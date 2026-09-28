@@ -251,6 +251,22 @@ static inline bool valid_var_kind(char kind) {
 	}
 }
 
+static bool var_at_roleloc(RAnal *anal, const RAnalVar *var, const char *role) {
+	const char *loc = r_anal_cc_roleloc (anal, var->fcn->callconv, role);
+	return loc && var->regname && r_anal_cc_location_uses (anal, loc, var->regname);
+}
+
+// context and error registers are not positional, but dyncc counts its roles
+R_API bool r_anal_var_is_abi_role(const RAnalVar *var) {
+	R_RETURN_VAL_IF_FAIL (var && var->fcn, false);
+	const char *cc = var->fcn->callconv;
+	if (var->kind != R_ANAL_VAR_KIND_REG || !cc || r_str_startswith (cc, "dyncc:")) {
+		return false;
+	}
+	RAnal *anal = var->fcn->anal;
+	return var_at_roleloc (anal, var, "self") || var_at_roleloc (anal, var, "error");
+}
+
 R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind, const char * R_NULLABLE type, int size, bool isarg, const char * R_NONNULL name) {
 	R_RETURN_VAL_IF_FAIL (fcn && name, NULL);
 	R_LOG_DEBUG ("fcn.setvar 0x%llx delta=%d kind=%c type=%s size=%d isarg=%d name=%s", fcn->addr, delta, kind, type, size, isarg, name);
@@ -1703,6 +1719,61 @@ static const RAnalArgSeq *argseq_of(RAnal *anal, const char *cc) {
 	return seq;
 }
 
+// a stripped function or an unrecognised kind lets register usage decide,
+// while a symbol that is not swift-mangled is a c function and gets none
+static int lookup_swift_roles(RAnal *anal, RAnalFunction *fcn) {
+	if (!anal->binb.swift_roles || !anal->flb.f) {
+		return R_BIN_SWIFT_ROLE_ANY;
+	}
+	const RVecFlagItemPtr *flags = r_flag_get_vec (anal->flb.f, fcn->addr);
+	int roles = R_BIN_SWIFT_ROLE_ANY;
+	RFlagItem **it, *fi;
+	r_flag_item_vec_foreach (flags, it, fi) {
+		// a synthetic func.<addr> sits beside the real symbol: keep looking
+		const int r = fi->rawname? anal->binb.swift_roles (fi->rawname): R_BIN_SWIFT_ROLE_ANY;
+		if (r == R_BIN_SWIFT_ROLE_ANY) {
+			continue;
+		}
+		if (r) {
+			return r;
+		}
+		roles = 0;
+	}
+	return roles;
+}
+
+static int function_swift_roles(RAnal *anal, RAnalFunction *fcn) {
+	if (fcn->swift_roles == UT8_MAX) {
+		fcn->swift_roles = lookup_swift_roles (anal, fcn);
+	}
+	return fcn->swift_roles;
+}
+
+static bool is_stack_reg(RAnal *anal, const char *reg) {
+	return STR_EQUAL (reg, r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP))
+		|| STR_EQUAL (reg, r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP));
+}
+
+static bool is_stack_slot(RAnal *anal, RAnalValue *v) {
+	return v && v->memref && v->reg && is_stack_reg (anal, v->reg);
+}
+
+// a callee-save spill or restore says nothing about the incoming value
+static bool is_stack_traffic(RAnal *anal, RAnalOp *op) {
+	return is_stack_slot (anal, RVecRArchValue_at (&op->dsts, 0))
+		|| is_stack_slot (anal, RVecRArchValue_at (&op->srcs, 0))
+		|| is_stack_slot (anal, RVecRArchValue_at (&op->srcs, 1));
+}
+
+static int positional_reg_args(RAnalFunction *f) {
+	int n = 0;
+	RAnalVar **it;
+	R_VEC_FOREACH (&f->vars, it) {
+		n += (*it)->kind == R_ANAL_VAR_KIND_REG && !r_anal_var_is_abi_role (*it);
+	}
+	return n;
+}
+
 R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count) {
 	int i = 0, argc = 0;
 	R_RETURN_IF_FAIL (anal && op && fcn);
@@ -1764,9 +1835,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			if (callee) {
 				callee_rargs = R_MIN (max_count, func_fixed_args (TDB, callee));
 			}
-			callee_rargs = callee_rargs
-				? callee_rargs
-				: r_anal_var_count (anal, f, R_ANAL_VAR_KIND_REG, 1);
+			callee_rargs = callee_rargs? callee_rargs: positional_reg_args (f);
 		}
 		int i;
 		const int total = callee_rargs;
@@ -1910,10 +1979,17 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	i = max_count;
 	const bool is_dyncc = r_str_startswith (fcn->callconv, "dyncc:");
 	const char *selfreg = r_anal_cc_roleloc (anal, fcn->callconv, is_dyncc? "T": "self");
-	if (selfreg) {
-		const bool in_src = is_reg_in_src (selfreg, anal, srcregs);
-		const bool in_dst = opdreg && r_anal_cc_location_uses (anal, selfreg, opdreg);
-		bool is_arg = is_used_like_arg (op, op_dst_writeonly, in_src, in_dst);
+	const char *errorreg = r_anal_cc_roleloc (anal, fcn->callconv, is_dyncc? "E": "error");
+	const bool in_src = selfreg && is_reg_in_src (selfreg, anal, srcregs);
+	const bool in_dst = selfreg && opdreg && r_anal_cc_location_uses (anal, selfreg, opdreg);
+	const bool err_in_src = errorreg && is_reg_in_src (errorreg, anal, srcregs);
+	const bool gated = !strcmp (fcn->callconv, "swift")
+		&& (in_src || in_dst || err_in_src || STR_EQUAL (opdreg, selfreg) || STR_EQUAL (opdreg, errorreg));
+	const int roles = gated? function_swift_roles (anal, fcn): R_BIN_SWIFT_ROLE_ANY;
+	if (selfreg && (roles & R_BIN_SWIFT_ROLE_SELF)) {
+		// an ignored spill leaves the state alone: the value is still incoming
+		const bool spill = (roles & R_BIN_SWIFT_ROLE_SELF_UNKNOWN) && !in_dst && is_stack_traffic (anal, op);
+		bool is_arg = !spill && is_used_like_arg (op, op_dst_writeonly, in_src, in_dst);
 		if (is_arg && reg_set[i] != 2) {
 			int delta = cc_loc_delta (anal, selfreg);
 			RAnalVar *newvar = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, 0, size, true, "self");
@@ -1925,22 +2001,30 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				reguse_append_hint (anal, op->addr, hintreg, "self");
 			}
 			r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, "self");
-			(*count)++;
-		} else if (in_src || STR_EQUAL (opdreg, selfreg)) {
+			*count += is_dyncc;
+		} else if (!spill && (in_src || STR_EQUAL (opdreg, selfreg))) {
 			reg_set[i] = 2;
 		}
+	}
+	if (selfreg) {
 		i++;
 	}
 
-	const char *errorreg = r_anal_cc_roleloc (anal, fcn->callconv, is_dyncc? "E": "error");
-	if (errorreg && reg_set[i] == 0 && STR_EQUAL (opdreg, errorreg)) {
+	// reading the incoming value, spilling it or restoring it from the frame
+	// is the callee-save contract; only a fresh value in the register throws
+	const bool err_unknown = roles & R_BIN_SWIFT_ROLE_ERROR_UNKNOWN;
+	const bool err_kept = err_unknown && reg_set[i] == 0
+		&& (err_in_src? !is_stack_traffic (anal, op): STR_EQUAL (opdreg, errorreg) && is_stack_traffic (anal, op));
+	if (err_kept) {
+		reg_set[i] = 2;
+	} else if (errorreg && (roles & R_BIN_SWIFT_ROLE_ERROR) && reg_set[i] == 0 && STR_EQUAL (opdreg, errorreg)) {
 		int delta = cc_loc_delta (anal, errorreg);
 		RAnalVar *newvar = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, 0, size, true, "error");
 		if (newvar) {
 			r_anal_var_set_access (anal, newvar, newvar->regname, op->addr, R_PERM_R, 0);
 		}
 		r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, "error");
-		(*count)++;
+		*count += is_dyncc;
 		reg_set[i] = 2;
 		if (!is_dyncc) {
 			const char *hintreg = reguse_regname_for_loc (anal, op, errorreg, opdreg);
@@ -2415,10 +2499,8 @@ R_API char *r_anal_function_format_sig(RAnal * R_NONNULL anal, RAnalFunction * R
 
 	R_VEC_FOREACH (cache->rvars, it) {
 		var = *it;
-		// assume self, error are always the last
-		if (!strcmp (var->name, "self") || !strcmp (var->name, "error")) {
-			r_strbuf_slice (buf, 0, r_strbuf_length (buf) - 2);
-			break;
+		if (r_anal_var_is_abi_role (var)) {
+			continue;
 		}
 		tmp_len = strlen (var->type);
 		if (tmp_len > 0) {

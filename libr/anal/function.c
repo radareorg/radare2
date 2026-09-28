@@ -85,6 +85,7 @@ R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 	fcn->diff = r_anal_diff_new ();
 	fcn->has_changed = true;
 	fcn->bp_frame = true;
+	fcn->swift_roles = UT8_MAX;
 	fcn->is_noreturn = false;
 	fcn->meta._min = UT64_MAX;
 	fcn->meta.stack_pop = R_ANAL_CC_STACK_POP_UNKNOWN;

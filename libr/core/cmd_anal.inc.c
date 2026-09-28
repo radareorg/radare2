@@ -1433,7 +1433,7 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 	RAnalVar **it;
 	R_VEC_FOREACH_VARS_CACHE (&cache, it) {
 		RAnalVar *var = *it;
-		if (!var->isarg) {
+		if (!var->isarg || r_anal_var_is_abi_role (var)) {
 			continue;
 		}
 		char *k = r_str_newf ("func.%s.arg.%d", fcn->name, (int)arg_count);
@@ -4654,6 +4654,9 @@ static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 			RAnalVar **vit;
 			R_VEC_FOREACH (cache.rvars, vit) {
 				RAnalVar *var = *vit;
+				if (r_anal_var_is_abi_role (var)) {
+					continue;
+				}
 				nargs++;
 				pj_o (j);
 				pj_ks (j, "name", var->name);

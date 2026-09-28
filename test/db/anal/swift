@@ -1,0 +1,49 @@
+NAME=swift cc keeps self across a callee-save spill of x20
+FILE=malloc://64
+ARGS=-a arm -b 64 -e anal.cc=swift
+CMDS=<<EOF
+wx f44fbea9800240f9f44fc2a8c0035fd6
+af
+afv~self,error
+EOF
+EXPECT=<<EOF
+arg int64_t self @ x20
+EOF
+RUN
+
+NAME=swift cc gives no role to a callee-save spill and restore
+FILE=malloc://64
+ARGS=-a arm -b 64 -e anal.cc=swift
+CMDS=<<EOF
+wx f44fbea9f44fc2a8c0035fd6
+af
+afv~?self
+wx f50f1ff8f50741f8c0035fd6
+af-
+af
+afv~?error
+EOF
+EXPECT=<<EOF
+0
+0
+EOF
+RUN
+
+NAME=swift cc reads self and error from their use
+FILE=malloc://64
+ARGS=-a arm -b 64 -e anal.cc=swift
+CMDS=<<EOF
+wx e00314aaf50301aac0035fd6
+af
+afv~self,error
+wx f657bea9f50300aaf657c2a8c0035fd6
+af-
+af
+afv~self,error
+EOF
+EXPECT=<<EOF
+arg int64_t self @ x20
+arg int64_t error @ x21
+arg int64_t error @ x21
+EOF
+RUN

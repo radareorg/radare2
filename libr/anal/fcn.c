@@ -3123,7 +3123,7 @@ static bool function_signature_fallback_to_vars(RAnal *anal, RAnalFunction *fcn,
 	R_VEC_FOREACH (vars, it) {
 		RAnalVar *var = *it;
 		RAnalFunctionParam *param;
-		if (!var->isarg || R_STR_ISEMPTY (var->type)) {
+		if (!var->isarg || R_STR_ISEMPTY (var->type) || r_anal_var_is_abi_role (var)) {
 			continue;
 		}
 		param = R_NEW0 (RAnalFunctionParam);
