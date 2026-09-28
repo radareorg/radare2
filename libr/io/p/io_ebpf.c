@@ -59,24 +59,27 @@ static const char *const reg_names[] = {
 #define REG_COUNT ((int)R_ARRAY_SIZE (reg_names))
 #define REGBUF (REG_COUNT * sizeof (ut64))
 
-static void print_snapshot(RIO *io, const ut64 *regs) {
+static char *print_snapshot(const ut64 *regs) {
+	RStrBuf *sb = r_strbuf_new ("");
 	int i;
 	for (i = 0; i < REG_COUNT; i++) {
-		io->cb_printf ("%-8s 0x%016"PFMT64x"%s", reg_names[i], regs[i],
+		r_strbuf_appendf (sb, "%-8s 0x%016"PFMT64x"%s", reg_names[i], regs[i],
 			(i % 3 == 2)? "\n": "  ");
 	}
 	if (i % 3 != 0) {
-		io->cb_printf ("\n");
+		r_strbuf_appendf (sb, "\n");
 	}
+	return r_strbuf_drain (sb);
 }
 
-static void emit_reg_flags(RIO *io, const ut64 *regs) {
+static char *emit_reg_flags(const ut64 *regs) {
+	RStrBuf *sb = r_strbuf_new ("fs registers\n");
 	int i;
-	io->cb_printf ("fs registers\n");
 	for (i = 0; i < REG_COUNT; i++) {
-		io->cb_printf ("f reg.%s 1 0x%"PFMT64x"\n", reg_names[i], regs[i]);
+		r_strbuf_appendf (sb, "f reg.%s 1 0x%"PFMT64x"\n", reg_names[i], regs[i]);
 	}
-	io->cb_printf ("fs *\n");
+	r_strbuf_appendf (sb, "fs *\n");
+	return r_strbuf_drain (sb);
 }
 #endif
 
@@ -363,14 +366,13 @@ static bool ebpf_read_regs(RIOEbpf *e, ut64 *regs) {
 	return bpf_ (BPF_MAP_LOOKUP_ELEM, &attr) == 0;
 }
 
-// Return false before the first snapshot so callers can use the procfs fallback.
-static bool ebpf_snapshot_regs(RIO *io, RIOEbpf *e) {
+// Return NULL before the first snapshot so callers can use the procfs fallback.
+static char *ebpf_snapshot_regs(RIOEbpf *e) {
 	ut64 r[REG_COUNT] = {0};
 	if (!ebpf_read_regs (e, r) || r[REG_PC] == 0) {
-		return false;
+		return NULL;
 	}
-	print_snapshot (io, r);
-	return true;
+	return print_snapshot (r);
 }
 #endif
 
@@ -395,19 +397,21 @@ static bool proc_pc_sp(int pid, ut64 *pc, ut64 *sp) {
 }
 
 // Prefer a full eBPF snapshot, then fall back to procfs pc/sp.
-static void print_regs(RIO *io, RIOEbpf *e) {
+static char *print_regs(RIO *io, RIOEbpf *e) {
 #if HAVE_EBPF
-	if (ebpf_snapshot_regs (io, e)) {
-		return;
+	char *s = ebpf_snapshot_regs (e);
+	if (s) {
+		return s;
 	}
 #endif
 	ut64 pc = 0, sp = 0;
 	if (proc_pc_sp (e->pid, &pc, &sp)) {
-		io->cb_printf ("pc 0x%016"PFMT64x"  sp 0x%016"PFMT64x"\n", pc, sp);
-		io->cb_printf ("(pc/sp from /proc/%d/syscall; ':probe <addr>' captures the full set)\n", e->pid);
-	} else {
-		R_LOG_ERROR ("Cannot read registers: target is running (try ':stop' or ':contstop')");
+		return r_str_newf (
+			"pc 0x%016"PFMT64x"  sp 0x%016"PFMT64x"\n"
+			"(pc/sp from /proc/%d/syscall; ':probe <addr>' captures the full set)\n", pc, sp, e->pid);
 	}
+	R_LOG_ERROR ("Cannot read registers: target is running (try ':stop' or ':contstop')");
+	return NULL;
 }
 
 // Before execve, a spawned target's procfs state still belongs to the r2 stub.
@@ -432,17 +436,15 @@ static bool preexec_guard(RIOEbpf *e) {
 	return false;
 }
 
-static void emit_maps(RIO *io, RIOEbpf *e, bool as_flags) {
+static char *emit_maps(RIOEbpf *e, bool as_flags) {
 	char path[64];
 	snprintf (path, sizeof (path), "/proc/%d/maps", e->pid);
 	char *m = r_file_slurp (path, NULL);
 	if (!m) {
 		R_LOG_ERROR ("Cannot read %s", path);
-		return;
+		return NULL;
 	}
-	if (as_flags) {
-		io->cb_printf ("fs maps\n");
-	}
+	RStrBuf *sb = r_strbuf_new (as_flags? "fs maps\n": NULL);
 	char *next = NULL;
 	char *line;
 	int idx = 0;
@@ -454,7 +456,7 @@ static void emit_maps(RIO *io, RIOEbpf *e, bool as_flags) {
 		}
 		if (!as_flags) {
 			const char *rest = strchr (line, ' ');
-			io->cb_printf ("0x%"PFMT64x" - 0x%"PFMT64x"%s\n", start, end, rest? rest: "");
+			r_strbuf_appendf (sb, "0x%"PFMT64x" - 0x%"PFMT64x"%s\n", start, end, rest? rest: "");
 			continue;
 		}
 		const char *map_path = strchr (line, '/');
@@ -462,28 +464,39 @@ static void emit_maps(RIO *io, RIOEbpf *e, bool as_flags) {
 		if (name) {
 			r_name_filter (name, -1);
 		}
-		io->cb_printf ("f map.%d.%s 0x%"PFMT64x" 0x%"PFMT64x"\n", idx++, name? name: "anon", end - start, start);
+		r_strbuf_appendf (sb, "f map.%d.%s 0x%"PFMT64x" 0x%"PFMT64x"\n", idx++, name? name: "anon", end - start, start);
 	}
 	if (as_flags) {
-		io->cb_printf ("fs *\n");
+		r_strbuf_appendf (sb, "fs *\n");
 	}
 	free (m);
+	return r_strbuf_drain (sb);
 }
 
 // Emit an r2 script: flags for every memory mapping plus the register set.
-static void emit_r2(RIO *io, RIOEbpf *e) {
-	emit_maps (io, e, true);
+static char *emit_r2(RIOEbpf *e) {
+	RStrBuf *sb = r_strbuf_new ("");
+	char *maps = emit_maps (e, true);
+	if (maps) {
+		r_strbuf_append (sb, maps);
+		free (maps);
+	}
 #if HAVE_EBPF
 	ut64 r[REG_COUNT] = {0};
 	if (ebpf_read_regs (e, r) && r[REG_PC]) {
-		emit_reg_flags (io, r);
-		return;
+		char *flags = emit_reg_flags (r);
+		if (flags) {
+			r_strbuf_append (sb, flags);
+			free (flags);
+		}
+		return r_strbuf_drain (sb);
 	}
 #endif
 	ut64 pc = 0, sp = 0;
 	if (proc_pc_sp (e->pid, &pc, &sp)) {
-		io->cb_printf ("fs registers\nf reg.pc 1 0x%"PFMT64x"\nf reg.sp 1 0x%"PFMT64x"\nfs *\n", pc, sp);
+		r_strbuf_appendf (sb, "fs registers\nf reg.pc 1 0x%"PFMT64x"\nf reg.sp 1 0x%"PFMT64x"\nfs *\n", pc, sp);
 	}
+	return r_strbuf_drain (sb);
 }
 
 // Only spawned targets are waitable children; retry interrupted waits.
@@ -685,16 +698,17 @@ static char *__system(RIO *io, RIODesc *desc, const char *cmd) {
 		// pid stays the first token so scripts can still parse it
 		char *exe = child_exited? NULL: r_sys_pidpath (e->pid);
 		const char *state = child_exited? "exited": e->spawned? "spawned": "attached";
-		io->cb_printf ("%d %s%s%s\n", e->pid, state,
+		char *res = r_str_newf ("%d %s%s%s\n", e->pid, state,
 			exe? " ": "", exe? exe: "");
 		free (exe);
+		return res;
 	} else if (r_str_startswith (cmd, "maps")) {
 		if (!preexec_guard (e)) {
-			emit_maps (io, e, false);
+			return emit_maps (e, false);
 		}
 	} else if (r_str_startswith (cmd, "r2")) {
 		if (!preexec_guard (e)) {
-			emit_r2 (io, e);
+			return emit_r2 (e);
 		}
 	} else if (r_str_startswith (cmd, "contstop")) {
 		const char *arg = r_str_trim_head_ro (cmd + strlen ("contstop"));
@@ -715,7 +729,7 @@ static char *__system(RIO *io, RIODesc *desc, const char *cmd) {
 		signal_target (e, SIGKILL);
 	} else if (r_str_startswith (cmd, "regs") || !strcmp (cmd, "r")) {
 		if (!preexec_guard (e)) {
-			print_regs (io, e);
+			return print_regs (io, e);
 		}
 #if HAVE_EBPF
 	} else if (r_str_startswith (cmd, "probe-")) {
@@ -732,7 +746,7 @@ static char *__system(RIO *io, RIODesc *desc, const char *cmd) {
 		if (cmd[0] != '?' && !r_str_startswith (cmd, "help")) {
 			R_LOG_ERROR ("Unknown ebpf command '%s'", cmd);
 		}
-		io->cb_printf (
+		return r_str_newf (
 			":pid            show target pid\n"
 			":maps           dump /proc/pid/maps of the target\n"
 			":r2             emit r2 flag commands for the maps and registers\n"
