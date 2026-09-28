@@ -1282,6 +1282,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		if (p && p->consb.cons && p->consb.cons->context && p->consb.cons->context->breaked) {
 			break;
 		}
+		if (use_sparse) {
+			j = i;
+		}
 		rowbytes = inc;
 		if (use_align) {
 			int sz = (p && p->offsize)? p->offsize (p->user, addr + j): -1;
@@ -1291,11 +1294,15 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		}
 
 		if (use_sparse) {
-			if (checkSparse (buf + i, inc, sparse_char)) {
-				if (i + inc >= len || checkSparse (buf + i + inc, inc, sparse_char)) {
-					if (i + inc + inc >= len ||
-					checkSparse (buf + i + inc + inc, inc, sparse_char)) {
-						sparse_char = buf[j];
+			if (i + inc <= len && checkSparse (buf + i, inc, 0)) {
+				if (sparse_char != buf[i]) {
+					last_sparse = 0;
+				}
+				if (i + inc == len || (i + 2 * (size_t)inc <= len &&
+					checkSparse (buf + i + inc, inc, buf[i]))) {
+					if (i + 2 * (size_t)inc >= len || (i + 3 * (size_t)inc <= len &&
+						checkSparse (buf + i + 2 * (size_t)inc, inc, buf[i]))) {
+						sparse_char = buf[i];
 						last_sparse++;
 						if (last_sparse == 2) {
 							r_print_printf (p, "%s", " ...\n");
@@ -1304,7 +1311,11 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						if (last_sparse > 2) {
 							continue;
 						}
+					} else {
+						last_sparse = 0;
 					}
+				} else {
+					last_sparse = 0;
 				}
 			} else {
 				last_sparse = 0;
