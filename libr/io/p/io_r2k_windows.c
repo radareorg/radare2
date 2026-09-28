@@ -88,7 +88,7 @@ static const char *GetFileName(const char *path) {
 	return pfile;
 }
 
-int r2k_windows_GetSystemModules(RIO *io) {
+char *r2k_windows_GetSystemModules(RIO *io) {
 	DWORD bRead = 0;
 	int i;
 	int bufmodsize = 1024 * 1024;
