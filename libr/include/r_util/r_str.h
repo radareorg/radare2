@@ -2,6 +2,7 @@
 #define R_STR_H
 
 #include "r_str_util.h"
+#include "r_str_any.h"
 #include <r_list.h>
 #include <r_vec.h>
 #include <r_types_base.h>
