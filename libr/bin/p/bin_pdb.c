@@ -41,7 +41,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	if (!res) {
 		return false;
 	}
-	if (!r_bin_pdb_parser (&res->pdb, bf->file)) {
+	if (!r_bin_pdb_parser_with_buf (&res->pdb, r_ref (buf))) {
 		free (res);
 		return false;
 	}

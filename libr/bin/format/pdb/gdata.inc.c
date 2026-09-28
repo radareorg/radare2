@@ -34,10 +34,18 @@ static void parse_gdata_stream(STpiStream *ss, void *stream, R_STREAM_FILE *stre
 	SGDATAStream *data_stream = (SGDATAStream *)stream;
 	data_stream->globals_list = r_list_newf (free_global);
 	ut16 len = 0;
-	while (1) {
+	while (stream_file->pos < stream_file->end) {
+		if (stream_file->end - stream_file->pos < 2) {
+			stream_file->error = READ_PAGE_FAIL;
+			return;
+		}
 		len = stream_file_read_le16 (stream_file);
 		if (len == 0) {
 			break;
+		}
+		if (len < 2 || len > stream_file->end - stream_file->pos) {
+			stream_file->error = READ_PAGE_FAIL;
+			return;
 		}
 		ut8 *data = malloc (len);
 		if (!data) {

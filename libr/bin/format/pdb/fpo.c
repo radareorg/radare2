@@ -43,7 +43,10 @@ void parse_fpo_stream(STpiStream *ss, void *stream, R_STREAM_FILE *stream_file) 
 	if (!data) {
 		return;
 	}
-	stream_file_get_data (stream_file, (char *)data);
+	if (!stream_file_get_data (stream_file, (char *)data)) {
+		free (data);
+		return;
+	}
 
 	SFPOStream *fpo_stream = (SFPOStream *)stream;
 	fpo_stream->fpo_data_list = r_list_newf (free);
@@ -80,7 +83,10 @@ void parse_fpo_new_stream(STpiStream *ss, void *stream, R_STREAM_FILE *stream_fi
 	if (!data) {
 		return;
 	}
-	stream_file_get_data (stream_file, (char *)data);
+	if (!stream_file_get_data (stream_file, (char *)data)) {
+		free (data);
+		return;
+	}
 
 	SFPONewStream *fpo_stream = (SFPONewStream *)stream;
 	fpo_stream->fpo_data_list = r_list_newf (free);
