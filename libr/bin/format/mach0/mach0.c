@@ -402,7 +402,7 @@ static bool parse_segments(struct MACH0_(obj_t) * mo, ut64 off) {
 	if (off > mo->size || off + sizeof (struct MACH0_(segment_command)) > mo->size) {
 		return false;
 	}
-	if (! (mo->segs = realloc (mo->segs, mo->nsegs * sizeof (struct MACH0_(segment_command))))) {
+	if (! (mo->segs = realloc (mo->segs, size_sects))) {
 		r_sys_perror ("realloc (seg)");
 		return false;
 	}
@@ -457,19 +457,11 @@ static bool parse_segments(struct MACH0_(obj_t) * mo, ut64 off) {
 
 	if (seg->nsects > 0) {
 		sect = mo->nsects;
-		mo->nsects += seg->nsects;
-		if (mo->nsects > MACHO_MAX_SECTIONS) {
-			int new_nsects = mo->nsects & 0xf;
-			R_LOG_WARN ("mach0 header contains too many sections (%d). Wrapping to %d",
-				mo->nsects,
-				new_nsects);
-			mo->nsects = new_nsects;
-		}
-		if ((int)mo->nsects < 1) {
-			R_LOG_WARN ("Invalid number of sections");
-			mo->nsects = sect;
+		if (sect > MACHO_MAX_SECTIONS || seg->nsects > MACHO_MAX_SECTIONS - sect) {
+			R_LOG_WARN ("mach0 header contains too many sections");
 			return false;
 		}
+		mo->nsects = sect + seg->nsects;
 		if (!UT32_MUL (&size_sects, mo->nsects - sect, sizeof (struct MACH0_(section)))) {
 			mo->nsects = sect;
 			return false;
