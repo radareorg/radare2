@@ -15,6 +15,14 @@ typedef struct {
 	size_t length;
 } RStrAnyItem;
 
+#if defined(__GNUC__) || defined(__clang__)
+#define R_STR_ANY_INLINE static inline __attribute__((always_inline))
+#elif defined(_MSC_VER)
+#define R_STR_ANY_INLINE static __forceinline
+#else
+#define R_STR_ANY_INLINE static inline
+#endif
+
 #if defined(__clang__)
 #define R_STR_ANY_UNROLL _Pragma ("clang loop unroll(full)")
 #elif defined(__GNUC__) && __GNUC__ >= 8
@@ -23,7 +31,7 @@ typedef struct {
 #define R_STR_ANY_UNROLL
 #endif
 
-static inline bool r_str_cmp_any_inline(const char *key, const RStrAnyItem *items, size_t count) {
+R_STR_ANY_INLINE bool r_str_cmp_any_inline(const char *key, const RStrAnyItem *items, size_t count) {
 	if (!key || !*key) {
 		return false;
 	}
@@ -39,7 +47,7 @@ static inline bool r_str_cmp_any_inline(const char *key, const RStrAnyItem *item
 	return false;
 }
 
-static inline bool r_str_prefix_any_tail(const char *key, const char *item) {
+R_STR_ANY_INLINE bool r_str_prefix_any_tail(const char *key, const char *item) {
 	while (*item && *item == *key) {
 		item++;
 		key++;
@@ -47,7 +55,7 @@ static inline bool r_str_prefix_any_tail(const char *key, const char *item) {
 	return !*item;
 }
 
-static inline bool r_str_startswith_any_inline(const char *key, const RStrAnyItem *items, size_t count) {
+R_STR_ANY_INLINE bool r_str_startswith_any_inline(const char *key, const RStrAnyItem *items, size_t count) {
 	if (!key || !*key) {
 		return false;
 	}
@@ -62,7 +70,7 @@ static inline bool r_str_startswith_any_inline(const char *key, const RStrAnyIte
 	return false;
 }
 
-static inline bool r_str_endswith_any_inline(const char *key, const RStrAnyItem *items, size_t count) {
+R_STR_ANY_INLINE bool r_str_endswith_any_inline(const char *key, const RStrAnyItem *items, size_t count) {
 	if (!key || !*key) {
 		return false;
 	}
@@ -80,7 +88,7 @@ static inline bool r_str_endswith_any_inline(const char *key, const RStrAnyItem 
 	return false;
 }
 
-static inline bool r_str_strstr_any_inline(const char *key, const RStrAnyItem *items, size_t count) {
+R_STR_ANY_INLINE bool r_str_strstr_any_inline(const char *key, const RStrAnyItem *items, size_t count) {
 	if (!key || !*key) {
 		return false;
 	}
@@ -103,6 +111,7 @@ static inline bool r_str_strstr_any_inline(const char *key, const RStrAnyItem *i
 }
 
 #undef R_STR_ANY_UNROLL
+#undef R_STR_ANY_INLINE
 
 #ifdef __cplusplus
 }
