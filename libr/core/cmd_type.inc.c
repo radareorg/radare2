@@ -509,9 +509,9 @@ static void showFormat(RCore *core, const char *name, int mode) {
 			} else {
 				if (R_STR_ISNOTEMPTY (fmt)) {
 					if (mode) {
-						r_cons_printf (core->cons, "pf.%s %s\n", name, fmt);
+						r_cons_printf (core->cons, "'pf.%s %s\n", name, fmt);
 					} else {
-						r_cons_printf (core->cons, "pf %s\n", fmt);
+						r_cons_printf (core->cons, "'pf %s\n", fmt);
 					}
 				} else {
 					// This happens when the type hasnt been fully removed

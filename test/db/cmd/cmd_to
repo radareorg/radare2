@@ -2,7 +2,7 @@ NAME=to
 FILE=-
 CMDS=to bins/headers/s1.h;t S1
 EXPECT=<<EOF
-pf ddd x y z
+'pf ddd x y z
 EOF
 RUN
 
@@ -10,7 +10,7 @@ NAME=to
 FILE=-
 CMDS=to bins/headers/s2.h; t S1
 EXPECT=<<EOF
-pf ddd x test z
+'pf ddd x test z
 EOF
 RUN
 
@@ -18,7 +18,7 @@ NAME=to
 FILE=-
 CMDS=to bins/headers/s1.h; to bins/headers/s2.h; t S1
 EXPECT=<<EOF
-pf ddd x test z
+'pf ddd x test z
 EOF
 RUN
 
@@ -26,7 +26,7 @@ NAME=to perturbated
 FILE=-
 CMDS=to bins/headers/s1.h; to bins/headers/s4.h; t S1
 EXPECT=<<EOF
-pf ddd x test z
+'pf ddd x test z
 EOF
 RUN
 
@@ -42,7 +42,7 @@ tk struct.S1.y
 tk struct.S1.z
 EOF
 EXPECT=<<EOF
-pf [3]d[4]dd x y z
+'pf [3]d[4]dd x y z
 struct
 x,y,z
 int,0,3
