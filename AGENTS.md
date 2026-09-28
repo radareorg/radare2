@@ -35,14 +35,16 @@ Search symbols and paths first; read only relevant sections:
 
 ## Build
 
-- For code changes, build from the root: `./configure` if needed, then `make -j2` (adjust jobs to available resources). Keep failure output. Do not compile individual `.c`/`.o` files directly.
+- For code changes, run `./configure` if needed, then `make -j2` from the root (adjust jobs to available resources). Keep failure output. Do not compile individual `.c`/`.o` files directly.
+- Run `sys/install.sh --without-pull` for a full clean rebuild and symlink installation.
+- `.d` files are compiler generated. If one causes a build failure, remove it and rebuild; do not edit it.
 - Edit `configure.acr` and regenerate `configure` with `acr`; do not edit generated `configure` directly.
 - Update both Make and Meson for library dependencies. Register new plugins in `dist/plugins-cfg/plugins.def.cfg`, `dist/plugins-cfg/plugins.static.cfg` and the relevant `libr/*/meson.build`.
 
 ## Verify
 
-- Add command-based `r2r` regressions using `r2` commands in existing `test/db/` files, reusing fixtures, instead of adding C unit tests. Cover the reported behavior and relevant edge cases; do not blindly accept changed expected output.
-- Build and install this checkout before running `r2r -C test db/...` from the root. See [Regression testing](DEVELOPERS.md#regression-testing) for library/plugin paths, absolute executable overrides and `test/unit/`.
+- Use `r2r` tests in `test/db/` for `r2` behavior and C unit tests in `test/unit/` for direct API behavior. Reuse test files and fixtures when suitable. Cover the reported behavior and edge cases; check expected output before changing it.
+- Build before running `r2r -C test db/...` from the root. Existing `symstall` symlinks use rebuilt files without reinstalling. Otherwise, install this checkout or set its executable, library and plugin paths. See [Regression testing](DEVELOPERS.md#regression-testing).
 - Keep the filename last in `r2` invocations. Use `-n` only for raw input: it skips binary loading. `io.va=false` changes addressing, not binary loading.
 - Binary fixtures belong in `radare2-testbins` (`test/bins/`), not this repository. `// R2R` comments can link source files to tests.
 - For memory debugging, see `DEVELOPERS.md` (Error diagnosis): `R2_DEBUG=1` and `sys/sanitize.sh`.

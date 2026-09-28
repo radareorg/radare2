@@ -702,8 +702,11 @@ make
 
 while inside a modified module (eg: `libr/core`).
 
-Note that if you have radare2 already installed, you don't have to reinstall it
-again after recompilation, as the compiled libraries are connected through the symlinks.
+If radare2 was installed with `symstall`, its symlinks use rebuilt files without
+reinstalling.
+
+The compiler generates `.d` files for build dependencies. If one causes a build
+failure, remove it and rebuild; do not edit it.
 
 ## Repeated installation
 
@@ -757,16 +760,20 @@ git reset --hard
 
 ## Regression testing
 
-Use `r2r` to run the radare2 regression test suite, e.g.:
+With a `symstall` installation pointing to this checkout, rebuild and test:
 
 ```sh
-sys/install.sh
+make -j2
 r2r -C test db/cmd/cmd_print
 ```
 
-Build and install this checkout before testing so the executables, libraries
-and plugins come from the same revision. For an uninstalled build,
-`R2R_RADARE2` and `R2R_RASM2` must be absolute paths (`r2r -C` changes directory).
+Check that the installed executables, libraries and plugins point to this checkout.
+For a full clean rebuild and symlink installation, run `sys/install.sh --without-pull`.
+It runs `make mrproper` before rebuilding. Without `--without-pull`, the script
+may pull from upstream on `master`.
+
+For an uninstalled build, `R2R_RADARE2` and `R2R_RASM2` must be absolute paths
+(`r2r -C` changes directory).
 These overrides only select executables: also configure the platform library
 search path and `R2_LIBR_PLUGINS` for the checkout; otherwise installed
 libraries or plugins may be loaded silently.
@@ -774,8 +781,9 @@ On Linux, set `LD_LIBRARY_PATH` to the absolute `libr/*/` library directories
 and `R2_LIBR_PLUGINS` to the checkout's absolute `libr` path.
 
 C unit tests live in `test/unit/`; `make -C test unit-tests` uses the configured
-installation prefix too. For new regressions, exercise the changed behavior
-through `r2` commands in `test/db/` using `r2r`, instead of adding C unit tests.
+installation prefix too. For new regressions exposed through `r2`, add command
+tests in `test/db/`, reusing existing test files and fixtures when appropriate.
+Use C unit tests for behavior that needs direct API coverage.
 
 r2r's source can be found in the `binr/r2r/` directory, while binaries used for
 tests are located in the following GitHub repository:
