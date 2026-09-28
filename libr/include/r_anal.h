@@ -346,6 +346,7 @@ typedef struct r_anal_function_t {
 	bool bp_frame;
 	bool bp_from_sp; // a prologue copied SP into BP, so BP really is the frame base
 	bool is_noreturn; // true if function does not return
+	ut8 swift_roles; // R_BIN_SWIFT_ROLE_* bits the linkage name gives, UT8_MAX until asked
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	size_t fingerprint_size;
 	RAnalDiff *diff;
@@ -1304,6 +1305,7 @@ R_API bool r_anal_import_c_decls(RAnal *anal, const char *decls, char **errmsg);
 /* var.c */
 R_API R_OWNED char *r_anal_function_autoname_var(RAnalFunction *fcn, char kind, const char *pfx, int ptr);
 R_API R_UNOWNED RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind, const char * R_NULLABLE type, int size, bool isarg, const char * R_NONNULL name);
+R_API bool r_anal_var_is_abi_role(const RAnalVar *var);
 R_API bool r_anal_function_set_var_prot(RAnalFunction *fcn, RList /*<RAnalVarProt>*/ *l);
 R_API R_UNOWNED RAnalVar *r_anal_function_get_var(RAnalFunction *fcn, char kind, int delta);
 R_API RList *r_anal_var_deserialize(const char *ser);

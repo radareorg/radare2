@@ -68,16 +68,119 @@ NAME=swift-x86-64 calling convention json
 ARGS=-e bin.demangle=false
 FILE=bins/mach0/swift5.1-throwError
 CMDS=<<EOF
+e anal.cc=swift
+k anal/cc/cc.swift.clobber
 s sym.__s10throwError7ThrowerC0a2MyB0yyKF
 af
-afc swift
 afva
 afcrj
 afvj
+afcf~[1]
+afcfj
+aaft
+afsj~{argc}
+afsj~{args}
+afv~self,error
+af @ 0x100001b50
+af @ 0x100001b70
+afv @ 0x100001b70~arg
+s 0x100001990
+af
+afvn ctx self
+afvn self arg1
+afs
 EOF
 EXPECT=<<EOF
+rax,rcx,rdx,rsi,rdi,r8,r9,r10,r11,r12,xmm0,xmm1,xmm2,xmm3,xmm4,xmm5,xmm6,xmm7,xmm8,xmm9,xmm10,xmm11,xmm12,xmm13,xmm14,xmm15
 {"ret":"rax","args":["rdi","rsi","rdx","rcx","r8","r9"],"self":"r13","error":"r12"}
 {"reg":[{"name":"self","kind":"reg","type":"int64_t","ref":"r13"},{"name":"error","kind":"reg","type":"int64_t","ref":"r12"}],"sp":[],"bp":[{"name":"var_10h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-16}},{"name":"var_18h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-24}},{"name":"var_20h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-32}},{"name":"var_28h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-40}}]}
+()
+[{"name":"method.throwError.Thrower.throwError.Thrower.allocator.My...B0yyKF","args":[],"count":0}]
+0
+[]
+arg int64_t self @ r13
+arg int64_t error @ r12
+arg int64_t self @ r13
+void sym.__s10throwError02MyB0V1xSivs (int64_t self);
+EOF
+RUN
+
+NAME=swift cc gives self to the getter of an indirect struct
+FILE=bins/mach0/iGoat-Swift.arm_64.1
+CMDS=<<EOF
+e anal.cc=swift
+af @ 0x1000e1020
+afv @ 0x1000e1020~self
+EOF
+EXPECT=<<EOF
+arg int64_t self @ x20
+EOF
+RUN
+
+NAME=swift cc lets usage decide for a stripped function
+FILE=bins/mach0/iGoat-Swift.arm_64.1
+CMDS=<<EOF
+e anal.cc=swift
+af @ 0x1000d808c
+afv @ 0x1000d808c~self,error
+EOF
+EXPECT=<<EOF
+arg int64_t self @ x20
+EOF
+RUN
+
+NAME=swift cc does not read self from a callee-save spill
+FILE=bins/mach0/iGoat-Swift.arm_64.1
+CMDS=<<EOF
+e anal.cc=swift
+af @ 0x1000e1348
+afv @ 0x1000e1348~arg
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ x0
+EOF
+RUN
+
+NAME=swift cc does not read error from a register save and restore
+FILE=bins/mach0/MASTestApp
+CMDS=<<EOF
+e anal.cc=swift
+af @ 0x100004000
+afv @ 0x100004000~error,arg1
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ x0
+EOF
+RUN
+
+NAME=swift cc gives self to subscripts and observers
+FILE=bins/mach0/Alamofire-stripped
+ARGS=-e bin.demangle=false
+CMDS=<<EOF
+e anal.cc=swift
+af @ sym.__s9Alamofire15SessionDelegateCyAA7RequestCSgSo16NSURLSessionTaskCcig
+afv @ sym.__s9Alamofire15SessionDelegateCyAA7RequestCSgSo16NSURLSessionTaskCcig~self,error
+o bins/mach0/WheresMyBrowser
+e anal.cc=swift
+af @ sym.__s15WheresMyBrowser17WKOptionsViewCellC10optionNameSSSgvW
+afv @ sym.__s15WheresMyBrowser17WKOptionsViewCellC10optionNameSSSgvW~self,error
+EOF
+EXPECT=<<EOF
+arg int64_t self @ x20
+arg int64_t self @ x20
+EOF
+RUN
+
+NAME=swift cc lets usage decide for a closure
+FILE=bins/mach0/WheresMyBrowser
+ARGS=-e bin.demangle=false
+CMDS=<<EOF
+e anal.cc=swift
+af @ 0x10000fd84
+afv @ 0x10000fd84~self,error
+EOF
+EXPECT=<<EOF
+arg int64_t error @ x21
 EOF
 RUN
 
