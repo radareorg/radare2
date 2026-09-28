@@ -829,6 +829,9 @@ CMDS=pf._NT_TIB ? (_NT_TIB)Self ; pf._NT_TIB > /dev/null ; pf.
 EXPECT=<<EOF
 'pf._NT_TIB ? (_NT_TIB)Self
 EOF
+EXPECT_ERR=<<EOF
+ERROR: Recursive struct '_NT_TIB'
+EOF
 RUN
 
 NAME=Infinite Recursion segfault 2
@@ -837,6 +840,82 @@ CMDS=pf._NT_TIB ?ppppip? (_EXCEPTION_REGISTRATION_RECORD)ExceptionList StackBase
 EXPECT=<<EOF
 'pf._NT_TIB ?ppppip? (_EXCEPTION_REGISTRATION_RECORD)ExceptionList StackBase StackLimit SubSystemTib FiberData Version ArbitraryUserPointer (_NT_TIB)Self
 EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot find format for struct `_EXCEPTION_REGISTRATION_RECORD'
+EOF
+RUN
+
+NAME=Undefined inline struct format
+FILE=malloc://1024
+CMDS=pf i?i first (missing)child last
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot find format for struct `missing'
+EOF
+RUN
+
+NAME=Undefined nested struct format
+FILE=malloc://1024
+CMDS=<<EOF
+pf.inner ? (missing)child
+pf.outer i?i first (inner)child last
+pfs.outer
+pf.outer
+EOF
+EXPECT=<<EOF
+-1
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot find format for struct `missing'
+ERROR: Cannot find format for struct `missing'
+EOF
+RUN
+
+NAME=Mutually recursive struct formats
+FILE=malloc://1024
+CMDS=<<EOF
+pf.a ? (b)child
+pf.b ? (a)child
+pf.a
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot find size for `? (a)child'
+EOF
+RUN
+
+NAME=Recursive NT_TIB struct pointer
+FILE=malloc://1024
+ARGS=-b 32
+CMDS=<<EOF
+wx 10000000
+pf._NT_TIB *? (_NT_TIB)Self
+pfs._NT_TIB
+pf._NT_TIB
+EOF
+EXPECT=<<EOF
+4
+ Self : (*0x10)
+                struct<_NT_TIB>
+      Self :  NULL
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Self pointer struct format size
+FILE=malloc://1024
+ARGS=-b 32
+CMDS=<<EOF
+pf.node p*? value (node)next
+pfs.node
+pf.node
+EOF
+EXPECT=<<EOF
+8
+ value : 0x00000000 = 0x00000000
+  next :  NULL
+EOF
+EXPECT_ERR=
 RUN
 
 NAME=One byte enum endianness

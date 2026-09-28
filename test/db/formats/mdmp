@@ -135,27 +135,27 @@ FILE=bins/mdmp/hello.dmp
 ARGS=-nn
 CMDS=pf.
 EXPECT=<<EOF
-pf.mdmp_directory [4]E? (mdmp_stream_type)StreamType (mdmp_location_descriptor)Location
-pf.mdmp_exception [4]E[4]Eqqdd[15]q (mdmp_exception_code)ExceptionCode (mdmp_exception_flags)ExceptionFlags ExceptionRecord ExceptionAddress NumberParameters __UnusedAlignment ExceptionInformation
-pf.mdmp_exception_stream dd?? ThreadId __Alignment (mdmp_exception)ExceptionRecord (mdmp_location_descriptor)ThreadContext
-pf.mdmp_header [4]zddddt[8]B Signature Version NumberOfStreams StreamDirectoryRVA CheckSum TimeDateStamp (mdmp_type)Flags
-pf.mdmp_location_descriptor dd DataSize RVA
-pf.mdmp_location_descriptor64 qq DataSize RVA
-pf.mdmp_memory64_list qq[83]? NumberOfMemoryRanges BaseRva (mdmp_memory_descriptor64)MemoryRanges
-pf.mdmp_memory_descriptor q? StartOfMemoryRange (mdmp_location_descriptor)Memory
-pf.mdmp_memory_descriptor64 qq StartOfMemoryRange DataSize
-pf.mdmp_memory_info qq[4]Edq[4]E[4]E[4]Ed BaseAddress AllocationBase (mdmp_page_protect)AllocationProtect __Alignment1 RegionSize (mdmp_mem_state)State (mdmp_page_protect)Protect (mdmp_mem_type)Type __Alignment2
-pf.mdmp_memory_info_list ddq[127]? SizeOfHeader SizeOfEntry NumberOfEntries (mdmp_memory_info)MemoryInfo
-pf.mdmp_misc_info d[4]Bdtttddddd SizeOfInfo (mdmp_misc1_flags)Flags1 ProcessId ProcessCreateTime ProcessUserTime ProcessKernelTime ProcessorMaxMhz ProcessorCurrentMhz ProcessorMhzLimit ProcessorMaxIdleState ProcessorCurrentIdleState
-pf.mdmp_module qddtd???qq BaseOfImage SizeOfImage CheckSum TimeDateStamp ModuleNameRVA (mdmp_vs_fixedfileinfo)VersionInfo (mdmp_location_descriptor)CvRecord (mdmp_location_descriptor)MiscRecord Reserved0 Reserved1
-pf.mdmp_module_list d[10]? NumberOfModule (mdmp_module)Modules
-pf.mdmp_string dZ Length Buffer
-pf.mdmp_system_info [2]EwwbBddd[4]Ed[2]Ew[2]q (mdmp_processor_architecture)ProcessorArchitecture ProcessorLevel ProcessorRevision NumberOfProcessors (mdmp_product_type)ProductType MajorVersion MinorVersion BuildNumber (mdmp_platform_id)PlatformId CsdVersionRva (mdmp_suite_mask)SuiteMask Reserved2 ProcessorFeatures
-pf.mdmp_thread ddddq?? ThreadId SuspendCount PriorityClass Priority Teb (mdmp_memory_descriptor)Stack (mdmp_location_descriptor)ThreadContext
-pf.mdmp_thread_list d[1]? NumberOfThreads (mdmp_thread)Threads
-pf.mdmp_token_info ddq TokenSize TokenId TokenHandle
-pf.mdmp_token_info_list dddd TokenListSize TokenListEntries ListHeaderSize ElementHeaderSize
-pf.mdmp_vs_fixedfileinfo ddddddddddddd dwSignature dwStrucVersion dwFileVersionMs dwFileVersionLs dwProductVersionMs dwProductVersionLs dwFileFlagsMask dwFileFlags dwFileOs dwFileType dwFileSubtype dwFileDateMs dwFileDateLs
+'pf.mdmp_directory [4]E? (mdmp_stream_type)StreamType (mdmp_location_descriptor)Location
+'pf.mdmp_exception [4]E[4]Eqqdd[15]q (mdmp_exception_code)ExceptionCode (mdmp_exception_flags)ExceptionFlags ExceptionRecord ExceptionAddress NumberParameters __UnusedAlignment ExceptionInformation
+'pf.mdmp_exception_stream dd?? ThreadId __Alignment (mdmp_exception)ExceptionRecord (mdmp_location_descriptor)ThreadContext
+'pf.mdmp_header [4]zddddt[8]B Signature Version NumberOfStreams StreamDirectoryRVA CheckSum TimeDateStamp (mdmp_type)Flags
+'pf.mdmp_location_descriptor dd DataSize RVA
+'pf.mdmp_location_descriptor64 qq DataSize RVA
+'pf.mdmp_memory64_list qq[83]? NumberOfMemoryRanges BaseRva (mdmp_memory_descriptor64)MemoryRanges
+'pf.mdmp_memory_descriptor q? StartOfMemoryRange (mdmp_location_descriptor)Memory
+'pf.mdmp_memory_descriptor64 qq StartOfMemoryRange DataSize
+'pf.mdmp_memory_info qq[4]Edq[4]E[4]E[4]Ed BaseAddress AllocationBase (mdmp_page_protect)AllocationProtect __Alignment1 RegionSize (mdmp_mem_state)State (mdmp_page_protect)Protect (mdmp_mem_type)Type __Alignment2
+'pf.mdmp_memory_info_list ddq[127]? SizeOfHeader SizeOfEntry NumberOfEntries (mdmp_memory_info)MemoryInfo
+'pf.mdmp_misc_info d[4]Bdtttddddd SizeOfInfo (mdmp_misc1_flags)Flags1 ProcessId ProcessCreateTime ProcessUserTime ProcessKernelTime ProcessorMaxMhz ProcessorCurrentMhz ProcessorMhzLimit ProcessorMaxIdleState ProcessorCurrentIdleState
+'pf.mdmp_module qddtd???qq BaseOfImage SizeOfImage CheckSum TimeDateStamp ModuleNameRVA (mdmp_vs_fixedfileinfo)VersionInfo (mdmp_location_descriptor)CvRecord (mdmp_location_descriptor)MiscRecord Reserved0 Reserved1
+'pf.mdmp_module_list d[10]? NumberOfModule (mdmp_module)Modules
+'pf.mdmp_string dZ Length Buffer
+'pf.mdmp_system_info [2]EwwbBddd[4]Ed[2]Ew[2]q (mdmp_processor_architecture)ProcessorArchitecture ProcessorLevel ProcessorRevision NumberOfProcessors (mdmp_product_type)ProductType MajorVersion MinorVersion BuildNumber (mdmp_platform_id)PlatformId CsdVersionRva (mdmp_suite_mask)SuiteMask Reserved2 ProcessorFeatures
+'pf.mdmp_thread ddddq?? ThreadId SuspendCount PriorityClass Priority Teb (mdmp_memory_descriptor)Stack (mdmp_location_descriptor)ThreadContext
+'pf.mdmp_thread_list d[1]? NumberOfThreads (mdmp_thread)Threads
+'pf.mdmp_token_info ddq TokenSize TokenId TokenHandle
+'pf.mdmp_token_info_list dddd TokenListSize TokenListEntries ListHeaderSize ElementHeaderSize
+'pf.mdmp_vs_fixedfileinfo ddddddddddddd dwSignature dwStrucVersion dwFileVersionMs dwFileVersionLs dwProductVersionMs dwProductVersionLs dwFileFlagsMask dwFileFlags dwFileOs dwFileType dwFileSubtype dwFileDateMs dwFileDateLs
 EOF
 RUN
 
