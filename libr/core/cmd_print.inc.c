@@ -2747,11 +2747,14 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8 *block, 
 			int bufsize = core->blocksize;
 			char *fmt = sdb_get (core->print->formats, name, NULL);
 			if (fmt) {
+				int struct_size = r_print_format_struct_size (core->print, fmt, mode, 0);
+				free (fmt);
+				if (struct_size < 0) {
+					goto err_name;
+				}
 				// TODO: what is +10 magic number?
 				// Backtracks to commit e5e23c237755cdeb13ba15938c93ada590e453db / issue #2808
-				int struct_size = r_print_format_struct_size (core->print, fmt, mode, 0) + 10;
-				bufsize = R_MAX (bufsize, struct_size);
-				free (fmt);
+				bufsize = R_MAX (bufsize, struct_size + 10);
 			}
 			ut8 *buf = r_core_readblock (core, bufsize);
 			if (!buf) {
@@ -2782,6 +2785,9 @@ err_name:
 		ut8 *buf = NULL;
 		const char *fmt = r_str_trim_head_ro (input + 1);
 		int struct_sz = r_print_format_struct_size (core->print, fmt, mode, 0);
+		if (struct_sz < 0) {
+			goto err_buf;
+		}
 		int size = R_MAX (core->blocksize, struct_sz);
 		if (size < 1) {
 			goto err_buf;

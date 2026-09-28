@@ -1886,7 +1886,8 @@ R_API int r_print_format_sizeof(RPrint *p, const char *f, int mode, int n) {
 					}
 				} else {
 					format = p? sdb_get (p->formats, structname + 1, NULL): NULL;
-				if (format && !strncmp (format, f, strlen (format) - 1)) {
+					if (format && !strcmp (format, f)) {
+						R_LOG_ERROR ("Recursive struct '%s'", structname + 1);
 						R_FREE (format);
 						ret = -1;
 						goto cleanup_struct;
@@ -1898,13 +1899,17 @@ R_API int r_print_format_sizeof(RPrint *p, const char *f, int mode, int n) {
 				}
 				if (!format) {
 					R_LOG_ERROR ("Cannot find format for struct `%s'", structname + 1);
-					ret = 0;
+					ret = -1;
 					goto cleanup_struct;
 				}
 				int newsize = r_print_format_sizeof (p, format, mode, n + 1);
+				if (newsize < 0) {
+					ret = newsize;
+					goto cleanup_struct;
+				}
 				if (newsize < 1) {
 					R_LOG_ERROR ("Cannot find size for `%s'", format);
-					ret = 0;
+					ret = -1;
 					goto cleanup_struct;
 				}
 				st32 mul_result;
@@ -1912,7 +1917,7 @@ R_API int r_print_format_sizeof(RPrint *p, const char *f, int mode, int n) {
 					size = size + mul_result;
 				} else {
 					R_LOG_ERROR ("Prevented multiply integer overflow in format2.c");
-					ret = 0;
+					ret = -1;
 					goto cleanup_struct;
 				}
 		cleanup_struct:
