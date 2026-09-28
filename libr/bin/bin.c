@@ -1819,6 +1819,7 @@ R_API void r_bin_bind(RBin *bin, RBinBind *b) {
 		b->get_sym = r_bin_get_sym;
 		b->get_reloc_at = get_reloc_at;
 		b->demangle = r_bin_demangle;
+		b->swift_roles = r_bin_demangle_swift_roles;
 	}
 }
 

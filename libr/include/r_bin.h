@@ -919,6 +919,13 @@ typedef ut64 (*RBinBaddr)(RBinFile *bf, ut64 addr);
 typedef RVecRBinSymbol *(*RBinGetSymbolsVec)(RBin *bin);
 typedef RBinSymbol *(*RBinGetSymbolAt)(RBin *bin, ut64 addr);
 typedef RBinReloc *(*RBinGetRelocAt)(RBin *bin, ut64 vaddr);
+#define R_BIN_SWIFT_ROLE_SELF 1
+#define R_BIN_SWIFT_ROLE_ERROR 2
+// the name allows the role but does not prove it: usage decides
+#define R_BIN_SWIFT_ROLE_SELF_UNKNOWN 4
+#define R_BIN_SWIFT_ROLE_ERROR_UNKNOWN 8
+#define R_BIN_SWIFT_ROLE_ANY 15
+typedef int (*RBinSwiftRoles)(const char *name);
 typedef const char *(*RBinGetCC)(RBin *bin, ut64 vaddr);
 typedef RBinAddr *(*RBinGetSym)(RBin *bin, int sym);
 
@@ -939,6 +946,7 @@ typedef struct r_bin_bind_t {
 	ut32 visibility;
 	// the relocation recorded against exactly this address, if any
 	RBinGetRelocAt get_reloc_at;
+	RBinSwiftRoles swift_roles;
 } RBinBind;
 
 R_API void r_bin_info_free(RBinInfo *rb);
@@ -1108,6 +1116,7 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib);
 typedef char *(*RBinSwiftResolver)(void *user, ut64 addr, bool indirect);
 R_API char *r_bin_demangle_swift_typeref(const ut8 *p, int len, ut64 va, RBinSwiftResolver resolver, void *user);
 R_API char *r_bin_demangle_swift_member(const char *context, const char *rest, ut64 *attr);
+R_API int r_bin_demangle_swift_roles(const char *name);
 R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym);
 R_API char *r_bin_demangle_rust(RBinFile *binfile, const char *str, ut64 vaddr);
 R_API char *r_bin_demangle_dlang(const char *str);
