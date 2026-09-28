@@ -439,7 +439,7 @@ static bool r_bin_coff_init_scn_hdr(RBinCoffObj *obj) {
 	if (f_magic == COFF_FILE_TI_COFF) {
 		offset += 2;
 	}
-	if (offset > obj->size || offset + size > obj->size) {
+	if (offset > obj->size || size > obj->size - offset || size > SIZE_MAX - sizeof (struct coff_scn_hdr)) {
 		return false;
 	}
 	obj->scn_hdrs = calloc (1, size + sizeof (struct coff_scn_hdr));
@@ -613,28 +613,12 @@ static bool r_bin_coff_init_symtable(RBinCoffObj *obj) {
 }
 
 static bool r_bin_coff_init_scn_va(RBinCoffObj *obj) {
-	int f_nscns = obj->type == COFF_TYPE_BIGOBJ? obj->bigobj_hdr.f_nscns: obj->hdr.f_nscns;
-#if 0
-	if (f_nscns < 1) {
-		R_LOG_WARN ("Invalid amount of f_nscns %d", f_nscns);
-		return true;
-	}
-	if (f_nscns > UT16_MAX) {
-		R_LOG_WARN ("Invalid amount of f_nscns %d", f_nscns);
-		return true;
-	}
-	st32 alloc_size;
-	if (r_mul_overflow_st32 (sizeof (struct coff_scn_hdr), f_nscns, &alloc_size)) {
-		R_LOG_WARN ("Dimming f_nscns count because is poluted or too large");
-		f_nscns &= 0xff;
-		return false;
-	}
-#endif
+	ut32 f_nscns = obj->type == COFF_TYPE_BIGOBJ? obj->bigobj_hdr.f_nscns: obj->hdr.f_nscns;
 	obj->scn_va = R_NEWS (ut64, f_nscns);
 	if (!obj->scn_va) {
 		return false;
 	}
-	int i;
+	ut32 i;
 	ut64 va = 0;
 	for (i = 0; i < f_nscns; i++) {
 		ut64 sz = obj->scn_hdrs[i].s_size;

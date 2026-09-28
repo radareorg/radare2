@@ -367,10 +367,17 @@ static inline void * R_NONNULL r_new(size_t s) {
 	return malloc (s);
 }
 
+static inline void *r_new_array(size_t count, size_t size) {
+	if (size && count > SIZE_MAX / size) {
+		return NULL;
+	}
+	return malloc (count * size);
+}
+
 #define BITS2BYTES(x) (((x)/8)+(((x)%8)?1:0))
 #define ZERO_FILL(x) memset (&x, 0, sizeof (x))
 #define R_NEWS0(x,y) (x*)calloc(y, sizeof (x))
-#define R_NEWS(x,y) (x*)malloc(sizeof (x)*(y))
+#define R_NEWS(x,y) (x*)r_new_array((y), sizeof (x))
 #define R_NEW0(x) (x*)r_new0(sizeof (x))
 #define R_NEW(x) (x*)r_new(sizeof (x))
 #define R_NEWCOPY(x,y) (x*)r_new_copy(sizeof (x), y)
