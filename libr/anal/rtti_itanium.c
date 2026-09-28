@@ -194,16 +194,15 @@ static bool rtti_itanium_vmi_class_type_info_init(RVTableContext *context, ut64 
 	if (!context->read_addr (context->anal, addr, &at)) {
 		return false;
 	}
-	at = at & 0xffffffff;
-	if (at < 1 || at > 0xfffff) {
-		R_LOG_ERROR ("reading vmi_base_count");
+	vmi_cti->vmi_base_count = at & 0xffffffff;
+	if (vmi_cti->vmi_base_count < 1 || vmi_cti->vmi_base_count > 0xfffff) {
 		return false;
 	}
-	vmi_cti->vmi_base_count = at;
 	vmi_cti->vmi_bases = calloc (sizeof (base_class_type_info), vmi_cti->vmi_base_count);
 	if (!vmi_cti->vmi_bases) {
 		return false;
 	}
+	/* bases array starts right after flags and base_count */
 	ut64 tmp_addr = addr + 0x4;
 
 	int i;
@@ -602,21 +601,22 @@ static class_type_info *raw_rtti_parse(RVTableContext *context, ut64 vtable_addr
 			return create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
 		}
 		ut32 vmi_flags = integers & 0xffffffff;
+		ut32 vmi_base_count;
+		ut64 tmp_addr;
 		addr += 0x4;
 		if (!context->read_addr (context->anal, addr, &integers)) {
 			return create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
 		}
-		integers = integers & 0xffffffff;
-		if (integers < 1 || integers > 0xfffff) {
+		vmi_base_count = integers & 0xffffffff;
+		tmp_addr = addr + 0x4;
+		if (vmi_base_count < 1 || vmi_base_count > 0xfffff) {
 			return create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
 		}
-		ut32 vmi_base_count = integers;
 
 		base_class_type_info *vmi_bases = calloc (sizeof (base_class_type_info), vmi_base_count);
 		if (!vmi_bases) {
 			return create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
 		}
-		ut64 tmp_addr = addr + 0x4;
 
 		int i;
 		for (i = 0; i < vmi_base_count; i++) {
@@ -651,24 +651,30 @@ static class_type_info *rtti_itanium_type_info_new(RVTableContext *context, ut64
 		return NULL;
 	}
 
-	RTypeInfoType type = rtti_itanium_type_info_type_from_flag (context, rtti_addr);
-	// If there isn't flag telling us the type of TypeInfo
-	// try to find the flag in it's vtable
-	if (type == R_TYPEINFO_TYPE_UNKNOWN) {
-		ut64 follow;
-		if (!context->read_addr (context->anal, rtti_addr, &follow)) {
-			return NULL;
-		}
+	// Determine RTTI struct type from its vptr (points to the vtable of the
+	// RTTI class itself). The vtable's flags give the structural type, whereas
+	// the RTTI's own symbol name describes the class it is RTTI for (and thus
+	// falsely matches "__vmi_class_type_info" for vmi_class_type_info's own
+	// RTTI object, which is really an SI typeinfo).
+	RTypeInfoType type = R_TYPEINFO_TYPE_UNKNOWN;
+	ut64 follow;
+	if (context->read_addr (context->anal, rtti_addr, &follow)) {
 		follow -= 2 * context->word_size;
 		type = rtti_itanium_type_info_type_from_flag (context, follow);
 	}
-
 	if (type == R_TYPEINFO_TYPE_UNKNOWN) {
 		return raw_rtti_parse (context, vtable_addr, rtti_addr);
 	}
+	class_type_info *cti = NULL;
 	switch (type) {
-	case R_TYPEINFO_TYPE_VMI_CLASS:
-		return (class_type_info *)rtti_itanium_vmi_class_type_info_new (context, rtti_addr, vtable_addr);
+	case R_TYPEINFO_TYPE_VMI_CLASS: {
+		cti = (class_type_info *)rtti_itanium_vmi_class_type_info_new (context, rtti_addr, vtable_addr);
+		if (!cti) {
+			R_LOG_DEBUG ("VMI typeinfo parse failed for 0x%" PFMT64x, rtti_addr);
+			return NULL;
+		}
+		return cti;
+	}
 	case R_TYPEINFO_TYPE_SI_CLASS:
 		return (class_type_info *)rtti_itanium_si_class_type_info_new (context, rtti_addr, vtable_addr);
 	case R_TYPEINFO_TYPE_CLASS:
@@ -676,7 +682,7 @@ static class_type_info *rtti_itanium_type_info_new(RVTableContext *context, ut64
 	default:
 		R_RETURN_VAL_IF_REACHED (NULL);
 	}
-	return false;
+	return NULL;
 }
 
 static void rtti_itanium_type_info_free(void *info) {
