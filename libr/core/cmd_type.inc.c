@@ -508,7 +508,9 @@ static void showFormat(RCore *core, const char *name, int mode) {
 				pj_free (pj);
 			} else {
 				if (R_STR_ISNOTEMPTY (fmt)) {
-					if (mode) {
+					if (strpbrk (fmt, "\r\n") || (mode && strpbrk (name, "\r\n"))) {
+						R_LOG_ERROR ("Cannot export a multiline type format");
+					} else if (mode) {
 						r_cons_printf (core->cons, "'pf.%s %s\n", name, fmt);
 					} else {
 						r_cons_printf (core->cons, "'pf %s\n", fmt);
