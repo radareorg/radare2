@@ -402,14 +402,42 @@ TPState *tps_init(RAnal *anal) {
 	}
 	tps->tt.enable_rollback = tps->cfg_rollback;
 	tps->tt.be = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config);
+	tps->tt.track_base = tps->stack_base;
+	tps->tt.track_size = tps->cfg_bbstate? tps->stack_size: 0;
 	return tps;
 }
 
 // how far back in emulation order a real predecessor is looked for before giving up
 #define TP_PRED_SCAN_MAX 64
 
+typedef struct {
+	ut8 *regs;
+	ut8 *mem; // dirty-byte values at block exit, in mem_dirty order
+	size_t nmem;
+} TPBBSnap;
+
 static void tp_bbstate_kv_free(HtUPKv *kv) {
-	free (kv->value);
+	TPBBSnap *s = kv->value;
+	if (s) {
+		free (s->regs);
+		free (s->mem);
+		free (s);
+	}
+}
+
+// the stack map starts zeroed, so a byte first written after the snapshot goes back to 0
+static void tp_restore_mem(TPState *tps, const TPBBSnap *s) {
+	TypeTrace *tt = &tps->tt;
+	const size_t n = RVecUT64_length (&tt->mem_dirty);
+	size_t i;
+	for (i = 0; i < n; i++) {
+		const ut8 want = i < s->nmem? s->mem[i]: 0;
+		ut8 *live = RVecBuf_at (&tt->mem_shadow, i);
+		if (*live != want) {
+			*live = want;
+			tt_mem_write (tps, *RVecUT64_at (&tt->mem_dirty, i), &want, 1);
+		}
+	}
 }
 
 static bool tp_bb_edge_cb(ut64 addr, void *user) {
@@ -633,7 +661,7 @@ static void tp_restore_block_writes(TypeTrace *tt, TPLoopHdr *hdr, const ut8 *sn
 	}
 }
 
-// memory is never rewound, so the stack keeps sibling branch writes
+// a full restore rewinds the stack too; a loop exit keeps its live state
 static bool tp_restore_pred_state(TPState *tps, RVecUT64 *bblist, int j, ut64 bbat, HtUP *bbstate, HtUP *loop_headers, int arena_size) {
 	if (j < 1) {
 		return false;
@@ -651,14 +679,15 @@ static bool tp_restore_pred_state(TPState *tps, RVecUT64 *bblist, int j, ut64 bb
 		if (!tp_bb_leads_to (anal, pa, bbat)) {
 			continue;
 		}
-		ut8 *snap = ht_up_find (bbstate, pa, NULL);
-		if (snap) {
+		TPBBSnap *s = ht_up_find (bbstate, pa, NULL);
+		if (s) {
 			TPLoopHdr *hdr = ht_up_find (loop_headers, pa, NULL);
 			// partial restore only at a loop exit fed by the loop's own live state; a call in the header has untraced effects
 			if (hdr && !hdr->has_call && hdr->members && !set_u_contains (hdr->members, bbat) && set_u_contains (hdr->members, prev)) {
-				tp_restore_block_writes (&tps->tt, hdr, snap, arena_size);
+				tp_restore_block_writes (&tps->tt, hdr, s->regs, arena_size);
 			} else {
-				r_reg_arena_poke (tps->tt.reg, snap, arena_size);
+				r_reg_arena_poke (tps->tt.reg, s->regs, arena_size);
+				tp_restore_mem (tps, s);
 			}
 			return true;
 		}
@@ -832,8 +861,12 @@ TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_ops, TPE
 		if (bbstate) {
 			ut8 *snap = r_reg_arena_peek (etrace->reg, &arena_size);
 			if (snap) {
-				if (!ht_up_update (bbstate, bb_addr, snap)) {
-					free (snap);
+				TPBBSnap *s = R_NEW0 (TPBBSnap);
+				s->regs = snap;
+				s->nmem = RVecBuf_length (&etrace->mem_shadow);
+				s->mem = s->nmem? r_mem_dup (R_VEC_START_ITER (&etrace->mem_shadow), s->nmem): NULL;
+				if (!ht_up_update (bbstate, bb_addr, s)) {
+					tp_bbstate_kv_free (&(HtUPKv){ .value = s });
 				}
 			}
 		}

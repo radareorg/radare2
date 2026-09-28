@@ -4315,12 +4315,12 @@ var int64_t s @ rbp-0x20
 EOF2
 RUN
 
-NAME=a restored block reads the sibling branch stack writes
+NAME=a restored block reads its own branch stack writes
 FILE=malloc://256
 ARGS=-a x86 -b 64 -e types.sizes=true -e types.bbstate=true
 CMDS=<<EOF2
-# entry sets size 0x100 in edx and at rbp-0x10; the sibling branch lowers both to 0x40 and returns; the join memsets with the register size, then with the reloaded stack size
-wx 554889e54883ec70ba0001000048c745f00001000085ff750eba4000000048c745f040000000c3488d7de031f6e84e000000488d7da031f6488b55f0e83f000000c9c3
+# entry sets size 0x100 in edx and 0x30 at rbp-0x10; the sibling branch lowers both to 0x40 and returns; the join memsets with the register size, then with the reloaded stack size
+wx 554889e54883ec70ba0001000048c745f03000000085ff750eba4000000048c745f040000000c3488d7de031f6e84e000000488d7da031f6488b55f0e83f000000c9c3
 wx c3 @ 0x80
 af+ 0x80 memset
 afb+ 0x80 0x80 1
@@ -4332,7 +4332,7 @@ afv~var_
 EOF2
 EXPECT=<<EOF2
 var uint8_t [256] var_20h @ rbp-0x20
-var uint8_t [64] var_60h @ rbp-0x60
+var uint8_t [48] var_60h @ rbp-0x60
 EOF2
 RUN
 
@@ -4340,8 +4340,8 @@ NAME=disabling the state restore takes registers and stack from the same block
 FILE=malloc://256
 ARGS=-a x86 -b 64 -e types.sizes=true -e types.bbstate=false
 CMDS=<<EOF2
-# entry sets size 0x100 in edx and at rbp-0x10; the sibling branch lowers both to 0x40 and returns; the join memsets with the register size, then with the reloaded stack size
-wx 554889e54883ec70ba0001000048c745f00001000085ff750eba4000000048c745f040000000c3488d7de031f6e84e000000488d7da031f6488b55f0e83f000000c9c3
+# entry sets size 0x100 in edx and 0x30 at rbp-0x10; the sibling branch lowers both to 0x40 and returns; the join memsets with the register size, then with the reloaded stack size
+wx 554889e54883ec70ba0001000048c745f03000000085ff750eba4000000048c745f040000000c3488d7de031f6e84e000000488d7da031f6488b55f0e83f000000c9c3
 wx c3 @ 0x80
 af+ 0x80 memset
 afb+ 0x80 0x80 1
@@ -4354,6 +4354,26 @@ EOF2
 EXPECT=<<EOF2
 var uint8_t [64] var_20h @ rbp-0x20
 var uint8_t [64] var_60h @ rbp-0x60
+EOF2
+RUN
+
+NAME=a loop exit keeps the memory the loop wrote
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true -e types.bbstate=true
+CMDS=<<EOF2
+# a counter at rbp-0x8 steps to 0x40 in the loop; the exit memsets with its reload
+wx 554889e54883ec3048c745f80000000048837df8407d07488345f810ebf2488b55f8488d7de031f6e813000000c9c3
+wx c3 @ 0x40
+af+ 0x40 memset
+afb+ 0x40 0x40 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv~var_20h
+EOF2
+EXPECT=<<EOF2
+var uint8_t [16] var_20h @ rbp-0x20
 EOF2
 RUN
 

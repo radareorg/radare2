@@ -62,6 +62,9 @@ typedef struct {
 	ut32 indexed_ops; // ops already folded into regwrites
 } TypeTraceDB;
 
+R_VEC_TYPE(RVecUT64, ut64);
+R_VEC_TYPE(RVecBuf, ut8);
+
 typedef struct type_trace_t {
 	TypeTraceDB db;
 	int idx;
@@ -69,13 +72,17 @@ typedef struct type_trace_t {
 	RReg *reg;
 	ut32 voy[TP_VOYEUR_NMAX];
 	RStrBuf rollback;  // ESIL string to rollback state (inspired by PR #24428)
+	// the bytes written inside [track_base, track_base + track_size), so a
+	// block restore can rewind exactly them
+	RVecUT64 mem_dirty; // addresses in first-write order
+	HtUU *mem_dirty_idx; // addr => index + 1
+	RVecBuf mem_shadow; // live value of each dirty byte
+	ut64 track_base;
+	ut64 track_size;
 	bool enable_rollback;
 	bool be; // decode recorded store values with the target's endianness
 	// TODO: Add REsil instance here
 } TypeTrace;
-
-R_VEC_TYPE(RVecUT64, ut64);
-R_VEC_TYPE(RVecBuf, ut8);
 
 #define TP_CHAIN_MAX 4
 
