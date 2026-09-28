@@ -232,7 +232,32 @@ bool test_foreach_instruction_bounds(void) {
 	mu_end;
 }
 
+bool test_type_format_export_newlines(void) {
+	RCore *core = r_core_new ();
+	Sdb *types = core->anal->sdb_types;
+	sdb_set (types, "evil", "type", 0);
+	const char *formats[] = { "d value\nf injected", "d value\rf injected" };
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (formats); i++) {
+		sdb_set (types, "type.evil", formats[i], 0);
+		char *output = r_core_cmd_str (core, "t evil");
+		mu_assert_streq_free (output, "", "reject multiline format export");
+		output = r_core_cmd_str (core, "ts* evil");
+		mu_assert_streq_free (output, "", "reject multiline named format export");
+		output = r_core_cmd_str (core, ".t evil");
+		mu_assert_streq_free (output, "", "reject multiline format execution");
+		mu_assert_null (r_flag_get (core->flags, "injected"), "type format must not execute a second command");
+	}
+	sdb_set (types, "evil\nf injected\n#", "type", 0);
+	sdb_set (types, "type.evil\nf injected\n#", "d value", 0);
+	char *output = r_core_cmd_str (core, "'ts* evil\nf injected\n#");
+	mu_assert_streq_free (output, "", "reject multiline format name");
+	r_core_free (core);
+	mu_end;
+}
+
 int all_tests(void) {
+	mu_run_test (test_type_format_export_newlines);
 	mu_run_test (test_foreach_instruction_bounds);
 	mu_run_test (test_cmd_str_issue_18799);
 	mu_run_test (test_multiple_cores_share_terminal);
