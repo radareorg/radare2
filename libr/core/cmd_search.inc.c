@@ -124,6 +124,7 @@ static RCoreHelpMessage help_msg_slash = {
 	"/w", " foo", "search for wide string 'f\\0o\\0o\\0'",
 	"/wi", " foo", "search for wide string ignoring case 'f\\0o\\0o\\0'",
 	"/x", "[?] [bytes]", "search for hex string with mask, ignoring some nibbles",
+	"/xs", "", "search for sparse zero or 0xff gaps (at least 32 bytes)",
 	"/z", " min max", "search for strings of given size",
 	"/*", " [comment string]", "add multiline comment, end it with '*/'",
 #if 0
@@ -242,6 +243,7 @@ static RCoreHelpMessage help_msg_slash_x = {
 	"/x ", "ff..33", "search for hex string ignoring some nibbles",
 	"/x ", "9090cd80:ffff7ff0", "search with binary mask",
 	"/xn", "[1|2|4|8] value amount", "search for an array of Value repeated Amount of times",
+	"/xs", "", "find starts of zero or 0xff runs of at least 32 bytes",
 	"/xv", "[1|2|4|8] v0 v1 v2 v3 ..", "search for an array of values with given size and endian",
 	NULL
 };
@@ -3247,6 +3249,76 @@ static bool do_asm_search(RCore *core, RSearchParameters *param, const char *inp
 	return success;
 }
 
+static bool sparse_search_hit(RSearch *search, RSearchKeyword *kw, ut64 addr, ut64 length) {
+	return length < 32 || r_search_hit_new (search, kw, addr) == 1;
+}
+
+static void do_sparse_search(RCore *core, RSearchParameters *param) {
+	RSearch *search = core->search;
+	if (core->blocksize < 1) {
+		return;
+	}
+	ut8 *buf = malloc (core->blocksize);
+	if (!buf) {
+		return;
+	}
+	RSearchKeyword kw = { .keyword_length = 1 };
+	r_search_reset (search, R_SEARCH_KEYWORD);
+	r_search_set_callback (search, &_cb_hit, param);
+	if (param->outmode == R_MODE_JSON) {
+		pj_a (param->pj);
+	} else if (!param->searchflags) {
+		r_cons_printf (core->cons, "'fs hits\n");
+	}
+	RListIter *iter;
+	RIOMap *map;
+	r_cons_break_push (core->cons, NULL, NULL);
+	r_list_foreach (param->boundaries, iter, map) {
+		ut64 from = r_io_map_begin (map);
+		ut64 to = r_io_map_end (map);
+		ut64 run_start = from;
+		ut64 run_length = 0;
+		ut8 run_value = 0;
+		ut64 at;
+		for (at = from; at < to && !r_cons_is_breaked (core->cons); ) {
+			int len = R_MIN ((ut64)core->blocksize, to - at);
+			if (!r_io_read_at (core->io, at, buf, len)) {
+				break;
+			}
+			int i;
+			for (i = 0; i < len; i++) {
+				ut8 value = buf[i];
+				if (run_length && value != run_value) {
+					if (!sparse_search_hit (search, &kw, run_start, run_length)) {
+						goto done;
+					}
+					run_length = 0;
+				}
+				if (value == 0 || value == 0xff) {
+					if (!run_length) {
+						run_start = at + i;
+						run_value = value;
+					}
+					run_length++;
+				}
+			}
+			at += len;
+		}
+		if (at < to) {
+			break;
+		}
+		if (run_length && !sparse_search_hit (search, &kw, run_start, run_length)) {
+			break;
+		}
+	}
+done:
+	r_cons_break_pop (core->cons);
+	free (buf);
+	if (param->outmode == R_MODE_JSON) {
+		pj_end (param->pj);
+	}
+}
+
 static void do_string_search(RCore *core, RInterval search_itv, RSearchParameters *param) {
 	ut64 at;
 	ut8 *buf;
@@ -5403,6 +5475,12 @@ reread:
 			cmd_search_xn (core, input);
 		} else if (input[1] == 'v') {
 			cmd_search_xv (core, input);
+		} else if (input[1] == 's') {
+			if (!*r_str_trim_head_ro (input + 2)) {
+				do_sparse_search (core, &param);
+			} else {
+				r_cons_cmd_help_match (core->cons, help_msg_slash_x, "/xs", 0, true);
+			}
 		} else {
 			RSearchKeyword *kw;
 			char *s, *p = strdup (input + param_offset);

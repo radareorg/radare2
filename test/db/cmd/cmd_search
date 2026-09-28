@@ -1081,6 +1081,41 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=/xs finds sparse gaps across read blocks
+FILE=bins/other/gaps.bin
+ARGS=-n
+CMDS=<<EOF
+b 17
+/xs
+EOF
+EXPECT=<<EOF
+0x00000064 hit0_0 00
+0x000003e8 hit0_1 ff
+0x00000bb8 hit0_2 00
+EOF
+RUN
+
+NAME=/xs respects range, minimum length and hit limit
+FILE=bins/other/gaps.bin
+ARGS=-n
+CMDS=<<EOF
+e search.from=0x3e8
+e search.to=0x407
+/xs
+e search.to=0x408
+/xs
+e search.from=0
+e search.to=0x2000
+e search.maxhits=2
+/xs
+EOF
+EXPECT=<<EOF
+0x000003e8 hit0_0 ff
+0x00000064 hit0_0 00
+0x000003e8 hit0_1 ff
+EOF
+RUN
+
 NAME=search range hex
 FILE=malloc://1024
 CMDS=<<EOF
