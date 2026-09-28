@@ -663,11 +663,6 @@ static class_type_info *rtti_itanium_type_info_new(RVTableContext *context, ut64
 		type = rtti_itanium_type_info_type_from_flag (context, follow);
 	}
 	if (type == R_TYPEINFO_TYPE_UNKNOWN) {
-		// fall back to the RTTI object's own symbol name
-		type = rtti_itanium_type_info_type_from_flag (context, rtti_addr);
-	}
-
-	if (type == R_TYPEINFO_TYPE_UNKNOWN) {
 		return raw_rtti_parse (context, vtable_addr, rtti_addr);
 	}
 	class_type_info *cti = NULL;
@@ -675,14 +670,8 @@ static class_type_info *rtti_itanium_type_info_new(RVTableContext *context, ut64
 	case R_TYPEINFO_TYPE_VMI_CLASS: {
 		cti = (class_type_info *)rtti_itanium_vmi_class_type_info_new (context, rtti_addr, vtable_addr);
 		if (!cti) {
-			/* The name matched VMI but the underlying structure is not a valid
-			 * VMI typeinfo. This can happen for the typeinfo of
-			 * __vmi_class_type_info itself (which is really an SI typeinfo),
-			 * since the name of that class contains "__vmi_class_type_info".
-			 * Fall back to raw parsing instead of hard-failing the whole
-			 * vtable analysis. */
-			R_LOG_DEBUG ("VMI typeinfo parse failed for 0x%" PFMT64x ", falling back to raw parse", rtti_addr);
-			cti = raw_rtti_parse (context, vtable_addr, rtti_addr);
+			R_LOG_DEBUG ("VMI typeinfo parse failed for 0x%" PFMT64x, rtti_addr);
+			return NULL;
 		}
 		return cti;
 	}
