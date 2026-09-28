@@ -107,7 +107,7 @@ static bool __close(RIODesc *fd) {
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (r_str_startswith (cmd, "pid")) {
-		io->cb_printf ("%d\n", -1);
+		return r_str_newf ("%d\n", -1);
 	}
 	return NULL;
 }

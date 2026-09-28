@@ -198,16 +198,12 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	return NULL;
 }
 
-static void printcmd(RIO *io, RIODesc *fd, const char *cmd) {
+static char *cmdresult(RIODesc *fd, const char *cmd) {
 	if (!fd || !fd->data) {
-		return;
+		return NULL;
 	}
 	RIOWinedbg *wd = fd->data;
-	char *res = runcmd (wd, cmd);
-	if (res) {
-		io->cb_printf ("%s\n", res);
-		free (res);
-	}
+	return runcmd (wd, cmd);
 }
 
 static struct winedbg_x86_32 regState(RIODesc *fd) {
@@ -320,24 +316,27 @@ const char *msg =
 		return strdup (msg);
 	} else if (r_str_startswith (cmd, "dr*")) {
 		struct winedbg_x86_32 r = regState (fd);
-		io->cb_printf ("f eip = 0x%08x\n", r.eip);
-		io->cb_printf ("f esp = 0x%08x\n", r.esp);
-		io->cb_printf ("f ebp = 0x%08x\n", r.ebp);
-		io->cb_printf ("f eax = 0x%08x\n", r.eax);
-		io->cb_printf ("f ebx = 0x%08x\n", r.ebx);
-		io->cb_printf ("f ecx = 0x%08x\n", r.ecx);
-		io->cb_printf ("f edx = 0x%08x\n", r.edx);
-		io->cb_printf ("f esi = 0x%08x\n", r.esi);
-		io->cb_printf ("f edi = 0x%08x\n", r.edi);
-		io->cb_printf ("f eflags = 0x%08x\n", r.eflags);
-		io->cb_printf ("f cs = 0x%08x\n", r.cs);
-		io->cb_printf ("f ss = 0x%08x\n", r.ss);
-		io->cb_printf ("f ds = 0x%08x\n", r.ds);
-		io->cb_printf ("f es = 0x%08x\n", r.es);
-		io->cb_printf ("f fs = 0x%08x\n", r.fs);
-		io->cb_printf ("f gs = 0x%08x\n", r.gs);
+		return r_str_newf (
+			"f eip = 0x%08x\n"
+			"f esp = 0x%08x\n"
+			"f ebp = 0x%08x\n"
+			"f eax = 0x%08x\n"
+			"f ebx = 0x%08x\n"
+			"f ecx = 0x%08x\n"
+			"f edx = 0x%08x\n"
+			"f esi = 0x%08x\n"
+			"f edi = 0x%08x\n"
+			"f eflags = 0x%08x\n"
+			"f cs = 0x%08x\n"
+			"f ss = 0x%08x\n"
+			"f ds = 0x%08x\n"
+			"f es = 0x%08x\n"
+			"f fs = 0x%08x\n"
+			"f gs = 0x%08x\n",
+			r.eip, r.esp, r.ebp, r.eax, r.ebx, r.ecx, r.edx,
+			r.esi, r.edi, r.eflags, r.cs, r.ss, r.ds, r.es, r.fs, r.gs);
 	} else if (r_str_startswith (cmd, "dr")) {
-		printcmd (io, fd, "info reg");
+		return cmdresult (fd, "info reg");
 	} else if (r_str_startswith (cmd, "db ")) {
 		int n = r_num_get (NULL, cmd + 3) || io->off;
 		r_strf_var (brkcmd, 32, "break *%x", n);
@@ -355,7 +354,7 @@ const char *msg =
 	} else if (r_str_startswith (cmd, "dso")) {
 		R_LOG_TODO ("dso");
 	} else if (r_str_startswith (cmd, "dp")) {
-		printcmd (io, fd, "info thread");
+		return cmdresult (fd, "info thread");
 	} else if (r_str_startswith (cmd, "dm")) {
 		char *wineDbgMaps = wd? runcmd (wd, "info maps"): NULL;
 		char *res = NULL;
@@ -389,8 +388,7 @@ const char *msg =
 	} else if (r_str_startswith (cmd, "pid")) {
 		return r_str_newf ("%d", fd->fd);
 	}
-	printcmd (io, fd, cmd);
-	return NULL;
+	return cmdresult (fd, cmd);
 }
 
 RIOPlugin r_io_plugin_winedbg = {

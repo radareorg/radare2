@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2024 - pancake */
+/* radare - LGPL - Copyright 2015-2026 - pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -128,7 +128,9 @@ static char *__system(RIO *io, RIODesc *fd, const char *command) {
 	char *url = r_str_newf ("%s/%s", rURL(fd), cmd);
 	char *out = r_socket_http_get (url, NULL, &code, &rlen);
 	if (out && rlen > 0) {
-		io->cb_printf ("%s", out);
+		free (cmd);
+		free (url);
+		return out;
 	}
 	free (out);
 	free (url);

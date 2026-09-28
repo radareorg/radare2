@@ -90,7 +90,7 @@ static char *r2k__system(RIO *io, RIODesc *fd, const char *cmd) {
 	}
 	if (r_str_startswith (cmd, "mod")) {
 #if R2__WINDOWS__
-		GetSystemModules (io);
+		return r2k_windows_GetSystemModules (io);
 #endif
 	} else {
 #if defined (__linux__) && !defined (__GNU__) && !R2_UEFI

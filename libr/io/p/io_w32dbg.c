@@ -248,7 +248,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		THREAD_BASIC_INFORMATION tbi = {0};
 		NTSTATUS status = r_w32_NtQueryInformationThread (wrap->pi.hThread, 0, &tbi, sizeof (tbi), NULL);
 		if (status == 0) {
-			io->cb_printf ("0x%"PFMT64x"\n", (ut64)tbi.TebBaseAddress);
+			return r_str_newf ("0x%"PFMT64x"\n", (ut64)tbi.TebBaseAddress);
 		} else {
 			R_LOG_ERROR ("NtQueryInformationThread failed");
 		}
