@@ -346,10 +346,32 @@ dotherax:
 		return last? !use_stdin (num, flags, mode, pj): true;
 	}
 	if (flags->hexstr2raw) { // -s
-		int n = ((strlen (str)) >> 1) + 1;
+		// Normalize C-style \xNN escapes (Fixes #21190): stdin keeps the
+		// literal "\x41\x42" text, so drop the "\x" marker and decode it
+		// like plain "4142". Inputs without backslashes are unaffected.
+		char *hexstr = str;
+		if (strchr (str, '\\')) {
+			hexstr = strdup (str);
+			if (hexstr) {
+				ut8 tmp;
+				char *r = hexstr;
+				char *w = hexstr;
+				while (*r) {
+					if (r[0] == '\\' && r[1] == 'x' && r_hex_to_byte (&tmp, r[2]) && r_hex_to_byte (&tmp, r[3])) {
+						r += 2;
+					} else {
+						*w++ = *r++;
+					}
+				}
+				*w = '\0';
+			} else {
+				hexstr = str;
+			}
+		}
+		int n = ((strlen (hexstr)) >> 1) + 1;
 		buf = calloc (1, n);
 		if (buf) {
-			n = r_hex_str2bin (str, (ut8 *)buf);
+			n = r_hex_str2bin (hexstr, (ut8 *)buf);
 			if (n > 0) {
 				if (flags->swapendian) {
 					if (!flags->swapbytes) {
@@ -370,6 +392,9 @@ dotherax:
 			}
 			rax2_newline (*flags);
 			free (buf);
+		}
+		if (hexstr != str) {
+			free (hexstr);
 		}
 		return true;
 	}
