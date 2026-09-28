@@ -3,6 +3,7 @@
 #define R_LOG_ORIGIN "core.anal"
 
 #include <r_core.h>
+#include "cbin.h"
 #include <r_vec.h>
 #include <sdb/ht_uu.h>
 
@@ -3151,6 +3152,25 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 		}
 		if (fcn->diff->name) {
 			pj_ks (pj, "diffname", fcn->diff->name);
+		}
+	}
+	{
+		// embed the trycatch regions owned by this function (same json as "iwj.")
+		RBinFile *bf = r_bin_cur (core->bin);
+		const RVecRBinTrycatch *tcs = bf? r_bin_file_get_trycatch (bf): NULL;
+		if (tcs) {
+			const RBinTrycatch *tc;
+			bool found = false;
+			R_VEC_FOREACH (tcs, tc) {
+				if (tc->source == fcn->addr) {
+					found = true;
+					break;
+				}
+			}
+			if (found) {
+				pj_k (pj, "trycatch");
+				bin_trycatch_json (pj, tcs, fcn->addr);
+			}
 		}
 	}
 	pj_end (pj);

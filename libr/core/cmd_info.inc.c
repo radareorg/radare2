@@ -8,9 +8,7 @@
 
 #include "../bin/format/pdb/pdb_downloader.h"
 
-R_IPI bool bin_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 count, int type_filter);
-R_IPI bool bin_raw_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 count, int type_filter);
-R_IPI void bin_trycatch_flag(RCore *core, const RBinTrycatch *tc, size_t index, bool set);
+#include "cbin.h"
 
 // clang-format off
 static RCoreHelpMessage help_msg_ih = {
@@ -44,6 +42,8 @@ static RCoreHelpMessage help_msg_iw = {
 	"iw", "", "list exception regions",
 	"iw.", "", "list exception regions for the current function",
 	"iwj", "", "list exception regions in JSON",
+	"iwj.", "", "list exception regions for the current function in JSON",
+	"iw.j", "", "same as iwj.",
 	"iwq", "", "list try start, exclusive end and handler addresses",
 	"iw*", "", "print exception region flags as r2 commands",
 	"iwc", " from to handler [type [typefilter]]", "add catch at current source (type * for catch-all)",
@@ -3999,17 +3999,26 @@ static int cmd_info(void *data, const char *input) {
 			}
 			break;
 		}
+		bool here = input[1] == '.'; // "iw." and "iw.j" (json mode for "iw.j" comes from the arg parser)
+		if (input[1] == 'j' && input[2] == '.') { // "iwj."
+			here = true;
+			mode = R_MODE_JSON; // the mode parser only checks the last char, so "j." is not detected
+			INIT_PJ ();
+		}
 		RList *objs = r_core_bin_files (core);
 		RListIter *iter;
 		RBinFile *bf;
 		RBinFile *cur = core->bin->cur;
 		r_list_foreach (objs, iter, bf) {
 			core->bin->cur = bf;
-			if (input[1] == '.') {
+			if (here) {
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
 				if (fcn) {
 					RCoreBinFilter filter = { .addr = fcn->addr };
-					r_core_bin_info (core, R_CORE_BIN_ACC_TRYCATCH, NULL, mode, va, &filter, NULL);
+					r_core_bin_info (core, R_CORE_BIN_ACC_TRYCATCH, pj, mode, va, &filter, NULL);
+				} else if (pj) {
+					pj_a (pj);
+					pj_end (pj);
 				}
 			} else {
 				RBININFO ("trycatch", R_CORE_BIN_ACC_TRYCATCH, NULL, 0);
