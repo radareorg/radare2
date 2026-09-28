@@ -189,22 +189,27 @@ static bool rtti_itanium_vmi_class_type_info_init(RVTableContext *context, ut64 
 	if (!context->read_addr (context->anal, addr, &at)) {
 		return false;
 	}
-	vmi_cti->vmi_flags = at & 0xffffffff;
-	addr += 0x4;
-	if (!context->read_addr (context->anal, addr, &at)) {
+	if (VT_WORD_SIZE (context) == 8) {
+		/* on 64-bit, flags(4) and base_count(4) are packed into one word */
+		vmi_cti->vmi_flags = at & 0xffffffff;
+		vmi_cti->vmi_base_count = (at >> 32) & 0xffffffff;
+	} else {
+		vmi_cti->vmi_flags = at & 0xffffffff;
+		addr += 0x4;
+		if (!context->read_addr (context->anal, addr, &at)) {
+			return false;
+		}
+		vmi_cti->vmi_base_count = at & 0xffffffff;
+	}
+	if (vmi_cti->vmi_base_count < 1 || vmi_cti->vmi_base_count > 0xfffff) {
 		return false;
 	}
-	at = at & 0xffffffff;
-	if (at < 1 || at > 0xfffff) {
-		R_LOG_ERROR ("reading vmi_base_count");
-		return false;
-	}
-	vmi_cti->vmi_base_count = at;
 	vmi_cti->vmi_bases = calloc (sizeof (base_class_type_info), vmi_cti->vmi_base_count);
 	if (!vmi_cti->vmi_bases) {
 		return false;
 	}
-	ut64 tmp_addr = addr + 0x4;
+	/* bases array starts right after the flags+count word */
+	ut64 tmp_addr = (VT_WORD_SIZE (context) == 8)? addr + 0x8: addr + 0x4;
 
 	int i;
 	for (i = 0; i < vmi_cti->vmi_base_count; i++) {
@@ -602,21 +607,28 @@ static class_type_info *raw_rtti_parse(RVTableContext *context, ut64 vtable_addr
 			return create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
 		}
 		ut32 vmi_flags = integers & 0xffffffff;
-		addr += 0x4;
-		if (!context->read_addr (context->anal, addr, &integers)) {
+		ut32 vmi_base_count;
+		ut64 tmp_addr;
+		if (VT_WORD_SIZE (context) == 8) {
+			/* on 64-bit, flags(4) and base_count(4) are packed into one word */
+			vmi_base_count = (integers >> 32) & 0xffffffff;
+			tmp_addr = addr + 0x8;
+		} else {
+			addr += 0x4;
+			if (!context->read_addr (context->anal, addr, &integers)) {
+				return create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
+			}
+			vmi_base_count = integers & 0xffffffff;
+			tmp_addr = addr + 0x4;
+		}
+		if (vmi_base_count < 1 || vmi_base_count > 0xfffff) {
 			return create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
 		}
-		integers = integers & 0xffffffff;
-		if (integers < 1 || integers > 0xfffff) {
-			return create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
-		}
-		ut32 vmi_base_count = integers;
 
 		base_class_type_info *vmi_bases = calloc (sizeof (base_class_type_info), vmi_base_count);
 		if (!vmi_bases) {
 			return create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
 		}
-		ut64 tmp_addr = addr + 0x4;
 
 		int i;
 		for (i = 0; i < vmi_base_count; i++) {
@@ -666,9 +678,22 @@ static class_type_info *rtti_itanium_type_info_new(RVTableContext *context, ut64
 	if (type == R_TYPEINFO_TYPE_UNKNOWN) {
 		return raw_rtti_parse (context, vtable_addr, rtti_addr);
 	}
+	class_type_info *cti = NULL;
 	switch (type) {
-	case R_TYPEINFO_TYPE_VMI_CLASS:
-		return (class_type_info *)rtti_itanium_vmi_class_type_info_new (context, rtti_addr, vtable_addr);
+	case R_TYPEINFO_TYPE_VMI_CLASS: {
+		cti = (class_type_info *)rtti_itanium_vmi_class_type_info_new (context, rtti_addr, vtable_addr);
+		if (!cti) {
+			/* The name matched VMI but the underlying structure is not a valid
+			 * VMI typeinfo. This can happen for the typeinfo of
+			 * __vmi_class_type_info itself (which is really an SI typeinfo),
+			 * since the name of that class contains "__vmi_class_type_info".
+			 * Fall back to raw parsing instead of hard-failing the whole
+			 * vtable analysis. */
+			R_LOG_DEBUG ("VMI typeinfo parse failed for 0x%" PFMT64x ", falling back to raw parse", rtti_addr);
+			cti = raw_rtti_parse (context, vtable_addr, rtti_addr);
+		}
+		return cti;
+	}
 	case R_TYPEINFO_TYPE_SI_CLASS:
 		return (class_type_info *)rtti_itanium_si_class_type_info_new (context, rtti_addr, vtable_addr);
 	case R_TYPEINFO_TYPE_CLASS:
@@ -676,7 +701,7 @@ static class_type_info *rtti_itanium_type_info_new(RVTableContext *context, ut64
 	default:
 		R_RETURN_VAL_IF_REACHED (NULL);
 	}
-	return false;
+	return NULL;
 }
 
 static void rtti_itanium_type_info_free(void *info) {
