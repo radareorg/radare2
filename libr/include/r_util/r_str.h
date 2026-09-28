@@ -2,6 +2,7 @@
 #define R_STR_H
 
 #include "r_str_util.h"
+#include "r_str_any.h"
 #include <r_list.h>
 #include <r_vec.h>
 #include <r_types_base.h>
@@ -315,6 +316,7 @@ R_UNUSED static inline bool r_str_startswith_inline(const char *str, const char 
 	return !strncmp (str, needle, strlen (needle));
 }
 #define r_str_startswith r_str_startswith_inline
+
 R_UNUSED static const char *r_str_skip_prefix(const char *str, const char *prefix) {
 	if (r_str_startswith (str, prefix)) {
 		str += strlen (prefix);

@@ -213,19 +213,9 @@ static void r_anal_function_arg_free(RAnalFuncArg *arg) {
 static bool is_format_function(const char *name) {
 	const char *base = r_str_rchr (name, NULL, '.');
 	base = base? base + 1: name;
-	static const char *const fns[] = {
-		"printf", "fprintf", "dprintf", "sprintf", "snprintf", "asprintf",
-		"syslog", "err", "errx", "warn", "warnx",
-		"wprintf", "fwprintf", "swprintf",
-		"__printf_chk", "__fprintf_chk", "__sprintf_chk", "__snprintf_chk", NULL
-	};
-	int i;
-	for (i = 0; fns[i]; i++) {
-		if (!strcmp (base, fns[i])) {
-			return true;
-		}
-	}
-	return false;
+	return R_STR_CMP_ANY (base, "printf", "fprintf", "dprintf", "sprintf", "snprintf", "asprintf",
+		"syslog", "err", "errx", "warn", "warnx", "wprintf", "fwprintf", "swprintf",
+		"__printf_chk", "__fprintf_chk", "__sprintf_chk", "__snprintf_chk");
 }
 
 static char *read_format_string(RCore *core, ut64 ptr) {

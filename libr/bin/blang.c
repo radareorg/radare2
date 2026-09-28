@@ -76,8 +76,7 @@ static inline bool is_ibmxl_symbol(const char *name) {
 	if (*name == '?' || r_str_startswith (name, "_Z") || r_str_startswith (name, "__Z")) {
 		return false;
 	}
-	bool candidate = r_str_startswith (name, "__ct__")
-		|| r_str_startswith (name, "__dt__") || r_str_startswith (name, "__vft");
+	bool candidate = R_STR_STARTSWITH_ANY (name, "__ct__", "__dt__", "__vft");
 	if (!candidate && name[0] == '_' && name[1] == '_') {
 		const char *sep = strstr (name + 2, "__");
 		if (!sep || sep == name + 2 || !islower ((unsigned char)name[2])) {

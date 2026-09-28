@@ -497,6 +497,7 @@ foreach item : [
     ['arc4random_uniform', '#include <stdlib.h>', []],
     ['explicit_bzero', '#include <string.h>', []],
     ['explicit_memset', '#include <string.h>', []],
+    ['memmem', '#define _GNU_SOURCE\n#include <string.h>', []],
     ['clock_nanosleep', '#include <time.h>', []],
     ['clock_gettime', '#include <time.h>', [lrt]],
     ['sigaction', '#include <signal.h>', []]

@@ -3815,21 +3815,8 @@ static bool cb_malloc(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->value) {
-		const char *valid[] = {
-			"glibc",
-			"macos",
-			"windows",
-			"jemalloc",
-			NULL
-		};
-		const char *nv = node->value;
-		if (core->dbg) {
-			int i;
-			for (i = 0; valid[i]; i++) {
-				if (!strcmp (valid[i], nv)) {
-					core->dbg->options.malloc = node->value;
-				}
-			}
+		if (core->dbg && R_STR_CMP_ANY (node->value, "glibc", "macos", "windows", "jemalloc")) {
+			core->dbg->options.malloc = node->value;
 		}
 	}
 	return true;
