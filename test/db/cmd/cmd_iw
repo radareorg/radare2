@@ -76,10 +76,10 @@ NAME=iw edits only the selected binary
 FILE=bins/elf/ClassCpp.out
 CMDS=<<EOF
 iw-*
-iw+ 0x100 0x110 0x120 0x130
+iwc 0x110 0x120 0x130 @ 0x100
 o bins/wasm/basic.wasm
 iwj
-iw+ 0x200 0x210 0x220 0x230 kind=cleanup
+iwf 0x210 0x220 0x230 @ 0x200
 ob 0
 iwj
 ob 1
@@ -102,11 +102,11 @@ CMDS=<<EOF
 iw-*
 e asm.flags=false
 pd 1 @ 0x12aa~try 0x
-iw+ 0x1269 0x12aa 0x12af 0x132c kind=finally
+iwf 0x12aa 0x12af 0x132c @ 0x1269
 pd 1 @ 0x12aa~try 0x
 iw- 0
 pd 1 @ 0x12aa~try 0x
-iw+ 0x1269 0x12aa 0x12af 0x132c kind=finally
+iwf 0x12aa 0x12af 0x132c @ 0x1269
 pd 1 @ 0x12aa~try 0x
 iw-*
 pd 1 @ 0x12aa~try 0x
@@ -126,11 +126,11 @@ wx c3 @ 0x10
 wx c3 @ 0x20
 af @ 0
 afbq @ 0
-iw+ 0 0 1 0x10
+iwc 0 1 0x10 @ 0
 af-0
 af @ 0
 afbq @ 0
-iw+ 0 0 1 0x20
+iwc 0 1 0x20 @ 0
 af-0
 af @ 0
 afbq @ 0
@@ -218,7 +218,7 @@ iw+?~finally means
 iw-?~last region moves
 EOF
 EXPECT=<<EOF
-| iw+ source from to handler [attr ...]  append an exception region (iw+? for attributes)
+| iw+ source from to handler [attr ...]           append an exception region (iw+? for attributes)
 | kind=catch|cleanup|finally|filter  region kind (default: catch; finally means cleanup)
 | iw- index  delete the region with the given iw index (last region moves to this index)
 EOF
@@ -255,5 +255,85 @@ EXPECT=<<EOF
 [{"index":0,"source":0,"from":1,"to":2,"handler":3,"filter":0,"kind":"catch","typeFilter":0,"type":"Error"}]
 []
 []
+EOF
+RUN
+
+NAME=iw compact forms use current source and positional metadata
+FILE=-
+CMDS=<<EOF
+s 0x100
+iwc $$+0x10 $$+0x20 0x130 "Example Error" 7
+iwc 0x110 0x120 0x140 * -1
+iwf 0x110 0x120 0x150
+iwF 0x110 0x120 0x160 0x170 "Filter Error" 9
+iwF 0x110 0x120 0x180 0x190 "" -2 @ 0x200
+iwc 0x100000010 0x100000020 0x100000030 @ 0x100000000
+s
+iwj
+EOF
+EXPECT=<<EOF
+0x100
+[{"index":0,"source":256,"from":272,"to":288,"handler":304,"filter":0,"kind":"catch","typeFilter":7,"type":"Example Error"},{"index":1,"source":256,"from":272,"to":288,"handler":320,"filter":0,"kind":"catch","typeFilter":-1,"catchAll":true},{"index":2,"source":256,"from":272,"to":288,"handler":336,"filter":0,"kind":"cleanup"},{"index":3,"source":256,"from":272,"to":288,"handler":352,"filter":368,"kind":"filter","typeFilter":9,"type":"Filter Error"},{"index":4,"source":512,"from":272,"to":288,"handler":384,"filter":400,"kind":"filter","typeFilter":-2},{"index":5,"source":4294967296,"from":4294967312,"to":4294967328,"handler":4294967344,"filter":0,"kind":"catch","typeFilter":0}]
+EOF
+RUN
+
+NAME=iw compact forms reject invalid edits atomically
+FILE=-
+CMDS=<<EOF
+iwc 1 2
+iwc 1 2 3 Error 1 extra
+iwf 1 2 3 extra
+iwF 1 2 3
+iwF 1 2 3 4 Error 1 extra
+iwc missing.region 2 3
+iwf 1 missing.region 3
+iwF 1 2 missing.region 4
+iwF 1 2 3 missing.region
+iwc 1 2 3 Error missing.region
+iwF 1 2 3 4 Error missing.region
+iwc 2 2 3
+iwf 3 2 4
+iwj
+EOF
+EXPECT=<<EOF
+[]
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid arguments for iwc (see iwc?)
+ERROR: Invalid arguments for iwc (see iwc?)
+ERROR: Invalid arguments for iwf (see iwf?)
+ERROR: Invalid arguments for iwF (see iwF?)
+ERROR: Invalid arguments for iwF (see iwF?)
+ERROR: Invalid exception region expression: missing.region
+ERROR: Invalid exception region expression: missing.region
+ERROR: Invalid exception region expression: missing.region
+ERROR: Invalid exception region expression: missing.region
+ERROR: Invalid exception region expression: missing.region
+ERROR: Invalid exception region expression: missing.region
+ERROR: Exception region start must precede its exclusive end
+ERROR: Exception region start must precede its exclusive end
+EOF
+RUN
+
+NAME=iw compact help and missing binary
+FILE=-
+CMDS=<<EOF
+ob-*
+iwc?~owning function
+iwf?~owning function
+iwF?~owning function
+iwc 1 2 3
+iwf 1 2 3
+iwF 1 2 3 4
+EOF
+EXPECT=<<EOF
+| @ source                                        owning function address (default: current seek)
+| @ source                                        owning function address (default: current seek)
+| @ source                                        owning function address (default: current seek)
+EOF
+EXPECT_ERR=<<EOF
+ERROR: No current binary
+ERROR: No current binary
+ERROR: No current binary
 EOF
 RUN
