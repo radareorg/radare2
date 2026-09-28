@@ -88,28 +88,33 @@ static const char *GetFileName(const char *path) {
 	return pfile;
 }
 
-int GetSystemModules(RIO *io) {
+char *r2k_windows_GetSystemModules(RIO *io) {
 	DWORD bRead = 0;
 	int i;
-	LPVOID lpBufMods = NULL;
 	int bufmodsize = 1024 * 1024;
-	if (gHandleDriver) {
-		if (!(lpBufMods = malloc (bufmodsize))) {
-			R_LOG_ERROR ("GetSystemModules: Cannot allocate %i bytes of memory", bufmodsize);
-			return -1;
-		}
-		if (DeviceIoControl (gHandleDriver, IOCTL_GET_SYSTEM_MODULES, lpBufMods, bufmodsize, lpBufMods, bufmodsize, &bRead, NULL)) {
-			PRTL_PROCESS_MODULES pm = (PRTL_PROCESS_MODULES)lpBufMods;
-			PRTL_PROCESS_MODULE_INFORMATION pMod = pm->Modules;
-			for (i = 0; i < pm->NumberOfModules; i++) {
-				const char *fileName = GetFileName((const char*)pMod[i].FullPathName);
-				io->cb_printf ("f nt.%s 0x%"PFMT64x" @ 0x"PFMT64x"\n", fileName, (ut64)pMod[i].ImageSize, (ut64)pMod[i].ImageBase);
-			}
-		}
-	} else {
+	if (!gHandleDriver) {
 		R_LOG_ERROR ("Driver not initialized");
+		return NULL;
 	}
-	return 1;
+	LPVOID lpBufMods = malloc (bufmodsize);
+	if (!lpBufMods) {
+		R_LOG_ERROR ("GetSystemModules: Cannot allocate %i bytes of memory", bufmodsize);
+		return NULL;
+	}
+	if (DeviceIoControl (gHandleDriver, IOCTL_GET_SYSTEM_MODULES, lpBufMods, bufmodsize, lpBufMods, bufmodsize, &bRead, NULL)) {
+		PRTL_PROCESS_MODULES pm = (PRTL_PROCESS_MODULES)lpBufMods;
+		PRTL_PROCESS_MODULE_INFORMATION pMod = pm->Modules;
+		RStrBuf *sb = r_strbuf_new ("");
+		for (i = 0; i < pm->NumberOfModules; i++) {
+			const char *fileName = GetFileName((const char*)pMod[i].FullPathName);
+			r_strbuf_appendf (sb, "f nt.%s 0x%"PFMT64x" @ 0x"PFMT64x"\n", fileName, (ut64)pMod[i].ImageSize, (ut64)pMod[i].ImageBase);
+		}
+		char *res = r_strbuf_drain (sb);
+		free (lpBufMods);
+		return res;
+	}
+	free (lpBufMods);
+	return NULL;
 }
 
 int ReadKernelMemory (ut64 address, ut8 *buf, int len) {

@@ -66,7 +66,7 @@ static RIODesc *w32__open(RIO *io, const char *pathname, int rw, int mode) {
 static char *w32__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (io && fd && fd->data && cmd && !strcmp (cmd, "winbase")) {
 		RIOW32 *w32 = (RIOW32 *)fd->data;
-		io->cb_printf ("%"PFMT64u , w32->winbase);
+		return r_str_newf ("%"PFMT64u, w32->winbase);
 	}
 	return NULL;
 }

@@ -309,12 +309,6 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	return NULL;
 }
 
-static void printcmd(RIO *io, RIOSysGdb *state, const char *cmd) {
-	char *res = runcmd (state, cmd);
-	io->cb_printf ("%s\n", res);
-	free (res);
-}
-
 static const char arm_64[] = "\n"
 			"=PC     pc\n"
 			"=SN     x16\n"
@@ -622,9 +616,9 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	} else if (!strcmp (cmd, "drp")) {
 		return printprofile (io, fd);
 	} else if (!strcmp (cmd, "dbt")) {
-		printcmd (io, state, "backtrace");
+		return runcmd (state, "backtrace");
 	} else if (!strcmp (cmd, "dc")) {
-		printcmd (io, state, "cont");
+		return runcmd (state, "cont");
 	} else if (!strcmp (cmd, "dr8")) {
 		if (state->use_lldb) {
 			char *regs = runcmd (state, "re read");
@@ -720,17 +714,16 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		free (regs);
 		return r_hex_bin2strdup ((const ut8 *)arena, arenasize);
 	} else if (!strcmp (cmd, "di")) {
-		printcmd (io, state, "info proc all");
+		return runcmd (state, "info proc all");
 	} else if (r_str_startswith (cmd, "dk")) {
 		// do nothing. but we should send a signal here
 	} else if (!strcmp (cmd, "ds")) {
 		runcmd (state, "stepi");
 	} else if (!strcmp (cmd, "dr")) {
 		if (state->use_lldb) {
-			printcmd (io, state, "re read");
-		} else {
-			printcmd (io, state, "i r");
+			return runcmd (state, "re read");
 		}
+		return runcmd (state, "i r");
 	} else if (!strcmp (cmd, "dm")) {
 		RStrBuf *sb = r_strbuf_new ("");
 		// TODO: construct new string with standard pat
@@ -756,15 +749,11 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		}
 		r_list_free (list);
 		return r_strbuf_drain (sb);
-		// printcmd (io, state, "info proc mappings");
 	} else if (r_str_startswith (cmd, "pid")) { // should be using `dp` imho
 		int pid = sysgdb_getpid (state);
-		// io->cb_printf ("%d\n", pid);
 		return r_str_newf ("%d\n", pid);
-	} else {
-		printcmd (io, state, cmd);
 	}
-	return NULL;
+	return runcmd (state, cmd);
 }
 
 static int __getpid(RIODesc *fd) {

@@ -67,7 +67,7 @@ static char *print_snapshot(const ut64 *regs) {
 			(i % 3 == 2)? "\n": "  ");
 	}
 	if (i % 3 != 0) {
-		r_strbuf_appendf (sb, "\n");
+		r_strbuf_append (sb, "\n");
 	}
 	return r_strbuf_drain (sb);
 }
@@ -78,7 +78,7 @@ static char *emit_reg_flags(const ut64 *regs) {
 	for (i = 0; i < REG_COUNT; i++) {
 		r_strbuf_appendf (sb, "f reg.%s 1 0x%"PFMT64x"\n", reg_names[i], regs[i]);
 	}
-	r_strbuf_appendf (sb, "fs *\n");
+	r_strbuf_append (sb, "fs *\n");
 	return r_strbuf_drain (sb);
 }
 #endif
@@ -467,7 +467,7 @@ static char *emit_maps(RIOEbpf *e, bool as_flags) {
 		r_strbuf_appendf (sb, "f map.%d.%s 0x%"PFMT64x" 0x%"PFMT64x"\n", idx++, name? name: "anon", end - start, start);
 	}
 	if (as_flags) {
-		r_strbuf_appendf (sb, "fs *\n");
+		r_strbuf_append (sb, "fs *\n");
 	}
 	free (m);
 	return r_strbuf_drain (sb);
