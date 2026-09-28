@@ -186,7 +186,7 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 			}
 			flagname = dup;
 			if (IS_MODE_RAD (mode)) {
-				r_cons_printf (core->cons, "pf.%s %s\n", flagname, v);
+				r_cons_printf (core->cons, "'pf.%s %s\n", flagname, v);
 			} else if (IS_MODE_SET (mode)) {
 				sdb_set (core->print->formats, flagname, v, 0);
 			}
