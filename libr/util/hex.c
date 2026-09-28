@@ -417,6 +417,11 @@ R_API int r_hex_str2bin(const char *in, ut8 *out) {
 			nibbles++;
 			in++;
 		}
+		if (*in == '\\' && in[1] == 'x'
+				&& IS_HEXCHAR (in[2]) && IS_HEXCHAR (in[3])) {
+			in += 2;
+			continue;
+		}
 		if (*in == '\0') {
 			break;
 		}
