@@ -3153,6 +3153,51 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 			pj_ks (pj, "diffname", fcn->diff->name);
 		}
 	}
+	{
+		RBinFile *bf = r_bin_cur (core->bin);
+		const RVecRBinTrycatch *trycatch = bf? r_bin_file_get_trycatch (bf): NULL;
+		if (trycatch) {
+			const RBinTrycatch *tc;
+			bool first = true;
+			R_VEC_FOREACH (trycatch, tc) {
+				if (tc->source != fcn->addr) {
+					continue;
+				}
+				if (first) {
+					pj_k (pj, "trycatch");
+					pj_a (pj);
+					first = false;
+				}
+				pj_o (pj);
+				pj_kn (pj, "from", tc->from);
+				pj_kn (pj, "to", tc->to);
+				pj_kn (pj, "handler", tc->handler);
+				switch (tc->kind) {
+				case R_BIN_TRYCATCH_CLEANUP:
+					pj_ks (pj, "kind", "cleanup");
+					break;
+				case R_BIN_TRYCATCH_FILTER:
+					pj_ks (pj, "kind", "filter");
+					break;
+				case R_BIN_TRYCATCH_CATCH:
+					pj_ks (pj, "kind", "catch");
+					break;
+				default:
+					break;
+				}
+				if (tc->type) {
+					pj_ks (pj, "type", tc->type);
+				}
+				if (tc->catch_all) {
+					pj_kb (pj, "catchAll", true);
+				}
+				pj_end (pj);
+			}
+			if (!first) {
+				pj_end (pj);
+			}
+		}
+	}
 	pj_end (pj);
 	free (name);
 	return 0;

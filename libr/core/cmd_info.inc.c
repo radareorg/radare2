@@ -44,6 +44,7 @@ static RCoreHelpMessage help_msg_iw = {
 	"iw", "", "list exception regions",
 	"iw.", "", "list exception regions for the current function",
 	"iwj", "", "list exception regions in JSON",
+	"iwj.", "", "list exception regions for the current function in JSON",
 	"iwq", "", "list try start, exclusive end and handler addresses",
 	"iw*", "", "print exception region flags as r2 commands",
 	"iwc", " from to handler [type [typefilter]]", "add catch at current source (type * for catch-all)",
@@ -4005,7 +4006,18 @@ static int cmd_info(void *data, const char *input) {
 		RBinFile *cur = core->bin->cur;
 		r_list_foreach (objs, iter, bf) {
 			core->bin->cur = bf;
-			if (input[1] == '.') {
+			if (input[1] == 'j' && input[2] == '.') { // "iwj."
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
+				if (fcn) {
+					PJ *pj_wj = r_core_pj_new (core);
+					if (pj_wj) {
+						RCoreBinFilter filter = { .addr = fcn->addr };
+						r_core_bin_info (core, R_CORE_BIN_ACC_TRYCATCH, pj_wj, R_MODE_JSON, va, &filter, NULL);
+						r_cons_println (core->cons, pj_string (pj_wj));
+						pj_free (pj_wj);
+					}
+				}
+			} else if (input[1] == '.') { // "iw."
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
 				if (fcn) {
 					RCoreBinFilter filter = { .addr = fcn->addr };
