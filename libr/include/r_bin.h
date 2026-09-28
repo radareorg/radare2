@@ -752,6 +752,8 @@ typedef struct r_bin_trycatch_t {
 	bool catch_all;
 } RBinTrycatch;
 
+typedef bool (*RBinTrycatchCb)(const RBinTrycatch *tc, void *user);
+
 static inline void r_bin_trycatch_fini(RBinTrycatch *tc) {
 	if (tc) {
 		free (tc->type);
@@ -1019,7 +1021,7 @@ R_API bool r_bin_trycatch_insert(RBinFile *bf, const RBinTrycatch *tc);
 R_API bool r_bin_trycatch_delete(RBinFile *bf, size_t index);
 R_API bool r_bin_trycatch_clear(RBinFile *bf);
 // Visit one source in insertion order; the callback must not mutate the store.
-R_API bool r_bin_trycatch_foreach(RBinFile *bf, ut64 source, bool (*cb)(const RBinTrycatch *tc, void *user), void *user);
+R_API bool r_bin_trycatch_foreach(RBinFile *bf, ut64 source, RBinTrycatchCb cb, void *user);
 R_API RVecRBinSymbol *r_bin_get_symbols_vec(RBin *bin);
 // O(1) lookup by address (vaddr first, then paddr). Builds a lazy index on the
 // current RBinObject on first call; returns NULL if no symbol matches.

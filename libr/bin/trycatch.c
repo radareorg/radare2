@@ -175,7 +175,7 @@ R_API bool r_bin_trycatch_clear(RBinFile *bf) {
 	return true;
 }
 
-R_API bool r_bin_trycatch_foreach(RBinFile *bf, ut64 source, bool (*cb)(const RBinTrycatch *tc, void *user), void *user) {
+R_API bool r_bin_trycatch_foreach(RBinFile *bf, ut64 source, RBinTrycatchCb cb, void *user) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && cb, false);
 	TrycatchStore *store = trycatch_store (bf);
 	if (!store) {
