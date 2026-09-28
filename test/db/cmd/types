@@ -4880,3 +4880,26 @@ EXPECT=<<EOF_EXPECT
 [{"name":"IncompleteUnion","fields":[{"name":"value","type":"Missing","offset":0,"size":1}]}]
 EOF_EXPECT
 RUN
+
+NAME=Empty enums produce valid JSON in single and complete listings
+FILE=-
+CMDS=<<EOF
+t-*
+tk Empty=enum
+tk Full=enum
+tk enum.Full=Zero,One
+tk enum.Full.Zero=0
+tk enum.Full.One=1
+tk Last=enum
+tej
+tej Empty
+tej Full
+tej Last
+EOF
+EXPECT=<<EOF
+{"Empty":{},"Full":{"Zero":0,"One":1},"Last":{}}
+{"name":"Empty","values":{}}
+{"name":"Full","values":{"Zero":0,"One":1}}
+{"name":"Last","values":{}}
+EOF
+RUN

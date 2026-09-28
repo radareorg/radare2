@@ -1539,15 +1539,13 @@ static void print_type_view(RCore *core, const char *arg) {
 
 static void enum_members_to_json(PJ *pj, Sdb *TDB, const char *name) {
 	RList *list = r_type_get_enum (TDB, name);
-	if (!r_list_empty (list)) {
-		RListIter *iter;
-		RTypeEnum *member;
-		pj_o (pj);
-		r_list_foreach (list, iter, member) {
-			pj_kn (pj, member->name, r_num_math (NULL, member->val));
-		}
-		pj_end (pj);
+	RListIter *iter;
+	RTypeEnum *member;
+	pj_o (pj);
+	r_list_foreach (list, iter, member) {
+		pj_kn (pj, member->name, r_num_math (NULL, member->val));
 	}
+	pj_end (pj);
 	r_list_free (list);
 }
 
