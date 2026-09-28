@@ -63,6 +63,25 @@ void type_trace_voyeur_mem_read(void *user, ut64 addr, const ut8 *buf, int len) 
 	update_trace_db_op (db);
 }
 
+// past this many dirty bytes a function keeps master's unrewound stack
+#define TP_BBMEM_MAX 4096
+
+static void tt_track_writes(TypeTrace *trace, ut64 addr, const ut8 *buf, int len) {
+	int i;
+	for (i = 0; i < len; i++) {
+		const ut64 a = addr + i;
+		bool found = false;
+		const ut64 di = ht_uu_find (trace->mem_dirty_idx, a, &found);
+		if (found) {
+			*RVecBuf_at (&trace->mem_shadow, di - 1) = buf[i];
+		} else if (RVecUT64_length (&trace->mem_dirty) < TP_BBMEM_MAX) {
+			RVecUT64_push_back (&trace->mem_dirty, &a);
+			RVecBuf_push_back (&trace->mem_shadow, &buf[i]);
+			ht_uu_insert (trace->mem_dirty_idx, a, RVecUT64_length (&trace->mem_dirty));
+		}
+	}
+}
+
 void type_trace_voyeur_mem_write(void *user, ut64 addr, const ut8 *old, const ut8 *buf, int len) {
 	R_RETURN_IF_FAIL (user && buf && (len > 0));
 	TypeTrace *trace = user;
@@ -80,6 +99,9 @@ void type_trace_voyeur_mem_write(void *user, ut64 addr, const ut8 *old, const ut
 			r_strbuf_prependf (&trace->rollback,
 				"0x%02x,0x%" PFMT64x ",=[1],", old[i], addr + i);
 		}
+	}
+	if (addr >= trace->track_base && len <= trace->track_size && addr - trace->track_base <= trace->track_size - len) {
+		tt_track_writes (trace, addr, buf, len);
 	}
 	update_trace_db_op (&trace->db);
 }
@@ -115,6 +137,9 @@ bool type_trace_init(TypeTrace *trace, REsil *esil, RReg *reg) {
 	*trace = (const TypeTrace){ 0 };
 	trace_db_init (&trace->db);
 	r_strbuf_init (&trace->rollback);
+	RVecUT64_init (&trace->mem_dirty);
+	trace->mem_dirty_idx = ht_uu_new0 ();
+	RVecBuf_init (&trace->mem_shadow);
 	trace->enable_rollback = false; // Disabled by default for performance
 	trace->voy[TP_VOYEUR_REG_READ] = r_esil_add_voyeur (esil, &trace->db,
 		type_trace_voyeur_reg_read, R_ESIL_VOYEUR_REG_READ);
@@ -192,6 +217,9 @@ void type_trace_fini(TypeTrace *trace, REsil *esil) {
 	R_RETURN_IF_FAIL (trace && esil);
 	trace_db_fini (&trace->db);
 	r_strbuf_fini (&trace->rollback);
+	RVecUT64_fini (&trace->mem_dirty);
+	ht_uu_free (trace->mem_dirty_idx);
+	RVecBuf_fini (&trace->mem_shadow);
 	r_esil_del_voyeur (esil, trace->voy[TP_VOYEUR_MEM_WRITE]);
 	r_esil_del_voyeur (esil, trace->voy[TP_VOYEUR_MEM_READ]);
 	r_esil_del_voyeur (esil, trace->voy[TP_VOYEUR_REG_WRITE]);
