@@ -3,7 +3,7 @@
 #define R_LOG_ORIGIN "core.anal"
 
 #include <r_core.h>
-R_IPI int bin_trycatch_json(PJ *pj, const RVecRBinTrycatch *tcs, ut64 source);
+#include "cbin.h"
 #include <r_vec.h>
 #include <sdb/ht_uu.h>
 
@@ -3160,11 +3160,14 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 		const RVecRBinTrycatch *tcs = bf? r_bin_file_get_trycatch (bf): NULL;
 		if (tcs) {
 			const RBinTrycatch *tc;
-			int count = 0;
+			bool found = false;
 			R_VEC_FOREACH (tcs, tc) {
-				count += (tc->source == fcn->addr);
+				if (tc->source == fcn->addr) {
+					found = true;
+					break;
+				}
 			}
-			if (count > 0) {
+			if (found) {
 				pj_k (pj, "trycatch");
 				bin_trycatch_json (pj, tcs, fcn->addr);
 			}

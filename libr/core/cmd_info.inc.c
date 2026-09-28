@@ -8,9 +8,7 @@
 
 #include "../bin/format/pdb/pdb_downloader.h"
 
-R_IPI bool bin_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 count, int type_filter);
-R_IPI bool bin_raw_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 count, int type_filter);
-R_IPI void bin_trycatch_flag(RCore *core, const RBinTrycatch *tc, size_t index, bool set);
+#include "cbin.h"
 
 // clang-format off
 static RCoreHelpMessage help_msg_ih = {
@@ -45,6 +43,7 @@ static RCoreHelpMessage help_msg_iw = {
 	"iw.", "", "list exception regions for the current function",
 	"iwj", "", "list exception regions in JSON",
 	"iwj.", "", "list exception regions for the current function in JSON",
+	"iw.j", "", "same as iwj.",
 	"iwq", "", "list try start, exclusive end and handler addresses",
 	"iw*", "", "print exception region flags as r2 commands",
 	"iwc", " from to handler [type [typefilter]]", "add catch at current source (type * for catch-all)",
@@ -4000,7 +3999,7 @@ static int cmd_info(void *data, const char *input) {
 			}
 			break;
 		}
-		bool here = input[1] == '.'; // "iw." / "iw.j"
+		bool here = input[1] == '.'; // "iw." and "iw.j" (json mode for "iw.j" comes from the arg parser)
 		if (input[1] == 'j' && input[2] == '.') { // "iwj."
 			here = true;
 			mode = R_MODE_JSON; // the mode parser only checks the last char, so "j." is not detected
