@@ -638,7 +638,7 @@ static RCoreHelpMessage help_msg_px = {
 	"pxq", "", "show hexadecimal quad-words dump (64bit)",
 	"pxQ", "[q]", "same as above, but one per line",
 	"pxr", "[1248][qj]", "show hexword references (q=quiet, j=json)",
-	"pxs", "", "show hexadecimal in sparse mode",
+	"pxs", "", "show hexadecimal in sparse mode (see hex.gaplines)",
 	"pxt", "[*.] [origin]", "show delta pointer table in r2 commands",
 	"pxu", "[?1248]", "unsigned integer dump (1 byte, 2 and 4)",
 	"pxw", "", "show hexadecimal words dump (32bit)",

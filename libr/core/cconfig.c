@@ -4738,6 +4738,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("hex.compact", "false", &cb_hexcompact, "show smallest 16 byte col hexdump (60 columns)");
 	SETCB ("cmd.hexcursor", "", &cb_cmd_hexcursor, "if set and cursor is enabled display given pf format string");
 	SETI ("hex.flagsz", 0, "If non zero, overrides the flag size in pxa");
+	SETI ("hex.gaplines", 2, "minimum gap size in hexdump lines for pxs and /xs (see hex.cols)");
 	SETICB ("hex.cols", 16, &cb_hexcols, "number of columns in hexdump");
 	SETI ("hex.depth", 5, "maximal level of recurrence while telescoping memory");
 	SETB ("hex.onechar", "false", "number of columns in hexdump");

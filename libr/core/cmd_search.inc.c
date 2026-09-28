@@ -124,7 +124,7 @@ static RCoreHelpMessage help_msg_slash = {
 	"/w", " foo", "search for wide string 'f\\0o\\0o\\0'",
 	"/wi", " foo", "search for wide string ignoring case 'f\\0o\\0o\\0'",
 	"/x", "[?] [bytes]", "search for hex string with mask, ignoring some nibbles",
-	"/xs", "", "search for sparse zero or 0xff gaps (at least 32 bytes)",
+	"/xs", "", "search for sparse zero or 0xff gaps (see hex.gaplines)",
 	"/z", " min max", "search for strings of given size",
 	"/*", " [comment string]", "add multiline comment, end it with '*/'",
 #if 0
@@ -243,7 +243,7 @@ static RCoreHelpMessage help_msg_slash_x = {
 	"/x ", "ff..33", "search for hex string ignoring some nibbles",
 	"/x ", "9090cd80:ffff7ff0", "search with binary mask",
 	"/xn", "[1|2|4|8] value amount", "search for an array of Value repeated Amount of times",
-	"/xs", "", "find starts of zero or 0xff runs of at least 32 bytes",
+	"/xs", "", "find starts of zero or 0xff runs (see hex.gaplines)",
 	"/xv", "[1|2|4|8] v0 v1 v2 v3 ..", "search for an array of values with given size and endian",
 	NULL
 };
@@ -3249,12 +3249,17 @@ static bool do_asm_search(RCore *core, RSearchParameters *param, const char *inp
 	return success;
 }
 
-static bool sparse_search_hit(RSearch *search, RSearchKeyword *kw, ut64 addr, ut64 length) {
-	return length < 32 || r_search_hit_new (search, kw, addr) == 1;
+static bool sparse_search_hit(RSearch *search, RSearchKeyword *kw, ut64 addr, ut64 length, ut64 gap_size) {
+	return length < gap_size || r_search_hit_new (search, kw, addr) == 1;
 }
 
 static void do_sparse_search(RCore *core, RSearchParameters *param) {
 	RSearch *search = core->search;
+	const ut64 gap_lines = r_config_get_i (core->config, "hex.gaplines");
+	ut64 gap_size;
+	if (r_mul_overflow_ut64 (gap_lines, R_MAX (2, core->print->cols), &gap_size)) {
+		gap_size = UT64_MAX;
+	}
 	if (core->blocksize < 1) {
 		return;
 	}
@@ -3289,7 +3294,7 @@ static void do_sparse_search(RCore *core, RSearchParameters *param) {
 			for (i = 0; i < len; i++) {
 				ut8 value = buf[i];
 				if (run_length && value != run_value) {
-					if (!sparse_search_hit (search, &kw, run_start, run_length)) {
+					if (!sparse_search_hit (search, &kw, run_start, run_length, gap_size)) {
 						goto done;
 					}
 					run_length = 0;
@@ -3307,7 +3312,7 @@ static void do_sparse_search(RCore *core, RSearchParameters *param) {
 		if (at < to) {
 			break;
 		}
-		if (run_length && !sparse_search_hit (search, &kw, run_start, run_length)) {
+		if (run_length && !sparse_search_hit (search, &kw, run_start, run_length, gap_size)) {
 			break;
 		}
 	}

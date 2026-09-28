@@ -557,6 +557,79 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pxs honors hex.gaplines at exact run lengths
+FILE=malloc://64
+CMDS=<<EOF
+e hex.header=false
+e hex.gaplines
+pxs 32
+e hex.gaplines=3
+pxs 32
+pxs 48
+e hex.gaplines=5
+pxs 64
+EOF
+EXPECT=<<EOF
+2
+0x00000000  0000 0000 0000 0000 0000 0000 0000 0000  ................
+ ...
+0x00000000  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x00000010  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x00000000  0000 0000 0000 0000 0000 0000 0000 0000  ................
+ ...
+0x00000000  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x00000010  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x00000020  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x00000030  0000 0000 0000 0000 0000 0000 0000 0000  ................
+EOF
+RUN
+
+NAME=pxs scales hex.gaplines with hex.cols
+FILE=malloc://32
+CMDS=<<EOF
+e hex.header=false
+b 32
+wX ff
+e hex.cols=8
+pxs 16
+e hex.gaplines=3
+pxs 16
+pxs 24
+e hex.cols=16
+pxs 32
+EOF
+EXPECT=<<EOF
+0x00000000  ffff ffff ffff ffff  ........
+ ...
+0x00000000  ffff ffff ffff ffff  ........
+0x00000008  ffff ffff ffff ffff  ........
+0x00000000  ffff ffff ffff ffff  ........
+ ...
+0x00000000  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x00000010  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+EOF
+RUN
+
+NAME=hex.gaplines handles zero and overflowing line counts
+FILE=malloc://32
+CMDS=<<EOF
+e hex.header=false
+e hex.gaplines=0
+pxs 32
+/xs
+e hex.gaplines=0x1000000000000000
+pxs 32
+/xs
+EOF
+EXPECT=<<EOF
+0x00000000  0000 0000 0000 0000 0000 0000 0000 0000  ................
+ ...
+0x00000000 hit0_0 00
+0x00000000  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x00000010  0000 0000 0000 0000 0000 0000 0000 0000  ................
+EOF
+RUN
+
 NAME=hex.compact changes layout without enabling pxs
 FILE=bins/other/gaps.bin
 ARGS=-n

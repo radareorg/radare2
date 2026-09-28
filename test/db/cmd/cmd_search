@@ -1095,6 +1095,41 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=/xs scales hex.gaplines with hex.cols across read blocks
+FILE=malloc://96
+CMDS=<<EOF
+b 16
+wX ff @ 16
+b 7
+/xs
+e hex.gaplines=1
+/xs
+e hex.gaplines=2
+e hex.cols=8
+/xs
+e hex.gaplines=8
+/xs
+e search.from=0x20
+e search.to=0x5f
+/xs
+e search.to=0x60
+/xs
+e hex.gaplines=9
+/xs
+EOF
+EXPECT=<<EOF
+0x00000020 hit0_0 00
+0x00000000 hit0_0 00
+0x00000010 hit0_1 ff
+0x00000020 hit0_2 00
+0x00000000 hit0_0 00
+0x00000010 hit0_1 ff
+0x00000020 hit0_2 00
+0x00000020 hit0_0 00
+0x00000020 hit0_0 00
+EOF
+RUN
+
 NAME=/xs respects range, minimum length and hit limit
 FILE=bins/other/gaps.bin
 ARGS=-n

@@ -1062,6 +1062,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	const char *bytefmt = "%02x";
 	const char *pre = "";
 	int last_sparse = 0;
+	ut64 gap_lines = 2;
+	size_t sparse_start = 0;
+	size_t sparse_end = 0;
 	bool use_hexa = true;
 	bool use_align = false;
 	bool use_unalloc = false;
@@ -1074,6 +1077,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	if (p) {
 		pairs = p->pairs;
 		use_sparse = p->flags & R_PRINT_FLAGS_SPARSE;
+		if (use_sparse && p->coreb.cfgGetI) {
+			gap_lines = p->coreb.cfgGetI (p->coreb.core, "hex.gaplines");
+		}
 		use_header = p->flags & R_PRINT_FLAGS_HEADER;
 		use_hdroff = p->flags & R_PRINT_FLAGS_HDROFF;
 		use_segoff = p->flags & R_PRINT_FLAGS_SEGOFF;
@@ -1156,6 +1162,10 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			inc = 8;
 		}
 		break;
+	}
+	ut64 gap_size;
+	if (r_mul_overflow_ut64 (gap_lines, inc, &gap_size)) {
+		gap_size = UT64_MAX;
 	}
 	const char *space = hex_style? ".": " ";
 	// TODO: Use base to change %03o and so on
@@ -1294,7 +1304,14 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		}
 
 		if (use_sparse) {
-			if (i + inc <= len && checkSparse (buf + i, inc, 0)) {
+			if (i >= sparse_end) {
+				sparse_start = i;
+				sparse_end = i + 1;
+				while (sparse_end < len && buf[sparse_end] == buf[i]) {
+					sparse_end++;
+				}
+			}
+			if (sparse_end - sparse_start >= gap_size && i + inc <= len && checkSparse (buf + i, inc, 0)) {
 				if (sparse_char != buf[i]) {
 					last_sparse = 0;
 				}
