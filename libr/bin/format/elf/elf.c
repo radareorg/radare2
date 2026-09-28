@@ -3655,8 +3655,14 @@ static size_t get_num_relocs_dynamic(ELFOBJ *eo) {
 	const RBinElfDynamicInfo *di = &eo->dyn_info;
 	size_t res = get_num_relocs_android (eo);
 
-	res += di->relasz_read / di->dt_relaent;
-	res += di->relsz_read / di->dt_relent;
+	// ET_CORE and unknown machines never reach the dynamic parser, so the
+	// strides can still be their zero default here
+	if (di->dt_relaent) {
+		res += di->relasz_read / di->dt_relaent;
+	}
+	if (di->dt_relent) {
+		res += di->relsz_read / di->dt_relent;
+	}
 	// RELR bitmap words each encode up to wordsize*8-1 relocations, so scan the
 	// table for the exact count instead of assuming one reloc per entry
 	if (di->dt_relr != R_BIN_ELF_ADDR_MAX && di->relrsz_read) {
