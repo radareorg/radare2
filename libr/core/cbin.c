@@ -4040,6 +4040,50 @@ R_IPI void bin_trycatch_flag(RCore *core, const RBinTrycatch *tc, size_t index, 
 	}
 }
 
+// Serialize the regions of a source function as a JSON array in pj.
+// source = UT64_MAX selects all the regions. Returns the number of entries.
+// This is the single JSON representation used by "iwj" and the trycatch
+// array embedded in function json (afij).
+R_IPI int bin_trycatch_json(PJ *pj, const RVecRBinTrycatch *tcs, ut64 source) {
+	R_RETURN_VAL_IF_FAIL (pj, 0);
+	RVecRBinTrycatch empty = { 0 };
+	if (!tcs) {
+		tcs = &empty;
+	}
+	size_t idx = 0;
+	const RBinTrycatch *tc;
+	pj_a (pj);
+	R_VEC_FOREACH (tcs, tc) {
+		if (source != UT64_MAX && tc->source != source) {
+			continue;
+		}
+		const char *kind = trycatch_kind_name (tc->kind);
+		pj_o (pj);
+		pj_kn (pj, "index", idx);
+		pj_kn (pj, "source", tc->source);
+		pj_kn (pj, "from", tc->from);
+		pj_kn (pj, "to", tc->to);
+		pj_kn (pj, "handler", tc->handler);
+		pj_kn (pj, "filter", tc->filter);
+		if (tc->kind != R_BIN_TRYCATCH_UNSPECIFIED) {
+			pj_ks (pj, "kind", kind);
+			if (tc->kind != R_BIN_TRYCATCH_CLEANUP) {
+				pj_kN (pj, "typeFilter", tc->type_filter);
+			}
+			if (tc->type) {
+				pj_ks (pj, "type", tc->type);
+			}
+			if (tc->catch_all) {
+				pj_kb (pj, "catchAll", true);
+			}
+		}
+		pj_end (pj);
+		idx++;
+	}
+	pj_end (pj);
+	return idx;
+}
+
 static bool bin_trycatch(RCore *core, PJ *pj, int mode, ut64 source) {
 	RBinFile *bf = r_bin_cur (core->bin);
 	const RBinTrycatch *tc;
@@ -4048,40 +4092,20 @@ static bool bin_trycatch(RCore *core, PJ *pj, int mode, ut64 source) {
 	if (!trycatch) {
 		trycatch = &empty;
 	}
+	if (IS_MODE_JSON (mode)) {
+		bin_trycatch_json (pj, trycatch, source);
+		return true;
+	}
 	size_t idx = 0;
 	if (IS_MODE_SET (mode)) {
 		r_flag_space_push (core->flags, R_FLAGS_FS_TRYCATCH);
-	}
-	if (IS_MODE_JSON (mode)) {
-		pj_a (pj);
 	}
 	R_VEC_FOREACH (trycatch, tc) {
 		if (source != UT64_MAX && tc->source != source) {
 			continue;
 		}
 		const char *kind = trycatch_kind_name (tc->kind);
-		if (IS_MODE_JSON (mode)) {
-			pj_o (pj);
-			pj_kn (pj, "index", idx);
-			pj_kn (pj, "source", tc->source);
-			pj_kn (pj, "from", tc->from);
-			pj_kn (pj, "to", tc->to);
-			pj_kn (pj, "handler", tc->handler);
-			pj_kn (pj, "filter", tc->filter);
-			if (tc->kind != R_BIN_TRYCATCH_UNSPECIFIED) {
-				pj_ks (pj, "kind", kind);
-				if (tc->kind != R_BIN_TRYCATCH_CLEANUP) {
-					pj_kN (pj, "typeFilter", tc->type_filter);
-				}
-				if (tc->type) {
-					pj_ks (pj, "type", tc->type);
-				}
-				if (tc->catch_all) {
-					pj_kb (pj, "catchAll", true);
-				}
-			}
-			pj_end (pj);
-		} else if (IS_MODE_SET (mode)) {
+		if (IS_MODE_SET (mode)) {
 			bin_trycatch_flag (core, tc, idx, true);
 		} else if (IS_MODE_RAD (mode)) {
 			r_cons_printf (core->cons, "f try.%"PFMT64u".%"PFMT64x".from=0x%08"PFMT64x"\n", (ut64)idx, tc->source, tc->from);
@@ -4106,9 +4130,6 @@ static bool bin_trycatch(RCore *core, PJ *pj, int mode, ut64 source) {
 	}
 	if (IS_MODE_SET (mode)) {
 		r_flag_space_pop (core->flags);
-	}
-	if (IS_MODE_JSON (mode)) {
-		pj_end (pj);
 	}
 	return true;
 }

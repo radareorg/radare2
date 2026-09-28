@@ -3,6 +3,7 @@
 #define R_LOG_ORIGIN "core.anal"
 
 #include <r_core.h>
+R_IPI int bin_trycatch_json(PJ *pj, const RVecRBinTrycatch *tcs, ut64 source);
 #include <r_vec.h>
 #include <sdb/ht_uu.h>
 
@@ -3154,47 +3155,18 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 		}
 	}
 	{
+		// embed the trycatch regions owned by this function (same json as "iwj.")
 		RBinFile *bf = r_bin_cur (core->bin);
-		const RVecRBinTrycatch *trycatch = bf? r_bin_file_get_trycatch (bf): NULL;
-		if (trycatch) {
+		const RVecRBinTrycatch *tcs = bf? r_bin_file_get_trycatch (bf): NULL;
+		if (tcs) {
 			const RBinTrycatch *tc;
-			bool first = true;
-			R_VEC_FOREACH (trycatch, tc) {
-				if (tc->source != fcn->addr) {
-					continue;
-				}
-				if (first) {
-					pj_k (pj, "trycatch");
-					pj_a (pj);
-					first = false;
-				}
-				pj_o (pj);
-				pj_kn (pj, "from", tc->from);
-				pj_kn (pj, "to", tc->to);
-				pj_kn (pj, "handler", tc->handler);
-				switch (tc->kind) {
-				case R_BIN_TRYCATCH_CLEANUP:
-					pj_ks (pj, "kind", "cleanup");
-					break;
-				case R_BIN_TRYCATCH_FILTER:
-					pj_ks (pj, "kind", "filter");
-					break;
-				case R_BIN_TRYCATCH_CATCH:
-					pj_ks (pj, "kind", "catch");
-					break;
-				default:
-					break;
-				}
-				if (tc->type) {
-					pj_ks (pj, "type", tc->type);
-				}
-				if (tc->catch_all) {
-					pj_kb (pj, "catchAll", true);
-				}
-				pj_end (pj);
+			int count = 0;
+			R_VEC_FOREACH (tcs, tc) {
+				count += (tc->source == fcn->addr);
 			}
-			if (!first) {
-				pj_end (pj);
+			if (count > 0) {
+				pj_k (pj, "trycatch");
+				bin_trycatch_json (pj, tcs, fcn->addr);
 			}
 		}
 	}
