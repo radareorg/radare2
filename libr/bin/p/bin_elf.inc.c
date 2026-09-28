@@ -1991,7 +1991,7 @@ static void lookup_symbols(RBinFile *bf, RBinInfo *ret) {
 				ret->lang = (ret->lang && !strcmp (ret->lang, "c++"))? "c++ blocks ext.": "c blocks ext.";
 			}
 			if (!ret->has_canary) {
-				if (strstr (oname, "__stack_chk_fail") || strstr (oname, "__stack_smash_handler")) {
+				if (strstr (oname, "__stack_chk") || strstr (oname, "__stack_smash_handler")) {
 					ret->has_canary = true;
 				}
 			}
