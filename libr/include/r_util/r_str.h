@@ -315,6 +315,35 @@ R_UNUSED static inline bool r_str_startswith_inline(const char *str, const char 
 	return !strncmp (str, needle, strlen (needle));
 }
 #define r_str_startswith r_str_startswith_inline
+// prefixes is a sequence of NUL-terminated strings ending with an empty string.
+static inline bool r_str_startswith_any(const char *str, const char *prefixes) {
+	if (!str || !prefixes) {
+		return false;
+	}
+	const size_t str_len = strlen (str);
+	while (*prefixes) {
+		const size_t prefix_len = strlen (prefixes);
+		if (prefix_len <= str_len && !memcmp (str, prefixes, prefix_len)) {
+			return true;
+		}
+		prefixes += prefix_len + 1;
+	}
+	return false;
+}
+static inline bool r_str_cmp_any(const char *str, const char *items) {
+	if (!str || !items) {
+		return false;
+	}
+	const size_t str_len = strlen (str);
+	while (*items) {
+		const size_t item_len = strlen (items);
+		if (item_len == str_len && !memcmp (str, items, item_len + 1)) {
+			return true;
+		}
+		items += item_len + 1;
+	}
+	return false;
+}
 R_UNUSED static const char *r_str_skip_prefix(const char *str, const char *prefix) {
 	if (r_str_startswith (str, prefix)) {
 		str += strlen (prefix);

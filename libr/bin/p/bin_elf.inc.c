@@ -2054,20 +2054,15 @@ static bool has_sanitizers(RBinFile *bf) {
 		return false;
 	}
 	// runtime entry points imported by -fsanitize= instrumented code
-	static const char *const prefixes[] = {
-		"__sanitizer_", "__asan_", "__hwasan_", "__ubsan_", "__tsan_", "__msan_", NULL
-	};
+	static const char prefixes[] = "sanitizer_\0asan_\0hwasan_\0ubsan_\0tsan_\0msan_\0";
 	RBinImport *imp;
 	R_VEC_FOREACH (imports, imp) {
 		const char *iname = r_bin_name_tostring2 (imp->name, 'o');
 		if (iname[0] != '_' || iname[1] != '_') {
 			continue;
 		}
-		const char *const *p;
-		for (p = prefixes; *p; p++) {
-			if (r_str_startswith (iname, *p)) {
-				return true;
-			}
+		if (r_str_startswith_any (iname + 2, prefixes)) {
+			return true;
 		}
 	}
 	return false;

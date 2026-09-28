@@ -38,6 +38,31 @@ bool test_r_str_wrap(void) {
 	mu_end;
 }
 
+bool test_r_str_startswith_any(void) {
+	static const char prefixes[] = "asan_\0hwasan_\0ubsan_\0";
+	mu_assert (r_str_startswith_any ("asan_report", prefixes), "first prefix");
+	mu_assert (r_str_startswith_any ("hwasan_report", prefixes), "middle prefix");
+	mu_assert (r_str_startswith_any ("ubsan_report", prefixes), "last prefix");
+	mu_assert (!r_str_startswith_any ("asan", prefixes), "short string");
+	mu_assert (!r_str_startswith_any ("msan_report", prefixes), "nonmatching prefix");
+	mu_assert (!r_str_startswith_any ("", prefixes), "empty string");
+	mu_assert (!r_str_startswith_any ("asan_report", ""), "empty prefix list");
+	mu_end;
+}
+
+bool test_r_str_cmp_any(void) {
+	static const char items[] = "asan\0hwasan\0ubsan\0";
+	mu_assert (r_str_cmp_any ("asan", items), "first item");
+	mu_assert (r_str_cmp_any ("hwasan", items), "middle item");
+	mu_assert (r_str_cmp_any ("ubsan", items), "last item");
+	mu_assert (!r_str_cmp_any ("asan_report", items), "prefix is not a full match");
+	mu_assert (!r_str_cmp_any ("asa", items), "short string");
+	mu_assert (!r_str_cmp_any ("msan", items), "nonmatching item");
+	mu_assert (!r_str_cmp_any ("", items), "empty string");
+	mu_assert (!r_str_cmp_any ("asan", ""), "empty item list");
+	mu_end;
+}
+
 bool test_r_str_md2txt_rendering(void) {
 	RMarkdownOptions options = {
 		.utf8 = true,
@@ -1008,6 +1033,8 @@ bool test_r_str_trim_args_quote_parity(void) {
 bool all_tests(void) {
 	mu_run_test (test_r_file);
 	mu_run_test (test_r_str_wrap);
+	mu_run_test (test_r_str_startswith_any);
+	mu_run_test (test_r_str_cmp_any);
 	mu_run_test (test_r_str_md2txt_rendering);
 	mu_run_test (test_r_str_newf);
 	mu_run_test (test_r_str_replace_char_once);
