@@ -376,13 +376,6 @@ typedef struct r_core_esil_t {
 #define	R_CORE_ESIL_TRAP_REVERT	0x4
 #define	R_CORE_ESIL_TRAP_REVERT_CONFIG	0x8
 
-/* Lookup table for the exception handlers described by the try.* flags, so the
- * analysis does not have to walk the whole flag table once per function. */
-typedef struct r_core_trycatch_index_t {
-	RBinFile *bf; // bin file the index was built from, NULL when never built
-	HtUP *by_source; // ut64 source address -> RVecUT64 of handler addresses
-} RCoreTrycatchIndex;
-
 struct r_core_t {
 	RBin *bin;
 	RConfig *config;
@@ -414,7 +407,6 @@ struct r_core_t {
 	RLang *lang;
 	RDebug *dbg;
 	RFlag *flags;
-	RCoreTrycatchIndex trycatch_index;
 	RSearch *search;
 	RFS *fs;
 	RFSShell *rfs;
@@ -901,7 +893,6 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd);
 R_API void r_core_sysenv_end(RCore *core, const char *cmd);
 
 R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly);
-R_API void r_core_anal_trycatch_index_reset(RCore *core);
 // XXX dupe from r_bin.h
 /* bin.c */
 #define R_CORE_BIN_ACC_STRINGS	0x001

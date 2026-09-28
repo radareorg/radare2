@@ -2396,7 +2396,6 @@ static int cmd_flag(void *data, const char *input) {
 		r_core_return_invalid_command (core, "f", *input);
 		break;
 	}
-	r_core_anal_trycatch_index_reset (core);
 	free (str);
 	return 0;
 }

@@ -101,3 +101,32 @@ EXPECT=<<EOF
                  [36mmov[37m ebx[0m,[37m [32m0[0m
 EOF
 RUN
+
+NAME=ELF shared catch handler analysis without try flags
+FILE=bins/elf/0pack
+CMDS=<<EOF
+e anal.trycatch=false
+af @ 0x4779b4
+afbq @ 0x4779b4~?0x004779d8
+af-*
+e anal.trycatch=true
+f-try.*
+af @ 0x4779b4
+afbq @ 0x4779b4~?0x004779d8
+EOF
+EXPECT=<<EOF
+0
+1
+EOF
+RUN
+
+NAME=ELF cleanup handler is not added to its function
+FILE=bins/elf/ClassCpp.out
+CMDS=<<EOF
+af @ 0x1269
+afbq @ 0x1269~?0x0000132c
+EOF
+EXPECT=<<EOF
+0
+EOF
+RUN

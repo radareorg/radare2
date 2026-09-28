@@ -676,97 +676,28 @@ static void warn_nonexec_map(RCore *core, ut64 at) {
 	}
 }
 
-static void trycatch_handlers_free(HtUPKv *kv) {
-	RVecUT64 *handlers = kv->value;
-	if (handlers) {
-		RVecUT64_free (handlers);
-	}
-}
-
-/* The try.* flags are named try.<idx>.<source>.<kind>, collect the catch and
- * filter handlers of every source address in a single pass over the flags.
- * Cleanup handlers only run while unwinding, so they are left out on purpose. */
-static bool collect_trycatch_handler(RFlagItem *flag, void *user) {
-	HtUP *by_source = user;
-	const char *p = flag->name + strlen ("try.");
-	p = strchr (p, '.');
-	if (!p) {
-		return true;
-	}
-	p++;
-	char *end = NULL;
-	ut64 source = strtoull (p, &end, 16);
-	if (!end || *end != '.') {
-		return true;
-	}
-	const char *kind = end + 1;
-	if (strcmp (kind, "catch") && strcmp (kind, "filter")) {
-		return true;
-	}
-	RVecUT64 *handlers = ht_up_find (by_source, source, NULL);
-	if (!handlers) {
-		handlers = RVecUT64_new ();
-		if (!handlers || !ht_up_insert (by_source, source, handlers)) {
-			RVecUT64_free (handlers);
-			return true;
-		}
-	}
-	ut64 *handler;
-	R_VEC_FOREACH (handlers, handler) {
-		if (*handler == flag->addr) {
-			return true;
-		}
-	}
-	RVecUT64_push_back (handlers, &flag->addr);
-	return true;
-}
-
-R_API void r_core_anal_trycatch_index_reset(RCore *core) {
-	R_RETURN_IF_FAIL (core);
-	RCoreTrycatchIndex *idx = &core->trycatch_index;
-	ht_up_free (idx->by_source);
-	idx->by_source = NULL;
-	idx->bf = NULL;
-}
-
-static HtUP *trycatch_index_get(RCore *core) {
-	RCoreTrycatchIndex *idx = &core->trycatch_index;
-	RBinFile *bf = r_bin_cur (core->bin);
-	if (idx->by_source && idx->bf == bf) {
-		return idx->by_source;
-	}
-	r_core_anal_trycatch_index_reset (core);
-	idx->by_source = ht_up_new (NULL, trycatch_handlers_free, NULL);
-	if (!idx->by_source) {
-		return NULL;
-	}
-	idx->bf = bf;
-	r_flag_foreach_prefix (core->flags, "try.", 4, collect_trycatch_handler, idx->by_source);
-	return idx->by_source;
-}
-
-/* Exception handlers are not ordinary CFG successors. Analyze their entry
- * blocks as part of the owning function without inventing conditional edges. */
+// Analyze exception handlers in their owning function without adding CFG edges.
 static void core_anal_fcn_trycatch(RCore *core, RAnalFunction *fcn) {
 	if (!core->anal->opt.trycatch) {
 		return;
 	}
-	HtUP *by_source = trycatch_index_get (core);
-	if (!by_source) {
+	RBinFile *bf = r_bin_cur (core->bin);
+	RVecRBinTrycatch *trycatch = bf? r_bin_file_get_trycatch (bf): NULL;
+	if (!trycatch) {
 		return;
 	}
-	RVecUT64 *handlers = ht_up_find (by_source, fcn->addr, NULL);
-	if (!handlers) {
-		return;
-	}
-	ut64 *handler;
-	R_VEC_FOREACH (handlers, handler) {
-		if (*handler == fcn->addr || r_anal_function_contains (fcn, *handler)) {
+	RBinTrycatch *tc;
+	R_VEC_FOREACH (trycatch, tc) {
+		if (tc->source != fcn->addr || tc->kind == R_BIN_TRYCATCH_CLEANUP) {
 			continue;
 		}
-		int ret = r_anal_function_bb (core->anal, fcn, *handler);
+		ut64 handler = tc->handler;
+		if (handler == fcn->addr || r_anal_function_contains (fcn, handler)) {
+			continue;
+		}
+		int ret = r_anal_function_bb (core->anal, fcn, handler);
 		if (ret < 0 && ret != R_ANAL_RET_END) {
-			R_LOG_DEBUG ("Cannot analyze exception handler at 0x%08"PFMT64x, *handler);
+			R_LOG_DEBUG ("Cannot analyze exception handler at 0x%08"PFMT64x, handler);
 		}
 	}
 }
