@@ -4357,11 +4357,129 @@ var uint8_t [64] var_60h @ rbp-0x60
 EOF2
 RUN
 
+NAME=a slot tracked before the dirty-byte cap is still rewound
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true -e types.bbstate=true
+CMDS=<<EOF2
+# entry stores 0x30 at rbp-8, then rep stosb runs the dirty bytes past the cap; the sibling lowers it to 0x40; the join reloads it
+wx 554889e54881ec0012000048c745f830000000488dbd00eeffffb90011000031c0f3aa85ff750948c745f840000000c3488b55f8488d7de031f6e841000000c9c3
+wx c3 @ 0x80
+af+ 0x80 memset
+afb+ 0x80 0x80 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv~var_20h
+EOF2
+EXPECT=<<EOF2
+var uint8_t [48] var_20h @ rbp-0x20
+EOF2
+RUN
+
+NAME=a slot first written past the dirty-byte cap is not rewound
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true -e types.bbstate=true
+CMDS=<<EOF2
+# rep stosb leaves 0xff9 dirty bytes, so the entry's qword store of 0x30 at rbp-8 crosses the cap and is dropped whole; the sibling lowers it to 0x40; the join reloads the sibling's value
+wx 554889e54881ec00120000488dbd00eeffffb9f10f000031c0f3aa48c745f83000000085ff750948c745f840000000c3488b55f8488d7de031f6e841000000c9c3
+wx c3 @ 0x80
+af+ 0x80 memset
+afb+ 0x80 0x80 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv~var_20h
+EOF2
+EXPECT=<<EOF2
+var uint8_t [64] var_20h @ rbp-0x20
+EOF2
+RUN
+
+NAME=a store straddling the stack map edge is restored in its mapped part
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true -e types.bbstate=true
+CMDS=<<EOF2
+# rbp+0xc is the last dword of the stack map, so the qword store is clipped; the sibling lowers it to 0x40 and the join reloads the dword
+wx 554889e54883ec7048c7450c3000000085ff750948c7450c40000000c38b550c488d7da031f6e855000000c9c3
+wx c3 @ 0x80
+af+ 0x80 memset
+afb+ 0x80 0x80 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv~var_
+EOF2
+EXPECT=<<EOF2
+var uint8_t [48] var_60h @ rbp-0x60
+EOF2
+RUN
+
+NAME=a slot first written by a sibling block is rewound to zero at the join
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true -e types.bbstate=true
+CMDS=<<EOF2
+# the entry never writes rbp-0x10; only the returning sibling stores 0x40 there
+wx 554889e54883ec70ba0001000085ff750eba4000000048c745f040000000c3488d7de031f6e856000000488d7da031f6488b55f0e847000000c9c3
+wx c3 @ 0x80
+af+ 0x80 memset
+afb+ 0x80 0x80 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv~var_
+EOF2
+EXPECT=<<EOF2
+var uint8_t [256] var_20h @ rbp-0x20
+EOF2
+RUN
+
+NAME=a restored block keeps the pointer type its own lineage stored
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e asm.os=android -e types.bbstate=true
+CMDS=<<EOF2
+# entry calls GetEnv(&env) at rbp-0x10; the returning sibling overwrites the slot with 1; the join loads env->functions->FindClass and calls it
+wx 554889e54883ec70488d75f0e86f00000085ff750948c745f001000000c3488b45f0488b00488b4030ffd0c9c3
+wx c3 @ 0x80
+af+ 0x80 JNIInvokeInterface.GetEnv
+afb+ 0x80 0x80 1
+af @ 0
+s 0
+aft
+pd 6 @ 0x1e~call
+EOF2
+EXPECT=<<EOF2
+|           0x00000029      ffd0           call rax                    ; jclass JNINativeInterface.FindClass(JNIEnv *env, const char *name)
+EOF2
+RUN
+
+NAME=a restored block drops the pointer type a sibling block stored
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e asm.os=android -e types.bbstate=true
+CMDS=<<EOF2
+# entry zeroes rbp-0x10; the returning sibling calls GetEnv(&env) with rsi=rbp-0x10; the join loads env->functions->FindClass and calls it
+wx 554889e54883ec7048c745f00000000085ff750a488d75f0e863000000c3488b45f0488b00488b4030ffd0c9c3
+wx c3 @ 0x80
+af+ 0x80 JNIInvokeInterface.GetEnv
+afb+ 0x80 0x80 1
+af @ 0
+s 0
+aft
+pd 6 @ 0x1e~call
+EOF2
+EXPECT=<<EOF2
+|           0x00000029      ffd0           call rax
+EOF2
+RUN
+
 NAME=a loop exit keeps the memory the loop wrote
 FILE=malloc://256
 ARGS=-a x86 -b 64 -e types.sizes=true -e types.bbstate=true
 CMDS=<<EOF2
-# a counter at rbp-0x8 steps to 0x40 in the loop; the exit memsets with its reload
+# linear emulation runs the body once, so the exit reloads 0x10, not 0x40
 wx 554889e54883ec3048c745f80000000048837df8407d07488345f810ebf2488b55f8488d7de031f6e813000000c9c3
 wx c3 @ 0x40
 af+ 0x40 memset
@@ -4415,6 +4533,29 @@ afv
 EOF2
 EXPECT=<<EOF2
 var int64_t s @ rbp-0x20
+EOF2
+RUN
+
+NAME=a loop header containing a call keeps the stack the body wrote at the exit
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e types.sizes=true -e types.bbstate=true
+CMDS=<<EOF2
+# entry stores 0x30 at rbp-8, the body lowers it to 0x10; the exit reloads it for memset
+wx 554889e54883ec3048c745f830000000e82b00000085c0740a48c745f810000000ebed488b55f8488d7de031f6e816000000c9c3
+wx c3 @ 0x40
+wx c3 @ 0x48
+af+ 0x40 readfd
+afb+ 0x40 0x40 1
+af+ 0x48 memset
+afb+ 0x48 0x48 1
+'td void *memset(void *s, int c, size_t n);
+af @ 0
+s 0
+aft
+afv~var_20h
+EOF2
+EXPECT=<<EOF2
+var uint8_t [16] var_20h @ rbp-0x20
 EOF2
 RUN
 
