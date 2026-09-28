@@ -175,7 +175,7 @@ ts fcn_00000000_arg0
 afv
 EOF
 EXPECT=<<EOF
-pf [8]d field_0x0
+'pf [8]d field_0x0
 arg struct fcn_00000000_arg0 * arg1 @ rdi
 EOF
 RUN

@@ -26,7 +26,7 @@ union Str {
   char str0[5];
   char str1[11];
 };
-pf 0[5]z[11]z str0 str1
+'pf 0[5]z[11]z str0 str1
 Str
  str0 : 0x00000000 = "hello"
  str1 : 0x00000000 = "hello world"
@@ -45,7 +45,7 @@ tu Str
 .tu Str
 EOF
 EXPECT=<<EOF
-pf 0[5]z? str0 (PadStr)str1
+'pf 0[5]z? str0 (PadStr)str1
  str0 : 0x00000000 = "hello"
  str1 : 
                 struct<PadStr>
@@ -66,8 +66,8 @@ EOF
 EXPECT=<<EOF
 Bar
 Foo
-pf d a
-pf zd hello world
+'pf d a
+'pf zd hello world
 EOF
 RUN
 
@@ -84,7 +84,7 @@ ts~Foo
 EOF
 EXPECT=<<EOF
 Foo
-pf d a
+'pf d a
 --
 EOF
 RUN
@@ -283,7 +283,7 @@ t-*
 t int
 EOF
 EXPECT=<<EOF
-pf d
+'pf d
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Cannot find 'int' type
@@ -530,7 +530,7 @@ dox
 dox_t
 name
 name_t
-pf [127]z[40]zi street city zip
+'pf [127]z[40]zi street city zip
 EOF
 RUN
 
@@ -618,7 +618,7 @@ ts foo
 .ts foo
 EOF
 EXPECT=<<EOF
-pf d? x (bar)moo
+'pf d? x (bar)moo
    x : 0x00000000 = 0x00000000
  moo : 
                 struct<bar>
@@ -636,7 +636,7 @@ ts foo
 .ts foo
 EOF
 EXPECT=<<EOF
-pf d[2]? x (bar)moo
+'pf d[2]? x (bar)moo
    x : 0x00000000 = 0x00000000
  moo : 
 [
@@ -990,7 +990,7 @@ pd 1
 EOF
 EXPECT=<<EOF
 Books
-pf 0[50]z[50]z[100]z title author subject
+'pf 0[50]z[50]z[100]z title author subject
 var union Books @ rbp-0x70
 |           0x000006d2      488d4590       lea rax, [Books]
 EOF
@@ -1006,7 +1006,7 @@ ts foo
 .ts foo
 EOF
 EXPECT=<<EOF
-pf d[4].pz x fp b
+'pf d[4].pz x fp b
   x : 0x00000000 = 0x00000000
  fp : 0x00000008 = (qword)0x0000000000000000
   b : 0x00000010 = "\x05hello"
@@ -1021,7 +1021,7 @@ CMDS=<<EOF
 ts pointer
 EOF
 EXPECT=<<EOF
-pf zp y obj
+'pf zp y obj
 EOF
 RUN
 
@@ -1209,9 +1209,9 @@ tk~typedef.A=,typedef.B=,typedef.C=,struct.A,struct.B,struct.C
 ts~A,B,C,D
 EOF
 EXPECT=<<EOF
-pf f num
-pf dF num num2
-pf c ch
+'pf f num
+'pf dF num num2
+'pf c ch
 ----
 struct.A=num
 struct.A.num=float,0,0
@@ -1248,8 +1248,8 @@ tk~^struct.0,struct.1,struct.2,struct.3
 ts~^0,1,2,3,A,B
 EOF
 EXPECT=<<EOF
-pf f num
-pf c ch
+'pf f num
+'pf c ch
 
 
 A
@@ -2137,14 +2137,78 @@ t foo
 tu* foo
 EOF
 EXPECT=<<EOF
-pf.foo 0dc a b
+'pf.foo 0dc a b
 'tk foo=union
 'tk union.foo=a,b
 'tk union.foo.a=int,0,0
 'tk union.foo.b=char,0,0
-pf 0dc a b
-pf.foo 0dc a b
+'pf 0dc a b
+'pf.foo 0dc a b
 EOF
+RUN
+
+NAME=Struct format exports keep command separators literal
+FILE=malloc://32
+CMDS=<<EOF
+'tk evil=struct
+'tk struct.evil="a;f injected"
+'tk struct.evil.a;f injected=int,0,0
+t evil
+ts evil
+.t evil > /dev/null
+.ts evil > /dev/null
+ts. evil > /dev/null
+.ts* evil
+pf.evil > /dev/null
+f~injected
+EOF
+EXPECT=<<EOF
+'pf d a;f injected
+'pf d a;f injected
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Union format exports keep command separators literal
+FILE=malloc://32
+CMDS=<<EOF
+'tk evil=union
+'tk union.evil="a;f injected"
+'tk union.evil.a;f injected=int,0,0
+t evil
+tu evil
+.t evil > /dev/null
+.tu evil > /dev/null
+tu. evil > /dev/null
+.tu* evil
+pf.evil > /dev/null
+f~injected
+EOF
+EXPECT=<<EOF
+'pf 0d a;f injected
+'pf 0d a;f injected
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Type format exports keep command substitutions literal
+FILE=malloc://32
+CMDS=<<EOF
+'tk evil=type
+'tk type.evil="d a`f injected`"
+t evil
+.t evil > /dev/null
+f~injected
+'tk type.evil="d a$(f injected)"
+t evil
+.t evil > /dev/null
+f~injected
+EOF
+EXPECT=<<EOF
+'pf d a`f injected`
+'pf d a$(f injected)
+EOF
+EXPECT_ERR=
 RUN
 
 NAME=td uint64_t
@@ -2312,7 +2376,7 @@ uid_t
 int
 Number=typedef
 typedef.Number=int
-pf d
+'pf d
 EOF
 RUN
 
@@ -2336,7 +2400,7 @@ EOF
 EXPECT=<<EOF
 0
 0
-pf d
+'pf d
 EOF
 RUN
 
@@ -2359,8 +2423,8 @@ ts t8
 tss t10
 EOF
 EXPECT=<<EOF
-pf d
-pf d
+'pf d
+'pf d
 4
 EOF
 RUN
@@ -2635,7 +2699,7 @@ to bins/other/visibility_test.h
 ts PadStr
 CMDS
 EXPECT=<<EXPECT
-pf [6].[11]z str1
+'pf [6].[11]z str1
 EXPECT
 RUN
 
@@ -2701,7 +2765,7 @@ to bins/other/packed_test.h
 ts packed
 CMDS
 EXPECT=<<EXPECT
-pf cdc a b c
+'pf cdc a b c
 EXPECT
 RUN
 
@@ -2712,7 +2776,7 @@ to bins/other/packed_test.h
 ts normal
 CMDS
 EXPECT=<<EXPECT
-pf c[3].dc a b c
+'pf c[3].dc a b c
 EXPECT
 RUN
 
@@ -3076,7 +3140,7 @@ ts outer
 EOF
 EXPECT=<<EOF
 12
-pf ?[4].d (pair<int, char>)p x
+'pf ?[4].d (pair<int, char>)p x
 EOF
 RUN
 

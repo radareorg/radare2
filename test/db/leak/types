@@ -23,7 +23,7 @@ EXPECT=<<EOF
 member ();
 missing ();
 0
-pf dd first second
+'pf dd first second
 EOF
 REGEXP_ERR=ERROR SUMMARY: 0 errors
 RUN
