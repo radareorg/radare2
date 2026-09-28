@@ -1574,6 +1574,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# DT_RELR retagged so only the header reaches .relr.dyn, then sh_size 0x1000
+NAME=ELF: an oversized relr header stops at the next section
+FILE=malloc://0x81000
+CMDS=<<EOF
+wff bins/elf/ls-toybox
+wx 22 @ 0x7b150
+oba 0
+ir~?
+wx 0010 @ 0x80a08
+oba 0
+ir~?
+EOF
+EXPECT=<<EOF
+2124
+2124
+EOF
+RUN
+
 NAME=ELF: DT_RELSZ and DT_PLTRELSZ past the loaded bytes fall back to the headers
 FILE=malloc://0x4000
 CMDS=<<EOF
@@ -1606,6 +1624,24 @@ EXPECT=<<EOF
 --
 0x0000200c 0x0000100c SET_32 7     printf
 --
+0x0000200c 0x0000100c SET_32 7     printf
+EOF
+RUN
+
+# DT_JMPREL zeroed so only the header reaches .rel.plt, sh_size 8 -> 0x8000
+NAME=ELF: a rel.plt header larger than the file still stops at the next section
+FILE=malloc://0x4000
+CMDS=<<EOF
+wff bins/elf/libtest_32.so
+wx 00000000 @ 0xf78
+wx 00ff0000 @ 0xf98
+wx 00800000 @ 0x17b4
+oba 0
+ir~?
+ir~printf
+EOF
+EXPECT=<<EOF
+11
 0x0000200c 0x0000100c SET_32 7     printf
 EOF
 RUN
@@ -1653,6 +1689,25 @@ EXPECT=<<EOF
 14
 --
 7
+EOF
+RUN
+
+NAME=ELF: a DT_RELAENT below the entry size reads whole entries
+FILE=malloc://0x4000
+CMDS=<<EOF
+wff bins/elf/simple_malloc_x86_64
+wx 08 @ 0xf28
+oba 0
+ir~?
+wx 00 @ 0xf28
+oba 0
+ir~?
+EOF
+EXPECT=<<EOF
+14
+14
+EOF
+EXPECT_ERR=<<EOF
 EOF
 RUN
 

@@ -126,6 +126,7 @@ typedef struct Elf_(dynamic_info) {
 	Elf_(Xword) relsz_read;
 	Elf_(Xword) relrsz_read;
 	Elf_(Xword) pltrelsz_read;
+	Elf_(Xword) androidrelsz_read;
 	Elf_(Xword) dt_rpath;
 	Elf_(Xword) dt_runpath;
 	RVecElfOff dt_needed;
