@@ -40,14 +40,30 @@ static RCoreHelpMessage help_msg_is = {
 };
 
 static RCoreHelpMessage help_msg_iw = {
-	"Usage: iw", "[?jq*+-]", "Manage try/catch/finally blocks in the selected binary",
+	"Usage: iw", "[?jq*cfF+-]", "Manage try/catch/finally blocks in the selected binary",
 	"iw", "", "list exception regions",
 	"iwj", "", "list exception regions in JSON",
 	"iwq", "", "list try start, exclusive end and handler addresses",
 	"iw*", "", "print exception region flags as r2 commands",
+	"iwc", " from to handler [type [typefilter]]", "add catch at current source (type * for catch-all)",
+	"iwf", " from to handler", "add finally/cleanup at current source",
+	"iwF", " from to handler filter [type [typefilter]]", "add filter at current source",
 	"iw+", " source from to handler [attr ...]", "append an exception region (iw+? for attributes)",
 	"iw-", " index", "delete the region with the given iw index (last region moves to this index)",
 	"iw-*", "", "delete all exception regions in the selected binary",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_iwadd = {
+	"Usage: iw", "[cfF] from to handler ... [@ source]", "Add exception regions at the current source address",
+	"iwc", " from to handler [type [typefilter]]", "add a catch handler",
+	"iwf", " from to handler", "add a finally/cleanup handler",
+	"iwF", " from to handler filter [type [typefilter]]", "add a filter handler",
+	"", "from to", "try start and exclusive end; addresses accept expressions",
+	"", "type", "quoted type name, * for catch-all, or an empty string for no type",
+	"", "typefilter", "signed type filter value (default: 0)",
+	"", "@ source", "owning function address (default: current seek)",
+	"", "iw+?", "full form with explicit source and optional attributes",
 	NULL
 };
 
@@ -264,7 +280,7 @@ static RCoreHelpMessage help_msg_i = {
 	"it", "", "file hashes", // hashes in it? wtf, thats a pretty bad subcommand
 	"iT", "", "file signature", // iT for signatures omg thats worst
 	"iv", "", "display file version info", // wtf why not iv
-	"iw", "[?jq*+-]", "list or edit try/catch/finally blocks",
+	"iw", "[?jq*cfF+-]", "list or edit try/catch/finally blocks",
 	"iz", "[?]", "strings in data sections (in JSON/Base64)",
 	NULL
 };
@@ -3585,10 +3601,13 @@ static bool cmd_iw_num(RCore *core, const char *arg, ut64 *value) {
 }
 
 static bool cmd_iw_edit(RCore *core, const char *input) {
-	const bool add = *input == '+';
+	const bool add = *input != '-';
+	const bool compact = add && *input != '+';
 	const char *arg = r_str_trim_head_ro (input + 1);
 	if (!*arg || *arg == '?') {
-		if (add) {
+		if (compact) {
+			r_cons_cmd_help (core->cons, help_msg_iwadd);
+		} else if (add) {
 			r_cons_cmd_help (core->cons, help_msg_iwplus);
 		} else {
 			r_cons_cmd_help_match (core->cons, help_msg_iw, "iw-", 0, true);
@@ -3596,7 +3615,7 @@ static bool cmd_iw_edit(RCore *core, const char *input) {
 		return true;
 	}
 	RBinFile *bf = r_bin_cur (core->bin);
-	if (!bf || !bf->bo || !bf->bo->plugin) {
+	if (!bf || !bf->bo) {
 		R_LOG_ERROR ("No current binary");
 		return false;
 	}
@@ -3648,14 +3667,21 @@ static bool cmd_iw_edit(RCore *core, const char *input) {
 		}
 		r_flag_space_pop (core->flags);
 	} else {
-		if (argc < 4) {
+		const int first = compact? 1: 0;
+		const int required = compact? (*input == 'F'? 4: 3): 4;
+		if (compact && (argc < required || argc > required + (*input == 'f'? 0: 2))) {
+			R_LOG_ERROR ("Invalid arguments for iw%c (see iw%c?)", *input, *input);
+			goto beach;
+		}
+		if (argc < required) {
 			R_LOG_ERROR ("Usage: iw+ source from to handler [attr ...]");
 			goto beach;
 		}
+		region.source = core->addr;
 		ut64 *addresses[] = { &region.source, &region.from, &region.to, &region.handler };
 		int i;
-		for (i = 0; i < 4; i++) {
-			if (!cmd_iw_num (core, argv[i], addresses[i])) {
+		for (i = first; i < 4; i++) {
+			if (!cmd_iw_num (core, argv[i - first], addresses[i])) {
 				goto beach;
 			}
 		}
@@ -3663,41 +3689,70 @@ static bool cmd_iw_edit(RCore *core, const char *input) {
 			R_LOG_ERROR ("Exception region start must precede its exclusive end");
 			goto beach;
 		}
-		for (i = 4; i < argc; i++) {
-			const char *attr = argv[i];
-			if (r_str_startswith (attr, "kind=")) {
-				const char *kind = attr + 5;
-				if (!strcmp (kind, "catch")) {
-					region.kind = R_BIN_TRYCATCH_CATCH;
-				} else if (!strcmp (kind, "cleanup") || !strcmp (kind, "finally")) {
-					region.kind = R_BIN_TRYCATCH_CLEANUP;
-				} else if (!strcmp (kind, "filter")) {
-					region.kind = R_BIN_TRYCATCH_FILTER;
-				} else {
-					R_LOG_ERROR ("Invalid exception region kind: %s", kind);
+		if (compact) {
+			if (*input == 'f') {
+				region.kind = R_BIN_TRYCATCH_CLEANUP;
+			} else if (*input == 'F') {
+				region.kind = R_BIN_TRYCATCH_FILTER;
+				if (!cmd_iw_num (core, argv[3], &region.filter)) {
 					goto beach;
 				}
-			} else if (r_str_startswith (attr, "filter=")) {
-				if (!cmd_iw_num (core, attr + 7, &region.filter)) {
-					goto beach;
+			}
+			if (argc > required) {
+				const char *type = argv[required];
+				if (!strcmp (type, "*")) {
+					region.catch_all = true;
+				} else if (*type) {
+					region.type = strdup (type);
+					if (!region.type) {
+						goto beach;
+					}
 				}
-			} else if (r_str_startswith (attr, "typefilter=")) {
+			}
+			if (argc > required + 1) {
 				ut64 value;
-				if (!cmd_iw_num (core, attr + 11, &value)) {
+				if (!cmd_iw_num (core, argv[required + 1], &value)) {
 					goto beach;
 				}
 				region.type_filter = (st64)value;
-			} else if (r_str_startswith (attr, "type=")) {
-				free (region.type);
-				region.type = strdup (attr + 5);
-				if (!region.type) {
+			}
+		} else {
+			for (i = 4; i < argc; i++) {
+				const char *attr = argv[i];
+				if (r_str_startswith (attr, "kind=")) {
+					const char *kind = attr + 5;
+					if (!strcmp (kind, "catch")) {
+						region.kind = R_BIN_TRYCATCH_CATCH;
+					} else if (!strcmp (kind, "cleanup") || !strcmp (kind, "finally")) {
+						region.kind = R_BIN_TRYCATCH_CLEANUP;
+					} else if (!strcmp (kind, "filter")) {
+						region.kind = R_BIN_TRYCATCH_FILTER;
+					} else {
+						R_LOG_ERROR ("Invalid exception region kind: %s", kind);
+						goto beach;
+					}
+				} else if (r_str_startswith (attr, "filter=")) {
+					if (!cmd_iw_num (core, attr + 7, &region.filter)) {
+						goto beach;
+					}
+				} else if (r_str_startswith (attr, "typefilter=")) {
+					ut64 value;
+					if (!cmd_iw_num (core, attr + 11, &value)) {
+						goto beach;
+					}
+					region.type_filter = (st64)value;
+				} else if (r_str_startswith (attr, "type=")) {
+					free (region.type);
+					region.type = strdup (attr + 5);
+					if (!region.type) {
+						goto beach;
+					}
+				} else if (!strcmp (attr, "catchall")) {
+					region.catch_all = true;
+				} else {
+					R_LOG_ERROR ("Invalid exception region attribute: %s", attr);
 					goto beach;
 				}
-			} else if (!strcmp (attr, "catchall")) {
-				region.catch_all = true;
-			} else {
-				R_LOG_ERROR ("Invalid exception region attribute: %s", attr);
-				goto beach;
 			}
 		}
 		size_t index = RVecRBinTrycatch_length (regions);
@@ -3937,7 +3992,7 @@ static int cmd_info(void *data, const char *input) {
 	break;
 	case 'w': // "iw"
 	{
-		if (input[1] == '+' || input[1] == '-') {
+		if (input[1] == '+' || input[1] == '-' || input[1] == 'c' || input[1] == 'f' || input[1] == 'F') {
 			if (!cmd_iw_edit (core, input + 1)) {
 				r_core_return_value (core, R_CMD_RC_FAILURE);
 			}
