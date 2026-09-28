@@ -395,17 +395,22 @@ static ut32 count_omf_record_type(r_bin_omf_obj *obj, ut8 type) {
 	return ct;
 }
 
-static ut32 count_omf_multi_record_type(r_bin_omf_obj *obj, ut8 type) {
+static bool count_omf_multi_record_type(r_bin_omf_obj *obj, ut8 type, ut32 *count) {
 	OMF_record_handler *tmp = obj->records;
 	ut32 ct = 0;
 	while (tmp) {
 		OMF_record *rec = (OMF_record *)tmp;
 		if (rec->type == type) {
-			ct += ((OMF_multi_datas *)rec->content)->nb_elem;
+			ut32 n = ((OMF_multi_datas *)rec->content)->nb_elem;
+			if (n > ST32_MAX - ct) {
+				return false;
+			}
+			ct += n;
 		}
 		tmp = tmp->next;
 	}
-	return ct;
+	*count = ct;
+	return true;
 }
 
 static OMF_record_handler *get_next_omf_record_type(OMF_record_handler *tmp, ut8 type) {
@@ -501,7 +506,9 @@ static bool get_omf_data_info(r_bin_omf_obj *obj) {
 }
 
 static bool get_omf_infos(r_bin_omf_obj *obj) {
-	obj->nb_name = count_omf_multi_record_type (obj, OMF_LNAMES);
+	if (!count_omf_multi_record_type (obj, OMF_LNAMES, &obj->nb_name)) {
+		return false;
+	}
 	if (obj->nb_name > 0) {
 		if (!(obj->names = R_NEWS0 (char *, obj->nb_name))) {
 			return false;
@@ -518,7 +525,9 @@ static bool get_omf_infos(r_bin_omf_obj *obj) {
 		get_omf_section_info (obj);
 	}
 	get_omf_data_info (obj);
-	obj->nb_symbol = count_omf_multi_record_type (obj, OMF_PUBDEF);
+	if (!count_omf_multi_record_type (obj, OMF_PUBDEF, &obj->nb_symbol)) {
+		return false;
+	}
 	if (obj->nb_symbol > 0) {
 		if (!(obj->symbols = R_NEWS0 (OMF_symbol *, obj->nb_symbol))) {
 			return false;
