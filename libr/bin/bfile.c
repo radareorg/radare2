@@ -1461,14 +1461,6 @@ R_API ut64 r_bin_file_get_vaddr(RBinFile *bf, ut64 paddr, ut64 vaddr) {
 	return paddr;
 }
 
-R_API R_UNOWNED RVecRBinTrycatch *r_bin_file_get_trycatch(RBinFile * R_NONNULL bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->plugin, NULL);
-	if (bf->bo->plugin->trycatch) {
-		return bf->bo->plugin->trycatch (bf);
-	}
-	return NULL;
-}
-
 R_API RVecRBinSymbol *r_bin_file_get_symbols_vec(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf, NULL);
 	return bf->bo? &bf->bo->symbols_vec: NULL;

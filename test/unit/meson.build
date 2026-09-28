@@ -19,6 +19,7 @@ if get_option('enable_tests')
     'big',
     'bin',
     'bin_demangle',
+    'bin_trycatch',
     'bitmap',
     'bitset',
     'buf',

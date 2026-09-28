@@ -6877,17 +6877,17 @@ static void ds_trycatch_init(RDisasmState *ds) {
 		return;
 	}
 	RBinFile *bf = r_bin_cur (ds->core->bin);
-	RVecRBinTrycatch *regions = bf? r_bin_file_get_trycatch (bf): NULL;
+	const RVecRBinTrycatch *regions = bf? r_bin_file_get_trycatch (bf): NULL;
 	if (!regions) {
 		return;
 	}
 	ds->trycatches = r_list_new ();
 	ut64 start = r_core_pava (ds->core, ds->addr);
-	RBinTrycatch *tc;
+	const RBinTrycatch *tc;
 	R_VEC_FOREACH (regions, tc) {
 		if (tc->from < tc->to && tc->to > start
 				&& (tc->from <= start || tc->from - start < ds->len)) {
-			r_list_append (ds->trycatches, tc);
+			r_list_append (ds->trycatches, (void *)tc);
 		}
 	}
 }
@@ -6895,7 +6895,7 @@ static void ds_trycatch_init(RDisasmState *ds) {
 static void ds_print_trycatch(RDisasmState *ds) {
 	RCons *cons = ds->core->cons;
 	RListIter *iter;
-	RBinTrycatch *tc;
+	const RBinTrycatch *tc;
 	r_list_foreach (ds->trycatches, iter, tc) {
 		bool inside = ds->vat >= tc->from && ds->vat < tc->to;
 		ds->in_try |= inside;

@@ -11,6 +11,7 @@ r_bin_sources = [
   'bfilter.c',
   'bfile.c',
   'bobj.c',
+  'trycatch.c',
 # plugins
   'p/bin_io.c',
   'p/bin_null.c',

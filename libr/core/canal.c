@@ -676,58 +676,28 @@ static void warn_nonexec_map(RCore *core, ut64 at) {
 	}
 }
 
-typedef struct {
-	const char *suffix;
-	RVecUT64 handlers;
-} TrycatchHandlerCollector;
-
-static bool collect_trycatch_handler(RFlagItem *flag, void *user) {
-	TrycatchHandlerCollector *ctx = user;
-	if (!r_str_endswith (flag->name, ctx->suffix)) {
+// Analyze exception handlers in their owning function without adding CFG edges.
+static bool anal_trycatch(const RBinTrycatch *tc, void *user) {
+	RAnalFunction *fcn = user;
+	ut64 handler = tc->handler;
+	if (tc->kind == R_BIN_TRYCATCH_CLEANUP || handler == fcn->addr || r_anal_function_contains (fcn, handler)) {
 		return true;
 	}
-	ut64 *handler;
-	R_VEC_FOREACH (&ctx->handlers, handler) {
-		if (*handler == flag->addr) {
-			return true;
-		}
+	int ret = r_anal_function_bb (fcn->anal, fcn, handler);
+	if (ret < 0 && ret != R_ANAL_RET_END) {
+		R_LOG_DEBUG ("Cannot analyze exception handler at 0x%08"PFMT64x, handler);
 	}
-	RVecUT64_push_back (&ctx->handlers, &flag->addr);
 	return true;
 }
 
-/* Exception handlers are not ordinary CFG successors. Analyze their entry
- * blocks as part of the owning function without inventing conditional edges. */
 static void core_anal_fcn_trycatch(RCore *core, RAnalFunction *fcn) {
 	if (!core->anal->opt.trycatch) {
 		return;
 	}
-	// catch and filter handlers are entrypoints of the owning function, the
-	// cleanup ones only run while unwinding so they are left out on purpose
-	const char *kinds[] = { "catch", "filter" };
-	TrycatchHandlerCollector ctx = { 0 };
-	RVecUT64_init (&ctx.handlers);
-	size_t i;
-	for (i = 0; i < R_ARRAY_SIZE (kinds); i++) {
-		char *suffix = r_str_newf (".%"PFMT64x".%s", fcn->addr, kinds[i]);
-		if (!suffix) {
-			break;
-		}
-		ctx.suffix = suffix;
-		r_flag_foreach_prefix (core->flags, "try.", 4, collect_trycatch_handler, &ctx);
-		free (suffix);
+	RBinFile *bf = r_bin_cur (core->bin);
+	if (bf) {
+		r_bin_trycatch_foreach (bf, fcn->addr, anal_trycatch, fcn);
 	}
-	ut64 *handler;
-	R_VEC_FOREACH (&ctx.handlers, handler) {
-		if (*handler == fcn->addr || r_anal_function_contains (fcn, *handler)) {
-			continue;
-		}
-		int ret = r_anal_function_bb (core->anal, fcn, *handler);
-		if (ret < 0 && ret != R_ANAL_RET_END) {
-			R_LOG_DEBUG ("Cannot analyze exception handler at 0x%08"PFMT64x, *handler);
-		}
-	}
-	RVecUT64_fini (&ctx.handlers);
 }
 
 static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {

@@ -4026,15 +4026,29 @@ static const char *trycatch_kind_name(RBinTrycatchKind kind) {
 	}
 }
 
+R_IPI void bin_trycatch_flag(RCore *core, const RBinTrycatch *tc, size_t index, bool set) {
+	const char *suffixes[] = { "from", "to", trycatch_kind_name (tc->kind) };
+	const ut64 addresses[] = { tc->from, tc->to, tc->handler };
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (suffixes); i++) {
+		r_strf_var (name, 128, "try.%"PFMT64u".%"PFMT64x".%s", (ut64)index, tc->source, suffixes[i]);
+		if (set) {
+			r_flag_set (core->flags, name, addresses[i], 1);
+		} else {
+			r_flag_unset_name (core->flags, name);
+		}
+	}
+}
+
 static bool bin_trycatch(RCore *core, PJ *pj, int mode) {
 	RBinFile *bf = r_bin_cur (core->bin);
-	RBinTrycatch *tc;
-	RVecRBinTrycatch *trycatch = bf? r_bin_file_get_trycatch (bf): NULL;
+	const RBinTrycatch *tc;
+	const RVecRBinTrycatch *trycatch = bf? r_bin_file_get_trycatch (bf): NULL;
 	RVecRBinTrycatch empty = { 0 };
 	if (!trycatch) {
 		trycatch = &empty;
 	}
-	int idx = 0;
+	size_t idx = 0;
 	if (IS_MODE_SET (mode)) {
 		r_flag_space_push (core->flags, R_FLAGS_FS_TRYCATCH);
 	}
@@ -4045,7 +4059,7 @@ static bool bin_trycatch(RCore *core, PJ *pj, int mode) {
 		const char *kind = trycatch_kind_name (tc->kind);
 		if (IS_MODE_JSON (mode)) {
 			pj_o (pj);
-			pj_ki (pj, "index", idx);
+			pj_kn (pj, "index", idx);
 			pj_kn (pj, "source", tc->source);
 			pj_kn (pj, "from", tc->from);
 			pj_kn (pj, "to", tc->to);
@@ -4065,23 +4079,15 @@ static bool bin_trycatch(RCore *core, PJ *pj, int mode) {
 			}
 			pj_end (pj);
 		} else if (IS_MODE_SET (mode)) {
-			char *name = r_str_newf ("try.%d.%"PFMT64x".from", idx, tc->source);
-			r_flag_set (core->flags, name, tc->from, 1);
-			free (name);
-			name = r_str_newf ("try.%d.%"PFMT64x".to", idx, tc->source);
-			r_flag_set (core->flags, name, tc->to, 1);
-			free (name);
-			name = r_str_newf ("try.%d.%"PFMT64x".%s", idx, tc->source, kind);
-			r_flag_set (core->flags, name, tc->handler, 1);
-			free (name);
+			bin_trycatch_flag (core, tc, idx, true);
 		} else if (IS_MODE_RAD (mode)) {
-			r_cons_printf (core->cons, "f try.%d.%" PFMT64x ".from=0x%08" PFMT64x "\n", idx, tc->source, tc->from);
-			r_cons_printf (core->cons, "f try.%d.%" PFMT64x ".to=0x%08" PFMT64x "\n", idx, tc->source, tc->to);
-			r_cons_printf (core->cons, "f try.%d.%" PFMT64x ".%s=0x%08" PFMT64x "\n", idx, tc->source, kind, tc->handler);
+			r_cons_printf (core->cons, "f try.%"PFMT64u".%"PFMT64x".from=0x%08"PFMT64x"\n", (ut64)idx, tc->source, tc->from);
+			r_cons_printf (core->cons, "f try.%"PFMT64u".%"PFMT64x".to=0x%08"PFMT64x"\n", (ut64)idx, tc->source, tc->to);
+			r_cons_printf (core->cons, "f try.%"PFMT64u".%"PFMT64x".%s=0x%08"PFMT64x"\n", (ut64)idx, tc->source, kind, tc->handler);
 		} else if (IS_MODE_SIMPLE (mode) || IS_MODE_SIMPLEST (mode)) {
 			r_cons_printf (core->cons, "0x%08" PFMT64x " 0x%08" PFMT64x " 0x%08" PFMT64x "\n", tc->from, tc->to, tc->handler);
 		} else {
-			r_cons_printf (core->cons, "%d 0x%08" PFMT64x "-0x%08" PFMT64x " %s", idx, tc->from, tc->to, kind);
+			r_cons_printf (core->cons, "%"PFMT64u" 0x%08"PFMT64x"-0x%08"PFMT64x" %s", (ut64)idx, tc->from, tc->to, kind);
 			if (tc->type) {
 				r_cons_printf (core->cons, " (%s)", tc->type);
 			} else if (tc->catch_all) {

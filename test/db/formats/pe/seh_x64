@@ -64,3 +64,23 @@ EXPECT=<<EOF
             ; try 0x140001084-0x140001094 filter -> 0x140001094
 EOF
 RUN
+
+NAME=PE catch and filter handlers use metadata and owning source
+FILE=bins/pe/seh_x64.exe
+CMDS=<<EOF
+e anal.trycatch=false
+af @ 0x140001010
+afbq @ 0x140001010~?0x140001066,0x140001076,0x140001094
+af-*
+e anal.trycatch=true
+f try.2.140001010.filter=0x140001d30
+af @ 0x140001010
+afbq @ 0x140001010~?0x140001066,0x140001076,0x140001094
+afbq @ 0x140001010~?0x140001d30,0x14000145a
+EOF
+EXPECT=<<EOF
+0
+3
+0
+EOF
+RUN

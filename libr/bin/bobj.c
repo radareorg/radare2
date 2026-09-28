@@ -260,6 +260,7 @@ static void object_delete_items(RBinObject *o) {
 	RVecRBinReloc_free (o->relocs);
 	RVecRBinString_fini (&o->strings);
 	ht_up_free (o->strings_db);
+	r_bin_trycatch_free (o->trycatch);
 
 	RVecRBinImport_fini (&o->imports_vec);
 	RVecRBinSymbol_fini (&o->symbols_vec);

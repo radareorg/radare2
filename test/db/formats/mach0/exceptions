@@ -30,3 +30,17 @@ EXPECT=<<EOF
             0x100002a1c      47000094       bl sym.___clang_call_terminate
 EOF
 RUN
+
+NAME=Mach-O catch analysis excludes cleanup without try flags
+FILE=bins/mach0/ClassCpp.out
+CMDS=<<EOF
+f-try.*
+af @ 0x10000292c
+afbq @ 0x10000292c~?0x100002a1c
+afbq @ 0x10000292c~?0x1000029f8
+EOF
+EXPECT=<<EOF
+1
+0
+EOF
+RUN

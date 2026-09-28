@@ -4384,3 +4384,19 @@ EXPECT=<<EOF
 0x00000105 0x0000010c 00:0000 7 s 0x00000120
 EOF
 RUN
+
+NAME=trycatch analysis requires binary metadata
+FILE=malloc://32
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx c3 @ 0
+wx c3 @ 0x10
+f owner=0
+f try.0.0.catch=0x10
+af @ 0
+afbq @ 0
+EOF
+EXPECT=<<EOF
+0x00000000
+EOF
+RUN
