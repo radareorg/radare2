@@ -40,8 +40,9 @@ static RCoreHelpMessage help_msg_is = {
 };
 
 static RCoreHelpMessage help_msg_iw = {
-	"Usage: iw", "[?jq*cfF+-]", "Manage try/catch/finally blocks in the selected binary",
+	"Usage: iw", "[?jq*.cfF+-]", "Manage try/catch/finally blocks in the selected binary",
 	"iw", "", "list exception regions",
+	"iw.", "", "list exception regions for the current function",
 	"iwj", "", "list exception regions in JSON",
 	"iwq", "", "list try start, exclusive end and handler addresses",
 	"iw*", "", "print exception region flags as r2 commands",
@@ -4004,7 +4005,15 @@ static int cmd_info(void *data, const char *input) {
 		RBinFile *cur = core->bin->cur;
 		r_list_foreach (objs, iter, bf) {
 			core->bin->cur = bf;
-			RBININFO ("trycatch", R_CORE_BIN_ACC_TRYCATCH, NULL, 0);
+			if (input[1] == '.') {
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
+				if (fcn) {
+					RCoreBinFilter filter = { .addr = fcn->addr };
+					r_core_bin_info (core, R_CORE_BIN_ACC_TRYCATCH, NULL, mode, va, &filter, NULL);
+				}
+			} else {
+				RBININFO ("trycatch", R_CORE_BIN_ACC_TRYCATCH, NULL, 0);
+			}
 		}
 		core->bin->cur = cur;
 		r_list_free (objs);

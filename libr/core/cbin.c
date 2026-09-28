@@ -4040,7 +4040,7 @@ R_IPI void bin_trycatch_flag(RCore *core, const RBinTrycatch *tc, size_t index, 
 	}
 }
 
-static bool bin_trycatch(RCore *core, PJ *pj, int mode) {
+static bool bin_trycatch(RCore *core, PJ *pj, int mode, ut64 source) {
 	RBinFile *bf = r_bin_cur (core->bin);
 	const RBinTrycatch *tc;
 	const RVecRBinTrycatch *trycatch = bf? r_bin_file_get_trycatch (bf): NULL;
@@ -4056,6 +4056,9 @@ static bool bin_trycatch(RCore *core, PJ *pj, int mode) {
 		pj_a (pj);
 	}
 	R_VEC_FOREACH (trycatch, tc) {
+		if (source != UT64_MAX && tc->source != source) {
+			continue;
+		}
 		const char *kind = trycatch_kind_name (tc->kind);
 		if (IS_MODE_JSON (mode)) {
 			pj_o (pj);
@@ -5763,7 +5766,7 @@ R_API bool r_core_bin_info(RCore *core, ut64 action, PJ *pj, int mode, int va, R
 		ret &= bin_classes (core, pj, mode);
 	}
 	if ((action & R_CORE_BIN_ACC_TRYCATCH)) {
-		ret &= bin_trycatch (core, pj, mode);
+		ret &= bin_trycatch (core, pj, mode, at);
 	}
 	if ((action & R_CORE_BIN_ACC_SIZE)) {
 		ret &= bin_size (core, pj, mode);
