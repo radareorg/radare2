@@ -4,6 +4,7 @@
 #include <r_cons.h>
 #include <r_lib.h>
 #include <r_bin.h>
+#include "../i/private.h"
 
 // R2R db/formats/mangling/swift
 // R2R db/tools/rabin2
@@ -1500,6 +1501,159 @@ static char *swift_prefix_word(const char *prefix, int idx) {
 		p += n;
 	}
 	return NULL;
+}
+
+static const char *swift_literal(const char *s, const char *end) {
+	if (!isdigit ((ut8)*s) || *s == '0') {
+		return NULL;
+	}
+	size_t n = 0;
+	for (; isdigit ((ut8)*s); s++) {
+		n = (n * 10) + (*s - '0');
+		if (n > (size_t)(end - s)) {
+			return NULL;
+		}
+	}
+	return (n <= (size_t)(end - s))? s + n: NULL;
+}
+
+static const char *swift_ident(const char *s, const char *end) {
+	if (*s != '0') {
+		return swift_literal (s, end);
+	}
+	for (s++; s && (islower ((ut8)*s) || isdigit ((ut8)*s));) {
+		s = islower ((ut8)*s)? s + 1: swift_literal (s, end);
+	}
+	if (!s || !isupper ((ut8)*s)) {
+		return NULL;
+	}
+	s++;
+	if (*s == '0') {
+		return s + 1;
+	}
+	return isdigit ((ut8)*s)? swift_literal (s, end): s;
+}
+
+// kind of the innermost nominal type (C, V, O, P) the declaration belongs to
+static char swift_context_kind(const char *p, const char *end) {
+	char kind = 0;
+	if (*p == 'S' && isalpha ((ut8)p[1]) && !strchr ("oCc", p[1])) {
+		// stdlib protocols, else a struct or Optional
+		kind = strchr ("BEeFGHjKkLlMmQTtUXxYyZz", p[1])? 'P': 'V';
+		p = swift_ident (p + 2, end);
+		p = (p && *p == 'E')? p + 1: NULL;
+	} else {
+		p = (r_str_startswith (p, "So") || r_str_startswith (p, "SC"))? p + 2: swift_ident (p, end);
+	}
+	while (p) {
+		const char *q = swift_ident (p, end);
+		const char *d = (q && isdigit ((ut8)*q))? swift_ident (q, end): NULL;
+		if (d && r_str_startswith (d, "LL")) {
+			q = d + 2;
+		}
+		if (!q || !*q || !strchr ("CVOP", *q)) {
+			break;
+		}
+		kind = *q++;
+		const char *e = q;
+		if (*e == 'A') {
+			for (e++; islower ((ut8)*e); e++) {
+			}
+			e = isupper ((ut8)*e)? e + 1: NULL;
+		} else {
+			e = swift_ident (e, end);
+		}
+		p = (e && *e == 'E')? e + 1: q;
+	}
+	return kind;
+}
+
+// K is a closure's too; skip identifiers so their text is never read as K
+static const char *swift_effects(const char *s, const char *lim, bool *async) {
+	const char *k = NULL;
+	while (s && s < lim) {
+		const char *t = s;
+		while (isdigit ((ut8)*t)) {
+			t++;
+		}
+		if (t > s) {
+			const char *id = swift_ident (s, lim);
+			s = (*t == '_' && !(id && r_str_startswith (id, "LL")))? t + 1: id;
+		} else if (*s == 'A') {
+			for (s++; islower ((ut8)*s); s++) {
+			}
+			s += isupper ((ut8)*s) != 0;
+		} else if (*s == 'Y' && (s[1] == 'a' || s[1] == 'K')) {
+			*async |= s[1] == 'a';
+			k = (s[1] == 'K')? s + 1: k;
+			s += 2;
+		} else if (strchr ("SXY", *s) && s[1]) {
+			s += 2;
+		} else {
+			if (*s == 'K' && s[1] != 'X') {
+				k = s;
+			} else if (*s == 'c' && k && s != k + 1) {
+				k = NULL;
+			}
+			s++;
+		}
+	}
+	return s? k: NULL;
+}
+
+// which of the swiftself and swifterror registers a linkage name says are live
+R_API int r_bin_demangle_swift_roles(const char *name) {
+	R_RETURN_VAL_IF_FAIL (name, 0);
+	// func.<addr> and friends are synthesised, not linkage names
+	if (r_bin_name_is_unnamed (name)) {
+		return R_BIN_SWIFT_ROLE_ANY;
+	}
+	while (*name == '_') {
+		name++;
+	}
+	if (*name == 'T') {
+		// the swift 4 mangling is not parsed here
+		return R_BIN_SWIFT_ROLE_ANY;
+	}
+	if (!r_str_startswith (name, "$s") && !r_str_startswith (name, "$S")) {
+		return 0;
+	}
+	const char *s = name + 2;
+	size_t n = strlen (s);
+	const bool witness = r_str_endswith (s, "TA") || r_str_endswith (s, "TW") || r_str_endswith (s, "Tj");
+	n -= witness? 2: 0;
+	const bool is_static = n > 0 && s[n - 1] == 'Z';
+	n -= is_static;
+	if (n < 3) {
+		return R_BIN_SWIFT_ROLE_ANY;
+	}
+	const char *end = s + n;
+	const char *lim = end;
+	bool init = false;
+	if (end[-1] == 'F' && end[-2] != 'M') {
+		lim = end - 1;
+	} else if (end[-2] == 'f' && strchr ("Cc", end[-1]) && strchr ("cu", end[-3])) {
+		lim = end - 2;
+		init = true;
+	} else if (!(strchr ("vi", end[-2]) && strchr ("gsMrWw", end[-1]))
+			&& !(end[-2] == 'f' && strchr ("DdEe", end[-1]))) {
+		// closures, specializations, thunks, resume partials: usage decides
+		return R_BIN_SWIFT_ROLE_ANY;
+	}
+	bool async = false;
+	const char *k = swift_effects (s, lim, &async);
+	const char kind = swift_context_kind (s, end);
+	int roles = 0;
+	// an indirect struct passes even a borrowed self in the context register
+	const bool value_self = !is_static && !init && (kind == 'V' || kind == 'O');
+	if (witness || kind == 'C' || kind == 'P' || value_self) {
+		roles |= R_BIN_SWIFT_ROLE_SELF;
+	}
+	// an async function returns its error through the task, not the register
+	if (!async && lim != end && k && (k[1] == 'c') == init) {
+		roles |= R_BIN_SWIFT_ROLE_ERROR;
+	}
+	return roles;
 }
 
 // extract the member name and attributes from the tail of a mangled swift
