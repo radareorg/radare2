@@ -1,6 +1,6 @@
-NAME=fh
+NAME=fhq
 FILE=bins/elf/analysis/ls-alxchk
-CMDS=fh
+CMDS=fhq
 EXPECT=<<EOF
  elf_
      header
@@ -696,4 +696,3 @@ EXPECT=<<EOF
          wcwidth
 EOF
 RUN
-

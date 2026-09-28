@@ -54,7 +54,10 @@ static RCoreHelpMessage help_msg_f = {
 	"ff", " ([glob])", "distance in bytes to reach the next flag (see sn/sp)",
 	"fi", " [size] | [from] [to]", "show flags in current block or range",
 	"fg", "", "bring coretasks jobs to the foreground (see '&' command)",
-	"fh", "[*] ([prefix])", "construct a graph hirearchy with the flag names",
+	"fh", " [prefix]", "show the flag name hierarchy with addresses",
+	"fhq", " [prefix]", "show only the names in the flag hierarchy",
+	"fhj", " [prefix]", "show the flag hierarchy as a JSON tree",
+	"fh*", " [prefix]", "show the flag hierarchy as graph commands",
 	"fj", "", "list flags in JSON format",
 	"fl", " (@[flag]) [size]", "show or set flag length (size)",
 	"fla", " [glob]", "automatically compute the size of all flags matching glob",
@@ -187,7 +190,35 @@ static size_t common_prefix_len(const char *a, const char *b, size_t start) {
 	return k;
 }
 
-static void __printRecursive(RCore *core, RList *flags, const char *prefix, int mode) {
+static void print_flag_hierarchy_node(RCore *core, PJ *pj, const char *name, size_t parent_len, RFlagItem *flag, bool group, int mode) {
+	if (mode == '*') {
+		r_cons_printf (core->cons, "'agn %s %s\n", name, name + parent_len);
+		return;
+	}
+	if (pj) {
+		pj_o (pj);
+		pj_ks (pj, "name", name + parent_len);
+		pj_ks (pj, "full_name", name);
+		if (flag) {
+			pj_kn (pj, "offset", flag->addr);
+		}
+		if (group) {
+			pj_ka (pj, "children");
+		} else {
+			pj_end (pj);
+		}
+		return;
+	}
+	if (mode == 'q') {
+		r_cons_printf (core->cons, "%*s %s\n", (int)parent_len, "", name + parent_len);
+	} else if (flag) {
+		r_cons_printf (core->cons, "0x%08"PFMT64x" %*s %s\n", flag->addr, (int)parent_len, "", name + parent_len);
+	} else {
+		r_cons_printf (core->cons, "          %*s %s\n", (int)parent_len, "", name + parent_len);
+	}
+}
+
+static void __printRecursive(RCore *core, RList *flags, const char *prefix, int mode, PJ *pj) {
 	/* Context structure for iterative traversal */
 	typedef struct {
 		char *prefix;
@@ -196,6 +227,7 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 		size_t end;
 		size_t index;
 		HtPP *processed;
+		bool json_open;
 	} FlagContext;
 
 	size_t prefix_len = strlen (prefix);
@@ -274,7 +306,6 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 		const char *parent_prefix = ctx->prefix;
 		size_t parent_len = ctx->prefix_len;
 		bool resume = false;
-		char padstr[128];
 		/* Iterate over children in this context */
 		while (i < ctx->end && !r_cons_is_breaked (core->cons)) {
 			const char *name = flag_array[i]->name;
@@ -285,14 +316,37 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 			}
 			/* Case 1: current name is prefix of next name -> output current and skip grouping */
 			if (i + 1 < ctx->end && strncmp (flag_array[i+1]->name, name, strlen (name)) == 0) {
+				if (pj) {
+					size_t j = i + 2;
+					while (j < ctx->end && r_str_startswith (flag_array[j]->name, name)) {
+						j++;
+					}
+					FlagContext *child_ctx = R_NEW0 (FlagContext);
+					child_ctx->prefix = strdup (name);
+					child_ctx->prefix_len = strlen (name);
+					child_ctx->start = i + 1;
+					child_ctx->end = j;
+					child_ctx->index = i + 1;
+					child_ctx->processed = ht_pp_new0 ();
+					if (!child_ctx->processed) {
+						free (child_ctx->prefix);
+						free (child_ctx);
+						aborted = true;
+						break;
+					}
+					print_flag_hierarchy_node (core, pj, name, parent_len, flag_array[i], true, mode);
+					child_ctx->json_open = true;
+					ctx->index = j;
+					r_list_append (stack, ctx);
+					r_list_append (stack, child_ctx);
+					resume = true;
+					break;
+				}
 				if (!ht_pp_find (ctx->processed, name, NULL) && strcmp (name, parent_prefix) != 0) {
 					ht_pp_insert (ctx->processed, name, (void *)1);
+					print_flag_hierarchy_node (core, pj, name, parent_len, flag_array[i], false, mode);
 					if (mode == '*') {
-						r_cons_printf (core->cons, "'agn %s %s\n", name, name + parent_len);
 						r_cons_printf (core->cons, "'age %s %s\n", *parent_prefix ? parent_prefix : "root", name);
-					} else {
-						r_str_pad (padstr, sizeof (padstr), ' ', parent_len);
-						r_cons_printf (core->cons, "%s %s\n", padstr, name + parent_len);
 					}
 				}
 				/* No recursive push for actual flag (leaf) */
@@ -303,12 +357,9 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 			if (i + 1 >= ctx->end) {
 				if (!ht_pp_find (ctx->processed, name, NULL) && strcmp (name, parent_prefix) != 0) {
 					ht_pp_insert (ctx->processed, name, (void *)1);
+					print_flag_hierarchy_node (core, pj, name, parent_len, flag_array[i], false, mode);
 					if (mode == '*') {
-						r_cons_printf (core->cons, "'agn %s %s\n", name, name + parent_len);
 						r_cons_printf (core->cons, "'age %s %s\n", *parent_prefix ? parent_prefix : "root", name);
-					} else {
-						r_str_pad (padstr, sizeof (padstr), ' ', parent_len);
-						r_cons_printf (core->cons, "%s %s\n", padstr, name + parent_len);
 					}
 				}
 				i++;
@@ -321,13 +372,9 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 				/* No additional common prefix beyond parent -> current is a standalone leaf */
 				if (!ht_pp_find (ctx->processed, name, NULL) && strcmp (name, parent_prefix) != 0) {
 					ht_pp_insert (ctx->processed, name, (void *)1);
+					print_flag_hierarchy_node (core, pj, name, parent_len, flag_array[i], false, mode);
 					if (mode == '*') {
-						r_cons_printf (core->cons, "'agn %s %s\n", name, name + parent_len);
 						r_cons_printf (core->cons, "'age %s %s\n", *parent_prefix ? parent_prefix : "root", name);
-					} else {
-						char *pad = r_str_pad (NULL, 0, ' ', parent_len);
-						r_cons_printf (core->cons, "%s %s\n", pad, name + parent_len);
-						free (pad);
 					}
 				}
 				i++;
@@ -337,7 +384,7 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 			size_t j = i + 2;
 			size_t cluster_prefix_len = common_len;
 			while (j < ctx->end && strncmp (flag_array[j]->name, name, cluster_prefix_len) == 0) {
-				size_t new_common = common_prefix_len(name, flag_array[j]->name, parent_len);
+				size_t new_common = common_prefix_len (name, flag_array[j]->name, parent_len);
 				if (new_common < cluster_prefix_len) {
 					cluster_prefix_len = new_common;
 				}
@@ -355,15 +402,6 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 					break;
 				}
 				if (!ht_pp_find (ctx->processed, group, NULL) && strcmp (group, parent_prefix) != 0) {
-					ht_pp_insert (ctx->processed, group, (void *)1);
-					/* Print the group prefix */
-					if (mode == '*') {
-						r_cons_printf (core->cons, "'agn %s %s\n", group, group + parent_len);
-						r_cons_printf (core->cons, "'age %s %s\n", *parent_prefix ? parent_prefix : "root", group);
-					} else {
-						r_str_pad (padstr, sizeof (padstr), ' ', parent_len);
-						r_cons_printf (core->cons, "%s %s\n", padstr, group + parent_len);
-					}
 					/* Prepare new context for this group */
 					FlagContext *child_ctx = R_NEW0 (FlagContext);
 					child_ctx->prefix = group;
@@ -371,13 +409,19 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 					child_ctx->start = i;
 					child_ctx->end = j;
 					child_ctx->index = i;
-					child_ctx->processed = ht_pp_new0();
+					child_ctx->processed = ht_pp_new0 ();
 					if (!child_ctx->processed) {
 						free (child_ctx->prefix);
 						free (child_ctx);
 						aborted = true;
 						break;
 					}
+					ht_pp_insert (ctx->processed, group, (void *)1);
+					print_flag_hierarchy_node (core, pj, group, parent_len, NULL, true, mode);
+					if (mode == '*') {
+						r_cons_printf (core->cons, "'age %s %s\n", *parent_prefix ? parent_prefix : "root", group);
+					}
+					child_ctx->json_open = pj != NULL;
 					/* Update current context to resume after this cluster */
 					ctx->index = j;
 					/* Push current context back and push the new child context */
@@ -399,12 +443,9 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 					const char *fname = flag_array[k]->name;
 					if (!ht_pp_find (ctx->processed, fname, NULL) && strcmp (fname, parent_prefix) != 0) {
 						ht_pp_insert (ctx->processed, fname, (void *)1);
+						print_flag_hierarchy_node (core, pj, fname, parent_len, flag_array[k], false, mode);
 						if (mode == '*') {
-							r_cons_printf (core->cons, "'agn %s %s\n", fname, fname + parent_len);
 							r_cons_printf (core->cons, "'age %s %s\n", *parent_prefix ? parent_prefix : "root", fname);
-						} else {
-							r_str_pad (padstr, sizeof (padstr), ' ', parent_len);
-							r_cons_printf (core->cons, "%s %s\n", padstr, fname + parent_len);
 						}
 					}
 				}
@@ -422,6 +463,10 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 		}
 		if (!resume) {
 			/* Context finished processing all children (or aborted), free it */
+			if (ctx->json_open) {
+				pj_end (pj);
+				pj_end (pj);
+			}
 			ht_pp_free (ctx->processed);
 			free (ctx->prefix);
 			free (ctx);
@@ -433,15 +478,13 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 
 	/* If aborted, clear any remaining stack entries without processing */
 	if (aborted) {
-		RListIter *iter;
 		FlagContext *ctx;
-		r_list_foreach (stack, iter, ctx) {
-			if (!ctx) {
-				continue;
+		while ((ctx = r_list_pop (stack))) {
+			if (ctx->json_open) {
+				pj_end (pj);
+				pj_end (pj);
 			}
-			if (ctx->processed) {
-				ht_pp_free (ctx->processed);
-			}
+			ht_pp_free (ctx->processed);
 			free (ctx->prefix);
 			free (ctx);
 		}
@@ -453,9 +496,18 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 static void __flag_graph(RCore *core, const char *input, int mode) {
 	RList *flags = r_list_newf (NULL);
 	r_flag_foreach_space (core->flags, r_flag_space_cur (core->flags), listFlag, flags);
+	PJ *pj = mode == 'j' ? r_core_pj_new (core) : NULL;
+	if (pj) {
+		pj_a (pj);
+	}
 	r_cons_break_push (core->cons, NULL, NULL);
-	__printRecursive (core, flags, input, mode);
+	__printRecursive (core, flags, input, mode, pj);
 	r_cons_break_pop (core->cons);
+	if (pj) {
+		pj_end (pj);
+		r_cons_println (core->cons, pj_string (pj));
+		pj_free (pj);
+	}
 	r_list_free (flags);
 }
 
@@ -2003,6 +2055,14 @@ static int cmd_flag(void *data, const char *input) {
 			break;
 		case '*':
 			__flag_graph (core, r_str_trim_head_ro (input + 2), '*');
+			break;
+		case 'q':
+		case 'j':
+			if (input[2] && input[2] != ' ') {
+				r_cons_cmd_help_match (core->cons, help_msg_f, "fh", 0, false);
+			} else {
+				__flag_graph (core, r_str_trim_head_ro (input + 2), input[1]);
+			}
 			break;
 		case ' ':
 			__flag_graph (core, r_str_trim_head_ro (input + 2), ' ');

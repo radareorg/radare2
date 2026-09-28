@@ -1,0 +1,41 @@
+NAME=flag hierarchy output modes
+FILE=-
+CMDS=<<EOF
+fs fh_test
+f bar 1 @ 0x100
+f sym.foo1 1 @ 0x10
+f sym.foo2 1 @ 0x20
+fh
+fhq
+fhj
+fhj sym.
+fhj nothing
+EOF
+EXPECT=<<EOF
+0x00000100  bar
+           sym.foo
+0x00000010         1
+0x00000020         2
+ bar
+ sym.foo
+        1
+        2
+[{"name":"bar","full_name":"bar","offset":256},{"name":"sym.foo","full_name":"sym.foo","children":[{"name":"1","full_name":"sym.foo1","offset":16},{"name":"2","full_name":"sym.foo2","offset":32}]}]
+[{"name":"foo","full_name":"sym.foo","children":[{"name":"1","full_name":"sym.foo1","offset":16},{"name":"2","full_name":"sym.foo2","offset":32}]}]
+[]
+EOF
+RUN
+
+NAME=flag that is also a hierarchy parent in JSON
+FILE=-
+CMDS=<<EOF
+fs fh_test
+f sym.foo 1 @ 8
+f sym.foo1 1 @ 0x10
+f sym.foo2 1 @ 0x20
+fhj
+EOF
+EXPECT=<<EOF
+[{"name":"sym.foo","full_name":"sym.foo","offset":8,"children":[{"name":"1","full_name":"sym.foo1","offset":16},{"name":"2","full_name":"sym.foo2","offset":32}]}]
+EOF
+RUN
