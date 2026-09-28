@@ -6107,32 +6107,50 @@ char *Elf_(compiler)(ELFOBJ *eo) {
 	if (!section) {
 		return NULL;
 	}
-
-	ut32 sz = R_MIN (section->size, 128);
-	if (sz < 1 || sz >= ST32_MAX) {
+	// .comment holds NUL-separated strings, sometimes with padding between them
+	const ut32 sz = R_MIN (section->size, 4096);
+	if (sz < 1) {
 		return NULL;
 	}
-
 	char *buf = malloc (sz + 1);
 	if (!buf) {
 		return NULL;
 	}
-
-	ut64 off = section->offset;
-	if (r_buf_read_at (eo->b, off, (ut8*)buf, sz) != sz) {
+	if (r_buf_read_at (eo->b, section->offset, (ut8*)buf, sz) != sz) {
 		free (buf);
 		return NULL;
 	}
 	buf[sz] = 0;
-
-	const size_t buflen = strlen (buf);
-	if (buflen < sz && buflen + 1 < sz && buf[buflen + 1]) {
-		buf[buflen] = ' ';
+	RStrBuf *sb = r_strbuf_new ("");
+	ut32 i = 0;
+	while (i < sz) {
+		char *s = buf + i;
+		const size_t len = strlen (s);
+		i += len + 1;
+		r_str_trim (s);
+		if (!*s) {
+			continue;
+		}
+		// skip entries already emitted (linkers often repeat the same line per object)
+		const char *prev = r_strbuf_get (sb);
+		const char *hit = strstr (prev, s);
+		const size_t slen = strlen (s);
+		if (hit && (hit == prev || hit[-1] == ' ') && (!hit[slen] || hit[slen] == ' ')) {
+			continue;
+		}
+		if (r_strbuf_length (sb) > 0) {
+			r_strbuf_append (sb, " ");
+		}
+		r_strbuf_append (sb, s);
 	}
-	buf[sz] = 0;
-	r_str_trim (buf);
-	char *res = r_str_escape (buf);
 	free (buf);
+	char *str = r_strbuf_drain (sb);
+	if (!*str) {
+		free (str);
+		return NULL;
+	}
+	char *res = r_str_escape (str);
+	free (str);
 	return res;
 }
 
