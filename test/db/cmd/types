@@ -4069,6 +4069,453 @@ var uint8_t [136] var_88h @ rbp-0x88
 EOF
 RUN
 
+NAME=aft recovers a string split across adjacent stack stores
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec2048b8414141414141414148ba4242424242424200488945e0488955e8488d45e04889c7e850000000c9c3 @ 0
+wx c3 @ 0x80
+af @ 0x80
+afn puts @ 0x80
+'td int puts(const char *s);
+af @ 0
+aft
+afv
+afvx
+pd 1 @ 0x20
+aft
+afv
+EOF
+EXPECT=<<EOF
+var char [16] s @ rbp-0x20
+afvR
+         s  0x24
+afvW
+         s  0x1c,0x20
+|           0x00000020      488955e8       mov qword [s[8]], rdx
+var char [16] s @ rbp-0x20
+EOF
+RUN
+
+NAME=aft does not merge unterminated adjacent stack locals
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec2048b8414141414141414148ba4242424242424242488945e0488955e8488d45e04889c7e850000000c9c3 @ 0
+wx c3 @ 0x80
+af @ 0x80
+afn puts @ 0x80
+'td int puts(const char *s);
+af @ 0
+aft
+afv
+EOF
+EXPECT=<<EOF
+var int64_t var_18h @ rbp-0x18
+var char * s @ rbp-0x20
+EOF
+RUN
+
+NAME=aft recovers a stack string passed by a direct lea
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec3048b8414141414141414148ba4242424242424200488945e0488955e8488d7de0e8d3000000c9c3 @ 0
+wx c3 @ 0x100
+af @ 0x100
+afn puts @ 0x100
+'td int puts(const char *s);
+af @ 0
+aft
+afv
+pd 1 @ 32
+EOF
+EXPECT=<<EOF
+var char [16] s @ rbp-0x20
+|           0x00000020      488955e8       mov qword [s[8]], rdx
+EOF
+RUN
+
+NAME=aft includes string initialization after address materialization
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec30488d7de048b8414141414141414148ba4242424242424200488945e0488955e8e8d3000000c9c3 @ 0
+wx c3 @ 0x100
+af @ 0x100
+afn puts @ 0x100
+'td int puts(const char *s);
+af @ 0
+aft
+afv
+EOF
+EXPECT=<<EOF
+var char [16] s @ rbp-0x20
+EOF
+RUN
+
+NAME=aft sees a terminator overwritten between lea and call
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec3048b8414141414141414148ba4242424242424200488945e0488955e8488d45e04889c7c645ef42e8cc000000c9c3 @ 0
+wx c3 @ 0x100
+af @ 0x100
+afn puts @ 0x100
+'td int puts(const char *s);
+af @ 0
+aft
+afv
+EOF
+EXPECT=<<EOF
+var int8_t var_11h @ rbp-0x11
+var int64_t var_18h @ rbp-0x18
+var char * s @ rbp-0x20
+EOF
+RUN
+
+NAME=aft sees a store starting before the stack string
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec3048b8414141414141414148ba4242424242424200488945e0488955e8488d45e04889c748b84141414101010101488945dce8c2000000c9c3 @ 0
+wx c3 @ 0x100
+af @ 0x100
+afn puts @ 0x100
+'td int puts(const char *s);
+af @ 0
+aft
+afv
+EOF
+EXPECT=<<EOF
+var int64_t var_18h @ rbp-0x18
+var char * s @ rbp-0x20
+var int64_t var_24h @ rbp-0x24
+EOF
+RUN
+
+NAME=aft decodes the overlapping part of a supported store
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec3048b8414141414141414148ba4242424242424200488945e0488955e8488d7de048b84141414143434343488945dce8c5000000c9c3 @ 0
+wx c3 @ 0x100
+af @ 0x100
+afn puts @ 0x100
+'td int puts(const char *s);
+af @ 0
+aft
+afv
+EOF
+EXPECT=<<EOF
+var char [16] s @ rbp-0x20
+var int64_t var_24h @ rbp-0x24
+EOF
+RUN
+
+NAME=aft invalidates string evidence overwritten by a wide store
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec3048b8414141414141414148ba4242424242424200488945e0488955e8488d45e04889c7f30f7f45dce8cb000000c9c3 @ 0
+wx c3 @ 0x100
+af @ 0x100
+afn puts @ 0x100
+'td int puts(const char *s);
+af @ 0
+aft
+afv
+EOF
+EXPECT=<<EOF
+arg double arg1 @ xmm0
+var int64_t var_18h @ rbp-0x18
+var char * s @ rbp-0x20
+var double var_24h @ rbp-0x24
+EOF
+RUN
+
+NAME=aft accepts a short whitespace string beside another local
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec30c745e061090d00c745e441414141488d7de0e8e1000000c9c3 @ 0
+wx c3 @ 0x100
+af @ 0x100
+afn puts @ 0x100
+'td int puts(const char *s);
+af @ 0
+aft
+afv
+EOF
+EXPECT=<<EOF
+var int32_t var_1ch @ rbp-0x1c
+var char [4] s @ rbp-0x20
+EOF
+RUN
+
+NAME=aft accepts a string terminated by a traced zero store
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec3048c745e80000000048b8414109410d410a41488945e0488d7de0e8d9000000c9c3 @ 0
+wx c3 @ 0x100
+af @ 0x100
+afn puts @ 0x100
+'td int puts(const char *s);
+af @ 0
+aft
+afv
+EOF
+EXPECT=<<EOF
+var char [9] s @ rbp-0x20
+EOF
+RUN
+
+NAME=aft preserves SP-relative string indices across stack adjustments
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 4883ec3048b8414141414141414148ba424242424242420048894424084883ec104889542420488d7c2418e8d00000004883c440c3 @ 0
+wx c3 @ 0x100
+af @ 0x100
+afn puts @ 0x100
+'td int puts(const char *s);
+af @ 0
+aft
+afv
+afvx
+pd 1 @ 24
+pd 1 @ 33
+aft
+afv
+EOF
+EXPECT=<<EOF
+var char [16] s @ rsp+0x18
+afvR
+         s  0x26
+afvW
+         s  0x18,0x21
+|           0x00000018      4889442408     mov qword [s], rax
+|           0x00000021      4889542420     mov qword [s[8]], rdx
+var char [16] s @ rsp+0x18
+EOF
+RUN
+
+NAME=aft recovers a stack string from a char local without a prior fact
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec3048b8414141414141414148ba4242424242424200488945e0488955e8488d45e04889c7e8d0000000c9c3 @ 0
+wx c3 @ 0x100
+af @ 0x100
+afn puts @ 0x100
+'td int puts(const char *s);
+af @ 0
+afvt var_20h char
+aft
+afv
+EOF
+EXPECT=<<EOF
+var char [16] s @ rbp-0x20
+EOF
+RUN
+
+NAME=aft requires a char pointer parameter for stack strings
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec3048b8414141414141414148ba4242424242424200488945e0488955e8488d7de0e8d3000000c9c3 @ 0
+wx c3 @ 0x100
+af @ 0x100
+afn puts @ 0x100
+'td int puts(void *s);
+af @ 0
+aft
+afv
+EOF
+EXPECT=<<EOF
+var int64_t var_18h @ rbp-0x18
+var int64_t s @ rbp-0x20
+EOF
+RUN
+
+NAME=aft keeps a proven char array above later pointer evidence
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec3048b8414141414141414148ba4242424242424200488945e0488955e8488d7de0e8d3000000488d45e04889c7e8d7000000c9c3 @ 0
+wx c3 @ 0x100
+af @ 0x100
+afn puts @ 0x100
+'td int puts(const char *s);
+af @ 0
+wx c3 @ 0x110
+af @ 0x110
+afn other @ 0x110
+'td int other(char **s);
+aft
+afv
+EOF
+EXPECT=<<EOF
+var char [16] s @ rbp-0x20
+EOF
+RUN
+
+NAME=aft records a new stack array fact for subsequent parallel meets
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec3085ff742748b8414141414141414148ba4242424242424200488945e0488955e8488d7de0e8cf000000eb0c488d45e04889c7e8d1000000c9c3 @ 0
+wx c3 @ 0x100
+af @ 0x100
+afn puts @ 0x100
+'td int puts(const char *s);
+af @ 0
+afvt var_20h char
+wx c3 @ 0x110
+af @ 0x110
+afn other @ 0x110
+'td int other(char **s);
+aft
+afv
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rdi
+var char ** s @ rbp-0x20
+EOF
+RUN
+
+NAME=aft does not combine stack stores from non-monotonic sibling blocks
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec3085ff7414eb7200000000000000000000000000000000000048b84141414141414141488945e0488d7de0e8c9000000eb67000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000048b84242424242424200488945e8eb1000000000000000000000000000000000c9c3
+wx c3 @ 0x100
+af @ 0x100
+afn puts @ 0x100
+'td int puts(const char *s);
+af @ 0
+aft
+afv
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rdi
+var int64_t var_18h @ rbp-0x18
+var char s @ rbp-0x20
+EOF
+RUN
+
+NAME=aft enlarges a reused stack string and preserves its new accesses
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec30c745e041414100488d7de0e8e800000048b84141414141414141488945e048b84242424242424200488945e8488d7de0e8c3000000c745e041414100488d7de0e8b3000000c9c3
+wx c3 @ 0x100
+af @ 0x100
+afn puts @ 0x100
+'td int puts(const char *s);
+af @ 0
+aft
+afv
+afvx
+pd 1 @ 0x30
+aft
+afv
+EOF
+EXPECT=<<EOF
+var char [16] s @ rbp-0x20
+afvR
+         s  0xf,0x34,0x44
+afvW
+         s  0x8,0x22,0x30,0x3d
+|           0x00000030      488945e8       mov qword [s[8]], rax
+var char [16] s @ rbp-0x20
+EOF
+RUN
+
+NAME=aft merges different stack string lengths in a diamond
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec3085ff7412c745e041414100488d7de0e8e4000000eb2548b84141414141414141488945e048b84242424242424200488945e8488d7de0e8bd000000c9c3
+wx c3 @ 0x100
+af @ 0x100
+afn puts @ 0x100
+'td int puts(const char *s);
+af @ 0
+aft
+afv
+aft
+afv
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rdi
+var char [16] s @ rbp-0x20
+arg int64_t arg1 @ rdi
+var char [16] s @ rbp-0x20
+EOF
+RUN
+
+NAME=aft merges different stack string lengths with reversed branches
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec3085ff742748b84141414141414141488945e048b84242424242424200488945e8488d7de0e8cf000000eb10c745e041414100488d7de0e8bd000000c9c3
+wx c3 @ 0x100
+af @ 0x100
+afn puts @ 0x100
+'td int puts(const char *s);
+af @ 0
+aft
+afv
+aft
+afv
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rdi
+var char [16] s @ rbp-0x20
+arg int64_t arg1 @ rdi
+var char [16] s @ rbp-0x20
+EOF
+RUN
+
+NAME=aft requires a traced terminator instead of initial stack zeroes
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec30c745e041414141488d7de0e8e8000000c9c3
+wx c3 @ 0x100
+af @ 0x100
+afn puts @ 0x100
+'td int puts(const char *s);
+af @ 0
+aft
+afv
+EOF
+EXPECT=<<EOF
+var char s @ rbp-0x20
+EOF
+RUN
+
+NAME=aft keeps unwritten gaps between stack stores
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec30c745e041414141c745e842424200488d7de0e8e1000000c9c3
+wx c3 @ 0x100
+af @ 0x100
+afn puts @ 0x100
+'td int puts(const char *s);
+af @ 0
+aft
+afv
+EOF
+EXPECT=<<EOF
+var int32_t var_18h @ rbp-0x18
+var char s @ rbp-0x20
+EOF
+RUN
+
 NAME=aft keeps a named type on a memset stack local
 FILE=malloc://256
 ARGS=-a x86 -b 64 -e types.sizes=true

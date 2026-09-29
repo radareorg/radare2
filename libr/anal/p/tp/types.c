@@ -38,7 +38,7 @@ void var_rename(RAnal *anal, RAnalVar *v, const char *name, ut64 addr) {
 static bool tp_prim_scalar(const char *t);
 
 // specificity lattice shared by var facts (var=true) and struct member types (var=false)
-// vars: 0 default < 1 sign hint < 2 non-pointer < 3 scalar/void pointer < 4 char *, typed pointer or named type
+// vars: 0 default < 1 sign hint < 2 non-pointer < 3 scalar/void pointer < 4 char *, typed pointer or named type < 5 local char array
 // members: 0 default < 1 prim scalar < 2 void pointer < 3 prim pointer (char * ties) < 4 named type
 static int tp_rank(const char *t, bool var) {
 	if (R_STR_ISEMPTY (t)) {
@@ -47,6 +47,9 @@ static int tp_rank(const char *t, bool var) {
 	t = r_str_skip_prefix (r_str_trim_head_ro (t), "const ");
 	if (R_STR_ISEMPTY (t) || r_str_startswith (t, "undefined")) {
 		return 0;
+	}
+	if (var && r_str_startswith (t, "char") && *r_str_trim_head_ro (t + 4) == '[') {
+		return 5;
 	}
 	if (!strchr (t, '*')) {
 		if (!strcmp (t, "void")) {
@@ -75,6 +78,10 @@ static char *tp_type_meet(RAnal *anal, const char *a, int rank_a, const char *b,
 	b = r_str_skip_prefix (b, "const ");
 	if (!strcmp (a, b)) {
 		return strdup (a);
+	}
+	// Different strings prove a buffer large enough for either path.
+	if (rank_a == 5 && rank_b == 5) {
+		return strdup (atoi (strchr (a, '[') + 1) > atoi (strchr (b, '[') + 1)? a: b);
 	}
 	// different pointees agree only on being a pointer; ranking one side would make the meet order-dependent
 	if (strchr (a, '*') && strchr (b, '*')) {
@@ -216,6 +223,21 @@ static char *tp_built_type(RAnalVar *var, const char *vname, const char *type, i
 
 // applies newtype to the var and takes ownership of it as the recorded fact
 static void tp_fact_apply(RAnal *anal, TPVarFact *fact, RAnalVar *var, char *newtype, int rank, ut64 baddr) {
+	if (rank == 5) {
+		const int extent = atoi (strchr (newtype, '[') + 1);
+		RAnalVar **it;
+		R_VEC_FOREACH (&var->fcn->vars, it) {
+			RAnalVar *other = *it;
+			if (other != var && other->kind == var->kind && other->delta > var->delta
+				&& other->delta - var->delta < extent) {
+				RAnalVarAccess *acc;
+				R_VEC_FOREACH (&other->accesses, acc) {
+					r_anal_var_set_access (anal, var, acc->reg,
+						var->fcn->addr + acc->offset, acc->type, acc->stackptr + var->delta - other->delta);
+				}
+			}
+		}
+	}
 	r_anal_var_set_type (anal, var, newtype);
 	free (fact->type);
 	fact->type = newtype;
@@ -252,10 +274,11 @@ static void tp_fact_retype(TPState *tps, ut64 baddr, TPVarFact *fact, RAnalVar *
 		tp_fact_apply (anal, fact, var, cand, rank, baddr);
 		return;
 	}
-	if (fact->met || tp_facts_parallel (tps, fact->bb_addr, baddr)) {
+	const bool meet = fact->met || tp_facts_parallel (tps, fact->bb_addr, baddr);
+	if (meet || (rank == 5 && fact->rank == 5)) {
 		char *met = tp_type_meet (anal, fact->type, fact->rank, cand, rank);
 		free (cand);
-		fact->met = true;
+		fact->met = meet;
 		if (!met || !strcmp (met, fact->type)) {
 			free (met);
 			return;
@@ -561,6 +584,75 @@ static void propagate_arg_type(TPState *tps, ut64 baddr, RAnalVar *var, const ch
 		tp_var_retype (tps, baddr, var, name, type, var_memref, false);
 		var_rename (anal, var, name, addr);
 	}
+}
+
+#define TP_STACK_STRING_MAX 128
+
+static bool tp_stack_string_var(TPState *tps, ut64 baddr, int idx, RAnalVar *var, RAnalOp *op, const char *type) {
+	if (!type || strcmp (r_str_skip_prefix (type, "const "), "char *")
+		|| (op->type & R_ANAL_OP_TYPE_MASK) != R_ANAL_OP_TYPE_LEA
+		|| (var->kind != R_ANAL_VAR_KIND_BPV && var->kind != R_ANAL_VAR_KIND_SPV)
+		|| var->isarg || !tp_prim_scalar (var->type)) {
+		return false;
+	}
+	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
+	const TypeTraceAccess *reg = dst && dst->reg
+		? etrace_find_access (&tps->tt, idx, etrace_is_regwrite_name, (void *)dst->reg): NULL;
+	if (!reg || reg->reg.value < tps->stack_base
+		|| reg->reg.value - tps->stack_base >= tps->stack_size) {
+		return false;
+	}
+	ut8 bytes[TP_STACK_STRING_MAX] = { 0 }, written[TP_STACK_STRING_MAX] = { 0 };
+	const int end = etrace_index (&tps->tt);
+	int j;
+	for (j = R_MAX (tps->bb_trace_start, end - TYPE_MATCH_MAX_BACKTRACE); j < end; j++) {
+		TypeTraceOp *step = VecTraceOp_at (&tps->tt.db.ops, j);
+		ut32 k;
+		for (k = step->start; k < step->end; k++) {
+			TypeTraceAccess *a = VecAccess_at (&tps->tt.db.accesses, k);
+			if (!a || a->is_reg || !a->is_write || a->mem.size < 1) {
+				continue;
+			}
+			const ut64 off = a->mem.addr > reg->reg.value? a->mem.addr - reg->reg.value: 0;
+			const ut64 skip = a->mem.addr < reg->reg.value? reg->reg.value - a->mem.addr: 0;
+			if (off >= sizeof (bytes) || skip >= a->mem.size) {
+				continue;
+			}
+			const bool known = a->mem.size <= 8 && !(a->mem.size & (a->mem.size - 1));
+			const int count = R_MIN (a->mem.size - skip, sizeof (bytes) - off);
+			int n;
+			for (n = 0; n < count; n++) {
+				if (known) {
+					const int shift = 8 * (tps->tt.be? a->mem.size - skip - n - 1: skip + n);
+					bytes[off + n] = (ut8)(a->mem.value >> shift);
+				}
+				written[off + n] = known;
+			}
+		}
+	}
+	int len = 0;
+	while (len < sizeof (bytes) && written[len] && bytes[len]
+		&& (IS_PRINTABLE (bytes[len]) || strchr ("\n\r\t", bytes[len]))) {
+		len++;
+	}
+	// Require a traced terminator; the emulator's initially zeroed stack is not string evidence.
+	if (!len || len == sizeof (bytes) || !written[len] || bytes[len]) {
+		return false;
+	}
+	char *array = r_str_newf ("char [%d]", len + 1);
+	if (!array) {
+		return false;
+	}
+	TPVarFact *fact = ht_up_find (tps->var_facts, (ut64)(size_t)var, NULL);
+	if (!fact) {
+		fact = R_NEW0 (TPVarFact);
+		ht_up_insert (tps->var_facts, (ut64)(size_t)var, fact);
+		tp_fact_apply (tps->anal, fact, var, array, 5, baddr);
+	} else {
+		tp_fact_retype (tps, baddr, fact, var, NULL, array, 0, false);
+		free (array);
+	}
+	return true;
 }
 
 // the prefix must end at a word boundary so named types like printer_t do not rank as scalars
@@ -1067,8 +1159,12 @@ void tp_apply_arg_type(TPState *tps, ut64 baddr, int j, RAnalVar *var, RAnalOp *
 				}
 			}
 		}
-		propagate_arg_type (tps, baddr, var, name, type, var_memref, callee_ref,
-			fcn_name, in_stack, place, soff, addr, userfnc);
+		if (!userfnc && tp_stack_string_var (tps, baddr, j, var, op, type)) {
+			var_rename (tps->anal, var, name, addr);
+		} else {
+			propagate_arg_type (tps, baddr, var, name, type, var_memref, callee_ref,
+				fcn_name, in_stack, place, soff, addr, userfnc);
+		}
 	}
 	if (tps->cfg_fields) {
 		tp_field_from_arg (tps, j, var, op, chain, type, userfnc);
