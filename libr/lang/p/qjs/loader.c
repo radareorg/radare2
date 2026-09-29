@@ -6,15 +6,7 @@ const char * const alias_marker = "↻ ";
 
 static void r2qjs_dump_obj(JSContext *ctx, JSValueConst val);
 
-static char *r2qjs_normalize_module_name(JSContext * ctx, const char * base_name, const char * name, void *opaque) {
-	char *root = strdup (base_name);
-	if (root && r_str_endswith (root, ".js")) {
-		char *r = (char *)r_str_rchr (root, NULL, '/');
-		if (r) {
-			*r = 0;
-			R_LOG_DEBUG ("USE ROOT (%s)", root);
-		}
-	}
+static char *r2qjs_normalize_path(const char *root, const char *base_name, const char *name) {
 	R_LOG_DEBUG ("NORMALIZE base_name=(%s) name=(%s) root=%s", base_name, name, root);
 	if (r_str_startswith (name, "../")) {
 	// 	return r_str_newf ("%s/%s", root, base_name + 3);
@@ -54,6 +46,23 @@ static char *r2qjs_normalize_module_name(JSContext * ctx, const char * base_name
 	}
 	// R_LOG_INFO ("normalize (%s) (%s)", base_name, name);
 	return strdup (name);
+}
+
+// QuickJS releases the returned name with js_free, so it must come from js_malloc
+static char *r2qjs_normalize_module_name(JSContext *ctx, const char *base_name, const char *name, void *opaque) {
+	char *root = strdup (base_name);
+	if (root && r_str_endswith (root, ".js")) {
+		char *r = (char *)r_str_rchr (root, NULL, '/');
+		if (r) {
+			*r = 0;
+			R_LOG_DEBUG ("USE ROOT (%s)", root);
+		}
+	}
+	char *path = r2qjs_normalize_path (root, base_name, name);
+	char *res = path? js_strdup (ctx, path): NULL;
+	free (path);
+	free (root);
+	return res;
 }
 
 static JSModuleDef *r2qjs_load_module(JSContext *ctx, const char *module_name, void *opaque) {
@@ -105,10 +114,7 @@ static JSModuleDef *r2qjs_load_module(JSContext *ctx, const char *module_name, v
 	}
 	R_LOG_DEBUG ("pop");
 	HtPP *ht = opaque;
-	if (!ht) {
-		return NULL;
-	}
-	char *data = ht_pp_find (ht, module_name, NULL);
+	char *data = ht? ht_pp_find (ht, module_name, NULL): NULL;
 	if (data) {
 #if 0
 		JSModuleDef *def = JS_RunModule (ctx, "/", module_name);
@@ -130,7 +136,8 @@ static JSModuleDef *r2qjs_load_module(JSContext *ctx, const char *module_name, v
 		return JS_VALUE_GET_PTR (val);
 #endif
 	}
-	R_LOG_ERROR ("Cannot find module (%s)", module_name);
+	// the loader must leave an exception behind, or QuickJS reports "[uninitialized]"
+	JS_ThrowReferenceError (ctx, "could not load module '%s'", module_name);
 	return NULL;
 }
 
