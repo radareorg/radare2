@@ -1392,7 +1392,12 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		ut16 halfword = r_read_ble16 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config));
 		oplen = (!(halfword & 0x1c00) || (halfword & 0x1000))? 4: 2;
 		if (len < oplen) {
-			return false;
+			op->type = R_ANAL_OP_TYPE_ILL;
+			op->size = 2;
+			if (mask & R_ARCH_OP_MASK_DISASM) {
+				op->mnemonic = strdup ("invalid");
+			}
+			return true;
 		}
 	}
 
@@ -2177,24 +2182,6 @@ static char *regs(RArchSession *as) {
 	return strdup (p);
 }
 
-static int archinfo(RArchSession *as, ut32 q) {
-	if (q == R_ARCH_INFO_WODST) {
-		return 1;
-	}
-	switch (q) {
-	case R_ARCH_INFO_CODE_ALIGN:
-	case R_ARCH_INFO_MINOP_SIZE:
-		{
-			const char *cpu = as->config->cpu;
-			if (cpu && !strcmp (cpu, "micro")) {
-				return 2; // (as->bits == 16) ? 2: 4;
-			}
-		}
-		break;
-	}
-	return 4;
-}
-
 static bool init(RArchSession *as) {
 	R_RETURN_VAL_IF_FAIL (as, false);
 	if (as->data) {
@@ -2229,7 +2216,7 @@ const RArchPlugin r_arch_plugin_mips_gnu = {
 	.cpus = "micro,mips1,mips2,mips3,mips4,mips5,mips64r2,mips32r2,mips64,mips32,loongson3a,gs464,gs464e,gs264e,loongson2e,loongson2f,mips32/64",
 	.arch = "mips",
 	.bits = R_SYS_BITS_PACK2 (32, 64),
-	.info = archinfo,
+	.info = mips_archinfo,
 	.decode = decode,
 	.regs = regs,
 	.init = init,

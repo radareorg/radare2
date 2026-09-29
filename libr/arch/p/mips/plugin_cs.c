@@ -1245,7 +1245,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	if (!pd || handle == 0) {
 		return false;
 	}
-	int opsize = -1;
 
 // XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	op->addr = addr;
@@ -1257,12 +1256,12 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	bool ok = r_arch_cs_disasm_iter (handle, buf, len, addr, &csi);
 	cs_insn *insn = &csi.insn;
 	if (!ok || insn->size < 1) {
+		op->size = mips_archinfo (as, R_ARCH_INFO_INVOP_SIZE);
 		if (mask & R_ARCH_OP_MASK_DISASM) {
-			op->mnemonic = strdup ("invalid");
 			op->type = R_ANAL_OP_TYPE_ILL;
-			opsize = 4;
+			op->mnemonic = strdup ("invalid");
 		}
-		goto beach;
+		return true;
 	}
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = r_str_newf ("%s%s%s",
@@ -1277,7 +1276,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		}
 	}
 	op->id = insn->id;
-	opsize = op->size = insn->size;
+	op->size = insn->size;
 	op->refptr = 0;
 	switch (insn->id) {
 	case MIPS_INS_INVALID:
@@ -1616,7 +1615,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	if (stateful) {
 		t9_invalidate (pd, op, insn);
 	}
-beach:
 	set_opdir (op);
 	if (insn && mask & R_ARCH_OP_MASK_OPEX) {
 		opex (&op->opex, handle, insn);
@@ -1629,7 +1627,7 @@ beach:
 	if (mask & R_ARCH_OP_MASK_VAL) {
 		op_fillval (as, op, &handle, insn);
 	}
-	return opsize;
+	return true;
 }
 
 static char *get_reg_profile(RArchSession * as) {
@@ -1738,19 +1736,6 @@ static char *get_reg_profile(RArchSession * as) {
 	return p? strdup (p): NULL;
 }
 
-static int archinfo(RArchSession *as, ut32 q) {
-	if (q == R_ARCH_INFO_WODST) {
-		return 1;
-	}
-	if (q == R_ARCH_INFO_CODE_ALIGN || q == R_ARCH_INFO_MINOP_SIZE) {
-		const char *cpu = as->config->cpu;
-		if (cpu && !strcmp (cpu, "micro")) {
-			return 2; // (anal->bits == 16) ? 2: 4;
-		}
-	}
-	return 4;
-}
-
 static char *mnemonics(RArchSession *as, int id, bool json) {
 	R_RETURN_VAL_IF_FAIL (as && as->data, NULL);
 	CapstonePluginData *cpd = as->data;
@@ -1793,7 +1778,7 @@ const RArchPlugin r_arch_plugin_mips_cs = {
 	.arch = "mips",
 	.cpus = "mips32/64,mips1,mips2,mips3,mips4,mips5,mips32,mips32r2,mips64,mips64r2,micro,r6,v3,v2",
 	.regs = get_reg_profile,
-	.info = archinfo,
+	.info = mips_archinfo,
 	.preludes = preludes,
 	.bits = R_SYS_BITS_PACK3 (16, 32, 64),
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
