@@ -223,6 +223,12 @@ static int hacky_arm_asm(RArchSession *a, RAnalOp *op, const ut8 *buf, int len) 
 	if (a->config->bits == 64 && len >= 4) {
 		ut32 insn = r_read_ble32 (buf, R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config));
 		int insn_class = (insn >> 25) & 0xf;
+		bool is_ret;
+		const char *pauth_lr = hack_pauth_lr_mnemonic (insn, &is_ret);
+		if (pauth_lr) {
+			op->mnemonic = strdup (pauth_lr);
+			return op->size;
+		}
 		switch (insn_class) {
 		// Data Processing -- Register
 		case 5:

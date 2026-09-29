@@ -143,12 +143,61 @@ static int hack_handle_br_exc_sys(ut32 insn, RAnalOp *op) {
 	return -1;
 }
 
+// Map FEAT_PAuth_LR encodings to the closest instructions supported by Capstone 5.
+static const char *hack_pauth_lr_mnemonic(ut32 insn, bool *is_ret) {
+	*is_ret = false;
+	if ((insn & 0xffc0001f) == 0x5500001f) {
+		*is_ret = true;
+		return (insn & 0x00200000)? "retab": "retaa";
+	}
+	if ((insn & 0xffffffe0) == 0xd65f0be0 && (insn & 0x1f) != 0x1f) {
+		*is_ret = true;
+		return "retaa";
+	}
+	if ((insn & 0xffffffe0) == 0xd65f0fe0 && (insn & 0x1f) != 0x1f) {
+		*is_ret = true;
+		return "retab";
+	}
+	if ((insn & 0xffc0001f) == 0xf380001f) {
+		return (insn & 0x00200000)? "autibsp": "autiasp";
+	}
+	if ((insn & 0xfffffc1f) == 0xdac1901e && ((insn >> 5) & 0x1f) != 0x1f) {
+		return "autiasp";
+	}
+	if ((insn & 0xfffffc1f) == 0xdac1941e && ((insn >> 5) & 0x1f) != 0x1f) {
+		return "autibsp";
+	}
+	switch (insn) {
+	case 0xdac1bbfe: // autia171615
+		return "autia1716";
+	case 0xdac1bffe: // autib171615
+		return "autib1716";
+	case 0xdac183fe: // pacnbiasppc
+	case 0xdac1a3fe: // paciasppc
+		return "paciasp";
+	case 0xdac187fe: // pacnbibsppc
+	case 0xdac1a7fe: // pacibsppc
+		return "pacibsp";
+	case 0xdac18bfe: // pacia171615
+		return "pacia1716";
+	case 0xdac18ffe: // pacib171615
+		return "pacib1716";
+	}
+	return NULL;
+}
+
 static inline int hacky_arm_anal(RArchSession *a, RAnalOp *op, const ut8 *buf, int len) {
 	int ret = -1;
 	// Hacky support for ARMv8.3 and ARMv8.5
 	if (a->config->bits == 64 && len >= 4) {
 		ut32 insn = r_read_ble32 (buf, R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config));
 		int insn_class = (insn >> 25) & 0xf;
+		bool is_ret;
+		if (hack_pauth_lr_mnemonic (insn, &is_ret)) {
+			op->type = is_ret? R_ANAL_OP_TYPE_RET: R_ANAL_OP_TYPE_CMP;
+			op->family = R_ANAL_OP_FAMILY_SECURITY;
+			return op->size = 4;
+		}
 		// xpaci // e#43c1da
 		if (!memcmp (buf + 1, "\x43\xc1\xda", 3)) {
 			op->type = R_ANAL_OP_TYPE_MOV;
