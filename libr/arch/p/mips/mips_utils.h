@@ -7,6 +7,27 @@
 #include <r_arch.h>
 #include <r_bin.h>
 
+static inline int mips_archinfo(RArchSession *as, ut32 q) {
+	switch (q) {
+	case R_ARCH_INFO_WODST:
+		return 1;
+	case R_ARCH_INFO_CODE_ALIGN:
+	case R_ARCH_INFO_FUNC_ALIGN:
+	case R_ARCH_INFO_MINOP_SIZE:
+	case R_ARCH_INFO_INVOP_SIZE:
+		return (as->config->cpu && !strcmp (as->config->cpu, "micro"))? 2: 4;
+	case R_ARCH_INFO_MAXOP_SIZE:
+	case R_ARCH_INFO_DATA_ALIGN:
+	case R_ARCH_INFO_DATA4_ALIGN:
+		return 4;
+	case R_ARCH_INFO_DATA2_ALIGN:
+		return 2;
+	case R_ARCH_INFO_DATA8_ALIGN:
+		return 8;
+	}
+	return -1;
+}
+
 static inline ut64 mips_read_ptr_at(RBin *bin, ut64 addr, bool be, int bits) {
 	const int ptrsz = bits == 64 ? 8 : 4;
 	ut8 v[8] = {0};
