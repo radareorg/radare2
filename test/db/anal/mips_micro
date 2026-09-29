@@ -65,7 +65,8 @@ EXPECT=<<EOF
 0x0000000e   2                     41a4  0xa441
 0x00000010   4                 9860cc06  lwl a0, 1740(t8)
 0x00000014   2                     3084  movep a1,a2, zero, v1
-0x00000016   2                     7090  slti v1, s0, 0
+0x00000016   1                       70  invalid
+0x00000017   1                       90  invalid
 --
 0x00000000   2                     4fe5  addiu sp, sp, -56
 0x00000002   4                 22fdd018  swm s0-s6,ra, 24(sp)
@@ -111,7 +112,8 @@ gnu
 0x0000000e   2                     41a4  0xa441
 0x00000010   4                 9860cc06  lwl a0, 1740(t8)
 0x00000014   2                     3084  movep a1,a2, zero, v1
-0x00000016   2                     7090  slti v1, s0, 0
+0x00000016   1                       70  invalid
+0x00000017   1                       90  invalid
 cs
 0x00000000   2                     4fe5  addiusp -0x38
 0x00000002   4                 22fdd018  swm32 s0, s1, s2, s3, s4, s5, s6, ra, 0x18(sp)
@@ -246,5 +248,138 @@ EOF
 EXPECT=<<EOF
 addiusp -0x38
 addiu sp, sp, -56
+EOF
+RUN
+
+NAME=micromips GNU analysis sizes in both byte orders
+FILE=malloc://36
+ARGS=-a mips.gnu -b 32 -e asm.cpu=micro -e cfg.bigendian=true
+CMDS=<<EOF
+wx 41bc0002339c821f033ce1504fedff3c801cfb9d0010cbe96e8d45d9308000054be9470a
+af
+afbj
+af-
+e cfg.bigendian=false
+wx bc4102009c331f823c0350e1ed4f3cff1c809dfb1000e9cb8d6ed94580300500e94b0a47
+af
+afbj
+EOF
+EXPECT=<<EOF
+[{"addr":0,"size":36,"opaddr":0,"inputs":0,"outputs":0,"ninstr":12,"instrs":[0,4,8,12,14,18,22,24,26,28,32,34],"traced":0}]
+[{"addr":0,"size":36,"opaddr":0,"inputs":0,"outputs":0,"ninstr":12,"instrs":[0,4,8,12,14,18,22,24,26,28,32,34],"traced":0}]
+EOF
+RUN
+
+NAME=micromips GNU pdf keeps every instruction after analysis
+FILE=bins/elf/micromips.elf
+ARGS=-a mips.gnu -e asm.lines=false -e asm.comments=false
+CMDS=<<EOF
+aaa
+pdf @ sym.main~0x0040[0,1]
+pdf @ sym.nthFibonacciTerm~0x0040[0,1]
+EOF
+EXPECT=<<EOF
+0x004000d0 41bc0002
+0x004000d4 339c821f
+0x004000d8 033ce150
+0x004000dc 4fed
+0x004000de ff3c801c
+0x004000e2 fb9d0010
+0x004000e6 cbe9
+0x004000e8 6e8d
+0x004000ea 45d9
+0x004000ec 30800005
+0x004000f0 4be9
+0x004000f2 470a
+0x00400220 41bc0002
+0x00400224 339c80cf
+0x00400228 033ce150
+0x0040022c 4fe5
+0x0040022e fb9d0010
+0x00400232 22fdd018
+0x00400236 8e85
+0x00400238 0e00
+0x0040023a 40440006
+0x0040023e ed7f
+0x00400240 e950
+0x00400242 0c50
+0x00400244 22fd5018
+0x00400248 470e
+0x0040024a 8e2c
+0x0040024c 0e25
+0x0040024e 0e44
+0x00400250 32a00002
+0x00400254 0e80
+0x00400256 ec01
+0x00400258 32600001
+0x0040025c 32c00001
+0x00400260 e850
+0x00400262 02551350
+0x00400266 ad08
+0x00400268 ff3c8018
+0x0040026c ed01
+0x0040026e 9414ffe8
+0x00400272 e910
+0x00400274 cfe6
+0x00400276 0e13
+0x00400278 86cc
+0x0040027a 45d9
+0x0040027c 00000000
+0x00400280 b6c20004
+0x00400284 4b84
+0x00400286 ec7f
+0x00400288 cfdc
+0x0040028a e810
+0x0040028c b4140007
+0x00400290 02131150
+0x00400294 0e62
+0x00400296 32800001
+0x0040029a cfe3
+0x0040029c 4ea2
+0x0040029e 0e02
+0x004002a0 cffc
+0x004002a2 0e80
+0x004002a4 ed01
+0x004002a6 0e00
+0x004002a8 cfcc
+0x004002aa e950
+EOF
+RUN
+
+NAME=micromips rejects truncated instructions and keeps alignment checks
+FILE=-
+ARGS=-a mips.gnu -b 32 -e asm.cpu=micro -e cfg.bigendian=true
+CMDS=<<EOF
+pad 4fe5
+pad ff3c
+pad ff
+pad ff3c801c
+e cfg.bigendian=false
+pad e54f
+pad 3cff
+pad ff
+pad 3cff1c80
+e cfg.bigendian=true
+wx 4fe5ff3c801c
+pd 2
+pd 1 @ 1
+e asm.cpu=mips32
+pd 1 @ 2
+EOF
+EXPECT=<<EOF
+addiu sp, sp, -56
+invalid
+unaligned
+invalid
+lw t9, -32740(gp)
+addiu sp, sp, -56
+invalid
+unaligned
+invalid
+lw t9, -32740(gp)
+            0x00000000      4fe5           addiu sp, sp, -56
+            0x00000002      ff3c801c       lw t9, -32740(gp)
+            0x00000001      e5             unaligned
+            0x00000002      ff3c           unaligned
 EOF
 RUN

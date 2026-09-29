@@ -1384,6 +1384,18 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	if (!op) {
 		return false; // XXX true?
 	}
+	if (as->config->cpu && !strcmp (as->config->cpu, "micro")) {
+		if (len < 2) {
+			return false;
+		}
+		// microMIPS encodes the instruction length in the first halfword.
+		ut16 halfword = r_read_ble16 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config));
+		oplen = (!(halfword & 0x1c00) || (halfword & 0x1000))? 4: 2;
+		if (len < oplen) {
+			return false;
+		}
+	}
+
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->addr = addr;
 		int res = disassemble (as, op, b, len);
