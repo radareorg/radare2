@@ -17,6 +17,8 @@ static RList *anal_preludes(RArchSession *as) {
 			r_list_append (l, r_str_newf ("f00000d1 ff0000f0"));
 			r_list_append (l, r_str_newf ("f00000a9 ff0000f0"));
 			r_list_append (l, r_str_newf ("d503237f000000ff ffffffff000000ff"));
+			r_list_append (l, r_str_newf ("dac1a7fe ffffffff"));
+			r_list_append (l, r_str_newf ("dac187fe ffffffff"));
 			break;
 		default:
 			r_list_free (l);
@@ -40,6 +42,8 @@ static RList *anal_preludes(RArchSession *as) {
 			r_list_append (l, r_str_newf ("f00000d1 f00000ff"));
 			r_list_append (l, r_str_newf ("f00000a9 f00000ff"));
 			r_list_append (l, r_str_newf ("7f2303d5 ffffffff"));
+			r_list_append (l, r_str_newf ("fea7c1da ffffffff"));
+			r_list_append (l, r_str_newf ("fe87c1da ffffffff"));
 			break;
 		default:
 			r_list_free (l);
