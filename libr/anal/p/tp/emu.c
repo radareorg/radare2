@@ -794,6 +794,7 @@ TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_ops, TPE
 	int arena_size = 0;
 	for (j = 0; j < bblist_size; j++) {
 		const ut64 bbat = *RVecUT64_at (&bblist, j);
+		tps->bb_trace_start = VecTraceOp_length (&etrace->db.ops);
 		tps->lineage_reset = bbstate && tp_restore_pred_state (tps, &bblist, j, bbat, bbstate, loop_headers, arena_size);
 		TPLoopHdr *cur_hdr = ht_up_find (loop_headers, bbat, NULL);
 		if (cur_hdr) {

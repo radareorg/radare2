@@ -138,6 +138,7 @@ typedef struct tp_state_t {
 	REsilRegInterface reg_if;
 	REsilMemInterface mem_if;
 	TypeTrace tt;
+	int bb_trace_start;
 	ut64 stack_base;
 	ut64 stack_size;
 	int stack_fd;
