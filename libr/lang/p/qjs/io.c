@@ -249,7 +249,7 @@ static JSValue r2plugin_io(JSContext *ctx, JSValueConst this_val, int argc, JSVa
 	RPluginMeta meta = {
 		.name = strdup (nameptr),
 		.desc = descptr ? strdup (descptr) : NULL,
-		.license = descptr ? strdup (licenseptr) : NULL,
+		.license = licenseptr ? strdup (licenseptr) : NULL,
 	};
 	memcpy ((void*)&ap->meta, &meta, sizeof (RPluginMeta));
 
