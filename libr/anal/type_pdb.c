@@ -121,10 +121,18 @@ static void parse_enum(const RAnal *anal, STpiStream *ss, SType *type, RList *ty
 	type_info->get_utype (ss, type_info, (void **)&utype);
 	int size = 0;
 	char *type_name = NULL;
-	if (utype && utype->type_data.type_info) {
-		SLF_SIMPLE_TYPE *st = utype->type_data.type_info;
-		type_name = st->type;
-		size = st->size;
+	bool to_free_type_name = false;
+	if (utype) {
+		if (utype->type_data.leaf_type == eLF_SIMPLE_TYPE) {
+			SLF_SIMPLE_TYPE *st = utype->type_data.type_info;
+			if (st) {
+				type_name = st->type;
+				size = st->size;
+			}
+		} else if (utype->type_data.get_print_type) {
+			utype->type_data.get_print_type (ss, &utype->type_data, &type_name);
+			to_free_type_name = true;
+		}
 	}
 	RList *members;
 	type_info->get_members (ss, type_info, &members);
@@ -148,6 +156,9 @@ static void parse_enum(const RAnal *anal, STpiStream *ss, SType *type, RList *ty
 	}
 	if (to_free_name) {
 		R_FREE (name);
+	}
+	if (to_free_type_name) {
+		free (type_name);
 	}
 	tpi_free_simple_type (utype);
 	r_anal_base_type_free (base_type);
