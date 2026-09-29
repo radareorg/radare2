@@ -887,3 +887,49 @@ var int32_t var_14h @ rbp-0x14
 var int32_t var_18h @ rbp-0x18
 EOF
 RUN
+
+NAME=aft preserves BP-relative indices for an explicit array
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e54883ec2048b8414141414141414148ba4242424242424200488945e0488955e8488d45e04889c7e850000000c9c3
+af @ 0
+afvn s var_20h
+afvt s "char [16]"
+aft
+pd 1 @ 0x1c
+pd 1 @ 0x20
+aft
+pd 1 @ 0x1c
+pd 1 @ 0x20
+EOF
+EXPECT=<<EOF
+|           0x0000001c      488945e0       mov qword [s], rax
+|           0x00000020      488955e8       mov qword [s[8]], rdx
+|           0x0000001c      488945e0       mov qword [s], rax
+|           0x00000020      488955e8       mov qword [s[8]], rdx
+EOF
+RUN
+
+NAME=aft preserves explicit SP-relative array indices across stack adjustments
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 4883ec3048b8414141414141414148ba424242424242420048894424084883ec104889542420488d7c2418e8d00000004883c440c3
+af @ 0
+afvn s var_8h
+afvt s "char [16]"
+aft
+pd 1 @ 0x18
+pd 1 @ 0x21
+aft
+pd 1 @ 0x18
+pd 1 @ 0x21
+EOF
+EXPECT=<<EOF
+|           0x00000018      4889442408     mov qword [s], rax
+|           0x00000021      4889542420     mov qword [s[8]], rdx
+|           0x00000018      4889442408     mov qword [s], rax
+|           0x00000021      4889542420     mov qword [s[8]], rdx
+EOF
+RUN

@@ -170,7 +170,7 @@ R_API bool r_anal_function_rebase_vars(RAnal *a, RAnalFunction *fcn) {
 // Element size (bytes) and count of an array type like "char[4]"/"int[9][9]".
 // False if it is not a sized array (unknown element type or missing [N]).
 static bool array_type_info(RAnal *anal, const char *type, int *esize, int *count) {
-	const char *br = strchr (type, '[');
+	const char *br = type? strchr (type, '['): NULL;
 	if (!br) {
 		return false;
 	}
@@ -695,7 +695,10 @@ R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, st64 delta, u
 	RAnalVar **it;
 	R_VEC_FOREACH (inst_accesses, it) {
 		RAnalVar *v = *it;
-		if (v->delta == delta) {
+		int esize, count;
+		if (v->delta == delta || (v->kind != R_ANAL_VAR_KIND_REG && delta > v->delta
+			&& array_type_info (fcn->anal, v->type, &esize, &count)
+			&& delta - v->delta < (st64)esize * count)) {
 			var = v;
 			break;
 		}
@@ -713,7 +716,8 @@ R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, st64 delta, u
 	if (!acc || acc->offset != offset) {
 		return ST64_MAX;
 	}
-	return acc->stackptr;
+	// An array access records its base displacement at this instruction, including SP adjustments.
+	return acc->stackptr + delta - var->delta;
 }
 
 R_API const char *r_anal_function_get_var_reg_at(RAnalFunction *fcn, st64 delta, ut64 addr) {
@@ -1398,7 +1402,8 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	const bool fuzzy = !strcmp (anal->config->arch, "arm");
 	RAnalVar *var = get_stack_var (anal, fcn, frame_off, access_size, var_size, fuzzy, addr_taken);
 	if (var) {
-		r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr);
+		const st64 interior = frame_off != var->delta && aggregate_extent (anal, var)? frame_off - var->delta: 0;
+		r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr - interior);
 		// Revisit inferred arguments after a CC change without replacing user edits.
 		if (!isarg || !var->isarg || var->delta != frame_off) {
 			return;
