@@ -5,7 +5,7 @@
 .Nd Radare2 Package Manager
 .Sh SYNOPSIS
 .Nm r2pm
-.Op Fl AacdeHhijlpqrRstuUvw
+.Op Fl AabcdeHhijlpqrRstuUvw
 .Op Ar pkgs...
 .Sh DESCRIPTION
 The package manager for Radare2, allowing installation, update, uninstallation, and discovery of plugins and tools.
@@ -18,6 +18,17 @@ Text output marks them as
 .Ql [unsupported] .
 .It Fl a Ar repository
 Add or delete external repository. Using '-a repository' adds a repository, and '-a -repository' deletes it. Use with no arguments to list all registered repos.
+.It Fl b
+Require a binary package for the target architecture, operating system and
+.Ev R2V
+version.
+Use with
+.Fl i .
+Skip source checkout and build dependencies.
+If no binary installer exists or installation fails, return an error and
+request re-running without
+.Fl b ;
+never fall back to building from source.
 .It Fl c Ar pkgname
 Clear cached sources for the given package. Use
 .Fl cp
@@ -95,6 +106,17 @@ Directory for user man pages (default: ~/.local/share/radare2/prefix/man)
 Directory for user documentation (default: ~/.local/share/radare2/prefix/doc)
 .It Ev R2PM_OFFLINE
 Disable online operations (default: 0)
+.It Ev R2V
+Release version requested by binary installers (defaults to the installed
+.Cm radare2 -qv
+version).
+.It Ev R2PM_OS
+Target operating system exported to package scripts
+(for example linux, darwin or windows).
+.It Ev R2PM_ARCH
+Target architecture exported to package scripts (for example x86 or arm).
+.It Ev R2PM_BITS
+Target pointer size exported to package scripts (32 or 64).
 .It Ev R2PM_PLATFORM
 Override the platform used to filter
 .Fl s
@@ -137,11 +159,42 @@ Linker search path flags to build against radare2 libraries
 .It Ev R2_LIBS
 Library flags to link against radare2 libraries
 .El
+.Sh BINARY PACKAGES
+Packages implement
+.Ic R2PM_BINSTALL()
+as a shell script on Unix, or
+.Ic R2PM_BINSTALL_WINDOWS()
+as Windows commands.
+These blocks run without a source checkout; they must select an exact release
+using
+.Ev R2V , R2PM_OS , R2PM_ARCH
+and
+.Ev R2PM_BITS ,
+download and install its files, and return a nonzero status on failure.
+The binary installer handles its own tools and runtime dependencies;
+.Ic R2PM_NEEDS
+and
+.Ic R2PM_DEPS
+are used only for source installs.
+Normal installation directories,
+.Ev GLOBAL
+and
+.Ev R2PM_SUDO
+are available.
+Installations are registered only on success.
 .Sh EXAMPLES
 .Pp
 Install a package
 .Pp
   $ r2pm -i yara3
+.Pp
+Install the r2frida binary matching the installed radare2 version
+.Pp
+  $ r2pm -bi r2frida
+.Pp
+Select a binary release explicitly (for example in CI)
+.Pp
+  $ R2V=6.2.2 r2pm -bi r2frida
 .Pp
 Clean cache and then install (don't git pull on $R2PM_GITDIR/yara3)
 .Pp

@@ -10,19 +10,30 @@
 #define R2PM_INSTALL_QJS "\nR2PM_INSTALL_QJS() {\n"
 #define R2PM_INSTALL_UNIX "\nR2PM_INSTALL() {\n"
 #define R2PM_INSTALL_WINDOWS "\nR2PM_INSTALL_WINDOWS() {\n"
+#define R2PM_BINSTALL "\nR2PM_BINSTALL() {\n"
+#define R2PM_BINSTALL_WINDOWS "\nR2PM_BINSTALL_WINDOWS() {\n"
 #define R2PM_UNINSTALL_R2 "\nR2PM_UNINSTALL_R2() {\n"
+
+#if defined(__ANDROID__)
+#define R2PM_OS "android"
+#elif TARGET_OS_IPHONE
+#define R2PM_OS "ios"
+#else
+#define R2PM_OS R_SYS_OS
+#endif
 
 #ifndef R2PM_STALE_DAYS
 #define R2PM_STALE_DAYS 14
 #endif
 
-static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, bool global);
+static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, bool global, bool binary);
 
 static const char *helpmsg =
 	"Usage: r2pm [-flags] [pkgs...]\n"
 	"Commands:\n"
 	" -A                include unsupported packages in search results\n"
 	" -a [repository]   add or -delete external repository\n"
+	" -b                install only binary packages; fail if unavailable (requires -i)\n"
 	" -c <pkgname>      clear cached sources for the given package (see -cp)\n"
 	" -ci <pkgname>     clean + install\n"
 	" -cp               clean the user's home plugin directory\n"
@@ -51,6 +62,7 @@ static const char *helpmsg =
 typedef struct r_r2pm_t {
 	bool add;
 	bool all;
+	bool binary;
 	bool clean;
 	bool doc;
 	bool edit;
@@ -108,6 +120,15 @@ static const char *r2pm_modifier_option(const R2Pm *r2pm) {
 }
 
 static int r2pm_check_arguments(R2Pm *r2pm, int argc, int ind, bool action) {
+	if (r2pm->binary && r2pm->upgrade) {
+		R_LOG_ERROR ("Option '-b' cannot be combined with '-UU'");
+		return 1;
+	}
+	if (r2pm->binary && !r2pm->help && !r2pm->version && !r2pm->envhelp) {
+		if (!r2pm->install) {
+			return r2pm_missing_argument ("-b", "-i");
+		}
+	}
 	if (!action && argc > 1) {
 		const char *modifier = r2pm_modifier_option (r2pm);
 		if (modifier) {
@@ -342,7 +363,7 @@ static void r2pm_upgrade(bool force) {
 	if (r_list_length (list) < 1) {
 		R_LOG_INFO ("No packages to upgrade");
 	} else {
-		r2pm_install (list, false, true, force, false);
+		r2pm_install (list, false, true, force, false, false);
 	}
 	free (s);
 	r_list_free (list);
@@ -542,6 +563,9 @@ static void r2pm_setenv(R2Pm *r2pm) {
 		r_sys_setenv ("R2PM_TIME", r2pm->time);
 	}
 	r_sys_setenv ("R2_LIBEXT", R_LIB_EXT);
+	r_sys_setenv ("R2PM_OS", R2PM_OS);
+	r_sys_setenv ("R2PM_ARCH", R_SYS_ARCH);
+	r_sys_setenv ("R2PM_BITS", sizeof (void *) == 8? "64": "32");
 
 	char *gdir = r2pm_gitdir ();
 	r_sys_setenv ("R2PM_GITDIR", gdir);
@@ -756,7 +780,9 @@ static int r2pm_run_r2script(const char *script, const char *dir) {
 static int r2pm_uninstall_pkg(const char *pkg, bool global) {
 	R_LOG_INFO ("Uninstalling %s", pkg);
 	char *srcdir = r2pm_gitdir ();
-	const bool have_builddir = r2pm_have_builddir (pkg);
+	char *builddir = r2pm_source_dir (srcdir, pkg);
+	const bool have_builddir = r2pm_have_builddir (pkg) && r_file_is_directory (builddir);
+	free (builddir);
 	char *r2script = r2pm_get (pkg, R2PM_UNINSTALL_R2, TT_CODEBLOCK);
 	if (r2script) {
 		char *pkgdir = have_builddir? r2pm_source_dir (srcdir, pkg): NULL;
@@ -776,6 +802,7 @@ static int r2pm_uninstall_pkg(const char *pkg, bool global) {
 		free (srcdir);
 		return 1;
 	}
+	script = r_str_replace_all (script, "\n", " && ");
 	char *esrcdir = r_str_escape_sh (srcdir);
 	char *epkg = r_str_escape_sh (pkg);
 	char *s = (have_builddir && esrcdir && epkg)
@@ -801,9 +828,11 @@ static int r2pm_uninstall_pkg(const char *pkg, bool global) {
 	free (epkg);
 	int res = r_sandbox_system (s, 1);
 	free (s);
-
-	r2pm_unregister (pkg);
 #endif
+	if (res == 0) {
+		r2pm_unregister (pkg);
+	}
+	free (script);
 	free (srcdir);
 	return res;
 }
@@ -964,10 +993,36 @@ static bool r2pm_check(const char *program) {
 	return found;
 }
 
-static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
-	bool have_builddir = r2pm_have_builddir (pkg);
+static int r2pm_install_binary_pkg(const char *pkg, bool global) {
+#if R2__WINDOWS__
+	char *script = r2pm_get (pkg, R2PM_BINSTALL_WINDOWS, TT_CODEBLOCK);
+#else
+	char *script = r2pm_get (pkg, R2PM_BINSTALL, TT_CODEBLOCK);
+#endif
+	if (R_STR_ISEMPTY (script)) {
+		R_LOG_ERROR ("No binary package for '%s' on " R2PM_OS "/" R_SYS_ARCH "; re-run without -b", pkg);
+		free (script);
+		return 1;
+	}
+#if R2__WINDOWS__
+	char *s = r_str_replace_all (script, "\n", " && ");
+#else
+	char *s = r_str_newf ("set -e\nR2PM_FAIL(){\n  echo \"$@\" >&2\n  exit 1\n}\n%s", script);
+	free (script);
+#endif
+	int res = s? r_sandbox_system (s, 1): 1;
+	free (s);
+	if (res) {
+		R_LOG_ERROR ("Binary install failed for '%s'; re-run without -b to build from source", pkg);
+		return 1;
+	}
+	r2pm_register (pkg, global);
+	return 0;
+}
+
+static int r2pm_install_pkg(const char *pkg, bool clean, bool global, bool binary) {
 	R_LOG_INFO ("Starting install for %s", pkg);
-	char *needs = r2pm_get (pkg, "\nR2PM_NEEDS ", TT_TEXTLINE);
+	char *needs = binary? NULL: r2pm_get (pkg, "\nR2PM_NEEDS ", TT_TEXTLINE);
 	if (needs) {
 		bool error = false;
 		char *dep;
@@ -992,7 +1047,7 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 					if (r_sys_cmd (cmd) == 0) {
 						const char cmd[] = "pip3 install meson --break-system-packages";
 						if (r_sys_cmd (cmd) == 0) {
-							return r2pm_install_pkg (pkg, clean, global);
+							return r2pm_install_pkg (pkg, clean, global, false);
 						}
 					}
 				}
@@ -1035,6 +1090,10 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 			return -1;
 		}
 	}
+	if (binary) {
+		return r2pm_install_binary_pkg (pkg, global);
+	}
+	bool have_builddir = r2pm_have_builddir (pkg);
 	char *deps = r2pm_get (pkg, "\nR2PM_DEPS ", TT_TEXTLINE);
 	if (deps) {
 		char *dep;
@@ -1052,7 +1111,7 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 				}
 			}
 			if (r2pm_clone (dep) == 0) {
-				r2pm_install_pkg (dep, clean, false); // XXX get current pkg global value
+				r2pm_install_pkg (dep, clean, false, false); // XXX get current pkg global value
 			} else {
 				R_LOG_ERROR ("Cannot clone %s", dep);
 				// ignore return -1;
@@ -1175,7 +1234,7 @@ static bool r2pm_have_packages(void) {
 	return res;
 }
 
-static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, bool global) {
+static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, bool global, bool binary) {
 	RListIter *iter;
 	const char *t;
 	int rc = 0;
@@ -1187,6 +1246,13 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, 
 	}
 	r_str_trim (r2v);
 	R_LOG_INFO ("Using r2-%s and r2pm-" R2_VERSION, r2v);
+	if (binary) {
+		char *version = r_sys_getenv ("R2V");
+		if (R_STR_ISEMPTY (version)) {
+			r_sys_setenv ("R2V", r2v);
+		}
+		free (version);
+	}
 	free (r2v);
 	if (global) {
 		r_sys_setenv ("GLOBAL", "1");
@@ -1219,8 +1285,8 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, 
 		if (clean) {
 			r2pm_clean_pkg (t);
 		}
-		if (r2pm_clone (t) == 0) {
-			rc |= r2pm_install_pkg (t, clean, global);
+		if (binary || r2pm_clone (t) == 0) {
+			rc |= r2pm_install_pkg (t, clean, global, binary);
 		} else {
 			R_LOG_ERROR ("Cannot clone %s", t);
 			rc = 1;
@@ -1312,7 +1378,9 @@ static bool is_valid_package(const char *dbdir, const char *pkg) {
 	bool valid = data && (strstr (data, R2PM_INSTALL_R2)
 		|| strstr (data, R2PM_INSTALL_QJS)
 		|| strstr (data, R2PM_INSTALL_UNIX)
-		|| strstr (data, R2PM_INSTALL_WINDOWS));
+		|| strstr (data, R2PM_INSTALL_WINDOWS)
+		|| strstr (data, R2PM_BINSTALL)
+		|| strstr (data, R2PM_BINSTALL_WINDOWS));
 	if (!valid) {
 		R_LOG_DEBUG ("Unable to find an R2PM_INSTALL script in '%s'", pkg);
 	}
@@ -1393,12 +1461,14 @@ static bool r2pm_pkg_supported(const char *data) {
 		return false;
 	}
 	bool supported = (r_str_cmp_list (platform, "r2", ' ') && strstr (data, R2PM_INSTALL_R2))
-		|| (r_str_cmp_list (platform, "unix", ' ') && strstr (data, R2PM_INSTALL_UNIX))
-		|| (r_str_cmp_list (platform, "windows", ' ') && strstr (data, R2PM_INSTALL_WINDOWS))
+		|| (r_str_cmp_list (platform, "unix", ' ') && (strstr (data, R2PM_INSTALL_UNIX) || strstr (data, R2PM_BINSTALL)))
+		|| (r_str_cmp_list (platform, "windows", ' ') && (strstr (data, R2PM_INSTALL_WINDOWS) || strstr (data, R2PM_BINSTALL_WINDOWS)))
 		|| (r_str_cmp_list (platform, "qjs", ' ') && strstr (data, R2PM_INSTALL_QJS))
 		|| (r_str_cmp_list (platform, "any", ' ') && (strstr (data, R2PM_INSTALL_R2)
 			|| strstr (data, R2PM_INSTALL_UNIX)
 			|| strstr (data, R2PM_INSTALL_WINDOWS)
+			|| strstr (data, R2PM_BINSTALL)
+			|| strstr (data, R2PM_BINSTALL_WINDOWS)
 			|| strstr (data, R2PM_INSTALL_QJS)));
 	free (env);
 	return supported;
@@ -1444,10 +1514,10 @@ static char *r2pm_search(const char *grep, int mode, bool all) {
 				if (strstr (data, R2PM_INSTALL_R2)) {
 					pj_s (pj, "r2");
 				}
-				if (strstr (data, R2PM_INSTALL_WINDOWS)) {
+				if (strstr (data, R2PM_INSTALL_WINDOWS) || strstr (data, R2PM_BINSTALL_WINDOWS)) {
 					pj_s (pj, "windows");
 				}
-				if (strstr (data, R2PM_INSTALL_UNIX)) {
+				if (strstr (data, R2PM_INSTALL_UNIX) || strstr (data, R2PM_BINSTALL)) {
 					pj_s (pj, "unix");
 				}
 				if (strstr (data, R2PM_INSTALL_QJS)) {
@@ -1494,6 +1564,10 @@ static void r2pm_envhelp(void) {
 	"R2PM_OFFLINE=%d         # don't git pull\n"
 	"R2PM_TIME=YYYY-MM-DD\n"
 	"R2PM_PLATFORM=          # r2, unix, windows, qjs or any (overrides the search filter)\n"
+	"R2V=                    # binary release version (defaults to radare2 -qv)\n"
+	"R2PM_OS=" R2PM_OS "\n"
+	"R2PM_ARCH=" R_SYS_ARCH "\n"
+	"R2PM_BITS=%d\n"
 	"R2PM_PLUGDIR=%s\n"
 	"R2PM_PLUGDIR=%s (global)\n"
 	"R2PM_PREFIX=%s\n"
@@ -1509,6 +1583,7 @@ static void r2pm_envhelp(void) {
 	"R2_LIBS=%s\n",
 		r2pm_log_level,
 		r2pm_offline,
+		(int)(sizeof (void *) * 8),
 		r2pm_plugdir,
 		r2pm_plugdir2,
 		r2pm_prefix,
@@ -1586,7 +1661,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		0
 	};
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "AaqecdiIjhH:flgrRpst:uUv");
+	r_getopt_init (&opt, argc, argv, "AabqecdiIjhH:flgrRpst:uUv");
 	int i, c;
 	bool action = false;
 	// -H option without argument
@@ -1599,6 +1674,9 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		switch (c) {
 		case 'A':
 			r2pm.all = true;
+			break;
+		case 'b':
+			r2pm.binary = true;
 			break;
 		case 'a':
 			r2pm.add = true;
@@ -1795,7 +1873,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	} else if (r2pm.edit) {
 		res = r2pm_edit (targets);
 	} else if (r2pm.install) {
-		res = r2pm_install (targets, r2pm.uninstall, r2pm.clean, r2pm.force, r2pm.global);
+		res = r2pm_install (targets, r2pm.uninstall, r2pm.clean, r2pm.force, r2pm.global, r2pm.binary);
 	} else if (r2pm.uninstall) {
 		res = r2pm_uninstall (targets, r2pm.global);
 	} else if (r2pm.clean) {

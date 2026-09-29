@@ -141,6 +141,33 @@ ERROR: Option '-u' requires one or more packages
 EOF
 RUN
 
+NAME=r2pm -b requires install
+FILE=-
+CMDS=r2pm -b
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Option '-b' requires -i
+EOF
+RUN
+
+NAME=r2pm -bi requires package
+FILE=-
+CMDS=r2pm -bi
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Option '-i' requires one or more packages
+EOF
+RUN
+
+NAME=r2pm binary mode rejects source upgrade
+FILE=-
+CMDS=r2pm -biUU r2frida
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Option '-b' cannot be combined with '-UU'
+EOF
+RUN
+
 NAME=r2pm -d requires package
 FILE=-
 CMDS=!r2pm -d
