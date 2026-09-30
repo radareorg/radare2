@@ -224,6 +224,7 @@ EOF
 RUN
 
 NAME=aom-riscv
+REQUIRE=cs5
 FILE=-
 CMDS=<<EOF
 e asm.arch=riscv.cs
@@ -241,6 +242,28 @@ nop
 272
 272
 272
+EOF
+RUN
+
+NAME=aom-riscv (cs6)
+REQUIRE=cs6
+FILE=-
+CMDS=<<EOF
+e asm.arch=riscv.cs
+e asm.bits=64
+wx 13 # wa nop
+aom
+aoml~?
+e asm.bits=32
+aoml~?
+e asm.bits=16
+aoml~?
+EOF
+EXPECT=<<EOF
+nop
+1674
+1674
+1674
 EOF
 RUN
 
