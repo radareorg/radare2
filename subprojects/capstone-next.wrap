@@ -3,5 +3,5 @@ url = https://github.com/capstone-engine/capstone.git
 revision = 26d632ecf83967ad3981d65ca28f87ce0e393ec6
 patch_directory = capstone-next
 directory = capstone-next
-diff_files = capstone-next/capstone-patches/fix-x86-16.patch, capstone-next/capstone-patches/fix-arm-shift-alias.patch
+diff_files = capstone-next/capstone-patches/fix-x86-16.patch, capstone-next/capstone-patches/fix-ppc-32-mode.patch, capstone-next/capstone-patches/fix-arm-shift-alias.patch
 depth = 1

@@ -1,0 +1,12 @@
+--- a/arch/PowerPC/PPCMapping.c
++++ b/arch/PowerPC/PPCMapping.c
+@@ -339,6 +339,9 @@
+ 
+ bool PPC_getFeatureBits(unsigned int mode, unsigned int feature)
+ {
++	if (feature == PPC_Feature64Bit) {
++		return (mode & CS_MODE_64) != 0;
++	}
+ 	if (feature == PPC_FeatureQPX) {
+ 		return (mode & CS_MODE_QPX) != 0;
+ 	} else if (feature == PPC_FeatureSPE) {

@@ -72,6 +72,7 @@ EOF
 RUN
 
 NAME=PPC64 pad without pseudo is unfiltered
+REQUIRE=cs5
 FILE=malloc://32
 CMDS=<<EOF
 e asm.arch=ppc
@@ -82,6 +83,21 @@ EOF
 EXPECT=<<EOF
 cmpdi r9, 0
 beq 0x20c
+EOF
+RUN
+
+NAME=PPC64 pad without pseudo is unfiltered (cs6)
+REQUIRE=cs6
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+pad 2c29000041820208
+EOF
+EXPECT=<<EOF
+cmpdi r9, 0
+bt eq, 0x20c
 EOF
 RUN
 

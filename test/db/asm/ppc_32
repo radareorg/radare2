@@ -25,7 +25,12 @@ adE "stwu r1, -0x10(r1)" 9421fff0
 adE "cmpwi r3, 0" 2c030000
 
 # Branches
-adE "beq 0x10" 41820010
+aE "beq 0x10" 41820010
+REQUIRE=cs5
+dE "beq 0x10" 41820010
+REQUIRE=cs6
+dE "bt eq, 0x10" 41820010
+REQUIRE=
 adE "bl 0x100" 48000101
 adE "blr" 4e800020
 adE "bctrl" 4e800421
@@ -36,8 +41,18 @@ adE "mflr r0" 7c0802a6
 
 # Coverage: mnemonics implemented but previously untested
 adE "divw r3, r4, r5" 7c642bd6
-adE "bge 0x10" 40800010
-adE "ble 0x10" 40810010
+aE "bge 0x10" 40800010
+REQUIRE=cs5
+dE "bge 0x10" 40800010
+REQUIRE=cs6
+dE "bf lt, 0x10" 40800010
+REQUIRE=
+aE "ble 0x10" 40810010
+REQUIRE=cs5
+dE "ble 0x10" 40810010
+REQUIRE=cs6
+dE "bf gt, 0x10" 40810010
+REQUIRE=
 
 # Coverage: sub alias should encode as subf with swapped rA/rB
 # (assemble-only: ppc_cs canonicalises back to "subf r5, r4, r3").
