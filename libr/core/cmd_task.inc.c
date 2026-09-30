@@ -29,6 +29,10 @@ static int _cmd_tasks_impl(void *data, const char *input) {
 		break;
 	}
 	case ':': // "&:"
+		if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+			R_LOG_ERROR ("The &: command is disabled in sandbox mode");
+			return 0;
+		}
 		r_core_cmd_queue (core, input + 1);
 		break;
 	case 'w': // "&w"

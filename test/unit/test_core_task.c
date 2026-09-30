@@ -403,6 +403,23 @@ bool test_registered_mount_task_output(void) {
 	mu_end;
 }
 
+bool test_sandbox_command_queue(void) {
+	RCore *core = r_core_new ();
+	r_core_cmd0 (core, "&:f queued");
+	r_core_prompt_exec (core);
+	mu_assert_notnull (r_flag_get (core->flags, "queued"), "unsandboxed commands can be queued");
+
+	int old_grain = r_sandbox_grain (R_SANDBOX_GRAIN_NONE);
+	mu_assert_true (r_sandbox_enable (true), "enable sandbox");
+	r_core_cmd0 (core, "&:f forbidden");
+	r_core_prompt_exec (core);
+	mu_assert_null (r_flag_get (core->flags, "forbidden"), "sandboxed commands cannot queue work for later");
+	r_core_free (core);
+	r_sandbox_grain (old_grain);
+	r_sandbox_disable (true);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_task_join_uses_thread_identity);
 	mu_run_test (test_task_context_blocksize_snapshot);
@@ -410,6 +427,7 @@ int all_tests(void) {
 	mu_run_test (test_task_cancel_breaks_child_console);
 	mu_run_test (test_registered_echo_nested_task);
 	mu_run_test (test_registered_mount_task_output);
+	mu_run_test (test_sandbox_command_queue);
 	return tests_passed != tests_run;
 }
 
