@@ -256,42 +256,6 @@ bool test_type_format_export_newlines(void) {
 	mu_end;
 }
 
-bool test_sandbox_grain_expressions(void) {
-	RCore *core = r_core_new ();
-	const struct {
-		const char *expression;
-		int mask;
-	} cases[] = {
-		{ "!disk,!exec", R_SANDBOX_GRAIN_ALL & ~(R_SANDBOX_GRAIN_DISK | R_SANDBOX_GRAIN_EXEC) },
-		{ " !disk , !exec ", R_SANDBOX_GRAIN_ALL & ~(R_SANDBOX_GRAIN_DISK | R_SANDBOX_GRAIN_EXEC) },
-		{ "all,!exec", R_SANDBOX_GRAIN_ALL & ~R_SANDBOX_GRAIN_EXEC },
-		{ "disk,files,!disk", R_SANDBOX_GRAIN_FILES },
-		{ "!exec,exec", R_SANDBOX_GRAIN_ALL },
-		{ "none,exec", R_SANDBOX_GRAIN_EXEC },
-		{ "exec,none", R_SANDBOX_GRAIN_NONE },
-		{ "!all", R_SANDBOX_GRAIN_NONE },
-		{ "!none", R_SANDBOX_GRAIN_ALL },
-		{ "file", R_SANDBOX_GRAIN_FILES }
-	};
-	size_t i;
-	for (i = 0; i < R_ARRAY_SIZE (cases); i++) {
-		mu_assert_notnull (r_config_set (core->config, "cfg.sandbox.grain", cases[i].expression), "parse grain expression");
-		int mask = r_sandbox_grain (R_SANDBOX_GRAIN_ALL);
-		mu_assert_eq (mask, cases[i].mask, cases[i].expression);
-	}
-	r_config_set (core->config, "cfg.sandbox.grain", "disk");
-	const char *invalid[] = { "!", "disk,,exec", "!disk,", "disk garbage", "allexec", "!exec,!bogus", "" };
-	for (i = 0; i < R_ARRAY_SIZE (invalid); i++) {
-		r_config_set (core->config, "cfg.sandbox.grain", invalid[i]);
-		mu_assert_streq (r_config_get (core->config, "cfg.sandbox.grain"), "disk", "invalid expression preserves configuration");
-		int mask = r_sandbox_grain (R_SANDBOX_GRAIN_DISK);
-		mu_assert_eq (mask, R_SANDBOX_GRAIN_DISK, "invalid expression preserves permissions");
-	}
-	r_core_free (core);
-	r_sandbox_grain (R_SANDBOX_GRAIN_ALL);
-	mu_end;
-}
-
 int all_tests(void) {
 	mu_run_test (test_type_format_export_newlines);
 	mu_run_test (test_foreach_instruction_bounds);
@@ -304,7 +268,6 @@ int all_tests(void) {
 	mu_run_test (test_autocomplete_find_prefers_exact_match);
 	mu_run_test (test_o_autocomplete_uses_file_completion);
 	mu_run_test (test_registered_command_autocomplete);
-	mu_run_test (test_sandbox_grain_expressions);
 	return tests_passed != tests_run;
 }
 

@@ -1663,62 +1663,15 @@ static RCoreHelpMessage help_msg_grain = {
 static bool cb_cfgsanbox_grain(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
-	if (strstr (node->value, "?")) {
+	if (!strcmp (node->value, "?")) {
 		r_cons_cmd_help (core->cons, help_msg_grain);
 		return false;
 	}
-	static const struct {
-		const char *name;
-		int mask;
-	} grains[] = {
-		{ "all", R_SANDBOX_GRAIN_ALL },
-		{ "none", R_SANDBOX_GRAIN_NONE },
-		{ "exec", R_SANDBOX_GRAIN_EXEC },
-		{ "socket", R_SANDBOX_GRAIN_SOCKET },
-		{ "file", R_SANDBOX_GRAIN_FILES },
-		{ "files", R_SANDBOX_GRAIN_FILES },
-		{ "disk", R_SANDBOX_GRAIN_DISK },
-		{ "network", R_SANDBOX_GRAIN_NETWORK },
-		{ "environ", R_SANDBOX_GRAIN_ENVIRON },
-		{ "hidden", R_SANDBOX_GRAIN_HIDDEN }
-	};
-	char *value = strdup (node->value);
-	if (!value) {
+	int gt;
+	if (!r_sandbox_grain_parse (node->value, &gt)) {
+		R_LOG_ERROR ("Invalid sandbox grain expression '%s'", node->value);
 		return false;
 	}
-	RList *options = r_str_split_list (value, ",", 0);
-	if (!options) {
-		free (value);
-		return false;
-	}
-	int gt = *r_str_trim_head_ro (node->value) == '!'? R_SANDBOX_GRAIN_ALL: R_SANDBOX_GRAIN_NONE;
-	RListIter *iter;
-	char *option;
-	r_list_foreach (options, iter, option) {
-		bool remove = *option == '!';
-		const char *name = remove? r_str_trim_head_ro (option + 1): option;
-		size_t i;
-		for (i = 0; i < R_ARRAY_SIZE (grains); i++) {
-			if (!strcmp (name, grains[i].name)) {
-				break;
-			}
-		}
-		if (i == R_ARRAY_SIZE (grains)) {
-			R_LOG_ERROR ("Unknown sandbox grain '%s'", option);
-			r_list_free (options);
-			free (value);
-			return false;
-		}
-		if (remove) {
-			gt &= ~grains[i].mask;
-		} else if (!strcmp (name, "none")) {
-			gt = R_SANDBOX_GRAIN_NONE;
-		} else {
-			gt |= grains[i].mask;
-		}
-	}
-	r_list_free (options);
-	free (value);
 	int old_grain = r_sandbox_grain (gt);
 	if (r_sandbox_enable (false) && (gt & old_grain) != gt) {
 		r_sandbox_grain (old_grain);

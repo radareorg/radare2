@@ -358,6 +358,71 @@ bool test_endian_roundtrip(void) {
 	mu_end;
 }
 
+bool test_sandbox_grain_parse(void) {
+	const struct {
+		const char *expression;
+		int mask;
+	} cases[] = {
+		{ "all", R_SANDBOX_GRAIN_ALL },
+		{ "none", R_SANDBOX_GRAIN_NONE },
+		{ "disk", R_SANDBOX_GRAIN_DISK },
+		{ "file", R_SANDBOX_GRAIN_FILES },
+		{ "files", R_SANDBOX_GRAIN_FILES },
+		{ "exec", R_SANDBOX_GRAIN_EXEC },
+		{ "socket", R_SANDBOX_GRAIN_SOCKET },
+		{ "network", R_SANDBOX_GRAIN_NETWORK },
+		{ "environ", R_SANDBOX_GRAIN_ENVIRON },
+		{ "hidden", R_SANDBOX_GRAIN_HIDDEN },
+		{ "disk,exec", R_SANDBOX_GRAIN_DISK | R_SANDBOX_GRAIN_EXEC },
+		{ "disk,disk", R_SANDBOX_GRAIN_DISK },
+		{ " \t\r\n\v\f files \t\r\n\v\f ", R_SANDBOX_GRAIN_FILES },
+		{ "!disk,!exec", R_SANDBOX_GRAIN_ALL & ~(R_SANDBOX_GRAIN_DISK | R_SANDBOX_GRAIN_EXEC) },
+		{ " ! disk , !\t exec ", R_SANDBOX_GRAIN_ALL & ~(R_SANDBOX_GRAIN_DISK | R_SANDBOX_GRAIN_EXEC) },
+		{ "all,!exec", R_SANDBOX_GRAIN_ALL & ~R_SANDBOX_GRAIN_EXEC },
+		{ "disk,files,!disk", R_SANDBOX_GRAIN_FILES },
+		{ "files,!file", R_SANDBOX_GRAIN_NONE },
+		{ "file,!files", R_SANDBOX_GRAIN_NONE },
+		{ "!exec,exec", R_SANDBOX_GRAIN_ALL },
+		{ "exec,!exec", R_SANDBOX_GRAIN_NONE },
+		{ "exec,!disk", R_SANDBOX_GRAIN_EXEC },
+		{ "!disk,!disk", R_SANDBOX_GRAIN_ALL & ~R_SANDBOX_GRAIN_DISK },
+		{ "none,exec", R_SANDBOX_GRAIN_EXEC },
+		{ "exec,none", R_SANDBOX_GRAIN_NONE },
+		{ "all,none", R_SANDBOX_GRAIN_NONE },
+		{ "none,all", R_SANDBOX_GRAIN_ALL },
+		{ "!exec,all", R_SANDBOX_GRAIN_ALL },
+		{ "all,!exec,none,files", R_SANDBOX_GRAIN_FILES },
+		{ "none,!disk", R_SANDBOX_GRAIN_NONE },
+		{ "!all", R_SANDBOX_GRAIN_NONE },
+		{ "!none", R_SANDBOX_GRAIN_ALL },
+		{ "exec,!none", R_SANDBOX_GRAIN_EXEC },
+		{ "exec,!all,files", R_SANDBOX_GRAIN_FILES }
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (cases); i++) {
+		int mask = 0x12345678;
+		mu_assert_true (r_sandbox_grain_parse (cases[i].expression, &mask), cases[i].expression);
+		mu_assert_eq (mask, cases[i].mask, cases[i].expression);
+	}
+	mu_end;
+}
+
+bool test_sandbox_grain_parse_invalid(void) {
+	const char *cases[] = {
+		"", " \t\r\n\v\f ", ",", ",disk", "disk,", "disk,,exec", "disk, ,exec", "!disk,",
+		"!", "! \t", "!!disk", "! !disk", "disk!", "disk,!", "disk,! ,exec", "disk,! !exec",
+		"bogus", "!exec,!bogus", "allexec", "allx", "non", "filesx", "xfile", "disk garbage",
+		"disk exec", "fi les", "ALL", "disk;exec", "disk|exec", "disk\xff", "?"
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (cases); i++) {
+		int mask = 0x12345678;
+		mu_assert_false (r_sandbox_grain_parse (cases[i], &mask), cases[i]);
+		mu_assert_eq (mask, 0x12345678, "invalid expression preserves output mask");
+	}
+	mu_end;
+}
+
 bool test_sandbox_localhost(void) {
 	static const char *ok_inputs[] = {
 		"localhost",
@@ -469,6 +534,8 @@ int all_tests(void) {
 	mu_run_test (test_endian_roundtrip);
 	mu_run_test (test_file_is_abspath);
 	mu_run_test (test_sys_executable_path);
+	mu_run_test (test_sandbox_grain_parse);
+	mu_run_test (test_sandbox_grain_parse_invalid);
 	mu_run_test (test_sandbox_localhost);
 	mu_run_test (test_sandbox_hidden_path);
 	return tests_passed != tests_run;

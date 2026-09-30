@@ -154,6 +154,60 @@ R_API int r_sandbox_grain(int mask) {
 	return old_grain;
 }
 
+R_API bool r_sandbox_grain_parse(const char *R_NONNULL expr, int *R_NONNULL mask) {
+	R_RETURN_VAL_IF_FAIL (expr && mask, false);
+	static const struct {
+		const char *name;
+		int mask;
+	} grains[] = {
+		{ "all", R_SANDBOX_GRAIN_ALL },
+		{ "none", R_SANDBOX_GRAIN_NONE },
+		{ "exec", R_SANDBOX_GRAIN_EXEC },
+		{ "socket", R_SANDBOX_GRAIN_SOCKET },
+		{ "file", R_SANDBOX_GRAIN_FILES },
+		{ "files", R_SANDBOX_GRAIN_FILES },
+		{ "disk", R_SANDBOX_GRAIN_DISK },
+		{ "network", R_SANDBOX_GRAIN_NETWORK },
+		{ "environ", R_SANDBOX_GRAIN_ENVIRON },
+		{ "hidden", R_SANDBOX_GRAIN_HIDDEN }
+	};
+	expr = r_str_trim_head_ro (expr);
+	int result = *expr == '!'? R_SANDBOX_GRAIN_ALL: R_SANDBOX_GRAIN_NONE;
+	for (;;) {
+		bool remove = *expr == '!';
+		if (remove) {
+			expr = r_str_trim_head_ro (expr + 1);
+		}
+		const char *end = expr + strcspn (expr, ",");
+		size_t len = end - expr;
+		while (len && IS_WHITECHAR (expr[len - 1])) {
+			len--;
+		}
+		size_t i;
+		for (i = 0; i < R_ARRAY_SIZE (grains); i++) {
+			if (strlen (grains[i].name) == len && !memcmp (expr, grains[i].name, len)) {
+				break;
+			}
+		}
+		if (i == R_ARRAY_SIZE (grains)) {
+			return false;
+		}
+		if (remove) {
+			result &= ~grains[i].mask;
+		} else if (grains[i].mask == R_SANDBOX_GRAIN_NONE) {
+			result = R_SANDBOX_GRAIN_NONE;
+		} else {
+			result |= grains[i].mask;
+		}
+		if (!*end) {
+			break;
+		}
+		expr = r_str_trim_head_ro (end + 1);
+	}
+	*mask = result;
+	return true;
+}
+
 R_API bool r_sandbox_check(int mask) {
 	if (r_sandbox_enable (0)) {
 		R_SANDBOX_GUARD (mask, false);
