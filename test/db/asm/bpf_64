@@ -1,10 +1,34 @@
+REQUIRE=cs5
 d "ldb [0x0]" 3000000000000000
+REQUIRE=cs6
+d "ldabsb [skb+0x0]" 3000000000000000
+REQUIRE=
+REQUIRE=cs5
 d "ldh [0x2]" 2800000002000000
+REQUIRE=cs6
+d "ldabsh [skb+0x2]" 2800000002000000
+REQUIRE=
+REQUIRE=cs5
 d "ldw [0x4]" 2000000004000000
+REQUIRE=cs6
+d "ldabsw [skb+0x4]" 2000000004000000
+REQUIRE=
 
+REQUIRE=cs5
 d "ldb [r0]" 5000000000000000
+REQUIRE=cs6
+d "ldindb [skb+r0]" 5000000000000000
+REQUIRE=
+REQUIRE=cs5
 d "ldh [r1]" 4810000000000000
+REQUIRE=cs6
+d "ldindh [skb+r1]" 4810000000000000
+REQUIRE=
+REQUIRE=cs5
 d "ldw [r2]" 4020000000000000
+REQUIRE=cs6
+d "ldindw [skb+r2]" 4020000000000000
+REQUIRE=
 
 d "lddw r9, 0xffffffff" 18090000ffffffff0000000000000000
 d "lddw r9, 0x1ffffffff" 18090000ffffffff0000000001000000
@@ -20,7 +44,12 @@ ad "ldxw r7, [r2+0x10]" 6127100000000000
 ad "stxb [r0], r7" 7370000000000000
 ad "stxh [r1+0x8], r8" 6b81080000000000
 ad "stxw [r2+0x10], r9" 6392100000000000
-ad "xaddw [r2+0x10], r9" c392100000000000
+a "xaddw [r2+0x10], r9" c392100000000000
+REQUIRE=cs5
+d "xaddw [r2+0x10], r9" c392100000000000
+REQUIRE=cs6
+d "aadd [r2+0x10], r9" c392100000000000
+REQUIRE=
 ad "call 0x1" 8500000001000000
 ad "exit" 9500000000000000
 ad "jeq r0, r1, +0x18" 1d10180000000000
@@ -36,9 +65,17 @@ d "stxb [r0], r7" 7370000000000000
 d "stxh [r1+0x8], r8" 6b81080000000000
 d "stxw [r2+0x10], r9" 6392100000000000
 
+REQUIRE=cs5
 d "xaddw [r2+0x10], r9" c392100000000000
+REQUIRE=cs6
+d "aadd [r2+0x10], r9" c392100000000000
+REQUIRE=
 
+REQUIRE=cs5
 d "jmp +0x1b" 05001b0000000000
+REQUIRE=cs6
+d "ja +0x1b" 05001b0000000000
+REQUIRE=
 d "call 0x1" 8500000001000000
 d "exit" 9500000000000000
 
@@ -56,17 +93,33 @@ d "jslt r8, r9, +0x10" cd98100000000000
 d "jsle r9, r10, +0xf" dda90f0000000000
 
 d "jeq r0, 0x0, +0xe" 15000e0000000000
+REQUIRE=cs5
 d "jne r3, 0xffffffff, +0xd" 55030d00ffffffff
+REQUIRE=cs6
+d "jne r3, -0x1, +0xd" 55030d00ffffffff
+REQUIRE=
 
 d "jgt r1, 0x40, +0xc" 25010c0040000000
+REQUIRE=cs5
 d "jge r2, 0xffffffff, +0xb" 35020b00ffffffff
+REQUIRE=cs6
+d "jge r2, -0x1, +0xb" 35020b00ffffffff
+REQUIRE=
+REQUIRE=cs5
 d "jsgt r4, 0xffffffff, +0xa" 65040a00ffffffff
+REQUIRE=cs6
+d "jsgt r4, -0x1, +0xa" 65040a00ffffffff
+REQUIRE=
 d "jsge r5, 0x7fffffff, +0x9" 75050900ffffff7f
 
 d "jlt r6, 0xff, +0x8" a5060800ff000000
 d "jle r7, 0xffff, +0x7" b5070700ffff0000
 d "jslt r8, 0x0, +0x6" c508060000000000
+REQUIRE=cs5
 d "jsle r9, 0xffffffff, +0x5" d5090500ffffffff
+REQUIRE=cs6
+d "jsle r9, -0x1, +0x5" d5090500ffffffff
+REQUIRE=
 
 d "add64 r0, r1" 0f10000000000000
 d "sub64 r1, r2" 1f21000000000000
