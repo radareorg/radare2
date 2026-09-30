@@ -1,4 +1,4 @@
-.Dd September 1, 2026
+.Dd September 30, 2026
 .Dt R2PM 1
 .Sh NAME
 .Nm r2pm
@@ -96,6 +96,21 @@ Show version
 .Bl -tag -width Fl
 .It Ev SUDO
 Command to use for system-wide installs (default: sudo)
+.It Ev R2PM_SUDO
+Value of
+.Ev SUDO
+when using
+.Fl g ,
+empty otherwise.
+Exported to package scripts.
+.It Ev R2PM_GLOBAL , GLOBAL
+Set to 1 when using
+.Fl g ,
+0 otherwise.
+Exported to package scripts.
+.It Ev R2PM_GITURL
+Git repository for the package database
+(default: https://github.com/radareorg/radare2-pm)
 .It Ev R2PM_PLUGDIR
 Directory for user plugins (default: ~/.local/share/radare2/plugins)
 .It Ev R2PM_BINDIR
@@ -158,6 +173,11 @@ Compiler flags to build against radare2 libraries
 Linker search path flags to build against radare2 libraries
 .It Ev R2_LIBS
 Library flags to link against radare2 libraries
+.It Ev R2_LIBEXT
+Shared library extension for plugins (so, dylib or dll)
+.It Ev R2_USER_PLUGINS
+User plugin directory, regardless of
+.Fl g
 .El
 .Sh BINARY PACKAGES
 Packages implement
@@ -171,6 +191,16 @@ using
 and
 .Ev R2PM_BITS ,
 download and install its files, and return a nonzero status on failure.
+Unix scripts run with
+.Ql set -e
+and can call
+.Ic R2PM_FAIL Ar message
+to abort with an error.
+On Windows the block lines are joined with
+.Ql &&
+and run by
+.Cm cmd ,
+so each line must be a single command.
 The binary installer handles its own tools and runtime dependencies;
 .Ic R2PM_NEEDS
 and
