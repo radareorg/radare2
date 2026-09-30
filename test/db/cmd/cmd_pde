@@ -152,6 +152,7 @@ EOF
 RUN
 
 NAME=pde mips beql delay-slot layout
+REQUIRE=cs5
 FILE=malloc://12
 CMDS=<<EOF
 e asm.arch=mips
@@ -163,6 +164,24 @@ pde 3
 EOF
 EXPECT=<<EOF
 0x00000000      beql zero, zero, 8
+0x00000004      addiu sp, sp, -0x10
+0x00000008      nop
+EOF
+RUN
+
+NAME=pde mips beql delay-slot layout (cs6)
+REQUIRE=cs6
+FILE=malloc://12
+CMDS=<<EOF
+e asm.arch=mips
+e asm.bits=32
+e cfg.bigendian=true
+e asm.bytes=false
+wx 5000000127bdfff000000000
+pde 3
+EOF
+EXPECT=<<EOF
+0x00000000      beqzl zero, 8
 0x00000004      addiu sp, sp, -0x10
 0x00000008      nop
 EOF

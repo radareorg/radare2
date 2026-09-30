@@ -252,6 +252,7 @@ EOF
 RUN
 
 NAME=aom-mips
+REQUIRE=cs5
 FILE=-
 CMDS=<<EOF
 e asm.arch=mips
@@ -268,6 +269,27 @@ nop
 625
 625
 625
+EOF
+RUN
+
+NAME=aom-mips (cs6)
+REQUIRE=cs6
+FILE=-
+CMDS=<<EOF
+e asm.arch=mips
+e asm.bits=64
+aom
+aoml~?
+e asm.bits=32
+aoml~?
+e asm.bits=16
+aoml~?
+EOF
+EXPECT=<<EOF
+nop
+1359
+1359
+1359
 EOF
 RUN
 

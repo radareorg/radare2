@@ -4,10 +4,21 @@ d "addiu zero, t0, -0x19" e7ff0025 0x4
 d "addiu zero, t0, 0" 00000025 0x4
 d "andi zero, zero, 0" 00000030 0x4
 d "b 8" 00000010 0x4
+REQUIRE=cs5
 d "bc0f 8" 00000041 0x4
+REQUIRE=cs6
+d "mftr zero, zero, 0, 0, 0" 00000041 0x4
+REQUIRE=
 d "bc1f 8" 00000045 0x4
+# This legacy instruction is not decoded by cs6 in this mode.
+REQUIRE=cs5
 d "bc2f 8" 00000049 0x4
+REQUIRE=
+REQUIRE=cs5
 d "bc3f 8" 0000004d 0x4
+REQUIRE=cs6
+d "lwxc1 f0, zero(t0)" 0000004d 0x4
+REQUIRE=
 d "beq t0, s0, 0x444c" 11111011 0x4
 d "beql sp, t8, 0x14008" 0050b853 0x4
 d "beqz t0, 8" 00000011 0x4
@@ -24,48 +35,164 @@ d "bltzl s6, 0x118" 4400c206 0x4
 d "bne t0, s0, 0x440c" 01111015 0x4
 d "bnel s0, s0, -0xbff8" 00d01056 0x4
 d "bnez zero, 8" 00000014 0x4
+REQUIRE=cs5
 d "cache 0, (zero)" 000000bc 0x4
+REQUIRE=cs6
+d "cache 0, 0(zero)" 000000bc 0x4
+REQUIRE=
 d "daddi zero, zero, 0" 00000060 0x4
 d "daddiu zero, zero, 0" 00000064 0x4
 d "j 0" 00000008 0x4
 d "jal 0" 0000000c 0x4
 d "jalx 0" 00000074 0x4
 d "jalx 4" 01000074 0x4
+REQUIRE=cs5
 d "lb zero, (zero)" 00000080 0x4
+REQUIRE=cs6
+d "lb zero, 0(zero)" 00000080 0x4
+REQUIRE=
+REQUIRE=cs5
 d "lbu zero, (zero)" 00000090 0x4
+REQUIRE=cs6
+d "lbu zero, 0(zero)" 00000090 0x4
+REQUIRE=
+REQUIRE=cs5
 d "ldc1 f0, (zero)" 000000d4 0x4
+REQUIRE=cs6
+d "ldc1 f0, 0(zero)" 000000d4 0x4
+REQUIRE=
+REQUIRE=cs5
 d "ldl zero, (zero)" 00000068 0x4
+REQUIRE=cs6
+d "ldl zero, 0(zero)" 00000068 0x4
+REQUIRE=
+REQUIRE=cs5
 d "ldr zero, (zero)" 0000006c 0x4
+REQUIRE=cs6
+d "ldr zero, 0(zero)" 0000006c 0x4
+REQUIRE=
+REQUIRE=cs5
 d "lh zero, (zero)" 00000084 0x4
+REQUIRE=cs6
+d "lh zero, 0(zero)" 00000084 0x4
+REQUIRE=
+REQUIRE=cs5
 d "lhu zero, (zero)" 00000094 0x4
+REQUIRE=cs6
+d "lhu zero, 0(zero)" 00000094 0x4
+REQUIRE=
+REQUIRE=cs5
 d "ll zero, (zero)" 000000c0 0x4
+REQUIRE=cs6
+d "ll zero, 0(zero)" 000000c0 0x4
+REQUIRE=
+REQUIRE=cs5
 d "lld zero, (zero)" 000000d0 0x4
+REQUIRE=cs6
+d "lld zero, 0(zero)" 000000d0 0x4
+REQUIRE=
 d "lui zero, 0" 0000003c 0x4
+REQUIRE=cs5
 d "lw zero, (zero)" 0000008c 0x4
+REQUIRE=cs6
+d "lw zero, 0(zero)" 0000008c 0x4
+REQUIRE=
+REQUIRE=cs5
 d "lwc1 f0, (zero)" 000000c4 0x4
+REQUIRE=cs6
+d "lwc1 f0, 0(zero)" 000000c4 0x4
+REQUIRE=
+REQUIRE=cs5
 d "lwl zero, (zero)" 00000088 0x4
+REQUIRE=cs6
+d "lwl zero, 0(zero)" 00000088 0x4
+REQUIRE=
+REQUIRE=cs5
 d "lwr zero, (zero)" 00000098 0x4
+REQUIRE=cs6
+d "lwr zero, 0(zero)" 00000098 0x4
+REQUIRE=
+REQUIRE=cs5
 d "lwu zero, (zero)" 0000009c 0x4
+REQUIRE=cs6
+d "lwu zero, 0(zero)" 0000009c 0x4
+REQUIRE=
 d "lwxc1 f0, zero(zero)" 0000004c 0x4
+REQUIRE=cs5
 d "mfc0 zero, zero, 0" 00000040 0x4
+REQUIRE=cs6
+d "mfc0 zero, 0, 0" 00000040 0x4
+REQUIRE=
 d "mfc1 zero, f0" 00000044 0x4
+REQUIRE=cs5
 d "mfc2 zero, zero, 0" 00000048 0x4
+REQUIRE=cs6
+d "mfc2 zero, 0, 0" 00000048 0x4
+REQUIRE=
 d "nop" 00000000 0x4
 d "ori zero, t0, 0" 00000035 0x4
+REQUIRE=cs5
 d "sb zero, (zero)" 000000a0 0x4
+REQUIRE=cs6
+d "sb zero, 0(zero)" 000000a0 0x4
+REQUIRE=
+REQUIRE=cs5
 d "sc zero, (zero)" 000000e0 0x4
+REQUIRE=cs6
+d "sc zero, 0(zero)" 000000e0 0x4
+REQUIRE=
+REQUIRE=cs5
 d "scd zero, (zero)" 000000f0 0x4
+REQUIRE=cs6
+d "scd zero, 0(zero)" 000000f0 0x4
+REQUIRE=
+REQUIRE=cs5
 d "sd zero, (zero)" 000000fc 0x4
+REQUIRE=cs6
+d "sd zero, 0(zero)" 000000fc 0x4
+REQUIRE=
+REQUIRE=cs5
 d "sdc1 f0, (zero)" 000000f4 0x4
+REQUIRE=cs6
+d "sdc1 f0, 0(zero)" 000000f4 0x4
+REQUIRE=
+REQUIRE=cs5
 d "sdl zero, (zero)" 000000b0 0x4
+REQUIRE=cs6
+d "sdl zero, 0(zero)" 000000b0 0x4
+REQUIRE=
+REQUIRE=cs5
 d "sdr zero, (zero)" 000000b4 0x4
+REQUIRE=cs6
+d "sdr zero, 0(zero)" 000000b4 0x4
+REQUIRE=
+REQUIRE=cs5
 d "sh zero, (zero)" 000000a4 0x4
+REQUIRE=cs6
+d "sh zero, 0(zero)" 000000a4 0x4
+REQUIRE=
 d "slti zero, zero, 0" 00000028 0x4
 d "sltiu zero, zero, 0" 0000002c 0x4
+REQUIRE=cs5
 d "sw zero, (zero)" 000000ac 0x4
+REQUIRE=cs6
+d "sw zero, 0(zero)" 000000ac 0x4
+REQUIRE=
+REQUIRE=cs5
 d "swc1 f0, (zero)" 000000e4 0x4
+REQUIRE=cs6
+d "swc1 f0, 0(zero)" 000000e4 0x4
+REQUIRE=
+REQUIRE=cs5
 d "swl zero, (zero)" 000000a8 0x4
+REQUIRE=cs6
+d "swl zero, 0(zero)" 000000a8 0x4
+REQUIRE=
+REQUIRE=cs5
 d "swr zero, (zero)" 000000b8 0x4
+REQUIRE=cs6
+d "swr zero, 0(zero)" 000000b8 0x4
+REQUIRE=
 d "xori zero, zero, 0" 00000038 0x4
 dB "beqzl zero, 8" 00000050 0x4
 dB "bnezl t0, 8" 00000055 0x4
