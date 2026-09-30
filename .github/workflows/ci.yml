@@ -110,7 +110,6 @@ jobs:
       with:
         name: r2r.json
         path: /tmp/r2r.json
-  # TODO: Add job to build with capstone-next, for now v5 is stable
   build-syscapstone-resymlink:
     name: linux-sys-capstone-resymlink
     runs-on: ubuntu-22.04
@@ -132,7 +131,7 @@ jobs:
     - name: Checking if capstone was cloned
       run: if find subprojects -maxdepth 1 -type d \( -name 'capstone-v4' -o -name 'capstone-v5' -o -name 'capstone-next' \) | grep -q .; then echo "Capstone wasnt supposed to be cloned"; exit 1; fi
   linux-test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 #    if: contains(github.ref, 'ci-')
     steps:
     - name: Checkout
@@ -151,6 +150,28 @@ jobs:
     - uses: actions/upload-artifact@v7
       with:
         name: results.json
+        path: test/results.json
+  linux-test6:
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v7
+    - name: Building Radare2 with Capstone 6
+      run: |
+        python3 -m pip install --upgrade pip
+        pip3 install --user r2pipe wheel
+        export CFLAGS="-O2 -Wno-unused-result"
+        sys/install.sh --without-pull --without-syscapstone --with-capstone-next
+    - name: Running tests
+      run: |
+        export LD_LIBRARY_PATH=/usr/local/lib
+        export R2R_SKIP_ARCHOS=1
+        make tests
+    - uses: actions/upload-artifact@v7
+      if: always()
+      with:
+        name: results-cs6.json
         path: test/results.json
   mipsbe:
     name: mipsbe
