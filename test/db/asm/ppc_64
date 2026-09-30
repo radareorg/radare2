@@ -21,7 +21,7 @@ adE "xor r3, r4, r5" 7c832a78
 
 # XO-form arithmetic
 adE "add r5, r3, r4" 7ca32214
-adE "subf r5, r3, r4" 7ca32050
+aE "subf r5, r3, r4" 7ca32050
 adE "mullw r3, r4, r5" 7c6429d6
 
 # Loads and stores (32-bit and 64-bit)
@@ -38,10 +38,10 @@ adE "cmpwi r3, 0" 2c030000
 adE "cmpw r3, r4" 7c032000
 
 # Conditional branches (BD = target - 0)
-adE "beq 0x10" 41820010
-adE "bne 0x10" 40820010
-adE "bgt 0x10" 41810010
-adE "blt 0x10" 41800010
+aE "beq 0x10" 41820010
+aE "bne 0x10" 40820010
+aE "bgt 0x10" 41810010
+aE "blt 0x10" 41800010
 
 # Unconditional branches
 adE "b 0x100" 48000100
@@ -61,8 +61,8 @@ adE "mflr r0" 7c0802a6
 # Coverage: mnemonics implemented but previously untested
 adE "ldu r3, 0x10(r1)" e8610011
 adE "divw r3, r4, r5" 7c642bd6
-adE "bge 0x10" 40800010
-adE "ble 0x10" 40810010
+aE "bge 0x10" 40800010
+aE "ble 0x10" 40810010
 adE "mtctr r12" 7d8903a6
 
 # Coverage: sub alias and mr alias (assemble-only — ppc_cs canonicalises).
@@ -83,3 +83,23 @@ ad "nop" 00000060
 ad "sc" 02000044
 ad "li r3, 0" 00006038
 ad "blr" 2000804e
+
+# Capstone 5 disassembly
+REQUIRE=cs5
+dE "subf r5, r3, r4" 7ca32050
+dE "beq 0x10" 41820010
+dE "bne 0x10" 40820010
+dE "bgt 0x10" 41810010
+dE "blt 0x10" 41800010
+dE "bge 0x10" 40800010
+dE "ble 0x10" 40810010
+
+# Capstone 6 disassembly
+REQUIRE=cs6
+dE "sub r5, r4, r3" 7ca32050
+dE "bt eq, 0x10" 41820010
+dE "bf eq, 0x10" 40820010
+dE "bt gt, 0x10" 41810010
+dE "bt lt, 0x10" 41800010
+dE "bf lt, 0x10" 40800010
+dE "bf gt, 0x10" 40810010

@@ -700,6 +700,9 @@ static void create_src_dst(RAnalOp *op) {
 }
 
 static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x) {
+	if (x >= insn->detail->ppc.op_count) {
+		return;
+	}
 	cs_ppc_op ppcop = INSOP (x);
 	val->reg = parse_reg_name (*handle, insn, x);
 	switch (ppcop.type) {
@@ -769,18 +772,16 @@ static char *shrink(char *op) {
 
 #undef PPC
 #define CSINC PPC
-#if 0
-#define CSINC_MODE \
-	((as->config->bits == 64) ? CS_MODE_64 : (as->config->bits == 32) ? CS_MODE_32 : 0) \
-	| (R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN)
+#if CS_API_MAJOR >= 6
+#define CSINC_MODE ((as->config->bits == 64)? CS_MODE_64: CS_MODE_32 | CS_MODE_BOOKE)
 #else
-#define CSINC_MODE \
-	((as->config->bits == 64) ? CS_MODE_64 : (as->config->bits == 32) ? CS_MODE_32 : 0)
+#define CSINC_MODE ((as->config->bits == 64)? CS_MODE_64: CS_MODE_32)
 #endif
 #include "../capstone.inc.c"
 
 typedef struct plugin_data_t {
 	CapstonePluginData cpd;
+	int bits;
 	char cspr[16];
 	char words[8][64];
 	// PPC64 ELFv1 TOC base per GPR: addis rX,r2,HA stores gp+(HA<<16); a later ld/addi/st rY,LO(rX) resolves op->ptr/val (0 = no pending value)
@@ -1452,6 +1453,8 @@ static unsigned int ppc6_case_id(cs_insn *insn) {
 		return ppc6_oe_base_id (insn->id);
 	}
 	switch (insn->alias_id) {
+	case PPC_INS_ALIAS_MR_:
+		return PPC_INS_MR;
 	case PPC_INS_ALIAS_LI:
 	case PPC_INS_ALIAS_LIS:
 	case PPC_INS_ALIAS_MR:
@@ -1545,6 +1548,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	ut8 *buf = op->bytes;
 	const int len = op->size;
 	char cmaskbuf[cmaskbuf_SIZEOF] = {0};
+	PluginData *pd = as->data;
+	if (pd->bits != as->config->bits) {
+		cs_option (pd->cpd.cs_handle, CS_OPT_MODE, CSINC_MODE);
+		pd->bits = as->config->bits;
+	}
 	csh handle = cs_handle_for_session (as);
 	if (handle == 0 || len < 4) {
 		return false;
@@ -1555,7 +1563,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	char ea[64];
 	char vbuf[96];
 
-	PluginData *pd = as->data;
 	const bool stateful = mask & R_ARCH_OP_MASK_STATEFUL;
 	const char *cpu = as->config->cpu;
 	const char *cm = (as->config->bits == 32)? "0xffffffff": "0xffffffffffffffff";

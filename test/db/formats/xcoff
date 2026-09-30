@@ -1,5 +1,6 @@
 # merged: xcoff sections; xcoff disassemble; xcoff entrypoint; xcoff imports
 NAME=ppc xcoff
+REQUIRE=cs5
 FILE=bins/xcoff/file-xcoff-aix51
 CMDS=<<EOF
 i~^format
@@ -42,6 +43,92 @@ oris r9, r9, 0x403
 cmpwi cr2, r17, 0
 stw r9, 0(r10)
 bne 0x1000016c
+bl 0x100001f0
+nop
+--
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000000 0x10000128 ---------- ---------- program
+--
+nth vaddr      bind type lib name
+---------------------------------
+0   ---------- NONE UNK      errno
+1   ---------- NONE UNK      __mulh
+2   ---------- NONE UNK      _iob
+3   ---------- NONE FUNC     exit
+4   ---------- NONE FUNC     free
+5   ---------- NONE FUNC     strlen
+6   ---------- NONE FUNC     fopen64
+7   ---------- NONE FUNC     getenv
+8   ---------- NONE FUNC     atoi
+9   ---------- NONE FUNC     fprintf
+10  ---------- NONE FUNC     strchr
+11  ---------- NONE FUNC     printf
+12  ---------- NONE FUNC     fclose
+13  ---------- NONE FUNC     fflush
+14  ---------- NONE FUNC     __flsbuf
+15  ---------- NONE FUNC     vfprintf
+16  ---------- NONE FUNC     fwrite
+17  ---------- NONE FUNC     strncmp
+18  ---------- NONE FUNC     strrchr
+19  ---------- NONE FUNC     fputc
+20  ---------- NONE FUNC     rewind
+21  ---------- NONE FUNC     fputs
+22  ---------- NONE FUNC     strstr
+23  ---------- NONE FUNC     strerror
+24  ---------- NONE FUNC     wcwidth
+25  ---------- NONE FUNC     mbrtowc
+26  ---------- NONE UNK      __crt0v
+27  ---------- NONE UNK      optind
+28  ---------- NONE FUNC     getline
+29  ---------- NONE UNK      optarg
+EOF
+RUN
+
+NAME=ppc xcoff (cs6)
+REQUIRE=cs6
+FILE=bins/xcoff/file-xcoff-aix51
+CMDS=<<EOF
+i~^format
+e asm.arch
+e asm.bits
+s
+?e --
+iS
+?e --
+pi 16
+?e --
+ie
+?e --
+ii
+EOF
+EXPECT=<<EOF
+format   coff
+ppc
+32
+0x10000128
+--
+nth paddr         size vaddr        vsize perm flags type   name
+----------------------------------------------------------------
+0   0x00000128  0x3722 0x10000128  0x3722 -r-x 0x0   TEXT   .text-0
+1   0x0000384a   0x4ba 0x2000084a   0x4ba -rw- 0x0   DATA   .data-1
+2   0x00000000    0x1c 0x20000d04    0x1c -rw- 0x0   BSS    .bss-2
+3   0x00003d04   0xc73 0x00000000   0xc73 ---- 0x0   LOADER .loader-3
+--
+lwz r17, 0x28(r2)
+mr r14, r3
+mr r15, r4
+mr r16, r5
+cmpw r30, r31
+stw r14, 0(r2)
+stw r15, 4(r2)
+lwz r17, 0(r17)
+lwz r10, 0x2c(r2)
+li r9, 0
+oris r9, r9, 0x403
+cmpwi cr2, r17, 0
+stw r9, 0(r10)
+bf eq, 0x1000016c
 bl 0x100001f0
 nop
 --
