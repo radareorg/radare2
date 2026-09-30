@@ -67,7 +67,7 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 #define MEMDISP(x) insn->detail->arm.operands[x].mem.disp
 #define MEMDISP64(x) (ut64)insn->detail->arm64.operands[x].mem.disp
 #define ISIMM(x) (insn->detail->arm.operands[x].type == ARM_OP_IMM)
-#define ISIMM64(x) ((arm64_op_type)insn->detail->arm64.operands[x].type & (ARM64_OP_IMM | ARM64_OP_CIMM | ARM64_OP_FP))
+#define ISIMM64(x) ((arm64_op_type)INSOP64 (x).type == ARM64_OP_IMM || (arm64_op_type)INSOP64 (x).type == ARM64_OP_CIMM || (arm64_op_type)INSOP64 (x).type == ARM64_OP_FP)
 #define ISREG(x) (insn->detail->arm.operands[x].type == ARM_OP_REG)
 #define ISREG64(x) ((arm64_op_type)insn->detail->arm64.operands[x].type == ARM64_OP_REG)
 #define ISMEM(x) (insn->detail->arm.operands[x].type == ARM_OP_MEM)
@@ -605,6 +605,18 @@ static const char *extender_name(arm64_extender extender) {
 
 static const char *vas_name(arm64_vas vas) {
 	switch (vas) {
+#if CS_API_MAJOR >= 6
+	case AARCH64LAYOUT_VL_B:
+		return "1b";
+	case AARCH64LAYOUT_VL_H:
+		return "1h";
+	case AARCH64LAYOUT_VL_S:
+		return "1s";
+	case AARCH64LAYOUT_VL_D:
+		return "1d";
+	case AARCH64LAYOUT_VL_Q:
+		return "1q";
+#endif
 	case ARM64_VAS_8B:
 		return "8b";
 	case ARM64_VAS_16B:
@@ -644,6 +656,18 @@ static const char *vas_name(arm64_vas vas) {
 
 static int vas_size(arm64_vas vas) {
 	switch (vas) {
+#if CS_API_MAJOR >= 6
+	case AARCH64LAYOUT_VL_B:
+		return 8;
+	case AARCH64LAYOUT_VL_H:
+		return 16;
+	case AARCH64LAYOUT_VL_S:
+		return 32;
+	case AARCH64LAYOUT_VL_D:
+		return 64;
+	case AARCH64LAYOUT_VL_Q:
+		return 128;
+#endif
 	case ARM64_VAS_8B:
 	case ARM64_VAS_16B:
 		return 8;
@@ -679,6 +703,14 @@ static int vas_size(arm64_vas vas) {
 
 static int vas_count(arm64_vas vas) {
 	switch (vas) {
+#if CS_API_MAJOR >= 6
+	case AARCH64LAYOUT_VL_B:
+	case AARCH64LAYOUT_VL_H:
+	case AARCH64LAYOUT_VL_S:
+	case AARCH64LAYOUT_VL_D:
+	case AARCH64LAYOUT_VL_Q:
+		return 1;
+#endif
 	case ARM64_VAS_16B:
 		return 16;
 	case ARM64_VAS_8B:
@@ -940,8 +972,8 @@ static const char *decode_shift(arm_shifter shift) {
 	case ARM_SFT_ROR_REG:
 #if CS_API_MAJOR < 6
 	case ARM_SFT_RRX_REG:
-		return E_OP_RR;
 #endif
+		return E_OP_RR;
 	default:
 		break;
 	}
@@ -3622,7 +3654,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 }
 
 static int cond_cs2r2(int cc) {
-	if (cc == ARM_CC_AL || cc < 0) {
+	if (cc == ARM_CC_AL || cc == ARM_CC_INVALID || cc < 0) {
 		cc = R_ANAL_CONDTYPE_AL;
 	} else {
 		switch (cc) {
@@ -3951,6 +3983,13 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->type = R_ANAL_OP_TYPE_AND;
 		break;
 	case ARM64_INS_ORR:
+		if (ISIMM64 (2) && ((arm64_reg)REGID64 (1) == ARM64_REG_XZR || (arm64_reg)REGID64 (1) == ARM64_REG_WZR)) {
+			op->type = R_ANAL_OP_TYPE_MOV;
+			op->val = IMM64 (2);
+			op->cycles = 1;
+			break;
+		}
+		// fall through
 	case ARM64_INS_ORN:
 		op->type = R_ANAL_OP_TYPE_OR;
 		break;
@@ -4137,10 +4176,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->reg = cs_reg_name (handle, insn->detail->arm64.operands[0].reg);
 		break;
 	case ARM64_INS_B:
-		// BX LR == RET
-		if ((arm64_reg) insn->detail->arm64.operands[0].reg == ARM64_REG_LR) {
-			op->type = R_ANAL_OP_TYPE_RET;
-		} else if (insn->detail->arm64.cc) {
+		if (op->cond != R_ANAL_CONDTYPE_AL) {
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->jump = IMM64(0);
 			op->fail = addr + op->size;
@@ -4965,7 +5001,7 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 		// TODO arch plugins should NOT set register values
 		{
 			int j;
-			for (j = 0; j < 3; j++, i++) {
+			for (j = 0; j < 3 && i < count; j++, i++) {
 				set_src_dst (op, RVecRArchValue_at (&op->srcs, j), &handle, insn, i, bits);
 			}
 			set_src_dst (op, RVecRArchValue_at (&op->dsts, 0), &handle, insn, 0, bits);
@@ -5009,6 +5045,316 @@ static inline bool is_valid_mnemonic(const char *m) {
 	return !r_str_startswith (m, "hint") && !r_str_startswith (m, "udf");
 }
 
+#if CS_API_MAJOR >= 6
+static void arm_normalize_operands(cs_insn *insn, int bits) {
+	int i;
+	if (bits == 64) {
+		cs_arm64 *arm = &insn->detail->arm64;
+		for (i = 0; i < arm->op_count; i++) {
+			cs_arm64_op *operand = &arm->operands[i];
+			if (operand->type == ARM64_OP_MEM && operand->mem.base == ARM64_REG_INVALID
+					&& operand->mem.index == ARM64_REG_INVALID) {
+				st64 address = operand->mem.disp;
+				operand->type = ARM64_OP_IMM;
+				operand->imm = address;
+			}
+			if (operand->type == ARM64_OP_MEM && arm->post_index && i + 1 == arm->op_count
+					&& arm->op_count < R_ARRAY_SIZE (arm->operands)) {
+				cs_arm64_op *offset = &arm->operands[arm->op_count++];
+				offset->type = ARM64_OP_IMM;
+				offset->imm = operand->mem.disp;
+				operand->mem.disp = 0;
+			}
+		}
+		if ((insn->id == ARM64_INS_FCMP || insn->id == ARM64_INS_FCMPE)
+				&& arm->op_count == 2 && arm->operands[1].type == ARM64_OP_REG
+				&& arm->operands[1].reg == ARM64_REG_XZR) {
+			arm->operands[1].type = ARM64_OP_FP;
+			arm->operands[1].fp = 0.0;
+		}
+	} else {
+		cs_arm *arm = &insn->detail->arm;
+		switch (insn->id) {
+		case ARM_INS_ASR:
+		case ARM_INS_LSL:
+		case ARM_INS_LSR:
+		case ARM_INS_ROR:
+			if (arm->op_count == 3 && arm->operands[1].shift.type != ARM_SFT_INVALID) {
+				if (arm->operands[2].type == ARM_OP_IMM) {
+					arm->op_count--;
+				} else {
+					arm->operands[1].shift.type = ARM_SFT_INVALID;
+					arm->operands[1].shift.value = 0;
+				}
+			}
+			break;
+		default:
+			break;
+		}
+		for (i = 0; i < arm->op_count; i++) {
+			cs_arm_op *operand = &arm->operands[i];
+			if (operand->type != ARM_OP_MEM) {
+				continue;
+			}
+			if (operand->mem.scale < 0) {
+				operand->subtracted = true;
+			}
+			if (!operand->mem.scale) {
+				operand->mem.scale = 1;
+			}
+			if (!operand->mem.index && operand->subtracted && operand->mem.disp > 0) {
+				operand->mem.disp = -operand->mem.disp;
+				operand->subtracted = false;
+			}
+			if (arm->post_index && i + 1 == arm->op_count && arm->op_count < R_ARRAY_SIZE (arm->operands)) {
+				cs_arm_op *offset = &arm->operands[arm->op_count++];
+				*offset = *operand;
+				if (operand->mem.index) {
+					offset->type = ARM_OP_REG;
+					offset->reg = operand->mem.index;
+				} else {
+					offset->type = ARM_OP_IMM;
+					offset->imm = operand->mem.disp;
+				}
+				operand->mem.index = ARM_REG_INVALID;
+				operand->mem.disp = 0;
+				operand->shift.type = ARM_SFT_INVALID;
+				operand->shift.value = 0;
+				operand->subtracted = false;
+			}
+		}
+	}
+}
+
+static unsigned int arm_alias_id(const cs_insn *insn, int bits) {
+	if (!insn->is_alias || !insn->usesAliasDetails) {
+		return insn->id;
+	}
+	if (bits == 64) {
+		switch (insn->alias_id) {
+		case ARM64_INS_ALIAS_LDRAA:
+			return ARM64_INS_LDRAA;
+		case ARM64_INS_ALIAS_ADD:
+			return ARM64_INS_ADD;
+		case ARM64_INS_ALIAS_CMN:
+			return ARM64_INS_CMN;
+		case ARM64_INS_ALIAS_ADDS:
+			return ARM64_INS_ADDS;
+		case ARM64_INS_ALIAS_AND:
+			return ARM64_INS_AND;
+		case ARM64_INS_ALIAS_ANDS:
+			return ARM64_INS_ANDS;
+		case ARM64_INS_ALIAS_LDR:
+			return ARM64_INS_LDR;
+		case ARM64_INS_ALIAS_STR:
+			return ARM64_INS_STR;
+		case ARM64_INS_ALIAS_LDRB:
+			return ARM64_INS_LDRB;
+		case ARM64_INS_ALIAS_STRB:
+			return ARM64_INS_STRB;
+		case ARM64_INS_ALIAS_LDRH:
+			return ARM64_INS_LDRH;
+		case ARM64_INS_ALIAS_STRH:
+			return ARM64_INS_STRH;
+		case ARM64_INS_ALIAS_LDUR:
+			return ARM64_INS_LDUR;
+		case ARM64_INS_ALIAS_STUR:
+			return ARM64_INS_STUR;
+		case ARM64_INS_ALIAS_LDP:
+			return ARM64_INS_LDP;
+		case ARM64_INS_ALIAS_LDNP:
+			return ARM64_INS_LDNP;
+		case ARM64_INS_ALIAS_STNP:
+			return ARM64_INS_STNP;
+		case ARM64_INS_ALIAS_MOV:
+			return ARM64_INS_MOV;
+		case ARM64_INS_ALIAS_ORR:
+			return ARM64_INS_ORR;
+		case ARM64_INS_ALIAS_FMOV:
+			return ARM64_INS_FMOV;
+		case ARM64_INS_ALIAS_NOP:
+			return ARM64_INS_NOP;
+		case ARM64_INS_ALIAS_PACIAZ:
+			return ARM64_INS_PACIAZ;
+		case ARM64_INS_ALIAS_PACIBZ:
+			return ARM64_INS_PACIBZ;
+		case ARM64_INS_ALIAS_AUTIAZ:
+			return ARM64_INS_AUTIAZ;
+		case ARM64_INS_ALIAS_AUTIBZ:
+			return ARM64_INS_AUTIBZ;
+		case ARM64_INS_ALIAS_PACIASP:
+			return ARM64_INS_PACIASP;
+		case ARM64_INS_ALIAS_PACIBSP:
+			return ARM64_INS_PACIBSP;
+		case ARM64_INS_ALIAS_AUTIASP:
+			return ARM64_INS_AUTIASP;
+		case ARM64_INS_ALIAS_AUTIBSP:
+			return ARM64_INS_AUTIBSP;
+		case ARM64_INS_ALIAS_PACIA1716:
+			return ARM64_INS_PACIA1716;
+		case ARM64_INS_ALIAS_PACIB1716:
+			return ARM64_INS_PACIB1716;
+		case ARM64_INS_ALIAS_AUTIA1716:
+			return ARM64_INS_AUTIA1716;
+		case ARM64_INS_ALIAS_AUTIB1716:
+			return ARM64_INS_AUTIB1716;
+		case ARM64_INS_ALIAS_XPACLRI:
+			return ARM64_INS_XPACLRI;
+		case ARM64_INS_ALIAS_LDRAB:
+			return ARM64_INS_LDRAB;
+		case ARM64_INS_ALIAS_ISB:
+			return ARM64_INS_ISB;
+		case ARM64_INS_ALIAS_MOVN:
+			return ARM64_INS_MOVN;
+		case ARM64_INS_ALIAS_MOVZ:
+			return ARM64_INS_MOVZ;
+		case ARM64_INS_ALIAS_NGC:
+			return ARM64_INS_NGC;
+		case ARM64_INS_ALIAS_NGCS:
+			return ARM64_INS_NGCS;
+		case ARM64_INS_ALIAS_SUB:
+			return ARM64_INS_SUB;
+		case ARM64_INS_ALIAS_CMP:
+			return ARM64_INS_CMP;
+		case ARM64_INS_ALIAS_SUBS:
+			return ARM64_INS_SUBS;
+		case ARM64_INS_ALIAS_NEG:
+			return ARM64_INS_NEG;
+		case ARM64_INS_ALIAS_NEGS:
+			return ARM64_INS_NEGS;
+		case ARM64_INS_ALIAS_MUL:
+			return ARM64_INS_MUL;
+		case ARM64_INS_ALIAS_MNEG:
+			return ARM64_INS_MNEG;
+		case ARM64_INS_ALIAS_SMULL:
+			return ARM64_INS_SMULL;
+		case ARM64_INS_ALIAS_UMULL:
+			return ARM64_INS_UMULL;
+		case ARM64_INS_ALIAS_IRG:
+			return ARM64_INS_IRG;
+		case ARM64_INS_ALIAS_BICS:
+			return ARM64_INS_BICS;
+		case ARM64_INS_ALIAS_BIC:
+			return ARM64_INS_BIC;
+		case ARM64_INS_ALIAS_EON:
+			return ARM64_INS_EON;
+		case ARM64_INS_ALIAS_EOR:
+			return ARM64_INS_EOR;
+		case ARM64_INS_ALIAS_ORN:
+			return ARM64_INS_ORN;
+		case ARM64_INS_ALIAS_MVN:
+			return ARM64_INS_MVN;
+		case ARM64_INS_ALIAS_TST:
+			return ARM64_INS_TST;
+		case ARM64_INS_ALIAS_ROR:
+			return ARM64_INS_ROR;
+		case ARM64_INS_ALIAS_ASR:
+			return ARM64_INS_ASR;
+		case ARM64_INS_ALIAS_SXTB:
+			return ARM64_INS_SXTB;
+		case ARM64_INS_ALIAS_SXTH:
+			return ARM64_INS_SXTH;
+		case ARM64_INS_ALIAS_SXTW:
+			return ARM64_INS_SXTW;
+		case ARM64_INS_ALIAS_LSR:
+			return ARM64_INS_LSR;
+		case ARM64_INS_ALIAS_UXTB:
+			return ARM64_INS_UXTB;
+		case ARM64_INS_ALIAS_UXTH:
+			return ARM64_INS_UXTH;
+		case ARM64_INS_ALIAS_UXTW:
+			return ARM64_INS_UXTW;
+		case ARM64_INS_ALIAS_CSET:
+			return ARM64_INS_CSET;
+		case ARM64_INS_ALIAS_CINC:
+			return ARM64_INS_CINC;
+		case ARM64_INS_ALIAS_RET:
+			return ARM64_INS_RET;
+		case ARM64_INS_ALIAS_LDPSW:
+			return ARM64_INS_LDPSW;
+		case ARM64_INS_ALIAS_LDRSH:
+			return ARM64_INS_LDRSH;
+		case ARM64_INS_ALIAS_LDRSB:
+			return ARM64_INS_LDRSB;
+		case ARM64_INS_ALIAS_LDRSW:
+			return ARM64_INS_LDRSW;
+		case ARM64_INS_ALIAS_LDURH:
+			return ARM64_INS_LDURH;
+		case ARM64_INS_ALIAS_LDURB:
+			return ARM64_INS_LDURB;
+		case ARM64_INS_ALIAS_LDURSH:
+			return ARM64_INS_LDURSH;
+		case ARM64_INS_ALIAS_LDURSB:
+			return ARM64_INS_LDURSB;
+		case ARM64_INS_ALIAS_LDURSW:
+			return ARM64_INS_LDURSW;
+		case ARM64_INS_ALIAS_LDTRH:
+			return ARM64_INS_LDTRH;
+		case ARM64_INS_ALIAS_LDTRB:
+			return ARM64_INS_LDTRB;
+		case ARM64_INS_ALIAS_LDTRSH:
+			return ARM64_INS_LDTRSH;
+		case ARM64_INS_ALIAS_LDTRSB:
+			return ARM64_INS_LDTRSB;
+		case ARM64_INS_ALIAS_LDTRSW:
+			return ARM64_INS_LDTRSW;
+		case ARM64_INS_ALIAS_STP:
+			return ARM64_INS_STP;
+		case ARM64_INS_ALIAS_STURH:
+			return ARM64_INS_STURH;
+		case ARM64_INS_ALIAS_STURB:
+			return ARM64_INS_STURB;
+		case ARM64_INS_ALIAS_STTRH:
+			return ARM64_INS_STTRH;
+		case ARM64_INS_ALIAS_STTRB:
+			return ARM64_INS_STTRB;
+		case ARM64_INS_ALIAS_IC:
+			return ARM64_INS_IC;
+		case ARM64_INS_ALIAS_DC:
+			return ARM64_INS_DC;
+		case ARM64_INS_ALIAS_LSL:
+			return ARM64_INS_LSL;
+		case ARM64_INS_ALIAS_SBFX:
+			return ARM64_INS_SBFX;
+		case ARM64_INS_ALIAS_UBFX:
+			return ARM64_INS_UBFX;
+		case ARM64_INS_ALIAS_SBFIZ:
+			return ARM64_INS_SBFIZ;
+		case ARM64_INS_ALIAS_UBFIZ:
+			return ARM64_INS_UBFIZ;
+		case ARM64_INS_ALIAS_BFI:
+			return ARM64_INS_BFI;
+		case ARM64_INS_ALIAS_BFXIL:
+			return ARM64_INS_BFXIL;
+		}
+	} else {
+		switch (insn->alias_id) {
+		case ARM_INS_ALIAS_VMOV:
+			return ARM_INS_VMOV;
+		case ARM_INS_ALIAS_NOP:
+			return ARM_INS_NOP;
+		case ARM_INS_ALIAS_ASR:
+			return ARM_INS_ASR;
+		case ARM_INS_ALIAS_LSL:
+			return ARM_INS_LSL;
+		case ARM_INS_ALIAS_LSR:
+			return ARM_INS_LSR;
+		case ARM_INS_ALIAS_ROR:
+			return ARM_INS_ROR;
+		case ARM_INS_ALIAS_RRX:
+			return ARM_INS_RRX;
+		case ARM_INS_ALIAS_LDM:
+			return ARM_INS_LDM;
+		case ARM_INS_ALIAS_POP:
+			return ARM_INS_POP;
+		case ARM_INS_ALIAS_PUSH:
+			return ARM_INS_PUSH;
+		}
+	}
+	return insn->id;
+}
+#endif
+
 static int analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	csh *cs_handle = cs_handle_for_session (as);
 	op->size = (as->config->bits == 16)? 2: 4;
@@ -5021,6 +5367,10 @@ static int analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 	bool ok = r_arch_cs_disasm_iter (*cs_handle, buf, len, addr, &csi);
 	cs_insn *insn = &csi.insn;
 	if (ok && is_valid_mnemonic (insn->mnemonic)) {
+#if CS_API_MAJOR >= 6
+		insn->id = arm_alias_id (insn, as->config->bits);
+		arm_normalize_operands (insn, as->config->bits);
+#endif
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			free (op->mnemonic);
 			op->mnemonic = r_str_newf ("%s%s%s",
@@ -5102,6 +5452,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		pd->last_syntax = as->config->syntax;
 		int mode = (as->config->syntax == R_ARCH_SYNTAX_REGNUM)
 				? CS_OPT_SYNTAX_NOREGNAME: CS_OPT_SYNTAX_DEFAULT;
+		#if CS_API_MAJOR >= 6
+		if (as->config->bits != 64 && as->config->syntax != R_ARCH_SYNTAX_REGNUM) {
+			mode |= CS_OPT_SYNTAX_CS_REG_ALIAS;
+		}
+#endif
 		cs_option (*handle, CS_OPT_SYNTAX, mode);
 	}
 	return analop (as, op, op->addr, op->bytes, op->size, mask) >= 1;
@@ -5164,6 +5519,7 @@ static bool init(RArchSession* as) {
 
 	PluginData *pd = as->data;
 	pd->bits = as->config->bits;
+	pd->last_syntax = -1;
 	pd->bigendian = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
 	pd->cpu = as->config->cpu? strdup (as->config->cpu): NULL;
 	pd->ht_it = ht_uu_new0 ();

@@ -942,6 +942,7 @@ RUN
 
 # merged: arm aae with bit switch
 NAME=ao 16 after ao 32
+REQUIRE=cs5
 FILE=bins/arm/elf/hello_world
 CMDS=<<EOF
 e asm.bits=16
@@ -982,6 +983,69 @@ mnemonic: add
 description: add two values
 mask: ffff
 id: 2
+bytes: 00af
+size: 2
+sign: false
+type: add
+cycles: 1
+esil: 0,sp,+,0xffffffff,&,r7,=
+family: cpu
+--
+            ;-- main:
+            0x0000050c      80b5           push {r7, lr}
+            0x0000050e      00af           add r7, sp, 0
+            0x00000510      034b           ldr r3, [0x00000520]        ; [0x520:4]=94
+            0x00000512      7b44           add r3, pc                  ; 0x574 ; "Hello world!"
+            0x00000514      1846           mov r0, r3
+            0x00000516      fff75aef       blx sym.imp.puts
+            0x0000051a      0023           movs r3, 0
+            0x0000051c      1846           mov r0, r3
+            0x0000051e      80bd           pop {r7, pc}
+EOF
+RUN
+
+NAME=ao 16 after ao 32 (cs6)
+REQUIRE=cs6
+FILE=bins/arm/elf/hello_world
+CMDS=<<EOF
+e asm.bits=16
+ao@0x568
+?e --
+ao@0x50e
+?e --
+aei
+e asm.bits=32
+aae 20 @ main
+pd 9 @ main
+EOF
+EXPECT=<<EOF
+address: 0x568
+opcode: push {r3, lr}
+esilcost: 24
+disasm: push {r3, lr}
+pseudo: push (r3, lr)
+mnemonic: push
+mask: ffffffff
+id: 635
+bytes: 08402de9
+size: 4
+sign: false
+type: push
+cycles: 1
+esil: 8,sp,-=,r3,sp,=[4],lr,sp,4,+,=[4]
+family: cpu
+stackop: inc
+stackptr: 8
+--
+address: 0x50e
+opcode: add r7, sp, 0
+esilcost: 0
+disasm: add r7, sp, 0
+pseudo: r7 = sp + 0
+mnemonic: add
+description: add two values
+mask: ffff
+id: 33
 bytes: 00af
 size: 2
 sign: false

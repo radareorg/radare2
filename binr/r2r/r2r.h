@@ -93,6 +93,7 @@ typedef struct r2r_asm_test_t {
 	ut64 line;
 	const char *arch;
 	const char *cpu;
+	const char *require;
 	int bits;
 	int mode;
 	ut64 offset;
@@ -149,6 +150,7 @@ typedef struct r2r_run_config_t {
 	const char *json_test_file;
 	ut64 timeout_ms;
 	int shallow;
+	int capstone_version;
 	bool skip_cmd;
 	bool skip_fuzz;
 	bool skip_asm;

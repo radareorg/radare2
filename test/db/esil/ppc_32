@@ -89,6 +89,7 @@ EOF
 RUN
 
 NAME=long ESIL ppc-32
+REQUIRE=cs5
 FILE=-
 CMDS=<<EOF
 e asm.arch=ppc
@@ -100,6 +101,22 @@ EOF
 EXPECT=<<EOF
 bdnz 0xfffffffffffffff0
 0x00000000 1,ctr,-=,$z,!,?{,0xfffffffffffffff0,pc,=,}
+EOF
+RUN
+
+NAME=long ESIL ppc-32 (cs6)
+REQUIRE=cs6
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi 4200fff0)
+EOF
+EXPECT=<<EOF
+bc 0x10, lt, 0xfffffffffffffff0
+0x00000000 1,ctr,-=,$z,!,?{,0xfffffff0,pc,=,}
 EOF
 RUN
 
@@ -341,6 +358,7 @@ EOF
 RUN
 
 NAME=subtract from carrying ppc-32
+REQUIRE=cs5
 FILE=-
 CMDS=<<EOF
 e asm.arch=ppc
@@ -351,6 +369,22 @@ e cfg.bigendian=true
 EOF
 EXPECT=<<EOF
 subfc r3, r4, r5
+0x00000000 0x8000000000000000,r4,0xffffffff,^,^,0x8000000000000000,r4,r5,-,0xffffffff,&,^,<,1,r4,0xffffffff,^,r4,r5,-,0xffffffff,&,-,!,&,|,r4,r5,-,r3,=,ca,=
+EOF
+RUN
+
+NAME=subtract from carrying ppc-32 (cs6)
+REQUIRE=cs6
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi 7c642810)
+EOF
+EXPECT=<<EOF
+subc r3, r5, r4
 0x00000000 0x8000000000000000,r4,0xffffffff,^,^,0x8000000000000000,r4,r5,-,0xffffffff,&,^,<,1,r4,0xffffffff,^,r4,r5,-,0xffffffff,&,-,!,&,|,r4,r5,-,r3,=,ca,=
 EOF
 RUN
@@ -401,6 +435,7 @@ EOF
 RUN
 
 NAME=nor bitwise complement ppc-32
+REQUIRE=cs5
 FILE=-
 CMDS=<<EOF
 e asm.arch=ppc
@@ -411,6 +446,22 @@ e cfg.bigendian=true
 EOF
 EXPECT=<<EOF
 nor r3, r4, r4
+0x00000000 r4,r4,|,0xffffffffffffffff,^,r3,=
+EOF
+RUN
+
+NAME=nor bitwise complement ppc-32 (cs6)
+REQUIRE=cs6
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi 7c8320f8)
+EOF
+EXPECT=<<EOF
+not r3, r4
 0x00000000 r4,r4,|,0xffffffffffffffff,^,r3,=
 EOF
 RUN

@@ -398,6 +398,10 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 			switch (insn->id) {
 #if CS_API_MAJOR > 5
 			case BPF_INS_JAL:
+				op->type = R_ANAL_OP_TYPE_JMP;
+				op->jump = op->addr + insn->size * (1 + (st64)(st32)IMM (0));
+				break;
+			case BPF_INS_JA:
 #else
 			case BPF_INS_JMP:
 #endif
@@ -671,6 +675,7 @@ static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr) 
 	switch (insn->id) {
 #if CS_API_MAJOR > 5
 	case BPF_INS_JAL:
+	case BPF_INS_JA:
 #else
 	case BPF_INS_JMP:
 #endif

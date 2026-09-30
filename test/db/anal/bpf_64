@@ -1,4 +1,5 @@
 NAME=add64 reg, reg
+REQUIRE=cs5
 FILE=malloc://128
 CMDS=<<EOF
 e asm.arch=bpf
@@ -26,7 +27,37 @@ family: cpu
 EOF
 RUN
 
+NAME=add64 reg, reg (cs6)
+REQUIRE=cs6
+FILE=malloc://128
+CMDS=<<EOF
+e asm.arch=bpf
+e asm.bits=64
+wx 0x0f10000000000000
+ao@0
+EOF
+EXPECT=<<EOF
+address: 0x0
+opcode: add64 r0, r1
+esilcost: 0
+disasm: add64 r0, r1
+pseudo: r0 += r1
+mnemonic: add64
+description: add src to dst (64-bit)
+mask: ffffffffffffffff
+id: 18
+bytes: 0f10000000000000
+size: 8
+sign: false
+type: add
+cycles: 0
+esil: r1,r0,+=
+family: cpu
+EOF
+RUN
+
 NAME=add64 reg, imm
+REQUIRE=cs5
 FILE=malloc://128
 CMDS=<<EOF
 e asm.arch=bpf
@@ -44,6 +75,36 @@ mnemonic: add64
 description: add src to dst (64-bit)
 mask: ffffffffffffffff
 id: 14
+bytes: 0700000001000000
+val: 0x00000001
+size: 8
+sign: false
+type: add
+cycles: 0
+esil: 1,r0,+=
+family: cpu
+EOF
+RUN
+
+NAME=add64 reg, imm (cs6)
+REQUIRE=cs6
+FILE=malloc://128
+CMDS=<<EOF
+e asm.arch=bpf
+e asm.bits=64
+wx 0x0700000001000000
+ao@0
+EOF
+EXPECT=<<EOF
+address: 0x0
+opcode: add64 r0, 0x1
+esilcost: 0
+disasm: add64 r0, 0x1
+pseudo: r0 += 0x1
+mnemonic: add64
+description: add src to dst (64-bit)
+mask: ffffffffffffffff
+id: 18
 bytes: 0700000001000000
 val: 0x00000001
 size: 8
@@ -85,6 +146,7 @@ EOF
 RUN
 
 NAME=add reg, imm
+REQUIRE=cs5
 FILE=malloc://128
 CMDS=<<EOF
 e asm.arch=bpf
@@ -112,8 +174,38 @@ family: cpu
 EOF
 RUN
 
+NAME=add reg, imm (cs6)
+REQUIRE=cs6
+FILE=malloc://128
+CMDS=<<EOF
+e asm.arch=bpf
+e asm.bits=64
+wx 6392100000000000
+ao@0
+EOF
+EXPECT=<<EOF
+address: 0x0
+opcode: stxw [r2+0x10], r9
+esilcost: 12
+disasm: stxw [r2+0x10], r9
+pseudo: [r2+0x10] = r9
+mnemonic: stxw
+description: store word from register
+mask: ffffffffffffffff
+id: 63
+bytes: 6392100000000000
+size: 8
+sign: false
+type: store
+cycles: 0
+esil: r9,16,r2,+,=[4]
+family: cpu
+EOF
+RUN
+
 # merged: is
 NAME=pd 5
+REQUIRE=cs5
 FILE=bins/bpf/memo_v2.solana.so
 CMDS=<<EOF
 pd 5
@@ -138,7 +230,34 @@ nth paddr      vaddr      bind   type   size lib name         demangled
 EOF
 RUN
 
+NAME=pd 5 (cs6)
+REQUIRE=cs6
+FILE=bins/bpf/memo_v2.solana.so
+CMDS=<<EOF
+pd 5
+?e --
+is
+EOF
+EXPECT=<<EOF
+            ;-- entry0:
+            ;-- entrypoint:
+            0x000009b8      bf12000000..   mov64 r2, r1
+            0x000009c0      bfa1000000..   mov64 r1, r10
+            0x000009c8      07010000d0..   add64 r1, 0xffffffd0
+            0x000009d0      8510000005..   call 0x205
+            0x000009d8      79a6d0ff00..   ldxdw r6, [r10-0x30]
+--
+nth paddr      vaddr      bind   type   size lib name         demangled
+-----------------------------------------------------------------------
+3   0x00000c48 0x00000c48 GLOBAL FUNC   328      custom_panic
+4   0x000009b8 0x000009b8 GLOBAL FUNC   328      entrypoint
+1   ---------- ---------- GLOBAL NOTYPE 16       imp.abort
+2   ---------- ---------- GLOBAL NOTYPE 16       imp.sol_log_
+EOF
+RUN
+
 NAME=negative jmp targets
+REQUIRE=cs5
 FILE=malloc://128
 CMDS=<<EOF
 e asm.arch=bpf
@@ -155,3 +274,39 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=negative jmp targets (cs6)
+REQUIRE=cs6
+FILE=malloc://128
+CMDS=<<EOF
+e asm.arch=bpf
+e asm.bits=64
+wx 7b 1a f8 ff 00 00 00 00  79 a1 f8 ff 00 00 00 00  07 01 00 00 01 00 00 00  7b 1a f8 ff 00 00 00 00  05 00 fc ff 00 00 00 00
+pd 5 @0
+EOF
+EXPECT=<<EOF
+            0x00000000      7b1af8ff00..   stxdw [r10-0x8], r1
+        .-> 0x00000008      79a1f8ff00..   ldxdw r1, [r10-0x8]
+        :   0x00000010      0701000001..   add64 r1, 0x1
+        :   0x00000018      7b1af8ff00..   stxdw [r10-0x8], r1
+        `=< 0x00000020      0500fcff00..   ja -0x4
+EOF
+RUN
+
+
+NAME=BPF long jumps use signed 32-bit immediates
+REQUIRE=cs6
+FILE=malloc://16
+ARGS=-a bpf -b 64
+CMDS=<<EOF
+wx 0600000000000100060000000000ffff
+ao 2~type,jump,esil:
+EOF
+EXPECT=<<EOF
+type: jmp
+esil: 0x80008,pc,=
+jump: 0x00080008
+type: jmp
+esil: 0xfffffffffff80010,pc,=
+jump: 0xfffffffffff80010
+EOF
+RUN

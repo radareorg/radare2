@@ -195,6 +195,9 @@ capstone-build:
 
 else
 
+capstone:
+	$(MAKE) -C ../subprojects $(notdir $(CS_ROOT))
+
 ifeq ($(CS_RELEASE),1)
 
 

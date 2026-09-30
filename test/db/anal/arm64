@@ -78,6 +78,7 @@ EOF
 RUN
 
 NAME=ao mte irg addg
+REQUIRE=cs5
 FILE=bins/mach0/hello-mte
 CMDS=<<EOF
 ao@0x100007f10
@@ -121,7 +122,53 @@ family: cpu
 EOF
 RUN
 
+NAME=ao mte irg addg (cs6)
+REQUIRE=cs6
+FILE=bins/mach0/hello-mte
+CMDS=<<EOF
+ao@0x100007f10
+?e --
+ao@0x100007f14
+EOF
+EXPECT=<<EOF
+address: 0x100007f10
+opcode: irg x8, sp, x8
+esilcost: 0
+disasm: irg x8, sp, x8
+pseudo: irg x8, sp, x8
+mnemonic: irg
+description: insert random tag
+mask: ffffffff
+id: 508
+bytes: e813c89a
+size: 4
+sign: false
+type: mov
+cycles: 0
+family: sec
+--
+address: 0x100007f14
+opcode: addg x9, x8, 0x20, 0
+esilcost: 0
+disasm: addg x9, x8, 0x20, 0
+pseudo: addg x9, x8, 0x20, 0
+mnemonic: addg
+description: add with tag
+mask: ffffffff
+id: 6
+bytes: 09018291
+val: 0x00000020
+size: 4
+sign: false
+type: add
+cycles: 1
+esil: 0x20,x8,+,x9,=
+family: cpu
+EOF
+RUN
+
 NAME=ao mte big endian
+REQUIRE=cs5
 FILE=-
 ARGS=-a arm -b 64 -e cfg.bigendian=true
 CMDS=<<EOF
@@ -187,7 +234,75 @@ family: sec
 EOF
 RUN
 
+NAME=ao mte big endian (cs6)
+REQUIRE=cs6
+FILE=-
+ARGS=-a arm -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 0c09a09109018291e813c89a
+ao@0
+?e ---
+ao@4
+?e ---
+ao@8
+EOF
+EXPECT=<<EOF
+address: 0x0
+opcode: addg x12, x8, 0x200, 2
+esilcost: 0
+disasm: addg x12, x8, 0x200, 2
+pseudo: addg x12, x8, 0x200, 2
+mnemonic: addg
+description: add with tag
+mask: ffffffff
+id: 6
+bytes: 0c09a091
+val: 0x00000200
+size: 4
+sign: false
+type: add
+cycles: 1
+esil: 0x200,x8,+,x12,=
+family: cpu
+---
+address: 0x4
+opcode: addg x9, x8, 0x20, 0
+esilcost: 0
+disasm: addg x9, x8, 0x20, 0
+pseudo: addg x9, x8, 0x20, 0
+mnemonic: addg
+description: add with tag
+mask: ffffffff
+id: 6
+bytes: 09018291
+val: 0x00000020
+size: 4
+sign: false
+type: add
+cycles: 1
+esil: 0x20,x8,+,x9,=
+family: cpu
+---
+address: 0x8
+opcode: irg x8, sp, x8
+esilcost: 0
+disasm: irg x8, sp, x8
+pseudo: irg x8, sp, x8
+mnemonic: irg
+description: insert random tag
+mask: ffffffff
+id: 508
+bytes: e813c89a
+size: 4
+sign: false
+type: mov
+cycles: 0
+family: sec
+EOF
+RUN
+
 NAME=Variable analysis with stp/preindexed str
+REQUIRE=cs5
 FILE=-
 ARGS=-a arm -b 64
 CMDS=<<EOF
@@ -200,6 +315,29 @@ EOF
 EXPECT=<<EOF
 afvR
    var_10h  0x8,0xc
+   var_20h  0x14
+    var_8h  0xc
+afvW
+   var_10h  0x4
+   var_20h  0x0
+    var_8h  0x4
+EOF
+RUN
+
+NAME=Variable analysis with stp/preindexed str (cs6)
+REQUIRE=cs6
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e anal.vars.stackname=true
+wx f30f1ef8fd7b01a9fd430091fd7b41a9e00313aaf30742f8c0035fd6
+aap
+aaef
+afvx
+EOF
+EXPECT=<<EOF
+afvR
+   var_10h  0xc
    var_20h  0x14
     var_8h  0xc
 afvW
@@ -56720,5 +56858,20 @@ cases: 2
 0x00000140 0x00000154 00:0000 20 s 0x00000180 s 0x00000184
 0x00000180 0x00000184 00:0000 4
 0x00000184 0x00000188 00:0000 4
+EOF
+RUN
+
+NAME=ARM64 logical immediate move value
+FILE=malloc://8
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx e3031832e10378b2
+ao 2~type,val:
+EOF
+EXPECT=<<EOF
+val: 0x00000100
+type: mov
+val: 0x00000100
+type: mov
 EOF
 RUN

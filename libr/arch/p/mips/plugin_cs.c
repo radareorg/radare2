@@ -124,7 +124,7 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out);
 #define MIPS_INS_BZ MIPS_INS_BZ_D
 #define MIPS_INS_MOV MIPS_INS_MOV_D
 #define MIPS_INS_FSUB MIPS_INS_FSUB_D
-#define MIPS_INS_NEGU MIPS_INS_NEG_D
+#define MIPS_INS_NEGU MIPS_INS_ALIAS_NEGU
 #define MIPS_INS_LDI MIPS_INS_LDI_D
 #define MIPS_INS_SUBV MIPS_INS_SUBV_D
 #define MIPS_INS_SUBVI MIPS_INS_SUBVI_D
@@ -397,8 +397,9 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 		case MIPS_INS_DDIV:
 		case MIPS_INS_DDIVU:
 			{
-				const char *rs = ARG (0);
-				const char *rt = ARG (1);
+				const int first = OPCOUNT () == 3? 1: 0;
+				const char *rs = ARG (first);
+				const char *rt = ARG (first + 1);
 				es_div (as, op, insn->id, rs, rt, false);
 				es_div (as, op, insn->id, rs, rt, true);
 			}
@@ -1094,6 +1095,11 @@ static int get_capstone_mode(RArchSession *as) {
 			mode |= CS_MODE_MIPS2;
 		}
 	}
+#if CS_API_MAJOR >= 6
+	if (!(mode & (CS_MODE_MICRO | CS_MODE_MIPS32R6 | CS_MODE_MIPS3 | CS_MODE_MIPS2))) {
+		mode |= (as->config->bits == 64)? CS_MODE_MIPS64R2: CS_MODE_MIPS32R2;
+	}
+#endif
 	mode |= (as->config->bits == 64)? CS_MODE_MIPS64: CS_MODE_MIPS32;
 	return mode;
 }
@@ -1106,6 +1112,7 @@ typedef struct plugin_data_t {
 	CapstonePluginData cpd;
 	RRegItem reg;
 	char *cpu;
+	int bits;
 	ut64 t9_pre;
 	ut64 t9_adj;
 	bool bigendian;
@@ -1126,6 +1133,7 @@ static bool init(RArchSession *as) {
 	pd->t9_adj = UT64_MAX;
 	pd->bigendian = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
 	pd->cpu = as->config->cpu? strdup (as->config->cpu): NULL;
+	pd->bits = as->config->bits;
 	if (!r_arch_cs_init (as, &pd->cpd.cs_handle)) {
 		R_LOG_ERROR ("Cannot initialize capstone");
 		R_FREE (as->data);
@@ -1165,6 +1173,9 @@ static bool plugin_changed(RArchSession *as) {
 		return true;
 	}
 	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config) != cpd->bigendian) {
+		return true;
+	}
+	if (as->config->bits != cpd->bits) {
 		return true;
 	}
 	return strcmp (r_str_get (cpd->cpu), r_str_get (as->config->cpu)) != 0;
@@ -1221,6 +1232,67 @@ static void set_jump_target(RAnalOp *op, cs_insn *insn) {
 	}
 }
 
+#if CS_API_MAJOR >= 6
+static unsigned int mips_alias_id(const cs_insn *insn) {
+	// MIPS emits alias operands without setting usesAliasDetails in cs6.
+	if (insn->is_alias) {
+		switch (insn->alias_id) {
+		case MIPS_INS_ALIAS_NOT:
+			return MIPS_INS_NOT;
+		case MIPS_INS_ALIAS_MOVE:
+			return MIPS_INS_MOVE;
+		case MIPS_INS_ALIAS_BAL:
+			return MIPS_INS_BAL;
+		case MIPS_INS_ALIAS_NEG:
+			return MIPS_INS_NEG;
+		case MIPS_INS_ALIAS_NEGU:
+			return MIPS_INS_NEGU;
+		case MIPS_INS_ALIAS_NOP:
+			return MIPS_INS_NOP;
+		case MIPS_INS_ALIAS_SYSCALL:
+			return MIPS_INS_SYSCALL;
+		case MIPS_INS_ALIAS_BREAK:
+			return MIPS_INS_BREAK;
+		case MIPS_INS_ALIAS_NOR:
+			return MIPS_INS_NOR;
+		case MIPS_INS_ALIAS_SLT:
+			return MIPS_INS_SLT;
+		case MIPS_INS_ALIAS_SLTU:
+			return MIPS_INS_SLTU;
+		case MIPS_INS_ALIAS_JR:
+			return MIPS_INS_JR;
+		case MIPS_INS_ALIAS_JRC:
+			return MIPS_INS_JRC;
+		case MIPS_INS_ALIAS_JALRC:
+			return MIPS_INS_JALRC;
+		case MIPS_INS_ALIAS_DIV:
+			return MIPS_INS_DIV;
+		case MIPS_INS_ALIAS_DIVU:
+			return MIPS_INS_DIVU;
+		case MIPS_INS_ALIAS_SW:
+			return MIPS_INS_SW;
+		case MIPS_INS_ALIAS_BEQC:
+			return MIPS_INS_BEQC;
+		case MIPS_INS_ALIAS_BNEC:
+			return MIPS_INS_BNEC;
+		case MIPS_INS_ALIAS_BEQZC:
+			return MIPS_INS_BEQZC;
+		case MIPS_INS_ALIAS_BNEZC:
+			return MIPS_INS_BNEZC;
+		case MIPS_INS_ALIAS_B:
+			return MIPS_INS_B;
+		case MIPS_INS_ALIAS_BEQZ:
+			return MIPS_INS_BEQZ;
+		case MIPS_INS_ALIAS_BNEZ:
+			return MIPS_INS_BNEZ;
+		case MIPS_INS_ALIAS_LI:
+			return MIPS_INS_LI;
+		}
+	}
+	return insn->id;
+}
+#endif
+
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	ut64 addr = op->addr;
 	const ut8 *buf = op->bytes;
@@ -1275,6 +1347,16 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			insn->id = MIPS_INS_INVALID;
 		}
 	}
+#if CS_API_MAJOR >= 6
+	insn->id = mips_alias_id (insn);
+	if (insn->is_alias && (insn->alias_id == MIPS_INS_ALIAS_BEQZL || insn->alias_id == MIPS_INS_ALIAS_BNEZL)
+			&& OPCOUNT () == 2) {
+		OPERAND (2) = OPERAND (1);
+		OPERAND (1).type = MIPS_OP_REG;
+		OPERAND (1).reg = MIPS_REG_ZERO;
+		insn->detail->mips.op_count = 3;
+	}
+#endif
 	op->id = insn->id;
 	op->size = insn->size;
 	op->refptr = 0;

@@ -46,7 +46,9 @@ extern "C" {
 #endif
 
 #define R_BUILDSYSTEM "@R2_BUILDSYSTEM@"
-#if @USE_CS4@ == 1
+#if !WANT_CAPSTONE
+#define R2_CSVERSION 0
+#elif @USE_CS4@ == 1
 #define R2_CSVERSION 4
 #elif @USE_CSNEXT@ == 1
 #define R2_CSVERSION 6

@@ -329,6 +329,7 @@ R_API RVecR2RAsmTestPtr *r2r_load_asm_test_file(RStrConstPool *strpool, const ch
 	}
 
 	ut64 linenum = 0;
+	const char *require = NULL;
 	char *line = contents;
 	size_t linesz;
 	char *nextline;
@@ -339,6 +340,11 @@ R_API RVecR2RAsmTestPtr *r2r_load_asm_test_file(RStrConstPool *strpool, const ch
 			continue;
 		}
 		if (*line == '#') {
+			continue;
+		}
+
+		if (r_str_startswith (line, "REQUIRE=")) {
+			require = r_str_constpool_get (strpool, line + strlen ("REQUIRE="));
 			continue;
 		}
 
@@ -415,6 +421,7 @@ R_API RVecR2RAsmTestPtr *r2r_load_asm_test_file(RStrConstPool *strpool, const ch
 		test->bits = bits;
 		test->arch = arch;
 		test->cpu = cpu;
+		test->require = require;
 		test->mode = mode;
 		test->offset = offset? (ut64)strtoull (offset, NULL, 0): 0;
 		test->disasm = strdup (disasm);

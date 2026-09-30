@@ -75,7 +75,11 @@ static const char *parse_reg_name(csh handle, cs_insn *insn, int reg_num) {
 }
 
 static int get_capstone_mode(RArchSession *as) {
+#if CS_SIX
+	int mode = CS_MODE_BIG_ENDIAN | CS_MODE_V9;
+#else
 	int mode = CS_MODE_LITTLE_ENDIAN;
+#endif
 #if 0
 	// XXX capstone doesnt support big endian sparc, this code does nothing, so we need to swap around
 	if (as->config->big_endian) {
@@ -159,6 +163,23 @@ performed in big-endian byte order.
 			op->mnemonic = strdup ("invalid");
 		}
 	} else {
+#if CS_SIX
+		if (insn->is_alias && insn->usesAliasDetails) {
+			switch (insn->alias_id) {
+			case SPARC_INS_ALIAS_CALL:
+				insn->id = SPARC_INS_CALL;
+				break;
+			case SPARC_INS_ALIAS_CMP:
+			case SPARC_INS_ALIAS_RET:
+			case SPARC_INS_ALIAS_RETL:
+				insn->id = insn->alias_id;
+				break;
+			case SPARC_INS_ALIAS_MOV:
+				insn->id = SPARC_INS_MOV;
+				break;
+			}
+		}
+#endif
 		if (mask & R_ARCH_OP_MASK_OPEX) {
 			opex (&op->opex, handle, insn);
 		}
@@ -181,6 +202,8 @@ performed in big-endian byte order.
 			break;
 #if CS_SIX
 		case SPARC_INS_RETT:
+		case SPARC_INS_ALIAS_RET:
+		case SPARC_INS_ALIAS_RETL:
 #else
 		case SPARC_INS_RETT:
 		case SPARC_INS_RET:
@@ -195,8 +218,10 @@ performed in big-endian byte order.
 		case SPARC_INS_CALL:
 			switch (INSOP(0).type) {
 			case SPARC_OP_MEM:
-				// TODO
+#if !CS_SIX
 				break;
+#endif
+
 			case SPARC_OP_REG:
 				op->type = R_ANAL_OP_TYPE_UCALL;
 				op->delay = 1;
@@ -217,6 +242,9 @@ performed in big-endian byte order.
 			op->type = R_ANAL_OP_TYPE_NOP;
 			break;
 #if CS_SIX
+		case SPARC_INS_ALIAS_CMP:
+			op->type = R_ANAL_OP_TYPE_CMP;
+			break;
 #else
 		case SPARC_INS_CMP:
 			op->type = R_ANAL_OP_TYPE_CMP;
@@ -276,7 +304,7 @@ performed in big-endian byte order.
 				}
 				if (INSCC == SPARC_CC_ICC_A) { // always
 					op->type = R_ANAL_OP_TYPE_JMP;
-					op->delay = 0;
+					op->delay = (insn->detail->sparc.hint & SPARC_HINT_A)? 0: 1;
 				} else {
 					op->fail = addr + 8;
 				}
@@ -289,7 +317,7 @@ performed in big-endian byte order.
 				// if (INSCC != SPARC_CC_ICC_N) { /* never */ }
 				if (INSCC == SPARC_CC_ICC_A) { // always
 					op->type = R_ANAL_OP_TYPE_JMP;
-					op->delay = 0;
+					op->delay = (insn->detail->sparc.hint & SPARC_HINT_A)? 0: 1;
 				} else {
 					op->fail = addr + 8;
 				}

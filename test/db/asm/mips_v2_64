@@ -1,2 +1,9 @@
+REQUIRE=cs5
 d "lwc3 0, (zero)" 000000cc
+REQUIRE=cs6
+d "pref 0, 0(zero)" 000000cc
+REQUIRE=
+# This legacy instruction is not decoded by cs6 in this mode.
+REQUIRE=cs5
 d "swc3 0, (zero)" 000000ec
+REQUIRE=
