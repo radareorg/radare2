@@ -211,6 +211,7 @@ EOF
 RUN
 
 NAME=aom-ppc
+REQUIRE=cs5
 FILE=-
 CMDS=<<EOF
 e asm.arch=ppc
@@ -220,6 +221,20 @@ EOF
 EXPECT=<<EOF
 invalid
 1726
+EOF
+RUN
+
+NAME=aom-ppc (cs6)
+REQUIRE=cs6
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+aom
+aoml~?
+EOF
+EXPECT=<<EOF
+invalid
+1714
 EOF
 RUN
 
