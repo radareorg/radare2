@@ -120,6 +120,7 @@ EOF
 RUN
 
 NAME=aom-evm for capstone
+REQUIRE=cs5
 FILE=-
 CMDS=<<EOF
 e asm.arch=evm
@@ -130,6 +131,21 @@ EOF
 EXPECT=<<EOF
 stop
 134
+EOF
+RUN
+
+NAME=aom-evm for capstone (cs6)
+REQUIRE=cs6
+FILE=-
+CMDS=<<EOF
+e asm.arch=evm
+e asm.bits=32
+aom
+aoml~?
+EOF
+EXPECT=<<EOF
+stop
+146
 EOF
 RUN
 
