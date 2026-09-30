@@ -1477,41 +1477,62 @@ static const char *r2pm_platform(char **env) {
 	}
 	free (*env);
 	*env = NULL;
-#if R2__WINDOWS__
-	return "r2 windows";
-#elif defined(__wasi__) || defined(__EMSCRIPTEN__)
+	return "r2 " R2PM_OS " " R2PM_TRIPLET
 #if WANT_QJS
-	return "r2 qjs";
-#else
-	return "r2";
+		" qjs r2js"
 #endif
-#elif R2__UNIX__
-#if WANT_QJS
-	return "r2 unix qjs";
-#else
-	return "r2 unix";
+#if TERMUX_BUILD
+		" termux"
 #endif
-#else
-	return "r2";
+#if R2__UNIX__ && !defined(__wasi__) && !defined(__EMSCRIPTEN__)
+		" unix"
 #endif
+		;
 }
 
-static bool r2pm_pkg_supported(const char *data) {
+static RList *r2pm_pkg_platforms(char *data) {
+	char *declared = r2pm_parse (data, "\nR2PM_PLATFORMS ", TT_TEXTLINE);
+	if (declared) {
+		r_str_trim (declared);
+	}
+	if (R_STR_ISNOTEMPTY (declared)) {
+		RList *platforms = r_str_split_duplist (declared, " ", true);
+		free (declared);
+		striptrim (platforms);
+		return platforms;
+	}
+	free (declared);
+	RList *platforms = r_list_newf (free);
+	if (strstr (data, R2PM_INSTALL_R2)) {
+		r_list_append (platforms, strdup ("r2"));
+	}
+	if (strstr (data, R2PM_INSTALL_WINDOWS) || strstr (data, R2PM_BINSTALL_WINDOWS)) {
+		r_list_append (platforms, strdup ("windows"));
+	}
+	if (strstr (data, R2PM_INSTALL_UNIX) || strstr (data, R2PM_BINSTALL)) {
+		r_list_append (platforms, strdup ("unix"));
+	}
+	if (strstr (data, R2PM_INSTALL_QJS)) {
+		r_list_append (platforms, strdup ("qjs"));
+	}
+	return platforms;
+}
+
+static bool r2pm_pkg_supported(RList *platforms) {
 	char *env = NULL;
 	const char *platform = r2pm_platform (&env);
-	if (!platform) {
-		return false;
+	RListIter *iter;
+	const char *name;
+	bool supported = false;
+	r_list_foreach (platforms, iter, name) {
+		if (!strcmp (name, "any") || r_str_cmp_list (platform, "any", ' ')
+			|| r_str_cmp_list (platform, name, ' ')
+			|| (!strcmp (name, "r2js") && r_str_cmp_list (platform, "qjs", ' '))
+			|| (!strcmp (name, "qjs") && r_str_cmp_list (platform, "r2js", ' '))) {
+			supported = true;
+			break;
+		}
 	}
-	bool supported = (r_str_cmp_list (platform, "r2", ' ') && strstr (data, R2PM_INSTALL_R2))
-		|| (r_str_cmp_list (platform, "unix", ' ') && (strstr (data, R2PM_INSTALL_UNIX) || strstr (data, R2PM_BINSTALL)))
-		|| (r_str_cmp_list (platform, "windows", ' ') && (strstr (data, R2PM_INSTALL_WINDOWS) || strstr (data, R2PM_BINSTALL_WINDOWS)))
-		|| (r_str_cmp_list (platform, "qjs", ' ') && strstr (data, R2PM_INSTALL_QJS))
-		|| (r_str_cmp_list (platform, "any", ' ') && (strstr (data, R2PM_INSTALL_R2)
-			|| strstr (data, R2PM_INSTALL_UNIX)
-			|| strstr (data, R2PM_INSTALL_WINDOWS)
-			|| strstr (data, R2PM_BINSTALL)
-			|| strstr (data, R2PM_BINSTALL_WINDOWS)
-			|| strstr (data, R2PM_INSTALL_QJS)));
 	free (env);
 	return supported;
 }
@@ -1546,32 +1567,28 @@ static char *r2pm_search(const char *grep, int mode, bool all) {
 			free (data);
 			continue;
 		}
-		bool supported = r2pm_pkg_supported (data);
+		RList *platforms = r2pm_pkg_platforms (data);
+		bool supported = r2pm_pkg_supported (platforms);
 		if (all || supported) {
 			if (pj) {
 				pj_o (pj);
 				pj_ks (pj, "name", file);
 				pj_ks (pj, "desc", desc);
 				pj_ka (pj, "platforms");
-				if (strstr (data, R2PM_INSTALL_R2)) {
-					pj_s (pj, "r2");
-				}
-				if (strstr (data, R2PM_INSTALL_WINDOWS) || strstr (data, R2PM_BINSTALL_WINDOWS)) {
-					pj_s (pj, "windows");
-				}
-				if (strstr (data, R2PM_INSTALL_UNIX) || strstr (data, R2PM_BINSTALL)) {
-					pj_s (pj, "unix");
-				}
-				if (strstr (data, R2PM_INSTALL_QJS)) {
-					pj_s (pj, "qjs");
+				RListIter *platform_iter;
+				const char *platform;
+				r_list_foreach (platforms, platform_iter, platform) {
+					pj_s (pj, platform);
 				}
 				pj_end (pj);
+				pj_kb (pj, "binary", strstr (data, R2PM_BINSTALL) || strstr (data, R2PM_BINSTALL_WINDOWS));
 				pj_kb (pj, "supported", supported);
 				pj_end (pj);
 			} else {
 				r_strbuf_appendf (sb, "%-20s%s%s\n", file, supported? "": "[unsupported] ", desc);
 			}
 		}
+		r_list_free (platforms);
 		free (desc);
 		free (data);
 	}

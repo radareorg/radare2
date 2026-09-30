@@ -61,9 +61,15 @@ or
 .Fl v .
 Search objects include a
 .Va platforms
-array of strings and a
+array of strings, a
+.Va binary
+boolean indicating whether a binary installer is available, and a
 .Va supported
 boolean.
+Binary installers can distribute ready-to-use scripts as well as native binaries.
+The platforms are taken from the package's space-separated
+.Ic R2PM_PLATFORMS
+list, or inferred from install hooks when it is absent or empty.
 .It Fl l
 List installed packages
 .It Fl q
@@ -139,14 +145,35 @@ Target platform triplet exported to package scripts as
 .It Ev R2PM_PLATFORM
 Override the platform used to filter
 .Fl s
-results. Accepted values are
+results. Values include
+.Cm linux ,
+.Cm darwin ,
+.Cm windows ,
+.Cm termux ,
+.Cm r2js ,
 .Cm r2 ,
 .Cm unix ,
-.Cm windows ,
-.Cm qjs ,
+.Cm qjs
 and
 .Cm any ;
 multiple values may be space-separated.
+Exact
+.Ar os-arch-bits
+triplets such as
+.Cm linux-x86-32
+are also accepted.
+The default includes the host OS, its exact
+.Ev R2PM_TRIPLET ,
+runtime capabilities and
+.Cm termux
+for Termux builds.
+.Cm r2js
+and
+.Cm qjs
+are aliases for the QuickJS runtime.
+A package is supported when any declared platform matches;
+.Cm any
+matches all platforms.
 Packages with an
 .Ic R2PM_INSTALL_R2()
 block are portable radare2-command packages; the automatically detected platform
@@ -183,6 +210,30 @@ Shared library extension for plugins (so, dylib or dll)
 User plugin directory, regardless of
 .Fl g
 .El
+.Sh PACKAGE PLATFORMS
+Packages can declare their supported operating systems or runtimes with a
+space-separated list, optionally enclosed in double quotes:
+.Bd -literal -offset indent
+R2PM_PLATFORMS "linux darwin windows"
+R2PM_PLATFORMS "r2js"
+R2PM_PLATFORMS "linux-x86-32"
+.Ed
+.Pp
+The declaration is optional. Packages without it, or with an empty value,
+retain platform inference from their install hooks and existing install behavior.
+When present, it overrides that inference for search filtering and JSON output.
+Use runtime tags for portable scripts, OS tags for all architectures on that OS,
+or an exact
+.Ar os-arch-bits
+triplet to restrict availability to one OS, architecture and bitness.
+For example,
+.Cm linux-x86-32
+matches 32-bit x86 Linux, but not 64-bit x86 Linux or 32-bit ARM Linux.
+Multiple entries are alternatives: any matching entry makes the package visible.
+An OS tag such as
+.Cm linux
+alongside a triplet allows all architectures on that OS.
+Platform tags do not guarantee a binary for every release.
 .Sh BINARY PACKAGES
 Packages implement
 .Ic R2PM_BINSTALL()

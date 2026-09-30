@@ -40,7 +40,7 @@ mkdir -p /tmp/r2pm-platform-json-r2r
 r2pm -qjs r2only
 rmrf /tmp/r2pm-platform-json-r2r
 EOF
-EXPECT=[{"name":"r2only","desc":"portable r2","platforms":["r2"],"supported":true}]
+EXPECT=[{"name":"r2only","desc":"portable r2","platforms":["r2"],"binary":false,"supported":true}]
 EXPECT_ERR=
 RUN
 

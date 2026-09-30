@@ -21,10 +21,6 @@ On 64-bit Linux, `make -C test r2k` runs the r2k command regressions with a
 mock ioctl driver after building and installing radare2. It requires a C
 compiler and does not load a kernel module or access kernel memory.
 
-After building, run `python3 test/scripts/test-r2pm-binary.py` from the repository
-root to check binary package installation with an isolated package database.
-Set `R2PM` to select a different executable; the default uses `r2pm` from `PATH`.
-
 # Usage
 
  * To run *all* tests, use `make -k all`.
