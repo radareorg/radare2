@@ -1120,6 +1120,15 @@ R_API void r2r_archs(R2RRunConfig *config) {
 	if (!config->rasm2_archs) {
 		config->rasm2_archs = strdup ("");
 	}
+	const char *version_argv[] = { "-v" };
+	out = subprocess_runner (config->r2_cmd, version_argv, R_ARRAY_SIZE (version_argv), NULL, NULL, 0, R_MIN (config->timeout_ms, 10000), NULL);
+	if (out && out->ret == 0 && out->out) {
+		const char *version = strstr (out->out, " cs:");
+		if (version) {
+			config->capstone_version = atoi (version + 4);
+		}
+	}
+	r2r_process_output_free (out);
 }
 
 #if R2__WINDOWS__
@@ -1926,11 +1935,17 @@ static bool require_has(const char *require, const char *token) {
 	return false;
 }
 
-static bool require_check(const char *require) {
+static bool require_check(const char *require, int capstone_version) {
 	if (R_STR_ISEMPTY (require)) {
 		return true;
 	}
 	bool res = true;
+	if (require_has (require, "cs5")) {
+		res &= capstone_version == 5;
+	}
+	if (require_has (require, "cs6")) {
+		res &= capstone_version == 6;
+	}
 	if (require_has (require, "gas")) {
 		char *as_bin = r_file_path ("as");
 		res &= (bool)as_bin;
@@ -2015,7 +2030,7 @@ static bool rasm2_has_arch(R2RRunConfig *config, const char *arch) {
 // Check cmd/leak test compatibility and early skip conditions
 static bool check_cmd_test_skip(R2RRunConfig *config, R2RCmdTest *cmd_test) {
 	const char *require = cmd_test->require.value;
-	if (!require_check (require)) {
+	if (!require_check (require, config->capstone_version)) {
 		R_LOG_WARN ("Skipping because of %s", require);
 		return true;
 	}
@@ -2068,7 +2083,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 			ret->run_failed = false;
 		} else {
 			R2RAsmTest *at = test->asm_test;
-			if (!rasm2_has_arch (config, at->arch)) {
+			if (!require_check (at->require, config->capstone_version) || !rasm2_has_arch (config, at->arch)) {
 				success = true;
 				ret->run_failed = false;
 				ret->run_skipped = true;

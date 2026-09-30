@@ -191,13 +191,54 @@ bool test_r2r_fix(void) {
 }
 
 bool test_r2r_require(void) {
-	mu_assert_true (require_check (NULL), "empty requirement");
-	mu_assert_true (require_check (""), "empty requirement");
+	mu_assert_true (require_check (NULL, 0), "empty requirement");
+	mu_assert_true (require_check ("", 0), "empty requirement");
+	mu_assert_true (require_check ("cs5", 5), "Capstone 5 requirement");
+	mu_assert_false (require_check ("cs5", 6), "Capstone 5 excludes Capstone 6");
+	mu_assert_true (require_check ("cs6", 6), "Capstone 6 requirement");
+	mu_assert_false (require_check ("cs6", 5), "Capstone 6 excludes Capstone 5");
+	mu_assert_false (require_check ("cs5", 0), "missing Capstone 5");
+	mu_assert_false (require_check ("cs6", 0), "missing Capstone 6");
+	mu_assert_false (require_check ("cs5, cs6", 5), "requirements are conjunctive");
+	mu_assert_false (require_check ("cs5;cs6", 6), "semicolon separator");
+	mu_assert_true (require_check ("cs60", 5), "match whole tokens");
 #if R_SYS_ENDIAN == 0
-	mu_assert_true (require_check ("little"), "little endian requirement");
+	mu_assert_true (require_check ("little cs6", 6), "combined requirement");
+	mu_assert_true (require_check ("little", 0), "little endian requirement");
 #else
-	mu_assert_false (require_check ("little"), "little endian requirement");
+	mu_assert_false (require_check ("little cs6", 6), "combined requirement");
+	mu_assert_false (require_check ("little", 0), "little endian requirement");
 #endif
+	mu_end;
+}
+
+bool test_r2r_asm_require(void) {
+	R2RTestDatabase *db = r2r_test_database_new ();
+	RVecR2RAsmTestPtr *tests = r2r_load_asm_test_file (&db->strpool, "unit/r2r_asm_test");
+	mu_assert_notnull (tests, "load assembly requirements");
+	mu_assert_eq (RVecR2RAsmTestPtr_length (tests), 4, "assembly test count");
+	mu_assert_null ((*RVecR2RAsmTestPtr_at (tests, 0))->require, "no initial requirement");
+	mu_assert_streq ((*RVecR2RAsmTestPtr_at (tests, 1))->require, "cs5", "Capstone 5 block");
+	mu_assert_streq ((*RVecR2RAsmTestPtr_at (tests, 2))->require, "cs6", "Capstone 6 block");
+	mu_assert_streq ((*RVecR2RAsmTestPtr_at (tests, 3))->require, "", "reset requirement");
+	mu_assert_eq ((*RVecR2RAsmTestPtr_at (tests, 3))->line, 7, "preserve source line numbers");
+	R2RRunConfig config = { .capstone_version = 5 };
+	R2RTest test = { .type = R2R_TEST_TYPE_ASM, .asm_test = *RVecR2RAsmTestPtr_at (tests, 2) };
+	R2RTestResultInfo *result = r2r_run_test (&config, &test);
+	mu_assert_true (result->run_skipped, "skip mismatched assembly test before spawning");
+	r2r_test_result_info_free (result);
+	R2RCmdTest cmd_test = { .require.value = "cs6" };
+	test.type = R2R_TEST_TYPE_CMD;
+	test.cmd_test = &cmd_test;
+	result = r2r_run_test (&config, &test);
+	mu_assert_true (result->run_skipped, "skip mismatched command test before spawning");
+	r2r_test_result_info_free (result);
+	R2RAsmTest **it;
+	R_VEC_FOREACH (tests, it) {
+		r2r_asm_test_free (*it);
+	}
+	RVecR2RAsmTestPtr_free (tests);
+	r2r_test_database_free (db);
 	mu_end;
 }
 
@@ -205,6 +246,7 @@ int all_tests(void) {
 	mu_run_test (test_r2r_database_load_cmd);
 	mu_run_test (test_r2r_fix);
 	mu_run_test (test_r2r_require);
+	mu_run_test (test_r2r_asm_require);
 	return tests_passed != tests_run;
 }
 
