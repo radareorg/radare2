@@ -156,3 +156,14 @@ EOF
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=stderr redirect to $alias
+FILE=-
+CMDS=<<EOF
+?ee asf 2> $foo
+cat $foo
+EOF
+EXPECT=<<EOF
+asf
+EOF
+RUN

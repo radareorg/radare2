@@ -5073,17 +5073,44 @@ repeat:;
 			// pipe to alias variable
 			// register output of command as an alias
 			r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
-			RBuffer *cmd_out = r_core_cmd_tobuf (core, cmd);
-			if (cmd_out) {
-				int alias_len;
-				ut8 *alias_data = r_buf_read_all (cmd_out, &alias_len);
-				const char *arg = r_str_trim_head_ro (str + 1);
-				if (!r_cmd_alias_set_raw (core->rcmd, arg, alias_data, alias_len, appendResult)) {
-					R_LOG_INFO ("Cannot write to alias '$%s'", arg);
+			const char *arg = r_str_trim_head_ro (str + 1);
+			if (fdn == 2) {
+				char *tmp = r_file_temp ("r2stderr");
+				int tmpfd = r_sandbox_open (tmp, O_BINARY | O_RDWR | O_CREAT | O_TRUNC, 0644);
+				if (tmpfd != -1) {
+					int bak = dup (2);
+					if (bak != -1) {
+						dup2 (tmpfd, 2);
+						r_core_cmd0 (core, cmd);
+						r_cons_flush (cons);
+						dup2 (bak, 2);
+						close (bak);
+					}
+					close (tmpfd);
+					size_t tmpsz = 0;
+					char *tmpdata = r_file_slurp (tmp, &tmpsz);
+					if (tmpdata) {
+						if (!r_cmd_alias_set_raw (core->rcmd, arg, (const ut8 *)tmpdata, (int)tmpsz, appendResult)) {
+							R_LOG_INFO ("Cannot write to alias '$%s'", arg);
+						}
+						free (tmpdata);
+					}
+					ret = 0;
 				}
-				ret = 0;
-				r_unref (cmd_out);
-				free (alias_data);
+				r_file_rm (tmp);
+				free (tmp);
+			} else {
+				RBuffer *cmd_out = r_core_cmd_tobuf (core, cmd);
+				if (cmd_out) {
+					int alias_len;
+					ut8 *alias_data = r_buf_read_all (cmd_out, &alias_len);
+					if (!r_cmd_alias_set_raw (core->rcmd, arg, alias_data, alias_len, appendResult)) {
+						R_LOG_INFO ("Cannot write to alias '$%s'", arg);
+					}
+					ret = 0;
+					r_unref (cmd_out);
+					free (alias_data);
+				}
 			}
 		} else if (fdn > 0) {
 			// pipe to file (or append)
