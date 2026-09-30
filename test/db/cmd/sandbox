@@ -179,3 +179,22 @@ true
 none
 EOF
 RUN
+
+NAME=sandbox grain exclusions block environment access
+FILE=-
+CMDS=<<EOF
+%R2_GRAIN_TEST=visible
+e cfg.sandbox.grain=!disk,!exec
+e cfg.sandbox=true
+%R2_GRAIN_TEST~?
+e cfg.sandbox.grain=!disk,!exec,!environ
+%R2_GRAIN_TEST~?
+e cfg.sandbox.grain=!exec
+e cfg.sandbox.grain
+EOF
+EXPECT=<<EOF
+1
+0
+!disk,!exec,!environ
+EOF
+RUN

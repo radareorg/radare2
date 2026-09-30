@@ -1644,9 +1644,11 @@ static bool cb_dirsrc_base(void *user, void *data) {
 // clang-format off
 static RCoreHelpMessage help_msg_grain = {
 	"Usage:", "e cfg.sandbox.grain=arg[,arg...]", "select which sandbox permissions stay enabled",
+	"!name", "", "remove a permission; a leading ! starts with all permissions",
+	"!disk,!exec", "", "allow all permissions except disk and exec",
 	"Grain types:", "", "",
-	"all", "", "allow every sandbox grain",
-	"none", "", "block every optional grain",
+	"all", "", "reset to every sandbox grain",
+	"none", "", "reset to no optional grains",
 	"disk", "", "allow low-level file descriptors and file open operations",
 	"files", "", "allow stdio-style file and directory access (fopen, opendir, chdir)",
 	"exec", "", "allow process execution and kill/system helpers",
@@ -1665,34 +1667,58 @@ static bool cb_cfgsanbox_grain(void *user, void *data) {
 		r_cons_cmd_help (core->cons, help_msg_grain);
 		return false;
 	}
-	int gt = R_SANDBOX_GRAIN_NONE;
-	if (strstr (node->value, "all")) {
-		gt = R_SANDBOX_GRAIN_ALL;
-	} else if (strstr (node->value, "none")) {
-		gt = R_SANDBOX_GRAIN_NONE;
-	} else {
-		if (strstr (node->value, "exec")) {
-			gt |= R_SANDBOX_GRAIN_EXEC;
+	static const struct {
+		const char *name;
+		int mask;
+	} grains[] = {
+		{ "all", R_SANDBOX_GRAIN_ALL },
+		{ "none", R_SANDBOX_GRAIN_NONE },
+		{ "exec", R_SANDBOX_GRAIN_EXEC },
+		{ "socket", R_SANDBOX_GRAIN_SOCKET },
+		{ "file", R_SANDBOX_GRAIN_FILES },
+		{ "files", R_SANDBOX_GRAIN_FILES },
+		{ "disk", R_SANDBOX_GRAIN_DISK },
+		{ "network", R_SANDBOX_GRAIN_NETWORK },
+		{ "environ", R_SANDBOX_GRAIN_ENVIRON },
+		{ "hidden", R_SANDBOX_GRAIN_HIDDEN }
+	};
+	char *value = strdup (node->value);
+	if (!value) {
+		return false;
+	}
+	RList *options = r_str_split_list (value, ",", 0);
+	if (!options) {
+		free (value);
+		return false;
+	}
+	int gt = *r_str_trim_head_ro (node->value) == '!'? R_SANDBOX_GRAIN_ALL: R_SANDBOX_GRAIN_NONE;
+	RListIter *iter;
+	char *option;
+	r_list_foreach (options, iter, option) {
+		bool remove = *option == '!';
+		const char *name = remove? r_str_trim_head_ro (option + 1): option;
+		size_t i;
+		for (i = 0; i < R_ARRAY_SIZE (grains); i++) {
+			if (!strcmp (name, grains[i].name)) {
+				break;
+			}
 		}
-		if (strstr (node->value, "socket")) {
-			gt |= R_SANDBOX_GRAIN_SOCKET;
+		if (i == R_ARRAY_SIZE (grains)) {
+			R_LOG_ERROR ("Unknown sandbox grain '%s'", option);
+			r_list_free (options);
+			free (value);
+			return false;
 		}
-		if (strstr (node->value, "file")) {
-			gt |= R_SANDBOX_GRAIN_FILES;
-		}
-		if (strstr (node->value, "disk")) {
-			gt |= R_SANDBOX_GRAIN_DISK;
-		}
-		if (strstr (node->value, "network")) {
-			gt |= R_SANDBOX_GRAIN_NETWORK;
-		}
-		if (strstr (node->value, "environ")) {
-			gt |= R_SANDBOX_GRAIN_ENVIRON;
-		}
-		if (strstr (node->value, "hidden")) {
-			gt |= R_SANDBOX_GRAIN_HIDDEN;
+		if (remove) {
+			gt &= ~grains[i].mask;
+		} else if (!strcmp (name, "none")) {
+			gt = R_SANDBOX_GRAIN_NONE;
+		} else {
+			gt |= grains[i].mask;
 		}
 	}
+	r_list_free (options);
+	free (value);
 	int old_grain = r_sandbox_grain (gt);
 	if (r_sandbox_enable (false) && (gt & old_grain) != gt) {
 		r_sandbox_grain (old_grain);
@@ -4494,7 +4520,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("cfg.fortunes.tts", "false", "speak out the fortune");
 	SETS ("cfg.prefixdump", "dump", "filename prefix for automated dumps");
 	SETCB ("cfg.sandbox", "false", &cb_cfgsanbox, "sandbox mode disables systems and open on upper directories");
-	SETCB ("cfg.sandbox.grain", "all", &cb_cfgsanbox_grain, "select sandbox permissions to keep enabled (all, none, disk, files, exec, socket, network, environ, hidden)");
+	SETCB ("cfg.sandbox.grain", "all", &cb_cfgsanbox_grain, "select sandbox permissions (all, none, disk, files, exec, socket, network, environ, hidden); !name removes a permission");
 	SETB ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "use little (false) or big (true) endianness");
 	SETCB ("cfg.float", "ieee754", &cb_cfg_float, "FPU profile for floating point operations (use -e cfg.float=? for list)");

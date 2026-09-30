@@ -64,3 +64,16 @@ Only r2's sandbox is supported.
 - activated before showing the prompt
 
 	$ r2 -S /bin/ls
+
+Permission expressions
+----------------------
+
+`cfg.sandbox.grain` accepts comma-separated permission names. Prefix a name
+with `!` to remove it. If the first option is negative, evaluation starts with
+all permissions; otherwise it starts with none. Options apply from left to
+right, and `all` or `none` resets the mask at that point.
+
+For example, `!disk,!exec` allows everything except disk access and process
+execution. `disk,files,!disk` allows only `files`, while `all,!exec` allows
+everything except execution. Whitespace around options is ignored. Unknown
+names and empty options are rejected without changing the current permissions.
