@@ -17,7 +17,11 @@ capstone-next_all:
 	cd capstone-next && git fetch --depth=1 origin 26d632ecf83967ad3981d65ca28f87ce0e393ec6
 	cd capstone-next && git checkout FETCH_HEAD
 	cp -rf packagefiles/capstone-next/* capstone-next
+<<<<<<< HEAD
 	for a in capstone-next/capstone-patches/fix-x86-16.patch ; do echo "patch -d capstone-next -p1 < $$a" ; patch -d capstone-next -p1 < $$a ; done
+=======
+	for a in capstone-next/capstone-patches/fix-x86-16.patch capstone-next/capstone-patches/fix-x86-att-detail.patch capstone-next/capstone-patches/fix-ppc-32-mode.patch capstone-next/capstone-patches/fix-arm-shift-alias.patch capstone-next/capstone-patches/fix-m68k-btst-size.patch ; do echo "patch -d capstone-next -p1 < $$a" ; patch -d capstone-next -p1 < $$a ; done
+>>>>>>> ad71d9102c (Fix m68k btst size with capstone 6 and add cs6 tests ##arch)
 
 capstone-next_clean:
 	rm -rf capstone-next
