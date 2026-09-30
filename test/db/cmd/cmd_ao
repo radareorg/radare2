@@ -242,6 +242,7 @@ EOF
 RUN
 
 NAME=aom-m680x
+REQUIRE=cs5
 FILE=-
 CMDS=<<EOF
 e asm.arch=m680x
@@ -251,6 +252,20 @@ EOF
 EXPECT=<<EOF
 fcb
 356
+EOF
+RUN
+
+NAME=aom-m680x (cs6)
+REQUIRE=cs6
+FILE=-
+CMDS=<<EOF
+e asm.arch=m680x
+aom
+aoml~?
+EOF
+EXPECT=<<EOF
+fcb
+412
 EOF
 RUN
 
