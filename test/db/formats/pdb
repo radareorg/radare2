@@ -281,3 +281,15 @@ EXPECT_ERR=<<EOF
 ERROR: Invalid root size or page size
 EOF
 RUN
+
+NAME=Issue #12924 - Enum with modified underlying type in PDB
+FILE=-
+CMDS=<<EOF
+idp bins/pdb/issue_12924.pdb
+te~tagCOINITBASE
+EOF
+EXPECT=<<EOF
+tagCOINITBASE
+EOF
+RUN
+
