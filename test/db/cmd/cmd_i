@@ -3997,3 +3997,29 @@ nth paddr        size vaddr       vsize perm flags type name
 2   0x00000238  0x124 0x00000238  0x124 -r-x 0x0   ---- code
 EOF
 RUN
+
+NAME=iic classify imports
+FILE=bins/elf/crackme0x00b
+CMDS=<<EOF
+iicq
+iic printf
+iicl console
+iicl nope
+iicj
+aa
+iiclj format
+iiclj nope
+iiclx console
+EOF
+EXPECT=<<EOF
+console
+format
+console,format
+printf
+puts
+{"console":[{"name":"printf","addr":134513536,"refs":[]},{"name":"puts","addr":134513568,"refs":[]}],"format":[{"name":"printf","addr":134513536,"refs":[]}]}
+[{"name":"printf","addr":134513536,"refs":[{"addr":134513829,"fcn":"main"}]}]
+[]
+main
+EOF
+RUN
