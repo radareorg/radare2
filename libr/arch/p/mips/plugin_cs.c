@@ -1234,60 +1234,24 @@ static void set_jump_target(RAnalOp *op, cs_insn *insn) {
 
 #if CS_API_MAJOR >= 6
 static unsigned int mips_alias_id(const cs_insn *insn) {
-	// MIPS emits alias operands without setting usesAliasDetails in cs6.
-	if (insn->is_alias) {
-		switch (insn->alias_id) {
-		case MIPS_INS_ALIAS_NOT:
-			return MIPS_INS_NOT;
-		case MIPS_INS_ALIAS_MOVE:
-			return MIPS_INS_MOVE;
-		case MIPS_INS_ALIAS_BAL:
-			return MIPS_INS_BAL;
-		case MIPS_INS_ALIAS_NEG:
-			return MIPS_INS_NEG;
-		case MIPS_INS_ALIAS_NEGU:
-			return MIPS_INS_NEGU;
-		case MIPS_INS_ALIAS_NOP:
-			return MIPS_INS_NOP;
-		case MIPS_INS_ALIAS_SYSCALL:
-			return MIPS_INS_SYSCALL;
-		case MIPS_INS_ALIAS_BREAK:
-			return MIPS_INS_BREAK;
-		case MIPS_INS_ALIAS_NOR:
-			return MIPS_INS_NOR;
-		case MIPS_INS_ALIAS_SLT:
-			return MIPS_INS_SLT;
-		case MIPS_INS_ALIAS_SLTU:
-			return MIPS_INS_SLTU;
-		case MIPS_INS_ALIAS_JR:
-			return MIPS_INS_JR;
-		case MIPS_INS_ALIAS_JRC:
-			return MIPS_INS_JRC;
-		case MIPS_INS_ALIAS_JALRC:
-			return MIPS_INS_JALRC;
-		case MIPS_INS_ALIAS_DIV:
-			return MIPS_INS_DIV;
-		case MIPS_INS_ALIAS_DIVU:
-			return MIPS_INS_DIVU;
-		case MIPS_INS_ALIAS_SW:
-			return MIPS_INS_SW;
-		case MIPS_INS_ALIAS_BEQC:
-			return MIPS_INS_BEQC;
-		case MIPS_INS_ALIAS_BNEC:
-			return MIPS_INS_BNEC;
-		case MIPS_INS_ALIAS_BEQZC:
-			return MIPS_INS_BEQZC;
-		case MIPS_INS_ALIAS_BNEZC:
-			return MIPS_INS_BNEZC;
-		case MIPS_INS_ALIAS_B:
-			return MIPS_INS_B;
-		case MIPS_INS_ALIAS_BEQZ:
-			return MIPS_INS_BEQZ;
-		case MIPS_INS_ALIAS_BNEZ:
-			return MIPS_INS_BNEZ;
-		case MIPS_INS_ALIAS_LI:
-			return MIPS_INS_LI;
-		}
+	// alias mnemonics that are also real instructions, alias_id is 0 for the rest
+	switch (insn->alias_id) {
+	case MIPS_INS_ALIAS_B: return MIPS_INS_B;
+	case MIPS_INS_ALIAS_BAL: return MIPS_INS_BAL;
+	case MIPS_INS_ALIAS_BEQZ: return MIPS_INS_BEQZ;
+	case MIPS_INS_ALIAS_BEQZC: return MIPS_INS_BEQZC;
+	case MIPS_INS_ALIAS_BNEZ: return MIPS_INS_BNEZ;
+	case MIPS_INS_ALIAS_BNEZC: return MIPS_INS_BNEZC;
+	case MIPS_INS_ALIAS_JALRC: return MIPS_INS_JALRC;
+	case MIPS_INS_ALIAS_JR: return MIPS_INS_JR;
+	case MIPS_INS_ALIAS_JRC: return MIPS_INS_JRC;
+	case MIPS_INS_ALIAS_LI: return MIPS_INS_LI;
+	case MIPS_INS_ALIAS_MOVE: return MIPS_INS_MOVE;
+	case MIPS_INS_ALIAS_NEG: return MIPS_INS_NEG;
+	case MIPS_INS_ALIAS_NEGU: return MIPS_INS_NEGU;
+	case MIPS_INS_ALIAS_NOP: return MIPS_INS_NOP;
+	case MIPS_INS_ALIAS_NOT: return MIPS_INS_NOT;
+	case MIPS_INS_ALIAS_SW: return MIPS_INS_SW;
 	}
 	return insn->id;
 }
@@ -1349,8 +1313,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	}
 #if CS_API_MAJOR >= 6
 	insn->id = mips_alias_id (insn);
-	if (insn->is_alias && (insn->alias_id == MIPS_INS_ALIAS_BEQZL || insn->alias_id == MIPS_INS_ALIAS_BNEZL)
-			&& OPCOUNT () == 2) {
+	if ((insn->alias_id == MIPS_INS_ALIAS_BEQZL || insn->alias_id == MIPS_INS_ALIAS_BNEZL) && OPCOUNT () == 2) {
 		OPERAND (2) = OPERAND (1);
 		OPERAND (1).type = MIPS_OP_REG;
 		OPERAND (1).reg = MIPS_REG_ZERO;
