@@ -1600,6 +1600,22 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		} \
 	} while (0)
 
+static int condition_bit(const char *arg) {
+	int field = 0;
+	if (r_str_startswith (arg, "4*cr") && arg[4] >= '0' && arg[4] <= '7' && arg[5] == '+') {
+		field = arg[4] - '0';
+		arg += 6;
+	}
+	const char *names[] = { "lt", "gt", "eq", "un" };
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (names); i++) {
+		if (!strcmp (arg, names[i])) {
+			return field * 4 + i;
+		}
+	}
+	return -1;
+}
+
 static char *parse(RAsmPluginSession *aps, const char *data) {
 	int len = strlen (data);
 	char w0[WSZ];
@@ -1688,6 +1704,25 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 			}
 		} else {
 			r_str_ncpy (w0, buf, WSZ);
+		}
+		if ((!strcmp (w0, "bt") || !strcmp (w0, "bf")) && *w2) {
+			int bit = condition_bit (w1);
+			if (bit >= 0) {
+				const char *taken[] = { "blt", "bgt", "beq", "bso" };
+				const char *clear[] = { "bge", "ble", "bne", "bns" };
+				r_str_ncpy (w0, w0[1] == 't'? taken[bit % 4]: clear[bit % 4], WSZ);
+				snprintf (w1, WSZ, "cr%d", bit / 4);
+			}
+		}
+		if (!strcmp (w0, "isellt") || !strcmp (w0, "iselgt") || !strcmp (w0, "iseleq")) {
+			snprintf (w4, WSZ, "cr0%s", w0 + 4);
+			r_str_ncpy (w0, "isel", WSZ);
+		} else if (!strcmp (w0, "isel")) {
+			int bit = condition_bit (w4);
+			if (bit >= 0) {
+				const char *names[] = { "lt", "gt", "eq", "so" };
+				snprintf (w4, WSZ, "cr%d%s", bit / 4, names[bit % 4]);
+			}
 		}
 		{
 			const char *wa[] = { w0, w1, w2, w3, w4, w5 };
