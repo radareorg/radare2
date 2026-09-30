@@ -147,3 +147,35 @@ EXPECT=<<EOF
 hidden
 EOF
 RUN
+
+NAME=sandbox grain cannot grant additional permissions
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain=environ
+e cfg.sandbox=true
+e cfg.sandbox.grain=exec,environ
+e cfg.sandbox.grain
+e cfg.sandbox.grain=none
+e cfg.sandbox.grain=all
+e cfg.sandbox.grain
+EOF
+EXPECT=<<EOF
+environ
+none
+EOF
+RUN
+
+NAME=sandbox configuration cannot be reset
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain=none
+e cfg.sandbox=true
+e-
+e cfg.sandbox
+e cfg.sandbox.grain
+EOF
+EXPECT=<<EOF
+true
+none
+EOF
+RUN

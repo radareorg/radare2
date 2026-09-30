@@ -1693,7 +1693,12 @@ static bool cb_cfgsanbox_grain(void *user, void *data) {
 			gt |= R_SANDBOX_GRAIN_HIDDEN;
 		}
 	}
-	r_sandbox_grain (gt);
+	int old_grain = r_sandbox_grain (gt);
+	if (r_sandbox_enable (false) && (gt & old_grain) != gt) {
+		r_sandbox_grain (old_grain);
+		R_LOG_ERROR ("Cannot increase sandbox permissions");
+		return false;
+	}
 	return true;
 }
 

@@ -857,6 +857,10 @@ static int cmd_eval(void *data, const char *input) {
 		core_config_list (core, (input[1])? input + 1: NULL, 's');
 		break;
 	case '-': // "e-"
+		if (r_sandbox_enable (false)) {
+			R_LOG_ERROR ("Cannot reset configuration in sandbox mode");
+			break;
+		}
 		r_core_config_init (core);
 		// eprintf ("BUG: 'e-' command locks the eval hashtable. patches are welcome :)\n");
 		break;
