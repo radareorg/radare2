@@ -1,0 +1,7 @@
+d "nop" 90
+REQUIRE=cs5
+d "nop" 90
+REQUIRE=cs6
+d "nop" 90
+REQUIRE=
+d "nop" 90
