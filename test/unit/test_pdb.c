@@ -524,11 +524,24 @@ bool test_pdb_type_save(void) {
 	mu_end;
 }
 
+bool test_pdb_enum_modified_utype(void) {
+	RBinPdb pdb = {0};
+	RAnal *anal = r_anal_new ();
+	mu_assert_true (pdb_info_save_types (anal, "bins/pdb/issue_12924.pdb", &pdb), "pdb parsing failed");
+	check_kv ("tagCOINITBASE", "enum");
+	check_kv ("enum.tagCOINITBASE", "COINITBASE_MULTITHREADED");
+	check_kv ("enum.tagCOINITBASE.COINITBASE_MULTITHREADED", "0x0");
+	check_kv ("enum.tagCOINITBASE.0x0", "COINITBASE_MULTITHREADED");
+	r_anal_free (anal);
+	mu_end;
+}
+
 bool all_tests(void) {
 #if R_SYS_ENDIAN == 0
 	mu_run_test (test_pdb_tpi_cpp);
 	mu_run_test (test_pdb_tpi_rust);
 	mu_run_test (test_pdb_type_save);
+	mu_run_test (test_pdb_enum_modified_utype);
 #endif
 	return tests_passed != tests_run;
 }
