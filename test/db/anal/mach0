@@ -48,6 +48,7 @@ EOF
 RUN
 
 NAME=analysis macho test
+REQUIRE=cs5
 FILE=bins/mach0/ls-m1
 ARGS=-a arm -b 64
 CMDS=<<EOF
@@ -62,6 +63,42 @@ EXPECT=<<EOF
 |           ; arg int argc @ x0
 |           ; arg char **argv @ x1
 |           ; var int32_t var_64h @ x29-0x64
+|           ; var int64_t var_0h @ sp+0x0
+|           ; var int64_t var_8h @ sp+0x8
+|           ; var int32_t var_14h @ sp+0x14
+|           ; var int64_t var_18h @ sp+0x18
+|           ; var int64_t var_20h_2 @ sp+0x20
+|           ; var int64_t var_220h @ sp+0x220
+|           ; var int64_t var_10h @ sp+0x650
+|           ; var int64_t var_20h @ sp+0x660
+|           ; var int64_t var_30h @ sp+0x670
+|           ; var int64_t var_40h @ sp+0x680
+|           ; var int64_t var_50h @ sp+0x690
+|           0x100003a90      7f2303d5       pacibsp
+|           0x100003a94      fc6fbaa9       stp x28, x27, [sp, -0x60]!
+|           0x100003a98      fa6701a9       stp x26, x25, [var_10h]
+|           0x100003a9c      f85f02a9       stp x24, x23, [var_20h]
+EOF
+RUN
+
+NAME=analysis macho test (cs6)
+REQUIRE=cs6
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e asm.var.summary=0
+aa
+pd 4
+EOF
+EXPECT=<<EOF
+            ;-- entry0:
+            ;-- func.100003a90:
+/ 2980: int main (int argc, char **argv, char **envp); // noreturn
+|           ; arg int argc @ x0
+|           ; arg char **argv @ x1
+|           ; var int64_t var_60h @ x29-0x60
+|           ; var int32_t var_64h @ x29-0x64
+|           ; var int64_t var_70h @ x29-0x70
 |           ; var int64_t var_0h @ sp+0x0
 |           ; var int64_t var_8h @ sp+0x8
 |           ; var int32_t var_14h @ sp+0x14
