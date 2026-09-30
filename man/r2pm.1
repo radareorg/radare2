@@ -215,7 +215,19 @@ Normal installation directories,
 and
 .Ev R2PM_SUDO
 are available.
-Installations are registered only on success.
+Installations are registered only on success, and marked as binary.
+.Pp
+Packages installed this way are uninstalled with
+.Ic R2PM_BUNINSTALL()
+or
+.Ic R2PM_BUNINSTALL_WINDOWS() ,
+which run the same way and must remove the files the binary installer added;
+.Fl u
+selects them automatically, without
+.Fl b .
+If the package has no such block,
+.Ic R2PM_UNINSTALL()
+is used.
 .Sh EXAMPLES
 .Pp
 Install a package

@@ -12,6 +12,8 @@
 #define R2PM_INSTALL_WINDOWS "\nR2PM_INSTALL_WINDOWS() {\n"
 #define R2PM_BINSTALL "\nR2PM_BINSTALL() {\n"
 #define R2PM_BINSTALL_WINDOWS "\nR2PM_BINSTALL_WINDOWS() {\n"
+#define R2PM_BUNINSTALL "\nR2PM_BUNINSTALL() {\n"
+#define R2PM_BUNINSTALL_WINDOWS "\nR2PM_BUNINSTALL_WINDOWS() {\n"
 #define R2PM_UNINSTALL_R2 "\nR2PM_UNINSTALL_R2() {\n"
 
 #if defined(__ANDROID__)
@@ -257,7 +259,7 @@ typedef enum {
 	TT_ENDQUOTE,
 } R2pmTokenType;
 
-static void r2pm_register(const char *pkg, bool g) {
+static void r2pm_register(const char *pkg, bool g, bool binary) {
 	char *pkgdir = r2pm_pkgdir ();
 	r_sys_mkdirp (pkgdir);
 	char *f = r_str_newf ("%s/%s", pkgdir, pkg);
@@ -265,6 +267,7 @@ static void r2pm_register(const char *pkg, bool g) {
 	if (f) {
 		RStrBuf *sb = r_strbuf_new ("");
 		r_strbuf_appendf (sb, "Global: %s\n", r_str_bool (g));
+		r_strbuf_appendf (sb, "Binary: %s\n", r_str_bool (binary));
 		char *s = r_time_secs_tostring (r_time_today ());
 		r_strbuf_appendf (sb, "InstallationDate: %s\n", s);
 		free (s);
@@ -273,6 +276,17 @@ static void r2pm_register(const char *pkg, bool g) {
 		free (ss);
 		free (f);
 	}
+}
+
+static bool r2pm_is_binary(const char *pkg) {
+	char *pkgdir = r2pm_pkgdir ();
+	char *f = r_str_newf ("%s/%s", pkgdir, pkg);
+	free (pkgdir);
+	char *data = f? r_file_slurp (f, NULL): NULL;
+	free (f);
+	bool res = data && strstr (data, "\nBinary: true\n");
+	free (data);
+	return res;
 }
 
 static void r2pm_unregister(const char *pkg) {
@@ -784,9 +798,37 @@ static int r2pm_run_r2script(const char *script, const char *dir) {
 	return res;
 }
 
+// runs R2PM_BINSTALL/R2PM_BUNINSTALL blocks without a source checkout, takes ownership of script
+static int r2pm_run_binary_script(char *script) {
+#if R2__WINDOWS__
+	char *s = r_str_replace_all (script, "\n", " && ");
+#else
+	char *s = r_str_newf ("set -e\nR2PM_FAIL(){\n  echo \"$@\" >&2\n  exit 1\n}\n%s", script);
+	free (script);
+#endif
+	int res = s? r_sandbox_system (s, 1): 1;
+	free (s);
+	return res;
+}
+
 // looks copypaste with r2pm_install_pkg ()
 static int r2pm_uninstall_pkg(const char *pkg, bool global) {
 	R_LOG_INFO ("Uninstalling %s", pkg);
+	if (r2pm_is_binary (pkg)) {
+#if R2__WINDOWS__
+		char *bscript = r2pm_get (pkg, R2PM_BUNINSTALL_WINDOWS, TT_CODEBLOCK);
+#else
+		char *bscript = r2pm_get (pkg, R2PM_BUNINSTALL, TT_CODEBLOCK);
+#endif
+		if (R_STR_ISNOTEMPTY (bscript)) {
+			int res = r2pm_run_binary_script (bscript);
+			if (res == 0) {
+				r2pm_unregister (pkg);
+			}
+			return res;
+		}
+		free (bscript);
+	}
 	char *srcdir = r2pm_gitdir ();
 	char *builddir = r2pm_source_dir (srcdir, pkg);
 	const bool have_builddir = r2pm_have_builddir (pkg) && r_file_is_directory (builddir);
@@ -1012,19 +1054,11 @@ static int r2pm_install_binary_pkg(const char *pkg, bool global) {
 		free (script);
 		return 1;
 	}
-#if R2__WINDOWS__
-	char *s = r_str_replace_all (script, "\n", " && ");
-#else
-	char *s = r_str_newf ("set -e\nR2PM_FAIL(){\n  echo \"$@\" >&2\n  exit 1\n}\n%s", script);
-	free (script);
-#endif
-	int res = s? r_sandbox_system (s, 1): 1;
-	free (s);
-	if (res) {
+	if (r2pm_run_binary_script (script)) {
 		R_LOG_ERROR ("Binary install failed for '%s'; re-run without -b to build from source", pkg);
 		return 1;
 	}
-	r2pm_register (pkg, global);
+	r2pm_register (pkg, global, true);
 	return 0;
 }
 
@@ -1136,7 +1170,7 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global, bool binar
 		char *pkgdir = have_builddir? r2pm_source_dir (srcdir, pkg): NULL;
 		int res = r2pm_run_r2script (r2script, pkgdir);
 		if (res == 0) {
-			r2pm_register (pkg, global);
+			r2pm_register (pkg, global, false);
 		}
 		free (pkgdir);
 		free (r2script);
@@ -1225,7 +1259,7 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global, bool binar
 	int res = r_sandbox_system (s, 1);
 	free (s);
 	if (res == 0) {
-		r2pm_register (pkg, global);
+		r2pm_register (pkg, global, false);
 	}
 #endif
 	free (script);
