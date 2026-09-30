@@ -1,4 +1,6 @@
+# Capstone 6 removed the TMS320C64x backend.
 NAME=320c64 OPEX
+REQUIRE=cs5
 FILE=malloc://512280
 CMDS=<<EOF
 e asm.arch=tms320
@@ -41,6 +43,7 @@ EOF
 RUN
 
 NAME=320c64 pseudo
+REQUIRE=cs5
 FILE=bins/elf/ld-2.27.so
 CMDS=<<EOF
 e asm.arch=tms320
