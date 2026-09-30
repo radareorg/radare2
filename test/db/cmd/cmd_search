@@ -1082,9 +1082,13 @@ EOF
 RUN
 
 NAME=/xs finds sparse gaps across read blocks
-FILE=bins/other/gaps.bin
-ARGS=-n
+FILE=malloc://0x2000
 CMDS=<<EOF
+b 0x2000
+wX 41
+w0 100 @ 0x64
+wX ff @ 0x3e8!100
+w0 100 @ 0xbb8
 b 17
 /xs
 EOF
@@ -1131,9 +1135,13 @@ EOF
 RUN
 
 NAME=/xs respects range, minimum length and hit limit
-FILE=bins/other/gaps.bin
-ARGS=-n
+FILE=malloc://0x2000
 CMDS=<<EOF
+b 0x2000
+wX 41
+w0 100 @ 0x64
+wX ff @ 0x3e8!100
+w0 100 @ 0xbb8
 e search.from=0x3e8
 e search.to=0x407
 /xs

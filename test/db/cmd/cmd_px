@@ -491,9 +491,15 @@ EOF
 RUN
 
 NAME=pxs keeps offsets across zero and ff gaps
-FILE=bins/other/gaps.bin
-ARGS=-n
+FILE=malloc://0x2000
 CMDS=<<EOF
+wx acff1413 @ 0x60
+wx 7c15ba85646af3bb3c737d0dda361f41d84714ba1dade29f @ 0xc8
+wx bbd9bf6174386230 @ 0x3e0
+wX ff @ 0x3e8!100
+wx 19178f24f8d115710a87fd7a319e24b8916e8663 @ 0x44c
+wx ecc6de8b246e8226 @ 0xbb0
+wx 6f5cc05cc4a763215b590a2310c385b2502fd3ef @ 0xc1c
 e hex.header=false
 pxs 0x80 @ 0x60
 pxs 0x80 @ 0x3e0
@@ -525,8 +531,7 @@ EOF
 RUN
 
 NAME=pxs handles a partial final row
-FILE=bins/other/gaps.bin
-ARGS=-n
+FILE=malloc://0x2000
 CMDS=<<EOF
 e hex.header=false
 pxs 0x21 @ 0x70
@@ -631,9 +636,9 @@ EOF
 RUN
 
 NAME=hex.compact changes layout without enabling pxs
-FILE=bins/other/gaps.bin
-ARGS=-n
+FILE=malloc://0x2000
 CMDS=<<EOF
+wx acff1413 @ 0x60
 e hex.header=false
 e hex.compact=true
 px 0x40 @ 0x60
