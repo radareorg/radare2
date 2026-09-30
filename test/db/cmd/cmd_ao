@@ -214,6 +214,7 @@ EOF
 RUN
 
 NAME=aom-sparc
+REQUIRE=cs5
 FILE=-
 CMDS=<<EOF
 e asm.arch=sparc
@@ -224,6 +225,21 @@ EOF
 EXPECT=<<EOF
 unimp
 278
+EOF
+RUN
+
+NAME=aom-sparc (cs6)
+REQUIRE=cs6
+FILE=-
+CMDS=<<EOF
+e asm.arch=sparc
+e cfg.bigendian=true
+aom
+aoml~?
+EOF
+EXPECT=<<EOF
+unimp
+289
 EOF
 RUN
 
