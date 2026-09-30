@@ -22,6 +22,13 @@
 #define R2PM_OS R_SYS_OS
 #endif
 
+#if defined(__LP64__) || defined(_WIN64)
+#define R2PM_BITS "64"
+#else
+#define R2PM_BITS "32"
+#endif
+#define R2PM_TRIPLET R2PM_OS "-" R_SYS_ARCH "-" R2PM_BITS
+
 #ifndef R2PM_STALE_DAYS
 #define R2PM_STALE_DAYS 14
 #endif
@@ -565,7 +572,8 @@ static void r2pm_setenv(R2Pm *r2pm) {
 	r_sys_setenv ("R2_LIBEXT", R_LIB_EXT);
 	r_sys_setenv ("R2PM_OS", R2PM_OS);
 	r_sys_setenv ("R2PM_ARCH", R_SYS_ARCH);
-	r_sys_setenv ("R2PM_BITS", sizeof (void *) == 8? "64": "32");
+	r_sys_setenv ("R2PM_BITS", R2PM_BITS);
+	r_sys_setenv ("R2PM_TRIPLET", R2PM_TRIPLET);
 
 	char *gdir = r2pm_gitdir ();
 	r_sys_setenv ("R2PM_GITDIR", gdir);
@@ -1000,7 +1008,7 @@ static int r2pm_install_binary_pkg(const char *pkg, bool global) {
 	char *script = r2pm_get (pkg, R2PM_BINSTALL, TT_CODEBLOCK);
 #endif
 	if (R_STR_ISEMPTY (script)) {
-		R_LOG_ERROR ("No binary package for '%s' on " R2PM_OS "/" R_SYS_ARCH "; re-run without -b", pkg);
+		R_LOG_ERROR ("No binary package for '%s' on " R2PM_TRIPLET "; re-run without -b", pkg);
 		free (script);
 		return 1;
 	}
@@ -1567,7 +1575,8 @@ static void r2pm_envhelp(void) {
 	"R2V=                    # binary release version (defaults to radare2 -qv)\n"
 	"R2PM_OS=" R2PM_OS "\n"
 	"R2PM_ARCH=" R_SYS_ARCH "\n"
-	"R2PM_BITS=%d\n"
+	"R2PM_BITS=" R2PM_BITS "\n"
+	"R2PM_TRIPLET=" R2PM_TRIPLET "\n"
 	"R2PM_PLUGDIR=%s\n"
 	"R2PM_PLUGDIR=%s (global)\n"
 	"R2PM_PREFIX=%s\n"
@@ -1583,7 +1592,6 @@ static void r2pm_envhelp(void) {
 	"R2_LIBS=%s\n",
 		r2pm_log_level,
 		r2pm_offline,
-		(int)(sizeof (void *) * 8),
 		r2pm_plugdir,
 		r2pm_plugdir2,
 		r2pm_prefix,
