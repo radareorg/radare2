@@ -1,0 +1,15 @@
+diff --git a/arch/M68K/M68KDisassembler.c b/arch/M68K/M68KDisassembler.c
+index dfaaaaa..613fe61 100644
+--- a/arch/M68K/M68KDisassembler.c
++++ b/arch/M68K/M68KDisassembler.c
+@@ -2519,8 +2519,8 @@ static void d68020_bsr_32(m68k_info *info)
+ 
+ static void d68000_btst_r(m68k_info *info)
+ {
+-	build_re_1(info, M68K_INS_BTST, 2);
+-	ISIZE = 1;
++	build_re_1(info, M68K_INS_BTST, 4);
++	ISIZE = (info->ir & 0x38) ? 1 : 4;
+ }
+ 
+ static void d68000_btst_s(m68k_info *info)
