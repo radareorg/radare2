@@ -110,7 +110,6 @@ jobs:
       with:
         name: r2r.json
         path: /tmp/r2r.json
-  # TODO: Add job to build with capstone-next, for now v5 is stable
   build-syscapstone-resymlink:
     name: linux-sys-capstone-resymlink
     runs-on: ubuntu-22.04
@@ -151,6 +150,26 @@ jobs:
     - uses: actions/upload-artifact@v7
       with:
         name: results.json
+        path: test/results.json
+  linux-test6:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v7
+    - name: Building Radare2 with Capstone 6
+      run: |
+        python3 -m pip install --upgrade pip
+        pip3 install --user r2pipe wheel
+        export CFLAGS="-O2 -Wno-unused-result"
+        sys/install.sh --with-capstone-next --without-syscapstone
+    - name: Running tests
+      run: |
+        export LD_LIBRARY_PATH=/usr/local/lib
+        export R2R_SKIP_ARCHOS=1
+        make tests
+    - uses: actions/upload-artifact@v7
+      with:
+        name: results-cs6.json
         path: test/results.json
   mipsbe:
     name: mipsbe
