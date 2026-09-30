@@ -97,6 +97,19 @@ EOF
 RUN
 
 # merged: anal.prefix.default sparc
+NAME=af anal sparc
+FILE=bins/elf/elf-Linux-SparcV8-bash
+CMDS=<<EOF
+e anal.vars=false
+aaa
+s 0x0002bca0
+afi~name
+EOF
+EXPECT=<<EOF
+name: main
+EOF
+RUN
+
 NAME=disass_Solaris_sparc
 FILE=bins/elf/elf-solaris-sparc-ls
 CMDS=<<EOF
@@ -261,30 +274,6 @@ sethi 0xb0, o0
 0x00013620   12    240 sym.dired_dump_obstack
 0x00025758   12    148 sym.xstrtol_fatal
 0x00013948    1     64 sym.get_funky_string
-EOF
-RUN
-
-NAME=af anal sparc
-FILE=bins/elf/elf-Linux-SparcV8-bash
-CMDS=<<EOF
-aaa
-s 0x0002bca0
-afi~name
-EOF
-EXPECT=<<EOF
-name: main
-EOF
-RUN
-
-NAME=af anal sparc
-FILE=bins/elf/elf-Linux-SparcV8-bash
-CMDS=<<EOF
-aaa
-s 0x0002bca0
-afi~name
-EOF
-EXPECT=<<EOF
-name: main
 EOF
 RUN
 
@@ -580,18 +569,6 @@ EXPECT=<<EOF
 0x0002d45c 0x0002d470 00:0000 20 j 0x0002d16c f 0x0002d470
 0x0002d470 0x0002d490 00:0000 32 j 0x0002d16c f 0x0002d490
 0x0002d490 0x0002d494 00:0000 4 j 0x0002d180
-EOF
-RUN
-
-NAME=af anal sparc
-FILE=bins/elf/elf-Linux-SparcV8-bash
-CMDS=<<EOF
-aaa
-s 0x0002bca0
-afi~name
-EOF
-EXPECT=<<EOF
-name: main
 EOF
 RUN
 
