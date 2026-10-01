@@ -407,31 +407,17 @@ R_API bool r_core_project_open(RCore *core, const char *prj_path) {
 }
 
 static char *get_project_name(const char *prj_script) {
+	const char *prefix = "'e prj.name = ";
 	char buf[1024];
 	char *file = NULL;
 	FILE *fd = r_sandbox_fopen (prj_script, "r");
 	if (fd) {
-		for (;;) {
-			if (!fgets (buf, sizeof (buf), fd)) {
-				break;
+		while (fgets (buf, sizeof (buf), fd)) {
+			if (!r_str_startswith (buf, prefix)) {
+				continue;
 			}
-			if (feof (fd)) {
-				break;
-			}
-			if (r_str_startswith (buf, "\"\"e prj.name = ")) {
-				file = strdup (buf + strlen ("\"\"e prj.name"));
-				break;
-			}
-			if (r_str_startswith (buf, "\"e prj.name = ")) {
-				// if (!strncmp (buf, "\"e prj.name = ", 14))
-				buf[strlen (buf) - 2] = 0; // remove trailing '"'
-				file = strdup (buf + 14);
-				break;
-			}
-			if (r_str_startswith (buf, "'e prj.name = ")) {
-				file = strdup (buf + strlen ("'e prj.name"));
-				break;
-			}
+			file = r_str_trim_dup (buf + strlen (prefix));
+			break;
 		}
 		fclose (fd);
 	} else {
