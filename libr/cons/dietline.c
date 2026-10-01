@@ -1213,7 +1213,8 @@ static inline void rotate_kill_ring(RCons *cons) {
 		if (line->kill_ring_ptr < 0) {
 			line->kill_ring_ptr = line->kill_ring->length - 1;
 		}
-		line->clipboard = r_list_get_n (line->kill_ring, line->kill_ring_ptr);
+		free (line->clipboard);
+		line->clipboard = r_str_new (r_list_get_n (line->kill_ring, line->kill_ring_ptr));
 		paste (line);
 	}
 }

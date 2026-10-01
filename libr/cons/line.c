@@ -23,6 +23,7 @@ R_API RLine *r_line_new(RCons *cons) {
 R_API void r_line_free(RLine *line) {
 	if (line) {
 		free (line->state.prompt);
+		free (line->clipboard);
 		r_list_free (line->kill_ring);
 		r_line_hist_free (line);
 		r_line_completion_clear (&line->completion);
