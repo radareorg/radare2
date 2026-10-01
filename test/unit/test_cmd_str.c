@@ -413,7 +413,7 @@ typedef struct {
 	int broader;
 	int after;
 	bool exec;
-	bool environ;
+	bool environ_allowed;
 } SandboxPolicyProbe;
 
 static void *sandbox_policy_probe(void *user) {
@@ -423,7 +423,7 @@ static void *sandbox_policy_probe(void *user) {
 	r_sandbox_run (R_SANDBOX_GRAIN_ALL, sandbox_mutation_probe, &probe->broader);
 	probe->after = r_sandbox_grain (R_SANDBOX_GRAIN_NONE);
 	probe->exec = r_sandbox_check (R_SANDBOX_GRAIN_EXEC);
-	probe->environ = r_sandbox_check (R_SANDBOX_GRAIN_ENVIRON);
+	probe->environ_allowed = r_sandbox_check (R_SANDBOX_GRAIN_ENVIRON);
 	return user;
 }
 
@@ -453,7 +453,7 @@ bool test_sandbox_scope_policy(void) {
 	mu_assert_eq (probe.narrower, R_SANDBOX_GRAIN_ENVIRON, "nested partial scopes intersect permissions");
 	mu_assert_eq (probe.broader, requested, "nested all cannot grant permissions");
 	mu_assert_eq (probe.after, requested, "nested scope restores outer policy");
-	mu_assert_true (probe.exec && probe.environ, "granted permissions remain usable");
+	mu_assert_true (probe.exec && probe.environ_allowed, "granted permissions remain usable");
 	mu_assert_eq (all, (int)R_SANDBOX_GRAIN_ALL, "all-permissions scope remains immutable");
 	mu_assert_true (disjoint_denied, "disjoint scopes deny combined alternative permissions");
 	mu_assert_false (restored_enabled, "scope mutations do not enable the base sandbox");
@@ -481,7 +481,7 @@ bool test_sandbox_scope_restoration(void) {
 	mu_assert_eq (probe.before, R_SANDBOX_GRAIN_ENVIRON, "scope intersects enabled base permissions");
 	mu_assert_eq (probe.broader, R_SANDBOX_GRAIN_ENVIRON, "nested all cannot bypass the base policy");
 	mu_assert_false (probe.exec, "scope cannot grant execution denied by base");
-	mu_assert_true (probe.environ, "scope retains permissions granted by base and request");
+	mu_assert_true (probe.environ_allowed, "scope retains permissions granted by base and request");
 	mu_assert_true (enabled_restored, "scope restores an already enabled sandbox");
 	mu_assert_true (grain_restored, "scope preserves an enabled sandbox's grain");
 	mu_assert_true (disabled_restored, "scope preserves a temporarily disabled sandbox");
