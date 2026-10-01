@@ -439,7 +439,11 @@ static int cmd_zf(void *data, const char *input) {
 			r_cons_cmd_help_match (core->cons, help_msg_zf, "zfd", 0, false);
 			return false;
 		}
-		r_sign_flirt_dump (core->anal, input + 2);
+		char *dump = r_sign_flirt_dump (core->anal, input + 2);
+		if (dump) {
+			r_cons_printf (core->cons, "%s\n", dump);
+			free (dump);
+		}
 		break;
 	case 'l': // "zfl"
 		{

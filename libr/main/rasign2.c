@@ -195,7 +195,11 @@ static RList *get_ar_file_uris(const char *fname) {
 
 static int dump_flirt(const char *ifile) {
 	RCore *core = opencore (NULL);
-	r_sign_flirt_dump (core->anal, ifile);
+	char *dump = r_sign_flirt_dump (core->anal, ifile);
+	if (dump) {
+		printf ("%s\n", dump);
+		free (dump);
+	}
 	r_cons_flush (core->cons);
 	r_core_free (core);
 	return 0;
