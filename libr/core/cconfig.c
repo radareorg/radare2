@@ -4798,7 +4798,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETS ("http.basepath", "/", "define base path for http requests");
 	SETS ("http.maxport", "9999", "last HTTP server port");
 	SETS ("http.ui", "m", "default webui (m, t, f)");
-	SETB ("http.sandbox", "true", "sandbox the HTTP server");
+	SETB ("http.sandbox", "true", "run HTTP commands with restricted permissions (set before starting the server)");
 	SETB ("http.channel", "false", "use the new threadchannel based webserver (EXPERIMENTAL)");
 	SETI ("http.timeout", 3, "disconnect clients after N seconds of inactivity");
 	SETI ("http.dietime", 0, "kill server after N seconds with no client");

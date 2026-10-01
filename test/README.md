@@ -25,6 +25,9 @@ compiler and does not load a kernel module or access kernel memory.
 
  * To run *all* tests, use `make -k all`.
  * To execute only the unit tests use `make -k unit-tests`.
+ * To check HTTP sandbox enforcement on a local server, use `make http-sandbox`
+   after building and installing this checkout. This requires Python 3 and
+   permission to open localhost sockets.
 
 ## Failure Levels
 

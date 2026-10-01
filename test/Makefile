@@ -28,6 +28,9 @@ scripts/r2k_mock.so: scripts/r2k_mock.c ../libr/io/p/io_r2k_linux.h
 r2k: scripts/r2k_mock.so
 	cd .. && LD_PRELOAD=$(CURDIR)/scripts/r2k_mock.so r2r -u -L -C test db/extras/io/r2k
 
+http-sandbox:
+	python3 scripts/test-http-sandbox.py
+
 keystone: bins
 	${RUNTEST} db/extras/asm/x86.ks_*
 

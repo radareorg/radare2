@@ -1,5 +1,4 @@
-Sandboxing r2
-=============
+# Sandboxing r2
 
 radare2 supports sandboxing natively by wrapping all attempts
 to access the filesystem, network or run programs.
@@ -8,8 +7,7 @@ But for some platforms, the kernel provides a native sandboxing
 experience. ATM only OSX and OpenBSD are supported by r2, feel
 free to extend the support to Linux and Windows.
 
-OSX
----
+## OSX
 
 OSX Seatbelt implements a system-level sandbox for applications,
 the rules are described in a lispy .sb file:
@@ -19,8 +17,7 @@ the rules are described in a lispy .sb file:
 **NOTE**: r2 -S is an alias for -e cfg.sandbox=true
 
 
-OpenBSD (from 5.9)
-------------------
+## OpenBSD (from 5.9)
 
 OpenBSD comes with support for sandboxing using the pledge(2) syscall.
 
@@ -30,8 +27,7 @@ Only the following are allowed:
 - filesystem reading
 - mmap(2) `PROT_EXEC` manipulation
 
-OpenBSD (until 5.9)
--------------------
+## OpenBSD (until 5.9)
 
 OpenBSD comes with support for sandboxing using the systrace utility.
 
@@ -45,16 +41,14 @@ Run with the generated profile
 
 	$ systrace -a r2 -S /bin/ls
 
-FreeBSD (from 10.0)
--------------------
+## FreeBSD (from 10.0)
 
 FreeBSD comes with the Capsicum framework support,
  using cap_enter(2).
 
 Operations limited on what basic capability mode support.
 
-Other
------
+## Other
 
 Only r2's sandbox is supported.
 
@@ -65,8 +59,7 @@ Only r2's sandbox is supported.
 
 	$ r2 -S /bin/ls
 
-Permission expressions
-----------------------
+## Permission expressions
 
 `cfg.sandbox.grain` accepts comma-separated permission names. Prefix a name
 with `!` to remove it. If the first option is negative, evaluation starts with
@@ -77,3 +70,38 @@ For example, `!disk,!exec` allows everything except disk access and process
 execution. `disk,files,!disk` allows only `files`, while `all,!exec` allows
 everything except execution. Whitespace around options is ignored. Unknown
 names and empty options are rejected without changing the current permissions.
+
+## HTTP command sandbox
+
+`http.sandbox=true` is the default. GET, POST and output-free `/cmd/:`
+commands run with no optional sandbox permissions. This blocks process
+execution, new sockets, network requests, filesystem access through the
+sandbox wrappers, environment access and hidden paths. Commands can still
+inspect and modify the loaded analysis state.
+
+The HTTP session's sandbox setting is fixed when the server starts. Remote
+commands cannot disable it or reset the configuration. `cfg.sandbox` and
+`cfg.sandbox.grain` retain their local values and are read-only in this session.
+Queuing commands for later execution is also blocked. Restrictions apply only
+to the executing thread for each command, without changing the local sandbox
+state, permissions, or operating-system sandbox. Command output is captured
+in memory without temporary files or redirecting process-wide stdout.
+Platforms without compiler thread-local storage use operating-system thread
+storage.
+
+These permissions are enforced by radare2 wrappers, rather than operating-system
+confinement. They do not synchronize access to the analysis state. The background
+HTTP server (`=h&`) shares that state with the local session; avoid concurrent
+analysis commands against the same core.
+
+Set `http.sandbox=false` before starting the server only when clients should
+have the local session's permissions; an enabled local sandbox still applies,
+including in a background HTTP server. The HTTP sandbox is not authentication;
+configure `http.bind`, `http.auth` and network access for the intended clients.
+These command restrictions do not change the separate static-file and upload
+endpoints.
+
+Outside HTTP, `cfg.sandbox.grain` still defaults to `all`. Configure the desired
+permissions before enabling `cfg.sandbox`; once enabled, commands can reduce
+permissions but cannot grant additional ones. Operating-system sandboxes may
+impose further, irreversible restrictions.
