@@ -602,6 +602,40 @@ bool test_sandbox_scope_readonly_file(void) {
 	mu_end;
 }
 
+bool test_project_save_failure_preserves_state(void) {
+	char *dir = r_file_temp ("r2-project-failure");
+	mu_assert_true (r_sys_mkdir (dir), "create project failure fixture");
+	char *blocker = r_file_new (dir, "blocked", NULL);
+	mu_assert_true (r_file_dump (blocker, (const ut8 *)"file", 4, false), "create parent path blocker");
+	char *projects = r_file_new (blocker, "projects", NULL);
+	char *script = r_file_new (blocker, "rc.r2", NULL);
+	RCore *core = r_core_new ();
+	mu_assert_notnull (r_core_file_open (core, "malloc://64", R_PERM_RW, 0), "open project test binary");
+	r_config_set (core->config, "dir.projects", projects);
+	r_config_set (core->config, "prj.name", "existing");
+	core->prj->path = strdup ("existing_path");
+	r_core_project_undirty (core);
+	core->flags->is_dirty = true;
+	bool saved = r_core_project_save (core, "next");
+	bool name_preserved = !strcmp (r_config_get (core->config, "prj.name"), "existing")
+		&& core->prj->name && !strcmp (core->prj->name, "existing");
+	bool path_preserved = core->prj->path && !strcmp (core->prj->path, "existing_path");
+	bool dirty_preserved = core->flags->is_dirty;
+	bool script_saved = r_core_project_save_script (core, script, R_CORE_PRJ_ALL);
+	r_core_free (core);
+	r_file_rm_rf (dir);
+	free (dir);
+	free (blocker);
+	free (projects);
+	free (script);
+	mu_assert_false (saved, "project save reports a failed script write");
+	mu_assert_false (script_saved, "public script save reports a failed write");
+	mu_assert_true (name_preserved, "failed save preserves configured and loaded project names");
+	mu_assert_true (path_preserved, "failed save preserves the loaded project path");
+	mu_assert_true (dirty_preserved, "failed save leaves unsaved state dirty");
+	mu_end;
+}
+
 bool test_project_name_script_format(void) {
 #if R2__UNIX__ && !__wasi__
 	const char *scripts[] = {
@@ -648,6 +682,7 @@ int all_tests(void) {
 	mu_run_test (test_sandbox_scope_restoration);
 	mu_run_test (test_sandbox_scope_threads);
 	mu_run_test (test_sandbox_scope_readonly_file);
+	mu_run_test (test_project_save_failure_preserves_state);
 	mu_run_test (test_project_name_script_format);
 	return tests_passed != tests_run;
 }
