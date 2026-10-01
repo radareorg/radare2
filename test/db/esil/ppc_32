@@ -115,7 +115,7 @@ e cfg.bigendian=true
 .(pi 4200fff0)
 EOF
 EXPECT=<<EOF
-bc 0x10, lt, 0xfffffffffffffff0
+bc 0x10, lt, 0xfffffff0
 0x00000000 1,ctr,-=,$z,!,?{,0xfffffff0,pc,=,}
 EOF
 RUN
