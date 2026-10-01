@@ -581,10 +581,12 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	core->cons->context->is_interactive = true;
 	flush (core, sb);
 	char *s = r_strbuf_drain (sb);
+	bool ret = true;
 	if (!strcmp (filename, "/dev/stdout")) {
 		r_cons_printf (cons, "%s\n", s);
 	} else {
-		if (!r_file_dump (filename, (const ut8*)s, strlen (s), 0)) {
+		ret = r_file_dump (filename, (const ut8*)s, strlen (s), 0);
+		if (!ret) {
 			R_LOG_ERROR ("Cannot save file");
 		}
 	}
@@ -596,7 +598,7 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	}
 	free (filename);
 
-	return true;
+	return ret;
 }
 
 static void r_core_project_zip(RCore *core, const char *prj_dir) {
