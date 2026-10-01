@@ -670,6 +670,10 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 		return 1;
 	}
 	if (launch == '-') {
+		if (r_sandbox_enable (false)) {
+			R_LOG_ERROR ("Stopping HTTP threads is disabled in sandbox mode");
+			return 1;
+		}
 		if (priv->httpthread) {
 			r_core_rtr_http_stop (core);
 			r_th_wait (priv->httpthread);

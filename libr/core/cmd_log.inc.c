@@ -338,6 +338,10 @@ static int cmd_log(void *data, const char *input) {
 		break;
 	case '=': // "T="
 		if (input[1] == '&') { //  "T=&"
+			if (r_sandbox_enable (false)) {
+				R_LOG_ERROR ("Background log synchronization is disabled in sandbox mode");
+				break;
+			}
 			if (input[2] == '&') { // "T=&&"
 				r_cons_break_push (core->cons, NULL, NULL);
 				while (!r_cons_is_breaked (core->cons)) {
