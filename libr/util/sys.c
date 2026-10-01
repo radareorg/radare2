@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #include <r_userconf.h>
 #include <stdlib.h>
@@ -841,7 +841,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 		}
 		close (sh_err[1]);
 		close (sh_in[0]);
-		if (R_STR_ISEMPTY (inputptr)) {
+		if (!inputptr || ilen <= 0) {
 			close (sh_in[1]);
 			sh_in[1] = -1;
 		}
@@ -864,7 +864,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 			if (sterr) {
 				FD_SET (sh_err[0], &rfds);
 			}
-			if (inputptr && *inputptr && written < ilen) {
+			if (sh_in[1] >= 0) {
 				FD_SET (sh_in[1], &wfds);
 				if (sh_in[1] > maxfd) {
 					maxfd = sh_in[1];
@@ -905,7 +905,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 				*sterr = tmp;
 				memcpy (*sterr + err_len, buffer, bytes);
 				err_len += bytes;
-			} else if (FD_ISSET (sh_in[1], &wfds) && written < ilen) {
+			} else if (sh_in[1] >= 0 && FD_ISSET (sh_in[1], &wfds) && written < ilen) {
 				int inputptr_len = ilen >= 0? ilen - written: strlen (inputptr + written);
 				inputptr_len = R_MIN (inputptr_len, sizeof (buffer));
 				bytes = write (sh_in[1], inputptr + written, inputptr_len);
