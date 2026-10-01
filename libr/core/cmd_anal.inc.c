@@ -11899,11 +11899,13 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			r_cons_cmd_help (core->cons, help_msg_axl);
 			break;
 		case 'j': // "axlj"
-			// XXX axj != axlj r_core_call (core, "axj");
-			char *s = r_anal_xrefs_list (core->anal, 'j', 0, NULL);
-			if (s) {
-				r_cons_print (core->cons, s);
-				free (s);
+			{
+				// XXX axj != axlj r_core_call (core, "axj");
+				char *s = r_anal_xrefs_list (core->anal, 'j', 0, NULL);
+				if (s) {
+					r_cons_print (core->cons, s);
+					free (s);
+				}
 			}
 			break;
 		case 'c': // "axlc"
