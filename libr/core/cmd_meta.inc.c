@@ -1084,14 +1084,22 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			ut64 size;
 			RAnalMetaItem *mi = r_meta_get_at (core->anal, addr, type, &size);
 			if (mi) {
-				r_meta_print (core->anal, mi, addr, size, input[3], NULL, NULL, false);
+				char *m = r_meta_print (core->anal, mi, addr, size, input[3], NULL, NULL, false);
+				if (m) {
+					r_cons_print (core->cons, m);
+					free (m);
+				}
 			}
 			break;
 		} else if (input[2] == 'j') { // "Cs.j"
 			ut64 size;
 			RAnalMetaItem *mi = r_meta_get_at (core->anal, addr, type, &size);
 			if (mi) {
-				r_meta_print (core->anal, mi, addr, size, input[2], NULL, NULL, false);
+				char *m = r_meta_print (core->anal, mi, addr, size, input[2], NULL, NULL, false);
+				if (m) {
+					r_cons_print (core->cons, m);
+					free (m);
+				}
 				r_cons_newline (core->cons);
 			}
 			break;
