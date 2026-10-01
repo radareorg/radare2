@@ -33,15 +33,15 @@ let
   sdb = fetchFromGitHub {
     owner = "radareorg";
     repo = "sdb";
-    rev = "2.4.8";
-    hash = "sha256-yNpIQjtRmHfY4ZPqLrEfmoK7793SUCUJ7zwuGUjqkUc=";
+    rev = "2.5.2";
+    hash = "sha256-qZdqa1xsQd/ebvd8QSDRZWsO+IX99XiN99DZgEguYKQ=";
   };
 
   qjs = fetchFromGitHub {
     owner = "quickjs-ng";
     repo = "quickjs";
-    rev = "3087a2ce5bcb66cc1fcd9f34d3e5ce3bd43a67d9";
-    hash = "sha256-Z6DUe/W1+3SYPRPCiL3oNL5ovXCsW3dsFuGkA9WF3W4=";
+    rev = "b51e5278439b2fa0510fbb1f3b3dff9f0064d5d7";
+    hash = "sha256-xKEtry1YJ6kQzGJRCpR9drSNlOYdMzLheVhdcxN0R8s=";
   };
 
   zydis-tarball = fetchurl {
