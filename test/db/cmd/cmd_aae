@@ -36,6 +36,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=aae silences log hints and restores log.hints
+FILE=bins/elf/ls
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+e log.hints=false
+aae
+e log.hints
+e log.hints=true
+aae
+e log.hints
+EOF
+EXPECT=<<EOF
+false
+true
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=aae clears call-clobbered regs before xref inference
 FILE=malloc://0x400
 ARGS=-w -a x86 -b 64
