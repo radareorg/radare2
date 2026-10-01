@@ -602,6 +602,31 @@ bool test_sandbox_scope_readonly_file(void) {
 	mu_end;
 }
 
+bool test_project_name_script_format(void) {
+#if R2__UNIX__ && !__wasi__
+	const char *scripts[] = {
+		"# r2 rdb project file\n'e prj.name = saved_name\n",
+		"# r2 rdb project file\n'e prj.name = saved_name",
+		"# r2 rdb project file\n\"e prj.name = ignored\"\n''e prj.name = ignored\n'e prj.name = saved_name\n"
+	};
+	char *dir = r_file_temp ("r2-project-name");
+	mu_assert_true (r_sys_mkdir (dir), "create project name fixture");
+	char *script = r_file_new (dir, "rc.r2", NULL);
+	RCore *core = r_core_new ();
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (scripts); i++) {
+		mu_assert_true (r_file_dump (script, (const ut8 *)scripts[i], -1, false), "write project name fixture");
+		char *name = r_core_project_name (core, script);
+		mu_assert_streq_free (name, "saved_name", "read only the generated project name format");
+	}
+	r_core_free (core);
+	r_file_rm_rf (dir);
+	free (script);
+	free (dir);
+#endif
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_type_format_export_newlines);
 	mu_run_test (test_foreach_instruction_bounds);
@@ -623,6 +648,7 @@ int all_tests(void) {
 	mu_run_test (test_sandbox_scope_restoration);
 	mu_run_test (test_sandbox_scope_threads);
 	mu_run_test (test_sandbox_scope_readonly_file);
+	mu_run_test (test_project_name_script_format);
 	return tests_passed != tests_run;
 }
 
