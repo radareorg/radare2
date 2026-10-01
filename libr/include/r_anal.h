@@ -1202,7 +1202,7 @@ R_API void r_anal_pin_init(RAnal *a);
 R_API void r_anal_pin_fini(RAnal *a);
 R_API void r_anal_pin(RAnal *a, ut64 addr, const char *name);
 R_API const char *r_anal_pin_call(RAnal *a, ut64 addr);
-R_API void r_anal_pin_list(RAnal *a);
+R_API char *r_anal_pin_list(RAnal *a);
 R_API void r_anal_pin_unset(RAnal *a, ut64 addr);
 
 /* fcn.c */

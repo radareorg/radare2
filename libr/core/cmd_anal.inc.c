@@ -9683,7 +9683,11 @@ static void cmd_aep(RCore *core, const char *input) {
 		break;
 	case '*':
 	case 0:
-		r_anal_pin_list (core->anal);
+		{
+			char *s = r_anal_pin_list (core->anal);
+			r_cons_print (core->cons, s);
+			free (s);
+		}
 		break;
 	case '-':
 		if (input[2] == '*') {
