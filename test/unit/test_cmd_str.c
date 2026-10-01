@@ -543,6 +543,65 @@ bool test_sandbox_scope_threads(void) {
 	mu_end;
 }
 
+#if R2__UNIX__ && !__wasi__
+typedef struct {
+	const char *path;
+	bool readable;
+	bool writes_denied;
+} SandboxFileProbe;
+
+static void *sandbox_file_probe(void *user) {
+	SandboxFileProbe *probe = user;
+	int fd = r_sandbox_open (probe->path, O_RDONLY, 0);
+	if (fd >= 0) {
+		ut8 bytes[4];
+		probe->readable = r_sandbox_read (fd, bytes, sizeof (bytes)) == sizeof (bytes)
+			&& !memcmp (bytes, "data", sizeof (bytes));
+		r_sandbox_close (fd);
+	}
+	const int modes[] = { O_WRONLY, O_RDWR, O_RDONLY | O_TRUNC, O_WRONLY | O_TRUNC,
+		O_RDONLY | O_APPEND, O_WRONLY | O_APPEND, O_CREAT | O_WRONLY };
+	probe->writes_denied = true;
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (modes); i++) {
+		fd = r_sandbox_open (probe->path, modes[i], 0600);
+		if (fd >= 0) {
+			probe->writes_denied = false;
+			r_sandbox_close (fd);
+		}
+	}
+	return user;
+}
+#endif
+
+bool test_sandbox_scope_readonly_file(void) {
+#if R2__UNIX__ && !__wasi__
+	char *cwd = r_sys_getdir ();
+	char *path = NULL;
+	int fd = r_file_mkstemp ("r2-sandbox", &path);
+	mu_assert ("create sandbox file fixture", fd >= 0);
+	close (fd);
+	mu_assert_true (r_file_dump (path, (const ut8 *)"data", 4, false), "write sandbox file fixture");
+	char *directory = r_file_dirname (path);
+	SandboxFileProbe probe = { .path = r_file_basename (path) };
+	bool changed_directory = r_sys_chdir (directory);
+	if (changed_directory) {
+		r_sandbox_run (R_SANDBOX_GRAIN_DISK, sandbox_file_probe, &probe);
+	}
+	bool restored_directory = r_sys_chdir (cwd);
+	char *contents = r_file_slurp (path, NULL);
+	r_file_rm (path);
+	free (directory);
+	free (path);
+	free (cwd);
+	mu_assert_true (changed_directory && restored_directory, "restore working directory after file scope");
+	mu_assert_true (probe.readable, "disk permission permits relative file reads");
+	mu_assert_true (probe.writes_denied, "sandbox rejects write, truncate and append access");
+	mu_assert_streq_free (contents, "data", "denied opens leave file contents unchanged");
+#endif
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_type_format_export_newlines);
 	mu_run_test (test_foreach_instruction_bounds);
@@ -563,6 +622,7 @@ int all_tests(void) {
 	mu_run_test (test_sandbox_scope_policy);
 	mu_run_test (test_sandbox_scope_restoration);
 	mu_run_test (test_sandbox_scope_threads);
+	mu_run_test (test_sandbox_scope_readonly_file);
 	return tests_passed != tests_run;
 }
 

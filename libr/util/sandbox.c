@@ -579,7 +579,7 @@ R_API int r_sandbox_open(const char *path, int perm, int mode) {
 	}
 #endif
 	if (r_sandbox_enable (false)) {
-		if ((perm & O_CREAT) || (perm & O_RDWR)
+		if ((perm & (O_CREAT | O_RDWR | O_WRONLY | O_TRUNC | O_APPEND))
 			|| (!r_sandbox_check_path (epath))) {
 			free (epath);
 			return -1;
