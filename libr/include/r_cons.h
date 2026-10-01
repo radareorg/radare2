@@ -1288,6 +1288,7 @@ typedef struct r_panels_menu_item {
 typedef struct r_panels_menu_t {
 	RPanelsMenuItem *root;
 	RPanelsMenuItem **history;
+	RPanelsMenuItem *frame; // per-panel actions opened from the [=] button
 	int depth;
 	int n_refresh;
 	RPanel **refreshPanels;
@@ -1340,6 +1341,7 @@ typedef struct r_panels_t {
 	RPanelsMenu *panels_menu;
 	HtPP *mht;
 	RPanelsMode mode;
+	RPanelsMode frame_mode; // mode restored when the frame menu closes
 	RPanelsFun fun;
 	RPanelsMode prevMode;
 	RPanelsLayout layout;

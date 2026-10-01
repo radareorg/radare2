@@ -6,6 +6,7 @@
 #define PANEL_HEADER_H 2
 #define PANEL_NUM_LIMIT 16
 #define PANEL_HL_COLOR core->cons->context->pal.graph_box2
+#define PANEL_FRAME_BUTTON "[=]"
 #define PANEL_CONFIG_SIDEPANEL_W 60
 #define PANEL_CONFIG_MIN_SIZE    2
 #define PANEL_CONFIG_RESIZE_W    4
