@@ -2250,7 +2250,7 @@ static int cmd_afv(RCore *core, const char *str) {
 			}
 			char *s = r_anal_var_display (core->anal, v1);
 			if (s) {
-				r_cons_print (core->cons, s);
+				r_cons_println (core->cons, s);
 				free (s);
 			}
 		} else {
@@ -9960,7 +9960,11 @@ static void cmd_aet(RCore *core, const char *input) {
 		}
 		break;
 	case 0: // "aet"
-		r_esil_trace_list (core->anal->esil, 0);
+		if (esil) {
+			char *s = r_esil_trace_list (esil, 0);
+			r_cons_print (core->cons, s);
+			free (s);
+		}
 		break;
 	default:
 		r_core_return_invalid_command (core, "aet", input[1]);

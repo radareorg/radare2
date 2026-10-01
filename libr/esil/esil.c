@@ -1084,15 +1084,20 @@ R_API bool r_esil_dumpstack(REsil *esil) {
 			esil->trap, esil->trap_code,
 			r_esil_trapstr (esil->trap));
 	}
-	bool ret = false;
+	RStrBuf *sb = r_strbuf_new ("");
 	for (i = 0; i < esil->stackptr; i++) {
 		RStrs s = esil->stack[i];
 		if (!r_strs_empty (s)) {
 			const char *comma = (i + 1 < esil->stackptr)? ",": "\n";
-			esil->anal->cb_printf ("%s%s", s.a, comma);
-			ret = true;
+			r_strbuf_appendf (sb, "%s%s", s.a, comma);
 		}
 	}
+	bool ret = r_strbuf_length (sb) > 0;
+	RCoreBind *coreb = &esil->anal->coreb;
+	if (ret && coreb->puts) {
+		coreb->puts (coreb->core, r_strbuf_get (sb));
+	}
+	r_strbuf_free (sb);
 	return ret;
 }
 

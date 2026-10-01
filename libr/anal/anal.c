@@ -242,7 +242,6 @@ R_API RAnal *r_anal_new(void) {
 	anal->sdb_classes = sdb_ns (anal->sdb, "classes", 1);
 	anal->sdb_classes_attrs = sdb_ns (anal->sdb_classes, "attrs", 1);
 	anal->zign_path = strdup ("");
-	anal->cb_printf = (PrintfCallback) printf;
 	anal->reg = r_reg_new ();
 	REsilOptions esil_opt = r_esil_options (anal->reg, NULL);
 	esil_opt.addrsize = 1;
@@ -555,30 +554,35 @@ R_API bool r_anal_is_aligned(RAnal *anal, const ut64 addr) {
 	return align <= 1 || !(addr % align);
 }
 
+typedef struct {
+	RAnal *anal;
+	RStrBuf *sb;
+} NoreturnListCtx;
+
 static bool __nonreturn_print_commands(void *p, const char *k, const char *v) {
-	RAnal *anal = (RAnal *)p;
+	NoreturnListCtx *ctx = p;
 	if (!strcmp (v, "func")) {
 		char *query = r_str_newf ("func.%s.noreturn", k);
-		if (sdb_bool_get (anal->sdb_types, query, NULL)) {
-			anal->cb_printf ("tnn %s\n", k);
+		if (sdb_bool_get (ctx->anal->sdb_types, query, NULL)) {
+			r_strbuf_appendf (ctx->sb, "tnn %s\n", k);
 		}
 		free (query);
 	}
 	if (r_str_startswith (k, "addr.")) {
-		anal->cb_printf ("tna 0x%s %s\n", k + 5, v);
+		r_strbuf_appendf (ctx->sb, "tna 0x%s %s\n", k + 5, v);
 	}
 	return true;
 }
 
 static bool __nonreturn_print(void *p, const char *k, const char *v) {
-	RAnal *anal = (RAnal *)p;
+	NoreturnListCtx *ctx = p;
 	if (r_str_startswith (k, "func.") && strstr (k, ".noreturn")) {
 		char *s = strdup (k + 5);
 		char *d = strchr (s, '.');
 		if (d) {
 			*d = 0;
 		}
-		anal->cb_printf ("%s\n", s);
+		r_strbuf_appendf (ctx->sb, "%s\n", s);
 		free (s);
 	}
 	if (r_str_startswith (k, "addr.")) {
@@ -589,24 +593,27 @@ static bool __nonreturn_print(void *p, const char *k, const char *v) {
 		char *ptr = strstr (off, ".noreturn");
 		if (ptr) {
 			*ptr = 0;
-			anal->cb_printf ("0x%s\n", off);
+			r_strbuf_appendf (ctx->sb, "0x%s\n", off);
 		}
 		free (off);
 	}
 	return true;
 }
 
-R_API void r_anal_noreturn_list(RAnal *anal, int mode) {
+R_API char *r_anal_noreturn_list(RAnal *anal, int mode) {
+	R_RETURN_VAL_IF_FAIL (anal, NULL);
+	NoreturnListCtx ctx = { anal, r_strbuf_new ("") };
 	switch (mode) {
 	case 1:
 	case '*':
 	case 'r':
-		sdb_foreach (anal->sdb_types, __nonreturn_print_commands, anal);
+		sdb_foreach (anal->sdb_types, __nonreturn_print_commands, &ctx);
 		break;
 	default:
-		sdb_foreach (anal->sdb_types, __nonreturn_print, anal);
+		sdb_foreach (anal->sdb_types, __nonreturn_print, &ctx);
 		break;
 	}
+	return r_strbuf_drain (ctx.sb);
 }
 
 #define K_NORET_ADDR(x) r_strf ("addr.%"PFMT64x".noreturn", x)

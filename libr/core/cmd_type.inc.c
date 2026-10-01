@@ -674,10 +674,12 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 		break;
 	case '*':
 	case 'r': // "tn*"
-		r_anal_noreturn_list (core->anal, 1);
-		break;
 	case 0: // "tn"
-		r_anal_noreturn_list (core->anal, 0);
+		{
+			char *s = r_anal_noreturn_list (core->anal, *input? 1: 0);
+			r_cons_print (core->cons, s);
+			free (s);
+		}
 		break;
 	default:
 	case '?':

@@ -306,6 +306,10 @@ R_API char *r_core_call_str_at(RCore *core, ut64 addr, const char *cmd) {
 	return retstr;
 }
 
+static void core_puts(RCore *core, const char *str) {
+	r_cons_print (core->cons, str);
+}
+
 R_API void r_core_bind(RCore *core, RCoreBind *bnd) {
 	R_RETURN_IF_FAIL (core && bnd);
 	bnd->core = core;
@@ -317,7 +321,7 @@ R_API void r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->cmdStr = (RCoreCmdStr)r_core_cmd_str;
 	bnd->cmdStrF = (RCoreCmdStrF)r_core_cmd_strf;
 	bnd->help = (RCoreBindHelp)core_help;
-	bnd->puts = (RCorePuts)r_cons_print;
+	bnd->puts = (RCorePuts)core_puts;
 	bnd->setArchBits = (RCoreSetArchBits)setab;
 	bnd->getName = (RCoreGetName)getName;
 	bnd->getNameDelta = (RCoreGetNameDelta)getNameDelta;
@@ -2674,7 +2678,6 @@ R_API bool r_core_init(RCore *core) {
 	core->print->sdb_types = core->anal->sdb_types;
 	core->rasm->syscall = r_syscall_ref (core->anal->syscall); // BIND syscall anal/asm
 	r_anal_set_user_ptr (core->anal, core);
-	core->anal->cb_printf = (void *)r_cons_gprintf;
 	core->rasm->parse->varlist = r_anal_function_get_var_fields;
 	core->bin = r_bin_new ();
 	r_cons_bind (core->cons, &core->bin->consb);

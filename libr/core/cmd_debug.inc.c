@@ -6524,10 +6524,12 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			switch (input[2]) {
 			case 0: // "dte"
-				r_esil_trace_list (core->anal->esil, 0);
-				break;
-			case '*': // "dte"
-				r_esil_trace_list (core->anal->esil, '*');
+			case '*': // "dte*"
+				{
+					char *s = r_esil_trace_list (core->anal->esil, input[2]);
+					r_cons_print (core->cons, s);
+					free (s);
+				}
 				break;
 			case 'i': { // "dtei"
 				ut64 addr = r_num_math (core->num, input + 3);
@@ -6556,7 +6558,9 @@ static int cmd_debug(void *data, const char *input) {
 				break;
 			case ' ': { // "dte "
 					int idx = atoi (input + 3);
-					r_esil_trace_show (core->anal->esil, idx, 0);
+					char *s = r_esil_trace_show (core->anal->esil, idx, 0);
+					r_cons_print (core->cons, s);
+					free (s);
 				}
 				break;
 			case 'd':

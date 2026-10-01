@@ -524,7 +524,6 @@ typedef struct r_anal_t {
 	RefManager *rm;
 	RSpaces zign_spaces;
 	char *zign_path; // dir.zigns
-	PrintfCallback cb_printf;
 	RPrint *print;
 	//moved from RAnalFcn
 	Sdb *sdb; // root
@@ -1647,7 +1646,7 @@ R_API int r_esil_to_reil_setup(REsil *esil, RAnal *anal, int romem, int stats);
 R_API const char *r_esil_trapstr(int type);
 
 /* no-return stuff */
-R_API void r_anal_noreturn_list(RAnal *anal, int mode);
+R_API char *r_anal_noreturn_list(RAnal *anal, int mode);
 R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr);
 R_API bool r_anal_noreturn_drop(RAnal *anal, const char *expr);
 R_API bool r_anal_noreturn_at_addr(RAnal *anal, ut64 addr);
