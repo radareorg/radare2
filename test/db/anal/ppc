@@ -2005,3 +2005,22 @@ jump: 0x00000014
 fail: 0x00000014
 EOF
 RUN
+
+NAME=ppc asm.bits toggle reopens capstone mode (cs6)
+REQUIRE=cs6
+FILE=malloc://16
+ARGS=-a ppc -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 42108400
+pi 1
+e asm.bits=64
+pi 1
+e asm.bits=32
+pi 1
+EOF
+EXPECT=<<EOF
+bc 0x10, 4*cr4+lt, 0xffff8400
+bc 0x10, 4*cr4+lt, 0xffffffffffff8400
+bc 0x10, 4*cr4+lt, 0xffff8400
+EOF
+RUN

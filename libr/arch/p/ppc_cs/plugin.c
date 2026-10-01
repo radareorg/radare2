@@ -773,7 +773,7 @@ static char *shrink(char *op) {
 #undef PPC
 #define CSINC PPC
 #if CS_API_MAJOR >= 6
-#define CSINC_MODE ((as->config->bits == 64)? CS_MODE_64: CS_MODE_32 | CS_MODE_BOOKE)
+#define CSINC_MODE (((as->config->bits == 64)? CS_MODE_64: CS_MODE_32) | CS_MODE_BOOKE)
 #else
 #define CSINC_MODE ((as->config->bits == 64)? CS_MODE_64: CS_MODE_32)
 #endif
@@ -1550,8 +1550,15 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	char cmaskbuf[cmaskbuf_SIZEOF] = {0};
 	PluginData *pd = as->data;
 	if (pd->bits != as->config->bits) {
+#if CS_API_MAJOR >= 6
+		// capstone v6 ORs CS_OPT_MODE into the current mode; reopen
+		cs_close (&pd->cpd.cs_handle);
+		r_arch_cs_init (as, &pd->cpd.cs_handle);
+		pd->bits = pd->cpd.cs_handle? as->config->bits: 0;
+#else
 		cs_option (pd->cpd.cs_handle, CS_OPT_MODE, CSINC_MODE);
 		pd->bits = as->config->bits;
+#endif
 	}
 	csh handle = cs_handle_for_session (as);
 	if (handle == 0 || len < 4) {
