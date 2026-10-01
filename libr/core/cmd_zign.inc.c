@@ -441,7 +441,7 @@ static int cmd_zf(void *data, const char *input) {
 		}
 		char *dump = r_sign_flirt_dump (core->anal, input + 2);
 		if (dump) {
-			r_cons_printf (core->cons, "%s\n", dump);
+			r_cons_print (core->cons, dump);
 			free (dump);
 		}
 		break;
@@ -1259,6 +1259,7 @@ static bool cmd_zd(void *data, const char *input) {
 
 static int cmd_zc(void *data, const char *input) {
 	int result = true;
+	char *diff = NULL;
 	RCore *core = (RCore *)data;
 	const char *raw_bytes_thresh = r_config_get (core->config, "zign.diff.bthresh");
 	const char *raw_graph_thresh = r_config_get (core->config, "zign.diff.gthresh");
@@ -1271,7 +1272,8 @@ static int cmd_zc(void *data, const char *input) {
 			result = false;
 			break;
 		}
-		result = r_sign_diff (core->anal, options, input + 1);
+		diff = r_sign_diff (core->anal, options, input + 1);
+		result = diff != NULL;
 		break;
 	case 'n':
 		switch (input[1]) {
@@ -1281,7 +1283,8 @@ static int cmd_zc(void *data, const char *input) {
 				result = false;
 				break;
 			}
-			result = r_sign_diff_by_name (core->anal, options, input + 2, false);
+			diff = r_sign_diff_by_name (core->anal, options, input + 2, false);
+			result = diff != NULL;
 			break;
 		case '!': // "zcn!"
 			if (input[2] != ' ' || !input[3]) {
@@ -1289,7 +1292,8 @@ static int cmd_zc(void *data, const char *input) {
 				result = false;
 				break;
 			}
-			result = r_sign_diff_by_name (core->anal, options, input + 3, true);
+			diff = r_sign_diff_by_name (core->anal, options, input + 3, true);
+			result = diff != NULL;
 			break;
 		default:
 			r_cons_cmd_help_match (core->cons, help_msg_zc, "zcn", 0, false);
@@ -1303,6 +1307,10 @@ static int cmd_zc(void *data, const char *input) {
 		r_core_return_invalid_command (core, "zc", *input);
 		result = false;
 		break;
+	}
+	if (diff) {
+		r_cons_print (core->cons, diff);
+		free (diff);
 	}
 
 	r_sign_options_free (options);
@@ -1474,8 +1482,10 @@ static int cmd_zign(void *data, const char *input) {
 			}
 			ut64 oaddr = core->addr;
 			core->addr = naddr; // XXX R2_600 - this is a hack because we cant break the abi
-			r_sign_list (core->anal, *input);
+			char *list = r_sign_list (core->anal, *input);
 			core->addr = oaddr;
+			r_cons_print (core->cons, list);
+			free (list);
 		}
 		break;
 	case ',': // "z,"
