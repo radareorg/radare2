@@ -219,3 +219,52 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=aae no load xref from a read the load did not make
+FILE=malloc://0x4000
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 000050e1009f9fe5000091151eff2fe1 @ 0x1000
+wx 00200000 @ 0x1f0c
+aae 16 @ 0x1000
+?e ldr_2000=`axf @ 0x1004~0x2000~?`
+?e ldrne_1f0c=`axf @ 0x1008~0x1f0c~?`
+?e ldrne_2000=`axf @ 0x1008~0x2000~?`
+EOF
+EXPECT=<<EOF
+ldr_2000=1
+ldrne_1f0c=0
+ldrne_2000=0
+EOF
+RUN
+
+NAME=aae no load xref from a read the load did not make: same path on x86
+FILE=malloc://0x4000
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 31c9a10018000000000000f3acc3 @ 0x1000
+aae 14 @ 0x1000
+?e mov_1800=`axf @ 0x1002~0x1800~?`
+?e rep_1800=`axf @ 0x100b~0x1800~?`
+EOF
+EXPECT=<<EOF
+mov_1800=1
+rep_1800=0
+EOF
+RUN
+
+NAME=aae stack loads keep their xrefs
+FILE=malloc://0x4000
+ARGS=-a arm -b 32
+CMDS=<<EOF
+aeim
+ar r1=0x178000
+wv4 0x2000 @ 0x178000
+wx 000091e51eff2fe1 @ 0x1100
+aae 8 @ 0x1100
+?e stack_178000=`axf @ 0x1100~0x178000~?`
+EOF
+EXPECT=<<EOF
+stack_178000=1
+EOF
+RUN
