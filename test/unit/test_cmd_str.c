@@ -1,5 +1,9 @@
 #include <r_core.h>
 #include "minunit.h"
+#if R2__UNIX__
+#include <sys/stat.h>
+static struct stat sandbox_stdout;
+#endif
 
 static int test_user_fgets(RCons *cons, char *buf, int len) {
 	(void)cons;
@@ -256,6 +260,143 @@ bool test_type_format_export_newlines(void) {
 	mu_end;
 }
 
+static void *sandbox_capture_mutation(void *user) {
+	return r_core_cmd_str_pipe (user, "!mutate");
+}
+
+static int sandbox_probe(void *user, const char *input) {
+	RCore *core = user;
+	if (!strcmp (input, "nested")) {
+		char *output = r_sandbox_run (R_SANDBOX_GRAIN_ALL, sandbox_capture_mutation, core);
+		r_cons_print (core->cons, output);
+		free (output);
+	} else if (!strcmp (input, "mutate")) {
+		r_sandbox_disable (true);
+		r_sandbox_enable (true);
+		r_sandbox_grain (R_SANDBOX_GRAIN_ALL);
+		r_sandbox_disable (false);
+	}
+#if R2__UNIX__
+	if (!strcmp (input, "descriptor")) {
+		struct stat current;
+		bool unchanged = !fstat (STDOUT_FILENO, &current)
+			&& current.st_dev == sandbox_stdout.st_dev && current.st_ino == sandbox_stdout.st_ino;
+		r_cons_printf (core->cons, "%s\n", r_str_bool (unchanged));
+		return 0;
+	}
+#endif
+	r_cons_printf (core->cons, "%s\n", r_str_bool (r_sandbox_check (R_SANDBOX_GRAIN_EXEC)));
+	return 0;
+}
+
+typedef struct {
+	RCore *core;
+	char *output;
+	char *nested;
+	char *descriptor;
+	bool enabled;
+	int grain;
+} SandboxCaptureProbe;
+
+static void *sandbox_capture_probe(void *user) {
+	SandboxCaptureProbe *probe = user;
+	probe->output = r_core_cmd_str_pipe (probe->core, "!probe");
+	probe->nested = r_core_cmd_str_pipe (probe->core, "!nested");
+#if R2__UNIX__
+	probe->descriptor = r_core_cmd_str_pipe (probe->core, "!descriptor");
+#endif
+	probe->enabled = r_sandbox_enable (false);
+	probe->grain = r_sandbox_grain (R_SANDBOX_GRAIN_ALL);
+	return user;
+}
+
+bool test_cmd_str_pipe_sandbox(void) {
+	RCore *core = r_core_new ();
+#if R2__UNIX__
+	char *shell_output = r_core_cmd_str_pipe (core, "!!echo CAPTURED");
+	mu_assert_streq_free (shell_output, "CAPTURED\n", "unsandboxed capture includes shell output");
+	mu_assert_eq (fstat (STDOUT_FILENO, &sandbox_stdout), 0, "snapshot output descriptor");
+#endif
+	r_cmd_add (core->rcmd, "!", sandbox_probe);
+	char *output = r_core_cmd_str_pipe (core, "!probe");
+	mu_assert_streq_free (output, "true\n", "unsandboxed capture permits execution");
+	mu_assert_false (r_sandbox_enable (false), "capture preserves disabled sandbox");
+
+	int old_grain = r_sandbox_grain (R_SANDBOX_GRAIN_ENVIRON);
+	SandboxCaptureProbe probe = { .core = core };
+	void *result = r_sandbox_run (R_SANDBOX_GRAIN_NONE, sandbox_capture_probe, &probe);
+	bool restored_enabled = r_sandbox_enable (false);
+	int restored_grain = r_sandbox_grain (old_grain);
+	r_core_free (core);
+	mu_assert_ptreq (result, &probe, "scope returns the callback result");
+	mu_assert_streq_free (probe.output, "false\n", "capture preserves execution restriction");
+	mu_assert_streq_free (probe.nested, "false\nfalse\n", "nested capture cannot disable or weaken the sandbox");
+#if R2__UNIX__
+	mu_assert_streq_free (probe.descriptor, "true\n", "restricted capture does not redirect stdout");
+#endif
+	mu_assert_true (probe.enabled, "capture preserves enabled sandbox");
+	mu_assert_eq (probe.grain, R_SANDBOX_GRAIN_NONE, "scope refuses increased permissions");
+	mu_assert_false (restored_enabled, "scope restores disabled sandbox");
+	mu_assert_eq (restored_grain, R_SANDBOX_GRAIN_ENVIRON, "scope restores nondefault grain");
+	mu_end;
+}
+
+bool test_cmd_str_pipe_sandbox_exec(const char *command, const char *expected) {
+#if R2__UNIX__ && !LIBC_HAVE_PLEDGE && !HAVE_CAPSICUM && !LIBC_HAVE_PRIV_SET
+	RCore *core = r_core_new ();
+	r_config_set_b (core->config, "io.va", false);
+	mu_assert_notnull (r_core_file_open (core, "malloc://4", R_PERM_RW, 0), "open pipeline input");
+	const ut8 bytes[] = { 0, 'a', 0, 'b' };
+	mu_assert_true (r_core_write_at (core, 0, bytes, sizeof (bytes)), "write binary pipeline input");
+	char *input = r_core_cmd_str (core, "p8 4");
+	mu_assert_streq_free (input, "00610062\n", "pipeline fixture contains leading and embedded NULs");
+	int old_grain = r_sandbox_grain (R_SANDBOX_GRAIN_ALL);
+	r_sandbox_enable (true);
+	char *output = r_core_cmd_str_pipe (core, command);
+	bool enabled = r_sandbox_enable (false);
+	r_sandbox_grain (old_grain);
+	r_sandbox_disable (true);
+	r_sandbox_disable (true);
+	r_core_free (core);
+	mu_assert_streq_free (output, expected, "capture includes permitted external command output");
+	mu_assert_true (enabled, "capture preserves the enabled sandbox");
+#endif
+	mu_end;
+}
+
+#if !LIBC_HAVE_PLEDGE && !HAVE_CAPSICUM && !LIBC_HAVE_PRIV_SET
+static int sandbox_capture_calls;
+
+static int sandbox_enable_probe(void *user, const char *input) {
+	sandbox_capture_calls++;
+	r_sandbox_grain (R_SANDBOX_GRAIN_NONE);
+	r_sandbox_enable (true);
+	return 0;
+}
+#endif
+
+bool test_cmd_str_pipe_capture_failure(void) {
+#if !LIBC_HAVE_PLEDGE && !HAVE_CAPSICUM && !LIBC_HAVE_PRIV_SET
+	RCore *core = r_core_new ();
+	r_cmd_add (core->rcmd, "!", sandbox_enable_probe);
+	int old_grain = r_sandbox_grain (R_SANDBOX_GRAIN_ALL);
+	sandbox_capture_calls = 0;
+	char *output = r_core_cmd_str_pipe (core, "!enable");
+	bool capture_failed = !output;
+	free (output);
+	bool enabled = r_sandbox_enable (false);
+	int resulting_grain = r_sandbox_grain (old_grain);
+	r_sandbox_disable (true);
+	r_sandbox_disable (true);
+	r_core_free (core);
+	mu_assert_true (capture_failed, "command enabling sandbox prevents reading capture file");
+	mu_assert_eq (sandbox_capture_calls, 1, "capture failure never replays a command");
+	mu_assert_true (enabled, "capture failure preserves the command's sandbox change");
+	mu_assert_eq (resulting_grain, R_SANDBOX_GRAIN_NONE, "capture failure preserves the command's grain");
+#endif
+	mu_end;
+}
+
 static void *sandbox_mutation_probe(void *user) {
 	int *grain = user;
 	r_sandbox_disable (true);
@@ -414,6 +555,11 @@ int all_tests(void) {
 	mu_run_test (test_autocomplete_find_prefers_exact_match);
 	mu_run_test (test_o_autocomplete_uses_file_completion);
 	mu_run_test (test_registered_command_autocomplete);
+	mu_run_test (test_cmd_str_pipe_sandbox);
+	mu_run_test_named (test_cmd_str_pipe_sandbox_exec, "test_cmd_str_pipe_sandbox_exec_shell", "!!echo CAPTURED", "CAPTURED\n");
+	mu_run_test_named (test_cmd_str_pipe_sandbox_exec, "test_cmd_str_pipe_sandbox_exec_pipe", "?e input | tr a-z A-Z", "INPUT\n");
+	mu_run_test_named (test_cmd_str_pipe_sandbox_exec, "test_cmd_str_pipe_sandbox_exec_binary", "pr 4 | tr '\\000' X", "XaXb");
+	mu_run_test (test_cmd_str_pipe_capture_failure);
 	mu_run_test (test_sandbox_scope_policy);
 	mu_run_test (test_sandbox_scope_restoration);
 	mu_run_test (test_sandbox_scope_threads);

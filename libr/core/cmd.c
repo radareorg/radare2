@@ -3674,19 +3674,27 @@ static int cmdpipe_internal(RCore *core, char *radare_cmd, char *shell_cmd) {
 	int child;
 #endif
 	int olen, ret = -1;
-	char *str, *out = NULL;
+	char *out = NULL;
 
-	if (*shell_cmd == '!') {
-		shell_cmd++;
+	if (*shell_cmd == '!' || cons->context->cmd_str_depth > 0) {
+		if (*shell_cmd == '!') {
+			shell_cmd++;
+		}
 		char *err = NULL;
 
 		r_cons_grep_parsecmd (cons, shell_cmd, "\"");
 		olen = 0;
 		out = NULL;
-		str = r_core_cmd_str (core, radare_cmd);
-		if (str) {
-			ret = r_sys_cmd_str_full (shell_cmd, str, -1, &out, &olen, &err)? 0: -1;
-			free (str);
+		RBuffer *input = r_core_cmd_tobuf (core, radare_cmd);
+		if (input) {
+			ut64 input_size = 0;
+			const char *input_data = (const char *)r_buf_data (input, &input_size);
+			if (input_size > ST32_MAX) {
+				R_LOG_ERROR ("Command output is too large to pipe");
+			} else if (input_data || !input_size) {
+				ret = r_sys_cmd_str_full (shell_cmd, input_data, (int)input_size, &out, &olen, &err)? 0: -1;
+			}
+			r_unref (input);
 			if (olen > 0) {
 				r_cons_write (cons, out, olen);
 			}
@@ -7160,40 +7168,40 @@ R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 	RCons *cons = r_core_get_cons (core);
 	char *tmp = NULL;
 	char *p = (*cmd != '"')? strchr (cmd, '|'): NULL;
-	if (!p && *cmd != '!' && *cmd != '.') {
+	if (r_sandbox_enable (false) || (!p && *cmd != '!' && *cmd != '.')) {
 		return r_core_cmd_str (core, cmd);
 	}
 	r_cons_reset (cons);
-	r_sandbox_disable (true);
-	if (r_file_mkstemp ("cmd", &tmp) != -1) {
-		int pipefd = r_cons_pipe_open (cons, tmp, 1, false);
-		if (pipefd == -1) {
-			r_file_rm (tmp);
-			r_sandbox_disable (false);
-			free (tmp);
-			return r_core_cmd_str (core, cmd);
-		}
-		char *_cmd = strdup (cmd);
-		r_core_cmd (core, _cmd, 0);
-		r_cons_flush (cons);
-		r_cons_pipe_close (cons, pipefd);
-		if (r_file_exists (tmp)) {
-			char *s = r_file_slurp (tmp, NULL);
-			r_file_rm (tmp);
-			r_sandbox_disable (false);
-			free (tmp);
-			free (_cmd);
-			return s? s: strdup ("");
-		}
-		R_LOG_ERROR ("slurp %s fails", tmp);
+	int fd = r_file_mkstemp ("cmd", &tmp);
+	if (fd == -1) {
+		return NULL;
+	}
+	close (fd);
+	int pipefd = r_cons_pipe_open (cons, tmp, 1, false);
+	if (pipefd == -1) {
 		r_file_rm (tmp);
 		free (tmp);
-		free (_cmd);
-		r_sandbox_disable (false);
 		return r_core_cmd_str (core, cmd);
 	}
-	r_sandbox_disable (0);
-	return NULL;
+	r_core_cmd (core, cmd, 0);
+	r_cons_flush (cons);
+	r_cons_pipe_close (cons, pipefd);
+	char *out = r_file_slurp (tmp, NULL);
+	if (!out) {
+		R_LOG_ERROR ("Cannot capture command output from %s", tmp);
+	}
+	// Clean up our temporary file even if the command enabled the sandbox.
+#if R2__WINDOWS__
+	wchar_t *wtmp = r_utf8_to_utf16 (tmp);
+	if (wtmp) {
+		_wremove (wtmp);
+	}
+	free (wtmp);
+#else
+	remove (tmp);
+#endif
+	free (tmp);
+	return out;
 }
 
 R_API char *r_core_cmd_strf_at(RCore *core, ut64 addr, const char *fmt, ...) {
