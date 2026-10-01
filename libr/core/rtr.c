@@ -32,10 +32,17 @@ typedef struct {
 } TextLog;
 
 typedef struct {
+	bool enabled;
+	bool configured;
+	int grain;
+} HttpSandboxPolicy;
+
+typedef struct {
 	RCore *core;
 	int launch;
 	int browse;
 	char *path;
+	HttpSandboxPolicy policy;
 } HttpThread;
 
 typedef struct {

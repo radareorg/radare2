@@ -50,18 +50,18 @@ static char * R_NONNULL guess_filetype(const char *path) {
 	return strdup ("Content-Type: application/octet-stream\n");
 }
 
-static char *cmdstr(RCore *core, const char *cmd) {
-	R_RETURN_VAL_IF_FAIL (core && cmd, NULL);
-	char *out;
+typedef struct {
+	RCore *core;
+	const char *cmd;
+	bool capture;
+} HttpCommand;
+
+static void *http_command_run(void *user) {
+	HttpCommand *request = user;
+	RCore *core = request->core;
+	char *out = NULL;
 	RConsContext *ctx = core->cons->context;
 	ctx->noflush = false;
-	bool restoreSandbox = false;
-	bool oldSandbox = r_config_get_b (core->config, "cfg.sandbox");
-	if (r_config_get_b (core->config, "http.sandbox")) {
-		//(void)r_config_get_i (core->config, "cfg.sandbox");
-		r_config_set_b (core->config, "cfg.sandbox", true);
-		restoreSandbox = true;
-	}
 #if WEBCONFIG
 	const bool orig_scr_html = r_config_get_b (core->config, "scr.html");
 	const int orig_scr_color = r_config_get_i (core->config, "scr.color");
@@ -70,20 +70,23 @@ static char *cmdstr(RCore *core, const char *cmd) {
 	r_config_set_b (core->config, "asm.bytes", false);
 	r_config_set_b (core->config, "scr.interactive", false);
 #endif
-	out = r_core_cmd_str_pipe (core, cmd);
+	if (request->capture) {
+		out = r_core_cmd_str_pipe (core, request->cmd);
+	} else {
+		r_core_cmd0 (core, request->cmd);
+	}
 #if WEBCONFIG
 	/* refresh settings - run callbacks */
 	r_config_set_b (core->config, "scr.html", orig_scr_html);
 	r_config_set_i (core->config, "scr.color", orig_scr_color);
 	r_config_set_b (core->config, "scr.interactive", orig_scr_interactive);
 #endif
-	if (restoreSandbox) {
-		if (!oldSandbox) {
-			r_sandbox_disable (true);
-		}
-		r_config_set_b (core->config, "cfg.sandbox", oldSandbox);
-	}
 	return out;
+}
+
+static char *cmdstr(RCore *core, const char *cmd, bool capture, bool sandbox, int grain) {
+	HttpCommand request = { core, cmd, capture };
+	return sandbox? r_sandbox_run (grain, http_command_run, &request): http_command_run (&request);
 }
 
 static void rtr_http_request_free(RSocketHTTPRequest *rs) {
@@ -93,7 +96,7 @@ static void rtr_http_request_free(RSocketHTTPRequest *rs) {
 	}
 }
 
-static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, const char *path) {
+static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, const char *path, const HttpSandboxPolicy *policy) {
 	if (!path) {
 		return HTTP_RUN_ERROR;
 	}
@@ -116,6 +119,8 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 	const char *basepath = r_config_get (core->config, "http.basepath");
 	const char *httpui = r_config_get (core->config, "http.ui");
 	const char *httpauthfile = r_config_get (core->config, "http.authfile");
+	const bool sandbox = policy->enabled;
+	const int grain = policy->grain;
 	char *pfile = NULL;
 
 	if (!r_file_is_directory (root)) {
@@ -195,6 +200,12 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 	origcfg = core->config;
 	newcfg = r_config_clone (core->config);
 	core->config = newcfg;
+	r_config_set_b (newcfg, "http.sandbox", policy->configured);
+	r_config_readonly (newcfg, "http.sandbox");
+	if (sandbox) {
+		r_config_readonly (newcfg, "cfg.sandbox");
+		r_config_readonly (newcfg, "cfg.sandbox.grain");
+	}
 	eprintf ("Starting http server...\n");
 	eprintf ("open http://%s:%s/\n", host, port);
 	eprintf ("r2 -C http://%s:%s/cmd/\n", host, port);
@@ -440,10 +451,9 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 								out = NULL;
 							} else if (*cmd == ':') {
 								/* commands in /cmd/: starting with : do not show any output */
-								r_core_cmd0 (core, cmd + 1);
-								out = NULL;
+								out = cmdstr (core, cmd + 1, false, sandbox, grain);
 							} else {
-								out = cmdstr (core, cmd);
+								out = cmdstr (core, cmd, true, sandbox, grain);
 							}
 
 							if (out) {
@@ -560,7 +570,7 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 			if (r_str_startswith (rs->path, "/cmd")) {
 				char *out = NULL;
 				if (rs->data && rs->data_length > 0) {
-					out = cmdstr (core, (const char *)rs->data);
+					out = cmdstr (core, (const char *)rs->data, true, sandbox, grain);
 				}
 				if (out) {
 					char *res = r_str_uri_encode (out);
@@ -650,15 +660,12 @@ static RThreadFunctionRet r_core_rtr_http_thread(RThread *th) {
 	if (!ht || !ht->core) {
 		return false;
 	}
-	if (r_config_get_b (ht->core->config, "http.sandbox")) {
-		R_LOG_WARN ("Background webserver requires http.sandbox=false to run properly");
-	}
-	HttpRunResult ret = r_core_rtr_http_run (ht->core, ht->launch, ht->browse, ht->path);
-	if (ret == HTTP_RUN_SUCCESS) {
+	HttpRunResult ret = r_core_rtr_http_run (ht->core, ht->launch, ht->browse, ht->path, &ht->policy);
+	if (ret != HTTP_RUN_RESTART) {
 		R_FREE (ht->path);
 		free (ht);
 	}
-	return (ret == HTTP_RUN_ERROR || ret == HTTP_RUN_RESTART) ? R_TH_REPEAT : R_TH_STOP;
+	return ret == HTTP_RUN_RESTART? R_TH_REPEAT: R_TH_STOP;
 }
 #endif
 
@@ -688,6 +695,20 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 		R_LOG_ERROR ("http server is already running");
 		return 1;
 	}
+	HttpSandboxPolicy policy = {
+		.configured = r_config_get_b (core->config, "http.sandbox"),
+		.grain = R_SANDBOX_GRAIN_ALL
+	};
+	policy.enabled = policy.configured || r_sandbox_enable (false);
+	policy.grain = policy.configured? R_SANDBOX_GRAIN_NONE: R_SANDBOX_GRAIN_ALL;
+	if (policy.enabled) {
+		ut32 permission;
+		for (permission = 1; permission; permission <<= 1) {
+			if ((policy.grain & permission) && !r_sandbox_check (permission)) {
+				policy.grain &= ~permission;
+			}
+		}
+	}
 	if (launch == '&') {
 #if USE_HTTP_THREADS
 		if (priv->httpthread) {
@@ -702,12 +723,19 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 			ht->launch = launch;
 			ht->browse = browse;
 			ht->path = strdup (tpath);
-			priv->httpthread = r_th_new (r_core_rtr_http_thread, ht, false);
-			if (priv->httpthread) {
-				r_th_setname (priv->httpthread, "httpthread");
+			ht->policy = policy;
+			if (ht->path) {
+				priv->httpthread = r_th_new (r_core_rtr_http_thread, ht, false);
 			}
-			bool res = r_th_start (priv->httpthread);
-			R_LOG_INFO ("Background http server started (success=%s)", r_str_bool (res));
+			if (!priv->httpthread || !r_th_start (priv->httpthread)) {
+				r_th_free (priv->httpthread);
+				priv->httpthread = NULL;
+				free (ht->path);
+				free (ht);
+				return 1;
+			}
+			r_th_setname (priv->httpthread, "httpthread");
+			R_LOG_INFO ("Background http server started");
 		}
 		return 0;
 #else
@@ -718,7 +746,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 #endif
 	}
 	do {
-		ret = r_core_rtr_http_run (core, launch, browse, path);
+		ret = r_core_rtr_http_run (core, launch, browse, path, &policy);
 	} while (ret == HTTP_RUN_RESTART);
 	return (ret == HTTP_RUN_ERROR) ? 1 : 0;
 }
