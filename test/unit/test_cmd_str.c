@@ -256,6 +256,152 @@ bool test_type_format_export_newlines(void) {
 	mu_end;
 }
 
+static void *sandbox_mutation_probe(void *user) {
+	int *grain = user;
+	r_sandbox_disable (true);
+	r_sandbox_enable (true);
+	r_sandbox_grain (R_SANDBOX_GRAIN_NONE);
+	r_sandbox_disable (false);
+	*grain = r_sandbox_grain (R_SANDBOX_GRAIN_ALL);
+	return user;
+}
+
+typedef struct {
+	int before;
+	int narrower;
+	int broader;
+	int after;
+	bool exec;
+	bool environ;
+} SandboxPolicyProbe;
+
+static void *sandbox_policy_probe(void *user) {
+	SandboxPolicyProbe *probe = user;
+	probe->before = r_sandbox_grain (R_SANDBOX_GRAIN_ALL);
+	r_sandbox_run (R_SANDBOX_GRAIN_ENVIRON | R_SANDBOX_GRAIN_DISK, sandbox_mutation_probe, &probe->narrower);
+	r_sandbox_run (R_SANDBOX_GRAIN_ALL, sandbox_mutation_probe, &probe->broader);
+	probe->after = r_sandbox_grain (R_SANDBOX_GRAIN_NONE);
+	probe->exec = r_sandbox_check (R_SANDBOX_GRAIN_EXEC);
+	probe->environ = r_sandbox_check (R_SANDBOX_GRAIN_ENVIRON);
+	return user;
+}
+
+static void *sandbox_combined_check(void *user) {
+	bool *denied = user;
+	*denied = !r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK);
+	return user;
+}
+
+static void *sandbox_disjoint_probe(void *user) {
+	return r_sandbox_run (R_SANDBOX_GRAIN_DISK, sandbox_combined_check, user);
+}
+
+bool test_sandbox_scope_policy(void) {
+	int old_grain = r_sandbox_grain (R_SANDBOX_GRAIN_FILES);
+	int requested = R_SANDBOX_GRAIN_EXEC | R_SANDBOX_GRAIN_ENVIRON;
+	SandboxPolicyProbe probe = { 0 };
+	void *result = r_sandbox_run (requested, sandbox_policy_probe, &probe);
+	int all = R_SANDBOX_GRAIN_NONE;
+	r_sandbox_run (R_SANDBOX_GRAIN_ALL, sandbox_mutation_probe, &all);
+	bool disjoint_denied = false;
+	r_sandbox_run (R_SANDBOX_GRAIN_FILES, sandbox_disjoint_probe, &disjoint_denied);
+	bool restored_enabled = r_sandbox_enable (false);
+	int restored_grain = r_sandbox_grain (old_grain);
+	mu_assert_ptreq (result, &probe, "scope returns callback result");
+	mu_assert_eq (probe.before, requested, "disabled base grain does not restrict scope");
+	mu_assert_eq (probe.narrower, R_SANDBOX_GRAIN_ENVIRON, "nested partial scopes intersect permissions");
+	mu_assert_eq (probe.broader, requested, "nested all cannot grant permissions");
+	mu_assert_eq (probe.after, requested, "nested scope restores outer policy");
+	mu_assert_true (probe.exec && probe.environ, "granted permissions remain usable");
+	mu_assert_eq (all, (int)R_SANDBOX_GRAIN_ALL, "all-permissions scope remains immutable");
+	mu_assert_true (disjoint_denied, "disjoint scopes deny combined alternative permissions");
+	mu_assert_false (restored_enabled, "scope mutations do not enable the base sandbox");
+	mu_assert_eq (restored_grain, R_SANDBOX_GRAIN_FILES, "scope mutations preserve disabled base grain");
+	mu_end;
+}
+
+bool test_sandbox_scope_restoration(void) {
+#if !LIBC_HAVE_PLEDGE && !HAVE_CAPSICUM && !LIBC_HAVE_PRIV_SET
+	int old_grain = r_sandbox_grain (R_SANDBOX_GRAIN_ENVIRON);
+	r_sandbox_enable (true);
+	SandboxPolicyProbe probe = { 0 };
+	r_sandbox_run (R_SANDBOX_GRAIN_EXEC | R_SANDBOX_GRAIN_ENVIRON, sandbox_policy_probe, &probe);
+	bool enabled_restored = r_sandbox_enable (false);
+	bool grain_restored = r_sandbox_check (R_SANDBOX_GRAIN_ENVIRON)
+		&& !r_sandbox_check (R_SANDBOX_GRAIN_EXEC);
+	r_sandbox_disable (true);
+	int disabled_grain = R_SANDBOX_GRAIN_NONE;
+	r_sandbox_run (R_SANDBOX_GRAIN_EXEC, sandbox_mutation_probe, &disabled_grain);
+	bool disabled_restored = !r_sandbox_enable (false);
+	bool restore_slot_preserved = r_sandbox_disable (false);
+	int restored_grain = r_sandbox_grain (old_grain);
+	r_sandbox_disable (true);
+	r_sandbox_disable (true);
+	mu_assert_eq (probe.before, R_SANDBOX_GRAIN_ENVIRON, "scope intersects enabled base permissions");
+	mu_assert_eq (probe.broader, R_SANDBOX_GRAIN_ENVIRON, "nested all cannot bypass the base policy");
+	mu_assert_false (probe.exec, "scope cannot grant execution denied by base");
+	mu_assert_true (probe.environ, "scope retains permissions granted by base and request");
+	mu_assert_true (enabled_restored, "scope restores an already enabled sandbox");
+	mu_assert_true (grain_restored, "scope preserves an enabled sandbox's grain");
+	mu_assert_true (disabled_restored, "scope preserves a temporarily disabled sandbox");
+	mu_assert_true (restore_slot_preserved, "scope preserves the disable/restore slot");
+	mu_assert_eq (restored_grain, R_SANDBOX_GRAIN_ENVIRON, "scope preserves the disabled grain");
+	mu_assert_eq (disabled_grain, R_SANDBOX_GRAIN_EXEC, "temporarily disabled base does not restrict scope");
+#endif
+	mu_end;
+}
+
+#if WANT_THREADS
+typedef struct {
+	RThreadSemaphore *ready;
+	RThreadSemaphore *resume;
+	bool restricted;
+	bool restored;
+} SandboxThreadProbe;
+
+static void *sandbox_thread_scope(void *user) {
+	SandboxThreadProbe *probe = user;
+	r_th_sem_post (probe->ready);
+	r_th_sem_wait (probe->resume);
+	probe->restricted = r_sandbox_enable (false) && r_sandbox_check (R_SANDBOX_GRAIN_EXEC)
+		&& !r_sandbox_check (R_SANDBOX_GRAIN_ENVIRON)
+		&& r_sandbox_grain (R_SANDBOX_GRAIN_ALL) == R_SANDBOX_GRAIN_EXEC;
+	return user;
+}
+
+static RThreadFunctionRet sandbox_thread_probe(RThread *thread) {
+	SandboxThreadProbe *probe = thread->user;
+	r_sandbox_run (R_SANDBOX_GRAIN_EXEC, sandbox_thread_scope, probe);
+	probe->restored = !r_sandbox_enable (false);
+	return R_TH_STOP;
+}
+#endif
+
+bool test_sandbox_scope_threads(void) {
+#if WANT_THREADS
+	SandboxThreadProbe probe = { r_th_sem_new (0), r_th_sem_new (0), false, false };
+	mu_assert_notnull (probe.ready, "create ready semaphore");
+	mu_assert_notnull (probe.resume, "create resume semaphore");
+	RThread *thread = r_th_new (sandbox_thread_probe, &probe, 0);
+	mu_assert_notnull (thread, "create sandbox thread");
+	r_th_start (thread);
+	r_th_sem_wait (probe.ready);
+	bool unaffected = !r_sandbox_enable (false) && r_sandbox_check (R_SANDBOX_GRAIN_EXEC);
+	int main_grain = R_SANDBOX_GRAIN_ALL;
+	r_sandbox_run (R_SANDBOX_GRAIN_NONE, sandbox_mutation_probe, &main_grain);
+	r_th_sem_post (probe.resume);
+	r_th_wait (thread);
+	r_th_free (thread);
+	r_th_sem_free (probe.ready);
+	r_th_sem_free (probe.resume);
+	mu_assert_true (unaffected, "one thread's sandbox does not restrict another");
+	mu_assert_eq (main_grain, R_SANDBOX_GRAIN_NONE, "concurrent scopes keep different permissions");
+	mu_assert_true (probe.restricted, "another thread's callback does not relax the scope");
+	mu_assert_true (probe.restored, "worker restores its own sandbox state");
+#endif
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_type_format_export_newlines);
 	mu_run_test (test_foreach_instruction_bounds);
@@ -268,6 +414,9 @@ int all_tests(void) {
 	mu_run_test (test_autocomplete_find_prefers_exact_match);
 	mu_run_test (test_o_autocomplete_uses_file_completion);
 	mu_run_test (test_registered_command_autocomplete);
+	mu_run_test (test_sandbox_scope_policy);
+	mu_run_test (test_sandbox_scope_restoration);
+	mu_run_test (test_sandbox_scope_threads);
 	return tests_passed != tests_run;
 }
 
