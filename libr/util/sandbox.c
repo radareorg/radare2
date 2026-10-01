@@ -26,7 +26,81 @@ static R_TH_LOCAL bool G_enabled = false;
 static R_TH_LOCAL bool G_disabled = false;
 static R_TH_LOCAL int G_graintype = R_SANDBOX_GRAIN_ALL;
 
-#define R_SANDBOX_GUARD(x,y) if (G_enabled && !(G_graintype & (x))) { return (y); }
+typedef struct {
+	int grain;
+} RSandboxScope;
+
+#if HAVE_TH_LOCAL || !WANT_THREADS
+static R_TH_LOCAL RSandboxScope *G_scope;
+
+static RSandboxScope *sandbox_scope_current(void) {
+	return G_scope;
+}
+
+static bool sandbox_scope_set(RSandboxScope *scope) {
+	G_scope = scope;
+	return true;
+}
+#elif HAVE_PTHREAD
+static pthread_key_t scope_key;
+static pthread_once_t scope_once = PTHREAD_ONCE_INIT;
+static bool scope_key_ready;
+
+static void sandbox_scope_init(void) {
+	scope_key_ready = pthread_key_create (&scope_key, NULL) == 0;
+}
+
+static RSandboxScope *sandbox_scope_current(void) {
+	pthread_once (&scope_once, sandbox_scope_init);
+	return scope_key_ready? pthread_getspecific (scope_key): NULL;
+}
+
+static bool sandbox_scope_set(RSandboxScope *scope) {
+	pthread_once (&scope_once, sandbox_scope_init);
+	return scope_key_ready && pthread_setspecific (scope_key, scope) == 0;
+}
+#elif R2__WINDOWS__
+static DWORD scope_key;
+static LONG scope_key_state;
+
+static bool sandbox_scope_init(void) {
+	if (!InterlockedCompareExchange (&scope_key_state, 1, 0)) {
+		scope_key = TlsAlloc ();
+		InterlockedExchange (&scope_key_state, scope_key == TLS_OUT_OF_INDEXES? -1: 2);
+	}
+	while (InterlockedCompareExchange (&scope_key_state, 0, 0) == 1) {
+		Sleep (0);
+	}
+	return InterlockedCompareExchange (&scope_key_state, 0, 0) == 2;
+}
+
+static RSandboxScope *sandbox_scope_current(void) {
+	return sandbox_scope_init ()? TlsGetValue (scope_key): NULL;
+}
+
+static bool sandbox_scope_set(RSandboxScope *scope) {
+	return sandbox_scope_init () && TlsSetValue (scope_key, scope);
+}
+#endif
+
+#define R_SANDBOX_GUARD(x,y) if (!r_sandbox_check (x)) { return (y); }
+
+R_API void *r_sandbox_run(int grain, void *(*callback)(void *), void *user) {
+	R_RETURN_VAL_IF_FAIL (callback, NULL);
+	RSandboxScope *previous = sandbox_scope_current ();
+	int allowed = previous? previous->grain: G_enabled? G_graintype: R_SANDBOX_GRAIN_ALL;
+	RSandboxScope scope = { .grain = grain & allowed };
+	if (!sandbox_scope_set (&scope)) {
+		R_LOG_ERROR ("Cannot bind sandbox policy to this thread");
+		return NULL;
+	}
+	void *result = callback (user);
+	if (!sandbox_scope_set (previous)) {
+		R_LOG_ERROR ("Cannot restore the thread's sandbox policy");
+		abort ();
+	}
+	return result;
+}
 
 static bool inHomeWww(const char *path) {
 	R_RETURN_VAL_IF_FAIL (path, false);
@@ -67,7 +141,7 @@ R_API bool r_sandbox_check_path(const char *path) {
 	size_t root_len;
 	const char *p;
 	/* XXX: the sandbox can be bypassed if a directory is symlink */
-	if (G_enabled && !(G_graintype & R_SANDBOX_GRAIN_HIDDEN) && is_hidden_path (path)) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_HIDDEN) && is_hidden_path (path)) {
 		return false;
 	}
 	root_len = strlen (R2_LIBDIR"/radare2");
@@ -120,6 +194,9 @@ R_API bool r_sandbox_check_path(const char *path) {
 }
 
 R_API bool r_sandbox_disable(bool e) {
+	if (sandbox_scope_current ()) {
+		return true;
+	}
 	if (e) {
 #if LIBC_HAVE_PLEDGE
 		if (G_enabled) {
@@ -149,6 +226,10 @@ R_API bool r_sandbox_disable(bool e) {
 }
 
 R_API int r_sandbox_grain(int mask) {
+	RSandboxScope *scope = sandbox_scope_current ();
+	if (scope) {
+		return scope->grain;
+	}
 	int old_grain = G_graintype;
 	G_graintype = (mask & R_SANDBOX_GRAIN_ALL);
 	return old_grain;
@@ -209,10 +290,11 @@ R_API bool r_sandbox_grain_parse(const char *R_NONNULL expr, int *R_NONNULL mask
 }
 
 R_API bool r_sandbox_check(int mask) {
-	if (r_sandbox_enable (0)) {
-		R_SANDBOX_GUARD (mask, false);
+	RSandboxScope *scope = sandbox_scope_current ();
+	if (scope) {
+		return (scope->grain & mask) != 0;
 	}
-	return true;
+	return !G_enabled || (G_graintype & mask) != 0;
 }
 
 R_API bool r_sandbox_check_localhost(const char *str) {
@@ -250,6 +332,9 @@ R_API bool r_sandbox_check_localhost(const char *str) {
 }
 
 R_API bool r_sandbox_enable(bool e) {
+	if (sandbox_scope_current ()) {
+		return true;
+	}
 	if (G_enabled) {
 		if (!e) {
 			// R_LOG_ERROR ("Can't disable sandbox");
@@ -427,7 +512,7 @@ R_API int r_sandbox_system(const char *x, int n) {
 
 R_API bool r_sandbox_creat(const char *path, int mode) {
 	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_DISK, false);
-	if (G_enabled) {
+	if (r_sandbox_enable (false)) {
 		return false; // creating files is not allowed in sandbox even with DISK grain
 #if 0
 		if (mode & O_CREAT) {
@@ -493,7 +578,7 @@ R_API int r_sandbox_open(const char *path, int perm, int mode) {
 		path = "NUL";
 	}
 #endif
-	if (G_enabled) {
+	if (r_sandbox_enable (false)) {
 		if ((perm & O_CREAT) || (perm & O_RDWR)
 			|| (!r_sandbox_check_path (epath))) {
 			free (epath);
@@ -568,7 +653,7 @@ R_API FILE *r_sandbox_fopen(const char *path, const char *mode) {
 	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK, NULL);
 	FILE *ret = NULL;
 	char *epath = NULL;
-	if (G_enabled) {
+	if (r_sandbox_enable (false)) {
 		if (strchr (mode, 'w') || strchr (mode, 'a') || strchr (mode, '+')) {
 			return NULL;
 		}
@@ -603,7 +688,7 @@ R_API FILE *r_sandbox_fopen(const char *path, const char *mode) {
 R_API int r_sandbox_chdir(const char *path) {
 	R_RETURN_VAL_IF_FAIL (path, -1);
 	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK, -1);
-	if (G_enabled && !r_sandbox_check_path (path)) {
+	if (r_sandbox_enable (false) && !r_sandbox_check_path (path)) {
 		return -1;
 	}
 	return chdir (path);
