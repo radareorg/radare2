@@ -1041,6 +1041,10 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 	}
 
 	if (*input == '&') { // "=h&" "=&:9090" -> start in background using taskmode
+		if (r_sandbox_enable (false)) {
+			R_LOG_ERROR ("Background RAP servers are disabled in sandbox mode");
+			return;
+		}
 		if (priv->rapthread) {
 			R_LOG_INFO ("RAP Thread is already running");
 			R_LOG_INFO ("This is experimental and probably buggy. Use at your own risk");

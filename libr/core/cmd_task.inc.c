@@ -29,7 +29,7 @@ static int _cmd_tasks_impl(void *data, const char *input) {
 		break;
 	}
 	case ':': // "&:"
-		if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+		if (r_sandbox_enable (false)) {
 			R_LOG_ERROR ("The &: command is disabled in sandbox mode");
 			return 0;
 		}
@@ -42,7 +42,7 @@ static int _cmd_tasks_impl(void *data, const char *input) {
 		r_cons_cmd_help (core->cons, help_msg_amper);
 		break;
 	case 'b': { // "&b"
-		if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+		if (r_sandbox_enable (false)) {
 			R_LOG_ERROR ("The &b command is disabled in sandbox mode");
 			return 0;
 		}
@@ -57,7 +57,7 @@ static int _cmd_tasks_impl(void *data, const char *input) {
 			break;
 		}
 	case '&': { // "&&"
-		if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+		if (r_sandbox_enable (false)) {
 			R_LOG_ERROR ("The && command is disabled in sandbox mode");
 			return 0;
 		}
@@ -81,7 +81,7 @@ static int _cmd_tasks_impl(void *data, const char *input) {
 		break;
 	}
 	default: { // "& <COMMAND>" -> run command in background task
-		if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+		if (r_sandbox_enable (false)) {
 			R_LOG_ERROR ("The & command is disabled in sandbox mode");
 			return 0;
 		}
