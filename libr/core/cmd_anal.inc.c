@@ -2248,7 +2248,11 @@ static int cmd_afv(RCore *core, const char *str) {
 				free (ostr);
 				return false;
 			}
-			r_anal_var_display (core->anal, v1);
+			char *s = r_anal_var_display (core->anal, v1);
+			if (s) {
+				r_cons_print (core->cons, s);
+				free (s);
+			}
 		} else {
 			RVecAnalVarPtr *vars = r_anal_function_vars (core->anal, fcn);
 			RAnalVar **it;
@@ -2317,7 +2321,11 @@ static int cmd_afv(RCore *core, const char *str) {
 	case '\0':
 	case '*': // "afv[bsr]*"
 		if (fcn) {
-			r_anal_var_list_show (core->anal, fcn, type, str[1], NULL);
+			char *s = r_anal_var_list_show (core->anal, fcn, type, str[1], NULL);
+			if (s) {
+				r_cons_print (core->cons, s);
+				free (s);
+			}
 		} else {
 			R_LOG_ERROR ("Cannot find function");
 		}
@@ -2338,7 +2346,13 @@ static int cmd_afv(RCore *core, const char *str) {
 	case '?':
 		break;
 	case '.': // "afv[bsr]."
-		r_anal_var_list_show (core->anal, fcn, core->addr, 0, NULL);
+		{
+			char *s = r_anal_var_list_show (core->anal, fcn, core->addr, 0, NULL);
+			if (s) {
+				r_cons_print (core->cons, s);
+				free (s);
+			}
+		}
 		break;
 	case '-': // "afv[bsr]-"
 		if (!fcn) {

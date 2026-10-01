@@ -1232,7 +1232,7 @@ R_API int r_anal_var_count_args(RAnalFunction *fcn);
 R_API int r_anal_var_count_locals(RAnalFunction *fcn);
 
 /* vars // globals. not here  */
-R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var);
+R_API char *r_anal_var_display(RAnal *anal, RAnalVar *var);
 
 R_API int r_anal_function_complexity(RAnalFunction *fcn);
 R_API int r_anal_function_loops(RAnalFunction *fcn);
@@ -1431,7 +1431,7 @@ R_API int r_anal_reflines_middle(RAnal *anal, RList *list, ut64 addr, int len);
 R_API RAnalRefStr *r_anal_reflines_str(void *core, ut64 addr, int opts);
 R_API void r_anal_reflines_str_free(RAnalRefStr *refstr);
 /* TODO move to r_core */
-R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode, PJ* pj);
+R_API char *r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode, PJ* pj);
 R_API R_OWNED RVecAnalVarPtr *r_anal_var_vec(RAnal *anal, RAnalFunction *fcn, int kind);
 
 // calling conventions API
