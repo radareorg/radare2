@@ -3897,7 +3897,7 @@ static bool cb_config_log_cons(void *coreptr, void *nodeptr) {
 	RConfigNode *node = (RConfigNode *)nodeptr;
 	if (r_str_is_true (node->value)) {
 		r_config_set_b (core->config, "log.quiet", true);
-		r_log_add_callback (cb_log_cons, NULL);
+		r_log_add_callback (cb_log_cons, core);
 	} else {
 		r_config_set_b (core->config, "log.quiet", false);
 		r_log_del_callback (cb_log_cons);

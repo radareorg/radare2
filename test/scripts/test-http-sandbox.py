@@ -111,6 +111,10 @@ def check_http_sandbox(sandbox, background=False, local_grain="all", local_sandb
                 command("POST", "=h--")
                 command("GET", "=h-")
         assert command("GET", "?e still-running") == b"still-running\n"
+        if background and scoped:
+            output = command("POST", "e log.cons=true; e http.sandbox=false; e log.cons=false")
+            assert b"Key 'http.sandbox' is readonly" in output, output
+            assert command("GET", "e log.cons") == b"false\n"
         if not background and (not local_sandbox or local_grain == "all" or "exec" in local_grain.split(",")):
             command("GET", "=h--")
             stdout, stderr = process.communicate(timeout=5)
