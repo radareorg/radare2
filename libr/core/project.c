@@ -47,7 +47,7 @@ static char *get_project_script_path(RCore *core, const char *file) {
 		}
 	}
 	char *data = r_file_slurp (prjfile, NULL);
-	if (data && !r_str_startswith (data, "# r2 rdb project file")) {
+	if (data? !r_str_startswith (data, "# r2 rdb project file"): r_file_exists (prjfile)) {
 		R_FREE (prjfile);
 	}
 	free (data);
@@ -100,38 +100,33 @@ R_API void r_core_project_cat(RCore *core, const char *name) {
 }
 
 R_API int r_core_project_list(RCore *core, int mode) {
-	PJ *pj = NULL;
 	RListIter *iter;
-
 	char *foo, *path = r_file_abspath (r_config_get (core->config, "dir.projects"));
 	if (!path) {
 		return 0;
 	}
-	RList *list = r_sys_dir (path);
-	switch (mode) {
-	case 'j':
-		pj = r_core_pj_new (core);
-		if (!pj) {
-			break;
-		}
+	PJ *pj = mode == 'j'? r_core_pj_new (core): NULL;
+	if (mode == 'j' && !pj) {
+		free (path);
+		return 0;
+	}
+	if (pj) {
 		pj_a (pj);
-		r_list_foreach (list, iter, foo) {
-			// todo. escape string
-			if (r_core_is_project (core, foo)) {
+	}
+	RList *list = r_sys_dir (path);
+	r_list_foreach (list, iter, foo) {
+		if (r_core_is_project (core, foo)) {
+			if (pj) {
 				pj_s (pj, foo);
-			}
-		}
-		pj_end (pj);
-		r_cons_println (core->cons, pj_string (pj));
-		pj_free (pj);
-		break;
-	default:
-		r_list_foreach (list, iter, foo) {
-			if (r_core_is_project (core, foo)) {
+			} else {
 				r_cons_println (core->cons, foo);
 			}
 		}
-		break;
+	}
+	if (pj) {
+		pj_end (pj);
+		r_cons_println (core->cons, pj_string (pj));
+		pj_free (pj);
 	}
 	r_list_free (list);
 	free (path);
@@ -214,116 +209,112 @@ static char *project_extract_file(const char *rc_data) {
 	return NULL;
 }
 
+typedef struct {
+	RCore *core;
+	const char *data;
+} ProjectScript;
+
+static void *project_run_script(void *user) {
+	ProjectScript *script = user;
+	return r_core_cmd_lines (script->core, script->data)? user: NULL;
+}
+
 static bool r_core_project_load(RCore *core, const char *prj_name, const char *rcpath) {
-	if (!core) {
+	if (!core || R_STR_ISEMPTY (prj_name) || !rcpath) {
 		return false;
 	}
-	if (R_STR_ISEMPTY (prj_name)) {
-		prj_name = r_core_project_name (core, rcpath);
-	}
-	if (r_project_is_loaded (core->prj)) {
-		R_LOG_INFO ("o--;e prj.name=");
-	//	return false;
-	}
-	if (!r_project_open (core->prj, prj_name, rcpath)) {
-		return false;
-	}
+	const bool sandbox = r_sandbox_enable (false);
 	const bool cfg_fortunes = r_config_get_b (core->config, "cfg.fortunes");
 	const bool scr_interactive = r_cons_is_interactive (core->cons);
 	const bool scr_prompt = r_config_get_b (core->config, "scr.prompt");
-	if (r_config_get_b (core->config, "prj.new")) {
-		char *prj_dir = r_file_dirname (rcpath);
-		char *prj_bin = prj_dir? r_file_new (prj_dir, "prj.bin", NULL): NULL;
-		if (prj_bin && r_file_exists (prj_bin)) {
-			bool ret = r_core_cmdf (core, "prj load %s", prj_bin) != -1;
-			free (prj_bin);
-			char *prj_path = prj_dir;
-			if (prj_path) {
-				Rvc *vc = rvc_open (prj_path, RVC_TYPE_GIT);
-				core->prj->rvc = vc;
-			} else {
-				R_LOG_ERROR ("Failed to load rvc");
-			}
-			if (r_config_get_b (core->config, "prj.history")) {
-				char *file = r_file_new (prj_path, "history", NULL);
-				r_line_hist_free (core->cons->line); // R2_600 - hist_reset ?
-				r_line_hist_load (core->cons->line, file);
-				free (file);
-			}
-			free (prj_path);
-			r_config_set_b (core->config, "cfg.fortunes", cfg_fortunes);
-			r_config_set_b (core->config, "scr.interactive", scr_interactive);
-			r_config_set_b (core->config, "scr.prompt", scr_prompt);
-			r_config_bump (core->config, "asm.arch");
-			r_config_set (core->config, "prj.name", prj_name);
-			return ret;
+	char *prj_path = r_file_dirname (rcpath);
+	bool ret = false;
+	if (!sandbox && r_config_get_b (core->config, "prj.new")) {
+		char *prj_bin = prj_path? r_file_new (prj_path, "prj.bin", NULL): NULL;
+		bool exists = prj_bin && r_file_exists (prj_bin);
+		if (exists) {
+			ret = r_core_cmdf (core, "prj load %s", prj_bin) != -1;
+		} else {
+			R_LOG_WARN ("Binary project '%s' not found; falling back to legacy script", prj_bin? prj_bin: "prj.bin");
 		}
-		R_LOG_WARN ("Binary project '%s' not found; falling back to legacy script", prj_bin? prj_bin: "prj.bin");
 		free (prj_bin);
-		free (prj_dir);
+		if (exists) {
+			goto loaded;
+		}
 	}
 
-	// check if the target binary file exists before loading the project script
-	char *rc_abspath = r_file_abspath (rcpath);
-	char *rc_data = r_file_slurp (rc_abspath? rc_abspath: rcpath, NULL);
-	free (rc_abspath);
-	if (!rc_data) {
+	char *rc_data = r_file_slurp (rcpath, NULL);
+	if (!rc_data || !r_str_startswith (rc_data, "# r2 rdb project file")) {
 		R_LOG_ERROR ("Cannot read project script '%s'", rcpath);
+		free (rc_data);
+		free (prj_path);
 		return false;
 	}
-	char *prj_file = project_extract_file (rc_data);
+	char *prj_file = sandbox? NULL: project_extract_file (rc_data);
 	if (prj_file && !strstr (prj_file, "://") && !r_file_exists (prj_file)) {
 		R_LOG_ERROR ("File associated with the project is missing: %s", prj_file);
-		if (r_config_get_b (core->config, "prj.prompt") && r_cons_is_interactive (core->cons)) {
+		if (r_config_get_b (core->config, "prj.prompt") && scr_interactive) {
 			char *prompt = r_str_newf ("New path for '%s': ", prj_file);
 			char *new_path = r_cons_input (core->cons, prompt);
 			free (prompt);
 			if (R_STR_ISNOTEMPTY (new_path)) {
-				// replace old path with the new one in the rc script
 				char *old_o_line = r_str_newf ("o \"%s\"", prj_file);
 				char *new_o_line = r_str_newf ("o \"%s\"", new_path);
-				char *patched = r_str_replace (rc_data, old_o_line, new_o_line, 0);
+				rc_data = r_str_replace (rc_data, old_o_line, new_o_line, 0);
 				free (old_o_line);
 				free (new_o_line);
-				rc_data = patched;
 			}
 			free (new_path);
 		}
 	}
 	free (prj_file);
-
-	const bool sandy = r_config_get_b (core->config, "prj.sandbox");
-	bool ret = false;
-	if (sandy) {
-		int oldgrain = r_sandbox_grain (R_SANDBOX_GRAIN_DISK | R_SANDBOX_GRAIN_FILES);
-		r_sandbox_enable (true);
-		ret = r_core_cmd_lines (core, rc_data);
-		r_sandbox_disable (true);
-		r_sandbox_grain (oldgrain);
-	} else {
-		ret = r_core_cmd_lines (core, rc_data);
+	if (sandbox) {
+		char *line = rc_data, *out = rc_data;
+		while (*line) {
+			char *next = strchr (line, '\n');
+			size_t len = next? next + 1 - line: strlen (line);
+			// Reuse the current binary instead of replaying generated I/O commands.
+			if (*line != 'o' && !r_str_startswith (line, "'e prj.name = ")) {
+				memmove (out, line, len);
+				out += len;
+			}
+			line += len;
+		}
+		*out = 0;
+		if (core->prj->rvc) {
+			rvc_close (core->prj->rvc, false);
+			core->prj->rvc = NULL;
+		}
 	}
+	ProjectScript script = { core, rc_data };
+	ret = r_config_get_b (core->config, "prj.sandbox")
+		? r_sandbox_run (R_SANDBOX_GRAIN_DISK | R_SANDBOX_GRAIN_FILES, project_run_script, &script) != NULL
+		: r_core_cmd_lines (core, rc_data);
 	free (rc_data);
-	char *prj_path = r_file_dirname (rcpath);
-	if (prj_path) {
-		//check if the project uses git
-		Rvc *vc = rvc_open (prj_path, RVC_TYPE_GIT);
-		core->prj->rvc = vc;
-	} else {
-		R_LOG_ERROR ("Failed to load rvc");
-	}
-	if (r_config_get_b (core->config, "prj.history")) {
-		char *file = r_file_new (prj_path, "history", NULL);
-		r_line_hist_free (core->cons->line); // R2_600 - hist_reset ?
-		r_line_hist_load (core->cons->line, file);
-		free (file);
-	}
-	free (prj_path);
+loaded:
 	r_config_set_b (core->config, "cfg.fortunes", cfg_fortunes);
 	r_config_set_b (core->config, "scr.interactive", scr_interactive);
 	r_config_set_b (core->config, "scr.prompt", scr_prompt);
 	r_config_bump (core->config, "asm.arch");
-	r_config_set (core->config, "prj.name", prj_name);
+	if (ret) {
+		r_config_set (core->config, "prj.name", prj_name);
+		ret = !strcmp (r_config_get (core->config, "prj.name"), prj_name);
+	}
+	if (ret) {
+		free (core->prj->path);
+		core->prj->path = prj_path;
+		prj_path = NULL;
+		if (!sandbox) {
+			core->prj->rvc = rvc_open (core->prj->path, RVC_TYPE_GIT);
+			if (r_config_get_b (core->config, "prj.history")) {
+				char *file = r_file_new (core->prj->path, "history", NULL);
+				r_line_hist_free (core->cons->line);
+				r_line_hist_load (core->cons->line, file);
+				free (file);
+			}
+		}
+	}
+	free (prj_path);
 	return ret;
 }
 
@@ -337,62 +328,51 @@ static RThreadFunctionRet project_load_background(RThread *th) {
 }
 
 R_API RThread *r_core_project_load_bg(RCore *core, const char *prj_name, const char *rc_path) {
+	R_RETURN_VAL_IF_FAIL (core && rc_path, NULL);
 	ProjectState *ps = R_NEW0 (ProjectState);
 	ps->core = core;
-	ps->prj_name = strdup (prj_name);
+	ps->prj_name = r_core_project_name (core, R_STR_ISNOTEMPTY (prj_name)? prj_name: rc_path);
 	ps->rc_path = strdup (rc_path);
 	RThread *th = r_th_new (project_load_background, ps, false);
 	if (th) {
 		r_th_start (th);
 		char thname[32] = {0};
-		size_t thlen = R_MIN (strlen (prj_name), sizeof (thname) - 1);
-		r_str_ncpy (thname, prj_name, thlen);
+		size_t thlen = R_MIN (strlen (r_str_get (prj_name)), sizeof (thname) - 1);
+		r_str_ncpy (thname, r_str_get (prj_name), thlen);
 		r_th_setname (th, thname);
 	}
 	return th;
 }
 
 R_API bool r_core_project_open(RCore *core, const char *prj_path) {
-	RCons *cons = core->cons;
 	R_RETURN_VAL_IF_FAIL (core && !R_STR_ISEMPTY (prj_path), false);
-	bool interactive = r_config_get_b (core->config, "scr.interactive");
-	bool close_current_session = true;
-	bool ask_for_closing = true;
-	if (r_project_is_loaded (core->prj)) {
-		R_LOG_ERROR ("There's a project already opened");
-		ask_for_closing = false;
-		bool ccs = interactive? r_cons_yesno (cons, 'y', "Close current session? (Y/n)"): true;
-		if (!ccs) {
-			R_LOG_ERROR ("Project not loaded");
-			return false;
-		}
-		r_core_cmd0 (core, "o--");
-		r_core_cmd0 (core, "P-");
+	const bool sandbox = r_sandbox_enable (false);
+	if (sandbox && !core->io->desc) {
+		R_LOG_ERROR ("Open a binary before loading a sandboxed project");
+		return false;
 	}
 	char *prj_name = r_core_project_name (core, prj_path);
 	char *prj_script = get_project_script_path (core, prj_path);
-	if (!prj_script) {
+	bool ret = false;
+	if (!prj_name || !prj_script) {
 		R_LOG_ERROR ("Invalid project name '%s'", prj_path);
-		return false;
+		goto beach;
 	}
-	if (ask_for_closing && r_project_is_loaded (core->prj)) {
-		if (r_cons_is_interactive (core->cons)) {
-			close_current_session = interactive
-				? r_cons_yesno (cons, 'y', "Close current session? (Y/n)")
-				: true;
+	if (!sandbox) {
+		if (r_project_is_loaded (core->prj) && r_config_get_b (core->config, "scr.interactive")
+				&& !r_cons_yesno (core->cons, 'y', "Close current session? (Y/n)")) {
+			goto beach;
 		}
-	}
-	if (close_current_session) {
 		r_config_set (core->config, "prj.name", "");
 		r_core_cmd0 (core, "o--");
 	}
-	/* load sdb stuff in here */
-	bool ret = r_core_project_load (core, prj_name, prj_script);
-	free (prj_name);
-	free (prj_script);
+	ret = r_core_project_load (core, prj_name, prj_script);
 	if (ret) {
 		r_core_project_undirty (core);
 	}
+beach:
+	free (prj_name);
+	free (prj_script);
 	return ret;
 }
 
@@ -666,10 +646,18 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		ret = false;
 		goto beach;
 	}
+	const bool sandbox = r_sandbox_enable (false);
+	if (sandbox && core->prj->rvc) {
+		rvc_close (core->prj->rvc, false);
+		core->prj->rvc = NULL;
+	}
 	r_config_set (core->config, "prj.name", prj_name);
 	if (strcmp (r_config_get (core->config, "prj.name"), prj_name)) {
 		ret = false;
 		goto beach;
+	}
+	if (sandbox) {
+		goto saved;
 	}
 	if (r_config_get_b (core->config, "prj.new")) {
 		char *prj_file = r_file_new (prj_dir, "prj.bin", NULL);
@@ -732,6 +720,7 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	if (r_config_get_b (core->config, "prj.zip")) {
 		r_core_project_zip (core, prj_dir);
 	}
+saved:
 	free (core->prj->path);
 	core->prj->path = prj_dir;
 	prj_dir = NULL;

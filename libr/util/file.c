@@ -893,13 +893,7 @@ R_API bool r_file_touch(const char *file) {
 
 R_API bool r_file_dump(const char *file, const ut8 *buf, int len, bool append) {
 	R_RETURN_VAL_IF_FAIL (!R_STR_ISEMPTY (file), false);
-	FILE *fd;
-	if (append) {
-		fd = r_sandbox_fopen (file, "ab");
-	} else {
-		r_sys_truncate (file, 0);
-		fd = r_sandbox_fopen (file, "wb");
-	}
+	FILE *fd = r_sandbox_fopen (file, append? "ab": "wb");
 	if (!fd) {
 		R_LOG_ERROR ("Cannot open '%s' for writing", file);
 		return false;

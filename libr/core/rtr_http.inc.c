@@ -84,9 +84,14 @@ static void *http_command_run(void *user) {
 	return out;
 }
 
-static char *cmdstr(RCore *core, const char *cmd, bool capture, bool sandbox, int grain) {
+static void policy_fini(HttpSandboxPolicy *policy) {
+	free (policy->expression);
+	free (policy->projectdir);
+}
+
+static char *cmdstr(RCore *core, const char *cmd, bool capture, const HttpSandboxPolicy *policy) {
 	HttpCommand request = { core, cmd, capture };
-	return sandbox? r_sandbox_run (grain, http_command_run, &request): http_command_run (&request);
+	return policy->enabled? r_sandbox_run_path (policy->grain, policy->projectdir, http_command_run, &request): http_command_run (&request);
 }
 
 static void rtr_http_request_free(RSocketHTTPRequest *rs) {
@@ -120,7 +125,6 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 	const char *httpui = r_config_get (core->config, "http.ui");
 	const char *httpauthfile = r_config_get (core->config, "http.authfile");
 	const bool sandbox = policy->enabled;
-	const int grain = policy->grain;
 	char *pfile = NULL;
 
 	if (!r_file_is_directory (root)) {
@@ -205,6 +209,7 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 	r_config_readonly (newcfg, "http.sandbox");
 	r_config_readonly (newcfg, "http.sandbox.grain");
 	if (sandbox) {
+		r_config_readonly (newcfg, "dir.projects");
 		r_config_readonly (newcfg, "cfg.sandbox");
 		r_config_readonly (newcfg, "cfg.sandbox.grain");
 	}
@@ -453,9 +458,9 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 								out = NULL;
 							} else if (*cmd == ':') {
 								/* commands in /cmd/: starting with : do not show any output */
-								out = cmdstr (core, cmd + 1, false, sandbox, grain);
+								out = cmdstr (core, cmd + 1, false, policy);
 							} else {
-								out = cmdstr (core, cmd, true, sandbox, grain);
+								out = cmdstr (core, cmd, true, policy);
 							}
 
 							if (out) {
@@ -572,7 +577,7 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 			if (r_str_startswith (rs->path, "/cmd")) {
 				char *out = NULL;
 				if (rs->data && rs->data_length > 0) {
-					out = cmdstr (core, (const char *)rs->data, true, sandbox, grain);
+					out = cmdstr (core, (const char *)rs->data, true, policy);
 				}
 				if (out) {
 					char *res = r_str_uri_encode (out);
@@ -682,7 +687,7 @@ static RThreadFunctionRet r_core_rtr_http_thread(RThread *th) {
 	HttpRunResult ret = r_core_rtr_http_run (ht->core, ht->launch, ht->browse, ht->path, &ht->policy);
 	if (ret != HTTP_RUN_RESTART) {
 		R_FREE (ht->path);
-		free (ht->policy.expression);
+		policy_fini (&ht->policy);
 		free (ht);
 	}
 	return ret == HTTP_RUN_RESTART? R_TH_REPEAT: R_TH_STOP;
@@ -720,7 +725,8 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 		.grain = R_SANDBOX_GRAIN_ALL
 	};
 	const char *expression = r_config_get (core->config, "http.sandbox.grain");
-	policy.enabled = policy.configured || r_sandbox_enable (false);
+	const bool local_sandbox = r_sandbox_enable (false);
+	policy.enabled = policy.configured || local_sandbox;
 	if (policy.enabled) {
 		if (policy.configured && !r_sandbox_grain_parse (expression, &policy.grain)) {
 			R_LOG_ERROR ("Invalid HTTP sandbox permissions");
@@ -737,6 +743,12 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 	if (!policy.expression) {
 		return 1;
 	}
+	if (policy.enabled && !local_sandbox) {
+		const char *projectdir = r_config_get (core->config, "dir.projects");
+		if (R_STR_ISNOTEMPTY (projectdir) && r_sys_mkdirp (projectdir)) {
+			policy.projectdir = r_file_abspath (projectdir);
+		}
+	}
 	if (launch == '&') {
 #if USE_HTTP_THREADS
 		if (priv->httpthread) {
@@ -744,7 +756,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 			R_LOG_INFO ("This is experimental and probably buggy. Use at your own risk");
 			R_LOG_TODO ("Use different eval environ for scr. for the web");
 			R_LOG_TODO ("Visual mode should be enabled on local");
-			free (policy.expression);
+			policy_fini (&policy);
 		} else {
 			const char *tpath = r_str_trim_head_ro (path + 1);
 			HttpThread *ht = R_NEW0 (HttpThread);
@@ -760,7 +772,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 				r_th_free (priv->httpthread);
 				priv->httpthread = NULL;
 				free (ht->path);
-				free (ht->policy.expression);
+				policy_fini (&ht->policy);
 				free (ht);
 				return 1;
 			}
@@ -769,7 +781,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 		}
 		return 0;
 #else
-		free (policy.expression);
+		policy_fini (&policy);
 		while (*path == '&') {
 			path++;
 		}
@@ -779,6 +791,6 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 	do {
 		ret = r_core_rtr_http_run (core, launch, browse, path, &policy);
 	} while (ret == HTTP_RUN_RESTART);
-	free (policy.expression);
+	policy_fini (&policy);
 	return (ret == HTTP_RUN_ERROR) ? 1 : 0;
 }

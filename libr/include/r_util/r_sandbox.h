@@ -59,8 +59,10 @@ R_API int r_sandbox_grain(int mask);
 R_API bool r_sandbox_grain_parse(const char *R_NONNULL expr, int *R_NONNULL mask);
 R_API bool r_sandbox_check(int mask);
 R_API bool r_sandbox_check_localhost(const char *str);
-// Run synchronously with permissions intersected with this thread's current policy, without an OS sandbox.
-R_API void *r_sandbox_run(int grain, void *(*callback)(void *), void *user);
+typedef void *(*RSandboxCallback)(void *user);
+R_API void *r_sandbox_run(int grain, RSandboxCallback callback, void *user);
+R_API void *r_sandbox_run_path(int grain, R_UNOWNED const char *path, RSandboxCallback callback, void *user);
+R_API bool r_sandbox_check_writepath(const char *path);
 
 #ifdef __cplusplus
 }
