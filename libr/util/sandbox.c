@@ -28,6 +28,7 @@ static R_TH_LOCAL int G_graintype = R_SANDBOX_GRAIN_ALL;
 
 typedef struct {
 	int grain;
+	const char *path;
 } RSandboxScope;
 
 #if HAVE_TH_LOCAL || !WANT_THREADS
@@ -85,11 +86,18 @@ static bool sandbox_scope_set(RSandboxScope *scope) {
 
 #define R_SANDBOX_GUARD(x,y) if (!r_sandbox_check (x)) { return (y); }
 
-R_API void *r_sandbox_run(int grain, void *(*callback)(void *), void *user) {
+R_API void *r_sandbox_run(int grain, RSandboxCallback callback, void *user) {
+	return r_sandbox_run_path (grain, NULL, callback, user);
+}
+
+R_API void *r_sandbox_run_path(int grain, const char *path, RSandboxCallback callback, void *user) {
 	R_RETURN_VAL_IF_FAIL (callback, NULL);
 	RSandboxScope *previous = sandbox_scope_current ();
 	int allowed = previous? previous->grain: G_enabled? G_graintype: R_SANDBOX_GRAIN_ALL;
-	RSandboxScope scope = { .grain = grain & allowed };
+	RSandboxScope scope = {
+		.grain = grain & allowed,
+		.path = previous? previous->path: G_enabled? NULL: path
+	};
 	if (!sandbox_scope_set (&scope)) {
 		R_LOG_ERROR ("Cannot bind sandbox policy to this thread");
 		return NULL;
@@ -100,6 +108,44 @@ R_API void *r_sandbox_run(int grain, void *(*callback)(void *), void *user) {
 		abort ();
 	}
 	return result;
+}
+
+R_API bool r_sandbox_check_writepath(const char *path) {
+	RSandboxScope *scope = sandbox_scope_current ();
+	if (!scope || R_STR_ISEMPTY (scope->path) || R_STR_ISEMPTY (path)) {
+		return false;
+	}
+#if R2__UNIX__ && !__wasi__
+	struct stat st;
+	bool exists = !lstat (path, &st);
+	if (exists? !S_ISDIR (st.st_mode) && (!S_ISREG (st.st_mode) || st.st_nlink > 1): errno != ENOENT) {
+		return false;
+	}
+	char *resolved = NULL;
+	if (exists) {
+		resolved = realpath (path, NULL);
+	} else {
+		char *absolute = r_file_abspath (path);
+		char *parent = absolute? r_file_dirname (absolute): NULL;
+		char *directory = parent? realpath (*parent? parent: "/", NULL): NULL;
+		if (directory) {
+			resolved = r_str_newf ("%s%s%s", directory, strcmp (directory, "/")? "/": "", r_file_basename (absolute));
+		}
+		free (directory);
+		free (parent);
+		free (absolute);
+	}
+	size_t len = strlen (scope->path);
+	while (len > 1 && scope->path[len - 1] == '/') {
+		len--;
+	}
+	bool allowed = resolved && !strncmp (resolved, scope->path, len)
+		&& (!resolved[len] || resolved[len] == '/' || (len == 1 && scope->path[0] == '/'));
+	free (resolved);
+	return allowed;
+#else
+	return false;
+#endif
 }
 
 static bool inHomeWww(const char *path) {
@@ -514,17 +560,6 @@ R_API bool r_sandbox_creat(const char *path, int mode) {
 	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_DISK, false);
 	if (r_sandbox_enable (false)) {
 		return false; // creating files is not allowed in sandbox even with DISK grain
-#if 0
-		if (mode & O_CREAT) {
-			return -1;
-		}
-		if (mode & O_RDWR) {
-			return -1;
-		}
-		if (!r_sandbox_check_path (path)) {
-			return -1;
-		}
-#endif
 	}
 	int fd = open (path, O_CREAT | O_TRUNC | O_WRONLY, mode);
 	if (fd != -1) {
@@ -650,21 +685,16 @@ R_API int r_sandbox_open(const char *path, int perm, int mode) {
 
 R_API FILE *r_sandbox_fopen(const char *path, const char *mode) {
 	R_RETURN_VAL_IF_FAIL (path && mode, NULL);
-	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK, NULL);
 	FILE *ret = NULL;
-	char *epath = NULL;
-	if (r_sandbox_enable (false)) {
-		if (strchr (mode, 'w') || strchr (mode, 'a') || strchr (mode, '+')) {
-			return NULL;
-		}
-		epath = expand_home (path);
-		if (!r_sandbox_check_path (epath)) {
-			free (epath);
-			return NULL;
-		}
-	}
+	char *epath = expand_home (path);
 	if (!epath) {
-		epath = expand_home (path);
+		return NULL;
+	}
+	if (!r_sandbox_check_writepath (epath)
+			&& (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)
+				|| (r_sandbox_enable (false) && (strpbrk (mode, "wa+") || !r_sandbox_check_path (epath))))) {
+		free (epath);
+		return NULL;
 	}
 	if ((strchr (mode, 'w') || strchr (mode, 'a') || r_file_is_regular (epath))) {
 #if R2__WINDOWS__
@@ -710,14 +740,14 @@ R_API int r_sandbox_kill(int pid, int sig) {
 #if R2__WINDOWS__
 R_API HANDLE r_sandbox_opendir(const char *path, WIN32_FIND_DATAW *entry) {
 	R_RETURN_VAL_IF_FAIL (path, NULL);
-	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK, NULL);
-	wchar_t dir[MAX_PATH];
-	wchar_t *wcpath = 0;
-	if (r_sandbox_enable (0)) {
-		if (path && !r_sandbox_check_path (path)) {
+	if (!r_sandbox_check_writepath (path)) {
+		R_SANDBOX_GUARD (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK, NULL);
+		if (r_sandbox_enable (false) && !r_sandbox_check_path (path)) {
 			return NULL;
 		}
 	}
+	wchar_t dir[MAX_PATH];
+	wchar_t *wcpath = 0;
 	if (!(wcpath = r_utf8_to_utf16 (path))) {
 		return NULL;
 	}
@@ -728,9 +758,9 @@ R_API HANDLE r_sandbox_opendir(const char *path, WIN32_FIND_DATAW *entry) {
 #else
 R_API DIR* r_sandbox_opendir(const char *path) {
 	R_RETURN_VAL_IF_FAIL (path, NULL);
-	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK, NULL);
-	if (r_sandbox_enable (0)) {
-		if (path && !r_sandbox_check_path (path)) {
+	if (!r_sandbox_check_writepath (path)) {
+		R_SANDBOX_GUARD (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK, NULL);
+		if (r_sandbox_enable (false) && !r_sandbox_check_path (path)) {
 			return NULL;
 		}
 	}

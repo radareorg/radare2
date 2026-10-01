@@ -82,10 +82,25 @@ inspect and modify the loaded
 analysis state. For example, set `http.sandbox.grain=environ` before starting
 the server to permit environment access while keeping the other restrictions.
 
+When started from an unsandboxed local session, HTTP also permits file access
+inside `dir.projects`, captured as a canonical path at startup. Its default is
+the user's XDG `radare2/projects` directory. Projects can be
+listed, saved and loaded there; loading reuses the current binary and maps,
+and project scripts retain the HTTP sandbox restrictions. An already enabled
+local sandbox gains no additional filesystem access. This uses the existing
+path-based whitelist model and cannot prevent races with another local process
+replacing directories while a file is opened. The writable exception is currently
+available on UNIX only.
+
+Projects use `rc.r2` scripts by default (`prj.new=false`). Sandboxed HTTP
+saves and loads use these scripts even when `prj.new=true`; the optional
+`prj.bin` artifact is neither saved nor loaded in this mode.
+
 The HTTP session's sandbox settings are fixed when the server starts. Remote
 commands cannot disable them or reset the configuration. `cfg.sandbox` and
 `cfg.sandbox.grain` retain their local values and are read-only in this session;
-the separate `http.sandbox` settings describe the HTTP policy. Queuing commands
+`dir.projects` is also fixed. The separate `http.sandbox` settings describe the
+HTTP policy. Queuing commands
 for later execution remains blocked, including when `exec` is permitted.
 Restrictions apply only to the executing thread for the duration of each
 command, without changing the local sandbox state, permissions, or

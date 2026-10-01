@@ -36,6 +36,7 @@ typedef struct {
 	bool configured;
 	int grain;
 	char *expression;
+	char *projectdir; // Canonical dir.projects snapshot for this HTTP session.
 } HttpSandboxPolicy;
 
 typedef struct {

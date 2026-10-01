@@ -1025,7 +1025,12 @@ R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len) {
 R_API bool r_sys_mkdir(const char *dir) {
 	bool ret;
 
-	if (r_sandbox_enable (0)) {
+	if (r_sandbox_enable (false) && !r_sandbox_check_writepath (dir)) {
+#if R2__WINDOWS__
+		SetLastError (ERROR_ACCESS_DENIED);
+#else
+		errno = EACCES;
+#endif
 		return false;
 	}
 #if R2__WINDOWS__
@@ -1070,19 +1075,14 @@ R_API bool r_sys_mkdirp(const char *dir) {
 			break;
 		}
 		*ptr = 0;
-		if (!r_sys_mkdir (path) && r_sys_mkdir_failed ()) {
-#if 0
-			if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES)) {
-				R_LOG_ERROR ("fail '%s' of '%s'", path, dir);
-			}
-#endif
+		if (!r_file_is_directory (path) && !r_sys_mkdir (path) && r_sys_mkdir_failed ()) {
 			free (path);
 			return false;
 		}
 		*ptr = slash;
 		ptr++;
 	}
-	if (!r_sys_mkdir (path) && r_sys_mkdir_failed ()) {
+	if (!r_file_is_directory (path) && !r_sys_mkdir (path) && r_sys_mkdir_failed ()) {
 		ret = false;
 	}
 	free (path);
