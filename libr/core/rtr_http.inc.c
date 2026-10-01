@@ -642,6 +642,23 @@ the_end:
 	r_list_free (so.authtokens);
 	free (pfile);
 	r_socket_free (s);
+	// Config callbacks may borrow strings owned by the HTTP session.
+#define HTTP_REBIND_CONFIG(field, key) do { \
+	RConfigNode *node = r_config_node_get (newcfg, key); \
+	if (node && (field) == node->value) { \
+		node = r_config_node_get (origcfg, key); \
+		(field) = node? node->value: NULL; \
+	} \
+} while (0)
+	HTTP_REBIND_CONFIG (core->anal->opt.defprefix, "anal.prefix.default");
+	HTTP_REBIND_CONFIG (core->anal->opt.prefix_marker, "anal.prefix.marker");
+	HTTP_REBIND_CONFIG (core->cmdtimes, "cmd.times");
+	HTTP_REBIND_CONFIG (core->print->cfmt, "cmd.hexcursor");
+	HTTP_REBIND_CONFIG (core->cons->teefile, "file.output");
+	HTTP_REBIND_CONFIG (core->cons->teefile, "scr.tee");
+	HTTP_REBIND_CONFIG (core->dbg->options.malloc, "dbg.malloc");
+	HTTP_REBIND_CONFIG (core->bin->prefix, "bin.prefix");
+#undef HTTP_REBIND_CONFIG
 	r_config_free (newcfg);
 	if (newblk != origblk) {
 		free (newblk);
