@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake, nibble, defragger, ret2libc */
+/* radare - LGPL - Copyright 2009-2026 - pancake, nibble, defragger, ret2libc */
 
 // R2R db/cmd/cmd_aflxj db/cmd/cmd_aflxv db/cmd/cmd_ax
 
@@ -388,10 +388,10 @@ static void r_anal_xrefs_list_table(RAnal *anal, RVecAnalRef *anal_refs, const c
 	r_table_free (table);
 }
 
-static void r_anal_xrefs_list_json(RAnal *anal, RVecAnalRef *anal_refs) {
+static char *r_anal_xrefs_list_json(RAnal *anal, RVecAnalRef *anal_refs) {
 	PJ *pj = anal->coreb.pjWithEncoding (anal->coreb.core);
 	if (!pj) {
-		return;
+		return NULL;
 	}
 
 	pj_a (pj);
@@ -428,30 +428,36 @@ static void r_anal_xrefs_list_json(RAnal *anal, RVecAnalRef *anal_refs) {
 	}
 
 	pj_end (pj);
-
-	anal->cb_printf ("%s\n", pj_string (pj));
-	pj_free (pj);
+	return pj_drain (pj);
 }
 
-static void r_anal_xrefs_list_hex(RAnal *anal, RVecAnalRef *anal_refs) {
+static char *r_anal_xrefs_list_hex(RAnal *anal, RVecAnalRef *anal_refs) {
+	RStrBuf sb;
+	r_strbuf_init (&sb);
 	RAnalRef *ref;
 	R_VEC_FOREACH (anal_refs, ref) {
 		const int t = R_ANAL_REF_TYPE_MASK (ref->type);
 		// TODO: export/import the read-write-exec information
-		anal->cb_printf ("ax%c 0x%"PFMT64x" 0x%"PFMT64x"\n", t? t: ' ', ref->addr, ref->at);
+		r_strbuf_appendf (&sb, "ax%c 0x%"PFMT64x" 0x%"PFMT64x"\n", t? t: ' ', ref->addr, ref->at);
 	}
+	return r_strbuf_drain (&sb);
 }
 
-static void r_anal_xrefs_list_mapping(RAnal *anal, RVecAnalRef *anal_refs) {
+static char *r_anal_xrefs_list_mapping(RAnal *anal, RVecAnalRef *anal_refs) {
+	RStrBuf sb;
+	r_strbuf_init (&sb);
 	RAnalRef *ref;
 	R_VEC_FOREACH (anal_refs, ref) {
 		RAnalRefType t = R_ANAL_REF_TYPE_MASK (ref->type);
-		anal->cb_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x"  %s:%s\n", ref->at, ref->addr,
+		r_strbuf_appendf (&sb, "0x%08"PFMT64x" -> 0x%08"PFMT64x"  %s:%s\n", ref->at, ref->addr,
 			r_anal_ref_type_tostring (t), r_anal_ref_perm_tostring (ref));
 	}
+	return r_strbuf_drain (&sb);
 }
 
-static void r_anal_xrefs_list_plaintext(RAnal *anal, RVecAnalRef *anal_refs) {
+static char *r_anal_xrefs_list_plaintext(RAnal *anal, RVecAnalRef *anal_refs) {
+	RStrBuf sb;
+	r_strbuf_init (&sb);
 	RAnalRef *ref;
 	R_VEC_FOREACH (anal_refs, ref) {
 		int t = R_ANAL_REF_TYPE_MASK (ref->type);
@@ -462,52 +468,54 @@ static void r_anal_xrefs_list_plaintext(RAnal *anal, RVecAnalRef *anal_refs) {
 		char *name = anal->coreb.getNameDelta (anal->coreb.core, ref->at);
 		if (name) {
 			r_str_replace_ch (name, ' ', 0, true);
-			anal->cb_printf ("%40s", name);
+			r_strbuf_appendf (&sb, "%40s", name);
 			free (name);
 		} else {
-			anal->cb_printf ("%40s", "?");
+			r_strbuf_appendf (&sb, "%40s", "?");
 		}
 
-		anal->cb_printf (" 0x%"PFMT64x" > %4s:%s > 0x%"PFMT64x, ref->at,
+		r_strbuf_appendf (&sb, " 0x%"PFMT64x" > %4s:%s > 0x%"PFMT64x, ref->at,
 			r_anal_ref_type_tostring (t), r_anal_ref_perm_tostring (ref), ref->addr);
 
 		name = anal->coreb.getNameDelta (anal->coreb.core, ref->addr);
 		if (name) {
 			r_str_replace_ch (name, ' ', 0, true);
-			anal->cb_printf (" %s\n", name);
+			r_strbuf_appendf (&sb, " %s\n", name);
 			free (name);
 		} else {
-			anal->cb_printf ("\n");
+			r_strbuf_appendf (&sb, "\n");
 		}
 	}
+	return r_strbuf_drain (&sb);
 }
 
-R_API void r_anal_xrefs_list(RAnal *anal, int rad, const char *arg, RTable *t) {
-	R_RETURN_IF_FAIL (anal && anal->rm);
+R_API char *r_anal_xrefs_list(RAnal *anal, int rad, const char *arg, RTable *t) {
+	R_RETURN_VAL_IF_FAIL (anal && anal->rm, NULL);
 
 	RVecAnalRef *anal_refs = ref_manager_get_refs (anal->rm, UT64_MAX);
 	if (!anal_refs) {
 		R_LOG_DEBUG ("Could not list xrefs");
-		return;
+		return NULL;
 	}
 
 	RVecAnalRef_sort (anal_refs, compare_ref); // XXX not needed?
 
+	char *result = NULL;
 	switch (rad) {
 	case ',':
 		r_anal_xrefs_list_table (anal, anal_refs, arg, t);
 		break;
 	case 'j':
-		r_anal_xrefs_list_json (anal, anal_refs);
+		result = r_anal_xrefs_list_json (anal, anal_refs);
 		break;
 	case '*':
-		r_anal_xrefs_list_hex (anal, anal_refs);
+		result = r_anal_xrefs_list_hex (anal, anal_refs);
 		break;
 	case 'q':
-		r_anal_xrefs_list_mapping (anal, anal_refs);
+		result = r_anal_xrefs_list_mapping (anal, anal_refs);
 		break;
 	case '\0':
-		r_anal_xrefs_list_plaintext (anal, anal_refs);
+		result = r_anal_xrefs_list_plaintext (anal, anal_refs);
 		break;
 	default:
 		R_LOG_DEBUG ("Unsupported xrefs list format: %c", rad);
@@ -515,6 +523,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad, const char *arg, RTable *t) {
 	}
 
 	RVecAnalRef_free (anal_refs);
+	return result;
 }
 
 R_API ut64 r_anal_xrefs_count(RAnal *anal) {

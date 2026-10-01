@@ -11813,7 +11813,11 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case ',': // "ax,"
 		{
 			RTable *table = (*input == ',')? r_core_table_new (core, "xrefs"): NULL;
-			r_anal_xrefs_list (core->anal, input[0], *input? r_str_trim_head_ro (input + 1): "", table);
+			char *s = r_anal_xrefs_list (core->anal, input[0], *input? r_str_trim_head_ro (input + 1): "", table);
+			if (s) {
+				r_cons_print (core->cons, s);
+				free (s);
+			}
 		}
 		break;
 	case '.':
@@ -11878,7 +11882,11 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			break;
 		case 'j': // "axlj"
 			// XXX axj != axlj r_core_call (core, "axj");
-			r_anal_xrefs_list (core->anal, 'j', 0, NULL);
+			char *s = r_anal_xrefs_list (core->anal, 'j', 0, NULL);
+			if (s) {
+				r_cons_print (core->cons, s);
+				free (s);
+			}
 			break;
 		case 'c': // "axlc"
 			{
