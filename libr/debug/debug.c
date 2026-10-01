@@ -392,7 +392,6 @@ R_API RDebug *r_debug_new(int hard) {
 	dbg->tree = r_tree_new ();
 	dbg->tracenodes = sdb_new0 ();
 	dbg->trace = r_debug_trace_new ();
-	dbg->cb_printf = (void *)printf;
 	dbg->reg = r_reg_new ();
 	dbg->num = r_num_new (num_callback, str_callback, dbg);
 	dbg->current = NULL;

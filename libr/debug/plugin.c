@@ -81,17 +81,18 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 	return dbg->current;
 }
 
-R_API bool r_debug_plugin_list(RDebug *dbg, int mode) {
-	R_RETURN_VAL_IF_FAIL (dbg, false);
+R_API R_OWNED char *r_debug_plugin_list(RDebug *dbg, int mode) {
+	R_RETURN_VAL_IF_FAIL (dbg, NULL);
 	char spaces[16];
 	PJ *pj = NULL;
 	if (mode == 'j') {
 		pj = dbg->pj;
 		if (!pj) {
-			return false;
+			return NULL;
 		}
 		pj_a (pj);
 	}
+	RStrBuf *sb = r_strbuf_new ("");
 
 	RListIter *iter;
 	RDebugPluginSession *ds;
@@ -103,13 +104,13 @@ R_API bool r_debug_plugin_list(RDebug *dbg, int mode) {
 			spaces[sp] = 0;
 		}
 		if (mode == 'q') {
-			dbg->cb_printf ("%s\n", meta.name);
+			r_strbuf_appendf (sb, "%s\n", meta.name);
 		} else if (mode == 'j') {
 			pj_o (pj);
 			r_lib_meta_pj (pj, &meta);
 			pj_end (pj);
 		} else {
-			dbg->cb_printf ("%s %s %s%s\n",
+			r_strbuf_appendf (sb, "%s %s %s%s\n",
 				(ds == dbg->current)? "o": "-",
 				meta.name, spaces, meta.desc);
 		}
@@ -117,9 +118,9 @@ R_API bool r_debug_plugin_list(RDebug *dbg, int mode) {
 	}
 	if (mode == 'j') {
 		pj_end (pj);
-		dbg->cb_printf ("%s\n", pj_string (pj));
+		r_strbuf_appendf (sb, "%s\n", pj_string (pj));
 	}
-	return true;
+	return r_strbuf_drain (sb);
 }
 
 R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *plugin) {

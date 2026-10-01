@@ -68,12 +68,11 @@ R_API int r_debug_desc_write(RDebug *dbg, int fd, ut64 addr, int len) {
 	return false;
 }
 
-R_API int r_debug_desc_list(RDebug *dbg, bool show_commands) {
-	R_RETURN_VAL_IF_FAIL (dbg, 0);
+R_API R_OWNED char *r_debug_desc_list(RDebug *dbg, bool show_commands) {
+	R_RETURN_VAL_IF_FAIL (dbg, NULL);
 	RListIter *iter;
 	RDebugDesc *p;
-	int count = 0;
-
+	RStrBuf *sb = r_strbuf_new ("");
 	RDebugPlugin *plugin = R_UNWRAP2 (dbg->current, plugin);
 	if (plugin && plugin->desc.list) {
 		RList *list = plugin->desc.list (dbg->pid);
@@ -82,12 +81,12 @@ R_API int r_debug_desc_list(RDebug *dbg, bool show_commands) {
 				// Skip over std streams
 				// TODO: option to select which fd to start at?
 				if (p->fd < 3) {
-					dbg->cb_printf ("#dd %s\n", p->path);
+					r_strbuf_appendf (sb, "#dd %s\n", p->path);
 				} else {
-					dbg->cb_printf ("dd %s\n", p->path);
+					r_strbuf_appendf (sb, "dd %s\n", p->path);
 				}
 			} else {
-				dbg->cb_printf ("%d 0x%" PFMT64x " %c%c%c %s\n", p->fd, p->off,
+				r_strbuf_appendf (sb, "%d 0x%" PFMT64x " %c%c%c %s\n", p->fd, p->off,
 						(p->perm & R_PERM_R)? 'r': '-',
 						(p->perm & R_PERM_W)? 'w': '-',
 						p->type, p->path);
@@ -95,5 +94,5 @@ R_API int r_debug_desc_list(RDebug *dbg, bool show_commands) {
 		}
 		r_list_free (list);
 	}
-	return count;
+	return r_strbuf_drain (sb);
 }

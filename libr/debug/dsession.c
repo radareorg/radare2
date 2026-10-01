@@ -331,8 +331,8 @@ R_API bool r_debug_session_restore(RDebug *dbg, ut64 checkpoint_id) {
 	return true;
 }
 
-R_API void r_debug_session_list(RDebug *dbg, int mode) {
-	R_RETURN_IF_FAIL (dbg && dbg->session);
+R_API R_OWNED char *r_debug_session_list(RDebug *dbg, int mode) {
+	R_RETURN_VAL_IF_FAIL (dbg && dbg->session, NULL);
 	RDebugSession *session = dbg->session;
 	RDebugCheckpoint *chkpt;
 	size_t index = 0;
@@ -354,20 +354,21 @@ R_API void r_debug_session_list(RDebug *dbg, int mode) {
 			pj_end (pj);
 		}
 		pj_end (pj);
-		dbg->cb_printf ("%s\n", pj_string (pj));
+		char *s = r_str_newf ("%s\n", pj_string (pj));
 		pj_free (pj);
-		return;
+		return s;
 	}
+	RStrBuf *sb = r_strbuf_new ("");
 	R_VEC_FOREACH (session->checkpoints, chkpt) {
 		if (chkpt->parent_id == UT64_MAX) {
-			dbg->cb_printf ("%"PFMT64u" parent=- cnum=%d%s%s%s\n",
+			r_strbuf_appendf (sb, "%"PFMT64u" parent=- cnum=%d%s%s%s\n",
 				chkpt->id,
 				chkpt->cnum,
 				chkpt->id == session->current_checkpoint_id? " current": "",
 				chkpt->label? " label=": "",
 				chkpt->label? chkpt->label: "");
 		} else {
-			dbg->cb_printf ("%"PFMT64u" parent=%"PFMT64u" cnum=%d%s%s%s\n",
+			r_strbuf_appendf (sb, "%"PFMT64u" parent=%"PFMT64u" cnum=%d%s%s%s\n",
 				chkpt->id,
 				chkpt->parent_id,
 				chkpt->cnum,
@@ -376,24 +377,27 @@ R_API void r_debug_session_list(RDebug *dbg, int mode) {
 				chkpt->label? chkpt->label: "");
 		}
 	}
+	return r_strbuf_drain (sb);
 }
 
-R_API void r_debug_session_list_memory(RDebug *dbg) {
+R_API R_OWNED char *r_debug_session_list_memory(RDebug *dbg) {
+	R_RETURN_VAL_IF_FAIL (dbg, NULL);
 	RListIter *iter;
 	RDebugMap *map;
 	r_debug_map_sync (dbg);
+	RStrBuf *sb = r_strbuf_new ("");
 	r_list_foreach (dbg->maps, iter, map) {
 		if ((map->perm & R_PERM_RW) == R_PERM_RW) {
 			RDebugSnap *snap = r_debug_snap_map (dbg, map);
 			if (!snap) {
-				return;
+				break;
 			}
 			int hashsz = 0;
 			ut8 *hash = r_debug_snap_get_hash (dbg, snap, &hashsz);
 			if (hash && hashsz > 0) {
 				char *hexstr = r_hex_bin2strdup (hash, hashsz);
 				if (hexstr) {
-					dbg->cb_printf ("%s: %s\n", snap->name, hexstr);
+					r_strbuf_appendf (sb, "%s: %s\n", snap->name, hexstr);
 					free (hexstr);
 				}
 				free (hash);
@@ -401,6 +405,7 @@ R_API void r_debug_session_list_memory(RDebug *dbg) {
 		// 	r_debug_snap_free (snap);
 		}
 	}
+	return r_strbuf_drain (sb);
 }
 
 R_API bool r_debug_session_add_reg_change(RDebugSession *session, int arena, ut64 offset, ut64 data) {

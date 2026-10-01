@@ -7433,7 +7433,7 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 			pj_o (pj);
 		}
 		// XXX detect which one is current usage
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 16, pj, mode2, use_color);
+		print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 16, pj, mode2, use_color));
 	}
 #if 0
 	if (mode == '=') {
@@ -7450,7 +7450,7 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 		}
 	}
 #endif
-	r_debug_reg_list (core->dbg, type, bits, pj, mode2, use_color);
+	print_owned (core, r_debug_reg_list (core->dbg, type, bits, pj, mode2, use_color));
 	if (mode == 'j') {
 		if (mode2 == 'J') {
 			pj_end (pj);
@@ -7514,7 +7514,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		__tableRegList (core, core->anal->reg, str + 1);
 		break;
 	case 'e': // "are"
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 64, NULL, 'e', NULL);
+		print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 64, NULL, 'e', NULL));
 		break;
 	case '0': // "ar0"
 		r_reg_arena_zero (core->anal->reg);
@@ -7795,13 +7795,13 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		cmd_reg_vector (core, core->anal->reg, str, false, help_msg_arv);
 		break;
 	case 'd': // "ard"
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, core->anal->config->bits,
-			NULL, 3, use_color); // XXX detect which one is current usage
+		print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, core->anal->config->bits,
+			NULL, 3, use_color)); // XXX detect which one is current usage
 		break;
 	case 'o': // "aro"
 		r_reg_arena_swap (core->dbg->reg, false);
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, core->anal->config->bits,
-			NULL, 0, use_color); // XXX detect which one is current usage
+		print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, core->anal->config->bits,
+			NULL, 0, use_color)); // XXX detect which one is current usage
 		r_reg_arena_swap (core->dbg->reg, false);
 		break;
 	case '=': // "ar="

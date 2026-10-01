@@ -69,6 +69,11 @@ static int bb_cmpaddr(const void *_a, const void *_b) {
 
 static void cmd_debug_reg(RCore *core, const char *str);
 
+static void print_owned(RCore *core, R_OWNED char *s) {
+	r_cons_print (core->cons, r_str_get (s));
+	free (s);
+}
+
 R_API ut8 *r_core_readblock(RCore *core, ut64 size) {
 	if (size == 0) {
 		size = core->blocksize;

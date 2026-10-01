@@ -2747,7 +2747,6 @@ R_API bool r_core_init(RCore *core) {
 	//	r_reg_arena_push (core->dbg->reg); // create a 2 level register state stack
 	//	core->dbg->anal->reg = core->anal->reg; // XXX: dupped instance.. can cause lost pointerz
 	core->io->cb_printf = r_cons_gprintf;
-	core->dbg->cb_printf = r_cons_gprintf;
 	core->dbg->ev = core->ev;
 	core->autocomplete = R_NEW0 (RCoreAutocomplete);
 	r_core_plugins_init (core->rcmd);

@@ -31,3 +31,30 @@ EXPECT=<<EOF
 \      `==< 0x100003fa4 06:001d      b 0x100003f98
 EOF
 RUN
+
+NAME=dt list formats
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 90 @ 0x10
+wx 90 @ 0x20
+dtj
+dt+ 0x10
+dt+ 0x20
+dtj
+dt*
+dtq
+dt
+EOF
+EXPECT=<<EOF
+{"tag":0,"traces":[]}
+{"tag":0,"traces":[{"addr":16,"tag":0,"times":1,"count":16,"size":1},{"addr":32,"tag":0,"times":1,"count":32,"size":1}]}
+dt+ 0x10 1
+dt+ 0x20 1
+0x10
+0x20
+0x00000010 size=1 count=16 times=1 tag=0
+0x00000020 size=1 count=32 times=1 tag=0
+EOF
+RUN

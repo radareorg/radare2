@@ -93,8 +93,8 @@ static bool is_mandatory(RRegItem *item, const char *pcname, const char *spname)
 	return true;
 }
 
-R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, const char *use_color) {
-	R_RETURN_VAL_IF_FAIL (dbg && dbg->reg, false);
+R_API R_OWNED char *r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, const char *use_color) {
+	R_RETURN_VAL_IF_FAIL (dbg && dbg->reg, NULL);
 	int delta, cols, n = 0;
 	const char *fmt, *fmt2, *kwhites;
 	RPrint *pr = NULL;
@@ -104,7 +104,7 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 	ut64 diff;
 	char strvalue[256];
 	bool isJson = tolower (rad) == 'j';
-	R_RETURN_VAL_IF_FAIL (!isJson || (isJson && pj), false);
+	R_RETURN_VAL_IF_FAIL (!isJson || pj, NULL);
 
 	if (dbg->coreb.core) {
 		pr = ((RCore*)dbg->coreb.core)->print;
@@ -145,10 +145,11 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 	dbg->creg = NULL;
 	RList *list = r_reg_get_list (dbg->reg, type);
 	if (!list) {
-		return false;
+		return NULL;
 	}
+	RStrBuf *sb = r_strbuf_new ("");
 	if (rad == 1 || rad == '*') {
-		dbg->cb_printf ("fs+%s\n", R_FLAGS_FS_REGISTERS);
+		r_strbuf_appendf (sb, "fs+%s\n", R_FLAGS_FS_REGISTERS);
 	}
 	const char *pcname = r_reg_alias_getname (dbg->reg, R_REG_ALIAS_PC);
 	const char *spname = r_reg_alias_getname (dbg->reg, R_REG_ALIAS_SP);
@@ -240,21 +241,21 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 		}
 		switch (rad) {
 		case '-':
-			dbg->cb_printf ("f-%s\n", item->name);
+			r_strbuf_appendf (sb, "f-%s\n", item->name);
 			break;
 		case 'R':
-			dbg->cb_printf ("aer %s = %s\n", item->name, strvalue);
+			r_strbuf_appendf (sb, "aer %s = %s\n", item->name, strvalue);
 			break;
 		case 1:
 		case '*':
-			dbg->cb_printf ("f %s %d %s\n", item->name, item->size / 8, strvalue);
+			r_strbuf_appendf (sb, "f %s %d %s\n", item->name, item->size / 8, strvalue);
 			break;
 		case 'e':
-			dbg->cb_printf ("%s%s,%s,:=", isfirst?"":",", strvalue, item->name);
+			r_strbuf_appendf (sb, "%s%s,%s,:=", isfirst?"":",", strvalue, item->name);
 			isfirst = false;
 			break;
 		case '.':
-			dbg->cb_printf ("dr %s=%s\n", item->name, strvalue);
+			r_strbuf_appendf (sb, "dr %s=%s\n", item->name, strvalue);
 			break;
 		case '=':
 			{
@@ -268,7 +269,7 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 				}
 				strcpy (whites, kwhites);
 				if (delta && use_color) {
-					dbg->cb_printf ("%s", use_color);
+					r_strbuf_append (sb, use_color);
 				}
 				snprintf (content, sizeof (content),
 						fmt2, "", item->name, "", strvalue, "");
@@ -279,13 +280,13 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 				memset (whites, ' ', sizeof (whites));
 				whites[len] = 0;
 
-				dbg->cb_printf (fmt2, a, item->name, b, strvalue,
+				r_strbuf_appendf (sb, fmt2, a, item->name, b, strvalue,
 						((n+1)%cols)? whites: "\n");
 				if (highlight) {
-					dbg->cb_printf (Color_INVERT_RESET);
+					r_strbuf_append (sb, Color_INVERT_RESET);
 				}
 				if (delta && use_color) {
-					dbg->cb_printf (Color_RESET);
+					r_strbuf_append (sb, Color_RESET);
 				}
 			}
 			break;
@@ -295,33 +296,33 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 				char woot[512];
 				snprintf (woot, sizeof (woot),
 						" was 0x%"PFMT64x" delta %d\n", diff, delta);
-				dbg->cb_printf (fmt, item->name, strvalue, woot);
+				r_strbuf_appendf (sb, fmt, item->name, strvalue, woot);
 			}
 			break;
 		default:
 			if (delta && use_color) {
-				dbg->cb_printf ("%s", use_color);
-				dbg->cb_printf (fmt, item->name, strvalue, Color_RESET"\n");
+				r_strbuf_append (sb, use_color);
+				r_strbuf_appendf (sb, fmt, item->name, strvalue, Color_RESET"\n");
 			} else {
-				dbg->cb_printf (fmt, item->name, strvalue, "\n");
+				r_strbuf_appendf (sb, fmt, item->name, strvalue, "\n");
 			}
 			break;
 		}
 		n++;
 	}
 	if (rad == 'e') {
-		dbg->cb_printf ("\n");
+		r_strbuf_append (sb, "\n");
 	}
 	if (rad == 1 || rad == '*') {
-		dbg->cb_printf ("fs-\n");
+		r_strbuf_append (sb, "fs-\n");
 	}
 beach:
 	if (isJson) {
 		pj_end (pj);
 	} else if (n > 0 && (rad == 2 || rad == '=') && ((n % cols))) {
-		dbg->cb_printf ("\n");
+		r_strbuf_append (sb, "\n");
 	}
-	return n != 0;
+	return r_strbuf_drain (sb);
 }
 
 R_API bool r_debug_reg_set(RDebug *dbg, const char *name, ut64 num) {
