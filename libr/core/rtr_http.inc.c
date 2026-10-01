@@ -201,7 +201,9 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 	newcfg = r_config_clone (core->config);
 	core->config = newcfg;
 	r_config_set_b (newcfg, "http.sandbox", policy->configured);
+	r_config_set (newcfg, "http.sandbox.grain", policy->expression);
 	r_config_readonly (newcfg, "http.sandbox");
+	r_config_readonly (newcfg, "http.sandbox.grain");
 	if (sandbox) {
 		r_config_readonly (newcfg, "cfg.sandbox");
 		r_config_readonly (newcfg, "cfg.sandbox.grain");
@@ -663,6 +665,7 @@ static RThreadFunctionRet r_core_rtr_http_thread(RThread *th) {
 	HttpRunResult ret = r_core_rtr_http_run (ht->core, ht->launch, ht->browse, ht->path, &ht->policy);
 	if (ret != HTTP_RUN_RESTART) {
 		R_FREE (ht->path);
+		free (ht->policy.expression);
 		free (ht);
 	}
 	return ret == HTTP_RUN_RESTART? R_TH_REPEAT: R_TH_STOP;
@@ -699,15 +702,23 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 		.configured = r_config_get_b (core->config, "http.sandbox"),
 		.grain = R_SANDBOX_GRAIN_ALL
 	};
+	const char *expression = r_config_get (core->config, "http.sandbox.grain");
 	policy.enabled = policy.configured || r_sandbox_enable (false);
-	policy.grain = policy.configured? R_SANDBOX_GRAIN_NONE: R_SANDBOX_GRAIN_ALL;
 	if (policy.enabled) {
+		if (policy.configured && !r_sandbox_grain_parse (expression, &policy.grain)) {
+			R_LOG_ERROR ("Invalid HTTP sandbox permissions");
+			return 1;
+		}
 		ut32 permission;
 		for (permission = 1; permission; permission <<= 1) {
 			if ((policy.grain & permission) && !r_sandbox_check (permission)) {
 				policy.grain &= ~permission;
 			}
 		}
+	}
+	policy.expression = strdup (expression);
+	if (!policy.expression) {
+		return 1;
 	}
 	if (launch == '&') {
 #if USE_HTTP_THREADS
@@ -716,6 +727,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 			R_LOG_INFO ("This is experimental and probably buggy. Use at your own risk");
 			R_LOG_TODO ("Use different eval environ for scr. for the web");
 			R_LOG_TODO ("Visual mode should be enabled on local");
+			free (policy.expression);
 		} else {
 			const char *tpath = r_str_trim_head_ro (path + 1);
 			HttpThread *ht = R_NEW0 (HttpThread);
@@ -731,6 +743,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 				r_th_free (priv->httpthread);
 				priv->httpthread = NULL;
 				free (ht->path);
+				free (ht->policy.expression);
 				free (ht);
 				return 1;
 			}
@@ -739,6 +752,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 		}
 		return 0;
 #else
+		free (policy.expression);
 		while (*path == '&') {
 			path++;
 		}
@@ -748,5 +762,6 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 	do {
 		ret = r_core_rtr_http_run (core, launch, browse, path, &policy);
 	} while (ret == HTTP_RUN_RESTART);
+	free (policy.expression);
 	return (ret == HTTP_RUN_ERROR) ? 1 : 0;
 }

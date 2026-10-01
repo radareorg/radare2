@@ -9,7 +9,8 @@ import urllib.parse
 import urllib.request
 
 
-def check_http_sandbox(sandbox, background=False, local_grain="all", local_sandbox=False):
+def check_http_sandbox(sandbox, background=False, local_grain="all", local_sandbox=False,
+                       http_grain="none", temporary_grain=None):
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
         port = sock.getsockname()[1]
@@ -18,9 +19,13 @@ def check_http_sandbox(sandbox, background=False, local_grain="all", local_sandb
             "-e", f"cfg.sandbox.grain={local_grain}"]
     if not sandbox:
         args += ["-e", "http.sandbox=false"]
+    if http_grain != "none":
+        args += ["-e", f"http.sandbox.grain={http_grain}"]
     if local_sandbox:
         args += ["-c", "e cfg.sandbox=true"]
     start = "=h&" if background else "=h"
+    if temporary_grain:
+        start += f" @e:http.sandbox.grain={temporary_grain}"
     args += ["-c", start]
     if background:
         args += ["-c", "sleep 30"]
@@ -30,15 +35,18 @@ def check_http_sandbox(sandbox, background=False, local_grain="all", local_sandb
     process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
     base = f"http://127.0.0.1:{port}"
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    request_grain = temporary_grain or http_grain
     scoped = sandbox or local_sandbox
 
     def permitted(name):
-        return not sandbox and (not local_sandbox or local_grain == "all" or name in local_grain.split(","))
+        def includes(grain):
+            return grain == "all" or name in grain.split(",")
+        return (not sandbox or includes(request_grain)) and (not local_sandbox or includes(local_grain))
 
     exec_allowed = permitted("exec")
     environ_allowed = permitted("environ")
     local_config = f"{str(local_sandbox).lower()}\n{local_grain}\n".encode()
-    http_config = f"{str(sandbox).lower()}\n".encode()
+    http_config = f"{str(sandbox).lower()}\n{request_grain}\n".encode()
 
     def command(method, text):
         url = base + "/cmd/"
@@ -74,12 +82,13 @@ def check_http_sandbox(sandbox, background=False, local_grain="all", local_sandb
             count = command(method, "%R2_HTTP_SANDBOX_PROBE~?")
             assert count == (b"1\n" if environ_allowed else b"0\n"), count
             assert command(method, "e cfg.sandbox; e cfg.sandbox.grain") == local_config
-            assert command(method, "e http.sandbox") == http_config
+            assert command(method, "e http.sandbox; e http.sandbox.grain") == http_config
 
         assert command("GET", ":!!echo HTTP_EXECUTED") == b""
         if scoped:
             for method in ("GET", "POST"):
-                for setting in ("http.sandbox=false", "cfg.sandbox=false", "cfg.sandbox.grain=none", "cfg.sandbox.grain=all"):
+                for setting in ("http.sandbox=false", "http.sandbox.grain=all", "http.sandbox.grain=none",
+                                "cfg.sandbox=false", "cfg.sandbox.grain=none", "cfg.sandbox.grain=all"):
                     command(method, "e " + setting)
                 command(method, "e-")
                 tasks = {task["id"] for task in json.loads(command(method, "&j"))}
@@ -91,13 +100,13 @@ def check_http_sandbox(sandbox, background=False, local_grain="all", local_sandb
                 assert (b"HTTP_EXECUTED" in command(method, "!!echo HTTP_EXECUTED")) == exec_allowed
                 assert command(method, "%R2_HTTP_SANDBOX_PROBE~?") == (b"1\n" if environ_allowed else b"0\n")
                 assert command(method, "e cfg.sandbox; e cfg.sandbox.grain") == local_config
-                assert command(method, "e http.sandbox") == http_config
-            for text in ("e cfg.sandbox.grain=all", "e cfg.sandbox=false", "e-",
+                assert command(method, "e http.sandbox; e http.sandbox.grain") == http_config
+            for text in ("e http.sandbox.grain=all", "e cfg.sandbox.grain=all", "e cfg.sandbox=false", "e-",
                          "&:f HTTP_DEFERRED", "& f HTTP_DEFERRED"):
                 assert command("GET", ":" + text) == b""
             assert (b"HTTP_EXECUTED" in command("GET", "!!echo HTTP_EXECUTED")) == exec_allowed
             assert command("GET", "e cfg.sandbox; e cfg.sandbox.grain") == local_config
-            assert command("GET", "e http.sandbox") == http_config
+            assert command("GET", "e http.sandbox; e http.sandbox.grain") == http_config
             if background and permitted("network"):
                 command("POST", "=h--")
                 command("GET", "=h-")
@@ -116,13 +125,16 @@ def check_http_sandbox(sandbox, background=False, local_grain="all", local_sandb
         if process.poll() is None:
             process.terminate()
             process.communicate(timeout=5)
-    print(f"PASS http.sandbox={sandbox}, background={background}, "
-          f"local_sandbox={local_sandbox}, local_grain={local_grain}")
+    print(f"PASS http.sandbox={sandbox}, grain={request_grain}, background={background}, "
+          f"local_sandbox={local_sandbox}, local_grain={local_grain}, temporary_grain={temporary_grain}")
 
 
 if __name__ == "__main__":
     check_http_sandbox(True)
     check_http_sandbox(False)
+    check_http_sandbox(True, http_grain="environ", local_grain="disk")
+    check_http_sandbox(True, http_grain="exec", local_grain="environ")
     check_http_sandbox(True, background=True)
-    check_http_sandbox(True, local_sandbox=True, local_grain="socket,network,environ")
+    check_http_sandbox(True, http_grain="all", local_sandbox=True, local_grain="socket,network,environ")
     check_http_sandbox(False, background=True, local_sandbox=True, local_grain="socket,network,environ")
+    check_http_sandbox(True, background=True, temporary_grain="environ")

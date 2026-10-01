@@ -198,3 +198,62 @@ EXPECT=<<EOF
 !disk,!exec,!environ
 EOF
 RUN
+
+NAME=HTTP sandbox grain is independent of local sandbox
+FILE=-
+CMDS=<<EOF
+e http.sandbox.grain
+e cfg.sandbox.grain=environ
+e http.sandbox.grain=all,!exec
+e http.sandbox.grain
+e cfg.sandbox
+e cfg.sandbox.grain
+EOF
+EXPECT=<<EOF
+none
+all,!exec
+false
+environ
+EOF
+RUN
+
+NAME=HTTP sandbox grain rejects malformed values without side effects
+FILE=-
+CMDS=<<EOF
+e http.sandbox.grain=environ
+e http.sandbox.grain=exec,
+e http.sandbox.grain
+e http.sandbox.grain=bogus
+e http.sandbox.grain
+e http.sandbox.grain=exec,,environ
+e http.sandbox.grain
+e http.sandbox.grain=!
+e http.sandbox.grain
+e cfg.sandbox
+e cfg.sandbox.grain
+EOF
+EXPECT=<<EOF
+environ
+environ
+environ
+environ
+false
+all
+EOF
+RUN
+
+NAME=HTTP sandbox grain assignment does not change active local permissions
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain=none
+e cfg.sandbox=true
+e http.sandbox.grain=exec
+e http.sandbox.grain
+e cfg.sandbox.grain=exec
+e cfg.sandbox.grain
+EOF
+EXPECT=<<EOF
+exec
+none
+EOF
+RUN
