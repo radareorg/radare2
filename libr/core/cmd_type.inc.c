@@ -676,7 +676,7 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 	case 'r': // "tn*"
 	case 0: // "tn"
 		{
-			char *s = r_anal_noreturn_list (core->anal, *input? 1: 0);
+			char *s = r_anal_noreturn_list (core->anal, *input);
 			r_cons_print (core->cons, s);
 			free (s);
 		}

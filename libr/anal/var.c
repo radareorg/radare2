@@ -2254,17 +2254,14 @@ R_API char *r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int 
 	if (!pj && mode == 'j') {
 		return NULL;
 	}
-	const bool json_mode = (mode == 'j');
 	RStrBuf sb;
-	if (!json_mode) {
-		r_strbuf_init (&sb);
-	}
-	if (json_mode) {
+	r_strbuf_init (&sb);
+	if (mode == 'j') {
 		pj_a (pj);
 	}
 	RVecAnalVarPtr *vec = r_anal_var_vec (anal, fcn, kind);
 	if (!vec) {
-		if (json_mode) {
+		if (mode == 'j') {
 			pj_end (pj);
 		}
 		return NULL;
@@ -2408,12 +2405,11 @@ R_API char *r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int 
 	if (mode == '*' && !RVecAnalVarPtr_empty (vec)) {
 		r_strbuf_append (&sb, "s-\n");
 	}
-	if (json_mode) {
+	RVecAnalVarPtr_free (vec);
+	if (mode == 'j') {
 		pj_end (pj);
-		RVecAnalVarPtr_free (vec);
 		return NULL;
 	}
-	RVecAnalVarPtr_free (vec);
 	return r_strbuf_drain_nofree (&sb);
 }
 

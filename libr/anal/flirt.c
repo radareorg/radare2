@@ -1377,17 +1377,15 @@ R_API char *r_sign_flirt_dump(const RAnal *anal, const char *flirt_file) {
 	}
 	RFlirt *f = flirt_new (anal, flirt_buf);
 	RFlirtNode *node = flirt_parse (f);
-	char *result = NULL;
-	if (node) {
-		RStrBuf *sb = r_strbuf_new ("");
-		print_node (sb, node, -1);
-		result = r_strbuf_drain (sb);
-		node_free (node);
-	} else {
-		R_LOG_ERROR ("We encountered a problem while parsing the file");
-	}
 	flirt_free (f);
-	return result;
+	if (!node) {
+		R_LOG_ERROR ("We encountered a problem while parsing the file");
+		return NULL;
+	}
+	RStrBuf *sb = r_strbuf_new ("");
+	print_node (sb, node, -1);
+	node_free (node);
+	return r_strbuf_drain (sb);
 }
 
 // parses a flirt signature file and scan the currently opened file with it

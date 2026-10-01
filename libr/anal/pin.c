@@ -122,30 +122,23 @@ R_API const char *r_anal_pin_call(RAnal *a, ut64 addr) {
 	return NULL;
 }
 
-typedef struct {
-	RAnal *a;
-	RStrBuf sb;
-} ListCtx;
-
 static bool cb_list(void *user, const char *k, const char *v) {
-	ListCtx *ctx = (ListCtx*)user;
+	RStrBuf *sb = (RStrBuf*)user;
 	if (*k == '0') {
 		// bind
-		r_strbuf_appendf (&ctx->sb, "'@%s'aep %s\n", k, v);
+		r_strbuf_appendf (sb, "'@%s'aep %s\n", k, v);
 	} else {
 		if (r_str_startswith (k, "cmd.")) {
-			r_strbuf_appendf (&ctx->sb, "'aep %s=%s\n", k + 4, v);
+			r_strbuf_appendf (sb, "'aep %s=%s\n", k + 4, v);
 		} else {
-			r_strbuf_appendf (&ctx->sb, "'aep %s\n", k);
+			r_strbuf_appendf (sb, "'aep %s\n", k);
 		}
 	}
 	return true;
 }
 
 R_API char *r_anal_pin_list(RAnal *a) {
-	ListCtx ctx;
-	ctx.a = a;
-	r_strbuf_init (&ctx.sb);
-	sdb_foreach (DB, cb_list, &ctx);
-	return r_strbuf_drain_nofree (&ctx.sb);
+	RStrBuf *sb = r_strbuf_new ("");
+	sdb_foreach (DB, cb_list, sb);
+	return r_strbuf_drain (sb);
 }

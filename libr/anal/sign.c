@@ -1966,9 +1966,7 @@ static bool listCB(RSignItem *it, void *user) {
 		pj_end (ctx->pj);
 	}
 	// Collisions
-	if (it->collisions) {
-		list_sign_list (ctx->sb, it->collisions, ctx->pj, ctx->format, R_SIGN_COLLISIONS, it->name);
-	} else if (ctx->format == 'j') {
+	if (it->collisions || ctx->format == 'j') {
 		list_sign_list (ctx->sb, it->collisions, ctx->pj, ctx->format, R_SIGN_COLLISIONS, it->name);
 	}
 

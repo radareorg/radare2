@@ -347,13 +347,8 @@ static void meta_print(RAnal *a, RStrBuf *sb, RAnalMetaItem *d, ut64 start, ut64
 						s = strdup (pstr);
 					}
 					if (rad) {
-						if (!strcmp (type, "CCu")) {
-							r_strbuf_appendf (sb, "%s base64:%s @ 0x%08" PFMT64x "\n",
-								type, s, start);
-						} else {
-							r_strbuf_appendf (sb, "%s base64:%s @ 0x%08" PFMT64x "\n",
-								type, s, start);
-						}
+						r_strbuf_appendf (sb, "%s base64:%s @ 0x%08" PFMT64x "\n",
+							type, s, start);
 					} else {
 						if (!strcmp (type, "CCu")) {
 							char *mys = r_str_escape (pstr);
@@ -505,10 +500,9 @@ R_API void r_meta_print_list_at(RAnal *a, ut64 addr, int rad, const char *tq, RT
 			meta_print (a, sb, node->data, node->start, ns, rad, NULL, true);
 		}
 		RVecIntervalNodePtr_free (nodes);
-		char *s = r_strbuf_drain (sb);
 		RCore *core = a->coreb.core;
-		r_cons_print (core->cons, s);
-		free (s);
+		r_cons_print (core->cons, r_strbuf_get (sb));
+		r_strbuf_free (sb);
 	}
 }
 
@@ -516,7 +510,6 @@ static void print_meta_list(RAnal *a, int type, int rad, ut64 addr, ut64 from, u
 	RCore *core = a->coreb.core;
 	RCons *cons = core->cons;
 	PJ *pj = NULL;
-	RStrBuf *sb = NULL;
 	if (rad == ',') {
 		if (!t) {
 			t = r_table_new ("meta", NULL);
@@ -533,9 +526,8 @@ static void print_meta_list(RAnal *a, int type, int rad, ut64 addr, ut64 from, u
 			return;
 		}
 		pj_a (pj);
-	} else if (!t) {
-		sb = r_strbuf_new ("");
 	}
+	RStrBuf *sb = r_strbuf_new ("");
 
 	RAnalFunction *fcn = NULL;
 	if (addr != UT64_MAX) {
@@ -570,11 +562,8 @@ static void print_meta_list(RAnal *a, int type, int rad, ut64 addr, ut64 from, u
 		}
 	}
 beach:
-	if (sb) {
-		char *s = r_strbuf_drain (sb);
-		r_cons_print (cons, s);
-		free (s);
-	}
+	r_cons_print (cons, r_strbuf_get (sb));
+	r_strbuf_free (sb);
 	if (t && tq) {
 		if (!r_table_query (t, tq)) {
 			pj_free (pj);
