@@ -82,10 +82,14 @@ static int inline output(RCore *core, RasignOptions *conf) {
 	ut64 oaddr = core->addr; // R2_600 - r_sign_list should take addr as arg
 	core->addr = UT64_MAX;
 	if (conf->rad) {
-		r_sign_list (anal, '*');
+		char *list = r_sign_list (anal, '*');
+		r_cons_print (core->cons, list);
+		free (list);
 	}
 	if (conf->json) {
-		r_sign_list (anal, 'j');
+		char *list = r_sign_list (anal, 'j');
+		r_cons_print (core->cons, list);
+		free (list);
 	}
 	core->addr = oaddr;
 	// write sigs to file
@@ -195,7 +199,11 @@ static RList *get_ar_file_uris(const char *fname) {
 
 static int dump_flirt(const char *ifile) {
 	RCore *core = opencore (NULL);
-	r_sign_flirt_dump (core->anal, ifile);
+	char *dump = r_sign_flirt_dump (core->anal, ifile);
+	if (dump) {
+		printf ("%s", dump);
+		free (dump);
+	}
 	r_cons_flush (core->cons);
 	r_core_free (core);
 	return 0;

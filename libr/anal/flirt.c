@@ -601,7 +601,7 @@ static bool module_match_buffer(RAnal *anal, const RFlirtModule *module, ut8 *b,
 			next_module_function->name = r_str_newf ("flirt.%s", name);
 			anal->flb.set (anal->flb.f, next_module_function->name,
 				next_module_function->addr, next_module_function_size);
-			anal->cb_printf ("Found %s\n", next_module_function->name);
+			R_LOG_INFO ("Found %s", next_module_function->name);
 			free (name);
 		}
 	}
@@ -1369,24 +1369,23 @@ static inline void flirt_free(RFlirt *f) {
 }
 
 // dump a flirt signature content on screen
-R_API void r_sign_flirt_dump(const RAnal *anal, const char *flirt_file) {
+R_API char *r_sign_flirt_dump(const RAnal *anal, const char *flirt_file) {
 	RBuffer *flirt_buf = r_buf_new_from_file (flirt_file);
 	if (!flirt_buf) {
 		R_LOG_ERROR ("Can't slurp %s", flirt_file);
-		return;
+		return NULL;
 	}
 	RFlirt *f = flirt_new (anal, flirt_buf);
 	RFlirtNode *node = flirt_parse (f);
-	if (node) {
-		RStrBuf *sb = r_strbuf_new ("");
-		print_node (sb, node, -1);
-		anal->cb_printf ("%s", r_strbuf_get (sb));
-		r_strbuf_free (sb);
-		node_free (node);
-	} else {
-		R_LOG_ERROR ("We encountered a problem while parsing the file");
-	}
 	flirt_free (f);
+	if (!node) {
+		R_LOG_ERROR ("We encountered a problem while parsing the file");
+		return NULL;
+	}
+	RStrBuf *sb = r_strbuf_new ("");
+	print_node (sb, node, -1);
+	node_free (node);
+	return r_strbuf_drain (sb);
 }
 
 // parses a flirt signature file and scan the currently opened file with it

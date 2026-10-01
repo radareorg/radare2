@@ -2248,7 +2248,11 @@ static int cmd_afv(RCore *core, const char *str) {
 				free (ostr);
 				return false;
 			}
-			r_anal_var_display (core->anal, v1);
+			char *s = r_anal_var_display (core->anal, v1);
+			if (s) {
+				r_cons_println (core->cons, s);
+				free (s);
+			}
 		} else {
 			RVecAnalVarPtr *vars = r_anal_function_vars (core->anal, fcn);
 			RAnalVar **it;
@@ -2317,7 +2321,11 @@ static int cmd_afv(RCore *core, const char *str) {
 	case '\0':
 	case '*': // "afv[bsr]*"
 		if (fcn) {
-			r_anal_var_list_show (core->anal, fcn, type, str[1], NULL);
+			char *s = r_anal_var_list_show (core->anal, fcn, type, str[1], NULL);
+			if (s) {
+				r_cons_print (core->cons, s);
+				free (s);
+			}
 		} else {
 			R_LOG_ERROR ("Cannot find function");
 		}
@@ -2338,7 +2346,13 @@ static int cmd_afv(RCore *core, const char *str) {
 	case '?':
 		break;
 	case '.': // "afv[bsr]."
-		r_anal_var_list_show (core->anal, fcn, core->addr, 0, NULL);
+		{
+			char *s = r_anal_var_list_show (core->anal, fcn, core->addr, 0, NULL);
+			if (s) {
+				r_cons_print (core->cons, s);
+				free (s);
+			}
+		}
 		break;
 	case '-': // "afv[bsr]-"
 		if (!fcn) {
@@ -9683,7 +9697,11 @@ static void cmd_aep(RCore *core, const char *input) {
 		break;
 	case '*':
 	case 0:
-		r_anal_pin_list (core->anal);
+		{
+			char *s = r_anal_pin_list (core->anal);
+			r_cons_print (core->cons, s);
+			free (s);
+		}
 		break;
 	case '-':
 		if (input[2] == '*') {
@@ -9942,7 +9960,11 @@ static void cmd_aet(RCore *core, const char *input) {
 		}
 		break;
 	case 0: // "aet"
-		r_esil_trace_list (core->anal->esil, 0);
+		if (esil) {
+			char *s = r_esil_trace_list (esil, 0);
+			r_cons_print (core->cons, s);
+			free (s);
+		}
 		break;
 	default:
 		r_core_return_invalid_command (core, "aet", input[1]);
@@ -11809,7 +11831,11 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case ',': // "ax,"
 		{
 			RTable *table = (*input == ',')? r_core_table_new (core, "xrefs"): NULL;
-			r_anal_xrefs_list (core->anal, input[0], *input? r_str_trim_head_ro (input + 1): "", table);
+			char *s = r_anal_xrefs_list (core->anal, input[0], *input? r_str_trim_head_ro (input + 1): "", table);
+			if (s) {
+				r_cons_print (core->cons, s);
+				free (s);
+			}
 		}
 		break;
 	case '.':
@@ -11873,8 +11899,14 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			r_cons_cmd_help (core->cons, help_msg_axl);
 			break;
 		case 'j': // "axlj"
-			// XXX axj != axlj r_core_call (core, "axj");
-			r_anal_xrefs_list (core->anal, 'j', 0, NULL);
+			{
+				// XXX axj != axlj r_core_call (core, "axj");
+				char *s = r_anal_xrefs_list (core->anal, 'j', 0, NULL);
+				if (s) {
+					r_cons_print (core->cons, s);
+					free (s);
+				}
+			}
 			break;
 		case 'c': // "axlc"
 			{

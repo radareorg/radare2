@@ -452,8 +452,8 @@ R_API REsilTrace *r_esil_trace_new(REsil *esil);
 R_API void r_esil_trace_free(REsilTrace *trace);
 #include <r_arch.h>
 R_API void r_esil_trace_op(REsil *esil, struct r_anal_op_t *op);
-R_API void r_esil_trace_list(REsil *esil, int format);
-R_API void r_esil_trace_show(REsil *esil, int idx, int format);
+R_API char *r_esil_trace_list(REsil *esil, int format);
+R_API char *r_esil_trace_show(REsil *esil, int idx, int format);
 R_API void r_esil_trace_restore(REsil *esil, int idx);
 R_API ut64 r_esil_trace_loopcount(REsilTrace *etrace, ut64 addr);
 R_API void r_esil_trace_loopcount_increment(REsilTrace *etrace, ut64 addr);

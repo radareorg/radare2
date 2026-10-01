@@ -21,7 +21,7 @@ typedef void (*RCoreDebugSyscallHit)(void *core);
 typedef char* (*RCoreCmdStr)(void *core, const char *cmd);
 typedef char* (*RCoreBindHelp)(void *core, RCoreHelpMessage help);
 typedef char* (*RCoreCmdStrF)(void *core, const char *cmd, ...);
-typedef void (*RCorePuts)(const char *cmd);
+typedef void (*RCorePuts)(void *core, const char *str);
 typedef void (*RCoreSetArchBits)(void *core, const char *arch, int bits);
 typedef bool (*RCoreIsMapped)(void *core, ut64 addr, int perm);
 typedef bool (*RCoreDebugMapsSync)(void *core);

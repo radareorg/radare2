@@ -123,20 +123,22 @@ R_API const char *r_anal_pin_call(RAnal *a, ut64 addr) {
 }
 
 static bool cb_list(void *user, const char *k, const char *v) {
-	RAnal *a = (RAnal*)user;
+	RStrBuf *sb = (RStrBuf*)user;
 	if (*k == '0') {
 		// bind
-		a->cb_printf ("'@%s'aep %s\n", k, v);
+		r_strbuf_appendf (sb, "'@%s'aep %s\n", k, v);
 	} else {
 		if (r_str_startswith (k, "cmd.")) {
-			a->cb_printf ("'aep %s=%s\n", k + 4, v);
+			r_strbuf_appendf (sb, "'aep %s=%s\n", k + 4, v);
 		} else {
-			a->cb_printf ("'aep %s\n", k);
+			r_strbuf_appendf (sb, "'aep %s\n", k);
 		}
 	}
 	return true;
 }
 
-R_API void r_anal_pin_list(RAnal *a) {
-	sdb_foreach (DB, cb_list, a);
+R_API char *r_anal_pin_list(RAnal *a) {
+	RStrBuf *sb = r_strbuf_new ("");
+	sdb_foreach (DB, cb_list, sb);
+	return r_strbuf_drain (sb);
 }

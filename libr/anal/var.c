@@ -78,8 +78,8 @@ static RVecAnalVarPtr *anal_var_ptr_clone(RVecAnalVarPtr *src) {
 }
 
 
-R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var) {
-	R_RETURN_VAL_IF_FAIL (anal && var, false);
+R_API char *r_anal_var_display(RAnal *anal, RAnalVar *var) {
+	R_RETURN_VAL_IF_FAIL (anal && var, NULL);
 	const char *type = var->type;
 	if (r_str_startswith (var->type, "signed ")) {
 		type = var->type + 7;
@@ -88,17 +88,18 @@ R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var) {
 	RRegItem *ri;
 	if (!fmt) {
 		R_LOG_ERROR ("type:%s doesn't exist", var->type);
-		return false;
+		return NULL;
 	}
 	bool usePxr = !strcmp (var->type, "int"); // hacky but useful
+	char *result = NULL;
 	switch (var->kind) {
 	case R_ANAL_VAR_KIND_REG:
 		ri = r_reg_index_get (anal->reg, var->delta);
 		if (ri) {
 			if (usePxr) {
-				anal->cb_printf ("pxr $w @r:%s\n", ri->name);
+				result = r_str_newf ("pxr $w @r:%s", ri->name);
 			} else {
-				anal->cb_printf ("pf r (%s)\n", ri->name);
+				result = r_str_newf ("pf r (%s)", ri->name);
 			}
 		} else {
 			R_LOG_ERROR ("register '%s' not found", var->type);
@@ -111,9 +112,9 @@ R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var) {
 			const char sign = real_delta >= 0 ? '+' : '-';
 			const char *bpreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
 			if (usePxr) {
-				anal->cb_printf ("pxr $w @%s%c0x%x\n", bpreg, sign, udelta);
+				result = r_str_newf ("pxr $w @%s%c0x%x", bpreg, sign, udelta);
 			} else {
-				anal->cb_printf ("pf %s @%s%c0x%x\n", fmt, bpreg, sign, udelta);
+				result = r_str_newf ("pf %s @%s%c0x%x", fmt, bpreg, sign, udelta);
 			}
 		}
 		break;
@@ -122,15 +123,15 @@ R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var) {
 			ut32 udelta = R_ABS (var->delta + var->fcn->maxstack);
 			const char *spreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
 			if (usePxr) {
-				anal->cb_printf ("pxr $w @%s+0x%x\n", spreg, udelta);
+				result = r_str_newf ("pxr $w @%s+0x%x", spreg, udelta);
 			} else {
-				anal->cb_printf ("pf %s @ %s+0x%x\n", fmt, spreg, udelta);
+				result = r_str_newf ("pf %s @ %s+0x%x", fmt, spreg, udelta);
 			}
 		}
 		break;
 	}
 	free (fmt);
-	return true;
+	return result;
 }
 
 static const char * const int_type(int size) {
@@ -2248,11 +2249,13 @@ R_API RList *r_anal_function_get_var_fields(RAnalFunction *fcn, int kind) {
 	return list;
 }
 
-R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode, PJ *pj) {
-	R_RETURN_IF_FAIL (anal && fcn);
+R_API char *r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode, PJ *pj) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn, NULL);
 	if (!pj && mode == 'j') {
-		return;
+		return NULL;
 	}
+	RStrBuf sb;
+	r_strbuf_init (&sb);
 	if (mode == 'j') {
 		pj_a (pj);
 	}
@@ -2261,11 +2264,11 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 		if (mode == 'j') {
 			pj_end (pj);
 		}
-		return;
+		return NULL;
 	}
 	//s- at the end of the loop
 	if (mode == '*' && !RVecAnalVarPtr_empty (vec)) {
-		anal->cb_printf ("s 0x%" PFMT64x "\n", fcn->addr);
+		r_strbuf_appendf (&sb, "s 0x%" PFMT64x "\n", fcn->addr);
 	}
 	if (kind == R_ANAL_VAR_KIND_REG) {
 		assign_reg_argnums (anal, fcn, vec);
@@ -2286,10 +2289,10 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 					R_LOG_ERROR ("Register not found");
 					break;
 				}
-				anal->cb_printf ("'afv%c %s %s %s\n",
+				r_strbuf_appendf (&sb, "'afv%c %s %s %s\n",
 					kind, i->name, var->name, var->type);
 			} else {
-				anal->cb_printf ("'afv%c %"PFMT64d" %s %s\n", kind,
+				r_strbuf_appendf (&sb, "'afv%c %"PFMT64d" %s %s\n", kind,
 					r_anal_var_frame_delta (anal, fcn, kind, var->delta),
 					var->name, var->type);
 			}
@@ -2361,11 +2364,11 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 				int delta = var->delta + fcn->bp_off;
 				const char *bpreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
 				if (var->isarg) {
-					anal->cb_printf ("arg %s %s @ %s+0x%x\n",
+					r_strbuf_appendf (&sb, "arg %s %s @ %s+0x%x\n",
 						var->type, var->name, bpreg? bpreg: "BP", delta);
 				} else {
 					char sign = (-var->delta <= fcn->bp_off) ? '+' : '-';
-					anal->cb_printf ("var %s %s @ %s%c0x%x\n",
+					r_strbuf_appendf (&sb, "var %s %s @ %s%c0x%x\n",
 						var->type, var->name, bpreg? bpreg: "BP",
 						sign, R_ABS (delta));
 				}
@@ -2377,7 +2380,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 					R_LOG_ERROR ("Register not found");
 					break;
 				}
-				anal->cb_printf ("%s %s %s @ %s\n",
+				r_strbuf_appendf (&sb, "%s %s %s @ %s\n",
 					var->isarg ? "arg" : "var", var->type, var->name, i->name);
 				}
 				break;
@@ -2387,10 +2390,10 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 				const char *spreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
 				if (!var->isarg) {
 					char sign = (-var->delta <= fcn->maxstack) ? '+' : '-';
-					anal->cb_printf ("var %s %s @ %s%c0x%x\n",
+					r_strbuf_appendf (&sb, "var %s %s @ %s%c0x%x\n",
 						var->type, var->name, spreg? spreg: "SP", sign, R_ABS (delta));
 				} else {
-					anal->cb_printf ("arg %s %s @ %s+0x%x\n",
+					r_strbuf_appendf (&sb, "arg %s %s @ %s+0x%x\n",
 						var->type, var->name, spreg? spreg: "SP", delta);
 
 				}
@@ -2400,12 +2403,14 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 		}
 	}
 	if (mode == '*' && !RVecAnalVarPtr_empty (vec)) {
-		anal->cb_printf ("s-\n");
-	}
-	if (mode == 'j') {
-		pj_end (pj);
+		r_strbuf_append (&sb, "s-\n");
 	}
 	RVecAnalVarPtr_free (vec);
+	if (mode == 'j') {
+		pj_end (pj);
+		return NULL;
+	}
+	return r_strbuf_drain_nofree (&sb);
 }
 
 R_API void r_anal_function_vars_cache_init(RAnal *anal, RAnalFcnVarsCache *cache, RAnalFunction *fcn) {

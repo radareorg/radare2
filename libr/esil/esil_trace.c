@@ -415,46 +415,23 @@ R_API void r_esil_trace_restore(REsil *esil, int idx) {
 	ht_up_foreach (trace->memory, restore_memory_cb, esil);
 }
 
-static void print_access(PrintfCallback p, int idx, REsilTraceAccess *a, int format) {
+static void print_access(RStrBuf *sb, int idx, REsilTraceAccess *a, int format) {
 	const char *direction = a->is_write? "write": "read";
 	switch (format) {
 	case '*':
 		if (a->is_reg) {
-			p ("ar %s = %" PFMT64u "\n", a->reg.name, a->reg.value);
+			r_strbuf_appendf (sb, "ar %s = %" PFMT64u "\n", a->reg.name, a->reg.value);
 		} else {
-			p ("wx %s @ %" PFMT64u "\n", a->mem.data, a->mem.addr);
+			r_strbuf_appendf (sb, "wx %s @ %" PFMT64u "\n", a->mem.data, a->mem.addr);
 		}
 		break;
 	default:
 		if (a->is_reg) {
-			p ("%d.reg.%s.%s=0x%" PFMT64x "\n", idx, direction, a->reg.name, a->reg.value);
+			r_strbuf_appendf (sb, "%d.reg.%s.%s=0x%" PFMT64x "\n", idx, direction, a->reg.name, a->reg.value);
 		} else {
-			p ("%d.mem.%s.0x%" PFMT64x "=%s\n", idx, direction, a->mem.addr, a->mem.data);
+			r_strbuf_appendf (sb, "%d.mem.%s.0x%" PFMT64x "=%s\n", idx, direction, a->mem.addr, a->mem.data);
 		}
 		break;
-	}
-}
-
-R_API void r_esil_trace_list(REsil *esil, int format) {
-	R_RETURN_IF_FAIL (esil && esil->anal);
-#if 0
-	// debug stuff
-	ut32 vec_idx = RVecAccess_length (&esil->trace->db.accesses);
-	int i;
-	for (i = 0; i < vec_idx; i++) {
-		REsilTraceAccess *xs = RVecAccess_at (&esil->trace->db.accesses, i);
-		eprintf ("%d XS %c%c %s\n", i, xs->is_reg? 'r': 'm', xs->is_write? 'w': 'r', xs->is_reg? xs->reg.name: "");
-	}
-#endif
-	if (esil->trace) {
-		// PrintfCallback p = esil->anal->cb_printf;
-		int idx = 0;
-		REsilTraceOp *op;
-		R_VEC_FOREACH (&esil->trace->db.ops, op) {
-			// eprintf ("---> %d | 0x%08" PFMT64x " | %d %d\n", idx, op->addr, op->start, op->end);
-			r_esil_trace_show (esil, idx, format);
-			idx++;
-		}
 	}
 }
 
@@ -463,8 +440,7 @@ static inline ut64 lookup_pc(REsilTraceDB *db, int idx) {
 	return to? to->addr: UT64_MAX;
 }
 
-R_API void r_esil_trace_show(REsil *esil, int idx, int format) {
-	PrintfCallback p = esil->anal->cb_printf;
+static void trace_show(REsil *esil, RStrBuf *sb, int idx, int format) {
 	if (!esil->trace) {
 		return;
 	}
@@ -477,15 +453,15 @@ R_API void r_esil_trace_show(REsil *esil, int idx, int format) {
 	REsilTraceOp *op = RVecTraceOp_at (&esil->trace->db.ops, idx);
 	switch (format) {
 	case '*': // radare
-		p ("ar PC=0x%" PFMT64x "\n", pc);
+		r_strbuf_appendf (sb, "ar PC=0x%" PFMT64x "\n", pc);
 		break;
 	default: // sdb
-		p ("%d.addr=0x%08" PFMT64x "\n", idx, op->addr);
+		r_strbuf_appendf (sb, "%d.addr=0x%08" PFMT64x "\n", idx, op->addr);
 		if (op->start != op->end) {
 			REsilTraceAccess *start = RVecAccess_at (&esil->trace->db.accesses, op->start);
 			REsilTraceAccess *end = RVecAccess_at (&esil->trace->db.accesses, op->end - 1);
 			while (start <= end) {
-				print_access (p, idx, start, format);
+				print_access (sb, idx, start, format);
 				start++;
 			}
 		} else {
@@ -494,4 +470,35 @@ R_API void r_esil_trace_show(REsil *esil, int idx, int format) {
 		}
 		break;
 	}
+}
+
+R_API char *r_esil_trace_show(REsil *esil, int idx, int format) {
+	R_RETURN_VAL_IF_FAIL (esil, NULL);
+	RStrBuf *sb = r_strbuf_new ("");
+	trace_show (esil, sb, idx, format);
+	return r_strbuf_drain (sb);
+}
+
+R_API char *r_esil_trace_list(REsil *esil, int format) {
+	R_RETURN_VAL_IF_FAIL (esil, NULL);
+	RStrBuf *sb = r_strbuf_new ("");
+#if 0
+	// debug stuff
+	ut32 vec_idx = RVecAccess_length (&esil->trace->db.accesses);
+	int i;
+	for (i = 0; i < vec_idx; i++) {
+		REsilTraceAccess *xs = RVecAccess_at (&esil->trace->db.accesses, i);
+		eprintf ("%d XS %c%c %s\n", i, xs->is_reg? 'r': 'm', xs->is_write? 'w': 'r', xs->is_reg? xs->reg.name: "");
+	}
+#endif
+	if (esil->trace) {
+		int idx = 0;
+		REsilTraceOp *op;
+		R_VEC_FOREACH (&esil->trace->db.ops, op) {
+			// eprintf ("---> %d | 0x%08" PFMT64x " | %d %d\n", idx, op->addr, op->start, op->end);
+			trace_show (esil, sb, idx, format);
+			idx++;
+		}
+	}
+	return r_strbuf_drain (sb);
 }

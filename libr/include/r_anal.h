@@ -524,7 +524,6 @@ typedef struct r_anal_t {
 	RefManager *rm;
 	RSpaces zign_spaces;
 	char *zign_path; // dir.zigns
-	PrintfCallback cb_printf;
 	RPrint *print;
 	//moved from RAnalFcn
 	Sdb *sdb; // root
@@ -1202,7 +1201,7 @@ R_API void r_anal_pin_init(RAnal *a);
 R_API void r_anal_pin_fini(RAnal *a);
 R_API void r_anal_pin(RAnal *a, ut64 addr, const char *name);
 R_API const char *r_anal_pin_call(RAnal *a, ut64 addr);
-R_API void r_anal_pin_list(RAnal *a);
+R_API char *r_anal_pin_list(RAnal *a);
 R_API void r_anal_pin_unset(RAnal *a, ut64 addr);
 
 /* fcn.c */
@@ -1232,7 +1231,7 @@ R_API int r_anal_var_count_args(RAnalFunction *fcn);
 R_API int r_anal_var_count_locals(RAnalFunction *fcn);
 
 /* vars // globals. not here  */
-R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var);
+R_API char *r_anal_var_display(RAnal *anal, RAnalVar *var);
 
 R_API int r_anal_function_complexity(RAnalFunction *fcn);
 R_API int r_anal_function_loops(RAnalFunction *fcn);
@@ -1283,7 +1282,7 @@ R_API RVecAnalRef *r_anal_xrefs_get(RAnal *anal, ut64 to);
 R_API RVecAnalRef *r_anal_refs_get(RAnal *anal, ut64 from);
 R_API bool r_anal_xrefs_has_xrefs_at(RAnal *anal, ut64 at);
 R_API RVecAnalRef *r_anal_xrefs_get_from(RAnal *anal, ut64 to);
-R_API void r_anal_xrefs_list(RAnal *anal, int rad, const char *arg, RTable *t);
+R_API char *r_anal_xrefs_list(RAnal *anal, int rad, const char *arg, RTable *t);
 R_API ut64 r_anal_xrefs_count(RAnal *anal);
 R_API ut64 r_anal_xrefs_count_at(RAnal *anal, ut64 to);
 R_API RVecAnalRef *r_anal_function_get_refs(RAnalFunction *fcn);
@@ -1431,7 +1430,7 @@ R_API int r_anal_reflines_middle(RAnal *anal, RList *list, ut64 addr, int len);
 R_API RAnalRefStr *r_anal_reflines_str(void *core, ut64 addr, int opts);
 R_API void r_anal_reflines_str_free(RAnalRefStr *refstr);
 /* TODO move to r_core */
-R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode, PJ* pj);
+R_API char *r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode, PJ* pj);
 R_API R_OWNED RVecAnalVarPtr *r_anal_var_vec(RAnal *anal, RAnalFunction *fcn, int kind);
 
 // calling conventions API
@@ -1556,7 +1555,7 @@ R_API void r_meta_rebase(RAnal *anal, ut64 diff);
 R_API ut64 r_meta_get_size(RAnal *a, RAnalMetaType type);
 
 R_API const char *r_meta_type_tostring(int type);
-R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int rad, PJ *pj, RTable *t, bool show_full);
+R_API char *r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int rad, PJ *pj, RTable *t, bool show_full);
 R_API void r_meta_print_list_all(RAnal *a, int type, int rad, const char *tq, RTable *t);
 R_API void r_meta_print_list_at(RAnal *a, ut64 addr, int rad, const char *tq, RTable *t);
 R_API void r_meta_print_list_in_function(RAnal *a, int type, int rad, ut64 addr, const char *tq, RTable *t);
@@ -1647,7 +1646,7 @@ R_API int r_esil_to_reil_setup(REsil *esil, RAnal *anal, int romem, int stats);
 R_API const char *r_esil_trapstr(int type);
 
 /* no-return stuff */
-R_API void r_anal_noreturn_list(RAnal *anal, int mode);
+R_API char *r_anal_noreturn_list(RAnal *anal, int mode);
 R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr);
 R_API bool r_anal_noreturn_drop(RAnal *anal, const char *expr);
 R_API bool r_anal_noreturn_at_addr(RAnal *anal, ut64 addr);
