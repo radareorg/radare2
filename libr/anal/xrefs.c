@@ -440,7 +440,7 @@ static char *r_anal_xrefs_list_hex(RAnal *anal, RVecAnalRef *anal_refs) {
 		// TODO: export/import the read-write-exec information
 		r_strbuf_appendf (&sb, "ax%c 0x%"PFMT64x" 0x%"PFMT64x"\n", t? t: ' ', ref->addr, ref->at);
 	}
-	return r_strbuf_drain (&sb);
+	return r_strbuf_drain_nofree (&sb);
 }
 
 static char *r_anal_xrefs_list_mapping(RAnal *anal, RVecAnalRef *anal_refs) {
@@ -452,7 +452,7 @@ static char *r_anal_xrefs_list_mapping(RAnal *anal, RVecAnalRef *anal_refs) {
 		r_strbuf_appendf (&sb, "0x%08"PFMT64x" -> 0x%08"PFMT64x"  %s:%s\n", ref->at, ref->addr,
 			r_anal_ref_type_tostring (t), r_anal_ref_perm_tostring (ref));
 	}
-	return r_strbuf_drain (&sb);
+	return r_strbuf_drain_nofree (&sb);
 }
 
 static char *r_anal_xrefs_list_plaintext(RAnal *anal, RVecAnalRef *anal_refs) {
@@ -486,7 +486,7 @@ static char *r_anal_xrefs_list_plaintext(RAnal *anal, RVecAnalRef *anal_refs) {
 			r_strbuf_appendf (&sb, "\n");
 		}
 	}
-	return r_strbuf_drain (&sb);
+	return r_strbuf_drain_nofree (&sb);
 }
 
 R_API char *r_anal_xrefs_list(RAnal *anal, int rad, const char *arg, RTable *t) {

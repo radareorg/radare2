@@ -2414,7 +2414,7 @@ R_API char *r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int 
 		return NULL;
 	}
 	RVecAnalVarPtr_free (vec);
-	return r_strbuf_drain (&sb);
+	return r_strbuf_drain_nofree (&sb);
 }
 
 R_API void r_anal_function_vars_cache_init(RAnal *anal, RAnalFcnVarsCache *cache, RAnalFunction *fcn) {
