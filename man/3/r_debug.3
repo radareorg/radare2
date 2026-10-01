@@ -168,11 +168,13 @@ Set a register locally. After calling `r_debug_reg_set ()` call
 debuggee. Common pattern: read PC with `r_debug_reg_get ()`, update a
 register, write back with `r_debug_reg_sync ()`, then `r_debug_continue ()`.
 .Pp
-.Ft bool
+.Ft char *
 .Fn r_debug_reg_list "RDebug *dbg" "int type" "int size" "PJ *pj" "int rad" "const char *use_color"
 .Pp
-Produce a formatted list of registers suitable for printing. Useful for
-implementing `info registers` style commands in front-ends.
+Return a newly allocated formatted list of registers that the caller must
+free. In JSON mode the registers are appended to `pj`, which stays owned by
+the caller, and the returned text may be empty. Useful for implementing
+`info registers` style commands in front-ends.
 .Sh BREAKPOINTS
 .Ft RBreakpointItem *
 .Fn r_debug_bp_add "RDebug *dbg" "ut64 addr" "int hw" "bool watch" "int rw" "char *module" "st64 m_delta"

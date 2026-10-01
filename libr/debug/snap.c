@@ -110,13 +110,16 @@ R_API int r_debug_snap_delete(RDebug *dbg, int idx) {
 	return 1;
 }
 
-R_API void r_debug_snap_list(RDebug *dbg, int idx, int mode) {
+R_API R_OWNED char *r_debug_snap_list(RDebug *dbg, int idx, int mode) {
+	R_RETURN_VAL_IF_FAIL (dbg, NULL);
 	const char *comment, *comma;
 	ut32 count = 0;
 	RListIter *iter;
 	RDebugSnap *snap;
-	if (mode == 'j')
-		dbg->cb_printf ("[");
+	RStrBuf *sb = r_strbuf_new ("");
+	if (mode == 'j') {
+		r_strbuf_append (sb, "[");
+	}
 	r_list_foreach (dbg->snaps, iter, snap) {
 		comment = "";
 		comma = (iter->n)? ",":"";
@@ -129,21 +132,22 @@ R_API void r_debug_snap_list(RDebug *dbg, int idx, int mode) {
 			comment = snap->comment;
 		switch (mode) {
 		case 'j':
-			dbg->cb_printf ("{\"count\":%d,\"addr\":%"PFMT64d",\"size\":%d,\"crc\":%d,\"comment\":\"%s\"}%s",
+			r_strbuf_appendf (sb, "{\"count\":%d,\"addr\":%"PFMT64d",\"size\":%d,\"crc\":%d,\"comment\":\"%s\"}%s",
 				count, snap->addr, snap->size, snap->crc, comment, comma);
 			break;
 		case '*':
-			dbg->cb_printf ("dms 0x%08"PFMT64x"\n", snap->addr);
+			r_strbuf_appendf (sb, "dms 0x%08"PFMT64x"\n", snap->addr);
 			break;
 		default:
-			dbg->cb_printf ("%d 0x%08"PFMT64x" - 0x%08"PFMT64x" size: %d crc: %x  --  %s\n",
+			r_strbuf_appendf (sb, "%d 0x%08"PFMT64x" - 0x%08"PFMT64x" size: %d crc: %x  --  %s\n",
 				count, snap->addr, snap->addr_end, snap->size, snap->crc, comment);
 		}
 		count++;
 	}
 	if (mode == 'j') {
-		dbg->cb_printf ("]\n");
+		r_strbuf_append (sb, "]\n");
 	}
+	return r_strbuf_drain (sb);
 }
 
 R_API int r_debug_snap_all(RDebug *dbg, int perms) {

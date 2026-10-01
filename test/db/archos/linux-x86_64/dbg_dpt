@@ -1,0 +1,17 @@
+NAME=dptj current thread
+FILE=bins/elf/ls-focal
+ARGS=-d
+CMDS=<<EOF
+dptj~{0.current}
+dptj~{0.status}
+dpt~[0]
+dmsj
+doc
+EOF
+EXPECT=<<EOF
+true
+s
+*
+[]
+EOF
+RUN

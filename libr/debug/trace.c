@@ -221,7 +221,7 @@ static int cmpaddr(const RListInfo *a, const RListInfo *b) {
 	return (begin_a > begin_b)? 1: (begin_a < begin_b)? -1: 0;
 }
 
-static void r_debug_trace_list_json(RDebug *dbg) {
+static void r_debug_trace_list_json(RDebug *dbg, RStrBuf *sb) {
 	int tag = dbg->trace->tag;
 	PJ *pj = pj_new ();
 	pj_o (pj);
@@ -243,17 +243,16 @@ static void r_debug_trace_list_json(RDebug *dbg) {
 
 	pj_end (pj);
 	pj_end (pj);
-	char *s = pj_drain (pj);
-	dbg->cb_printf ("%s\n", s);
-	free (s);
+	r_strbuf_appendf (sb, "%s\n", pj_string (pj));
+	pj_free (pj);
 }
 
-static void r_debug_trace_list_quiet(RDebug *dbg) {
+static void r_debug_trace_list_quiet(RDebug *dbg, RStrBuf *sb) {
 	int tag = dbg->trace->tag;
 	RDebugTracepointItem *trace;
 	R_VEC_FOREACH (dbg->trace->traces, trace) {
 		if (!trace->tag || (tag & trace->tag)) {
-			dbg->cb_printf ("0x%"PFMT64x"\n", trace->addr);
+			r_strbuf_appendf (sb, "0x%"PFMT64x"\n", trace->addr);
 		}
 	}
 }
@@ -266,7 +265,7 @@ static inline void listinfo_fini(RListInfo *info) {
 
 R_VEC_TYPE_WITH_FINI (RVecListInfo, RListInfo, listinfo_fini);
 
-static void r_debug_trace_list_table(RDebug *dbg, ut64 offset, RTable *t) {
+static void r_debug_trace_list_table(RDebug *dbg, RStrBuf *sb, ut64 offset, RTable *t) {
 	RVecListInfo info_vec;
 	RVecListInfo_init (&info_vec);
 
@@ -293,7 +292,7 @@ static void r_debug_trace_list_table(RDebug *dbg, ut64 offset, RTable *t) {
 		RIO *io = dbg->iob.io;
 		r_table_visual_vec (table, &info_vec, offset, 1, r_cons_get_size (core->cons, NULL), io->va);
 		char *s = r_table_tostring (table);
-		io->cb_printf ("%s", s);
+		r_strbuf_append (sb, s);
 		free (s);
 		r_table_free (table);
 	}
@@ -301,47 +300,49 @@ static void r_debug_trace_list_table(RDebug *dbg, ut64 offset, RTable *t) {
 	RVecListInfo_fini (&info_vec);
 }
 
-static void r_debug_trace_list_make(RDebug *dbg) {
+static void r_debug_trace_list_make(RDebug *dbg, RStrBuf *sb) {
 	int tag = dbg->trace->tag;
 	RDebugTracepointItem *trace;
 	R_VEC_FOREACH (dbg->trace->traces, trace) {
 		if (!trace->tag || (tag & trace->tag)) {
-			dbg->cb_printf ("dt+ 0x%"PFMT64x" %d\n", trace->addr, trace->times);
+			r_strbuf_appendf (sb, "dt+ 0x%"PFMT64x" %d\n", trace->addr, trace->times);
 		}
 	}
 }
 
-static void r_debug_trace_list_default(RDebug *dbg) {
+static void r_debug_trace_list_default(RDebug *dbg, RStrBuf *sb) {
 	int tag = dbg->trace->tag;
 	RDebugTracepointItem *trace;
 	R_VEC_FOREACH (dbg->trace->traces, trace) {
 		if (!trace->tag || (tag & trace->tag)) {
-			dbg->cb_printf ("0x%08"PFMT64x" size=%d count=%d times=%d tag=%d\n",
+			r_strbuf_appendf (sb, "0x%08"PFMT64x" size=%d count=%d times=%d tag=%d\n",
 				trace->addr, trace->size, trace->count, trace->times, trace->tag);
 		}
 	}
 }
 
-R_API void r_debug_trace_list(RDebug *dbg, int mode, ut64 offset, RTable *t) {
-	R_RETURN_IF_FAIL (dbg && dbg->trace);
+R_API R_OWNED char *r_debug_trace_list(RDebug *dbg, int mode, ut64 offset, RTable *t) {
+	R_RETURN_VAL_IF_FAIL (dbg && dbg->trace, NULL);
+	RStrBuf *sb = r_strbuf_new ("");
 	switch (mode) {
 	case 'j':
-		r_debug_trace_list_json (dbg);
+		r_debug_trace_list_json (dbg, sb);
 		break;
 	case 'q':
-		r_debug_trace_list_quiet (dbg);
+		r_debug_trace_list_quiet (dbg, sb);
 		break;
 	case '=':
-		r_debug_trace_list_table (dbg, offset, t);
+		r_debug_trace_list_table (dbg, sb, offset, t);
 		break;
 	case 1:
 	case '*':
-		r_debug_trace_list_make (dbg);
+		r_debug_trace_list_make (dbg, sb);
 		break;
 	default:
-		r_debug_trace_list_default (dbg);
+		r_debug_trace_list_default (dbg, sb);
 		break;
 	}
+	return r_strbuf_drain (sb);
 }
 
 // XXX: find better name, make it public?

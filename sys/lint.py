@@ -274,7 +274,7 @@ CHECKS = [
 		filters=[(rb"error", True, re.I), (rb"/native/", False), (rb"spp", False), (rb"cons", False)]),
 	Check("appendf-no-format",
 		[L(b"appendf")],
-		filters=[(rb"\"", True), (rb"%", False)]),
+		filters=[(rb"appendf\s*\([^,]*,\s*\"", True), (rb"%", False)]),
 	Check("strbuf-setf-no-format",
 		[L(b"strbuf_setf")],
 		filters=[(rb"\"", True), (rb"%", False)]),

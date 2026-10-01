@@ -424,32 +424,23 @@ static DWORD __get_msg_type(char *name) {
 	return 0;
 }
 
-static void __print_windows(RDebug *dbg, RList *windows) {
-	RTable *tbl = __create_window_table ();
-	if (!tbl) {
-		return;
-	}
-	RListIter *it;
-	window *win;
-	r_list_foreach (windows, it, win) {
-		__add_window_to_table (tbl, win);
-	}
-	char *t = r_table_tofancystring (tbl);
-	dbg->cb_printf (t);
-	free (t);
-	r_table_free (tbl);
-}
-
-R_API void r_w32_print_windows(RDebug *dbg) {
+R_API R_OWNED char *r_w32_print_windows(RDebug *dbg) {
 	RList *windows = __get_windows (dbg);
-	if (windows) {
-		if (!windows->length) {
-			dbg->cb_printf ("No windows for this process.\n");
-			return;
+	char *s = NULL;
+	if (windows && !windows->length) {
+		s = strdup ("No windows for this process.\n");
+	} else if (windows) {
+		RTable *tbl = __create_window_table ();
+		RListIter *it;
+		window *win;
+		r_list_foreach (windows, it, win) {
+			__add_window_to_table (tbl, win);
 		}
-		__print_windows (dbg, windows);
+		s = r_table_tofancystring (tbl);
+		r_table_free (tbl);
 	}
 	r_list_free (windows);
+	return s;
 }
 
 R_API bool r_w32_add_winmsg_breakpoint(RDebug *dbg, const char *input) {
@@ -470,7 +461,7 @@ R_API bool r_w32_add_winmsg_breakpoint(RDebug *dbg, const char *input) {
 	if (window_id) {
 		RList *windows = __get_windows (dbg);
 		if (windows && !windows->length) {
-			dbg->cb_printf ("No windows for this process.\n");
+			R_LOG_WARN ("No windows for this process");
 		}
 		ut64 win_h = r_num_math (NULL, window_id);
 		RListIter *it;
@@ -482,8 +473,7 @@ R_API bool r_w32_add_winmsg_breakpoint(RDebug *dbg, const char *input) {
 			}
 		}
 		if (!offset) {
-			dbg->cb_printf ("Window not found, try these:\n");
-			__print_windows (dbg, windows);
+			R_LOG_ERROR ("Window not found, use dW to list them");
 		}
 		r_list_free (windows);
 	} else {

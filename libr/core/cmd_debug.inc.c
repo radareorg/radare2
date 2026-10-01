@@ -1641,7 +1641,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	switch (input[1]) {
 	case '\0': // "dp"
 		R_LOG_INFO ("Selected: %d %d", core->dbg->pid, core->dbg->tid);
-		r_debug_pid_list (core->dbg, core->dbg->pid, 0);
+		print_owned (core, r_debug_pid_list (core->dbg, core->dbg->pid, 0));
 		break;
 	case '-': // "dp-"
 		if (input[2]== ' ') {
@@ -1685,20 +1685,20 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	case 't': // "dpt"
 		switch (input[2]) {
 		case '\0': // "dpt"
-			r_debug_thread_list (core->dbg, core->dbg->pid, 0);
+			print_owned (core, r_debug_thread_list (core->dbg, core->dbg->pid, 0));
 			break;
 		case '.':
 			r_cons_printf (core->cons, "%d\n", core->dbg->tid);
 			break;
 		case 'j': // "dptj"
 			if (input[3] != ' ') { // "dptj"
-				r_debug_thread_list (core->dbg, core->dbg->pid, 'j');
+				print_owned (core, r_debug_thread_list (core->dbg, core->dbg->pid, 'j'));
 			} else { // "dptj "
-				r_debug_thread_list (core->dbg, atoi (input + 3), 'j');
+				print_owned (core, r_debug_thread_list (core->dbg, atoi (input + 3), 'j'));
 			}
 			break;
 		case ' ': // "dpt "
-			r_debug_thread_list (core->dbg, atoi (input + 2), 0);
+			print_owned (core, r_debug_thread_list (core->dbg, atoi (input + 2), 0));
 			break;
 		case '=': // "dpt="
 			r_debug_select (core->dbg, core->dbg->pid,
@@ -1745,10 +1745,10 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	case 'l': // "dpl"
 		switch (input[2]) {
 		case '\0': // "dpl"
-			r_debug_pid_list (core->dbg, 0, 0);
+			print_owned (core, r_debug_pid_list (core->dbg, 0, 0));
 			break;
 		case 'j': // "dplj"
-			r_debug_pid_list (core->dbg, 0, 'j');
+			print_owned (core, r_debug_pid_list (core->dbg, 0, 'j'));
 			break;
 		}
 		break;
@@ -1759,11 +1759,11 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	case 'j': // "dpj"
 		switch (input[2]) {
 		case '\0': // "dpj"
-			r_debug_pid_list (core->dbg, core->dbg->pid, 'j');
+			print_owned (core, r_debug_pid_list (core->dbg, core->dbg->pid, 'j'));
 			break;
 		case ' ': // "dpj "
-			r_debug_pid_list (core->dbg,
-					(int) R_MAX (0, (int)r_num_math (core->num, input + 2)), 'j');
+			print_owned (core, r_debug_pid_list (core->dbg,
+					(int) R_MAX (0, (int)r_num_math (core->num, input + 2)), 'j'));
 			break;
 		}
 		break;
@@ -1780,8 +1780,8 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		}
 		break;
 	case ' ': // "dp "
-		r_debug_pid_list (core->dbg,
-				(int) R_MAX (0, (int)r_num_math (core->num, input + 2)), 0);
+		print_owned (core, r_debug_pid_list (core->dbg,
+				(int) R_MAX (0, (int)r_num_math (core->num, input + 2)), 0));
 		break;
 	case '?': // "dp?"
 	default:
@@ -2253,7 +2253,7 @@ static int cmd_debug_map_snapshot(RCore *core, const char *input) {
 	case 0:
 	case 'j':
 	case '*':
-		r_debug_snap_list (core->dbg, -1, input[0]);
+		print_owned (core, r_debug_snap_list (core->dbg, -1, input[0]));
 		break;
 	default:
 		r_core_return_invalid_command (core, "dms", input[0]);
@@ -2275,7 +2275,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		cmd_debug_map_snapshot (core, input + 1);
 		break;
 	case '.': // "dm."
-		r_debug_map_list (core->dbg, addr, input);
+		print_owned (core, r_debug_map_list (core->dbg, addr, input));
 		break;
 	case 'm': // "dmm"
 		if (!strcmp (input + 1, ".*")) {
@@ -2679,7 +2679,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	case 'q': // "dmq"
 		if (r_config_get_b (core->config, "cfg.debug")) {
 			r_debug_map_sync (core->dbg); // update process memory maps
-			r_debug_map_list (core->dbg, core->addr, input);
+			print_owned (core, r_debug_map_list (core->dbg, core->addr, input));
 		} else {
 			R_LOG_INFO ("dm requires the debugger or use `om` instead");
 			if (*input == 'j') {
@@ -2690,8 +2690,8 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	case '=': // "dm="
 		if (r_config_get_b (core->config, "cfg.debug")) {
 			r_debug_map_sync (core->dbg);
-			r_debug_map_list_visual (core->dbg, core->addr, input,
-					r_config_get_i (core->config, "scr.color"));
+			print_owned (core, r_debug_map_list_visual (core->dbg, core->addr, input,
+					r_config_get_i (core->config, "scr.color")));
 		} else {
 			R_LOG_WARN ("Memory Maps require to be (cfg.debug/-d) in debugger mode. Otherwise use 'om'");
 		}
@@ -3134,7 +3134,7 @@ static void cmd_reg_vector_sync(RCore *core, RRegType type, bool write, bool deb
 static void cmd_reg_vector_list(RCore *core, RReg *reg, RRegType type, int bits) {
 	RReg *debug_reg = core->dbg->reg;
 	core->dbg->reg = reg;
-	r_debug_reg_list (core->dbg, type, bits, NULL, 0, NULL);
+	print_owned (core, r_debug_reg_list (core->dbg, type, bits, NULL, 0, NULL));
 	core->dbg->reg = debug_reg;
 }
 
@@ -3399,7 +3399,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		r_core_cmdf (core, "ara%s", str + 1);
 		break;
 	case '-': // "dr-"
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, NULL, '-', 0);
+		print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, NULL, '-', 0));
 		break;
 	case '?': // "dr?"
 		if (str[1]) {
@@ -3477,7 +3477,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		cmd_drb (core, str);
 		break;
 	case 'e': // "dre"
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 64, NULL, 'e', NULL);
+		print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 64, NULL, 'e', NULL));
 		break;
 	case 'c': // "drc"
 		// todo: set flag values with drc zf=1
@@ -3740,7 +3740,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				type = r_reg_type_by_name (str + 2);
 				r_debug_reg_sync (core->dbg, type, false);
 				PJ *pj = (tolower (rad) == 'j')? r_core_pj_new (core): NULL;
-				r_debug_reg_list (core->dbg, type, size, pj, rad, use_color);
+				print_owned (core, r_debug_reg_list (core->dbg, type, size, pj, rad, use_color));
 				if (pj) {
 					char *s = pj_drain (pj);
 					r_cons_printf (core->cons, "%s\n", s);
@@ -3749,7 +3749,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			} else {
 				if (type != R_REG_TYPE_LAST) {
 					r_debug_reg_sync (core->dbg, type, false);
-					r_debug_reg_list (core->dbg, type, size, NULL, rad, use_color);
+					print_owned (core, r_debug_reg_list (core->dbg, type, size, NULL, rad, use_color));
 				} else {
 					R_LOG_ERROR ("unknown type");
 				}
@@ -3767,11 +3767,11 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		cmd_drn (core, str);
 		break;
 	case 'd': // "drd"
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, NULL, 3, use_color); // xxx detect which one is current usage
+		print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, NULL, 3, use_color)); // xxx detect which one is current usage
 		break;
 	case 'o': // "dro"
 		r_reg_arena_swap (core->dbg->reg, false);
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, NULL, 0, use_color); // xxx detect which one is current usage
+		print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, NULL, 0, use_color)); // xxx detect which one is current usage
 		r_reg_arena_swap (core->dbg->reg, false);
 		break;
 	case ',': // "dr,"
@@ -3787,23 +3787,23 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			if (r_config_get_b (core->config, "cfg.debug")) {
 				if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
 					if (pcbits && pcbits != bits) {
-						r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, NULL, '=', use_color); // xxx detect which one is current usage
+						print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, NULL, '=', use_color)); // xxx detect which one is current usage
 					}
-					r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, NULL, '=', use_color); // xxx detect which one is current usage
+					print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, NULL, '=', use_color)); // xxx detect which one is current usage
 					if (pcbits2) {
-						r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits2, NULL, '=', use_color); // xxx detect which one is current usage
+						print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits2, NULL, '=', use_color)); // xxx detect which one is current usage
 					}
 				} //else eprintf ("cannot retrieve registers from pid %d\n", core->dbg->pid);
 			} else {
 				RReg *orig = core->dbg->reg;
 				core->dbg->reg = core->anal->reg;
 				if (pcbits && pcbits != bits) {
-					r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, NULL, '=', use_color); // xxx detect which one is current usage
+					print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, NULL, '=', use_color)); // xxx detect which one is current usage
 				}
-				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, NULL, '=', use_color); // xxx detect which one is current usage
+				print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, NULL, '=', use_color)); // xxx detect which one is current usage
 #if 0
 				if (pcbits2) {
-					r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits2, NULL, '=', use_color); // xxx detect which one is current usage
+					print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits2, NULL, '=', use_color)); // xxx detect which one is current usage
 				}
 #endif
 				core->dbg->reg = orig;
@@ -3813,18 +3813,18 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	case '.':
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
 			int pcbits2, pcbits = grab_bits (core, str + 1, &pcbits2);
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, NULL, '.', use_color);
+			print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, NULL, '.', use_color));
 			if (pcbits2) {
-				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits2, NULL, '.', use_color);
+				print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits2, NULL, '.', use_color));
 			}
 		}
 		break;
 	case '*': // "dr*"
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
 			int pcbits2, pcbits = grab_bits (core, str + 1, &pcbits2);
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, NULL, '*', use_color);
+			print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, NULL, '*', use_color));
 			if (pcbits2) {
-				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits2, NULL, '*', use_color);
+				print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits2, NULL, '*', use_color));
 			}
 			r_flag_space_pop (core->flags);
 		}
@@ -3867,14 +3867,14 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				if (!pj) {
 					return;
 				}
-				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, pj, 'j', use_color);
+				print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, pj, 'j', use_color));
 				char *s = pj_drain (pj);
 				if (s) {
 					r_cons_printf (core->cons, "%s\n", s);
 					free (s);
 				}
 			} else {
-				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, NULL, 0, use_color);
+				print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, NULL, 0, use_color));
 			}
 		} else {
 			R_LOG_ERROR ("Cannot retrieve registers from pid %d", core->dbg->pid);
@@ -3922,7 +3922,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 
 		size = atoi (str + 1);
 		if (size) {
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, size, NULL, str[0], use_color);
+			print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, size, NULL, str[0], use_color));
 		} else {
 			char *comma = strchr (str + 1, ',');
 			if (comma) {
@@ -5011,7 +5011,7 @@ static void r_core_debug_esil(RCore *core, const char *input) {
 	switch (input[0]) {
 	case '\0': // "de"
 		// list
-		r_debug_esil_watch_list (core->dbg);
+		print_owned (core, r_debug_esil_watch_list (core->dbg));
 		break;
 	case ' ': // "de "
 		{
@@ -5116,11 +5116,7 @@ static void r_core_debug_kill(RCore *core, const char *input) {
 	} else if (*input == 'o') {
 		switch (input[1]) {
 		case 0: // "dko" - list signal skip/conts
-			{
-				char *s = r_debug_signal_list (core->dbg, 1);
-				r_cons_print (core->cons, s);
-				free (s);
-			}
+			print_owned (core, r_debug_signal_list (core->dbg, 1));
 			break;
 		case ' ': // dko SIGNAL
 			if (input[2]) {
@@ -5163,15 +5159,11 @@ static void r_core_debug_kill(RCore *core, const char *input) {
 		}
 	} else if (*input == 'j') {
 		core->dbg->pj = r_core_pj_new (core); /// XXX dbg->pj is an antipattern R2_600
-		char *s = r_debug_signal_list (core->dbg, 2);
-		r_cons_print (core->cons, s);
-		free (s);
+		print_owned (core, r_debug_signal_list (core->dbg, 2));
 		pj_free (core->dbg->pj);
 		core->dbg->pj = NULL;
 	} else if (!*input) {
-		char *s = r_debug_signal_list (core->dbg, 0);
-		r_cons_print (core->cons, s);
-		free (s);
+		print_owned (core, r_debug_signal_list (core->dbg, 0));
 #if 0
 		RListIter *iter;
 		RDebugSignal *ds;
@@ -6019,7 +6011,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 			if (argc < 2) {
 				// only dd and dd* can have 1 arg here, others should error out
 				if (!input[0] || input[0] == '*') {
-					ret = r_debug_desc_list (core->dbg, print);
+					print_owned (core, r_debug_desc_list (core->dbg, print));
 				} else {
 					r_cons_cmd_help_match (core->cons, help_msg_dd, "dd", input[0], true);
 				}
@@ -6378,15 +6370,15 @@ static int cmd_debug(void *data, const char *input) {
 		case '=': // "dt="
 		case 'q': // "dtq"
 		case 'j': // "dtj"
-			r_debug_trace_list (core->dbg, input[1], core->addr, NULL);
+			print_owned (core, r_debug_trace_list (core->dbg, input[1], core->addr, NULL));
 			break;
 		case '*': // "dt*"
-			r_debug_trace_list (core->dbg, 1, core->addr, NULL);
+			print_owned (core, r_debug_trace_list (core->dbg, 1, core->addr, NULL));
 			break;
 		case ',': // "dt,"
 			{
 				RTable *t = r_core_table_new (core, "traces");
-				r_debug_trace_list (core->dbg, ',', core->addr, t);
+				print_owned (core, r_debug_trace_list (core->dbg, ',', core->addr, t));
 			}
 			break;
 		case ' ': // "dt [addr]"
@@ -6662,7 +6654,7 @@ static int cmd_debug(void *data, const char *input) {
 				break;
 			case 'm': // "dtsm"
 				if (core->dbg->session) {
-					r_debug_session_list_memory (core->dbg);
+					print_owned (core, r_debug_session_list_memory (core->dbg));
 				}
 				break;
 			case 'd': // "dtsd"
@@ -6670,14 +6662,14 @@ static int cmd_debug(void *data, const char *input) {
 				break;
 			case 'j': // "dtsj"
 				if (core->dbg->session) {
-					r_debug_session_list (core->dbg, 'j');
+					print_owned (core, r_debug_session_list (core->dbg, 'j'));
 				} else {
 					R_LOG_INFO ("No session started");
 				}
 				break;
 			case 'l': // "dtsl"
 				if (core->dbg->session) {
-					r_debug_session_list (core->dbg, 0);
+					print_owned (core, r_debug_session_list (core->dbg, 0));
 				} else {
 					R_LOG_INFO ("No session started");
 				}
@@ -6738,11 +6730,11 @@ static int cmd_debug(void *data, const char *input) {
 	case 'L': // "dL"
 		switch (input[1]) {
 		case 'q':
-			r_debug_plugin_list (core->dbg, input[1]);
+			print_owned (core, r_debug_plugin_list (core->dbg, input[1]));
 			break;
 		case 'j':
 			core->dbg->pj = r_core_pj_new (core);
-			r_debug_plugin_list (core->dbg, 'j');
+			print_owned (core, r_debug_plugin_list (core->dbg, 'j'));
 			pj_free (core->dbg->pj);
 			core->dbg->pj = NULL;
 			break;
@@ -6757,7 +6749,7 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			break;
 		default:
-			r_debug_plugin_list (core->dbg, 0);
+			print_owned (core, r_debug_plugin_list (core->dbg, 0));
 			break;
 		}
 		break;
@@ -7024,7 +7016,7 @@ static int cmd_debug(void *data, const char *input) {
 		if (input[1] == 'i') {
 			r_w32_identify_window ();
 		} else {
-			r_w32_print_windows (core->dbg);
+			print_owned (core, r_w32_print_windows (core->dbg));
 		}
 		break;
 #endif

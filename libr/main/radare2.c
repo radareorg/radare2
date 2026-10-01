@@ -1010,7 +1010,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			free (mr.debugbackend);
 			mr.debugbackend = strdup (opt.arg);
 			if (!strcmp (opt.arg, "?")) {
-				r_debug_plugin_list (r->dbg, 'q');
+				char *s = r_debug_plugin_list (r->dbg, 'q');
+				r_cons_print (r->cons, r_str_get (s));
+				free (s);
 				r_cons_flush (r->cons);
 				mainr2_fini (&mr);
 				return 0;

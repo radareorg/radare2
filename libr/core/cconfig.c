@@ -2149,7 +2149,9 @@ static bool cb_dbgbackend(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (*node->value == '?') {
-		r_debug_plugin_list (core->dbg, 'q');
+		char *s = r_debug_plugin_list (core->dbg, 'q');
+		r_cons_print (core->cons, r_str_get (s));
+		free (s);
 		return false;
 	}
 	// TODO: probably not necessary

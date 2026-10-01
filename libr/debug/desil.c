@@ -347,10 +347,12 @@ R_API void r_debug_esil_watch_reset(RDebug *dbg) {
 	EWPS = NULL;
 }
 
-R_API void r_debug_esil_watch_list(RDebug *dbg) {
+R_API R_OWNED char *r_debug_esil_watch_list(RDebug *dbg) {
 	EsilBreak *ew;
 	RListIter *iter;
+	RStrBuf *sb = r_strbuf_new ("");
 	r_list_foreach (EWPS, iter, ew) {
-		dbg->cb_printf ("de %s %c %s\n", r_str_rwx_i (ew->rwx), ew->dev, ew->expr);
+		r_strbuf_appendf (sb, "de %s %c %s\n", r_str_rwx_i (ew->rwx), ew->dev, ew->expr);
 	}
+	return r_strbuf_drain (sb);
 }
