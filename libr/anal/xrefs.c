@@ -483,7 +483,7 @@ static char *r_anal_xrefs_list_plaintext(RAnal *anal, RVecAnalRef *anal_refs) {
 			r_strbuf_appendf (&sb, " %s\n", name);
 			free (name);
 		} else {
-			r_strbuf_appendf (&sb, "\n");
+			r_strbuf_append (&sb, "\n");
 		}
 	}
 	return r_strbuf_drain_nofree (&sb);
