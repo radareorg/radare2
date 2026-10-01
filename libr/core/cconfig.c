@@ -1643,7 +1643,8 @@ static bool cb_dirsrc_base(void *user, void *data) {
 
 // clang-format off
 static RCoreHelpMessage help_msg_grain = {
-	"Usage:", "e cfg.sandbox.grain=arg[,arg...]", "select which sandbox permissions stay enabled",
+	"Usage:", "e cfg.sandbox.grain=arg[,arg...]", "select local sandbox permissions",
+	"e", " http.sandbox.grain=arg[,arg...]", "select HTTP sandbox permissions before starting the server",
 	"!name", "", "remove a permission; a leading ! starts with all permissions",
 	"!disk,!exec", "", "allow all permissions except disk and exec",
 	"Grain types:", "", "",
@@ -1671,6 +1672,9 @@ static bool cb_cfgsanbox_grain(void *user, void *data) {
 	if (!r_sandbox_grain_parse (node->value, &gt)) {
 		R_LOG_ERROR ("Invalid sandbox grain expression '%s'", node->value);
 		return false;
+	}
+	if (!strcmp (node->name, "http.sandbox.grain")) {
+		return true;
 	}
 	int old_grain = r_sandbox_grain (gt);
 	if (r_sandbox_enable (false) && (gt & old_grain) != gt) {
@@ -4799,6 +4803,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETS ("http.maxport", "9999", "last HTTP server port");
 	SETS ("http.ui", "m", "default webui (m, t, f)");
 	SETB ("http.sandbox", "true", "run HTTP commands with restricted permissions (set before starting the server)");
+	SETCB ("http.sandbox.grain", "none", &cb_cfgsanbox_grain, "HTTP sandbox permissions using cfg.sandbox.grain syntax (set before starting the server)");
 	SETB ("http.channel", "false", "use the new threadchannel based webserver (EXPERIMENTAL)");
 	SETI ("http.timeout", 3, "disconnect clients after N seconds of inactivity");
 	SETI ("http.dietime", 0, "kill server after N seconds with no client");

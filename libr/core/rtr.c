@@ -35,6 +35,7 @@ typedef struct {
 	bool enabled;
 	bool configured;
 	int grain;
+	char *expression;
 } HttpSandboxPolicy;
 
 typedef struct {
