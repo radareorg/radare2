@@ -15732,7 +15732,84 @@ static void cmd_aaef(RCore *core) {
 	r_io_fd_close (core->io, mem_fd);
 }
 
-static int cmd_anal_all(RCore *core, const char *input) {
+static void cmd_aae(RCore *core, const char *input) {
+	// emulation walks whole regions and skips the non-executable ones, so the
+	// best-practice hints are just noise for this sweep (same as cmd_aa)
+	const bool log_hints = r_config_get_b (core->config, "log.hints");
+	r_config_set_b (core->config, "log.hints", false);
+	if (input[1] == 'f') { // "aaef"
+		if (input[2] == '?') {
+			r_cons_cmd_help_match (core->cons, help_msg_aae, "aaef", 0, true);
+		} else {
+			cmd_aaef (core);
+		}
+	} else if (input[1] == '?') { // "aae?"
+		r_cons_cmd_help (core->cons, help_msg_aae);
+	} else if (input[1] == 'p') { // "aaep" // auto define all esil pins
+		if (input[2] == '?') {
+			r_cons_cmd_help_match (core->cons, help_msg_aae, "aaef", 0, true);
+		} else {
+			r_core_cmd0 (core, "aep ret0@@@i");
+			r_core_cmd0 (core, "aepa@@@i");
+		}
+	} else if (input[1] == ' ') { // "aae "
+		char *arg = r_str_trim_dup (input + 1);
+		const char *len = (char *)arg;
+		char *addr = strchr (arg, ' ');
+		if (addr) {
+			*addr = 0;
+			addr = (char *)r_str_trim_head_ro (addr + 1);
+		}
+		int mem_fd = anal_esil_mem (core);	//what du if this fails?
+		r_core_anal_esil (core, len, addr);
+		r_io_fd_close (core->io, mem_fd);
+		free (arg);
+	} else {
+		const bool only_xrefs = input[1] == 'x';
+		ut64 at = core->addr;
+		if (only_xrefs && input[2] == ' ') { // "aaex len"
+			char *arg = r_str_trim_dup (input + 2);
+			const char *len = (char *)arg;
+			r_core_cmd0 (core, "aeim");
+			r_core_anal_esil (core, len, "+x");
+			free (arg);
+		} else {
+			RIOMap *map;
+			RListIter *iter;
+			RList *list = r_core_get_boundaries_prot (core, -1, NULL, "anal");
+			if (list) {
+				const char *target = only_xrefs? "+x": NULL;
+				const char *anal_in = r_config_get (core->config, "anal.in");
+				if (!strcmp ("range", anal_in) || !strcmp ("raw", anal_in)) {
+					ut64 from = r_config_get_i (core->config, "anal.from");
+					ut64 to = r_config_get_i (core->config, "anal.to");
+					if (to > from) {
+						char *len = r_str_newf (" 0x%"PFMT64x, to - from);
+						r_core_seek (core, from, true);
+						r_core_anal_esil (core, len, target);
+						free (len);
+					} else {
+						R_LOG_ERROR ("anal.from can't be past anal.to");
+					}
+				} else {
+					r_list_foreach (list, iter, map) {
+						if (map->perm & R_PERM_X) {
+							char *ss = r_str_newf (" 0x%"PFMT64x, r_io_map_size (map));
+							r_core_seek (core, r_io_map_begin (map), true);
+							r_core_anal_esil (core, ss, target);
+							free (ss);
+						}
+					}
+					r_list_free (list);
+				}
+			}
+		}
+		r_core_seek (core, at, true);
+	}
+	r_config_set_b (core->config, "log.hints", log_hints);
+}
+
+static bool cmd_anal_all(RCore *core, const char *input) {
 	if (*input == '?') {
 		r_cons_cmd_help (core->cons, help_msg_aa);
 		return true;
@@ -15943,76 +16020,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		}
 		break;
 	case 'e': // "aae"
-		if (input[1] == 'f') { // "aaef"
-			if (input[2] == '?') {
-				r_cons_cmd_help_match (core->cons, help_msg_aae, "aaef", 0, true);
-			} else {
-				cmd_aaef (core);
-			}
-		} else if (input[1] == '?') { // "aae?"
-			r_cons_cmd_help (core->cons, help_msg_aae);
-		} else if (input[1] == 'p') { // "aaep" // auto define all esil pins
-			if (input[2] == '?') {
-				r_cons_cmd_help_match (core->cons, help_msg_aae, "aaef", 0, true);
-			} else {
-				r_core_cmd0 (core, "aep ret0@@@i");
-				r_core_cmd0 (core, "aepa@@@i");
-			}
-		} else if (input[1] == ' ') { // "aae "
-			char *arg = r_str_trim_dup (input + 1);
-			const char *len = (char *)arg;
-			char *addr = strchr (arg, ' ');
-			if (addr) {
-				*addr = 0;
-				addr = (char *)r_str_trim_head_ro (addr + 1);
-			}
-			int mem_fd = anal_esil_mem (core);	//what du if this fails?
-			r_core_anal_esil (core, len, addr);
-			r_io_fd_close (core->io, mem_fd);
-			free (arg);
-		} else {
-			const bool only_xrefs = input[1] == 'x';
-			ut64 at = core->addr;
-			if (only_xrefs && input[2] == ' ') { // "aaex len"
-				char *arg = r_str_trim_dup (input + 2);
-				const char *len = (char *)arg;
-				r_core_cmd0 (core, "aeim");
-				r_core_anal_esil (core, len, "+x");
-				free (arg);
-			} else {
-				RIOMap *map;
-				RListIter *iter;
-				RList *list = r_core_get_boundaries_prot (core, -1, NULL, "anal");
-				if (!list) {
-					break;
-				}
-				const char *target = only_xrefs? "+x": NULL;
-				const char *anal_in = r_config_get (core->config, "anal.in");
-				if (!strcmp ("range", anal_in) || !strcmp ("raw", anal_in)) {
-					ut64 from = r_config_get_i (core->config, "anal.from");
-					ut64 to = r_config_get_i (core->config, "anal.to");
-					if (to > from) {
-						char *len = r_str_newf (" 0x%"PFMT64x, to - from);
-						r_core_seek (core, from, true);
-						r_core_anal_esil (core, len, target);
-						free (len);
-					} else {
-						R_LOG_ERROR ("anal.from can't be past anal.to");
-					}
-				} else {
-					r_list_foreach (list, iter, map) {
-						if (map->perm & R_PERM_X) {
-							char *ss = r_str_newf (" 0x%"PFMT64x, r_io_map_size (map));
-							r_core_seek (core, r_io_map_begin (map), true);
-							r_core_anal_esil (core, ss, target);
-							free (ss);
-						}
-					}
-					r_list_free (list);
-				}
-			}
-			r_core_seek (core, at, true);
-		}
+		cmd_aae (core, input);
 		break;
 	case 'r': // "aar"
 		switch (input[1]) {
