@@ -46,15 +46,15 @@ static const char *panels_static[] = {
 };
 
 static const char *menus[] = {
-	"File", "Edit", "Analyze", "Window", "Tools", "Search", "Debug", "Help"
+	"File", "Edit", "View", "Tools", "Analyze", "Search", "Debug", "Help"
 };
 
 static const char *menus_desc[] = {
 	"File and project operations",
 	"Clipboard and write operations",
-	"Core analysis actions and plugin commands",
 	"Open analysis and data views",
 	"Tools, shells and file manager",
+	"Core analysis actions and plugin commands",
 	"String, code and pattern searches",
 	"Debugger views and actions",
 	"Help, versions and manpages"
@@ -86,7 +86,7 @@ static const char *menus_iocache[] = {
 	"On", "Off"
 };
 
-static const char *menus_Window[] = {
+static const char *menus_View[] = {
 	"Console", "Hexdump", "Disassembly", "Disassemble Summary", "Decompiler", "Decompiler With Offsets",
 	"Graph", "Tiny Graph",
 	"Functions", "Function Calls", "Sections", "Segments", "Strings in data sections", "Strings in the whole bin",
@@ -2515,6 +2515,12 @@ static bool r_panels_handle_cursor_mode(RCore *core, const int key) {
 	return true;
 }
 
+static void r_panels_release_edge(RPanels *panels) {
+	panels->mouse_on_edge_x = false;
+	panels->mouse_on_edge_y = false;
+	panels->mouse_edge_grabbed = false;
+}
+
 static bool r_panels_drag_and_resize(RCore *core, int key) {
 	RPanels *panels = core->panels;
 	if (!panels->mouse_on_edge_x && !panels->mouse_on_edge_y) {
@@ -2538,11 +2544,35 @@ static bool r_panels_drag_and_resize(RCore *core, int key) {
 		}
 		return true;
 	}
-	if (!cons->dragging) {
-		(void)r_cons_get_click (cons, NULL, NULL);
-		panels->mouse_on_edge_x = false;
-		panels->mouse_on_edge_y = false;
+	if (cons->dragging) {
+		return true;
 	}
+	int x, y;
+	const bool clicked = r_cons_get_click (cons, &x, &y);
+	if (!cons->mouse_event) {
+		r_panels_release_edge (panels);
+		return false;
+	}
+	if (cons->drag_moved) {
+		r_panels_release_edge (panels);
+		return true;
+	}
+	if (!clicked) {
+		return true;
+	}
+	// touch terminals like termux never report motion: tap the edge, then tap the target
+	if (!panels->mouse_edge_grabbed) {
+		panels->mouse_edge_grabbed = true;
+		return true;
+	}
+	y -= r_config_get_i (core->config, "scr.notch");
+	if (panels->mouse_on_edge_x) {
+		r_panels_update_edge_x (core, x - 1 - panels->mouse_orig_x);
+	}
+	if (panels->mouse_on_edge_y) {
+		r_panels_update_edge_y (core, y - 1 - panels->mouse_orig_y);
+	}
+	r_panels_release_edge (panels);
 	return true;
 }
 
@@ -2988,6 +3018,12 @@ static void r_panels_menu_hline(RCore *core, RStrBuf *buf, int width) {
 	}
 }
 
+static int r_panels_menu_max_items(RConsCanvas *can, RPanelsMenuItem *item, int y) {
+	const int avail = can->h - y - 4;
+	// leave the bottom row free so the border is not hidden when the menu is clipped
+	return R_MAX ((item->n_sub > avail)? avail - 1: avail, 3);
+}
+
 static RStrBuf *r_panels_draw_menu(RCore *core, RPanelsMenuItem *item, int max_items) {
 	RStrBuf *buf = r_strbuf_new (NULL);
 	if (!buf) {
@@ -3051,10 +3087,7 @@ static RStrBuf *r_panels_draw_menu(RCore *core, RPanelsMenuItem *item, int max_i
 static void r_panels_update_menu_contents(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *parent) {
 	RPanel *p = parent->p;
 	RConsCanvas *can = core->panels->can;
-	int max_items = can->h - p->view->pos.y - 4;
-	if (max_items < 3) {
-		max_items = 3;
-	}
+	const int max_items = r_panels_menu_max_items (can, parent, p->view->pos.y);
 	RStrBuf *buf = r_panels_draw_menu (core, parent, max_items);
 	if (!buf) {
 		return;
@@ -4182,7 +4215,7 @@ static void r_panels_refresh(RCore *core) {
 		}
 	}
 	const bool in_menu = panels->mode == PANEL_MODE_MENU;
-	char *menubar = r_str_newf ("%s%s", in_menu? Color_YELLOW: Color_RESET, r_strbuf_get (title));
+	char *menubar = r_str_newf (Color_RESET"%s", r_strbuf_get (title));
 	r_panels_canvas_write_bar (can, 0, w, menubar, ' ');
 	free (menubar);
 	RPanelsNavLayout nav_layout;
@@ -6205,8 +6238,8 @@ static int settings_colors_cb(void *user) {
 
 static void config_refresh_menu(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *parent) {
 	free (parent->p->model->title);
-	int mi = core->panels->can->h - parent->p->view->pos.y - 4;
-	parent->p->model->title = r_strbuf_drain (r_panels_draw_menu (core, parent, R_MAX (mi, 3)));
+	const int mi = r_panels_menu_max_items (core->panels->can, parent, parent->p->view->pos.y);
+	parent->p->model->title = r_strbuf_drain (r_panels_draw_menu (core, parent, mi));
 	size_t i;
 	for (i = 1; i < menu->depth; i++) {
 		RPanel *p = menu->history[i]->p;
@@ -6609,10 +6642,7 @@ static int open_menu_cb(void *user) {
 	if (y >= can->h) {
 		y = can->h - 1;
 	}
-	int max_items = can->h - y - 4;
-	if (max_items < 3) {
-		max_items = 3;
-	}
+	const int max_items = r_panels_menu_max_items (can, child, y);
 	RStrBuf *buf = r_panels_draw_menu (core, child, max_items);
 	if (!buf) {
 		return 0;
@@ -6751,7 +6781,7 @@ static const MenuItem edit_items[] = {
 	{ NULL, NULL, NULL }
 };
 
-static const MenuItem window_items[] = {
+static const MenuItem view_items[] = {
 	{ "Show All Decompiler Output", "Expand the full decompiler output", show_all_decompiler_cb },
 	{ NULL, NULL, NULL }
 };
@@ -6856,7 +6886,7 @@ static bool init_panels_menu(RCore *core) {
 	r_panels_add_menu_items (core, "File", file_items, menus_File, R_ARRAY_SIZE (menus_File), add_cmd_panel);
 	r_panels_add_menu_items (core, "Edit", edit_items, menus_Edit, R_ARRAY_SIZE (menus_Edit), add_cmd_panel);
 	r_panels_add_menu_items (core, "Edit.Settings", settings_items, menus_Settings, R_ARRAY_SIZE (menus_Settings), open_menu_cb);
-	r_panels_add_menu_items_sorted (core, "Window", window_items, menus_Window, R_ARRAY_SIZE (menus_Window), add_cmd_panel);
+	r_panels_add_menu_items_sorted (core, "View", view_items, menus_View, R_ARRAY_SIZE (menus_View), add_cmd_panel);
 	r_panels_add_menu_items (core, "Tools", tools_items, menus_Tools, R_ARRAY_SIZE (menus_Tools), NULL);
 	r_panels_add_menu_items (core, "Search", search_items, menus_Search, R_ARRAY_SIZE (menus_Search), NULL);
 	r_panels_add_menu_full (core, "Debug", "Emulate...", "ESIL execution helpers", NULL, open_menu_cb);

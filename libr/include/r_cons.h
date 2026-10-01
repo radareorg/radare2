@@ -1336,6 +1336,7 @@ typedef struct r_panels_t {
 	bool autoUpdate;
 	bool mouse_on_edge_x;
 	bool mouse_on_edge_y;
+	bool mouse_edge_grabbed; // tap-to-grab edge resize for touch terminals
 	RPanelsMenu *panels_menu;
 	HtPP *mht;
 	RPanelsMode mode;
