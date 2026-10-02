@@ -476,6 +476,7 @@ RUN
 
 
 NAME=Variable access with misc registers (ARM)
+REQUIRE=cs5
 FILE=-
 ARGS=-a arm -b 16
 CMDS=<<EOF
@@ -541,6 +542,77 @@ afvW
 |           0x00000028      0c37           adds r7, 0xc
 |           0x0000002a      bd46           mov sp, r7
 |           0x0000002c      5df8047b       ldr r7, [sp], 4
+\           0x00000030      7047           bx lr
+EOF
+RUN
+
+NAME=Variable access with misc registers (ARM) (cs6)
+REQUIRE=cs6
+FILE=-
+ARGS=-a arm -b 16
+CMDS=<<EOF
+e asm.var.summary=0
+e asm.flags=false
+e asm.comments=false
+e anal.vars.stackname = true
+aeim
+wx 80b483b000af78600b467b8013467b707b78002b03d07a887b689a6103e07b881a047b689a6100bf0c37bd465df8047b7047
+af
+aaef
+afvx
+pdf
+EOF
+EXPECT=<<EOF
+afvR
+      arg1  0x6
+      arg2  0x8
+      arg3  0xc
+   var_10h  0x4
+    var_ch  0x18,0x22
+    var_eh  0x16,0x1e
+    var_fh  0x10
+    var_4h
+afvW
+      arg1
+      arg2
+      arg3
+   var_10h
+    var_ch  0x6
+    var_eh  0xa
+    var_fh  0xe
+    var_4h
+/ 50: fcn.00000000 (int16_t arg1, int16_t arg2, int16_t arg3);
+|           ; arg int16_t arg1 @ r0
+|           ; arg int16_t arg2 @ r1
+|           ; arg int16_t arg3 @ r2
+|           ; var int16_t var_10h @ sp+0x0
+|           ; var int8_t var_fh @ sp+0x1
+|           ; var int16_t var_eh @ sp+0x2
+|           ; var int32_t var_ch @ sp+0x4
+|           ; var int16_t var_4h @ sp+0xc
+|           0x00000000      80b4           push {r7}
+|           0x00000002      83b0           sub sp, 0xc
+|           0x00000004      00af           add r7, sp, 0
+|           0x00000006      7860           str r0, [var_ch]
+|           0x00000008      0b46           mov r3, r1
+|           0x0000000a      7b80           strh r3, [var_eh]
+|           0x0000000c      1346           mov r3, r2
+|           0x0000000e      7b70           strb r3, [var_fh]
+|           0x00000010      7b78           ldrb r3, [var_fh]
+|           0x00000012      002b           cmp r3, 0
+|       ,=< 0x00000014      03d0           beq 0x1e
+|       |   0x00000016      7a88           ldrh r2, [var_eh]
+|       |   0x00000018      7b68           ldr r3, [var_ch]
+|       |   0x0000001a      9a61           str r2, [r3, 0x18]
+|      ,==< 0x0000001c      03e0           b 0x26
+|      |`-> 0x0000001e      7b88           ldrh r3, [var_eh]
+|      |    0x00000020      1a04           lsls r2, r3, 0x10
+|      |    0x00000022      7b68           ldr r3, [var_ch]
+|      |    0x00000024      9a61           str r2, [r3, 0x18]
+|      `--> 0x00000026      00bf           nop
+|           0x00000028      0c37           adds r7, 0xc
+|           0x0000002a      bd46           mov sp, r7
+|           0x0000002c      5df8047b       pop {r7}
 \           0x00000030      7047           bx lr
 EOF
 RUN

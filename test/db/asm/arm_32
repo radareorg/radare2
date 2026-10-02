@@ -118,11 +118,23 @@ d "addeq r1, r1, r2, lsl 2" 02118100
 d "addne r1, r1, ip" 0c108110
 d "addne r1, r1, r0, lsl 2" 00118110
 d "andeq r0, r0, 1" 01000002
+REQUIRE=cs5
 d "andeq r3, r5, 0x80000000" 02310502
+REQUIRE=cs6
+d "andeq r3, r5, -0x80000000" 02310502
+REQUIRE=
 d "andne r3, r3, r2" 02300310
 d "andne ip, ip, r7" 07c00c10
+REQUIRE=cs5
 d "asreq r0, ip, 0x1f" cc0fa001
+REQUIRE=cs6
+d "asreq r0, ip, 31" cc0fa001
+REQUIRE=
+REQUIRE=cs5
 d "asrne r0, r4, 0x1f" c40fa011
+REQUIRE=cs6
+d "asrne r0, r4, 31" c40fa011
+REQUIRE=
 d "beq 8" 0000000a
 d "biceq r3, r3, 7" 0730c303
 d "blne 0x1900" 3E06001B
@@ -145,7 +157,11 @@ d "ldrdne r2, r3, [r3, ip]" dc208311
 d "ldreq r0, [fp, -0xb4]" b4001b05
 d "ldrheq r0, [r3, r0]" b0009301
 d "lslne r1, r1, 2" 0111a011
+REQUIRE=cs5
 d "lsreq r0, r0, 0x10" 2008a001
+REQUIRE=cs6
+d "lsreq r0, r0, 16" 2008a001
+REQUIRE=
 d "lsrne r0, r0, 9" a004a011
 d "mlaeq r7, r5, r7, r0" 95072700
 d "mlane r3, r1, r3, r2" 91232310
@@ -153,10 +169,18 @@ d "moveq r0, sl" 0a00a001
 d "movne r0, sb" 0900a011
 d "mulne r3, r3, r0" 93000310
 d "mvneq r0, 0x15" 1500e003
+REQUIRE=cs5
 d "mvneq r0, 0x80000000" 0201e003
+REQUIRE=cs6
+d "mvneq r0, -0x80000000" 0201e003
+REQUIRE=
 d "orreq r5, r5, r3" 03508501
 d "orreq r6, r6, r2, lsr 1" a2608601
+REQUIRE=cs5
 d "orreq r3, r3, 0x80000000" 02318303
+REQUIRE=cs6
+d "orreq r3, r3, -0x80000000" 02318303
+REQUIRE=
 d "orrne r0, r0, r1, lsl ip" 110c8011
 d "orrne r1, r1, r3" 03108111
 d "popeq {pc}" 04f09d04
