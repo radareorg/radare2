@@ -349,9 +349,11 @@ if get_option('plugins') == ''
     'bochs',
     'gdb',
     'native',
-    'qnx',
     'winkd',
   ]
+  if use_gpl
+    debug_plugins += [ 'qnx' ]
+  endif
 
   egg_plugins += [
     'exec',
@@ -388,7 +390,6 @@ io_plugins += [
     'mmap',
     'procpid',
     'ptrace',
-    'qnx',
     'r2k',
     'rap',
     'rbuf',
@@ -401,6 +402,9 @@ io_plugins += [
     'winkd',
     'winedbg',
   ]
+  if use_gpl
+    io_plugins += [ 'qnx' ]
+  endif
   if get_option('use_zip')
     io_plugins += [ 'zip' ]
   endif
