@@ -489,8 +489,6 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (esil && esil->anal && esil->user, false);
 	EsilBreakCtx *ctx = esil->user;
 	if (ctx->clob.enabled && ctx->clob.read_clobbered) {
-		ctx->last_read = UT64_MAX;
-		ctx->last_data = UT64_MAX;
 		if (buf && len > 0) {
 			memset (buf, 0, len);
 		}
@@ -1181,6 +1179,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		if (gp_fixed && gp_reg) {
 			r_reg_setv (core->anal->reg, gp_reg, gp);
 		}
+		ctx.last_read = ctx.last_data = UT64_MAX;
 		(void)r_esil_parse (ESIL, esilstr);
 		const bool skip_ref = clob_op_end (&ctx, &op);
 		if (skip_ref && esilbreak_skip_ref_op (op.type)) {
