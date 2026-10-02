@@ -56920,3 +56920,28 @@ type: sync
 family: sec
 EOF_EXPECT
 RUN
+
+NAME=A64 GCSB DSYNC hint keeps function analysis intact
+FILE=malloc://64
+ARGS=-a arm -b 64
+REQUIRE=cs5
+CMDS=<<EOF_CMDS
+wx 000080d27f2203d5c0035fd6
+pi 1 @ 4
+ao 1 @ 4~type,family
+af
+afb
+e cfg.bigendian=true
+pi 1 @ 4
+ao 1 @ 4~type,family
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+gcsb dsync
+type: sync
+family: sec
+0x00000000 0x0000000c 00:0000 12
+gcsb dsync
+type: sync
+family: sec
+EOF_EXPECT
+RUN
