@@ -145,6 +145,28 @@ static inline void print_plugin_verbose(RStrBuf *sb, RMutaPlugin *cp) {
 	}
 }
 
+static const char *builtin_hash_license(const char *name) {
+	if (!strcmp (name, "md4")) {
+		return "GPL-2.0-or-later";
+	}
+	if (!strcmp (name, "md5")) {
+		return "RSA-MD";
+	}
+	if (!strcmp (name, "sha1")) {
+		return "MPL-1.1 OR GPL-2.0-or-later";
+	}
+	if (r_str_startswith (name, "sha")) {
+		return "BSD-3-Clause";
+	}
+	if (!strcmp (name, "xxhash")) {
+		return "BSD-2-Clause";
+	}
+	if (!strcmp (name, "hamdist") || !strcmp (name, "ssdeep")) {
+		return "MIT";
+	}
+	return "LGPL-3.0-only";
+}
+
 R_API char *r_muta_list(RMuta *cry, RMutaType type, int mode) {
 	R_RETURN_VAL_IF_FAIL (cry, NULL);
 	RStrBuf *sb = r_strbuf_new ("");
@@ -207,6 +229,11 @@ R_API char *r_muta_list(RMuta *cry, RMutaType type, int mode) {
 			if (r_muta_find (cry, name)) {
 				continue;
 			}
+#if !WITH_GPL
+			if (bits == R_HASH_MD4) {
+				continue;
+			}
+#endif
 			switch (mode) {
 			case 'J':
 				pj_s (pj, name);
@@ -215,6 +242,7 @@ R_API char *r_muta_list(RMuta *cry, RMutaType type, int mode) {
 				pj_o (pj);
 				pj_ks (pj, "type", "hash");
 				pj_ks (pj, "name", name);
+				pj_ks (pj, "license", builtin_hash_license (name));
 				pj_end (pj);
 				break;
 			case 'q':

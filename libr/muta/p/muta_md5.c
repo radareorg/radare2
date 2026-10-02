@@ -63,7 +63,7 @@ RMutaPlugin r_muta_plugin_md5 = {
 		.name = "md5",
 		.desc = "MD5 hash",
 		.author = "pancake",
-		.license = "MIT",
+		.license = "RSA-MD",
 	},
 	.type = R_MUTA_TYPE_HASH,
 	.implements = "md5",

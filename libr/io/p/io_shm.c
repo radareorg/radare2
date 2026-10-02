@@ -137,7 +137,7 @@ RIOPlugin r_io_plugin_shm = {
 	.meta = {
 		.name = "shm",
 		.desc = "Shared memory resources plugin",
-		.license = "MIT",
+		.license = "LGPL-3.0-only",
 		.author = "pancake",
 	},
 	.uris = "shm://",

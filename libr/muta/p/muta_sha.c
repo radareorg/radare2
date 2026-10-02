@@ -98,7 +98,7 @@ RMutaPlugin r_muta_plugin_sha = {
 		.name = "sha",
 		.desc = "Secure Hash Algorithm (SHA)",
 		.author = "pancake",
-		.license = "MIT",
+		.license = "BSD-3-Clause AND (MPL-1.1 OR GPL-2.0-or-later)",
 	},
 	.type = R_MUTA_TYPE_HASH,
 	.implements = "sha1,sha256,sha384,sha512",
