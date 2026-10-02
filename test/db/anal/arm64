@@ -56788,3 +56788,26 @@ ret
 0x00000008
 EOF_EXPECT
 RUN
+
+NAME=PAuth LR PACM does not terminate function analysis
+FILE=malloc://64
+ARGS=-a arm -b 64
+REQUIRE=cs5
+CMDS=<<EOF_CMDS
+wx 000080d2ff2403d5c0035fd6
+pi 1 @ 4
+ao 1 @ 4~type[1]
+af
+afb
+e cfg.bigendian=true
+pi 1 @ 4
+ao 1 @ 4~type[1]
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+pacm
+cmp
+0x00000000 0x0000000c 00:0000 12
+pacm
+cmp
+EOF_EXPECT
+RUN
