@@ -226,7 +226,7 @@ static RCoreHelpMessage help_msg_panels = {
 	"r",        "toggle callhints/jmphints/leahints",
 	"R",        "randomize color palette (ecr)",
 	"s/S",      "step in / step over",
-	"t/T",      "tab prompt / close a tab",
+	"t/T",      "tab menu (t1..t9 switch tab) / close a tab",
 	"u/U",      "undo / redo seek",
 	"w",        "shuffle panels around in window mode",
 	"V",        "go to the graph mode",
@@ -469,6 +469,10 @@ static bool r_panels_frame_menu_is_open(RPanels *panels) {
 	RPanelsMenu *menu = panels->panels_menu;
 	return panels->mode == PANEL_MODE_MENU && menu && menu->frame
 		&& menu->depth > 1 && menu->history[1] == menu->frame;
+}
+
+static bool r_panels_tab_menu_is_open(RPanels *panels) {
+	return r_panels_frame_menu_is_open (panels) && !strcmp (panels->panels_menu->frame->name, "Tab");
 }
 
 static bool r_panels_check_if_cur_panel(RCore *core, RPanel *panel) {
@@ -2657,14 +2661,13 @@ typedef struct {
 	int address_w;
 	int undo_x;
 	int redo_x;
-	int new_tab_x;
 	int prev_tabs_x;
 	int prev_tab;
 	int next_tabs_x;
 	int next_tab;
 	int tab_x[PANEL_NUM_LIMIT];
 	int tab_w[PANEL_NUM_LIMIT];
-	int close_x[PANEL_NUM_LIMIT];
+	int menu_x;
 } RPanelsNavLayout;
 
 static const char *r_panels_navbar_tab_name(RPanelsRoot *root, int index, char *number, size_t number_size) {
@@ -2681,7 +2684,7 @@ static int r_panels_navbar_window_width(RPanelsRoot *root, int first, int last) 
 	for (i = first; i <= last; i++) {
 		char number[16];
 		const char *name = r_panels_navbar_tab_name (root, i, number, sizeof (number));
-		width += r_str_ansi_len (name) + 12;
+		width += r_str_ansi_len (name) + (i == root->cur_panels? 12: 8);
 	}
 	return width;
 }
@@ -2728,13 +2731,18 @@ static RStrBuf *r_panels_navbar(RCore *core, int width, RPanelsNavLayout *layout
 			const char *name = r_panels_navbar_tab_name (root, i, number, sizeof (number));
 			int name_len = r_str_ansi_len (name);
 			layout->tab_x[i] = r_panels_navbar_x (bar);
-			layout->tab_w[i] = name_len + 10;
-			layout->close_x[i] = layout->tab_x[i] + name_len + 4;
 			if (i == cur) {
-				const bool color = core->panels->can->color;
-				r_strbuf_appendf (bar, "%s\\  %s [x]  /%s", color? Color_INVERT: "", name, color? Color_INVERT_RESET: "");
+				layout->tab_w[i] = name_len + 10;
+				layout->menu_x = layout->tab_x[i] + name_len + 4;
+				if (core->panels->can->color) {
+					r_strbuf_appendf (bar, "%s%s   %s [t]   "Color_RESET, core->cons->context->pal.widget_bg,
+						r_panels_title_foreground (core), name);
+				} else {
+					r_strbuf_appendf (bar, "[  %s [t]  ]", name);
+				}
 			} else {
-				r_strbuf_appendf (bar, "'--%s [x]--'", name);
+				layout->tab_w[i] = name_len + 6;
+				r_strbuf_appendf (bar, "   %s   ", name);
 			}
 			if (i < last) {
 				r_strbuf_append (bar, "  ");
@@ -2749,8 +2757,6 @@ static RStrBuf *r_panels_navbar(RCore *core, int width, RPanelsNavLayout *layout
 			r_strbuf_append (bar, "  ");
 		}
 	}
-	layout->new_tab_x = r_panels_navbar_x (bar);
-	r_strbuf_append (bar, "[t]");
 	return bar;
 }
 
@@ -2877,38 +2883,12 @@ static void r_panels_navbar_select_tab(RCore *core, int index) {
 	}
 }
 
-static void r_panels_navbar_close_tab(RCore *core, int index) {
-	RPanelsRoot *root = r_panels_navbar_tab_root (core, index);
-	if (!root) {
-		return;
-	}
-	if (index == root->cur_panels) {
-		r_panels_set_root_state (core, DEL);
-		return;
-	}
-	r_panels_free_partial (root->panels[index]);
-	int i;
-	for (i = index; i < root->n_panels - 1; i++) {
-		root->panels[i] = root->panels[i + 1];
-	}
-	root->panels[--root->n_panels] = NULL;
-	if (index < root->cur_panels) {
-		root->cur_panels--;
-	}
-}
+static void r_panels_open_tab_menu(RCore *core);
 
 static bool r_panels_handle_mouse_on_tabs(RCore *core, int x, RPanelsNavLayout *layout) {
 	RPanelsRoot *root = core->panels_root;
-	if (r_panels_navbar_hit (x, layout->new_tab_x, 3)) {
-		if (core->panels->mode == PANEL_MODE_MENU) {
-			r_panels_close_menu (core);
-		}
-		int old_count = root? root->n_panels: 0;
-		r_panels_handle_tab_new (core);
-		if (root && root->n_panels > old_count) {
-			root->cur_panels = root->n_panels - 1;
-			r_panels_set_root_state (core, ROTATE);
-		}
+	if (r_panels_navbar_hit (x, layout->menu_x, 3)) {
+		r_panels_open_tab_menu (core);
 		return true;
 	}
 	if (r_panels_navbar_hit (x, layout->prev_tabs_x, 1)) {
@@ -2921,10 +2901,6 @@ static bool r_panels_handle_mouse_on_tabs(RCore *core, int x, RPanelsNavLayout *
 	}
 	int i;
 	for (i = 0; root && i < root->n_panels; i++) {
-		if (r_panels_navbar_hit (x, layout->close_x[i], 3)) {
-			r_panels_navbar_close_tab (core, i);
-			return true;
-		}
 		if (r_panels_navbar_hit (x, layout->tab_x[i], layout->tab_w[i])) {
 			r_panels_navbar_select_tab (core, i);
 			return true;
@@ -3418,6 +3394,26 @@ static int frame_cache_cb(void *user) {
 	return 0;
 }
 
+static void r_panels_frame_split(RCore *core, bool vertical) {
+	RPanels *panels = core->panels;
+	r_panels_close_menu (core);
+	if (panels->mode == PANEL_MODE_ZOOM) {
+		r_panels_toggle_zoom_mode (core);
+	}
+	RPanel *cur = r_panels_get_cur_panel (panels);
+	r_panels_split_panel (core, cur, cur->model->title, cur->model->cmd, vertical);
+}
+
+static int frame_split_horizontal_cb(void *user) {
+	r_panels_frame_split ((RCore *)user, false);
+	return 0;
+}
+
+static int frame_split_vertical_cb(void *user) {
+	r_panels_frame_split ((RCore *)user, true);
+	return 0;
+}
+
 static int frame_close_cb(void *user) {
 	RCore *core = (RCore *)user;
 	RPanels *panels = core->panels;
@@ -3427,6 +3423,97 @@ static int frame_close_cb(void *user) {
 	}
 	r_panels_dismantle_del_panel (core, r_panels_get_cur_panel (panels), panels->curnode);
 	return 0;
+}
+
+static int open_menu_cb(void *user);
+static void handle_tab_new_with_cur_panel(RCore *core);
+
+static void r_panels_copy_panel_state(RCore *core, RPanel *dst, RPanel *src) {
+	dst->model->cache = src->model->cache;
+	free (dst->model->funcName);
+	dst->model->funcName = src->model->funcName? strdup (src->model->funcName): NULL;
+	r_panels_set_cmd_str_cache (core, dst, src->model->cmdStrCache);
+}
+
+static void r_panels_move_panel_to_tab(RCore *core, int dst) {
+	RPanelsRoot *root = core->panels_root;
+	RPanels *src = core->panels;
+	RPanels *target = r_panels_get_panels (root, dst);
+	if (!target || target == src || src->n_panels <= 1) {
+		return;
+	}
+	RPanel *cur = r_panels_get_cur_panel (src);
+	const int n_panels = target->n_panels;
+	core->panels = target;
+	r_panels_split_panel (core, r_panels_get_cur_panel (target), cur->model->title, cur->model->cmd, true);
+	if (target->n_panels == n_panels) {
+		core->panels = src;
+		return;
+	}
+	r_panels_set_curnode (core, target->curnode + 1);
+	r_panels_copy_panel_state (core, r_panels_get_cur_panel (target), cur);
+	core->panels = src;
+	r_panels_dismantle_del_panel (core, cur, src->curnode);
+	root->cur_panels = dst;
+	r_panels_set_root_state (core, ROTATE);
+}
+
+static int frame_move_menu_cb(void *user) {
+	RCore *core = (RCore *)user;
+	RPanelsMenu *menu = core->panels->panels_menu;
+	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+	if (parent->sub[parent->selectedIndex]->sub) {
+		open_menu_cb (core);
+	}
+	return 0;
+}
+
+static int frame_move_tab_cb(void *user) {
+	RCore *core = (RCore *)user;
+	RPanels *panels = core->panels;
+	RPanelsMenu *menu = panels->panels_menu;
+	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+	const char *args = parent->sub[parent->selectedIndex]->args;
+	const int dst = args? atoi (args): -1;
+	r_panels_close_menu (core);
+	if (panels->mode == PANEL_MODE_ZOOM) {
+		r_panels_toggle_zoom_mode (core);
+	}
+	if (dst < 0) {
+		handle_tab_new_with_cur_panel (core);
+	} else {
+		r_panels_move_panel_to_tab (core, dst);
+	}
+	return 0;
+}
+
+// one entry per other tab plus a new tab, empty when the panel is the only one in this tab
+static void r_panels_frame_move_menu_fill(RCore *core, RPanelsMenuItem *item) {
+	RPanelsRoot *root = core->panels_root;
+	if (core->panels->n_panels <= 1) {
+		return;
+	}
+	int i;
+	for (i = 0; i < root->n_panels; i++) {
+		if (i == root->cur_panels) {
+			continue;
+		}
+		char number[16];
+		char *args = r_str_newf ("%d", i);
+		const char *name = r_panels_navbar_tab_name (root, i, number, sizeof (number));
+		RPanelsMenuItem *sub = r_panels_menu_item_new (name, "Move this panel into that tab", args, frame_move_tab_cb);
+		free (args);
+		if (!r_panels_menu_item_append (item, sub)) {
+			r_panels_free_menu_item (sub);
+			return;
+		}
+	}
+	if (root->n_panels < PANEL_NUM_LIMIT) {
+		RPanelsMenuItem *sub = r_panels_menu_item_new ("New tab", "Move this panel into a new tab", NULL, frame_move_tab_cb);
+		if (!r_panels_menu_item_append (item, sub)) {
+			r_panels_free_menu_item (sub);
+		}
+	}
 }
 
 static bool frame_maximize_state(RCore *core, RPanel *panel) {
@@ -3446,9 +3533,14 @@ typedef struct {
 
 // actions listed in the [=] menu of every panel, in display order
 static const FrameMenuAction frame_menu_actions[] = {
-	{ "Toggle Maximize", "Zoom this panel to fill the screen", frame_maximize_cb, frame_maximize_state },
-	{ "Contents...", "Replace the contents of this panel", frame_contents_cb, NULL },
-	{ "Toggle Cache", "Cache the command output of this panel", frame_cache_cb, frame_cache_state },
+	{ "Maximize", "Zoom this panel to fill the screen", frame_maximize_cb, frame_maximize_state },
+	{ "Cache contents", "Cache the command output of this panel", frame_cache_cb, frame_cache_state },
+	{ "--", NULL, NULL, NULL },
+	{ "Split Horizontal", "Split this panel in two, one above the other", frame_split_horizontal_cb, NULL },
+	{ "Split Vertical", "Split this panel in two, side by side", frame_split_vertical_cb, NULL },
+	{ "--", NULL, NULL, NULL },
+	{ "Panel contents...", "Replace the contents of this panel", frame_contents_cb, NULL },
+	{ "Move to tab", "Move this panel into another tab", frame_move_menu_cb, NULL },
 	{ "--", NULL, NULL, NULL },
 	{ "Close", "Close this panel", frame_close_cb, NULL },
 };
@@ -3467,6 +3559,9 @@ static RPanelsMenuItem *r_panels_frame_menu_new(RCore *core, RPanel *panel) {
 		char *name = r_panels_frame_action_name (core, panel, action);
 		RPanelsMenuItem *item = r_panels_menu_item_new (name, action->desc, NULL, action->cb);
 		free (name);
+		if (action->cb == frame_move_menu_cb) {
+			r_panels_frame_move_menu_fill (core, item);
+		}
 		if (!r_panels_menu_item_append (frame, item)) {
 			r_panels_free_menu_item (item);
 			break;
@@ -3488,22 +3583,28 @@ static void r_panels_frame_menu_update(RCore *core) {
 	r_panels_update_menu_contents (core, panels->panels_menu, frame);
 }
 
-static void r_panels_open_frame_menu(RCore *core) {
+// contextual menus (panel frame, tab) share the frame slot of the menu
+static void r_panels_open_popup(RCore *core, RPanelsMenuItem *item, int x, int y) {
 	RPanels *panels = core->panels;
-	RPanel *cur = r_panels_get_cur_panel (panels);
-	if (!cur) {
-		return;
-	}
 	RPanelsMenu *menu = panels->panels_menu;
 	const RPanelsMode mode = panels->mode == PANEL_MODE_MENU? PANEL_MODE_DEFAULT: panels->mode;
 	r_panels_set_mode (core, PANEL_MODE_MENU);
 	r_panels_clear_panels_menu (core);
 	panels->frame_mode = mode;
 	r_panels_free_menu_item (menu->frame);
-	menu->frame = r_panels_frame_menu_new (core, cur);
-	// drop down below the [=] button, which sits at the left of the title row
-	r_panels_menu_push (core, menu->frame, cur->view->pos.x + 1, cur->view->pos.y + 2);
+	menu->frame = item;
+	r_panels_menu_push (core, item, x, y);
 	r_panels_set_refresh_all (core, false, false);
+}
+
+static void r_panels_open_frame_menu(RCore *core) {
+	RPanels *panels = core->panels;
+	RPanel *cur = r_panels_get_cur_panel (panels);
+	if (!cur) {
+		return;
+	}
+	// drop down below the [=] button, which sits at the left of the title row
+	r_panels_open_popup (core, r_panels_frame_menu_new (core, cur), cur->view->pos.x + 1, cur->view->pos.y + 2);
 }
 
 static int r_panels_select_mouse_panel(RCore *core, int x, int y) {
@@ -3554,6 +3655,11 @@ static bool r_panels_handle_mouse_on_panel(RCore *core, int x, int y, int *key) 
 		return false;
 	}
 	RPanel *ppos = r_panels_get_panel (panels, idx);
+	const RPanelPos *pos = &ppos->view->pos;
+	// click coordinates are 1-based, skip the frame borders
+	if (y <= pos->y + 1 || y >= pos->y + pos->h || x <= pos->x + 1 || x >= pos->x + pos->w) {
+		return true;
+	}
 	char *word = r_panels_get_word_from_canvas (panels, x, y);
 	if (R_STR_ISEMPTY (word)) {
 		free (word);
@@ -4310,9 +4416,11 @@ static void r_panels_print_footer(RCore *core, int w, int footer_y, bool in_menu
 	char *cropped = r_str_ansi_crop (r_str_get (text), 0, 0, R_MAX (w - 1, 1), 1);
 	const int notch = r_config_get_i (core->config, "scr.notch");
 	r_cons_gotoxy (cons, 0, notch + footer_y + 1);
-	if (core->panels->can->color) {
+	if (in_menu && core->panels->can->color) {
 		r_cons_printf (cons, Color_RESET"%s%s%s\x1b[0K"Color_RESET, cons->context->pal.widget_bg,
 			r_panels_title_foreground (core), r_str_get (cropped));
+	} else if (core->panels->can->color) {
+		r_cons_printf (cons, Color_RESET"%s\x1b[0K"Color_RESET, r_str_get (cropped));
 	} else {
 		r_cons_printf (cons, "%s\x1b[0K", r_str_get (cropped));
 	}
@@ -4407,7 +4515,7 @@ static void r_panels_refresh(RCore *core) {
 		print_notch (core);
 		r_cons_printf (core->cons, Color_RESET R_CONS_CLEAR_LINE);
 		r_cons_canvas_print (can);
-		r_panels_print_footer (core, w, h - PANEL_FOOTER_H, in_menu);
+		r_panels_print_footer (core, w, h - PANEL_FOOTER_H, in_menu && !r_panels_tab_menu_is_open (panels));
 		if (core->scr_gadgets) {
 			r_core_call (core, "pg");
 		}
@@ -5185,89 +5293,174 @@ static void init_all_dbs(RCore *core) {
 	init_rotate_db (core);
 }
 
+// appends an empty tab and leaves core->panels pointing to it, NULL and untouched on failure
+static RPanels *r_panels_tab_append(RCore *core) {
+	RPanelsRoot *root = core->panels_root;
+	if (root->n_panels >= PANEL_NUM_LIMIT) {
+		return NULL;
+	}
+	RPanels *panels = r_panels_new (core);
+	if (!panels) {
+		return NULL;
+	}
+	RPanels *prev = core->panels;
+	core->panels = panels;
+	root->panels[root->n_panels++] = panels;
+	if (!init_panels_menu (core) || !r_panels_alloc (core, panels)) {
+		root->panels[--root->n_panels] = NULL;
+		r_panels_free_partial (panels);
+		core->panels = prev;
+		return NULL;
+	}
+	r_panels_set_mode (core, PANEL_MODE_DEFAULT);
+	init_all_dbs (core);
+	return panels;
+}
+
+static void r_panels_tab_switch_last(RCore *core) {
+	RPanelsRoot *root = core->panels_root;
+	root->cur_panels = root->n_panels - 1;
+	r_panels_set_root_state (core, ROTATE);
+}
+
 static void handle_tab_new_with_cur_panel(RCore *core) {
 	RPanels *panels = core->panels;
 	if (panels->n_panels <= 1) {
 		return;
 	}
-
-	RPanelsRoot *root = core->panels_root;
-	if (root->n_panels + 1 >= PANEL_NUM_LIMIT) {
-		return;
-	}
-
 	RPanel *cur = r_panels_get_cur_panel (panels);
-
-	RPanels *new_panels = r_panels_new (core);
+	RPanels *new_panels = r_panels_tab_append (core);
 	if (!new_panels) {
 		return;
 	}
-	root->panels[root->n_panels] = new_panels;
-
-	RPanels *prev = core->panels;
-	core->panels = new_panels;
-
-	if (!init_panels_menu (core) || !r_panels_alloc (core, new_panels)) {
-		core->panels = prev;
-		return;
-	}
-	r_panels_set_mode (core, PANEL_MODE_DEFAULT);
-	init_all_dbs (core);
-
 	RPanel *new_panel = r_panels_get_panel (new_panels, 0);
 	r_panels_init_panel_param (core, new_panel, cur->model->title, cur->model->cmd);
-	new_panel->model->cache = cur->model->cache;
-	new_panel->model->funcName = strdup (cur->model->funcName);
-	r_panels_set_cmd_str_cache (core, new_panel, cur->model->cmdStrCache);
+	r_panels_copy_panel_state (core, new_panel, cur);
 	r_panels_maximize_panel_size (new_panels);
-
-	core->panels = prev;
+	core->panels = panels;
 	r_panels_dismantle_del_panel (core, cur, panels->curnode);
-
-	root->cur_panels = root->n_panels;
-	root->n_panels++;
-	r_panels_set_root_state (core, ROTATE);
+	r_panels_tab_switch_last (core);
 }
 
-static void r_panels_handle_tab(RCore *core) {
-	r_cons_gotoxy (core->cons, 0, 0);
-	if (core->panels_root->n_panels <= 1) {
-		r_cons_printf (core->cons, R_CONS_CLEAR_LINE"%stab: q:quit t:new T:newWithCurPanel -:del =:setName"Color_RESET, PANEL_HL_COLOR);
-	} else {
-		const int min = 1;
-		const int max = core->panels_root->n_panels;
-		r_cons_printf (core->cons, R_CONS_CLEAR_LINE"%stab: q:quit [%d..%d]:select; p:prev; n:next; t:new T:newWithCurPanel -:del =:setName"Color_RESET,
-				PANEL_HL_COLOR, min, max);
+static void r_panels_clone_tab(RCore *core) {
+	RPanels *panels = core->panels;
+	RPanels *clone = r_panels_tab_append (core);
+	if (!clone) {
+		return;
 	}
-	r_cons_flush (core->cons);
-	r_cons_set_raw (core->cons, true);
-	const int ch = r_cons_readchar (core->cons);
+	int i;
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *src = r_panels_get_panel (panels, i);
+		RPanel *dst = r_panels_get_panel (clone, i);
+		r_panels_init_panel_param (core, dst, src->model->title, src->model->cmd);
+		dst->view->pos = src->view->pos;
+		dst->model->addr = src->model->addr;
+		r_panels_copy_panel_state (core, dst, src);
+	}
+	clone->curnode = panels->curnode;
+	core->panels = panels;
+	r_panels_tab_switch_last (core);
+}
 
-	if (isdigit (ch)) {
-		r_panels_handle_tab_nth (core, ch);
-	} else {
-		switch (ch) {
-		case 'n':
-			r_panels_handle_tab_next (core);
-			break;
-		case 'p':
-			r_panels_handle_tab_prev (core);
-			break;
-		case 'x': // 'tx'
-		case '-':
-			r_panels_set_root_state (core, DEL);
-			break;
-		case '=':
-			r_panels_handle_tab_name (core);
-			break;
-		case 't':
-			r_panels_handle_tab_new (core);
-			break;
-		case 'T':
-			handle_tab_new_with_cur_panel (core);
-			break;
+static int tab_new_cb(void *user) {
+	RCore *core = (RCore *)user;
+	r_panels_close_menu (core);
+	const int n_tabs = core->panels_root->n_panels;
+	r_panels_handle_tab_new (core);
+	if (core->panels_root->n_panels > n_tabs) {
+		r_panels_tab_switch_last (core);
+	}
+	return 0;
+}
+
+static int tab_clone_cb(void *user) {
+	RCore *core = (RCore *)user;
+	r_panels_close_menu (core);
+	if (core->panels->mode == PANEL_MODE_ZOOM) {
+		r_panels_toggle_zoom_mode (core);
+	}
+	r_panels_clone_tab (core);
+	return 0;
+}
+
+static int tab_rename_cb(void *user) {
+	RCore *core = (RCore *)user;
+	r_panels_close_menu (core);
+	r_panels_handle_tab_name (core);
+	r_panels_set_refresh_all (core, false, false);
+	return 0;
+}
+
+static int tab_close_cb(void *user) {
+	RCore *core = (RCore *)user;
+	r_panels_close_menu (core);
+	r_panels_set_root_state (core, DEL);
+	return 0;
+}
+
+static int tab_next_cb(void *user) {
+	RCore *core = (RCore *)user;
+	r_panels_close_menu (core);
+	r_panels_handle_tab_next (core);
+	return 0;
+}
+
+// entries are named "<n> <tab name>", n being the key that selects the tab
+static int tab_goto_cb(void *user) {
+	RCore *core = (RCore *)user;
+	RPanelsMenu *menu = core->panels->panels_menu;
+	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+	const int n = atoi (parent->sub[parent->selectedIndex]->name);
+	r_panels_close_menu (core);
+	r_panels_handle_tab_nth (core, '0' + n);
+	return 0;
+}
+
+static int tab_prev_cb(void *user) {
+	RCore *core = (RCore *)user;
+	r_panels_close_menu (core);
+	r_panels_handle_tab_prev (core);
+	return 0;
+}
+
+static void r_panels_tab_menu_add(RPanelsMenuItem *menu, const char *name, const char *desc, RPanelsMenuCallback cb) {
+	RPanelsMenuItem *item = r_panels_menu_item_new (name, desc, NULL, cb);
+	if (!r_panels_menu_item_append (menu, item)) {
+		r_panels_free_menu_item (item);
+	}
+}
+
+static void r_panels_open_tab_menu(RCore *core) {
+	RPanelsRoot *root = core->panels_root;
+	RConsCanvas *can = core->panels->can;
+	RPanelsMenuItem *menu = r_panels_menu_item_new ("Tab", NULL, NULL, NULL);
+	const bool many = root->n_panels > 1;
+	if (root->n_panels < PANEL_NUM_LIMIT) {
+		r_panels_tab_menu_add (menu, "New Tab", "Open a new tab with the default layout", tab_new_cb);
+		r_panels_tab_menu_add (menu, "Clone", "Open a new tab with a copy of this one", tab_clone_cb);
+	}
+	r_panels_tab_menu_add (menu, "Rename", "Change the name of this tab", tab_rename_cb);
+	if (many) {
+		r_panels_tab_menu_add (menu, "Close", "Close this tab", tab_close_cb);
+		r_panels_tab_menu_add (menu, "--", NULL, NULL);
+		r_panels_tab_menu_add (menu, "Next", "Switch to the next tab", tab_next_cb);
+		r_panels_tab_menu_add (menu, "Prev", "Switch to the previous tab", tab_prev_cb);
+		r_panels_tab_menu_add (menu, "--", NULL, NULL);
+		int i;
+		for (i = 0; i < root->n_panels && i < 9; i++) {
+			char number[16];
+			const char *tab_name = r_panels_navbar_tab_name (root, i, number, sizeof (number));
+			char *name = r_str_newf ("%d %s%s", i + 1, tab_name, i == root->cur_panels? " *": "");
+			r_panels_tab_menu_add (menu, name, "Switch to this tab", tab_goto_cb);
+			free (name);
 		}
 	}
+	RPanelsNavLayout layout;
+	r_strbuf_free (r_panels_navbar (core, can->w, &layout));
+	// pop up above the selected tab, navbar columns are 1-based
+	const int x = R_MAX (layout.tab_x[R_MAX (root->cur_panels, 0)] - 1, 0);
+	const int y = can->h - PANEL_FOOTER_H - menu->n_sub - 2;
+	r_panels_open_popup (core, menu, x, y);
 }
 
 static void handleComment(RCore *core) {
@@ -7141,9 +7334,14 @@ static void handle_menu(RCore *core, const int key) {
 			r_panels_close_menu (core);
 			return;
 		default: // mouse presses arrive as key 0, keep the menu open for the release
+			if (key >= '1' && key <= '9' && r_panels_tab_menu_is_open (panels)) {
+				r_panels_close_menu (core);
+				r_panels_handle_tab_nth (core, key);
+			}
 			return;
 		}
-	}	switch (key) {
+	}
+	switch (key) {
 	case 'h':
 		if (menu->depth <= 2) {
 			menu->n_refresh = 0;
@@ -7910,10 +8108,7 @@ virtualmouse:
 		}
 		return;
 	case 't':
-		r_panels_handle_tab (core);
-		if (panels_root->root_state != DEFAULT) {
-			goto exit;
-		}
+		r_panels_open_tab_menu (core);
 		break;
 	case 'T':
 		if (panels_root->n_panels > 1) {

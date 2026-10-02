@@ -704,7 +704,7 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 	r_strbuf_free (vline);
 	if (color) {
 		c->attr = Color_RESET;
-		for (i = -1; i < h; i++) {
+		for (i = 0; i < h; i++) {
 			if (G (x + w, y + i)) {
 				W (Color_RESET);
 			}
