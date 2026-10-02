@@ -1925,6 +1925,9 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	case ARM64_INS_BR:
 		r_strbuf_setf (&op->esil, "%s,pc,:=", REG64 (0));
 		break;
+#if CS_API_MAJOR > 4
+	case ARM64_INS_BC:
+#endif
 	case ARM64_INS_B:
 		/* capstone precompute resulting address, using PC + IMM */
 		r_strbuf_appendf (&op->esil, "%"PFMT64d",pc,:=", IMM64 (0));
@@ -4136,11 +4139,14 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->eob = true;
 		op->reg = cs_reg_name (handle, insn->detail->arm64.operands[0].reg);
 		break;
+#if CS_API_MAJOR > 4
+	case ARM64_INS_BC:
+#endif
 	case ARM64_INS_B:
 		// BX LR == RET
 		if ((arm64_reg) insn->detail->arm64.operands[0].reg == ARM64_REG_LR) {
 			op->type = R_ANAL_OP_TYPE_RET;
-		} else if (insn->detail->arm64.cc) {
+		} else if (insn->detail->arm64.cc > ARM64_CC_INVALID && insn->detail->arm64.cc < ARM64_CC_AL) {
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->jump = IMM64(0);
 			op->fail = addr + op->size;
