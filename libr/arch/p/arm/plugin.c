@@ -48,7 +48,7 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 		}
 	} else {
 		opsize = 4;
-		r_write_ble32 (opbuf, opcode, !be);
+		r_write_ble32 (opbuf, opcode, bits == 64 || !be);
 	}
 	r_anal_op_set_bytes (op, op->addr, opbuf, opsize);
 	// r_strbuf_setbin (&op->buf, opbuf, opsize);

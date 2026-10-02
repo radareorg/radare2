@@ -56747,3 +56747,44 @@ cmp
 cmp
 EOF_EXPECT
 RUN
+
+NAME=A64 fallback instructions and preludes ignore data endianness
+FILE=malloc://64
+ARGS=-a arm -b 64 -e anal.in=io.maps
+REQUIRE=cs5
+CMDS=<<EOF_CMDS
+wx fea7c1da1f000055fe87c1da1f002055
+pi 4
+ao 4~type[1]
+aap
+aflq
+af-*
+e cfg.bigendian=true
+pi 4
+ao 4~type[1]
+aap
+aflq
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+pacibsp
+retaa
+pacibsp
+retab
+cmp
+ret
+cmp
+ret
+0x00000000
+0x00000008
+pacibsp
+retaa
+pacibsp
+retab
+cmp
+ret
+cmp
+ret
+0x00000000
+0x00000008
+EOF_EXPECT
+RUN
