@@ -55,17 +55,19 @@ NAME=swift cc gives no self or error to a c function or a free swift function
 FILE=bins/elf/analysis/hello-swift
 ARGS=-e bin.demangle=false
 CMDS=<<EOF
-e anal.cc=swift
+e anal.cc
 af @ sym.__libc_csu_init
 afs @ sym.__libc_csu_init
 o bins/elf/swift-klass
-e anal.cc=swift
+e anal.cc
 af @ 0x20d0
 afv @ 0x20d0~self,error
 afs @ 0x20d0
 EOF
 EXPECT=<<EOF
+swift
 void sym.__libc_csu_init (int64_t arg1, int64_t arg2, int64_t arg3);
+swift
 void sym._s4main5entrySiyF ();
 EOF
 RUN
@@ -74,7 +76,7 @@ NAME=swift cc gives self to struct setters, class static methods and class initi
 FILE=bins/elf/swift-klass
 ARGS=-e bin.demangle=false
 CMDS=<<EOF
-e anal.cc=swift
+e anal.cc
 af @ sym._s4main10SomeStructV4nameSSvs
 afv @ sym._s4main10SomeStructV4nameSSvs~self,error
 af @ sym._s4main9SomeClassC12staticMethodyyFZ
@@ -83,6 +85,7 @@ af @ sym._s4main9SomeClassCACycfc
 afv @ sym._s4main9SomeClassCACycfc~self,error
 EOF
 EXPECT=<<EOF
+swift
 arg int64_t self @ x20
 arg int64_t self @ x20
 arg int64_t self @ x20
@@ -93,12 +96,13 @@ NAME=swift cc gives no self to struct initializers
 FILE=bins/elf/swift-klass
 ARGS=-e bin.demangle=false
 CMDS=<<EOF
-e anal.cc=swift
+e anal.cc
 af @ sym._s4main10SomeStructV4name2idACSS_SitcfC
 afv @ sym._s4main10SomeStructV4name2idACSS_SitcfC~?self
 afs @ sym._s4main10SomeStructV4name2idACSS_SitcfC
 EOF
 EXPECT=<<EOF
+swift
 0
 void method.constructor.main.SomeStruct.init ();
 EOF
