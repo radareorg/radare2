@@ -257,6 +257,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=mips64 dneg dnegu esil
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=mips
+e asm.bits=64
+wx 2e1003002f100300
+aoe 2
+EOF
+EXPECT=<<EOF
+0x00000000 v1,zero,-,v0,=
+0x00000004 v1,zero,-,v0,=
+EOF
+RUN
+
 NAME=mips bgtz no likely skip
 FILE=malloc://16
 CMDS=<<EOF
