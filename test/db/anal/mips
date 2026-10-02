@@ -184,6 +184,7 @@ EOF
 RUN
 
 NAME=mips pseudo sw + 0
+REQUIRE=cs5
 FILE=malloc://32
 ARGS=-a mips -m 0x80100000
 CMDS=<<EOF
@@ -195,6 +196,23 @@ pd 1
 EOF
 EXPECT=<<EOF
             0x80100000      0000beaf       sw fp, (sp)
+            0x80100000      0000beaf       [sp + 0] = fp
+EOF
+RUN
+
+NAME=mips pseudo sw + 0 (cs6)
+REQUIRE=cs6
+FILE=malloc://32
+ARGS=-a mips -m 0x80100000
+CMDS=<<EOF
+e io.va=true
+wx 0000beaf
+pd 1
+e asm.pseudo=true
+pd 1
+EOF
+EXPECT=<<EOF
+            0x80100000      0000beaf       sw fp, 0(sp)
             0x80100000      0000beaf       [sp + 0] = fp
 EOF
 RUN
@@ -236,6 +254,20 @@ aoe 1~?pc,4,+,pc,:=
 EOF
 EXPECT=<<EOF
 1
+EOF
+RUN
+
+NAME=mips64 dneg dnegu esil
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=mips
+e asm.bits=64
+wx 2e1003002f100300
+aoe 2
+EOF
+EXPECT=<<EOF
+0x00000000 v1,zero,-,v0,=
+0x00000004 v1,zero,-,v0,=
 EOF
 RUN
 
@@ -525,6 +557,7 @@ EOF
 RUN
 
 NAME=mips branch delay function detection #1.
+REQUIRE=cs5
 FILE=malloc://160
 ARGS=-m 0x8060b4f8
 CMDS=<<EOF
@@ -582,6 +615,78 @@ EXPECT=<<EOF
 0x8060b568      01008424   addiu a0, a0, 1
 0x8060b56c      0800e003   jr ra
 0x8060b570      000080a0   sb zero, (a0)
+0x8060b574      00000000   nop
+(fcn) fcn.8060b578 20
+// void fcn.8060b578 (int32_t arg1, int32_t arg2);
+`- args(a0, a1)
+0x8060b578      e0ffbd27   addiu sp, sp, -0x20
+0x8060b57c      542d180c   jal fcn.8060b550
+0x8060b580      00000000   nop
+0x8060b584      0800e003   jr ra
+0x8060b588      2000bd27   addiu sp, sp, 0x20
+0x8060b58c      00000000   nop
+EOF
+RUN
+
+NAME=mips branch delay function detection #1. (cs6)
+REQUIRE=cs6
+FILE=malloc://160
+ARGS=-m 0x8060b4f8
+CMDS=<<EOF
+e io.va=true
+e asm.cmt.calls=false
+e asm.bits=32
+e asm.arch=mips
+e asm.comments=0
+e anal.hasnext=1
+e anal.nopskip=1
+e asm.nbytes=4
+e asm.lines.bb=false
+e asm.lines.jmp=false
+e asm.lines.fcn=false
+s 0x8060b4f8
+wx 0000000000000000002e0500032e05000f00801021100000492d1808000082900800e003211080000000829007004010000000000016020003160200f8ff451000000000482d180801008424211000000800e003000000000000a290050040100100a524000082a00000a290552d1808010084240800e003000080a000000000e0ffbd27542d180c000000000800e0032000bd270000000000000000
+aa 2> /dev/null
+pd 38
+EOF
+EXPECT=<<EOF
+0x8060b4f8      00000000   nop
+0x8060b4fc      00000000   nop
+(fcn) fcn.8060b500 80
+// void fcn.8060b500 (int32_t arg1, int32_t arg2);
+`- args(a0, a1)
+0x8060b500      002e0500   sll a1, a1, 0x18
+0x8060b504      032e0500   sra a1, a1, 0x18
+0x8060b508      0f008010   beqz a0, 0x8060b548
+0x8060b50c      21100000   move v0, zero
+0x8060b510      492d1808   j 0x8060b524
+0x8060b514      00008290   lbu v0, 0(a0)
+0x8060b518      0800e003   jr ra
+0x8060b51c      21108000   move v0, a0
+0x8060b520      00008290   lbu v0, 0(a0)
+0x8060b524      07004010   beqz v0, 0x8060b544
+0x8060b528      00000000   nop
+0x8060b52c      00160200   sll v0, v0, 0x18
+0x8060b530      03160200   sra v0, v0, 0x18
+0x8060b534      f8ff4510   beq v0, a1, 0x8060b518
+0x8060b538      00000000   nop
+0x8060b53c      482d1808   j 0x8060b520
+0x8060b540      01008424   addiu a0, a0, 1
+0x8060b544      21100000   move v0, zero
+0x8060b548      0800e003   jr ra
+0x8060b54c      00000000   nop
+(fcn) fcn.8060b550 36
+// void fcn.8060b550 (int32_t arg1, int32_t arg2);
+`- args(a0, a1)
+0x8060b550      0000a290   lbu v0, 0(a1)
+0x8060b554      05004010   beqz v0, 0x8060b56c
+0x8060b558      0100a524   addiu a1, a1, 1
+0x8060b55c      000082a0   sb v0, 0(a0)
+0x8060b560      0000a290   lbu v0, 0(a1)
+0x8060b564      552d1808   j 0x8060b554
+0x8060b568      01008424   addiu a0, a0, 1
+0x8060b56c      0800e003   jr ra
+0x8060b570      000080a0   sb zero, 0(a0)
 0x8060b574      00000000   nop
 (fcn) fcn.8060b578 20
 // void fcn.8060b578 (int32_t arg1, int32_t arg2);
@@ -660,6 +765,7 @@ EOF
 RUN
 
 NAME=capstone: mips branch delay function detection #1.
+REQUIRE=cs5
 FILE=malloc://160
 ARGS=-m 0x8060b4f8
 CMDS=<<EOF
@@ -731,7 +837,81 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=capstone: mips branch delay function detection #1. (cs6)
+REQUIRE=cs6
+FILE=malloc://160
+ARGS=-m 0x8060b4f8
+CMDS=<<EOF
+e io.va=true
+e asm.cmt.calls=false
+e anal.in=io.maps
+e asm.bits=32
+e asm.arch=mips
+e asm.comments=0
+e anal.hasnext=1
+e anal.nopskip=1
+e asm.nbytes=4
+e asm.lines.bb=false
+e asm.lines.jmp=false
+e asm.lines.fcn=false
+s 0x8060b4f8
+wx 0000000000000000002e0500032e05000f00801021100000492d1808000082900800e003211080000000829007004010000000000016020003160200f8ff451000000000482d180801008424211000000800e003000000000000a290050040100100a524000082a00000a290552d1808010084240800e003000080a000000000e0ffbd27542d180c000000000800e0032000bd270000000000000000
+aa 2> /dev/null
+pd 38
+EOF
+EXPECT=<<EOF
+0x8060b4f8      00000000   nop
+0x8060b4fc      00000000   nop
+(fcn) fcn.8060b500 80
+// void fcn.8060b500 (int32_t arg1, int32_t arg2);
+`- args(a0, a1)
+0x8060b500      002e0500   sll a1, a1, 0x18
+0x8060b504      032e0500   sra a1, a1, 0x18
+0x8060b508      0f008010   beqz a0, 0x8060b548
+0x8060b50c      21100000   move v0, zero
+0x8060b510      492d1808   j 0x8060b524
+0x8060b514      00008290   lbu v0, 0(a0)
+0x8060b518      0800e003   jr ra
+0x8060b51c      21108000   move v0, a0
+0x8060b520      00008290   lbu v0, 0(a0)
+0x8060b524      07004010   beqz v0, 0x8060b544
+0x8060b528      00000000   nop
+0x8060b52c      00160200   sll v0, v0, 0x18
+0x8060b530      03160200   sra v0, v0, 0x18
+0x8060b534      f8ff4510   beq v0, a1, 0x8060b518
+0x8060b538      00000000   nop
+0x8060b53c      482d1808   j 0x8060b520
+0x8060b540      01008424   addiu a0, a0, 1
+0x8060b544      21100000   move v0, zero
+0x8060b548      0800e003   jr ra
+0x8060b54c      00000000   nop
+(fcn) fcn.8060b550 36
+// void fcn.8060b550 (int32_t arg1, int32_t arg2);
+`- args(a0, a1)
+0x8060b550      0000a290   lbu v0, 0(a1)
+0x8060b554      05004010   beqz v0, 0x8060b56c
+0x8060b558      0100a524   addiu a1, a1, 1
+0x8060b55c      000082a0   sb v0, 0(a0)
+0x8060b560      0000a290   lbu v0, 0(a1)
+0x8060b564      552d1808   j 0x8060b554
+0x8060b568      01008424   addiu a0, a0, 1
+0x8060b56c      0800e003   jr ra
+0x8060b570      000080a0   sb zero, 0(a0)
+0x8060b574      00000000   nop
+(fcn) fcn.8060b578 20
+// void fcn.8060b578 (int32_t arg1, int32_t arg2);
+`- args(a0, a1)
+0x8060b578      e0ffbd27   addiu sp, sp, -0x20
+0x8060b57c      542d180c   jal fcn.8060b550
+0x8060b580      00000000   nop
+0x8060b584      0800e003   jr ra
+0x8060b588      2000bd27   addiu sp, sp, 0x20
+0x8060b58c      00000000   nop
+EOF
+RUN
+
 NAME=capstone: mips branch delay function detection #2.
+REQUIRE=cs5
 FILE=malloc://160
 ARGS=-m 0x8060b4f8
 CMDS=<<EOF
@@ -803,7 +983,81 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=capstone: mips branch delay function detection #2. (cs6)
+REQUIRE=cs6
+FILE=malloc://160
+ARGS=-m 0x8060b4f8
+CMDS=<<EOF
+e io.va=true
+e asm.cmt.calls=false
+e asm.bits=32
+e anal.in=io.maps
+e asm.arch=mips
+e asm.comments=0
+e anal.hasnext=1
+e anal.nopskip=1
+e asm.nbytes=4
+e asm.lines.bb=false
+e asm.lines.jmp=false
+e asm.lines.fcn=true
+s 0x8060b4f8
+wx 0000000000000000002e0500032e05000f00801021100000492d1808000082900800e003211080000000829007004010000000000016020003160200f8ff451000000000482d180801008424211000000800e003000000000000a290050040100100a524000082a00000a290552d1808010084240800e003000080a000000000e0ffbd27542d180c000000000800e0032000bd270000000000000000
+aa 2> /dev/null
+pd 38
+EOF
+EXPECT=<<EOF
+  0x8060b4f8      00000000   nop
+  0x8060b4fc      00000000   nop
+/ (fcn) fcn.8060b500 80
+// void fcn.8060b500 (int32_t arg1, int32_t arg2);
+| `- args(a0, a1)
+| 0x8060b500      002e0500   sll a1, a1, 0x18
+| 0x8060b504      032e0500   sra a1, a1, 0x18
+| 0x8060b508      0f008010   beqz a0, 0x8060b548
+| 0x8060b50c      21100000   move v0, zero
+| 0x8060b510      492d1808   j 0x8060b524
+| 0x8060b514      00008290   lbu v0, 0(a0)
+| 0x8060b518      0800e003   jr ra
+| 0x8060b51c      21108000   move v0, a0
+| 0x8060b520      00008290   lbu v0, 0(a0)
+| 0x8060b524      07004010   beqz v0, 0x8060b544
+| 0x8060b528      00000000   nop
+| 0x8060b52c      00160200   sll v0, v0, 0x18
+| 0x8060b530      03160200   sra v0, v0, 0x18
+| 0x8060b534      f8ff4510   beq v0, a1, 0x8060b518
+| 0x8060b538      00000000   nop
+| 0x8060b53c      482d1808   j 0x8060b520
+| 0x8060b540      01008424   addiu a0, a0, 1
+| 0x8060b544      21100000   move v0, zero
+| 0x8060b548      0800e003   jr ra
+\ 0x8060b54c      00000000   nop
+/ (fcn) fcn.8060b550 36
+// void fcn.8060b550 (int32_t arg1, int32_t arg2);
+| `- args(a0, a1)
+| 0x8060b550      0000a290   lbu v0, 0(a1)
+| 0x8060b554      05004010   beqz v0, 0x8060b56c
+| 0x8060b558      0100a524   addiu a1, a1, 1
+| 0x8060b55c      000082a0   sb v0, 0(a0)
+| 0x8060b560      0000a290   lbu v0, 0(a1)
+| 0x8060b564      552d1808   j 0x8060b554
+| 0x8060b568      01008424   addiu a0, a0, 1
+| 0x8060b56c      0800e003   jr ra
+\ 0x8060b570      000080a0   sb zero, 0(a0)
+  0x8060b574      00000000   nop
+/ (fcn) fcn.8060b578 20
+// void fcn.8060b578 (int32_t arg1, int32_t arg2);
+| `- args(a0, a1)
+| 0x8060b578      e0ffbd27   addiu sp, sp, -0x20
+| 0x8060b57c      542d180c   jal fcn.8060b550
+| 0x8060b580      00000000   nop
+| 0x8060b584      0800e003   jr ra
+\ 0x8060b588      2000bd27   addiu sp, sp, 0x20
+  0x8060b58c      00000000   nop
+EOF
+RUN
+
 NAME=mips big endian strings, calls, etc. analysis
+REQUIRE=cs5
 FILE=bins/elf/analysis/mipsbe-ip
 CMDS=<<EOF
 s 0x00402088
@@ -812,6 +1066,27 @@ EOF
 EXPECT=<<EOF
             0x00402088      8f84814c       lw a0, -main(gp)            ; [reloc.main:4]=0x402558 sym.main
             0x0040208c      8fa50000       lw a1, (sp)
+            0x00402090      27a60004       addiu a2, sp, 4
+            0x00402094      2401fff8       addiu at, zero, -8
+            0x00402098      03a1e824       and sp, sp, at
+            0x0040209c      27bdffe0       addiu sp, sp, -0x20
+            0x004020a0      8f878230       lw a3, -sym._init(gp)       ; [reloc._init:4]=0x401ff4 sym._init
+            0x004020a4      8f888114       lw t0, -sym._fini(gp)       ; [reloc._fini:4]=0x41eca0 sym._fini
+            0x004020a8      afa80010       sw t0, 0x10(sp)
+            0x004020ac      afa20014       sw v0, 0x14(sp)
+EOF
+RUN
+
+NAME=mips big endian strings, calls, etc. analysis (cs6)
+REQUIRE=cs6
+FILE=bins/elf/analysis/mipsbe-ip
+CMDS=<<EOF
+s 0x00402088
+pd 10
+EOF
+EXPECT=<<EOF
+            0x00402088      8f84814c       lw a0, -main(gp)            ; [reloc.main:4]=0x402558 sym.main
+            0x0040208c      8fa50000       lw a1, 0(sp)
             0x00402090      27a60004       addiu a2, sp, 4
             0x00402094      2401fff8       addiu at, zero, -8
             0x00402098      03a1e824       and sp, sp, at

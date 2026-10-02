@@ -2850,9 +2850,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		} else if (fmt == 'e') {
 			if (R_STR_ISNOTEMPTY (esilstr)) {
 				if (use_color) {
-					r_cons_printf (core->cons, "%s0x%" PFMT64x Color_RESET " %s\n", color, core->addr + idx, esilstr);
+					r_cons_printf (core->cons, "%s0x%08" PFMT64x Color_RESET " %s\n", color, core->addr + idx, esilstr);
 				} else {
-					r_cons_printf (core->cons, "0x%" PFMT64x " %s\n", core->addr + idx, esilstr);
+					r_cons_printf (core->cons, "0x%08" PFMT64x " %s\n", core->addr + idx, esilstr);
 				}
 			}
 		} else if (fmt == 's') {

@@ -7,7 +7,7 @@ aoe 1 @ 0x40205c
 EOF
 EXPECT=<<EOF
 0x0000079e 0x0040259e 5 utf16le
-0x40205c 8,sp,-=,0x40259e,sp,=[8]
+0x0040205c 8,sp,-=,0x40259e,sp,=[8]
 EOF
 RUN
 
@@ -19,8 +19,8 @@ aoe 1 @ 0x402232
 aoe 1 @ 0x40223f
 EOF
 EXPECT=<<EOF
-0x402232 32,sp,[8],~,sp,=[8]
-0x40223f 24,sp,+=,8,sp,-=,r0,sp,=[8]
+0x00402232 32,sp,[8],~,sp,=[8]
+0x0040223f 24,sp,+=,8,sp,-=,r0,sp,=[8]
 EOF
 RUN
 
