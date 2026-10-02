@@ -80,9 +80,9 @@ RUN
 NAME=ao mte irg addg
 FILE=bins/mach0/hello-mte
 CMDS=<<EOF
-ao@0x100007f10
+ao@0x100007f10~!id:
 ?e --
-ao@0x100007f14
+ao@0x100007f14~!id:
 EOF
 EXPECT=<<EOF
 address: 0x100007f10
@@ -93,7 +93,6 @@ pseudo: irg x8, sp, x8
 mnemonic: irg
 description: insert random tag
 mask: ffffffff
-id: 429
 bytes: e813c89a
 size: 4
 sign: false
@@ -109,7 +108,6 @@ pseudo: addg x9, x8, 0x20, 0
 mnemonic: addg
 description: add with tag
 mask: ffffffff
-id: 7
 bytes: 09018291
 val: 0x00000020
 size: 4
@@ -126,11 +124,11 @@ FILE=-
 ARGS=-a arm -b 64 -e cfg.bigendian=true
 CMDS=<<EOF
 wx 0c09a09109018291e813c89a
-ao@0
+ao@0~!id:
 ?e ---
-ao@4
+ao@4~!id:
 ?e ---
-ao@8
+ao@8~!id:
 EOF
 EXPECT=<<EOF
 address: 0x0
@@ -141,7 +139,6 @@ pseudo: addg x12, x8, 0x200, 2
 mnemonic: addg
 description: add with tag
 mask: ffffffff
-id: 7
 bytes: 0c09a091
 val: 0x00000200
 size: 4
@@ -159,7 +156,6 @@ pseudo: addg x9, x8, 0x20, 0
 mnemonic: addg
 description: add with tag
 mask: ffffffff
-id: 7
 bytes: 09018291
 val: 0x00000020
 size: 4
@@ -177,7 +173,6 @@ pseudo: irg x8, sp, x8
 mnemonic: irg
 description: insert random tag
 mask: ffffffff
-id: 429
 bytes: e813c89a
 size: 4
 sign: false
@@ -188,6 +183,7 @@ EOF
 RUN
 
 NAME=Variable analysis with stp/preindexed str
+REQUIRE=cs5
 FILE=-
 ARGS=-a arm -b 64
 CMDS=<<EOF
@@ -200,6 +196,29 @@ EOF
 EXPECT=<<EOF
 afvR
    var_10h  0x8,0xc
+   var_20h  0x14
+    var_8h  0xc
+afvW
+   var_10h  0x4
+   var_20h  0x0
+    var_8h  0x4
+EOF
+RUN
+
+NAME=Variable analysis with stp/preindexed str (cs6)
+REQUIRE=cs6
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e anal.vars.stackname=true
+wx f30f1ef8fd7b01a9fd430091fd7b41a9e00313aaf30742f8c0035fd6
+aap
+aaef
+afvx
+EOF
+EXPECT=<<EOF
+afvR
+   var_10h  0xc
    var_20h  0x14
     var_8h  0xc
 afvW
@@ -56969,4 +56988,48 @@ chkfeat x16
 type: mov
 family: sec
 EOF_EXPECT
+RUN
+
+NAME=ARM64 logical immediate move value
+FILE=malloc://8
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx e3031832e10378b2
+ao 2~type,val:
+EOF
+EXPECT=<<EOF
+val: 0x00000100
+type: mov
+val: 0x00000100
+type: mov
+EOF
+RUN
+
+NAME=ARM64 operands and aliases are the same in all capstone versions
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 20000058f30742f80820201e1f0001ebe00301aa00f07dd3
+pi 6
+aoj @ 0~{0.opex.operands}
+aoj @ 4~{0.opex.operands}
+aoj @ 8~{0.opex.operands}
+aoj @ 12~{0.type}
+aoj @ 16~{0.type}
+aoj @ 20~{0.type}
+EOF
+EXPECT=<<EOF
+ldr x0, 4
+ldr x19, [sp], 0x20
+fcmp s0, 0.0
+cmp x0, x1
+mov x0, x1
+lsl x0, x0, 3
+[{"type":"reg","value":"x0"},{"type":"imm","value":4}]
+[{"type":"reg","value":"x19"},{"type":"mem","base":"sp","disp":0},{"type":"imm","value":32}]
+[{"type":"reg","value":"s0"},{"type":"fp","value":0.000}]
+cmp
+mov
+shl
+EOF
 RUN

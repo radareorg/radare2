@@ -28,6 +28,7 @@ EOF
 RUN
 
 NAME=pia20 (3)
+REQUIRE=cs5
 FILE=bins/mach0/BatteryLife
 ARGS=-a arm -b 16
 CMDS=pia 20
@@ -35,6 +36,25 @@ EXPECT=<<EOF
 push {r4, r5, r6, r7, lr}
 add r7, sp, 0xc
 str r8, [sp, -0x4]!
+ldrh r4, [r0, 0x28]
+mov r5, r1
+mov r6, r0
+blx 0x137d68
+vsubhn.i32 d4, q13, q0
+mov r8, r0
+invalid
+EOF
+RUN
+
+NAME=pia20 (3) (cs6)
+REQUIRE=cs6
+FILE=bins/mach0/BatteryLife
+ARGS=-a arm -b 16
+CMDS=pia 20
+EXPECT=<<EOF
+push {r4, r5, r6, r7, lr}
+add r7, sp, 0xc
+str r8, [sp, -4]!
 ldrh r4, [r0, 0x28]
 mov r5, r1
 mov r6, r0
