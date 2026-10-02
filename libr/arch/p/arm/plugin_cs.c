@@ -4971,7 +4971,7 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 		// TODO arch plugins should NOT set register values
 		{
 			int j;
-			for (j = 0; j < 3; j++, i++) {
+			for (j = 0; j < 3 && i < count; j++, i++) {
 				set_src_dst (op, RVecRArchValue_at (&op->srcs, j), &handle, insn, i, bits);
 			}
 			set_src_dst (op, RVecRArchValue_at (&op->dsts, 0), &handle, insn, 0, bits);
