@@ -1233,7 +1233,7 @@ static void set_jump_target(RAnalOp *op, cs_insn *insn) {
 }
 
 #if CS_API_MAJOR >= 6
-static unsigned int mips_alias_id(const cs_insn *insn) {
+static unsigned int mips_resolve_alias_id(const cs_insn *insn) {
 	// alias mnemonics that are also real instructions, alias_id is 0 for the rest
 	switch (insn->alias_id) {
 	case MIPS_INS_ALIAS_B: return MIPS_INS_B;
@@ -1254,6 +1254,17 @@ static unsigned int mips_alias_id(const cs_insn *insn) {
 	case MIPS_INS_ALIAS_SW: return MIPS_INS_SW;
 	}
 	return insn->id;
+}
+
+static bool mips_alias_omits_zero(unsigned int alias_id) {
+	switch (alias_id) {
+	case MIPS_INS_ALIAS_BEQZL:
+	case MIPS_INS_ALIAS_BNEZL:
+	case MIPS_INS_ALIAS_DNEG:
+	case MIPS_INS_ALIAS_DNEGU:
+		return true;
+	}
+	return false;
 }
 #endif
 
@@ -1312,8 +1323,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		}
 	}
 #if CS_API_MAJOR >= 6
-	insn->id = mips_alias_id (insn);
-	if ((insn->alias_id == MIPS_INS_ALIAS_BEQZL || insn->alias_id == MIPS_INS_ALIAS_BNEZL) && OPCOUNT () == 2) {
+	insn->id = mips_resolve_alias_id (insn);
+	// no real insn id for these aliases: keep beql/bnel/dsub/dsubu and restore the omitted $zero
+	if (mips_alias_omits_zero (insn->alias_id) && OPCOUNT () == 2) {
 		OPERAND (2) = OPERAND (1);
 		OPERAND (1).type = MIPS_OP_REG;
 		OPERAND (1).reg = MIPS_REG_ZERO;
