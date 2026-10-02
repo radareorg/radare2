@@ -188,7 +188,7 @@ static const char *hack_pauth_lr_mnemonic(ut32 insn, bool *is_ret) {
 	return NULL;
 }
 
-static inline int hacky_arm_anal(RArchSession *a, RAnalOp *op, const ut8 *buf, int len) {
+static inline int hacky_arm_anal(RArchSession *a, RAnalOp *op, const ut8 *buf, int len, RAnalOpMask mask) {
 	int ret = -1;
 	// Hacky support for ARMv8.3 and ARMv8.5
 	if (a->config->bits == 64 && len >= 4) {
@@ -198,6 +198,9 @@ static inline int hacky_arm_anal(RArchSession *a, RAnalOp *op, const ut8 *buf, i
 		if (hack_pauth_lr_mnemonic (insn, &is_ret)) {
 			op->type = is_ret? R_ANAL_OP_TYPE_RET: R_ANAL_OP_TYPE_CMP;
 			op->family = R_ANAL_OP_FAMILY_SECURITY;
+			if (is_ret && (mask & R_ARCH_OP_MASK_ESIL)) {
+				r_strbuf_set (&op->esil, "lr,pc,:=");
+			}
 			return op->size = 4;
 		}
 		// xpaci // e#43c1da

@@ -2138,3 +2138,52 @@ EXPECT=<<EOF
 0x00000001
 EOF
 RUN
+
+NAME=PAuth LR returns restore the program counter
+FILE=malloc://64
+ARGS=-a arm -b 64
+REQUIRE=cs5
+CMDS=<<EOF_CMDS
+aei
+aer lr=0x30
+wx 1f0000551f002055e00b5fd6fe0b5fd6e00f5fd6fe0f5fd6
+ao 6~type[1]
+aeip
+aes
+aer pc
+s 4
+aeip
+aes
+aer pc
+s 8
+aeip
+aes
+aer pc
+s 12
+aeip
+aes
+aer pc
+s 16
+aeip
+aes
+aer pc
+s 20
+aeip
+aes
+aer pc
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+ret
+ret
+ret
+ret
+ret
+ret
+0x00000030
+0x00000030
+0x00000030
+0x00000030
+0x00000030
+0x00000030
+EOF_EXPECT
+RUN

@@ -5064,7 +5064,7 @@ static int analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 			}
 			return -1;
 		}
-		hacky_arm_anal (as, op, buf, len);
+		hacky_arm_anal (as, op, buf, len, mask);
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			if (hacky_arm_asm (as, op, buf, len) < 1) {
 				free (op->mnemonic);
