@@ -1073,6 +1073,18 @@ static int test_pj_param_raw(void) {
 	mu_end;
 }
 
+static int test_pj_rj_integers(void) {
+	const char *input = "{\"neg\":-5,\"zero\":0,\"arr\":[-9223372036854775808,18446744073709551615]}";
+	RJson *parsed = r_json_parsedup (input);
+	mu_assert_notnull (parsed, "parse failed");
+	PJ *pj = pj_new ();
+	pj_rj (pj, parsed);
+	mu_assert_streq (pj_string (pj), input, "pj_rj integer roundtrip");
+	pj_free (pj);
+	r_json_free (parsed);
+	mu_end;
+}
+
 JsonTest tests[] = {
 	{ // 0
 		"    {\n      \"some-int\": 195,\n      \"array1\": [ 3, 5.1, -7, \"nin"
@@ -1307,6 +1319,7 @@ static int all_tests(void) {
 	size_t i;
 
 	mu_run_test_named (test_pj_param_raw, "test_pj_param_raw");
+	mu_run_test_named (test_pj_rj_integers, "test_pj_rj_integers");
 	for (i = 1; i < sizeof (tests) / sizeof (tests[0]); i++) {
 		char *input = strdup (tests[i].json);
 		char testname[256];

@@ -366,7 +366,11 @@ R_API void pj_rj(PJ *pj, RJson *j) {
 		pj_b (pj, j->num.u_value);
 		break;
 	case R_JSON_INTEGER:
-		pj_n (pj, j->num.s_value);
+		if (j->num.dbl_value < 0) {
+			pj_N (pj, j->num.s_value);
+		} else {
+			pj_n (pj, j->num.u_value);
+		}
 		break;
 	case R_JSON_DOUBLE:
 		pj_d (pj, j->num.dbl_value);
