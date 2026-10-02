@@ -1,4 +1,4 @@
-/* radare - MIT - Copyright 2025 - pancake */
+/* radare - LGPL-3.0-only - Copyright 2025 - pancake */
 
 #include <r_asm.h>
 
@@ -226,7 +226,7 @@ RAsmPlugin r_asm_plugin_snes = {
 		.name = "snes",
 		.desc = "SNES / 65C816 pseudo syntax",
 		.author = "pancake",
-		.license = "MIT",
+		.license = "LGPL-3.0-only",
 	},
 	.parse = parse,
 };

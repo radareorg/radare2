@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2022 - condret */
+/* radare - LGPL - Copyright 2015-2026 - condret */
 
 #include <string.h>
 #include <r_types.h>
