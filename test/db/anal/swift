@@ -47,3 +47,41 @@ arg int64_t error @ x21
 arg int64_t error @ x21
 EOF
 RUN
+
+NAME=arm32 swift cc passes and reads self in r10 (sl), error in r8, clobbers r8
+FILE=malloc://512
+ARGS=-a arm -b 32 -e anal.cc=swift
+CMDS=<<EOF
+wx 018ca0e3414fa0e30c0000eb000098e5001094e51eff2fe1
+wx 1eff2fe1 @ 0x40
+af
+afcrj
+aae
+axq~?0x0000000c
+axq~0x00000104
+wx 0a00a0e11eff2fe1 @ 0x80
+af @ 0x80
+afv @ 0x80
+EOF
+EXPECT=<<EOF
+{"ret":"r0","args":["r0","r1","r2","r3"],"self":"sl","error":"r8"}
+0
+0x00000010 -> 0x00000104  DATA:r--
+arg int32_t self @ sl
+EOF
+RUN
+
+NAME=arm32 default cc keeps the r8-based xref the swift cc drops
+FILE=malloc://512
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 018ca0e3414fa0e30c0000eb000098e5001094e51eff2fe1
+wx 1eff2fe1 @ 0x40
+af
+aae
+axq~0x00000100
+EOF
+EXPECT=<<EOF
+0x0000000c -> 0x00000100  DATA:r--
+EOF
+RUN
