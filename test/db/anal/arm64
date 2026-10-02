@@ -56722,3 +56722,28 @@ cases: 2
 0x00000184 0x00000188 00:0000 4
 EOF
 RUN
+
+NAME=PAuth LR authentication accepts xzr
+FILE=malloc://64
+ARGS=-a arm -b 64
+REQUIRE=cs5
+CMDS=<<EOF_CMDS
+wx 1e90c1dade93c1dafe93c1da1e94c1dade97c1dafe97c1da
+pi 6
+ao 6~type[1]
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+autiasp
+autiasp
+autiasp
+autibsp
+autibsp
+autibsp
+cmp
+cmp
+cmp
+cmp
+cmp
+cmp
+EOF_EXPECT
+RUN
