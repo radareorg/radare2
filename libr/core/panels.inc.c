@@ -289,9 +289,6 @@ static void print_notch(RCore *core) {
 	}
 }
 
-static void r_panels_clear_header_rows(RCore *core) {
-	r_cons_printf (core->cons, Color_RESET R_CONS_CLEAR_LINE"\n"R_CONS_CLEAR_LINE R_CONS_CURSOR_UP);
-}
 
 static RPanel *r_panels_get_panel(RPanels *panels, int i) {
 	return (panels && i < PANEL_NUM_LIMIT)? panels->panel[i]: NULL;
@@ -509,7 +506,7 @@ static void r_panels_check_edge(RCore *core) {
 		} else {
 			p->view->edge &= ~(1 << PANEL_EDGE_RIGHT);
 		}
-		if (pos->y + pos->h == can->h) {
+		if (pos->y + pos->h == can->h - PANEL_FOOTER_H) {
 			p->view->edge |= (1 << PANEL_EDGE_BOTTOM);
 		} else {
 			p->view->edge &= ~(1 << PANEL_EDGE_BOTTOM);
@@ -755,28 +752,14 @@ static char *r_panels_menu_status_text(RPanelsMenuItem *item) {
 	return strdup (item->name);
 }
 
-static void r_panels_print_menu_status(RCore *core, const char *msg) {
-	if (R_STR_ISEMPTY (msg)) {
-		return;
+static char *r_panels_menu_status_line(RPanelsMenuItem *item) {
+	char *text = r_panels_menu_status_text (item);
+	if (!text) {
+		return NULL;
 	}
-	int rows;
-	int cols = r_cons_get_size (core->cons, &rows);
-	if (rows < 1 || cols < 1) {
-		return;
-	}
-	int width = R_MAX (cols - 1, 1);
-	char *status = r_str_newf (" Menu: %s ", msg);
-	char *cropped = r_str_ansi_crop (status, 0, 0, width, 1);
-	const char *visible = cropped? cropped: status;
-	char *padding = r_str_pad (NULL, 0, ' ', R_MAX (width - r_str_ansi_len (visible), 0));
-	char *line = r_str_newf (Color_INVERT"%s%s%s"Color_RESET,
-		PANEL_HL_COLOR, visible, padding);
-	r_cons_gotoxy (core->cons, 0, rows + 1);
-	r_cons_printf (core->cons, R_CONS_CLEAR_LINE"%s", line);
-	free (line);
-	free (padding);
-	free (cropped);
-	free (status);
+	char *line = r_str_newf (" Menu: %s", text);
+	free (text);
+	return line;
 }
 
 static void r_panels_canvas_write_bar(RConsCanvas *can, int y, int width, const char *text, char pad) {
@@ -795,7 +778,7 @@ static void r_panels_canvas_write_bar(RConsCanvas *can, int y, int width, const 
 }
 
 static void r_panels_menu_panel_print(RConsCanvas *can, RPanel *panel, int x, int y, int w, int h) {
-	(void) r_cons_canvas_gotoxy (can, panel->view->pos.x + 2, panel->view->pos.y + 2);
+	(void) r_cons_canvas_gotoxy (can, panel->view->pos.x + 2, panel->view->pos.y + 1);
 	char *text = r_str_ansi_crop (panel->model->title, x, y, w, h);
 	if (text) {
 		r_cons_canvas_write (can, text);
@@ -977,6 +960,7 @@ static void r_panels_layout_default(RCore *core, RPanels *panels) {
 		return;
 	}
 	int h, w = r_cons_get_size (core->cons, &h);
+	h -= PANEL_FOOTER_H;
 	if (panels->n_panels <= 1) {
 		r_panels_set_geometry (&p0->view->pos, 0, PANEL_HEADER_H, w, h - PANEL_HEADER_H);
 		return;
@@ -1008,6 +992,7 @@ static void r_panels_layout(RCore *core, RPanels *panels) {
 
 static void r_panels_layout_equal_hor(RCore *core, RPanels *panels) {
 	int h, w = r_cons_get_size (core->cons, &h);
+	h -= PANEL_FOOTER_H;
 	int pw = w / panels->n_panels;
 	int i, cw = 0;
 	for (i = 0; i < panels->n_panels; i++) {
@@ -1217,7 +1202,7 @@ static void r_panels_adjust_and_add_panel(RCore *core, const char *name, char *c
 	available_space = r_panels_adjust_side_panels (core);
 	r_panels_insert_panel (core, 0, name, cmd);
 	RPanel *p0 = r_panels_get_panel (panels, 0);
-	r_panels_set_geometry (&p0->view->pos, 0, PANEL_HEADER_H, available_space + 1, h - PANEL_HEADER_H);
+	r_panels_set_geometry (&p0->view->pos, 0, PANEL_HEADER_H, available_space + 1, h - PANEL_HEADER_H - PANEL_FOOTER_H);
 	r_panels_set_curnode (core, 0);
 }
 
@@ -1253,7 +1238,7 @@ static void r_panels_fix_layout_axis(RCore *core, bool horizontal) {
 		int h;
 		(void)r_cons_get_size (core->cons, &h);
 		skip_pos = PANEL_HEADER_H;
-		skip_sz = h - PANEL_HEADER_H;
+		skip_sz = h - PANEL_HEADER_H - PANEL_FOOTER_H;
 	}
 	int i;
 	for (i = 0; i < panels->n_panels - 1 && n_edges < PANEL_NUM_LIMIT; i++) {
@@ -1583,7 +1568,7 @@ static void r_panels_maximize_panel_size(RPanels *panels) {
 	if (!cur) {
 		return;
 	}
-	r_panels_set_geometry (&cur->view->pos, 0, PANEL_HEADER_H, panels->can->w, panels->can->h - PANEL_HEADER_H);
+	r_panels_set_geometry (&cur->view->pos, 0, PANEL_HEADER_H, panels->can->w, panels->can->h - PANEL_HEADER_H - PANEL_FOOTER_H);
 	cur->view->refresh = true;
 }
 
@@ -2194,7 +2179,7 @@ static void r_panels_resize_panel(RPanels *panels, Direction dir) {
 	bool horiz = (dir == 'h' || dir == 'l');
 	bool neg = (dir == 'h' || dir == 'k');
 	int d = horiz ? PANEL_CONFIG_RESIZE_W : PANEL_CONFIG_RESIZE_H;
-	int pmax = horiz ? panels->can->w : panels->can->h;
+	int pmax = horiz ? panels->can->w : panels->can->h - PANEL_FOOTER_H;
 	// offsets into RPanelPos for primary axis (pos/size) and secondary axis
 	size_t op = horiz ? offsetof (RPanelPos, x) : offsetof (RPanelPos, y);
 	size_t os = horiz ? offsetof (RPanelPos, w) : offsetof (RPanelPos, h);
@@ -2711,16 +2696,16 @@ static RStrBuf *r_panels_navbar(RCore *core, int width, RPanelsNavLayout *layout
 	char *address = r_str_newf ("[0x%08"PFMT64x "]", core->addr);
 	layout->address_x = r_panels_navbar_x (bar);
 	layout->address_w = r_str_ansi_len (address);
-	r_strbuf_appendf (bar, "%s%s%s ", PANEL_HL_COLOR, address, Color_RESET);
+	r_strbuf_appendf (bar, "%s ", address);
 	free (address);
 	layout->undo_x = r_panels_navbar_x (bar);
-	r_strbuf_appendf (bar, "%s[<]%s ", PANEL_HL_COLOR, Color_RESET);
+	r_strbuf_append (bar, "[<] ");
 	layout->redo_x = r_panels_navbar_x (bar);
-	r_strbuf_appendf (bar, "%s[>]%s ", PANEL_HL_COLOR, Color_RESET);
+	r_strbuf_append (bar, "[>] ");
 	RPanelsRoot *root = core->panels_root;
 	int available = width - r_str_ansi_len (r_strbuf_get (bar)) - 3;
 	if (!root || root->n_panels < 1) {
-		r_strbuf_append (bar, "__");
+		r_strbuf_append (bar, "  ");
 	} else if (available > 0) {
 		int cur = R_MAX (0, R_MIN (root->cur_panels, root->n_panels - 1));
 		int i, first = 0, last = cur;
@@ -2734,9 +2719,9 @@ static RStrBuf *r_panels_navbar(RCore *core, int width, RPanelsNavLayout *layout
 		if (first > 0) {
 			layout->prev_tabs_x = r_panels_navbar_x (bar);
 			layout->prev_tab = first - 1;
-			r_strbuf_append (bar, "<_");
+			r_strbuf_append (bar, "< ");
 		} else {
-			r_strbuf_append (bar, "__");
+			r_strbuf_append (bar, "  ");
 		}
 		for (i = first; i <= last; i++) {
 			char number[16];
@@ -2746,25 +2731,26 @@ static RStrBuf *r_panels_navbar(RCore *core, int width, RPanelsNavLayout *layout
 			layout->tab_w[i] = name_len + 10;
 			layout->close_x[i] = layout->tab_x[i] + name_len + 4;
 			if (i == cur) {
-				r_strbuf_appendf (bar, "%s/  %s [x]  \\%s", PANEL_HL_COLOR, name, Color_RESET);
+				const bool color = core->panels->can->color;
+				r_strbuf_appendf (bar, "%s\\  %s [x]  /%s", color? Color_INVERT: "", name, color? Color_INVERT_RESET: "");
 			} else {
-				r_strbuf_appendf (bar, ".--%s %s[x]%s--.", name, PANEL_HL_COLOR, Color_RESET);
+				r_strbuf_appendf (bar, "'--%s [x]--'", name);
 			}
 			if (i < last) {
-				r_strbuf_append (bar, "__");
+				r_strbuf_append (bar, "  ");
 			}
 		}
 		if (last + 1 < root->n_panels) {
-			r_strbuf_append (bar, "_");
+			r_strbuf_append (bar, " ");
 			layout->next_tabs_x = r_panels_navbar_x (bar);
 			layout->next_tab = last + 1;
 			r_strbuf_append (bar, ">");
 		} else {
-			r_strbuf_append (bar, "__");
+			r_strbuf_append (bar, "  ");
 		}
 	}
 	layout->new_tab_x = r_panels_navbar_x (bar);
-	r_strbuf_appendf (bar, "%s[t]%s", PANEL_HL_COLOR, Color_RESET);
+	r_strbuf_append (bar, "[t]");
 	return bar;
 }
 
@@ -3042,9 +3028,7 @@ static void r_panels_menu_hline(RCore *core, RStrBuf *buf, int width) {
 }
 
 static int r_panels_menu_max_items(RConsCanvas *can, RPanelsMenuItem *item, int y) {
-	const int avail = can->h - y - 4;
-	// leave the bottom row free so the border is not hidden when the menu is clipped
-	return R_MAX ((item->n_sub > avail)? avail - 1: avail, 3);
+	return R_MAX (can->h - PANEL_FOOTER_H - y - 2, 3);
 }
 
 // entries first..last are shown, with a "(...)" row above or below when the list is scrolled
@@ -3123,9 +3107,9 @@ static void r_panels_update_menu_contents(RCore *core, RPanelsMenu *menu, RPanel
 	free (p->model->title);
 	p->model->title = r_strbuf_drain (buf);
 	p->view->pos.w = r_str_bounds (p->model->title, &p->view->pos.h);
-	p->view->pos.h += 4;
-	if (p->view->pos.y + p->view->pos.h > can->h) {
-		p->view->pos.h = can->h - p->view->pos.y;
+	p->view->pos.h += 2;
+	if (p->view->pos.y + p->view->pos.h > can->h - PANEL_FOOTER_H) {
+		p->view->pos.h = can->h - PANEL_FOOTER_H - p->view->pos.y;
 	}
 	p->model->type = PANEL_TYPE_MENU;
 	p->view->refresh = true;
@@ -3144,8 +3128,8 @@ static int r_panels_menu_item_at(RCore *core, RPanelsMenuItem *item, int x, int 
 	int first, last;
 	bool top_ell, bot_ell;
 	r_panels_menu_visible_range (item, max_items, &first, &last, &top_ell, &bot_ell);
-	// entries are printed from the second row inside the box border
-	const int idx = first + y - pos->y - 2 - (top_ell? 1: 0);
+	// entries are printed from the first row inside the box border
+	const int idx = first + y - pos->y - 1 - (top_ell? 1: 0);
 	const bool on_border = x == pos->x || x == pos->x + pos->w - 1;
 	if (on_border || idx < first || idx > last || r_panels_menu_is_separator (item->sub[idx]->name)) {
 		return -2;
@@ -3384,7 +3368,7 @@ static void r_panels_create_modal(RCore *core, RPanel *panel) {
 static void r_panels_menu_push(RCore *core, RPanelsMenuItem *item, int x, int y) {
 	RPanelsMenu *menu = core->panels->panels_menu;
 	RConsCanvas *can = core->panels->can;
-	y = R_MAX (0, R_MIN (y, can->h - 1));
+	y = R_MAX (0, R_MIN (y, can->h - PANEL_FOOTER_H - 1));
 	RStrBuf *buf = r_panels_draw_menu (core, item, r_panels_menu_max_items (can, item, y));
 	if (!buf) {
 		return;
@@ -3394,9 +3378,9 @@ static void r_panels_menu_push(RCore *core, RPanelsMenuItem *item, int x, int y)
 	free (p->model->title);
 	p->model->title = r_strbuf_drain (buf);
 	pos->w = r_str_bounds (p->model->title, &pos->h);
-	pos->h += 4;
-	if (y + pos->h > can->h) {
-		pos->h = can->h - y;
+	pos->h += 2;
+	if (y + pos->h > can->h - PANEL_FOOTER_H) {
+		pos->h = can->h - PANEL_FOOTER_H - y;
 	}
 	if (x + pos->w > can->w) {
 		x = R_MAX (0, can->w - pos->w);
@@ -3613,7 +3597,7 @@ static bool r_panels_handle_mouse_press(RCore *core) {
 	}
 	const int x = cons->drag_x;
 	const int y = cons->drag_y - r_config_get_i (core->config, "scr.notch");
-	if (y <= PANEL_HEADER_H) {
+	if (y <= PANEL_HEADER_H || y >= panels->can->h) {
 		return false;
 	}
 	panels->mouse_on_edge_x = false;
@@ -3643,7 +3627,7 @@ static bool r_panels_handle_mouse(RCore *core, int *key) {
 		if (y == MENU_Y && r_panels_handle_mouse_on_top (core, x, y)) {
 			return true;
 		}
-		if (y == MENU_Y + 1 && panels->panels_menu->n_refresh < 1) {
+		if (y == panels->can->h && panels->mode != PANEL_MODE_MENU) {
 			return r_panels_handle_mouse_on_navbar (core, x, key);
 		}
 		if (panels->mode == PANEL_MODE_MENU) {
@@ -3691,6 +3675,7 @@ static void r_panels_move_panel_to(RCore *core, RPanel *panel, int src, Directio
 		panels->panel[panels->n_panels - 1] = panel;
 	}
 	int h, w = r_cons_get_size (core->cons, &h);
+	h -= PANEL_FOOTER_H;
 	if (w < 1) {
 		w = 1;
 	}
@@ -3812,8 +3797,8 @@ static void r_panels_resize_layout(RPanels *panels, int width, int height) {
 	}
 	int old_x_max = R_MAX (old_width - 1, 0);
 	int new_x_max = R_MAX (width - 1, 0);
-	int old_y_max = R_MAX (old_height - PANEL_HEADER_H - 1, 0);
-	int new_y_max = R_MAX (height - PANEL_HEADER_H - 1, 0);
+	int old_y_max = R_MAX (old_height - PANEL_HEADER_H - PANEL_FOOTER_H - 1, 0);
+	int new_y_max = R_MAX (height - PANEL_HEADER_H - PANEL_FOOTER_H - 1, 0);
 	int i;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *panel = r_panels_get_panel (panels, i);
@@ -4312,6 +4297,29 @@ static void demo_begin(RCore *core, RConsCanvas *can) {
 	}
 }
 
+// printed outside the canvas so the tint can reach the last column via clear-to-eol
+static void r_panels_print_footer(RCore *core, int w, int footer_y, bool in_menu) {
+	RCons *cons = core->cons;
+	char *text;
+	if (in_menu) {
+		text = r_panels_menu_status_line (r_panels_get_selected_menu_item (core->panels));
+	} else {
+		RPanelsNavLayout nav_layout;
+		text = r_strbuf_drain (r_panels_navbar (core, w, &nav_layout));
+	}
+	char *cropped = r_str_ansi_crop (r_str_get (text), 0, 0, R_MAX (w - 1, 1), 1);
+	const int notch = r_config_get_i (core->config, "scr.notch");
+	r_cons_gotoxy (cons, 0, notch + footer_y + 1);
+	if (core->panels->can->color) {
+		r_cons_printf (cons, Color_RESET"%s%s%s\x1b[0K"Color_RESET, cons->context->pal.widget_bg,
+			r_panels_title_foreground (core), r_str_get (cropped));
+	} else {
+		r_cons_printf (cons, "%s\x1b[0K", r_str_get (cropped));
+	}
+	free (cropped);
+	free (text);
+}
+
 static void r_panels_refresh(RCore *core) {
 	RPanels *panels = core->panels;
 	RConsCanvas *can = panels->can;
@@ -4376,11 +4384,6 @@ static void r_panels_refresh(RCore *core) {
 	char *menubar = r_str_newf (Color_RESET"%s", r_strbuf_get (title));
 	r_panels_canvas_write_bar (can, 0, w, menubar, ' ');
 	free (menubar);
-	RPanelsNavLayout nav_layout;
-	RStrBuf *navbar = menubar_open && panels->panels_menu->n_refresh > 0? NULL: r_panels_navbar (core, w, &nav_layout);
-	r_panels_canvas_write_bar (can, 1, w, navbar? r_strbuf_get (navbar): "", navbar? '_': ' ');
-	r_strbuf_free (navbar);
-	// menubar dropdowns occupy the row below the menubar while they are open
 	for (i = 0; i < panels->panels_menu->n_refresh; i++) {
 		r_panels_panel_print (core, can, panels->panels_menu->refreshPanels[i], 0);
 	}
@@ -4402,15 +4405,11 @@ static void r_panels_refresh(RCore *core) {
 		r_panels_refresh (core);
 	} else {
 		print_notch (core);
-		r_panels_clear_header_rows (core);
+		r_cons_printf (core->cons, Color_RESET R_CONS_CLEAR_LINE);
 		r_cons_canvas_print (can);
+		r_panels_print_footer (core, w, h - PANEL_FOOTER_H, in_menu);
 		if (core->scr_gadgets) {
 			r_core_call (core, "pg");
-		}
-		if (in_menu) {
-			char *status = r_panels_menu_status_text (r_panels_get_selected_menu_item (panels));
-			r_panels_print_menu_status (core, status);
-			free (status);
 		}
 		r_panels_show_cursor (core);
 		r_cons_flush (core->cons);
@@ -4706,8 +4705,8 @@ static int add_cmdf_panel(RCore *core, char *input, char *str) {
 	r_panels_adjust_side_panels (core);
 	r_panels_insert_panel (core, 0, child->name, "");
 	RPanel *p0 = r_panels_get_panel (panels, 0);
-	if (h > PANEL_HEADER_H) {
-		r_panels_set_geometry (&p0->view->pos, 0, PANEL_HEADER_H, PANEL_CONFIG_SIDEPANEL_W, h - PANEL_HEADER_H);
+	if (h > PANEL_HEADER_H + PANEL_FOOTER_H) {
+		r_panels_set_geometry (&p0->view->pos, 0, PANEL_HEADER_H, PANEL_CONFIG_SIDEPANEL_W, h - PANEL_HEADER_H - PANEL_FOOTER_H);
 	}
 	char *cmdf = r_panels_load_cmdf (core, p0, input, str);
 	r_panels_set_cmd_str_cache (core, p0, cmdf);

@@ -3,7 +3,8 @@
 #include <r_core.h>
 
 #define MENU_Y 1
-#define PANEL_HEADER_H 2
+#define PANEL_HEADER_H 1
+#define PANEL_FOOTER_H 1
 #define PANEL_NUM_LIMIT 16
 #define PANEL_HL_COLOR core->cons->context->pal.graph_box2
 #define PANEL_FRAME_BUTTON "[=]"
@@ -105,6 +106,9 @@ R_API bool r_core_panels_load(RCore *core, const char *_name) {
 		if (py < PANEL_HEADER_H) {
 			ph = R_MAX (ph - (PANEL_HEADER_H - py), PANEL_CONFIG_MIN_SIZE);
 			py = PANEL_HEADER_H;
+		}
+		if (panels->can && py + ph > panels->can->h - PANEL_FOOTER_H) {
+			ph = R_MAX (panels->can->h - PANEL_FOOTER_H - py, PANEL_CONFIG_MIN_SIZE);
 		}
 		r_panels_set_geometry (&p->view->pos, atoi (x), py, atoi (w), ph);
 		r_panels_init_panel_param (core, p, title, cmd);
