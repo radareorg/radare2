@@ -168,6 +168,8 @@ static const char *hack_pauth_lr_mnemonic(ut32 insn, bool *is_ret) {
 		return "autibsp";
 	}
 	switch (insn) {
+	case 0xd50324ff: // pacm
+		return "pacm";
 	case 0xdac1bbfe: // autia171615
 		return "autia1716";
 	case 0xdac1bffe: // autib171615
