@@ -56811,3 +56811,31 @@ pacm
 cmp
 EOF_EXPECT
 RUN
+
+NAME=A64 pointer authentication preludes cover both keys
+FILE=malloc://64
+ARGS=-a arm -b 64 -e anal.in=io.maps
+CMDS=<<EOF_CMDS
+wx 3f2303d5c0035fd67f2303d5c0035fd6fea3c1dac0035fd6fea7c1dac0035fd6fe83c1dac0035fd6fe87c1dac0035fd6
+aap
+aflq~$
+af-*
+e cfg.bigendian=true
+aap
+aflq~$
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+0x00000000
+0x00000008
+0x00000010
+0x00000018
+0x00000020
+0x00000028
+0x00000000
+0x00000008
+0x00000010
+0x00000018
+0x00000020
+0x00000028
+EOF_EXPECT
+RUN
