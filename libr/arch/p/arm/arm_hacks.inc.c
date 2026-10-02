@@ -121,7 +121,7 @@ static int hack_handle_dp_imm(ut32 insn, RAnalOp *op) {
 }
 
 static int hack_handle_br_exc_sys(ut32 insn, RAnalOp *op) {
-	if (insn == 0xd50322df) { // clrbhb
+	if (insn == 0xd50322df || insn == 0xd503227f) { // clrbhb, gcsb dsync
 		op->type = R_ANAL_OP_TYPE_SYNC;
 		return op->size = 4;
 	}
