@@ -45,13 +45,13 @@ ao~mask
 EOF
 EXPECT=<<EOF
 mask: ffffffff
-mask: ff0ffc2b
+mask: ffffffff
 --
 mask: ffffffff
-mask: 00000208
+mask: 8000407a
 --
 mask: ffffffff
-mask: 000001b6
+mask: 0000807f
 EOF
 RUN
 

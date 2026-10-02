@@ -10627,10 +10627,10 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 			ut8 finalmask[32] = {0};
 			for (; *p; p++) {
 				int byte_index = (pi / 8);
-				int bit_index = (pi % 8);
+				int bit_index = 7 - (pi % 8);
 				ut8 *byte = finalmask + byte_index;
-				if (*p == '0') {
-					// only pick the bits that modify the 0th word
+				if (*p == '0' || *p == 'x') {
+					// Fix bits that change the mnemonic or invalidate the instruction.
 					R_BIT_SET (byte, bit_index);
 					pi++;
 				} else if (isalnum (*p)) {
