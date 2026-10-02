@@ -845,19 +845,65 @@ static void r_panels_update_help_contents(RCore *core, RPanel *panel) {
 	r_panels_panel_write_content (core, panel, panel->model->readOnly, panel->view->sx, false);
 }
 
+static const char *r_panels_title_foreground(RCore *core) {
+	RConsContext *ctx = core->cons->context;
+	RColor color = ctx->cpal.widget_bg;
+	int brightness = color.a == ALPHA_FGBG
+		? 299 * color.r2 + 587 * color.g2 + 114 * color.b2
+		: 299 * color.r + 587 * color.g + 114 * color.b;
+	if (ctx->color_mode == COLOR_MODE_16) {
+		// Use the emitted background because ANSI colors can approximate RGB poorly.
+		const char *p = ctx->pal.widget_bg;
+		int code = 0;
+		for (; *p && *p != 'm'; p++) {
+			if (*p == '[' || *p == ';') {
+				code = atoi (p + 1);
+			}
+		}
+		if (R_BETWEEN (40, code, 47) || R_BETWEEN (100, code, 107)) {
+			int index = code >= 100? code - 100: code - 40;
+			int intensity = code >= 100? 255: 128;
+			brightness = intensity * (299 * !!(index & 1)
+				+ 587 * !!(index & 2) + 114 * !!(index & 4));
+			if (code == 47 || code == 100) {
+				brightness = 192000;
+			}
+		}
+	}
+	return brightness < 128000? Color_WHITE: Color_BLACK;
+}
+
 static void r_panels_update_title(RCore *core, RPanel *panel) {
 	RConsCanvas *can = core->panels->can;
 	RPanelPos *pos = &panel->view->pos;
-	const char *name = r_str_get (panel->model->title);
-	char *title = r_panels_check_if_cur_panel (core, panel)
-		? r_str_newf (Color_INVERT"%s"PANEL_FRAME_BUTTON" %s"Color_RESET, PANEL_HL_COLOR, name)
-		: r_str_newf (" =  %s   ", name);
-	if (r_cons_canvas_gotoxy (can, pos->x + 1, pos->y + 1)) {
-		char *s = r_str_ansi_crop (title, 0, 0, pos->w - 2, 1);
-		r_cons_canvas_write (can, s? s: "");
-		free (s);
+	int width = pos->w - 2;
+	if (width < 1 || !r_cons_canvas_gotoxy (can, pos->x + 1, pos->y + 1)) {
+		return;
 	}
+	bool selected = r_panels_check_if_cur_panel (core, panel);
+	const char *name = r_str_get (panel->model->title);
+	char *title = selected
+		? r_str_newf (PANEL_FRAME_BUTTON" %s", name)
+		: r_str_newf (" =  %s   ", name);
+	char *cropped = r_str_ansi_crop (title, 0, 0, width, 1);
 	free (title);
+	if (!cropped) {
+		return;
+	}
+	if (selected) {
+		r_str_ansi_strip (cropped);
+		char *padding = r_str_pad (NULL, 0, ' ', R_MAX (width - r_str_display_width (cropped), 0));
+		if (padding) {
+			char *line = r_str_newf (Color_RESET"%s%s%s%s"Color_RESET,
+				core->cons->context->pal.widget_bg, r_panels_title_foreground (core), cropped, padding);
+			r_cons_canvas_write (can, line);
+			free (line);
+			free (padding);
+		}
+	} else {
+		r_cons_canvas_write (can, cropped);
+	}
+	free (cropped);
 }
 
 static void r_panels_update_panel_contents(RCore *core, RPanel *panel, const char *cmdstr) {
@@ -3570,15 +3616,14 @@ static bool r_panels_handle_mouse_press(RCore *core) {
 	if (y <= PANEL_HEADER_H) {
 		return false;
 	}
-	const int idx = r_panels_select_mouse_panel (core, x, y);
-	if (idx == -1) {
-		return false;
-	}
 	panels->mouse_on_edge_x = false;
 	panels->mouse_on_edge_y = false;
 	(void)r_panels_check_if_mouse_x_on_edge (core, x, y);
 	(void)r_panels_check_if_mouse_y_on_edge (core, x, y);
-	return true;
+	if (panels->mouse_on_edge_x || panels->mouse_on_edge_y) {
+		return true;
+	}
+	return r_panels_select_mouse_panel (core, x, y) != -1;
 }
 
 static bool r_panels_handle_mouse(RCore *core, int *key) {
@@ -4289,7 +4334,7 @@ static void r_panels_refresh(RCore *core) {
 	// the frame menu floats over the mode it was opened from
 	const RPanelsMode mode = frame_menu? panels->frame_mode: panels->mode;
 	for (i = 0; i < panels->n_panels; i++) {
-		if (mode == PANEL_MODE_ZOOM && i != panels->curnode) {
+		if (mode == PANEL_MODE_ZOOM || i == panels->curnode) {
 			continue;
 		}
 		r_panels_panel_print (core, can, r_panels_get_panel (panels, i), 0);
