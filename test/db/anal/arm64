@@ -56839,3 +56839,59 @@ EXPECT=<<EOF_EXPECT
 0x00000028
 EOF_EXPECT
 RUN
+
+NAME=A64 consistent conditional branches split basic blocks
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF_CMDS
+wx 50000054c0035fd6c0035fd6
+ao 1~type,jump,fail
+af
+afb
+aeim
+aer zf=1
+aeip
+aes
+aer pc
+aer zf=0
+s 0
+aeip
+aes
+aer pc
+wx d1ffff54 @ 8
+s 8
+ao 1~type,jump,fail
+aer zf=0
+aeip
+aes
+aer pc
+aer zf=1
+s 8
+aeip
+aes
+aer pc
+wx 5e000054 @ 0
+ao 1 @ 0~type,jump,fail
+wx 5f000054 @ 0
+ao 1 @ 0~type,jump,fail
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+type: cjmp
+jump: 0x00000008
+fail: 0x00000004
+0x00000000 0x00000004 00:0000 4 j 0x00000008 f 0x00000004
+0x00000004 0x00000008 00:0000 4
+0x00000008 0x0000000c 00:0000 4
+0x00000008
+0x00000004
+type: cjmp
+jump: 0x00000000
+fail: 0x0000000c
+0x00000000
+0x0000000c
+type: jmp
+jump: 0x00000008
+type: jmp
+jump: 0x00000008
+EOF_EXPECT
+RUN
