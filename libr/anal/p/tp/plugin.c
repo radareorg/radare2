@@ -179,7 +179,7 @@ RAnalPlugin r_anal_plugin_tp = {
 		.name = "tp",
 		.desc = "Type propagation analysis",
 		.author = "radare2",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.depends = "esil",
 	.cmd = tp_cmd,

@@ -450,7 +450,7 @@ RBinPlugin r_bin_plugin_gns1 = {
 	.meta = {
 		.name = "gns1",
 		.desc = "Apple C4000 baseband firmware (FTAB/GNS1.bin)",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 		.author = "Zapper9982",
 	},
 	.check = &gns1_check,

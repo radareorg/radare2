@@ -234,7 +234,7 @@ RIOPlugin r_io_plugin_tap = {
 		.name = "tap",
 		.desc = "SIMH .tap file IO plugin",
 		.author = "pancake",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.uris = "tap://",
 	.open = __open,

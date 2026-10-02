@@ -391,7 +391,7 @@ RAnalPlugin r_anal_plugin_autoname = {
 		.name = "autoname",
 		.author = "pancake",
 		.desc = "Score-based function autonaming from refs, strings and callers",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.cmd = autonamecmd,
 };

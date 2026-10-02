@@ -730,7 +730,7 @@ RAnalPlugin r_anal_plugin_blaze = {
 		.name = "blaze",
 		.author = "pancake, defragger",
 		.desc = "Code analysis using basic block construction (blaze algorithm)",
-		.license = "LGPL",
+		.license = "LGPL-3.0-only",
 	},
 	.cmd = blazecmd,
 };

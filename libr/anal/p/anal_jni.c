@@ -522,7 +522,7 @@ RAnalPlugin r_anal_plugin_jni = {
 		.name = "jni",
 		.desc = "JNI native method table discovery",
 		.author = "pancake",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.eligible = jni_eligible,
 	.pre_analysis = jni_pre_analysis,

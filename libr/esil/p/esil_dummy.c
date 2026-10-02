@@ -50,7 +50,7 @@ REsilPlugin r_esil_plugin_dummy = {
 		.name = "dummy",
 		.desc = "dummy esil plugin",
 		.author = "pancake",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.init = r_esil_dummy_init,
 	.fini = r_esil_dummy_fini

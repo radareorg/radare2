@@ -446,7 +446,7 @@ RBinPlugin r_bin_plugin_mdt = {
 	.meta = {
 		.name = "mdt",
 		.desc = "Qualcomm MDT firmware format",
-		.license = "LGPL-3.-only",
+		.license = "LGPL-3.0-only",
 		.author = "Rot127",
 	},
 	.load = &load,

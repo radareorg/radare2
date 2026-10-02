@@ -764,7 +764,7 @@ RAnalPlugin r_anal_plugin_sbpf = {
 	.meta = {
 		.name = "sbpf",
 		.desc = "Solana BPF analysis plugin with enhanced string detection",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 		.author = "ulexec",
 	},
 	.cmd = sbpfcmd,

@@ -193,7 +193,7 @@ RBinXtrPlugin r_bin_xtr_plugin_xtr_ftab = {
 		.name = "xtr.ftab",
 		.author = "pancake",
 		.desc = "Apple C4000 FTAB firmware extractor",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.extract_from_buffer = &extract_from_buffer,
 	.extractall_from_buffer = &extractall_from_buffer,

@@ -113,7 +113,7 @@ static bool end(RMutaSession *ms, const ut8 *buf, int len) {
 RMutaPlugin r_muta_plugin_charset_seven = {
 	.meta = {
 		.name = "seven",
-		.license = "LGPL",
+		.license = "MIT",
 		.desc = "7-bit character set encoding/decoding",
 	},
 	.type = R_MUTA_TYPE_CHARSET,

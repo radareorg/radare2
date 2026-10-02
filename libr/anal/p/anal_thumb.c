@@ -161,7 +161,7 @@ RAnalPlugin r_anal_plugin_thumb = {
 		.name = "thumb",
 		.desc = "ARM Thumb/ARM32 mode switch detection",
 		.author = "pancake",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.cmd = thumbcmd,
 	.eligible = thumb_eligible,

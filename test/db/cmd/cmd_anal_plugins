@@ -14,7 +14,7 @@ CMDS=<<EOF
 LA~tp
 EOF
 EXPECT=<<EOF
-tp           LGPL3 Type propagation analysis
+tp           LGPL-3.0-only Type propagation analysis
 EOF
 RUN
 

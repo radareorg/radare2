@@ -297,7 +297,7 @@ RAnalPlugin r_anal_plugin_drcov = {
 		.name = "drcov",
 		.desc = "DRCOV coverage import",
 		.author = "seifreed",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.cmd = drcovcmd
 };

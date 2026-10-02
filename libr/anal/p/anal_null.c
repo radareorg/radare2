@@ -17,7 +17,7 @@ RAnalPlugin r_anal_plugin_null = {
 	.meta = {
 		.name = "null",
 		.desc = "Fallback/Null analysis plugin",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.cmd = nullcmd
 };

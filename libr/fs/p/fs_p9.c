@@ -1351,7 +1351,7 @@ RFSPlugin r_fs_plugin_p9 = {
 	.meta = {
 		.name = "9fs",
 		.desc = "Plan 9 9P filesystem over RSocket",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.open = fs_p9_open,
 	.read = fs_p9_read,

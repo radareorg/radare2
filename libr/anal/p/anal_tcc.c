@@ -184,7 +184,7 @@ RAnalPlugin r_anal_plugin_tcc = {
 	.meta = {
 		.name = "tcc",
 		.desc = "",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 	},
 	.tparse_text = types_parse_text,
 	.tparse_file = types_parse_file,

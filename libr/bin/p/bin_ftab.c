@@ -455,7 +455,7 @@ RBinPlugin r_bin_plugin_ftab = {
 	.meta = {
 		.name = "ftab",
 		.desc = "Apple C4000 FTAB firmware container",
-		.license = "LGPL3",
+		.license = "LGPL-3.0-only",
 		.author = "pancake",
 	},
 	.check = &check,
