@@ -314,6 +314,9 @@ R_API RBinLanguages r_bin_load_languages(RBinFile *bf) {
 				&& primary != declared)) {
 		info->lang = r_bin_lang_tostring (primary);
 	}
+	if (!info->default_cc && primary == R_BIN_LANG_SWIFT) {
+		info->default_cc = strdup ("swift");
+	}
 	return bo->langs;
 }
 
