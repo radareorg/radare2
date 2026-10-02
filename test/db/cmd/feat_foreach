@@ -21,6 +21,7 @@ EOF
 RUN
 
 NAME=@@c:/c/a fs:
+REQUIRE=cs5
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
 e asm.bytes=0
@@ -28,6 +29,23 @@ e search.in = bin.sections
 ?v $$ @@c:/aoq fs:[ra
 EOF
 EXPECT=<<EOF
+0x100004cd7
+0x100004d95
+0x100004e1d
+0x100005078
+EOF
+RUN
+
+NAME=@@c:/c/a fs: (cs6)
+REQUIRE=cs6
+FILE=bins/mach0/mac-ls
+CMDS=<<EOF
+e asm.bytes=0
+e search.in = bin.sections
+?v $$ @@c:/aoq fs:[ra
+EOF
+EXPECT=<<EOF
+0x1000049d5
 0x100004cd7
 0x100004d95
 0x100004e1d
