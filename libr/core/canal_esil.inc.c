@@ -974,6 +974,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		.fcn = fcn,
 		.spname = spname,
 		.initial_sp = r_reg_getv (core->anal->reg, spname),
+		.last_read = UT64_MAX,
+		.last_data = UT64_MAX,
 		.ntarget = ntarget,
 		.strings_only = strings_only,
 		.clob.enabled = r_config_get_b (core->config, "anal.vars.clobber"),
