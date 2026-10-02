@@ -94,7 +94,10 @@ if user_plugins.contains('arm')
   asm_plugins += [ 'arm' ]
 endif
 if user_plugins.contains('v850')
-  arch_plugins += [ 'v810', 'v850' ]
+  arch_plugins += [ 'v810' ]
+  if use_gpl
+    arch_plugins += [ 'v850' ]
+  endif
   asm_plugins += [ 'v850' ]
 endif
 if user_plugins.contains('wasm')
@@ -120,7 +123,7 @@ if user_plugins.contains('dalvik')
   arch_plugins += [ 'dalvik' ]
   asm_plugins += [ 'dalvik' ]
 endif
-if user_plugins.contains('loongarch')
+if user_plugins.contains('loongarch') and use_gpl
   arch_plugins += [ 'loongarch_gnu' ]
 endif
 if user_plugins.contains('elf')
@@ -134,23 +137,19 @@ endif
 # default plugins if none is defined
 if get_option('plugins') == ''
   arch_plugins += [
-    'arc',
     '6502',
     '6502_cs',
     '8051',
-    'alpha',
     'amd29k',
     'any_as',
     'any_vasm',
     'arm',
     'arm_cs',
-    'avr',
     'bf',
     'bpf',
     'bpf_cs',
     'chip8',
     'cr16',
-    'cris',
     'dalvik',
     'dis',
     'ebc',
@@ -171,29 +170,23 @@ if get_option('plugins') == ''
     'mcs96',
     'mips_cs',
     'msp430',
-    'nios2',
     'or1k',
     'pic',
     'ppc_cs',
     'propeller',
     'pyc',
     'pickle',
-    'riscv',
     'riscv_cs',
     'rsp',
     's1c88',
     's390_cs',
     'sm5xx',
-    'sh',
     'sh_cs',
     'snes',
     'sparc_cs',
     'tms320',
-    'tricore',
     'tricore_cs',
     'v810',
-    'v850',
-    'vax',
     'wasm',
     'ws',
     'x86_cs',
@@ -208,17 +201,27 @@ if get_option('plugins') == ''
 
   if use_gpl
     arch_plugins += [
+      'alpha',
+      'arc',
       'arm_gnu',
+      'avr',
+      'cris',
       'lanai',
       'stm8',
       'loongarch_gnu',
       'm68k_gnu',
       'mips_gnu',
       'nds32',
+      'nios2',
       'pdp11',
       'ppc_gnu',
+      'riscv',
       's390_gnu',
+      'sh',
       'sparc_gnu',
+      'tricore',
+      'v850',
+      'vax',
       'xtensa',
       'z80',
     # 'hppa_gnu',

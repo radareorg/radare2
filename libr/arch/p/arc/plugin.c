@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2026 - pancake */
+/* radare - GPL - Copyright 2012-2026 - pancake */
 
 #include <r_lib.h>
 #include <r_arch.h>
@@ -1265,7 +1265,7 @@ const RArchPlugin r_arch_plugin_arc = {
 	.meta = {
 		.name = "arc",
 		.author = "pancake",
-		.license = "LGPL-3.0-only",
+		.license = "GPL-3.0-only",
 		.desc = "Argonaut RISC Core",
 	},
 	.arch = "arc",

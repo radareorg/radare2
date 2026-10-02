@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2026 - pancake, Roc Valles, condret, killabyte */
+/* radare - GPL - Copyright 2011-2026 - pancake, Roc Valles, condret, killabyte */
 
 #if 0
 http://www.atmel.com/images/atmel-0856-avr-instruction-set-manual.pdf
@@ -2373,7 +2373,7 @@ const RArchPlugin r_arch_plugin_avr = {
 		.name = "avr",
 		.author = "pancake,rvalles,condret,killabyte",
 		.desc = "Alf and Vegard RISC processor",
-		.license = "LGPL-3.0-only",
+		.license = "GPL-3.0-only",
 	},
 	.arch = "avr",
 	.info = info,

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2024 - pancake */
+/* radare2 - GPL - Copyright 2014-2026 - pancake */
 
 #include <r_asm.h>
 #include <r_anal.h>
@@ -221,7 +221,7 @@ const RArchPlugin r_arch_plugin_nios2 = {
 	.meta = {
 		.name = "nios2",
 		.desc = "Intel Altera NIOS II FPGA",
-		.license = "LGPL-3.0-only",
+		.license = "GPL-3.0-only",
 	},
 	.arch = "nios2",
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,

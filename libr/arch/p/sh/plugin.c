@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2023 eloi <limited-entropy.com> */
+/* radare - GPL - Copyright 2010-2026 eloi <limited-entropy.com> */
 
 #include <r_lib.h>
 #include <r_arch.h>
@@ -1325,7 +1325,7 @@ const RArchPlugin r_arch_plugin_sh = {
 		.name = "sh",
 		.author = "Eloi Sanfelix",
 		.desc = "Hitachi SH-4 CPU",
-		.license = "LGPL-3.0-only",
+		.license = "GPL-3.0-only",
 	},
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.arch = "sh",

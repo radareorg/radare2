@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2024 - pancake */
+/* radare - GPL - Copyright 2010-2026 - pancake */
 
 #include <r_arch.h>
 #include "../../include/disas-asm.h"
@@ -2211,7 +2211,7 @@ const RArchPlugin r_arch_plugin_mips_gnu = {
 		.name = "mips.gnu",
 		.author = "pancake",
 		.desc = "MIPS RISC architecture",
-		.license = "LGPL-3.0-only",
+		.license = "GPL-3.0-only",
 	},
 	.cpus = "micro,mips1,mips2,mips3,mips4,mips5,mips64r2,mips32r2,mips64,mips32,loongson3a,gs464,gs464e,gs264e,loongson2e,loongson2f,mips32/64",
 	.arch = "mips",

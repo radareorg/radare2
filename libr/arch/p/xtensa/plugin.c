@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2016-2023 - pancake */
+/* radare2 - GPL - Copyright 2016-2026 - pancake */
 
 #include <r_arch.h>
 #include "gnu/xtensa-isa.h"
@@ -2266,7 +2266,7 @@ const RArchPlugin r_arch_plugin_xtensa = {
 	.meta = {
 		.name = "xtensa",
 		.desc = "Modular Tensilica's Xtensa Processor",
-		.license = "LGPL-3.0-only",
+		.license = "GPL-3.0-only",
 	},
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.info = archinfo,

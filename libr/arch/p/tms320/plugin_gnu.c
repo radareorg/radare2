@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2025 - pancake */
+/* radare - GPL - Copyright 2025 - pancake */
 
 #define R_LOG_ORIGIN "arch.tms320.gnu"
 

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2024 - pancake */
+/* radare2 - GPL - Copyright 2014-2026 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -135,7 +135,7 @@ const RArchPlugin r_arch_plugin_s390_gnu = {
 		.name = "s390.gnu",
 		.author = "pancake",
 		.desc = "IBM SystemZ S390 (binutils)",
-		.license = "BSD-3-Clause",
+		.license = "GPL-3.0-only",
 	},
 	.arch = "s390",
 	.cpus = "esa,zarch",

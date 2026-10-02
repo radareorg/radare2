@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2024 - curly */
+/* radare - GPL - Copyright 2020-2026 - curly */
 
 #include <r_asm.h>
 #include <r_arch.h>
@@ -256,7 +256,7 @@ const RArchPlugin r_arch_plugin_tricore = {
 		.name = "tricore",
 		.author = "curly",
 		.desc = "TRICORE analysis plugin",
-		.license = "LGPL-3.0-only",
+		.license = "GPL-3.0-only",
 	},
 	.arch = "tricore",
 	.cpus = "generic,rider-a,rider-b,v2,pcp,pcp2",

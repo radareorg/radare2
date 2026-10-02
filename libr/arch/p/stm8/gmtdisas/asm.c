@@ -1,4 +1,4 @@
-// Evolved from https://github.com/volbus/gmtdisas
+// GPL - Evolved from https://github.com/volbus/gmtdisas
 
 #include <r_util.h>
 #include "ins.inc.c"
