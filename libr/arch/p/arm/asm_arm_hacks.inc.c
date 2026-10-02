@@ -31,6 +31,9 @@ static char *hack_asm_handle_dp_imm(ut32 insn) {
 }
 
 static char *hack_asm_handle_br_exc_sys(ut32 insn) {
+	if (insn == 0xd50322df) {
+		return strdup ("clrbhb");
+	}
 	char *buf_asm = NULL;
 	const char *mnemonic = "bti";
 	const ut8 op0 = (insn >> 29) & 0x7;
