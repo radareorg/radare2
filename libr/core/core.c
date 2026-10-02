@@ -3771,6 +3771,14 @@ R_API RBin *r_core_get_bin(RCore *core) {
 	return core->bin;
 }
 
+R_API RIO *r_core_get_io(RCore *core) {
+	return core->io;
+}
+
+R_API RLang *r_core_get_lang(RCore *core) {
+	return core->lang;
+}
+
 R_API RBuffer *r_core_syscallf(RCore *core, const char *name, const char *fmt, ...) {
 	char str[1024];
 	RBuffer *buf;

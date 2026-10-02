@@ -42,6 +42,7 @@ sublibs:
 ifneq ($(LIBS8),)
 	$(MAKE) $(LIBS8)
 endif
+	$(MAKE) -C opencore
 
 include ${SHLR}/zip/deps.mk
 
@@ -66,7 +67,7 @@ LDFLAGS+=${SSL_LDFLAGS}
 
 ifeq ($(OSTYPE),darwin)
 
-LIBR_COMPONENTS_AR := $(sort $(wildcard */libr_*.$(EXT_AR)))
+LIBR_COMPONENTS_AR := $(sort $(filter-out opencore/%,$(wildcard */libr_*.$(EXT_AR))))
 LIBR_SHLR_AR := ../shlr/libr_shlr.$(EXT_AR)
 
 libr.$(EXT_AR): $(LIBR_COMPONENTS_AR) $(LIBR_SHLR_AR)
@@ -92,7 +93,7 @@ WHOLEFLAG=-Wl,--whole-archive
 endif
 endif
 libr.o: ../shlr/libr_shlr.${EXT_AR}
-	$(CC) -r -nostdlib $(CFLAGS) $(WHOLEFLAG) -o libr.o $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
+	$(CC) -r -nostdlib $(CFLAGS) $(WHOLEFLAG) -o libr.o $(filter-out opencore/%,$(wildcard */libr_*.${EXT_AR})) ../shlr/libr_shlr.${EXT_AR}
 
 libr.${EXT_AR}: libr.o
 	$(AR) -rs $@ libr.o
@@ -147,6 +148,7 @@ install-includes:
 	@-rm -f "${DESTDIR}${INCLUDEDIR}/libr"
 	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr"
 	(cd include && for FILE in *.h ; do ${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr" ; done)
+	${INSTALL_DATA} opencore/r_opencore.h "${DESTDIR}${INCLUDEDIR}/libr"
 	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/sflib"
 	(cd include/sflib && for DIR in * ; do \
 		${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/sflib/$$DIR" ; \
@@ -251,6 +253,7 @@ deinstall uninstall:
 	@echo libr aka radare2 has been uninstalled from PREFIX=${DESTDIR}${PREFIX}
 
 clean:
+	$(MAKE) -C opencore clean
 	for LIB in ${LIBS}; do ( cd $${LIB} && $(MAKE) clean ); done
 	rm -rf libr.${LIB_SO} libr.${LIB_AR}
 

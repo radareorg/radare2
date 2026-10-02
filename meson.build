@@ -684,6 +684,7 @@ subdir('libr/cons/d')
 subdir('libr/magic/d')
 subdir('libr/flag/d')
 subdir('libr/main')
+subdir('libr/opencore')
 subdir('shlr/panels')
 
 
