@@ -121,6 +121,10 @@ static int hack_handle_dp_imm(ut32 insn, RAnalOp *op) {
 }
 
 static int hack_handle_br_exc_sys(ut32 insn, RAnalOp *op) {
+	if (insn == 0xd50322df) { // clrbhb
+		op->type = R_ANAL_OP_TYPE_SYNC;
+		return op->size = 4;
+	}
 	const ut8 op0 = (insn >> 29) & 0x7;
 	const ut16 op1 = (insn >> 12) & 0x3fff;
 	ut8 op2 = insn & 0x1f;
