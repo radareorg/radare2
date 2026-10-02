@@ -387,7 +387,7 @@ wx 08bf
 aoe
 EOF
 EXPECT=<<EOF
-0x0 zf,?{,0x2,pc,:=,}
+0x00000000 zf,?{,0x2,pc,:=,}
 EOF
 RUN
 
@@ -400,7 +400,7 @@ wx 18bf00000000
 aoe
 EOF
 EXPECT=<<EOF
-0x0 zf,!,?{,0x2,pc,:=,}
+0x00000000 zf,!,?{,0x2,pc,:=,}
 EOF
 RUN
 
@@ -413,7 +413,7 @@ wx 28bf00000000
 aoe
 EOF
 EXPECT=<<EOF
-0x0 cf,?{,0x2,pc,:=,}
+0x00000000 cf,?{,0x2,pc,:=,}
 EOF
 RUN
 
@@ -426,7 +426,7 @@ wx 38bf00000000
 aoe
 EOF
 EXPECT=<<EOF
-0x0 cf,!,?{,0x2,pc,:=,}
+0x00000000 cf,!,?{,0x2,pc,:=,}
 EOF
 RUN
 
@@ -439,7 +439,7 @@ wx 48bf00000000
 aoe
 EOF
 EXPECT=<<EOF
-0x0 nf,?{,0x2,pc,:=,}
+0x00000000 nf,?{,0x2,pc,:=,}
 EOF
 RUN
 
@@ -452,7 +452,7 @@ wx 58bf00000000
 aoe
 EOF
 EXPECT=<<EOF
-0x0 nf,!,?{,0x2,pc,:=,}
+0x00000000 nf,!,?{,0x2,pc,:=,}
 EOF
 RUN
 
@@ -465,7 +465,7 @@ wx 68bf00000000
 aoe
 EOF
 EXPECT=<<EOF
-0x0 vf,?{,0x2,pc,:=,}
+0x00000000 vf,?{,0x2,pc,:=,}
 EOF
 RUN
 
@@ -478,7 +478,7 @@ wx 78bf00000000
 aoe
 EOF
 EXPECT=<<EOF
-0x0 vf,!,?{,0x2,pc,:=,}
+0x00000000 vf,!,?{,0x2,pc,:=,}
 EOF
 RUN
 
@@ -491,7 +491,7 @@ wx e8bf00000000
 aoe
 EOF
 EXPECT=<<EOF
-0x0 0x2,pc,:=
+0x00000000 0x2,pc,:=
 EOF
 RUN
 

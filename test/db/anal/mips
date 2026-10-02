@@ -266,8 +266,8 @@ wx 2e1003002f100300
 aoe 2
 EOF
 EXPECT=<<EOF
-0x0 v1,zero,-,v0,=
-0x4 v1,zero,-,v0,=
+0x00000000 v1,zero,-,v0,=
+0x00000004 v1,zero,-,v0,=
 EOF
 RUN
 
