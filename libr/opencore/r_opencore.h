@@ -41,6 +41,7 @@ extern "C" {
 	X (void, r_core_free, (void *core)) \
 	X (int, r_core_cmd0, (void *core, const char *cmd)) \
 	X (char *, r_core_cmd_str, (void *core, const char *cmd)) \
+	X (void *, r_core_cmd_tobuf, (void *core, const char *cmd)) \
 	X (void *, r_core_file_open, (void *core, const char *file, int perm, uint64_t addr)) \
 	X (bool, r_core_bin_load, (void *core, const char *file, uint64_t baddr)) \
 	X (void *, r_core_get_config, (void *core)) \
@@ -53,6 +54,8 @@ extern "C" {
 	X (uint64_t, r_config_get_i, (void *cfg, const char *key)) \
 	X (void *, r_buf_new_with_pointers, (const uint8_t *bytes, uint64_t len, bool steal)) \
 	X (void, r_buf_fini, (void *buf)) \
+	X (uint64_t, r_buf_size, (void *buf)) \
+	X (const uint8_t *, r_buf_data, (void *buf, uint64_t *size)) \
 	X (void *, r_io_open_buffer, (void *io, void *buf, int perm, int mode)) \
 	X (bool, r_io_use_fd, (void *io, int fd)) \
 	X (bool, r_lang_use, (void *lang, const char *name)) \
@@ -92,6 +95,7 @@ typedef struct r_opencore_magic_t ROpenMagic;
 // r_opencore_init must succeed before calling any other function
 // libpath can be NULL to use $R2_OPENCORE_LIB or the default search paths
 R_OPENCORE_API ROpenCoreLib *r_opencore_lib(void);
+R_OPENCORE_API ROpenCoreApi *r_opencore_api(void);
 R_OPENCORE_API bool r_opencore_init(const char *libpath);
 R_OPENCORE_API void r_opencore_fini(void);
 R_OPENCORE_API const char *r_opencore_error(void);
@@ -100,6 +104,7 @@ R_OPENCORE_API void *r_opencore_sym(const char *name);
 // core instance, returned strings must be released with free()
 R_OPENCORE_API ROpenCore *r_opencore_new(void);
 R_OPENCORE_API void r_opencore_free(ROpenCore *oc);
+R_OPENCORE_API void r_opencore_buf_free(void *buf);
 R_OPENCORE_API int r_opencore_cmd0(ROpenCore *oc, const char *cmd);
 R_OPENCORE_API char *r_opencore_cmd(ROpenCore *oc, const char *cmd);
 R_OPENCORE_API bool r_opencore_open(ROpenCore *oc, const char *file, int perm, uint64_t addr);
@@ -210,6 +215,15 @@ R_OPENCORE_API void *r_opencore_sym(const char *name) {
 	return R_OPENCORE_DLSYM (r_opencore_lib ()->handle, name);
 }
 
+// loads the library on first use and aborts if it cannot be resolved
+R_OPENCORE_API ROpenCoreApi *r_opencore_api(void) {
+	if (!r_opencore_init (NULL)) {
+		fprintf (stderr, "r_opencore: %s\n", r_opencore_error ());
+		abort ();
+	}
+	return &r_opencore_lib ()->api;
+}
+
 #define R_OPENCORE_CALL(name) (r_opencore_lib ()->api.name)
 
 R_OPENCORE_API ROpenCore *r_opencore_new(void) {
@@ -229,7 +243,7 @@ R_OPENCORE_API ROpenCore *r_opencore_new(void) {
 	return oc;
 }
 
-static inline void r_opencore_buf_free(void *buf) {
+R_OPENCORE_API void r_opencore_buf_free(void *buf) {
 	if (buf) {
 		R_OPENCORE_CALL (r_buf_fini) (buf);
 		free (buf);
@@ -347,6 +361,62 @@ R_OPENCORE_API const char *r_opencore_magic_error(ROpenMagic *magic) {
 
 #undef R_OPENCORE_CALL
 
+#endif
+
+#ifdef R_OPENCORE_COMPAT
+// original radare2 names mapped to opencore, so existing code builds unchanged
+typedef uint8_t ut8;
+typedef uint16_t ut16;
+typedef uint32_t ut32;
+typedef uint64_t ut64;
+typedef int64_t st64;
+typedef ROpenCore RCore;
+typedef ROpenMagic RMagic;
+typedef struct r_opencore_buf_t RBuffer;
+// fd is the first field of RIODesc
+typedef struct r_opencore_iodesc_t {
+	int fd;
+} RIODesc;
+
+#define UT64_MAX UINT64_MAX
+#define R_PERM_X R_OPENCORE_PERM_X
+#define R_PERM_W R_OPENCORE_PERM_W
+#define R_PERM_R R_OPENCORE_PERM_R
+#define R_PERM_RW R_OPENCORE_PERM_RW
+#define R_PERM_RWX R_OPENCORE_PERM_RWX
+#define R_OPENCORE_FN(name) (r_opencore_api ()->name)
+
+#define eprintf(...) fprintf (stderr, __VA_ARGS__)
+#define r_sys_setenv(k, v) setenv (k, v, 1)
+#define r_unref(x) r_opencore_buf_free (x)
+#define r_core_new() (r_opencore_api (), r_opencore_new ())
+#define r_core_free(c) r_opencore_free (c)
+#define r_core_cmd0(c, cmd) R_OPENCORE_FN (r_core_cmd0) ((c)->core, cmd)
+#define r_core_cmd_str(c, cmd) R_OPENCORE_FN (r_core_cmd_str) ((c)->core, cmd)
+#define r_core_cmd_tobuf(c, cmd) ((RBuffer *)R_OPENCORE_FN (r_core_cmd_tobuf) ((c)->core, cmd))
+#define r_core_file_open(c, f, perm, addr) ((RIODesc *)R_OPENCORE_FN (r_core_file_open) ((c)->core, f, perm, addr))
+#define r_core_bin_load(c, f, baddr) R_OPENCORE_FN (r_core_bin_load) ((c)->core, f, baddr)
+#define r_config_set(...) R_OPENCORE_FN (r_config_set) (__VA_ARGS__)
+#define r_config_set_i(...) R_OPENCORE_FN (r_config_set_i) (__VA_ARGS__)
+#define r_config_set_b(...) R_OPENCORE_FN (r_config_set_b) (__VA_ARGS__)
+#define r_config_get(...) R_OPENCORE_FN (r_config_get) (__VA_ARGS__)
+#define r_config_get_i(...) R_OPENCORE_FN (r_config_get_i) (__VA_ARGS__)
+#define r_buf_new_with_pointers(...) ((RBuffer *)R_OPENCORE_FN (r_buf_new_with_pointers) (__VA_ARGS__))
+#define r_buf_size(...) R_OPENCORE_FN (r_buf_size) (__VA_ARGS__)
+#define r_buf_data(...) R_OPENCORE_FN (r_buf_data) (__VA_ARGS__)
+#define r_io_open_buffer(...) ((RIODesc *)R_OPENCORE_FN (r_io_open_buffer) (__VA_ARGS__))
+#define r_io_use_fd(...) R_OPENCORE_FN (r_io_use_fd) (__VA_ARGS__)
+#define r_lang_use(...) R_OPENCORE_FN (r_lang_use) (__VA_ARGS__)
+#define r_lang_run_string(...) R_OPENCORE_FN (r_lang_run_string) (__VA_ARGS__)
+#define r_num_get(...) R_OPENCORE_FN (r_num_get) (__VA_ARGS__)
+#define r_hash_ssdeep(...) R_OPENCORE_FN (r_hash_ssdeep) (__VA_ARGS__)
+#define r_str_distance(...) R_OPENCORE_FN (r_str_distance) (__VA_ARGS__)
+#define r_inflate_lz4(...) R_OPENCORE_FN (r_inflate_lz4) (__VA_ARGS__)
+#define r_magic_new(...) ((RMagic *)R_OPENCORE_FN (r_magic_new) (__VA_ARGS__))
+#define r_magic_free(m) r_opencore_magic_free (m)
+#define r_magic_load_buffer(...) R_OPENCORE_FN (r_magic_load_buffer) (__VA_ARGS__)
+#define r_magic_buffer(...) R_OPENCORE_FN (r_magic_buffer) (__VA_ARGS__)
+#define r_magic_error(...) R_OPENCORE_FN (r_magic_error) (__VA_ARGS__)
 #endif
 
 #ifdef __cplusplus
