@@ -190,7 +190,7 @@ static inline int hacky_arm_anal(RArchSession *a, RAnalOp *op, const ut8 *buf, i
 	int ret = -1;
 	// Hacky support for ARMv8.3 and ARMv8.5
 	if (a->config->bits == 64 && len >= 4) {
-		ut32 insn = r_read_ble32 (buf, R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config));
+		ut32 insn = r_read_le32 (buf);
 		int insn_class = (insn >> 25) & 0xf;
 		bool is_ret;
 		if (hack_pauth_lr_mnemonic (insn, &is_ret)) {
