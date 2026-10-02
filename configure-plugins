@@ -74,19 +74,13 @@ want_zydis() {
   echo 1
 }
 
-if [ ! -f "$cfg" ]; then
-  echo "configure-plugins: Copying dist/plugins-cfg/plugins.def.cfg"
-  cp -f dist/plugins-cfg/plugins.def.cfg plugins.cfg
-fi
-
 load () {
-  if [ -e $cfg ]; then
-    echo "configure-plugins: Loading $cfg .."
-    . $cfg
-  else
-    echo "configure-plugins: Loading $1 .."
-    . "$1"
+  if [ ! -f "$cfg" ]; then
+    echo "configure-plugins: Copying $1"
+    cp -f "$1" "$cfg"
   fi
+  echo "configure-plugins: Loading $cfg .."
+  . "$cfg"
 }
 
 
@@ -311,7 +305,10 @@ while : ; do
 		;;
 	"--without-zydis") WANT_ZYDIS=0 ;;
 	"--with-syszydis") WANT_ZYDIS=1 ;;
-	"--without-gpl") DEFCFG=./plugins.nogpl.cfg ;;
+	"--without-gpl")
+		DEFCFG=dist/plugins-cfg/plugins.nogpl.cfg
+		cmp -s "$cfg" "$DEFCFG" || rm -f "$cfg"
+		;;
 	"--disable-loadlibs") LOADLIBS=0 ;;
 	"--rm-static") RMSTATIC="$2" ; ;;
   "--list") sort_vars ; list ; ;;
