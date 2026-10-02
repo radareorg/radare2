@@ -1,4 +1,4 @@
-/* radare - MIT - Copyright 2021-2026 - pancake, brainstorm, condret */
+/* radare - GPL - Copyright 2021-2026 - pancake, brainstorm, condret */
 
 #include <r_anal.h>
 #include "v850dis.h"
@@ -946,7 +946,7 @@ const RArchPlugin r_arch_plugin_v850 = {
 		.name = "v850",
 		.author = "pancake,brainstorm,condret",
 		.desc = "V850 Renesas Electronics RISC",
-		.license = "MIT",
+		.license = "GPL-3.0-only",
 	},
 	.preludes = preludes,
 	.cpus = "e0,0,e,e1,e2,e2v3,e3v5,all",

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2024-2025 - pancake */
+/* radare - GPL - Copyright 2016-2026 - pancake */
 
 #define R_LOG_ORIGIN "arch.stm8"
 
