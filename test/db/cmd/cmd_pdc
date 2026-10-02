@@ -148,8 +148,8 @@ void entry0 (void) {
     return eax;
 }
 
- 0x0040200f |                                | // callconv: eax cdecl (stack);
- 0x0040200f |                                | void entry0 (void) {
+ 0x0040200f | // callconv: eax cdecl (stack);
+ 0x0040200f | void entry0 (void) {
  0x0040200f |     si = 3
  0x00402013 |     fcn.00402000 ()
  0x00402018 |     do {
@@ -268,8 +268,8 @@ af
 pdco
 EOF
 EXPECT=<<EOF
- 0x100003a54 |                                | // callconv: x0 arm64 (x0, x1, x2, x3, x4, x5, x6, x7, stack);
- 0x100003a54 |                                | void sym.func.100003a54 (int64_t arg1, int64_t arg2) {
+ 0x100003a54 | // callconv: x0 arm64 (x0, x1, x2, x3, x4, x5, x6, x7, stack);
+ 0x100003a54 | void sym.func.100003a54 (int64_t arg1, int64_t arg2) {
  0x100003a54 |     x8 = [x0 + 0x60] // arg1
  0x100003a58 |     x8 = [x8 + 0x60]
  0x100003a5c |     x9 = [x1 + 0x60] // arg2
@@ -546,8 +546,8 @@ af
 pdco
 EOF
 EXPECT=<<EOF
- 0x00000000 |                                | // callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
- 0x00000000 |                                | void fcn.00000000 (void) {
+ 0x00000000 | // callconv: r3 ppc-64 (r3, r4, r5, r6, r7, r8, r9, r10, stack);
+ 0x00000000 | void fcn.00000000 (void) {
  0x00000000 |     // ICOD XREF from fcn.00000000 @ 0x4(x)
  0x00000004 |     r3 = [obj.myglobal]
  0x00000008 |     return

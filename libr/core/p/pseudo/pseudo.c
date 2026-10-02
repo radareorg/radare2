@@ -619,8 +619,10 @@ static void asm_append(RStrBuf *sb, RCore *core, ut64 addr, const char *prefix) 
 
 static void print_pipe_header(PDCState *state, ut64 addr) {
 	print_str (state, " 0x%08" PFMT64x " | ", addr);
-	r_strbuf_pad (state_sb (state), ' ', 30);
-	print_str (state, " | ");
+	if (state->show_asm) {
+		r_strbuf_pad (state_sb (state), ' ', 30);
+		print_str (state, " | ");
+	}
 }
 
 static int tc_depth(PDCState *state, ut64 addr);
@@ -2528,10 +2530,10 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 	{
 		char *cc = r_core_cmd_strf (core, "afci@0x%08" PFMT64x, state.fcn->addr);
 		r_str_trim (cc);
-		if (state.show_addr || state.show_asm) {
-			print_pipe_header (&state, state.fcn->addr);
-		}
 		if (R_STR_ISNOTEMPTY (cc)) {
+			if (state.show_addr || state.show_asm) {
+				print_pipe_header (&state, state.fcn->addr);
+			}
 			PRINTF ("// callconv: %s\n", cc);
 		}
 		free (cc);
