@@ -42,7 +42,6 @@ r_io_sources = [
   'p/io_null.c',
   'p/io_procpid.c',
   'p/io_ptrace.c',
-  'p/io_qnx.c',
   'p/io_r2k.c',
   'p/io_r2pipe.c',
   'p/io_r2web.c',
@@ -81,10 +80,14 @@ r_io_deps = [
   bochs_dep,
   gdb_dep,
   winkd_dep,
-  qnx_dep,
   get_option('use_zip') ? zip_dep : declare_dependency(),
   pth
 ]
+
+if not get_option('nogpl')
+  r_io_sources += 'p/io_qnx.c'
+  r_io_deps += qnx_dep
+endif
 
 if host_machine.system() == 'haiku'
   r_io_deps += [
@@ -127,10 +130,13 @@ r_io_static_deps = [
   winkd_static_dep,
   bochs_static_dep,
   gdb_static_dep,
-  qnx_static_dep,
   get_option('use_zip') ? zip_dep : declare_dependency(),
   pth
 ]
+
+if not get_option('nogpl')
+  r_io_static_deps += qnx_static_dep
+endif
 
 r_io_static = static_library('r_io_static', r_io_sources,
   include_directories: platform_inc,

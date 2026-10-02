@@ -1,17 +1,4 @@
 /*
- * $QNXtpLicenseC:
- * Copyright 2005, QNX Software Systems. All Rights Reserved.
- *
- * This source code may contain confidential information of QNX Software
- * Systems (QSS) and its licensors.  Any use, reproduction, modification,
- * disclosure, distribution or transfer of this software, or any software
- * that includes or is based upon any of this code, is prohibited unless
- * expressly authorized by QSS by written agreement.  For more information
- * (including whether this source code file has been published) please
- * email licensing@qnx.com. $
-*/
-
-/*
 
    Copyright 2003 Free Software Foundation, Inc.
 

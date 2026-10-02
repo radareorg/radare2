@@ -21,7 +21,6 @@ r_debug_sources = [
   'p/debug_evm.c',
   'p/debug_native.c',
   'p/debug_null.c',
-  'p/debug_qnx.c',
   'p/debug_rap.c',
   'p/debug_winkd.c',
   #'p/native/arm.c',
@@ -51,11 +50,15 @@ r_debug_deps = [
   r_lang_dep,
   r_egg_dep,
   winkd_dep,
-  qnx_dep,
   gdb_dep,
   bochs_dep,
   r_socket_dep
 ]
+
+if not get_option('nogpl')
+  r_debug_sources += 'p/debug_qnx.c'
+  r_debug_deps += qnx_dep
+endif
 
 if host_machine.system() == 'linux' or host_machine.system() == 'android'
   r_debug_sources += ['p/native/linux/linux_debug.c']
@@ -133,10 +136,13 @@ r_debug_static_deps = [
   r_egg_static_dep,
   r_socket_static_dep,
   winkd_static_dep,
-  qnx_static_dep,
   gdb_static_dep,
   bochs_static_dep,
 ]
+
+if not get_option('nogpl')
+  r_debug_static_deps += qnx_static_dep
+endif
 
 r_debug_static = static_library('r_debug_static', r_debug_sources,
   include_directories: r_debug_inc,

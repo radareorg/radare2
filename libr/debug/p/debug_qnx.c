@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake, defragger, madprogrammer */
+/* radare - LGPL - Copyright 2009-2026 - pancake, defragger, madprogrammer */
 
 #include <r_debug.h>
 #include <libqnxr.h>
@@ -396,7 +396,7 @@ RDebugPlugin r_debug_plugin_qnx = {
 		.name = "qnx",
 		.author = "pancake, defragger, madprogrammer",
 		.desc = "qnx debug plugin",
-		.license = "LGPL-3.0-only",
+		.license = "GPL-2.0-only",
 	},
 	.arch = "x86,arm",
 	.bits = R_SYS_BITS_PACK (32),

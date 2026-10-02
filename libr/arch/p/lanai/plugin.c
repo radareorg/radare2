@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2024 - pancake */
+/* radare - LGPL - Copyright 2016-2026 - pancake */
 
 #include <r_arch.h>
 #include "../../include/disas-asm.h"
@@ -105,7 +105,7 @@ const RArchPlugin r_arch_plugin_lanai = {
 	.meta = {
 		.name = "lanai",
 		.author = "pancake",
-		.license = "GPL-3.0-only",
+		.license = "GPL-2.0-only",
 		.desc = "Myricom's LANAI (based on GNU binutils",
 	},
 	.arch = "lanai",
