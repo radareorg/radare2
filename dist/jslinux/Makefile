@@ -291,11 +291,13 @@ else
 $(WORK)/r2blob: | $(CC_WRAP)
 	@echo "[r2] cross-building static r2blob for riscv64 (this reconfigures the source tree!)"
 	-$(MAKE) -C $(R2_ROOT) clean > /dev/null 2>&1
-	cd $(R2_ROOT) && cp -f dist/plugins-cfg/plugins.jslinux.cfg plugins.cfg
-	cd $(R2_ROOT) && ./configure-plugins
 	cd $(R2_ROOT) && CC=$(CC_WRAP) HOST_CC=cc CFLAGS="$(R2_CFLAGS)" ./configure \
 		--host=riscv64-unknown-linux-musl --with-ostype=gnulinux \
 		--prefix=/usr $(R2_CONFIGURE_FLAGS)
+	# --without-gpl replaces plugins.cfg with the nogpl set, so apply ours after
+	cd $(R2_ROOT) && cp -f dist/plugins-cfg/plugins.jslinux.cfg plugins.cfg
+	cd $(R2_ROOT) && ./configure-plugins --with-ostype=gnulinux \
+		$(filter-out --without-gpl,$(R2_CONFIGURE_FLAGS))
 	$(MAKE) -C $(R2_ROOT) libs -j$(JOBS) CC=$(CC_WRAP) HOST_CC=cc \
 		LIBS_TARGET=sublibs WITH_LIBS=0 WITH_LIBR=1
 	cd $(R2_ROOT)/binr/blob && rm -f r2blob && \

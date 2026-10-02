@@ -42,11 +42,12 @@ $(BUILDDIR):
 
 $(CONFIG_STAMP): $(R2DIR)/configure.acr \
 		$(R2DIR)/dist/plugins-cfg/plugins.uefi.cfg | $(BUILDDIR)
-	cp $(R2DIR)/dist/plugins-cfg/plugins.uefi.cfg $(R2DIR)/plugins.cfg
-	cd $(R2DIR) && ./configure-plugins
 	cd $(R2DIR) && CC=$(CC) AR=$(AR) RANLIB=$(RANLIB) \
 		PKGCONFIG=/usr/bin/false CFLAGS="$(UEFI_CFLAGS)" LDFLAGS="-nostdlib" \
 		./configure $(CONFIGURE_FLAGS)
+	# --without-gpl replaces plugins.cfg with the nogpl set, so apply ours after
+	cp $(R2DIR)/dist/plugins-cfg/plugins.uefi.cfg $(R2DIR)/plugins.cfg
+	cd $(R2DIR) && ./configure-plugins $(filter-out --without-gpl,$(CONFIGURE_FLAGS))
 	touch $@
 
 build: $(CONFIG_STAMP)
