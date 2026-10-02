@@ -161,10 +161,10 @@ static const char *hack_pauth_lr_mnemonic(ut32 insn, bool *is_ret) {
 	if ((insn & 0xffc0001f) == 0xf380001f) {
 		return (insn & 0x00200000)? "autibsp": "autiasp";
 	}
-	if ((insn & 0xfffffc1f) == 0xdac1901e && ((insn >> 5) & 0x1f) != 0x1f) {
+	if ((insn & 0xfffffc1f) == 0xdac1901e) {
 		return "autiasp";
 	}
-	if ((insn & 0xfffffc1f) == 0xdac1941e && ((insn >> 5) & 0x1f) != 0x1f) {
+	if ((insn & 0xfffffc1f) == 0xdac1941e) {
 		return "autibsp";
 	}
 	switch (insn) {
