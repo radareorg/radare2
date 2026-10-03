@@ -185,7 +185,7 @@ static RBinMdtPart *load_segment_part(ELFOBJ *header, int idx) {
 	    magic[2] == ELFMAG2 && magic[3] == ELFMAG3) {
 		part->format = R_BIN_MDT_PART_ELF;
 		// Load nested ELF
-		part->obj.elf = Elf_(new_buf) (vfile_buffer, 0, false);
+		part->obj.elf = Elf_(new_buf) (vfile_buffer, 0, false, false);
 		// symbols are read from the nested ELF in symbols_vec
 	} else if ((segment->p_flags & QCOM_MDT_TYPE_MASK) == QCOM_MDT_TYPE_SIGNATURE) {
 		part->format = R_BIN_MDT_PART_MBN;
@@ -231,7 +231,7 @@ static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	mdt->name = strdup (bf->file ? r_file_basename (bf->file) : "firmware");
 
 	// Load header ELF
-	mdt->header = Elf_(new_buf) (b, 0, false);
+	mdt->header = Elf_(new_buf) (b, 0, false, false);
 	if (!mdt->header) {
 		R_LOG_ERROR ("Failed to parse .mdt ELF header");
 		goto error;

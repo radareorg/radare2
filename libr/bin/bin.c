@@ -319,6 +319,7 @@ R_API bool r_bin_reload(RBin *bin, ut32 bf_id, ut64 baseaddr) {
 	RBinFileOptions opt;
 	r_bin_file_options_init (&opt, bf->fd, baseaddr, bf->loadaddr, bin->options.rawstr);
 	opt.filename = bf->file;
+	opt.memlayout = bf->memlayout;
 	if (!bf->buf) {
 		r_bin_file_delete (bin, bf->id);
 		return false;
@@ -507,6 +508,7 @@ R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt) {
 		if (buf) {
 			// reading from the backing file on disk, not process memory
 			is_debugger = false;
+			opt->memlayout = false;
 			opt->loadaddr = 0;
 			opt->sz = 0;
 		}

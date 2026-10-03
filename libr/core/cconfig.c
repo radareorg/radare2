@@ -4414,6 +4414,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("bin.relocs", "true", "load relocs information at startup if available");
 	SETB ("bin.relocs.apply", "false", "apply reloc information");
 	SETB ("bin.relocs.xrefs", "true", "register xrefs from reloc information");
+	SETB ("bin.memlayout", "false", "oba <addr> [baddr] reads the buffer as a memory image (segments at vaddr - base)");
 	SETICB ("bin.maxsymlen", 0, &cb_binmaxsymlen, "maximum length for symbol names");
 	SETICB ("bin.str.min", 0, &cb_binminstr, "minimum string length for r_bin");
 	SETICB ("bin.str.max", 0, &cb_binmaxstr, "maximum string length for r_bin");
