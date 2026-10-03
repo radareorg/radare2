@@ -212,7 +212,7 @@ capstone-build: capstone
 ifeq ($(CAPSTONE_LDFLAGS),)
 	cd $(CS_ROOT) && CFLAGS="${CAPSTONE_CFLAGS} $(CFLAGS)" LDFLAGS="$(LDFLAGS)" \
 		$(MAKE) $(CAPSTONE_MAKEFLAGS) CC="$(CC)" AR_EXT=a IS_CYGWIN=0 CAPSTONE_STATIC=yes CAPSTONE_SHARED=no \
-		RANLIB="$(RANLIB)" LIBARCHS="" AR="$(AR)" IS_MINGW=0 libcapstone.a
+		RANLIB="$(RANLIB)" LIBARCHS="" AR="$(AR)" AR_FLAGS=qc IS_MINGW=0 libcapstone.a
 ifneq (${EXT_AR},a)
 	-cp -f $(CS_ROOT)/libcapstone.a $(CS_ROOT)/libcapstone.${EXT_AR}
 endif

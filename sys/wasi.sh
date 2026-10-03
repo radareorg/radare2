@@ -10,13 +10,11 @@ TOOLS="rax2 rafs2 radiff2 rahash2 radare2 rasm2 rabin2 rafind2"
 # Setup WASI SDK
 wasi_setup_sdk
 
-# Setup plugins
-wasi_setup_plugins
-
 # Configure and build
 # XXX gperf-builds are broken
 # ./configure --with-static-themes --with-compiler=wasi --disable-debugger --without-fork --with-ostype=wasi --with-checks-level=0 --disable-threads --without-dylink --with-libr --without-gpl
 ./configure --with-static-themes --without-gperf --with-compiler=wasi --disable-debugger --without-fork --with-ostype=wasi --with-checks-level=0 --disable-threads --without-dylink --with-libr --without-gpl || exit 1
+wasi_setup_plugins || exit 1
 
 make -s -j${MAKE_JOBS} || exit 1
 

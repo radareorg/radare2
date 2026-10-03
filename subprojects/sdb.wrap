@@ -3,3 +3,5 @@ url = https://github.com/radareorg/sdb.git
 revision = 2.5.2
 directory = sdb
 depth = 1
+patch_directory = sdb
+diff_files = sdb/archive-create.patch

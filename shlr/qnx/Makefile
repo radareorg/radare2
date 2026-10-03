@@ -62,7 +62,7 @@ $(LIB)/$(LIBNAME).$(EXT_AR): $(LIB) $(SRC_O)
 ifeq ($(WITHPIC),1)
 	$(LD) $(PIC_CFLAGS) $(LDFLAGS_SHARED) -o $(LIB)/$(LIBFILE) $(CFLAGS) $(SRC_O) $(LDFLAGS) $(LINK)
 endif
-	$(AR) rvs $(LIB)/$(LIBNAME).$(EXT_AR) $(SRC_O)
+	$(AR) rcvs $(LIB)/$(LIBNAME).$(EXT_AR) $(SRC_O)
 	# required for solaris and w32
 	$(RANLIB) $(LIB)/$(LIBNAME).$(EXT_AR)
 

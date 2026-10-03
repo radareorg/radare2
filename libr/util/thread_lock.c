@@ -61,7 +61,7 @@ static bool _lock_init(RThreadLock *thl, bool recursive) {
 		InitializeCriticalSection (&thl->lock.cs);
 	}
 #else
-#if !R2_UEFI
+#if !R2_UEFI && !__wasi__
 #warning Unsupported mutex
 #endif
 	return false;

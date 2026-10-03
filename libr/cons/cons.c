@@ -1491,7 +1491,7 @@ R_API void r_cons_set_raw(RCons *cons, bool is_raw) {
 			return;
 		}
 	}
-#else
+#elif !__wasi__
 #warning No raw console supported for this platform
 #endif
 	terminal->foreground = cons;

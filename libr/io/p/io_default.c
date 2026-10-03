@@ -224,6 +224,7 @@ static void mmap_free(RIOMMapFileObj *R_NULLABLE mmo) {
 	}
 }
 
+#if !__wasi__
 static RIOMMapFileObj *mmap_create(RIO *io, const char *filename, int perm, int mode) {
 	R_RETURN_VAL_IF_FAIL (io && filename, NULL);
 	RIOMMapFileObj *mmo = R_NEW0 (RIOMMapFileObj);
@@ -251,6 +252,7 @@ static RIOMMapFileObj *mmap_create(RIO *io, const char *filename, int perm, int 
 	}
 	return mmo;
 }
+#endif
 
 static bool uricheck(const char *filename) {
 	R_RETURN_VAL_IF_FAIL (filename, false);
@@ -343,13 +345,13 @@ static int mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 
 static RIODesc *mmap_open(RIO *io, const char *file, int perm, int mode) {
 	R_RETURN_VAL_IF_FAIL (io && file, NULL);
+#if HAVE_FIFO
 	const char *filepath = file;
 	if (r_str_startswith (file, "file://")) {
 		filepath = file + strlen ("file://");
 	} else if (r_str_startswith (file, "stdio://")) {
 		filepath = file + strlen ("stdio://");
 	}
-#if HAVE_FIFO
 	// Handle pipes (FIFOs) by slurping them atomically
 	if (is_fifo (filepath)) {
 		size_t fifo_sz = 0;

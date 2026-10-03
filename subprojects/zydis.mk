@@ -2,6 +2,7 @@
 
 ZYDIS_BUILD_CFLAGS=$(filter-out -Werror%,$(CFLAGS))
 ZYDIS_PATCHES=zydis-patches/unused-rex-token-aliases.patch
+ZYDIS_PATCHES+=zydis-patches/unused-string-append-case.patch
 
 zydis:
 	rm -rf zydis.tmp

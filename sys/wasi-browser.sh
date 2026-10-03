@@ -25,13 +25,11 @@ fi
 rm -f /tmp/wasi_test.c /tmp/wasi_test.wasm
 echo "WASI toolchain OK"
 
-# Setup plugins
-wasi_setup_plugins
-
 # Configure and build
 # XXX gperf-builds are broken
 # ./configure --with-static-themes --with-compiler=wasi --disable-debugger --without-fork --with-ostype=wasi --with-checks-level=0 --disable-threads --without-dylink --with-libr --without-gpl
 ./configure --with-static-themes --without-gperf --with-compiler=wasi --disable-debugger --without-fork --with-ostype=wasi --with-checks-level=0 --disable-threads --without-dylink --with-libr --without-gpl --with-wasm-browser || exit 1
+wasi_setup_plugins || exit 1
 
 make -s -j${MAKE_JOBS} || exit 1
 

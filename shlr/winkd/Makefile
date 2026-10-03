@@ -1,7 +1,4 @@
 include ../../libr/config.mk
-include ../../config-user.mk
-include ../../mk/platform.mk
-include ../../mk/${COMPILER}.mk
 
 CFLAGS:=-I../../libr/include $(CFLAGS)
 CFLAGS+=${PIC_CFLAGS}
@@ -21,7 +18,7 @@ all: ${LIBAR}
 
 ${LIBAR}: $(OFILES)
 	rm -f ${LIBAR}
-	${AR} q ${LIBAR} ${OFILES}
+	${AR} qc ${LIBAR} ${OFILES}
 	${RANLIB} ${LIBAR}
 
 clean:

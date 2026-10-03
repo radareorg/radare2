@@ -4,6 +4,8 @@ WRAP_wrap_git_url:=https://github.com/radareorg/sdb.git
 WRAP_wrap_git_revision:=2.5.2
 WRAP_wrap_git_directory:=sdb
 WRAP_wrap_git_depth:=1
+WRAP_wrap_git_patch_directory:=sdb
+WRAP_wrap_git_diff_files:=sdb/archive-create.patch
 
 .PHONY: sdb_clean sdb_all
 
@@ -14,6 +16,8 @@ sdb_all:
 	git clone --no-checkout --depth=1 https://github.com/radareorg/sdb.git sdb
 	cd sdb && git fetch --depth=1 origin 2.5.2
 	cd sdb && git checkout FETCH_HEAD
+	cp -rf packagefiles/sdb/* sdb
+	for a in sdb/archive-create.patch ; do echo "patch -d sdb -p1 < $$a" ; patch -d sdb -p1 < $$a ; done
 
 sdb_clean:
 	rm -rf sdb

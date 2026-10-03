@@ -9,7 +9,7 @@ _INCLUDE_MK_GCC_=
 include ../../mk/${COMPILER}.mk
 SHLR?=..
 LIBAR=libr_java.$(EXT_AR)
-CC_AR=$(AR) -r $(LIBAR)
+CC_AR=$(AR) -rc $(LIBAR)
 
 OSTYPE?=$(shell uname | tr 'A-Z' 'a-z')
 ifeq (${OSTYPE},)

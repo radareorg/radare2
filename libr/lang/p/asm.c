@@ -50,7 +50,9 @@ static RLangPlugin r_lang_plugin_asm = {
 };
 #else
 
+#if !__wasi__
 #pragma message("Warning: C RLangPlugin is not implemented on this platform")
+#endif
 static RLangPlugin r_lang_plugin_asm = { 0 };
 
 #endif

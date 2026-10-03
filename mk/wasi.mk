@@ -11,7 +11,7 @@ LIBATOMIC=
 LINK=
 RANLIB=$(WASI_SDK)/bin/ranlib
 ONELIB=0
-CC_AR=$(AR) q ${LIBAR}
+CC_AR=$(AR) qc ${LIBAR}
 PARTIALLD=$(CC) -r -nostdlib -Wl,--whole-archive -Wl,--no-entry
 PIC_CFLAGS=-fPIC
 LDFLAGS+=-flto -Wl,-z,stack-size=8388608

@@ -432,7 +432,9 @@ beach:
 #endif
 	return buf;
 #else
+#if !__wasi__
 #warning TODO r_stdin_slurp
+#endif
 	return NULL;
 #endif
 }

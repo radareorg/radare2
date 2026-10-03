@@ -1,8 +1,5 @@
 include ../global.mk
 include config.mk
-include ../config-user.mk
-include ../mk/platform.mk
-include ../mk/${COMPILER}.mk
 
 DESTDIR:=$(DESTDIR)
 PREFIX?=${PWD}/../prefix
@@ -95,7 +92,7 @@ libr.o: ../shlr/libr_shlr.${EXT_AR}
 	$(CC) -r -nostdlib $(CFLAGS) $(WHOLEFLAG) -o libr.o $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 
 libr.${EXT_AR}: libr.o
-	$(AR) -rs $@ libr.o
+	$(AR) -rcs $@ libr.o
 	$(RANLIB) $@
 
 libr.${EXT_SO}: libr.${EXT_AR}

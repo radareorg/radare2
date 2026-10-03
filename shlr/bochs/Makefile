@@ -43,7 +43,7 @@ lib/$(LIBNAME).$(EXT_AR): lib $(SRC_O)
 ifeq ($(WITHPIC),1)
 	$(LD) $(PIC_CFLAGS) $(LDFLAGS_SHARED) -o lib/$(LIBFILE) $(CFLAGS) $(SRC_O) $(LDFLAGS) $(LINK)
 endif
-	$(AR) rvs lib/$(LIBNAME).$(EXT_AR) $(SRC_O)
+	$(AR) rcvs lib/$(LIBNAME).$(EXT_AR) $(SRC_O)
 	$(RANLIB) lib/$(LIBNAME).$(EXT_AR)
 
 clean:

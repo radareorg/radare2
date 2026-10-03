@@ -70,9 +70,10 @@ wasi_setup_sdk() {
 	echo "Using WASI_SYSROOT=$WASI_SYSROOT"
 }
 
-# Setup plugins configuration
+# Apply the WASI plugins after configure selects its no-GPL defaults.
 wasi_setup_plugins() {
-	cp -f dist/plugins-cfg/plugins.wasi.cfg plugins.cfg
+	cp -f dist/plugins-cfg/plugins.wasi.cfg plugins.cfg || return 1
+	./configure-plugins
 }
 
 # Build tools for WASI
