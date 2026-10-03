@@ -309,6 +309,7 @@ static void cmd_oba(RCore *core, const char *input) {
 			if (desc) {
 				RBinFileOptions opt;
 				r_bin_file_options_init (&opt, desc->fd, baddr, addr, rawstr);
+				opt.memlayout = r_config_get_b (core->config, "bin.memlayout");
 				opt.sz = oba_memsize (core->dbg, addr);
 				if (!opt.sz) {
 					opt.sz = 1024 * 1024;
@@ -326,6 +327,7 @@ static void cmd_oba(RCore *core, const char *input) {
 			if (desc) {
 				RBinFileOptions opt;
 				r_bin_file_options_init (&opt, desc->fd, addr, addr, rawstr);
+				opt.memlayout = r_config_get_b (core->config, "bin.memlayout");
 				opt.sz = oba_memsize (core->dbg, addr);
 				if (!opt.sz) {
 					opt.sz = 1024 * 1024;

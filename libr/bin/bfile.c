@@ -842,6 +842,7 @@ R_IPI RBinFile *r_bin_file_new_from_buffer(RBin *bin, const char *file, RBuffer 
 		RListIter *item = r_list_append (bin->binfiles, bf);
 		bf->buf = r_ref (buf);
 		bf->user_baddr = opt->baseaddr;
+		bf->memlayout = opt->memlayout;
 		RBinPlugin *plugin = get_plugin_from_buffer (bin, bf, opt->pluginname, bf->buf);
 		RBinObject *o = r_bin_object_new (bf, plugin, opt->baseaddr, opt->loadaddr, 0, r_buf_size (bf->buf));
 		if (!o) {

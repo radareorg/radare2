@@ -535,6 +535,7 @@ typedef struct r_bin_file_options_t {
 	bool nofuncstarts;
 	bool skip_symbols; // skip symbol loading (e.g., for companion debug files)
 	const char *filename;
+	bool memlayout;
 } RBinFileOptions;
 
 typedef struct r_bin_addrline_store_t RBinAddrLineStore;
@@ -595,6 +596,7 @@ typedef struct r_bin_file_t {
 	struct r_bin_t *rbin;
 	int string_count;
 	RArena *arena;
+	bool memlayout;
 } RBinFile;
 
 #define R_BIN_DEMANGLE_TYPE_SLOTS (R_BIN_LANG_IBMXL + 1)
