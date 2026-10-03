@@ -3,13 +3,10 @@
 #include <r_lang.h>
 
 static bool lang_lib_file_run(RLangSession *user, const char *file) {
-	char *libpath = strdup (file);
+	char *libpath = r_file_abspath (file);
 	void *lib;
 	if (!libpath) {
 		return false;
-	}
-	if (!r_str_startswith (libpath, "/") && !r_str_startswith (libpath, "./")) {
-		libpath = r_str_prepend (libpath, "./");
 	}
 	if (!r_file_exists (libpath)) {
 		if (!r_str_endswith (libpath, R_LIB_EXT)) {
@@ -31,7 +28,7 @@ static bool lang_lib_file_run(RLangSession *user, const char *file) {
 			void *rp = r_lib_dl_sym (lib, "radare_plugin");
 			if (rp) {
 				RCore *core = user->lang->user;
-				user->lang->cmdf (core, "'L %s", file);
+				user->lang->cmdf (core, "'L %s", libpath);
 			} else {
 				R_LOG_ERROR ("Cannot find 'entry' or 'radare_plugin' symbols in library");
 			}
