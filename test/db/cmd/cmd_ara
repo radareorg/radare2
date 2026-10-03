@@ -93,6 +93,8 @@ EXPECT=<<EOF
 amd64
 amd64syscall
 dlang
+golang
+golang_abi0
 ms
 p9
 reg
@@ -102,6 +104,8 @@ rax reg(rdi, rsi, rdx, rcx)
 amd64
 amd64syscall
 dlang
+golang
+golang_abi0
 ms
 p9
 reg

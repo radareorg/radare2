@@ -73,3 +73,10 @@ cc.dlang.arg4=r8d
 cc.dlang.arg5=r9d
 cc.dlang.argn=stack_rev
 cc.dlang.pop=callee
+
+# Go on x86-32 passes both arguments and results on the stack.
+golang=cc
+cc.golang.argn=stack
+cc.golang.stackalloc=lower
+cc.golang.pop=caller
+cc.golang.ret0=stack
