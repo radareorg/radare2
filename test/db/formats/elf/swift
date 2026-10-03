@@ -103,3 +103,28 @@ EXPECT=<<EOF
 void method.constructor.main.SomeStruct.init ();
 EOF
 RUN
+
+NAME=swift self and error survive type propagation of their callee's arg names
+FILE=malloc://512
+ARGS=-a arm -b 64 -e anal.cc=swift
+CMDS=<<EOF
+wx e00314aa3f000094c0035fd6
+wx 150280d2e00315aa36000094c0035fd6 @ 0x20
+wx e20300aae00302aa2e000094c0035fd6 @ 0x40
+wx c0035fd6 @ 0x100
+td void takebuf(char *buffer);
+af takebuf @ 0x100
+af self_caller @ 0
+af error_caller @ 0x20
+af arg_caller @ 0x40
+aaft
+afv @ 0
+afv @ 0x20
+afv @ 0x40
+EOF
+EXPECT=<<EOF
+arg char * self @ x20
+arg char * error @ x21
+arg char * buffer @ x0
+EOF
+RUN
