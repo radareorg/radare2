@@ -65,14 +65,19 @@ EXPECT=<<EOF
 |           ; var int64_t var_0h @ sp+0x0
 |           ; var int64_t var_8h @ sp+0x8
 |           ; var int32_t var_14h @ sp+0x14
-|           ; var int64_t var_18h @ sp+0x18
+|           ; var int64_t var_18h_2 @ sp+0x18
 |           ; var int64_t var_20h_2 @ sp+0x20
 |           ; var int64_t var_220h @ sp+0x220
 |           ; var int64_t var_10h @ sp+0x650
+|           ; var int64_t var_18h @ sp+0x658
 |           ; var int64_t var_20h @ sp+0x660
+|           ; var int64_t var_28h @ sp+0x668
 |           ; var int64_t var_30h @ sp+0x670
+|           ; var int64_t var_38h @ sp+0x678
 |           ; var int64_t var_40h @ sp+0x680
+|           ; var int64_t var_48h @ sp+0x688
 |           ; var int64_t var_50h @ sp+0x690
+|           ; var int64_t var_58h @ sp+0x698
 |           0x100003a90      7f2303d5       pacibsp
 |           0x100003a94      fc6fbaa9       stp x28, x27, [sp, -0x60]!
 |           0x100003a98      fa6701a9       stp x26, x25, [var_10h]
