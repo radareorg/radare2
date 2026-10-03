@@ -568,15 +568,26 @@ static void r2pm_setenv(R2Pm *r2pm) {
 	free (gmake);
 	r2pm_set_pyvenv (r2pm);
 
+	char *r2_plugdir = r2pm->global? r_str_r2_prefix (R2_PLUGINS): r_xdg_datadir ("plugins");
+	r_sys_setenv ("R2PM_PLUGDIR", r2_plugdir);
+	free (r2_plugdir);
+
 	if (r2pm->global) {
-		// the r2pm_plugdir changes when using -g
-		char *r2_plugdir = r_str_newf (R2_LIBDIR "/radare2/" R2_VERSION);
-		r_sys_setenv ("R2PM_PLUGDIR", r2_plugdir);
-		free (r2_plugdir);
+		r_sys_setenv ("GLOBAL", "1");
+		r_sys_setenv ("R2PM_GLOBAL", "1");
+		char *sudo = r_sys_getenv ("SUDO");
+		if (R_STR_ISEMPTY (sudo)) {
+			free (sudo);
+			sudo = strdup ("sudo");
+		}
+		r_sys_setenv ("R2PM_SUDO", sudo);
+		r_sys_setenv ("SUDO", sudo);
+		free (sudo);
 	} else {
-		char *r2_plugdir = r_xdg_datadir ("plugins");
-		r_sys_setenv ("R2PM_PLUGDIR", r2_plugdir);
-		free (r2_plugdir);
+		r_sys_setenv ("GLOBAL", "0");
+		r_sys_setenv ("R2PM_GLOBAL", "0");
+		r_sys_setenv ("R2PM_SUDO", "");
+		r_sys_setenv ("SUDO", "");
 	}
 
 	if (r2pm->time) {
@@ -663,7 +674,6 @@ static void r2pm_setenv(R2Pm *r2pm) {
 	free (incdir);
 
 	free (r2_prefix);
-	// GLOBAL = 0 # depends on r2pm.global, which is set on r2pm_install
 	static const char *python_bins[] = {
 		"python3",
 		"python2",
@@ -1296,23 +1306,6 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, 
 		free (version);
 	}
 	free (r2v);
-	if (global) {
-		r_sys_setenv ("GLOBAL", "1");
-		r_sys_setenv ("R2PM_GLOBAL", "1");
-		char *sudo = r_sys_getenv ("SUDO");
-		if (R_STR_ISEMPTY (sudo)) {
-			free (sudo);
-			sudo = strdup ("sudo");
-		}
-		r_sys_setenv ("R2PM_SUDO", sudo);
-		r_sys_setenv ("SUDO", sudo);
-		free (sudo);
-	} else {
-		r_sys_setenv ("GLOBAL", "0");
-		r_sys_setenv ("R2PM_GLOBAL", "0");
-		r_sys_setenv ("R2PM_SUDO", "");
-		r_sys_setenv ("SUDO", "");
-	}
 	if (!r2pm_have_packages ()) {
 		R_LOG_ERROR ("Please run r2pm -U to initialize/update the database");
 		return 1;
@@ -1616,7 +1609,7 @@ static void r2pm_envhelp(void) {
 	char *r2_ldflags = r_sys_getenv ("R2_LDFLAGS");
 	char *r2_libs = r_sys_getenv ("R2_LIBS");
 	bool r2pm_offline = r_sys_getenv_asbool ("R2PM_OFFLINE");
-	char *r2pm_plugdir2 = r_str_newf (R2_LIBDIR "/radare2/" R2_VERSION);
+	char *r2pm_plugdir2 = r_str_r2_prefix (R2_PLUGINS);
 	printf ("R2_LOG_LEVEL=%d         # define log.level for r2pm\n"
 	"SUDO=sudo              # path to the SUDO executable\n"
 	"MAKE=make              # path to the GNU MAKE executable\n"
