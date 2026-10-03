@@ -87,6 +87,40 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=r2pm global plugin directory follows R2_PREFIX
+FILE=-
+CMDS=<<EOF
+%R2_PREFIX=/r2pm-relocated
+r2pm -gH R2PM_UNUSED
+env R2PM_PLUGDIR~^/r2pm-relocated~?
+EOF
+EXPECT=<<EOF
+1
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=r2pm global environment is also available without install
+FILE=-
+CMDS=<<EOF
+%SUDO=r2pm-test-sudo
+r2pm -gH GLOBAL
+r2pm -gH R2PM_GLOBAL
+r2pm -gH R2PM_SUDO
+r2pm -H GLOBAL
+r2pm -H R2PM_GLOBAL
+r2pm -H R2PM_SUDO
+EOF
+EXPECT=<<EOF
+1
+1
+r2pm-test-sudo
+0
+0
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=r2pm -r status code
 FILE=-
 CMDS='!!r2pm -r false; echo $?
