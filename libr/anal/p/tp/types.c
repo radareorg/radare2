@@ -18,7 +18,7 @@ void var_rename(RAnal *anal, RAnalVar *v, const char *name, ut64 addr) {
 	if (!name || !v) {
 		return;
 	}
-	if (!*name || !strcmp (name, "...")) {
+	if (!*name || !strcmp (name, "...") || r_anal_var_is_abi_role (v)) {
 		return;
 	}
 	bool is_default = (r_str_startswith (v->name, VARPREFIX) || r_str_startswith (v->name, ARGPREFIX));
