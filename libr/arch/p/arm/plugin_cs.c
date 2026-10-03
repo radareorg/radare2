@@ -67,7 +67,7 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 #define MEMDISP(x) insn->detail->arm.operands[x].mem.disp
 #define MEMDISP64(x) (ut64)insn->detail->arm64.operands[x].mem.disp
 #define ISIMM(x) (insn->detail->arm.operands[x].type == ARM_OP_IMM)
-#define ISIMM64(x) ((arm64_op_type)insn->detail->arm64.operands[x].type & (ARM64_OP_IMM | ARM64_OP_CIMM | ARM64_OP_FP))
+#define ISIMM64(x) ((arm64_op_type)INSOP64 (x).type == ARM64_OP_IMM || (arm64_op_type)INSOP64 (x).type == ARM64_OP_CIMM || (arm64_op_type)INSOP64 (x).type == ARM64_OP_FP)
 #define ISREG(x) (insn->detail->arm.operands[x].type == ARM_OP_REG)
 #define ISREG64(x) ((arm64_op_type)insn->detail->arm64.operands[x].type == ARM64_OP_REG)
 #define ISMEM(x) (insn->detail->arm.operands[x].type == ARM_OP_MEM)
@@ -119,41 +119,21 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 // CS6 compatibility:
 #if CS_API_MAJOR == 6
 
-#define ARM_INS_NOP ARM_INS_ALIAS_NOP
-
-#define ARM64_INS_MNEG ARM64_INS_ALIAS_MNEG
-#define ARM64_INS_NOP ARM64_INS_ALIAS_NOP
-#define ARM64_INS_CMP ARM64_INS_ALIAS_CMP
-#define ARM64_INS_CMN ARM64_INS_ALIAS_CMN
-#define ARM64_INS_TST ARM64_INS_ALIAS_TST
-#define ARM64_INS_CSET ARM64_INS_ALIAS_CSET
-#define ARM64_INS_CINC ARM64_INS_ALIAS_CINC
-#define ARM64_INS_MVN ARM64_INS_ALIAS_MVN
-#define ARM64_INS_BFI ARM64_INS_ALIAS_BFI
-#define ARM64_INS_BFXIL ARM64_INS_ALIAS_BFXIL
-#define ARM64_INS_SBFIZ ARM64_INS_ALIAS_SBFIZ
-#define ARM64_INS_UBFIZ ARM64_INS_ALIAS_UBFIZ
-#define ARM64_INS_SBFX ARM64_INS_ALIAS_SBFX
-#define ARM64_INS_UBFX ARM64_INS_ALIAS_UBFX
-#define ARM64_INS_NEGS ARM64_INS_ALIAS_NEGS
-#define ARM64_INS_NGC ARM64_INS_ALIAS_NGC
-#define ARM64_INS_NGCS ARM64_INS_ALIAS_NGCS
-#define ARM64_INS_PACIA1716 ARM64_INS_ALIAS_PACIA1716
-#define ARM64_INS_PACIASP ARM64_INS_ALIAS_PACIASP
-#define ARM64_INS_PACIAZ ARM64_INS_ALIAS_PACIAZ
-#define ARM64_INS_PACIB1716 ARM64_INS_ALIAS_PACIB1716
-#define ARM64_INS_PACIBSP ARM64_INS_ALIAS_PACIBSP
-#define ARM64_INS_PACIBZ ARM64_INS_ALIAS_PACIBZ
-#define ARM64_INS_AUTIA1716 ARM64_INS_ALIAS_AUTIA1716
-#define ARM64_INS_AUTIASP ARM64_INS_ALIAS_AUTIASP
-#define ARM64_INS_AUTIAZ ARM64_INS_ALIAS_AUTIAZ
-#define ARM64_INS_AUTIB1716 ARM64_INS_ALIAS_AUTIB1716
-#define ARM64_INS_AUTIBSP ARM64_INS_ALIAS_AUTIBSP
-#define ARM64_INS_AUTIBZ ARM64_INS_ALIAS_AUTIBZ
-#define ARM64_INS_XPACLRI ARM64_INS_ALIAS_XPACLRI
-#define ARM64_INS_IC ARM64_INS_ALIAS_IC
-#define ARM64_INS_DC ARM64_INS_ALIAS_DC
-#define ARM64_INS_NEGS ARM64_INS_ALIAS_NEGS
+// alias-only mnemonics the analysis switches on, keyed by their alias id
+#define ARM_ALIAS_INS(X) X(ARM, NOP)
+#define ARM64_ALIAS_INS(X) X(ARM64, MNEG) X(ARM64, NOP) X(ARM64, CMP) X(ARM64, CMN) \
+	X(ARM64, TST) X(ARM64, CSET) X(ARM64, CINC) X(ARM64, MVN) X(ARM64, BFI) \
+	X(ARM64, BFXIL) X(ARM64, SBFIZ) X(ARM64, UBFIZ) X(ARM64, SBFX) X(ARM64, UBFX) \
+	X(ARM64, NEGS) X(ARM64, NGC) X(ARM64, NGCS) X(ARM64, PACIA1716) X(ARM64, PACIASP) \
+	X(ARM64, PACIAZ) X(ARM64, PACIB1716) X(ARM64, PACIBSP) X(ARM64, PACIBZ) \
+	X(ARM64, AUTIA1716) X(ARM64, AUTIASP) X(ARM64, AUTIAZ) X(ARM64, AUTIB1716) \
+	X(ARM64, AUTIBSP) X(ARM64, AUTIBZ) X(ARM64, XPACLRI) X(ARM64, IC) X(ARM64, DC)
+#define ALIAS_INS_ENUM(arch, name) arch##_INS_##name = arch##_INS_ALIAS_##name,
+#define ALIAS_INS_CASE(arch, name) case arch##_INS_ALIAS_##name:
+enum {
+	ARM_ALIAS_INS (ALIAS_INS_ENUM)
+	ARM64_ALIAS_INS (ALIAS_INS_ENUM)
+};
 
 // ARM64_OP_*:
 
@@ -605,6 +585,18 @@ static const char *extender_name(arm64_extender extender) {
 
 static const char *vas_name(arm64_vas vas) {
 	switch (vas) {
+#if CS_API_MAJOR >= 6
+	case AARCH64LAYOUT_VL_B:
+		return "1b";
+	case AARCH64LAYOUT_VL_H:
+		return "1h";
+	case AARCH64LAYOUT_VL_S:
+		return "1s";
+	case AARCH64LAYOUT_VL_D:
+		return "1d";
+	case AARCH64LAYOUT_VL_Q:
+		return "1q";
+#endif
 	case ARM64_VAS_8B:
 		return "8b";
 	case ARM64_VAS_16B:
@@ -644,6 +636,18 @@ static const char *vas_name(arm64_vas vas) {
 
 static int vas_size(arm64_vas vas) {
 	switch (vas) {
+#if CS_API_MAJOR >= 6
+	case AARCH64LAYOUT_VL_B:
+		return 8;
+	case AARCH64LAYOUT_VL_H:
+		return 16;
+	case AARCH64LAYOUT_VL_S:
+		return 32;
+	case AARCH64LAYOUT_VL_D:
+		return 64;
+	case AARCH64LAYOUT_VL_Q:
+		return 128;
+#endif
 	case ARM64_VAS_8B:
 	case ARM64_VAS_16B:
 		return 8;
@@ -679,6 +683,14 @@ static int vas_size(arm64_vas vas) {
 
 static int vas_count(arm64_vas vas) {
 	switch (vas) {
+#if CS_API_MAJOR >= 6
+	case AARCH64LAYOUT_VL_B:
+	case AARCH64LAYOUT_VL_H:
+	case AARCH64LAYOUT_VL_S:
+	case AARCH64LAYOUT_VL_D:
+	case AARCH64LAYOUT_VL_Q:
+		return 1;
+#endif
 	case ARM64_VAS_16B:
 		return 16;
 	case ARM64_VAS_8B:
@@ -940,8 +952,8 @@ static const char *decode_shift(arm_shifter shift) {
 	case ARM_SFT_ROR_REG:
 #if CS_API_MAJOR < 6
 	case ARM_SFT_RRX_REG:
-		return E_OP_RR;
 #endif
+		return E_OP_RR;
 	default:
 		break;
 	}
@@ -3625,7 +3637,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 }
 
 static int cond_cs2r2(int cc) {
-	if (cc == ARM_CC_AL || cc < 0) {
+	if (cc == ARM_CC_AL || cc == ARM_CC_INVALID || cc < 0) {
 		cc = R_ANAL_CONDTYPE_AL;
 	} else {
 		switch (cc) {
@@ -3669,7 +3681,8 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->family = R_ANAL_OP_FAMILY_CPU;
 	}
 
-	op->cond = cond_cs2r2 (insn->detail->arm64.cc);
+	// the A64 nv condition executes always
+	op->cond = ((arm64_cc)insn->detail->arm64.cc == ARM64_CC_NV)? R_ANAL_CONDTYPE_AL: cond_cs2r2 (insn->detail->arm64.cc);
 	if (op->cond == R_ANAL_CONDTYPE_NV) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 		return;
@@ -3954,6 +3967,13 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->type = R_ANAL_OP_TYPE_AND;
 		break;
 	case ARM64_INS_ORR:
+		if (ISIMM64 (2) && ((arm64_reg)REGID64 (1) == ARM64_REG_XZR || (arm64_reg)REGID64 (1) == ARM64_REG_WZR)) {
+			op->type = R_ANAL_OP_TYPE_MOV;
+			op->val = IMM64 (2);
+			op->cycles = 1;
+			break;
+		}
+		// fall through
 	case ARM64_INS_ORN:
 		op->type = R_ANAL_OP_TYPE_OR;
 		break;
@@ -4143,10 +4163,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_BC:
 #endif
 	case ARM64_INS_B:
-		// BX LR == RET
-		if ((arm64_reg) insn->detail->arm64.operands[0].reg == ARM64_REG_LR) {
-			op->type = R_ANAL_OP_TYPE_RET;
-		} else if (insn->detail->arm64.cc > ARM64_CC_INVALID && insn->detail->arm64.cc < ARM64_CC_AL) {
+		if (op->cond != R_ANAL_CONDTYPE_AL) {
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->jump = IMM64(0);
 			op->fail = addr + op->size;
@@ -4971,7 +4988,7 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 		// TODO arch plugins should NOT set register values
 		{
 			int j;
-			for (j = 0; j < 3; j++, i++) {
+			for (j = 0; j < 3 && i < count; j++, i++) {
 				set_src_dst (op, RVecRArchValue_at (&op->srcs, j), &handle, insn, i, bits);
 			}
 			set_src_dst (op, RVecRArchValue_at (&op->dsts, 0), &handle, insn, 0, bits);
@@ -5015,6 +5032,136 @@ static inline bool is_valid_mnemonic(const char *m) {
 	return !r_str_startswith (m, "hint") && !r_str_startswith (m, "udf");
 }
 
+#if CS_API_MAJOR >= 6
+static void arm64_normalize_operands(cs_insn *insn) {
+	cs_arm64 *arm = &insn->detail->arm64;
+	int i;
+	for (i = 0; i < arm->op_count; i++) {
+		cs_arm64_op *operand = &arm->operands[i];
+		// pc-relative literals come as base-less memory operands
+		if ((arm64_op_type)operand->type == ARM64_OP_MEM && (arm64_reg)operand->mem.base == ARM64_REG_INVALID
+				&& (arm64_reg)operand->mem.index == ARM64_REG_INVALID) {
+			st64 address = operand->mem.disp;
+			operand->type = ARM64_OP_IMM;
+			operand->imm = address;
+		}
+		// post-index offsets are kept in the memory operand instead of a trailing immediate
+		if ((arm64_op_type)operand->type == ARM64_OP_MEM && arm->post_index && i + 1 == arm->op_count
+				&& arm->op_count < R_ARRAY_SIZE (arm->operands)) {
+			cs_arm64_op *offset = &arm->operands[arm->op_count++];
+			offset->type = ARM64_OP_IMM;
+			offset->imm = operand->mem.disp;
+			operand->mem.disp = 0;
+		}
+	}
+	// fcmp against #0.0 reports the zero register
+	if ((insn->id == ARM64_INS_FCMP || insn->id == ARM64_INS_FCMPE)
+			&& arm->op_count == 2 && (arm64_op_type)arm->operands[1].type == ARM64_OP_REG
+			&& (arm64_reg)arm->operands[1].reg == ARM64_REG_XZR) {
+		arm->operands[1].type = ARM64_OP_FP;
+		arm->operands[1].fp = 0.0;
+	}
+}
+
+static void arm32_normalize_operands(cs_insn *insn) {
+	cs_arm *arm = &insn->detail->arm;
+	int i;
+	switch (insn->id) {
+	case ARM_INS_ASR:
+	case ARM_INS_LSL:
+	case ARM_INS_LSR:
+	case ARM_INS_ROR:
+		// shift aliases keep the shift in the source operand too
+		if (arm->op_count == 3 && arm->operands[1].shift.type != ARM_SFT_INVALID) {
+			if (arm->operands[2].type == ARM_OP_IMM) {
+				arm->op_count--;
+			} else {
+				arm->operands[1].shift.type = ARM_SFT_INVALID;
+				arm->operands[1].shift.value = 0;
+			}
+		}
+		break;
+	default:
+		break;
+	}
+	for (i = 0; i < arm->op_count; i++) {
+		cs_arm_op *operand = &arm->operands[i];
+		if (operand->type != ARM_OP_MEM) {
+			continue;
+		}
+		// a negative index is reported as scale -1 and a missing index as scale 0
+		if (operand->mem.scale < 0) {
+			operand->subtracted = true;
+		}
+		operand->mem.scale = 1;
+		if (!operand->mem.index && operand->subtracted && operand->mem.disp > 0) {
+			operand->mem.disp = -operand->mem.disp;
+			operand->subtracted = false;
+		}
+		// post-index offsets are kept in the memory operand instead of a trailing operand
+		if (arm->post_index && i + 1 == arm->op_count && arm->op_count < R_ARRAY_SIZE (arm->operands)) {
+			cs_arm_op *offset = &arm->operands[arm->op_count++];
+			*offset = *operand;
+			if (operand->mem.index) {
+				offset->type = ARM_OP_REG;
+				offset->reg = operand->mem.index;
+			} else {
+				offset->type = ARM_OP_IMM;
+				offset->imm = operand->mem.disp;
+			}
+			operand->mem.index = ARM_REG_INVALID;
+			operand->mem.disp = 0;
+			operand->shift.type = ARM_SFT_INVALID;
+			operand->shift.value = 0;
+			operand->subtracted = false;
+		}
+	}
+}
+
+static unsigned int arm_alias_id(const cs_insn *insn, int bits) {
+	if (!insn->is_alias || !insn->usesAliasDetails || !insn->alias_id) {
+		return insn->id;
+	}
+	// alias mnemonics that are also real instructions
+	if (bits == 64) {
+		switch (insn->alias_id) {
+		case ARM64_INS_ALIAS_ASR: return ARM64_INS_ASR;
+		case ARM64_INS_ALIAS_FMOV: return ARM64_INS_FMOV;
+		case ARM64_INS_ALIAS_LSL: return ARM64_INS_LSL;
+		case ARM64_INS_ALIAS_LSR: return ARM64_INS_LSR;
+		case ARM64_INS_ALIAS_MOV: return ARM64_INS_MOV;
+		case ARM64_INS_ALIAS_MUL: return ARM64_INS_MUL;
+		case ARM64_INS_ALIAS_NEG: return ARM64_INS_NEG;
+		case ARM64_INS_ALIAS_ROR: return ARM64_INS_ROR;
+		case ARM64_INS_ALIAS_SMULL: return ARM64_INS_SMULL;
+		case ARM64_INS_ALIAS_SXTB: return ARM64_INS_SXTB;
+		case ARM64_INS_ALIAS_SXTH: return ARM64_INS_SXTH;
+		case ARM64_INS_ALIAS_SXTW: return ARM64_INS_SXTW;
+		case ARM64_INS_ALIAS_UMULL: return ARM64_INS_UMULL;
+		case ARM64_INS_ALIAS_UXTB: return ARM64_INS_UXTB;
+		case ARM64_INS_ALIAS_UXTH: return ARM64_INS_UXTH;
+		case ARM64_INS_ALIAS_UXTW: return ARM64_INS_UXTW;
+		ARM64_ALIAS_INS (ALIAS_INS_CASE)
+			return insn->alias_id;
+		}
+	} else {
+		switch (insn->alias_id) {
+		case ARM_INS_ALIAS_ASR: return ARM_INS_ASR;
+		case ARM_INS_ALIAS_LSL: return ARM_INS_LSL;
+		case ARM_INS_ALIAS_LSR: return ARM_INS_LSR;
+		case ARM_INS_ALIAS_ROR: return ARM_INS_ROR;
+		case ARM_INS_ALIAS_RRX: return ARM_INS_RRX;
+		case ARM_INS_ALIAS_POP: return ARM_INS_POP;
+		case ARM_INS_ALIAS_PUSH: return ARM_INS_PUSH;
+		case ARM_INS_ALIAS_VMOV: return ARM_INS_VMOV;
+		ARM_ALIAS_INS (ALIAS_INS_CASE)
+			return insn->alias_id;
+		}
+	}
+	return insn->id;
+}
+#endif
+
 static int analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	csh *cs_handle = cs_handle_for_session (as);
 	op->size = (as->config->bits == 16)? 2: 4;
@@ -5027,6 +5174,15 @@ static int analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 	bool ok = r_arch_cs_disasm_iter (*cs_handle, buf, len, addr, &csi);
 	cs_insn *insn = &csi.insn;
 	if (ok && is_valid_mnemonic (insn->mnemonic)) {
+#if CS_API_MAJOR >= 6
+		// csi is a local copy, reshape it into the cs5 ids and operands the analysis expects
+		insn->id = arm_alias_id (insn, as->config->bits);
+		if (as->config->bits == 64) {
+			arm64_normalize_operands (insn);
+		} else {
+			arm32_normalize_operands (insn);
+		}
+#endif
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			free (op->mnemonic);
 			op->mnemonic = r_str_newf ("%s%s%s",
@@ -5108,6 +5264,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		pd->last_syntax = as->config->syntax;
 		int mode = (as->config->syntax == R_ARCH_SYNTAX_REGNUM)
 				? CS_OPT_SYNTAX_NOREGNAME: CS_OPT_SYNTAX_DEFAULT;
+#if CS_API_MAJOR >= 6
+		if (as->config->bits != 64 && as->config->syntax != R_ARCH_SYNTAX_REGNUM) {
+			mode |= CS_OPT_SYNTAX_CS_REG_ALIAS;
+		}
+#endif
 		cs_option (*handle, CS_OPT_SYNTAX, mode);
 	}
 	return analop (as, op, op->addr, op->bytes, op->size, mask) >= 1;
@@ -5170,6 +5331,7 @@ static bool init(RArchSession* as) {
 
 	PluginData *pd = as->data;
 	pd->bits = as->config->bits;
+	pd->last_syntax = -1;
 	pd->bigendian = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
 	pd->cpu = as->config->cpu? strdup (as->config->cpu): NULL;
 	pd->ht_it = ht_uu_new0 ();
