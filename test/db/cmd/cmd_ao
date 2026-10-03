@@ -178,6 +178,7 @@ EOF
 RUN
 
 NAME=aom-m68k
+REQUIRE=cs5
 FILE=-
 CMDS=<<EOF
 e asm.arch=m68k
@@ -187,6 +188,20 @@ EOF
 EXPECT=<<EOF
 ori.b
 374
+EOF
+RUN
+
+NAME=aom-m68k (cs6)
+REQUIRE=cs6
+FILE=-
+CMDS=<<EOF
+e asm.arch=m68k
+aom
+aoml~?
+EOF
+EXPECT=<<EOF
+ori.b
+406
 EOF
 RUN
 
