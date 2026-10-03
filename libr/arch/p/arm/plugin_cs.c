@@ -1217,29 +1217,29 @@ static void vector64_dst_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, 
 	}
 }
 
-#define SHIFTED_IMM64(n, sz) shifted_imm64(handle, insn, n, sz)
+#define SHIFTED_IMM64(n, sz) shifted_imm64 (&INSOP64 (n), sz)
 
-static ut64 shifted_imm64(csh *handle, cs_insn *insn, int n, int sz) {
-	cs_arm64_op op = INSOP64 (n);
-	int sft = op.shift.value;
-	switch (op.shift.type) {
+static ut64 shifted_imm64(const cs_arm64_op *op, int sz) {
+	const ut64 imm = op->imm;
+	const int sft = op->shift.value;
+	switch (op->shift.type) {
 	case ARM64_SFT_MSL:
-		return (IMM64 (n) << sft) | ((1 << sft) - 1);
+		return (imm << sft) | ((1 << sft) - 1);
 	case ARM64_SFT_LSL:
-		return IMM64 (n) << sft;
+		return imm << sft;
 	case ARM64_SFT_LSR:
-		return IMM64 (n) >> sft;
+		return imm >> sft;
 	case ARM64_SFT_ROR:
-		return (IMM64 (n) >> sft)|(IMM64 (n) << (sz - sft));
+		return (imm >> sft)|(imm << (sz - sft));
 	case ARM64_SFT_ASR:
 		switch (sz) {
-		case 8: return (st8)IMM64 (n) >> sft;
-		case 16: return (st16)IMM64 (n) >> sft;
-		case 32: return (st32)IMM64 (n) >> sft;
-		default: return (st64)IMM64 (n) >> sft;
+		case 8: return (st8)imm >> sft;
+		case 16: return (st16)imm >> sft;
+		case 32: return (st32)imm >> sft;
+		default: return (st64)imm >> sft;
 		}
 	default:
-		return IMM64 (n);
+		return imm;
 	}
 }
 
@@ -3743,12 +3743,9 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_SUB:
 		if (ISREG64(0) && (arm64_reg) REGID64(0) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
-			if (ISIMM64(1)) {
-				//sub sp, 0x54
-				op->stackptr = IMM(1);
-			} else if (ISIMM64(2) && ISREG64(1) && (arm64_reg) REGID64(1) == ARM64_REG_SP) {
+			if (ISIMM64(2) && ISREG64(1) && (arm64_reg) REGID64(1) == ARM64_REG_SP) {
 				//sub sp, sp, 0x10
-				op->stackptr = IMM64(2);
+				op->stackptr = SHIFTED_IMM64 (2, 64);
 			}
 			op->val = op->stackptr;
 		} else {
@@ -3788,12 +3785,9 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_ADD:
 		if (ISREG64 (0) && (arm64_reg) REGID64 (0) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
-			if (ISIMM64 (1)) {
-				//add sp, 0x54
-				op->stackptr = -(st64)IMM (1);
-			} else if (ISIMM64 (2) && ISREG64 (1) && (arm64_reg) REGID64 (1) == ARM64_REG_SP) {
+			if (ISIMM64 (2) && ISREG64 (1) && (arm64_reg) REGID64 (1) == ARM64_REG_SP) {
 				//add sp, sp, 0x10
-				op->stackptr = -(st64)IMM64 (2);
+				op->stackptr = -(st64)SHIFTED_IMM64 (2, 64);
 			}
 			// op->val = op->stackptr;
 		} else if ((arm64_reg) REGID64 (0) == ARM64_REG_SP) {
@@ -3801,7 +3795,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 			op->stackptr = 0;
 		} else {
 			if (ISIMM64 (2)) {
-				op->val = IMM64 (2);
+				op->val = SHIFTED_IMM64 (2, 64);
 			} else {
 				op->val = 0;
 			}
@@ -3931,7 +3925,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_CMP:
 		op->type = R_ANAL_OP_TYPE_CMP;
 		if (ISIMM64 (1)) {
-			op->val = IMM64 (1);
+			op->val = SHIFTED_IMM64 (1, 64);
 		}
 		break;
 	case ARM64_INS_FCMP:
@@ -4897,7 +4891,7 @@ static void set_src_dst(RAnalOp *op, RAnalValue *val, csh *handle, cs_insn *insn
 			val->delta = arm64op.mem.disp;
 			break;
 		case ARM64_OP_IMM:
-			val->imm = arm64op.imm;
+			val->imm = shifted_imm64 (&arm64op, 64);
 			break;
 		default:
 			break;
