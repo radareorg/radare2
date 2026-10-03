@@ -209,6 +209,36 @@ afvW
 EOF
 RUN
 
+NAME=Stack frame with shifted immediates
+FILE=-
+ARGS=-a arm -b 64 -e anal.vars.stackname=true
+CMDS=<<EOF
+wx ff0740d1ff4301d1e02708f9e1074091ff430191ff074091200440911f044071c0035fd6
+af
+afi~stackframe
+afvx
+ao 1 @ 4~stackptr
+ao 1 @ 0x14~stackptr
+ao 1 @ 0x18~^val
+ao 1 @ 0x1c~^val
+EOF
+EXPECT=<<EOF
+stackframe: 4176
+afvR
+      arg1  0x8
+    var_8h
+   var_50h  0xc
+afvW
+      arg1
+    var_8h  0x8
+   var_50h
+stackptr: 80
+stackptr: 18446744073709547520
+val: 0x00001000
+val: 0x00001000
+EOF
+RUN
+
 NAME=siguzas arm64 search
 FILE=bins/mach0/BatteryLife.arm_64.1
 CMDS=<<EOF
