@@ -749,6 +749,7 @@ R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, RBinFi
 	bf->rbin = bin;
 	bf->file = file ? r_arena_push_str (arena, file) : NULL;
 	bf->rawstr = opt->rawstr;
+	bf->inmem = opt->inmem;
 	bf->fd = opt->fd;
 	bf->curxtr = opt->pluginname? r_libstore_find_name_in (bin->libstore, bin->libstore->xtrs, opt->pluginname) : NULL;
 	if ((st64)file_sz < 0) {

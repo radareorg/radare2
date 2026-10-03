@@ -490,8 +490,9 @@ static Elf_(Phdr) *get_dynamic_segment(ELFOBJ *eo) {
 		if (p->p_type != PT_DYNAMIC) {
 			continue;
 		}
-		if (p->p_filesz > eo->size || p->p_offset > eo->size
-			|| p->p_offset + sizeof (Elf_(Dyn)) > eo->size) {
+		// init_dynamic_section bounds a memory image through v2p
+		if (!eo->inmem && (p->p_filesz > eo->size || p->p_offset > eo->size
+			|| p->p_offset + sizeof (Elf_(Dyn)) > eo->size)) {
 			return NULL;
 		}
 		return p;
@@ -716,20 +717,32 @@ static void fill_dynamic_entries(ELFOBJ *eo, ut64 loaded_offset, ut64 dyn_size) 
 	}
 }
 
-// the file-backed bytes of the PT_LOAD holding vaddr, from vaddr on
-static ut64 loaded_bytes_at(ELFOBJ *eo, ut64 vaddr) {
+static bool segment_backing(ELFOBJ *eo, const Elf_(Phdr) *p, ut64 vaddr, ut64 *off, ut64 *left) {
+	if (p->p_type != PT_LOAD || vaddr < p->p_vaddr) {
+		return false;
+	}
+	const ut64 delta = vaddr - p->p_vaddr;
+	const ut64 span = eo->inmem? p->p_memsz: p->p_filesz;
+	if (span > UT64_MAX - p->p_vaddr || delta >= span || (eo->inmem && p->p_vaddr < eo->memory_base)) {
+		return false;
+	}
+	const ut64 base = eo->inmem? p->p_vaddr - eo->memory_base: p->p_offset;
+	if (base > eo->size || delta >= eo->size - base) {
+		return false;
+	}
+	*off = base + delta;
+	*left = R_MIN (span - delta, eo->size - *off);
+	return true;
+}
+
+static bool backing_at(ELFOBJ *eo, ut64 vaddr, ut64 *off, ut64 *left) {
 	size_t i;
 	for (i = 0; i < eo->phnum; i++) {
-		const Elf_(Phdr) *p = &eo->phdr[i];
-		if (p->p_type != PT_LOAD || vaddr < p->p_vaddr || vaddr - p->p_vaddr >= p->p_filesz
-			|| p->p_filesz > UT64_MAX - p->p_vaddr || p->p_offset >= eo->size) {
-			continue;
+		if (segment_backing (eo, &eo->phdr[i], vaddr, off, left)) {
+			return true;
 		}
-		const ut64 end = R_MIN (p->p_filesz, eo->size - p->p_offset);
-		const ut64 at = vaddr - p->p_vaddr;
-		return at < end? end - at: 0;
 	}
-	return 0;
+	return false;
 }
 
 static ut64 reloc_section_size_at(ELFOBJ *eo, ut64 vaddr, ut32 sh_type) {
@@ -749,7 +762,8 @@ static Elf_(Xword) reloc_read_size(ELFOBJ *eo, ut64 vaddr, Elf_(Xword) size, ut3
 	if (vaddr == R_BIN_ELF_ADDR_MAX || !size) {
 		return size;
 	}
-	const ut64 loaded = loaded_bytes_at (eo, vaddr);
+	ut64 off, loaded = 0;
+	backing_at (eo, vaddr, &off, &loaded);
 	if (size <= loaded) {
 		return size;
 	}
@@ -777,7 +791,7 @@ static int init_dynamic_section(ELFOBJ *eo) {
 
 	ut64 dyn_size = dyn_phdr->p_filesz;
 
-	if (!dyn_size || loaded_offset + dyn_size > eo->size) {
+	if (!dyn_size || loaded_offset > eo->size || dyn_size > eo->size - loaded_offset) {
 		return false;
 	}
 
@@ -1704,6 +1718,21 @@ static void relro_insdb(ELFOBJ *eo) {
 /* Look down */
 static void sdb_init_const(ELFOBJ *eo);
 
+static bool init_memory_base(ELFOBJ *eo) {
+	const ut64 headers_end = eo->ehdr.e_phoff + ((ut64)eo->phnum * sizeof (Elf_(Phdr)));
+	size_t i;
+	for (i = 0; eo->phdr && i < eo->phnum; i++) {
+		const Elf_(Phdr) *p = &eo->phdr[i];
+		if (p->p_type == PT_LOAD && !p->p_offset && p->p_filesz >= headers_end) {
+			eo->memory_base = p->p_vaddr;
+			// a loader never maps the section table
+			eo->ehdr.e_shnum = 0;
+			return true;
+		}
+	}
+	return false;
+}
+
 static bool elf_init(ELFOBJ *eo) {
 	// eo is not an ELF
 	if (!init_ehdr (eo)) {
@@ -1714,6 +1743,10 @@ static bool elf_init(ELFOBJ *eo) {
 
 	if (!init_phdr (eo) && !is_bin_etrel (eo)) {
 		R_LOG_DEBUG ("Cannot initialize program headers");
+	}
+	if (eo->inmem && !init_memory_base (eo)) {
+		R_LOG_WARN ("No PT_LOAD maps the ELF header, reading it as a file");
+		eo->inmem = false;
 	}
 
 	if (eo->ehdr.e_type != ET_CORE) {
@@ -2373,6 +2406,10 @@ char *Elf_(intrp)(ELFOBJ *eo) {
 		}
 
 		ut64 addr = p->p_offset;
+		ut64 left;
+		if (eo->inmem && (!backing_at (eo, p->p_vaddr, &addr, &left) || left < p->p_filesz)) {
+			return NULL;
+		}
 		int sz = p->p_filesz;
 		sdb_num_set (eo->kv, "elf_header.intrp_addr", addr, 0);
 		sdb_num_set (eo->kv, "elf_header.intrp_size", sz, 0);
@@ -4667,6 +4704,16 @@ static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) 
 		ptr->vsize = phdr[i].p_memsz;
 		ptr->paddr = phdr[i].p_offset;
 		ptr->vaddr = phdr[i].p_vaddr;
+		if (eo->inmem) {
+			ut64 left = 0;
+			const bool backed = phdr[i].p_type == PT_LOAD
+				? segment_backing (eo, &phdr[i], ptr->vaddr, &ptr->paddr, &left)
+				: backing_at (eo, ptr->vaddr, &ptr->paddr, &left);
+			if (!backed && ptr->vaddr >= eo->memory_base) {
+				ptr->paddr = ptr->vaddr - eo->memory_base;
+			}
+			ptr->size = phdr[i].p_type == PT_LOAD? left: R_MIN (ptr->size, left);
+		}
 
 		ptr->perm = phdr[i].p_flags; // perm  are rwx like x=1, w=2, r=4, aka no need to convert from r2's R_PERM
 		ptr->is_segment = true;
@@ -5327,7 +5374,7 @@ static RVecRBinElfSymbol *parse_gnu_debugdata(ELFOBJ *eo, size_t *ret_size) {
 	ut8 *odata = r_sys_unxz (data, size, &osize);
 	if (odata) {
 		RBuffer *newelf = r_buf_new_with_pointers (odata, osize, false);
-		ELFOBJ* newobj = Elf_(new_buf) (newelf, eo->user_baddr, false);
+		ELFOBJ* newobj = Elf_(new_buf) (newelf, eo->user_baddr, false, false);
 		RVecRBinElfSymbol *symbols = NULL;
 		if (newobj) {
 			newobj->limit = eo->limit;
@@ -5974,7 +6021,7 @@ void Elf_(free)(ELFOBJ* eo) {
 	free (eo);
 }
 
-ELFOBJ* Elf_(new_buf)(RBuffer *buf, ut64 baddr, bool verbose) {
+ELFOBJ* Elf_(new_buf)(RBuffer *buf, ut64 baddr, bool verbose, bool inmem) {
 	ELFOBJ *eo = R_NEW0 (ELFOBJ);
 	RVecRBinTrycatch_init (&eo->trycatch);
 	eo->kv = sdb_new0 ();
@@ -5982,6 +6029,7 @@ ELFOBJ* Elf_(new_buf)(RBuffer *buf, ut64 baddr, bool verbose) {
 	eo->verbose = verbose;
 	eo->b = r_ref (buf);
 	eo->user_baddr = baddr;
+	eo->inmem = inmem;
 	if (!elf_init (eo)) {
 		Elf_(free) (eo);
 		return NULL;
@@ -5999,6 +6047,10 @@ static int is_in_vphdr(Elf_(Phdr) *p, ut64 addr) {
 
 ut64 Elf_(p2v)(ELFOBJ *eo, ut64 paddr) {
 	R_RETURN_VAL_IF_FAIL (eo, UT64_MAX);
+	if (eo->inmem) {
+		const ut64 vaddr = paddr + eo->memory_base;
+		return Elf_(v2p) (eo, vaddr) == paddr? vaddr: UT64_MAX;
+	}
 	if (eo->phdr) {
 		// When multiple PT_LOAD segments overlap in file-offset space (UPX)
 		// p_vaddr match so p2v/v2p round-trip at the real code region.
@@ -6036,6 +6088,10 @@ ut64 Elf_(p2v)(ELFOBJ *eo, ut64 paddr) {
 
 ut64 Elf_(v2p)(ELFOBJ *eo, ut64 vaddr) {
 	R_RETURN_VAL_IF_FAIL (eo, UT64_MAX);
+	if (eo->inmem) {
+		ut64 off, left;
+		return backing_at (eo, vaddr, &off, &left)? off: UT64_MAX;
+	}
 	if (eo->phdr) {
 		size_t i;
 		for (i = 0; i < eo->phnum; i++) {

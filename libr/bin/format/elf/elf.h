@@ -173,9 +173,11 @@ struct Elf_(obj_t) {
 	ut64 size;
 	ut64 baddr;
 	ut64 user_baddr;
+	ut64 memory_base;
 	ut64 boffset;
 	int endian;
 	bool verbose;
+	bool inmem;
 	bool load_unnamed;
 	bool has_nobtcfi;
 	bool has_nx;
@@ -260,7 +262,7 @@ const RVecRBinElfField *Elf_(load_fields)(struct Elf_(obj_t) *bin);
 char *Elf_(get_rpath)(struct Elf_(obj_t) *bin);
 
 struct Elf_(obj_t)* Elf_(new)(const char* file, bool verbose);
-struct Elf_(obj_t)* Elf_(new_buf)(RBuffer *buf, ut64 user_baddr, bool verbose);
+struct Elf_(obj_t)* Elf_(new_buf)(RBuffer *buf, ut64 user_baddr, bool verbose, bool inmem);
 void Elf_(free)(struct Elf_(obj_t)* bin);
 
 ut64 Elf_(resize_section)(RBinFile *bf, const char *name, ut64 size);

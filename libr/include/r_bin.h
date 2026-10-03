@@ -534,6 +534,7 @@ typedef struct r_bin_file_options_t {
 	int rawstr;
 	bool nofuncstarts;
 	bool skip_symbols; // skip symbol loading (e.g., for companion debug files)
+	bool inmem;
 	const char *filename;
 } RBinFileOptions;
 
@@ -594,6 +595,7 @@ typedef struct r_bin_file_t {
 	} dwarf_metadata;
 	struct r_bin_t *rbin;
 	int string_count;
+	bool inmem;
 	RArena *arena;
 } RBinFile;
 
