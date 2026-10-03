@@ -1,6 +1,18 @@
 #include <r_th.h>
 #include "minunit.h"
 
+bool test_lock_allocation(void) {
+	RThreadLock *lock = r_th_lock_new (false);
+	mu_assert_notnull (lock, "Non-recursive lock creation failed");
+	lock = r_th_lock_free (lock);
+	mu_assert_null (lock, "Lock free should return NULL");
+	lock = r_th_lock_new (true);
+	mu_assert_notnull (lock, "Recursive lock creation failed");
+	r_th_lock_free (lock);
+	mu_end;
+}
+
+#if WANT_THREADS
 // Shared data for testing
 static int shared_counter = 0;
 static RThreadLock *test_lock = NULL;
@@ -206,6 +218,8 @@ bool test_lock_wait(void) {
 	mu_end;
 }
 
+#endif
+
 bool test_atomic_operations(void) {
 	// Test atomic exchange
 	volatile R_ATOMIC_BOOL data = 0;
@@ -229,11 +243,14 @@ bool test_atomic_operations(void) {
 }
 
 int all_tests(void) {
+	mu_run_test (test_lock_allocation);
+#if WANT_THREADS
 	mu_run_test(test_lock_basic);
 	mu_run_test(test_lock_recursive);
 	mu_run_test(test_lock_non_recursive);
 	mu_run_test(test_lock_multiple_threads);
 	mu_run_test(test_lock_wait);
+#endif
 	mu_run_test(test_atomic_operations);
 	return tests_passed != tests_run;
 }

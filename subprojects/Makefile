@@ -63,10 +63,7 @@ distdeps: $(DISTDEPS)
 
 all: $(ALLDEPS)
 
-clean:
-	rm -rf $(ALLDEPS)
-
-mrproper:
-	rm -rf $(shell grep -v '^#' .gitignore)
+clean mrproper:
+	rm -rf $(addprefix ./,$(ALLDEPS))
 
 include $(addsuffix .mk, $(ALLDEPS))

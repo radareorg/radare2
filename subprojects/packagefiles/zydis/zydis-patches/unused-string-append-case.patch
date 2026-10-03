@@ -1,0 +1,80 @@
+--- a/amalgamated-dist/Zydis.c
++++ b/amalgamated-dist/Zydis.c
+@@ -30379,77 +30379,6 @@
+ }
+
+ /**
+- * Appends the content of the source string to the end of the destination
+- * string, converting the characters to the specified letter-case.
+- *
+- * @param   destination The destination string.
+- * @param   source      The source string.
+- * @param   letter_case The desired letter-case.
+- *
+- * @return  A zyan status code.
+- */
+-ZYAN_INLINE ZyanStatus ZydisStringAppendCase(ZyanString* destination, const ZyanStringView* source,
+-    ZydisLetterCase letter_case)
+-{
+-    ZYAN_ASSERT(destination && source);
+-    ZYAN_ASSERT(!destination->vector.allocator);
+-    ZYAN_ASSERT(destination->vector.size && source->string.vector.size);
+-
+-    if (destination->vector.size + source->string.vector.size - 1 > destination->vector.capacity)
+-    {
+-        return ZYAN_STATUS_INSUFFICIENT_BUFFER_SIZE;
+-    }
+-
+-    ZYAN_MEMCPY((char*)destination->vector.data + destination->vector.size - 1,
+-        source->string.vector.data, source->string.vector.size - 1);
+-
+-    switch (letter_case)
+-    {
+-    case ZYDIS_LETTER_CASE_DEFAULT:
+-        break;
+-    case ZYDIS_LETTER_CASE_LOWER:
+-    {
+-        const ZyanUSize index = destination->vector.size - 1;
+-        const ZyanUSize count = source->string.vector.size - 1;
+-        char* s = (char*)destination->vector.data + index;
+-        for (ZyanUSize i = index; i < index + count; ++i)
+-        {
+-            const char c = *s;
+-            if ((c >= 'A') && (c <= 'Z'))
+-            {
+-                *s = c | 32;
+-            }
+-            ++s;
+-        }
+-        break;
+-    }
+-    case ZYDIS_LETTER_CASE_UPPER:
+-    {
+-        const ZyanUSize index = destination->vector.size - 1;
+-        const ZyanUSize count = source->string.vector.size - 1;
+-        char* s = (char*)destination->vector.data + index;
+-        for (ZyanUSize i = index; i < index + count; ++i)
+-        {
+-            const char c = *s;
+-            if ((c >= 'a') && (c <= 'z'))
+-            {
+-                *s = c & ~32;
+-            }
+-            ++s;
+-        }
+-        break;
+-    }
+-    default:
+-        ZYAN_UNREACHABLE;
+-    }
+-
+-    destination->vector.size += source->string.vector.size - 1;
+-    ZYDIS_STRING_NULLTERMINATE(destination);
+-
+-    return ZYAN_STATUS_SUCCESS;
+-}
+-
+-/**
+  * Appends the content of the source short-string to the end of the destination string.
+  *
+  * @param   destination The destination string.
