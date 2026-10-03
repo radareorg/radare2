@@ -200,12 +200,109 @@ EOF
 EXPECT=<<EOF
 afvR
    var_10h  0x8,0xc
-   var_20h  0x14
     var_8h  0xc
+   var_20h  0x14
 afvW
    var_10h  0x4
-   var_20h  0x0
     var_8h  0x4
+   var_20h  0x0
+EOF
+RUN
+
+NAME=Variable analysis with paired loads and stores
+FILE=-
+ARGS=-a arm -b 64 -e anal.vars.stackname=true
+CMDS=<<EOF
+wx f30f1ef8e92342a9eb334769ed3b44a8e92301a9c0035fd6
+aap
+afvx
+EOF
+EXPECT=<<EOF
+afvR
+    arg_0h  0x4
+    arg_8h  0x4
+   arg_18h  0x8
+   arg_1ch  0x8
+   arg_20h  0xc
+   arg_28h  0xc
+   var_10h
+    var_8h
+afvW
+    arg_0h
+    arg_8h
+   arg_18h
+   arg_1ch
+   arg_20h
+   arg_28h
+   var_10h  0x10
+    var_8h  0x10
+EOF
+RUN
+
+NAME=Variable analysis pair strides follow the register width
+FILE=-
+ARGS=-a arm -b 64 -e anal.vars.stackname=true
+CMDS=<<EOF
+wx e10b4229e00741ade007446de10b0a29e00703adc0035fd6
+af
+afvx
+EOF
+EXPECT=<<EOF
+afvR
+      arg1  0xc
+   arg_10h  0x0
+   arg_14h  0x0
+   arg_20h  0x4
+   arg_30h  0x4
+   arg_40h  0x8
+   arg_48h  0x8
+   arg_50h
+   arg_54h
+   arg_60h
+   arg_70h
+afvW
+      arg1
+   arg_10h
+   arg_14h
+   arg_20h
+   arg_30h
+   arg_40h
+   arg_48h
+   arg_50h  0xc
+   arg_54h  0xc
+   arg_60h  0x10
+   arg_70h  0x10
+EOF
+RUN
+
+NAME=Variable analysis matches both halves of a pair exactly
+FILE=-
+ARGS=-a arm -b 64 -e anal.vars.stackname=true
+CMDS=<<EOF
+wx e0c300f8e10b4229c0035fd6
+af
+afv~sp
+EOF
+EXPECT=<<EOF
+arg int64_t arg_ch @ sp+0xc
+arg int32_t arg_10h @ sp+0x10
+arg int32_t arg_14h @ sp+0x14
+EOF
+RUN
+
+NAME=Variable analysis with a single load and a post-indexed ldp
+FILE=-
+ARGS=-a arm -b 64 -e anal.vars.stackname=true
+CMDS=<<EOF
+wx f30f1ef8e91740f9fd7bc1a8c0035fd6
+aap
+afvx
+EOF
+EXPECT=<<EOF
+afvR
+    arg_8h  0x4
+afvW
+    arg_8h
 EOF
 RUN
 

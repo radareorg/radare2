@@ -4946,6 +4946,29 @@ static void create_src_dst(RAnalOp *op) {
 	_ = RVecRArchValue_emplace_back (&op->dsts);
 }
 
+static void add_pair_slot(RAnalOp *op, csh *handle, cs_insn *insn, int x) {
+	switch (insn->id) {
+	case ARM64_INS_LDP:
+	case ARM64_INS_LDNP:
+	case ARM64_INS_LDPSW:
+	case ARM64_INS_STP:
+	case ARM64_INS_STNP:
+		break;
+	default:
+		return;
+	}
+	RAnalValue *second = RVecRArchValue_emplace_back (&op->dsts);
+	if (!second) {
+		return;
+	}
+	set_src_dst (op, second, handle, insn, x, 64);
+	if (!second->memref) {
+		RVecRArchValue_pop_back (&op->dsts);
+		return;
+	}
+	second->delta += second->memref;
+}
+
 static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn, int bits) {
 	create_src_dst (op);
 	int i;
@@ -4993,6 +5016,9 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 			}
 			set_src_dst (op, RVecRArchValue_at (&op->dsts, 0), &handle, insn, 0, bits);
 		}
+		if (bits == 64) {
+			add_pair_slot (op, &handle, insn, 2);
+		}
 		break;
 	case R_ANAL_OP_TYPE_STORE:
 		if (count > 2) {
@@ -5011,6 +5037,9 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 		// TODO arch plugins should NOT set register values
 		{
 			set_src_dst (op, RVecRArchValue_at (&op->dsts, 0), &handle, insn, --count, bits);
+			if (bits == 64) {
+				add_pair_slot (op, &handle, insn, count);
+			}
 			int j;
 			for (j = 0; j < 3 && j < count; j++) {
 				set_src_dst (op, RVecRArchValue_at (&op->srcs, j), &handle, insn, j, bits);

@@ -11,6 +11,7 @@ EOF
 EXPECT=<<EOF
 var char * ptr @ sp+0x8
 var int64_t var_10h @ sp+0x10
+var int64_t var_18h @ sp+0x18
 ---
             ;-- section.0.__TEXT.__text:
             ;-- entry0:
@@ -19,6 +20,7 @@ var int64_t var_10h @ sp+0x10
 / 56: int main (int argc, char **argv, char **envp);
 |           ; var char *ptr @ sp+0x8
 |           ; var int64_t var_10h @ sp+0x10
+|           ; var int64_t var_18h @ sp+0x18
 |           0x100003f68      ff8300d1       sub sp, sp, 0x20           ; [00] -r-x section size 56 named 0.__TEXT.__text
 |           0x100003f6c      fd7b01a9       stp x29, x30, [var_10h]
 |           0x100003f70      fd430091       add x29, sp, 0x10

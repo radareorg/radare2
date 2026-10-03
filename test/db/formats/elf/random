@@ -39,6 +39,7 @@ EXPECT=<<EOF
 |           ; var int64_t var_90h @ sp+0x90
 |           ; var int64_t var_98h @ sp+0x98
 |           ; var int64_t var_100h @ sp+0x100
+|           ; var int64_t var_108h @ sp+0x108
 |           ; var int64_t var_110h @ sp+0x110
 |           0x08000800      ff8304d1       sub sp, sp, 0x120
 |           0x08000804      fd7b10a9       stp x29, x30, [var_100h]
@@ -104,6 +105,7 @@ EXPECT=<<EOF
 |           ; var int64_t var_90h @ sp+0x90
 |           ; var int64_t var_98h @ sp+0x98
 |           ; var int64_t var_100h @ sp+0x100
+|           ; var int64_t var_108h @ sp+0x108
 |           ; var int64_t var_110h @ sp+0x110
 |           0x00000f94      ff8304d1       sub sp, sp, 0x120
 |           0x00000f98      fd7b10a9       stp x29, x30, [var_100h]
