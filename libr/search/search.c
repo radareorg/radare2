@@ -405,6 +405,10 @@ static bool brute_force_match(RSearch *s, RSearchKeyword *kw, const ut8 *buf, in
 	return j == kw->keyword_length;
 }
 
+static inline bool search_kw_hit_aligned(const RSearch *s, const RSearchKeyword *kw, ut64 addr) {
+	return (!s->align || !(addr % s->align)) && (!kw->align || !(addr % kw->align));
+}
+
 // Supported search variants: backward, binmask, icase, inverse, overlap
 R_IPI int search_kw_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 	RSearchKeyword *kw;
@@ -448,8 +452,10 @@ R_IPI int search_kw_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 				? kw->last - from < left->len ? from + left->len - kw->last : 0
 				: from - kw->last < left->len ? kw->last + left->len - from : 0;
 		for (; i + kw->keyword_length <= len1 && i < left->len; i++) {
-			if (brute_force_match (s, kw, left->data, i) != s->inverse) {
-				int t = r_search_hit_new (s, kw, s->bckwrds ? from - kw->keyword_length - i + left->len : from + i - left->len);
+			ut64 addr = s->bckwrds ? from - kw->keyword_length - i + left->len : from + i - left->len;
+			if (search_kw_hit_aligned (s, kw, addr)
+					&& brute_force_match (s, kw, left->data, i) != s->inverse) {
+				int t = r_search_hit_new (s, kw, addr);
 				if (!t) {
 					goto error;
 				}
@@ -466,8 +472,10 @@ R_IPI int search_kw_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 				? from > kw->last ? from - kw->last : 0
 				: from < kw->last ? kw->last - from : 0;
 		for (; i + kw->keyword_length <= len; i++) {
-			if (brute_force_match (s, kw, buf, i) != s->inverse) {
-				int t = r_search_hit_new (s, kw, s->bckwrds ? from - kw->keyword_length - i : from + i);
+			ut64 addr = s->bckwrds ? from - kw->keyword_length - i : from + i;
+			if (search_kw_hit_aligned (s, kw, addr)
+					&& brute_force_match (s, kw, buf, i) != s->inverse) {
+				int t = r_search_hit_new (s, kw, addr);
 				if (!t) {
 					goto error;
 				}
