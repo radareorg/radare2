@@ -13,7 +13,8 @@
 // XXX must be configurable by the user
 #define JMPTBL_LEA_SEARCH_SZ 64
 #define JMPTBL_MAXFCNSIZE 4096
-#define R_ANAL_MAX_INCSTACK 8096
+#define R_ANAL_MAX_INCSTACK (1024 * 1024)
+#define R_ANAL_MAX_CALLPOP 8096
 #define BB_ALIGN 0x10
 #define MAX_SCAN_SIZE 0x7ffffff
 
@@ -215,7 +216,7 @@ R_API int r_anal_call_stack_pop(RAnal *anal, RAnalOp *op) {
 
 static void fcn_apply_call_stack_pop(RAnalFunction *fcn, RAnalBlock *bb, RAnalOp *op) {
 	int pop = r_anal_call_stack_pop (fcn->anal, op);
-	if (pop > 0) {
+	if (pop > 0 && pop < R_ANAL_MAX_CALLPOP) {
 		st64 delta = -pop;
 		if (op->stackop == R_ANAL_STACK_INC && op->stackptr > 0) {
 			delta -= op->stackptr;
