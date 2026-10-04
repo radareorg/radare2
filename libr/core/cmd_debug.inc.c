@@ -4385,10 +4385,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		if (input[2] == '?') {
 			r_cons_cmd_help_match (core->cons, help_msg_db, "dbx", 0, true);
 		} else if (input[2] == ' ') {
-			if (addr == UT64_MAX) {
-				addr = core->addr;
-			}
-			bpi = r_bp_get_at (core->dbg->bp, addr);
+			bpi = r_bp_get_at (core->dbg->bp, core->addr);
 			if (bpi) {
 				free (bpi->expr);
 				bpi->expr = strdup (input + 3);
