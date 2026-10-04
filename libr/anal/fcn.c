@@ -3521,21 +3521,23 @@ R_API bool r_anal_function_purity(RAnalFunction *fcn) {
 	return fcn->is_pure;
 }
 
-static bool can_affect_bp(RAnal *anal, RAnalOp* op) {
-	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
-	RAnalValue *src = RVecRArchValue_at (&op->srcs, 0);
-	const char *opdreg = dst? dst->reg: NULL;
-	const char *opsreg = src? src->reg: NULL;
+static bool can_affect_bp(RAnal *anal, RAnalOp *op) {
 	const char *bpreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
-	if (bpreg) {
-		bool dst_is_bp = opdreg && !dst->memref && !strcmp (opdreg, bpreg);
-		bool src_is_bp = opsreg && !src->memref && !strcmp (opsreg, bpreg);
-		if (op->type == R_ANAL_OP_TYPE_XCHG) {
-			return src_is_bp || dst_is_bp;
-		}
-		return dst_is_bp;
+	if (!bpreg) {
+		return false;
 	}
-	return false;
+	if (op->type == R_ANAL_OP_TYPE_XCHG) {
+		RAnalValue *dst;
+		R_VEC_FOREACH (&op->dsts, dst) {
+			if (dst->reg && !dst->memref && !strcmp (dst->reg, bpreg)) {
+				return true;
+			}
+		}
+		RAnalValue *src = RVecRArchValue_at (&op->srcs, 0);
+		return src && src->reg && !src->memref && !strcmp (src->reg, bpreg);
+	}
+	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
+	return dst && dst->reg && !dst->memref && !strcmp (dst->reg, bpreg);
 }
 
 /*
@@ -3547,17 +3549,8 @@ R_API void r_anal_function_check_bp_use(RAnalFunction *fcn) {
 	RAnal *anal = fcn->anal;
 	RListIter *iter;
 	RAnalBlock *bb;
-	char *pos;
-	// XXX omg this is one of the most awful things ive seen lately
-	char str_to_find[40] = {0};
-	const char *bpreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
-	if (bpreg) {
-		snprintf (str_to_find, sizeof (str_to_find),
-			"\"type\":\"reg\",\"value\":\"%s", bpreg);
-	}
 	r_list_foreach (fcn->bbs, iter, bb) {
 		RAnalOp op;
-		RAnalValue *src = NULL;
 		ut64 at, end = bb->addr + bb->size;
 		ut8 *buf = malloc (bb->size);
 		if (!buf) {
@@ -3569,11 +3562,11 @@ R_API void r_anal_function_check_bp_use(RAnalFunction *fcn) {
 		}
 		int idx = 0;
 		for (at = bb->addr; at < end;) {
-			r_anal_op (anal, &op, at, buf + idx, bb->size - idx, R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_OPEX);
+			r_anal_op (anal, &op, at, buf + idx, bb->size - idx, R_ARCH_OP_MASK_VAL);
 			if (op.size < 1) {
 				op.size = 1;
 			}
-			src = RVecRArchValue_at (&op.srcs, 0);
+			RAnalValue *src = RVecRArchValue_at (&op.srcs, 0);
 			switch (op.type) {
 			case R_ANAL_OP_TYPE_MOV:
 			case R_ANAL_OP_TYPE_LEA:
@@ -3600,31 +3593,12 @@ R_API void r_anal_function_check_bp_use(RAnalFunction *fcn) {
 			case R_ANAL_OP_TYPE_SUB:
 			case R_ANAL_OP_TYPE_XOR:
 			case R_ANAL_OP_TYPE_SHL:
-				// op.dst is not filled for these operations, so for now,
-				// check for bp as dst looks like this; in the future
-				// it may be just replaced with call to can_affect_bp
-				if (*str_to_find) {
-					pos = op.opex.ptr ? strstr (op.opex.ptr, str_to_find) : NULL;
-					if (pos && pos - op.opex.ptr < 60) {
-						fcn->bp_frame = false;
-						r_anal_op_fini (&op);
-						free (buf);
-						return;
-					}
-				} else {
-					R_LOG_WARN ("No string to find");
-				}
-				break;
 			case R_ANAL_OP_TYPE_XCHG:
-				if (*str_to_find) {
-					if (op.opex.ptr && strstr (op.opex.ptr, str_to_find)) {
-						fcn->bp_frame = false;
-						r_anal_op_fini (&op);
-						free (buf);
-						return;
-					}
-				} else {
-					R_LOG_WARN ("No string to find");
+				if (can_affect_bp (anal, &op)) {
+					fcn->bp_frame = false;
+					r_anal_op_fini (&op);
+					free (buf);
+					return;
 				}
 				break;
 			case R_ANAL_OP_TYPE_POP:

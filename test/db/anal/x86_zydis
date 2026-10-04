@@ -225,3 +225,105 @@ EXPECT=<<EOF
 0x00000000
 EOF
 RUN
+
+NAME=x86 zydis 16-bit xchg frame pointer writes
+REQUIRE=zydis
+FILE=malloc://256
+CMDS=<<EOF
+e asm.arch=x86.zydis
+e asm.bits=16
+wx 5589e587c58b46f85dc3 @ 0
+af @ 0
+afvbj @ 0
+wx 5589e587e88b46f85dc3 @ 32
+af @ 32
+afvbj @ 32
+afva @ 32
+afvbj @ 32
+wx 5589e5872f8b46f85dc3 @ 64
+af @ 64
+afvbj @ 64
+wx 5589e58746f88b46f85dc3 @ 96
+af @ 96
+afvbj @ 96
+wx 5589e587d88b46f85dc3 @ 128
+af @ 128
+afvbj @ 128
+EOF
+EXPECT=<<EOF
+[]
+[]
+[]
+[]
+[{"name":"var_8h","kind":"var","type":"int16_t","ref":{"base":"bp","offset":-8}}]
+[{"name":"var_8h","kind":"var","type":"int16_t","ref":{"base":"bp","offset":-8}}]
+EOF
+RUN
+
+NAME=x86 zydis 32-bit xchg frame pointer writes
+REQUIRE=zydis
+FILE=malloc://256
+CMDS=<<EOF
+e asm.arch=x86.zydis
+e asm.bits=32
+wx 5589e587c58b45f85dc3 @ 0
+af @ 0
+afvbj @ 0
+wx 5589e587e88b45f85dc3 @ 32
+af @ 32
+afvbj @ 32
+afva @ 32
+afvbj @ 32
+wx 5589e587288b45f85dc3 @ 64
+af @ 64
+afvbj @ 64
+wx 5589e58745f88b45f85dc3 @ 96
+af @ 96
+afvbj @ 96
+wx 5589e587d88b45f85dc3 @ 128
+af @ 128
+afvbj @ 128
+EOF
+EXPECT=<<EOF
+[]
+[]
+[]
+[]
+[{"name":"var_8h","kind":"var","type":"int32_t","ref":{"base":"ebp","offset":-8}}]
+[{"name":"var_8h","kind":"var","type":"int32_t","ref":{"base":"ebp","offset":-8}}]
+EOF
+RUN
+
+NAME=x86 zydis 64-bit xchg frame pointer writes
+REQUIRE=zydis
+FILE=malloc://256
+CMDS=<<EOF
+e asm.arch=x86.zydis
+e asm.bits=64
+wx 554889e54887c5488b45f85dc3 @ 0
+af @ 0
+afvbj @ 0
+wx 554889e54887e8488b45f85dc3 @ 32
+af @ 32
+afvbj @ 32
+afva @ 32
+afvbj @ 32
+wx 554889e5488728488b45f85dc3 @ 64
+af @ 64
+afvbj @ 64
+wx 554889e5488745f8488b45f85dc3 @ 96
+af @ 96
+afvbj @ 96
+wx 554889e54887d8488b45f85dc3 @ 128
+af @ 128
+afvbj @ 128
+EOF
+EXPECT=<<EOF
+[]
+[]
+[]
+[]
+[{"name":"var_8h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-8}}]
+[{"name":"var_8h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-8}}]
+EOF
+RUN
