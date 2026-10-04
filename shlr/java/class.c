@@ -2682,9 +2682,7 @@ R_API RVecRBinString *r_bin_java_get_strings(RBinJavaObj *bin) {
 			str->size = cp_obj->info.cp_utf8.length + 3;
 			str->length = cp_obj->info.cp_utf8.length;
 			if (str->size > 0) {
-				str->string = r_str_ndup ((const char *)
-								cp_obj->info.cp_utf8.bytes,
-					R_BIN_JAVA_MAXSTR);
+				r_bin_string_set (str, r_str_ndup ((const char *)cp_obj->info.cp_utf8.bytes, R_BIN_JAVA_MAXSTR));
 			}
 		}
 	}

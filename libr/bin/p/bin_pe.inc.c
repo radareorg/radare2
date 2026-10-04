@@ -1450,7 +1450,9 @@ static RVecRBinString *strings(RBinFile *bf) {
 				break;
 			}
 			*bs = (RBinString){
-				.string = us.string,
+				.text = r_strs_from (us.string),
+				.owned = true,
+				.terminated = true,
 				.vaddr = us.vaddr,
 				.paddr = us.paddr,
 				.ordinal = index,

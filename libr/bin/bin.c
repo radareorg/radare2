@@ -280,8 +280,33 @@ R_API void r_bin_symbol_free(void *_sym) {
 
 R_API void r_bin_string_fini(RBinString *str) {
 	if (str) {
-		free (str->string);
+		if (str->owned) {
+			free ((char *)str->text.a);
+		}
+		str->text = r_strs_from_len (NULL, 0);
+		str->owned = str->terminated = false;
 	}
+}
+
+R_API void r_bin_string_set(RBinString *str, R_OWNED char *text) {
+	R_RETURN_IF_FAIL (str);
+	if (str->text.a != text) {
+		r_bin_string_fini (str);
+	}
+	str->text = r_strs_from (text);
+	str->owned = str->terminated = true;
+}
+
+R_API R_UNOWNED const char *r_bin_string_get(RBinString *str) {
+	R_RETURN_VAL_IF_FAIL (str, NULL);
+	if (str->text.a && !str->terminated) {
+		char *text = r_strs_tostring (str->text);
+		if (!text) {
+			return NULL;
+		}
+		r_bin_string_set (str, text);
+	}
+	return r_str_get (str->text.a);
 }
 
 R_API void r_bin_string_free(void *_str) {

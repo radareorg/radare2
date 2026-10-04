@@ -4213,8 +4213,8 @@ static void cmd_search_baddr(RCore *core, const char *input) {
 	if (obj) {
 		RBinString *s;
 		R_VEC_FOREACH (&obj->strings, s) {
-			if (strstr (s->string, "0x")) {
-				ut64 n = r_num_math (NULL, s->string);
+			if (r_strs_find_strs (s->text, R_STRS_LIT ("0x"))) {
+				ut64 n = r_num_math (NULL, r_bin_string_get (s));
 				appendbaddr (res, n);
 			}
 		}

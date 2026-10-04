@@ -890,21 +890,22 @@ static RVecRBinString *strings(RBinFile *bf) {
 
 		if (len > 5 && len < R_BIN_SIZEOF_STRINGS) {
 			RBinString bs = { 0 };
-			bs.string = malloc (len + 1);
-			if (!bs.string) {
+			char *text = malloc (len + 1);
+			if (!text) {
 				goto out_error;
 			}
 			off = bin->strings[i] + r_uleb128_len (buf, sizeof (buf));
 			if (off + len >= bin->size || off + len < len) {
-				free (bs.string);
+				free (text);
 				goto out_error;
 			}
-			r_buf_read_at (bin->b, off, (ut8*)bs.string, len);
-			bs.string[len] = 0;
-			if ((bs.string[0] == 'L' && strchr (bs.string, '/')) || !strncmp (bs.string, "[L", 2)) {
-				free (bs.string);
+			r_buf_read_at (bin->b, off, (ut8*)text, len);
+			text[len] = 0;
+			if ((text[0] == 'L' && strchr (text, '/')) || !strncmp (text, "[L", 2)) {
+				free (text);
 				continue;
 			}
+			r_bin_string_set (&bs, text);
 			bs.paddr = bin->strings[i];
 			bs.vaddr = bs.paddr;
 			bs.size = len;
