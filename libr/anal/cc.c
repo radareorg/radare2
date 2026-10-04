@@ -3,6 +3,64 @@
 #include <r_anal_priv.h>
 #define DB anal->sdb_cc
 
+// Memoize repeated analysis lookups until the calling convention database changes.
+#define CC_SLOTS (R_ANAL_CC_MAXARG * 2)
+#define CC_ROLES 6
+
+typedef struct r_anal_cc_info_t {
+	const char *name;
+	int maxarg; // -1 until resolved
+	int revarg; // -1 until resolved
+	bool dyn; // dyncc answers can depend on argc
+	ut32 argloc_known; // one bit per CC_SLOTS entry
+	const char *argloc[CC_SLOTS];
+	const char *regset[2];
+	ut8 known;
+	int nroles;
+	char roles[CC_ROLES][8];
+	const char *roleloc[CC_ROLES];
+} RAnalCCInfo;
+
+static void cc_info_kv_free(HtPPKv *kv) {
+	free (kv->key);
+	free (kv->value);
+}
+
+R_IPI void r_anal_cc_cache_reset(RAnal *anal) {
+	RAnalPriv *priv = R_ANAL_PRIV (anal);
+	ht_pp_free (priv->cc_cache);
+	priv->cc_cache = NULL;
+	priv->cc_last = NULL;
+}
+
+static RAnalCCInfo *cc_info(RAnal *anal, const char *cc) {
+	RAnalPriv *priv = R_ANAL_PRIV (anal);
+	RAnalCCInfo *ci = priv->cc_last;
+	if (ci && (ci->name == cc || !strcmp (ci->name, cc))) {
+		return ci;
+	}
+	if (!priv->cc_cache) {
+		priv->cc_cache = ht_pp_new (NULL, cc_info_kv_free, NULL);
+		if (!priv->cc_cache) {
+			return NULL;
+		}
+	}
+	ci = ht_pp_find (priv->cc_cache, cc, NULL);
+	if (!ci) {
+		ci = R_NEW0 (RAnalCCInfo);
+		ci->name = r_str_constpool_get (&anal->constpool, cc);
+		ci->maxarg = -1;
+		ci->revarg = -1;
+		ci->dyn = r_str_startswith (cc, "dyncc:");
+		if (!ci->name || !ht_pp_insert (priv->cc_cache, cc, ci)) {
+			free (ci);
+			return NULL;
+		}
+	}
+	priv->cc_last = ci;
+	return ci;
+}
+
 #define R_ANAL_DYNCC_NAME_SIZE 32
 #define R_ANAL_DYNCC_GROUP_SIZE 256
 #define R_ANAL_DYNCC_REGSET_SIZE 256
@@ -799,6 +857,7 @@ R_API void r_anal_cc_reset(RAnal *anal) {
 	// sdb_reset swaps the table without calling the hooks
 	R_ANAL_PRIV (anal)->cc_generation++;
 	sdb_reset (DB);
+	r_anal_cc_cache_reset (anal);
 	R_CRITICAL_LEAVE (anal);
 }
 
@@ -913,11 +972,7 @@ R_API bool r_anal_cc_exist(RAnal *anal, const char *cc) {
 	return (x != NULL) && !strcmp (x, "cc");
 }
 
-R_API const char *r_anal_cc_argloc(RAnal *anal, const char *cc, int n, int home, int argc) {
-	R_RETURN_VAL_IF_FAIL (anal && n >= 0 && home >= 0, NULL);
-	if (!cc) {
-		return NULL;
-	}
+static const char *cc_argloc(RAnal *anal, const char *cc, int n, int home, int argc) {
 	RAnalDynCC d;
 	if (dyncc_parse (cc, &d)) {
 		// the upper half of the fixed range addresses the fp register sequence
@@ -950,6 +1005,36 @@ R_API const char *r_anal_cc_argloc(RAnal *anal, const char *cc, int n, int home,
 		ret = sdb_const_getf (db, NULL, "cc.%s.argn", cc);
 	}
 	return ret? dyncc_from_static_loc (anal, ret): NULL;
+}
+
+static bool cc_info_revarg(RAnal *anal, const char *cc, RAnalCCInfo *ci) {
+	if (ci->revarg < 0) {
+		ci->revarg = r_str_is_true (sdb_const_getf (DB, NULL, "cc.%s.revarg", cc));
+	}
+	return ci->revarg;
+}
+
+R_API const char *r_anal_cc_argloc(RAnal *anal, const char *cc, int n, int home, int argc) {
+	R_RETURN_VAL_IF_FAIL (anal && n >= 0 && home >= 0, NULL);
+	if (!cc) {
+		return NULL;
+	}
+	RAnalCCInfo *ci = (home == 0 && n < CC_SLOTS)? cc_info (anal, cc): NULL;
+	if (!ci || (argc > 0 && ci->dyn)) {
+		return cc_argloc (anal, cc, n, home, argc);
+	}
+	if (argc > 0 && cc_info_revarg (anal, cc, ci)) {
+		if (n >= argc) {
+			return NULL;
+		}
+		n = argc - n - 1;
+	}
+	const ut32 bit = 1u << n;
+	if (!(ci->argloc_known & bit)) {
+		ci->argloc[n] = cc_argloc (anal, cc, n, 0, 0);
+		ci->argloc_known |= bit;
+	}
+	return ci->argloc[n];
 }
 
 // caller-reserved home space below the stack args (win64 shadow area)
@@ -1175,15 +1260,34 @@ R_API bool r_anal_cc_argval(RAnal *anal, RReg *reg, const char *convention, int 
 	return true;
 }
 
-R_API const char *r_anal_cc_roleloc(RAnal *anal, const char *convention, const char *role) {
-	R_RETURN_VAL_IF_FAIL (anal && convention && role, NULL);
+static const char *cc_roleloc(RAnal *anal, const char *convention, const char *role) {
 	RAnalDynCC d;
 	if (dyncc_parse (convention, &d)) {
 		return role[0] && !role[1]? dyncc_role_loc (anal, &d, role[0]): NULL;
 	}
 	const char *value = sdb_const_getf (DB, 0, "cc.%s.%s", convention, role);
-	const char *res = value? r_str_constpool_get (&anal->constpool, value): NULL;
-	return res;
+	return value? r_str_constpool_get (&anal->constpool, value): NULL;
+}
+
+R_API const char *r_anal_cc_roleloc(RAnal *anal, const char *convention, const char *role) {
+	R_RETURN_VAL_IF_FAIL (anal && convention && role, NULL);
+	RAnalCCInfo *ci = cc_info (anal, convention);
+	if (!ci) {
+		return cc_roleloc (anal, convention, role);
+	}
+	int i;
+	for (i = 0; i < ci->nroles; i++) {
+		if (!strcmp (ci->roles[i], role)) {
+			return ci->roleloc[i];
+		}
+	}
+	const char *loc = cc_roleloc (anal, convention, role);
+	if (ci->nroles < CC_ROLES && strlen (role) < sizeof (ci->roles[0])) {
+		r_str_ncpy (ci->roles[ci->nroles], role, sizeof (ci->roles[0]));
+		ci->roleloc[ci->nroles] = loc;
+		ci->nroles++;
+	}
+	return loc;
 }
 
 static void cc_set_roleloc(RAnal *anal, const char *convention, const char *role, const char *loc) {
@@ -1213,16 +1317,23 @@ R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
 	int i = 0;
 	R_RETURN_VAL_IF_FAIL (anal && DB && cc, 0);
 
+	RAnalCCInfo *ci = cc_info (anal, cc);
+	if (ci && ci->maxarg >= 0) {
+		return ci->maxarg;
+	}
 	RAnalDynCC d;
 	if (dyncc_parse (cc, &d)) {
-		return dyncc_max_arg (anal, &d);
-	}
-
-	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
-		const char *res = sdb_const_getf (DB, NULL, "cc.%s.arg%d", cc, i);
-		if (!res) {
-			break;
+		i = dyncc_max_arg (anal, &d);
+	} else {
+		for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
+			const char *res = sdb_const_getf (DB, NULL, "cc.%s.arg%d", cc, i);
+			if (!res) {
+				break;
+			}
 		}
+	}
+	if (ci) {
+		ci->maxarg = i;
 	}
 	return i;
 }
@@ -1269,14 +1380,26 @@ R_IPI int r_anal_cc_stack_pop(RAnal *anal, const char *convention) {
 	return cc_parse_stack_pop (pop, &ret)? ret: 0;
 }
 
-static const char *cc_regset(RAnal *anal, const char *convention, const char *field) {
+static const char *cc_regset(RAnal *anal, const char *convention, bool preserve) {
+	const ut8 known = 1u << preserve;
+	RAnalCCInfo *ci = cc_info (anal, convention);
+	if (ci && (ci->known & known)) {
+		return ci->regset[preserve];
+	}
+	const char *ret;
 	RAnalDynCC d;
 	if (dyncc_parse (convention, &d)) {
-		const RAnalDynCCSlice *slice = !strcmp (field, "clobber")? &d.clobbers: &d.preserves;
-		return dyncc_intern (anal, slice->p, slice->len);
+		const RAnalDynCCSlice *slice = preserve? &d.preserves: &d.clobbers;
+		ret = dyncc_intern (anal, slice->p, slice->len);
+	} else {
+		ret = sdb_const_getf (DB, NULL, "cc.%s.%s", convention, preserve? "preserve": "clobber");
+		ret = ret? r_str_constpool_get (&anal->constpool, ret): NULL;
 	}
-	const char *ret = sdb_const_getf (DB, NULL, "cc.%s.%s", convention, field);
-	return ret? r_str_constpool_get (&anal->constpool, ret): NULL;
+	if (ci) {
+		ci->regset[preserve] = ret;
+		ci->known |= known;
+	}
+	return ret;
 }
 
 static bool r_anal_cc_regset_contains(const char *regset, const char *reg);
@@ -1433,8 +1556,8 @@ R_API bool r_anal_cc_argclob(RAnal *anal, const char *caller_cc, int n, const ch
 	if (!loc) {
 		return false;
 	}
-	const char *clobbers = callee_cc? cc_regset (anal, callee_cc, "clobber"): NULL;
-	const char *preserves = callee_cc? cc_regset (anal, callee_cc, "preserve"): NULL;
+	const char *clobbers = callee_cc? cc_regset (anal, callee_cc, false): NULL;
+	const char *preserves = callee_cc? cc_regset (anal, callee_cc, true): NULL;
 	if (R_STR_ISNOTEMPTY (clobbers)) {
 		return r_anal_cc_location_in_regset (anal, loc, clobbers, false)
 			&& !r_anal_cc_location_in_regset (anal, loc, preserves, true);
@@ -1444,11 +1567,11 @@ R_API bool r_anal_cc_argclob(RAnal *anal, const char *caller_cc, int n, const ch
 
 R_API bool r_anal_cc_isclobber(RAnal *anal, const char *cc, const char *reg) {
 	R_RETURN_VAL_IF_FAIL (anal && cc && reg, false);
-	const char *clobbers = cc_regset (anal, cc, "clobber");
+	const char *clobbers = cc_regset (anal, cc, false);
 	if (R_STR_ISEMPTY (clobbers) || !r_anal_cc_regset_contains (clobbers, reg)) {
 		return false;
 	}
-	const char *preserves = cc_regset (anal, cc, "preserve");
+	const char *preserves = cc_regset (anal, cc, true);
 	return R_STR_ISEMPTY (preserves) || !r_anal_cc_regset_contains (preserves, reg);
 }
 

@@ -27,6 +27,8 @@ typedef struct r_anal_priv_t {
 	// each key write, and r_anal_cc_reset covers sdb_reset, which calls no hook
 	ut64 cc_generation;
 	RAnalArgSeq argseq; // single-threaded, like the rest of the analysis state
+	HtPP *cc_cache; // convention name -> RAnalCCInfo, dropped on every write to the cc sdb
+	struct r_anal_cc_info_t *cc_last;
 } RAnalPriv;
 
 // Recorded adrp/add (or lea) target for a register. Populated by the
@@ -55,6 +57,7 @@ typedef struct r_anal_switch_cursor_t RAnalSwitchCursor;
 R_IPI bool r_anal_switch_cursor_step(RAnalSwitchCursor *c, ut64 *target);
 /* Record the switch the cases applied so far describe, and free the cursor. */
 R_IPI void r_anal_switch_cursor_finish(RAnalSwitchCursor *c);
+R_IPI void r_anal_cc_cache_reset(RAnal *anal);
 R_IPI int r_anal_cc_stack_pop(RAnal *anal, const char *convention);
 R_IPI int r_anal_cc_shadow(RAnal *anal, const char *convention);
 R_IPI bool r_anal_cc_stack_rev(RAnal *anal, const char *cc);

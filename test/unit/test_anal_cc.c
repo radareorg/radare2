@@ -76,6 +76,8 @@ bool test_r_anal_cc_get(void) {
 	mu_assert_null (vv, "get self");
 	vv = r_anal_cc_roleloc (anal, "sectarian", "error");
 	mu_assert_null (vv, "get error");
+	r_anal_cc_set_self (anal, "sectarian", "rsi");
+	mu_assert_streq (r_anal_cc_roleloc (anal, "sectarian", "self"), "rsi", "setter invalidates cached missing self");
 	r_anal_free (anal);
 	mu_end;
 }
@@ -127,6 +129,12 @@ bool test_r_anal_cc_static_fixes(void) {
 	mu_assert_eq (r_anal_cc_max_arg (anal, "grow"), 1, "initial max args");
 	sdb_set (anal->sdb_cc, "cc.grow.arg1", "r1", 0);
 	mu_assert_eq (r_anal_cc_max_arg (anal, "grow"), 2, "max args after db update");
+	mu_assert_streq (r_anal_cc_argloc (anal, "grow", 1, 0, 0), "r1", "switching conventions resolves its own arguments");
+	sdb_set (anal->sdb_cc, "cc.grow.arg1", "r2", 0);
+	mu_assert_streq (r_anal_cc_argloc (anal, "grow", 1, 0, 0), "r2", "argument location after db update");
+	r_anal_cc_reset (anal);
+	mu_assert_eq (r_anal_cc_max_arg (anal, "grow"), 0, "reset invalidates cached count");
+	mu_assert_null (r_anal_cc_argloc (anal, "grow", 1, 0, 0), "reset invalidates cached arguments");
 
 	r_anal_free (anal);
 	mu_end;
@@ -335,7 +343,9 @@ bool test_r_anal_cc_dyncc(void) {
 
 bool test_r_anal_cc_del(void) {
 	RAnal *anal = ref_anal ();
+	mu_assert_eq (r_anal_cc_max_arg (anal, "sectarian"), 2, "warm count before deletion");
 	r_anal_cc_del (anal, "sectarian");
+	mu_assert_eq (r_anal_cc_max_arg (anal, "sectarian"), 0, "deletion invalidates cached count");
 	Sdb *ref = sdb_new0 ();
 	assert_sdb_eq (anal->sdb_cc, ref, "deleted");
 	sdb_free (ref);
