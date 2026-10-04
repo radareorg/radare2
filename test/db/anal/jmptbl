@@ -1,4 +1,5 @@
 NAME=jump table for swift on arm64
+REQUIRE=cs5
 FILE=bins/mach0/MASTestApp
 CMDS=<<EOF
 e asm.bytes=false
@@ -373,11 +374,12 @@ EOF
 RUN
 
 NAME=jump table for swift on arm64 again
+REQUIRE=cs5
 FILE=bins/mach0/MASTestApp
 CMDS=<<EOF
 e asm.bytes=false
 e asm.lines=false
-0x100004124 
+0x100004124
 af
 pdr
 EOF
@@ -675,6 +677,20 @@ EXPECT=<<EOF
 
 0x1000044a8      bl sym.imp.__stack_chk_fail
 
+EOF
+RUN
+
+NAME=jump table cases for swift on arm64
+FILE=bins/mach0/MASTestApp
+CMDS=<<EOF
+0x100004000;af
+afb~s 0x
+0x100004124;af
+afb~s 0x
+EOF
+EXPECT=<<EOF
+0x100004000 0x100004058 00:0000 88 s 0x100004058 s 0x100004060 s 0x100004074 s 0x100004080
+0x100004124 0x100004180 00:0000 92 s 0x100004180 s 0x10000418c s 0x1000041a0 s 0x100004438
 EOF
 RUN
 
