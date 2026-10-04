@@ -383,10 +383,6 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 		const char *section_name, *type_string;
 		ut64 paddr = string->paddr;
 		ut64 vaddr = rva (core->bin, paddr, string->vaddr, va);
-		const char *text = r_bin_string_get (string);
-		if (!text || !r_bin_string_filter (bin, text, vaddr)) {
-			continue;
-		}
 		if (string->length < minstr) {
 			continue;
 		}
@@ -394,6 +390,10 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 			continue;
 		}
 		if (type_filter && string->type != type_filter) {
+			continue;
+		}
+		const char *text = r_bin_string_get (string);
+		if (!text || !r_bin_string_filter (bin, text, vaddr)) {
 			continue;
 		}
 #if FALSE_POSITIVES
@@ -520,7 +520,6 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 				vaddr, string->size);
 			free (str);
 		} else {
-			int *block_list;
 			const char *str = text;
 			char *no_dbl_bslash_str = NULL;
 			if (!core->print->esc_bslash) {
@@ -545,43 +544,9 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 				}
 			}
 
-			char *blocks = NULL;
-			RStrBuf *buf = r_strbuf_new (str);
-			switch (string->type) {
-			case R_STRING_TYPE_UTF8:
-			case R_STRING_TYPE_WIDE:
-			case R_STRING_TYPE_WIDE32:
-				block_list = r_utf_block_list ((const ut8 *)text, -1, NULL);
-				if (block_list) {
-					if (block_list[0] == 0 && block_list[1] == -1) {
-						/* Don't show block list if
-						just Basic Latin (0x00 - 0x7F) */
-						free (block_list);
-						break;
-					}
-					int *block_ptr = block_list;
-					RStrBuf *sb = r_strbuf_new ("");
-					// a bit noisy and useless for listing here imho
-					for (; *block_ptr != -1; block_ptr++) {
-						if (block_ptr != block_list) {
-							r_strbuf_append (sb, ",");
-						}
-						const char *name = r_utf_block_name (*block_ptr);
-						if (name) {
-							r_strbuf_append (sb, name);
-						}
-					}
-					free (block_list);
-					blocks = r_strbuf_drain (sb);
-				}
-				break;
-			}
-			char *bufstr = r_strbuf_drain (buf);
 			r_table_add_rowf (table, "nXXddsss", (ut64)string->ordinal, paddr, vaddr,
 				(int)string->length, (int)string->size, section_name,
-				type_string, bufstr);
-			free (blocks);
-			free (bufstr);
+				type_string, str);
 			free (no_dbl_bslash_str);
 		}
 	}
