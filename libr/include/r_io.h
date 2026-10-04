@@ -576,7 +576,6 @@ R_API int r_io_desc_write_at(RIODesc *desc, ut64 addr, const ut8 *buf, int len);
 R_API RIODescInfo r_io_desc_info(RIODesc *desc);
 
 /* lifecycle */
-R_IPI bool r_io_desc_init(RIO *io);
 R_IPI void r_io_desc_fini(RIO *io);
 
 /* io/cache.c */

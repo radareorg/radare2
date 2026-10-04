@@ -21,7 +21,8 @@ R_API void r_io_init(RIO* io) {
 	io->addrbytes = 1;
 	io->overlay = true;
 	io->cb_printf = printf;
-	r_io_desc_init (io);
+	r_io_desc_fini (io);
+	r_id_storage_init (&io->files, 3, 0x80000000);
 	r_io_bank_init (io);
 	r_io_map_init (io);
 	r_io_cache_init (io);
@@ -149,7 +150,7 @@ R_API void r_io_close_all(RIO* io) {
 	R_RETURN_IF_FAIL (io);
 	r_io_desc_fini (io);
 	r_io_map_fini (io);
-	r_io_desc_init (io);
+	r_id_storage_init (&io->files, 3, 0x80000000);
 	r_io_map_init (io);
 	r_io_cache_reset (io);
 	r_io_plugins_reset (io);
