@@ -1093,6 +1093,62 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=newprj signals round-trip and explicit default settings
+FILE=malloc://0x100
+CMDS=<<EOF
+mkdir .tmp
+rm .tmp/newprj-signals.prj
+dko 11 skip
+dko 2 cont
+dko 15
+prj save .tmp/newprj-signals.prj > /dev/null
+dko 11
+dko 2
+dko 15 cont
+prj load .tmp/newprj-signals.prj > /dev/null
+prj load .tmp/newprj-signals.prj > /dev/null
+dk~SIGSEGV
+dk~SIGINT
+dk~SIGTERM
+prj diff .tmp/newprj-signals.prj~dko
+rm .tmp/newprj-signals.prj
+EOF
+EXPECT=<<EOF
+11 SIGSEGV skip
+2 SIGINT cont
+15 SIGTERM
+EOF
+RUN
+
+NAME=newprj signal diff replays changed added and reset settings
+FILE=malloc://0x100
+CMDS=<<EOF
+mkdir .tmp
+rm .tmp/newprj-sigdiff.prj
+dko 11 skip
+dko 2 cont
+prj save .tmp/newprj-sigdiff.prj > /dev/null
+dko 11 cont
+dko 2
+dko 15 skip
+prj diff .tmp/newprj-sigdiff.prj~dko > .tmp/newprj-sigdiff.r2
+prj open .tmp/newprj-sigdiff.prj > /dev/null
+dk~SIGTERM
+. .tmp/newprj-sigdiff.r2
+dk~SIGSEGV
+dk~SIGINT
+dk~SIGTERM
+rm .tmp/newprj-sigdiff.r2
+rm .tmp/newprj-sigdiff.prj
+EOF
+EXPECT=<<EOF
+15 SIGTERM
+11 SIGSEGV cont
+2 SIGINT
+15 SIGTERM skip
+EOF
+RUN
+
 NAME=newprj accepts version 5 projects
 FILE=hex://5250524a050000000f000000070000006c65676163790021000000020000000100000000000000ffffffff80000000000000000100000000
 ARGS=-n
@@ -1129,5 +1185,25 @@ EXPECT_ERR=<<EOF
 WARN: Invalid breakpoint record at 0x0000001e
 WARN: Invalid breakpoint strings at 0x00000052
 WARN: Truncated breakpoint record at 0x00000086
+EOF
+RUN
+
+NAME=newprj rejects invalid signal records without consuming the next entry
+FILE=hex://5250524a06000000090000000700000000190000000f000000ffffffff010000000b0000000400000000100000000f0000000200000001000000
+ARGS=-n
+CMDS=<<EOF
+mkdir .tmp
+wtf .tmp/newprj-sig-invalid.prj 58 2>/dev/null
+prj load .tmp/newprj-sig-invalid.prj > /dev/null
+dko~SIGINT
+rm .tmp/newprj-sig-invalid.prj
+EOF
+EXPECT=<<EOF
+2 SIGINT cont
+EOF
+EXPECT_ERR=<<EOF
+WARN: Invalid signal record at 0x00000019
+WARN: Invalid signal record at 0x00000021
+WARN: Truncated signal record at 0x00000029
 EOF
 RUN

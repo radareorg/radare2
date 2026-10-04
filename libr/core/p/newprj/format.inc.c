@@ -21,6 +21,7 @@ static const char *rprj_entry_type_tostring(int a) {
 	case RPRJ_FUNC: return "Functions";
 	case RPRJ_VART: return "VarTypes";
 	case RPRJ_BRKP: return "Breakpoints";
+	case RPRJ_SIGS: return "Signals";
 	}
 	return "UNKNOWN";
 }
@@ -123,6 +124,13 @@ static void rprj_breakpoint_write_record(RBuffer *b, R2ProjectBreakpoint *bp) {
 	r_write_le32 (buf + 40, bp->flags);
 	r_write_le32 (buf + 44, bp->togglehits);
 	r_write_le32 (buf + 48, bp->hits);
+	r_buf_write (b, buf, sizeof (buf));
+}
+
+static void rprj_signal_write_record(RBuffer *b, R2ProjectSignal *sig) {
+	ut8 buf[RPRJ_SIGNAL_SIZE] = {0};
+	r_write_le32 (buf, sig->signum);
+	r_write_le32 (buf + 4, sig->option);
 	r_buf_write (b, buf, sizeof (buf));
 }
 
@@ -231,6 +239,16 @@ static bool rprj_breakpoint_read(RBuffer *b, R2ProjectBreakpoint *bp) {
 	bp->flags = r_read_le32 (buf + 40);
 	bp->togglehits = r_read_le32 (buf + 44);
 	bp->hits = r_read_le32 (buf + 48);
+	return true;
+}
+
+static bool rprj_signal_read(RBuffer *b, R2ProjectSignal *sig) {
+	ut8 buf[RPRJ_SIGNAL_SIZE];
+	if (!rprj_read_exact (b, buf, sizeof (buf))) {
+		return false;
+	}
+	sig->signum = r_read_le32 (buf);
+	sig->option = r_read_le32 (buf + 4);
 	return true;
 }
 
