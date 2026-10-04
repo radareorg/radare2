@@ -4400,3 +4400,72 @@ EXPECT=<<EOF
 0x00000000
 EOF
 RUN
+
+NAME=Stack frame larger than 8 KiB
+FILE=-
+ARGS=-a x86 -b 64 -e anal.vars.stackname=true
+CMDS=<<EOF
+wx 4881ec0830000048897c24084889b424f82f0000488b842410b000004881c408300000c3
+af
+afi~stackframe
+afvx
+af-$$
+wx 4881ec00001000c3
+af
+afi~stackframe
+EOF
+EXPECT=<<EOF
+stackframe: 12296
+afvR
+      arg1  0x7
+      arg2  0xc
+ var_3000h
+   var_10h
+afvW
+      arg1
+      arg2
+ var_3000h  0x7
+   var_10h  0xc
+stackframe: 0
+EOF
+RUN
+
+NAME=Frame pointer local deeper than 8 KiB
+FILE=-
+ARGS=-a x86 -b 64 -e anal.vars.stackname=true
+CMDS=<<EOF
+wx 554889e54881ec003000004889bd08d0ffffc9c3
+af
+afv
+af-$$
+wx 554889e54883ec1089850000f8ffc9c3
+af
+afv
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rdi
+var int64_t var_3000h @ rbp-0x2ff8
+EOF
+RUN
+
+NAME=Callee stack pops of 8 KiB or more are ignored
+FILE=-
+ARGS=-a x86.zydis -b 64
+CMDS=<<EOF
+wx 53554154e8170000004889442408415c5d5bc3 @ 0
+wx c20040 @ 0x20
+af @ 0x20
+af @ 0
+afv @ 0
+af- @ 0
+af- @ 0x20
+wx c21000 @ 0x20
+af @ 0x20
+af @ 0
+afv @ 0
+EOF
+EXPECT=<<EOF
+var int64_t var_8h @ rsp+0x8
+arg int64_t arg_8h @ rsp+0x20
+EOF
+RUN

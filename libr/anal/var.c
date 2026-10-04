@@ -1310,7 +1310,6 @@ static bool op_is_ppc_toc_save(RAnal *anal, RAnalOp *op) {
 
 static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
 	st64 ptr = 0;
-	const st64 maxstackframe = 1024 * 8;
 	RAnalValue *val;
 	int access_size = 0;
 	bool have_ptr = false;
@@ -1396,7 +1395,8 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	} else {
 		frame_off = ptr - fcn->bp_off;
 	}
-	if (maxstackframe != 0 && (frame_off > maxstackframe || frame_off < -maxstackframe)) {
+	const st64 maxargoff = 1024 * 8;
+	if (frame_off > maxargoff || frame_off < -R_MAX (fcn->maxstack, maxargoff)) {
 		return;
 	}
 	const int var_size = anal->config->bits / 8;
