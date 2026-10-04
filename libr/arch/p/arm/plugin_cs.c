@@ -3748,9 +3748,6 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 				op->stackptr = SHIFTED_IMM64 (2, 64);
 			}
 			op->val = op->stackptr;
-		} else {
-			op->stackop = R_ANAL_STACK_RESET;
-			op->stackptr = 0;
 		}
 		op->cycles = 1;
 		/* fallthru */

@@ -57000,3 +57000,39 @@ type: mov
 family: sec
 EOF_EXPECT
 RUN
+
+NAME=sub with a non-sp destination keeps the stack depth
+FILE=-
+ARGS=-a arm -b 64 -e anal.vars.stackname=true
+CMDS=<<EOF
+wx ff8300d1000400d1e00300f9ff830091c0035fd6
+af
+afva
+afv
+ao 1 @ 0~stackop,stackptr
+ao 1 @ 4~stackop
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ x0
+var int64_t var_20h @ sp+0x0
+stackop: inc
+stackptr: 32
+EOF
+RUN
+
+NAME=arm.v35 add and sub with a non-sp destination keep the stack depth
+FILE=-
+ARGS=-a arm -b 64
+REQUIRE=arm.v35
+CMDS=<<EOF
+e asm.arch=arm.v35
+wx ff8300d1000400d100040091
+ao 1 @ 0~stackop,stackptr
+ao 1 @ 4~stackop
+ao 1 @ 8~stackop
+EOF
+EXPECT=<<EOF
+stackop: inc
+stackptr: 32
+EOF
+RUN

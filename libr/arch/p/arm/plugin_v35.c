@@ -886,9 +886,6 @@ static void anop64(RArchSession *as, RAnalOp *op, Instruction *insn) {
 				op->stackptr = GETIMM64 (2);
 			}
 			op->val = op->stackptr;
-		} else {
-			op->stackop = R_ANAL_STACK_RESET;
-			op->stackptr = 0;
 		}
 		op->cycles = 1;
 		/* fallthru */
@@ -922,9 +919,6 @@ static void anop64(RArchSession *as, RAnalOp *op, Instruction *insn) {
 				op->stackptr = -GETIMM64 (2);
 			}
 			op->val = op->stackptr;
-		} else {
-			op->stackop = R_ANAL_STACK_RESET;
-			op->stackptr = 0;
 		}
 		op->cycles = 1;
 		/* fallthru */
