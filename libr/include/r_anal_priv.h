@@ -46,7 +46,7 @@ R_IPI bool r_anal_var_is_default_argname(const char *name);
 R_IPI bool r_anal_reg_same(RAnal *anal, const char *a, const char *b);
 /* Adopt the block a switch case targets. False when no block covers it, in
  * which case the case needs scanning; the walker decides where. */
-R_IPI bool r_anal_function_materialize_switch_case(RAnal *anal, RAnalFunction *fcn, ut64 case_addr);
+R_IPI bool r_anal_function_materialize_switch_case(RAnal *anal, RAnalFunction *fcn, ut64 case_addr, int stack);
 /* Scan a switch case outside a walk and adopt the block it produced. */
 R_IPI void r_anal_function_scan_switch_case(RAnal *anal, RAnalFunction *fcn, ut64 case_addr);
 typedef struct r_anal_switch_cursor_t RAnalSwitchCursor;

@@ -599,7 +599,8 @@ static bool block_belongs_to_function(const RAnalBlock *block, const RAnalFuncti
 	return r_list_contains ((RList *)block->fcns, (void *)fcn);
 }
 
-static bool add_switch_case_block(RAnal *anal, RAnalFunction *fcn, ut64 case_addr) {
+// stack is the depth every case is entered at, INT_MAX when unknown
+static bool add_switch_case_block(RAnal *anal, RAnalFunction *fcn, ut64 case_addr, int stack) {
 	RAnalBlock *block = r_anal_get_block_at (anal, case_addr);
 	if (block) {
 		if (!block_belongs_to_function (block, fcn)) {
@@ -615,12 +616,15 @@ static bool add_switch_case_block(RAnal *anal, RAnalFunction *fcn, ut64 case_add
 		if (!r_anal_block_op_starts_at (block, case_addr)) {
 			return false;
 		}
+		const bool own = block_belongs_to_function (block, fcn);
 		RAnalBlock *split = r_anal_block_split (block, case_addr);
 		if (!split) {
 			return false;
 		}
-		if (!block_belongs_to_function (split, fcn)) {
+		if (!own) {
 			r_anal_function_add_block (fcn, split);
+		} else if (stack != INT_MAX) {
+			split->parent_stackptr = stack;
 		}
 		r_unref (split);
 		return true;
@@ -651,7 +655,7 @@ static bool reset_switch_case_stub(RAnal *anal, RAnalBlock *block) {
 	return true;
 }
 
-R_IPI bool r_anal_function_materialize_switch_case(RAnal *anal, RAnalFunction *fcn, ut64 case_addr) {
+R_IPI bool r_anal_function_materialize_switch_case(RAnal *anal, RAnalFunction *fcn, ut64 case_addr, int stack) {
 	R_RETURN_VAL_IF_FAIL (anal && fcn && case_addr != UT64_MAX && case_addr, false);
 	RAnalBlock *block = r_anal_get_block_at (anal, case_addr);
 	if (block) {
@@ -669,7 +673,7 @@ R_IPI bool r_anal_function_materialize_switch_case(RAnal *anal, RAnalFunction *f
 	// no block covers the case yet: it has to be scanned, and the walker that
 	// found the switch decides where, so that a nested switch never starts a
 	// second walk on the C stack
-	return add_switch_case_block (anal, fcn, case_addr);
+	return add_switch_case_block (anal, fcn, case_addr, stack);
 }
 
 R_IPI void r_anal_function_scan_switch_case(RAnal *anal, RAnalFunction *fcn, ut64 case_addr) {
@@ -677,7 +681,7 @@ R_IPI void r_anal_function_scan_switch_case(RAnal *anal, RAnalFunction *fcn, ut6
 	(void)r_anal_function_bb (anal, fcn, case_addr);
 	RAnalBlock *block = r_anal_get_block_at (anal, case_addr);
 	if (!block || block->ninstr > 0) {
-		(void)add_switch_case_block (anal, fcn, case_addr);
+		(void)add_switch_case_block (anal, fcn, case_addr, INT_MAX);
 	}
 }
 
@@ -937,7 +941,7 @@ typedef struct {
 		} exit;
 		RAnalSwitchCursor *table; // the suspended table
 	};
-	int stack; // Enter: fcn->stack on entry. Exit: fcn->stack to reinstall when restore is set
+	int stack; // depth at entry, to restore at exit, or a table's dispatch
 	ut8 kind; // WALK_ENTER, WALK_EXIT or WALK_TABLE
 } WalkFrame;
 
@@ -967,6 +971,7 @@ typedef struct {
 	bool is_amd64;
 	bool is_dalvik;
 	bool is_stm8;
+	bool walk_depth; // a fresh function's walk, so fcn->stack is trustworthy
 } FcnWalk;
 
 // Schedule a block to be scanned once the current one finishes. False means the
@@ -1009,7 +1014,7 @@ static void walk_sink_suspend(void *user, RAnalSwitchCursor *cursor, ut64 target
 		r_anal_switch_cursor_finish (cursor);
 		return;
 	}
-	*f = (WalkFrame){ .kind = WALK_TABLE };
+	*f = (WalkFrame){ .kind = WALK_TABLE, .stack = w->fcn->stack };
 	f->table = cursor;
 }
 
@@ -1029,7 +1034,7 @@ static void walk_table(FcnWalk *w, RAnalSwitchCursor *cursor) {
 		r_anal_switch_cursor_finish (cursor);
 		return;
 	}
-	*f = (WalkFrame){ .kind = WALK_TABLE };
+	*f = (WalkFrame){ .kind = WALK_TABLE, .stack = w->fcn->stack };
 	f->table = cursor;
 	(void) walk_defer (w, target, w->fcn->stack, WALK_CASE_NONE, UT64_MAX, 0);
 }
@@ -1145,8 +1150,12 @@ static void fcn_scan(FcnWalk *w, ut64 addr) {
 
 	RAnalBlock *existing_bb = bbget (anal, addr, anal->opt.jmpmid);
 	if (existing_bb) {
+		const bool split = existing_bb->addr != addr;
 		existing_bb = r_anal_block_split (existing_bb, addr);
 		bool existing_in_fcn = existing_bb && r_list_contains (existing_bb->fcns, fcn);
+		if (split && existing_in_fcn && w->walk_depth) {
+			existing_bb->parent_stackptr = fcn->stack;
+		}
 		if (!existing_in_fcn && existing_bb) {
 			if (existing_bb->addr == fcn->addr) {
 				if (anal->opt.slow) {
@@ -2449,6 +2458,7 @@ static int fcn_walk(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, bool f
 	w.is_amd64 = w.is_x86 ? fcn->callconv && !strcmp (fcn->callconv, "amd64") : false;
 	w.is_dalvik = w.is_x86 ? false : arch && !strncmp (arch, "dalvik", 6);
 	w.is_stm8 = (w.is_x86 || w.is_arm || w.is_dalvik || w.is_mips) ? false : arch && r_str_startswith (arch, "stm8");
+	w.walk_depth = r_list_empty (fcn->bbs);
 	RVecWalkFrame_init (&w.frames);
 	fcn_scan (&w, addr);
 	while (!RVecWalkFrame_empty (&w.frames)) {
@@ -2466,6 +2476,7 @@ static int fcn_walk(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, bool f
 			continue;
 		}
 		if (f.kind == WALK_TABLE) {
+			fcn->stack = f.stack;
 			walk_table (&w, f.table);
 			continue;
 		}
