@@ -184,7 +184,9 @@ beach:
 }
 
 static void __riocache_free(void *user) {
-	RIOCache *cache = (RIOCache *) user;
+	RIOCacheItem *cache = (RIOCacheItem *)user;
+	free (cache->data);
+	free (cache->odata);
 	free (cache);
 }
 
@@ -236,7 +238,7 @@ static bool __desc_cache_list_cb(void *user, const ut64 k, const void *v) {
 }
 
 R_API RList *r_io_desc_cache_list(RIODesc *desc) {
-	if (!desc || !desc->io || !desc->io->desc || !desc->io->p_cache || !desc->cache) {
+	if (!desc || !desc->io || !desc->io->p_cache || !desc->cache) {
 		return NULL;
 	}
 	RList *writes = r_list_newf ((RListFree)__riocache_free);
@@ -244,23 +246,19 @@ R_API RList *r_io_desc_cache_list(RIODesc *desc) {
 		return NULL;
 	}
 	ht_up_foreach (desc->cache, __desc_cache_list_cb, writes);
-	RIODesc *current = desc->io->desc;
-	desc->io->desc = desc;
-	desc->io->p_cache = false;
 
 	RIOCacheItem *c;
 	RListIter *iter;
 	r_list_foreach (writes, iter, c) {
 		const ut64 itvSize = r_itv_size (c->itv);
-		c->odata = calloc (1, itvSize);
+		c->odata = malloc (itvSize);
 		if (!c->odata) {
 			r_list_free (writes);
 			return NULL;
 		}
-		r_io_pread_at (desc->io, r_itv_begin (c->itv), c->odata, itvSize);
+		memset (c->odata, desc->io->ff? desc->io->Oxff: 0, itvSize);
+		r_io_plugin_read_at (desc, r_itv_begin (c->itv), c->odata, itvSize);
 	}
-	desc->io->p_cache = true;
-	desc->io->desc = current;
 	return writes;
 }
 
@@ -278,18 +276,17 @@ static bool __desc_cache_commit_cb(void *user, const ut64 k, const void *v) {
 			buf[i] = dcache->cdata[byteaddr];
 			i++;
 		} else if (i > 0) {
-			r_io_pwrite_at (desc->io, blockaddr + byteaddr - i, buf, i);
+			r_io_plugin_write_at (desc, blockaddr + byteaddr - i, buf, i);
 			i = 0;
 		}
 	}
 	if (i > 0) {
-		r_io_pwrite_at (desc->io, blockaddr + R_IO_DESC_CACHE_SIZE - i, buf, i);
+		r_io_plugin_write_at (desc, blockaddr + R_IO_DESC_CACHE_SIZE - i, buf, i);
 	}
 	return true;
 }
 
 R_API bool r_io_desc_cache_commit(RIODesc *desc) {
-	RIODesc *current;
 	if (!desc || !(desc->perm & R_PERM_W) || !desc->io ||
 		!desc->io->files.data || !desc->io->p_cache) {
 		return false;
@@ -297,14 +294,9 @@ R_API bool r_io_desc_cache_commit(RIODesc *desc) {
 	if (!desc->cache) {
 		return true;
 	}
-	current = desc->io->desc;
-	desc->io->desc = desc;
-	desc->io->p_cache = false;
 	ht_up_foreach (desc->cache, __desc_cache_commit_cb, desc);
 	ht_up_free (desc->cache);
 	desc->cache = NULL;
-	desc->io->p_cache = true;
-	desc->io->desc = current;
 	return true;
 }
 

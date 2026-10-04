@@ -195,3 +195,69 @@ EXPECT=<<EOF
 0000
 EOF
 RUN
+
+NAME=pcache commit keeps the selected fd and cache mode
+FILE=malloc://128
+CMDS=<<EOF
+e io.va=false
+wx 1122
+on malloc://128
+o=4
+wx aabb
+e io.pcache=true
+wx c0c1
+wx fefe @ 0x3f
+o=3
+wcpi 4
+oqq
+p8 2 @ 0
+o=4
+p8 2 @ 0
+p8 2 @ 0x3f
+wx d0d1
+e io.pcache.read=false
+p8 2 @ 0
+e io.pcache.read=true
+p8 2 @ 0
+wcpi 4
+e io.pcache.read=false
+p8 2 @ 0
+EOF
+EXPECT=<<EOF
+3
+1122
+c0c1
+fefe
+c0c1
+d0d1
+d0d1
+EOF
+RUN
+
+NAME=pcache listing keeps write-only caching and the selected fd
+FILE=malloc://128
+CMDS=<<EOF
+e io.va=false
+e log.level=0
+wx 1122
+on malloc://128
+o=4
+wx aabb
+e io.pcache.write=true
+wx c0c1
+o=3
+wcp 4
+oqq
+p8 2 @ 0
+o=4
+p8 2 @ 0
+e io.pcache.read=true
+p8 2 @ 0
+EOF
+EXPECT=<<EOF
+3
+1122
+aabb
+c0c1
+EOF
+RUN
