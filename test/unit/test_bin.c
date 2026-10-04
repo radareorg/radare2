@@ -422,6 +422,33 @@ bool test_r_bin_resource_raw_extraction(void) {
 	mu_end;
 }
 
+bool test_r_bin_cmd(void) {
+	RBin *bin = r_bin_new ();
+	RIO *io = r_io_new ();
+	r_io_bind (io, &bin->iob);
+	RBinFileOptions opt = {0};
+	r_bin_file_options_init (&opt, -1, 0, 0, 0);
+	mu_assert_true (r_bin_open (bin, "bins/pcap/udp6.pcap", &opt), "PCAP could not be opened");
+
+	char *res = r_bin_cmd (bin, "s");
+	mu_assert_notnull (res, "PCAP stream command was not handled");
+	mu_assert ("PCAP stream command output is missing", strstr (res, "pkts=3") && strstr (res, "pkts=4"));
+	free (res);
+	res = r_bin_cmd (bin, "sa");
+	mu_assert_notnull (res, "PCAP stream payload command was not handled");
+	mu_assert_streq (res, "query?again", "PCAP stream payload output is missing");
+	free (res);
+	res = r_bin_cmd (bin, "s 1");
+	mu_assert_notnull (res, "PCAP stream selection was not handled");
+	mu_assert ("PCAP stream selection output is missing", strstr (res, "* 1 tcp"));
+	free (res);
+	mu_assert_null (r_bin_cmd (bin, "invalid"), "Invalid PCAP command was handled");
+
+	r_bin_free (bin);
+	r_io_free (io);
+	mu_end;
+}
+
 // ELF32 ET_DYN using PN_XNUM: e_phnum is 0xffff and the real program header
 // count is taken from shdr[0].sh_info, so phdr[] holds a single entry
 static RBuffer *elf_pn_xnum_shared_object(void) {
@@ -512,6 +539,7 @@ bool all_tests(void) {
 	mu_run_test(test_r_bin_external_resource_data);
 	mu_run_test(test_r_bin_resource_decoding);
 	mu_run_test(test_r_bin_resource_raw_extraction);
+	mu_run_test(test_r_bin_cmd);
 	mu_run_test(test_r_bin_elf_pn_xnum_phdr);
 	return tests_passed != tests_run;
 }

@@ -3807,6 +3807,16 @@ beach:
 	return success;
 }
 
+static bool cmd_info_bin_plugin(RCore *core, const char *cmd) {
+	char *res = r_bin_cmd (core->bin, cmd);
+	if (!res) {
+		return false;
+	}
+	r_cons_print (core->cons, res);
+	free (res);
+	return true;
+}
+
 static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	if (!strcmp (input, "qqc") || !strcmp (input, "qcq")) {
@@ -3910,7 +3920,7 @@ static int cmd_info(void *data, const char *input) {
 			r_cons_cmd_help (core->cons, help_msg_ie);
 			break;
 		case ':': // "i:?"
-			if (r_bin_cmd (core->bin, "?")) {
+			if (cmd_info_bin_plugin (core, "?")) {
 				break;
 			}
 			// fallthrough
@@ -4256,7 +4266,7 @@ static int cmd_info(void *data, const char *input) {
 		cmd_info_demangle (core, input, pj, mode);
 		break;
 	case ':': // "i:"
-		if (!r_bin_cmd (core->bin, input + 1)) {
+		if (!cmd_info_bin_plugin (core, input + 1)) {
 			R_LOG_ERROR ("Unhandled RBinPlugin.cmd");
 		}
 		break;

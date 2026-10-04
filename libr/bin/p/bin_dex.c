@@ -1932,13 +1932,13 @@ static void dex_load_addrline(RBinFile *bf) {
 	}
 }
 
-static bool dex_cmd(RBinFile *bf, const char *command) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
+static char *dex_cmd(RBinFile *bf, const char *command) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	if (!command || strcmp (command, "addrline")) {
-		return false;
+		return NULL;
 	}
 	dex_load_addrline (bf);
-	return bf->addrline.used;
+	return bf->addrline.used? strdup (""): NULL;
 }
 
 static RList *classes(RBinFile *bf) {
