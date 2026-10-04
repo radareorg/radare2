@@ -18,71 +18,37 @@ static ut32 consume_chars(const char *input, char b) {
 	return i;
 }
 
-static bool perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const char *filename) {
-	// grab the current file descriptor, so we can reset core and io state
-	// after our io op is done
-	RIODesc *yankdesc = NULL;
-	ut64 fd = core->io->desc ? core->io->desc->fd: -1, yank_file_sz = 0,
-	     loadaddr = 0, addr = offset;
+static bool perform_file_yank(RCore *core, ut64 offset, ut64 len, const char *filename) {
+	if (R_STR_ISEMPTY (filename)) {
+		return false;
+	}
+	const ut64 io_off = core->io->off;
+	RIODesc *desc = r_io_desc_open (core->io, filename, R_PERM_R, 0644);
+	if (!desc) {
+		core->io->off = io_off;
+		return false;
+	}
 	bool res = false;
-
-	if (filename && *filename) {
-		ut64 load_align = r_config_get_i (core->config, "file.loadalign");
-		RIOMap *map = NULL;
-		yankdesc = r_io_open_nomap (core->io, filename, R_PERM_R, 0644);
-		// map the file in for IO operations.
-		if (yankdesc && load_align) {
-			yank_file_sz = r_io_size (core->io);
-			ut64 addr = 0;
-			r_io_map_locate (core->io, &addr, yank_file_sz, load_align);
-			map = r_io_map_add (core->io, yankdesc->fd, R_PERM_R, 0, addr, yank_file_sz);
-			loadaddr = map? r_io_map_begin (map): -1;
-			if (yankdesc && map && loadaddr != -1) {
-				// ***NOTE*** this is important, we need to
-				// address the file at its physical address!
-				addr += loadaddr;
-			} else if (yankdesc) {
-				R_LOG_ERROR ("Unable to map the opened file: %s", filename);
-				r_io_desc_close (yankdesc);
-				yankdesc = NULL;
-			} else {
-				R_LOG_ERROR ("Unable to open the file: %s", filename);
-			}
-		}
+	const ut64 size = r_io_desc_size (desc);
+	if (len == UT64_MAX) {
+		len = size;
 	}
-
-	// if len is -1 then we yank in everything
-	if (len == -1) {
-		len = yank_file_sz;
+	if (!len || len > ST32_MAX || offset > size || len > size - offset) {
+		R_LOG_ERROR ("Invalid file yank range");
+		goto beach;
 	}
-
-	// this wont happen if the file failed to open or the file failed to
-	// map into the IO layer
-	if (yankdesc) {
-		ut64 nres = r_io_seek (core->io, addr, R_IO_SEEK_SET);
-		ut64 actual_len = len <= yank_file_sz? len: 0;
-		ut8 *buf = NULL;
-		if (actual_len > 0 && nres == addr) {
-			buf = malloc (actual_len);
-			if (!r_io_read_at (core->io, addr, buf, actual_len)) {
-				free (buf);
-				buf = NULL;
-			}
-			r_core_yank_set (core, R_CORE_FOREIGN_ADDR, buf, len);
-			res = true;
-		} else if (nres != addr) {
-			R_LOG_ERROR ("Unable to yank data from file: (loadaddr (0x%" PFMT64x ") (addr (0x%" PFMT64x ") > file_sz (0x%"PFMT64x ")", nres, addr, yank_file_sz);
-		} else if (actual_len == 0) {
-			R_LOG_ERROR ("Unable to yank from file: addr+len (0x%" PFMT64x ") > file_sz (0x%"PFMT64x ")", addr + len, yank_file_sz);
+	ut8 *buf = malloc (len);
+	if (buf) {
+		if (r_io_desc_read_at (desc, offset, buf, len) == len) {
+			res = r_core_yank_set (core, R_CORE_FOREIGN_ADDR, buf, len);
+		} else {
+			R_LOG_ERROR ("Cannot read file for yank: %s", filename);
 		}
-		r_io_desc_close (yankdesc);
 		free (buf);
 	}
-	if (fd != -1) {
-		r_io_use_fd (core->io, fd);
-		core->switch_file_view = 1;
-		r_core_block_read (core);
-	}
+beach:
+	r_io_desc_close (desc);
+	core->io->off = io_off;
 	return res;
 }
 
@@ -405,9 +371,7 @@ R_API bool r_core_yank_file_ex(RCore *core, const char *input) {
 	}
 	ut64 addr = r_num_math (core->num, inp + adv);
 	adv += next + 1;
-	// grab the current file descriptor, so we can reset core and io state
-	// after our io op is done
-	bool b = perform_mapped_file_yank (core, addr, len, inp + adv);
+	bool b = perform_file_yank (core, addr, len, inp + adv);
 	free (inp);
 	return b;
 }
@@ -415,5 +379,5 @@ R_API bool r_core_yank_file_ex(RCore *core, const char *input) {
 R_API bool r_core_yank_file_all(RCore *core, const char *input) {
 	R_RETURN_VAL_IF_FAIL (core && input, false);
 	ut64 adv = consume_chars (input, ' ');
-	return perform_mapped_file_yank (core, 0, -1, input + adv);
+	return perform_file_yank (core, 0, UT64_MAX, input + adv);
 }

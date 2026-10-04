@@ -76,3 +76,65 @@ EXPECT=<<EOF
 done
 EOF
 RUN
+
+NAME=file yank reads its own descriptor without changing IO state
+FILE=malloc://16
+CMDS=<<EOF
+wx 11223344
+s 8
+e file.loadalign=0
+yfa hex://aabbccdd
+y8
+e io.va=false
+yf 2 1 hex://aabbccdd
+y8
+e io.autofd=false
+e file.loadalign=0x1000
+e io.va=true
+yf 2 1 hex://aabbccdd
+y8
+yfa hex://aabbccdd
+y8
+oqq
+oq~?
+om~?
+s
+p8 4 @ 0
+EOF
+EXPECT=<<EOF
+aabbccdd
+bbcc
+bbcc
+aabbccdd
+3
+1
+1
+0x8
+11223344
+EOF
+RUN
+
+NAME=file yank rejects out-of-range reads without replacing the clipboard
+FILE=malloc://16
+CMDS=<<EOF
+ywx 1122
+yf 2 3 hex://aabbccdd
+yf 1 4 hex://aabbccdd
+yf 1 0xffffffffffffffff hex://aabbccdd
+yf 0x80000000 0 hex://aabbccdd
+y8
+oq~?
+om~?
+EOF
+EXPECT=<<EOF
+1122
+1
+1
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid file yank range
+ERROR: Invalid file yank range
+ERROR: Invalid file yank range
+ERROR: Invalid file yank range
+EOF
+RUN
