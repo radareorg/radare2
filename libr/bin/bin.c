@@ -2381,7 +2381,7 @@ R_API char *r_bin_attr_update(RBinAttr *a, const char *s) {
 	return r_strbuf_drain (rest);
 }
 
-R_API bool r_bin_cmd(RBin *bin, const char *input) {
+R_API char *r_bin_cmd(RBin *bin, const char *input) {
 	RBinFile *a = r_bin_cur (bin);
 	if (a) {
 		RBinPlugin *plugin = r_bin_file_cur_plugin (a);
@@ -2389,5 +2389,5 @@ R_API bool r_bin_cmd(RBin *bin, const char *input) {
 			return plugin->cmd (a, input);
 		}
 	}
-	return false;
+	return NULL;
 }

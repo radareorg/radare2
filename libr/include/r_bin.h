@@ -813,7 +813,7 @@ typedef struct r_bin_plugin_t {
 	RBuffer* (*create)(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt);
 	char* (*demangle)(const char *str);
 	char* (*regstate)(RBinFile *bf);
-	bool (*cmd)(RBinFile *bf, const char *command);
+	R_OWNED char *(*cmd)(RBinFile *bf, const char *command);
 	char* (*types)(RBinFile *bf);
 	// TODO: R2_600 RBuffer* (*create)(RBin *bin, RBinCreateOptions *opt);
 	/* default value if not specified by user */
@@ -977,7 +977,7 @@ R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt);
  * (e.g. by r_fs_dir_bins). `xtr_data` is taken ownership of. */
 R_API bool r_bin_open_bins(RBin *bin, const char *filename, RBinFileOptions *opt, RList *xtr_data);
 R_API bool r_bin_reload(RBin *bin, ut32 bf_id, ut64 baseaddr);
-R_API bool r_bin_cmd(RBin *bin, const char *input);
+R_API R_OWNED char *r_bin_cmd(RBin *bin, const char *input);
 
 R_API RBinClass *r_bin_class_new(const char *name, const char *super, ut64 attr);
 R_API const char *r_bin_class_origin_tostring(RBinClassOrigin origin);

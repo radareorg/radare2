@@ -21,7 +21,10 @@ static RBinAddrLineStore *addrline_store(RBin *bin) {
 	if (!bin->want_dbginfo || !bf->bo || !bf->bo->plugin || !bf->bo->plugin->cmd) {
 		return NULL;
 	}
-	return bf->bo->plugin->cmd (bf, "addrline") && als->used ? als : NULL;
+	char *res = bf->bo->plugin->cmd (bf, "addrline");
+	bool handled = res != NULL;
+	free (res);
+	return handled && als->used ? als : NULL;
 }
 
 // must be tied to the rbinfile

@@ -5,6 +5,17 @@
 
 #include "../format/pcap/pcap.h"
 
+static const char pcap_help[] =
+	"Usage: i:[snp]  reconstruct tcp/udp streams\n"
+	"| i:s         list the streams, '*' marks the selected one\n"
+	"| i:s <n>     select the stream number <n>\n"
+	"| i:s.        select the stream of the packet at the current offset\n"
+	"| i:sp        list the messages (payload offset, direction, size) of the selected stream\n"
+	"| i:sa        dump the payload sent by the stream initiator (a -> b)\n"
+	"| i:sb        dump the payload sent by the stream responder (b -> a)\n"
+	"| i:n         seek to the next message in the stream of the current packet\n"
+	"| i:p         seek to the previous message in the stream of the current packet\n";
+
 static RBinInfo *info(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
@@ -95,25 +106,25 @@ static ut64 baddr(RBinFile *bf) {
 	return 0;
 }
 
-static void stream_print(RBin *bin, pcap_obj_t *obj, pcap_stream_t *s) {
+static void stream_append(RStrBuf *sb, pcap_obj_t *obj, pcap_stream_t *s) {
 	char *name = pcap_stream_name (s);
-	bin->cb_printf ("%c %d %s pkts=%d a=%"PFMT64u" b=%"PFMT64u"\n", s->id == obj->cur? '*': ' ',
+	r_strbuf_appendf (sb, "%c %d %s pkts=%d a=%"PFMT64u" b=%"PFMT64u"\n", s->id == obj->cur? '*': ' ',
 		s->id, name, r_list_length (s->recs), s->bytes[0], s->bytes[1]);
 	free (name);
 }
 
-static void message_print(RBin *bin, pcaprec_t *rec) {
-	bin->cb_printf ("0x%08"PFMT64x" %c %d\n", rec->dataoff, rec->dir? '<': '>', rec->datasz);
+static void message_append(RStrBuf *sb, pcaprec_t *rec) {
+	r_strbuf_appendf (sb, "0x%08"PFMT64x" %c %d\n", rec->dataoff, rec->dir? '<': '>', rec->datasz);
 }
 
-static bool stream_select(RBin *bin, pcap_obj_t *obj, int id) {
+static bool stream_select(RStrBuf *sb, pcap_obj_t *obj, int id) {
 	pcap_stream_t *s = r_list_get_n (obj->streams, id);
 	if (!s) {
 		R_LOG_ERROR ("Invalid stream number");
 		return false;
 	}
 	obj->cur = id;
-	stream_print (bin, obj, s);
+	stream_append (sb, obj, s);
 	return true;
 }
 
@@ -162,74 +173,72 @@ static bool message_seek(RBin *bin, pcap_obj_t *obj, pcap_stream_t *s, bool next
 	return true;
 }
 
-static bool pcap_cmd(RBinFile *bf, const char *cmd) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj && cmd, false);
+static char *pcap_cmd(RBinFile *bf, const char *cmd) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj && cmd, NULL);
 	pcap_obj_t *obj = bf->bo->bin_obj;
 	RBin *bin = bf->rbin;
 	pcap_stream_t *s = r_list_get_n (obj->streams, obj->cur);
-	RListIter *iter;
-	pcaprec_t *rec;
 	switch (*cmd) {
 	case 'n': // "i:n"
 	case 'p': // "i:p"
-		return message_seek (bin, obj, s, *cmd == 'n');
+		return message_seek (bin, obj, s, *cmd == 'n')? strdup (""): NULL;
 	case 's': // "i:s"
-		if (cmd[1] != ' ' && !s) {
-			R_LOG_ERROR ("No streams found");
-			return false;
-		}
-		switch (cmd[1]) {
-		case 0: // "i:s"
-			r_list_foreach (obj->streams, iter, s) {
-				stream_print (bin, obj, s);
-			}
-			return true;
-		case ' ': // "i:s 3"
-			return stream_select (bin, obj, r_num_math (NULL, cmd + 2));
-		case '.': // "i:s."
-			{
-				RIO *io = bin->iob.io;
-				rec = io && io->coreb.core? pcap_rec_at (obj, io->coreb.numGet (io->coreb.core, "$$")): NULL;
-				if (!rec || !rec->stream) {
-					R_LOG_ERROR ("No stream at the current offset");
-					return false;
-				}
-				return stream_select (bin, obj, rec->stream->id);
-			}
-		case 'p': // "i:sp"
-			r_list_foreach (s->recs, iter, rec) {
-				if (rec->datasz) {
-					message_print (bin, rec);
-				}
-			}
-			return true;
-		case 'a': // "i:sa"
-		case 'b': // "i:sb"
-			{
-				ut64 len;
-				ut8 *data = pcap_stream_data (obj, s, cmd[1] == 'b', &len);
-				if (data && len > 0) {
-					bin->consb.cb_write (bin->consb.cons, data, len);
-				}
-				free (data);
-				return true;
-			}
-		}
-		// fallthrough
+		break;
 	case 0:
 	case '?':
-		bin->cb_printf ("Usage: i:[snp]  reconstruct tcp/udp streams\n"
-			"| i:s         list the streams, '*' marks the selected one\n"
-			"| i:s <n>     select the stream number <n>\n"
-			"| i:s.        select the stream of the packet at the current offset\n"
-			"| i:sp        list the messages (payload offset, direction, size) of the selected stream\n"
-			"| i:sa        dump the payload sent by the stream initiator (a -> b)\n"
-			"| i:sb        dump the payload sent by the stream responder (b -> a)\n"
-			"| i:n         seek to the next message in the stream of the current packet\n"
-			"| i:p         seek to the previous message in the stream of the current packet\n");
-		return true;
+		return strdup (pcap_help);
+	default:
+		return NULL;
 	}
-	return false;
+	if (cmd[1] != ' ' && !s) {
+		R_LOG_ERROR ("No streams found");
+		return NULL;
+	}
+	RStrBuf sb = {0};
+	RListIter *iter;
+	pcaprec_t *rec;
+	switch (cmd[1]) {
+	case 0: // "i:s"
+		r_list_foreach (obj->streams, iter, s) {
+			stream_append (&sb, obj, s);
+		}
+		break;
+	case ' ': // "i:s 3"
+		if (!stream_select (&sb, obj, r_num_math (NULL, cmd + 2))) {
+			return NULL;
+		}
+		break;
+	case '.': // "i:s."
+		{
+			RIO *io = bin->iob.io;
+			rec = io && io->coreb.core? pcap_rec_at (obj, io->coreb.numGet (io->coreb.core, "$$")): NULL;
+			if (!rec || !rec->stream) {
+				R_LOG_ERROR ("No stream at the current offset");
+				return NULL;
+			}
+			if (!stream_select (&sb, obj, rec->stream->id)) {
+				return NULL;
+			}
+		}
+		break;
+	case 'p': // "i:sp"
+		r_list_foreach (s->recs, iter, rec) {
+			if (rec->datasz) {
+				message_append (&sb, rec);
+			}
+		}
+		break;
+	case 'a': // "i:sa"
+	case 'b': // "i:sb"
+		{
+			ut64 len;
+			ut8 *data = pcap_stream_data (obj, s, cmd[1] == 'b', &len);
+			return data? (char *)data: strdup ("");
+		}
+	default:
+		return strdup (pcap_help);
+	}
+	return r_strbuf_drain_nofree (&sb);
 }
 
 RBinPlugin r_bin_plugin_pcap = {
