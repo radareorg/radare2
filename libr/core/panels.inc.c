@@ -86,13 +86,29 @@ static const char *menus_iocache[] = {
 	"On", "Off"
 };
 
-static const char *menus_View[] = {
-	"Console", "Hexdump", "Disassembly", "Disassemble Summary", "Decompiler", "Decompiler With Offsets",
-	"Graph", "Tiny Graph",
-	"Functions", "Function Calls", "Sections", "Segments", "Strings in data sections", "Strings in the whole bin",
-	"Symbols", "Imports",
-	"Info", "Database",  "Breakpoints", "Comments", "Classes", "Entropy", "Entropy Fire", "Xrefs Here", "Methods",
-	"Var READ address", "Var WRITE address", "Summary", "Relocs", "Headers", "File Hashes", "Show All Decompiler Output"
+static const char *menus_View_Code[] = {
+	"Disassembly", "Disassemble Summary", "Decompiler", "Decompiler With Offsets",
+	"Graph", "Tiny Graph", "Show All Decompiler Output"
+};
+
+static const char *menus_View_Data[] = {
+	"Hexdump", "Strings in data sections", "Strings in the whole bin"
+};
+
+static const char *menus_View_Metadata[] = {
+	"Comments", "Xrefs Here", "Methods", "Var READ address", "Var WRITE address"
+};
+
+static const char *menus_View_Binary[] = {
+	"Sections", "Segments", "Relocs", "Headers", "File Hashes", "Info", "Database"
+};
+
+static const char *menus_View_Analysis[] = {
+	"Functions", "Function Calls", "Symbols", "Imports", "Classes", "Entropy", "Entropy Fire", "Summary"
+};
+
+static const char *menus_View_Other[] = {
+	"Console", "Breakpoints"
 };
 
 static const char *menus_Tools[] = {
@@ -7210,7 +7226,18 @@ static bool init_panels_menu(RCore *core) {
 	r_panels_add_menu_items (core, "File", file_items, menus_File, R_ARRAY_SIZE (menus_File), add_cmd_panel);
 	r_panels_add_menu_items (core, "Edit", edit_items, menus_Edit, R_ARRAY_SIZE (menus_Edit), add_cmd_panel);
 	r_panels_add_menu_items (core, "Edit.Settings", settings_items, menus_Settings, R_ARRAY_SIZE (menus_Settings), open_menu_cb);
-	r_panels_add_menu_items_sorted (core, "View", view_items, menus_View, R_ARRAY_SIZE (menus_View), add_cmd_panel);
+	r_panels_add_menu_full (core, "View", "Code...", "Code and decompiler views", NULL, open_menu_cb);
+	r_panels_add_menu_items (core, "View.Code...", view_items, menus_View_Code, R_ARRAY_SIZE (menus_View_Code), add_cmd_panel);
+	r_panels_add_menu_full (core, "View", "Data...", "Raw data and string views", NULL, open_menu_cb);
+	r_panels_add_menu_items (core, "View.Data...", view_items, menus_View_Data, R_ARRAY_SIZE (menus_View_Data), add_cmd_panel);
+	r_panels_add_menu_full (core, "View", "Metadata...", "Comments, xrefs and methods", NULL, open_menu_cb);
+	r_panels_add_menu_items (core, "View.Metadata...", view_items, menus_View_Metadata, R_ARRAY_SIZE (menus_View_Metadata), add_cmd_panel);
+	r_panels_add_menu_full (core, "View", "Binary...", "Binary structure and headers", NULL, open_menu_cb);
+	r_panels_add_menu_items (core, "View.Binary...", view_items, menus_View_Binary, R_ARRAY_SIZE (menus_View_Binary), add_cmd_panel);
+	r_panels_add_menu_full (core, "View", "Analysis...", "Analysis results and symbols", NULL, open_menu_cb);
+	r_panels_add_menu_items (core, "View.Analysis...", view_items, menus_View_Analysis, R_ARRAY_SIZE (menus_View_Analysis), add_cmd_panel);
+	r_panels_add_menu_full (core, "View", "Other...", "Miscellaneous views", NULL, open_menu_cb);
+	r_panels_add_menu_items (core, "View.Other...", view_items, menus_View_Other, R_ARRAY_SIZE (menus_View_Other), add_cmd_panel);
 	r_panels_add_menu_items (core, "Tools", tools_items, menus_Tools, R_ARRAY_SIZE (menus_Tools), NULL);
 	r_panels_add_menu_items (core, "Search", search_items, menus_Search, R_ARRAY_SIZE (menus_Search), NULL);
 	r_panels_add_menu_full (core, "Debug", "Emulate...", "ESIL execution helpers", NULL, open_menu_cb);
