@@ -3,6 +3,7 @@
 static void set_dcb(RCore *core, RPanel *p);
 static void set_pcb(RPanel *p);
 static void r_panels_refresh(RCore *core);
+static void r_panels_prepare_layout(RCore *core);
 static void init_new_panels_root(RCore *core);
 static void replace_cmd(RCore *core, const char *title, const char *cmd);
 static void create_panel_input(void *user, RPanel *panel, const RPanelLayout dir, const char * R_NULLABLE title);
@@ -46,17 +47,17 @@ static const char *panels_static[] = {
 };
 
 static const char *menus[] = {
-	"File", "Edit", "View", "Tools", "Analyze", "Search", "Debug", "Help"
+	"File", "Edit", "View", "Analyze", "Search", "Debug", "Tools", "Help"
 };
 
 static const char *menus_desc[] = {
 	"File and project operations",
 	"Clipboard and write operations",
 	"Open analysis and data views",
-	"Tools, shells and file manager",
 	"Core analysis actions and plugin commands",
 	"String, code and pattern searches",
-	"Debugger views and actions",
+	"Execution, breakpoints and emulation",
+	"Tools, shells and file manager",
 	"Help, versions and manpages"
 };
 
@@ -87,28 +88,37 @@ static const char *menus_iocache[] = {
 };
 
 static const char *menus_View_Code[] = {
-	"Disassembly", "Disassemble Summary", "Decompiler", "Decompiler With Offsets",
+	"Disassembly", "Function Disassembly", "Disassembly Summary", "Decompiler", "Decompiler With Offsets",
 	"Graph", "Tiny Graph", "Show All Decompiler Output"
 };
 
 static const char *menus_View_Data[] = {
-	"Hexdump", "Strings in data sections", "Strings in the whole bin"
+	"Hexdump", "Hexdump References", "Clipboard", "Strings in data sections", "Strings in the whole bin",
+	"Entropy", "Entropy Fire"
 };
 
 static const char *menus_View_Metadata[] = {
-	"Comments", "Xrefs Here", "Methods", "Var READ address", "Var WRITE address"
+	"Comments", "Flags", "Flag Spaces", "Visual Marks", "Types", "Structures", "Enumerations", "Function Signatures"
 };
 
 static const char *menus_View_Binary[] = {
-	"Sections", "Segments", "Relocs", "Headers", "File Hashes", "Info", "Database"
+	"Info", "Headers", "Sections", "Segments", "Entry Points", "Symbols", "Imports", "Exports",
+	"Relocs", "Libraries", "Classes", "Methods", "Resources", "File Hashes"
 };
 
 static const char *menus_View_Analysis[] = {
-	"Functions", "Function Calls", "Symbols", "Imports", "Classes", "Entropy", "Entropy Fire", "Summary"
+	"Functions", "Function Info", "Function Calls", "Basic Blocks", "Function Variables",
+	"Variable Reads", "Variable Writes", "Xrefs", "Xrefs Here", "Xrefs To", "References From"
+};
+
+static const char *menus_View_Debug[] = {
+	"Registers", "Register Columns", "Register References", "Flag Registers (1 bit)",
+	"Debug Registers", "FPU Registers", "XMM Registers", "YMM Registers", "--",
+	"Backtrace", "Stack", "Locals", "Breakpoints", "Memory Maps", "Modules", "Threads", "Processes"
 };
 
 static const char *menus_View_Other[] = {
-	"Console", "Breakpoints"
+	"Console", "Open Files", "IO Maps", "Database"
 };
 
 static const char *menus_Tools[] = {
@@ -120,7 +130,7 @@ static const char *menus_Tools[] = {
 };
 
 static const char *menus_Search[] = {
-	"String (Whole Bin)", "String (Data Sections)", "Magic", "ROP", "Code", "Hexpairs"
+	"String (Whole Bin)", "String (Data Sections)", "Assembly Strings", "Syscalls", "Magic", "ROP", "Code", "Hexpairs"
 };
 
 static const char *menus_Emulate[] = {
@@ -128,10 +138,7 @@ static const char *menus_Emulate[] = {
 };
 
 static const char *menus_Debug[] = {
-	"Registers", "Bit Registers", "FPU Registers", "XMM Registers", "YMM Registers", "RegisterRefs", "RegisterCols",
-	"DRX", "Breakpoints", "Watchpoints",
-	"Maps", "Modules", "Backtrace", "Locals", "Continue",
-	"Stack", "Step", "Step Over", "Reload"
+	"Continue", "Step", "Step Over", "Toggle Breakpoint", "Add Watchpoint", "Reload"
 };
 
 static const char *menus_Analyze[] = {
@@ -228,8 +235,10 @@ static RCoreHelpMessage help_msg_panels = {
 	"F",        "remove all the filters",
 	"g",        "go/seek to given offset",
 	"G",        "go/seek to highlight",
-	"i",        "insert hex",
+	"i",        "overwrite bytes at the cursor or start of the selection",
 	"I",        "insert assembly",
+	"Mouse",    "click a byte to select it, drag to select a range, right-click for panel settings",
+	"Scrollbar", "click or drag the right-side scrollbar of cached contents",
 	"`",        "rotate between common disassembly / hexdump options",
 	"hjkl",     "move around (left-down-up-right)",
 	"HJKL",     "move around (left-down-up-right) by page",
@@ -279,6 +288,7 @@ static RCoreHelpMessage help_msg_panels_zoom = {
 	"\"",       "create a panel from the list and replace the current one",
 	"' '",      "(space) toggle graph / panels",
 	"=",        "open the menu of the current panel",
+	"m",        "select the menu bar",
 	"tab",      "go to the next panel",
 	"b",        "browse symbols, flags, configurations, classes, ...",
 	"d",        "define in the current address. Same as Vd",
@@ -632,6 +642,7 @@ static bool r_panels_check_panel_type(RPanel *panel, const char *type) {
 	} else if (!strcmp (type, "px")) {
 		res = !strcmp (tmp, "px");
 	} else if (!strcmp (type, "xc")) {
+		res = !strcmp (tmp, "pxc");
 		int i;
 		for (i = 0; i < R_ARRAY_SIZE (hexdump_rotate); i++) {
 			if (!strcmp (tmp, hexdump_rotate[i])) {
@@ -663,7 +674,7 @@ static bool r_panels_is_abnormal_cursor_type(RCore *core, RPanel *panel) {
 		return true;
 	}
 	static const char *types[] = {
-		"Disassemble Summary", "Strings in data sections", "Strings in the whole bin",
+		"Disassembly Summary", "Strings in data sections", "Strings in the whole bin",
 		"Breakpoints", "Sections", "Segments",
 		"Comments"
 	};
@@ -682,6 +693,13 @@ static bool r_panels_is_normal_cursor_type(RPanel *panel) {
 			r_panels_check_panel_type (panel, "dr") ||
 			r_panels_check_panel_type (panel, "pd") ||
 			r_panels_check_panel_type (panel, "xc"));
+}
+
+static bool r_panels_is_byte_hexdump(RPanel *panel) {
+	const char *cmd = panel->model->cmd;
+	const size_t len = cmd? strcspn (cmd, " "): 0;
+	return (len == 2 && (!strncmp (cmd, "xc", len) || !strncmp (cmd, "px", len)))
+		|| (len == 3 && !strncmp (cmd, "pxc", len));
 }
 
 static void r_panels_set_cmd_str_cache(RCore *core, RPanel *p, char *s) {
@@ -721,6 +739,9 @@ static int r_panels_get_panel_idx_in_pos(RCore *core, int x, int y) {
 	RPanels *panels = core->panels;
 	int i;
 	for (i = 0; i < panels->n_panels; i++) {
+		if (panels->mode == PANEL_MODE_ZOOM && i != panels->curnode) {
+			continue;
+		}
 		RPanel *p = r_panels_get_panel (panels, i);
 		if (p && (x >= p->view->pos.x && x < p->view->pos.x + p->view->pos.w)) {
 			if (y >= p->view->pos.y && y < p->view->pos.y + p->view->pos.h) {
@@ -808,11 +829,64 @@ static void r_panels_menu_panel_print(RConsCanvas *can, RPanel *panel, int x, in
 	}
 }
 
+static const char *r_panels_rendered_content(RPanel *panel) {
+	return panel->model->readOnly? panel->model->readOnly: panel->model->cmdStrCache;
+}
+
+static int r_panels_content_height(const char *content) {
+	if (R_STR_ISEMPTY (content)) {
+		return 0;
+	}
+	int height = 1;
+	const char *p;
+	for (p = content; *p; p++) {
+		if (*p == '\n' && p[1] && height < INT_MAX) {
+			height++;
+		}
+	}
+	return height;
+}
+
+typedef struct {
+	int x;
+	int y;
+	int height;
+	int max_scroll;
+	int thumb;
+	int thumb_size;
+} RPanelsScrollbar;
+
+static bool r_panels_scrollbar_layout(RPanel *panel, RPanelsScrollbar *bar) {
+	RPanelPos *pos = &panel->view->pos;
+	if (panel->model->type == PANEL_TYPE_MENU || (!panel->model->cache && !panel->model->readOnly)
+			|| pos->w < 5 || pos->h < 4) {
+		return false;
+	}
+	const char *content = r_panels_rendered_content (panel);
+	if (!content) {
+		return false;
+	}
+	const int lines = r_panels_content_height (content);
+	bar->x = pos->x + pos->w - 2;
+	bar->y = pos->y + 2;
+	bar->height = pos->h - 3;
+	bar->max_scroll = R_MAX (0, lines - bar->height);
+	bar->thumb_size = lines > bar->height? R_MAX (1, (st64)bar->height * bar->height / lines): bar->height;
+	bar->thumb = bar->max_scroll? (st64)R_MIN (R_MAX (panel->view->sy, 0), bar->max_scroll)
+		* (bar->height - bar->thumb_size) / bar->max_scroll: 0;
+	return true;
+}
+
 static void r_panels_panel_write_content(RCore *core, RPanel *panel, const char *content, int sx, bool r_panels_show_cursor) {
+	RPanelsScrollbar bar;
+	const bool scrollbar = r_panels_scrollbar_layout (panel, &bar);
+	if (scrollbar) {
+		panel->view->sy = R_MIN (R_MAX (panel->view->sy, 0), bar.max_scroll);
+	}
 	int sy = R_MAX (panel->view->sy, 0);
 	int x = panel->view->pos.x;
 	int y = panel->view->pos.y;
-	int w = panel->view->pos.w;
+	int w = panel->view->pos.w - (scrollbar? 1: 0);
 	int h = panel->view->pos.h;
 	RConsCanvas *can = core->panels->can;
 	if (x >= can->w || y >= can->h) {
@@ -841,6 +915,15 @@ static void r_panels_panel_write_content(RCore *core, RPanel *panel, const char 
 		int sub = panel->view->curpos - panel->view->sy;
 		(void) r_cons_canvas_gotoxy (can, x + 2, y + 2 + sub);
 		r_cons_canvas_write (can, "*");
+	}
+	if (scrollbar) {
+		const bool utf8 = r_config_get_b (core->config, "scr.utf8");
+		int i;
+		for (i = 0; i < bar.height; i++) {
+			const bool thumb = i >= bar.thumb && i < bar.thumb + bar.thumb_size;
+			(void)r_cons_canvas_gotoxy (can, bar.x, bar.y + i);
+			r_cons_canvas_write (can, thumb? (utf8? "█": "#"): (utf8? "│": "|"));
+		}
 	}
 }
 
@@ -1030,6 +1113,7 @@ static void r_panels_layout_equal_hor(RCore *core, RPanels *panels) {
 
 /* makes space for a side panel, returns the amount of space made*/
 static unsigned int r_panels_adjust_side_panels(RCore *core) {
+	r_panels_prepare_layout (core);
 	RPanels *panels = core->panels;
 	int i, h;
 	unsigned int smallest = INT32_MAX;
@@ -1100,6 +1184,7 @@ static void r_panels_set_cursor(RCore *core, bool cur) {
 	RPanel *p = r_panels_get_cur_panel (core->panels);
 	RPrint *print = core->print;
 	print->cur_enabled = cur;
+	print->ocur = -1;
 	if (r_panels_is_abnormal_cursor_type (core, p)) {
 		return;
 	}
@@ -1113,6 +1198,10 @@ static void r_panels_set_cursor(RCore *core, bool cur) {
 
 static void r_panels_set_mode(RCore *core, RPanelsMode mode) {
 	RPanels *panels = core->panels;
+	panels->mouse_orig_x = -1;
+	if (mode == PANEL_MODE_MENU && panels->mode != PANEL_MODE_MENU) {
+		panels->frame_mode = panels->mode;
+	}
 	r_panels_set_cursor (core, false);
 	panels->mode = mode;
 	r_panels_update_help (core, panels);
@@ -2094,6 +2183,8 @@ static bool r_panels_handle_zoom_mode(RCore *core, const int key) {
 	case '[':
 	case ']':
 	case '=':
+	case 'm':
+	case 'i':
 		return false;
 	case 9:
 		r_panels_restore_panel_pos (panels->panel[panels->curnode]);
@@ -2450,6 +2541,11 @@ static bool r_panels_handle_cursor_mode(RCore *core, const int key) {
 	RPanel *cur = r_panels_get_cur_panel (core->panels);
 	RPrint *print = core->print;
 	char *db_val;
+	if (r_panels_check_panel_type (cur, "xc") && cur->model->directionCb
+			&& (key == 'h' || key == 'j' || key == 'k' || key == 'l')) {
+		cur->model->directionCb (core, key);
+		return true;
+	}
 	switch (key) {
 	case ':':
 	case ';':
@@ -2545,10 +2641,16 @@ static void r_panels_release_edge(RPanels *panels) {
 	panels->mouse_on_edge_x = false;
 	panels->mouse_on_edge_y = false;
 	panels->mouse_edge_grabbed = false;
+	panels->mouse_orig_x = -1;
+	panels->mouse_orig_y = -1;
 }
 
 static bool r_panels_drag_and_resize(RCore *core, int key) {
 	RPanels *panels = core->panels;
+	if (panels->mode == PANEL_MODE_ZOOM || panels->mode == PANEL_MODE_MENU) {
+		r_panels_release_edge (panels);
+		return false;
+	}
 	if (!panels->mouse_on_edge_x && !panels->mouse_on_edge_y) {
 		return false;
 	}
@@ -2875,6 +2977,15 @@ static void r_panels_close_menu(RCore *core) {
 	}
 }
 
+static void r_panels_prepare_layout(RCore *core) {
+	if (core->panels->mode == PANEL_MODE_MENU) {
+		r_panels_close_menu (core);
+	}
+	if (core->panels->mode == PANEL_MODE_ZOOM) {
+		r_panels_toggle_zoom_mode (core);
+	}
+}
+
 static bool r_panels_navbar_hit(int x, int start, int width) {
 	return start > 0 && x >= start && x < start + width;
 }
@@ -3142,8 +3253,8 @@ static void r_panels_handle_mouse_on_menu(RCore *core, int x, int y) {
 		}
 		if (idx >= 0) {
 			parent->selectedIndex = idx;
-			(void)(parent->sub[idx]->cb (core));
 			r_panels_update_menu_contents (core, menu, parent);
+			(void)(parent->sub[idx]->cb (core));
 			return;
 		}
 		r_panels_del_menu (core);
@@ -3533,7 +3644,8 @@ static void r_panels_frame_move_menu_fill(RCore *core, RPanelsMenuItem *item) {
 }
 
 static bool frame_maximize_state(RCore *core, RPanel *panel) {
-	return core->panels->frame_mode == PANEL_MODE_ZOOM;
+	RPanels *panels = core->panels;
+	return panels->mode == PANEL_MODE_ZOOM || (panels->mode == PANEL_MODE_MENU && panels->frame_mode == PANEL_MODE_ZOOM);
 }
 
 static bool frame_cache_state(RCore *core, RPanel *panel) {
@@ -3603,10 +3715,8 @@ static void r_panels_frame_menu_update(RCore *core) {
 static void r_panels_open_popup(RCore *core, RPanelsMenuItem *item, int x, int y) {
 	RPanels *panels = core->panels;
 	RPanelsMenu *menu = panels->panels_menu;
-	const RPanelsMode mode = panels->mode == PANEL_MODE_MENU? PANEL_MODE_DEFAULT: panels->mode;
 	r_panels_set_mode (core, PANEL_MODE_MENU);
 	r_panels_clear_panels_menu (core);
-	panels->frame_mode = mode;
 	r_panels_free_menu_item (menu->frame);
 	menu->frame = item;
 	r_panels_menu_push (core, item, x, y);
@@ -3632,9 +3742,69 @@ static int r_panels_select_mouse_panel(RCore *core, int x, int y) {
 	RPanel *old = r_panels_get_cur_panel (panels);
 	RPanel *cur = r_panels_get_panel (panels, idx);
 	old->view->refresh = true;
+	r_panels_set_cursor (core, false);
 	r_panels_set_curnode (core, idx);
 	cur->view->refresh = true;
 	return idx;
+}
+
+static void r_panels_scrollbar_seek(RPanel *panel, const RPanelsScrollbar *bar, int row) {
+	const int travel = bar->height - bar->thumb_size;
+	panel->view->sy = travel? (st64)R_MIN (R_MAX (row, 0), travel) * bar->max_scroll / travel: 0;
+	panel->view->curpos = panel->view->sy;
+	panel->view->refresh = true;
+}
+
+static bool r_panels_scrollbar_click(RCore *core, int x, int y) {
+	const int idx = r_panels_get_panel_idx_in_pos (core, x, y);
+	if (idx < 0) {
+		return false;
+	}
+	RPanels *panels = core->panels;
+	RPanel *panel = r_panels_get_panel (panels, idx);
+	RPanelsScrollbar bar;
+	if (!r_panels_scrollbar_layout (panel, &bar) || x != bar.x + 1 || y <= bar.y || y > bar.y + bar.height) {
+		return false;
+	}
+	r_panels_select_mouse_panel (core, x, y);
+	r_panels_set_cursor (core, false);
+	r_panels_release_edge (panels);
+	const int row = y - bar.y - 1;
+	panels->mouse_orig_x = x;
+	// Preserve where the thumb was grabbed when dragging it.
+	const bool on_thumb = row >= bar.thumb && row < bar.thumb + bar.thumb_size;
+	panels->mouse_orig_y = on_thumb? row - bar.thumb: bar.thumb_size / 2;
+	if (!on_thumb) {
+		r_panels_scrollbar_seek (panel, &bar, row - panels->mouse_orig_y);
+	}
+	if (!core->cons->dragging) {
+		r_panels_release_edge (panels);
+	}
+	return true;
+}
+
+static bool r_panels_scrollbar_drag(RCore *core) {
+	RPanels *panels = core->panels;
+	RCons *cons = core->cons;
+	RPanelsScrollbar bar;
+	RPanel *panel = r_panels_get_cur_panel (panels);
+	if (!cons->mouse_event || panels->mode == PANEL_MODE_MENU || panels->mouse_on_edge_x || panels->mouse_on_edge_y
+			|| panels->mouse_orig_x != panel->view->pos.x + panel->view->pos.w - 1
+			|| !r_panels_scrollbar_layout (panel, &bar)) {
+		return false;
+	}
+	if (cons->mouse_event && cons->drag_event) {
+		const int y = cons->drag_y - r_config_get_i (core->config, "scr.notch");
+		r_panels_scrollbar_seek (panel, &bar, y - bar.y - 1 - panels->mouse_orig_y);
+		return true;
+	}
+	if (!cons->dragging) {
+		int x, y;
+		r_cons_get_click (cons, &x, &y);
+		r_panels_release_edge (panels);
+		return cons->mouse_event;
+	}
+	return false;
 }
 
 static bool r_panels_handle_mouse_on_title(RCore *core, int x, int y) {
@@ -3655,6 +3825,173 @@ static bool r_panels_handle_mouse_on_title(RCore *core, int x, int y) {
 	return true;
 }
 
+static int r_panels_context_config_cb(void *user) {
+	RCore *core = user;
+	RPanelsMenu *menu = core->panels->panels_menu;
+	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+	RPanelsMenuItem *item = parent->sub[parent->selectedIndex];
+	RConfigNode *node = r_config_node_get (core->config, item->args);
+	if (r_config_node_is_bool (node)) {
+		r_config_toggle (core->config, item->args);
+	} else {
+		char *value = r_panels_show_status_input (core, "New value: ");
+		if (R_STR_ISNOTEMPTY (value)) {
+			r_config_set (core->config, item->args, value);
+		}
+		free (value);
+	}
+	free (item->name);
+	item->name = r_str_newf ("%s: %s", item->args, r_config_get (core->config, item->args));
+	r_panels_set_refresh_all (core, true, false);
+	r_panels_update_menu_contents (core, menu, parent);
+	return 0;
+}
+
+static int r_panels_clipboard_format_cb(void *user) {
+	RCore *core = user;
+	RPanelsMenu *menu = core->panels->panels_menu;
+	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+	RPanelsMenuItem *item = parent->sub[parent->selectedIndex];
+	replace_cmd (core, "Clipboard", item->args);
+	r_panels_reset_scroll_pos (r_panels_get_cur_panel (core->panels));
+	r_panels_close_menu (core);
+	return 0;
+}
+
+static RPanelsMenuItem *r_panels_context_menu_new(RCore *core, RPanel *panel) {
+	static const char *hex_settings[] = {
+		"hex.cols", "hex.pairs", "hex.ascii", "hex.header", "hex.addr", "hex.comments", "hex.section"
+	};
+	static const char *disasm_settings[] = {
+		"asm.bytes", "asm.addr", "asm.comments", "asm.cmt.right", "asm.pseudo", "asm.esil", "asm.emu"
+	};
+	static const char *other_settings[] = { "scr.color", "scr.utf8" };
+	const char **settings = other_settings;
+	size_t count = R_ARRAY_SIZE (other_settings);
+	if (r_panels_check_panel_type (panel, "xc") || r_panels_check_panel_type (panel, "px")) {
+		settings = hex_settings;
+		count = R_ARRAY_SIZE (hex_settings);
+	} else if (r_panels_check_panel_type (panel, "pd")) {
+		settings = disasm_settings;
+		count = R_ARRAY_SIZE (disasm_settings);
+	}
+	RPanelsMenuItem *context = r_panels_menu_item_new ("Panel settings", NULL, NULL, NULL);
+	if (!strcmp (panel->model->cmd, "y") || !strcmp (panel->model->cmd, "yx") || !strcmp (panel->model->cmd, "ys")) {
+		static const char *names[] = { "Summary", "Hexdump", "String" };
+		static const char *commands[] = { "y", "yx", "ys" };
+		size_t i;
+		for (i = 0; i < R_ARRAY_SIZE (names); i++) {
+			RPanelsMenuItem *item = r_panels_menu_item_new (names[i], "Change the clipboard display format",
+				commands[i], r_panels_clipboard_format_cb);
+			if (!r_panels_menu_item_append (context, item)) {
+				r_panels_free_menu_item (item);
+				break;
+			}
+		}
+		return context;
+	}
+	size_t i;
+	for (i = 0; i < count; i++) {
+		RConfigNode *node = r_config_node_get (core->config, settings[i]);
+		char *name = r_str_newf ("%s: %s", settings[i], node->value);
+		RPanelsMenuItem *item = r_panels_menu_item_new (name, node->desc, settings[i], r_panels_context_config_cb);
+		free (name);
+		if (!r_panels_menu_item_append (context, item)) {
+			r_panels_free_menu_item (item);
+			break;
+		}
+	}
+	return context;
+}
+
+static int r_panels_hexdump_byte_at(RCore *core, RPanel *panel, int x, int y) {
+	RPanelPos *pos = &panel->view->pos;
+	if (!r_panels_is_byte_hexdump (panel) || !panel->model->cmdStrCache
+			|| x < pos->x + 3 || x >= pos->x + pos->w
+			|| y < pos->y + 3 || y >= pos->y + pos->h) {
+		return -1;
+	}
+	int row = y - pos->y - 3 + panel->view->sy;
+	int column = x - pos->x - 3 + panel->view->sx;
+	char *line = r_str_ansi_crop (panel->model->cmdStrCache, 0, row, INT_MAX, row + 1);
+	if (!line) {
+		return -1;
+	}
+	r_str_ansi_filter (line, NULL, NULL, -1);
+	const int length = strlen (line);
+	const int cols = R_MAX (core->print->cols, 2);
+	int start = 0, result = -1;
+	ut64 addr = panel->model->addr;
+	if (core->print->flags & R_PRINT_FLAGS_OFFSET) {
+		start = (core->print->flags & R_PRINT_FLAGS_SECTION)? 21: 0;
+		if (start >= length || strncmp (line + start, "0x", 2)) {
+			goto beach;
+		}
+		char *end;
+		addr = strtoull (line + start, &end, 16);
+		start = end - line;
+	} else {
+		int data_row = row - (core->print->cols >= 2 && (core->print->flags & R_PRINT_FLAGS_HEADER));
+		if (data_row < 0) {
+			goto beach;
+		}
+		addr += (ut64)data_row * (core->print->stride? core->print->stride: cols);
+	}
+	if (addr < panel->model->addr || addr - panel->model->addr > INT_MAX - cols) {
+		goto beach;
+	}
+	while (start < length && (line[start] == ' ' || line[start] == '|')) {
+		start++;
+	}
+	const int hex_start = start;
+	int i;
+	for (i = 0; i < cols; i++) {
+		if (i && start < length && line[start] == ' ') {
+			start++;
+		}
+		if (start + 1 >= length || !isxdigit ((ut8)line[start]) || !isxdigit ((ut8)line[start + 1])) {
+			break;
+		}
+		if (column == start || column == start + 1) {
+			result = addr - panel->model->addr + i;
+			goto beach;
+		}
+		start += 2;
+	}
+	if (!(core->print->flags & R_PRINT_FLAGS_NONASCII)) {
+		bool compact = core->print->flags & R_PRINT_FLAGS_COMPACT;
+		int padding = compact? 0: (core->print->pairs? cols / 2: cols);
+		int separator = compact && core->print->col == 1 && core->print->pairs && (cols & 1)? 0: 1;
+		start = hex_start + cols * 2 + padding + separator;
+		if (column >= start && column < start + i && column < length) {
+			result = addr - panel->model->addr + column - start;
+		}
+	}
+beach:
+	free (line);
+	return result;
+}
+
+static bool r_panels_select_byte(RCore *core, RPanel *panel, int x, int y, bool extend) {
+	int offset = r_panels_hexdump_byte_at (core, panel, x, y);
+	if (offset < 0) {
+		return false;
+	}
+	if (panel->model->cache) {
+		panel->model->cache = false;
+		set_dcb (core, panel);
+	}
+	if (!extend) {
+		core->print->ocur = offset;
+	}
+	core->print->cur_enabled = true;
+	core->print->col = 1;
+	core->print->cur = offset;
+	panel->view->curpos = offset;
+	panel->view->refresh = true;
+	return true;
+}
+
 static void r_panels_seek_all(RCore *core, ut64 addr) {
 	RPanels *panels = core->panels;
 	int i;
@@ -3672,6 +4009,10 @@ static bool r_panels_handle_mouse_on_panel(RCore *core, int x, int y, int *key) 
 	}
 	RPanel *ppos = r_panels_get_panel (panels, idx);
 	const RPanelPos *pos = &ppos->view->pos;
+	if (r_panels_is_byte_hexdump (ppos)) {
+		r_panels_select_byte (core, ppos, x, y, false);
+		return true;
+	}
 	// click coordinates are 1-based, skip the frame borders
 	if (y <= pos->y + 1 || y >= pos->y + pos->h || x <= pos->x + 1 || x >= pos->x + pos->w) {
 		return true;
@@ -3722,20 +4063,55 @@ static bool r_panels_handle_mouse_press(RCore *core) {
 	if (y <= PANEL_HEADER_H || y >= panels->can->h) {
 		return false;
 	}
-	panels->mouse_on_edge_x = false;
-	panels->mouse_on_edge_y = false;
-	(void)r_panels_check_if_mouse_x_on_edge (core, x, y);
-	(void)r_panels_check_if_mouse_y_on_edge (core, x, y);
+	if (r_panels_scrollbar_click (core, x, y)) {
+		return true;
+	}
+	r_panels_release_edge (panels);
+	if (panels->mode != PANEL_MODE_ZOOM) {
+		(void)r_panels_check_if_mouse_x_on_edge (core, x, y);
+		(void)r_panels_check_if_mouse_y_on_edge (core, x, y);
+	}
 	if (panels->mouse_on_edge_x || panels->mouse_on_edge_y) {
 		return true;
 	}
-	return r_panels_select_mouse_panel (core, x, y) != -1;
+	if (r_panels_select_mouse_panel (core, x, y) == -1) {
+		return false;
+	}
+	RPanel *panel = r_panels_get_cur_panel (panels);
+	core->print->ocur = -1;
+	r_panels_select_byte (core, panel, x, y, false);
+	return true;
 }
 
 static bool r_panels_handle_mouse(RCore *core, int *key) {
 	RPanels *panels = core->panels;
-	if (r_panels_drag_and_resize (core, key? *key: 0)) {
+	RCons *cons = core->cons;
+	if (key && (*key == INT8_MAX || *key == -INT8_MAX)) {
+		int x, y;
+		r_cons_get_click (cons, &x, &y);
+		if (*key == INT8_MAX && panels->mode != PANEL_MODE_MENU && cons->mouse_event) {
+			y -= r_config_get_i (core->config, "scr.notch");
+			if (y > PANEL_HEADER_H && y < panels->can->h
+					&& r_panels_select_mouse_panel (core, x, y) != -1) {
+				RPanel *panel = r_panels_get_cur_panel (panels);
+				r_panels_release_edge (panels);
+				r_panels_open_popup (core, r_panels_context_menu_new (core, panel), x - 1, y - 1);
+			}
+		}
 		return true;
+	}
+	if (r_panels_scrollbar_drag (core) || r_panels_drag_and_resize (core, key? *key: 0)) {
+		return true;
+	}
+	if (cons->drag_event && panels->mode != PANEL_MODE_MENU) {
+		RPanel *panel = r_panels_get_cur_panel (panels);
+		if (r_panels_is_byte_hexdump (panel)) {
+			if (core->print->cur_enabled && core->print->ocur >= 0) {
+				r_panels_select_byte (core, panel, cons->drag_x,
+					cons->drag_y - r_config_get_i (core->config, "scr.notch"), true);
+			}
+			return true;
+		}
 	}
 	if (r_panels_handle_mouse_press (core)) {
 		return true;
@@ -3759,6 +4135,9 @@ static bool r_panels_handle_mouse(RCore *core, int *key) {
 		if (y <= PANEL_HEADER_H) {
 			return true;
 		}
+		if (r_panels_scrollbar_click (core, x, y)) {
+			return true;
+		}
 		if (r_panels_handle_mouse_on_title (core, x, y)) {
 			return true;
 		}
@@ -3778,9 +4157,6 @@ static bool r_panels_handle_mouse(RCore *core, int *key) {
 			RPanel *p = r_panels_get_cur_panel (panels);
 			r_panels_split_panel (core, p, p->model->title, p->model->cmd, true);
 		}
-	}
-	if (key && *key == INT8_MAX) {
-		*key = '"';
 	}
 	return false;
 }
@@ -4463,8 +4839,7 @@ static void r_panels_refresh(RCore *core) {
 
 	const bool frame_menu = r_panels_frame_menu_is_open (panels);
 	const bool menubar_open = panels->mode == PANEL_MODE_MENU && !frame_menu;
-	// the frame menu floats over the mode it was opened from
-	const RPanelsMode mode = frame_menu? panels->frame_mode: panels->mode;
+	const RPanelsMode mode = panels->mode == PANEL_MODE_MENU? panels->frame_mode: panels->mode;
 	for (i = 0; i < panels->n_panels; i++) {
 		if (mode == PANEL_MODE_ZOOM || i == panels->curnode) {
 			continue;
@@ -4472,9 +4847,7 @@ static void r_panels_refresh(RCore *core) {
 		r_panels_panel_print (core, can, r_panels_get_panel (panels, i), 0);
 	}
 	r_panels_panel_print (core, can, r_panels_get_cur_panel (panels), !menubar_open);
-	if (mode == PANEL_MODE_ZOOM) {
-		r_strbuf_appendf (title, "%s Zoom Mode | Press Enter or q to quit"Color_RESET, PANEL_HL_COLOR);
-	} else if (mode == PANEL_MODE_WINDOW) {
+	if (mode == PANEL_MODE_WINDOW) {
 		r_strbuf_appendf (title, "%s Window Mode | hjkl: move around the panels | q: quit the mode | Enter: Zoom mode"Color_RESET, PANEL_HL_COLOR);
 	} else {
 		RPanelsMenuItem *parent = panels->panels_menu->root;
@@ -4950,6 +5323,7 @@ static void update_disassembly_or_open(RCore *core) {
 		}
 	}
 	if (create_new) {
+		r_panels_prepare_layout (core);
 		RPanel *panel = r_panels_get_panel (panels, 0);
 		int x0 = panel->view->pos.x;
 		int y0 = panel->view->pos.y;
@@ -5093,41 +5467,59 @@ typedef struct {
 } ModalEntryDef;
 
 static const ModalEntryDef modal_entries_db[] = {
+	{ "Assembly Strings", "/az", NULL, PANEL_CACHE_ON },
 	{ "Backtrace", "dbt", NULL },
-	{ "Bit Registers", "dr 1", NULL },
+	{ "Basic Blocks", "afb", NULL },
 	{ "Breakpoints", "db", NULL, PANEL_CACHE_OFF },
 	{ "Change Command of Current Panel", NULL, replace_current_panel_input },
 	{ "Classes", "icq", NULL, PANEL_CACHE_ON },
-	{ "Clipboard", "yx", NULL },
+	{ "Clipboard", "y", NULL },
 	{ "Comments", "CC", NULL },
 	{ "Console", "cat $console", NULL },
 	{ "Create New", NULL, create_panel_input },
 	{ "Database", "k ***", NULL },
+	{ "Debug Registers", "drx", NULL },
 	{ "Decompiler", "pdc", NULL },
 	{ "Decompiler With Offsets", "pdco", NULL },
-	{ "Disassemble Summary", "pdsf", NULL },
 	{ "Disassembly", "pd", NULL },
-	{ "DRX", "drx", NULL },
+	{ "Disassembly Summary", "pdsf", NULL },
 	{ "Entropy", "p=e 100", NULL },
 	{ "Entropy Fire", "p==e 100", NULL },
+	{ "Entry Points", "ie", NULL, PANEL_CACHE_ON },
+	{ "Enumerations", "te", NULL },
+	{ "Exports", "iE", NULL, PANEL_CACHE_ON },
 	{ "File Hashes", "it", NULL, PANEL_CACHE_ON },
-	{ "FPU Registers", "dr fpu;drf", NULL },
+	{ "Flag Registers (1 bit)", "dr 1", NULL },
+	{ "Flag Spaces", "fs", NULL },
+	{ "Flags", "f", NULL },
+	{ "FPU Registers", "drf", NULL },
 	{ "Function Calls", "aflm", NULL },
+	{ "Function Disassembly", "pdf", NULL },
+	{ "Function Info", "afi", NULL },
+	{ "Function Signatures", "tf", NULL },
+	{ "Function Variables", "afv", NULL },
 	{ "Functions", "afl", NULL },
 	{ "Graph", "agf", NULL },
 	{ "Headers", "iH", NULL, PANEL_CACHE_ON },
 	{ "Hexdump", "xc $r*16", NULL },
+	{ "Hexdump References", "pxr $r*16", NULL },
 	{ "Imports", "iiq", NULL, PANEL_CACHE_ON },
 	{ "Info", "i", NULL },
+	{ "IO Maps", "om", NULL },
+	{ "Libraries", "il", NULL, PANEL_CACHE_ON },
 	{ "Locals", "afvd", NULL },
-	{ "Maps", "dm", NULL },
+	{ "Memory Maps", "dm", NULL },
 	{ "Methods", "ic", NULL },
 	{ "Modules", "dmm", NULL },
 	{ "New", "o", NULL },
-	{ "RegisterCols", "dr=", NULL },
-	{ "RegisterRefs", "drr", NULL },
+	{ "Open Files", "o", NULL },
+	{ "Processes", "dp", NULL },
+	{ "References From", "axf", NULL },
+	{ "Register Columns", "dr=", NULL },
+	{ "Register References", "drr", NULL },
 	{ "Registers", "dr", NULL },
 	{ "Relocs", "ir", NULL, PANEL_CACHE_ON },
+	{ "Resources", "iu", NULL, PANEL_CACHE_ON },
 	{ "Search strings in data sections", NULL, search_strings_data_create },
 	{ "Search strings in the whole bin", NULL, search_strings_bin_create },
 	{ "Sections", "iSq", NULL },
@@ -5136,15 +5528,20 @@ static const ModalEntryDef modal_entries_db[] = {
 	{ "Stack", "pxr@r:SP", NULL },
 	{ "Strings in data sections", "izq", NULL },
 	{ "Strings in the whole bin", "izzq", NULL },
-	{ "Summary", "pdsf", NULL },
+	{ "Structures", "ts", NULL },
 	{ "Symbols", "is,vaddr/cols/size/name,vaddr/sort/inc,vaddr/nostr/--,:quiet", NULL, PANEL_CACHE_ON },
+	{ "Syscalls", "/as", NULL, PANEL_CACHE_ON },
+	{ "Threads", "dpt", NULL },
 	{ "Tiny Graph", "agft", NULL },
-	{ "Var READ address", "afvR", NULL },
-	{ "Var WRITE address", "afvW", NULL },
-	{ "XMM Registers", "drm", NULL },
+	{ "Types", "t", NULL },
+	{ "Variable Reads", "afvR", NULL },
+	{ "Variable Writes", "afvW", NULL },
+	{ "Visual Marks", "fv", NULL },
+	{ "XMM Registers", "drv", NULL },
 	{ "Xrefs", "ax", NULL },
 	{ "Xrefs Here", "ax.", NULL },
-	{ "YMM Registers", "drmy", NULL }
+	{ "Xrefs To", "axt", NULL },
+	{ "YMM Registers", "drvy", NULL }
 };
 
 static bool r_panels_default_cache(RCore *core, RPanel *panel) {
@@ -5732,78 +6129,42 @@ static void direction_stack_cb(void *user, int direction) {
 }
 
 static void direction_hexdump_cb(void *user, int direction) {
-	RCore *core = (RCore *)user;
-	RPanels *panels = core->panels;
-	RPanel *cur = r_panels_get_cur_panel (panels);
-	if (!cur) {
-		return;
-	}
-	if (cur->model->cache) {
+	RCore *core = user;
+	RPanel *panel = r_panels_get_cur_panel (core->panels);
+	if (panel->model->cache) {
 		direction_default_cb (user, direction);
 		return;
 	}
-	int cols = r_config_get_i (core->config, "hex.cols");
-	if (cols < 1) {
-		cols = 16;
-	}
-	cur->view->refresh = true;
+	const int cols = R_MAX (core->print->cols, 2);
+	int delta;
 	switch (direction) {
-	case 'h':
-		if (!core->print->cur) {
-			cur->model->addr -= cols;
-			core->print->cur += cols - 1;
-		} else if (core->print->cur_enabled) {
-			r_panels_cursor_left (core);
-		} else {
-			cur->model->addr--;
-		}
-		break;
-	case 'l':
-		if (core->print->cur / cols + 1 > cur->view->pos.h - 5
-				&& core->print->cur % cols == cols - 1) {
-			cur->model->addr += cols;
-			core->print->cur -= cols - 1;
-		} else if (core->print->cur_enabled) {
-			r_panels_cursor_right (core);
-		} else {
-			cur->model->addr++;
-		}
-		break;
-	case 'k':
-		if (!cur->model->cache) {
-			if (core->print->cur_enabled) {
-				if (!(core->print->cur / cols)) {
-					cur->model->addr -= cols;
-				} else {
-					core->print->cur -= cols;
-				}
-			} else {
-				if (cur->model->addr <= cols) {
-					r_panels_set_panel_addr (core, cur, 0);
-				} else {
-					cur->model->addr -= cols;
-				}
-			}
-		} else if (cur->view->sy > 0) {
-			cur->view->sy--;
-		}
-		break;
-	case 'j':
-		if (!cur->model->cache) {
-			if (core->print->cur_enabled) {
-				if (core->print->cur / cols + 1 > cur->view->pos.h - 5) {
-					cur->model->addr += cols;
-				} else {
-					core->print->cur += cols;
-				}
-			} else {
-				cur->model->addr += cols;
-			}
-		} else {
-			cur->view->sy++;
-		}
-		break;
+	case 'h': delta = -1; break;
+	case 'l': delta = 1; break;
+	case 'k': delta = -cols; break;
+	case 'j': delta = cols; break;
+	default: return;
 	}
+	RPrint *print = core->print;
+	print->ocur = -1;
+	if (print->cur_enabled) {
+		st64 next = (st64)print->cur + delta;
+		int rows = R_MAX (panel->view->pos.h - 3 - (print->cols >= 2 && (print->flags & R_PRINT_FLAGS_HEADER)), 1);
+		if (next < 0) {
+			ut64 step = R_MIN (panel->model->addr, cols);
+			panel->model->addr -= step;
+			next += (st64)step;
+		} else if (next / cols >= rows && panel->model->addr <= UT64_MAX - cols) {
+			panel->model->addr += cols;
+			next -= cols;
+		}
+		print->cur = R_MIN (R_MAX (next, 0), INT_MAX);
+		panel->view->curpos = print->cur;
+	} else if (delta < 0) {
+		panel->model->addr -= R_MIN (panel->model->addr, -delta);
+	} else {
+		panel->model->addr += R_MIN (UT64_MAX - panel->model->addr, delta);
+	}
+	panel->view->refresh = true;
 }
 
 static void direction_panels_cursor_cb(void *user, int direction) {
@@ -5881,59 +6242,53 @@ static void set_breakpoints_on_cursor(RCore *core, RPanel *panel) {
 	}
 }
 
+static ut64 r_panels_edit_addr(RCore *core) {
+	RPanel *panel = r_panels_get_cur_panel (core->panels);
+	RPrint *print = core->print;
+	int offset = 0;
+	if (print->cur_enabled) {
+		offset = print->ocur < 0? print->cur: R_MIN (print->cur, print->ocur);
+	}
+	return panel->model->addr + R_MAX (offset, 0);
+}
+
+static bool r_panels_write_hex(RCore *core, const char *hex) {
+	int nibbles = r_hex_str_is_valid (hex);
+	if (nibbles < 1 || (nibbles & 1)) {
+		R_LOG_ERROR ("Expected complete hex byte pairs");
+		return false;
+	}
+	size_t size;
+	ut8 *bytes = r_hex_str2bin_dup (hex, &size);
+	if (!bytes) {
+		return false;
+	}
+	bool written = r_core_write_at (core, r_panels_edit_addr (core), bytes, size);
+	free (bytes);
+	if (written) {
+		r_panels_set_refresh_all (core, true, false);
+	}
+	return written;
+}
+
 static void insert_value(RCore *core, int wat) {
-	if (!r_config_get_i (core->config, "io.cache")) {
-		if (r_panels_show_status_yesno (core, 1, "Insert is not available because io.cache is off. Turn on now? (Y/n)")) {
-			r_config_set_b (core->config, "io.cache", true);
-			(void)r_panels_show_status (core, "io.cache is on and insert is available now.");
-		} else {
-			(void)r_panels_show_status (core, "Check Menu->Edit->io.cache to toggle that option.");
+	ut64 addr = r_panels_edit_addr (core);
+	RIOMap *map = r_io_map_get_at (core->io, addr);
+	bool writable = core->io->va? map && (map->perm & R_PERM_W)
+		: core->io->desc && (core->io->desc->perm & R_PERM_W);
+	if (!writable && !r_config_get_b (core->config, "io.cache")) {
+		if (!r_panels_show_status_yesno (core, 1, "File is read-only. Enable io.cache for editing? (Y/n)")) {
 			return;
 		}
+		r_config_set_b (core->config, "io.cache", true);
 	}
-	RPanels *panels = core->panels;
-	RPanel *cur = r_panels_get_cur_panel (panels);
-	switch (wat) {
-	case 'a': // asm
-		r_core_visual_asm (core, cur->model->addr + core->print->cur);
-		cur->view->refresh = true;
-		return;
-	case 'x': // hex
-		{
-		const char *buf = r_cons_visual_readln (core->cons, "insert hex: ", NULL);
-		if (buf) {
-			r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, cur->model->addr + core->print->cur);
-			cur->view->refresh = true;
-		}
-		}
-		return;
-	}
-	if (r_panels_check_panel_type (cur, "px")) {
-		const char *buf = r_cons_visual_readln (core->cons, "insert hex: ", NULL);
-		if (buf) {
-			r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, cur->model->addr);
-			cur->view->refresh = true;
-		}
-	} else if (r_panels_check_panel_type (cur, "dr")) {
-		const char *creg = core->dbg->creg;
-		if (creg) {
-			const char *buf = r_cons_visual_readln (core->cons, "new-reg-value> ", NULL);
-			if (buf) {
-				r_core_callf (core, "dr %s = %s", creg, buf);
-				cur->view->refresh = true;
-			}
-		}
-	} else if (r_panels_check_panel_type (cur, "pd")) {
-		const char *buf = r_cons_visual_readln (core->cons, "insert asm: ", NULL);
-		if (buf) {
-			r_core_visual_asm (core, cur->model->addr + core->print->cur);
-			cur->view->refresh = true;
-		}
-	} else if (r_panels_check_panel_type (cur, "xc")) {
-		const char *buf = r_cons_visual_readln (core->cons, "insert hex: ", NULL);
-		if (buf) {
-			r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, cur->model->addr + core->print->cur);
-			cur->view->refresh = true;
+	if (wat == 'a') {
+		r_core_visual_asm (core, addr);
+		r_panels_set_refresh_all (core, true, false);
+	} else if (wat == 'x') {
+		const char *hex = r_cons_visual_readln (core->cons, "overwrite hex: ", NULL);
+		if (R_STR_ISNOTEMPTY (hex)) {
+			r_panels_write_hex (core, hex);
 		}
 	}
 }
@@ -6055,10 +6410,6 @@ static void set_dcb(RCore *core, RPanel *p) {
 	}
 }
 
-static const char *r_panels_rendered_content(RPanel *panel) {
-	return panel->model->readOnly? panel->model->readOnly: panel->model->cmdStrCache;
-}
-
 static int r_panels_content_width(const char *content) {
 	int max_width = 0;
 	const char *line = content;
@@ -6079,26 +6430,12 @@ static int r_panels_content_width(const char *content) {
 	return max_width;
 }
 
-static int r_panels_content_height(const char *content) {
-	if (R_STR_ISEMPTY (content)) {
-		return 0;
-	}
-	int height = 1;
-	const char *p;
-	for (p = content; *p; p++) {
-		if (*p == '\n' && p[1] && height < INT_MAX) {
-			height++;
-		}
-	}
-	return height;
-}
-
 static bool r_panels_wheel_is_bounded(RCore *core, RPanel *panel, int direction) {
 	RPanelDirectionCallback cb = panel->model->directionCb;
 	const bool horizontal = direction == 'h' || direction == 'l';
 	const bool view_scroll = cb == direction_default_cb || cb == direction_graph_cb;
 	if (horizontal) {
-		return view_scroll || !core->print->cur_enabled;
+		return view_scroll || cb == direction_hexdump_cb || !core->print->cur_enabled;
 	}
 	return view_scroll || (!core->print->cur_enabled && cb == direction_panels_cursor_cb);
 }
@@ -6116,7 +6453,11 @@ static void r_panels_wheel_direction(RCore *core, RPanel *panel, int direction) 
 		return;
 	}
 	const bool horizontal = direction == 'h' || direction == 'l';
-	const int viewport = horizontal? panel->view->pos.w - 3: panel->view->pos.h - 3;
+	int viewport = horizontal? panel->view->pos.w - 3: panel->view->pos.h - 3;
+	if (horizontal && (panel->model->cache || panel->model->readOnly)
+			&& panel->view->pos.w >= 5 && panel->view->pos.h >= 4) {
+		viewport--;
+	}
 	if (viewport < 1) {
 		cb (core, direction);
 		return;
@@ -6130,7 +6471,12 @@ static void r_panels_wheel_direction(RCore *core, RPanel *panel, int direction) 
 	if ((forward && *scroll >= max_scroll) || (!forward && *scroll <= 0)) {
 		return;
 	}
-	cb (core, direction);
+	if (horizontal && cb == direction_hexdump_cb) {
+		*scroll += forward? 1: -1;
+		panel->view->refresh = true;
+	} else {
+		cb (core, direction);
+	}
 	*scroll = R_MAX (0, R_MIN (*scroll, max_scroll));
 }
 
@@ -6248,29 +6594,10 @@ static void print_stack_cb(void *user, void *p) {
 static void print_hexdump_cb(void *user, void *p) {
 	RCore *core = (RCore *)user;
 	RPanel *panel = (RPanel *)p;
+	ut64 saved_addr = core->addr;
+	r_core_seek (core, panel->model->addr, true);
 	const char *cmdstr = r_panels_handle_cmd_str_cache (core, panel, false);
-	if (!cmdstr) {
-		ut64 o_offset = core->addr;
-		if (!panel->model->cache) {
-			core->addr = panel->model->addr;
-			r_core_seek (core, core->addr, true);
-			r_core_block_read (core);
-		}
-		char *base = hexdump_rotate[R_ABS(panel->model->rotate) % R_ARRAY_SIZE (hexdump_rotate)];
-		char *cmd = r_str_newf ("%s ", base);
-		int n = r_str_split (panel->model->cmd, ' ');
-		int i;
-		for (i = 0; i < n; i++) {
-			const char *s = r_str_word_get0 (panel->model->cmd, i);
-			if (!i) {
-				continue;
-			}
-			cmd = r_str_append (cmd, s);
-		}
-		panel->model->cmd = cmd;
-		cmdstr = r_panels_handle_cmd_str_cache (core, panel, false);
-		core->addr = o_offset;
-	}
+	r_core_seek (core, saved_addr, true);
 	r_panels_update_panel_contents (core, panel, cmdstr);
 }
 
@@ -6388,7 +6715,7 @@ static int settings_decompiler_cb(void *user) {
 	}
 	r_config_set (core->config, "cmd.pdc", pdc_next);
 	r_panels_set_refresh_all (core, true, false);
-	r_panels_set_mode (core, PANEL_MODE_DEFAULT);
+	r_panels_close_menu (core);
 	return 0;
 }
 
@@ -6421,29 +6748,24 @@ static int load_layout_saved_cb(void *user) {
 	RPanelsMenu *menu = core->panels->panels_menu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
+	r_panels_prepare_layout (core);
 	if (!r_core_panels_load (core, child->name)) {
 		create_default_panels (core);
 		r_panels_layout (core, core->panels);
 	}
 	r_panels_set_curnode (core, 0);
-	core->panels->panels_menu->depth = 1;
 	r_panels_set_mode (core, PANEL_MODE_DEFAULT);
-	r_panels_del_menu (core);
-	r_panels_del_menu (core);
 	r_panels_set_refresh_all (core, true, false);
 	return 0;
 }
 
 static int load_layout_default_cb(void *user) {
 	RCore *core = (RCore *)user;
+	r_panels_prepare_layout (core);
 	r_panels_alloc (core, core->panels);
 	create_default_panels (core);
 	r_panels_layout (core, core->panels);
-	core->panels->panels_menu->depth = 1;
 	r_panels_set_mode (core, PANEL_MODE_DEFAULT);
-	r_panels_del_menu (core);
-	r_panels_del_menu (core);
-	r_panels_del_menu (core);
 	r_panels_set_refresh_all (core, true, false);
 	return 0;
 }
@@ -6474,6 +6796,7 @@ static int project_close_cb(void *user) {
 
 static int save_layout_cb(void *user) {
 	RCore *core = (RCore *)user;
+	r_panels_prepare_layout (core);
 	r_core_panels_save (core, NULL);
 	r_panels_set_mode (core, PANEL_MODE_DEFAULT);
 	r_panels_clear_panels_menu (core);
@@ -6831,7 +7154,7 @@ static int io_cache_on_cb(void *user) {
 	RCore *core = (RCore *)user;
 	r_config_set_b (core->config, "io.cache", true);
 	(void)r_panels_show_status (core, "io.cache is on");
-	r_panels_set_mode (core, PANEL_MODE_DEFAULT);
+	r_panels_close_menu (core);
 	return 0;
 }
 
@@ -6839,7 +7162,7 @@ static int io_cache_off_cb(void *user) {
 	RCore *core = (RCore *)user;
 	r_config_set_b (core->config, "io.cache", false);
 	(void)r_panels_show_status (core, "io.cache is off");
-	r_panels_set_mode (core, PANEL_MODE_DEFAULT);
+	r_panels_close_menu (core);
 	return 0;
 }
 
@@ -6933,6 +7256,7 @@ static int game_cb(void *user) {
 
 static int help_cb(void *user) {
 	RCore *core = (RCore *)user;
+	r_panels_prepare_layout (core);
 	r_panels_toggle_help (core);
 	return 0;
 }
@@ -7140,7 +7464,9 @@ static const MenuItem tools_items[] = {
 static const MenuItem search_items[] = {
 	{ "String (Whole Bin)", "Search strings in the whole binary", string_whole_bin_cb },
 	{ "String (Data Sections)", "Search strings in data sections only", string_data_sec_cb },
-	{ "Gadgets", "Search for gadgets", rop_cb },
+	{ "Assembly Strings", "Search assembly constructed strings (/az)", add_cmd_panel },
+	{ "Syscalls", "Search syscall instructions (/as)", add_cmd_panel },
+	{ "ROP", "Search for gadgets", rop_cb },
 	{ "Magic", "Run magic signatures", magic_cb },
 	{ "Code", "Search for code sequences", code_cb },
 	{ "Hexpairs", "Search for raw hexpairs", hexpairs_cb },
@@ -7155,8 +7481,8 @@ static const MenuItem emulate_items[] = {
 };
 
 static const MenuItem debug_items[] = {
-	{ "Breakpoints", "Open the breakpoints panel", break_points_cb },
-	{ "Watchpoints", "Open the watchpoints panel", watch_points_cb },
+	{ "Toggle Breakpoint", "Toggle a breakpoint at an address", break_points_cb },
+	{ "Add Watchpoint", "Set a watchpoint at an address", watch_points_cb },
 	{ "Continue", "Resume execution", continue_cb },
 	{ "Step", "Single-step into the next instruction", step_cb },
 	{ "Step Over", "Single-step over the next instruction", step_over_cb },
@@ -7230,12 +7556,14 @@ static bool init_panels_menu(RCore *core) {
 	r_panels_add_menu_items (core, "View.Code...", view_items, menus_View_Code, R_ARRAY_SIZE (menus_View_Code), add_cmd_panel);
 	r_panels_add_menu_full (core, "View", "Data...", "Raw data and string views", NULL, open_menu_cb);
 	r_panels_add_menu_items (core, "View.Data...", view_items, menus_View_Data, R_ARRAY_SIZE (menus_View_Data), add_cmd_panel);
-	r_panels_add_menu_full (core, "View", "Metadata...", "Comments, xrefs and methods", NULL, open_menu_cb);
+	r_panels_add_menu_full (core, "View", "Metadata...", "Comments, flags and types", NULL, open_menu_cb);
 	r_panels_add_menu_items (core, "View.Metadata...", view_items, menus_View_Metadata, R_ARRAY_SIZE (menus_View_Metadata), add_cmd_panel);
-	r_panels_add_menu_full (core, "View", "Binary...", "Binary structure and headers", NULL, open_menu_cb);
+	r_panels_add_menu_full (core, "View", "Binary...", "Binary structure, symbols and imports", NULL, open_menu_cb);
 	r_panels_add_menu_items (core, "View.Binary...", view_items, menus_View_Binary, R_ARRAY_SIZE (menus_View_Binary), add_cmd_panel);
-	r_panels_add_menu_full (core, "View", "Analysis...", "Analysis results and symbols", NULL, open_menu_cb);
+	r_panels_add_menu_full (core, "View", "Analysis...", "Functions, variables and cross references", NULL, open_menu_cb);
 	r_panels_add_menu_items (core, "View.Analysis...", view_items, menus_View_Analysis, R_ARRAY_SIZE (menus_View_Analysis), add_cmd_panel);
+	r_panels_add_menu_full (core, "View", "Debug...", "Registers, stack and debugger state", NULL, open_menu_cb);
+	r_panels_add_menu_items (core, "View.Debug...", view_items, menus_View_Debug, R_ARRAY_SIZE (menus_View_Debug), add_cmd_panel);
 	r_panels_add_menu_full (core, "View", "Other...", "Miscellaneous views", NULL, open_menu_cb);
 	r_panels_add_menu_items (core, "View.Other...", view_items, menus_View_Other, R_ARRAY_SIZE (menus_View_Other), add_cmd_panel);
 	r_panels_add_menu_items (core, "Tools", tools_items, menus_Tools, R_ARRAY_SIZE (menus_Tools), NULL);
@@ -7322,13 +7650,7 @@ static void handle_menu(RCore *core, const int key) {
 	RPanelsMenu *menu = panels->panels_menu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	if (!parent || !parent->sub) {
-		r_panels_del_menu (core);
-		r_panels_del_menu (core);
-		r_panels_del_menu (core);
-		r_panels_del_menu (core);
-		menu->n_refresh = 0;
-		r_panels_set_mode (core, PANEL_MODE_DEFAULT);
-		r_panels_get_cur_panel (panels)->view->refresh = true;
+		r_panels_close_menu (core);
 		r_panels_set_refresh_all (core, true, false);
 		return;
 	}
@@ -7433,9 +7755,7 @@ static void handle_menu(RCore *core, const int key) {
 		if (panels->panels_menu->depth > 1) {
 			r_panels_del_menu (core);
 		} else {
-			menu->n_refresh = 0;
-			r_panels_set_mode (core, PANEL_MODE_DEFAULT);
-			r_panels_get_cur_panel (panels)->view->refresh = true;
+			r_panels_close_menu (core);
 		}
 		break;
 	case '$':
@@ -7447,23 +7767,24 @@ static void handle_menu(RCore *core, const int key) {
 		(void)(child->cb (core));
 		break;
 	case 9:
-		menu->n_refresh = 0;
-		r_panels_handle_tab_key (core, false);
-		break;
 	case 'Z':
-		menu->n_refresh = 0;
-		r_panels_handle_tab_key (core, true);
+		r_panels_close_menu (core);
+		if (panels->mode == PANEL_MODE_ZOOM) {
+			r_panels_handle_zoom_mode (core, key);
+		} else {
+			r_panels_handle_tab_key (core, key == 'Z');
+		}
 		break;
 	case ':':
 		menu->n_refresh = 0;
 		handlePrompt (core, panels);
 		break;
 	case '?':
-		menu->n_refresh = 0;
+		r_panels_prepare_layout (core);
 		r_panels_toggle_help (core);
 		break;
 	case '"':
-		menu->n_refresh = 0;
+		r_panels_prepare_layout (core);
 		r_panels_create_modal (core, r_panels_get_panel (panels, 0));
 		r_panels_set_mode (core, PANEL_MODE_DEFAULT);
 		break;

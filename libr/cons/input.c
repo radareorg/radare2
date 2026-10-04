@@ -155,16 +155,18 @@ static int r_cons_sgr_mouse_event(RCons *cons) {
 	ypos[i] = 0;
 	cons->mouse_event = true;
 	int b = atoi (button);
+	int x = atoi (xpos);
+	int y = atoi (ypos);
 	int wheel = r_cons_mouse_wheel_key (b);
 	if (wheel) {
 		return wheel;
 	}
 	switch (b) {
 	case 2: // right click
+		cons->click_x = x;
+		cons->click_y = y;
 		return ch == 'M'? INT8_MAX: -INT8_MAX;
 	}
-	int x = atoi (xpos);
-	int y = atoi (ypos);
 	if (cons->drag_enabled) {
 		if (b & 32) { // motion while a button is held
 			if (!cons->dragging) {

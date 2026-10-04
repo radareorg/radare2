@@ -55,6 +55,7 @@ if get_option('enable_tests')
     'list',
     'lz4',
     'ovf',
+    'panels',
     'pdb',
     'pj',
     'print',
