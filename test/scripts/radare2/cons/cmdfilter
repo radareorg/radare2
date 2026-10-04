@@ -1,0 +1,10 @@
+ec comment red
+f filter.plain
+'f filter.quote
+'@13'f filter.seek
+b64:ZiBmaWx0ZXIuc2NyaXB0
+b64:'ZiBmaWx0ZXIucmF3NjQ=
+ec comment green; f filter.separator
+ec comment `f filter.substitution`
+ec comment $(b64:'ZiBmaWx0ZXIubmVzdGVk')red
+ec comment rgb:123456

@@ -313,3 +313,23 @@ ERROR: Invalid color code (bgonly xxxx)
 ERROR: Unknown color xxxx
 EOF
 RUN
+
+NAME=eco filters raw commands and preserves allowed colors
+FILE=-
+ENV=XDG_DATA_HOME=scripts
+CMDS=<<EOF
+eco cmdfilter
+f~filter.
+ec*~^ec comment
+'s 42
+s
+b64:'cyA0Mw==
+s
+EOF
+EXPECT=<<EOF
+ec comment rgb:123456
+0x2a
+0x2b
+EOF
+EXPECT_ERR=
+RUN
