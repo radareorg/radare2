@@ -211,6 +211,18 @@ static void clear_flags(RAnalOp *op, int flags) {
 	}
 }
 
+static inline bool is_reg_operand(const v850np_inst *inst, int i) {
+	return v850_operands[inst->op->operands[i]].flags & V850_OPERAND_REG;
+}
+
+static inline bool is_sp_operand(const v850np_inst *inst, int i) {
+	return is_reg_operand (inst, i) && inst->args[i].value == V850_SP;
+}
+
+static bool is_sp_adjust(const v850np_inst *inst) {
+	return !is_reg_operand (inst, 0) && is_sp_operand (inst, 1) && (!inst->op->operands[2] || is_sp_operand (inst, 2));
+}
+
 static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	ut8 opcode = 0;
 	const char *reg1 = NULL;
@@ -471,19 +483,19 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 	case V850_ADD_IMM5:
 		op->type = R_ANAL_OP_TYPE_ADD;
 		if (F2_REG2(word1) == V850_SP) {
+			op->val = (st32)SEXT5 (F2_IMM (word1));
 			op->stackop = R_ANAL_STACK_INC;
-			op->stackptr = F2_IMM (word1);
-			op->val = op->stackptr;
+			op->stackptr = -(st64)op->val;
 		}
 		r_strbuf_appendf (&op->esil, "0x%x,%s,+=", SEXT5 (F2_IMM (word1)), F2_RN2 (word1));
 		update_flags (op, -1);
 		break;
 	case V850_ADDI:
 		op->type = R_ANAL_OP_TYPE_ADD;
-		if (F6_REG2(word1) == V850_SP) {
+		if (F6_REG2(word1) == V850_SP && F6_REG1(word1) == V850_SP) {
+			op->val = (st16)word2;
 			op->stackop = R_ANAL_STACK_INC;
-			op->stackptr = (st64) word2;
-			op->val = op->stackptr;
+			op->stackptr = -(st64)op->val;
 		}
 		r_strbuf_appendf (&op->esil, "0x%x,%s,+,%s,=",  SEXT_IMM16_32 (word2), F6_RN1 (word1), F6_RN2 (word1));
 		update_flags (op, -1);
@@ -789,8 +801,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	case R_ANAL_OP_TYPE_ADD:
 	case R_ANAL_OP_TYPE_SUB:
-		// Detect stack pointer modifications: add/addi/sub with sp as destination
-		if (inst.text && strstr (inst.text, ", sp")) {
+		if (inst.op && is_sp_adjust (&inst)) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = (op->type == R_ANAL_OP_TYPE_SUB)? inst.value: -inst.value;
 			op->val = inst.value;

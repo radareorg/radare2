@@ -524,3 +524,38 @@ r1,r6,r7,r8,r9,r10,r11,r12,r13,r14,r15,r16,r17,r18,r19,lp
 r2,r20,r21,r22,r23,r24,r25,r26,r27,r28,r29,sp,gp,tp,ep
 EOF
 RUN
+
+NAME=v850 stack adjustments
+FILE=-
+ARGS=-a v850 -e asm.bytes=false -e asm.stackptr=true
+CMDS=<<EOF
+wx 031ee0ff03360024061e1000a619581a631e10007f00
+pd 7
+ao 1 @ 0xc~stackop
+EOF
+EXPECT=<<EOF
+            0x00000000     0      addi -32, sp, sp
+            0x00000004    32+     addi 9216, sp, r6
+            0x00000008    32      addi 16, r6, sp
+            0x0000000c    32      sub r6, sp
+            0x0000000e    32      add -8, sp
+            0x00000010    40+     satsubi 16, sp, sp
+            0x00000014    56+     jmp [lp]
+EOF
+RUN
+
+NAME=v850e0 stack adjustments
+FILE=-
+ARGS=-a v850 -e asm.bytes=false -e asm.stackptr=true
+CMDS=<<EOF
+e asm.cpu=e0
+wx 581a031ee0ff061e10007f00
+pd 4
+EOF
+EXPECT=<<EOF
+            0x00000000     0      add -8, r3
+            0x00000002     8+     addi 0xffe0, r3, r3
+            0x00000006    40+     addi 0x10, r6, r3
+            0x0000000a    40      jmp [r31]
+EOF
+RUN
