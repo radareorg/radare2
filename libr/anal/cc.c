@@ -10,8 +10,7 @@
 typedef struct r_anal_cc_info_t {
 	const char *name;
 	int maxarg; // -1 until resolved
-	int revarg; // -1 until resolved
-	bool dyn; // dyncc answers can depend on argc
+	bool argc_dependent;
 	ut32 argloc_known; // one bit per CC_SLOTS entry
 	const char *argloc[CC_SLOTS];
 	const char *regset[2];
@@ -50,8 +49,8 @@ static RAnalCCInfo *cc_info(RAnal *anal, const char *cc) {
 		ci = R_NEW0 (RAnalCCInfo);
 		ci->name = r_str_constpool_get (&anal->constpool, cc);
 		ci->maxarg = -1;
-		ci->revarg = -1;
-		ci->dyn = r_str_startswith (cc, "dyncc:");
+		ci->argc_dependent = r_str_startswith (cc, "dyncc:")
+			|| r_str_is_true (sdb_const_getf (DB, NULL, "cc.%s.revarg", cc));
 		if (!ci->name || !ht_pp_insert (priv->cc_cache, cc, ci)) {
 			free (ci);
 			return NULL;
@@ -1007,27 +1006,14 @@ static const char *cc_argloc(RAnal *anal, const char *cc, int n, int home, int a
 	return ret? dyncc_from_static_loc (anal, ret): NULL;
 }
 
-static bool cc_info_revarg(RAnal *anal, const char *cc, RAnalCCInfo *ci) {
-	if (ci->revarg < 0) {
-		ci->revarg = r_str_is_true (sdb_const_getf (DB, NULL, "cc.%s.revarg", cc));
-	}
-	return ci->revarg;
-}
-
 R_API const char *r_anal_cc_argloc(RAnal *anal, const char *cc, int n, int home, int argc) {
 	R_RETURN_VAL_IF_FAIL (anal && n >= 0 && home >= 0, NULL);
 	if (!cc) {
 		return NULL;
 	}
 	RAnalCCInfo *ci = (home == 0 && n < CC_SLOTS)? cc_info (anal, cc): NULL;
-	if (!ci || (argc > 0 && ci->dyn)) {
+	if (!ci || (argc > 0 && ci->argc_dependent)) {
 		return cc_argloc (anal, cc, n, home, argc);
-	}
-	if (argc > 0 && cc_info_revarg (anal, cc, ci)) {
-		if (n >= argc) {
-			return NULL;
-		}
-		n = argc - n - 1;
 	}
 	const ut32 bit = 1u << n;
 	if (!(ci->argloc_known & bit)) {
