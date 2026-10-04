@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #include <r_core.h>
+#include "visual_modes.h"
 #include <r_vec.h>
 
 #define NPF 5
@@ -119,7 +120,6 @@ static const char *printfmtColumns[NPF] = {
 };
 
 // to print the stack in the debugger view
-#define PRINT_HEX_FORMATS 14
 #define PRINT_3_FORMATS 2
 #define PRINT_4_FORMATS 11
 #define PRINT_5_FORMATS 7
@@ -145,29 +145,6 @@ static const char *print4Formats[PRINT_4_FORMATS] = {
 static const char *print5Formats[PRINT_5_FORMATS] = {
 	"pca", "pcA", "p8x", "pcc", "psb", "pcp", "pcd",
 };
-
-R_IPI void applyHexMode(RCore *core) {
-	int hexMode = core->visual.hexMode;
-	core->visual.currentFormat = R_ABS (hexMode) % PRINT_HEX_FORMATS;
-	bool compact = false;
-	bool comments = false;
-	switch (core->visual.currentFormat) {
-	case 0: /* px */
-	case 1: /* pxa */
-	case 3: /* prx */
-	case 6: /* pxw */
-	case 10: /* pxr */
-		comments = true;
-		break;
-	case 4: /* pxb */
-	case 7: /* pxq */
-		compact = true;
-		comments = true;
-		break;
-	}
-	r_config_set_b (core->config, "hex.compact", compact);
-	r_config_set_b (core->config, "hex.comments", comments);
-}
 
 R_API void r_core_visual_toggle_decompiler_disasm(RCore *core, bool for_graph, bool reset) {
 	if (core->visual.hold) {

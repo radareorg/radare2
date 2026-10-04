@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2010-2026 - pancake */
 
-#include "../config.h"
+#include <config.h>
 #include "../include/r_core.h"
 #include "../xps/r2plugins.h"
 

@@ -31,6 +31,7 @@ option('checks_level', type: 'integer', value: 9999, description: 'Value between
 option('capstone_in_builddir', type: 'boolean', value: false, description: 'When true, capstone is downloaded in the build directory and not in the source one')
 option('want_threads', type: 'boolean', value: true)
 option('want_qjs', type: 'boolean', value: true)
+option('want_panels', type: 'boolean', value: true, description: 'Build the visual panels core plugin')
 option('use_new_abi', type: 'boolean', value: false)
 option('use_bundle_prefix', type: 'boolean', value: false)
 option('want_capstone', type: 'boolean', value: true)

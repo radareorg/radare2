@@ -142,3 +142,4 @@ visual:
 
 panel:
   - libr/core/panels.c
+  - libr/core/p/panels/**/*

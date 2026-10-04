@@ -442,17 +442,6 @@ static RCoreHelpMessage help_msg_vertical_bar = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_v = {
-	"Usage:", "v[*i]", "",
-	"v", "", "open visual panels",
-	"v", " test", "load saved layout with name test",
-	"ve", " [fg] [bg]", "define foreground and background for current panel",
-	"v.", " [file]", "load visual script (also known as slides)",
-	"v=", " test", "save current layout with name test",
-	"vi", " test", "open the file test in 'cfg.editor'",
-	NULL
-};
-
 // clang-format on
 
 struct duplicate_flag_t {
@@ -2992,84 +2981,6 @@ static int cmd_resize(void *data, const char *input) {
 	}
 	if (newsize < (core->addr + core->blocksize) || oldsize < (core->addr + core->blocksize)) {
 		r_core_block_read (core);
-	}
-	return true;
-}
-
-static int cmd_panels(void *data, const char *input) {
-	RCore *core = (RCore*) data;
-	if (core->vmode) {
-		return false;
-	}
-	if (*input == '.') {
-		const char *f = r_str_trim_head_ro (input + 1);
-		if (*f) {
-			r_core_visual_slides (core, f);
-		}
-		return false;
-	}
-	if (*input == '?') {
-		r_cons_cmd_help (core->cons, help_msg_v);
-		return false;
-	}
-	if (!r_cons_is_interactive (core->cons)) {
-		R_LOG_ERROR ("Panel mode requires scr.interactive=true");
-		return false;
-	}
-	if (*input == ' ') {
-		if (core->panels) {
-			r_core_panels_load (core, input + 1);
-		}
-		r_config_set (core->config, "scr.layout", input + 1);
-		return true;
-	}
-	if (*input == 'e') {
-		if (input[1] == ' ') {
-#define getpanel(x,y) ((x) && (y) < 16)? (x)->panel[y]: NULL
-			RPanel *pan = getpanel (core->panels, core->panels->curnode);
-#undef getpanel
-			if (pan) {
-				char *r = r_cons_pal_parse (core->cons, r_str_trim_head_ro (input + 2), NULL);
-				if (r) {
-					free (pan->model->bgcolor);
-					pan->model->bgcolor = r_str_newf (Color_RESET"%s", r);
-					free (r);
-				} else {
-					R_LOG_ERROR ("Invalid color %sXXX"Color_RESET, r);
-				}
-			}
-		} else {
-			r_cons_cmd_help_match (core->cons, help_msg_v, "ve", 0, true);
-		}
-		return true;
-	}
-	if (*input == '=') {
-		if (input[1]) {
-			r_core_panels_save (core, input + 1);
-			r_config_set (core->config, "scr.layout", input + 1);
-		} else {
-			r_cons_cmd_help_match (core->cons, help_msg_v, "v=", 0, true);
-		}
-		return true;
-	}
-	if (*input == 'i') {
-		char *sp = strchr (input, ' ');
-		if (sp) {
-			char *r = r_core_editor (core, sp + 1, NULL, NULL);
-			if (r) {
-				free (r);
-			} else {
-				R_LOG_ERROR ("Cannot open file (%s)", sp + 1);
-			}
-		} else {
-			r_cons_cmd_help_match (core->cons, help_msg_v, "vi", 0, true);
-		}
-		return false;
-	}
-	if (*input) {
-		r_cons_cmd_help (core->cons, help_msg_v);
-	} else {
-		r_core_panels_root (core, core->panels_root);
 	}
 	return true;
 }
@@ -7437,7 +7348,6 @@ R_API void r_core_cmd_init(RCore *core) {
 		{ "u", "uname/undo", cmd_undo },
 		{ "<", "pipe into RCons.readChar", cmd_pipein },
 		{ "V", "enter visual mode", cmd_visual },
-		{ "v", "enter visual panels", cmd_panels },
 		{ "w", "write bytes", cmd_write },
 		{ "x", "alias for px", cmd_hexdump },
 		{ "y", "yank bytes", cmd_yank },
