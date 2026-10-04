@@ -203,6 +203,42 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ESIL /rs switches call conventions across CFG branches
+FILE=malloc://0x500
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx e8fb00000083ff007436 @ 0x100
+wx 48c7c600030000e8ea000000488d1ec3 @ 0x10a
+wx 48c7c600030000e8d4000000488d1ec3 @ 0x140
+wx c3 @ 0x200
+wx c3 @ 0x220
+wz clean @ 0x300
+af+ 0x100 test
+afb+ 0x100 0x100 10 0x140 0x10a
+afb+ 0x100 0x10a 16
+afb+ 0x100 0x140 16
+af+ 0x200 sysv
+afb+ 0x200 0x200 1
+afc amd64 @ 0x200
+af+ 0x220 windows
+afb+ 0x220 0x220 1
+afc ms @ 0x220
+ax-*
+e anal.cc=amd64
+e anal.vars.clobber=true
+e search.from=0x100
+e search.to=0x150
+/rs
+axq
+EOF
+EXPECT=<<EOF
+0x0000010a -> 0x00000300  STRN:r--
+0x00000140 -> 0x00000300  STRN:r--
+0x0000014c -> 0x00000300  STRN:r--
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=ESIL /rs sparse CFG follows backward edges across buffer boundaries
 FILE=malloc://0x40000
 ARGS=-a x86 -b 64
