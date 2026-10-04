@@ -831,8 +831,8 @@ static bool mips_reg_is_stack_base(int reg) {
 	return reg == 29 || reg == 30;
 }
 
-static void mips_set_stackop_add(RAnalOp *op, int rt, int imm) {
-	if (rt == 29) {
+static void mips_set_stackop_add(RAnalOp *op, int rt, int rs, int imm) {
+	if (rt == 29 && rs == 29) {
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = -imm;
 	}
@@ -1826,7 +1826,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			if ((mask & R_ARCH_OP_MASK_VAL) && mips_reg_is_stack_base (rs)) {
 				mips_fill_add_values (op, rt, rs, imm);
 			}
-			mips_set_stackop_add (op, rt, imm);
+			mips_set_stackop_add (op, rt, rs, imm);
 			op->val = imm; // Beware: this one is signed... use `?vi $v`
 			if (rs == 0) {
 				insn.id = MIPS_INS_LI;
@@ -1839,7 +1839,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			if ((mask & R_ARCH_OP_MASK_VAL) && mips_reg_is_stack_base (rs)) {
 				mips_fill_add_values (op, rt, rs, imm);
 			}
-			mips_set_stackop_add (op, rt, imm);
+			mips_set_stackop_add (op, rt, rs, imm);
 			break;
 		case 10: // slti
 			insn.id = MIPS_INS_SLTI;
@@ -1867,7 +1867,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			if ((mask & R_ARCH_OP_MASK_VAL) && mips_reg_is_stack_base (rs)) {
 				mips_fill_add_values (op, rt, rs, imm);
 			}
-			mips_set_stackop_add (op, rt, imm);
+			mips_set_stackop_add (op, rt, rs, imm);
 			break;
 		case 25: // daddiu
 			insn.id = MIPS_INS_DADDIU;
@@ -1875,7 +1875,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			if ((mask & R_ARCH_OP_MASK_VAL) && mips_reg_is_stack_base (rs)) {
 				mips_fill_add_values (op, rt, rs, imm);
 			}
-			mips_set_stackop_add (op, rt, imm);
+			mips_set_stackop_add (op, rt, rs, imm);
 			if (rs == 0) {
 				insn.id = MIPS_INS_LDI;
 				snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "0x%" PFMT32x, imm);
