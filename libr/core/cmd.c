@@ -6790,15 +6790,8 @@ static int core_cmd_context(RCore *core, RCmdContext *parent, const char *cstr, 
 		goto beach; // false
 	}
 	r_core_return_code (core, 0);
-	ret = handle_command_call (core, &context, cstr);
 	if (!strcmp (cstr, "!") || !strcmp (cstr, "!!")) {
 		log = false;
-	}
-	if (ret != -1) {
-		if (log) {
-			r_line_hist_add (cons->line, cstr);
-		}
-		goto beach;
 	}
 	if (R_STR_ISNOTEMPTY (core->cmdfilter)) {
 		const char invalid_chars[] = ";|>`@";
@@ -6813,6 +6806,13 @@ static int core_cmd_context(RCore *core, RCmdContext *parent, const char *cstr, 
 			ret = true;
 			goto beach;
 		}
+	}
+	ret = handle_command_call (core, &context, cstr);
+	if (ret != -1) {
+		if (log) {
+			r_line_hist_add (cons->line, cstr);
+		}
+		goto beach;
 	}
 	if (core->cmdremote) {
 		if (*cstr == 'q') {
