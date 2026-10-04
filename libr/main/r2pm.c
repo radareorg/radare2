@@ -651,6 +651,17 @@ static void r2pm_setenv(R2Pm *r2pm) {
 	char *r2pm_bindir = r_str_newf ("%s/bin", r2_prefix);
 	r_sys_mkdirp (r2pm_bindir);
 	r_sys_setenv ("R2PM_BINDIR", r2pm_bindir);
+	if (r2pm->install && !r2pm->quiet) {
+		char *path = r_sys_getenv ("PATH");
+		if (!r_str_cmp_list (path, r2pm_bindir, R_SYS_ENVSEP[0])) {
+#if R2__WINDOWS__
+			R_LOG_HINT ("Add r2pm programs to PATH: set \"PATH=%%PATH%%;%s\"", r2pm_bindir);
+#else
+			R_LOG_HINT ("Add r2pm programs to PATH: export PATH=\"$PATH:$(r2pm -H R2PM_BINDIR)\"");
+#endif
+		}
+		free (path);
+	}
 	r_sys_setenv_sep ("PATH", r2pm_bindir, false);
 	r_sys_setenv_sep ("PATH", R2_BINDIR, false);
 	free (r2pm_bindir);
