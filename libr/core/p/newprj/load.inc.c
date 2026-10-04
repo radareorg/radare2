@@ -1172,6 +1172,189 @@ static void rprj_hint_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 	r_list_free (seen);
 }
 
+static const char *rprj_breakpoint_module_name(RPrjCursor *cur, R2ProjectAddr *addr) {
+	R2ProjectMod *mod = rprj_mod_get (cur, addr->mod);
+	if (!mod) {
+		return NULL;
+	}
+	const char *file = rprj_st_get (cur->st, mod->file);
+	return R_STR_ISNOTEMPTY (file)? file: rprj_st_get (cur->st, mod->name);
+}
+
+static void rprj_print_breakpoint(RPrjCursor *cur, const RBreakpointItem *bp) {
+	r_strbuf_append (cur->out, "'dbb 0\n");
+	if (bp->perm & (R_BP_PROT_READ | R_BP_PROT_WRITE | R_BP_PROT_ACCESS)) {
+		const int rw = R_BP_PROT_READ | R_BP_PROT_WRITE;
+		const char *perm = (bp->perm & R_BP_PROT_ACCESS) || (bp->perm & rw) == rw? "rw"
+			: bp->perm & R_BP_PROT_WRITE? "w": "r";
+		r_strbuf_appendf (cur->out, "'dbw 0x%08"PFMT64x" %s\n", bp->addr, perm);
+	} else if (bp->hw == R_BP_TYPE_HW) {
+		r_strbuf_appendf (cur->out, "'dbH 0x%08"PFMT64x"\n", bp->addr);
+	} else {
+		r_strbuf_appendf (cur->out, "db 0x%08"PFMT64x" @e:dbg.hwbp=false\n", bp->addr);
+	}
+	if (bp->trace) {
+		r_strbuf_appendf (cur->out, "'dbte 0x%08"PFMT64x"\n", bp->addr);
+	}
+	if (!bp->enabled || bp->togglehits) {
+		r_strbuf_appendf (cur->out, "'db%c 0x%08"PFMT64x" %d\n",
+			bp->enabled? 'e': 'd', bp->addr, bp->togglehits);
+	}
+	if (R_STR_ISNOTEMPTY (bp->data)) {
+		r_strbuf_appendf (cur->out, "'dbc 0x%08"PFMT64x" %s\n", bp->addr, bp->data);
+	}
+	if (R_STR_ISNOTEMPTY (bp->cond)) {
+		r_strbuf_appendf (cur->out, "'dbC 0x%08"PFMT64x" %s\n", bp->addr, bp->cond);
+	}
+	if (R_STR_ISNOTEMPTY (bp->name)) {
+		r_strbuf_appendf (cur->out, "'@0x%08"PFMT64x"'dbn %s\n", bp->addr, bp->name);
+	}
+	if (R_STR_ISNOTEMPTY (bp->expr)) {
+		r_strbuf_appendf (cur->out, "'@0x%08"PFMT64x"'dbx %s\n", bp->addr, bp->expr);
+	}
+	if (cur->core->dbg && cur->core->dbg->bp->delta) {
+		r_strbuf_appendf (cur->out, "'dbb %"PFMT64d"\n", cur->core->dbg->bp->delta);
+	}
+}
+
+static bool rprj_breakpoint_differs(const RBreakpointItem *saved, const RBreakpointItem *bp) {
+	return bp->size != saved->size || bp->perm != saved->perm || bp->hw != saved->hw
+		|| bp->togglehits != saved->togglehits || bp->hits != saved->hits
+		|| rprj_breakpoint_flags (bp) != rprj_breakpoint_flags (saved)
+		|| strcmp (r_str_get (saved->name), r_str_get (bp->name))
+		|| strcmp (r_str_get (saved->data), r_str_get (bp->data))
+		|| strcmp (r_str_get (saved->cond), r_str_get (bp->cond))
+		|| strcmp (r_str_get (saved->expr), r_str_get (bp->expr));
+}
+
+static void rprj_breakpoint_set_string(char **dst, const char *src) {
+	free (*dst);
+	*dst = R_STR_ISNOTEMPTY (src)? strdup (src): NULL;
+}
+
+static void rprj_breakpoint_add(RBreakpoint *bp, const RBreakpointItem *saved) {
+	RBreakpointItem *bpi = r_bp_get_at (bp, saved->addr);
+	if (bpi && (bpi->internal || bpi->swstep)) {
+		return;
+	}
+	if (bpi && (bpi->size != saved->size || bpi->perm != saved->perm || bpi->hw != saved->hw)) {
+		r_bp_del (bp, saved->addr);
+		bpi = NULL;
+	}
+	if (!bpi) {
+		// The project address is already rebased; do not apply dbb again.
+		const st64 delta = bp->delta;
+		bp->delta = 0;
+		if (saved->hw == R_BP_TYPE_FAULT) {
+			r_bp_add_fault (bp, saved->addr, saved->size, saved->perm);
+			bpi = r_bp_get_at (bp, saved->addr);
+		} else if (saved->perm & (R_BP_PROT_READ | R_BP_PROT_WRITE | R_BP_PROT_ACCESS)) {
+			bpi = r_bp_watch_add (bp, saved->addr, saved->size, saved->hw, saved->perm);
+		} else if (saved->hw == R_BP_TYPE_HW) {
+			bpi = r_bp_add_hw (bp, saved->addr, saved->size, saved->perm);
+		} else {
+			bpi = r_bp_add_sw (bp, saved->addr, saved->size, saved->perm);
+		}
+		bp->delta = delta;
+	}
+	if (!bpi) {
+		R_LOG_WARN ("Cannot restore breakpoint at 0x%08"PFMT64x, saved->addr);
+		return;
+	}
+	rprj_breakpoint_set_string (&bpi->name, saved->name);
+	rprj_breakpoint_set_string (&bpi->data, saved->data);
+	rprj_breakpoint_set_string (&bpi->cond, saved->cond);
+	rprj_breakpoint_set_string (&bpi->expr, saved->expr);
+	rprj_breakpoint_set_string (&bpi->module_name, saved->module_name);
+	bpi->module_delta = saved->module_delta;
+	bpi->delta = bpi->addr - bp->baddr;
+	bpi->enabled = saved->enabled;
+	bpi->trace = saved->trace;
+	bpi->togglehits = saved->togglehits;
+	bpi->hits = saved->hits;
+}
+
+static void rprj_breakpoint_load(RPrjCursor *cur, int mode, ut64 next_entry) {
+	RBuffer *b = cur->b;
+	const bool diff = (mode & R_CORE_NEWPRJ_MODE_DIFF) != 0;
+	RList *seen = diff? r_list_newf (free): NULL;
+	while (rprj_entry_remaining (b, next_entry)) {
+		const ut64 at = r_buf_at (b);
+		R2ProjectBreakpoint bp;
+		if (!rprj_entry_has (b, next_entry, RPRJ_BREAKPOINT_SIZE) || !rprj_breakpoint_read (b, &bp)) {
+			R_LOG_WARN ("Truncated breakpoint record at 0x%08"PFMT64x, at);
+			break;
+		}
+		ut64 va = UT64_MAX;
+		if (!rprj_mod_va (cur, &bp.addr, &va) || va == UT64_MAX) {
+			R_LOG_WARN ("Cannot resolve breakpoint record at 0x%08"PFMT64x, at);
+			continue;
+		}
+		if (!bp.size || bp.size > ST32_MAX - 16 || bp.togglehits > ST32_MAX || bp.hits > ST32_MAX
+				|| !bp.perm || (bp.perm & ~(R_PERM_RWX | R_BP_PROT_ACCESS))
+				|| (bp.hw != R_BP_TYPE_SW && bp.hw != R_BP_TYPE_HW && bp.hw != R_BP_TYPE_FAULT)
+				|| (bp.flags & ~(RPRJ_BREAKPOINT_TRACE | RPRJ_BREAKPOINT_ENABLED))) {
+			R_LOG_WARN ("Invalid breakpoint record at 0x%08"PFMT64x, at);
+			continue;
+		}
+		RBreakpointItem saved = {
+			.addr = va,
+			.size = bp.size,
+			.perm = bp.perm,
+			.hw = bp.hw,
+			.enabled = !!(bp.flags & RPRJ_BREAKPOINT_ENABLED),
+			.trace = !!(bp.flags & RPRJ_BREAKPOINT_TRACE),
+			.togglehits = bp.togglehits,
+			.hits = bp.hits,
+			.name = (char *)rprj_st_get (cur->st, bp.name),
+			.data = (char *)rprj_st_get (cur->st, bp.data),
+			.cond = (char *)rprj_st_get (cur->st, bp.cond),
+			.expr = (char *)rprj_st_get (cur->st, bp.expr),
+			.module_name = (char *)rprj_breakpoint_module_name (cur, &bp.addr),
+			.module_delta = bp.addr.mod != UT32_MAX? bp.addr.delta: 0,
+		};
+		if ((bp.name != UT32_MAX && !saved.name) || (bp.data != UT32_MAX && !saved.data)
+				|| (bp.cond != UT32_MAX && !saved.cond) || (bp.expr != UT32_MAX && !saved.expr)) {
+			R_LOG_WARN ("Invalid breakpoint strings at 0x%08"PFMT64x, at);
+			continue;
+		}
+		if (mode & R_CORE_NEWPRJ_MODE_LOG) {
+			r_strbuf_appendf (cur->out, "      0x%08"PFMT64x" size=%u perm=%u hw=%u flags=0x%x name=%s\n",
+				va, bp.size, bp.perm, bp.hw, bp.flags, r_str_get (saved.name));
+		}
+		if (mode & R_CORE_NEWPRJ_MODE_SCRIPT) {
+			rprj_print_breakpoint (cur, &saved);
+		}
+		if (diff) {
+			rprj_diff_seen_addr (seen, va);
+			RBreakpointItem *curbp = cur->core->dbg && cur->core->dbg->bp
+				? r_bp_get_at (cur->core->dbg->bp, va): NULL;
+			if (curbp && (curbp->internal || curbp->swstep)) {
+				continue;
+			}
+			if (!curbp) {
+				r_strbuf_appendf (cur->out, "'db- 0x%08"PFMT64x"\n", va);
+			} else if (rprj_breakpoint_differs (&saved, curbp)) {
+				r_strbuf_appendf (cur->out, "'db- 0x%08"PFMT64x"\n", va);
+				rprj_print_breakpoint (cur, curbp);
+			}
+		}
+		if ((mode & R_CORE_NEWPRJ_MODE_LOAD) && cur->core->dbg && cur->core->dbg->bp) {
+			rprj_breakpoint_add (cur->core->dbg->bp, &saved);
+		}
+	}
+	if (diff && cur->core->dbg && cur->core->dbg->bp) {
+		RBreakpointItem *bp;
+		RListIter *iter;
+		r_list_foreach (cur->core->dbg->bp->bps, iter, bp) {
+			if (!bp->internal && !bp->swstep && !rprj_diff_has_addr (seen, bp->addr)) {
+				rprj_print_breakpoint (cur, bp);
+			}
+		}
+	}
+	r_list_free (seen);
+}
+
 static void rprj_strs_log(RPrjCursor *cur, ut64 next_entry) {
 	RBuffer *b = cur->b;
 	ut64 size;
@@ -1271,7 +1454,7 @@ static char *r_core_newprj_load(RCore *core, const char *file, int mode) {
 		r_unref (b);
 		return NULL;
 	}
-	if (hdr.version != RPRJ_VERSION) {
+	if (hdr.version < 5 || hdr.version > RPRJ_VERSION) {
 		R_LOG_ERROR ("Unsupported project version %d (this build understands version %d)", hdr.version, RPRJ_VERSION);
 		r_unref (b);
 		return NULL;
@@ -1304,6 +1487,9 @@ static char *r_core_newprj_load(RCore *core, const char *file, int mode) {
 		goto done;
 	}
 	if (mode & R_CORE_NEWPRJ_MODE_RIO) {
+		if (core->dbg) {
+			r_bp_del_all (core->dbg->bp);
+		}
 		r_core_cmd0 (core, "o--");
 		r_config_set (core->config, "prj.name", "");
 		rprj_restore_io_maps (&cur);
@@ -1368,6 +1554,9 @@ static char *r_core_newprj_load(RCore *core, const char *file, int mode) {
 			break;
 		case RPRJ_HINT:
 			rprj_hint_load (&cur, mode, next_entry);
+			break;
+		case RPRJ_BRKP:
+			rprj_breakpoint_load (&cur, mode, next_entry);
 			break;
 		}
 		if (mode & R_CORE_NEWPRJ_MODE_LOG) {

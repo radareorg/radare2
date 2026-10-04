@@ -315,6 +315,46 @@ static void rprj_hints_write(RPrjCursor *cur) {
 	r_anal_addr_hints_foreach (cur->core->anal, rprj_hints_collect_cb, &ctx);
 }
 
+static ut32 rprj_st_append_opt(R2ProjectStringTable *st, const char *s) {
+	return R_STR_ISNOTEMPTY (s)? rprj_st_append (st, s): UT32_MAX;
+}
+
+static ut32 rprj_breakpoint_flags(const RBreakpointItem *bp) {
+	return (bp->trace? RPRJ_BREAKPOINT_TRACE: 0)
+		| (bp->enabled? RPRJ_BREAKPOINT_ENABLED: 0);
+}
+
+static void rprj_breakpoint_write_one(RPrjCursor *cur, RBreakpointItem *bp) {
+	if (bp->internal || bp->swstep) {
+		return;
+	}
+	R2ProjectBreakpoint pbp = {
+		.addr = rprj_mod_addr (cur, bp->addr),
+		.name = rprj_st_append_opt (cur->st, bp->name),
+		.data = rprj_st_append_opt (cur->st, bp->data),
+		.cond = rprj_st_append_opt (cur->st, bp->cond),
+		.expr = rprj_st_append_opt (cur->st, bp->expr),
+		.size = (ut32)bp->size,
+		.perm = (ut32)bp->perm,
+		.hw = (ut32)bp->hw,
+		.flags = rprj_breakpoint_flags (bp),
+		.togglehits = (ut32)bp->togglehits,
+		.hits = (ut32)bp->hits,
+	};
+	rprj_breakpoint_write_record (cur->b, &pbp);
+}
+
+static void rprj_breakpoint_write(RPrjCursor *cur) {
+	if (!cur->core->dbg || !cur->core->dbg->bp) {
+		return;
+	}
+	RBreakpointItem *bp;
+	RListIter *iter;
+	r_list_foreach (cur->core->dbg->bp->bps, iter, bp) {
+		rprj_breakpoint_write_one (cur, bp);
+	}
+}
+
 static bool evalkey_is_saveable(RConfigNode *node) {
 	if (r_config_node_is_ro (node)) {
 		return false;
@@ -422,6 +462,7 @@ static bool r_core_newprj_save(RCore *core, const char *file) {
 	rprj_write_entry (&cur, RPRJ_HINT, rprj_hints_write);
 	rprj_write_entry (&cur, RPRJ_FUNC, rprj_function_write);
 	rprj_write_entry (&cur, RPRJ_XREF, rprj_xref_write);
+	rprj_write_entry (&cur, RPRJ_BRKP, rprj_breakpoint_write);
 	rprj_write_entry (&cur, RPRJ_STRS, rprj_strs_write_entry);
 	RVecPrjMap_free (cur.maps);
 	ut64 size;

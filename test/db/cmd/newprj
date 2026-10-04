@@ -737,6 +737,37 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=newprj breakpoints and watchpoints round-trip
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+mkdir .tmp
+rm .tmp/newprj-bps.prj
+db 0x10
+s 0x10
+dbn saved.bp
+dbc 0x10 ?e hit
+dbC 0x10 dr PC
+dbte 0x10
+dbd 0x10 3
+dbx saved.expr
+dbH 0x20
+dbw 0x30 w
+prj save .tmp/newprj-bps.prj > /dev/null
+db-*
+prj load .tmp/newprj-bps.prj > /dev/null
+prj load .tmp/newprj-bps.prj > /dev/null
+dbj
+dbx~saved.expr
+prj diff .tmp/newprj-bps.prj~db
+rm .tmp/newprj-bps.prj
+EOF
+EXPECT=<<EOF
+[{"addr":16,"size":1,"perm":"--x","hw":false,"trace":true,"enabled":false,"valid":true,"data":"?e hit","cond":"dr PC","name":"saved.bp"},{"addr":32,"size":1,"perm":"--x","hw":true,"trace":false,"enabled":true,"valid":true,"data":"","cond":"","name":"0x20"},{"addr":48,"size":1,"perm":"-w-","hw":true,"trace":false,"enabled":true,"valid":true,"data":"","cond":"","name":"0x30"}]
+0x00000010 saved.expr
+EOF
+RUN
+
 NAME=newprj open restores file maps
 FILE=malloc://0x10
 CMDS=<<EOF
@@ -924,6 +955,179 @@ wtf .tmp/newprj-version.prj 8 2>/dev/null
 rm .tmp/newprj-version.prj
 END
 EXPECT_ERR=<<END
-ERROR: Unsupported project version 255 (this build understands version 5)
+ERROR: Unsupported project version 255 (this build understands version 6)
 END
+RUN
+
+NAME=newprj rebased breakpoints keep modules
+FILE=malloc://0x20
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+mkdir .tmp
+rm .tmp/newprj-bpmods.prj
+omv 1 0x1000
+db 0x1010
+dbw 0x1018 rw
+prj save .tmp/newprj-bpmods.prj > /dev/null
+db-*
+omv 1 0x8000
+prj load .tmp/newprj-bpmods.prj > /dev/null
+db
+rm .tmp/newprj-bpmods.prj
+EOF
+EXPECT=<<EOF
+0x00008010 - 0x00008011 1 --x sw break enabled valid name="_x1010" module="malloc:__0x20"
+0x00008018 - 0x00008019 1 rw- hw break enabled valid name="_x1018" module="malloc:__0x20"
+EOF
+RUN
+
+NAME=newprj load replaces breakpoint types and open discards extra breakpoints
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+mkdir .tmp
+rm .tmp/newprj-bpmerge.prj
+db 0x10
+prj save .tmp/newprj-bpmerge.prj > /dev/null
+db-*
+dbH 0x10
+dbH 0x20
+prj load .tmp/newprj-bpmerge.prj > /dev/null
+prj load .tmp/newprj-bpmerge.prj > /dev/null
+dbj
+prj open .tmp/newprj-bpmerge.prj > /dev/null
+dbj
+rm .tmp/newprj-bpmerge.prj
+EOF
+EXPECT=<<EOF
+[{"addr":32,"size":1,"perm":"--x","hw":true,"trace":false,"enabled":true,"valid":true,"data":"","cond":"","name":"0x20"},{"addr":16,"size":1,"perm":"--x","hw":false,"trace":false,"enabled":true,"valid":true,"data":"","cond":"","name":"0x10"}]
+[{"addr":16,"size":1,"perm":"--x","hw":false,"trace":false,"enabled":true,"valid":true,"data":"","cond":"","name":"0x10"}]
+EOF
+RUN
+
+NAME=newprj load does not apply breakpoint delta twice
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+mkdir .tmp
+rm .tmp/newprj-bpdelta.prj
+dbb 8
+db 0x10
+prj save .tmp/newprj-bpdelta.prj > /dev/null
+db-*
+prj load .tmp/newprj-bpdelta.prj > /dev/null
+dbj
+dbb
+rm .tmp/newprj-bpdelta.prj
+EOF
+EXPECT=<<EOF
+[{"addr":24,"size":1,"perm":"--x","hw":false,"trace":false,"enabled":true,"valid":true,"data":"","cond":"","name":"0x10"}]
+8
+EOF
+RUN
+
+NAME=newprj breakpoint script replays strings and breakpoint types
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+mkdir .tmp
+rm .tmp/newprj-bpscript.prj
+db 0x10
+'@0x10'dbn literal; @ 'name'
+'dbc 0x10 ?e hit; ?e other
+'dbC 0x10 dr PC; ?v $$
+'@0x10'dbx sym.main+4
+dbd 0x10 3
+dbte 0x10
+dbH 0x20
+dbw 0x30 r
+e dbg.hwbp=true
+dbb 8
+prj save .tmp/newprj-bpscript.prj > /dev/null
+prj r2 .tmp/newprj-bpscript.prj~db > .tmp/newprj-bpscript.r2
+db-*
+. .tmp/newprj-bpscript.r2
+dbj
+dbx~sym.main
+prj diff .tmp/newprj-bpscript.prj~db
+e dbg.hwbp
+dbb
+rm .tmp/newprj-bpscript.r2
+rm .tmp/newprj-bpscript.prj
+EOF
+EXPECT=<<EOF
+[{"addr":16,"size":1,"perm":"--x","hw":false,"trace":true,"enabled":false,"valid":true,"data":"?e hit; ?e other","cond":"dr PC; ?v $$","name":"literal; @ 'name'"},{"addr":32,"size":1,"perm":"--x","hw":true,"trace":false,"enabled":true,"valid":true,"data":"","cond":"","name":"0x20"},{"addr":48,"size":1,"perm":"r--","hw":true,"trace":false,"enabled":true,"valid":true,"data":"","cond":"","name":"0x30"}]
+0x00000010 sym.main+4
+true
+8
+EOF
+RUN
+
+NAME=newprj breakpoint diff replays additions deletions and changed metadata
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+mkdir .tmp
+rm .tmp/newprj-bpdiff.prj
+db 0x10
+dbc 0x10 ?e saved
+dbte 0x10
+dbH 0x20
+prj save .tmp/newprj-bpdiff.prj > /dev/null
+'@0x10'dbn live.bp
+dbc 0x10 ?e live
+dbd 0x10 4
+dbtd 0x10
+db- 0x20
+dbw 0x30 w
+prj diff .tmp/newprj-bpdiff.prj~db > .tmp/newprj-bpdiff.r2
+db-*
+prj load .tmp/newprj-bpdiff.prj > /dev/null
+. .tmp/newprj-bpdiff.r2
+dbj
+rm .tmp/newprj-bpdiff.r2
+rm .tmp/newprj-bpdiff.prj
+EOF
+EXPECT=<<EOF
+[{"addr":16,"size":1,"perm":"--x","hw":false,"trace":false,"enabled":false,"valid":true,"data":"?e live","cond":"","name":"live.bp"},{"addr":48,"size":1,"perm":"-w-","hw":true,"trace":false,"enabled":true,"valid":true,"data":"","cond":"","name":"0x30"}]
+EOF
+RUN
+
+NAME=newprj accepts version 5 projects
+FILE=hex://5250524a050000000f000000070000006c65676163790021000000020000000100000000000000ffffffff80000000000000000100000000
+ARGS=-n
+CMDS=<<EOF
+mkdir .tmp
+wtf .tmp/newprj-v5.prj 56 2>/dev/null
+prj load .tmp/newprj-v5.prj > /dev/null
+f~legacy
+rm .tmp/newprj-v5.prj
+EOF
+EXPECT=<<EOF
+0x00000080 1 legacy
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=newprj rejects invalid breakpoint records without consuming the next entry
+FILE=hex://5250524a060000000e00000007000000616674657200710000000e000000ffffffff1000000000000000ffffffffffffffffffffffffffffffffffffff7f0100000001000000020000000000000000000000ffffffff1000000000000000feffffffffffffffffffffffffffffff0100000001000000010000000200000000000000000000000021000000020000000100000000000000ffffffff80000000000000000100000000
+ARGS=-n
+CMDS=<<EOF
+mkdir .tmp
+wtf .tmp/newprj-bp-invalid.prj 168 2>/dev/null
+prj load .tmp/newprj-bp-invalid.prj > /dev/null
+dbj
+f~after
+rm .tmp/newprj-bp-invalid.prj
+EOF
+EXPECT=<<EOF
+[]
+0x00000080 1 after
+EOF
+EXPECT_ERR=<<EOF
+WARN: Invalid breakpoint record at 0x0000001e
+WARN: Invalid breakpoint strings at 0x00000052
+WARN: Truncated breakpoint record at 0x00000086
+EOF
 RUN
