@@ -210,31 +210,26 @@ static char *r_core_prompt_substitute(RCore *core, char *key) {
 		}
 		return strdup (date_str);
 	} else if (!strcmp (key, "vpm")) {
-		char pm[32] = "[XADVC]";
-		int i;
-		for (i = 0; i < 6; i++) {
-			if (core->visual.printidx == i) {
-				pm[i + 1] = toupper ((unsigned char)pm[i + 1]);
-			} else {
-				pm[i + 1] = tolower ((unsigned char)pm[i + 1]);
-			}
+		char pm[] = "[xadvc]";
+		int idx = core->visual.printidx;
+		if (idx >= 0 && idx < 5) {
+			pm[idx + 1] = toupper ((unsigned char)pm[idx + 1]);
 		}
 		return strdup (pm);
 	} else if (!strcmp (key, "vfmt")) {
 		return r_str_newf ("%d", core->visual.currentFormat);
 	} else if (!strcmp (key, "vpcs")) {
 		ut64 sz = r_io_size (core->io);
+		if (sz == UT64_MAX) {
+			return strdup ("");
+		}
 		ut64 pa = core->addr;
 		RIOMap *map = r_io_map_get_at (core->io, core->addr);
 		if (map) {
 			pa = map->delta;
 		}
-		if (sz == UT64_MAX) {
-			return strdup ("");
-		} else {
-			int pc = (!sz || pa > sz)? 0: (pa * 100) / sz;
-			return r_str_newf ("%d%% ", pc);
-		}
+		int pc = (!sz || pa > sz)? 0: (pa * 100) / sz;
+		return r_str_newf ("%d%% ", pc);
 	} else if (!strcmp (key, "vbs")) {
 		return r_str_newf ("%d", core->blocksize);
 	} else if (!strcmp (key, "vbar")) {
