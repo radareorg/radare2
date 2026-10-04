@@ -124,6 +124,14 @@ bool test_r_anal_cc_static_fixes(void) {
 	mu_assert_streq (r_anal_cc_argloc (anal, "rev", 3, 0, -1), "^", "static stack argn is canonicalized");
 	sdb_set (anal->sdb_cc, "cc.rev.argn", "stack_rev", 0);
 	mu_assert_streq (r_anal_cc_argloc (anal, "rev", 3, 0, -1), "^-", "static stack_rev argn is canonicalized");
+	sdb_set (anal->sdb_cc, "cc.rev.fparg0", "xmm0", 0);
+	const char *fp = r_anal_cc_argloc (anal, "rev", R_ANAL_CC_MAXARG, 0, 3);
+	mu_assert_notnull (fp, "revarg leaves fp slots unchanged");
+	mu_assert_streq (fp, "xmm0", "revarg fp register");
+	mu_assert_streq (r_anal_cc_argloc (anal, "rev", 0, 0, R_ANAL_CC_MAXARG + 1), "^-", "reversed integer slot does not become an fp slot");
+	mu_assert_streq (r_anal_cc_argloc (anal, "rev", 0, 0, R_ANAL_CC_MAXARG * 2 + 1), "^-", "revarg past cached slots");
+	mu_assert_streq (r_anal_cc_argloc (anal, "rev", 0, 0, ST32_MAX), "^-", "revarg with extreme argc");
+	mu_assert_streq (r_anal_cc_argloc (anal, "rev", 0, 0, 0), "r0", "argc-dependent lookups leave the cache unchanged");
 
 	r_anal_cc_set (anal, "rax grow(r0)");
 	mu_assert_eq (r_anal_cc_max_arg (anal, "grow"), 1, "initial max args");
