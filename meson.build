@@ -564,9 +564,10 @@ install_data(script_files, install_dir: r2_scripts)
 
 libsdb_sp = subproject('sdb')
 libsdb_static = libsdb_sp.get_variable('libsdb_static')
+default_library_type = get_option('default_library')
 if host_machine.system() == 'uefi'
   libsdb_dynamic = libsdb_static
-else
+elif default_library_type != 'static'
   libsdb_dynamic = libsdb_sp.get_variable('libsdb').get_shared_lib()
 endif
 libsdb_includes = libsdb_sp.get_variable('sdb_inc')
@@ -606,12 +607,14 @@ elif os_name == 'windows'
     lib_extension = '.dll'
 endif
 
-libsdb_install = custom_target('libr2sdb',
-  input : libsdb_dynamic,
-  output : 'libsdb' + lib_extension,
-  command : copyinout,
-  install : true,
-  install_dir : get_option('libdir'))
+if host_machine.system() == 'uefi' or default_library_type != 'static'
+  libsdb_install = custom_target('libr2sdb',
+    input : libsdb_dynamic,
+    output : 'libsdb' + lib_extension,
+    command : copyinout,
+    install : true,
+    install_dir : get_option('libdir'))
+endif
 
 sdb_gen_cmd_cgen = [ sdb_exe, '-t', '-C', '-o', '@OUTPUT@', '@INPUT@' ]
 sdb_gen_cmd = [ sdb_exe, '@OUTPUT@', '==', '@INPUT@' ]
