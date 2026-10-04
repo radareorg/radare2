@@ -26,6 +26,7 @@ if get_option('enable_tests')
     'cmd_str',
     'cmd_api',
     'cons',
+    'core_prompt',
     'core_task',
     'debruijn',
     'debug',

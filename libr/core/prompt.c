@@ -155,14 +155,14 @@ static char *r_core_prompt_substitute(RCore *core, char *key) {
 	} else if (r_str_startswith (key, "r:")) {
 		const char *regname = key + 2;
 		RRegItem *reg = r_reg_get (core->dbg->reg, regname, -1);
-		if (reg) {
-			ut64 val = r_reg_get_value (core->dbg->reg, reg);
-			const char *fmt_addr = (core->print->wide_offsets && R_SYS_BITS_CHECK (core->dbg->bits, 64))
-				? "0x%016" PFMT64x
-				: "0x%08" PFMT64x;
-			return r_str_newf (fmt_addr, val);
+		if (!reg) {
+			return strdup ("");
 		}
-		return strdup ("");
+		ut64 val = r_reg_get_value (core->dbg->reg, reg);
+		r_unref (reg);
+		const char *fmt_addr = (core->print->wide_offsets && R_SYS_BITS_CHECK (core->dbg->bits, 64))
+			? "0x%016" PFMT64x: "0x%08" PFMT64x;
+		return r_str_newf (fmt_addr, val);
 	} else if (!strcmp (key, "relto")) {
 		int mask = prompt_reloff_mask (core);
 		if (mask) {
