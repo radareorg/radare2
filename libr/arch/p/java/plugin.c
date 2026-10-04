@@ -2,9 +2,9 @@
 
 #include <r_arch.h>
 
-#include "../../../shlr/java/ops.h"
-#include "../../../shlr/java/code.h"
-#include "../../../shlr/java/class.h"
+#include <java/ops.h>
+#include <java/code.h>
+#include <java/class.h>
 
 static inline ut64 java_get_method_start(void) {
 	return 0;
