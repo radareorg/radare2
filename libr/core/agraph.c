@@ -1,6 +1,7 @@
 /* Copyright radare2 - 2014-2026 - pancake, ret2libc */
 
 #include <r_core.h>
+#include "visual_modes.h"
 
 R_IPI void visual_refresh(RCore *core);
 
@@ -4433,23 +4434,6 @@ static void graph_breakpoint(RCore *core) {
 
 static void graph_continue(RCore *core) {
 	r_core_cmd (core, "dc", 0);
-}
-
-R_IPI void applyDisMode(RCore *core) {
-	switch (core->visual.disMode) {
-	case 0:
-		r_config_set_b (core->config, "asm.pseudo", false);
-		r_config_set_b (core->config, "asm.esil", false);
-		break;
-	case 1:
-		r_config_set_b (core->config, "asm.pseudo", true);
-		r_config_set_b (core->config, "asm.esil", false);
-		break;
-	case 2:
-		r_config_set_b (core->config, "asm.pseudo", false);
-		r_config_set_b (core->config, "asm.esil", true);
-		break;
-	}
 }
 
 static void rotateColor(RCore *core) {

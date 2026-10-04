@@ -621,8 +621,6 @@ R_API void r_core_print_scrollbar(RCore *core);
 R_API void r_core_print_scrollbar_bottom(RCore *core);
 R_API void r_core_visual_prompt_input(RCore *core);
 R_API void r_core_visual_toggle_decompiler_disasm(RCore *core, bool for_graph, bool reset);
-R_IPI void applyDisMode(RCore *core);
-R_IPI void applyHexMode(RCore *core);
 R_API int r_core_visual_refs(RCore *core, bool xref, bool fcnInsteadOfAddr);
 R_API void r_core_visual_append_help(RCore *core, RStrBuf *p, const char *title, const char * const *help);
 R_API bool r_core_prevop_addr(RCore* core, ut64 start_addr, int numinstrs, ut64* prev_addr);
@@ -1092,6 +1090,7 @@ extern RCorePlugin r_core_plugin_prj;
 extern RCorePlugin r_core_plugin_writedwarf;
 extern RCorePlugin r_core_plugin_agD;
 extern RCorePlugin r_core_plugin_pseudo;
+extern RCorePlugin r_core_plugin_panels;
 
 R_IPI void r_core_plugins_init(RCmd *cmd);
 R_IPI void r_core_plugins_load(RCmd *cmd);

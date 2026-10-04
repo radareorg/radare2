@@ -650,6 +650,17 @@ single static library archive (`.a`) which you can link your own programs
 against to use radare2's libraries without depending on an existing system
 installation. See [doc/static.md](doc/static.md) for more info.
 
+The visual panels interface (`v`) is the `core.panels` plugin, enabled by default.
+To omit it in a Make build, remove `core.panels` from `plugins.cfg`, run
+`./configure-plugins`, and rebuild. With Meson, use `-Dwant_panels=false`.
+The existing `r_core_panels_*` API remains available through a small bridge;
+entering panels reports that the plugin is unavailable when it is not loaded.
+
+Panels implementation files live in `libr/core/p/panels/`, grouped by layout,
+rendering, menus, input, tabs, views, and persistence. They are included by
+`plugin.c` so implementation helpers remain private to the plugin. The shared
+cleanup helpers also support the existing `r_panels_root_free` API.
+
 [This presentation](http://radare.org/get/lacon-radare-2009/) gives a good
 overview of the libraries. //Link not working temporarily.
 

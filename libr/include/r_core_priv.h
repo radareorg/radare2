@@ -9,6 +9,12 @@
 extern "C" {
 #endif
 
+typedef struct {
+	bool (*root)(RCore *core, RPanelsRoot *root);
+	void (*save)(RCore *core, const char *name);
+	bool (*load)(RCore *core, const char *name);
+} RCorePanels;
+
 typedef struct r_core_priv_t {
 	// arch cache
 	int old_bits;
@@ -30,6 +36,7 @@ typedef struct r_core_priv_t {
 	// disasm cache
 	ut64 goaddr;
 	char *section;
+	const RCorePanels *panels;
 } RCorePriv;
 
 R_IPI bool isVisualDisasm(RCore *core);
