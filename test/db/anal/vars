@@ -982,3 +982,101 @@ arg int32_t arg_18h @ rsp+0x18
 arg int32_t arg_20h @ rsp+0x20
 EOF
 RUN
+
+NAME=sp restored from the frame pointer keeps the stack depth
+FILE=-
+ARGS=-a arm -b 64 -e anal.vars.stackname=true
+CMDS=<<EOF
+wx fd7bbea9fd030091ff0304d11f010091bf030091e00f40f9fd7bc2a8c0035fd6
+wx fd7bbda9fd430091ff0304d11f010091bf4300d1e01740f9fd7bc3a8c0035fd6 @ 0x40
+wx fd7bbea9fd030091ff0304d11f010091bf030091400000b4e00f40f9fd7bc2a8c0035fd6 @ 0x80
+wx fd7bbda9fd430091ff0304d11f010091bf430091e00740f9fd7bc3a8c0035fd6 @ 0xc0
+af
+afva
+afv~var_8h
+af @ 0x40
+afva @ 0x40
+afv @ 0x40~var_8h
+af @ 0x80
+afva @ 0x80
+afv @ 0x80~var_8h
+af @ 0xc0
+afva @ 0xc0
+afv @ 0xc0~var_8h
+EOF
+EXPECT=<<EOF
+var int64_t var_8h @ sp+0x118
+var int64_t var_8h @ sp+0x128
+var int64_t var_8h @ sp+0x118
+var int64_t var_8h @ sp+0x128
+EOF
+RUN
+
+NAME=storing the frame pointer does not restore sp
+FILE=bins/elf/go-cdetect
+CMDS=<<EOF
+af @ 0x434e80
+afva @ 0x434e80
+afv @ 0x434e80
+EOF
+EXPECT=<<EOF
+var int64_t var_10h @ rsp+0x10
+EOF
+RUN
+
+NAME=loading sp through the frame pointer does not restore it
+FILE=-
+ARGS=-a x86 -b 64 -e anal.vars.stackname=true
+CMDS=<<EOF
+wx 554889e54881ec00010000488b65f8488b442418c9c3
+af
+afva
+afv
+EOF
+EXPECT=<<EOF
+var int64_t var_f0h @ rsp+0x18
+var int64_t var_10h @ rbp-0x8
+EOF
+RUN
+
+NAME=adding a register to the frame pointer does not restore sp
+FILE=-
+ARGS=-a x86 -b 64 -e anal.vars.stackname=true
+CMDS=<<EOF
+wx 554889e54881ec000100004801ec488b442418c9c3
+af
+afva
+afv
+EOF
+EXPECT=<<EOF
+var int64_t var_f0h @ rsp+0x18
+EOF
+RUN
+
+NAME=a repurposed frame pointer does not restore sp
+FILE=-
+ARGS=-a x86 -b 64 -e anal.vars.stackname=true
+CMDS=<<EOF
+wx 554889e54881ec000100004889fd4889ec488b442418c9c3
+af
+afva
+afv~rsp
+EOF
+EXPECT=<<EOF
+var int64_t var_f0h @ rsp+0x18
+EOF
+RUN
+
+NAME=a conditional restore from the frame pointer is ignored
+FILE=-
+ARGS=-a arm -b 32 -e anal.vars.stackname=true
+CMDS=<<EOF
+wx 00482de904b08de201dc4de2000050e304d04b1208109de50088bde8
+af
+afva
+afv~sp+
+EOF
+EXPECT=<<EOF
+var int32_t var_100h @ sp+0x8
+EOF
+RUN
