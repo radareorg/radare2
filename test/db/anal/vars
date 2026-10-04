@@ -933,3 +933,52 @@ EXPECT=<<EOF
 |           0x00000021      4889542420     mov qword [s[8]], rdx
 EOF
 RUN
+
+NAME=split blocks keep the stack depth
+FILE=-
+ARGS=-a arm -b 64 -e anal.vars.stackname=true
+CMDS=<<EOF
+wx ff8300d1400000b4020000141f2003d5e10b40f9ff830091c0035fd6
+wx ff8300d11f2003d51f2003d5e10b40f9c0ffffb4ff830091c0035fd6 @ 0x100
+af
+afva
+afv
+af @ 0x100
+afva @ 0x100
+afv @ 0x100
+EOF
+EXPECT=<<EOF
+var int64_t var_10h @ sp+0x10
+var int64_t var_10h @ sp+0x10
+EOF
+RUN
+
+NAME=jump table cases keep the stack depth
+FILE=bins/mach0/rust/rust_nonnull_arm64
+CMDS=<<EOF
+af @ 0x100032ba0
+afva @ 0x100032ba0
+afv @ 0x100032ba0~arg
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ x0
+arg int64_t arg2 @ x1
+arg int64_t arg3 @ x2
+arg int64_t arg4 @ x3
+EOF
+RUN
+
+NAME=jump table resumes at the dispatch depth
+FILE=bins/elf/libc-2.23.so
+CMDS=<<EOF
+af @ 0x9e930
+afva @ 0x9e930
+afv @ 0x9e930~sp+
+EOF
+EXPECT=<<EOF
+arg int32_t arg_8h @ rsp+0x8
+arg int32_t arg_10h @ rsp+0x10
+arg int32_t arg_18h @ rsp+0x18
+arg int32_t arg_20h @ rsp+0x20
+EOF
+RUN

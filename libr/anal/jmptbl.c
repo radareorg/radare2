@@ -554,12 +554,12 @@ R_API bool r_anal_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut6
 
 // The block a case targets, adopted into the function. UT64_MAX when it exists
 // already; otherwise the case address, which still has to be scanned.
-static ut64 case_target_to_scan(RAnal *anal, RAnalFunction *fcn, JmptblTargetCtx *ctx, ut64 jmpptr) {
+static ut64 case_target_to_scan(RAnal *anal, RAnalFunction *fcn, JmptblTargetCtx *ctx, ut64 jmpptr, int stack) {
 	if (!jmpptr || jmpptr == UT64_MAX || ht_up_find_kv (ctx->analyzed_targets, jmpptr, NULL)) {
 		return UT64_MAX;
 	}
 	ht_up_insert (ctx->analyzed_targets, jmpptr, (void *)1);
-	return r_anal_function_materialize_switch_case (anal, fcn, jmpptr)? UT64_MAX: jmpptr;
+	return r_anal_function_materialize_switch_case (anal, fcn, jmpptr, stack)? UT64_MAX: jmpptr;
 }
 
 // The dispatch block, found again if a case's scan split the switch instruction
@@ -847,7 +847,7 @@ static bool switch_apply_flagged(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bl
 			continue;
 		}
 		apply_case (anal, fcn, block, spec->startea, esize, jmpptr, (ut64)casenum, entry_addr, insn_entry);
-		const ut64 scan = case_target_to_scan (anal, fcn, &target_ctx, jmpptr);
+		const ut64 scan = case_target_to_scan (anal, fcn, &target_ctx, jmpptr, INT_MAX);
 		if (scan != UT64_MAX) {
 			// a command applies the switch outside any walk, so the case is scanned here
 			r_anal_function_scan_switch_case (anal, fcn, scan);
@@ -1071,6 +1071,7 @@ struct r_anal_switch_cursor_t {
 	int ret0; // what the caller had before the table
 	bool applied; // some case was applied
 	bool scanned; // a case went out for scanning since the last step; the block may have been split
+	int stack; // depth the cases are entered at, INT_MAX outside a walk
 	union {
 		SwitchLegacyState legacy;
 		SwitchArmState arm;
@@ -1537,12 +1538,12 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 }
 
 // Apply one resolved case. UT64_MAX when nothing is left to scan for it.
-static ut64 jmptbl_apply_caseop(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, RBitset *s, ut64 saddr, int loadsz, const RAnalCaseOp *kase) {
+static ut64 jmptbl_apply_caseop(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, RBitset *s, ut64 saddr, int loadsz, const RAnalCaseOp *kase, int stack) {
 	apply_case (anal, fcn, bb, saddr, loadsz, kase->jump, kase->value, kase->jump, true);
 	if (!r_bitset_set (s, kase->jump)) {
 		return UT64_MAX;
 	}
-	return r_anal_function_materialize_switch_case (anal, fcn, kase->jump)? UT64_MAX: kase->jump;
+	return r_anal_function_materialize_switch_case (anal, fcn, kase->jump, stack)? UT64_MAX: kase->jump;
 }
 
 R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, ut64 saddr, ut64 jaddr, RList *cases, int loadsz) {
@@ -1550,7 +1551,7 @@ R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 	RAnalCaseOp *kase;
 	RListIter *iter;
 	r_list_foreach (cases, iter, kase) {
-		const ut64 scan = jmptbl_apply_caseop (anal, fcn, bb, s, saddr, loadsz, kase);
+		const ut64 scan = jmptbl_apply_caseop (anal, fcn, bb, s, saddr, loadsz, kase, INT_MAX);
 		if (scan != UT64_MAX) {
 			// listing is not a walk, so the case is scanned here as it always was
 			r_anal_function_scan_switch_case (anal, fcn, scan);
@@ -1690,7 +1691,7 @@ static bool switch_cursor_legacy_next(RAnalSwitchCursor *c, ut64 *target) {
 		}
 		apply_case (anal, c->fcn, c->block, c->ip, case_sz, jmpptr, i + t->shift, case_loc, false);
 		c->applied = true;
-		*target = case_target_to_scan (anal, c->fcn, &c->ctx, jmpptr);
+		*target = case_target_to_scan (anal, c->fcn, &c->ctx, jmpptr, c->stack);
 		c->block = switch_block_refetch (anal, c->block, c->ip);
 		if (*target != UT64_MAX) {
 			c->idx++;
@@ -1705,7 +1706,7 @@ static bool switch_cursor_legacy_next(RAnalSwitchCursor *c, ut64 *target) {
 			t->default_case = c->ip + 8;
 		}
 		apply_case (anal, c->fcn, c->block, c->ip, t->sz, t->default_case, -1, t->loc + c->idx * t->sz, false);
-		*target = case_target_to_scan (anal, c->fcn, &c->ctx, t->default_case);
+		*target = case_target_to_scan (anal, c->fcn, &c->ctx, t->default_case, c->stack);
 		c->block = switch_block_refetch (anal, c->block, c->ip);
 		return *target != UT64_MAX;
 	}
@@ -1720,7 +1721,7 @@ static bool switch_cursor_arm_next(RAnalSwitchCursor *c, ut64 *target) {
 		}
 		apply_case (c->anal, c->fcn, c->block, c->ip, c->arm.sz, jmpptr, c->idx, jmpptr, true);
 		c->applied = true;
-		*target = case_target_to_scan (c->anal, c->fcn, &c->ctx, jmpptr);
+		*target = case_target_to_scan (c->anal, c->fcn, &c->ctx, jmpptr, c->stack);
 		c->block = switch_block_refetch (c->anal, c->block, c->ip);
 		if (*target != UT64_MAX) {
 			c->idx++;
@@ -1763,7 +1764,7 @@ static bool switch_cursor_arm64_next(RAnalSwitchCursor *c, ut64 *target) {
 		kase.addr = caseaddr;
 		kase.jump = caseaddr;
 		kase.value = i;
-		*target = jmptbl_apply_caseop (anal, c->fcn, c->block, t->seen, c->ip, t->loadsize, &kase);
+		*target = jmptbl_apply_caseop (anal, c->fcn, c->block, t->seen, c->ip, t->loadsize, &kase, c->stack);
 		c->block = switch_block_refetch (anal, c->block, c->ip);
 		t->valid_cases++;
 		c->applied = true;
@@ -1855,6 +1856,7 @@ R_IPI void r_anal_switch_cursor_finish(RAnalSwitchCursor *c) {
 // Without one the cases are scanned here, as the switch commands always have.
 static int switch_cursor_run(RAnalSwitchCursor *c, const RAnalScanSink *sink) {
 	ut64 target;
+	c->stack = sink? c->fcn->stack: INT_MAX;
 	while (r_anal_switch_cursor_step (c, &target)) {
 		if (sink) {
 			const int ret = switch_cursor_result (c);
