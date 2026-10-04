@@ -1,3 +1,20 @@
+NAME=aod descriptions after changing architecture
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+aod add
+e asm.arch=mips
+aod add
+e asm.arch=x86
+aod nop
+EOF
+EXPECT=<<EOF
+adds src and dst, stores result on dst
+adds two registers, trap on overflow
+no operation
+EOF
+RUN
+
 NAME=asm.describe alignment with memory access
 FILE=-
 CMDS=<<EOF
