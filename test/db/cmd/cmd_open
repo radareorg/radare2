@@ -580,8 +580,24 @@ CMDS=<<EOF
 o -
 o-*
 o~?
+om~?
+o-*
+on malloc://4
+wx 11223344
+p8 4
+o-*
+on malloc://4
+p8 4
+o--
+o~?
+om~?
 EOF
 EXPECT=<<EOF
+0
+0
+11223344
+00000000
+0
 0
 EOF
 RUN

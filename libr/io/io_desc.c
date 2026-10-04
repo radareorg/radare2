@@ -393,17 +393,6 @@ R_API bool r_io_desc_extend(RIODesc *desc, ut64 size) {
 	return 0;
 }
 
-/* lifecycle */
-
-// TODO: move into io.c : r_io_init
-R_IPI bool r_io_desc_init(RIO *io) {
-	R_RETURN_VAL_IF_FAIL (io, false);
-	r_io_desc_fini (io);
-	// TODO: it leaks if called twice
-	// fd is signed
-	return r_id_storage_init (&io->files, 3, 0x80000000);
-}
-
 static bool desc_fini_cb(void *user, void *data, ut32 id) {
 	RIODesc* desc = (RIODesc*) data;
 	if (desc && desc->plugin && desc->plugin->close) {
