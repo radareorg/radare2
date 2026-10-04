@@ -35,6 +35,11 @@ static bool myvalid(RCore *core, ut64 addr) {
 }
 
 typedef struct {
+	const char *cc;
+	RVecEsilRegTaint spans;
+} EsilCallClobbers;
+
+typedef struct {
 	bool enabled;
 	RVecEsilRegTaint reg_taints;
 	EsilRegTaint pc_span;
@@ -47,9 +52,6 @@ typedef struct {
 	char *delayed_call_cc;
 	int delayed_call_slots;
 	int delayed_taint_clear_slots;
-	// gpr items clobbered by the last convention seen, resolved once per cc
-	char *havoc_cc;
-	RList *havoc_items;
 } EsilClobCtx;
 
 typedef struct {
@@ -63,6 +65,7 @@ typedef struct {
 	ut64 ntarget;
 	bool strings_only;
 	EsilClobCtx clob;
+	EsilCallClobbers *call_clobbers; // Shared by CFG snapshots.
 } EsilBreakCtx;
 
 typedef int RPerm;
@@ -103,17 +106,12 @@ static bool cc_retreg(RAnal *anal, const char *cc, const RRegItem *item) {
 	return false;
 }
 
-static void esil_reg_taint_add_item(EsilBreakCtx *ctx, const RRegItem *item) {
-	if (item->size < 1) {
+static void esil_reg_taint_add(RVecEsilRegTaint *taints, EsilRegTaint span) {
+	if (span.size < 1) {
 		return;
 	}
-	EsilRegTaint span = {
-		.arena = item->arena,
-		.offset = item->offset,
-		.size = item->size,
-	};
 	EsilRegTaint *taint;
-	R_VEC_FOREACH (&ctx->clob.reg_taints, taint) {
+	R_VEC_FOREACH (taints, taint) {
 		if (taint->arena != span.arena) {
 			continue;
 		}
@@ -127,7 +125,7 @@ static void esil_reg_taint_add_item(EsilBreakCtx *ctx, const RRegItem *item) {
 			return;
 		}
 	}
-	RVecEsilRegTaint_push_back (&ctx->clob.reg_taints, &span);
+	RVecEsilRegTaint_push_back (taints, &span);
 }
 
 static void esil_reg_taint_clear_item(EsilBreakCtx *ctx, const RRegItem *item) {
@@ -194,8 +192,7 @@ static void esilbreak_ctx_fini(REsil *esil, EsilBreakCtx *ctx) {
 	esil->user = NULL;
 	RVecEsilRegTaint_fini (&ctx->clob.reg_taints);
 	free (ctx->clob.delayed_call_cc);
-	free (ctx->clob.havoc_cc);
-	r_list_free (ctx->clob.havoc_items);
+	RVecEsilRegTaint_fini (&ctx->call_clobbers->spans);
 	free (ctx->spname);
 }
 
@@ -204,27 +201,27 @@ static bool esilbreak_skip_ref_op(int type) {
 	return type == R_ANAL_OP_TYPE_LEA || type == R_ANAL_OP_TYPE_ADD || type == R_ANAL_OP_TYPE_LOAD;
 }
 
-static void esil_havoc_clobbers_by_cc(RAnal *anal, EsilBreakCtx *ctx, const char *cc) {
-	if (!anal || !anal->reg || !cc) {
-		return;
-	}
-	EsilClobCtx *clob = &ctx->clob;
-	RRegItem *item;
-	RListIter *iter;
-	if (!clob->havoc_cc || strcmp (clob->havoc_cc, cc)) {
-		free (clob->havoc_cc);
-		clob->havoc_cc = strdup (cc);
-		r_list_free (clob->havoc_items);
-		clob->havoc_items = r_list_new ();
-		RRegSet *rs = &anal->reg->regset[R_REG_TYPE_GPR];
-		r_list_foreach (rs->regs, iter, item) {
+static void esil_apply_call_clobbers(EsilBreakCtx *ctx, const char *cc) {
+	RAnal *anal = ctx->anal;
+	EsilCallClobbers *cache = ctx->call_clobbers;
+	if (!cache->cc || strcmp (cache->cc, cc)) {
+		RList *regs = anal->reg->regset[R_REG_TYPE_GPR].regs;
+		if (!RVecEsilRegTaint_reserve (&cache->spans, r_list_length (regs))) {
+			return;
+		}
+		cache->cc = r_str_constpool_get (&anal->constpool, cc);
+		RVecEsilRegTaint_clear (&cache->spans);
+		RRegItem *item;
+		RListIter *iter;
+		r_list_foreach (regs, iter, item) {
 			if (r_anal_cc_isclobber (anal, cc, item->name)) {
-				r_list_append (clob->havoc_items, item);
+				esil_reg_taint_add (&cache->spans, (EsilRegTaint) { item->arena, item->offset, item->size });
 			}
 		}
 	}
-	r_list_foreach (clob->havoc_items, iter, item) {
-		esil_reg_taint_add_item (ctx, item);
+	EsilRegTaint *span;
+	R_VEC_FOREACH (&cache->spans, span) {
+		esil_reg_taint_add (&ctx->clob.reg_taints, *span);
 	}
 }
 
@@ -241,7 +238,7 @@ static bool esil_delay_call_clobbers(RAnal *anal, EsilBreakCtx *ctx, RAnalOp *op
 		return false;
 	}
 	if (op->delay < 1) {
-		esil_havoc_clobbers_by_cc (anal, ctx, cc);
+		esil_apply_call_clobbers (ctx, cc);
 		return false;
 	}
 	free (ctx->clob.delayed_call_cc);
@@ -250,7 +247,7 @@ static bool esil_delay_call_clobbers(RAnal *anal, EsilBreakCtx *ctx, RAnalOp *op
 	return ctx->clob.delayed_call_slots > 0;
 }
 
-static void esil_step_delayed_call_clobbers(RAnal *anal, EsilBreakCtx *ctx) {
+static void esil_step_delayed_call_clobbers(EsilBreakCtx *ctx) {
 	if (!ctx->clob.delayed_call_cc || ctx->clob.delayed_call_slots < 1) {
 		return;
 	}
@@ -258,7 +255,7 @@ static void esil_step_delayed_call_clobbers(RAnal *anal, EsilBreakCtx *ctx) {
 	if (ctx->clob.delayed_call_slots > 0) {
 		return;
 	}
-	esil_havoc_clobbers_by_cc (anal, ctx, ctx->clob.delayed_call_cc);
+	esil_apply_call_clobbers (ctx, ctx->clob.delayed_call_cc);
 	R_FREE (ctx->clob.delayed_call_cc);
 }
 
@@ -288,7 +285,7 @@ static void clob_op_begin(EsilBreakCtx *ctx, RAnalOp *op, ut64 cur) {
 	if (!ctx->clob.enabled) {
 		return;
 	}
-	esil_step_delayed_call_clobbers (ctx->anal, ctx);
+	esil_step_delayed_call_clobbers (ctx);
 	esil_step_delayed_flow_taint_clear (ctx);
 	if (RVecEsilRegTaint_length (&ctx->clob.reg_taints) > 0 && r_anal_get_function_at (ctx->anal, cur)) {
 		esil_clear_flow_taint (ctx);
@@ -631,7 +628,7 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 				} else if (ctx->clob.pc_span.size < 1
 						|| !esil_reg_taint_overlap_item (&ctx->clob.pc_span, item)) {
 					esil_reg_taint_clear_item (ctx, clear_item);
-					esil_reg_taint_add_item (ctx, item);
+					esil_reg_taint_add (&ctx->clob.reg_taints, (EsilRegTaint) { item->arena, item->offset, item->size });
 				}
 				r_unref (xitem);
 				r_unref (item);
@@ -983,6 +980,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		return;
 	}
 	char *spname = strdup (kspname);
+	EsilCallClobbers call_clobbers = {0};
 	EsilBreakCtx ctx = {
 		.op = &op,
 		.anal = core->anal,
@@ -994,6 +992,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		.ntarget = ntarget,
 		.strings_only = strings_only,
 		.clob.enabled = r_config_get_b (core->config, "anal.vars.clobber"),
+		.call_clobbers = &call_clobbers,
 	};
 	RVecEsilRegTaint_init (&ctx.clob.reg_taints);
 	esil_reg_pc_span (core->anal, &ctx.clob.pc_span);
