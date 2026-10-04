@@ -30,3 +30,21 @@ d0,d1,a0,a1,fp0,fp1
 d2,d3,d4,d5,d6,d7,a2,a3,a4,a5,a6,a7,fp2,fp3,fp4,fp5,fp6,fp7
 EOF
 RUN
+
+NAME=m68k link frame sizes
+FILE=-
+ARGS=-a m68k -e asm.cpu=68020 -e asm.bytes=false -e asm.stackptr=true
+CMDS=<<EOF
+wx 480efffedcbb4e56fff04e75
+pd 3
+wx 4e56fff04e5e4e75 @ 0x10
+af @ 0x10
+afi @ 0x10~stackframe
+EOF
+EXPECT=<<EOF
+            0x00000000     0      link.l a6, 0xfffedcbb
+            0x00000006 74569+     link.w a6, 0xfff0
+            0x0000000a 74589+     rts
+stackframe: 20
+EOF
+RUN
