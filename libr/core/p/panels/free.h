@@ -7,6 +7,31 @@
 
 #define PANEL_NUM_LIMIT 16
 
+static inline void r_panels_free_panel(RPanel *panel) {
+	if (!panel) {
+		return;
+	}
+	RPanelModel *model = panel->model;
+	if (model) {
+		free (model->cmd);
+		free (model->title);
+		free (model->bgcolor);
+		free (model->cmdStrCache);
+		free (model->readOnly);
+		free (model->funcName);
+		if (model->filter) {
+			int i;
+			for (i = 0; i < model->n_filter; i++) {
+				free (model->filter[i]);
+			}
+			free (model->filter);
+		}
+		free (model);
+	}
+	free (panel->view);
+	free (panel);
+}
+
 static inline void r_panels_free_menu_item(RPanelsMenuItem *item) {
 	if (!item) {
 		return;
@@ -19,25 +44,7 @@ static inline void r_panels_free_menu_item(RPanelsMenuItem *item) {
 		r_panels_free_menu_item (item->sub[i]);
 	}
 	free (item->sub);
-	if (item->p) {
-		if (item->p->model) {
-			free (item->p->model->cmd);
-			free (item->p->model->title);
-			free (item->p->model->bgcolor);
-			free (item->p->model->cmdStrCache);
-			free (item->p->model->readOnly);
-			free (item->p->model->funcName);
-			if (item->p->model->filter) {
-				for (i = 0; i < item->p->model->n_filter; i++) {
-					free (item->p->model->filter[i]);
-				}
-				free (item->p->model->filter);
-			}
-			free (item->p->model);
-		}
-		free (item->p->view);
-		free (item->p);
-	}
+	r_panels_free_panel (item->p);
 	free (item);
 }
 
@@ -46,37 +53,11 @@ static inline void r_panels_free_root_menu(RPanelsMenu *menu) {
 		return;
 	}
 	// items are freed here; mht must already be freed or cleared before this
-	if (menu->root) {
-		r_panels_free_menu_item (menu->root);
-	}
+	r_panels_free_menu_item (menu->root);
 	r_panels_free_menu_item (menu->frame);
 	free (menu->history);
 	free (menu->refreshPanels);
 	free (menu);
-}
-
-static inline void r_panels_free_panel(RPanel *panel) {
-	if (!panel) {
-		return;
-	}
-	if (panel->model) {
-		free (panel->model->cmd);
-		free (panel->model->title);
-		free (panel->model->bgcolor);
-		free (panel->model->cmdStrCache);
-		free (panel->model->readOnly);
-		free (panel->model->funcName);
-		if (panel->model->filter) {
-			int i;
-			for (i = 0; i < panel->model->n_filter; i++) {
-				free (panel->model->filter[i]);
-			}
-			free (panel->model->filter);
-		}
-		free (panel->model);
-	}
-	free (panel->view);
-	free (panel);
 }
 
 static inline void r_panels_free_partial(RPanels *panels) {

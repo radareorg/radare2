@@ -10,50 +10,9 @@ static const char *panels_static[] = {
 	"Disassembly", "Functions", "Symbols"
 };
 
-static const char *menus[] = {
-	"File", "Edit", "View", "Analyze", "Search", "Debug", "Tools", "Help"
-};
-
-static const char *menus_desc[] = {
-	"File and project operations",
-	"Clipboard and write operations",
-	"Open analysis and data views",
-	"Core analysis actions and plugin commands",
-	"String, code and pattern searches",
-	"Execution, breakpoints and emulation",
-	"Tools, shells and file manager",
-	"Help, versions and manpages"
-};
-
-static const char *menus_File[] = {
-	"New", "Open File", "Reopen...", "Close File", "--", "Open Project", "Save Project", "Close Project", "--", "Quit"
-};
-
-static const char *menus_Settings[] = {
-	"Edit radare2rc", "--", "Color Themes...", "Decompiler...", "Disassembly...", "Screen...", "--",
-	"Save Layout", "Load Layout", "Clear Saved Layouts"
-};
-
-static const char *menus_ReOpen[] = {
-	"In Read+Write", "In Debugger"
-};
-
-static const char *menus_loadLayout[] = {
-	"Saved..", "Default"
-};
-
-static const char *menus_Edit[] = {
-	"Settings", "--",
-	"Copy", "Paste", "Clipboard", "Write String", "Write Hex", "Write Value", "Assemble", "Fill", "io.cache"
-};
-
-static const char *menus_iocache[] = {
-	"On", "Off"
-};
-
 static const char *menus_View_Code[] = {
 	"Disassembly", "Function Disassembly", "Disassembly Summary", "Decompiler", "Decompiler With Offsets",
-	"Graph", "Tiny Graph", "Show All Decompiler Output"
+	"Graph", "Tiny Graph"
 };
 
 static const char *menus_View_Data[] = {
@@ -85,30 +44,6 @@ static const char *menus_View_Other[] = {
 	"Console", "Open Files", "IO Maps", "Database"
 };
 
-static const char *menus_Tools[] = {
-	"Calculator", "Assembler",
-	"--",
-	"R2 Shell", "System Shell", "FSMount Shell", "R2JS Shell",
-	"--",
-	"File Manager"
-};
-
-static const char *menus_Search[] = {
-	"String (Whole Bin)", "String (Data Sections)", "Assembly Strings", "Syscalls", "Magic", "ROP", "Code", "Hexpairs"
-};
-
-static const char *menus_Emulate[] = {
-	"Step From", "Step To", "Step Range"
-};
-
-static const char *menus_Debug[] = {
-	"Continue", "Step", "Step Over", "Toggle Breakpoint", "Add Watchpoint", "Reload"
-};
-
-static const char *menus_Analyze[] = {
-	"Function", "Symbols", "Program", "BasicBlocks", "Calls", "Preludes", "References", "Plugins..."
-};
-
 static const char *menus_settings_disassembly[] = {
 	"asm", "hex.section", "io.cache", "hex.pairs", "emu.str"
 };
@@ -120,15 +55,6 @@ static const char *menus_settings_disassembly_asm[] = {
 
 static const char *menus_settings_screen[] = {
 	"scr.bgfill", "scr.color", "scr.utf8", "scr.utf8.curvy", "scr.wheel"
-};
-
-static const char *menus_Help[] = {
-	"Toggle Help",
-	"Manpages...",
-	"--",
-	"License", "Version", "Full Version",
-	"--",
-	"Fortune", "2048"
 };
 
 static const char *entropy_rotate[] = {
@@ -361,8 +287,20 @@ static const char *manpage_tools[] = {
 
 static const char *asm_value_items[] = { "asm.var.summary", "asm.arch", "asm.bits", "asm.cpu", NULL };
 
+static const MenuItem menus[] = {
+	{ "File", "File and project operations", open_menu_cb },
+	{ "Edit", "Clipboard and write operations", open_menu_cb },
+	{ "View", "Open analysis and data views", open_menu_cb },
+	{ "Analyze", "Core analysis actions and plugin commands", open_menu_cb },
+	{ "Search", "String, code and pattern searches", open_menu_cb },
+	{ "Debug", "Execution, breakpoints and emulation", open_menu_cb },
+	{ "Tools", "Tools, shells and file manager", open_menu_cb },
+	{ "Help", "Help, versions and manpages", open_menu_cb },
+	{ NULL, NULL, NULL }
+};
+
 static const MenuItem file_items[] = {
-	{ "New", "Open a new file", NULL },
+	{ "New", "Open a new file", add_cmd_panel },
 	{ "Open File", "Prompt for a file and open it", open_file_cb },
 	{ "Reopen...", "Reopen the current file with a different mode", open_menu_cb },
 	{ "Close File", "Close the current file descriptor", close_file_cb },
@@ -377,6 +315,12 @@ static const MenuItem file_items[] = {
 
 static const MenuItem settings_items[] = {
 	{ "Edit radare2rc", "Open the user radare2rc file", r2rc_cb },
+	{ "--", NULL, NULL },
+	{ "Color Themes...", NULL, open_menu_cb },
+	{ "Decompiler...", NULL, open_menu_cb },
+	{ "Disassembly...", NULL, open_menu_cb },
+	{ "Screen...", NULL, open_menu_cb },
+	{ "--", NULL, NULL },
 	{ "Save Layout", "Save the current panels layout", save_layout_cb },
 	{ "Load Layout", "Load a saved or default layout", open_menu_cb },
 	{ "Clear Saved Layouts", "Delete every saved panels layout", clear_layout_cb },
@@ -384,30 +328,29 @@ static const MenuItem settings_items[] = {
 };
 
 static const MenuItem edit_items[] = {
+	{ "Settings", "Configuration, themes and layouts", open_menu_cb },
+	{ "--", NULL, NULL },
 	{ "Copy", "Copy the current selection or line", copy_cb },
 	{ "Paste", "Paste the clipboard at the current offset", paste_cb },
+	{ "Clipboard", NULL, add_cmd_panel },
 	{ "Write String", "Write an ASCII string", write_str_cb },
 	{ "Write Hex", "Write raw hexpairs", write_hex_cb },
 	{ "Write Value", "Write a numeric value", writeValueCb },
 	{ "Assemble", "Assemble and write instructions", assemble_cb },
 	{ "Fill", "Fill a block with a repeated value", fill_cb },
 	{ "io.cache", "Toggle io.cache helpers", open_menu_cb },
-	{ "Settings", "Configuration, themes and layouts", open_menu_cb },
-	{ NULL, NULL, NULL }
-};
-
-static const MenuItem view_items[] = {
-	{ "Show All Decompiler Output", "Expand the full decompiler output", show_all_decompiler_cb },
 	{ NULL, NULL, NULL }
 };
 
 static const MenuItem tools_items[] = {
 	{ "Calculator", "Open the expression calculator", calculator_cb },
 	{ "Assembler", "Open the assembler helper", r2_assembler_cb },
+	{ "--", NULL, NULL },
 	{ "R2 Shell", "Run commands inside an r2 shell", shell_r2_cb },
 	{ "System Shell", "Open a system shell", shell_system_cb },
 	{ "FSMount Shell", "Browse mounted filesystems", shell_fs_cb },
 	{ "R2JS Shell", "Open an R2JS shell", shell_r2js_cb },
+	{ "--", NULL, NULL },
 	{ "File Manager", "Open the file manager", shell_mmc_cb },
 	{ NULL, NULL, NULL }
 };
@@ -417,8 +360,8 @@ static const MenuItem search_items[] = {
 	{ "String (Data Sections)", "Search strings in data sections only", string_data_sec_cb },
 	{ "Assembly Strings", "Search assembly constructed strings (/az)", add_cmd_panel },
 	{ "Syscalls", "Search syscall instructions (/as)", add_cmd_panel },
-	{ "ROP", "Search for gadgets", rop_cb },
 	{ "Magic", "Run magic signatures", magic_cb },
+	{ "ROP", "Search for gadgets", rop_cb },
 	{ "Code", "Search for code sequences", code_cb },
 	{ "Hexpairs", "Search for raw hexpairs", hexpairs_cb },
 	{ NULL, NULL, NULL }
@@ -432,12 +375,13 @@ static const MenuItem emulate_items[] = {
 };
 
 static const MenuItem debug_items[] = {
-	{ "Toggle Breakpoint", "Toggle a breakpoint at an address", break_points_cb },
+	{ "Emulate...", "ESIL execution helpers", open_menu_cb },
 	{ "Add Watchpoint", "Set a watchpoint at an address", watch_points_cb },
 	{ "Continue", "Resume execution", continue_cb },
+	{ "Reload", "Reload the current debugging session", reload_cb },
 	{ "Step", "Single-step into the next instruction", step_cb },
 	{ "Step Over", "Single-step over the next instruction", step_over_cb },
-	{ "Reload", "Reload the current debugging session", reload_cb },
+	{ "Toggle Breakpoint", "Toggle a breakpoint at an address", break_points_cb },
 	{ NULL, NULL, NULL }
 };
 
@@ -446,22 +390,23 @@ static const MenuItem analyze_items[] = {
 	{ "Symbols", "Analyze symbols into functions and metadata", symbols_cb },
 	{ "Program", "Run broad program analysis", program_cb },
 	{ "BasicBlocks", "Analyze basic blocks", basic_blocks_cb },
-	{ "Preludes", "Find function preludes", aap_cb },
-	{ "Emulation", "Analyze through emulation", aae_cb },
 	{ "Calls", "Analyze calls and callees", calls_cb },
+	{ "Preludes", "Find function preludes", aap_cb },
 	{ "References", "Analyze references", references_cb },
 	{ "Plugins...", "Browse analysis plugin commands", open_menu_cb },
 	{ NULL, NULL, NULL }
 };
 
 static const MenuItem help_items[] = {
+	{ "Toggle Help", "Toggle the panels help view", help_cb },
+	{ "Manpages...", "Browse bundled manpages", open_menu_cb },
+	{ "--", NULL, NULL },
 	{ "License", "Show the software license", license_cb },
 	{ "Version", "Show the short version", version_cb },
 	{ "Full Version", "Show the full version report", version2_cb },
+	{ "--", NULL, NULL },
 	{ "Fortune", "Print a random fortune", fortune_cb },
 	{ "2048", "Open the 2048 game", game_cb },
-	{ "Manpages...", "Browse bundled manpages", open_menu_cb },
-	{ "Toggle Help", "Toggle the panels help view", help_cb },
 	{ NULL, NULL, NULL }
 };
 

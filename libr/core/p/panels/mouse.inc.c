@@ -139,11 +139,11 @@ static char *r_panels_get_word_from_canvas_for_menu(RCore *core, RPanels *panels
 
 static bool r_panels_handle_mouse_on_top(RCore *core, int x, int y) {
 	RPanels *panels = core->panels;
+	RPanelsMenu *menu = panels->panels_menu;
 	char *word = r_panels_get_word_from_canvas (panels, x, y);
 	int i;
-	for (i = 0; i < R_ARRAY_SIZE (menus); i++) {
-		if (!strcmp (word, menus[i])) {
-			RPanelsMenu *menu = panels->panels_menu;
+	for (i = 0; i < menu->root->n_sub; i++) {
+		if (!strcmp (word, menu->root->sub[i]->name)) {
 			if (panels->mode == PANEL_MODE_MENU && menu->root->selectedIndex == i
 					&& !r_panels_frame_menu_is_open (panels)) {
 				r_panels_close_menu (core);

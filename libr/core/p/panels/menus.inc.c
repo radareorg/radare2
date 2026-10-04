@@ -707,7 +707,7 @@ static char *r_panels_menu_fallback_desc(RCore *core, const char *name, RPanelsM
 	return r_panels_search_db (core, name);
 }
 
-static RList *r_panels_sorted_list(RCore *core, const char *menu[], int count) {
+static RList *r_panels_sorted_list(const char *menu[], int count) {
 	RList *list = r_list_newf (NULL);
 	int i;
 	for (i = 0; i < count; i++) {
@@ -717,16 +717,6 @@ static RList *r_panels_sorted_list(RCore *core, const char *menu[], int count) {
 	}
 	r_list_sort (list, r_panels_cmpstr);
 	return list;
-}
-
-static const MenuItem *r_panels_find_menu_item(const MenuItem *items, const char *name) {
-	int i;
-	for (i = 0; items && items[i].name; i++) {
-		if (!strcmp (name, items[i].name)) {
-			return &items[i];
-		}
-	}
-	return NULL;
 }
 
 static char *r_panels_prompt_menu_args(RCore *core, const RPanelsMenuItem *item) {
@@ -857,38 +847,28 @@ static void init_menu_anal_plugins(void *_core, const char *parent) {
 	r_list_free (entries);
 }
 
-static void r_panels_add_menu_items(RCore *core, const char *parent,
-		const MenuItem *items, const char **menu_list, int count, RPanelsMenuCallback default_cb) {
-	int i;
-	for (i = 0; i < count; i++) {
-		const char *name = menu_list[i];
-		if (*name == '-') {
-			r_panels_add_menu (core, parent, name, r_panels_separator);
-			continue;
-		}
-		const MenuItem *item = r_panels_find_menu_item (items, name);
-		RPanelsMenuCallback cb = item? item->cb: NULL;
-		RPanelsMenuCallback final_cb = cb? cb: (default_cb? default_cb: add_cmd_panel);
-		char *desc = r_panels_menu_fallback_desc (core, name, final_cb, item? item->desc: NULL);
-		r_panels_add_menu_full (core, parent, name, desc, NULL, final_cb);
-		free (desc);
+static void r_panels_add_menu_action(RCore *core, const char *parent, const char *name, const char *desc, RPanelsMenuCallback cb) {
+	if (*name == '-') {
+		r_panels_add_menu (core, parent, name, r_panels_separator);
+		return;
+	}
+	char *description = r_panels_menu_fallback_desc (core, name, cb, desc);
+	r_panels_add_menu_full (core, parent, name, description, NULL, cb);
+	free (description);
+}
+
+static void r_panels_add_menu_items(RCore *core, const char *parent, const MenuItem *items) {
+	const MenuItem *item;
+	for (item = items; item->name; item++) {
+		r_panels_add_menu_action (core, parent, item->name, item->desc, item->cb);
 	}
 }
 
-static void r_panels_add_menu_items_sorted(RCore *core, const char *parent,
-		const MenuItem *items, const char **menu_list, int count, RPanelsMenuCallback default_cb) {
-	RList *list = r_panels_sorted_list (core, menu_list, count);
-	char *pos;
-	RListIter *iter;
-	r_list_foreach (list, iter, pos) {
-		const MenuItem *item = r_panels_find_menu_item (items, pos);
-		RPanelsMenuCallback cb = item? item->cb: NULL;
-		RPanelsMenuCallback final_cb = cb? cb: (default_cb? default_cb: add_cmd_panel);
-		char *desc = r_panels_menu_fallback_desc (core, pos, final_cb, item? item->desc: NULL);
-		r_panels_add_menu_full (core, parent, pos, desc, NULL, final_cb);
-		free (desc);
+static void r_panels_add_menu_views(RCore *core, const char *parent, const char **names, int count) {
+	int i;
+	for (i = 0; i < count; i++) {
+		r_panels_add_menu_action (core, parent, names[i], NULL, add_cmd_panel);
 	}
-	r_list_free (list);
 }
 
 static void handle_menu(RCore *core, const int key) {

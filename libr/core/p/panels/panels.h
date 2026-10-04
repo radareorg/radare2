@@ -156,7 +156,6 @@ static int reload_cb(void *user);
 static int function_cb(void *user);
 static int symbols_cb(void *user);
 static int program_cb(void *user);
-static int aae_cb(void *user);
 static int aap_cb(void *user);
 static int basic_blocks_cb(void *user);
 static int calls_cb(void *user);

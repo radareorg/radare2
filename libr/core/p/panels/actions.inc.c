@@ -285,39 +285,21 @@ static void init_menu_saved_layout(void *_core, const char *parent) {
 	RList *dir = r_sys_dir (dir_path);
 	RCore *core = (RCore *)_core;
 	RListIter *it;
-	char *entry, *entry2;
-	if (dir) {
-		r_list_foreach (dir, it, entry) {
-			if (*entry != '.') {
-				r_panels_add_menu (core, parent, entry, load_layout_saved_cb);
-			}
+	char *entry;
+	r_list_foreach (dir, it, entry) {
+		if (*entry != '.') {
+			r_panels_add_menu (core, parent, entry, load_layout_saved_cb);
 		}
 	}
 	char *sysdir_path = r_panels_config_path (true);
 	RList *sysdir = r_sys_dir (sysdir_path);
-	if (sysdir) {
-		bool found_in_home;
-		// load entries from syspath
-		r_list_foreach (sysdir, it, entry) {
-			if (*entry != '.') {
-				found_in_home = false;
-				if (dir) {
-					RListIter *it2;
-					r_list_foreach (dir, it2, entry2) {
-						if (!strcmp (entry, entry2)) {
-							found_in_home = true;
-							break;
-						}
-					}
-				}
-				if (!found_in_home) {
-					r_panels_add_menu (core, parent, entry, load_layout_saved_cb);
-				}
-			}
+	r_list_foreach (sysdir, it, entry) {
+		if (*entry != '.' && (!dir || !r_list_find (dir, entry, r_panels_cmpstr))) {
+			r_panels_add_menu (core, parent, entry, load_layout_saved_cb);
 		}
-		r_list_free (sysdir);
-		free (sysdir_path);
 	}
+	r_list_free (sysdir);
+	free (sysdir_path);
 	r_list_free (dir);
 	free (dir_path);
 }
@@ -447,7 +429,7 @@ static int config_toggle_cb(void *user) {
 
 static void r_panels_init_menu_config(RCore *core, const char *parent,
 		const char **items, int count, const char **value_items) {
-	RList *list = r_panels_sorted_list (core, items, count);
+	RList *list = r_panels_sorted_list (items, count);
 	char *pos;
 	RListIter *iter;
 	RStrBuf *rsb = r_strbuf_new (NULL);
@@ -667,12 +649,6 @@ static int program_cb(void *user) {
 	return 0;
 }
 
-static int aae_cb(void *user) {
-	RCore *core = (RCore *)user;
-	r_core_cmdf (core, "aae");
-	return 0;
-}
-
 static int aap_cb(void *user) {
 	RCore *core = (RCore *)user;
 	r_core_cmdf (core, "aap");
@@ -814,7 +790,7 @@ static void init_menu_color_settings_layout(void *_core, const char *parent) {
 	char *now = r_core_cmd_str (core, "eco.");
 	r_str_split (now, '\n');
 	parent = "Edit.Settings.Color Themes...";
-	RList *list = r_panels_sorted_list (core, (const char **)core->visual.menus_Colors, R_ARRAY_SIZE (core->visual.menus_Colors));
+	RList *list = r_panels_sorted_list ((const char **)core->visual.menus_Colors, R_ARRAY_SIZE (core->visual.menus_Colors));
 	char *pos;
 	RListIter* iter;
 	RStrBuf *buf = r_strbuf_new (NULL);
@@ -833,7 +809,7 @@ static void init_menu_color_settings_layout(void *_core, const char *parent) {
 
 static void init_menu_disasm_settings_layout(void *_core, const char *parent) {
 	RCore *core = (RCore *)_core;
-	RList *list = r_panels_sorted_list (core, menus_settings_disassembly, R_ARRAY_SIZE (menus_settings_disassembly));
+	RList *list = r_panels_sorted_list (menus_settings_disassembly, R_ARRAY_SIZE (menus_settings_disassembly));
 	char *pos;
 	RListIter* iter;
 	RStrBuf *rsb = r_strbuf_new (NULL);
@@ -881,43 +857,37 @@ static bool init_panels_menu(RCore *core) {
 	RPanelsMenuItem *root = R_NEW0 (RPanelsMenuItem);
 	panels->panels_menu = panels_menu;
 	panels_menu->root = root;
-	root->n_sub = 0;
-	root->name = NULL;
-	root->sub = NULL;
 
 	load_config_menu (core);
 
-	int i;
-	for (i = 0; i < R_ARRAY_SIZE (menus); i++) {
-		r_panels_add_menu_full (core, NULL, menus[i], menus_desc[i], NULL, open_menu_cb);
-	}
+	r_panels_add_menu_items (core, NULL, menus);
 
-	r_panels_add_menu_items (core, "File", file_items, menus_File, R_ARRAY_SIZE (menus_File), add_cmd_panel);
-	r_panels_add_menu_items (core, "Edit", edit_items, menus_Edit, R_ARRAY_SIZE (menus_Edit), add_cmd_panel);
-	r_panels_add_menu_items (core, "Edit.Settings", settings_items, menus_Settings, R_ARRAY_SIZE (menus_Settings), open_menu_cb);
+	r_panels_add_menu_items (core, "File", file_items);
+	r_panels_add_menu_items (core, "Edit", edit_items);
+	r_panels_add_menu_items (core, "Edit.Settings", settings_items);
 	r_panels_add_menu_full (core, "View", "Code...", "Code and decompiler views", NULL, open_menu_cb);
-	r_panels_add_menu_items (core, "View.Code...", view_items, menus_View_Code, R_ARRAY_SIZE (menus_View_Code), add_cmd_panel);
+	r_panels_add_menu_views (core, "View.Code...", menus_View_Code, R_ARRAY_SIZE (menus_View_Code));
+	r_panels_add_menu_full (core, "View.Code...", "Show All Decompiler Output", "Expand the full decompiler output", NULL, show_all_decompiler_cb);
 	r_panels_add_menu_full (core, "View", "Data...", "Raw data and string views", NULL, open_menu_cb);
-	r_panels_add_menu_items (core, "View.Data...", view_items, menus_View_Data, R_ARRAY_SIZE (menus_View_Data), add_cmd_panel);
+	r_panels_add_menu_views (core, "View.Data...", menus_View_Data, R_ARRAY_SIZE (menus_View_Data));
 	r_panels_add_menu_full (core, "View", "Metadata...", "Comments, flags and types", NULL, open_menu_cb);
-	r_panels_add_menu_items (core, "View.Metadata...", view_items, menus_View_Metadata, R_ARRAY_SIZE (menus_View_Metadata), add_cmd_panel);
+	r_panels_add_menu_views (core, "View.Metadata...", menus_View_Metadata, R_ARRAY_SIZE (menus_View_Metadata));
 	r_panels_add_menu_full (core, "View", "Binary...", "Binary structure, symbols and imports", NULL, open_menu_cb);
-	r_panels_add_menu_items (core, "View.Binary...", view_items, menus_View_Binary, R_ARRAY_SIZE (menus_View_Binary), add_cmd_panel);
+	r_panels_add_menu_views (core, "View.Binary...", menus_View_Binary, R_ARRAY_SIZE (menus_View_Binary));
 	r_panels_add_menu_full (core, "View", "Analysis...", "Functions, variables and cross references", NULL, open_menu_cb);
-	r_panels_add_menu_items (core, "View.Analysis...", view_items, menus_View_Analysis, R_ARRAY_SIZE (menus_View_Analysis), add_cmd_panel);
+	r_panels_add_menu_views (core, "View.Analysis...", menus_View_Analysis, R_ARRAY_SIZE (menus_View_Analysis));
 	r_panels_add_menu_full (core, "View", "Debug...", "Registers, stack and debugger state", NULL, open_menu_cb);
-	r_panels_add_menu_items (core, "View.Debug...", view_items, menus_View_Debug, R_ARRAY_SIZE (menus_View_Debug), add_cmd_panel);
+	r_panels_add_menu_views (core, "View.Debug...", menus_View_Debug, R_ARRAY_SIZE (menus_View_Debug));
 	r_panels_add_menu_full (core, "View", "Other...", "Miscellaneous views", NULL, open_menu_cb);
-	r_panels_add_menu_items (core, "View.Other...", view_items, menus_View_Other, R_ARRAY_SIZE (menus_View_Other), add_cmd_panel);
-	r_panels_add_menu_items (core, "Tools", tools_items, menus_Tools, R_ARRAY_SIZE (menus_Tools), NULL);
-	r_panels_add_menu_items (core, "Search", search_items, menus_Search, R_ARRAY_SIZE (menus_Search), NULL);
-	r_panels_add_menu_full (core, "Debug", "Emulate...", "ESIL execution helpers", NULL, open_menu_cb);
-	r_panels_add_menu_items_sorted (core, "Debug", debug_items, menus_Debug, R_ARRAY_SIZE (menus_Debug), add_cmd_panel);
-	r_panels_add_menu_items (core, "Debug.Emulate...", emulate_items, menus_Emulate, R_ARRAY_SIZE (menus_Emulate), NULL);
-	r_panels_add_menu_items (core, "Analyze", analyze_items, menus_Analyze, R_ARRAY_SIZE (menus_Analyze), NULL);
-	r_panels_add_menu_items (core, "Help", help_items, menus_Help, R_ARRAY_SIZE (menus_Help), help_cb);
-	r_panels_add_menu_items (core, "File.Reopen...", reopen_items, menus_ReOpen, R_ARRAY_SIZE (menus_ReOpen), NULL);
-	r_panels_add_menu_items (core, "Edit.Settings.Load Layout", loadlayout_items, menus_loadLayout, R_ARRAY_SIZE (menus_loadLayout), NULL);
+	r_panels_add_menu_views (core, "View.Other...", menus_View_Other, R_ARRAY_SIZE (menus_View_Other));
+	r_panels_add_menu_items (core, "Tools", tools_items);
+	r_panels_add_menu_items (core, "Search", search_items);
+	r_panels_add_menu_items (core, "Debug", debug_items);
+	r_panels_add_menu_items (core, "Debug.Emulate...", emulate_items);
+	r_panels_add_menu_items (core, "Analyze", analyze_items);
+	r_panels_add_menu_items (core, "Help", help_items);
+	r_panels_add_menu_items (core, "File.Reopen...", reopen_items);
+	r_panels_add_menu_items (core, "Edit.Settings.Load Layout", loadlayout_items);
 
 	init_menu_saved_layout (core, "Edit.Settings.Load Layout.Saved..");
 	init_menu_color_settings_layout (core, "Edit.Settings.Color Themes...");
@@ -939,7 +909,7 @@ static bool init_panels_menu(RCore *core) {
 
 	init_menu_disasm_settings_layout (core, "Edit.Settings.Disassembly...");
 	init_menu_screen_settings_layout (core, "Edit.Settings.Screen...");
-	r_panels_add_menu_items (core, "Edit.io.cache", iocache_items, menus_iocache, R_ARRAY_SIZE (menus_iocache), NULL);
+	r_panels_add_menu_items (core, "Edit.io.cache", iocache_items);
 
 	panels_menu->history = calloc (8, sizeof (RPanelsMenuItem *));
 	r_panels_clear_panels_menu (core);
