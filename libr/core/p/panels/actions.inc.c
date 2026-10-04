@@ -228,9 +228,8 @@ static int load_layout_saved_cb(void *user) {
 	if (!r_core_panels_load (core, child->name)) {
 		create_default_panels (core);
 		r_panels_layout (core, core->panels);
+		r_panels_set_mode (core, PANEL_MODE_DEFAULT);
 	}
-	r_panels_set_curnode (core, 0);
-	r_panels_set_mode (core, PANEL_MODE_DEFAULT);
 	r_panels_set_refresh_all (core, true, false);
 	return 0;
 }
@@ -272,9 +271,8 @@ static int project_close_cb(void *user) {
 
 static int save_layout_cb(void *user) {
 	RCore *core = (RCore *)user;
-	r_panels_prepare_layout (core);
+	r_panels_close_menu (core);
 	r_core_panels_save (core, NULL);
-	r_panels_set_mode (core, PANEL_MODE_DEFAULT);
 	r_panels_clear_panels_menu (core);
 	r_panels_get_cur_panel (core->panels)->view->refresh = true;
 	return 0;

@@ -1,6 +1,6 @@
 /* Copyright radare2 - 2014-2026 - pancake, ret2libc */
 
-#include <r_core.h>
+#include <r_core_priv.h>
 #include "visual_modes.h"
 
 R_IPI void visual_refresh(RCore *core);
@@ -4519,7 +4519,7 @@ static void nextword(RCore *core, RAGraph *g, const char *word) {
 }
 
 R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int mode) {
-	bool is_interactive = (mode != 0);
+	bool is_interactive = mode == 1 || mode == 3;
 	if (is_interactive && !r_cons_is_interactive (core->cons)) {
 		R_LOG_ERROR ("Interactive graph mode requires 'e scr.interactive=true'");
 		return false;
@@ -4613,6 +4613,10 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 	grd->follow_offset = _fcn == NULL;
 	grd->fcn = fcn? &fcn: NULL;
 	ret = agraph_refresh (grd);
+	RCoreGraphCapture *capture = ((RCorePriv *)core->priv)->graph_capture;
+	if (ret && !is_interactive && capture) {
+		capture->cb (g, capture->user);
+	}
 	if (!ret || is_interactive != 1) {
 		r_cons_newline (core->cons);
 		exit_graph = true;

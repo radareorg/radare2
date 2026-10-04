@@ -1,0 +1,111 @@
+NAME=panels horizontal scrollbar clicks and drags cached contents
+FILE=-
+CMDS=<<EOF
+"$capture=v @e:scr.interactive=true > $panel"
+"$probe=?e START_ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz_0123456789_END"
+e scr.utf8=false
+e scr.wheel=false
+e scr.cols=80
+e scr.rows=20
+<e$probe\n=j qQ
+v @e:scr.interactive=true > /dev/null
+<Q
+$capture > /dev/null
+cat $panel~START_~?
+cat $panel~_END~?
+cat $panel~\#\#\#~?
+"<\x1b[<0;53;18M\x1b[<0;53;18mQ"
+v @e:scr.interactive=true > /dev/null
+<Q
+$capture > /dev/null
+cat $panel~START_~?
+cat $panel~_END~?
+"<\x1b[<0;53;18M\x1b[<32;3;18M\x1b[<0;3;18mQ"
+v @e:scr.interactive=true > /dev/null
+<Q
+$capture > /dev/null
+cat $panel~START_~?
+cat $panel~_END~?
+EOF
+EXPECT=<<EOF
+1
+0
+1
+0
+1
+1
+0
+EOF
+RUN
+
+NAME=panels resizing and refreshing update horizontal scroll bounds
+FILE=-
+CMDS=<<EOF
+"$capture=v @e:scr.interactive=true > $panel"
+"$probe=?e START_ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz_0123456789_END"
+e scr.utf8=false
+e scr.wheel=false
+e scr.cols=80
+e scr.rows=20
+<e$probe\n=j qQ
+v @e:scr.interactive=true > /dev/null
+"<\x1b[<0;53;18M\x1b[<0;53;18mQ"
+v @e:scr.interactive=true > /dev/null
+e scr.cols=120
+<Q
+$capture > /dev/null
+cat $panel~START_~?
+cat $panel~_END~?
+cat $panel~\#\#\#~?
+"$probe=?e SHORT"
+<=jj Q
+v @e:scr.interactive=true > /dev/null
+<Q
+$capture > /dev/null
+cat $panel~SHORT~?
+cat $panel~START_~?
+cat $panel~\#\#\#~?
+EOF
+EXPECT=<<EOF
+1
+1
+0
+1
+0
+0
+EOF
+RUN
+
+NAME=panels vertical scrollbar indexes cached rows and preserves dragging
+FILE=-
+CMDS=<<EOF
+"$capture=v @e:scr.interactive=true > $panel"
+"$probe=px 2048"
+e scr.utf8=false
+e scr.wheel=false
+e scr.cols=80
+e scr.rows=20
+<e$probe\n=j qQ
+v @e:scr.interactive=true > /dev/null
+<Q
+$capture > /dev/null
+cat $panel~0x000007f0~?
+"<\x1b[<0;54;17M\x1b[<0;54;17mQ"
+v @e:scr.interactive=true > /dev/null
+<Q
+$capture > /dev/null
+cat $panel~0x000007f0~?
+"<\x1b[<0;54;17M\x1b[<32;54;4M\x1b[<0;54;4mQ"
+v @e:scr.interactive=true > /dev/null
+<Q
+$capture > /dev/null
+cat $panel~0x00000010~?
+cat $panel~0x000007f0~?
+EOF
+EXPECT=<<EOF
+0
+1
+1
+0
+EOF
+RUN

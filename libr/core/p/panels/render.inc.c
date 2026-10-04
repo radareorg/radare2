@@ -56,70 +56,117 @@ static const char *r_panels_rendered_content(RPanel *panel) {
 	return panel->model->readOnly? panel->model->readOnly: panel->model->cmdStrCache;
 }
 
-static int r_panels_content_height(const char *content) {
-	if (R_STR_ISEMPTY (content)) {
-		return 0;
+static RPanelsModel *r_panels_content_index(RPanel *panel, const char *content) {
+	RPanelsModel *model = (RPanelsModel *)panel->model;
+	if (!content) {
+		return NULL;
 	}
-	int height = 1;
-	const char *p;
-	for (p = content; *p; p++) {
-		if (*p == '\n' && p[1] && height < INT_MAX) {
-			height++;
+	if (model->content == content) {
+		return model;
+	}
+	model->content = NULL;
+	model->width = model->height = 0;
+	RPanelsLines_clear (&model->lines);
+	const char *line = content;
+	while (*line) {
+		size_t *offset = RPanelsLines_emplace_back (&model->lines);
+		if (!offset || model->height == INT_MAX) {
+			return NULL;
 		}
+		*offset = line - content;
+		const char *end = strchr (line, '\n');
+		if (!end) {
+			end = line + strlen (line);
+		}
+		int width = end == line? 0: R_MIN (r_str_ansi_nlen (line, end - line), INT_MAX);
+		model->width = R_MAX (model->width, width);
+		model->height++;
+		line = *end? end + 1: end;
 	}
-	return height;
+	size_t *offset = RPanelsLines_emplace_back (&model->lines);
+	if (!offset) {
+		return NULL;
+	}
+	*offset = line - content;
+	if (content == r_panels_rendered_content (panel)) {
+		model->content = content;
+	}
+	return model;
 }
 
-static bool r_panels_scrollbar_layout(RPanel *panel, RPanelsScrollbar *bar) {
+static char *r_panels_crop_content(RPanel *panel, const char *content, int x, int y, int width, int height) {
+	RPanelsModel *model = r_panels_content_index (panel, content);
+	if (!model || width < 1 || height < 1 || y >= model->height) {
+		return NULL;
+	}
+	const size_t start = *RPanelsLines_at (&model->lines, y);
+	const size_t end = *RPanelsLines_at (&model->lines, y + R_MIN (height, model->height - y));
+	if (end - start > INT_MAX) {
+		return NULL;
+	}
+	char *rows = r_str_ndup (content + start, end - start);
+	char *cropped = rows? r_str_ansi_crop (rows, x, 0, (ut32)x + width, height): NULL;
+	free (rows);
+	return cropped;
+}
+
+static bool r_panels_scrollbar_layout(RPanel *panel, RPanelsScrollbar *bar, bool horizontal) {
 	RPanelPos *pos = &panel->view->pos;
 	if (panel->model->type == PANEL_TYPE_MENU || (!panel->model->cache && !panel->model->readOnly)
 			|| pos->w < 5 || pos->h < 4) {
 		return false;
 	}
-	const char *content = r_panels_rendered_content (panel);
-	if (!content) {
+	RPanelsModel *model = r_panels_content_index (panel, r_panels_rendered_content (panel));
+	if (!model || (horizontal && model->width <= pos->w - 4)) {
 		return false;
 	}
-	const int lines = r_panels_content_height (content);
-	bar->x = pos->x + pos->w - 2;
-	bar->y = pos->y + 2;
-	bar->height = pos->h - 3;
-	bar->max_scroll = R_MAX (0, lines - bar->height);
-	bar->thumb_size = lines > bar->height? R_MAX (1, (st64)bar->height * bar->height / lines): bar->height;
-	bar->thumb = bar->max_scroll? (st64)R_MIN (R_MAX (panel->view->sy, 0), bar->max_scroll)
-		* (bar->height - bar->thumb_size) / bar->max_scroll: 0;
-	return true;
+	bar->horizontal = horizontal;
+	bar->x = pos->x + (horizontal? 2: pos->w - 2);
+	bar->y = pos->y + (horizontal? pos->h - 2: 2);
+	bar->length = horizontal? pos->w - 4: pos->h - 3 - (model->width > pos->w - 4);
+	const int extent = horizontal? model->width: model->height;
+	const int scroll = horizontal? panel->view->sx: panel->view->sy;
+	bar->max_scroll = R_MAX (0, extent - bar->length);
+	bar->thumb_size = extent > bar->length? R_MAX (1, (st64)bar->length * bar->length / extent): bar->length;
+	bar->thumb = bar->max_scroll? (st64)R_MIN (R_MAX (scroll, 0), bar->max_scroll)
+		* (bar->length - bar->thumb_size) / bar->max_scroll: 0;
+	return bar->length > 0;
 }
 
 static void r_panels_panel_write_content(RCore *core, RPanel *panel, const char *content, int sx, bool r_panels_show_cursor) {
-	RPanelsScrollbar bar;
-	const bool scrollbar = r_panels_scrollbar_layout (panel, &bar);
-	if (scrollbar) {
-		panel->view->sy = R_MIN (R_MAX (panel->view->sy, 0), bar.max_scroll);
+	RPanelsScrollbar bars[2];
+	bool visible[2];
+	int axis;
+	for (axis = 0; axis < 2; axis++) {
+		visible[axis] = r_panels_scrollbar_layout (panel, &bars[axis], axis);
+		if (visible[axis]) {
+			int *scroll = axis? &panel->view->sx: &panel->view->sy;
+			*scroll = R_MIN (R_MAX (*scroll, 0), bars[axis].max_scroll);
+		}
 	}
-	int sy = R_MAX (panel->view->sy, 0);
-	int x = panel->view->pos.x;
-	int y = panel->view->pos.y;
-	int w = panel->view->pos.w - (scrollbar? 1: 0);
-	int h = panel->view->pos.h;
+	if (visible[0] && !visible[1]) {
+		panel->view->sx = 0;
+	}
+	if ((visible[0] || visible[1]) && sx >= 0) {
+		sx = panel->view->sx;
+	}
+	const int sy = R_MAX (panel->view->sy, 0);
+	const int x = panel->view->pos.x;
+	const int y = panel->view->pos.y;
+	const int w = panel->view->pos.w - 3 - visible[0];
+	const int h = panel->view->pos.h - 3 - visible[1];
 	RConsCanvas *can = core->panels->can;
 	if (x >= can->w || y >= can->h) {
 		return;
 	}
 	(void) r_cons_canvas_gotoxy (can, x + 2, y + 2);
-	char *text = NULL;
-	if (sx < 0) {
-		int idx = R_MIN (-sx, 128);
+	char *text = r_panels_crop_content (panel, content, R_MAX (sx, 0), sy, w + R_MIN (sx, 0), h);
+	if (sx < 0 && text) {
 		char white[129];
-		r_str_pad (white, sizeof (white), ' ', idx);
-		text = r_str_ansi_crop (content, 0, sy, w + sx - 3, h - 2 + sy);
-		char *newText = r_str_prefix_all (text, white);
-		if (newText) {
-			free (text);
-			text = newText;
-		}
-	} else {
-		text = r_str_ansi_crop (content, sx, sy, w + sx - 3, h - 2 + sy);
+		r_str_pad (white, sizeof (white), ' ', R_MIN (-sx, 128));
+		char *prefixed = r_str_prefix_all (text, white);
+		free (text);
+		text = prefixed;
 	}
 	if (text) {
 		r_cons_canvas_write (can, text);
@@ -130,13 +177,17 @@ static void r_panels_panel_write_content(RCore *core, RPanel *panel, const char 
 		(void) r_cons_canvas_gotoxy (can, x + 2, y + 2 + sub);
 		r_cons_canvas_write (can, "*");
 	}
-	if (scrollbar) {
-		const bool utf8 = r_config_get_b (core->config, "scr.utf8");
+	const bool utf8 = r_config_get_b (core->config, "scr.utf8");
+	for (axis = 0; axis < 2; axis++) {
+		if (!visible[axis]) {
+			continue;
+		}
+		RPanelsScrollbar *bar = &bars[axis];
 		int i;
-		for (i = 0; i < bar.height; i++) {
-			const bool thumb = i >= bar.thumb && i < bar.thumb + bar.thumb_size;
-			(void)r_cons_canvas_gotoxy (can, bar.x, bar.y + i);
-			r_cons_canvas_write (can, thumb? (utf8? "█": "#"): (utf8? "│": "|"));
+		for (i = 0; i < bar->length; i++) {
+			const bool thumb = i >= bar->thumb && i < bar->thumb + bar->thumb_size;
+			(void)r_cons_canvas_gotoxy (can, bar->x + (axis? i: 0), bar->y + (axis? 0: i));
+			r_cons_canvas_write (can, thumb? (utf8? "█": "#"): (axis? (utf8? "─": "-"): (utf8? "│": "|")));
 		}
 	}
 }
@@ -476,8 +527,17 @@ static void r_panels_default_panel_print(RCore *core, RPanel *panel) {
 		r_panels_update_help_contents (core, panel);
 		r_panels_update_title (core, panel);
 	} else if (panel->model->cmd) {
+		ut64 addr = core->addr;
+		if (!r_panels_sync_seek (panel)) {
+			r_core_seek (core, panel->model->addr, true);
+		} else if (!r_panels_is_normal_cursor_type (panel)) {
+			panel->model->addr = addr;
+		}
 		panel->model->print_cb (core, panel);
 		r_panels_update_title (core, panel);
+		if (!r_panels_sync_seek (panel)) {
+			r_core_seek (core, addr, true);
+		}
 	}
 	core->print->cur_enabled = o_cur;
 }
@@ -508,7 +568,7 @@ static void r_panels_panel_print(RCore *core, RConsCanvas *can, RPanel *panel, b
 static void refresh_core_offset(RCore *core) {
 	RPanels *panels = core->panels;
 	RPanel *cur = r_panels_get_cur_panel (panels);
-	if (r_panels_check_panel_type (cur, "pd")) {
+	if (r_panels_sync_seek (cur) && r_panels_check_panel_type (cur, "pd")) {
 		core->addr = cur->model->addr;
 	}
 }

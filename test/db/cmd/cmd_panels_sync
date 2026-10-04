@@ -1,0 +1,119 @@
+NAME=panels pinned cached command refreshes at its own address and rejoins seek
+FILE=-
+CMDS=<<EOF
+"$capture=v @e:scr.interactive=true > $panel"
+"$probe=?v $$+0xabc00000"
+e scr.wheel=false
+<e$probe\n=j q=jjj qQ
+v @e:scr.interactive=true > /dev/null
+s 0x20
+<=jj Q
+v @e:scr.interactive=true > /dev/null
+<Q
+$capture > /dev/null
+cat $panel~0xabc00000~?
+cat $panel~0xabc00020~?
+?v $$
+<=jjj qQ
+v @e:scr.interactive=true > /dev/null
+<Q
+$capture > /dev/null
+cat $panel~0xabc00020~?
+EOF
+EXPECT=<<EOF
+1
+0
+0x20
+1
+EOF
+RUN
+
+NAME=panels pinned hexdump ignores global seek and permits local navigation
+FILE=-
+CMDS=<<EOF
+"$capture=v @e:scr.interactive=true > $panel"
+e scr.wheel=false
+e hex.pairs=false
+e hex.cols=8
+wx deadbeef
+wx facefeed @ 0x100
+<exc\n=jjj qQ
+v @e:scr.interactive=true > /dev/null
+s 0x100
+<Q
+$capture > /dev/null
+cat $panel~de ad be ef~?
+cat $panel~fa ce fe ed~?
+<g0x100\nQ
+v @e:scr.interactive=true > /dev/null
+<Q
+$capture > /dev/null
+cat $panel~fa ce fe ed~?
+EOF
+EXPECT=<<EOF
+1
+0
+1
+EOF
+RUN
+
+NAME=panels pinned disassembly scrolls locally after a global seek
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+"$capture=v @e:scr.interactive=true > $panel"
+e scr.wheel=false
+wx 90c3
+wx cccc @ 0x100
+<=jjj qQ
+v @e:scr.interactive=true > /dev/null
+s 0x100
+<Q
+$capture > /dev/null
+cat $panel~nop~?
+cat $panel~int3~?
+<jQ
+v @e:scr.interactive=true > /dev/null
+s 0x100
+<Q
+$capture > /dev/null
+cat $panel~nop~?
+cat $panel~ret~?
+cat $panel~int3~?
+EOF
+EXPECT=<<EOF
+1
+0
+0
+1
+0
+EOF
+RUN
+
+NAME=panels pinned graph keeps its function across seek and explicit refresh
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+"$capture=v @e:scr.interactive=true > $panel"
+e scr.wheel=false
+wx 85c0740290c3c3
+wx ccc3 @ 0x100
+af
+af @ 0x100
+<mlljljjjjj =jjj qQ
+v @e:scr.interactive=true > /dev/null
+s 0x100
+<=jj Q
+v @e:scr.interactive=true > /dev/null
+<Q
+$capture > /dev/null
+cat $panel~test eax, eax~?
+cat $panel~int3~?
+?v $$
+EOF
+EXPECT=<<EOF
+1
+0
+0x100
+EOF
+RUN

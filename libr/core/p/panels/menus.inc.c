@@ -42,7 +42,7 @@ static RPanelsMenuItem *r_panels_menu_item_new(const char *name, const char *des
 	item->args = R_STR_ISNOTEMPTY (args)? strdup (args): NULL;
 	item->cb = cb;
 	item->p = R_NEW0 (RPanel);
-	item->p->model = R_NEW0 (RPanelModel);
+	item->p->model = (RPanelModel *)R_NEW0 (RPanelsModel);
 	item->p->view = R_NEW0 (RPanelView);
 	return item;
 }
@@ -55,6 +55,15 @@ static bool r_panels_menu_item_append(RPanelsMenuItem *parent, RPanelsMenuItem *
 	parent->sub = sub;
 	parent->sub[parent->n_sub++] = item;
 	return true;
+}
+
+static RPanelsMenuItem *r_panels_menu_item_add(RPanelsMenuItem *parent, const char *name, const char *desc, const char *args, RPanelsMenuCallback cb) {
+	RPanelsMenuItem *item = r_panels_menu_item_new (name, desc, args, cb);
+	if (!r_panels_menu_item_append (parent, item)) {
+		r_panels_free_menu_item (item);
+		return NULL;
+	}
+	return item;
 }
 
 static void r_panels_mht_free_kv(HtPPKv *kv) {
@@ -152,6 +161,10 @@ static int r_panels_menu_max_items(RConsCanvas *can, RPanelsMenuItem *item, int 
 	return R_MAX (can->h - PANEL_FOOTER_H - y - 2, 3);
 }
 
+static int r_panels_menu_y(RConsCanvas *can, RPanelsMenuItem *item, int y) {
+	return R_CLAMP (y, 0, R_MAX (0, can->h - PANEL_FOOTER_H - item->n_sub - 2));
+}
+
 // entries first..last are shown, with a "(...)" row above or below when the list is scrolled
 static void r_panels_menu_visible_range(RPanelsMenuItem *item, int max_items, int *first, int *last, bool *top_ell, bool *bot_ell) {
 	const int n = item->n_sub;
@@ -220,6 +233,7 @@ static RStrBuf *r_panels_draw_menu(RCore *core, RPanelsMenuItem *item, int max_i
 static void r_panels_update_menu_contents(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *parent) {
 	RPanel *p = parent->p;
 	RConsCanvas *can = core->panels->can;
+	p->view->pos.y = r_panels_menu_y (can, parent, p->view->pos.y);
 	const int max_items = r_panels_menu_max_items (can, parent, p->view->pos.y);
 	RStrBuf *buf = r_panels_draw_menu (core, parent, max_items);
 	if (!buf) {
@@ -261,7 +275,7 @@ static int r_panels_menu_item_at(RCore *core, RPanelsMenuItem *item, int x, int 
 static void r_panels_menu_push(RCore *core, RPanelsMenuItem *item, int x, int y) {
 	RPanelsMenu *menu = core->panels->panels_menu;
 	RConsCanvas *can = core->panels->can;
-	y = R_MAX (0, R_MIN (y, can->h - PANEL_FOOTER_H - 1));
+	y = r_panels_menu_y (can, item, y);
 	RStrBuf *buf = r_panels_draw_menu (core, item, r_panels_menu_max_items (can, item, y));
 	if (!buf) {
 		return;
@@ -309,6 +323,98 @@ static int frame_cache_cb(void *user) {
 	return 0;
 }
 
+static int frame_refresh_cb(void *user) {
+	RCore *core = (RCore *)user;
+	RPanel *panel = r_panels_get_cur_panel (core->panels);
+	r_panels_set_cmd_str_cache (core, panel, NULL);
+	r_panels_close_menu (core);
+	panel->view->refresh = true;
+	return 0;
+}
+
+static int frame_sync_seek_cb(void *user) {
+	RCore *core = (RCore *)user;
+	RPanel *panel = r_panels_get_cur_panel (core->panels);
+	RPanelsModel *model = (RPanelsModel *)panel->model;
+	model->sync_seek = !model->sync_seek;
+	if (model->sync_seek) {
+		r_panels_set_panel_addr (core, panel, core->addr);
+		r_panels_set_cmd_str_cache (core, panel, NULL);
+	}
+	panel->view->refresh = true;
+	r_panels_frame_menu_update (core);
+	return 0;
+}
+
+static void r_panels_refresh_tabs(RCore *core, bool graphs_only) {
+	RPanelsRoot *root = core->panels_root;
+	int i, j;
+	for (i = 0; i < root->n_panels; i++) {
+		RPanels *panels = root->panels[i];
+		for (j = 0; j < panels->n_panels; j++) {
+			RPanel *panel = panels->panel[j];
+			if (!graphs_only || r_panels_check_panel_type (panel, "agf")) {
+				r_panels_set_cmd_str_cache (core, panel, NULL);
+				panel->view->refresh = true;
+			}
+		}
+	}
+}
+
+static int context_analyze_cb(void *user) {
+	RCore *core = (RCore *)user;
+	RPanelsMenuItem *item = r_panels_get_selected_menu_item (core->panels);
+	const char *cmd = item->args;
+	ut64 addr = core->addr;
+	RPanel *panel = r_panels_get_cur_panel (core->panels);
+	if (!r_panels_sync_seek (panel)) {
+		r_core_seek (core, panel->model->addr, true);
+	}
+	r_panels_close_menu (core);
+	r_core_cmd0 (core, cmd);
+	r_core_seek (core, addr, true);
+	r_panels_refresh_tabs (core, false);
+	return 0;
+}
+
+static int context_graph_option_cb(void *user) {
+	RCore *core = (RCore *)user;
+	RPanelsMenu *menu = core->panels->panels_menu;
+	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+	const GraphMenuOption *option = &graph_menu_options[parent->selectedIndex];
+	RPanel *panel = r_panels_get_cur_panel (core->panels);
+	if (option->key) {
+		int count = option->states[2]? 3: 2;
+		int value = R_CLAMP (r_config_get_i (core->config, option->key), 0, count - 1);
+		r_config_set_i (core->config, option->key, (value + 1) % count);
+		r_panels_refresh_tabs (core, true);
+	} else {
+		bool tiny = !strcmp (panel->model->cmd, "agft");
+		free (panel->model->cmd);
+		free (panel->model->title);
+		panel->model->cmd = strdup (tiny? "agf": "agft");
+		panel->model->title = strdup (tiny? "Graph": "Tiny Graph");
+	}
+	r_panels_reset_scroll_pos (panel);
+	return frame_refresh_cb (core);
+}
+
+static void r_panels_graph_menu_fill(RCore *core, RPanel *panel, RPanelsMenuItem *parent) {
+	bool tiny = !strcmp (panel->model->cmd, "agft");
+	size_t i, count = tiny? 2: R_ARRAY_SIZE (graph_menu_options);
+	for (i = 0; i < count; i++) {
+		const GraphMenuOption *option = &graph_menu_options[i];
+		int value = option->key? r_config_get_i (core->config, option->key): tiny;
+		int max = option->states[2]? 2: 1;
+		char *name = r_str_newf ("%s (%s)", option->name, option->states[R_CLAMP (value, 0, max)]);
+		RPanelsMenuItem *item = r_panels_menu_item_add (parent, name, NULL, NULL, context_graph_option_cb);
+		free (name);
+		if (!item) {
+			break;
+		}
+	}
+}
+
 static void r_panels_frame_split(RCore *core, bool vertical) {
 	RPanels *panels = core->panels;
 	r_panels_close_menu (core);
@@ -342,9 +448,11 @@ static int frame_close_cb(void *user) {
 
 static void r_panels_copy_panel_state(RCore *core, RPanel *dst, RPanel *src) {
 	dst->model->cache = src->model->cache;
+	dst->model->addr = src->model->addr;
+	((RPanelsModel *)dst->model)->sync_seek = r_panels_sync_seek (src);
 	free (dst->model->funcName);
 	dst->model->funcName = src->model->funcName? strdup (src->model->funcName): NULL;
-	r_panels_set_cmd_str_cache (core, dst, src->model->cmdStrCache);
+	r_panels_set_cmd_str_cache (core, dst, r_panels_is_graph_panel (src)? NULL: src->model->cmdStrCache);
 }
 
 static int frame_move_menu_cb(void *user) {
@@ -414,6 +522,10 @@ static bool frame_cache_state(RCore *core, RPanel *panel) {
 	return panel->model->cache;
 }
 
+static bool frame_sync_seek_state(RCore *core, RPanel *panel) {
+	return r_panels_sync_seek (panel);
+}
+
 static char *r_panels_frame_action_name(RCore *core, RPanel *panel, const FrameMenuAction *action) {
 	return action->state
 		? r_str_newf ("%s (%s)", action->name, action->state (core, panel)? "on": "off")
@@ -426,14 +538,13 @@ static RPanelsMenuItem *r_panels_frame_menu_new(RCore *core, RPanel *panel) {
 	for (i = 0; i < R_ARRAY_SIZE (frame_menu_actions); i++) {
 		const FrameMenuAction *action = &frame_menu_actions[i];
 		char *name = r_panels_frame_action_name (core, panel, action);
-		RPanelsMenuItem *item = r_panels_menu_item_new (name, action->desc, NULL, action->cb);
+		RPanelsMenuItem *item = r_panels_menu_item_add (frame, name, action->desc, NULL, action->cb);
 		free (name);
+		if (!item) {
+			return frame;
+		}
 		if (action->cb == frame_move_menu_cb) {
 			r_panels_frame_move_menu_fill (core, item);
-		}
-		if (!r_panels_menu_item_append (frame, item)) {
-			r_panels_free_menu_item (item);
-			break;
 		}
 	}
 	return frame;
@@ -445,7 +556,7 @@ static void r_panels_frame_menu_update(RCore *core) {
 	RPanelsMenuItem *frame = panels->panels_menu->frame;
 	RPanel *cur = r_panels_get_cur_panel (panels);
 	int i;
-	for (i = 0; i < frame->n_sub; i++) {
+	for (i = 0; i < R_MIN (frame->n_sub, R_ARRAY_SIZE (frame_menu_actions)); i++) {
 		free (frame->sub[i]->name);
 		frame->sub[i]->name = r_panels_frame_action_name (core, cur, &frame_menu_actions[i]);
 	}

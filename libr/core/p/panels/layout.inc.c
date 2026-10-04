@@ -391,6 +391,9 @@ static void r_panels_del_panel(RCore *core, int pi) {
 	if (!tmp) {
 		return;
 	}
+	if (pi == panels->curnode) {
+		r_panels_set_cursor (core, false);
+	}
 	for (i = pi; i < (panels->n_panels - 1); i++) {
 		panels->panel[i] = panels->panel[i + 1];
 	}

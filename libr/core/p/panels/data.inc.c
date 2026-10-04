@@ -98,7 +98,7 @@ static RCoreHelpMessage help_msg_panels = {
 	"/",        "highlight the keyword",
 	"(",        "toggle snow",
 	"&",        "toggle cache for the current panel",
-	"=",        "open the menu of the current panel (maximize, contents, cache, close)",
+	"=",        "open the menu of the current panel (Maximize, Command, Cache, Refresh, Sync seek, Close)",
 	"[1-9]",    "follow jmp/call identified by shortcut (like ;[1])",
 	"' '",      "(space) toggle graph / panels",
 	"tab",      "go to the next panel",
@@ -118,7 +118,7 @@ static RCoreHelpMessage help_msg_panels = {
 	"i",        "overwrite bytes at the cursor or start of the selection",
 	"I",        "insert assembly",
 	"Mouse",    "click a byte to select it, drag to select a range, right-click for panel settings",
-	"Scrollbar", "click or drag the right-side scrollbar of cached contents",
+	"Scrollbar", "click or drag the scrollbars of cached contents",
 	"`",        "rotate between common disassembly / hexdump options",
 	"hjkl",     "move around (left-down-up-right)",
 	"HJKL",     "move around (left-down-up-right) by page",
@@ -189,15 +189,26 @@ static RCoreHelpMessage help_msg_panels_zoom = {
 // actions listed in the [=] menu of every panel, in display order
 static const FrameMenuAction frame_menu_actions[] = {
 	{ "Maximize", "Zoom this panel to fill the screen", frame_maximize_cb, frame_maximize_state },
-	{ "Cache contents", "Cache the command output of this panel", frame_cache_cb, frame_cache_state },
+	{ "Cache", "Cache the command output of this panel", frame_cache_cb, frame_cache_state },
+	{ "Refresh", "Run this panel's command again", frame_refresh_cb, NULL },
+	{ "Sync seek", "Follow address changes in other panels", frame_sync_seek_cb, frame_sync_seek_state },
 	{ "--", NULL, NULL, NULL },
 	{ "Split Horizontal", "Split this panel in two, one above the other", frame_split_horizontal_cb, NULL },
 	{ "Split Vertical", "Split this panel in two, side by side", frame_split_vertical_cb, NULL },
 	{ "--", NULL, NULL, NULL },
-	{ "Panel contents...", "Replace the contents of this panel", frame_contents_cb, NULL },
+	{ "Command", "Replace the command of this panel", frame_contents_cb, NULL },
 	{ "Move to tab", "Move this panel into another tab", frame_move_menu_cb, NULL },
 	{ "--", NULL, NULL, NULL },
 	{ "Close", "Close this panel", frame_close_cb, NULL },
+};
+
+static const GraphMenuOption graph_menu_options[] = {
+	{ "Graph mode", NULL, { "normal", "tiny" } },
+	{ "Layout", "graph.layout", { "vertical", "horizontal" } },
+	{ "Node bodies", "graph.body", { "off", "on" } },
+	{ "Node titles", "graph.ntitles", { "off", "on" } },
+	{ "Comments", "graph.comments", { "off", "on" } },
+	{ "Edges", "graph.edges", { "off", "simple", "avoid collisions" } },
 };
 
 static const ModalEntryDef modal_entries_db[] = {
@@ -427,4 +438,3 @@ static const MenuItem iocache_items[] = {
 	{ "Off", "Disable io.cache", io_cache_off_cb },
 	{ NULL, NULL, NULL }
 };
-

@@ -48,13 +48,17 @@ static void handle_print_rotate(RCore *core) {
 static void replace_cmd(RCore *core, const char *title, const char *cmd) {
 	RPanels *panels = core->panels;
 	RPanel *cur = r_panels_get_cur_panel (panels);
+	r_panels_set_cursor (core, false);
 	free (cur->model->cmd);
 	free (cur->model->title);
 	cur->model->cmd = strdup (cmd);
 	cur->model->title = strdup (title);
 	cur->model->cache = r_panels_default_cache (core, cur);
 	r_panels_set_cmd_str_cache (core, cur, NULL);
-	r_panels_set_panel_addr (core, cur, core->addr);
+	r_panels_reset_scroll_pos (cur);
+	if (r_panels_sync_seek (cur)) {
+		r_panels_set_panel_addr (core, cur, core->addr);
+	}
 	cur->model->type = PANEL_TYPE_DEFAULT;
 	set_dcb (core, cur);
 	set_pcb (cur);
@@ -334,7 +338,7 @@ static bool check_func_diff(RCore *core, RPanel *p) {
 		if (R_STR_ISEMPTY (p->model->funcName)) {
 			return false;
 		}
-		p->model->funcName = NULL;
+		R_FREE (p->model->funcName);
 		return true;
 	}
 	if (!p->model->funcName || strcmp (p->model->funcName, func->name)) {
@@ -403,11 +407,82 @@ static void print_disassembly_cb(void *user, void *p) {
 	r_panels_update_panel_contents (core, panel, cmdstr);
 }
 
+static void r_panels_capture_graph(const RAGraph *graph, void *user) {
+	RPanelsGraphNodes *nodes = user;
+	RListIter *iter;
+	RGraphNode *node;
+	r_list_foreach (r_graph_get_nodes (graph->graph), iter, node) {
+		RANode *anode = node->data;
+		if (anode->is_dummy) {
+			continue;
+		}
+		RPanelsGraphNode *position = RPanelsGraphNodes_emplace_back (nodes);
+		if (!position) {
+			break;
+		}
+		position->addr = r_num_get (NULL, anode->title);
+		position->x = anode->x + graph->can->sx;
+		position->y = anode->y + graph->can->sy + R_STR_ISNOTEMPTY (graph->title);
+	}
+}
+
+static void r_panels_focus_graph(RCore *core, RPanel *panel) {
+	RPanelsModel *model = (RPanelsModel *)panel->model;
+	ut64 addr = r_anal_get_bbaddr (core->anal, core->addr);
+	RPanelsGraphNode *node, *target = NULL;
+	R_VEC_FOREACH (&model->graph_nodes, node) {
+		if (node->addr == addr) {
+			target = node;
+			break;
+		}
+	}
+	if (!target && !model->graph_focused && !RPanelsGraphNodes_empty (&model->graph_nodes)) {
+		target = RPanelsGraphNodes_at (&model->graph_nodes, 0);
+	}
+	if (target) {
+		panel->view->sx = R_MAX (0, target->x - 1);
+		panel->view->sy = R_MAX (0, target->y - 1);
+	}
+	model->graph_addr = core->addr;
+	model->graph_focused = true;
+}
+
 static void print_graph_cb(void *user, void *p) {
 	RCore *core = (RCore *)user;
 	RPanel *panel = (RPanel *)p;
-	bool update = core->panels->autoUpdate && check_func_diff (core, panel);
+	RPanelsModel *model = (RPanelsModel *)panel->model;
+	bool refresh = core->panels->autoUpdate || !panel->model->cache || !panel->model->cmdStrCache;
+	bool update = refresh && check_func_diff (core, panel);
+	if (refresh && !panel->model->funcName && r_panels_is_graph_panel (panel)) {
+		if (update || !panel->model->cmdStrCache) {
+			r_panels_reset_scroll_pos (panel);
+		}
+		char *msg = r_str_newf ("No function at 0x%08"PFMT64x"\nRight-click > Analyze function", core->addr);
+		r_panels_set_cmd_str_cache (core, panel, msg);
+		r_panels_update_panel_contents (core, panel, msg);
+		free (msg);
+		return;
+	}
+	bool geometry = r_panels_is_graph_panel (panel) && !panel->model->n_filter;
+	bool capture = geometry && (update || !panel->model->cache || !panel->model->cmdStrCache);
+	bool focus = update || !model->graph_focused || model->graph_addr != core->addr;
+	RPanelsGraphNodes nodes;
+	RPanelsGraphNodes_init (&nodes);
+	RCoreGraphCapture context = { r_panels_capture_graph, &nodes };
+	RCorePriv *priv = core->priv;
+	RCoreGraphCapture *saved_capture = priv->graph_capture;
+	if (capture) {
+		priv->graph_capture = &context;
+	}
 	const char *cmdstr = r_panels_handle_cmd_str_cache (core, panel, update);
+	priv->graph_capture = saved_capture;
+	if (capture) {
+		RPanelsGraphNodes_fini (&model->graph_nodes);
+		model->graph_nodes = nodes;
+	}
+	if (geometry && focus) {
+		r_panels_focus_graph (core, panel);
+	}
 	core->cons->event_resize = NULL;
 	core->cons->event_data = core;
 	core->cons->event_resize = (RConsEvent) r_panels_do_panels_refreshQueued;
@@ -422,13 +497,13 @@ static void print_stack_cb(void *user, void *p) {
 		return;
 	}
 	const int size = r_config_get_i (core->config, "stack.size");
-	const int delta = r_config_get_i (core->config, "stack.delta");
+	const int delta = r_panels_sync_seek (panel)? r_config_get_i (core->config, "stack.delta"): 0;
 	const int bits = r_config_get_i (core->config, "asm.bits");
 	const char sign = (delta < 0)? '+': '-';
 	const int absdelta = R_ABS (delta);
 	char *cmd = r_str_newf ("px%s %d", bits == 32? "w": "q", size);
 	panel->model->cmd = cmd;
-	ut64 sp_addr = r_reg_getv (core->anal->reg, "SP");
+	ut64 sp_addr = r_panels_sync_seek (panel)? r_reg_getv (core->anal->reg, "SP"): panel->model->addr;
 	char *k = r_str_newf ("%s @ 0x%08"PFMT64x"%c%d", cmd, sp_addr, sign, absdelta);
 	char *cmdstr = r_core_cmd_str (core, k);
 	free (k);

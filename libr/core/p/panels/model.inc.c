@@ -177,6 +177,12 @@ static bool r_panels_is_byte_hexdump(RPanel *panel) {
 }
 
 static void r_panels_set_cmd_str_cache(RCore *core, RPanel *p, char *s) {
+	RPanelsModel *model = (RPanelsModel *)p->model;
+	model->content = NULL;
+	RPanelsGraphNodes_clear (&model->graph_nodes);
+	if (!s) {
+		model->graph_focused = false;
+	}
 	free (p->model->cmdStrCache);
 	p->model->cmdStrCache = s? strdup (s): NULL;
 	set_dcb (core, p);
@@ -184,14 +190,37 @@ static void r_panels_set_cmd_str_cache(RCore *core, RPanel *p, char *s) {
 }
 
 static void r_panels_set_read_only(RCore *core, RPanel *p, const char * R_NULLABLE s) {
+	((RPanelsModel *)p->model)->content = NULL;
 	free (p->model->readOnly);
 	p->model->readOnly = s? strdup (s): NULL;
 	set_dcb (core, p);
 	set_pcb (p);
 }
 
+static bool r_panels_is_graph_panel(RPanel *panel) {
+	const char *cmd = panel->model->cmd;
+	return cmd && (!strcmp (cmd, "agf") || !strcmp (cmd, "agft"));
+}
+
+static bool r_panels_sync_seek(RPanel *panel) {
+	return ((RPanelsModel *)panel->model)->sync_seek;
+}
+
 static void r_panels_set_panel_addr(RCore *core, RPanel *panel, ut64 addr) {
-	panel->model->addr = addr;
+	if (r_panels_sync_seek (panel) || panel == r_panels_get_cur_panel (core->panels)) {
+		panel->model->addr = addr;
+	}
+}
+
+static void r_panels_seek_all(RCore *core, ut64 addr) {
+	RPanels *panels = core->panels;
+	int i;
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *panel = r_panels_get_panel (panels, i);
+		if (r_panels_sync_seek (panel)) {
+			panel->model->addr = addr;
+		}
+	}
 }
 
 static int r_panels_get_panel_idx_in_pos(RCore *core, int x, int y) {
@@ -287,7 +316,9 @@ static void r_panels_set_mode(RCore *core, RPanelsMode mode) {
 	if (mode == PANEL_MODE_MENU && panels->mode != PANEL_MODE_MENU) {
 		panels->frame_mode = panels->mode;
 	}
-	r_panels_set_cursor (core, false);
+	if (mode != PANEL_MODE_MENU && panels->mode != PANEL_MODE_MENU) {
+		r_panels_set_cursor (core, false);
+	}
 	panels->mode = mode;
 	r_panels_update_help (core, panels);
 }
@@ -320,16 +351,19 @@ static void r_panels_init_panel_param(RCore *core, RPanel *p, const char *title,
 	if (!p) {
 		return;
 	}
+	r_panels_set_cursor (core, false);
 	RPanelModel *m = p->model;
 	RPanelView *v = p->view;
+	((RPanelsModel *)m)->sync_seek = true;
 	m->type = PANEL_TYPE_DEFAULT;
 	m->rotate = 0;
 	v->curpos = 0;
+	r_panels_reset_scroll_pos (p);
 	r_panels_set_panel_addr (core, p, core->addr);
 	m->rotateCb = NULL;
 	r_panels_set_cmd_str_cache (core, p, NULL);
 	r_panels_set_read_only (core, p, NULL);
-	m->funcName = NULL;
+	R_FREE (m->funcName);
 	v->refresh = true;
 	v->edge = 0;
 	free (m->title);
@@ -441,7 +475,7 @@ static void r_panels_check_stackbase(RCore *core) {
 	int i;
 	for (i = 1; i < panels->n_panels; i++) {
 		RPanel *p = r_panels_get_panel (panels, i);
-		if (p && p->model->cmd && r_panels_check_panel_type (p, "px") && p->model->baseAddr != stackbase) {
+		if (p && r_panels_sync_seek (p) && r_panels_check_panel_type (p, "px") && p->model->baseAddr != stackbase) {
 			p->model->baseAddr = stackbase;
 			r_panels_set_panel_addr (core, p, stackbase - r_config_get_i (core->config, "stack.delta") + core->print->cur);
 		}
@@ -570,7 +604,7 @@ static bool r_panels_alloc(RCore *core, RPanels *panels) {
 	int i;
 	for (i = 0; i < PANEL_NUM_LIMIT; i++) {
 		panels->panel[i] = R_NEW0 (RPanel);
-		panels->panel[i]->model = R_NEW0 (RPanelModel);
+		panels->panel[i]->model = (RPanelModel *)R_NEW0 (RPanelsModel);
 		r_panels_renew_filter (panels->panel[i], PANEL_NUM_LIMIT);
 		panels->panel[i]->view = R_NEW0 (RPanelView);
 	}

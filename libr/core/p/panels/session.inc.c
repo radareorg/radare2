@@ -9,6 +9,7 @@ static void panels_process(RCore *core, RPanels *panels) {
 	RPanels *prev;
 	prev = core->panels;
 	core->panels = panels;
+	r_panels_seek_all (core, core->addr);
 	panels->autoUpdate = true;
 	int h, w = r_panels_get_size (core, &h);
 	if (panels->can) {
@@ -181,7 +182,9 @@ virtualmouse:
 		break;
 	case ':':
 		handlePrompt(core, panels);
-		r_panels_set_panel_addr (core, cur, core->addr);
+		if (r_panels_sync_seek (cur)) {
+			r_panels_set_panel_addr (core, cur, core->addr);
+		}
 		break;
 	case 'c':
 		r_panels_activate_cursor (core);
@@ -416,6 +419,9 @@ virtualmouse:
 		r_panels_get_cur_panel (panels)->view->refresh = true;
 		break;
 	case 'g':
+		if (!r_panels_sync_seek (cur)) {
+			r_core_seek (core, cur->model->addr, true);
+		}
 		r_core_visual_showcursor (core, true);
 		r_core_visual_offset (core);
 		r_core_visual_showcursor (core, false);
@@ -791,15 +797,6 @@ static bool panels_root(RCore *core, RPanelsRoot *panels_root) {
 			r_panels_layout (core, panels);
 		}
 		core->panels = prev;
-	}
-	if (panels) {
-		size_t i = 0;
-		for (; i < panels->n_panels; i++) {
-			RPanel *cur = r_panels_get_panel (panels, i);
-			if (cur) {
-				cur->model->addr = core->addr;
-			}
-		}
 	}
 	int maxpage = r_config_get_i (core->config, "scr.maxpage");
 	r_config_set_i (core->config, "scr.maxpage", 0);

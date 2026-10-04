@@ -743,14 +743,7 @@ static void handlePrompt(RCore *core, RPanels *panels) {
 	cons->event_resize = resize;
 	int h, w = r_panels_get_size (core, &h);
 	r_panels_resize_layout (panels, w, h);
-	int i;
-	for (i = 0; i < panels->n_panels; i++) {
-		RPanel *p = r_panels_get_panel (panels, i);
-		if (p && r_panels_check_panel_type (p, "pd")) {
-			r_panels_set_panel_addr (core, p, core->addr);
-			break;
-		}
-	}
+	r_panels_seek_all (core, core->addr);
 }
 
 static int add_cmd_panel(void *user) {
@@ -851,6 +844,9 @@ static void direction_disassembly_cb(void *user, int direction) {
 	if (cur->model->cache) {
 		direction_default_cb (user, direction);
 		return;
+	}
+	if (!r_panels_sync_seek (cur)) {
+		r_core_seek (core, cur->model->addr, true);
 	}
 	int cols = core->print->cols;
 	cur->view->refresh = true;
@@ -1167,24 +1163,38 @@ static bool r_panels_write_hex(RCore *core, const char *hex) {
 	return written;
 }
 
-static void insert_value(RCore *core, int wat) {
-	ut64 addr = r_panels_edit_addr (core);
+static bool r_panels_prepare_write(RCore *core, ut64 addr) {
 	RIOMap *map = r_io_map_get_at (core->io, addr);
 	bool writable = core->io->va? map && (map->perm & R_PERM_W)
 		: core->io->desc && (core->io->desc->perm & R_PERM_W);
 	if (!writable && !r_config_get_b (core->config, "io.cache")) {
 		if (!r_panels_show_status_yesno (core, 1, "File is read-only. Enable io.cache for editing? (Y/n)")) {
-			return;
+			return false;
 		}
 		r_config_set_b (core->config, "io.cache", true);
+	}
+	return true;
+}
+
+static void insert_value(RCore *core, int wat) {
+	ut64 addr = r_panels_edit_addr (core);
+	if (!r_panels_prepare_write (core, addr)) {
+		return;
 	}
 	if (wat == 'a') {
 		r_core_visual_asm (core, addr);
 		r_panels_set_refresh_all (core, true, false);
 	} else if (wat == 'x') {
-		const char *hex = r_cons_visual_readln (core->cons, "overwrite hex: ", NULL);
-		if (R_STR_ISNOTEMPTY (hex)) {
-			r_panels_write_hex (core, hex);
+		bool ascii = core->print->cur_enabled && core->print->col == 2;
+		const char *value = r_cons_visual_readln (core->cons, ascii? "overwrite text: ": "overwrite hex: ", NULL);
+		if (R_STR_ISNOTEMPTY (value)) {
+			if (ascii) {
+				if (r_core_write_at (core, addr, (const ut8 *)value, strlen (value))) {
+					r_panels_set_refresh_all (core, true, false);
+				}
+			} else {
+				r_panels_write_hex (core, value);
+			}
 		}
 	}
 }
@@ -1205,7 +1215,7 @@ static void set_addr_by_type(RCore *core, const char *cmd, ut64 addr) {
 	int i;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p = r_panels_get_panel (panels, i);
-		if (!r_panels_check_panel_type (p, cmd)) {
+		if (!r_panels_sync_seek (p) || !r_panels_check_panel_type (p, cmd)) {
 			continue;
 		}
 		r_panels_set_panel_addr (core, p, addr);

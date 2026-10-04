@@ -7,6 +7,25 @@
 
 #define PANEL_NUM_LIMIT 16
 
+typedef struct {
+	ut64 addr;
+	int x, y;
+} RPanelsGraphNode;
+
+R_VEC_TYPE (RPanelsGraphNodes, RPanelsGraphNode);
+R_VEC_TYPE (RPanelsLines, size_t);
+
+typedef struct {
+	RPanelModel model;
+	const char *content;
+	RPanelsLines lines;
+	int width, height;
+	RPanelsGraphNodes graph_nodes;
+	ut64 graph_addr;
+	bool graph_focused;
+	bool sync_seek;
+} RPanelsModel;
+
 static inline void r_panels_free_panel(RPanel *panel) {
 	if (!panel) {
 		return;
@@ -19,6 +38,8 @@ static inline void r_panels_free_panel(RPanel *panel) {
 		free (model->cmdStrCache);
 		free (model->readOnly);
 		free (model->funcName);
+		RPanelsLines_fini (&((RPanelsModel *)model)->lines);
+		RPanelsGraphNodes_fini (&((RPanelsModel *)model)->graph_nodes);
 		if (model->filter) {
 			int i;
 			for (i = 0; i < model->n_filter; i++) {

@@ -291,3 +291,21 @@ stateDiagram-v2
   linkStyle 8 stroke:#3030a3,fill:none
 EOF
 RUN
+
+NAME=agft renders once without interactive mode
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e scr.interactive=false
+e scr.utf8=false
+wx 85c0740290c3c3
+af
+agft
+e scr.interactive
+EOF
+EXPECT=<<EOF
+ *
+*  *
+false
+EOF
+RUN

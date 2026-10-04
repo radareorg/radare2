@@ -15,6 +15,11 @@ typedef struct {
 	bool (*load)(RCore *core, const char *name);
 } RCorePanels;
 
+typedef struct {
+	void (*cb)(const RAGraph *graph, void *user);
+	void *user;
+} RCoreGraphCapture;
+
 typedef struct r_core_priv_t {
 	// arch cache
 	int old_bits;
@@ -37,6 +42,7 @@ typedef struct r_core_priv_t {
 	ut64 goaddr;
 	char *section;
 	const RCorePanels *panels;
+	RCoreGraphCapture *graph_capture; // borrowed while capturing graph output
 } RCorePriv;
 
 R_IPI bool isVisualDisasm(RCore *core);

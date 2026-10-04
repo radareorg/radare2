@@ -44,10 +44,11 @@ typedef struct {
 typedef struct {
 	int x;
 	int y;
-	int height;
+	int length;
 	int max_scroll;
 	int thumb;
 	int thumb_size;
+	bool horizontal;
 } RPanelsScrollbar;
 
 typedef struct {
@@ -70,6 +71,12 @@ typedef struct {
 	RPanelsMenuCallback cb;
 	bool (*state)(RCore *core, RPanel *panel); // optional, appends (on) or (off) to the name
 } FrameMenuAction;
+
+typedef struct {
+	const char *name;
+	const char *key;
+	const char *states[3];
+} GraphMenuOption;
 
 typedef enum {
 	PANEL_CACHE_AUTO,
@@ -104,12 +111,15 @@ static void r_panels_menu_bar_range(RPanelsMenuItem *root, int sel, int bar_room
 static int frame_maximize_cb(void *user);
 static int frame_contents_cb(void *user);
 static int frame_cache_cb(void *user);
+static int frame_refresh_cb(void *user);
+static int frame_sync_seek_cb(void *user);
 static int frame_split_horizontal_cb(void *user);
 static int frame_split_vertical_cb(void *user);
 static int frame_close_cb(void *user);
 static int frame_move_menu_cb(void *user);
 static bool frame_maximize_state(RCore *core, RPanel *panel);
 static bool frame_cache_state(RCore *core, RPanel *panel);
+static bool frame_sync_seek_state(RCore *core, RPanel *panel);
 static void r_panels_frame_menu_update(RCore *core);
 static int continue_cb(void *user);
 static int step_cb(void *user);
@@ -196,6 +206,7 @@ static void r_panels_create_modal(RCore *core, RPanel *panel);
 static void r_panels_set_rcb(RPanels *ps, RPanel *p);
 static int add_cmdf_panel(RCore *core, char *input, char *str);
 static void replace_cmd(RCore *core, const char *title, const char *cmd);
+static void r_panels_reset_scroll_pos(RPanel *p);
 static void create_panel_input(void *user, RPanel *panel, const RPanelLayout dir, const char * R_NULLABLE title);
 static void replace_current_panel_input(void *user, RPanel *panel, const RPanelLayout dir, const char * R_NULLABLE title);
 static void search_strings_data_create(void *user, RPanel *panel, const RPanelLayout dir, const char * R_NULLABLE title);

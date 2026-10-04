@@ -313,3 +313,356 @@ ERROR: Visual mode requires scr.interactive=true
 ERROR: Panel mode requires scr.interactive=true
 EOF
 RUN
+
+NAME=panels edit menu skips separator and toggles io.cache
+FILE=-
+CMDS=<<EOF
+e scr.wheel=false
+e io.cache=false
+<mljjjjjjjjjjl xQ
+v @e:scr.interactive=true > /dev/null
+e io.cache
+<mljjjjjjjjjjlj xQ
+v @e:scr.interactive=true > /dev/null
+e io.cache
+EOF
+EXPECT=<<EOF
+true
+false
+EOF
+RUN
+
+NAME=panels settings submenu preserves order and callbacks
+FILE=-
+CMDS=<<EOF
+e scr.wheel=false
+e scr.bgfill=false
+<mljljjjjl qqqqQ
+v @e:scr.interactive=true > /dev/null
+e scr.bgfill
+EOF
+EXPECT=<<EOF
+true
+EOF
+RUN
+
+NAME=panels graph analysis recovers missing function and switches to tiny
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+"$capture=v @e:scr.interactive=true > $panel"
+e scr.wheel=false
+e scr.cols=100
+e scr.rows=30
+e scr.utf8=false
+e log.level=0
+wx 85c0740290c3c3
+<mlljljjjjj Q
+$capture > /dev/null
+cat $panel~No function~?
+aflc
+"<\x1b[<2;10;6M Q"
+v @e:scr.interactive=true > /dev/null
+aflc
+<Q
+$capture > /dev/null
+cat $panel~No function~?
+cat $panel~test eax, eax~?
+<=qQ
+$capture > /dev/null
+cat $panel~Graph options~?
+cat $panel~Analyze function~?
+cat $panel~Refresh~?
+"<\x1b[<2;10;6Mjl Q"
+v @e:scr.interactive=true > /dev/null
+<Q
+$capture > /dev/null
+cat $panel~*  *~?
+EOF
+EXPECT=<<EOF
+1
+0
+1
+0
+1
+0
+0
+1
+1
+EOF
+RUN
+
+NAME=panels graph options refresh cached output and preserve cache preference
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+"$capture=v @e:scr.interactive=true > $panel"
+e scr.wheel=false
+e scr.cols=100
+e scr.rows=30
+e scr.utf8=false
+e graph.layout=0
+e graph.body=true
+e graph.edges=1
+wx 85c0740290c3c3
+af
+"<mlljljjjjj \x1b[<2;10;25MjlqqQ"
+$capture > /dev/null
+cat $panel~Edges (simple)~?
+"<\x1b[<2;10;6Mjljj Q"
+v @e:scr.interactive=true > /dev/null
+e graph.body
+<Q
+$capture > /dev/null
+cat $panel~test eax, eax~?
+"<\x1b[<2;10;6Mjlj Q"
+v @e:scr.interactive=true > /dev/null
+e graph.layout
+<=jqQ
+$capture > /dev/null
+cat $panel~Cache (on)~?
+EOF
+EXPECT=<<EOF
+1
+false
+0
+1
+1
+EOF
+RUN
+
+NAME=panels custom graph command keeps its explicit address
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+"$capture=v @e:scr.interactive=true > $panel"
+e scr.wheel=false
+e scr.cols=100
+e scr.rows=30
+e scr.utf8=false
+wx 85c0740290c3c3 @ 0x100
+af @ 0x100
+"<eagf @ 0x100\nQ"
+$capture > /dev/null
+cat $panel~No function~?
+cat $panel~test eax, eax~?
+<=qQ
+$capture > /dev/null
+cat $panel~Graph options~?
+EOF
+EXPECT=<<EOF
+0
+1
+0
+EOF
+RUN
+
+NAME=panels refresh reruns a cached command once without changing cache mode
+FILE=-
+CMDS=<<EOF
+"$capture=v @e:scr.interactive=true > $panel"
+e scr.wheel=false
+e scr.cols=100
+e scr.rows=30
+f counter=0
+"$probe=f counter=counter+1;?v counter"
+<e$probe\n=j qQ
+v @e:scr.interactive=true > /dev/null
+f before=counter
+<Q
+v @e:scr.interactive=true > /dev/null
+?v counter-before
+<=jj Q
+$capture > /dev/null
+?v counter-before
+cat $panel~Cache (on)~?
+f before=counter
+<Q
+v @e:scr.interactive=true > /dev/null
+?v counter-before
+<=j qQ
+v @e:scr.interactive=true > /dev/null
+f before=counter
+<=jj Q
+$capture > /dev/null
+"?v counter>before"
+cat $panel~Cache (off)~?
+EOF
+EXPECT=<<EOF
+0x0
+0x1
+1
+0x0
+0x1
+1
+EOF
+RUN
+
+NAME=panels functions menu analyzes program and refreshes cached functions
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+"$capture=v @e:scr.interactive=true > $panel"
+e scr.wheel=false
+e scr.cols=100
+e scr.rows=30
+e log.level=0
+wx 85c0740290c3c3
+"<\t=j q\x1b[<2;70;6M Q"
+v @e:scr.interactive=true > /dev/null
+aflc
+<Q
+$capture > /dev/null
+cat $panel~0x00000000    3      7~?
+s
+EOF
+EXPECT=<<EOF
+1
+1
+0x0
+EOF
+RUN
+
+NAME=panels graph follows selected block and preserves manual scrolling
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+"$capture=v @e:scr.interactive=true > $panel"
+e scr.wheel=false
+e scr.utf8=false
+e scr.cols=100
+e scr.rows=20
+wx 85c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c385c0740290c3c3
+af
+s 221
+<eagf\nQ
+v @e:scr.interactive=true > /dev/null
+<Q
+$capture > /dev/null
+cat $panel~0xdc ~?
+<jjjjQ
+v @e:scr.interactive=true > /dev/null
+<Q
+$capture > /dev/null
+cat $panel~0xdc ~?
+s 0
+<Q
+$capture > /dev/null
+cat $panel~0x0 ~?
+"<\x1b[<2;10;6Mjl Q"
+v @e:scr.interactive=true > /dev/null
+s 221
+<Q
+$capture > /dev/null
+cat $panel~                                        *~?
+s 0
+<Q
+$capture > /dev/null
+cat $panel~                                        *~?
+s 221
+"<\x1b[<2;10;6Mjl Q"
+v @e:scr.interactive=true > /dev/null
+<exc $r*16\nQ
+v @e:scr.interactive=true > /dev/null
+<Q
+$capture > /dev/null
+cat $panel~c385 c074~?
+EOF
+EXPECT=<<EOF
+1
+0
+1
+1
+0
+1
+EOF
+RUN
+
+NAME=panels hexdump mouse selects ASCII and hexadecimal editing columns
+FILE=-
+CMDS=<<EOF
+e scr.wheel=false
+e scr.utf8=false
+e scr.cols=80
+e scr.rows=20
+e hex.cols=8
+wx 4142434445464748494a4b4c4d4e4f50
+<exc 32\nQ
+v @e:scr.interactive=true > /dev/null
+"<\x1b[<0;38;5M\x1b[<0;38;5mi5a\nQQ"
+v @e:scr.interactive=true > /dev/null
+p8 8
+wx 4142434445464748
+"<\x1b[<0;20;5M\x1b[<0;20;5mi5a\nQQ"
+v @e:scr.interactive=true > /dev/null
+p8 8
+EOF
+EXPECT=<<EOF
+4142356145464748
+41425a4445464748
+EOF
+RUN
+
+NAME=panels hexdump context preserves selected range when cancelled and copied
+FILE=-
+CMDS=<<EOF
+e scr.wheel=false
+e scr.utf8=false
+e scr.cols=80
+e scr.rows=20
+e hex.cols=8
+wx 4142434445464748494a4b4c4d4e4f50
+<exc 32\nQ
+v @e:scr.interactive=true > /dev/null
+"<\x1b[<0;25;5M\x1b[<32;17;5M\x1b[<0;17;5m\x1b[<2;40;6M\x1b[<2;40;6mq\x1b[<2;15;6M QQ"
+v @e:scr.interactive=true > /dev/null
+y8
+"<\x1b[<2;20;6M\x1b[<2;20;6mj QQ"
+v @e:scr.interactive=true > /dev/null
+p8 8 @ 8
+EOF
+EXPECT=<<EOF
+42434445
+494a424344454f50
+EOF
+RUN
+
+NAME=panels hexdump context Insert preserves ASCII selection
+FILE=-
+CMDS=<<EOF
+e scr.wheel=false
+e scr.utf8=false
+e scr.cols=80
+e scr.rows=20
+e hex.cols=8
+wx 4142434445464748
+<exc 16\nQ
+v @e:scr.interactive=true > /dev/null
+"<\x1b[<0;39;5M\x1b[<0;39;5m\x1b[<2;15;6Mjj 5a\nQQ"
+v @e:scr.interactive=true > /dev/null
+p8 8
+EOF
+EXPECT=<<EOF
+4142433561464748
+EOF
+RUN
+
+NAME=panels opening a new panel clears the previous byte selection
+FILE=-
+CMDS=<<EOF
+e scr.wheel=false
+e scr.utf8=false
+e scr.cols=80
+e scr.rows=20
+e hex.cols=8
+wx 4142434445464748
+<exc 16\nQ
+v @e:scr.interactive=true > /dev/null
+"<\x1b[<0;39;5M\x1b[<0;39;5mmlljljjjjj i5a\nQQ"
+v @e:scr.interactive=true > /dev/null
+p8 8
+EOF
+EXPECT=<<EOF
+5a42434445464748
+EOF
+RUN
