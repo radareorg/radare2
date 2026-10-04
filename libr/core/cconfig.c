@@ -804,6 +804,8 @@ static bool cb_asmarch(void *user, void *data) {
 		}
 	}
 	r_debug_set_arch (core->dbg, node->value, bits);
+	r_bp_use (core->dbg->bp, node->value, bits);
+	r_config_set_i (core->config, "dbg.bpsize", r_bp_size (core->dbg->bp));
 	if (!r_config_set (core->config, "anal.arch", node->value)) {
 		char *p, *s = strdup (node->value);
 		if (s) {

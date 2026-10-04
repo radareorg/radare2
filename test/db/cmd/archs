@@ -12,6 +12,25 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=breakpoint sizes follow architecture changes at the same bit width
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e asm.arch=mips
+e dbg.bpsize
+db 0x10
+e asm.arch=x86
+e dbg.bpsize
+db 0x20
+dbj
+EOF
+EXPECT=<<EOF
+4
+1
+[{"addr":16,"size":4,"perm":"--x","hw":false,"trace":false,"enabled":true,"valid":true,"data":"","cond":"","name":"0x10"},{"addr":32,"size":1,"perm":"--x","hw":false,"trace":false,"enabled":true,"valid":true,"data":"","cond":"","name":"0x20"}]
+EOF
+RUN
+
 NAME=endian tests: mips
 FILE=-
 CMDS=<<EOF
