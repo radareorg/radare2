@@ -3522,20 +3522,22 @@ R_API bool r_anal_function_purity(RAnalFunction *fcn) {
 }
 
 static bool can_affect_bp(RAnal *anal, RAnalOp *op) {
-	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
-	RAnalValue *src = RVecRArchValue_at (&op->srcs, 0);
-	const char *opdreg = dst? dst->reg: NULL;
-	const char *opsreg = src? src->reg: NULL;
 	const char *bpreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
-	if (bpreg) {
-		bool dst_is_bp = opdreg && !dst->memref && !strcmp (opdreg, bpreg);
-		bool src_is_bp = opsreg && !src->memref && !strcmp (opsreg, bpreg);
-		if (op->type == R_ANAL_OP_TYPE_XCHG) {
-			return src_is_bp || dst_is_bp;
-		}
-		return dst_is_bp;
+	if (!bpreg) {
+		return false;
 	}
-	return false;
+	if (op->type == R_ANAL_OP_TYPE_XCHG) {
+		RAnalValue *dst;
+		R_VEC_FOREACH (&op->dsts, dst) {
+			if (dst->reg && !dst->memref && !strcmp (dst->reg, bpreg)) {
+				return true;
+			}
+		}
+		RAnalValue *src = RVecRArchValue_at (&op->srcs, 0);
+		return src && src->reg && !src->memref && !strcmp (src->reg, bpreg);
+	}
+	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
+	return dst && dst->reg && !dst->memref && !strcmp (dst->reg, bpreg);
 }
 
 /*
