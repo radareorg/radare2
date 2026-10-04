@@ -704,8 +704,9 @@ static bool r_panels_handle_mouse(RCore *core, int *key) {
 			if (core->print->cur_enabled && core->print->ocur >= 0) {
 				r_panels_select_byte (core, panel, cons->drag_x,
 					cons->drag_y - r_config_get_i (core->config, "scr.notch"), true);
+				return true;
 			}
-			return true;
+			r_panels_set_cursor (core, false);
 		}
 	}
 	if (r_panels_handle_mouse_press (core)) {

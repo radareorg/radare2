@@ -117,13 +117,19 @@ static bool r_panels_scrollbar_layout(RPanel *panel, RPanelsScrollbar *bar, bool
 		return false;
 	}
 	RPanelsModel *model = r_panels_content_index (panel, r_panels_rendered_content (panel));
-	if (!model || (horizontal && model->width <= pos->w - 4)) {
+	if (!model) {
+		return false;
+	}
+	bool horizontal_scroll = model->width > pos->w - 3;
+	bool vertical_scroll = model->height > pos->h - 3 - horizontal_scroll;
+	horizontal_scroll |= model->width > pos->w - 3 - vertical_scroll;
+	if (!(horizontal? horizontal_scroll: vertical_scroll)) {
 		return false;
 	}
 	bar->horizontal = horizontal;
 	bar->x = pos->x + (horizontal? 2: pos->w - 2);
 	bar->y = pos->y + (horizontal? pos->h - 2: 2);
-	bar->length = horizontal? pos->w - 4: pos->h - 3 - (model->width > pos->w - 4);
+	bar->length = horizontal? pos->w - 3 - vertical_scroll: pos->h - 3 - horizontal_scroll;
 	const int extent = horizontal? model->width: model->height;
 	const int scroll = horizontal? panel->view->sx: panel->view->sy;
 	bar->max_scroll = R_MAX (0, extent - bar->length);
@@ -136,18 +142,16 @@ static bool r_panels_scrollbar_layout(RPanel *panel, RPanelsScrollbar *bar, bool
 static void r_panels_panel_write_content(RCore *core, RPanel *panel, const char *content, int sx, bool r_panels_show_cursor) {
 	RPanelsScrollbar bars[2];
 	bool visible[2];
+	const bool bounded = panel->model->type != PANEL_TYPE_MENU && (panel->model->cache || panel->model->readOnly);
 	int axis;
 	for (axis = 0; axis < 2; axis++) {
 		visible[axis] = r_panels_scrollbar_layout (panel, &bars[axis], axis);
-		if (visible[axis]) {
+		if (bounded) {
 			int *scroll = axis? &panel->view->sx: &panel->view->sy;
-			*scroll = R_MIN (R_MAX (*scroll, 0), bars[axis].max_scroll);
+			*scroll = visible[axis]? R_MIN (R_MAX (*scroll, 0), bars[axis].max_scroll): 0;
 		}
 	}
-	if (visible[0] && !visible[1]) {
-		panel->view->sx = 0;
-	}
-	if ((visible[0] || visible[1]) && sx >= 0) {
+	if (bounded && sx >= 0) {
 		sx = panel->view->sx;
 	}
 	const int sy = R_MAX (panel->view->sy, 0);

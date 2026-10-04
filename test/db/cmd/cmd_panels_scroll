@@ -109,3 +109,160 @@ EXPECT=<<EOF
 0
 EOF
 RUN
+
+NAME=panels hexdump address drag scrolls both ways and stops at zero
+FILE=-
+CMDS=<<EOF
+"$capture=v @e:scr.interactive=true > $panel"
+e scr.utf8=false
+e scr.wheel=false
+e scr.cols=80
+e scr.rows=20
+e hex.cols=8
+<exc 16\n=jjj qQ
+v @e:scr.interactive=true > /dev/null
+"<\x1b[<0;8;6M\x1b[<32;8;4M\x1b[<0;8;4mQ"
+v @e:scr.interactive=true > /dev/null
+<Q
+$capture > /dev/null
+cat $panel~0x00000010~?
+cat $panel~0x00000008~?
+"<\x1b[<0;8;5M\x1b[<32;8;6M\x1b[<0;8;6mQ"
+v @e:scr.interactive=true > /dev/null
+<Q
+$capture > /dev/null
+cat $panel~0x00000008~?
+cat $panel~0x00000010~?
+"<\x1b[<0;8;5M\x1b[<32;8;10M\x1b[<0;8;10mQ"
+v @e:scr.interactive=true > /dev/null
+<Q
+$capture > /dev/null
+cat $panel~0x00000008~?
+cat $panel~0x00000010~?
+EOF
+EXPECT=<<EOF
+1
+0
+1
+1
+1
+0
+EOF
+RUN
+
+NAME=panels scrollbars only occupy space when content overflows
+FILE=-
+CMDS=<<EOF
+"$capture=v @e:scr.interactive=true > $panel"
+"$probe=?e 0123456789012345678901234567890123456789012345678901 @@=0 1 2 3 4 5 6 7 8 9 10 11 12 13 14"
+e scr.utf8=false
+e scr.wheel=false
+e scr.cols=80
+e scr.rows=20
+<e$probe\n=j qQ
+v @e:scr.interactive=true > /dev/null
+<Q
+$capture > /dev/null
+cat $panel~\#~?
+cat $panel~0123456789012345678901234567890123456789012345678901~?
+"$probe=?e 01234567890123456789012345678901234567890123456789012 @@=0 1 2 3 4 5 6 7 8 9 10 11 12 13"
+<=jj Q
+v @e:scr.interactive=true > /dev/null
+<Q
+$capture > /dev/null
+cat $panel~\#\#\#~?
+cat $panel~0123456789012345678901234567890123456789012345678901~?
+"$probe=?e 012345678901234567890123456789012345678901234567890 @@=0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15"
+<=jj Q
+v @e:scr.interactive=true > /dev/null
+<Q
+$capture > /dev/null
+cat $panel~\#~?
+cat $panel~\#\#\#~?
+"$probe=?e 0123456789012345678901234567890123456789012345678901 @@=0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15"
+<=jj Q
+v @e:scr.interactive=true > /dev/null
+<Q
+$capture > /dev/null
+cat $panel~\#\#\#~?
+"<\x1b[<0;53;18M\x1b[<0;53;18m\x1b[<0;54;17M\x1b[<0;54;17mQ"
+v @e:scr.interactive=true > /dev/null
+"$probe=?e SHORT"
+<=jj Q
+v @e:scr.interactive=true > /dev/null
+<Q
+$capture > /dev/null
+cat $panel~\#~?
+cat $panel~SHORT~?
+EOF
+EXPECT=<<EOF
+0
+1
+1
+1
+1
+0
+1
+0
+1
+EOF
+RUN
+
+NAME=panels resizing hides unneeded vertical scrollbar and resets scrolling
+FILE=-
+CMDS=<<EOF
+"$capture=v @e:scr.interactive=true > $panel"
+"$probe=?v $$+0xabc00000 @@=0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15"
+e scr.utf8=false
+e scr.wheel=false
+e scr.cols=80
+e scr.rows=20
+<e$probe\n=j qQ
+v @e:scr.interactive=true > /dev/null
+"<\x1b[<0;54;18M\x1b[<0;54;18mQ"
+v @e:scr.interactive=true > /dev/null
+<Q
+$capture > /dev/null
+cat $panel~\#~?
+cat $panel~0xabc00000~?
+cat $panel~0xabc0000f~?
+e scr.rows=21
+<Q
+$capture > /dev/null
+cat $panel~\#~?
+cat $panel~0xabc00000~?
+cat $panel~0xabc0000f~?
+EOF
+EXPECT=<<EOF
+1
+0
+1
+0
+1
+1
+EOF
+RUN
+
+NAME=panels hexdump address drag after selection keeps panning over bytes
+FILE=-
+CMDS=<<EOF
+"$capture=v @e:scr.interactive=true > $panel"
+e scr.utf8=false
+e scr.wheel=false
+e scr.cols=80
+e scr.rows=20
+e hex.cols=8
+<exc 16\n=jjj qQ
+v @e:scr.interactive=true > /dev/null
+"<\x1b[<0;25;5M\x1b[<32;17;5M\x1b[<0;17;5m\x1b[<0;8;6M\x1b[<32;20;5M\x1b[<32;20;4M\x1b[<0;20;4mQQ"
+v @e:scr.interactive=true > /dev/null
+<Q
+$capture > /dev/null
+cat $panel~0x00000010~?
+cat $panel~0x00000008~?
+EOF
+EXPECT=<<EOF
+1
+0
+EOF
+RUN
