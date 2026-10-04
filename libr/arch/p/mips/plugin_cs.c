@@ -1479,7 +1479,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		SET_VAL (op, 2);
 		op->sign = (insn->id == MIPS_INS_ADDI || insn->id == MIPS_INS_ADD);
 		op->type = R_ANAL_OP_TYPE_ADD;
-		if (REGID(0) == MIPS_REG_SP) {
+		if (OPCOUNT () == 3 && REGID (0) == MIPS_REG_SP && REGID (1) == MIPS_REG_SP && OPERAND (2).type == MIPS_OP_IMM) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -IMM(2);
 		}

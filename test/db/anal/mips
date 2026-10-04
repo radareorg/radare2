@@ -1567,3 +1567,40 @@ EXPECT=<<EOF
 0x404c3c
 EOF
 RUN
+
+NAME=mips stack adjustments come only from sp-to-sp add immediates
+FILE=-
+ARGS=-a mips -b 32 -e asm.bytes=false -e asm.stackptr=true
+CMDS=<<EOF
+wx e0ffbd2700c0dd2721e8a803e0ffbd27e0ffa4270800e003
+pd 6
+EOF
+EXPECT=<<EOF
+            0x00000000     0      addiu sp, sp, -0x20
+            0x00000004    32+     addiu sp, fp, -0x4000
+            0x00000008    32      addu sp, sp, t0
+            0x0000000c    32      addiu sp, sp, -0x20
+            0x00000010    64+     addiu a0, sp, -0x20
+            0x00000014    64      jr ra
+EOF
+RUN
+
+NAME=mips.gnu 64-bit stack adjustments come only from sp-to-sp add immediates
+FILE=-
+ARGS=-a mips.gnu -b 64 -e asm.bytes=false -e asm.stackptr=true
+CMDS=<<EOF
+wx e0ffbd2700c0dd2700c0dd2300c0dd6700c0dd63e0ffbd23e0ffbd67e0ffbd630800e003
+pd 9
+EOF
+EXPECT=<<EOF
+            0x00000000     0      addiu sp, sp, -32
+            0x00000004    32+     addiu sp, s8, -16384
+            0x00000008    32      addi sp, s8, -16384
+            0x0000000c    32      daddiu sp, s8, -16384
+            0x00000010    32      daddi sp, s8, -16384
+            0x00000014    32      addi sp, sp, -32
+            0x00000018    64+     daddiu sp, sp, -32
+            0x0000001c    96+     daddi sp, sp, -32
+            0x00000020   128+     jr ra
+EOF
+RUN
