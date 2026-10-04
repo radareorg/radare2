@@ -1355,6 +1355,68 @@ static void rprj_breakpoint_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 	r_list_free (seen);
 }
 
+static void rprj_print_signal_option(RPrjCursor *cur, ut32 signum, ut32 option) {
+	if (!option) {
+		r_strbuf_appendf (cur->out, "'dko %u\n", signum);
+	} else if (option & R_DBG_SIGNAL_CONT) {
+		r_strbuf_appendf (cur->out, "'dko %u cont\n", signum);
+	} else if (option & R_DBG_SIGNAL_SKIP) {
+		r_strbuf_appendf (cur->out, "'dko %u skip\n", signum);
+	}
+}
+
+static bool rprj_signal_diff_cb(void *user, const char *k, const char *v) {
+	R2ProjectDiffCtx *ctx = (R2ProjectDiffCtx *)user;
+	if (!r_str_startswith (k, "cfg.")) {
+		return true;
+	}
+	const int signum = atoi (k + 4);
+	const int option = atoi (v);
+	if (signum > 0 && option && !rprj_diff_has_addr (ctx->seen, (ut64)signum)) {
+		rprj_print_signal_option (ctx->cur, (ut32)signum, (ut32)option);
+	}
+	return true;
+}
+
+static void rprj_signal_load(RPrjCursor *cur, int mode, ut64 next_entry) {
+	RBuffer *b = cur->b;
+	const bool diff = (mode & R_CORE_NEWPRJ_MODE_DIFF) != 0;
+	RList *seen = diff? r_list_newf (free): NULL;
+	while (rprj_entry_remaining (b, next_entry)) {
+		const ut64 at = r_buf_at (b);
+		R2ProjectSignal sig;
+		if (!rprj_entry_has (b, next_entry, RPRJ_SIGNAL_SIZE) || !rprj_signal_read (b, &sig)) {
+			R_LOG_WARN ("Truncated signal record at 0x%08"PFMT64x, at);
+			break;
+		}
+		if (!sig.signum || sig.signum > ST32_MAX || (sig.option & ~(R_DBG_SIGNAL_CONT | R_DBG_SIGNAL_SKIP))) {
+			R_LOG_WARN ("Invalid signal record at 0x%08"PFMT64x, at);
+			continue;
+		}
+		if (mode & R_CORE_NEWPRJ_MODE_LOG) {
+			r_strbuf_appendf (cur->out, "      signal=%u option=%u\n", sig.signum, sig.option);
+		}
+		if (mode & R_CORE_NEWPRJ_MODE_SCRIPT) {
+			rprj_print_signal_option (cur, sig.signum, sig.option);
+		}
+		if (diff) {
+			rprj_diff_seen_addr (seen, (ut64)sig.signum);
+			const int option = cur->core->dbg? r_debug_signal_what (cur->core->dbg, (int)sig.signum): 0;
+			if (option != (int)sig.option) {
+				rprj_print_signal_option (cur, sig.signum, (ut32)option);
+			}
+		}
+		if ((mode & R_CORE_NEWPRJ_MODE_LOAD) && cur->core->dbg) {
+			r_debug_signal_setup (cur->core->dbg, (int)sig.signum, (int)sig.option);
+		}
+	}
+	if (diff && cur->core->dbg && cur->core->dbg->sgnls) {
+		R2ProjectDiffCtx ctx = { cur, seen };
+		sdb_foreach (cur->core->dbg->sgnls, rprj_signal_diff_cb, &ctx);
+	}
+	r_list_free (seen);
+}
+
 static void rprj_strs_log(RPrjCursor *cur, ut64 next_entry) {
 	RBuffer *b = cur->b;
 	ut64 size;
@@ -1489,6 +1551,8 @@ static char *r_core_newprj_load(RCore *core, const char *file, int mode) {
 	if (mode & R_CORE_NEWPRJ_MODE_RIO) {
 		if (core->dbg) {
 			r_bp_del_all (core->dbg->bp);
+			r_debug_signal_fini (core->dbg);
+			r_debug_signal_init (core->dbg);
 		}
 		r_core_cmd0 (core, "o--");
 		r_config_set (core->config, "prj.name", "");
@@ -1557,6 +1621,9 @@ static char *r_core_newprj_load(RCore *core, const char *file, int mode) {
 			break;
 		case RPRJ_BRKP:
 			rprj_breakpoint_load (&cur, mode, next_entry);
+			break;
+		case RPRJ_SIGS:
+			rprj_signal_load (&cur, mode, next_entry);
 			break;
 		}
 		if (mode & R_CORE_NEWPRJ_MODE_LOG) {

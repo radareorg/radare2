@@ -355,6 +355,30 @@ static void rprj_breakpoint_write(RPrjCursor *cur) {
 	}
 }
 
+static bool rprj_signal_write_cb(void *user, const char *k, const char *v) {
+	RPrjCursor *cur = (RPrjCursor *)user;
+	if (!r_str_startswith (k, "cfg.")) {
+		return true;
+	}
+	const int signum = atoi (k + 4);
+	if (signum < 1) {
+		return true;
+	}
+	const int option = atoi (v);
+	R2ProjectSignal sig = {
+		.signum = (ut32)signum,
+		.option = (ut32)option,
+	};
+	rprj_signal_write_record (cur->b, &sig);
+	return true;
+}
+
+static void rprj_signal_write(RPrjCursor *cur) {
+	if (cur->core->dbg && cur->core->dbg->sgnls) {
+		sdb_foreach (cur->core->dbg->sgnls, rprj_signal_write_cb, cur);
+	}
+}
+
 static bool evalkey_is_saveable(RConfigNode *node) {
 	if (r_config_node_is_ro (node)) {
 		return false;
@@ -463,6 +487,7 @@ static bool r_core_newprj_save(RCore *core, const char *file) {
 	rprj_write_entry (&cur, RPRJ_FUNC, rprj_function_write);
 	rprj_write_entry (&cur, RPRJ_XREF, rprj_xref_write);
 	rprj_write_entry (&cur, RPRJ_BRKP, rprj_breakpoint_write);
+	rprj_write_entry (&cur, RPRJ_SIGS, rprj_signal_write);
 	rprj_write_entry (&cur, RPRJ_STRS, rprj_strs_write_entry);
 	RVecPrjMap_free (cur.maps);
 	ut64 size;
