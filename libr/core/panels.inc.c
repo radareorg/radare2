@@ -766,6 +766,8 @@ static void r_panels_bottom_panel_line(RCore *core) {
 		r_cons_printf (cons, "%s", hline);
 	}
 	r_cons_write (cons, br_corner, strlen (br_corner));
+	r_cons_gotoxy (cons, 0, h);
+	r_cons_print (cons, Color_RESET R_CONS_CLEAR_LINE);
 }
 
 static RPanelsMenuItem *r_panels_get_selected_menu_item(RPanels *panels) {
@@ -4996,8 +4998,17 @@ static void r_panels_del_panels(RCore *core) {
 
 
 static void handlePrompt(RCore *core, RPanels *panels) {
+	RCons *cons = core->cons;
+	RConsEvent resize = cons->event_resize;
+	void *event_data = cons->event_data;
+	cons->event_resize = NULL;
 	r_panels_bottom_panel_line (core);
 	r_core_visual_prompt_input (core);
+	cons->event_resize = NULL;
+	cons->event_data = event_data;
+	cons->event_resize = resize;
+	int h, w = r_panels_get_size (core, &h);
+	r_panels_resize_layout (panels, w, h);
 	int i;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p = r_panels_get_panel (panels, i);
@@ -7026,7 +7037,7 @@ static int r2_assembler_cb(void *user) {
 static int shell_r2_cb(void *user) {
 	RCore *core = (RCore *)user;
 	core->vmode = false;
-	r_core_visual_prompt_input (core);
+	handlePrompt (core, core->panels);
 	core->vmode = true;
 	return 0;
 }
