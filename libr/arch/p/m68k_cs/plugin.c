@@ -628,11 +628,14 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	case M68K_INS_LSL:
 		op->type = R_ANAL_OP_TYPE_SHL;
 		break;
-	case M68K_INS_LINK:
+	case M68K_INS_LINK: {
+		const bool is_long = m68k->op_size.cpu_size == M68K_CPU_SIZE_LONG;
+		const st64 disp = is_long? (st32)IMM (1): (st16)IMM (1);
 		op->type = R_ANAL_OP_TYPE_PUSH;
 		op->stackop = R_ANAL_STACK_INC;
-		op->stackptr = -(st16)IMM(1);
+		op->stackptr = 4 - disp;
 		break;
+	}
 	case M68K_INS_LSR:
 		op->type = R_ANAL_OP_TYPE_SHR;
 		break;
