@@ -15,6 +15,7 @@ static void r_bp_item_free(RBreakpointItem *b) {
 		free (b->module_name);
 		free (b->data);
 		free (b->cond);
+		free (b->expr);
 		free (b);
 	}
 }
