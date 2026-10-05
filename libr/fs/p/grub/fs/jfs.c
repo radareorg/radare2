@@ -27,6 +27,7 @@
 #include <r_types.h>
 
 #define GRUB_JFS_MAX_SYMLNK_CNT 8
+#define GRUB_JFS_MAX_SYMLNK_LEN 4096
 #define GRUB_JFS_FILETYPE_MASK 0170000
 #define GRUB_JFS_FILETYPE_REG 0100000
 #define GRUB_JFS_FILETYPE_LNK 0120000
@@ -578,12 +579,14 @@ grub_jfs_read_file(struct grub_jfs_data *data,
 DATA.  */
 static grub_err_t
 grub_jfs_find_file(struct grub_jfs_data *data, const char *path) {
-	char *fpath = grub_malloc (grub_strlen (path));
+	char *fpath = grub_strdup (path);
 	char *name = fpath;
 	char *next;
 	struct grub_jfs_diropen *diro;
 
-	grub_strncpy (fpath, path, grub_strlen (path) + 1);
+	if (!fpath) {
+		return grub_errno;
+	}
 
 	if (grub_jfs_read_inode (data, GRUB_JFS_AGGR_INODE, &data->currinode)) {
 		grub_free (fpath);
@@ -676,22 +679,23 @@ grub_jfs_find_file(struct grub_jfs_data *data, const char *path) {
 
 static grub_err_t
 grub_jfs_lookup_symlink(struct grub_jfs_data *data, int ino) {
-	int size = grub_le_to_cpu64 (data->currinode.size);
-#ifndef _MSC_VER
-	char symlink[size + 1];
-#else
-	char *symlink = grub_malloc (size + 1);
-#endif
+	grub_uint64_t size = grub_le_to_cpu64 (data->currinode.size);
 	if (++data->linknest > GRUB_JFS_MAX_SYMLNK_CNT) {
 		return grub_error (GRUB_ERR_SYMLINK_LOOP, "too deep nesting of symlinks");
 	}
-
-	if (size <= 128) {
-		grub_strncpy (symlink, (char *) (data->currinode.symlink.path), 128);
-	} else if (grub_jfs_read_file (data, 0, 0, 0, size, symlink) < 0) {
+	if (size < 1 || size > GRUB_JFS_MAX_SYMLNK_LEN) {
+		return grub_error (GRUB_ERR_BAD_FS, "invalid symlink size");
+	}
+	char *symlink = grub_malloc (size + 1);
+	if (!symlink) {
 		return grub_errno;
 	}
-
+	if (size <= sizeof (data->currinode.symlink.path)) {
+		grub_memcpy (symlink, data->currinode.symlink.path, size);
+	} else if (grub_jfs_read_file (data, 0, 0, 0, size, symlink) < 0) {
+		grub_free (symlink);
+		return grub_errno;
+	}
 	symlink[size] = '\0';
 
 	/* The symlink is an absolute path, go back to the root inode.  */
@@ -700,15 +704,13 @@ grub_jfs_lookup_symlink(struct grub_jfs_data *data, int ino) {
 	}
 
 	/* Now load in the old inode.  */
-	if (grub_jfs_read_inode (data, ino, &data->currinode)) {
-		return grub_errno;
+	if (!grub_jfs_read_inode (data, ino, &data->currinode)) {
+		grub_jfs_find_file (data, symlink);
+		if (grub_errno) {
+			grub_error (grub_errno, "cannot follow symlink `%s'", symlink);
+		}
 	}
-
-	grub_jfs_find_file (data, symlink);
-	if (grub_errno) {
-		grub_error (grub_errno, "cannot follow symlink `%s'", symlink);
-	}
-
+	grub_free (symlink);
 	return grub_errno;
 }
 
