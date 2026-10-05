@@ -80,8 +80,9 @@ static char *name_from_table(ut64 off, filetable *tbl) {
 static int ar_parse_header(RArFp *arf, filetable *tbl, ut64 arsize) {
 	R_RETURN_VAL_IF_FAIL (arf && arf->buf && tbl, -1);
 	RBuffer *b = arf->buf;
-
-	ut64 h_off = r_buf_tell (b);
+	ut64 h_off;
+next_header:
+	h_off = r_buf_tell (b);
 	if (h_off % 2 == 1) {
 		// headers start at even offset
 		ut8 tmp[1];
@@ -130,7 +131,7 @@ static int ar_parse_header(RArFp *arf, filetable *tbl, ut64 arsize) {
 		R_LOG_ERROR ("Malformed AR: bad size in header at offset 0x%" PFMT64x, h_off);
 		return -1;
 	}
-	ut64 size = atol (h.size);
+	ut64 size = strtoull (h.size, NULL, 10);
 
 	h.timestamp[0] = '\0'; // null terminate h.name
 	r_str_trim_tail (h.name);
@@ -144,15 +145,14 @@ static int ar_parse_header(RArFp *arf, filetable *tbl, ut64 arsize) {
 			R_LOG_ERROR ("Malformed ar: too short");
 			return -1;
 		}
-		// return next entry
-		return ar_parse_header (arf, tbl, arsize);
+		goto next_header;
 	} else if (!strcmp (h.name, "//")) {
 		// table of file names
 		if (tbl->data || tbl->size != 0) {
 			R_LOG_ERROR ("invalid ar file: two filename lookup tables (at 0x%" PFMT64x ", and 0x%" PFMT64x ")", tbl->offset, h_off);
 			return -1;
 		}
-		tbl->data = (char *)malloc (size + 1);
+		tbl->data = (size <= arsize - r_buf_tell (b))? malloc (size + 1): NULL;
 		if (!tbl->data || r_buf_read (b, (ut8 *)tbl->data, size) != size) {
 			return -1;
 		}
@@ -160,8 +160,7 @@ static int ar_parse_header(RArFp *arf, filetable *tbl, ut64 arsize) {
 		tbl->size = size;
 		tbl->offset = h_off;
 
-		// return next entry
-		return ar_parse_header (arf, tbl, arsize);
+		goto next_header;
 	}
 
 	/*
