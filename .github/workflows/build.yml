@@ -45,6 +45,7 @@ jobs:
       run: sys/wasi.sh
     - uses: actions/upload-artifact@v7
       with:
+        if-no-files-found: error
         name: linux-wasi
         path: radare2-*-wasi.zip
 
@@ -70,6 +71,7 @@ jobs:
       run: sys/wasi-api.sh
     - uses: actions/upload-artifact@v7
       with:
+        if-no-files-found: error
         name: linux-wasi-api
         path: |
           radare2-*-wasi-api.zip
@@ -96,6 +98,7 @@ jobs:
       run: sys/wasi-browser.sh
     - uses: actions/upload-artifact@v7
       with:
+        if-no-files-found: error
         name: linux-wasi-browser
         path: radare2-*-wasi-browser.zip
 
@@ -105,6 +108,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v7
+    - name: Test iOS packaging failure handling
+      run: python3 test/scripts/test-ios-cydia.py
     - name: Installing with capstone, libuv and openssl
       run: |
           export CFLAGS=-Wl,--no-undefined
@@ -133,6 +138,7 @@ jobs:
         make install
     - uses: actions/upload-artifact@v7
       with:
+        if-no-files-found: error
         name: tarball
         path: radare2-?.?.?.*
 
@@ -156,6 +162,7 @@ jobs:
       run: tar -cJvf radare2-${{ steps.r2v.outputs.branch }}-filc.tar.xz /opt/r2filc
     - uses: actions/upload-artifact@v7
       with:
+        if-no-files-found: error
         name: filc
         path: radare2-*-filc.tar.xz
 
@@ -204,6 +211,7 @@ jobs:
     - name: Pub
       uses: actions/upload-artifact@v7
       with:
+        if-no-files-found: error
         name: linux-static-${{ matrix.arch }}
         path: radare2-*-static-${{ matrix.arch }}.tar.xz
 
@@ -218,6 +226,7 @@ jobs:
     - name: Pub
       uses: actions/upload-artifact@v7
       with:
+        if-no-files-found: error
         name: linux-acr-rpm-64
         path: dist/rpm/*.rpm
 
@@ -268,6 +277,7 @@ jobs:
     - name: Pub
       uses: actions/upload-artifact@v7
       with:
+        if-no-files-found: error
         name: linux-acr-deb-${{ matrix.arch }}
         path: radare2*.deb
 
@@ -345,6 +355,7 @@ jobs:
     - name: Pub
       uses: actions/upload-artifact@v7
       with:
+        if-no-files-found: error
         path: dist/macos/*.pkg
         name: macos-acr-${{ matrix.arch }}
 
@@ -354,8 +365,8 @@ jobs:
       fail-fast: false
       matrix:
         type:
+          # Xcode 14+ no longer builds 32-bit iOS applications.
           - cydia
-          - cydia32
         include:
           - type: cydia
             sdk: true
@@ -381,15 +392,11 @@ jobs:
     - if: ${{ matrix.sdk }}
       uses: actions/upload-artifact@v7
       with:
+        if-no-files-found: error
         name: ios-${{ matrix.type }}
         path: |
           ./dist/cydia/radare2/r2ios-sdk-*.zip
           ./dist/cydia/radare2/*.deb
-    - if: ${{ !matrix.sdk }}
-      uses: actions/upload-artifact@v7
-      with:
-        name: ios-${{ matrix.type }}
-        path: ./dist/cydia/radare2/*.deb
 
   # Android
   android-acr:
@@ -418,6 +425,7 @@ jobs:
         ls -l
     - uses: actions/upload-artifact@v7
       with:
+        if-no-files-found: error
         name: android-acr-${{ matrix.arch }}
         path: radare2*android*${{ matrix.arch }}.tar.gz
 
@@ -475,6 +483,7 @@ jobs:
         tar --transform 's/android-dir/data\/data\/org.radareorg.radare2installer/g' -czvf radare2-${{ steps.r2v.outputs.branch }}-android-${{ matrix.arch }}.tar.gz android-dir/
     - uses: actions/upload-artifact@v7
       with:
+        if-no-files-found: error
         name: android-meson-${{ matrix.arch }}
         path: /tmp/radare2-${{ steps.r2v.outputs.branch }}-android-${{ matrix.arch }}.tar.gz
 
@@ -506,6 +515,7 @@ jobs:
     - name: Build with meson + ninja
       shell: pwsh
       run: |
+        $PSNativeCommandUseErrorActionPreference = $true
         .github\vsdevenv.ps1
         meson --buildtype=release --prefix=$PWD\radare2-${{ steps.r2v.outputs.branch }}-w32 -Dc_std=c11 build
         ninja -C build -j4 install
@@ -520,6 +530,7 @@ jobs:
 #      run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.r2v.outputs.branch }}
     - uses: actions/upload-artifact@v7
       with:
+        if-no-files-found: error
         name: w32-meson
         path: |
           radare2-${{ steps.r2v.outputs.branch }}-w32.zip
@@ -550,21 +561,18 @@ jobs:
       shell: bash
       run: echo "branch=`./configure -qV`" >> $GITHUB_OUTPUT
       id: r2v
-    - name: preconfigure
-      continue-on-error: true
-      shell: cmd
-      run: preconfigure
     - name: Build with meson + ninja
       shell: cmd
       run: |
         call configure static
+        if errorlevel 1 exit /b 1
         call make
+        if errorlevel 1 exit /b 1
     - name: Test executable
-      continue-on-error: true
       shell: cmd
       run: |
         cd prefix\bin
-        r2blob -v
+        r2blob.static.exe -v
     - name: Zipping Executable
       shell: cmd
       run: |
@@ -572,8 +580,8 @@ jobs:
         dir
         7z a r2blob-${{ steps.r2v.outputs.branch }}-w64.zip r2blob.static.exe
     - uses: actions/upload-artifact@v7
-      continue-on-error: true
       with:
+        if-no-files-found: error
         name: w64-static
         path: prefix\bin\r2blob-${{ steps.r2v.outputs.branch }}-w64.zip
 
@@ -605,8 +613,7 @@ jobs:
     - name: Build with meson + ninja
       shell: pwsh
       run: |
-        # cmd '/c call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" "x86_64"'
-        bash sys/source_bat.bash 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat' "x86_64"
+        $PSNativeCommandUseErrorActionPreference = $true
         # meson_options: --default-library=shared|static -Dstatic_runtime=true --backend vs2019
         meson --buildtype=release --prefix=$PWD\radare2-${{ steps.r2v.outputs.branch }}-w64 -Dc_std=c11 build
         # -j4 matches w32-meson (same 4-vCPU runner + 16GB pagefile), which
@@ -624,24 +631,19 @@ jobs:
 #      run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.r2v.outputs.branch }}
     - uses: actions/upload-artifact@v7
       with:
+        if-no-files-found: error
         name: w64-meson
         path: |
           radare2-${{ steps.r2v.outputs.branch }}-w64.zip
 #          radare2-win-installer\Output\radare2.exe
   msys2-w64-meson:
-    strategy:
-      fail-fast: false
-      matrix:
-        # PRs build MINGW64 only (msvcrt, the less conforming CRT and hence the
-        # one most likely to expose regressions); UCRT64 is added on master.
-        sys: ${{ fromJSON(github.event_name != 'pull_request' && '["MINGW64", "UCRT64"]' || '["MINGW64"]') }}
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v7
     - name: Setup MSYS2
       uses: msys2/setup-msys2@v2
       with:
-        msystem: ${{ matrix.sys }}
+        msystem: UCRT64
         update: true
         install: base-devel git
         pacboy: >-
@@ -650,12 +652,7 @@ jobs:
           ninja:p
     - name: Configure Build
       shell: msys2 {0}
-      run: |
-        prefix=$(case "${{ matrix.sys }}" in
-          MINGW64) echo /mingw64 ;;
-          UCRT64) echo /ucrt64 ;;
-        esac)
-        meson setup build --prefix=$prefix
+      run: meson setup build --prefix=/ucrt64
     - name: Compile Project
       shell: msys2 {0}
       run: meson compile -C build
@@ -680,7 +677,7 @@ jobs:
     - name: Build with meson + ninja
       shell: pwsh
       run: |
-        bash sys/source_bat.bash 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat' "arm64"
+        $PSNativeCommandUseErrorActionPreference = $true
         meson --buildtype=release --prefix=$PWD\radare2-${{ steps.r2v.outputs.branch }}-w64-arm64 -Dc_std=c11 build
         ninja -C build -j 1
         ninja -C build install
@@ -688,6 +685,7 @@ jobs:
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w64-arm64.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w64-arm64
     - uses: actions/upload-artifact@v7
       with:
+        if-no-files-found: error
         name: msys2-w64-arm-meson
         path: radare2-${{ steps.r2v.outputs.branch }}-w64-arm64.zip
 
@@ -695,12 +693,6 @@ jobs:
     if: ${{ github.event_name != 'pull_request' }}
     runs-on: windows-11-arm
     steps:
-    - name: Win configure Pagefile
-      uses: al-cheb/configure-pagefile-action@v1.5
-      with:
-          minimum-size: 16GB
-          maximum-size: 16GB
-          disk-root: "C:"
     - name: Checkout
       uses: actions/checkout@v7
     - uses: actions/setup-python@v7
@@ -720,7 +712,7 @@ jobs:
     - name: Build with meson + ninja
       shell: pwsh
       run: |
-        bash sys/source_bat.bash 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat' "arm64"
+        $PSNativeCommandUseErrorActionPreference = $true
         meson --buildtype=release --prefix=$PWD\radare2-${{ steps.r2v.outputs.branch }}-w64-arm64 -Dc_std=c11 build
         ninja -C build -j 1
         ninja -C build install
@@ -728,13 +720,14 @@ jobs:
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w64-arm64.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w64-arm64
     - uses: actions/upload-artifact@v7
       with:
+        if-no-files-found: error
         name: w64-arm-meson
         path: radare2-${{ steps.r2v.outputs.branch }}-w64-arm64.zip
 
   # FreeBSD
   freebsd:
     if: ${{ github.event_name != 'pull_request' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v7
     - name: Extract r2 version
@@ -764,6 +757,7 @@ jobs:
           cp /tmp/radare2-freebsd.tgz radare2-${{ steps.r2v.outputs.branch }}-freebsd.tgz
     - uses: actions/upload-artifact@v7
       with:
+        if-no-files-found: error
         name: freebsd
         path: radare2-*-freebsd.tgz
 
@@ -838,6 +832,7 @@ jobs:
         make -C dist/sdk
     - uses: actions/upload-artifact@v7
       with:
+        if-no-files-found: error
         name: macos-xcframework
         path: dist/sdk/Radare2.xcframework.zip
 
@@ -858,6 +853,7 @@ jobs:
       run: mv build-uefi/BOOTX64.EFI radare2-`./configure -qV`-uefi-x86_64.efi
     - uses: actions/upload-artifact@v7
       with:
+        if-no-files-found: error
         name: linux-uefi
         path: radare2-*-uefi-x86_64.efi
 
@@ -868,13 +864,14 @@ jobs:
       is_release: ${{ steps.release.outputs.is }}
       tag_name: ${{ steps.release.outputs.tag }}
     needs:
+      - linux-deps
       - linux-wasi
       - linux-wasi-api
       - linux-wasi-browser
       - tarball
       - filc
-#      - linux-static
-#      - linux-acr-rpm-64
+      - linux-static
+      - linux-acr-rpm-64
       - linux-acr-deb
       - macos-acr
       - macos-xcframework
@@ -886,9 +883,10 @@ jobs:
       - w64-meson
       - w64-static
       - w64-arm-meson
+      - msys2-w64-meson
       - msys2-w64-arm-meson
       - linux-uefi
-#      - freebsd
+      - freebsd
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
@@ -911,21 +909,28 @@ jobs:
     needs:
       - check_release
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     env:
       ASSET_FILES: |
         dist/artifacts/tarball/*.tar.xz
         dist/artifacts/filc/*.tar.xz
-        dist/artifacts/linux-acr-deb-*/radare2_*.deb
+        dist/artifacts/linux-acr-deb-amd64/radare2_*.deb
+        dist/artifacts/linux-acr-deb-arm64/radare2_*.deb
+        dist/artifacts/linux-acr-deb-i386/radare2_*.deb
         dist/artifacts/w64-meson/*.zip
         dist/artifacts/w32-meson/*.zip
-        dist/artifacts/macos-acr-*/*.pkg
+        dist/artifacts/macos-acr-arm64/*.pkg
+        dist/artifacts/macos-acr-x86_64/*.pkg
         dist/artifacts/macos-xcframework/*.zip
         dist/artifacts/ios-cydia/*.deb
-        dist/artifacts/ios-cydia32/*.deb
         dist/artifacts/ios-cydia/r2ios-sdk-*.zip
-        dist/artifacts/android-acr-*/*.tar.gz
+        dist/artifacts/android-acr-arm/*.tar.gz
+        dist/artifacts/android-acr-aarch64/*.tar.gz
         dist/artifacts/android-sdk/radare2-*-android-sdk.zip
-        dist/artifacts/linux-acr-deb-*/radare2-dev_*.deb
+        dist/artifacts/linux-acr-deb-amd64/radare2-dev_*.deb
+        dist/artifacts/linux-acr-deb-arm64/radare2-dev_*.deb
+        dist/artifacts/linux-acr-deb-i386/radare2-dev_*.deb
         dist/artifacts/linux-wasi/*.zip
         dist/artifacts/linux-wasi-browser/*.zip
         dist/artifacts/linux-wasi-api/*.zip
@@ -944,23 +949,31 @@ jobs:
         run: echo "branch=`./configure -qV`" >> $GITHUB_OUTPUT
         id: r2v
       - name: Prepare release notes
+        shell: bash
         run: ./sys/release-notes.sh | tee ./RELEASE_NOTES.md
       - name: Download artifacts
         uses: actions/download-artifact@v8
         with:
           path: dist/artifacts
       - name: Generate checksums
+        shell: bash
         run: sha256sum $ASSET_FILES | awk '{sub(".*/", "", $2); print $1"  "$2}' > checksums.txt
-      - name: Create GitHub release
+      - name: Upload draft release assets
         id: create_release
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           name: ${{ steps.r2v.outputs.branch }}
           tag_name: ${{ needs.check_release.outputs.tag_name }}
           body_path: ./RELEASE_NOTES.md
-          draft: false
+          draft: true
           prerelease: false
           generate_release_notes: false
+          fail_on_unmatched_files: true
           files: |
             ${{ env.ASSET_FILES }}
             checksums.txt
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.check_release.outputs.tag_name }}
+        run: gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest

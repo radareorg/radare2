@@ -1,13 +1,12 @@
 #!/bin/sh
 
-set -x
+set -ex
 STOW=0
 fromscratch=1 # 1
 onlymakedeb=0
 static=1
 
-gcc -v 2> /dev/null
-if [ $? = 0 ]; then
+if gcc -v 2> /dev/null; then
 	export HOST_CC=gcc
 fi
 if [ -z "${CPU}" ]; then
@@ -34,6 +33,7 @@ fi
 ROOT=dist/cydia/radare2/root
 
 makeDeb() {
+	LDID=$(command -v ldid2 || command -v ldid)
 	make -C binr ios-sdk-sign
 	rm -rf /tmp/r2ios
 	make install DESTDIR=/tmp/r2ios
@@ -42,7 +42,8 @@ makeDeb() {
 	rm -rf "${ROOT}"
 	mkdir -p "${ROOT}"
 	sudo tar xpzvf /tmp/r2ios-${CPU}.tar.gz -C "${ROOT}"
-	rm -f ${ROOT}/${PREFIX}/lib/*.{a,dylib,dSYM}
+	rm -f "${ROOT}${PREFIX}/lib/"*.a "${ROOT}${PREFIX}/lib/"*.dylib
+	rm -rf "${ROOT}${PREFIX}/lib/"*.dSYM
 	if [ "$static" = 1 ]; then
 	(
 		rm -f ${ROOT}/${PREFIX}/bin/*
@@ -51,11 +52,11 @@ makeDeb() {
 		for a in r2 rabin2 rarun2 rasm2 ragg2 rahash2 rax2 rafind2 radiff2 ; do ln -fs radare2 $a ; done
 	)
 		echo "Signing radare2"
-		ldid2 -Sbinr/radare2/radare2_ios.xml ${ROOT}/usr/bin/radare2
+		"${LDID}" -Sbinr/radare2/radare2_ios.xml "${ROOT}${PREFIX}/bin/radare2"
 	else
-		for a in "${ROOT}/usr/bin/"* "${ROOT}/usr/lib/"*.dylib ; do
+		for a in "${ROOT}${PREFIX}/bin/"* "${ROOT}${PREFIX}/lib/"*.dylib ; do
 			echo "Signing $a"
-			ldid2 -Sbinr/radare2/radare2_ios.xml $a
+			"${LDID}" -Sbinr/radare2/radare2_ios.xml "$a"
 		done
 	fi
 	if [ "${STOW}" = 1 ]; then
@@ -93,10 +94,11 @@ fi
 if [ $onlymakedeb = 1 ]; then
 	makeDeb
 else
-	RV=0
 	export CC="ios-sdk-clang"
 	if [ $fromscratch = 1 ]; then
-		make clean
+		if [ -f config-user.mk ]; then
+			make clean
+		fi
 		cp -f dist/plugins-cfg/plugins.ios.cfg plugins.cfg
 		if [ "$static" = 1 ]; then
 			./configure --prefix="${PREFIX}" --with-ostype=darwin \
@@ -105,20 +107,17 @@ else
 			./configure --prefix="${PREFIX}" --with-ostype=darwin \
 			--with-compiler=ios-sdk-clang --target=arm-unknown-darwin
 		fi
-		RV=$?
 	fi
-	if [ $RV = 0 ]; then
-		time make -j4 || exit 1
-		if [ "$static" = 1 ]; then
-			ls -l libr/util/libr_util.a || exit 1
-			ls -l libr/flag/libr_flag.a || exit 1
-			rm -f libr/*/*.dylib
-			(
-			cd binr ; make clean ;
-			cd blob ; make USE_LTO=1
-			xcrun --sdk iphoneos strip radare2
-			)
-		fi
-		[ $? = 0 ] && makeDeb
+	time make -j4
+	if [ "$static" = 1 ]; then
+		ls -l libr/util/libr_util.a
+		ls -l libr/flag/libr_flag.a
+		rm -f libr/*/*.dylib
+		(
+		cd binr ; make clean
+		cd blob ; make USE_LTO=1
+		xcrun --sdk iphoneos strip radare2
+		)
 	fi
+	makeDeb
 fi
