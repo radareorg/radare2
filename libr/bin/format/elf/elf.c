@@ -5298,6 +5298,9 @@ static RVecRBinElfSymbol *parse_gnu_debugdata(ELFOBJ *eo, size_t *ret_size) {
 	if (ret_size) {
 		*ret_size = 0;
 	}
+	if (eo->is_debugdata) {
+		return NULL;
+	}
 	if (!eo->sections_loaded) {
 		// parse sections pls
 		_load_elf_sections (eo);
@@ -5317,6 +5320,8 @@ static RVecRBinElfSymbol *parse_gnu_debugdata(ELFOBJ *eo, size_t *ret_size) {
 	}
 	if (r_buf_read_at (eo->b, addr, data, size) != size) {
 		R_LOG_ERROR ("Cannot read");
+		free (data);
+		return NULL;
 	}
 	size_t osize;
 	ut8 *odata = r_sys_unxz (data, size, &osize);
@@ -5326,6 +5331,7 @@ static RVecRBinElfSymbol *parse_gnu_debugdata(ELFOBJ *eo, size_t *ret_size) {
 		RVecRBinElfSymbol *symbols = NULL;
 		if (newobj) {
 			newobj->limit = eo->limit;
+			newobj->is_debugdata = true;
 			if (Elf_(load_symbols) (newobj)) {
 				symbols = newobj->g_symbols_vec;
 				newobj->g_symbols_vec = NULL;

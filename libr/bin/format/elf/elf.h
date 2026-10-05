@@ -214,6 +214,7 @@ struct Elf_(obj_t) {
 	bool fields_loaded;
 	RVecRBinElfField g_fields;
 	int limit;
+	bool is_debugdata; // decompressed .gnu_debugdata, must not recurse
 	char *osabi;
 	RVecRBinTrycatch trycatch;
 	bool trycatch_loaded;
