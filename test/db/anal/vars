@@ -495,7 +495,7 @@ afvR
       arg1  0x6
       arg2  0x8
       arg3  0xc
-   var_10h  0x4,0x2c
+   var_10h  0x4
     var_ch  0x18,0x22
     var_eh  0x16,0x1e
     var_fh  0x10
@@ -1078,5 +1078,94 @@ afv~sp+
 EOF
 EXPECT=<<EOF
 var int32_t var_100h @ sp+0x8
+EOF
+RUN
+
+NAME=lea rsp from the frame pointer restores the stack depth
+FILE=-
+ARGS=-a x86 -b 64 -e anal.vars.stackname=true
+CMDS=<<EOF
+wx 554889e5534881ec00010000488d65f8488b4424185b5dc3
+wx 554889e5534881ec00010000488d640500488b4424185b5dc3 @ 0x40
+wx 554889e5488da510000080488b4424085dc3 @ 0x80
+af
+afva
+afv~rsp
+af @ 0x40
+afva @ 0x40
+afv @ 0x40~rsp
+af @ 0x80
+afva @ 0x80
+afv @ 0x80~rsp
+afi @ 0x80~stackframe
+EOF
+EXPECT=<<EOF
+arg int64_t arg_8h @ rsp+0x118
+var int64_t var_f8h @ rsp+0x18
+arg int64_t arg_0h @ rsp+0x8
+stackframe: 8
+EOF
+RUN
+
+NAME=arm32 add sp, fp, 0 restores the depth and sp writeback moves it
+FILE=-
+ARGS=-a arm -b 32 -e anal.vars.stackname=true
+CMDS=<<EOF
+wx 04b02de500b08de201dc4de200d08be208109de504b09de41eff2fe1
+wx 00482de900b08de201dc4de201d08be008109de50048bde81eff2fe1 @ 0x40
+wx 04b02de500009de504b09de41eff2fe1 @ 0x80
+wx f8a06de10c009de5d8a0cde01eff2fe1 @ 0xc0
+wx 01002de704009de51eff2fe1 @ 0x100
+af
+afva
+afv~sp
+afi~stackframe
+af @ 0x40
+afva @ 0x40
+afv @ 0x40~sp
+af @ 0x80
+afv @ 0x80~sp
+afi @ 0x80~stackframe
+af @ 0xc0
+afv @ 0xc0~sp
+afi @ 0xc0~stackframe
+af @ 0x100
+afv @ 0x100~sp
+afi @ 0x100~stackframe
+EOF
+EXPECT=<<EOF
+arg int32_t arg_4h @ sp+0x108
+stackframe: 260
+var int32_t var_100h @ sp+0x8
+var int32_t var_4h @ sp+0x0
+stackframe: 4
+arg int32_t arg_4h @ sp+0xc
+stackframe: 8
+arg int32_t arg_0h @ sp+0x0
+arg int32_t arg_4h @ sp+0x4
+stackframe: 0
+EOF
+RUN
+
+NAME=a restore deeper than the frame grows the frame
+FILE=-
+ARGS=-a arm -b 64 -e anal.vars.stackname=true
+CMDS=<<EOF
+wx fd7bbfa9fd030091bf0308d1e00740f9bf030091fd7bc1a8c0035fd6
+wx fd7bbfa9fd030091ff0308d1bf2300d1e00740f9bf030091fd7bc1a8c0035fd6 @ 0x40
+af
+afva
+afv~sp
+afi~stackframe
+af @ 0x40
+afva @ 0x40
+afv @ 0x40~sp
+afi @ 0x40~stackframe
+EOF
+EXPECT=<<EOF
+var int64_t var_208h @ sp+0x8
+stackframe: 528
+var int64_t var_10h @ sp+0x200
+stackframe: 528
 EOF
 RUN

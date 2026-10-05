@@ -4186,6 +4186,22 @@ static void check_itblock(RArchSession *as, cs_insn *insn) {
 	}
 }
 
+// a pre- or post-indexed access through sp moves the stack like a push or pop
+static void sp_writeback32(RAnalOp *op, cs_insn *insn) {
+	const int last = OPCOUNT () - 1;
+	if (ISPREINDEX32 ()) {
+		if (REGBASE (last) == ARM_REG_SP && insn->detail->arm.operands[last].mem.index == ARM_REG_INVALID) {
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = -(st64)MEMDISP (last);
+		}
+	} else if (ISPOSTINDEX32 ()) {
+		if (REGBASE (last - 1) == ARM_REG_SP && ISIMM (last)) {
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = -(st64)insn->detail->arm.operands[last].imm;
+		}
+	}
+}
+
 static void anop32(RArchSession *as, csh handle, RAnalOp *op, cs_insn *insn, bool thumb, const ut8 *buf, int len) {
 	const ut64 addr = op->addr;
 	const int pcdelta = thumb? 4: 8;
@@ -4495,10 +4511,12 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_STRT:
 		op->cycles = 4;
 		op->type = R_ANAL_OP_TYPE_STORE;
-		if (REGBASE(1) == ARM_REG_FP) {
+		if (ISMEM (1) && REGBASE (1) == ARM_REG_FP) {
 			op->stackop = R_ANAL_STACK_SET;
 			op->stackptr = 0;
 			op->ptr = (ut64)-MEMDISP (1);
+		} else {
+			sp_writeback32 (op, insn);
 		}
 		break;
 	case ARM_INS_SXTB:
@@ -4543,11 +4561,11 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->ptrsize = 2;
 			break;
 		}
-		if (REGBASE(1) == ARM_REG_FP) {
+		if (ISMEM (1) && REGBASE (1) == ARM_REG_FP) {
 			op->stackop = R_ANAL_STACK_GET;
 			op->stackptr = 0;
 			op->ptr = -MEMDISP (1);
-		} else if (REGBASE(1) == ARM_REG_PC) {
+		} else if (ISMEM (1) && REGBASE (1) == ARM_REG_PC) {
 			op->ptr = (addr & ~3LL) + (thumb? 4: 8) + MEMDISP (1);
 			op->refptr = 4;
 			if (REGID(0) == ARM_REG_PC && (arm_cc)insn->detail->arm.cc != ARM_CC_AL) {
@@ -4558,6 +4576,8 @@ jmp $$ + 4 + ( [delta] * 2 )
 				op->ireg = r_str_getf (cs_reg_name (handle, INSOP (1).mem.index));
 				break;
 			}
+		} else {
+			sp_writeback32 (op, insn);
 		}
 		break;
 	case ARM_INS_MRS:
@@ -4882,12 +4902,15 @@ static void set_src_dst(RAnalOp *op, RAnalValue *val, csh *handle, cs_insn *insn
 	if (bits == 64) {
 		switch (arm64op.type) {
 		case ARM64_OP_REG:
+			val->type = R_ANAL_VAL_REG;
 			break;
 		case ARM64_OP_MEM:
+			val->type = R_ANAL_VAL_MEM;
 			val->memref = arm_memref_size (op, insn, x, bits);
 			val->delta = arm64op.mem.disp;
 			break;
 		case ARM64_OP_IMM:
+			val->type = R_ANAL_VAL_IMM;
 			val->imm = shifted_imm64 (&arm64op, 64);
 			break;
 		default:
@@ -4896,13 +4919,16 @@ static void set_src_dst(RAnalOp *op, RAnalValue *val, csh *handle, cs_insn *insn
 	} else {
 		switch (armop.type) {
 		case ARM_OP_REG:
+			val->type = R_ANAL_VAL_REG;
 			break;
 		case ARM_OP_MEM:
+			val->type = R_ANAL_VAL_MEM;
 			val->memref = arm_memref_size (op, insn, x, bits);
 			val->mul = armop.mem.scale;
 			val->delta = armop.mem.disp;
 			break;
 		case ARM_OP_IMM:
+			val->type = R_ANAL_VAL_IMM;
 			val->imm = armop.imm;
 			break;
 		default:

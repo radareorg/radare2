@@ -834,27 +834,42 @@ R_API void r_anal_function_syncstack(RAnalFunction *fcn, RAnalOp *op) {
 	R_RETURN_IF_FAIL (fcn && op);
 	const ut32 type = op->type & R_ANAL_OP_TYPE_MASK;
 	if (!fcn->bp_frame || fcn->bp_off <= 0 || op->cond != R_ANAL_CONDTYPE_AL
-			|| (type != R_ANAL_OP_TYPE_MOV && type != R_ANAL_OP_TYPE_ADD && type != R_ANAL_OP_TYPE_SUB)) {
+			|| (type != R_ANAL_OP_TYPE_MOV && type != R_ANAL_OP_TYPE_ADD
+				&& type != R_ANAL_OP_TYPE_SUB && type != R_ANAL_OP_TYPE_LEA)) {
 		return;
 	}
 	RAnal *anal = fcn->anal;
 	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
 	RAnalValue *src = RVecRArchValue_at (&op->srcs, 0);
-	if (!dst || !src || !dst->reg || !src->reg || dst->memref || src->memref
+	if (!dst || !src || !dst->reg || !src->reg || dst->memref || src->regdelta
 			|| !r_anal_reg_same (anal, dst->reg, r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP))
 			|| !r_anal_reg_same (anal, src->reg, r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP))) {
 		return;
 	}
-	if (type == R_ANAL_OP_TYPE_MOV) {
-		fcn->stack = fcn->bp_off;
+	st64 depth = fcn->bp_off;
+	if (type == R_ANAL_OP_TYPE_LEA) {
+		// lea sp, [bp - N] reads no memory, its operand is the new sp
+		if (!src->memref || op->stackop != R_ANAL_STACK_GET) {
+			return;
+		}
+		depth -= src->delta;
+	} else if (src->memref) {
+		return;
+	} else if (type != R_ANAL_OP_TYPE_MOV) {
+		RAnalValue *imm = RVecRArchValue_at (&op->srcs, 1);
+		// a two-operand add/sub leaves this slot zeroed with no type
+		if (!imm || (!imm->imm && imm->type != R_ANAL_VAL_IMM)) {
+			return;
+		}
+		depth += (type == R_ANAL_OP_TYPE_SUB)? imm->imm: -imm->imm;
+	}
+	if (R_ABS (depth - fcn->stack) >= R_ANAL_MAX_INCSTACK) {
 		return;
 	}
-	RAnalValue *imm = RVecRArchValue_at (&op->srcs, 1);
-	// a two-operand add/sub leaves this slot zeroed, and an add of 0 is a mov
-	if (!imm || !imm->imm) {
-		return;
+	fcn->stack = depth;
+	if (depth > fcn->maxstack) {
+		fcn->maxstack = depth;
 	}
-	fcn->stack = (type == R_ANAL_OP_TYPE_SUB)? fcn->bp_off + imm->imm: fcn->bp_off - imm->imm;
 }
 
 static inline bool has_vars(RAnal *anal, ut64 addr) {
@@ -1489,7 +1504,9 @@ noskip:
 		default:
 			break;
 		}
+		const st64 synced_from = fcn->stack;
 		r_anal_function_syncstack (fcn, op);
+		bb->stackptr += fcn->stack - synced_from;
 		if (op->ptr && op->ptr != UT64_MAX && op->ptr != UT32_MAX) {
 			// swapped parameters wtf
 			// its read or wr
