@@ -120,13 +120,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ELF cleanup handler is not added to its function
+NAME=ELF cleanup handler is added to its function
 FILE=bins/elf/ClassCpp.out
 CMDS=<<EOF
 af @ 0x1269
 afbq @ 0x1269~?0x0000132c
 EOF
 EXPECT=<<EOF
-0
+1
 EOF
 RUN

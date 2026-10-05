@@ -677,17 +677,78 @@ static void warn_nonexec_map(RCore *core, ut64 at) {
 	}
 }
 
+static void stack_adjust(RAnalFunction *fcn, RAnalOp *op) {
+	if (op->stackop == R_ANAL_STACK_INC) {
+		fcn->stack += op->stackptr;
+	} else if (op->stackop == R_ANAL_STACK_RESET) {
+		fcn->stack = 0;
+	}
+	r_anal_function_syncstack (fcn, op);
+}
+
+typedef struct {
+	RAnalFunction *fcn; // NULL accepts a block of any function
+	RAnalBlock *bb;
+} BlockIn;
+
+static bool block_in_cb(RAnalBlock *bb, void *user) {
+	BlockIn *in = user;
+	if (in->fcn && !r_list_contains (bb->fcns, in->fcn)) {
+		return true;
+	}
+	in->bb = bb;
+	return false;
+}
+
+// the block holding addr, at any instruction offset
+static RAnalBlock *block_in(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
+	BlockIn in = { fcn, NULL };
+	r_anal_blocks_foreach_in (anal, addr, block_in_cb, &in);
+	return in.bb;
+}
+
+// leaves fcn->stack at the depth of the try range's last instruction
+static void trycatch_depth(RAnal *anal, RAnalFunction *fcn, ut64 to) {
+	RAnalBlock *bb = block_in (anal, fcn, to - 1);
+	if (!bb) {
+		R_LOG_DEBUG ("No block of the function holds the try range ending at 0x%08"PFMT64x, to);
+		return;
+	}
+	const int len = r_anal_bb_opaddr_at (bb, to - 1) - bb->addr;
+	ut8 *buf = malloc (R_MAX (len, 1));
+	if (!buf || !anal->iob.read_at (anal->iob.io, bb->addr, buf, len)) {
+		free (buf);
+		return;
+	}
+	fcn->stack = bb->parent_stackptr;
+	int pos = 0;
+	while (pos < len) {
+		RAnalOp op;
+		if (r_anal_op (anal, &op, bb->addr + pos, buf + pos, len - pos, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL) < 1) {
+			r_anal_op_fini (&op);
+			break;
+		}
+		stack_adjust (fcn, &op);
+		pos += op.size;
+		r_anal_op_fini (&op);
+	}
+	free (buf);
+}
+
 // Analyze exception handlers in their owning function without adding CFG edges.
 static bool anal_trycatch(const RBinTrycatch *tc, void *user) {
 	RAnalFunction *fcn = user;
-	ut64 handler = tc->handler;
-	if (tc->kind == R_BIN_TRYCATCH_CLEANUP || tc->kind == R_BIN_TRYCATCH_FINALLY || handler == fcn->addr || r_anal_function_contains (fcn, handler)) {
+	RAnal *anal = fcn->anal;
+	const ut64 handler = tc->handler;
+	if (tc->kind == R_BIN_TRYCATCH_FINALLY || handler == fcn->addr || block_in (anal, NULL, handler)) {
 		return true;
 	}
-	int ret = r_anal_function_bb (fcn->anal, fcn, handler);
-	if (ret < 0 && ret != R_ANAL_RET_END) {
+	const int saved = fcn->stack;
+	trycatch_depth (anal, fcn, tc->to);
+	if (r_anal_function_bb (anal, fcn, handler) == R_ANAL_RET_ERROR) {
 		R_LOG_DEBUG ("Cannot analyze exception handler at 0x%08"PFMT64x, handler);
 	}
+	fcn->stack = saved;
 	return true;
 }
 
@@ -3885,12 +3946,7 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 		}
 		r_anal_extract_rarg (core->anal, &op, fcn, reg_set, &ctx->count);
 		if (!ctx->argonly) {
-			if (op.stackop == R_ANAL_STACK_INC) {
-				fcn->stack += op.stackptr;
-			} else if (op.stackop == R_ANAL_STACK_RESET) {
-				fcn->stack = 0;
-			}
-			r_anal_function_syncstack (fcn, &op);
+			stack_adjust (fcn, &op);
 			r_anal_extract_vars (core->anal, fcn, &op);
 		}
 		int opsize = op.size;

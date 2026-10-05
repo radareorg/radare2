@@ -34,3 +34,92 @@ false
 87
 EOF
 RUN
+
+NAME=unwinder resume calls do not return
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx fd7bbfa9fd0300913e000094fd7bbea9fd030091fd7bc2a8c0035fd6
+wx fd7bbfa9fd0300913e000094fd7bbea9fd030091fd7bc2a8c0035fd6 @ 0x20
+wx fd7bbfa9fd0300913e000094fd7bbea9fd030091fd7bc2a8c0035fd6 @ 0x40
+wx fd7bbfa9fd0300913e000094fd7bbea9fd030091fd7bc2a8c0035fd6 @ 0x60
+wx fd7bbfa9fd0300913e000094fd7bbea9fd030091fd7bc2a8c0035fd6 @ 0x80
+f sym.imp._Unwind_Resume @ 0x100
+f sym.___Unwind_Resume @ 0x120
+f sym.imp._Unwind_SjLj_Resume @ 0x140
+f sym.imp.__cxa_end_cleanup @ 0x160
+f sym.imp.objc_release @ 0x180
+af @ 0
+af @ 0xc
+afi @ 0~^size
+afi @ 0xc~stackframe
+af @@=0x20 0x40 0x60 0x80
+?v $FS @@=0x20 0x40 0x60 0x80
+EOF
+EXPECT=<<EOF
+size: 12
+stackframe: 32
+0xc
+0xc
+0xc
+0x1c
+EOF
+RUN
+
+NAME=c++ and objc throw helpers do not return on any os
+FILE=malloc://1024
+ARGS=-a x86 -b 64 -e asm.os=darwin
+CMDS=<<EOF
+wx e8fb010000c3 @ 0x0
+wx e8fb010000c3 @ 0x10
+wx e8fb010000c3 @ 0x20
+wx e8fb010000c3 @ 0x30
+wx e8fb010000c3 @ 0x40
+wx e8fb010000c3 @ 0x50
+wx e8fb010000c3 @ 0x60
+wx e8fb010000c3 @ 0x70
+wx e8fb010000c3 @ 0x80
+wx e8fb010000c3 @ 0x90
+wx e8fb010000c3 @ 0xa0
+wx e8fb010000c3 @ 0xb0
+f sym.imp.__cxa_throw @ 0x200
+f sym.imp.__cxa_rethrow @ 0x210
+f sym.imp.__cxa_bad_cast @ 0x220
+f sym.imp.__cxa_bad_typeid @ 0x230
+f sym.imp.__cxa_throw_bad_array_new_length @ 0x240
+f sym.imp.__cxa_pure_virtual @ 0x250
+f sym.imp.__cxa_call_unexpected @ 0x260
+f sym.imp.std::terminate__ @ 0x270
+f sym.imp._ZSt9terminatev @ 0x280
+f sym.imp.objc_exception_throw @ 0x290
+f sym.imp.objc_exception_rethrow @ 0x2a0
+f sym.imp._Unwind_Resume_or_Rethrow @ 0x2b0
+af @ 0x0
+af @ 0x10
+af @ 0x20
+af @ 0x30
+af @ 0x40
+af @ 0x50
+af @ 0x60
+af @ 0x70
+af @ 0x80
+af @ 0x90
+af @ 0xa0
+af @ 0xb0
+?v $FS @@=0 0x10 0x20 0x30 0x40 0x50 0x60 0x70 0x80 0x90 0xa0 0xb0
+EOF
+EXPECT=<<EOF
+0x5
+0x5
+0x5
+0x5
+0x5
+0x5
+0x5
+0x5
+0x5
+0x5
+0x5
+0x6
+EOF
+RUN

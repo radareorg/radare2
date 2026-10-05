@@ -109,7 +109,7 @@ EXPECT=<<EOF
 0x0040f710 368 flirt.locked_vfxprintf
 0x0040f880 784 flirt.__fxprintf
 0x0040fe20 33103 flirt._IO_fflush
-0x00410210 429 flirt._IO_puts
+0x00410210 512 flirt._IO_puts
 0x00410410 1898 flirt.adjust_wide_data
 0x004115d0 1182 flirt._IO_wdo_write
 0x00411f00 400 flirt._IO_vasprintf
@@ -208,9 +208,9 @@ EXPECT=<<EOF
 0x0046b070 13435 flirt._IO_vfwprintf
 0x0046e540 1929 flirt.__parse_one_specmb
 0x0046ecd0 2211 flirt.__parse_one_specwc
-0x0046f6d0 314 flirt._IO_fputs
-0x0046f8e0 413 flirt._IO_fwrite
-0x0046fae0 727 flirt._IO_getdelim
+0x0046f6d0 515 flirt._IO_fputs
+0x0046f8e0 512 flirt._IO_fwrite
+0x0046fae0 816 flirt._IO_getdelim
 0x0046fe10 349 flirt._IO_getline
 0x004700f0 320 flirt._IO_padn
 0x00470230 320 flirt._IO_wpadn
