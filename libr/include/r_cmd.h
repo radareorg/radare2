@@ -59,7 +59,7 @@ typedef RCmdResult (*RCmdCtxCb) (RCmdContext *ctx);
 // The storage belongs to ctx; arg.b points to a NUL terminator.
 static inline RStrs r_cmdctx_arg(RCmdContext *ctx, size_t index) {
 	RStrs *arg = RVecRStrs_at (&ctx->args, index);
-	return arg? *arg: (RStrs) { NULL, NULL };
+	return arg? *arg: r_strs_new (NULL, NULL);
 }
 
 // Fill caller-owned storage with borrowed arguments, padding missing entries with NULL.
