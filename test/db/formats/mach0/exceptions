@@ -31,7 +31,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Mach-O catch analysis excludes cleanup without try flags
+NAME=Mach-O catch analysis seeds cleanup pads without try flags
 FILE=bins/mach0/ClassCpp.out
 CMDS=<<EOF
 f-try.*
@@ -41,6 +41,6 @@ afbq @ 0x10000292c~?0x1000029f8
 EOF
 EXPECT=<<EOF
 1
-0
+1
 EOF
 RUN

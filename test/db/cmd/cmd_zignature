@@ -826,6 +826,7 @@ RUN
 
 NAME=zb single exact match
 FILE=bins/elf/static-glibc-2.27
+ARGS=-e anal.trycatch=false
 CMDS=<<EOF
 s 0x00410210
 e zign.maxsz = 32
@@ -1320,6 +1321,7 @@ RUN
 
 NAME=zbr exact match
 FILE=bins/elf/static-glibc-2.27
+ARGS=-e anal.trycatch=false
 CMDS=<<EOF
 aa
 e zign.maxsz = 32
@@ -1334,6 +1336,7 @@ RUN
 
 NAME=zbrj exact match
 FILE=bins/elf/static-glibc-2.27
+ARGS=-e anal.trycatch=false
 CMDS=<<EOF
 aa
 e zign.maxsz = 32
@@ -1383,6 +1386,7 @@ RUN
 
 NAME=zbr ignore masked bytes
 FILE=bins/elf/static-glibc-2.27
+ARGS=-e anal.trycatch=false
 CMDS=<<EOF
 aa
 e zign.maxsz = 32
@@ -1397,6 +1401,7 @@ RUN
 
 NAME=zb zign.threshold
 FILE=bins/elf/static-glibc-2.27
+ARGS=-e anal.trycatch=false
 CMDS=<<EOF
 s 0x00410210
 e zign.maxsz = 32

@@ -3166,6 +3166,83 @@ func.errc.arg.1=int,code
 func.errc.arg.2=const char *,fmt
 func.errc.ret=void
 
+Unwind_Resume=func
+func.Unwind_Resume.args=1
+func.Unwind_Resume.arg.0=void *,exception_object
+func.Unwind_Resume.noreturn=true
+func.Unwind_Resume.ret=void
+
+Unwind_SjLj_Resume=func
+func.Unwind_SjLj_Resume.args=1
+func.Unwind_SjLj_Resume.arg.0=void *,exception_object
+func.Unwind_SjLj_Resume.noreturn=true
+func.Unwind_SjLj_Resume.ret=void
+
+cxa_end_cleanup=func
+func.cxa_end_cleanup.args=0
+func.cxa_end_cleanup.noreturn=true
+func.cxa_end_cleanup.ret=void
+
+cxa_throw=func
+func.cxa_throw.args=3
+func.cxa_throw.arg.0=void *,thrown_exception
+func.cxa_throw.arg.1=struct std::type_info *,tinfo
+func.cxa_throw.arg.2=void *,dest
+func.cxa_throw.noreturn=true
+func.cxa_throw.ret=void
+
+cxa_rethrow=func
+func.cxa_rethrow.args=0
+func.cxa_rethrow.noreturn=true
+func.cxa_rethrow.ret=void
+
+cxa_bad_cast=func
+func.cxa_bad_cast.args=0
+func.cxa_bad_cast.noreturn=true
+func.cxa_bad_cast.ret=void
+
+cxa_bad_typeid=func
+func.cxa_bad_typeid.args=0
+func.cxa_bad_typeid.noreturn=true
+func.cxa_bad_typeid.ret=void
+
+cxa_throw_bad_array_new_length=func
+func.cxa_throw_bad_array_new_length.args=0
+func.cxa_throw_bad_array_new_length.noreturn=true
+func.cxa_throw_bad_array_new_length.ret=void
+
+cxa_pure_virtual=func
+func.cxa_pure_virtual.args=0
+func.cxa_pure_virtual.noreturn=true
+func.cxa_pure_virtual.ret=void
+
+cxa_call_unexpected=func
+func.cxa_call_unexpected.args=1
+func.cxa_call_unexpected.arg.0=void *,exception_object
+func.cxa_call_unexpected.noreturn=true
+func.cxa_call_unexpected.ret=void
+
+std::terminate__=func
+func.std::terminate__.args=0
+func.std::terminate__.noreturn=true
+func.std::terminate__.ret=void
+
+ZSt9terminatev=func
+func.ZSt9terminatev.args=0
+func.ZSt9terminatev.noreturn=true
+func.ZSt9terminatev.ret=void
+
+objc_exception_throw=func
+func.objc_exception_throw.args=1
+func.objc_exception_throw.arg.0=void *,exception
+func.objc_exception_throw.noreturn=true
+func.objc_exception_throw.ret=void
+
+objc_exception_rethrow=func
+func.objc_exception_rethrow.args=0
+func.objc_exception_rethrow.noreturn=true
+func.objc_exception_rethrow.ret=void
+
 warn=func
 func.warn.args=2
 func.warn.arg.0=const char *,fmt

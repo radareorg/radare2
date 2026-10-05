@@ -1516,8 +1516,9 @@ pdc~// try 0x
 EOF
 EXPECT=<<EOF
     try { // cleanup at 0x1000029f8
-    } // end try
-    catch (...) { // try 0x100002a04..0x100002a0c
+        try { // catch at 0x100002a1c
+    } cleanup { // try 0x100002960..0x1000029d8
+        } catch (...) { // try 0x100002a04..0x100002a0c
 EOF
 RUN
 
@@ -1534,8 +1535,9 @@ pdc~// try 0x
 EOF
 EXPECT=<<EOF
     try { // cleanup at 0x1000029f8
-    } // end try
-    catch (...) { // try 0x100002a04..0x100002a0c
+        try { // catch at 0x100002a1c
+    } cleanup { // try 0x100002960..0x1000029d8
+        } catch (...) { // try 0x100002a04..0x100002a0c
 EOF
 RUN
 
@@ -1551,6 +1553,10 @@ EOF
 EXPECT=<<EOF
     try { // catch at 0x004779d8
     } catch (std::exception) { // try 0x004779d0..0x004779d3
+        } cleanup { // try 0x00477a08..0x00477a0d
+        } cleanup { // try 0x00477a36..0x00477a3b
+    cleanup { // try 0x004779fd..0x00477a02
+    cleanup { // try 0x00477a2b..0x00477a30
 EOF
 RUN
 
