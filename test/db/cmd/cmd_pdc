@@ -1580,7 +1580,7 @@ pdc~try { //
 pdc~end try
 EOF
 EXPECT=<<EOF
-    try { // cleanup at 0x100021eb
+    try { // finally at 0x100021eb
     } // end try
 EOF
 RUN

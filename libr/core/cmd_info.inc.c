@@ -47,7 +47,7 @@ static RCoreHelpMessage help_msg_iw = {
 	"iwq", "", "list try start, exclusive end and handler addresses",
 	"iw*", "", "print exception region flags as r2 commands",
 	"iwc", " from to handler [type [typefilter]]", "add catch at current source (type * for catch-all)",
-	"iwf", " from to handler", "add finally/cleanup at current source",
+	"iwf", " from to handler", "add a cleanup landing pad at current source",
 	"iwF", " from to handler filter [type [typefilter]]", "add filter at current source",
 	"iw+", " source from to handler [attr ...]", "append an exception region (iw+? for attributes)",
 	"iw-", " index", "delete the region with the given iw index (last region moves to this index)",
@@ -58,7 +58,7 @@ static RCoreHelpMessage help_msg_iw = {
 static RCoreHelpMessage help_msg_iwadd = {
 	"Usage: iw", "[cfF] from to handler ... [@ source]", "Add exception regions at the current source address",
 	"iwc", " from to handler [type [typefilter]]", "add a catch handler",
-	"iwf", " from to handler", "add a finally/cleanup handler",
+	"iwf", " from to handler", "add a cleanup landing pad",
 	"iwF", " from to handler filter [type [typefilter]]", "add a filter handler",
 	"", "from to", "try start and exclusive end; addresses accept expressions",
 	"", "type", "quoted type name, * for catch-all, or an empty string for no type",
@@ -73,7 +73,7 @@ static RCoreHelpMessage help_msg_iwplus = {
 	"", "source", "function address owning the region",
 	"", "from to", "try start and exclusive end (from < to)",
 	"", "handler", "catch, finally or filter handler address",
-	"", "kind=catch|cleanup|finally|filter", "region kind (default: catch; finally means cleanup)",
+	"", "kind=catch|cleanup|finally|filter", "region kind (default: catch; finally is a funclet outside the function)",
 	"", "filter=expr", "filter address (default: 0)",
 	"", "typefilter=expr", "signed type filter value (default: 0)",
 	"", "type=name", "exception type name (quote names containing spaces)",
@@ -3760,8 +3760,10 @@ static bool cmd_iw_edit(RCore *core, const char *input) {
 					const char *kind = attr + 5;
 					if (!strcmp (kind, "catch")) {
 						region.kind = R_BIN_TRYCATCH_CATCH;
-					} else if (!strcmp (kind, "cleanup") || !strcmp (kind, "finally")) {
+					} else if (!strcmp (kind, "cleanup")) {
 						region.kind = R_BIN_TRYCATCH_CLEANUP;
+					} else if (!strcmp (kind, "finally")) {
+						region.kind = R_BIN_TRYCATCH_FINALLY;
 					} else if (!strcmp (kind, "filter")) {
 						region.kind = R_BIN_TRYCATCH_FILTER;
 					} else {

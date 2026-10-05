@@ -565,7 +565,7 @@ static void clr_trycatch_method(RBinFile *bf, RVecRBinTrycatch *trycatch, RList 
 					break;
 				case CIL_EH_FINALLY:
 				case CIL_EH_FAULT:
-					tc->kind = R_BIN_TRYCATCH_CLEANUP;
+					tc->kind = R_BIN_TRYCATCH_FINALLY;
 					break;
 				case CIL_EH_CATCH:
 					tc->kind = R_BIN_TRYCATCH_CATCH;

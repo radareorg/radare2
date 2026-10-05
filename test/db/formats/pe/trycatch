@@ -5,7 +5,7 @@ CMDS=<<EOF
 iw*~from~?
 iw*~catch=~?
 iw*~filter=~?
-iw*~cleanup=~?
+iw*~finally=~?
 ?e --
 iwj~{[0]}
 iwj~{[3]}
@@ -17,8 +17,8 @@ EXPECT=<<EOF
 52
 89
 --
-{"index":0,"source":6442456588,"from":6442456666,"to":6442456816,"handler":6442605238,"filter":0,"kind":"cleanup"}
-{"index":3,"source":6442461416,"from":6442461499,"to":6442461725,"handler":6442605354,"filter":0,"kind":"cleanup"}
+{"index":0,"source":6442456588,"from":6442456666,"to":6442456816,"handler":6442605238,"filter":0,"kind":"finally"}
+{"index":3,"source":6442461416,"from":6442461499,"to":6442461725,"handler":6442605354,"filter":0,"kind":"finally"}
 {"index":6,"source":6442464484,"from":6442464538,"to":6442464679,"handler":6442464679,"filter":6442605461,"kind":"filter","typeFilter":0}
 EOF
 RUN
@@ -29,7 +29,7 @@ CMDS=<<EOF
 iw*~from~?
 iw*~catch=~?
 iw*~filter=~?
-iw*~cleanup=~?
+iw*~finally=~?
 EOF
 EXPECT=<<EOF
 66
@@ -48,7 +48,7 @@ iwj~{[10]}
 EOF
 EXPECT=<<EOF
 {"index":0,"source":5368713676,"from":5368713717,"to":5368713978,"handler":5368713978,"filter":5368783488,"kind":"filter","typeFilter":0}
-{"index":4,"source":5368720976,"from":5368721006,"to":5368721016,"handler":5368783692,"filter":0,"kind":"cleanup"}
+{"index":4,"source":5368720976,"from":5368721006,"to":5368721016,"handler":5368783692,"filter":0,"kind":"finally"}
 {"index":10,"source":5368731884,"from":5368731902,"to":5368731910,"handler":5368731910,"filter":0,"kind":"catch","typeFilter":0}
 EOF
 RUN

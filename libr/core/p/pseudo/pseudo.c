@@ -698,26 +698,15 @@ static bool bb_addr_is_goto_target(RAnalFunction *fcn, ut64 addr) {
 
 static int bb_last_op_type(RCore *core, RAnalBlock *bb);
 
-static const char *tc_kind_name(const RBinTrycatch *tc) {
-	switch (tc->kind) {
-	case R_BIN_TRYCATCH_CLEANUP:
-		return "cleanup";
-	case R_BIN_TRYCATCH_FILTER:
-		return "filter";
-	default:
-		return "catch";
-	}
-}
-
 // "catch (std::exception) { // try 0xfrom..0xto", typeless kinds drop the parens
 static char *tc_handler_tag(const RBinTrycatch *tc) {
 	const char *ty = NULL;
-	if (tc->kind != R_BIN_TRYCATCH_CLEANUP && tc->kind != R_BIN_TRYCATCH_FILTER) {
+	if (tc->kind == R_BIN_TRYCATCH_CATCH || tc->kind == R_BIN_TRYCATCH_UNSPECIFIED) {
 		ty = tc->type? tc->type: (tc->catch_all? "...": NULL);
 	}
 	return ty
 		? r_str_newf ("catch (%s) { // try 0x%08" PFMT64x "..0x%08" PFMT64x, ty, tc->from, tc->to)
-		: r_str_newf ("%s { // try 0x%08" PFMT64x "..0x%08" PFMT64x, tc_kind_name (tc), tc->from, tc->to);
+		: r_str_newf ("%s { // try 0x%08" PFMT64x "..0x%08" PFMT64x, r_bin_trycatch_kind_tostring (tc->kind), tc->from, tc->to);
 }
 
 static const RBinTrycatch *trycatch_handler_at(PDCState *state, ut64 addr) {
@@ -803,7 +792,7 @@ static void emit_trycatch_marks(PDCState *state, ut64 addr, int indent) {
 			}
 		}
 		if (addr == tc->from) {
-			print_line_at (state, addr, indent - 1, true, "try { // %s at 0x%08" PFMT64x, tc_kind_name (tc), tc->handler);
+			print_line_at (state, addr, indent - 1, true, "try { // %s at 0x%08" PFMT64x, r_bin_trycatch_kind_tostring (tc->kind), tc->handler);
 			state->open_trys++;
 		}
 	}
@@ -824,7 +813,7 @@ static void orphan_trycatch_bounds(PDCState *state, RAnalBlock *bb, bool opening
 			state->open_trys--;
 		}
 		if (opening && tc->from >= bb->addr && tc->from < end) {
-			print_line_at (state, tc->from, 0, true, "try { // %s at 0x%08" PFMT64x, tc_kind_name (tc), tc->handler);
+			print_line_at (state, tc->from, 0, true, "try { // %s at 0x%08" PFMT64x, r_bin_trycatch_kind_tostring (tc->kind), tc->handler);
 			state->open_trys++;
 		}
 	}

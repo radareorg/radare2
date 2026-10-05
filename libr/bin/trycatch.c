@@ -85,7 +85,7 @@ R_API R_UNOWNED const RVecRBinTrycatch *r_bin_file_get_trycatch(RBinFile * R_NON
 
 R_API bool r_bin_trycatch_insert(RBinFile *bf, const RBinTrycatch *tc) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && tc, false);
-	if (tc->from >= tc->to || tc->kind < R_BIN_TRYCATCH_UNSPECIFIED || tc->kind > R_BIN_TRYCATCH_FILTER) {
+	if (tc->from >= tc->to || tc->kind < R_BIN_TRYCATCH_UNSPECIFIED || tc->kind > R_BIN_TRYCATCH_FINALLY) {
 		return false;
 	}
 	RBinTrycatch item = *tc;

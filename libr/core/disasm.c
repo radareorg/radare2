@@ -6907,8 +6907,7 @@ static void ds_print_trycatch(RDisasmState *ds) {
 		if (ds->show_color) {
 			r_cons_print (cons, ds->pal_comment);
 		}
-		const char *kind = tc->kind == R_BIN_TRYCATCH_CLEANUP? "cleanup":
-			tc->kind == R_BIN_TRYCATCH_FILTER? "filter": "catch";
+		const char *kind = r_bin_trycatch_kind_tostring (tc->kind);
 		r_cons_printf (cons, "; try 0x%08" PFMT64x "-0x%08" PFMT64x " %s", tc->from, tc->to, kind);
 		if (tc->type || tc->catch_all) {
 			r_cons_printf (cons, " (%s)", tc->type? tc->type: "...");
