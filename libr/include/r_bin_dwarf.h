@@ -670,6 +670,16 @@ extern "C" {
 #define DW_UT_lo_user                   0x80
 #define DW_UT_hi_user                   0xff
 
+#define DW_LLE_end_of_list              0x00
+#define DW_LLE_base_addressx            0x01
+#define DW_LLE_startx_endx              0x02
+#define DW_LLE_startx_length            0x03
+#define DW_LLE_offset_pair              0x04
+#define DW_LLE_default_location         0x05
+#define DW_LLE_base_address             0x06
+#define DW_LLE_start_end                0x07
+#define DW_LLE_start_length             0x08
+
 #define DW_LNCT_path            0x0001
 #define DW_LNCT_directory_index 0x0002
 #define DW_LNCT_timestamp       0x0003
@@ -761,6 +771,7 @@ typedef enum {
 	// Raw DWARF 5 indexes that could not be resolved in this object.
 	DW_AT_KIND_ADDRESS_INDEX,
 	DW_AT_KIND_STRING_INDEX,
+	DW_AT_KIND_LOCLIST_INDEX, // DW_FORM_loclistx before the unit resolves it
 } RBinDwarfAttrKind;
 
 typedef struct dwarf_attr_kind {
@@ -912,6 +923,8 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinFile *bf, RVecDwarfAbbrevDe
 R_API HtUP/*<offset, RBinDwarfLocList*>*/  *r_bin_dwarf_parse_loc(RBinFile *bf, int addr_size);
 R_API R_OWNED char *r_bin_dwarf_print_loc(HtUP /*<offset, RBinDwarfLocList*>*/  *loc_table, int addr_size);
 R_API R_OWNED char *r_bin_dwarf_print_loc_stream(RBinFile *bf, int addr_size);
+R_API HtUP/*<offset, RBinDwarfLocList*>*/  *r_bin_dwarf_parse_loclists(RBinFile *bf, const RBinDwarfDebugInfo *info);
+R_API R_OWNED char *r_bin_dwarf_print_loclists_stream(RBinFile *bf);
 R_API void r_bin_dwarf_free_loc(HtUP /*<offset, RBinDwarfLocList*>*/  *loc_table);
 R_API void r_bin_dwarf_free_debug_info(RBinDwarfDebugInfo *inf);
 R_API void r_bin_dwarf_free_debug_abbrev(RVecDwarfAbbrevDecl *da);

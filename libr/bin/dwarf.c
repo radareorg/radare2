@@ -393,6 +393,7 @@ enum {
 	DWARF_SN_FRAME,
 	DWARF_SN_LINE,
 	DWARF_SN_LOC,
+	DWARF_SN_LOCLISTS,
 	DWARF_SN_STR,
 	DWARF_SN_LINE_STR,
 	DWARF_SN_STR_OFFSETS,
@@ -411,6 +412,7 @@ static const char *dwarf_sn_elf[DWARF_SN_MAX] = {
 	[DWARF_SN_FRAME] = "debug_frame",
 	[DWARF_SN_LINE] = "debug_line",
 	[DWARF_SN_LOC] = "debug_loc",
+	[DWARF_SN_LOCLISTS] = "debug_loclists",
 	[DWARF_SN_STR] = "debug_str",
 	[DWARF_SN_LINE_STR] = "debug_line_str",
 	[DWARF_SN_STR_OFFSETS] = "debug_str_offs",
@@ -452,6 +454,9 @@ static RBinSection *get_section(RBinFile *bf, int sn) {
 		R_VEC_FOREACH (&o->sections_vec, section) {
 			if (section->name && strstr (section->name, name_str)) {
 				if (sn == DWARF_SN_STR && strstr (section->name, "debug_str_off")) {
+					continue;
+				}
+				if (sn == DWARF_SN_LOC && strstr (section->name, "debug_loclists")) {
 					continue;
 				}
 				/* accept matching section, including compressed or zdebug variants */
@@ -2549,7 +2554,7 @@ static const ut8 *parse_attr_value(RBinFile *bf, const ut8 *obuf, int obuf_len, 
 		break;
 	// An index into the .debug_loc
 	case DW_FORM_loclistx:
-		value->kind = DW_AT_KIND_LOCLISTPTR;
+		value->kind = DW_AT_KIND_LOCLIST_INDEX;
 		buf = dwarf_read_uleb_index (buf, buf_end, &value->reference);
 		break;
 		// An index into the .debug_rnglists
@@ -2696,12 +2701,20 @@ static bool dwarf_address_base(const ut8 *data, size_t section_size, bool be,
 		false, true, address_size, end);
 }
 
-static bool dwarf_comp_unit_index_bases(const RBinDwarfCompUnit *unit, bool need_str, bool need_addr, ut64 *str_base, bool *has_str_base, ut64 *addr_base, bool *has_addr_base) {
+// a DWARF 5 sec_offset location points into .debug_loclists, not .debug_loc
+static inline bool dwarf_attr_is_loclist5(const RBinDwarfCompUnit *unit, const RBinDwarfAttrValue *value) {
+	return unit->hdr.version >= 5 && value->attr_form == DW_FORM_sec_offset
+		&& value->kind == DW_AT_KIND_REFERENCE
+		&& (value->attr_name == DW_AT_location || value->attr_name == DW_AT_frame_base);
+}
+
+static bool dwarf_comp_unit_index_bases(const RBinDwarfCompUnit *unit, bool need_str, bool need_addr, bool need_loclists, ut64 *str_base, bool *has_str_base, ut64 *addr_base, bool *has_addr_base, ut64 *loclists_base, bool *has_loclists_base) {
 	R_RETURN_VAL_IF_FAIL (unit && unit->dies && str_base && has_str_base
-		&& addr_base && has_addr_base, false);
+		&& addr_base && has_addr_base && loclists_base && has_loclists_base, false);
 	*has_str_base = false;
 	*has_addr_base = false;
-	if (!need_str && !need_addr) {
+	*has_loclists_base = false;
+	if (!need_str && !need_addr && !need_loclists) {
 		return true;
 	}
 	RBinDwarfDie *root = RVecDwarfDie_at (unit->dies, 0);
@@ -2726,6 +2739,13 @@ static bool dwarf_comp_unit_index_bases(const RBinDwarfCompUnit *unit, bool need
 			}
 			*has_addr_base = true;
 			*addr_base = value->reference;
+		} else if (value->attr_name == DW_AT_loclists_base) {
+			if (*has_loclists_base || value->attr_form != DW_FORM_sec_offset
+				|| value->kind != DW_AT_KIND_REFERENCE) {
+				return false;
+			}
+			*has_loclists_base = true;
+			*loclists_base = value->reference;
 		}
 	}
 	return true;
@@ -2760,7 +2780,41 @@ typedef struct {
 	RBinSection *addr_section;
 	const ut8 *addr;
 	size_t addr_end;
+	bool has_loclists_base;
+	ut64 loclists_base;
+	DwarfIndexResolution loclists_status;
+	const ut8 *loclists;
+	size_t loclists_end; // of the contribution DW_AT_loclists_base points into
+	ut8 loclists_offset_size;
 } DwarfIndexResolver;
+
+// the contribution whose offset table starts at base: its end and offset size
+static bool dwarf_loclists_base(const ut8 *data, size_t size, bool be, ut64 base, size_t *end, ut8 *offset_size) {
+	if (base < 12 || base > size) {
+		return false;
+	}
+	const bool dwarf64 = base >= 20 && r_read_ble32 (data + base - 20, be) == DWARF_INIT_LEN_64;
+	const ut64 length = dwarf64? r_read_ble64 (data + base - 16, be): r_read_ble32 (data + base - 12, be);
+	const ut8 *fields = data + base - 8; // version, address size, segment selector size
+	if (length < 8 || length > size - base + 8 || r_read_ble16 (fields, be) != 5 || fields[3]) {
+		return false;
+	}
+	*offset_size = dwarf64? 8: 4;
+	*end = (size_t)base - 8 + length;
+	return true;
+}
+
+// DW_FORM_loclistx indexes the offset table at the unit's DW_AT_loclists_base
+static void dwarf_index_resolver_init_loclists(DwarfIndexResolver *resolver) {
+	RBinSection *section = get_section (resolver->bf, DWARF_SN_LOCLISTS);
+	resolver->loclists = section? get_section_bytes (resolver->bf, section): NULL;
+	resolver->loclists_status = DWARF_INDEX_RESOLUTION_UNAVAILABLE;
+	if (resolver->loclists && resolver->has_loclists_base
+		&& dwarf_loclists_base (resolver->loclists, section->bytes.len, resolver->be,
+			resolver->loclists_base, &resolver->loclists_end, &resolver->loclists_offset_size)) {
+		resolver->loclists_status = DWARF_INDEX_RESOLUTION_OK;
+	}
+}
 
 static DwarfIndexResolution dwarf_index_resolver_init_str(DwarfIndexResolver *resolver) {
 	resolver->str_status = DWARF_INDEX_RESOLUTION_MALFORMED;
@@ -2884,6 +2938,25 @@ static DwarfIndexResolution dwarf_index_resolver_resolve_die(DwarfIndexResolver 
 				return DWARF_INDEX_RESOLUTION_MALFORMED;
 			}
 			value->kind = DW_AT_KIND_ADDRESS;
+		} else if (value->kind == DW_AT_KIND_LOCLIST_INDEX) {
+			if (resolver->loclists_status != DWARF_INDEX_RESOLUTION_OK) {
+				result = resolver->loclists_status;
+				continue;
+			}
+			const ut8 offset_size = resolver->loclists_offset_size;
+			ut64 list_offset;
+			if (!dwarf_index_entry_offset (resolver->loclists_base, value->reference,
+					offset_size, resolver->loclists_end, &entry_offset)
+				|| !dwarf_read_index (resolver->loclists + entry_offset,
+					resolver->loclists + resolver->loclists_end, resolver->be,
+					offset_size, &list_offset)
+				|| list_offset >= resolver->loclists_end - resolver->loclists_base) {
+				return DWARF_INDEX_RESOLUTION_MALFORMED;
+			}
+			value->reference = resolver->loclists_base + list_offset;
+			value->kind = DW_AT_KIND_LOCLISTPTR;
+		} else if (dwarf_attr_is_loclist5 (resolver->unit, value)) {
+			value->kind = DW_AT_KIND_LOCLISTPTR;
 		}
 	}
 	return result;
@@ -2901,6 +2974,7 @@ static DwarfIndexResolution dwarf_resolve_comp_unit_indexes(RBinFile *bf, RBinDw
 	};
 	bool need_str = false;
 	bool need_addr = false;
+	bool need_loclists = false;
 	RBinDwarfDie *die;
 	R_VEC_FOREACH (unit->dies, die) {
 		if (!die->attr_values) {
@@ -2912,15 +2986,21 @@ static DwarfIndexResolution dwarf_resolve_comp_unit_indexes(RBinFile *bf, RBinDw
 				&& value->kind == DW_AT_KIND_STRING_INDEX;
 			need_addr |= dwarf_form_is_addrx (value->attr_form)
 				&& value->kind == DW_AT_KIND_ADDRESS_INDEX;
+			need_loclists |= value->kind == DW_AT_KIND_LOCLIST_INDEX
+				|| dwarf_attr_is_loclist5 (unit, value);
 		}
 	}
-	if (!need_str && !need_addr) {
+	if (!need_str && !need_addr && !need_loclists) {
 		return DWARF_INDEX_RESOLUTION_OK;
 	}
-	if (!dwarf_comp_unit_index_bases (unit, need_str, need_addr,
+	if (!dwarf_comp_unit_index_bases (unit, need_str, need_addr, need_loclists,
 			&resolver.str_base, &resolver.has_str_base,
-			&resolver.addr_base, &resolver.has_addr_base)) {
+			&resolver.addr_base, &resolver.has_addr_base,
+			&resolver.loclists_base, &resolver.has_loclists_base)) {
 		return DWARF_INDEX_RESOLUTION_MALFORMED;
+	}
+	if (need_loclists) {
+		dwarf_index_resolver_init_loclists (&resolver);
 	}
 	if (need_str && dwarf_index_resolver_init_str (&resolver)
 			== DWARF_INDEX_RESOLUTION_MALFORMED) {
@@ -4084,6 +4164,270 @@ R_API void r_bin_dwarf_free_loc(HtUP /*<offset, RBinDwarfLocList*>*/ *loc_table)
 		ht_up_foreach (loc_table, free_loc_list, NULL);
 		ht_up_free (loc_table);
 	}
+}
+
+typedef struct {
+	RBin *bin;
+	const ut8 *addr; // .debug_addr, NULL when the unit has no usable table
+	ut64 addr_base;
+	size_t addr_end;
+	ut8 addr_size;
+	bool be;
+	bool raw_index; // without a table keep the addrx index itself (the dump)
+} LoclistCtx;
+
+static bool loclist_uleb(const ut8 **buf, const ut8 *limit, ut64 *value) {
+	if (*buf >= limit) {
+		return false;
+	}
+	*buf = dwarf_read_uleb_index (*buf, limit, value);
+	return *buf != NULL;
+}
+
+static bool loclist_addr(const LoclistCtx *ctx, const ut8 **buf, const ut8 *limit, ut64 *value) {
+	if (limit - *buf < ctx->addr_size) {
+		return false;
+	}
+	*value = dwarf_read_address (ctx->bin, ctx->addr_size, buf, limit);
+	return true;
+}
+
+static bool loclist_addrx(const LoclistCtx *ctx, const ut8 **buf, const ut8 *limit, ut64 *value) {
+	size_t entry;
+	if (!loclist_uleb (buf, limit, value)) {
+		return false;
+	}
+	if (!ctx->addr) {
+		return ctx->raw_index;
+	}
+	return dwarf_index_entry_offset (ctx->addr_base, *value, ctx->addr_size, ctx->addr_end, &entry)
+		&& dwarf_read_index (ctx->addr + entry, ctx->addr + ctx->addr_end, ctx->be, ctx->addr_size, value);
+}
+
+// a base entry only moves *base; the default location has no range
+static bool loclist_entry(const LoclistCtx *ctx, const ut8 **buf, const ut8 *limit, ut8 *lle, ut64 *base, ut64 *start, ut64 *end, RBinDwarfBlock *expr) {
+	if (*buf >= limit) {
+		return false;
+	}
+	*lle = *(*buf)++;
+	*start = 0;
+	*end = UT64_MAX;
+	expr->length = 0;
+	expr->data = NULL;
+	ut64 length = 0;
+	bool ok = true;
+	switch (*lle) {
+	case DW_LLE_end_of_list:
+		return true;
+	case DW_LLE_base_addressx:
+		return loclist_addrx (ctx, buf, limit, base);
+	case DW_LLE_base_address:
+		return loclist_addr (ctx, buf, limit, base);
+	case DW_LLE_startx_endx:
+		ok = loclist_addrx (ctx, buf, limit, start) && loclist_addrx (ctx, buf, limit, end);
+		break;
+	case DW_LLE_startx_length:
+		ok = loclist_addrx (ctx, buf, limit, start) && loclist_uleb (buf, limit, &length);
+		*end = *start + length;
+		break;
+	case DW_LLE_offset_pair:
+		ok = loclist_uleb (buf, limit, start) && loclist_uleb (buf, limit, end);
+		*start += *base;
+		*end += *base;
+		break;
+	case DW_LLE_default_location:
+		*end = 0;
+		break;
+	case DW_LLE_start_end:
+		ok = loclist_addr (ctx, buf, limit, start) && loclist_addr (ctx, buf, limit, end);
+		break;
+	case DW_LLE_start_length:
+		ok = loclist_addr (ctx, buf, limit, start) && loclist_uleb (buf, limit, &length);
+		*end = *start + length;
+		break;
+	default:
+		return false;
+	}
+	if (!ok || !loclist_uleb (buf, limit, &length) || length > limit - *buf) {
+		return false;
+	}
+	expr->length = length;
+	expr->data = *buf;
+	*buf += length;
+	return true;
+}
+
+static inline bool loclist_is_base(ut8 lle) {
+	return lle == DW_LLE_base_addressx || lle == DW_LLE_base_address;
+}
+
+// one .debug_loclists list, from offset to its DW_LLE_end_of_list
+static RBinDwarfLocList *parse_loclist(const LoclistCtx *ctx, const ut8 *sec, size_t sec_len, ut64 offset, ut64 base) {
+	if (offset >= sec_len) {
+		return NULL;
+	}
+	const ut8 *buf = sec + offset;
+	const ut8 *limit = sec + sec_len;
+	RBinDwarfLocList *list = create_loc_list (offset);
+	ut8 lle;
+	ut64 start, end;
+	RBinDwarfBlock expr;
+	while (loclist_entry (ctx, &buf, limit, &lle, &base, &start, &end, &expr)) {
+		if (lle == DW_LLE_end_of_list) {
+			return list;
+		}
+		if (loclist_is_base (lle)) {
+			continue;
+		}
+		r_list_append (list->list, create_loc_range (start, end, r_mem_dup (&expr, sizeof (expr))));
+	}
+	free_loc_list (NULL, 0, list);
+	return NULL;
+}
+
+static ut64 comp_unit_low_pc(const RBinDwarfCompUnit *unit) {
+	RBinDwarfDie *root = RVecDwarfDie_at (unit->dies, 0);
+	if (root && root->attr_values) {
+		RBinDwarfAttrValue *value;
+		R_VEC_FOREACH (root->attr_values, value) {
+			if (value->attr_name == DW_AT_low_pc && value->kind == DW_AT_KIND_ADDRESS) {
+				return value->address;
+			}
+		}
+	}
+	return 0;
+}
+
+// the lists DWARF 5 locations and frame bases refer to, by section offset
+R_API HtUP /*<offset, RBinDwarfLocList*>*/ *r_bin_dwarf_parse_loclists(RBinFile *bf, const RBinDwarfDebugInfo *info) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->rbin && info, NULL);
+	RBinSection *section = get_section (bf, DWARF_SN_LOCLISTS);
+	const ut8 *sec = section? get_section_bytes (bf, section): NULL;
+	if (!sec || !info->comp_units) {
+		return NULL;
+	}
+	HtUP *table = ht_up_new0 ();
+	if (!table) {
+		return NULL;
+	}
+	RBinSection *addr_section = get_section (bf, DWARF_SN_ADDR);
+	const ut8 *addr = addr_section? get_section_bytes (bf, addr_section): NULL;
+	const bool be = r_bin_is_big_endian (bf->rbin);
+	RBinDwarfCompUnit *unit;
+	R_VEC_FOREACH (info->comp_units, unit) {
+		if (unit->hdr.version < 5 || !unit->dies) {
+			continue;
+		}
+		LoclistCtx ctx = { .bin = bf->rbin, .be = be, .addr_size = unit->hdr.address_size };
+		ut64 str_base, addr_base, loclists_base;
+		bool has_str_base, has_addr_base, has_loclists_base;
+		if (!dwarf_comp_unit_index_bases (unit, false, true, true, &str_base, &has_str_base,
+				&addr_base, &has_addr_base, &loclists_base, &has_loclists_base)) {
+			continue;
+		}
+		if (addr && has_addr_base && dwarf_address_base (addr, addr_section->bytes.len, be,
+				addr_base, ctx.addr_size, &ctx.addr_end)) {
+			ctx.addr = addr;
+			ctx.addr_base = addr_base;
+		}
+		const ut64 base = comp_unit_low_pc (unit);
+		RBinDwarfDie *die;
+		R_VEC_FOREACH (unit->dies, die) {
+			if (!die->attr_values) {
+				continue;
+			}
+			RBinDwarfAttrValue *value;
+			R_VEC_FOREACH (die->attr_values, value) {
+				if (value->kind != DW_AT_KIND_LOCLISTPTR || ht_up_find (table, value->reference, NULL)) {
+					continue;
+				}
+				RBinDwarfLocList *list = parse_loclist (&ctx, sec, section->bytes.len, value->reference, base);
+				// a list that does not parse stays as an empty one, decoded once
+				ht_up_insert (table, value->reference, list? list: create_loc_list (value->reference));
+			}
+		}
+	}
+	return table;
+}
+
+static const char *loclist_entry_name(ut8 lle) {
+	switch (lle) {
+	case DW_LLE_end_of_list: return "end_of_list";
+	case DW_LLE_base_addressx: return "base_addressx";
+	case DW_LLE_startx_endx: return "startx_endx";
+	case DW_LLE_startx_length: return "startx_length";
+	case DW_LLE_offset_pair: return "offset_pair";
+	case DW_LLE_default_location: return "default_location";
+	case DW_LLE_base_address: return "base_address";
+	case DW_LLE_start_end: return "start_end";
+	case DW_LLE_start_length: return "start_length";
+	}
+	return "unknown";
+}
+
+// every .debug_loclists contribution as ranges; addrx indices stay unresolved
+R_API R_OWNED char *r_bin_dwarf_print_loclists_stream(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
+	RBinSection *section = get_section (bf, DWARF_SN_LOCLISTS);
+	const ut8 *buf = section? get_section_bytes (bf, section): NULL;
+	if (!buf || section->bytes.len < 12) {
+		return NULL;
+	}
+	RBin *bin = bf->rbin;
+	const bool be = r_bin_is_big_endian (bin);
+	const ut8 *const sec = buf;
+	const ut8 *const sec_end = buf + section->bytes.len;
+	RStrBuf *sb = r_strbuf_new (NULL);
+	r_strbuf_append (sb, "\nContents of the .debug_loclists section:\n");
+	while (buf + 12 <= sec_end && !dwarf_is_breaked (bin)) {
+		const ut64 unit_offset = buf - sec;
+		ut64 unit_length = r_read_ble32 (buf, be);
+		ut8 offset_size = 4;
+		buf += 4;
+		if (unit_length == DWARF_INIT_LEN_64) {
+			if (buf + 8 > sec_end) {
+				break;
+			}
+			unit_length = r_read_ble64 (buf, be);
+			offset_size = 8;
+			buf += 8;
+		}
+		if (unit_length < 8 || unit_length > sec_end - buf) {
+			break;
+		}
+		const ut8 *limit = buf + unit_length;
+		const ut16 version = r_read_ble16 (buf, be);
+		const ut32 offsets = r_read_ble32 (buf + 4, be);
+		LoclistCtx ctx = { .bin = bin, .be = be, .addr_size = buf[2], .raw_index = true };
+		const bool sane = version == 5 && !buf[3] && (ctx.addr_size == 2 || ctx.addr_size == 4 || ctx.addr_size == 8);
+		buf += 8;
+		r_strbuf_appendf (sb, "0x%" PFMT64x " version %d address size %d offsets %u\n", unit_offset, version, ctx.addr_size, offsets);
+		if (!sane || (ut64)offsets * offset_size > limit - buf) {
+			buf = limit;
+			continue;
+		}
+		buf += (size_t)offsets * offset_size;
+		ut8 lle;
+		ut64 base = 0, start, end;
+		RBinDwarfBlock expr;
+		while (buf < limit) {
+			const ut64 at = buf - sec;
+			if (!loclist_entry (&ctx, &buf, limit, &lle, &base, &start, &end, &expr)) {
+				r_strbuf_appendf (sb, "0x%" PFMT64x " <Malformed entry>\n", at);
+				break;
+			}
+			if (lle == DW_LLE_end_of_list) {
+				r_strbuf_appendf (sb, "0x%" PFMT64x " <End of list>\n", at);
+			} else if (loclist_is_base (lle)) {
+				r_strbuf_appendf (sb, "0x%" PFMT64x " %s 0x%" PFMT64x "\n", at, loclist_entry_name (lle), base);
+			} else {
+				r_strbuf_appendf (sb, "0x%" PFMT64x " %s 0x%" PFMT64x " 0x%" PFMT64x " %" PFMT64u "\n", at, loclist_entry_name (lle), start, end, expr.length);
+			}
+		}
+		buf = limit;
+	}
+	r_strbuf_append (sb, "\n");
+	return r_strbuf_drain (sb);
 }
 
 /* Itanium C++ ABI LSDA (language specific data area) parser. This is the

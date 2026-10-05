@@ -12,6 +12,7 @@ typedef struct dwarf_parse_context_t {
 	Sdb *sdb;
 	HtUP/*<ut64 offset, DwarfDie *die>*/ *die_map;
 	HtUP/*<offset, RBinDwarfLocList*>*/  *locations;
+	HtUP/*<offset, RBinDwarfLocList*>*/  *loclists;
 	const char *lang; // for demangling
 	RArena *arena;
 } Context;
@@ -1308,8 +1309,9 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 	}
 	RBinDwarfBlock block;
 	if (loc->kind == DW_AT_KIND_LOCLISTPTR || loc->kind == DW_AT_KIND_REFERENCE || loc->kind == DW_AT_KIND_CONSTANT) {
-		ut64 offset = loc->reference;
-		RBinDwarfLocList *range_list = ht_up_find (ctx->locations, offset, NULL);
+		// a DWARF 5 list lives in .debug_loclists, a separate offset space
+		HtUP *table = loc->kind == DW_AT_KIND_LOCLISTPTR? ctx->loclists: ctx->locations;
+		RBinDwarfLocList *range_list = table? ht_up_find (table, loc->reference, NULL): NULL;
 		if (!range_list) { /* for some reason offset isn't there, wrong parsing or malformed dwarf */
 			return NULL;
 		}
@@ -2256,6 +2258,7 @@ R_API void r_anal_dwarf_process_info(const RAnal *anal, RAnalDwarfContext *ctx) 
 			.die_map = info->lookup_table,
 			.sdb = dwarf_sdb,
 			.locations = ctx->loc,
+			.loclists = ctx->loclists,
 			.lang = NULL,
 			.arena = arena
 		};

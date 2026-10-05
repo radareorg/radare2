@@ -30,6 +30,7 @@ R_LIB_VERSION_HEADER(r_anal);
 typedef struct r_anal_dwarf_context {
 	const RBinDwarfDebugInfo *info;
 	HtUP/*<offset, RBinDwarfLocList*>*/  *loc;
+	HtUP/*<offset, RBinDwarfLocList*>*/  *loclists; // from .debug_loclists
 	// const RBinDwarfCfa *cfa; TODO
 } RAnalDwarfContext;
 
