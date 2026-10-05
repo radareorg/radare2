@@ -3890,10 +3890,7 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 			} else if (op.stackop == R_ANAL_STACK_RESET) {
 				fcn->stack = 0;
 			}
-			st64 sp_depth;
-			if (r_anal_function_is_sp_restored (fcn, &op, &sp_depth)) {
-				fcn->stack = sp_depth;
-			}
+			r_anal_function_syncstack (fcn, &op);
 			r_anal_extract_vars (core->anal, fcn, &op);
 		}
 		int opsize = op.size;

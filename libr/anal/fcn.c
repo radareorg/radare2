@@ -824,12 +824,12 @@ static inline bool op_is_set_bp(RAnal *anal, const char *op_dst, const char *op_
 	return op_src && !strcmp (sp_reg, op_src) && r_anal_reg_same (anal, bp_reg, op_dst);
 }
 
-R_API bool r_anal_function_is_sp_restored(RAnalFunction *fcn, RAnalOp *op, st64 *depth) {
-	R_RETURN_VAL_IF_FAIL (fcn && op && depth, false);
+R_API void r_anal_function_syncstack(RAnalFunction *fcn, RAnalOp *op) {
+	R_RETURN_IF_FAIL (fcn && op);
 	const ut32 type = op->type & R_ANAL_OP_TYPE_MASK;
 	if (!fcn->bp_frame || fcn->bp_off <= 0 || op->cond != R_ANAL_CONDTYPE_AL
 			|| (type != R_ANAL_OP_TYPE_MOV && type != R_ANAL_OP_TYPE_ADD && type != R_ANAL_OP_TYPE_SUB)) {
-		return false;
+		return;
 	}
 	RAnal *anal = fcn->anal;
 	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
@@ -837,19 +837,18 @@ R_API bool r_anal_function_is_sp_restored(RAnalFunction *fcn, RAnalOp *op, st64 
 	if (!dst || !src || !dst->reg || !src->reg || dst->memref || src->memref
 			|| !r_anal_reg_same (anal, dst->reg, r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP))
 			|| !r_anal_reg_same (anal, src->reg, r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP))) {
-		return false;
+		return;
 	}
 	if (type == R_ANAL_OP_TYPE_MOV) {
-		*depth = fcn->bp_off;
-		return true;
+		fcn->stack = fcn->bp_off;
+		return;
 	}
 	RAnalValue *imm = RVecRArchValue_at (&op->srcs, 1);
 	// a two-operand add/sub leaves this slot zeroed, and an add of 0 is a mov
 	if (!imm || !imm->imm) {
-		return false;
+		return;
 	}
-	*depth = (type == R_ANAL_OP_TYPE_SUB)? fcn->bp_off + imm->imm: fcn->bp_off - imm->imm;
-	return true;
+	fcn->stack = (type == R_ANAL_OP_TYPE_SUB)? fcn->bp_off + imm->imm: fcn->bp_off - imm->imm;
 }
 
 static inline bool has_vars(RAnal *anal, ut64 addr) {
@@ -1486,10 +1485,7 @@ noskip:
 		default:
 			break;
 		}
-		st64 sp_depth;
-		if (r_anal_function_is_sp_restored (fcn, op, &sp_depth)) {
-			fcn->stack = sp_depth;
-		}
+		r_anal_function_syncstack (fcn, op);
 		if (op->ptr && op->ptr != UT64_MAX && op->ptr != UT32_MAX) {
 			// swapped parameters wtf
 			// its read or wr
