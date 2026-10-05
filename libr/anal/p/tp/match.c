@@ -3,6 +3,25 @@
 
 #include "tp.h"
 
+static void tp_op_kv_free(HtUPKv *kv) {
+	r_anal_op_free (kv->value);
+}
+
+static RAnalOp *tp_op_at(TPState *tps, ut64 addr, int mask) {
+	RAnalOp *op = ht_up_find (tps->op_cache, addr, NULL);
+	if (!op) {
+		op = tp_anal_op (tps->anal, addr, mask);
+		if (op && !tps->op_cache) {
+			tps->op_cache = ht_up_new (NULL, tp_op_kv_free, NULL);
+		}
+		if (!op || !tps->op_cache || !ht_up_insert (tps->op_cache, addr, op)) {
+			r_anal_op_free (op);
+			return NULL;
+		}
+	}
+	return op;
+}
+
 /**
  * type match at a call instruction inside another function
  *
@@ -13,20 +32,6 @@
  * \param prev_idx index in the esil trace
  * \param userfnc whether the callee is a user function (affects propagation direction)
  */
-// every call site backtraces over the instructions since the previous call, so
-// the same op gets decoded for each of its callers; keep them for the function
-static RAnalOp *tp_op_at(TPState *tps, ut64 addr, int mask) {
-	RAnalOp *op = ht_up_find (tps->op_cache, addr, NULL);
-	if (!op) {
-		op = tp_anal_op (tps->anal, addr, mask);
-		if (!op || !ht_up_insert (tps->op_cache, addr, op)) {
-			r_anal_op_free (op);
-			return NULL;
-		}
-	}
-	return op;
-}
-
 static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, const char *cc,
 	int prev_idx, bool userfnc) {
 	RAnal *anal = tps->anal;
