@@ -1340,6 +1340,7 @@ R_API RAnalVarAccess *r_anal_var_get_access_at(RAnalVar *var, ut64 addr);
 R_API int r_anal_var_get_argnum(RAnalVar *var);
 
 R_API void r_anal_extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op);
+R_API void r_anal_function_syncstack(RAnalFunction *fcn, RAnalOp *op);
 R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count);
 
 // Get the variable that var is written to at one of its accesses
