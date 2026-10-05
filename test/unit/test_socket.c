@@ -29,7 +29,29 @@ static bool test_r_socket_gets_buffer_limit(void) {
 }
 #endif
 
+static bool test_r_socket_http_handle_upload(void) {
+	const char *body = "--------------------------d74496d66958873e\r\n"
+		"Content-Disposition: form-data; name=\"file\"; filename=\"a.txt\"\r\n"
+		"Content-Type: text/plain\r\n\r\n"
+		"HELLO\r\n"
+		"--------------------------d74496d66958873e--\r\n";
+	int len = 0;
+	ut8 *data = r_socket_http_handle_upload ((const ut8 *)body, strlen (body), &len);
+	mu_assert_notnull (data, "parse multipart upload");
+	mu_assert_eq (len, 5, "upload length");
+	mu_assert_memeq (data, (const ut8 *)"HELLO", 5, "upload contents");
+	free (data);
+
+	// trailer scan lands on the leading dashes
+	const char *shortbody = "----------\nContent-Disposition: form-data; \n\n";
+	data = r_socket_http_handle_upload ((const ut8 *)shortbody, strlen (shortbody), &len);
+	mu_assert_null (data, "reject truncated multipart body");
+	mu_assert_eq (len, 0, "no upload length");
+	mu_end;
+}
+
 static int all_tests(void) {
+	mu_run_test (test_r_socket_http_handle_upload);
 #if R2__UNIX__ && !__wasi__
 	mu_run_test (test_r_socket_gets_buffer_limit);
 #endif

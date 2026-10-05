@@ -590,7 +590,7 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 				} else {
 					r_socket_http_response (rs, 200, "", 0, headers);
 				}
-			} else if (r_config_get_b (core->config, "http.upload")) {
+			} else if (r_str_startswith (rs->path, "/up/") && rs->path[4] && r_config_get_b (core->config, "http.upload")) {
 				ret = r_socket_http_handle_upload (rs->data, rs->data_length, &retlen);
 				if (ret) {
 					ut64 size = r_config_get_i (core->config, "http.maxsize");

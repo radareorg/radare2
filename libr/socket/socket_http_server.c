@@ -226,7 +226,7 @@ R_API ut8 *r_socket_http_handle_upload(const ut8 *str, int len, int *retlen) {
 	if (retlen) {
 		*retlen = 0;
 	}
-	if (r_str_startswith ((const char *)str, "----------")) {
+	if (len >= 40 && r_str_startswith ((const char *)str, "----------")) {
 		int datalen;
 		char *ret;
 		const char *data, *token = (const char *)str + 10;
@@ -246,11 +246,14 @@ R_API ut8 *r_socket_http_handle_upload(const ut8 *str, int len, int *retlen) {
 				data++;
 			}
 			end = (const char *)str + len - 40;
-			while (*end == '-') {
+			while (end > data && *end == '-') {
 				end--;
 			}
-			if (*end == 10 || *end == 13) {
+			if (end > data && (*end == 10 || *end == 13)) {
 				end--;
+			}
+			if (end < data) {
+				return NULL;
 			}
 			datalen = (size_t) (end - data);
 			ret = malloc (datalen + 1);
