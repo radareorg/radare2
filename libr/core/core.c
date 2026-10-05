@@ -3327,6 +3327,7 @@ reaccept:
 		if (!c) {
 			break;
 		}
+		pipefd = -1;
 		if (r_cons_is_breaked (core->cons)) {
 			goto out_of_function;
 		}
@@ -3556,8 +3557,12 @@ reaccept:
 				r_socket_read_block (c, buf, 4);
 				i = r_read_be32 (buf);
 				{
-					// FIXME: Use r_socket_close
-					int ret = close (i);
+					// only the fd returned by RAP_PACKET_OPEN, never the listener or other descriptors
+					int ret = -1;
+					if (i == pipefd && r_io_fd_close (core->io, i)) {
+						pipefd = -1;
+						ret = 0;
+					}
 					r_write_be32 (buf + 1, ret);
 					buf[0] = RAP_PACKET_CLOSE | RAP_PACKET_REPLY;
 					r_socket_write (c, buf, 5);
