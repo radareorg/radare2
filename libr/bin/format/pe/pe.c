@@ -3762,6 +3762,7 @@ RVecPEExport *PE_(r_bin_pe_get_exports)(RBinPEObj *pe) {
 	}
 	PE_VWord *func_rvas = NULL;
 	PE_Word *ordinals = NULL;
+	st32 *ord2name = NULL;
 	if (pe->export_directory) {
 		const ut32 nfuncs = pe->export_directory->NumberOfFunctions;
 		// Avoid fuzzing inputs that claim an unreasonable export count.
@@ -3798,6 +3799,26 @@ RVecPEExport *PE_(r_bin_pe_get_exports)(RBinPEObj *pe) {
 		if (r != (int)funcs_sz) {
 			goto beach;
 		}
+		// Build an ordinal->name-index map so each function resolves its name
+		// in O(1) instead of rescanning AddressOfOrdinals for every function.
+		if (nfuncs > 0 && pe->export_directory->NumberOfNames > 0) {
+			ord2name = malloc (nfuncs * sizeof (st32));
+			if (!ord2name) {
+				goto beach;
+			}
+			ut32 k;
+			for (k = 0; k < nfuncs; k++) {
+				ord2name[k] = -1;
+			}
+			int n;
+			for (n = 0; n < pe->export_directory->NumberOfNames; n++) {
+				PE_Word fo = r_read_at_ble16 ((ut8 *)ordinals, n * sizeof (PE_Word), pe->endian);
+				// first name wins, matching the previous linear search
+				if (fo < nfuncs && ord2name[fo] == -1) {
+					ord2name[fo] = n;
+				}
+			}
+		}
 		int i;
 		for (i = 0; i < pe->export_directory->NumberOfFunctions; i++) {
 			function_name[0] = '\0';
@@ -3807,18 +3828,12 @@ RVecPEExport *PE_(r_bin_pe_get_exports)(RBinPEObj *pe) {
 			function_ordinal = i;
 			// have exports by name?
 			if (pe->export_directory->NumberOfNames > 0) {
-				// search for value of i into AddressOfOrdinals
+				// resolve the export name via the ordinal->name-index map
 				name_vaddr = 0;
-				int n;
-				for (n = 0; n < pe->export_directory->NumberOfNames; n++) {
-					PE_Word fo = r_read_at_ble16 ((ut8 *)ordinals, n * sizeof (PE_Word), pe->endian);
-					// if exist this index into AddressOfOrdinals
-					if (i == fo) {
-						function_ordinal = fo;
-						// get the VA of export name  from AddressOfNames
-						name_vaddr = r_buf_read_le32_at (pe->b, names_paddr + n * sizeof (PE_VWord));
-						break;
-					}
+				int n = ord2name? ord2name[i]: -1;
+				if (n >= 0) {
+					// get the VA of export name from AddressOfNames
+					name_vaddr = r_buf_read_le32_at (pe->b, names_paddr + n * sizeof (PE_VWord));
 				}
 				// have an address into name_vaddr?
 				if (name_vaddr) {
@@ -3859,6 +3874,7 @@ RVecPEExport *PE_(r_bin_pe_get_exports)(RBinPEObj *pe) {
 		}
 		R_FREE (ordinals);
 		R_FREE (func_rvas);
+		R_FREE (ord2name);
 	}
 	parse_symbol_table (pe, exports);
 	if (RVecPEExport_empty (exports)) {
@@ -3869,6 +3885,7 @@ RVecPEExport *PE_(r_bin_pe_get_exports)(RBinPEObj *pe) {
 beach:
 	free (ordinals);
 	free (func_rvas);
+	free (ord2name);
 	RVecPEExport_free (exports);
 	return NULL;
 }
