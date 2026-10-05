@@ -121,6 +121,27 @@ static struct zip *r_io_zip_open_archive(const char *archivename, ut32 perm, int
 	return za;
 }
 
+static RBuffer *r_io_zip_read_entry(struct zip_file *zf, ut64 size) {
+	if (!size) {
+		return r_buf_new ();
+	}
+	if (size > SIZE_MAX) {
+		return NULL;
+	}
+	ut8 *buf = malloc (size);
+	if (!buf) {
+		return NULL;
+	}
+	RBuffer *b = NULL;
+	if (zip_fread (zf, buf, size) == (zip_int64_t)size) {
+		b = r_buf_new_with_pointers (buf, size, true);
+	}
+	if (!b) {
+		free (buf);
+	}
+	return b;
+}
+
 static bool r_io_zip_slurp_file(RIOZipFileObj *zfo) {
 	R_RETURN_VAL_IF_FAIL (zfo, false);
 	bool res = false;
@@ -134,24 +155,15 @@ static bool r_io_zip_slurp_file(RIOZipFileObj *zfo) {
 			zip_close (za);
 			return false;
 		}
-		if (!zfo->b) {
-			zfo->b = r_buf_new ();
-		}
 		struct zip_stat sb;
 		zip_stat_init (&sb);
-		if (zfo->b && !zip_stat_index (za, zfo->entry, 0, &sb)) {
-			if (sb.size > 0) {
-				ut8 *buf = calloc (1, sb.size);
-				if (buf) {
-					zip_fread (zFile, buf, sb.size);
-					r_buf_set_bytes (zfo->b, buf, sb.size);
-					res = true;
-					zfo->opened = true;
-					free (buf);
-				}
-			} else {
-				res = true;
+		if (!zip_stat_index (za, zfo->entry, 0, &sb)) {
+			RBuffer *b = r_io_zip_read_entry (zFile, sb.size);
+			if (b) {
+				r_unref (zfo->b);
+				zfo->b = b;
 				zfo->opened = true;
+				res = true;
 			}
 		}
 		zip_fclose (zFile);
