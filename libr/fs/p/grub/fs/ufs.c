@@ -556,6 +556,16 @@ grub_ufs_find_file(struct grub_ufs_data *data, const char *path) {
 	return grub_errno;
 }
 
+static int
+grub_ufs_sblock_valid(struct grub_ufs_data *data) {
+	grub_int32_t bsize = UFS_BLKSZ (data);
+	if (bsize < 4096 || bsize > 65536 || (bsize & (bsize - 1))) {
+		return 0;
+	}
+	return grub_num_to_cpu32 (data->sblock.ino_per_group, data->be) != 0
+		&& grub_num_to_cpu32 (data->sblock.log2_blksz, data->be) < 32;
+}
+
 /* Mount the filesystem on the disk DISK.  */
 static struct grub_ufs_data *
 grub_ufs_mount(grub_disk_t disk) {
@@ -578,10 +588,14 @@ grub_ufs_mount(grub_disk_t disk) {
 
 		if (grub_le_to_cpu32 (data->sblock.magic) == GRUB_UFS_MAGIC) {
 			data->be = 0;
-			return data;
+			if (grub_ufs_sblock_valid (data)) {
+				return data;
+			}
 		} else if (grub_be_to_cpu32 (data->sblock.magic) == GRUB_UFS_MAGIC) {
 			data->be = 1;
-			return data;
+			if (grub_ufs_sblock_valid (data)) {
+				return data;
+			}
 		}
 		sblklist++;
 	}
