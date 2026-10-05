@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2025 - pancake */
+/* radare2 - LGPL - Copyright 2013-2026 - pancake */
 
 #include "index.h"
 #include <r_main.h>
@@ -57,6 +57,8 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 	const char *port = "8080";
 	const char *httpauthfile = NULL;
 	char *pfile = NULL;
+	char *pidfile = NULL;
+	int ret = 0;
 
 	RGetopt opt;
 	bool list_sessions = false;
@@ -163,13 +165,12 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 	s->local = listenlocal;
 	if (!r_socket_listen (s, port, NULL)) {
 		R_LOG_ERROR ("Cannot listen on %d", s->port);
-		r_socket_free (s);
-		return 1;
+		ret = 1;
+		goto cleanup;
 	}
 
 	R_LOG_INFO ("http://localhost:%d/", s->port);
 	/* Create a pid file in tmpdir/r2/<pid>.pid so r2 (=l) can discover this server */
-	char *pidfile = NULL;
 	{
 		char *tmpdir = r_file_tmpdir ();
 		char *tmpdir_r2 = r_str_newf ("%s/r2", tmpdir);
@@ -189,14 +190,8 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 
 	if (dosandbox && !r_sandbox_enable (true)) {
 		R_LOG_ERROR ("Cannot enable the sandbox");
-		free (pfile);
-		r_list_free (so.authtokens);
-		r_socket_free (s);
-		if (pidfile) {
-			r_file_rm (pidfile);
-			free (pidfile);
-		}
-		return 1;
+		ret = 1;
+		goto cleanup;
 	}
 
 	cons = r_cons_new ();
@@ -226,7 +221,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 #endif
 				}
 			} else if (r_str_startswith (rs->path, "/file/open/")) {
-				char *filename = rs->path + strlen ("/file/open/");
+				const char *filename = r_str_trim_head_ro (rs->path + strlen ("/file/open/"));
 				if (*filename == '-') {
 					// r2 stops opening files after "--", so reject option-shaped names instead
 					r_socket_http_response (rs, 400, "", 0, NULL);
@@ -268,6 +263,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 		R_FREE (res);
 	}
 
+cleanup:
 	r_cons_free (cons);
 	free (pfile);
 	r_list_free (so.authtokens);
@@ -277,5 +273,5 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 		r_file_rm (pidfile);
 		free (pidfile);
 	}
-	return 0;
+	return ret;
 }
