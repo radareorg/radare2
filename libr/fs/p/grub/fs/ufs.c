@@ -35,6 +35,7 @@
 #define GRUB_UFS_FILETYPE_DIR 4
 #define GRUB_UFS_FILETYPE_LNK 10
 #define GRUB_UFS_MAX_SYMLNK_CNT 8
+#define GRUB_UFS_MAX_SYMLNK_LEN 4096
 
 #define GRUB_UFS_DIRBLKS 12
 #define GRUB_UFS_INDIRBLKS 3
@@ -409,27 +410,30 @@ grub_ufs_read_inode(struct grub_ufs_data *data, int ino, char *inode) {
 number of the directory the symlink is relative to.  */
 static grub_err_t
 grub_ufs_lookup_symlink(struct grub_ufs_data *data, int ino) {
-#ifndef _MSC_VER
-	char symlink[INODE_SIZE (data) + 1];
-#else
-	char *symlink = grub_malloc (INODE_SIZE (data) + 1);
-#endif
+	grub_uint64_t size = INODE_SIZE (data);
 	if (++data->linknest > GRUB_UFS_MAX_SYMLNK_CNT) {
 		return grub_error (GRUB_ERR_SYMLINK_LOOP, "too deep nesting of symlinks");
 	}
-
-	if (INODE_NBLOCKS (data) == 0) {
-		grub_strcpy (symlink, (char *)INODE (data, symlink));
-	} else {
-		grub_disk_read (data->disk,
-			(INODE_DIRBLOCKS (data, 0)
-				<< grub_num_to_cpu32 (data->sblock.log2_blksz,
-					data->be)),
-			0,
-			INODE_SIZE (data),
-			symlink);
-		symlink[INODE_SIZE (data)] = '\0';
+	if (size < 1 || size > GRUB_UFS_MAX_SYMLNK_LEN) {
+		return grub_error (GRUB_ERR_BAD_FS, "invalid symlink size");
 	}
+	if (INODE_NBLOCKS (data) == 0 && size > sizeof (INODE (data, symlink))) {
+		return grub_error (GRUB_ERR_BAD_FS, "invalid inline symlink size");
+	}
+	char *symlink = grub_malloc (size + 1);
+	if (!symlink) {
+		return grub_errno;
+	}
+	if (INODE_NBLOCKS (data) == 0) {
+		grub_memcpy (symlink, INODE (data, symlink), size);
+	} else if (grub_disk_read (data->disk,
+			(INODE_DIRBLOCKS (data, 0)
+				<< grub_num_to_cpu32 (data->sblock.log2_blksz, data->be)),
+			0, size, symlink)) {
+		grub_free (symlink);
+		return grub_errno;
+	}
+	symlink[size] = '\0';
 
 	/* The symlink is an absolute path, go back to the root inode.  */
 	if (symlink[0] == '/') {
@@ -437,15 +441,13 @@ grub_ufs_lookup_symlink(struct grub_ufs_data *data, int ino) {
 	}
 
 	/* Now load in the old inode.  */
-	if (grub_ufs_read_inode (data, ino, 0)) {
-		return grub_errno;
+	if (!grub_ufs_read_inode (data, ino, 0)) {
+		grub_ufs_find_file (data, symlink);
+		if (grub_errno) {
+			grub_error (grub_errno, "cannot follow symlink `%s'", symlink);
+		}
 	}
-
-	grub_ufs_find_file (data, symlink);
-	if (grub_errno) {
-		grub_error (grub_errno, "cannot follow symlink `%s'", symlink);
-	}
-
+	grub_free (symlink);
 	return grub_errno;
 }
 
