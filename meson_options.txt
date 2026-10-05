@@ -3,6 +3,7 @@ option('static_runtime', type: 'boolean', value: false, description: 'Link all l
 option('local', type: 'boolean', value: false, description: 'Adds support for local/side-by-side installation (sets rpath if needed)')
 option('blob', type: 'boolean', value: false, description: 'Compile just one binary which dispatch to the right handlers based on the name used to call it')
 option('libr', type: 'boolean', value: false, description: 'Also build a single libr shared library with all libraries and plugins inside (requires default_library=static)')
+option('libr_hide', type: 'array', choices: ['openssl', 'capstone'], value: [], description: 'Bundled static dependencies whose symbols are kept out of the libr shared library exports')
 option('wasan', type: 'boolean', value: false, description: 'Windows-specific hack to build with asan using msvc')
 option('threadsafety', type: 'boolean', value: false, description: 'Enable thread-safe checks on critical paths')
 option('debugstuff', type: 'boolean', value: true, description: 'Permit and handle ^C hook signals and kept todo and debug logs')

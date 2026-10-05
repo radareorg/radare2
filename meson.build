@@ -700,6 +700,37 @@ if get_option('libr')
   foreach lib : libr_parts
     libr_objs += lib.extract_all_objects(recursive: false)
   endforeach
+  libr_link_args = []
+  libr_link_depends = []
+  libr_hide = get_option('libr_hide')
+  if libr_hide.length() > 0
+    libr_hide_libs = []
+    if libr_hide.contains('openssl')
+      if not use_sys_openssl or not get_option('static_sys_openssl')
+        error('-Dlibr_hide=openssl requires -Duse_ssl=true -Duse_sys_openssl=true -Dstatic_sys_openssl=true')
+      endif
+      ssl_libdir = sys_openssl.get_variable(pkgconfig: 'libdir')
+      libr_hide_libs += files(ssl_libdir / 'libssl.a', ssl_libdir / 'libcrypto.a')
+    endif
+    if libr_hide.contains('capstone')
+      if not is_variable('cs')
+        error('-Dlibr_hide=capstone requires the bundled capstone (use_sys_capstone=false)')
+      endif
+      libr_hide_libs += cs.get_variable('libcapstone')
+    endif
+    libr_hide_fmt = host_machine.system() == 'darwin' ? 'darwin' : 'gnu'
+    libr_hide_map = custom_target('libr_hide',
+      input: libr_hide_libs,
+      output: 'libr_hide.map',
+      command: [py3_exe, files('sys/libr_hide.py'), find_program('nm'), libr_hide_fmt, '@OUTPUT@', '@INPUT@'],
+    )
+    if libr_hide_fmt == 'darwin'
+      libr_link_args += '-Wl,-unexported_symbols_list,' + libr_hide_map.full_path()
+    else
+      libr_link_args += '-Wl,--version-script=' + libr_hide_map.full_path()
+    endif
+    libr_link_depends += libr_hide_map
+  endif
   # own objects are forced in, bundled third party code is pulled from the archives on demand
   libr = shared_library('r',
     objects: libr_objs,
@@ -708,6 +739,8 @@ if get_option('libr')
       r_reg_dep, r_esil_dep, r_arch_dep, r_fs_dep, r_bin_dep, r_config_dep,
       r_asm_dep, r_lang_dep, r_anal_dep, r_egg_dep, r_debug_dep, r_core_dep,
       r_main_dep],
+    link_args: libr_link_args,
+    link_depends: libr_link_depends,
     install: true,
     install_rpath: rpath_lib,
     soversion: r2_libversion
