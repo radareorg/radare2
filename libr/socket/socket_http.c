@@ -483,13 +483,13 @@ R_API char *r_socket_http_post(const char *url, const char *headers[], const cha
 					free (escaped_url);
 					return NULL;
 				}
-				r_strbuf_appendf (sb, " -H '%s'", escaped_header);
+				r_strbuf_appendf (sb, " -H \"%s\"", escaped_header);
 				free (escaped_header);
 				header++;
 			}
 		}
 		char *escaped_data = r_str_escape_sh (data);
-		r_strbuf_appendf (sb, " -d \"%s\"", escaped_data);
+		r_strbuf_appendf (sb, " --data-raw \"%s\"", escaped_data);
 		free (escaped_data);
 		r_strbuf_appendf (sb, " \"%s\"", escaped_url);
 		char *command = r_strbuf_drain (sb);
