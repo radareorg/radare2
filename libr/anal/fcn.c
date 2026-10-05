@@ -297,6 +297,12 @@ static RAnalBlock *fcn_append_basic_block(RAnal *anal, RAnalFunction *fcn, ut64 
 
 #define gotoBeach(x) ret = x; inherit = false; goto beach;
 
+// class metadata flags outrank symbols and hide the sym.* flag beside them
+static bool hides_symbol(RAnal *anal, RFlagItem *flag, ut64 at) {
+	return flag->space && !strcmp (flag->space->name, "classes")
+		&& anal->flb.exist_at (anal->flb.f, "sym", 3, at);
+}
+
 static bool is_symbol_flag(const char *name) {
 	return strstr (name, "imp.")
 		|| strstr (name, "dbg.")
@@ -1379,10 +1385,8 @@ noskip:
 		}
 		if (flagends && !flagbounds && fcn->addr != at) {
 			RFlagItem *flag = anal->flag_get (anal->flb.f, false, at);
-			if (flag) {
-				if (r_str_startswith (flag->name, "sym")) {
-					gotoBeach (R_ANAL_RET_END);
-				}
+			if (flag && (r_str_startswith (flag->name, "sym") || hides_symbol (anal, flag, at))) {
+				gotoBeach (R_ANAL_RET_END);
 			}
 		}
 		if (!overlapped) {

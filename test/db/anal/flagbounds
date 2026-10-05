@@ -20,6 +20,70 @@ size: 1
 EOF
 RUN
 
+NAME=anal.flagends sees a sym flag behind a method flag
+FILE=malloc://16
+ARGS=-a x86 -b 64 -e anal.nopskip=false
+CMDS=<<EOF
+wx 909090c3
+fs symbols
+f sym.foo 1 @ 1
+fs classes
+f method.Foo.bar 1 @ 1
+fs *
+af @ 0
+afi @ 0~size
+EOF
+EXPECT=<<EOF
+size: 1
+EOF
+RUN
+
+NAME=anal.flagends keeps a sym flag hidden behind a sign flag
+FILE=malloc://16
+ARGS=-a x86 -b 64 -e anal.nopskip=false
+CMDS=<<EOF
+wx 909090c3
+fs symbols
+f sym.foo 1 @ 1
+fs sign
+f sign.foo 1 @ 1
+fs *
+af @ 0
+afi @ 0~size
+EOF
+EXPECT=<<EOF
+size: 4
+EOF
+RUN
+
+NAME=a method entry after an unwinder call keeps its own frame
+FILE=bins/mach0/BatteryLife.arm_64.1
+CMDS=<<EOF
+af @ 0x1000fc268
+af @ 0x1000fc354
+afi @ 0x1000fc354~stackframe
+EOF
+EXPECT=<<EOF
+stackframe: 64
+EOF
+RUN
+
+NAME=anal.flagends ignores a method flag without a symbol
+FILE=malloc://16
+ARGS=-a x86 -b 64 -e anal.nopskip=false
+CMDS=<<EOF
+wx 909090c3
+fs classes
+f method.Foo.bar 1 @ 1
+fs *
+af @ 0
+afi @ 0~size
+EOF
+EXPECT=<<EOF
+size: 4
+EOF
+RUN
+
 NAME=anal.flagends ignores non-symbol flags
 FILE=malloc://16
 CMDS=<<EOF
