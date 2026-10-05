@@ -98,6 +98,7 @@ static void bimport_free(void *p) {
 
 // Maximum recursion depth when resolving constant pool references
 #define MAX_CPITEMS 16
+#define MAX_EV_DEPTH 64
 
 static const ut16 R_BIN_JAVA_ELEMENT_VALUE_METAS_SZ = 14;
 static RBinJavaMetaInfo R_BIN_JAVA_NULL_TYPE_METAS = { 0 };
@@ -234,9 +235,9 @@ static void r_bin_java_print_stack_map_frame_summary(RBinJavaStackMapFrame *obj)
 static void r_bin_java_print_verification_info_summary(RBinJavaVerificationObj *obj);
 static RBinJavaStackMapFrame *r_bin_java_build_stack_frame_from_local_variable_table(RBinJavaObj *bin, RBinJavaAttrInfo *attr);
 static RBinJavaStackMapFrame *r_bin_java_stack_map_frame_new(ut8 *buffer, ut64 sz, RBinJavaStackMapFrame *p_frame, ut64 buf_offset);
-static RBinJavaElementValue *r_bin_java_element_value_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset);
+static RBinJavaElementValue *r_bin_java_element_value_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset, int depth);
 static RBinJavaAnnotation *r_bin_java_annotation_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset);
-static RBinJavaElementValuePair *r_bin_java_element_pair_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset);
+static RBinJavaElementValuePair *r_bin_java_element_pair_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset, int depth);
 static RBinJavaBootStrapMethod *r_bin_java_bootstrap_method_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset);
 static RBinJavaAnnotationsArray *r_bin_java_annotation_array_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset);
 static RBinJavaElementValueMetas *r_bin_java_get_ev_meta_from_tag(ut8 tag);
@@ -5786,7 +5787,7 @@ static char *r_bin_java_print_unknown_cp_stringify(RBinJavaCPTypeObj *obj) {
 	return r_str_newf ("%d.0x%04" PFMT64x ".%s", obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *)obj->metas->type_info)->name);
 }
 
-static RBinJavaElementValuePair *r_bin_java_element_pair_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset) {
+static RBinJavaElementValuePair *r_bin_java_element_pair_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset, int depth) {
 	if (!buffer || sz < 8) {
 		return NULL;
 	}
@@ -5803,7 +5804,7 @@ static RBinJavaElementValuePair *r_bin_java_element_pair_new(RBinJavaObj *bin, u
 		free (evp);
 		return NULL;
 	}
-	evp->value = r_bin_java_element_value_new (bin, buffer + offset, sz - offset, buf_offset + offset);
+	evp->value = r_bin_java_element_value_new (bin, buffer + offset, sz - offset, buf_offset + offset, depth);
 	if (evp->value) {
 		offset += evp->value->size;
 		if (offset >= sz) {
@@ -6000,7 +6001,7 @@ static RBinJavaAttrInfo *r_bin_java_annotation_default_attr_new(RBinJavaObj *bin
 	offset += 6;
 	if (attr && sz >= offset) {
 		attr->type = R_BIN_JAVA_ATTR_TYPE_ANNOTATION_DEFAULT_ATTR;
-		attr->info.annotation_default_attr.default_value = r_bin_java_element_value_new (bin, buffer + offset, sz - offset, buf_offset + offset);
+		attr->info.annotation_default_attr.default_value = r_bin_java_element_value_new (bin, buffer + offset, sz - offset, buf_offset + offset, 0);
 		if (attr->info.annotation_default_attr.default_value) {
 			offset += attr->info.annotation_default_attr.default_value->size;
 		}
@@ -6091,7 +6092,7 @@ static RBinJavaAnnotation *r_bin_java_annotation_new(RBinJavaObj *bin, ut8 *buff
 		if (offset > sz) {
 			break;
 		}
-		evps = r_bin_java_element_pair_new (bin, buffer + offset, sz - offset, buf_offset + offset);
+		evps = r_bin_java_element_pair_new (bin, buffer + offset, sz - offset, buf_offset + offset, 0);
 		if (evps) {
 			offset += evps->size;
 			r_list_append (annotation->element_value_pairs, (void *)evps);
@@ -6226,10 +6227,14 @@ static ut64 r_bin_java_element_value_calc_size(RBinJavaElementValue *element_val
 	return sz;
 }
 
-static RBinJavaElementValue *r_bin_java_element_value_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset) {
+static RBinJavaElementValue *r_bin_java_element_value_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset, int depth) {
 	ut32 i = 0;
 	ut64 offset = 0;
 	if (sz < 8) {
+		return NULL;
+	}
+	if (depth > MAX_EV_DEPTH) {
+		R_LOG_WARN ("Annotation element values nested too deep");
 		return NULL;
 	}
 	RBinJavaElementValue *element_value = R_NEW0 (RBinJavaElementValue);
@@ -6297,7 +6302,7 @@ static RBinJavaElementValue *r_bin_java_element_value_new(RBinJavaObj *bin, ut8 
 			if (offset >= sz) {
 				break;
 			}
-			RBinJavaElementValue *ev_element = r_bin_java_element_value_new (bin, buffer + offset, sz - offset, buf_offset + offset);
+			RBinJavaElementValue *ev_element = r_bin_java_element_value_new (bin, buffer + offset, sz - offset, buf_offset + offset, depth + 1);
 			if (ev_element) {
 				element_value->size += ev_element->size;
 				offset += ev_element->size;
@@ -6324,7 +6329,7 @@ static RBinJavaElementValue *r_bin_java_element_value_new(RBinJavaObj *bin, ut8 
 			if (offset > sz) {
 				break;
 			}
-			evps = r_bin_java_element_pair_new (bin, buffer + offset, sz - offset, buf_offset + offset);
+			evps = r_bin_java_element_pair_new (bin, buffer + offset, sz - offset, buf_offset + offset, depth + 1);
 			if (evps) {
 				element_value->size += evps->size;
 				offset += evps->size;
