@@ -4016,19 +4016,8 @@ static bool bin_fields(RCore *core, PJ *pj, int mode, int va) {
 	return true;
 }
 
-static const char *trycatch_kind_name(RBinTrycatchKind kind) {
-	switch (kind) {
-	case R_BIN_TRYCATCH_CLEANUP:
-		return "cleanup";
-	case R_BIN_TRYCATCH_FILTER:
-		return "filter";
-	default:
-		return "catch";
-	}
-}
-
 R_IPI void bin_trycatch_flag(RCore *core, const RBinTrycatch *tc, size_t index, bool set) {
-	const char *suffixes[] = { "from", "to", trycatch_kind_name (tc->kind) };
+	const char *suffixes[] = { "from", "to", r_bin_trycatch_kind_tostring (tc->kind) };
 	const ut64 addresses[] = { tc->from, tc->to, tc->handler };
 	size_t i;
 	for (i = 0; i < R_ARRAY_SIZE (suffixes); i++) {
@@ -4058,7 +4047,7 @@ R_IPI int bin_trycatch_json(PJ *pj, const RVecRBinTrycatch *tcs, ut64 source) {
 		if (source != UT64_MAX && tc->source != source) {
 			continue;
 		}
-		const char *kind = trycatch_kind_name (tc->kind);
+		const char *kind = r_bin_trycatch_kind_tostring (tc->kind);
 		pj_o (pj);
 		pj_kn (pj, "index", idx);
 		pj_kn (pj, "source", tc->source);
@@ -4068,7 +4057,7 @@ R_IPI int bin_trycatch_json(PJ *pj, const RVecRBinTrycatch *tcs, ut64 source) {
 		pj_kn (pj, "filter", tc->filter);
 		if (tc->kind != R_BIN_TRYCATCH_UNSPECIFIED) {
 			pj_ks (pj, "kind", kind);
-			if (tc->kind != R_BIN_TRYCATCH_CLEANUP) {
+			if (tc->kind != R_BIN_TRYCATCH_CLEANUP && tc->kind != R_BIN_TRYCATCH_FINALLY) {
 				pj_kN (pj, "typeFilter", tc->type_filter);
 			}
 			if (tc->type) {
@@ -4105,7 +4094,7 @@ static bool bin_trycatch(RCore *core, PJ *pj, int mode, ut64 source) {
 		if (source != UT64_MAX && tc->source != source) {
 			continue;
 		}
-		const char *kind = trycatch_kind_name (tc->kind);
+		const char *kind = r_bin_trycatch_kind_tostring (tc->kind);
 		if (IS_MODE_SET (mode)) {
 			bin_trycatch_flag (core, tc, idx, true);
 		} else if (IS_MODE_RAD (mode)) {

@@ -551,7 +551,7 @@ static void seh_trycatch(RIO *io, RVecRBinTrycatch *trycatch, ut64 baseAddr,
 			}
 			tc = r_bin_trycatch_add (trycatch, source, from, to, baseAddr + scope.HandlerAddress, 0);
 			if (tc) {
-				tc->kind = R_BIN_TRYCATCH_CLEANUP;
+				tc->kind = R_BIN_TRYCATCH_FINALLY;
 			}
 		}
 		if (!tc) {

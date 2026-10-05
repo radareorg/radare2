@@ -230,7 +230,7 @@ static bool test_trycatch_ownership(void) {
 	entry.from++;
 	mu_assert_false (r_bin_trycatch_insert (fixture.bf, &entry), "reject reversed range");
 	entry = make_entry (UT64_MAX, 2);
-	entry.kind = R_BIN_TRYCATCH_FILTER + 1;
+	entry.kind = R_BIN_TRYCATCH_FINALLY + 1;
 	mu_assert_false (r_bin_trycatch_insert (fixture.bf, &entry), "reject unknown kind");
 	entry.kind = (RBinTrycatchKind)-1;
 	mu_assert_false (r_bin_trycatch_insert (fixture.bf, &entry), "reject negative kind");

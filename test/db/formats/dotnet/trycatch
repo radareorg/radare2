@@ -15,7 +15,7 @@ EXPECT=<<EOF
     "to": 268444139,
     "handler": 268444139,
     "filter": 0,
-    "kind": "cleanup"
+    "kind": "finally"
   },
   {
     "index": 1,
@@ -24,16 +24,16 @@ EXPECT=<<EOF
     "to": 268444372,
     "handler": 268444372,
     "filter": 0,
-    "kind": "cleanup"
+    "kind": "finally"
   }
 ]
 --
 f try.0.100021c0.from=0x100021d0
 f try.0.100021c0.to=0x100021eb
-f try.0.100021c0.cleanup=0x100021eb
+f try.0.100021c0.finally=0x100021eb
 f try.1.10002224.from=0x1000227d
 f try.1.10002224.to=0x100022d4
-f try.1.10002224.cleanup=0x100022d4
+f try.1.10002224.finally=0x100022d4
 EOF
 RUN
 
@@ -130,7 +130,7 @@ CMDS=<<EOF
 iw*~from~?
 iw*~catch=~?
 iw*~filter=~?
-iw*~cleanup=~?
+iw*~finally=~?
 EOF
 EXPECT=<<EOF
 22
@@ -147,7 +147,7 @@ CMDS=<<EOF
 iw*~from~?
 iw*~catch=~?
 iw*~filter=~?
-iw*~cleanup=~?
+iw*~finally=~?
 ?e --
 iwj~{[3]}
 iwj~{[18]}

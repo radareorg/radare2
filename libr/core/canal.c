@@ -681,7 +681,7 @@ static void warn_nonexec_map(RCore *core, ut64 at) {
 static bool anal_trycatch(const RBinTrycatch *tc, void *user) {
 	RAnalFunction *fcn = user;
 	ut64 handler = tc->handler;
-	if (tc->kind == R_BIN_TRYCATCH_CLEANUP || handler == fcn->addr || r_anal_function_contains (fcn, handler)) {
+	if (tc->kind == R_BIN_TRYCATCH_CLEANUP || tc->kind == R_BIN_TRYCATCH_FINALLY || handler == fcn->addr || r_anal_function_contains (fcn, handler)) {
 		return true;
 	}
 	int ret = r_anal_function_bb (fcn->anal, fcn, handler);

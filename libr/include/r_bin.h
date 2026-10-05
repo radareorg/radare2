@@ -738,6 +738,7 @@ typedef enum r_bin_trycatch_kind_t {
 	R_BIN_TRYCATCH_CATCH,
 	R_BIN_TRYCATCH_CLEANUP,
 	R_BIN_TRYCATCH_FILTER,
+	R_BIN_TRYCATCH_FINALLY, // runtime-called funclet, not code of the function
 } RBinTrycatchKind;
 
 typedef struct r_bin_trycatch_t {
@@ -753,6 +754,19 @@ typedef struct r_bin_trycatch_t {
 } RBinTrycatch;
 
 typedef bool (*RBinTrycatchCb)(const RBinTrycatch *tc, void *user);
+
+static inline const char *r_bin_trycatch_kind_tostring(RBinTrycatchKind kind) {
+	switch (kind) {
+	case R_BIN_TRYCATCH_CLEANUP:
+		return "cleanup";
+	case R_BIN_TRYCATCH_FILTER:
+		return "filter";
+	case R_BIN_TRYCATCH_FINALLY:
+		return "finally";
+	default:
+		return "catch";
+	}
+}
 
 static inline void r_bin_trycatch_fini(RBinTrycatch *tc) {
 	if (tc) {
