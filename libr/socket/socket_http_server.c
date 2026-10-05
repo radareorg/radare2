@@ -5,6 +5,7 @@
 
 #define SOCKET_HTTP_MAX_HEADERS 128
 #define SOCKET_HTTP_BODY_CHUNK 0x10000
+#define SOCKET_HTTP_BODY_MAX (128 * 1024 * 1024)
 
 static R_TH_LOCAL bool *breaked = NULL;
 
@@ -12,19 +13,19 @@ R_API void r_socket_http_server_set_breaked(bool *b) {
 	breaked = b;
 }
 
-static void http_read_body(RSocketHTTPRequest *hr, int content_length) {
+static void http_read_body(RSocketHTTPRequest *hr, size_t content_length) {
 	ut8 first;
 	// one missing byte: either the leftover newline or the first body byte
 	if (r_socket_read_block (hr->s, &first, 1) != 1) {
 		return;
 	}
 	// grow as data arrives instead of trusting the declared length
-	int cap = R_MIN (content_length, SOCKET_HTTP_BODY_CHUNK);
+	size_t cap = R_MIN (content_length, SOCKET_HTTP_BODY_CHUNK);
 	ut8 *data = malloc (cap + 1);
 	if (!data) {
 		return;
 	}
-	int have = 0;
+	size_t have = 0;
 	if (first != '\r' && first != '\n') {
 		data[have++] = first;
 	}
@@ -45,11 +46,12 @@ static void http_read_body(RSocketHTTPRequest *hr, int content_length) {
 	}
 	data[have] = 0;
 	hr->data = data;
-	hr->data_length = have;
+	hr->data_length = (int)have;
 }
 
 R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *so) {
-	int content_length = 0, xx, yy;
+	ut64 content_length = 0;
+	int xx, yy;
 	int pxx = 1, first = 0;
 	char buf[1500], *p, *q;
 	RSocketHTTPRequest *hr = R_NEW0 (RSocketHTTPRequest);
@@ -125,7 +127,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 			} else if (!hr->host && r_str_startswith (buf, "Host: ")) {
 				hr->host = strdup (buf + 6);
 			} else if (r_str_ncasecmp (buf, "Content-Length: ", 16) == 0) {
-				content_length = atoi (buf + 16);
+				content_length = strtoull (buf + 16, NULL, 10);
 			} else if (so->httpauth && r_str_startswith (buf, "Authorization: Basic ")) {
 				int declen;
 				char *dec = (char *)r_base64_decode_dyn (buf + 21, -1, &declen, false);
@@ -148,7 +150,14 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 		}
 	}
 	if (content_length > 0 && hr->auth) {
-		http_read_body (hr, content_length);
+		if (content_length > SOCKET_HTTP_BODY_MAX) {
+			R_LOG_WARN ("HTTP request body too large (%" PFMT64u " bytes)", content_length);
+			r_socket_http_response (hr, 413, "413 Payload Too Large\n", 0, NULL);
+			r_socket_http_close (hr);
+			r_socket_http_free (hr);
+			return NULL;
+		}
+		http_read_body (hr, (size_t)content_length);
 	}
 	return hr;
 }
