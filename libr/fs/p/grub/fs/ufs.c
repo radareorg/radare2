@@ -498,8 +498,16 @@ grub_ufs_find_file(struct grub_ufs_data *data, const char *path) {
 #else
 		namelen = grub_num_to_cpu16 (dirent.namelen, data->be);
 #endif
+		const grub_uint16_t direntlen = grub_num_to_cpu16 (dirent.direntlen, data->be);
+		if (direntlen < sizeof (dirent) + namelen) {
+			break;
+		}
 		{
 			char *filename = grub_malloc (namelen + 1);
+			if (!filename) {
+				grub_free (fpath);
+				return grub_errno;
+			}
 			if (grub_ufs_read_file (data, 0, 0, pos + sizeof (dirent), namelen, filename) < 0) {
 				grub_free (fpath);
 				grub_free (filename);
@@ -548,7 +556,7 @@ grub_ufs_find_file(struct grub_ufs_data *data, const char *path) {
 			grub_free (filename);
 		}
 
-		pos += grub_num_to_cpu16 (dirent.direntlen, data->be);
+		pos += direntlen;
 	} while (pos < INODE_SIZE (data));
 
 	grub_free (fpath);
@@ -659,19 +667,20 @@ grub_ufs_dir(grub_device_t device, const char *path, int(*hook)(const char *file
 #else
 			namelen = grub_num_to_cpu16 (dirent.namelen, data->be);
 #endif
+			const grub_uint16_t direntlen = grub_num_to_cpu16 (dirent.direntlen, data->be);
+			if (direntlen < sizeof (dirent) + namelen) {
+				break;
+			}
 
 			{
-#ifndef _MSC_VER
-				char filename[namelen + 1];
-#else
 				char *filename = grub_malloc (namelen + 1);
-#endif
 				struct grub_dirhook_info info;
 				struct grub_ufs_inode inode;
 
 				grub_memset (&info, 0, sizeof (info));
 
-				if (grub_ufs_read_file (data, 0, 0, pos + sizeof (dirent), namelen, filename) < 0) {
+				if (!filename || grub_ufs_read_file (data, 0, 0, pos + sizeof (dirent), namelen, filename) < 0) {
+					grub_free (filename);
 					break;
 				}
 
@@ -683,12 +692,14 @@ grub_ufs_dir(grub_device_t device, const char *path, int(*hook)(const char *file
 				info.mtime = grub_num_to_cpu64 (inode.mtime, data->be);
 				info.mtimeset = 1;
 
-				if (hook (filename, &info, closure)) {
+				const int stop = hook (filename, &info, closure);
+				grub_free (filename);
+				if (stop) {
 					break;
 				}
 			}
 
-			pos += grub_num_to_cpu16 (dirent.direntlen, data->be);
+			pos += direntlen;
 		}
 	}
 
