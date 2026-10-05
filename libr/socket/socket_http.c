@@ -107,15 +107,12 @@ static char *socket_http_answer(RSocket *s, const char *headers[], int *code, in
 			goto exit;
 		}
 		p += strlen ("Location:");
+		// the headers are chopped, so the last one has no newline
 		const char *end_url = strchr (p, '\n');
-		if (end_url) {
-			int url_len = end_url - p;
-			char *url = r_str_ndup (p, url_len);
-			r_str_trim (url);
-			res = socket_http_get_recursive (url, headers, code, rlen, --redirections);
-			free (url);
-			len = *rlen;
-		}
+		char *url = end_url? r_str_ndup (p, end_url - p): strdup (p);
+		r_str_trim (url);
+		res = socket_http_get_recursive (url, headers, code, &len, --redirections);
+		free (url);
 		goto exit;
 	}
 
