@@ -148,95 +148,87 @@ R_API bool r_sandbox_check_writepath(const char *path) {
 #endif
 }
 
-static bool inHomeWww(const char *path) {
-	R_RETURN_VAL_IF_FAIL (path, false);
-	bool ret = false;
-	char *homeWww = r_xdg_datadir ("www");
-	if (homeWww) {
-		if (r_str_startswith (path, homeWww)) {
-			ret = true;
-		}
-		free (homeWww);
+// returns the path relative to root when it is inside it, or NULL
+static const char *path_in_root(const char *path, const char *root) {
+	if (R_STR_ISEMPTY (root) || !r_str_startswith (path, root)) {
+		return NULL;
 	}
-	return ret;
+	path += strlen (root);
+	if (*path && *path != '/' && !r_str_endswith (root, "/")) {
+		return NULL;
+	}
+	while (*path == '/') {
+		path++;
+	}
+	return path;
 }
 
-static bool is_hidden_path(const char *path) {
-	if (*path == '.') {
-		return true;
+static const char *path_in_trusted_root(const char *path) {
+	const char *rest = path_in_root (path, R2_LIBDIR "/radare2");
+	if (!rest) {
+		rest = path_in_root (path, R2_DATDIR "/radare2");
 	}
-	if (strstr (path, "/.")) {
-		return true;
+	if (!rest) {
+		rest = path_in_root (path, R2_WWWROOT);
+	}
+	if (!rest) {
+		char *home_www = r_xdg_datadir ("www");
+#if R2__WINDOWS__
+		r_str_replace_char (home_www, '\\', '/');
+#endif
+		rest = path_in_root (path, home_www);
+		free (home_www);
+	}
+	return rest;
+}
+
+static bool has_parent_component(const char *path) {
+	return !strcmp (path, "..") || r_str_startswith (path, "../")
+		|| strstr (path, "/../") || r_str_endswith (path, "/..");
+}
+
+static bool path_is_allowed(const char *path) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_HIDDEN) && (*path == '.' || strstr (path, "/."))) {
+		return false;
+	}
+	// install and webroot dirs may be absolute, but must not be escaped with ..
+	const char *rest = path_in_trusted_root (path);
+	if (rest) {
+		path = rest;
+	}
+	if (*path == '/' || r_str_startswith (path, "./") || has_parent_component (path)) {
+		return false;
 	}
 #if R2__WINDOWS__
-	if (strstr (path, "\\.")) {
-		return true;
+	// drive letters, also drive relative paths like C:foo
+	if (strchr (path, ':')) {
+		return false;
 	}
 #endif
-	return false;
-}
-
-/**
- * This function verifies that the given path is allowed. Paths are allowed only if they don't
- * contain .. components (which would indicate directory traversal) and they are relative.
- * Paths pointing into the webroot are an exception: For reaching the webroot, .. and absolute
- * path are ok.
- */
-R_API bool r_sandbox_check_path(const char *path) {
-	R_RETURN_VAL_IF_FAIL (path, false);
-	size_t root_len;
-	const char *p;
-	/* XXX: the sandbox can be bypassed if a directory is symlink */
-	if (!r_sandbox_check (R_SANDBOX_GRAIN_HIDDEN) && is_hidden_path (path)) {
-		return false;
-	}
-	root_len = strlen (R2_LIBDIR"/radare2");
-	if (!strncmp (path, R2_LIBDIR"/radare2", root_len)) {
-		return true;
-	}
-	root_len = strlen (R2_DATDIR"/radare2");
-	if (!strncmp (path, R2_DATDIR"/radare2", root_len)) {
-		return true;
-	}
-	if (inHomeWww (path)) {
-		return true;
-	}
-	// Accessing stuff inside the webroot is ok even if we need .. or leading / for that
-	root_len = strlen (R2_WWWROOT);
-	if (R2_WWWROOT[0] && !strncmp (path, R2_WWWROOT, root_len) && (
-			R2_WWWROOT[root_len-1] == '/' || path[root_len] == '/' || path[root_len] == '\0')) {
-		path += strlen (R2_WWWROOT);
-		while (*path == '/') {
-			path++;
-		}
-	}
-
-	// ./ path is not allowed
-	if (path[0] == '.' && path[1] == '/') {
-		return false;
-	}
-	// Properly check for directory traversal using "..". First, does it start with a .. part?
-	if (path[0] == '.' && path[1] == '.' && (path[2] == '\0' || path[2] == '/')) {
-		return 0;
-	}
-
-	// Or does it have .. in some other position?
-	for (p = strstr (path, "/.."); p; p = strstr (p + 1, "/..")) {
-		if (p[3] == '\0' || p[3] == '/') {
-			return false;
-		}
-	}
-	// Absolute paths are forbidden.
-	if (*path == '/') {
-		return false;
-	}
 #if R2__UNIX__
 	char ch;
-	if (readlink (path, &ch, 1) != -1) {
+	if (!rest && readlink (path, &ch, 1) != -1) {
 		return false;
 	}
 #endif
 	return true;
+}
+
+/**
+ * Verify that the given path is allowed. Paths are allowed only if they are relative and
+ * don't contain .. components. Paths inside the install and webroot directories may be absolute.
+ */
+R_API bool r_sandbox_check_path(const char *path) {
+	R_RETURN_VAL_IF_FAIL (path, false);
+	/* XXX: the sandbox can be bypassed if a directory is symlink */
+	char *p = strdup (path);
+#if R2__WINDOWS__
+	// checks only deal with forward slashes
+	r_str_replace_char (p, '\\', '/');
+#endif
+	const bool allowed = p && path_is_allowed (p);
+	free (p);
+	return allowed;
 }
 
 R_API bool r_sandbox_disable(bool e) {
