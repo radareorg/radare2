@@ -560,6 +560,8 @@ typedef struct {
 
 //resource types
 #define R_PE_MAX_RESOURCES 2056
+// real resource trees are 3 levels deep (type/name/language)
+#define R_PE_MAX_RESOURCE_DEPTH 32
 #define PE_RESOURCE_ENTRY_CURSOR          1
 #define PE_RESOURCE_ENTRY_BITMAP          2
 #define PE_RESOURCE_ENTRY_ICON            3

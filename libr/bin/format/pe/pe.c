@@ -3184,13 +3184,17 @@ static bool is_dos_time(const ut32 certainPosixTimeStamp, const ut32 possiblePos
 	return true;
 }
 
-static void _parse_resource_directory(RBinPEObj *pe, Pe_image_resource_directory *dir, ut64 offDir, int type, int id, RBitset *dirs, const char *resource_name) {
+static void _parse_resource_directory(RBinPEObj *pe, Pe_image_resource_directory *dir, ut64 offDir, int type, int id, RBitset *dirs, const char *resource_name, int depth) {
 	char *resourceEntryName = NULL;
 	int index = 0;
 	ut32 totalRes = dir->NumberOfNamedEntries + dir->NumberOfIdEntries;
 	ut64 rsrc_base = pe->resource_directory_offset;
 	ut64 off;
 	if (totalRes > R_PE_MAX_RESOURCES) {
+		return;
+	}
+	if (depth > R_PE_MAX_RESOURCE_DEPTH) {
+		R_LOG_WARN ("resource directory too deeply nested");
 		return;
 	}
 	for (index = 0; index < totalRes; index++) {
@@ -3236,7 +3240,7 @@ static void _parse_resource_directory(RBinPEObj *pe, Pe_image_resource_directory
 			if (len < 1 || len != sizeof (Pe_image_resource_directory)) {
 				R_LOG_WARN ("parsing resource directory");
 			}
-			_parse_resource_directory (pe, &identEntry, OffsetToDirectory, type, entry.u1.Name & 0xffff, dirs, resourceEntryName);
+			_parse_resource_directory (pe, &identEntry, OffsetToDirectory, type, entry.u1.Name & 0xffff, dirs, resourceEntryName, depth + 1);
 			R_FREE (resourceEntryName);
 			continue;
 		}
@@ -3482,7 +3486,7 @@ R_API void PE_(bin_pe_parse_resource)(RBinPEObj *pe) {
 			if (len != sizeof (identEntry)) {
 				R_LOG_WARN ("parsing resource directory");
 			}
-			(void)_parse_resource_directory (pe, &identEntry, OffsetToDirectory, typeEntry.u1.Name & 0xffff, 0, dirs, NULL);
+			(void)_parse_resource_directory (pe, &identEntry, OffsetToDirectory, typeEntry.u1.Name & 0xffff, 0, dirs, NULL, 1);
 		}
 	}
 	r_bitset_free (dirs);
