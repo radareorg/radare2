@@ -845,7 +845,8 @@ static char *readString(ut8 *p, int off, int len) {
 
 static void parseCodeDirectory(RMutaBind *mb, RBuffer *b, int offset, ut32 datasize) {
 	ut64 off = offset;
-	ut8 *p = calloc (1, datasize);
+	// pad to the full struct so fixed-offset field reads stay in bounds on short blobs
+	ut8 *p = calloc (1, R_MAX (datasize, sizeof (CS_CodeDirectory)));
 	if (!p) {
 		return;
 	}
@@ -862,7 +863,9 @@ static void parseCodeDirectory(RMutaBind *mb, RBuffer *b, int offset, ut32 datas
 	READFIELD (nSpecialSlots);
 	READFIELD (nCodeSlots);
 	READFIELD (hashSize);
-	READFIELD (teamIDOffset);
+	if (cscd.version >= 0x20200) {
+		READFIELD (teamIDOffset);
+	}
 	READFIELD8 (hashType);
 	READFIELD (pageSize);
 	READFIELD (codeLimit);
@@ -876,7 +879,7 @@ static void parseCodeDirectory(RMutaBind *mb, RBuffer *b, int offset, ut32 datas
 	eprintf ("hashType: %d\n", cscd.hashType);
 	char *identity = readString (p, cscd.identOffset, datasize);
 	eprintf ("Identity: %s\n", identity);
-	char *teamId = readString (p, cscd.teamIDOffset, datasize);
+	char *teamId = cscd.teamIDOffset? readString (p, cscd.teamIDOffset, datasize): NULL;
 	eprintf ("TeamID: %s\n", teamId);
 	eprintf ("CodeSlots: %d\n", cscd.nCodeSlots);
 	free (identity);
