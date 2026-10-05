@@ -1250,12 +1250,15 @@ static void bin_dwarf_process_info(RCore *core, RBinFile *bf, RVecDwarfAbbrevDec
 		return;
 	}
 	HtUP *loc_table = r_bin_dwarf_parse_loc (bf, core->anal->config->bits / 8);
+	HtUP *loclists = r_bin_dwarf_parse_loclists (bf, info);
 	RAnalDwarfContext ctx = {
 		.info = info,
-		.loc = loc_table
+		.loc = loc_table,
+		.loclists = loclists
 	};
 	r_anal_dwarf_process_info (core->anal, &ctx);
 	r_bin_dwarf_free_loc (loc_table);
+	r_bin_dwarf_free_loc (loclists);
 	r_bin_dwarf_free_debug_info (info);
 }
 
@@ -1330,6 +1333,9 @@ static bool bin_addrline_maybe(RCore *core, PJ *pj, int mode, bool allow_large) 
 				}
 				if (!r_cons_is_breaked (core->cons)) {
 					bin_dwarf_print_string (core, r_bin_dwarf_print_loc_stream (bf, core->anal->config->bits / 8));
+				}
+				if (!r_cons_is_breaked (core->cons)) {
+					bin_dwarf_print_string (core, r_bin_dwarf_print_loclists_stream (bf));
 				}
 				if (!r_cons_is_breaked (core->cons)) {
 					bin_dwarf_print_string (core, r_bin_dwarf_print_aranges (bf));
