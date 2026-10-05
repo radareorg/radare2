@@ -981,6 +981,11 @@ R_API ut8 *r_socket_slurp(RSocket *s, int *len) {
 		*len = 0;
 	}
 	for (;;) {
+		if (copied > INT_MAX - 2 * blockSize) {
+			R_LOG_ERROR ("Stream is too large");
+			copied = 0;
+			break;
+		}
 		int rc = r_socket_read (s, buf + copied, blockSize);
 		if (rc > 0) {
 			copied += rc;

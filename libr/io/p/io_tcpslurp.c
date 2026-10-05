@@ -19,6 +19,7 @@ static ut8 *tcpme(const char *pathname, int *code, int *len) {
 	} else if (*pathname == ':') {
 		/* listen and wait for connection - this is localhost only */
 		RSocket *sl = r_socket_new (false);
+		sl->local = true;
 		if (!r_socket_listen (sl, pathname + 1, NULL)) {
 			R_LOG_ERROR ("Cannot listen");
 			r_socket_free (sl);
