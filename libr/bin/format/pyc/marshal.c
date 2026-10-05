@@ -7,6 +7,7 @@
 
 // avoiding using r2 internals asserts
 #define if_true_return(cond,ret) if (cond) { return (ret); }
+#define PYC_MAX_DEPTH 512
 
 // All mutable parse state is carried in PycUnmarshalCtx (see marshal.h).
 
@@ -898,7 +899,7 @@ ut64 get_code_object_addr(RBuffer *buffer, ut32 magic) {
 	return 0;
 }
 
-static pyc_object *get_object(PycUnmarshalCtx *ctx, RBuffer *buffer, int wanted_type) {
+static pyc_object *get_object_at_depth(PycUnmarshalCtx *ctx, RBuffer *buffer, int wanted_type) {
 	bool error = false;
 	pyc_object *ret = NULL;
 	ut8 code = get_ut8 (buffer, &error);
@@ -1039,6 +1040,25 @@ static pyc_object *get_object(PycUnmarshalCtx *ctx, RBuffer *buffer, int wanted_
 		if (ret) {
 			r_list_append (ctx->refs, copy_object (ret));
 		}
+	}
+	return ret;
+}
+
+static pyc_object *get_object(PycUnmarshalCtx *ctx, RBuffer *buffer, int wanted_type) {
+	if (ctx->too_deep) {
+		return NULL;
+	}
+	if (ctx->depth >= PYC_MAX_DEPTH) {
+		R_LOG_WARN ("pyc: marshal objects nested deeper than %d levels", PYC_MAX_DEPTH);
+		ctx->too_deep = true;
+		return NULL;
+	}
+	ctx->depth++;
+	pyc_object *ret = get_object_at_depth (ctx, buffer, wanted_type);
+	ctx->depth--;
+	if (ctx->too_deep) {
+		free_object (ret);
+		return NULL;
 	}
 	return ret;
 }
