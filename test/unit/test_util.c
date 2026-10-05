@@ -518,6 +518,45 @@ bool test_sandbox_hidden_path(void) {
 	mu_end;
 }
 
+bool test_sandbox_symlink_path(void) {
+#if R2__UNIX__
+	mu_assert_eq (mkdir ("sbx_real", 0755), 0, "cannot create test directory");
+	int fd = open ("sbx_real/file", O_CREAT | O_WRONLY, 0644);
+	mu_assert_neq (fd, -1, "cannot create test file");
+	close (fd);
+	mu_assert_eq (symlink ("/", "sbx_link"), 0, "cannot create directory symlink");
+	mu_assert_eq (symlink ("/etc", "sbx_real/inner"), 0, "cannot create nested symlink");
+
+	bool was_enabled = r_sandbox_enable (false);
+	int old_grain = r_sandbox_grain (R_SANDBOX_GRAIN_FILES);
+	r_sandbox_enable (true);
+	const bool real_dir = r_sandbox_check_path ("sbx_real");
+	const bool real_file = r_sandbox_check_path ("sbx_real/file");
+	const bool real_trailing = r_sandbox_check_path ("sbx_real/");
+	const bool link_final = r_sandbox_check_path ("sbx_link");
+	const bool link_dir = r_sandbox_check_path ("sbx_link/etc/passwd");
+	const bool link_trailing = r_sandbox_check_path ("sbx_link/");
+	const bool link_nested = r_sandbox_check_path ("sbx_real/inner/passwd");
+	r_sandbox_grain (old_grain);
+	if (!was_enabled) {
+		r_sandbox_disable (true);
+	}
+	unlink ("sbx_real/inner");
+	unlink ("sbx_real/file");
+	rmdir ("sbx_real");
+	unlink ("sbx_link");
+
+	mu_assert_true (real_dir, "regular directory should be allowed");
+	mu_assert_true (real_file, "file in regular directory should be allowed");
+	mu_assert_true (real_trailing, "regular directory with trailing slash should be allowed");
+	mu_assert_false (link_final, "final symlink component should be rejected");
+	mu_assert_false (link_dir, "intermediate directory symlink should be rejected");
+	mu_assert_false (link_trailing, "directory symlink with trailing slash should be rejected");
+	mu_assert_false (link_nested, "nested intermediate symlink should be rejected");
+#endif
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_ignore_prefixes);
 	mu_run_test (test_remove_r2_prefixes);
@@ -538,6 +577,7 @@ int all_tests(void) {
 	mu_run_test (test_sandbox_grain_parse_invalid);
 	mu_run_test (test_sandbox_localhost);
 	mu_run_test (test_sandbox_hidden_path);
+	mu_run_test (test_sandbox_symlink_path);
 	return tests_passed != tests_run;
 }
 

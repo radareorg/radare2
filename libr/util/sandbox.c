@@ -187,27 +187,52 @@ static bool has_parent_component(const char *path) {
 		|| strstr (path, "/../") || r_str_endswith (path, "/..");
 }
 
-static bool path_is_allowed(const char *path) {
+#if R2__UNIX__
+// checks every component from start to the end of path, the prefix before start is trusted
+static bool path_has_symlink(char *path, char *start) {
+	char ch;
+	char *slash = start;
+	for (;;) {
+		slash = strchr (slash, '/');
+		if (slash) {
+			*slash = 0;
+		}
+		const bool is_link = *path && readlink (path, &ch, 1) != -1;
+		if (slash) {
+			*slash = '/';
+		}
+		if (is_link) {
+			return true;
+		}
+		if (!slash) {
+			return false;
+		}
+		slash++;
+	}
+}
+#endif
+
+static bool path_is_allowed(char *path) {
 	if (!r_sandbox_check (R_SANDBOX_GRAIN_HIDDEN) && (*path == '.' || strstr (path, "/."))) {
 		return false;
 	}
 	// install and webroot dirs may be absolute, but must not be escaped with ..
+	char *rel = path;
 	const char *rest = path_in_trusted_root (path);
 	if (rest) {
-		path = rest;
+		rel = (char *)rest;
 	}
-	if (*path == '/' || r_str_startswith (path, "./") || has_parent_component (path)) {
+	if (*rel == '/' || r_str_startswith (rel, "./") || has_parent_component (rel)) {
 		return false;
 	}
 #if R2__WINDOWS__
 	// drive letters, also drive relative paths like C:foo
-	if (strchr (path, ':')) {
+	if (strchr (rel, ':')) {
 		return false;
 	}
 #endif
 #if R2__UNIX__
-	char ch;
-	if (!rest && readlink (path, &ch, 1) != -1) {
+	if (*rel && path_has_symlink (path, rel)) {
 		return false;
 	}
 #endif
@@ -220,7 +245,6 @@ static bool path_is_allowed(const char *path) {
  */
 R_API bool r_sandbox_check_path(const char *path) {
 	R_RETURN_VAL_IF_FAIL (path, false);
-	/* XXX: the sandbox can be bypassed if a directory is symlink */
 	char *p = strdup (path);
 #if R2__WINDOWS__
 	// checks only deal with forward slashes
