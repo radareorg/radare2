@@ -28,6 +28,7 @@
 
 #define GRUB_JFS_MAX_SYMLNK_CNT 8
 #define GRUB_JFS_MAX_SYMLNK_LEN 4096
+#define GRUB_JFS_MAX_NAME_LEN 255
 #define GRUB_JFS_FILETYPE_MASK 0170000
 #define GRUB_JFS_FILETYPE_REG 0100000
 #define GRUB_JFS_FILETYPE_LNK 0120000
@@ -229,7 +230,7 @@ R_PACKED(
 		struct grub_jfs_leaf_next_dirent *next_leaf;
 
 		/* The filename and inode of the last read dirent.  */
-		char name[255];
+		char name[GRUB_JFS_MAX_NAME_LEN * 3 + 1];
 		grub_uint32_t ino;
 	});
 
@@ -451,8 +452,9 @@ grub_jfs_getent(struct grub_jfs_diropen *diro) {
 	struct grub_jfs_leaf_dirent *leaf;
 	struct grub_jfs_leaf_next_dirent *next_leaf;
 	int len;
+	int chunk;
 	int nextent;
-	grub_uint16_t filename[255];
+	grub_uint16_t filename[GRUB_JFS_MAX_NAME_LEN];
 
 	/* Add the unicode string to the utf16 filename buffer.  */
 
@@ -488,20 +490,19 @@ grub_jfs_getent(struct grub_jfs_diropen *diro) {
 		return grub_jfs_getent (diro);
 	}
 
-	addstr ((grub_uint16_t *)leaf->namepart, len < 11? len: 11, filename, &strpos);
+	chunk = R_MIN (len, 11);
+	addstr ((grub_uint16_t *)leaf->namepart, chunk, filename, &strpos);
 	diro->ino = grub_le_to_cpu32 (leaf->inode);
-	len -= 11;
+	len -= chunk;
 
 	/* Move down to the leaf level.  */
 	nextent = leaf->next;
-	if (leaf->next != 255) {
-		do {
-			next_leaf = &diro->next_leaf[nextent];
-			addstr ((grub_uint16_t *)next_leaf->namepart, len < 15? len: 15, filename, &strpos);
-
-			len -= 15;
-			nextent = next_leaf->next;
-		} while (next_leaf->next != 255 && len > 0);
+	while (nextent != 255 && len > 0) {
+		next_leaf = &diro->next_leaf[nextent];
+		chunk = R_MIN (len, 15);
+		addstr ((grub_uint16_t *)next_leaf->namepart, chunk, filename, &strpos);
+		len -= chunk;
+		nextent = next_leaf->next;
 	}
 
 	diro->index++;
