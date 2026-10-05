@@ -47,11 +47,11 @@ static void update_bounds(Rsrec *rs, ut64 min, ut64 max, const ut8 *buf) {
 }
 
 static bool srec_parse_byte(const char *s, ut8 *out) {
-	int v = r_hex_pair2bin (s);
-	if (v < 0) {
+	ut8 v = 0;
+	if (!r_hex_to_byte (&v, s[0]) || !r_hex_to_byte (&v, s[1])) {
 		return false;
 	}
-	*out = (ut8)v;
+	*out = v;
 	return true;
 }
 

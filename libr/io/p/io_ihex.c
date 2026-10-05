@@ -235,6 +235,17 @@ static bool __plugin_open(RIO *io, const char *pathname, bool many) {
 	return r_str_startswith (pathname, "ihex://");
 }
 
+static bool ihex_bytes(const char *s, ut8 *out, int n) {
+	int i;
+	for (i = 0; i < n; i++, s += 2) {
+		out[i] = 0;
+		if (!r_hex_to_byte (&out[i], s[0]) || !r_hex_to_byte (&out[i], s[1])) {
+			return false;
+		}
+	}
+	return true;
+}
+
 // ihex_parse : parse ihex file loaded at *str, fill sparse buffer "rbuf"
 // supported rec types : 00, 01, 02, 04
 // ret 0 if ok
@@ -246,8 +257,8 @@ static bool ihex_parse(Rihex *rih, char *str) {
 	// ut16 next_addr = 0;	// for checking if records are sequential
 	char *eol;
 	ut8 cksum;
-	int extH, extL;
-	int bc = 0, type, byte, i, l;
+	ut8 hdr[4], ext[2], byte;
+	int bc = 0, type, i;
 	// fugly macro to prevent an overflow of r_buf_write_at() len
 #define SEC_MAX (sec_size < INT_MAX)? sec_size: INT_MAX
 	ut32 sec_size = 0;
@@ -259,14 +270,13 @@ static bool ihex_parse(Rihex *rih, char *str) {
 	const char *ostr = str;
 	const bool ignore_cksum = r_sys_getenv_asbool ("R2_IHEX_IGNCSUM");
 	do {
-		l = sscanf (str, ":%02x%04x%02x", &bc, &addr_tmp, &type);
-		if (l != 3) {
+		if (*str != ':' || !ihex_bytes (str + 1, hdr, sizeof (hdr))) {
 			R_LOG_ERROR ("Invalid data in ihex file (%.*s)", 80, str);
 			goto fail;
 		}
-		bc &= 0xff;
-		addr_tmp &= 0xffff;
-		type &= 0xff;
+		bc = hdr[0];
+		addr_tmp = (hdr[1] << 8) | hdr[2];
+		type = hdr[3];
 		ut64 at = (!sec_start && sec_start == addr_tmp)? addr_tmp? addr_tmp: sec_start: sec_start + addr_tmp;
 
 		switch (type) {
@@ -280,15 +290,12 @@ static bool ihex_parse(Rihex *rih, char *str) {
 			cksum += addr_tmp;
 			cksum += type;
 
+			if (!ihex_bytes (str + 9, sec_tmp, bc)) {
+				R_LOG_ERROR ("unparsable data (%s)", str);
+				goto fail;
+			}
 			for (i = 0; i < bc; i++) {
-				if (sscanf (str + 9 + (i * 2), "%02x", &byte) != 1) {
-					R_LOG_ERROR ("unparsable data (%s)", str);
-					goto fail;
-				}
-				if (sec_size + i < sec_count) {
-					sec_tmp[i] = (ut8) byte & 0xff;
-				}
-				cksum += byte;
+				cksum += sec_tmp[i];
 			}
 			sec_size = bc;
 			ut32 tmp = 0;
@@ -308,7 +315,7 @@ static bool ihex_parse(Rihex *rih, char *str) {
 			//next_addr += bc;
 			if (eol) {
 				// checksum
-				if (sscanf (str + 9 + (i * 2), "%02x", &byte) !=1) {
+				if (!ihex_bytes (str + 9 + (i * 2), &byte, 1)) {
 					R_LOG_ERROR ("unparsable data!");
 					goto fail;
 				}
@@ -356,16 +363,13 @@ static bool ihex_parse(Rihex *rih, char *str) {
 				R_LOG_ERROR ("invalid type 02/04 record!");
 				goto fail;
 			}
-			if ((sscanf (str + 9 + 0, "%02x", &extH) !=1) ||
-				(sscanf (str + 9 + 2, "%02x", &extL) !=1)) {
+			if (!ihex_bytes (str + 9, ext, sizeof (ext))) {
 				R_LOG_ERROR ("unparsable data!");
 				goto fail;
 			}
-			extH &= 0xff;
-			extL &= 0xff;
-			cksum += extH + extL;
+			cksum += ext[0] + ext[1];
 
-			segreg = (extH << 8) | extL;
+			segreg = (ext[0] << 8) | ext[1];
 
 			//segment rec(02) gives bits 4..19; linear rec(04) is bits 16..31
 			segreg = segreg << ((type == 2)? 4: 16);
@@ -373,9 +377,9 @@ static bool ihex_parse(Rihex *rih, char *str) {
 			sec_start = segreg;
 
 			if (eol) {
-				byte = 0; //break checksum if sscanf failed
-				if (sscanf (str + 9 + 4, "%02x", &byte) != 1) {
-					cksum = 1;
+				byte = 0;
+				if (!ihex_bytes (str + 9 + 4, &byte, 1)) {
+					cksum = 1; // break the checksum
 				}
 				cksum += byte;
 				if (cksum != 0) {
