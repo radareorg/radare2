@@ -197,9 +197,9 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 			R_LOG_ERROR ("Empty list of HTTP users");
 			return HTTP_RUN_ERROR;
 		}
-		so.timeout = r_config_get_i (core->config, "http.timeout");
 		so.accept_timeout = 1;
 	}
+	so.timeout = r_config_get_i (core->config, "http.timeout");
 
 	origcfg = core->config;
 	newcfg = r_config_clone (core->config);

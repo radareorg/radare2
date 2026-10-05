@@ -3,10 +3,49 @@
 #include <r_socket.h>
 #include <r_util.h>
 
+#define SOCKET_HTTP_MAX_HEADERS 128
+#define SOCKET_HTTP_BODY_CHUNK 0x10000
+
 static R_TH_LOCAL bool *breaked = NULL;
 
 R_API void r_socket_http_server_set_breaked(bool *b) {
 	breaked = b;
+}
+
+static void http_read_body(RSocketHTTPRequest *hr, int content_length) {
+	ut8 first;
+	// one missing byte: either the leftover newline or the first body byte
+	if (r_socket_read_block (hr->s, &first, 1) != 1) {
+		return;
+	}
+	// grow as data arrives instead of trusting the declared length
+	int cap = R_MIN (content_length, SOCKET_HTTP_BODY_CHUNK);
+	ut8 *data = malloc (cap + 1);
+	if (!data) {
+		return;
+	}
+	int have = 0;
+	if (first != '\r' && first != '\n') {
+		data[have++] = first;
+	}
+	while (have < content_length) {
+		if (have == cap) {
+			cap = (cap > content_length / 2)? content_length: cap * 2;
+			ut8 *bigger = realloc (data, cap + 1);
+			if (!bigger) {
+				break;
+			}
+			data = bigger;
+		}
+		int r = r_socket_read_block (hr->s, data + have, cap - have);
+		if (r < 1) {
+			break;
+		}
+		have += r;
+	}
+	data[have] = 0;
+	hr->data = data;
+	hr->data_length = have;
 }
 
 R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *so) {
@@ -64,6 +103,12 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 				hr->path = r_str_trim_dup (p + 1);
 			}
 		} else {
+			if (r_list_length (hr->headers) >= SOCKET_HTTP_MAX_HEADERS) {
+				R_LOG_WARN ("Too many HTTP headers");
+				r_socket_http_close (hr);
+				r_socket_http_free (hr);
+				return NULL;
+			}
 			if (buf[0] && buf[0] != '\r' && buf[0] != '\n') {
 				char *line = strdup (buf);
 				r_str_trim (line);
@@ -102,29 +147,8 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 			}
 		}
 	}
-	if (content_length > 0) {
-		r_socket_read_block (hr->s, (ut8 *)buf, 1); // one missing byte wtf
-		if (content_length >= ST32_MAX) {
-			r_socket_http_close (hr);
-			r_socket_http_free (hr);
-			R_LOG_ERROR ("Could not allocate hr data");
-			return NULL;
-		}
-		hr->data = malloc (content_length + 1);
-		if (hr->data) {
-			hr->data_length = content_length;
-			if (buf[0] == '\r' || buf[0] == '\n') {
-				/* discarded leftover newline; now read the body */
-				r_socket_read_block (hr->s, hr->data, hr->data_length);
-			} else {
-				/* first byte belongs to body */
-				hr->data[0] = buf[0];
-				if (hr->data_length > 1) {
-					r_socket_read_block (hr->s, (ut8 *) (hr->data + 1), hr->data_length - 1);
-				}
-			}
-			hr->data[content_length] = 0;
-		}
+	if (content_length > 0 && hr->auth) {
+		http_read_body (hr, content_length);
 	}
 	return hr;
 }
