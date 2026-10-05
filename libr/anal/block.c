@@ -932,6 +932,33 @@ static bool noreturn_successors_reachable_cb(RAnalBlock *block, void *user) {
 	return true;
 }
 
+static void noreturn_mark_from(HtUP *succs, NoreturnSuccessor *succ) {
+	if (succ && !succ->reachable) {
+		r_anal_block_recurse (succ->block, noreturn_successors_reachable_cb, succs);
+	}
+}
+
+static bool noreturn_mark_succ_cb(ut64 addr, void *user) {
+	noreturn_mark_from (user, ht_up_find (user, addr, NULL));
+	return true;
+}
+
+// blocks no chopped edge leads to, such as landing pads, are roots too
+static void noreturn_mark_roots(HtUP *succs, RAnalFunction *fcn, RAnalBlock *chopped) {
+	NoreturnSuccessor *self = ht_up_find (succs, chopped->addr, NULL);
+	self->reachable = true;
+	RListIter *iter;
+	RAnalBlock *bb;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		NoreturnSuccessor *succ = ht_up_find (succs, bb->addr, NULL);
+		if (!succ) {
+			r_anal_block_successor_addrs_foreach (bb, noreturn_mark_succ_cb, succs);
+		} else if (bb->addr == fcn->addr) {
+			noreturn_mark_from (succs, succ);
+		}
+	}
+}
+
 static bool noreturn_remove_unreachable_cb(void *user, const ut64 k, const void *v) {
 	RAnalFunction *fcn = user;
 	NoreturnSuccessor *succ = (NoreturnSuccessor *)v;
@@ -986,10 +1013,7 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 	// We need to clone the list because block->fcns will get modified in the loop
 	RList *fcns_cpy = r_list_clone (block->fcns, NULL);
 	r_list_foreach (fcns_cpy, it, fcn) {
-		RAnalBlock *entry = r_anal_get_block_at (block->anal, fcn->addr);
-		if (entry && r_list_contains (entry->fcns, fcn)) {
-			r_anal_block_recurse (entry, noreturn_successors_reachable_cb, succs);
-		}
+		noreturn_mark_roots (succs, fcn, block);
 		ht_up_foreach (succs, noreturn_remove_unreachable_cb, fcn);
 		fcn->ninstr = r_anal_function_instrcount (fcn);
 		fcn->meta.numcallrefs = -1;

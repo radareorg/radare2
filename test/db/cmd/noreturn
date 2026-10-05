@@ -265,3 +265,53 @@ EXPECT=<<EOF
 0x000012df 0x000012e1 00:0000 2
 EOF
 RUN
+
+NAME=noreturn chop keeps blocks reached from outside the entry's tree
+FILE=malloc://128
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx e83b000000c3 @ 0
+wx 90eb0d @ 0x10
+wx e8230000007409 @ 0x18
+wx c3 @ 0x20
+wx c3 @ 0x28
+wx c3 @ 0x40
+af @ 0x40
+tn 0x40
+af @ 0
+afb+ 0 0x10 3 0x20
+afb+ 0 0x18 7 0x28 0x20
+afb+ 0 0x20 1
+afb+ 0 0x28 1
+axC 0x40 @ 0x18
+aanr
+afb
+EOF
+EXPECT=<<EOF
+0x00000000 0x00000005 00:0000 5
+0x00000010 0x00000013 00:0000 3 j 0x00000020
+0x00000018 0x0000001d 00:0000 5
+0x00000020 0x00000021 00:0000 1
+EOF
+RUN
+
+NAME=noreturn chop keeps an entry the chopped block loops back to
+FILE=malloc://128
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 85c0740c @ 0
+wx e837000000ebf5 @ 4
+wx c3 @ 0x10
+wx c3 @ 0x40
+af @ 0x40
+af @ 0
+tn 0x40
+aanr
+afb
+EOF
+EXPECT=<<EOF
+0x00000000 0x00000004 00:0000 4 j 0x00000010 f 0x00000004
+0x00000004 0x00000009 00:0000 5
+0x00000010 0x00000011 00:0000 1
+EOF
+RUN
