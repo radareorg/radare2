@@ -136,3 +136,64 @@ hello
 world
 EOF
 RUN
+
+NAME=b64 raw preserves encoded semicolons without executing the suffix
+FILE=-
+CMDS=<<EOF
+b64:'P2UgbGl0ZXJhbDtmIGI2NC5zZXBhcmF0b3I=
+f~b64.separator
+EOF
+EXPECT=<<EOF
+literal;f b64.separator
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=b64 scripts execute encoded semicolons and newlines
+FILE=-
+CMDS=<<EOF
+b64:P2UgbGl0ZXJhbDtmIGI2NC5zZXBhcmF0b3I=
+f~b64.separator
+b64:P2UgZmlyc3QKZiBiNjQubmV3bGluZQo/ZSBsYXN0
+f~b64.newline
+EOF
+EXPECT=<<EOF
+literal
+0x00000000 1 b64.separator
+first
+last
+0x00000000 1 b64.newline
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=b64 raw preserves encoded substitutions and seek operators
+FILE=-
+CMDS=<<EOF
+b64:'P2UgJChmIGI2NC5kb2xsYXIpIGBmIGI2NC5iYWNrdGlja2AgQCAweDQw
+f~b64.
+s
+EOF
+EXPECT=<<EOF
+$(f b64.dollar) `f b64.backtick` @ 0x40
+0x0
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=b64 palette commands work outside theme loading
+FILE=-
+CMDS=<<EOF
+ec comment rgb:123456
+b64:'ZWMgY29tbWVudCByZ2I6YWJjZGVm
+ec*~^ec comment
+ec comment rgb:123456
+b64:ZWMgY29tbWVudCByZ2I6YWJjZGVm
+ec*~^ec comment
+EOF
+EXPECT=<<EOF
+ec comment rgb:abcdef
+ec comment rgb:abcdef
+EOF
+EXPECT_ERR=
+RUN

@@ -2,9 +2,13 @@ ec comment red
 f filter.plain
 'f filter.quote
 '@13'f filter.seek
+'0x14'f filter.legacy
 b64:ZiBmaWx0ZXIuc2NyaXB0
 b64:'ZiBmaWx0ZXIucmF3NjQ=
 ec comment green; f filter.separator
 ec comment `f filter.substitution`
+ec comment $(f filter.nested_plain)red
+ec comment $('f filter.nested_quote)red
+ec comment $(b64:ZiBmaWx0ZXIubmVzdGVkX3NjcmlwdA==)red
 ec comment $(b64:'ZiBmaWx0ZXIubmVzdGVk')red
 ec comment rgb:123456
