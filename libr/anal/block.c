@@ -923,39 +923,43 @@ static bool noreturn_successors_cb(RAnalBlock *block, void *user) {
 	return true;
 }
 
-static bool noreturn_successors_reachable_cb(RAnalBlock *block, void *user) {
-	HtUP *succs = user;
-	NoreturnSuccessor *succ = ht_up_find (succs, block->addr, NULL);
-	if (succ) {
-		succ->reachable = true;
-	}
-	return true;
-}
-
-static void noreturn_mark_from(HtUP *succs, NoreturnSuccessor *succ) {
-	if (succ && !succ->reachable) {
-		r_anal_block_recurse (succ->block, noreturn_successors_reachable_cb, succs);
-	}
-}
+typedef struct {
+	HtUP *succs;
+	RVecAnalBlockPtr pending;
+} NoreturnReachability;
 
 static bool noreturn_mark_succ_cb(ut64 addr, void *user) {
-	noreturn_mark_from (user, ht_up_find (user, addr, NULL));
+	NoreturnReachability *ctx = user;
+	NoreturnSuccessor *succ = ht_up_find (ctx->succs, addr, NULL);
+	if (succ && !succ->reachable) {
+		succ->reachable = true;
+		RVecAnalBlockPtr_push_back (&ctx->pending, &succ->block);
+	}
 	return true;
 }
 
-// blocks no chopped edge leads to, such as landing pads, are roots too
-static void noreturn_mark_roots(HtUP *succs, RAnalFunction *fcn, RAnalBlock *chopped) {
+// Blocks outside the chopped tree, such as landing pads, are roots too.
+static void noreturn_mark_roots(NoreturnReachability *ctx, RAnalFunction *fcn, RAnalBlock *chopped) {
+	HtUP *succs = ctx->succs;
 	NoreturnSuccessor *self = ht_up_find (succs, chopped->addr, NULL);
 	self->reachable = true;
+	if (succs->count == 1) {
+		return;
+	}
 	RListIter *iter;
 	RAnalBlock *bb;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		NoreturnSuccessor *succ = ht_up_find (succs, bb->addr, NULL);
 		if (!succ) {
-			r_anal_block_successor_addrs_foreach (bb, noreturn_mark_succ_cb, succs);
+			r_anal_block_successor_addrs_foreach (bb, noreturn_mark_succ_cb, ctx);
 		} else if (bb->addr == fcn->addr) {
-			noreturn_mark_from (succs, succ);
+			noreturn_mark_succ_cb (bb->addr, ctx);
 		}
+	}
+	while (!RVecAnalBlockPtr_empty (&ctx->pending)) {
+		bb = *RVecAnalBlockPtr_last (&ctx->pending);
+		RVecAnalBlockPtr_pop_back (&ctx->pending);
+		r_anal_block_successor_addrs_foreach (bb, noreturn_mark_succ_cb, ctx);
 	}
 }
 
@@ -976,6 +980,11 @@ static bool noreturn_get_blocks_cb(void *user, const ut64 k, const void *v) {
 	return true;
 }
 
+static bool noreturn_check_predecessor_cb(RAnalBlock *block, void *user) {
+	RAnalBlock *chopped = user;
+	return block->addr + block->size != chopped->addr;
+}
+
 R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (block, NULL);
 	// A noreturn call that is the block's last instruction chops at the block
@@ -994,7 +1003,18 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 	if (!succs) {
 		return block;
 	}
-	r_anal_block_recurse (block, noreturn_successors_cb, succs);
+	if (block->jump == UT64_MAX && block->fail == UT64_MAX && !block->switch_op) {
+		noreturn_successors_cb (block, succs);
+	} else {
+		r_anal_block_recurse (block, noreturn_successors_cb, succs);
+	}
+	NoreturnReachability reachability = { .succs = succs };
+	RVecAnalBlockPtr_init (&reachability.pending);
+	if (succs->count > 1 && !RVecAnalBlockPtr_reserve (&reachability.pending, succs->count)) {
+		ht_up_free (succs);
+		r_unref (block);
+		return block;
+	}
 
 	// Chop the block. Resize and remove all destination addrs
 	r_anal_block_set_size (block, addr - block->addr);
@@ -1013,12 +1033,13 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 	// We need to clone the list because block->fcns will get modified in the loop
 	RList *fcns_cpy = r_list_clone (block->fcns, NULL);
 	r_list_foreach (fcns_cpy, it, fcn) {
-		noreturn_mark_roots (succs, fcn, block);
+		noreturn_mark_roots (&reachability, fcn, block);
 		ht_up_foreach (succs, noreturn_remove_unreachable_cb, fcn);
 		fcn->ninstr = r_anal_function_instrcount (fcn);
 		fcn->meta.numcallrefs = -1;
 	}
 	r_list_free (fcns_cpy);
+	RVecAnalBlockPtr_fini (&reachability.pending);
 
 	// This last step isn't really critical, but nice to have.
 	// Prepare to merge blocks with their predecessors if possible
@@ -1026,6 +1047,8 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 	r_list_init (&merge_blocks);
 	merge_blocks.free = (RListFree)block_unref;
 	ht_up_foreach (succs, noreturn_get_blocks_cb, &merge_blocks);
+	bool merge_needed = succs->count > 1 || !block->addr
+		|| !r_anal_blocks_foreach_in (block->anal, block->addr - 1, noreturn_check_predecessor_cb, block);
 
 	// Free/unref BEFORE doing the merge!
 	// Some of the blocks might not be valid anymore later!
@@ -1035,7 +1058,9 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 
 	r_unref (block);
 	// Do the actual merge
-	r_anal_block_automerge (&merge_blocks);
+	if (merge_needed) {
+		r_anal_block_automerge (&merge_blocks);
+	}
 
 	// No try to recover the pointer to the block if it still exists
 	RAnalBlock *ret = NULL;

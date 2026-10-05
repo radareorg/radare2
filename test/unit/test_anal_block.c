@@ -712,8 +712,88 @@ bool test_r_anal_block_chop_noreturn(void) {
 	mu_end;
 }
 
+bool test_r_anal_block_chop_noreturn_shared_roots(void) {
+	RAnal *anal = r_anal_new ();
+	RAnalFunction *with_pads = r_anal_create_function (anal, "with_pads", 0x100, R_ANAL_FCN_TYPE_FCN, NULL);
+	RAnalFunction *without_pads = r_anal_create_function (anal, "without_pads", 0x700, R_ANAL_FCN_TYPE_FCN, NULL);
+	RAnalBlock *entry = r_anal_create_block (anal, 0x100, 0x10);
+	RAnalBlock *chopped = r_anal_create_block (anal, 0x200, 0x10);
+	RAnalBlock *branch = r_anal_create_block (anal, 0x300, 0x10);
+	RAnalBlock *join = r_anal_create_block (anal, 0x350, 0x10);
+	RAnalBlock *tail = r_anal_create_block (anal, 0x380, 0x10);
+	RAnalBlock *dead = r_anal_create_block (anal, 0x400, 0x10);
+	RAnalBlock *pad = r_anal_create_block (anal, 0x500, 0x10);
+	RAnalBlock *other_pad = r_anal_create_block (anal, 0x600, 0x10);
+	RAnalBlock *other_entry = r_anal_create_block (anal, 0x700, 0x10);
+	entry->jump = chopped->addr;
+	other_entry->jump = chopped->addr;
+	chopped->jump = branch->addr;
+	chopped->fail = dead->addr;
+	branch->jump = join->addr;
+	branch->fail = tail->addr;
+	join->jump = branch->addr;
+	pad->jump = branch->addr;
+	other_pad->jump = join->addr;
+
+	r_anal_function_add_block (with_pads, entry);
+	r_anal_function_add_block (with_pads, pad);
+	r_anal_function_add_block (with_pads, other_pad);
+	r_anal_function_add_block (without_pads, other_entry);
+	RAnalBlock *shared[] = { chopped, branch, join, tail, dead };
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (shared); i++) {
+		r_anal_function_add_block (with_pads, shared[i]);
+		r_anal_function_add_block (without_pads, shared[i]);
+	}
+
+	mu_assert_ptreq (r_anal_block_chop_noreturn (chopped, 0x201), chopped, "chopped block survives");
+	mu_assert_eq (r_list_length (with_pads->bbs), 7, "landing pads keep their shared suffix");
+	mu_assert ("cycle remains reachable", r_list_contains (with_pads->bbs, join));
+	mu_assert ("other branch remains reachable", r_list_contains (with_pads->bbs, tail));
+	mu_assert ("unreachable successor removed", !r_list_contains (with_pads->bbs, dead));
+	mu_assert_eq (r_list_length (without_pads->bbs), 2, "reachability resets for each function");
+	mu_assert ("second function keeps chopped block", r_list_contains (without_pads->bbs, chopped));
+	mu_assert_ptreq (r_anal_block_chop_noreturn (chopped, 0x201), chopped, "repeated chop survives");
+	mu_assert_eq (r_list_length (with_pads->bbs), 7, "repeated chop keeps landing pads");
+	mu_assert_eq (r_list_length (without_pads->bbs), 2, "repeated chop keeps second function");
+
+	r_unref (entry);
+	r_unref (pad);
+	r_unref (other_pad);
+	r_unref (other_entry);
+	for (i = 0; i < R_ARRAY_SIZE (shared); i++) {
+		r_unref (shared[i]);
+	}
+	assert_invariants (anal);
+	assert_leaks (anal);
+	r_anal_free (anal);
+	mu_end;
+}
+
+bool test_r_anal_block_chop_noreturn_contiguous(void) {
+	RAnal *anal = r_anal_new ();
+	RAnalFunction *fcn = r_anal_create_function (anal, "contiguous", 0x100, R_ANAL_FCN_TYPE_FCN, NULL);
+	RAnalBlock *entry = r_anal_create_block (anal, 0x100, 0x10);
+	RAnalBlock *chopped = r_anal_create_block (anal, 0x110, 0x10);
+	entry->jump = chopped->addr;
+	r_anal_function_add_block (fcn, entry);
+	r_anal_function_add_block (fcn, chopped);
+
+	mu_assert_null (r_anal_block_chop_noreturn (chopped, 0x111), "chopped block merged into entry");
+	mu_assert_eq (entry->size, 0x11, "entry includes shortened block");
+	mu_assert_eq (entry->jump, UT64_MAX, "merged block has no successor");
+	mu_assert_eq (r_list_length (fcn->bbs), 1, "contiguous predecessor still merges");
+	r_unref (entry);
+	assert_invariants (anal);
+	assert_leaks (anal);
+	r_anal_free (anal);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_anal_block_chop_noreturn);
+	mu_run_test (test_r_anal_block_chop_noreturn_shared_roots);
+	mu_run_test (test_r_anal_block_chop_noreturn_contiguous);
 	mu_run_test (test_r_anal_block_create);
 	mu_run_test (test_r_anal_block_contains);
 	mu_run_test (test_r_anal_block_split);
