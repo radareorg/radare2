@@ -5,6 +5,7 @@
 #include <r_fs.h>
 #include <r_lib.h>
 #include <r_util.h>
+#include <sdb/set.h>
 #include "fs_apfs.h"
 
 
@@ -40,6 +41,7 @@ static void apfs_cleanup_ctx(ApfsFS *ctx) {
 		return;
 	}
 	ht_up_free (ctx->inodes);
+	set_u_free (ctx->visited);
 	free (ctx->nx_sb);
 	free (ctx->vol_sb);
 	free (ctx);
@@ -56,6 +58,7 @@ static bool fs_apfs_mount(RFSRoot *root) {
 		free (ctx);
 		return false;
 	}
+	ctx->visited = set_u_new ();
 	// Scan for container superblock
 	// The NXSB magic is at offset 0x20 within the container superblock (after ApfsObjPhys header)
 	ut64 nx_off = 0;
@@ -542,7 +545,7 @@ static void fs_apfs_details(RFSRoot *root, RStrBuf *sb) {
 
 static bool apfs_parse_catalog_record(ApfsFS *ctx, ut8 *key_data, ut16 key_len, ut8 *val_data, ut16 val_len);
 static bool apfs_parse_dir_record(ApfsFS *ctx, ut64 obj_id, ut8 *key_data, ut16 key_len, ut8 *val_data, ut16 val_len);
-static bool apfs_parse_btree_node(ApfsFS *ctx, ut64 block_num, ut64 parent_inode_num);
+static bool apfs_parse_btree_node(ApfsFS *ctx, ut64 block_num, ut64 parent_inode_num, int depth);
 
 static bool apfs_parse_omap_btree(ApfsFS *ctx, ut64 omap_oid) {
 	ut64 omap_paddr;
@@ -563,7 +566,7 @@ static bool apfs_parse_omap_btree(ApfsFS *ctx, ut64 omap_oid) {
 	return true;
 }
 
-static bool apfs_resolve_omap_btree_node(ApfsFS *ctx, ut64 node_oid, ut64 target_oid, ut64 target_xid, ut64 *paddr);
+static bool apfs_resolve_omap_btree_node(ApfsFS *ctx, ut64 node_oid, ut64 target_oid, ut64 target_xid, ut64 *paddr, int depth);
 
 static bool apfs_fixed_value_offset(ut32 block_size, ut32 nkeys, ut32 index, ut32 value_size, bool is_root, ut32 *offset) {
 	ut32 end = block_size;
@@ -596,12 +599,15 @@ static bool apfs_resolve_omap(ApfsFS *ctx, ut64 oid, ut64 *paddr) {
 		: 0;
 	R_LOG_DEBUG ("apfs_resolve_omap: target_xid=%" PFMT64u, target_xid);
 
-	bool result = apfs_resolve_omap_btree_node (ctx, ctx->omap_tree_oid, oid, target_xid, paddr);
+	bool result = apfs_resolve_omap_btree_node (ctx, ctx->omap_tree_oid, oid, target_xid, paddr, 0);
 	R_LOG_DEBUG ("apfs_resolve_omap: result=%d, paddr=%" PFMT64u, result, *paddr);
 	return result;
 }
 
-static bool apfs_resolve_omap_btree_node(ApfsFS *ctx, ut64 node_oid, ut64 target_oid, ut64 target_xid, ut64 *paddr) {
+static bool apfs_resolve_omap_btree_node(ApfsFS *ctx, ut64 node_oid, ut64 target_oid, ut64 target_xid, ut64 *paddr, int depth) {
+	if (depth > APFS_MAX_BTREE_DEPTH) {
+		return false;
+	}
 	ut64 node_paddr = node_oid; // For the root node, assume direct mapping
 	ut64 offset = apfs_block_to_offset (ctx, node_paddr);
 	if (offset == UT64_MAX) {
@@ -785,7 +791,7 @@ static bool apfs_resolve_omap_btree_node(ApfsFS *ctx, ut64 node_oid, ut64 target
 		}
 
 		if (child_oid != 0) {
-			found = apfs_resolve_omap_btree_node (ctx, child_oid, target_oid, target_xid, paddr);
+			found = apfs_resolve_omap_btree_node (ctx, child_oid, target_oid, target_xid, paddr, depth + 1);
 		}
 	}
 
@@ -812,7 +818,7 @@ static bool apfs_walk_catalog_btree(ApfsFS *ctx, ut64 root_oid, ut64 parent_inod
 	}
 
 	// Start with root B-tree node
-	return apfs_parse_btree_node (ctx, root_paddr, parent_inode_num);
+	return apfs_parse_btree_node (ctx, root_paddr, parent_inode_num, 0);
 }
 
 static bool apfs_validate_kvloc_bounds(ApfsFS *ctx, ut16 nkeys, size_t kvloc_offset) {
@@ -824,11 +830,16 @@ static bool apfs_validate_kvloc_bounds(ApfsFS *ctx, ut16 nkeys, size_t kvloc_off
 	return nkeys <= max_kvloc_entries;
 }
 
-static bool apfs_parse_btree_node(ApfsFS *ctx, ut64 block_num, ut64 parent_inode_num) {
+static bool apfs_parse_btree_node(ApfsFS *ctx, ut64 block_num, ut64 parent_inode_num, int depth) {
 	ut64 offset = apfs_block_to_offset (ctx, block_num);
-	if (offset == UT64_MAX) {
+	if (offset == UT64_MAX || depth > APFS_MAX_BTREE_DEPTH) {
 		return false;
 	}
+	const ut64 node_id = ctx->delta + offset;
+	if (set_u_contains (ctx->visited, node_id)) {
+		return false;
+	}
+	set_u_add (ctx->visited, node_id);
 
 	ApfsBtreeNodePhys *node = malloc (ctx->block_size);
 	if (!node) {
@@ -941,7 +952,7 @@ static bool apfs_parse_btree_node(ApfsFS *ctx, ut64 block_num, ut64 parent_inode
 
 				ut64 child_paddr;
 				if (apfs_resolve_omap (ctx, child_oid, &child_paddr)) {
-					apfs_parse_btree_node (ctx, child_paddr, parent_inode_num);
+					apfs_parse_btree_node (ctx, child_paddr, parent_inode_num, depth + 1);
 				}
 			}
 		}
@@ -1262,7 +1273,7 @@ static bool apfs_scan_for_btree_nodes(ApfsFS *ctx) {
 		if (obj_type == APFS_OBJECT_TYPE_BTREE_NODE || obj_type == APFS_OBJECT_TYPE_FSTREE) {
 			R_LOG_DEBUG ("Found B-tree node at block %" PFMT64u " (offset 0x%" PFMT64x ")", block, offset);
 			valid_nodes_found++;
-			if (apfs_parse_btree_node (ctx, block, 0)) {
+			if (apfs_parse_btree_node (ctx, block, 0, 0)) {
 				found_any = true;
 			}
 		} else if (obj_type == APFS_OBJECT_TYPE_BTREE) {

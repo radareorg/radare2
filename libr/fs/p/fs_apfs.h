@@ -65,6 +65,7 @@
 
 // Maximum number of B-tree keys to prevent DoS
 #define APFS_MAX_BTREE_KEYS 4096
+#define APFS_MAX_BTREE_DEPTH 32
 #define APFS_BTREE_FOOTER_SIZE 40
 
 // Volume flags
@@ -411,6 +412,7 @@ typedef struct ApfsFS {
 	ApfsOmapPhys *omap;
 	ut64 omap_tree_oid;
 	HtUP *inodes; // Hash table: inode_num -> ApfsInodeCache
+	SetU *visited; // catalog B-tree nodes already walked, by image offset
 	bool mounted;
 	bool is_le;
 } ApfsFS;
