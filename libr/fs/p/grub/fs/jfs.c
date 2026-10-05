@@ -225,7 +225,8 @@ R_PACKED(
 		struct grub_jfs_data *data;
 		struct grub_jfs_inode *inode;
 		int count;
-		char *sorted;
+		int slots;
+		grub_uint8_t *sorted;
 		struct grub_jfs_leaf_dirent *leaf;
 		struct grub_jfs_leaf_next_dirent *next_leaf;
 
@@ -237,59 +238,43 @@ R_PACKED(
 static grub_err_t grub_jfs_lookup_symlink(struct grub_jfs_data *data,
 	int ino);
 
-struct getblk_closure {
-	struct grub_jfs_data *data;
-	unsigned int blk;
-};
-
-static int
-getblk(struct grub_jfs_treehead *treehead,
-	struct grub_jfs_tree_extent *extents,
-	struct getblk_closure *c) {
-	int found = -1;
-	int i;
-
-	for (i = 0; i < grub_le_to_cpu16 (treehead->count) - 2; i++) {
-		if (treehead->flags & GRUB_JFS_TREE_LEAF) {
-			/* Read the leafnode.  */
-			if (grub_le_to_cpu32 (extents[i].offset2) <= c->blk && ((grub_le_to_cpu16 (extents[i].extent.length)) + (extents[i].extent.length2 << 8) + grub_le_to_cpu32 (extents[i].offset2)) > c->blk) {
-				return (c->blk - grub_le_to_cpu32 (extents[i].offset2) + grub_le_to_cpu32 (extents[i].extent.blk2));
-			}
-		} else if (c->blk >= grub_le_to_cpu32 (extents[i].offset2)) {
-			found = i;
-		}
-	}
-
-	if (found != -1) {
-		struct
-		{
-			struct grub_jfs_treehead treehead;
-			struct grub_jfs_tree_extent extents[254];
-		} tree;
-
-		if (grub_disk_read (c->data->disk,
-			grub_le_to_cpu32 (extents[found].extent.blk2)
-				<< (grub_le_to_cpu16 (c->data->sblock.log2_blksz) - GRUB_DISK_SECTOR_BITS),
-			0,
-			sizeof (tree),
-			(char *)&tree)) {
-			return -1;
-		}
-
-		return getblk (&tree.treehead, &tree.extents[0], c);
-	}
-
-	return -1;
-}
-
 /* Get the block number for the block BLK in the node INODE in the
 mounted filesystem DATA.  */
 static int
 grub_jfs_blkno(struct grub_jfs_data *data, struct grub_jfs_inode *inode, unsigned int blk) {
-	struct getblk_closure c;
-	c.data = data;
-	c.blk = blk;
-	return getblk (&inode->file.tree, &inode->file.extents[0], &c);
+	struct {
+		struct grub_jfs_treehead treehead;
+		struct grub_jfs_tree_extent extents[254];
+	} tree;
+	struct grub_jfs_treehead *treehead = &inode->file.tree;
+	struct grub_jfs_tree_extent *extents = inode->file.extents;
+	int max = 16;
+	int depth;
+	for (depth = 0; depth < 16; depth++) {
+		const int count = R_MIN (grub_le_to_cpu16 (treehead->count) - 2, max);
+		int found = -1;
+		int i;
+		for (i = 0; i < count; i++) {
+			if (treehead->flags & GRUB_JFS_TREE_LEAF) {
+				/* Read the leafnode.  */
+				if (grub_le_to_cpu32 (extents[i].offset2) <= blk && ((grub_le_to_cpu16 (extents[i].extent.length)) + (extents[i].extent.length2 << 8) + grub_le_to_cpu32 (extents[i].offset2)) > blk) {
+					return (blk - grub_le_to_cpu32 (extents[i].offset2) + grub_le_to_cpu32 (extents[i].extent.blk2));
+				}
+			} else if (blk >= grub_le_to_cpu32 (extents[i].offset2)) {
+				found = i;
+			}
+		}
+		if (found == -1 || grub_disk_read (data->disk,
+				grub_le_to_cpu32 (extents[found].extent.blk2)
+					<< (grub_le_to_cpu16 (data->sblock.log2_blksz) - GRUB_DISK_SECTOR_BITS),
+				0, sizeof (tree), (char *)&tree)) {
+			return -1;
+		}
+		treehead = &tree.treehead;
+		extents = tree.extents;
+		max = R_ARRAY_SIZE (tree.extents);
+	}
+	return -1;
 }
 
 static grub_err_t
@@ -340,7 +325,9 @@ grub_jfs_mount(grub_disk_t disk) {
 		goto fail;
 	}
 
-	if (strncmp ((char *) (data->sblock.magic), "JFS1", 4)) {
+	const grub_uint16_t log2_blksz = grub_le_to_cpu16 (data->sblock.log2_blksz);
+	if (strncmp ((char *) (data->sblock.magic), "JFS1", 4) || log2_blksz < GRUB_DISK_SECTOR_BITS
+			|| log2_blksz > 12 || grub_le_to_cpu32 (data->sblock.blksz) != 1U << log2_blksz) {
 		grub_error (GRUB_ERR_BAD_FS, "not a JFS filesystem");
 		goto fail;
 	}
@@ -364,6 +351,23 @@ fail:
 	}
 
 	return 0;
+}
+
+// point DIRO at the dirents of the page it just read
+static int
+grub_jfs_setpage(struct grub_jfs_diropen *diro) {
+	const int slots = grub_le_to_cpu32 (diro->data->sblock.blksz) / 32;
+	const int sindex = diro->dirpage->header.sindex;
+	if (sindex >= slots) {
+		return 0;
+	}
+	diro->leaf = diro->dirpage->dirent;
+	diro->next_leaf = diro->dirpage->next_dirent;
+	diro->sorted = (grub_uint8_t *)&diro->dirpage->sorted[sindex * 32];
+	diro->count = R_MIN (diro->dirpage->header.count, (slots - sindex) * 32);
+	diro->slots = slots;
+	diro->index = 0;
+	return 1;
 }
 
 static struct grub_jfs_diropen *
@@ -391,8 +395,9 @@ grub_jfs_opendir(struct grub_jfs_data *data, struct grub_jfs_inode *inode) {
 	if (inode->file.tree.flags & GRUB_JFS_TREE_LEAF) {
 		diro->leaf = inode->dir.dirents;
 		diro->next_leaf = (struct grub_jfs_leaf_next_dirent *)de;
-		diro->sorted = (char *) (inode->dir.header.sorted);
-		diro->count = inode->dir.header.count;
+		diro->sorted = inode->dir.header.sorted;
+		diro->count = R_MIN (inode->dir.header.count, sizeof (inode->dir.header.sorted));
+		diro->slots = R_ARRAY_SIZE (inode->dir.dirents);
 
 		return diro;
 	}
@@ -403,30 +408,25 @@ grub_jfs_opendir(struct grub_jfs_data *data, struct grub_jfs_inode *inode) {
 		return 0;
 	}
 
-	blk = grub_le_to_cpu32 (de[inode->dir.header.sorted[0]].ex.blk2);
-	blk <<= (grub_le_to_cpu16 (data->sblock.log2_blksz) - GRUB_DISK_SECTOR_BITS);
-
 	/* Read in the nodes until we are on the leaf node level.  */
-	do {
-		int index;
-		if (grub_disk_read (data->disk, blk, 0, grub_le_to_cpu32 (data->sblock.blksz), diro->dirpage->sorted)) {
-			grub_free (diro->dirpage);
-			grub_free (diro);
-			return 0;
+	int index = inode->dir.header.sorted[0];
+	int slots = R_ARRAY_SIZE (inode->dir.dirents);
+	int depth;
+	for (depth = 0; depth < 16 && index < slots; depth++) {
+		blk = grub_le_to_cpu32 (de[index].ex.blk2) << (grub_le_to_cpu16 (data->sblock.log2_blksz) - GRUB_DISK_SECTOR_BITS);
+		if (grub_disk_read (data->disk, blk, 0, grub_le_to_cpu32 (data->sblock.blksz), diro->dirpage->sorted) || !grub_jfs_setpage (diro)) {
+			break;
 		}
-
+		if (diro->dirpage->header.flags & GRUB_JFS_TREE_LEAF) {
+			return diro;
+		}
 		de = (struct grub_jfs_internal_dirent *)diro->dirpage->dirent;
-		index = diro->dirpage->sorted[diro->dirpage->header.sindex * 32];
-		blk = (grub_le_to_cpu32 (de[index].ex.blk2)
-			<< (grub_le_to_cpu16 (data->sblock.log2_blksz) - GRUB_DISK_SECTOR_BITS));
-	} while (! (diro->dirpage->header.flags & GRUB_JFS_TREE_LEAF));
-
-	diro->leaf = diro->dirpage->dirent;
-	diro->next_leaf = diro->dirpage->next_dirent;
-	diro->sorted = &diro->dirpage->sorted[diro->dirpage->header.sindex * 32];
-	diro->count = diro->dirpage->header.count;
-
-	return diro;
+		index = diro->sorted[0];
+		slots = diro->slots;
+	}
+	grub_free (diro->dirpage);
+	grub_free (diro);
+	return 0;
 }
 
 static void
@@ -471,18 +471,16 @@ grub_jfs_getent(struct grub_jfs_diropen *diro) {
 		next = grub_le_to_cpu64 (diro->dirpage->header.nextb);
 		next <<= (grub_le_to_cpu16 (diro->data->sblock.log2_blksz) - GRUB_DISK_SECTOR_BITS);
 
-		if (grub_disk_read (diro->data->disk, next, 0, grub_le_to_cpu32 (diro->data->sblock.blksz), diro->dirpage->sorted)) {
-			return grub_errno;
+		// callers iterate until out of range, so any failure ends the directory
+		if (grub_disk_read (diro->data->disk, next, 0, grub_le_to_cpu32 (diro->data->sblock.blksz), diro->dirpage->sorted) || !grub_jfs_setpage (diro)) {
+			return GRUB_ERR_OUT_OF_RANGE;
 		}
-
-		diro->leaf = diro->dirpage->dirent;
-		diro->next_leaf = diro->dirpage->next_dirent;
-		diro->sorted = &diro->dirpage->sorted[diro->dirpage->header.sindex * 32];
-		diro->count = diro->dirpage->header.count;
-		diro->index = 0;
+	}
+	if (diro->sorted[diro->index] >= diro->slots) {
+		return GRUB_ERR_OUT_OF_RANGE;
 	}
 
-	leaf = &diro->leaf[(int)diro->sorted[diro->index]];
+	leaf = &diro->leaf[diro->sorted[diro->index]];
 
 	len = leaf->len;
 	if (!len) {
@@ -497,7 +495,7 @@ grub_jfs_getent(struct grub_jfs_diropen *diro) {
 
 	/* Move down to the leaf level.  */
 	nextent = leaf->next;
-	while (nextent != 255 && len > 0) {
+	while (nextent < diro->slots && len > 0) {
 		next_leaf = &diro->next_leaf[nextent];
 		chunk = R_MIN (len, 15);
 		addstr ((grub_uint16_t *)next_leaf->namepart, chunk, filename, &strpos);
