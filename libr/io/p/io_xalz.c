@@ -18,21 +18,22 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		int outsize;
 		char *data = r_file_slurp (diskpath, &sz);
 		int consumed;
-		if (data) {
+		if (data && sz > 0xc && sz <= ST32_MAX) {
 			ut32 osz = r_read_le32 (data + 8);
 			// create buffer
-			ut8 *obuf = r_inflate_lz4 ((const ut8*)data + 0xc, (uint32_t) sz - 0xc, &consumed, &outsize);
+			ut8 *obuf = r_inflate_lz4 ((const ut8*)data + 0xc, (int)(sz - 0xc), &consumed, &outsize);
 			if (obuf) {
 				if (osz != outsize) {
 					R_LOG_WARN ("Invalid decompressed size");
 				}
+				free (data);
 				mal->buf = obuf;
-				mal->size = osz;
+				mal->size = outsize;
 				return r_io_desc_new (io, &r_io_plugin_xalz, diskpath,
 					R_PERM_RW | (rw & R_PERM_X), mode, mal);
 			}
-			free (data);
 		}
+		free (data);
 		free (mal);
 	}
 	return NULL;
