@@ -3891,7 +3891,7 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 				fcn->stack = 0;
 			}
 			st64 sp_depth;
-			if (r_anal_function_sp_from_bp (fcn, &op, &sp_depth)) {
+			if (r_anal_function_is_sp_restored (fcn, &op, &sp_depth)) {
 				fcn->stack = sp_depth;
 			}
 			r_anal_extract_vars (core->anal, fcn, &op);

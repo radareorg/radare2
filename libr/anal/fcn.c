@@ -824,7 +824,7 @@ static inline bool op_is_set_bp(RAnal *anal, const char *op_dst, const char *op_
 	return op_src && !strcmp (sp_reg, op_src) && r_anal_reg_same (anal, bp_reg, op_dst);
 }
 
-R_API bool r_anal_function_sp_from_bp(RAnalFunction *fcn, RAnalOp *op, st64 *depth) {
+R_API bool r_anal_function_is_sp_restored(RAnalFunction *fcn, RAnalOp *op, st64 *depth) {
 	R_RETURN_VAL_IF_FAIL (fcn && op && depth, false);
 	const ut32 type = op->type & R_ANAL_OP_TYPE_MASK;
 	if (!fcn->bp_frame || fcn->bp_off <= 0 || op->cond != R_ANAL_CONDTYPE_AL
@@ -1487,7 +1487,7 @@ noskip:
 			break;
 		}
 		st64 sp_depth;
-		if (r_anal_function_sp_from_bp (fcn, op, &sp_depth)) {
+		if (r_anal_function_is_sp_restored (fcn, op, &sp_depth)) {
 			fcn->stack = sp_depth;
 		}
 		if (op->ptr && op->ptr != UT64_MAX && op->ptr != UT32_MAX) {
