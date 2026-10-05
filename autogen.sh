@@ -6,6 +6,9 @@
 #
 # -- pancake
 
+[ -z "$EDITOR" ] && EDITOR=vim
+$EDITOR configure.acr
+
 r2pm -h >/dev/null 2>&1
 if [ $? = 0 ]; then
 	echo "Installing the last version of 'acr'..."
@@ -34,12 +37,17 @@ if [ -n "$1" ]; then
 	./configure $*
 fi
 
-[ -z "$EDITOR" ] && EDITOR=vim
-$EDITOR README.md
-$EDITOR sys/install-debs.sh
-$EDITOR dist/rpm/radare2.spec
-$EDITOR dist/npm/package.json
-$EDITOR dist/nix/package.nix
-for a in dist/wapm/*/*.toml ; do
-	$EDITOR $a
+setver() {
+	F=$1
+	shift
+	sed "$@" < "$F" > "$F.tmp" && cat "$F.tmp" > "$F"
+	rm -f "$F.tmp"
+}
+setver sys/install-debs.sh -e 's,^\[ -z "$V" \] && V=".*",[ -z "$V" ] \&\& V="'$V'",'
+setver dist/rpm/radare2.spec -e 's,^\(Version:[[:space:]]*\).*,\1'$V','
+setver dist/npm/package.json -e 's,^\(  "version": "\)[^"]*",\1'$V'",'
+setver dist/nix/package.nix -e 's,^\(  version = "\)[^"]*",\1'$V'",'
+for a in dist/wapm/*/wapm.toml ; do
+	setver $a -e 's,^version = ".*",version = "'$V'",'
 done
+$EDITOR README.md

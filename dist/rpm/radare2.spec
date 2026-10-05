@@ -5,7 +5,7 @@
 
 Name:           radare2
 # This version must be a valid and existing release number otherwise CI will fail
-Version:        6.2.2
+Version:        6.2.4
 Release:        1%{?dist}
 Summary:        The %{name} reverse engineering framework
 Group:          Applications/Engineering
