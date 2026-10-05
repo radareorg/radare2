@@ -416,120 +416,74 @@ static RFSFile *fs_apfs_open(RFSRoot *root, const char *path, bool create) {
 	return file;
 }
 
-static bool apfs_read_file_extents(ApfsFS *ctx, ApfsInodeCache *cache, ut8 **data, ut64 *size) {
-	if (!ctx || !cache || !cache->inode || !data || !size) {
-		return false;
-	}
-
-	*size = apfs_inode_get_size (ctx, cache);
-	if (*size == 0) {
-		*data = NULL;
-		return true;
-	}
-	if (*size > SIZE_MAX) {
-		return false;
-	}
-
-	*data = calloc (*size, 1);
-	if (!*data) {
-		return false;
-	}
-
+// reads len bytes at addr into the zeroed buf, sparse parts are left as zeros
+static bool apfs_read_file_range(ApfsFS *ctx, ApfsInodeCache *cache, ut64 addr, ut8 *buf, ut64 len) {
 	// Note: APFS file data is accessed via file extent records stored in the catalog B-tree,
 	// not through inode xfields. The xfields contain metadata like file name and data stream info.
-
-	// Check if we have file extent information (primary method)
-	if (cache->extent && cache->extent->phys_block_num > 0) {
-		ut64 phys_block = cache->extent->phys_block_num;
-		ut64 extent_len = cache->extent->length;
-
-		ut64 offset = apfs_block_to_offset (ctx, phys_block);
+	const ApfsFileExtentInfo *extent = cache->extent;
+	if (extent && extent->phys_block_num > 0) {
+		ut64 offset = apfs_block_to_offset (ctx, extent->phys_block_num);
 		if (offset != UT64_MAX) {
-			ut64 to_read = (*size < extent_len) ? *size : extent_len;
-			if (apfs_read_at (ctx, offset, *data, to_read)) {
+			if (addr >= extent->length) {
+				return true;
+			}
+			ut64 at;
+			if (!r_add_overflow_ut64 (offset, addr, &at)
+					&& apfs_read_at (ctx, at, buf, R_MIN (len, extent->length - addr))) {
 				return true;
 			}
 		}
 	}
 
 	// Fallback heuristic for test images: try reading from consecutive blocks
-	ut64 bytes_read = 0;
-	ut64 block_size = ctx->block_size;
-	ut64 start_block = cache->inode->private_id;
-	ut64 blocks_needed = (*size + block_size - 1) / block_size;
+	const ut64 block_size = ctx->block_size;
+	const ut64 start_block = cache->inode->private_id;
+	ut64 done = 0;
+	while (done < len) {
+		const ut64 pos = addr + done;
+		const ut64 block_offset = apfs_block_to_offset (ctx, start_block + pos / block_size);
+		const ut64 chunk = R_MIN (block_size - pos % block_size, len - done);
+		if (block_offset == UT64_MAX || !apfs_read_at (ctx, block_offset + pos % block_size, buf + done, chunk)) {
+			break;
+		}
+		done += chunk;
+	}
+	if (done > 0) {
+		return true;
+	}
+	if (addr >= block_size) {
+		return false;
+	}
 
+	// For test images, the data might be stored inline or at fixed locations
 	ut8 *block_buf = malloc (block_size);
 	if (!block_buf) {
-		free (*data);
-		*data = NULL;
 		return false;
 	}
-
-	ut64 i;
-	for (i = 0; i < blocks_needed && bytes_read < *size; i++) {
-		ut64 block_offset = apfs_block_to_offset (ctx, start_block + i);
-		if (block_offset == UT64_MAX) {
-			break;
+	const ut64 test_offsets[] = {
+		apfs_block_to_offset (ctx, start_block),
+		apfs_block_to_offset (ctx, start_block + 1),
+		apfs_block_to_offset (ctx, start_block + 0x10),
+		apfs_block_to_offset (ctx, 0x100) // Common test location
+	};
+	const ut64 to_read = R_MIN (apfs_inode_get_size (ctx, cache), block_size);
+	bool found = false;
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (test_offsets) && !found; i++) {
+		if (test_offsets[i] == UT64_MAX || !apfs_read_at (ctx, test_offsets[i], block_buf, to_read)) {
+			continue;
 		}
-
-		ut64 to_read = R_MIN (block_size, *size - bytes_read);
-
-		if (apfs_read_at (ctx, block_offset, block_buf, to_read)) {
-			memcpy (*data + bytes_read, block_buf, to_read);
-			bytes_read += to_read;
-		} else {
-			break;
+		// Check if this looks like file data (not all zeros or repeated patterns)
+		ut64 j;
+		for (j = 0; j < to_read && !found; j++) {
+			found = block_buf[j] != 0 && block_buf[j] != 0xFF;
 		}
-	}
-
-	// If we couldn't read any data, try a different approach
-	if (bytes_read == 0) {
-		// For test images, the data might be stored inline or at fixed locations
-		// Try reading from a few common locations
-		ut64 test_offsets[] = {
-			apfs_block_to_offset (ctx, start_block),
-			apfs_block_to_offset (ctx, start_block + 1),
-			apfs_block_to_offset (ctx, start_block + 0x10),
-			apfs_block_to_offset (ctx, 0x100) // Common test location
-		};
-
-		for (i = 0; i < sizeof (test_offsets) / sizeof (test_offsets[0]); i++) {
-			if (test_offsets[i] == UT64_MAX) {
-				continue;
-			}
-
-			ut64 to_read = (*size < block_size)? *size: block_size;
-			if (apfs_read_at (ctx, test_offsets[i], block_buf, to_read)) {
-				// Check if this looks like file data (not all zeros or repeated patterns)
-				bool looks_like_data = false;
-				ut64 j;
-				for (j = 0; j < to_read; j++) {
-					if (block_buf[j] != 0 && block_buf[j] != 0xFF) {
-						looks_like_data = true;
-						break;
-					}
-				}
-
-				if (looks_like_data) {
-					ut64 copy_len = (to_read < *size)? to_read: *size;
-					memcpy (*data, block_buf, copy_len);
-					bytes_read = copy_len;
-					break;
-				}
-			}
+		if (found) {
+			memcpy (buf, block_buf + addr, R_MIN (len, to_read - addr));
 		}
 	}
-
 	free (block_buf);
-
-	if (bytes_read == 0) {
-		free (*data);
-		*data = NULL;
-		*size = 0;
-		return false;
-	}
-
-	return true;
+	return found;
 }
 
 static int fs_apfs_read(RFSFile *file, ut64 addr, int len) {
@@ -545,33 +499,20 @@ static int fs_apfs_read(RFSFile *file, ut64 addr, int len) {
 		return -1;
 	}
 
-	ut8 *file_data = NULL;
-	ut64 file_size = 0;
-
-	// Parse file extents to get the actual file data
-	if (!apfs_read_file_extents (ctx, cache, &file_data, &file_size)) {
-		return -1;
-	}
-
-	// Allocate buffer for the requested range
-	if (addr >= file_size) {
-		free (file_data);
+	const ut64 file_size = apfs_inode_get_size (ctx, cache);
+	if (len <= 0 || addr >= file_size) {
 		return 0;
 	}
-
-	ut64 available = file_size - addr;
-	ut64 read_len = (len < available)? len: available;
-
-	if (read_len > 0) {
-		file->data = malloc (read_len);
-		if (!file->data) {
-			free (file_data);
-			return -1;
-		}
-		memcpy (file->data, file_data + addr, read_len);
+	const ut64 read_len = R_MIN ((ut64)len, file_size - addr);
+	R_FREE (file->data);
+	file->data = calloc (read_len, 1);
+	if (!file->data) {
+		return -1;
 	}
-
-	free (file_data);
+	if (!apfs_read_file_range (ctx, cache, addr, file->data, read_len)) {
+		R_FREE (file->data);
+		return -1;
+	}
 	return read_len;
 }
 
