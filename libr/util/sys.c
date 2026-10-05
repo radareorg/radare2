@@ -318,11 +318,15 @@ R_API char *r_sys_cmd_strf(const char *fmt, ...) {
 	return ret;
 }
 
+#define UNXZ_MAXSIZE (256 * 1024 * 1024)
+
+static int sys_cmd_str_full(const char *cmd, const char *input, int ilen, char **output, int *len, char **sterr, size_t maxlen);
+
 R_API ut8 *r_sys_unxz(const ut8 *buf, size_t len, size_t *olen) {
 	char *err = NULL;
 	ut8 *out = NULL;
 	int _olen = 0;
-	int rc = r_sys_cmd_str_full ("xz -d", (const char *)buf, (int)len, (char **)&out, &_olen, &err);
+	int rc = sys_cmd_str_full ("xz -d", (const char *)buf, (int)len, (char **)&out, &_olen, &err, UNXZ_MAXSIZE);
 	if (rc == 0 || rc == 1) {
 		if (olen) {
 			*olen = (size_t)_olen;
@@ -765,7 +769,7 @@ R_API bool r_sys_aslr(int val) {
 }
 
 #if R2__UNIX__ && HAVE_SYSTEM
-R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char **output, int *len, char **sterr) {
+static int sys_cmd_str_full(const char *cmd, const char *input, int ilen, char **output, int *len, char **sterr, size_t maxlen) {
 	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
 		return false;
 	}
@@ -885,6 +889,13 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 				if ((bytes = read (sh_out[0], buffer, sizeof (buffer))) < 1) {
 					break;
 				}
+				if (maxlen && out_len + bytes > maxlen) {
+					R_LOG_ERROR ("Command output exceeds %" PFMTSZu " bytes", maxlen);
+					r_sandbox_kill (pid, SIGKILL);
+					R_FREE (outputptr);
+					out_len = 0;
+					break;
+				}
 				char *tmp = realloc (outputptr, out_len + bytes + 1);
 				if (!tmp) {
 					R_FREE (outputptr);
@@ -959,15 +970,30 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 	return false;
 }
 #elif R2__WINDOWS__
-R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char **output, int *len, char **sterr) {
-	return r_sys_cmd_str_full_w32 (cmd, input, ilen, output, len, sterr);
+static int sys_cmd_str_full(const char *cmd, const char *input, int ilen, char **output, int *len, char **sterr, size_t maxlen) {
+	int outlen = 0;
+	bool ret = r_sys_cmd_str_full_w32 (cmd, input, ilen, output, &outlen, sterr);
+	if (output && maxlen && (size_t)outlen > maxlen) {
+		R_LOG_ERROR ("Command output exceeds %" PFMTSZu " bytes", maxlen);
+		R_FREE (*output);
+		outlen = 0;
+		ret = false;
+	}
+	if (len) {
+		*len = outlen;
+	}
+	return ret;
 }
 #else
-R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char **output, int *len, char **sterr) {
+static int sys_cmd_str_full(const char *cmd, const char *input, int ilen, char **output, int *len, char **sterr, size_t maxlen) {
 	R_LOG_ERROR ("RSyscmd.strFull() is not yet implemented for this platform");
 	return false;
 }
 #endif
+
+R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char **output, int *len, char **sterr) {
+	return sys_cmd_str_full (cmd, input, ilen, output, len, sterr, 0);
+}
 
 R_API int r_sys_cmdf(const char *fmt, ...) {
 	int ret;
