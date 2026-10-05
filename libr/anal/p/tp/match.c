@@ -3,6 +3,25 @@
 
 #include "tp.h"
 
+static void tp_op_kv_free(HtUPKv *kv) {
+	r_anal_op_free (kv->value);
+}
+
+static RAnalOp *tp_op_at(TPState *tps, ut64 addr, int mask) {
+	RAnalOp *op = ht_up_find (tps->op_cache, addr, NULL);
+	if (!op) {
+		op = tp_anal_op (tps->anal, addr, mask);
+		if (op && !tps->op_cache) {
+			tps->op_cache = ht_up_new (NULL, tp_op_kv_free, NULL);
+		}
+		if (!op || !tps->op_cache || !ht_up_insert (tps->op_cache, addr, op)) {
+			r_anal_op_free (op);
+			return NULL;
+		}
+	}
+	return op;
+}
+
 /**
  * type match at a call instruction inside another function
  *
@@ -108,14 +127,12 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 			if (instr_addr < baddr) {
 				break;
 			}
-			RAnalOp *op = tp_anal_op (anal, instr_addr, opmask);
+			RAnalOp *op = tp_op_at (tps, instr_addr, opmask);
 			if (!op) {
 				break;
 			}
-			RAnalOp *next_op = tp_anal_op (anal, instr_addr + op->size, R_ARCH_OP_MASK_BASIC);
+			RAnalOp *next_op = tp_op_at (tps, instr_addr + op->size, opmask);
 			if (!next_op || (j != idx && (next_op->type == R_ANAL_OP_TYPE_CALL || next_op->type == R_ANAL_OP_TYPE_JMP))) {
-				r_anal_op_free (op);
-				r_anal_op_free (next_op);
 				break;
 			}
 			RAnalVar *var = r_anal_get_used_function_var (anal, op->addr);
@@ -240,8 +257,6 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 					tp_var_retype (tps, baddr, var, name, r_str_get_fail (type, "int"), var_memref, false);
 				}
 			}
-			r_anal_op_free (op);
-			r_anal_op_free (next_op);
 		}
 		free (owned_type);
 	}

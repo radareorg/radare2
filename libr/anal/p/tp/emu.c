@@ -98,6 +98,7 @@ void tps_fini(TPState *tps) {
 	ht_up_free (tps->var_facts);
 	ht_up_free (tps->reach_cache);
 	ht_up_free (tps->mem_types);
+	ht_up_free (tps->op_cache);
 	tp_flush_pending_const (tps);
 	RVecTPPendingConst_fini (&tps->pending_const);
 	type_trace_fini (&tps->tt, &tps->esil);
