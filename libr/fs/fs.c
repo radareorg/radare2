@@ -482,6 +482,10 @@ R_API bool r_fs_dir_dump(RFS *fs, const char *path, const char *name) {
 		if (!strcmp (file->name, ".") || !strcmp (file->name, "..")) {
 			continue;
 		}
+		if (!*file->name || strchr (file->name, '/') || strchr (file->name, '\\')) {
+			R_LOG_WARN ("Skipping unsafe filename \"%s\"", file->name);
+			continue;
+		}
 		char *str = r_str_newf ("%s/%s", name, file->name);
 		char *npath = r_str_newf ("%s/%s", path, file->name);
 
