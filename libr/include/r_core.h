@@ -964,6 +964,7 @@ R_API int r_core_rtr_http_stop(RCore *u);
 R_API int r_core_rtr_gdb(RCore *core, int launch, const char *path);
 R_API bool r_core_session_register(RCore *core, const char *uri, int port);
 R_API bool r_core_session_unregister(RCore *core);
+R_API char *r_core_session_pidfile_write(const char *data);
 
 R_API int r_core_visual_prevopsz(RCore *core, ut64 addr);
 R_API void r_core_visual_config(RCore *core);

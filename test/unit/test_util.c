@@ -590,6 +590,96 @@ bool test_sandbox_dl_open(void) {
 	mu_end;
 }
 
+bool test_file_rm_rf_symlink(void) {
+#if R2__UNIX__
+	mu_assert_eq (mkdir ("rmrf_outside", 0755), 0, "cannot create outside directory");
+	int fd = open ("rmrf_outside/keep", O_CREAT | O_WRONLY, 0644);
+	mu_assert_neq (fd, -1, "cannot create outside file");
+	close (fd);
+	mu_assert_eq (mkdir ("rmrf_tree", 0755), 0, "cannot create tree");
+	mu_assert_eq (mkdir ("rmrf_tree/sub", 0755), 0, "cannot create subdirectory");
+	mu_assert_eq (symlink ("../../rmrf_outside", "rmrf_tree/sub/link"), 0, "cannot create nested symlink");
+	mu_assert_eq (symlink ("rmrf_outside", "rmrf_toplink"), 0, "cannot create top symlink");
+
+	RList *files = r_file_lsrf ("rmrf_tree");
+	const bool listed_outside = files && r_list_find (files, "rmrf_tree/sub/link/keep", (RListComparator)strcmp);
+	r_list_free (files);
+	const bool rm_tree = r_file_rm_rf ("rmrf_tree");
+	const bool tree_gone = !r_file_is_directory ("rmrf_tree");
+	const bool rm_top = r_file_rm_rf ("rmrf_toplink");
+	struct stat st;
+	const bool toplink_gone = lstat ("rmrf_toplink", &st) != 0;
+	const bool kept = r_file_exists ("rmrf_outside/keep");
+
+	unlink ("rmrf_toplink");
+	unlink ("rmrf_tree/sub/link");
+	rmdir ("rmrf_tree/sub");
+	rmdir ("rmrf_tree");
+	unlink ("rmrf_outside/keep");
+	rmdir ("rmrf_outside");
+
+	mu_assert_false (listed_outside, "lsrf should not descend into directory symlinks");
+	mu_assert_true (rm_tree && tree_gone, "rm_rf should remove the tree including the symlink");
+	mu_assert_true (rm_top && toplink_gone, "rm_rf on a directory symlink should remove only the link");
+	mu_assert_true (kept, "files behind directory symlinks must survive rm_rf");
+#endif
+	mu_end;
+}
+
+bool test_session_pidfile_symlink(void) {
+#if R2__UNIX__
+	char *cwd = r_sys_getdir ();
+	char *old_xdg = r_sys_getenv ("XDG_RUNTIME_DIR");
+	char *old_tmp = r_sys_getenv ("TMPDIR");
+	char *tmp = r_str_newf ("%s/pidtmp", cwd);
+	mu_assert_eq (mkdir (tmp, 0755), 0, "cannot create tmp directory");
+	r_sys_setenv ("XDG_RUNTIME_DIR", tmp);
+	r_sys_setenv ("TMPDIR", tmp);
+	char *dir = r_str_newf ("%s/r2", tmp);
+	mu_assert_eq (mkdir (dir, 0755), 0, "cannot create session directory");
+	char *victim = r_str_newf ("%s/victim", tmp);
+	r_file_dump (victim, (const ut8 *)"ORIGINAL", 8, false);
+	char *expected = r_str_newf ("%s/%d.pid", dir, r_sys_getpid ());
+	mu_assert_eq (symlink (victim, expected), 0, "cannot plant pidfile symlink");
+
+	char *fn = r_core_session_pidfile_write ("r2web://127.0.0.1:1/cmd");
+	char *victim_data = r_file_slurp (victim, NULL);
+	struct stat st;
+	const bool regular = fn && !lstat (fn, &st) && S_ISREG (st.st_mode);
+	char *pid_data = fn? r_file_slurp (fn, NULL): NULL;
+	if (fn) {
+		unlink (fn);
+	}
+	rmdir (dir);
+	mu_assert_eq (symlink (tmp, dir), 0, "cannot plant session directory symlink");
+	char *fn_linkdir = r_core_session_pidfile_write ("data");
+	unlink (dir);
+
+	unlink (victim);
+	rmdir (tmp);
+	r_sys_setenv ("XDG_RUNTIME_DIR", old_xdg);
+	r_sys_setenv ("TMPDIR", old_tmp);
+
+	mu_assert_streq (victim_data, "ORIGINAL", "symlink target must not be modified");
+	mu_assert_streq (fn, expected, "pidfile should be created at the pid path");
+	mu_assert_true (regular, "pidfile should replace the symlink with a regular file");
+	mu_assert_streq (pid_data, "r2web://127.0.0.1:1/cmd", "pidfile content");
+	mu_assert_null (fn_linkdir, "symlinked session directory should be refused");
+	free (fn_linkdir);
+	free (pid_data);
+	free (victim_data);
+	free (fn);
+	free (expected);
+	free (victim);
+	free (dir);
+	free (tmp);
+	free (old_tmp);
+	free (old_xdg);
+	free (cwd);
+#endif
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_ignore_prefixes);
 	mu_run_test (test_remove_r2_prefixes);
@@ -612,6 +702,8 @@ int all_tests(void) {
 	mu_run_test (test_sandbox_hidden_path);
 	mu_run_test (test_sandbox_symlink_path);
 	mu_run_test (test_sandbox_dl_open);
+	mu_run_test (test_file_rm_rf_symlink);
+	mu_run_test (test_session_pidfile_symlink);
 	return tests_passed != tests_run;
 }
 

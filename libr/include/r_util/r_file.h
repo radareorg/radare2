@@ -24,6 +24,7 @@ R_API bool r_file_is_abspath(const char *file);
 R_API bool r_file_is_c(const char *file);
 R_API bool r_file_is_directory(const char *str);
 R_API bool r_file_is_regular(const char *str);
+R_API bool r_file_is_symlink(const char *file);
 R_API bool r_file_is_executable(const char *file);
 
 R_API bool r_file_truncate(const char *filename, ut64 newsize);

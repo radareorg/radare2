@@ -190,14 +190,13 @@ static bool has_parent_component(const char *path) {
 #if R2__UNIX__
 // checks every component from start to the end of path, the prefix before start is trusted
 static bool path_has_symlink(char *path, char *start) {
-	char ch;
 	char *slash = start;
 	for (;;) {
 		slash = strchr (slash, '/');
 		if (slash) {
 			*slash = 0;
 		}
-		const bool is_link = *path && readlink (path, &ch, 1) != -1;
+		const bool is_link = *path && r_file_is_symlink (path);
 		if (slash) {
 			*slash = '/';
 		}

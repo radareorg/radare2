@@ -1444,14 +1444,43 @@ R_API bool r_core_rtr_cmds(RCore *core, const char * R_NULLABLE port) {
 #endif
 
 /* Session registration API - used to track HTTP sessions for r2agent -L */
+// writes <tmp>/r2/<pid>.pid without following symlinks, returns its path
+R_API char *r_core_session_pidfile_write(const char *data) {
+	char *tmpdir = r_file_tmpdir ();
+	char *dir = r_str_newf ("%s/r2", tmpdir);
+	char *fn = r_str_newf ("%s/%d.pid", dir, r_sys_getpid ());
+	bool ok = false;
+	r_sys_mkdir (dir);
+#if R2__UNIX__ && !__wasi__
+	struct stat st;
+	if (lstat (dir, &st) || !S_ISDIR (st.st_mode) || st.st_uid != geteuid ()) {
+		R_LOG_WARN ("Refusing to use session directory %s: not a directory owned by the current user", dir);
+	} else {
+		// a leftover file with our pid is stale, unlink removes symlinks without following them
+		unlink (fn);
+		int fd = r_sandbox_open (fn, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW, 0644);
+		if (fd != -1) {
+			const size_t len = strlen (data);
+			ok = write (fd, data, len) == (ssize_t)len;
+			close (fd);
+			if (!ok) {
+				unlink (fn);
+			}
+		}
+	}
+#else
+	ok = r_file_dump (fn, (const ut8 *)data, strlen (data), false);
+#endif
+	free (dir);
+	free (tmpdir);
+	if (!ok) {
+		R_FREE (fn);
+	}
+	return fn;
+}
+
 R_API bool r_core_session_register(RCore *core, const char *uri, int port) {
 	R_RETURN_VAL_IF_FAIL (core && uri, false);
-	char *tmpdir = r_file_tmpdir ();
-	char *tmpdir_r2 = r_str_newf ("%s/r2", tmpdir);
-	r_sys_mkdir (tmpdir_r2);
-	int pid = r_sys_getpid ();
-	char *fn = r_str_newf ("%s/%d.pid", tmpdir_r2, pid);
-
 	/* Get filename or project name for context */
 	char *filename = NULL;
 	if (core->io && core->io->desc && core->io->desc->uri) {
@@ -1468,21 +1497,15 @@ R_API bool r_core_session_register(RCore *core, const char *uri, int port) {
 	/* Store URI and filename separated by # for parsing */
 	char *suri = r_str_newf ("%s://%s:%d/cmd#%s", uri,
 		r_config_get (core->config, "http.bind"), port, filename);
-	bool res = r_file_dump (fn, (const ut8 *)suri, strlen (suri), false);
-	if (res) {
+	char *fn = r_core_session_pidfile_write (suri);
+	if (fn) {
 		/* Store pidfile path in core for cleanup */
-		if (core->sessionfile) {
-			free (core->sessionfile);
-		}
+		free (core->sessionfile);
 		core->sessionfile = fn;
-	} else {
-		free (fn);
 	}
 	free (suri);
-	free (tmpdir_r2);
-	free (tmpdir);
 	free (filename);
-	return res;
+	return fn != NULL;
 }
 
 R_API bool r_core_session_unregister(RCore *core) {

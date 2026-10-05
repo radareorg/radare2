@@ -172,20 +172,9 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 	R_LOG_INFO ("http://localhost:%d/", s->port);
 	/* Create a pid file in tmpdir/r2/<pid>.pid so r2 (=l) can discover this server */
 	{
-		char *tmpdir = r_file_tmpdir ();
-		char *tmpdir_r2 = r_str_newf ("%s/r2", tmpdir);
-		r_sys_mkdir (tmpdir_r2);
-		int pid = r_sys_getpid ();
-		char *fn = r_str_newf ("%s/%d.pid", tmpdir_r2, pid);
 		char *suri = r_str_newf ("r2web://127.0.0.1:%d/cmd", s->port);
-		if (r_file_dump (fn, (const ut8 *)suri, strlen (suri), false)) {
-			pidfile = fn; /* keep ownership to remove on exit */
-		} else {
-			free (fn);
-		}
+		pidfile = r_core_session_pidfile_write (suri); /* keep ownership to remove on exit */
 		free (suri);
-		free (tmpdir_r2);
-		free (tmpdir);
 	}
 
 	if (dosandbox && !r_sandbox_enable (true)) {

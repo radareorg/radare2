@@ -189,6 +189,22 @@ R_API bool r_file_is_directory(const char *str) {
 	return S_IFDIR == (S_IFDIR & buf.st_mode);
 }
 
+// true for symlinks (and reparse points on windows) without following them
+R_API bool r_file_is_symlink(const char *file) {
+	R_RETURN_VAL_IF_FAIL (!R_STR_ISEMPTY (file), false);
+#if R2__WINDOWS__
+	LPTSTR file_ = r_sys_conv_utf8_to_win (file);
+	DWORD attrs = GetFileAttributes (file_);
+	free (file_);
+	return attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_REPARSE_POINT);
+#elif R2__UNIX__
+	struct stat st;
+	return !lstat (file, &st) && S_ISLNK (st.st_mode);
+#else
+	return false;
+#endif
+}
+
 static bool is_writable_directory(const char *path) {
 	if (R_STR_ISEMPTY (path) || !r_file_is_directory (path)) {
 		return false;
@@ -954,7 +970,8 @@ R_API bool r_file_rm(const char *file) {
 		free (file_);
 		return !ret;
 #else
-		return !rmdir (file);
+		// unlink directory symlinks instead of failing to rmdir them
+		return r_file_is_symlink (file)? !unlink (file): !rmdir (file);
 #endif
 	} else {
 #if R2__WINDOWS__
@@ -1238,7 +1255,7 @@ static bool dir_recursive(RList *dst, const char *dir) {
 			ret = false;
 			break;
 		}
-		if (r_file_is_directory (path)) {
+		if (r_file_is_directory (path) && !r_file_is_symlink (path)) {
 			if (!dir_recursive (dst, path)) {
 				ret = false;
 				break;
@@ -1264,7 +1281,7 @@ R_API RList *r_file_lsrf(const char *dir) {
 }
 
 R_API bool r_file_rm_rf(const char *dir) {
-	if (r_file_exists (dir)) {
+	if (r_file_exists (dir) || r_file_is_symlink (dir)) {
 		return r_file_rm (dir);
 	}
 	RList *files = r_file_lsrf (dir);
