@@ -69,7 +69,7 @@ R_IPI bool io_memory_resize(RIO *io, RIODesc *fd, ut64 count) {
 		mal->offset = 0;
 		return true;
 	}
-	if (mal->offset > mal->size) {
+	if (mal->offset > mal->size || count > UT32_MAX) {
 		return false;
 	}
 	ut8 *new_buf = realloc (mal->buf, count);

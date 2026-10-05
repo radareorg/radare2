@@ -44,14 +44,14 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int count) {
 		if (mem) {
 			int c = r_socket_read (s, mem, 4096);
 			if (c > 0) {
-				r_io_stream_read (sdat->ios, mem, c);
-				int osz = mal->size;
-				io_memory_resize (io, desc, mal->size + c);
-				memcpy (mal->buf + osz, mem, c);
-				io->coreb.cmdf (io->coreb.core, "f nread_%d %d %d",
-					sdat->count, c, mal->size);
-				// io->coreb.cmdf (io->coreb.core, "omr 1 %d", mal->size);
-				sdat->count++;
+				const ut32 osz = mal->size;
+				if (io_memory_resize (io, desc, (ut64)osz + c)) {
+					r_io_stream_read (sdat->ios, mem, c);
+					memcpy (mal->buf + osz, mem, c);
+					io->coreb.cmdf (io->coreb.core, "'f nread_%d %d %u",
+						sdat->count, c, mal->size);
+					sdat->count++;
+				}
 			}
 			free (mem);
 		}
