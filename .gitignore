@@ -1,5 +1,6 @@
 clang-log/
 .claude
+.pmai/
 .cache
 .clang_complete
 .tmp-format
