@@ -54,7 +54,7 @@ static const char *menus_settings_disassembly_asm[] = {
 };
 
 static const char *menus_settings_screen[] = {
-	"scr.bgfill", "scr.color", "scr.utf8", "scr.utf8.curvy", "scr.wheel"
+	"scr.bgfill", "scr.color", "scr.utf8", "scr.utf8.curvy"
 };
 
 static const char *entropy_rotate[] = {

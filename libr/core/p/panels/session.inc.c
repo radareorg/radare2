@@ -34,7 +34,7 @@ static void panels_process(RCore *core, RPanels *panels) {
 	r_cons_set_interactive (core->cons, true);
 	r_core_visual_showcursor (core, false);
 repeat:
-	r_cons_enable_mouse (core->cons, r_config_get_i (core->config, "scr.wheel"));
+	r_cons_enable_mouse (core->cons, true);
 	core->panels = panels;
 	core->cons->event_resize = NULL; // avoid running old event with new data
 	core->cons->event_data = core;
@@ -762,6 +762,7 @@ static void init_new_panels_root(RCore *core) {
 
 static bool panels_root(RCore *core, RPanelsRoot *panels_root) {
 	core->visual.fromVisual = core->vmode;
+	r_config_set_b (core->config, "scr.wheel", true);
 	if (!panels_root) {
 		panels_root = R_NEW0 (RPanelsRoot);
 		core->panels_root = panels_root;
