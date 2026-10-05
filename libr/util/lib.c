@@ -14,6 +14,11 @@ static const char *const r_lib_types[] = {
 
 R_API void *r_lib_dl_open(const char *libname, bool safe_mode) {
 	void *ret = NULL;
+	// loading a library runs its constructors, only self-loading is allowed in sandbox
+	if (R_STR_ISNOTEMPTY (libname) && !r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+		R_LOG_DEBUG ("r_lib_dl_open: sandbox denies loading %s", libname);
+		return NULL;
+	}
 #if WANT_DYLINK
 #if R2__UNIX__
 	if (libname) {

@@ -557,6 +557,39 @@ bool test_sandbox_symlink_path(void) {
 	mu_end;
 }
 
+bool test_sandbox_dl_open(void) {
+	const char *libpath = R2_LIBDIR "/libr_util." R_LIB_EXT;
+	void *lib = r_lib_dl_open (libpath, false);
+	mu_assert_notnull (lib, "library should load without sandbox");
+	r_lib_dl_close (lib);
+
+	bool was_enabled = r_sandbox_enable (false);
+	int old_grain = r_sandbox_grain (R_SANDBOX_GRAIN_FILES);
+	r_sandbox_enable (true);
+	void *denied = r_lib_dl_open (libpath, false);
+	void *denied_safe = r_lib_dl_open (libpath, true);
+	void *self = r_lib_dl_open (NULL, false);
+	r_sandbox_grain (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_EXEC);
+	void *granted = r_lib_dl_open (libpath, false);
+	r_sandbox_grain (old_grain);
+	if (!was_enabled) {
+		r_sandbox_disable (true);
+	}
+	void *handles[] = { denied, denied_safe, self, granted };
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (handles); i++) {
+		if (handles[i]) {
+			r_lib_dl_close (handles[i]);
+		}
+	}
+
+	mu_assert_null (denied, "sandbox without exec grain should deny loading libraries");
+	mu_assert_null (denied_safe, "sandbox without exec grain should deny safe loading");
+	mu_assert_notnull (self, "sandbox should allow self loading");
+	mu_assert_notnull (granted, "exec grain should allow loading libraries");
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_ignore_prefixes);
 	mu_run_test (test_remove_r2_prefixes);
@@ -578,6 +611,7 @@ int all_tests(void) {
 	mu_run_test (test_sandbox_localhost);
 	mu_run_test (test_sandbox_hidden_path);
 	mu_run_test (test_sandbox_symlink_path);
+	mu_run_test (test_sandbox_dl_open);
 	return tests_passed != tests_run;
 }
 
