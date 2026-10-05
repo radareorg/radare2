@@ -313,3 +313,65 @@ ERROR: Invalid color code (bgonly xxxx)
 ERROR: Unknown color xxxx
 EOF
 RUN
+
+NAME=eco filters raw commands and preserves allowed colors
+FILE=-
+ENV=XDG_DATA_HOME=scripts
+CMDS=<<EOF
+eco cmdfilter
+f~filter.
+ec*~^ec comment
+'s 42
+s
+b64:'cyA0Mw==
+s
+EOF
+EXPECT=<<EOF
+ec comment rgb:123456
+0x2a
+0x2b
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=eco rejects encoded palette commands and command separators
+FILE=-
+ENV=XDG_DATA_HOME=scripts
+CMDS=<<EOF
+eco cmdfilter-encoded
+f~filter.
+ec*~^ec comment
+EOF
+EXPECT=<<EOF
+ec comment rgb:123456
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=eco repeated loads preserve unfiltered raw commands and temporary seeks
+FILE=-
+ENV=XDG_DATA_HOME=scripts
+CMDS=<<EOF
+eco cmdfilter
+eco cmdfilter-encoded
+eco cmdfilter
+f~filter.
+s 8
+'@32'b64:'ZiBiNjQuYXQ=
+s
+f~b64.at
+'0x30'f b64.legacy
+s
+f~b64.legacy
+b64:'P2UgbGl0ZXJhbDtmIGI2NC5zZXBhcmF0b3I=
+f~b64.separator
+EOF
+EXPECT=<<EOF
+0x8
+0x00000020 1 b64.at
+0x8
+0x00000030 1 b64.legacy
+literal;f b64.separator
+EOF
+EXPECT_ERR=
+RUN
