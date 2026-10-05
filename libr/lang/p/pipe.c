@@ -126,6 +126,9 @@ static void env(const char *s, int f) {
 #endif
 
 static bool lang_pipe_run(RLangSession *s, const char *code, int len) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+		return false;
+	}
 #if R2__UNIX__
 	int safe_in = dup (0);
 	int child, ret;

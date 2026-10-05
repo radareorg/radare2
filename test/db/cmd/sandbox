@@ -291,3 +291,16 @@ exec
 none
 EOF
 RUN
+
+NAME=sandbox grain=none blocks lang pipe
+FILE=--
+CMDS=<<EOF
+e cfg.sandbox.grain=none
+e cfg.sandbox=true
+#!pipe echo PIPE_RAN
+?e done
+EOF
+EXPECT=<<EOF
+done
+EOF
+RUN

@@ -15,6 +15,9 @@ void r_sys_perror_str(const char *fun);
 char *ReadFromPipe(HANDLE fh, int *outlen);
 
 R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, int ilen, char **output, int *outlen, char **sterr) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+		return false;
+	}
 	HANDLE in = NULL;
 	HANDLE out = NULL;
 	HANDLE err = NULL;
@@ -96,6 +99,9 @@ R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, int ilen, 
 }
 
 R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE out, HANDLE err) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+		return false;
+	}
 	PROCESS_INFORMATION pi = {0};
 	STARTUPINFO si = {0};
 	LPTSTR cmdline_;
