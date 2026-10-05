@@ -1113,13 +1113,13 @@ R_IPI void r_bin_object_filter_strings(RBinObject *bo) {
 	R_VEC_FOREACH (&bo->strings, ptr) {
 		// strict decoding: a string is only treated as base64 if it fully is,
 		// and every nested decode must shrink, otherwise this loops forever
-		char *dec = (char *)r_base64_decode_dyn ((const char *)ptr->string, -1, NULL, true);
+		char *dec = (char *)r_base64_decode_dyn (ptr->text.a, r_strs_len (ptr->text), NULL, true);
 		if (R_STR_ISEMPTY (dec)) {
 			free (dec);
 			dec = NULL;
 		}
 		if (dec) {
-			char *s = ptr->string;
+			const char *s = dec;
 			for (;;) {
 				char *dec2 = (char *)r_base64_decode_dyn ((const char *)s, -1, NULL, true);
 				if (R_STR_ISEMPTY (dec2)) {
@@ -1134,8 +1134,7 @@ R_IPI void r_bin_object_filter_strings(RBinObject *bo) {
 				s = dec = dec2;
 			}
 			if (r_str_is_printable (dec) && strlen (dec) > 3) {
-				free (ptr->string);
-				ptr->string = dec;
+				r_bin_string_set (ptr, dec);
 				ptr->type = R_STRING_TYPE_BASE64;
 			} else {
 				free (dec);

@@ -410,13 +410,15 @@ typedef struct r_bin_import_t {
 } RBinImport;
 
 typedef struct r_bin_string_t {
-	char *string; // TODO: rename to text or so
+	RStrs text; // Display text, already decoded from the source encoding.
 	ut64 vaddr;
 	ut64 paddr;
 	ut32 ordinal;
 	ut32 size; // size of buffer containing the string in bytes
 	ut32 length; // length of string in chars
 	char type; // Ascii Wide cp850 utf8 base64 ...
+	bool owned;
+	bool terminated;
 } RBinString;
 
 #include <r_vec.h>
@@ -426,6 +428,9 @@ R_API void r_bin_section_fini(RBinSection *sec);
 R_API void r_bin_symbol_fini(RBinSymbol *sym);
 R_API void r_bin_import_fini(RBinImport *sym);
 R_API void r_bin_string_fini(RBinString *str);
+R_API void r_bin_string_set(RBinString *str, R_OWNED char *text);
+// Materializes unterminated slices; the returned text belongs to str.
+R_API R_UNOWNED const char *r_bin_string_get(RBinString *str);
 typedef struct r_bin_resource_t {
 	char *name;
 	char *type;

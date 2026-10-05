@@ -45,6 +45,10 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 	const char *type_string = r_bin_string_type (string->type);
 	ut64 vaddr = io->va ? r_bin_get_vaddr (bin, string->paddr, string->vaddr) : string->paddr;
 	ut64 addr = vaddr; // bf->bo? vaddr: string->vaddr;
+	const char *text = r_bin_string_get (string);
+	if (!text) {
+		return;
+	}
 
 	// If raw string dump mode, use printf to dump directly to stdout.
 	//  PrintfCallback temp = io->cb_printf;
@@ -59,22 +63,22 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 			pj_kn (pj, "length", string->length);
 			pj_ks (pj, "section", section_name);
 			pj_ks (pj, "type", type_string);
-			pj_ks (pj, "string", string->string);
+			pj_ks (pj, "string", text);
 			pj_end (pj);
 		}
 		break;
 	case R_MODE_SIMPLEST:
-		io->cb_printf ("%s\n", string->string);
+		io->cb_printf ("%s\n", text);
 		break;
 	case R_MODE_SIMPLE:
 		if (raw == 2) {
-			io->cb_printf ("0x%08"PFMT64x" %s\n", addr, string->string);
+			io->cb_printf ("0x%08"PFMT64x" %s\n", addr, text);
 		} else {
-			io->cb_printf ("%s\n", string->string);
+			io->cb_printf ("%s\n", text);
 		}
 		break;
 	case R_MODE_RADARE: {
-		char *f_name = strdup (string->string);
+		char *f_name = strdup (text);
 		r_name_filter (f_name, -1);
 		if (bin->prefix) {
 			io->cb_printf ("'0x%08"PFMT64x"'f %s.str.%s %u\n"
@@ -95,7 +99,7 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 			       "(%s) %5s %s\n",
 			string->ordinal, string->paddr, vaddr,
 			string->length, string->size,
-			section_name, type_string, string->string);
+			section_name, type_string, text);
 		break;
 	}
 }
@@ -444,8 +448,8 @@ static int string_scan_range(RBinFile *bf, RVecRBinString *list, HtUP *strings_i
 			} else {
 				r_str_trim_tail (str);
 			}
-			bs.string = str;
-			bs.length = runes - (before - strlen (str));
+			r_bin_string_set (&bs, str);
+			bs.length = runes - (before - r_strs_len (bs.text));
 			if (list) {
 				size_t string_index = RVecRBinString_length (list);
 				RBinString *dst = RVecRBinString_emplace_back (list);
@@ -1193,7 +1197,7 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int dump, in
 					bs->ordinal = src.ordinal;
 					bs->vaddr = cfstr_vaddr;
 					bs->paddr = cfstr_vaddr; // XXX should be paddr instead
-					bs->string = r_str_newf ("cstr.%s", src.string);
+					r_bin_string_set (bs, r_str_newf ("cstr.%.*s", (int)r_strs_len (src.text), src.text.a));
 					r_bin_strings_index_insert (strings_index, bs->vaddr, RVecRBinString_length (ret) - 1);
 				}
 			}

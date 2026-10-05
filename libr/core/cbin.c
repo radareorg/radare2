@@ -359,7 +359,7 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 	int maxstr = r_config_get_i (core->config, "bin.str.max");
 	RBin *bin = core->bin;
 	RBinObject *obj = r_bin_cur_object (bin);
-	RBinString *string;
+	RBinString *it;
 	RBinSection *section;
 
 	bin->options.minstrlen = minstr;
@@ -378,13 +378,11 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 	}
 	RBinString b64 = { 0 };
 	if (list) {
-	R_VEC_FOREACH (list, string) {
+	R_VEC_FOREACH (list, it) {
+		RBinString *string = it;
 		const char *section_name, *type_string;
 		ut64 paddr = string->paddr;
 		ut64 vaddr = rva (core->bin, paddr, string->vaddr, va);
-		if (!r_bin_string_filter (bin, string->string, vaddr)) {
-			continue;
-		}
 		if (string->length < minstr) {
 			continue;
 		}
@@ -394,9 +392,13 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 		if (type_filter && string->type != type_filter) {
 			continue;
 		}
+		const char *text = r_bin_string_get (string);
+		if (!text || !r_bin_string_filter (bin, text, vaddr)) {
+			continue;
+		}
 #if FALSE_POSITIVES
 		{
-			int *block_list = r_utf_block_list ((const ut8 *)string->string, -1, NULL);
+			int *block_list = r_utf_block_list ((const ut8 *)text, -1, NULL);
 			if (block_list) {
 				if (block_list[0] == 0 && block_list[1] == -1) {
 					/* Don't show block list if
@@ -412,14 +414,16 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 		section_name = section? section->name: "";
 		type_string = r_bin_string_type (string->type);
 		if (b64str) {
-			ut8 *s = r_base64_decode_dyn (string->string, -1, NULL, true);
+			ut8 *s = r_base64_decode_dyn (text, -1, NULL, true);
 			if (R_STR_ISNOTEMPTY (s) && IS_PRINTABLE (*s)) {
 				// TODO: add more checks
-				free (b64.string);
+				r_bin_string_fini (&b64);
 				memcpy (&b64, string, sizeof (b64));
-				b64.string = (char *)s;
-				b64.size = strlen (b64.string);
+				b64.text = r_strs_from_len (NULL, 0);
+				r_bin_string_set (&b64, (char *)s);
+				b64.size = r_strs_len (b64.text);
 				string = &b64;
+				text = b64.text.a;
 			} else {
 				free (s);
 			}
@@ -440,18 +444,18 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 				break;
 			}
 			if (string->size > 0) {
-				r_meta_set (core->anal, R_META_TYPE_STRING, vaddr, string->size, string->string);
+				r_meta_set (core->anal, R_META_TYPE_STRING, vaddr, string->size, text);
 			}
 			char *str = (core->bin->prefix)
-				? r_str_newf ("%s.str.%s", core->bin->prefix, string->string)
-				: r_str_newf ("str.%s", string->string);
+				? r_str_newf ("%s.str.%s", core->bin->prefix, text)
+				: r_str_newf ("str.%s", text);
 			r_name_filter (str, -1);
 			RFlagItem *fi = r_flag_set (core->flags, str, vaddr, string->size);
 			if (fi) {
-				r_flag_item_set_rawname (core->flags, fi, string->string);
+				r_flag_item_set_rawname (core->flags, fi, text);
 				const bool realstr = r_config_get_b (core->config, "bin.str.real");
 				if (realstr) {
-					char *es = r_str_escape (string->string);
+					char *es = r_str_escape (text);
 					char *s = r_str_newf ("\"%s\"", es);
 					r_flag_item_set_realname (core->flags, fi, s);
 					free (s);
@@ -461,13 +465,13 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 			free (str);
 		} else if (IS_MODE_SIMPLE (mode) && !IS_MODE_JSON (mode)) {
 			r_cons_printf (core->cons, "0x%" PFMT64x " %d %d %s\n", vaddr,
-				string->size, string->length, string->string);
+				string->size, string->length, text);
 		} else if (IS_MODE_SIMPLEST (mode)) {
-			r_cons_println (core->cons, string->string);
+			r_cons_println (core->cons, text);
 		} else if (IS_MODE_JSON (mode) && IS_MODE_SIMPLE (mode)) {
 			pj_o (pj);
 			pj_kn (pj, "vaddr", vaddr);
-			pj_ks (pj, "string", string->string);
+			pj_ks (pj, "string", text);
 			pj_end (pj);
 		} else if (IS_MODE_JSON (mode)) {
 			int *block_list;
@@ -479,13 +483,13 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 			pj_kn (pj, "length", string->length);
 			pj_ks (pj, "section", section_name);
 			pj_ks (pj, "type", type_string);
-			pj_ks (pj, "string", string->string);
+			pj_ks (pj, "string", text);
 
 			switch (string->type) {
 			case R_STRING_TYPE_UTF8:
 			case R_STRING_TYPE_WIDE:
 			case R_STRING_TYPE_WIDE32:
-				block_list = r_utf_block_list ((const ut8 *)string->string, -1, NULL);
+				block_list = r_utf_block_list ((const ut8 *)text, -1, NULL);
 				if (block_list) {
 					if (block_list[0] == 0 && block_list[1] == -1) {
 						/* Don't include block list if
@@ -507,8 +511,8 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 			pj_end (pj);
 		} else if (IS_MODE_RAD (mode)) {
 			char *str = (core->bin->prefix)
-				? r_str_newf ("%s.str.%s", core->bin->prefix, string->string)
-				: r_str_newf ("str.%s", string->string);
+				? r_str_newf ("%s.str.%s", core->bin->prefix, text)
+				: r_str_newf ("str.%s", text);
 			r_name_filter (str, -1);
 			r_cons_printf (core->cons, "'f %s %u 0x%08" PFMT64x "\n"
 						"'@0x%08" PFMT64x "'Cs %u\n",
@@ -516,11 +520,10 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 				vaddr, string->size);
 			free (str);
 		} else {
-			int *block_list;
-			char *str = string->string;
+			const char *str = text;
 			char *no_dbl_bslash_str = NULL;
 			if (!core->print->esc_bslash) {
-				char *ptr;
+				const char *ptr;
 				for (ptr = str; *ptr; ptr++) {
 					if (*ptr != '\\') {
 						continue;
@@ -533,7 +536,7 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 							}
 							ptr = no_dbl_bslash_str + (ptr - str);
 						}
-						memmove (ptr + 1, ptr + 2, strlen (ptr + 2) + 1);
+						memmove ((char *)ptr + 1, ptr + 2, strlen (ptr + 2) + 1);
 					}
 				}
 				if (no_dbl_bslash_str) {
@@ -541,48 +544,14 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 				}
 			}
 
-			char *blocks = NULL;
-			RStrBuf *buf = r_strbuf_new (str);
-			switch (string->type) {
-			case R_STRING_TYPE_UTF8:
-			case R_STRING_TYPE_WIDE:
-			case R_STRING_TYPE_WIDE32:
-				block_list = r_utf_block_list ((const ut8 *)string->string, -1, NULL);
-				if (block_list) {
-					if (block_list[0] == 0 && block_list[1] == -1) {
-						/* Don't show block list if
-						just Basic Latin (0x00 - 0x7F) */
-						free (block_list);
-						break;
-					}
-					int *block_ptr = block_list;
-					RStrBuf *sb = r_strbuf_new ("");
-					// a bit noisy and useless for listing here imho
-					for (; *block_ptr != -1; block_ptr++) {
-						if (block_ptr != block_list) {
-							r_strbuf_append (sb, ",");
-						}
-						const char *name = r_utf_block_name (*block_ptr);
-						if (name) {
-							r_strbuf_append (sb, name);
-						}
-					}
-					free (block_list);
-					blocks = r_strbuf_drain (sb);
-				}
-				break;
-			}
-			char *bufstr = r_strbuf_drain (buf);
 			r_table_add_rowf (table, "nXXddsss", (ut64)string->ordinal, paddr, vaddr,
 				(int)string->length, (int)string->size, section_name,
-				type_string, bufstr);
-			free (blocks);
-			free (bufstr);
+				type_string, str);
 			free (no_dbl_bslash_str);
 		}
 	}
 	}
-	R_FREE (b64.string);
+	r_bin_string_fini (&b64);
 	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
 	} else if (IS_MODE_SET (mode)) {

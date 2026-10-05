@@ -737,3 +737,21 @@ nth paddr vaddr len size section type string
 [{"vaddr":134513840,"paddr":1200,"ordinal":0,"size":13,"length":12,"section":".rodata","type":"ascii","string":"Hello world!"}]
 EOF
 RUN
+
+NAME=base64 string display keeps the vector iterator and pagination
+FILE=hex://534756736247383d007461696c2100
+CMDS=<<EOF
+e bin.str.debase64=true
+izzqq
+izzqq 1 1
+e bin.str.debase64=false
+izzqq
+EOF
+EXPECT=<<EOF
+Hello
+tail!
+tail!
+SGVsbG8=
+tail!
+EOF
+RUN
