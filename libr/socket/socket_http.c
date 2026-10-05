@@ -120,39 +120,29 @@ static char *socket_http_answer(RSocket *s, const char *headers[], int *code, in
 	}
 
 	/* Parse Len */
+	const int body_len = olen - (dn - buf);
 	p = r_str_casestr (buf, "Content-Length: ");
-	if (p) {
-		len = atoi (p + 16);
-	} else {
-		len = olen - (dn - buf);
-	}
-	if (len == 0) {
-		R_LOG_DEBUG ("LEN = 0");
-	}
+	len = p? atoi (p + 16): body_len;
 	if (len > 0) {
-		if (len > olen) {
-			res = malloc (len + 2);
-			if (!res) {
-				goto exit;
-			}
-			olen -= (dn - buf);
-			memcpy (res, dn + delta, olen);
-			do {
-				ret = r_socket_read_block (s, (ut8 *)res + olen, len - olen);
-				if (ret < 1) {
-					break;
-				}
-				olen += ret;
-			} while (olen < len);
-			res[len] = 0;
-		} else {
-			res = malloc (len + 1);
-			if (res) {
-				memcpy (res, dn + delta, len);
-				res[len] = 0;
-			}
+		res = malloc ((size_t)len + 1);
+		if (!res) {
+			len = 0;
+			goto exit;
 		}
+		int have = R_MIN (body_len, len);
+		memcpy (res, dn + delta, have);
+		while (have < len) {
+			ret = r_socket_read_block (s, (ut8 *)res + have, len - have);
+			if (ret < 1) {
+				break;
+			}
+			have += ret;
+		}
+		len = have;
+		res[len] = 0;
 	} else {
+		R_LOG_DEBUG ("LEN = 0");
+		len = 0;
 		res = strdup ("");
 	}
 exit:
