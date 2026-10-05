@@ -389,12 +389,11 @@ grub_strdup(const char *s) {
 
 char *
 grub_strndup(const char *s, grub_size_t n) {
-	grub_size_t len;
+	grub_size_t len = 0;
 	char *p;
 
-	len = grub_strlen (s);
-	if (len > n) {
-		len = n;
+	while (len < n && s[len]) {
+		len++;
 	}
 	p = (char *)grub_malloc (len + 1);
 	if (!p) {

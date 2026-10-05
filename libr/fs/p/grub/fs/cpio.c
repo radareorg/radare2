@@ -104,25 +104,23 @@ grub_cpio_find_file(struct grub_cpio_data *data, char **name, grub_uint32_t *ofs
 
 	data->size = (((grub_uint32_t)hd.filesize_1) << 16) + hd.filesize_2;
 
-	if (hd.namesize & 1) {
-		hd.namesize++;
-	}
-
-	if ((*name = grub_malloc (hd.namesize)) == NULL) {
+	const grub_size_t namesize = hd.namesize + (hd.namesize & 1);
+	if ((*name = grub_malloc (namesize + 1)) == NULL) {
 		return grub_errno;
 	}
 
-	if (grub_disk_read (data->disk, 0, data->hofs + sizeof (hd), hd.namesize, *name)) {
+	if (grub_disk_read (data->disk, 0, data->hofs + sizeof (hd), namesize, *name)) {
 		grub_free (*name);
 		return grub_errno;
 	}
+	(*name)[namesize] = 0;
 
-	if (data->size == 0 && hd.mode == 0 && hd.namesize == 11 + 1 && !memcmp (*name, "TRAILER!!!", 11)) {
+	if (data->size == 0 && hd.mode == 0 && namesize == 11 + 1 && !memcmp (*name, "TRAILER!!!", 11)) {
 		*ofs = 0;
 		return GRUB_ERR_NONE;
 	}
 
-	data->dofs = data->hofs + sizeof (hd) + hd.namesize;
+	data->dofs = data->hofs + sizeof (hd) + namesize;
 	*ofs = data->dofs + data->size;
 	if (data->size & 1) {
 		(*ofs)++;
@@ -143,7 +141,7 @@ grub_cpio_find_file(struct grub_cpio_data *data, char **name, grub_uint32_t *ofs
 		return grub_error (GRUB_ERR_BAD_FS, "invalid tar archive");
 	}
 
-	if ((*name = grub_strdup (hd.name)) == NULL) {
+	if ((*name = grub_strndup (hd.name, sizeof (hd.name))) == NULL) {
 		return grub_errno;
 	}
 
@@ -221,7 +219,7 @@ grub_cpio_dir(grub_device_t device, const char *path, int(*hook)(const char *fil
 				break;
 			}
 
-			if (memcmp (np, name, len) == 0) {
+			if (!strncmp (np, name, len)) {
 				char *p, *n;
 
 				n = name + len;
