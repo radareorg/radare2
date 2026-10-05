@@ -46,16 +46,30 @@ RUN
 NAME=sandbox grain=none blocks shell subcommands
 FILE=-
 CMDS=<<EOF
-!rm -f /tmp/r2_sandbox_subcmd_pwned
 e cfg.sandbox.grain=none
 e cfg.sandbox=true
-!echo $(!touch /tmp/r2_sandbox_subcmd_pwned) 2>/dev/null
-e cfg.sandbox=false
-!test -e /tmp/r2_sandbox_subcmd_pwned && echo pwned || echo safe
-!rm -f /tmp/r2_sandbox_subcmd_pwned
+?e $(!echo dollar)
+?e $(?e safe)
+e cfg.sandbox
 EOF
 EXPECT=<<EOF
 safe
+true
+EOF
+RUN
+
+NAME=sandbox grain=none blocks backtick shell subcommands
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain=none
+e cfg.sandbox=true
+?e `!echo backtick`
+?e `?e safe`
+e cfg.sandbox
+EOF
+EXPECT=<<EOF
+safe
+true
 EOF
 RUN
 
@@ -65,9 +79,13 @@ CMDS=<<EOF
 e cfg.sandbox.grain=exec
 e cfg.sandbox=true
 !!echo hello
+?e $(!!echo dollar)
+?e `!!echo backtick`
 EOF
 EXPECT=<<EOF
 hello
+dollar
+backtick
 EOF
 RUN
 
