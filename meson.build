@@ -689,6 +689,35 @@ subdir('libr/flag/d')
 subdir('libr/main')
 subdir('shlr/panels')
 
+if get_option('libr')
+  if default_library_type != 'static'
+    error('-Dlibr=true requires -Ddefault_library=static')
+  endif
+  libr_parts = [r_util, r_socket, r_muta, r_cons, r_io, r_bp, r_syscall,
+    r_search, r_magic, r_flag, r_reg, r_esil, r_arch, r_fs, r_bin, r_config,
+    r_asm, r_lang, r_anal, r_egg, r_debug, r_core, r_main]
+  libr_objs = []
+  foreach lib : libr_parts
+    libr_objs += lib.extract_all_objects(recursive: false)
+  endforeach
+  # own objects are forced in, bundled third party code is pulled from the archives on demand
+  libr = shared_library('r',
+    objects: libr_objs,
+    dependencies: [sdb_dep, r_util_dep, r_socket_dep, r_muta_dep, r_cons_dep,
+      r_io_dep, r_bp_dep, r_syscall_dep, r_search_dep, r_magic_dep, r_flag_dep,
+      r_reg_dep, r_esil_dep, r_arch_dep, r_fs_dep, r_bin_dep, r_config_dep,
+      r_asm_dep, r_lang_dep, r_anal_dep, r_egg_dep, r_debug_dep, r_core_dep,
+      r_main_dep],
+    install: true,
+    install_rpath: rpath_lib,
+    soversion: r2_libversion
+  )
+  libr_dep = declare_dependency(link_with: libr,
+    include_directories: include_directories('.', 'libr/include'),
+    version: r2_version
+  )
+endif
+
 
 subdir('binr')
 if meson.is_subproject()
