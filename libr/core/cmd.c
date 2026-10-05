@@ -5133,6 +5133,10 @@ next2:
 		*ptr = '\0';
 		*ptr2 = '\0';
 		if (ptr[1] == '!') {
+			if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+				R_LOG_ERROR ("The ! sub-command is disabled in sandbox mode");
+				goto fail;
+			}
 			str = r_core_cmd_str_pipe (core, ptr + 1);
 		} else {
 			// Color disabled when doing backticks ?e `pi 1`
