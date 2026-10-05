@@ -3517,7 +3517,7 @@ static int bin_pe_init_security(RBinPEObj *pe) {
 	if (size == 0) {
 		return true;
 	}
-	if (size < 8 || paddr > pe->size || paddr + size > pe->size) {
+	if (size < 8 || paddr > pe->size || size > pe->size - paddr) {
 		R_LOG_WARN ("Invalid certificate table");
 		return false;
 	}
@@ -3536,7 +3536,7 @@ static int bin_pe_init_security(RBinPEObj *pe) {
 		Pe_certificate *cert = R_NEW0 (Pe_certificate);
 		cert->dwLength = r_buf_read_le32_at (pe->b, offset);
 		cert->dwLength += (8 - (cert->dwLength & 7)) & 7; // align32
-		if (offset + cert->dwLength > paddr + size) {
+		if (cert->dwLength > paddr + size - offset) {
 			R_LOG_WARN ("Invalid certificate entry");
 			R_FREE (cert);
 			return false;
