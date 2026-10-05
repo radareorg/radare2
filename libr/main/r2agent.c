@@ -226,8 +226,15 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 #endif
 				}
 			} else if (r_str_startswith (rs->path, "/file/open/")) {
-				int session_port = 3000 + r_num_rand (1024);
 				char *filename = rs->path + strlen ("/file/open/");
+				if (*filename == '-') {
+					// r2 stops opening files after "--", so reject option-shaped names instead
+					r_socket_http_response (rs, 400, "", 0, NULL);
+					r_socket_http_close (rs);
+					r_socket_http_free (rs);
+					continue;
+				}
+				int session_port = 3000 + r_num_rand (1024);
 				char *escaped_filename = r_str_escape_sh (filename);
 				char *authargs = NULL;
 				if (so.httpauth) {
