@@ -88,6 +88,13 @@ static time_t ntfs_filetime_to_unix(ut64 filetime) {
 	return (time_t)(seconds - ntfs_epoch_offset);
 }
 
+static ut32 ntfs_clusters_to_size(st8 clusters, ut32 cluster_size) {
+	if (clusters > 0) {
+		return clusters * cluster_size;
+	}
+	return (-clusters < 32)? 1U << -clusters: 0;
+}
+
 static void details_ntfs(RFSRoot *root, RStrBuf *sb) {
 	ntfs_bpb_t bpb;
 	if (root->iob.read_at (root->iob.io, root->delta, (ut8 *)&bpb, sizeof (bpb)) != sizeof (bpb)) {
@@ -118,27 +125,14 @@ static void details_ntfs(RFSRoot *root, RStrBuf *sb) {
 	ut64 total_size = total_sectors * bytes_per_sector;
 	ut64 mft_offset = root->delta + (mft_cluster * cluster_size);
 
-	st8 clusters_per_mft = bpb.clusters_per_mft_record;
-	ut32 mft_record_size;
-	if (clusters_per_mft > 0) {
-		mft_record_size = clusters_per_mft * cluster_size;
-	} else {
-		mft_record_size = 1 << (-clusters_per_mft);
-	}
-
-	st8 clusters_per_index = bpb.clusters_per_index_block;
-	ut32 index_block_size;
-	if (clusters_per_index > 0) {
-		index_block_size = clusters_per_index * cluster_size;
-	} else {
-		index_block_size = 1 << (-clusters_per_index);
-	}
+	const ut32 mft_record_size = ntfs_clusters_to_size (bpb.clusters_per_mft_record, cluster_size);
+	const ut32 index_block_size = ntfs_clusters_to_size (bpb.clusters_per_index_block, cluster_size);
 
 	char volume_label[256] = {0};
 	ut64 creation_time = 0;
 	ut64 modification_time = 0;
 
-	if (mft_record_size == 0 || mft_record_size > 65536) {
+	if (mft_record_size < sizeof (ntfs_mft_record_t) || mft_record_size > 65536) {
 		goto print_info;
 	}
 
@@ -149,34 +143,37 @@ static void details_ntfs(RFSRoot *root, RStrBuf *sb) {
 			ntfs_mft_record_t *mft = (ntfs_mft_record_t *)mft_record;
 
 			if (memcmp (mft->signature, "FILE", 4) == 0) {
-				ut16 attr_offset = r_read_le16 ((ut8 *)&mft->first_attr_offset);
+				size_t attr_offset = r_read_le16 ((ut8 *)&mft->first_attr_offset);
 
-				while (attr_offset < mft_record_size - sizeof (ntfs_attr_header_t)) {
+				while (attr_offset + sizeof (ntfs_attr_header_t) <= mft_record_size) {
 					ntfs_attr_header_t *attr = (ntfs_attr_header_t *)(mft_record + attr_offset);
 					ut32 attr_type = r_read_le32 ((ut8 *)&attr->type);
 					ut32 attr_length = r_read_le32 ((ut8 *)&attr->length);
 
-					if (attr_type == 0xFFFFFFFF || attr_length == 0 || attr_length > mft_record_size) {
+					if (attr_type == 0xFFFFFFFF || attr_length < sizeof (ntfs_attr_header_t) || attr_length > mft_record_size - attr_offset) {
 						break;
 					}
+					ut32 value_length = r_read_le32 ((ut8 *)&attr->value_length);
+					ut16 value_offset = r_read_le16 ((ut8 *)&attr->value_offset);
+					if (attr->non_resident || value_offset > attr_length || value_length > attr_length - value_offset) {
+						attr_offset += attr_length;
+						continue;
+					}
+					const ut8 *value = mft_record + attr_offset + value_offset;
 
 					// 0x10 = $STANDARD_INFORMATION
-					if (attr_type == 0x10 && !attr->non_resident) {
-						ut16 value_offset = r_read_le16 ((ut8 *)&attr->value_offset);
-						ntfs_std_info_t *std_info = (ntfs_std_info_t *)(mft_record + attr_offset + value_offset);
+					if (attr_type == 0x10 && value_length >= sizeof (ntfs_std_info_t)) {
+						ntfs_std_info_t *std_info = (ntfs_std_info_t *)value;
 						creation_time = r_read_le64 ((ut8 *)&std_info->creation_time);
 						modification_time = r_read_le64 ((ut8 *)&std_info->modification_time);
 					}
 
 					// 0x60 = $VOLUME_NAME
-					if (attr_type == 0x60 && !attr->non_resident) {
-						ut32 value_length = r_read_le32 ((ut8 *)&attr->value_length);
-						ut16 value_offset = r_read_le16 ((ut8 *)&attr->value_offset);
-
+					if (attr_type == 0x60) {
 						if (value_length > 0 && value_length < 512) {
 							// Volume name is in UTF-16LE, simple conversion to ASCII
 							// Better conversion needed for non ASCII characters
-							ut8 *name_utf16 = mft_record + attr_offset + value_offset;
+							const ut8 *name_utf16 = value;
 							int name_chars = value_length / 2;
 							int j;
 							if (name_chars > 127) {
