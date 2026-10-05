@@ -558,7 +558,7 @@ bool test_sandbox_symlink_path(void) {
 }
 
 bool test_sandbox_dl_open(void) {
-	const char *libpath = R2_LIBDIR "/libr_util." R_LIB_EXT;
+	const char *libpath = "libr_util." R_LIB_EXT;
 	void *lib = r_lib_dl_open (libpath, false);
 	mu_assert_notnull (lib, "library should load without sandbox");
 	r_lib_dl_close (lib);
