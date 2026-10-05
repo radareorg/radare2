@@ -168,6 +168,7 @@ MESSAGES = {
 	"eprintf-could-failed-cannot": "eprintf 'Could/Failed/Cannot' message, use R_LOG_ERROR",
 	"arch-lib-type-anal": "arch plugin should use R_LIB_TYPE_ARCH, not R_LIB_TYPE_ANAL",
 	"eprintf-warning": "eprintf 'Warning:' message, use R_LOG_WARN",
+	"header-compound-literal": "C99 compound literal in a public header is not C++, MSVC rejects it",
 }
 
 # The checks below are a 1:1 port of the git grep pipelines of the old
@@ -345,6 +346,10 @@ CHECKS = [
 			(rb"r_cons_eprintf|alloc", False)]),
 	Check("arch-lib-type-anal",
 		[L(b"R_LIB_TYPE_ANAL")], prefixes=ARCH_P),
+	# headers are included from C++ (iaito, r2ghidra), macros only break when expanded there
+	Check("header-compound-literal",
+		[Rx(rb"(?:\breturn|[=?:,(])[ \t]*\((?:const[ \t]+|struct[ \t]+)*[A-Za-z_]\w*[ \t]*\)[ \t]*\{")],
+		numbered=True, filters=[(rb"^libr/include/.*\.h:", True), (rb"#[ \t]*define", False)]),
 ]
 
 # printed after the c++ compat check, like in the old lint.sh
