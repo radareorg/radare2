@@ -1174,7 +1174,7 @@ R_API char *r_core_rtr_cmds_query(RCore *core, const char *host, const char *por
 		r_socket_write (s, (void*)cmd, strlen (cmd));
 		//r_socket_write (s, "px\n", 3);
 		for (;;) {
-			int ret = r_socket_read (s, buf, sizeof (buf));
+			int ret = r_socket_read (s, buf, sizeof (buf) - 1);
 			if (ret < 1) {
 				break;
 			}
