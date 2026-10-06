@@ -835,11 +835,24 @@ static ut64 num_callback(RNum *userptr, const char *str, bool *ok) {
 		break;
 	case '[':
 {
+		if (ok) {
+			*ok = true;
+		}
 		ut64 n = 0LL;
 		int refsz = core->rasm->config->bits / 8;
-		const char *p = strchr (str, ':');
-		if (p) {
-			refsz = atoi (str + 1);
+		const char *p = str + 1;
+		while (isdigit ((ut8)*p)) {
+			p++;
+		}
+		if (p > str + 1 && *p == ':') {
+			const char *size = str + 1;
+			while (*size == '0') {
+				size++;
+			}
+			if (p - size != 1 || !strchr ("1248", *size)) {
+				return invalid_numvar (core, "invalid reference size");
+			}
+			refsz = *size - '0';
 			str = p;
 		}
 		// push state
@@ -848,7 +861,9 @@ static ut64 num_callback(RNum *userptr, const char *str, bool *ok) {
 		}
 		char *o = strdup (str + 1);
 		if (o) {
-			if (r_str_replace_char (o, ']', 0)>0) {
+			char *end = strrchr (o, ']');
+			if (end) {
+				*end = 0;
 				RNum inner = *core->num;
 				n = r_num_math (&inner, o);
 				if (inner.nc.errors) {
@@ -859,9 +874,6 @@ static ut64 num_callback(RNum *userptr, const char *str, bool *ok) {
 			free (o);
 		}
 		// pop state
-		if (ok) {
-			*ok = true;
-		}
 		ut8 buf[sizeof (ut64)] = {0};
 		(void)r_io_read_at (core->io, n, buf, R_MIN (sizeof (buf), refsz));
 		const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);

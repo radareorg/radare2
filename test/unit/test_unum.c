@@ -166,7 +166,72 @@ bool test_r_num_hex_unsigned(void) {
 	mu_end;
 }
 
+static ut64 nested_reference_callback(RNum *user, const char *str, bool *ok) {
+	*ok = !strcmp (str, "[4:[8:0]+[1:2]]");
+	return *ok? 42: 0;
+}
+
+bool test_r_num_nested_reference_tokens(void) {
+	RNum *refnum = r_num_new (nested_reference_callback, NULL, NULL);
+	const char *err = NULL;
+	mu_assert_eq (r_num_math_err (refnum, "[4:[8:0]+[1:2]]+1", &err), 43, "nested reference is one token");
+	mu_assert_null (err, "balanced brackets are valid");
+	r_num_math_err (refnum, "[4:[8:0]", &err);
+	mu_assert_notnull (err, "missing outer closing bracket");
+	r_num_math_err (refnum, "[4:[8:0]+[1:2]]]", &err);
+	mu_assert_notnull (err, "extra closing bracket");
+	char longref[R_NUMCALC_STRSZ + 2];
+	memset (longref, '1', sizeof (longref) - 1);
+	longref[0] = '[';
+	longref[sizeof (longref) - 1] = 0;
+	r_num_math_err (refnum, longref, &err);
+	mu_assert_streq (err, "string too long", "oversized reference is rejected");
+	r_num_free (refnum);
+	mu_end;
+}
+
+static ut64 bounded_reference_callback(RNum *user, const char *str, bool *ok) {
+	int *calls = (int *)user;
+	(*calls)++;
+	*ok = true;
+	return 42;
+}
+
+bool test_r_num_reference_nesting_limit(void) {
+	int calls = 0;
+	RNum *refnum = r_num_new (bounded_reference_callback, NULL, &calls);
+	char expression[R_NUMCALC_STRSZ];
+	const int depths[] = {32, 33, 400};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (depths); i++) {
+		const int depth = depths[i];
+		memset (expression, '[', depth);
+		expression[depth] = '0';
+		memset (expression + depth + 1, ']', depth);
+		expression[2 * depth + 1] = 0;
+		const char *err = NULL;
+		calls = 0;
+		ut64 value = r_num_math_err (refnum, expression, &err);
+		if (depth == 32) {
+			mu_assert_eq (value, 42, "nesting boundary is accepted");
+			mu_assert_null (err, "nesting boundary has no error");
+			mu_assert_eq (calls, 1, "one callback at the boundary");
+		} else {
+			mu_assert_eq (value, 0, "excessive nesting is rejected");
+			mu_assert_streq (err, "reference nesting too deep", "nesting limit diagnostic");
+			mu_assert_eq (calls, 0, "excessive nesting never invokes the callback");
+		}
+	}
+	const char *err = NULL;
+	mu_assert_eq (r_num_math_err (refnum, "[0]", &err), 42, "valid reference after rejection");
+	mu_assert_null (err, "nesting errors do not persist");
+	r_num_free (refnum);
+	mu_end;
+}
+
 bool all_tests(void) {
+	mu_run_test (test_r_num_reference_nesting_limit);
+	mu_run_test (test_r_num_nested_reference_tokens);
 	mu_run_test (test_r_num_hex_unsigned);
 	mu_run_test (test_r_num_units);
 	mu_run_test (test_r_num_minmax_swap);

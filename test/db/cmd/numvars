@@ -1,3 +1,71 @@
+NAME=num nested memory references
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wv8 0x20 @ 0
+wv8 0x40 @ 0x20
+wv8 0x12345678 @ 0x40
+wv8 0xaabb @ 0x30
+f pointer=0
+?vx [0]
+?vx [[0]]
+?vx [[[0]]]
+?vx [0]+[[0]]
+?vx [0x10+[0]]
+?vx [[pointer]]+1
+EOF
+EXPECT=<<EOF
+0x00000020
+0x00000040
+0x12345678
+0x00000060
+0x0000aabb
+0x00000041
+EOF
+RUN
+
+NAME=num nested memory reference sizes
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wv8 0x20 @ 0
+wv8 0x40 @ 0x20
+wv8 0x12345678 @ 0x40
+?vx [[4:0]]
+?vx [1:[8:0]]
+?vx [2:[4:0]]
+?vx [4:[8:0]]
+?vx [8:[1:0]]
+?vx [4:[8:0]+0x20]
+EOF
+EXPECT=<<EOF
+0x00000040
+0x00000040
+0x00000040
+0x00000040
+0x00000040
+0x12345678
+EOF
+RUN
+
+NAME=num nested memory references big endian
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 0000000000000020 @ 0
+wx 0000000000000040 @ 0x20
+wx 12345678 @ 0x40
+?vx [[0]]
+?vx [4:[[0]]]
+?vx [4:[8:[8:0]]]
+EOF
+EXPECT=<<EOF
+0x00000040
+0x12345678
+0x12345678
+EOF
+RUN
+
 NAME=num vars blocksize
 FILE=malloc://0x4000
 CMDS=<<EOF
@@ -229,5 +297,61 @@ bbs
 148
 76628
 73508
+EOF
+RUN
+
+NAME=num memory reference nesting limit
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wv8 0x20 @ 0
+wv8 0x20 @ 0x20
+?vx [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[0]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]
+?vx [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[0]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]
+?vx [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[0]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]
+?vx [0]
+EOF
+EXPECT=<<EOF
+0x00000020
+0x00000000
+0x00000000
+0x00000020
+EOF
+EXPECT_ERR=<<EOF
+ERROR: reference nesting too deep
+ERROR: reference nesting too deep
+EOF
+RUN
+
+NAME=num memory reference size validation
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wv8 0x20 @ 0
+?vx [0:0]
+?vx [3:0]
+?vx [16:0]
+?vx [4294967297:0]
+?vx [999999999999999999:0]
+?vx [04:0]
+?vx [0000000000000000000000000000000000000000004:0]
+?vx [4:0]+[8:0]
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000000
+0x00000000
+0x00000000
+0x00000000
+0x00000020
+0x00000020
+0x00000040
+EOF
+EXPECT_ERR=<<EOF
+ERROR: invalid reference size
+ERROR: invalid reference size
+ERROR: invalid reference size
+ERROR: invalid reference size
+ERROR: invalid reference size
 EOF
 RUN
