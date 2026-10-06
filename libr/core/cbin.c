@@ -1250,15 +1250,16 @@ static void bin_dwarf_process_info(RCore *core, RBinFile *bf, RVecDwarfAbbrevDec
 		return;
 	}
 	HtUP *loc_table = r_bin_dwarf_parse_loc (bf, core->anal->config->bits / 8);
-	HtUP *loclists = r_bin_dwarf_parse_loclists (bf, info);
+	RBinDwarfLocLists *loclists = r_bin_dwarf_loclists_new (bf);
 	RAnalDwarfContext ctx = {
 		.info = info,
 		.loc = loc_table,
-		.loclists = loclists
+		.loclists = loclists,
+		.loclist_foreach = r_bin_dwarf_loclists_foreach
 	};
 	r_anal_dwarf_process_info (core->anal, &ctx);
 	r_bin_dwarf_free_loc (loc_table);
-	r_bin_dwarf_free_loc (loclists);
+	r_bin_dwarf_loclists_free (loclists);
 	r_bin_dwarf_free_debug_info (info);
 }
 

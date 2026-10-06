@@ -740,11 +740,21 @@ EOF
 EXPECT=<<EOF
 arg int64_t arg1 @ rdi
 arg int64_t arg2 @ rsi
-arg int prec @ r8
-var []uint8 dst @ rdx
-var int i @ rcx
 var bool hasDecimalPoint @ r9
 var []uint8 tail @ r10
+var int i @ rcx
+var []uint8 dst @ rdx
+EOF
+RUN
+
+NAME=dwarf fbreg inside a location list is read
+FILE=bins/elf/dwarf_go_tree
+CMDS=<<EOF
+aaa > /dev/null
+afv @ 0x0048a1b0~prec
+EOF
+EXPECT=<<EOF
+var int prec_1 @ rsp+0x88
 EOF
 RUN
 

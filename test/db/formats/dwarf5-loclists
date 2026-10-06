@@ -4,6 +4,7 @@ CMDS=<<EOF
 aaa
 afv @ sym.work
 afv @ sym.main
+afv @ sym._start~var
 id~version 5
 id~?End of list
 id~?debug_loc section
@@ -16,6 +17,7 @@ var int y @ rax
 var int z @ rbx
 arg int argc @ rdi
 arg char ** argv @ rsi
+var int r @ rax
 0x0 version 5 address size 8 offsets 6
 0x65 version 5 address size 8 offsets 1
 7
@@ -61,5 +63,82 @@ EOF
 EXPECT=<<EOF
 0
 1
+EOF
+RUN
+
+NAME=DWARF 5 loclists: a variable gets the location covering most of its function
+FILE=bins/elf/dwarf/loclists-x64-semantics
+ARGS=-e anal.vars=false
+CMDS=<<EOF
+aaa
+afv @ sym.work
+afv @ sym._start
+EOF
+EXPECT=<<EOF
+arg int b @ rdx
+var int x @ rbp
+var int z @ rbx
+arg int a @ rsp+0x10
+var int r @ rax
+EOF
+RUN
+
+NAME=DWARF 5 loclists: a malformed entry drops its list and nothing else
+FILE=bins/elf/dwarf/loclists-x64-bad-entries
+CMDS=<<EOF
+aaa
+afv @ sym.work
+id~Malformed entry
+EOF
+EXPECT=<<EOF
+arg int a @ rdi
+arg int b @ rsi
+var int y @ rax
+0x37 <Malformed entry>
+EOF
+RUN
+
+NAME=DWARF 5 loclists: a list is bounded by its contribution
+FILE=bins/elf/dwarf/loclists-x64-bad-contribution
+CMDS=<<EOF
+aaa
+afv @ sym.work
+afv @ sym._start~var
+id~Malformed
+id~?version 5
+EOF
+EXPECT=<<EOF
+arg int a @ rdi
+arg int b @ rsi
+var int x @ rbp
+var int y @ rax
+var int r @ rax
+0x51 <Malformed entry>
+0x53 <Malformed header>
+1
+EOF
+RUN
+
+NAME=DWARF 5 loclists: a loclistx index past the offset table costs that location only
+FILE=bins/elf/dwarf/loclists-x64-bad-index
+CMDS=<<EOF
+aaa
+afv @ sym.work
+EOF
+EXPECT=<<EOF
+arg int a @ rdi
+arg int b @ rsi
+var int y @ rax
+var int z @ rbx
+EOF
+RUN
+
+NAME=DWARF 5 loclists: a range whose sums wrap is malformed
+FILE=bins/elf/dwarf/loclists-aarch64-bad-base
+CMDS=<<EOF
+id~Malformed
+EOF
+EXPECT=<<EOF
+0x4d <Malformed entry>
 EOF
 RUN
