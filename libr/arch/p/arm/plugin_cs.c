@@ -4946,7 +4946,8 @@ static void create_src_dst(RAnalOp *op) {
 	_ = RVecRArchValue_emplace_back (&op->dsts);
 }
 
-static void add_pair_slot(RAnalOp *op, csh *handle, cs_insn *insn, int x) {
+// the second slot of a paired load or store, one element above the first
+static void add_pair_slot(RVecRArchValue *side, cs_insn *insn) {
 	switch (insn->id) {
 	case ARM64_INS_LDP:
 	case ARM64_INS_LDNP:
@@ -4957,16 +4958,13 @@ static void add_pair_slot(RAnalOp *op, csh *handle, cs_insn *insn, int x) {
 	default:
 		return;
 	}
-	RAnalValue *second = RVecRArchValue_emplace_back (&op->dsts);
-	if (!second) {
+	const RAnalValue *first = RVecRArchValue_at (side, 0);
+	if (!first || !first->memref) {
 		return;
 	}
-	set_src_dst (op, second, handle, insn, x, 64);
-	if (!second->memref) {
-		RVecRArchValue_pop_back (&op->dsts);
-		return;
-	}
-	second->delta += second->memref;
+	RAnalValue second = *first;
+	second.delta += second.memref;
+	RVecRArchValue_push_back (side, &second);
 }
 
 static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn, int bits) {
@@ -5017,7 +5015,7 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 			set_src_dst (op, RVecRArchValue_at (&op->dsts, 0), &handle, insn, 0, bits);
 		}
 		if (bits == 64) {
-			add_pair_slot (op, &handle, insn, 2);
+			add_pair_slot (&op->srcs, insn);
 		}
 		break;
 	case R_ANAL_OP_TYPE_STORE:
@@ -5038,7 +5036,7 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 		{
 			set_src_dst (op, RVecRArchValue_at (&op->dsts, 0), &handle, insn, --count, bits);
 			if (bits == 64) {
-				add_pair_slot (op, &handle, insn, count);
+				add_pair_slot (&op->dsts, insn);
 			}
 			int j;
 			for (j = 0; j < 3 && j < count; j++) {

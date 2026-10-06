@@ -12824,6 +12824,9 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 						} else if (src->delta) {
 							offimm = src->delta;
 						}
+						if (offimm) {
+							break;
+						}
 					}
 				}
 				if (!offimm) {

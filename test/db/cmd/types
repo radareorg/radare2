@@ -833,6 +833,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=aht on an arm64 paired load takes the first slot
+FILE=malloc://16
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 408440a9
+'td struct foo {int a; int b; int c;};
+aht foo.c
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      408440a9       ldp x0, x1, [x2, foo.c]
+EOF
+RUN
+
 NAME=struct offset for dst operand with aht
 FILE=-
 CMDS=<<EOF
