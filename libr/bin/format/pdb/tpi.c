@@ -1139,7 +1139,8 @@ static void get_union_members(STpiStream *ss, void *type, RList **l) {
 	} else {
 		indx = lf_union->field_list - ss->ctx.base_idx;
 		SType *tmp = (SType *)r_list_get_n (ss->ctx.types_list, indx);
-		*l = tmp? ((SLF_FIELDLIST *)tmp->type_data.type_info)->substructs: NULL;
+		*l = (tmp && tmp->type_data.leaf_type == eLF_FIELDLIST)
+			? ((SLF_FIELDLIST *)tmp->type_data.type_info)->substructs : NULL;
 	}
 }
 
@@ -1153,7 +1154,8 @@ static void get_struct_class_members(STpiStream *ss, void *type, RList **l) {
 	} else {
 		indx = lf->field_list - ss->ctx.base_idx;
 		SType *tmp = (SType *)r_list_get_n (ss->ctx.types_list, indx);
-		*l = tmp? ((SLF_FIELDLIST *)tmp->type_data.type_info)->substructs: NULL;
+	    *l = (tmp && tmp->type_data.leaf_type == eLF_FIELDLIST)
+			? ((SLF_FIELDLIST *)tmp->type_data.type_info)->substructs : NULL;
 	}
 }
 
@@ -1166,7 +1168,8 @@ static void get_enum_members(STpiStream *ss, void *type, RList **l) {
 	} else {
 		unsigned int indx = lf->field_list - ss->ctx.base_idx;
 		SType *tmp = (SType *)r_list_get_n (ss->ctx.types_list, indx);
-		*l = tmp? ((SLF_FIELDLIST *)tmp->type_data.type_info)->substructs: NULL;
+	    *l = (tmp && tmp->type_data.leaf_type == eLF_FIELDLIST)
+			? ((SLF_FIELDLIST *)tmp->type_data.type_info)->substructs : NULL;
 	}
 }
 
