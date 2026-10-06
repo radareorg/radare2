@@ -365,7 +365,6 @@ R_API bool r_esil_define(REsil *esil, const char *op, const char *body, ut32 pus
 	eop->push = push;
 	eop->pop = pop;
 	eop->type = type;
-	eop->info = body; // listings show the expansion
 	if (!ht_pp_update (esil->ops, &eop->name, eop)) {
 		R_LOG_ERROR ("Cannot define esil op %s", op);
 		free (tokens);

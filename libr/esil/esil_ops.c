@@ -1935,20 +1935,43 @@ typedef struct {
 	PJ *pj;
 } OpsData;
 
-static void opsforeach_one(OpsData *opsdata, const char *key, const REsilOp *eop) {
-	const char *type = "";
-	switch (eop->type) {
-	case OT_MATH: type = " (math)"; break;
-	case OT_UNK: type = " (unknown)"; break;
-	case OT_CTR: type = " (control)"; break;
-	case OT_MATH|OT_REGW: type = " (math+regw)"; break;
-	case OT_MATH|OT_MEMR|OT_REGW: type = " (math+memr+regw)"; break;
-	case OT_MEMR: type = " (memr)"; break;
-	case OT_MEMW: type = " (memw)"; break;
+static const struct { const char *name; ut32 bit; } optype_names[] = {
+	{ "math", R_ESIL_OP_TYPE_MATH },
+	{ "memr", R_ESIL_OP_TYPE_MEM_READ },
+	{ "memw", R_ESIL_OP_TYPE_MEM_WRITE },
+	{ "regw", R_ESIL_OP_TYPE_REG_WRITE },
+	{ "control", R_ESIL_OP_TYPE_CONTROL_FLOW },
+	{ "unknown", R_ESIL_OP_TYPE_UNKNOWN },
+	{ "custom", R_ESIL_OP_TYPE_CUSTOM },
+	{ "flag", R_ESIL_OP_TYPE_FLAG },
+	{ "trap", R_ESIL_OP_TYPE_TRAP },
+	{ "crypto", R_ESIL_OP_TYPE_CRYPTO },
+};
+
+static void optype_label(RStrBuf *sb, ut32 type) {
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (optype_names); i++) {
+		if (type & optype_names[i].bit) {
+			if (r_strbuf_length (sb)) {
+				r_strbuf_append (sb, "+");
+			}
+			r_strbuf_append (sb, optype_names[i].name);
+		}
 	}
+}
+
+static void opsforeach_one(OpsData *opsdata, const char *key, const REsilOp *eop) {
+	RStrBuf sb;
+	r_strbuf_init (&sb);
+	optype_label (&sb, eop->type);
+	const char *type = r_strbuf_get (&sb);
+	const char *desc = eop->body? eop->body: r_str_get (eop->info);
 	if (opsdata->sb) {
-		r_strbuf_appendf (opsdata->sb, ": %s (%d -- %d) \\ %s%s\n",
-			key, eop->pop, eop->push, eop->info?eop->info: "", type);
+		r_strbuf_appendf (opsdata->sb, ": %s (%d -- %d) \\ %s", key, eop->pop, eop->push, desc);
+		if (*type) {
+			r_strbuf_appendf (opsdata->sb, " (%s)", type);
+		}
+		r_strbuf_append (opsdata->sb, "\n");
 	} else if (opsdata->pj) {
 		PJ *pj = opsdata->pj;
 		pj_o (pj);
@@ -1958,11 +1981,16 @@ static void opsforeach_one(OpsData *opsdata, const char *key, const REsilOp *eop
 		if (eop->info) {
 			pj_ks (pj, "info", eop->info);
 		}
-		if (R_STR_ISNOTEMPTY (type)) {
+		if (*type) {
 			pj_ks (pj, "type", type);
 		}
+		if (eop->body) {
+			pj_ks (pj, "body", eop->body);
+		}
+		pj_kb (pj, "native", eop->code != NULL);
 		pj_end (pj);
 	}
+	r_strbuf_fini (&sb);
 }
 
 // HtPP callback — key is a pointer to an RStrs inside the REsilOp value
