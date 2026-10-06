@@ -470,7 +470,10 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 					}
 					stringValueAppend (ch);
 					if (ch == '[') {
-						depth++;
+						if (++depth > 32) {
+							error (num, nc, "reference nesting too deep");
+							return nc->curr_tok = RNCEND;
+						}
 					} else if (ch == ']' && !--depth) {
 						break;
 					}
