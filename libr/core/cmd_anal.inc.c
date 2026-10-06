@@ -372,7 +372,7 @@ static RCoreHelpMessage help_msg_ae = {
 	"ae!", " [file]", "compile esil file into an esil expression",
 	"ae?", "", "show this help",
 	"ae??", "", "show ESIL help",
-	"ae???", "", "list ESIL ops",
+	"ae???", "[j]", "list ESIL ops",
 	"aea", "[f] [count]", "analyse n esil instructions accesses (regs, mem..)",
 	"aeA", "[f] [count]", "analyse n bytes for their esil accesses (regs, mem..)",
 	"aeb", " ([addr])", "emulate block in current or given address",

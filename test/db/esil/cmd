@@ -211,3 +211,31 @@ EXPECT=<<EOF
 stepout triggered 0 0
 EOF
 RUN
+
+NAME=ae???j native and body fields
+FILE=-
+CMDS=<<EOF
+ae???j~{}~&"body": "1,+"
+ae???j~{}~&info,"1,+"~?
+?vi `ae???j~{}~&"native",false~?` - `ae???j~{}~"body"~?`
+?vi `ae???j~{}~&"native",true~?` + `ae???j~{}~&"native",false~?` - `ae???j~{}~"name"~?`
+ae???j~{}~&type,"math":0
+ae???j~{=}~memr+memw[-1]:0
+ae???~^: ++ (1
+ae???~^: + (2
+ae???~^: = (2
+ae???~^: += (2
+EOF
+EXPECT=<<EOF
+    "body": "1,+",
+0
+0
+0
+    "type": "math",
+"math+memr+memw"
+: ++ (1 -- 1) \ 1,+ (math)
+: + (2 -- 1) \  (math)
+: = (2 -- 0) \  (regw)
+: += (2 -- 0) \ DUP,ROT,SWAP,+,SWAP,= (math+regw)
+EOF
+RUN
