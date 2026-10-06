@@ -166,7 +166,31 @@ bool test_r_num_hex_unsigned(void) {
 	mu_end;
 }
 
+static ut64 nested_reference_callback(RNum *user, const char *str, bool *ok) {
+	*ok = !strcmp (str, "[4:[8:0]+[1:2]]");
+	return *ok? 42: 0;
+}
+
+bool test_r_num_nested_reference_tokens(void) {
+	RNum *refnum = r_num_new (nested_reference_callback, NULL, NULL);
+	const char *err = NULL;
+	mu_assert_eq (r_num_math_err (refnum, "[4:[8:0]+[1:2]]+1", &err), 43, "nested reference is one token");
+	mu_assert_null (err, "balanced brackets are valid");
+	r_num_math_err (refnum, "[4:[8:0]", &err);
+	mu_assert_notnull (err, "missing outer closing bracket");
+	r_num_math_err (refnum, "[4:[8:0]+[1:2]]]", &err);
+	mu_assert_notnull (err, "extra closing bracket");
+	char longref[R_NUMCALC_STRSZ + 2];
+	memset (longref, '[', sizeof (longref) - 1);
+	longref[sizeof (longref) - 1] = 0;
+	r_num_math_err (refnum, longref, &err);
+	mu_assert_streq (err, "string too long", "oversized reference is rejected");
+	r_num_free (refnum);
+	mu_end;
+}
+
 bool all_tests(void) {
+	mu_run_test (test_r_num_nested_reference_tokens);
 	mu_run_test (test_r_num_hex_unsigned);
 	mu_run_test (test_r_num_units);
 	mu_run_test (test_r_num_minmax_swap);
