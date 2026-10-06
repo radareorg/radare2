@@ -31,10 +31,13 @@ static void destroy(RBinFile *bf) {
 }
 
 static char *header(RBinFile *bf, int mode) {
-	RStrBuf *sb = r_strbuf_new ("");
+      r_bin_ne_obj_t *ne = bf->bo->bin_obj;
+      if (!ne || !ne->ne_header) {
+              return NULL;
+      }
+      RStrBuf *sb = r_strbuf_new ("");
 #define p(f,...) r_strbuf_appendf (sb, f, ##__VA_ARGS__)
-	r_bin_ne_obj_t *ne = bf->bo->bin_obj;
-	p ("Signature: NE\n");
+    p ("Signature: NE\n");
 	p ("MajLinkerVersion: %d\n", ne->ne_header->MajLinkerVersion);
 	p ("MinLinkerVersion: %d\n", ne->ne_header->MinLinkerVersion);
 	p ("EntryTableOffset: 0x%04x\n", ne->ne_header->EntryTableOffset);
