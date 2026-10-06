@@ -86,8 +86,17 @@ static void r_core_debug_syscall_hit(RCore *core) {
 
 R_API RBinReloc *r_core_getreloc(RCore *core, ut64 addr, int size) {
 	R_RETURN_VAL_IF_FAIL (core, NULL);
-	RVecRBinReloc *relocs = r_bin_get_relocs (core->bin);
-	return relocs? r_bin_reloc_at (relocs, addr, size): NULL;
+	RBinObject *bo = r_bin_cur_object (core->bin);
+	if (!bo || !bo->relocs || addr == UT64_MAX) {
+		return NULL;
+	}
+	// the reloc table keeps file vaddrs, callers pass mapped ones
+	const st64 shift = bo->info && bo->info->has_va? bo->baddr_shift: 0;
+	const ut64 at = addr - shift;
+	if (shift > 0? at > addr: at < addr) {
+		return NULL;
+	}
+	return r_bin_reloc_at (bo->relocs, at, size);
 }
 
 /* returns the address of a jmp/call given a shortcut by the user or UT64_MAX

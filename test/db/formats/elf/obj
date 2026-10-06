@@ -43,7 +43,7 @@ CMDS=pi 3@ sym.main
 EXPECT=<<EOF
 push rbp
 mov rbp, rsp
-call 0x59
+call test
 EOF
 RUN
 
@@ -54,6 +54,6 @@ CMDS=pi 3@sym.main
 EXPECT=<<EOF
 push rbp
 mov rbp, rsp
-call 0x200059
+call test
 EOF
 RUN

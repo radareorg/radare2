@@ -5633,11 +5633,12 @@ static void ds_print_relocs(RDisasmState *ds) {
 			const char *rel_imp_name = r_bin_name_tostring2 (rel->import->name, pref);
 			r_cons_printf (cons, "%s RELOC %d %s", ds->cmtoken, rel->type, rel_imp_name);
 		} else if (rel->symbol) {
-			const char *rel_sym_name = r_bin_name_tostring2 (rel->symbol->name, pref);
+			RBinSymbol *sym = rel->symbol;
+			const char *rel_sym_name = r_bin_name_tostring2 (sym->name, pref);
+			const ut64 sym_addr = sym->paddr == UT64_MAX? sym->vaddr
+				: r_bin_get_vaddr (core->bin, sym->paddr, sym->vaddr);
 			r_cons_printf (cons, "%s RELOC %d %s @ 0x%08" PFMT64x,
-					ds->cmtoken,
-					rel->type, rel_sym_name,
-					rel->symbol->vaddr);
+					ds->cmtoken, rel->type, rel_sym_name, sym_addr);
 			if (rel->addend) {
 				if (rel->addend > 0) {
 					r_cons_printf (cons, " + 0x%" PFMT64x, rel->addend);

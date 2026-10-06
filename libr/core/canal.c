@@ -5932,15 +5932,17 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 // calls read sym.plt.<target> instead of an anonymous fcn address
 static void plt_stub_flag(RCore *core, ut64 entry, ut64 size, ut64 slot) {
 	const int ptrsz = R_MAX (4, core->anal->config->bits / 8);
-	// the reloc tree keeps file vaddrs while the decoded slot is a runtime address
-	RBinObject *bo = r_bin_cur_object (core->bin);
-	const st64 shift = bo? bo->baddr_shift: 0;
-	RBinReloc *rel = r_core_getreloc (core, slot - shift, ptrsz);
+	RBinReloc *rel = r_core_getreloc (core, slot, ptrsz);
 	if (!rel || rel->import || !rel->symbol) {
 		return;
 	}
 	RBinSymbol *target = rel->symbol;
-	if (!target->vaddr || target->vaddr == UT64_MAX || target->vaddr == entry) {
+	if (!target->vaddr || target->vaddr == UT64_MAX) {
+		return;
+	}
+	const ut64 taddr = target->paddr == UT64_MAX? target->vaddr
+		: r_bin_get_vaddr (core->bin, target->paddr, target->vaddr);
+	if (taddr == entry) {
 		return;
 	}
 	// STT_GNU_IFUNC is the only type r2 maps to LOOS

@@ -6055,7 +6055,12 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 			if (rels) {
 				RBinReloc *rel;
 				R_VEC_FOREACH (rels, rel) {
-					append_item (list, NULL, va? rel->vaddr: rel->paddr, UT64_MAX);
+					ut64 at = rel->paddr;
+					if (va) {
+						at = rel->paddr == UT64_MAX? rel->vaddr
+							: r_bin_get_vaddr (core->bin, rel->paddr, rel->vaddr);
+					}
+					append_item (list, NULL, at, UT64_MAX);
 				}
 			}
 		}
