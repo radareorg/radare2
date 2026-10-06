@@ -12,7 +12,11 @@ typedef struct dwarf_parse_context_t {
 	Sdb *sdb;
 	HtUP/*<ut64 offset, DwarfDie *die>*/ *die_map;
 	HtUP/*<offset, RBinDwarfLocList*>*/  *locations;
-	HtUP/*<offset, RBinDwarfLocList*>*/  *loclists;
+	RBinDwarfLocLists *loclists; // .debug_loclists, read on demand
+	RBinDwarfLocListForeach loclist_foreach;
+	const RBinDwarfCompUnit *unit;
+	ut64 scope_lo; // the function a location list is picked for
+	ut64 scope_hi;
 	const char *lang; // for demangling
 	RArena *arena;
 } Context;
@@ -1279,19 +1283,66 @@ static const char *get_dwarf_reg_name(const char *arch, int reg_num, VariableLoc
 	return "unsupported_reg";
 }
 
-static RBinDwarfLocRange *find_largest_loc_range(RList *loc_list) {
-	RBinDwarfLocRange *largest = NULL;
-	ut64 max_range_size = 0;
-	RListIter *iter;
-	RBinDwarfLocRange *range;
-	r_list_foreach (loc_list, iter, range) {
-		ut64 diff = range->end - range->start;
-		if (diff > max_range_size) {
-			max_range_size = diff ;
-			largest = range;
+typedef struct {
+	ut64 lo;
+	ut64 hi;
+	ut64 best_len;
+	RBinDwarfBlock best; // the expression data stays in the section bytes
+	RBinDwarfBlock dflt;
+	bool has_best;
+	bool has_dflt;
+} LocPick;
+
+// the range covering most of the scope wins, the first one on a tie
+static void pick_range(LocPick *pick, ut64 start, ut64 end, const RBinDwarfBlock *expr) {
+	const ut64 from = R_MAX (start, pick->lo);
+	const ut64 to = R_MIN (end, pick->hi);
+	if (to > from && to - from > pick->best_len) {
+		pick->best_len = to - from;
+		pick->best = *expr;
+		pick->has_best = true;
+	}
+}
+
+static bool pick_loclist_entry(void *user, ut64 start, ut64 end, const RBinDwarfBlock *expr, bool is_default) {
+	LocPick *pick = user;
+	if (is_default) {
+		pick->dflt = *expr;
+		pick->has_dflt = true;
+	} else {
+		pick_range (pick, start, end, expr);
+	}
+	return true;
+}
+
+// the location a list gives the scope; the default one only where no range does
+static bool pick_location(Context *ctx, const RBinDwarfAttrValue *loc, RBinDwarfBlock *block) {
+	LocPick pick = { .lo = ctx->scope_lo, .hi = ctx->scope_hi };
+	if (loc->kind == DW_AT_KIND_LOCLISTPTR) {
+		if (!ctx->loclist_foreach
+			|| !ctx->loclist_foreach (ctx->loclists, ctx->unit, loc->reference, pick_loclist_entry, &pick)) {
+			return false;
+		}
+	} else {
+		RBinDwarfLocList *list = ctx->locations? ht_up_find (ctx->locations, loc->reference, NULL): NULL;
+		if (!list) {
+			return false;
+		}
+		// .debug_loc ranges are read without their unit base, so the scope
+		// cannot bound them: the longest well-formed one wins, as before
+		pick.lo = 0;
+		pick.hi = UT64_MAX;
+		RListIter *iter;
+		RBinDwarfLocRange *range;
+		r_list_foreach (list->list, iter, range) {
+			pick_range (&pick, range->start, range->end, range->expression);
 		}
 	}
-	return largest;
+	if (!pick.has_best && !pick.has_dflt) {
+		return false;
+	}
+	*block = pick.has_best? pick.best: pick.dflt;
+	return true;
 }
 
 /* TODO move a lot of the parsing here into dwarf.c and do only processing here */
@@ -1308,23 +1359,10 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 		return NULL;
 	}
 	RBinDwarfBlock block;
-	if (loc->kind == DW_AT_KIND_LOCLISTPTR || loc->kind == DW_AT_KIND_REFERENCE || loc->kind == DW_AT_KIND_CONSTANT) {
-		// a DWARF 5 list lives in .debug_loclists, a separate offset space
-		HtUP *table = loc->kind == DW_AT_KIND_LOCLISTPTR? ctx->loclists: ctx->locations;
-		RBinDwarfLocList *range_list = table? ht_up_find (table, loc->reference, NULL): NULL;
-		if (!range_list) { /* for some reason offset isn't there, wrong parsing or malformed dwarf */
-			return NULL;
-		}
-		/* use the largest range as a variable */
-		RBinDwarfLocRange *range = find_largest_loc_range (range_list->list);
-		if (!range) {
-			return NULL;
-		}
-		/* Very rough and sloppy, refactor this hacked up stuff */
-		block = *range->expression;
-		// range->expression... etc
-	} else {
+	if (loc->kind == DW_AT_KIND_BLOCK) {
 		block = loc->block;
+	} else if (!pick_location (ctx, loc, &block)) {
+		return NULL;
 	}
 	VariableLocationKind kind = LOCATION_UNKNOWN;
 	st64 offset = 0;
@@ -1345,10 +1383,7 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 			}
 			i++;
 			const ut8 *dump = block.data + i;
-			if (loc->block.length > block.length) {
-				return NULL;
-			}
-			offset = r_sleb128 (&dump, block.data + loc->block.length);
+			offset = r_sleb128 (&dump, block.data + block.length);
 			if (frame_base) {
 				/* recursive parsing, but frame_base should be only one, but someone
 				   could make malicious resource exhaustion attack, so a depth counter might be cool? */
@@ -2004,6 +2039,8 @@ static void parse_function(Context *ctx, ut64 idx) {
 	bool get_linkage_name = prefer_linkage_name (ctx->lang);
 	bool has_ranges = false;
 	bool has_ret_type = false;
+	ut64 high_pc = 0;
+	ut64 high_pc_delta = 0;
 	size_t address_count = 0;
 	RStrBuf ret_type;
 	r_strbuf_init (&ret_type);
@@ -2086,6 +2123,12 @@ static void parse_function(Context *ctx, ut64 idx) {
 			has_ranges = true;
 			break;
 		case DW_AT_high_pc:
+			if (val->kind == DW_AT_KIND_ADDRESS) {
+				high_pc = val->address;
+			} else if (val->kind == DW_AT_KIND_CONSTANT) {
+				high_pc_delta = val->uconstant;
+			}
+			break;
 		default:
 			break;
 		}
@@ -2100,7 +2143,14 @@ static void parse_function(Context *ctx, ut64 idx) {
 	/* TODO do the same for arguments in future so we can use their location */
 	RList/*<Variable*>*/  *variables = r_list_new ();
 	bool has_unspecified_parameters = false;
+	if (high_pc_delta && r_add_overflow (fcn.addr, high_pc_delta, &high_pc)) {
+		high_pc = 0;
+	}
+	ctx->scope_lo = fcn.addr;
+	ctx->scope_hi = high_pc? high_pc: UT64_MAX;
 	bool formals_complete = parse_function_args_and_vars (ctx, idx, &args, variables, &has_unspecified_parameters);
+	ctx->scope_lo = 0;
+	ctx->scope_hi = UT64_MAX;
 	fcn.prototype_complete = address_count == 1 && !has_ranges && formals_complete;
 
 	if (ret_type.len == 0) { /* DW_AT_type is omitted in case of `void` ret type */
@@ -2259,6 +2309,9 @@ R_API void r_anal_dwarf_process_info(const RAnal *anal, RAnalDwarfContext *ctx) 
 			.sdb = dwarf_sdb,
 			.locations = ctx->loc,
 			.loclists = ctx->loclists,
+			.loclist_foreach = ctx->loclist_foreach,
+			.unit = unit,
+			.scope_hi = UT64_MAX,
 			.lang = NULL,
 			.arena = arena
 		};

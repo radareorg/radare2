@@ -923,7 +923,12 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinFile *bf, RVecDwarfAbbrevDe
 R_API HtUP/*<offset, RBinDwarfLocList*>*/  *r_bin_dwarf_parse_loc(RBinFile *bf, int addr_size);
 R_API R_OWNED char *r_bin_dwarf_print_loc(HtUP /*<offset, RBinDwarfLocList*>*/  *loc_table, int addr_size);
 R_API R_OWNED char *r_bin_dwarf_print_loc_stream(RBinFile *bf, int addr_size);
-R_API HtUP/*<offset, RBinDwarfLocList*>*/  *r_bin_dwarf_parse_loclists(RBinFile *bf, const RBinDwarfDebugInfo *info);
+typedef struct r_bin_dwarf_loclists_t RBinDwarfLocLists;
+typedef bool (*RBinDwarfLocEntryCb)(void *user, ut64 start, ut64 end, const RBinDwarfBlock *expr, bool is_default);
+typedef bool (*RBinDwarfLocListForeach)(RBinDwarfLocLists *lists, const RBinDwarfCompUnit *unit, ut64 offset, RBinDwarfLocEntryCb cb, void *user);
+R_API RBinDwarfLocLists *r_bin_dwarf_loclists_new(RBinFile *bf);
+R_API bool r_bin_dwarf_loclists_foreach(RBinDwarfLocLists *lists, const RBinDwarfCompUnit *unit, ut64 offset, RBinDwarfLocEntryCb cb, void *user);
+R_API void r_bin_dwarf_loclists_free(RBinDwarfLocLists *lists);
 R_API R_OWNED char *r_bin_dwarf_print_loclists_stream(RBinFile *bf);
 R_API void r_bin_dwarf_free_loc(HtUP /*<offset, RBinDwarfLocList*>*/  *loc_table);
 R_API void r_bin_dwarf_free_debug_info(RBinDwarfDebugInfo *inf);
