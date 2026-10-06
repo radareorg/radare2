@@ -1308,6 +1308,87 @@ static bool op_is_ppc_toc_save(RAnal *anal, RAnalOp *op) {
 	return toc && toc->reg && !strcmp (toc->reg, "r2");
 }
 
+static void extract_arg_at(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type, st64 ptr, int access_size, bool exact);
+
+// the slots one operand side touches through reg; a paired access has two
+static int stack_slots(RAnal *anal, RVecRArchValue *values, const char *reg, const char *sign, st64 *ptrs, int *sizes) {
+	int n = 0;
+	RAnalValue *val;
+	R_VEC_FOREACH (values, val) {
+		if (n < 2 && extract_arg_from_value (anal, val, reg, sign, &ptrs[n], &sizes[n]) && (!n || ptrs[n] != ptrs[0])) {
+			n++;
+		}
+	}
+	return n;
+}
+
+static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
+	st64 ptrs[2] = {0};
+	int sizes[2] = {0};
+	RAnalValue *val;
+
+	R_RETURN_IF_FAIL (anal && fcn && op && reg);
+
+	if (!fcn->bp_from_sp) {
+		// the prologue copies SP into BP before any use of it, so seeing it here settles the question
+		const char *spreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
+		if (spreg && op_is_stack_frame_setup (anal, op, spreg)) {
+			fcn->bp_from_sp = true;
+		}
+	}
+
+	if (op_is_ppc_toc_save (anal, op)) {
+		return;
+	}
+
+	int slots = stack_slots (anal, &op->srcs, reg, sign, ptrs, sizes);
+	if (!slots) {
+		slots = stack_slots (anal, &op->dsts, reg, sign, ptrs, sizes);
+	}
+	bool have_ptr = slots > 0;
+	st64 ptr = ptrs[0];
+	int access_size = sizes[0];
+
+	if (!have_ptr && extract_arg_from_immop (anal, fcn, op, reg, sign, &ptr)) {
+		have_ptr = true;
+		// `add fp, sp, #N` is a frame pointer setup, so it gets no var for the saved-LR/FP slot
+		if (op_is_stack_frame_setup (anal, op, reg)) {
+			return;
+		}
+	}
+	if (!have_ptr) {
+		val = RVecRArchValue_at (&op->dsts, 0);
+		if (op_dst_is_stack_reg (anal, op)) {
+			if (!op->stackop && val) {
+				R_LOG_DEBUG ("Analysis didn't fill op->stackop for instruction that alters stack at 0x%" PFMT64x, op->addr);
+			}
+			return;
+		}
+		if (((op->stackop == R_ANAL_STACK_SET) || (op->stackop == R_ANAL_STACK_GET))
+				&& ((op->reg && !strcmp (op->reg, reg)) || (op->ireg && !strcmp (op->ireg, reg)))) {
+			if (op->ptr % 4) {
+				return;
+			}
+			ptr = R_ABS (op->ptr);
+			access_size = op->refptr > 0 ? op->refptr : 0;
+			have_ptr = true;
+		} else {
+			return;
+		}
+	}
+
+	if (!RVecRArchValue_at (&op->srcs, 0) || !RVecRArchValue_at (&op->dsts, 0)) {
+		R_LOG_DEBUG ("Analysis didn't fill op->src/dst at 0x%" PFMT64x, op->addr);
+	}
+	if (op->stackop == R_ANAL_STACK_INC && !strcmp (anal->config->arch, "arm")) {
+		return;
+	}
+	extract_arg_at (anal, fcn, op, reg, sign, type, ptr, access_size, slots > 1);
+	if (slots > 1) {
+		extract_arg_at (anal, fcn, op, reg, sign, type, ptrs[1], sizes[1], true);
+	}
+}
+
 static void extract_arg_at(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type, st64 ptr, int access_size, bool exact) {
 	int rw = (op->direction == R_ANAL_OP_DIR_WRITE) ? R_PERM_W : R_PERM_R;
 	const bool addr_taken = op->direction == R_ANAL_OP_DIR_REF;
@@ -1414,89 +1495,6 @@ static void extract_arg_at(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const c
 	}
 	free (vartype);
 }
-
-static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
-	st64 ptr = 0;
-	RAnalValue *val;
-	int access_size = 0;
-	bool have_ptr = false;
-
-	R_RETURN_IF_FAIL (anal && fcn && op && reg);
-
-	if (!fcn->bp_from_sp) {
-		// the prologue copies SP into BP before any use of it, so seeing it here settles the question
-		const char *spreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
-		if (spreg && op_is_stack_frame_setup (anal, op, spreg)) {
-			fcn->bp_from_sp = true;
-		}
-	}
-
-	if (op_is_ppc_toc_save (anal, op)) {
-		return;
-	}
-
-	R_VEC_FOREACH (&op->srcs, val) {
-		if (extract_arg_from_value (anal, val, reg, sign, &ptr, &access_size)) {
-			have_ptr = true;
-			break;
-		}
-	}
-	if (!have_ptr) {
-		R_VEC_FOREACH (&op->dsts, val) {
-			if (extract_arg_from_value (anal, val, reg, sign, &ptr, &access_size)) {
-				have_ptr = true;
-				break;
-			}
-		}
-	}
-
-	if (!have_ptr && extract_arg_from_immop (anal, fcn, op, reg, sign, &ptr)) {
-		have_ptr = true;
-		// `add fp, sp, #N` is a frame pointer setup, so it gets no var for the saved-LR/FP slot
-		if (op_is_stack_frame_setup (anal, op, reg)) {
-			return;
-		}
-	}
-	if (!have_ptr) {
-		val = RVecRArchValue_at (&op->dsts, 0);
-		if (op_dst_is_stack_reg (anal, op)) {
-			if (!op->stackop && val) {
-				R_LOG_DEBUG ("Analysis didn't fill op->stackop for instruction that alters stack at 0x%" PFMT64x, op->addr);
-			}
-			return;
-		}
-		if (((op->stackop == R_ANAL_STACK_SET) || (op->stackop == R_ANAL_STACK_GET))
-				&& ((op->reg && !strcmp (op->reg, reg)) || (op->ireg && !strcmp (op->ireg, reg)))) {
-			if (op->ptr % 4) {
-				return;
-			}
-			ptr = R_ABS (op->ptr);
-			access_size = op->refptr > 0 ? op->refptr : 0;
-			have_ptr = true;
-		} else {
-			return;
-		}
-	}
-
-	if (!RVecRArchValue_at (&op->srcs, 0) || !RVecRArchValue_at (&op->dsts, 0)) {
-		R_LOG_DEBUG ("Analysis didn't fill op->src/dst at 0x%" PFMT64x, op->addr);
-	}
-	if (op->stackop == R_ANAL_STACK_INC && !strcmp (anal->config->arch, "arm")) {
-		return;
-	}
-	const bool pair = RVecRArchValue_length (&op->dsts) > 1;
-	extract_arg_at (anal, fcn, op, reg, sign, type, ptr, access_size, pair);
-	if (!pair) {
-		return;
-	}
-	const st64 first = ptr;
-	R_VEC_FOREACH (&op->dsts, val) {
-		if (val->memref && extract_arg_from_value (anal, val, reg, sign, &ptr, &access_size) && ptr != first) {
-			extract_arg_at (anal, fcn, op, reg, sign, type, ptr, access_size, true);
-		}
-	}
-}
-
 
 // get_regname walks the register table, and the sources of one instruction do
 // not change between argument slots, so the caller resolves them once.

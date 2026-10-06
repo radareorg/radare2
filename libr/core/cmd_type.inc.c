@@ -2150,6 +2150,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 				if (src && src->reg) {
 					src_addr = r_reg_getv (reg, src->reg) + index;
 					src_imm = src->delta;
+					break;
 				}
 			}
 			RAnalValue *dst = RVecRArchValue_at (&aop.dsts, 0);
