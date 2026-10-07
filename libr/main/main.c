@@ -3,8 +3,208 @@
 #include <r_main.h>
 #include <r_userconf.h>
 #include <r_lib.h>
+#include "main_private.h"
 
 R_LIB_VERSION(r_main);
+
+R_IPI RCons *r_main_cons(void) {
+	RCons *cons = r_cons_global (NULL);
+	if (!cons) {
+		return NULL;
+	}
+	char *value = r_sys_getenv ("R2CONS");
+	const bool explicit_cons = value != NULL;
+	if (!explicit_cons) {
+		value = r_sys_getenv ("R2CORE");
+	}
+	void *ptr = NULL;
+	int pid = -1;
+	char tail;
+	const bool tagged = explicit_cons && value && sscanf (value, "%p:%d%c", &ptr, &pid, &tail) == 2;
+	const bool valid = tagged || (value && sscanf (value, "%p%c", &ptr, &tail) == 1);
+	free (value);
+	if (!valid || !ptr) {
+		return NULL;
+	}
+	// A tagged pointer also supports unattached child consoles on builds without native TLS.
+	if (tagged) {
+		return pid == r_sys_getpid ()? ptr: NULL;
+	}
+	return ptr == (explicit_cons? (void *)cons: cons->user)? cons: NULL;
+}
+
+R_IPI RCons *r_main_cons_new(void) {
+	RCons *cons = r_main_cons ();
+	return cons? cons: r_cons_new ();
+}
+
+R_IPI void r_main_cons_free(RCons *cons) {
+	if (cons && cons != r_main_cons ()) {
+		r_cons_free (cons);
+	}
+}
+
+R_IPI void r_main_cons_flush(RCons *cons) {
+	RCons *parent = r_main_cons ();
+	if (parent) {
+		if (cons != parent) {
+			r_cons_merge_output (parent, cons);
+		}
+	} else {
+		r_cons_flush (cons);
+	}
+}
+
+R_IPI int r_main_printf(RCons *cons, const char *format, ...) {
+	va_list ap;
+	va_start (ap, format);
+	int ret = 0;
+	if (cons) {
+		r_cons_printf_list (cons, format, ap);
+	} else {
+		ret = vprintf (format, ap);
+	}
+	va_end (ap);
+	return ret;
+}
+
+R_IPI st64 r_main_write(RCons *cons, const void *buf, size_t len) {
+	if (cons) {
+		return !len || r_cons_write (cons, buf, len)? len: -1;
+	}
+	return write (1, buf, len);
+}
+
+R_IPI int r_main_gprintf(const char *format, ...) {
+	RCons *cons = r_main_cons ();
+	if (!cons) {
+		cons = r_cons_global (NULL);
+	}
+	va_list ap;
+	va_start (ap, format);
+	r_cons_printf_list (cons, format, ap);
+	va_end (ap);
+	return 0;
+}
+
+R_IPI RPrint *r_main_print_new(void) {
+	RPrint *print = r_print_new ();
+	RCons *cons = r_main_cons ();
+	if (cons) {
+		r_cons_bind (cons, &print->consb);
+	}
+	return print;
+}
+
+R_IPI bool r_main_core_init(RCore *core) {
+	RCons *parent = r_main_cons ();
+	if (!parent) {
+		return r_core_init (core);
+	}
+	core->cons = r_cons_new_child (parent);
+	if (!core->cons) {
+		return false;
+	}
+	char *core_env = r_sys_getenv ("R2CORE");
+	const bool initialized = r_core_init (core);
+	r_sys_setenv ("R2CORE", core_env);
+	free (core_env);
+	return initialized;
+}
+
+R_IPI RCore *r_main_core_new(void) {
+	RCore *core = R_NEW0 (RCore);
+	if (!r_main_core_init (core)) {
+		free (core);
+		return NULL;
+	}
+	return core;
+}
+
+R_IPI void r_main_core_fini(RCore *core) {
+	RCons *parent = r_main_cons ();
+	if (parent && core->cons != parent) {
+		r_cons_merge_output (parent, core->cons);
+	}
+	r_core_fini (core);
+}
+
+R_IPI void r_main_core_free(RCore *core) {
+	if (core) {
+		r_main_core_fini (core);
+		free (core);
+	}
+}
+
+static int main_invoke(RMainCallback callback, int argc, const char **argv) {
+	RCons *previous_cons = r_cons_global (NULL);
+	RCons *cons = r_main_cons ();
+	char *previous_env = r_sys_getenv ("R2CONS");
+	char *previous_core = r_sys_getenv ("R2CORE");
+	bool noflush = false;
+#if !__wasi__
+	int stdout_fd = -1;
+#endif
+	if (cons) {
+#if !__wasi__
+		fflush (stdout);
+		stdout_fd = dup (1);
+		if (stdout_fd == -1) {
+			free (previous_env);
+			free (previous_core);
+			return 1;
+		}
+#endif
+		r_strf_var (cons_ptr, 64, "%p:%d", cons, r_sys_getpid ());
+		r_sys_setenv ("R2CONS", cons_ptr);
+		noflush = cons->context->noflush;
+		cons->context->noflush = true;
+	} else {
+		// Do not borrow a console subsequently created by the standalone tool itself.
+		r_sys_setenv ("R2CONS", "");
+	}
+	int ret = callback (argc, argv);
+#if !__wasi__
+	if (stdout_fd != -1) {
+		fflush (stdout);
+		dup2 (stdout_fd, 1);
+		close (stdout_fd);
+	}
+#endif
+	if (cons) {
+		cons->context->noflush = noflush;
+		r_cons_global (previous_cons);
+	}
+	r_sys_setenv ("R2CONS", previous_env);
+	r_sys_setenv ("R2CORE", previous_core);
+	free (previous_env);
+	free (previous_core);
+	return ret;
+}
+
+#define MAIN_WRAPPER(name) \
+	R_IPI int r_main_##name##_impl(int argc, const char **argv); \
+	R_API int r_main_##name(int argc, const char **argv) { \
+		return main_invoke (r_main_##name##_impl, argc, argv); \
+	}
+
+MAIN_WRAPPER (r2pm)
+MAIN_WRAPPER (rax2)
+MAIN_WRAPPER (radiff2)
+MAIN_WRAPPER (rafind2)
+MAIN_WRAPPER (ravc2)
+MAIN_WRAPPER (rarun2)
+MAIN_WRAPPER (rafs2)
+MAIN_WRAPPER (rasm2)
+MAIN_WRAPPER (ragg2)
+MAIN_WRAPPER (rapatch2)
+MAIN_WRAPPER (rahash2)
+MAIN_WRAPPER (rabin2)
+MAIN_WRAPPER (radare2)
+MAIN_WRAPPER (r2agent)
+MAIN_WRAPPER (rasign2)
+
+#undef MAIN_WRAPPER
 
 static const RMain foo[] = {
 	{ "r2pm", r_main_r2pm },
@@ -49,6 +249,7 @@ R_API int r_main_run(RMain *m, int argc, const char **argv) {
 }
 
 R_API int r_main_version_print(const char *progname, int mode) {
+	RCons *main_cons = r_main_cons ();
 	PJ *pj;
 	switch (mode) {
 	case 'j':
@@ -70,18 +271,18 @@ R_API int r_main_version_print(const char *progname, int mode) {
 		pj_end (pj);
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		printf ("%s\n", s);
+		r_main_printf (main_cons, "%s\n", s);
 		free (s);
 		break;
 	case 'q':
-		printf ("%s\n", R2_VERSION);
+		r_main_printf (main_cons, "%s\n", R2_VERSION);
 		// mainr2_fini (&mr);
 		break;
 	default:
 		{
 			char *s = r_str_version (progname);
 			if (s) {
-				printf ("%s\n", s);
+				r_main_printf (main_cons, "%s\n", s);
 				free (s);
 			}
 		}

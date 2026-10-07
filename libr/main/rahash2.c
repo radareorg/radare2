@@ -4,6 +4,7 @@
 
 #include <r_io.h>
 #include <r_main.h>
+#include "main_private.h"
 #include <r_util/r_print.h>
 #include <r_muta.h>
 
@@ -85,6 +86,7 @@ static void do_hash_seed(RahashOptions *ro, const char *seed) {
 }
 
 static void do_hash_hexprint(const ut8 *c, int len, int ule, PJ *pj, int rad) {
+	RCons *main_cons = r_main_cons ();
 	int i;
 	char *buf = malloc (len * 2 + 1);
 	if (!buf) {
@@ -104,12 +106,13 @@ static void do_hash_hexprint(const ut8 *c, int len, int ule, PJ *pj, int rad) {
 	} else if (rad == 'J') {
 		pj_s (pj, buf);
 	} else {
-		printf ("%s%s", buf, rad == 'n'? "": "\n");
+		r_main_printf (main_cons, "%s%s", buf, rad == 'n'? "": "\n");
 	}
 	free (buf);
 }
 
 static void do_hash_print(RHash *ctx, RahashOptions *ro, ut64 hash, int dlen, PJ *pj, int rad) {
+	RCons *main_cons = r_main_cons ();
 	int ule = ro->endian;
 	char *o;
 	const ut8 *c = ctx->digest;
@@ -117,29 +120,29 @@ static void do_hash_print(RHash *ctx, RahashOptions *ro, ut64 hash, int dlen, PJ
 	switch (rad) {
 	case 0:
 		if (!ro->quiet) {
-			printf ("0x%08" PFMT64x "-0x%08" PFMT64x " %s: ",
+			r_main_printf (main_cons, "0x%08" PFMT64x "-0x%08" PFMT64x " %s: ",
 				ro->from,
 				ro->to > 0? ro->to - 1: 0,
 				hname);
 		}
 		if (hash & R_HASH_SSDEEP) {
-			printf ("%s\n", ctx->digest);
+			r_main_printf (main_cons, "%s\n", ctx->digest);
 		} else if (dlen == R_HASH_SIZE_ENTROPY) {
-			printf ("%.8f\n", ctx->entropy);
+			r_main_printf (main_cons, "%.8f\n", ctx->entropy);
 		} else {
 			do_hash_hexprint (c, dlen, ule, pj, rad);
 		}
 		break;
 	case 1:
-		printf ("CC file %s:", hname);
+		r_main_printf (main_cons, "CC file %s:", hname);
 		do_hash_hexprint (c, dlen, ule, pj, rad);
 		break;
 	case 3:
-		printf ("k file.%s=", hname);
+		r_main_printf (main_cons, "k file.%s=", hname);
 		if (hash & R_HASH_SSDEEP) {
-			printf ("%s\n", ctx->digest);
+			r_main_printf (main_cons, "%s\n", ctx->digest);
 		} else if (dlen == R_HASH_SIZE_ENTROPY) {
-			printf ("%.8f\n", ctx->entropy);
+			r_main_printf (main_cons, "%.8f\n", ctx->entropy);
 		} else {
 			do_hash_hexprint (c, dlen, ule, pj, 0);
 		}
@@ -149,7 +152,7 @@ static void do_hash_print(RHash *ctx, RahashOptions *ro, ut64 hash, int dlen, PJ
 			// print nothing
 		} else {
 			if (hash & R_HASH_SSDEEP) {
-				printf ("%s", ctx->digest);
+				r_main_printf (main_cons, "%s", ctx->digest);
 			} else {
 				do_hash_hexprint (c, dlen, ule, pj, rad);
 			}
@@ -175,7 +178,7 @@ static void do_hash_print(RHash *ctx, RahashOptions *ro, ut64 hash, int dlen, PJ
 	case 'q':
 	default:
 		o = r_print_randomart (c, dlen, ro->from);
-		printf ("%s\n%s\n", hname, o);
+		r_main_printf (main_cons, "%s\n%s\n", hname, o);
 		free (o);
 		break;
 	}
@@ -197,6 +200,7 @@ static int do_hash_internal(RHash *ctx, RahashOptions *ro, ut64 hash, const ut8 
 }
 
 static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *io, int bsize, int rad, int ule, const ut8 *compare) {
+	RCons *main_cons = r_main_cons ();
 	ut64 j, algobit = r_hash_name_to_bits (algo);
 	ut8 *buf;
 	int ret = 0;
@@ -270,13 +274,13 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 					continue;
 				}
 				if (!ro->quiet && rad != 'j') {
-					printf ("%s: ", file);
+					r_main_printf (main_cons, "%s: ", file);
 				}
 				do_hash_print (ctx, ro, i, dlen, pj, ro->quiet? 'n': rad);
 				if (ro->quiet == 1) {
-					printf (" %s\n", file);
+					r_main_printf (main_cons, " %s\n", file);
 				} else if (ro->quiet > 0 && ro->quiet < 3 && !rad) {
-					printf ("\n");
+					r_main_printf (main_cons, "\n");
 				}
 			}
 		}
@@ -315,7 +319,7 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 	}
 	if (rad == 'j') {
 		pj_end (pj);
-		printf ("%s\n", pj_string (pj));
+		r_main_printf (main_cons, "%s\n", pj_string (pj));
 		pj_free (pj);
 	}
 
@@ -330,11 +334,12 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 }
 
 static int do_help(int line) {
-	printf ("Usage: rahash2 [-BehjkLqRrvX] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...\n");
+	RCons *main_cons = r_main_cons ();
+	r_main_printf (main_cons, "Usage: rahash2 [-BehjkLqRrvX] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...\n");
 	if (line) {
 		return 0;
 	}
-	printf (
+	r_main_printf (main_cons,
 		" -a algo     comma separated list of algorithms (default is 'sha256')\n"
 		" -b bsize    specify the size of the block (instead of full file)\n"
 		" -B          show per-block hash\n"
@@ -363,9 +368,10 @@ static int do_help(int line) {
 }
 
 static void algolist(int mode) {
+	RCons *main_cons = r_main_cons ();
 	RMuta *cry = r_muta_new ();
 	char *s = r_muta_list (cry, (int)R_MUTA_TYPE_ALL, mode);
-	printf ("%s", s);
+	r_main_printf (main_cons, "%s", s);
 	free (s);
 	r_muta_free (cry);
 }
@@ -385,6 +391,7 @@ static bool is_power_of_two(const ut64 x) {
 }
 
 static void print_result(RahashOptions *ro, const ut8 *result, int result_size) {
+	RCons *main_cons = r_main_cons ();
 	int i;
 	switch (ro->mode) {
 	case 'j':
@@ -400,18 +407,18 @@ static void print_result(RahashOptions *ro, const ut8 *result, int result_size) 
 			pj_end (pj);
 			pj_end (pj);
 			char *s = pj_drain (pj);
-			printf ("%s\n", s);
+			r_main_printf (main_cons, "%s\n", s);
 			free (s);
 		}
 		break;
 	case 'x':
 		for (i = 0; i < result_size; i++) {
-			printf ("%02x", result[i]);
+			r_main_printf (main_cons, "%02x", result[i]);
 		}
-		printf ("\n");
+		r_main_printf (main_cons, "\n");
 		break;
 	default:
-		if (write (1, result, result_size) != result_size) {
+		if (r_main_write (main_cons, result, result_size) != result_size) {
 			R_LOG_WARN ("cannot write result");
 		}
 		break;
@@ -541,7 +548,8 @@ static bool check_base_flags(RahashOptions *ro) {
 	return false;
 }
 
-R_API int r_main_rahash2(int argc, const char **argv) {
+R_IPI int r_main_rahash2_impl(int argc, const char **argv) {
+	RCons *main_cons = r_main_cons ();
 	ut64 i;
 	int c, rad = 0, bsize = 0, numblocks = 0, ule = 0;
 	const char *file = NULL;
@@ -698,7 +706,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		// TODO: support -f and -t
 		char *eptype = r_str_escape_sh (ptype);
 		for (i = opt.ind; i < argc; i++) {
-			printf ("%s:\n", argv[i]);
+			r_main_printf (main_cons, "%s:\n", argv[i]);
 			char *eargv = r_str_escape_sh (argv[i]);
 			if (eptype && eargv) {
 				r_sys_cmdf ("r2 -qfnc \"p==%s 100\" \"%s\"", eptype, eargv);
@@ -833,7 +841,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			}
 			if (rad == 'j' || rad == 'J') {
 				pj_end (pj);
-				printf ("%s\n", pj_string (pj));
+				r_main_printf (main_cons, "%s\n", pj_string (pj));
 				pj_free (pj);
 			}
 			if (str != nhashstr) {

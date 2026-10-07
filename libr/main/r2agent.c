@@ -2,6 +2,7 @@
 
 #include "index.h"
 #include <r_main.h>
+#include "main_private.h"
 #include <r_core.h>
 
 #if __APPLE__ && (__arm__ || __arm64__ || __aarch64__)
@@ -15,7 +16,8 @@ extern int memorystatus_control(uint32_t command, pid_t pid, uint32_t flags, voi
 #endif
 
 static int usage(bool v) {
-	printf ("Usage: r2agent [-adhsLjv] [-p port]\n"
+	RCons *main_cons = r_main_cons ();
+	r_main_printf (main_cons, "Usage: r2agent [-adhsLjv] [-p port]\n"
 	"  -a        listen for everyone (localhost by default)\n"
 	"  -d        run in daemon mode (background)\n"
 	"  -h        show this help message\n"
@@ -46,7 +48,8 @@ static RList *auth_tokens_split(char *str) {
 	return tokens;
 }
 
-R_API int r_main_r2agent(int argc, const char **argv) {
+R_IPI int r_main_r2agent_impl(int argc, const char **argv) {
+	RCons *main_cons = r_main_cons ();
 	RSocket *s;
 	RCons *cons = NULL;
 	RSocketHTTPOptions so = { 0 };
@@ -110,7 +113,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 	}
 
 	if (list_sessions) {
-		RCore *core = r_core_new ();
+		RCore *core = r_main_core_new ();
 		if (!core) {
 			R_LOG_ERROR ("Unable to create RCore instance");
 			return 1;
@@ -118,10 +121,10 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 		const char *cmd = list_json? "=lj": "=l";
 		char *out = r_core_cmd_str (core, cmd);
 		if (out) {
-			printf ("%s\n", out);
+			r_main_printf (main_cons, "%s\n", out);
 			free (out);
 		}
-		r_core_free (core);
+		r_main_core_free (core);
 		return 0;
 	}
 
@@ -155,7 +158,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 #if LIBC_HAVE_FORK
 		int pid = r_sys_fork ();
 		if (pid > 0) {
-			printf ("%d\n", pid);
+			r_main_printf (main_cons, "%d\n", pid);
 			return 0;
 		}
 #endif
@@ -183,7 +186,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 		goto cleanup;
 	}
 
-	cons = r_cons_new ();
+	cons = r_main_cons_new ();
 
 	while (!r_cons_is_breaked (cons)) {
 		char *res = NULL;
@@ -253,7 +256,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 	}
 
 cleanup:
-	r_cons_free (cons);
+	r_main_cons_free (cons);
 	free (pfile);
 	r_list_free (so.authtokens);
 	r_socket_free (s);

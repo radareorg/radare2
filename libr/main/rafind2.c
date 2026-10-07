@@ -4,6 +4,7 @@
 
 #include <ctype.h>
 #include <r_main.h>
+#include "main_private.h"
 #include <r_bin.h>
 #include <r_search.h>
 #include <r_util/r_print.h>
@@ -64,7 +65,7 @@ static void rafind_options_fini(RafindOptions *ro) {
 			r_bin_free (ro->bin);
 			ro->bin = NULL;
 		}
-		r_cons_free (ro->cons);
+		r_main_cons_free (ro->cons);
 	}
 }
 
@@ -77,7 +78,7 @@ static void rafind_options_init(RafindOptions *ro) {
 	ro->keywords = r_list_newf (NULL);
 	ro->hits = r_list_newf (free);
 	ro->pj = NULL;
-	ro->cons = r_cons_new ();
+	ro->cons = r_main_cons_new ();
 }
 
 static int rafind_open(RafindOptions *ro, const char *file);
@@ -232,6 +233,7 @@ static bool rafind_replace_at(RafindOptions *ro, ut64 addr, ut32 match_len) {
 	return true;
 }
 static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
+	RCons *main_cons = r_main_cons ();
 	RafindOptions *ro = (RafindOptions *)user;
 	ut8 *buf = ro->buf;
 	int delta = addr - ro->cur;
@@ -316,19 +318,19 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		pj_ks (ro->pj, "data", str);
 		pj_end (ro->pj);
 	} else if (ro->rad) {
-		printf ("f hit%d_%d = 0x%08" PFMT64x " # %s\n", 0, kw->count, addr, ro->curfile);
+		r_main_printf (main_cons, "f hit%d_%d = 0x%08" PFMT64x " # %s\n", 0, kw->count, addr, ro->curfile);
 	} else {
 		if (!ro->quiet) {
-			printf ("%s: ", ro->curfile);
+			r_main_printf (main_cons, "%s: ", ro->curfile);
 		}
 		if (ro->showstr) {
-			printf ("0x%" PFMT64x " %s\n", addr, str);
+			r_main_printf (main_cons, "0x%" PFMT64x " %s\n", addr, str);
 		} else {
-			printf ("0x%" PFMT64x "\n", addr);
+			r_main_printf (main_cons, "0x%" PFMT64x "\n", addr);
 			if (ro->pr) {
 				int bs = R_MIN (ro->bsize, 64);
 				r_print_hexdump (ro->pr, addr, (ut8 *)buf + delta, bs, 16, 1, 1);
-				r_cons_flush (ro->cons);
+				r_main_cons_flush (ro->cons);
 			}
 		}
 	}
@@ -412,11 +414,12 @@ static bool rafind_parse_replace(RafindOptions *ro, const char *arg) {
 }
 
 static int show_help(const char *argv0, int line) {
-	printf ("Usage: %s [-mBXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|S] str] [-x hex] [-R str] [-I str] [-g] -|file|dir ..\n", argv0);
+	RCons *main_cons = r_main_cons ();
+	r_main_printf (main_cons, "Usage: %s [-mBXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|S] str] [-x hex] [-R str] [-I str] [-g] -|file|dir ..\n", argv0);
 	if (line) {
 		return 0;
 	}
-	printf (
+	r_main_printf (main_cons,
 		" -a [align] only accept aligned hits\n"
 		" -b [size]  set block size\n"
 		" -B         use big endian instead of the little one (See -V)\n"
@@ -649,7 +652,8 @@ static int rafind_open(RafindOptions *ro, const char *file) {
 		: rafind_open_file (ro, file, NULL, -1);
 }
 
-R_API int r_main_rafind2(int argc, const char **argv) {
+R_IPI int r_main_rafind2_impl(int argc, const char **argv) {
+	RCons *main_cons = r_main_cons ();
 	int c;
 	const char *file = NULL;
 
@@ -773,7 +777,7 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 			r_list_append (ro.keywords, (void *)opt.arg);
 			break;
 		case 'X':
-			ro.pr = r_print_new ();
+			ro.pr = r_main_print_new ();
 			break;
 		case 'q':
 			ro.quiet = true;
@@ -873,7 +877,7 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 			r_io_plugin_list (ro.io);
 		}
 #endif
-		r_cons_flush (ro.cons);
+		r_main_cons_flush (ro.cons);
 		rafind_options_fini (&ro);
 		return 0;
 	}
@@ -908,7 +912,7 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 	}
 	if (ro.pj) {
 		pj_end (ro.pj);
-		printf ("%s\n", pj_string (ro.pj));
+		r_main_printf (main_cons, "%s\n", pj_string (ro.pj));
 		pj_free (ro.pj);
 		ro.pj = NULL;
 	}

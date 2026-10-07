@@ -4,6 +4,7 @@
 
 #include <r_asm.h>
 #include <r_main.h>
+#include "main_private.h"
 
 typedef struct {
 	bool oneliner;
@@ -24,6 +25,7 @@ typedef struct {
 	RLib *l;
 	RAsm *a;
 	RAnal *anal;
+	RCons *cons;
 	RAsmOptions opt;
 } RAsmState;
 
@@ -57,6 +59,7 @@ static void rasm_set_archbits(RAsmState *as) {
 
 static RAsmState *rasm_new(void) {
 	RAsmState *as = R_NEW0 (RAsmState);
+	as->cons = r_main_cons ();
 	as->l = r_lib_new (NULL, NULL);
 	as->a = r_asm_new ();
 	as->anal = r_anal_new ();
@@ -101,6 +104,7 @@ static char *stackop2str(int type) {
 }
 
 static int showanal(RAsmState *as, RAnalOp *op, ut64 offset, ut8 *buf, int len, PJ *pj) {
+	RCons *main_cons = as->cons;
 	int ret = r_anal_op (as->anal, op, offset, buf, len, R_ARCH_OP_MASK_ESIL);
 	if (ret < 1) {
 		return ret;
@@ -130,25 +134,25 @@ static int showanal(RAsmState *as, RAnalOp *op, ut64 offset, ut8 *buf, int len, 
 		pj_kn (pj, "stackptr", op->stackptr);
 		pj_end (pj);
 	} else {
-		printf ("offset:   0x%08" PFMT64x "\n", offset);
-		printf ("bytes:    %s\n", bytes);
-		printf ("type:     %s\n", optype);
+		r_main_printf (main_cons, "offset:   0x%08" PFMT64x "\n", offset);
+		r_main_printf (main_cons, "bytes:    %s\n", bytes);
+		r_main_printf (main_cons, "type:     %s\n", optype);
 		if (op->jump != UT64_MAX) {
-			printf ("jump:     0x%08" PFMT64x "\n", op->jump);
+			r_main_printf (main_cons, "jump:     0x%08" PFMT64x "\n", op->jump);
 		}
 		if (op->fail != UT64_MAX) {
-			printf ("fail:     0x%08" PFMT64x "\n", op->fail);
+			r_main_printf (main_cons, "fail:     0x%08" PFMT64x "\n", op->fail);
 		}
 		// if (op->ref != -1LL)
-		//       printf ("ref:      0x%08"PFMT64x"\n", op->ref);
+		//       r_main_printf (main_cons, "ref:      0x%08"PFMT64x"\n", op->ref);
 		if (op->val != UT64_MAX) {
-			printf ("value:    0x%08" PFMT64x "\n", op->val);
+			r_main_printf (main_cons, "value:    0x%08" PFMT64x "\n", op->val);
 		}
-		printf ("stackop:  %s\n", stackop);
-		printf ("esil:     %s\n", r_strbuf_get (&op->esil));
-		printf ("stackptr: %" PFMT64d "\n", op->stackptr);
-		// produces (null) printf ("decode str: %s\n", r_anal_op_tostring (anal, op));
-		printf ("\n");
+		r_main_printf (main_cons, "stackop:  %s\n", stackop);
+		r_main_printf (main_cons, "esil:     %s\n", r_strbuf_get (&op->esil));
+		r_main_printf (main_cons, "stackptr: %" PFMT64d "\n", op->stackptr);
+		// produces (null) r_main_printf (main_cons, "decode str: %s\n", r_anal_op_tostring (anal, op));
+		r_main_printf (main_cons, "\n");
 	}
 	free (stackop);
 	free (bytes);
@@ -157,6 +161,7 @@ static int showanal(RAsmState *as, RAnalOp *op, ut64 offset, ut8 *buf, int len, 
 
 // TODO: add israw/len
 static int show_analinfo(RAsmState *as, const char *arg, ut64 offset) {
+	RCons *main_cons = as->cons;
 	ut8 *buf = (ut8 *)strdup ((const char *)arg);
 	int ret, len = r_hex_str2bin ((char *)buf, buf);
 	PJ *pj = NULL;
@@ -195,7 +200,7 @@ static int show_analinfo(RAsmState *as, const char *arg, ut64 offset) {
 	}
 	if (as->opt.json) {
 		pj_end (pj);
-		printf ("%s\n", pj_string (pj));
+		r_main_printf (main_cons, "%s\n", pj_string (pj));
 	}
 	pj_free (pj);
 	free (buf);
@@ -209,6 +214,7 @@ static int sizetsort(const void *a, const void *b) {
 }
 
 static void rarch2_list(RAsmState *as, const char *arch) {
+	RCons *main_cons = as->cons;
 	int i;
 	RArchPlugin *h;
 	RListIter *iter, *iter2;
@@ -257,7 +263,7 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 		r_list_sort (bitslist, sizetsort);
 		char *bitstr = r_num_list_join (bitslist, " ");
 		if (as->opt.quiet) {
-			printf ("%s\n", h->meta.name);
+			r_main_printf (main_cons, "%s\n", h->meta.name);
 		} else if (as->opt.json) {
 			pj_o (pj);
 			r_lib_meta_pj (pj, &h->meta);
@@ -271,21 +277,21 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 			pj_ks (pj, "features", feat);
 			pj_end (pj);
 		} else if (arch) {
-			printf ("name: %s\n", h->meta.name);
-			printf ("bits: %s\n", bitstr);
-			printf ("desc: %s\n", h->meta.desc);
-			printf ("feat: %s\n", feat);
+			r_main_printf (main_cons, "name: %s\n", h->meta.name);
+			r_main_printf (main_cons, "bits: %s\n", bitstr);
+			r_main_printf (main_cons, "desc: %s\n", h->meta.desc);
+			r_main_printf (main_cons, "feat: %s\n", feat);
 			if (h->meta.author) {
-				printf ("auth: %s\n", h->meta.author);
+				r_main_printf (main_cons, "auth: %s\n", h->meta.author);
 			}
 			if (h->meta.license) {
-				printf ("lice: %s\n", h->meta.license);
+				r_main_printf (main_cons, "lice: %s\n", h->meta.license);
 			}
 			if (h->meta.version) {
-				printf ("vers: %s\n", h->meta.version);
+				r_main_printf (main_cons, "vers: %s\n", h->meta.version);
 			}
 		} else {
-			printf ("%s %-11s %-11s %s\n", feat, bitstr, h->meta.name, h->meta.desc);
+			r_main_printf (main_cons, "%s %-11s %-11s %s\n", feat, bitstr, h->meta.name, h->meta.desc);
 		}
 		r_list_free (bitslist);
 		free (bitstr);
@@ -295,12 +301,13 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 	}
 	if (as->opt.json) {
 		pj_end (pj);
-		printf ("%s\n", pj_string (pj));
+		r_main_printf (main_cons, "%s\n", pj_string (pj));
 	}
 	pj_free (pj);
 }
 
 static void rasm2_list_parse_plugins(RAsmState *as, const char *arch) {
+	RCons *main_cons = as->cons;
 	RListIter *iter;
 	RAsmPluginSession *aps;
 	PJ *pj = NULL;
@@ -313,25 +320,25 @@ static void rasm2_list_parse_plugins(RAsmState *as, const char *arch) {
 			continue;
 		}
 		if (as->opt.quiet) {
-			printf ("%s\n", aps->plugin->meta.name);
+			r_main_printf (main_cons, "%s\n", aps->plugin->meta.name);
 		} else if (as->opt.json) {
 			pj_o (pj);
 			r_lib_meta_pj (pj, &aps->plugin->meta);
 			pj_end (pj);
 		} else if (arch) {
-			printf ("name: %s\n", aps->plugin->meta.name);
-			printf ("desc: %s\n", aps->plugin->meta.desc);
+			r_main_printf (main_cons, "name: %s\n", aps->plugin->meta.name);
+			r_main_printf (main_cons, "desc: %s\n", aps->plugin->meta.desc);
 			if (aps->plugin->meta.author) {
-				printf ("auth: %s\n", aps->plugin->meta.author);
+				r_main_printf (main_cons, "auth: %s\n", aps->plugin->meta.author);
 			}
 			if (aps->plugin->meta.license) {
-				printf ("lice: %s\n", aps->plugin->meta.license);
+				r_main_printf (main_cons, "lice: %s\n", aps->plugin->meta.license);
 			}
 			if (aps->plugin->meta.version) {
-				printf ("vers: %s\n", aps->plugin->meta.version);
+				r_main_printf (main_cons, "vers: %s\n", aps->plugin->meta.version);
 			}
 		} else {
-			printf ("%-20s %s\n", aps->plugin->meta.name, aps->plugin->meta.desc);
+			r_main_printf (main_cons, "%-20s %s\n", aps->plugin->meta.name, aps->plugin->meta.desc);
 		}
 		if (arch) {
 			break;
@@ -339,18 +346,19 @@ static void rasm2_list_parse_plugins(RAsmState *as, const char *arch) {
 	}
 	if (as->opt.json) {
 		pj_end (pj);
-		printf ("%s\n", pj_string (pj));
+		r_main_printf (main_cons, "%s\n", pj_string (pj));
 	}
 	pj_free (pj);
 }
 
 static int rasm_show_help(int v) {
+	RCons *main_cons = r_main_cons ();
 	if (v < 2) {
-		printf ("Usage: rasm2 [-ACdDehHLBvw] [-a arch] [-b bits] [-s addr] [-S syntax]\n"
+		r_main_printf (main_cons, "Usage: rasm2 [-ACdDehHLBvw] [-a arch] [-b bits] [-s addr] [-S syntax]\n"
 		"   [-f file] [-o file] [-F fil:ter] [-i skip] [-l len] 'code'|hex|0101b|-\n");
 	}
 	if (v != 1) {
-		printf (" -a [arch]    set architecture to assemble/disassemble (see -L)\n"
+		r_main_printf (main_cons, " -a [arch]    set architecture to assemble/disassemble (see -L)\n"
 		" -A           show Analysis information from given hexpairs\n"
 		" -b [bits]    set cpu register size (8, 16, 32, 64) (RASM2_BITS)\n"
 		" -B           binary input/output (-l is mandatory for binary input)\n"
@@ -383,12 +391,12 @@ static int rasm_show_help(int v) {
 		" If the last argument is '-' reads from stdin\n");
 	}
 	if (v == 2) {
-		printf ("Environment:\n");
+		r_main_printf (main_cons, "Environment:\n");
 		rasm_show_env (true);
-		printf ("Preprocessor directives:\n");
+		r_main_printf (main_cons, "Preprocessor directives:\n");
 		r_asm_list_directives ();
-		printf ("Assembler directives:\n");
-		printf (".intel_syntax\n"
+		r_main_printf (main_cons, "Assembler directives:\n");
+		r_main_printf (main_cons, ".intel_syntax\n"
 		".att_syntax     sets e asm.syntax=att to use AT&T syntax parser\n"
 		".endian [0,1]   default endian is system endian, 0=little, 1=big\n"
 		".big_endian     call e cfg.bigendian=true, same as .endian 1\n"
@@ -516,6 +524,7 @@ static ut64 pcpos(const char *buf) {
 }
 
 static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int bits, int hex) {
+	RCons *main_cons = as->cons;
 	if (len < 1) {
 		R_LOG_ERROR ("Invalid length");
 		return 0;
@@ -582,16 +591,16 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 		RAnalOp aop = { 0 };
 		while (ret < len) {
 			if (ret == pcaddr) {
-				printf ("=PC:\n");
+				r_main_printf (main_cons, "=PC:\n");
 			}
 			aop.size = 0;
 			if (r_anal_op (as->anal, &aop, addr, data + ret, len - ret, R_ARCH_OP_MASK_ESIL) > 0) {
-				printf ("%s\n", R_STRBUF_SAFEGET (&aop.esil));
+				r_main_printf (main_cons, "%s\n", R_STRBUF_SAFEGET (&aop.esil));
 			} else {
-				printf ("invalid\n");
+				r_main_printf (main_cons, "invalid\n");
 			}
 			if (aop.size < 1) {
-				printf ("invalid\n");
+				r_main_printf (main_cons, "invalid\n");
 				break;
 			}
 			ret += aop.size;
@@ -610,10 +619,10 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 				r_anal_op_set_mnemonic (&op, 0, "unaligned");
 			}
 			if (ret == pcaddr) {
-				printf ("=PC:\n");
+				r_main_printf (main_cons, "=PC:\n");
 			}
 			char *op_hex = r_hex_bin2strdup (op.bytes, op.size);
-			printf ("0x%08" PFMT64x "  %2d %24s  %s\n",
+			r_main_printf (main_cons, "0x%08" PFMT64x "  %2d %24s  %s\n",
 				as->a->pc, op.size, op_hex, op.mnemonic);
 			free (op_hex);
 			ret += op.size;
@@ -630,11 +639,11 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 		if (acode) {
 			if (as->opt.oneliner) {
 				r_str_replace_char (acode->assembly, '\n', ';');
-				printf ("%s\n", acode->assembly);
+				r_main_printf (main_cons, "%s\n", acode->assembly);
 			} else if (acode->assembly[0]) {
-				printf ("%s", acode->assembly);
+				r_main_printf (main_cons, "%s", acode->assembly);
 			} else {
-				printf ("empty\n");
+				r_main_printf (main_cons, "empty\n");
 			}
 			ret = acode->len;
 			r_asm_code_free (acode);
@@ -648,28 +657,31 @@ beach:
 }
 
 static void print_buf(RAsmState *as, char *str) {
+	RCons *main_cons = as->cons;
 	int i;
 	if (as->opt.coutput) {
-		printf ("\"");
+		r_main_printf (main_cons, "\"");
 		for (i = 1; *str; str += 2, i += 2) {
 			if (! (i % 41)) {
-				printf ("\" \\\n\"");
+				r_main_printf (main_cons, "\" \\\n\"");
 				i = 1;
 			}
-			printf ("\\x%c%c", *str, str[1]);
+			r_main_printf (main_cons, "\\x%c%c", *str, str[1]);
 		}
-		printf ("\"\n");
+		r_main_printf (main_cons, "\"\n");
 	} else {
-		printf ("%s\n", str);
+		r_main_printf (main_cons, "%s\n", str);
 	}
 }
 
 static bool print_label(void *user, const void *k, const void *v) {
-	printf ("f label.%s = %s\n", (const char *)k, (const char *)v);
+	RCons *main_cons = user;
+	r_main_printf (main_cons, "f label.%s = %s\n", (const char *)k, (const char *)v);
 	return true;
 }
 
 static bool rasm_asm(RAsmState *as, const char *buf, ut64 offset, ut64 len, int bits, bool hexwords) {
+	RCons *main_cons = as->cons;
 	int i, j, ret = 0;
 
 	r_asm_set_pc (as->a, offset);
@@ -682,7 +694,7 @@ static bool rasm_asm(RAsmState *as, const char *buf, ut64 offset, ut64 len, int 
 	if (acode->len > 0) {
 		ret = acode->len;
 		if (as->opt.bin) {
-			if ((ret = write (1, acode->bytes, acode->len)) != acode->len) {
+			if ((ret = r_main_write (main_cons, acode->bytes, acode->len)) != acode->len) {
 				R_LOG_ERROR ("Failed to write buffer");
 				r_asm_code_free (acode);
 				return false;
@@ -693,21 +705,21 @@ static bool rasm_asm(RAsmState *as, const char *buf, ut64 offset, ut64 len, int 
 				int bytes = (b / 8) + 1;
 				for (i = 0; i < bytes; i++) {
 					for (j = 0; j < 8 && b--; j++) {
-						printf ("%c", (acode->bytes[i] &(1 << j))? '1': '0');
+						r_main_printf (main_cons, "%c", (acode->bytes[i] &(1 << j))? '1': '0');
 					}
 				}
-				printf ("\n");
+				r_main_printf (main_cons, "\n");
 			} else {
 				if (hexwords) {
 					size_t i = 0;
 					for (i = 0; i < acode->len; i += sizeof (ut32)) {
 						ut32 dword = r_read_ble32 (acode->bytes + i, R_SYS_ENDIAN);
-						printf ("0x%08x ", dword);
+						r_main_printf (main_cons, "0x%08x ", dword);
 						if ((i / 4) == 7) {
-							printf ("\n");
+							r_main_printf (main_cons, "\n");
 						}
 					}
-					printf ("\n");
+					r_main_printf (main_cons, "\n");
 				} else {
 					char *str = r_asm_code_get_hex (acode);
 					if (str) {
@@ -739,22 +751,23 @@ static bool __lib_arch_cb(RLibPlugin *pl, void *user, void *data) {
 }
 
 static int print_assembly_output(RAsmState *as, const char *buf, ut64 offset, ut64 len, bool hexwords, const char *arch) {
+	RCons *main_cons = as->cons;
 	int bits = as->opt.bits;
 	if (as->opt.rad) {
-		printf ("e asm.arch=%s\n", arch? arch: R_SYS_ARCH);
-		printf ("e asm.bits=%d\n", bits? bits: (int)R_SYS_BITS);
+		r_main_printf (main_cons, "e asm.arch=%s\n", arch? arch: R_SYS_ARCH);
+		r_main_printf (main_cons, "e asm.bits=%d\n", bits? bits: (int)R_SYS_BITS);
 		if (offset) {
-			printf ("s 0x%" PFMT64x "\n", offset);
+			r_main_printf (main_cons, "s 0x%" PFMT64x "\n", offset);
 		}
-		printf ("wx ");
+		r_main_printf (main_cons, "wx ");
 	}
 	// int ret = rasm_asm (as, (char *)buf, offset, len, as->a->config->bits, hexwords);
 	int ret = rasm_asm (as, (char *)buf, offset, len, bits, hexwords);
 	if (as->opt.rad) {
-		printf ("f entry = $$\n");
-		printf ("f label.main = $$ + 1\n");
+		r_main_printf (main_cons, "f entry = $$\n");
+		r_main_printf (main_cons, "f label.main = $$ + 1\n");
 		if (as->a->flags) {
-			ht_pp_foreach (as->a->flags, print_label, NULL);
+			ht_pp_foreach (as->a->flags, print_label, as->cons);
 		}
 	}
 	return ret;
@@ -798,24 +811,27 @@ static char *io_slurp(const char *file, size_t *len) {
 }
 
 static void rasm_env_print(const char *name) {
+	RCons *main_cons = r_main_cons ();
 	char *value = r_sys_getenv (name);
-	printf ("%s\n", R_STR_ISNOTEMPTY (value)? value: "");
+	r_main_printf (main_cons, "%s\n", R_STR_ISNOTEMPTY (value)? value: "");
 	free (value);
 }
 
 static void rasm_show_env(bool show_desc) {
+	RCons *main_cons = r_main_cons ();
 	int id = 0;
 	for (id = 0; id < (sizeof (env) / sizeof (env[0])); id++) {
 		if (show_desc) {
-			printf ("%s\t%s\n", env[id].name, env[id].desc);
+			r_main_printf (main_cons, "%s\t%s\n", env[id].name, env[id].desc);
 		} else {
-			printf ("%s=", env[id].name);
+			r_main_printf (main_cons, "%s=", env[id].name);
 			rasm_env_print (env[id].name);
 		}
 	}
 }
 
-R_API int r_main_rasm2(int argc, const char *argv[]) {
+R_IPI int r_main_rasm2_impl(int argc, const char *argv[]) {
+	RCons *main_cons = r_main_cons ();
 	const char *env_arch = r_sys_getenv ("RASM2_ARCH");
 	const char *env_bits = r_sys_getenv ("RASM2_BITS");
 	const char *arch = R_SYS_ARCH;
@@ -939,7 +955,13 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			fd = open (opt.arg, O_TRUNC | O_RDWR | O_CREAT, 0644);
 #ifndef __wasi__
 			if (fd != -1) {
+				fflush (stdout);
 				dup2 (fd, 1);
+				if (main_cons) {
+					r_sys_setenv ("R2CONS", "");
+					main_cons = NULL;
+					as->cons = NULL;
+				}
 			}
 #endif
 			break;
@@ -954,7 +976,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			break;
 		case 'S':
 			if (*opt.arg == '?') {
-				printf ("att\nintel\nmasm\njz\nregnum\n");
+				r_main_printf (main_cons, "att\nintel\nmasm\njz\nregnum\n");
 				rasm_free (as);
 				return 0;
 			} else {
@@ -1054,7 +1076,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 		const char *s = r_asm_describe (as->a, opt.argv[opt.ind]);
 		ret = 1;
 		if (s) {
-			printf ("%s\n", s);
+			r_main_printf (main_cons, "%s\n", s);
 			ret = 0;
 		}
 		goto beach;
@@ -1213,9 +1235,9 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			}
 			if (as->opt.rad) {
 				as->opt.oneliner = true;
-				printf ("'e asm.arch=%s\n", arch? arch: R_SYS_ARCH);
-				printf ("'e asm.bits=%d\n", bits);
-				printf ("'wa ");
+				r_main_printf (main_cons, "'e asm.arch=%s\n", arch? arch: R_SYS_ARCH);
+				r_main_printf (main_cons, "'e asm.bits=%d\n", bits);
+				r_main_printf (main_cons, "'wa ");
 			}
 			ret = rasm_disasm (as, offset, (char *)usrstr, len,
 				as->a->config->bits, dis - 1);

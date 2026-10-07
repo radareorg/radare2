@@ -3,6 +3,7 @@
 #define R_LOG_ORIGIN "rafs2"
 
 #include <r_main.h>
+#include "main_private.h"
 #include <r_fs.h>
 #include <r_io.h>
 #include <r_cons.h>
@@ -50,7 +51,7 @@ static Rafs2State *rafs2_new(void) {
 	s->l = r_lib_new (NULL, NULL);
 	s->io = r_io_new ();
 	s->fs = r_fs_new ();
-	s->cons = r_cons_new ();
+	s->cons = r_main_cons_new ();
 
 	const bool load_plugins = !r_sys_getenv_asbool ("R2_NOPLUGINS");
 	if (load_plugins) {
@@ -63,7 +64,7 @@ static Rafs2State *rafs2_new(void) {
 
 static void rafs2_free(Rafs2State *s) {
 	if (s) {
-		r_cons_free (s->cons);
+		r_main_cons_free (s->cons);
 		r_fs_free (s->fs);
 		r_io_free (s->io);
 		r_lib_free (s->l);
@@ -73,7 +74,8 @@ static void rafs2_free(Rafs2State *s) {
 }
 
 static void show_usage(void) {
-	printf ("Usage: rafs2 [options] -t <fstype> <file>\n"
+	RCons *main_cons = r_main_cons ();
+	r_main_printf (main_cons, "Usage: rafs2 [options] -t <fstype> <file>\n"
 	"Options:\n"
 	"  -t <type>    Filesystem type (ext2, fat, ntfs, iso9660, hfs, ubifs, etc.)\n"
 	"  -o <offset>  Offset to mount filesystem (default: 0)\n"
@@ -100,6 +102,7 @@ static void show_usage(void) {
 }
 
 static int rafs2_list_plugins(Rafs2State *s) {
+	RCons *main_cons = r_main_cons ();
 	RFS *fs = s->fs;
 	if (!fs) {
 		R_LOG_ERROR ("Cannot create FS instance");
@@ -126,16 +129,16 @@ static int rafs2_list_plugins(Rafs2State *s) {
 			}
 		}
 		pj_end (pj);
-		printf ("%s\n", pj_string (pj));
+		r_main_printf (main_cons, "%s\n", pj_string (pj));
 		pj_free (pj);
 	} else {
-		printf ("Available filesystem types:\n");
+		r_main_printf (main_cons, "Available filesystem types:\n");
 		RListIter *iter;
 		RFSPlugin *plugin;
 		r_list_foreach (plugins, iter, plugin) {
 			if (plugin->meta.name) {
 				const char *desc = plugin->meta.desc? plugin->meta.desc: "";
-				printf ("  %-12s %s\n", plugin->meta.name, desc);
+				r_main_printf (main_cons, "  %-12s %s\n", plugin->meta.name, desc);
 			}
 		}
 	}
@@ -144,6 +147,7 @@ static int rafs2_list_plugins(Rafs2State *s) {
 }
 
 static int rafs2_list(Rafs2State *s, const char *path) {
+	RCons *main_cons = r_main_cons ();
 	RList *list = r_fs_dir (s->fs, path);
 	if (!list) {
 		R_LOG_ERROR ("Cannot list directory: %s", path);
@@ -168,14 +172,14 @@ static int rafs2_list(Rafs2State *s, const char *path) {
 			pj_end (pj);
 		}
 		pj_end (pj);
-		printf ("%s\n", pj_string (pj));
+		r_main_printf (main_cons, "%s\n", pj_string (pj));
 		pj_free (pj);
 	} else {
 		RListIter *iter;
 		RFSFile *file;
 		r_list_foreach (list, iter, file) {
 			char type = file->type;
-			printf ("%c %10u  %s\n", type, file->size, file->name);
+			r_main_printf (main_cons, "%c %10u  %s\n", type, file->size, file->name);
 		}
 	}
 	r_list_free (list);
@@ -183,6 +187,7 @@ static int rafs2_list(Rafs2State *s, const char *path) {
 }
 
 static int rafs2_cat(Rafs2State *s, const char *path) {
+	RCons *main_cons = r_main_cons ();
 	RFS *fs = s->fs;
 	RFSFile *file = r_fs_open (fs, path, false);
 	if (!file) {
@@ -193,7 +198,7 @@ static int rafs2_cat(Rafs2State *s, const char *path) {
 	if (file->size > 0) {
 		int len = r_fs_read (fs, file, 0, file->size);
 		if (len > 0 && file->data) {
-			fwrite (file->data, 1, len, stdout);
+			r_main_write (main_cons, file->data, (1) * (len));
 		}
 	}
 
@@ -202,6 +207,7 @@ static int rafs2_cat(Rafs2State *s, const char *path) {
 }
 
 static int rafs2_details(Rafs2State *s) {
+	RCons *main_cons = r_main_cons ();
 	const char *mountpoint = s->opt.mountpoint;
 	RList *roots = r_fs_root (s->fs, mountpoint);
 	if (!roots || r_list_empty (roots)) {
@@ -233,12 +239,12 @@ static int rafs2_details(Rafs2State *s) {
 		pj_ks (pj, "details", r_strbuf_get (sb));
 		r_strbuf_free (sb);
 		pj_end (pj);
-		printf ("%s\n", pj_string (pj));
+		r_main_printf (main_cons, "%s\n", pj_string (pj));
 		pj_free (pj);
 	} else {
 		RStrBuf *sb = r_strbuf_new ("");
 		plugin->details (root, sb);
-		printf ("%s", r_strbuf_get (sb));
+		r_main_printf (main_cons, "%s", r_strbuf_get (sb));
 		r_strbuf_free (sb);
 	}
 	r_list_free (roots);
@@ -246,6 +252,7 @@ static int rafs2_details(Rafs2State *s) {
 }
 
 static int rafs2_extract(Rafs2State *s, const char *paths) {
+	RCons *main_cons = r_main_cons ();
 	RFS *fs = s->fs;
 	char *colon = strchr (paths, ':');
 	if (!colon) {
@@ -281,7 +288,7 @@ static int rafs2_extract(Rafs2State *s, const char *paths) {
 			}
 			fwrite (file->data, 1, len, fp);
 			fclose (fp);
-			printf ("Extracted %s -> %s (%d bytes)\n", src, dst, len);
+			r_main_printf (main_cons, "Extracted %s -> %s (%d bytes)\n", src, dst, len);
 		} else {
 			R_LOG_ERROR ("Failed to read file: %s", src);
 			r_fs_close (fs, file);
@@ -289,7 +296,7 @@ static int rafs2_extract(Rafs2State *s, const char *paths) {
 			return 1;
 		}
 	} else {
-		printf ("Extracted %s -> %s (0 bytes)\n", src, dst);
+		r_main_printf (main_cons, "Extracted %s -> %s (0 bytes)\n", src, dst);
 		FILE *fp = fopen (dst, "wb");
 		if (fp) {
 			fclose (fp);
@@ -317,7 +324,7 @@ static int rafs2_shell(Rafs2State *s) {
 	return ret? 0: 1;
 }
 
-R_API int r_main_rafs2(int argc, const char **argv) {
+R_IPI int r_main_rafs2_impl(int argc, const char **argv) {
 	int c, ret = 0;
 	const char *list_path = NULL;
 	const char *cat_path = NULL;

@@ -5,6 +5,7 @@
 #include <r_egg.h>
 #include <r_bin.h>
 #include <r_main.h>
+#include "main_private.h"
 #include <r_util/r_print.h>
 #include <r_util.h>
 
@@ -71,11 +72,12 @@ static void __es_free(REggState *es) {
 }
 
 static int usage(int v) {
-	printf ("Usage: ragg2 [-FOLsrxhvz] [-a arch] [-b bits] [-k os] [-o file] [-I path]\n"
+	RCons *main_cons = r_main_cons ();
+	r_main_printf (main_cons, "Usage: ragg2 [-FOLsrxhvz] [-a arch] [-b bits] [-k os] [-o file] [-I path]\n"
 	"             [-i sc] [-E enc] [-B hex] [-c k=v] [-C file] [-p pad] [-q off]\n"
 	"             [-S string] [-f fmt] [-nN dword] [-dDw off:hex] [-e expr] file|f.asm|-\n");
 	if (v) {
-		printf (
+		r_main_printf (main_cons,
 			" -a [arch]       select architecture (x86, mips, arm, ppc)\n"
 			" -b [bits]       register size (32, 64, ..)\n"
 			" -B [hexpairs]   append some hexpair bytes\n"
@@ -116,23 +118,25 @@ static int usage(int v) {
 }
 
 static void list(REgg *egg) {
+	RCons *main_cons = r_main_cons ();
 	RListIter *iter;
 	REggPlugin *p;
-	printf ("shellcodes:\n");
+	r_main_printf (main_cons, "shellcodes:\n");
 	r_list_foreach (egg->libstore->plugins, iter, p) {
 		if (p->type == R_EGG_PLUGIN_SHELLCODE) {
-			printf ("%10s : %s\n", p->meta.name, p->meta.desc);
+			r_main_printf (main_cons, "%10s : %s\n", p->meta.name, p->meta.desc);
 		}
 	}
-	printf ("encoders:\n");
+	r_main_printf (main_cons, "encoders:\n");
 	r_list_foreach (egg->libstore->plugins, iter, p) {
 		if (p->type == R_EGG_PLUGIN_ENCODER) {
-			printf ("%10s : %s\n", p->meta.name, p->meta.desc);
+			r_main_printf (main_cons, "%10s : %s\n", p->meta.name, p->meta.desc);
 		}
 	}
 }
 
 static int create(const char *format, const char *arch, int bits, const ut8 *code, int codelen) {
+	RCons *main_cons = r_main_cons ();
 	RBin *bin = r_bin_new ();
 	r_libstore_load (bin->libstore);
 	RBinArchOptions opts;
@@ -142,7 +146,7 @@ static int create(const char *format, const char *arch, int bits, const ut8 *cod
 	if (b) {
 		ut64 blen;
 		const ut8 *tmp = r_buf_data (b, &blen);
-		if (write (1, tmp, blen) != blen) {
+		if (r_main_write (main_cons, tmp, blen) != blen) {
 			R_LOG_ERROR ("Failed to write buffer");
 		}
 		r_unref (b);
@@ -174,33 +178,39 @@ static int openfile(const char *f, int x) {
 	if (r != 0) {
 		R_LOG_ERROR ("Could not resize");
 	}
-	close (1);
+	fflush (stdout);
 #if !__wasi__
 	dup2 (fd, 1);
+	if (r_main_cons ()) {
+		r_sys_setenv ("R2CONS", "");
+	}
 #endif
 	return fd;
 }
 #define ISEXEC (fmt != 'r')
 
 static void ragg_env_print(const char *name) {
+	RCons *main_cons = r_main_cons ();
 	char *value = r_sys_getenv (name);
-	printf ("%s\n", R_STR_ISNOTEMPTY (value)? value: "");
+	r_main_printf (main_cons, "%s\n", R_STR_ISNOTEMPTY (value)? value: "");
 	free (value);
 }
 
 static void ragg_show_env(bool show_desc) {
+	RCons *main_cons = r_main_cons ();
 	int id = 0;
 	for (id = 0; id < (sizeof (env) / sizeof (env[0])); id++) {
 		if (show_desc) {
-			printf ("%s\t%s\n", env[id].name, env[id].desc);
+			r_main_printf (main_cons, "%s\t%s\n", env[id].name, env[id].desc);
 		} else {
-			printf ("%s=", env[id].name);
+			r_main_printf (main_cons, "%s=", env[id].name);
 			ragg_env_print (env[id].name);
 		}
 	}
 }
 
-R_API int r_main_ragg2(int argc, const char **argv) {
+R_IPI int r_main_ragg2_impl(int argc, const char **argv) {
+	RCons *main_cons = r_main_cons ();
 	const char *file = NULL;
 	const char *padding = NULL;
 	const char *pattern = NULL;
@@ -475,8 +485,8 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 		}
 
 		get_offset = r_num_math (0, sequence);
-		printf ("Little endian: %d\n", r_debruijn_offset (get_offset, false));
-		printf ("Big endian: %d\n", r_debruijn_offset (get_offset, true));
+		r_main_printf (main_cons, "Little endian: %d\n", r_debruijn_offset (get_offset, false));
+		r_main_printf (main_cons, "Big endian: %d\n", r_debruijn_offset (get_offset, true));
 		free (sequence);
 		__es_free (es);
 		return 0;
@@ -630,6 +640,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 			goto fail;
 		}
 	}
+	main_cons = r_main_cons ();
 
 	// assemble to binary
 	if (!show_asm) {
@@ -666,7 +677,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 	r_egg_finalize (es->e);
 
 	if (show_asm) {
-		printf ("%s\n", r_egg_get_assembly (es->e));
+		r_main_printf (main_cons, "%s\n", r_egg_get_assembly (es->e));
 	}
 
 	if (show_raw || show_hex || show_execute) {
@@ -688,7 +699,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 		if (show_raw) {
 			ut64 blen;
 			const ut8 *tmp = r_buf_data (b, &blen);
-			if (write (1, tmp, blen) != blen) {
+			if (r_main_write (main_cons, tmp, blen) != blen) {
 				R_LOG_ERROR ("Failed to write buffer");
 				goto fail;
 			}
@@ -697,7 +708,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 				R_LOG_ERROR ("No format specified wtf");
 				goto fail;
 			}
-			RPrint *p = r_print_new ();
+			RPrint *p = r_main_print_new ();
 			ut64 tmpsz;
 			const ut8 *tmp = r_buf_data (b, &tmpsz);
 			switch (*format) {
@@ -709,17 +720,17 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 				break;
 			case 'r':
 				if (show_str) {
-					printf ("\"");
+					r_main_printf (main_cons, "\"");
 					for (i = 0; i < tmpsz; i++) {
-						printf ("\\x%02x", tmp[i]);
+						r_main_printf (main_cons, "\\x%02x", tmp[i]);
 					}
-					printf ("\"\n");
+					r_main_printf (main_cons, "\"\n");
 				} else if (show_hex) {
 					r_buf_seek (b, 0, R_BUF_SET);
 					for (i = 0; i < tmpsz; i++) {
-						printf ("%02x", tmp[i]);
+						r_main_printf (main_cons, "%02x", tmp[i]);
 					}
-					printf ("\n");
+					r_main_printf (main_cons, "\n");
 				} // else show_raw is_above ()
 				break;
 			case 'p': // PE/python

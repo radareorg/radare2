@@ -3,6 +3,7 @@
 #define R_LOG_ORIGIN "rasign2"
 
 #include <r_main.h>
+#include "main_private.h"
 #include <r_core.h>
 
 typedef struct {
@@ -14,7 +15,8 @@ typedef struct {
 } RasignOptions;
 
 static void rasign_show_help(void) {
-	printf ("Usage: rasign2 [options] [file]\n"
+	RCons *main_cons = r_main_cons ();
+	r_main_printf (main_cons, "Usage: rasign2 [options] [file]\n"
 	" -a               make signatures from all .o files in the provided .a file\n"
 	" -A[AAA]          same as r2 -A, the more 'A's the more analysis is performed\n"
 	" -f               interpret the file as a FLIRT .sig file and dump signatures\n"
@@ -35,7 +37,7 @@ static void rasign_show_help(void) {
 
 static RCore *opencore(const char *fname) {
 	RIODesc *rfile = NULL;
-	RCore *c = r_core_new ();
+	RCore *c = r_main_core_new ();
 	if (!c) {
 		R_LOG_ERROR ("Count not get core");
 		return NULL;
@@ -53,12 +55,12 @@ static RCore *opencore(const char *fname) {
 
 		if (!rfile) {
 			R_LOG_ERROR ("Could not open file %s", fname);
-			r_core_free (c);
+			r_main_core_free (c);
 			return NULL;
 		}
 		(void)r_core_bin_load (c, NULL, UT64_MAX);
 		(void)r_core_bin_update_arch_bits (c);
-		r_cons_flush (c->cons);
+		r_main_cons_flush (c->cons);
 	}
 	return c;
 }
@@ -97,14 +99,14 @@ static int inline output(RCore *core, RasignOptions *conf) {
 		R_LOG_ERROR ("Failed to write file");
 		return -1;
 	}
-	r_cons_flush (core->cons);
+	r_main_cons_flush (core->cons);
 	return 0;
 }
 
 static int handle_sdb(const char *fname, RasignOptions *conf) {
 	int ret = -1;
 	// can't use RAnal here because JSON output requires core, in a sneaky way
-	RCore *core = r_core_new ();
+	RCore *core = r_main_core_new ();
 	if (!core) {
 		return -1;
 	}
@@ -118,7 +120,7 @@ static int handle_sdb(const char *fname, RasignOptions *conf) {
 		}
 		ret = output (core, conf);
 	}
-	r_core_free (core);
+	r_main_core_free (core);
 	return ret;
 }
 
@@ -151,7 +153,7 @@ static int signs_from_file(const char *fname, RasignOptions *conf) {
 	r_sign_all_functions (core->anal, conf->merge);
 
 	int ret = output (core, conf);
-	r_core_free (core);
+	r_main_core_free (core);
 	return ret;
 }
 
@@ -198,14 +200,15 @@ static RList *get_ar_file_uris(const char *fname) {
 }
 
 static int dump_flirt(const char *ifile) {
+	RCons *main_cons = r_main_cons ();
 	RCore *core = opencore (NULL);
 	char *dump = r_sign_flirt_dump (core->anal, ifile);
 	if (dump) {
-		printf ("%s", dump);
+		r_main_printf (main_cons, "%s", dump);
 		free (dump);
 	}
-	r_cons_flush (core->cons);
-	r_core_free (core);
+	r_main_cons_flush (core->cons);
+	r_main_core_free (core);
 	return 0;
 }
 
@@ -254,7 +257,7 @@ static int handle_archive_files(const char *fname, RasignOptions *conf) {
 	return ret;
 }
 
-R_API int r_main_rasign2(int argc, const char **argv) {
+R_IPI int r_main_rasign2_impl(int argc, const char **argv) {
 	int c;
 	RGetopt opt;
 	RasignOptions conf = { 0 };

@@ -4,11 +4,13 @@
 
 #include <r_core.h>
 #include <r_main.h>
+#include "main_private.h"
 
 static int show_help(int v) {
-	printf ("Usage: rapatch2 [-p N] [-sv] [-R] [patchfile] ([targetfile])\n");
+	RCons *main_cons = r_main_cons ();
+	r_main_printf (main_cons, "Usage: rapatch2 [-p N] [-sv] [-R] [patchfile] ([targetfile])\n");
 	if (v) {
-		printf (
+		r_main_printf (main_cons,
 			"  -p N       patch level, skip N directories\n"
 			"  -R         reverse patch\n"
 			"  -s         sandbox mode, disable scripts and r2 command execution\n"
@@ -71,11 +73,11 @@ static int rapatch_file(RapatchOptions *ro, const char *patch, const char *file)
 	}
 	r_core_cmd0 (ro->core, "o");
 	R_LOG_INFO ("File %s patched", file);
-	r_cons_flush (ro->core->cons);
+	r_main_cons_flush (ro->core->cons);
 	return 0;
 }
 
-R_API int r_main_rapatch2(int argc, const char **argv) {
+R_IPI int r_main_rapatch2_impl(int argc, const char **argv) {
 	RGetopt opt;
 	int o;
 	RapatchOptions ro = { 0 };
@@ -115,13 +117,13 @@ R_API int r_main_rapatch2(int argc, const char **argv) {
 		R_LOG_ERROR ("Missing patchfile");
 		return 1;
 	}
-	ro.core = r_core_new ();
+	ro.core = r_main_core_new ();
 	int rc = 0;
 	if (R_STR_ISNOTEMPTY (target)) {
 		rc = rapatch_file (&ro, patchfile, target);
 	} else {
 		rc = rapatch_directory (&ro, patchfile);
 	}
-	r_core_free (ro.core);
+	r_main_core_free (ro.core);
 	return rc;
 }

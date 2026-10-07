@@ -7,6 +7,7 @@
 #include "r_util/r_str.h"
 #include "r_util/r_sys.h"
 #include <r_main.h>
+#include "main_private.h"
 #include <r_lib.h>
 
 // R2R db/tools/r2
@@ -82,6 +83,7 @@ static void json_plugins(RCore *core, PJ *pj, const char *name, const char *cmd)
 }
 
 static int r_main_version_verify(RCore *core, bool show, bool json) {
+	RCons *main_cons = r_main_cons ();
 	int i, ret;
 	typedef const char *(*vc) ();
 	const char *base = R2_GITTAP "-" R2_ABIVERSION_STRING;
@@ -209,11 +211,11 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 		pj_end (pj);
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		printf ("%s\n", s);
+		r_main_printf (main_cons, "%s\n", s);
 		free (s);
 	} else {
 		if (show) {
-			printf ("%s  r2\n", base);
+			r_main_printf (main_cons, "%s  r2\n", base);
 		}
 		for (i = ret = 0; vcs[i].name; i++) {
 			struct vcs_t *v = &vcs[i];
@@ -222,7 +224,7 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 				ret = 1;
 			}
 			if (show) {
-				printf ("%s  %s\n", name, v->name);
+				r_main_printf (main_cons, "%s  %s\n", name, v->name);
 			}
 		}
 		if (ret) {
@@ -233,12 +235,13 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 }
 
 static int main_help(int line) {
+	RCons *main_cons = r_main_cons ();
 	if (line < 2) {
-		printf ("Usage: r2 [-ACdfjLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-c cmd]\n"
+		r_main_printf (main_cons, "Usage: r2 [-ACdfjLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-c cmd]\n"
 		"          [-s addr] [-B baddr] [-m maddr] [-i script] [-e k=v] file|pid|-|--|=\n");
 	}
 	if (line != 1) {
-		printf (
+		r_main_printf (main_cons,
 			" --           run radare2 without opening any file\n"
 			" -            same as 'r2 malloc://512'\n"
 			" =            read file from stdin (use -i and -c to run cmds)\n"
@@ -349,7 +352,7 @@ static int main_help(int line) {
 
 		char *helpmsg = r_strbuf_drain (sb);
 		if (helpmsg) {
-			printf ("%s", helpmsg);
+			r_main_printf (main_cons, "%s", helpmsg);
 			free (helpmsg);
 		}
 	}
@@ -357,6 +360,7 @@ static int main_help(int line) {
 }
 
 static int main_print_var(const char *var_name) {
+	RCons *main_cons = r_main_cons ();
 	int i = 0;
 #ifdef R2__WINDOWS__
 	char *incdir = r_str_r2_prefix (R2_INCDIR);
@@ -378,7 +382,7 @@ static int main_print_var(const char *var_name) {
 	char *homeplugins = r_xdg_datadir ("plugins");
 	char *homezigns = r_xdg_datadir ("zigns");
 	char *homedoc = r_xdg_datadir ("doc");
-	// printf ("homedoc = %s\n", homedoc);
+	// r_main_printf (main_cons, "homedoc = %s\n", homedoc);
 	char *plugins = r_str_r2_prefix (R2_PLUGINS);
 	char *magicpath = r_str_r2_prefix (R2_SDB_MAGIC);
 	char *historyhome = r_xdg_cachedir ("history");
@@ -452,12 +456,12 @@ static int main_print_var(const char *var_name) {
 		const char *value = R_STR_ISNOTEMPTY (env_value)? env_value: r_str_get (r2_vars[i].value);
 		if (var_name) {
 			if (!strcmp (r2_vars[i].name + delta, var_name)) {
-				printf ("%s\n", value);
+				r_main_printf (main_cons, "%s\n", value);
 				free (env_value);
 				break;
 			}
 		} else {
-			printf ("%s=%s\n", r2_vars[i].name, value);
+			r_main_printf (main_cons, "%s=%s\n", r2_vars[i].name, value);
 		}
 		free (env_value);
 		i++;
@@ -496,7 +500,7 @@ static bool run_commands(RCore *r, RList *cmds, RList *files, bool quiet, int do
 			goto beach;
 		}
 		int ret = r_core_run_script (r, file);
-		r_cons_flush (r->cons);
+		r_main_cons_flush (r->cons);
 		if (ret == -2) {
 			R_LOG_ERROR ("Cannot open '%s'", file);
 		}
@@ -508,7 +512,7 @@ static bool run_commands(RCore *r, RList *cmds, RList *files, bool quiet, int do
 	/* -c */
 	r_list_foreach (cmds, iter, cmdn) {
 		r_core_cmd_lines (r, cmdn);
-		r_cons_flush (r->cons);
+		r_main_cons_flush (r->cons);
 	}
 beach:
 	if (quiet && !has_failed) {
@@ -640,7 +644,7 @@ static void perform_analysis(RCore *r, int do_analysis) {
 	case 3: acmd = "aaaa"; break;
 	}
 	r_core_call (r, acmd);
-	r_cons_flush (r->cons);
+	r_main_cons_flush (r->cons);
 	r->times->file_anal_time = r_time_now_mono () - r->times->file_anal_time;
 }
 
@@ -654,9 +658,9 @@ static RThreadFunctionRet th_analysis(RThread *th) {
 	}
 	R_LOG_INFO ("Loading binary information in background");
 	// XXX R2_600 - cons
-	RCons *cons = r_cons_thready (r_cons_new ());
+	RCons *cons = r_cons_thready (r_main_cons_new ());
 	perform_analysis (td->core, td->do_analysis);
-	r_cons_free (cons);
+	r_main_cons_free (cons);
 	R_FREE (th->user);
 	R_LOG_INFO ("bin.load done");
 	return false;
@@ -664,14 +668,14 @@ static RThreadFunctionRet th_analysis(RThread *th) {
 
 static RThreadFunctionRet th_binload(RThread *th) {
 	R_LOG_INFO ("Loading binary information in background");
-	RCons *cons = r_cons_thready (r_cons_new ());
+	RCons *cons = r_cons_thready (r_main_cons_new ());
 	ThreadData *td = (ThreadData *)th->user;
 	RCore *r = td->core;
 	const char *filepath = td->filepath;
 	const ut64 baddr = td->baddr;
 	(void)r_core_bin_load (r, filepath, baddr);
 	free (td->filepath);
-	r_cons_free (cons);
+	r_main_cons_free (cons);
 	R_FREE (th->user);
 	R_LOG_INFO ("bin.load done");
 	return false;
@@ -784,7 +788,7 @@ static void mainr2_fini(RMainRadare2 *mr) {
 	free (mr->debugbackend);
 	free (mr->project_name);
 	free (mr->qjs_script);
-	r_core_free (mr->r);
+	r_main_core_free (mr->r);
 }
 
 static char *dp_read(RCore *core) {
@@ -816,7 +820,7 @@ static void dp_write(RCore *core, const char *s) {
 
 #define OPTARGS "=012AjMCwxfF:Hhm:e:Enk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSzuXt"
 
-R_API int r_main_radare2(int argc, const char **argv) {
+R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 	int c, ret;
 	RMainRadare2 mr;
 	mainr2_init (&mr);
@@ -900,7 +904,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		mainr2_fini (&mr);
 		return res;
 	}
-	RCore *r = r_core_new ();
+	RCore *r = r_main_core_new ();
 	if (!r) {
 		R_LOG_ERROR ("Cannot initialize RCore");
 		mainr2_fini (&mr);
@@ -909,6 +913,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	mr.r = r;
 	r->r_main_radare2 = r_main_radare2;
 	r->r_main_radiff2 = r_main_radiff2;
+	r->r_main_rapatch2 = r_main_rapatch2;
 	r->r_main_rafind2 = r_main_rafind2;
 	r->r_main_rabin2 = r_main_rabin2;
 	r->r_main_ragg2 = r_main_ragg2;
@@ -923,7 +928,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	r_core_task_sync_begin (&mr.r->tasks);
 	if (argc == 2 && !strcmp (argv[1], "-p")) {
 		r_core_project_list (r, 0);
-		r_cons_flush (r->cons);
+		r_main_cons_flush (r->cons);
 		mainr2_fini (&mr);
 		return 0;
 	}
@@ -1013,7 +1018,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				char *s = r_debug_plugin_list (r->dbg, 'q');
 				r_cons_print (r->cons, r_str_get (s));
 				free (s);
-				r_cons_flush (r->cons);
+				r_main_cons_flush (r->cons);
 				mainr2_fini (&mr);
 				return 0;
 			}
@@ -1101,7 +1106,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		case 'p':
 			if (!strcmp (opt.arg, "?")) {
 				r_core_project_list (r, 0);
-				r_cons_flush (r->cons);
+				r_main_cons_flush (r->cons);
 				mainr2_fini (&mr);
 				return 0;
 			}
@@ -1246,7 +1251,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	if (mr.do_list_core_plugins) { // "-LL"
 		r_core_cmd0 (r, mr.json? "Lcj": "Lc");
-		r_cons_flush (r->cons);
+		r_main_cons_flush (r->cons);
 		mainr2_fini (&mr);
 		return 0;
 	}
@@ -1256,7 +1261,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		}
 		run_commands (r, NULL, mr.prefiles, false, mr.do_analysis);
 		run_commands (r, mr.cmds, mr.files, mr.quiet, mr.do_analysis);
-		if (mr.quiet_leak) {
+		if (mr.quiet_leak && !r_main_cons ()) {
 			exit (0);
 		}
 		const char *arg = argv[opt.ind];
@@ -1265,7 +1270,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		} else {
 			r_core_list_io (r, arg, 0);
 		}
-		r_cons_flush (r->cons);
+		r_main_cons_flush (r->cons);
 		mainr2_fini (&mr);
 		return 0;
 	}
@@ -1417,7 +1422,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			char *path = r_str_newf ("malloc://%d", sz);
 			mr.fh = r_core_file_open (r, path, mr.perms, mr.mapaddr);
 			if (!mr.fh) {
-				r_cons_flush (r->cons);
+				r_main_cons_flush (r->cons);
 				free (buf);
 				R_LOG_ERROR ("Cannot open '%s'", path);
 				free (path);
@@ -1773,7 +1778,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		}
 		if (!mr.fh) {
 			if (R_STR_ISNOTEMPTY (mr.pfile)) {
-				r_cons_flush (r->cons);
+				r_main_cons_flush (r->cons);
 				if (mr.perms & R_PERM_W) {
 					R_LOG_ERROR ("Cannot open '%s' for writing", mr.pfile);
 				} else {
@@ -1807,7 +1812,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			char *res = r_config_eval (r->config, cmdn, false, NULL);
 			r_cons_print (r->cons, res);
 			free (res);
-			r_cons_flush (r->cons);
+			r_main_cons_flush (r->cons);
 		}
 		if (mr.asmbits) {
 			r_config_set (r->config, "asm.bits", mr.asmbits);
@@ -1877,7 +1882,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			char *res = r_config_eval (r->config, cmdn, false, NULL);
 			r_cons_print (r->cons, res);
 			free (res);
-			r_cons_flush (r->cons);
+			r_main_cons_flush (r->cons);
 		}
 
 		// no flagspace selected by default the beginning
@@ -1982,7 +1987,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	if (r_config_get_b (r->config, "scr.prompt")) {
 		if (mr.run_rc && r_config_get_i (r->config, "cfg.fortunes")) {
 			r_core_fortune_print_random (r);
-			r_cons_flush (r->cons);
+			r_main_cons_flush (r->cons);
 		}
 	}
 	if (mr.sandbox) {
@@ -2109,7 +2114,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	ret = r->rc;
 beach:
-	if (mr.quiet_leak) {
+	if (mr.quiet_leak && !r_main_cons ()) {
 		exit (r->rc);
 		return ret;
 	}

@@ -54,6 +54,7 @@ if get_option('enable_tests')
     'lang',
     'list',
     'lz4',
+    'main',
     'ovf',
     'pdb',
     'pj',

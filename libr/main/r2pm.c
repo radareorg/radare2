@@ -3,6 +3,7 @@
 #define R_LOG_ORIGIN "r2pm"
 
 #include <r_main.h>
+#include "main_private.h"
 #include <r_lib.h>
 
 #define R2PM_GITURL "https://github.com/radareorg/radare2-pm"
@@ -704,9 +705,10 @@ static void r2pm_setenv(R2Pm *r2pm) {
 }
 
 static int r2pm_doc_pkg(const char *pkg) {
+	RCons *main_cons = r_main_cons ();
 	char *docstr = r2pm_get (pkg, "\nR2PM_DOC=\"", TT_ENDQUOTE);
 	if (docstr) {
-		printf ("%s\n", docstr);
+		r_main_printf (main_cons, "%s\n", docstr);
 		free (docstr);
 		return 0;
 	}
@@ -716,7 +718,7 @@ static int r2pm_doc_pkg(const char *pkg) {
 	int rc = 0;
 	char *script = r_file_slurp (pkgfile, NULL);
 	if (script) {
-		printf ("%s\n", script);
+		r_main_printf (main_cons, "%s\n", script);
 		free (script);
 	} else {
 		R_LOG_ERROR ("Cannot find package: %s", pkg);
@@ -1331,6 +1333,7 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, 
 }
 
 static int r2pm_edit(RList *targets) {
+	RCons *main_cons = r_main_cons ();
 	RListIter *iter;
 	const char *t;
 	int rc = 0;
@@ -1360,7 +1363,7 @@ static int r2pm_edit(RList *targets) {
 			int rc = r_sys_cmdf ("r2 -c 'oe %s;q' --", pkgpath);
 #endif
 			if (rc != 0) {
-				printf ("%s\n", pkgpath);
+				r_main_printf (main_cons, "%s\n", pkgpath);
 			}
 		} else {
 			R_LOG_ERROR ("Unknown package");
@@ -1456,9 +1459,10 @@ static int count_installed(void) {
 }
 
 static int r2pm_info(void) {
+	RCons *main_cons = r_main_cons ();
 	const int installed_packages = count_installed ();
 	const int available_packages = count_available ();
-	printf ("Installed %d packages of %d in database\n",
+	r_main_printf (main_cons, "Installed %d packages of %d in database\n",
 		installed_packages, available_packages);
 	return 0;
 }
@@ -1595,6 +1599,7 @@ static char *r2pm_search(const char *grep, int mode, bool all) {
 }
 
 static void r2pm_envhelp(void) {
+	RCons *main_cons = r_main_cons ();
 	int r2pm_log_level = r_sys_getenv_asint ("R2_LOG_LEVEL");
 	char *r2pm_plugdir = r_sys_getenv ("R2PM_PLUGDIR");
 	char *r2pm_bindir = r_sys_getenv ("R2PM_BINDIR");
@@ -1610,7 +1615,7 @@ static void r2pm_envhelp(void) {
 	char *r2_libs = r_sys_getenv ("R2_LIBS");
 	bool r2pm_offline = r_sys_getenv_asbool ("R2PM_OFFLINE");
 	char *r2pm_plugdir2 = r_str_r2_prefix (R2_PLUGINS);
-	printf ("R2_LOG_LEVEL=%d         # define log.level for r2pm\n"
+	r_main_printf (main_cons, "R2_LOG_LEVEL=%d         # define log.level for r2pm\n"
 	"SUDO=sudo              # path to the SUDO executable\n"
 	"MAKE=make              # path to the GNU MAKE executable\n"
 	"R2PM_OFFLINE=%d         # don't git pull\n"
@@ -1665,27 +1670,29 @@ static void r2pm_envhelp(void) {
 }
 
 static void r2pm_varprint(const char *name) {
+	RCons *main_cons = r_main_cons ();
 	char *v = r_sys_getenv (name);
 	if (R_STR_ISNOTEMPTY (v)) {
-		printf ("%s\n", v);
+		r_main_printf (main_cons, "%s\n", v);
 	}
 	free (v);
 }
 
 static int r2pm_main_return(RCons *cons, bool own_cons, int rc) {
 	if (own_cons) {
-		r_cons_flush (cons);
-		r_cons_free (cons);
+		r_main_cons_flush (cons);
+		r_main_cons_free (cons);
 	}
 	return rc;
 }
 
-R_API int r_main_r2pm(int argc, const char **argv) {
+R_IPI int r_main_r2pm_impl(int argc, const char **argv) {
+	RCons *main_cons = r_main_cons ();
 	bool own_cons = false;
-	RCons *cons = r_cons_global (NULL);
+	RCons *cons = r_main_cons ();
 	if (!cons) {
 		own_cons = true;
-		cons = r_cons_new ();
+		cons = r_main_cons_new ();
 	}
 #if R2__UNIX__
 	char *wd = getcwd (NULL, 0);
@@ -1853,7 +1860,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		return r2pm_main_return (cons, own_cons, r2pm.rc);
 	}
 	if (r2pm.help || argc == 1) {
-		printf ("%s", helpmsg);
+		r_main_printf (main_cons, "%s", helpmsg);
 		return r2pm_main_return (cons, own_cons, r2pm.rc);
 	}
 	{
@@ -1886,7 +1893,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	}
 	if (r2pm.add) {
 		if (opt.ind == argc) {
-			printf (R2PM_GITURL "\n");
+			r_main_printf (main_cons, R2PM_GITURL "\n");
 		} else {
 			for (i = opt.ind; i < argc; i++) {
 				r2pm_add (&r2pm, argv[i]);
@@ -1908,7 +1915,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 			if (*s) {
 				r_cons_print (cons, s);
 				if (own_cons) {
-					r_cons_flush (cons);
+					r_main_cons_flush (cons);
 				}
 				res = r2pm.json && !strcmp (s, "[]");
 			} else {
@@ -1935,7 +1942,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		if (s) {
 			r_cons_print (cons, s);
 			if (own_cons) {
-				r_cons_flush (cons);
+				r_main_cons_flush (cons);
 			}
 			res = 0;
 		} else {
@@ -1955,7 +1962,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 			}
 		}
 		if (own_cons) {
-			r_cons_flush (cons);
+			r_main_cons_flush (cons);
 		}
 	}
 	r_list_free (targets);

@@ -4,6 +4,7 @@
 
 #include <r_core.h>
 #include <r_main.h>
+#include "main_private.h"
 
 R_VEC_TYPE (RVecRBinStringPtr, RBinString *);
 
@@ -82,7 +83,7 @@ static RCore *opencore(RadiffOptions *ro, const char *f) {
 	RListIter *iter;
 	const ut64 baddr = UT64_MAX;
 	const char *e;
-	RCore *c = r_core_new ();
+	RCore *c = r_main_core_new ();
 	if (!c) {
 		return NULL;
 	}
@@ -111,11 +112,11 @@ static RCore *opencore(RadiffOptions *ro, const char *f) {
 #endif
 
 		if (!rfile) {
-			r_core_free (c);
+			r_main_core_free (c);
 			return NULL;
 		}
 		if (!r_core_bin_load (c, NULL, baddr)) {
-			r_core_free (c);
+			r_main_core_free (c);
 			return NULL;
 		}
 		(void)r_core_bin_update_arch_bits (c);
@@ -146,7 +147,7 @@ static RCore *opencore(RadiffOptions *ro, const char *f) {
 		if (ro->zignatures) {
 			r_core_cmd0 (c, "zg");
 		}
-		r_cons_flush (c->cons);
+		r_main_cons_flush (c->cons);
 	}
 	// TODO: must enable io.va here if wanted .. r_config_set_i (c->config, "io.va", va);
 	return c;
@@ -183,6 +184,7 @@ static int cb_xpatch(RDiff *d, void *user, RDiffOp *op) {
 }
 
 static int cb(RDiff *d, void *user, RDiffOp *op) {
+	RCons *main_cons = r_main_cons ();
 	int i;
 	RadiffOptions *ro = (RadiffOptions *)user;
 	char s[256] = { 0 };
@@ -197,39 +199,39 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			readstr (s, sizeof (s), op->a_buf, op->a_len);
 			if (*s) {
 				if (!ro->quiet) {
-					printf (Color_RED);
+					r_main_printf (main_cons, Color_RED);
 				}
-				printf ("-0x%08" PFMT64x ":", op->a_off + ro->baddr);
+				r_main_printf (main_cons, "-0x%08" PFMT64x ":", op->a_off + ro->baddr);
 				int len = op->a_len; // R_MIN (op->a_len, strlen (op->a_buf));
 				for (i = 0; i < len; i++) {
-					printf ("%02x ", op->a_buf[i]);
+					r_main_printf (main_cons, "%02x ", op->a_buf[i]);
 				}
 				if (!ro->quiet) {
 					char *p = r_str_escape ((const char *)op->a_buf);
-					printf (" \"%s\"", p);
+					r_main_printf (main_cons, " \"%s\"", p);
 					free (p);
-					printf (Color_RESET);
+					r_main_printf (main_cons, Color_RESET);
 				}
-				printf ("\n");
+				r_main_printf (main_cons, "\n");
 			}
 		}
 		if (op->b_len > 0) {
 			readstr (s, sizeof (s), op->b_buf, op->b_len);
 			if (*s) {
 				if (!ro->quiet) {
-					printf (Color_GREEN);
+					r_main_printf (main_cons, Color_GREEN);
 				}
-				printf ("+0x%08" PFMT64x ":", op->b_off + ro->baddr);
+				r_main_printf (main_cons, "+0x%08" PFMT64x ":", op->b_off + ro->baddr);
 				for (i = 0; i < op->b_len; i++) {
-					printf ("%02x ", op->b_buf[i]);
+					r_main_printf (main_cons, "%02x ", op->b_buf[i]);
 				}
 				if (!ro->quiet) {
 					char *p = r_str_escape ((const char *)op->b_buf);
-					printf (" \"%s\"", p);
+					r_main_printf (main_cons, " \"%s\"", p);
 					free (p);
-					printf (Color_RESET);
+					r_main_printf (main_cons, Color_RESET);
 				}
-				printf ("\n");
+				r_main_printf (main_cons, "\n");
 			}
 		}
 		break;
@@ -238,24 +240,24 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			R_LOG_WARN ("r2cmds (-r) + disasm (-D) is not yet implemented");
 		}
 		if (op->a_len == op->b_len) {
-			printf ("wx ");
+			r_main_printf (main_cons, "wx ");
 			for (i = 0; i < op->b_len; i++) {
-				printf ("%02x", op->b_buf[i]);
+				r_main_printf (main_cons, "%02x", op->b_buf[i]);
 			}
-			printf (" @ 0x%08" PFMT64x "\n", op->b_off + ro->baddr);
+			r_main_printf (main_cons, " @ 0x%08" PFMT64x "\n", op->b_off + ro->baddr);
 		} else {
 			if (op->a_len > 0) {
-				printf ("r-%d @ 0x%08" PFMT64x "\n",
+				r_main_printf (main_cons, "r-%d @ 0x%08" PFMT64x "\n",
 					op->a_len, op->a_off + ro->delta + ro->baddr);
 			}
 			if (op->b_len > 0) {
-				printf ("r+%d @ 0x%08" PFMT64x "\n",
+				r_main_printf (main_cons, "r+%d @ 0x%08" PFMT64x "\n",
 					op->b_len, op->b_off + ro->delta + ro->baddr);
-				printf ("wx ");
+				r_main_printf (main_cons, "wx ");
 				for (i = 0; i < op->b_len; i++) {
-					printf ("%02x", op->b_buf[i]);
+					r_main_printf (main_cons, "%02x", op->b_buf[i]);
 				}
-				printf (" @ 0x%08" PFMT64x "\n", op->b_off + ro->delta + ro->baddr);
+				r_main_printf (main_cons, " @ 0x%08" PFMT64x "\n", op->b_off + ro->delta + ro->baddr);
 			}
 			ro->delta += (op->b_off - op->a_off);
 		}
@@ -280,69 +282,69 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 	default:
 		if (ro->disasm) {
 			int i;
-			printf ("--- 0x%08" PFMT64x "  ", op->a_off + ro->baddr);
+			r_main_printf (main_cons, "--- 0x%08" PFMT64x "  ", op->a_off + ro->baddr);
 			if (!ro->core) {
 				ro->core = opencore (ro, ro->file);
 			}
 			for (i = 0; i < op->a_len; i++) {
-				printf ("%02x", op->a_buf[i]);
+				r_main_printf (main_cons, "%02x", op->a_buf[i]);
 			}
-			printf ("\n");
+			r_main_printf (main_cons, "\n");
 			if (ro->core) {
 				int len = R_MAX (4, op->a_len);
 				RAsmCode *ac = r_asm_mdisassemble (ro->core->rasm, op->a_buf, len);
 				char *acbufasm = strdup (ac->assembly);
 				if (ro->quiet) {
 					char *bufasm = r_str_prefix_all (acbufasm, "- ");
-					printf ("%s\n", bufasm);
+					r_main_printf (main_cons, "%s\n", bufasm);
 					free (bufasm);
 				} else {
 					char *bufasm = r_str_prefix_all (acbufasm, Color_RED "- ");
-					printf ("%s" Color_RESET, bufasm);
+					r_main_printf (main_cons, "%s" Color_RESET, bufasm);
 					free (bufasm);
 				}
 				free (acbufasm);
 				r_asm_code_free (ac);
 			}
 		} else {
-			printf ("0x%08" PFMT64x " ", op->a_off + ro->baddr);
+			r_main_printf (main_cons, "0x%08" PFMT64x " ", op->a_off + ro->baddr);
 			for (i = 0; i < op->a_len; i++) {
-				printf ("%02x", op->a_buf[i]);
+				r_main_printf (main_cons, "%02x", op->a_buf[i]);
 			}
 		}
 		if (ro->disasm) {
 			int i;
-			printf ("+++ 0x%08" PFMT64x "  ", op->b_off + ro->baddr);
+			r_main_printf (main_cons, "+++ 0x%08" PFMT64x "  ", op->b_off + ro->baddr);
 			if (!ro->core) {
 				ro->core = opencore (ro, ro->file);
 			}
 			for (i = 0; i < op->b_len; i++) {
-				printf ("%02x", op->b_buf[i]);
+				r_main_printf (main_cons, "%02x", op->b_buf[i]);
 			}
-			printf ("\n");
+			r_main_printf (main_cons, "\n");
 			if (ro->core) {
 				int len = R_MAX (4, op->b_len);
 				RAsmCode *ac = r_asm_mdisassemble (ro->core->rasm, op->b_buf, len);
 				char *acbufasm = strdup (ac->assembly);
 				if (ro->quiet) {
 					char *bufasm = r_str_prefix_all (acbufasm, "+ ");
-					printf ("%s\n", bufasm);
+					r_main_printf (main_cons, "%s\n", bufasm);
 					free (bufasm);
 					free (acbufasm);
 				} else {
 					char *bufasm = r_str_prefix_all (acbufasm, Color_GREEN "+ ");
-					printf ("%s\n" Color_RESET, bufasm);
+					r_main_printf (main_cons, "%s\n" Color_RESET, bufasm);
 					free (bufasm);
 					free (acbufasm);
 				}
 				// r_asm_code_free (ac);
 			}
 		} else {
-			printf (" => ");
+			r_main_printf (main_cons, " => ");
 			for (i = 0; i < op->b_len; i++) {
-				printf ("%02x", op->b_buf[i]);
+				r_main_printf (main_cons, "%02x", op->b_buf[i]);
 			}
-			printf (" 0x%08" PFMT64x "\n", op->b_off + ro->baddr);
+			r_main_printf (main_cons, " 0x%08" PFMT64x "\n", op->b_off + ro->baddr);
 		}
 		return 1;
 	}
@@ -350,16 +352,18 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 }
 
 void print_bytes(const void *p, size_t len, bool big_endian) {
+	RCons *main_cons = r_main_cons ();
 	size_t i;
 	for (i = 0; i < len; i++) {
 		ut8 ch = ((ut8 *)p)[big_endian? (len - i - 1): i];
-		if (write (1, &ch, 1) != 1) {
+		if (r_main_write (main_cons, &ch, 1) != 1) {
 			break;
 		}
 	}
 }
 
 static int bcb(RDiff *d, void *user, RDiffOp *op) {
+	RCons *main_cons = r_main_cons ();
 	RadiffOptions *ro = user;
 	ut64 offset_diff = op->a_off - ro->gdiff_start;
 	ut8 opcode;
@@ -437,15 +441,15 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 	// we append data
 	if (op->b_len <= 246) {
 		ut8 data = op->b_len;
-		R_UNUSED_RESULT (write (1, &data, 1));
+		R_UNUSED_RESULT (r_main_write (main_cons, &data, 1));
 	} else if (op->b_len <= USHRT_MAX) {
 		USLen = (ut16)op->b_len;
 		ut8 data = 247;
-		R_UNUSED_RESULT (write (1, &data, 1));
+		R_UNUSED_RESULT (r_main_write (main_cons, &data, 1));
 		print_bytes (&USLen, sizeof (USLen), true);
 	} else if (op->b_len <= INT_MAX) {
 		ut8 data = 248;
-		R_UNUSED_RESULT (write (1, &data, 1));
+		R_UNUSED_RESULT (r_main_write (main_cons, &data, 1));
 		ILen = (int)op->b_len;
 		print_bytes (&ILen, sizeof (ILen), true);
 	} else {
@@ -455,7 +459,7 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 		size_t i;
 		for (i = 0; i < times; i++) {
 			ut8 data = 248;
-			if (write (1, &data, 1) != 1) {
+			if (r_main_write (main_cons, &data, 1) != 1) {
 				break;
 			}
 			print_bytes (&max, sizeof (max), true);
@@ -474,9 +478,10 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 }
 
 static int show_help(int v) {
-	printf ("Usage: radiff2 [-options] [-A[A]] [-B #] [-g sym] [-m graph_mode][-t %%] [file] [file]\n");
+	RCons *main_cons = r_main_cons ();
+	r_main_printf (main_cons, "Usage: radiff2 [-options] [-A[A]] [-B #] [-g sym] [-m graph_mode][-t %%] [file] [file]\n");
 	if (v) {
-		printf (
+		r_main_printf (main_cons,
 			"  -a [arch]  specify architecture plugin to use (x86, arm, ..)\n"
 			"  -A [-A]    run aaa or aaaa after loading each binary (see -C)\n"
 			"  -b [bits]  specify register size for arch (16 (thumb), 32, 64, ..)\n"
@@ -614,11 +619,11 @@ static void dump_cols(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, int w) 
 			}
 		}
 		r_cons_printf (ro->cons, "\n");
-		r_cons_flush (ro->cons);
+		r_main_cons_flush (ro->cons);
 	}
 	r_cons_break_end (ro->cons);
 	r_cons_printf (ro->cons, "\n" Color_RESET);
-	r_cons_flush (ro->cons);
+	r_main_cons_flush (ro->cons);
 	if (as != bs) {
 		r_cons_printf (ro->cons, "...\n");
 	}
@@ -714,11 +719,11 @@ static void dump_cols_hexii(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, i
 			r_cons_printf (ro->cons, "  ");
 		}
 		r_cons_printf (ro->cons, "\n");
-		r_cons_flush (ro->cons);
+		r_main_cons_flush (ro->cons);
 	}
 	r_cons_break_end (ro->cons);
 	r_cons_printf (ro->cons, "\n" Color_RESET);
-	r_cons_flush (ro->cons);
+	r_main_cons_flush (ro->cons);
 	if (as != bs) {
 		r_cons_printf (ro->cons, "...\n");
 	}
@@ -1089,10 +1094,7 @@ static void radiff_options_init(RadiffOptions *ro) {
 	ro->evals = r_list_newf (NULL);
 	ro->mode = MODE_DIFF;
 	ro->gmode = GRAPH_DEFAULT_MODE;
-	ro->cons = r_cons_singleton ();
-	if (!ro->cons) {
-		ro->cons = r_cons_new ();
-	}
+	ro->cons = r_main_cons_new ();
 	ro->offset_a = 0;
 	ro->offset_b = 0;
 	ro->length_a = UT64_MAX;
@@ -1102,8 +1104,8 @@ static void radiff_options_init(RadiffOptions *ro) {
 static void radiff_options_fini(RadiffOptions *ro) {
 	r_list_free (ro->runcmd);
 	r_list_free (ro->evals);
-	r_core_free (ro->core);
-	r_cons_free (ro->cons);
+	r_main_core_free (ro->core);
+	r_main_cons_free (ro->cons);
 }
 
 static void fileobj(RadiffOptions *ro, const char *ro_file, const ut8 *buf, size_t sz) {
@@ -1139,6 +1141,7 @@ static const char idhelp[] =
 	" Z zignatures\n";
 
 static bool select_input_data(RadiffOptions *ro, const char *arg) {
+	RCons *main_cons = r_main_cons ();
 	char ch0 = *arg;
 	if (!singlechar (arg)) {
 		if (!strcmp (arg, "symbols")) {
@@ -1170,7 +1173,7 @@ static bool select_input_data(RadiffOptions *ro, const char *arg) {
 	switch (ch0) {
 	case '?':
 	case 'h':
-		printf ("%s\n", idhelp);
+		r_main_printf (main_cons, "%s\n", idhelp);
 		return false;
 	case 'c':
 		ro->mode = MODE_DIFF_CLASSES;
@@ -1226,6 +1229,7 @@ static const char gfhelp[] =
 	"  i          interactive ascii art\n";
 
 static bool select_graph_type(RadiffOptions *ro, const char *arg) {
+	RCons *main_cons = r_main_cons ();
 	char ch0 = *arg;
 	if (!singlechar (arg)) {
 		if (!strcmp (arg, "sdb")) {
@@ -1255,7 +1259,7 @@ static bool select_graph_type(RadiffOptions *ro, const char *arg) {
 	switch (ch0) {
 	case '?':
 	case 'h':
-		printf ("%s\n", gfhelp);
+		r_main_printf (main_cons, "%s\n", gfhelp);
 		return false;
 	case 'i': ro->gmode = GRAPH_INTERACTIVE_MODE; break;
 	case 'k': ro->gmode = GRAPH_SDB_MODE; break;
@@ -1284,6 +1288,7 @@ static const char ofhelp[] =
 	" X hexii        simplified hexdump (hexII format)\n";
 
 static bool select_output_format(RadiffOptions *ro, const char *arg) {
+	RCons *main_cons = r_main_cons ();
 	char ch0 = *arg;
 	if (!singlechar (arg)) {
 		if (!strcmp (arg, "hexii")) {
@@ -1309,7 +1314,7 @@ static bool select_output_format(RadiffOptions *ro, const char *arg) {
 	switch (ch0) {
 	case '?':
 	case 'h':
-		printf ("%s\n", ofhelp);
+		r_main_printf (main_cons, "%s\n", ofhelp);
 		return false;
 	case 'j':
 		ro->diffmode = 'j';
@@ -1352,7 +1357,8 @@ static RThreadFunctionRet thready_core(RThread *th) {
 	return false;
 }
 
-R_API int r_main_radiff2(int argc, const char **argv) {
+R_IPI int r_main_radiff2_impl(int argc, const char **argv) {
+	RCons *main_cons = r_main_cons ();
 	RadiffOptions ro;
 	const char *columnSort = NULL;
 	const char *addr = NULL;
@@ -1484,12 +1490,12 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			break;
 		case 't':
 			ro.threshold = atoi (opt.arg);
-			// printf ("%s\n", opt.arg);
+			// r_main_printf (main_cons, "%s\n", opt.arg);
 			break;
 		case 'T': // imho `t <=> T`
 			R_LOG_WARN ("Threading support is experimental and known to be crashy");
 			ro.thready = true;
-			// printf ("%s\n", opt.arg);
+			// r_main_printf (main_cons, "%s\n", opt.arg);
 			break;
 		case 'x':
 			ro.mode = MODE_COLS;
@@ -1699,12 +1705,12 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		}
 		// r_cons_printf (c2->cons, "PENE\n");
 		if (ro.mode == MODE_CODE || ro.mode == MODE_GRAPH) {
-			r_cons_flush (c->cons);
-			r_cons_flush (c2->cons);
-			r_cons_flush (ro.cons);
+			r_main_cons_flush (c->cons);
+			r_main_cons_flush (c2->cons);
+			r_main_cons_flush (ro.cons);
 		}
-		r_core_free (c);
-		r_core_free (c2);
+		r_main_core_free (c);
+		r_main_core_free (c2);
 		if (ro.mode == MODE_CODE || ro.mode == MODE_GRAPH) {
 			return 0;
 		}
@@ -1767,7 +1773,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		r_cons_printf (ro.cons, "+++ %s\n", ro.file2);
 		r_diff_set_callback (d, &cb_xpatch, &ro);
 		r_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);
-		r_cons_flush (ro.cons);
+		r_main_cons_flush (ro.cons);
 		break;
 	case MODE_COLSII:
 		if (!c && !r_list_empty (ro.evals)) {
@@ -1802,18 +1808,18 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			pj_ka (ro.pj, "changes");
 		}
 		if (ro.diffmode == 'B') {
-			R_UNUSED_RESULT (write (1, "\xd1\xff\xd1\xff\x04", 5));
+			R_UNUSED_RESULT (r_main_write (main_cons, "\xd1\xff\xd1\xff\x04", 5));
 		}
 		if (ro.diffmode == 'U') {
 			char *res = r_diff_buffers_unified (d, bufa, (int)sza, bufb, (int)szb);
 			if (res) {
-				printf ("%s", res);
+				r_main_printf (main_cons, "%s", res);
 				free (res);
 			}
 		} else if (ro.diffmode == 'B') {
 			r_diff_set_callback (d, &bcb, &ro);
 			r_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);
-			R_UNUSED_RESULT (write (1, "\x00", 1));
+			R_UNUSED_RESULT (r_main_write (main_cons, "\x00", 1));
 		} else {
 			r_diff_set_callback (d, &cb, &ro);
 			// r_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);
@@ -1846,20 +1852,20 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 				r_diff_free (d);
 			}
 		}
-		printf ("similarity: %.3f\n", sim);
-		printf ("distance: %d\n", ro.count);
+		r_main_printf (main_cons, "similarity: %.3f\n", sim);
+		r_main_printf (main_cons, "distance: %d\n", ro.count);
 		break;
 	}
 
 	if (ro.diffmode == 'j' && ro.showcount) {
 		pj_kd (ro.pj, "count", ro.count);
 	} else if (ro.showcount && ro.diffmode != 'j') {
-		printf ("%d\n", ro.count);
+		r_main_printf (main_cons, "%d\n", ro.count);
 	}
 	if (ro.pj) {
 		pj_end (ro.pj);
 		char *s = pj_drain (ro.pj);
-		printf ("%s\n", s);
+		r_main_printf (main_cons, "%s\n", s);
 		free (s);
 		ro.pj = NULL;
 	}

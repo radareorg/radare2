@@ -3,6 +3,7 @@
 #define R_LOG_ORIGIN "rarun2"
 
 #include <r_main.h>
+#include "main_private.h"
 #include <r_socket.h>
 
 #if R2__UNIX__ && HAVE_PTY
@@ -22,13 +23,14 @@ static void rarun2_tty(void) {
 }
 #endif
 
-R_API int r_main_rarun2(int argc, const char **argv) {
+R_IPI int r_main_rarun2_impl(int argc, const char **argv) {
+	RCons *main_cons = r_main_cons ();
 	RRunProfile *p;
 	// setvbuf (stdout, NULL, _IONBF, 0);
 	int i;
 	if (argc == 1 || !strcmp (argv[1], "-h")) {
-		printf ("Usage: rarun2 -v|-t|script.rr2 [directive ..]\n");
-		printf ("%s", r_run_help ());
+		r_main_printf (main_cons, "Usage: rarun2 -v|-t|script.rr2 [directive ..]\n");
+		r_main_printf (main_cons, "%s", r_run_help ());
 		return 1;
 	}
 	if (!strcmp (argv[1], "-v")) {

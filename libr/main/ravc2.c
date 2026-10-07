@@ -5,6 +5,7 @@
 #include <rvc.h>
 #include <r_list.h>
 #include <r_main.h>
+#include "main_private.h"
 
 typedef struct {
 	const char *name;
@@ -18,12 +19,14 @@ static RAvcEnv env[] = {
 static void ravc_show_env(bool show_desc);
 
 static void usage(void) {
-	printf ("Usage: ravc2 [-qvh] [action] [args ...]\n");
+	RCons *main_cons = r_main_cons ();
+	r_main_printf (main_cons, "Usage: ravc2 [-qvh] [action] [args ...]\n");
 }
 
 static void help(void) {
+	RCons *main_cons = r_main_cons ();
 	usage ();
-	printf (
+	r_main_printf (main_cons,
 		"Flags:\n"
 		" -q         quiet mode\n"
 		" -v         show version\n"
@@ -51,24 +54,27 @@ static char *get_author(void) {
 }
 
 static void ravc_env_print(const char *name) {
+	RCons *main_cons = r_main_cons ();
 	char *value = r_sys_getenv (name);
-	printf ("%s\n", R_STR_ISNOTEMPTY (value)? value: "");
+	r_main_printf (main_cons, "%s\n", R_STR_ISNOTEMPTY (value)? value: "");
 	free (value);
 }
 
 static void ravc_show_env(bool show_desc) {
+	RCons *main_cons = r_main_cons ();
 	int id = 0;
 	for (id = 0; id < (sizeof (env) / sizeof (env[0])); id++) {
 		if (show_desc) {
-			printf ("%s\t%s\n", env[id].name, env[id].desc);
+			r_main_printf (main_cons, "%s\t%s\n", env[id].name, env[id].desc);
 		} else {
-			printf ("%s=", env[id].name);
+			r_main_printf (main_cons, "%s=", env[id].name);
 			ravc_env_print (env[id].name);
 		}
 	}
 }
 
-R_API int r_main_ravc2(int argc, const char **argv) {
+R_IPI int r_main_ravc2_impl(int argc, const char **argv) {
+	RCons *main_cons = r_main_cons ();
 	RGetopt opt;
 	int c;
 	bool quiet = false;
@@ -79,7 +85,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		return 1;
 	}
 	if (!r_cons_is_initialized ()) {
-		r_cons_new ();
+		r_main_cons_new ();
 	}
 	int rad = 0;
 	r_getopt_init (&opt, argc, argv, "gqvhH:j");
@@ -113,7 +119,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 
 	if (version) {
 		if (quiet) {
-			printf ("%s\n", R2_VERSION);
+			r_main_printf (main_cons, "%s\n", R2_VERSION);
 			return 0;
 		}
 		return r_main_version_print ("ravc2", rad);
@@ -162,7 +168,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			RListIter *iter;
 			char *branch;
 			r_list_foreach (branches, iter, branch) {
-				printf ("%s\n", branch);
+				r_main_printf (main_cons, "%s\n", branch);
 			}
 			r_list_free (branches);
 		} else {
@@ -202,16 +208,16 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	} else if (!strcmp (action, "status")) {
 		char *current_branch = rvc->p->curbranch (rvc);
 		if (current_branch) {
-			printf ("Branch: %s\n", current_branch);
+			r_main_printf (main_cons, "Branch: %s\n", current_branch);
 			RList *uncommited = rvc->p->uncommited (rvc);
 			if (r_list_empty (uncommited)) {
-				printf ("All files are committed\n");
+				r_main_printf (main_cons, "All files are committed\n");
 			} else {
-				printf ("The following files were NOT committed:\n");
+				r_main_printf (main_cons, "The following files were NOT committed:\n");
 				RListIter *iter;
 				const char *file;
 				r_list_foreach (uncommited, iter, file) {
-					printf ("%s\n", file);
+					r_main_printf (main_cons, "%s\n", file);
 				}
 			}
 			r_list_free (uncommited);

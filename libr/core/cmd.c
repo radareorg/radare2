@@ -369,6 +369,7 @@ static RCoreHelpMessage help_msg_r = {
 	"rabin2", " [...]", "run rabin2's main",
 	"radare2", " [...]", "run radare2's main",
 	"radiff2", " [...]", "run radiff2's main",
+	"rapatch2", " [...]", "run rapatch2's main",
 	"rafind2", " [...]", "run rafind2's main",
 	"rafs2", " [...]", "run rafs2's main",
 	"rahash2", " [...]", "run rahash2's main",
@@ -2119,7 +2120,7 @@ static void load_table_asciiart(RCore *core, RTable *t, RList *lines) {
 					free (ss);
 					continue;
 				}
-				if (isdigit ((unsigned char)*ss)) {
+				if (isdigit ((ut8)*ss)) {
 					int col = r_list_length (items);
 					RTableColumn *c = r_list_get_n (t->cols, col);
 					if (c) {
@@ -2711,12 +2712,20 @@ static int cmd_kuery(void *data, const char *input) {
 	return 0;
 }
 
-static int __runMain(RMainCallback cb, const char *arg) {
+static int __runMain(RCore *core, RMainCallback cb, const char *arg) {
 	char *a = r_str_trim_dup (arg);
 	int argc = 0;
 	char **args = r_str_argv (a, &argc);
+	RCons *previous_cons = r_cons_global (NULL);
+	r_cons_global (core->cons);
+	char *previous_env = r_sys_getenv ("R2CONS");
+	r_strf_var (cons_ptr, 64, "%p:%d", core->cons, r_sys_getpid ());
+	r_sys_setenv ("R2CONS", cons_ptr);
 	int res = cb? cb (argc, (const char **)args): -1;
-	free (args);
+	r_sys_setenv ("R2CONS", previous_env);
+	free (previous_env);
+	r_cons_global (previous_cons);
+	r_str_argv_free (args);
 	free (a);
 	return res;
 }
@@ -2728,62 +2737,44 @@ static bool cmd_r2cmd(RCore *core, const char *_input) {
 	int rc = 0;
 
 	if (ISCMD ("rax2")) {
-		rc = __runMain (core->r_main_rax2, input);
+		rc = __runMain (core, core->r_main_rax2, input);
 	} else if (ISCMD ("r2pm")) {
-		rc = __runMain (core->r_main_r2pm , input);
+		rc = __runMain (core, core->r_main_r2pm , input);
 	} else if (ISCMD ("r2")) {
-		rc = __runMain (core->r_main_radare2, input);
-	} else if (ISCMD ("rapatch2")) {
-		r_sys_cmdf ("%s", input);
-		// rc = __runMain (r_main_rapatch2, input);
-	} else if (ISCMD ("radare2")) {
-		r_sys_cmdf ("%s", input);
-		// rc = __runMain (core->r_main_radare2, input);
-	} else if (ISCMD ("rasm2")) {
-#if __wasi__
-		// TODO: fix this (rcons)
-		rc = __runMain (core->r_main_rasm2, input);
-#else
-		r_sys_cmdf ("%s", input);
-#endif
-	} else if (ISCMD ("rabin2")) {
-		r_sys_cmdf ("%s", input);
-		// rc = __runMain (core->r_main_rabin2, input);
-	} else if (ISCMD ("ragg2")) {
-		r_sys_cmdf ("%s", input);
-		// rc = __runMain (core->r_main_ragg2, input);
-	} else if (ISCMD ("rafs2")) {
-		rc = __runMain (core->r_main_rafs2, input);
-	} else if (ISCMD ("ravc2")) {
-		rc = __runMain (core->r_main_ravc2, input);
-	} else if (ISCMD ("r2pm")) {
-		rc = __runMain (core->r_main_r2pm, input);
-	} else if (ISCMD ("radiff2")) {
-		rc = __runMain (core->r_main_radiff2, input);
-	} else if (ISCMD ("r2.")) {
+		rc = __runMain (core, core->r_main_radare2, input);
+	} else if (r_str_startswith (input, "r2.")) {
+		// TODO: use the api instead
 		r_core_cmdf (core, "'js console.log(r2.%s)", input + 3);
-	} else if (ISCMD ("r2mcp")) {
-		R_LOG_ERROR ("You need to install the plugin with r2pm -ci r2mcp");
-		r_core_return_value (core, 1);
-	} else if (ISCMD ("r2ai")) {
-		R_LOG_ERROR ("You need to install the plugin with r2pm -ci r2ai");
-		r_core_return_value (core, 1);
+	} else if (ISCMD ("rapatch2")) {
+		rc = __runMain (core, core->r_main_rapatch2, input);
+	} else if (ISCMD ("radare2")) {
+		rc = __runMain (core, core->r_main_radare2, input);
+	} else if (ISCMD ("rasm2")) {
+		rc = __runMain (core, core->r_main_rasm2, input);
+	} else if (ISCMD ("rabin2")) {
+		rc = __runMain (core, core->r_main_rabin2, input);
+	} else if (ISCMD ("ragg2")) {
+		rc = __runMain (core, core->r_main_ragg2, input);
+	} else if (ISCMD ("rafs2")) {
+		rc = __runMain (core, core->r_main_rafs2, input);
+	} else if (ISCMD ("ravc2")) {
+		rc = __runMain (core, core->r_main_ravc2, input);
+	} else if (ISCMD ("r2pm")) {
+		rc = __runMain (core, core->r_main_r2pm, input);
+	} else if (ISCMD ("radiff2")) {
+		rc = __runMain (core, core->r_main_radiff2, input);
 	} else {
-		const char *r2cmds[] = {
-			"rax2", "r2pm", "rafs2", "rasm2", "rabin2", "rahash2", "rafind2", "rarun2", "ragg2", "radare2", "r2pm", "r2", NULL
-		};
-		int i;
-		for (i = 0; r2cmds[i]; i++) {
-			if (r_str_startswith (input, r2cmds[i])) {
-				free (input);
-				return true;
-			}
+		if (!R_STR_STARTSWITH_ANY (input, "r2mcp", "r2ai", "r2flutter", "r2hermes", "r2unity")) {
+			free (input);
+			r_core_return_value (core, 1);
+			return false;
 		}
-		if (_input[0] == 'a') {
-			r_cons_cmd_help_match (core->cons, help_msg_r, "ra", 0, false);
+		char *s = strchr (input, ' ');
+		if (s) {
+			*s = 0;
 		}
-		free (input);
-		return false;
+		R_LOG_ERROR ("You need to install the plugin with r2pm -ci %s", input);
+		rc = 1;
 	}
 	free (input);
 	r_core_return_value (core, rc);
@@ -2862,16 +2853,6 @@ static int cmd_resize(void *data, const char *input) {
 	switch (*input) {
 	case 'b': // "rb" rebase
 		return cmd_rebase (core, input + 1);
-	case '2': // "r2" // XXX should be handled already in cmd_r2cmd()
-		if (r_str_startswith (input + 1, "ai")) {
-			R_LOG_ERROR ("Missing plugin. Run: r2pm -ci r2ai");
-			r_core_return_code (core, 1);
-			return true;
-		}
-		// TODO: use argv[0] instead of 'radare2'
-		// TODO: { char **argv = { "r2", NULL }; r_main_radare2 (1, argv); }
-		r_sys_cmdf ("radare%s", input);
-		return true;
 	case 'm': // "rm"
 		return cmd_rm (core, input);
 	case 'x':
@@ -2882,10 +2863,8 @@ static int cmd_resize(void *data, const char *input) {
 		}
 		return true;
 	case '\0':
-		if (core->io->desc) {
-			if (oldsize != -1) {
-				r_cons_printf (core->cons, "%"PFMT64d"\n", oldsize);
-			}
+		if (core->io->desc && oldsize != -1) {
+			r_cons_printf (core->cons, "%"PFMT64d"\n", oldsize);
 		}
 		return true;
 	case 'j': { // "rj"
@@ -2901,12 +2880,10 @@ static int cmd_resize(void *data, const char *input) {
 			return true;
 		}
 	case 'h': // "rh"
-		if (core->io->desc) {
-			if (oldsize != -1) {
-				char humansz[8];
-				r_num_units (humansz, sizeof (humansz), oldsize);
-				r_cons_printf (core->cons, "%s\n", humansz);
-			}
+		if (core->io->desc && oldsize != -1) {
+			char humansz[8];
+			r_num_units (humansz, sizeof (humansz), oldsize);
+			r_cons_printf (core->cons, "%s\n", humansz);
 		}
 		return true;
 	case '+': // "r+"
