@@ -434,7 +434,7 @@ static bool cb_archbits_getter(RCore *core, RConfigNode *node) {
 
 static bool core_arch_set_endian_reload(RCore *core, ut32 endian) {
 	if (core->anal && core->anal->reg) {
-		core->anal->reg->endian = endian;
+		r_reg_set_endian (core->anal->reg, endian);
 	}
 	if (core->anal->arch->cfg && core->anal->arch->cfg->endian == endian) {
 		return true;
@@ -472,6 +472,7 @@ static bool cb_archendian(void *user, void *data) {
 	} else {
 		return false;
 	}
+	core->rasm->config->endian = endian;
 	if (!core_arch_set_endian_reload (core, endian)) {
 		return false;
 	}

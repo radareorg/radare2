@@ -154,6 +154,29 @@ bool test_r_reg_get_value_flag(void) {
 	mu_end;
 }
 
+bool test_r_reg_set_endian(void) {
+	RReg *reg = r_reg_new ();
+	mu_assert_notnull (reg, "r_reg_new () failed");
+	r_reg_set_profile_string (reg, "gpr	xer	.32	0	0\ngpr	ca	.1	3.5	0\n");
+	r_reg_set_endian (reg, R_SYS_ENDIAN_BIG);
+	r_reg_setv (reg, "xer", 0x20000000);
+	mu_assert_eq (r_reg_getv (reg, "ca"), 1, "big endian flag reads its xer bit");
+	r_reg_setv (reg, "ca", 0);
+	mu_assert_eq (r_reg_getv (reg, "xer"), 0, "big endian flag writes its xer bit");
+	r_reg_set_endian (reg, R_SYS_ENDIAN_LITTLE);
+	r_reg_setv (reg, "xer", 0x20000000);
+	mu_assert_eq (r_reg_getv (reg, "ca"), 1, "flag follows the register back to little endian");
+	r_reg_free (reg);
+
+	reg = r_reg_new ();
+	r_reg_set_endian (reg, R_SYS_ENDIAN_BIG);
+	r_reg_set_profile_string (reg, "gpr	xer	.32	0	0\ngpr	ca	.1	3.5	0\n");
+	r_reg_setv (reg, "xer", 0x20000000);
+	mu_assert_eq (r_reg_getv (reg, "ca"), 1, "profile parsed under big endian mirrors its flags");
+	r_reg_free (reg);
+	mu_end;
+}
+
 bool test_r_reg_get(void) {
 	RRegItem *r;
 
@@ -765,6 +788,7 @@ int all_tests(void) {
 	mu_run_test (test_r_reg_cfloat_half);
 	mu_run_test (test_r_reg_get_value_gpr);
 	mu_run_test (test_r_reg_get_value_flag);
+	mu_run_test (test_r_reg_set_endian);
 	mu_run_test (test_r_reg_get);
 	mu_run_test (test_r_reg_get_list);
 	mu_run_test (test_r_reg_get_pack);

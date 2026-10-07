@@ -402,7 +402,7 @@ R_DEPRECATE R_API bool r_anal_set_reg_profile(RAnal *anal, const char *p) {
 	}
 	if (R_STR_ISNOTEMPTY (p)) {
 		if (anal->config) {
-			anal->reg->endian = anal->config->endian;
+			r_reg_set_endian (anal->reg, anal->config->endian);
 		}
 		ret = r_reg_set_profile_string (anal->reg, p);
 	}

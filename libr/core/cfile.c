@@ -1140,7 +1140,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 				r_config_set (r->config, "cfg.bigendian", r_str_bool (inf->big_endian));
 				r_config_set (r->config, "asm.arch", inf->arch);
 				r_config_set_i (r->config, "asm.bits", inf->bits);
-				r->anal->reg->endian = inf->big_endian? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE;
+				r_reg_set_endian (r->anal->reg, inf->big_endian? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE);
 				r_bin_info_free (inf);
 			}
 		}

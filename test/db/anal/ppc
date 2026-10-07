@@ -1577,9 +1577,9 @@ spr_272,r3,=
 mov
 r3,spr_272,=
 mov
-0x1fffffff,xer,&,29,ca,<<,|,30,ov,<<,|,31,so,<<,|,r3,=
+xer,r3,=
 mov
-29,r3,>>,1,&,ca,=,30,r3,>>,1,&,ov,=,31,r3,>>,1,&,so,=,0x1fffffff,r3,&,xer,=
+r3,xer,=
 EOF
 RUN
 
@@ -2022,5 +2022,55 @@ EXPECT=<<EOF
 bc 0x10, 4*cr4+lt, 0xffff8400
 bc 0x10, 4*cr4+lt, 0xffffffffffff8400
 bc 0x10, 4*cr4+lt, 0xffff8400
+EOF
+RUN
+
+NAME=ppc endian changes preserve custom register profiles
+FILE=malloc://16
+ARGS=-a ppc -b 32 -e cfg.bigendian=false
+CMDS=<<EOF
+arp unit/legacy_unit/reg/test.regs
+ar eax=0x11223344
+ar eax
+e cfg.bigendian=true
+ar eax
+e cfg.bigendian=false
+ar eax
+e arch.endian=big
+ar eax
+e arch.endian=little
+ar eax
+EOF
+EXPECT=<<EOF
+0x11223344
+0x44332211
+0x11223344
+0x44332211
+0x11223344
+EOF
+RUN
+
+NAME=ppc xer flags follow endian flips after an arch reselect
+FILE=bins/elf/hello.ppc
+CMDS=<<EOF
+e cfg.bigendian=false
+e asm.arch=ppc
+e cfg.bigendian=true
+ar xer=0x20000000
+ar ca
+e arch.endian=little
+ar xer=0
+ar so=1
+ar xer
+e arch.endian=big
+ar xer=0x20000000
+ar ca
+pi 1 @ entry0
+EOF
+EXPECT=<<EOF
+0x00000001
+0x80000000
+0x00000001
+mr r9, r1
 EOF
 RUN

@@ -882,3 +882,313 @@ EXPECT=<<EOF
 0x04040801
 EOF
 RUN
+
+NAME=ppc32 big endian XER flags share register state
+FILE=malloc://16
+ARGS=-a ppc -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 7c6102a67c6103a6
+aei
+ar xer=0xe0000042
+aes
+ar r3
+ar ca
+ar ov
+ar so
+ar r3=0x20000055
+aes
+ar xer
+ar ca
+ar ov
+ar so
+ar r3=0x4000002a
+ar pc=4
+aes
+ar xer
+ar ca
+ar ov
+ar so
+ar r3=0x8000000f
+ar pc=4
+aes
+ar xer
+ar ca
+ar ov
+ar so
+ara+
+ar xer=0x42
+ar ca
+ar ov
+ar so
+ara-
+ar xer
+ar so
+ar ca=1
+ar ov=1
+ar so=0
+ar xer
+ar pc=0
+aes
+ar r3
+EOF
+EXPECT=<<EOF
+0xe0000042
+0x00000001
+0x00000001
+0x00000001
+0x20000055
+0x00000001
+0x00000000
+0x00000000
+0x4000002a
+0x00000000
+0x00000001
+0x00000000
+0x8000000f
+0x00000000
+0x00000000
+0x00000001
+0x00000000
+0x00000000
+0x00000000
+0x8000000f
+0x00000001
+0x6000000f
+0x6000000f
+EOF
+RUN
+
+NAME=ppc32 little endian XER flags share register state
+FILE=malloc://16
+ARGS=-a ppc -b 32 -e cfg.bigendian=false
+CMDS=<<EOF
+wx a602617ca603617c
+aei
+ar xer=0xe0000042
+aes
+ar r3
+ar ca
+ar ov
+ar so
+ar r3=0x20000055
+aes
+ar xer
+ar ca
+ar ov
+ar so
+ar r3=0x4000002a
+ar pc=4
+aes
+ar xer
+ar ca
+ar ov
+ar so
+ar r3=0x8000000f
+ar pc=4
+aes
+ar xer
+ar ca
+ar ov
+ar so
+ara+
+ar xer=0x42
+ar ca
+ar ov
+ar so
+ara-
+ar xer
+ar so
+ar ca=1
+ar ov=1
+ar so=0
+ar xer
+ar pc=0
+aes
+ar r3
+EOF
+EXPECT=<<EOF
+0xe0000042
+0x00000001
+0x00000001
+0x00000001
+0x20000055
+0x00000001
+0x00000000
+0x00000000
+0x4000002a
+0x00000000
+0x00000001
+0x00000000
+0x8000000f
+0x00000000
+0x00000000
+0x00000001
+0x00000000
+0x00000000
+0x00000000
+0x8000000f
+0x00000001
+0x6000000f
+0x6000000f
+EOF
+RUN
+
+NAME=ppc32 XER aliases follow cfg.bigendian changes
+FILE=malloc://16
+ARGS=-a ppc -b 32 -e cfg.bigendian=false
+CMDS=<<EOF
+aei
+ar r4=0x11223344
+ara+
+ar r4=0x10203040
+e anal.roregs=r4
+e cfg.bigendian=true
+ar r4
+e cfg.bigendian=true
+ar r4
+wx 388000017c6102a6
+ar pc=0
+ar xer=0
+ar ca=1
+aes 2
+ar r3
+ar r4
+ar xer=0xe0000042
+ar ca
+ar ov
+ar so
+ar ca=0
+ar ov=0
+ar so=0
+ar xer
+e cfg.bigendian=false
+ar r4
+e cfg.bigendian=false
+ar r4
+wx 01008038a602617c
+ar pc=0
+ar xer=0
+ar ca=1
+aes 2
+ar r3
+ar r4
+ar xer=0xe0000042
+ar ca
+ar ov
+ar so
+ar ca=0
+ar ov=0
+ar so=0
+ar xer
+e anal.roregs=
+ara-
+ar r4
+ara-
+ar r4=0x11223344
+e cfg.bigendian=true
+ar r4
+e cfg.bigendian=false
+ar r4
+EOF
+EXPECT=<<EOF
+0x40302010
+0x40302010
+0x20000000
+0x40302010
+0x00000001
+0x00000001
+0x00000001
+0x00000042
+0x10203040
+0x10203040
+0x20000000
+0x10203040
+0x00000001
+0x00000001
+0x00000001
+0x00000042
+0x11223344
+0x44332211
+0x11223344
+EOF
+RUN
+
+NAME=ppc32 XER aliases follow arch.endian changes
+FILE=malloc://16
+ARGS=-a ppc -b 32 -e cfg.bigendian=false
+CMDS=<<EOF
+aei
+ar r4=0x11223344
+ara+
+ar r4=0x10203040
+e anal.roregs=r4
+e arch.endian=big
+ar r4
+e arch.endian=big
+ar r4
+wx 388000017c6102a6
+ar pc=0
+ar xer=0
+ar ca=1
+aes 2
+ar r3
+ar r4
+ar xer=0xe0000042
+ar ca
+ar ov
+ar so
+ar ca=0
+ar ov=0
+ar so=0
+ar xer
+e arch.endian=little
+ar r4
+e arch.endian=little
+ar r4
+wx 01008038a602617c
+ar pc=0
+ar xer=0
+ar ca=1
+aes 2
+ar r3
+ar r4
+ar xer=0xe0000042
+ar ca
+ar ov
+ar so
+ar ca=0
+ar ov=0
+ar so=0
+ar xer
+e anal.roregs=
+ara-
+ar r4
+ara-
+ar r4=0x11223344
+e arch.endian=big
+ar r4
+e arch.endian=little
+ar r4
+EOF
+EXPECT=<<EOF
+0x40302010
+0x40302010
+0x20000000
+0x40302010
+0x00000001
+0x00000001
+0x00000001
+0x00000042
+0x10203040
+0x10203040
+0x20000000
+0x10203040
+0x00000001
+0x00000001
+0x00000001
+0x00000042
+0x11223344
+0x44332211
+0x11223344
+EOF
+RUN

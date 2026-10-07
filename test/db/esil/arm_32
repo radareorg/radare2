@@ -3682,3 +3682,35 @@ EXPECT=<<EOF
 0x00000000
 EOF
 RUN
+
+NAME=big endian cpsr flags alias the same bits
+FILE=malloc://16
+ARGS=-a arm -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+ar cpsr=0x20000000
+ar cf
+ar cf=0
+ar zf=1
+ar cpsr
+EOF
+EXPECT=<<EOF
+0x00000001
+0x40000000
+EOF
+RUN
+
+NAME=little endian cpsr flags alias the same bits
+FILE=malloc://16
+ARGS=-a arm -b 32 -e cfg.bigendian=false
+CMDS=<<EOF
+ar cpsr=0x20000000
+ar cf
+ar cf=0
+ar zf=1
+ar cpsr
+EOF
+EXPECT=<<EOF
+0x00000001
+0x40000000
+EOF
+RUN

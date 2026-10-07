@@ -266,6 +266,60 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	return NULL;
 }
 
+static inline bool is_big(int endian) {
+	return (endian & R_SYS_ENDIAN_BIG) == R_SYS_ENDIAN_BIG;
+}
+
+static RRegItem *widest_host(RList *regs, RRegItem *bit) {
+	RRegItem *host = NULL;
+	RListIter *iter;
+	RRegItem *ri;
+	r_list_foreach (regs, iter, ri) {
+		if (ri->size <= 8 || ri->offset < 0 || ri->offset % 8) {
+			continue;
+		}
+		if (ri->offset > bit->offset || bit->offset + bit->size > ri->offset + ri->size) {
+			continue;
+		}
+		if (!host || ri->size > host->size) {
+			host = ri;
+		}
+	}
+	return host;
+}
+
+// sub-byte items are declared at their little endian byte of the host register
+static void mirror_bits(RReg *reg) {
+	int i;
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		RList *regs = reg->regset[i].regs;
+		RListIter *iter;
+		RRegItem *ri;
+		r_list_foreach (regs, iter, ri) {
+			if (ri->size >= 8 || ri->offset < 0) {
+				continue;
+			}
+			RRegItem *host = widest_host (regs, ri);
+			if (!host) {
+				continue;
+			}
+			int base = host->offset / 8;
+			int last = base + (host->size + 7) / 8 - 1;
+			int byte = last - (ri->offset / 8 - base);
+			ri->offset = (byte * 8) + (ri->offset % 8);
+		}
+	}
+}
+
+R_API void r_reg_set_endian(RReg *reg, int endian) {
+	R_RETURN_IF_FAIL (reg);
+	const bool flip = is_big (reg->endian) != is_big (endian);
+	reg->endian = endian;
+	if (flip) {
+		mirror_bits (reg);
+	}
+}
+
 #define PARSER_MAX_TOKENS 8
 R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 	R_RETURN_VAL_IF_FAIL (reg && str, false);
@@ -404,6 +458,9 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 		}
 	} while (*p++);
 	(void)have_a0;
+	if (is_big (reg->endian)) {
+		mirror_bits (reg);
+	}
 	reg->size = 0;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		RRegSet *rs = &reg->regset[i];
