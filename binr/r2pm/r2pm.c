@@ -3,6 +3,6 @@
 #include <r_main.h>
 
 int main(int argc, const char **argv) {
-	return r_main_r2pm (argc, argv);
+	return r_main_r2pm (NULL, argc, argv);
 }
 

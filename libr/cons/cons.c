@@ -2230,14 +2230,19 @@ R_API void r_cons_print(RCons *cons, const char *str) {
 }
 
 R_API int r_cons_printf(RCons *cons, const char *format, ...) {
-	va_list ap;
 	if (R_STR_ISEMPTY (format)) {
 		return -1;
 	}
+	va_list ap;
 	va_start (ap, format);
-	r_cons_printf_list (cons, format, ap);
+	int ret = 0;
+	if (cons) {
+		r_cons_printf_list (cons, format, ap);
+	} else {
+		ret = vprintf (format, ap);
+	}
 	va_end (ap);
-	return 0;
+	return ret;
 }
 
 R_API void r_cons_break(RCons *cons) {
