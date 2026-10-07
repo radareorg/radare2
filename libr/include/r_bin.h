@@ -654,7 +654,6 @@ struct r_bin_t {
 	RIDStorage *ids;
 	RMutaBind mb;
 	RList/*<RBinFile>*/ *binfiles;
-	PrintfCallback cb_printf;
 	int loadany;
 	RIOBind iob;
 	RConsBind consb;

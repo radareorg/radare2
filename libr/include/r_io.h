@@ -4,6 +4,7 @@
 #define R2_IO_H
 
 #include <r_bind.h>
+#include <r_cons.h>
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_socket.h>
@@ -160,7 +161,7 @@ typedef struct r_io_t {
 	char *envprofile;
 	char *args;
 	REvent *event;
-	PrintfCallback cb_printf;
+	RCons *cons;
 	RCoreBind coreb;
 	RMutaBind mb;
 	// TODO Wrap ... well its more like a proxy, should unify across OS instead of using separate apis

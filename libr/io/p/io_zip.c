@@ -482,7 +482,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 			char *name;
 			RListIter *iter;
 			r_list_foreach (files, iter, name) {
-				io->cb_printf ("%d %s\n", i, name);
+				r_cons_printf (io->cons, "%d %s\n", i, name);
 				i++;
 			}
 			r_list_free (files);

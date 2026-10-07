@@ -609,7 +609,7 @@ static char *__demangleAs(RBin *bin, RBinLanguage type, const char *file) {
 static void list_plugins(RBin *bin, const char *plugin_name, PJ *pj, int rad) {
 	int format = (rad == R_MODE_JSON)? 'j': rad? 'q'
 						: 0;
-	bin->cb_printf = (PrintfCallback)printf;
+	bin->consb.cons = NULL;
 	if (R_STR_ISNOTEMPTY (plugin_name)) {
 		r_bin_list_plugin (bin, plugin_name, pj, format);
 	} else {
@@ -1298,7 +1298,6 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		} \
 	}
 	core.bin = bin;
-	bin->cb_printf = r_cons_gprintf; // XXX deprecate
 	filter.addr = at;
 	filter.name = name;
 	core.cons->context->is_interactive = false;

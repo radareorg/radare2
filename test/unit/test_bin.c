@@ -5,6 +5,27 @@
 
 //TODO test r_str_chop_path
 
+bool test_r_bin_console(void) {
+	RCons *active = r_cons_new ();
+	RCons *cons = r_cons_new_child (active);
+	RBin *bin = r_bin_new ();
+	r_cons_bind (cons, &bin->consb);
+	r_bin_list (bin, NULL, 'q');
+	size_t len = 0;
+	r_cons_get_buffer (cons, &len);
+	mu_assert ("plugin list uses the bound console", len > 0);
+	r_cons_reset (cons);
+	r_bin_demangle_list (bin);
+	r_cons_get_buffer (cons, &len);
+	mu_assert ("demangler list uses the bound console", len > 0);
+	r_cons_get_buffer (active, &len);
+	mu_assert_eq (len, 0, "output leaves the active console alone");
+	r_bin_free (bin);
+	r_cons_free (cons);
+	r_cons_free (active);
+	mu_end;
+}
+
 bool test_r_bin(void) {
 	RBin *bin = r_bin_new ();
 	RIO *io = r_io_new ();
@@ -530,6 +551,7 @@ bool test_r_bin_elf_pn_xnum_phdr(void) {
 
 
 bool all_tests(void) {
+	mu_run_test (test_r_bin_console);
 	mu_run_test(test_r_bin);
 	mu_run_test(test_r_bin_jni_language);
 	mu_run_test(test_r_bin_languages);
