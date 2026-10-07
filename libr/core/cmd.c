@@ -2725,8 +2725,6 @@ static int __runMain(RCore *core, RMainCallback cb, const char *arg) {
 	return res;
 }
 
-#define ISCMD(x) (!strcmp (input, x) || r_str_startswith (input, x " "))
-
 static bool cmd_r2cmd(RCore *core, const char *_input) {
 	char *input = r_str_newf ("r%s", _input);
 	int rc = 0;
@@ -2749,8 +2747,13 @@ static bool cmd_r2cmd(RCore *core, const char *_input) {
 			{"radiff2", offsetof(RCore, r_main_radiff2)},
 		};
 
-		for (int i = 0; i < (int)(sizeof(tools)/sizeof(tools[0])); i++) {
-			if (ISCMD(tools[i].name)) {
+		int i;
+		for (i = 0; i < (int)(sizeof (tools) / sizeof (tools[0])); i++) {
+			if (r_str_startswith (input, tools[i].name)) {
+				const char *arguments = input + strlen (tools[i].name);
+				if (*arguments && *arguments != ' ') {
+					continue;
+				}
 				rc = __runMain (core, *(RMainCallback*)((char*)core + tools[i].offset), input);
 				goto done;
 			}
