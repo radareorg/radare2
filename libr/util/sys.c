@@ -35,6 +35,11 @@ extern int backtrace_symbols_fd(void**, size_t, int);
 static R_TH_LOCAL char** Genv = NULL;
 static R_TH_LOCAL bool Gunsignable = false; // OK
 
+#if R2_USE_BUNDLE_PREFIX
+static char *macho_detect_bundle_location(void);
+static char *macho_path_for_address_or_main(const void *addr);
+#endif
+
 #if (__linux__ && __GNU_LIBRARY__) || defined(NETBSD_WITH_BACKTRACE) || \
   defined(FREEBSD_WITH_BACKTRACE) || __DragonFly__ || __sun
 # include <execinfo.h>
@@ -1650,6 +1655,9 @@ R_API char *r_sys_get_src_dir_w32(void) {
 #endif
 
 R_API char *r_sys_prefix(const char *pfx) {
+#if R2_USE_BUNDLE_PREFIX
+	return macho_detect_bundle_location ();
+#else
 	char *r2prefix = r_sys_getenv ("R2_PREFIX");
 	if (R_STR_ISEMPTY (r2prefix)) {
 		free (r2prefix);
@@ -1667,7 +1675,37 @@ R_API char *r_sys_prefix(const char *pfx) {
 		r_sys_setenv ("R2_PREFIX", pfx);
 	}
 	return r2prefix;
+#endif
 }
+
+#if R2_USE_BUNDLE_PREFIX
+static char *macho_detect_bundle_location(void) {
+	char *macho_path = macho_path_for_address_or_main (macho_detect_bundle_location);
+	char *macho_dir = r_file_dirname (macho_path);
+	free (macho_path);
+
+#if TARGET_OS_OSX
+	char *resources = r_file_new (macho_dir, "Resources", NULL);
+	free (macho_dir);
+	return resources;
+#else
+	return macho_dir;
+#endif
+}
+
+static char *macho_path_for_address_or_main(const void *addr) {
+	Dl_info info;
+	if (dladdr (addr, &info) && info.dli_fname) {
+		return strdup (info.dli_fname);
+	}
+
+	ut32 size = 0;
+	_NSGetExecutablePath (NULL, &size);
+	char *buf = malloc (size);
+	_NSGetExecutablePath (buf, &size);
+	return buf;
+}
+#endif
 
 R_API RSysInfo *r_sys_info(void) {
 #if R2__UNIX__
