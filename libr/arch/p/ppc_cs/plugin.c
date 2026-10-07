@@ -446,9 +446,9 @@ static char *regs(RArchSession *as) {
 			"fpu	f29 .64 524 0\n"
 			"fpu	f30 .64 532 0\n"
 			"fpu	f31 .64 540 0\n"
-			"gpr	ca .1 292 0\n"
-			"gpr	ov .1 293 0\n"
-			"gpr	so .1 294 0\n";
+			"gpr	ca .1 163.5 0\n"
+			"gpr	ov .1 163.6 0\n"
+			"gpr	so .1 163.7 0\n";
 		return strdup (p);
 	}
 
@@ -586,9 +586,9 @@ static char *regs(RArchSession *as) {
 		"fpu	f29 .64 728 0\n"
 		"fpu	f30 .64 736 0\n"
 		"fpu	f31 .64 744 0\n"
-		"gpr	ca .1 496 0\n"
-		"gpr	ov .1 497 0\n"
-		"gpr	so .1 498 0\n";
+		"gpr	ca .1 315.5 0\n"
+		"gpr	ov .1 315.6 0\n"
+		"gpr	so .1 315.7 0\n";
 	return strdup (p);
 }
 
@@ -3014,15 +3014,15 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				op->type = R_ANAL_OP_TYPE_MOV;
 				esilprintf (op, "%s,%s,=", ARG (1), PPCSPR (0));
 			} else if (!strcmp (insn->mnemonic, "mfxer")) {
-				// fold the split SO/OV/CA back into bits 0:2
 				op->type = R_ANAL_OP_TYPE_MOV;
-				esilprintf (op, "0x1fffffff,xer,&,29,ca,<<,|,30,ov,<<,|,31,so,<<,|,%s,=",
-					ARG (0));
+				esilprintf (op, "xer,%s,=", ARG (0));
 			} else if (!strcmp (insn->mnemonic, "mtxer")) {
-				const char *rs = ARG (0);
 				op->type = R_ANAL_OP_TYPE_MOV;
-				esilprintf (op, "29,%s,>>,1,&,ca,=,30,%s,>>,1,&,ov,=,31,%s,>>,1,&,so,=,0x1fffffff,%s,&,xer,=",
-					rs, rs, rs, rs);
+				if (as->config->bits == 64) {
+					esilprintf (op, "0xffffffff,%s,&,xer,=", ARG (0));
+				} else {
+					esilprintf (op, "%s,xer,=", ARG (0));
+				}
 			} else if (CS6_ALIAS (insn) && (insn->mnemonic[1] == 'f' || insn->mnemonic[1] == 't')) {
 				// cs6 names the spr in the mnemonic instead of an operand, so only the move type is left
 				op->type = R_ANAL_OP_TYPE_MOV;

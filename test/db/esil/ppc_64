@@ -2392,7 +2392,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=mfxer folds the carry overflow and summary bits into the read value ppc-64
+NAME=mfxer reads carry overflow and summary flag updates ppc-64
 FILE=malloc://0x100
 ARGS=-a ppc -b 64 -e cfg.bigendian=true
 CMDS=<<EOF
@@ -2428,7 +2428,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=mtxer splits the written value back into the carry overflow and summary bits ppc-64
+NAME=mtxer writes XER and its carry overflow and summary bits ppc-64
 FILE=malloc://0x100
 ARGS=-a ppc -b 64 -e cfg.bigendian=true
 CMDS=<<EOF
@@ -2450,7 +2450,7 @@ aes
 ar ca
 ar ov
 ar so
-ar r3=0x80000005
+ar r3=0xffffffff80000005
 aepc 0
 aes
 ar ca
@@ -2468,7 +2468,7 @@ EXPECT=<<EOF
 0x00000000
 0x00000000
 0x00000001
-0x00000005
+0x80000005
 EOF
 RUN
 
@@ -2524,5 +2524,303 @@ EXPECT=<<EOF
 0x04040801
 0x00000011
 0x00000011
+EOF
+RUN
+
+NAME=ppc64 big endian XER flags share register state
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 7c6102a67c6103a6
+aei
+ar xer=0xe0000042
+aes
+ar r3
+ar ca
+ar ov
+ar so
+ar r3=0x20000055
+aes
+ar xer
+ar ca
+ar ov
+ar so
+ar r3=0x4000002a
+ar pc=4
+aes
+ar xer
+ar ca
+ar ov
+ar so
+ar r3=0x8000000f
+ar pc=4
+aes
+ar xer
+ar ca
+ar ov
+ar so
+ara+
+ar xer=0x42
+ar ca
+ar ov
+ar so
+ara-
+ar xer
+ar so
+ar ca=1
+ar ov=1
+ar so=0
+ar xer
+ar pc=0
+aes
+ar r3
+EOF
+EXPECT=<<EOF
+0xe0000042
+0x00000001
+0x00000001
+0x00000001
+0x20000055
+0x00000001
+0x00000000
+0x00000000
+0x4000002a
+0x00000000
+0x00000001
+0x00000000
+0x8000000f
+0x00000000
+0x00000000
+0x00000001
+0x00000000
+0x00000000
+0x00000000
+0x8000000f
+0x00000001
+0x6000000f
+0x6000000f
+EOF
+RUN
+
+NAME=ppc64 little endian XER flags share register state
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e cfg.bigendian=false
+CMDS=<<EOF
+wx a602617ca603617c
+aei
+ar xer=0xe0000042
+aes
+ar r3
+ar ca
+ar ov
+ar so
+ar r3=0x20000055
+aes
+ar xer
+ar ca
+ar ov
+ar so
+ar r3=0x4000002a
+ar pc=4
+aes
+ar xer
+ar ca
+ar ov
+ar so
+ar r3=0x8000000f
+ar pc=4
+aes
+ar xer
+ar ca
+ar ov
+ar so
+ara+
+ar xer=0x42
+ar ca
+ar ov
+ar so
+ara-
+ar xer
+ar so
+ar ca=1
+ar ov=1
+ar so=0
+ar xer
+ar pc=0
+aes
+ar r3
+EOF
+EXPECT=<<EOF
+0xe0000042
+0x00000001
+0x00000001
+0x00000001
+0x20000055
+0x00000001
+0x00000000
+0x00000000
+0x4000002a
+0x00000000
+0x00000001
+0x00000000
+0x8000000f
+0x00000000
+0x00000000
+0x00000001
+0x00000000
+0x00000000
+0x00000000
+0x8000000f
+0x00000001
+0x6000000f
+0x6000000f
+EOF
+RUN
+
+NAME=ppc64 XER aliases follow cfg.bigendian changes
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e cfg.bigendian=false
+CMDS=<<EOF
+aei
+ar r4=0x1122334455667788
+ara+
+ar r4=0x1020304050607080
+e cfg.bigendian=true
+ar r4
+e cfg.bigendian=true
+ar r4
+wx 7c6102a6
+ar pc=0
+ar xer=0
+ar ca=1
+aes
+ar r3
+ar xer=0xe0000042
+ar ca
+ar ov
+ar so
+ar ca=0
+ar ov=0
+ar so=0
+ar xer
+e cfg.bigendian=false
+ar r4
+e cfg.bigendian=false
+ar r4
+wx a602617c
+ar pc=0
+ar xer=0
+ar ca=1
+aes
+ar r3
+ar xer=0xe0000042
+ar ca
+ar ov
+ar so
+ar ca=0
+ar ov=0
+ar so=0
+ar xer
+ara-
+ar r4
+ara-
+ar r4=0x1122334455667788
+e cfg.bigendian=true
+ar r4
+e cfg.bigendian=false
+ar r4
+EOF
+EXPECT=<<EOF
+0x8070605040302010
+0x8070605040302010
+0x20000000
+0x00000001
+0x00000001
+0x00000001
+0x00000042
+0x1020304050607080
+0x1020304050607080
+0x20000000
+0x00000001
+0x00000001
+0x00000001
+0x00000042
+0x1122334455667788
+0x8877665544332211
+0x1122334455667788
+EOF
+RUN
+
+NAME=ppc64 XER aliases follow arch.endian changes
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e cfg.bigendian=false
+CMDS=<<EOF
+aei
+ar r4=0x1122334455667788
+ara+
+ar r4=0x1020304050607080
+e arch.endian=big
+ar r4
+e arch.endian=big
+ar r4
+wx 7c6102a6
+ar pc=0
+ar xer=0
+ar ca=1
+aes
+ar r3
+ar xer=0xe0000042
+ar ca
+ar ov
+ar so
+ar ca=0
+ar ov=0
+ar so=0
+ar xer
+e arch.endian=little
+ar r4
+e arch.endian=little
+ar r4
+wx a602617c
+ar pc=0
+ar xer=0
+ar ca=1
+aes
+ar r3
+ar xer=0xe0000042
+ar ca
+ar ov
+ar so
+ar ca=0
+ar ov=0
+ar so=0
+ar xer
+ara-
+ar r4
+ara-
+ar r4=0x1122334455667788
+e arch.endian=big
+ar r4
+e arch.endian=little
+ar r4
+EOF
+EXPECT=<<EOF
+0x8070605040302010
+0x8070605040302010
+0x20000000
+0x00000001
+0x00000001
+0x00000001
+0x00000042
+0x1020304050607080
+0x1020304050607080
+0x20000000
+0x00000001
+0x00000001
+0x00000001
+0x00000042
+0x1122334455667788
+0x8877665544332211
+0x1122334455667788
 EOF
 RUN

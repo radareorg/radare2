@@ -202,6 +202,7 @@ R_API int r_reg_alias_fromstring(const char *type);
 
 // profile // R2_600 - refactor this api
 R_API bool r_reg_set_profile_string(RReg *reg, const char *profile);
+R_API void r_reg_set_endian(RReg *reg, int endian);
 R_API char* r_reg_profile_to_cc(RReg *reg);
 R_API bool r_reg_set_profile(RReg *reg, const char *profile);
 R_API char *r_reg_parse_gdb_profile(const char *profile);
