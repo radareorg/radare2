@@ -23,9 +23,7 @@ typedef struct {
 #define R_STR_ANY_INLINE static inline
 #endif
 
-#if defined(__clang__)
-#define R_STR_ANY_UNROLL _Pragma ("clang loop unroll(full)")
-#elif defined(__GNUC__) && __GNUC__ >= 8
+#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ >= 8
 #define R_STR_ANY_UNROLL _Pragma ("GCC unroll 32")
 #else
 #define R_STR_ANY_UNROLL

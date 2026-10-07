@@ -1256,7 +1256,7 @@ int main(int argc, char **argv) {
 	r_w32_init ();
 #endif
 	R2ROptions opt = r2r_options_init ();
-	R2RState state = { 0 };
+	R2RState state = { .run_config = { 0 } };
 
 	int arg_ind = r2r_parse_args (&opt, argc, argv);
 	if (arg_ind < 0) {

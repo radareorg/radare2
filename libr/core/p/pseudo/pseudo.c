@@ -360,7 +360,7 @@ static char *fold_resolved_refs(RCore *core, char *code) {
 		free (drop);
 		return code;
 	}
-	PDCPendingRef pend = {0};
+	PDCPendingRef pend = { .reg = { 0 } };
 	const char *ptr = code;
 	ut64 addr = UT64_MAX;
 	int i;

@@ -70,7 +70,7 @@ buildAbi() {
 	cp -f "$PLUGINS_CFG" plugins.cfg
 	./configure --with-compiler=android --with-ostype=android \
 		--target="$target" --prefix="$PREFIX" --with-libr \
-		--with-bundle-prefix --without-gpl --without-sqsh \
+		--without-gpl --without-sqsh \
 		--with-checks-level=0
 	"$make" -s -j "$JOBS"
 	"$make" -s install DESTDIR="$install_dst"

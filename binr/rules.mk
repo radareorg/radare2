@@ -16,12 +16,11 @@ USE_PIE := 0
 endif
 
 ifeq ($(USE_PIE),1)
-CFLAGS+=-pie
+LDFLAGS+=-pie
 endif
 CFLAGS:=-I$(LTOP)/include $(CFLAGS)
 
 ifeq (${ANDROID},1)
-CFLAGS+=-lm
 LDFLAGS+=-lm
 else
 ifneq (${OSTYPE},linux)

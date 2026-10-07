@@ -49,11 +49,11 @@ endif
 ifeq ($(shell type llvm-ar > /dev/null && echo ok),ok)
 AR=llvm-ar
 RANLIB=llvm-ranlib
-CC_AR=llvm-ar -r ${LIBAR}
+CC_AR=llvm-ar -rc ${LIBAR}
 else
 RANLIB=${CROSS}ranlib
 AR=${CROSS}ar
-CC_AR=${CROSS}ar -r ${LIBAR}
+CC_AR=${CROSS}ar -rc ${LIBAR}
 endif
 
 PARTIALLD=${CROSS}ld -r

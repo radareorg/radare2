@@ -192,7 +192,7 @@ static RBinInfo* info(RBinFile *bf) {
 		ret->bits = 8;
 		return ret;
 	}
-	PebbleAppInfo pai = {0};
+	PebbleAppInfo pai = {{0}};
 	if (!read_pebble_app_info (bf->buf, &pai)) {
 		R_LOG_ERROR ("Truncated Header");
 		return NULL;
