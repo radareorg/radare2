@@ -1966,8 +1966,8 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 				}
 			}
 		}
-		r_anal_hint_set_size (core->anal, reloc->vaddr, 4);
-		r_meta_set (core->anal, R_META_TYPE_DATA, reloc->vaddr, 4, NULL);
+		r_anal_hint_set_size (core->anal, addr, 4);
+		r_meta_set (core->anal, R_META_TYPE_DATA, addr, 4, NULL);
 		free (module);
 	}
 
@@ -1975,14 +1975,15 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 	char *flagname = construct_reloc_name (reloc, NULL, ri->flagpfx);
 	if (!flagname) {
 		char name[32] = { 0 };
-		r_io_read_at (core->io, reloc->addend, (ut8 *)name, sizeof (name));
+		const ut64 target = a2b (core->bin, reloc->addend);
+		r_io_read_at (core->io, target, (ut8 *)name, sizeof (name));
 		name[sizeof (name) - 1] = 0;
 		if (name[0] && name[1] && isalpha (name[0]) && isalpha (name[1])) {
 			r_name_filter (name, -1);
 			R_LOG_DEBUG ("Naming fixup reloc with string %s", name);
 			flagname = r_str_newf ("%sfixup.%s", ri->flagpfx, name);
 			if (ri->reloc_xrefs) {
-				r_anal_xrefs_set (core->anal, reloc->vaddr, reloc->addend, R_ANAL_REF_TYPE_DATA);
+				r_anal_xrefs_set (core->anal, addr, target, R_ANAL_REF_TYPE_DATA);
 			}
 		} else {
 			return;
@@ -2034,11 +2035,11 @@ static void add_metadata(RelocInfo *ri, RBinReloc *reloc, ut64 addr, int mode) {
 	}
 	if (IS_MODE_SET (mode)) {
 		// relocs are sorted by vaddr: skip the ones inside the previous data meta
-		if (ri->meta_end != UT64_MAX && reloc->vaddr < ri->meta_end && reloc->vaddr >= ri->meta_end - cdsz) {
+		if (ri->meta_end != UT64_MAX && addr < ri->meta_end && addr >= ri->meta_end - cdsz) {
 			return;
 		}
-		r_meta_set (core->anal, R_META_TYPE_DATA, reloc->vaddr, cdsz, NULL);
-		ri->meta_end = reloc->vaddr + cdsz;
+		r_meta_set (core->anal, R_META_TYPE_DATA, addr, cdsz, NULL);
+		ri->meta_end = addr + cdsz;
 	} else if (IS_MODE_RAD (mode)) {
 		r_cons_printf (core->cons, "'@0x%08" PFMT64x "'Cd %d\n", addr, cdsz);
 	}

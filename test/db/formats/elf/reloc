@@ -1208,8 +1208,8 @@ pd 2 @ 0x1168
 om~mmap..bss[4,6]
 EOF
 EXPECT=<<EOF
-            0x00001168      890000d0       adrp x9, 0x13000
-            0x0000116c      29e12b91       add x9, x9, 0xaf8
+            0x00001168      890000d0       adrp x9, 0x13000            ; RELOC 32 .bss @ 0x00013af8
+            0x0000116c      29e12b91       add x9, x9, 0xaf8           ; RELOC 32 .bss @ 0x00013af8
 0x00013af8 0x00013ef7
 EOF
 RUN
@@ -1723,5 +1723,80 @@ EXPECT=<<EOF
 6
 EOF
 EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=ELF: reloc annotation and data meta follow the slot under a custom base address
+FILE=bins/elf/analysis/dynamic-poffset
+ARGS=-B 0x1000000 -e bin.relocs.apply=true
+CMDS=<<EOF
+pd 1 @ 0x12009a8~RELOC[0,5,6,7]
+Cd. @ 0x12009a8
+C*~Cd~0x0060~?
+EOF
+EXPECT=<<EOF
+0x012009a8 write
+8
+0
+EOF
+RUN
+
+NAME=ELF: reloc annotation and data meta at the slot with the default base address
+FILE=bins/elf/analysis/dynamic-poffset
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pd 1 @ 0x6009a8~RELOC[0,5,6,7]
+Cd. @ 0x6009a8
+C*~Cd~?
+EOF
+EXPECT=<<EOF
+0x006009a8 write
+8
+20
+EOF
+RUN
+
+NAME=ELF: reloc annotation follows the slot under a custom base address without patching
+FILE=bins/elf/analysis/dynamic-poffset
+ARGS=-B 0x1000000
+CMDS=<<EOF
+pd 1 @ 0x12009a8~RELOC[0,5,6,7]
+Cd. @ 0x12009a8
+EOF
+EXPECT=<<EOF
+0x012009a8 write
+8
+EOF
+RUN
+
+NAME=ELF s390x: every reloc data meta lands in the mapped image under a custom base address
+FILE=bins/elf/ls-s390x
+ARGS=-B 0x100000 -e bin.relocs.apply=true
+CMDS=<<EOF
+pd 1 @ 0x127028~RELOC[0,5,6,7]
+pd 1 @ 0x27028~RELOC~?
+Cd. @ 0x127028
+C*~Cd~0x0012~?
+EOF
+EXPECT=<<EOF
+0x00127028 __cxa_finalize
+0
+8
+346
+EOF
+RUN
+
+NAME=ELF: fixup relocs read their name and set their xref through the base address
+FILE=bins/elf/ls
+ARGS=-B 0x1000000
+CMDS=<<EOF
+f~fixup.~?
+f~fixup.ATIUH
+axq~0x010210b0
+EOF
+EXPECT=<<EOF
+101
+0x010210b0 8 reloc.fixup.ATIUH.
+0x010210b0 -> 0x0100b8a0  DATA:r--
 EOF
 RUN
