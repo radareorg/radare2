@@ -4193,7 +4193,7 @@ static int cmd_info(void *data, const char *input) {
 			if (is_array) {
 				pj_k (pj, "plugin");
 			}
-			r_bin_list_plugin (core->bin, plugin_name, pj, json);
+			r_core_list_bin_plugin (core, plugin_name, pj, json);
 		} else {
 			r_bin_list (core->bin, pj, json);
 		}
