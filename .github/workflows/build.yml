@@ -384,8 +384,8 @@ jobs:
     - if: ${{ matrix.sdk }}
       name: Create iOS SDK
       run: |
-        ./sys/sdk-ios.sh
-        pushd /tmp/r2ios
+        ./sys/sdk-ios.sh -a arm64
+        pushd /tmp/r2sdk
         zip -r /tmp/r2ios-sdk.zip *
         popd
         mv /tmp/r2ios-sdk.zip dist/cydia/radare2/r2ios-sdk-${{ steps.r2v.outputs.branch }}.zip
