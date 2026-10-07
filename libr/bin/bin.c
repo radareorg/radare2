@@ -1429,9 +1429,7 @@ R_API RVecRBinSymbol *r_bin_get_symbols_vec(RBin *bin) {
 	return bf? r_bin_file_get_symbols_vec (bf): NULL;
 }
 
-R_API RBinSymbol *r_bin_get_symbol_at(RBin *bin, ut64 addr) {
-	R_RETURN_VAL_IF_FAIL (bin, NULL);
-	RBinObject *o = r_bin_cur_object (bin);
+R_IPI RBinSymbol *r_bin_object_get_symbol_at(RBinObject *o, ut64 addr) {
 	if (!o) {
 		return NULL;
 	}
@@ -1451,6 +1449,11 @@ R_API RBinSymbol *r_bin_get_symbol_at(RBin *bin, ut64 addr) {
 		}
 	}
 	return ht_up_find (o->symbol_addr_ht, addr, NULL);
+}
+
+R_API RBinSymbol *r_bin_get_symbol_at(RBin *bin, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
+	return r_bin_object_get_symbol_at (r_bin_cur_object (bin), addr);
 }
 
 R_API RVecRBinImport *r_bin_get_imports_vec(RBin *bin) {

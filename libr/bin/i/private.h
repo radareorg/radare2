@@ -39,6 +39,7 @@ static inline bool limit_reached_vec_imports(const RVecRBinImport *vec, int limi
 R_IPI void r_bin_object_free(void /*RBinObject*/ *o_);
 R_IPI void r_bin_trycatch_free(void *store);
 R_IPI ut64 r_bin_object_get_baddr(RBinObject *o);
+R_IPI RBinSymbol *r_bin_object_get_symbol_at(RBinObject *o, ut64 addr);
 R_IPI void r_bin_object_filter_strings(RBinObject *bo);
 
 static inline void r_bin_strings_index_insert(HtUP *index, ut64 vaddr, size_t string_index) {

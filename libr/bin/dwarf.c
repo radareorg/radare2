@@ -4630,12 +4630,9 @@ static char *eh_type_name(RBinFile *bf, ut64 type_addr) {
 		}
 	}
 	if (!name) {
-		RBinSymbol *symbol;
-		R_VEC_FOREACH (&bf->bo->symbols_vec, symbol) {
-			if (symbol->vaddr == type_addr && symbol->name) {
-				name = r_bin_name_tostring (symbol->name);
-				break;
-			}
+		RBinSymbol *symbol = r_bin_object_get_symbol_at (bf->bo, type_addr);
+		if (symbol && symbol->vaddr == type_addr && symbol->name) {
+			name = r_bin_name_tostring (symbol->name);
 		}
 	}
 	if (!name) {
