@@ -161,7 +161,7 @@ typedef struct r_io_t {
 	char *envprofile;
 	char *args;
 	REvent *event;
-	RConsBind consb;
+	RCons *cons;
 	RCoreBind coreb;
 	RMutaBind mb;
 	// TODO Wrap ... well its more like a proxy, should unify across OS instead of using separate apis

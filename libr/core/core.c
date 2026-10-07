@@ -2753,7 +2753,7 @@ R_API bool r_core_init(RCore *core) {
 	// XXX pushing uninitialized regstate results in trashed reg values
 	//	r_reg_arena_push (core->dbg->reg); // create a 2 level register state stack
 	//	core->dbg->anal->reg = core->anal->reg; // XXX: dupped instance.. can cause lost pointerz
-	r_cons_bind (core->cons, &core->io->consb);
+	core->io->cons = core->cons;
 	core->dbg->ev = core->ev;
 	core->autocomplete = R_NEW0 (RCoreAutocomplete);
 	r_core_plugins_init (core->rcmd);

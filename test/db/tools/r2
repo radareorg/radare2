@@ -16,31 +16,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=r2 shell tool output order and filtering
-FILE=--
-CMDS=<<EOF
-echo before
-rasm2 -a x86 -d 90
-echo middle
-rax2 33
-rasm2 -a x86 -d c3~ret
-rabin2 -h~Usage
-radiff2 -h~Usage
-echo after
-EOF
-EXPECT=<<EOF
-before
-nop
-middle
-0x21
-ret
-Usage: rabin2 [-AcdeEghHiIjJlLMqrRsSuvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]
-Usage: radiff2 [-options] [-A[A]] [-B #] [-g sym] [-m graph_mode][-t %] [file] [file]
-after
-EOF
-EXPECT_ERR=
-RUN
-
 NAME=r2 -H lists runtime environment variables
 FILE=-
 CMDS=<<EOF

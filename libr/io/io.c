@@ -20,7 +20,7 @@ R_API void r_io_init(RIO* io) {
 	R_RETURN_IF_FAIL (io);
 	io->addrbytes = 1;
 	io->overlay = true;
-	io->consb.cb_printf = r_cons_printf;
+	io->cons = NULL;
 	r_io_desc_fini (io);
 	r_id_storage_init (&io->files, 3, 0x80000000);
 	r_io_bank_init (io);

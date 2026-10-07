@@ -4,12 +4,11 @@
 
 #include <r_core.h>
 #include <r_main.h>
-#include "main_private.h"
 
-static int show_help(RCons *main_cons, int v) {
-	r_cons_printf (main_cons, "Usage: rapatch2 [-p N] [-sv] [-R] [patchfile] ([targetfile])\n");
+static int show_help(int v) {
+	printf ("Usage: rapatch2 [-p N] [-sv] [-R] [patchfile] ([targetfile])\n");
 	if (v) {
-		r_cons_printf (main_cons,
+		printf (
 			"  -p N       patch level, skip N directories\n"
 			"  -R         reverse patch\n"
 			"  -s         sandbox mode, disable scripts and r2 command execution\n"
@@ -46,7 +45,7 @@ static int rapatch_directory(RapatchOptions *ro, const char *patch) {
 	return res? 0: 1;
 }
 
-static int rapatch_file(RCons *main_cons, RapatchOptions *ro, const char *patch, const char *file) {
+static int rapatch_file(RapatchOptions *ro, const char *patch, const char *file) {
 	R_LOG_INFO ("Using the old rapatch file format, be careful");
 	RIODesc *fd = r_core_file_open (ro->core, file, R_PERM_W, 0);
 	if (!fd) {
@@ -72,11 +71,11 @@ static int rapatch_file(RCons *main_cons, RapatchOptions *ro, const char *patch,
 	}
 	r_core_cmd0 (ro->core, "o");
 	R_LOG_INFO ("File %s patched", file);
-	r_main_cons_flush (main_cons, ro->core->cons);
+	r_cons_flush (ro->core->cons);
 	return 0;
 }
 
-R_API int r_main_rapatch2(RCons *main_cons, int argc, const char **argv) {
+R_API int r_main_rapatch2(int argc, const char **argv) {
 	RGetopt opt;
 	int o;
 	RapatchOptions ro = { 0 };
@@ -85,7 +84,7 @@ R_API int r_main_rapatch2(RCons *main_cons, int argc, const char **argv) {
 	while ((o = r_getopt_next (&opt)) != -1) {
 		switch (o) {
 		case 'h':
-			return show_help (main_cons, 1);
+			return show_help (1);
 		case 's':
 			ro.sandbox = true;
 			break;
@@ -100,14 +99,14 @@ R_API int r_main_rapatch2(RCons *main_cons, int argc, const char **argv) {
 			ro.reverse = true;
 			break;
 		case 'v':
-			return r_main_version_print (main_cons, "rapatch2", 0);
+			return r_main_version_print ("rapatch2", 0);
 		default:
-			return show_help (main_cons, 0);
+			return show_help (0);
 		}
 	}
 
 	if (argc < 2 || opt.ind + 1 > argc) {
-		return show_help (main_cons, 0);
+		return show_help (0);
 	}
 	const char *patchfile = (opt.ind < argc)? argv[opt.ind]: NULL;
 	const char *target = (opt.ind + 1 < argc)? argv[opt.ind + 1]: NULL;
@@ -116,13 +115,13 @@ R_API int r_main_rapatch2(RCons *main_cons, int argc, const char **argv) {
 		R_LOG_ERROR ("Missing patchfile");
 		return 1;
 	}
-	ro.core = r_main_core_new (main_cons);
+	ro.core = r_core_new ();
 	int rc = 0;
 	if (R_STR_ISNOTEMPTY (target)) {
-		rc = rapatch_file (main_cons, &ro, patchfile, target);
+		rc = rapatch_file (&ro, patchfile, target);
 	} else {
 		rc = rapatch_directory (&ro, patchfile);
 	}
-	r_main_core_free (main_cons, ro.core);
+	r_core_free (ro.core);
 	return rc;
 }

@@ -4,6 +4,7 @@
 #include "../libgdbr.h"
 #include "r_types_base.h"
 #include <r_util.h>
+#include <r_cons.h>
 
 /*!
  * \brief Acquires the gdbr lock and sets up breaking
@@ -56,7 +57,7 @@ int gdbr_check_vcont(libgdbr_t *g);
  * remote target's interpreter.
  * \returns 0 on success and -1 on failure
  */
-int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, RConsBind *consb);
+int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, RCons *cons);
 
 /*!
  * \brief attaches to a process

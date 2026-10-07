@@ -4,7 +4,6 @@
 
 #include <r_core.h>
 #include <r_main.h>
-#include "main_private.h"
 
 R_VEC_TYPE (RVecRBinStringPtr, RBinString *);
 
@@ -45,7 +44,6 @@ enum {
 };
 
 typedef struct {
-	RCons *output;
 	ut64 gdiff_start;
 	bool zignatures;
 	const char *file;
@@ -80,11 +78,11 @@ typedef struct {
 	ut64 length_b;
 } RadiffOptions;
 
-static RCore *opencore(RCons *main_cons, RadiffOptions *ro, const char *f) {
+static RCore *opencore(RadiffOptions *ro, const char *f) {
 	RListIter *iter;
 	const ut64 baddr = UT64_MAX;
 	const char *e;
-	RCore *c = r_main_core_new (main_cons);
+	RCore *c = r_core_new ();
 	if (!c) {
 		return NULL;
 	}
@@ -113,11 +111,11 @@ static RCore *opencore(RCons *main_cons, RadiffOptions *ro, const char *f) {
 #endif
 
 		if (!rfile) {
-			r_main_core_free (main_cons, c);
+			r_core_free (c);
 			return NULL;
 		}
 		if (!r_core_bin_load (c, NULL, baddr)) {
-			r_main_core_free (main_cons, c);
+			r_core_free (c);
 			return NULL;
 		}
 		(void)r_core_bin_update_arch_bits (c);
@@ -148,7 +146,7 @@ static RCore *opencore(RCons *main_cons, RadiffOptions *ro, const char *f) {
 		if (ro->zignatures) {
 			r_core_cmd0 (c, "zg");
 		}
-		r_main_cons_flush (main_cons, c->cons);
+		r_cons_flush (c->cons);
 	}
 	// TODO: must enable io.va here if wanted .. r_config_set_i (c->config, "io.va", va);
 	return c;
@@ -187,7 +185,6 @@ static int cb_xpatch(RDiff *d, void *user, RDiffOp *op) {
 static int cb(RDiff *d, void *user, RDiffOp *op) {
 	int i;
 	RadiffOptions *ro = (RadiffOptions *)user;
-	RCons *main_cons = ro->output;
 	char s[256] = { 0 };
 	if (ro->showcount) {
 		ro->count++;
@@ -200,39 +197,39 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			readstr (s, sizeof (s), op->a_buf, op->a_len);
 			if (*s) {
 				if (!ro->quiet) {
-					r_cons_printf (main_cons, Color_RED);
+					printf (Color_RED);
 				}
-				r_cons_printf (main_cons, "-0x%08" PFMT64x ":", op->a_off + ro->baddr);
+				printf ("-0x%08" PFMT64x ":", op->a_off + ro->baddr);
 				int len = op->a_len; // R_MIN (op->a_len, strlen (op->a_buf));
 				for (i = 0; i < len; i++) {
-					r_cons_printf (main_cons, "%02x ", op->a_buf[i]);
+					printf ("%02x ", op->a_buf[i]);
 				}
 				if (!ro->quiet) {
 					char *p = r_str_escape ((const char *)op->a_buf);
-					r_cons_printf (main_cons, " \"%s\"", p);
+					printf (" \"%s\"", p);
 					free (p);
-					r_cons_printf (main_cons, Color_RESET);
+					printf (Color_RESET);
 				}
-				r_cons_printf (main_cons, "\n");
+				printf ("\n");
 			}
 		}
 		if (op->b_len > 0) {
 			readstr (s, sizeof (s), op->b_buf, op->b_len);
 			if (*s) {
 				if (!ro->quiet) {
-					r_cons_printf (main_cons, Color_GREEN);
+					printf (Color_GREEN);
 				}
-				r_cons_printf (main_cons, "+0x%08" PFMT64x ":", op->b_off + ro->baddr);
+				printf ("+0x%08" PFMT64x ":", op->b_off + ro->baddr);
 				for (i = 0; i < op->b_len; i++) {
-					r_cons_printf (main_cons, "%02x ", op->b_buf[i]);
+					printf ("%02x ", op->b_buf[i]);
 				}
 				if (!ro->quiet) {
 					char *p = r_str_escape ((const char *)op->b_buf);
-					r_cons_printf (main_cons, " \"%s\"", p);
+					printf (" \"%s\"", p);
 					free (p);
-					r_cons_printf (main_cons, Color_RESET);
+					printf (Color_RESET);
 				}
-				r_cons_printf (main_cons, "\n");
+				printf ("\n");
 			}
 		}
 		break;
@@ -241,24 +238,24 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			R_LOG_WARN ("r2cmds (-r) + disasm (-D) is not yet implemented");
 		}
 		if (op->a_len == op->b_len) {
-			r_cons_printf (main_cons, "wx ");
+			printf ("wx ");
 			for (i = 0; i < op->b_len; i++) {
-				r_cons_printf (main_cons, "%02x", op->b_buf[i]);
+				printf ("%02x", op->b_buf[i]);
 			}
-			r_cons_printf (main_cons, " @ 0x%08" PFMT64x "\n", op->b_off + ro->baddr);
+			printf (" @ 0x%08" PFMT64x "\n", op->b_off + ro->baddr);
 		} else {
 			if (op->a_len > 0) {
-				r_cons_printf (main_cons, "r-%d @ 0x%08" PFMT64x "\n",
+				printf ("r-%d @ 0x%08" PFMT64x "\n",
 					op->a_len, op->a_off + ro->delta + ro->baddr);
 			}
 			if (op->b_len > 0) {
-				r_cons_printf (main_cons, "r+%d @ 0x%08" PFMT64x "\n",
+				printf ("r+%d @ 0x%08" PFMT64x "\n",
 					op->b_len, op->b_off + ro->delta + ro->baddr);
-				r_cons_printf (main_cons, "wx ");
+				printf ("wx ");
 				for (i = 0; i < op->b_len; i++) {
-					r_cons_printf (main_cons, "%02x", op->b_buf[i]);
+					printf ("%02x", op->b_buf[i]);
 				}
-				r_cons_printf (main_cons, " @ 0x%08" PFMT64x "\n", op->b_off + ro->delta + ro->baddr);
+				printf (" @ 0x%08" PFMT64x "\n", op->b_off + ro->delta + ro->baddr);
 			}
 			ro->delta += (op->b_off - op->a_off);
 		}
@@ -283,80 +280,80 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 	default:
 		if (ro->disasm) {
 			int i;
-			r_cons_printf (main_cons, "--- 0x%08" PFMT64x "  ", op->a_off + ro->baddr);
+			printf ("--- 0x%08" PFMT64x "  ", op->a_off + ro->baddr);
 			if (!ro->core) {
-				ro->core = opencore (main_cons, ro, ro->file);
+				ro->core = opencore (ro, ro->file);
 			}
 			for (i = 0; i < op->a_len; i++) {
-				r_cons_printf (main_cons, "%02x", op->a_buf[i]);
+				printf ("%02x", op->a_buf[i]);
 			}
-			r_cons_printf (main_cons, "\n");
+			printf ("\n");
 			if (ro->core) {
 				int len = R_MAX (4, op->a_len);
 				RAsmCode *ac = r_asm_mdisassemble (ro->core->rasm, op->a_buf, len);
 				char *acbufasm = strdup (ac->assembly);
 				if (ro->quiet) {
 					char *bufasm = r_str_prefix_all (acbufasm, "- ");
-					r_cons_printf (main_cons, "%s\n", bufasm);
+					printf ("%s\n", bufasm);
 					free (bufasm);
 				} else {
 					char *bufasm = r_str_prefix_all (acbufasm, Color_RED "- ");
-					r_cons_printf (main_cons, "%s" Color_RESET, bufasm);
+					printf ("%s" Color_RESET, bufasm);
 					free (bufasm);
 				}
 				free (acbufasm);
 				r_asm_code_free (ac);
 			}
 		} else {
-			r_cons_printf (main_cons, "0x%08" PFMT64x " ", op->a_off + ro->baddr);
+			printf ("0x%08" PFMT64x " ", op->a_off + ro->baddr);
 			for (i = 0; i < op->a_len; i++) {
-				r_cons_printf (main_cons, "%02x", op->a_buf[i]);
+				printf ("%02x", op->a_buf[i]);
 			}
 		}
 		if (ro->disasm) {
 			int i;
-			r_cons_printf (main_cons, "+++ 0x%08" PFMT64x "  ", op->b_off + ro->baddr);
+			printf ("+++ 0x%08" PFMT64x "  ", op->b_off + ro->baddr);
 			if (!ro->core) {
-				ro->core = opencore (main_cons, ro, ro->file);
+				ro->core = opencore (ro, ro->file);
 			}
 			for (i = 0; i < op->b_len; i++) {
-				r_cons_printf (main_cons, "%02x", op->b_buf[i]);
+				printf ("%02x", op->b_buf[i]);
 			}
-			r_cons_printf (main_cons, "\n");
+			printf ("\n");
 			if (ro->core) {
 				int len = R_MAX (4, op->b_len);
 				RAsmCode *ac = r_asm_mdisassemble (ro->core->rasm, op->b_buf, len);
 				char *acbufasm = strdup (ac->assembly);
 				if (ro->quiet) {
 					char *bufasm = r_str_prefix_all (acbufasm, "+ ");
-					r_cons_printf (main_cons, "%s\n", bufasm);
+					printf ("%s\n", bufasm);
 					free (bufasm);
 					free (acbufasm);
 				} else {
 					char *bufasm = r_str_prefix_all (acbufasm, Color_GREEN "+ ");
-					r_cons_printf (main_cons, "%s\n" Color_RESET, bufasm);
+					printf ("%s\n" Color_RESET, bufasm);
 					free (bufasm);
 					free (acbufasm);
 				}
 				// r_asm_code_free (ac);
 			}
 		} else {
-			r_cons_printf (main_cons, " => ");
+			printf (" => ");
 			for (i = 0; i < op->b_len; i++) {
-				r_cons_printf (main_cons, "%02x", op->b_buf[i]);
+				printf ("%02x", op->b_buf[i]);
 			}
-			r_cons_printf (main_cons, " 0x%08" PFMT64x "\n", op->b_off + ro->baddr);
+			printf (" 0x%08" PFMT64x "\n", op->b_off + ro->baddr);
 		}
 		return 1;
 	}
 	return 0;
 }
 
-void print_bytes(RCons *main_cons, const void *p, size_t len, bool big_endian) {
+void print_bytes(const void *p, size_t len, bool big_endian) {
 	size_t i;
 	for (i = 0; i < len; i++) {
 		ut8 ch = ((ut8 *)p)[big_endian? (len - i - 1): i];
-		if (r_main_write (main_cons, &ch, 1) != 1) {
+		if (write (1, &ch, 1) != 1) {
 			break;
 		}
 	}
@@ -364,7 +361,6 @@ void print_bytes(RCons *main_cons, const void *p, size_t len, bool big_endian) {
 
 static int bcb(RDiff *d, void *user, RDiffOp *op) {
 	RadiffOptions *ro = user;
-	RCons *main_cons = ro->output;
 	ut64 offset_diff = op->a_off - ro->gdiff_start;
 	ut8 opcode;
 	ut16 USAddr = 0;
@@ -401,39 +397,39 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 			int max = INT_MAX;
 			size_t i;
 			for (i = 0; i < times; i++) {
-				print_bytes (main_cons, &opcode, sizeof (opcode), true);
+				print_bytes (&opcode, sizeof (opcode), true);
 				// XXX this is overflowingly wrong
-				// XXX print_bytes (main_cons, &gdiff_start + i * max, sizeof (gdiff_start), true);
-				print_bytes (main_cons, &max, sizeof (max), true);
+				// XXX print_bytes (&gdiff_start + i * max, sizeof (gdiff_start), true);
+				print_bytes (&max, sizeof (max), true);
 			}
 		}
 
 		// print opcode for COPY
-		print_bytes (main_cons, &opcode, sizeof (opcode), true);
+		print_bytes (&opcode, sizeof (opcode), true);
 
 		// print position for COPY
 		if (opcode <= 251) {
-			print_bytes (main_cons, &USAddr, sizeof (USAddr), true);
+			print_bytes (&USAddr, sizeof (USAddr), true);
 		} else if (opcode < 255) {
-			print_bytes (main_cons, &IAddr, sizeof (IAddr), true);
+			print_bytes (&IAddr, sizeof (IAddr), true);
 		} else {
-			print_bytes (main_cons, &ro->gdiff_start, sizeof (ro->gdiff_start), true);
+			print_bytes (&ro->gdiff_start, sizeof (ro->gdiff_start), true);
 		}
 
 		// print length for COPY
 		switch (opcode) {
 		case 249:
 		case 252:
-			print_bytes (main_cons, &UCLen, sizeof (UCLen), true);
+			print_bytes (&UCLen, sizeof (UCLen), true);
 			break;
 		case 250:
 		case 253:
-			print_bytes (main_cons, &USLen, sizeof (USLen), true);
+			print_bytes (&USLen, sizeof (USLen), true);
 			break;
 		case 251:
 		case 254:
 		case 255:
-			print_bytes (main_cons, &ILen, sizeof (ILen), true);
+			print_bytes (&ILen, sizeof (ILen), true);
 			break;
 		}
 	}
@@ -441,17 +437,17 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 	// we append data
 	if (op->b_len <= 246) {
 		ut8 data = op->b_len;
-		R_UNUSED_RESULT (r_main_write (main_cons, &data, 1));
+		R_UNUSED_RESULT (write (1, &data, 1));
 	} else if (op->b_len <= USHRT_MAX) {
 		USLen = (ut16)op->b_len;
 		ut8 data = 247;
-		R_UNUSED_RESULT (r_main_write (main_cons, &data, 1));
-		print_bytes (main_cons, &USLen, sizeof (USLen), true);
+		R_UNUSED_RESULT (write (1, &data, 1));
+		print_bytes (&USLen, sizeof (USLen), true);
 	} else if (op->b_len <= INT_MAX) {
 		ut8 data = 248;
-		R_UNUSED_RESULT (r_main_write (main_cons, &data, 1));
+		R_UNUSED_RESULT (write (1, &data, 1));
 		ILen = (int)op->b_len;
-		print_bytes (main_cons, &ILen, sizeof (ILen), true);
+		print_bytes (&ILen, sizeof (ILen), true);
 	} else {
 		// split into multiple DATA, because op->b_len is greater than INT_MAX
 		int times = op->b_len / INT_MAX;
@@ -459,28 +455,28 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 		size_t i;
 		for (i = 0; i < times; i++) {
 			ut8 data = 248;
-			if (r_main_write (main_cons, &data, 1) != 1) {
+			if (write (1, &data, 1) != 1) {
 				break;
 			}
-			print_bytes (main_cons, &max, sizeof (max), true);
-			print_bytes (main_cons, op->b_buf, max, false);
+			print_bytes (&max, sizeof (max), true);
+			print_bytes (op->b_buf, max, false);
 			op->b_buf += max;
 		}
 		op->b_len = op->b_len % max;
 
 		// print the remaining size
 		int remain_size = op->b_len;
-		print_bytes (main_cons, &remain_size, sizeof (remain_size), true);
+		print_bytes (&remain_size, sizeof (remain_size), true);
 	}
-	print_bytes (main_cons, op->b_buf, op->b_len, false);
+	print_bytes (op->b_buf, op->b_len, false);
 	ro->gdiff_start = op->b_off + op->b_len;
 	return 0;
 }
 
-static int show_help(RCons *main_cons, int v) {
-	r_cons_printf (main_cons, "Usage: radiff2 [-options] [-A[A]] [-B #] [-g sym] [-m graph_mode][-t %%] [file] [file]\n");
+static int show_help(int v) {
+	printf ("Usage: radiff2 [-options] [-A[A]] [-B #] [-g sym] [-m graph_mode][-t %%] [file] [file]\n");
 	if (v) {
-		r_cons_printf (main_cons,
+		printf (
 			"  -a [arch]  specify architecture plugin to use (x86, arm, ..)\n"
 			"  -A [-A]    run aaa or aaaa after loading each binary (see -C)\n"
 			"  -b [bits]  specify register size for arch (16 (thumb), 32, 64, ..)\n"
@@ -518,7 +514,7 @@ static int show_help(RCons *main_cons, int v) {
 }
 
 #define DUMP_CONTEXT 2
-static void dump_cols(RCons *main_cons, RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, int w) {
+static void dump_cols(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, int w) {
 	ut32 sz = R_MIN (as, bs);
 	ut32 i, j;
 	int ctx = DUMP_CONTEXT;
@@ -618,17 +614,17 @@ static void dump_cols(RCons *main_cons, RadiffOptions *ro, ut8 *a, int as, ut8 *
 			}
 		}
 		r_cons_printf (ro->cons, "\n");
-		r_main_cons_flush (main_cons, ro->cons);
+		r_cons_flush (ro->cons);
 	}
 	r_cons_break_end (ro->cons);
 	r_cons_printf (ro->cons, "\n" Color_RESET);
-	r_main_cons_flush (main_cons, ro->cons);
+	r_cons_flush (ro->cons);
 	if (as != bs) {
 		r_cons_printf (ro->cons, "...\n");
 	}
 }
 
-static void dump_cols_hexii(RCons *main_cons, RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, int w) {
+static void dump_cols_hexii(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, int w) {
 	bool spacy = false;
 	ut32 sz = R_MIN (as, bs);
 	ut32 i, j;
@@ -718,11 +714,11 @@ static void dump_cols_hexii(RCons *main_cons, RadiffOptions *ro, ut8 *a, int as,
 			r_cons_printf (ro->cons, "  ");
 		}
 		r_cons_printf (ro->cons, "\n");
-		r_main_cons_flush (main_cons, ro->cons);
+		r_cons_flush (ro->cons);
 	}
 	r_cons_break_end (ro->cons);
 	r_cons_printf (ro->cons, "\n" Color_RESET);
-	r_main_cons_flush (main_cons, ro->cons);
+	r_cons_flush (ro->cons);
 	if (as != bs) {
 		r_cons_printf (ro->cons, "...\n");
 	}
@@ -741,14 +737,14 @@ static char *handle_sha256(RadiffOptions *ro, const ut8 *block, int len) {
 	return res;
 }
 
-static ut8 *slurp(RCons *main_cons, RadiffOptions *ro, const char *file, size_t *sz) {
+static ut8 *slurp(RadiffOptions *ro, const char *file, size_t *sz) {
 	if (!strstr (file, "://")) {
 		return (ut8 *)r_file_slurp (file, sz);
 	}
 	ut8 *data = NULL;
 	ut64 size;
 	if (!ro->core) {
-		ro->core = opencore (main_cons, ro, ro->file);
+		ro->core = opencore (ro, ro->file);
 		if (!ro->core) {
 			R_LOG_ERROR ("opencore failed");
 			return NULL;
@@ -1086,26 +1082,28 @@ static void __print_diff_graph(RCore *c, ut64 off, int gmode) {
 	}
 }
 
-static void radiff_options_init(RCons *main_cons, RadiffOptions *ro) {
+static void radiff_options_init(RadiffOptions *ro) {
 	memset (ro, 0, sizeof (RadiffOptions));
-	ro->output = main_cons;
 	ro->threshold = -1;
 	ro->useva = true;
 	ro->evals = r_list_newf (NULL);
 	ro->mode = MODE_DIFF;
 	ro->gmode = GRAPH_DEFAULT_MODE;
-	ro->cons = r_main_cons_new (main_cons);
+	ro->cons = r_cons_singleton ();
+	if (!ro->cons) {
+		ro->cons = r_cons_new ();
+	}
 	ro->offset_a = 0;
 	ro->offset_b = 0;
 	ro->length_a = UT64_MAX;
 	ro->length_b = UT64_MAX;
 }
 
-static void radiff_options_fini(RCons *main_cons, RadiffOptions *ro) {
+static void radiff_options_fini(RadiffOptions *ro) {
 	r_list_free (ro->runcmd);
 	r_list_free (ro->evals);
-	r_main_core_free (main_cons, ro->core);
-	r_main_cons_free (main_cons, ro->cons);
+	r_core_free (ro->core);
+	r_cons_free (ro->cons);
 }
 
 static void fileobj(RadiffOptions *ro, const char *ro_file, const ut8 *buf, size_t sz) {
@@ -1140,7 +1138,7 @@ static const char idhelp[] =
 	" z strings\n"
 	" Z zignatures\n";
 
-static bool select_input_data(RCons *main_cons, RadiffOptions *ro, const char *arg) {
+static bool select_input_data(RadiffOptions *ro, const char *arg) {
 	char ch0 = *arg;
 	if (!singlechar (arg)) {
 		if (!strcmp (arg, "symbols")) {
@@ -1172,7 +1170,7 @@ static bool select_input_data(RCons *main_cons, RadiffOptions *ro, const char *a
 	switch (ch0) {
 	case '?':
 	case 'h':
-		r_cons_printf (main_cons, "%s\n", idhelp);
+		printf ("%s\n", idhelp);
 		return false;
 	case 'c':
 		ro->mode = MODE_DIFF_CLASSES;
@@ -1227,7 +1225,7 @@ static const char gfhelp[] =
 	"  t          tiny ascii art\n"
 	"  i          interactive ascii art\n";
 
-static bool select_graph_type(RCons *main_cons, RadiffOptions *ro, const char *arg) {
+static bool select_graph_type(RadiffOptions *ro, const char *arg) {
 	char ch0 = *arg;
 	if (!singlechar (arg)) {
 		if (!strcmp (arg, "sdb")) {
@@ -1257,7 +1255,7 @@ static bool select_graph_type(RCons *main_cons, RadiffOptions *ro, const char *a
 	switch (ch0) {
 	case '?':
 	case 'h':
-		r_cons_printf (main_cons, "%s\n", gfhelp);
+		printf ("%s\n", gfhelp);
 		return false;
 	case 'i': ro->gmode = GRAPH_INTERACTIVE_MODE; break;
 	case 'k': ro->gmode = GRAPH_SDB_MODE; break;
@@ -1285,7 +1283,7 @@ static const char ofhelp[] =
 	" x hex          two column hexdump-style\n"
 	" X hexii        simplified hexdump (hexII format)\n";
 
-static bool select_output_format(RCons *main_cons, RadiffOptions *ro, const char *arg) {
+static bool select_output_format(RadiffOptions *ro, const char *arg) {
 	char ch0 = *arg;
 	if (!singlechar (arg)) {
 		if (!strcmp (arg, "hexii")) {
@@ -1311,7 +1309,7 @@ static bool select_output_format(RCons *main_cons, RadiffOptions *ro, const char
 	switch (ch0) {
 	case '?':
 	case 'h':
-		r_cons_printf (main_cons, "%s\n", ofhelp);
+		printf ("%s\n", ofhelp);
 		return false;
 	case 'j':
 		ro->diffmode = 'j';
@@ -1350,11 +1348,11 @@ typedef struct {
 static RThreadFunctionRet thready_core(RThread *th) {
 	ThreadData *td = (ThreadData *)th->user;
 	*td->core = NULL;
-	*td->core = opencore (td->ro->output, td->ro, td->file);
+	*td->core = opencore (td->ro, td->file);
 	return false;
 }
 
-R_API int r_main_radiff2(RCons *main_cons, int argc, const char **argv) {
+R_API int r_main_radiff2(int argc, const char **argv) {
 	RadiffOptions ro;
 	const char *columnSort = NULL;
 	const char *addr = NULL;
@@ -1366,7 +1364,7 @@ R_API int r_main_radiff2(RCons *main_cons, int argc, const char **argv) {
 	RDiff *d;
 	RGetopt opt;
 
-	radiff_options_init (main_cons, &ro);
+	radiff_options_init (&ro);
 
 	r_getopt_init (&opt, argc, argv, "Aa:b:B:c:CdDe:f:g:hi:jl:m:no:Oprst:TXxuUqvV");
 	while ((o = r_getopt_next (&opt)) != -1) {
@@ -1409,7 +1407,7 @@ R_API int r_main_radiff2(RCons *main_cons, int argc, const char **argv) {
 			r_list_append (ro.evals, (void *)opt.arg);
 			break;
 		case 'f':
-			if (!select_output_format (main_cons, &ro, opt.arg)) {
+			if (!select_output_format (&ro, opt.arg)) {
 				R_LOG_ERROR ("Invalid output format selected");
 				return 1;
 			}
@@ -1420,9 +1418,9 @@ R_API int r_main_radiff2(RCons *main_cons, int argc, const char **argv) {
 			addr = opt.arg;
 			break;
 		case 'h':
-			return show_help (main_cons, 1);
+			return show_help (1);
 		case 'i':
-			if (!select_input_data (main_cons, &ro, opt.arg)) {
+			if (!select_input_data (&ro, opt.arg)) {
 				R_LOG_ERROR ("Invalid input data selected (see -i help)");
 				return 1;
 			}
@@ -1432,7 +1430,7 @@ R_API int r_main_radiff2(RCons *main_cons, int argc, const char **argv) {
 			ro.pj = pj_new ();
 			break;
 		case 'm':
-			if (!select_graph_type (main_cons, &ro, opt.arg)) {
+			if (!select_graph_type (&ro, opt.arg)) {
 				R_LOG_ERROR ("Invalid input data selected (see -i help)");
 				return 1;
 			}
@@ -1486,12 +1484,12 @@ R_API int r_main_radiff2(RCons *main_cons, int argc, const char **argv) {
 			break;
 		case 't':
 			ro.threshold = atoi (opt.arg);
-			// r_cons_printf (main_cons, "%s\n", opt.arg);
+			// printf ("%s\n", opt.arg);
 			break;
 		case 'T': // imho `t <=> T`
 			R_LOG_WARN ("Threading support is experimental and known to be crashy");
 			ro.thready = true;
-			// r_cons_printf (main_cons, "%s\n", opt.arg);
+			// printf ("%s\n", opt.arg);
 			break;
 		case 'x':
 			ro.mode = MODE_COLS;
@@ -1509,17 +1507,17 @@ R_API int r_main_radiff2(RCons *main_cons, int argc, const char **argv) {
 			ro.quiet = true;
 			break;
 		case 'v':
-			return r_main_version_print (main_cons, "radiff2", 0);
+			return r_main_version_print ("radiff2", 0);
 		case 'V':
 			ro.verbose = true;
 			break;
 		default:
-			return show_help (main_cons, 0);
+			return show_help (0);
 		}
 	}
 
 	if (argc < 3 || opt.ind + 2 > argc) {
-		return show_help (main_cons, 0);
+		return show_help (0);
 	}
 	ro.file = (opt.ind < argc)? argv[opt.ind]: NULL;
 	ro.file2 = (opt.ind + 1 < argc)? argv[opt.ind + 1]: NULL;
@@ -1553,12 +1551,12 @@ R_API int r_main_radiff2(RCons *main_cons, int argc, const char **argv) {
 			r_th_wait (t0);
 			r_th_wait (t1);
 		} else {
-			c = opencore (main_cons, &ro, ro.file);
+			c = opencore (&ro, ro.file);
 			if (!c) {
 				R_LOG_ERROR ("Cannot open '%s'", r_str_getf (ro.file));
 				return 1;
 			}
-			c2 = opencore (main_cons, &ro, ro.file2);
+			c2 = opencore (&ro, ro.file2);
 			if (!c2) {
 				R_LOG_ERROR ("Cannot open '%s'", r_str_getf (ro.file2));
 				return 1;
@@ -1701,12 +1699,12 @@ R_API int r_main_radiff2(RCons *main_cons, int argc, const char **argv) {
 		}
 		// r_cons_printf (c2->cons, "PENE\n");
 		if (ro.mode == MODE_CODE || ro.mode == MODE_GRAPH) {
-			r_main_cons_flush (main_cons, c->cons);
-			r_main_cons_flush (main_cons, c2->cons);
-			r_main_cons_flush (main_cons, ro.cons);
+			r_cons_flush (c->cons);
+			r_cons_flush (c2->cons);
+			r_cons_flush (ro.cons);
 		}
-		r_main_core_free (main_cons, c);
-		r_main_core_free (main_cons, c2);
+		r_core_free (c);
+		r_core_free (c2);
 		if (ro.mode == MODE_CODE || ro.mode == MODE_GRAPH) {
 			return 0;
 		}
@@ -1714,13 +1712,13 @@ R_API int r_main_radiff2(RCons *main_cons, int argc, const char **argv) {
 	default:
 		{
 			size_t fsz = 0;
-			bufa_orig = bufa = slurp (main_cons, &ro, ro.file, &fsz);
+			bufa_orig = bufa = slurp (&ro, ro.file, &fsz);
 			sza = fsz;
 			if (!bufa) {
 				R_LOG_ERROR ("Cannot open %s", r_str_getf (ro.file));
 				return 1;
 			}
-			bufb_orig = bufb = slurp (main_cons, &ro, ro.file2, &fsz);
+			bufb_orig = bufb = slurp (&ro, ro.file2, &fsz);
 			szb = fsz;
 			if (!bufb) {
 				R_LOG_ERROR ("Cannot open: %s", r_str_getf (ro.file2));
@@ -1769,19 +1767,19 @@ R_API int r_main_radiff2(RCons *main_cons, int argc, const char **argv) {
 		r_cons_printf (ro.cons, "+++ %s\n", ro.file2);
 		r_diff_set_callback (d, &cb_xpatch, &ro);
 		r_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);
-		r_main_cons_flush (main_cons, ro.cons);
+		r_cons_flush (ro.cons);
 		break;
 	case MODE_COLSII:
 		if (!c && !r_list_empty (ro.evals)) {
-			c = opencore (main_cons, &ro, NULL);  // keep separate core instance
+			c = opencore (&ro, NULL);  // keep separate core instance
 		}
-		dump_cols_hexii (main_cons, &ro, bufa, (int)sza, bufb, (int)szb, (r_cons_get_size (ro.cons, NULL) > 112)? 16: 8);
+		dump_cols_hexii (&ro, bufa, (int)sza, bufb, (int)szb, (r_cons_get_size (ro.cons, NULL) > 112)? 16: 8);
 		break;
 	case MODE_COLS:
 		if (!c && !r_list_empty (ro.evals)) {
-			c = opencore (main_cons, &ro, NULL);  // keep separate core instance
+			c = opencore (&ro, NULL);  // keep separate core instance
 		}
-		dump_cols (main_cons, &ro, bufa, (int)sza, bufb, (int)szb, (r_cons_get_size (ro.cons, NULL) > 112)? 16: 8);
+		dump_cols (&ro, bufa, (int)sza, bufb, (int)szb, (r_cons_get_size (ro.cons, NULL) > 112)? 16: 8);
 		break;
 	case MODE_DIFF:
 	case MODE_DIFF_STRS:
@@ -1796,7 +1794,7 @@ R_API int r_main_radiff2(RCons *main_cons, int argc, const char **argv) {
 			pj_o (ro.pj);
 			pj_ka (ro.pj, "files");
 			if (!ro.core) {
-				ro.core = opencore (main_cons, &ro, ro.file);
+				ro.core = opencore (&ro, ro.file);
 			}
 			fileobj (&ro, ro.file, bufa, sza);
 			fileobj (&ro, ro.file2, bufb, szb);
@@ -1804,18 +1802,18 @@ R_API int r_main_radiff2(RCons *main_cons, int argc, const char **argv) {
 			pj_ka (ro.pj, "changes");
 		}
 		if (ro.diffmode == 'B') {
-			R_UNUSED_RESULT (r_main_write (main_cons, "\xd1\xff\xd1\xff\x04", 5));
+			R_UNUSED_RESULT (write (1, "\xd1\xff\xd1\xff\x04", 5));
 		}
 		if (ro.diffmode == 'U') {
 			char *res = r_diff_buffers_unified (d, bufa, (int)sza, bufb, (int)szb);
 			if (res) {
-				r_cons_printf (main_cons, "%s", res);
+				printf ("%s", res);
 				free (res);
 			}
 		} else if (ro.diffmode == 'B') {
 			r_diff_set_callback (d, &bcb, &ro);
 			r_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);
-			R_UNUSED_RESULT (r_main_write (main_cons, "\x00", 1));
+			R_UNUSED_RESULT (write (1, "\x00", 1));
 		} else {
 			r_diff_set_callback (d, &cb, &ro);
 			// r_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);
@@ -1848,26 +1846,26 @@ R_API int r_main_radiff2(RCons *main_cons, int argc, const char **argv) {
 				r_diff_free (d);
 			}
 		}
-		r_cons_printf (main_cons, "similarity: %.3f\n", sim);
-		r_cons_printf (main_cons, "distance: %d\n", ro.count);
+		printf ("similarity: %.3f\n", sim);
+		printf ("distance: %d\n", ro.count);
 		break;
 	}
 
 	if (ro.diffmode == 'j' && ro.showcount) {
 		pj_kd (ro.pj, "count", ro.count);
 	} else if (ro.showcount && ro.diffmode != 'j') {
-		r_cons_printf (main_cons, "%d\n", ro.count);
+		printf ("%d\n", ro.count);
 	}
 	if (ro.pj) {
 		pj_end (ro.pj);
 		char *s = pj_drain (ro.pj);
-		r_cons_printf (main_cons, "%s\n", s);
+		printf ("%s\n", s);
 		free (s);
 		ro.pj = NULL;
 	}
 	free (bufa_orig);
 	free (bufb_orig);
-	radiff_options_fini (main_cons, &ro);
+	radiff_options_fini (&ro);
 
 	return 0;
 }
