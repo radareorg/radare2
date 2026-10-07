@@ -4023,3 +4023,76 @@ puts
 main
 EOF
 RUN
+
+NAME=iL plugin details preserve exact and prefix lookup
+FILE=-
+CMDS=<<EOF
+iL elf
+iL elf64
+iL elf6
+iL xtr.pemixed
+iL xtr.pem
+iL msvc
+iL msv
+EOF
+EXPECT=<<EOF
+Name: elf
+Description: Executable and Link Format (ELF) for 32 bit
+License: LGPL-3.0-only
+Author: nibble
+Name: elf64
+Description: Executable Link Format for 64bit
+License: LGPL-3.0-only
+Author: nibble
+Name: elf64
+Description: Executable Link Format for 64bit
+License: LGPL-3.0-only
+Author: nibble
+Name: xtr.pemixed
+Description: Microsoft Portable Executable Extractor
+License: LGPL-3.0-only
+Author: JohnPeng47
+Name: xtr.pemixed
+Description: Microsoft Portable Executable Extractor
+License: LGPL-3.0-only
+Author: JohnPeng47
+Name: msvc
+Description: Microsoft Visual C++ demangler
+License: LGPL-3.0-only
+Name: msvc
+Description: Microsoft Visual C++ demangler
+License: LGPL-3.0-only
+EOF
+RUN
+
+NAME=iLj plugin details preserve JSON metadata
+FILE=-
+CMDS=<<EOF
+iLj elf
+iLj elf64
+iLj xtr.pemixed
+iLj xtr.pem
+iLj msvc
+iLj msv
+EOF
+EXPECT=<<EOF
+{"name":"elf","description":"Executable and Link Format (ELF) for 32 bit","license":"LGPL-3.0-only"}
+{"name":"elf64","description":"Executable Link Format for 64bit","license":"LGPL-3.0-only"}
+{"name":"xtr.pemixed","description":"Microsoft Portable Executable Extractor","license":"LGPL-3.0-only"}
+{"name":"xtr.pemixed","description":"Microsoft Portable Executable Extractor","license":"LGPL-3.0-only"}
+{"name":"msvc","description":"Microsoft Visual C++ demangler","license":"LGPL-3.0-only"}
+{"name":"msvc","description":"Microsoft Visual C++ demangler","license":"LGPL-3.0-only"}
+EOF
+RUN
+
+NAME=iL unknown plugin reports an error
+FILE=-
+CMDS=<<EOF
+iL aitodo_missing_plugin
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot find plugin aitodo_missing_plugin
+EOF
+RUN

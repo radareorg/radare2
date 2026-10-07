@@ -666,6 +666,7 @@ R_API void r_core_anal_cc_init(RCore *core);
 R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, int followDepth, bool is_json);
 R_API void r_core_anal_esil_function(RCore *core, ut64 addr); /// TODO: better name and move to anal
 
+R_API bool r_core_list_bin_plugin(RCore *core, const char *name, PJ *pj, int json);
 R_API int r_core_list_io(RCore *core, const char *name, int mode);
 R_API void r_core_list_lang(RCore *core, int mode);
 
