@@ -104,3 +104,164 @@ EXPECT=<<EOF
 0x185c
 EOF
 RUN
+
+NAME=arm ldr pc plt stub xref names the thumb function
+FILE=bins/elf/analysis/libstagefright_soft_g711dec.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+aaa
+ax~0x202c~CODE
+e anal.calls=true
+aa
+afl~0x0000289
+EOF
+EXPECT=<<EOF
+         rsym._ZN7android8SoftG711D1Ev+8 0x202c > CODE:--x > 0x2740 method.destructor.android::SoftG711._SoftG711__
+0x0000289c    6     66 dbg.android::SoftG711::DecodeALaw(short*, unsigned char const*, unsigned int)
+EOF
+RUN
+
+NAME=arm ldr pc plt stub xref survives a rebased load
+FILE=bins/elf/analysis/libstagefright_soft_g711dec.so
+ARGS=-B 0x100000 -e bin.relocs.apply=true
+CMDS=<<EOF
+aaa
+ax~0x10202c~CODE
+EOF
+EXPECT=<<EOF
+         rsym._ZN7android8SoftG711D1Ev+8 0x10202c > CODE:--x > 0x102740 method.destructor.android::SoftG711._SoftG711__
+EOF
+RUN
+
+NAME=arm ldr pc slot off its thumb symbol keeps the odd target
+FILE=bins/elf/analysis/libstagefright_soft_g711dec.so
+ARGS=-e bin.relocs.apply=true -e io.cache=true
+CMDS=<<EOF
+wv4 0x2743 @ 0x6f10
+aaa
+ax~0x202c~CODE
+EOF
+EXPECT=<<EOF
+         rsym._ZN7android8SoftG711D1Ev+8 0x202c > CODE:--x > 0x2743 sym.android::SoftG711::_SoftG711____1+3
+EOF
+RUN
+
+NAME=arm ldr pc targeted search accepts raw and thumb addresses
+FILE=bins/elf/analysis/libstagefright_soft_g711dec.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+aae 12 0x2740 @ 0x2024
+ax~0x202c~CODE
+ax-*
+aae 12 0x2741 @ 0x2024
+ax~0x202c~CODE
+EOF
+EXPECT=<<EOF
+         rsym._ZN7android8SoftG711D1Ev+8 0x202c > CODE:--x > 0x2740 method.destructor.android::SoftG711._SoftG711__
+         rsym._ZN7android8SoftG711D1Ev+8 0x202c > CODE:--x > 0x2740 method.destructor.android::SoftG711._SoftG711__
+EOF
+RUN
+
+NAME=arm ldr pc slot holding an arm symbol plus one keeps the odd target
+FILE=bins/elf/analysis/libsimplejni.so
+ARGS=-e bin.relocs.apply=true -e io.cache=true
+CMDS=<<EOF
+wv4 0x2045 @ 0x3fa0
+aaa
+ax~0xe30~CODE
+EOF
+EXPECT=<<EOF
+       rsym.__gnu_Unwind_Restore_VFP_D+8 0xe30 > CODE:--x > 0x2045 sym.__gnu_Unwind_Restore_VFP_D+1
+EOF
+RUN
+
+NAME=arm plt stubs on libarm.so reach even thumb entries
+FILE=bins/elf/libarm.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+aaa
+ax~0x3e158~CODE
+ax*~axc~!axc 0x3e~1 0x3e,3 0x3e,5 0x3e,7 0x3e,9 0x3e,b 0x3e,d 0x3e,f 0x3e~?
+ax*~axc~!axc 0x3e~ 0x3e~?
+aflc
+EOF
+EXPECT=<<EOF
+                          fcn.0003e150+8 0x3e158 > CODE:--x > 0x2d588 sym.std::__ndk1::to_string_int_
+0
+203
+926
+EOF
+RUN
+
+NAME=arm blx through a register load keeps the odd target
+FILE=malloc://0x4000
+ARGS=-a arm -b 32
+CMDS=<<EOF
+ahb 32 @ 0x1000
+ahb 16 @ 0x2000
+wx 7047 @ 0x2000
+wx 183093e533ff2fe1 @ 0x1000
+wx 01200000 @ 0x18
+af @ 0x2000
+af @ 0x1000
+aae 8 @ 0x1000
+ax~CALL
+aflc
+EOF
+EXPECT=<<EOF
+                          fcn.00001000+4 0x1004 > CALL:--x > 0x2001 fcn.00002000+1
+2
+EOF
+RUN
+
+NAME=arm ldr pc without a reloc keeps the odd target despite a thumb hint
+FILE=malloc://0x4000
+ARGS=-a arm -b 32
+CMDS=<<EOF
+ahb 32 @ 0x1000
+ahb 16 @ 0x2000
+wx 7047 @ 0x2000
+wx 00f09fe5 @ 0x1000
+wx 01200000 @ 0x1008
+af @ 0x2000
+aae 4 @ 0x1000
+ax~CODE
+EOF
+EXPECT=<<EOF
+                                       ? 0x1000 > CODE:--x > 0x2001 fcn.00002000+1
+EOF
+RUN
+
+NAME=arm libgcc unwind wrapper and pic veneer keep their odd targets
+FILE=bins/elf/libmagic.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+aaa
+ax~0x7fec
+ax~0x12ef8
+ax*~axc 0x1bf~?
+aflc
+EOF
+EXPECT=<<EOF
+         sym.___Unwind_RaiseException+28 0x7fec > CODE:--x > 0x7ff1 sym.___Unwind_RaiseException+33
+                          fcn.00012ef0+8 0x12ef8 > CODE:--x > 0x7935 sym._Unwind_VRS_Set+1
+36
+331
+EOF
+RUN
+
+NAME=arm thumb reloc slot that no ldr pc reads adds no xref
+FILE=bins/elf/arm-thumb-bit.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+aaa
+afl
+ax
+EOF
+EXPECT=<<EOF
+0x08000034    1      6 sym.caller
+0x0800003c    1      2 sym.tf
+0x08000040    1     16 sym.armf
+                              sym.caller 0x8000034 > CALL:--x > 0x800003c sym.tf
+EOF
+RUN

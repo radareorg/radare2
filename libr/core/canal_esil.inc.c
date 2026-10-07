@@ -880,6 +880,12 @@ static ut64 pulldata(RCore *core, ut8 *buf, size_t buf_size, ut64 start, ut64 en
 	return addr - *buf_addr;
 }
 
+static ut64 thumb_slot_target(RCore *core, ut64 slot, ut64 dst) {
+	RBinReloc *rel = r_core_getreloc (core, slot, 1);
+	RBinSymbol *sym = rel? rel->symbol: NULL;
+	return (sym && sym->bits == 16 && reloc_sym_vaddr (core, sym) == dst - 1)? dst - 1: dst;
+}
+
 // R2R db/cmd/cmd_search_esil db/cmd/cmd_aae
 R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *target /* addr */) {
 	R_RETURN_IF_FAIL (core && str);
@@ -1372,12 +1378,16 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				// the type mask preserves the COND bit, strip it too so
 				// conditional variants like UCCALL are handled as calls
 				const int utype = op.type & R_ANAL_OP_TYPE_MASK & ~R_ANAL_OP_TYPE_COND;
-				if (!skip_ref && CHECKREF (dst)) {
+				const ut64 to = (!skip_ref && (arch == R2_ARCH_ARM32 || is_thumb)
+						&& op.type == R_ANAL_OP_TYPE_MJMP && (dst & 1))
+					? thumb_slot_target (core, ctx.last_read, dst): dst;
+				if (!skip_ref && (CHECKREF (dst) || CHECKREF (to))) {
+					// Normalizing an xref must not seed another function.
 					if (myvalid (core, dst)) {
 						RAnalRefType ref = utype == R_ANAL_OP_TYPE_UCALL
 							? R_ANAL_REF_TYPE_CALL
 							: R_ANAL_REF_TYPE_CODE;
-						r_anal_xrefs_setf (core->anal, fcn, cur, dst, ref | R_ANAL_REF_TYPE_EXEC);
+						r_anal_xrefs_setf (core->anal, fcn, cur, to, ref | R_ANAL_REF_TYPE_EXEC);
 						if (!xrefs_only) {
 							r_core_anal_fcn (core, dst, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
 						}
