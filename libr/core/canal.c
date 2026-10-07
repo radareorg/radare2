@@ -5328,6 +5328,11 @@ R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2) {
 	R_LOG_INFO ("Merge 0x%08"PFMT64x" into 0x%08"PFMT64x, addr, addr2);
 }
 
+static ut64 reloc_sym_vaddr(RCore *core, RBinSymbol *sym) {
+	return sym->paddr == UT64_MAX? sym->vaddr
+		: r_bin_get_vaddr (core->bin, sym->paddr, sym->vaddr);
+}
+
 #include "canal_esil.inc.c"
 
 static bool isValidAddress(RCore *core, ut64 addr) {
@@ -5940,8 +5945,7 @@ static void plt_stub_flag(RCore *core, ut64 entry, ut64 size, ut64 slot) {
 	if (!target->vaddr || target->vaddr == UT64_MAX) {
 		return;
 	}
-	const ut64 taddr = target->paddr == UT64_MAX? target->vaddr
-		: r_bin_get_vaddr (core->bin, target->paddr, target->vaddr);
+	const ut64 taddr = reloc_sym_vaddr (core, target);
 	if (taddr == entry) {
 		return;
 	}
