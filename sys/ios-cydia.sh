@@ -34,7 +34,6 @@ ROOT=dist/cydia/radare2/root
 
 makeDeb() {
 	LDID=$(command -v ldid2 || command -v ldid)
-	make -C binr ios-sdk-sign
 	rm -rf /tmp/r2ios
 	make install DESTDIR=/tmp/r2ios
 	rm -rf /tmp/r2ios/${PREFIX}/share/radare2/*/www/*/node_modules
@@ -114,8 +113,7 @@ else
 		ls -l libr/flag/libr_flag.a
 		rm -f libr/*/*.dylib
 		(
-		cd binr ; make clean
-		cd blob ; make USE_LTO=1
+		cd binr/blob ; make USE_LTO=1
 		xcrun --sdk iphoneos strip radare2
 		)
 	fi
