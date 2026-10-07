@@ -754,6 +754,7 @@ aaa > /dev/null
 afv @ 0x0048a1b0~prec
 EOF
 EXPECT=<<EOF
+arg int prec @ rsp+0x108
 var int prec_1 @ rsp+0x88
 EOF
 RUN

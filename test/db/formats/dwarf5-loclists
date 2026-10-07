@@ -66,7 +66,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=DWARF 5 loclists: a variable gets the location covering most of its function
+NAME=DWARF 5 loclists: a parameter gets its entry location, a local the widest
 FILE=bins/elf/dwarf/loclists-x64-semantics
 ARGS=-e anal.vars=false
 CMDS=<<EOF
@@ -75,10 +75,10 @@ afv @ sym.work
 afv @ sym._start
 EOF
 EXPECT=<<EOF
+arg int a @ rdi
 arg int b @ rdx
 var int x @ rbp
 var int z @ rbx
-arg int a @ rsp+0x10
 var int r @ rax
 EOF
 RUN
@@ -130,6 +130,23 @@ arg int a @ rdi
 arg int b @ rsi
 var int y @ rax
 var int z @ rbx
+EOF
+RUN
+
+NAME=DWARF 5 loclists: a loclists base of the wrong form keeps its unit
+FILE=malloc://4096
+CMDS=<<EOF
+wff bins/elf/dwarf/loclists-x64-clang
+wx 06 @ 0x311
+oba 0
+id~&loclists_base,:
+id~Compilation Unit
+EOF
+EXPECT=<<EOF
+     DW_AT_loclists_base       : 12
+     DW_AT_loclists_base       : <0x71>
+  Compilation Unit @ offset 0x0:
+  Compilation Unit @ offset 0xd4:
 EOF
 RUN
 

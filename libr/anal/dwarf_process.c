@@ -1287,17 +1287,23 @@ typedef struct {
 	ut64 lo;
 	ut64 hi;
 	ut64 best_len;
+	ut64 best_start;
 	RBinDwarfBlock best; // the expression data stays in the section bytes
 	RBinDwarfBlock dflt;
 	bool has_best;
 	bool has_dflt;
+	bool at_entry; // a formal parameter takes its location at entry
 } LocPick;
 
-// the range covering most of the scope wins, the first one on a tie
+// parameters take their first range, others the one covering most of scope
 static void pick_range(LocPick *pick, ut64 start, ut64 end, const RBinDwarfBlock *expr) {
 	const ut64 from = R_MAX (start, pick->lo);
 	const ut64 to = R_MIN (end, pick->hi);
-	if (to > from && to - from > pick->best_len) {
+	const bool better = pick->at_entry
+		? !pick->has_best || start < pick->best_start
+		: to - from > pick->best_len;
+	if (to > from && better) {
+		pick->best_start = start;
 		pick->best_len = to - from;
 		pick->best = *expr;
 		pick->has_best = true;
@@ -1315,9 +1321,9 @@ static bool pick_loclist_entry(void *user, ut64 start, ut64 end, const RBinDwarf
 	return true;
 }
 
-// the location a list gives the scope; the default one only where no range does
-static bool pick_location(Context *ctx, const RBinDwarfAttrValue *loc, RBinDwarfBlock *block) {
-	LocPick pick = { .lo = ctx->scope_lo, .hi = ctx->scope_hi };
+// the default location only where no range covers the scope
+static bool pick_location(Context *ctx, const RBinDwarfAttrValue *loc, bool at_entry, RBinDwarfBlock *block) {
+	LocPick pick = { .lo = ctx->scope_lo, .hi = ctx->scope_hi, .at_entry = at_entry };
 	if (loc->kind == DW_AT_KIND_LOCLISTPTR) {
 		if (!ctx->loclist_foreach
 			|| !ctx->loclist_foreach (ctx->loclists, ctx->unit, loc->reference, pick_loclist_entry, &pick)) {
@@ -1328,8 +1334,7 @@ static bool pick_location(Context *ctx, const RBinDwarfAttrValue *loc, RBinDwarf
 		if (!list) {
 			return false;
 		}
-		// .debug_loc ranges are read without their unit base, so the scope
-		// cannot bound them: the longest well-formed one wins, as before
+		// .debug_loc ranges lack their unit base, so the scope cannot bound them
 		pick.lo = 0;
 		pick.hi = UT64_MAX;
 		RListIter *iter;
@@ -1346,7 +1351,7 @@ static bool pick_location(Context *ctx, const RBinDwarfAttrValue *loc, RBinDwarf
 }
 
 /* TODO move a lot of the parsing here into dwarf.c and do only processing here */
-static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrValue *loc, const RBinDwarfAttrValue *frame_base, bool is_frame_base) {
+static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrValue *loc, const RBinDwarfAttrValue *frame_base, bool is_frame_base, bool at_entry) {
 	/* reg5 - val is in register 5
 	fbreg <leb> - offset from frame base
 	regx <leb> - contents is in register X
@@ -1361,7 +1366,7 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 	RBinDwarfBlock block;
 	if (loc->kind == DW_AT_KIND_BLOCK) {
 		block = loc->block;
-	} else if (!pick_location (ctx, loc, &block)) {
+	} else if (!pick_location (ctx, loc, at_entry, &block)) {
 		return NULL;
 	}
 	VariableLocationKind kind = LOCATION_UNKNOWN;
@@ -1387,7 +1392,7 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 			if (frame_base) {
 				/* recursive parsing, but frame_base should be only one, but someone
 				   could make malicious resource exhaustion attack, so a depth counter might be cool? */
-				VariableLocation *location = parse_dwarf_location (ctx, frame_base, NULL, true);
+				VariableLocation *location = parse_dwarf_location (ctx, frame_base, NULL, true, at_entry);
 				if (location) {
 					location->offset += offset;
 					return location;
@@ -1603,7 +1608,8 @@ static bool parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 						parse_abstract_origin (ctx, val->reference, &type, &name);
 						break;
 					case DW_AT_location:
-						var->location = parse_dwarf_location (ctx, val, frame_base, false);
+						var->location = parse_dwarf_location (ctx, val, frame_base, false,
+							child_die->tag == DW_TAG_formal_parameter && child_depth == 1);
 						break;
 					case DW_AT_variable_parameter:
 						// go marks a result slot as a formal parameter with this flag set
@@ -2039,6 +2045,7 @@ static void parse_function(Context *ctx, ut64 idx) {
 	bool get_linkage_name = prefer_linkage_name (ctx->lang);
 	bool has_ranges = false;
 	bool has_ret_type = false;
+	ut64 low_pc = 0;
 	ut64 high_pc = 0;
 	ut64 high_pc_delta = 0;
 	size_t address_count = 0;
@@ -2062,6 +2069,8 @@ static void parse_function(Context *ctx, ut64 idx) {
 			has_linkage_name = true;
 			break;
 		case DW_AT_low_pc:
+			low_pc = val->address;
+			// fallthrough
 		case DW_AT_entry_pc:
 			fcn.addr = val->address;
 			address_count++;
@@ -2143,10 +2152,13 @@ static void parse_function(Context *ctx, ut64 idx) {
 	/* TODO do the same for arguments in future so we can use their location */
 	RList/*<Variable*>*/  *variables = r_list_new ();
 	bool has_unspecified_parameters = false;
-	if (high_pc_delta && r_add_overflow (fcn.addr, high_pc_delta, &high_pc)) {
+	if (!low_pc) {
+		low_pc = fcn.addr;
+	}
+	if (high_pc_delta && r_add_overflow (low_pc, high_pc_delta, &high_pc)) {
 		high_pc = 0;
 	}
-	ctx->scope_lo = fcn.addr;
+	ctx->scope_lo = low_pc;
 	ctx->scope_hi = high_pc? high_pc: UT64_MAX;
 	bool formals_complete = parse_function_args_and_vars (ctx, idx, &args, variables, &has_unspecified_parameters);
 	ctx->scope_lo = 0;
