@@ -56,14 +56,19 @@ bool test_main_shell_capture(void) {
 	r_config_set_i (core->config, "scr.color", 0);
 	r_config_set_b (core->config, "scr.interactive", false);
 	char *previous_cons = r_sys_getenv ("R2CONS");
+	RCons *other = r_cons_new ();
 	r_sys_setenv ("R2CONS", "saved-value");
 	char *output = r_core_cmd_str (core, "echo before; rasm2 -a x86 -d 90; echo after");
 	mu_assert_streq_free (output, "before\nnop\nafter\n", "shell output order and capture");
 	output = r_sys_getenv ("R2CONS");
 	mu_assert_streq_free (output, "saved-value", "shell restores previous environment");
+	mu_assert_ptreq (r_cons_global (NULL), other, "shell restores previous active console");
 	output = r_core_cmd_str (core, "r2 -NNQ -c 'echo inner; rasm2 -a x86 -d c3' --; echo outer");
 	mu_assert_streq_free (output, "inner\nret\nouter\n", "nested main returns to caller");
-	int i;
+	output = r_sys_getenv ("R2CONS");
+	mu_assert_streq_free (output, "saved-value", "nested tools restore previous environment");
+	mu_assert_ptreq (r_cons_global (NULL), other, "nested tools restore previous active console");
+	size_t i;
 	for (i = 0; i < 2; i++) {
 		output = r_core_cmd_str (core, "radiff2 -h");
 		mu_assert_notnull (strstr (output, "Usage: radiff2"), "repeated tool help is captured");
@@ -73,8 +78,25 @@ bool test_main_shell_capture(void) {
 	mu_assert_streq_free (output, "alive\n", "repeated tool calls preserve console");
 	mu_assert_ptreq (core->cons->user, core, "nested core preserves caller callbacks");
 	mu_assert_ptreq (core->cons->num, core->num, "nested core preserves caller numeric state");
+	const char *values[] = { "", NULL };
+	for (i = 0; i < R_ARRAY_SIZE (values); i++) {
+		r_sys_setenv ("R2CONS", values[i]);
+		output = r_core_cmd_str (core, "rasm2 -a x86 -d 90");
+		mu_assert_streq_free (output, "nop\n", "shell capture with empty or absent environment");
+		output = r_sys_getenv ("R2CONS");
+		mu_assert_nullable_streq (output, values[i], "shell restores empty or absent environment");
+		free (output);
+		mu_assert_ptreq (r_cons_global (NULL), other, "shell preserves alternate console");
+	}
+	core->r_main_rasm2 = NULL;
+	output = r_core_cmd_str (core, "rasm2 -h");
+	free (output);
+	mu_assert_eq (core->num->value, 1, "missing tool reports failure");
+	mu_assert_null (r_sys_getenv ("R2CONS"), "missing tool preserves absent environment");
+	mu_assert_ptreq (r_cons_global (NULL), other, "missing tool preserves alternate console");
 	r_sys_setenv ("R2CONS", previous_cons);
 	free (previous_cons);
+	r_cons_free (other);
 	r_core_free (core);
 	mu_end;
 }

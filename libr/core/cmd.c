@@ -2716,10 +2716,15 @@ static int __runMain(RCore *core, RMainCallback cb, const char *arg) {
 	char *a = r_str_trim_dup (arg);
 	int argc = 0;
 	char **args = r_str_argv (a, &argc);
+	RCons *previous_cons = r_cons_global (NULL);
+	char *previous_env = r_sys_getenv ("R2CONS");
 	r_cons_global (core->cons);
 	r_strf_var (cons_ptr, 64, "%p", core->cons);
 	r_sys_setenv ("R2CONS", cons_ptr);
 	int res = cb? cb (argc, (const char **)args): -1;
+	r_sys_setenv ("R2CONS", previous_env);
+	r_cons_global (previous_cons);
+	free (previous_env);
 	r_str_argv_free (args);
 	free (a);
 	return res;
