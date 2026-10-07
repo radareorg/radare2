@@ -23,18 +23,17 @@ static void rarun2_tty(void) {
 }
 #endif
 
-R_IPI int r_main_rarun2_impl(int argc, const char **argv) {
-	RCons *main_cons = r_main_cons ();
+R_API int r_main_rarun2(RCons *main_cons, int argc, const char **argv) {
 	RRunProfile *p;
 	// setvbuf (stdout, NULL, _IONBF, 0);
 	int i;
 	if (argc == 1 || !strcmp (argv[1], "-h")) {
-		r_main_printf (main_cons, "Usage: rarun2 -v|-t|script.rr2 [directive ..]\n");
-		r_main_printf (main_cons, "%s", r_run_help ());
+		r_cons_printf (main_cons, "Usage: rarun2 -v|-t|script.rr2 [directive ..]\n");
+		r_cons_printf (main_cons, "%s", r_run_help ());
 		return 1;
 	}
 	if (!strcmp (argv[1], "-v")) {
-		return r_main_version_print ("rarun2", 0);
+		return r_main_version_print (main_cons, "rarun2", 0);
 	}
 	const char *file = argv[1];
 	if (!strcmp (file, "-t")) {

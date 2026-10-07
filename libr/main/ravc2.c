@@ -16,17 +16,15 @@ static RAvcEnv env[] = {
 	{ "RAVC2_USER", "override cfg.user value to author commit" }
 };
 
-static void ravc_show_env(bool show_desc);
+static void ravc_show_env(RCons *main_cons, bool show_desc);
 
-static void usage(void) {
-	RCons *main_cons = r_main_cons ();
-	r_main_printf (main_cons, "Usage: ravc2 [-qvh] [action] [args ...]\n");
+static void usage(RCons *main_cons) {
+	r_cons_printf (main_cons, "Usage: ravc2 [-qvh] [action] [args ...]\n");
 }
 
-static void help(void) {
-	RCons *main_cons = r_main_cons ();
-	usage ();
-	r_main_printf (main_cons,
+static void help(RCons *main_cons) {
+	usage (main_cons);
+	r_cons_printf (main_cons,
 		"Flags:\n"
 		" -q         quiet mode\n"
 		" -v         show version\n"
@@ -41,7 +39,7 @@ static void help(void) {
 		" status                        print a status message\n"
 		" reset                         remove all uncommited changes\n"
 		" log                           print all commits\n");
-	ravc_show_env (true);
+	ravc_show_env (main_cons, true);
 }
 
 static char *get_author(void) {
@@ -53,44 +51,41 @@ static char *get_author(void) {
 	return author;
 }
 
-static void ravc_env_print(const char *name) {
-	RCons *main_cons = r_main_cons ();
+static void ravc_env_print(RCons *main_cons, const char *name) {
 	char *value = r_sys_getenv (name);
-	r_main_printf (main_cons, "%s\n", R_STR_ISNOTEMPTY (value)? value: "");
+	r_cons_printf (main_cons, "%s\n", R_STR_ISNOTEMPTY (value)? value: "");
 	free (value);
 }
 
-static void ravc_show_env(bool show_desc) {
-	RCons *main_cons = r_main_cons ();
+static void ravc_show_env(RCons *main_cons, bool show_desc) {
 	int id = 0;
 	for (id = 0; id < (sizeof (env) / sizeof (env[0])); id++) {
 		if (show_desc) {
-			r_main_printf (main_cons, "%s\t%s\n", env[id].name, env[id].desc);
+			r_cons_printf (main_cons, "%s\t%s\n", env[id].name, env[id].desc);
 		} else {
-			r_main_printf (main_cons, "%s=", env[id].name);
-			ravc_env_print (env[id].name);
+			r_cons_printf (main_cons, "%s=", env[id].name);
+			ravc_env_print (main_cons, env[id].name);
 		}
 	}
 }
 
-R_IPI int r_main_ravc2_impl(int argc, const char **argv) {
-	RCons *main_cons = r_main_cons ();
+R_API int r_main_ravc2(RCons *main_cons, int argc, const char **argv) {
 	RGetopt opt;
 	int c;
 	bool quiet = false;
 	bool version = false;
 
 	if (argc < 2) {
-		usage ();
+		usage (main_cons);
 		return 1;
 	}
 	if (!r_cons_is_initialized ()) {
-		r_main_cons_new ();
+		r_main_cons_new (main_cons);
 	}
 	int rad = 0;
 	r_getopt_init (&opt, argc, argv, "gqvhH:j");
 	if (argc == 2 && !strcmp (argv[1], "-H")) {
-		ravc_show_env (false);
+		ravc_show_env (main_cons, false);
 		return 0;
 	}
 	while ((c = r_getopt_next (&opt)) != -1) {
@@ -106,23 +101,23 @@ R_IPI int r_main_ravc2_impl(int argc, const char **argv) {
 			version = true;
 			break;
 		case 'h':
-			help ();
+			help (main_cons);
 			return 0;
 		case 'H':
-			ravc_env_print (opt.arg);
+			ravc_env_print (main_cons, opt.arg);
 			return 0;
 		default:
-			usage ();
+			usage (main_cons);
 			return 1;
 		}
 	}
 
 	if (version) {
 		if (quiet) {
-			r_main_printf (main_cons, "%s\n", R2_VERSION);
+			r_cons_printf (main_cons, "%s\n", R2_VERSION);
 			return 0;
 		}
-		return r_main_version_print ("ravc2", rad);
+		return r_main_version_print (main_cons, "ravc2", rad);
 	}
 	if (opt.ind >= argc) {
 		R_LOG_ERROR ("Try ravc2 -h");
@@ -168,7 +163,7 @@ R_IPI int r_main_ravc2_impl(int argc, const char **argv) {
 			RListIter *iter;
 			char *branch;
 			r_list_foreach (branches, iter, branch) {
-				r_main_printf (main_cons, "%s\n", branch);
+				r_cons_printf (main_cons, "%s\n", branch);
 			}
 			r_list_free (branches);
 		} else {
@@ -208,16 +203,16 @@ R_IPI int r_main_ravc2_impl(int argc, const char **argv) {
 	} else if (!strcmp (action, "status")) {
 		char *current_branch = rvc->p->curbranch (rvc);
 		if (current_branch) {
-			r_main_printf (main_cons, "Branch: %s\n", current_branch);
+			r_cons_printf (main_cons, "Branch: %s\n", current_branch);
 			RList *uncommited = rvc->p->uncommited (rvc);
 			if (r_list_empty (uncommited)) {
-				r_main_printf (main_cons, "All files are committed\n");
+				r_cons_printf (main_cons, "All files are committed\n");
 			} else {
-				r_main_printf (main_cons, "The following files were NOT committed:\n");
+				r_cons_printf (main_cons, "The following files were NOT committed:\n");
 				RListIter *iter;
 				const char *file;
 				r_list_foreach (uncommited, iter, file) {
-					r_main_printf (main_cons, "%s\n", file);
+					r_cons_printf (main_cons, "%s\n", file);
 				}
 			}
 			r_list_free (uncommited);

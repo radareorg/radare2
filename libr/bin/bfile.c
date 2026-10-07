@@ -47,7 +47,6 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 	ut64 addr = vaddr; // bf->bo? vaddr: string->vaddr;
 
 	// If raw string dump mode, use printf to dump directly to stdout.
-	//  PrintfCallback temp = io->cb_printf;
 	switch (mode) {
 	case R_MODE_JSON:
 		if (pj) {
@@ -64,25 +63,25 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 		}
 		break;
 	case R_MODE_SIMPLEST:
-		io->cb_printf ("%s\n", string->string);
+		io->consb.cb_printf (io->consb.cons, "%s\n", string->string);
 		break;
 	case R_MODE_SIMPLE:
 		if (raw == 2) {
-			io->cb_printf ("0x%08"PFMT64x" %s\n", addr, string->string);
+			io->consb.cb_printf (io->consb.cons, "0x%08"PFMT64x" %s\n", addr, string->string);
 		} else {
-			io->cb_printf ("%s\n", string->string);
+			io->consb.cb_printf (io->consb.cons, "%s\n", string->string);
 		}
 		break;
 	case R_MODE_RADARE: {
 		char *f_name = strdup (string->string);
 		r_name_filter (f_name, -1);
 		if (bin->prefix) {
-			io->cb_printf ("'0x%08"PFMT64x"'f %s.str.%s %u\n"
+			io->consb.cb_printf (io->consb.cons, "'0x%08"PFMT64x"'f %s.str.%s %u\n"
 					"'0x%08"PFMT64x"'Cs %u\n",
 					addr, bin->prefix, f_name, string->size,
 					addr, string->size);
 		} else {
-			io->cb_printf ("'0x%08"PFMT64x"'f str.%s %u\n"
+			io->consb.cb_printf (io->consb.cons, "'0x%08"PFMT64x"'f str.%s %u\n"
 					"'0x%08"PFMT64x"'Cs %u\n",
 					addr, f_name, string->size,
 					addr, string->size);
@@ -91,7 +90,7 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 		break;
 		}
 	case R_MODE_PRINT:
-		io->cb_printf ("%03u 0x%08" PFMT64x " 0x%08" PFMT64x " %3u %3u "
+		io->consb.cb_printf (io->consb.cons, "%03u 0x%08" PFMT64x " 0x%08" PFMT64x " %3u %3u "
 			       "(%s) %5s %s\n",
 			string->ordinal, string->paddr, vaddr,
 			string->length, string->size,
@@ -473,7 +472,7 @@ static int string_scan_range(RBinFile *bf, RVecRBinString *list, HtUP *strings_i
 		if (bin) {
 			RIO *io = bin->iob.io;
 			if (io) {
-				io->cb_printf ("%s", pj_string (pj));
+				io->consb.cb_printf (io->consb.cons, "%s", pj_string (pj));
 			}
 		}
 		pj_free (pj);

@@ -477,17 +477,17 @@ struct r_core_t {
 	RThreadLock *lock;
 	bool in_log_process; // false;
 	RMainCallback r_main_radare2;
-	int (*r_main_rafind2)(int argc, const char **argv);
-	int (*r_main_ravc2)(int argc, const char **argv);
-	int (*r_main_r2pm)(int argc, const char **argv);
-	int (*r_main_radiff2)(int argc, const char **argv);
-	int (*r_main_rafs2)(int argc, const char **argv);
-	int (*r_main_rabin2)(int argc, const char **argv);
-	int (*r_main_rarun2)(int argc, const char **argv);
-	int (*r_main_ragg2)(int argc, const char **argv);
-	int (*r_main_rasm2)(int argc, const char **argv);
-	int (*r_main_rax2)(int argc, const char **argv);
-	int (*r_main_rapatch2)(int argc, const char **argv);
+	RMainCallback r_main_rafind2;
+	RMainCallback r_main_ravc2;
+	RMainCallback r_main_r2pm;
+	RMainCallback r_main_radiff2;
+	RMainCallback r_main_rafs2;
+	RMainCallback r_main_rabin2;
+	RMainCallback r_main_rarun2;
+	RMainCallback r_main_ragg2;
+	RMainCallback r_main_rasm2;
+	RMainCallback r_main_rax2;
+	RMainCallback r_main_rapatch2;
 	int skiplines; // used only for disasm
 	void *priv; // Its RCorePriv but only used internally to not break abi
 	bool esil_anal_stop; // sounds like must be deprecated

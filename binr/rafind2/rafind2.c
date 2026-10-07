@@ -3,6 +3,6 @@
 #include <r_main.h>
 
 int main(int argc, const char **argv) {
-	return r_main_rafind2 (argc, argv);
+	return r_main_rafind2 (NULL, argc, argv);
 }
 

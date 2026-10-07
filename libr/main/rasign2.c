@@ -14,9 +14,8 @@ typedef struct {
 	bool merge, sdb, ar, rad, quiet, json, flirt, collision, show_version;
 } RasignOptions;
 
-static void rasign_show_help(void) {
-	RCons *main_cons = r_main_cons ();
-	r_main_printf (main_cons, "Usage: rasign2 [options] [file]\n"
+static void rasign_show_help(RCons *main_cons) {
+	r_cons_printf (main_cons, "Usage: rasign2 [options] [file]\n"
 	" -a               make signatures from all .o files in the provided .a file\n"
 	" -A[AAA]          same as r2 -A, the more 'A's the more analysis is performed\n"
 	" -f               interpret the file as a FLIRT .sig file and dump signatures\n"
@@ -35,9 +34,9 @@ static void rasign_show_help(void) {
 	"  rasign2 -o libc.sdb libc.so.6\n");
 }
 
-static RCore *opencore(const char *fname) {
+static RCore *opencore(RCons *main_cons, const char *fname) {
 	RIODesc *rfile = NULL;
-	RCore *c = r_main_core_new ();
+	RCore *c = r_main_core_new (main_cons);
 	if (!c) {
 		R_LOG_ERROR ("Count not get core");
 		return NULL;
@@ -55,12 +54,12 @@ static RCore *opencore(const char *fname) {
 
 		if (!rfile) {
 			R_LOG_ERROR ("Could not open file %s", fname);
-			r_main_core_free (c);
+			r_main_core_free (main_cons, c);
 			return NULL;
 		}
 		(void)r_core_bin_load (c, NULL, UT64_MAX);
 		(void)r_core_bin_update_arch_bits (c);
-		r_main_cons_flush (c->cons);
+		r_main_cons_flush (main_cons, c->cons);
 	}
 	return c;
 }
@@ -76,7 +75,7 @@ static void find_functions(RCore *core, size_t count) {
 	r_core_cmd0 (core, cmd);
 }
 
-static int inline output(RCore *core, RasignOptions *conf) {
+static int inline output(RCons *main_cons, RCore *core, RasignOptions *conf) {
 	RAnal *anal = core->anal;
 	if (conf->collision) {
 		r_sign_resolve_collisions (anal);
@@ -99,14 +98,14 @@ static int inline output(RCore *core, RasignOptions *conf) {
 		R_LOG_ERROR ("Failed to write file");
 		return -1;
 	}
-	r_main_cons_flush (core->cons);
+	r_main_cons_flush (main_cons, core->cons);
 	return 0;
 }
 
-static int handle_sdb(const char *fname, RasignOptions *conf) {
+static int handle_sdb(RCons *main_cons, const char *fname, RasignOptions *conf) {
 	int ret = -1;
 	// can't use RAnal here because JSON output requires core, in a sneaky way
-	RCore *core = r_main_core_new ();
+	RCore *core = r_main_core_new (main_cons);
 	if (!core) {
 		return -1;
 	}
@@ -118,14 +117,14 @@ static int handle_sdb(const char *fname, RasignOptions *conf) {
 		if (conf->collision) {
 			r_sign_resolve_collisions (core->anal);
 		}
-		ret = output (core, conf);
+		ret = output (main_cons, core, conf);
 	}
-	r_main_core_free (core);
+	r_main_core_free (main_cons, core);
 	return ret;
 }
 
-static int signs_from_file(const char *fname, RasignOptions *conf) {
-	RCore *core = opencore (fname);
+static int signs_from_file(RCons *main_cons, const char *fname, RasignOptions *conf) {
+	RCore *core = opencore (main_cons, fname);
 	if (!core) {
 		R_LOG_ERROR ("Could not get core");
 		return -1;
@@ -152,8 +151,8 @@ static int signs_from_file(const char *fname, RasignOptions *conf) {
 	// create zignatures
 	r_sign_all_functions (core->anal, conf->merge);
 
-	int ret = output (core, conf);
-	r_main_core_free (core);
+	int ret = output (main_cons, core, conf);
+	r_main_core_free (main_cons, core);
 	return ret;
 }
 
@@ -199,20 +198,19 @@ static RList *get_ar_file_uris(const char *fname) {
 	return uris;
 }
 
-static int dump_flirt(const char *ifile) {
-	RCons *main_cons = r_main_cons ();
-	RCore *core = opencore (NULL);
+static int dump_flirt(RCons *main_cons, const char *ifile) {
+	RCore *core = opencore (main_cons, NULL);
 	char *dump = r_sign_flirt_dump (core->anal, ifile);
 	if (dump) {
-		r_main_printf (main_cons, "%s", dump);
+		r_cons_printf (main_cons, "%s", dump);
 		free (dump);
 	}
-	r_main_cons_flush (core->cons);
-	r_main_core_free (core);
+	r_main_cons_flush (main_cons, core->cons);
+	r_main_core_free (main_cons, core);
 	return 0;
 }
 
-static int handle_archive_files(const char *fname, RasignOptions *conf) {
+static int handle_archive_files(RCons *main_cons, const char *fname, RasignOptions *conf) {
 	RList *uris = get_ar_file_uris (fname);
 	if (!uris) {
 		return -1;
@@ -230,7 +228,7 @@ static int handle_archive_files(const char *fname, RasignOptions *conf) {
 	r_list_foreach (uris, iter, u) {
 		if (r_str_endswith (u, ".o")) {
 			eprintf ("\nProcessing %s...\n", u);
-			int err = signs_from_file (u, conf);
+			int err = signs_from_file (main_cons, u, conf);
 			if (err) {
 				ret = err;
 			}
@@ -257,7 +255,7 @@ static int handle_archive_files(const char *fname, RasignOptions *conf) {
 	return ret;
 }
 
-R_IPI int r_main_rasign2_impl(int argc, const char **argv) {
+R_API int r_main_rasign2(RCons *main_cons, int argc, const char **argv) {
 	int c;
 	RGetopt opt;
 	RasignOptions conf = { 0 };
@@ -305,27 +303,27 @@ R_IPI int r_main_rasign2_impl(int argc, const char **argv) {
 			conf.show_version = true;
 			break;
 		case 'h':
-			rasign_show_help ();
+			rasign_show_help (main_cons);
 			return 0;
 		default:
-			rasign_show_help ();
+			rasign_show_help (main_cons);
 			return -1;
 		}
 	}
 	if (conf.show_version) {
 		int mode = conf.quiet? 'q': 0;
-		return r_main_version_print ("rasign2", mode);
+		return r_main_version_print (main_cons, "rasign2", mode);
 	}
 
 	if (conf.a_cnt > 2) {
 		R_LOG_ERROR ("Invalid analysis (too many -a's?)");
-		rasign_show_help ();
+		rasign_show_help (main_cons);
 		return -1;
 	}
 
 	if (opt.ind >= argc) {
 		R_LOG_ERROR ("You must provide a file");
-		rasign_show_help ();
+		rasign_show_help (main_cons);
 		return -1;
 	}
 
@@ -339,7 +337,7 @@ R_IPI int r_main_rasign2_impl(int argc, const char **argv) {
 			R_LOG_ERROR ("Can't use -S with -f");
 			return -1;
 		}
-		return dump_flirt (ifile);
+		return dump_flirt (main_cons, ifile);
 	} else if (conf.ar) {
 		if (conf.json) {
 			R_LOG_ERROR ("JSON does not work with .a files currently");
@@ -353,7 +351,7 @@ R_IPI int r_main_rasign2_impl(int argc, const char **argv) {
 			R_LOG_ERROR ("Can't use -S with -A");
 			return -1;
 		}
-		return handle_archive_files (ifile, &conf);
+		return handle_archive_files (main_cons, ifile, &conf);
 	} else if (conf.sdb) {
 		if (conf.a_cnt > 0) {
 			R_LOG_ERROR ("Option -a invalid with -S");
@@ -366,8 +364,8 @@ R_IPI int r_main_rasign2_impl(int argc, const char **argv) {
 			}
 			conf.ofile = ifile;
 		}
-		return handle_sdb (ifile, &conf);
+		return handle_sdb (main_cons, ifile, &conf);
 	} else {
-		return signs_from_file (ifile, &conf);
+		return signs_from_file (main_cons, ifile, &conf);
 	}
 }

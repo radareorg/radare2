@@ -2717,14 +2717,12 @@ static int __runMain(RCore *core, RMainCallback cb, const char *arg) {
 	int argc = 0;
 	char **args = r_str_argv (a, &argc);
 	RCons *previous_cons = r_cons_global (NULL);
-	char *previous_env = r_sys_getenv ("R2CONS");
 	r_cons_global (core->cons);
-	r_strf_var (cons_ptr, 64, "%p", core->cons);
-	r_sys_setenv ("R2CONS", cons_ptr);
-	int res = cb? cb (argc, (const char **)args): -1;
-	r_sys_setenv ("R2CONS", previous_env);
+	const bool noflush = core->cons->context->noflush;
+	core->cons->context->noflush = true;
+	int res = cb? cb (core->cons, argc, (const char **)args): -1;
+	core->cons->context->noflush = noflush;
 	r_cons_global (previous_cons);
-	free (previous_env);
 	r_str_argv_free (args);
 	free (a);
 	return res;
@@ -2738,28 +2736,28 @@ static bool cmd_r2cmd(RCore *core, const char *_input) {
 		// TODO: use the api instead
 		r_core_cmdf (core, "'js console.log(r2.%s)", input + 3);
 	} else {
-		static const struct { const char *name; size_t offset; } tools[] = {
-			{"rax2", offsetof(RCore, r_main_rax2)},
-			{"r2pm", offsetof(RCore, r_main_r2pm)},
-			{"r2", offsetof(RCore, r_main_radare2)},
-			{"radare2", offsetof(RCore, r_main_radare2)},
-			{"rapatch2", offsetof(RCore, r_main_rapatch2)},
-			{"rasm2", offsetof(RCore, r_main_rasm2)},
-			{"rabin2", offsetof(RCore, r_main_rabin2)},
-			{"ragg2", offsetof(RCore, r_main_ragg2)},
-			{"rafs2", offsetof(RCore, r_main_rafs2)},
-			{"ravc2", offsetof(RCore, r_main_ravc2)},
-			{"radiff2", offsetof(RCore, r_main_radiff2)},
+		const struct { const char *name; RMainCallback callback; } tools[] = {
+			{"rax2", core->r_main_rax2},
+			{"r2pm", core->r_main_r2pm},
+			{"r2", core->r_main_radare2},
+			{"radare2", core->r_main_radare2},
+			{"rapatch2", core->r_main_rapatch2},
+			{"rasm2", core->r_main_rasm2},
+			{"rabin2", core->r_main_rabin2},
+			{"ragg2", core->r_main_ragg2},
+			{"rafs2", core->r_main_rafs2},
+			{"ravc2", core->r_main_ravc2},
+			{"radiff2", core->r_main_radiff2},
 		};
 
 		int i;
-		for (i = 0; i < (int)(sizeof (tools) / sizeof (tools[0])); i++) {
+		for (i = 0; i < R_ARRAY_SIZE (tools); i++) {
 			if (r_str_startswith (input, tools[i].name)) {
 				const char *arguments = input + strlen (tools[i].name);
 				if (*arguments && *arguments != ' ') {
 					continue;
 				}
-				rc = __runMain (core, *(RMainCallback*)((char*)core + tools[i].offset), input);
+				rc = __runMain (core, tools[i].callback, input);
 				goto done;
 			}
 		}

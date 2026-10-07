@@ -31,7 +31,7 @@ R_API void r_bin_demangle_list(RBin *bin) {
 	RBinDemanglePlugin *plugin;
 	RListIter *iter;
 	r_list_foreach (bin->demangle_plugins, iter, plugin) {
-		bin->cb_printf ("%s\n", plugin->meta.name);
+		bin->consb.cb_printf (bin->consb.cons, "%s\n", plugin->meta.name);
 	}
 }
 

@@ -82,8 +82,7 @@ static void json_plugins(RCore *core, PJ *pj, const char *name, const char *cmd)
 	free (res);
 }
 
-static int r_main_version_verify(RCore *core, bool show, bool json) {
-	RCons *main_cons = r_main_cons ();
+static int r_main_version_verify(RCons *main_cons, RCore *core, bool show, bool json) {
 	int i, ret;
 	typedef const char *(*vc) ();
 	const char *base = R2_GITTAP "-" R2_ABIVERSION_STRING;
@@ -211,11 +210,11 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 		pj_end (pj);
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		r_main_printf (main_cons, "%s\n", s);
+		r_cons_printf (main_cons, "%s\n", s);
 		free (s);
 	} else {
 		if (show) {
-			r_main_printf (main_cons, "%s  r2\n", base);
+			r_cons_printf (main_cons, "%s  r2\n", base);
 		}
 		for (i = ret = 0; vcs[i].name; i++) {
 			struct vcs_t *v = &vcs[i];
@@ -224,7 +223,7 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 				ret = 1;
 			}
 			if (show) {
-				r_main_printf (main_cons, "%s  %s\n", name, v->name);
+				r_cons_printf (main_cons, "%s  %s\n", name, v->name);
 			}
 		}
 		if (ret) {
@@ -234,14 +233,13 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 	return ret;
 }
 
-static int main_help(int line) {
-	RCons *main_cons = r_main_cons ();
+static int main_help(RCons *main_cons, int line) {
 	if (line < 2) {
-		r_main_printf (main_cons, "Usage: r2 [-ACdfjLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-c cmd]\n"
+		r_cons_printf (main_cons, "Usage: r2 [-ACdfjLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-c cmd]\n"
 		"          [-s addr] [-B baddr] [-m maddr] [-i script] [-e k=v] file|pid|-|--|=\n");
 	}
 	if (line != 1) {
-		r_main_printf (main_cons,
+		r_cons_printf (main_cons,
 			" --           run radare2 without opening any file\n"
 			" -            same as 'r2 malloc://512'\n"
 			" =            read file from stdin (use -i and -c to run cmds)\n"
@@ -352,15 +350,14 @@ static int main_help(int line) {
 
 		char *helpmsg = r_strbuf_drain (sb);
 		if (helpmsg) {
-			r_main_printf (main_cons, "%s", helpmsg);
+			r_cons_printf (main_cons, "%s", helpmsg);
 			free (helpmsg);
 		}
 	}
 	return 0;
 }
 
-static int main_print_var(const char *var_name) {
-	RCons *main_cons = r_main_cons ();
+static int main_print_var(RCons *main_cons, const char *var_name) {
 	int i = 0;
 #ifdef R2__WINDOWS__
 	char *incdir = r_str_r2_prefix (R2_INCDIR);
@@ -382,7 +379,7 @@ static int main_print_var(const char *var_name) {
 	char *homeplugins = r_xdg_datadir ("plugins");
 	char *homezigns = r_xdg_datadir ("zigns");
 	char *homedoc = r_xdg_datadir ("doc");
-	// r_main_printf (main_cons, "homedoc = %s\n", homedoc);
+	// r_cons_printf (main_cons, "homedoc = %s\n", homedoc);
 	char *plugins = r_str_r2_prefix (R2_PLUGINS);
 	char *magicpath = r_str_r2_prefix (R2_SDB_MAGIC);
 	char *historyhome = r_xdg_cachedir ("history");
@@ -456,12 +453,12 @@ static int main_print_var(const char *var_name) {
 		const char *value = R_STR_ISNOTEMPTY (env_value)? env_value: r_str_get (r2_vars[i].value);
 		if (var_name) {
 			if (!strcmp (r2_vars[i].name + delta, var_name)) {
-				r_main_printf (main_cons, "%s\n", value);
+				r_cons_printf (main_cons, "%s\n", value);
 				free (env_value);
 				break;
 			}
 		} else {
-			r_main_printf (main_cons, "%s=%s\n", r2_vars[i].name, value);
+			r_cons_printf (main_cons, "%s=%s\n", r2_vars[i].name, value);
 		}
 		free (env_value);
 		i++;
@@ -488,7 +485,7 @@ static int main_print_var(const char *var_name) {
 	return 0;
 }
 
-static bool run_commands(RCore *r, RList *cmds, RList *files, bool quiet, int do_analysis) {
+static bool run_commands(RCons *main_cons, RCore *r, RList *cmds, RList *files, bool quiet, int do_analysis) {
 	RListIter *iter;
 	const char *cmdn;
 	const char *file;
@@ -500,7 +497,7 @@ static bool run_commands(RCore *r, RList *cmds, RList *files, bool quiet, int do
 			goto beach;
 		}
 		int ret = r_core_run_script (r, file);
-		r_main_cons_flush (r->cons);
+		r_main_cons_flush (main_cons, r->cons);
 		if (ret == -2) {
 			R_LOG_ERROR ("Cannot open '%s'", file);
 		}
@@ -512,7 +509,7 @@ static bool run_commands(RCore *r, RList *cmds, RList *files, bool quiet, int do
 	/* -c */
 	r_list_foreach (cmds, iter, cmdn) {
 		r_core_cmd_lines (r, cmdn);
-		r_main_cons_flush (r->cons);
+		r_main_cons_flush (main_cons, r->cons);
 	}
 beach:
 	if (quiet && !has_failed) {
@@ -644,7 +641,7 @@ static void perform_analysis(RCore *r, int do_analysis) {
 	case 3: acmd = "aaaa"; break;
 	}
 	r_core_call (r, acmd);
-	r_main_cons_flush (r->cons);
+	r_cons_flush (r->cons);
 	r->times->file_anal_time = r_time_now_mono () - r->times->file_anal_time;
 }
 
@@ -658,9 +655,9 @@ static RThreadFunctionRet th_analysis(RThread *th) {
 	}
 	R_LOG_INFO ("Loading binary information in background");
 	// XXX R2_600 - cons
-	RCons *cons = r_cons_thready (r_main_cons_new ());
+	RCons *cons = r_cons_thready (r_cons_new ());
 	perform_analysis (td->core, td->do_analysis);
-	r_main_cons_free (cons);
+	r_cons_free (cons);
 	R_FREE (th->user);
 	R_LOG_INFO ("bin.load done");
 	return false;
@@ -668,14 +665,14 @@ static RThreadFunctionRet th_analysis(RThread *th) {
 
 static RThreadFunctionRet th_binload(RThread *th) {
 	R_LOG_INFO ("Loading binary information in background");
-	RCons *cons = r_cons_thready (r_main_cons_new ());
+	RCons *cons = r_cons_thready (r_cons_new ());
 	ThreadData *td = (ThreadData *)th->user;
 	RCore *r = td->core;
 	const char *filepath = td->filepath;
 	const ut64 baddr = td->baddr;
 	(void)r_core_bin_load (r, filepath, baddr);
 	free (td->filepath);
-	r_main_cons_free (cons);
+	r_cons_free (cons);
 	R_FREE (th->user);
 	R_LOG_INFO ("bin.load done");
 	return false;
@@ -770,7 +767,7 @@ static void mainr2_init(RMainRadare2 *mr) {
 	mr->prefiles = r_list_newf (free);
 }
 
-static void mainr2_fini(RMainRadare2 *mr) {
+static void mainr2_fini(RCons *main_cons, RMainRadare2 *mr) {
 	r_list_free (mr->cmds);
 	r_list_free (mr->evals);
 	r_list_free (mr->files);
@@ -788,7 +785,7 @@ static void mainr2_fini(RMainRadare2 *mr) {
 	free (mr->debugbackend);
 	free (mr->project_name);
 	free (mr->qjs_script);
-	r_main_core_free (mr->r);
+	r_main_core_free (main_cons, mr->r);
 }
 
 static char *dp_read(RCore *core) {
@@ -820,7 +817,7 @@ static void dp_write(RCore *core, const char *s) {
 
 #define OPTARGS "=012AjMCwxfF:Hhm:e:Enk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSzuXt"
 
-R_IPI int r_main_radare2_impl(int argc, const char **argv) {
+R_API int r_main_radare2(RCons *main_cons, int argc, const char **argv) {
 	int c, ret;
 	RMainRadare2 mr;
 	mainr2_init (&mr);
@@ -848,8 +845,8 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 		free (sysdbg);
 	}
 	if (argc < 2) {
-		mainr2_fini (&mr);
-		return main_help (1);
+		mainr2_fini (main_cons, &mr);
+		return main_help (main_cons, 1);
 	}
 	// Pre-RCore commandline flags
 	RGetopt opt = { 0 };
@@ -871,26 +868,26 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 			break;
 		case 'H':
 			if (R_STR_ISNOTEMPTY (opt.place)) {
-				main_print_var (opt.place);
+				main_print_var (main_cons, opt.place);
 				opt.place = "";
 				opt.ind++;
 			} else if (opt.ind < argc && argv[opt.ind][0] != '-') {
-				main_print_var (argv[opt.ind]);
+				main_print_var (main_cons, argv[opt.ind]);
 				opt.ind++;
 			} else {
-				main_print_var (NULL);
+				main_print_var (main_cons, NULL);
 			}
 			mr.leave = true;
 			break;
 		}
 	}
 	if (mr.leave) {
-		mainr2_fini (&mr);
+		mainr2_fini (main_cons, &mr);
 		return 0;
 	}
 	if (mr.help > 0) {
-		int ret = main_help (mr.help > 1? 2: 0);
-		mainr2_fini (&mr);
+		int ret = main_help (main_cons, mr.help > 1? 2: 0);
+		mainr2_fini (main_cons, &mr);
 		return ret;
 	}
 	if (mr.show_version) {
@@ -900,14 +897,14 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 		} else if (mr.quiet) {
 			mode = 'q';
 		}
-		int res = r_main_version_print ("radare2", mode);
-		mainr2_fini (&mr);
+		int res = r_main_version_print (main_cons, "radare2", mode);
+		mainr2_fini (main_cons, &mr);
 		return res;
 	}
-	RCore *r = r_main_core_new ();
+	RCore *r = r_main_core_new (main_cons);
 	if (!r) {
 		R_LOG_ERROR ("Cannot initialize RCore");
-		mainr2_fini (&mr);
+		mainr2_fini (main_cons, &mr);
 		return 1;
 	}
 	mr.r = r;
@@ -928,8 +925,8 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 	r_core_task_sync_begin (&mr.r->tasks);
 	if (argc == 2 && !strcmp (argv[1], "-p")) {
 		r_core_project_list (r, 0);
-		r_main_cons_flush (r->cons);
-		mainr2_fini (&mr);
+		r_main_cons_flush (main_cons, r->cons);
+		mainr2_fini (main_cons, &mr);
 		return 0;
 	}
 	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
@@ -993,7 +990,7 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 			break;
 		case 'E':
 			ret = r_core_call (r, "ed!");
-			mainr2_fini (&mr);
+			mainr2_fini (main_cons, &mr);
 			return ret == R_CMD_RC_SUCCESS? 0: 1;
 		case 'c':
 			r_list_append (mr.cmds, (void *)strdup (opt.arg));
@@ -1006,7 +1003,7 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 			mr.debug = 1;
 #else
 			R_LOG_ERROR ("Sorry. I'm built without debugger support");
-			mainr2_fini (&mr);
+			mainr2_fini (main_cons, &mr);
 			return 1;
 #endif
 			break;
@@ -1018,8 +1015,8 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 				char *s = r_debug_plugin_list (r->dbg, 'q');
 				r_cons_print (r->cons, r_str_get (s));
 				free (s);
-				r_main_cons_flush (r->cons);
-				mainr2_fini (&mr);
+				r_main_cons_flush (main_cons, r->cons);
+				mainr2_fini (main_cons, &mr);
 				return 0;
 			}
 			break;
@@ -1106,8 +1103,8 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 		case 'p':
 			if (!strcmp (opt.arg, "?")) {
 				r_core_project_list (r, 0);
-				r_main_cons_flush (r->cons);
-				mainr2_fini (&mr);
+				r_main_cons_flush (main_cons, r->cons);
+				mainr2_fini (main_cons, &mr);
 				return 0;
 			}
 			free (mr.project_name);
@@ -1169,8 +1166,8 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 			break;
 		case 'V':
 			{
-				int rc = r_main_version_verify (r, 1, mr.json);
-				mainr2_fini (&mr);
+				int rc = r_main_version_verify (main_cons, r, 1, mr.json);
+				mainr2_fini (main_cons, &mr);
 				return rc;
 			}
 		case 'w':
@@ -1190,7 +1187,7 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 #else
 		if (dup2 (1, 2) == -1) {
 			R_LOG_ERROR ("Cannot redirect stderr to stdout");
-			mainr2_fini (&mr);
+			mainr2_fini (main_cons, &mr);
 			return 1;
 		}
 #endif
@@ -1198,27 +1195,27 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 	if (mr.noStderr) {
 		if (close (2) == -1) {
 			R_LOG_ERROR ("Failed to close stderr");
-			mainr2_fini (&mr);
+			mainr2_fini (main_cons, &mr);
 			return 1;
 		}
 		const char nul[] = R_SYS_DEVNULL;
 		int new_stderr = open (nul, O_RDWR);
 		if (new_stderr == -1) {
 			R_LOG_ERROR ("Failed to open %s for stderr", nul);
-			mainr2_fini (&mr);
+			mainr2_fini (main_cons, &mr);
 			return 1;
 		}
 		if (new_stderr != 2) {
 #if !__wasi__
 			if (dup2 (new_stderr, 2) == -1) {
 				R_LOG_ERROR ("Failed to dup2 stderr");
-				mainr2_fini (&mr);
+				mainr2_fini (main_cons, &mr);
 				return 1;
 			}
 #endif
 			if (close (new_stderr) == -1) {
 				R_LOG_ERROR ("Failed to close %s", nul);
-				mainr2_fini (&mr);
+				mainr2_fini (main_cons, &mr);
 				return 1;
 			}
 		}
@@ -1251,17 +1248,17 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 
 	if (mr.do_list_core_plugins) { // "-LL"
 		r_core_cmd0 (r, mr.json? "Lcj": "Lc");
-		r_main_cons_flush (r->cons);
-		mainr2_fini (&mr);
+		r_main_cons_flush (main_cons, r->cons);
+		mainr2_fini (main_cons, &mr);
 		return 0;
 	}
 	if (mr.do_list_io_plugins) { // "-L"
 		if (r_config_get_b (r->config, "cfg.plugins")) {
 			r_core_loadlibs (r, R_LIB_LOAD_ALL, NULL);
 		}
-		run_commands (r, NULL, mr.prefiles, false, mr.do_analysis);
-		run_commands (r, mr.cmds, mr.files, mr.quiet, mr.do_analysis);
-		if (mr.quiet_leak && !r_main_cons ()) {
+		run_commands (main_cons, r, NULL, mr.prefiles, false, mr.do_analysis);
+		run_commands (main_cons, r, mr.cmds, mr.files, mr.quiet, mr.do_analysis);
+		if (mr.quiet_leak && !main_cons) {
 			exit (0);
 		}
 		const char *arg = argv[opt.ind];
@@ -1270,8 +1267,8 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 		} else {
 			r_core_list_io (r, arg, 0);
 		}
-		r_main_cons_flush (r->cons);
-		mainr2_fini (&mr);
+		r_main_cons_flush (main_cons, r->cons);
+		mainr2_fini (main_cons, &mr);
 		return 0;
 	}
 	if (mr.json) {
@@ -1282,7 +1279,7 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 		} else {
 			r_core_call (r, "js:");
 		}
-		mainr2_fini (&mr);
+		mainr2_fini (main_cons, &mr);
 		return 0;
 	}
 #if R2__WINDOWS__
@@ -1299,7 +1296,7 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 	if (mr.debug == 1) {
 		if (opt.ind >= argc && !mr.haveRarunProfile) {
 			R_LOG_ERROR ("Missing argument for -d");
-			mainr2_fini (&mr);
+			mainr2_fini (main_cons, &mr);
 			return 1;
 		}
 		const char *src = mr.haveRarunProfile? mr.pfile: argv[opt.ind];
@@ -1329,7 +1326,7 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 	if (r_config_get_b (r->config, "cfg.plugins")) {
 		r_core_loadlibs (r, R_LIB_LOAD_ALL, NULL);
 	}
-	ret = run_commands (r, NULL, mr.prefiles, false, mr.do_analysis);
+	ret = run_commands (main_cons, r, NULL, mr.prefiles, false, mr.do_analysis);
 	r_list_free (mr.prefiles);
 	mr.prefiles = NULL;
 
@@ -1338,7 +1335,7 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 	if (mr.project_name) {
 		if (!r_core_project_open (r, mr.project_name)) {
 			R_LOG_ERROR ("Cannot find project");
-			mainr2_fini (&mr);
+			mainr2_fini (main_cons, &mr);
 			return 1;
 		}
 	}
@@ -1347,7 +1344,7 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 		const char *uri = argv[opt.ind];
 		if (opt.ind >= argc) {
 			R_LOG_ERROR ("Missing URI for -C");
-			mainr2_fini (&mr);
+			mainr2_fini (main_cons, &mr);
 			return 1;
 		}
 		if (strstr (uri, "://")) {
@@ -1393,12 +1390,12 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 	if (R_STR_ISNOTEMPTY (mr.pfile) && r_file_is_directory (mr.pfile)) {
 		if (mr.debug) {
 			R_LOG_ERROR ("Cannot debug directories, yet");
-			mainr2_fini (&mr);
+			mainr2_fini (main_cons, &mr);
 			return 1;
 		}
 		if (!r_sys_chdir (argv[opt.ind])) {
 			R_LOG_ERROR ("Cannot open directory");
-			mainr2_fini (&mr);
+			mainr2_fini (main_cons, &mr);
 			return 1;
 		}
 	} else if (argv[opt.ind] && !strcmp (argv[opt.ind], "=")) {
@@ -1415,18 +1412,18 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 #else
 		R_LOG_ERROR ("Cannot reopen stdin without UNIX");
 		free (buf);
-		mainr2_fini (&mr);
+		mainr2_fini (main_cons, &mr);
 		return 1;
 #endif
 		if (buf && sz > 0) {
 			char *path = r_str_newf ("malloc://%d", sz);
 			mr.fh = r_core_file_open (r, path, mr.perms, mr.mapaddr);
 			if (!mr.fh) {
-				r_main_cons_flush (r->cons);
+				r_main_cons_flush (main_cons, r->cons);
 				free (buf);
 				R_LOG_ERROR ("Cannot open '%s'", path);
 				free (path);
-				mainr2_fini (&mr);
+				mainr2_fini (main_cons, &mr);
 				return 1;
 			}
 			size_t size = r_io_fd_size (r->io, mr.fh->fd);
@@ -1439,7 +1436,7 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 		} else {
 			R_LOG_ERROR ("Cannot slurp from stdin");
 			free (buf);
-			mainr2_fini (&mr);
+			mainr2_fini (main_cons, &mr);
 			return 1;
 		}
 	} else if (strcmp (argv[opt.ind - 1], "--") && !mr.project_name) {
@@ -1464,7 +1461,7 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 			mr.perms = R_PERM_RWX;
 			if (opt.ind >= argc) {
 				R_LOG_ERROR ("No program given to -d");
-				mainr2_fini (&mr);
+				mainr2_fini (main_cons, &mr);
 				return 1;
 			}
 			if (mr.debug == 2) {
@@ -1778,7 +1775,7 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 		}
 		if (!mr.fh) {
 			if (R_STR_ISNOTEMPTY (mr.pfile)) {
-				r_main_cons_flush (r->cons);
+				r_main_cons_flush (main_cons, r->cons);
 				if (mr.perms & R_PERM_W) {
 					R_LOG_ERROR ("Cannot open '%s' for writing", mr.pfile);
 				} else {
@@ -1812,7 +1809,7 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 			char *res = r_config_eval (r->config, cmdn, false, NULL);
 			r_cons_print (r->cons, res);
 			free (res);
-			r_main_cons_flush (r->cons);
+			r_main_cons_flush (main_cons, r->cons);
 		}
 		if (mr.asmbits) {
 			r_config_set (r->config, "asm.bits", mr.asmbits);
@@ -1882,7 +1879,7 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 			char *res = r_config_eval (r->config, cmdn, false, NULL);
 			r_cons_print (r->cons, res);
 			free (res);
-			r_main_cons_flush (r->cons);
+			r_main_cons_flush (main_cons, r->cons);
 		}
 
 		// no flagspace selected by default the beginning
@@ -1971,7 +1968,7 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 	if (mr.perms & R_PERM_W) {
 		r_core_cmd0 (r, "ompg+w");
 	}
-	ret = run_commands (r, mr.cmds, mr.files, mr.quiet, mr.do_analysis);
+	ret = run_commands (main_cons, r, mr.cmds, mr.files, mr.quiet, mr.do_analysis);
 	r_list_free (mr.cmds);
 	r_list_free (mr.evals);
 	r_list_free (mr.files);
@@ -1987,7 +1984,7 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 	if (r_config_get_b (r->config, "scr.prompt")) {
 		if (mr.run_rc && r_config_get_i (r->config, "cfg.fortunes")) {
 			r_core_fortune_print_random (r);
-			r_main_cons_flush (r->cons);
+			r_main_cons_flush (main_cons, r->cons);
 		}
 	}
 	if (mr.sandbox) {
@@ -2114,7 +2111,7 @@ R_IPI int r_main_radare2_impl(int argc, const char **argv) {
 
 	ret = r->rc;
 beach:
-	if (mr.quiet_leak && !r_main_cons ()) {
+	if (mr.quiet_leak && !main_cons) {
 		exit (r->rc);
 		return ret;
 	}
@@ -2128,6 +2125,6 @@ beach:
 		r_th_free (mr.th_ana);
 	}
 	r_core_task_sync_end (&r->tasks);
-	mainr2_fini (&mr);
+	mainr2_fini (main_cons, &mr);
 	return (ret < 0? 0: ret);
 }

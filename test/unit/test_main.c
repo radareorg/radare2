@@ -7,15 +7,10 @@ bool test_main_borrowed_console(void) {
 	RCons *cons = core->cons;
 	r_config_set_i (core->config, "scr.color", 0);
 	r_config_set_b (core->config, "scr.interactive", false);
-	char *previous_cons = r_sys_getenv ("R2CONS");
-	r_strf_var (cons_ptr, 64, "%p", cons);
-	r_sys_setenv ("R2CONS", cons_ptr);
 	const char *argv[] = { "rax2", "33", NULL };
-	mu_assert_eq (r_main_rax2 (2, argv), 0, "R2CONS console succeeds");
+	mu_assert_eq (r_main_rax2 (cons, 2, argv), 0, "borrowed console succeeds");
 	mu_assert_streq (r_cons_get_buffer (cons, NULL), "0x21\n", "borrowed console captures output");
 	r_cons_reset (cons);
-	char *value = r_sys_getenv ("R2CONS");
-	mu_assert_streq_free (value, cons_ptr, "tool preserves console environment");
 
 	const RMainCallback callbacks[] = {
 		r_main_rasm2, r_main_rax2, r_main_rabin2, r_main_radiff2,
@@ -26,7 +21,7 @@ bool test_main_borrowed_console(void) {
 	const char *help[] = { "tool", "-h", NULL };
 	size_t i;
 	for (i = 0; i < R_ARRAY_SIZE (callbacks); i++) {
-		callbacks[i] (2, help);
+		callbacks[i] (cons, 2, help);
 		size_t len = 0;
 		r_cons_get_buffer (cons, &len);
 		mu_assert ("help captured in borrowed console", len > 0);
@@ -35,14 +30,10 @@ bool test_main_borrowed_console(void) {
 		mu_assert_ptreq (cons->num, core->num, "tool preserves caller numeric state");
 		r_cons_reset (cons);
 	}
-	r_sys_setenv ("R2CONS", NULL);
-	mu_assert_eq (r_main_rax2 (2, argv), 0, "standalone output succeeds");
+	mu_assert_eq (r_main_rax2 (NULL, 2, argv), 0, "standalone output succeeds");
 	size_t len = 0;
 	r_cons_get_buffer (cons, &len);
-	mu_assert_eq (len, 0, "absent R2CONS does not fall back to R2CORE");
-	mu_assert_null (r_sys_getenv ("R2CONS"), "tool restores absent environment variable");
-	r_sys_setenv ("R2CONS", previous_cons);
-	free (previous_cons);
+	mu_assert_eq (len, 0, "standalone output leaves caller buffer alone");
 	r_core_free (core);
 	mu_assert_false (r_cons_is_initialized (), "no tool-owned console left alive");
 	mu_end;
@@ -55,18 +46,12 @@ bool test_main_shell_capture(void) {
 	core->r_main_radiff2 = r_main_radiff2;
 	r_config_set_i (core->config, "scr.color", 0);
 	r_config_set_b (core->config, "scr.interactive", false);
-	char *previous_cons = r_sys_getenv ("R2CONS");
 	RCons *other = r_cons_new ();
-	r_sys_setenv ("R2CONS", "saved-value");
 	char *output = r_core_cmd_str (core, "echo before; rasm2 -a x86 -d 90; echo after");
 	mu_assert_streq_free (output, "before\nnop\nafter\n", "shell output order and capture");
-	output = r_sys_getenv ("R2CONS");
-	mu_assert_streq_free (output, "saved-value", "shell restores previous environment");
 	mu_assert_ptreq (r_cons_global (NULL), other, "shell restores previous active console");
 	output = r_core_cmd_str (core, "r2 -NNQ -c 'echo inner; rasm2 -a x86 -d c3' --; echo outer");
 	mu_assert_streq_free (output, "inner\nret\nouter\n", "nested main returns to caller");
-	output = r_sys_getenv ("R2CONS");
-	mu_assert_streq_free (output, "saved-value", "nested tools restore previous environment");
 	mu_assert_ptreq (r_cons_global (NULL), other, "nested tools restore previous active console");
 	size_t i;
 	for (i = 0; i < 2; i++) {
@@ -78,24 +63,11 @@ bool test_main_shell_capture(void) {
 	mu_assert_streq_free (output, "alive\n", "repeated tool calls preserve console");
 	mu_assert_ptreq (core->cons->user, core, "nested core preserves caller callbacks");
 	mu_assert_ptreq (core->cons->num, core->num, "nested core preserves caller numeric state");
-	const char *values[] = { "", NULL };
-	for (i = 0; i < R_ARRAY_SIZE (values); i++) {
-		r_sys_setenv ("R2CONS", values[i]);
-		output = r_core_cmd_str (core, "rasm2 -a x86 -d 90");
-		mu_assert_streq_free (output, "nop\n", "shell capture with empty or absent environment");
-		output = r_sys_getenv ("R2CONS");
-		mu_assert_nullable_streq (output, values[i], "shell restores empty or absent environment");
-		free (output);
-		mu_assert_ptreq (r_cons_global (NULL), other, "shell preserves alternate console");
-	}
 	core->r_main_rasm2 = NULL;
 	output = r_core_cmd_str (core, "rasm2 -h");
 	free (output);
 	mu_assert_eq (core->num->value, 1, "missing tool reports failure");
-	mu_assert_null (r_sys_getenv ("R2CONS"), "missing tool preserves absent environment");
 	mu_assert_ptreq (r_cons_global (NULL), other, "missing tool preserves alternate console");
-	r_sys_setenv ("R2CONS", previous_cons);
-	free (previous_cons);
 	r_cons_free (other);
 	r_core_free (core);
 	mu_end;
@@ -103,17 +75,12 @@ bool test_main_shell_capture(void) {
 
 bool test_main_binary_capture(void) {
 	RCore *core = r_core_new ();
-	char *previous_cons = r_sys_getenv ("R2CONS");
-	r_strf_var (cons_ptr, 64, "%p", core->cons);
-	r_sys_setenv ("R2CONS", cons_ptr);
 	const char *argv[] = { "rax2", "-s", "410042", NULL };
-	mu_assert_eq (r_main_rax2 (3, argv), 0, "binary output succeeds");
+	mu_assert_eq (r_main_rax2 (core->cons, 3, argv), 0, "binary output succeeds");
 	size_t len;
 	const char *output = r_cons_get_buffer (core->cons, &len);
 	mu_assert_eq (len, 3, "binary output length");
 	mu_assert_memeq ((const ut8 *)output, (const ut8 *)"A\0B", 3, "binary output preserves embedded NUL");
-	r_sys_setenv ("R2CONS", previous_cons);
-	free (previous_cons);
 	r_core_free (core);
 	mu_end;
 }
@@ -121,17 +88,53 @@ bool test_main_binary_capture(void) {
 bool test_main_child_console(void) {
 	RCore *core = r_core_new ();
 	RCons *child = r_cons_new_child (core->cons);
-	char *previous_cons = r_sys_getenv ("R2CONS");
-	r_strf_var (cons_ptr, 64, "%p", child);
-	r_sys_setenv ("R2CONS", cons_ptr);
 	const char *argv[] = { "rax2", "33", NULL };
-	mu_assert_eq (r_main_rax2 (2, argv), 0, "use an unattached child console");
-	mu_assert_streq (r_cons_get_buffer (child, NULL), "0x21\n", "plain pointer captures output in child console");
+	mu_assert_eq (r_main_rax2 (child, 2, argv), 0, "use an unattached child console");
+	mu_assert_streq (r_cons_get_buffer (child, NULL), "0x21\n", "explicit console captures output in child console");
 	mu_assert_ptreq (r_cons_global (NULL), core->cons, "restore original active console");
 	mu_assert_true (child->context->noflush, "preserve capture mode");
-	r_sys_setenv ("R2CONS", previous_cons);
-	free (previous_cons);
+	r_cons_reset (child);
+	r_cons_bind (child, &core->bin->consb);
+	r_bin_demangle_list (core->bin);
+	size_t len = 0;
+	r_cons_get_buffer (child, &len);
+	mu_assert ("bin output uses its bound console", len > 0);
+	r_cons_get_buffer (core->cons, &len);
+	mu_assert_eq (len, 0, "bin output leaves the active console alone");
+	r_cons_bind (core->cons, &core->bin->consb);
 	r_cons_free (child);
+	r_core_free (core);
+	mu_end;
+}
+
+bool test_main_file_output(void) {
+	RCore *core = r_core_new ();
+	char *path = r_file_temp ("r2-main-output");
+	const char *asm_argv[] = { "rasm2", "-a", "x86", "-B", "-o", path, "mov eax, 1", NULL };
+	const char *egg_argv[] = { "ragg2", "-r", "-B", "410042", "-o", path, NULL };
+	mu_assert_eq (r_main_rasm2 (core->cons, 7, asm_argv), 0, "assembly output file succeeds");
+	size_t len;
+	char *output = r_file_slurp (path, &len);
+	mu_assert_eq (len, 5, "assembly file length");
+	mu_assert_memeq ((ut8 *)output, (ut8 *)"\xb8\x01\0\0\0", 5, "assembly file preserves NUL bytes");
+	free (output);
+	mu_assert_eq (r_main_ragg2 (core->cons, 6, egg_argv), 0, "egg output file succeeds");
+	output = r_file_slurp (path, &len);
+	mu_assert_eq (len, 3, "egg file length");
+	mu_assert_memeq ((ut8 *)output, (ut8 *)"A\0B", 3, "egg file preserves NUL bytes");
+	free (output);
+	mu_assert_ptreq (r_cons_global (NULL), core->cons, "file output preserves active console");
+	r_cons_get_buffer (core->cons, &len);
+	mu_assert_eq (len, 0, "file output leaves caller buffer empty");
+	const char *find_argv[] = { "rafind2", "-x", "410042", path, NULL };
+	mu_assert_eq (r_main_rafind2 (core->cons, 4, find_argv), 0, "search callback captures output");
+	mu_assert_streq (r_cons_get_buffer (core->cons, NULL), "0x0\n", "search uses its output context");
+	r_cons_reset (core->cons);
+	const char *argv[] = { "rax2", "33", NULL };
+	mu_assert_eq (r_main_rax2 (core->cons, 2, argv), 0, "output after file tools succeeds");
+	mu_assert_streq (r_cons_get_buffer (core->cons, NULL), "0x21\n", "caller output remains usable");
+	r_file_rm (path);
+	free (path);
 	r_core_free (core);
 	mu_end;
 }
@@ -141,6 +144,7 @@ int all_tests(void) {
 	mu_run_test (test_main_shell_capture);
 	mu_run_test (test_main_binary_capture);
 	mu_run_test (test_main_child_console);
+	mu_run_test (test_main_file_output);
 	return tests_passed != tests_run;
 }
 

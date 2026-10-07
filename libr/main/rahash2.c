@@ -85,8 +85,7 @@ static void do_hash_seed(RahashOptions *ro, const char *seed) {
 	}
 }
 
-static void do_hash_hexprint(const ut8 *c, int len, int ule, PJ *pj, int rad) {
-	RCons *main_cons = r_main_cons ();
+static void do_hash_hexprint(RCons *main_cons, const ut8 *c, int len, int ule, PJ *pj, int rad) {
 	int i;
 	char *buf = malloc (len * 2 + 1);
 	if (!buf) {
@@ -106,13 +105,12 @@ static void do_hash_hexprint(const ut8 *c, int len, int ule, PJ *pj, int rad) {
 	} else if (rad == 'J') {
 		pj_s (pj, buf);
 	} else {
-		r_main_printf (main_cons, "%s%s", buf, rad == 'n'? "": "\n");
+		r_cons_printf (main_cons, "%s%s", buf, rad == 'n'? "": "\n");
 	}
 	free (buf);
 }
 
-static void do_hash_print(RHash *ctx, RahashOptions *ro, ut64 hash, int dlen, PJ *pj, int rad) {
-	RCons *main_cons = r_main_cons ();
+static void do_hash_print(RCons *main_cons, RHash *ctx, RahashOptions *ro, ut64 hash, int dlen, PJ *pj, int rad) {
 	int ule = ro->endian;
 	char *o;
 	const ut8 *c = ctx->digest;
@@ -120,31 +118,31 @@ static void do_hash_print(RHash *ctx, RahashOptions *ro, ut64 hash, int dlen, PJ
 	switch (rad) {
 	case 0:
 		if (!ro->quiet) {
-			r_main_printf (main_cons, "0x%08" PFMT64x "-0x%08" PFMT64x " %s: ",
+			r_cons_printf (main_cons, "0x%08" PFMT64x "-0x%08" PFMT64x " %s: ",
 				ro->from,
 				ro->to > 0? ro->to - 1: 0,
 				hname);
 		}
 		if (hash & R_HASH_SSDEEP) {
-			r_main_printf (main_cons, "%s\n", ctx->digest);
+			r_cons_printf (main_cons, "%s\n", ctx->digest);
 		} else if (dlen == R_HASH_SIZE_ENTROPY) {
-			r_main_printf (main_cons, "%.8f\n", ctx->entropy);
+			r_cons_printf (main_cons, "%.8f\n", ctx->entropy);
 		} else {
-			do_hash_hexprint (c, dlen, ule, pj, rad);
+			do_hash_hexprint (main_cons, c, dlen, ule, pj, rad);
 		}
 		break;
 	case 1:
-		r_main_printf (main_cons, "CC file %s:", hname);
-		do_hash_hexprint (c, dlen, ule, pj, rad);
+		r_cons_printf (main_cons, "CC file %s:", hname);
+		do_hash_hexprint (main_cons, c, dlen, ule, pj, rad);
 		break;
 	case 3:
-		r_main_printf (main_cons, "k file.%s=", hname);
+		r_cons_printf (main_cons, "k file.%s=", hname);
 		if (hash & R_HASH_SSDEEP) {
-			r_main_printf (main_cons, "%s\n", ctx->digest);
+			r_cons_printf (main_cons, "%s\n", ctx->digest);
 		} else if (dlen == R_HASH_SIZE_ENTROPY) {
-			r_main_printf (main_cons, "%.8f\n", ctx->entropy);
+			r_cons_printf (main_cons, "%.8f\n", ctx->entropy);
 		} else {
-			do_hash_hexprint (c, dlen, ule, pj, 0);
+			do_hash_hexprint (main_cons, c, dlen, ule, pj, 0);
 		}
 		break;
 	case 'n':
@@ -152,9 +150,9 @@ static void do_hash_print(RHash *ctx, RahashOptions *ro, ut64 hash, int dlen, PJ
 			// print nothing
 		} else {
 			if (hash & R_HASH_SSDEEP) {
-				r_main_printf (main_cons, "%s", ctx->digest);
+				r_cons_printf (main_cons, "%s", ctx->digest);
 			} else {
-				do_hash_hexprint (c, dlen, ule, pj, rad);
+				do_hash_hexprint (main_cons, c, dlen, ule, pj, rad);
 			}
 		}
 		break;
@@ -164,13 +162,13 @@ static void do_hash_print(RHash *ctx, RahashOptions *ro, ut64 hash, int dlen, PJ
 		if (hash & R_HASH_SSDEEP) {
 			pj_ks (pj, "hash", (const char *)c);
 		} else {
-			do_hash_hexprint (c, dlen, ule, pj, rad);
+			do_hash_hexprint (main_cons, c, dlen, ule, pj, rad);
 		}
 		pj_end (pj);
 		break;
 	case 'J':
 		pj_k (pj, hname);
-		do_hash_hexprint (c, dlen, ule, pj, rad);
+		do_hash_hexprint (main_cons, c, dlen, ule, pj, rad);
 		break;
 	case 'Q':
 		// nothing to print
@@ -178,13 +176,13 @@ static void do_hash_print(RHash *ctx, RahashOptions *ro, ut64 hash, int dlen, PJ
 	case 'q':
 	default:
 		o = r_print_randomart (c, dlen, ro->from);
-		r_main_printf (main_cons, "%s\n%s\n", hname, o);
+		r_cons_printf (main_cons, "%s\n%s\n", hname, o);
 		free (o);
 		break;
 	}
 }
 
-static int do_hash_internal(RHash *ctx, RahashOptions *ro, ut64 hash, const ut8 *buf, int len, PJ *pj, int rad, int print) {
+static int do_hash_internal(RCons *main_cons, RHash *ctx, RahashOptions *ro, ut64 hash, const ut8 *buf, int len, PJ *pj, int rad, int print) {
 	if (len < 0) {
 		return 0;
 	}
@@ -195,12 +193,11 @@ static int do_hash_internal(RHash *ctx, RahashOptions *ro, ut64 hash, const ut8 
 	if (ro->iterations > 0) {
 		r_hash_do_spice (ctx, hash, ro->iterations, ro->_s);
 	}
-	do_hash_print (ctx, ro, hash, dlen, pj, rad);
+	do_hash_print (main_cons, ctx, ro, hash, dlen, pj, rad);
 	return 1;
 }
 
-static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *io, int bsize, int rad, int ule, const ut8 *compare) {
-	RCons *main_cons = r_main_cons ();
+static int do_hash(RCons *main_cons, RahashOptions *ro, const char *file, const char *algo, RIO *io, int bsize, int rad, int ule, const ut8 *compare) {
 	ut64 j, algobit = r_hash_name_to_bits (algo);
 	ut8 *buf;
 	int ret = 0;
@@ -256,15 +253,15 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 				int dlen = r_hash_size (hashbit);
 				r_hash_do_begin (ctx, i);
 				if (ro->s.buf && ro->s.prefix) {
-					do_hash_internal (ctx, ro, hashbit, ro->s.buf, ro->s.len, pj, rad, 0);
+					do_hash_internal (main_cons, ctx, ro, hashbit, ro->s.buf, ro->s.len, pj, rad, 0);
 				}
 				for (j = ro->from; j < ro->to; j += bsize) {
 					int len = ((j + bsize) > ro->to)? (ro->to - j): bsize;
 					r_io_pread_at (io, j, buf, len);
-					do_hash_internal (ctx, ro, hashbit, buf, len, pj, rad, 0);
+					do_hash_internal (main_cons, ctx, ro, hashbit, buf, len, pj, rad, 0);
 				}
 				if (ro->s.buf && !ro->s.prefix) {
-					do_hash_internal (ctx, ro, hashbit, ro->s.buf, ro->s.len, pj, rad, 0);
+					do_hash_internal (main_cons, ctx, ro, hashbit, ro->s.buf, ro->s.len, pj, rad, 0);
 				}
 				r_hash_do_end (ctx, i);
 				if (ro->iterations > 0) {
@@ -274,13 +271,13 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 					continue;
 				}
 				if (!ro->quiet && rad != 'j') {
-					r_main_printf (main_cons, "%s: ", file);
+					r_cons_printf (main_cons, "%s: ", file);
 				}
-				do_hash_print (ctx, ro, i, dlen, pj, ro->quiet? 'n': rad);
+				do_hash_print (main_cons, ctx, ro, i, dlen, pj, ro->quiet? 'n': rad);
 				if (ro->quiet == 1) {
-					r_main_printf (main_cons, " %s\n", file);
+					r_cons_printf (main_cons, " %s\n", file);
 				} else if (ro->quiet > 0 && ro->quiet < 3 && !rad) {
-					r_main_printf (main_cons, "\n");
+					r_cons_printf (main_cons, "\n");
 				}
 			}
 		}
@@ -308,10 +305,10 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 					if (ro->to > fsize) {
 						ro->to = fsize;
 					}
-					do_hash_internal (ctx, ro, hashbit, buf, nsize, pj, rad, 1);
+					do_hash_internal (main_cons, ctx, ro, hashbit, buf, nsize, pj, rad, 1);
 				}
 				// Commented out to fix issue #23371
-				// do_hash_internal (ctx, ro, hashbit, NULL, 0, pj, rad, 1);
+				// do_hash_internal (main_cons, ctx, ro, hashbit, NULL, 0, pj, rad, 1);
 				ro->from = ofrom;
 				ro->to = oto;
 			}
@@ -319,7 +316,7 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 	}
 	if (rad == 'j') {
 		pj_end (pj);
-		r_main_printf (main_cons, "%s\n", pj_string (pj));
+		r_cons_printf (main_cons, "%s\n", pj_string (pj));
 		pj_free (pj);
 	}
 
@@ -333,13 +330,12 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 	return ret;
 }
 
-static int do_help(int line) {
-	RCons *main_cons = r_main_cons ();
-	r_main_printf (main_cons, "Usage: rahash2 [-BehjkLqRrvX] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...\n");
+static int do_help(RCons *main_cons, int line) {
+	r_cons_printf (main_cons, "Usage: rahash2 [-BehjkLqRrvX] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...\n");
 	if (line) {
 		return 0;
 	}
-	r_main_printf (main_cons,
+	r_cons_printf (main_cons,
 		" -a algo     comma separated list of algorithms (default is 'sha256')\n"
 		" -b bsize    specify the size of the block (instead of full file)\n"
 		" -B          show per-block hash\n"
@@ -367,11 +363,10 @@ static int do_help(int line) {
 	return 0;
 }
 
-static void algolist(int mode) {
-	RCons *main_cons = r_main_cons ();
+static void algolist(RCons *main_cons, int mode) {
 	RMuta *cry = r_muta_new ();
 	char *s = r_muta_list (cry, (int)R_MUTA_TYPE_ALL, mode);
-	r_main_printf (main_cons, "%s", s);
+	r_cons_printf (main_cons, "%s", s);
 	free (s);
 	r_muta_free (cry);
 }
@@ -390,8 +385,7 @@ static bool is_power_of_two(const ut64 x) {
 	return x && ! (x &(x - 1));
 }
 
-static void print_result(RahashOptions *ro, const ut8 *result, int result_size) {
-	RCons *main_cons = r_main_cons ();
+static void print_result(RCons *main_cons, RahashOptions *ro, const ut8 *result, int result_size) {
 	int i;
 	switch (ro->mode) {
 	case 'j':
@@ -407,15 +401,15 @@ static void print_result(RahashOptions *ro, const ut8 *result, int result_size) 
 			pj_end (pj);
 			pj_end (pj);
 			char *s = pj_drain (pj);
-			r_main_printf (main_cons, "%s\n", s);
+			r_cons_printf (main_cons, "%s\n", s);
 			free (s);
 		}
 		break;
 	case 'x':
 		for (i = 0; i < result_size; i++) {
-			r_main_printf (main_cons, "%02x", result[i]);
+			r_cons_printf (main_cons, "%02x", result[i]);
 		}
-		r_main_printf (main_cons, "\n");
+		r_cons_printf (main_cons, "\n");
 		break;
 	default:
 		if (r_main_write (main_cons, result, result_size) != result_size) {
@@ -425,7 +419,7 @@ static void print_result(RahashOptions *ro, const ut8 *result, int result_size) 
 	}
 }
 
-static int encrypt_or_decrypt(RahashOptions *ro, const char *hashstr, int hashstr_len, const ut8 *iv, int ivlen, int mode) {
+static int encrypt_or_decrypt(RCons *main_cons, RahashOptions *ro, const char *hashstr, int hashstr_len, const ut8 *iv, int ivlen, int mode) {
 	const int direction = ro->direction;
 	const char *algo = ro->algorithm;
 	// TODO: generalise this for all non key encoding/decoding.
@@ -448,7 +442,7 @@ static int encrypt_or_decrypt(RahashOptions *ro, const char *hashstr, int hashst
 				int result_size = 0;
 				ut8 *result = r_muta_session_get_output (cj, &result_size);
 				if (result) {
-					print_result (ro, result, result_size);
+					print_result (main_cons, ro, result, result_size);
 					free (result);
 				}
 			} else {
@@ -466,7 +460,7 @@ static int encrypt_or_decrypt(RahashOptions *ro, const char *hashstr, int hashst
 	return 1;
 }
 
-static int encrypt_or_decrypt_file(RahashOptions *ro, const char *filename, const ut8 *iv, int ivlen, int mode) {
+static int encrypt_or_decrypt_file(RCons *main_cons, RahashOptions *ro, const char *filename, const ut8 *iv, int ivlen, int mode) {
 	const int direction = ro->direction;
 	const char *algo = ro->algorithm;
 	// TODO: generalise this for all non key encoding/decoding. aka muta vs encoder plugins after moving all those hash algos to muta plugins
@@ -500,7 +494,7 @@ static int encrypt_or_decrypt_file(RahashOptions *ro, const char *filename, cons
 				int result_size = 0;
 				ut8 *result = r_muta_session_get_output (cj, &result_size);
 				if (result) {
-					print_result (ro, result, result_size);
+					print_result (main_cons, ro, result, result_size);
 					free (result);
 				}
 				free (buf);
@@ -548,8 +542,7 @@ static bool check_base_flags(RahashOptions *ro) {
 	return false;
 }
 
-R_IPI int r_main_rahash2_impl(int argc, const char **argv) {
-	RCons *main_cons = r_main_cons ();
+R_API int r_main_rahash2(RCons *main_cons, int argc, const char **argv) {
 	ut64 i;
 	int c, rad = 0, bsize = 0, numblocks = 0, ule = 0;
 	const char *file = NULL;
@@ -633,22 +626,22 @@ R_IPI int r_main_rahash2_impl(int argc, const char **argv) {
 		case 'f': ro->from = r_num_math (NULL, opt.arg); break;
 		case 't': ro->to = 1 + r_num_math (NULL, opt.arg); break;
 		case 'v': show_version = true; break;
-		case 'h': ret (do_help (0));
+		case 'h': ret (do_help (main_cons, 0));
 		case 's': setHashString (opt.arg, 0); break;
 		case 'x': setHashString (opt.arg, 1); break;
 		case 'c': compareStr = opt.arg; break;
-		default: ret (do_help (0));
+		default: ret (do_help (main_cons, 0));
 		}
 	}
 	if (show_version) {
-		ret (r_main_version_print ("rahash2", rad));
+		ret (r_main_version_print (main_cons, "rahash2", rad));
 	}
 
 	if (listplugins) {
 		if (rad == 'j' && ro->quiet) {
 			rad = 'J';
 		}
-		algolist (rad);
+		algolist (main_cons, rad);
 		ret (0);
 	}
 	algo = r_list_empty (algos)? strdup ("sha1"): r_str_list_join (algos, ",");
@@ -706,7 +699,7 @@ R_IPI int r_main_rahash2_impl(int argc, const char **argv) {
 		// TODO: support -f and -t
 		char *eptype = r_str_escape_sh (ptype);
 		for (i = opt.ind; i < argc; i++) {
-			r_main_printf (main_cons, "%s:\n", argv[i]);
+			r_cons_printf (main_cons, "%s:\n", argv[i]);
 			char *eargv = r_str_escape_sh (argv[i]);
 			if (eptype && eargv) {
 				r_sys_cmdf ("r2 -qfnc \"p==%s 100\" \"%s\"", eptype, eargv);
@@ -784,7 +777,7 @@ R_IPI int r_main_rahash2_impl(int argc, const char **argv) {
 			hashstr_len = r_str_unescape (nhashstr);
 		}
 		if (ro->direction != -1) {
-			ret (encrypt_or_decrypt (ro, nhashstr, hashstr_len, iv, ivlen, 0));
+			ret (encrypt_or_decrypt (main_cons, ro, nhashstr, hashstr_len, iv, ivlen, 0));
 		} else {
 			char *str = (char *)nhashstr;
 			int strsz = hashstr_len;
@@ -834,14 +827,14 @@ R_IPI int r_main_rahash2_impl(int argc, const char **argv) {
 					ctx = r_hash_new (true, hashbit);
 					ro->from = 0;
 					ro->to = strsz;
-					do_hash_internal (ctx, ro, hashbit, (const ut8 *)str, strsz, pj, rad, 1);
+					do_hash_internal (main_cons, ctx, ro, hashbit, (const ut8 *)str, strsz, pj, rad, 1);
 					compare_hashes (ctx, ro, compareBin, r_hash_size (algobit), &_ret, mode);
 					r_hash_free (ctx);
 				}
 			}
 			if (rad == 'j' || rad == 'J') {
 				pj_end (pj);
-				r_main_printf (main_cons, "%s\n", pj_string (pj));
+				r_cons_printf (main_cons, "%s\n", pj_string (pj));
 				pj_free (pj);
 			}
 			if (str != nhashstr) {
@@ -858,7 +851,7 @@ R_IPI int r_main_rahash2_impl(int argc, const char **argv) {
 		}
 	}
 	if (opt.ind >= argc) {
-		ret (do_help (1));
+		ret (do_help (main_cons, 1));
 	}
 	if (numblocks) {
 		bsize = -bsize;
@@ -877,7 +870,7 @@ R_IPI int r_main_rahash2_impl(int argc, const char **argv) {
 		}
 
 		if (ro->direction != -1) {
-			int rt = encrypt_or_decrypt_file (ro, argv[i], iv, ivlen, 0);
+			int rt = encrypt_or_decrypt_file (main_cons, ro, argv[i], iv, ivlen, 0);
 			if (rt == -1) {
 				continue;
 			}
@@ -910,7 +903,7 @@ R_IPI int r_main_rahash2_impl(int argc, const char **argv) {
 				}
 			}
 			// TODO: move some args into the ro struct
-			_ret |= do_hash (ro, argv[i], algo, io, bsize, rad, ule, compareBin);
+			_ret |= do_hash (main_cons, ro, argv[i], algo, io, bsize, rad, ule, compareBin);
 			ro->to = 0;
 			r_io_desc_close (desc);
 		}

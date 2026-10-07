@@ -110,13 +110,13 @@ int main(int argc, const char **argv) {
 		}
 		char **argv = r_str_argv (ea, &argc);
 		r_sys_setenv ("R2_ARGS", NULL);
-		int res = r_main_radare2 (argc, (const char **)argv);
+		int res = r_main_radare2 (NULL, argc, (const char **)argv);
 		free (ea);
 		free (argv);
 		return res;
 	}
 	free (ea);
-	return r_main_radare2 (argc, argv);
+	return r_main_radare2 (NULL, argc, argv);
 }
 
 #endif

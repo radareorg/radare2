@@ -43,15 +43,14 @@ static Rabin2Env env[] = {
 	{ "RABIN2_VERBOSE", "e bin.verbose         # show debugging messages from the parser" },
 };
 
-static void rabin_show_env(bool show_desc);
+static void rabin_show_env(RCons *main_cons, bool show_desc);
 
-static int rabin_show_help(int line) {
-	RCons *main_cons = r_main_cons ();
-	r_main_printf (main_cons, "Usage: rabin2 [-AcdeEghHiIjJlLMqrRsSuvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
+static int rabin_show_help(RCons *main_cons, int line) {
+	r_cons_printf (main_cons, "Usage: rabin2 [-AcdeEghHiIjJlLMqrRsSuvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
 	"              [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M] [-P[-P] pdb]\n"
 	"              [-o str] [-O help] [-k query] [-D lang mangledsymbol] file\n");
 	if (line != 1) {
-		r_main_printf (main_cons,
+		r_cons_printf (main_cons,
 			" -@ [addr]       show section, symbol or import at addr\n"
 			" -A              list sub-binaries and their arch-bits pairs\n"
 			" -a [arch]       set arch (x86, arm, .. or <arch>_<bits>)\n"
@@ -112,8 +111,8 @@ static int rabin_show_help(int line) {
 			" -Z              guess size of binary program\n");
 	}
 	if (line == 2) {
-		r_main_printf (main_cons, "Environment:\n");
-		rabin_show_env (true);
+		r_cons_printf (main_cons, "Environment:\n");
+		rabin_show_env (main_cons, true);
 	}
 	return 1;
 }
@@ -154,8 +153,7 @@ static bool isBinopHelp(const char *op) {
 	return false;
 }
 
-static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
-	RCons *main_cons = r_main_cons ();
+static bool extract_binobj(RCons *main_cons, const RBinFile *bf, RBinXtrData *data, int idx) {
 	ut64 bin_size = data? data->size: 0;
 	ut8 *bytes;
 	const char *xtr_type = "";
@@ -213,7 +211,7 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 		R_LOG_ERROR ("extract failed %s", outfile);
 		res = false;
 	} else {
-		r_main_printf (main_cons, "%s created (%" PFMT64d ")\n", outfile, bin_size);
+		r_cons_printf (main_cons, "%s created (%" PFMT64d ")\n", outfile, bin_size);
 		res = true;
 	}
 
@@ -224,7 +222,7 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 	return res;
 }
 
-static int rabin_extract(RBin *bin, int all) {
+static int rabin_extract(RCons *main_cons, RBin *bin, int all) {
 	RBinXtrData *data = NULL;
 	int res = false;
 	RBinFile *bf = r_bin_cur (bin);
@@ -236,7 +234,7 @@ static int rabin_extract(RBin *bin, int all) {
 		int idx = 0;
 		RListIter *iter;
 		r_list_foreach (bf->xtr_data, iter, data) {
-			res = extract_binobj (bf, data, idx++);
+			res = extract_binobj (main_cons, bf, data, idx++);
 			if (!res) {
 				break;
 			}
@@ -246,7 +244,7 @@ static int rabin_extract(RBin *bin, int all) {
 		if (!data) {
 			return res;
 		}
-		res = extract_binobj (bf, data, 0);
+		res = extract_binobj (main_cons, bf, data, 0);
 	}
 	return res;
 }
@@ -256,8 +254,7 @@ static bool rabin_extract_resources(RBin *bin, const char *output) {
 	return bf && r_bin_file_extract_resources (bf, output);
 }
 
-static int rabin_dump_symbols(RBin *bin, int len) {
-	RCons *main_cons = r_main_cons ();
+static int rabin_dump_symbols(RCons *main_cons, RBin *bin, int len) {
 	RVecRBinSymbol *symbols = r_bin_get_symbols_vec (bin);
 	if (!symbols) {
 		return false;
@@ -285,7 +282,7 @@ static int rabin_dump_symbols(RBin *bin, int len) {
 		if (r_buf_read_at (bin->cur->buf, symbol->paddr, buf, len) == len) {
 			r_hex_bin2str (buf, len, ret);
 			const char *name = r_bin_name_tostring (symbol->name);
-			r_main_printf (main_cons, "%s %s\n", name, ret);
+			r_cons_printf (main_cons, "%s %s\n", name, ret);
 		} else {
 			R_LOG_ERROR ("Cannot read from buffer");
 		}
@@ -295,8 +292,7 @@ static int rabin_dump_symbols(RBin *bin, int len) {
 	return true;
 }
 
-static bool __dumpSections(RBin *bin, const char *scnname, const char *output, const char *file, bool raw) {
-	RCons *main_cons = r_main_cons ();
+static bool __dumpSections(RCons *main_cons, RBin *bin, const char *scnname, const char *output, const char *file, bool raw) {
 	RBinSection *section;
 	RVecRBinSection *sections = r_bin_get_sections_vec (bin);
 	if (!sections || RVecRBinSection_empty (sections)) {
@@ -341,7 +337,7 @@ static bool __dumpSections(RBin *bin, const char *scnname, const char *output, c
 				}
 			} else {
 				r_hex_bin2str (buf, ss, ret);
-				r_main_printf (main_cons, "%s\n", ret);
+				r_cons_printf (main_cons, "%s\n", ret);
 			}
 		}
 		free (buf);
@@ -351,7 +347,7 @@ static bool __dumpSections(RBin *bin, const char *scnname, const char *output, c
 	return true;
 }
 
-static int rabin_do_operation(RCons *cons, RBin *bin, const char *op, int rad, const char *output, const char *file) {
+static int rabin_do_operation(RCons *main_cons, RCons *cons, RBin *bin, const char *op, int rad, const char *output, const char *file) {
 	char *arg = NULL, *ptr = NULL, *ptr2 = NULL;
 	bool rc = true;
 
@@ -395,7 +391,7 @@ static int rabin_do_operation(RCons *cons, RBin *bin, const char *op, int rad, c
 		case 's':
 			{
 				ut64 a = ptr2? r_num_math (NULL, ptr2): 0;
-				if (!rabin_dump_symbols (bin, a)) {
+				if (!rabin_dump_symbols (main_cons, bin, a)) {
 					goto error;
 				}
 			}
@@ -404,7 +400,7 @@ static int rabin_do_operation(RCons *cons, RBin *bin, const char *op, int rad, c
 			if (!ptr2) {
 				goto _rabin_do_operation_error;
 			}
-			if (!__dumpSections (bin, ptr2, output, file, rad)) {
+			if (!__dumpSections (main_cons, bin, ptr2, output, file, rad)) {
 				goto error;
 			}
 			break;
@@ -474,7 +470,7 @@ static int rabin_do_operation(RCons *cons, RBin *bin, const char *op, int rad, c
 				char *sign = plg->signature (cur, rad == R_MODE_JSON);
 				if (sign) {
 					r_cons_println (cons, sign);
-					r_main_cons_flush (cons);
+					r_main_cons_flush (main_cons, cons);
 					free (sign);
 				}
 			}
@@ -485,7 +481,7 @@ static int rabin_do_operation(RCons *cons, RBin *bin, const char *op, int rad, c
 			char *types = r_bin_get_types (bin);
 			if (types) {
 				r_cons_println (cons, types);
-				r_main_cons_flush (cons);
+				r_main_cons_flush (main_cons, cons);
 				free (types);
 			}
 		}
@@ -535,11 +531,10 @@ error:
 	return false;
 }
 
-static bool rabin_show_srcline(RBin *bin, ut64 at) {
-	RCons *main_cons = r_main_cons ();
+static bool rabin_show_srcline(RCons *main_cons, RBin *bin, ut64 at) {
 	char *srcline;
 	if (at != UT64_MAX && (srcline = r_bin_addrline_tostring (bin, at, 1))) {
-		r_main_printf (main_cons, "%s\n", srcline);
+		r_cons_printf (main_cons, "%s\n", srcline);
 		free (srcline);
 		return true;
 	}
@@ -612,7 +607,6 @@ static char *__demangleAs(RBin *bin, RBinLanguage type, const char *file) {
 static void list_plugins(RBin *bin, const char *plugin_name, PJ *pj, int rad) {
 	int format = (rad == R_MODE_JSON)? 'j': rad? 'q'
 						: 0;
-	bin->cb_printf = r_main_cons ()? r_main_gprintf: printf;
 	if (R_STR_ISNOTEMPTY (plugin_name)) {
 		r_bin_list_plugin (bin, plugin_name, pj, format);
 	} else {
@@ -620,28 +614,25 @@ static void list_plugins(RBin *bin, const char *plugin_name, PJ *pj, int rad) {
 	}
 }
 
-static void rabin_env_print(const char *name) {
-	RCons *main_cons = r_main_cons ();
+static void rabin_env_print(RCons *main_cons, const char *name) {
 	char *value = r_sys_getenv (name);
-	r_main_printf (main_cons, "%s\n", R_STR_ISNOTEMPTY (value)? value: "");
+	r_cons_printf (main_cons, "%s\n", R_STR_ISNOTEMPTY (value)? value: "");
 	free (value);
 }
 
-static void rabin_show_env(bool show_desc) {
-	RCons *main_cons = r_main_cons ();
+static void rabin_show_env(RCons *main_cons, bool show_desc) {
 	int id = 0;
 	for (id = 0; id < (sizeof (env) / sizeof (env[0])); id++) {
 		if (show_desc) {
-			r_main_printf (main_cons, "%s\t%s\n", env[id].name, env[id].desc);
+			r_cons_printf (main_cons, "%s\t%s\n", env[id].name, env[id].desc);
 		} else {
-			r_main_printf (main_cons, "%s=", env[id].name);
-			rabin_env_print (env[id].name);
+			r_cons_printf (main_cons, "%s=", env[id].name);
+			rabin_env_print (main_cons, env[id].name);
 		}
 	}
 }
 
-R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
-	RCons *main_cons = r_main_cons ();
+R_API int r_main_rabin2(RCons *main_cons, int argc, const char **argv) {
 	Rabin2State state = { 0 };
 	const char *name = NULL;
 	const char *file = NULL;
@@ -668,7 +659,7 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 	RCore core = { 0 };
 	ut64 at = UT64_MAX;
 
-	r_main_core_init (&core);
+	r_main_core_init (main_cons, &core);
 	RBin *bin = core.bin;
 	RCons *cons = core.cons;
 
@@ -771,8 +762,8 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 	int help = 0;
 	r_getopt_init (&opt, argc, argv, "DjJ:gAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEulRwO:o:pPqQrTtvLhxXzZy");
 	if (argc == 2 && !strcmp (argv[1], "-J")) {
-		rabin_show_env (false);
-		r_main_core_fini (&core);
+		rabin_show_env (main_cons, false);
+		r_main_core_fini (main_cons, &core);
 		free (state.stdin_buf);
 		return 0;
 	}
@@ -860,8 +851,8 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 		case 'Z': set_action (R_BIN_REQ_SIZE); break;
 		case 'I': set_action (R_BIN_REQ_INFO); break;
 		case 'J':
-			rabin_env_print (opt.arg);
-			r_main_core_fini (&core);
+			rabin_env_print (main_cons, opt.arg);
+			r_main_core_fini (main_cons, &core);
 			free (state.stdin_buf);
 			return 0;
 		case 'H':
@@ -912,7 +903,7 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 				bin->options.show_codesign = true;
 			}
 			if (isBinopHelp (op)) {
-				r_main_printf (main_cons, "Usage: iO [expression]:\n"
+				r_cons_printf (main_cons, "Usage: iO [expression]:\n"
 				" e/0x8048000       change entrypoint\n"
 				" d/s/1024          dump symbols\n"
 				" d/S/.text         dump section\n"
@@ -927,13 +918,13 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 				" P/LOAD0/rwx       change segment permissions (elf: LOAD0, GNU_STACK, PHDR, ...; mach-o: __TEXT, __DATA, ...)\n"
 				" c                 show Codesign data\n"
 				" C                 show LDID entitlements\n");
-				r_main_core_fini (&core);
+				r_main_core_fini (main_cons, &core);
 				free (state.stdin_buf);
 				return 0;
 			}
 			if (opt.ind == argc) {
 				R_LOG_ERROR ("Missing filename");
-				r_main_core_fini (&core);
+				r_main_core_fini (main_cons, &core);
 				free (state.stdin_buf);
 				return 1;
 			}
@@ -942,9 +933,9 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 		case 'p': va = false; break;
 		case 'r': rad = true; break;
 		case 'v':
-			r_main_core_fini (&core);
+			r_main_core_fini (main_cons, &core);
 			free (state.stdin_buf);
-			return r_main_version_print ("rabin2", 0);
+			return r_main_version_print (main_cons, "rabin2", 0);
 		case 'L':
 			set_action (R_BIN_REQ_LISTPLUGINS);
 			break;
@@ -990,10 +981,10 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 		}
 	}
 	if (help) {
-		r_main_core_fini (&core);
+		r_main_core_fini (main_cons, &core);
 		free (create);
 		free (state.stdin_buf);
-		return rabin_show_help (help > 1? 2: 0);
+		return rabin_show_help (main_cons, help > 1? 2: 0);
 	}
 	core.io->va = va;
 
@@ -1014,10 +1005,10 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 		list_plugins (bin, plugin_name, pj, rad);
 		if (rad == R_MODE_JSON) {
 			r_cons_println (cons, pj_string (pj));
-			r_main_cons_flush (cons);
 			pj_free (pj);
 		}
-		r_main_core_fini (&core);
+		r_main_cons_flush (main_cons, cons);
+		r_main_core_fini (main_cons, &core);
 		free (state.stdin_buf);
 		return 0;
 	}
@@ -1027,15 +1018,15 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 		RBinLanguage type = R_BIN_LANG_NONE;
 		if (!*do_demangle || !strcmp (do_demangle, "?") || !strcmp (do_demangle, "help")) {
 			r_bin_demangle_list (core.bin);
-			r_main_cons_flush (core.cons);
-			r_main_core_fini (&core);
+			r_main_cons_flush (main_cons, core.cons);
+			r_main_core_fini (main_cons, &core);
 			free (state.stdin_buf);
 			return 0;
 		}
 		if ((argc - opt.ind) < 2) {
-			r_main_core_fini (&core);
+			r_main_core_fini (main_cons, &core);
 			free (state.stdin_buf);
-			return rabin_show_help (0);
+			return rabin_show_help (main_cons, 0);
 		}
 		file = argv[opt.ind + 1];
 		type = r_bin_demangle_type (do_demangle);
@@ -1050,14 +1041,14 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 				res = __demangleAs (bin, type, s);
 				if (!res) {
 					R_LOG_ERROR ("Unknown lang to demangle. Use: cxx, ibmxl, msvc, dlang, rust, pascal, java, objc, swift");
-					r_main_core_fini (&core);
+					r_main_core_fini (main_cons, &core);
 					free (state.stdin_buf);
 					return 1;
 				}
 				if (R_STR_ISNOTEMPTY (res)) {
-					r_main_printf (main_cons, "%s\n", res);
+					r_cons_printf (main_cons, "%s\n", res);
 				} else if (*s) {
-					r_main_printf (main_cons, "%s\n", s);
+					r_cons_printf (main_cons, "%s\n", s);
 				}
 				R_FREE (res);
 				free (s);
@@ -1066,16 +1057,16 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 		} else {
 			res = __demangleAs (bin, type, file);
 			if (R_STR_ISNOTEMPTY (res)) {
-				r_main_printf (main_cons, "%s\n", res);
+				r_cons_printf (main_cons, "%s\n", res);
 				free (res);
-				r_main_core_fini (&core);
+				r_main_core_fini (main_cons, &core);
 				free (state.stdin_buf);
 				return 0;
 			}
-			r_main_printf (main_cons, "%s\n", file);
+			r_cons_printf (main_cons, "%s\n", file);
 		}
 		free (res);
-		r_main_core_fini (&core);
+		r_main_core_fini (main_cons, &core);
 		free (state.stdin_buf);
 		return 1;
 	}
@@ -1083,16 +1074,16 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 
 	if (file && !*file) {
 		R_LOG_ERROR ("Cannot open empty path");
-		r_main_core_fini (&core);
+		r_main_core_fini (main_cons, &core);
 		free (state.stdin_buf);
 		return 1;
 	}
 
 	if (!query) {
 		if (action & R_BIN_REQ_HELP || action == R_BIN_REQ_UNK || !file) {
-			r_main_core_fini (&core);
+			r_main_core_fini (main_cons, &core);
 			free (state.stdin_buf);
-			return rabin_show_help (0);
+			return rabin_show_help (main_cons, 0);
 		}
 	}
 	if (arch) {
@@ -1110,7 +1101,7 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 		char *p2, *p = strchr (create, ':');
 		if (!p) {
 			R_LOG_ERROR ("Invalid format for -C flag. Use 'format:code:data (in hexpairs)");
-			r_main_core_fini (&core);
+			r_main_core_fini (main_cons, &core);
 			free (state.stdin_buf);
 			return 1;
 		}
@@ -1130,7 +1121,7 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 		}
 		code = malloc (strlen (p) + 1);
 		if (!code) {
-			r_main_core_fini (&core);
+			r_main_core_fini (main_cons, &core);
 			free (state.stdin_buf);
 			return 1;
 		}
@@ -1151,7 +1142,7 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 		} else {
 			R_LOG_ERROR ("Cannot create binary for this format '%s'", create);
 		}
-		r_main_core_fini (&core);
+		r_main_core_fini (main_cons, &core);
 		free (state.stdin_buf);
 		return 0;
 	}
@@ -1162,7 +1153,7 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 
 	if (!file) {
 		R_LOG_ERROR ("Missing file");
-		r_main_core_fini (&core);
+		r_main_core_fini (main_cons, &core);
 		free (state.stdin_buf);
 		return 1;
 	}
@@ -1171,7 +1162,7 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 #if R2__UNIX__ && HAVE_FORK
 		int child = r_sys_fork ();
 		if (child == -1) {
-			r_main_core_fini (&core);
+			r_main_core_fini (main_cons, &core);
 			free (state.stdin_buf);
 			return 1;
 		}
@@ -1184,12 +1175,12 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 		if (addr) {
 			R_LOG_INFO ("%s is loaded at 0x%" PFMT64x, file, (ut64) (size_t) (addr));
 			r_lib_dl_close (addr);
-			r_main_core_fini (&core);
+			r_main_core_fini (main_cons, &core);
 			free (state.stdin_buf);
 			return 0;
 		}
 		R_LOG_ERROR ("Cannot open the '%s' library", file);
-		r_main_core_fini (&core);
+		r_main_core_fini (main_cons, &core);
 		free (state.stdin_buf);
 		return 0;
 	}
@@ -1202,7 +1193,7 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 		if (opt.ind + 3 > argc) {
 			R_LOG_ERROR ("Usage: rabin2 -X [fat|zip] foo.zip a b c");
 			free (state.stdin_buf);
-			r_main_core_fini (&core);
+			r_main_core_fini (main_cons, &core);
 			return 1;
 		}
 
@@ -1221,7 +1212,7 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 				rc = 1;
 			}
 		}
-		r_main_core_fini (&core);
+		r_main_core_fini (main_cons, &core);
 		r_list_free (files);
 		free (state.stdin_buf);
 		return rc;
@@ -1232,13 +1223,13 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 			fd = r_io_fd_get_current (core.io);
 			if (fd == -1) {
 				R_LOG_ERROR ("Cannot open file '%s'", file);
-				r_main_core_fini (&core);
+				r_main_core_fini (main_cons, &core);
 				free (state.stdin_buf);
 				return 1;
 			}
 		} else {
 			R_LOG_ERROR ("Cannot open file '%s'", file);
-			r_main_core_fini (&core);
+			r_main_core_fini (main_cons, &core);
 			free (state.stdin_buf);
 			return 1;
 		}
@@ -1258,7 +1249,7 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 		// but we have yet the chance that this file is a fat binary
 		if (!bin->cur || !bin->cur->xtr_data) {
 			R_LOG_ERROR ("Cannot open file");
-			r_main_core_fini (&core);
+			r_main_core_fini (main_cons, &core);
 			free (state.stdin_buf);
 			return 1;
 		}
@@ -1280,7 +1271,7 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 	if (query) {
 		if (rad) {
 			r_core_bin_export_info (&core, R_MODE_RADARE);
-			r_main_cons_flush (cons);
+			r_main_cons_flush (main_cons, cons);
 		} else {
 			if (!strcmp (query, "-")) {
 				__sdb_prompt (&state, bin->cur->sdb);
@@ -1288,7 +1279,7 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 				sdb_query (bin->cur->sdb, query);
 			}
 		}
-		r_main_core_fini (&core);
+		r_main_core_fini (main_cons, &core);
 		free (state.stdin_buf);
 		return 0;
 	}
@@ -1304,7 +1295,6 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 		} \
 	}
 	core.bin = bin;
-	bin->cb_printf = r_main_gprintf;
 	filter.addr = at;
 	filter.name = name;
 	core.cons->context->is_interactive = false;
@@ -1377,7 +1367,7 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 	run_action ("hashes", R_BIN_REQ_HASHES, R_CORE_BIN_ACC_HASHES);
 	run_action ("sections mapping", R_BIN_REQ_SECTIONS_MAPPING, R_CORE_BIN_ACC_SECTIONS_MAPPING);
 	if (action & R_BIN_REQ_SRCLINE) {
-		rabin_show_srcline (bin, at);
+		rabin_show_srcline (main_cons, bin, at);
 	}
 	if (action & R_BIN_REQ_EXTRACT) {
 		const bool extract_sections = action & R_BIN_REQ_SECTIONS;
@@ -1395,7 +1385,7 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 		}
 		if (!extract_sections && !extract_segments && !extract_resources) {
 			if (bf && bf->xtr_data) {
-				if (!rabin_extract (bin, (!arch && !arch_name && !bits))) {
+				if (!rabin_extract (main_cons, bin, (!arch && !arch_name && !bits))) {
 					retval = 1;
 				}
 			} else {
@@ -1405,7 +1395,7 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 		}
 	}
 	if (op && action & R_BIN_REQ_OPERATION) {
-		if (!rabin_do_operation (cons, bin, op, rad, output, file)) {
+		if (!rabin_do_operation (main_cons, cons, bin, op, rad, output, file)) {
 			retval = 1;
 		}
 	}
@@ -1415,8 +1405,8 @@ R_IPI int r_main_rabin2_impl(int argc, const char **argv) {
 	}
 
 	pj_free (pj);
-	r_main_cons_flush (cons);
-	r_main_core_fini (&core);
+	r_main_cons_flush (main_cons, cons);
+	r_main_core_fini (main_cons, &core);
 	r_syscmd_popalld ();
 	free (state.stdin_buf);
 
