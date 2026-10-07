@@ -76,11 +76,20 @@ int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
 	addr_size = (len && (data[0] & 2))? 8: 4;
 	RBinFile *bf = r_bin_cur (bin);
 	if (bf) {
-		RVecDwarfAbbrevDecl *abbrev = r_bin_dwarf_parse_abbrev (bf, mode);
-		RBinDwarfDebugInfo *info = abbrev? r_bin_dwarf_parse_info (bf, abbrev, mode): NULL;
+		RVecDwarfAbbrevDecl *abbrev = r_bin_dwarf_parse_abbrev (bf);
+		RBinDwarfDebugInfo *info = abbrev? r_bin_dwarf_parse_info (bf, abbrev): NULL;
 		HtUP /*<offset, RBinDwarfLocList*>*/ *loc_table = r_bin_dwarf_parse_loc (bf, addr_size);
-		RList *lines = r_bin_dwarf_parse_line (bf, mode);
-		r_bin_dwarf_parse_aranges (bf, mode);
+		char *text = NULL;
+		RList *lines = r_bin_dwarf_parse_line (bf, mode, &text);
+		free (text);
+		if (mode == R_MODE_PRINT) {
+			if (abbrev) {
+				free (r_bin_dwarf_print_abbrev (abbrev));
+				free (r_bin_dwarf_print_info (bf, abbrev));
+			}
+			free (r_bin_dwarf_print_aranges (bf));
+			free (r_bin_dwarf_print_loc_stream (bf, addr_size));
+		}
 		if (loc_table) {
 			char *text = r_bin_dwarf_print_loc (loc_table, addr_size);
 			free (text);

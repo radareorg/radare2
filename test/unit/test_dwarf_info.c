@@ -118,11 +118,11 @@ bool test_dwarf3_c(void) {
 
 	RBinFile *bf = r_bin_cur (bin);
 	mu_assert_notnull (bf, "Failed to get current bin file");
-	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bf, MODE);
+	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bf);
 	mu_assert_notnull (da, "Failed to parse abbreviations");
 	mu_assert_eq (RVecDwarfAbbrevDecl_length(da), 7, "Incorrect number of abbreviations");
 
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, da, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, da);
 	mu_assert_notnull (info, "Failed to parse debug info");
 	mu_assert_notnull (info->comp_units, "Compilation units vector is NULL");
 	mu_assert_eq (RVecDwarfCompUnit_length(info->comp_units), 1, "Incorrect number of info compilation units");
@@ -175,11 +175,11 @@ bool test_dwarf4_cpp_multiple_modules(void) {
 
 	RBinFile *bf = r_bin_cur (bin);
 	mu_assert_notnull (bf, "Failed to get current bin file");
-	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bf, MODE);
+	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bf);
 	mu_assert_notnull (da, "Failed to parse abbreviations");
 	mu_assert_eq (RVecDwarfAbbrevDecl_length(da), 37, "Incorrect number of abbreviations");
 
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, da, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, da);
 	mu_assert_notnull (info, "Failed parsing of debug_info");
 	mu_assert_notnull (info->comp_units, "Compilation units vector is NULL");
 	mu_assert_eq (RVecDwarfCompUnit_length(info->comp_units), 2, "Incorrect number of info compilation units");
@@ -345,9 +345,9 @@ bool test_dwarf2_big_endian(void) {
 
 	RBinFile *bf = r_bin_cur (bin);
 	mu_assert_notnull (bf, "Failed to get current bin file");
-	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bf, MODE);
+	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bf);
 	mu_assert_eq (RVecDwarfAbbrevDecl_length(da), 108, "Incorrect number of abbreviation");
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, da, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, da);
 	mu_assert_notnull (info, "Failed parsing of debug_info");
 	mu_assert_eq (RVecDwarfCompUnit_length(info->comp_units), 1, "Incorrect number of info compilation units");
 
@@ -473,9 +473,9 @@ bool test_dwarf_bad_strp_is_local(void) {
 	mu_assert_true (r_bin_open_buf (bin, buf, &opt),
 		"Couldn't open bad-strp fixture");
 	RBinFile *bf = r_bin_cur (bin);
-	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf, MODE);
+	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf);
 	mu_assert_notnull (abbrevs, "Couldn't parse bad-strp abbreviations");
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs);
 	mu_assert_notnull (info, "A bad string offset must not reject debug_info");
 	mu_assert_eq (RVecDwarfCompUnit_length (info->comp_units), 2,
 		"A bad string offset must not discard either CU");
@@ -506,9 +506,9 @@ bool test_dwarf_bad_cu_is_skipped(void) {
 	mu_assert_true (r_bin_open_buf (bin, buf, &opt),
 		"Couldn't open malformed-CU fixture");
 	RBinFile *bf = r_bin_cur (bin);
-	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf, MODE);
+	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf);
 	mu_assert_notnull (abbrevs, "Couldn't parse malformed-CU abbreviations");
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs);
 	mu_assert_notnull (info, "A malformed CU must not reject debug_info");
 	mu_assert_eq (RVecDwarfCompUnit_length (info->comp_units), 1,
 		"Only the malformed CU should be skipped");
@@ -538,9 +538,9 @@ bool test_dwarf_bad_header_preserves_prior_cus(void) {
 	mu_assert_true (r_bin_open_buf (bin, buf, &opt),
 		"Couldn't open malformed-header fixture");
 	RBinFile *bf = r_bin_cur (bin);
-	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf, MODE);
+	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf);
 	mu_assert_notnull (abbrevs, "Couldn't parse malformed-header abbreviations");
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs);
 	mu_assert_notnull (info, "A malformed later header discarded prior CUs");
 	mu_assert_eq (RVecDwarfCompUnit_length (info->comp_units), 1,
 		"The malformed later header was not isolated");
@@ -569,9 +569,9 @@ bool test_dwarf_bad_address_size_is_local(void) {
 	mu_assert_true (r_bin_open_buf (bin, buf, &opt),
 		"Couldn't open bad-address-size fixture");
 	RBinFile *bf = r_bin_cur (bin);
-	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf, MODE);
+	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf);
 	mu_assert_notnull (abbrevs, "Couldn't parse bad-address-size abbreviations");
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs);
 	mu_assert_notnull (info, "An invalid address size rejected all debug_info");
 	mu_assert_eq (RVecDwarfCompUnit_length (info->comp_units), 1,
 		"The invalid address size was not isolated to its CU");
@@ -602,9 +602,9 @@ bool test_dwarf_explicit_zero_rebase(void) {
 	mu_assert_true (r_bin_open_buf (bin, buf, &opt),
 		"Couldn't open explicit-zero-rebase fixture");
 	RBinFile *bf = r_bin_cur (bin);
-	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf, MODE);
+	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf);
 	mu_assert_notnull (abbrevs, "Couldn't parse rebase abbreviations");
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs);
 	mu_assert_notnull (info, "An underflowing address must not reject its CU");
 	RBinDwarfCompUnit *unit = RVecDwarfCompUnit_at (info->comp_units, 0);
 	mu_assert_notnull (unit, "Rebased CU is NULL");
@@ -651,9 +651,9 @@ bool test_dwarf5_mixed_address_table_format(void) {
 		addr_section->size - 8, "Couldn't copy .debug_addr entries");
 	addr_section->bytes = addr_bytes;
 	addr_section->size += 8;
-	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf, MODE);
+	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf);
 	mu_assert_notnull (abbrevs, "Couldn't parse DWARF5 abbreviations");
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs);
 	mu_assert_notnull (info, "DWARF64 address table failed in a DWARF32 CU");
 	RBinDwarfCompUnit *unit = RVecDwarfCompUnit_at (info->comp_units, 0);
 	RBinDwarfDie *root = unit? RVecDwarfDie_at (unit->dies, 0): NULL;
@@ -669,9 +669,9 @@ bool test_dwarf5_indexed_strings_and_addresses(void) {
 	mu_assert_true (r_bin_open (bin, "bins/elf/dwarf5_line_cl", &opt),
 		"dwarf5_line_cl binary could not be opened");
 	RBinFile *bf = r_bin_cur (bin);
-	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf, MODE);
+	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf);
 	mu_assert_notnull (abbrevs, "Failed parsing DWARF5 abbreviations");
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs);
 	mu_assert_notnull (info, "Failed parsing DWARF5 indexed forms");
 	RBinDwarfCompUnit *unit = RVecDwarfCompUnit_at (info->comp_units, 0);
 	RBinDwarfDie *root = unit? RVecDwarfDie_at (unit->dies, 0): NULL;

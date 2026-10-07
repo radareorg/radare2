@@ -1245,7 +1245,7 @@ static void bin_addrline_break_end(RCore *core, bool *state) {
 }
 
 static void bin_dwarf_process_info(RCore *core, RBinFile *bf, RVecDwarfAbbrevDecl *da) {
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, da, R_MODE_SET);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, da);
 	if (!info) {
 		return;
 	}
@@ -1257,6 +1257,13 @@ static void bin_dwarf_process_info(RCore *core, RBinFile *bf, RVecDwarfAbbrevDec
 	r_anal_dwarf_process_info (core->anal, &ctx);
 	r_bin_dwarf_free_loc (loc_table);
 	r_bin_dwarf_free_debug_info (info);
+}
+
+static void bin_dwarf_print_string(RCore *core, char *text) {
+	if (text) {
+		r_cons_print (core->cons, text);
+	}
+	free (text);
 }
 
 static bool bin_addrline_maybe(RCore *core, PJ *pj, int mode, bool allow_large) {
@@ -1309,21 +1316,23 @@ static bool bin_addrline_maybe(RCore *core, PJ *pj, int mode, bool allow_large) 
 			bin_addrline_warn_large_dwarf (bf, false);
 		}
 		if (mode == R_MODE_PRINT && large_dwarf) {
-			R_LOG_WARN ("Streaming large DWARF debug dump directly to the console to avoid buffering several GB of output");
 			bin_cons_stream_begin (core, &stream_state);
 			bin_addrline_break_begin (core, &parser_break_pushed);
 		}
-		RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bf, mode);
+		RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bf);
 		if (da) {
 			if (mode == R_MODE_PRINT) {
 				if (!r_cons_is_breaked (core->cons)) {
-					r_bin_dwarf_print_info (bf, da);
+					bin_dwarf_print_string (core, r_bin_dwarf_print_abbrev (da));
 				}
 				if (!r_cons_is_breaked (core->cons)) {
-					r_bin_dwarf_print_loc_stream (bf, core->anal->config->bits / 8);
+					bin_dwarf_print_string (core, r_bin_dwarf_print_info (bf, da));
 				}
 				if (!r_cons_is_breaked (core->cons)) {
-					r_bin_dwarf_parse_aranges (bf, mode);
+					bin_dwarf_print_string (core, r_bin_dwarf_print_loc_stream (bf, core->anal->config->bits / 8));
+				}
+				if (!r_cons_is_breaked (core->cons)) {
+					bin_dwarf_print_string (core, r_bin_dwarf_print_aranges (bf));
 				}
 			} else {
 				if (mode == R_MODE_SET) {
@@ -1336,7 +1345,10 @@ static bool bin_addrline_maybe(RCore *core, PJ *pj, int mode, bool allow_large) 
 			r_bin_dwarf_free_debug_abbrev (da);
 		}
 		if (!r_cons_is_breaked (core->cons)) {
-			list = ownlist = r_bin_dwarf_parse_line (bf, mode);
+			char *text = NULL;
+			bool want_text = mode == R_MODE_PRINT || bin_addrline_is_script_mode (mode);
+			list = ownlist = r_bin_dwarf_parse_line (bf, mode, want_text? &text: NULL);
+			bin_dwarf_print_string (core, text);
 		}
 		bin_addrline_break_end (core, &parser_break_pushed);
 		bin_cons_stream_end (core, &stream_state);
@@ -1558,7 +1570,7 @@ static RList *bin_source_files(RCore *core) {
 		return NULL;
 	}
 	RList *files = NULL;
-	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (binfile, R_MODE_SET);
+	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (binfile);
 	if (da) {
 		files = r_bin_dwarf_parse_comp_unit_files (binfile, da);
 		r_bin_dwarf_free_debug_abbrev (da);
