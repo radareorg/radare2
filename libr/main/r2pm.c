@@ -1674,10 +1674,8 @@ static void r2pm_varprint(RCons *main_cons, const char *name) {
 }
 
 static int r2pm_main_return(RCons *main_cons, RCons *cons, int rc) {
-	if (!main_cons) {
-		r_main_cons_flush (main_cons, cons);
-		r_main_cons_free (main_cons, cons);
-	}
+	r_main_cons_flush (main_cons, cons);
+	r_main_cons_free (main_cons, cons);
 	return rc;
 }
 
@@ -1903,9 +1901,6 @@ R_API int r_main_r2pm(RCons *main_cons, int argc, const char **argv) {
 		if (s) {
 			if (*s) {
 				r_cons_print (cons, s);
-				if (!main_cons) {
-					r_main_cons_flush (main_cons, cons);
-				}
 				res = r2pm.json && !strcmp (s, "[]");
 			} else {
 				res = 1;
@@ -1930,9 +1925,6 @@ R_API int r_main_r2pm(RCons *main_cons, int argc, const char **argv) {
 		char *s = r2pm_list (r2pm.json? 'j': 0);
 		if (s) {
 			r_cons_print (cons, s);
-			if (!main_cons) {
-				r_main_cons_flush (main_cons, cons);
-			}
 			res = 0;
 		} else {
 			res = 1;
@@ -1949,9 +1941,6 @@ R_API int r_main_r2pm(RCons *main_cons, int argc, const char **argv) {
 				free (t);
 				free (s);
 			}
-		}
-		if (!main_cons) {
-			r_main_cons_flush (main_cons, cons);
 		}
 	}
 	r_list_free (targets);

@@ -53,6 +53,8 @@ bool test_main_shell_capture(void) {
 	output = r_core_cmd_str (core, "r2 -NNQ -c 'echo inner; rasm2 -a x86 -d c3' --; echo outer");
 	mu_assert_streq_free (output, "inner\nret\nouter\n", "nested main returns to caller");
 	mu_assert_ptreq (r_cons_global (NULL), other, "nested tools restore previous active console");
+	output = r_core_cmd_str (core, "radiff2 bins/other/radiff2/radiff2_c_1 bins/other/radiff2/radiff2_c_2");
+	mu_assert_streq_free (output, "0x00000000 91 => 90 0x00000000\n", "diff callback uses the caller console");
 	size_t i;
 	for (i = 0; i < 2; i++) {
 		output = r_core_cmd_str (core, "radiff2 -h");
@@ -81,6 +83,12 @@ bool test_main_binary_capture(void) {
 	const char *output = r_cons_get_buffer (core->cons, &len);
 	mu_assert_eq (len, 3, "binary output length");
 	mu_assert_memeq ((const ut8 *)output, (const ut8 *)"A\0B", 3, "binary output preserves embedded NUL");
+	r_cons_reset (core->cons);
+	const char *diff_argv[] = { "radiff2", "-f1", "bins/other/radiff2/radiff2_c_1", "bins/other/radiff2/radiff2_c_2", NULL };
+	mu_assert_eq (r_main_radiff2 (core->cons, 4, diff_argv), 0, "binary diff output succeeds");
+	output = r_cons_get_buffer (core->cons, &len);
+	mu_assert_eq (len, 8, "binary diff output length");
+	mu_assert_memeq ((const ut8 *)output, (const ut8 *)"\xd1\xff\xd1\xff\x04\x01\x90\0", 8, "diff callback captures binary bytes");
 	r_core_free (core);
 	mu_end;
 }
