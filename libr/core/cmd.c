@@ -2719,7 +2719,7 @@ static int __runMain(RCore *core, RMainCallback cb, const char *arg) {
 	RCons *previous_cons = r_cons_global (NULL);
 	r_cons_global (core->cons);
 	char *previous_env = r_sys_getenv ("R2CONS");
-	r_strf_var (cons_ptr, 64, "%p:%d", core->cons, r_sys_getpid ());
+	r_strf_var (cons_ptr, 64, "%p", core->cons);
 	r_sys_setenv ("R2CONS", cons_ptr);
 	int res = cb? cb (argc, (const char **)args): -1;
 	r_sys_setenv ("R2CONS", previous_env);

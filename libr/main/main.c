@@ -8,29 +8,16 @@
 R_LIB_VERSION(r_main);
 
 R_IPI RCons *r_main_cons(void) {
-	RCons *cons = r_cons_global (NULL);
-	if (!cons) {
+	if (!r_cons_is_initialized ()) {
 		return NULL;
 	}
 	char *value = r_sys_getenv ("R2CONS");
-	const bool explicit_cons = value != NULL;
-	if (!explicit_cons) {
-		value = r_sys_getenv ("R2CORE");
-	}
 	void *ptr = NULL;
-	int pid = -1;
-	char tail;
-	const bool tagged = explicit_cons && value && sscanf (value, "%p:%d%c", &ptr, &pid, &tail) == 2;
-	const bool valid = tagged || (value && sscanf (value, "%p%c", &ptr, &tail) == 1);
+	if (value) {
+		sscanf (value, "%p", &ptr);
+	}
 	free (value);
-	if (!valid || !ptr) {
-		return NULL;
-	}
-	// A tagged pointer also supports unattached child consoles on builds without native TLS.
-	if (tagged) {
-		return pid == r_sys_getpid ()? ptr: NULL;
-	}
-	return ptr == (explicit_cons? (void *)cons: cons->user)? cons: NULL;
+	return ptr;
 }
 
 R_IPI RCons *r_main_cons_new(void) {
@@ -155,13 +142,11 @@ static int main_invoke(RMainCallback callback, int argc, const char **argv) {
 			return 1;
 		}
 #endif
-		r_strf_var (cons_ptr, 64, "%p:%d", cons, r_sys_getpid ());
-		r_sys_setenv ("R2CONS", cons_ptr);
 		noflush = cons->context->noflush;
 		cons->context->noflush = true;
 	} else {
-		// Do not borrow a console subsequently created by the standalone tool itself.
-		r_sys_setenv ("R2CONS", "");
+		// Ignore inherited console pointers in standalone tools.
+		r_sys_setenv ("R2CONS", NULL);
 	}
 	int ret = callback (argc, argv);
 #if !__wasi__

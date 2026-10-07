@@ -8,12 +8,14 @@ bool test_main_borrowed_console(void) {
 	r_config_set_i (core->config, "scr.color", 0);
 	r_config_set_b (core->config, "scr.interactive", false);
 	char *previous_cons = r_sys_getenv ("R2CONS");
-	r_sys_setenv ("R2CONS", NULL);
+	r_strf_var (cons_ptr, 64, "%p", cons);
+	r_sys_setenv ("R2CONS", cons_ptr);
 	const char *argv[] = { "rax2", "33", NULL };
-	mu_assert_eq (r_main_rax2 (2, argv), 0, "R2CORE fallback succeeds");
-	mu_assert_streq (r_cons_get_buffer (cons, NULL), "0x21\n", "fallback captures output");
+	mu_assert_eq (r_main_rax2 (2, argv), 0, "R2CONS console succeeds");
+	mu_assert_streq (r_cons_get_buffer (cons, NULL), "0x21\n", "borrowed console captures output");
 	r_cons_reset (cons);
-	mu_assert_null (r_sys_getenv ("R2CONS"), "fallback restores absent environment variable");
+	char *value = r_sys_getenv ("R2CONS");
+	mu_assert_streq_free (value, cons_ptr, "tool preserves console environment");
 
 	const RMainCallback callbacks[] = {
 		r_main_rasm2, r_main_rax2, r_main_rabin2, r_main_radiff2,
@@ -33,6 +35,12 @@ bool test_main_borrowed_console(void) {
 		mu_assert_ptreq (cons->num, core->num, "tool preserves caller numeric state");
 		r_cons_reset (cons);
 	}
+	r_sys_setenv ("R2CONS", NULL);
+	mu_assert_eq (r_main_rax2 (2, argv), 0, "standalone output succeeds");
+	size_t len = 0;
+	r_cons_get_buffer (cons, &len);
+	mu_assert_eq (len, 0, "absent R2CONS does not fall back to R2CORE");
+	mu_assert_null (r_sys_getenv ("R2CONS"), "tool restores absent environment variable");
 	r_sys_setenv ("R2CONS", previous_cons);
 	free (previous_cons);
 	r_core_free (core);
@@ -92,11 +100,11 @@ bool test_main_child_console(void) {
 	RCore *core = r_core_new ();
 	RCons *child = r_cons_new_child (core->cons);
 	char *previous_cons = r_sys_getenv ("R2CONS");
-	r_strf_var (cons_ptr, 64, "%p:%d", child, r_sys_getpid ());
+	r_strf_var (cons_ptr, 64, "%p", child);
 	r_sys_setenv ("R2CONS", cons_ptr);
 	const char *argv[] = { "rax2", "33", NULL };
 	mu_assert_eq (r_main_rax2 (2, argv), 0, "use an unattached child console");
-	mu_assert_streq (r_cons_get_buffer (child, NULL), "0x21\n", "explicit console takes precedence over R2CORE");
+	mu_assert_streq (r_cons_get_buffer (child, NULL), "0x21\n", "plain pointer captures output in child console");
 	mu_assert_ptreq (r_cons_global (NULL), core->cons, "restore original active console");
 	mu_assert_true (child->context->noflush, "preserve capture mode");
 	r_sys_setenv ("R2CONS", previous_cons);
