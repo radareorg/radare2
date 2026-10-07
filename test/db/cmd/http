@@ -1,0 +1,109 @@
+NAME=Idle background HTTP server preserves shell seeks and prints
+FILE=hex://112233445566778899aabbccddeeff0090c3000055c3
+ARGS=-a x86 -b 64 -e http.port=0 -e log.level=0
+CMDS=<<EOF
+=h&
+sleep 0.2
+0x10
+sleep 1.2
+s
+p8 2
+pd 1~[0]
+s 20
+sleep 1.2
+s
+p8 2
+pd 1~[0]
+=h-
+s
+p8 2
+EOF
+EXPECT=<<EOF
+0x10
+90c3
+0x00000010
+0x14
+55c3
+0x00000014
+0x14
+55c3
+EOF
+REGEXP_ERR=Starting http server
+RUN
+
+NAME=HTTP server task preserves shell output and state until canceled
+FILE=hex://112233445566778899aabbccddeeff0090c3000055c3
+ARGS=-a x86 -b 64 -e http.port=0 -e log.level=0
+CMDS=<<EOF
+b 16
+& =h
+sleep 0.2
+0x10
+sleep 1.2
+s
+p8 2
+x 2~[0]
+pd 1~[0]
+b 512
+s+4
+sleep 1.2
+b
+s
+p8 2
+pd 1~[0]
+&b 1
+&& 1
+b
+s
+p8 2
+?e stopped
+&= 1
+EOF
+EXPECT=<<EOF
+[1] =h
+0x10
+90c3
+-
+0x00000010
+0x00000010
+0x200
+0x14
+55c3
+0x00000014
+0x200
+0x14
+55c3
+stopped
+
+EOF
+REGEXP_ERR=Starting http server
+RUN
+
+NAME=Idle background HTTP server preserves shell block size on stop
+FILE=hex://112233445566778899aabbccddeeff0090c3000055c3
+ARGS=-e http.port=0 -e log.level=0
+CMDS=<<EOF
+b 16
+=h&
+sleep 0.2
+b 512
+s 16
+sleep 1.2
+b
+s
+p8 2
+=h-
+b
+s
+p8 2
+EOF
+EXPECT=<<EOF
+0x200
+0x10
+90c3
+0x200
+0x10
+90c3
+EOF
+REGEXP_ERR=Starting http server
+RUN

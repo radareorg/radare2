@@ -60,7 +60,7 @@ static void *http_command_run(void *user) {
 	HttpCommand *request = user;
 	RCore *core = request->core;
 	char *out = NULL;
-	RConsContext *ctx = core->cons->context;
+	RConsContext *ctx = r_core_get_cons (core)->context;
 	ctx->noflush = false;
 #if WEBCONFIG
 	const bool orig_scr_html = r_config_get_b (core->config, "scr.html");
@@ -106,6 +106,7 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 		return HTTP_RUN_ERROR;
 	}
 	RCorePriv *priv = core->priv;
+	RCons *cons = r_core_get_cons (core);
 	RConfig *newcfg = NULL, *origcfg = NULL;
 	char headers[128] = {0};
 	RSocketHTTPRequest *rs;
@@ -238,46 +239,40 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 
 	core->block = newblk;
 // TODO: handle mutex lock/unlock here
-	r_cons_break_push (core->cons, (RConsBreak)r_core_rtr_http_stop, core);
-	while (!r_cons_is_breaked (core->cons) && core->http_up) {
-		const bool in_http_context = core->config == newcfg;
-		/* restore environment */
-		core->config = origcfg;
-#if WEBCONFIG
-		r_config_set_b (origcfg, "scr.html", r_config_get_b (origcfg, "scr.html"));
-		r_config_set_i (origcfg, "scr.color", r_config_get_i (origcfg, "scr.color"));
-		r_config_set_b (origcfg, "scr.interactive", r_config_get_b (origcfg, "scr.interactive"));
-#endif
-
-		// Preserve the HTTP session state only while we are still executing in
-		// that context. Early continues after accept() leave the core in the
-		// original context, and copying that state here would alias origblk.
-		if (in_http_context) {
+	r_cons_break_push (cons, (RConsBreak)r_core_rtr_http_stop, core);
+	while (!r_cons_is_breaked (cons) && core->http_up) {
+		// Restore shell state only after using the HTTP context.
+		if (core->config == newcfg) {
 			newoff = core->addr;
 			newblk = core->block;
 			newblksz = core->blocksize;
+			core->addr = origoff;
+			core->block = origblk;
+			core->blocksize = origblksz;
+			core->config = origcfg;
+#if WEBCONFIG
+			r_config_set_b (origcfg, "scr.html", r_config_get_b (origcfg, "scr.html"));
+			r_config_set_i (origcfg, "scr.color", r_config_get_i (origcfg, "scr.color"));
+			r_config_set_b (origcfg, "scr.interactive", r_config_get_b (origcfg, "scr.interactive"));
+#endif
 		}
-
-		core->addr = origoff;
-		core->block = origblk;
-		core->blocksize = origblksz;
 
 		// backup and restore offset and blocksize
 		/* this is blocking */
 		activateDieTime (core);
 
-		void *bed = r_cons_sleep_begin (core->cons);
+		void *bed = r_cons_sleep_begin (cons);
 		rs = r_socket_http_accept (s, &so);
-		r_cons_sleep_end (core->cons, bed);
+		r_cons_sleep_end (cons, bed);
 		if (!core->http_up) {
 			rtr_http_request_free (rs);
 			break;
 		}
 
 		if (!rs) {
-			bed = r_cons_sleep_begin (core->cons);
+			bed = r_cons_sleep_begin (cons);
 			r_sys_usleep (100);
-			r_cons_sleep_end (core->cons, bed);
+			r_cons_sleep_end (cons, bed);
 			continue;
 		}
 
@@ -439,12 +434,12 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 						if (R_STR_ISNOTEMPTY (httpcmd)) {
 							int len; // do remote http query and proxy response
 							char *res, *bar = r_str_newf ("%s/%s", httpcmd, cmd);
-							bed = r_cons_sleep_begin (core->cons);
+							bed = r_cons_sleep_begin (cons);
 							res = r_socket_http_get (bar, NULL, NULL, &len);
-							r_cons_sleep_end (core->cons, bed);
+							r_cons_sleep_end (cons, bed);
 							if (res) {
 								res[len] = 0;
-								r_cons_println (core->cons, res);
+								r_cons_println (cons, res);
 							}
 							free (bar);
 						} else {
@@ -623,10 +618,10 @@ the_end:
 		if (core->config == newcfg) {
 			newoff = core->addr;
 			newblk = core->block;
+			core->addr = origoff;
+			core->block = origblk;
+			core->blocksize = origblksz;
 		}
-		core->addr = origoff;
-		core->block = origblk;
-		core->blocksize = origblksz;
 		int timeout = r_config_get_i (core->config, "http.timeout");
 		const char *host = r_config_get (core->config, "http.bind");
 		const char *port = r_config_get (core->config, "http.port");
@@ -641,7 +636,7 @@ the_end:
 		r_config_set (core->config, "http.allow", allow);
 		r_config_set (core->config, "http.ui", httpui);
 	}
-	r_cons_break_pop (core->cons);
+	r_cons_break_pop (cons);
 	core->http_up = false;
 	priv->listenport = NULL;
 	r_list_free (so.authtokens);

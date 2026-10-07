@@ -1159,6 +1159,30 @@ static void session_list(RCore *core, int mode) {
 	free (tmpdir);
 }
 
+static RCmdResult cmd_http(RCmdContext *ctx) {
+	RCore *core = ctx->user;
+	const char *mode = ctx->handler_user;
+	const char *input = ctx->subcmd.a;
+	if (*input == '?') {
+		r_cons_cmd_help (ctx->cons, help_msg_equalh);
+	} else {
+		const char *path = *mode == 'H'? r_str_trim_head_ro (input): input;
+		r_core_rtr_http (core, getArg (*input, *mode), *mode, path);
+	}
+	return (RCmdResult) { 0 };
+}
+
+static bool r_core_cmd_http_init(RCmd *cmd) {
+	if (!r_cmd_register_args (cmd, "=h", cmd_http, "h", R_CMD_ARGS_VERBATIM)) {
+		return false;
+	}
+	if (!r_cmd_register_args (cmd, "=H", cmd_http, "H", R_CMD_ARGS_VERBATIM)) {
+		r_cmd_unregister (cmd, "=h");
+		return false;
+	}
+	return true;
+}
+
 static int cmd_rap(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (*input) {
@@ -1243,21 +1267,6 @@ static int cmd_rap(void *data, const char *input) {
 			r_cons_cmd_help (core->cons, help_msg_equalg);
 		} else {
 			r_core_rtr_gdb (core, getArg (input[1], 'g'), input + 1);
-		}
-		break;
-	case 'h': // "=h"
-		if (input[1] == '?') {
-			r_cons_cmd_help (core->cons, help_msg_equalh);
-		} else {
-			r_core_rtr_http (core, getArg (input[1], 'h'), 'h', input + 1);
-		}
-		break;
-	case 'H': // "=H"
-		if (input[1] == '?') {
-			r_cons_cmd_help (core->cons, help_msg_equalh);
-		} else {
-			const char *arg = r_str_trim_head_ro (input + 1);
-			r_core_rtr_http (core, getArg (input[1], 'H'), 'H', arg);
 		}
 		break;
 	case '?': // "=?"
@@ -7384,6 +7393,9 @@ R_API void r_core_cmd_init(RCore *core) {
 		}
 		if (!r_core_cmd_echo_init (core->rcmd)) {
 			R_LOG_ERROR ("Cannot register echo commands");
+		}
+		if (!r_core_cmd_http_init (core->rcmd)) {
+			R_LOG_ERROR ("Cannot register HTTP commands");
 		}
 		size_t i;
 		for (i = 0; i < R_ARRAY_SIZE (cmds); i++) {
