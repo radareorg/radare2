@@ -2,10 +2,10 @@
 
 #include <r_core.h>
 
-static bool print_bin_plugin_details(RCore *core, const RPluginMeta *meta, PJ *pj, int json) {
-	if (json == 'q') {
+static bool print_plugin_details(RCore *core, const RPluginMeta *meta, PJ *pj, int mode) {
+	if (mode == 'q') {
 		r_cons_printf (core->cons, "%s\n", meta->name);
-	} else if (json) {
+	} else if (mode) {
 		pj_o (pj);
 		pj_ks (pj, "name", meta->name);
 		pj_ks (pj, "description", meta->desc);
@@ -41,7 +41,7 @@ R_API bool r_core_list_bin_plugin(RCore *core, const char *name, PJ *pj, int jso
 
 	RBinPlugin *bp = r_libstore_find_name (bin->libstore, name);
 	if (bp) {
-		return print_bin_plugin_details (core, &bp->meta, pj, json);
+		return print_plugin_details (core, &bp->meta, pj, json);
 	}
 	r_list_foreach (plugins, it, bp) {
 		if (!prefix_bp && r_str_startswith (bp->meta.name, name)) {
@@ -49,11 +49,11 @@ R_API bool r_core_list_bin_plugin(RCore *core, const char *name, PJ *pj, int jso
 		}
 	}
 	if (prefix_bp) {
-		return print_bin_plugin_details (core, &prefix_bp->meta, pj, json);
+		return print_plugin_details (core, &prefix_bp->meta, pj, json);
 	}
 	bx = r_libstore_find_name_in (bin->libstore, bin->libstore->xtrs, name);
 	if (bx) {
-		return print_bin_plugin_details (core, &bx->meta, pj, json);
+		return print_plugin_details (core, &bx->meta, pj, json);
 	}
 	r_list_foreach (xtrs, it, bx) {
 		if (!prefix_bx && r_str_startswith (bx->meta.name, name)) {
@@ -61,11 +61,11 @@ R_API bool r_core_list_bin_plugin(RCore *core, const char *name, PJ *pj, int jso
 		}
 	}
 	if (prefix_bx) {
-		return print_bin_plugin_details (core, &prefix_bx->meta, pj, json);
+		return print_plugin_details (core, &prefix_bx->meta, pj, json);
 	}
 	dem = r_bin_demangle_plugin_find (bin, name);
 	if (dem) {
-		return print_bin_plugin_details (core, &dem->meta, pj, json);
+		return print_plugin_details (core, &dem->meta, pj, json);
 	}
 	r_list_foreach (bin->demangle_plugins, it, dem) {
 		if (!prefix_dem && r_str_startswith (dem->meta.name, name)) {
@@ -73,7 +73,7 @@ R_API bool r_core_list_bin_plugin(RCore *core, const char *name, PJ *pj, int jso
 		}
 	}
 	if (prefix_dem) {
-		return print_bin_plugin_details (core, &prefix_dem->meta, pj, json);
+		return print_plugin_details (core, &prefix_dem->meta, pj, json);
 	}
 
 	R_LOG_ERROR ("Cannot find plugin %s", name);
@@ -107,7 +107,7 @@ R_API void r_core_list_lang(RCore *core, int mode) {
 			r_lib_meta_pj (pj, &h->meta);
 			pj_end (pj);
 		} else if (mode == 'q') {
-			r_cons_printf (core->cons, "%s\n", h->meta.name);
+			print_plugin_details (core, &h->meta, NULL, mode);
 		} else if (mode == ',') {
 			r_table_add_row (table,
 				r_str_get (h->meta.name),
@@ -172,10 +172,7 @@ R_API int r_core_list_io(RCore *core, const char *name, int mode) {
 			}
 			pj_end (pj);
 		} else if (name) {
-			r_cons_printf (cons, "name: %s\n", plugin->meta.name);
-			r_cons_printf (cons, "auth: %s\n", plugin->meta.author);
-			r_cons_printf (cons, "lice: %s\n", plugin->meta.license);
-			r_cons_printf (cons, "desc: %s\n", plugin->meta.desc);
+			print_plugin_details (core, &plugin->meta, NULL, 0);
 			r_cons_printf (cons, "uris: %s\n", plugin->uris);
 			if (*str) {
 				r_cons_printf (cons, "perm: %s\n", str);
