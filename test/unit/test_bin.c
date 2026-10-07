@@ -23,6 +23,48 @@ bool test_r_bin(void) {
 	mu_end;
 }
 
+bool test_r_bin_mach0_chained_fixups(void) {
+	const char *path = "bins/mach0/hello-macos-arm64-chained";
+	int i;
+	for (i = 0; i < 2; i++) {
+		RBin *bin = r_bin_new ();
+		RIO *io = r_io_new ();
+		r_io_bind (io, &bin->iob);
+		mu_assert_null (io->desc, "Mach-O load starts without a selected I/O descriptor");
+		RBinFileOptions opt = {0};
+		r_bin_file_options_init (&opt, -1, 0, 0, 0);
+		opt.filename = path;
+		RBuffer *buf = NULL;
+		bool opened;
+		if (i) {
+			buf = r_buf_new_file (path, O_RDONLY, 0);
+			mu_assert_notnull (buf, "Mach-O input buffer");
+			opened = r_bin_open_buf (bin, buf, &opt);
+		} else {
+			opened = r_bin_open (bin, path, &opt);
+		}
+		mu_assert_true (opened, "Mach-O with chained fixups could not be opened");
+		RBinFile *bf = r_bin_cur (bin);
+		mu_assert_notnull (bf, "Mach-O binfile");
+		mu_assert_notnull (bf->buf, "Mach-O load retains its buffer");
+		ut8 bytes[8];
+		mu_assert_eq (r_buf_read_at (bf->buf, 0, bytes, 4), 4, "Read Mach-O header");
+		mu_assert_eq (r_read_le32 (bytes), 0xfeedfacf, "Mach-O header is intact");
+		mu_assert_eq (r_buf_read_at (bf->buf, 0x8158, bytes, sizeof (bytes)), sizeof (bytes), "Read chained rebase");
+		mu_assert_eq (r_read_le64 (bytes), 0x100003bfcULL, "Chained rebase resolves its target");
+		mu_assert_eq (r_buf_read_at (bf->buf, 0x80f8, bytes, sizeof (bytes)), sizeof (bytes), "Read chained bind");
+		mu_assert_eq (r_read_le64 (bytes), 0, "Chained bind is cleared in the rebased buffer");
+		if (buf) {
+			mu_assert_eq (r_buf_read_at (buf, 0x8158, bytes, sizeof (bytes)), sizeof (bytes), "Read original chained pointer");
+			mu_assert_eq (r_read_le64 (bytes), 0x0010000000003bfcULL, "Rebasing preserves the input buffer");
+		}
+		r_bin_free (bin);
+		r_io_free (io);
+		r_unref (buf);
+	}
+	mu_end;
+}
+
 static bool bin_is_jni(const char *path) {
 	RBin *bin = r_bin_new ();
 	RIO *io = r_io_new ();
@@ -531,6 +573,7 @@ bool test_r_bin_elf_pn_xnum_phdr(void) {
 
 bool all_tests(void) {
 	mu_run_test(test_r_bin);
+	mu_run_test(test_r_bin_mach0_chained_fixups);
 	mu_run_test(test_r_bin_jni_language);
 	mu_run_test(test_r_bin_languages);
 	mu_run_test(test_r_bin_function_kind_attributes);

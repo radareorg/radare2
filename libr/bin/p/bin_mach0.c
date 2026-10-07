@@ -25,7 +25,7 @@ extern RBinWrite r_bin_write_mach0;
 
 static bool rebase_buffer_callback2(void * context, RFixupEventDetails * event_details);
 static RBinInfo *info(RBinFile *bf);
-static RBuffer *swizzle_io_read(RBinFile *bf, struct MACH0_(obj_t) *obj, RIO *io);
+static RBuffer *rebase_buffer(struct MACH0_(obj_t) *obj);
 
 #define IS_PTR_AUTH(x) ((x & (1ULL << 63)) != 0)
 #define IS_PTR_BIND(x) ((x & (1ULL << 62)) != 0)
@@ -92,8 +92,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 laddr) {
 	if (mo) {
 		bf->bo->bin_obj = mo;
 		if (mo->chained_starts) {
-			RIO *io = bf->rbin->iob.io;
-			RBuffer *nb = swizzle_io_read (bf, mo, io);
+			RBuffer *nb = rebase_buffer (mo);
 			if (nb != bf->buf) {
 				r_unref (bf->buf);
 			}
@@ -711,9 +710,8 @@ static ut8 *rebase_buffer_chunk_ptr(RFixupRebaseContext *ctx, ut64 in_buf, ut32 
 	return ctx->chunk + chunk_off;
 }
 
-static RBuffer *swizzle_io_read(RBinFile *bf, struct MACH0_(obj_t) *obj, RIO *io) {
-	(void)bf;
-	R_RETURN_VAL_IF_FAIL (io && io->desc && io->desc->plugin, NULL);
+static RBuffer *rebase_buffer(struct MACH0_(obj_t) *obj) {
+	R_RETURN_VAL_IF_FAIL (obj && obj->b, NULL);
 	RFixupRebaseContext ctx = {0};
 	RBuffer *nb = r_buf_new_with_cache (obj->b, false);
 	if (!nb) {
@@ -737,7 +735,6 @@ static RBuffer *swizzle_io_read(RBinFile *bf, struct MACH0_(obj_t) *obj, RIO *io
 		return ob;
 	}
 	obj->b = ob;
-//	bf->buf = nb; // ???
 	return nb;
 }
 
