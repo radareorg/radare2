@@ -2723,6 +2723,7 @@ static bool dwarf_comp_unit_index_bases(const RBinDwarfCompUnit *unit, bool need
 			&& root->tag != DW_TAG_skeleton_unit)) {
 		return false;
 	}
+	bool bad_loclists_base = false;
 	RBinDwarfAttrValue *value;
 	R_VEC_FOREACH (root->attr_values, value) {
 		if (value->attr_name == DW_AT_str_offsets_base) {
@@ -2740,14 +2741,14 @@ static bool dwarf_comp_unit_index_bases(const RBinDwarfCompUnit *unit, bool need
 			*has_addr_base = true;
 			*addr_base = value->reference;
 		} else if (value->attr_name == DW_AT_loclists_base) {
-			if (*has_loclists_base || value->attr_form != DW_FORM_sec_offset
-				|| value->kind != DW_AT_KIND_REFERENCE) {
-				return false;
-			}
+			bad_loclists_base |= *has_loclists_base || value->attr_form != DW_FORM_sec_offset
+				|| value->kind != DW_AT_KIND_REFERENCE;
 			*has_loclists_base = true;
 			*loclists_base = value->reference;
 		}
 	}
+	// a bad loclists base costs the unit its location lists only
+	*has_loclists_base &= !bad_loclists_base;
 	return true;
 }
 
@@ -4368,7 +4369,6 @@ static bool loclists_unit(RBinDwarfLocLists *ll, const RBinDwarfCompUnit *unit) 
 	}
 	ll->unit = unit;
 	ll->unit_ok = false;
-	ll->has_contribution = false;
 	ut64 str_base, addr_base, loclists_base;
 	bool has_str_base, has_addr_base, has_loclists_base;
 	if (unit->hdr.version < 5 || !unit->dies
@@ -4383,17 +4383,21 @@ static bool loclists_unit(RBinDwarfLocLists *ll, const RBinDwarfCompUnit *unit) 
 		ctx.addr_base = addr_base;
 	}
 	ll->ctx = ctx;
-	ll->has_contribution = has_loclists_base
-		&& dwarf_loclists_contribution_base (ll->sec, ll->len, ll->be, loclists_base, &ll->contribution);
+	DwarfLoclistsContribution c;
+	// a unit without a base resumes the walk at the last contribution
+	if (has_loclists_base && dwarf_loclists_contribution_base (ll->sec, ll->len, ll->be, loclists_base, &c)) {
+		ll->contribution = c;
+		ll->has_contribution = true;
+	}
 	ll->unit_ok = true;
 	return true;
 }
 
-// the contribution holding the list at offset; without a base the headers are walked
+// the contribution holding the list at offset, walking headers past the last
 static bool loclists_contribution_of(RBinDwarfLocLists *ll, ut64 offset, DwarfLoclistsContribution *c) {
 	if (ll->has_contribution && offset >= ll->contribution.lists && offset < ll->contribution.end) {
 		*c = ll->contribution;
-		return true;
+		return c->address_size == ll->ctx.addr_size;
 	}
 	size_t at = ll->has_contribution && offset >= ll->contribution.end? ll->contribution.end: 0;
 	while (dwarf_loclists_contribution_at (ll->sec, ll->len, ll->be, at, c)) {
@@ -4463,6 +4467,7 @@ R_API R_OWNED char *r_bin_dwarf_print_loclists_stream(RBinFile *bf) {
 			}
 			if (lle == DW_LLE_end_of_list) {
 				r_strbuf_appendf (sb, "0x%" PFMT64x " <End of list>\n", entry);
+				base = 0;
 			} else if (loclist_is_base (lle)) {
 				r_strbuf_appendf (sb, "0x%" PFMT64x " %s 0x%" PFMT64x "\n", entry, loclist_entry_name (lle), base);
 			} else {
