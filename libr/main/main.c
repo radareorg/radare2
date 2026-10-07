@@ -124,10 +124,7 @@ R_IPI void r_main_core_free(RCore *core) {
 }
 
 static int main_invoke(RMainCallback callback, int argc, const char **argv) {
-	RCons *previous_cons = r_cons_global (NULL);
 	RCons *cons = r_main_cons ();
-	char *previous_env = r_sys_getenv ("R2CONS");
-	char *previous_core = r_sys_getenv ("R2CORE");
 	bool noflush = false;
 #if !__wasi__
 	int stdout_fd = -1;
@@ -137,8 +134,6 @@ static int main_invoke(RMainCallback callback, int argc, const char **argv) {
 		fflush (stdout);
 		stdout_fd = dup (1);
 		if (stdout_fd == -1) {
-			free (previous_env);
-			free (previous_core);
 			return 1;
 		}
 #endif
@@ -146,7 +141,7 @@ static int main_invoke(RMainCallback callback, int argc, const char **argv) {
 		cons->context->noflush = true;
 	} else {
 		// Ignore inherited console pointers in standalone tools.
-		r_sys_setenv ("R2CONS", NULL);
+	//	r_sys_setenv ("R2CONS", NULL);
 	}
 	int ret = callback (argc, argv);
 #if !__wasi__
@@ -158,12 +153,7 @@ static int main_invoke(RMainCallback callback, int argc, const char **argv) {
 #endif
 	if (cons) {
 		cons->context->noflush = noflush;
-		r_cons_global (previous_cons);
 	}
-	r_sys_setenv ("R2CONS", previous_env);
-	r_sys_setenv ("R2CORE", previous_core);
-	free (previous_env);
-	free (previous_core);
 	return ret;
 }
 
