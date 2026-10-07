@@ -52,12 +52,12 @@ static bool test_parse_dwarf_types(void) {
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
 	RBinFile *bf = r_bin_cur (bin);
 	mu_assert_notnull (bf, "Couldn't get current bin file");
-	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf, MODE);
+	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf);
 	if (!abbrevs) {
 		mu_assert ("Couldn't parse Abbreviations", false);
 		return MU_ERR;
 	}
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs);
 	if (!info) {
 		RVecDwarfAbbrevDecl_free (abbrevs);
 		mu_assert ("Couldn't parse debug_info section", false);
@@ -119,12 +119,12 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
 	RBinFile *bf = r_bin_cur (bin);
 	mu_assert_notnull (bf, "Couldn't get current bin file");
-	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf, MODE);
+	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf);
 	if (!abbrevs) {
 		mu_assert ("Couldn't parse Abbreviations", false);
 		return MU_ERR;
 	}
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs);
 	if (!info) {
 		RVecDwarfAbbrevDecl_free (abbrevs);
 		mu_assert ("Couldn't parse debug_info section", false);
@@ -197,12 +197,12 @@ static bool test_dwarf_function_parsing_go(void) {
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
 	RBinFile *bf = r_bin_cur (bin);
 	mu_assert_notnull (bf, "Couldn't get current bin file");
-	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf, MODE);
+	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf);
 	if (!abbrevs) {
 		mu_assert ("Couldn't parse Abbreviations", false);
 		return MU_ERR;
 	}
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs);
 	if (!info) {
 		RVecDwarfAbbrevDecl_free (abbrevs);
 		mu_assert ("Couldn't parse debug_info section", false);
@@ -257,12 +257,12 @@ static bool test_dwarf_function_parsing_rust(void) {
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
 	RBinFile *bf = r_bin_cur (bin);
 	mu_assert_notnull (bf, "Couldn't get current bin file");
-	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf, MODE);
+	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf);
 	if (!abbrevs) {
 		mu_assert ("Couldn't parse Abbreviations", false);
 		return MU_ERR;
 	}
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs);
 	if (!info) {
 		RVecDwarfAbbrevDecl_free (abbrevs);
 		mu_assert ("Couldn't parse debug_info section", false);
