@@ -2946,8 +2946,13 @@ static void edge_routes_free(EdgeRoutes *routes) {
 	}
 }
 
-static inline void edge_key_push(RVecEdgeRouteKey *key, ut64 value) {
-	RVecEdgeRouteKey_push_back (key, &value);
+static inline bool edge_key_push(RVecEdgeRouteKey *key, ut64 value) {
+	ut64 *entry = RVecEdgeRouteKey_emplace_back (key);
+	if (!entry) {
+		return false;
+	}
+	*entry = value;
+	return true;
 }
 
 static inline ut64 edge_key_pair(int a, int b) {
@@ -2955,30 +2960,41 @@ static inline ut64 edge_key_pair(int a, int b) {
 }
 
 // every input of the edge routing, so routes are reused only while it is unchanged
-static void edge_routes_key(const RAGraph *g, RVecEdgeRouteKey *key) {
+static bool edge_routes_key(const RAGraph *g, RVecEdgeRouteKey *key) {
 	const RList *nodes = r_graph_get_nodes (g->graph);
 	RGraphNode *gn, **itn;
 	RListIter *it;
 	RANode *a;
 	RVecEdgeRouteKey_clear (key);
-	edge_key_push (key, edge_key_pair (g->layout, g->zoom));
-	edge_key_push (key, edge_key_pair (g->is_callgraph, g->hints));
-	edge_key_push (key, edge_key_pair (g->edgemode, g->can->linemode));
+	if (!edge_key_push (key, edge_key_pair (g->layout, g->zoom))
+			|| !edge_key_push (key, edge_key_pair (g->is_callgraph, g->hints))
+			|| !edge_key_push (key, edge_key_pair (g->edgemode, g->can->linemode))) {
+		return false;
+	}
 	graph_foreach_anode (nodes, it, gn, a) {
-		edge_key_push (key, (ut64)(size_t)a);
-		edge_key_push (key, edge_key_pair (gn->idx, a->is_dummy));
-		edge_key_push (key, edge_key_pair (a->x, a->y));
-		edge_key_push (key, edge_key_pair (a->w, a->h));
-		edge_key_push (key, edge_key_pair (a->layer, a->layer_height));
-		edge_key_push (key, edge_key_pair (a->layer_width, RVecGraphNodePtr_length (&gn->out_nodes)));
-		R_VEC_FOREACH (&gn->out_nodes, itn) {
-			edge_key_push (key, (*itn)->idx);
+		if (!edge_key_push (key, (ut64)(size_t)a)
+				|| !edge_key_push (key, edge_key_pair (gn->idx, a->is_dummy))
+				|| !edge_key_push (key, edge_key_pair (a->x, a->y))
+				|| !edge_key_push (key, edge_key_pair (a->w, a->h))
+				|| !edge_key_push (key, edge_key_pair (a->layer, a->layer_height))
+				|| !edge_key_push (key, edge_key_pair (a->layer_width, RVecGraphNodePtr_length (&gn->out_nodes)))) {
+			return false;
 		}
-		edge_key_push (key, RVecGraphNodePtr_length (&gn->in_nodes));
+		R_VEC_FOREACH (&gn->out_nodes, itn) {
+			if (!edge_key_push (key, (*itn)->idx)) {
+				return false;
+			}
+		}
+		if (!edge_key_push (key, RVecGraphNodePtr_length (&gn->in_nodes))) {
+			return false;
+		}
 		R_VEC_FOREACH (&gn->in_nodes, itn) {
-			edge_key_push (key, (*itn)->idx);
+			if (!edge_key_push (key, (*itn)->idx)) {
+				return false;
+			}
 		}
 	}
+	return true;
 }
 
 static bool edge_routes_key_eq(const RVecEdgeRouteKey *a, const RVecEdgeRouteKey *b) {
@@ -2986,31 +3002,33 @@ static bool edge_routes_key_eq(const RVecEdgeRouteKey *a, const RVecEdgeRouteKey
 	return len == RVecEdgeRouteKey_length (b) && (!len || !memcmp (a->_start, b->_start, len * sizeof (ut64)));
 }
 
-static void edge_routes_add(EdgeRoutes *routes, const RConsCanvas *c, EdgeDrawKind kind, int edge, int x, int y, int x2, int y2, RCanvasLineStyle *style, int bend, int xbend, int ybend, bool isvert) {
+static bool edge_routes_add(EdgeRoutes *routes, const RConsCanvas *c, EdgeDrawKind kind, int edge, int x, int y, int x2, int y2, RCanvasLineStyle *style, int bend, int xbend, int ybend, bool isvert) {
 	EdgeDraw *d = RVecEdgeDraw_emplace_back (&routes->draws);
-	if (d) {
-		// conservative bounds of every cell the canvas line functions can touch
-		const int xs[] = { x, x2, xbend, x + bend + 3, x2 - ybend - 1 };
-		const int ys[] = { y, y2, xbend, y + bend + 2, y2 - ybend - 1, y2 + 2 };
-		int i;
-		*d = (EdgeDraw){ kind, isvert, edge, x, y, x2, y2, bend, xbend, ybend, INT_MAX, INT_MAX, INT_MIN, INT_MIN, *style };
-		for (i = 0; i < R_ARRAY_SIZE (xs); i++) {
-			d->minx = R_MIN (d->minx, xs[i]);
-			d->maxx = R_MAX (d->maxx, xs[i]);
-		}
-		for (i = 0; i < R_ARRAY_SIZE (ys); i++) {
-			d->miny = R_MIN (d->miny, ys[i]);
-			d->maxy = R_MAX (d->maxy, ys[i]);
-		}
-		d->minx -= 2;
-		d->miny -= 2;
-		d->maxx += 2;
-		d->maxy += 2;
+	if (!d) {
+		return false;
 	}
+	// conservative bounds of every cell the canvas line functions can touch
+	const int xs[] = { x, x2, xbend, x + bend + 3, x2 - ybend - 1 };
+	const int ys[] = { y, y2, xbend, y + bend + 2, y2 - ybend - 1, y2 + 2 };
+	int i;
+	*d = (EdgeDraw){ kind, isvert, edge, x, y, x2, y2, bend, xbend, ybend, INT_MAX, INT_MAX, INT_MIN, INT_MIN, *style };
+	for (i = 0; i < R_ARRAY_SIZE (xs); i++) {
+		d->minx = R_MIN (d->minx, xs[i]);
+		d->maxx = R_MAX (d->maxx, xs[i]);
+	}
+	for (i = 0; i < R_ARRAY_SIZE (ys); i++) {
+		d->miny = R_MIN (d->miny, ys[i]);
+		d->maxy = R_MAX (d->maxy, ys[i]);
+	}
+	d->minx -= 2;
+	d->miny -= 2;
+	d->maxx += 2;
+	d->maxy += 2;
 	// diagonal lines reset the shared style of the following segments
 	if (!c->linemode && (x == x2 || y == y2)) {
 		style->dot_style = DOT_STYLE_NORMAL;
 	}
+	return true;
 }
 
 static bool edge_draw_visible(const RConsCanvas *c, const EdgeDraw *d) {
@@ -3111,6 +3129,7 @@ static int first_x_cmp(RGraphNode *const *ga, RGraphNode *const *gb) {
 
 static bool edge_routes_build(RAGraph *g, EdgeRoutes *routes) {
 	RCons *cons = g->can->cons;
+	bool complete = false;
 	int out_nth, in_nth, bendpoint;
 	RGraphNode **itn;
 	RListIter *itm, *ito;
@@ -3182,7 +3201,7 @@ static bool edge_routes_build(RAGraph *g, EdgeRoutes *routes) {
 			const int edge = RVecEdgeHighlight_length (&routes->edges);
 			EdgeHighlight *eh = RVecEdgeHighlight_emplace_back (&routes->edges);
 			if (!eh) {
-				break;
+				goto cleanup;
 			}
 			*eh = (EdgeHighlight){ 0 };
 			if (!R_STR_ISEMPTY (a->title) && !R_STR_ISEMPTY (b->title)) {
@@ -3257,12 +3276,16 @@ static bool edge_routes_build(RAGraph *g, EdgeRoutes *routes) {
 					ax += (many && !g->is_callgraph)? 0: 4;
 				}
 				if (a->h < a->layer_height) {
-					edge_routes_add (routes, g->can, EDGE_DRAW_LINE, edge, ax, ay, ax, ay + a->layer_height - a->h, &style, 0, 0, 0, false);
+					if (!edge_routes_add (routes, g->can, EDGE_DRAW_LINE, edge, ax, ay, ax, ay + a->layer_height - a->h, &style, 0, 0, 0, false)) {
+						goto cleanup;
+					}
 					ay = a->y + a->layer_height;
 					style.symbol = LINE_NOSYM_VERT;
 				}
 				if (by >= ay) {
-					edge_routes_add (routes, g->can, EDGE_DRAW_SQUARE, edge, ax, ay, bx, by, &style, bendpoint, 0, 0, true);
+					if (!edge_routes_add (routes, g->can, EDGE_DRAW_SQUARE, edge, ax, ay, bx, by, &style, bendpoint, 0, 0, true)) {
+						goto cleanup;
+					}
 				} else {
 					struct tmpbackedgeinfo *tmp = calloc (1, sizeof (struct tmpbackedgeinfo));
 					tmp->ax = ax;
@@ -3278,7 +3301,9 @@ static bool edge_routes_build(RAGraph *g, EdgeRoutes *routes) {
 				}
 				if (b->is_dummy) {
 					style.symbol = LINE_NOSYM_VERT;
-					edge_routes_add (routes, g->can, EDGE_DRAW_LINE, edge, bx, by, bx, b->y + b->h, &style, 0, 0, 0, false);
+					if (!edge_routes_add (routes, g->can, EDGE_DRAW_LINE, edge, bx, by, bx, b->y + b->h, &style, 0, 0, 0, false)) {
+						goto cleanup;
+					}
 				}
 				if (b->x != a->x || b->layer <= a->layer || (!a->is_dummy && b->is_dummy) || (a->is_dummy && !b->is_dummy)) {
 					if (tm) {
@@ -3309,7 +3334,9 @@ static bool edge_routes_build(RAGraph *g, EdgeRoutes *routes) {
 				}
 
 				if (a->w < a->layer_width) {
-					edge_routes_add (routes, g->can, EDGE_DRAW_SQUARE, edge, ax, ay, a->x + a->layer_width, ay, &style, 0, 0, 0, false);
+					if (!edge_routes_add (routes, g->can, EDGE_DRAW_SQUARE, edge, ax, ay, a->x + a->layer_width, ay, &style, 0, 0, 0, false)) {
+						goto cleanup;
+					}
 					ax = a->x;
 					if (g->zoom > 1) {
 						ax += a->layer_width;
@@ -3319,7 +3346,9 @@ static bool edge_routes_build(RAGraph *g, EdgeRoutes *routes) {
 					style.symbol = LINE_NOSYM_HORIZ;
 				}
 				if (bx >= ax) {
-					edge_routes_add (routes, g->can, EDGE_DRAW_SQUARE, edge, ax, ay, bx, by, &style, tm->edgectr, 0, 0, false);
+					if (!edge_routes_add (routes, g->can, EDGE_DRAW_SQUARE, edge, ax, ay, bx, by, &style, tm->edgectr, 0, 0, false)) {
+						goto cleanup;
+					}
 				} else {
 					struct tmpbackedgeinfo *tmp = calloc (1, sizeof (struct tmpbackedgeinfo));
 					if (tmp) {
@@ -3337,7 +3366,9 @@ static bool edge_routes_build(RAGraph *g, EdgeRoutes *routes) {
 				}
 				if (b->is_dummy) {
 					style.symbol = LINE_NOSYM_HORIZ;
-					edge_routes_add (routes, g->can, EDGE_DRAW_SQUARE, edge, bx, by, bx + b->layer_width, by, &style, 0, 0, 0, false);
+					if (!edge_routes_add (routes, g->can, EDGE_DRAW_SQUARE, edge, bx, by, bx + b->layer_width, by, &style, 0, 0, 0, false)) {
+						goto cleanup;
+					}
 				}
 				if ((b->y == a->y && b->h != a->h) || b->y != a->y || b->layer <= a->layer || (!a->is_dummy && b->is_dummy) || (a->is_dummy && !b->is_dummy)) {
 					tm->edgectr += 1;
@@ -3384,8 +3415,10 @@ static bool edge_routes_build(RAGraph *g, EdgeRoutes *routes) {
 
 		if (tt) {
 			int arg = (rightlen < leftlen)? maxx + 1: minx - 1;
-			edge_routes_add (routes, g->can, EDGE_DRAW_BACK, temp->edge, temp->ax, temp->ay, temp->bx, temp->by,
-				&temp->style, temp->edgectr, arg, tt->revedgectr, !g->layout);
+			if (!edge_routes_add (routes, g->can, EDGE_DRAW_BACK, temp->edge, temp->ax, temp->ay, temp->bx, temp->by,
+					&temp->style, temp->edgectr, arg, tt->revedgectr, !g->layout)) {
+				goto cleanup;
+			}
 		}
 
 		r_list_foreach (lyr, ito, tl) {
@@ -3403,6 +3436,8 @@ static bool edge_routes_build(RAGraph *g, EdgeRoutes *routes) {
 		}
 	}
 
+	complete = true;
+cleanup:
 	r_list_foreach (lyr, ito, tl) {
 		free (tl);
 	}
@@ -3415,7 +3450,7 @@ static bool edge_routes_build(RAGraph *g, EdgeRoutes *routes) {
 	r_list_free (bckedges);
 	ht_uu_free (out_edge_numbers);
 	ht_uu_free (in_edge_numbers);
-	return !r_cons_is_breaked (cons);
+	return complete && !r_cons_is_breaked (cons);
 }
 
 static void agraph_print_edges(RAGraph *g) {
@@ -3430,15 +3465,18 @@ static void agraph_print_edges(RAGraph *g) {
 		g->edge_routes = R_NEW0 (EdgeRoutes);
 	}
 	EdgeRoutes *routes = g->edge_routes;
-	edge_routes_key (g, &routes->scratch);
+	if (!edge_routes_key (g, &routes->scratch)) {
+		routes->valid = false;
+		goto beach;
+	}
 	if (!routes->valid || !edge_routes_key_eq (&routes->scratch, &routes->key)) {
 		RVecEdgeDraw_clear (&routes->draws);
 		RVecEdgeHighlight_clear (&routes->edges);
-		routes->valid = edge_routes_build (g, routes);
 		// building sorts the neighbours, so take the key afterwards
-		edge_routes_key (g, &routes->key);
+		routes->valid = edge_routes_build (g, routes) && edge_routes_key (g, &routes->key);
 	}
 	edge_routes_draw (g, routes);
+beach:
 	r_cons_break_pop (g->can->cons);
 }
 
@@ -4726,10 +4764,6 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 	}
 	if (!exit_graph) {
 		fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
-		if (fcn) {
-			get_bbupdate (g, core, fcn);
-			fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
-		}
 	}
 
 	core->cons->event_resize = NULL; // avoid running old event with new data
