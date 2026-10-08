@@ -17,7 +17,7 @@ typedef struct {
 	int isize; // size of idxs allocation
 	ut32 *idxs; // indexes
 	ut32 *sidx; // sorted index -- not yet used
-	RBloom *bloom;
+	HtPP *ht; // string -> position + 1, built on the first lookup
 } RStrpool;
 
 R_API RStrpool* r_strpool_new(void);

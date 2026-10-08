@@ -71,6 +71,7 @@ if get_option('enable_tests')
     'stack',
     'str',
     'strbuf',
+    'strpool',
     'scanf',
     'printf',
     'table',
