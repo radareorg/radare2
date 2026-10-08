@@ -11795,13 +11795,15 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 
 			// R2_590 slow, we should add a function that deletes several xrefs
 			RVecAnalRef *list = r_anal_xrefs_get (core->anal, to);
-			RAnalRef *ref;
-			R_VEC_FOREACH (list, ref) {
-				if (from != UT64_MAX && from == ref->addr) {
-					r_anal_xref_del (core->anal, ref->addr, ref->at);
-				}
-				if (from == UT64_MAX) {
-					r_anal_xref_del (core->anal, ref->addr, ref->at);
+			if (list) {
+				RAnalRef *ref;
+				R_VEC_FOREACH (list, ref) {
+					if (from != UT64_MAX && from == ref->addr) {
+						r_anal_xref_del (core->anal, ref->addr, ref->at);
+					}
+					if (from == UT64_MAX) {
+						r_anal_xref_del (core->anal, ref->addr, ref->at);
+					}
 				}
 			}
 			RVecAnalRef_free (list);
