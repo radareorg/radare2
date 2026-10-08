@@ -437,7 +437,7 @@ static const char *dwarf_sn_xcoff64[DWARF_SN_MAX] = {
 	[DWARF_SN_PUBTYPES] = "dwpbtyp"
 };
 
-static RBinSection *get_section(RBinFile *bf, int sn) {
+static RBinSection *dwarf_get_section(RBinFile *bf, int sn) {
 	R_RETURN_VAL_IF_FAIL (sn >= 0 && sn < DWARF_SN_MAX, NULL);
 	RBinObject *o = bf->bo;
 	const char *rclass = (o && o->info)? o->info->rclass: NULL;
@@ -468,7 +468,7 @@ static RBinSection *get_section(RBinFile *bf, int sn) {
 }
 
 // this function caches full section data in section->bytes
-static const ut8 *get_section_bytes(RBinFile *bf, RBinSection *section) {
+static const ut8 *dwarf_get_section_bytes(RBinFile *bf, RBinSection *section) {
 	if (section->bytes.len && section->bytes.ptr) {
 		return section->bytes.ptr;
 	}
@@ -785,11 +785,11 @@ beach:
 	return buf;
 }
 
-static const char *get_section_string(RBinFile *bf, RBinSection *section, size_t offset) {
+static const char *dwarf_get_section_string(RBinFile *bf, RBinSection *section, size_t offset) {
 	if (!bf || !section) {
 		return NULL;
 	}
-	const ut8 *data = get_section_bytes (bf, section);
+	const ut8 *data = dwarf_get_section_bytes (bf, section);
 	size_t len = section->bytes.len;
 	if (!data || offset >= len) {
 		return NULL;
@@ -990,13 +990,13 @@ static const ut8 *str_form_value(RBinFile *bf, entry_descriptor desc, const ut8 
 	switch (desc.form) {
 	case DW_FORM_line_strp:
 		section_offset = dwarf_read_offset (bin, is_64bit, &buf, buf_end);
-		section = get_section (bf, DWARF_SN_LINE_STR);
-		*ret_name = section? get_section_string (bf, section, section_offset): NULL;
+		section = dwarf_get_section (bf, DWARF_SN_LINE_STR);
+		*ret_name = section? dwarf_get_section_string (bf, section, section_offset): NULL;
 		return buf;
 	case DW_FORM_strp:
 		section_offset = dwarf_read_offset (bin, is_64bit, &buf, buf_end);
-		section = get_section (bf, DWARF_SN_STR);
-		*ret_name = section? get_section_string (bf, section, section_offset): NULL;
+		section = dwarf_get_section (bf, DWARF_SN_STR);
+		*ret_name = section? dwarf_get_section_string (bf, section, section_offset): NULL;
 		return buf;
 	case DW_FORM_strp_sup:
 		// TODO: handle this properly
@@ -1337,7 +1337,7 @@ static const ut8 *parse_line_header(RBin *bin, RBinFile *bf, const ut8 *buf, con
 #define DWARF_ADDRLINE_STORE_LIMIT (16 * 1024 * 1024)
 
 static bool dwarf_line_store_is_large(RBinFile *bf) {
-	RBinSection *section = get_section (bf, DWARF_SN_LINE);
+	RBinSection *section = dwarf_get_section (bf, DWARF_SN_LINE);
 	return section && section->size > DWARF_ADDRLINE_STORE_LIMIT;
 }
 
@@ -1787,7 +1787,7 @@ static bool parse_line_raw(RBin *a, const ut8 *obuf, ut64 len, int mode, RStrBuf
 	return true;
 }
 
-static void line_files_add(RList *files, HtPP *seen, const char *file) {
+static void dwarf_line_files_add(RList *files, HtPP *seen, const char *file) {
 	if (R_STR_ISEMPTY (file)) {
 		return;
 	}
@@ -1809,11 +1809,11 @@ static void line_files_add(RList *files, HtPP *seen, const char *file) {
 
 R_API RList *r_bin_dwarf_parse_line_files(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
-	RBinSection *section = get_section (bf, DWARF_SN_LINE);
+	RBinSection *section = dwarf_get_section (bf, DWARF_SN_LINE);
 	if (!section) {
 		return NULL;
 	}
-	const ut8 *obuf = get_section_bytes (bf, section);
+	const ut8 *obuf = dwarf_get_section_bytes (bf, section);
 	if (!obuf || section->bytes.len < 1) {
 		return NULL;
 	}
@@ -1838,7 +1838,7 @@ R_API RList *r_bin_dwarf_parse_line_files(RBinFile *bf) {
 		}
 		size_t i;
 		for (i = 0; i < hdr.file_names_count; i++) {
-			line_files_add (files, seen, hdr.file_names[i].name);
+			dwarf_line_files_add (files, seen, hdr.file_names[i].name);
 		}
 		size_t len_size = hdr.is_64bit? 12: 4;
 		size_t remaining = buf_end - unit_start;
@@ -2195,7 +2195,7 @@ static void print_die(const RBinDwarfDie *die, RStrBuf *sb) {
 	}
 }
 
-static void print_comp_unit(const RBinDwarfCompUnit *unit, RStrBuf *sb) {
+static void dwarf_print_comp_unit(const RBinDwarfCompUnit *unit, RStrBuf *sb) {
 	R_RETURN_IF_FAIL (unit && unit->dies);
 	print_comp_unit_header (unit, sb);
 	RBinDwarfDie *die;
@@ -2412,9 +2412,9 @@ static const ut8 *parse_attr_value(RBinFile *bf, const ut8 *obuf, int obuf_len, 
 			return NULL;
 		}
 		RBinSection *section = (def->attr_form == DW_FORM_strp)
-			? get_section (bf, DWARF_SN_STR)
-			: get_section (bf, DWARF_SN_LINE_STR);
-		const char *str = section? get_section_string (bf, section, (size_t)value->string.offset): NULL;
+			? dwarf_get_section (bf, DWARF_SN_STR)
+			: dwarf_get_section (bf, DWARF_SN_LINE_STR);
+		const char *str = section? dwarf_get_section_string (bf, section, (size_t)value->string.offset): NULL;
 		value->string.content = str;
 		break;
 	// offset in .debug_info
@@ -2830,8 +2830,8 @@ typedef struct {
 
 // DW_FORM_loclistx indexes the offset table at the unit's DW_AT_loclists_base
 static void dwarf_index_resolver_init_loclists(DwarfIndexResolver *resolver) {
-	RBinSection *section = get_section (resolver->bf, DWARF_SN_LOCLISTS);
-	resolver->loclists = section? get_section_bytes (resolver->bf, section): NULL;
+	RBinSection *section = dwarf_get_section (resolver->bf, DWARF_SN_LOCLISTS);
+	resolver->loclists = section? dwarf_get_section_bytes (resolver->bf, section): NULL;
 	resolver->loclists_status = DWARF_INDEX_RESOLUTION_UNAVAILABLE;
 	if (resolver->loclists && resolver->has_loclists_base
 		&& dwarf_loclists_contribution_base (resolver->loclists, section->bytes.len, resolver->be,
@@ -2842,12 +2842,12 @@ static void dwarf_index_resolver_init_loclists(DwarfIndexResolver *resolver) {
 
 static DwarfIndexResolution dwarf_index_resolver_init_str(DwarfIndexResolver *resolver) {
 	resolver->str_status = DWARF_INDEX_RESOLUTION_MALFORMED;
-	resolver->str_offsets_section = get_section (resolver->bf, DWARF_SN_STR_OFFSETS);
-	resolver->str_section = get_section (resolver->bf, DWARF_SN_STR);
+	resolver->str_offsets_section = dwarf_get_section (resolver->bf, DWARF_SN_STR_OFFSETS);
+	resolver->str_section = dwarf_get_section (resolver->bf, DWARF_SN_STR);
 	resolver->str_offsets = resolver->str_offsets_section
-		? get_section_bytes (resolver->bf, resolver->str_offsets_section): NULL;
+		? dwarf_get_section_bytes (resolver->bf, resolver->str_offsets_section): NULL;
 	if (!resolver->str_offsets || !resolver->str_section
-		|| !get_section_bytes (resolver->bf, resolver->str_section)) {
+		|| !dwarf_get_section_bytes (resolver->bf, resolver->str_section)) {
 		resolver->str_status = DWARF_INDEX_RESOLUTION_UNAVAILABLE;
 		return resolver->str_status;
 	}
@@ -2875,9 +2875,9 @@ static DwarfIndexResolution dwarf_index_resolver_init_str(DwarfIndexResolver *re
 
 static DwarfIndexResolution dwarf_index_resolver_init_addr(DwarfIndexResolver *resolver) {
 	resolver->addr_status = DWARF_INDEX_RESOLUTION_MALFORMED;
-	resolver->addr_section = get_section (resolver->bf, DWARF_SN_ADDR);
+	resolver->addr_section = dwarf_get_section (resolver->bf, DWARF_SN_ADDR);
 	resolver->addr = resolver->addr_section
-		? get_section_bytes (resolver->bf, resolver->addr_section): NULL;
+		? dwarf_get_section_bytes (resolver->bf, resolver->addr_section): NULL;
 	if (!resolver->addr) {
 		resolver->addr_status = DWARF_INDEX_RESOLUTION_UNAVAILABLE;
 		return resolver->addr_status;
@@ -2930,7 +2930,7 @@ static DwarfIndexResolution dwarf_index_resolver_resolve_die(DwarfIndexResolver 
 			if (string_offset > SIZE_MAX) {
 				return DWARF_INDEX_RESOLUTION_MALFORMED;
 			}
-			const char *content = get_section_string (resolver->bf,
+			const char *content = dwarf_get_section_string (resolver->bf,
 				resolver->str_section, (size_t)string_offset);
 			if (!content) {
 				return DWARF_INDEX_RESOLUTION_MALFORMED;
@@ -3381,8 +3381,8 @@ static bool dwarf_parse_root_die(RBinFile *bf, const ut8 *buf, const ut8 *unit_e
 
 static bool dwarf_foreach_root(RBinFile *bf, RVecDwarfAbbrevDecl *decls, DwarfRootCallback callback, void *user) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin && decls, false);
-	RBinSection *section = get_section (bf, DWARF_SN_INFO);
-	const ut8 *data = section? get_section_bytes (bf, section): NULL;
+	RBinSection *section = dwarf_get_section (bf, DWARF_SN_INFO);
+	const ut8 *data = section? dwarf_get_section_bytes (bf, section): NULL;
 	if (!data || !section->bytes.len) {
 		return false;
 	}
@@ -3487,7 +3487,7 @@ static bool dwarf_collect_source_file(RBinFile *bf, const RBinDwarfCompUnit *uni
 	}
 	char *path = (r_file_is_abspath (name) || !comp_dir)
 		? strdup (name): r_str_newf ("%s/%s", comp_dir, name);
-	line_files_add (ctx->files, ctx->seen, path);
+	dwarf_line_files_add (ctx->files, ctx->seen, path);
 	free (path);
 	return true;
 }
@@ -3516,11 +3516,11 @@ R_API RList *r_bin_dwarf_parse_comp_unit_files(RBinFile *bf, RVecDwarfAbbrevDecl
 
 R_API R_OWNED char *r_bin_dwarf_print_info(RBinFile *bf, RVecDwarfAbbrevDecl *decls) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin && decls, NULL);
-	RBinSection *section = get_section (bf, DWARF_SN_INFO);
+	RBinSection *section = dwarf_get_section (bf, DWARF_SN_INFO);
 	if (!section) {
 		return NULL;
 	}
-	const ut8 *obuf = get_section_bytes (bf, section);
+	const ut8 *obuf = dwarf_get_section_bytes (bf, section);
 	if (!obuf || section->bytes.len < 1 || section->bytes.len > (UT32_MAX >> 1)) {
 		return NULL;
 	}
@@ -3573,7 +3573,7 @@ R_API R_OWNED char *r_bin_dwarf_print_info(RBinFile *bf, RVecDwarfAbbrevDecl *de
 			buf = unit_end;
 			continue;
 		}
-		print_comp_unit (&unit, sb);
+		dwarf_print_comp_unit (&unit, sb);
 		dwarf_comp_unit_fini (&unit);
 		buf = unit_end;
 	}
@@ -3773,13 +3773,13 @@ static ut64 getint(RBinDwarfAttrValue *val) {
 R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinFile *bf, RVecDwarfAbbrevDecl *da) {
 	R_RETURN_VAL_IF_FAIL (da && bf, NULL);
 	RBin *bin = bf->rbin;
-	RBinSection *section = get_section (bf, DWARF_SN_INFO);
+	RBinSection *section = dwarf_get_section (bf, DWARF_SN_INFO);
 
 	if (!bin || !section) {
 		return NULL;
 	}
 	/* Read and possibly decompress the .debug_info section */
-	const ut8 *buf = get_section_bytes (bf, section);
+	const ut8 *buf = dwarf_get_section_bytes (bf, section);
 	if (!buf || section->size < 1 || section->size > (UT32_MAX >> 1)) {
 		return NULL;
 	}
@@ -3874,10 +3874,10 @@ R_API RList *r_bin_dwarf_parse_line(RBinFile *bf, int mode, char **text) {
 	}
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
 	RList *list = NULL;
-	RBinSection *section = get_section (bf, DWARF_SN_LINE);
+	RBinSection *section = dwarf_get_section (bf, DWARF_SN_LINE);
 	if (bf && section) {
 		/* Read and possibly decompress the .debug_line section */
-		const ut8 *buf = get_section_bytes (bf, section);
+		const ut8 *buf = dwarf_get_section_bytes (bf, section);
 		if (!buf || section->bytes.len < 1) {
 			return NULL;
 		}
@@ -3898,11 +3898,11 @@ R_API RList *r_bin_dwarf_parse_line(RBinFile *bf, int mode, char **text) {
 
 R_API R_OWNED char *r_bin_dwarf_print_aranges(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
-	RBinSection *section = get_section (bf, DWARF_SN_ARANGES);
+	RBinSection *section = dwarf_get_section (bf, DWARF_SN_ARANGES);
 	if (!section) {
 		return NULL;
 	}
-	const ut8 *buf = get_section_bytes (bf, section);
+	const ut8 *buf = dwarf_get_section_bytes (bf, section);
 	if (!buf || section->bytes.len < 1 || section->bytes.len > ST32_MAX) {
 		return NULL;
 	}
@@ -3913,11 +3913,11 @@ R_API R_OWNED char *r_bin_dwarf_print_aranges(RBinFile *bf) {
 
 R_API RVecDwarfAbbrevDecl *r_bin_dwarf_parse_abbrev(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
-	RBinSection *section = get_section (bf, DWARF_SN_ABBREV);
+	RBinSection *section = dwarf_get_section (bf, DWARF_SN_ABBREV);
 	if (!bf || !section) {
 		return NULL;
 	}
-	const ut8 *buf = get_section_bytes (bf, section);
+	const ut8 *buf = dwarf_get_section_bytes (bf, section);
 	if (!buf) {
 		return NULL;
 	}
@@ -4031,12 +4031,12 @@ static void parse_loc_raw(RBin *bin, HtUP /*<offset, List *<LocListEntry>*/ *loc
 #endif
 R_API HtUP /*<offset, RBinDwarfLocList*/ *r_bin_dwarf_parse_loc(RBinFile *bf, int addr_size) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
-	RBinSection *section = get_section (bf, DWARF_SN_LOC);
+	RBinSection *section = dwarf_get_section (bf, DWARF_SN_LOC);
 	if (!bf || !section) {
 		return NULL;
 	}
 	/* The standarparse_loc_raw_frame, not sure why is that */
-	const ut8 *buf = get_section_bytes (bf, section);
+	const ut8 *buf = dwarf_get_section_bytes (bf, section);
 	if (!buf) {
 		return NULL;
 	}
@@ -4100,11 +4100,11 @@ R_API R_OWNED char *r_bin_dwarf_print_loc(HtUP /*<offset, RBinDwarfLocList*/ *lo
 
 R_API R_OWNED char *r_bin_dwarf_print_loc_stream(RBinFile *bf, int addr_size) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
-	RBinSection *section = get_section (bf, DWARF_SN_LOC);
+	RBinSection *section = dwarf_get_section (bf, DWARF_SN_LOC);
 	if (!section) {
 		return NULL;
 	}
-	const ut8 *buf = get_section_bytes (bf, section);
+	const ut8 *buf = dwarf_get_section_bytes (bf, section);
 	if (!buf || section->bytes.len < 1) {
 		return NULL;
 	}
@@ -4342,8 +4342,8 @@ struct r_bin_dwarf_loclists_t {
 
 R_API RBinDwarfLocLists *r_bin_dwarf_loclists_new(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
-	RBinSection *section = get_section (bf, DWARF_SN_LOCLISTS);
-	const ut8 *sec = section? get_section_bytes (bf, section): NULL;
+	RBinSection *section = dwarf_get_section (bf, DWARF_SN_LOCLISTS);
+	const ut8 *sec = section? dwarf_get_section_bytes (bf, section): NULL;
 	if (!sec) {
 		return NULL;
 	}
@@ -4352,8 +4352,8 @@ R_API RBinDwarfLocLists *r_bin_dwarf_loclists_new(RBinFile *bf) {
 	ll->sec = sec;
 	ll->len = section->bytes.len;
 	ll->be = r_bin_is_big_endian (bf->rbin);
-	RBinSection *addr_section = get_section (bf, DWARF_SN_ADDR);
-	ll->addr = addr_section? get_section_bytes (bf, addr_section): NULL;
+	RBinSection *addr_section = dwarf_get_section (bf, DWARF_SN_ADDR);
+	ll->addr = addr_section? dwarf_get_section_bytes (bf, addr_section): NULL;
 	ll->addr_len = ll->addr? addr_section->bytes.len: 0;
 	return ll;
 }
@@ -4435,8 +4435,8 @@ static const char *loclist_entry_name(ut8 lle) {
 // every .debug_loclists contribution as ranges; addrx indices stay unresolved
 R_API R_OWNED char *r_bin_dwarf_print_loclists_stream(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
-	RBinSection *section = get_section (bf, DWARF_SN_LOCLISTS);
-	const ut8 *sec = section? get_section_bytes (bf, section): NULL;
+	RBinSection *section = dwarf_get_section (bf, DWARF_SN_LOCLISTS);
+	const ut8 *sec = section? dwarf_get_section_bytes (bf, section): NULL;
 	if (!sec) {
 		return NULL;
 	}
@@ -4733,7 +4733,7 @@ R_IPI void r_bin_dwarf_parse_lsda(RBinFile *bf, RVecRBinTrycatch *result, ut64 f
 	if (!section || section->size > ST32_MAX) {
 		return;
 	}
-	const ut8 *bytes = get_section_bytes (bf, section);
+	const ut8 *bytes = dwarf_get_section_bytes (bf, section);
 	if (!bytes) {
 		return;
 	}
@@ -4987,7 +4987,7 @@ R_IPI void r_bin_dwarf_parse_eh_frame(RBinFile *bf, RVecRBinTrycatch *result) {
 	if (!section || section->size < 8 || section->size > ST32_MAX) {
 		return;
 	}
-	const ut8 *bytes = get_section_bytes (bf, section);
+	const ut8 *bytes = dwarf_get_section_bytes (bf, section);
 	if (!bytes || section->bytes.len < 8) {
 		return;
 	}
