@@ -725,3 +725,76 @@ plugin-error
 EOF2
 EXPECT_ERR=
 RUN
+
+NAME=mdt sorted directory tree and depth limit
+FILE=-
+CMDS=<<EOF2
+m /tree tmp
+md+ /tree/z
+md+ /tree/a/b
+mw /tree/a/b/file x
+mw /tree/top x
+mdt /tree
+mdt /tree 1
+EOF2
+EXPECT=<<EOF2
+/tree
+|-- a/
+|   `-- b/
+|       `-- file
+|-- top
+`-- z/
+/tree
+|-- a/
+|-- top
+`-- z/
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mdt root mounts and empty directory
+FILE=-
+CMDS=<<EOF2
+m /z tmp
+m /a tmp
+md+ /a/empty
+mw /z/file x
+mdt
+mdt /a/empty
+EOF2
+EXPECT=<<EOF2
+/
+|-- a/
+|   `-- empty/
+`-- z/
+    `-- file
+/a/empty
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=mdt rejects missing paths and invalid depth
+FILE=-
+CMDS=<<EOF2
+mdt /missing
+?v $?
+mdt / 0
+?v $?
+mdt / 65
+?v $?
+mdt / -1
+?v $?
+EOF2
+EXPECT=<<EOF2
+0x1
+0x1
+0x1
+0x1
+EOF2
+EXPECT_ERR=<<EOF2
+ERROR: Invalid path
+ERROR: Tree depth must be between 1 and 64
+ERROR: Tree depth must be between 1 and 64
+ERROR: Tree depth must be between 1 and 64
+EOF2
+RUN

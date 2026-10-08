@@ -16,6 +16,7 @@ static RCoreHelpMessage help_msg_m = {
 	"mL", "[Lj]", "list filesystem plugins (Same as Lm), mLL shows only fs plugin names",
 	"mc", " [file]", "cat: Show the contents of the given file",
 	"md", " /", "list files and directory on the virtual r2's fs",
+	"mdt", " [path] [depth]", "show an ASCII directory tree (default depth: 64)",
 	"mdd", " /", "show file size like `ls -l` in ms",
 	"mdx", " /", "list deleted files (FAT)",
 	"mdq", " /", "show just the file name (quiet)",
@@ -168,6 +169,130 @@ static bool mount_ls(RCmdContext *ctx) {
 		pj_free (pj);
 	}
 	free (input);
+	return ok;
+}
+
+static int mount_tree_file_cmp(const void *a, const void *b) {
+	const RFSFile *fa = a;
+	const RFSFile *fb = b;
+	return strcmp (fa->name, fb->name);
+}
+
+static RList *mount_tree_dir(RCore *core, RFSRoot *root, const char *path) {
+	RList *list = root? root->p->dir (root, path, core->fs->view): r_fs_dir (core->fs, path);
+	if (!root && !strcmp (path, "/")) {
+		if (!list) {
+			list = r_list_newf ((RListFree)r_fs_file_free);
+		}
+		RListIter *iter;
+		RFSRoot *mount;
+		r_list_foreach (core->fs->roots, iter, mount) {
+			if (!strcmp (mount->path, "/")) {
+				continue;
+			}
+			RFSFile *file = r_fs_file_new (NULL, mount->path + 1);
+			file->type = R_FS_FILE_TYPE_MOUNTPOINT;
+			r_list_append (list, file);
+		}
+	}
+	if (!list) {
+		return NULL;
+	}
+	RListIter *iter, *next;
+	RFSFile *file;
+	r_list_foreach_safe (list, iter, next, file) {
+		if (R_STR_ISEMPTY (file->name) || !strcmp (file->name, ".") || !strcmp (file->name, "..")
+			|| strchr (file->name, '/') || strchr (file->name, '\\')) {
+			r_list_delete (list, iter);
+		}
+	}
+	r_list_sort (list, mount_tree_file_cmp);
+	return list;
+}
+
+static bool mount_tree_collect(RCore *core, RFSRoot *root, const char *path, int depth, RList *list, RTreeNode *parent) {
+	bool ok = true;
+	RListIter *iter;
+	RFSFile *file;
+	r_list_foreach (list, iter, file) {
+		if (r_cons_is_breaked (core->cons)) {
+			return false;
+		}
+		bool directory = file->type == R_FS_FILE_TYPE_DIRECTORY || file->type == R_FS_FILE_TYPE_MOUNTPOINT;
+		char *escaped = r_str_escape_utf8_keep_printable (file->name, false, true);
+		char *name = escaped? r_str_newf ("%s%s", escaped, directory? "/": ""): NULL;
+		free (escaped);
+		if (!name) {
+			return false;
+		}
+		RTreeNode *node = r_tree_add_node (parent->tree, parent, name);
+		if (!node) {
+			free (name);
+			return false;
+		}
+		node->free = free;
+		if (!directory || depth <= 1) {
+			continue;
+		}
+		char *child = r_str_newf ("%s/%s", !strcmp (path, "/")? "": path, file->name);
+		if (!child) {
+			return false;
+		}
+		RList *children = mount_tree_dir (core, root, child);
+		if (children) {
+			ok &= mount_tree_collect (core, root, child, depth - 1, children, node);
+		} else {
+			ok = false;
+		}
+		r_list_free (children);
+		free (child);
+	}
+	return ok;
+}
+
+static bool core_fs_tree(RCore *core, RFSRoot *root, const char *path, int depth) {
+	RList *list = mount_tree_dir (core, root, path);
+	if (!list) {
+		R_LOG_ERROR ("Invalid path");
+		return false;
+	}
+	char *escaped = r_str_escape_utf8_keep_printable (path, false, true);
+	if (!escaped) {
+		r_list_free (list);
+		return false;
+	}
+	RTree *tree = r_tree_new ();
+	RTreeNode *node = r_tree_add_node (tree, NULL, escaped);
+	node->free = free;
+	r_cons_break_push (core->cons, NULL, NULL);
+	bool ok = mount_tree_collect (core, root, path, depth, list, node);
+	r_cons_break_pop (core->cons);
+	char *text = r_tree_to_ascii (tree, NULL, NULL);
+	if (text) {
+		r_cons_print (core->cons, text);
+	} else {
+		ok = false;
+	}
+	free (text);
+	r_tree_free (tree);
+	r_list_free (list);
+	return ok;
+}
+
+static bool mount_tree(RCmdContext *ctx) {
+	RCore *core = ctx->user;
+	ut64 depth = 64;
+	if (!r_cmdctx_num (ctx, 1, core->num, &depth) || depth < 1 || depth > 64) {
+		R_LOG_ERROR ("Tree depth must be between 1 and 64");
+		return false;
+	}
+	char *path = mount_path (ctx);
+	if (!path) {
+		return false;
+	}
+	r_str_trim_path (path);
+	bool ok = core_fs_tree (core, NULL, *path? path: "/", depth);
+	free (path);
 	return ok;
 }
 
@@ -685,6 +810,7 @@ static bool r_core_cmd_mount_init(RCmd *cmd) {
 		{ "mg", mount_get, "mg [filename] [offset [size]]", 1, 3, 0 },
 		{ "mn", mount_details, "mn [mountpoint]", 0, 1, 0 },
 		{ "md", mount_ls, "md [path]", 0, 1, 0 },
+		{ "mdt", mount_tree, "mdt [path] [depth]", 0, 2, 0 },
 		{ "mdj", mount_ls, "mdj [path]", 0, 1, 0 },
 		{ "mdd", mount_ls, "mdd [path]", 0, 1, 0 },
 		{ "mdq", mount_ls, "mdq [path]", 0, 1, 0 },

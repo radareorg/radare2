@@ -60,6 +60,7 @@ static int r_core_cmd_subst_i(RCore *core, RCmdContext *context, char *cmd, char
 static int core_cmd_context(RCore *core, RCmdContext *parent, const char *cstr, bool log);
 static char *core_cmd_str_context(RCore *core, RCmdContext *parent, const char *cmd);
 static RCons *core_cmd_cons(void *data);
+static bool core_fs_tree(RCore *core, RFSRoot *root, const char *path, int depth);
 
 static int bb_cmpaddr(const void *_a, const void *_b) {
 	const RAnalBlock *a = _a;

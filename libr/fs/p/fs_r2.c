@@ -91,7 +91,7 @@ static RList *fscmd(RFSRoot *root, const char *cmd, int type) {
 	R_RETURN_VAL_IF_FAIL (root, NULL);
 	char *res = root->cob.cmdStr (root->cob.core, cmd);
 	if (res) {
-		RList *list = r_list_newf (free);
+		RList *list = r_list_newf ((RListFree)r_fs_file_free);
 		if (!list) {
 			free (res);
 			return NULL;
@@ -205,14 +205,22 @@ static char *cl_path_vpath(const char *path) {
 	return NULL;
 }
 
+static bool route_matches(const char *path, const char *route) {
+	size_t length = strlen (route);
+	return !strncmp (path, route, length) && (!path[length] || path[length] == '/');
+}
+
 static RFSFile* fs_r2_open(RFSRoot *root, const char *path, bool create) {
 	R_RETURN_VAL_IF_FAIL (root, NULL);
 	int i;
 	for (i = 0; routes[i].path; i++) {
 		const char *cwd = routes[i].path;
-		if (routes[i].cat && !strncmp (path, cwd, strlen (cwd))) {
+		if (routes[i].cat && route_matches (path, cwd)) {
 			RFSFile* file = r_fs_file_new (root, path);
-			routes[i].cat (root, file, path);
+			if (routes[i].cat (root, file, path) < 0) {
+				r_fs_file_free (file);
+				return NULL;
+			}
 			return file;
 		}
 	}
@@ -369,7 +377,7 @@ static RList *__cfg(RFSRoot *root, const char *path) {
 	char *res = root->cob.cmdStr (root->cob.core, cmd);
 	free (cmd);
 	if (res) {
-		RList *list = r_list_new ();
+		RList *list = r_list_newf ((RListFree)r_fs_file_free);
 		if (!list) {
 			free (res);
 			return NULL;
@@ -416,6 +424,10 @@ static RList *__cl(RFSRoot *root, const char *path) {
 			append_unique_file (list, name, slash? 'd': 'f', 0, 0);
 			free (name);
 		}
+	}
+	if (*cwd && r_list_empty (list)) {
+		r_list_free (list);
+		list = NULL;
 	}
 	r_list_free (lines);
 	free (cwd);
@@ -465,7 +477,7 @@ static int __cl_cat(RFSRoot *root, RFSFile *file, const char *path) {
 
 static RList *__root(RFSRoot *root, const char *path) {
 	R_RETURN_VAL_IF_FAIL (root, NULL);
-	RList *list = r_list_newf (NULL);
+	RList *list = r_list_newf ((RListFree)r_fs_file_free);
 	if (!list) {
 		return NULL;
 	}
@@ -481,7 +493,7 @@ static RList *fs_r2_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
 	R_RETURN_VAL_IF_FAIL (root, NULL);
 	size_t i;
 	for (i = 0; routes[i].path; i++) {
-		if (routes[i].dir && !strncmp (path, routes[i].path, strlen (routes[i].path))) {
+		if (routes[i].dir && route_matches (path, routes[i].path)) {
 			return routes[i].dir (root, path);
 		}
 	}
