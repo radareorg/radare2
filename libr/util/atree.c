@@ -9,10 +9,10 @@ typedef struct {
 	void *user;
 	bool utf8;
 	bool failed;
-} AsciiTreeContext;
+} ATreeContext;
 
 static void atree_visit(RTreeNode *node, RTreeVisitor *visitor) {
-	AsciiTreeContext *ctx = visitor->user;
+	ATreeContext *ctx = visitor->user;
 	if (ctx->failed) {
 		return;
 	}
@@ -43,7 +43,7 @@ static void atree_visit(RTreeNode *node, RTreeVisitor *visitor) {
 
 R_API R_OWNED char *r_tree_to_string(RTree *tree, RTreeNodeLabelCb R_NULLABLE label, void *user, bool utf8) {
 	R_RETURN_VAL_IF_FAIL (tree, NULL);
-	AsciiTreeContext ctx = { .label = label, .user = user, .utf8 = utf8 };
+	ATreeContext ctx = { .label = label, .user = user, .utf8 = utf8 };
 	r_strbuf_init (&ctx.output);
 	r_strbuf_init (&ctx.continuation);
 	RTreeVisitor visitor = { .pre_visit = atree_visit, .user = &ctx };
@@ -54,8 +54,4 @@ R_API R_OWNED char *r_tree_to_string(RTree *tree, RTreeNodeLabelCb R_NULLABLE la
 		return NULL;
 	}
 	return r_strbuf_drain_nofree (&ctx.output);
-}
-
-R_API R_OWNED char *r_tree_to_ascii(RTree *tree, RTreeNodeLabelCb R_NULLABLE label, void *user) {
-	return r_tree_to_string (tree, label, user, false);
 }
