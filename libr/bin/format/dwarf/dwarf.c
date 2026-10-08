@@ -1,10 +1,10 @@
 /* radare - LGPL - Copyright 2012-2025 - pancake, Fedor Sakharov */
 
-#include "format/elf/elf.h"
+#include "../elf/elf.h"
 #include "r_bin.h"
 #include "r_bin_dwarf.h"
 #include "r_util/r_assert.h"
-#include "i/private.h"
+#include "../../i/private.h"
 
 #define READ8(buf) \
 	(((buf) + sizeof (ut8) <= buf_end)? ((ut8 *)buf)[0]: 0); \

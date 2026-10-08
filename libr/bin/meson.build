@@ -6,7 +6,7 @@ r_bin_sources = [
   'addrline.c',
   'demangle.c',
   'demangle_stubs.c',
-  'dwarf.c',
+  'format/dwarf/dwarf.c',
   'blang.c',
   'bfilter.c',
   'bfile.c',
