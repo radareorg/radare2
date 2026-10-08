@@ -40,6 +40,7 @@ static int __cl_cat(RFSRoot *root, RFSFile *file, const char *path);
 static Routes routes[] = {
 	{ "/cfg", &__cfg, &__cfg_cat, &__cfg_write },
 	{ "/cl", &__cl, &__cl_cat, NULL },
+	{ "/cu", &__cl, &__cl_cat, NULL },
 	{ "/flags", &__flags, &__flags_cat, NULL},
 	{ "/version", NULL, &__version, NULL},
 	{ "/seek", NULL, &__seek_cat, &__seek_write },
@@ -114,40 +115,14 @@ static char *cl_normalize_vpath(const char *path) {
 	if (R_STR_ISEMPTY (path)) {
 		return NULL;
 	}
-	char *dup = strdup (path);
+	char *dup = r_str_newf ("/%s", path);
 	if (!dup) {
 		return NULL;
 	}
 	r_str_replace_char (dup, '\\', '/');
-	RStrBuf *sb = r_strbuf_new ("");
-	if (!sb) {
-		free (dup);
-		return NULL;
-	}
-	char *p = dup;
-	while (*p) {
-		while (*p == '/') {
-			p++;
-		}
-		char *seg = p;
-		while (*p && *p != '/') {
-			p++;
-		}
-		char ch = *p;
-		*p = 0;
-		if (*seg && strcmp (seg, ".") && strcmp (seg, "..")) {
-			if (r_strbuf_length (sb) > 0) {
-				r_strbuf_append (sb, "/");
-			}
-			r_strbuf_append (sb, seg);
-		}
-		if (!ch) {
-			break;
-		}
-		p++;
-	}
+	r_str_trim_path (dup);
+	char *res = strdup (dup + 1);
 	free (dup);
-	char *res = r_strbuf_drain (sb);
 	if (R_STR_ISEMPTY (res)) {
 		free (res);
 		return NULL;
@@ -155,9 +130,9 @@ static char *cl_normalize_vpath(const char *path) {
 	return res;
 }
 
-static RList *cl_load(RFSRoot *root) {
+static RList *cl_load(RFSRoot *root, bool units) {
 	R_RETURN_VAL_IF_FAIL (root, NULL);
-	char *res = root->cob.cmdStr (root->cob.core, "CLj");
+	char *res = root->cob.cmdStr (root->cob.core, units? "CLuj": "CLj");
 	if (!res) {
 		return NULL;
 	}
@@ -175,10 +150,10 @@ static RList *cl_load(RFSRoot *root) {
 	}
 	RJson *child;
 	for (child = json->children.first; child; child = child->next) {
-		if (child->type != R_JSON_OBJECT) {
+		if (child->type != (units? R_JSON_STRING: R_JSON_OBJECT)) {
 			continue;
 		}
-		const char *file = r_json_get_str (child, "file");
+		const char *file = units? child->str_value: r_json_get_str (child, "file");
 		char *vpath = cl_normalize_vpath (file);
 		if (!vpath) {
 			continue;
@@ -186,8 +161,10 @@ static RList *cl_load(RFSRoot *root) {
 		R2ClLine *line = R_NEW0 (R2ClLine);
 		line->file = strdup (file);
 		line->vpath = vpath;
-		line->addr = (ut64)r_json_get_num (child, "addr");
-		line->line = (int)r_json_get_num (child, "line");
+		if (!units) {
+			line->addr = (ut64)r_json_get_num (child, "addr");
+			line->line = (int)r_json_get_num (child, "line");
+		}
 		r_list_append (lines, line);
 	}
 	r_json_free (json);
@@ -196,10 +173,10 @@ static RList *cl_load(RFSRoot *root) {
 }
 
 static char *cl_path_vpath(const char *path) {
-	if (!strcmp (path, "/cl")) {
+	if (!strcmp (path, "/cl") || !strcmp (path, "/cu")) {
 		return strdup ("");
 	}
-	if (!strncmp (path, "/cl/", 4)) {
+	if (!strncmp (path, "/cl/", 4) || !strncmp (path, "/cu/", 4)) {
 		return cl_normalize_vpath (path + 4);
 	}
 	return NULL;
@@ -403,7 +380,7 @@ static RList *__cl(RFSRoot *root, const char *path) {
 	if (!cwd) {
 		return NULL;
 	}
-	RList *lines = cl_load (root);
+	RList *lines = cl_load (root, r_str_startswith (path, "/cu"));
 	RList *list = r_list_newf ((RListFree)r_fs_file_free);
 	if (lines && list) {
 		const size_t cwd_len = strlen (cwd);
@@ -441,7 +418,8 @@ static int __cl_cat(RFSRoot *root, RFSFile *file, const char *path) {
 		free (vpath);
 		return -1;
 	}
-	RList *lines = cl_load (root);
+	bool units = r_str_startswith (path, "/cu");
+	RList *lines = cl_load (root, units);
 	RStrBuf *sb = r_strbuf_new ("");
 	if (!lines || !sb) {
 		r_list_free (lines);
@@ -453,6 +431,10 @@ static int __cl_cat(RFSRoot *root, RFSFile *file, const char *path) {
 	R2ClLine *line;
 	r_list_foreach (lines, iter, line) {
 		if (strcmp (line->vpath, vpath)) {
+			continue;
+		}
+		if (units) {
+			r_strbuf_appendf (sb, "%s\n", line->file);
 			continue;
 		}
 		char *row = line->line > 0? r_file_slurp_line (line->file, line->line, 0): NULL;

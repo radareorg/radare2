@@ -74,7 +74,7 @@ static RCoreHelpMessage help_msg_CL = {
 	"CLf", " [addr]", "show filename for current or given offset",
 	"CLj", "", "same as above, in JSON (see dir.source for paths)",
 	"CLt", " [path]", "show an ASCII source-file tree (also exposed by the r2 filesystem under /cl)",
-	"CLu", "[j]", "list DWARF compilation-unit source paths (optional JSON)",
+	"CLu", "[jt]", "list DWARF compilation-unit source paths (JSON/tree; r2 filesystem /cu)",
 	"CL*", "", "same as above but in r2 commands format",
 	"CL.", "", "show list all code line information (virtual address <-> source file:line)",
 	"CL-", "*", "remove all the cached codeline information",
@@ -348,13 +348,13 @@ static void cmd_meta_lineinfo_units(RCore *core, bool json) {
 	r_list_free (files);
 }
 
-static int cmd_meta_lineinfo_tree(RCore *core, const char *input) {
+static int cmd_meta_lineinfo_tree(RCore *core, const char *input, bool units) {
 	if (*input == '?' && !input[1]) {
 		r_cons_cmd_help (core->cons, help_msg_CL);
 		return 0;
 	}
 	if (*input && *input != ' ') {
-		r_core_return_invalid_command (core, "CLt", *input);
+		r_core_return_invalid_command (core, units? "CLut": "CLt", *input);
 		return 0;
 	}
 	RFSPlugin *plugin = r_libstore_find_name (core->fs->libstore, "r2");
@@ -368,7 +368,7 @@ static int cmd_meta_lineinfo_tree(RCore *core, const char *input) {
 	while (*subpath == '/') {
 		subpath++;
 	}
-	char *path = r_str_newf ("/cl%s%s", *subpath? "/": "", subpath);
+	char *path = r_str_newf ("/%s%s%s", units? "cu": "cl", *subpath? "/": "", subpath);
 	if (path) {
 		r_str_trim_path (path);
 		r_core_return_code (core, core_fs_tree (core, &root, path, 64)? 0: 1);
@@ -396,9 +396,12 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		return cmd_meta_lineinfo_decompile (core, p + 1);
 	}
 	if (*p == 't') {
-		return cmd_meta_lineinfo_tree (core, p + 1);
+		return cmd_meta_lineinfo_tree (core, p + 1, false);
 	}
 	if (*p == 'u') {
+		if (p[1] == 't') {
+			return cmd_meta_lineinfo_tree (core, p + 2, true);
+		}
 		if (p[1] == '?' && !p[2]) {
 			r_cons_cmd_help (core->cons, help_msg_CL);
 		} else if (!p[1] || (p[1] == 'j' && !p[2])) {
