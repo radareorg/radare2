@@ -1208,3 +1208,73 @@ EXPECT=<<EOF2
 EOF2
 EXPECT_ERR=
 RUN
+
+NAME=CLt source tree without a mount
+FILE=-
+CMDS=<<EOF2
+CL 0x100 src/z.c:1
+CL 0x110 src/include/a.h:2
+CL 0x120 src/z.c:3
+CLt
+CLt src
+m
+EOF2
+EXPECT=<<EOF2
+/cl
+`-- src/
+    |-- include/
+    |   `-- a.h
+    `-- z.c
+/cl/src
+|-- include/
+|   `-- a.h
+`-- z.c
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=CL compilation units distinguish main sources from line files
+FILE=bins/elf/dwarf3_line
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF2
+CLuj
+CLt usr/w/g/radare2/test/bins/src
+EOF2
+EXPECT=<<EOF2
+["/usr/w/g/radare2/test/bins/src/dwarf-line.c"]
+/cl/usr/w/g/radare2/test/bins/src
+|-- dwarf-line/
+|   `-- bar.c
+`-- dwarf-line.c
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=CLu lists multiple compilation-unit source paths
+FILE=bins/elf/dwarf4_many_comp_units.elf
+ARGS=-e bin.relocs.apply=true
+CMDS=CLu
+EXPECT=<<EOF2
+/home/hound/r2test/dwarf/cpp/dump/clang/../main.cpp
+/home/hound/r2test/dwarf/cpp/dump/clang/../mammal.cpp
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=CL trees with no DWARF and invalid source paths
+FILE=-
+CMDS=<<EOF2
+CLt
+CLuj
+CLt missing
+?v $?
+EOF2
+EXPECT=<<EOF2
+/cl
+[]
+0x1
+EOF2
+EXPECT_ERR=<<EOF2
+ERROR: Invalid path
+EOF2
+RUN

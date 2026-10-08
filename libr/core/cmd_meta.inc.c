@@ -73,6 +73,8 @@ static RCoreHelpMessage help_msg_CL = {
 	"CLd", "[aoj*]", "decompile current function from dwarf line info (usable via cmd.pdc)",
 	"CLf", " [addr]", "show filename for current or given offset",
 	"CLj", "", "same as above, in JSON (see dir.source for paths)",
+	"CLt", " [path]", "show an ASCII source-file tree (also exposed by the r2 filesystem under /cl)",
+	"CLu", "[j]", "list DWARF compilation-unit source paths (optional JSON)",
 	"CL*", "", "same as above but in r2 commands format",
 	"CL.", "", "show list all code line information (virtual address <-> source file:line)",
 	"CL-", "*", "remove all the cached codeline information",
@@ -315,6 +317,66 @@ static bool cmd_meta_lineinfo_print_source(RCore *core, ut64 at) {
 // CLd command family (in its own file to keep this one small)
 #include "cmd_meta_cld.inc.c"
 
+static void cmd_meta_lineinfo_units(RCore *core, bool json) {
+	RList *files = NULL;
+	RBinFile *bf = r_bin_cur (core->bin);
+	if (bf && r_config_get_b (core->config, "bin.dbginfo")) {
+		RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf);
+		if (abbrevs) {
+			files = r_bin_dwarf_parse_comp_unit_files (bf, abbrevs);
+			r_bin_dwarf_free_debug_abbrev (abbrevs);
+		}
+	}
+	PJ *pj = json? r_core_pj_new (core): NULL;
+	if (pj) {
+		pj_a (pj);
+	}
+	RListIter *iter;
+	const char *file;
+	r_list_foreach (files, iter, file) {
+		if (pj) {
+			pj_s (pj, file);
+		} else {
+			r_cons_println (core->cons, file);
+		}
+	}
+	if (pj) {
+		pj_end (pj);
+		r_cons_println (core->cons, pj_string (pj));
+		pj_free (pj);
+	}
+	r_list_free (files);
+}
+
+static int cmd_meta_lineinfo_tree(RCore *core, const char *input) {
+	if (*input == '?' && !input[1]) {
+		r_cons_cmd_help (core->cons, help_msg_CL);
+		return 0;
+	}
+	if (*input && *input != ' ') {
+		r_core_return_invalid_command (core, "CLt", *input);
+		return 0;
+	}
+	RFSPlugin *plugin = r_libstore_find_name (core->fs->libstore, "r2");
+	if (!plugin || !plugin->dir) {
+		R_LOG_ERROR ("The r2 filesystem plugin is unavailable");
+		r_core_return_code (core, 1);
+		return 0;
+	}
+	RFSRoot root = { .p = plugin, .cob = core->fs->cob };
+	const char *subpath = r_str_trim_head_ro (input);
+	while (*subpath == '/') {
+		subpath++;
+	}
+	char *path = r_str_newf ("/cl%s%s", *subpath? "/": "", subpath);
+	if (path) {
+		r_str_trim_path (path);
+		r_core_return_code (core, core_fs_tree (core, &root, path, 64)? 0: 1);
+		free (path);
+	}
+	return 0;
+}
+
 static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	int ret;
 	ut64 offset = UT64_MAX; // use this as error value
@@ -332,6 +394,20 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	}
 	if (*p == 'd') { // "CLd" - decompile current function from dwarf line info
 		return cmd_meta_lineinfo_decompile (core, p + 1);
+	}
+	if (*p == 't') {
+		return cmd_meta_lineinfo_tree (core, p + 1);
+	}
+	if (*p == 'u') {
+		if (p[1] == '?' && !p[2]) {
+			r_cons_cmd_help (core->cons, help_msg_CL);
+		} else if (!p[1] || (p[1] == 'j' && !p[2])) {
+			cmd_meta_lineinfo_units (core, p[1] == 'j');
+			r_core_return_code (core, 0);
+		} else {
+			r_core_return_invalid_command (core, "CLu", p[1]);
+		}
+		return 0;
 	}
 	if (*p == 'L') { // "CLL"
 		if (p[1] == 'f') { // "CLLf"
