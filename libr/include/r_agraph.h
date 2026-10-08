@@ -114,6 +114,7 @@ typedef struct r_ascii_graph_t {
 	RVecAGraphDist *dists;
 	RList *edges; /* RList<AEdge> */
 	RAGraphHits ghits;
+	struct r_agraph_edge_routes_t *edge_routes; // cached edge drawing after layout
 } RAGraph;
 
 typedef struct r_ascii_graph_transition_callbacks_t {

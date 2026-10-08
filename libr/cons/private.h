@@ -30,17 +30,14 @@ static inline void __cons_write_ll(RCons *cons, const char *buf, int len) {
 #endif
 }
 
-static inline void __cons_write(RCons *cons, const char *obuf, int olen) {
+static inline void __cons_write(RCons *cons, const char *obuf, size_t olen) {
 	const size_t bucket = 64 * 1024;
 	size_t i;
-	if (olen < 0) {
-		olen = strlen (obuf);
-	}
-	for (i = 0; (i + bucket) < olen; i += bucket) {
-		__cons_write_ll (cons, obuf + i, bucket);
+	for (i = 0; olen - i > bucket; i += bucket) {
+		__cons_write_ll (cons, obuf + i, (int)bucket);
 	}
 	if (i < olen) {
-		__cons_write_ll (cons, obuf + i, olen - i);
+		__cons_write_ll (cons, obuf + i, (int)(olen - i));
 	}
 }
 

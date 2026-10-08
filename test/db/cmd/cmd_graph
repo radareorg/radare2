@@ -413,6 +413,59 @@ agraph.edge.0x123_0x123.highlight=true
 EOF
 RUN
 
+NAME=crossing sweeps with shared destinations and high fan-in
+FILE=-
+CMDS=<<EOF
+agn p0
+agn p1
+agn p2
+agn p3
+agn p4
+agn p5
+agn p6
+agn p7
+agn u
+agn v
+agn w
+agn a
+agn b
+agn c
+age p0 v
+age p1 u
+age p1 w
+age p2 u
+age p2 v
+age p3 u
+age p4 u
+age p5 v
+age p6 v
+age p7 w
+age u c
+age u b
+age v a
+age v b
+age w b
+age p0 b
+aggk~nodes.~.x=
+EOF
+EXPECT=<<EOF
+agraph.nodes.a.x=0x6c
+agraph.nodes.b.x=0x3f
+agraph.nodes.c.x=0x11
+agraph.nodes.p0.x=0x68
+agraph.nodes.p1.x=0x34
+agraph.nodes.p2.x=0x4e
+agraph.nodes.p3.x=0
+agraph.nodes.p4.x=0x1a
+agraph.nodes.p5.x=0x9c
+agraph.nodes.p6.x=0xb6
+agraph.nodes.p7.x=0x82
+agraph.nodes.u.x=0x11
+agraph.nodes.v.x=0x6c
+agraph.nodes.w.x=0x47
+EOF
+RUN
+
 # wont run on big endian because of a bug in capstone
 NAME=lowaddr lights
 FILE=bins/elf/elf_one_symbol_shdr
@@ -444,5 +497,30 @@ digraph code {
         "0x00000458" -> "0x00000458" [color="#13a10e"];
         "0x00000458" -> "0x00000479" [color="#c50f1f"];
 }
+EOF
+RUN
+
+NAME=visual graph scroll keeps edges whose endpoints are offscreen
+FILE=-
+CMDS=<<EOF
+e scr.utf8=false
+e scr.color=0
+e scr.cols=40
+e scr.rows=8
+agn a
+agn b base64:bDAKbDEKbDIKbDMKbDQKbDUKbDYKbDcKbDgKbDkKbDEwCmwxMQpsMTIKbDEzCmwxNApsMTUKbDE2CmwxNwpsMTgKbDE5Cg==
+agn c
+age a b
+age b c
+age a c
+"$capture=aggv @e:scr.interactive=true > $frame"
+<jjjjq
+$capture > /dev/null
+cat $frame~?l12
+cat $frame~?l12                \|    \|
+EOF
+EXPECT=<<EOF
+1
+1
 EOF
 RUN

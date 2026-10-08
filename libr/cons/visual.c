@@ -82,7 +82,8 @@ R_API void r_cons_visual_write(RCons *cons, char *buffer) {
 			if (lines > 0) {
 				__cons_write (cons, pptr, plen);
 				if (len != olen) {
-					__cons_write (cons, R_CONS_CLEAR_FROM_CURSOR_TO_END Color_RESET, -1);
+					__cons_write (cons, R_CONS_CLEAR_FROM_CURSOR_TO_END Color_RESET,
+						sizeof (R_CONS_CLEAR_FROM_CURSOR_TO_END Color_RESET) - 1);
 				}
 			}
 		} else {

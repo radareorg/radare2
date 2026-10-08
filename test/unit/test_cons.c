@@ -352,6 +352,45 @@ bool test_cons_empty_drain_reuses_buffer(void) {
 	mu_end;
 }
 
+bool test_cons_output_chunks(void) {
+	RCons *cons = r_cons_new ();
+	char *filename = NULL;
+	int fd = r_file_mkstemp ("r2-cons-output", &filename);
+	mu_assert ("temporary output file", fd >= 0);
+	cons->fdout = fd;
+	cons->context->is_interactive = false;
+	const size_t length = 2 * 64 * 1024 + 3;
+	char *buffer = malloc (length);
+	mu_assert_notnull (buffer, "output buffer");
+	size_t i;
+	for (i = 0; i < length; i++) {
+		buffer[i] = i % 256;
+	}
+	mu_assert_true (r_cons_write (cons, buffer, length), "buffer binary output");
+	r_cons_flush (cons);
+	mu_assert_eq (cons->context->buffer_len, 0, "flush drains all chunks");
+
+	cons->columns = 2;
+	cons->rows = 1;
+	cons->break_lines = false;
+	char cropped[] = "abcdef\n";
+	r_cons_visual_write (cons, cropped);
+	close (fd);
+	size_t output_length;
+	char *output = r_file_slurp (filename, &output_length);
+	r_file_rm (filename);
+	free (filename);
+	mu_assert_notnull (output, "read flushed output");
+	const char suffix[] = "ab" R_CONS_CLEAR_FROM_CURSOR_TO_END Color_RESET;
+	mu_assert_eq (output_length, length + sizeof (suffix) - 1, "all chunks and clear sequence are written");
+	mu_assert_memeq ((const ut8 *)output, (const ut8 *)buffer, length, "chunk boundaries preserve binary output");
+	mu_assert_memeq ((const ut8 *)output + length, (const ut8 *)suffix, sizeof (suffix) - 1, "clipping writes the complete clear sequence");
+	free (buffer);
+	free (output);
+	r_cons_free (cons);
+	mu_end;
+}
+
 typedef struct {
 	RThreadSemaphore *ready;
 	RThreadSemaphore *release;
@@ -736,6 +775,7 @@ bool all_tests(void) {
 	mu_run_test (test_cons_child_concurrent_merge);
 	mu_run_test (test_cons_multiple_roots_same_thread);
 	mu_run_test (test_cons_empty_drain_reuses_buffer);
+	mu_run_test (test_cons_output_chunks);
 	mu_run_test (test_cons_multiple_roots_across_threads);
 	mu_run_test (test_cons_timeout_keeps_earliest_deadline);
 	mu_run_test (test_cons_timeout_does_not_restart_expired_deadline);

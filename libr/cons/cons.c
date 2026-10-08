@@ -925,11 +925,11 @@ R_API void r_cons_flush(RCons *cons) {
 
 	if (r_cons_is_interactive (cons) && !r_sandbox_enable (false)) {
 		if (cons->linesleep > 0 && cons->linesleep < 1000) {
-			int i = 0;
+			size_t i = 0;
 			int pagesize = R_MAX (1, cons->pagesize);
 			char *ptr = ctx->buffer;
 			char *nl = strchr (ptr, '\n');
-			int len = ctx->buffer_len;
+			size_t len = ctx->buffer_len;
 			ctx->buffer[ctx->buffer_len] = 0;
 			r_cons_break_push (cons, NULL, NULL);
 			while (nl && !r_cons_is_breaked (cons)) {
