@@ -312,7 +312,8 @@ static void cmd_oba(RCore *core, const char *input) {
 				opt.inmem = r_config_get_b (core->config, "bin.inmem");
 				opt.sz = oba_memsize (core->dbg, addr);
 				if (!opt.sz) {
-					opt.sz = 1024 * 1024;
+					const ut64 desc_size = r_io_desc_size (desc);
+					opt.sz = (opt.inmem && addr < desc_size)? desc_size - addr: 1024 * 1024;
 				}
 				r_bin_open_io (core->bin, &opt);
 				oba_finish_load (core);

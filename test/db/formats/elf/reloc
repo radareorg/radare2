@@ -2065,3 +2065,64 @@ vaddr paddr type ntype name
 ---------------------------
 EOF
 RUN
+
+NAME=ELF: a memory-layout image whose loader rebased its dynamic tags lists its relocs
+FILE=malloc://16440
+ARGS=-e bin.inmem=true
+CMDS=<<EOF
+wff bins/elf/x86_64-pie-memimg
+wv8 0x555555554308 @ 0x3e70
+wv8 0x5555555543d0 @ 0x3e80
+wv8 0x555555554328 @ 0x3e90
+wv8 0x555555558000 @ 0x3ed0
+wv8 0x555555554548 @ 0x3f00
+wv8 0x555555554488 @ 0x3f10
+wv8 0x555555554454 @ 0x3f70
+oba 0 0x555555554000
+ir
+EOF
+EXPECT=<<EOF
+vaddr          paddr      type   ntype name
+-------------------------------------------
+0x555555557de8 0x00003de8 ADD_64 8      0x00001130
+0x555555557df0 0x00003df0 ADD_64 8      0x000010e0
+0x555555557fd8 0x00003fd8 SET_64 6     _ITM_deregisterTMCloneTable
+0x555555557fe0 0x00003fe0 SET_64 6     __libc_start_main
+0x555555557fe8 0x00003fe8 SET_64 6     __gmon_start__
+0x555555557ff0 0x00003ff0 SET_64 6     _ITM_registerTMCloneTable
+0x555555557ff8 0x00003ff8 SET_64 6     __cxa_finalize
+0x555555558018 0x00004018 SET_64 7     printf
+0x555555558028 0x00004028 ADD_64 8      0x00004028
+EOF
+RUN
+
+NAME=ELF: oba reads a memory-layout image larger than 1 MiB whole
+FILE=malloc://0x104040
+ARGS=-e bin.inmem=true
+CMDS=<<EOF
+wff bins/elf/x86_64-pie-memimg
+wv8 0x103de8 @ 0x168
+wv8 0x103df8 @ 0x1a0
+wd 0x3de8 0x250 @ 0x103de8
+oba 0
+ir~?
+EOF
+EXPECT=<<EOF
+11
+EOF
+RUN
+
+NAME=ELF: bin.inmem on a relocatable object reads it as a file without a warning
+FILE=malloc://424
+ARGS=-e bin.inmem=true
+CMDS=<<EOF
+wff bins/elf/arm-thumb-movw.o
+oba 0
+ir~?
+EOF
+EXPECT=<<EOF
+6
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN

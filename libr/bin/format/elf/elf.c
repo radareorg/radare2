@@ -548,6 +548,36 @@ static inline size_t get_maximum_number_of_dynamic_entries(ut64 dyn_size) {
 	return dyn_size / sizeof (Elf_(Dyn));
 }
 
+static bool backing_at(ELFOBJ *eo, ut64 vaddr, ut64 *off, ut64 *left);
+
+// glibc rewrites these in place to runtime addresses in a loaded image
+static inline bool is_loader_rebased(ut64 tag) {
+	switch (tag) {
+	case DT_HASH:
+	case DT_PLTGOT:
+	case DT_STRTAB:
+	case DT_SYMTAB:
+	case DT_RELA:
+	case DT_REL:
+	case DT_JMPREL:
+	case DT_RELR:
+	case DT_VERSYM:
+	case DT_GNU_HASH:
+		return true;
+	}
+	return false;
+}
+
+static ut64 dyn_link_ptr(ELFOBJ *eo, ut64 tag, ut64 ptr) {
+	if (!eo->inmem || eo->user_baddr == UT64_MAX || !is_loader_rebased (tag)) {
+		return ptr;
+	}
+	const ut64 bias = eo->user_baddr - eo->memory_base;
+	ut64 off, left;
+	return (bias && !backing_at (eo, ptr, &off, &left) && backing_at (eo, ptr - bias, &off, &left))
+		? ptr - bias: ptr;
+}
+
 static bool fill_dynamic_entry(ELFOBJ *eo, ut64 entry_offset, Elf_(Dyn) *d) {
 	ut8 sdyn[sizeof (Elf_(Dyn))] = {0};
 	int len = r_buf_read_at (eo->b, entry_offset, sdyn, sizeof (sdyn));
@@ -556,7 +586,8 @@ static bool fill_dynamic_entry(ELFOBJ *eo, ut64 entry_offset, Elf_(Dyn) *d) {
 	}
 	int j = 0; // required because its used in a macro
 	d->d_tag = R_BIN_ELF_READWORD (sdyn, j);
-	d->d_un.d_ptr = R_BIN_ELF_READWORD (sdyn, j);
+	const ut64 value = R_BIN_ELF_READWORD (sdyn, j);
+	d->d_un.d_ptr = dyn_link_ptr (eo, d->d_tag, value);
 	return true;
 }
 
@@ -1745,7 +1776,9 @@ static bool elf_init(ELFOBJ *eo) {
 		R_LOG_DEBUG ("Cannot initialize program headers");
 	}
 	if (eo->inmem && !init_memory_base (eo)) {
-		R_LOG_WARN ("No PT_LOAD maps the ELF header, reading it as a file");
+		if (eo->ehdr.e_type == ET_EXEC || eo->ehdr.e_type == ET_DYN) {
+			R_LOG_WARN ("No PT_LOAD maps the ELF header, reading it as a file");
+		}
 		eo->inmem = false;
 	}
 
@@ -4511,7 +4544,7 @@ static bool parse_pt_dynamic(RBinFile *bf, RBinSection *ptr) {
 		switch (entry.d_tag) {
 		case DT_RELR:
 			R_LOG_DEBUG ("RELR section found at 0x%08"PFMT64x, entry.d_un.d_ptr);
-			eo->dyn_info.dt_relr = entry.d_un.d_ptr;
+			eo->dyn_info.dt_relr = dyn_link_ptr (eo, entry.d_tag, entry.d_un.d_ptr);
 			break;
 		case DT_RELRSZ:
 			R_LOG_DEBUG ("RELR section size: 0x%08"PFMT64x, entry.d_un.d_val);
