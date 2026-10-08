@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2013-2025 - pancake */
 
 #include <r_cons.h>
+#include "private.h"
 #define W(y) r_cons_canvas_write(c,y)
 #define G(x,y) r_cons_canvas_gotoxy(c,x,y)
 
@@ -135,7 +136,7 @@ static void draw_horizontal_segment(RConsCanvas *c, int x, int y, int width, con
 		const ut64 loc = (ut64)c->y * c->w + c->x;
 		int i;
 		for (i = 1; i < count; i++) {
-			ht_up_update (c->attrs, loc + i, (void *)c->attr);
+			canvas_attrs_set (c->attrs, loc + i, c->attr);
 		}
 	}
 	free (segment);

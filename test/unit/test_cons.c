@@ -605,11 +605,11 @@ bool test_cons_canvas_attribute_lifetime(void) {
 	};
 	r_cons_canvas_line_square (canvas, 0, 0, 7, 0, &style);
 	free (color);
-	const char *attribute = ht_up_find (canvas->attrs, 0, NULL);
+	const char *attribute = r_cons_canvas_attribute_at (canvas, 0, 0);
 	mu_assert_streq (attribute, Color_RED, "custom color survives its input");
 	int x;
 	for (x = 1; x < 8; x++) {
-		mu_assert_ptreq (ht_up_find (canvas->attrs, x, NULL), attribute, "line cells share one color");
+		mu_assert_ptreq (r_cons_canvas_attribute_at (canvas, x, 0), attribute, "line cells share one color");
 	}
 	char *output = r_cons_canvas_tostring (canvas);
 	mu_assert_streq_free (output, Color_RED "." Color_RED "-" Color_RED "-" Color_RED "-"
@@ -621,13 +621,13 @@ bool test_cons_canvas_attribute_lifetime(void) {
 	canvas->attr = color;
 	r_cons_canvas_write_at (canvas, "a", 0, 0);
 	free (color);
-	mu_assert_streq (ht_up_find (canvas->attrs, 0, NULL), Color_BLUE, "direct attribute is retained");
+	mu_assert_streq (r_cons_canvas_attribute_at (canvas, 0, 0), Color_BLUE, "direct attribute is retained");
 
 	r_cons_canvas_background (canvas, Color_BGBLUE);
 	r_cons_canvas_write_at (canvas, "b\nc", 1, 0);
 	r_cons_canvas_background (canvas, Color_BGRED);
-	mu_assert_streq (ht_up_find (canvas->attrs, 1, NULL), Color_BGBLUE, "newline retains the old background");
-	mu_assert_streq (ht_up_find (canvas->attrs, 9, NULL), Color_BGBLUE, "next row retains the old background");
+	mu_assert_streq (r_cons_canvas_attribute_at (canvas, 1, 0), Color_BGBLUE, "newline retains the old background");
+	mu_assert_streq (r_cons_canvas_attribute_at (canvas, 1, 1), Color_BGBLUE, "next row retains the old background");
 
 	r_cons_canvas_clear (canvas, R_CONS_CANVAS_FLAG_DEFAULT);
 	cons->context->color_mode = COLOR_MODE_16;
@@ -637,7 +637,7 @@ bool test_cons_canvas_attribute_lifetime(void) {
 	r_cons_canvas_line_square (canvas, 0, 0, 7, 0, &style);
 	cons->context->color_mode = COLOR_MODE_256;
 	r_cons_pal_reload (cons);
-	mu_assert_streq (ht_up_find (canvas->attrs, 0, NULL), palette_color, "palette reload retains existing colors");
+	mu_assert_streq (r_cons_canvas_attribute_at (canvas, 0, 0), palette_color, "palette reload retains existing colors");
 	free (palette_color);
 	r_cons_canvas_free (canvas);
 	r_cons_free (cons);
@@ -768,6 +768,37 @@ bool test_cons_canvas_resize_reuses_rows(void) {
 	mu_end;
 }
 
+bool test_cons_canvas_many_attributes(void) {
+	RCons *cons = r_cons_new ();
+	RConsCanvas *canvas = r_cons_canvas_new (cons, 300, 2, 0);
+	mu_assert_notnull (canvas, "canvas");
+	canvas->color = true;
+	int x;
+	for (x = 0; x < 300; x++) {
+		char *s = r_str_newf ("\x1b[38;2;%d;%d;0mx", x % 256, x / 256);
+		r_cons_canvas_write_at (canvas, s, x, 0);
+		free (s);
+	}
+	for (x = 0; x < 300; x++) {
+		char *expected = r_str_newf ("\x1b[38;2;%d;%d;0m", x % 256, x / 256);
+		mu_assert_streq (r_cons_canvas_attribute_at (canvas, x, 0), expected, "each cell keeps its own style past 255 styles");
+		free (expected);
+	}
+	char *output = r_cons_canvas_tostring (canvas);
+	mu_assert_true (r_str_startswith (output, "\x1b[38;2;0;0;0mx\x1b[38;2;1;0;0mx"), "serialized styles");
+	mu_assert_notnull (strstr (output, "\x1b[38;2;43;1;0mx"), "serialized wide style");
+	free (output);
+	r_cons_canvas_write_at (canvas, "y", 5, 0);
+	mu_assert_streq (r_cons_canvas_attribute_at (canvas, 5, 0), "\x1b[38;2;43;1;0m", "plain write uses the current style");
+	r_cons_canvas_clear (canvas, R_CONS_CANVAS_FLAG_DEFAULT);
+	mu_assert_null (r_cons_canvas_attribute_at (canvas, 299, 0), "clear removes styles");
+	mu_assert_true (r_cons_canvas_resize (canvas, 4, 1), "resize");
+	mu_assert_null (r_cons_canvas_attribute_at (canvas, 0, 0), "resize removes styles");
+	r_cons_canvas_free (canvas);
+	r_cons_free (cons);
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_cons);
 	mu_run_test (test_cons_to_html);
@@ -790,6 +821,7 @@ bool all_tests(void) {
 	mu_run_test (test_cons_canvas_large_output);
 	mu_run_test (test_cons_canvas_dimension_bounds);
 	mu_run_test (test_cons_canvas_resize_reuses_rows);
+	mu_run_test (test_cons_canvas_many_attributes);
 	return tests_passed != tests_run;
 }
 

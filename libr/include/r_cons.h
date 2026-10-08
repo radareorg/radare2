@@ -334,7 +334,7 @@ typedef struct r_cons_canvas_t {
 	int *blen;
 	int *bsize;
 	const char *attr; //The current attr (inserted on each write)
-	HtUP *attrs; // all the different attributes <key: unsigned int loc, const char *attr>
+	struct r_cons_canvas_attrs_t *attrs; // per-cell attribute styles, keyed by y * w + x
 	RStrConstPool constpool; // Pool for non-compile-time attrs
 	int sx; // scrollx
 	int sy; // scrolly
@@ -841,6 +841,7 @@ R_API void r_cons_canvas_print(RConsCanvas *c);
 R_API void r_cons_canvas_print_region(RConsCanvas *c);
 R_API char *r_cons_canvas_tostring(RConsCanvas *c);
 R_API void r_cons_canvas_attr(RConsCanvas *c,const char *attr);
+R_API const char *r_cons_canvas_attribute_at(RConsCanvas *c, int x, int y);
 R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s);
 R_API void r_cons_canvas_background(RConsCanvas *c, const char *color);
 R_API bool r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y);

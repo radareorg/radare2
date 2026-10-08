@@ -11,6 +11,14 @@ R_IPI bool pager_all_matches(const char *s, RRegex *rx, RList **mla, int *lines,
 R_IPI int *pager_splitlines(char *s, int *lines_count);
 R_IPI void pal_clone(RConsContext *ctx);
 
+typedef struct r_cons_canvas_attrs_t RConsCanvasAttrs;
+R_IPI RConsCanvasAttrs *canvas_attrs_new(void);
+R_IPI void canvas_attrs_free(RConsCanvasAttrs *a);
+R_IPI void canvas_attrs_clear(RConsCanvasAttrs *a, bool release);
+R_IPI void canvas_attrs_set(RConsCanvasAttrs *a, ut64 loc, const char *style);
+R_IPI const char *canvas_attrs_get(const RConsCanvasAttrs *a, ut64 loc);
+R_IPI ut64 canvas_attrs_size(const RConsCanvasAttrs *a);
+
 static inline void __cons_write_ll(RCons *cons, const char *buf, int len) {
 #if R2__WINDOWS__
 	if (cons->vtmode) {
