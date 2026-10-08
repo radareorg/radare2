@@ -799,6 +799,36 @@ bool test_cons_canvas_many_attributes(void) {
 	mu_end;
 }
 
+bool test_cons_canvas_print_rows(void) {
+	RCons *cons = r_cons_new ();
+	RConsCanvas *canvas = r_cons_canvas_new (cons, 6, 6, 0);
+	mu_assert_notnull (canvas, "canvas");
+	canvas->color = true;
+	r_cons_canvas_write_at (canvas, Color_RED "a", 0, 0);
+	r_cons_canvas_write_at (canvas, "\t", 2, 1);
+	r_cons_canvas_write_at (canvas, Color_BLUE "b \t", 1, 2);
+	r_cons_canvas_write_at (canvas, "\t", 0, 4);
+	char *expected = r_cons_canvas_tostring (canvas);
+	mu_assert_notnull (expected, "serialized canvas");
+	size_t len;
+	r_cons_reset (cons);
+	r_cons_canvas_print (canvas);
+	mu_assert_streq (r_cons_get_buffer (cons, &len), expected, "print streams every row");
+	r_str_trim_tail (expected);
+	r_cons_reset (cons);
+	r_cons_canvas_print_region (canvas);
+	mu_assert_streq (r_cons_get_buffer (cons, &len), expected, "print_region trims only the output tail");
+	free (expected);
+	r_cons_canvas_clear (canvas, R_CONS_CANVAS_FLAG_DEFAULT);
+	r_cons_reset (cons);
+	r_cons_canvas_print_region (canvas);
+	const char *empty = r_cons_get_buffer (cons, &len);
+	mu_assert_true (!empty || !*empty, "blank canvas prints nothing");
+	r_cons_canvas_free (canvas);
+	r_cons_free (cons);
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_cons);
 	mu_run_test (test_cons_to_html);
@@ -822,6 +852,7 @@ bool all_tests(void) {
 	mu_run_test (test_cons_canvas_dimension_bounds);
 	mu_run_test (test_cons_canvas_resize_reuses_rows);
 	mu_run_test (test_cons_canvas_many_attributes);
+	mu_run_test (test_cons_canvas_print_rows);
 	return tests_passed != tests_run;
 }
 

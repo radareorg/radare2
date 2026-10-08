@@ -111,6 +111,7 @@ static unsigned int count_output_lines(const char *buffer, size_t len) {
 }
 
 #define MOAR (4096 * 8)
+#define R_CONS_MOVE_LAST (1024 * 1024)
 
 static bool cons_palloc(RCons *cons, size_t moar) {
 	RConsContext *C = cons->context;
@@ -860,14 +861,22 @@ R_API void r_cons_flush(RCons *cons) {
 		r_cons_reset (cons);
 		goto beach;
 	}
+	// large plain writes hand their buffer over as the last output instead of copying it
+	bool move_last = false;
 	if (lastMatters (ctx)) {
-		// snapshot of the output
-		if (ctx->buffer_len > ctx->lastLength) {
-			free (ctx->lastOutput);
-			ctx->lastOutput = malloc (ctx->buffer_len + 1);
+#if !__wasi__
+		move_last = ctx->buffer_len >= R_CONS_MOVE_LAST && R_STR_ISEMPTY (cons->highlight)
+			&& !(r_cons_is_interactive (cons) && cons->fdout == 1);
+#endif
+		if (!move_last) {
+			// snapshot of the output
+			if (ctx->buffer_len > ctx->lastLength) {
+				free (ctx->lastOutput);
+				ctx->lastOutput = malloc (ctx->buffer_len + 1);
+			}
+			ctx->lastLength = ctx->buffer_len;
+			memcpy (ctx->lastOutput, ctx->buffer, ctx->buffer_len);
 		}
-		ctx->lastLength = ctx->buffer_len;
-		memcpy (ctx->lastOutput, ctx->buffer, ctx->buffer_len);
 	} else {
 		ctx->lastMode = false;
 	}
@@ -948,6 +957,14 @@ R_API void r_cons_flush(RCons *cons) {
 		}
 	} else {
 		__cons_write (cons, ctx->buffer, ctx->buffer_len);
+	}
+	if (move_last) {
+		free (ctx->lastOutput);
+		char *last = realloc (ctx->buffer, ctx->buffer_len + 1);
+		ctx->lastOutput = last? last: ctx->buffer;
+		ctx->lastLength = ctx->buffer_len;
+		ctx->buffer = NULL;
+		ctx->buffer_sz = 0;
 	}
 
 	r_cons_reset (cons);
