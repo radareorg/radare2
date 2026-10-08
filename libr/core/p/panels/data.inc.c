@@ -12,7 +12,7 @@ static const char *panels_static[] = {
 
 static const char *menus_View_Code[] = {
 	"Disassembly", "Function Disassembly", "Disassembly Summary", "Decompiler", "Decompiler With Offsets",
-	"Graph", "Tiny Graph"
+	"Graph", "Tiny Graph", "Source Tree", "Compilation Unit Tree"
 };
 
 static const char *menus_View_Data[] = {
@@ -41,7 +41,7 @@ static const char *menus_View_Debug[] = {
 };
 
 static const char *menus_View_Other[] = {
-	"Console", "Open Files", "IO Maps", "Database"
+	"Console", "Open Files", "IO Maps", "Database", "Filesystem Tree"
 };
 
 static const char *menus_settings_disassembly[] = {
@@ -74,7 +74,7 @@ static const char *function_rotate[] = {
 };
 
 static const char *cache_white_list_cmds[] = {
-	"agf", "Help", "is,"
+	"agf", "Help", "is,", "CLt", "CLut", "mdt"
 };
 
 static RotateEntry rotate_entries[8];
@@ -220,6 +220,7 @@ static const ModalEntryDef modal_entries_db[] = {
 	{ "Classes", "icq", NULL, PANEL_CACHE_ON },
 	{ "Clipboard", "y", NULL },
 	{ "Comments", "CC", NULL },
+	{ "Compilation Unit Tree", "CLut", NULL, PANEL_CACHE_ON },
 	{ "Console", "cat $console", NULL },
 	{ "Create New", NULL, create_panel_input },
 	{ "Database", "k ***", NULL },
@@ -234,6 +235,7 @@ static const ModalEntryDef modal_entries_db[] = {
 	{ "Enumerations", "te", NULL },
 	{ "Exports", "iE", NULL, PANEL_CACHE_ON },
 	{ "File Hashes", "it", NULL, PANEL_CACHE_ON },
+	{ "Filesystem Tree", "mdt", NULL, PANEL_CACHE_ON },
 	{ "Flag Registers (1 bit)", "dr 1", NULL },
 	{ "Flag Spaces", "fs", NULL },
 	{ "Flags", "f", NULL },
@@ -270,6 +272,7 @@ static const ModalEntryDef modal_entries_db[] = {
 	{ "Sections", "iSq", NULL },
 	{ "Segments", "iSSq", NULL },
 	{ "Show All Decompiler Output", NULL, delegate_show_all_decompiler_cb },
+	{ "Source Tree", "CLt", NULL, PANEL_CACHE_ON },
 	{ "Stack", "pxr@r:SP", NULL },
 	{ "Strings in data sections", "izq", NULL },
 	{ "Strings in the whole bin", "izzq", NULL },
