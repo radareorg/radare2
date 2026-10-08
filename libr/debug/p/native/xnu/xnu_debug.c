@@ -679,6 +679,11 @@ static void xnu_free_threads_ports(RDebugPid *p) {
 }
 */
 
+// refreshed list of xnu_thread_t owned by dbg, NULL without a task
+RList *xnu_threads(RDebug *dbg) {
+	return xnu_update_thread_list (dbg)? dbg->threads: NULL;
+}
+
 RList *xnu_thread_list(RDebug *dbg, int pid, RList *list) {
 #if __arm64__ || __aarch_64__ || __arm64e__
 	#define CPU_PC R_SYS_BITS_CHECK (dbg->bits, 64)? \

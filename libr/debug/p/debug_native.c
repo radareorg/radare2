@@ -1546,7 +1546,7 @@ static bool arm64_hwbp_del(RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
 #define S_USER                  ((uint32_t)(2u << 1))
 
 static bool darwin_arm64_hwbp_add(RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
-	RList *threads = xnu_thread_list (dbg, dbg->pid, NULL);
+	RList *threads = xnu_threads (dbg);
 	if (!threads) {
 		return false;
 	}
@@ -1574,7 +1574,6 @@ static bool darwin_arm64_hwbp_add(RDebug *dbg, RBreakpoint *bp, RBreakpointItem 
 		}
 	}
 	if (slot == -1) {
-		r_list_free (threads);
 		return false; // No available slots
 	}
 	// Set breakpoint on all threads
@@ -1589,12 +1588,11 @@ static bool darwin_arm64_hwbp_add(RDebug *dbg, RBreakpoint *bp, RBreakpointItem 
 			ret = true;
 		}
 	}
-	r_list_free (threads);
 	return ret;
 }
 
 static bool darwin_arm64_hwbp_del(RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
-	RList *threads = xnu_thread_list (dbg, dbg->pid, NULL);
+	RList *threads = xnu_threads (dbg);
 	if (!threads) {
 		return false;
 	}
@@ -1616,7 +1614,6 @@ static bool darwin_arm64_hwbp_del(RDebug *dbg, RBreakpoint *bp, RBreakpointItem 
 	}
 found:
 	if (slot == -1) {
-		r_list_free (threads);
 		return false; // Breakpoint not found
 	}
 	// Clear breakpoint on all threads
@@ -1631,7 +1628,6 @@ found:
 			ret = true;
 		}
 	}
-	r_list_free (threads);
 	return ret;
 }
 
