@@ -477,7 +477,14 @@ static const ut8 *dwarf_get_section_bytes(RBinFile *bf, RBinSection *section) {
 		return NULL;
 	}
 	/* Handle compressed DWARF sections (.zdebug_* or SHF_COMPRESSED) */
-	if (R_BIN_ELF_SCN_IS_COMPRESSED (section->flags) || (section->name && strstr (section->name, "zdebug"))) {
+	RBinInfo *info = bf->bo->info;
+	const bool is_elf = info && info->rclass && r_str_startswith (info->rclass, "elf");
+	const bool compressed = (section->name && strstr (section->name, "zdebug"))
+		|| (is_elf && R_BIN_ELF_SCN_IS_COMPRESSED (section->flags));
+	if (compressed) {
+		if (!is_elf) {
+			return NULL;
+		}
 		ut64 raw_size = section->size;
 		if (raw_size < 12 || raw_size > ST32_MAX) {
 			return NULL;
@@ -490,10 +497,7 @@ static const ut8 *dwarf_get_section_bytes(RBinFile *bf, RBinSection *section) {
 			free (rawbuf);
 			return NULL;
 		}
-		/* Determine ELF class and endianness */
-		RBinObject *ro = bf->bo;
-		ELFOBJ *eo = (ELFOBJ *)ro->bin_obj;
-		bool is64 = eo && eo->ehdr.e_ident[EI_CLASS] == ELFCLASS64;
+		bool is64 = r_buf_read8_at (bf->buf, EI_CLASS) == ELFCLASS64;
 		bool be = r_bin_is_big_endian (bf->rbin);
 		/* Parse compression header */
 		if (is64 && raw_size < 24) {

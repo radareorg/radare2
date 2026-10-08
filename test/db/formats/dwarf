@@ -5336,3 +5336,15 @@ addr: 0x08003797
 --
 EOF
 RUN
+
+NAME=compressed debug sections
+FILE=bins/elf/new/b53985768bb99f138f48655f7b8bf7e420d13d.debug
+CMDS=<<EOF
+CL~?
+idx~?
+EOF
+EXPECT=<<EOF
+123228
+181
+EOF
+RUN
