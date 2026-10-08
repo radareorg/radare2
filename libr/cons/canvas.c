@@ -249,7 +249,9 @@ R_API void r_cons_canvas_clear(RConsCanvas *c, int flags) {
 	int y;
 	for (y = 0; y < c->h; y++) {
 		memset (c->b[y], '\n', c->bsize[y]);
+		c->blen[y] = c->w;
 	}
+	c->x = c->y = 0;
 	ht_up_foreach (c->attrs, attribute_delete_cb, c->attrs);
 	if (flags != R_CONS_CANVAS_FLAG_DEFAULT) {
 		c->flags = flags;
@@ -619,6 +621,10 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 	if (!c || !canvas_array_sizes (w, h, &rows_size, &lengths_size)) {
 		return false;
 	}
+	if (c->b && w == c->w && h == c->h) {
+		r_cons_canvas_clear (c, R_CONS_CANVAS_FLAG_DEFAULT);
+		return true;
+	}
 	const int old_h = c->h;
 	int i;
 	// shrink: free dropped lines before resizing the pointer array
@@ -655,8 +661,6 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 		c->bsize[i] = w + 1;
 	}
 	c->w = w;
-	c->x = 0;
-	c->y = 0;
 	r_cons_canvas_clear (c, R_CONS_CANVAS_FLAG_DEFAULT);
 	return true;
 beach:

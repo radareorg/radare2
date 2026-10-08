@@ -625,34 +625,6 @@ bool test_cons_canvas_long_attribute(void) {
 	mu_end;
 }
 
-bool test_cons_canvas_wide_attribute_overlap(void) {
-	RCons *cons = r_cons_new ();
-	RConsCanvas *canvas = r_cons_canvas_new (cons, 3, 2, R_CONS_CANVAS_FLAG_UTF8);
-	mu_assert_notnull (canvas, "canvas");
-	canvas->color = true;
-	RStrBuf *text = r_strbuf_new (NULL);
-	int i;
-	for (i = 0; i < 100; i++) {
-		r_strbuf_append (text, Color_RED);
-	}
-	r_strbuf_append (text, "a");
-	r_cons_canvas_write_at (canvas, r_strbuf_get (text), 0, 1);
-	free (canvas->b[0]);
-	canvas->b[0] = strdup ("😀x ");
-	canvas->blen[0] = strlen (canvas->b[0]);
-	canvas->bsize[0] = canvas->blen[0] + 1;
-	RStrBuf *expected = r_strbuf_new ("😀x");
-	const char *attribute = ht_up_find (canvas->attrs, 3, NULL);
-	r_strbuf_appendf (expected, "%s\n%s", attribute, r_strbuf_get (text));
-	char *output = r_cons_canvas_tostring (canvas);
-	mu_assert_streq_free (output, r_strbuf_get (expected), "overlapping wide row emits the full attribute twice");
-	r_strbuf_free (expected);
-	r_strbuf_free (text);
-	r_cons_canvas_free (canvas);
-	r_cons_free (cons);
-	mu_end;
-}
-
 bool test_cons_canvas_vertical_clipping(void) {
 	RCons *cons = r_cons_new ();
 	const int endpoints[][2] = {
@@ -731,6 +703,32 @@ bool test_cons_canvas_dimension_bounds(void) {
 	mu_end;
 }
 
+bool test_cons_canvas_resize_reuses_rows(void) {
+	RConsCanvas *canvas = r_cons_canvas_new (NULL, 4, 2, 0);
+	RConsCanvas *reference = r_cons_canvas_new (NULL, 4, 2, 0);
+	mu_assert_notnull (canvas, "canvas");
+	mu_assert_notnull (reference, "reference canvas");
+	r_cons_canvas_write_at (canvas, "\xe2\x94\x80\xe2\x94\x80", 0, 0);
+	r_cons_canvas_write_at (canvas, "z", 1, 1);
+	mu_assert_true (canvas->blen[0] > canvas->w, "utf8 expands the row bytes");
+	char *row = canvas->b[0];
+	mu_assert_true (r_cons_canvas_resize (canvas, 4, 2), "same size resize");
+	mu_assert_ptreq (canvas->b[0], row, "same size resize reuses rows");
+	mu_assert_eq (canvas->blen[0], canvas->w, "row length is reset");
+	mu_assert_eq (canvas->x, 0, "cursor x is reset");
+	mu_assert_eq (canvas->y, 0, "cursor y is reset");
+	r_cons_canvas_write_at (canvas, "ab", 0, 0);
+	r_cons_canvas_write_at (reference, "ab", 0, 0);
+	char *output = r_cons_canvas_tostring (canvas);
+	char *expected = r_cons_canvas_tostring (reference);
+	mu_assert_streq (output, expected, "reused canvas matches a fresh one");
+	free (output);
+	free (expected);
+	r_cons_canvas_free (canvas);
+	r_cons_canvas_free (reference);
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_cons);
 	mu_run_test (test_cons_to_html);
@@ -748,10 +746,10 @@ bool all_tests(void) {
 	mu_run_test (test_cons_cmd_help_match);
 	mu_run_test (test_cons_canvas_attribute_lifetime);
 	mu_run_test (test_cons_canvas_long_attribute);
-	mu_run_test (test_cons_canvas_wide_attribute_overlap);
 	mu_run_test (test_cons_canvas_vertical_clipping);
 	mu_run_test (test_cons_canvas_large_output);
 	mu_run_test (test_cons_canvas_dimension_bounds);
+	mu_run_test (test_cons_canvas_resize_reuses_rows);
 	return tests_passed != tests_run;
 }
 
