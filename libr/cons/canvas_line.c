@@ -131,7 +131,8 @@ static void draw_horizontal_segment(RConsCanvas *c, int x, int y, int width, con
 	W (segment);
 	if (c->color) {
 		// Preserve the per-cell attributes of the former one-write-per-cell loop.
-		const int loc = (c->y * c->w) + c->x;
+		c->attr = r_str_constpool_get (&c->constpool, c->attr);
+		const ut64 loc = (ut64)c->y * c->w + c->x;
 		int i;
 		for (i = 1; i < count; i++) {
 			ht_up_update (c->attrs, loc + i, (void *)c->attr);
@@ -288,22 +289,20 @@ static void draw_horizontal_line(RConsCanvas *c, int x, int y, int width, int st
 }
 
 static void draw_vertical_line(RConsCanvas *c, int x, int y, int height, int dot_style) {
-	int i;
+	st64 i;
 	RCons *cons = c->cons;
-	/* do not render offscreen vertical lines */
-	if (x + c->sx < 0) {
-		return;
-	}
-	if (x + c->sx > c->w) {
+	const st64 from = R_MAX ((st64)y, -(st64)c->sy);
+	const st64 to = R_MIN (R_MIN ((st64)y + height, (st64)c->h - c->sy), (st64)ST32_MAX + 1);
+	if ((st64)x + c->sx < 0 || (st64)x + c->sx >= c->w || from >= to) {
 		return;
 	}
 	const char *vline = cons->use_utf8? utf8_line_vert (cons, dot_style): "|";
 	r_cons_break_push (c->cons, NULL, NULL);
-	for (i = y; i < y + height; i++) {
+	for (i = from; i < to; i++) {
 		if (r_cons_is_breaked (c->cons)) {
 			break;
 		}
-		if (G (x, i)) {
+		if (G (x, (int)i)) {
 			W (vline);
 		}
 	}

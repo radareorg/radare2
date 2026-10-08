@@ -552,6 +552,185 @@ bool test_cons_cmd_help_match(void) {
 	mu_end;
 }
 
+bool test_cons_canvas_attribute_lifetime(void) {
+	RCons *cons = r_cons_new ();
+	cons->use_utf8 = false;
+	RConsCanvas *canvas = r_cons_canvas_new (cons, 8, 2, 0);
+	mu_assert_notnull (canvas, "canvas");
+	canvas->color = true;
+	char *color = strdup (Color_RED);
+	RCanvasLineStyle style = {
+		.color = LINE_TRUE,
+		.symbol = LINE_NONE,
+		.ansicolor = color
+	};
+	r_cons_canvas_line_square (canvas, 0, 0, 7, 0, &style);
+	free (color);
+	const char *attribute = ht_up_find (canvas->attrs, 0, NULL);
+	mu_assert_streq (attribute, Color_RED, "custom color survives its input");
+	int x;
+	for (x = 1; x < 8; x++) {
+		mu_assert_ptreq (ht_up_find (canvas->attrs, x, NULL), attribute, "line cells share one color");
+	}
+	char *output = r_cons_canvas_tostring (canvas);
+	mu_assert_streq_free (output, Color_RED "." Color_RED "-" Color_RED "-" Color_RED "-"
+		Color_RED "-" Color_RED "-" Color_RED "-" Color_RED ".\n", "colored line output");
+
+	r_cons_canvas_clear (canvas, R_CONS_CANVAS_FLAG_DEFAULT);
+	mu_assert_streq (attribute, Color_RED, "clearing attributes retains pooled strings");
+	color = strdup (Color_BLUE);
+	canvas->attr = color;
+	r_cons_canvas_write_at (canvas, "a", 0, 0);
+	free (color);
+	mu_assert_streq (ht_up_find (canvas->attrs, 0, NULL), Color_BLUE, "direct attribute is retained");
+
+	r_cons_canvas_background (canvas, Color_BGBLUE);
+	r_cons_canvas_write_at (canvas, "b\nc", 1, 0);
+	r_cons_canvas_background (canvas, Color_BGRED);
+	mu_assert_streq (ht_up_find (canvas->attrs, 1, NULL), Color_BGBLUE, "newline retains the old background");
+	mu_assert_streq (ht_up_find (canvas->attrs, 9, NULL), Color_BGBLUE, "next row retains the old background");
+
+	r_cons_canvas_clear (canvas, R_CONS_CANVAS_FLAG_DEFAULT);
+	cons->context->color_mode = COLOR_MODE_16;
+	r_cons_pal_reload (cons);
+	char *palette_color = strdup (cons->context->pal.graph_true);
+	style.ansicolor = NULL;
+	r_cons_canvas_line_square (canvas, 0, 0, 7, 0, &style);
+	cons->context->color_mode = COLOR_MODE_256;
+	r_cons_pal_reload (cons);
+	mu_assert_streq (ht_up_find (canvas->attrs, 0, NULL), palette_color, "palette reload retains existing colors");
+	free (palette_color);
+	r_cons_canvas_free (canvas);
+	r_cons_free (cons);
+	mu_end;
+}
+
+bool test_cons_canvas_long_attribute(void) {
+	RCons *cons = r_cons_new ();
+	RConsCanvas *canvas = r_cons_canvas_new (cons, 1, 1, 0);
+	mu_assert_notnull (canvas, "canvas");
+	canvas->color = true;
+	RStrBuf *text = r_strbuf_new (NULL);
+	int i;
+	for (i = 0; i < 100; i++) {
+		r_strbuf_append (text, Color_RED);
+	}
+	r_strbuf_append (text, "x");
+	r_cons_canvas_write (canvas, r_strbuf_get (text));
+	char *output = r_cons_canvas_tostring (canvas);
+	mu_assert_streq_free (output, r_strbuf_get (text), "output includes the complete ANSI attribute");
+	r_strbuf_free (text);
+	r_cons_canvas_free (canvas);
+	r_cons_free (cons);
+	mu_end;
+}
+
+bool test_cons_canvas_wide_attribute_overlap(void) {
+	RCons *cons = r_cons_new ();
+	RConsCanvas *canvas = r_cons_canvas_new (cons, 3, 2, R_CONS_CANVAS_FLAG_UTF8);
+	mu_assert_notnull (canvas, "canvas");
+	canvas->color = true;
+	RStrBuf *text = r_strbuf_new (NULL);
+	int i;
+	for (i = 0; i < 100; i++) {
+		r_strbuf_append (text, Color_RED);
+	}
+	r_strbuf_append (text, "a");
+	r_cons_canvas_write_at (canvas, r_strbuf_get (text), 0, 1);
+	free (canvas->b[0]);
+	canvas->b[0] = strdup ("😀x ");
+	canvas->blen[0] = strlen (canvas->b[0]);
+	canvas->bsize[0] = canvas->blen[0] + 1;
+	RStrBuf *expected = r_strbuf_new ("😀x");
+	const char *attribute = ht_up_find (canvas->attrs, 3, NULL);
+	r_strbuf_appendf (expected, "%s\n%s", attribute, r_strbuf_get (text));
+	char *output = r_cons_canvas_tostring (canvas);
+	mu_assert_streq_free (output, r_strbuf_get (expected), "overlapping wide row emits the full attribute twice");
+	r_strbuf_free (expected);
+	r_strbuf_free (text);
+	r_cons_canvas_free (canvas);
+	r_cons_free (cons);
+	mu_end;
+}
+
+bool test_cons_canvas_vertical_clipping(void) {
+	RCons *cons = r_cons_new ();
+	const int endpoints[][2] = {
+		{ -100, 100 }, { -100, -90 }, { 20, 30 }, { -1, -1 }, { 3, 3 }, { 0, 2 }
+	};
+	const char *units[] = { RUNECODESTR_LINE_VERT, "┊", "╵" };
+	int utf8, dot_style, shift, edge;
+	for (utf8 = 0; utf8 < 2; utf8++) {
+		cons->use_utf8 = utf8;
+		cons->dotted_lines = true;
+		for (dot_style = DOT_STYLE_NORMAL; dot_style <= DOT_STYLE_BACKEDGE; dot_style++) {
+			for (shift = 0; shift < 2; shift++) {
+				for (edge = 0; edge < R_ARRAY_SIZE (endpoints); edge++) {
+					int flags = utf8? R_CONS_CANVAS_FLAG_UTF8: 0;
+					RConsCanvas *canvas = r_cons_canvas_new (cons, 8, 5, flags);
+					RConsCanvas *reference = r_cons_canvas_new (cons, 8, 5, flags);
+					mu_assert_notnull (canvas, "clipped canvas");
+					mu_assert_notnull (reference, "reference canvas");
+					canvas->linemode = true;
+					canvas->color = reference->color = true;
+					canvas->sx = reference->sx = -shift;
+					canvas->sy = reference->sy = -3 * shift;
+					RCanvasLineStyle style = {
+						.color = LINE_NONE,
+						.symbol = LINE_NONE,
+						.dot_style = dot_style,
+						.ansicolor = Color_GREEN
+					};
+					int y = endpoints[edge][0], y2 = endpoints[edge][1];
+					r_cons_canvas_line_square_defined (canvas, 3, y, 3, y2, &style, 0, true);
+					reference->attr = Color_GREEN;
+					int row;
+					for (row = y + 1; row <= y2 + 1; row++) {
+						r_cons_canvas_write_at (reference, utf8? units[dot_style]: "|", 3, row);
+					}
+					char *output = r_cons_canvas_tostring (canvas);
+					char *expected = r_cons_canvas_tostring (reference);
+					mu_assert_streq (output, expected, "vertical clipping preserves cells and colors");
+					free (output);
+					free (expected);
+					r_cons_canvas_free (canvas);
+					r_cons_canvas_free (reference);
+				}
+			}
+		}
+	}
+	r_cons_free (cons);
+	mu_end;
+}
+
+bool test_cons_canvas_large_output(void) {
+	RConsCanvas *canvas = r_cons_canvas_new (NULL, 8191, 8192, 0);
+	mu_assert_notnull (canvas, "large canvas");
+	r_cons_canvas_fill (canvas, 0, 0, canvas->w, canvas->h, 'x');
+	char *output = r_cons_canvas_tostring (canvas);
+	mu_assert_notnull (output, "large serialized canvas");
+	const ut64 length = (ut64)(canvas->w + 1) * canvas->h - 1;
+	mu_assert_eq (strlen (output), length, "large output length");
+	mu_assert_eq (output[0], 'x', "first output cell");
+	mu_assert_eq (output[canvas->w], '\n', "row separator");
+	mu_assert_eq (output[length - 1], 'x', "last output cell");
+	free (output);
+	r_cons_canvas_free (canvas);
+	mu_end;
+}
+
+bool test_cons_canvas_dimension_bounds(void) {
+	mu_assert_null (r_cons_canvas_new (NULL, ST32_MAX, 1, 0), "row capacity must fit int");
+	RConsCanvas *canvas = r_cons_canvas_new (NULL, 1, 1, 0);
+	mu_assert_notnull (canvas, "canvas");
+	mu_assert_false (r_cons_canvas_resize (canvas, ST32_MAX, 1), "reject overflowing row capacity");
+	r_cons_canvas_write (canvas, "x");
+	char *output = r_cons_canvas_tostring (canvas);
+	mu_assert_streq_free (output, "x", "rejected resize preserves the canvas");
+	r_cons_canvas_free (canvas);
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_cons);
 	mu_run_test (test_cons_to_html);
@@ -567,6 +746,12 @@ bool all_tests(void) {
 	mu_run_test (test_cons_cmd_help_uses_context_color);
 	mu_run_test (test_cons_push_inherits_last_output);
 	mu_run_test (test_cons_cmd_help_match);
+	mu_run_test (test_cons_canvas_attribute_lifetime);
+	mu_run_test (test_cons_canvas_long_attribute);
+	mu_run_test (test_cons_canvas_wide_attribute_overlap);
+	mu_run_test (test_cons_canvas_vertical_clipping);
+	mu_run_test (test_cons_canvas_large_output);
+	mu_run_test (test_cons_canvas_dimension_bounds);
 	return tests_passed != tests_run;
 }
 
