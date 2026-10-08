@@ -95,7 +95,7 @@ static RCoreHelpMessage help_msg_omb = {
 static RCoreHelpMessage help_msg_oba = {
 	"Usage: oba", "[addr] ([filename])", "Load bininfo and update flags",
 	"oba", " [addr]", "open bin info from the given address",
-	"oba", " [addr] [baddr]", "open file and load bin info at given address",
+	"oba", " [addr] [baddr]", "open file and load bin info at given address (bin.inmem reads it as a memory image)",
 	"oba", " [addr] [/abs/filename|base64:filename]", "open file and load bin info at given address",
 	NULL
 };
@@ -111,7 +111,7 @@ static RCoreHelpMessage help_msg_ob = {
 	"ob--", "", "delete the last binfile",
 	"ob.", " ([addr])", "show bfid at current address",
 	"ob=", "", "show ascii art table having the list of open files",
-	"oba", " [addr] [baddr]", "open file and load bin info at given address",
+	"oba", " [addr] [baddr]", "open file and load bin info at given address (bin.inmem reads it as a memory image)",
 	"oba", " [addr] [filename]", "open file and load bin info at given address",
 	"oba", " [addr]", "open bin info from the given address",
 	"obf", " ([file|base64:file])", "load bininfo for current file (useful for r2 -n)",
@@ -301,34 +301,19 @@ static void cmd_oba(RCore *core, const char *input) {
 			R_LOG_ERROR ("Cannot oba open '%s'", r_str_trim_head_ro (filename));
 		} else if (encoded_filename) {
 			R_LOG_ERROR ("Cannot oba open decoded filename");
-		} else if (R_STR_ISNOTEMPTY (filename)) {
-			ut64 baddr = r_num_math (core->num, filename);
+		} else {
 			ut64 addr = r_num_math (core->num, input + 2); // mapaddr
+			ut64 baddr = R_STR_ISNOTEMPTY (filename)? r_num_math (core->num, filename): addr;
 			int fd = r_io_fd_get_current (core->io);
 			RIODesc *desc = r_io_desc_get (core->io, fd);
 			if (desc) {
 				RBinFileOptions opt;
 				r_bin_file_options_init (&opt, desc->fd, baddr, addr, rawstr);
+				opt.inmem = r_config_get_b (core->config, "bin.inmem");
 				opt.sz = oba_memsize (core->dbg, addr);
 				if (!opt.sz) {
-					opt.sz = 1024 * 1024;
-				}
-				r_bin_open_io (core->bin, &opt);
-				oba_finish_load (core);
-				r_core_cmd0 (core, ".is*");
-			} else {
-				R_LOG_ERROR ("No file to load bin from?");
-			}
-		} else {
-			ut64 addr = r_num_math (core->num, input + 2);
-			int fd = r_io_fd_get_current (core->io);
-			RIODesc *desc = r_io_desc_get (core->io, fd);
-			if (desc) {
-				RBinFileOptions opt;
-				r_bin_file_options_init (&opt, desc->fd, addr, addr, rawstr);
-				opt.sz = oba_memsize (core->dbg, addr);
-				if (!opt.sz) {
-					opt.sz = 1024 * 1024;
+					const ut64 desc_size = r_io_desc_size (desc);
+					opt.sz = (opt.inmem && addr < desc_size)? desc_size - addr: 1024 * 1024;
 				}
 				r_bin_open_io (core->bin, &opt);
 				oba_finish_load (core);
