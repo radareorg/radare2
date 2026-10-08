@@ -16,7 +16,7 @@ static RCoreHelpMessage help_msg_m = {
 	"mL", "[Lj]", "list filesystem plugins (Same as Lm), mLL shows only fs plugin names",
 	"mc", " [file]", "cat: Show the contents of the given file",
 	"md", " /", "list files and directory on the virtual r2's fs",
-	"mdt", " [path] [depth]", "show an ASCII directory tree (default depth: 64)",
+	"mdt", " [path] [depth]", "show a directory tree (scr.utf8; default depth: 64)",
 	"mdd", " /", "show file size like `ls -l` in ms",
 	"mdx", " /", "list deleted files (FAT)",
 	"mdq", " /", "show just the file name (quiet)",
@@ -267,7 +267,7 @@ static bool core_fs_tree(RCore *core, RFSRoot *root, const char *path, int depth
 	r_cons_break_push (core->cons, NULL, NULL);
 	bool ok = mount_tree_collect (core, root, path, depth, list, node);
 	r_cons_break_pop (core->cons);
-	char *text = r_tree_to_ascii (tree, NULL, NULL);
+	char *text = r_tree_to_string (tree, NULL, NULL, r_config_get_b (core->config, "scr.utf8"));
 	if (text) {
 		r_cons_print (core->cons, text);
 	} else {

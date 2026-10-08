@@ -1318,3 +1318,30 @@ ERROR: Cannot open /r2/cu/missing
 ERROR: Invalid path
 EOF2
 RUN
+
+NAME=CL source and compilation unit trees honor scr.utf8
+FILE=bins/elf/dwarf3_line
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF2
+e scr.utf8=true
+CLt usr/w/g/radare2/test/bins/src
+CLut usr/w/g/radare2/test/bins/src
+m /r2 r2
+mdt /r2/cu/usr/w/g/radare2/test/bins/src
+e scr.utf8=false
+CLut usr/w/g/radare2/test/bins/src
+EOF2
+EXPECT=<<EOF2
+/cl/usr/w/g/radare2/test/bins/src
+├── dwarf-line/
+│   └── bar.c
+└── dwarf-line.c
+/cu/usr/w/g/radare2/test/bins/src
+└── dwarf-line.c
+/r2/cu/usr/w/g/radare2/test/bins/src
+└── dwarf-line.c
+/cu/usr/w/g/radare2/test/bins/src
+`-- dwarf-line.c
+EOF2
+EXPECT_ERR=
+RUN

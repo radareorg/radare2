@@ -524,3 +524,30 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=visual horizontal scroll keeps a back-edge channel with offscreen endpoints
+FILE=-
+CMDS=<<EOF
+e scr.utf8=true
+e scr.color=0
+e scr.cols=40
+e scr.rows=8
+e graph.layout=1
+e graph.dotted=true
+agn a
+agn b 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
+agn c
+age a b
+age b c
+age a c
+age c a
+age c c
+"$capture=aggv @e:scr.interactive=true > $frame"
+<jjllllllllq
+$capture > /dev/null
+cat $frame~?\xe2\x95\xb4\xe2\x95\xb4\xe2\x95\xb4\xe2\x95\xb4
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN

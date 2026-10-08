@@ -798,3 +798,28 @@ ERROR: Tree depth must be between 1 and 64
 ERROR: Tree depth must be between 1 and 64
 EOF2
 RUN
+
+NAME=mdt honors scr.utf8 and preserves UTF-8 names
+FILE=-
+CMDS=<<EOF2
+m /tree tmp
+md+ /tree/a
+mw /tree/a/é.c x
+mw /tree/z x
+e scr.utf8=true
+mdt /tree
+e scr.utf8=false
+mdt /tree
+EOF2
+EXPECT=<<EOF2
+/tree
+├── a/
+│   └── é.c
+└── z
+/tree
+|-- a/
+|   `-- é.c
+`-- z
+EOF2
+EXPECT_ERR=
+RUN

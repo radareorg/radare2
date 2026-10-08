@@ -73,7 +73,7 @@ static RCoreHelpMessage help_msg_CL = {
 	"CLd", "[aoj*]", "decompile current function from dwarf line info (usable via cmd.pdc)",
 	"CLf", " [addr]", "show filename for current or given offset",
 	"CLj", "", "same as above, in JSON (see dir.source for paths)",
-	"CLt", " [path]", "show an ASCII source-file tree (also exposed by the r2 filesystem under /cl)",
+	"CLt", " [path]", "show a source-file tree (scr.utf8; r2 filesystem /cl)",
 	"CLu", "[jt]", "list DWARF compilation-unit source paths (JSON/tree; r2 filesystem /cu)",
 	"CL*", "", "same as above but in r2 commands format",
 	"CL.", "", "show list all code line information (virtual address <-> source file:line)",

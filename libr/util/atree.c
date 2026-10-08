@@ -4,9 +4,10 @@
 
 typedef struct {
 	RStrBuf output;
-	RStrBuf prefix;
+	RStrBuf continuation;
 	RTreeNodeLabelCb label;
 	void *user;
+	bool utf8;
 	bool failed;
 } AsciiTreeContext;
 
@@ -20,30 +21,41 @@ static void atree_visit(RTreeNode *node, RTreeVisitor *visitor) {
 		ctx->failed = !r_strbuf_appendf (&ctx->output, "%s\n", r_str_get (label));
 		return;
 	}
-	ut32 prefix_length;
-	if (node->depth < 1 || r_mul_overflow_ut32 (node->depth - 1, 4, &prefix_length)
-		|| prefix_length > INT_MAX) {
+	if (node->depth < 1) {
 		ctx->failed = true;
 		return;
 	}
-	r_strbuf_slice (&ctx->prefix, 0, prefix_length);
+	r_strbuf_slice (&ctx->continuation, 0, node->depth - 1);
+	const char *continuation = r_strbuf_get (&ctx->continuation);
+	int i;
+	for (i = 0; i < node->depth - 1; i++) {
+		const char *prefix = continuation[i] == '|'? (ctx->utf8? "│   ": "|   "): "    ";
+		if (!r_strbuf_append (&ctx->output, prefix)) {
+			ctx->failed = true;
+			return;
+		}
+	}
 	bool last = r_list_last (node->parent->children) == node;
-	ctx->failed = !r_strbuf_appendf (&ctx->output, "%s%s%s\n", r_strbuf_get (&ctx->prefix),
-		last? "`-- ": "|-- ", r_str_get (label))
-		|| !r_strbuf_append (&ctx->prefix, last? "    ": "|   ");
+	const char *branch = ctx->utf8? (last? "└── ": "├── "): (last? "`-- ": "|-- ");
+	ctx->failed = !r_strbuf_appendf (&ctx->output, "%s%s\n", branch, r_str_get (label))
+		|| !r_strbuf_append (&ctx->continuation, last? " ": "|");
 }
 
-R_API R_OWNED char *r_tree_to_ascii(RTree *tree, RTreeNodeLabelCb R_NULLABLE label, void *user) {
+R_API R_OWNED char *r_tree_to_string(RTree *tree, RTreeNodeLabelCb R_NULLABLE label, void *user, bool utf8) {
 	R_RETURN_VAL_IF_FAIL (tree, NULL);
-	AsciiTreeContext ctx = { .label = label, .user = user };
+	AsciiTreeContext ctx = { .label = label, .user = user, .utf8 = utf8 };
 	r_strbuf_init (&ctx.output);
-	r_strbuf_init (&ctx.prefix);
+	r_strbuf_init (&ctx.continuation);
 	RTreeVisitor visitor = { .pre_visit = atree_visit, .user = &ctx };
 	r_tree_dfs (tree, &visitor);
-	r_strbuf_fini (&ctx.prefix);
+	r_strbuf_fini (&ctx.continuation);
 	if (ctx.failed) {
 		r_strbuf_fini (&ctx.output);
 		return NULL;
 	}
 	return r_strbuf_drain_nofree (&ctx.output);
+}
+
+R_API R_OWNED char *r_tree_to_ascii(RTree *tree, RTreeNodeLabelCb R_NULLABLE label, void *user) {
+	return r_tree_to_string (tree, label, user, false);
 }

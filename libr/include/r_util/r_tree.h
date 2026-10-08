@@ -42,6 +42,7 @@ R_API void r_tree_dfs(RTree *t, RTreeVisitor *vis);
 R_API void r_tree_bfs(RTree *t, RTreeVisitor *vis);
 // Without a label callback, node data is treated as a string. The caller owns the result.
 R_API R_OWNED char *r_tree_to_ascii(RTree *tree, RTreeNodeLabelCb R_NULLABLE label, void *user);
+R_API R_OWNED char *r_tree_to_string(RTree *tree, RTreeNodeLabelCb R_NULLABLE label, void *user, bool utf8);
 
 #ifdef __cplusplus
 }

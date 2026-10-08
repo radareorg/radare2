@@ -127,6 +127,17 @@ bool test_r_tree_ascii(void) {
 		"|   `-- last\n"
 		"`-- third\n", "branches and ancestor continuation");
 	free (text);
+	text = r_tree_to_string (tree, NULL, NULL, true);
+	mu_assert_streq (text,
+		"root\n"
+		"├── first\n"
+		"│   ├── one\n"
+		"│   └── two\n"
+		"│       └── nested\n"
+		"├── second\n"
+		"│   └── last\n"
+		"└── third\n", "UTF-8 branches and ancestor continuation");
+	free (text);
 	r_tree_free (tree);
 	mu_end;
 }
