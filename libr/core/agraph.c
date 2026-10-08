@@ -2980,8 +2980,24 @@ static bool edge_routes_add(EdgeRoutes *routes, const RConsCanvas *c, EdgeDrawKi
 		return false;
 	}
 	// conservative bounds of every cell the canvas line functions can touch
-	const int xs[] = { x, x2, xbend, x + bend + 3, x2 - ybend - 1 };
-	const int ys[] = { y, y2, xbend, y + bend + 2, y2 - ybend - 1, y2 + 2 };
+	int xs[] = { x, x2, x, x, x2 };
+	int ys[] = { y, y2, y, y, y2, y2 + 2 };
+	// unused bends must not extend the bounds back to the origin
+	if (c->linemode && kind != EDGE_DRAW_LINE) {
+		if (isvert) {
+			ys[3] = y + bend + 2;
+			if (kind == EDGE_DRAW_BACK) {
+				xs[2] = xbend;
+				ys[4] = y2 - ybend - 1;
+			}
+		} else {
+			xs[3] = x + bend + 3;
+			if (kind == EDGE_DRAW_BACK) {
+				ys[2] = xbend;
+				xs[4] = x2 - ybend - 1;
+			}
+		}
+	}
 	int i;
 	*d = (EdgeDraw){ kind, isvert, edge, x, y, x2, y2, bend, xbend, ybend, INT_MAX, INT_MAX, INT_MIN, INT_MIN, *style };
 	for (i = 0; i < R_ARRAY_SIZE (xs); i++) {
