@@ -562,6 +562,11 @@ static int abbrev_cmp(const void *a, const void *b) {
 	return 0;
 }
 
+static RBinDwarfAbbrevDecl *abbrev_find(const RVecDwarfAbbrevDecl *decls, ut64 abbrev_offset) {
+	RBinDwarfAbbrevDecl key = { .offset = abbrev_offset };
+	return bsearch (&key, decls->_start, RVecDwarfAbbrevDecl_length (decls), sizeof (key), abbrev_cmp);
+}
+
 static bool is_printable_lang(ut64 attr_code) {
 	if (attr_code >= sizeof (dwarf_langs) / sizeof (dwarf_langs[0])) {
 		return false;
@@ -3388,7 +3393,6 @@ static bool dwarf_foreach_root(RBinFile *bf, RVecDwarfAbbrevDecl *decls, DwarfRo
 	}
 	const ut8 *buf = data;
 	const ut8 *end = data + section->bytes.len;
-	size_t abbrevs_count = RVecDwarfAbbrevDecl_length (decls);
 	while (buf < end && !dwarf_is_breaked (bf->rbin)) {
 		if (dwarf_is_zero_padding (buf, end)) {
 			return true;
@@ -3415,9 +3419,7 @@ static bool dwarf_foreach_root(RBinFile *bf, RVecDwarfAbbrevDecl *decls, DwarfRo
 			buf = unit_end;
 			continue;
 		}
-		RBinDwarfAbbrevDecl key = { .offset = unit.hdr.abbrev_offset };
-		RBinDwarfAbbrevDecl *abbrev_start = bsearch (&key, decls->_start,
-			abbrevs_count, sizeof (key), abbrev_cmp);
+		RBinDwarfAbbrevDecl *abbrev_start = abbrev_find (decls, unit.hdr.abbrev_offset);
 		if (!abbrev_start || !dwarf_parse_root_die (bf, buf, unit_end, &unit,
 				decls, abbrev_start - decls->_start)) {
 			dwarf_comp_unit_fini (&unit);
@@ -3527,7 +3529,6 @@ R_API R_OWNED char *r_bin_dwarf_print_info(RBinFile *bf, RVecDwarfAbbrevDecl *de
 	RBin *bin = bf->rbin;
 	const ut8 *buf = obuf;
 	const ut8 *buf_end = obuf + section->bytes.len;
-	size_t abbrevs_count = RVecDwarfAbbrevDecl_length (decls);
 	RStrBuf *sb = r_strbuf_new (NULL);
 	while (buf && buf < buf_end && !dwarf_is_breaked (bin)) {
 		if (dwarf_is_zero_padding (buf, buf_end)) {
@@ -3559,8 +3560,7 @@ R_API R_OWNED char *r_bin_dwarf_print_info(RBinFile *bf, RVecDwarfAbbrevDecl *de
 			buf = unit_end;
 			continue;
 		}
-		RBinDwarfAbbrevDecl key = { .offset = unit.hdr.abbrev_offset };
-		RBinDwarfAbbrevDecl *abbrev_start = bsearch (&key, decls->_start, abbrevs_count, sizeof (key), abbrev_cmp);
+		RBinDwarfAbbrevDecl *abbrev_start = abbrev_find (decls, unit.hdr.abbrev_offset);
 		if (!abbrev_start) {
 			dwarf_comp_unit_fini (&unit);
 			buf = unit_end;
@@ -3637,8 +3637,7 @@ static RBinDwarfDebugInfo *parse_info_raw(RBinFile *bf, RVecDwarfAbbrevDecl *dec
 		// find abbrev start for current comp unit
 		// we could also do naive, ((char *)da->decls) + abbrev_offset,
 		// but this is more bulletproof to invalid DWARF
-		RBinDwarfAbbrevDecl key = { .offset = unit.hdr.abbrev_offset };
-		RBinDwarfAbbrevDecl *abbrev_start = bsearch (&key, decls->_start, RVecDwarfAbbrevDecl_length (decls), sizeof (key), abbrev_cmp);
+		RBinDwarfAbbrevDecl *abbrev_start = abbrev_find (decls, unit.hdr.abbrev_offset);
 		if (!abbrev_start) {
 			dwarf_comp_unit_fini (&unit);
 			buf = unit_end;
