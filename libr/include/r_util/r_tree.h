@@ -32,6 +32,7 @@ typedef struct r_tree_visitor_t {
 	void *user;
 } RTreeVisitor;
 typedef void (*RTreeNodeVisitCb)(RTreeNode *n, RTreeVisitor *vis);
+typedef const char *(*RTreeNodeLabelCb)(const RTreeNode *node, void *user);
 
 R_API RTree *r_tree_new(void);
 R_API RTreeNode *r_tree_add_node(RTree *t, RTreeNode *node, void *child_data);
@@ -39,6 +40,8 @@ R_API void r_tree_reset(RTree *t);
 R_API void r_tree_free(RTree *t);
 R_API void r_tree_dfs(RTree *t, RTreeVisitor *vis);
 R_API void r_tree_bfs(RTree *t, RTreeVisitor *vis);
+// Without a label callback, node data is treated as a string. The caller owns the result.
+R_API R_OWNED char *r_tree_to_ascii(RTree *tree, RTreeNodeLabelCb R_NULLABLE label, void *user);
 
 #ifdef __cplusplus
 }

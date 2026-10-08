@@ -100,8 +100,59 @@ bool test_r_tree(void) {
 	mu_end;
 }
 
+bool test_r_tree_ascii(void) {
+	RTree *tree = r_tree_new ();
+	char *text = r_tree_to_ascii (tree, NULL, NULL);
+	mu_assert_streq (text, "", "empty tree");
+	free (text);
+	RTreeNode *root = r_tree_add_node (tree, NULL, "root");
+	text = r_tree_to_ascii (tree, NULL, NULL);
+	mu_assert_streq (text, "root\n", "root without children");
+	free (text);
+	RTreeNode *first = r_tree_add_node (tree, root, "first");
+	RTreeNode *second = r_tree_add_node (tree, root, "second");
+	r_tree_add_node (tree, root, "third");
+	r_tree_add_node (tree, first, "one");
+	RTreeNode *two = r_tree_add_node (tree, first, "two");
+	r_tree_add_node (tree, two, "nested");
+	r_tree_add_node (tree, second, "last");
+	text = r_tree_to_ascii (tree, NULL, NULL);
+	mu_assert_streq (text,
+		"root\n"
+		"|-- first\n"
+		"|   |-- one\n"
+		"|   `-- two\n"
+		"|       `-- nested\n"
+		"|-- second\n"
+		"|   `-- last\n"
+		"`-- third\n", "branches and ancestor continuation");
+	free (text);
+	r_tree_free (tree);
+	mu_end;
+}
+
+static const char *tree_ascii_label(const RTreeNode *node, void *user) {
+	const char **labels = user;
+	return labels[(size_t)node->data];
+}
+
+bool test_r_tree_ascii_labels(void) {
+	RTree *tree = r_tree_new ();
+	RTreeNode *root = r_tree_add_node (tree, NULL, (void *)0);
+	r_tree_add_node (tree, root, (void *)1);
+	r_tree_add_node (tree, root, (void *)2);
+	const char *labels[] = { "root", "custom label", NULL };
+	char *text = r_tree_to_ascii (tree, tree_ascii_label, labels);
+	mu_assert_streq (text, "root\n|-- custom label\n`-- \n", "callback with user data and missing label");
+	free (text);
+	r_tree_free (tree);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_tree);
+	mu_run_test (test_r_tree_ascii);
+	mu_run_test (test_r_tree_ascii_labels);
 	return tests_passed != tests_run;
 }
 

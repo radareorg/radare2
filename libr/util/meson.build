@@ -1,6 +1,7 @@
 r_util_sources = [
   'alloc.c',
   'arena.c',
+  'atree.c',
   'asn1_str.c',
   'asn1.c',
   'assert.c',
