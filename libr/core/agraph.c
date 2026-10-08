@@ -702,12 +702,8 @@ static void assign_layers(const RAGraph *g) {
 	r_list_free (topological_sort);
 }
 
-static int find_edge(const RGraphEdge *a, const RGraphEdge *b) {
-	return a->from == b->to && a->to == b->from? 0: 1;
-}
-
-static bool is_reversed(const RAGraph *g, const RGraphEdge *e) {
-	return (bool)r_list_find (g->back_edges, e, (RListComparator)find_edge);
+static ut64 graph_edge_key(const RGraphNode *from, const RGraphNode *to) {
+	return ((ut64)from->idx << 32) | to->idx;
 }
 
 /* add dummy nodes when there are edges that span multiple layers */
@@ -727,22 +723,30 @@ static void create_dummy_nodes(RAGraph *g) {
 	dummy_vis.fcross_edge = (RGraphEdgeCallback)view_dummy;
 	r_graph_dfs (g->graph, &dummy_vis);
 
+	SetU *back_edges = set_u_new ();
+	r_list_foreach (g->back_edges, it, e) {
+		if (e->from && e->to) {
+			set_u_add (back_edges, graph_edge_key (e->from, e->to));
+		}
+	}
 	r_list_foreach (g->long_edges, it, e) {
 		RANode *from = get_anode (e->from);
 		RANode *to = get_anode (e->to);
 		int diff_layer = R_ABS (from->layer - to->layer);
 		RANode *prev = get_anode (e->from);
+		const bool reversed = set_u_contains (back_edges, graph_edge_key (e->to, e->from));
 		int i, nth = e->nth;
 
 		r_agraph_del_edge (g, from, to);
 		for (i = 1; i < diff_layer; i++) {
 			RANode *dummy = r_agraph_add_node (g, NULL, NULL, NULL);
 			if (!dummy) {
+				set_u_free (back_edges);
 				return;
 			}
 			dummy->is_dummy = true;
 			dummy->layer = from->layer + i;
-			dummy->is_reversed = is_reversed (g, e);
+			dummy->is_reversed = reversed;
 			dummy->w = 1;
 			r_agraph_add_edge_at (g, prev, dummy, nth);
 
@@ -751,6 +755,7 @@ static void create_dummy_nodes(RAGraph *g) {
 		}
 		r_graph_add_edge (g->graph, prev->gnode, e->to);
 	}
+	set_u_free (back_edges);
 }
 
 /* create layers and assign an initial ordering of the nodes into them */
@@ -830,39 +835,16 @@ static void minimize_crossings(const RAGraph *g) {
 	} while (cross_changed && max_changes);
 }
 
-static int cmp_graph_node_ptr(const RGraphNode *a, const RGraphNode *b) {
-	const size_t aa = (size_t)a;
-	const size_t bb = (size_t)b;
-	return (aa > bb)? 1: (aa < bb)? -1: 0;
+static ut64 dist_key(const RGraphNode *from, const RGraphNode *to) {
+	return ((ut64)(from? from->idx: UT32_MAX) << 32) | (to? to->idx: UT32_MAX);
 }
 
-static int cmp_agraph_dist(const RAGraphDist *a, const RAGraphDist *b) {
-	int cmp = cmp_graph_node_ptr (a->from, b->from);
-	return cmp? cmp: cmp_graph_node_ptr (a->to, b->to);
-}
-
-static int find_dist(const RAGraphDist *a, const void *b) {
-	return cmp_agraph_dist (a, (const RAGraphDist *)b);
-}
-
-static RAGraphDist *dist_find(const RAGraph *g, const RGraphNode *from, const RGraphNode *to) {
-	if (!g->dists) {
-		return NULL;
+static bool dist_find(const RAGraph *g, const RGraphNode *from, const RGraphNode *to, int *dist) {
+	bool found = false;
+	if (g->dists) {
+		*dist = (int)ht_uu_find (g->dists, dist_key (from, to), &found);
 	}
-	RAGraphDist d = {
-		.from = from,
-		.to = to
-	};
-	return RVecAGraphDist_find_sorted (g->dists, &d, find_dist);
-}
-
-static RAGraphDist *dist_insert_sorted(RVecAGraphDist *dists, const RAGraphDist *dist) {
-	size_t index = RVecAGraphDist_lower_bound (dists, (RAGraphDist *)dist, cmp_agraph_dist);
-	RAGraphDist *slot = RVecAGraphDist_emplace_back (dists);
-	RAGraphDist *dst = R_VEC_START_ITER (dists) + index;
-	memmove (dst + 1, dst, (slot - dst) * sizeof (RAGraphDist));
-	*dst = *dist;
-	return dst;
+	return found;
 }
 
 /* returns the distance between two nodes */
@@ -870,11 +852,10 @@ static RAGraphDist *dist_insert_sorted(RVecAGraphDist *dists, const RAGraphDist 
  * otherwise calculate the distance of two nodes on the same layer */
 static int dist_nodes(const RAGraph *g, const RGraphNode *a, const RGraphNode *b) {
 	const RANode *aa, *ab;
-	int res = 0;
+	int res = 0, dist;
 
-	RAGraphDist *old = dist_find (g, a, b);
-	if (old) {
-		return old->dist;
+	if (dist_find (g, a, b, &dist)) {
+		return dist;
 	}
 
 	aa = get_anode (a);
@@ -888,12 +869,9 @@ static int dist_nodes(const RAGraph *g, const RGraphNode *a, const RGraphNode *b
 			const RGraphNode *next = g->layers[aa->layer].nodes[i + 1];
 			const RANode *anext = get_anode (next);
 			const RANode *acur = get_anode (cur);
-			bool found = false;
-
-			old = dist_find (g, cur, next);
-			if (old) {
-				res += old->dist;
-				found = true;
+			const bool found = dist_find (g, cur, next, &dist);
+			if (found) {
+				res += dist;
 			}
 
 			if (acur && anext && !found) {
@@ -928,18 +906,8 @@ static void set_dist_nodes(const RAGraph *g, int l, int cur, int next) {
 	avi = get_anode (vi);
 	avip = get_anode (vip);
 
-	RAGraphDist *d = dist_find (g, vi, vip);
-	RAGraphDist new_dist = {
-		.from = vi,
-		.to = vip,
-		.dist = (avip && avi)? avip->x - avi->x: 0
-	};
-	if (!d) {
-		d = dist_insert_sorted (g->dists, &new_dist);
-	}
-	if (d) {
-		d->dist = new_dist.dist;
-	}
+	const int dist = (avip && avi)? avip->x - avi->x: 0;
+	ht_uu_update (g->dists, dist_key (vi, vip), (ut32)dist);
 }
 
 static inline int is_valid_pos(const RAGraph *g, int l, int pos) {
@@ -1623,10 +1591,7 @@ static void place_original(RAGraph *g) {
 		ht_uu_free (D);
 		return;
 	}
-	RVecAGraphDist dists;
-	RVecAGraphDist_init (&dists);
-	RVecAGraphDist_reserve (&dists, g->graph->n_nodes);
-	g->dists = &dists;
+	g->dists = ht_uu_new0 ();
 
 	graph_foreach_anode (nodes, itn, gn, an) {
 		if (!an->is_dummy) {
@@ -1644,7 +1609,7 @@ static void place_original(RAGraph *g) {
 	original_traverse_l (g, D, P, true);
 	original_traverse_l (g, D, P, false);
 
-	RVecAGraphDist_fini (&dists);
+	ht_uu_free (g->dists);
 	g->dists = NULL;
 	ht_uu_free (P);
 	ht_uu_free (D);
@@ -1726,7 +1691,7 @@ static void set_layer_gap(RAGraph *g) {
 	}
 }
 
-static void fix_back_edge_dummy_nodes(RAGraph *g, RANode *from, RANode *to) {
+static void fix_back_edge_dummy_nodes(RAGraph *g, RANode *from, RANode *to, RVecGraphNodePtr *dead) {
 	RANode *v, *tmp = NULL;
 	RGraphNode *gv = NULL;
 	RGraphNode **it;
@@ -1762,7 +1727,10 @@ static void fix_back_edge_dummy_nodes(RAGraph *g, RANode *from, RANode *to) {
 			g->layers[v->layer].nodes[g->layers[v->layer].n_nodes - 1] = 0;
 			g->layers[v->layer].n_nodes -= 1;
 
-			r_graph_del_node (g->graph, v->gnode);
+			// the node list is swept once by the caller
+			r_graph_node_unlink (g->graph, v->gnode);
+			v->gnode->data = NULL;
+			RVecGraphNodePtr_push_back (dead, &v->gnode);
 			ranode_free (v);
 		}
 	}
@@ -2055,13 +2023,17 @@ static void set_layout(RAGraph *g) {
 	 * converting them to longedges and adding dummy nodes. */
 	const RListIter *it;
 	const RGraphEdge *e;
+	RVecGraphNodePtr dead;
+	RVecGraphNodePtr_init (&dead);
 	r_list_foreach (g->back_edges, it, e) {
 		RANode *from = e->from? get_anode (e->from): NULL;
 		RANode *to = e->to? get_anode (e->to): NULL;
-		fix_back_edge_dummy_nodes (g, from, to);
+		fix_back_edge_dummy_nodes (g, from, to, &dead);
 		r_agraph_del_edge (g, to, from);
 		r_agraph_add_edge_at (g, from, to, e->nth);
 	}
+	r_graph_del_nodes (g->graph, &dead);
+	RVecGraphNodePtr_fini (&dead);
 
 	switch (g->layout) {
 	default:

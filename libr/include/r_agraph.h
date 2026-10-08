@@ -9,6 +9,7 @@ extern "C" {
 #include <r_cons.h>
 #include <r_util/r_graph.h>
 #include <r_vec.h>
+#include <sdb/ht_uu.h>
 
 typedef struct r_agraph_location {
 	int x;
@@ -16,14 +17,6 @@ typedef struct r_agraph_location {
 } RAGraphLocation;
 
 R_VEC_TYPE (RVecAGraphLocation, RAGraphLocation);
-
-typedef struct r_agraph_dist {
-	const RGraphNode *from;
-	const RGraphNode *to;
-	int dist;
-} RAGraphDist;
-
-R_VEC_TYPE (RVecAGraphDist, RAGraphDist);
 
 typedef struct r_ascii_node_t {
 	RGraphNode *gnode;
@@ -111,7 +104,7 @@ typedef struct r_ascii_graph_t {
 	RList *long_edges;
 	struct layer_t *layers;
 	unsigned int n_layers;
-	RVecAGraphDist *dists;
+	HtUU *dists; // explicit node distances, keyed by node index pair
 	RList *edges; /* RList<AEdge> */
 	RAGraphHits ghits;
 	struct r_agraph_edge_routes_t *edge_routes; // cached edge drawing after layout

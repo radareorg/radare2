@@ -326,6 +326,45 @@ static bool dom_tree_check(DomTestGraph *tg, size_t root, const char *descr) {
 	return ok;
 }
 
+static bool test_graph_del_nodes(void) {
+	RGraph *g = r_graph_new ();
+	RGraphNode *a = r_graph_add_node (g, (void *)1);
+	RGraphNode *b = r_graph_add_node (g, (void *)2);
+	RGraphNode *c = r_graph_add_node (g, (void *)3);
+	RGraphNode *d = r_graph_add_node (g, (void *)4);
+	r_graph_add_edge (g, a, b);
+	r_graph_add_edge (g, b, c);
+	r_graph_add_edge (g, c, d);
+	r_graph_add_edge (g, a, d);
+	r_graph_add_edge (g, d, a);
+	mu_assert_eq (g->n_edges, 5, "edges before");
+
+	r_graph_node_unlink (g, b);
+	mu_assert_eq (g->n_edges, 3, "unlink removes in and out edges");
+	mu_assert_eq (g->n_nodes, 4, "unlink keeps the node");
+	mu_assert_true (RVecGraphNodePtr_empty (&b->in_nodes) && RVecGraphNodePtr_empty (&b->out_nodes), "unlinked node has no edges");
+	mu_assert_false (r_graph_adjacent (g, a, b), "a no longer points to b");
+	r_graph_node_unlink (g, b);
+	mu_assert_eq (g->n_edges, 3, "unlink is idempotent");
+
+	RVecGraphNodePtr dead;
+	RVecGraphNodePtr_init (&dead);
+	RVecGraphNodePtr_push_back (&dead, &b);
+	RVecGraphNodePtr_push_back (&dead, &c);
+	RVecGraphNodePtr_push_back (&dead, &b);
+	r_graph_del_nodes (g, &dead);
+	RVecGraphNodePtr_fini (&dead);
+	mu_assert_eq (g->n_nodes, 2, "nodes after batch delete");
+	mu_assert_eq (g->n_edges, 2, "edges after batch delete");
+	mu_assert_eq (r_list_length (r_graph_get_nodes (g)), 2, "node list length");
+	mu_assert_ptreq (r_list_first (r_graph_get_nodes (g)), a, "first node kept");
+	mu_assert_ptreq (r_list_last (r_graph_get_nodes (g)), d, "last node kept");
+	mu_assert_true (r_graph_adjacent (g, a, d) && r_graph_adjacent (g, d, a), "remaining edges kept");
+	mu_assert_eq (RVecGraphNodePtr_length (&d->in_nodes), 1, "d lost the edge from c");
+	r_graph_free (g);
+	mu_end;
+}
+
 static bool test_dom_tree_linear(void) {
 	DomTestGraph tg;
 	dom_graph_init (&tg, 3);
@@ -499,6 +538,7 @@ static bool test_pdom_tree(void) {
 
 static int all_tests(void) {
 	mu_run_test (test_legacy_graph);
+	mu_run_test (test_graph_del_nodes);
 	mu_run_test (test_dom_tree_linear);
 	mu_run_test (test_dom_tree_diamond);
 	mu_run_test (test_dom_tree_nested_loops);

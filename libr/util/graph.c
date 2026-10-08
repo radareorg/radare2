@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2007-2024 - pancake, ret2libc, condret */
 
 #include <r_util.h>
+#include <sdb/set.h>
 
 R_VEC_TYPE (RVecGraphEdge, RGraphEdge);
 
@@ -210,11 +211,10 @@ R_API RGraphNode *r_graph_add_nodef(RGraph *graph, void *data, RListFree user_fr
 
 /* remove the node from the graph and free the node */
 /* users of this function should be aware they can't access n anymore */
-R_API void r_graph_del_node(RGraph *t, RGraphNode *n) {
+// removes all the edges of the node, keeping it in the graph
+R_API void r_graph_node_unlink(RGraph *t, RGraphNode *n) {
+	R_RETURN_IF_FAIL (t && n);
 	RGraphNode *gn;
-	if (!n) {
-		return;
-	}
 	RGraphNode **it;
 	R_VEC_FOREACH (&n->in_nodes, it) {
 		gn = *it;
@@ -229,9 +229,42 @@ R_API void r_graph_del_node(RGraph *t, RGraphNode *n) {
 		graph_node_vec_delete_sorted (&gn->all_neighbours, n);
 		t->n_edges--;
 	}
+	RVecGraphNodePtr_clear (&n->in_nodes);
+	RVecGraphNodePtr_clear (&n->out_nodes);
+	RVecGraphNodePtr_clear (&n->all_neighbours);
+}
 
-	r_list_delete_data (t->nodes, n);
-	t->n_nodes--;
+R_API void r_graph_del_node(RGraph *t, RGraphNode *n) {
+	if (n) {
+		r_graph_node_unlink (t, n);
+		r_list_delete_data (t->nodes, n);
+		t->n_nodes--;
+	}
+}
+
+// unlinks and frees the given nodes with a single walk of the node list
+R_API void r_graph_del_nodes(RGraph *t, const RVecGraphNodePtr *nodes) {
+	R_RETURN_IF_FAIL (t && nodes);
+	if (RVecGraphNodePtr_empty (nodes)) {
+		return;
+	}
+	SetU *dead = set_u_new ();
+	RGraphNode **it;
+	R_VEC_FOREACH (nodes, it) {
+		if (*it) {
+			r_graph_node_unlink (t, *it);
+			set_u_add (dead, (ut64)(size_t)*it);
+		}
+	}
+	RListIter *iter, *tmp;
+	RGraphNode *n;
+	r_list_foreach_safe (t->nodes, iter, tmp, n) {
+		if (set_u_contains (dead, (ut64)(size_t)n)) {
+			r_list_delete (t->nodes, iter);
+			t->n_nodes--;
+		}
+	}
+	set_u_free (dead);
 }
 
 R_API void r_graph_add_edge(RGraph *t, RGraphNode *from, RGraphNode *to) {

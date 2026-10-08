@@ -56,6 +56,8 @@ R_API RGraphNode *r_graph_add_node(RGraph *g, void *data);
 R_API RGraphNode *r_graph_add_nodef(RGraph *g, void *data, RListFree user_free);
 // XXX 'n' is destroyed after calling this function.
 R_API void r_graph_del_node(RGraph *g, RGraphNode *n);
+R_API void r_graph_del_nodes(RGraph *g, const RVecGraphNodePtr *nodes);
+R_API void r_graph_node_unlink(RGraph *g, RGraphNode *n);
 R_API void r_graph_add_edge(RGraph *g, RGraphNode *from, RGraphNode *to);
 R_API void r_graph_add_edge_at(RGraph *g, RGraphNode *from, RGraphNode *to, int nth);
 R_API RGraphNode *r_graph_node_split_forward(RGraph *g, RGraphNode *split_me, void *data);
