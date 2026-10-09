@@ -1962,16 +1962,19 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8 *data, i
 		if (is_json) {
 			if (s) {
 				free (s);
+				s = pj_drain (pj);
+			} else {
+				pj_free (pj);
 			}
-			s = pj_drain (pj);
-			r_cons_println (core->cons, s);
-		} else if (s) {
-			r_cons_print (core->cons, s);
-		} else {
-			R_LOG_ERROR ("Malformed object: did you supply enough data? try to change the block size (see b?)");
 		}
 		if (s) {
+			r_cons_print (core->cons, s);
+			if (is_json) {
+				r_cons_newline (core->cons);
+			}
 			free (s);
+		} else {
+			R_LOG_ERROR ("Malformed object: did you supply enough data? try to change the block size (see b?)");
 		}
 		break;
 	}

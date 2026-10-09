@@ -1,0 +1,951 @@
+NAME=AXML valid UTF-8 string at the pool boundary
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 104
+wx 030008006800000001001c002400000001000000000000000001000020000000000000000000000001017800020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+<x>
+</x>
+{"x":{},"child":[]}
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=AXML UTF-8 namespace and attribute lookups
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 225
+wx 03000800e100000001001c00590000000500000000000000000100003000000000000000000000000a000000180000001c000000200000000707616e64726f6964000b0b75726e3a616e64726f69640001017800010161000306c3a9f09f988000000110001800000001000000ffffffff0000000001000000020110003800000001000000ffffffffffffffff020000001400140001000000000000000100000003000000ffffffff0800000304000000030110001800000001000000ffffffffffffffff02000000010110001800000001000000ffffffff0000000001000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+<x xmlns:android="urn:android" android:a="é😀">
+</x>
+{"x":{"xmlns":{"android":"urn:android"},"android:a":"é😀"},"child":[]}
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=AXML UTF-8 string contents extend into the next chunk
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 103
+wx 030008006700000001001c0023000000010000000000000000010000200000000000000000000000010578020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML UTF-8 missing string terminator
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 103
+wx 030008006700000001001c0023000000010000000000000000010000200000000000000000000000010178020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML UTF-8 short length prefix
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 101
+wx 030008006500000001001c002100000001000000000000000001000020000000000000000000000080020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML UTF-8 short extended length prefix
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 102
+wx 030008006600000001001c00220000000100000000000000000100002000000000000000000000000180020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML UTF-8 offset into the next chunk
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 104
+wx 030008006800000001001c002400000001000000000000000001000020000000000000000400000001017800020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML UTF-8 offset beyond XML into trailing input
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 116
+wx 030008006800000001001c002400000001000000000000000001000020000000000000004000000001017800020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000010154000000000000000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML valid UTF-16 string at the pool boundary
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 106
+wx 030008006a00000001001c0026000000010000000000000000000000200000000000000000000000010078000000020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+<x>
+</x>
+{"x":{},"child":[]}
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=AXML UTF-16 namespace and attribute lookups
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 250
+wx 03000800fa00000001001c0072000000050000000000000000000000300000000000000000000000120000002c0000003200000038000000070061006e00640072006f006900640000000b00750072006e003a0061006e00640072006f006900640000000100780000000100610000000300e9003dd800de0000000110001800000001000000ffffffff0000000001000000020110003800000001000000ffffffffffffffff020000001400140001000000000000000100000003000000ffffffff0800000304000000030110001800000001000000ffffffffffffffff02000000010110001800000001000000ffffffff0000000001000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+<x xmlns:android="urn:android" android:a="é😀">
+</x>
+{"x":{"xmlns":{"android":"urn:android"},"android:a":"é😀"},"child":[]}
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=AXML UTF-16 string contents extend into the next chunk
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 104
+wx 030008006800000001001c002400000001000000000000000000000020000000000000000000000005007800020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML UTF-16 missing string terminator
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 104
+wx 030008006800000001001c002400000001000000000000000000000020000000000000000000000001007800020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML UTF-16 short length prefix
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 101
+wx 030008006500000001001c002100000001000000000000000000000020000000000000000000000001020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML UTF-16 short extended length prefix
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 103
+wx 030008006700000001001c0023000000010000000000000000000000200000000000000000000000008001020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML UTF-16 offset into the next chunk
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 106
+wx 030008006a00000001001c0026000000010000000000000000000000200000000000000006000000010078000000020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML UTF-16 offset beyond XML into trailing input
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 120
+wx 030008006a00000001001c0026000000010000000000000000000000200000000000000042000000010078000000020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff000000000100540000000000000000000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML pool after an extended XML header
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 108
+wx 03000c006c0000000000000001001c002400000001000000000000000001000020000000000000000000000001017800020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+<x>
+</x>
+{"x":{},"child":[]}
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=AXML pool after a resource map
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 112
+wx 0300080070000000800108000800000001001c002400000001000000000000000001000020000000000000000000000001017800020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+<x>
+</x>
+{"x":{},"child":[]}
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=AXML extended pool and element headers
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 116
+wx 030008007400000001002000280000000100000000000000000100002400000000000000000000000000000001017800020114002800000001000000ffffffff00000000ffffffff00000000140014000000000000000000030114001c00000001000000ffffffff00000000ffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+<x>
+</x>
+{"x":{},"child":[]}
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=AXML attribute offset and stride
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 140
+wx 030008008c00000001001c002c000000020000000000000000010000240000000000000000000000040000000101780001016100020110004000000001000000ffffffffffffffff0000000018001800010000000000000000000000ffffffff01000000ffffffff080000000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+<x a="">
+</x>
+{"x":{"a":""},"child":[]}
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=AXML cached resource attribute name
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 147
+wx 030008009300000001001c002b000000020000000000000000010000240000000000000000000000040000000101780000000080010800100000000000000001000101020110003800000001000000ffffffffffffffff00000000140014000100000000000000ffffffff01000000ffffffff0800000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+<x label="">
+</x>
+{"x":{"label":""},"child":[]}
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=AXML resource map excludes the following header
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 384
+wx 030008008001000001001c002b0000000200000000000000000100002400000000000000000000000400000001017800000000800108000c00000000000000020101012901000001000000ffffffffffffffff00000000140014000100000000000000ffffffff01000000ffffffff0800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffffff00000000140014000100000000000000ffffffff01000000ffffffff0800000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+<x null="">
+</x>
+{"x":{"null":""},"child":[]}
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=AXML UTF-8 extended byte length
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 268
+wx 030008000c01000001001c00b400000003000000000000000001000028000000000000000000000004000000080000000101780001016100408080c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a9c3a900020110003800000001000000ffffffffffffffff00000000140014000100000000000000ffffffff01000000ffffffff0800000302000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+<x a="éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé">
+</x>
+{"x":{"a":"éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé"},"child":[]}
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=AXML start element four bytes short
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 104
+wx 030008006800000001001c002400000001000000000000000001000020000000000000000000000001017800020110002000000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Truncated element
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Truncated element
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML 48-byte start element cannot contain one attribute
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 124
+wx 030008007c00000001001c002400000001000000000000000001000020000000000000000000000001017800020110003000000001000000ffffffffffffffff00000000140014000100000000000000ffffffff00000000ffffffff0800000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid element count
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid element count
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML end element eight bytes short
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 104
+wx 030008006800000001001c002400000001000000000000000001000020000000000000000000000001017800020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001000000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Truncated element
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Truncated element
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML start namespace eight bytes short
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 128
+wx 030008008000000001001c002400000001000000000000000001000020000000000000000000000001017800000110001000000001000000ffffffff0000000001000000020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML end namespace eight bytes short
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 128
+wx 030008008000000001001c002400000001000000000000000001000020000000000000000000000001017800010110001000000001000000ffffffff0000000001000000020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML resource map must contain whole entries
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 114
+wx 030008007200000001001c002400000001000000000000000001000020000000000000000000000001017800800108000a0000000000020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML duplicate string pool
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 140
+wx 030008008c00000001001c00240000000100000000000000000100002000000000000000000000000101780001001c002400000001000000000000000001000020000000000000000000000001017800020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML short string pool header
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 80
+wx 030008005000000001001c000c00000001000000020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML oversized string offset table count
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 104
+wx 030008006800000001001c002400000000001000000000000001000020000000000000000000000001017800020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML style and string counts cannot wrap
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 104
+wx 030008006800000001001c0024000000ffffffffffffffff0001000020000000000000000000000001017800020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML string may not consume the style data terminator
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 108
+wx 030008006c00000001001c00280000000100000001000000000100002400000027000000000000000000000001017800020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML element name index outside pool
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 104
+wx 030008006800000001001c002400000001000000000000000001000020000000000000000000000001017800020110002400000001000000ffffffffffffffff01000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML end element name index outside pool
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 104
+wx 030008006800000001001c002400000001000000000000000001000020000000000000000000000001017800020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff01000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML attribute name index outside pool
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 124
+wx 030008007c00000001001c002400000001000000000000000001000020000000000000000000000001017800020110003800000001000000ffffffffffffffff00000000140014000100000000000000ffffffff01000000ffffffff0800000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML attribute string value index outside pool
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 124
+wx 030008007c00000001001c002400000001000000000000000001000020000000000000000000000001017800020110003800000001000000ffffffffffffffff00000000140014000100000000000000ffffffff00000000ffffffff0800000301000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML namespace prefix index outside pool
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 128
+wx 030008008000000001001c002400000001000000000000000001000020000000000000000000000001017800000110001800000001000000ffffffff0100000000000000020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML namespace URI index outside pool
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 128
+wx 030008008000000001001c002400000001000000000000000001000020000000000000000000000001017800000110001800000001000000ffffffff0000000001000000020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML attribute offset overlaps extension
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 124
+wx 030008007c00000001001c002400000001000000000000000001000020000000000000000000000001017800020110003800000001000000ffffffffffffffff00000000000014000100000000000000ffffffff00000000ffffffff0800000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid element count
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid element count
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML attribute offset outside chunk
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 124
+wx 030008007c00000001001c002400000001000000000000000001000020000000000000000000000001017800020110003800000001000000ffffffffffffffff00000000ffff14000100000000000000ffffffff00000000ffffffff0800000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid element count
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid element count
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML attribute stride too short
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 124
+wx 030008007c00000001001c002400000001000000000000000001000020000000000000000000000001017800020110003800000001000000ffffffffffffffff00000000140013000100000000000000ffffffff00000000ffffffff0800000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid element count
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid element count
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML chunk extends past XML into trailing input
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 104
+wx 030008006400000001001c002400000001000000000000000001000020000000000000000000000001017800020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML truncated common chunk header
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 108
+wx 030008006c00000001001c002400000001000000000000000001000020000000000000000000000001017800020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff0000000001011000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML chunk size smaller than common header
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 104
+wx 030008006800000001001c002400000001000000000000000001000020000000000000000000000001017800020110000400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML chunk header size smaller than common header
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 104
+wx 030008006800000001001c002400000001000000000000000001000020000000000000000000000001017800020104002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML unclosed element
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+b 80
+wx 030008005000000001001c002400000001000000000000000001000020000000000000000000000001017800020110002400000001000000ffffffffffffffff00000000140014000000000000000000 @ 0
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+ERROR: Invalid Android Binary XML
+ERROR: Malformed object: did you supply enough data? try to change the block size (see b?)
+EOF
+RUN
+
+NAME=AXML pool and string offset larger than 64KB
+FILE=malloc://65640
+CMDS=<<EOF
+e scr.color=0
+b 65640
+wx 030008006800010001001c0024000100010000000000000000010000200001000000000000000000 @ 0
+wx 01017800 @ 65576
+wx 020110002400000001000000ffffffffffffffff00000000140014000000000000000000030110001800000001000000ffffffffffffffff00000000 @ 65580
+pFA
+pFAj
+EOF
+EXPECT=<<EOF
+<x>
+</x>
+{"x":{},"child":[]}
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=AXML UTF-16 extended length is decoded in full
+FILE=malloc://65682
+CMDS=<<EOF
+e scr.color=0
+b 65682
+wx 030008009200010001001c003a000100030000000000000000000000280000000000000000000000060000000c00000001007800000001006100000000800080 @ 0
+wX 6100 @ 64!65536
+wx 0000020110003800000001000000ffffffffffffffff00000000140014000100000000000000ffffffff01000000ffffffff0800000302000000030110001800000001000000ffffffffffffffff00000000 @ 65600
+pFA~?.
+pFAj~?.
+EOF
+EXPECT=<<EOF
+32782
+32794
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
