@@ -413,7 +413,8 @@ static int rabin_do_operation(RCons *cons, RBin *bin, const char *op, int rad, c
 		}
 		switch (*ptr) {
 		case 'l':
-			if (!ptr2 || !r_bin_wr_addlib (bin, ptr2)) {
+			if (!ptr2 || !*ptr2 || !r_bin_wr_addlib (bin, ptr2)) {
+				R_LOG_ERROR ("Cannot add library (unsupported format or layout, or invalid name)");
 				goto error;
 			}
 			rc = r_bin_wr_output (bin, output);
@@ -913,7 +914,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 				" d/S/.text         dump section\n"
 				" r/.data/1024      resize section\n"
 				" R                 remove RPATH\n"
-				" a/l/libfoo.dylib  add library\n"
+				" a/l/LIBRARY      add ELF DT_NEEDED or Mach-O LC_LOAD_DYLIB\n"
 				" w/weak//usr/lib/libfoo.dylib    make Mach-O dylib load weak\n"
 				" w/strong//usr/lib/libfoo.dylib  make Mach-O dylib load required\n"
 				" w/symweak/NAME    make an ELF or Mach-O import weak\n"
