@@ -1,0 +1,17 @@
+NAME=rabin2 addlib ELF and Mach-O layouts
+REQUIRE=unix
+FILE=-
+CMDS=!python3 scripts/test-rabin2-addlib.py
+EXPECT=<<EOFOUT
+ELF and Mach-O addlib checks passed
+EOFOUT
+RUN
+
+NAME=rabin2 addlib preserves Mach-O data and chained fixups
+REQUIRE=unix
+FILE=-
+CMDS=!python3 scripts/test-rabin2-addlib.py bins/mach0/TestRTTI-armv7 bins/mach0/TestRTTI-arm64 bins/mach0/TestMacOS-arm64e bins/mach0/SwiftAsynciOS
+EXPECT=<<EOFOUT
+Mach-O payloads preserved
+EOFOUT
+RUN
