@@ -8,5 +8,6 @@ RBinWrite r_bin_write_elf = {
 	.seg_perms = &seg_perms,
 	.rpath_del = &rpath_del,
 	.entry = &chentry,
+	.addlib = &addlib,
 	.symbol_weak = &symbol_weak,
 };
