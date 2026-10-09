@@ -3935,6 +3935,7 @@ static size_t populate_relocs_record_from_android(ELFOBJ *eo, size_t pos, size_t
 			reloc->sym = ELF_R_SYM ((Elf_(Xword))info);
 			reloc->type = ELF_R_TYPE ((Elf_(Xword))info);
 			reloc->addend = is_rela? r_addend: 0;
+			reloc->implicit_addend = !is_rela;
 			rel_cache_add (eo, reloc);
 			fix_rva_and_offset_exec_file (eo, reloc);
 			pos++;
@@ -4210,6 +4211,21 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, RVecElfOff *starts
 	return pos;
 }
 
+// a rel or relr relative keeps its addend in the slot it patches
+static void load_implicit_addends(ELFOBJ *eo) {
+	const int type = relr_reloc_type (eo->ehdr.e_machine);
+	if (!type) {
+		return;
+	}
+	RBinElfReloc *r;
+	R_VEC_FOREACH (&eo->g_relocs, r) {
+		ut64 word;
+		if (r->type == type && !r->sym && r->implicit_addend && relr_word (eo, r->rva, &word)) {
+			r->addend = word;
+		}
+	}
+}
+
 static bool populate_relocs_record(ELFOBJ *eo) {
 	RVecRBinElfReloc_init (&eo->g_relocs);
 	RVecElfOff starts;
@@ -4234,6 +4250,7 @@ static bool populate_relocs_record(ELFOBJ *eo) {
 	i = populate_relocs_record_from_mips_got (eo, i, num_relocs);
 	i = populate_relocs_record_from_section (eo, &starts, i, num_relocs);
 	RVecElfOff_fini (&starts);
+	load_implicit_addends (eo);
 	eo->g_reloc_num = RVecRBinElfReloc_length (&eo->g_relocs);
 	return true;
 }

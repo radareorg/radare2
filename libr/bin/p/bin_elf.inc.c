@@ -527,8 +527,6 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 	#define SET(T) r->type = R_BIN_RELOC_ ## T; r->additive = 0; return r
 	#define SETA(T) do { r->type = R_BIN_RELOC_ ## T; r->additive = !rel->implicit_addend; return r; } while (0)
 	#define ADD(T, A) do { st32 _tmp; if (!r_add_overflow_st32 (r->addend, A, &_tmp)) { r->addend = _tmp; } SETA (T); } while (0)
-	// only RELA rows carry a real addend; REL keeps the historic base fold
-	#define REL(T) do { if (rel->mode == DT_RELA) { SETA (T); } ADD (T, B); } while (0)
 
 	// Early return if it's a CREL relocation - it was already set up in the initialization above
 	if (rel->mode == DT_CREL) {
@@ -576,7 +574,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_386_PC32:     ADD(32,-(st64)P); break;
 		case R_386_GLOB_DAT: SET(32); break;
 		case R_386_JMP_SLOT: SET(32); break;
-		case R_386_RELATIVE: REL(32); break;
+		case R_386_RELATIVE: SETA(32); break;
 		case R_386_GOTOFF:   ADD(32, -(st64)got_addr); break;
 		case R_386_GOTPC:    ADD(32, got_addr - P); break;
 		case R_386_16:       ADD(16, 0); break;
@@ -601,7 +599,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_X86_64_PC32:      ADD(32,-(st64)P); break;
 		case R_X86_64_GLOB_DAT:  r->vaddr -= rel->sto; SET(64); break;
 		case R_X86_64_JUMP_SLOT: r->vaddr -= rel->sto; SET(64); break;
-		case R_X86_64_RELATIVE:  REL(64); break;
+		case R_X86_64_RELATIVE:  SETA(64); break;
 		case R_X86_64_32:        ADD(32, 0); break;
 		case R_X86_64_32S:       ADD(32, 0); break;
 		case R_X86_64_16:        ADD(16, 0); break;
@@ -631,7 +629,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_ARM_GLOB_DAT:         ADD(32, 0); break;
 		case R_ARM_JUMP_SLOT:        ADD(32, 0); break;
 		case R_ARM_COPY:             ADD(32, 0); break; // copy symbol at runtime
-		case R_ARM_RELATIVE:         ADD(32, B); break;
+		case R_ARM_RELATIVE:         SETA(32); break;
 		case R_ARM_GOTOFF:           ADD(32,-(st64)got_addr); break;
 		case R_ARM_GOTPC:            ADD(32, got_addr - P); break;
 		case R_ARM_CALL:             ADD(24, -(st64)P); break;
@@ -663,7 +661,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		switch (rel->type) {
 		case R_RISCV_NONE: break;
 		case R_RISCV_JUMP_SLOT: ADD(64, 0); break;
-		case R_RISCV_RELATIVE: ADD(64, B); break;
+		case R_RISCV_RELATIVE: SETA(64); break;
 		default: ADD(64, got_addr); break; // reg relocations
 		}
 		break;
@@ -672,7 +670,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_AARCH64_GLOB_DAT: SET (64); break;
 		case R_AARCH64_JUMP_SLOT: SET (64); break;
 		case R_AARCH64_COPY: ADD (64, 0); break; // copy symbol at runtime
-		case R_AARCH64_RELATIVE: REL (64); break;
+		case R_AARCH64_RELATIVE: SETA (64); break;
 		case R_AARCH64_IRELATIVE: r->is_ifunc = true; SET (64); break;
 		// data references
 		case R_AARCH64_PREL16: ADD (16, B); break;
@@ -773,7 +771,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_PPC_REL24: ADD(24, -(st64)P); break;
 		case R_PPC_REL14: ADD(16, -(st64)P); break;
 		case R_PPC_REL32: ADD(32, -(st64)P); break;
-		case R_PPC_RELATIVE: ADD(32, -(st64)P); break;
+		case R_PPC_RELATIVE: SETA(32); break;
 		case R_PPC_PLT32: ADD(32, -(st64)P); break;
 		case R_PPC_ADDR16: ADD(16, 0); break;
 		case R_PPC_ADDR32: ADD(32, 0); break;
@@ -791,7 +789,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_PPC64_ADDR64:
 			SET (64);
 		case R_PPC64_RELATIVE:  // A + load bias
-			REL (64);
+			SETA (64);
 		case R_PPC64_ADDR32:
 			ADD (32, 0);
 		case R_PPC64_REL32:
@@ -881,7 +879,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_NDS32_COPY:           ADD(32, 0); break;
 		case R_NDS32_GLOB_DAT:       SET(32); break;
 		case R_NDS32_JMP_SLOT:       SET(32); break;
-		case R_NDS32_RELATIVE:       ADD(32, B); break;
+		case R_NDS32_RELATIVE:       SETA(32); break;
 		case R_NDS32_GOTOFF:         ADD(32, -(st64)got_addr); break;
 		case R_NDS32_GOTPC20:        ADD(32, got_addr - P); break;
 		case R_NDS32_GOT_HI20:       ADD(32, got_addr); break;
@@ -913,7 +911,6 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 	}
 #undef SET
 #undef SETA
-#undef REL
 #undef ADD
 	RVecRBinReloc_pop_back (out);
 	return NULL;
@@ -1131,17 +1128,6 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 	ut64 V = 0;
 	ut64 A = rel->addend;
 	ut8 buf[8] = {0};
-	// rel/relr carry no explicit addend: the slot's own word is it
-	if (rel->mode == DT_RELR || e_machine == EM_386) {
-		ut8 slot[8] = {0};
-		const int ws = (e_machine == EM_386)? 4: (int)sizeof (Elf_(Addr));
-		if (iob->read_at (iob->io, P, slot, ws) != ws) {
-			return;
-		}
-		if (rel->implicit_addend) {
-			A = r_read_ble (slot, bo->endian, 8 * ws);
-		}
-	}
 	switch (e_machine) {
 	case EM_S390: {
 		const int ws = sizeof (Elf_(Addr));
@@ -1568,6 +1554,13 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		break;
 	}
 	case EM_386:
+		// i386 rel carries no explicit addend: the slot's own word is it
+		if (iob->read_at (iob->io, P, buf, 4) != 4) {
+			return;
+		}
+		if (rel->implicit_addend) {
+			A = r_read_ble32 (buf, bo->endian);
+		}
 		switch (rel->type) {
 		case R_386_32:
 			V = S + A;

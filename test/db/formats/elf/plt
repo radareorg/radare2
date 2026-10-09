@@ -16,7 +16,7 @@ EXPECT=<<EOF
 0x00076f00 16 sym.imp.strtold
 --
             ;-- __strchr_chk:
-            0x000758f8      300000d0       adrp x16, 0x7b000
+            0x000758f8      300000d0       adrp x16, reloc.fixup.user  ; 0x7b000
             0x000758fc      114642f9       ldr x17, [x16, 0x488]
 EOF
 RUN
