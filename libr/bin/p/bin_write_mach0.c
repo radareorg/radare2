@@ -4,75 +4,204 @@
 #include <r_bin.h>
 #include "mach0/mach0.h"
 
-typedef struct machoPointers_t {
-	size_t ncmds;
-	size_t ncmds_off;
-	size_t sizeofcmds;
-	size_t sizeofcmds_off;
-	size_t lastcmd_off;
-} MachoPointers;
-
-static MachoPointers findLastCommand(RBinFile *bf) {
-	struct MACH0_(obj_t) *bin = bf->bo->bin_obj;
-	int i = 0;
-	ut64 off;
-	MachoPointers mp = {0};
-	mp.ncmds = bin->hdr.ncmds;
-	mp.ncmds_off = 0x10;
-	mp.sizeofcmds = bin->hdr.sizeofcmds;
-	mp.sizeofcmds_off = 0x14;
-
-	for (i = 0, off = 0x20 + bin->header_at; i < mp.ncmds; i++) {
-		ut32 loadc[2] = {0};
-		r_buf_read_at (bin->b, off, (ut8*)&loadc, sizeof (loadc));
-		//r_buf_seek (bin->b, off, R_BUF_SET);
-		int len = loadc[1]; // r_buf_read_le32 (loadc[1]); // bin->b); //
-		if (len < 1) {
-			R_LOG_ERROR ("read (lc) at 0x%08"PFMT64x, off);
+static bool addlib(RBinFile *bf, const char *lib) {
+	if (!bf || !bf->bo || !bf->bo->bin_obj || !bf->buf || !R_STR_ISNOTEMPTY (lib)) {
+		return false;
+	}
+	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
+	// Chained pointers in bf->buf may have been rebased for analysis.
+	RBuffer *src = mo->chained_starts? mo->b: bf->buf;
+	ut64 size = r_buf_size (src);
+	if (mo->header_at > size || sizeof (struct MACH0_(mach_header)) > size - mo->header_at) {
+		return false;
+	}
+	ut64 off = mo->header_at + sizeof (struct MACH0_(mach_header));
+	if (off > size || mo->hdr.sizeofcmds > size - off || mo->hdr.ncmds == UT32_MAX) {
+		return false;
+	}
+	ut64 end = off + mo->hdr.sizeofcmds;
+	ut64 limit = size;
+#if R_BIN_MACH064
+	const ut32 alignment = 8;
+#else
+	const ut32 alignment = 4;
+#endif
+	size_t namelen = strlen (lib) + 1;
+	if (namelen > UT32_MAX - sizeof (struct dylib_command) - alignment) {
+		return false;
+	}
+	ut32 cmdsize = (sizeof (struct dylib_command) + namelen + alignment - 1) & ~(alignment - 1);
+	if (cmdsize > UT32_MAX - mo->hdr.sizeofcmds) {
+		return false;
+	}
+	ut8 *command = calloc (1, cmdsize);
+	if (!command) {
+		return false;
+	}
+	bool ok = false, duplicate = false, signed_file = false;
+	ut32 i, sections = 0;
+	for (i = 0; i < mo->hdr.ncmds; i++) {
+		ut8 lc[8];
+		if (off > end || sizeof (lc) > end - off
+			|| r_buf_read_at (src, off, lc, sizeof (lc)) != sizeof (lc)) {
+			goto beach;
+		}
+		ut32 cmd = r_read_ble32 (lc, mo->big_endian);
+		ut32 len = r_read_ble32 (lc + 4, mo->big_endian);
+		if (len < sizeof (lc) || len > end - off || len % alignment) {
+			goto beach;
+		}
+		if (cmd == LC_LOAD_DYLIB || cmd == LC_LOAD_WEAK_DYLIB || cmd == LC_REEXPORT_DYLIB
+			|| cmd == LC_LOAD_UPWARD_DYLIB || cmd == LC_LAZY_LOAD_DYLIB) {
+			if (len < sizeof (struct dylib_command)) {
+				goto beach;
+			}
+			ut32 nameoff = r_buf_read_ble32_at (src, off + 8, mo->big_endian);
+			if (nameoff < sizeof (struct dylib_command) || nameoff >= len) {
+				goto beach;
+			}
+			if (namelen <= len - nameoff && r_buf_read_at (src, off + nameoff, command, namelen) == namelen
+				&& !memcmp (command, lib, namelen)) {
+				duplicate = true;
+			}
+		}
+		// Link-edit data can precede the first section in unusual layouts.
+		switch (cmd) {
+		case LC_SEGMENT:
+		case LC_SEGMENT_64:
+			{
+				ut32 segsize = cmd == LC_SEGMENT? 56: 72;
+				ut32 secsize = cmd == LC_SEGMENT? 68: 80;
+				if (len < segsize) {
+					goto beach;
+				}
+				ut32 count = r_buf_read_ble32_at (src, off + segsize - 8, mo->big_endian);
+				if (count > (len - segsize) / secsize || count > UT32_MAX - sections) {
+					goto beach;
+				}
+				sections += count;
+			}
+			break;
+		case LC_NOTE:
+		case LC_MAIN:
+			{
+				ut32 field = cmd == LC_NOTE? 24: 8;
+				if (len < field + 16) {
+					goto beach;
+				}
+				ut64 dataoff = r_buf_read_ble64_at (src, off + field, mo->big_endian);
+				if (dataoff) {
+					limit = R_MIN (limit, dataoff);
+				}
+			}
+			break;
+		case LC_CODE_SIGNATURE:
+			signed_file = true;
+			// fall through
+		case LC_SEGMENT_SPLIT_INFO:
+		case LC_FUNCTION_STARTS:
+		case LC_DATA_IN_CODE:
+		case LC_DYLIB_CODE_SIGN_DRS:
+		case LC_LINKER_OPTIMIZATION_HINT:
+		case LC_DYLD_EXPORTS_TRIE:
+		case LC_DYLD_CHAINED_FIXUPS:
+		case LC_ENCRYPTION_INFO:
+		case LC_ENCRYPTION_INFO_64:
+		case LC_TWOLEVEL_HINTS:
+			if (len < 16) {
+				goto beach;
+			}
+			ut32 dataoff = r_buf_read_ble32_at (src, off + 8, mo->big_endian);
+			if (dataoff) {
+				limit = R_MIN (limit, dataoff);
+			}
+			break;
+		case LC_SYMTAB:
+		case LC_DYSYMTAB:
+		case LC_DYLD_INFO:
+		case LC_DYLD_INFO_ONLY:
+			{
+				ut32 count = cmd == LC_SYMTAB? 2: cmd == LC_DYSYMTAB? 6: 5;
+				ut32 start = cmd == LC_DYSYMTAB? 32: 8;
+				ut32 j;
+				if (len < start + count * 8) {
+					goto beach;
+				}
+				for (j = 0; j < count; j++) {
+					ut32 dataoff = r_buf_read_ble32_at (src, off + start + j * 8, mo->big_endian);
+					if (dataoff) {
+						limit = R_MIN (limit, dataoff);
+					}
+				}
+			}
 			break;
 		}
-		int size = r_read_ble32 (&loadc[1], bin->big_endian);
-		off += size;
+		off += len;
 	}
-	mp.lastcmd_off = off;
-	return mp;
-}
-
-static const uint8_t sample_dylib[56] = {
-	0x0c, 0x00, 0x00, 0x00, 0x38, 0x00, 0x00, 0x00, 0x18, 0x00,
-	0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x01, 0x0a, 0xca, 0x04,
-	0x00, 0x00, 0x01, 0x00, 0x2f, 0x75, 0x73, 0x72, 0x2f, 0x6c,
-	0x69, 0x62, 0x2f, 0x6c, 0x69, 0x6f, 0x75, 0x74, 0x69, 0x6c,
-	0x2e, 0x64, 0x79, 0x6c, 0x69, 0x62, 0x00, 0x6c, 0x69, 0x62,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-};
-
-static bool MACH0_(write_addlib)(RBinFile *bf, const char *lib) {
-	MachoPointers mp = findLastCommand (bf);
-	size_t size_of_lib = 56;
-
-	ut32 ncmds = mp.ncmds + 1;
-	r_buf_write_at (bf->buf, mp.ncmds_off, (const ut8*)&ncmds, sizeof (ncmds));
-
-	ut32 sizeofcmds = mp.sizeofcmds + size_of_lib; // , &ncmds, sizeof (ncmds));
-	r_buf_write_at (bf->buf, mp.sizeofcmds_off, (ut8*)&sizeofcmds, sizeof (sizeofcmds));
-
-	size_t lib_len = strlen (lib);
-	if (lib_len > 22) {
-		R_LOG_WARN ("Adjusting cmdsize too long libname");
-		size_of_lib += lib_len + 1 - 22;
-		size_of_lib += 8 - (size_of_lib % 8);
+	if (off != end) {
+		goto beach;
 	}
-
-	const size_t sample_dylib_name_off = 24;
-	r_buf_write_at (bf->buf, mp.lastcmd_off, sample_dylib, 56);
-	r_buf_write_at (bf->buf, mp.lastcmd_off + 4, (const ut8*)&size_of_lib, 4);
-	r_buf_write_at (bf->buf, mp.lastcmd_off + sample_dylib_name_off, (const ut8*)lib, lib_len + 1);
-	return true;
-}
-
-static bool addlib(RBinFile *bf, const char *lib) {
-	return MACH0_(write_addlib) (bf, lib);
+	if (duplicate) {
+		RBuffer *out = r_buf_new_with_buf (src);
+		if (out) {
+			r_unref (bf->buf);
+			bf->buf = out;
+			ok = true;
+		}
+		goto beach;
+	}
+	if (!mo->sects || !mo->segs || sections != mo->nsects) {
+		goto beach;
+	}
+	int j;
+	for (j = 0; j < mo->nsects; j++) {
+		struct MACH0_(section) *section = &mo->sects[j];
+		ut32 type = section->flags & SECTION_TYPE;
+		if (section->size && type != S_ZEROFILL && type != S_GB_ZEROFILL && type != S_THREAD_LOCAL_ZEROFILL) {
+			limit = R_MIN (limit, section->offset);
+		}
+	}
+	for (j = 0; j < mo->nsegs; j++) {
+		if (mo->segs[j].fileoff && mo->segs[j].filesize) {
+			limit = R_MIN (limit, mo->segs[j].fileoff);
+		}
+	}
+	if (!mo->nsects || end > limit || cmdsize > limit - end
+		|| r_buf_read_at (src, end, command, cmdsize) != cmdsize) {
+		R_LOG_ERROR ("Not enough Mach-O header padding for library load command");
+		goto beach;
+	}
+	for (i = 0; i < cmdsize; i++) {
+		if (command[i]) {
+			R_LOG_ERROR ("Mach-O header padding is not empty");
+			goto beach;
+		}
+	}
+	r_write_ble32 (command, LC_LOAD_DYLIB, mo->big_endian);
+	r_write_ble32 (command + 4, cmdsize, mo->big_endian);
+	r_write_ble32 (command + 8, sizeof (struct dylib_command), mo->big_endian);
+	memcpy (command + sizeof (struct dylib_command), lib, namelen);
+	RBuffer *out = r_buf_new_with_buf (src);
+	if (!out) {
+		goto beach;
+	}
+	ut8 counts[8];
+	r_write_ble32 (counts, mo->hdr.ncmds + 1, mo->big_endian);
+	r_write_ble32 (counts + 4, mo->hdr.sizeofcmds + cmdsize, mo->big_endian);
+	ok = r_buf_write_at (out, end, command, cmdsize) == cmdsize
+		&& r_buf_write_at (out, mo->header_at + 16, counts, sizeof (counts)) == sizeof (counts);
+	if (ok) {
+		r_unref (bf->buf);
+		bf->buf = out;
+		if (signed_file) {
+			R_LOG_WARN ("Mach-O changed; code signature must be regenerated");
+		}
+	} else {
+		r_unref (out);
+	}
+beach:
+	free (command);
+	return ok;
 }
 
 static bool lib_weak(RBinFile *bf, const char *lib, bool weak) {
