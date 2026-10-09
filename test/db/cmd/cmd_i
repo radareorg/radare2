@@ -3102,17 +3102,17 @@ nth paddr      vaddr      bind   type   size lib name                           
 relocs
 vaddr      paddr      type   ntype name
 ---------------------------------------
-0x00001eec 0x00000eec SET_32 8
-0x00001ef0 0x00000ef0 SET_32 8
+0x00001eec 0x00000eec SET_32 8      0x00000550
+0x00001ef0 0x00000ef0 SET_32 8      0x00000500
 0x00001fe8 0x00000fe8 SET_32 6     _ITM_deregisterTMCloneTable
 0x00001fec 0x00000fec SET_32 6     __cxa_finalize
 0x00001ff0 0x00000ff0 SET_32 6     __gmon_start__
-0x00001ff4 0x00000ff4 SET_32 8
+0x00001ff4 0x00000ff4 SET_32 8      0x00000590
 0x00001ff8 0x00000ff8 SET_32 6     _Jv_RegisterClasses
 0x00001ffc 0x00000ffc SET_32 6     _ITM_registerTMCloneTable
 0x0000200c 0x0000100c SET_32 7     puts
 0x00002010 0x00001010 SET_32 7     __libc_start_main
-0x00002018 0x00001018 SET_32 8
+0x00002018 0x00001018 SET_32 8      0x00002018
 flags
 0x00000000 1936 segment.LOAD0
 0x00000000 0 segment.GNU_STACK

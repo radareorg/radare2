@@ -733,9 +733,9 @@ oba 0
 ir~0x00078030
 EOF
 EXPECT=<<EOF
-0x00078030 0x00078030 SET_64 1027
-0x00078030 0x00078030 SET_32 23
-0x00078030 0x00078030 SET_64 22
+0x00078030 0x00078030 SET_64 1027   0x00006385
+0x00078030 0x00078030 SET_32 23     0x00006385
+0x00078030 0x00078030 SET_64 22     0x00006385
 EOF
 RUN
 
@@ -961,15 +961,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ELF: arm rel relative reloc listing is unchanged
+NAME=ELF: arm rel relative reloc lists its slot word
 FILE=bins/elf/arm-relative-linkbase.so
 ARGS=-e bin.relocs.apply=true
 CMDS=<<EOF
 ir~SET_32
 EOF
 EXPECT=<<EOF
-0x00070220 0x00000220 SET_32 23     0x00040000
-0x00070224 0x00000224 SET_32 23     0x00040000
+0x00070220 0x00000220 SET_32 23     0x000501bc
+0x00070224 0x00000224 SET_32 23     0x00070224
 EOF
 RUN
 
@@ -1005,14 +1005,63 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ELF: i386 rel relative reloc listing is unchanged
+NAME=ELF: i386 rel relative reloc lists its slot word
 FILE=bins/elf/i386-base10000-rel.so
 ARGS=-e bin.relocs.apply=true
 CMDS=<<EOF
 ir~0x000132c0
 EOF
 EXPECT=<<EOF
-0x000132c0 0x000002c0 SET_32 8      0x00010000
+0x000132c0 0x000002c0 SET_32 8      0x00011216
+EOF
+RUN
+
+NAME=ELF: aarch64 relr relative reloc lists its slot word
+FILE=bins/elf/aarch64-relr-linkbase.so
+CMDS=<<EOF
+ir~SET_64
+EOF
+EXPECT=<<EOF
+0x00070360 0x00000360 SET_64 1027   0x000502a8
+0x00070368 0x00000368 SET_64 1027   0x00070368
+0x00070370 0x00000370 SET_64 1027   0x00070370
+0x00070378 0x00000378 SET_64 1027   0x000502ac
+EOF
+RUN
+
+NAME=ELF: aarch64 relr relative reloc moves by the load bias under -B
+FILE=bins/elf/aarch64-relr-linkbase.so
+ARGS=-B 0x100000 -e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x130360
+pv8 @ 0x130378
+EOF
+EXPECT=<<EOF
+0x00000000001102a8
+0x00000000001102ac
+EOF
+RUN
+
+NAME=ELF: i386 android packed rel relative keeps its slot word
+FILE=bins/elf/i386-aps2-rel.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+ir~SET_32 8
+pv4 @ 0x3218
+EOF
+EXPECT=<<EOF
+0x00003218 0x00000218 SET_32 8      0x000001b8
+0x000001b8
+EOF
+RUN
+
+NAME=ELF: ppc32 rela relative reloc lists its addend
+FILE=bins/elf/dropbear_powerpc-linux-gnu_gcc_-O2
+CMDS=<<EOF
+ir~^0x0002f420
+EOF
+EXPECT=<<EOF
+0x0002f420 0x0002f420 ADD_32 22     0x0004fdf4
 EOF
 RUN
 

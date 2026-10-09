@@ -133,6 +133,13 @@ DEBUG: (section .dynamic) Cd 4[48] @ 0x12000
 DEBUG: RCoreCallAt(0x00012000): Cd 4[48]
 DEBUG: (section .got) Cd 4[56] @ 0x2fdd8
 DEBUG: RCoreCallAt(0x0002fdd8): Cd 4[56]
+DEBUG: Naming fixup reloc with string Linux_version_3.4.0_
+DEBUG: Naming fixup reloc with string Linux_version_3.4.0_722276
+DEBUG: Naming fixup reloc with string Linux_version_3.4.0_481100
+DEBUG: Naming fixup reloc with string Linux_version_3.4.0_636608
+DEBUG: Naming fixup reloc with string Linux_version_3.4.0_660648
+DEBUG: Naming fixup reloc with string Linux_version_3.4.0_257432
+DEBUG: Naming fixup reloc with string Ubuntu
 DEBUG: RCoreCmd: =!
 DEBUG: RCoreCmd: ieq
 DEBUG: RCoreCmd: ie
