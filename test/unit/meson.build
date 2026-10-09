@@ -14,6 +14,7 @@ if get_option('enable_tests')
     'anal_xrefs',
     'anal_x86',
     'arena',
+    'asn1',
     'axml',
     'codemeta',
     'base64',
