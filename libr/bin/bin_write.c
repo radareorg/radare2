@@ -67,6 +67,10 @@ R_API bool r_bin_wr_entry(RBin *bin, ut64 addr) {
 R_API bool r_bin_wr_addlib(RBin *bin, const char *lib) {
 	R_RETURN_VAL_IF_FAIL (bin && lib, false);
 	RBinFile *bf = r_bin_cur (bin);
+	if (bf && !r_list_empty (bf->xtr_data)) {
+		R_LOG_ERROR ("Extract the binary before adding a library");
+		return false;
+	}
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 	RBinWriteAddLib addlib = R_UNWRAP3 (plugin, write, addlib);
 	return addlib? addlib (bin->cur, lib): false;
