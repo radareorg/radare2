@@ -169,8 +169,7 @@ static bool test_axml_string_index_past_pool_chunk(void) {
 	put_start_element (&b, 32, 4, 0);
 	pad (&b, 80);
 	char *s = r_axml_decode (b.bytes, b.size, NULL);
-	mu_assert_notnull (s, "oversized string index must not read past the pool chunk");
-	free (s);
+	mu_assert_null (s, "oversized string index must be rejected");
 	mu_end;
 }
 
@@ -183,8 +182,7 @@ static bool test_axml_string_pool_chunk_too_small(void) {
 	put_start_element (&b, 32, 0, 0);
 	pad (&b, 80);
 	char *s = r_axml_decode (b.bytes, b.size, NULL);
-	mu_assert_notnull (s, "truncated pool chunk must not be parsed as a pool header");
-	free (s);
+	mu_assert_null (s, "truncated pool chunk must be rejected");
 	mu_end;
 }
 
