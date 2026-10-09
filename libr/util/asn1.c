@@ -53,7 +53,7 @@ static RASN1Object *asn1_parse_header(const ut8 *buffer_base, const ut8 *buffer,
 		// Check for indefinite length.
 		if (length8) {
 			// Length over 6 bytes is not allowed.
-			if (length8 > length - 1 || length8 > 6) {
+			if (length8 > length - 2 || length8 > 6) {
 				R_LOG_DEBUG ("ASN.1: length error");
 				goto out_error;
 			}
@@ -83,7 +83,7 @@ static RASN1Object *asn1_parse_header(const ut8 *buffer_base, const ut8 *buffer,
 	// Calculate headerlength before BITSTRING adjustment
 	obj->headerlength = obj->sector - initial_pos;
 	if (obj->tag == TAG_BITSTRING) {
-		if (obj->length > 0) {
+		if (obj->length > 0 && obj->sector < buffer + length) {
 			obj->length--;
 			obj->bitlength = obj->length * 8 - obj->sector[0];
 			obj->sector++; // real sector starts + 1
