@@ -186,3 +186,20 @@ EXPECT=<<EOF
 - 1 fd: 4 +0x00000000 0x0804a020 - 0x0804a023 rw- rw- mmap.LOAD1
 EOF
 RUN
+
+NAME=io.exec controls the exec permission of the maps on open
+FILE=-
+CMDS=<<EOF
+e scr.null=true
+o malloc://32 0x400
+e io.exec=false
+o malloc://32 0x800
+e scr.null=false
+om
+EOF
+EXPECT=<<EOF
+- 3 fd: 5 +0x00000000 0x00000800 - 0x0000081f rw- rw-
+- 2 fd: 4 +0x00000000 0x00000400 - 0x0000041f rwx rwx
+* 1 fd: 3 +0x00000000 0x00000000 - 0x000001ff rwx rwx
+EOF
+RUN
