@@ -871,6 +871,86 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ELF: absolute symbol values do not move under -B
+FILE=bins/elf/x86_64-abs-sym.so
+ARGS=-B 0x10000000 -e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x100033f0
+pv8 @ 0x100033f8
+pv8 @ 0x10003400
+pv8 @ 0x10003408
+EOF
+EXPECT=<<EOF
+0x0000000000001234
+0x0000000000400100
+0x0000000000000000
+0x00000000100033f0
+EOF
+RUN
+
+NAME=ELF: absolute symbol values in a section-less ELF under -B
+FILE=bins/elf/x86_64-abs-sym-noshdr.so
+ARGS=-B 0x10000000 -e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x100033f0
+pv8 @ 0x100033f8
+pv8 @ 0x10003400
+pv8 @ 0x10003408
+EOF
+EXPECT=<<EOF
+0x0000000000001234
+0x0000000000400100
+0x0000000000000000
+0x00000000100033f0
+EOF
+RUN
+
+NAME=ELF: ET_REL absolute symbols are not placed at the base
+FILE=bins/elf/x86_64-abs-sym.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x08000040
+pv8 @ 0x08000048
+pv8 @ 0x08000050
+pv8 @ 0x08000058
+EOF
+EXPECT=<<EOF
+0x0000000000001234
+0x0000000000400100
+0x0000000000000000
+0x0000000008000040
+EOF
+RUN
+
+NAME=ELF: Thumb blx to an absolute Thumb function becomes a bl
+FILE=bins/elf/arm-abs-thumb-blx.o
+ARGS=-e bin.relocs.apply=true -e asm.sub.names=false
+CMDS=<<EOF
+pi 2 @ 0x08000034
+pv4 @ 0x08000044
+EOF
+EXPECT=<<EOF
+bl 0x8000100
+blx 0x8000040
+0x08000101
+EOF
+RUN
+
+NAME=ELF: absolute symbol values at the link base
+FILE=bins/elf/x86_64-abs-sym.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x004033f0
+pv8 @ 0x004033f8
+pv8 @ 0x00403408
+EOF
+EXPECT=<<EOF
+0x0000000000001234
+0x0000000000400100
+0x00000000004033f0
+EOF
+RUN
+
 NAME=ELF: aarch64 relative reloc keeps the link base out
 FILE=bins/elf/aarch64-relative-linkbase.so
 ARGS=-e bin.relocs.apply=true

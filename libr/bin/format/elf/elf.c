@@ -2384,7 +2384,7 @@ static bool has_public_visibility_leaks(ELFOBJ *eo) {
 	RBinElfSymbol *symbol;
 	R_VEC_FOREACH (eo->g_symbols_vec, symbol) {
 		const char *name = symbol->name;
-		if (!name || !*name || symbol->is_imported || symbol->is_sht_null) {
+		if (R_STR_ISEMPTY (name) || symbol->st_shndx == SHN_UNDEF) {
 			continue;
 		}
 		if (strcmp (symbol->bind, R_BIN_BIND_GLOBAL_STR) && strcmp (symbol->bind, R_BIN_BIND_WEAK_STR)) {
@@ -5016,7 +5016,6 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 		new_symbol.st_other = READ8 (s, j);
 		new_symbol.st_shndx = READ16 (s, j);
 #endif
-		bool is_sht_null = false;
 		bool is_vaddr = false;
 		bool is_imported = new_symbol.st_shndx == STN_UNDEF;
 		int tsize = 0;
@@ -5033,7 +5032,6 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 		} else if (type == R_BIN_ELF_ALL_SYMBOLS) {
 			tsize = new_symbol.st_size;
 			toffset = (ut64) new_symbol.st_value;
-			is_sht_null = new_symbol.st_shndx == SHT_NULL;
 #if R_BIN_ELF64
 			if (ELF64_ST_TYPE (new_symbol.st_info) == STT_FUNC) {
 				ut64 code_addr = ppc64v1_opd_deref (eo, toffset);
@@ -5087,9 +5085,9 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 		psym->ordinal = i;
 		psym->in_shdr = false;
 		fill_symbol_bind_and_type (eo, psym, &new_symbol);
-		psym->is_sht_null = is_sht_null;
 		psym->is_vaddr = is_vaddr;
-		psym->is_imported = is_imported;
+		psym->st_shndx = new_symbol.st_shndx;
+		psym->st_value = new_symbol.st_value;
 		if (type == R_BIN_ELF_IMPORT_SYMBOLS && is_imported) {
 			const int limit = eo->limit;
 			if (limit > 0 && ++state->import_count >= limit) {
@@ -5349,6 +5347,19 @@ static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol *sym) {
 	}
 }
 
+static void set_abs_by_ord(ELFOBJ *eo, const RBinElfSymbol *symbol) {
+	if (symbol->st_shndx != SHN_ABS) {
+		return;
+	}
+	if (!eo->abs_by_ord) {
+		eo->abs_by_ord = ht_uu_new0 ();
+		if (!eo->abs_by_ord) {
+			return;
+		}
+	}
+	ht_uu_update (eo->abs_by_ord, symbol->ordinal, symbol->st_value);
+}
+
 // Fill sym with converted symbol data, returns true on success
 static void fill_symbol(ELFOBJ *eo, RBinElfSymbol *symbol, RBinSymbol *sym) {
 	ut64 paddr, vaddr;
@@ -5371,7 +5382,7 @@ static void fill_symbol(ELFOBJ *eo, RBinElfSymbol *symbol, RBinSymbol *sym) {
 	sym->forwarder = "NONE";
 	sym->bind = symbol->bind;
 	sym->type = symbol->type;
-	sym->is_imported = symbol->is_imported;
+	sym->is_imported = symbol->st_shndx == SHN_UNDEF;
 	sym->paddr = paddr;
 	sym->vaddr = vaddr;
 	sym->attr.size = symbol->size;
@@ -5443,8 +5454,8 @@ static RVecRBinElfSymbol *parse_gnu_debugdata(ELFOBJ *eo, size_t *ret_size) {
 					ut64 paddr = Elf_(v2p) (eo, vaddr);
 					symbol->is_vaddr = paddr == UT64_MAX;
 					symbol->offset = symbol->is_vaddr? vaddr: paddr;
-					char *key = r_str_newf ("%"PFMT64x":%"PFMT64x":%d:%d:%s:%s:%s",
-						vaddr, symbol->size, symbol->is_imported, symbol->is_sht_null,
+					char *key = r_str_newf ("%"PFMT64x":%"PFMT64x":%d:%s:%s:%s",
+						vaddr, symbol->size, symbol->st_shndx == SHN_UNDEF,
 						symbol->bind, symbol->type, symbol->name);
 					bool duplicate = seen && key && ht_su_find (seen, key, NULL);
 					if (!duplicate) {
@@ -5522,6 +5533,8 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 	free (eo->symbols_by_ord);
 	eo->symbols_by_ord = symbols_by_ord;
 	eo->symbols_by_ord_size = symbols_by_ord? ord_size: 0;
+	ht_uu_free (eo->abs_by_ord);
+	eo->abs_by_ord = NULL;
 	if (ret_ctr > ii->import_ret_ctr + max_ord) {
 		return NULL;
 	}
@@ -5545,7 +5558,7 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 		bool keep_symbol = true;
 		fill_symbol (eo, symbol, isym);
 		const bool can_store = symbols_by_ord && isym->ordinal < ord_size;
-		if (symbol->is_imported) {
+		if (symbol->st_shndx == SHN_UNDEF) {
 			if (limit > 0 && count >= limit) {
 				keep_symbol = false;
 			} else {
@@ -5557,6 +5570,7 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 			const ut32 ord = isym->ordinal;
 			r_bin_symbol_free (symbols_by_ord[ord]);
 			symbols_by_ord[ord] = isym;
+			set_abs_by_ord (eo, symbol);
 		} else {
 			r_bin_symbol_free (isym);
 		}
@@ -5687,7 +5701,6 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 		sym.st_other = READ8 (s, j);
 		sym.st_shndx = READ16 (s, j);
 #endif
-		bool is_sht_null = false;
 		bool is_vaddr = false;
 		bool is_imported = sym.st_shndx == STN_UNDEF;
 		ut64 offset = 0;
@@ -5702,7 +5715,6 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 		} else {
 			tsize = sym.st_size;
 			toffset = (ut64)sym.st_value;
-			is_sht_null = sym.st_shndx == SHT_NULL;
 #if R_BIN_ELF64
 			if (ELF64_ST_TYPE (sym.st_info) == STT_FUNC) {
 				ut64 code_addr = ppc64v1_opd_deref (eo, toffset);
@@ -5765,9 +5777,9 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 
 		es->ordinal = k;
 		fill_symbol_bind_and_type (eo, es, &sym);
-		es->is_sht_null = is_sht_null;
 		es->is_vaddr = is_vaddr;
-		es->is_imported = is_imported;
+		es->st_shndx = sym.st_shndx;
+		es->st_value = sym.st_value;
 		(*ret_ctr)++;
 		if (type == R_BIN_ELF_IMPORT_SYMBOLS && is_imported) {
 			(*import_ret_ctr)++;
@@ -5884,7 +5896,7 @@ RVecRBinSymbol *Elf_(load_symbols_vec)(RBinFile *bf, ELFOBJ *eo) {
 	RBinSymbol **sbo = eo->ehdr.e_shnum? NULL: eo->symbols_by_ord;
 	const size_t sbo_size = eo->symbols_by_ord_size;
 	R_VEC_FOREACH (elf_symbols, symbol) {
-		if (symbol->is_sht_null) {
+		if (symbol->st_shndx == SHN_UNDEF) {
 			continue;
 		}
 		if (!eo->load_unnamed && r_bin_name_is_unnamed (symbol->name)) {
@@ -5893,8 +5905,9 @@ RVecRBinSymbol *Elf_(load_symbols_vec)(RBinFile *bf, ELFOBJ *eo) {
 		RBinSymbol sym;
 		fill_symbol (eo, symbol, &sym);
 		r_bin_register_symbol_language (bf, &sym);
-		if (sbo && !symbol->is_imported && symbol->ordinal < sbo_size && !sbo[symbol->ordinal]) {
+		if (sbo && symbol->ordinal < sbo_size && !sbo[symbol->ordinal]) {
 			sbo[symbol->ordinal] = r_bin_symbol_clone (&sym);
+			set_abs_by_ord (eo, symbol);
 		}
 		RVecRBinSymbol_push_back (&eo->symbols_cache, &sym);
 	}
@@ -5948,7 +5961,7 @@ RVecRBinSymbol *Elf_(load_plt_symbols_vec)(RBinFile *bf, ELFOBJ *eo) {
 	RVecRBinElfSymbol *elf_imports = eo->g_imports_vec;
 	RBinElfSymbol *is;
 	R_VEC_FOREACH (elf_imports, is) {
-		if (!is->size || is->is_sht_null) {
+		if (!is->size) {
 			continue;
 		}
 		if (!eo->load_unnamed && r_bin_name_is_unnamed (is->name)) {
@@ -6064,6 +6077,7 @@ void Elf_(free)(ELFOBJ* eo) {
 	}
 	ht_uu_free (eo->rel_cache);
 	ht_uu_free (eo->ppc64_plt_stubs);
+	ht_uu_free (eo->abs_by_ord);
 	free (eo->ppc32_thunks);
 	sdb_free (eo->kv);
 	r_list_free (eo->inits);

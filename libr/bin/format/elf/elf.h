@@ -55,11 +55,11 @@ typedef struct r_bin_elf_section_t {
 typedef struct r_bin_elf_symbol_t {
 	ut64 offset;
 	ut64 size;
+	ut64 st_value;
 	ut32 ordinal;
+	ut16 st_shndx;
 	bool in_shdr;
-	bool is_sht_null;
 	bool is_vaddr; /* when true, offset is virtual address, otherwise it's physical */
-	bool is_imported;
 	const char *bind;
 	const char *type;
 	char name[ELF_STRING_LENGTH];
@@ -168,6 +168,7 @@ struct Elf_(obj_t) {
 	size_t imports_by_ord_size;
 	RBinSymbol **symbols_by_ord;
 	size_t symbols_by_ord_size;
+	HtUU *abs_by_ord; // ordinal -> SHN_ABS value
 
 	int bss;
 	ut64 size;
