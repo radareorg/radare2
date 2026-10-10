@@ -936,6 +936,57 @@ blx 0x8000040
 EOF
 RUN
 
+NAME=ELF: ET_REL relocs against a common symbol share one unresolved slot
+FILE=bins/elf/x86_64-common-sym.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x08000040
+pv8 @ 0x08000048
+om~.got.r2
+EOF
+EXPECT=<<EOF
+0x00000000080000f4
+0x00000000080000f4
+- 6 fd: 4 +0x00000000 0x080000f4 - 0x08000103 rw- rw- .got.r2
+EOF
+RUN
+
+NAME=ELF: code relocs against common symbols take a slot like an import
+FILE=bins/elf/x86_64-common-code.o
+ARGS=-e bin.relocs.apply=true -e asm.sub.names=false
+CMDS=<<EOF
+pi 4 @ 0x08000040
+ir~ADD_32
+pv8 @ 0x08000059
+o-*
+EOF
+EXPECT=<<EOF
+mov rax, qword [rip + 0x17d]
+call 0x80001c4
+mov rax, qword [rip + 0x179]
+call 0x80001cc
+0x080001c4 0x00000043 ADD_32 2     cbuf - 0x08000047
+0x080001c4 0x00000048 ADD_32 4     cbuf - 0x0800004c
+0x080001cc 0x0000004f ADD_32 2     ext - 0x08000053
+0x080001cc 0x00000054 ADD_32 4     ext - 0x08000058
+0x00000000080001d4
+EOF
+RUN
+
+NAME=ELF: aarch64 GOT relocs against a common symbol load its slot
+FILE=bins/elf/aarch64-common-got.o
+ARGS=-e bin.relocs.apply=true -e asm.sub.names=false
+CMDS=<<EOF
+pi 4 @ 0x08000040
+EOF
+EXPECT=<<EOF
+adrp x0, 0x8000000
+ldr x0, [x0, 0x158]
+adrp x1, 0x8000000
+ldr x1, [x1, 0x160]
+EOF
+RUN
+
 NAME=ELF: absolute symbol values at the link base
 FILE=bins/elf/x86_64-abs-sym.so
 ARGS=-e bin.relocs.apply=true
