@@ -724,7 +724,11 @@ d "movntpd xmmword [eax], xmm0" 660f2b00
 d "ucomiss xmm0, dword [eax]" 0f2e00
 d "comiss xmm0, dword [eax]" 0f2f00
 d "ucomisd xmm0, qword [eax]" 660f2e00
+REQUIRE=cs5
 d "comisd xmm0, xmmword [eax]" 660f2f00
+REQUIRE=cs6
+d "comisd xmm0, qword [eax]" 660f2f00
+REQUIRE=
 d "psubb mm0, qword [eax]" 0ff800
 d "psubw mm0, qword [eax]" 0ff900
 d "psubd mm0, qword [eax]" 0ffa00

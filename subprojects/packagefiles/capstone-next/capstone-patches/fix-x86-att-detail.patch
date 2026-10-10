@@ -1,0 +1,53 @@
+--- a/arch/X86/X86ATTInstPrinter.c
++++ b/arch/X86/X86ATTInstPrinter.c
+@@ -906,7 +906,9 @@
+ 		if (DispVal) {
+ 			if (MCOperand_getReg(IndexReg) ||
+ 			    MCOperand_getReg(BaseReg)) {
++				SStream_opt_unum(O, false);
+ 				printInt64(O, DispVal);
++				SStream_opt_unum(O, MI->csh->imm_unsigned);
+ 			} else {
+ 				// only immediate as address of memory
+ 				if (DispVal < 0) {
+@@ -1153,7 +1155,8 @@
+ 			MI->flat_insn->detail->x86.operands[0].type =
+ 				X86_OP_IMM;
+ 			MI->flat_insn->detail->x86.operands[0].imm = 1;
+-			MI->flat_insn->detail->x86.operands[0].size = 1;
++			MI->flat_insn->detail->x86.operands[0].size =
++				MI->flat_insn->detail->x86.operands[1].size;
+ 			MI->flat_insn->detail->x86.op_count++;
+ 		}
+ 
+@@ -1212,6 +1215,30 @@
+ 		MI->flat_insn->detail->x86.operands[0].access = access[0];
+ 		MI->flat_insn->detail->x86.operands[1].access = access[1];
+ #endif
++
++		// Keep detail operands in Intel order regardless of printed syntax.
++		switch (MI->flat_insn->id) {
++		case X86_INS_ENTER:
++		case X86_INS_BOUND:
++		case X86_INS_LCALL:
++		case X86_INS_LJMP:
++			if (MI->flat_insn->detail->x86.op_count > 1) {
++				uint8_t access = MI->flat_insn->detail->x86.operands[0].access;
++				MI->flat_insn->detail->x86.operands[0].access =
++					MI->flat_insn->detail->x86.operands[1].access;
++				MI->flat_insn->detail->x86.operands[1].access = access;
++			}
++			break;
++		default: {
++			int lo = 0, hi = MI->flat_insn->detail->x86.op_count - 1;
++			for (; lo < hi; lo++, hi--) {
++				cs_x86_op op = MI->flat_insn->detail->x86.operands[lo];
++				MI->flat_insn->detail->x86.operands[lo] = MI->flat_insn->detail->x86.operands[hi];
++				MI->flat_insn->detail->x86.operands[hi] = op;
++			}
++			break;
++		}
++		}
+ 	}
+ }
+ 
