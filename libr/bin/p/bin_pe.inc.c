@@ -6,6 +6,89 @@
 #include "pe/pe.h"
 #include "../format/pe/dotnet.h"
 
+static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
+	if ((opt->arch && strcmp (opt->arch, "x86")) || (opt->bits != 32 && opt->bits != 64)) {
+		R_LOG_ERROR ("PE creation supports x86 in 32 or 64 bits");
+		return NULL;
+	}
+#if R_BIN_PE64
+	if (opt->bits != 64) {
+		R_LOG_ERROR ("PE64 creation requires 64 bits");
+		return NULL;
+	}
+#endif
+	if (codelen < 0 || datalen < 0 || (codelen && !code) || (datalen && !data)) {
+		return NULL;
+	}
+	const bool is64 = opt->bits == 64;
+	const ut64 code_size = R_ROUND ((ut64)codelen, 0x200);
+	const ut64 data_size = R_ROUND ((ut64)datalen, 0x200);
+	const ut64 data_rva = R_ROUND (0x1000 + R_MAX ((ut64)codelen, 1), 0x1000);
+	const ut64 image_size = datalen? R_ROUND (data_rva + datalen, 0x1000): data_rva;
+	const ut64 file_size = 0x200 + code_size + data_size;
+	if (file_size > UT32_MAX || image_size > UT32_MAX) {
+		return NULL;
+	}
+	ut8 header[0x200] = {0};
+	memcpy (header, "MZ", 2);
+	r_write_le32 (header + 0x3c, 0x80);
+	memcpy (header + 0x80, "PE", 2);
+	r_write_le16 (header + 0x84, is64? PE_IMAGE_FILE_MACHINE_AMD64: PE_IMAGE_FILE_MACHINE_I386);
+	r_write_le16 (header + 0x86, datalen? 2: 1);
+	const ut16 opt_size = is64? 0xf0: 0xe0;
+	r_write_le16 (header + 0x94, opt_size);
+	r_write_le16 (header + 0x96, 3 | (is64? PE_IMAGE_FILE_LARGE_ADDRESS_AWARE: PE_IMAGE_FILE_32BIT_MACHINE));
+	ut8 *oh = header + 0x98;
+	r_write_le16 (oh, is64? 0x20b: 0x10b);
+	r_write_le32 (oh + 4, code_size);
+	r_write_le32 (oh + 8, data_size);
+	r_write_le32 (oh + 16, codelen? 0x1000: 0);
+	r_write_le32 (oh + 20, 0x1000);
+	if (is64) {
+		r_write_le64 (oh + 24, 0x400000);
+	} else {
+		r_write_le32 (oh + 24, datalen? data_rva: 0);
+		r_write_le32 (oh + 28, 0x400000);
+	}
+	r_write_le32 (oh + 32, 0x1000); // SectionAlignment
+	r_write_le32 (oh + 36, 0x200); // FileAlignment
+	r_write_le16 (oh + 40, 4); // MajorOperatingSystemVersion
+	r_write_le16 (oh + 48, 4); // MajorSubsystemVersion
+	r_write_le32 (oh + 56, image_size);
+	r_write_le32 (oh + 60, sizeof (header));
+	r_write_le16 (oh + 68, 2); // Windows GUI
+	int i;
+	for (i = 0; i < 4; i++) {
+		const ut32 size = i % 2? 0x1000: 0x100000;
+		if (is64) {
+			r_write_le64 (oh + 72 + i * 8, size);
+		} else {
+			r_write_le32 (oh + 72 + i * 4, size);
+		}
+	}
+	r_write_le32 (oh + (is64? 108: 92), 16); // NumberOfRvaAndSizes
+	for (i = 0; i < (datalen? 2: 1); i++) {
+		ut8 *section = oh + opt_size + i * 40;
+		memcpy (section, i? ".data": ".text", 5);
+		r_write_le32 (section + 8, i? datalen: codelen);
+		r_write_le32 (section + 12, i? data_rva: 0x1000);
+		r_write_le32 (section + 16, i? data_size: code_size);
+		r_write_le32 (section + 20, i? 0x200 + code_size: 0x200);
+		r_write_le32 (section + 36, i? 0xc0000040: 0x60000020);
+	}
+	RBuffer *buf = r_buf_new_empty (file_size);
+	if (!buf) {
+		return NULL;
+	}
+	if (r_buf_write_at (buf, 0, header, sizeof (header)) != sizeof (header)
+		|| (codelen && r_buf_write_at (buf, 0x200, code, codelen) != codelen)
+		|| (datalen && r_buf_write_at (buf, 0x200 + code_size, data, datalen) != datalen)) {
+		r_unref (buf);
+		return NULL;
+	}
+	return buf;
+}
+
 static Sdb* get_sdb(RBinFile *bf) {
 	RBinPEObj *pe = PE_(get) (bf);
 	return pe? pe->kv: NULL;
