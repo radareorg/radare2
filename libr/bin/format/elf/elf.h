@@ -66,6 +66,12 @@ typedef struct r_bin_elf_symbol_t {
 	char libname[ELF_STRING_LENGTH];
 } RBinElfSymbol;
 
+// an SHN_ABS or common symbol, whose st_value is not an address
+typedef struct r_bin_elf_special_sym_t {
+	ut64 value;
+	bool common;
+} RBinElfSpecialSym;
+
 typedef struct r_bin_elf_reloc_t {
 	int sym;
 	int type;
@@ -168,7 +174,7 @@ struct Elf_(obj_t) {
 	size_t imports_by_ord_size;
 	RBinSymbol **symbols_by_ord;
 	size_t symbols_by_ord_size;
-	HtUU *abs_by_ord; // ordinal -> SHN_ABS value
+	HtUP *special_by_ord; // ordinal -> RBinElfSpecialSym
 
 	int bss;
 	ut64 size;

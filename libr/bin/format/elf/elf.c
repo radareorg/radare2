@@ -5347,17 +5347,32 @@ static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol *sym) {
 	}
 }
 
-static void set_abs_by_ord(ELFOBJ *eo, const RBinElfSymbol *symbol) {
-	if (symbol->st_shndx != SHN_ABS) {
+#ifndef SHN_X86_64_LCOMMON
+#define SHN_X86_64_LCOMMON 0xff02
+#endif
+
+static inline bool is_common_shndx(ELFOBJ *eo, ut16 shndx) {
+	return shndx == SHN_COMMON || (eo->ehdr.e_machine == EM_X86_64 && shndx == SHN_X86_64_LCOMMON);
+}
+
+static void special_kv_free(HtUPKv *kv) {
+	free (kv->value);
+}
+
+static void set_special_by_ord(ELFOBJ *eo, const RBinElfSymbol *symbol) {
+	const bool common = is_common_shndx (eo, symbol->st_shndx);
+	if (!common && symbol->st_shndx != SHN_ABS) {
 		return;
 	}
-	if (!eo->abs_by_ord) {
-		eo->abs_by_ord = ht_uu_new0 ();
-		if (!eo->abs_by_ord) {
-			return;
-		}
+	if (!eo->special_by_ord) {
+		eo->special_by_ord = ht_up_new (NULL, special_kv_free, NULL);
 	}
-	ht_uu_update (eo->abs_by_ord, symbol->ordinal, symbol->st_value);
+	RBinElfSpecialSym *ss = R_NEW (RBinElfSpecialSym);
+	ss->value = symbol->st_value;
+	ss->common = common;
+	if (!eo->special_by_ord || !ht_up_update (eo->special_by_ord, symbol->ordinal, ss)) {
+		free (ss);
+	}
 }
 
 // Fill sym with converted symbol data, returns true on success
@@ -5533,8 +5548,8 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 	free (eo->symbols_by_ord);
 	eo->symbols_by_ord = symbols_by_ord;
 	eo->symbols_by_ord_size = symbols_by_ord? ord_size: 0;
-	ht_uu_free (eo->abs_by_ord);
-	eo->abs_by_ord = NULL;
+	ht_up_free (eo->special_by_ord);
+	eo->special_by_ord = NULL;
 	if (ret_ctr > ii->import_ret_ctr + max_ord) {
 		return NULL;
 	}
@@ -5570,7 +5585,7 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 			const ut32 ord = isym->ordinal;
 			r_bin_symbol_free (symbols_by_ord[ord]);
 			symbols_by_ord[ord] = isym;
-			set_abs_by_ord (eo, symbol);
+			set_special_by_ord (eo, symbol);
 		} else {
 			r_bin_symbol_free (isym);
 		}
@@ -5907,7 +5922,7 @@ RVecRBinSymbol *Elf_(load_symbols_vec)(RBinFile *bf, ELFOBJ *eo) {
 		r_bin_register_symbol_language (bf, &sym);
 		if (sbo && symbol->ordinal < sbo_size && !sbo[symbol->ordinal]) {
 			sbo[symbol->ordinal] = r_bin_symbol_clone (&sym);
-			set_abs_by_ord (eo, symbol);
+			set_special_by_ord (eo, symbol);
 		}
 		RVecRBinSymbol_push_back (&eo->symbols_cache, &sym);
 	}
@@ -6077,7 +6092,7 @@ void Elf_(free)(ELFOBJ* eo) {
 	}
 	ht_uu_free (eo->rel_cache);
 	ht_uu_free (eo->ppc64_plt_stubs);
-	ht_uu_free (eo->abs_by_ord);
+	ht_up_free (eo->special_by_ord);
 	free (eo->ppc32_thunks);
 	sdb_free (eo->kv);
 	r_list_free (eo->inits);

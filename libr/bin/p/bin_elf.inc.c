@@ -120,6 +120,31 @@ static inline bool reloc_is_import(ELFOBJ *eo, const RBinElfReloc *rel) {
 	return rel->sym && rel->sym < eo->imports_by_ord_size && eo->imports_by_ord[rel->sym];
 }
 
+// a common symbol has no address until link time, so it gets a slot too
+static inline const RBinElfSpecialSym *special_sym(ELFOBJ *eo, ut64 ord) {
+	return eo->special_by_ord? ht_up_find (eo->special_by_ord, ord, NULL): NULL;
+}
+
+static inline bool reloc_has_slot(ELFOBJ *eo, const RBinElfReloc *rel) {
+	const RBinElfSpecialSym *ss = special_sym (eo, rel->sym);
+	return reloc_is_import (eo, rel) || (ss && ss->common);
+}
+
+// arches whose _patch_reloc points a code site at its slot
+static inline bool patch_redirects_code(ut16 e_machine) {
+	switch (e_machine) {
+	case EM_ARM:
+	case EM_AARCH64:
+	case EM_PPC64:
+	case EM_386:
+	case EM_X86_64:
+	case EM_BPF:
+	case EM_SBPF:
+		return true;
+	}
+	return false;
+}
+
 #ifndef R_BIN_CGC
 #include "../format/swift/swift.h"
 
@@ -1322,9 +1347,9 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		break;
 	case EM_AARCH64: {
 		int word = 0;
-		// only an import has a GOT entry here: the .got.r2 slot that S names
+		// only a slotted symbol has a GOT entry; S is its .got.r2 slot
 		if (aarch64_got_reloc (rel->type)) {
-			if (!reloc_is_import (bo, rel)) {
+			if (!reloc_has_slot (bo, rel)) {
 				R_LOG_DEBUG ("unpatched aarch64 got reloc %d at 0x%"PFMT64x, rel->type, rel->rva);
 				break;
 			}
@@ -1940,34 +1965,28 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	R_VEC_FOREACH (relocs, reloc) {
 		ut64 plt_entry_addr = vaddr;
 		ut64 sym_addr = UT64_MAX;
-		bool resolved = false;
-		const bool is_import = reloc_is_import (eo, reloc);
-		const bool has_sym = !is_import && reloc->sym && reloc->sym < eo->symbols_by_ord_size && eo->symbols_by_ord[reloc->sym];
+		const bool has_slot = reloc_has_slot (eo, reloc);
 		bool is_abs = false;
-		const ut64 abs_value = (has_sym && eo->abs_by_ord)? ht_uu_find (eo->abs_by_ord, reloc->sym, &is_abs): 0;
 
-		if (is_import) {
+		if (has_slot) {
 			bool found;
 			sym_addr = ht_uu_find (relocs_by_sym, reloc->sym, &found);
 			if (found) {
 				plt_entry_addr = sym_addr;
-				resolved = true;
 			}
-		} else if (is_abs) {
-			sym_addr = abs_value;
-			plt_entry_addr = sym_addr;
-			resolved = true;
-		} else if (has_sym) {
+		} else if (reloc->sym && reloc->sym < eo->symbols_by_ord_size && eo->symbols_by_ord[reloc->sym]) {
+			const RBinElfSpecialSym *ss = special_sym (eo, reloc->sym);
+			is_abs = ss && !ss->common;
 			RBinSymbol *sym = eo->symbols_by_ord[reloc->sym];
 			// a tls symbol's value is an offset in the thread block, not an address
 			const bool is_tls = sym->type && !strcmp (sym->type, R_BIN_TYPE_TLS_STR);
-			sym_addr = sym->vaddr;
-			if (!is_tls && sym_addr && sym_addr != UT64_MAX) {
+			sym_addr = is_abs? ss->value: sym->vaddr;
+			if (!is_abs && !is_tls && sym_addr && sym_addr != UT64_MAX) {
 				sym_addr = elf_io_addr (bf, eo, sym_addr);
 			}
 			plt_entry_addr = sym_addr;
-			resolved = sym_addr && sym_addr != UT64_MAX;
 		}
+		const bool resolved = is_abs || (sym_addr && sym_addr != UT64_MAX);
 		const ut64 raddr = resolved? sym_addr: vaddr;
 		_patch_reloc (bf, eo, eo->ehdr.e_machine, &b->iob, reloc,
 			elf_io_addr (bf, eo, reloc->rva), raddr, bias, plt_entry_addr, toc_base);
@@ -1980,7 +1999,9 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 			|| (eo->ehdr.e_machine == EM_PPC && reloc->type == R_PPC_DTPMOD32);
 		// a patched code site branches to the slot, so the slot is what the
 		// reloc describes; a data site holds the value and keeps its own vaddr
-		if (is_import && !tls_module) {
+		const bool site_moves = has_slot
+			&& (patch_redirects_code (eo->ehdr.e_machine) || reloc_is_import (eo, reloc));
+		if (site_moves && !tls_module) {
 			const st64 shift = bf->bo->baddr_shift;
 			RBinSection *s = r_bin_get_section_at (bf->bo, ptr->vaddr + shift, true);
 			if (s && (s->perm & R_PERM_X)) {
