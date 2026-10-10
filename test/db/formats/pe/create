@@ -1,40 +1,94 @@
 NAME=create pe x86-64
 FILE=-
-BROKEN=1
 CMDS=<<EOF
-rm ./tiny64.pe__
-!rabin2 -C pe64:cc -a x86 -b 64 ./tiny64.pe__
-ls -l ./tiny64.pe__~[3]
-rm ./tiny64.pe__
+rm ./tiny_pe64_64.pe__
+!rabin2 -C pe64:cc -a x86 -b 64 ./tiny_pe64_64.pe__
+o ./tiny_pe64_64.pe__
+iI~arch,bits
+p8 1 @ entry0
+e io.va=false
+p8 2 @ 0x84
+p8 2 @ 0x98
+o-.
+rm ./tiny_pe64_64.pe__
 EOF
 EXPECT=<<EOF
-125
+arch     x86
+bits     64
+cc
+6486
+0b02
 EOF
 RUN
 
 NAME=create pe x86-64 auto-pe64
 FILE=-
 CMDS=<<EOF
-rm ./tiny64.pe__2
-!rabin2 -C pe:cc -a x86 -b 64 ./tiny64.pe__2
-ls -l ./tiny64.pe__2~[3]
-rm ./tiny64.pe__2
+rm ./tiny_pe_64.pe__
+!rabin2 -C pe:cc -a x86 -b 64 ./tiny_pe_64.pe__
+o ./tiny_pe_64.pe__
+iI~arch,bits
+p8 1 @ entry0
+e io.va=false
+p8 2 @ 0x84
+p8 2 @ 0x98
+o-.
+rm ./tiny_pe_64.pe__
 EOF
 EXPECT=<<EOF
-125
+arch     x86
+bits     64
+cc
+6486
+0b02
 EOF
 RUN
 
 NAME=create pe x86-32
 FILE=-
 CMDS=<<EOF
-rm ./tiny32.pe__
-!rabin2 -C pe:cc -a x86 -b 32 ./tiny32.pe__
-ls -l ./tiny32.pe__~[3]
-rm ./tiny32.pe__
+rm ./tiny_pe_32.pe__
+!rabin2 -C pe:cc -a x86 -b 32 ./tiny_pe_32.pe__
+o ./tiny_pe_32.pe__
+iI~arch,bits
+p8 1 @ entry0
+e io.va=false
+p8 2 @ 0x84
+p8 2 @ 0x98
+o-.
+rm ./tiny_pe_32.pe__
 EOF
 EXPECT=<<EOF
-125
+arch     x86
+bits     32
+cc
+4c01
+0b01
 EOF
 RUN
 
+NAME=create pe64 with a data section
+FILE=-
+CMDS=<<EOF
+rm ./tiny_data.pe__
+!rabin2 -C pe64:31c0c3:01020304 -a x86 -b 64 ./tiny_data.pe__
+o ./tiny_data.pe__
+iI~bits
+p8 3 @ entry0
+p8 4 @ section..data
+e io.va=false
+p8 2 @ 0x86
+p8 4 @ 0xd0
+p8 4 @ 0xd4
+o-.
+rm ./tiny_data.pe__
+EOF
+EXPECT=<<EOF
+bits     64
+31c0c3
+01020304
+0200
+00300000
+00020000
+EOF
+RUN
