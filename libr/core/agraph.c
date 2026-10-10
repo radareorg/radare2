@@ -2165,7 +2165,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	}
 	r_config_set_b (core->config, "asm.lines.bb", false);
 	r_config_set_b (core->config, "asm.lines", false);
-	r_config_set_i (core->config, "asm.cmt.col", 0);
+	r_config_set_i (core->config, "asm.cmt.col", r_config_get_i (core->config, "graph.cmt.col"));
 	r_config_set_b (core->config, "asm.marks", false);
 	r_config_set_b (core->config, "asm.cmt.right", (opts & BODY_SUMMARY) || o_cmtright);
 	r_config_set_b (core->config, "asm.comments", (opts & BODY_SUMMARY) || o_comments);

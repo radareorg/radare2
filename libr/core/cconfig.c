@@ -4834,6 +4834,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("graph.few", "false", "show few basic blocks in the graph");
 	SETB ("graph.comments", "true", "show disasm comments in graph");
 	SETB ("graph.cmtright", "false", "show comments at right");
+	SETI ("graph.cmt.col", 0, "column to align graph node comments; 0=ragged as today");
 	SETCB ("graph.gv.format", "gif", &cb_graphformat, "graph image extension when using 'w' format (png, jpg, pdf, ps, svg, json)");
 	SETB ("graph.refs", "false", "hraph references in callgraphs (.agc*;aggi)");
 	SETB ("graph.json.usenames", "true", "use names instead of addresses in Global Call Graph (agCj)");
