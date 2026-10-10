@@ -1263,7 +1263,11 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		}
 		case R_ARM_THM_PC22:
 		case R_ARM_THM_JUMP24: {
-			const st64 target = S + addend - P;
+			// ld turns a blx to a thumb function into a bl
+			if (S & 1) {
+				lo |= 0x1000;
+			}
+			const st64 target = (S & ~1ULL) + addend - P;
 			// blx switches to arm state, so it needs 4 alignment
 			const st64 amask = (lo & 0x1000)? 1: 3;
 			// a thumb branch reaches +-16MB, leave the rest alone
@@ -1960,15 +1964,24 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	R_VEC_FOREACH (relocs, reloc) {
 		ut64 plt_entry_addr = vaddr;
 		ut64 sym_addr = UT64_MAX;
+		bool resolved = false;
 		const bool is_import = reloc_is_import (eo, reloc);
+		const bool has_sym = !is_import && reloc->sym && reloc->sym < eo->symbols_by_ord_size && eo->symbols_by_ord[reloc->sym];
+		bool is_abs = false;
+		const ut64 abs_value = (has_sym && eo->abs_by_ord)? ht_uu_find (eo->abs_by_ord, reloc->sym, &is_abs): 0;
 
 		if (is_import) {
 			bool found;
 			sym_addr = ht_uu_find (relocs_by_sym, reloc->sym, &found);
 			if (found) {
 				plt_entry_addr = sym_addr;
+				resolved = true;
 			}
-		} else if (reloc->sym && reloc->sym < eo->symbols_by_ord_size && eo->symbols_by_ord[reloc->sym]) {
+		} else if (is_abs) {
+			sym_addr = abs_value;
+			plt_entry_addr = sym_addr;
+			resolved = true;
+		} else if (has_sym) {
 			RBinSymbol *sym = eo->symbols_by_ord[reloc->sym];
 			// a tls symbol's value is an offset in the thread block, not an address
 			const bool is_tls = sym->type && !strcmp (sym->type, R_BIN_TYPE_TLS_STR);
@@ -1977,8 +1990,8 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 				sym_addr = elf_io_addr (bf, eo, sym_addr);
 			}
 			plt_entry_addr = sym_addr;
+			resolved = sym_addr && sym_addr != UT64_MAX;
 		}
-		const bool resolved = sym_addr && sym_addr != UT64_MAX;
 		const ut64 raddr = resolved? sym_addr: vaddr;
 		_patch_reloc (bf, eo, eo->ehdr.e_machine, &b->iob, reloc,
 			elf_io_addr (bf, eo, reloc->rva), raddr, bias, plt_entry_addr, toc_base);
