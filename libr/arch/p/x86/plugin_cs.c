@@ -43,6 +43,12 @@ call = 4
 
 typedef struct plugin_data_t {
 	CapstonePluginData cpd;
+#if CS_API_MAJOR >= 6
+	// Intel-syntax handle used for detail (ESIL/opex) when the session
+	// syntax is AT&T or MASM. Capstone v6 reports detail operands in
+	// print order, but ESIL is built assuming Intel order.
+	csh detail_handle;
+#endif
 	int bits;
 	int syntax;
 	int omode; // XXX unused?
@@ -68,6 +74,18 @@ static bool init(RArchSession *as) {
 	}
 	pd->bits = as->config->bits;
 	pd->syntax = as->config->syntax;
+#if CS_API_MAJOR >= 6
+	// Capstone v6 reports detail operands in print order for AT&T/MASM
+	// handles, but ESIL is built assuming Intel order. Decode detail
+	// through a second Intel-syntax handle and use the session handle
+	// only for the printed text.
+	if (pd->syntax == R_ARCH_SYNTAX_ATT || pd->syntax == R_ARCH_SYNTAX_MASM) {
+		r_arch_cs_init (as, &pd->detail_handle);
+		if (pd->detail_handle) {
+			cs_option (pd->detail_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_INTEL);
+		}
+	}
+#endif
 	switch (as->config->bits) {
 	case 16: pd->cs_mode = CS_MODE_16; break;
 	case 32: pd->cs_mode = CS_MODE_32; break;
@@ -83,6 +101,11 @@ static bool fini(RArchSession *as) {
 	R_RETURN_VAL_IF_FAIL (as, false);
 	PluginData *pd = as->data;
 	cs_close (&pd->cpd.cs_handle);
+#if CS_API_MAJOR >= 6
+	if (pd->detail_handle) {
+		cs_close (&pd->detail_handle);
+	}
+#endif
 	R_FREE (as->data);
 	return true;
 }
@@ -4319,11 +4342,30 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	size_t size = len;
 	bool ok = r_arch_cs_disasm (handle, (const uint8_t **)&buf, &size, (uint64_t *)&naddr, &csi);
 	cs_insn *insn = &csi.insn;
+	cs_insn *tinsn = insn; // instruction used for the printed text
+	csh dhandle = handle; // handle used for detail-driven analysis
+#if CS_API_MAJOR >= 6
+	// Capstone v6 reports detail operands in print order for AT&T/MASM
+	// handles, but ESIL is built assuming Intel order (see init). Take
+	// detail from the Intel-syntax handle so ESIL does not depend on
+	// asm.syntax, and keep the session handle only for the text.
+	RArchCSInsn csi_detail;
+	PluginData *sdata = as->data;
+	if (sdata->detail_handle) {
+		const ut8 *dbuf = op->bytes;
+		size_t dsize = len;
+		ut64 dnaddr = addr;
+		if (r_arch_cs_disasm (sdata->detail_handle, (const uint8_t **)&dbuf, &dsize, (uint64_t *)&dnaddr, &csi_detail)) {
+			insn = &csi_detail.insn;
+			dhandle = sdata->detail_handle;
+		}
+	}
+#endif
 	//XXX: capstone lcall seg:off workaround, remove when capstone will be fixed
-	if (ok && mode == CS_MODE_16 && r_str_startswith (insn->mnemonic, "lcall")) {
-		char *opstr = strdup (insn->op_str);
+	if (ok && mode == CS_MODE_16 && r_str_startswith (tinsn->mnemonic, "lcall")) {
+		char *opstr = strdup (tinsn->op_str);
 		opstr = r_str_replace (opstr, ", ", ":", 0);
-		r_str_ncpy (insn->op_str, opstr, sizeof (insn->op_str));
+		r_str_ncpy (tinsn->op_str, opstr, sizeof (tinsn->op_str));
 		free (opstr);
 	}
 	if (!ok) {
@@ -4335,9 +4377,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	} else {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = r_str_newf ("%s%s%s",
-				insn->mnemonic,
-				insn->op_str[0]?" ":"",
-				insn->op_str);
+				tinsn->mnemonic,
+				tinsn->op_str[0]?" ":"",
+				tinsn->op_str);
 			if (op->mnemonic) {
 				if (as->config->syntax != R_ARCH_SYNTAX_MASM) {
 					op->mnemonic = r_str_replace (op->mnemonic, "ptr ", "", true);
@@ -4370,10 +4412,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			op->family = R_ANAL_OP_FAMILY_THREAD; // XXX ?
 			break;
 		}
-		anop (as, op, addr, buf, len, &handle, insn);
+		anop (as, op, addr, buf, len, &dhandle, insn);
 		set_opdir (op, insn);
 		if (mask & R_ARCH_OP_MASK_ESIL) {
-			anop_esil (as, op, addr, buf, len, handle, insn);
+			anop_esil (as, op, addr, buf, len, dhandle, insn);
 		}
 		if (mask & R_ARCH_OP_MASK_OPEX) {
 			opex (as, &op->opex, insn, mode);
