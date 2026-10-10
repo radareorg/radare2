@@ -114,15 +114,15 @@ enum {
 
 typedef struct reginfo {
 	ut32 regsize;
-	ut32 regdelta;
+	ut32 regoffset;
 } reginfo_t;
 
 static const reginfo_t reginf[ARCH_LEN] = {
-	{ 160, 0x5c },
-	{ 216, 0x84 },
-	{ 72, 0x5c },
-	{ 272, 0x84 },
-	{ 272, 0x84 }
+	{ 68, 72 },
+	{ 216, 112 },
+	{ 72, 72 },
+	{ 272, 112 },
+	{ 272, 112 }
 };
 
 static bool is_bin_etrel(ELFOBJ *eo) {
@@ -3227,96 +3227,75 @@ char* Elf_(get_osabi_name)(ELFOBJ *eo) {
 	return strdup (eo->osabi);
 }
 
-typedef struct reg_offset_state {
-	size_t i;
-	ut64 offset;  // used as output parameter
-} RegOffsetState;
-
-static inline bool _calculate_reg_offset(ELFOBJ *eo, RegOffsetState *state) {
-	bool success = true;
-	ut64 offset = 0;
-	const ut64 p_offset = eo->phdr[state->i].p_offset;
-	while (true) {
-		ut8 elf_nhdr[sizeof (Elf_(Nhdr))] = {0};
-		const size_t elf_nhdr_size = sizeof (Elf_(Nhdr));
-		int ret = r_buf_read_at (eo->b, p_offset + offset, elf_nhdr, elf_nhdr_size);
-		if (ret != elf_nhdr_size) {
-			R_LOG_DEBUG ("Cannot read NOTES hdr from CORE file");
-			success = false;
-			break;
-		}
-
-		ut32 n_namesz = r_read_ble32 (elf_nhdr, eo->endian);
-		ut32 n_descsz = r_read_ble32 (elf_nhdr + 4, eo->endian);
-		ut32 n_type = r_read_ble32 (elf_nhdr + 8, eo->endian);
-		if (n_type == NT_PRSTATUS) {
-			break;
-		}
-
-		offset += elf_nhdr_size + round_up (n_descsz) + round_up (n_namesz);
+static const reginfo_t *core_reginfo(ELFOBJ *eo) {
+	switch (eo->ehdr.e_machine) {
+	case EM_386:
+	case EM_IAMCU: return &reginf[X86];
+	case EM_X86_64: return &reginf[X86_64];
+	case EM_ARM: return &reginf[ARM];
+	case EM_AARCH64: return &reginf[AARCH64];
 	}
+	return NULL;
+}
 
-	state->offset = offset;
-	return success;
+static bool read_core_note(ELFOBJ *eo, const Elf_(Phdr) *p, ut64 *offset, Elf_(Nhdr) *note, ut64 *desc) {
+	ut8 hdr[12], owner[6];
+	const ut64 size = r_buf_size (eo->b);
+	if (p->p_offset > size || p->p_filesz > size - p->p_offset
+		|| *offset > p->p_filesz || p->p_filesz - *offset < sizeof (hdr)
+		|| r_buf_read_at (eo->b, p->p_offset + *offset, hdr, sizeof (hdr)) != sizeof (hdr)) {
+		return false;
+	}
+	note->n_namesz = r_read_ble32 (hdr, eo->endian);
+	note->n_descsz = r_read_ble32 (hdr + 4, eo->endian);
+	note->n_type = r_read_ble32 (hdr + 8, eo->endian);
+	const ut64 namesz = round_up ((ut64)note->n_namesz);
+	const ut64 descsz = round_up ((ut64)note->n_descsz);
+	*offset += sizeof (hdr);
+	if (namesz > p->p_filesz - *offset || descsz > p->p_filesz - *offset - namesz) {
+		return false;
+	}
+	if ((note->n_namesz != 5 && note->n_namesz != 6)
+		|| r_buf_read_at (eo->b, p->p_offset + *offset, owner, note->n_namesz) != note->n_namesz
+		|| (note->n_namesz == 5? memcmp (owner, "CORE", 5): memcmp (owner, "LINUX", 6))) {
+		note->n_type = 0;
+	}
+	*desc = p->p_offset + *offset + namesz;
+	*offset += namesz + descsz;
+	return true;
 }
 
 ut8 *Elf_(grab_regstate)(ELFOBJ *eo, int *len) {
-	if (!eo->phdr) {
-		R_LOG_DEBUG ("Cannot find NOTE section");
+	const reginfo_t *regs = core_reginfo (eo);
+	if (!eo->phdr || !regs) {
 		return NULL;
 	}
-
 	size_t i;
 	for (i = 0; i < eo->phnum; i++) {
 		Elf_(Phdr) *p = &eo->phdr[i];
 		if (p->p_type != PT_NOTE) {
 			continue;
 		}
-
-		RegOffsetState state = { .i = i, .offset = 0 };
-		if (!_calculate_reg_offset (eo, &state)) {
-			break;
+		ut64 offset = 0, desc;
+		Elf_(Nhdr) note;
+		while (read_core_note (eo, p, &offset, &note, &desc)) {
+			if (note.n_type != NT_PRSTATUS || note.n_descsz < regs->regoffset + regs->regsize) {
+				continue;
+			}
+			ut8 *buf = malloc (regs->regsize);
+			if (!buf) {
+				return NULL;
+			}
+			if (r_buf_read_at (eo->b, desc + regs->regoffset, buf, regs->regsize) != regs->regsize) {
+				free (buf);
+				return NULL;
+			}
+			if (len) {
+				*len = regs->regsize;
+			}
+			return buf;
 		}
-
-		ut64 offset = state.offset;
-		int regdelta = 0;
-		int regsize = 0;
-		switch (eo->ehdr.e_machine) {
-		case EM_AARCH64:
-			regsize = reginf[AARCH64].regsize;
-			regdelta = reginf[AARCH64].regdelta;
-			break;
-		case EM_ARM:
-			regsize = reginf[ARM].regsize;
-			regdelta = reginf[ARM].regdelta;
-			break;
-		case EM_386:
-		case EM_IAMCU:
-			regsize = reginf[X86].regsize;
-			regdelta = reginf[X86].regdelta;
-			break;
-		case EM_X86_64:
-			regsize = reginf[X86_64].regsize;
-			regdelta = reginf[X86_64].regdelta;
-			break;
-		}
-
-		ut8 *buf = malloc (regsize);
-		if (!buf) {
-			break;
-		}
-		if (r_buf_read_at (eo->b, p->p_offset + offset + regdelta, buf, regsize) != regsize) {
-			free (buf);
-			R_LOG_DEBUG ("Cannot read register state from CORE file");
-			break;
-		}
-		if (len) {
-			*len = regsize;
-		}
-		return buf;
 	}
-
-	R_LOG_DEBUG ("Cannot find NOTE section");
 	return NULL;
 }
 
@@ -4863,6 +4842,68 @@ static void _add_ehdr_section(RBinFile *bf, ELFOBJ *eo) {
 	ptr->is_segment = true;
 }
 
+static void add_core_sections(ELFOBJ *eo) {
+	const reginfo_t *regs = core_reginfo (eo);
+	if (eo->ehdr.e_type != ET_CORE || !eo->phdr || !regs) {
+		return;
+	}
+	ut32 first_tid = 0, tid = 0;
+	size_t i;
+	for (i = 0; i < eo->phnum; i++) {
+		Elf_(Phdr) *p = &eo->phdr[i];
+		if (p->p_type != PT_NOTE) {
+			continue;
+		}
+		ut64 offset = 0, desc;
+		Elf_(Nhdr) note;
+		while (read_core_note (eo, p, &offset, &note, &desc)) {
+			const char *name;
+			ut64 size = note.n_descsz;
+			switch (note.n_type) {
+			case NT_PRSTATUS:
+				tid = 0;
+				if (size < regs->regoffset + regs->regsize) {
+					continue;
+				}
+				tid = r_buf_read_ble32_at (eo->b, desc + (regs->regoffset == 112? 32: 24), eo->endian);
+				if (!first_tid) {
+					first_tid = tid;
+				}
+				desc += regs->regoffset;
+				size = regs->regsize;
+				name = ".reg";
+				break;
+			case NT_FPREGSET:
+				name = ".reg2";
+				break;
+			case NT_X86_XSTATE:
+				if (eo->ehdr.e_machine != EM_386 && eo->ehdr.e_machine != EM_X86_64) {
+					continue;
+				}
+				name = ".reg-xstate";
+				break;
+			default:
+				continue;
+			}
+			if (!tid || !size) {
+				continue;
+			}
+			int alias;
+			for (alias = 0; alias < (tid == first_tid? 2: 1); alias++) {
+				RBinSection *section = RVecRBinSection_emplace_back (&eo->cached_sections);
+				if (!section) {
+					return;
+				}
+				section->name = alias? strdup (name): r_str_newf ("%s/%u", name, tid);
+				section->paddr = desc;
+				section->vaddr = desc;
+				section->size = section->vsize = size;
+				section->perm = R_PERM_R;
+			}
+		}
+	}
+}
+
 static void _cache_bin_sections(RBinFile *bf, ELFOBJ *eo, const RVecRBinElfSection *elf_bin_sections) {
 	if (elf_bin_sections) {
 		_store_bin_sections (eo, elf_bin_sections);
@@ -4894,6 +4935,7 @@ static void _cache_bin_sections(RBinFile *bf, ELFOBJ *eo, const RVecRBinElfSecti
 		}
 	}
 
+	add_core_sections (eo);
 	_add_ehdr_section (bf, eo);
 }
 
