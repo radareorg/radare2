@@ -33,7 +33,7 @@ extern "C" {
  *   2. Seal: call _seal() to compact allocations. After this, _add is UB.
  * Or construct from an existing buffer via _from_entries / _from_utf16le.
  *
- * Relation to RStrpool: RStrpool is a mutable pool with dedup (bloom) and
+ * Relation to RStrpool: RStrpool is a mutable pool with dedup (hash index) and
  * NUL-terminated entries. RStrsStore is the immutable, length-prefixed
  * counterpart. Entries may overlap in the base buffer (shared suffixes).
  * RStrpool callers (corelog, addrline) that need mutation stay on RStrpool.

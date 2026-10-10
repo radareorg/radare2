@@ -8,20 +8,44 @@ R_API RStrpool * R_NULLABLE r_strpool_new(void) {
 	p->isize = 16;
 	p->str = malloc (p->size);
 	p->idxs = calloc (sizeof (p->idxs[0]), p->isize);
-	if (p->str && p->idxs) {
-		p->str[0] = 0;
-		p->bloom = r_bloom_new (1024, 2, NULL);
-		if (!p->bloom) {
-			free (p->str);
-			free (p->idxs);
-			R_FREE (p);
-		}
-	} else {
+	if (!p->str || !p->idxs) {
 		free (p->idxs);
 		free (p->str);
 		R_FREE (p);
+		return NULL;
 	}
+	p->str[0] = 0;
 	return p;
+}
+
+static void index_drop(RStrpool *p) {
+	ht_pp_free (p->ht);
+	p->ht = NULL;
+}
+
+// true when s is indexed afterwards, at pos or at an earlier copy
+static bool index_add(RStrpool *p, const char *s, int pos) {
+	if (ht_pp_insert (p->ht, s, (void *)(size_t)(pos + 1))) {
+		return true;
+	}
+	bool found = false;
+	ht_pp_find (p->ht, s, &found);
+	return found;
+}
+
+static bool index_build(RStrpool *p) {
+	p->ht = ht_pp_new0 ();
+	if (!p->ht) {
+		return false;
+	}
+	int i;
+	for (i = 0; i < p->count; i++) {
+		if (!index_add (p, p->str + p->idxs[i], i)) {
+			index_drop (p);
+			return false;
+		}
+	}
+	return true;
 }
 
 static char *strpool_alloc(RStrpool *p, int l) {
@@ -40,8 +64,7 @@ static char *strpool_alloc(RStrpool *p, int l) {
 		}
 		ret = realloc (p->str, p->size);
 		if (!ret) {
-			free (p->str);
-			p->str = NULL;
+			p->size = osize;
 			return NULL;
 		}
 		p->str = ret;
@@ -76,6 +99,7 @@ static int strpool_memcat(RStrpool *p, const char *s, int len) {
 }
 
 R_API void r_strpool_empty(RStrpool *p) {
+	index_drop (p);
 	p->size = 128;
 	p->isize = 128;
 	p->count = 0;
@@ -90,6 +114,7 @@ R_API void r_strpool_slice(RStrpool *p, int index) {
 	R_RETURN_IF_FAIL (p);
 	char *pos = r_strpool_get_nth (p, index);
 	if (pos) {
+		index_drop (p);
 		p->count = index; // or index -1 ?
 		// TODO: shrink string allocation too?
 	}
@@ -105,9 +130,13 @@ R_API void r_strpool_slice_range(RStrpool *p, int idx_from, int idx_to) {
 	}
 	if (idx_from == 0) {
 		// Just truncate from idx_to onwards
-		p->count = idx_to;
+		if (idx_to < p->count) {
+			index_drop (p);
+			p->count = idx_to;
+		}
 		return;
 	}
+	index_drop (p);
 	int i, j;
 	// Shift remaining items to the beginning
 	for (i = idx_from, j = 0; i < idx_to; i++, j++) {
@@ -118,14 +147,8 @@ R_API void r_strpool_slice_range(RStrpool *p, int idx_from, int idx_to) {
 
 R_API int r_strpool_add(RStrpool *p, const char *s) {
 	R_RETURN_VAL_IF_FAIL (p && s, -1);
-	if (!r_bloom_check (p->bloom, s, strlen (s))) {
-		return r_strpool_append (p, s);
-	}
 	const int pos = r_strpool_get (p, s);
-	if (pos >= 0) {
-		return pos;
-	}
-	return r_strpool_append (p, s);
+	return pos >= 0? pos: r_strpool_append (p, s);
 }
 
 R_API int r_strpool_append(RStrpool *p, const char *s) {
@@ -135,19 +158,21 @@ R_API int r_strpool_append(RStrpool *p, const char *s) {
 	if (idx < 0) {
 		return -1;
 	}
-	r_bloom_add (p->bloom, s, l - 1);
 	if (!strpool_resize_count (p)) {
 		return -1;
 	}
-	int pos = p->count;
-	p->idxs[p->count] = idx;
+	const int pos = p->count;
+	p->idxs[pos] = idx;
 	p->count++;
+	if (p->ht && !index_add (p, p->str + idx, pos)) {
+		index_drop (p);
+	}
 	return pos;
 }
 
 R_API void r_strpool_free(RStrpool *p) {
 	if (R_LIKELY (p)) {
-		r_bloom_free (p->bloom);
+		ht_pp_free (p->ht);
 		free (p->str);
 		free (p->idxs);
 		free (p);
@@ -168,13 +193,11 @@ R_API char *r_strpool_get_nth(RStrpool *p, int index) {
 }
 
 R_API int r_strpool_get(RStrpool *p, const char *w) {
-	int i;
-	// XXX this is O(n) - must be optimized with an skiparray or hashtable
-	for (i = 0; i < p->count; i++) {
-		const char *v = r_strpool_get_nth (p, i);
-		if (!strcmp (v, w)) {
-			return i;
-		}
+	R_RETURN_VAL_IF_FAIL (p && w, -1);
+	if (!p->ht && !index_build (p)) {
+		return -1;
 	}
-	return -1;
+	bool found = false;
+	void *pos = ht_pp_find (p->ht, w, &found);
+	return found? (int)(size_t)pos - 1: -1;
 }
