@@ -41,6 +41,22 @@ static bool is_safe_r2_script_arg(const char *s) {
 	return res;
 }
 
+static char *sdb_key_name(const char *key, const char *suffix, bool sanitize) {
+	const char *end = strstr (key, suffix);
+	if (!end) {
+		return NULL;
+	}
+	char *name = r_str_ndup (key, end - key);
+	if (name && sanitize) {
+		r_name_filter (name, -1);
+	}
+	return name;
+}
+
+static bool is_single_line(const char *s) {
+	return !strpbrk (s, "\r\n");
+}
+
 static void pair_bool(RCore *core, PJ *pj, const char *key, bool val) {
 	if (pj) {
 		pj_kb (pj, key, val);
@@ -115,7 +131,6 @@ R_API bool r_core_bin_set_by_fd(RCore *core, ut64 bin_fd) {
 }
 
 R_API void r_core_bin_export_info(RCore *core, int mode) {
-	char *flagname = NULL, *offset = NULL;
 	SdbList *ls = NULL;
 	RBinFile *bf = r_bin_cur (core->bin);
 	if (!bf) {
@@ -141,23 +156,23 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 	ls_foreach (ls, iter, kv) {
 		char *k = sdbkv_key (kv);
 		char *v = sdbkv_value (kv);
-		char *dup = strdup (k);
-		// printf ("?e (%s) (%s)\n", k, v);
-		if ((flagname = strstr (dup, ".offset"))) {
-			*flagname = 0;
-			flagname = dup;
+		char *flagname = sdb_key_name (k, ".offset", IS_MODE_RAD (mode));
+		if (flagname) {
 			if (IS_MODE_RAD (mode)) {
-				r_cons_printf (core->cons, "'@%s'f %s\n", v, flagname);
+				if (is_single_line (v)) {
+					r_cons_printf (core->cons, "'@%s'f %s\n", v, flagname);
+				}
 			} else if (IS_MODE_SET (mode)) {
 				ut64 nv = r_num_math (core->num, v);
 				r_flag_set (core->flags, flagname, nv, 0);
 			}
-			free (offset);
-			offset = strdup (v);
 		}
-		if (strstr (dup, ".cparse")) {
+		free (flagname);
+		if (strstr (k, ".cparse")) {
 			if (IS_MODE_RAD (mode)) {
-				r_cons_printf (core->cons, "'td %s\n", v);
+				if (is_single_line (v)) {
+					r_cons_printf (core->cons, "'td %s\n", v);
+				}
 			} else if (IS_MODE_SET (mode)) {
 				char *code = r_str_newf ("%s;", v);
 				char *errmsg = NULL;
@@ -173,47 +188,39 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 				}
 			}
 		}
-		free (dup);
 	}
-	R_FREE (offset);
 	ls_foreach (ls, iter, kv) {
 		char *k = sdbkv_key (kv);
 		char *v = sdbkv_value (kv);
-		char *dup = strdup (k);
-		if ((flagname = strstr (dup, ".format"))) {
-			*flagname = 0;
-			if (!offset) {
-				offset = strdup ("0");
-			}
-			flagname = dup;
+		char *flagname = sdb_key_name (k, ".format", IS_MODE_RAD (mode));
+		if (flagname) {
 			if (IS_MODE_RAD (mode)) {
-				r_cons_printf (core->cons, "'pf.%s %s\n", flagname, v);
+				if (is_single_line (v)) {
+					r_cons_printf (core->cons, "'pf.%s %s\n", flagname, v);
+				}
 			} else if (IS_MODE_SET (mode)) {
 				sdb_set (core->print->formats, flagname, v, 0);
 			}
 		}
-		free (dup);
+		free (flagname);
 	}
 	ls_foreach (ls, iter, kv) {
 		char *k = sdbkv_key (kv);
 		char *v = sdbkv_value (kv);
-		char *dup = strdup (k);
-		if ((flagname = strstr (dup, ".format"))) {
-			*flagname = 0;
-			if (!offset) {
-				offset = strdup ("0");
-			}
-			flagname = dup;
+		char *flagname = sdb_key_name (k, ".format", false);
+		if (flagname) {
 			int fmtsize = r_print_format_struct_size (core->print, v, 0, 0);
 			const char *off = sdb_const_getf (db, NULL, "%s.offset", flagname);
 			if (fmtsize < 1) {
-				free (dup);
+				free (flagname);
 				continue;
 			}
 			fmtsize += 4;
 			if (off) {
 				if (IS_MODE_RAD (mode)) {
-					r_cons_printf (core->cons, "'@%s'Cf %d %s\n", off, fmtsize, v);
+					if (is_single_line (off) && is_single_line (v)) {
+						r_cons_printf (core->cons, "'@%s'Cf %d %s\n", off, fmtsize, v);
+					}
 				} else if (IS_MODE_SET (mode)) {
 					ut64 addr = r_num_get (NULL, off);
 					ut8 *buf = malloc (fmtsize);
@@ -229,11 +236,13 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 				}
 			}
 		}
-		if ((flagname = strstr (dup, ".size"))) {
-			*flagname = 0;
-			flagname = dup;
+		free (flagname);
+		flagname = sdb_key_name (k, ".size", IS_MODE_RAD (mode));
+		if (flagname) {
 			if (IS_MODE_RAD (mode)) {
-				r_cons_printf (core->cons, "fl %s %s\n", flagname, v);
+				if (is_single_line (v)) {
+					r_cons_printf (core->cons, "'fl %s %s\n", flagname, v);
+				}
 			} else if (IS_MODE_SET (mode)) {
 				RFlagItem *fi = r_flag_get (core->flags, flagname);
 				if (fi) {
@@ -243,10 +252,9 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 				}
 			}
 		}
-		free (dup);
+		free (flagname);
 	}
 leave:
-	free (offset);
 	ls_free (ls);
 	if (IS_MODE_SET (mode)) {
 		r_flag_space_pop (core->flags);

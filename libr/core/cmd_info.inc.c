@@ -3153,7 +3153,12 @@ static void cmd_iddlf(RCore *core) {
 		}
 		ut64 addr = sdb_num_getf (dwarf_sdb, NULL, "fcn.%s.addr", key);
 		int size = idd_symbol_size (core, name);
-		r_cons_printf (core->cons, "f sym.%s %d @ 0x%" PFMT64x "\n", name, size, addr);
+		bool valid_name = r_name_check (name);
+		char *flagname = valid_name? NULL: r_name_filter_dup (name);
+		if (valid_name || flagname) {
+			r_cons_printf (core->cons, "f sym.%s %d @ 0x%" PFMT64x "\n", flagname? flagname: name, size, addr);
+		}
+		free (flagname);
 	}
 	ls_free (l);
 }
