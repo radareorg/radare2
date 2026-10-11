@@ -269,7 +269,7 @@ static bool rax(RNum *num, char *str, int len, int last, RaxActions *flags, RaxM
 	}
 
 	bool usedflags = false;
-	if (*str == '-') {
+	if (*str == '-' && !isdigit ((ut8)str[1])) {
 		while (str[1] && str[1] != ' ') {
 			switch (str[1]) {
 			case 'n': flags->newline = true; break;
@@ -303,16 +303,6 @@ static bool rax(RNum *num, char *str, int len, int last, RaxActions *flags, RaxM
 			case 'v': return r_main_version_print ("rax2", 0);
 			case '\0': return !use_stdin (num, flags, mode, pj);
 			default:
-				/* not as complete as for positive numbers */
-				out_mode = !flags->keepbase? '0': 'I';
-				if (str[1] >= '0' && str[1] <= '9') {
-					if (str[2] == 'x') {
-						out_mode = 'I';
-					} else if (r_str_endswith (str, "f")) {
-						out_mode = 'l';
-					}
-					return format_output (num, out_mode, str, *mode, *flags);
-				}
 				help_usage ();
 				return help ();
 			}
@@ -802,7 +792,8 @@ dotherax:
 	}
 	// no flags passed
 
-	if (str[0] == '0' && (tolower ((ut8)str[1]) == 'x')) {
+	const char *digits = (*str == '-')? str + 1: str;
+	if (digits[0] == '0' && (tolower ((ut8)digits[1]) == 'x')) {
 		out_mode = (flags->keepbase)? '0': 'I';
 	} else if (r_str_startswith (str, "b")) {
 		out_mode = 'B';
