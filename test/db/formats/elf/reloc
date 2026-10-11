@@ -2188,6 +2188,9 @@ mov rbp, rsp
 mov edi, 0
 call 0x1000002e8
 EOF
+EXPECT_ERR=<<EOF
+WARN: Reloc type 10 at 0x100000045 overflows with 0x10000005b for x64, left unpatched
+EOF
 RUN
 
 NAME=ELF: x86-64 R_X86_64_32S that does not fit is left alone
@@ -2204,6 +2207,12 @@ mov rbp, rsp
 call 0x100000b17
 mov rsi, 0
 EOF
+EXPECT_ERR=<<EOF
+WARN: Reloc type 11 at 0x100000085 overflows with 0x1000000ba for x64, left unpatched
+WARN: Reloc type 11 at 0x100000094 overflows with 0x100000f7f for x64, left unpatched
+WARN: Reloc type 11 at 0x10000009b overflows with 0x1000000c7 for x64, left unpatched
+WARN: Reloc type 11 at 0x1000000ac overflows with 0x1000000d0 for x64, left unpatched
+EOF
 RUN
 
 NAME=ELF: x86-64 R_X86_64_32 is unsigned, so 0x8000005b still fits
@@ -2217,5 +2226,7 @@ push rbp
 mov rbp, rsp
 mov edi, 0x8000005b
 call 0x800002e8
+EOF
+EXPECT_ERR=<<EOF
 EOF
 RUN

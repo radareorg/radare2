@@ -1693,6 +1693,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		}
 		// ld refuses a value the field cannot hold
 		if (!x86_64_fits (rel->type, V, word)) {
+			R_LOG_WARN ("Reloc type %d at 0x%"PFMT64x" overflows with 0x%"PFMT64x" for x64, left unpatched", rel->type, P, V);
 			break;
 		}
 		switch (word) {
