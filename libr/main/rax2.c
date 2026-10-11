@@ -623,8 +623,7 @@ dotherax:
 		memcpy (&d, &n, sizeof (d));
 
 		/* decimal, hexa, octal */
-		s = n >> 16 << 12;
-		a = n & 0x0fff;
+		r_num_segaddr (n, 0, 4, &s, &a);
 		r_num_units (unit, sizeof (unit), n);
 		if (n >> 32) {
 			printf ("int64   %" PFMT64d "\n", (st64)n);
@@ -692,8 +691,7 @@ dotherax:
 		pj_ks (*pj, "octal", r_strf ("0%" PFMT64o, n));
 
 		/* decimal, hexa, octal */
-		s = n >> 16 << 12;
-		a = n & 0x0fff;
+		r_num_segaddr (n, 0, 4, &s, &a);
 		r_num_units (unit, sizeof (unit), n);
 
 		pj_ks (*pj, "unit", unit);
