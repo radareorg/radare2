@@ -2391,8 +2391,8 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 				char *id = r_buf_get_string (buf, addr + str_off - 8);
 				if (R_STR_ISNOTEMPTY (id)) {
 					sdb_set (mo->kv, "id.name", id, 0);
-					free (id);
 				}
+				free (id);
 			}
 			break;
 		case LC_DYLD_EXPORTS_TRIE:
