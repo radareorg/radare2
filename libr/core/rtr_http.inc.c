@@ -571,9 +571,22 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 			char buf[128];
 			if (r_str_startswith (rs->path, "/cmd")) {
 				char *out = NULL;
-				if (rs->data && rs->data_length > 0) {
-					out = cmdstr (core, (const char *)rs->data, true, policy);
+				char *prefix = r_str_startswith (rs->path, "/cmd/")? rs->path + 5: NULL;
+				if (prefix) {
+					r_str_uri_decode (prefix);
 				}
+				const char *data = rs->data && rs->data_length > 0? (const char *)rs->data: "";
+				char *cmd = r_str_newf ("%s%s%s", prefix? prefix: "", prefix && *prefix && *data? " ": "", data);
+				if (!cmd) {
+					r_socket_http_response (rs, 500, "Cannot allocate command", 0, headers);
+					rtr_http_request_free (rs);
+					free (dir);
+					continue;
+				}
+				if (*cmd) {
+					out = cmdstr (core, cmd, true, policy);
+				}
+				free (cmd);
 				if (out) {
 					char *res = r_str_uri_encode (out);
 					char *newheaders = r_str_newf ("Content-Type: text/plain\n%s", headers);

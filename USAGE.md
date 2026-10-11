@@ -76,3 +76,18 @@ r2 = r2pipe.open("/bin/ls")
 print(r2.cmd("pd 10"))
 r2.quit()
 ```
+
+### HTTP commands
+
+Start the HTTP server with `r2 -e http.port=9999 -c '=h' -`. These requests
+all execute `echo hello`:
+
+```sh
+curl http://localhost:9999/cmd/echo%20hello
+curl -d 'echo hello' http://localhost:9999/cmd/
+curl -d hello http://localhost:9999/cmd/echo
+```
+
+POST requests join the URL-decoded command after `/cmd/` and the raw body
+with one space when both are nonempty. An empty body runs only the URL command;
+an empty URL command runs only the body. Body-only POSTs to `/cmd` also work.

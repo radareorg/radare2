@@ -73,8 +73,8 @@ def check_http_sandbox_in_directory(directory, sandbox, background=False, local_
     local_config = f"{str(local_sandbox).lower()}\n{local_grain}\n".encode()
     http_config = f"{str(sandbox).lower()}\n{request_grain}\n".encode()
 
-    def command(method, text):
-        url = base + "/cmd/"
+    def command(method, text, prefix="", path="/cmd/"):
+        url = base + path + urllib.parse.quote(prefix, safe="")
         data = None
         if method == "GET":
             url += urllib.parse.quote(text, safe="")
@@ -100,6 +100,14 @@ def check_http_sandbox_in_directory(directory, sandbox, background=False, local_
                 time.sleep(0.05)
         else:
             raise AssertionError("HTTP server did not start")
+
+        assert command("POST", "hello", "echo") == b"hello\n"
+        assert command("POST", "world", "echo hello") == b"hello world\n"
+        assert command("POST", "100%20+done", "echo") == b"100%20+done\n"
+        assert command("POST", "", "echo hello") == b"hello\n"
+        assert command("POST", "echo hello", path="/cmd") == b"hello\n"
+        assert command("POST", "") == b""
+        assert (b"HTTP_EXECUTED" in command("POST", "HTTP_EXECUTED", "!!echo")) == exec_allowed
 
         for method in ("GET", "POST"):
             assert command(method, "?e ordinary") == b"ordinary\n"
