@@ -2175,3 +2175,47 @@ EOF
 EXPECT_ERR=<<EOF
 EOF
 RUN
+
+NAME=ELF: x86-64 R_X86_64_32 that does not fit is left alone
+FILE=bins/elf/analysis/test.obj
+ARGS=-B 0x100000000 -e bin.relocs.apply=true -e asm.sub.names=false
+CMDS=<<EOF
+pi 4 @ section..text
+EOF
+EXPECT=<<EOF
+push rbp
+mov rbp, rsp
+mov edi, 0
+call 0x1000002e8
+EOF
+RUN
+
+NAME=ELF: x86-64 R_X86_64_32S that does not fit is left alone
+FILE=bins/elf/test.ko
+ARGS=-B 0x100000000 -e bin.relocs.apply=true -e asm.sub.names=false
+CMDS=<<EOF
+pi 6 @ section..init.text
+EOF
+EXPECT=<<EOF
+call 0x100000b0f
+push rbp
+mov rdi, 0
+mov rbp, rsp
+call 0x100000b17
+mov rsi, 0
+EOF
+RUN
+
+NAME=ELF: x86-64 R_X86_64_32 is unsigned, so 0x8000005b still fits
+FILE=bins/elf/analysis/test.obj
+ARGS=-B 0x80000000 -e bin.relocs.apply=true -e asm.sub.names=false
+CMDS=<<EOF
+pi 4 @ section..text
+EOF
+EXPECT=<<EOF
+push rbp
+mov rbp, rsp
+mov edi, 0x8000005b
+call 0x800002e8
+EOF
+RUN

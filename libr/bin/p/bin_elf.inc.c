@@ -1034,6 +1034,25 @@ static bool disp_fits(st64 x, int bits) {
 	return x >= -(1LL << (bits - 1)) && x < (1LL << (bits - 1));
 }
 
+// lld's overflow rule: 32 is unsigned, 8 and 16 take either sign
+static inline bool x86_64_fits(int type, ut64 v, int word) {
+	const int bits = word * 8;
+	switch (type) {
+	case R_X86_64_32:
+		return v < (1ULL << bits);
+	case R_X86_64_8:
+	case R_X86_64_16:
+		return v < (1ULL << bits) || disp_fits ((st64)v, bits);
+	case R_X86_64_32S:
+	case R_X86_64_PC8:
+	case R_X86_64_PC16:
+	case R_X86_64_PC32:
+	case R_X86_64_PLT32:
+		return disp_fits ((st64)v, bits);
+	}
+	return true;
+}
+
 // thumb2 movw/movt scatter their imm16 into imm4:i:imm3:imm8
 static ut32 thumb_mov_imm(ut32 hi, ut32 lo) {
 	return ((hi & 0xf) << 12) | (((hi >> 10) & 1) << 11) | (((lo >> 12) & 7) << 8) | (lo & 0xff);
@@ -1670,6 +1689,10 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			break;
 		default:
 			//eprintf ("relocation %d not handle at this time\n", rel->type);
+			break;
+		}
+		// ld refuses a value the field cannot hold
+		if (!x86_64_fits (rel->type, V, word)) {
 			break;
 		}
 		switch (word) {
