@@ -3752,6 +3752,9 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->cycles = 1;
 		/* fallthru */
 	case ARM64_INS_MSUB:
+	case ARM64_INS_FSUB:
+	case ARM64_INS_FMSUB:
+	case ARM64_INS_FNMSUB:
 	case ARM64_INS_SBC:
 	case ARM64_INS_NGC:
 	case ARM64_INS_NGCS:
@@ -3770,6 +3773,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_MUL:
 	case ARM64_INS_SMULL:
 	case ARM64_INS_FMUL:
+	case ARM64_INS_FNMUL:
 	case ARM64_INS_UMULL:
 		/* TODO: if next instruction is also a MUL, cycles are /=2 */
 		/* also known as Register Indexing Addressing */
@@ -3803,7 +3807,9 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_ADC:
 	case ARM64_INS_UMADDL:
 	case ARM64_INS_SMADDL:
+	case ARM64_INS_FADD:
 	case ARM64_INS_FMADD:
+	case ARM64_INS_FNMADD:
 	case ARM64_INS_MADD:
 #if CS_API_MAJOR > 4
 	case ARM64_INS_ADDS:
@@ -3917,7 +3923,23 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		break;
 	case ARM64_INS_NEG:
 	case ARM64_INS_NEGS:
+	case ARM64_INS_FNEG:
 		op->type = R_ANAL_OP_TYPE_NOT;
+		break;
+	case ARM64_INS_FCVT:
+	case ARM64_INS_FCVTAS:
+	case ARM64_INS_FCVTAU:
+	case ARM64_INS_FCVTMS:
+	case ARM64_INS_FCVTMU:
+	case ARM64_INS_FCVTNS:
+	case ARM64_INS_FCVTNU:
+	case ARM64_INS_FCVTPS:
+	case ARM64_INS_FCVTPU:
+	case ARM64_INS_FCVTZS:
+	case ARM64_INS_FCVTZU:
+	case ARM64_INS_SCVTF:
+	case ARM64_INS_UCVTF:
+		op->type = R_ANAL_OP_TYPE_CAST;
 		break;
 	case ARM64_INS_CMP:
 		op->type = R_ANAL_OP_TYPE_CMP;
@@ -3926,6 +3948,9 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		}
 		break;
 	case ARM64_INS_FCMP:
+	case ARM64_INS_FCMPE:
+	case ARM64_INS_FCCMP:
+	case ARM64_INS_FCCMPE:
 	case ARM64_INS_CCMP:
 	case ARM64_INS_CCMN:
 	case ARM64_INS_CMN:
