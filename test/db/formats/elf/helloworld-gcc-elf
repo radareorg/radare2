@@ -337,6 +337,7 @@ EOF
 EXPECT=<<EOF
     0 * classes
     5 * format
+   10 * globals
     3 * imports
     3 * relocs
    30 * sections
@@ -348,6 +349,7 @@ EXPECT=<<EOF
     0 * classes
     5 * format
     0 * functions
+   10 * globals
     3 * imports
     3 * relocs
    30 * sections
@@ -369,6 +371,7 @@ EXPECT=<<EOF
     0 * classes
     5 * format
     1 * functions
+   10 * globals
     3 * imports
     3 * relocs
    30 * sections
@@ -562,7 +565,7 @@ f~?
 f
 EOF
 EXPECT=<<EOF
-85
+95
 --
 0x00000000 0 section.
 0x00000000 17 section..comment
@@ -614,28 +617,36 @@ EXPECT=<<EOF
 0x08048494 0 sym._fini
 0x080484a8 21 section..rodata
 0x080484a8 4 obj._fp_hw
+0x080484a8 4 global._fp_hw
 0x080484ac 4 obj._IO_stdin_used
+0x080484ac 4 global._IO_stdin_used
 0x080484b0 13 str.Hello_world_
 0x080484c0 44 section..eh_frame_hdr
 0x080484c0 44 segment.GNU_EH_FRAME
 0x080484ec 176 section..eh_frame
 0x08048598 0 obj.__FRAME_END__
+0x08048598 0 global.__FRAME_END__
 0x0804959c 4 section..init_array
 0x0804959c 284 segment.LOAD1
 0x0804959c 0 obj.__frame_dummy_init_array_entry
+0x0804959c 0 global.__frame_dummy_init_array_entry
 0x0804959c 0 loc.__init_array_start
 0x080495a0 4 section..fini_array
 0x080495a0 0 obj.__do_global_dtors_aux_fini_array_entry
+0x080495a0 0 global.__do_global_dtors_aux_fini_array_entry
 0x080495a0 0 loc.__init_array_end
 0x080495a4 4 section..jcr
 0x080495a4 0 obj.__JCR_LIST__
+0x080495a4 0 global.__JCR_LIST__
 0x080495a4 0 obj.__JCR_END__
 0x080495a8 232 section..dynamic
 0x080495a8 232 segment.DYNAMIC
 0x080495a8 0 obj._DYNAMIC
+0x080495a8 0 global._DYNAMIC
 0x08049690 4 section..got
 0x08049694 24 section..got.plt
 0x08049694 0 obj._GLOBAL_OFFSET_TABLE_
+0x08049694 0 global._GLOBAL_OFFSET_TABLE_
 0x080496a0 4 reloc.puts
 0x080496a4 4 reloc.__gmon_start__
 0x080496a8 4 reloc.__libc_start_main
@@ -643,8 +654,10 @@ EXPECT=<<EOF
 0x080496ac 0 loc.data_start
 0x080496ac 0 loc.__data_start
 0x080496b0 0 obj.__dso_handle
+0x080496b0 0 global.__dso_handle
 0x080496b4 4 section..bss
 0x080496b4 1 obj.completed.5979
+0x080496b4 1 global.completed.5979
 0x080496b4 0 loc._edata
 0x080496b4 0 loc.__bss_start
 0x080496b4 0 obj.__TMC_END__

@@ -283,7 +283,7 @@ NAME=rabin2 -G 0x1000 -rs fatmach0
 FILE=bins/mach0/fatmach0-3true
 CMDS=!!rabin2 -G 0x1000 -rs ${R2_FILE}~f ~?
 EXPECT=<<EOF
-3
+2
 EOF
 RUN
 

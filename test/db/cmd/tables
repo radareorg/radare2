@@ -13,7 +13,7 @@ EOF
 EXPECT=<<EOF
 size
 ----
-18.2K
+18.8K
 
 --
 addr,size,space,name

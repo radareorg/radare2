@@ -3133,6 +3133,7 @@ flags
 0x00000590 256 main
 0x00000590 60 sym.main
 0x0000064c 4 obj._IO_stdin_used
+0x0000064c 4 global._IO_stdin_used
 0x00000658 60 segment.GNU_EH_FRAME
 0x00001eec 308 segment.LOAD1
 0x00001eec 276 segment.GNU_RELRO
@@ -3531,7 +3532,6 @@ FILE=bins/mach0/fatmach0-3true
 CMDS=isqq
 EXPECT=<<EOF
 __mh_execute_header
-radr://5614542
 imp.exit
 EOF
 RUN
@@ -3820,7 +3820,7 @@ is~?
 is~entry?
 EOF
 EXPECT=<<EOF
-246
+243
 0
 EOF
 RUN
@@ -3914,11 +3914,11 @@ ie
 il
 EOF
 EXPECT=<<EOF
-nth paddr      vaddr       bind   type size lib name                demangled
------------------------------------------------------------------------------
-0   0x00000000 0x100000000 GLOBAL FUNC 0        __mh_execute_header
-1   0x00001060 0x100001060 GLOBAL FUNC 0        ___progname
-2   0x00000f0c 0x100000f0c GLOBAL FUNC 0        _main
+nth paddr      vaddr       bind   type   size lib name                demangled
+-------------------------------------------------------------------------------
+0   0x00000000 0x100000000 GLOBAL NOTYPE 0        __mh_execute_header
+1   0x00001060 0x100001060 GLOBAL OBJ    0        ___progname
+2   0x00000f0c 0x100000f0c GLOBAL FUNC   0        _main
 nth vaddr      bind type lib name
 ---------------------------------
 0   ---------- NONE FUNC     exit
