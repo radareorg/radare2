@@ -4713,7 +4713,8 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 			uninit = false;
 		}
 		(void) r_anal_op (core->anal, &op, at, buf, bsz, opmask);
-		while ((i + maxopsz) < bsz && !r_cons_is_breaked (core->cons)) {
+		const int scan_end = bsz == left? bsz: bsz - maxopsz;
+		while (i < scan_end && !r_cons_is_breaked (core->cons)) {
 			r_anal_op_fini (&op);
 			// check if meta tells its code
 			{
@@ -4833,7 +4834,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		if (i < 1) {
 			break;
 		}
-		at += i + 1; // XXX i think this causes code unalignment problems
+		at += i;
 	}
 beach:
 	r_cons_break_pop (core->cons);
