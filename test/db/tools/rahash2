@@ -6,6 +6,24 @@ bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a35 entropy: 3.27819072
 EOF
 RUN
 
+NAME=rahash2 entropy output modes
+FILE=-
+CMDS=<<EOF
+!rahash2 -qq -a entropy bins/elf/analysis/hello-linux-x86_64
+!rahash2 -j -a entropy bins/elf/analysis/hello-linux-x86_64
+!rahash2 -r -a entropy bins/elf/analysis/hello-linux-x86_64
+!rahash2 -j -a md5,entropy -s 123456789
+!rahash2 -J -a md5,entropy -s 123456789
+EOF
+EXPECT=<<EOF
+3.27819072
+[{"name":"entropy","hash":"3.27819072"}]
+bins/elf/analysis/hello-linux-x86_64: CC file entropy:3.27819072
+[{"name":"md5","hash":"25f9e794323b453885f5181f1b624d0b"},{"name":"entropy","hash":"3.16992500"}]
+{"md5":"25f9e794323b453885f5181f1b624d0b","entropy":"3.16992500"}
+EOF
+RUN
+
 NAME=rahash2 -a ssdeep
 FILE=-
 CMDS=!rahash2 -a ssdeep bins/elf/analysis/hello-linux-x86_64
