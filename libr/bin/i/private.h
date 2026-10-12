@@ -7,7 +7,7 @@
 
 R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, RBinFileOptions *opt, Sdb *sdb, bool steal_ptr);
 R_IPI RBinObject *r_bin_file_object_find_by_id(RBinFile *binfile, ut32 binobj_id);
-R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw);
+R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *a, int min, int raw, RStrBuf *output);
 R_IPI RBinFile *r_bin_file_find_by_object_id(RBin *bin, ut32 binobj_id);
 R_IPI RBinFile *r_bin_file_find_by_id(RBin *bin, ut32 binfile_id);
 R_IPI bool r_bin_file_set_obj(RBin *bin, RBinFile *bf, RBinObject *obj);

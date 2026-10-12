@@ -2171,8 +2171,10 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 		int min = r_config_get_i (core->config, "bin.str.min");
 		if (bf) {
 			bf->strmode = mode;
-			RVecRBinString *res = r_bin_dump_strings (bf, min, 2);
-			RVecRBinString_free (res);
+			RStrBuf output = {0};
+			r_bin_dump_strings (bf, min, 2, &output);
+			r_cons_write (core->cons, r_strbuf_get (&output), r_strbuf_length (&output));
+			r_strbuf_fini (&output);
 		}
 	} else if (raw) {
 		bin_raw_strings (core, pj, mode, va, skip, count, type_filter);

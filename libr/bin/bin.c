@@ -123,12 +123,12 @@ R_API void r_bin_xtrdata_free(void /*RBinXtrData*/ *data_) {
 
 R_API RVecRBinString *r_bin_raw_strings(RBinFile *bf, int min) {
 	R_RETURN_VAL_IF_FAIL (bf, NULL);
-	return r_bin_file_get_strings (bf, min, 0, 2);
+	return r_bin_file_get_strings (bf, min, 2, NULL);
 }
 
-R_API RVecRBinString *r_bin_dump_strings(RBinFile *bf, int min, int raw) {
-	R_RETURN_VAL_IF_FAIL (bf, NULL);
-	return r_bin_file_get_strings (bf, min, 1, raw);
+R_API void r_bin_dump_strings(RBinFile *bf, int min, int raw, RStrBuf *output) {
+	R_RETURN_IF_FAIL (bf && output);
+	r_bin_file_get_strings (bf, min, raw, output);
 }
 
 R_API void r_bin_file_options_init(RBinFileOptions *opt, int fd, ut64 baseaddr, ut64 loadaddr, int rawstr) {
@@ -1211,7 +1211,7 @@ R_API RVecRBinString *r_bin_reset_strings(RBin *bin) {
 
 	RVecRBinString *strings = plugin && plugin->strings
 		? plugin->strings (bf)
-		: r_bin_file_get_strings (bf, bin->options.minstrlen, 0, bf->rawstr);
+		: r_bin_file_get_strings (bf, bin->options.minstrlen, bf->rawstr, NULL);
 	r_bin_take_strings (&bf->bo->strings, strings);
 	if (bin->options.debase64) {
 		r_bin_object_filter_strings (bf->bo);

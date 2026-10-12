@@ -997,7 +997,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	if (bin->filter_rules & R_BIN_REQ_STRINGS) {
 		RVecRBinString *strings = p->strings
 			? p->strings (bf)
-			: r_bin_file_get_strings (bf, minlen, 0, bf->rawstr);
+			: r_bin_file_get_strings (bf, minlen, bf->rawstr, NULL);
 		r_bin_take_strings (&bo->strings, strings);
 		if (bin->options.debase64) {
 			r_bin_object_filter_strings (bo);

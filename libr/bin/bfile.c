@@ -25,9 +25,7 @@ static RBinSymbol *__getMethod(RBinClass *c, const char *method) {
 	return NULL;
 }
 
-static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
-	R_RETURN_IF_FAIL (bf && string);
-
+static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj, RStrBuf *output) {
 	int mode = bf->strmode;
 	RBin *bin = bf->rbin;
 	if (!bin) {
@@ -46,8 +44,6 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 	ut64 vaddr = io->va ? r_bin_get_vaddr (bin, string->paddr, string->vaddr) : string->paddr;
 	ut64 addr = vaddr; // bf->bo? vaddr: string->vaddr;
 
-	// If raw string dump mode, use printf to dump directly to stdout.
-	//  PrintfCallback temp = io->cb_printf;
 	switch (mode) {
 	case R_MODE_JSON:
 		if (pj) {
@@ -64,25 +60,25 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 		}
 		break;
 	case R_MODE_SIMPLEST:
-		io->cb_printf ("%s\n", string->string);
+		r_strbuf_appendf (output, "%s\n", string->string);
 		break;
 	case R_MODE_SIMPLE:
 		if (raw == 2) {
-			io->cb_printf ("0x%08"PFMT64x" %s\n", addr, string->string);
+			r_strbuf_appendf (output, "0x%08"PFMT64x" %s\n", addr, string->string);
 		} else {
-			io->cb_printf ("%s\n", string->string);
+			r_strbuf_appendf (output, "%s\n", string->string);
 		}
 		break;
 	case R_MODE_RADARE: {
 		char *f_name = strdup (string->string);
 		r_name_filter (f_name, -1);
 		if (bin->prefix) {
-			io->cb_printf ("'0x%08"PFMT64x"'f %s.str.%s %u\n"
+			r_strbuf_appendf (output, "'0x%08"PFMT64x"'f %s.str.%s %u\n"
 					"'0x%08"PFMT64x"'Cs %u\n",
 					addr, bin->prefix, f_name, string->size,
 					addr, string->size);
 		} else {
-			io->cb_printf ("'0x%08"PFMT64x"'f str.%s %u\n"
+			r_strbuf_appendf (output, "'0x%08"PFMT64x"'f str.%s %u\n"
 					"'0x%08"PFMT64x"'Cs %u\n",
 					addr, f_name, string->size,
 					addr, string->size);
@@ -91,7 +87,7 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 		break;
 		}
 	case R_MODE_PRINT:
-		io->cb_printf ("%03u 0x%08" PFMT64x " 0x%08" PFMT64x " %3u %3u "
+		r_strbuf_appendf (output, "%03u 0x%08" PFMT64x " 0x%08" PFMT64x " %3u %3u "
 			       "(%s) %5s %s\n",
 			string->ordinal, string->paddr, vaddr,
 			string->length, string->size,
@@ -113,7 +109,7 @@ static void string_set_addrs(RBinString *bs, ut64 str_start, ut64 pdelta, ut64 v
 }
 
 // TODO: this code must be implemented in RSearch as options for the strings mode
-static int string_scan_range(RBinFile *bf, RVecRBinString *list, HtUP *strings_index, int min, const ut64 from, const ut64 to, int type, int raw, RBinSection *section) {
+static int string_scan_range(RBinFile *bf, RVecRBinString *list, HtUP *strings_index, int min, const ut64 from, const ut64 to, int type, int raw, RBinSection *section, RStrBuf *output) {
 	RBin *bin = bf->rbin;
 	const bool strings_nofp = bin->strings_nofp;
 	ut8 tmp[64]; // temporal buffer to encode characters in utf8 form
@@ -162,7 +158,7 @@ static int string_scan_range(RBinFile *bf, RVecRBinString *list, HtUP *strings_i
 	RBinSection *s = NULL;
 	bool ascii_only = false;
 	PJ *pj = NULL;
-	if (bf->strmode == R_MODE_JSON && !list) {
+	if (bf->strmode == R_MODE_JSON && output) {
 		pj = pj_new ();
 		if (pj) {
 			pj_a (pj);
@@ -457,7 +453,7 @@ static int string_scan_range(RBinFile *bf, RVecRBinString *list, HtUP *strings_i
 					break;
 				}
 			} else {
-				print_string (bf, &bs, raw, pj);
+				print_string (bf, &bs, raw, pj, output);
 				r_bin_string_fini (&bs);
 			}
 			if (from == 0 && to == bf->size) {
@@ -470,12 +466,7 @@ static int string_scan_range(RBinFile *bf, RVecRBinString *list, HtUP *strings_i
 	free (buf);
 	if (pj) {
 		pj_end (pj);
-		if (bin) {
-			RIO *io = bin->iob.io;
-			if (io) {
-				io->cb_printf ("%s", pj_string (pj));
-			}
-		}
+		r_strbuf_append (output, pj_string (pj));
 		pj_free (pj);
 	}
 	r_strbuf_free (sb);
@@ -490,7 +481,7 @@ static bool is_data_section(RBinFile *a, RBinSection *s) {
 	return s->name && strstr (s->name, "_const");
 }
 
-static void get_strings_range(RBinFile *bf, RVecRBinString *list, HtUP *strings_index, int min, int raw, bool nofp, ut64 from, ut64 to, RBinSection *section) {
+static void get_strings_range(RBinFile *bf, RVecRBinString *list, HtUP *strings_index, int min, int raw, bool nofp, ut64 from, ut64 to, RBinSection *section, RStrBuf *output) {
 	R_RETURN_IF_FAIL (bf && bf->buf);
 
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
@@ -554,7 +545,7 @@ static void get_strings_range(RBinFile *bf, RVecRBinString *list, HtUP *strings_
 		R_LOG_ERROR ("encoding %s not supported", enc);
 		return;
 	}
-	string_scan_range (bf, list, strings_index, min, from, to, type, raw, section);
+	string_scan_range (bf, list, strings_index, min, from, to, type, raw, section, output);
 }
 
 /////////////////////////////
@@ -1114,12 +1105,12 @@ R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *bf) {
 }
 
 // TODO: searchStrings() instead
-R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
+R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RStrBuf *output) {
 	R_RETURN_VAL_IF_FAIL (bf, NULL);
 	RBinObject *bo = bf->bo;
 	const bool nofp = bf->rbin->strings_nofp;
 	RBinSection *section;
-	RVecRBinString *ret = dump? NULL: RVecRBinString_new ();
+	RVecRBinString *ret = output? NULL: RVecRBinString_new ();
 	const bool has_sections = !raw && bo && !RVecRBinSection_empty (&bo->sections_vec);
 	HtUP *strings_index = ret && has_sections? ht_up_new0 (): NULL;
 	const int limit = bf->rbin->options.limit;
@@ -1132,11 +1123,11 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int dump, in
 		R_VEC_FOREACH (&bo->sections_vec, section) {
 			if (is_data_section (bf, section)) {
 				get_strings_range (bf, ret, strings_index, min, raw, nofp, section->paddr,
-						section->paddr + section->size, section);
+						section->paddr + section->size, section, output);
 			}
 		}
 	} else {
-		get_strings_range (bf, ret, strings_index, min, raw, nofp, 0, bf->size, NULL);
+		get_strings_range (bf, ret, strings_index, min, raw, nofp, 0, bf->size, NULL, output);
 		ht_up_free (strings_index);
 		return ret;
 	}

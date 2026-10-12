@@ -1024,7 +1024,7 @@ R_API ut64 r_bin_get_laddr(RBin *bin);
 R_API ut64 r_bin_get_size(RBin *bin);
 R_API RBinAddr *r_bin_get_sym(RBin *bin, int sym);
 R_API RVecRBinString *r_bin_raw_strings(RBinFile *a, int min);
-R_API RVecRBinString *r_bin_dump_strings(RBinFile *a, int min, int raw);
+R_API void r_bin_dump_strings(RBinFile *a, int min, int raw, RStrBuf *output);
 
 // use RBinFile instead
 R_API const RList *r_bin_get_entries(RBin *bin);

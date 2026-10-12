@@ -1424,7 +1424,7 @@ static const char *dotnet_user_string(RBinFile *bf, RBinPEObj *pe, ut32 index) {
 
 static RVecRBinString *strings(RBinFile *bf) {
 	RVecRBinString *ret = r_bin_file_get_strings (bf,
-		bf->rbin->options.minstrlen, 0, bf->rawstr);
+		bf->rbin->options.minstrlen, bf->rawstr, NULL);
 	if (!ret) {
 		ret = RVecRBinString_new ();
 	}
