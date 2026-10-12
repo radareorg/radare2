@@ -3323,6 +3323,7 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case X86_INS_FXSAVE:
 	case X86_INS_FXSAVE64:
 	case X86_INS_FISTTP:
+		op->sign = insn->id == X86_INS_FISTTP;
 		op0_memimmhandle (op, insn, addr, regsz);
 		/* fallthu */
 	case X86_INS_FCOMPP:
@@ -3385,12 +3386,19 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		op->family = R_ANAL_OP_FAMILY_FPU;
 		break;
+	case X86_INS_FILD:
+		op0_memimmhandle (op, insn, addr, regsz);
+		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->family = R_ANAL_OP_FAMILY_FPU;
+		op->sign = true;
+		break;
 	case X86_INS_FIST:
 	case X86_INS_FISTP:
 	case X86_INS_FST:
 	case X86_INS_FSTP:
 	case X86_INS_FXRSTOR:
 	case X86_INS_FXRSTOR64:
+		op->sign = insn->id == X86_INS_FIST || insn->id == X86_INS_FISTP;
 		op0_memimmhandle (op, insn, addr, regsz);
 		/* fallthru */
 	case X86_INS_FSTPNCE:
@@ -3635,6 +3643,11 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case X86_INS_MOVDQ2Q:
 		{
 		op->type = R_ANAL_OP_TYPE_MOV;
+		op->sign = insn->id == X86_INS_MOVSX || insn->id == X86_INS_MOVSXD;
+		if (insn->id == X86_INS_MOVSS || (insn->id == X86_INS_MOVSD
+			&& (is_xmm_reg (INSOP (0)) || is_xmm_reg (INSOP (1))))) {
+			op->datatype = R_ANAL_DATATYPE_FLOAT;
+		}
 		op0_memimmhandle (op, insn, addr, regsz);
 		op1_memimmhandle (op, insn, addr, regsz);
 		if (INSOP (1).type == X86_OP_MEM) {
