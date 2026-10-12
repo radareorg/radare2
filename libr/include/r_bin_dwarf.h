@@ -486,6 +486,7 @@ extern "C" {
 #define DW_OP_bit_piece                 0x9d
 #define DW_OP_implicit_value            0x9e
 #define DW_OP_stack_value               0x9f
+#define DW_OP_addrx                     0xa1
 
 /* <_lo_user ; _hi_user> Interval is reserved for vendor extensions */
 #define DW_OP_lo_user                   0xe0

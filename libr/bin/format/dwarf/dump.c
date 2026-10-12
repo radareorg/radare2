@@ -402,6 +402,10 @@ static void print_attr_value(const RBinDwarfAttrValue *val, RStrBuf *sb) {
 	case DW_FORM_block2:
 	case DW_FORM_block4:
 	case DW_FORM_exprloc:
+		if (val->kind == DW_AT_KIND_ADDRESS) {
+			r_strbuf_appendf (sb, "0x%" PFMT64x, val->address);
+			break;
+		}
 		r_strbuf_appendf (sb, "%" PFMT64u " byte block:", val->block.length);
 		for (i = 0; i < val->block.length; i++) {
 			r_strbuf_appendf (sb, " 0x%02x", val->block.data[i]);

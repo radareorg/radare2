@@ -90,7 +90,7 @@ static void attr_value_fini(RBinDwarfAttrValue *value) {
 	}
 	// Only DW_FORM_block2 allocates block.data with r_mem_dup.
 	// Other block forms point into the section buffer.
-	if (value->attr_form == DW_FORM_block2) {
+	if (value->attr_form == DW_FORM_block2 && value->kind == DW_AT_KIND_BLOCK) {
 		free ((void *)value->block.data);
 	}
 }
@@ -503,6 +503,20 @@ static const ut8 *parse_attr_value(RBinFile *bf, const ut8 *obuf, int obuf_len, 
 	}
 	if (!buf || buf > buf_end) {
 		return NULL;
+	}
+	if (bf->bo->baddr_shift && value->attr_name == DW_AT_location && value->kind == DW_AT_KIND_BLOCK
+		&& value->block.data && value->block.length == 1 + hdr->address_size
+		&& value->block.data[0] == DW_OP_addr) {
+		ut64 address;
+		if (!dwarf_read_index (value->block.data + 1, value->block.data + value->block.length,
+				be, hdr->address_size, &address) || !dwarf_relocate_address (bf, address, &address)) {
+			return NULL;
+		}
+		if (value->attr_form == DW_FORM_block2) {
+			free ((void *)value->block.data);
+		}
+		value->address = address;
+		value->kind = DW_AT_KIND_ADDRESS;
 	}
 	return buf;
 }

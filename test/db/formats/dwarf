@@ -1009,7 +1009,7 @@ EXPECT=<<EOF
      DW_AT_type                : <0x2d>
      DW_AT_decl_file           : 1
      DW_AT_decl_line           : 9
-     DW_AT_location            : 2 byte block: 0xa1 0x00
+     DW_AT_location            : 0x2004
 <0x2d>: Abbrev Number: 3    (DW_TAG_array_type)
      DW_AT_type                : <0x39>
 <0x32>: Abbrev Number: 4    (DW_TAG_subrange_type)
@@ -1028,7 +1028,7 @@ EXPECT=<<EOF
      DW_AT_type                : <0x4b>
      DW_AT_decl_file           : 0
      DW_AT_decl_line           : 22
-     DW_AT_location            : 2 byte block: 0xa1 0x01
+     DW_AT_location            : 0x2008
 <0x4b>: Abbrev Number: 3    (DW_TAG_array_type)
      DW_AT_type                : <0x39>
 <0x50>: Abbrev Number: 4    (DW_TAG_subrange_type)

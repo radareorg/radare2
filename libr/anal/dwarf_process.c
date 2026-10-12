@@ -1352,6 +1352,12 @@ static bool pick_location(Context *ctx, const RBinDwarfAttrValue *loc, bool at_e
 
 /* TODO move a lot of the parsing here into dwarf.c and do only processing here */
 static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrValue *loc, const RBinDwarfAttrValue *frame_base, bool is_frame_base, bool at_entry) {
+	if (loc->kind == DW_AT_KIND_ADDRESS) {
+		VariableLocation *location = R_NEW0 (VariableLocation);
+		location->kind = LOCATION_GLOBAL;
+		location->address = loc->address;
+		return location;
+	}
 	/* reg5 - val is in register 5
 	fbreg <leb> - offset from frame base
 	regx <leb> - contents is in register X
@@ -1534,6 +1540,7 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 				return NULL;
 			}
 			kind = LOCATION_GLOBAL; // address
+			i += addr_size - 1;
 			break;
 		}
 		case DW_OP_call_frame_cfa:
