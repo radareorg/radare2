@@ -5,6 +5,12 @@
 // R2R db/anal/globals
 #define GLOBAL_FLAGSPACE "globals"
 
+static void global_clear_inference(RAnal *anal, ut64 addr) {
+	sdb_unsetf (anal->sdb, 0, "global.inferred.0x%" PFMT64x, addr);
+	sdb_unsetf (anal->sdb, 0, "global.semantic.0x%" PFMT64x, addr);
+	sdb_unsetf (anal->sdb, 0, "global.layout.0x%" PFMT64x, addr);
+}
+
 static ut64 global_type_size(RAnal *anal, const char *type_name) {
 	char *base = strdup (type_name);
 	if (!base) {
@@ -55,8 +61,7 @@ R_API bool r_anal_global_add(RAnal *anal, ut64 addr, const char *type_name, cons
 		return false;
 	}
 	if (type) {
-		r_strf_var (key, 64, "global.inferred.0x%" PFMT64x, addr);
-		sdb_unset (anal->sdb, key, 0);
+		global_clear_inference (anal, addr);
 		r_flag_item_set_type (flags, fi, type);
 		char *fmtstr = r_type_format (anal->sdb_types, type);
 		r_meta_del (anal, R_META_TYPE_FORMAT, addr, 0);
@@ -75,8 +80,7 @@ R_API bool r_anal_global_del(RAnal *anal, ut64 addr) {
 	RFlagItem *fi = r_anal_global_get (anal, addr);
 	if (fi) {
 		RFlag *flags = anal->flb.f;
-		r_strf_var (key, 64, "global.inferred.0x%" PFMT64x, addr);
-		sdb_unset (anal->sdb, key, 0);
+		global_clear_inference (anal, addr);
 		r_meta_del (anal, R_META_TYPE_FORMAT, addr, 0);
 		r_flag_unset (flags, fi);
 		r_anal_types_unlink (anal, addr);

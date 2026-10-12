@@ -4505,8 +4505,15 @@ static void anal_global_access(RCore *core, const RAnalOp *op, ut64 addr, int si
 		|| (ut64)size > map->itv.size - (addr - map->itv.addr)) {
 		return;
 	}
-	if (r_flag_get_by_spaces (core->flags, false, addr, "relocs", "imports", NULL)) {
+	if (r_flag_get_by_spaces (core->flags, false, addr, "imports", NULL)) {
 		return;
+	}
+	if (r_flag_get_by_spaces (core->flags, false, addr, "relocs", NULL)) {
+		RVecRBinReloc *relocs = r_bin_get_relocs (core->bin);
+		RBinReloc *reloc = relocs? r_bin_reloc_at (relocs, addr, 1): NULL;
+		if (!reloc || reloc->import || reloc->is_ifunc || (reloc->symbol && reloc->symbol->is_imported)) {
+			return;
+		}
 	}
 	RAnal *anal = core->anal;
 	RFlagItem *global = r_anal_global_get (anal, addr);
@@ -4522,6 +4529,11 @@ static void anal_global_access(RCore *core, const RAnalOp *op, ut64 addr, int si
 	const char *inferred = sdb_const_get (anal->sdb, key, NULL);
 	const char *current = global? r_anal_global_get_type (anal, addr): NULL;
 	if (current && (!inferred || strcmp (current, inferred))) {
+		return;
+	}
+	const char *layout = sdb_const_getf (anal->sdb, NULL, "global.layout.0x%" PFMT64x, addr);
+	if (current && (sdb_const_getf (anal->sdb, NULL, "global.semantic.0x%" PFMT64x, addr)
+		|| (layout && !strcmp (current, layout)))) {
 		return;
 	}
 	if (global && !current && global->size && global->size != size) {

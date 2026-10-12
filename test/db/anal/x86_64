@@ -182,7 +182,7 @@ EXPECT=<<EOF
 0x000048f4 0x00004901 00:0000 13 j 0x000045b1 f 0x00004901
 0x00004901 0x0000491a 00:0000 25 j 0x000045ba f 0x0000491a
 
-|           0x000039c2      mov dword [global.0x21f558], 2             ; [0x21f558:4]=1
+|           0x000039c2      mov dword [global.status.0x21f558], 2      ; [0x21f558:4]=1
 |           0x000039cc      call fcn.00015960
 |           0x000039d1      mov byte [global.0x220618], 1              ; [0x220618:1]=0
 EOF

@@ -377,3 +377,599 @@ EXPECT=<<EOF
 [{"name":"global.0x2000","addr":8192,"size":4,"type":"float"},{"name":"global.0x2020","addr":8224,"size":8,"type":"void *"},{"name":"global.0x2028","addr":8232,"size":4,"type":"int32_t"},{"name":"global.0x2030","addr":8240,"size":2,"type":"int16_t"}]
 EOF
 RUN
+
+NAME=Global type and name propagate from a callee argument without debug information
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+e asm.arch=x86
+e asm.bits=64
+wx 488b3c2500200000 @ 0
+wa call 0x80 @ 8
+wx c3 @ 13
+wx c3 @ 0x80
+af @ 0x80
+afn helper @ 0x80
+af @ 0
+afn caller @ 0
+afs int helper(char *message) @ 0x80
+aei
+aeim
+aar 14 @ 0
+avgj
+aaft
+avgj
+aar 14 @ 0
+avgj
+avg uint64_t global.message.0x2000 @ 0x2000
+aaft
+aar 14 @ 0
+avgj
+EOF
+EXPECT=<<EOF
+[{"name":"global.0x2000","addr":8192,"size":8,"type":"uint64_t"}]
+[{"name":"global.message.0x2000","addr":8192,"size":8,"type":"char *"}]
+[{"name":"global.message.0x2000","addr":8192,"size":8,"type":"char *"}]
+[{"name":"global.message.0x2000","addr":8192,"size":8,"type":"uint64_t"}]
+EOF
+RUN
+
+NAME=Global stores receive callee return types and retain them on subsequent analysis
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+e asm.arch=x86
+e asm.bits=64
+wa call 0x80 @ 0
+wx 4889042500200000c3 @ 5
+wx c3 @ 0x80
+af @ 0x80
+afn helper @ 0x80
+af @ 0
+afn caller @ 0
+"td char *helper(void);"
+aei
+aeim
+aar 14 @ 0
+avgj
+aaft
+avgj
+aaft
+aar 14 @ 0
+avgj
+EOF
+EXPECT=<<EOF
+[{"name":"global.0x2000","addr":8192,"size":8,"type":"uint64_t"}]
+[{"name":"global.0x2000","addr":8192,"size":8,"type":"char *"}]
+[{"name":"global.0x2000","addr":8192,"size":8,"type":"char *"}]
+EOF
+RUN
+
+NAME=Common global base synthesizes a struct and propagates a field type and name
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+e asm.arch=x86
+e asm.bits=64
+wx 48c7c3002000008b03488b7b08 @ 0
+wa call 0x80 @ 13
+wx c3 @ 18
+wx c3 @ 0x80
+af @ 0x80
+afn helper @ 0x80
+af @ 0
+afn caller @ 0
+afs int helper(char *message) @ 0x80
+aei
+aeim
+aaft
+avgj
+tsc global_0x2000
+aaft
+avgj
+tsc global_0x2000
+EOF
+EXPECT=<<EOF
+[{"name":"global.0x2000","addr":8192,"size":16,"type":"global_0x2000"}]
+struct global_0x2000 {
+  uint32_t field_0x0;
+  char *message_0x8;
+};
+[{"name":"global.0x2000","addr":8192,"size":16,"type":"global_0x2000"}]
+struct global_0x2000 {
+  uint32_t field_0x0;
+  char *message_0x8;
+};
+EOF
+RUN
+
+NAME=Global field inference follows copied base registers
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+e asm.arch=x86
+e asm.bits=64
+wx 48c7c3002000004889d98b01488b7908 @ 0
+wa call 0x80 @ 16
+wx c3 @ 21
+wx c3 @ 0x80
+af @ 0x80
+afn helper @ 0x80
+af @ 0
+afn caller @ 0
+afs int helper(char *message) @ 0x80
+aei
+aeim
+aaft
+avgj
+tsc global_0x2000
+EOF
+EXPECT=<<EOF
+[{"name":"global.0x2000","addr":8192,"size":16,"type":"global_0x2000"}]
+struct global_0x2000 {
+  uint32_t field_0x0;
+  char *message_0x8;
+};
+EOF
+RUN
+
+NAME=Global field inference keeps disjoint fields across wide and partial accesses
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+e asm.arch=x86
+e asm.bits=64
+wx 48c7c3002000008b038b4b04488b138a4301c3 @ 0
+af @ 0
+aei
+aeim
+aaft
+avgj
+tsc global_0x2000
+aaft
+avgj
+tsc global_0x2000
+EOF
+EXPECT=<<EOF
+[{"name":"global.0x2000","addr":8192,"size":8,"type":"global_0x2000"}]
+struct global_0x2000 {
+  uint32_t field_0x0;
+  uint32_t field_0x4;
+};
+[{"name":"global.0x2000","addr":8192,"size":8,"type":"global_0x2000"}]
+struct global_0x2000 {
+  uint32_t field_0x0;
+  uint32_t field_0x4;
+};
+EOF
+RUN
+
+NAME=Neighboring globals without a common base remain independent
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+e asm.arch=x86
+e asm.bits=64
+wx 8b0425002000008b042504200000c3 @ 0
+af @ 0
+aei
+aeim
+aar 15 @ 0
+aaft
+avgj
+EOF
+EXPECT=<<EOF
+[{"name":"global.0x2000","addr":8192,"size":4,"type":"uint32_t"},{"name":"global.0x2004","addr":8196,"size":4,"type":"uint32_t"}]
+EOF
+RUN
+
+NAME=Global argument propagation preserves manually assigned names and types
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+e asm.arch=x86
+e asm.bits=64
+wx 488b3c2500200000 @ 0
+wa call 0x80 @ 8
+wx c3 @ 13
+wx c3 @ 0x80
+af @ 0x80
+afn helper @ 0x80
+af @ 0
+afn caller @ 0
+afs int helper(char *message) @ 0x80
+avg uint64_t global.owner @ 0x2000
+aei
+aeim
+aaft
+avgj
+EOF
+EXPECT=<<EOF
+[{"name":"global.owner","addr":8192,"size":8,"type":"uint64_t"}]
+EOF
+RUN
+
+NAME=Known pointee types propagate to global objects passed by address
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+e asm.arch=x86
+e asm.bits=64
+wx 488d3c2500200000 @ 0
+wa call 0x80 @ 8
+wx c3 @ 13
+wx c3 @ 0x80
+af @ 0x80
+afn helper @ 0x80
+af @ 0
+afn caller @ 0
+"td struct Ctx { int count; char *message; };"
+afs int helper(struct Ctx *ctx) @ 0x80
+aei
+aeim
+aaft
+avgj
+aar 14 @ 0
+avgj
+EOF
+EXPECT=<<EOF
+[{"name":"global.ctx.0x2000","addr":8192,"size":12,"type":"struct Ctx"}]
+[{"name":"global.ctx.0x2000","addr":8192,"size":12,"type":"struct Ctx"}]
+EOF
+RUN
+
+NAME=Conflicting global pointer evidence meets at void pointer and remains stable
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+e asm.arch=x86
+e asm.bits=64
+wx 488b3c2500200000 @ 0
+wa call 0x80 @ 8
+wx 488b3c2500200000 @ 13
+wa call 0xc0 @ 21
+wx c3 @ 26
+wx c3 @ 0x80
+wx c3 @ 0xc0
+af @ 0x80
+afn helper @ 0x80
+af @ 0xc0
+afn other @ 0xc0
+af @ 0
+afn caller @ 0
+afs int helper(char *message) @ 0x80
+afs int other(int *message) @ 0xc0
+aei
+aeim
+aar 27 @ 0
+aaft
+avgj
+aaft
+avgj
+afs int helper(int *message) @ 0x80
+afs int other(char *message) @ 0xc0
+aaft
+avgj
+EOF
+EXPECT=<<EOF
+[{"name":"global.message.0x2000","addr":8192,"size":8,"type":"void *"}]
+[{"name":"global.message.0x2000","addr":8192,"size":8,"type":"void *"}]
+[{"name":"global.message.0x2000","addr":8192,"size":8,"type":"void *"}]
+EOF
+RUN
+
+NAME=Global field grouping preserves explicitly typed interior globals
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+e asm.arch=x86
+e asm.bits=64
+wx 48c7c3002000008b03488b7b08 @ 0
+wa call 0x80 @ 13
+wx c3 @ 18
+wx c3 @ 0x80
+af @ 0x80
+afn helper @ 0x80
+af @ 0
+afn caller @ 0
+afs int helper(char *message) @ 0x80
+avg uint64_t global.owner @ 0x2008
+aei
+aeim
+aaft
+avgj
+EOF
+EXPECT=<<EOF
+[{"name":"global.owner","addr":8200,"size":8,"type":"uint64_t"}]
+EOF
+RUN
+
+NAME=Global fields on aarch64 use the formed ADRP ADD object base
+FILE=malloc://256
+ARGS=-a arm -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+e asm.arch=arm
+e asm.bits=64
+wa adrp x19, 0x2000 @ 0
+wa add x19, x19, 0x20 @ 4
+wa ldr w0, [x19] @ 8
+wa ldr x0, [x19, 8] @ 12
+wa ret @ 16
+af @ 0
+aei
+aeim
+aaft
+avgj
+tsc global_0x2020
+aaft
+avgj
+EOF
+EXPECT=<<EOF
+[{"name":"global.0x2020","addr":8224,"size":16,"type":"global_0x2020"}]
+struct global_0x2020 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint64_t field_0x8;
+};
+[{"name":"global.0x2020","addr":8224,"size":16,"type":"global_0x2020"}]
+EOF
+RUN
+
+NAME=An aarch64 page base alone does not merge independent globals
+FILE=malloc://256
+ARGS=-a arm -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+e asm.arch=arm
+e asm.bits=64
+wa adrp x19, 0x2000 @ 0
+wx 602240b9 @ 4
+wx 602640b9 @ 8
+wa ret @ 12
+af @ 0
+aei
+aeim
+aae 16 @ 0
+aaft
+avgj
+EOF
+EXPECT=<<EOF
+[{"name":"global.0x2020","addr":8224,"size":4,"type":"uint32_t"},{"name":"global.0x2024","addr":8228,"size":4,"type":"uint32_t"}]
+EOF
+RUN
+
+NAME=Known object types replace previously synthesized global layouts
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+e asm.arch=x86
+e asm.bits=64
+wx 48c7c3002000008b03488b4b08488d3b @ 0
+wa call 0x80 @ 16
+wx c3 @ 21
+wx c3 @ 0x80
+af @ 0x80
+afn helper @ 0x80
+af @ 0
+afn caller @ 0
+"td struct Ctx { int count; char pad[4]; char *message; };"
+afs int helper(struct Ctx *ctx) @ 0x80
+aei
+aeim
+aaft
+avgj
+aaft
+avgj
+EOF
+EXPECT=<<EOF
+[{"name":"global.ctx.0x2000","addr":8192,"size":16,"type":"struct Ctx"}]
+[{"name":"global.ctx.0x2000","addr":8192,"size":16,"type":"struct Ctx"}]
+EOF
+RUN
+
+NAME=Global field facts survive calls between accesses and keep unique member names
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+e asm.arch=x86
+e asm.bits=64
+wx 48c7c300200000488b3b @ 0
+wa call 0x80 @ 10
+wx 488b7b08 @ 15
+wa call 0x80 @ 19
+wx c3 @ 24
+wx c3 @ 0x80
+af @ 0x80
+afn helper @ 0x80
+af @ 0
+afn caller @ 0
+afs int helper(char *message) @ 0x80
+aei
+aeim
+aaft
+avgj
+tsc global_0x2000
+aaft
+avgj
+tsc global_0x2000
+EOF
+EXPECT=<<EOF
+[{"name":"global.message.0x2000","addr":8192,"size":16,"type":"global_0x2000"}]
+struct global_0x2000 {
+  char *message_0x0;
+  char *message_0x8;
+};
+[{"name":"global.message.0x2000","addr":8192,"size":16,"type":"global_0x2000"}]
+struct global_0x2000 {
+  char *message_0x0;
+  char *message_0x8;
+};
+EOF
+RUN
+
+NAME=Automatic analysis registers a global layout from code without symbol or type metadata
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+e asm.arch=x86
+e asm.bits=64
+wx 48c7c3002000008b038b4b04c3 @ 0
+aaa
+avgj
+tsc global_0x2000
+aaa
+avgj
+EOF
+EXPECT=<<EOF
+[{"name":"global.0x2000","addr":8192,"size":8,"type":"global_0x2000"}]
+struct global_0x2000 {
+  uint32_t field_0x0;
+  uint32_t field_0x4;
+};
+[{"name":"global.0x2000","addr":8192,"size":8,"type":"global_0x2000"}]
+EOF
+RUN
+
+NAME=Global address propagation does not invent one-byte objects for char buffers
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+e asm.arch=x86
+e asm.bits=64
+wx 488d3c2500200000 @ 0
+wa call 0x80 @ 8
+wx c3 @ 13
+wx c3 @ 0x80
+af @ 0x80
+afn helper @ 0x80
+af @ 0
+afn caller @ 0
+afs int helper(char *message) @ 0x80
+aei
+aeim
+aaft
+avgj
+EOF
+EXPECT=<<EOF
+[]
+EOF
+RUN
+
+NAME=Local data relocations remain global accesses rather than import slots
+FILE=bins/mach0/anal-globals-stripped
+CMDS=<<EOF
+fs relocs
+f reloc.internal 8 @ 0x100004020
+fs *
+aaa
+avg. @ 0x100004020
+avg~?
+EOF
+EXPECT=<<EOF
+uint64_t
+9
+EOF
+RUN
+
+NAME=TP global field inference accepts local pointer relocations through the binary binding
+FILE=bins/mach0/anal-globals-stripped
+CMDS=<<EOF
+e io.cache=true
+wa adrp x19, 0x100004000 @ entry0
+wa add x19, x19, 0x18 @ entry0+4
+wa ldr w0, [x19] @ entry0+8
+wa ldr x0, [x19, 8] @ entry0+12
+wa ret @ entry0+16
+af @ entry0
+fs relocs
+f reloc.internal 8 @ 0x100004020
+fs *
+aei
+aeim
+aaft
+avgj
+tsc global_0x100004018
+EOF
+EXPECT=<<EOF
+[{"name":"global.0x100004018","addr":4294983704,"size":16,"type":"global_0x100004018"}]
+struct global_0x100004018 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[4]; // gap
+  uint64_t field_0x8;
+};
+EOF
+RUN
+
+NAME=Unknown sized global objects retain their extent while field evidence is incomplete
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+e asm.arch=x86
+e asm.bits=64
+wx 48c7c300200000488b3b @ 0
+wa call 0x80 @ 10
+wx c3 @ 15
+wx c3 @ 0x80
+af @ 0x80
+afn helper @ 0x80
+af @ 0
+afn caller @ 0
+afs int helper(char *message) @ 0x80
+fs globals
+f global.object 16 @ 0x2000
+fs *
+aei
+aeim
+aaft
+avg
+aaft
+avg
+EOF
+EXPECT=<<EOF
+0x00002000 16 global.object unknown
+0x00002000 16 global.object unknown
+EOF
+RUN
+
+NAME=Global argument typing stops at the live definition rather than earlier dead writes
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+e asm.arch=x86
+e asm.bits=64
+wx 488b3c2500200000488b3c2510200000 @ 0
+wa call 0x80 @ 16
+wx c3 @ 21
+wx c3 @ 0x80
+af @ 0x80
+afn helper @ 0x80
+af @ 0
+afn caller @ 0
+afs int helper(char *message) @ 0x80
+aei
+aeim
+aar 22 @ 0
+aaft
+avgj
+EOF
+EXPECT=<<EOF
+[{"name":"global.0x2000","addr":8192,"size":8,"type":"uint64_t"},{"name":"global.message.0x2010","addr":8208,"size":8,"type":"char *"}]
+EOF
+RUN

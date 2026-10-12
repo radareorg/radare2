@@ -22,6 +22,8 @@ static RAnalOp *tp_op_at(TPState *tps, ut64 addr, int mask) {
 	return op;
 }
 
+#include "globals.inc.c"
+
 /**
  * type match at a call instruction inside another function
  *
@@ -168,7 +170,9 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 						}
 					}
 				}
-				if (var) {
+				if (!userfnc && tp_global_from_arg (tps, op, j, &chain, type, name)) {
+					break;
+				} else if (var) {
 					if (selfsize && tp_selfsize_hit (tps, j, var, place, selfptr)) {
 						// the callee clears this stack object, so its stated size types the var
 						tp_selfsize_var (tps, baddr, var, selfsize);
@@ -196,6 +200,9 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 
 			// Type propagate by following source reg
 			if (!res && *regname && etrace_regwrite_contains (tt, j, regname)) {
+				if (!userfnc && tp_global_from_arg (tps, op, j, &chain, type, name)) {
+					break;
+				}
 				if (tp_op_loads_value (tt, op, j)) {
 					if (!var || var->kind == R_ANAL_VAR_KIND_REG) {
 						ut64 addr_read = UT64_MAX;
@@ -496,6 +503,7 @@ static void type_match_op_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 ad
 	if (cur_idx < 0) {
 		cur_idx = 0;
 	}
+	tp_global_access (tps, aop, cur_idx);
 	RAnalVar *var = r_anal_get_used_function_var (anal, aop->addr);
 	ut32 type = aop->type & R_ANAL_OP_TYPE_MASK;
 	if ((type == R_ANAL_OP_TYPE_UCALL || type == R_ANAL_OP_TYPE_UCCALL)
@@ -557,6 +565,9 @@ static void type_match_op_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 ad
 		const char *cur_dest = etrace_regwrite (etrace, cur_idx);
 		get_src_regname_from_esil (anal, r_strbuf_get (&aop->esil), aop->addr, src, sizeof (src));
 		if (reg_token_contains (c->tp.ret_reg, src)) {
+			if (type == R_ANAL_OP_TYPE_MOV || type == R_ANAL_OP_TYPE_STORE) {
+				tp_global_from_ret (tps, cur_idx, c->tp.ret_type);
+			}
 			if (var && aop->direction == R_ANAL_OP_DIR_WRITE) {
 				tp_var_retype (tps, bb_addr, var, NULL, c->tp.ret_type, false, false);
 				c->tp.resolved = true;
