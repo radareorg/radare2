@@ -5406,6 +5406,14 @@ static void set_special_by_ord(ELFOBJ *eo, const RBinElfSymbol *symbol) {
 	if (!common && symbol->st_shndx != SHN_ABS) {
 		return;
 	}
+	if (symbol->st_shndx == SHN_ABS) {
+		RBinSymbol *reloc_sym = eo->symbols_by_ord[symbol->ordinal];
+		reloc_sym->paddr = UT64_MAX;
+		reloc_sym->vaddr = symbol->st_value;
+		if (eo->ehdr.e_machine == EM_ARM) {
+			_set_arm_thumb_bits (eo, reloc_sym);
+		}
+	}
 	if (!eo->special_by_ord) {
 		eo->special_by_ord = ht_up_new (NULL, special_kv_free, NULL);
 	}
