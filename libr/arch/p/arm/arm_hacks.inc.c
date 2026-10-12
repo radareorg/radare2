@@ -1,4 +1,79 @@
 #include "r_anal.h"
+
+static const char *reg_list[] = {
+	"x0", "x1", "x2", "x3", "x4",
+	"x5", "x6", "x7", "x8", "x9",
+	"x10", "x11", "x12", "x13", "x14",
+	"x15", "x16", "x17", "x18", "x19",
+	"x20", "x21", "x22", "x23", "x24",
+	"x25", "x26", "x27", "x28", "x29",
+	"x30"
+};
+
+static bool hack_decode_cpa(RAnalOp *op, ut32 insn, RAnalOpMask mask) {
+	if ((insn & 0xbfe0e000) != 0x9a002000) {
+		return false;
+	}
+	const bool subtract = (insn >> 30) & 1;
+	const ut8 shift = (insn >> 10) & 7;
+	const ut8 rd = insn & 31;
+	const ut8 rn = (insn >> 5) & 31;
+	const ut8 rm = (insn >> 16) & 31;
+	const char *regs[] = {
+		rd == 31? "sp": reg_list[rd],
+		rn == 31? "sp": reg_list[rn],
+		rm == 31? "xzr": reg_list[rm]
+	};
+	op->size = 4;
+	op->cycles = 1;
+	op->type = subtract? R_ANAL_OP_TYPE_SUB: R_ANAL_OP_TYPE_ADD;
+	if (mask & R_ARCH_OP_MASK_DISASM) {
+		free (op->mnemonic);
+		op->mnemonic = r_str_newf ("%s %s, %s, %s", subtract? "subpt": "addpt", regs[0], regs[1], regs[2]);
+		if (shift) {
+			op->mnemonic = r_str_appendf (op->mnemonic, ", lsl %u", shift);
+		}
+	}
+	if (mask & R_ARCH_OP_MASK_ESIL) {
+		// Model address arithmetic without the system-register-controlled pointer check.
+		r_strbuf_setf (&op->esil, "%u,%s,<<,%s,%c,%s,=", shift, rm == 31? "0": regs[2], regs[1], subtract? '-': '+', regs[0]);
+	}
+	if (mask & R_ARCH_OP_MASK_VAL) {
+		RArchValue value = { .type = R_ANAL_VAL_REG, .reg = regs[0] };
+		RVecRArchValue_push_back (&op->dsts, &value);
+		value.reg = regs[1];
+		RVecRArchValue_push_back (&op->srcs, &value);
+		value.reg = regs[2];
+		value.mul = 1 << shift;
+		RVecRArchValue_push_back (&op->srcs, &value);
+	}
+	if (mask & R_ARCH_OP_MASK_OPEX) {
+		PJ *pj = pj_new ();
+		if (pj) {
+			pj_o (pj);
+			pj_ka (pj, "operands");
+			int i;
+			for (i = 0; i < R_ARRAY_SIZE (regs); i++) {
+				pj_o (pj);
+				pj_ks (pj, "type", "reg");
+				pj_ks (pj, "value", regs[i]);
+				if (i == 2 && shift) {
+					pj_ko (pj, "shift");
+					pj_ks (pj, "type", "lsl");
+					pj_ki (pj, "value", shift);
+					pj_end (pj);
+				}
+				pj_end (pj);
+			}
+			pj_end (pj);
+			pj_end (pj);
+			r_strbuf_set (&op->opex, pj_string (pj));
+			pj_free (pj);
+		}
+	}
+	return true;
+}
+
 static int hack_handle_dp_reg(ut32 insn, RAnalOp *op) {
 	const bool op0 = (insn >> 30) & 0x1;
 	const bool op1 = (insn >> 28) & 0x1;

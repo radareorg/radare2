@@ -4771,16 +4771,6 @@ static bool is_valid64(arm64_reg reg) {
 	return reg != ARM64_REG_INVALID;
 }
 
-static const char *reg_list[] = {
-	"x0", "x1", "x2", "x3", "x4",
-	"x5", "x6", "x7", "x8", "x9",
-	"x10", "x11", "x12", "x13", "x14",
-	"x15", "x16", "x17", "x18", "x19",
-	"x20", "x21", "x22", "x23", "x24",
-	"x25", "x26", "x27", "x28", "x29",
-	"x30"
-};
-
 static int parse_reg64_name(const char** reg_base, const char **reg_delta, csh handle, cs_insn *insn, int reg_num) {
 	cs_arm64_op armop = INSOP64 (reg_num);
 	switch (armop.type) {
@@ -5091,6 +5081,9 @@ static int analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 	if (!buf) {
 		buf = op->bytes;
 		len = op->size;
+	}
+	if (as->config->bits == 64 && len >= 4 && hack_decode_cpa (op, r_read_le32 (buf), mask)) {
+		return op->size;
 	}
 	RArchCSInsn csi;
 	bool ok = r_arch_cs_disasm_iter (*cs_handle, buf, len, addr, &csi);

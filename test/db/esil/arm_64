@@ -1,3 +1,43 @@
+NAME=Checked pointer address arithmetic handles shifts, SP and XZR
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 962e179a962e17daff231f9ae13f029a9f3e1cda
+aei
+aer x20=0x1000
+aer x23=3
+aeip
+aes
+aer x22
+s 4
+aeip
+aes
+aer x22
+aer sp=0x2000
+s 8
+aeip
+aes
+aer sp
+aer x2=1
+s 12
+aeip
+aes
+aer x1
+aer x28=1
+s 16
+aeip
+aes
+aer sp
+EOF
+EXPECT=<<EOF
+0x00001018
+0x00000fe8
+0x00002000
+0x00002080
+0x00000f80
+EOF
+RUN
+
 NAME=flutter refs
 FILE=-
 ARGS=-a arm -b 64

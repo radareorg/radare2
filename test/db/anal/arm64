@@ -1,3 +1,63 @@
+NAME=Checked pointer arithmetic decodes without Capstone support
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 962e179a962e17daff231f9ae13f029a9f3e1cda962e171a
+pi 6
+ao 6~type[1]
+aoj 1~{0.opex}
+aoj 1 @ 8~{0.opex}
+e cfg.bigendian=true
+pi 2
+ao 2~type[1]
+EOF
+EXPECT=<<EOF
+addpt x22, x20, x23, lsl 3
+subpt x22, x20, x23, lsl 3
+addpt sp, sp, xzr
+addpt x1, sp, x2, lsl 7
+subpt sp, x20, x28, lsl 7
+invalid
+add
+sub
+add
+add
+sub
+ill
+{"operands":[{"type":"reg","value":"x22"},{"type":"reg","value":"x20"},{"type":"reg","value":"x23","shift":{"type":"lsl","value":3}}]}
+{"operands":[{"type":"reg","value":"sp"},{"type":"reg","value":"sp"},{"type":"reg","value":"xzr"}]}
+addpt x22, x20, x23, lsl 3
+subpt x22, x20, x23, lsl 3
+add
+sub
+EOF
+RUN
+
+NAME=Checked pointer arithmetic keeps both global stores in the function
+FILE=malloc://64
+ARGS=-a arm -b 64 -e log.level=0
+CMDS=<<EOF
+wx 962e179a160000b0c05a00f9400000b5c05a00f9c0035fd6
+o malloc://0x1000 0x1000 rw
+s 0
+af main
+aaaa
+afij @ 8~{0.name}
+afij @ 16~{0.name}
+afij @ 0~{0.realsz}
+afij @ 0~{0.ninstrs}
+axt @ 0x10b0
+EOF
+EXPECT=<<EOF
+main
+main
+24
+6
+main 0x8 [DATA:-w-] str x0, [x22, 0xb0]
+main 0x10 [DATA:-w-] str x0, [x22, 0xb0]
+EOF
+RUN
+
 NAME=rcall
 FILE=-
 CMDS=<<EOF

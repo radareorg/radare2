@@ -1,3 +1,8 @@
+d "addpt x22, x20, x23, lsl 3" 962e179a
+d "subpt x22, x20, x23, lsl 3" 962e17da
+d "addpt sp, sp, xzr" ff231f9a
+d "addpt x1, sp, x2, lsl 7" e13f029a
+d "subpt sp, x20, x28, lsl 7" 9f3e1cda
 ad "b.hs 0x10" 82000054
 ad "b.lo 0x10" 83000054
 ad "b.mi 0x10" 84000054
