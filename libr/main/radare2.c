@@ -36,11 +36,41 @@ static void prompt_rebuild_outdated_plugins(RCore *core) {
 			|| r_list_empty (mismatches)) {
 		return;
 	}
+	r_cons_print (core->cons,
+		"\nOutdated r2pm plugins cannot be loaded with this version of radare2.\n"
+		"  y/Enter  Rebuild this plugin\n"
+		"  n        Skip this plugin\n"
+		"  d        Delete this plugin (r2pm -u)\n"
+		"  a        Rebuild this and all remaining outdated plugins\n"
+		"  i        Ignore all remaining outdated plugins for this session\n\n");
+	bool rebuild_all = false;
 	RListIter *iter;
 	const char *pkgname;
 	r_list_foreach (mismatches, iter, pkgname) {
-		int choice = r_cons_yesnobut (core->cons, 'y', 'd', "Rebuild outdated '%s' plugin? (Y/n/d) ", pkgname);
-		if (choice == 'n') {
+		int choice = 'y';
+		if (!rebuild_all) {
+			r_cons_printf (core->cons, "Rebuild outdated '%s' plugin? (Y/n/d/a/i) ", pkgname);
+			r_cons_flush (core->cons);
+			r_cons_set_raw (core->cons, true);
+			choice = r_cons_readchar (core->cons);
+			r_cons_set_raw (core->cons, false);
+			if (choice == '\n' || choice == '\r') {
+				choice = 'y';
+			} else if (choice < 0) {
+				choice = 'i';
+			} else {
+				choice = tolower ((ut8)choice);
+			}
+			r_cons_printf (core->cons, "%c\n", choice);
+			r_cons_flush (core->cons);
+		}
+		if (choice == 'i') {
+			break;
+		}
+		if (choice == 'a') {
+			rebuild_all = true;
+		}
+		if (choice != 'y' && choice != 'd' && choice != 'a') {
 			continue;
 		}
 		char *epkgname = r_str_escape_sh (pkgname);
