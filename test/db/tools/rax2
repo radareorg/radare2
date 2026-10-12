@@ -519,6 +519,28 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rax2 flags with negative numbers
+FILE=-
+CMDS=<<EOF
+!rax2 -d -1
+!rax2 -k -0x10
+!rax2 -f -1.5
+!rax2 -1.5g
+!rax2 -101d
+!rax2 -r -1 | grep ^int64
+!rax2 -j -1 | grep -o '"int64":"[^"]*"'
+EOF
+EXPECT=<<EOF
+-1
+0xfffffffffffffff0
+-1.5
+Gxbfc0
+-5
+int64   -1
+"int64":"-1"
+EOF
+RUN
+
 NAME=rax2 -X 0
 FILE=-
 CMDS=!rax2 -X 0
