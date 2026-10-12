@@ -208,7 +208,7 @@ static char *tp_built_type(RAnalVar *var, const char *vname, const char *type, i
 			r_strbuf_set (&sb, "uint64_t");
 		} else if (r_str_startswith (tmp1, "unsigned")) {
 			r_strbuf_set (&sb, "uint32_t");
-		} else if (r_str_startswith (tmp1, "int")) {
+		} else if (!strcmp (tmp1, "int")) {
 			r_strbuf_set (&sb, "int32_t");
 		}
 	}
