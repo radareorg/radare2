@@ -973,3 +973,33 @@ EXPECT=<<EOF
 [{"name":"global.0x2000","addr":8192,"size":8,"type":"uint64_t"},{"name":"global.message.0x2010","addr":8208,"size":8,"type":"char *"}]
 EOF
 RUN
+
+NAME=Global registration restores a removed flagspace
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF_CMDS
+avg uint8_t global.byte @ 0x1000
+fs-*
+avg uint16_t global.byte @ 0x1000
+avgj
+avg. @ 0x1000
+fs globals
+f~?
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+[{"name":"global.byte","addr":4096,"size":2,"type":"uint16_t"}]
+uint16_t
+1
+EOF_EXPECT
+RUN
+
+NAME=Dalvik field references are not inferred as native globals
+FILE=bins/dex/org.radare.radare2installer.dex
+CMDS=<<EOF
+aaa
+avg~?
+EOF
+EXPECT=<<EOF
+0
+EOF
+RUN

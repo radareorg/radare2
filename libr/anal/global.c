@@ -60,6 +60,7 @@ R_API bool r_anal_global_add(RAnal *anal, ut64 addr, const char *type_name, cons
 		free (type);
 		return false;
 	}
+	fi->space = r_flag_space_get (flags, GLOBAL_FLAGSPACE);
 	if (type) {
 		global_clear_inference (anal, addr);
 		r_flag_item_set_type (flags, fi, type);

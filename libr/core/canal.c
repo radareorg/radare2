@@ -4498,6 +4498,10 @@ static void anal_global_access(RCore *core, const RAnalOp *op, ut64 addr, int si
 	if (addr < 0x100 || (size != 1 && size != 2 && size != 4 && size != 8) || op->tlocal) {
 		return;
 	}
+	// Dalvik field references point to metadata, not native variable storage.
+	if (!strcmp (core->anal->config->arch, "dalvik")) {
+		return;
+	}
 	RIOMap *map = r_io_map_get_at (core->io, addr);
 	if (!map || !(map->sperm & R_PERM_R) || (map->sperm & R_PERM_X)
 		|| (map->name && (r_str_startswith (map->name, "mem.")
