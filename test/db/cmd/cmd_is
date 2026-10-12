@@ -6,10 +6,10 @@ is~My
 f~My
 EOF
 EXPECT=<<EOF
-7   0x00002a20 0x100002a20 LOCAL  FUNC 0        __ZN7MyClassC1Ev                                                                                                                                   MyClass::MyClass()
-11  0x00002b0c 0x100002b0c LOCAL  FUNC 0        __ZN7MyClassD1Ev                                                                                                                                   MyClass::~MyClass()
-13  0x00002b44 0x100002b44 LOCAL  FUNC 0        __ZN7MyClassC2Ev                                                                                                                                   MyClass::MyClass()
-41  0x00003150 0x100003150 LOCAL  FUNC 0        __ZN7MyClassD2Ev                                                                                                                                   MyClass::~MyClass()
+7   0x00002a20 0x100002a20 LOCAL  FUNC   0        __ZN7MyClassC1Ev                                                                                                                                   MyClass::MyClass()
+11  0x00002b0c 0x100002b0c LOCAL  FUNC   0        __ZN7MyClassD1Ev                                                                                                                                   MyClass::~MyClass()
+13  0x00002b44 0x100002b44 LOCAL  FUNC   0        __ZN7MyClassC2Ev                                                                                                                                   MyClass::MyClass()
+41  0x00003150 0x100003150 LOCAL  FUNC   0        __ZN7MyClassD2Ev                                                                                                                                   MyClass::~MyClass()
 0x100002a20 0 sym.MyClass.__ZN7MyClassC1Ev
 0x100002a20 0 sym.MyClass::MyClass__
 0x100002a20 1 class.MyClass
@@ -32,10 +32,10 @@ is~My
 f~My
 EOF
 EXPECT=<<EOF
-7   0x00002a20 0x100002a20 LOCAL  FUNC 0        __ZN7MyClassC1Ev
-11  0x00002b0c 0x100002b0c LOCAL  FUNC 0        __ZN7MyClassD1Ev
-13  0x00002b44 0x100002b44 LOCAL  FUNC 0        __ZN7MyClassC2Ev
-41  0x00003150 0x100003150 LOCAL  FUNC 0        __ZN7MyClassD2Ev
+7   0x00002a20 0x100002a20 LOCAL  FUNC   0        __ZN7MyClassC1Ev
+11  0x00002b0c 0x100002b0c LOCAL  FUNC   0        __ZN7MyClassD1Ev
+13  0x00002b44 0x100002b44 LOCAL  FUNC   0        __ZN7MyClassC2Ev
+41  0x00003150 0x100003150 LOCAL  FUNC   0        __ZN7MyClassD2Ev
 0x100002a20 0 sym.MyClass.__ZN7MyClassC1Ev
 0x100002a20 0 sym.__ZN7MyClassC1Ev
 0x100002a20 1 class.MyClass
@@ -108,12 +108,12 @@ EOF
 EXPECT=<<EOF
 {
   "name": "_$ss23_ContiguousArrayStorageCyypGMD",
-  "flagname": "sym.__ss23_ContiguousArrayStorageCyypGMD",
+  "flagname": "obj.__ss23_ContiguousArrayStorageCyypGMD",
   "realname": "_$ss23_ContiguousArrayStorageCyypGMD",
   "ordinal": 5,
   "bind": "LOCAL",
   "size": 0,
-  "type": "FUNC",
+  "type": "OBJ",
   "vaddr": 4295000064,
   "paddr": 32768,
   "is_imported": false
@@ -132,12 +132,12 @@ EXPECT=<<EOF
 {
   "name": "_$ss23_ContiguousArrayStorageCyypGMD",
   "demname": "...ss23_ContiguousArrayStorageCyypGMD",
-  "flagname": "sym....ss23_ContiguousArrayStorageCyypGMD",
+  "flagname": "obj....ss23_ContiguousArrayStorageCyypGMD",
   "realname": "...ss23_ContiguousArrayStorageCyypGMD",
   "ordinal": 5,
   "bind": "LOCAL",
   "size": 0,
-  "type": "FUNC",
+  "type": "OBJ",
   "vaddr": 4295000064,
   "paddr": 32768,
   "is_imported": false

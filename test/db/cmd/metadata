@@ -308,8 +308,8 @@ Cd 4[3]
 pd 3
 EOF
 EXPECT=<<EOF
-            0x0000db98      .dword 0x00085038 ; obj.main_arena
-            0x0000db9c      .dword 0x000844ac ; obj.check_action
+            0x0000db98      .dword 0x00085038 ; obj.main_arena ; global.main_arena
+            0x0000db9c      .dword 0x000844ac ; obj.check_action ; global.check_action
             0x0000dba0      .dword 0x000663c4 ; str.free__:_invalid_pointer
 EOF
 RUN
@@ -323,8 +323,8 @@ ahi 1
 pd 3
 EOF
 EXPECT=<<EOF
-            0x0000db98      .int32 00111000010100000000100000000000b ; obj.main_arena
-            0x0000db9c      .dword 0x000844ac ; obj.check_action
+            0x0000db98      .int32 00111000010100000000100000000000b ; obj.main_arena ; global.main_arena
+            0x0000db9c      .dword 0x000844ac ; obj.check_action ; global.check_action
             0x0000dba0      .dword 0x000663c4 ; str.free__:_invalid_pointer
 EOF
 RUN
@@ -338,8 +338,8 @@ ahi 8
 pd 3
 EOF
 EXPECT=<<EOF
-            0x0000db98      .int32 2050070o ; obj.main_arena
-            0x0000db9c      .dword 0x000844ac ; obj.check_action
+            0x0000db98      .int32 2050070o ; obj.main_arena ; global.main_arena
+            0x0000db9c      .dword 0x000844ac ; obj.check_action ; global.check_action
             0x0000dba0      .dword 0x000663c4 ; str.free__:_invalid_pointer
 EOF
 RUN
@@ -353,8 +353,8 @@ ahi 10
 pd 3
 EOF
 EXPECT=<<EOF
-            0x0000db98      .int32 544824 ; obj.main_arena
-            0x0000db9c      .dword 0x000844ac ; obj.check_action
+            0x0000db98      .int32 544824 ; obj.main_arena ; global.main_arena
+            0x0000db9c      .dword 0x000844ac ; obj.check_action ; global.check_action
             0x0000dba0      .dword 0x000663c4 ; str.free__:_invalid_pointer
 EOF
 RUN
@@ -374,8 +374,8 @@ s 0x00083fc4
 C.
 EOF
 EXPECT=<<EOF
-            0x0000db98      .dword 0x00085038 ; obj.main_arena
-            0x0000db9c      .dword 0x000844ac ; obj.check_action
+            0x0000db98      .dword 0x00085038 ; obj.main_arena ; global.main_arena
+            0x0000db9c      .dword 0x000844ac ; obj.check_action ; global.check_action
             0x0000dba0      .dword 0x000663c4 ; str.free__:_invalid_pointer
 --
 0x0007a23c ascii[13] "match_symbol"

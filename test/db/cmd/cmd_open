@@ -741,7 +741,7 @@ ob
 EOF
 EXPECT=<<EOF
 7
-137
+136
 7
 arch     arm
 baddr    0x4000
