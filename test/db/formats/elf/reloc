@@ -778,7 +778,7 @@ EOF
 EXPECT=<<EOF
 0x0000200c 0x0000100c SET_32 7     printf
 0x0000200c  0x00002018                                   . ..
-0x00001fec  0x00002028                                   ( ..
+0x00001fec  0x0000201c                                   . ..
 EOF
 RUN
 
@@ -793,7 +793,7 @@ EOF
 EXPECT=<<EOF
 0x0000400c 0x0000300c SET_32 7     __libc_start_main
 0x0000400c  0x0000401c                                   .@..
-0x00003ff4  0x00004038                                   8@..
+0x00003ff4  0x00004028                                   (@..
 EOF
 RUN
 
@@ -947,7 +947,7 @@ EOF
 EXPECT=<<EOF
 0x00000000080000f4
 0x00000000080000f4
-- 6 fd: 4 +0x00000000 0x080000f4 - 0x08000103 rw- rw- .got.r2
+- 6 fd: 4 +0x00000000 0x080000f4 - 0x080000fb rw- rw- .got.r2
 EOF
 RUN
 
@@ -1229,7 +1229,7 @@ CMDS=<<EOF
 pv8 @ 0x100021c78
 EOF
 EXPECT=<<EOF
-0x0000000100023b68
+0x0000000100023560
 EOF
 RUN
 
@@ -1240,7 +1240,7 @@ CMDS=<<EOF
 p8 8 @ 0x21c78
 EOF
 EXPECT=<<EOF
-683b020000000000
+6035020000000000
 EOF
 RUN
 
@@ -1279,7 +1279,7 @@ EOF
 EXPECT=<<EOF
 0x100000b0f 0x0000007d ADD_32 4     __fentry__ - 0x08000081
 --
-0x100000b0f 0x100000b5e
+0x100000b0f 0x100000b26
 0x100001050 0 section..bss
 EOF
 RUN
@@ -1325,7 +1325,7 @@ CMDS=<<EOF
 ?v [0x50004ff8]
 EOF
 EXPECT=<<EOF
-0x50007bb0
+0x50007b98
 EOF
 RUN
 
@@ -1403,7 +1403,7 @@ iS~NOBITS
 is~rabin_cmd
 EOF
 EXPECT=<<EOF
-0x080384db 0x08040e2a
+0x080384db 0x08038962
 4   0x00040e40      0x0 0x08040e40  0x618a0 -rw- 0x3   NOBITS   .bss
 8   0x00040e40 0x08040e40 LOCAL  OBJ    8          rabin_cmd
 EOF
@@ -1435,7 +1435,7 @@ EOF
 EXPECT=<<EOF
 4   0x00009a83     0x0 0x08009a83     0x0 -rw- 0x3   NOBITS   .bss
 5   0x000055c8   0xe64 0x080055c8   0xe64 -r-- 0x2   PROGBITS .rodata
-0x08008703 0x080090be
+0x08008703 0x080087b6
 EOF
 RUN
 
@@ -1452,7 +1452,6 @@ vaddr      paddr      type   ntype name
 0x00002000 0x00001000 ADD_32 21    mul2
 0x00002004 0x00001004 ADD_32 21    sub2
 0x00002008 0x00001008 ADD_32 21    add2
-- 3 fd: 4 +0x00000000 0x0000200c - 0x00002017 rw- rw- .got.r2
 EOF
 RUN
 
@@ -1471,7 +1470,7 @@ vaddr      paddr      type   ntype name
 0x00002004 0x00001004 ADD_32 21    sub2
 0x00002008 0x00001008 ADD_32 21    __tls_get_addr_opt
 0x0000200c 0x0000100c ADD_32 21    add2
-- 3 fd: 4 +0x00000000 0x00002010 - 0x00002023 rw- rw- .got.r2
+- 3 fd: 4 +0x00000000 0x00002010 - 0x00002013 rw- rw- .got.r2
 EOF
 RUN
 
@@ -1486,7 +1485,61 @@ EXPECT=<<EOF
 0x00188588 0x00187588 ADD_64 16
 0x00188be0 0x00187be0 ADD_64 16    std::__once_callable
 0x00189bb8 0x00188bb8 ADD_64 16    std::__once_call
-0x000000000018fe30
+0x000000000018e640
+EOF
+RUN
+
+NAME=ELF: a symbol-less reloc takes no got.r2 slot
+FILE=bins/elf/x86_64-tailrela.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x10ce0
+pv8 @ 0x10d30
+om~.got.r2
+EOF
+EXPECT=<<EOF
+0x0000000000010e40
+0x0000000000010d28
+- 5 fd: 5 +0x00000000 0x00010e38 - 0x00010e47 rw- rw- .got.r2
+EOF
+RUN
+
+NAME=ELF: a symbol-less x86-64 TPOFF64 is applied as its addend
+FILE=bins/elf/libc-2.27.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x3ead60
+pv8 @ 0x3ead68
+EOF
+EXPECT=<<EOF
+0x0000000000000038
+0x0000000000000030
+EOF
+RUN
+
+NAME=ELF: a TLS import takes no got.r2 slot and is applied as 0
+FILE=bins/elf/tls/ext_tls
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x3fc8
+pv8 @ 0x3fd0
+EOF
+EXPECT=<<EOF
+0x0000000000000000
+0x0000000000004028
+EOF
+RUN
+
+NAME=ELF: a TLS import takes no got.r2 slot without section headers
+FILE=bins/elf/tls/ext_tls-noshdr
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x3fc8
+om~.got.r2
+EOF
+EXPECT=<<EOF
+0x0000000000000000
+- 6 fd: 5 +0x00000000 0x00004018 - 0x0000403f rw- rw- .got.r2
 EOF
 RUN
 
