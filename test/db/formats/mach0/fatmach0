@@ -267,11 +267,10 @@ FILE=bins/mach0/fatmach0-3true
 ARGS=-a x86 -b32 -B 0x90000000
 CMDS=is
 EXPECT=<<EOF
-nth paddr      vaddr      bind   type size lib name                demangled
-----------------------------------------------------------------------------
-0   0x00005000 0x90000000 GLOBAL FUNC 0        __mh_execute_header
-1   0x00005000 0x95613542 LOCAL  FUNC 0        radr://5614542
-2   0x00005f94 0x90000f94 LOCAL  FUNC 0        imp.exit
+nth paddr      vaddr      bind   type   size lib name                demangled
+------------------------------------------------------------------------------
+0   0x00005000 0x90000000 GLOBAL NOTYPE 0        __mh_execute_header
+1   0x00005f94 0x90000f94 LOCAL  FUNC   0        imp.exit
 EOF
 RUN
 

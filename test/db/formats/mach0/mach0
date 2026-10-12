@@ -288,7 +288,7 @@ NAME=mach0 exports trie
 FILE=bins/mach0/Alamofire-stripped
 CMDS=<<EOF
 iE~_AlamofireVersionString?
-psz@sym._AlamofireVersionString
+psz@obj._AlamofireVersionString
 EOF
 EXPECT=<<EOF
 1

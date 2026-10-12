@@ -3201,7 +3201,7 @@ static void _handle_arm_thumb(RBinSymbol *sym) {
 	}
 }
 
-static void _enrich_symbol(RBinFile *bf, struct MACH0_(obj_t) * bin, HtPP *symcache, RBinSymbol *sym) {
+static void _enrich_symbol(RBinFile *bf, struct MACH0_(obj_t) * bin, HtPP *symcache, RBinSymbol *sym, ut32 section_index) {
 	int wordsize = MACH0_(get_bits) (bin);
 
 	const char *oname = r_bin_name_tostring2 (sym->name, 'o');
@@ -3238,6 +3238,30 @@ static void _enrich_symbol(RBinFile *bf, struct MACH0_(obj_t) * bin, HtPP *symca
 	sym->forwarder = "NONE";
 	sym->bind = sym->type && r_str_startswith (sym->type, "LOCAL")? R_BIN_BIND_LOCAL_STR: R_BIN_BIND_GLOBAL_STR;
 	sym->type = R_BIN_TYPE_FUNC_STR;
+	if (!sym->is_imported) {
+		sym->type = R_BIN_TYPE_NOTYPE_STR;
+		if (!section_index) {
+			int i;
+			for (i = 0; i < bin->nsects; i++) {
+				struct MACH0_(section) *section = &bin->sects[i];
+				if (sym->vaddr >= section->addr && sym->vaddr - section->addr < section->size) {
+					section_index = i + 1;
+					break;
+				}
+			}
+		}
+		if (section_index && section_index <= bin->nsects) {
+			struct MACH0_(section) *section = &bin->sects[section_index - 1];
+			ut32 section_type = section->flags & SECTION_TYPE;
+			if (section_type == S_THREAD_LOCAL_REGULAR || section_type == S_THREAD_LOCAL_ZEROFILL
+				|| section_type == S_THREAD_LOCAL_VARIABLES) {
+				sym->type = R_BIN_TYPE_TLS_STR;
+			} else {
+				sym->type = section->flags & (S_ATTR_PURE_INSTRUCTIONS | S_ATTR_SOME_INSTRUCTIONS)
+					? R_BIN_TYPE_FUNC_STR: R_BIN_TYPE_OBJECT_STR;
+			}
+		}
+	}
 
 	if (bin->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {
 		_handle_arm_thumb (sym);
@@ -3317,7 +3341,7 @@ static void _fill_exports(struct MACH0_(obj_t) * mo, const char *name, ut64 flag
 	sym->name = r_bin_name_new (name);
 	sym->bind = R_BIN_BIND_GLOBAL_STR;
 	sym->ordinal = (*context->ordinal)++;
-	_enrich_symbol (context->bf, mo, context->symcache, sym);
+	_enrich_symbol (context->bf, mo, context->symcache, sym, 0);
 }
 
 static bool apple_symbol(const char *sym_name) {
@@ -3437,6 +3461,9 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 
 		for (i = from; i < to && j < symbols_count; i++) {
 			struct MACH0_(nlist) *nl = &mo->symtab[i];
+			if (nl->n_type & N_STAB) {
+				continue;
+			}
 			ut64 vaddr = nl->n_value;
 			if (vaddr < 100) {
 				continue;
@@ -3465,7 +3492,7 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 				R_FREE (sym_name);
 				sym->ordinal = ordinal++;
 				_update_main_addr_if_needed (mo, sym);
-				_enrich_symbol (bf, mo, symcache, sym);
+				_enrich_symbol (bf, mo, symcache, sym, nl->n_sect);
 				j++;
 				if (exceeds_bin_limit (limit, ordinal)) {
 					R_LOG_WARN ("symbols mo.limit reached");
@@ -3512,7 +3539,7 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 			sym->type = symbol.type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL? "LOCAL": "EXT";
 			sym->is_imported = symbol.is_imported;
 			sym->ordinal = ordinal++;
-			_enrich_symbol (bf, mo, symcache, sym);
+			_enrich_symbol (bf, mo, symcache, sym, 0);
 			free (symbol.name);
 		}
 	}
@@ -3561,7 +3588,7 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 			sym->ordinal = ordinal++;
 
 			_update_main_addr_if_needed (mo, sym);
-			_enrich_symbol (bf, mo, symcache, sym);
+			_enrich_symbol (bf, mo, symcache, sym, st->n_sect);
 			j++;
 		}
 	}
