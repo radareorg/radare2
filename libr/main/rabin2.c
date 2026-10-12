@@ -610,12 +610,10 @@ static char *__demangleAs(RBin *bin, RBinLanguage type, const char *file) {
 static void list_plugins(RCore *core, const char *plugin_name, PJ *pj, int rad) {
 	int format = (rad == R_MODE_JSON)? 'j': rad? 'q'
 						: 0;
-	RBin *bin = core->bin;
-	bin->cb_printf = (PrintfCallback)printf;
 	if (R_STR_ISNOTEMPTY (plugin_name)) {
 		r_core_list_bin_plugin (core, plugin_name, pj, format);
 	} else {
-		r_bin_list (bin, pj, format);
+		r_core_list_bin (core, pj, format);
 	}
 }
 

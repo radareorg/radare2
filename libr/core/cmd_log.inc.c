@@ -445,15 +445,7 @@ static int cmd_plugins(void *data, const char *input) {
 		}
 		break;
 	case 'b': // "Lb"
-		if (input[1] == 'j') { // "Lbj"
-			PJ *pj = r_core_pj_new (core);
-			r_bin_list (core->bin, pj, 'j');
-			char *s = pj_drain (pj);
-			r_cons_println (core->cons, s);
-			free (s);
-		} else {
-			r_bin_list (core->bin, NULL, 0);
-		}
+		r_core_list_bin (core, NULL, input[1]);
 		break;
 	case 'm': // "Lm"
 		if (input[1] == 'j') {

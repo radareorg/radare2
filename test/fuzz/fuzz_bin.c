@@ -2,7 +2,6 @@
 #include <r_getopt.h>
 #include <r_io.h>
 #include <r_types.h>
-#include <r_util/pj.h>
 #include <r_util/r_buf.h>
 #include <r_util/r_log.h>
 #include <r_util/r_sys.h>
@@ -84,7 +83,6 @@ int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
 		bo.sz = len;
 		bo.filename = "fuzz-bin";
 		if (r_bin_open_io (bin, &bo)) {
-			PJ *pj = pj_new ();
 			char *types = r_bin_get_types (bin);
 			RList *hashes = r_bin_file_compute_hashes (bin, len? len: 1);
 			(void)r_bin_get_info (bin);
@@ -97,10 +95,6 @@ int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
 			(void)r_bin_get_classes (bin);
 			(void)r_bin_get_strings (bin);
 			(void)r_bin_get_symbols_vec (bin);
-			if (pj) {
-				r_bin_list (bin, pj, R_MODE_JSON);
-				free (pj_drain (pj));
-			}
 			free (types);
 			r_list_free (hashes);
 		}

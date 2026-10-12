@@ -7,9 +7,7 @@ static bool print_plugin_details(RCore *core, const RPluginMeta *meta, PJ *pj, i
 		r_cons_printf (core->cons, "%s\n", meta->name);
 	} else if (mode) {
 		pj_o (pj);
-		pj_ks (pj, "name", meta->name);
-		pj_ks (pj, "description", meta->desc);
-		pj_ks (pj, "license", r_str_get_fail (meta->license, "???"));
+		r_lib_meta_pj (pj, meta);
 		pj_end (pj);
 	} else {
 		r_cons_printf (core->cons, "Name: %s\n", meta->name);
@@ -25,6 +23,71 @@ static bool print_plugin_details(RCore *core, const RPluginMeta *meta, PJ *pj, i
 		}
 	}
 	return true;
+}
+
+R_API void r_core_list_bin(RCore *core, PJ *pj, int mode) {
+	R_RETURN_IF_FAIL (core && core->bin);
+	RBin *bin = core->bin;
+	const struct {
+		RList *plugins;
+		const char *type;
+		const char *prefix;
+	} groups[] = {
+		{ bin->libstore->plugins, "bin", NULL },
+		{ bin->libstore->xtrs, "xtr", "xtr." },
+		{ bin->libstore->ldrs, "ldr", "ldr." },
+		{ bin->demangle_plugins, "dem", NULL }
+	};
+	bool local_pj = mode == 'j' && !pj;
+	if (local_pj) {
+		pj = r_core_pj_new (core);
+		if (!pj) {
+			return;
+		}
+	}
+	if (mode == 'q') {
+		pj = NULL;
+	}
+	RStrBuf *sb = pj? NULL: r_strbuf_new ("");
+	if (pj) {
+		pj_o (pj);
+	}
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (groups); i++) {
+		if (pj) {
+			pj_ka (pj, groups[i].type);
+		}
+		RListIter *iter;
+		const RPluginMeta *meta;
+		r_list_foreach (groups[i].plugins, iter, meta) {
+			if (pj) {
+				print_plugin_details (core, meta, pj, 'j');
+			} else if (mode == 'q') {
+				r_strbuf_appendf (sb, "%s\n", meta->name);
+			} else {
+				const char *name = meta->name;
+				if (groups[i].prefix && r_str_startswith (name, groups[i].prefix)) {
+					name += 3;
+				}
+				r_strbuf_appendf (sb, "%s  %-11s %s\n", groups[i].type, name, meta->desc);
+			}
+		}
+		if (pj) {
+			pj_end (pj);
+		}
+	}
+	if (pj) {
+		pj_end (pj);
+		if (local_pj) {
+			char *s = pj_drain (pj);
+			r_cons_println (core->cons, s);
+			free (s);
+		}
+	} else {
+		char *s = r_strbuf_drain (sb);
+		r_cons_print (core->cons, s);
+		free (s);
+	}
 }
 
 R_API bool r_core_list_bin_plugin(RCore *core, const char *name, PJ *pj, int json) {

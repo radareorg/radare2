@@ -1011,7 +1011,6 @@ R_API bool r_bin_ldr_add(RBin *bin, RBinLdrPlugin *foo);
 R_API bool r_bin_demangle_plugin_add(RBin *bin, RBinDemanglePlugin *plugin);
 R_API bool r_bin_demangle_plugin_remove(RBin *bin, RBinDemanglePlugin *plugin);
 R_API RBinDemanglePlugin *r_bin_demangle_plugin_find(RBin *bin, const char *name);
-R_API void r_bin_list(RBin *bin, PJ *pj, int format);
 R_API RBinPlugin *r_bin_get_binplugin_by_buffer(RBin *bin, RBinFile *bf, RBuffer *buf);
 R_API void r_bin_force_plugin(RBin *bin, const char *pname);
 

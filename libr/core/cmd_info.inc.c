@@ -4200,7 +4200,7 @@ static int cmd_info(void *data, const char *input) {
 			}
 			r_core_list_bin_plugin (core, plugin_name, pj, json);
 		} else {
-			r_bin_list (core->bin, pj, json);
+			r_core_list_bin (core, pj, json);
 		}
 		break;
 	}

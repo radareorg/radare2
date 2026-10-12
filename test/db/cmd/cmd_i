@@ -4065,7 +4065,7 @@ License: LGPL-3.0-only
 EOF
 RUN
 
-NAME=iLj plugin details preserve JSON metadata
+NAME=iLj plugin details use shared JSON metadata
 FILE=-
 CMDS=<<EOF
 iLj elf
@@ -4076,12 +4076,12 @@ iLj msvc
 iLj msv
 EOF
 EXPECT=<<EOF
-{"name":"elf","description":"Executable and Link Format (ELF) for 32 bit","license":"LGPL-3.0-only"}
-{"name":"elf64","description":"Executable Link Format for 64bit","license":"LGPL-3.0-only"}
-{"name":"xtr.pemixed","description":"Microsoft Portable Executable Extractor","license":"LGPL-3.0-only"}
-{"name":"xtr.pemixed","description":"Microsoft Portable Executable Extractor","license":"LGPL-3.0-only"}
-{"name":"msvc","description":"Microsoft Visual C++ demangler","license":"LGPL-3.0-only"}
-{"name":"msvc","description":"Microsoft Visual C++ demangler","license":"LGPL-3.0-only"}
+{"name":"elf","desc":"Executable and Link Format (ELF) for 32 bit","author":"nibble","license":"LGPL-3.0-only"}
+{"name":"elf64","desc":"Executable Link Format for 64bit","author":"nibble","license":"LGPL-3.0-only"}
+{"name":"xtr.pemixed","desc":"Microsoft Portable Executable Extractor","author":"JohnPeng47","license":"LGPL-3.0-only"}
+{"name":"xtr.pemixed","desc":"Microsoft Portable Executable Extractor","author":"JohnPeng47","license":"LGPL-3.0-only"}
+{"name":"msvc","desc":"Microsoft Visual C++ demangler","license":"LGPL-3.0-only"}
+{"name":"msvc","desc":"Microsoft Visual C++ demangler","license":"LGPL-3.0-only"}
 EOF
 RUN
 
