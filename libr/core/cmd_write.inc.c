@@ -205,6 +205,7 @@ static RCoreHelpMessage help_msg_wv = {
 
 static RCoreHelpMessage help_msg_wx = {
 	"Usage:", "wx[f] [arg]", "",
+	"wx", " 31..88", "write hexpairs, preserving nibbles marked as '.' or '?'",
 	"wx", " 3.", "write the left nibble of the current byte",
 	"wx", " .5", "write the right nibble of the current byte",
 	"wx+", " 9090", "write hexpairs and seek forward",
@@ -234,20 +235,44 @@ R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 	R_RETURN_VAL_IF_FAIL (core && pairs, 0);
 
 	const ut64 addr = core->addr;
+	bool masked = strpbrk (pairs, ".?") != NULL;
 	ut8 *buf = (ut8*)strdup (pairs);
-	int len = r_hex_str2bin (pairs, buf);
+	ut8 *mask = masked? (ut8*)strdup (pairs): NULL;
+	if (!buf || (masked && !mask)) {
+		goto beach;
+	}
+	int len = masked? r_hex_str2binmask (pairs, buf, mask): r_hex_str2bin (pairs, buf);
 	if (len != 0) {
 		if (len < 0) {
 			len = -len;
-			ut8 byte = 0;
-			if (r_io_read_at (core->io, addr + len - 1, &byte, 1)) {
-				buf[len - 1] |= byte & 0xf;
+			if (!masked) {
+				ut8 byte = 0;
+				if (r_io_read_at (core->io, addr + len - 1, &byte, 1)) {
+					buf[len - 1] |= byte & 0xf;
+				}
 			}
+		}
+		if (masked) {
+			ut8 *original = malloc (len);
+			if (!original) {
+				goto beach;
+			}
+			if (r_io_nread_at (core->io, addr, original, len) != len) {
+				R_LOG_ERROR ("Cannot read bytes to preserve masked nibbles");
+				free (original);
+				goto beach;
+			}
+			int i;
+			for (i = 0; i < len; i++) {
+				buf[i] = (buf[i] & mask[i]) | (original[i] & ~mask[i]);
+			}
+			free (original);
 		}
 		if (r_core_write_at (core, addr, buf, len)) {
 			WSEEK (core, len);
 			r_core_block_read (core);
 			r_free (buf);
+			free (mask);
 			r_core_return_value (core, R_CMD_RC_SUCCESS);
 			return len;
 		}
@@ -255,8 +280,10 @@ R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 	} else {
 		R_LOG_ERROR ("invalid hexpair string");
 	}
+beach:
 	r_core_return_value (core, R_CMD_RC_FAILURE);
 	r_free (buf);
+	free (mask);
 	return 0;
 }
 

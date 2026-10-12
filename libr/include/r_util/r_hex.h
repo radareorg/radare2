@@ -7,6 +7,7 @@ extern "C" {
 
 R_API int r_hex_pair2bin(const char *arg);
 R_API int r_hex_str2bin_until_new(const char *in, ut8 **out);
+// Returns 0 on error, or a negative length for an odd number of nibbles.
 R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask);
 R_API int r_hex_str2bin(const char *in, ut8 *out);
 R_API ut8 *r_hex_str2bin_dup(const char *in, size_t *len);

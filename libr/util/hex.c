@@ -486,19 +486,22 @@ R_API int r_hex_str2bin_until_new(const char *in, ut8 **out) {
 }
 
 R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
-	R_RETURN_VAL_IF_FAIL (in && out && mask, -1);
+	R_RETURN_VAL_IF_FAIL (in && out && mask, 0);
 	char *kw = strdup (in);
 	char *ms = strdup (in);
 	if (!kw || !ms) {
 		free (kw);
 		free (ms);
-		return -1;
+		return 0;
 	}
 	char *k, *m;
 	for (k = kw, m = ms; *k; k++, m++) {
-		if (*k == '.') {
+		if (*k == '.' || *k == '?') {
 			*k = '0';
 			*m = '0';
+		} else if (*k == '0' && k[1] == 'x') {
+			k++;
+			m++;
 		} else if (IS_HEXCHAR (*k)) {
 			*m = 'f';
 		}
@@ -523,7 +526,7 @@ R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
 		}
 		return klen;
 	}
-	return -1;
+	return 0;
 }
 
 R_API st64 r_hex_bin_truncate(ut64 in, int n) {
