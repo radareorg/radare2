@@ -971,6 +971,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# pd shows the loaded slot; irj sym_va stays unbiased like the reloc vaddr
 NAME=ELF: common symbol slot follows the load bias under -B
 FILE=bins/elf/x86_64-common-sym.o
 ARGS=-B 0x10000000 -e bin.relocs.apply=true
