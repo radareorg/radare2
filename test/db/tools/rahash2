@@ -1127,6 +1127,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rahash2 -J file
+FILE=-
+CMDS=<<EOF
+!rahash2 -J -a md4,md5 bins/elf/analysis/hello-linux-x86_64
+!rahash2 -jj -a md5 bins/elf/analysis/hello-linux-x86_64
+EOF
+EXPECT=<<EOF
+{"md5":"c957bd5bd6204470256bc15248ccafd4","md4":"d4d61472a12d59be3a85e07ff9065658"}
+{"md5":"c957bd5bd6204470256bc15248ccafd4"}
+EOF
+RUN
+
 NAME=rahash2 -j string
 FILE=-
 CMDS=!rahash2 -j -a sha1,sha256 -s 233

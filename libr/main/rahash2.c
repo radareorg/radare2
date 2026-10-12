@@ -265,7 +265,7 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 				if (!*r_hash_name (i)) {
 					continue;
 				}
-				if (!ro->quiet && rad != 'j') {
+				if (!ro->quiet && rad != 'j' && rad != 'J') {
 					printf ("%s: ", file);
 				}
 				do_hash_print (ctx, ro, i, dlen, pj, ro->quiet? 'n': rad);
@@ -309,7 +309,7 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 			}
 		}
 	}
-	if (rad == 'j') {
+	if (rad == 'j' || rad == 'J') {
 		pj_end (pj);
 		printf ("%s\n", pj_string (pj));
 		pj_free (pj);
