@@ -1003,3 +1003,30 @@ EXPECT=<<EOF
 0
 EOF
 RUN
+
+NAME=Constant argument does not type an overwritten global load
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+e asm.arch=x86
+e asm.bits=64
+wx 488b3c2500200000bf01000000 @ 0
+wa call 0x80 @ 13
+wa ret @ 18
+wa ret @ 0x80
+af @ 0x80
+afn helper @ 0x80
+af @ 0
+afn caller @ 0
+afs int helper(char *message) @ 0x80
+aei
+aeim
+aar 19 @ 0
+aaft
+avgj
+EOF
+EXPECT=<<EOF
+[{"name":"global.0x2000","addr":8192,"size":8,"type":"uint64_t"}]
+EOF
+RUN

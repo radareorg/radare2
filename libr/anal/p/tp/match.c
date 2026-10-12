@@ -144,6 +144,10 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 			if (pos_hit && tps->cfg_fields && chain.len > 0 && !etrace_regwrite_contains (tt, j, regname)) {
 				pos_hit = false;
 			}
+			const RArchValue *src = RVecRArchValue_at (&op->srcs, 0);
+			// An immediate replaces the earlier value and ends the copy chain.
+			const bool constant = (op->type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_MOV
+				&& src && !src->reg && !src->memref && !etrace_have_memread (tt, j);
 			// Match type from function param to instr
 			if (pos_hit) {
 				R_LOG_DEBUG ("InHit");
@@ -170,7 +174,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 						}
 					}
 				}
-				if (!userfnc && tp_global_from_arg (tps, op, j, &chain, type, name)) {
+				if (constant || (!userfnc && tp_global_from_arg (tps, op, j, &chain, type, name))) {
 					break;
 				} else if (var) {
 					if (selfsize && tp_selfsize_hit (tps, j, var, place, selfptr)) {
@@ -200,7 +204,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 
 			// Type propagate by following source reg
 			if (!res && *regname && etrace_regwrite_contains (tt, j, regname)) {
-				if (!userfnc && tp_global_from_arg (tps, op, j, &chain, type, name)) {
+				if (constant || (!userfnc && tp_global_from_arg (tps, op, j, &chain, type, name))) {
 					break;
 				}
 				if (tp_op_loads_value (tt, op, j)) {
