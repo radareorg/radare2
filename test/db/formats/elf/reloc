@@ -879,12 +879,15 @@ pv8 @ 0x100033f0
 pv8 @ 0x100033f8
 pv8 @ 0x10003400
 pv8 @ 0x10003408
+pd 2 @ 0x100033f8~RELOC[5-7]
 EOF
 EXPECT=<<EOF
 0x0000000000001234
 0x0000000000400100
 0x0000000000000000
 0x00000000100033f0
+abshit @ 0x00400100
+abszero @ 0x00000000
 EOF
 RUN
 
@@ -896,12 +899,15 @@ pv8 @ 0x100033f0
 pv8 @ 0x100033f8
 pv8 @ 0x10003400
 pv8 @ 0x10003408
+pd 2 @ 0x100033f8~RELOC[5-7]
 EOF
 EXPECT=<<EOF
 0x0000000000001234
 0x0000000000400100
 0x0000000000000000
 0x00000000100033f0
+abshit @ 0x00400100
+abszero @ 0x00000000
 EOF
 RUN
 
@@ -913,12 +919,17 @@ pv8 @ 0x08000040
 pv8 @ 0x08000048
 pv8 @ 0x08000050
 pv8 @ 0x08000058
+irj~{}~sym_va
 EOF
 EXPECT=<<EOF
 0x0000000000001234
 0x0000000000400100
 0x0000000000000000
 0x0000000008000040
+    "sym_va": 4660,
+    "sym_va": 4194560,
+    "sym_va": 0,
+    "sym_va": 134217792,
 EOF
 RUN
 
@@ -928,11 +939,15 @@ ARGS=-e bin.relocs.apply=true -e asm.sub.names=false
 CMDS=<<EOF
 pi 2 @ 0x08000034
 pv4 @ 0x08000044
+irj~{}~sym_va
 EOF
 EXPECT=<<EOF
 bl 0x8000100
 blx 0x8000040
 0x08000101
+    "sym_va": 134217984,
+    "sym_va": 134217792,
+    "sym_va": 134217984,
 EOF
 RUN
 
@@ -943,11 +958,43 @@ CMDS=<<EOF
 pv8 @ 0x08000040
 pv8 @ 0x08000048
 om~.got.r2
+irj~{}~sym_va
+is~cbuf
 EOF
 EXPECT=<<EOF
 0x00000000080000f4
 0x00000000080000f4
 - 6 fd: 4 +0x00000000 0x080000f4 - 0x080000fb rw- rw- .got.r2
+    "sym_va": 134217972,
+    "sym_va": 134217972,
+1   0x00000000 0x08000000 GLOBAL OBJ    8        cbuf
+EOF
+RUN
+
+NAME=ELF: common symbol slot follows the load bias under -B
+FILE=bins/elf/x86_64-common-sym.o
+ARGS=-B 0x10000000 -e bin.relocs.apply=true
+CMDS=<<EOF
+pd 2 @ 0x10000040~RELOC[5-7]
+irj~{}~sym_va
+EOF
+EXPECT=<<EOF
+cbuf @ 0x100000f4
+cbuf @ 0x100000f4
+    "sym_va": 134217972,
+    "sym_va": 134217972,
+EOF
+RUN
+
+NAME=ELF: common symbol listing is unchanged when relocs are not applied
+FILE=bins/elf/x86_64-common-sym.o
+ARGS=-e bin.relocs.apply=false
+CMDS=<<EOF
+irj~{}~sym_va
+EOF
+EXPECT=<<EOF
+    "sym_va": 134217728,
+    "sym_va": 134217728,
 EOF
 RUN
 
@@ -978,12 +1025,15 @@ FILE=bins/elf/aarch64-common-got.o
 ARGS=-e bin.relocs.apply=true -e asm.sub.names=false
 CMDS=<<EOF
 pi 4 @ 0x08000040
+irj~{}~sym_va
 EOF
 EXPECT=<<EOF
 adrp x0, 0x8000000
 ldr x0, [x0, 0x158]
 adrp x1, 0x8000000
 ldr x1, [x1, 0x160]
+    "sym_va": 134218072,
+    "sym_va": 134218072,
 EOF
 RUN
 

@@ -1973,11 +1973,13 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		}
 	}
 	const ut64 bias = elf_io_addr (bf, eo, eo->baddr) - eo->baddr;
+	const st64 shift = bf->bo->baddr_shift;
 	RBinElfReloc *reloc;
 	R_VEC_FOREACH (relocs, reloc) {
 		ut64 plt_entry_addr = vaddr;
 		ut64 sym_addr = UT64_MAX;
 		const bool has_slot = reloc_has_slot (eo, reloc);
+		const RBinElfSpecialSym *ss = special_sym (eo, reloc->sym);
 		bool is_abs = false;
 
 		if (has_slot) {
@@ -1987,7 +1989,6 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 				plt_entry_addr = sym_addr;
 			}
 		} else if (reloc->sym && reloc->sym < eo->symbols_by_ord_size && eo->symbols_by_ord[reloc->sym]) {
-			const RBinElfSpecialSym *ss = special_sym (eo, reloc->sym);
 			is_abs = ss && !ss->common;
 			RBinSymbol *sym = eo->symbols_by_ord[reloc->sym];
 			sym_addr = is_abs? ss->value: sym->vaddr;
@@ -2003,7 +2004,12 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		const ut64 raddr = resolved? sym_addr: addressable? vaddr: 0;
 		_patch_reloc (bf, eo, eo->ehdr.e_machine, &b->iob, reloc,
 			elf_io_addr (bf, eo, reloc->rva), raddr, bias, plt_entry_addr, toc_base);
-		ptr = reloc_convert (eo, reloc, n_vaddr - bf->bo->baddr_shift, ret);
+		RBinSymbol *csym = (takes_slot && ss && ss->common)? eo->symbols_by_ord[reloc->sym]: NULL;
+		if (csym) {
+			csym->vaddr = vaddr - shift;
+			csym->paddr = Elf_(v2p) (eo, csym->vaddr);
+		}
+		ptr = reloc_convert (eo, reloc, n_vaddr - shift, ret);
 		if (!ptr) {
 			continue;
 		}
@@ -2012,7 +2018,6 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		const bool site_moves = has_slot
 			&& (patch_redirects_code (eo->ehdr.e_machine) || reloc_is_import (eo, reloc));
 		if (site_moves) {
-			const st64 shift = bf->bo->baddr_shift;
 			RBinSection *s = r_bin_get_section_at (bf->bo, ptr->vaddr + shift, true);
 			if (s && (s->perm & R_PERM_X)) {
 				if (resolved) {
