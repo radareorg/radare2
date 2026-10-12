@@ -365,6 +365,90 @@ arg double arg1 @ d0
 EOF
 RUN
 
+NAME=arm64 fp arithmetic, conversions and compares read and write their registers
+FILE=malloc://512
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 1038611e5190431fb29c661fc0035fd6 @ 0x0
+wx 3088621ec0035fd6 @ 0x40
+wx 1028611e5110631fc0035fd6 @ 0x80
+wx 3040611ec0035fd6 @ 0xc0
+wx 1040621e2900789e4a00799e7100629e9200639ec0035fd6 @ 0x100
+wx 0900649e2a00659e4b00709e6c00719e8d00609eae00619ecf00689ef000699ec0035fd6 @ 0x140
+wx 1020611e4004631e9414651ee0d79f1ac0035fd6 @ 0x180
+wx 0100629e2008611e4100789e20040091c0035fd6 @ 0x1c0
+af @ 0x0
+af @ 0x40
+af @ 0x80
+af @ 0xc0
+af @ 0x100
+af @ 0x140
+af @ 0x180
+af @ 0x1c0
+afv @ 0x0
+?e --
+afv @ 0x40
+?e --
+afv @ 0x80
+?e --
+afv @ 0xc0
+?e --
+afv @ 0x100
+?e --
+afv @ 0x140
+?e --
+afv @ 0x180
+?e --
+afv @ 0x1c0
+EOF
+EXPECT=<<EOF
+arg double arg1 @ d0
+arg double arg2 @ d1
+arg double arg3 @ d2
+arg double arg4 @ d3
+arg double arg5 @ d4
+arg double arg6 @ d5
+arg double arg7 @ d6
+arg double arg8 @ d7
+--
+arg double arg1 @ d1
+arg double arg2 @ d2
+--
+arg double arg1 @ d0
+arg double arg2 @ d1
+arg double arg3 @ d2
+arg double arg4 @ d3
+arg double arg5 @ d4
+--
+arg double arg1 @ d1
+--
+arg int64_t arg1 @ x3
+arg int64_t arg2 @ x4
+arg double arg3 @ d0
+arg double arg4 @ d1
+arg double arg5 @ d2
+--
+arg double arg1 @ d0
+arg double arg2 @ d1
+arg double arg3 @ d2
+arg double arg4 @ d3
+arg double arg5 @ d4
+arg double arg6 @ d5
+arg double arg7 @ d6
+arg double arg8 @ d7
+--
+arg double arg1 @ d0
+arg double arg2 @ d1
+arg double arg3 @ d2
+arg double arg4 @ d3
+arg double arg5 @ d4
+arg double arg6 @ d5
+--
+arg int64_t arg1 @ x0
+arg double arg2 @ d2
+EOF
+RUN
+
 NAME=arm64 d0 read after a call is not an argument
 FILE=malloc://64
 ARGS=-a arm -b 64

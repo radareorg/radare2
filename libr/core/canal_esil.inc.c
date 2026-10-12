@@ -1262,7 +1262,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			break;
 		case R_ANAL_OP_TYPE_ADD:
 			/* TODO: test if this is valid for other archs too */
-			if (archIsArm) {
+			// an fp sum is never an address
+			if (archIsArm && op.family != R_ANAL_OP_FAMILY_FPU) {
 				/* This code is known to work on Thumb, ARM and ARM64 */
 				ut64 dst = ESIL->cur;
 				if ((target && dst == ctx.ntarget) || !target) {

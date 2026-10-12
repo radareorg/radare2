@@ -167,6 +167,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=aae takes no arm64 fp sum as an address
+FILE=malloc://0x400
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 000080d20000679e0100401f2228601e01000891c0035fd6
+af
+aae
+axq
+EOF
+EXPECT=<<EOF
+0x00000010 -> 0x00000200  DATA:r--
+EOF
+RUN
+
 NAME=aae honors call clobbers with emu.lazy
 FILE=malloc://0x400
 ARGS=-w -a x86 -b 64
