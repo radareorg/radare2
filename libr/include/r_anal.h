@@ -1829,7 +1829,7 @@ R_API void r_anal_dwarf_process_info(const RAnal *anal, RAnalDwarfContext *ctx);
 R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwarf_sdb);
 /* global.c */
 R_API RFlagItem *r_anal_global_get(RAnal *anal, ut64 addr);
-R_API bool r_anal_global_add(RAnal *anal, ut64 addr, const char *type_name, const char *name);
+R_API bool r_anal_global_add(RAnal *anal, ut64 addr, const char *R_NULLABLE type_name, const char *name);
 R_API bool r_anal_global_del(RAnal *anal, ut64 addr);
 R_API bool r_anal_global_retype(RAnal *anal, ut64 addr, const char *new_type);
 R_API bool r_anal_global_rename(RAnal *anal, ut64 addr, const char *new_name);

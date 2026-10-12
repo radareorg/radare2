@@ -2265,6 +2265,50 @@ static const char *parse_comp_unit_lang(const RBinDwarfDie *die) {
 	return lang;
 }
 
+static void parse_global_variable(Context *ctx, const RBinDwarfDie *die) {
+	const RBinDwarfAttrValue *location_attr = find_attr (die, DW_AT_location);
+	if (!location_attr || (location_attr->kind != DW_AT_KIND_ADDRESS
+		&& (location_attr->kind != DW_AT_KIND_BLOCK || !location_attr->block.data
+			|| location_attr->block.length != 1 + ctx->anal->config->bits / 8
+			|| location_attr->block.data[0] != DW_OP_addr))) {
+		return;
+	}
+	VariableLocation *location = parse_dwarf_location (ctx, location_attr, NULL, false, false);
+	if (!location || location->kind != LOCATION_GLOBAL) {
+		free (location);
+		return;
+	}
+	const char *name = NULL;
+	RStrBuf type;
+	r_strbuf_init (&type);
+	const RBinDwarfAttrValue *value;
+	R_VEC_FOREACH (die->attr_values, value) {
+		switch (value->attr_name) {
+		case DW_AT_name:
+			if (value->kind == DW_AT_KIND_STRING) {
+				name = value->string.content;
+			}
+			break;
+		case DW_AT_type:
+			parse_type (ctx, value->reference, &type, NULL, NULL);
+			break;
+		case DW_AT_specification:
+		case DW_AT_abstract_origin:
+			parse_abstract_origin (ctx, value->reference, &type, &name);
+			break;
+		default:
+			break;
+		}
+	}
+	if (name && type.len) {
+		sdb_setf (ctx->sdb, "global", 0, "global.0x%" PFMT64x, location->address);
+		sdb_setf (ctx->sdb, name, 0, "global.0x%" PFMT64x ".name", location->address);
+		sdb_setf (ctx->sdb, r_strbuf_get (&type), 0, "global.0x%" PFMT64x ".type", location->address);
+	}
+	r_strbuf_fini (&type);
+	free (location);
+}
+
 /**
  * @brief Delegates DIE to it's proper parsing method
  *
@@ -2295,6 +2339,9 @@ static void parse_type_entry(Context *ctx, ut64 idx) {
 		break;
 	case DW_TAG_subprogram:
 		parse_function (ctx, idx);
+		break;
+	case DW_TAG_variable:
+		parse_global_variable (ctx, die);
 		break;
 	case DW_TAG_compile_unit:
 		/* used for name demangling */
@@ -2347,6 +2394,32 @@ bool filter_sdb_function_names(void *user, const char *k, const char *v) {
 	return !strcmp (v, "fcn");
 }
 
+static bool integrate_dwarf_global(RAnal *anal, ut64 addr, const char *name, const char *type) {
+	RFlagItem *global = r_anal_global_get (anal, addr);
+	char *global_name = global? strdup (global->name): r_str_newf ("global.%s", name);
+	if (!global_name) {
+		return false;
+	}
+	r_name_filter (global_name, -1);
+	RFlagItem *existing = r_flag_get (anal->flb.f, global_name);
+	if (existing && existing->addr != addr) {
+		char *unique_name = r_str_newf ("%s.0x%" PFMT64x, global_name, addr);
+		free (global_name);
+		global_name = unique_name;
+	}
+	bool added = global_name && r_anal_global_add (anal, addr, type, global_name);
+	if (added) {
+		global = r_anal_global_get (anal, addr);
+		r_flag_item_set_realname (anal->flb.f, global, name);
+	}
+	free (global_name);
+	return added;
+}
+
+static bool filter_sdb_global_names(void *user, const char *key, const char *value) {
+	return !strcmp (value, "global") && r_str_startswith (key, "global.0x");
+}
+
 static bool integrate_dwarf_var(RAnal *anal, RFlag *flags, RAnalFunction *fcn, const char *var_name, char *var_data, bool is_arg) {
 	R_RETURN_VAL_IF_FAIL (anal && flags && var_name && var_data, false);
 	char *extra = NULL;
@@ -2360,12 +2433,8 @@ static bool integrate_dwarf_var(RAnal *anal, RFlag *flags, RAnalFunction *fcn, c
 	if (*kind != 'r') {
 		offset = strtol (extra, NULL, 10);
 	}
-	if (*kind == 'g') { /* global, fixed addr TODO add size to variables? */
-		char *global_name = r_str_newf ("global_%s", var_name);
-		r_flag_unset_addr (flags, offset);
-		r_flag_set_next (flags, global_name, offset, 4);
-		free (global_name);
-		return true;
+	if (*kind == 'g') {
+		return integrate_dwarf_global (anal, strtoull (extra, NULL, 10), var_name, type);
 	}
 	if (!fcn) {
 		return false;
@@ -2406,12 +2475,22 @@ static bool integrate_dwarf_var(RAnal *anal, RFlag *flags, RAnalFunction *fcn, c
  * @param dwarf_sdb
  */
 R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwarf_sdb) {
-	R_RETURN_IF_FAIL (anal && dwarf_sdb);
+	R_RETURN_IF_FAIL (anal && flags && dwarf_sdb);
+	SdbListIter *it;
+	SdbKv *kv;
+	SdbList *globals = sdb_foreach_list_filter (dwarf_sdb, filter_sdb_global_names, false);
+	ls_foreach (globals, it, kv) {
+		const char *key = kv->base.key;
+		const char *name = sdb_const_getf (dwarf_sdb, NULL, "%s.name", key);
+		const char *type = sdb_const_getf (dwarf_sdb, NULL, "%s.type", key);
+		if (name && type) {
+			integrate_dwarf_global (anal, r_num_get (NULL, key + 7), name, type);
+		}
+	}
+	ls_free (globals);
 
 	/* get all entries with value == func */
 	SdbList *sdb_list = sdb_foreach_list_filter (dwarf_sdb, filter_sdb_function_names, false);
-	SdbListIter *it;
-	SdbKv *kv;
 	/* iterate all function entries */
 	ls_foreach (sdb_list, it, kv) {
 		char *func_sname = kv->base.key;

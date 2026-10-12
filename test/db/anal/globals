@@ -1,0 +1,206 @@
+NAME=Global commands preserve types and coexisting symbol flags
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+avgj
+avg uint8_t global.byte @ 0x1000
+avgj
+avg. @ 0x1000
+Cf. @ 0x1000
+fs symbols
+f obj.byte 1 @ 0x1000
+avg. @ 0x1000
+avg uint64_t global.byte @ 0x1000
+avgj
+Cf. @ 0x1000
+avg- @ 0x1000
+avgj
+f~obj.byte
+avg int * global.pointer @ 0x2000
+avg int[3][2] global.array @ 0x3000
+avg int const global.constant @ 0x4000
+avgj
+EOF
+EXPECT=<<EOF
+[]
+[{"name":"global.byte","addr":4096,"size":1,"type":"uint8_t"}]
+uint8_t
+b
+uint8_t
+[{"name":"global.byte","addr":4096,"size":8,"type":"uint64_t"}]
+q
+[]
+0x00001000 1 obj.byte
+[{"name":"global.pointer","addr":8192,"size":8,"type":"int *"},{"name":"global.array","addr":12288,"size":24,"type":"int[3][2]"},{"name":"global.constant","addr":16384,"size":4,"type":"int const"}]
+EOF
+RUN
+
+NAME=Global commands reject unknown and overflowing types without changing globals
+FILE=-
+ARGS=-a x86 -b 64 -e log.level=0
+CMDS=<<EOF
+avg uint8_t global.byte @ 0x1000
+avg missing_type global.byte @ 0x1000
+avg int[18446744073709551615] global.byte @ 0x1000
+avgj
+EOF
+EXPECT=<<EOF
+[{"name":"global.byte","addr":4096,"size":1,"type":"uint8_t"}]
+EOF
+RUN
+
+NAME=ELF object symbols automatically register globals without guessing types
+FILE=bins/elf/anal-globals-symbols
+CMDS=<<EOF
+aa
+avg
+is~global~FUNC~?
+afl~global~?
+EOF
+EXPECT=<<EOF
+0x01000190 4 global.global_limit unknown
+0x01002258 4 global.global_count unknown
+0x0100225c 1 global.global_byte unknown
+0x01002260 8 global.global_wide unknown
+0x01002268 12 global.global_array unknown
+0x01002278 8 global.global_pointer unknown
+0x01002280 8 global.global_pair unknown
+0x01002288 4 global.main.local_static unknown
+0x0100228c 2 global.global_static unknown
+0x01002290 4 global.global_zero unknown
+0
+0
+EOF
+RUN
+
+NAME=ELF DWARF globals and static locals recover names sizes and C types
+FILE=bins/elf/anal-globals
+CMDS=<<EOF
+aaa
+avg
+avg. @ obj.global_array
+is~global~FUNC~?
+f~obj.global_count~?
+avg~?
+aaa
+avg~?
+EOF
+EXPECT=<<EOF
+0x01000190 4 global.global_limit int const
+0x01002258 4 global.global_count int
+0x0100225c 1 global.global_byte unsigned char
+0x01002260 8 global.global_wide uint64_t
+0x01002268 12 global.global_array int[3]
+0x01002278 8 global.global_pointer int *
+0x01002280 8 global.global_pair GlobalPair
+0x01002288 4 global.main.local_static int
+0x0100228c 2 global.global_static short
+0x01002290 4 global.global_zero int
+int[3]
+0
+1
+10
+10
+EOF
+RUN
+
+NAME=DWARF 5 indexed global locations recover C types and sizes
+FILE=bins/elf/anal-globals-dwarf5
+CMDS=<<EOF
+aaa
+avg
+EOF
+EXPECT=<<EOF
+0x01000190 4 global.global_limit int const
+0x01002258 4 global.global_count int
+0x0100225c 1 global.global_byte unsigned char
+0x01002260 8 global.global_wide uint64_t
+0x01002268 12 global.global_array int[3]
+0x01002278 8 global.global_pointer int *
+0x01002280 8 global.global_pair GlobalPair
+0x01002288 4 global.main.local_static int
+0x0100228c 2 global.global_static short
+0x01002290 4 global.global_zero int
+EOF
+RUN
+
+NAME=Rebased ELF globals retain their addresses sizes and C types including bss
+FILE=bins/elf/anal-globals
+ARGS=-B 0x2000000
+CMDS=<<EOF
+aaa
+avg
+avg~?
+EOF
+EXPECT=<<EOF
+0x02000190 4 global.global_limit int const
+0x02002258 4 global.global_count int
+0x0200225c 1 global.global_byte unsigned char
+0x02002260 8 global.global_wide uint64_t
+0x02002268 12 global.global_array int[3]
+0x02002278 8 global.global_pointer int *
+0x02002280 8 global.global_pair GlobalPair
+0x02002288 4 global.main.local_static int
+0x0200228c 2 global.global_static short
+0x02002290 4 global.global_zero int
+10
+EOF
+RUN
+
+NAME=Mach-O data and bss symbols are objects and automatically register globals
+FILE=bins/mach0/anal-globals
+ARGS=-e bin.dbginfo=false
+CMDS=<<EOF
+aa
+avg
+is~global~FUNC~?
+is~global~OBJ~?
+afl~global~?
+EOF
+EXPECT=<<EOF
+0x1000004e8 0 global._global_limit unknown
+0x100004000 0 global._global_count unknown
+0x100004004 0 global._global_byte unknown
+0x100004008 0 global._global_wide unknown
+0x100004010 0 global._global_array unknown
+0x100004020 0 global._global_pointer unknown
+0x100004028 0 global._global_pair unknown
+0x100004030 0 global._main.local_static unknown
+0x100004034 0 global._global_static unknown
+0x100004038 0 global._global_zero unknown
+0
+9
+0
+EOF
+RUN
+
+NAME=Mach-O dSYM globals recover C types without duplicate globals or losing symbols
+FILE=bins/mach0/anal-globals
+CMDS=<<EOF
+aaa
+avg
+avg. @ obj._global_array
+is~global~FUNC~?
+f~obj._global_count~?
+avg~?
+aaa
+avg~?
+EOF
+EXPECT=<<EOF
+0x1000004e8 4 global._global_limit int const
+0x100004000 4 global._global_count int
+0x100004004 1 global._global_byte unsigned char
+0x100004008 8 global._global_wide uint64_t
+0x100004010 12 global._global_array int[3]
+0x100004020 8 global._global_pointer int *
+0x100004028 8 global._global_pair GlobalPair
+0x100004030 4 global._main.local_static int
+0x100004034 2 global._global_static short
+0x100004038 4 global._global_zero int
+int[3]
+0
+1
+10
+10
+EOF
+RUN

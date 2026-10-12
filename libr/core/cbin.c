@@ -2742,6 +2742,20 @@ static void set_symbol_flag(RCore *core, RBinSymbol *symbol, const SymName *sn, 
 		if (sn->demname) {
 			fi->demangled = true;
 		}
+		if (!symbol->is_imported && symbol->type && !strcmp (symbol->type, R_BIN_TYPE_OBJECT_STR)
+			&& !r_anal_global_get (core->anal, addr)) {
+			const char *name = r_str_startswith (fn, "obj.")? fn + 4: fn;
+			char *global_name = core->bin->prefix
+				? r_str_newf ("%s.global.%s", core->bin->prefix, name)
+				: r_str_newf ("global.%s", name);
+			if (global_name && r_anal_global_add (core->anal, addr, NULL, global_name)) {
+				RFlagItem *global = r_anal_global_get (core->anal, addr);
+				global->size = symbol->attr.size;
+				r_flag_item_set_realname (core->flags, global, display_name);
+				r_flag_item_set_rawname (core->flags, global, sn->name);
+			}
+			free (global_name);
+		}
 	} else {
 		R_LOG_WARN ("Can't find flag (%s)", fn);
 	}
@@ -2845,6 +2859,9 @@ static bool its_an_export(RBinSymbol *s) {
 }
 
 static ut64 compute_addr(RBin *bin, ut64 paddr, ut64 vaddr, int va) {
+	if (paddr == UT64_MAX && va == VA_TRUE && bin->cur && bin->cur->bo) {
+		return r_bin_file_get_vaddr (bin->cur, paddr, vaddr);
+	}
 	return paddr == UT64_MAX? vaddr: rva (bin, paddr, vaddr, va);
 }
 
