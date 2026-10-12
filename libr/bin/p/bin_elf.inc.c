@@ -130,6 +130,13 @@ static inline bool reloc_has_slot(ELFOBJ *eo, const RBinElfReloc *rel) {
 	return reloc_is_import (eo, rel) || (ss && ss->common);
 }
 
+// a tls symbol's value is an offset in the thread block, not an address
+static inline bool reloc_sym_is_tls(ELFOBJ *eo, const RBinElfReloc *rel) {
+	const RBinSymbol *sym = (rel->sym < eo->symbols_by_ord_size)? eo->symbols_by_ord[rel->sym]: NULL;
+	const char *type = sym? sym->type: reloc_is_import (eo, rel)? eo->imports_by_ord[rel->sym]->type: NULL;
+	return type && !strcmp (type, R_BIN_TYPE_TLS_STR);
+}
+
 // arches whose _patch_reloc points a code site at its slot
 static inline bool patch_redirects_code(ut16 e_machine) {
 	switch (e_machine) {
@@ -1912,8 +1919,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	if (eo->ehdr.e_type != ET_REL && eo->ehdr.e_type != ET_DYN && !is_ppc64v1_exec) {
 		return NULL;
 	}
-	ut64 size = eo->g_reloc_num * cdsz;
-	if (size == 0) {
+	if (!eo->g_reloc_num) {
 		return NULL;
 	}
 	RIOBank *bank = b->iob.bank_get (io, io->bank);
@@ -1942,24 +1948,6 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 			|| eo->ehdr.e_machine == EM_ARM)) {
 		n_vaddr = (n_vaddr + cdsz - 1) & ~(cdsz - 1);
 	}
-	// reserve at least that space
-	size = eo->g_reloc_num * cdsz;
-	char *muri = r_str_newf ("malloc://%" PFMT64u, size);
-	if (!muri) {
-		return NULL;
-	}
-	RIODesc *gotr2desc = b->iob.open_at (io, muri, R_PERM_R, 0664, n_vaddr);
-	free (muri);
-	if (!gotr2desc) {
-		return NULL;
-	}
-
-	RIOMap *gotr2map = b->iob.map_get_at (io, n_vaddr);
-	if (!gotr2map) {
-		return NULL;
-	}
-	gotr2map->name = strdup (".got.r2");
-
 	const RVecRBinElfReloc *relocs = Elf_(load_relocs) (eo);
 	if (!relocs) {
 		return NULL;
@@ -2002,46 +1990,54 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 			const RBinElfSpecialSym *ss = special_sym (eo, reloc->sym);
 			is_abs = ss && !ss->common;
 			RBinSymbol *sym = eo->symbols_by_ord[reloc->sym];
-			// a tls symbol's value is an offset in the thread block, not an address
-			const bool is_tls = sym->type && !strcmp (sym->type, R_BIN_TYPE_TLS_STR);
 			sym_addr = is_abs? ss->value: sym->vaddr;
-			if (!is_abs && !is_tls && sym_addr && sym_addr != UT64_MAX) {
+			if (!is_abs && !reloc_sym_is_tls (eo, reloc) && sym_addr && sym_addr != UT64_MAX) {
 				sym_addr = elf_io_addr (bf, eo, sym_addr);
 			}
 			plt_entry_addr = sym_addr;
 		}
 		const bool resolved = is_abs || (sym_addr && sym_addr != UT64_MAX);
-		const ut64 raddr = resolved? sym_addr: vaddr;
+		const bool addressable = !resolved && reloc->sym && !reloc_sym_is_tls (eo, reloc);
+		const bool takes_slot = addressable && eo->ehdr.e_machine != EM_SBPF;
+		// symbol-less relocs have S = 0 (gABI); a tls value is no address
+		const ut64 raddr = resolved? sym_addr: addressable? vaddr: 0;
 		_patch_reloc (bf, eo, eo->ehdr.e_machine, &b->iob, reloc,
 			elf_io_addr (bf, eo, reloc->rva), raddr, bias, plt_entry_addr, toc_base);
 		ptr = reloc_convert (eo, reloc, n_vaddr - bf->bo->baddr_shift, ret);
 		if (!ptr) {
 			continue;
 		}
-		// the loader fills a module id; it has no slot
-		const bool tls_module = (eo->ehdr.e_machine == EM_X86_64 && reloc->type == R_X86_64_DTPMOD64)
-			|| (eo->ehdr.e_machine == EM_PPC && reloc->type == R_PPC_DTPMOD32);
 		// a patched code site branches to the slot, so the slot is what the
 		// reloc describes; a data site holds the value and keeps its own vaddr
 		const bool site_moves = has_slot
 			&& (patch_redirects_code (eo->ehdr.e_machine) || reloc_is_import (eo, reloc));
-		if (site_moves && !tls_module) {
+		if (site_moves) {
 			const st64 shift = bf->bo->baddr_shift;
 			RBinSection *s = r_bin_get_section_at (bf->bo, ptr->vaddr + shift, true);
 			if (s && (s->perm & R_PERM_X)) {
 				if (resolved) {
 					ptr->vaddr = sym_addr - shift;
-				} else if (eo->ehdr.e_machine != EM_SBPF) {
+				} else if (takes_slot) {
 					ptr->vaddr = vaddr - shift;
 				}
 			}
 		}
-		if (!resolved && eo->ehdr.e_machine != EM_SBPF && !tls_module) {
+		if (takes_slot) {
 			ht_uu_insert (relocs_by_sym, reloc->sym, vaddr);
 			vaddr += cdsz;
 		}
 	}
 	ht_uu_free (relocs_by_sym);
+	if (vaddr > n_vaddr) {
+		char *muri = r_str_newf ("malloc://%" PFMT64u, vaddr - n_vaddr);
+		if (muri && b->iob.open_at (io, muri, R_PERM_R, 0664, n_vaddr)) {
+			RIOMap *gotr2map = b->iob.map_get_at (io, n_vaddr);
+			if (gotr2map) {
+				gotr2map->name = strdup (".got.r2");
+			}
+		}
+		free (muri);
+	}
 	return ret;
 }
 

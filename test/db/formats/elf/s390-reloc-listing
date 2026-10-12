@@ -30,7 +30,7 @@ reloc.getenv
 0x00127028 8 reloc.__cxa_finalize
 section..got + 24
 117
-- 4 fd: 5 +0x00000000 0x00128898 - 0x00129357 rw- rw- .got.r2
+- 4 fd: 5 +0x00000000 0x00128898 - 0x00128c1f rw- rw- .got.r2
 EOF
 RUN
 
