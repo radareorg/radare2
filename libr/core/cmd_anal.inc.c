@@ -8541,11 +8541,13 @@ static int anal_esil_mem(RCore *core) {
 	if (fd < 0) {
 		return fd;
 	}
-	if (!r_io_map_add (core->io, fd, R_PERM_RW, 0LL, addr, size)) {
+	RIOMap *map = r_io_map_add (core->io, fd, R_PERM_RW, 0LL, addr, size);
+	if (!map) {
 		r_io_fd_close (core->io, fd);
 		R_LOG_ERROR ("Cannot create map for anal esil mem, fd %d got closed again", fd);
 		return -1;
 	}
+	r_io_map_set_name (map, "stack.anal");
 	const ut64 sp = addr + (size / 2);
 	r_reg_setv (core->anal->reg, "SP", sp);
 	r_reg_setv (core->anal->reg, "BP", sp);

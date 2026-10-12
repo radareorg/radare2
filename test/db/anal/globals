@@ -204,3 +204,176 @@ int[3]
 10
 EOF
 RUN
+
+NAME=Stripped ELF globals recover access types without symbols or DWARF
+FILE=bins/elf/anal-globals-stripped
+CMDS=<<EOF
+iI~stripped
+is~OBJ~?
+avgj
+aaa
+avg
+aaa
+avg~?
+EOF
+EXPECT=<<EOF
+stripped true
+0
+[]
+0x01002258 4 global.0x1002258 uint32_t
+0x0100225c 1 global.0x100225c uint8_t
+0x01002260 8 global.0x1002260 uint64_t
+0x0100226c 4 global.0x100226c uint32_t
+0x01002278 8 global.0x1002278 void *
+0x01002280 4 global.0x1002280 uint32_t
+0x01002288 4 global.0x1002288 uint32_t
+0x0100228c 2 global.0x100228c int16_t
+0x01002290 4 global.0x1002290 uint32_t
+9
+EOF
+RUN
+
+NAME=Stripped Mach-O globals recover access types without symbols or DWARF
+FILE=bins/mach0/anal-globals-stripped
+CMDS=<<EOF
+iI~stripped
+is~OBJ~?
+avgj
+aaa
+avg
+aaa
+avg~?
+EOF
+EXPECT=<<EOF
+stripped true
+0
+[]
+0x100004000 4 global.0x100004000 uint32_t
+0x100004004 1 global.0x100004004 uint8_t
+0x100004008 8 global.0x100004008 uint64_t
+0x100004014 4 global.0x100004014 uint32_t
+0x100004020 8 global.0x100004020 uint64_t
+0x100004028 4 global.0x100004028 uint32_t
+0x100004030 4 global.0x100004030 uint32_t
+0x100004034 2 global.0x100004034 int16_t
+0x100004038 4 global.0x100004038 uint32_t
+9
+EOF
+RUN
+
+NAME=Global access widths grow without replacing manual types
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+e asm.arch=x86
+e asm.bits=64
+wx 0fb6042500200000c39090909090909090 @ 0
+aar 8 @ 0
+avgj
+wx 668b042500200000c3 @ 0
+aar 64 @ 0
+avgj
+wx 8b042500200000c390 @ 0
+aar 64 @ 0
+avgj
+wx 488b042500200000c3 @ 0
+aar 64 @ 0
+avgj
+avg int8_t global.0x2000 @ 0x2000
+aar 64 @ 0
+avgj
+avg- @ 0x2000
+aar 64 @ 0
+avgj
+EOF
+EXPECT=<<EOF
+[{"name":"global.0x2000","addr":8192,"size":1,"type":"uint8_t"}]
+[{"name":"global.0x2000","addr":8192,"size":2,"type":"uint16_t"}]
+[{"name":"global.0x2000","addr":8192,"size":4,"type":"uint32_t"}]
+[{"name":"global.0x2000","addr":8192,"size":8,"type":"uint64_t"}]
+[{"name":"global.0x2000","addr":8192,"size":1,"type":"int8_t"}]
+[{"name":"global.0x2000","addr":8192,"size":8,"type":"uint64_t"}]
+EOF
+RUN
+
+NAME=Global accesses infer signed integers floats doubles and pointers
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+e asm.arch=x86
+e asm.bits=64
+wx 0020000000000000 @ 0x2020
+wx 0fbe042500200000f30f10042508200000dd042510200000488b042520200000c3 @ 0
+aar 64 @ 0
+aae 33 @ 0
+avgj
+EOF
+EXPECT=<<EOF
+[{"name":"global.0x2000","addr":8192,"size":1,"type":"int8_t"},{"name":"global.0x2008","addr":8200,"size":4,"type":"float"},{"name":"global.0x2010","addr":8208,"size":8,"type":"double"},{"name":"global.0x2020","addr":8224,"size":8,"type":"void *"}]
+EOF
+RUN
+
+NAME=Global discovery excludes stack code linkage slots and out-of-bounds accesses
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+om 4 0x3000 64 0 rw mem.0x3000
+e asm.arch=x86
+e asm.bits=64
+fs relocs
+f reloc.slot 8 @ 0x2030
+fs *
+wx 488d0425002000008b04257f2000008b042540000000488b0425302000008b042500300000c3 @ 0
+aar 64 @ 0
+aae 38 @ 0
+avgj
+EOF
+EXPECT=<<EOF
+[]
+EOF
+RUN
+
+NAME=Global discovery respects array bounds and the selected flag space
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+e asm.arch=x86
+e asm.bits=64
+avg uint32_t[4] global.array @ 0x2000
+fs symbols
+f inner @ 0x2004
+wx 8b042508200000c3 @ 0
+aar 8 @ 0
+avgj
+fs~symbols[1]
+EOF
+EXPECT=<<EOF
+[{"name":"global.array","addr":8192,"size":16,"type":"uint32_t[4]"}]
+*
+EOF
+RUN
+
+NAME=Global integer accesses preserve floating pointer and signed inference
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+e asm.arch=x86
+e asm.bits=64
+wx 0020000000000000 @ 0x2020
+wx f30f10042500200000488b042520200000db1c2528200000df042530200000 @ 0
+aar 31 @ 0
+avgj
+wx 8b042500200000df2c25202000000fb7042530200000 @ 0
+aar 22 @ 0
+avgj
+EOF
+EXPECT=<<EOF
+[{"name":"global.0x2000","addr":8192,"size":4,"type":"float"},{"name":"global.0x2020","addr":8224,"size":8,"type":"void *"},{"name":"global.0x2028","addr":8232,"size":4,"type":"int32_t"},{"name":"global.0x2030","addr":8240,"size":2,"type":"int16_t"}]
+[{"name":"global.0x2000","addr":8192,"size":4,"type":"float"},{"name":"global.0x2020","addr":8224,"size":8,"type":"void *"},{"name":"global.0x2028","addr":8232,"size":4,"type":"int32_t"},{"name":"global.0x2030","addr":8240,"size":2,"type":"int16_t"}]
+EOF
+RUN

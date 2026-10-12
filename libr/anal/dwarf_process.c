@@ -2394,6 +2394,19 @@ bool filter_sdb_function_names(void *user, const char *k, const char *v) {
 	return !strcmp (v, "fcn");
 }
 
+static bool remove_inferred_global(RFlagItem *flag, void *user) {
+	RAnal *anal = user;
+	if (flag->space && !strcmp (flag->space->name, "globals")) {
+		r_strf_var (key, 64, "global.inferred.0x%" PFMT64x, flag->addr);
+		const char *inferred = sdb_const_get (anal->sdb, key, NULL);
+		const char *type = r_anal_global_get_type (anal, flag->addr);
+		if (inferred && type && !strcmp (inferred, type)) {
+			r_anal_global_del (anal, flag->addr);
+		}
+	}
+	return true;
+}
+
 static bool integrate_dwarf_global(RAnal *anal, ut64 addr, const char *name, const char *type) {
 	RFlagItem *global = r_anal_global_get (anal, addr);
 	char *global_name = global? strdup (global->name): r_str_newf ("global.%s", name);
@@ -2411,6 +2424,10 @@ static bool integrate_dwarf_global(RAnal *anal, ut64 addr, const char *name, con
 	if (added) {
 		global = r_anal_global_get (anal, addr);
 		r_flag_item_set_realname (anal->flb.f, global, name);
+		ut64 end;
+		if (!r_add_overflow (addr, global->size, &end)) {
+			r_flag_foreach_range (anal->flb.f, addr + 1, end, remove_inferred_global, anal);
+		}
 	}
 	free (global_name);
 	return added;

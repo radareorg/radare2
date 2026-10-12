@@ -4493,6 +4493,66 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	return count;
 }
 
+// R2R db/anal/globals
+static void anal_global_access(RCore *core, const RAnalOp *op, ut64 addr, int size, ut64 value) {
+	if (addr < 0x100 || (size != 1 && size != 2 && size != 4 && size != 8) || op->tlocal) {
+		return;
+	}
+	RIOMap *map = r_io_map_get_at (core->io, addr);
+	if (!map || !(map->sperm & R_PERM_R) || (map->sperm & R_PERM_X)
+		|| (map->name && (r_str_startswith (map->name, "mem.")
+			|| r_str_startswith (map->name, "stack") || r_str_startswith (map->name, "heap")))
+		|| (ut64)size > map->itv.size - (addr - map->itv.addr)) {
+		return;
+	}
+	if (r_flag_get_by_spaces (core->flags, false, addr, "relocs", "imports", NULL)) {
+		return;
+	}
+	RAnal *anal = core->anal;
+	RFlagItem *global = r_anal_global_get (anal, addr);
+	if (!global) {
+		r_flag_space_push (core->flags, "globals");
+		RFlagItem *container = r_flag_get_at (core->flags, addr, true);
+		r_flag_space_pop (core->flags);
+		if (container && addr - container->addr < container->size) {
+			return;
+		}
+	}
+	r_strf_var (key, 64, "global.inferred.0x%" PFMT64x, addr);
+	const char *inferred = sdb_const_get (anal->sdb, key, NULL);
+	const char *current = global? r_anal_global_get_type (anal, addr): NULL;
+	if (current && (!inferred || strcmp (current, inferred))) {
+		return;
+	}
+	if (global && !current && global->size && global->size != size) {
+		return;
+	}
+	if (value == UT64_MAX && size == anal->config->bits / 8 && (op->direction & R_ANAL_OP_DIR_READ)) {
+		if (!r_io_read_i (core->io, addr, &value, size, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config))) {
+			value = UT64_MAX;
+		}
+	}
+	r_strf_var (integer_type, 16, "%s%d_t", op->sign? "int": "uint", size * 8);
+	const char *type = integer_type;
+	if (((op->family == R_ANAL_OP_FAMILY_FPU && !op->sign) || op->datatype == R_ANAL_DATATYPE_FLOAT)
+		&& (size == 4 || size == 8)) {
+		type = size == 4? "float": "double";
+	} else if (size == anal->config->bits / 8 && value && value != UT64_MAX
+		&& r_io_is_valid_offset (core->io, value, R_PERM_R)) {
+		type = "void *";
+	}
+	if (current && (global->size > size || (global->size == size
+		&& (!strcmp (current, type) || (type == integer_type
+			&& (!op->sign || !r_str_startswith (current, "uint"))))))) {
+		return;
+	}
+	char *name = global? strdup (global->name): r_str_newf ("global.0x%" PFMT64x, addr);
+	if (name && r_anal_global_add (anal, addr, type, name)) {
+		sdb_set (anal->sdb, key, type, 0);
+	}
+	free (name);
+}
+
 static bool add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
 	const int reftype = R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ;
 	int len = 0;
@@ -4769,6 +4829,10 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 #endif
 				if (found_xref (&ctx, op.addr, op.ptr, reftype)) {
 					count++;
+					if (!ctx.rad && op.refptr > 0 && !(op.direction & R_ANAL_OP_DIR_EXEC)
+						&& (op.type & R_ANAL_OP_TYPE_MASK & ~R_ANAL_OP_TYPE_COND) != R_ANAL_OP_TYPE_LEA) {
+						anal_global_access (core, &op, op.ptr, op.refptr, UT64_MAX);
+					}
 				}
 			} else {
 				// check for using reg+disp, which shouldnt be valid if op.ptr is set

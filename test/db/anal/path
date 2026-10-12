@@ -191,14 +191,14 @@ pdb @@= 0x000067d0 0x00004df0 0x000132d0 0x000132de 0x00004960
 |           0x00004e50      488d3d8991..   lea rdi, [0x0000dfe0]
 |           0x00004e57      c70597e301..   mov dword [obj.exit_failure], 2 ; [0x231f8:4]=1
 |           0x00004e61      e8fa260100     call sub.__cxa_atexit
-|           0x00004e66      c6054bf401..   mov byte [0x000242b8], 1    ; [0x242b8:1]=0
+|           0x00004e66      c6054bf401..   mov byte [global.0x242b8], 1 ; [0x242b8:1]=0
 |           0x00004e6d      48b8000000..   movabs rax, 0x8000000000000000
-|           0x00004e77      488905f2f4..   mov qword [0x00024370], rax ; [0x24370:8]=0
+|           0x00004e77      488905f2f4..   mov qword [global.0x24370], rax ; [0x24370:8]=0
 |           0x00004e7e      8b055ce30100   mov eax, dword [obj.ls_mode] ; [0x231e0:4]=1
-|           0x00004e84      c70582f301..   mov dword [0x00024210], 0   ; [0x24210:4]=0
-|           0x00004e8e      48c705e7f4..   mov qword [0x00024380], 0   ; [0x24380:8]=0
-|           0x00004e99      48c705d4f4..   mov qword [0x00024378], 0xffffffffffffffff ; [0x24378:8]=0
-|           0x00004ea4      c6052df401..   mov byte [0x000242d8], 0    ; [0x242d8:1]=0
+|           0x00004e84      c70582f301..   mov dword [global.0x24210], 0 ; [0x24210:4]=0
+|           0x00004e8e      48c705e7f4..   mov qword [global.0x24380], 0 ; [0x24380:8]=0
+|           0x00004e99      48c705d4f4..   mov qword [global.0x24378], 0xffffffffffffffff ; [0x24378:8]=0
+|           0x00004ea4      c6052df401..   mov byte [global.0x242d8], 0 ; [0x242d8:1]=0
 |           0x00004eab      83f802         cmp eax, 2
 |       ,=< 0x00004eae      0f842e0e0000   je 0x5ce2
             ; CALL XREF from main @ 0x4e1b(x)

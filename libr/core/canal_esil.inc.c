@@ -491,6 +491,7 @@ static bool esilbreak_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len)
 	if (myvalid (core, addr) && r_io_read_at (core->io, addr, (ut8*)buf, len)) {
 		if (!is_stack (core->io, addr)) {
 			r_anal_xrefs_set (core->anal, esil->addr, addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_WRITE);
+			anal_global_access (core, ctx->op, addr, len, UT64_MAX);
 		}
 	}
 	return true;
@@ -549,6 +550,7 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 				esil_string_ref (esil, addr);
 			} else {
 				r_anal_xrefs_set (core->anal, esil->addr, addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
+				anal_global_access (core, ctx->op, addr, len, refptr);
 			}
 		}
 	}

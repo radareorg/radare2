@@ -55,6 +55,8 @@ R_API bool r_anal_global_add(RAnal *anal, ut64 addr, const char *type_name, cons
 		return false;
 	}
 	if (type) {
+		r_strf_var (key, 64, "global.inferred.0x%" PFMT64x, addr);
+		sdb_unset (anal->sdb, key, 0);
 		r_flag_item_set_type (flags, fi, type);
 		char *fmtstr = r_type_format (anal->sdb_types, type);
 		r_meta_del (anal, R_META_TYPE_FORMAT, addr, 0);
@@ -73,6 +75,8 @@ R_API bool r_anal_global_del(RAnal *anal, ut64 addr) {
 	RFlagItem *fi = r_anal_global_get (anal, addr);
 	if (fi) {
 		RFlag *flags = anal->flb.f;
+		r_strf_var (key, 64, "global.inferred.0x%" PFMT64x, addr);
+		sdb_unset (anal->sdb, key, 0);
 		r_meta_del (anal, R_META_TYPE_FORMAT, addr, 0);
 		r_flag_unset (flags, fi);
 		r_anal_types_unlink (anal, addr);
