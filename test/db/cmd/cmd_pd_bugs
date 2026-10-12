@@ -1,3 +1,21 @@
+NAME=Relative global substitution preserves a following immediate
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+e asm.arch=x86
+e asm.bits=64
+e asm.bytes=false
+e asm.comments=false
+f global.slot 8 @ 0x2000
+wx 48c705f51f0000ffffffff @ 0
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      mov qword [global.slot], 0xffffffffffffffff
+EOF
+RUN
+
 NAME=pd asmdescribe on string
 FILE=bins/mach0/mac-ls4
 ARGS=-a arm -b64

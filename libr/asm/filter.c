@@ -304,7 +304,9 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 				bool lea = x86 && r_str_startswith (hdata, "lea") && (hdata[3] == ' ' || hdata[3] == 0x1b);
 				bool remove_brackets = false;
 				flag = p->flag_get (f, false, off);
-				if ((!flag || arm) && p->subrel_addr) {
+				const char *bracket = x86? strchr (hdata, '['): NULL;
+				const bool memory_operand = bracket && bracket < ptr && strchr (ptr, ']');
+				if ((!flag || arm) && p->subrel_addr && (!x86 || memory_operand)) {
 					remove_brackets = lea || (arm && p->subrel_addr);
 					flag2 = p->flag_get (f, false, p->subrel_addr);
 					if (!flag || arm) {
