@@ -292,12 +292,14 @@ R_API bool r_lib_close(RLib *lib, const char *file) {
 	return false;
 }
 
-static bool already_loaded(RLib *lib, const char *name, int type) {
+static bool already_loaded(RLib *lib, const char *name, int type, const char *file) {
 	if (name && type >= 0 && type < R_LIB_TYPE_LAST) {
 		bool found;
 		RLibPlugin *p = ht_pp_find (lib->plugins_ht[type], name, &found);
 		if (found && p) {
-			R_LOG_ERROR ("Not loading library because it has already been loaded from '%s'", p->file);
+			if (strcmp (p->file, file)) {
+				R_LOG_ERROR ("Not loading library because it has already been loaded from '%s'", p->file);
+			}
 			return true;
 		}
 	}
@@ -351,8 +353,11 @@ R_API bool r_lib_open(RLib *lib, const char *file) {
 
 	// Step 3: Check plugin metadata and ABI version
 	RPluginMeta *meta = (RPluginMeta *)(stru->data);
-	if (already_loaded (lib, meta->name, stru->type)) {
+	if (already_loaded (lib, meta->name, stru->type, file)) {
 		r_lib_dl_close (handle);
+		if (strf) {
+			free (stru);
+		}
 		return false;
 	}
 

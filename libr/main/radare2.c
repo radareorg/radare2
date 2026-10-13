@@ -44,6 +44,7 @@ static void prompt_rebuild_outdated_plugins(RCore *core) {
 		"  a        Rebuild this and all remaining outdated plugins\n"
 		"  i        Ignore all remaining outdated plugins for this session\n\n");
 	bool rebuild_all = false;
+	bool rebuilt = false;
 	RListIter *iter;
 	const char *pkgname;
 	r_list_foreach (mismatches, iter, pkgname) {
@@ -81,12 +82,18 @@ static void prompt_rebuild_outdated_plugins(RCore *core) {
 		const char *flag = choice == 'd'? "-u": "-ci";
 		if (!r_sys_cmdf ("r2pm %s \"%s\"", flag, epkgname)) {
 			R_LOG_INFO ("%s outdated r2pm plugin package '%s'", choice == 'd'? "Deleted": "Rebuilt", pkgname);
+			if (choice != 'd') {
+				rebuilt = true;
+			}
 		} else {
 			R_LOG_WARN ("Failed to run 'r2pm %s %s'", flag, pkgname);
 		}
 		free (epkgname);
 	}
 	r_list_purge (core->lib->plugin_mismatches);
+	if (rebuilt && r_config_get_b (core->config, "cfg.plugins")) {
+		r_lib_load_paths (core->lib, R_LIB_LOAD_ALL, r_config_get (core->config, "dir.plugins"));
+	}
 }
 
 static void json_plugins(RCore *core, PJ *pj, const char *name, const char *cmd) {
