@@ -161,6 +161,31 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=entry stated over a NOBITS .text (separate debuginfo)
+FILE=bins/elf/libc-2.26-debug.so
+CMDS=<<EOF
+ie
+s
+EOF
+EXPECT=<<EOF
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+---------- 0x000212e0 0x00000018 0x00000018 program
+0x212e0
+EOF
+RUN
+
+NAME=entry stated over a NOBITS .text keeps no file offset under a load address
+FILE=bins/elf/libc-2.26-debug.so
+ARGS=-m 0x100000
+CMDS=ie
+EXPECT=<<EOF
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+---------- 0x001212e0 0x00000018 0x00100018 program
+EOF
+RUN
+
 NAME=iee for dt preinit
 FILE=bins/elf/ieee.elf
 CMDS=<<EOF

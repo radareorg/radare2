@@ -123,6 +123,13 @@ static ut64 rva(RBin *bin, ut64 paddr, ut64 vaddr, int va) {
 	return (va == VA_NOREBASE)? vaddr: paddr;
 }
 
+static ut64 compute_addr(RBin *bin, ut64 paddr, ut64 vaddr, int va) {
+	if (paddr == UT64_MAX && va == VA_TRUE && bin->cur && bin->cur->bo) {
+		return r_bin_file_get_vaddr (bin->cur, paddr, vaddr);
+	}
+	return paddr == UT64_MAX? vaddr: rva (bin, paddr, vaddr, va);
+}
+
 R_API bool r_core_bin_set_by_fd(RCore *core, ut64 bin_fd) {
 	if (r_bin_file_set_cur_by_fd (core->bin, bin_fd)) {
 		r_core_bin_set_cur (core, r_bin_cur (core->bin));
@@ -1784,7 +1791,7 @@ static bool bin_entry(RCore *core, PJ *pj, int mode, ut64 laddr, int va, bool in
 				hvaddr = rva (core->bin, hpaddr, entry->hvaddr, va);
 			}
 		}
-		ut64 at = rva (core->bin, paddr, entry->vaddr, va);
+		ut64 at = compute_addr (core->bin, paddr, entry->vaddr, va);
 		const char *type = r_bin_entry_type_string (entry->type);
 		if (!type) {
 			type = "unknown";
@@ -1883,7 +1890,7 @@ static bool bin_entry(RCore *core, PJ *pj, int mode, ut64 laddr, int va, bool in
 		r_table_free (table);
 	} else if (IS_MODE_SET (mode)) {
 		if (entry) {
-			ut64 at = rva (core->bin, entry->paddr, entry->vaddr, va);
+			ut64 at = compute_addr (core->bin, entry->paddr, entry->vaddr, va);
 			r_core_seek (core, at, false);
 		}
 	} else if (IS_MODE_RAD (mode)) {
@@ -2914,13 +2921,6 @@ static bool its_an_export(RBinSymbol *s) {
 	return (s->bind && !strcmp (s->bind, R_BIN_BIND_GLOBAL_STR));
 }
 
-static ut64 compute_addr(RBin *bin, ut64 paddr, ut64 vaddr, int va) {
-	if (paddr == UT64_MAX && va == VA_TRUE && bin->cur && bin->cur->bo) {
-		return r_bin_file_get_vaddr (bin->cur, paddr, vaddr);
-	}
-	return paddr == UT64_MAX? vaddr: rva (bin, paddr, vaddr, va);
-}
-
 static void handle_arm_special_symbol(RCore *core, RBinSymbol *symbol, int va) {
 	ut64 addr = compute_addr (core->bin, symbol->paddr, symbol->vaddr, va);
 	const char *oname = r_bin_name_tostring2 (symbol->name, 'o');
@@ -2957,11 +2957,13 @@ static void handle_arm_hint(RCore *core, RBinInfo *info, ut64 paddr, ut64 vaddr,
 
 	int force_bits = 0;
 	ut64 addr = compute_addr (core->bin, paddr, vaddr, va);
-	if (paddr & 1 || bits == 16) {
+	// an entry with no file offset states its mode through bits alone
+	const bool odd = paddr != UT64_MAX && (paddr & 1);
+	if (odd || bits == 16) {
 		force_bits = 16;
 	} else if (info->bits == 16 && bits == 32) {
 		force_bits = 32;
-	} else if (! (paddr & 1) && bits == 32) {
+	} else if (!odd && bits == 32) {
 		force_bits = 32;
 	}
 	if (force_bits) {

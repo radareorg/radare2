@@ -238,6 +238,7 @@ ut64 Elf_(get_baddr)(struct Elf_(obj_t) *bin);
 ut64 Elf_(p2v)(struct Elf_(obj_t) *bin, ut64 paddr);
 ut64 Elf_(v2p)(struct Elf_(obj_t) *bin, ut64 vaddr);
 ut64 Elf_(get_boffset)(struct Elf_(obj_t) *bin);
+ut64 Elf_(get_entry_vaddr)(struct Elf_(obj_t) *bin);
 ut64 Elf_(get_entry_offset)(struct Elf_(obj_t) *bin);
 ut64 Elf_(get_main_offset)(struct Elf_(obj_t) *bin);
 ut64 Elf_(get_init_offset)(struct Elf_(obj_t) *bin);
