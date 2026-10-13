@@ -559,7 +559,12 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 	}
 	if (ro->mode == R_SEARCH_REGEXP) {
 		r_list_foreach (ro->keywords, iter, kw) {
-			r_search_kw_add (rs, r_search_keyword_new_regexp (kw, NULL));
+			RSearchKeyword *k = r_search_keyword_new_regexp (kw, NULL);
+			if (k) {
+				r_search_kw_add (rs, k);
+			} else {
+				R_LOG_ERROR ("Invalid regexp, use /pattern/flags");
+			}
 		}
 	}
 
