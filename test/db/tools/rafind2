@@ -326,6 +326,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rafind2 regexp without slashes
+FILE=-
+CMDS=!rafind2 -e R.A..E -e /Th.s/ bins/arm/README
+EXPECT=<<EOF
+0xf
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid regexp, use /pattern/flags
+EOF
+RUN
+
 NAME=rafind2 ""
 FILE=-
 CMDS=!rafind2 ""
