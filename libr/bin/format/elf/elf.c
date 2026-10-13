@@ -5412,14 +5412,6 @@ static void set_special_by_ord(ELFOBJ *eo, const RBinElfSymbol *symbol) {
 	if (!common && symbol->st_shndx != SHN_ABS) {
 		return;
 	}
-	if (symbol->st_shndx == SHN_ABS) {
-		RBinSymbol *reloc_sym = eo->symbols_by_ord[symbol->ordinal];
-		reloc_sym->paddr = UT64_MAX;
-		reloc_sym->vaddr = symbol->st_value;
-		if (eo->ehdr.e_machine == EM_ARM) {
-			_set_arm_thumb_bits (eo, reloc_sym);
-		}
-	}
 	if (!eo->special_by_ord) {
 		eo->special_by_ord = ht_up_new (NULL, special_kv_free, NULL);
 	}
@@ -5440,7 +5432,18 @@ static void fill_symbol(ELFOBJ *eo, RBinElfSymbol *symbol, RBinSymbol *sym) {
 			symbol->is_vaddr = false;
 		}
 	}
-	if (symbol->is_vaddr) {
+	if (symbol->st_shndx == SHN_ABS) {
+		// gABI: no relocation moves an absolute value; only a typed one aliasing the file keeps an offset
+		vaddr = symbol->st_value;
+		paddr = UT64_MAX;
+		const char *type = symbol->type;
+		if (type && (!strcmp (type, R_BIN_TYPE_FUNC_STR) || !strcmp (type, R_BIN_TYPE_OBJECT_STR))) {
+			const ut64 offset = Elf_(v2p) (eo, vaddr);
+			if (offset < eo->size) {
+				paddr = offset;
+			}
+		}
+	} else if (symbol->is_vaddr) {
 		paddr = UT64_MAX;
 		vaddr = symbol->offset;
 	} else {
@@ -5457,6 +5460,9 @@ static void fill_symbol(ELFOBJ *eo, RBinElfSymbol *symbol, RBinSymbol *sym) {
 	sym->paddr = paddr;
 	sym->vaddr = vaddr;
 	sym->attr.size = symbol->size;
+	if (symbol->st_shndx == SHN_ABS) {
+		sym->attr.flags |= R_BIN_ATTR_ABSOLUTE;
+	}
 	sym->ordinal = symbol->ordinal;
 	if (eo->ehdr.e_machine == EM_ARM) {
 		_set_arm_thumb_bits (eo, sym);

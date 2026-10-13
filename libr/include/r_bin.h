@@ -235,6 +235,7 @@ typedef uint64_t RBinAttribute;
 #define R_BIN_ATTR_LATE (1ULL << 45)
 #define R_BIN_ATTR_GENERATOR (1ULL << 46)
 #define R_BIN_ATTR_DESTRUCTOR (1ULL << 47)
+#define R_BIN_ATTR_ABSOLUTE (1ULL << 48) // ELF SHN_ABS: a value no rebase moves
 
 typedef enum {
 	R_BIN_FIELD_KIND_VARIABLE,
