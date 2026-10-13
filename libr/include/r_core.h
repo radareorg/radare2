@@ -487,6 +487,7 @@ struct r_core_t {
 	int (*r_main_ragg2)(int argc, const char **argv);
 	int (*r_main_rasm2)(int argc, const char **argv);
 	int (*r_main_rax2)(int argc, const char **argv);
+	int (*r_main_rapatch2)(int argc, const char **argv);
 	int skiplines; // used only for disasm
 	void *priv; // Its RCorePriv but only used internally to not break abi
 	bool esil_anal_stop; // sounds like must be deprecated

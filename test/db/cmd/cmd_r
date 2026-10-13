@@ -62,3 +62,17 @@ ok
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=rapatch2 main from the REPL without PATH
+FILE=-
+CMDS=<<EOF
+r?~rapatch2?
+env PATH=
+rapatch2
+EOF
+EXPECT=<<EOF
+1
+Usage: rapatch2 [-p N] [-sv] [-R] [patchfile] ([targetfile])
+EOF
+EXPECT_ERR=
+RUN

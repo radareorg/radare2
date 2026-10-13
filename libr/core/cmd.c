@@ -370,6 +370,7 @@ static RCoreHelpMessage help_msg_r = {
 	"rabin2", " [...]", "run rabin2's main",
 	"radare2", " [...]", "run radare2's main",
 	"radiff2", " [...]", "run radiff2's main",
+	"rapatch2", " [...]", "run rapatch2's main",
 	"rafind2", " [...]", "run rafind2's main",
 	"rafs2", " [...]", "run rafs2's main",
 	"rahash2", " [...]", "run rahash2's main",
@@ -2735,8 +2736,7 @@ static bool cmd_r2cmd(RCore *core, const char *_input) {
 	} else if (ISCMD ("r2")) {
 		rc = __runMain (core->r_main_radare2, input);
 	} else if (ISCMD ("rapatch2")) {
-		r_sys_cmdf ("%s", input);
-		// rc = __runMain (r_main_rapatch2, input);
+		rc = __runMain (core->r_main_rapatch2, input);
 	} else if (ISCMD ("radare2")) {
 		r_sys_cmdf ("%s", input);
 		// rc = __runMain (core->r_main_radare2, input);
