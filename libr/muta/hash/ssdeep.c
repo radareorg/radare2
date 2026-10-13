@@ -57,16 +57,17 @@ static inline void process_byte(State *s, ut8 b) {
 
 	ut32 rh = roll_sum (s);
 	if (rh % s->bs == s->bs - 1) {
+		// when full, the slot after the end keeps the last piece hash
+		s->hs1[s->hs1_len] = b64[s->bh1 % 64];
 		if (s->hs1_len < SPAM_SUM_LENGTH - 1) {
-			char ch = b64[s->bh1 % 64];
-			s->hs1[s->hs1_len++] = ch;
+			s->hs1_len++;
 			s->bh1 = HASH_INIT;
 		}
 		ut32 bs2 = s->bs * 2;
 		if (rh % bs2 == bs2 - 1) {
+			s->hs2[s->hs2_len] = b64[s->bh2 % 64];
 			if (s->hs2_len < (SPAM_SUM_LENGTH / 2) - 1) {
-				char ch = b64[s->bh2 % 64];
-				s->hs2[s->hs2_len++] = ch;
+				s->hs2_len++;
 				s->bh2 = HASH_INIT;
 			}
 		}
@@ -92,22 +93,25 @@ R_API char *r_hash_ssdeep(const ut8 *buf, size_t len) {
 		for (i = 0; i < len; i++) {
 			process_byte (&s, buf[i]);
 		}
-		if (s.hs1_len < (SPAM_SUM_LENGTH / 2)) {
-			s.bs /= 2;
-			if (!s.bs) {
-				// buffer too small, cant hash
-				return NULL;
-			}
+		if (s.bs > BLOCK_MIN && s.hs1_len < (SPAM_SUM_LENGTH / 2)) {
+			// retry with half the block size from a clean state
+			const int bs = s.bs / 2;
+			memset (&s, 0, sizeof (s));
 			s.bh1 = HASH_INIT;
 			s.bh2 = HASH_INIT;
-			s.hs1_len = 0;
-			s.hs2_len = 0;
-			s.n = 0;
+			s.bs = bs;
 		} else {
 			if (roll_sum (&s)) {
 				// Finalize the hash string with the remaining data
 				s.hs1[s.hs1_len++] = b64[s.bh1 % 64];
 				s.hs2[s.hs2_len++] = b64[s.bh2 % 64];
+			} else {
+				if (s.hs1[s.hs1_len]) {
+					s.hs1_len++;
+				}
+				if (s.hs2[s.hs2_len]) {
+					s.hs2_len++;
+				}
 			}
 			break;
 		}

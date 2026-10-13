@@ -28,7 +28,19 @@ NAME=rahash2 -a ssdeep
 FILE=-
 CMDS=!rahash2 -a ssdeep bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
-bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a35 ssdeep: 96:aPsZ7JSRX4hHmfSz/XWwZpxI9LGr5lar87cZGbbgb:aPeJiam6zWQpxKLElZE
+bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a35 ssdeep: 96:Gy7im/6GjuA9fuF/lsSULxe2RELk3MgmEof7EEa4BIUdoBU:GyXfk/lsSU8LkaEofDOeom
+EOF
+RUN
+
+NAME=rahash2 -a ssdeep small input
+FILE=-
+CMDS=<<EOF
+!rahash2 -a ssdeep -s 123456789
+!rahash2 -j -a md5,ssdeep -s 123456789
+EOF
+EXPECT=<<EOF
+0x00000000-0x00000008 ssdeep: 3:OWS:OWS
+[{"name":"md5","hash":"25f9e794323b453885f5181f1b624d0b"},{"name":"ssdeep","hash":"3:OWS:OWS"}]
 EOF
 RUN
 
@@ -1123,7 +1135,7 @@ NAME=rahash2 -j file ssdeep
 FILE=-
 CMDS=!rahash2 -j -a ssdeep bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
-[{"name":"ssdeep","hash":"96:aPsZ7JSRX4hHmfSz/XWwZpxI9LGr5lar87cZGbbgb:aPeJiam6zWQpxKLElZE"}]
+[{"name":"ssdeep","hash":"96:Gy7im/6GjuA9fuF/lsSULxe2RELk3MgmEof7EEa4BIUdoBU:GyXfk/lsSU8LkaEofDOeom"}]
 EOF
 RUN
 
