@@ -2075,3 +2075,21 @@ EXPECT=<<EOF
 0x000001f0 hit0_0 "GIF8"
 EOF
 RUN
+
+NAME=/as search.maxhits ends the search across maps
+FILE=malloc://16
+CMDS=<<EOF
+wx b83c0000000f05
+o malloc://16 0x1000
+wx b83c0000000f05 @ 0x1000
+e asm.arch=x86
+e asm.bits=64
+e asm.os=linux
+e search.in=io.maps
+e search.maxhits=1
+/as
+EOF
+EXPECT=<<EOF
+0x00000005 exit
+EOF
+RUN
