@@ -194,7 +194,7 @@ CMDS=!rabin2 -a x86 -b 32 -e bins/mach0/fatmach0-3true
 EXPECT=<<EOF
 paddr      vaddr      phaddr     vhaddr     type
 ------------------------------------------------
-0x00005f44 0x00001f44 0x00000420 0x00001420 program
+0x00005f44 0x00001f44 0x00005420 0x00001420 program
 EOF
 RUN
 
