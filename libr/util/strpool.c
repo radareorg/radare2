@@ -10,6 +10,7 @@ R_API RStrpool * R_NULLABLE r_strpool_new(void) {
 	p->idxs = calloc (sizeof (p->idxs[0]), p->isize);
 	if (p->str && p->idxs) {
 		p->str[0] = 0;
+		p->last = UT32_MAX;
 		p->bloom = r_bloom_new (1024, 2, NULL);
 		if (!p->bloom) {
 			free (p->str);
@@ -80,6 +81,7 @@ R_API void r_strpool_empty(RStrpool *p) {
 	p->isize = 128;
 	p->count = 0;
 	p->len = 0;
+	p->last = UT32_MAX;
 	free (p->str);
 	p->str = malloc (p->size);
 	free (p->idxs);
@@ -91,6 +93,7 @@ R_API void r_strpool_slice(RStrpool *p, int index) {
 	char *pos = r_strpool_get_nth (p, index);
 	if (pos) {
 		p->count = index; // or index -1 ?
+		p->last = UT32_MAX;
 		// TODO: shrink string allocation too?
 	}
 }
@@ -103,6 +106,7 @@ R_API void r_strpool_slice_range(RStrpool *p, int idx_from, int idx_to) {
 	if (idx_to > p->count || idx_to < idx_from) {
 		idx_to = p->count;
 	}
+	p->last = UT32_MAX;
 	if (idx_from == 0) {
 		// Just truncate from idx_to onwards
 		p->count = idx_to;
@@ -118,14 +122,15 @@ R_API void r_strpool_slice_range(RStrpool *p, int idx_from, int idx_to) {
 
 R_API int r_strpool_add(RStrpool *p, const char *s) {
 	R_RETURN_VAL_IF_FAIL (p && s, -1);
-	if (!r_bloom_check (p->bloom, s, strlen (s))) {
-		return r_strpool_append (p, s);
+	if (p->last != UT32_MAX && !strcmp (p->str + p->idxs[p->last], s)) {
+		return p->last;
 	}
-	const int pos = r_strpool_get (p, s);
-	if (pos >= 0) {
-		return pos;
+	int pos = r_bloom_check (p->bloom, s, strlen (s))? r_strpool_get (p, s): -1;
+	if (pos < 0) {
+		pos = r_strpool_append (p, s);
 	}
-	return r_strpool_append (p, s);
+	p->last = (pos < 0)? UT32_MAX: (ut32)pos;
+	return pos;
 }
 
 R_API int r_strpool_append(RStrpool *p, const char *s) {

@@ -18,6 +18,7 @@ typedef struct {
 	ut32 *idxs; // indexes
 	ut32 *sidx; // sorted index -- not yet used
 	RBloom *bloom;
+	ut32 last; // position returned by the previous add, UT32_MAX if none
 } RStrpool;
 
 R_API RStrpool* r_strpool_new(void);
