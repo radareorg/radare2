@@ -889,8 +889,6 @@ DEBUG: Cannot resolve symbol address __gmon_start__
 DEBUG: Cannot resolve symbol address __gmon_start__
 DEBUG: Cannot resolve symbol address _ITM_registerTMCloneTable
 DEBUG: Cannot resolve symbol address _ITM_registerTMCloneTable
-DEBUG: Cannot resolve symbol address __cxa_finalize
-DEBUG: Cannot resolve symbol address __cxa_finalize
 EOF
 RUN
 

@@ -6142,6 +6142,7 @@ void Elf_(free)(ELFOBJ* eo) {
 	}
 	ht_uu_free (eo->rel_cache);
 	ht_uu_free (eo->ppc64_plt_stubs);
+	ht_uu_free (eo->x86_pltgot_stubs);
 	ht_up_free (eo->special_by_ord);
 	free (eo->ppc32_thunks);
 	sdb_free (eo->kv);
