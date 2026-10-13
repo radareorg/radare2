@@ -874,6 +874,14 @@ static void do_syscall_search(RCore *core, RSearchParameters *param) {
 			R_LOG_ERROR ("Invalid destination boundary");
 			goto beach;
 		}
+		// start on the first aligned address so every window is read at a candidate
+		if (align > 1 && (from % align)) {
+			const ut64 skip = align - (from % align);
+			if (skip >= to - from) {
+				continue;
+			}
+			from += skip;
+		}
 		syscall_state_set_unknown (&local_state, true);
 		for (i = 0, at = from; at < to; at++, i++) {
 			if (r_cons_is_breaked (core->cons)) {
@@ -881,9 +889,6 @@ static void do_syscall_search(RCore *core, RSearchParameters *param) {
 			}
 			if (i >= (bsize - 32)) {
 				i = 0;
-			}
-			if (use_align && align > 1 && (at % align)) {
-				continue;
 			}
 			if (!i) {
 				r_io_read_at (core->io, at, buf, bsize);
