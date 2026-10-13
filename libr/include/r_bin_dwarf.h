@@ -837,7 +837,6 @@ R_VEC_TYPE(RVecDwarfCompUnit, RBinDwarfCompUnit);
 
 typedef struct {
   RVecDwarfCompUnit *comp_units;
-	HtUP/*<ut64 offset, DwarfDie *die>*/ *lookup_table;
 } RBinDwarfDebugInfo;
 
 R_VEC_TYPE(RVecDwarfAttrDef, RBinDwarfAttrDef);
@@ -933,6 +932,7 @@ R_API void r_bin_dwarf_loclists_free(RBinDwarfLocLists *lists);
 R_API R_OWNED char *r_bin_dwarf_print_loclists_stream(RBinFile *bf);
 R_API void r_bin_dwarf_free_loc(HtUP /*<offset, RBinDwarfLocList*>*/  *loc_table);
 R_API void r_bin_dwarf_free_debug_info(RBinDwarfDebugInfo *inf);
+R_API RBinDwarfDie *r_bin_dwarf_find_die(const RBinDwarfDebugInfo *info, ut64 offset);
 R_API void r_bin_dwarf_free_debug_abbrev(RVecDwarfAbbrevDecl *da);
 
 #ifdef __cplusplus

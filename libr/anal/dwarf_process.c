@@ -10,7 +10,7 @@ typedef struct dwarf_parse_context_t {
 	const RBinDwarfDie *all_dies;
 	const ut64 count;
 	Sdb *sdb;
-	HtUP/*<ut64 offset, DwarfDie *die>*/ *die_map;
+	const RBinDwarfDebugInfo *info;
 	HtUP/*<offset, RBinDwarfLocList*>*/  *locations;
 	RBinDwarfLocLists *loclists; // .debug_loclists, read on demand
 	RBinDwarfLocListForeach loclist_foreach;
@@ -291,7 +291,7 @@ static void parse_array_type(Context *ctx, int idx, RStrBuf *strbuf) {
  */
 static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *size, HtUP **visited) {
 	R_RETURN_VAL_IF_FAIL (strbuf, -1);
-	RBinDwarfDie *die = ht_up_find (ctx->die_map, offset, NULL);
+	RBinDwarfDie *die = r_bin_dwarf_find_die (ctx->info, offset);
 	if (!die) {
 		return -1;
 	}
@@ -611,7 +611,7 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 	// if it is definition of previous declaration (TODO Fix, big ugly hotfix addition)
 	st32 spec_attr_idx = find_attr_idx (die, DW_AT_specification);
 	if (spec_attr_idx != -1) {
-		RBinDwarfDie *decl_die = ht_up_find (ctx->die_map, RVecDwarfAttrValue_at(die->attr_values, spec_attr_idx)->reference, NULL);
+		RBinDwarfDie *decl_die = r_bin_dwarf_find_die (ctx->info, RVecDwarfAttrValue_at(die->attr_values, spec_attr_idx)->reference);
 		if (!decl_die) {
 			goto cleanup;
 		}
@@ -889,7 +889,7 @@ static bool prefer_linkage_name(const char *lang) {
 }
 
 static void parse_abstract_origin(Context *ctx, ut64 offset, RStrBuf *type, const char **name) {
-	RBinDwarfDie *die = ht_up_find (ctx->die_map, offset, NULL);
+	RBinDwarfDie *die = r_bin_dwarf_find_die (ctx->info, offset);
 	if (!die || !die->attr_values) {
 		return;
 	}
@@ -2087,7 +2087,7 @@ static void parse_function(Context *ctx, ut64 idx) {
 			RStrBuf origin_type;
 			r_strbuf_init (&origin_type);
 			const char *origin_name = NULL;
-			RBinDwarfDie *origin_die = ht_up_find (ctx->die_map, val->reference, NULL);
+			RBinDwarfDie *origin_die = r_bin_dwarf_find_die (ctx->info, val->reference);
 			has_ret_type |= origin_die && !!get_die_attr (origin_die, DW_AT_type);
 			parse_abstract_origin (ctx, val->reference, &origin_type, &origin_name);
 			if (!fcn.name) {
@@ -2101,7 +2101,7 @@ static void parse_function(Context *ctx, ut64 idx) {
 		}
 		case DW_AT_specification: /* reference to declaration DIE with more info */
 		{
-			RBinDwarfDie *spec_die = ht_up_find (ctx->die_map, val->reference, NULL);
+			RBinDwarfDie *spec_die = r_bin_dwarf_find_die (ctx->info, val->reference);
 			if (spec_die) {
 				/* I assume that if specification has a name, this DIE hasn't */
 				fcn.name = get_specification_die_name (spec_die);
@@ -2371,7 +2371,7 @@ R_API void r_anal_dwarf_process_info(const RAnal *anal, RAnalDwarfContext *ctx) 
 			.anal = anal,
 			.all_dies = unit->dies->_start,
 			.count = RVecDwarfDie_length(unit->dies),
-			.die_map = info->lookup_table,
+			.info = info,
 			.sdb = dwarf_sdb,
 			.locations = ctx->loc,
 			.loclists = ctx->loclists,
