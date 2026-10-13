@@ -1311,7 +1311,6 @@ R_API RBin *r_bin_new(void) {
 			sdb_free (db);
 		}
 	}
-	bin->cb_printf = (PrintfCallback)printf;
 	bin->options.minstrlen = 0;
 	bin->options.setflags = true;
 	bin->options.load_unnamed = true;
@@ -1393,7 +1392,7 @@ R_API bool r_bin_select_bfid(RBin *bin, ut32 bf_id) {
 	return bf? r_bin_file_set_obj (bin, bf, NULL): false;
 }
 
-static void list_xtr_archs(RBin *bin, PJ *pj, int mode) {
+static void list_xtr_archs(RBin *bin, PJ *pj, RStrBuf *output, int mode) {
 	RBinFile *binfile = r_bin_cur (bin);
 	if (binfile->xtr_data) {
 		RListIter *iter_xtr;
@@ -1415,7 +1414,7 @@ static void list_xtr_archs(RBin *bin, PJ *pj, int mode) {
 			bits = xtr_data->metadata->bits;
 			switch (mode) {
 			case 'q': // "iAq"
-				bin->cb_printf ("%s\n", arch);
+				r_strbuf_appendf (output, "%s\n", arch);
 				break;
 			case 'j': // "iAj"
 				{
@@ -1429,7 +1428,7 @@ static void list_xtr_archs(RBin *bin, PJ *pj, int mode) {
 					break;
 				}
 			default:
-				bin->cb_printf ("%03i 0x%08" PFMT64x
+				r_strbuf_appendf (output, "%03i 0x%08" PFMT64x
 					" %" PFMT64d " %s_%i %s\n",
 					i++,
 					xtr_data->offset,
@@ -1461,9 +1460,10 @@ static char *get_arch_string(const char *arch, int bits, RBinInfo *info) {
 	return r_strbuf_drain (sb);
 }
 
-R_API void r_bin_list_archs(RBin *bin, PJ *pj, RTable *t, int mode) {
-	R_RETURN_IF_FAIL (bin);
+R_API R_OWNED char *r_bin_list_archs(RBin *bin, PJ *pj, RTable *t, int mode) {
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 
+	RStrBuf output = {0};
 	char unk[128];
 	char archline[256];
 	RBinFile *binfile = r_bin_cur (bin);
@@ -1473,21 +1473,21 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, RTable *t, int mode) {
 	// r_bin_select (bin, "arm", 64, "arm");
 	// xtr format, or native multi-slice (fat Mach-O) with xtr_data list
 	if (binfile && (binfile->curxtr || !r_list_empty (binfile->xtr_data))) {
-		list_xtr_archs (bin, pj, mode);
-		return;
+		list_xtr_archs (bin, pj, &output, mode);
+		return r_strbuf_drain_nofree (&output);
 	}
 	Sdb *binfile_sdb = binfile? binfile->sdb: NULL;
 	if (!binfile_sdb) {
 		//	R_LOG_ERROR ("Cannot find SDB!");
-		return;
+		return r_strbuf_drain_nofree (&output);
 	}
 	if (!binfile) {
 		//	R_LOG_ERROR ("Binary format not currently loaded!");
-		return;
+		return r_strbuf_drain_nofree (&output);
 	}
 	RBinFile *nbinfile = r_bin_file_find_by_name (bin, name);
 	if (!nbinfile) {
-		return;
+		return r_strbuf_drain_nofree (&output);
 	}
 	RTable *table = t? t: r_table_new ("bins", NULL);
 	const char *fmt = "dXnss";
@@ -1512,7 +1512,7 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, RTable *t, int mode) {
 	if (info && narch > 1) {
 		switch (mode) {
 		case 'q':
-			bin->cb_printf ("%s\n", arch);
+			r_strbuf_appendf (&output, "%s\n", arch);
 			break;
 		case 'j':
 			pj_o (pj);
@@ -1537,7 +1537,7 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, RTable *t, int mode) {
 			r_table_add_rowf (table, fmt, 0, boffset, obj_size, str_fmt, machine);
 			free (str_fmt);
 			char *s = r_table_tostring (table);
-			bin->cb_printf ("%s", s);
+			r_strbuf_append (&output, s);
 			free (s);
 		}
 		snprintf (archline, sizeof (archline) - 1, "0x%08" PFMT64x ":%" PFMT64u ":%s:%d:%s", boffset, obj_size, arch, bits, machine);
@@ -1545,7 +1545,7 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, RTable *t, int mode) {
 		if (info) {
 			switch (mode) {
 			case 'q':
-				bin->cb_printf ("%s\n", arch);
+				r_strbuf_appendf (&output, "%s\n", arch);
 				break;
 			case 'j':
 				pj_o (pj);
@@ -1570,14 +1570,14 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, RTable *t, int mode) {
 				r_table_add_rowf (table, fmt, 0, boffset, obj_size, str_fmt, "");
 				free (str_fmt);
 				char *s = r_table_tostring (table);
-				bin->cb_printf ("%s", s);
+				r_strbuf_append (&output, s);
 				free (s);
 			}
 			snprintf (archline, sizeof (archline), "0x%08" PFMT64x ":%" PFMT64u ":%s:%d", boffset, obj_size, arch, bits);
 		} else if (nbinfile && mode) {
 			switch (mode) {
 			case 'q':
-				bin->cb_printf ("%s\n", arch);
+				r_strbuf_appendf (&output, "%s\n", arch);
 				break;
 			case 'j':
 				pj_o (pj);
@@ -1593,7 +1593,7 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, RTable *t, int mode) {
 			default:
 				r_table_add_rowf (table, fmt, 0, boffset, obj_size, "", "");
 				char *s = r_table_tostring (table);
-				bin->cb_printf ("%s", s);
+				r_strbuf_append (&output, s);
 				free (s);
 			}
 			snprintf (archline, sizeof (archline), "0x%08" PFMT64x ":%" PFMT64u ":%s:%d", boffset, obj_size, "unk", 0);
@@ -1605,6 +1605,7 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, RTable *t, int mode) {
 		pj_end (pj);
 	}
 	r_table_free (table);
+	return r_strbuf_drain_nofree (&output);
 }
 
 R_API void r_bin_set_user_ptr(RBin *bin, void *user) {

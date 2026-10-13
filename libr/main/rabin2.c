@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #include <r_core.h>
 #include "../../libr/bin/format/pdb/pdb_downloader.h"
@@ -1020,7 +1020,9 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		char *res = NULL;
 		RBinLanguage type = R_BIN_LANG_NONE;
 		if (!*do_demangle || !strcmp (do_demangle, "?") || !strcmp (do_demangle, "help")) {
-			r_bin_demangle_list (core.bin);
+			char *s = r_bin_demangle_list (core.bin);
+			r_cons_print (core.cons, s);
+			free (s);
 			r_cons_flush (core.cons);
 			r_core_fini (&core);
 			free (state.stdin_buf);
@@ -1300,7 +1302,6 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		} \
 	}
 	core.bin = bin;
-	bin->cb_printf = r_cons_gprintf; // XXX deprecate
 	filter.addr = at;
 	filter.name = name;
 	core.cons->context->is_interactive = false;
@@ -1310,11 +1311,11 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	}
 	// List fatmach0 sub-binaries, etc
 	if (action & R_BIN_REQ_LISTARCHS || ((arch || bits || arch_name) && !r_bin_select (bin, arch, bits, arch_name))) {
-		if (rad == R_MODE_SIMPLEST || rad == R_MODE_SIMPLE) {
-			r_bin_list_archs (bin, pj, NULL, 'q');
-		} else {
-			r_bin_list_archs (bin, pj, NULL, (rad == R_MODE_JSON)? 'j': 1);
-		}
+		int arch_mode = (rad == R_MODE_SIMPLEST || rad == R_MODE_SIMPLE)? 'q'
+			: (rad == R_MODE_JSON)? 'j': 1;
+		char *output = r_bin_list_archs (bin, pj, NULL, arch_mode);
+		r_cons_print (cons, output);
+		free (output);
 		free (arch_name);
 	}
 	if (action & R_BIN_REQ_PDB_DWNLD) {

@@ -2690,8 +2690,6 @@ R_API bool r_core_init(RCore *core) {
 	core->rasm->parse->varlist = r_anal_function_get_var_fields;
 	core->bin = r_bin_new ();
 	r_cons_bind (core->cons, &core->bin->consb);
-	// XXX we should use RConsBind instead of this hardcoded pointer
-	core->bin->cb_printf = (PrintfCallback)r_cons_gprintf;
 	r_bin_set_user_ptr (core->bin, core);
 	core->io = r_io_new ();
 	r_event_hook (core->io->event, R_EVENT_IO_WRITE, ev_iowrite_cb, core);

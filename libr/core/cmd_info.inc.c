@@ -4137,11 +4137,11 @@ static int cmd_info(void *data, const char *input) {
 		} else if (input[1] == 'j') {
 			RTable *t = r_core_table_new (core, "archs");
 			pj_o (pj); // weird
-			r_bin_list_archs (core->bin, pj, t, 'j');
+			print_owned (core, r_bin_list_archs (core->bin, pj, t, 'j'));
 			pj_end (pj);
 		} else {
 			RTable *t = r_core_table_new (core, "archs");
-			r_bin_list_archs (core->bin, NULL, t, 1);
+			print_owned (core, r_bin_list_archs (core->bin, NULL, t, 1));
 		}
 		break;
 	case 'e': // "ie"
