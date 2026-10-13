@@ -3849,33 +3849,33 @@ iS sha1,crc32
 iSS sha1,crc32
 EOF
 EXPECT=<<EOF
-nth paddr         size vaddr         vsize perm flags ssdeep                                                                                             type             name
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-0   0x00003830  0x3c10 0x100003830  0x3c10 -r-x 0x0   24:xecd/8FGEE8Z6J/QJl38o38x8bzLbLyJgLVlnLeJLrrXLPLIgjjhob6qXK:xFE/w/QJbdLHyJOVtet/bTIgnmOy         REGULAR          0.__TEXT.__text
-1   0x00007440   0x520 0x100007440   0x520 -r-x 0x0   1:lllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll:                                 SYMBOL_STUBS     1.__TEXT.__auth_stubs
-2   0x00007960    0xdc 0x100007960    0xdc -r-x 0x0   3:Rbis8AaroSr4o4eANUFRtlU/sGYao05teAC/mef7HZlNCvlBAevsn:Wx1piU40S5teAg77NCvlBC                     REGULAR          2.__TEXT.__const
-3   0x00007a3c   0x4e9 0x100007a3c   0x4e9 -r-x 0x0   24:HfvlIEf751ylc4cBcLo6d6sV36oYEhsQNGfltM0LtIsBNSntfTioY:Hf97fl1ohcBcLB3MQN2ysPibBY                CSTRINGS         3.__TEXT.__cstring
-4   0x00007f28    0xd8 0x100007f28    0xd8 -r-x 0x0   6:wUyeplqMyLtCLM+oMCgMligBpbwof/PUQ:Qwlf5kiE6of5                                                   REGULAR          4.__TEXT.__unwind_info
-5   0x00008000   0x290 0x100008000   0x290 -rw- 0x0   12:N+OK+tQR0i5B96/PZPr6cld+UBlBF2FKp7lVsV4JlziVNNnpMGfRB3fn:N+8tKd5B0/JPBlBF2FKp7cNNaABv           NONLAZY_POINTERS 5.__DATA_CONST.__auth_got
-6   0x00008290    0x30 0x100008290    0x30 -rw- 0x0   1:qh2kllmdnR3toYDSllNMXlltglQ7toY4dllN9XlltglqhNkln:qh2kURdouievWQGVnX9qlqAln                      NONLAZY_POINTERS 6.__DATA_CONST.__got
-7   0x000082c0   0x268 0x1000082c0   0x268 -rw- 0x0   12:YZUFJj6p4T/tuP7+ltE/fg8SaRtHU4jLnmtd5FrblVUJC+ElwtSI1g0PRt1gGE:YZuJj6p4rmeu3gxaRm4jbEdYcKSIbptM REGULAR          7.__DATA_CONST.__const
-8   0x0000c000    0x20 0x10000c000    0x20 -rw- 0x0   1:llllllllllllllllllllllllllllllll:                                                                REGULAR          8.__DATA.__data
-9   0x00000000     0x0 0x10000c020    0xb0 -rw- 0x0                                                                                                      ZEROFILL         9.__DATA.__common
-10  0x00000000     0x0 0x10000c0d0   0x150 -rw- 0x0                                                                                                      ZEROFILL         10.__DATA.__bss
+nth paddr         size vaddr         vsize perm flags      ssdeep                                                                                             type             name
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+0   0x00003830  0x3c10 0x100003830  0x3c10 -r-x 0x80000400 24:xecd/8FGEE8Z6J/QJl38o38x8bzLbLyJgLVlnLeJLrrXLPLIgjjhob6qXK:xFE/w/QJbdLHyJOVtet/bTIgnmOy         REGULAR          0.__TEXT.__text
+1   0x00007440   0x520 0x100007440   0x520 -r-x 0x80000408 1:lllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll:                                 SYMBOL_STUBS     1.__TEXT.__auth_stubs
+2   0x00007960    0xdc 0x100007960    0xdc -r-x 0x0        3:Rbis8AaroSr4o4eANUFRtlU/sGYao05teAC/mef7HZlNCvlBAevsn:Wx1piU40S5teAg77NCvlBC                     REGULAR          2.__TEXT.__const
+3   0x00007a3c   0x4e9 0x100007a3c   0x4e9 -r-x 0x2        24:HfvlIEf751ylc4cBcLo6d6sV36oYEhsQNGfltM0LtIsBNSntfTioY:Hf97fl1ohcBcLB3MQN2ysPibBY                CSTRINGS         3.__TEXT.__cstring
+4   0x00007f28    0xd8 0x100007f28    0xd8 -r-x 0x0        6:wUyeplqMyLtCLM+oMCgMligBpbwof/PUQ:Qwlf5kiE6of5                                                   REGULAR          4.__TEXT.__unwind_info
+5   0x00008000   0x290 0x100008000   0x290 -rw- 0x6        12:N+OK+tQR0i5B96/PZPr6cld+UBlBF2FKp7lVsV4JlziVNNnpMGfRB3fn:N+8tKd5B0/JPBlBF2FKp7cNNaABv           NONLAZY_POINTERS 5.__DATA_CONST.__auth_got
+6   0x00008290    0x30 0x100008290    0x30 -rw- 0x6        1:qh2kllmdnR3toYDSllNMXlltglQ7toY4dllN9XlltglqhNkln:qh2kURdouievWQGVnX9qlqAln                      NONLAZY_POINTERS 6.__DATA_CONST.__got
+7   0x000082c0   0x268 0x1000082c0   0x268 -rw- 0x0        12:YZUFJj6p4T/tuP7+ltE/fg8SaRtHU4jLnmtd5FrblVUJC+ElwtSI1g0PRt1gGE:YZuJj6p4rmeu3gxaRm4jbEdYcKSIbptM REGULAR          7.__DATA_CONST.__const
+8   0x0000c000    0x20 0x10000c000    0x20 -rw- 0x0        1:llllllllllllllllllllllllllllllll:                                                                REGULAR          8.__DATA.__data
+9   0x00000000     0x0 0x10000c020    0xb0 -rw- 0x1                                                                                                           ZEROFILL         9.__DATA.__common
+10  0x00000000     0x0 0x10000c0d0   0x150 -rw- 0x1                                                                                                           ZEROFILL         10.__DATA.__bss
 --
-nth paddr         size vaddr         vsize perm flags sha1, crc32                                       type             name
------------------------------------------------------------------------------------------------------------------------------
-0   0x00003830  0x3c10 0x100003830  0x3c10 -r-x 0x0   597dd9392a6e194e98d21b2ca4ddebb298f09575 f0140c0d REGULAR          0.__TEXT.__text
-1   0x00007440   0x520 0x100007440   0x520 -r-x 0x0   50d3d6842dcc27779e36328bd63f5f81e3fedc43 3b2e9755 SYMBOL_STUBS     1.__TEXT.__auth_stubs
-2   0x00007960    0xdc 0x100007960    0xdc -r-x 0x0   5e1360a742e0a5f6353d85b7384154fdf71638a4 66f4beca REGULAR          2.__TEXT.__const
-3   0x00007a3c   0x4e9 0x100007a3c   0x4e9 -r-x 0x0   b2d3430179b36eb6d6d4f40567200fca6eb55dd2 509843f1 CSTRINGS         3.__TEXT.__cstring
-4   0x00007f28    0xd8 0x100007f28    0xd8 -r-x 0x0   5a2314eb29ff90684dcdd86a6925564862e5c594 b0ded58b REGULAR          4.__TEXT.__unwind_info
-5   0x00008000   0x290 0x100008000   0x290 -rw- 0x0   ee3f452cb100d6d1fcbf672412c3e8461e7e53f2 aae96e37 NONLAZY_POINTERS 5.__DATA_CONST.__auth_got
-6   0x00008290    0x30 0x100008290    0x30 -rw- 0x0   0e15d630f62b65d21110a4ba17ce0f8211c6ca8b e6402175 NONLAZY_POINTERS 6.__DATA_CONST.__got
-7   0x000082c0   0x268 0x1000082c0   0x268 -rw- 0x0   be33657ad47139b81533a6212659ae955b02cdac de20cceb REGULAR          7.__DATA_CONST.__const
-8   0x0000c000    0x20 0x10000c000    0x20 -rw- 0x0   de8a847bff8c343d69b853a215e6ee775ef2ef96 190a55ad REGULAR          8.__DATA.__data
-9   0x00000000     0x0 0x10000c020    0xb0 -rw- 0x0                                                     ZEROFILL         9.__DATA.__common
-10  0x00000000     0x0 0x10000c0d0   0x150 -rw- 0x0                                                     ZEROFILL         10.__DATA.__bss
+nth paddr         size vaddr         vsize perm flags      sha1, crc32                                       type             name
+----------------------------------------------------------------------------------------------------------------------------------
+0   0x00003830  0x3c10 0x100003830  0x3c10 -r-x 0x80000400 597dd9392a6e194e98d21b2ca4ddebb298f09575 f0140c0d REGULAR          0.__TEXT.__text
+1   0x00007440   0x520 0x100007440   0x520 -r-x 0x80000408 50d3d6842dcc27779e36328bd63f5f81e3fedc43 3b2e9755 SYMBOL_STUBS     1.__TEXT.__auth_stubs
+2   0x00007960    0xdc 0x100007960    0xdc -r-x 0x0        5e1360a742e0a5f6353d85b7384154fdf71638a4 66f4beca REGULAR          2.__TEXT.__const
+3   0x00007a3c   0x4e9 0x100007a3c   0x4e9 -r-x 0x2        b2d3430179b36eb6d6d4f40567200fca6eb55dd2 509843f1 CSTRINGS         3.__TEXT.__cstring
+4   0x00007f28    0xd8 0x100007f28    0xd8 -r-x 0x0        5a2314eb29ff90684dcdd86a6925564862e5c594 b0ded58b REGULAR          4.__TEXT.__unwind_info
+5   0x00008000   0x290 0x100008000   0x290 -rw- 0x6        ee3f452cb100d6d1fcbf672412c3e8461e7e53f2 aae96e37 NONLAZY_POINTERS 5.__DATA_CONST.__auth_got
+6   0x00008290    0x30 0x100008290    0x30 -rw- 0x6        0e15d630f62b65d21110a4ba17ce0f8211c6ca8b e6402175 NONLAZY_POINTERS 6.__DATA_CONST.__got
+7   0x000082c0   0x268 0x1000082c0   0x268 -rw- 0x0        be33657ad47139b81533a6212659ae955b02cdac de20cceb REGULAR          7.__DATA_CONST.__const
+8   0x0000c000    0x20 0x10000c000    0x20 -rw- 0x0        de8a847bff8c343d69b853a215e6ee775ef2ef96 190a55ad REGULAR          8.__DATA.__data
+9   0x00000000     0x0 0x10000c020    0xb0 -rw- 0x1                                                          ZEROFILL         9.__DATA.__common
+10  0x00000000     0x0 0x10000c0d0   0x150 -rw- 0x1                                                          ZEROFILL         10.__DATA.__bss
 --
 nth paddr         size vaddr         vsize perm flags sha1, crc32                                       type name
 -----------------------------------------------------------------------------------------------------------------

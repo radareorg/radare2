@@ -2773,6 +2773,7 @@ RVecSegment *MACH0_(get_segments_vec)(RBinFile *bf, struct MACH0_(obj_t) * mo) {
 				s->is_segment = false;
 				s->size = (sect->flags == S_ZEROFILL)? 0: (ut64)sect->size;
 				s->type = macho_section_type_tostring (sect->flags);
+				s->flags = sect->flags;
 				s->paddr = (ut64)sect->offset;
 
 				int segment_index = 0;
