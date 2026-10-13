@@ -986,6 +986,10 @@ theverynext:
 				r_anal_op_fini (&aop);
 			}
 			}
+			// a break or the hit limit ends the search, not only this map
+			if (r_cons_is_breaked (core->cons) || (search->maxhits > 0 && count >= search->maxhits)) {
+				break;
+			}
 		}
 beach:
 		if (param->pj) {
