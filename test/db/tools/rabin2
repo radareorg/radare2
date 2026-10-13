@@ -311,7 +311,7 @@ CMDS=!rabin2 -e ${R2_FILE}
 EXPECT=<<EOF
 paddr      vaddr       phaddr     vhaddr      type
 --------------------------------------------------
-0x00001ef8 0x100000ef8 0x00000570 0x100000570 program
+0x00001ef8 0x100000ef8 0x00001570 0x100000570 program
 EOF
 RUN
 
@@ -331,7 +331,7 @@ CMDS=!rabin2 -a x86 -b 32 -e ${R2_FILE}
 EXPECT=<<EOF
 paddr      vaddr      phaddr     vhaddr     type
 ------------------------------------------------
-0x00005f44 0x00001f44 0x00000420 0x00001420 program
+0x00005f44 0x00001f44 0x00005420 0x00001420 program
 EOF
 RUN
 
@@ -351,7 +351,7 @@ CMDS=!rabin2 -B 0x2000000 -e ${R2_FILE}
 EXPECT=<<EOF
 paddr      vaddr      phaddr     vhaddr     type
 ------------------------------------------------
-0x00001ef8 0x02000ef8 0x00000570 0x02000570 program
+0x00001ef8 0x02000ef8 0x00001570 0x02000570 program
 EOF
 RUN
 

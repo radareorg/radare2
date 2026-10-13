@@ -238,7 +238,7 @@ static RList *entries(RBinFile *bf) {
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	ptr->paddr = entry->offset + bo->boffset;
 	ptr->vaddr = entry->addr;
-	ptr->hpaddr = entry->haddr;
+	ptr->hpaddr = entry->haddr? entry->haddr + bo->boffset: 0;
 	ptr->hvaddr = entry->hvaddr;
 	ptr->bits = bits;
 	//realign due to thumb
