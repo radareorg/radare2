@@ -2093,3 +2093,60 @@ EXPECT=<<EOF
 0x00000005 exit
 EOF
 RUN
+
+NAME=/as search.align starts at the first aligned address
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+e asm.os=linux
+wx 00000000a80b8052010000d4
+e search.in=range
+e search.from=1
+e search.to=0x10
+e search.align=4
+/as
+EOF
+EXPECT=<<EOF
+0x00000008 exit
+EOF
+RUN
+
+NAME=/as search.align=64 reads each window at an aligned address
+FILE=malloc://8192
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+e asm.os=linux
+b 4096
+wx a80b8052 @ 0xfc0
+wx 010000d4 @ 0x1000
+e search.in=range
+e search.from=1
+e search.to=0x2000
+e search.align=64
+/as
+EOF
+EXPECT=<<EOF
+0x00001000 exit
+EOF
+RUN
+
+NAME=/as search.align past the block size reads each candidate's own window
+FILE=malloc://16384
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+e asm.os=linux
+b 4096
+wx 010000d4 @ 0x2000
+e search.in=range
+e search.from=1
+e search.to=0x4000
+e search.align=8192
+/as~[0]
+EOF
+EXPECT=<<EOF
+0x00002000
+EOF
+RUN
