@@ -4545,6 +4545,8 @@ struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) * mo) {
 	entry->addr = ea;
 	entry->offset = addr_to_offset (mo, entry->addr);
 	entry->haddr = sdb_num_get (mo->kv, "mach0.entry.offset", 0);
+	// the load command holding the entry is mapped with the header in __TEXT
+	entry->hvaddr = entry->haddr? offset_to_vaddr (mo, entry->haddr): 0;
 	sdb_num_set (mo->kv, "mach0.entry.vaddr", entry->addr, 0);
 	sdb_num_set (mo->kv, "mach0.entry.paddr", mo->entry, 0);
 

@@ -239,6 +239,7 @@ static RList *entries(RBinFile *bf) {
 	ptr->paddr = entry->offset + bo->boffset;
 	ptr->vaddr = entry->addr;
 	ptr->hpaddr = entry->haddr;
+	ptr->hvaddr = entry->hvaddr;
 	ptr->bits = bits;
 	//realign due to thumb
 	if (bits == 16) {
