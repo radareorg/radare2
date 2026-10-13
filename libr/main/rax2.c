@@ -7,6 +7,7 @@
 // R2R db/tools/rahash2
 
 #include <r_main.h>
+#include "main_private.h"
 #include <r_util/pj.h>
 #include <r_util/r_print.h>
 #include <r_util/r_str.h>
@@ -47,9 +48,9 @@ typedef struct {
 	char omode;
 } RaxMode;
 
-static bool rax(RNum *num, char *str, int len, int last, RaxActions *flags, RaxMode *mode, PJ **pj);
+static bool rax(RCons *main_cons, RNum *num, char *str, int len, int last, RaxActions *flags, RaxMode *mode, PJ **pj);
 
-static int use_stdin(RNum *num, RaxActions *flags, RaxMode *mode, PJ **pj) {
+static int use_stdin(RCons *main_cons, RNum *num, RaxActions *flags, RaxMode *mode, PJ **pj) {
 	R_RETURN_VAL_IF_FAIL (num && flags, -1);
 	if (flags->hexstr2raw && flags->swapendian && !flags->swapbytes) {
 		R_LOG_ERROR ("Endian swap with -s requires -b <8|16|32|64>");
@@ -58,14 +59,14 @@ static int use_stdin(RNum *num, RaxActions *flags, RaxMode *mode, PJ **pj) {
 	int rc = 0;
 	if (flags->slurphex) {
 		char buf[1] = { 0 };
-		if (!rax (num, buf, 1, 0, flags, mode, pj)) {
+		if (!rax (main_cons, num, buf, 1, 0, flags, mode, pj)) {
 			rc = 1;
 		}
 	} else if (flags->raw2hexstr || (flags->hexstr2raw && flags->swapendian)) {
 		int len = 0;
 		char *buf = r_stdin_slurp (&len);
 		if (buf) {
-			if (!rax (num, buf, len, 0, flags, mode, pj)) {
+			if (!rax (main_cons, num, buf, len, 0, flags, mode, pj)) {
 				rc = 1;
 			}
 			free (buf);
@@ -77,7 +78,7 @@ static int use_stdin(RNum *num, RaxActions *flags, RaxMode *mode, PJ **pj) {
 			if (!buf) {
 				break;
 			}
-			if (!rax (num, buf, l, 0, flags, mode, pj)) {
+			if (!rax (main_cons, num, buf, l, 0, flags, mode, pj)) {
 				rc = 1;
 			}
 			free (buf);
@@ -86,18 +87,18 @@ static int use_stdin(RNum *num, RaxActions *flags, RaxMode *mode, PJ **pj) {
 	return rc;
 }
 
-static void rax2_newline(RaxActions flags) {
+static void rax2_newline(RCons *main_cons, RaxActions flags) {
 #if __EMSCRIPTEN__
-	puts ("");
+	r_cons_printf (main_cons, "\n");
 #else
 	if (flags.newline) {
-		puts ("");
+		r_cons_printf (main_cons, "\n");
 	}
 #endif
 	fflush (stdout);
 }
 
-static bool format_output(RNum *num, char mode, const char *s, RaxMode m, RaxActions flags) {
+static bool format_output(RCons *main_cons, RNum *num, char mode, const char *s, RaxMode m, RaxActions flags) {
 	const char *errstr = NULL;
 	ut64 n = r_num_math_err (num, s, &errstr);
 	if (errstr) {
@@ -117,30 +118,30 @@ static bool format_output(RNum *num, char mode, const char *s, RaxMode m, RaxAct
 	}
 	switch (m.omode) {
 	case 'I':
-		printf ("%" PFMT64d "\n", n);
+		r_cons_printf (main_cons, "%" PFMT64d "\n", n);
 		break;
 	case '0':
-		printf ("0x%" PFMT64x "\n", n);
+		r_cons_printf (main_cons, "0x%" PFMT64x "\n", n);
 		break;
 	case 'F':
 		{
 			int n2 = (int)n;
 			float *f = (float *)&n2;
-			printf ("%ff\n", *f);
+			r_cons_printf (main_cons, "%ff\n", *f);
 		}
 		break;
 	case 'V':
 
 		break;
 	case 'f':
-		printf ("%.01lf\n", num->fvalue);
+		r_cons_printf (main_cons, "%.01lf\n", num->fvalue);
 		break;
 		case 'l':
 		{
 			R_STATIC_ASSERT (sizeof (float) == 4);
 			float f = (float)num->fvalue;
 			ut32 *p = (ut32 *)&f;
-			printf ("Fx%08x\n", *p);
+			r_cons_printf (main_cons, "Fx%08x\n", *p);
 		}
 		break;
 	case 'g':
@@ -148,30 +149,30 @@ static bool format_output(RNum *num, char mode, const char *s, RaxMode m, RaxAct
 			R_STATIC_ASSERT (sizeof (float) == 4);
 			float f = (float)num->fvalue;
 			ut16 bf16 = r_num_float_to_bf16 (f);
-			printf ("Gx%04x\n", bf16);
+			r_cons_printf (main_cons, "Gx%04x\n", bf16);
 		}
 		break;
 	case 'G':
 		{
 			float f = r_num_bf16_to_float ((ut16)n);
-			printf ("%.9g\n", f);
+			r_cons_printf (main_cons, "%.9g\n", f);
 		}
 		break;
-	case 'O': printf ("0%" PFMT64o "\n", n); break;
+	case 'O': r_cons_printf (main_cons, "0%" PFMT64o "\n", n); break;
 	case 'B':
 		if (n) {
 			r_num_to_bits (strbits, n);
-			printf ("%sb\n", strbits);
+			r_cons_printf (main_cons, "%sb\n", strbits);
 		} else {
-			printf ("0b\n");
+			r_cons_printf (main_cons, "0b\n");
 		}
 		break;
 	case 'T':
 		if (n) {
 			r_num_to_ternary (strbits, n);
-			printf ("%st\n", strbits);
+			r_cons_printf (main_cons, "%st\n", strbits);
 		} else {
-			printf ("0t\n");
+			r_cons_printf (main_cons, "0t\n");
 		}
 		break;
 	default:
@@ -181,12 +182,12 @@ static bool format_output(RNum *num, char mode, const char *s, RaxMode m, RaxAct
 	return true;
 }
 
-static void help_usage(void) {
-	printf ("Usage: rax2 [-h|...] [- | expr ...] # convert between numeric bases\n");
+static void help_usage(RCons *main_cons) {
+	r_cons_printf (main_cons, "Usage: rax2 [-h|...] [- | expr ...] # convert between numeric bases\n");
 }
 
-static int help(void) {
-	printf (
+static int help(RCons *main_cons) {
+	r_cons_printf (main_cons,
 		"  int        ->  hex              ;  rax2 10\n"
 		"  hex        ->  int              ;  rax2 0xa\n"
 		"  -int       ->  hex              ;  rax2 -77\n"
@@ -255,7 +256,7 @@ static bool invalid_length(RaxActions flags) {
 	return true;
 }
 
-static bool rax(RNum *num, char *str, int len, int last, RaxActions *flags, RaxMode *mode, PJ **pj) {
+static bool rax(RCons *main_cons, RNum *num, char *str, int len, int last, RaxActions *flags, RaxMode *mode, PJ **pj) {
 	const char *errstr = NULL;
 	ut8 *buf;
 	char *p, out_mode = (flags->decimal)? 'I': '0';
@@ -273,7 +274,7 @@ static bool rax(RNum *num, char *str, int len, int last, RaxActions *flags, RaxM
 		while (str[1] && str[1] != ' ') {
 			switch (str[1]) {
 			case 'n': flags->newline = true; break;
-			case 'a': printf ("%s", r_str_asciitable ()); return true;
+			case 'a': r_cons_printf (main_cons, "%s", r_str_asciitable ()); return true;
 			case 's': flags->hexstr2raw = !flags->hexstr2raw; break;
 			case 'e': flags->swapendian = !flags->swapendian; break;
 			case 'S': flags->raw2hexstr = !flags->raw2hexstr; break;
@@ -300,17 +301,17 @@ static bool rax(RNum *num, char *str, int len, int last, RaxActions *flags, RaxM
 			case 'i': flags->ipaddr2num = !flags->ipaddr2num; break;
 			case 'j': flags->jsonbases = !flags->jsonbases; break;
 			case 'b': flags->forcebase = !flags->forcebase; break;
-			case 'v': return r_main_version_print ("rax2", 0);
-			case '\0': return !use_stdin (num, flags, mode, pj);
+			case 'v': return r_main_version_print (main_cons, "rax2", 0);
+			case '\0': return !use_stdin (main_cons, num, flags, mode, pj);
 			default:
-				help_usage ();
-				return help ();
+				help_usage (main_cons);
+				return help (main_cons);
 			}
 			str++;
 		}
 		usedflags = true;
 		if (last) {
-			return !use_stdin (num, flags, mode, pj);
+			return !use_stdin (main_cons, num, flags, mode, pj);
 		}
 		return true;
 	}
@@ -319,7 +320,7 @@ static bool rax(RNum *num, char *str, int len, int last, RaxActions *flags, RaxM
 			return false;
 		}
 		if (*str == 'h' || *str == '?') {
-			help ();
+			help (main_cons);
 			return false;
 		}
 	}
@@ -333,7 +334,7 @@ dotherax:
 			return false;
 		}
 		flags->swapbytes = bits / 8;
-		return last? !use_stdin (num, flags, mode, pj): true;
+		return last? !use_stdin (main_cons, num, flags, mode, pj): true;
 	}
 	if (flags->hexstr2raw) { // -s
 		int n = ((strlen (str)) >> 1) + 1;
@@ -356,9 +357,9 @@ dotherax:
 						r_mem_swapendian (buf + i, buf + i, flags->swapbytes);
 					}
 				}
-				fwrite (buf, n, 1, stdout);
+				r_main_write (main_cons, buf, n);
 			}
-			rax2_newline (*flags);
+			rax2_newline (main_cons, *flags);
 			free (buf);
 		}
 		return true;
@@ -366,28 +367,28 @@ dotherax:
 	if (flags->raw2hexstr) { // -S
 		if (flags->str2hexstr) {
 			int j;
-			printf ("s+0\n");
+			r_cons_printf (main_cons, "s+0\n");
 			for (i = 0; i < len;) {
-				printf ("wx+");
+				r_cons_printf (main_cons, "wx+");
 				for (j = 0; j < 80 && i < len; j++, i++) {
-					printf ("%02x", (ut8)str[i]);
+					r_cons_printf (main_cons, "%02x", (ut8)str[i]);
 				}
-				printf ("\n");
+				r_cons_printf (main_cons, "\n");
 			}
-			printf ("s-\n");
-			printf ("\n");
+			r_cons_printf (main_cons, "s-\n");
+			r_cons_printf (main_cons, "\n");
 		} else {
 			for (i = 0; i < len; i++) {
-				printf ("%02x", (ut8)str[i]);
+				r_cons_printf (main_cons, "%02x", (ut8)str[i]);
 			}
-			printf ("\n");
+			r_cons_printf (main_cons, "\n");
 		}
 		return true;
 	}
 	if (flags->binstr2raw) { // -Z
 		ut8 out[256] = { 0 };
 		if (r_mem_from_binstring (str, out, sizeof (out) - 1)) {
-			printf ("%s\n", out); // TODO accept non null terminated strings
+			r_cons_printf (main_cons, "%s\n", out); // TODO accept non null terminated strings
 		} else {
 			R_LOG_ERROR ("Invalid binary input string");
 		}
@@ -395,7 +396,7 @@ dotherax:
 	}
 	if (flags->hashstr) { // -H
 		int h = r_str_hash (str);
-		printf ("0x%x\n", h);
+		r_cons_printf (main_cons, "0x%x\n", h);
 		return true;
 	}
 	if (flags->keepbase) { // -k
@@ -423,7 +424,7 @@ dotherax:
 		} else {
 			s = r_print_randomart ((ut8 *)buf, n, *m);
 		}
-		printf ("%s\n", s);
+		r_cons_printf (main_cons, "%s\n", s);
 		free (s);
 		free (m);
 		return true;
@@ -437,33 +438,33 @@ dotherax:
 		if (n >> 32) {
 			/* is 64 bit value */
 			if (flags->hexstr2raw) {
-				fwrite (&n, sizeof (n), 1, stdout);
+				r_main_write (main_cons, &n, sizeof (n));
 			} else {
 				int i;
 				for (i = 0; i < 8; i++) {
-					printf ("%02x", (int) (n & 0xff));
+					r_cons_printf (main_cons, "%02x", (int) (n & 0xff));
 					n >>= 8;
 				}
-				printf ("\n");
+				r_cons_printf (main_cons, "\n");
 			}
 		} else {
 			/* is 32 bit value */
 			ut32 n32 = (ut32)n;
 			if (flags->hexstr2raw) {
-				fwrite (&n32, sizeof (n32), 1, stdout);
+				r_main_write (main_cons, &n32, sizeof (n32));
 			} else {
 				int i;
 				for (i = 0; i < 4; i++) {
-					printf ("%02x", n32 & 0xff);
+					r_cons_printf (main_cons, "%02x", n32 & 0xff);
 					n32 >>= 8;
 				}
-				printf ("\n");
+				r_cons_printf (main_cons, "\n");
 			}
 		}
 		return true;
 	} else if (flags->str2hexstr) { // -z (bin -> str)
 		char *newstr = r_mem_to_binstring ((const ut8 *)str, strlen (str));
-		printf ("%s\n", newstr);
+		r_cons_printf (main_cons, "%s\n", newstr);
 		free (newstr);
 		return true;
 	} else if (flags->signedword) { // -w
@@ -480,7 +481,7 @@ dotherax:
 		} else if (n >> 7) {
 			n = (st64) (st8)n;
 		}
-		printf ("%" PFMT64d "\n", n);
+		r_cons_printf (main_cons, "%" PFMT64d "\n", n);
 		return true;
 	} else if (flags->binaryraw) { // -c
 		ut64 n = r_num_math_err (num, str, &errstr);
@@ -491,27 +492,27 @@ dotherax:
 		if (n >> 32) {
 			/* is 64 bit value */
 			if (flags->hexstr2raw) {
-				fwrite (&n, sizeof (n), 1, stdout);
+				r_main_write (main_cons, &n, sizeof (n));
 			} else {
 				int i;
 				for (i = 0; i < 8; i++) {
-					printf ("\\x%02x", (int) (n & 0xff));
+					r_cons_printf (main_cons, "\\x%02x", (int) (n & 0xff));
 					n >>= 8;
 				}
-				printf ("\n");
+				r_cons_printf (main_cons, "\n");
 			}
 		} else {
 			/* is 32 bit value */
 			ut32 n32 = (ut32)n;
 			if (flags->hexstr2raw) {
-				fwrite (&n32, sizeof (n32), 1, stdout);
+				r_main_write (main_cons, &n32, sizeof (n32));
 			} else {
 				int i;
 				for (i = 0; i < 4; i++) {
-					printf ("\\x%02x", n32 & 0xff);
+					r_cons_printf (main_cons, "\\x%02x", n32 & 0xff);
 					n32 >>= 8;
 				}
-				printf ("\n");
+				r_cons_printf (main_cons, "\n");
 			}
 		}
 		return true;
@@ -522,7 +523,7 @@ dotherax:
 			R_LOG_ERROR (errstr);
 			return false;
 		}
-		printf ("%s\n", buf);
+		r_cons_printf (main_cons, "%s\n", buf);
 		return true;
 	} else if (flags->timestamp) { // -t
 		RList *split = r_str_split_list (str, "GMT", 0);
@@ -541,7 +542,7 @@ dotherax:
 			R_LOG_ERROR (errstr);
 			return false;
 		}
-		RPrint *p = r_print_new ();
+		RPrint *p = r_main_print_new (main_cons);
 		if (gmt) {
 			p->datezone = r_num_math_err (num, gmt, &errstr);
 			if (errstr) {
@@ -557,8 +558,8 @@ dotherax:
 		char *out = r_base64_encode_dyn ((const ut8 *)str, len);
 		if (out) {
 			if (*out) {
-				printf ("%s", out);
-				rax2_newline (*flags);
+				r_cons_printf (main_cons, "%s", out);
+				rax2_newline (main_cons, *flags);
 			}
 			free (out);
 		}
@@ -569,8 +570,8 @@ dotherax:
 		if (out) {
 			n = r_base64_decode (out, str, n, false);
 			if (n > 0) {
-				fwrite (out, n, 1, stdout);
-				rax2_newline (*flags);
+				r_main_write (main_cons, out, n);
+				rax2_newline (main_cons, *flags);
 			} else {
 				R_LOG_ERROR ("Cannot decode");
 			}
@@ -582,7 +583,7 @@ dotherax:
 		if (s) {
 			char *res = r_hex_from_code (s);
 			if (res) {
-				printf ("%s\n", res);
+				r_cons_printf (main_cons, "%s\n", res);
 				fflush (stdout);
 				free (res);
 			} else {
@@ -616,37 +617,37 @@ dotherax:
 		r_num_segaddr (n, 0, 4, &s, &a);
 		r_num_units (unit, sizeof (unit), n);
 		if (n >> 32) {
-			printf ("int64   %" PFMT64d "\n", (st64)n);
-			printf ("uint64  %" PFMT64u "\n", (ut64)n);
+			r_cons_printf (main_cons, "int64   %" PFMT64d "\n", (st64)n);
+			r_cons_printf (main_cons, "uint64  %" PFMT64u "\n", (ut64)n);
 		} else {
-			printf ("int32   %d\n", (st32)n);
-			printf ("uint32  %u\n", (ut32)n);
+			r_cons_printf (main_cons, "int32   %d\n", (st32)n);
+			r_cons_printf (main_cons, "uint32  %u\n", (ut32)n);
 		}
-		printf ("hex     0x%" PFMT64x "\n", n);
-		printf ("octal   0%" PFMT64o "\n", n);
-		printf ("unit    %s\n", unit);
-		printf ("segment %04x:%04x\n", s, a);
+		r_cons_printf (main_cons, "hex     0x%" PFMT64x "\n", n);
+		r_cons_printf (main_cons, "octal   0%" PFMT64o "\n", n);
+		r_cons_printf (main_cons, "unit    %s\n", unit);
+		r_cons_printf (main_cons, "segment %04x:%04x\n", s, a);
 		if (asnum) {
-			printf ("string  \"%s\"\n", asnum);
+			r_cons_printf (main_cons, "string  \"%s\"\n", asnum);
 			free (asnum);
 		}
 		/* binary and floating point */
 		r_str_bits64 (out, n);
 		memcpy (&f, &n, sizeof (f));
 		memcpy (&d, &n, sizeof (d));
-		printf ("float   %ff\n", f);
-		printf ("bf16    Gx%04x\n", r_num_float_to_bf16 (f));
-		printf ("double  %lf\n", d);
-		printf ("binary  0b%s\n", out);
+		r_cons_printf (main_cons, "float   %ff\n", f);
+		r_cons_printf (main_cons, "bf16    Gx%04x\n", r_num_float_to_bf16 (f));
+		r_cons_printf (main_cons, "double  %lf\n", d);
+		r_cons_printf (main_cons, "binary  0b%s\n", out);
 
 		// base36
 		char b36str[16];
 		b36_fromnum (b36str, n);
-		printf ("base36  %s\n", b36str);
+		r_cons_printf (main_cons, "base36  %s\n", b36str);
 
 		/* ternary */
 		r_num_to_ternary (out, n);
-		printf ("ternary 0t%s\n", out);
+		r_cons_printf (main_cons, "ternary 0t%s\n", out);
 
 		return true;
 	} else if (flags->jsonbases) {
@@ -729,7 +730,7 @@ dotherax:
 		}
 		char *s = r_strbuf_drain (sb);
 		if (s) {
-			printf ("%s", s);
+			r_cons_printf (main_cons, "%s", s);
 			free (s);
 		}
 		return true;
@@ -751,7 +752,7 @@ dotherax:
 		}
 		char *asnum = r_num_as_string (NULL, n, false);
 		if (asnum) {
-			printf ("%s", asnum);
+			r_cons_printf (main_cons, "%s", asnum);
 			free (asnum);
 		} else {
 			R_LOG_ERROR ("Not a string");
@@ -764,7 +765,7 @@ dotherax:
 			ut8 ip[4];
 			sscanf (str, "%hhd.%hhd.%hhd.%hhd", ip, ip + 1, ip + 2, ip + 3);
 			ut32 ip32 = ip[0] | (ip[1] << 8) | (ip[2] << 16) | (ip[3] << 24);
-			printf ("0x%08x\n", ip32);
+			r_cons_printf (main_cons, "0x%08x\n", ip32);
 		} else {
 			const char *errstr = NULL;
 			ut32 ip32 = (ut32)r_num_math_err (NULL, str, &errstr);
@@ -773,7 +774,7 @@ dotherax:
 				return false;
 			}
 			ut8 ip[4] = { ip32 & 0xff, (ip32 >> 8) & 0xff, (ip32 >> 16) & 0xff, ip32 >> 24 };
-			printf ("%d.%d.%d.%d\n", ip[0], ip[1], ip[2], ip[3]);
+			r_cons_printf (main_cons, "%d.%d.%d.%d\n", ip[0], ip[1], ip[2], ip[3]);
 		}
 		return true;
 	}
@@ -829,22 +830,22 @@ dotherax:
 	}
 	while ((p = strchr (str, ' '))) {
 		*p = 0;
-		if (!format_output (num, out_mode, str, *mode, *flags)) {
+		if (!format_output (main_cons, num, out_mode, str, *mode, *flags)) {
 			return false;
 		}
 		str = p + 1;
 	}
-	return *str? format_output (num, out_mode, str, *mode, *flags): true;
+	return *str? format_output (main_cons, num, out_mode, str, *mode, *flags): true;
 }
 
-R_API int r_main_rax2(int argc, const char **argv) {
+R_API int r_main_rax2(RCons *main_cons, int argc, const char **argv) {
 	int i;
 	int rc = 0;
 	int len = 0;
 
 	if (argc < 2) {
-		help_usage ();
-		// use_stdin (num, NULL, &fm);
+		help_usage (main_cons);
+		// use_stdin (main_cons, num, NULL, &fm);
 	} else {
 		RNum *num = r_num_new (NULL, NULL, NULL);
 		RaxActions flags = { 0 };
@@ -854,14 +855,14 @@ R_API int r_main_rax2(int argc, const char **argv) {
 			char *argv_i = strdup (argv[i]);
 			if (argv_i) {
 				len = r_str_unescape (argv_i);
-				if (!rax (num, argv_i, len, i == argc - 1, &flags, &mode, &pj)) {
+				if (!rax (main_cons, num, argv_i, len, i == argc - 1, &flags, &mode, &pj)) {
 					rc = 1;
 				}
 				free (argv_i);
 			}
 		}
 		if (pj) {
-			printf ("%s\n", pj_string (pj));
+			r_cons_printf (main_cons, "%s\n", pj_string (pj));
 			pj_free (pj);
 		}
 		r_num_free (num);

@@ -2,6 +2,7 @@
 
 #include "index.h"
 #include <r_main.h>
+#include "main_private.h"
 #include <r_core.h>
 
 #if __APPLE__ && (__arm__ || __arm64__ || __aarch64__)
@@ -14,8 +15,8 @@ extern int memorystatus_control(uint32_t command, pid_t pid, uint32_t flags, voi
 #define USE_IOS_JETSAM 0
 #endif
 
-static int usage(bool v) {
-	printf ("Usage: r2agent [-adhsLjv] [-p port]\n"
+static int usage(RCons *main_cons, bool v) {
+	r_cons_printf (main_cons, "Usage: r2agent [-adhsLjv] [-p port]\n"
 	"  -a        listen for everyone (localhost by default)\n"
 	"  -d        run in daemon mode (background)\n"
 	"  -h        show this help message\n"
@@ -46,7 +47,7 @@ static RList *auth_tokens_split(char *str) {
 	return tokens;
 }
 
-R_API int r_main_r2agent(int argc, const char **argv) {
+R_API int r_main_r2agent(RCons *main_cons, int argc, const char **argv) {
 	RSocket *s;
 	RCons *cons = NULL;
 	RSocketHTTPOptions so = { 0 };
@@ -77,7 +78,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 			dodaemon = true;
 			break;
 		case 'h':
-			return usage (true);
+			return usage (main_cons, true);
 		case 'v':
 			show_version = true;
 			break;
@@ -97,20 +98,20 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 			list_json = true;
 			break;
 		default:
-			return usage (false);
+			return usage (main_cons, false);
 		}
 	}
 	if (opt.ind != argc) {
-		return usage (false);
+		return usage (main_cons, false);
 	}
 
 	if (show_version) {
 		int mode = list_json? 'j': 0;
-		return r_main_version_print ("r2agent", mode);
+		return r_main_version_print (main_cons, "r2agent", mode);
 	}
 
 	if (list_sessions) {
-		RCore *core = r_core_new ();
+		RCore *core = r_main_core_new (main_cons);
 		if (!core) {
 			R_LOG_ERROR ("Unable to create RCore instance");
 			return 1;
@@ -118,10 +119,10 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 		const char *cmd = list_json? "=lj": "=l";
 		char *out = r_core_cmd_str (core, cmd);
 		if (out) {
-			printf ("%s\n", out);
+			r_cons_printf (main_cons, "%s\n", out);
 			free (out);
 		}
-		r_core_free (core);
+		r_main_core_free (main_cons, core);
 		return 0;
 	}
 
@@ -131,7 +132,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 	if (so.httpauth) {
 		if (!httpauthfile) {
 			R_LOG_ERROR ("No authentication user list set");
-			return usage (false);
+			return usage (main_cons, false);
 		}
 
 		size_t sz;
@@ -141,11 +142,11 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 			if (!so.authtokens) {
 				R_LOG_ERROR ("Empty list of HTTP users");
 				free (pfile);
-				return usage (false);
+				return usage (main_cons, false);
 			}
 		} else {
 			R_LOG_ERROR ("Empty list of HTTP users");
-			return usage (false);
+			return usage (main_cons, false);
 		}
 	}
 #if USE_IOS_JETSAM
@@ -155,7 +156,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 #if LIBC_HAVE_FORK
 		int pid = r_sys_fork ();
 		if (pid > 0) {
-			printf ("%d\n", pid);
+			r_cons_printf (main_cons, "%d\n", pid);
 			return 0;
 		}
 #endif
@@ -183,7 +184,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 		goto cleanup;
 	}
 
-	cons = r_cons_new ();
+	cons = r_main_cons_new (main_cons);
 
 	while (!r_cons_is_breaked (cons)) {
 		char *res = NULL;
@@ -253,7 +254,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 	}
 
 cleanup:
-	r_cons_free (cons);
+	r_main_cons_free (main_cons, cons);
 	free (pfile);
 	r_list_free (so.authtokens);
 	r_socket_free (s);

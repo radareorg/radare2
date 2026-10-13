@@ -368,7 +368,7 @@ bool test_r2_gdb_remote_open(void) {
 
 	r_sys_usleep (500000);
 	const char *argv[] = { "radare2", "-q", "-d", "-D", "gdb", "-Qc", "q", uri, NULL };
-	int ret = r_main_radare2 (8, argv);
+	int ret = r_main_radare2 (NULL, 8, argv);
 	int status = 0;
 	int waited = 0;
 	int wpid = 0;
@@ -414,7 +414,7 @@ bool test_r2_gdb_oversized_reg_response(void) {
 	r_sys_usleep (500000);
 	char *uri = r_str_newf ("gdb://127.0.0.1:%d", port);
 	const char *argv[] = { "radare2", "-q", "-d", "-D", "gdb", "-escr.null=true", "-Qc", "dr;q", uri, NULL };
-	int ret = r_main_radare2 (9, argv);
+	int ret = r_main_radare2 (NULL, 9, argv);
 	int status = 0;
 	int waited = 0;
 	int wpid = 0;
@@ -456,7 +456,7 @@ bool test_r2_gdb_long_xml_reg_name(void) {
 	r_sys_usleep (500000);
 	char *uri = r_str_newf ("gdb://127.0.0.1:%d", port);
 	const char *argv[] = { "radare2", "-q", "-d", "-D", "gdb", "-Qc", "q", uri, NULL };
-	int ret = r_main_radare2 (8, argv);
+	int ret = r_main_radare2 (NULL, 8, argv);
 	int status = 0;
 	int waited = 0;
 	int wpid = 0;
@@ -498,7 +498,7 @@ bool test_r2_gdb_recursive_xml_include(void) {
 	r_sys_usleep (500000);
 	char *uri = r_str_newf ("gdb://127.0.0.1:%d", port);
 	const char *argv[] = { "radare2", "-q", "-d", "-D", "gdb", "-Qc", "q", uri, NULL };
-	int ret = r_main_radare2 (8, argv);
+	int ret = r_main_radare2 (NULL, 8, argv);
 	int status = 0;
 	int waited = 0;
 	int wpid = 0;
@@ -540,7 +540,7 @@ bool test_r2_gdb_oversized_xml_regnum(void) {
 	r_sys_usleep (500000);
 	char *uri = r_str_newf ("gdb://127.0.0.1:%d", port);
 	const char *argv[] = { "radare2", "-q", "-d", "-D", "gdb", "-Qc", "q", uri, NULL };
-	int ret = r_main_radare2 (8, argv);
+	int ret = r_main_radare2 (NULL, 8, argv);
 	int status = 0;
 	int waited = 0;
 	int wpid = 0;
