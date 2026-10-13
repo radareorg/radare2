@@ -1563,6 +1563,9 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 #if CS_API_MAJOR > 4
 	case ARM64_INS_ADDG:
 #endif
+#if CS_API_MAJOR >= 6
+	case ARM64_INS_ADDPT:
+#endif
 	case ARM64_INS_ADD:
 		OPCALL ("+");
 		break;
@@ -1570,6 +1573,9 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		r_strbuf_setf (&op->esil, "cf,%s,+,%s,+,%s,=",
 			REG64 (2), REG64 (1), REG64 (0));
 		break;
+#if CS_API_MAJOR >= 6
+	case ARM64_INS_SUBPT:
+#endif
 	case ARM64_INS_SUB:
 		OPCALL ("-");
 		break;
@@ -3740,6 +3746,9 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 		op->cycles = 1;
 		break;
+#if CS_API_MAJOR >= 6
+	case ARM64_INS_SUBPT:
+#endif
 	case ARM64_INS_SUB:
 		if (ISREG64(0) && (arm64_reg) REGID64(0) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
@@ -3782,6 +3791,9 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		break;
 #if CS_API_MAJOR > 4
 	case ARM64_INS_ADDG:
+#endif
+#if CS_API_MAJOR >= 6
+	case ARM64_INS_ADDPT:
 #endif
 	case ARM64_INS_ADD:
 		if (ISREG64 (0) && (arm64_reg) REGID64 (0) == ARM64_REG_SP) {
@@ -5082,9 +5094,11 @@ static int analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 		buf = op->bytes;
 		len = op->size;
 	}
+#if CS_API_MAJOR < 6
 	if (as->config->bits == 64 && len >= 4 && hack_decode_cpa (op, r_read_le32 (buf), mask)) {
 		return op->size;
 	}
+#endif
 	RArchCSInsn csi;
 	bool ok = r_arch_cs_disasm_iter (*cs_handle, buf, len, addr, &csi);
 	cs_insn *insn = &csi.insn;

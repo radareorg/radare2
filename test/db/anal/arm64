@@ -1,6 +1,7 @@
 NAME=Checked pointer arithmetic decodes without Capstone support
 FILE=malloc://64
 ARGS=-a arm -b 64
+REQUIRE=cs5
 CMDS=<<EOF
 wx 962e179a962e17daff231f9ae13f029a9f3e1cda962e171a
 pi 6
@@ -30,6 +31,27 @@ addpt x22, x20, x23, lsl 3
 subpt x22, x20, x23, lsl 3
 add
 sub
+EOF
+RUN
+
+NAME=Checked pointer arithmetic uses native Capstone 6 instruction IDs
+FILE=malloc://64
+ARGS=-a arm -b 64
+REQUIRE=cs6
+CMDS=<<EOF
+wx 962e179a962e17da
+pi 2
+ao 2~type[1]
+?v `aoj 1~{0.id}`!=0
+?v `aoj 1 @ 4~{0.id}`!=0
+EOF
+EXPECT=<<EOF
+addpt x22, x20, x23, lsl 3
+subpt x22, x20, x23, lsl 3
+add
+sub
+0x1
+0x1
 EOF
 RUN
 

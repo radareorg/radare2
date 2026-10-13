@@ -10,6 +10,7 @@ static const char *reg_list[] = {
 	"x30"
 };
 
+#if CS_API_MAJOR < 6
 static bool hack_decode_cpa(RAnalOp *op, ut32 insn, RAnalOpMask mask) {
 	if ((insn & 0xbfe0e000) != 0x9a002000) {
 		return false;
@@ -73,6 +74,7 @@ static bool hack_decode_cpa(RAnalOp *op, ut32 insn, RAnalOpMask mask) {
 	}
 	return true;
 }
+#endif
 
 static int hack_handle_dp_reg(ut32 insn, RAnalOp *op) {
 	const bool op0 = (insn >> 30) & 0x1;
