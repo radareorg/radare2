@@ -1,3 +1,14 @@
+d "maddpt x0, x1, x2, x3" 200c629b
+d "msubpt x0, x1, x2, x3" 208c629b
+d "maddpt xzr, x1, x2, x3" 3f0c629b
+d "maddpt x0, x1, x2, xzr" 207c629b
+d "maddpt x0, xzr, xzr, xzr" e07f7f9b
+d "addpt z0.d, z1.d, z2.d" 2008e204
+d "subpt z0.d, z1.d, z2.d" 200ce204
+d "addpt z0.d, p0/m, z0.d, z2.d" 4000c404
+d "subpt z0.d, p0/m, z0.d, z2.d" 4000c504
+d "madpt z0.d, z2.d, z1.d" 20d8c244
+d "mlapt z0.d, z1.d, z2.d" 20d0c244
 d "addpt x22, x20, x23, lsl 3" 962e179a
 d "subpt x22, x20, x23, lsl 3" 962e17da
 d "addpt sp, sp, xzr" ff231f9a

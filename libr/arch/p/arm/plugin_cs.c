@@ -1566,11 +1566,17 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 			REGBITS64 (1), REG64 (2), REGBITS64 (1), REG64 (1), REG64 (3), REG64 (0));
 		break;
 	case ARM64_INS_UMADDL:
+#if CS_API_MAJOR >= 6
+	case ARM64_INS_MADDPT:
+#endif
 	case ARM64_INS_MADD:
 		r_strbuf_setf (&op->esil, "%s,%s,*,%s,+,%s,=",
 			REG64 (2), REG64 (1), REG64 (3), REG64 (0));
 		break;
 	case ARM64_INS_UMSUBL:
+#if CS_API_MAJOR >= 6
+	case ARM64_INS_MSUBPT:
+#endif
 	case ARM64_INS_MSUB:
 		r_strbuf_setf (&op->esil, "%s,%s,*,%s,-,%s,=",
 			REG64 (2), REG64 (1), REG64 (3), REG64 (0));
@@ -1579,11 +1585,15 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		r_strbuf_setf (&op->esil, "%s,%s,*,0,-,%s,=",
 			REG64 (2), REG64 (1), REG64 (0));
 		break;
-#if CS_API_MAJOR > 4
-	case ARM64_INS_ADDG:
-#endif
 #if CS_API_MAJOR >= 6
 	case ARM64_INS_ADDPT:
+		if (REG64 (0)[0] != 'z') {
+			OPCALL ("+");
+		}
+		break;
+#endif
+#if CS_API_MAJOR > 4
+	case ARM64_INS_ADDG:
 #endif
 	case ARM64_INS_ADD:
 		OPCALL ("+");
@@ -1611,6 +1621,10 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 #endif
 #if CS_API_MAJOR >= 6
 	case ARM64_INS_SUBPT:
+		if (REG64 (0)[0] != 'z') {
+			OPCALL ("-");
+		}
+		break;
 #endif
 	case ARM64_INS_SUB:
 		OPCALL ("-");
@@ -3812,6 +3826,9 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->cycles = 1;
 		/* fallthru */
 	case ARM64_INS_MSUB:
+#if CS_API_MAJOR >= 6
+	case ARM64_INS_MSUBPT:
+#endif
 	case ARM64_INS_FSUB:
 	case ARM64_INS_FMSUB:
 	case ARM64_INS_FNMSUB:
@@ -3874,12 +3891,22 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_FMADD:
 	case ARM64_INS_FNMADD:
 	case ARM64_INS_MADD:
+#if CS_API_MAJOR >= 6
+	case ARM64_INS_MADDPT:
+#endif
 #if CS_API_MAJOR > 4
 	case ARM64_INS_ADDS:
 	case ARM64_INS_ADCS:
 #endif
 		op->type = R_ANAL_OP_TYPE_ADD;
 		break;
+#if CS_API_MAJOR >= 6
+	case ARM64_INS_MADPT:
+	case ARM64_INS_MLAPT:
+		op->type = R_ANAL_OP_TYPE_ADD;
+		op->family = R_ANAL_OP_FAMILY_VEC;
+		break;
+#endif
 	case ARM64_INS_CSEL:
 	case ARM64_INS_FCSEL:
 	case ARM64_INS_CSET:
@@ -5092,6 +5119,11 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 			}
 			set_src_dst (op, RVecRArchValue_at (&op->dsts, 0), &handle, insn, 0, bits);
 		}
+#if CS_API_MAJOR >= 6
+		if (bits == 64 && (insn->id == ARM64_INS_MADPT || insn->id == ARM64_INS_MLAPT)) {
+			set_src_dst (op, RVecRArchValue_at (&op->srcs, 2), &handle, insn, 0, bits);
+		}
+#endif
 		if (bits == 64) {
 			add_pair_slot (&op->srcs, insn);
 		}

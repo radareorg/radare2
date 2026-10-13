@@ -1,3 +1,50 @@
+NAME=Checked pointer multiplication handles negative offsets and zero registers
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 200c629b208c629b3f0c629b207c629be07f7f9b
+aei
+aer x1=3
+aer x2=8
+aer x3=0x1000
+aer pstate=0xf0000000
+aeip
+aes
+aer x0
+s 4
+aeip
+aes
+aer x0
+aer x1=0xfffffffffffffffd
+s 0
+aeip
+aes
+aer x0
+s 8
+aeip
+aes
+aer x0
+s 12
+aeip
+aes
+aer x0
+s 16
+aeip
+aes
+aer x0
+aer pstate
+EOF
+EXPECT=<<EOF
+0x00001018
+0x00000fe8
+0x00000fe8
+0x00000fe8
+0xffffffffffffffe8
+0x00000000
+0xf0000000
+EOF
+RUN
+
 NAME=Tagged pointer subtraction strips tags and sets comparison flags
 FILE=malloc://64
 ARGS=-a arm -b 64

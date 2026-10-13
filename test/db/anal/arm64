@@ -1,3 +1,88 @@
+NAME=Remaining scalar and SVE checked pointer arithmetic decodes on Capstone 5
+FILE=malloc://64
+ARGS=-a arm -b 64
+REQUIRE=cs5
+CMDS=<<EOF
+wx 200c629b208c629b2008e204200ce2044000c4044000c50420d8c24420d0c244ff1fc404
+pi 9
+ao 9~type[1]
+aoj 1~{0.opex}
+aoj 1 @ 16~{0.opex}
+aoj 1 @ 24~{0.opex}
+e cfg.bigendian=true
+pi 8
+EOF
+EXPECT=<<EOF
+maddpt x0, x1, x2, x3
+msubpt x0, x1, x2, x3
+addpt z0.d, z1.d, z2.d
+subpt z0.d, z1.d, z2.d
+addpt z0.d, p0/m, z0.d, z2.d
+subpt z0.d, p0/m, z0.d, z2.d
+madpt z0.d, z2.d, z1.d
+mlapt z0.d, z1.d, z2.d
+addpt z31.d, p7/m, z31.d, z31.d
+add
+sub
+add
+sub
+add
+sub
+add
+add
+add
+{"operands":[{"type":"reg","value":"x0"},{"type":"reg","value":"x1"},{"type":"reg","value":"x2"},{"type":"reg","value":"x3"}]}
+{"operands":[{"type":"reg","value":"z0"},{"type":"reg","value":"p0"},{"type":"reg","value":"z0"},{"type":"reg","value":"z2"}]}
+{"operands":[{"type":"reg","value":"z0"},{"type":"reg","value":"z2"},{"type":"reg","value":"z1"}]}
+maddpt x0, x1, x2, x3
+msubpt x0, x1, x2, x3
+addpt z0.d, z1.d, z2.d
+subpt z0.d, z1.d, z2.d
+addpt z0.d, p0/m, z0.d, z2.d
+subpt z0.d, p0/m, z0.d, z2.d
+madpt z0.d, z2.d, z1.d
+mlapt z0.d, z1.d, z2.d
+EOF
+RUN
+
+NAME=Remaining checked pointer arithmetic keeps the reachable return in its function
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 200c629b208c629b2008e204200ce2044000c4044000c50420d8c24420d0c244c0035fd6
+af all_cpa
+afij~{0.realsz}
+afij~{0.ninstrs}
+afij @ 32~{0.name}
+EOF
+EXPECT=<<EOF
+36
+9
+all_cpa
+EOF
+RUN
+
+NAME=Checked pointer fallbacks reject invalid widths and preserve ordinary arithmetic
+FILE=malloc://64
+ARGS=-a arm -b 64
+REQUIRE=cs5
+CMDS=<<EOF
+wx 200c621b2008a204200c029b2000e204
+pi 4
+ao 4~type[1]
+EOF
+EXPECT=<<EOF
+invalid
+invalid
+madd x0, x1, x2, x3
+add z0.d, z1.d, z2.d
+ill
+ill
+add
+add
+EOF
+RUN
+
 NAME=Tagged pointer subtraction has arithmetic and comparison analysis types
 FILE=malloc://64
 ARGS=-a arm -b 64
@@ -60,17 +145,25 @@ FILE=malloc://64
 ARGS=-a arm -b 64
 REQUIRE=cs6
 CMDS=<<EOF
-wx 962e179a962e17da
-pi 2
-ao 2~type[1]
+wx 962e179a962e17da200c629b208c629b
+pi 4
+ao 4~type[1]
 ?v `aoj 1~{0.id}`!=0
 ?v `aoj 1 @ 4~{0.id}`!=0
+?v `aoj 1 @ 8~{0.id}`!=0
+?v `aoj 1 @ 12~{0.id}`!=0
 EOF
 EXPECT=<<EOF
 addpt x22, x20, x23, lsl 3
 subpt x22, x20, x23, lsl 3
+maddpt x0, x1, x2, x3
+msubpt x0, x1, x2, x3
 add
 sub
+add
+sub
+0x1
+0x1
 0x1
 0x1
 EOF

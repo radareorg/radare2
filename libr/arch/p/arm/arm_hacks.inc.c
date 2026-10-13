@@ -11,42 +11,17 @@ static const char *reg_list[] = {
 };
 
 #if CS_API_MAJOR < 6
-static bool hack_decode_cpa(RAnalOp *op, ut32 insn, RAnalOpMask mask) {
-	if ((insn & 0xbfe0e000) != 0x9a002000) {
-		return false;
-	}
-	const bool subtract = (insn >> 30) & 1;
-	const ut8 shift = (insn >> 10) & 7;
-	const ut8 rd = insn & 31;
-	const ut8 rn = (insn >> 5) & 31;
-	const ut8 rm = (insn >> 16) & 31;
-	const char *regs[] = {
-		rd == 31? "sp": reg_list[rd],
-		rn == 31? "sp": reg_list[rn],
-		rm == 31? "xzr": reg_list[rm]
-	};
-	op->size = 4;
-	op->cycles = 1;
-	op->type = subtract? R_ANAL_OP_TYPE_SUB: R_ANAL_OP_TYPE_ADD;
-	if (mask & R_ARCH_OP_MASK_DISASM) {
-		free (op->mnemonic);
-		op->mnemonic = r_str_newf ("%s %s, %s, %s", subtract? "subpt": "addpt", regs[0], regs[1], regs[2]);
-		if (shift) {
-			op->mnemonic = r_str_appendf (op->mnemonic, ", lsl %u", shift);
-		}
-	}
-	if (mask & R_ARCH_OP_MASK_ESIL) {
-		// Model address arithmetic without the system-register-controlled pointer check.
-		r_strbuf_setf (&op->esil, "%u,%s,<<,%s,%c,%s,=", shift, rm == 31? "0": regs[2], regs[1], subtract? '-': '+', regs[0]);
-	}
+static void hack_cpa_values(RAnalOp *op, const char *const *regs, int count, int shift, bool accumulate, RAnalOpMask mask) {
 	if (mask & R_ARCH_OP_MASK_VAL) {
-		RArchValue value = { .type = R_ANAL_VAL_REG, .reg = regs[0] };
+		RArchValue value = { .type = R_ANAL_VAL_REG, .reg = regs[0], .access = R_PERM_W };
 		RVecRArchValue_push_back (&op->dsts, &value);
-		value.reg = regs[1];
-		RVecRArchValue_push_back (&op->srcs, &value);
-		value.reg = regs[2];
-		value.mul = 1 << shift;
-		RVecRArchValue_push_back (&op->srcs, &value);
+		value.access = R_PERM_R;
+		int i;
+		for (i = accumulate? 0: 1; i < count; i++) {
+			value.reg = regs[i];
+			value.mul = i == 2? 1 << shift: 1;
+			RVecRArchValue_push_back (&op->srcs, &value);
+		}
 	}
 	if (mask & R_ARCH_OP_MASK_OPEX) {
 		PJ *pj = pj_new ();
@@ -54,7 +29,7 @@ static bool hack_decode_cpa(RAnalOp *op, ut32 insn, RAnalOpMask mask) {
 			pj_o (pj);
 			pj_ka (pj, "operands");
 			int i;
-			for (i = 0; i < R_ARRAY_SIZE (regs); i++) {
+			for (i = 0; i < count; i++) {
 				pj_o (pj);
 				pj_ks (pj, "type", "reg");
 				pj_ks (pj, "value", regs[i]);
@@ -72,6 +47,113 @@ static bool hack_decode_cpa(RAnalOp *op, ut32 insn, RAnalOpMask mask) {
 			pj_free (pj);
 		}
 	}
+}
+
+static bool hack_decode_sve_cpa(RAnalOp *op, ut32 insn, RAnalOpMask mask) {
+	static const char *const vector_regs[] = {
+		"z0", "z1", "z2", "z3", "z4", "z5", "z6", "z7",
+		"z8", "z9", "z10", "z11", "z12", "z13", "z14", "z15",
+		"z16", "z17", "z18", "z19", "z20", "z21", "z22", "z23",
+		"z24", "z25", "z26", "z27", "z28", "z29", "z30", "z31"
+	};
+	static const char *const predicate_regs[] = { "p0", "p1", "p2", "p3", "p4", "p5", "p6", "p7" };
+	bool predicated = false;
+	bool accumulate = false;
+	const char *mnemonic;
+	if ((insn & 0xffe0f800) == 0x04e00800) {
+		mnemonic = (insn & 0x400)? "subpt": "addpt";
+	} else if ((insn & 0xfffee000) == 0x04c40000) {
+		predicated = true;
+		mnemonic = (insn & 0x10000)? "subpt": "addpt";
+	} else if ((insn & 0xffe0f400) == 0x44c0d000) {
+		accumulate = true;
+		mnemonic = (insn & 0x800)? "madpt": "mlapt";
+	} else {
+		return false;
+	}
+	const char *regs[] = {
+		vector_regs[insn & 31],
+		vector_regs[(insn >> 5) & 31],
+		vector_regs[(insn >> 16) & 31],
+		NULL
+	};
+	int count = 3;
+	if (predicated) {
+		regs[3] = regs[1];
+		regs[2] = regs[0];
+		regs[1] = predicate_regs[(insn >> 10) & 7];
+		count = 4;
+	} else if (accumulate && (insn & 0x800)) {
+		const char *addend = regs[1];
+		regs[1] = regs[2];
+		regs[2] = addend;
+	}
+	op->size = 4;
+	op->cycles = 1;
+	op->family = R_ANAL_OP_FAMILY_VEC;
+	op->type = !strcmp (mnemonic, "subpt")? R_ANAL_OP_TYPE_SUB: R_ANAL_OP_TYPE_ADD;
+	if (mask & R_ARCH_OP_MASK_DISASM) {
+		free (op->mnemonic);
+		if (predicated) {
+			op->mnemonic = r_str_newf ("%s %s.d, %s/m, %s.d, %s.d", mnemonic, regs[0], regs[1], regs[2], regs[3]);
+		} else {
+			op->mnemonic = r_str_newf ("%s %s.d, %s.d, %s.d", mnemonic, regs[0], regs[1], regs[2]);
+		}
+	}
+	if (mask & R_ARCH_OP_MASK_ESIL) {
+		// Scalable lanes and predicates are not represented by the register profile.
+		r_strbuf_set (&op->esil, "");
+	}
+	hack_cpa_values (op, regs, count, 0, accumulate, mask);
+	return true;
+}
+
+static bool hack_decode_cpa(RAnalOp *op, ut32 insn, RAnalOpMask mask) {
+	const bool multiply = (insn & 0xffe00000) == 0x9b600000;
+	if (!multiply && (insn & 0xbfe0e000) != 0x9a002000) {
+		return hack_decode_sve_cpa (op, insn, mask);
+	}
+	const bool subtract = multiply? (insn >> 15) & 1: (insn >> 30) & 1;
+	const ut8 shift = multiply? 0: (insn >> 10) & 7;
+	const ut8 rd = insn & 31;
+	const ut8 rn = (insn >> 5) & 31;
+	const ut8 rm = (insn >> 16) & 31;
+	const ut8 ra = (insn >> 10) & 31;
+	const char *base_zero_reg = multiply? "xzr": "sp";
+	const char *regs[] = {
+		rd == 31? base_zero_reg: reg_list[rd],
+		rn == 31? base_zero_reg: reg_list[rn],
+		rm == 31? "xzr": reg_list[rm],
+		ra == 31? "xzr": reg_list[ra]
+	};
+	op->size = 4;
+	op->cycles = multiply? 2: 1;
+	op->type = subtract? R_ANAL_OP_TYPE_SUB: R_ANAL_OP_TYPE_ADD;
+	if (mask & R_ARCH_OP_MASK_DISASM) {
+		free (op->mnemonic);
+		if (multiply) {
+			op->mnemonic = r_str_newf ("%s %s, %s, %s, %s", subtract? "msubpt": "maddpt", regs[0], regs[1], regs[2], regs[3]);
+		} else {
+			op->mnemonic = r_str_newf ("%s %s, %s, %s", subtract? "subpt": "addpt", regs[0], regs[1], regs[2]);
+			if (shift) {
+				op->mnemonic = r_str_appendf (op->mnemonic, ", lsl %u", shift);
+			}
+		}
+	}
+	if (mask & R_ARCH_OP_MASK_ESIL) {
+		// Model address arithmetic without the system-controlled pointer checks.
+		if (multiply) {
+			r_strbuf_setf (&op->esil, "%s,%s,*,%s,%c", regs[2], regs[1], regs[3], subtract? '-': '+');
+			if (rd == 31) {
+				r_strbuf_append (&op->esil, ",POP");
+			} else {
+				r_strbuf_appendf (&op->esil, ",%s,=", regs[0]);
+			}
+		} else {
+			r_strbuf_setf (&op->esil, "%u,%s,<<,%s,%c,%s,=", shift, rm == 31? "0": regs[2], regs[1], subtract? '-': '+', regs[0]);
+		}
+	}
+	hack_cpa_values (op, regs, multiply? 4: 3, shift, false, mask);
 	return true;
 }
 #endif
