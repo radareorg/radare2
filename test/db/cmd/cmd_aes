@@ -93,6 +93,7 @@ aecs
 EOF
 EXPECT=<<EOF
 'aep ret0=dr R0=0;aexa ret
+'@0x1040'aep ret0
 'aep memcpy=wf `dr?A1` `dr?A2` @ `dr?A0`;aexa ret
 'aep strlen=dr R0=`pszl@r:A0`;aexa ret
 'aep puts=psz@r:A0; aexa ret

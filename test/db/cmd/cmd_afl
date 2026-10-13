@@ -196,7 +196,7 @@ EOF
 EXPECT=<<EOF
   12 sym.imp.dcgettext
   10 sym.imp.getenv
-  9 fcn.000046d0
+  9 sym.imp.free
   8 fcn.000148c0
   7 fcn.0000d7b0
   7 sym.imp.error
@@ -207,8 +207,8 @@ EXPECT=<<EOF
   3 fcn.000148e0
   3 fcn.0000cca0
   3 fcn.00006910
-  3 sym._obstack_begin
   3 sym.imp.__assert_fail
+  3 sym._obstack_begin
   3 sym.imp.strncmp
   2 fcn.0000eb50
   2 fcn.000109e0
@@ -237,27 +237,27 @@ EXPECT=<<EOF
   1 fcn.00006f70
   1 fcn.00015750
   1 fcn.00007180
-  1 sym.imp.__fprintf_chk
-  1 sym.imp.__overflow
+  1 fcn.00015b10
   1 sym.imp.__printf_chk
   1 sym.imp.__stack_chk_fail
   1 sym.imp.abort
   1 sym.imp.bindtextdomain
-  1 fcn.00015b70
   1 fcn.00015cd0
+  1 fcn.00015db0
   1 sym.imp.exit
   1 sym.imp.fflush_unlocked
   1 sym.imp.fnmatch
-  1 fcn.00015db0
   1 fcn.00016270
-  1 sym.imp.getopt_long
-  1 sym.imp.ioctl
   1 fcn.00016d50
   1 sub.__cxa_atexit
-  1 sym.imp.setlocale
-  1 fcn.00015b10
-  1 sym.imp.strcmp
+  1 sym.imp.getopt_long
+  1 sym.imp.ioctl
   1 fcn.00015b30
+  1 fcn.00015b70
+  1 sym.imp.setlocale
+  1 sym.imp.__fprintf_chk
+  1 sym.imp.strcmp
+  1 sym.imp.__overflow
   1 sym.imp.textdomain
 
 EOF

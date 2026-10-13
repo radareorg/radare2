@@ -205,6 +205,7 @@ struct Elf_(obj_t) {
 	RList *inits;
 	HtUU *rel_cache;
 	HtUU *ppc64_plt_stubs; // ppc64: slot_vaddr -> stub_vaddr (lazy, NULL until first use)
+	HtUU *x86_pltgot_stubs; // x86: got slot vaddr -> .plt.got stub vaddr (lazy)
 	ut64 arm64_plt_esize; // aarch64: measured plt entry stride, 0 until probed
 	ut64 *ppc32_thunks; // ppc32: plt slot index -> call thunk vaddr, lazy
 	ut64 ppc32_nthunks;
