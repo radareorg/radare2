@@ -76,3 +76,51 @@ Usage: rapatch2 [-p N] [-sv] [-R] [patchfile] ([targetfile])
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=REPL r2 JavaScript shortcut
+FILE=-
+ARGS=-NN
+CMDS=r2.cmd("?e shortcut").trim()
+EXPECT=<<EOF
+shortcut
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=REPL missing plugin diagnostics
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+r2mcp ignored
+r2ai ignored
+r2flutter ignored
+r2hermes ignored
+r2unity ignored
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: You need to install the plugin with r2pm -ci r2mcp
+ERROR: You need to install the plugin with r2pm -ci r2ai
+ERROR: You need to install the plugin with r2pm -ci r2flutter
+ERROR: You need to install the plugin with r2pm -ci r2hermes
+ERROR: You need to install the plugin with r2pm -ci r2unity
+EOF
+RUN
+
+NAME=REPL rejects tool name suffixes
+FILE=malloc://512
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+rax2suffix 33
+r2suffix
+r
+EOF
+EXPECT=<<EOF
+512
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid `a` subcommand, try `r?`
+ERROR: Invalid `2` subcommand, try `r?`
+EOF
+RUN

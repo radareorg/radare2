@@ -2723,69 +2723,63 @@ static int __runMain(RMainCallback cb, const char *arg) {
 	return res;
 }
 
-#define ISCMD(x) (!strcmp (input, x) || r_str_startswith (input, x " "))
-
 static bool cmd_r2cmd(RCore *core, const char *_input) {
 	char *input = r_str_newf ("r%s", _input);
 	int rc = 0;
 
-	if (ISCMD ("rax2")) {
-		rc = __runMain (core->r_main_rax2, input);
-	} else if (ISCMD ("r2pm")) {
-		rc = __runMain (core->r_main_r2pm , input);
-	} else if (ISCMD ("r2")) {
-		rc = __runMain (core->r_main_radare2, input);
-	} else if (ISCMD ("rapatch2")) {
-		rc = __runMain (core->r_main_rapatch2, input);
-	} else if (ISCMD ("radare2")) {
-		r_sys_cmdf ("%s", input);
-		// rc = __runMain (core->r_main_radare2, input);
-	} else if (ISCMD ("rasm2")) {
-#if __wasi__
-		// TODO: fix this (rcons)
-		rc = __runMain (core->r_main_rasm2, input);
-#else
-		r_sys_cmdf ("%s", input);
-#endif
-	} else if (ISCMD ("rabin2")) {
-		r_sys_cmdf ("%s", input);
-		// rc = __runMain (core->r_main_rabin2, input);
-	} else if (ISCMD ("ragg2")) {
-		r_sys_cmdf ("%s", input);
-		// rc = __runMain (core->r_main_ragg2, input);
-	} else if (ISCMD ("rafs2")) {
-		rc = __runMain (core->r_main_rafs2, input);
-	} else if (ISCMD ("ravc2")) {
-		rc = __runMain (core->r_main_ravc2, input);
-	} else if (ISCMD ("r2pm")) {
-		rc = __runMain (core->r_main_r2pm, input);
-	} else if (ISCMD ("radiff2")) {
-		rc = __runMain (core->r_main_radiff2, input);
-	} else if (ISCMD ("r2.")) {
+	if (r_str_startswith (input, "r2.")) {
 		r_core_cmdf (core, "'js console.log(r2.%s)", input + 3);
-	} else if (ISCMD ("r2mcp")) {
-		R_LOG_ERROR ("You need to install the plugin with r2pm -ci r2mcp");
-		r_core_return_value (core, 1);
-	} else if (ISCMD ("r2ai")) {
-		R_LOG_ERROR ("You need to install the plugin with r2pm -ci r2ai");
-		r_core_return_value (core, 1);
 	} else {
-		const char *r2cmds[] = {
-			"rax2", "r2pm", "rafs2", "rasm2", "rabin2", "rahash2", "rafind2", "rarun2", "ragg2", "radare2", "r2pm", "r2", NULL
+		const struct {
+			const char *name;
+			RMainCallback callback;
+			bool external;
+		} tools[] = {
+			{ "rax2", core->r_main_rax2, false },
+			{ "r2pm", core->r_main_r2pm, false },
+			{ "r2", core->r_main_radare2, false },
+			{ "radare2", NULL, true },
+			{ "rapatch2", core->r_main_rapatch2, false },
+#if __wasi__
+			{ "rasm2", core->r_main_rasm2, false },
+#else
+			{ "rasm2", NULL, true },
+#endif
+			{ "rabin2", NULL, true },
+			{ "ragg2", NULL, true },
+			{ "rafs2", core->r_main_rafs2, false },
+			{ "ravc2", core->r_main_ravc2, false },
+			{ "radiff2", core->r_main_radiff2, false },
 		};
 		int i;
-		for (i = 0; r2cmds[i]; i++) {
-			if (r_str_startswith (input, r2cmds[i])) {
-				free (input);
-				return true;
+		for (i = 0; i < R_ARRAY_SIZE (tools); i++) {
+			if (r_str_startswith (input, tools[i].name)) {
+				const char *arguments = input + strlen (tools[i].name);
+				if (*arguments && *arguments != ' ') {
+					continue;
+				}
+				if (tools[i].external) {
+					r_sys_cmdf ("%s", input);
+				} else {
+					rc = __runMain (tools[i].callback, input);
+				}
+				goto done;
 			}
 		}
-		if (_input[0] == 'a') {
-			r_cons_cmd_help_match (core->cons, help_msg_r, "ra", 0, false);
+
+		if (!R_STR_STARTSWITH_ANY (input, "r2mcp", "r2ai", "r2flutter", "r2hermes", "r2unity")) {
+			free (input);
+			r_core_return_value (core, 1);
+			return false;
 		}
-		free (input);
-		return false;
+		char *arguments = strchr (input, ' ');
+		if (arguments) {
+			*arguments = 0;
+		}
+		R_LOG_ERROR ("You need to install the plugin with r2pm -ci %s", input);
+		rc = 1;
 	}
+done:
 	free (input);
 	r_core_return_value (core, rc);
 	return true;
@@ -2863,16 +2857,6 @@ static int cmd_resize(void *data, const char *input) {
 	switch (*input) {
 	case 'b': // "rb" rebase
 		return cmd_rebase (core, input + 1);
-	case '2': // "r2" // XXX should be handled already in cmd_r2cmd()
-		if (r_str_startswith (input + 1, "ai")) {
-			R_LOG_ERROR ("Missing plugin. Run: r2pm -ci r2ai");
-			r_core_return_code (core, 1);
-			return true;
-		}
-		// TODO: use argv[0] instead of 'radare2'
-		// TODO: { char **argv = { "r2", NULL }; r_main_radare2 (1, argv); }
-		r_sys_cmdf ("radare%s", input);
-		return true;
 	case 'm': // "rm"
 		return cmd_rm (core, input);
 	case 'x':
