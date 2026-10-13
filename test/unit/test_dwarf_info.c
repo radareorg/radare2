@@ -685,6 +685,40 @@ bool test_dwarf5_indexed_strings_and_addresses(void) {
 	mu_end;
 }
 
+bool test_dwarf_find_die(void) {
+	RBinFileOptions opt = { 0 };
+	bool res = r_bin_open (bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
+	mu_assert ("dwarf4_many_comp_units.elf binary could not be opened", res);
+	RBinFile *bf = r_bin_cur (bin);
+	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bf);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, da);
+	mu_assert_notnull (info, "Failed parsing of debug_info");
+	mu_assert_eq (RVecDwarfCompUnit_length (info->comp_units), 2, "Incorrect number of info compilation units");
+	RBinDwarfCompUnit *first = RVecDwarfCompUnit_at (info->comp_units, 0);
+	RBinDwarfCompUnit *second = RVecDwarfCompUnit_at (info->comp_units, 1);
+	RBinDwarfDie *root = RVecDwarfDie_at (second->dies, 0);
+	mu_assert_eq (root->offset, 0x2cf, "Second unit root offset");
+	mu_assert_ptreq (r_bin_dwarf_find_die (info, 0x2cf), root, "Root of the second unit");
+	RBinDwarfDie *nested = RVecDwarfDie_at (second->dies, 20);
+	mu_assert_notnull (nested, "Nested die of the second unit is missing");
+	mu_assert_ptreq (r_bin_dwarf_find_die (info, nested->offset), nested, "Nested die of the second unit");
+	RBinDwarfDie *last = RVecDwarfDie_at (first->dies, 72);
+	mu_assert_notnull (last, "Null die of the first unit is missing");
+	mu_assert_eq (last->abbrev_code, 0, "Null die closes the first unit");
+	mu_assert_ptreq (r_bin_dwarf_find_die (info, last->offset), last, "Null die of the first unit");
+	mu_assert_ptreq (r_bin_dwarf_find_die (info, 0xb), RVecDwarfDie_at (first->dies, 0), "Root of the first unit");
+	mu_assert_null (r_bin_dwarf_find_die (info, 0), "First unit header is not a die");
+	mu_assert_null (r_bin_dwarf_find_die (info, 0x2c4), "Second unit header is not a die");
+	RBinDwarfDie *after_root = RVecDwarfDie_at (second->dies, 1);
+	mu_assert_notnull (after_root, "Second unit has a die after its root");
+	mu_assert ("The root attributes leave no gap to probe", after_root->offset > 0x2d0);
+	mu_assert_null (r_bin_dwarf_find_die (info, 0x2d0), "Offset inside a die is not a die");
+	mu_assert_null (r_bin_dwarf_find_die (info, 0x2c4 + 4 + 0x192), "Offset past the last unit");
+	r_bin_dwarf_free_debug_info (info);
+	RVecDwarfAbbrevDecl_free (da);
+	mu_end;
+}
+
 #define run_test_with_setup(test_func) do { \
 	if (!setup()) { \
 		printf("Setup failed for " #test_func "\n"); \
@@ -705,6 +739,7 @@ bool all_tests(void) {
 	run_test_with_setup(test_dwarf_explicit_zero_rebase);
 	run_test_with_setup(test_dwarf5_mixed_address_table_format);
 	run_test_with_setup(test_dwarf5_indexed_strings_and_addresses);
+	run_test_with_setup(test_dwarf_find_die);
 	return tests_passed != tests_run;
 }
 

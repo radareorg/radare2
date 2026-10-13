@@ -40,18 +40,6 @@ static RBinDwarfAbbrevDecl *abbrev_find(const RVecDwarfAbbrevDecl *decls, ut64 a
 	return bsearch (&key, decls->_start, RVecDwarfAbbrevDecl_length (decls), sizeof (key), abbrev_cmp);
 }
 
-static bool init_debug_info(RBinDwarfDebugInfo *inf) {
-	if (!inf) {
-		return false;
-	}
-	inf->comp_units = RVecDwarfCompUnit_new ();
-	if (!inf->comp_units) {
-		return false;
-	}
-
-	return true;
-}
-
 static bool init_die(RArena *arena, RBinDwarfDie *die, ut64 abbr_code, size_t attr_count) {
 	if (!die) {
 		return false;
@@ -129,8 +117,6 @@ R_API void r_bin_dwarf_free_debug_info(RBinDwarfDebugInfo *inf) {
 		dwarf_comp_unit_fini (unit);
 	}
 	RVecDwarfCompUnit_free (inf->comp_units);
-
-	ht_up_free (inf->lookup_table);
 	free (inf);
 }
 
@@ -161,8 +147,9 @@ static const ut8 *fill_block_data(const ut8 *buf, const ut8 *buf_end, RBinDwarfB
 * @param debug_str_len Length of the string section
 * @return const ut8* Updated buffer
 #endif
-static const ut8 *parse_attr_value(RBinFile *bf, const ut8 *obuf, int obuf_len, RBinDwarfAttrDef *def, RBinDwarfAttrValue *value, const RBinDwarfCompUnitHdr *hdr) {
-	R_RETURN_VAL_IF_FAIL (bf && def && value && hdr && obuf, NULL);
+static const ut8 *parse_attr_value(DwarfStrSections *sections, const ut8 *obuf, int obuf_len, RBinDwarfAttrDef *def, RBinDwarfAttrValue *value, const RBinDwarfCompUnitHdr *hdr) {
+	R_RETURN_VAL_IF_FAIL (sections && sections->bf && def && value && hdr && obuf, NULL);
+	RBinFile *bf = sections->bf;
 	RBin *bin = bf->rbin;
 
 	value->attr_form = def->attr_form;
@@ -341,9 +328,7 @@ static const ut8 *parse_attr_value(RBinFile *bf, const ut8 *obuf, int obuf_len, 
 		if (!buf || value->string.offset > SIZE_MAX) {
 			return NULL;
 		}
-		RBinSection *section = (def->attr_form == DW_FORM_strp)
-			? dwarf_get_section (bf, DWARF_SN_STR)
-			: dwarf_get_section (bf, DWARF_SN_LINE_STR);
+		RBinSection *section = def->attr_form == DW_FORM_strp? sections->str: sections->line_str;
 		const char *str = section? dwarf_get_section_string (bf, section, (size_t)value->string.offset): NULL;
 		value->string.content = str;
 		break;
@@ -561,7 +546,7 @@ static void dwarf_comp_unit_save_comp_dir(RBinFile *bf, RBinDwarfCompUnit *unit)
 * @param die DIE to store the parsed info into
 * @return const ut8* Updated buffer
 #endif
-static const ut8 *parse_die(RBinFile *bf, const ut8 *buf, const ut8 *buf_end, RBinDwarfAbbrevDecl *abbrev, RBinDwarfCompUnitHdr *hdr, RBinDwarfDie *die) {
+static const ut8 *parse_die(DwarfStrSections *sections, const ut8 *buf, const ut8 *buf_end, RBinDwarfAbbrevDecl *abbrev, RBinDwarfCompUnitHdr *hdr, RBinDwarfDie *die) {
 	if (!buf || !buf_end || buf > buf_end) {
 		return NULL;
 	}
@@ -571,7 +556,7 @@ static const ut8 *parse_die(RBinFile *bf, const ut8 *buf, const ut8 *buf_end, RB
 			break;
 		}
 		RBinDwarfAttrValue value = { 0 };
-		const ut8 *nbuf = parse_attr_value (bf, buf, buf_end - buf, def, &value, hdr);
+		const ut8 *nbuf = parse_attr_value (sections, buf, buf_end - buf, def, &value, hdr);
 		if (!nbuf) {
 			attr_value_fini (&value);
 			return NULL;
@@ -600,7 +585,8 @@ static const ut8 *parse_die(RBinFile *bf, const ut8 *buf, const ut8 *buf_end, RB
 *
 * @return const ut8* Update buffer
 #endif
-static const ut8 *parse_comp_unit(RBinFile *bf, const ut8 *buf_start, const ut8 *buf_end, RBinDwarfCompUnit *unit, const RVecDwarfAbbrevDecl *abbrevs, size_t first_abbr_idx) {
+static const ut8 *parse_comp_unit(DwarfStrSections *sections, const ut8 *buf_start, const ut8 *buf_end, RBinDwarfCompUnit *unit, const RVecDwarfAbbrevDecl *abbrevs, size_t first_abbr_idx) {
+	RBinFile *bf = sections->bf;
 	const ut8 *buf = buf_start;
 	size_t abbrevs_count = RVecDwarfAbbrevDecl_length (abbrevs);
 	int child_depth = 0;
@@ -663,7 +649,7 @@ static const ut8 *parse_comp_unit(RBinFile *bf, const ut8 *buf_start, const ut8 
 		die.tag = abbrev->tag;
 		die.has_children = abbrev->has_children;
 
-		buf = parse_die (bf, buf, buf_end, abbrev, &unit->hdr, &die);
+		buf = parse_die (sections, buf, buf_end, abbrev, &unit->hdr, &die);
 		if (!buf) {
 			dwarf_die_fini (&die);
 			return NULL;
@@ -803,11 +789,18 @@ static void dwarf_metadata_set_comp_dir(RBinFile *bf, ut64 debug_line_offset, bo
 	bf->dwarf_metadata.comp_dir = dir;
 }
 
-typedef bool (*DwarfRootCallback)(RBinFile *bf, const RBinDwarfCompUnit *unit, void *user);
+typedef bool (*DwarfUnitCallback)(RBinFile *bf, RBinDwarfCompUnit *unit, void *user);
 
-static bool dwarf_parse_root_die(RBinFile *bf, const ut8 *buf, const ut8 *unit_end, RBinDwarfCompUnit *unit, const RVecDwarfAbbrevDecl *decls, size_t first_abbr_idx) {
-	R_RETURN_VAL_IF_FAIL (bf && buf && unit_end && unit && unit->dies && decls
+enum {
+	DWARF_UNITS_ROOT_ONLY = 1,
+	DWARF_UNITS_STRICT = 2,
+	DWARF_UNITS_WARN = 4,
+};
+
+static bool dwarf_parse_root_die(DwarfStrSections *sections, const ut8 *buf, const ut8 *unit_end, RBinDwarfCompUnit *unit, const RVecDwarfAbbrevDecl *decls, size_t first_abbr_idx) {
+	R_RETURN_VAL_IF_FAIL (sections && buf && unit_end && unit && unit->dies && decls
 		&& buf < unit_end, false);
+	RBinFile *bf = sections->bf;
 	size_t abbrevs_count = RVecDwarfAbbrevDecl_length (decls);
 	ut64 abbr_code = 0;
 	const ut8 *attrs = dwarf_read_uleb_index (buf, unit_end, &abbr_code);
@@ -840,7 +833,7 @@ static bool dwarf_parse_root_die(RBinFile *bf, const ut8 *buf, const ut8 *unit_e
 		+ unit->hdr.header_size;
 	die.tag = abbrev->tag;
 	die.has_children = abbrev->has_children;
-	if (!parse_die (bf, attrs, unit_end, abbrev, &unit->hdr, &die)) {
+	if (!parse_die (sections, attrs, unit_end, abbrev, &unit->hdr, &die)) {
 		dwarf_die_fini (&die);
 		return false;
 	}
@@ -853,16 +846,36 @@ static bool dwarf_parse_root_die(RBinFile *bf, const ut8 *buf, const ut8 *unit_e
 	return true;
 }
 
-static bool dwarf_foreach_root(RBinFile *bf, RVecDwarfAbbrevDecl *decls, DwarfRootCallback callback, void *user) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->rbin && decls, false);
+static const ut8 *info_section_bytes(RBinFile *bf, size_t *len) {
 	RBinSection *section = dwarf_get_section (bf, DWARF_SN_INFO);
 	const ut8 *data = section? dwarf_get_section_bytes (bf, section): NULL;
 	if (!data || !section->bytes.len) {
+		return NULL;
+	}
+	*len = section->bytes.len;
+	return data;
+}
+
+// a keeping callback takes unit->dies; the fini below frees only unkept units
+static bool dwarf_foreach_unit(RBinFile *bf, RVecDwarfAbbrevDecl *decls, int flags, DwarfUnitCallback callback, void *user) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->rbin && decls, false);
+	size_t len = 0;
+	const ut8 *data = info_section_bytes (bf, &len);
+	bool full_walk = !(flags & DWARF_UNITS_ROOT_ONLY);
+	if (!data || (full_walk && len > (UT32_MAX >> 1))) {
 		return false;
 	}
+	DwarfStrSections sections = {
+		.bf = bf,
+		.str = dwarf_get_section (bf, DWARF_SN_STR),
+		.line_str = dwarf_get_section (bf, DWARF_SN_LINE_STR),
+	};
 	const ut8 *buf = data;
-	const ut8 *end = data + section->bytes.len;
-	while (buf < end && !dwarf_is_breaked (bf->rbin)) {
+	const ut8 *end = data + len;
+	while (buf < end) {
+		if (dwarf_is_breaked (bf->rbin)) {
+			return false;
+		}
 		if (dwarf_is_zero_padding (buf, end)) {
 			return true;
 		}
@@ -878,35 +891,39 @@ static bool dwarf_foreach_root(RBinFile *bf, RVecDwarfAbbrevDecl *decls, DwarfRo
 		size_t remaining = end - unit_start;
 		if (!buf || remaining < len_size || unit.hdr.length < unit.hdr.header_size
 			|| unit.hdr.length > remaining - len_size) {
-			// The next unit boundary is unknown, so keep only the units visited so far.
+			if (flags & DWARF_UNITS_WARN) {
+				R_LOG_WARN ("Invalid DWARF compilation unit header at 0x%" PFMT64x, unit.offset);
+			}
 			dwarf_comp_unit_fini (&unit);
-			return true;
+			return !(flags & DWARF_UNITS_STRICT);
 		}
 		const ut8 *unit_end = unit_start + len_size + unit.hdr.length;
-		if (!dwarf_supported_address_size (unit.hdr.address_size)) {
-			dwarf_comp_unit_fini (&unit);
-			buf = unit_end;
-			continue;
+		RBinDwarfAbbrevDecl *abbrev_start = NULL;
+		if (dwarf_supported_address_size (unit.hdr.address_size)) {
+			abbrev_start = abbrev_find (decls, unit.hdr.abbrev_offset);
+		} else if (flags & DWARF_UNITS_WARN) {
+			R_LOG_WARN ("Unsupported DWARF address size %u in compilation unit at 0x%" PFMT64x,
+				(unsigned)unit.hdr.address_size, unit.offset);
 		}
-		RBinDwarfAbbrevDecl *abbrev_start = abbrev_find (decls, unit.hdr.abbrev_offset);
-		if (!abbrev_start || !dwarf_parse_root_die (bf, buf, unit_end, &unit,
-				decls, abbrev_start - decls->_start)) {
-			dwarf_comp_unit_fini (&unit);
-			buf = unit_end;
-			continue;
+		bool parsed = false;
+		if (abbrev_start) {
+			size_t first_abbr_idx = abbrev_start - decls->_start;
+			parsed = (flags & DWARF_UNITS_ROOT_ONLY)
+				? dwarf_parse_root_die (&sections, buf, unit_end, &unit, decls, first_abbr_idx)
+				: parse_comp_unit (&sections, buf, unit_end, &unit, decls, first_abbr_idx) != NULL;
 		}
-		if (callback && !callback (bf, &unit, user)) {
+		if (parsed && callback && !callback (bf, &unit, user)) {
 			dwarf_comp_unit_fini (&unit);
 			return false;
 		}
 		dwarf_comp_unit_fini (&unit);
 		buf = unit_end;
 	}
-	return buf == end && !dwarf_is_breaked (bf->rbin);
+	return true;
 }
 
 R_API bool r_bin_dwarf_parse_comp_dirs(RBinFile *bf, RVecDwarfAbbrevDecl *decls) {
-	return dwarf_foreach_root (bf, decls, NULL, NULL);
+	return dwarf_foreach_unit (bf, decls, DWARF_UNITS_ROOT_ONLY, NULL, NULL);
 }
 
 static const char *attr_value_string(const RBinDwarfAttrValue *value) {
@@ -934,7 +951,7 @@ typedef struct {
 	HtPP *seen;
 } DwarfSourceFilesContext;
 
-static bool dwarf_collect_source_file(RBinFile *bf, const RBinDwarfCompUnit *unit, void *user) {
+static bool dwarf_collect_source_file(RBinFile *bf, RBinDwarfCompUnit *unit, void *user) {
 	(void)bf;
 	DwarfSourceFilesContext *ctx = user;
 	R_RETURN_VAL_IF_FAIL (ctx && ctx->files && ctx->seen && unit && unit->dies, false);
@@ -976,7 +993,7 @@ R_API RList *r_bin_dwarf_parse_comp_unit_files(RBinFile *bf, RVecDwarfAbbrevDecl
 		.files = files,
 		.seen = seen,
 	};
-	if (!dwarf_foreach_root (bf, decls, dwarf_collect_source_file, &ctx)) {
+	if (!dwarf_foreach_unit (bf, decls, DWARF_UNITS_ROOT_ONLY, dwarf_collect_source_file, &ctx)) {
 		r_list_free (files);
 		ht_pp_free (seen);
 		return NULL;
@@ -985,269 +1002,83 @@ R_API RList *r_bin_dwarf_parse_comp_unit_files(RBinFile *bf, RVecDwarfAbbrevDecl
 	return files;
 }
 
+static bool dwarf_print_unit(RBinFile *bf, RBinDwarfCompUnit *unit, void *user) {
+	(void)bf;
+	dwarf_print_comp_unit (unit, user);
+	return true;
+}
+
 R_API R_OWNED char *r_bin_dwarf_print_info(RBinFile *bf, RVecDwarfAbbrevDecl *decls) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin && decls, NULL);
-	RBinSection *section = dwarf_get_section (bf, DWARF_SN_INFO);
-	if (!section) {
-		return NULL;
-	}
-	const ut8 *obuf = dwarf_get_section_bytes (bf, section);
-	if (!obuf || section->bytes.len < 1 || section->bytes.len > (UT32_MAX >> 1)) {
-		return NULL;
-	}
-	RBin *bin = bf->rbin;
-	const ut8 *buf = obuf;
-	const ut8 *buf_end = obuf + section->bytes.len;
 	RStrBuf *sb = r_strbuf_new (NULL);
-	while (buf && buf < buf_end && !dwarf_is_breaked (bin)) {
-		if (dwarf_is_zero_padding (buf, buf_end)) {
-			buf = buf_end;
-			break;
-		}
-		RBinDwarfCompUnit unit = { 0 };
-		if (!init_comp_unit (&unit)) {
-			goto cleanup;
-		}
-		const ut8 *unit_start = buf;
-		unit.offset = unit_start - obuf;
-		unit.hdr.unit_offset = unit.offset;
-		buf = info_comp_unit_read_hdr (bin, buf, buf_end, &unit.hdr);
-		if (!buf || buf > buf_end) {
-			dwarf_comp_unit_fini (&unit);
-			goto cleanup;
-		}
-		size_t len_size = unit.hdr.is_64bit? 12: 4;
-		size_t remaining = buf_end - unit_start;
-		if (remaining < len_size || unit.hdr.length < unit.hdr.header_size
-			|| unit.hdr.length > remaining - len_size) {
-			dwarf_comp_unit_fini (&unit);
-			goto cleanup;
-		}
-		const ut8 *unit_end = unit_start + len_size + unit.hdr.length;
-		if (!dwarf_supported_address_size (unit.hdr.address_size)) {
-			dwarf_comp_unit_fini (&unit);
-			buf = unit_end;
-			continue;
-		}
-		RBinDwarfAbbrevDecl *abbrev_start = abbrev_find (decls, unit.hdr.abbrev_offset);
-		if (!abbrev_start) {
-			dwarf_comp_unit_fini (&unit);
-			buf = unit_end;
-			continue;
-		}
-		size_t first_abbr_idx = abbrev_start - decls->_start;
-		if (!parse_comp_unit (bf, buf, unit_end, &unit, decls,
-				first_abbr_idx)) {
-			dwarf_comp_unit_fini (&unit);
-			buf = unit_end;
-			continue;
-		}
-		dwarf_print_comp_unit (&unit, sb);
-		dwarf_comp_unit_fini (&unit);
-		buf = unit_end;
+	bool complete = dwarf_foreach_unit (bf, decls, DWARF_UNITS_STRICT, dwarf_print_unit, sb);
+	if (!complete && !dwarf_is_breaked (bf->rbin)) {
+		r_strbuf_free (sb);
+		return NULL;
 	}
 	return r_strbuf_drain (sb);
-cleanup:
-	r_strbuf_free (sb);
-	return NULL;
 }
 
-#if 0
-* @brief Parses whole .debug_info section
-*
-* @param sdb Sdb to store line related information into
-* @param da Parsed Abbreviations
-* @param obuf .debug_info section buffer start
-* @param len length of the section buffer
-* @param be big endian flag
-* @return R_API* parse_info_raw Parsed information
-#endif
-static RBinDwarfDebugInfo *parse_info_raw(RBinFile *bf, RVecDwarfAbbrevDecl *decls, const ut8 *obuf, size_t len) {
-	R_RETURN_VAL_IF_FAIL (bf && decls && obuf, false);
-	RBin *bin = bf->rbin;
-	const ut8 *buf = obuf;
-	const ut8 *buf_end = obuf + len;
-	RBinDwarfDebugInfo *info = R_NEW0 (RBinDwarfDebugInfo);
-	if (!init_debug_info (info)) {
-		goto cleanup;
+// only the root die carries DW_AT_comp_dir
+static bool dwarf_keep_unit(RBinFile *bf, RBinDwarfCompUnit *unit, void *user) {
+	RBinDwarfDebugInfo *info = user;
+	RBinDwarfDie *root = RVecDwarfDie_at (unit->dies, 0);
+	const char *name = NULL;
+	const char *path = NULL;
+	RBinDwarfAttrValue *v;
+	if (root->attr_values) {
+		R_VEC_FOREACH (root->attr_values, v) {
+			if (v->attr_name == DW_AT_name) {
+				name = attr_value_string (v);
+			} else if (v->attr_name == DW_AT_comp_dir) {
+				path = attr_value_string (v);
+			}
+		}
 	}
-
-	while (buf < buf_end) {
-		if (dwarf_is_zero_padding (buf, buf_end)) {
-			break;
-		}
-		RBinDwarfCompUnit unit = { 0 };
-		if (!init_comp_unit (&unit)) {
-			goto cleanup;
-		}
-		const ut8 *unit_start = buf;
-		unit.offset = buf - obuf;
-		// small redundancy, because it was easiest solution at a time
-		unit.hdr.unit_offset = buf - obuf;
-
-		buf = info_comp_unit_read_hdr (bin, buf, buf_end, &unit.hdr);
-		size_t len_size = unit.hdr.is_64bit? 12: 4;
-		size_t remaining = buf_end - unit_start;
-		if (!buf || remaining < len_size || unit.hdr.length < unit.hdr.header_size
-			|| unit.hdr.length > remaining - len_size) {
-			R_LOG_WARN ("Invalid DWARF compilation unit header at 0x%" PFMT64x, unit.offset);
-			dwarf_comp_unit_fini (&unit);
-			break;
-		}
-		const ut8 *unit_end = unit_start + len_size + unit.hdr.length;
-		if (!dwarf_supported_address_size (unit.hdr.address_size)) {
-			R_LOG_WARN ("Unsupported DWARF address size %u in compilation unit at 0x%" PFMT64x,
-				(unsigned)unit.hdr.address_size, unit.offset);
-			dwarf_comp_unit_fini (&unit);
-			buf = unit_end;
-			continue;
-		}
-
-		// find abbrev start for current comp unit
-		// we could also do naive, ((char *)da->decls) + abbrev_offset,
-		// but this is more bulletproof to invalid DWARF
-		RBinDwarfAbbrevDecl *abbrev_start = abbrev_find (decls, unit.hdr.abbrev_offset);
-		if (!abbrev_start) {
-			dwarf_comp_unit_fini (&unit);
-			buf = unit_end;
-			continue;
-		}
-		// They point to the same array object, so should be def. behaviour
-		size_t first_abbr_idx = abbrev_start - decls->_start;
-
-		buf = parse_comp_unit (bf, buf, unit_end, &unit, decls, first_abbr_idx);
-		if (!buf) {
-			dwarf_comp_unit_fini (&unit);
-			buf = unit_end;
-			continue;
-		}
-		buf = unit_end;
-
-		RVecDwarfCompUnit_push_back (info->comp_units, &unit);
+	if (path && name) {
+		char *abspath = (*name != '/')? r_str_newf ("%s/%s", path, name): strdup (name);
+		bf->addrline.al_add_cu (&bf->addrline, 0, abspath, NULL, 0, 0);
+		free (abspath);
 	}
-	return info;
-cleanup:
-	r_bin_dwarf_free_debug_info (info);
-	return NULL;
+	RVecDwarfCompUnit_push_back (info->comp_units, unit);
+	unit->dies = NULL;
+	return true;
 }
-
-static const char *getstr(RBinDwarfAttrValue *val) {
-	switch (val->attr_form) {
-	case DW_FORM_strx:
-	case DW_FORM_strx1:
-	case DW_FORM_strx2:
-	case DW_FORM_strx3:
-	case DW_FORM_strx4:
-	case DW_FORM_line_strp:
-	case DW_FORM_strp_sup:
-	case DW_FORM_strp:
-	case DW_FORM_string:
-		return val->string.content;
-	}
-	return NULL;
-}
-
-static ut64 getint(RBinDwarfAttrValue *val) {
-	switch (val->attr_form) {
-	case DW_FORM_addr:
-	case DW_FORM_addrx:
-	case DW_FORM_addrx1:
-	case DW_FORM_addrx2:
-	case DW_FORM_addrx3:
-	case DW_FORM_addrx4:
-	case DW_FORM_loclistx:
-	case DW_FORM_rnglistx:
-		return val->address;
-	case DW_FORM_implicit_const:
-		return val->uconstant;
-	}
-	return 0;
-}
-
-#if 0
-* @brief Parses .debug_info section
-*
-* @param da Parsed abbreviations
-* @param bin
-* @return RBinDwarfDebugInfo* Parsed information, NULL if error
-#endif
 
 R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinFile *bf, RVecDwarfAbbrevDecl *da) {
-	R_RETURN_VAL_IF_FAIL (da && bf, NULL);
-	RBin *bin = bf->rbin;
-	RBinSection *section = dwarf_get_section (bf, DWARF_SN_INFO);
-
-	if (!bin || !section) {
+	R_RETURN_VAL_IF_FAIL (da && bf && bf->rbin, NULL);
+	size_t len;
+	if (!info_section_bytes (bf, &len) || len > (UT32_MAX >> 1)) {
 		return NULL;
 	}
-	/* Read and possibly decompress the .debug_info section */
-	const ut8 *buf = dwarf_get_section_bytes (bf, section);
-	if (!buf || section->size < 1 || section->size > (UT32_MAX >> 1)) {
-		return NULL;
-	}
-	RBinDwarfDebugInfo *info = parse_info_raw (bf, da, buf, section->bytes.len);
-	if (!info) {
-		return NULL;
-	}
-
-	// TODO: load compilation units
-	// TODO: only necessary when we have no srcline inf
-	// TODO: add a command to enumerate the ranges for all the compilation units
-	// TODO: idu? -> 0x00001600 0x0001840 entry.S
-	RBinDwarfCompUnit *unit;
-	R_VEC_FOREACH (info->comp_units, unit) {
-		RBinDwarfDie *die;
-		R_VEC_FOREACH (unit->dies, die) {
-			const char *name = NULL;
-			const char *path = NULL;
-			ut64 low = 0;
-
-			if (!die->attr_values) {
-				continue;
-			}
-			RBinDwarfAttrValue *v;
-			R_VEC_FOREACH (die->attr_values, v) {
-				int n = v->attr_name;
-				switch (n) {
-				case DW_AT_name:
-					name = getstr (v);
-					break;
-				case DW_AT_comp_dir:
-					path = getstr (v);
-					break;
-				case DW_AT_low_pc:
-					low = getint (v);
-					break;
-				case DW_AT_high_pc:
-					// hig = getint (v);
-					break;
-				}
-			}
-			if (path && name) {
-				char *abspath = (*name != '/')? r_str_newf ("%s/%s", path, name): strdup (name);
-				// TODO: add compilation unit callback here
-				bf->addrline.al_add_cu (&bf->addrline, low + 1, abspath, NULL, 0, 0);
-				free (abspath);
-			}
-		}
-	}
-
-	// build hashtable after whole parsing because of possible relocations
-	size_t dies_count = 0;
-	R_VEC_FOREACH (info->comp_units, unit) {
-		RBinDwarfDie *die;
-		R_VEC_FOREACH (unit->dies, die) {
-			dies_count += 1;
-		}
-	}
-
-	info->lookup_table = ht_up_new_size (dies_count + dies_count / 3, NULL, NULL, NULL);
-	R_VEC_FOREACH (info->comp_units, unit) {
-		RBinDwarfDie *die;
-		R_VEC_FOREACH (unit->dies, die) {
-			ht_up_insert (info->lookup_table, die->offset, die); // optimization for further processing}
-		}
-	}
-
+	RBinDwarfDebugInfo *info = R_NEW0 (RBinDwarfDebugInfo);
+	info->comp_units = RVecDwarfCompUnit_new ();
+	dwarf_foreach_unit (bf, da, DWARF_UNITS_WARN, dwarf_keep_unit, info);
 	return info;
+}
+
+static int comp_unit_offset_cmp(const RBinDwarfCompUnit *a, const RBinDwarfCompUnit *b) {
+	return (a->offset > b->offset) - (a->offset < b->offset);
+}
+
+static int die_offset_cmp(const RBinDwarfDie *a, const RBinDwarfDie *b) {
+	return (a->offset > b->offset) - (a->offset < b->offset);
+}
+
+// units and their dies are stored in section order, so no index is needed
+R_API RBinDwarfDie *r_bin_dwarf_find_die(const RBinDwarfDebugInfo *info, ut64 offset) {
+	R_RETURN_VAL_IF_FAIL (info && info->comp_units, NULL);
+	RBinDwarfCompUnit unit_key = { .offset = offset };
+	size_t next = RVecDwarfCompUnit_upper_bound (info->comp_units, &unit_key, comp_unit_offset_cmp);
+	if (!next) {
+		return NULL;
+	}
+	RBinDwarfCompUnit *unit = RVecDwarfCompUnit_at (info->comp_units, next - 1);
+	RBinDwarfDie die_key = { .offset = offset };
+	size_t pos = RVecDwarfDie_lower_bound (unit->dies, &die_key, die_offset_cmp);
+	if (pos >= RVecDwarfDie_length (unit->dies)) {
+		return NULL;
+	}
+	RBinDwarfDie *die = RVecDwarfDie_at (unit->dies, pos);
+	return die->offset == offset? die: NULL;
 }

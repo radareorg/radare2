@@ -68,6 +68,12 @@ typedef struct {
 	ut8 offset_size;
 } DwarfLoclistsContribution;
 
+typedef struct {
+	RBinFile *bf;
+	RBinSection *str;
+	RBinSection *line_str;
+} DwarfStrSections;
+
 R_IPI RBinSection *dwarf_get_section(RBinFile *bf, int sn);
 R_IPI const ut8 *dwarf_get_section_bytes(RBinFile *bf, RBinSection *section);
 R_IPI const char *dwarf_get_section_string(RBinFile *bf, RBinSection *section, size_t offset);
