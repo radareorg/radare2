@@ -3,6 +3,9 @@
 #include <r_bin.h>
 #include <r_muta.h>
 #include "i/private.h"
+#if defined(__APPLE__)
+#include <sys/sysctl.h>
+#endif
 
 // maybe too big sometimes? 2KB of stack eaten here..
 #define R_STRING_SCAN_BUFFER_SIZE 4096
@@ -811,7 +814,69 @@ static bool xtr_metadata_match(RBinXtrData *xtr_data, const char *arch, int bits
 	}
 	const char *iter_arch = xtr_data->metadata->arch;
 	int iter_bits = xtr_data->metadata->bits;
-	return bits == iter_bits && !strcmp (iter_arch, arch) && !xtr_data->loaded;
+	return bits == iter_bits && !strcmp (iter_arch, arch);
+}
+
+static int native_arm64_subtype(void) {
+#if defined(__APPLE__)
+	int cpu_type = 0;
+	int subtype = 0;
+	size_t size = sizeof (cpu_type);
+	if (!sysctlbyname ("hw.cputype", &cpu_type, &size, NULL, 0) && cpu_type == 0x0100000c) {
+		size = sizeof (subtype);
+		if (!sysctlbyname ("hw.cpusubtype", &subtype, &size, NULL, 0)) {
+			return subtype & 0x00ffffff;
+		}
+	}
+#endif
+	return 0;
+}
+
+static int xtr_arm64_priority(const char *machine, int native_subtype) {
+	if (!strcmp (r_str_get (machine), "arm64e.x1")) {
+		return native_subtype == 12? 5: 0;
+	}
+	if (!strcmp (r_str_get (machine), "arm64.x1")) {
+		return native_subtype == 3 || native_subtype == 12? 4: 0;
+	}
+	if (!strcmp (r_str_get (machine), "arm64e")) {
+		return native_subtype == 2 || native_subtype == 12? 3: 1;
+	}
+	return 2;
+}
+
+static RBinFile *find_arch_in_file(RBin *bin, RBinFile *bf, const char *arch, int bits) {
+	if (!bf) {
+		return NULL;
+	}
+	RBinInfo *info = bf->bo? bf->bo->info: NULL;
+	const bool current_matches = info && info->arch && info->bits == bits && !strcmp (info->arch, arch);
+	if (r_list_empty (bf->xtr_data)) {
+		return current_matches? bf: NULL;
+	}
+	const bool arm64 = bits == 64 && !strcmp (arch, "arm");
+	const int native_subtype = arm64? native_arm64_subtype (): 0;
+	RBinXtrData *selected = NULL;
+	RBinXtrData *candidate;
+	RListIter *iter;
+	int priority = -1;
+	r_list_foreach (bf->xtr_data, iter, candidate) {
+		if (!xtr_metadata_match (candidate, arch, bits)) {
+			continue;
+		}
+		if (candidate->loaded && current_matches && bf->bo->boffset == candidate->offset) {
+			return bf;
+		}
+		int candidate_priority = arm64? xtr_arm64_priority (candidate->metadata->machine, native_subtype): 0;
+		if (candidate_priority > priority) {
+			selected = candidate;
+			priority = candidate_priority;
+		}
+	}
+	if (selected && r_bin_file_object_new_from_xtr_data (bin, bf, selected->baddr, selected->laddr, selected)) {
+		return bf;
+	}
+	return NULL;
 }
 
 R_IPI RBinFile *r_bin_file_new_from_buffer(RBin *bin, const char *file, RBuffer *buf, RBinFileOptions *opt) {
@@ -841,24 +906,19 @@ R_IPI RBinFile *r_bin_file_new_from_buffer(RBin *bin, const char *file, RBuffer 
 R_API RBinFile *r_bin_file_find_by_arch_bits(RBin *bin, const char *arch, int bits) {
 	RListIter *iter;
 	RBinFile *binfile = NULL;
-	RBinXtrData *xtr_data;
 
 	R_RETURN_VAL_IF_FAIL (bin && arch, NULL);
+	RBinFile *current = find_arch_in_file (bin, bin->cur, arch, bits);
+	if (current) {
+		return current;
+	}
 
 	r_list_foreach (bin->binfiles, iter, binfile) {
-		RListIter *iter_xtr;
-		if (!binfile->xtr_data) {
+		if (binfile == bin->cur) {
 			continue;
 		}
-		// look for sub-bins in Xtr Data and Load if we need to
-		r_list_foreach (binfile->xtr_data, iter_xtr, xtr_data) {
-			if (xtr_metadata_match (xtr_data, arch, bits)) {
-				if (!r_bin_file_object_new_from_xtr_data (bin, binfile, xtr_data->baddr,
-					    xtr_data->laddr, xtr_data)) {
-					return NULL;
-				}
-				return binfile;
-			}
+		if (find_arch_in_file (bin, binfile, arch, bits)) {
+			return binfile;
 		}
 	}
 	return binfile;

@@ -108,6 +108,8 @@ static const char *cpu_subtype_name(ut32 cputype, ut32 cpusubtype) {
 		case 0: return "all";
 		case 1: return "arm64v8";
 		case 2: return "arm64e";
+		case 3: return "arm64.x1";
+		case 12: return "arm64e.x1";
 		default: return "arm64";
 		}
 	case CPU_TYPE_ARM:

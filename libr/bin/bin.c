@@ -1330,6 +1330,12 @@ R_API RBin *r_bin_new(void) {
 
 R_API bool r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name) {
 	R_RETURN_VAL_IF_FAIL (bin && arch, false);
+	if (name && (!bin->cur || !bin->cur->file || strcmp (bin->cur->file, name))) {
+		RBinFile *named_file = r_bin_file_find_by_name (bin, name);
+		if (named_file) {
+			bin->cur = named_file;
+		}
+	}
 
 	RBinFile *binfile = r_bin_file_find_by_arch_bits (bin, arch, bits);
 	if (!binfile) {

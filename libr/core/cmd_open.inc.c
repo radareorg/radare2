@@ -2325,7 +2325,10 @@ static int cmd_open(void *data, const char *input) {
 			r_core_bin_set_arch_bits (core, filename, arch, bits);
 			RBinFile *file = NULL;
 			if (filename) {
-				file = r_bin_file_find_by_name (core->bin, filename);
+				file = r_bin_cur (core->bin);
+				if (!file || !file->file || strcmp (file->file, filename)) {
+					file = r_bin_file_find_by_name (core->bin, filename);
+				}
 				if (!file) {
 					R_LOG_ERROR ("Cannot find file %s", filename);
 				}

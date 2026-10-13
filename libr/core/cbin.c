@@ -5884,16 +5884,12 @@ R_API bool r_core_bin_set_arch_bits(RCore *core, const char *name, const char *_
 		free (arch);
 		arch = strdup (R_SYS_ARCH);
 	}
-	/* Find a file with the requested name/arch/bits */
-	RBinFile *binfile = r_bin_file_find_by_arch_bits (core->bin, arch, bits);
-	if (!binfile) {
-		free (arch);
-		return false;
-	}
+	RBinFile *previous = r_bin_cur (core->bin);
 	if (!r_bin_use_arch (core->bin, arch, bits, name)) {
 		free (arch);
 		return false;
 	}
+	RBinFile *binfile = r_bin_cur (core->bin);
 	R_FREE (arch);
 	// how bin.xtr plugins can inform
 	// if the binbuffer is bigger than the io allocated space, that means that rbin have
@@ -5911,7 +5907,7 @@ R_API bool r_core_bin_set_arch_bits(RCore *core, const char *name, const char *_
 	}
 	// set env if the binfile changed, we are dealing with xtr, or xtr_data
 	// is present (e.g. native fat Mach-O without xtr plugin)
-	if (curfile != binfile || binfile->curxtr || !r_list_empty (binfile->xtr_data)) {
+	if (previous != binfile || binfile->curxtr || !r_list_empty (binfile->xtr_data)) {
 		r_core_bin_set_cur (core, binfile);
 		return r_core_bin_set_env (core, binfile);
 	}
