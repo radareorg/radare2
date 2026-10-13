@@ -413,7 +413,9 @@ static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) 
 	RBinLanguage lang_type = r_bin_demangle_type (lang);
 	if (lang_type == R_BIN_LANG_NONE) {
 		if (!pj) {
-			r_bin_demangle_list (core->bin);
+			char *s = r_bin_demangle_list (core->bin);
+			r_cons_print (core->cons, s);
+			free (s);
 		}
 		r_core_return_value (core, 1);
 	}

@@ -1136,7 +1136,7 @@ R_API char *r_bin_demangle_rust(RBinFile *binfile, const char *str, ut64 vaddr);
 R_API char *r_bin_demangle_dlang(const char *str);
 R_API char *r_bin_demangle_ibmxl(const char *str);
 R_API RBinLanguage r_bin_demangle_type(const char *str);
-R_API void r_bin_demangle_list(RBin *bin);
+R_API char *r_bin_demangle_list(RBin *bin);
 R_API char *r_bin_demangle_plugin(RBin *bin, const char *name, const char *str);
 R_API const char *r_bin_get_meth_flag_string(ut64 flag, bool compact);
 
