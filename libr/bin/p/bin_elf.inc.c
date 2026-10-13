@@ -364,6 +364,18 @@ static bool is_library_without_entrypoint(ELFOBJ *eo) {
 	return true;
 }
 
+// a debuginfo file keeps e_entry over a NOBITS .text that its segment loads without file bytes
+static bool is_in_load_memory(ELFOBJ *eo, ut64 vaddr) {
+	size_t i;
+	for (i = 0; eo->phdr && i < eo->phnum; i++) {
+		const Elf_(Phdr) *p = &eo->phdr[i];
+		if (p->p_type == PT_LOAD && vaddr >= p->p_vaddr && vaddr - p->p_vaddr < p->p_memsz) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static RList* entries(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 
@@ -374,14 +386,17 @@ static RList* entries(RBinFile *bf) {
 
 	ELFOBJ* eo = bf->bo->bin_obj;
 	ut64 paddr = Elf_(get_entry_offset) (eo);
-	if (paddr != UT64_MAX) {
+	const ut64 e_entry = Elf_(get_entry_vaddr) (eo);
+	const bool unbacked = paddr == UT64_MAX && e_entry && Elf_(is_executable) (eo)
+		&& is_in_load_memory (eo, e_entry);
+	if (paddr != UT64_MAX || unbacked) {
 		RBinAddr *ptr = R_NEW0 (RBinAddr);
 		if (!ptr) {
 			return ret;
 		}
 
 		ptr->paddr = paddr;
-		ptr->vaddr = Elf_(p2v) (eo, ptr->paddr);
+		ptr->vaddr = unbacked? e_entry: Elf_(p2v) (eo, ptr->paddr);
 		ptr->hpaddr = 0x18;  // e_entry offset in ELF header
 		ptr->hvaddr = UT64_MAX; // 0x18 + baddr (bf);
 
@@ -400,7 +415,7 @@ static RList* entries(RBinFile *bf) {
 					ptr->vaddr--;
 					ptr->bits = 16;
 				}
-				if (ptr->paddr & 1) {
+				if (ptr->paddr != UT64_MAX && (ptr->paddr & 1)) {
 					ptr->paddr--;
 					ptr->bits = 16;
 				}

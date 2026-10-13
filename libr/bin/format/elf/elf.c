@@ -2116,6 +2116,18 @@ static ut64 get_entry_offset_from_shdr(ELFOBJ *eo) {
 	return UT64_MAX;
 }
 
+// e_entry, or the code a PPC64 ELFv1 descriptor at e_entry names
+ut64 Elf_(get_entry_vaddr)(ELFOBJ *eo) {
+	ut64 entry = eo->ehdr.e_entry;
+#if R_BIN_ELF64
+	ut64 code_addr = entry? ppc64v1_opd_deref (eo, entry): UT64_MAX;
+	if (code_addr != UT64_MAX) {
+		return code_addr;
+	}
+#endif
+	return entry;
+}
+
 ut64 Elf_(get_entry_offset)(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo, UT64_MAX);
 
@@ -2123,14 +2135,8 @@ ut64 Elf_(get_entry_offset)(ELFOBJ *eo) {
 		return UT64_MAX;
 	}
 
-	ut64 entry = eo->ehdr.e_entry;
+	ut64 entry = Elf_(get_entry_vaddr) (eo);
 	if (entry) {
-#if R_BIN_ELF64
-		ut64 code_addr = ppc64v1_opd_deref (eo, entry);
-		if (code_addr != UT64_MAX) {
-			entry = code_addr;
-		}
-#endif
 		return Elf_(v2p) (eo, entry);
 	}
 

@@ -882,7 +882,9 @@ typedef struct r_bin_class_t {
 		RListIter *_it;\
 		type_t *_el;\
 		r_list_foreach ((l), _it, _el) { \
-			_el->paddr += (o)->loadaddr;\
+			if (_el->paddr != UT64_MAX) { \
+				_el->paddr += (o)->loadaddr;\
+			} \
 		}\
 	} while (0)
 
