@@ -44,7 +44,7 @@ setver() {
 	rm -f "$F.tmp"
 }
 setver sys/install-debs.sh -e 's,^\[ -z "$V" \] && V=".*",[ -z "$V" ] \&\& V="'$V'",'
-# Keep the RPM version pinned to an existing release tag; update it manually on release.
+$EDITOR dist/rpm/radare2.spec
 setver dist/npm/package.json -e 's,^\(  "version": "\)[^"]*",\1'$V'",'
 setver dist/nix/package.nix -e 's,^\(  version = "\)[^"]*",\1'$V'",'
 for a in dist/wapm/*/wapm.toml ; do
