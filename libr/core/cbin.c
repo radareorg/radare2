@@ -2865,8 +2865,16 @@ static ut64 compute_addr(RBin *bin, ut64 paddr, ut64 vaddr, int va) {
 	return paddr == UT64_MAX? vaddr: rva (bin, paddr, vaddr, va);
 }
 
+// an absolute value is never rebased; in physical mode its mapped offset still applies
+static ut64 symbol_addr(RBin *bin, RBinSymbol *symbol, int va) {
+	if ((symbol->attr.flags & R_BIN_ATTR_ABSOLUTE) && va != VA_FALSE) {
+		return symbol->vaddr;
+	}
+	return compute_addr (bin, symbol->paddr, symbol->vaddr, va);
+}
+
 static void handle_arm_special_symbol(RCore *core, RBinSymbol *symbol, int va) {
-	ut64 addr = compute_addr (core->bin, symbol->paddr, symbol->vaddr, va);
+	ut64 addr = symbol_addr (core->bin, symbol, va);
 	const char *oname = r_bin_name_tostring2 (symbol->name, 'o');
 	// handle $a, $t, $d, $x and their numbered variants ($a.0, $t.1, etc)
 	if (oname[0] == '$' && oname[1] && (!oname[2] || oname[2] == '.')) {
@@ -2894,13 +2902,12 @@ static void handle_arm_special_symbol(RCore *core, RBinSymbol *symbol, int va) {
 	}
 }
 
-static void handle_arm_hint(RCore *core, RBinInfo *info, ut64 paddr, ut64 vaddr, int bits, int va) {
+static void handle_arm_hint(RCore *core, RBinInfo *info, ut64 addr, ut64 paddr, int bits) {
 	if (info->bits > 32) { // we look at 16 or 32 bit only
 		return;
 	}
 
 	int force_bits = 0;
-	ut64 addr = compute_addr (core->bin, paddr, vaddr, va);
 	if (paddr & 1 || bits == 16) {
 		force_bits = 16;
 	} else if (info->bits == 16 && bits == 32) {
@@ -2914,11 +2921,13 @@ static void handle_arm_hint(RCore *core, RBinInfo *info, ut64 paddr, ut64 vaddr,
 }
 
 static void handle_arm_symbol(RCore *core, RBinSymbol *symbol, RBinInfo *info, int va) {
-	handle_arm_hint (core, info, symbol->paddr, symbol->vaddr, symbol->bits, va);
+	ut64 addr = symbol_addr (core->bin, symbol, va);
+	handle_arm_hint (core, info, addr, symbol->paddr, symbol->bits);
 }
 
 static void handle_arm_entry(RCore *core, RBinAddr *entry, RBinInfo *info, int va) {
-	handle_arm_hint (core, info, entry->paddr, entry->vaddr, entry->bits, va);
+	ut64 addr = compute_addr (core->bin, entry->paddr, entry->vaddr, va);
+	handle_arm_hint (core, info, addr, entry->paddr, entry->bits);
 }
 
 static void select_flag_space(RCore *core, RBinSymbol *symbol) {
@@ -3016,7 +3025,7 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 		if (exponly && !its_an_export (symbol)) {
 			continue;
 		}
-		ut64 addr = compute_addr (core->bin, symbol->paddr, symbol->vaddr, va);
+		ut64 addr = symbol_addr (core->bin, symbol, va);
 		ut32 len = symbol->attr.size? symbol->attr.size: 1;
 		if (at != UT64_MAX) {
 			if (symbol->attr.size) {

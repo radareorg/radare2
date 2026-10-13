@@ -2074,6 +2074,8 @@ static const char *attr_bit_name(ut64 n, bool compact) {
 		return compact? "C": "constructor";
 	case R_BIN_ATTR_DESTRUCTOR:
 		return compact? "D": "destructor";
+	case R_BIN_ATTR_ABSOLUTE:
+		return compact? "B": "absolute";
 	case R_BIN_ATTR_DECLARED_SYNCHRONIZED:
 		return compact? "y": "declared_synchronized";
 	default:
