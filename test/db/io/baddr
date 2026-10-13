@@ -82,10 +82,10 @@ EOF
 EXPECT=<<EOF
 paddr      vaddr      phaddr     vhaddr     type
 ------------------------------------------------
-0x00005f44 0x00001f44 0x00000420 ---------- program
+0x00005f44 0x00001f44 0x00000420 0x00001420 program
 paddr      vaddr      phaddr     vhaddr     type
 ------------------------------------------------
-0x00005f44 0x00001f44 0x00000420 ---------- program
+0x00005f44 0x00001f44 0x00000420 0x00001420 program
 6a0089e583e4f083ec10
 6a0089e583e4f083ec10
 EOF
@@ -103,10 +103,10 @@ EOF
 EXPECT=<<EOF
 paddr      vaddr      phaddr     vhaddr     type
 ------------------------------------------------
-0x00005f44 0x00001f44 0x00000420 ---------- program
+0x00005f44 0x00001f44 0x00000420 0x00001420 program
 paddr      vaddr      phaddr     vhaddr     type
 ------------------------------------------------
-0x00005f44 0x00001f44 0x00000420 ---------- program
+0x00005f44 0x00001f44 0x00000420 0x00001420 program
 6a0089e583e4f083ec10
 ffffffffffffffffffff
 EOF

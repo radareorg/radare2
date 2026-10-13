@@ -3924,9 +3924,9 @@ nth vaddr      bind type lib name
 0   ---------- NONE FUNC     exit
 1   ---------- NONE FUNC     puts
 2   ---------- NONE FUNC     dyld_stub_binder
-paddr      vaddr       phaddr     vhaddr     type
--------------------------------------------------
-0x00000ed0 0x100000ed0 0x000005c0 ---------- program
+paddr      vaddr       phaddr     vhaddr      type
+--------------------------------------------------
+0x00000ed0 0x100000ed0 0x000005c0 0x1000005c0 program
 /usr/lib/libSystem.B.dylib
 EOF
 RUN
