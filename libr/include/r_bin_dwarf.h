@@ -776,8 +776,8 @@ typedef enum {
 } RBinDwarfAttrKind;
 
 typedef struct dwarf_attr_kind {
-	ut64 attr_name;
-	ut64 attr_form;
+	ut16 attr_name;
+	ut16 attr_form;
 	RBinDwarfAttrKind kind;
 	/* This is subideal, as dw_form_data can be anything
 	   we could lose information example: encoding signed
@@ -818,11 +818,12 @@ typedef struct {
 R_VEC_TYPE(RVecDwarfAttrValue, RBinDwarfAttrValue);
 
 typedef struct {
-	ut64	tag;
-	ut64	abbrev_code;
-	ut64	offset; // important for parsing types
-	bool	has_children; // important for parsing types
-	RVecDwarfAttrValue *attr_values;
+	ut64 offset; // important for parsing types
+	ut32 attr_idx;
+	ut32 abbrev_code;
+	ut16 attr_count;
+	ut16 tag;
+	bool has_children; // important for parsing types
 } RBinDwarfDie;
 
 R_VEC_TYPE(RVecDwarfDie, RBinDwarfDie);
@@ -830,8 +831,26 @@ R_VEC_TYPE(RVecDwarfDie, RBinDwarfDie);
 typedef struct {
 	RBinDwarfCompUnitHdr hdr;
 	ut64 offset;
-  RVecDwarfDie *dies;
+	RVecDwarfDie *dies;
+	RVecDwarfAttrValue *attrs;
 } RBinDwarfCompUnit;
+
+static inline RBinDwarfAttrValue *r_bin_dwarf_die_attr(const RBinDwarfCompUnit *cu, const RBinDwarfDie *die, size_t i) {
+	return die && i < die->attr_count? RVecDwarfAttrValue_at (cu->attrs, die->attr_idx + i): NULL;
+}
+
+#define R_BIN_DWARF_DIE_FOREACH_ATTR(cu, die, it) \
+	for (it = r_bin_dwarf_die_attr (cu, die, 0); it && it < (cu)->attrs->_start + (die)->attr_idx + (die)->attr_count; it++)
+
+static inline RBinDwarfAttrValue *r_bin_dwarf_die_find_attr(const RBinDwarfCompUnit *cu, const RBinDwarfDie *die, ut16 name) {
+	RBinDwarfAttrValue *value;
+	R_BIN_DWARF_DIE_FOREACH_ATTR (cu, die, value) {
+		if (value->attr_name == name) {
+			return value;
+		}
+	}
+	return NULL;
+}
 
 R_VEC_TYPE(RVecDwarfCompUnit, RBinDwarfCompUnit);
 
@@ -848,7 +867,7 @@ static inline int r_bin_dwarf_die_offset_cmp(const RBinDwarfDie *a, const RBinDw
 }
 
 // units and their dies are stored in section order, so no index is needed
-static inline RBinDwarfDie *r_bin_dwarf_find_die(const RBinDwarfDebugInfo *info, ut64 offset) {
+static inline RBinDwarfDie *r_bin_dwarf_find_die(const RBinDwarfDebugInfo *info, ut64 offset, R_OUT RBinDwarfCompUnit ** R_NULLABLE unit) {
 	R_RETURN_VAL_IF_FAIL (info && info->comp_units, NULL);
 	RBinDwarfCompUnit unit_key;
 	memset (&unit_key, 0, sizeof (unit_key));
@@ -857,16 +876,19 @@ static inline RBinDwarfDie *r_bin_dwarf_find_die(const RBinDwarfDebugInfo *info,
 	if (!next) {
 		return NULL;
 	}
-	RBinDwarfCompUnit *unit = RVecDwarfCompUnit_at (info->comp_units, next - 1);
+	RBinDwarfCompUnit *cu = RVecDwarfCompUnit_at (info->comp_units, next - 1);
 	RBinDwarfDie die_key;
 	memset (&die_key, 0, sizeof (die_key));
 	die_key.offset = offset;
-	size_t pos = RVecDwarfDie_lower_bound (unit->dies, &die_key, r_bin_dwarf_die_offset_cmp);
-	if (pos >= RVecDwarfDie_length (unit->dies)) {
+	size_t pos = RVecDwarfDie_lower_bound (cu->dies, &die_key, r_bin_dwarf_die_offset_cmp);
+	RBinDwarfDie *die = RVecDwarfDie_at (cu->dies, pos);
+	if (!die || die->offset != offset) {
 		return NULL;
 	}
-	RBinDwarfDie *die = RVecDwarfDie_at (unit->dies, pos);
-	return die->offset == offset? die: NULL;
+	if (unit) {
+		*unit = cu;
+	}
+	return die;
 }
 
 R_VEC_TYPE(RVecDwarfAttrDef, RBinDwarfAttrDef);

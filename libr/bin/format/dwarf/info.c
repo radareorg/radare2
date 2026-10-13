@@ -40,36 +40,13 @@ static RBinDwarfAbbrevDecl *abbrev_find(const RVecDwarfAbbrevDecl *decls, ut64 a
 	return bsearch (&key, decls->_start, RVecDwarfAbbrevDecl_length (decls), sizeof (key), abbrev_cmp);
 }
 
-static bool init_die(RArena *arena, RBinDwarfDie *die, ut64 abbr_code, size_t attr_count) {
-	if (!die) {
-		return false;
-	}
-	if (attr_count) {
-		die->attr_values = RVecDwarfAttrValue_new ();
-		if (!die->attr_values) {
-			return false;
-		}
-		if (!RVecDwarfAttrValue_reserve (die->attr_values, attr_count)) {
-			RVecDwarfAttrValue_free (die->attr_values);
-			die->attr_values = NULL;
-			return false;
-		}
-	} else {
-		die->attr_values = NULL;
-	}
-	die->abbrev_code = abbr_code;
-	return true;
-}
-
 static bool init_comp_unit(RBinDwarfCompUnit *cu) {
 	if (!cu) {
 		return false;
 	}
 	cu->dies = RVecDwarfDie_new ();
-	if (!cu->dies) {
-		return false;
-	}
-	return true;
+	cu->attrs = RVecDwarfAttrValue_new ();
+	return cu->dies && cu->attrs;
 }
 
 static void attr_value_fini(RBinDwarfAttrValue *value) {
@@ -83,27 +60,19 @@ static void attr_value_fini(RBinDwarfAttrValue *value) {
 	}
 }
 
-static void dwarf_die_fini(RBinDwarfDie *die) {
-	if (!die || !die->attr_values) {
-		return;
-	}
-	RBinDwarfAttrValue *value;
-	R_VEC_FOREACH (die->attr_values, value) {
-		attr_value_fini (value);
-	}
-	RVecDwarfAttrValue_free (die->attr_values);
-	die->attr_values = NULL;
-}
-
 static void dwarf_comp_unit_fini(RBinDwarfCompUnit *unit) {
-	if (!unit || !unit->dies) {
+	if (!unit) {
 		return;
 	}
-	RBinDwarfDie *die;
-	R_VEC_FOREACH (unit->dies, die) {
-		dwarf_die_fini (die);
+	if (unit->attrs) {
+		RBinDwarfAttrValue *value;
+		R_VEC_FOREACH (unit->attrs, value) {
+			attr_value_fini (value);
+		}
 	}
+	RVecDwarfAttrValue_free (unit->attrs);
 	RVecDwarfDie_free (unit->dies);
+	unit->attrs = NULL;
 	unit->dies = NULL;
 }
 
@@ -489,7 +458,7 @@ static const ut8 *parse_attr_value(DwarfStrSections *sections, const ut8 *obuf, 
 	if (!buf || buf > buf_end) {
 		return NULL;
 	}
-	if (bf->bo->baddr_shift && value->attr_name == DW_AT_location && value->kind == DW_AT_KIND_BLOCK
+	if (bf->bo->baddr_shift && def->attr_name == DW_AT_location && value->kind == DW_AT_KIND_BLOCK
 		&& value->block.data && value->block.length == 1 + hdr->address_size
 		&& value->block.data[0] == DW_OP_addr) {
 		ut64 address;
@@ -511,14 +480,14 @@ static void dwarf_metadata_set_comp_dir(RBinFile *bf, ut64 debug_line_offset, bo
 static void dwarf_comp_unit_save_comp_dir(RBinFile *bf, RBinDwarfCompUnit *unit) {
 	R_RETURN_IF_FAIL (bf && unit && unit->dies);
 	RBinDwarfDie *root = RVecDwarfDie_at (unit->dies, 0);
-	if (!root || !root->attr_values) {
+	if (!root) {
 		return;
 	}
 	const char *comp_dir = NULL;
 	ut64 debug_line_offset = 0;
 	bool has_debug_line_offset = false;
 	RBinDwarfAttrValue *value;
-	R_VEC_FOREACH (root->attr_values, value) {
+	R_BIN_DWARF_DIE_FOREACH_ATTR (unit, root, value) {
 		if (value->attr_name == DW_AT_comp_dir && value->kind == DW_AT_KIND_STRING) {
 			comp_dir = value->string.content;
 		} else if (value->attr_name == DW_AT_stmt_list
@@ -536,38 +505,35 @@ static void dwarf_comp_unit_save_comp_dir(RBinFile *bf, RBinDwarfCompUnit *unit)
 		has_debug_line_offset, comp_dir);
 }
 
-#if 0
-* @brief
-*
-* @param buf Start of the DIE data
-* @param buf_end
-* @param abbrev Abbreviation of the DIE
-* @param hdr Unit header
-* @param die DIE to store the parsed info into
-* @return const ut8* Updated buffer
-#endif
-static const ut8 *parse_die(DwarfStrSections *sections, const ut8 *buf, const ut8 *buf_end, RBinDwarfAbbrevDecl *abbrev, RBinDwarfCompUnitHdr *hdr, RBinDwarfDie *die) {
-	if (!buf || !buf_end || buf > buf_end) {
+static const ut8 *parse_die(DwarfStrSections *sections, const ut8 *buf, const ut8 *buf_end, const RBinDwarfAbbrevDecl *abbrev, ut64 abbr_code, RBinDwarfCompUnit *unit, RBinDwarfDie *die) {
+	if (!buf || !buf_end || buf > buf_end || abbrev->tag > UT16_MAX
+		|| RVecDwarfAttrValue_length (unit->attrs) > UT32_MAX) {
 		return NULL;
 	}
+	die->abbrev_code = abbr_code;
+	die->tag = abbrev->tag;
+	die->has_children = abbrev->has_children;
+	die->attr_idx = RVecDwarfAttrValue_length (unit->attrs);
 	RBinDwarfAttrDef *def;
 	R_VEC_FOREACH (abbrev->defs, def) {
 		if (!def->attr_name && !def->attr_form) {
 			break;
 		}
 		RBinDwarfAttrValue value = { 0 };
-		const ut8 *nbuf = parse_attr_value (sections, buf, buf_end - buf, def, &value, hdr);
-		if (!nbuf) {
+		buf = parse_attr_value (sections, buf, buf_end - buf, def, &value, &unit->hdr);
+		if (buf && def->attr_name > UT16_MAX) {
+			// beyond the DW_AT space, so the value is read past and not kept
+			attr_value_fini (&value);
+			continue;
+		}
+		RBinDwarfAttrValue *slot = buf && die->attr_count < UT16_MAX
+			? RVecDwarfAttrValue_emplace_back (unit->attrs): NULL;
+		if (!slot) {
 			attr_value_fini (&value);
 			return NULL;
 		}
-		buf = nbuf;
-
-		if (die->attr_values) {
-			RVecDwarfAttrValue_push_back (die->attr_values, &value);
-		} else {
-			attr_value_fini (&value);
-		}
+		*slot = value;
+		die->attr_count++;
 	}
 	return buf;
 }
@@ -635,29 +601,13 @@ static const ut8 *parse_comp_unit(DwarfStrSections *sections, const ut8 *buf_sta
 		if (!abbrev || !abbrev->defs) {
 			return NULL;
 		}
-
-		size_t attr_count = RVecDwarfAttrDef_length (abbrev->defs);
-		if (attr_count > 0) {
-			RBinDwarfAttrDef *last = RVecDwarfAttrDef_at (abbrev->defs, attr_count - 1);
-			if (last && !last->attr_name && !last->attr_form) {
-				attr_count--;
-			}
-		}
-		if (!init_die (bf->arena, &die, abbr_code, attr_count)) {
-			return NULL; // error
-		}
-		die.tag = abbrev->tag;
-		die.has_children = abbrev->has_children;
-
-		buf = parse_die (sections, buf, buf_end, abbrev, &unit->hdr, &die);
+		buf = parse_die (sections, buf, buf_end, abbrev, abbr_code, unit, &die);
 		if (!buf) {
-			dwarf_die_fini (&die);
 			return NULL;
 		}
-		bool has_children = die.has_children;
 		RVecDwarfDie_push_back (unit->dies, &die);
 		has_root = true;
-		if (has_children) {
+		if (die.has_children) {
 			child_depth++;
 		}
 	}
@@ -818,23 +768,10 @@ static bool dwarf_parse_root_die(DwarfStrSections *sections, const ut8 *buf, con
 			&& abbrev->tag != DW_TAG_skeleton_unit)) {
 		return false;
 	}
-	size_t attr_count = RVecDwarfAttrDef_length (abbrev->defs);
-	if (attr_count) {
-		RBinDwarfAttrDef *last = RVecDwarfAttrDef_at (abbrev->defs, attr_count - 1);
-		if (last && !last->attr_name && !last->attr_form) {
-			attr_count--;
-		}
-	}
 	RBinDwarfDie die = { 0 };
-	if (!init_die (bf->arena, &die, abbr_code, attr_count)) {
-		return false;
-	}
 	die.offset = unit->offset + (unit->hdr.is_64bit? 12: 4)
 		+ unit->hdr.header_size;
-	die.tag = abbrev->tag;
-	die.has_children = abbrev->has_children;
-	if (!parse_die (sections, attrs, unit_end, abbrev, &unit->hdr, &die)) {
-		dwarf_die_fini (&die);
+	if (!parse_die (sections, attrs, unit_end, abbrev, abbr_code, unit, &die)) {
 		return false;
 	}
 	RVecDwarfDie_push_back (unit->dies, &die);
@@ -881,6 +818,7 @@ static bool dwarf_foreach_unit(RBinFile *bf, RVecDwarfAbbrevDecl *decls, int fla
 		}
 		RBinDwarfCompUnit unit = { 0 };
 		if (!init_comp_unit (&unit)) {
+			dwarf_comp_unit_fini (&unit);
 			return false;
 		}
 		const ut8 *unit_start = buf;
@@ -956,20 +894,11 @@ static bool dwarf_collect_source_file(RBinFile *bf, RBinDwarfCompUnit *unit, voi
 	DwarfSourceFilesContext *ctx = user;
 	R_RETURN_VAL_IF_FAIL (ctx && ctx->files && ctx->seen && unit && unit->dies, false);
 	RBinDwarfDie *root = RVecDwarfDie_at (unit->dies, 0);
-	if (!root || !root->attr_values) {
+	if (!root) {
 		return true;
 	}
-	const char *comp_dir = NULL;
-	const char *name = NULL;
-	RBinDwarfAttrValue *value;
-	R_VEC_FOREACH (root->attr_values, value) {
-		const char *string_value = attr_value_string (value);
-		if (value->attr_name == DW_AT_comp_dir && string_value) {
-			comp_dir = string_value;
-		} else if (value->attr_name == DW_AT_name && string_value) {
-			name = string_value;
-		}
-	}
+	const char *comp_dir = attr_value_string (r_bin_dwarf_die_find_attr (unit, root, DW_AT_comp_dir));
+	const char *name = attr_value_string (r_bin_dwarf_die_find_attr (unit, root, DW_AT_name));
 	if (!name) {
 		return true;
 	}
@@ -1023,18 +952,8 @@ R_API R_OWNED char *r_bin_dwarf_print_info(RBinFile *bf, RVecDwarfAbbrevDecl *de
 static bool dwarf_keep_unit(RBinFile *bf, RBinDwarfCompUnit *unit, void *user) {
 	RBinDwarfDebugInfo *info = user;
 	RBinDwarfDie *root = RVecDwarfDie_at (unit->dies, 0);
-	const char *name = NULL;
-	const char *path = NULL;
-	RBinDwarfAttrValue *v;
-	if (root->attr_values) {
-		R_VEC_FOREACH (root->attr_values, v) {
-			if (v->attr_name == DW_AT_name) {
-				name = attr_value_string (v);
-			} else if (v->attr_name == DW_AT_comp_dir) {
-				path = attr_value_string (v);
-			}
-		}
-	}
+	const char *name = attr_value_string (r_bin_dwarf_die_find_attr (unit, root, DW_AT_name));
+	const char *path = attr_value_string (r_bin_dwarf_die_find_attr (unit, root, DW_AT_comp_dir));
 	if (path && name) {
 		char *abspath = (*name != '/')? r_str_newf ("%s/%s", path, name): strdup (name);
 		bf->addrline.al_add_cu (&bf->addrline, 0, abspath, NULL, 0, 0);
@@ -1042,6 +961,7 @@ static bool dwarf_keep_unit(RBinFile *bf, RBinDwarfCompUnit *unit, void *user) {
 	}
 	RVecDwarfCompUnit_push_back (info->comp_units, unit);
 	unit->dies = NULL;
+	unit->attrs = NULL;
 	return true;
 }
 
