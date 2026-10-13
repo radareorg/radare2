@@ -4,6 +4,9 @@
 #include <sys/stat.h>
 static struct stat sandbox_stdout;
 #endif
+#if R2__WINDOWS__
+#include <windows.h>
+#endif
 
 static int test_user_fgets(RCons *cons, char *buf, int len) {
 	(void)cons;
@@ -743,6 +746,174 @@ bool test_project_name_script_format(void) {
 	mu_end;
 }
 
+#if R2__WINDOWS__
+#define W32_CMD_STR_TIMEOUT 20000
+#define W32_CMD_STR_STDIN_SIZE (256 * 1024)
+
+typedef struct {
+	const char *cmd;
+	const char *input;
+	int ilen;
+	char *output;
+	int outlen;
+	char *sterr;
+	bool ret;
+} W32CmdStrJob;
+
+static DWORD WINAPI w32_cmd_str_job(LPVOID arg) {
+	W32CmdStrJob *job = (W32CmdStrJob *)arg;
+	job->ret = r_sys_cmd_str_full_w32 (job->cmd, job->input, job->ilen,
+		&job->output, &job->outlen, &job->sterr);
+	return 0;
+}
+
+// The call runs on a worker so a regression fails the test instead of hanging
+// the suite; on timeout the job is intentionally not freed because the
+// abandoned call may still be using the input buffer.
+static bool w32_cmd_str_bounded(W32CmdStrJob *job) {
+	HANDLE thread = CreateThread (NULL, 0, w32_cmd_str_job, job, 0, NULL);
+	if (!thread) {
+		mu_fail ("cannot create the cmd_str test thread");
+	}
+	if (WaitForSingleObject (thread, W32_CMD_STR_TIMEOUT) != WAIT_OBJECT_0) {
+		CloseHandle (thread);
+		mu_fail ("r_sys_cmd_str_full_w32 timed out");
+	}
+	CloseHandle (thread);
+	return job->ret;
+}
+
+static char *w32_cmd_str_self(const char *mode) {
+	TCHAR path[MAX_PATH];
+	DWORD len = GetModuleFileName (NULL, path, MAX_PATH);
+	if (!len || len >= MAX_PATH) {
+		return NULL;
+	}
+	char *exe = r_sys_conv_win_to_utf8 (path);
+	if (!exe) {
+		return NULL;
+	}
+	char *cmd = r_str_newf ("\"%s\" %s", exe, mode);
+	free (exe);
+	return cmd;
+}
+
+static int w32_cmd_str_echo_stdin(void) {
+	char buf[4096];
+	HANDLE input = GetStdHandle (STD_INPUT_HANDLE);
+	HANDLE output = GetStdHandle (STD_OUTPUT_HANDLE);
+	DWORD nread;
+	while (ReadFile (input, buf, sizeof (buf), &nread, NULL) && nread > 0) {
+		DWORD done = 0;
+		while (done < nread) {
+			DWORD written = 0;
+			if (!WriteFile (output, buf + done, nread - done, &written, NULL) || !written) {
+				return 1;
+			}
+			done += written;
+		}
+	}
+	return 0;
+}
+#endif
+
+bool test_w32_cmd_str_stdin_binary_roundtrip(void) {
+#if R2__WINDOWS__
+	r_sandbox_disable (true);
+	char *cmd = w32_cmd_str_self ("--echo-stdin");
+	mu_assert_notnull (cmd, "resolve the echo child command");
+	const int size = W32_CMD_STR_STDIN_SIZE;
+	char *input = malloc (size);
+	mu_assert_notnull (input, "allocate the binary input");
+	int i;
+	for (i = 0; i < size; i++) {
+		input[i] = (char) (i * 31);
+	}
+	W32CmdStrJob job = { .cmd = cmd, .input = input, .ilen = size };
+	mu_assert_true (w32_cmd_str_bounded (&job), "large binary stdin does not deadlock");
+	mu_assert_eq (job.outlen, size, "echoed output has the input length");
+	mu_assert_true (job.output && !memcmp (job.output, input, size), "echoed bytes match the input including NULs");
+	free (job.output);
+	free (job.sterr);
+	free (input);
+	free (cmd);
+	r_sandbox_disable (false);
+	mu_end;
+#else
+	mu_end;
+#endif
+}
+
+bool test_w32_cmd_str_negative_input_length(void) {
+#if R2__WINDOWS__
+	r_sandbox_disable (true);
+	char *cmd = w32_cmd_str_self ("--echo-stdin");
+	mu_assert_notnull (cmd, "resolve the echo child command");
+	const char *input = "hello";
+	W32CmdStrJob job = { .cmd = cmd, .input = input, .ilen = -1 };
+	mu_assert_true (w32_cmd_str_bounded (&job), "negative length feeds the NUL terminated input");
+	mu_assert_eq (job.outlen, 6, "negative length feeds the trailing NUL too");
+	mu_assert_true (job.output && !memcmp (job.output, input, 6), "echoed bytes include the string NUL");
+	free (job.output);
+	free (job.sterr);
+	free (cmd);
+	r_sandbox_disable (false);
+	mu_end;
+#else
+	mu_end;
+#endif
+}
+
+bool test_w32_cmd_str_stdin_early_exit(void) {
+#if R2__WINDOWS__
+	r_sandbox_disable (true);
+	char *cmd = w32_cmd_str_self ("--exit-without-reading");
+	mu_assert_notnull (cmd, "resolve the early exit child command");
+	const int size = W32_CMD_STR_STDIN_SIZE;
+	char *input = malloc (size);
+	mu_assert_notnull (input, "allocate the unread input");
+	memset (input, 'A', size);
+	W32CmdStrJob job = { .cmd = cmd, .input = input, .ilen = size };
+	mu_assert_true (w32_cmd_str_bounded (&job), "child exiting without reading returns promptly");
+	mu_assert_eq (job.outlen, 0, "early exit produces no output");
+	free (job.output);
+	free (job.sterr);
+	free (input);
+	free (cmd);
+	r_sandbox_disable (false);
+	mu_end;
+#else
+	mu_end;
+#endif
+}
+
+bool test_w32_cmd_str_missing_executable(void) {
+#if R2__WINDOWS__
+	r_sandbox_disable (true);
+	const char *cmd = "C:\\radare2-no-such-directory\\r2-no-such-binary.exe";
+	W32CmdStrJob job = { .cmd = cmd, .input = "input", .ilen = 5 };
+	mu_assert_false (w32_cmd_str_bounded (&job), "missing executable reports failure");
+	DWORD before = 0;
+	GetProcessHandleCount (GetCurrentProcess (), &before);
+	int i;
+	for (i = 0; i < 64; i++) {
+		char *output = NULL;
+		char *sterr = NULL;
+		mu_assert_false (r_sys_cmd_str_full_w32 (cmd, "input", 5, &output, NULL, &sterr),
+			"repeated missing executable calls keep failing");
+		free (output);
+		free (sterr);
+	}
+	DWORD after = 0;
+	GetProcessHandleCount (GetCurrentProcess (), &after);
+	r_sandbox_disable (false);
+	mu_assert_false (after > before + 16, "missing executable does not leak pipe handles");
+	mu_end;
+#else
+	mu_end;
+#endif
+}
+
 int all_tests(void) {
 	mu_run_test (test_type_format_export_newlines);
 	mu_run_test (test_bin_info_export_special_chars);
@@ -768,9 +939,21 @@ int all_tests(void) {
 	mu_run_test (test_sandbox_scope_readonly_file);
 	mu_run_test (test_project_save_failure_preserves_state);
 	mu_run_test (test_project_name_script_format);
+	mu_run_test (test_w32_cmd_str_stdin_binary_roundtrip);
+	mu_run_test (test_w32_cmd_str_negative_input_length);
+	mu_run_test (test_w32_cmd_str_stdin_early_exit);
+	mu_run_test (test_w32_cmd_str_missing_executable);
 	return tests_passed != tests_run;
 }
 
 int main(int argc, char **argv) {
+#if R2__WINDOWS__
+	if (argc > 1 && !strcmp (argv[1], "--echo-stdin")) {
+		return w32_cmd_str_echo_stdin ();
+	}
+	if (argc > 1 && !strcmp (argv[1], "--exit-without-reading")) {
+		return 0;
+	}
+#endif
 	return all_tests ();
 }
