@@ -1479,6 +1479,25 @@ static void arm64_esil_zext_wregs(RAnalOp *op) {
 	}
 }
 
+#if CS_API_MAJOR > 4
+static void arm64_subp_esil(RAnalOp *op, csh *handle, cs_insn *insn, bool flags, bool compare) {
+	const int first = compare? 0: 1;
+	char left[64], right[64];
+	snprintf (left, sizeof (left), "56,%s,~", REG64 (first));
+	snprintf (right, sizeof (right), "56,%s,~", REG64 (first + 1));
+	if (flags) {
+		r_strbuf_setf (&op->esil,
+			"%s,%s,==,$z,zf,:=,63,$s,nf,:=,64,$b,!,cf,:=,"
+			"63,%s,%s,^,%s,%s,-,%s,^,&,>>,vf,:=",
+			right, left, right, left, right, left, left);
+	}
+	if (!compare && (arm64_reg)REGID64 (0) != ARM64_REG_XZR) {
+		COMMA (&op->esil);
+		r_strbuf_appendf (&op->esil, "%s,%s,-,%s,=", right, left, REG64 (0));
+	}
+}
+#endif
+
 static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
@@ -1573,6 +1592,23 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		r_strbuf_setf (&op->esil, "cf,%s,+,%s,+,%s,=",
 			REG64 (2), REG64 (1), REG64 (0));
 		break;
+#if CS_API_MAJOR > 4
+	case ARM64_INS_SUBG:
+		// Model address subtraction without the system-controlled tag selection.
+		OPCALL ("-");
+		break;
+	case ARM64_INS_SUBP:
+		arm64_subp_esil (op, handle, insn, false, false);
+		break;
+	case ARM64_INS_SUBPS:
+		arm64_subp_esil (op, handle, insn, true, false);
+		break;
+#if CS_API_MAJOR == 5
+	case ARM64_INS_CMPP:
+		arm64_subp_esil (op, handle, insn, true, true);
+		break;
+#endif
+#endif
 #if CS_API_MAJOR >= 6
 	case ARM64_INS_SUBPT:
 #endif
@@ -3746,6 +3782,21 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 		op->cycles = 1;
 		break;
+#if CS_API_MAJOR > 4
+	case ARM64_INS_SUBP:
+	case ARM64_INS_SUBPS:
+		op->cycles = 1;
+		op->sign = true;
+		op->type = insn->id == ARM64_INS_SUBPS && (arm64_reg)REGID64 (0) == ARM64_REG_XZR? R_ANAL_OP_TYPE_CMP: R_ANAL_OP_TYPE_SUB;
+		break;
+#if CS_API_MAJOR == 5
+	case ARM64_INS_CMPP:
+		op->type = R_ANAL_OP_TYPE_CMP;
+		op->sign = true;
+		break;
+#endif
+	case ARM64_INS_SUBG:
+#endif
 #if CS_API_MAJOR >= 6
 	case ARM64_INS_SUBPT:
 #endif

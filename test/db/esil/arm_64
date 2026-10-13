@@ -1,3 +1,85 @@
+NAME=Tagged pointer subtraction strips tags and sets comparison flags
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx e03f82d16d00c79a6d00c7baff03cdba
+aei
+aer sp=0x2000
+aeip
+aes
+aer x0
+aer x3=0xab00000000001030
+aer x7=0xcd00000000001000
+s 4
+aeip
+aes
+aer x13
+s 8
+aeip
+aes
+aer x13
+aer zf
+aer nf
+aer cf
+aer vf
+aer sp=0xaa00000000000030
+s 12
+aeip
+aes
+aer sp
+aer zf
+aer nf
+aer cf
+aer vf
+EOF
+EXPECT=<<EOF
+0x00001fe0
+0x00000030
+0x00000030
+0x00000000
+0x00000000
+0x00000001
+0x00000000
+0xaa00000000000030
+0x00000001
+0x00000000
+0x00000001
+0x00000000
+EOF
+RUN
+
+NAME=Tagged pointer subtraction sign extends the 56-bit addresses
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 6d00c79a6d00c7ba
+aei
+aer x3=0x0080000000000000
+aer x7=0
+aeip
+aes
+aer x13
+aer x3=0
+aer x7=0x0080000000000000
+s 4
+aeip
+aes
+aer x13
+aer zf
+aer nf
+aer cf
+aer vf
+EOF
+EXPECT=<<EOF
+0xff80000000000000
+0x80000000000000
+0x00000000
+0x00000000
+0x00000000
+0x00000000
+EOF
+RUN
+
 NAME=Checked pointer address arithmetic handles shifts, SP and XZR
 FILE=malloc://64
 ARGS=-a arm -b 64

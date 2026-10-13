@@ -1,3 +1,24 @@
+NAME=Tagged pointer subtraction has arithmetic and comparison analysis types
+FILE=malloc://64
+ARGS=-a arm -b 64
+REQUIRE=cs5
+CMDS=<<EOF
+wx e03f82d16d00c79a6d00c7baff03cdba
+pi 4
+ao 4~type[1]
+EOF
+EXPECT=<<EOF
+subg x0, sp, 0x20, 0xf
+subp x13, x3, x7
+subps x13, x3, x7
+subps xzr, sp, x13
+sub
+sub
+sub
+cmp
+EOF
+RUN
+
 NAME=Checked pointer arithmetic decodes without Capstone support
 FILE=malloc://64
 ARGS=-a arm -b 64
