@@ -1056,29 +1056,3 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinFile *bf, RVecDwarfAbbrevDe
 	dwarf_foreach_unit (bf, da, DWARF_UNITS_WARN, dwarf_keep_unit, info);
 	return info;
 }
-
-static int comp_unit_offset_cmp(const RBinDwarfCompUnit *a, const RBinDwarfCompUnit *b) {
-	return (a->offset > b->offset) - (a->offset < b->offset);
-}
-
-static int die_offset_cmp(const RBinDwarfDie *a, const RBinDwarfDie *b) {
-	return (a->offset > b->offset) - (a->offset < b->offset);
-}
-
-// units and their dies are stored in section order, so no index is needed
-R_API RBinDwarfDie *r_bin_dwarf_find_die(const RBinDwarfDebugInfo *info, ut64 offset) {
-	R_RETURN_VAL_IF_FAIL (info && info->comp_units, NULL);
-	RBinDwarfCompUnit unit_key = { .offset = offset };
-	size_t next = RVecDwarfCompUnit_upper_bound (info->comp_units, &unit_key, comp_unit_offset_cmp);
-	if (!next) {
-		return NULL;
-	}
-	RBinDwarfCompUnit *unit = RVecDwarfCompUnit_at (info->comp_units, next - 1);
-	RBinDwarfDie die_key = { .offset = offset };
-	size_t pos = RVecDwarfDie_lower_bound (unit->dies, &die_key, die_offset_cmp);
-	if (pos >= RVecDwarfDie_length (unit->dies)) {
-		return NULL;
-	}
-	RBinDwarfDie *die = RVecDwarfDie_at (unit->dies, pos);
-	return die->offset == offset? die: NULL;
-}

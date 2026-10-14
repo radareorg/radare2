@@ -839,6 +839,36 @@ typedef struct {
   RVecDwarfCompUnit *comp_units;
 } RBinDwarfDebugInfo;
 
+static inline int r_bin_dwarf_comp_unit_offset_cmp(const RBinDwarfCompUnit *a, const RBinDwarfCompUnit *b) {
+	return (a->offset > b->offset) - (a->offset < b->offset);
+}
+
+static inline int r_bin_dwarf_die_offset_cmp(const RBinDwarfDie *a, const RBinDwarfDie *b) {
+	return (a->offset > b->offset) - (a->offset < b->offset);
+}
+
+// units and their dies are stored in section order, so no index is needed
+static inline RBinDwarfDie *r_bin_dwarf_find_die(const RBinDwarfDebugInfo *info, ut64 offset) {
+	R_RETURN_VAL_IF_FAIL (info && info->comp_units, NULL);
+	RBinDwarfCompUnit unit_key;
+	memset (&unit_key, 0, sizeof (unit_key));
+	unit_key.offset = offset;
+	size_t next = RVecDwarfCompUnit_upper_bound (info->comp_units, &unit_key, r_bin_dwarf_comp_unit_offset_cmp);
+	if (!next) {
+		return NULL;
+	}
+	RBinDwarfCompUnit *unit = RVecDwarfCompUnit_at (info->comp_units, next - 1);
+	RBinDwarfDie die_key;
+	memset (&die_key, 0, sizeof (die_key));
+	die_key.offset = offset;
+	size_t pos = RVecDwarfDie_lower_bound (unit->dies, &die_key, r_bin_dwarf_die_offset_cmp);
+	if (pos >= RVecDwarfDie_length (unit->dies)) {
+		return NULL;
+	}
+	RBinDwarfDie *die = RVecDwarfDie_at (unit->dies, pos);
+	return die->offset == offset? die: NULL;
+}
+
 R_VEC_TYPE(RVecDwarfAttrDef, RBinDwarfAttrDef);
 
 typedef struct {
@@ -932,7 +962,6 @@ R_API void r_bin_dwarf_loclists_free(RBinDwarfLocLists *lists);
 R_API R_OWNED char *r_bin_dwarf_print_loclists_stream(RBinFile *bf);
 R_API void r_bin_dwarf_free_loc(HtUP /*<offset, RBinDwarfLocList*>*/  *loc_table);
 R_API void r_bin_dwarf_free_debug_info(RBinDwarfDebugInfo *inf);
-R_API RBinDwarfDie *r_bin_dwarf_find_die(const RBinDwarfDebugInfo *info, ut64 offset);
 R_API void r_bin_dwarf_free_debug_abbrev(RVecDwarfAbbrevDecl *da);
 
 #ifdef __cplusplus
