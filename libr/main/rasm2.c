@@ -133,25 +133,26 @@ static int showanal(RAsmState *as, RAnalOp *op, ut64 offset, ut8 *buf, int len, 
 		pj_kn (pj, "stackptr", op->stackptr);
 		pj_end (pj);
 	} else {
-		r_cons_printf (as->cons, "offset:   0x%08" PFMT64x "\n", offset);
-		r_cons_printf (as->cons, "bytes:    %s\n", bytes);
-		r_cons_printf (as->cons, "type:     %s\n", optype);
+		RStrBuf *sb = r_strbuf_new (NULL);
+		bool success = r_strbuf_appendf (sb, "offset:   0x%08" PFMT64x "\n"
+			"bytes:    %s\ntype:     %s\n", offset, bytes, optype);
 		if (op->jump != UT64_MAX) {
-			r_cons_printf (as->cons, "jump:     0x%08" PFMT64x "\n", op->jump);
+			success = success && r_strbuf_appendf (sb, "jump:     0x%08" PFMT64x "\n", op->jump);
 		}
 		if (op->fail != UT64_MAX) {
-			r_cons_printf (as->cons, "fail:     0x%08" PFMT64x "\n", op->fail);
+			success = success && r_strbuf_appendf (sb, "fail:     0x%08" PFMT64x "\n", op->fail);
 		}
-		// if (op->ref != -1LL)
-		//       printf ("ref:      0x%08"PFMT64x"\n", op->ref);
 		if (op->val != UT64_MAX) {
-			r_cons_printf (as->cons, "value:    0x%08" PFMT64x "\n", op->val);
+			success = success && r_strbuf_appendf (sb, "value:    0x%08" PFMT64x "\n", op->val);
 		}
-		r_cons_printf (as->cons, "stackop:  %s\n", stackop);
-		r_cons_printf (as->cons, "esil:     %s\n", r_strbuf_get (&op->esil));
-		r_cons_printf (as->cons, "stackptr: %" PFMT64d "\n", op->stackptr);
-		// produces (null) printf ("decode str: %s\n", r_anal_op_tostring (anal, op));
-		r_cons_printf (as->cons, "\n");
+		success = success && r_strbuf_appendf (sb, "stackop:  %s\nesil:     %s\n"
+			"stackptr: %" PFMT64d "\n\n", stackop, r_strbuf_get (&op->esil), op->stackptr);
+		if (success) {
+			r_cons_print (as->cons, r_strbuf_get (sb));
+		} else {
+			ret = 0;
+		}
+		r_strbuf_free (sb);
 	}
 	free (stackop);
 	free (bytes);
