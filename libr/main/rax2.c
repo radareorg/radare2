@@ -255,6 +255,56 @@ static bool invalid_length(RaxActions flags) {
 	return true;
 }
 
+static bool rax_numbers(RNum *num, char *str, char out_mode, RaxActions *flags, RaxMode *mode) {
+	char *p;
+	r_str_trim (str);
+	const char *digits = (*str == '-')? str + 1: str;
+	if (digits[0] == '0' && (tolower ((ut8)digits[1]) == 'x')) {
+		out_mode = (flags->keepbase)? '0': 'I';
+	} else if (r_str_startswith (str, "b")) {
+		out_mode = 'B';
+		str++;
+	} else if (r_str_startswith (str, "t")) {
+		out_mode = 'T';
+		str++;
+	} else if (r_str_startswith (str, "Fx")) {
+		out_mode = 'F';
+		*str = '0';
+	} else if (r_str_startswith (str, "Bx")) {
+		out_mode = 'B';
+		*str = '0';
+	} else if (r_str_startswith (str, "Gx")) {
+		out_mode = 'G';
+		*str = '0';
+	} else if (r_str_startswith (str, "Tx")) {
+		out_mode = 'T';
+		*str = '0';
+	} else if (r_str_startswith (str, "Ox")) {
+		out_mode = 'O';
+		*str = '0';
+	} else if (r_str_endswith (str, "d")) {
+		out_mode = 'I';
+		str[strlen (str) - 1] = 'b';
+		// TODO: Move print into format_output
+	} else if (r_str_endswith (str, "f")) {
+		out_mode = 'l';
+	} else if (r_str_endswith (str, "g")) {
+		out_mode = 'g';
+	} else if (r_str_endswith (str, "dt")) {
+		out_mode = 'I';
+		str[strlen (str) - 2] = 't';
+		str[strlen (str) - 1] = '\0';
+	}
+	while ((p = strchr (str, ' '))) {
+		*p = 0;
+		if (!format_output (num, out_mode, str, *mode, *flags)) {
+			return false;
+		}
+		str = p + 1;
+	}
+	return *str? format_output (num, out_mode, str, *mode, *flags): true;
+}
+
 static bool rax(RNum *num, char *str, int len, int last, RaxActions *flags, RaxMode *mode, PJ **pj) {
 	const char *errstr = NULL;
 	ut8 *buf;
@@ -789,52 +839,14 @@ dotherax:
 		return true;
 	}
 	// no flags passed
-
-	const char *digits = (*str == '-')? str + 1: str;
-	if (digits[0] == '0' && (tolower ((ut8)digits[1]) == 'x')) {
-		out_mode = (flags->keepbase)? '0': 'I';
-	} else if (r_str_startswith (str, "b")) {
-		out_mode = 'B';
-		str++;
-	} else if (r_str_startswith (str, "t")) {
-		out_mode = 'T';
-		str++;
-	} else if (r_str_startswith (str, "Fx")) {
-		out_mode = 'F';
-		*str = '0';
-	} else if (r_str_startswith (str, "Bx")) {
-		out_mode = 'B';
-		*str = '0';
-	} else if (r_str_startswith (str, "Gx")) {
-		out_mode = 'G';
-		*str = '0';
-	} else if (r_str_startswith (str, "Tx")) {
-		out_mode = 'T';
-		*str = '0';
-	} else if (r_str_startswith (str, "Ox")) {
-		out_mode = 'O';
-		*str = '0';
-	} else if (r_str_endswith (str, "d")) {
-		out_mode = 'I';
-		str[strlen (str) - 1] = 'b';
-		// TODO: Move print into format_output
-	} else if (r_str_endswith (str, "f")) {
-		out_mode = 'l';
-	} else if (r_str_endswith (str, "g")) {
-		out_mode = 'g';
-	} else if (r_str_endswith (str, "dt")) {
-		out_mode = 'I';
-		str[strlen (str) - 2] = 't';
-		str[strlen (str) - 1] = '\0';
-	}
-	while ((p = strchr (str, ' '))) {
+	while ((p = strchr (str, '\n'))) {
 		*p = 0;
-		if (!format_output (num, out_mode, str, *mode, *flags)) {
+		if (!rax_numbers (num, str, out_mode, flags, mode)) {
 			return false;
 		}
 		str = p + 1;
 	}
-	return *str? format_output (num, out_mode, str, *mode, *flags): true;
+	return rax_numbers (num, str, out_mode, flags, mode);
 }
 
 R_API int r_main_rax2(int argc, const char **argv) {

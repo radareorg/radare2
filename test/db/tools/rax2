@@ -297,6 +297,20 @@ CMDS=!printf 414141 | rax2 -s
 EXPECT=AAA
 RUN
 
+NAME=rax2 converts every line read from stdin
+FILE=-
+CMDS=<<EOF
+!printf '10\n0x20\n30\n' | rax2 -
+!printf '1f\r\n' | rax2 -
+EOF
+EXPECT=<<EOF
+0xa
+32
+0x1e
+Fx3f800000
+EOF
+RUN
+
 NAME=rax2 endian swap hex stream
 FILE=-
 CMDS=!printf 1122334455667788 | rax2 -esb 32 | rax2 -S
