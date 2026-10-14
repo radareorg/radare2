@@ -1284,11 +1284,20 @@ beach:
 }
 
 R_API int r_main_rasm2(int argc, const char **argv) {
-	RCons *cons = (RCons *)(size_t)r_sys_getenv_asut64 ("R2CONS");
-	if (cons) {
+	RCons *cons = NULL;
+	char *cons_env = r_sys_getenv ("R2CONS");
+	if (cons_env) {
+		char *address = strchr (cons_env, ':');
+		if (address) {
+			*address++ = 0;
+			if (r_num_get (NULL, cons_env) == r_sys_getpid ()) {
+				cons = (RCons *)(size_t)r_num_get (NULL, address);
+			}
+		}
 		// Consume the pointer before a plugin can spawn a process.
 		r_sys_setenv ("R2CONS", NULL);
 	}
+	free (cons_env);
 	const bool own_cons = !cons;
 	if (own_cons) {
 		cons = r_cons_new ();

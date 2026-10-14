@@ -209,3 +209,22 @@ R2CONS=
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=internal main children ignore the parent console pointer
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env R2CONS=previous
+r2pm -qr rasm2 -a x86 -b 64 nop
+env R2CONS
+rasm2 -a x86 -b 64 -d 90~nop
+?e after
+EOF
+EXPECT=<<EOF
+90
+previous
+nop
+after
+EOF
+EXPECT_ERR=
+RUN
