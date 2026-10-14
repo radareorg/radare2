@@ -29,8 +29,8 @@ R_API bool r_anal_global_add(RAnal *anal, ut64 addr, const char *type_name, cons
 		r_name_filter (filtered_name, 0);
 	}
 	RFlagItem *named = r_flag_get (flags, filtered_name? filtered_name: name);
-	RFlagItem *global = r_anal_global_get (anal, addr);
-	ut64 flag_addr = flags->mask? addr & flags->mask: addr;
+	ut64 flag_addr = (flags->mask? addr & flags->mask: addr) + flags->base;
+	RFlagItem *global = r_anal_global_get (anal, flag_addr);
 	bool collision = (global && global != named)
 		|| (named && (named->addr != flag_addr
 			|| (named->space && strcmp (named->space->name, GLOBAL_FLAGSPACE))));
@@ -55,6 +55,7 @@ R_API bool r_anal_global_add(RAnal *anal, ut64 addr, const char *type_name, cons
 		return false;
 	}
 	fi->space = r_flag_space_get (flags, GLOBAL_FLAGSPACE);
+	addr = fi->addr;
 	if (type) {
 		global_clear_inference (anal, addr);
 		r_flag_item_set_type (flags, fi, type);
@@ -75,6 +76,7 @@ R_API bool r_anal_global_del(RAnal *anal, ut64 addr) {
 	RFlagItem *fi = r_anal_global_get (anal, addr);
 	if (fi) {
 		RFlag *flags = anal->flb.f;
+		addr = fi->addr;
 		global_clear_inference (anal, addr);
 		r_meta_del (anal, R_META_TYPE_FORMAT, addr, 0);
 		r_flag_unset (flags, fi);
@@ -88,7 +90,7 @@ R_API bool r_anal_global_retype(RAnal *anal, ut64 addr, const char *new_type) {
 	R_RETURN_VAL_IF_FAIL (anal && R_STR_ISNOTEMPTY (new_type), false);
 	RFlagItem *fi = r_anal_global_get (anal, addr);
 	if (fi) {
-		return r_anal_global_add (anal, addr, new_type, fi->name);
+		return r_anal_global_add (anal, fi->addr - anal->flb.f->base, new_type, fi->name);
 	}
 	return false;
 }

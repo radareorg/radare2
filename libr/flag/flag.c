@@ -175,7 +175,8 @@ static RFlagsAtOffset *r_flag_get_nearest_list(RFlag *f, ut64 addr, int dir) {
 
 static void remove_addrmap(RFlag *f, RFlagItem *item) {
 	R_RETURN_IF_FAIL (f && item);
-	RFlagsAtOffset *flags = r_flag_get_nearest_list (f, item->addr, 0);
+	ut64 addr = f->mask? item->addr & f->mask: item->addr;
+	RFlagsAtOffset *flags = r_flag_get_nearest_list (f, addr, 0);
 	if (flags) {
 		flag_vec_delete_item (&flags->flags, item);
 		if (RVecFlagItemPtr_empty (&flags->flags)) {
@@ -1035,7 +1036,7 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 addr, ut32 size) {
 	}
 
 	RFlagItem *item = r_flag_get (f, itemname.name);
-	if (item && item->addr == addr) {
+	if (item && item->addr == addr + f->base) {
 		item->size = size;
 		filtered_item_name_fini (&itemname);
 		return item;

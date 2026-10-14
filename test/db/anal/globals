@@ -43,6 +43,7 @@ fs symbols
 f occupied 4 @ 0x10
 avg int occupied @ 0x20
 avg int occupied @ 0x10
+"avg int occu	pied" @ 0x20
 fj
 avgj
 avg char distinct @ 0x10
@@ -68,19 +69,116 @@ avg int first @ 0x50
 avgj
 avg. @ 0x40
 Cf. @ 0x40
+tl
 avg int first @ 0x40
 avgj
 Cf. @ 0x40
+tl
 avg- @ 0x40
 avgj
+tl
+Cf~?
 EOF
 EXPECT=<<EOF
 [{"name":"first","addr":64,"size":1,"type":"char"}]
 char
 c
+0x00000040 = char
 [{"name":"first","addr":64,"size":4,"type":"int"}]
 d
+0x00000040 = int
 []
+0
+EOF
+RUN
+
+NAME=Global registration rejects duplicate addresses with a nonzero flag base
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e log.level=0
+CMDS=<<EOF
+fb 0x100
+avg char first @ 0x40
+avg int second @ 0x40
+avgj
+avg. @ 0x140
+Cf. @ 0x140
+tl
+avg- @ 0x140
+avgj
+tl
+Cf~?
+EOF
+EXPECT=<<EOF
+[{"name":"first","addr":320,"size":1,"type":"char"}]
+char
+c
+0x00000140 = char
+[]
+0
+EOF
+RUN
+
+NAME=Global registration allows retyping with a nonzero flag base
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e log.level=0
+CMDS=<<EOF
+fb 0x100
+avg char first @ 0x40
+avg uint16_t neighbor @ 0x60
+avg int first @ 0x40
+avgj
+avg. @ 0x140
+avg. @ 0x160
+Cf. @ 0x140
+tl~0x00000140
+tl~0x00000160
+Cf~?
+avg- @ 0x140
+avgj
+avg- @ 0x160
+avgj
+tl
+Cf~?
+EOF
+EXPECT=<<EOF
+[{"name":"first","addr":320,"size":4,"type":"int"},{"name":"neighbor","addr":352,"size":2,"type":"uint16_t"}]
+int
+uint16_t
+d
+0x00000140 = int
+0x00000160 = uint16_t
+2
+[{"name":"neighbor","addr":352,"size":2,"type":"uint16_t"}]
+[]
+0
+EOF
+RUN
+
+NAME=Global registration applies the flag mask before a nonzero base
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e log.level=0
+CMDS=<<EOF
+e io.mask=0xff
+fb 0x100
+avg char first @ 0x140
+avg int second @ 0x240
+avg int first @ 0x340
+avgj
+avg. @ 0x140
+Cf. @ 0x140
+tl
+avg- @ 0x240
+avgj
+tl
+Cf~?
+EOF
+EXPECT=<<EOF
+[{"name":"first","addr":320,"size":4,"type":"int"}]
+int
+d
+0x00000140 = int
+[]
+0
 EOF
 RUN
 

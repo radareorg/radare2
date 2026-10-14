@@ -859,64 +859,7 @@ static bool test_anal_type_bitsize_arrays(void) {
 	mu_end;
 }
 
-static bool test_anal_global_name_collision(void) {
-	RAnal *anal = r_anal_new ();
-	RFlag *flags = r_flag_new ();
-	r_flag_bind (flags, &anal->flb);
-	RFlagItem *symbol = r_flag_set_inspace (flags, "symbols", "occupied", 0x10, 4);
-	mu_assert_notnull (symbol, "create symbol");
-	RSpace *space = symbol->space;
-	mu_assert_false (r_anal_global_add (anal, 0x20, NULL, "occupied"), "reject symbol name at another address");
-	mu_assert_false (r_anal_global_add (anal, 0x10, NULL, "occupied"), "reject symbol name at the same address");
-	mu_assert_false (r_anal_global_add (anal, 0x20, NULL, " occupied "), "reject trimmed symbol name");
-	mu_assert_false (r_anal_global_add (anal, 0x20, NULL, "occu\tpied"), "reject filtered symbol name");
-	mu_assert_ptreq (r_flag_get (flags, "occupied"), symbol, "keep the original symbol");
-	mu_assert_ptreq (symbol->space, space, "keep the original flagspace");
-	mu_assert_eq (symbol->addr, 0x10, "keep the original address");
-	mu_assert_eq (symbol->size, 4, "keep the original size");
-	mu_assert_null (r_anal_global_get (anal, 0x10), "no global at symbol address");
-	mu_assert_null (r_anal_global_get (anal, 0x20), "no global at rejected address");
-	r_anal_free (anal);
-	r_flag_free (flags);
-	mu_end;
-}
-
-static bool test_anal_global_address_collision(void) {
-	RAnal *anal = r_anal_new ();
-	RFlag *flags = r_flag_new ();
-	r_flag_bind (flags, &anal->flb);
-	setup_sdb_for_atomic (anal->sdb_types);
-	mu_assert_true (r_anal_global_add (anal, 0x40, "char", "first"), "create typed global");
-	RFlagItem *global = r_anal_global_get (anal, 0x40);
-	ut64 epoch = r_anal_types_dirty_epoch (anal);
-	mu_assert_false (r_anal_global_add (anal, 0x40, "char[4]", "second"), "reject duplicate address");
-	mu_assert_false (r_anal_global_add (anal, 0x50, "char[4]", "first"), "reject moving existing global");
-	mu_assert_null (r_flag_get (flags, "second"), "no second global");
-	mu_assert_ptreq (r_anal_global_get (anal, 0x40), global, "keep the original global");
-	mu_assert_eq (global->size, 1, "keep the original size");
-	mu_assert_streq (r_anal_global_get_type (anal, 0x40), "char", "keep the original type");
-	mu_assert_streq (r_meta_get_string (anal, R_META_TYPE_FORMAT, 0x40), "c", "keep format metadata");
-	char *type = r_type_link_at (anal->sdb_types, 0x40);
-	mu_assert_streq (type, "char", "keep the original type link");
-	free (type);
-	mu_assert_eq (r_anal_types_dirty_epoch (anal), epoch, "rejected mutations do not change type links");
-	mu_assert_true (r_anal_global_retype (anal, 0x40, "char[4]"), "allow retyping the same global");
-	mu_assert_ptreq (r_anal_global_get (anal, 0x40), global, "retyping preserves identity");
-	mu_assert_eq (global->size, 4, "retyping updates size");
-	mu_assert_streq (r_anal_global_get_type (anal, 0x40), "char[4]", "retyping updates type");
-	RFlagItem *symbol = r_flag_set_inspace (flags, "symbols", "neighbor", 0x40, 4);
-	mu_assert_notnull (symbol, "allow a distinct symbol at the same address");
-	mu_assert_true (r_anal_global_del (anal, 0x40), "delete global");
-	mu_assert_ptreq (r_flag_get (flags, "neighbor"), symbol, "deleting global preserves symbol");
-	mu_assert_null (r_meta_get_string (anal, R_META_TYPE_FORMAT, 0x40), "delete global format metadata");
-	r_anal_free (anal);
-	r_flag_free (flags);
-	mu_end;
-}
-
 int all_tests(void) {
-	mu_run_test (test_anal_global_name_collision);
-	mu_run_test (test_anal_global_address_collision);
 	mu_run_test (test_anal_get_base_type_struct);
 	mu_run_test (test_anal_save_base_type_struct);
 	mu_run_test (test_anal_base_type_struct_array_roundtrip);
