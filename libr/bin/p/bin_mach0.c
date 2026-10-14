@@ -559,7 +559,8 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		goto beach;
 	}
 
-	const int cdsz = obj->info ? obj->info->bits / 8 : 8;
+	const bool is64 = mo->hdr.magic == MH_MAGIC_64 || mo->hdr.magic == MH_CIGAM_64;
+	const int cdsz = is64 ? 8 : 4;
 
 	ut64 offset = 0;
 	RIOBank *bank = iob->bank_get (io, io->bank);
