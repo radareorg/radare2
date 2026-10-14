@@ -694,10 +694,7 @@ R_API char *r_asm_list_directives(void) {
 	RStrBuf *sb = r_strbuf_new (NULL);
 	int i;
 	for (i = 0; directives[i]; i++) {
-		if (!r_strbuf_appendf (sb, "%s\n", directives[i])) {
-			r_strbuf_free (sb);
-			return NULL;
-		}
+		r_strbuf_appendf (sb, "%s\n", directives[i]);
 	}
 	return r_strbuf_drain (sb);
 }
