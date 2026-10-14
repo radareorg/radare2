@@ -1463,6 +1463,7 @@ R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention, int n);
 R_API const char *r_anal_cc_fpret(RAnal *anal, const char *convention, int n);
 R_API bool r_anal_cc_argclob(RAnal *anal, const char *caller_cc, int n, const char *callee_cc);
 R_API bool r_anal_cc_isclobber(RAnal *anal, const char *cc, const char *reg);
+R_API bool r_anal_cc_ispreserved(RAnal *anal, const char *cc, const char *reg);
 R_API const char *r_anal_cc_default(RAnal *anal);
 R_API const char *r_anal_function_cc(RAnalFunction *fcn);
 R_API const char *r_anal_call_convention(RAnal *anal, RAnalOp *op);
