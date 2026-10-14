@@ -186,44 +186,26 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=rasm2 REPL restores the console environment
+NAME=rasm2 REPL keeps the passed console environment
 FILE=-
 ARGS=-NN
 CMDS=<<EOF
 env PATH=
 env R2CONS=previous
 rasm2 -a x86 -b 64 nop
-env R2CONS
+env~R2CONS=previous?
+env~R2CONS=?
 rasm2 -S invalid
-env R2CONS
-env R2CONS=
-rasm2 -a x86 -b 64 -d 90
-env~R2CONS=
-EOF
-EXPECT=<<EOF
-90
-previous
-previous
-nop
-R2CONS=
-EOF
-EXPECT_ERR=
-RUN
-
-NAME=internal main children ignore the parent console pointer
-FILE=-
-ARGS=-NN
-CMDS=<<EOF
-env R2CONS=previous
-r2pm -qr rasm2 -a x86 -b 64 nop
-env R2CONS
-rasm2 -a x86 -b 64 -d 90~nop
+env~R2CONS=previous?
+env~R2CONS=?
 ?e after
 EOF
 EXPECT=<<EOF
 90
-previous
-nop
+0
+1
+0
+1
 after
 EOF
 EXPECT_ERR=

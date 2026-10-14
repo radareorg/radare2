@@ -2717,13 +2717,8 @@ static int __runMain(RCons *cons, RMainCallback cb, const char *arg) {
 	char *a = r_str_trim_dup (arg);
 	int argc = 0;
 	char **args = r_str_argv (a, &argc);
-	char *previous_cons = r_sys_getenv ("R2CONS");
-	char *cons_env = r_str_newf ("%d:0x%" PFMT64x, r_sys_getpid (), (ut64)(size_t)cons);
-	r_sys_setenv ("R2CONS", cons_env);
-	free (cons_env);
+	r_sys_setenv_asut64 ("R2CONS", (ut64)(size_t)cons);
 	int res = cb? cb (argc, (const char **)args): -1;
-	r_sys_setenv ("R2CONS", previous_cons);
-	free (previous_cons);
 	free (args);
 	free (a);
 	return res;
