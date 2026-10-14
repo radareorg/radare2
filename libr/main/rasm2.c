@@ -213,6 +213,8 @@ static int sizetsort(const void *a, const void *b) {
 }
 
 static void rarch2_list(RAsmState *as, const char *arch) {
+	RStrBuf *sb = r_strbuf_new (NULL);
+	bool success = true;
 	int i;
 	RArchPlugin *h;
 	RListIter *iter, *iter2;
@@ -261,7 +263,7 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 		r_list_sort (bitslist, sizetsort);
 		char *bitstr = r_num_list_join (bitslist, " ");
 		if (as->opt.quiet) {
-			r_cons_printf (as->cons, "%s\n", h->meta.name);
+			success = success && r_strbuf_appendf (sb, "%s\n", h->meta.name);
 		} else if (as->opt.json) {
 			pj_o (pj);
 			r_lib_meta_pj (pj, &h->meta);
@@ -275,21 +277,21 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 			pj_ks (pj, "features", feat);
 			pj_end (pj);
 		} else if (arch) {
-			r_cons_printf (as->cons, "name: %s\n", h->meta.name);
-			r_cons_printf (as->cons, "bits: %s\n", bitstr);
-			r_cons_printf (as->cons, "desc: %s\n", h->meta.desc);
-			r_cons_printf (as->cons, "feat: %s\n", feat);
+			success = success && r_strbuf_appendf (sb, "name: %s\n", h->meta.name);
+			success = success && r_strbuf_appendf (sb, "bits: %s\n", bitstr);
+			success = success && r_strbuf_appendf (sb, "desc: %s\n", h->meta.desc);
+			success = success && r_strbuf_appendf (sb, "feat: %s\n", feat);
 			if (h->meta.author) {
-				r_cons_printf (as->cons, "auth: %s\n", h->meta.author);
+				success = success && r_strbuf_appendf (sb, "auth: %s\n", h->meta.author);
 			}
 			if (h->meta.license) {
-				r_cons_printf (as->cons, "lice: %s\n", h->meta.license);
+				success = success && r_strbuf_appendf (sb, "lice: %s\n", h->meta.license);
 			}
 			if (h->meta.version) {
-				r_cons_printf (as->cons, "vers: %s\n", h->meta.version);
+				success = success && r_strbuf_appendf (sb, "vers: %s\n", h->meta.version);
 			}
 		} else {
-			r_cons_printf (as->cons, "%s %-11s %-11s %s\n", feat, bitstr, h->meta.name, h->meta.desc);
+			success = success && r_strbuf_appendf (sb, "%s %-11s %-11s %s\n", feat, bitstr, h->meta.name, h->meta.desc);
 		}
 		r_list_free (bitslist);
 		free (bitstr);
@@ -299,12 +301,18 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 	}
 	if (as->opt.json) {
 		pj_end (pj);
-		r_cons_printf (as->cons, "%s\n", pj_string (pj));
+		success = success && r_strbuf_appendf (sb, "%s\n", pj_string (pj));
 	}
 	pj_free (pj);
+	if (success) {
+		r_cons_print (as->cons, r_strbuf_get (sb));
+	}
+	r_strbuf_free (sb);
 }
 
 static void rasm2_list_parse_plugins(RAsmState *as, const char *arch) {
+	RStrBuf *sb = r_strbuf_new (NULL);
+	bool success = true;
 	RListIter *iter;
 	RAsmPluginSession *aps;
 	PJ *pj = NULL;
@@ -317,25 +325,25 @@ static void rasm2_list_parse_plugins(RAsmState *as, const char *arch) {
 			continue;
 		}
 		if (as->opt.quiet) {
-			r_cons_printf (as->cons, "%s\n", aps->plugin->meta.name);
+			success = success && r_strbuf_appendf (sb, "%s\n", aps->plugin->meta.name);
 		} else if (as->opt.json) {
 			pj_o (pj);
 			r_lib_meta_pj (pj, &aps->plugin->meta);
 			pj_end (pj);
 		} else if (arch) {
-			r_cons_printf (as->cons, "name: %s\n", aps->plugin->meta.name);
-			r_cons_printf (as->cons, "desc: %s\n", aps->plugin->meta.desc);
+			success = success && r_strbuf_appendf (sb, "name: %s\n", aps->plugin->meta.name);
+			success = success && r_strbuf_appendf (sb, "desc: %s\n", aps->plugin->meta.desc);
 			if (aps->plugin->meta.author) {
-				r_cons_printf (as->cons, "auth: %s\n", aps->plugin->meta.author);
+				success = success && r_strbuf_appendf (sb, "auth: %s\n", aps->plugin->meta.author);
 			}
 			if (aps->plugin->meta.license) {
-				r_cons_printf (as->cons, "lice: %s\n", aps->plugin->meta.license);
+				success = success && r_strbuf_appendf (sb, "lice: %s\n", aps->plugin->meta.license);
 			}
 			if (aps->plugin->meta.version) {
-				r_cons_printf (as->cons, "vers: %s\n", aps->plugin->meta.version);
+				success = success && r_strbuf_appendf (sb, "vers: %s\n", aps->plugin->meta.version);
 			}
 		} else {
-			r_cons_printf (as->cons, "%-20s %s\n", aps->plugin->meta.name, aps->plugin->meta.desc);
+			success = success && r_strbuf_appendf (sb, "%-20s %s\n", aps->plugin->meta.name, aps->plugin->meta.desc);
 		}
 		if (arch) {
 			break;
@@ -343,9 +351,13 @@ static void rasm2_list_parse_plugins(RAsmState *as, const char *arch) {
 	}
 	if (as->opt.json) {
 		pj_end (pj);
-		r_cons_printf (as->cons, "%s\n", pj_string (pj));
+		success = success && r_strbuf_appendf (sb, "%s\n", pj_string (pj));
 	}
 	pj_free (pj);
+	if (success) {
+		r_cons_print (as->cons, r_strbuf_get (sb));
+	}
+	r_strbuf_free (sb);
 }
 
 static int rasm_show_help(RCons *cons, int v) {
