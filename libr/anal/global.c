@@ -19,6 +19,26 @@ R_API RFlagItem *r_anal_global_get(RAnal *anal, ut64 addr) {
 R_API bool r_anal_global_add(RAnal *anal, ut64 addr, const char *type_name, const char *name) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->flb.f && R_STR_ISNOTEMPTY (name), false);
 	RFlag *flags = anal->flb.f;
+	char *filtered_name = NULL;
+	if (!r_name_check (name)) {
+		filtered_name = strdup (name);
+		if (!filtered_name) {
+			return false;
+		}
+		r_str_trim (filtered_name);
+		r_name_filter (filtered_name, 0);
+	}
+	RFlagItem *named = r_flag_get (flags, filtered_name? filtered_name: name);
+	RFlagItem *global = r_anal_global_get (anal, addr);
+	ut64 flag_addr = flags->mask? addr & flags->mask: addr;
+	bool collision = (global && global != named)
+		|| (named && (named->addr != flag_addr
+			|| (named->space && strcmp (named->space->name, GLOBAL_FLAGSPACE))));
+	free (filtered_name);
+	if (collision) {
+		R_LOG_ERROR ("Global name or address is already occupied: %s", name);
+		return false;
+	}
 	ut64 size = type_name? r_anal_type_bitsize (anal, type_name) / 8: 0;
 	ut64 end;
 	if (type_name && (!size || size > UT32_MAX || r_add_overflow (addr, size - 1, &end))) {

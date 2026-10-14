@@ -35,6 +35,55 @@ q
 EOF
 RUN
 
+NAME=Global registration preserves names owned by another flagspace
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e log.level=0
+CMDS=<<EOF
+fs symbols
+f occupied 4 @ 0x10
+avg int occupied @ 0x20
+avg int occupied @ 0x10
+fj
+avgj
+avg char distinct @ 0x10
+avgj
+avg- @ 0x10
+fj
+EOF
+EXPECT=<<EOF
+[{"name":"occupied","size":4,"addr":16}]
+[]
+[{"name":"distinct","addr":16,"size":1,"type":"char"}]
+[{"name":"occupied","size":4,"addr":16}]
+EOF
+RUN
+
+NAME=Global registration preserves existing address metadata and allows retyping
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e log.level=0
+CMDS=<<EOF
+avg char first @ 0x40
+avg int second @ 0x40
+avg int first @ 0x50
+avgj
+avg. @ 0x40
+Cf. @ 0x40
+avg int first @ 0x40
+avgj
+Cf. @ 0x40
+avg- @ 0x40
+avgj
+EOF
+EXPECT=<<EOF
+[{"name":"first","addr":64,"size":1,"type":"char"}]
+char
+c
+[{"name":"first","addr":64,"size":4,"type":"int"}]
+d
+[]
+EOF
+RUN
+
 NAME=Global commands reject unknown and overflowing types without changing globals
 FILE=-
 ARGS=-a x86 -b 64 -e log.level=0
