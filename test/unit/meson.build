@@ -17,6 +17,7 @@ if get_option('enable_tests')
     'asn1',
     'axml',
     'codemeta',
+    'base36',
     'base64',
     'big',
     'bin',
