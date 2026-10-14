@@ -386,7 +386,11 @@ static int rasm_show_help(int v) {
 		printf ("Environment:\n");
 		rasm_show_env (true);
 		printf ("Preprocessor directives:\n");
-		r_asm_list_directives ();
+		char *directives = r_asm_list_directives ();
+		if (directives) {
+			printf ("%s", directives);
+			free (directives);
+		}
 		printf ("Assembler directives:\n");
 		printf (".intel_syntax\n"
 		".att_syntax     sets e asm.syntax=att to use AT&T syntax parser\n"

@@ -148,7 +148,7 @@ R_API char *r_asm_tostring(RAsm *a, ut64 addr, const ut8 *b, int l);
 /* to ease the use of the native bindings (not used in r2) */
 R_API ut8 *r_asm_from_string(RAsm *a, ut64 addr, const char *b, int *l);
 R_API char *r_asm_describe(RAsm *a, const char* str);
-R_API void r_asm_list_directives(void);
+R_API R_OWNED char *r_asm_list_directives(void);
 R_API SdbGperf *r_asm_get_gperf(const char *k);
 R_API RList *r_asm_cpus(RAsm *a);
 
