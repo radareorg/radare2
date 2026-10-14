@@ -2713,11 +2713,20 @@ static int cmd_kuery(void *data, const char *input) {
 	return 0;
 }
 
-static int __runMain(RMainCallback cb, const char *arg) {
+static int __runMain(RCons *cons, RMainCallback cb, const char *arg) {
 	char *a = r_str_trim_dup (arg);
 	int argc = 0;
 	char **args = r_str_argv (a, &argc);
+	char *previous_cons = NULL;
+	if (cons) {
+		previous_cons = r_sys_getenv ("R2CONS");
+		r_sys_setenv_asut64 ("R2CONS", (ut64)(size_t)cons);
+	}
 	int res = cb? cb (argc, (const char **)args): -1;
+	if (cons) {
+		r_sys_setenv ("R2CONS", previous_cons);
+		free (previous_cons);
+	}
 	free (args);
 	free (a);
 	return res;
@@ -2740,11 +2749,7 @@ static bool cmd_r2cmd(RCore *core, const char *_input) {
 			{ "r2", core->r_main_radare2, false },
 			{ "radare2", NULL, true },
 			{ "rapatch2", core->r_main_rapatch2, false },
-#if __wasi__
 			{ "rasm2", core->r_main_rasm2, false },
-#else
-			{ "rasm2", NULL, true },
-#endif
 			{ "rabin2", NULL, true },
 			{ "ragg2", NULL, true },
 			{ "rafs2", core->r_main_rafs2, false },
@@ -2761,7 +2766,8 @@ static bool cmd_r2cmd(RCore *core, const char *_input) {
 				if (tools[i].external) {
 					r_sys_cmdf ("%s", input);
 				} else {
-					rc = __runMain (tools[i].callback, input);
+					RCons *cons = !strcmp (tools[i].name, "rasm2")? core->cons: NULL;
+					rc = __runMain (cons, tools[i].callback, input);
 				}
 				goto done;
 			}

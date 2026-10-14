@@ -124,3 +124,88 @@ ERROR: Invalid `a` subcommand, try `r?`
 ERROR: Invalid `2` subcommand, try `r?`
 EOF
 RUN
+
+NAME=rasm2 main from the REPL without PATH
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+rasm2 -a x86 -b 64 nop
+rasm2 -a x86 -b 64 -d 90
+rasm2 -a x86 -b 64 "mov rax, 33"
+?e after
+EOF
+EXPECT=<<EOF
+90
+nop
+48c7c021000000
+after
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rasm2 REPL output uses console filters and aliases
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+rasm2~Usage
+rasm2 -hh~include
+rasm2 -a x86 -b 64 -d 90c3~ret
+rasm2 -a x86 -b 64 nop >$assembled
+cat $assembled
+rasm2 -qv~?
+rasm2 -S invalid
+?e after
+EOF
+EXPECT=<<EOF
+Usage: rasm2 [-ACdDehHLBvw] [-a arch] [-b bits] [-s addr] [-S syntax]
+.include
+.incbin foo.bin include binary file
+ret
+90
+1
+after
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rasm2 REPL binary output preserves NUL bytes
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+rasm2 -a x86 -b 64 -B ".hex 410042" >$raw
+$**
+?e after
+EOF
+EXPECT=<<EOF
+$raw=base64:QQBC
+after
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rasm2 REPL restores the console environment
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+env R2CONS=previous
+rasm2 -a x86 -b 64 nop
+env R2CONS
+rasm2 -S invalid
+env R2CONS
+env R2CONS=
+rasm2 -a x86 -b 64 -d 90
+env~R2CONS=
+EOF
+EXPECT=<<EOF
+90
+previous
+previous
+nop
+R2CONS=
+EOF
+EXPECT_ERR=
+RUN
