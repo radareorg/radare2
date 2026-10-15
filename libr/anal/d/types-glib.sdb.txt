@@ -1,0 +1,1773 @@
+# GLib 2.0: https://docs.gtk.org/glib/
+
+GBytes=typedef
+typedef.GBytes=struct _GBytes
+
+GCompareFunc=typedef
+typedef.GCompareFunc=gint (*)(gconstpointer, gconstpointer)
+
+GDestroyNotify=typedef
+typedef.GDestroyNotify=void (*)(gpointer)
+
+GDuplicateFunc=typedef
+typedef.GDuplicateFunc=gpointer (*)(gpointer, gpointer)
+
+GEqualFunc=typedef
+typedef.GEqualFunc=gboolean (*)(gconstpointer, gconstpointer)
+
+GError=typedef
+typedef.GError=struct _GError
+
+GHashFunc=typedef
+typedef.GHashFunc=guint (*)(gconstpointer)
+
+GHashTable=typedef
+typedef.GHashTable=struct _GHashTable
+
+GKeyFile=typedef
+typedef.GKeyFile=struct _GKeyFile
+
+GList=typedef
+typedef.GList=struct _GList
+
+GOptionContext=typedef
+typedef.GOptionContext=struct _GOptionContext
+
+GOptionEntry=typedef
+typedef.GOptionEntry=struct _GOptionEntry
+
+GOptionGroup=typedef
+typedef.GOptionGroup=struct _GOptionGroup
+
+GPrintFunc=typedef
+typedef.GPrintFunc=void (*)(const gchar *)
+
+GPtrArray=typedef
+typedef.GPtrArray=struct _GPtrArray
+
+GQuark=typedef
+typedef.GQuark=guint32
+
+GString=typedef
+typedef.GString=struct _GString
+
+GStringChunk=typedef
+typedef.GStringChunk=struct _GStringChunk
+
+GStrv=typedef
+typedef.GStrv=gchar **
+
+GVariant=typedef
+typedef.GVariant=struct _GVariant
+
+GVariantDict=typedef
+typedef.GVariantDict=struct _GVariantDict
+
+GVariantIter=typedef
+typedef.GVariantIter=struct _GVariantIter
+
+GVariantType=typedef
+typedef.GVariantType=struct _GVariantType
+
+gboolean=typedef
+typedef.gboolean=gint
+
+gchar=typedef
+typedef.gchar=char
+
+gconstpointer=typedef
+typedef.gconstpointer=const void *
+
+gdouble=typedef
+typedef.gdouble=double
+
+gfloat=typedef
+typedef.gfloat=float
+
+gint=typedef
+typedef.gint=int
+
+gint16=typedef
+typedef.gint16=int16_t
+
+gint32=typedef
+typedef.gint32=int32_t
+
+gint64=typedef
+typedef.gint64=int64_t
+
+gint8=typedef
+typedef.gint8=int8_t
+
+gintptr=typedef
+typedef.gintptr=ssize_t
+
+glong=typedef
+typedef.glong=long
+
+goffset=typedef
+typedef.goffset=gint64
+
+gpointer=typedef
+typedef.gpointer=void *
+
+gshort=typedef
+typedef.gshort=short
+
+gsize=typedef
+typedef.gsize=size_t
+
+gssize=typedef
+typedef.gssize=ssize_t
+
+guchar=typedef
+typedef.guchar=unsigned char
+
+guint=typedef
+typedef.guint=unsigned int
+
+guint16=typedef
+typedef.guint16=uint16_t
+
+guint32=typedef
+typedef.guint32=uint32_t
+
+guint64=typedef
+typedef.guint64=uint64_t
+
+guint8=typedef
+typedef.guint8=uint8_t
+
+guintptr=typedef
+typedef.guintptr=size_t
+
+gulong=typedef
+typedef.gulong=unsigned long
+
+gunichar=typedef
+typedef.gunichar=guint32
+
+gunichar2=typedef
+typedef.gunichar2=guint16
+
+gushort=typedef
+typedef.gushort=unsigned short
+
+GFileTest=enum
+enum.GFileTest=G_FILE_TEST_IS_REGULAR,G_FILE_TEST_IS_SYMLINK,G_FILE_TEST_IS_DIR,G_FILE_TEST_IS_EXECUTABLE,G_FILE_TEST_EXISTS
+enum.GFileTest.G_FILE_TEST_IS_REGULAR=0x1
+enum.GFileTest.G_FILE_TEST_IS_SYMLINK=0x2
+enum.GFileTest.G_FILE_TEST_IS_DIR=0x4
+enum.GFileTest.G_FILE_TEST_IS_EXECUTABLE=0x8
+enum.GFileTest.G_FILE_TEST_EXISTS=0x10
+enum.GFileTest.0x1=G_FILE_TEST_IS_REGULAR
+enum.GFileTest.0x2=G_FILE_TEST_IS_SYMLINK
+enum.GFileTest.0x4=G_FILE_TEST_IS_DIR
+enum.GFileTest.0x8=G_FILE_TEST_IS_EXECUTABLE
+enum.GFileTest.0x10=G_FILE_TEST_EXISTS
+
+GKeyFileFlags=enum
+enum.GKeyFileFlags=G_KEY_FILE_NONE,G_KEY_FILE_KEEP_COMMENTS,G_KEY_FILE_KEEP_TRANSLATIONS
+enum.GKeyFileFlags.G_KEY_FILE_NONE=0x0
+enum.GKeyFileFlags.0x0=G_KEY_FILE_NONE
+enum.GKeyFileFlags.G_KEY_FILE_KEEP_COMMENTS=0x1
+enum.GKeyFileFlags.0x1=G_KEY_FILE_KEEP_COMMENTS
+enum.GKeyFileFlags.G_KEY_FILE_KEEP_TRANSLATIONS=0x2
+enum.GKeyFileFlags.0x2=G_KEY_FILE_KEEP_TRANSLATIONS
+
+GNormalizeMode=enum
+enum.GNormalizeMode=G_NORMALIZE_DEFAULT,G_NORMALIZE_NFD,G_NORMALIZE_DEFAULT_COMPOSE,G_NORMALIZE_NFC,G_NORMALIZE_ALL,G_NORMALIZE_NFKD,G_NORMALIZE_ALL_COMPOSE,G_NORMALIZE_NFKC
+enum.GNormalizeMode.G_NORMALIZE_DEFAULT=0x0
+enum.GNormalizeMode.G_NORMALIZE_NFD=0x0
+enum.GNormalizeMode.G_NORMALIZE_DEFAULT_COMPOSE=0x1
+enum.GNormalizeMode.G_NORMALIZE_NFC=0x1
+enum.GNormalizeMode.G_NORMALIZE_ALL=0x2
+enum.GNormalizeMode.G_NORMALIZE_NFKD=0x2
+enum.GNormalizeMode.G_NORMALIZE_ALL_COMPOSE=0x3
+enum.GNormalizeMode.G_NORMALIZE_NFKC=0x3
+enum.GNormalizeMode.0x0=G_NORMALIZE_DEFAULT
+enum.GNormalizeMode.0x1=G_NORMALIZE_DEFAULT_COMPOSE
+enum.GNormalizeMode.0x2=G_NORMALIZE_ALL
+enum.GNormalizeMode.0x3=G_NORMALIZE_ALL_COMPOSE
+
+g_aligned_alloc=func
+func.g_aligned_alloc.args=3
+func.g_aligned_alloc.arg.0=gsize,n_blocks
+func.g_aligned_alloc.arg.1=gsize,n_block_bytes
+func.g_aligned_alloc.arg.2=gsize,alignment
+func.g_aligned_alloc.ret=gpointer
+
+g_aligned_alloc0=func
+func.g_aligned_alloc0.args=3
+func.g_aligned_alloc0.arg.0=gsize,n_blocks
+func.g_aligned_alloc0.arg.1=gsize,n_block_bytes
+func.g_aligned_alloc0.arg.2=gsize,alignment
+func.g_aligned_alloc0.ret=gpointer
+
+g_aligned_free=func
+func.g_aligned_free.args=1
+func.g_aligned_free.arg.0=gpointer,mem
+func.g_aligned_free.ret=void
+
+g_aligned_free_sized=func
+func.g_aligned_free_sized.args=3
+func.g_aligned_free_sized.arg.0=gpointer,mem
+func.g_aligned_free_sized.arg.1=size_t,alignment
+func.g_aligned_free_sized.arg.2=size_t,size
+func.g_aligned_free_sized.ret=void
+
+g_ascii_digit_value=func
+func.g_ascii_digit_value.args=1
+func.g_ascii_digit_value.arg.0=gchar,c
+func.g_ascii_digit_value.ret=gint
+
+g_ascii_dtostr=func
+func.g_ascii_dtostr.args=3
+func.g_ascii_dtostr.arg.0=gchar *,buffer
+func.g_ascii_dtostr.arg.1=gint,buf_len
+func.g_ascii_dtostr.arg.2=gdouble,d
+func.g_ascii_dtostr.ret=gchar *
+
+g_ascii_formatd=func
+func.g_ascii_formatd.args=4
+func.g_ascii_formatd.arg.0=gchar *,buffer
+func.g_ascii_formatd.arg.1=gint,buf_len
+func.g_ascii_formatd.arg.2=const gchar *,format
+func.g_ascii_formatd.arg.3=gdouble,d
+func.g_ascii_formatd.ret=gchar *
+
+g_ascii_strcasecmp=func
+func.g_ascii_strcasecmp.args=2
+func.g_ascii_strcasecmp.arg.0=const gchar *,s1
+func.g_ascii_strcasecmp.arg.1=const gchar *,s2
+func.g_ascii_strcasecmp.ret=gint
+
+g_ascii_strdown=func
+func.g_ascii_strdown.args=2
+func.g_ascii_strdown.arg.0=const gchar *,str
+func.g_ascii_strdown.arg.1=gssize,len
+func.g_ascii_strdown.ret=gchar *
+
+g_ascii_string_to_signed=func
+func.g_ascii_string_to_signed.args=6
+func.g_ascii_string_to_signed.arg.0=const gchar *,str
+func.g_ascii_string_to_signed.arg.1=guint,base
+func.g_ascii_string_to_signed.arg.2=gint64,min
+func.g_ascii_string_to_signed.arg.3=gint64,max
+func.g_ascii_string_to_signed.arg.4=gint64 *,out_num
+func.g_ascii_string_to_signed.arg.5=GError **,error
+func.g_ascii_string_to_signed.ret=gboolean
+
+g_ascii_string_to_unsigned=func
+func.g_ascii_string_to_unsigned.args=6
+func.g_ascii_string_to_unsigned.arg.0=const gchar *,str
+func.g_ascii_string_to_unsigned.arg.1=guint,base
+func.g_ascii_string_to_unsigned.arg.2=guint64,min
+func.g_ascii_string_to_unsigned.arg.3=guint64,max
+func.g_ascii_string_to_unsigned.arg.4=guint64 *,out_num
+func.g_ascii_string_to_unsigned.arg.5=GError **,error
+func.g_ascii_string_to_unsigned.ret=gboolean
+
+g_ascii_strncasecmp=func
+func.g_ascii_strncasecmp.args=3
+func.g_ascii_strncasecmp.arg.0=const gchar *,s1
+func.g_ascii_strncasecmp.arg.1=const gchar *,s2
+func.g_ascii_strncasecmp.arg.2=gsize,n
+func.g_ascii_strncasecmp.ret=gint
+
+g_ascii_strtod=func
+func.g_ascii_strtod.args=2
+func.g_ascii_strtod.arg.0=const gchar *,nptr
+func.g_ascii_strtod.arg.1=gchar **,endptr
+func.g_ascii_strtod.ret=gdouble
+
+g_ascii_strtoll=func
+func.g_ascii_strtoll.args=3
+func.g_ascii_strtoll.arg.0=const gchar *,nptr
+func.g_ascii_strtoll.arg.1=gchar **,endptr
+func.g_ascii_strtoll.arg.2=guint,base
+func.g_ascii_strtoll.ret=gint64
+
+g_ascii_strtoull=func
+func.g_ascii_strtoull.args=3
+func.g_ascii_strtoull.arg.0=const gchar *,nptr
+func.g_ascii_strtoull.arg.1=gchar **,endptr
+func.g_ascii_strtoull.arg.2=guint,base
+func.g_ascii_strtoull.ret=guint64
+
+g_ascii_strup=func
+func.g_ascii_strup.args=2
+func.g_ascii_strup.arg.0=const gchar *,str
+func.g_ascii_strup.arg.1=gssize,len
+func.g_ascii_strup.ret=gchar *
+
+g_ascii_tolower=func
+func.g_ascii_tolower.args=1
+func.g_ascii_tolower.arg.0=gchar,c
+func.g_ascii_tolower.ret=gchar
+
+g_ascii_toupper=func
+func.g_ascii_toupper.args=1
+func.g_ascii_toupper.arg.0=gchar,c
+func.g_ascii_toupper.ret=gchar
+
+g_ascii_xdigit_value=func
+func.g_ascii_xdigit_value.args=1
+func.g_ascii_xdigit_value.arg.0=gchar,c
+func.g_ascii_xdigit_value.ret=gint
+
+g_base64_decode=func
+func.g_base64_decode.args=2
+func.g_base64_decode.arg.0=const gchar *,text
+func.g_base64_decode.arg.1=gsize *,out_len
+func.g_base64_decode.ret=guchar *
+
+g_base64_decode_inplace=func
+func.g_base64_decode_inplace.args=2
+func.g_base64_decode_inplace.arg.0=gchar *,text
+func.g_base64_decode_inplace.arg.1=gsize *,out_len
+func.g_base64_decode_inplace.ret=guchar *
+
+g_base64_decode_step=func
+func.g_base64_decode_step.args=5
+func.g_base64_decode_step.arg.0=const gchar *,in
+func.g_base64_decode_step.arg.1=gsize,len
+func.g_base64_decode_step.arg.2=guchar *,out
+func.g_base64_decode_step.arg.3=gint *,state
+func.g_base64_decode_step.arg.4=guint *,save
+func.g_base64_decode_step.ret=gsize
+
+g_base64_encode=func
+func.g_base64_encode.args=2
+func.g_base64_encode.arg.0=const guchar *,data
+func.g_base64_encode.arg.1=gsize,len
+func.g_base64_encode.ret=gchar *
+
+g_base64_encode_close=func
+func.g_base64_encode_close.args=4
+func.g_base64_encode_close.arg.0=gboolean,break_lines
+func.g_base64_encode_close.arg.1=gchar *,out
+func.g_base64_encode_close.arg.2=gint *,state
+func.g_base64_encode_close.arg.3=gint *,save
+func.g_base64_encode_close.ret=gsize
+
+g_base64_encode_step=func
+func.g_base64_encode_step.args=6
+func.g_base64_encode_step.arg.0=const guchar *,in
+func.g_base64_encode_step.arg.1=gsize,len
+func.g_base64_encode_step.arg.2=gboolean,break_lines
+func.g_base64_encode_step.arg.3=gchar *,out
+func.g_base64_encode_step.arg.4=gint *,state
+func.g_base64_encode_step.arg.5=gint *,save
+func.g_base64_encode_step.ret=gsize
+
+g_build_filename=func
+func.g_build_filename.args=2
+func.g_build_filename.arg.0=const gchar *,first_element
+func.g_build_filename.arg.1=,...
+func.g_build_filename.ret=gchar *
+
+g_build_filenamev=func
+func.g_build_filenamev.args=1
+func.g_build_filenamev.arg.0=gchar **,args
+func.g_build_filenamev.ret=gchar *
+
+g_build_path=func
+func.g_build_path.args=3
+func.g_build_path.arg.0=const gchar *,separator
+func.g_build_path.arg.1=const gchar *,first_element
+func.g_build_path.arg.2=,...
+func.g_build_path.ret=gchar *
+
+g_build_pathv=func
+func.g_build_pathv.args=2
+func.g_build_pathv.arg.0=const gchar *,separator
+func.g_build_pathv.arg.1=gchar **,args
+func.g_build_pathv.ret=gchar *
+
+g_canonicalize_filename=func
+func.g_canonicalize_filename.args=2
+func.g_canonicalize_filename.arg.0=const gchar *,filename
+func.g_canonicalize_filename.arg.1=const gchar *,relative_to
+func.g_canonicalize_filename.ret=gchar *
+
+g_clear_error=func
+func.g_clear_error.args=1
+func.g_clear_error.arg.0=GError **,err
+func.g_clear_error.ret=void
+
+g_dir_make_tmp=func
+func.g_dir_make_tmp.args=2
+func.g_dir_make_tmp.arg.0=const gchar *,tmpl
+func.g_dir_make_tmp.arg.1=GError **,error
+func.g_dir_make_tmp.ret=gchar *
+
+g_environ_getenv=func
+func.g_environ_getenv.args=2
+func.g_environ_getenv.arg.0=gchar **,envp
+func.g_environ_getenv.arg.1=const gchar *,variable
+func.g_environ_getenv.ret=const gchar *
+
+g_environ_setenv=func
+func.g_environ_setenv.args=4
+func.g_environ_setenv.arg.0=gchar **,envp
+func.g_environ_setenv.arg.1=const gchar *,variable
+func.g_environ_setenv.arg.2=const gchar *,value
+func.g_environ_setenv.arg.3=gboolean,overwrite
+func.g_environ_setenv.ret=gchar **
+
+g_environ_unsetenv=func
+func.g_environ_unsetenv.args=2
+func.g_environ_unsetenv.arg.0=gchar **,envp
+func.g_environ_unsetenv.arg.1=const gchar *,variable
+func.g_environ_unsetenv.ret=gchar **
+
+g_error_copy=func
+func.g_error_copy.args=1
+func.g_error_copy.arg.0=const GError *,error
+func.g_error_copy.ret=GError *
+
+g_error_free=func
+func.g_error_free.args=1
+func.g_error_free.arg.0=GError *,error
+func.g_error_free.ret=void
+
+g_error_matches=func
+func.g_error_matches.args=3
+func.g_error_matches.arg.0=const GError *,error
+func.g_error_matches.arg.1=GQuark,domain
+func.g_error_matches.arg.2=gint,code
+func.g_error_matches.ret=gboolean
+
+g_error_new=func
+func.g_error_new.args=4
+func.g_error_new.arg.0=GQuark,domain
+func.g_error_new.arg.1=gint,code
+func.g_error_new.arg.2=const gchar *,format
+func.g_error_new.arg.3=,...
+func.g_error_new.ret=GError *
+
+g_error_new_literal=func
+func.g_error_new_literal.args=3
+func.g_error_new_literal.arg.0=GQuark,domain
+func.g_error_new_literal.arg.1=gint,code
+func.g_error_new_literal.arg.2=const gchar *,message
+func.g_error_new_literal.ret=GError *
+
+g_error_new_valist=func
+func.g_error_new_valist.args=4
+func.g_error_new_valist.arg.0=GQuark,domain
+func.g_error_new_valist.arg.1=gint,code
+func.g_error_new_valist.arg.2=const gchar *,format
+func.g_error_new_valist.arg.3=va_list,args
+func.g_error_new_valist.ret=GError *
+
+g_file_get_contents=func
+func.g_file_get_contents.args=4
+func.g_file_get_contents.arg.0=const gchar *,filename
+func.g_file_get_contents.arg.1=gchar **,contents
+func.g_file_get_contents.arg.2=gsize *,length
+func.g_file_get_contents.arg.3=GError **,error
+func.g_file_get_contents.ret=gboolean
+
+g_file_read_link=func
+func.g_file_read_link.args=2
+func.g_file_read_link.arg.0=const gchar *,filename
+func.g_file_read_link.arg.1=GError **,error
+func.g_file_read_link.ret=gchar *
+
+g_file_set_contents=func
+func.g_file_set_contents.args=4
+func.g_file_set_contents.arg.0=const gchar *,filename
+func.g_file_set_contents.arg.1=const gchar *,contents
+func.g_file_set_contents.arg.2=gssize,length
+func.g_file_set_contents.arg.3=GError **,error
+func.g_file_set_contents.ret=gboolean
+
+g_file_test=func
+func.g_file_test.args=2
+func.g_file_test.arg.0=const gchar *,filename
+func.g_file_test.arg.1=GFileTest,test
+func.g_file_test.ret=gboolean
+
+g_free=func
+func.g_free.args=1
+func.g_free.arg.0=gpointer,mem
+func.g_free.ret=void
+
+g_free_sized=func
+func.g_free_sized.args=2
+func.g_free_sized.arg.0=gpointer,mem
+func.g_free_sized.arg.1=size_t,size
+func.g_free_sized.ret=void
+
+g_get_current_dir=func
+func.g_get_current_dir.args=0
+func.g_get_current_dir.ret=gchar *
+
+g_get_environ=func
+func.g_get_environ.args=0
+func.g_get_environ.ret=gchar **
+
+g_get_home_dir=func
+func.g_get_home_dir.args=0
+func.g_get_home_dir.ret=const gchar *
+
+g_get_prgname=func
+func.g_get_prgname.args=0
+func.g_get_prgname.ret=const gchar *
+
+g_get_tmp_dir=func
+func.g_get_tmp_dir.args=0
+func.g_get_tmp_dir.ret=const gchar *
+
+g_get_user_cache_dir=func
+func.g_get_user_cache_dir.args=0
+func.g_get_user_cache_dir.ret=const gchar *
+
+g_get_user_data_dir=func
+func.g_get_user_data_dir.args=0
+func.g_get_user_data_dir.ret=const gchar *
+
+g_get_user_name=func
+func.g_get_user_name.args=0
+func.g_get_user_name.ret=const gchar *
+
+g_getenv=func
+func.g_getenv.args=1
+func.g_getenv.arg.0=const gchar *,variable
+func.g_getenv.ret=const gchar *
+
+g_hash_table_contains=func
+func.g_hash_table_contains.args=2
+func.g_hash_table_contains.arg.0=GHashTable *,hash_table
+func.g_hash_table_contains.arg.1=gconstpointer,key
+func.g_hash_table_contains.ret=gboolean
+
+g_hash_table_destroy=func
+func.g_hash_table_destroy.args=1
+func.g_hash_table_destroy.arg.0=GHashTable *,hash_table
+func.g_hash_table_destroy.ret=void
+
+g_hash_table_get_values=func
+func.g_hash_table_get_values.args=1
+func.g_hash_table_get_values.arg.0=GHashTable *,hash_table
+func.g_hash_table_get_values.ret=GList *
+
+g_hash_table_insert=func
+func.g_hash_table_insert.args=3
+func.g_hash_table_insert.arg.0=GHashTable *,hash_table
+func.g_hash_table_insert.arg.1=gpointer,key
+func.g_hash_table_insert.arg.2=gpointer,value
+func.g_hash_table_insert.ret=gboolean
+
+g_hash_table_lookup=func
+func.g_hash_table_lookup.args=2
+func.g_hash_table_lookup.arg.0=GHashTable *,hash_table
+func.g_hash_table_lookup.arg.1=gconstpointer,key
+func.g_hash_table_lookup.ret=gpointer
+
+g_hash_table_new_full=func
+func.g_hash_table_new_full.args=4
+func.g_hash_table_new_full.arg.0=GHashFunc,hash_func
+func.g_hash_table_new_full.arg.1=GEqualFunc,key_equal_func
+func.g_hash_table_new_full.arg.2=GDestroyNotify,key_destroy_func
+func.g_hash_table_new_full.arg.3=GDestroyNotify,value_destroy_func
+func.g_hash_table_new_full.ret=GHashTable *
+
+g_intern_static_string=func
+func.g_intern_static_string.args=1
+func.g_intern_static_string.arg.0=const gchar *,string
+func.g_intern_static_string.ret=const gchar *
+
+g_intern_string=func
+func.g_intern_string.args=1
+func.g_intern_string.arg.0=const gchar *,string
+func.g_intern_string.ret=const gchar *
+
+g_key_file_load_from_data=func
+func.g_key_file_load_from_data.args=5
+func.g_key_file_load_from_data.arg.0=GKeyFile *,key_file
+func.g_key_file_load_from_data.arg.1=const gchar *,data
+func.g_key_file_load_from_data.arg.2=gsize,length
+func.g_key_file_load_from_data.arg.3=GKeyFileFlags,flags
+func.g_key_file_load_from_data.arg.4=GError **,error
+func.g_key_file_load_from_data.ret=gboolean
+
+g_key_file_new=func
+func.g_key_file_new.args=0
+func.g_key_file_new.ret=GKeyFile *
+
+g_key_file_unref=func
+func.g_key_file_unref.args=1
+func.g_key_file_unref.arg.0=GKeyFile *,key_file
+func.g_key_file_unref.ret=void
+
+g_malloc=func
+func.g_malloc.args=1
+func.g_malloc.arg.0=gsize,n_bytes
+func.g_malloc.ret=gpointer
+
+g_malloc0=func
+func.g_malloc0.args=1
+func.g_malloc0.arg.0=gsize,n_bytes
+func.g_malloc0.ret=gpointer
+
+g_malloc0_n=func
+func.g_malloc0_n.args=2
+func.g_malloc0_n.arg.0=gsize,n_blocks
+func.g_malloc0_n.arg.1=gsize,n_block_bytes
+func.g_malloc0_n.ret=gpointer
+
+g_malloc_n=func
+func.g_malloc_n.args=2
+func.g_malloc_n.arg.0=gsize,n_blocks
+func.g_malloc_n.arg.1=gsize,n_block_bytes
+func.g_malloc_n.ret=gpointer
+
+g_memdup=func
+func.g_memdup.args=2
+func.g_memdup.arg.0=gconstpointer,mem
+func.g_memdup.arg.1=guint,byte_size
+func.g_memdup.ret=gpointer
+
+g_memdup2=func
+func.g_memdup2.args=2
+func.g_memdup2.arg.0=gconstpointer,mem
+func.g_memdup2.arg.1=gsize,byte_size
+func.g_memdup2.ret=gpointer
+
+g_mkdir_with_parents=func
+func.g_mkdir_with_parents.args=2
+func.g_mkdir_with_parents.arg.0=const gchar *,pathname
+func.g_mkdir_with_parents.arg.1=gint,mode
+func.g_mkdir_with_parents.ret=gint
+
+g_option_context_add_group=func
+func.g_option_context_add_group.args=2
+func.g_option_context_add_group.arg.0=GOptionContext *,context
+func.g_option_context_add_group.arg.1=GOptionGroup *,group
+func.g_option_context_add_group.ret=void
+
+g_option_context_add_main_entries=func
+func.g_option_context_add_main_entries.args=3
+func.g_option_context_add_main_entries.arg.0=GOptionContext *,context
+func.g_option_context_add_main_entries.arg.1=const GOptionEntry *,entries
+func.g_option_context_add_main_entries.arg.2=const gchar *,translation_domain
+func.g_option_context_add_main_entries.ret=void
+
+g_option_context_free=func
+func.g_option_context_free.args=1
+func.g_option_context_free.arg.0=GOptionContext *,context
+func.g_option_context_free.ret=void
+
+g_option_context_get_help=func
+func.g_option_context_get_help.args=3
+func.g_option_context_get_help.arg.0=GOptionContext *,context
+func.g_option_context_get_help.arg.1=gboolean,main_help
+func.g_option_context_get_help.arg.2=GOptionGroup *,group
+func.g_option_context_get_help.ret=gchar *
+
+g_option_context_new=func
+func.g_option_context_new.args=1
+func.g_option_context_new.arg.0=const gchar *,parameter_string
+func.g_option_context_new.ret=GOptionContext *
+
+g_option_context_parse=func
+func.g_option_context_parse.args=4
+func.g_option_context_parse.arg.0=GOptionContext *,context
+func.g_option_context_parse.arg.1=gint *,argc
+func.g_option_context_parse.arg.2=gchar ***,argv
+func.g_option_context_parse.arg.3=GError **,error
+func.g_option_context_parse.ret=gboolean
+
+g_option_context_set_help_enabled=func
+func.g_option_context_set_help_enabled.args=2
+func.g_option_context_set_help_enabled.arg.0=GOptionContext *,context
+func.g_option_context_set_help_enabled.arg.1=gboolean,help_enabled
+func.g_option_context_set_help_enabled.ret=void
+
+g_option_context_set_summary=func
+func.g_option_context_set_summary.args=2
+func.g_option_context_set_summary.arg.0=GOptionContext *,context
+func.g_option_context_set_summary.arg.1=const gchar *,summary
+func.g_option_context_set_summary.ret=void
+
+g_option_group_add_entries=func
+func.g_option_group_add_entries.args=2
+func.g_option_group_add_entries.arg.0=GOptionGroup *,group
+func.g_option_group_add_entries.arg.1=const GOptionEntry *,entries
+func.g_option_group_add_entries.ret=void
+
+g_option_group_new=func
+func.g_option_group_new.args=5
+func.g_option_group_new.arg.0=const gchar *,name
+func.g_option_group_new.arg.1=const gchar *,description
+func.g_option_group_new.arg.2=const gchar *,help_description
+func.g_option_group_new.arg.3=gpointer,user_data
+func.g_option_group_new.arg.4=GDestroyNotify,destroy
+func.g_option_group_new.ret=GOptionGroup *
+
+g_path_get_basename=func
+func.g_path_get_basename.args=1
+func.g_path_get_basename.arg.0=const gchar *,file_name
+func.g_path_get_basename.ret=gchar *
+
+g_path_get_dirname=func
+func.g_path_get_dirname.args=1
+func.g_path_get_dirname.arg.0=const gchar *,file_name
+func.g_path_get_dirname.ret=gchar *
+
+g_path_is_absolute=func
+func.g_path_is_absolute.args=1
+func.g_path_is_absolute.arg.0=const gchar *,file_name
+func.g_path_is_absolute.ret=gboolean
+
+g_path_skip_root=func
+func.g_path_skip_root.args=1
+func.g_path_skip_root.arg.0=const gchar *,file_name
+func.g_path_skip_root.ret=const gchar *
+
+g_prefix_error=func
+func.g_prefix_error.args=3
+func.g_prefix_error.arg.0=GError **,err
+func.g_prefix_error.arg.1=const gchar *,format
+func.g_prefix_error.arg.2=,...
+func.g_prefix_error.ret=void
+
+g_prefix_error_literal=func
+func.g_prefix_error_literal.args=2
+func.g_prefix_error_literal.arg.0=GError **,err
+func.g_prefix_error_literal.arg.1=const gchar *,prefix
+func.g_prefix_error_literal.ret=void
+
+g_print=func
+func.g_print.args=2
+func.g_print.arg.0=const gchar *,format
+func.g_print.arg.1=,...
+func.g_print.ret=void
+
+g_printerr=func
+func.g_printerr.args=2
+func.g_printerr.arg.0=const gchar *,format
+func.g_printerr.arg.1=,...
+func.g_printerr.ret=void
+
+g_propagate_error=func
+func.g_propagate_error.args=2
+func.g_propagate_error.arg.0=GError **,dest
+func.g_propagate_error.arg.1=GError *,src
+func.g_propagate_error.ret=void
+
+g_propagate_prefixed_error=func
+func.g_propagate_prefixed_error.args=4
+func.g_propagate_prefixed_error.arg.0=GError **,dest
+func.g_propagate_prefixed_error.arg.1=GError *,src
+func.g_propagate_prefixed_error.arg.2=const gchar *,format
+func.g_propagate_prefixed_error.arg.3=,...
+func.g_propagate_prefixed_error.ret=void
+
+g_ptr_array_add=func
+func.g_ptr_array_add.args=2
+func.g_ptr_array_add.arg.0=GPtrArray *,array
+func.g_ptr_array_add.arg.1=gpointer,data
+func.g_ptr_array_add.ret=void
+
+g_ptr_array_free=func
+func.g_ptr_array_free.args=2
+func.g_ptr_array_free.arg.0=GPtrArray *,array
+func.g_ptr_array_free.arg.1=gboolean,free_segment
+func.g_ptr_array_free.ret=gpointer *
+
+g_ptr_array_new_with_free_func=func
+func.g_ptr_array_new_with_free_func.args=1
+func.g_ptr_array_new_with_free_func.arg.0=GDestroyNotify,element_free_func
+func.g_ptr_array_new_with_free_func.ret=GPtrArray *
+
+g_ptr_array_ref=func
+func.g_ptr_array_ref.args=1
+func.g_ptr_array_ref.arg.0=GPtrArray *,array
+func.g_ptr_array_ref.ret=GPtrArray *
+
+g_ptr_array_sort=func
+func.g_ptr_array_sort.args=2
+func.g_ptr_array_sort.arg.0=GPtrArray *,array
+func.g_ptr_array_sort.arg.1=GCompareFunc,compare_func
+func.g_ptr_array_sort.ret=void
+
+g_ptr_array_unref=func
+func.g_ptr_array_unref.args=1
+func.g_ptr_array_unref.arg.0=GPtrArray *,array
+func.g_ptr_array_unref.ret=void
+
+g_quark_from_static_string=func
+func.g_quark_from_static_string.args=1
+func.g_quark_from_static_string.arg.0=const gchar *,string
+func.g_quark_from_static_string.ret=GQuark
+
+g_quark_from_string=func
+func.g_quark_from_string.args=1
+func.g_quark_from_string.arg.0=const gchar *,string
+func.g_quark_from_string.ret=GQuark
+
+g_quark_to_string=func
+func.g_quark_to_string.args=1
+func.g_quark_to_string.arg.0=GQuark,quark
+func.g_quark_to_string.ret=const gchar *
+
+g_quark_try_string=func
+func.g_quark_try_string.args=1
+func.g_quark_try_string.arg.0=const gchar *,string
+func.g_quark_try_string.ret=GQuark
+
+g_realloc=func
+func.g_realloc.args=2
+func.g_realloc.arg.0=gpointer,mem
+func.g_realloc.arg.1=gsize,n_bytes
+func.g_realloc.ret=gpointer
+
+g_realloc_n=func
+func.g_realloc_n.args=3
+func.g_realloc_n.arg.0=gpointer,mem
+func.g_realloc_n.arg.1=gsize,n_blocks
+func.g_realloc_n.arg.2=gsize,n_block_bytes
+func.g_realloc_n.ret=gpointer
+
+g_set_error=func
+func.g_set_error.args=5
+func.g_set_error.arg.0=GError **,err
+func.g_set_error.arg.1=GQuark,domain
+func.g_set_error.arg.2=gint,code
+func.g_set_error.arg.3=const gchar *,format
+func.g_set_error.arg.4=,...
+func.g_set_error.ret=void
+
+g_set_error_literal=func
+func.g_set_error_literal.args=4
+func.g_set_error_literal.arg.0=GError **,err
+func.g_set_error_literal.arg.1=GQuark,domain
+func.g_set_error_literal.arg.2=gint,code
+func.g_set_error_literal.arg.3=const gchar *,message
+func.g_set_error_literal.ret=void
+
+g_set_prgname=func
+func.g_set_prgname.args=1
+func.g_set_prgname.arg.0=const gchar *,prgname
+func.g_set_prgname.ret=void
+
+g_set_printerr_handler=func
+func.g_set_printerr_handler.args=1
+func.g_set_printerr_handler.arg.0=GPrintFunc,func
+func.g_set_printerr_handler.ret=GPrintFunc
+
+g_setenv=func
+func.g_setenv.args=3
+func.g_setenv.arg.0=const gchar *,variable
+func.g_setenv.arg.1=const gchar *,value
+func.g_setenv.arg.2=gboolean,overwrite
+func.g_setenv.ret=gboolean
+
+g_shell_error_quark=func
+func.g_shell_error_quark.args=0
+func.g_shell_error_quark.ret=GQuark
+
+g_shell_parse_argv=func
+func.g_shell_parse_argv.args=4
+func.g_shell_parse_argv.arg.0=const gchar *,command_line
+func.g_shell_parse_argv.arg.1=gint *,argcp
+func.g_shell_parse_argv.arg.2=gchar ***,argvp
+func.g_shell_parse_argv.arg.3=GError **,error
+func.g_shell_parse_argv.ret=gboolean
+
+g_shell_quote=func
+func.g_shell_quote.args=1
+func.g_shell_quote.arg.0=const gchar *,unquoted_string
+func.g_shell_quote.ret=gchar *
+
+g_shell_unquote=func
+func.g_shell_unquote.args=2
+func.g_shell_unquote.arg.0=const gchar *,quoted_string
+func.g_shell_unquote.arg.1=GError **,error
+func.g_shell_unquote.ret=gchar *
+
+g_stpcpy=func
+func.g_stpcpy.args=2
+func.g_stpcpy.arg.0=gchar *,dest
+func.g_stpcpy.arg.1=const char *,src
+func.g_stpcpy.ret=gchar *
+
+g_str_equal=func
+func.g_str_equal.args=2
+func.g_str_equal.arg.0=gconstpointer,v1
+func.g_str_equal.arg.1=gconstpointer,v2
+func.g_str_equal.ret=gboolean
+
+g_str_has_prefix=func
+func.g_str_has_prefix.args=2
+func.g_str_has_prefix.arg.0=const gchar *,str
+func.g_str_has_prefix.arg.1=const gchar *,prefix
+func.g_str_has_prefix.ret=gboolean
+
+g_str_has_suffix=func
+func.g_str_has_suffix.args=2
+func.g_str_has_suffix.arg.0=const gchar *,str
+func.g_str_has_suffix.arg.1=const gchar *,suffix
+func.g_str_has_suffix.ret=gboolean
+
+g_str_hash=func
+func.g_str_hash.args=1
+func.g_str_hash.arg.0=gconstpointer,v
+func.g_str_hash.ret=guint
+
+g_str_is_ascii=func
+func.g_str_is_ascii.args=1
+func.g_str_is_ascii.arg.0=const gchar *,str
+func.g_str_is_ascii.ret=gboolean
+
+g_str_match_string=func
+func.g_str_match_string.args=3
+func.g_str_match_string.arg.0=const gchar *,search_term
+func.g_str_match_string.arg.1=const gchar *,potential_hit
+func.g_str_match_string.arg.2=gboolean,accept_alternates
+func.g_str_match_string.ret=gboolean
+
+g_str_to_ascii=func
+func.g_str_to_ascii.args=2
+func.g_str_to_ascii.arg.0=const gchar *,str
+func.g_str_to_ascii.arg.1=const gchar *,from_locale
+func.g_str_to_ascii.ret=gchar *
+
+g_str_tokenize_and_fold=func
+func.g_str_tokenize_and_fold.args=3
+func.g_str_tokenize_and_fold.arg.0=const gchar *,string
+func.g_str_tokenize_and_fold.arg.1=const gchar *,translit_locale
+func.g_str_tokenize_and_fold.arg.2=gchar ***,ascii_alternates
+func.g_str_tokenize_and_fold.ret=gchar **
+
+g_strcanon=func
+func.g_strcanon.args=3
+func.g_strcanon.arg.0=gchar *,string
+func.g_strcanon.arg.1=const gchar *,valid_chars
+func.g_strcanon.arg.2=gchar,substitutor
+func.g_strcanon.ret=gchar *
+
+g_strcasecmp=func
+func.g_strcasecmp.args=2
+func.g_strcasecmp.arg.0=const gchar *,s1
+func.g_strcasecmp.arg.1=const gchar *,s2
+func.g_strcasecmp.ret=gint
+
+g_strchomp=func
+func.g_strchomp.args=1
+func.g_strchomp.arg.0=gchar *,string
+func.g_strchomp.ret=gchar *
+
+g_strchug=func
+func.g_strchug.args=1
+func.g_strchug.arg.0=gchar *,string
+func.g_strchug.ret=gchar *
+
+g_strcmp0=func
+func.g_strcmp0.args=2
+func.g_strcmp0.arg.0=const char *,str1
+func.g_strcmp0.arg.1=const char *,str2
+func.g_strcmp0.ret=int
+
+g_strcompress=func
+func.g_strcompress.args=1
+func.g_strcompress.arg.0=const gchar *,source
+func.g_strcompress.ret=gchar *
+
+g_strconcat=func
+func.g_strconcat.args=2
+func.g_strconcat.arg.0=const gchar *,string1
+func.g_strconcat.arg.1=,...
+func.g_strconcat.ret=gchar *
+
+g_strdelimit=func
+func.g_strdelimit.args=3
+func.g_strdelimit.arg.0=gchar *,string
+func.g_strdelimit.arg.1=const gchar *,delimiters
+func.g_strdelimit.arg.2=gchar,new_delimiter
+func.g_strdelimit.ret=gchar *
+
+g_strdown=func
+func.g_strdown.args=1
+func.g_strdown.arg.0=gchar *,string
+func.g_strdown.ret=gchar *
+
+g_strdup=func
+func.g_strdup.args=1
+func.g_strdup.arg.0=const gchar *,str
+func.g_strdup.ret=gchar *
+
+g_strdup_printf=func
+func.g_strdup_printf.args=2
+func.g_strdup_printf.arg.0=const gchar *,format
+func.g_strdup_printf.arg.1=,...
+func.g_strdup_printf.ret=gchar *
+
+g_strdup_vprintf=func
+func.g_strdup_vprintf.args=2
+func.g_strdup_vprintf.arg.0=const gchar *,format
+func.g_strdup_vprintf.arg.1=va_list,args
+func.g_strdup_vprintf.ret=gchar *
+
+g_strdupv=func
+func.g_strdupv.args=1
+func.g_strdupv.arg.0=gchar **,str_array
+func.g_strdupv.ret=gchar **
+
+g_strerror=func
+func.g_strerror.args=1
+func.g_strerror.arg.0=gint,errnum
+func.g_strerror.ret=const gchar *
+
+g_strescape=func
+func.g_strescape.args=2
+func.g_strescape.arg.0=const gchar *,source
+func.g_strescape.arg.1=const gchar *,exceptions
+func.g_strescape.ret=gchar *
+
+g_strfreev=func
+func.g_strfreev.args=1
+func.g_strfreev.arg.0=gchar **,str_array
+func.g_strfreev.ret=void
+
+g_string_append=func
+func.g_string_append.args=2
+func.g_string_append.arg.0=GString *,string
+func.g_string_append.arg.1=const gchar *,val
+func.g_string_append.ret=GString *
+
+g_string_append_c=func
+func.g_string_append_c.args=2
+func.g_string_append_c.arg.0=GString *,string
+func.g_string_append_c.arg.1=gchar,c
+func.g_string_append_c.ret=GString *
+
+g_string_append_len=func
+func.g_string_append_len.args=3
+func.g_string_append_len.arg.0=GString *,string
+func.g_string_append_len.arg.1=const gchar *,val
+func.g_string_append_len.arg.2=gssize,len
+func.g_string_append_len.ret=GString *
+
+g_string_append_printf=func
+func.g_string_append_printf.args=3
+func.g_string_append_printf.arg.0=GString *,string
+func.g_string_append_printf.arg.1=const gchar *,format
+func.g_string_append_printf.arg.2=,...
+func.g_string_append_printf.ret=void
+
+g_string_append_unichar=func
+func.g_string_append_unichar.args=2
+func.g_string_append_unichar.arg.0=GString *,string
+func.g_string_append_unichar.arg.1=gunichar,wc
+func.g_string_append_unichar.ret=GString *
+
+g_string_append_uri_escaped=func
+func.g_string_append_uri_escaped.args=4
+func.g_string_append_uri_escaped.arg.0=GString *,string
+func.g_string_append_uri_escaped.arg.1=const gchar *,unescaped
+func.g_string_append_uri_escaped.arg.2=const gchar *,reserved_chars_allowed
+func.g_string_append_uri_escaped.arg.3=gboolean,allow_utf8
+func.g_string_append_uri_escaped.ret=GString *
+
+g_string_append_vprintf=func
+func.g_string_append_vprintf.args=3
+func.g_string_append_vprintf.arg.0=GString *,string
+func.g_string_append_vprintf.arg.1=const gchar *,format
+func.g_string_append_vprintf.arg.2=va_list,args
+func.g_string_append_vprintf.ret=void
+
+g_string_ascii_down=func
+func.g_string_ascii_down.args=1
+func.g_string_ascii_down.arg.0=GString *,string
+func.g_string_ascii_down.ret=GString *
+
+g_string_ascii_up=func
+func.g_string_ascii_up.args=1
+func.g_string_ascii_up.arg.0=GString *,string
+func.g_string_ascii_up.ret=GString *
+
+g_string_assign=func
+func.g_string_assign.args=2
+func.g_string_assign.arg.0=GString *,string
+func.g_string_assign.arg.1=const gchar *,rval
+func.g_string_assign.ret=GString *
+
+g_string_chunk_clear=func
+func.g_string_chunk_clear.args=1
+func.g_string_chunk_clear.arg.0=GStringChunk *,chunk
+func.g_string_chunk_clear.ret=void
+
+g_string_chunk_free=func
+func.g_string_chunk_free.args=1
+func.g_string_chunk_free.arg.0=GStringChunk *,chunk
+func.g_string_chunk_free.ret=void
+
+g_string_chunk_insert=func
+func.g_string_chunk_insert.args=2
+func.g_string_chunk_insert.arg.0=GStringChunk *,chunk
+func.g_string_chunk_insert.arg.1=const gchar *,string
+func.g_string_chunk_insert.ret=gchar *
+
+g_string_chunk_insert_const=func
+func.g_string_chunk_insert_const.args=2
+func.g_string_chunk_insert_const.arg.0=GStringChunk *,chunk
+func.g_string_chunk_insert_const.arg.1=const gchar *,string
+func.g_string_chunk_insert_const.ret=gchar *
+
+g_string_chunk_insert_len=func
+func.g_string_chunk_insert_len.args=3
+func.g_string_chunk_insert_len.arg.0=GStringChunk *,chunk
+func.g_string_chunk_insert_len.arg.1=const gchar *,string
+func.g_string_chunk_insert_len.arg.2=gssize,len
+func.g_string_chunk_insert_len.ret=gchar *
+
+g_string_chunk_new=func
+func.g_string_chunk_new.args=1
+func.g_string_chunk_new.arg.0=gsize,size
+func.g_string_chunk_new.ret=GStringChunk *
+
+g_string_copy=func
+func.g_string_copy.args=1
+func.g_string_copy.arg.0=GString *,string
+func.g_string_copy.ret=GString *
+
+g_string_down=func
+func.g_string_down.args=1
+func.g_string_down.arg.0=GString *,string
+func.g_string_down.ret=GString *
+
+g_string_equal=func
+func.g_string_equal.args=2
+func.g_string_equal.arg.0=const GString *,v
+func.g_string_equal.arg.1=const GString *,v2
+func.g_string_equal.ret=gboolean
+
+g_string_erase=func
+func.g_string_erase.args=3
+func.g_string_erase.arg.0=GString *,string
+func.g_string_erase.arg.1=gssize,pos
+func.g_string_erase.arg.2=gssize,len
+func.g_string_erase.ret=GString *
+
+g_string_free=func
+func.g_string_free.args=2
+func.g_string_free.arg.0=GString *,string
+func.g_string_free.arg.1=gboolean,free_segment
+func.g_string_free.ret=gchar *
+
+g_string_free_and_steal=func
+func.g_string_free_and_steal.args=1
+func.g_string_free_and_steal.arg.0=GString *,string
+func.g_string_free_and_steal.ret=gchar *
+
+g_string_free_deep=func
+func.g_string_free_deep.args=1
+func.g_string_free_deep.arg.0=GString *,string
+func.g_string_free_deep.ret=void
+
+g_string_free_to_bytes=func
+func.g_string_free_to_bytes.args=1
+func.g_string_free_to_bytes.arg.0=GString *,string
+func.g_string_free_to_bytes.ret=GBytes *
+
+g_string_hash=func
+func.g_string_hash.args=1
+func.g_string_hash.arg.0=const GString *,str
+func.g_string_hash.ret=guint
+
+g_string_insert=func
+func.g_string_insert.args=3
+func.g_string_insert.arg.0=GString *,string
+func.g_string_insert.arg.1=gssize,pos
+func.g_string_insert.arg.2=const gchar *,val
+func.g_string_insert.ret=GString *
+
+g_string_insert_c=func
+func.g_string_insert_c.args=3
+func.g_string_insert_c.arg.0=GString *,string
+func.g_string_insert_c.arg.1=gssize,pos
+func.g_string_insert_c.arg.2=gchar,c
+func.g_string_insert_c.ret=GString *
+
+g_string_insert_len=func
+func.g_string_insert_len.args=4
+func.g_string_insert_len.arg.0=GString *,string
+func.g_string_insert_len.arg.1=gssize,pos
+func.g_string_insert_len.arg.2=const gchar *,val
+func.g_string_insert_len.arg.3=gssize,len
+func.g_string_insert_len.ret=GString *
+
+g_string_insert_unichar=func
+func.g_string_insert_unichar.args=3
+func.g_string_insert_unichar.arg.0=GString *,string
+func.g_string_insert_unichar.arg.1=gssize,pos
+func.g_string_insert_unichar.arg.2=gunichar,wc
+func.g_string_insert_unichar.ret=GString *
+
+g_string_new=func
+func.g_string_new.args=1
+func.g_string_new.arg.0=const gchar *,init
+func.g_string_new.ret=GString *
+
+g_string_new_len=func
+func.g_string_new_len.args=2
+func.g_string_new_len.arg.0=const gchar *,init
+func.g_string_new_len.arg.1=gssize,len
+func.g_string_new_len.ret=GString *
+
+g_string_new_take=func
+func.g_string_new_take.args=1
+func.g_string_new_take.arg.0=gchar *,init
+func.g_string_new_take.ret=GString *
+
+g_string_overwrite=func
+func.g_string_overwrite.args=3
+func.g_string_overwrite.arg.0=GString *,string
+func.g_string_overwrite.arg.1=gsize,pos
+func.g_string_overwrite.arg.2=const gchar *,val
+func.g_string_overwrite.ret=GString *
+
+g_string_overwrite_len=func
+func.g_string_overwrite_len.args=4
+func.g_string_overwrite_len.arg.0=GString *,string
+func.g_string_overwrite_len.arg.1=gsize,pos
+func.g_string_overwrite_len.arg.2=const gchar *,val
+func.g_string_overwrite_len.arg.3=gssize,len
+func.g_string_overwrite_len.ret=GString *
+
+g_string_prepend=func
+func.g_string_prepend.args=2
+func.g_string_prepend.arg.0=GString *,string
+func.g_string_prepend.arg.1=const gchar *,val
+func.g_string_prepend.ret=GString *
+
+g_string_prepend_c=func
+func.g_string_prepend_c.args=2
+func.g_string_prepend_c.arg.0=GString *,string
+func.g_string_prepend_c.arg.1=gchar,c
+func.g_string_prepend_c.ret=GString *
+
+g_string_prepend_len=func
+func.g_string_prepend_len.args=3
+func.g_string_prepend_len.arg.0=GString *,string
+func.g_string_prepend_len.arg.1=const gchar *,val
+func.g_string_prepend_len.arg.2=gssize,len
+func.g_string_prepend_len.ret=GString *
+
+g_string_prepend_unichar=func
+func.g_string_prepend_unichar.args=2
+func.g_string_prepend_unichar.arg.0=GString *,string
+func.g_string_prepend_unichar.arg.1=gunichar,wc
+func.g_string_prepend_unichar.ret=GString *
+
+g_string_printf=func
+func.g_string_printf.args=3
+func.g_string_printf.arg.0=GString *,string
+func.g_string_printf.arg.1=const gchar *,format
+func.g_string_printf.arg.2=,...
+func.g_string_printf.ret=void
+
+g_string_replace=func
+func.g_string_replace.args=4
+func.g_string_replace.arg.0=GString *,string
+func.g_string_replace.arg.1=const gchar *,find
+func.g_string_replace.arg.2=const gchar *,replace
+func.g_string_replace.arg.3=guint,limit
+func.g_string_replace.ret=guint
+
+g_string_set_size=func
+func.g_string_set_size.args=2
+func.g_string_set_size.arg.0=GString *,string
+func.g_string_set_size.arg.1=gsize,len
+func.g_string_set_size.ret=GString *
+
+g_string_sized_new=func
+func.g_string_sized_new.args=1
+func.g_string_sized_new.arg.0=gsize,dfl_size
+func.g_string_sized_new.ret=GString *
+
+g_string_truncate=func
+func.g_string_truncate.args=2
+func.g_string_truncate.arg.0=GString *,string
+func.g_string_truncate.arg.1=gsize,len
+func.g_string_truncate.ret=GString *
+
+g_string_up=func
+func.g_string_up.args=1
+func.g_string_up.arg.0=GString *,string
+func.g_string_up.ret=GString *
+
+g_string_vprintf=func
+func.g_string_vprintf.args=3
+func.g_string_vprintf.arg.0=GString *,string
+func.g_string_vprintf.arg.1=const gchar *,format
+func.g_string_vprintf.arg.2=va_list,args
+func.g_string_vprintf.ret=void
+
+g_strip_context=func
+func.g_strip_context.args=2
+func.g_strip_context.arg.0=const gchar *,msgid
+func.g_strip_context.arg.1=const gchar *,msgval
+func.g_strip_context.ret=const gchar *
+
+g_strjoin=func
+func.g_strjoin.args=2
+func.g_strjoin.arg.0=const gchar *,separator
+func.g_strjoin.arg.1=,...
+func.g_strjoin.ret=gchar *
+
+g_strjoinv=func
+func.g_strjoinv.args=2
+func.g_strjoinv.arg.0=const gchar *,separator
+func.g_strjoinv.arg.1=gchar **,str_array
+func.g_strjoinv.ret=gchar *
+
+g_strlcat=func
+func.g_strlcat.args=3
+func.g_strlcat.arg.0=gchar *,dest
+func.g_strlcat.arg.1=const gchar *,src
+func.g_strlcat.arg.2=gsize,dest_size
+func.g_strlcat.ret=gsize
+
+g_strlcpy=func
+func.g_strlcpy.args=3
+func.g_strlcpy.arg.0=gchar *,dest
+func.g_strlcpy.arg.1=const gchar *,src
+func.g_strlcpy.arg.2=gsize,dest_size
+func.g_strlcpy.ret=gsize
+
+g_strncasecmp=func
+func.g_strncasecmp.args=3
+func.g_strncasecmp.arg.0=const gchar *,s1
+func.g_strncasecmp.arg.1=const gchar *,s2
+func.g_strncasecmp.arg.2=guint,n
+func.g_strncasecmp.ret=gint
+
+g_strndup=func
+func.g_strndup.args=2
+func.g_strndup.arg.0=const gchar *,str
+func.g_strndup.arg.1=gsize,n
+func.g_strndup.ret=gchar *
+
+g_strnfill=func
+func.g_strnfill.args=2
+func.g_strnfill.arg.0=gsize,length
+func.g_strnfill.arg.1=gchar,fill_char
+func.g_strnfill.ret=gchar *
+
+g_strreverse=func
+func.g_strreverse.args=1
+func.g_strreverse.arg.0=gchar *,string
+func.g_strreverse.ret=gchar *
+
+g_strrstr=func
+func.g_strrstr.args=2
+func.g_strrstr.arg.0=const gchar *,haystack
+func.g_strrstr.arg.1=const gchar *,needle
+func.g_strrstr.ret=gchar *
+
+g_strrstr_len=func
+func.g_strrstr_len.args=3
+func.g_strrstr_len.arg.0=const gchar *,haystack
+func.g_strrstr_len.arg.1=gssize,haystack_len
+func.g_strrstr_len.arg.2=const gchar *,needle
+func.g_strrstr_len.ret=gchar *
+
+g_strsignal=func
+func.g_strsignal.args=1
+func.g_strsignal.arg.0=gint,signum
+func.g_strsignal.ret=const gchar *
+
+g_strsplit=func
+func.g_strsplit.args=3
+func.g_strsplit.arg.0=const gchar *,string
+func.g_strsplit.arg.1=const gchar *,delimiter
+func.g_strsplit.arg.2=gint,max_tokens
+func.g_strsplit.ret=gchar **
+
+g_strsplit_set=func
+func.g_strsplit_set.args=3
+func.g_strsplit_set.arg.0=const gchar *,string
+func.g_strsplit_set.arg.1=const gchar *,delimiters
+func.g_strsplit_set.arg.2=gint,max_tokens
+func.g_strsplit_set.ret=gchar **
+
+g_strstr_len=func
+func.g_strstr_len.args=3
+func.g_strstr_len.arg.0=const gchar *,haystack
+func.g_strstr_len.arg.1=gssize,haystack_len
+func.g_strstr_len.arg.2=const gchar *,needle
+func.g_strstr_len.ret=gchar *
+
+g_strtod=func
+func.g_strtod.args=2
+func.g_strtod.arg.0=const gchar *,nptr
+func.g_strtod.arg.1=gchar **,endptr
+func.g_strtod.ret=gdouble
+
+g_strup=func
+func.g_strup.args=1
+func.g_strup.arg.0=gchar *,string
+func.g_strup.ret=gchar *
+
+g_strv_contains=func
+func.g_strv_contains.args=2
+func.g_strv_contains.arg.0=const gchar * const *,strv
+func.g_strv_contains.arg.1=const gchar *,str
+func.g_strv_contains.ret=gboolean
+
+g_strv_equal=func
+func.g_strv_equal.args=2
+func.g_strv_equal.arg.0=const gchar * const *,strv1
+func.g_strv_equal.arg.1=const gchar * const *,strv2
+func.g_strv_equal.ret=gboolean
+
+g_strv_length=func
+func.g_strv_length.args=1
+func.g_strv_length.arg.0=gchar **,str_array
+func.g_strv_length.ret=guint
+
+g_try_malloc=func
+func.g_try_malloc.args=1
+func.g_try_malloc.arg.0=gsize,n_bytes
+func.g_try_malloc.ret=gpointer
+
+g_try_malloc0=func
+func.g_try_malloc0.args=1
+func.g_try_malloc0.arg.0=gsize,n_bytes
+func.g_try_malloc0.ret=gpointer
+
+g_try_malloc0_n=func
+func.g_try_malloc0_n.args=2
+func.g_try_malloc0_n.arg.0=gsize,n_blocks
+func.g_try_malloc0_n.arg.1=gsize,n_block_bytes
+func.g_try_malloc0_n.ret=gpointer
+
+g_try_malloc_n=func
+func.g_try_malloc_n.args=2
+func.g_try_malloc_n.arg.0=gsize,n_blocks
+func.g_try_malloc_n.arg.1=gsize,n_block_bytes
+func.g_try_malloc_n.ret=gpointer
+
+g_try_realloc=func
+func.g_try_realloc.args=2
+func.g_try_realloc.arg.0=gpointer,mem
+func.g_try_realloc.arg.1=gsize,n_bytes
+func.g_try_realloc.ret=gpointer
+
+g_try_realloc_n=func
+func.g_try_realloc_n.args=3
+func.g_try_realloc_n.arg.0=gpointer,mem
+func.g_try_realloc_n.arg.1=gsize,n_blocks
+func.g_try_realloc_n.arg.2=gsize,n_block_bytes
+func.g_try_realloc_n.ret=gpointer
+
+g_ucs4_to_utf16=func
+func.g_ucs4_to_utf16.args=5
+func.g_ucs4_to_utf16.arg.0=const gunichar *,str
+func.g_ucs4_to_utf16.arg.1=glong,len
+func.g_ucs4_to_utf16.arg.2=glong *,items_read
+func.g_ucs4_to_utf16.arg.3=glong *,items_written
+func.g_ucs4_to_utf16.arg.4=GError **,error
+func.g_ucs4_to_utf16.ret=gunichar2 *
+
+g_ucs4_to_utf8=func
+func.g_ucs4_to_utf8.args=5
+func.g_ucs4_to_utf8.arg.0=const gunichar *,str
+func.g_ucs4_to_utf8.arg.1=glong,len
+func.g_ucs4_to_utf8.arg.2=glong *,items_read
+func.g_ucs4_to_utf8.arg.3=glong *,items_written
+func.g_ucs4_to_utf8.arg.4=GError **,error
+func.g_ucs4_to_utf8.ret=gchar *
+
+g_unichar_to_utf8=func
+func.g_unichar_to_utf8.args=2
+func.g_unichar_to_utf8.arg.0=gunichar,c
+func.g_unichar_to_utf8.arg.1=gchar *,outbuf
+func.g_unichar_to_utf8.ret=gint
+
+g_unsetenv=func
+func.g_unsetenv.args=1
+func.g_unsetenv.arg.0=const gchar *,variable
+func.g_unsetenv.ret=void
+
+g_utf16_to_ucs4=func
+func.g_utf16_to_ucs4.args=5
+func.g_utf16_to_ucs4.arg.0=const gunichar2 *,str
+func.g_utf16_to_ucs4.arg.1=glong,len
+func.g_utf16_to_ucs4.arg.2=glong *,items_read
+func.g_utf16_to_ucs4.arg.3=glong *,items_written
+func.g_utf16_to_ucs4.arg.4=GError **,error
+func.g_utf16_to_ucs4.ret=gunichar *
+
+g_utf16_to_utf8=func
+func.g_utf16_to_utf8.args=5
+func.g_utf16_to_utf8.arg.0=const gunichar2 *,str
+func.g_utf16_to_utf8.arg.1=glong,len
+func.g_utf16_to_utf8.arg.2=glong *,items_read
+func.g_utf16_to_utf8.arg.3=glong *,items_written
+func.g_utf16_to_utf8.arg.4=GError **,error
+func.g_utf16_to_utf8.ret=gchar *
+
+g_utf8_casefold=func
+func.g_utf8_casefold.args=2
+func.g_utf8_casefold.arg.0=const gchar *,str
+func.g_utf8_casefold.arg.1=gssize,len
+func.g_utf8_casefold.ret=gchar *
+
+g_utf8_collate=func
+func.g_utf8_collate.args=2
+func.g_utf8_collate.arg.0=const gchar *,str1
+func.g_utf8_collate.arg.1=const gchar *,str2
+func.g_utf8_collate.ret=gint
+
+g_utf8_collate_key=func
+func.g_utf8_collate_key.args=2
+func.g_utf8_collate_key.arg.0=const gchar *,str
+func.g_utf8_collate_key.arg.1=gssize,len
+func.g_utf8_collate_key.ret=gchar *
+
+g_utf8_collate_key_for_filename=func
+func.g_utf8_collate_key_for_filename.args=2
+func.g_utf8_collate_key_for_filename.arg.0=const gchar *,str
+func.g_utf8_collate_key_for_filename.arg.1=gssize,len
+func.g_utf8_collate_key_for_filename.ret=gchar *
+
+g_utf8_find_next_char=func
+func.g_utf8_find_next_char.args=2
+func.g_utf8_find_next_char.arg.0=const gchar *,p
+func.g_utf8_find_next_char.arg.1=const gchar *,end
+func.g_utf8_find_next_char.ret=gchar *
+
+g_utf8_find_prev_char=func
+func.g_utf8_find_prev_char.args=2
+func.g_utf8_find_prev_char.arg.0=const gchar *,str
+func.g_utf8_find_prev_char.arg.1=const gchar *,p
+func.g_utf8_find_prev_char.ret=gchar *
+
+g_utf8_get_char=func
+func.g_utf8_get_char.args=1
+func.g_utf8_get_char.arg.0=const gchar *,p
+func.g_utf8_get_char.ret=gunichar
+
+g_utf8_get_char_validated=func
+func.g_utf8_get_char_validated.args=2
+func.g_utf8_get_char_validated.arg.0=const gchar *,p
+func.g_utf8_get_char_validated.arg.1=gssize,max_len
+func.g_utf8_get_char_validated.ret=gunichar
+
+g_utf8_make_valid=func
+func.g_utf8_make_valid.args=2
+func.g_utf8_make_valid.arg.0=const gchar *,str
+func.g_utf8_make_valid.arg.1=gssize,len
+func.g_utf8_make_valid.ret=gchar *
+
+g_utf8_normalize=func
+func.g_utf8_normalize.args=3
+func.g_utf8_normalize.arg.0=const gchar *,str
+func.g_utf8_normalize.arg.1=gssize,len
+func.g_utf8_normalize.arg.2=GNormalizeMode,mode
+func.g_utf8_normalize.ret=gchar *
+
+g_utf8_offset_to_pointer=func
+func.g_utf8_offset_to_pointer.args=2
+func.g_utf8_offset_to_pointer.arg.0=const gchar *,str
+func.g_utf8_offset_to_pointer.arg.1=glong,offset
+func.g_utf8_offset_to_pointer.ret=gchar *
+
+g_utf8_pointer_to_offset=func
+func.g_utf8_pointer_to_offset.args=2
+func.g_utf8_pointer_to_offset.arg.0=const gchar *,str
+func.g_utf8_pointer_to_offset.arg.1=const gchar *,pos
+func.g_utf8_pointer_to_offset.ret=glong
+
+g_utf8_prev_char=func
+func.g_utf8_prev_char.args=1
+func.g_utf8_prev_char.arg.0=const gchar *,p
+func.g_utf8_prev_char.ret=gchar *
+
+g_utf8_strchr=func
+func.g_utf8_strchr.args=3
+func.g_utf8_strchr.arg.0=const gchar *,p
+func.g_utf8_strchr.arg.1=gssize,len
+func.g_utf8_strchr.arg.2=gunichar,c
+func.g_utf8_strchr.ret=gchar *
+
+g_utf8_strdown=func
+func.g_utf8_strdown.args=2
+func.g_utf8_strdown.arg.0=const gchar *,str
+func.g_utf8_strdown.arg.1=gssize,len
+func.g_utf8_strdown.ret=gchar *
+
+g_utf8_strlen=func
+func.g_utf8_strlen.args=2
+func.g_utf8_strlen.arg.0=const gchar *,p
+func.g_utf8_strlen.arg.1=gssize,max
+func.g_utf8_strlen.ret=glong
+
+g_utf8_strncpy=func
+func.g_utf8_strncpy.args=3
+func.g_utf8_strncpy.arg.0=gchar *,dest
+func.g_utf8_strncpy.arg.1=const gchar *,src
+func.g_utf8_strncpy.arg.2=gsize,n
+func.g_utf8_strncpy.ret=gchar *
+
+g_utf8_strrchr=func
+func.g_utf8_strrchr.args=3
+func.g_utf8_strrchr.arg.0=const gchar *,p
+func.g_utf8_strrchr.arg.1=gssize,len
+func.g_utf8_strrchr.arg.2=gunichar,c
+func.g_utf8_strrchr.ret=gchar *
+
+g_utf8_strreverse=func
+func.g_utf8_strreverse.args=2
+func.g_utf8_strreverse.arg.0=const gchar *,str
+func.g_utf8_strreverse.arg.1=gssize,len
+func.g_utf8_strreverse.ret=gchar *
+
+g_utf8_strup=func
+func.g_utf8_strup.args=2
+func.g_utf8_strup.arg.0=const gchar *,str
+func.g_utf8_strup.arg.1=gssize,len
+func.g_utf8_strup.ret=gchar *
+
+g_utf8_substring=func
+func.g_utf8_substring.args=3
+func.g_utf8_substring.arg.0=const gchar *,str
+func.g_utf8_substring.arg.1=glong,start_pos
+func.g_utf8_substring.arg.2=glong,end_pos
+func.g_utf8_substring.ret=gchar *
+
+g_utf8_to_ucs4=func
+func.g_utf8_to_ucs4.args=5
+func.g_utf8_to_ucs4.arg.0=const gchar *,str
+func.g_utf8_to_ucs4.arg.1=glong,len
+func.g_utf8_to_ucs4.arg.2=glong *,items_read
+func.g_utf8_to_ucs4.arg.3=glong *,items_written
+func.g_utf8_to_ucs4.arg.4=GError **,error
+func.g_utf8_to_ucs4.ret=gunichar *
+
+g_utf8_to_ucs4_fast=func
+func.g_utf8_to_ucs4_fast.args=3
+func.g_utf8_to_ucs4_fast.arg.0=const gchar *,str
+func.g_utf8_to_ucs4_fast.arg.1=glong,len
+func.g_utf8_to_ucs4_fast.arg.2=glong *,items_written
+func.g_utf8_to_ucs4_fast.ret=gunichar *
+
+g_utf8_to_utf16=func
+func.g_utf8_to_utf16.args=5
+func.g_utf8_to_utf16.arg.0=const gchar *,str
+func.g_utf8_to_utf16.arg.1=glong,len
+func.g_utf8_to_utf16.arg.2=glong *,items_read
+func.g_utf8_to_utf16.arg.3=glong *,items_written
+func.g_utf8_to_utf16.arg.4=GError **,error
+func.g_utf8_to_utf16.ret=gunichar2 *
+
+g_utf8_truncate_middle=func
+func.g_utf8_truncate_middle.args=2
+func.g_utf8_truncate_middle.arg.0=const gchar *,string
+func.g_utf8_truncate_middle.arg.1=gsize,truncate_length
+func.g_utf8_truncate_middle.ret=gchar *
+
+g_utf8_validate=func
+func.g_utf8_validate.args=3
+func.g_utf8_validate.arg.0=const gchar *,str
+func.g_utf8_validate.arg.1=gssize,max_len
+func.g_utf8_validate.arg.2=const gchar **,end
+func.g_utf8_validate.ret=gboolean
+
+g_utf8_validate_len=func
+func.g_utf8_validate_len.args=3
+func.g_utf8_validate_len.arg.0=const gchar *,str
+func.g_utf8_validate_len.arg.1=gsize,max_len
+func.g_utf8_validate_len.arg.2=const gchar **,end
+func.g_utf8_validate_len.ret=gboolean
+
+g_variant_dict_contains=func
+func.g_variant_dict_contains.args=2
+func.g_variant_dict_contains.arg.0=GVariantDict *,dict
+func.g_variant_dict_contains.arg.1=const gchar *,key
+func.g_variant_dict_contains.ret=gboolean
+
+g_variant_dict_lookup=func
+func.g_variant_dict_lookup.args=4
+func.g_variant_dict_lookup.arg.0=GVariantDict *,dict
+func.g_variant_dict_lookup.arg.1=const gchar *,key
+func.g_variant_dict_lookup.arg.2=const gchar *,format_string
+func.g_variant_dict_lookup.arg.3=,...
+func.g_variant_dict_lookup.ret=gboolean
+
+g_variant_dict_lookup_value=func
+func.g_variant_dict_lookup_value.args=3
+func.g_variant_dict_lookup_value.arg.0=GVariantDict *,dict
+func.g_variant_dict_lookup_value.arg.1=const gchar *,key
+func.g_variant_dict_lookup_value.arg.2=const GVariantType *,expected_type
+func.g_variant_dict_lookup_value.ret=GVariant *
+
+g_variant_dict_new=func
+func.g_variant_dict_new.args=1
+func.g_variant_dict_new.arg.0=GVariant *,from_asv
+func.g_variant_dict_new.ret=GVariantDict *
+
+g_variant_dict_unref=func
+func.g_variant_dict_unref.args=1
+func.g_variant_dict_unref.arg.0=GVariantDict *,dict
+func.g_variant_dict_unref.ret=void
+
+g_variant_get=func
+func.g_variant_get.args=3
+func.g_variant_get.arg.0=GVariant *,value
+func.g_variant_get.arg.1=const gchar *,format_string
+func.g_variant_get.arg.2=,...
+func.g_variant_get.ret=void
+
+g_variant_get_boolean=func
+func.g_variant_get_boolean.args=1
+func.g_variant_get_boolean.arg.0=GVariant *,value
+func.g_variant_get_boolean.ret=gboolean
+
+g_variant_get_child_value=func
+func.g_variant_get_child_value.args=2
+func.g_variant_get_child_value.arg.0=GVariant *,value
+func.g_variant_get_child_value.arg.1=gsize,index_
+func.g_variant_get_child_value.ret=GVariant *
+
+g_variant_get_double=func
+func.g_variant_get_double.args=1
+func.g_variant_get_double.arg.0=GVariant *,value
+func.g_variant_get_double.ret=gdouble
+
+g_variant_get_string=func
+func.g_variant_get_string.args=2
+func.g_variant_get_string.arg.0=GVariant *,value
+func.g_variant_get_string.arg.1=gsize *,length
+func.g_variant_get_string.ret=const gchar *
+
+g_variant_iter_init=func
+func.g_variant_iter_init.args=2
+func.g_variant_iter_init.arg.0=GVariantIter *,iter
+func.g_variant_iter_init.arg.1=GVariant *,value
+func.g_variant_iter_init.ret=gsize
+
+g_variant_iter_loop=func
+func.g_variant_iter_loop.args=3
+func.g_variant_iter_loop.arg.0=GVariantIter *,iter
+func.g_variant_iter_loop.arg.1=const gchar *,format_string
+func.g_variant_iter_loop.arg.2=,...
+func.g_variant_iter_loop.ret=gboolean
+
+g_variant_new=func
+func.g_variant_new.args=2
+func.g_variant_new.arg.0=const gchar *,format_string
+func.g_variant_new.arg.1=,...
+func.g_variant_new.ret=GVariant *
+
+g_variant_unref=func
+func.g_variant_unref.args=1
+func.g_variant_unref.arg.0=GVariant *,value
+func.g_variant_unref.ret=void

@@ -29,6 +29,9 @@ extern SdbGperf gperf_types_16;
 extern SdbGperf gperf_types_32;
 extern SdbGperf gperf_types_64;
 extern SdbGperf gperf_types_android;
+extern SdbGperf gperf_types_glib;
+extern SdbGperf gperf_types_gobject;
+extern SdbGperf gperf_types_gio;
 extern SdbGperf gperf_types_jni;
 extern SdbGperf gperf_types_arm_ios_16;
 extern SdbGperf gperf_types_arm_ios_32;
@@ -71,6 +74,9 @@ static const SdbGperf *gperfs_types[] = {
 	&gperf_types_32,
 	&gperf_types_64,
 	&gperf_types_android,
+	&gperf_types_glib,
+	&gperf_types_gobject,
+	&gperf_types_gio,
 	&gperf_types_jni,
 	&gperf_types_arm_ios_16,
 	&gperf_types_arm_ios_32,
