@@ -420,11 +420,11 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 				if (section) {
 					s = section;
 				} else if (bf->bo) {
-					s = r_bin_get_section_at (bf->bo, str_start, false);
+					s = r_bin_get_section_at (bf->bo, str_start + bf->bo->boffset + bf->bo->loadaddr, false);
 				}
 				if (s) {
 					vdelta = s->vaddr;
-					pdelta = s->paddr;
+					pdelta = r_bin_file_get_buffer_offset (bf, s->paddr);
 				}
 			}
 			ut64 baddr = bf->loadaddr && bf->bo? bf->bo->baddr: bf->loadaddr;
@@ -433,6 +433,9 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 			}
 			ut64 maddr = bf->bo? 0: bf->loadaddr;
 			string_set_addrs (&bs, str_start, pdelta, vdelta, baddr, maddr);
+			if (bf->bo) {
+				bs.paddr += bf->bo->boffset;
+			}
 			char *str = r_strbuf_drain (sb);
 			sb = r_strbuf_new ("");
 			size_t before = strlen (str);
@@ -1178,7 +1181,11 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RSt
 	if (has_sections) {
 		R_VEC_FOREACH (&bo->sections_vec, section) {
 			if (is_data_section (bf, section)) {
-				get_strings_range (&options, section->paddr, section->paddr + section->size, section);
+				ut64 offset = r_bin_file_get_buffer_offset (bf, section->paddr);
+				ut64 buffer_size = r_buf_size (bf->buf);
+				if (offset <= buffer_size && section->size <= buffer_size - offset) {
+					get_strings_range (&options, offset, offset + section->size, section);
+				}
 			}
 		}
 	} else {
@@ -1198,7 +1205,9 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RSt
 			int i;
 			// XXX do not walk if bin.strings == 0
 			ut8 *p;
-			if (section->size > bf->size) {
+			ut64 offset = r_bin_file_get_buffer_offset (bf, section->paddr);
+			ut64 buffer_size = r_buf_size (bf->buf);
+			if (offset > buffer_size || section->size > buffer_size - offset) {
 				continue;
 			}
 			if (section->size < 1) {
@@ -1218,7 +1227,7 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RSt
 			if (!sbuf) {
 				continue;
 			}
-			r_buf_read_at (bf->buf, section->paddr + cfstr_offs, sbuf, section->size);
+			r_buf_read_at (bf->buf, offset + cfstr_offs, sbuf, section->size);
 			for (i = 0; i < section->size; i += cfstr_size) {
 				ut8 *buf = sbuf;
 				p = buf + i;

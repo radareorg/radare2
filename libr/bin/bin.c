@@ -1162,8 +1162,9 @@ R_API bool r_bin_file_extract_sections(RBinFile *bf, const char *output, bool se
 		free (name);
 		ut64 buffer_size = r_buf_size (bf->buf);
 		RBuffer *buf = NULL;
-		if (section->paddr <= buffer_size && section->size <= buffer_size - section->paddr) {
-			buf = r_buf_new_slice (bf->buf, section->paddr, section->size);
+		ut64 offset = r_bin_file_get_buffer_offset (bf, section->paddr);
+		if (offset <= buffer_size && section->size <= buffer_size - offset) {
+			buf = r_buf_new_slice (bf->buf, offset, section->size);
 		}
 		if (buf && outfile && extract_buffer (buf, outfile)) {
 			R_LOG_INFO ("%s created (%"PFMT64u")", outfile, r_buf_size (buf));

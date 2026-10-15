@@ -2,6 +2,7 @@
 
 #include "../elf/elf.h"
 #include "dwarf.h"
+#include "../../i/private.h"
 
 static const char *dwarf_sn_elf[DWARF_SN_MAX] = {
 	[DWARF_SN_ABBREV] = "debug_abbrev",
@@ -70,7 +71,8 @@ R_IPI const ut8 *dwarf_get_section_bytes(RBinFile *bf, RBinSection *section) {
 		return section->bytes.ptr;
 	}
 
-	if (!bf->buf || section->paddr > bf->size || section->size > bf->size - section->paddr) {
+	ut64 offset = r_bin_file_get_buffer_offset (bf, section->paddr);
+	if (!bf->buf || offset > r_buf_size (bf->buf) || section->size > r_buf_size (bf->buf) - offset) {
 		return NULL;
 	}
 	/* Handle compressed DWARF sections (.zdebug_* or SHF_COMPRESSED) */
@@ -90,7 +92,7 @@ R_IPI const ut8 *dwarf_get_section_bytes(RBinFile *bf, RBinSection *section) {
 		if (!rawbuf) {
 			return NULL;
 		}
-		if (!r_buf_read_at (bf->buf, section->paddr, rawbuf, raw_size)) {
+		if (!r_buf_read_at (bf->buf, offset, rawbuf, raw_size)) {
 			free (rawbuf);
 			return NULL;
 		}
@@ -144,7 +146,7 @@ R_IPI const ut8 *dwarf_get_section_bytes(RBinFile *bf, RBinSection *section) {
 	// allocate 1 byte more to safely treat any offset as string if needed
 	ut8 *buf = r_arena_calloc (bf->arena, section->size + 1);
 	if (R_LIKELY (buf)) {
-		r_buf_read_at (bf->buf, section->paddr, buf, section->size);
+		r_buf_read_at (bf->buf, offset, buf, section->size);
 	}
 	section->bytes = r_slice (buf, section->size);
 
