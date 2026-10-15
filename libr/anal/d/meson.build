@@ -31,6 +31,7 @@ sdb_files = [
   'types-glib',
   'types-gobject',
   'types-gio',
+  'types-index',
   'types-jni',
   'types-darwin',
   'types-iokit',
