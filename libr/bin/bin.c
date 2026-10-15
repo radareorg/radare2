@@ -1074,6 +1074,9 @@ static bool extract_buffer(RBuffer *buf, const char *file) {
 		R_LOG_ERROR ("Cannot create extraction file '%s' without overwriting it", file);
 		return false;
 	}
+	if (!r_buf_size (buf)) {
+		return r_file_dump (file, NULL, 0, false);
+	}
 	return r_buf_dump (buf, file);
 }
 
