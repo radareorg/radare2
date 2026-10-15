@@ -5441,6 +5441,261 @@ func.longjmp_chk.noreturn=true
 EOF
 RUN
 
+NAME=GLib string and utility prototypes
+FILE=bins/elf/gnome-extensions
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+tfc g_strcmp0
+tfc g_str_equal
+tfc g_strdup
+tfc g_strsplit
+tfc g_strdup_printf
+tfc g_strdup_vprintf
+tfc g_strconcat
+tfc g_string_new
+tfc g_string_append_printf
+tfc g_utf8_validate
+tfc g_malloc_n
+tfc g_memdup
+tfc g_memdup2
+tfc g_shell_parse_argv
+tfc g_file_get_contents
+EOF
+EXPECT=<<EOF
+int g_strcmp0 (const char * str1, const char * str2);
+gboolean g_str_equal (gconstpointer v1, gconstpointer v2);
+gchar * g_strdup (const gchar * str);
+gchar ** g_strsplit (const gchar * string, const gchar * delimiter, gint max_tokens);
+gchar * g_strdup_printf (const gchar * format, ...);
+gchar * g_strdup_vprintf (const gchar * format, va_list args);
+gchar * g_strconcat (const gchar * string1, ...);
+GString * g_string_new (const gchar * init);
+void g_string_append_printf (GString * string, const gchar * format, ...);
+gboolean g_utf8_validate (const gchar * str, gssize max_len, const gchar ** end);
+gpointer g_malloc_n (gsize n_blocks, gsize n_block_bytes);
+gpointer g_memdup (gconstpointer mem, guint byte_size);
+gpointer g_memdup2 (gconstpointer mem, gsize byte_size);
+gboolean g_shell_parse_argv (const gchar * command_line, gint * argcp, gchar *** argvp, GError ** error);
+gboolean g_file_get_contents (const gchar * filename, gchar ** contents, gsize * length, GError ** error);
+EOF
+RUN
+
+NAME=GLib types follow the active binary
+FILE=bins/elf/gnome-extensions
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+tk g_strcmp0~?
+tk g_object_get_data~?
+tk g_file_copy~?
+o bins/elf/ls
+tk g_strcmp0~?
+tk g_object_get_data~?
+tk g_file_copy~?
+ob 0
+tk g_strcmp0~?
+tk g_object_get_data~?
+tk g_file_copy~?
+EOF
+EXPECT=<<EOF
+1
+1
+1
+0
+0
+0
+1
+1
+1
+EOF
+RUN
+
+NAME=GLib scalar types follow target pointer width
+FILE=bins/elf/gnome-extensions
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+tss gboolean
+tss gsize
+tss gssize
+tss gpointer
+tss GStrv
+tss gunichar
+tss gunichar2
+tss GType
+tss GCallback
+tss GClosureNotify
+e asm.bits=32
+tss gboolean
+tss gsize
+tss gssize
+tss gpointer
+tss GStrv
+tss gunichar
+tss gunichar2
+tss GType
+tss GCallback
+tss GClosureNotify
+EOF
+EXPECT=<<EOF
+4
+8
+8
+8
+8
+4
+2
+8
+8
+8
+4
+4
+4
+4
+4
+4
+2
+4
+4
+4
+EOF
+RUN
+
+NAME=GLib prototypes survive target OS changes
+FILE=bins/elf/gnome-extensions
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+tf g_strcmp0~func.g_strcmp0.ret=
+e asm.os=windows
+tf g_strcmp0~func.g_strcmp0.ret=
+e asm.os=macos
+tf g_strcmp0~func.g_strcmp0.ret=
+e asm.os=android
+tf g_strcmp0~func.g_strcmp0.ret=
+te GNormalizeMode 3
+te GFileTest 16
+EOF
+EXPECT=<<EOF
+func.g_strcmp0.ret=int
+func.g_strcmp0.ret=int
+func.g_strcmp0.ret=int
+func.g_strcmp0.ret=int
+G_NORMALIZE_ALL_COMPOSE
+G_FILE_TEST_EXISTS
+EOF
+RUN
+
+NAME=GLib imported functions use built-in prototypes
+FILE=bins/elf/gnome-extensions
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+af @ sym.imp.g_strcmp0
+afsq @ sym.imp.g_strcmp0
+af @ sym.imp.g_strdup
+afsq @ sym.imp.g_strdup
+af @ sym.imp.g_object_get_data
+afsq @ sym.imp.g_object_get_data
+af @ sym.imp.g_file_new_for_path
+afsq @ sym.imp.g_file_new_for_path
+EOF
+EXPECT=<<EOF
+int sym.imp.g_strcmp0 (const char *str1, const char *str2);
+gchar * sym.imp.g_strdup (const gchar *str);
+gpointer sym.imp.g_object_get_data (GObject *object, const gchar *key);
+GFile * sym.imp.g_file_new_for_path (const char *path);
+EOF
+RUN
+
+NAME=GLib collection and variant imports have prototypes
+FILE=bins/elf/gnome-extensions
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+tfc g_hash_table_new_full
+tfc g_option_context_parse
+tfc g_variant_dict_lookup
+tfc g_ptr_array_sort
+EOF
+EXPECT=<<EOF
+GHashTable * g_hash_table_new_full (GHashFunc hash_func, GEqualFunc key_equal_func, GDestroyNotify key_destroy_func, GDestroyNotify value_destroy_func);
+gboolean g_option_context_parse (GOptionContext * context, gint * argc, gchar *** argv, GError ** error);
+gboolean g_variant_dict_lookup (GVariantDict * dict, const gchar * key, const gchar * format_string, ...);
+void g_ptr_array_sort (GPtrArray * array, GCompareFunc compare_func);
+EOF
+RUN
+
+NAME=GObject data and signal imports have prototypes
+FILE=bins/elf/gnome-extensions
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+tfc g_object_get_data
+tfc g_object_set_data_full
+tfc g_object_ref
+tfc g_signal_connect_data
+tfc g_object_new
+tt GClosureNotify
+tt GDestroyNotify
+EOF
+EXPECT=<<EOF
+gpointer g_object_get_data (GObject * object, const gchar * key);
+void g_object_set_data_full (GObject * object, const gchar * key, gpointer data, GDestroyNotify destroy);
+gpointer g_object_ref (gpointer object);
+gulong g_signal_connect_data (gpointer instance, const gchar * detailed_signal, GCallback c_handler, gpointer data, GClosureNotify destroy_data, GConnectFlags connect_flags);
+gpointer g_object_new (GType object_type, const gchar * first_property_name, ...);
+void (*)(gpointer, GClosure *)
+void (*)(gpointer)
+EOF
+RUN
+
+NAME=GIO file and IPC imports have prototypes
+FILE=bins/elf/gnome-extensions
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+tfc g_file_copy
+tfc g_dbus_proxy_call_sync
+tfc g_subprocess_new
+tfc g_unix_input_stream_new
+tfc g_desktop_app_info_get_string
+tss GBusType
+tss GConnectFlags
+EOF
+EXPECT=<<EOF
+gboolean g_file_copy (GFile * source, GFile * destination, GFileCopyFlags flags, GCancellable * cancellable, GFileProgressCallback progress_callback, gpointer progress_callback_data, GError ** error);
+GVariant * g_dbus_proxy_call_sync (GDBusProxy * proxy, const gchar * method_name, GVariant * parameters, GDBusCallFlags flags, gint timeout_msec, GCancellable * cancellable, GError ** error);
+GSubprocess * g_subprocess_new (GSubprocessFlags flags, GError ** error, const gchar * argv0, ...);
+GInputStream * g_unix_input_stream_new (gint fd, gboolean close_fd);
+char * g_desktop_app_info_get_string (GDesktopAppInfo * info, const char * key);
+4
+4
+EOF
+RUN
+
+NAME=Indexed type loads include transitive dependencies
+FILE=bins/elf/gnome-extensions
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+t-*
+tol types-gio
+tk g_strcmp0
+tk g_object_get_data
+tk g_file_copy
+EOF
+EXPECT=<<EOF
+func
+func
+func
+EOF
+RUN
+
+NAME=Indexed type loads reject path traversal
+FILE=bins/elf/gnome-extensions
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+tol types-../types
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+WARN: Invalid type database name 'types-../types'
+EOF
+RUN
+
 NAME=a function keeps its prototype when a struct tag shares its name
 FILE=malloc://64
 ARGS=-a x86 -b 64

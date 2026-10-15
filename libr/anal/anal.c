@@ -291,6 +291,9 @@ void __block_free_rb(RBNode *node, void *user);
 
 static void anal_priv_free(RAnal * R_NONNULL a) {
 	r_anal_cc_cache_reset (a);
+	free (R_ANAL_PRIV (a)->types_libraries);
+	sdb_free (R_ANAL_PRIV (a)->types_index);
+	free (R_ANAL_PRIV (a)->types_subsystem);
 	free (R_ANAL_PRIV (a)->dir_prefix);
 	free (a->priv);
 }

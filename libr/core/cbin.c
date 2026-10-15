@@ -5,6 +5,7 @@
 #undef R_LOG_ORIGIN
 #define R_LOG_ORIGIN "core.bin"
 #include <r_core.h>
+#include <r_anal_priv.h>
 #include "cbin.h"
 #include "../bin/i/private.h"
 
@@ -835,11 +836,66 @@ R_API void r_core_anal_cc_init(RCore *core) {
 	free (anal_arch);
 }
 
+typedef struct {
+	RList *libraries;
+	RStrBuf *types;
+} TypeLibraryMatch;
+
+static bool match_library_types(void *user, const char *key, const char *value) {
+	TypeLibraryMatch *match = user;
+	if (!r_str_startswith (key, "library.") || R_STR_ISEMPTY (value)) {
+		return true;
+	}
+	RListIter *iter;
+	const char *lib;
+	r_list_foreach (match->libraries, iter, lib) {
+		const char *name = r_file_basename (lib);
+		if (r_str_startswith (name, "lib")) {
+			name += 3;
+		}
+		if (r_str_glob (name, key + 8)) {
+			if (r_strbuf_length (match->types) && !r_strbuf_append (match->types, ",")) {
+				return false;
+			}
+			return r_strbuf_append (match->types, value);
+		}
+	}
+	return true;
+}
+
+static void set_library_types(RCore *core, RBinObject *obj) {
+	r_core_anal_type_init (core);
+	RAnalPriv *priv = R_ANAL_PRIV (core->anal);
+	RStrBuf *types = r_strbuf_new ("");
+	if (!types) {
+		return;
+	}
+	TypeLibraryMatch match = { obj? obj->libs: NULL, types };
+	if (!priv->types_index || !sdb_foreach (priv->types_index, match_library_types, &match)) {
+		r_strbuf_free (types);
+		return;
+	}
+	char *names = r_strbuf_drain (types);
+	if (!names) {
+		return;
+	}
+	if (!strcmp (priv->types_libraries? priv->types_libraries: "", names)) {
+		free (names);
+		return;
+	}
+	free (priv->types_libraries);
+	priv->types_libraries = names;
+	priv->types_dirty = true;
+}
+
 static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 	int i, j, v;
 	char str[32];
 	RBinInfo *info = r_bin_get_info (core->bin);
 	RBinFile *bf = r_bin_cur (core->bin);
+	if (IS_MODE_SET (mode)) {
+		set_library_types (core, bf? bf->bo: NULL);
+	}
 	if (!bf) {
 		if (IS_MODE_JSON (mode)) {
 			pj_o (pj);

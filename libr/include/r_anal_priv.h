@@ -21,6 +21,9 @@ typedef struct r_anal_argseq_t {
 
 typedef struct r_anal_priv_t {
 	bool types_dirty;
+	char *types_libraries;
+	Sdb *types_index;
+	char *types_subsystem;
 	int types_loaded_bits;
 	char *dir_prefix;
 	// moves on every change to sdb_cc: the sdb hook set in r_anal_new sees
