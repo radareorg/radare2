@@ -1070,9 +1070,11 @@ static void append_call_args(RCore *core, RStrBuf *out, const char *callee, cons
 			last--;
 		}
 		char *type = r_type_func_args_type (anal->sdb_types, callee, index);
-		const bool pointer = type && strchr (type, '*');
-		if (type && !pointer && (r_anal_type_bitsize (anal, type) > word * 8
-				|| R_STR_CMP_ANY (type, "float", "double", "long double"))) {
+		char *resolved = type? r_type_resolve_typedef (anal->sdb_types, type): NULL;
+		const char *effective = resolved? resolved: type;
+		const bool pointer = effective && strchr (effective, '*');
+		if (effective && !pointer && (r_anal_type_bitsize (anal, effective) > word * 8
+				|| R_STR_CMP_ANY (effective, "float", "double", "long double"))) {
 			slots_known = false;
 		}
 		const char *digits = value;
@@ -1080,13 +1082,18 @@ static void append_call_args(RCore *core, RStrBuf *out, const char *callee, cons
 			digits += 2;
 		}
 		const bool zero = digits < last && digits + strspn (digits, "0") == last;
+		char *number_end;
+		ut64 address = strtoull (value, &number_end, 0);
+		const bool invalid_pointer = pointer && number_end > value && number_end == last
+			&& !r_io_is_valid_offset (core->io, address, R_PERM_R);
 		RAnalCCArgSlot slot;
 		const char *reg = NULL;
-		if (cc && slots_known && zero && (pointer || !type)
+		if (cc && slots_known && ((zero && (pointer || !type)) || invalid_pointer)
 				&& r_anal_cc_argslot (anal, cc, index, -1, false, &slot) && slot.reg
 				&& r_reg_get (anal->reg, slot.reg, -1)) {
 			reg = slot.reg;
 		}
+		free (resolved);
 		free (type);
 		if (reg) {
 			r_strbuf_append (out, reg);

@@ -31,6 +31,29 @@ static int ctype_size(RAnal *anal, const char *cc, const char *ctype) {
 	return r_anal_type_bitsize (anal, t) / 8;
 }
 
+static char *resolve_arg_type(Sdb *types, const char *type) {
+	char *resolved = r_type_resolve_typedef (types, type);
+	const char *effective = resolved? resolved: type;
+	const char *pointer = strchr (effective, '*');
+	if (!pointer) {
+		return resolved;
+	}
+	char *base = r_str_ndup (effective, pointer - effective);
+	if (!base) {
+		return resolved;
+	}
+	r_str_trim (base);
+	char *target = r_type_resolve_typedef (types, base);
+	free (base);
+	if (target) {
+		char *expanded = r_str_newf ("%s %s", target, pointer);
+		free (target);
+		free (resolved);
+		resolved = expanded;
+	}
+	return resolved;
+}
+
 static void set_fcn_args_info(RAnalFuncArg *arg, RAnal *anal, const char *cc, const char *fcn_name, int arg_num) {
 	if (!fcn_name || !arg || !anal) {
 		return;
@@ -46,8 +69,14 @@ static void set_fcn_args_info(RAnalFuncArg *arg, RAnal *anal, const char *cc, co
 	if (r_str_startswith (arg->c_type, "const ")) {
 		arg->c_type += 6;
 	}
-	arg->fmt = sdb_const_getf (TDB, NULL, "type.%s", arg->c_type);
-	arg->size = ctype_size (anal, cc, arg->c_type);
+	char *resolved = resolve_arg_type (TDB, arg->c_type);
+	const char *type = resolved? resolved: arg->c_type;
+	if (r_str_startswith (type, "const ")) {
+		type += 6;
+	}
+	arg->fmt = sdb_const_getf (TDB, NULL, "type.%s", type);
+	arg->size = ctype_size (anal, cc, type);
+	free (resolved);
 }
 
 static ut64 get_buf_val(ut8 *buf, int endian, int width) {
