@@ -188,8 +188,8 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits, int limit) 
 			if (!buf) {
 				continue;
 			}
-			ut64 nread = r_buf_read_at (bf->buf, sec->paddr - bf->bo->boffset, buf, ss);
-			if (nread < sec->size) {
+			st64 nread = r_buf_read_at (bf->buf, sec->paddr - bf->bo->boffset, buf, ss);
+			if (nread != ss) {
 				R_LOG_ERROR ("process_constructors: cannot process section %s", sec->name);
 				free (buf);
 				continue;
