@@ -2953,6 +2953,14 @@ static int cmd_resize(void *data, const char *input) {
 		return true;
 	}
 
+	// shift in file offsets, the maps do not grow with the file
+	ut64 paddr = core->addr;
+	if (delta && core->io->va && core->io->desc) {
+		RIOMap *map = r_io_map_get_at (core->io, core->addr);
+		paddr = (map && map->fd == core->io->desc->fd)
+			? core->addr - r_io_map_begin (map) + map->delta
+			: UT64_MAX;
+	}
 	bool grow = (newsize > oldsize);
 	if (grow) {
 		ret = r_io_resize (core->io, newsize);
@@ -2962,8 +2970,11 @@ static int cmd_resize(void *data, const char *input) {
 			return true;
 		}
 	}
-	if (delta && core->addr < newsize) {
-		r_io_shift (core->io, core->addr, grow? newsize: oldsize, delta);
+	if (delta && paddr < newsize) {
+		const bool va = core->io->va;
+		core->io->va = false;
+		r_io_shift (core->io, paddr, grow? newsize: oldsize, delta);
+		core->io->va = va;
 	}
 	if (!grow) {
 		ret = r_io_resize (core->io, newsize);
