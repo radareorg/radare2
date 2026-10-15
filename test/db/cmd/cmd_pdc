@@ -2194,3 +2194,44 @@ EXPECT=<<EOF
     x0 = strcmp ("", "hi")
 EOF
 RUN
+
+NAME=pdc recovers IPA-RA arguments and returns the arithmetic destination
+FILE=malloc://256
+ARGS=-a x86 -b64
+CMDS=<<EOF
+wx e83b0000008d047f01f0c3
+wx 83051000000001c3 @ 0x40
+af leaf @ 0x40
+af use_after_call @ 0
+pdc @ 0
+EOF
+EXPECT=<<EOF
+// callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
+void use_after_call (int64_t arg1, int64_t arg2) {
+    0x40 ()       // leaf
+    eax = rdi + rdi*2 // arg1
+    eax += esi    // arg2
+    return eax    // rsp
+}
+
+EOF
+RUN
+
+NAME=pdc recovers GCC IPA-RA ELF arguments and arithmetic result
+FILE=bins/elf/gcc-fipara/ipara_on
+CMDS=<<EOF
+aaa
+pdc @ sym.use_after_call
+EOF
+EXPECT=<<EOF
+// callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
+void sym.use_after_call (int64_t arg1, int64_t arg2) {
+    // CALL XREF from main @ 0x1073(x)
+    sym.func1 ()
+    eax = rdi + rdi*2 // arg1
+    eax += esi    // arg2
+    return eax    // rsp
+}
+
+EOF
+RUN

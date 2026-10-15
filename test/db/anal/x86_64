@@ -58,7 +58,7 @@ e asm.arch=x86
 e anal.arch=x86
 e asm.bits=64
 e anal.cc=amd64
-wx 4889f8e8080000004889f8c390909090c3
+wx 4889f8e8080000004889f8c39090909031ffc3
 af @ 0
 afc amd64 @ 0
 af @ 0x10
@@ -1801,7 +1801,7 @@ RUN
 
 NAME=No function
 FILE=malloc://0x50
-CMDS=aftm
+CMDS=aft
 EXPECT=<<EOF
 EOF
 RUN
@@ -1869,7 +1869,7 @@ tk func.CRTStartup.cc=THE_CC_THAT_NEVER_EXISTED
 tk func.CRTStartup.ret=eax
 aei
 aeim
-aftm
+aft
 EOF
 EXPECT=<<EOF
 1

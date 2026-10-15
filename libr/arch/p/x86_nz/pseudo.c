@@ -302,16 +302,14 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 		r_str_replace_char (w2, '[', 0);
 		r_str_replace_char (w2, ']', 0);
 		str = replace (nw, wa);
-	} else if ((strstr (w1, "ax") || strstr (w1, "ah") || strstr (w1, "al")) && !p->retleave_asm) {
-		p->retleave_asm = r_str_newf ("return %s", w2);
+	} else if (R_STR_CMP_ANY (w1, "rax", "eax", "ax", "ah", "al") && !p->retleave_asm) {
+		p->retleave_asm = r_str_newf ("return %s", !strcmp (w0, "mov")? w2: w1);
 		str = replace (nw, wa);
 	} else if (strstr (w0, "ret") && p->retleave_asm) {
 		str = strdup (p->retleave_asm);
 		R_FREE (p->retleave_asm);
-	} else if (p->retleave_asm) {
-		R_FREE (p->retleave_asm);
-		str = replace (nw, wa);
 	} else {
+		R_FREE (p->retleave_asm);
 		str = replace (nw, wa);
 	}
 	if (str) {
@@ -453,7 +451,7 @@ static char *subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int opl
 	RAsm *a = aps->rasm;
 	RParse *p = a->parse;
 	RAnal *anal = a->analb.anal;
-	RListIter *bpargiter, *spiter;
+	RListIter *iter;
 	char oldstr[64], newstr[64];
 	char *tstr = strdup (data);
 	if (!tstr) {
@@ -520,110 +518,63 @@ static char *subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int opl
 		if (ucase && tstr[1]) {
 			ucase = tstr[1] >= 'A' && tstr[1] <= 'Z';
 		}
-		char *ireg = NULL;
-		if (p->get_op_ireg) {
-			ireg = p->get_op_ireg(p->user, addr);
-		}
-		RAnalVarField *bparg, *sparg;
-		r_list_foreach (spargs, spiter, sparg) {
-			char sign = '+';
-			st64 delta = p->get_ptr_at
-				? p->get_ptr_at (f, sparg->delta, addr)
-				: ST64_MAX;
-			if (delta == ST64_MAX && sparg->field) {
-				delta = f->maxstack + sparg->delta;
-			} else if (delta == ST64_MAX) {
-				R_FREE (ireg);
-				continue;
-			}
-			if (delta < 0) {
-				sign = '-';
-				delta = -delta;
-			}
-			const char *reg = NULL;
-			if (p->get_reg_at) {
-				reg = p->get_reg_at (f, sparg->delta, addr);
-			}
-			if (!reg) {
-				reg = anal->reg->alias[R_REG_ALIAS_SP];
-			}
-			mk_reg_str (reg, delta, sign == '+', att, ireg, oldstr, sizeof (oldstr));
-
-			if (ucase) {
-				r_str_case (oldstr, true);
-			}
-			parse_localvar (a, newstr, sizeof (newstr), sparg->name, reg, sign, ireg, att);
-			char *ptr = strstr (tstr, oldstr);
-			if (ptr && (!att || *(ptr - 1) == ' ')) {
-				if (delta == 0) {
-					char *end = ptr + strlen (oldstr);
-					if (*end != ']' && *end != '\0') {
-						continue;
-					}
+		char *ireg = p->get_op_ireg? p->get_op_ireg (p->user, addr): NULL;
+		RList *groups[] = { spargs, bpargs };
+		int kind;
+		for (kind = 0; kind < R_ARRAY_SIZE (groups); kind++) {
+			RAnalVarField *var;
+			r_list_foreach (groups[kind], iter, var) {
+				char sign = '+';
+				st64 delta = p->get_ptr_at
+					? p->get_ptr_at (f, var->delta, addr)
+					: ST64_MAX;
+				if (delta == ST64_MAX && var->field) {
+					delta = var->delta + (kind? f->bp_off: f->maxstack);
+				} else if (delta == ST64_MAX) {
+					R_FREE (ireg);
+					continue;
 				}
-				tstr = r_str_replace (tstr, oldstr, newstr, 1);
-				break;
-			} else {
-				r_str_case (oldstr, false);
-				ptr = strstr (tstr, oldstr);
-				if (ptr && (!att || *(ptr - 1) == ' ')) {
+				if (delta < 0) {
+					sign = '-';
+					delta = -delta;
+				}
+				const char *reg = p->get_reg_at? p->get_reg_at (f, var->delta, addr): NULL;
+				if (!reg) {
+					reg = anal->reg->alias[kind? R_REG_ALIAS_BP: R_REG_ALIAS_SP];
+				}
+				mk_reg_str (reg, delta, sign == '+', att, ireg, oldstr, sizeof (oldstr));
+				if (ucase) {
+					r_str_case (oldstr, true);
+				}
+				parse_localvar (a, newstr, sizeof (newstr), var->name, reg, sign, ireg, att);
+				char *ptr = strstr (tstr, oldstr);
+				if (ptr && (!att || (ptr > tstr && ptr[-1] == ' '))) {
+					if (delta == 0) {
+						char *end = ptr + strlen (oldstr);
+						if (*end != ']' && *end != '\0') {
+							continue;
+						}
+					}
 					tstr = r_str_replace (tstr, oldstr, newstr, 1);
 					break;
-				}
-			}
-		}
-		/* iterate over base pointer args/vars */
-		r_list_foreach (bpargs, bpargiter, bparg) {
-			char sign = '+';
-			st64 delta = p->get_ptr_at
-				? p->get_ptr_at (f, bparg->delta, addr)
-				: ST64_MAX;
-			if (delta == ST64_MAX && bparg->field) {
-				delta = bparg->delta + f->bp_off;
-			} else if (delta == ST64_MAX) {
-				R_FREE (ireg);
-				continue;
-			}
-			if (delta < 0) {
-				sign = '-';
-				delta = -delta;
-			}
-			const char *reg = NULL;
-			if (p->get_reg_at) {
-				reg = p->get_reg_at (f, bparg->delta, addr);
-			}
-			if (!reg) {
-				reg = anal->reg->alias[R_REG_ALIAS_BP];
-			}
-			mk_reg_str (reg, delta, sign == '+', att, ireg, oldstr, sizeof (oldstr));
-			if (ucase) {
-				r_str_case (oldstr, true);
-			}
-			parse_localvar (a, newstr, sizeof (newstr), bparg->name, reg, sign, ireg, att);
-			char *ptr = strstr (tstr, oldstr);
-			if (ptr && (!att || *(ptr - 1) == ' ')) {
-				if (delta == 0) {
-					char *end = ptr + strlen (oldstr);
-					if (*end != ']' && *end != '\0') {
-						continue;
+				} else {
+					r_str_case (oldstr, false);
+					ptr = strstr (tstr, oldstr);
+					if (ptr && (!att || (ptr > tstr && ptr[-1] == ' '))) {
+						tstr = r_str_replace (tstr, oldstr, newstr, 1);
+						break;
 					}
 				}
-				tstr = r_str_replace (tstr, oldstr, newstr, 1);
-				break;
-			} else {
-				r_str_case (oldstr, false);
-				ptr = strstr (tstr, oldstr);
-				if (ptr && (!att || *(ptr - 1) == ' ')) {
-					tstr = r_str_replace (tstr, oldstr, newstr, 1);
+				// BP operands can also omit spaces.
+				if (!kind) {
+					continue;
+				}
+				snprintf (oldstr, sizeof (oldstr) - 1, "[%s%c0x%x]", reg, sign, (int)delta);
+				if (strstr (tstr, oldstr)) {
+					r_strf_var (replacement, sizeof (newstr) + 2, "[%s]", newstr);
+					tstr = r_str_replace (tstr, oldstr, replacement, 1);
 					break;
 				}
-			}
-			// Try with no spaces
-			snprintf (oldstr, sizeof (oldstr) - 1, "[%s%c0x%x]", reg, sign, (int)delta);
-			if (strstr (tstr, oldstr)) {
-				r_strf_var (replacement, sizeof (newstr) + 2, "[%s]", newstr);
-				tstr = r_str_replace (tstr, oldstr, replacement, 1);
-				break;
 			}
 		}
 		R_FREE (ireg);
@@ -631,15 +582,6 @@ static char *subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int opl
 		r_list_free (bpargs);
 	}
 
-	char bp[32];
-	if (anal->reg->alias[R_REG_ALIAS_BP]) {
-		r_str_ncpy (bp, anal->reg->alias[R_REG_ALIAS_BP], sizeof (bp));
-		if (isupper ((ut8)*tstr)) {
-			r_str_case (bp, true);
-		}
-	} else {
-		bp[0] = 0;
-	}
 	return tstr;
 }
 

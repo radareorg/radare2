@@ -3,12 +3,17 @@
 #define R_LOG_ORIGIN "core.anal"
 
 #include <r_core.h>
+#include <r_anal_priv.h>
+#include <r_hash.h>
 #include "cbin.h"
 #include <r_vec.h>
 #include <sdb/ht_uu.h>
 
 HEAPTYPE (ut64);
-R_VEC_TYPE(RVecIntPtr, int *);
+typedef struct {
+	int regs[R_ANAL_CC_REGSET_SIZE];
+} AnalRegState;
+R_VEC_TYPE (RVecRegState, AnalRegState);
 R_VEC_TYPE(RVecUT64, ut64);
 
 // used to speedup strcmp with rconfig.get in loops
@@ -72,24 +77,6 @@ static int cmpname(const void *_a, const void *_b) {
 	int bs = strcmp (b->name, a->name);
 	return (as > bs)? 1: (as < bs)? -1: 0;
 }
-
-static void apply_call_regsets(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, int *reg_set) {
-	const char *fcncc = r_anal_function_cc (fcn);
-	const int max_count = fcncc? r_anal_cc_max_arg (anal, fcncc): 0;
-	const char *cc = r_anal_call_convention (anal, op);
-	int i;
-	for (i = 0; i < max_count; i++) {
-		if (r_anal_cc_argclob (anal, fcncc, i, cc)) {
-			reg_set[i] = 2;
-		}
-	}
-	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
-		if (r_anal_cc_argclob (anal, fcncc, R_ANAL_CC_MAXARG + i, cc)) {
-			reg_set[R_ANAL_CC_FPSLOT_BASE + i] = 2;
-		}
-	}
-}
-
 
 static int cmpnbbs(const void *_a, const void *_b) {
 	const RAnalFunction *a = _a, *b = _b;
@@ -3830,41 +3817,115 @@ static RList *recurse(RCore *core, RAnalBlock *from, RAnalBlock *dest) {
 
 typedef struct {
 	int count;
-	RVecIntPtr reg_set;
+	RVecRegState reg_set;
 	bool argonly;
 	RAnalFunction *fcn;
 	RCore *core;
 	ut8 *buf;
 	size_t buf_size;
+	HtUU *clobbers;
+	RRegItem *arg_regs[R_ANAL_CC_MAXARG * 2];
+	ut64 clobber_budget;
+	ut64 unknown_clobbers;
 } BlockRecurseCtx;
 
-static void reg_set_clear(RVecIntPtr *vec) {
-	int **it;
-	R_VEC_FOREACH (vec, it) {
-		free (*it);
+// Reuse decoded block summaries; hash bytes once per callee, never decode them here.
+static ut64 callee_regmask(BlockRecurseCtx *ctx, ut64 addr, int depth) {
+	RAnal *anal = ctx->core->anal;
+	bool found = false;
+	ut64 mask = ctx->clobbers? ht_uu_find (ctx->clobbers, addr, &found): UT64_MAX;
+	if (found || !ctx->clobbers) {
+		return mask;
 	}
-	RVecIntPtr_clear (vec);
+	ht_uu_insert (ctx->clobbers, addr, UT64_MAX);
+	RAnalFunction *fcn = r_anal_get_function_at (anal, addr);
+	if (!fcn || depth > 8 || r_list_empty (fcn->bbs)
+			|| (fcn->bits && fcn->bits != anal->config->bits)
+			|| !fcn->callconv || strcmp (fcn->callconv, ctx->fcn->callconv)) {
+		return UT64_MAX;
+	}
+	mask = ctx->unknown_clobbers;
+	RListIter *iter;
+	RAnalBlock *bb;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		RAnalRegUsage *usage = r_anal_block_reg_usage (bb, NULL);
+		if (!usage || usage->unknown || usage->addr != bb->addr || usage->size != bb->size
+				|| !bb->size || bb->size > ctx->clobber_budget || r_cons_is_breaked (ctx->core->cons)
+				|| (bb->fail != UT64_MAX && !r_anal_function_contains (fcn, bb->fail))
+				|| (bb->jump == UT64_MAX && bb->fail == UT64_MAX
+					&& usage->last_type != R_ANAL_OP_TYPE_RET && usage->last_type != R_ANAL_OP_TYPE_JMP)) {
+			return UT64_MAX;
+		}
+		ctx->clobber_budget -= bb->size;
+		ut8 *buf = malloc (bb->size);
+		if (!buf) {
+			return UT64_MAX;
+		}
+		bool valid = r_io_read_at (ctx->core->io, bb->addr, buf, bb->size)
+			&& r_hash_xxhash (buf, bb->size) == usage->hash;
+		free (buf);
+		if (!valid) {
+			return UT64_MAX;
+		}
+		size_t index;
+		for (index = r_bitmap_find_next_set (usage->writes, 0); index != SIZE_MAX;
+				index = r_bitmap_find_next_set (usage->writes, index + 1)) {
+			RRegItem *reg = r_reg_index_get (anal->reg, index);
+			int i;
+			for (i = 0; i < R_ARRAY_SIZE (ctx->arg_regs); i++) {
+				RRegItem *arg = ctx->arg_regs[i];
+				if (!arg || !reg || arg->offset < 0 || reg->offset < 0
+						|| (arg->arena == reg->arena && arg->offset < reg->offset + reg->size
+							&& reg->offset < arg->offset + arg->size)) {
+					mask |= 1ULL << i;
+				}
+			}
+		}
+		RAnalRef *call;
+		R_VEC_FOREACH (&usage->calls, call) {
+			if (call->type == R_ANAL_REF_TYPE_CALL || !r_anal_function_contains (fcn, call->addr)) {
+				mask |= callee_regmask (ctx, call->addr, depth + 1);
+			}
+		}
+	}
+	ht_uu_update (ctx->clobbers, addr, mask);
+	return mask;
+}
+
+static void apply_call_regsets(BlockRecurseCtx *ctx, RAnalOp *op, int *reg_set) {
+	RAnal *anal = ctx->core->anal;
+	const char *fcncc = r_anal_function_cc (ctx->fcn);
+	if (!fcncc) {
+		return;
+	}
+	const char *cc = r_anal_call_convention (anal, op);
+	const int max_count = r_anal_cc_max_arg (anal, fcncc);
+	const int type = op->type & R_ANAL_OP_TYPE_MASK & ~R_ANAL_OP_TYPE_COND;
+	ut64 mask = type == R_ANAL_OP_TYPE_CALL? callee_regmask (ctx, op->jump, 0): UT64_MAX;
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (ctx->arg_regs); i++) {
+		if ((i < max_count || i >= R_ANAL_CC_MAXARG)
+				&& (mask & (1ULL << i)) && r_anal_cc_argclob (anal, fcncc, i, cc)) {
+			reg_set[i < R_ANAL_CC_MAXARG? i: R_ANAL_CC_FPSLOT_BASE + i - R_ANAL_CC_MAXARG] = 2;
+		}
+	}
 }
 
 static bool anal_block_on_exit(RAnalBlock *bb, BlockRecurseCtx *ctx) {
-	int **cur_slot = RVecIntPtr_last (&ctx->reg_set);
-	if (!cur_slot) {
+	size_t length = RVecRegState_length (&ctx->reg_set);
+	if (length < 2) {
+		RVecRegState_clear (&ctx->reg_set);
 		return false;
 	}
-	int *cur_regset = *cur_slot;
-	RVecIntPtr_pop_back (&ctx->reg_set);
-	if (RVecIntPtr_length (&ctx->reg_set) == 0) {
-		free (cur_regset);
-		return false;
-	}
-	int *prev_regset = *RVecIntPtr_at (&ctx->reg_set, RVecIntPtr_length (&ctx->reg_set) - 1);
+	AnalRegState *parent = RVecRegState_at (&ctx->reg_set, length - 2);
+	AnalRegState *current = RVecRegState_last (&ctx->reg_set);
 	size_t i;
 	for (i = 0; i < R_ANAL_CC_REGSET_SIZE; i++) {
-		if (!(prev_regset[i] & 3) && (cur_regset[i] & 3) == 1) {
-			prev_regset[i] |= 1;
+		if (!(parent->regs[i] & 3) && (current->regs[i] & 3) == 1) {
+			parent->regs[i] |= 1;
 		}
 	}
-	free (cur_regset);
+	RVecRegState_pop_back (&ctx->reg_set);
 	return true;
 }
 
@@ -3872,10 +3933,7 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 	if (r_cons_is_breaked (ctx->core->cons)) {
 		return false;
 	}
-	if (bb->size < 1) {
-		return true;
-	}
-	if (bb->size > ctx->core->anal->opt.bb_max_size) {
+	if (bb->size < 1 || bb->size > ctx->core->anal->opt.bb_max_size) {
 		return true;
 	}
 	if (bb->size > ctx->buf_size) {
@@ -3887,69 +3945,49 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 		ctx->buf_size = bb->size;
 	}
 	ut8 *buf = ctx->buf;
-	bool skip_bb = false;
-	if (r_io_read_at (ctx->core->io, bb->addr, buf, bb->size) < 1) {
-		skip_bb = true;
-	} else {
-		if (bb->size > 1024) {
-			// optimization skipping huge nop bbs
-			ut8 zbuf[8] = {0};
-			if (!memcmp (buf, zbuf, sizeof (zbuf))) {
-				skip_bb = true;
-			}
-		}
-	}
-	if (skip_bb) {
+	if (!r_io_read_at (ctx->core->io, bb->addr, buf, bb->size)) {
 		return false;
 	}
-	if (RVecIntPtr_length (&ctx->reg_set) == 0) {
+	// Skip huge zero-filled blocks.
+	const ut8 zeros[8] = { 0 };
+	if (bb->size > 1024 && !memcmp (buf, zeros, sizeof (zeros))) {
 		return false;
 	}
-	int *parent_reg_set = *RVecIntPtr_at (&ctx->reg_set, RVecIntPtr_length (&ctx->reg_set) - 1);
-	int *reg_set = R_NEWS (int, R_ANAL_CC_REGSET_SIZE);
-	memcpy (reg_set, parent_reg_set, R_ANAL_CC_REGSET_SIZE * sizeof (int));
-	RVecIntPtr_push_back (&ctx->reg_set, &reg_set);
+	RAnalRegUsage *usage = r_anal_block_reg_usage (bb, NULL);
+	ut32 hash = r_hash_xxhash (buf, bb->size);
+	bool record_usage = !usage || usage->addr != bb->addr || usage->size != bb->size || usage->hash != hash;
+	AnalRegState *parent = RVecRegState_last (&ctx->reg_set);
+	if (!parent) {
+		return false;
+	}
+	AnalRegState state = *parent;
+	AnalRegState *current = RVecRegState_emplace_back (&ctx->reg_set);
+	if (!current) {
+		return false;
+	}
+	*current = state;
+	int *reg_set = current->regs;
 	RCore *core = ctx->core;
 	RAnalFunction *fcn = ctx->fcn;
 	fcn->stack = bb->parent_stackptr;
-	RAnalOp op;
-	// XXX this is very slow. RAnalBlock knows its size and the position of the instructions already
-	ut64 opaddr = bb->addr;
 	const int mask = R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_HINT;
-	int pos;
-	int i = 0;
-	for (i = 0; i < bb->ninstr; i++) {
-		if (i >= bb->op_pos_size) {
-			R_LOG_ERROR ("Prevent op_pos overflow on large basic block at 0x%08"PFMT64x, bb->addr);
-			break;
-		}
-		pos = i? bb->op_pos[i - 1]: 0;
-		ut64 addr = bb->addr + pos;
-		if (addr != opaddr) {
-			if (ctx->core->anal->verbose) {
-				R_LOG_WARN ("Inconsistency 0x%" PFMT64x " vs 0x%" PFMT64x, addr, opaddr);
-			}
-		}
-		if (addr < bb->addr || addr >= bb->addr + bb->size) {
-			break;
-		}
-		if (opaddr < bb->addr || opaddr >= bb->addr + bb->size) {
-			break;
-		}
-		if (r_cons_is_breaked (core->cons)) {
-			break;
-		}
-		pos = (opaddr - bb->addr);
-		if (r_anal_op (core->anal, &op, opaddr, buf + pos, bb->size - pos, mask) < 1) {
+	ut64 pos = 0;
+	int i;
+	for (i = 0; i < bb->ninstr && pos < bb->size && !r_cons_is_breaked (core->cons); i++) {
+		RAnalOp op;
+		int size = r_anal_op (core->anal, &op, bb->addr + pos, buf + pos, bb->size - pos, mask);
+		if (size < 1 || size > bb->size - pos) {
 			r_anal_op_fini (&op);
 			break;
+		}
+		if (record_usage) {
+			usage = r_anal_block_reg_usage (bb, &op);
 		}
 		r_anal_extract_rarg (core->anal, &op, fcn, reg_set, &ctx->count);
 		if (!ctx->argonly) {
 			stack_adjust (fcn, &op);
 			r_anal_extract_vars (core->anal, fcn, &op);
 		}
-		int opsize = op.size;
 		int optype = op.type & R_ANAL_OP_TYPE_MASK;
 		if (optype == R_ANAL_OP_TYPE_CALL || optype == R_ANAL_OP_TYPE_CCALL
 				|| optype == R_ANAL_OP_TYPE_UCALL || optype == R_ANAL_OP_TYPE_UCCALL) {
@@ -3960,14 +3998,14 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 					fcn->stack -= op.stackptr;
 				}
 			}
-			apply_call_regsets (core->anal, fcn, &op, reg_set);
+			apply_call_regsets (ctx, &op, reg_set);
 		}
 		r_anal_op_fini (&op);
-		//r_anal_op_free (op);
-		if (opsize < 1) {
-			break;
-		}
-		opaddr += opsize;
+		pos += size;
+	}
+	usage = r_anal_block_reg_usage (bb, NULL);
+	if (usage && record_usage && pos == bb->size) {
+		usage->hash = hash;
 	}
 	return true;
 }
@@ -3981,32 +4019,33 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 		return;
 	}
 
-	// Fall back to existing ESIL-based recovery
 	if (core->anal->opt.bb_max_size < 1) {
 		return;
 	}
-#if 0
-	if (core->anal->cur && core->anal->cur->arch) {
-		if (!strcmp (core->anal->cur->arch, "java") || !strcmp (core->anal->cur->arch, "dalvik")) {
-			// var/arg info in dalvik is provided by the bin format, same goes for java
-			return;
+	BlockRecurseCtx ctx = { .argonly = argonly, .fcn = fcn, .core = core };
+	r_anal_reg_usage_check_profile (core->anal);
+	ctx.clobbers = ht_uu_new0 ();
+	ctx.clobber_budget = core->anal->opt.bb_max_size;
+	int i;
+	for (i = 0; fcn->callconv && i < R_ARRAY_SIZE (ctx.arg_regs); i++) {
+		const char *loc = r_anal_cc_argloc (core->anal, fcn->callconv, i, 0, 0);
+		ctx.arg_regs[i] = loc? r_reg_get (core->anal->reg, loc, -1): NULL;
+		if (!ctx.arg_regs[i]) {
+			ctx.unknown_clobbers |= 1ULL << i;
 		}
 	}
-#endif
-	BlockRecurseCtx ctx = { 0 };
-	ctx.argonly = argonly;
-	ctx.fcn = fcn;
-	ctx.core = core;
-	RVecIntPtr_init (&ctx.reg_set);
-	int *reg_set = R_NEWS0 (int, R_ANAL_CC_REGSET_SIZE);
-	RVecIntPtr_push_back (&ctx.reg_set, &reg_set);
+	AnalRegState state = { 0 };
+	RVecRegState_push_back (&ctx.reg_set, &state);
 	int saved_stack = fcn->stack;
 	RAnalBlock *first_bb = r_anal_get_block_at (fcn->anal, fcn->addr);
 	r_anal_block_recurse_depth_first (first_bb, (RAnalBlockCb)anal_block_cb,
 		(RAnalBlockCb)anal_block_on_exit, &ctx);
-	reg_set_clear (&ctx.reg_set);
-	RVecIntPtr_fini (&ctx.reg_set);
+	RVecRegState_fini (&ctx.reg_set);
 	free (ctx.buf);
+	ht_uu_free (ctx.clobbers);
+	for (i = 0; i < R_ARRAY_SIZE (ctx.arg_regs); i++) {
+		r_unref (ctx.arg_regs[i]);
+	}
 	fcn->stack = saved_stack;
 	r_anal_function_rename_default_args (fcn);
 }

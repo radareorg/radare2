@@ -12,6 +12,16 @@ extern "C" {
 // Argument locations are a property of the convention, not of the function
 #define R_ANAL_ARGSEQ_SLOTS (R_ANAL_CC_MAXARG * 2)
 
+typedef struct {
+	RBitmap *writes;
+	RVecAnalRef calls;
+	ut64 addr;
+	ut64 size;
+	ut32 hash;
+	int last_type;
+	bool unknown;
+} RAnalRegUsage;
+
 typedef struct r_anal_argseq_t {
 	const char *cc; // fcn->callconv, interned in anal->constpool, so the pointer names the convention
 	ut64 generation; // cc_generation when loc and max_arg were read
@@ -32,6 +42,8 @@ typedef struct r_anal_priv_t {
 	RAnalArgSeq argseq; // single-threaded, like the rest of the analysis state
 	HtPP *cc_cache; // convention name -> RAnalCCInfo, dropped on every write to the cc sdb
 	struct r_anal_cc_info_t *cc_last;
+	HtUP *reg_usage; // block pointer -> writes collected by existing instruction walks
+	const char *reg_usage_profile;
 } RAnalPriv;
 
 // Recorded adrp/add (or lea) target for a register. Populated by the
@@ -45,6 +57,87 @@ typedef struct r_leaddr_pair_t {
 
 #define R_ANAL_PRIV(x) ((RAnalPriv*)(x)->priv)
 #define R_ANAL_CC_STACK_POP_UNKNOWN (-1)
+
+static inline void reg_usage_free(HtUPKv *kv) {
+	RAnalRegUsage *usage = kv->value;
+	r_bitmap_free (usage->writes);
+	RVecAnalRef_fini (&usage->calls);
+	free (usage);
+}
+
+static inline void r_anal_reg_usage_check_profile(RAnal *anal) {
+	RAnalPriv *priv = R_ANAL_PRIV (anal);
+	const char *profile = r_str_constpool_get (&anal->constpool, anal->reg->reg_profile_str);
+	if (!profile || priv->reg_usage_profile != profile) {
+		ht_up_free (priv->reg_usage);
+		priv->reg_usage = NULL;
+		priv->reg_usage_profile = profile;
+	}
+}
+
+// Record decoded operands; a NULL operation only looks up the block summary.
+static inline RAnalRegUsage *r_anal_block_reg_usage(RAnalBlock *bb, RAnalOp *op) {
+	RAnalPriv *priv = R_ANAL_PRIV (bb->anal);
+	if (!priv->reg_usage && op) {
+		priv->reg_usage = ht_up_new (NULL, reg_usage_free, NULL);
+	}
+	const ut64 key = (ut64)(size_t)bb;
+	RAnalRegUsage *usage = priv->reg_usage? ht_up_find (priv->reg_usage, key, NULL): NULL;
+	if (!op || !priv->reg_usage) {
+		return usage;
+	}
+	if (!usage) {
+		if (!op->access || op->addr != bb->addr) {
+			return NULL;
+		}
+		usage = R_NEW0 (RAnalRegUsage);
+		usage->writes = r_bitmap_new (r_list_length (bb->anal->reg->allregs));
+		if (!usage->writes || !usage->writes->bitmap || !ht_up_insert (priv->reg_usage, key, usage)) {
+			r_bitmap_free (usage->writes);
+			free (usage);
+			return NULL;
+		}
+	}
+	if (op->addr == bb->addr) {
+		memset (usage->writes->bitmap, 0, (usage->writes->length + 7) / 8);
+		RVecAnalRef_clear (&usage->calls);
+		usage->addr = bb->addr;
+		usage->size = 0;
+		usage->unknown = false;
+	}
+	const int type = op->type & R_ANAL_OP_TYPE_MASK & ~R_ANAL_OP_TYPE_COND;
+	usage->unknown |= op->addr - bb->addr != usage->size || !op->access
+		|| type == R_ANAL_OP_TYPE_UNK || type == R_ANAL_OP_TYPE_ILL
+		|| type == R_ANAL_OP_TYPE_UCALL || type == R_ANAL_OP_TYPE_UJMP
+		|| type == R_ANAL_OP_TYPE_SWI || type == R_ANAL_OP_TYPE_TRAP;
+	usage->size += op->size;
+	usage->last_type = type;
+	if (usage->unknown) {
+		return usage;
+	}
+	if (type == R_ANAL_OP_TYPE_CALL || type == R_ANAL_OP_TYPE_JMP) {
+		RAnalRef *ref = RVecAnalRef_emplace_back (&usage->calls);
+		usage->unknown = !ref;
+		if (ref) {
+			ref->addr = op->jump;
+			ref->type = type == R_ANAL_OP_TYPE_CALL? R_ANAL_REF_TYPE_CALL: R_ANAL_REF_TYPE_CODE;
+		}
+	}
+	RListIter *iter;
+	RAnalValue *value;
+	r_list_foreach (op->access, iter, value) {
+		if (value->type == R_ANAL_VAL_REG && (value->access & R_PERM_W)) {
+			RRegItem *reg = value->reg? r_reg_get (bb->anal->reg, value->reg, -1): NULL;
+			if (reg && reg->index >= 0 && reg->index < usage->writes->length) {
+			r_bitmap_set (usage->writes, reg->index);
+			} else {
+				usage->unknown = true;
+			}
+			r_unref (reg);
+		}
+	}
+	return usage;
+}
 
 /* Store a function's calling convention, resolving a bare dyncc marker. */
 R_IPI bool r_anal_var_is_default_argname(const char *name);
