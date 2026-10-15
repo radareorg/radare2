@@ -21,6 +21,22 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=aarch64 packed relocs: an import with a GOT slot too keeps its plt entry
+FILE=bins/elf/ls-toybox
+CMDS=<<EOF
+ii~ free$
+ii~ strncmp$
+ii~ bind$
+f~sym.imp.free$
+EOF
+EXPECT=<<EOF
+5   0x00075940 GLOBAL FUNC     free
+10  0x000759a0 GLOBAL FUNC     strncmp
+85  0x00076048 GLOBAL FUNC     bind
+0x00075940 16 sym.imp.free
+EOF
+RUN
+
 NAME=aarch64 16-byte plt stride keeps its entry math
 FILE=bins/elf/libarm64.so
 CMDS=<<EOF
