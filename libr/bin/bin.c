@@ -1031,10 +1031,11 @@ R_API RBuffer *r_bin_file_get_resource_data(RBinFile *bf, const RBinResource *re
 			return NULL;
 		}
 		ut64 buffer_size = r_buf_size (bf->buf);
-		if (resource->paddr > buffer_size || resource->size > buffer_size - resource->paddr) {
+		ut64 offset = r_bin_file_get_buffer_offset (bf, resource->paddr);
+		if (offset > buffer_size || resource->size > buffer_size - offset) {
 			return NULL;
 		}
-		raw = r_buf_new_slice (bf->buf, resource->paddr, resource->size);
+		raw = r_buf_new_slice (bf->buf, offset, resource->size);
 	}
 	if (!raw || !decode || R_STR_ISEMPTY (resource->encoding) || r_str_eqi (resource->encoding, "raw")) {
 		return raw;
