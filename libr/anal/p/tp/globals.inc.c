@@ -92,6 +92,10 @@ static bool tp_global_range_cb(RFlagItem *global, void *user) {
 
 static bool tp_global_set(TPState *tps, ut64 addr, const char *type, const char *name, const char *layout) {
 	RAnal *anal = tps->anal;
+	RFlagItem *container = tp_global_container (anal, addr);
+	if (container && container->addr != addr) {
+		return false;
+	}
 	ut64 size = r_anal_type_bitsize (anal, type) / 8;
 	ut64 end;
 	if (size > UT32_MAX || r_add_overflow (addr, size, &end) || !tp_global_data (tps, addr, size)) {
@@ -150,7 +154,7 @@ static bool tp_global_field(TPState *tps, ut64 base, ut64 addr, const char *type
 		return false;
 	}
 	RFlagItem *global = tp_global_container (anal, base);
-	if (global && r_anal_global_get_type (anal, base) && !tp_global_inferred (anal, global)) {
+	if (global && r_anal_global_get_type (anal, global->addr) && !tp_global_inferred (anal, global)) {
 		return false;
 	}
 	char *layout = r_str_newf ("global_0x%" PFMT64x, base);
@@ -408,14 +412,35 @@ static bool tp_global_from_arg(TPState *tps, RAnalOp *op, int idx, const TPField
 	if (access && tp_global_data (tps, access->mem.addr, access->mem.size)) {
 		return tp_global_semantic (tps, access->mem.addr, type, name, access->mem.size);
 	}
-	if ((op->type & R_ANAL_OP_TYPE_MASK) != R_ANAL_OP_TYPE_LEA || !strchr (type, '*')) {
+	if ((op->type & R_ANAL_OP_TYPE_MASK) != R_ANAL_OP_TYPE_LEA) {
 		return false;
 	}
-	char *pointee = strdup (type);
+	char *pointee = r_type_resolve_typedef (tps->anal->sdb_types, type);
+	if (!pointee) {
+		pointee = strdup (type);
+	}
 	if (!pointee) {
 		return false;
 	}
-	*strrchr (pointee, '*') = 0;
+	char *star = strrchr (pointee, '*');
+	if (!star) {
+		free (pointee);
+		return false;
+	}
+	char *close = strchr (star, ')');
+	if (close && *r_str_trim_head_ro (close + 1) == '[') {
+		char *open = star;
+		while (open > pointee && open[-1] != '(') {
+			open--;
+		}
+		if (open > pointee && r_str_trim_head_ro (open) == star) {
+			memmove (open - 1, close + 1, strlen (close + 1) + 1);
+		} else {
+			memmove (star, star + 1, strlen (star + 1) + 1);
+		}
+	} else {
+		*star = 0;
+	}
 	r_str_trim (pointee);
 	ut64 addr = op->ptr;
 	if (addr == UT64_MAX) {

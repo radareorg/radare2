@@ -11,33 +11,6 @@ static void global_clear_inference(RAnal *anal, ut64 addr) {
 	sdb_unsetf (anal->sdb, 0, "global.layout.0x%" PFMT64x, addr);
 }
 
-static ut64 global_type_size(RAnal *anal, const char *type_name) {
-	char *base = strdup (type_name);
-	if (!base) {
-		return 0;
-	}
-	char *array = strchr (base, '[');
-	if (array) {
-		*array = 0;
-	}
-	r_str_trim (base);
-	while (r_str_endswith (base, " const") || r_str_endswith (base, " volatile")) {
-		*strrchr (base, ' ') = 0;
-	}
-	ut64 size = r_anal_type_bitsize (anal, base) / 8;
-	free (base);
-	const char *extent = strchr (type_name, '[');
-	while (size && extent && !strstr (type_name, "(*")) {
-		char *end;
-		ut64 count = strtoull (extent + 1, &end, 10);
-		if (end == extent + 1 || *end != ']' || !count || r_mul_overflow (size, count, &size)) {
-			return 0;
-		}
-		extent = strchr (end + 1, '[');
-	}
-	return size;
-}
-
 R_API RFlagItem *r_anal_global_get(RAnal *anal, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->flb.f, NULL);
 	return r_flag_get_by_spaces (anal->flb.f, false, addr, GLOBAL_FLAGSPACE, NULL);
@@ -46,8 +19,9 @@ R_API RFlagItem *r_anal_global_get(RAnal *anal, ut64 addr) {
 R_API bool r_anal_global_add(RAnal *anal, ut64 addr, const char *type_name, const char *name) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->flb.f && R_STR_ISNOTEMPTY (name), false);
 	RFlag *flags = anal->flb.f;
-	ut64 size = type_name? global_type_size (anal, type_name): 0;
-	if (type_name && (!size || size > UT32_MAX)) {
+	ut64 size = type_name? r_anal_type_bitsize (anal, type_name) / 8: 0;
+	ut64 end;
+	if (type_name && (!size || size > UT32_MAX || r_add_overflow (addr, size - 1, &end))) {
 		R_LOG_ERROR ("Unknown or oversized global type: %s", type_name);
 		return false;
 	}

@@ -49,6 +49,136 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=Global arrays share sizes formats and links with analysis types
+FILE=malloc://0x1000
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+"td struct Pair { int x; int y; };"
+avg uint16_t[2][3] global.grid @ 0x100
+avg int *[3] global.pointers @ 0x200
+avg int (* )[4] global.pointer @ 0x300
+avg const uint8_t [0x10] global.bytes @ 0x400
+avg Pair[2] global.pairs @ 0x500
+avgj
+tss uint16_t[2][3]
+tss int *[3]
+tss int (* )[4]
+tss Pair[2]
+Cf. @ 0x100
+Cf. @ 0x200
+Cf. @ 0x300
+Cf. @ 0x400
+Cf. @ 0x500~[0]
+tl
+EOF
+EXPECT=<<EOF
+[{"name":"global.grid","addr":256,"size":12,"type":"uint16_t[2][3]"},{"name":"global.pointers","addr":512,"size":24,"type":"int *[3]"},{"name":"global.pointer","addr":768,"size":8,"type":"int (* )[4]"},{"name":"global.bytes","addr":1024,"size":16,"type":"const uint8_t [0x10]"},{"name":"global.pairs","addr":1280,"size":16,"type":"Pair[2]"}]
+12
+24
+8
+16
+6w
+3p
+p
+16b
+2dd
+0x00000100 = uint16_t[2][3]
+0x00000200 = int *[3]
+0x00000300 = int (* )[4]
+0x00000400 = const uint8_t [0x10]
+0x00000500 = Pair[2]
+EOF
+RUN
+
+NAME=Global pointer arrays use the 32 bit target width
+FILE=malloc://0x1000
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+avg int *[2][3] global.pointers @ 0x100
+avg int (*)[4] global.pointer @ 0x200
+avg void (*[2])(int) global.callbacks @ 0x300
+avgj
+tss int *[2][3]
+tss int (*)[4]
+Cf. @ 0x100
+Cf. @ 0x300
+EOF
+EXPECT=<<EOF
+[{"name":"global.pointers","addr":256,"size":24,"type":"int *[2][3]"},{"name":"global.pointer","addr":512,"size":4,"type":"int (*)[4]"},{"name":"global.callbacks","addr":768,"size":8,"type":"void (*[2])(int)"}]
+24
+4
+6p
+2p
+EOF
+RUN
+
+NAME=Global union arrays retain each element rather than repeating one union in place
+FILE=malloc://0x1000
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+"td union Item { int count; char byte; };"
+avg Item[2] global.items @ 0x100
+avgj
+tss Item[2]
+Cf. @ 0x100
+tl
+EOF
+EXPECT=<<EOF
+[{"name":"global.items","addr":256,"size":8,"type":"Item[2]"}]
+8
+[2]? (pf 0dc count byte )
+0x00000100 = Item[2]
+EOF
+RUN
+
+NAME=Global arrays reject invalid extents and retain the previous type metadata
+FILE=malloc://0x1000
+ARGS=-a x86 -b 64 -e log.level=0
+CMDS=<<EOF
+avg uint16_t[3] global.array @ 0x100
+avg int[0] global.array @ 0x100
+avg int[-1] global.array @ 0x100
+avg int[] global.array @ 0x100
+avg int[2]trailing global.array @ 0x100
+avg int[2][3 global.array @ 0x100
+avg int[18446744073709551616] global.array @ 0x100
+avg int[9223372036854775808][4] global.array @ 0x100
+avg uint8_t[4294967296] global.array @ 0x100
+avg uint8_t[4] global.overflow @ 0xfffffffffffffffe
+avgj
+Cf. @ 0x100
+tl
+EOF
+EXPECT=<<EOF
+[{"name":"global.array","addr":256,"size":6,"type":"uint16_t[3]"}]
+3w
+0x00000100 = uint16_t[3]
+EOF
+RUN
+
+NAME=Global array typedefs retain their dimensions and reject recursive definitions
+FILE=malloc://0x1000
+ARGS=-a x86 -b 64 -e log.level=0
+CMDS=<<EOF
+tk Row=typedef
+tk typedef.Row=uint16_t[3]
+avg Row[2] global.grid @ 0x100
+avgj
+tss Row[2]
+Cf. @ 0x100
+tk Recursive=typedef
+tk typedef.Recursive=Recursive[2]
+avg Recursive global.grid @ 0x100
+avgj
+EOF
+EXPECT=<<EOF
+[{"name":"global.grid","addr":256,"size":12,"type":"Row[2]"}]
+12
+6w
+[{"name":"global.grid","addr":256,"size":12,"type":"Row[2]"}]
+EOF
+RUN
+
 NAME=ELF object symbols automatically register globals without guessing types
 FILE=bins/elf/anal-globals-symbols
 CMDS=<<EOF
@@ -357,6 +487,28 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=Type propagation preserves a global array when the accessed base is an interior element
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+avg uint32_t[4] global.array @ 0x2000
+wx 48c7c3042000008b03488b4b08c3 @ 0
+af @ 0
+aei
+aeim
+aar 14 @ 0
+aaft
+aaft
+avgj
+Cf. @ 0x2000
+EOF
+EXPECT=<<EOF
+[{"name":"global.array","addr":8192,"size":16,"type":"uint32_t[4]"}]
+4d
+EOF
+RUN
+
 NAME=Global integer accesses preserve floating pointer and signed inference
 FILE=-
 ARGS=-a x86 -b 64
@@ -623,6 +775,38 @@ EOF
 EXPECT=<<EOF
 [{"name":"global.ctx.0x2000","addr":8192,"size":12,"type":"struct Ctx"}]
 [{"name":"global.ctx.0x2000","addr":8192,"size":12,"type":"struct Ctx"}]
+EOF
+RUN
+
+NAME=Pointer to array parameters propagate the full global extent and remain stable
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+wx 488d3c2500200000 @ 0
+wa call 0x80 @ 8
+wx c3 @ 13
+wx c3 @ 0x80
+af @ 0x80
+afn helper @ 0x80
+af @ 0
+afn caller @ 0
+afs int helper(int (*values)[3]) @ 0x80
+aei
+aeim
+aaft
+avgj
+Cf. @ 0x2000
+tl~0x00002000
+aaft
+aar 14 @ 0
+avgj
+EOF
+EXPECT=<<EOF
+[{"name":"global.values.0x2000","addr":8192,"size":12,"type":"int [3]"}]
+3d
+0x00002000 = int [3]
+[{"name":"global.values.0x2000","addr":8192,"size":12,"type":"int [3]"}]
 EOF
 RUN
 

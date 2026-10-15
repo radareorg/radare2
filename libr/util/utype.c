@@ -346,8 +346,58 @@ static ut64 type_ptr_bitsize(Sdb *R_NONNULL TDB) {
 // how many nested structs or unions a measurement follows before giving up
 #define TYPE_CHAIN_MAX 32
 
+static bool type_array_parse(char *type, ut64 *elements) {
+	*elements = 1;
+	char *array = strchr (type, '[');
+	if (!array) {
+		return true;
+	}
+	const bool pointee = memchr (type, ')', array - type) && memchr (type, '*', array - type);
+	const char *extent = array;
+	while (*extent == '[') {
+		const char *number = r_str_trim_head_ro (extent + 1);
+		if (!isdigit ((ut8)*number)) {
+			return false;
+		}
+		char *end;
+		errno = 0;
+		ut64 count = strtoull (number, &end, 0);
+		extent = r_str_trim_head_ro (end);
+		if (errno == ERANGE || !count || *extent != ']'
+			|| (!pointee && r_mul_overflow (*elements, count, elements))) {
+			return false;
+		}
+		extent = r_str_trim_head_ro (extent + 1);
+	}
+	if (*extent && !(*extent == ')' && memchr (type, '(', array - type) && memchr (type, '*', array - type))) {
+		return false;
+	}
+	*array = 0;
+	r_str_trim (type);
+	return true;
+}
+
 // UT64_MAX means an aggregate reached itself; r_type_get_bitsize turns that into 0
 static ut64 type_bitsize(Sdb *TDB, const char *type, const char **chain, int depth) {
+	if (depth >= TYPE_CHAIN_MAX) {
+		return UT64_MAX;
+	}
+	if (strchr (type, '[')) {
+		char *base = strdup (type);
+		if (!base) {
+			return 0;
+		}
+		ut64 elements, bits = 0;
+		if (type_array_parse (base, &elements)) {
+			type_trim_qualifiers (base);
+			bits = type_bitsize (TDB, base, chain, depth);
+			if (bits == UT64_MAX || r_mul_overflow (bits, elements, &bits)) {
+				bits = UT64_MAX;
+			}
+		}
+		free (base);
+		return bits;
+	}
 	const char *type_view = type_skip_qualifiers (type);
 	if (strchr (type_view, '*')) {
 		return type_ptr_bitsize (TDB);
@@ -383,7 +433,7 @@ static ut64 type_bitsize(Sdb *TDB, const char *type, const char **chain, int dep
 		}
 		char *resolved = r_type_resolve_typedef (TDB, tmptype);
 		if (resolved) {
-			size = type_bitsize (TDB, resolved, chain, depth);
+			size = type_bitsize (TDB, resolved, chain, depth + 1);
 			free (resolved);
 		}
 		return size;
@@ -446,8 +496,14 @@ static ut64 type_bitsize(Sdb *TDB, const char *type, const char **chain, int dep
 
 R_API ut64 r_type_get_bitsize(Sdb *R_NONNULL TDB, const char *R_NONNULL type) {
 	R_RETURN_VAL_IF_FAIL (TDB && type, 0);
+	char *normalized = strdup (type_skip_qualifiers (type));
+	if (!normalized) {
+		return 0;
+	}
+	type_trim_qualifiers (normalized);
 	const char *chain[TYPE_CHAIN_MAX];
-	const ut64 bits = type_bitsize (TDB, type, chain, 0);
+	const ut64 bits = type_bitsize (TDB, normalized, chain, 0);
+	free (normalized);
 	return bits == UT64_MAX? 0: bits;
 }
 
@@ -629,7 +685,7 @@ R_API char *r_type_link_at(Sdb *TDB, ut64 addr) {
 }
 
 R_API int r_type_set_link(Sdb *TDB, const char *type, ut64 addr) {
-	if (sdb_const_get (TDB, type, 0)) {
+	if (sdb_const_get (TDB, type, 0) || r_type_get_bitsize (TDB, type)) {
 		sdb_setf (TDB, type, 0, "link.%08" PFMT64x, addr);
 		types_range_add (TDB, addr);
 		return true;
@@ -899,7 +955,9 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 	return r_strbuf_drain (fmt_sb);
 }
 
-R_API char *r_type_format(Sdb *TDB, const char *t) {
+static char *type_format(Sdb *TDB, const char *t, int depth);
+
+static char *type_format_base(Sdb *TDB, const char *t, int depth) {
 	const char *kind = sdb_const_get (TDB, t, NULL);
 	if (!kind) {
 		return NULL;
@@ -937,11 +995,57 @@ R_API char *r_type_format(Sdb *TDB, const char *t) {
 		}
 		// a typedef of a scalar formats as its target: typedef.size_t=uint64_t is a q
 		char *target = r_type_resolve_typedef (TDB, t);
-		char *fmt = target? r_type_format (TDB, target): NULL;
+		char *fmt = target? type_format (TDB, target, depth + 1): NULL;
 		free (target);
 		return fmt;
 	}
 	return NULL;
+}
+
+static char *type_format(Sdb *TDB, const char *t, int depth) {
+	if (depth >= TYPE_CHAIN_MAX) {
+		return NULL;
+	}
+	char *base = strdup (type_skip_qualifiers (t));
+	if (!base) {
+		return NULL;
+	}
+	type_trim_qualifiers (base);
+	ut64 elements;
+	if (!type_array_parse (base, &elements)) {
+		free (base);
+		return NULL;
+	}
+	type_trim_qualifiers (base);
+	const char *name = NULL;
+	const char *bare = type_aggregate_prefixed (base, &name)? name: base;
+	char *fmt = type_format_base (TDB, bare, depth);
+	if (!fmt && type_format_is_pointer (bare)) {
+		fmt = strdup ("p");
+	}
+	if (fmt && elements > 1) {
+		const char *body = fmt;
+		if (isdigit ((ut8)*fmt) && *fmt != '0') {
+			char *end;
+			ut64 count = strtoull (fmt, &end, 10);
+			if (r_mul_overflow (elements, count, &elements)) {
+				free (fmt);
+				free (base);
+				return NULL;
+			}
+			body = end;
+		}
+		char *array_fmt = r_str_newf (*body == '0'? "[%" PFMT64u "]? (pf %s)": "%" PFMT64u "%s", elements, body);
+		free (fmt);
+		fmt = array_fmt;
+	}
+	free (base);
+	return fmt;
+}
+
+R_API char *r_type_format(Sdb *TDB, const char *t) {
+	R_RETURN_VAL_IF_FAIL (TDB && t, NULL);
+	return type_format (TDB, t, 0);
 }
 
 R_API void r_type_del(Sdb *TDB, const char *name) {
