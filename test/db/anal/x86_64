@@ -1869,7 +1869,7 @@ tk func.CRTStartup.cc=THE_CC_THAT_NEVER_EXISTED
 tk func.CRTStartup.ret=eax
 aei
 aeim
-aftm
+aft
 EOF
 EXPECT=<<EOF
 1
