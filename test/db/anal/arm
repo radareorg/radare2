@@ -866,6 +866,28 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=arm pseudo pc-relative literal loads add their offset
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e asm.pseudo=true
+wx 0c109fe50c101fe5 @ 0x100
+pi 2 @ 0x100
+e asm.bits=16
+wx 0349 @ 0x200
+pi 1 @ 0x200
+wx dff81080 @ 0x302
+pi 1 @ 0x302
+EOF
+EXPECT=<<EOF
+r1 = [0x00000114]
+r1 = [0x00000100]
+r1 = [0x00000210]
+r8 = [0x00000314]
+EOF
+RUN
+
 NAME=arm jump table
 FILE=bins/elf/analysis/callback.elf
 CMDS=<<EOF
