@@ -232,6 +232,8 @@ CMDS=<<EOF
 s 0x100003a54
 af
 pdc
+e pdc.structured=false
+pdc~strcoll
 EOF
 EXPECT=<<EOF
 // callconv: x0 arm64 (x0, x1, x2, x3, x4, x5, x6, x7, stack);
@@ -250,11 +252,12 @@ void sym.func.100003a54 (int64_t arg1, int64_t arg2) {
             x8 = x1 + 0x68 // arg2
             x1 = x0 + 0x68 // arg1
             x0 = x8
-            goto sym.imp.strcoll // int strcoll("", "")
+            return strcoll ("", "");
         }
     }
 }
 
+        return strcoll ("", "");
 EOF
 RUN
 
@@ -325,7 +328,7 @@ EXPECT=<<EOF
  0x100003a80 |             x8 = x1 + 0x68 // arg2
  0x100003a84 |             x1 = x0 + 0x68 // arg1
  0x100003a88 |             x0 = x8
- 0x100003a8c |             goto sym.imp.strcoll // int strcoll("", "")
+ 0x100003a8c |             return strcoll ("", "");
  0x100003a74 |         }
  0x100003a68 |     }
  0x100003a8c | }
@@ -957,9 +960,9 @@ pdcj~{annotations[11]}
 pdcj~{annotations[12]}
 EOF
 EXPECT=<<EOF
-{"start":505,"end":557,"offset":4294982284,"type":"offset"}
-{"start":557,"end":605,"offset":4294982264,"type":"offset"}
-{"start":605,"end":652,"offset":4294982252,"type":"offset"}
+{"start":505,"end":538,"offset":4294982284,"type":"offset"}
+{"start":538,"end":586,"offset":4294982264,"type":"offset"}
+{"start":586,"end":633,"offset":4294982252,"type":"offset"}
 EOF
 RUN
 

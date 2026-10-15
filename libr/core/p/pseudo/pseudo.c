@@ -1039,7 +1039,8 @@ static const char *call_args_end(const char *args) {
 	return NULL;
 }
 
-static bool promote_call_comment(RCore *core, RStrBuf *out, char *line) {
+static bool promote_call_comment(PDCState *state, RStrBuf *out, char *line) {
+	RCore *core = state->core;
 	char *body = (char *)r_str_trim_head_ro (line);
 	if (r_str_startswith (body, "0x")) {
 		char *space = strchr (body, ' ');
@@ -1053,7 +1054,8 @@ static bool promote_call_comment(RCore *core, RStrBuf *out, char *line) {
 	while (tail > body && IS_WHITECHAR (tail[-1])) {
 		tail--;
 	}
-	if (tail - body < 2 || strncmp (tail - 2, "()", 2)) {
+	const bool tailcall = r_str_startswith (body, "goto ");
+	if (!tailcall && (tail - body < 2 || strncmp (tail - 2, "()", 2))) {
 		return false;
 	}
 	char *comment;
@@ -1090,18 +1092,33 @@ static bool promote_call_comment(RCore *core, RStrBuf *out, char *line) {
 			free (callee);
 			continue;
 		}
-		char *target = r_str_ndup (body, tail - body - 2);
+		const char *target_start = tailcall? body + 5: body;
+		char *target = r_str_ndup (target_start, tail - target_start - (tailcall? 0: 2));
 		if (!target) {
 			free (callee);
 			return false;
 		}
 		r_str_trim (target);
+		if (tailcall) {
+			RFlagItem *flag = r_flag_get (core->flags, target);
+			RAnalFunction *fcn = r_anal_get_function_byname (core->anal, target);
+			ut64 addr = flag? flag->addr: fcn? fcn->addr: r_num_get (NULL, target);
+			if ((!flag && !fcn && !r_anal_get_function_at (core->anal, addr))
+					|| r_anal_function_contains (state->fcn, addr)) {
+				free (target);
+				free (callee);
+				return false;
+			}
+		}
 		const char *base = r_str_startswith (target, "sym.imp.")? target + 8: target;
 		const char *bare = base;
 		while (*bare == '_') {
 			bare++;
 		}
 		r_strbuf_append_n (out, line, body - line);
+		if (tailcall) {
+			r_strbuf_append (out, "return ");
+		}
 		r_strbuf_appendf (out, "%s (", !strcmp (bare, callee)? base: callee);
 		free (target);
 		free (callee);
@@ -1109,6 +1126,9 @@ static bool promote_call_comment(RCore *core, RStrBuf *out, char *line) {
 			r_strbuf_append_n (out, open + 1, end - open - 1);
 		}
 		r_strbuf_append (out, ")");
+		if (tailcall) {
+			r_strbuf_append (out, ";");
+		}
 		char *previous;
 		for (previous = first; previous != comment; previous = next_comment (previous + 4, NULL)) {
 			const char *text = previous + 4;
@@ -1124,7 +1144,7 @@ static bool promote_call_comment(RCore *core, RStrBuf *out, char *line) {
 	return false;
 }
 
-static char *promote_calls(RCore *core, char *code) {
+static char *promote_calls(PDCState *state, char *code) {
 	RStrBuf *out = r_strbuf_new ("");
 	RList *lines = r_str_split_list (code, "\n", 0);
 	if (!lines) {
@@ -1134,7 +1154,7 @@ static char *promote_calls(RCore *core, char *code) {
 	RListIter *iter;
 	char *line;
 	r_list_foreach (lines, iter, line) {
-		if (!promote_call_comment (core, out, line)) {
+		if (!promote_call_comment (state, out, line)) {
 			r_strbuf_append (out, line);
 		}
 		if (iter->n) {
@@ -1162,7 +1182,7 @@ static char *fetch_bb_pseudo(PDCState *state, RAnalBlock *bb) {
 	}
 	code[len - 1] = 0;
 	find_and_change (code, len);
-	code = promote_calls (state->core, code);
+	code = promote_calls (state, code);
 	return fold_resolved_refs (state->core, code);
 }
 
@@ -2974,7 +2994,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 		s = comments_to_c (s);
 		s = r_str_replace (s, "goto ", "// goto loc_", true);
 		s = cleancomments (s);
-		s = promote_calls (core, s);
+		s = promote_calls (&state, s);
 		s = fold_resolved_refs (core, s);
 		if (state.show_asm) {
 			RList *rows = r_str_split_list (s, "\n", 0);
