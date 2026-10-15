@@ -2356,3 +2356,44 @@ ret
 0x00000030
 EOF_EXPECT
 RUN
+
+NAME=mrs and msr move the thread pointer
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+wx 40d03bd541d01bd5
+ar tpidr_el0=0x1234
+aes
+ar x0
+ar x1=0x5678
+aes
+ar tpidr_el0
+EOF
+EXPECT=<<EOF
+0x00001234
+0x00005678
+EOF
+RUN
+
+NAME=mrs and msr nzcv
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+wx 00423bd501421bd5
+ar pstate=0x60000000
+aes
+ar x0
+ar x1=0x80000000
+aes
+ar nf
+ar zf
+EOF
+EXPECT=<<EOF
+0x60000000
+0x00000001
+0x00000000
+EOF
+RUN
+
