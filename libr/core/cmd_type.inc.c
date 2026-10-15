@@ -2767,6 +2767,7 @@ static int cmd_type(void *data, const char *input) {
 			}
 		} else {
 			R_LOG_ERROR ("Sandbox: system call disabled");
+			r_core_return_code (core, R_CMD_RC_FAILURE);
 		}
 		break;
 	// td - parse string with cparse engine and load types from it

@@ -18,3 +18,20 @@ EXPECT=<<EOF
 {"res":"","error":false,"value":1,"code":0}
 EOF
 RUN
+
+NAME=sandbox denied type import reports failure and inline types remain available
+FILE=--
+CMDS=<<EOF
+e cfg.sandbox.grain=none
+e cfg.sandbox=true
+{"cmd":"to forbidden.h"}
+{"cmd":"td int sandbox_recovered(int value)"}
+tk func.sandbox_recovered.ret
+s 0
+EOF
+EXPECT=<<EOF
+{"res":"","error":true,"value":1,"logs":[{"type":"ERROR","origin":"cmd_type","message":"Sandbox: system call disabled"}],"code":1}
+{"res":"","error":false,"value":1,"code":0}
+int
+EOF
+RUN
