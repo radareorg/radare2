@@ -3105,10 +3105,14 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			addr + pcdelta, ARG (1), REG (0));
 		break;
 	case ARM_INS_MOV:
+#if CS_API_MAJOR > 4
+	case ARM_INS_MOVS: // capstone's id for thumb's 16-bit movs rd, rm and t2 movs.w with a shift
+#endif
 	case ARM_INS_VMOV:
 	case ARM_INS_MOVW:
-		if (as->config->bits == 16) {
-			MATH32 ("=");
+		// MATH32 ("=") left nothing for its mask, which aborted the esil before the flags
+		if (as->config->bits == 16 && !strcmp (ARG (1), "pc")) {
+			r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,=", addr + pcdelta, REG (0));
 		} else {
 			r_strbuf_appendf (&op->esil, "%s,%s,=", ARG (1), REG (0));
 		}
@@ -4514,6 +4518,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->cycles = 2;
 		break;
 	case ARM_INS_MOV:
+#if CS_API_MAJOR > 4
+	case ARM_INS_MOVS:
+#endif
 		if (REGID(0) == ARM_REG_PC) {
 			if (REGID(1) == ARM_REG_LR) {
 				op->type = op->cond == R_ANAL_CONDTYPE_AL ? R_ANAL_OP_TYPE_RET : R_ANAL_OP_TYPE_CRET;
