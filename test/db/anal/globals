@@ -773,8 +773,8 @@ aar 14 @ 0
 avgj
 EOF
 EXPECT=<<EOF
-[{"name":"global.ctx.0x2000","addr":8192,"size":12,"type":"struct Ctx"}]
-[{"name":"global.ctx.0x2000","addr":8192,"size":12,"type":"struct Ctx"}]
+[{"name":"global.ctx.0x2000","addr":8192,"size":16,"type":"struct Ctx"}]
+[{"name":"global.ctx.0x2000","addr":8192,"size":16,"type":"struct Ctx"}]
 EOF
 RUN
 
