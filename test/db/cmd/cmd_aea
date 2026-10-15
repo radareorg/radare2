@@ -154,3 +154,61 @@ EXPECT=<<EOF
 {"A":[],"I":[],"R":[],"W":[]}
 EOF
 RUN
+
+NAME=aea keeps the effects after an access to unmapped memory
+FILE=-
+ARGS=-a x86 -b64
+CMDS=<<EOF
+wx 53
+aea 1
+EOF
+EXPECT=<<EOF
+ I: rsp rbx
+ A: rsp rbx
+ R: rsp rbx
+ W: rsp
+ V: -8
+ N: rbx
+EOF
+RUN
+
+NAME=aea reads both registers of an arm64 stp to unmapped memory
+FILE=-
+ARGS=-a arm -b64
+CMDS=<<EOF
+wx fd7bbfa9
+aea 1
+EOF
+EXPECT=<<EOF
+ I: sp fp lr
+ A: sp fp lr
+ R: sp fp lr
+ W: sp
+ V: -16
+ N: fp lr
+EOF
+RUN
+
+NAME=aea reads unmapped memory as io fills it, with or without esil.nonull
+FILE=-
+ARGS=-a x86 -b64
+CMDS=<<EOF
+wx 5b
+ar rsp=0xdead0000
+aea 1
+e esil.nonull=true
+aea 1
+EOF
+EXPECT=<<EOF
+ I: rsp
+ A: rsp rbx
+ R: rsp
+ W: rsp rbx
+ V: 3735879688 -1
+ I: rsp
+ A: rsp rbx
+ R: rsp
+ W: rsp rbx
+ V: 3735879688 -1
+EOF
+RUN
