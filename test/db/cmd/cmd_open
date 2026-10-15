@@ -780,6 +780,20 @@ va       true
 EOF
 RUN
 
+NAME=o* recognizes file maps of zero-padded Mach-O segments
+FILE=bins/mach0/ls-m1
+ARGS=-a x86 -b64
+CMDS=<<EOF
+om~?
+o*~^om
+om~?
+EOF
+EXPECT=<<EOF
+4
+4
+EOF
+RUN
+
 NAME=obf?
 FILE=--
 CMDS=obf?
