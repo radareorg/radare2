@@ -481,6 +481,8 @@ static char *regs(RArchSession *as) {
 		"gpr	lr	.64	240	0\n" // lr = x30
 		"gpr	sp	.64	248	0\n"
 		"gpr	pc	.64	256	0\n"
+		"seg	tpidr_el0	.64	264	0\n" // the thread pointer, as x86's fs_base
+		"seg	tpidrro_el0	.64	272	0\n"
 		"gpr	zr	.64	?	0\n"
 		"gpr	xzr	.64	?	0\n"
 		"flg	pstate	.64	280	0   _____tfiae_____________j__qvczn\n" // x0

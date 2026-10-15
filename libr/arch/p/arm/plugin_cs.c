@@ -1498,6 +1498,33 @@ static void arm64_subp_esil(RAnalOp *op, csh *handle, cs_insn *insn, bool flags,
 }
 #endif
 
+// the system registers the profile states, by encoding (op0:op1:CRn:CRm:op2)
+static const char *arm64_profile_sysreg(cs_insn *insn, int n) {
+	cs_arm64_op *op = &insn->detail->arm64.operands[n];
+#if CS_API_MAJOR < 6
+	// capstone 5 builds differ: the bundled one tags these sys, others use the mrs/msr types
+	ut32 enc;
+	if (op->type == ARM64_OP_SYS) {
+		enc = op->sys;
+	} else if (op->type == ARM64_OP_REG_MRS || op->type == ARM64_OP_REG_MSR) {
+		enc = op->reg;
+	} else {
+		return NULL;
+	}
+#else
+	if (op->type != AARCH64_OP_SYSREG) {
+		return NULL;
+	}
+	const ut32 enc = op->sysop.reg.sysreg;
+#endif
+	switch (enc) {
+	case 0xde82: return "tpidr_el0";
+	case 0xde83: return "tpidrro_el0";
+	case 0xda10: return "nzcv";
+	}
+	return NULL;
+}
+
 static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
@@ -2588,6 +2615,26 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		break;
 	case ARM64_INS_UXTH:
 		r_strbuf_setf (&op->esil, "%s,0xffff,&,%s,=", REG64 (1), REG64 (0));
+		break;
+	case ARM64_INS_MRS:
+		{
+			const char *sr = arm64_profile_sysreg (insn, 1);
+			if (sr && !strcmp (sr, "nzcv")) {
+				r_strbuf_setf (&op->esil, "pstate,0xf0000000,&,%s,=", REG64 (0));
+			} else if (sr) {
+				r_strbuf_setf (&op->esil, "%s,%s,=", sr, REG64 (0));
+			}
+		}
+		break;
+	case ARM64_INS_MSR:
+		{
+			const char *sr = arm64_profile_sysreg (insn, 0);
+			if (sr && !strcmp (sr, "nzcv")) {
+				r_strbuf_setf (&op->esil, "%s,0xf0000000,&,pstate,0x0fffffff,&,|,pstate,=", REG64 (1));
+			} else if (sr) {
+				r_strbuf_setf (&op->esil, "%s,%s,=", REG64 (1), sr);
+			}
+		}
 		break;
 #if CS_API_MAJOR > 4
 	case ARM64_INS_RETAA:
