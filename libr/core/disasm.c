@@ -5757,8 +5757,11 @@ static void ds_print_relocs(RDisasmState *ds) {
 			const char *rel_sym_name = r_bin_name_tostring2 (sym->name, pref);
 			const ut64 sym_addr = sym->paddr == UT64_MAX? sym->vaddr
 				: r_bin_get_vaddr (core->bin, sym->paddr, sym->vaddr);
-			r_cons_printf (cons, "%s RELOC %d %s @ 0x%08" PFMT64x,
-					ds->cmtoken, rel->type, rel_sym_name, sym_addr);
+			r_cons_printf (cons, "%s RELOC %d %s", ds->cmtoken, rel->type, rel_sym_name);
+			// an unplaced symbol (a common one before the link) has no address to show
+			if (sym_addr != UT64_MAX) {
+				r_cons_printf (cons, " @ 0x%08" PFMT64x, sym_addr);
+			}
 			if (rel->addend) {
 				if (rel->addend > 0) {
 					r_cons_printf (cons, " + 0x%" PFMT64x, rel->addend);
