@@ -1584,5 +1584,5 @@ R_API void r_anal_set_syscc_default(RAnal *anal, const char *cc) {
 R_API const char *r_anal_cc_func(RAnal *anal, const char *func_name) {
 	R_RETURN_VAL_IF_FAIL (anal && func_name, NULL);
 	const char *cc = sdb_const_getf (anal->sdb_types, NULL, "func.%s.cc", func_name);
-	return cc ? cc : r_anal_cc_default (anal);
+	return cc && r_anal_cc_exist (anal, cc)? cc: r_anal_cc_default (anal);
 }
