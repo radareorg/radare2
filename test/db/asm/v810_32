@@ -55,3 +55,5 @@ d "cvt.sw r10, r11" 6af9000c
 d "subf.s r15, r30" cffb0014
 d "rev r15, r10" 4ff90028
 d "xb r11" 60f90020
+d "sch0bsu" 007c
+d "notbsu" 0f7c

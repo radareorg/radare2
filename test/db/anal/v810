@@ -1,0 +1,17 @@
+NAME=v810 bstr with an unassigned subop
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=v810
+wx 0f7c047c107c1f7c
+pi 1
+pi 1 @ 2
+pi 1 @ 4
+pi 1 @ 6
+EOF
+EXPECT=<<EOF
+notbsu
+invalid
+invalid
+invalid
+EOF
+RUN
