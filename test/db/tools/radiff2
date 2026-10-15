@@ -63,6 +63,47 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=radiff2 unified single byte changes
+FILE=-
+CMDS=<<EOF
+!radiff2 -qu bins/other/radiff2/radiff2_c_1 bins/other/radiff2/radiff2_c_2
+!radiff2 -qu hex://610062 hex://610162
+EOF
+EXPECT=<<EOF
+-0x00000000:91 
++0x00000000:90 
+-0x00000001:00 
++0x00000001:01 
+EOF
+RUN
+
+NAME=radiff2 unified string context
+FILE=-
+CMDS=<<EOF
+!radiff2 -u hex://610062 hex://610162
+!radiff2 -u hex://6162636465 hex://6158635965
+!radiff2 -u hex://6162 hex://6158
+!radiff2 -du hex://610a620a630a640a650a660a hex://610a580a630a640a590a660a
+!radiff2 -u -iz bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
+EOF
+EXPECT=<<EOF
+[31m-0x00000001:00  ""[0m
+[32m+0x00000001:01  "\x01b"[0m
+[31m-0x00000001:62  "bcde"[0m
+[32m+0x00000001:58  "XcYe"[0m
+[31m-0x00000003:64  "de"[0m
+[32m+0x00000003:59  "Ye"[0m
+[31m-0x00000001:62  "b"[0m
+[32m+0x00000001:58  "X"[0m
+[31m-0x00000002:62 0a  "b\nc\nd\ne\nf\n"[0m
+[32m+0x00000002:58 0a  "X\nc\nd\nY\nf\n"[0m
+[31m-0x00000008:65 0a  "e\nf\n"[0m
+[32m+0x00000008:59 0a  "Y\nf\n"[0m
+[31m-0x00000000:48 65 6c 6c  "Hello world!\n"[0m
+[32m+0x00000000:41 41 41 41  "AAAAo world!\n"[0m
+EOF
+RUN
+
 NAME=radiff2 gnu unified string comparison
 FILE=-
 CMDS=!!radiff2 -U -iz bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1 | tail -n 2
