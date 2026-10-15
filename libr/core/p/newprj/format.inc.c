@@ -22,6 +22,10 @@ static const char *rprj_entry_type_tostring(int a) {
 	case RPRJ_VART: return "VarTypes";
 	case RPRJ_BRKP: return "Breakpoints";
 	case RPRJ_SIGS: return "Signals";
+	case RPRJ_TYPE: return "Types";
+	case RPRJ_TLNK: return "TypeLinks";
+	case RPRJ_FMT: return "Formats";
+	case RPRJ_GLOB: return "Globals";
 	}
 	return "UNKNOWN";
 }

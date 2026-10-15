@@ -13,6 +13,89 @@ static bool rprj_entry_has(RBuffer *b, ut64 next_entry, ut64 len) {
 	return rprj_entry_remaining (b, next_entry) >= len;
 }
 
+static bool rprj_global_clear_cb(void *user, const char *key, const char *value) {
+	if (r_str_startswith (key, "global.")) {
+		sdb_unset (user, key, 0);
+	}
+	return true;
+}
+
+static void rprj_type_load(RPrjCursor *cur, int mode, ut64 next_entry) {
+	RBuffer *b = cur->b;
+	while (rprj_entry_has (b, next_entry, 8)) {
+		ut32 key_index, value_index;
+		if (!rprj_read_le32 (b, &key_index) || !rprj_read_le32 (b, &value_index)) {
+			break;
+		}
+		const char *key = rprj_st_get (cur->st, key_index);
+		const char *value = rprj_st_get (cur->st, value_index);
+		if (!key || !value) {
+			R_LOG_WARN ("Invalid type string index");
+			continue;
+		}
+		if (mode & R_CORE_NEWPRJ_MODE_LOG) {
+			r_strbuf_appendf (cur->out, "      %s = %s\n", key, value);
+		}
+		if (mode & R_CORE_NEWPRJ_MODE_LOAD) {
+			sdb_set (cur->core->anal->sdb_types, key, value, 0);
+		}
+	}
+	if (rprj_entry_remaining (b, next_entry)) {
+		R_LOG_WARN ("Truncated type record");
+	}
+	if (mode & R_CORE_NEWPRJ_MODE_LOAD) {
+		r_anal_types_bump_dirty_epoch (cur->core->anal);
+	}
+}
+
+static void rprj_sdb_addr_load(RPrjCursor *cur, int mode, ut64 next_entry, bool global) {
+	RBuffer *b = cur->b;
+	while (rprj_entry_has (b, next_entry, RPRJ_SDB_ADDR_SIZE)) {
+		ut8 record[RPRJ_SDB_ADDR_SIZE];
+		if (!rprj_read_exact (b, record, sizeof (record))) {
+			break;
+		}
+		const ut32 key_index = r_read_le32 (record);
+		const ut32 value_index = r_read_le32 (record + 4);
+		R2ProjectAddr addr = { .mod = r_read_le32 (record + 8), .delta = r_read_le64 (record + 12) };
+		ut64 va;
+		const char *key = rprj_st_get (cur->st, key_index);
+		const char *value = rprj_st_get (cur->st, value_index);
+		if (!key || !value || r_str_startswith (key, "global.") != global
+			|| !rprj_mod_va (cur, &addr, &va)) {
+			R_LOG_WARN ("Invalid type address record");
+			continue;
+		}
+		ut64 original;
+		const char *suffix;
+		const char *number = rprj_sdb_addr (key, &original, &suffix);
+		if (!number || (!global && *suffix)) {
+			R_LOG_WARN ("Invalid type address key %s", key);
+			continue;
+		}
+		char *rebased = r_str_newf (global? "%.*s%" PFMT64x "%s": "%.*s%08" PFMT64x "%s",
+			(int)(number - key), key, va, suffix);
+		if (!rebased) {
+			continue;
+		}
+		if (mode & R_CORE_NEWPRJ_MODE_LOG) {
+			r_strbuf_appendf (cur->out, "      %s = %s\n", rebased, value);
+		}
+		if (mode & R_CORE_NEWPRJ_MODE_LOAD) {
+			RAnal *anal = cur->core->anal;
+			if (!global && r_str_startswith (rebased, "link.")) {
+				r_anal_types_set_link (anal, value, va);
+			} else {
+				sdb_set (global? anal->sdb: anal->sdb_types, rebased, value, 0);
+			}
+		}
+		free (rebased);
+	}
+	if (rprj_entry_remaining (b, next_entry)) {
+		R_LOG_WARN ("Truncated type address record");
+	}
+}
+
 static void rprj_eval_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 	RBuffer *b = cur->b;
 	RCore *core = cur->core;
@@ -211,6 +294,11 @@ static void rprj_flag_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 			}
 			if (fe.type) {
 				r_flag_item_set_type (core->flags, fi, fe.type);
+			}
+			if (fe.space && !strcmp (fe.space, "globals")) {
+				sdb_unsetf (core->anal->sdb, 0, "global.inferred.0x%" PFMT64x, va);
+				sdb_unsetf (core->anal->sdb, 0, "global.semantic.0x%" PFMT64x, va);
+				sdb_unsetf (core->anal->sdb, 0, "global.layout.0x%" PFMT64x, va);
 			}
 			if (fe.color) {
 				r_flag_item_set_color (core->flags, fi, fe.color);
@@ -1042,6 +1130,33 @@ static void rprj_vart_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 	rprj_meta_load (cur, mode, next_entry, R_META_TYPE_VARTYPE);
 }
 
+static void rprj_fmt_load(RPrjCursor *cur, int mode, ut64 next_entry) {
+	RBuffer *b = cur->b;
+	while (rprj_entry_has (b, next_entry, RPRJ_CMNT_SIZE)) {
+		R2ProjectComment format;
+		if (!rprj_cmnt_read (b, &format)) {
+			break;
+		}
+		const char *text = rprj_st_get (cur->st, format.text);
+		R2ProjectAddr addr = { .mod = format.mod, .delta = format.delta };
+		ut64 va, end;
+		if (!text || !format.size || !rprj_mod_va (cur, &addr, &va)
+			|| r_add_overflow (va, format.size - 1, &end)) {
+			R_LOG_WARN ("Invalid format record");
+			continue;
+		}
+		if (mode & R_CORE_NEWPRJ_MODE_LOG) {
+			r_strbuf_appendf (cur->out, "      0x%08" PFMT64x " %" PFMT64u " %s\n", va, format.size, text);
+		}
+		if (mode & R_CORE_NEWPRJ_MODE_LOAD) {
+			r_meta_set (cur->core->anal, R_META_TYPE_FORMAT, va, format.size, text);
+		}
+	}
+	if (rprj_entry_remaining (b, next_entry)) {
+		R_LOG_WARN ("Truncated format record");
+	}
+}
+
 static void rprj_xref_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 	RCore *core = cur->core;
 	RBuffer *b = cur->b;
@@ -1555,6 +1670,7 @@ static char *r_core_newprj_load(RCore *core, const char *file, int mode) {
 			r_debug_signal_init (core->dbg);
 		}
 		r_core_cmd0 (core, "o--");
+		sdb_foreach (core->anal->sdb, rprj_global_clear_cb, core->anal->sdb);
 		r_config_set (core->config, "prj.name", "");
 		rprj_restore_io_maps (&cur);
 	}
@@ -1603,6 +1719,18 @@ static char *r_core_newprj_load(RCore *core, const char *file, int mode) {
 			break;
 		case RPRJ_VART:
 			rprj_vart_load (&cur, mode, next_entry);
+			break;
+		case RPRJ_FMT:
+			rprj_fmt_load (&cur, mode, next_entry);
+			break;
+		case RPRJ_TYPE:
+			rprj_type_load (&cur, mode, next_entry);
+			break;
+		case RPRJ_TLNK:
+			rprj_sdb_addr_load (&cur, mode, next_entry, false);
+			break;
+		case RPRJ_GLOB:
+			rprj_sdb_addr_load (&cur, mode, next_entry, true);
 			break;
 		case RPRJ_FLAG:
 			rprj_flag_load (&cur, mode, next_entry);
