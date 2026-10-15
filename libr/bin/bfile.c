@@ -1202,7 +1202,7 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RSt
 		const int cfstr_size = (bits == 64) ? 32 : 16;
 		const int cfstr_offs = (bits == 64) ? 16 :  8;
 		if (strstr (section->name, "__cfstring")) {
-			int i;
+			ut64 i;
 			// XXX do not walk if bin.strings == 0
 			ut8 *p;
 			ut64 offset = r_bin_file_get_buffer_offset (bf, section->paddr);
@@ -1210,7 +1210,7 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RSt
 			if (offset > buffer_size || section->size > buffer_size - offset) {
 				continue;
 			}
-			if (section->size < 1) {
+			if (section->size < cfstr_size || section->size > SZT_MAX) {
 				continue;
 			}
 			if (ret) {
@@ -1227,13 +1227,12 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RSt
 			if (!sbuf) {
 				continue;
 			}
-			r_buf_read_at (bf->buf, offset + cfstr_offs, sbuf, section->size);
-			for (i = 0; i < section->size; i += cfstr_size) {
-				ut8 *buf = sbuf;
-				p = buf + i;
-				if ((i + ((bits == 64)? 8: 4)) >= section->size) {
-					break;
-				}
+			if (r_buf_read_at (bf->buf, offset, sbuf, section->size) != section->size) {
+				free (sbuf);
+				continue;
+			}
+			for (i = 0; i <= section->size - cfstr_size; i += cfstr_size) {
+				p = sbuf + i + cfstr_offs;
 				ut64 cfstr_vaddr = section->vaddr + i;
 				ut64 cstr_vaddr = (bits == 64) ? r_read_le64 (p) : r_read_le32 (p);
 				RBinString *s = r_bin_strings_index_get (ret, strings_index, cstr_vaddr);
@@ -1248,7 +1247,7 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RSt
 					bs->size = src.size;
 					bs->ordinal = src.ordinal;
 					bs->vaddr = cfstr_vaddr;
-					bs->paddr = cfstr_vaddr; // XXX should be paddr instead
+					bs->paddr = offset + bo->boffset + i;
 					bs->string = r_str_newf ("cstr.%s", src.string);
 					r_bin_strings_index_insert (strings_index, bs->vaddr, RVecRBinString_length (ret) - 1);
 				}
