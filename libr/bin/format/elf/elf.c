@@ -4230,8 +4230,9 @@ static bool populate_relocs_record(ELFOBJ *eo) {
 	}
 
 	size_t i = 0;
-	i = populate_relocs_record_from_android (eo, i, num_relocs);
+	// the plt relocs go first, so an import's own jump slot names its plt entry
 	i = populate_relocs_record_from_dynamic (eo, i, num_relocs);
+	i = populate_relocs_record_from_android (eo, i, num_relocs);
 	i = populate_relocs_record_from_mips_got (eo, i, num_relocs);
 	i = populate_relocs_record_from_section (eo, &starts, i, num_relocs);
 	RVecElfOff_fini (&starts);
