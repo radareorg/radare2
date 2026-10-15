@@ -136,18 +136,27 @@ static bool sections_vec(RBinFile *bf) {
 	return true;
 }
 
-static RBinAddr *newEntry(ut64 hpaddr, ut64 paddr, int type, int bits) {
+static RBinAddr *newEntry(RBinFile *bf, ut64 hpaddr, ut64 vaddr, int type, int bits) {
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
-	ptr->paddr = paddr;
-	ptr->vaddr = paddr;
+	ptr->paddr = UT64_MAX;
+	ptr->vaddr = vaddr;
 	ptr->hpaddr = hpaddr;
 	ptr->bits = bits;
 	ptr->type = type;
 	// realign due to thumb
 	if (bits == 16 && ptr->vaddr & 1) {
 		// TODO add hint about thumb entrypoint
-		ptr->paddr--;
 		ptr->vaddr--;
+	}
+	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
+	RVecSegment *segments = MACH0_(get_segments_vec) (bf, mo);
+	RBinSection *segment;
+	R_VEC_FOREACH (segments, segment) {
+		if (segment->is_segment && ptr->vaddr >= segment->vaddr
+				&& ptr->vaddr - segment->vaddr < segment->size) {
+			ptr->paddr = segment->paddr + (ptr->vaddr - segment->vaddr);
+			break;
+		}
 	}
 	return ptr;
 }
@@ -191,7 +200,7 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits, int limit) 
 						break;
 					}
 					ut32 addr32 = r_read_le32 (buf + i);
-					RBinAddr *ba = newEntry (sec->paddr + i, (ut64)addr32, type, bits);
+					RBinAddr *ba = newEntry (bf, sec->paddr + i, (ut64)addr32, type, bits);
 					r_list_append (ret, ba);
 				}
 			} else {
@@ -200,7 +209,7 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits, int limit) 
 						break;
 					}
 					ut64 addr64 = r_read_le64 (buf + i);
-					RBinAddr *ba = newEntry (sec->paddr + i, addr64, type, bits);
+					RBinAddr *ba = newEntry (bf, sec->paddr + i, addr64, type, bits);
 					r_list_append (ret, ba);
 				}
 			}
