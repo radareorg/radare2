@@ -8749,7 +8749,8 @@ static bool mymemwrite(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 		}
 	}
 	if (!r_io_is_valid_offset (esil->anal->iob.io, addr, 0)) {
-		return false;
+		// unlisted, but handled: a false return would abort the rest of the expression
+		return true;
 	}
 	n = R_NEW (AeaMemItem);
 	if (n) {
@@ -8769,7 +8770,9 @@ static bool mymemread(REsil *esil, ut64 addr, ut8 *buf, int len) {
 		}
 	}
 	if (!r_io_is_valid_offset (esil->anal->iob.io, addr, 0)) {
-		return false;
+		// unlisted, but read as io fills unmapped bytes: a false return aborts the expression
+		memset (buf, esil->anal->iob.io->Oxff, len);
+		return true;
 	}
 	n = R_NEW (AeaMemItem);
 	if (n) {
