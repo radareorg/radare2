@@ -478,6 +478,7 @@ static void add_type_fields_to_json(RCore *core, PJ *pj, const char *struct_name
 }
 
 static void showFormat(RCore *core, const char *name, int mode) {
+	r_core_return_code (core, R_CMD_RC_SUCCESS);
 	const char *isenum = sdb_const_get (core->anal->sdb_types, name, 0);
 	if (isenum && !strcmp (isenum, "enum")) {
 		R_LOG_INFO ("Type is an enum");
@@ -503,6 +504,7 @@ static void showFormat(RCore *core, const char *name, int mode) {
 				if (R_STR_ISNOTEMPTY (fmt)) {
 					if (strpbrk (fmt, "\r\n") || (mode && strpbrk (name, "\r\n"))) {
 						R_LOG_ERROR ("Cannot export a multiline type format");
+						r_core_return_code (core, R_CMD_RC_FAILURE);
 					} else if (mode) {
 						r_cons_printf (core->cons, "'pf.%s %s\n", name, fmt);
 					} else {
@@ -516,6 +518,7 @@ static void showFormat(RCore *core, const char *name, int mode) {
 			free (fmt);
 		} else {
 			R_LOG_ERROR ("Cannot find '%s' type", name);
+			r_core_return_code (core, R_CMD_RC_FAILURE);
 		}
 	}
 }
@@ -681,6 +684,22 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 	}
 }
 
+static bool save_parsed_type_result(RCore *core, char *out, char *errmsg) {
+	const bool success = out != NULL;
+	if (out) {
+		r_anal_save_parsed_type (core->anal, out);
+		free (out);
+	}
+	if (errmsg) {
+		R_LOG_ERROR ("%s", errmsg);
+		free (errmsg);
+	} else if (!success) {
+		R_LOG_ERROR ("Cannot parse C type declarations");
+	}
+	r_core_return_code (core, success? R_CMD_RC_SUCCESS: R_CMD_RC_FAILURE);
+	return success;
+}
+
 static void cmd_type_edit(RCore *core, const char *typename, const char *c_cmd) {
 	if (R_STR_ISEMPTY (typename)) {
 		R_LOG_ERROR ("Type name required");
@@ -698,17 +717,12 @@ static void cmd_type_edit(RCore *core, const char *typename, const char *c_cmd) 
 		char *str_trimmed = strdup (str);
 		r_str_trim (str_trimmed);
 		if (strcmp (tmp, str_trimmed)) {
-			r_core_callf (core, "t- %s", typename);
 			char *errmsg = NULL;
 			char *out = r_anal_cparse (core->anal, tmp, &errmsg);
 			if (out) {
-				r_anal_save_parsed_type (core->anal, out);
-				free (out);
+				r_core_callf (core, "t- %s", typename);
 			}
-			if (errmsg) {
-				R_LOG_ERROR ("%s", errmsg);
-				free (errmsg);
-			}
+			save_parsed_type_result (core, out, errmsg);
 		}
 		free (str_trimmed);
 		free (tmp);
@@ -2705,29 +2719,13 @@ static int cmd_type(void *data, const char *input) {
 					if (tmp) {
 						char *errmsg = NULL;
 						char *out = r_anal_cparse (core->anal, tmp, &errmsg);
-						if (out) {
-							// r_cons_print (core->cons, out);
-							r_anal_save_parsed_type (core->anal, out);
-							free (out);
-						}
-						if (errmsg) {
-							R_LOG_ERROR ("%s", errmsg);
-							free (errmsg);
-						}
+						save_parsed_type_result (core, out, errmsg);
 						free (tmp);
 					}
 				} else {
 					char *errmsg = NULL;
 					char *out = r_anal_cparse_file (core->anal, filename, dir, &errmsg);
-					if (out) {
-						// r_cons_print (core->cons, out);
-						r_anal_save_parsed_type (core->anal, out);
-						free (out);
-					}
-					if (errmsg) {
-						R_LOG_ERROR ("%s", errmsg);
-						free (errmsg);
-					}
+					save_parsed_type_result (core, out, errmsg);
 				}
 				free (homefile);
 			} else if (input[1] == 'u') {
@@ -2760,15 +2758,9 @@ static int cmd_type(void *data, const char *input) {
 					char *errmsg = NULL;
 					char *out = r_anal_cparse (core->anal, tmp, &errmsg);
 					if (out) {
-						// remove previous types and save new edited types
 						sdb_reset (TDB);
-						r_anal_save_parsed_type (core->anal, out);
-						free (out);
 					}
-					if (errmsg) {
-						R_LOG_ERROR ("%s", errmsg);
-						free (errmsg);
-					}
+					save_parsed_type_result (core, out, errmsg);
 					free (tmp);
 				}
 				free (str);
@@ -2796,15 +2788,8 @@ static int cmd_type(void *data, const char *input) {
 				char *errmsg = NULL;
 				char *out = r_anal_cparse (core->anal, tmp, &errmsg);
 				free (tmp);
-				if (out) {
-					r_anal_save_parsed_type (core->anal, out);
-					free (out);
-					free (errmsg);
+				if (save_parsed_type_result (core, out, errmsg)) {
 					break;
-				}
-				if (errmsg) {
-					R_LOG_ERROR ("%s", errmsg);
-					free (errmsg);
 				}
 				r_cons_any_key (core->cons, NULL);
 			}
@@ -2816,16 +2801,10 @@ static int cmd_type(void *data, const char *input) {
 			char *errmsg = NULL;
 			char *out = r_anal_cparse (core->anal, tmp, &errmsg);
 			free (tmp);
-			if (out) {
-				r_anal_save_parsed_type (core->anal, out);
-				free (out);
-			}
-			if (errmsg) {
-				R_LOG_ERROR ("%s", errmsg);
-				free (errmsg);
-			}
+			save_parsed_type_result (core, out, errmsg);
 		} else {
 			R_LOG_ERROR ("Invalid use of td. See td? for help");
+			r_core_return_code (core, R_CMD_RC_FAILURE);
 		}
 		break;
 	case 'v': // "tv"

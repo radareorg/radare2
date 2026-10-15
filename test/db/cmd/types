@@ -281,6 +281,7 @@ CMDS=<<EOF
 t int
 t-*
 t int
+s 0
 EOF
 EXPECT=<<EOF
 'pf d
@@ -462,9 +463,11 @@ t~char,double,float,int,long,short,size,uid,void # basic universal types
 t~addr,date,dox,name
 ts~addr,date,dox,name
 t addr
+s 0
 EOF
 EXPECT_ERR=<<EOF
 ERROR: cpp: your compiler doesn't have support to my API
+ERROR: Cannot parse C type declarations
 ERROR: Cannot find 'addr' type
 EOF
 EXPECT=<<EOF
