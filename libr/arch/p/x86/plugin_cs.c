@@ -4646,12 +4646,12 @@ static char *get_reg_profile(RArchSession *as) {
 		"fpu    xmm4h .64 232  0\n"
 
 		"vec128@fpu    xmm5  .128 240  4\n"
-		"fpu    vec1285l .64 240  0\n"
-		"fpu    vec1285h .64 248  0\n"
+		"fpu    xmm5l .64 240  0\n"
+		"fpu    xmm5h .64 248  0\n"
 
 		"vec128@fpu    xmm6  .128 256  4\n"
-		"fpu    vec1286l .64 256  0\n"
-		"fpu    vec1286h .64 264  0\n"
+		"fpu    xmm6l .64 256  0\n"
+		"fpu    xmm6h .64 264  0\n"
 
 		"vec128@fpu    xmm7  .128 272  4\n"
 		"fpu    xmm7l .64 272  0\n"
