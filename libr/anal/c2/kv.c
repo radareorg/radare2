@@ -1144,6 +1144,49 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 	}
 }
 
+static bool split_fnptr_member(RStrs full, RStrs *name, RStrs *args, char **ret) {
+	const char *p;
+	for (p = full.a; p < full.b; p++) {
+		if (*p != '(') {
+			continue;
+		}
+		RStrs inner = r_strs_new (p + 1, full.b);
+		r_strs_skip_chars (&inner, " \t\n\r\v\f");
+		if (r_strs_at (inner, 0) != '*') {
+			continue;
+		}
+		r_strs_skip_chars (&inner, "* \t\n\r\v\f");
+		RStrs ident;
+		do {
+			ident = r_strs_take_ident (&inner);
+			r_strs_skip_chars (&inner, " \t\n\r\v\f");
+		} while (r_strs_equals_str (ident, "const") || r_strs_equals_str (ident, "volatile"));
+		if (r_strs_empty (ident) || r_strs_at (inner, 0) != ')') {
+			continue;
+		}
+		inner.a++;
+		r_strs_skip_chars (&inner, " \t\n\r\v\f");
+		if (r_strs_at (inner, 0) != '(') {
+			continue;
+		}
+		const char *end = scan_toplevel (r_strs_new (inner.a + 1, full.b), ')');
+		if (!end) {
+			return false;
+		}
+		char *raw = r_str_newf ("%.*s%.*s", (int)(p - full.a), full.a,
+			(int)(full.b - end - 1), end + 1);
+		if (!raw) {
+			return false;
+		}
+		*ret = collapse_whitespace (r_strs_from (raw));
+		free (raw);
+		*name = ident;
+		*args = r_strs_new (inner.a + 1, end);
+		return *ret != NULL;
+	}
+	return false;
+}
+
 // works for unions and structs
 static bool parse_struct(KVCParser *kvc, const char *type) {
 	RStrs struct_name = { .a = consume_word (kvc) };
@@ -1233,7 +1276,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		RStrs member_dimm = { 0 };
 		member_type.a = kvc->s.a;
 		// Support function pointer fields: allow parentheses when scanning semicolon
-		if (r_strs_find_strs ((RStrs){ member_type.a, kvc->s.b }, R_STRS_LIT (" (*"))) {
+		if (r_strs_find_strs ((RStrs){ member_type.a, kvc->s.b }, R_STRS_LIT ("(*"))) {
 			member_type.b = scan_to_semicolon (kvc, true);
 		} else {
 			member_type.b = scan_to_semicolon (kvc, false);
@@ -1280,73 +1323,31 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		skip_semicolons (kvc);
 		parse_trailing_attributes (kvc); // Handle trailing /// comments on same line
 		r_strs_trim (&member_type);
-		// Special-case function pointer fields
-		if (r_strs_find_strs (member_type, R_STRS_LIT (" (*"))) {
-			// member_type spans entire function pointer declaration including args
-			const char *start = member_type.a;
-			const char *starp = r_strs_find_strs (member_type, R_STRS_LIT (" (*"));
-			if (starp) {
-				// return type
-				RStrs rtype_tok = { start, starp };
-				r_strs_trim (&rtype_tok);
-				char *rtype = r_strs_tostring (rtype_tok);
-				// member name
-				const char *name_start = starp + 3;
-				const char *name_end = find_char_between (name_start, member_type.b, ')');
-				char *mname = NULL;
-				if (name_end && name_end > name_start) {
-					RStrs mname_tok = { name_start, name_end };
-					r_strs_trim (&mname_tok);
-					mname = r_strs_tostring (mname_tok);
-				}
-				if (!mname) {
-					// unnamed function pointer member, malformed input
-					free (rtype);
-					continue;
-				}
-				// argument types
-				const char *args_start = NULL;
-				if (name_end) {
-					args_start = find_char_between (name_end + 1, member_type.b, '(');
-				}
-				char *args = NULL;
-				if (args_start && args_start < member_type.b) {
-					const char *args_end = member_type.b;
-					// skip trailing ')'
-					if (args_end > args_start && args_end[-1] == ')') {
-						args_end--;
-					}
-					args = collapse_whitespace (r_strs_new (args_start + 1, args_end));
-				}
-				// build full type string
-				char *fulltype = r_str_newf ("%s * (%s)", rtype, r_str_get (args));
-				// We'll reference the function-pointer's type by a struct-prefixed name: <struct>.<member>
-				char *type_name = r_str_newf ("%s.%s", sn, mname);
-				if (!strcmp (type, "struct")) {
-					kvc_align_offset (kvc, &off, kvc->ptr_size);
-				}
-				// Add the member referring to that type name (no commas in the type)
-				kvc_basetype_add_member (bt, mname, type_name, off, 0);
-				char *fname = r_str_newf ("%s.%s", sn, mname);
-				emit_func_args (kvc, fname, args);
-				free (fname);
-				// return type
-				r_strbuf_appendf (kvc->sb, "type.%s.%s=func\n", sn, mname);
-				r_strbuf_appendf (kvc->sb, "%s.%s=func\n", sn, mname);
-				r_strbuf_appendf (kvc->sb, "func.%s.%s.ret=%s\n", sn, mname, r_str_get_fail (rtype, "void"));
-				off += kvc_typesize (kvc, fulltype, 1);
-				{
-					r_strf_var (full_scope, 512, "%s.%s", sn, mname);
-					apply_attributes (kvc, "struct", full_scope);
-				}
-				free (type_name);
-				free (fulltype);
-				free (rtype);
-				free (args);
-				free (mname);
-				continue;
+		RStrs fn_name, fn_args;
+		char *rtype = NULL;
+		if (split_fnptr_member (member_type, &fn_name, &fn_args, &rtype)) {
+			char *mname = r_strs_tostring (fn_name);
+			char *args = collapse_whitespace (fn_args);
+			char *type_name = r_str_newf ("%s.%s", sn, mname);
+			if (!is_union) {
+				kvc_align_offset (kvc, &off, kvc->ptr_size);
 			}
+			kvc_basetype_add_member (bt, mname, type_name, off, 0);
+			emit_func_args (kvc, type_name, args);
+			r_strbuf_appendf (kvc->sb, "type.%s=func\n", type_name);
+			r_strbuf_appendf (kvc->sb, "%s=func\n", type_name);
+			r_strbuf_appendf (kvc->sb, "func.%s.ret=%s\n", type_name, r_str_get_fail (rtype, "void"));
+			if (!is_union) {
+				off += kvc->ptr_size;
+			}
+			apply_attributes (kvc, "struct", type_name);
+			free (type_name);
+			free (rtype);
+			free (args);
+			free (mname);
+			continue;
 		}
+
 		// Check for typedef aliases that represent function pointers
 		{
 			char *mt_check = r_strs_tostring (member_type);
@@ -1378,7 +1379,9 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 							kvc_align_offset (kvc, &off, kvc->ptr_size);
 						}
 						kvc_basetype_add_member (bt, mname, mt_check, off, 0);
-						off += kvc_typesize (kvc, tdef, 1);
+						if (!is_union) {
+							off += kvc_typesize (kvc, tdef, 1);
+						}
 						{
 							r_strf_var (full_scope, 512, "%s.%s", sn, mname);
 							apply_attributes (kvc, "struct", full_scope);

@@ -1,0 +1,50 @@
+NAME=struct callback can return a function pointer
+FILE=--
+ARGS=-b 64
+CMDS=<<EOF
+'td struct rea_callbacks { void (*(*xDlSym)(void *ctx, void *handle, const char *name))(void); int (*next)(int n); };
+tk struct.rea_callbacks
+tk struct.rea_callbacks.xDlSym
+tk struct.rea_callbacks.next
+tk~func.rea_callbacks
+EOF
+EXPECT=<<EOF
+xDlSym,next
+rea_callbacks.xDlSym,0,0
+rea_callbacks.next,8,0
+func.rea_callbacks.next=n
+func.rea_callbacks.next.arg.0=int,n
+func.rea_callbacks.next.args=1
+func.rea_callbacks.next.cc=cdecl
+func.rea_callbacks.next.ret=int
+func.rea_callbacks.xDlSym=ctx,handle,name
+func.rea_callbacks.xDlSym.arg.0=void *,ctx
+func.rea_callbacks.xDlSym.arg.1=void *,handle
+func.rea_callbacks.xDlSym.arg.2=const char *,name
+func.rea_callbacks.xDlSym.args=3
+func.rea_callbacks.xDlSym.cc=cdecl
+func.rea_callbacks.xDlSym.ret=void (*)(void)
+EOF
+RUN
+
+NAME=union callback members overlap and pointer spacing is optional
+FILE=--
+ARGS=-b 64
+CMDS=<<EOF
+'td union rea_callback_union { void*(*first)(int n); int (*second)(void); int value; };
+tk union.rea_callback_union
+tk union.rea_callback_union.first
+tk union.rea_callback_union.second
+tk union.rea_callback_union.value
+tk func.rea_callback_union.first.ret
+tk func.rea_callback_union.first.arg.0
+EOF
+EXPECT=<<EOF
+first,second,value
+rea_callback_union.first,0,0
+rea_callback_union.second,0,0
+int,0,0
+void*
+int,n
+EOF
+RUN
