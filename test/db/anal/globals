@@ -1214,3 +1214,97 @@ EXPECT=<<EOF
 [{"name":"global.0x2000","addr":8192,"size":8,"type":"uint64_t"}]
 EOF
 RUN
+
+NAME=Global discovery skips the synthetic got.r2 import slots
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+om 4 0x3000 64 64 rw .got.r2
+wx 488b042500200000488b042500300000c3 @ 0
+aar 32 @ 0
+avgj
+EOF
+EXPECT=<<EOF
+[{"name":"global.0x2000","addr":8192,"size":8,"type":"uint64_t"}]
+EOF
+RUN
+
+NAME=Global argument propagation skips the synthetic got.r2 import slots
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+om 4 0x3000 64 64 rw .got.r2
+wx 488b3c2500200000 @ 0
+wa call 0x80 @ 8
+wx 488b3c2500300000 @ 13
+wa call 0x80 @ 21
+wx c3 @ 26
+wx c3 @ 0x80
+af @ 0x80
+afn helper @ 0x80
+af @ 0
+afn caller @ 0
+afs int helper(char *message) @ 0x80
+aei
+aeim
+aaft
+avgj
+EOF
+EXPECT=<<EOF
+[{"name":"global.message.0x2000","addr":8192,"size":8,"type":"char *"}]
+EOF
+RUN
+
+NAME=Global pointer inference ignores values inside the first page
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+wv8 0x80 @ 0x2000
+wx 488b042500200000c3 @ 0
+aar 9 @ 0
+avgj
+avg- @ 0x2000
+wv8 0x2008 @ 0x2000
+aar 9 @ 0
+avgj
+EOF
+EXPECT=<<EOF
+[{"name":"global.0x2000","addr":8192,"size":8,"type":"uint64_t"}]
+[{"name":"global.0x2000","addr":8192,"size":8,"type":"void *"}]
+EOF
+RUN
+
+NAME=Automatic globals skip the got.r2 slot of a data import under bin.relocs.apply
+FILE=bins/elf/ppc64v1-more
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+af @ 0x4bf8
+aaef
+axt @ 0x303b8~?
+avg~0x303b8~?
+om~.got.r2~?
+EOF
+EXPECT=<<EOF
+2
+0
+1
+EOF
+RUN
+
+NAME=Automatic globals keep a TLS offset slot an integer under bin.relocs.apply
+FILE=bins/elf/libc-2.27.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+af @ 0x437d9
+aaef
+avg~0x3ead60
+pv8 @ 0x3ead60
+EOF
+EXPECT=<<EOF
+0x003ead60 8 global.0x3ead60 uint64_t
+0x0000000000000038
+EOF
+RUN
