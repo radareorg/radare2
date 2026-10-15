@@ -2116,3 +2116,16 @@ EXPECT=<<EOF
         x0 = pdc_scalar (0, "help")
 EOF
 RUN
+
+NAME=pdc recovers gettext calls from the gnome-extensions binary
+FILE=bins/elf/gnome-extensions
+CMDS=<<EOF
+af @ 0x3b40
+pdc @ 0x3b40~bind_textdomain_codeset
+pdc @ 0x3b40~strcmp:0
+EOF
+EXPECT=<<EOF
+    x0 = bind_textdomain_codeset ("gnome-shell", "UTF-8")
+        x0 = strcmp (x0, "help")
+EOF
+RUN

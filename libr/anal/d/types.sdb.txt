@@ -3033,6 +3033,12 @@ func.bindtextdomain.arg.0=char *,domainname
 func.bindtextdomain.arg.1=char *,dirname
 func.bindtextdomain.ret=char *
 
+bind_textdomain_codeset=func
+func.bind_textdomain_codeset.args=2
+func.bind_textdomain_codeset.arg.0=const char *,domainname
+func.bind_textdomain_codeset.arg.1=const char *,codeset
+func.bind_textdomain_codeset.ret=char *
+
 textdomain=func
 func.textdomain.args=1
 func.textdomain.arg.0=char *,domainname
