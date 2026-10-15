@@ -1004,7 +1004,7 @@ EXPECT=<<EOF
 - 6 fd: 4 +0x00000000 0x080000f4 - 0x080000fb rw- rw- .got.r2
     "sym_va": 134217972,
     "sym_va": 134217972,
-1   0x00000000 0x08000000 GLOBAL OBJ    8        cbuf
+1   ---------- ---------- GLOBAL OBJ    8        cbuf
 EOF
 RUN
 
@@ -1053,15 +1053,79 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ELF: common symbol listing is unchanged when relocs are not applied
+NAME=ELF: an unapplied common symbol states no address
 FILE=bins/elf/x86_64-common-sym.o
 ARGS=-e bin.relocs.apply=false
 CMDS=<<EOF
 irj~{}~sym_va
+is~cbuf
 EOF
 EXPECT=<<EOF
-    "sym_va": 134217728,
-    "sym_va": 134217728,
+1   ---------- ---------- GLOBAL OBJ    8        cbuf
+EOF
+RUN
+
+NAME=ELF: unapplied relocs keep their common symbol's name without an address
+FILE=bins/elf/x86_64-common-refs.o
+ARGS=-e bin.relocs.apply=false
+CMDS=<<EOF
+is~GLOBAL OBJ
+is*~counter
+irj~{}~"name",sym_va
+pd 9 @ sym.bump~RELOC
+EOF
+EXPECT=<<EOF
+3   ---------- ---------- GLOBAL OBJ  4        counter
+4   ---------- ---------- GLOBAL OBJ  32       table
+5   ---------- ---------- GLOBAL OBJ  64       big
+    "name": "counter",
+    "name": "counter",
+    "name": "table",
+    "name": "big",
+    "name": "counter",
+    "name": "counter",
+            0x08000044      8b0500000000   mov eax, dword [0x0800004a] ; [0x800004a:4]=0x8901508d; RELOC 32 counter - 0x800004a
+            0x0800004d      891500000000   mov dword [0x08000053], edx ; [0x8000053:4]=0x48c26348; RELOC 32 counter - 0x8000053
+            0x08000056      4889050000..   mov qword [0x0800005d], rax ; [0x800005d:8]=0x10000000005be0f; RELOC 32 table - 0x8000055
+            0x0800005d      0fbe050000..   movsx eax, byte [0x08000064] ; [0x8000064:1]=1; RELOC 32 big - 0x8000061
+EOF
+RUN
+
+NAME=ELF: applied relocs to one common symbol share its slot
+FILE=bins/elf/x86_64-common-refs.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+is~GLOBAL OBJ
+ir~counter
+irj~{}~"name",sym_va
+EOF
+EXPECT=<<EOF
+3   ---------- ---------- GLOBAL OBJ  4        counter
+4   ---------- ---------- GLOBAL OBJ  32       table
+5   ---------- ---------- GLOBAL OBJ  64       big
+0x08000046 0x00000046 ADD_32 2     counter - 0x0800004a
+0x0800004f 0x0000004f ADD_32 2     counter - 0x08000053
+0x0800006d 0x0000006d ADD_32 2     counter - 0x08000071
+0x08000078 0x00000078 ADD_32 2     counter - 0x0800007c
+0x080002b5 0x00000046 ADD_32 2     counter - 0x0800004a
+    "name": "counter",
+    "sym_va": 134218421,
+    "name": "counter",
+    "sym_va": 134218421,
+    "name": "table",
+    "sym_va": 134218429,
+    "name": "big",
+    "sym_va": 134218437,
+    "name": "counter",
+    "sym_va": 134218421,
+    "name": "counter",
+    "sym_va": 134218421,
+    "name": "counter",
+    "sym_va": 134218421,
+    "name": "table",
+    "sym_va": 134218429,
+    "name": "big",
+    "sym_va": 134218437,
 EOF
 RUN
 

@@ -2312,7 +2312,8 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 			pj_kn (pj, "ntype", reloc->ntype);
 			pj_kn (pj, "vaddr", addr);
 			pj_kn (pj, "paddr", reloc->paddr);
-			if (reloc->symbol) {
+			// an unplaced symbol (a common one before the link) has no address to state
+			if (reloc->symbol && reloc->symbol->vaddr != UT64_MAX) {
 				pj_kn (pj, "sym_va", symbol_addr (core->bin, reloc->symbol, va));
 			}
 			pj_kb (pj, "is_ifunc", reloc->is_ifunc);
@@ -3239,7 +3240,8 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 				}
 				lastfs = 's';
 			}
-			if (core->bin->prefix || *n) { // we don't want unnamed symbol flags
+			// no flag for an unnamed symbol, nor for one without an address
+			if ((core->bin->prefix || *n) && addr != UT64_MAX) {
 				char *flagname = construct_symbol_flagname (core, "sym", sn.libname, n);
 				if (!flagname) {
 					goto next;
