@@ -1021,6 +1021,131 @@ static const char *cached_bb_raw(PDCState *state, RAnalBlock *bb) {
 	return ht_up_find (state->bbtext, bb->addr, NULL);
 }
 
+static const char *call_args_end(const char *args) {
+	int depth = 1;
+	const char *p = args;
+	while (*p) {
+		if (*p == '"' || *p == '\'') {
+			p = skip_quoted (p);
+			continue;
+		}
+		if (*p == '(') {
+			depth++;
+		} else if (*p == ')' && !--depth) {
+			return p;
+		}
+		p++;
+	}
+	return NULL;
+}
+
+static bool promote_call_comment(RCore *core, RStrBuf *out, char *line) {
+	char *body = (char *)r_str_trim_head_ro (line);
+	if (r_str_startswith (body, "0x")) {
+		char *space = strchr (body, ' ');
+		body = space? (char *)r_str_trim_head_ro (space): body;
+	}
+	char *first = next_comment (body, NULL);
+	if (!first) {
+		return false;
+	}
+	const char *tail = first;
+	while (tail > body && IS_WHITECHAR (tail[-1])) {
+		tail--;
+	}
+	if (tail - body < 2 || strncmp (tail - 2, "()", 2)) {
+		return false;
+	}
+	char *comment;
+	for (comment = first; comment; comment = next_comment (comment + 4, NULL)) {
+		char *text = comment + 4;
+		char *open = strchr (text, '(');
+		char *next = next_comment (text, NULL);
+		if (!open || (next && open >= next)) {
+			continue;
+		}
+		char *name = open;
+		while (name > text && (isalnum ((ut8)name[-1]) || strchr ("_.$:", name[-1]))) {
+			name--;
+		}
+		if (name == open) {
+			continue;
+		}
+		char *callee = r_str_ndup (name, open - name);
+		if (!callee) {
+			return false;
+		}
+		const char *ret = r_type_func_ret (core->anal->sdb_types, callee);
+		char *prefix = r_str_ndup (text, name - text);
+		if (!prefix) {
+			free (callee);
+			return false;
+		}
+		r_str_trim (prefix);
+		bool valid = !*prefix || (ret && !strcmp (prefix, ret));
+		free (prefix);
+		const char *end = valid? call_args_end (open + 1): NULL;
+		const char *after = end? r_str_trim_head_ro (end + 1): NULL;
+		if (!end || (next && end >= next) || (next? after != next + 1: *after)) {
+			free (callee);
+			continue;
+		}
+		char *target = r_str_ndup (body, tail - body - 2);
+		if (!target) {
+			free (callee);
+			return false;
+		}
+		r_str_trim (target);
+		const char *base = r_str_startswith (target, "sym.imp.")? target + 8: target;
+		const char *bare = base;
+		while (*bare == '_') {
+			bare++;
+		}
+		r_strbuf_append_n (out, line, body - line);
+		r_strbuf_appendf (out, "%s (", !strcmp (bare, callee)? base: callee);
+		free (target);
+		free (callee);
+		if (end - open != 5 || strncmp (open + 1, "void", 4)) {
+			r_strbuf_append_n (out, open + 1, end - open - 1);
+		}
+		r_strbuf_append (out, ")");
+		char *previous;
+		for (previous = first; previous != comment; previous = next_comment (previous + 4, NULL)) {
+			const char *text = previous + 4;
+			if (!r_str_startswith (text, "0x") && !r_str_startswith (text, "sym.")
+					&& !r_str_startswith (text, "reloc.") && !r_str_startswith (text, "[0x")) {
+				char *last = next_comment (previous + 4, NULL);
+				r_strbuf_append_n (out, previous, last - previous);
+			}
+		}
+		r_strbuf_append (out, end + 1);
+		return true;
+	}
+	return false;
+}
+
+static char *promote_calls(RCore *core, char *code) {
+	RStrBuf *out = r_strbuf_new ("");
+	RList *lines = r_str_split_list (code, "\n", 0);
+	if (!lines) {
+		r_strbuf_free (out);
+		return code;
+	}
+	RListIter *iter;
+	char *line;
+	r_list_foreach (lines, iter, line) {
+		if (!promote_call_comment (core, out, line)) {
+			r_strbuf_append (out, line);
+		}
+		if (iter->n) {
+			r_strbuf_append (out, "\n");
+		}
+	}
+	r_list_free (lines);
+	free (code);
+	return r_strbuf_drain (out);
+}
+
 static char *fetch_bb_pseudo(PDCState *state, RAnalBlock *bb) {
 	const char *raw = cached_bb_raw (state, bb);
 	char *code = R_STR_ISEMPTY (raw)? NULL: strdup (raw);
@@ -1037,6 +1162,7 @@ static char *fetch_bb_pseudo(PDCState *state, RAnalBlock *bb) {
 	}
 	code[len - 1] = 0;
 	find_and_change (code, len);
+	code = promote_calls (state->core, code);
 	return fold_resolved_refs (state->core, code);
 }
 
@@ -2848,6 +2974,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 		s = comments_to_c (s);
 		s = r_str_replace (s, "goto ", "// goto loc_", true);
 		s = cleancomments (s);
+		s = promote_calls (core, s);
 		s = fold_resolved_refs (core, s);
 		if (state.show_asm) {
 			RList *rows = r_str_split_list (s, "\n", 0);
