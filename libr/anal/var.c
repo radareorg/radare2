@@ -1670,11 +1670,14 @@ static inline bool same_reg(const RRegItem *a, const RRegItem *b) {
 }
 
 // the variable of an fp slot, whichever of its spellings it was created at
-static RAnalVar *fparg_var(RAnal *anal, RAnalFunction *fcn, const char *loc) {
+static RAnalVar *fparg_var(RAnal *anal, RAnalFunction *fcn, const RRegItem *reg) {
 	RAnalVar **it;
 	R_VEC_FOREACH (&fcn->vars, it) {
 		RAnalVar *var = *it;
-		if (var->kind == R_ANAL_VAR_KIND_REG && r_anal_cc_location_uses (anal, loc, var->regname)) {
+		RRegItem *ri = var->kind == R_ANAL_VAR_KIND_REG? r_reg_get (anal->reg, var->regname, -1): NULL;
+		const bool same = same_reg (ri, reg);
+		r_unref (ri);
+		if (same) {
 			return var;
 		}
 	}
@@ -1689,7 +1692,6 @@ typedef struct {
 	ut64 from;
 	int budget;
 	int bits;
-	bool callee_saved;
 	bool dst_writeonly;
 } FpCopyWalk;
 
@@ -1720,9 +1722,12 @@ static int copy_read_bits(FpCopyWalk *w, RAnalOp *op, bool *ends) {
 		}
 		r_unref (ri);
 	}
-	const bool call = type == R_ANAL_OP_TYPE_CALL || type == R_ANAL_OP_TYPE_UCALL
-		|| type == R_ANAL_OP_TYPE_CCALL || type == R_ANAL_OP_TYPE_UCCALL;
-	*ends |= call && !w->callee_saved;
+	const int calltype = op->type & 0xffff;
+	if (calltype == R_ANAL_OP_TYPE_CALL || calltype == R_ANAL_OP_TYPE_UCALL) {
+		const char *cc = r_anal_call_convention (w->anal, op);
+		const char *preserves = cc? r_anal_cc_regset (w->anal, cc, true): NULL;
+		*ends |= !r_anal_cc_location_in_regset (w->anal, w->copy->name, preserves, false);
+	}
 	return bits;
 }
 
@@ -1761,7 +1766,6 @@ static int copied_read_bits(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const 
 	};
 	const bool whole = w.copy && w.copy->size == src->size && w.copy->arena == src->arena && !same_reg (w.copy, src);
 	if (w.first && whole) {
-		w.callee_saved = r_anal_cc_ispreserved (anal, fcn->callconv, copy);
 		r_anal_block_recurse_followthrough (w.first, fp_copy_block_cb, &w);
 	}
 	r_unref (w.copy);
@@ -2058,20 +2062,21 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		// only a location with several spellings of the slot can show a width
 		const char *argreg = is_arg && fp && *regname == '{'? reguse_regname_for_loc (anal, op, regname, opdreg): NULL;
 		RRegItem *ari = argreg? r_reg_get (anal->reg, argreg, -1): NULL;
-		int fpbits = ari? ari->size: 64;
-		if (ari && ari->size > 64 && (op->type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_MOV) {
-			const bool fresh = (reg_set[slot] & 3) != 1 && dst && !dst->memref;
-			const int bits = fresh? copied_read_bits (anal, fcn, op, ari, opdreg, op_dst_writeonly): 0;
-			fpbits = bits > 0? bits: 64;
+		if (is_arg) {
+			var = ari? fparg_var (anal, fcn, ari): r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, delta);
 		}
-		if (ari) {
+		int fpbits = ari? ari->size: 64;
+		if (ari && !var) {
+			if (ari->size > 64 && (op->type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_MOV) {
+				const bool fresh = (reg_set[slot] & 3) != 1 && dst && !dst->memref;
+				const int bits = fresh? copied_read_bits (anal, fcn, op, ari, opdreg, op_dst_writeonly): 0;
+				fpbits = bits > 0? bits: 64;
+			}
 			RRegItem *alias = r_reg_get_at (anal->reg, ari->type, fpbits, BITS2BYTES (ari->offset));
 			delta = alias? alias->index: ari->index;
 		}
 		r_unref (ari);
-		if (is_arg && (reg_set[slot] & 3) == 1) {
-			var = argreg? fparg_var (anal, fcn, regname): r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, delta);
-		} else if (is_arg) {
+		if (is_arg && (reg_set[slot] & 3) != 1) {
 			const char *vname = NULL;
 			char *type = NULL;
 			char *name = NULL;
@@ -2085,7 +2090,6 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				name = r_str_newf ("arg%d", fp? max_count + n + 1: n + 1);
 				vname = name;
 			}
-			var = argreg? fparg_var (anal, fcn, regname): r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, delta);
 			if (!var) {
 				var = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG,
 					type? type: argreg? fparg_type (fpbits): deftype, argreg? BITS2BYTES (fpbits): regsize, true, vname);
@@ -2096,7 +2100,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			free (name);
 			free (type);
 			(*count)++;
-		} else {
+		} else if (!is_arg) {
 			if (!partial && (in_src || in_dst)) {
 				reg_set[slot] = 2;
 			}

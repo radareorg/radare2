@@ -447,6 +447,29 @@ arg double arg1 @ d0
 EOF
 RUN
 
+NAME=arm64 copied float width follows the callee calling convention
+FILE=malloc://128
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 081ca04e070000940029281ec0035fd6 @ 0
+wx 2800679ec0035fd6 @ 0x20
+wx 081ca04e070000940029281ec0035fd6 @ 0x40
+wx c0035fd6 @ 0x60
+af @ 0x20
+afc golang @ 0x20
+af @ 0x60
+af @ 0
+afv @ 0
+e anal.cc=golang
+af @ 0x40
+afv @ 0x40
+EOF
+EXPECT=<<EOF
+arg double arg1 @ d0
+arg float arg1 @ s0
+EOF
+RUN
+
 NAME=arm64 fp arithmetic, conversions and compares read and write their registers
 FILE=malloc://512
 ARGS=-a arm -b 64
