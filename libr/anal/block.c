@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2019-2025 - pancake, thestr4ng3r */
 
-#include <r_anal.h>
+#include <r_anal_priv.h>
 #include <r_hash.h>
 #include <r_core.h>
 
@@ -65,6 +65,9 @@ static void block_free(RAnalBlock *bb) {
 	}
 	RAnal *anal = bb->anal;
 	if (anal) {
+		if (R_ANAL_PRIV (anal)->reg_usage) {
+			ht_up_delete (R_ANAL_PRIV (anal)->reg_usage, (ut64)(size_t)bb);
+		}
 		r_rbtree_aug_delete (&anal->bb_tree, &bb->addr, __bb_addr_cmp, NULL, NULL, NULL, __max_end);
 	}
 	free (bb->esil);

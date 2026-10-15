@@ -2664,43 +2664,19 @@ R_API char *r_anal_function_format_sig(RAnal * R_NONNULL anal, RAnalFunction * R
 		r_anal_function_vars_cache_init (anal, cache, fcn);
 	}
 
-	size_t tmp_len;
-	RAnalVar *var;
-	RAnalVar **it;
-
-	R_VEC_FOREACH (cache->rvars, it) {
-		var = *it;
-		if (r_anal_var_is_abi_role (var)) {
-			continue;
-		}
-		tmp_len = strlen (var->type);
-		if (tmp_len > 0) {
-			r_strbuf_appendf (buf, "%s%s%s%s", comma, var->type,
-				tmp_len && var->type[tmp_len - 1] == '*' ? "" : " ",
-				var->name);
-			comma = ", ";
-		}
-	}
-	R_VEC_FOREACH (cache->bvars, it) {
-		var = *it;
-		if (var->isarg) {
-			tmp_len = strlen (var->type);
-			if (tmp_len > 0) {
-				r_strbuf_appendf (buf, "%s%s%s%s", comma, var->type,
-						tmp_len && var->type[tmp_len - 1] == '*' ? "" : " ",
-						var->name);
-				comma = ", ";
+	RVecAnalVarPtr *groups[] = { cache->rvars, cache->bvars, cache->svars };
+	int kind;
+	for (kind = 0; kind < R_ARRAY_SIZE (groups); kind++) {
+		RAnalVar **it;
+		R_VEC_FOREACH (groups[kind], it) {
+			RAnalVar *var = *it;
+			if (kind? !var->isarg: r_anal_var_is_abi_role (var)) {
+				continue;
 			}
-		}
-	}
-	R_VEC_FOREACH (cache->svars, it) {
-		var = *it;
-		if (var->isarg) {
-			tmp_len = strlen (var->type);
-			if (tmp_len > 0) {
+			size_t len = strlen (var->type);
+			if (len > 0) {
 				r_strbuf_appendf (buf, "%s%s%s%s", comma, var->type,
-					tmp_len && var->type[tmp_len - 1] == '*'? "": " ",
-					var->name);
+					var->type[len - 1] == '*'? "": " ", var->name);
 				comma = ", ";
 			}
 		}

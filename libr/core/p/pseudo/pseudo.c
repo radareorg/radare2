@@ -2047,56 +2047,6 @@ static RAnalBlock *render_loop_while(PDCState *state, RAnalBlock *test_bb, RList
 	return r_anal_bb_from_offset (state->core->anal, test_bb->fail);
 }
 
-static int pdc_argnum_cmp(RAnalVar *const *a, RAnalVar *const *b) {
-	return r_anal_var_get_argnum (*a) - r_anal_var_get_argnum (*b);
-}
-
-// "type name, type name, ..." for the true args (isarg) ordered by argnum
-static char *pdc_signature_args(RAnal *anal, RAnalFunction *fcn) {
-	RVecAnalVarPtr *vars = r_anal_function_vars (anal, fcn);
-	if (!vars) {
-		return NULL;
-	}
-	RVecAnalVarPtr_sort (vars, pdc_argnum_cmp);
-	RStrBuf *sb = r_strbuf_new ("");
-	RAnalVar **it;
-	bool first = true;
-	R_VEC_FOREACH (vars, it) {
-		RAnalVar *var = *it;
-		if (!var->isarg) {
-			continue;
-		}
-		const char *nm = R_STR_ISNOTEMPTY (var->name)? var->name: var->regname;
-		const char *ty = R_STR_ISNOTEMPTY (var->type)? var->type: "int";
-		r_strbuf_appendf (sb, "%s%s %s", first? "": ", ", ty, nm? nm: "arg");
-		first = false;
-	}
-	RVecAnalVarPtr_free (vars);
-	return r_strbuf_drain (sb);
-}
-
-static char *pdc_return_type(const char *fs, const char *name) {
-	if (R_STR_ISEMPTY (fs)) {
-		return NULL;
-	}
-	const char *paren = strchr (fs, '(');
-	const char *nm = NULL;
-	const char *p = fs;
-	while ((p = strstr (p, name))) {
-		if (paren && p >= paren) {
-			break;
-		}
-		nm = p;
-		p += strlen (name);
-	}
-	if (!nm || nm == fs) {
-		return NULL;
-	}
-	char *ret = r_str_ndup (fs, nm - fs);
-	r_str_trim (ret);
-	return ret;
-}
-
 // the switch header is the one opener with a trailing comment; a '{' anywhere
 // else in a line is data, as in the label of case 123
 static bool pdc_line_opens_brace(const char *line) {
@@ -2773,9 +2723,9 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 		PRINTF ("\n");
 	}
 
-	char *fs = r_core_cmd_strf (core, "afs@0x%08" PFMT64x, state.fcn->addr);
+	char *fs = r_anal_function_get_signature_string (state.fcn);
 	{
-		char *cc = r_core_cmd_strf (core, "afci@0x%08" PFMT64x, state.fcn->addr);
+		char *cc = fcncc? r_anal_cc_get (core->anal, fcncc): NULL;
 		r_str_trim (cc);
 		if (R_STR_ISNOTEMPTY (cc)) {
 			if (state.show_addr || state.show_asm) {
@@ -2788,18 +2738,13 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 	if (state.show_addr || state.show_asm) {
 		print_pipe_header (&state, state.fcn->addr);
 	}
-	if (R_STR_ISNOTEMPTY (fs) && !(r_str_startswith (fs, "void") && strstr (fs, "()"))) {
-		// afs carries a real prototype (named/typed args): use it verbatim
+	if (R_STR_ISNOTEMPTY (fs)) {
+		fs = r_str_replace (fs, " ()", " (void)", false);
 		r_str_replace_char (fs, ';', ' ');
 		r_str_trim (fs);
 		PRINTF ("%s {", fs);
 	} else {
-		char *params = pdc_signature_args (core->anal, state.fcn);
-		char *rettype = pdc_return_type (fs, state.fcn->name);
-		PRINTF ("%s %s (%s) {", R_STR_ISNOTEMPTY (rettype)? rettype: "int", state.fcn->name,
-			R_STR_ISNOTEMPTY (params)? params: "void");
-		free (params);
-		free (rettype);
+		PRINTF ("int %s (void) {", state.fcn->name);
 	}
 	free (fs);
 	indent++;
