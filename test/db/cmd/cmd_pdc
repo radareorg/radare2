@@ -270,12 +270,12 @@ void sym.func.100003a54 (int64_t arg1, int64_t arg2) {
             x8 = x1 + 0x68 // arg2
             x1 = x0 + 0x68 // arg1
             x0 = x8
-            return strcoll ("", "");
+            return strcoll (x0, x1);
         }
     }
 }
 
-        return strcoll ("", "");
+        return strcoll (x0, x1);
 EOF
 RUN
 
@@ -346,7 +346,7 @@ EXPECT=<<EOF
  0x100003a80 |             x8 = x1 + 0x68 // arg2
  0x100003a84 |             x1 = x0 + 0x68 // arg1
  0x100003a88 |             x0 = x8
- 0x100003a8c |             return strcoll ("", "");
+ 0x100003a8c |             return strcoll (x0, x1);
  0x100003a74 |         }
  0x100003a68 |     }
  0x100003a8c | }
@@ -2109,11 +2109,15 @@ pdc @ 0~strcmp
 fr sym.imp.strcmp sym.imp.pdc_scalar
 td int pdc_scalar(int category, const char *name);
 pdc @ 0~pdc_scalar
+td typedef void *PdcPointer;
+td int pdc_scalar(PdcPointer context, const char *name);
+pdc @ 0~pdc_scalar
 EOF
 EXPECT=<<EOF
     x0 = strcmp (x0, "help")
         x0 = strcmp (x0, "help")
         x0 = pdc_scalar (0, "help")
+        x0 = pdc_scalar (x0, "help")
 EOF
 RUN
 
@@ -2127,5 +2131,66 @@ EOF
 EXPECT=<<EOF
     x0 = bind_textdomain_codeset ("gnome-shell", "UTF-8")
         x0 = strcmp (x0, "help")
+EOF
+RUN
+
+NAME=pdc resolves GLib strings and preserves runtime GObject pointers
+FILE=bins/elf/gnome-extensions
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+af @ 0x5084
+pdc @ 0x5084~g_object_get_data,g_strcmp0
+e pdc.structured=false
+pdc @ 0x5084~g_object_get_data,g_strcmp0
+EOF
+EXPECT=<<EOF
+    x0 = g_object_get_data (x0, "desktop-id")
+    x0 = g_object_get_data (x0, "desktop-id")
+    return g_strcmp0 (x0, x1);
+        x0 = g_object_get_data (x0, "desktop-id")
+        x0 = g_object_get_data (x0, "desktop-id")
+        return g_strcmp0 (x0, x1);
+EOF
+RUN
+
+NAME=pdc resolves chained scalar and string pointer typedefs
+FILE=malloc://4096
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wa adr x0, 0x100 @ 0
+wa mov w1, 5 @ 4
+wa bl 0x200 @ 8
+wa ret @ 12
+wx 68656c6c6f00 @ 0x100
+td typedef char Letter;
+td typedef Letter Glyph;
+td typedef const Glyph *Message;
+td typedef unsigned int Count;
+td int pdc_alias(Message text, Count count);
+f sym.imp.pdc_alias @ 0x200
+af @ 0
+pdc @ 0~pdc_alias
+EOF
+EXPECT=<<EOF
+    x0 = pdc_alias ("hello", 5)
+EOF
+RUN
+
+NAME=pdc preserves readable empty string arguments
+FILE=malloc://4096
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wa adr x0, 0x100 @ 0
+wa adr x1, 0x120 @ 4
+wa bl 0x200 @ 8
+wa ret @ 12
+wx 00 @ 0x100
+wx 686900 @ 0x120
+f sym.imp.strcmp @ 0x200
+af @ 0
+pdc @ 0~strcmp
+EOF
+EXPECT=<<EOF
+    x0 = strcmp ("", "hi")
 EOF
 RUN
