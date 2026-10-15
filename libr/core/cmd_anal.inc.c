@@ -494,6 +494,7 @@ static RCoreHelpMessage help_msg_aea = {
 	"aeae", "  [esil]", "show regs/memory accesses used the given expression",
 	"aea*", " [ops]", "create mem.* flags for memory accesses",
 	"aeab", "", "show regs used in current basic block",
+	"aeaB", " [addr]", "show regs used in the basic block containing addr",
 	"aeaf", "", "show regs used in current function",
 	"aear", " [ops]", "show regs read in N instructions",
 	"aeaw", " [ops]", "show regs written in N instructions",
@@ -10010,9 +10011,10 @@ static void cmd_aea(RCore *core, const char *input, bool maxbytes) {
 			RAnalBlock *b;
 			RListIter *iter;
 			r_list_foreach (l, iter, b) {
-				cmd_aea_stuff (core, json? 'j': 0, b->addr, b->size, NULL, maxbytes);
+				cmd_aea_stuff (core, json? 'j': 0, b->addr, b->size, NULL, true);
 				break;
 			}
+			r_list_free (l);
 		}
 		break;
 	case 'f': // "aeaf"
@@ -10021,10 +10023,10 @@ static void cmd_aea(RCore *core, const char *input, bool maxbytes) {
 			if (fcn) {
 				switch (input[2]) {
 				case 'j': // "aeafj"
-					cmd_aea_stuff (core, 'j', r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn), NULL, maxbytes);
+					cmd_aea_stuff (core, 'j', r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn), NULL, true);
 					break;
 				default:
-					cmd_aea_stuff (core, 0, r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn), NULL, maxbytes);
+					cmd_aea_stuff (core, 0, r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn), NULL, true);
 					break;
 				}
 				break;
@@ -10036,10 +10038,10 @@ static void cmd_aea(RCore *core, const char *input, bool maxbytes) {
 		if (bb) {
 			switch (input[2]) {
 			case 'j': // "aeabj"
-				cmd_aea_stuff (core, 'j', bb->addr, bb->size, NULL, maxbytes);
+				cmd_aea_stuff (core, 'j', bb->addr, bb->size, NULL, true);
 				break;
 			default:
-				cmd_aea_stuff (core, 0, bb->addr, bb->size, NULL, maxbytes);
+				cmd_aea_stuff (core, 0, bb->addr, bb->size, NULL, true);
 				break;
 			}
 		}
