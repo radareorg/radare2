@@ -1020,6 +1020,7 @@ typedef struct {
 	bool is_dalvik;
 	bool is_stm8;
 	bool walk_depth; // a fresh function's walk, so fcn->stack is trustworthy
+	ReadAhead ra; // one cache for the walk, so a block inside the last read reads no io
 } FcnWalk;
 
 // Schedule a block to be scanned once the current one finishes. False means the
@@ -1125,8 +1126,7 @@ static void fcn_scan(FcnWalk *w, ut64 addr) {
 	RAnalFunction *fcn = w->fcn;
 	const ut64 len = w->len;
 	const char *variadic_reg = NULL;
-	ReadAhead ra_storage;
-	ReadAhead *ra = NULL;
+	ReadAhead *ra = &w->ra;
 	const char *bp_reg = NULL;
 	const char *sp_reg = NULL;
 	char op_dst_buf[32];
@@ -1310,10 +1310,6 @@ static void fcn_scan(FcnWalk *w, ut64 addr) {
 	}
 	bool has_variadic_reg = !!variadic_reg;
 	const bool nopskip = w->nopskip;
-	memset (&ra_storage, 0, sizeof (ra_storage));
-	ra = &ra_storage;
-	ra->cache_addr = UT64_MAX; // invalidate the cache
-
 	RAnalOp op_storage;
 	r_anal_op_init (&op_storage);
 	op = &op_storage;
@@ -1864,6 +1860,8 @@ noskip:
 					/// XXX RAnalFunction *fcn = r_anal_function_new (anal, op->jump);
 					RAnalFunction *nfcn = r_anal_create_function (anal, NULL, op->jump, 0, NULL);
 					r_anal_function (anal, nfcn? nfcn: fcn, op->jump, R_ANAL_REF_TYPE_CALL);
+					// cmd.fcn.new may have written io, so the next block reads it again
+					w->ra.cache_addr = UT64_MAX;
 #endif
 					gotoBeach (R_ANAL_RET_END);
 				}
@@ -2514,6 +2512,7 @@ static int fcn_walk(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, bool f
 	w.is_dalvik = w.is_x86 ? false : arch && !strncmp (arch, "dalvik", 6);
 	w.is_stm8 = (w.is_x86 || w.is_arm || w.is_dalvik || w.is_mips) ? false : arch && r_str_startswith (arch, "stm8");
 	w.walk_depth = r_list_empty (fcn->bbs);
+	w.ra.cache_addr = UT64_MAX;
 	RVecWalkFrame_init (&w.frames);
 	fcn_scan (&w, addr);
 	while (!RVecWalkFrame_empty (&w.frames)) {
