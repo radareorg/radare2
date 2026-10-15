@@ -38,6 +38,8 @@ extern SdbGperf gperf_types_arm_ios_16;
 extern SdbGperf gperf_types_arm_ios_32;
 extern SdbGperf gperf_types_arm_ios_64;
 extern SdbGperf gperf_types_darwin;
+extern SdbGperf gperf_types_darwin_32;
+extern SdbGperf gperf_types_darwin_64;
 extern SdbGperf gperf_types_linux;
 extern SdbGperf gperf_types_x86_macos_64;
 extern SdbGperf gperf_types;
@@ -84,6 +86,8 @@ static const SdbGperf *gperfs_types[] = {
 	&gperf_types_arm_ios_32,
 	&gperf_types_arm_ios_64,
 	&gperf_types_darwin,
+	&gperf_types_darwin_32,
+	&gperf_types_darwin_64,
 	&gperf_types_linux,
 	&gperf_types_x86_macos_64,
 	&gperf_types,

@@ -94,6 +94,7 @@ static void load_type_bundle(RAnal *anal, const char *names, Sdb *loaded) {
 		}
 		if (state == 1) {
 			load_types_from (anal, "%s", name);
+			load_types_from (anal, "%s-%d", name, anal->config->bits);
 			sdb_num_set (loaded, name, 2, 0);
 			free (r_list_pop_head (pending));
 			continue;

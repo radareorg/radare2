@@ -34,6 +34,8 @@ sdb_files = [
   'types-index',
   'types-jni',
   'types-darwin',
+  'types-darwin-32',
+  'types-darwin-64',
   'types-iokit',
   'types-linux',
   'types',
