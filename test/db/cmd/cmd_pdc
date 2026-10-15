@@ -13,6 +13,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pdc preserves comment punctuation in string arguments
+FILE=malloc://4096
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 000800107f000094c0035fd6 @ 0
+f sym.imp.puts @ 0x200
+wx 61203b2062202f2f206300 @ 0x100
+af @ 0
+pdc @ 0~puts
+EOF
+EXPECT=<<EOF
+    sym.imp.puts () // int puts("a ; b // c")
+EOF
+RUN
+
 NAME=pdc dedup dalvik call comments
 FILE=bins/dex/HelloWorld.dex
 CMDS=<<EOF

@@ -161,6 +161,21 @@ static void swap_strings(RFindCTX *ctx) {
 	free (copy);
 }
 
+static const char *skip_quoted(const char *s) {
+	const char quote = *s++;
+	while (*s && *s != '\n') {
+		if (*s == quote) {
+			return s + 1;
+		}
+		if (*s == '\\' && s[1]) {
+			s++;
+		}
+		s++;
+	}
+	return s;
+}
+
+
 // r2 renders comments as "<whitespace>; text", arch pseudo templates emit ';' with no space before it
 static bool is_comment_semicolon(const char *begin, const char *p) {
 	return *p == ';' && (p == begin || IS_WHITECHAR (p[-1]));
@@ -174,6 +189,10 @@ static void find_and_change(char *in, int len) {
 	char *start = in;
 	char *end = in + len;
 	for (ctx.linebegin = in; in < end; in++) {
+		if (!ctx.comment && (*in == '"' || *in == '\'')) {
+			in = (char *)skip_quoted (in) - 1;
+			continue;
+		}
 		if (*in == '\n' || !*in) {
 			if (ctx.type == TYPE_SYM && ctx.linecount < 1) {
 				ctx.linecount++;
@@ -475,9 +494,19 @@ static void remove_double_spaces(char *s) {
 	}
 }
 
+
 static char *next_comment(char *s, char *line_end) {
-	char *next = strstr (s, " // ");
-	return next && (!line_end || next < line_end)? next: NULL;
+	while (*s && (!line_end || s < line_end)) {
+		if (*s == '"' || *s == '\'') {
+			s = (char *)skip_quoted (s);
+			continue;
+		}
+		if (r_str_startswith (s, " // ")) {
+			return s;
+		}
+		s++;
+	}
+	return NULL;
 }
 
 static void dedup_comments(char *s) {
@@ -528,7 +557,9 @@ static char *comments_to_c(char *s) {
 	const char *chunk = s;
 	const char *p;
 	for (p = s; *p; p++) {
-		if (is_comment_semicolon (s, p)) {
+		if (*p == '"' || *p == '\'') {
+			p = skip_quoted (p) - 1;
+		} else if (is_comment_semicolon (s, p)) {
 			r_strbuf_append_n (sb, chunk, p - chunk);
 			r_strbuf_append (sb, "//");
 			chunk = p + 1;
@@ -545,7 +576,10 @@ static char *cleancomments(char *s) {
 	int spaces = 0;
 	bool ispfx = false;
 	while (*p) {
-		if (*p == '\n') {
+		if (*p == '"' || *p == '\'') {
+			p = (char *)skip_quoted (p);
+			continue;
+		} else if (*p == '\n') {
 			nl = p;
 			spaces = 0;
 			ispfx = true;
