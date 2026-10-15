@@ -616,7 +616,6 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_FICOMP:
 	case X86_INS_FINCSTP:
 	case X86_INS_FNCLEX:
-	case X86_INS_FNINIT:
 	case X86_INS_FNSTCW:
 	case X86_INS_FNSTSW:
 	case X86_INS_FPATAN:
@@ -664,6 +663,12 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			}
 			free (src);
 		}
+		break;
+	case X86_INS_FNINIT:
+		// the default control word, everything else cleared; ftw is fxsave's abridged tag, 0 = all empty
+		esilprintf (op, "0x37f,cwd,=,0,swd,=,0,ftw,=,0,fop,=,%s", (bits == 64)
+			? "0,frip,=,0,frdp,="
+			: "0,fip,=,0,fcs,=,0,foo,=,0,fos,=");
 		break;
 	case X86_INS_FLD1:
 		esilprintf (op,
