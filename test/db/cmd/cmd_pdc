@@ -36,7 +36,7 @@ wx 000800107f000094c0035fd6 @ 0
 f sym.imp.puts @ 0x200
 wx 61202862292c2022203b202f2f206300 @ 0x100
 af @ 0
-CCu user note @ 4
+CCu base64:dXNlcidzIG5vdGU= @ 4
 pdc @ 0~puts
 e pdc.structured=false
 pdc @ 0~puts
@@ -46,11 +46,11 @@ pdca @ 0~puts
 CC. @ 4
 EOF
 EXPECT=<<EOF
-    x0 = puts ("a (b), \" ; // c") // user note
-        x0 = puts ("a (b), \" ; // c") // user note
- 0x00000004 |         x0 = puts ("a (b), \" ; // c") // user note
- 0x00000004 | bl sym.imp.puts                |         x0 = puts ("a (b), \" ; // c") // user note
-x0 = puts ("a (b), \" ; // c") // user note
+    x0 = puts ("a (b), \" ; // c") // user's note
+        x0 = puts ("a (b), \" ; // c") // user's note
+ 0x00000004 |         x0 = puts ("a (b), \" ; // c") // user's note
+ 0x00000004 | bl sym.imp.puts                |         x0 = puts ("a (b), \" ; // c") // user's note
+x0 = puts ("a (b), \" ; // c") // user's note
 EOF
 RUN
 

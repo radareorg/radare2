@@ -175,6 +175,9 @@ static const char *skip_quoted(const char *s) {
 	return s;
 }
 
+static bool starts_quoted(const char *begin, const char *p) {
+	return *p == '"' || (*p == '\'' && (p == begin || (!isalnum ((ut8)p[-1]) && p[-1] != '_')));
+}
 
 // r2 renders comments as "<whitespace>; text", arch pseudo templates emit ';' with no space before it
 static bool is_comment_semicolon(const char *begin, const char *p) {
@@ -189,7 +192,7 @@ static void find_and_change(char *in, int len) {
 	char *start = in;
 	char *end = in + len;
 	for (ctx.linebegin = in; in < end; in++) {
-		if (!ctx.comment && (*in == '"' || *in == '\'')) {
+		if (!ctx.comment && starts_quoted (start, in)) {
 			in = (char *)skip_quoted (in) - 1;
 			continue;
 		}
@@ -494,10 +497,10 @@ static void remove_double_spaces(char *s) {
 	}
 }
 
-
 static char *next_comment(char *s, char *line_end) {
+	const char *begin = s;
 	while (*s && (!line_end || s < line_end)) {
-		if (*s == '"' || *s == '\'') {
+		if (starts_quoted (begin, s)) {
 			s = (char *)skip_quoted (s);
 			continue;
 		}
@@ -557,7 +560,7 @@ static char *comments_to_c(char *s) {
 	const char *chunk = s;
 	const char *p;
 	for (p = s; *p; p++) {
-		if (*p == '"' || *p == '\'') {
+		if (starts_quoted (s, p)) {
 			p = skip_quoted (p) - 1;
 		} else if (is_comment_semicolon (s, p)) {
 			r_strbuf_append_n (sb, chunk, p - chunk);
@@ -576,7 +579,7 @@ static char *cleancomments(char *s) {
 	int spaces = 0;
 	bool ispfx = false;
 	while (*p) {
-		if (*p == '"' || *p == '\'') {
+		if (starts_quoted (s, p)) {
 			p = (char *)skip_quoted (p);
 			continue;
 		} else if (*p == '\n') {
