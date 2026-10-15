@@ -928,3 +928,21 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=af reads a block again after cmd.fcn.new writes it
+FILE=malloc://256
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 7401c3e918000000cc @ 0
+wx 554889e5c3 @ 0x20
+"e cmd.fcn.new=wx 90c3 @ $$-0x1e"
+af @ 0
+afb @ 0
+EOF
+EXPECT=<<EOF
+0x00000000 0x00000002 00:0000 2 j 0x00000003 f 0x00000002
+0x00000002 0x00000003 00:0000 1 j 0x00000003
+0x00000003 0x00000008 00:0000 5 j 0x00000020
+EOF
+RUN
