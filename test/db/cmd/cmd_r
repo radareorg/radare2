@@ -20,6 +20,65 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=r+ keeps the end of the file
+FILE=malloc://8
+CMDS=<<EOF
+wx 6162636465666768
+r+2 @ 3
+r
+p8 10 @e:io.va=0
+r-2 @ 3
+r
+p8 8
+EOF
+EXPECT=<<EOF
+10
+61626364656465666768
+8
+6162636465666768
+EOF
+RUN
+
+NAME=r+ and r- at a mapped address
+FILE=malloc://8
+ARGS=-m 0x1000
+CMDS=<<EOF
+wx 6162636465666768 @ 0x1000
+r+2 @ 0x1003
+r
+p8 10 @ 0 @e:io.va=0
+r-2 @ 0x1003
+r
+p8 8 @ 0 @e:io.va=0
+EOF
+EXPECT=<<EOF
+10
+61626364656465666768
+8
+6162636465666768
+EOF
+RUN
+
+NAME=r+ and r- below the file size at a mapped address
+FILE=malloc://8
+ARGS=-m 4
+CMDS=<<EOF
+wx 6162636465666768 @ 4
+r+2 @ 7
+r
+p8 10 @ 0 @e:io.va=0
+r-2 @ 7
+r
+p8 8 @ 0 @e:io.va=0
+EOF
+EXPECT=<<EOF
+10
+61626364656465666768
+8
+6162636465666768
+EOF
+RUN
+
 NAME=r
 FILE=malloc://512
 CMDS=r
