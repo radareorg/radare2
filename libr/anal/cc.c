@@ -1366,7 +1366,8 @@ R_IPI int r_anal_cc_stack_pop(RAnal *anal, const char *convention) {
 	return cc_parse_stack_pop (pop, &ret)? ret: 0;
 }
 
-static const char *cc_regset(RAnal *anal, const char *convention, bool preserve) {
+R_IPI const char *r_anal_cc_regset(RAnal *anal, const char *convention, bool preserve) {
+	R_RETURN_VAL_IF_FAIL (anal && convention, NULL);
 	const ut8 known = 1u << preserve;
 	RAnalCCInfo *ci = cc_info (anal, convention);
 	if (ci && (ci->known & known)) {
@@ -1542,8 +1543,8 @@ R_API bool r_anal_cc_argclob(RAnal *anal, const char *caller_cc, int n, const ch
 	if (!loc) {
 		return false;
 	}
-	const char *clobbers = callee_cc? cc_regset (anal, callee_cc, false): NULL;
-	const char *preserves = callee_cc? cc_regset (anal, callee_cc, true): NULL;
+	const char *clobbers = callee_cc? r_anal_cc_regset (anal, callee_cc, false): NULL;
+	const char *preserves = callee_cc? r_anal_cc_regset (anal, callee_cc, true): NULL;
 	if (R_STR_ISNOTEMPTY (clobbers)) {
 		return r_anal_cc_location_in_regset (anal, loc, clobbers, false)
 			&& !r_anal_cc_location_in_regset (anal, loc, preserves, true);
@@ -1553,18 +1554,12 @@ R_API bool r_anal_cc_argclob(RAnal *anal, const char *caller_cc, int n, const ch
 
 R_API bool r_anal_cc_isclobber(RAnal *anal, const char *cc, const char *reg) {
 	R_RETURN_VAL_IF_FAIL (anal && cc && reg, false);
-	const char *clobbers = cc_regset (anal, cc, false);
+	const char *clobbers = r_anal_cc_regset (anal, cc, false);
 	if (R_STR_ISEMPTY (clobbers) || !r_anal_cc_regset_contains (clobbers, reg)) {
 		return false;
 	}
-	const char *preserves = cc_regset (anal, cc, true);
+	const char *preserves = r_anal_cc_regset (anal, cc, true);
 	return R_STR_ISEMPTY (preserves) || !r_anal_cc_regset_contains (preserves, reg);
-}
-
-R_API bool r_anal_cc_ispreserved(RAnal *anal, const char *cc, const char *reg) {
-	R_RETURN_VAL_IF_FAIL (anal && cc && reg, false);
-	const char *preserves = cc_regset (anal, cc, true);
-	return R_STR_ISNOTEMPTY (preserves) && r_anal_cc_regset_contains (preserves, reg);
 }
 
 R_API const char *r_anal_cc_default(RAnal *anal) {
