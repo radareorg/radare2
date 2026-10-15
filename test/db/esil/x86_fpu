@@ -290,3 +290,21 @@ EXPECT=<<EOF
 0x4008000000000000
 EOF
 RUN
+
+NAME=x87 stack in 32-bit code
+FILE=malloc://0x100
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx d9e8d9ee
+aes
+aes
+ar st0
+ar st1
+EOF
+EXPECT=<<EOF
+0x00000000
+0x3ff0000000000000
+EOF
+RUN
+
