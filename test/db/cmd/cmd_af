@@ -385,7 +385,9 @@ wx 081ca04eabffff970029281ec0035fd6 @ 0x1a0
 wx 011ca04ea7ffff972028211ec0035fd6 @ 0x1b0
 wx 081ca04e400000b4c0035fd60029281ec0035fd6 @ 0x1c0
 wx 081ca04eabffff970029281ec0035fd6 @ 0x1e0
+wx 081ca04e830100940029281ec0035fd6 @ 0x1f0
 wx 081ca04e610000b492ffff97c0035fd60085284ec0035fd6 @ 0x200
+wx 081ca04e20003fd60029281ec0035fd6 @ 0x220
 af @ 0x50
 af @ 0
 af @ 0x20
@@ -401,7 +403,9 @@ af @ 0x190
 af @ 0x1a0
 af @ 0x1b0
 af @ 0x1c0
+af @ 0x1f0
 af @ 0x200
+af @ 0x220
 afv @ 0
 afv @ 0x20
 afv @ 0x40
@@ -417,7 +421,9 @@ afv @ 0x190
 afv @ 0x1a0
 afv @ 0x1b0
 afv @ 0x1c0
+afv @ 0x1f0
 afv @ 0x200
+afv @ 0x220
 e anal.cc=golang
 af @ 0x1e0
 afv @ 0x1e0
@@ -446,7 +452,9 @@ arg double arg1 @ d0
 arg float arg1 @ s0
 arg double arg1 @ d0
 arg float arg1 @ s0
+arg float arg1 @ s0
 arg uint8_t[16] arg1 @ v0
+arg double arg1 @ d0
 arg double arg1 @ d0
 EOF
 RUN
@@ -471,6 +479,23 @@ EOF
 EXPECT=<<EOF
 arg double arg1 @ d0
 arg float arg1 @ s0
+EOF
+RUN
+
+NAME=arm64 copied float width stops at a callee whose preserve list lacks the register
+FILE=malloc://512
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx c0035fd6 @ 0x50
+wx 081ca04eabffff970029281ec0035fd6 @ 0x1a0
+k anal/cc/cc.golang.preserve=x19
+af @ 0x50
+afc golang @ 0x50
+af @ 0x1a0
+afv @ 0x1a0
+EOF
+EXPECT=<<EOF
+arg double arg1 @ d0
 EOF
 RUN
 

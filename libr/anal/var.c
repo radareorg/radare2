@@ -1732,6 +1732,10 @@ static int copy_read_bits(FpCopyWalk *w, RAnalOp *op, bool *ends) {
 	const int calltype = op->type & 0xffff;
 	if (calltype == R_ANAL_OP_TYPE_CALL || calltype == R_ANAL_OP_TYPE_UCALL) {
 		const char *cc = r_anal_call_convention (w->anal, op);
+		// a direct call to an unanalysed target follows the caller's convention
+		if (!cc && calltype == R_ANAL_OP_TYPE_CALL) {
+			cc = w->fcn->callconv;
+		}
 		const char *preserves = cc? r_anal_cc_regset (w->anal, cc, true): NULL;
 		*ends |= !r_anal_cc_location_in_regset (w->anal, w->copy->name, preserves, false);
 		w->after_call = true;
