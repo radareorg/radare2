@@ -2465,3 +2465,17 @@ EOF
 EXPECT_ERR=<<EOF
 EOF
 RUN
+
+NAME=ELF: a reloc name replaces the immediate, not the register holding the same digit
+FILE=bins/elf/arm-thumb-bit.o
+CMDS=<<EOF
+e asm.bits=32
+pi 3 @ 0x08000040
+EOF
+EXPECT=<<EOF
+movw r0, tf
+movt r0, tf
+movw r1, 0xfff8
+EOF
+RUN
+
