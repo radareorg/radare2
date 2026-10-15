@@ -3570,7 +3570,10 @@ RUN
 
 NAME=iu invalid subcommand
 FILE=-
-CMDS=iuy
+CMDS=<<EOF
+iuy
+s 0
+EOF
 EXPECT_ERR=<<EOF
 ERROR: Invalid `y` subcommand, try `iu?`
 EOF

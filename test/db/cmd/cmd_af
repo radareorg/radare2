@@ -733,7 +733,10 @@ RUN
 
 NAME=afbt invalid suffix
 FILE=-
-CMDS=afbtx
+CMDS=<<EOF
+afbtx
+s 0
+EOF
 EXPECT_ERR=<<EOF
 ERROR: Invalid `x` subcommand, try `afbt?`
 EOF
@@ -744,6 +747,7 @@ FILE=-
 CMDS=<<EOF
 afbtj tbl=0x10
 afbt* tbl=0x10
+s 0
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Invalid `j` subcommand, try `afbt?`

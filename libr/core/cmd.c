@@ -3236,53 +3236,53 @@ static int cmd_json(void *data, const char *input) {
 		r_cons_printf (core->cons, "Usage: {\"cmd\":\"...\",\"json\":false,\"trim\":true} # `cmd` is required\n");
 		return 0;
 	}
-	const RJson *j_cmd = NULL;
 	RJson *j = r_json_parsedup (input - 1);
-	if (j) {
-		j_cmd = r_json_get (j, "cmd");
-	}
+	const RJson *j_cmd = j && j->type == R_JSON_OBJECT? r_json_get (j, "cmd"): NULL;
 	PJ *pj = r_core_pj_new (core);
 	pj_o (pj);
-	if (j_cmd) {
+	if (j_cmd && j_cmd->type == R_JSON_STRING) {
 		const RJson *j_json = r_json_get (j, "json");
 		const RJson *j_trim = r_json_get (j, "trim");
-		bool is_json = false;
-		if (j_json && j_json->type == R_JSON_BOOLEAN) {
-			is_json = j_json->num.u_value == 1;
-		}
-		bool is_trim = false;
-		if (j_trim && j_trim->type == R_JSON_BOOLEAN) {
-			is_trim = j_trim->num.u_value == 1;
-		}
-		const char *r_cmd = j_cmd->str_value;
+		const bool is_json = j_json && j_json->type == R_JSON_BOOLEAN && j_json->num.u_value;
+		const bool is_trim = j_trim && j_trim->type == R_JSON_BOOLEAN && j_trim->num.u_value;
 		RList *stderr_list = r_list_newf (free);
-		// capture stderr
 		r_log_add_callback (stderr_cb, stderr_list);
-		char *res = r_core_cmd_str (core, r_cmd);
-		r_log_del_callback (stderr_cb);
+		char *res = r_core_cmd_str (core, j_cmd->str_value);
+		bool valid_json = false;
 		if (res) {
 			if (is_trim || is_json) {
 				r_str_trim (res);
 			}
-			if (is_json) {
+			if (is_json && *res) {
+				RJson *parsed = r_json_parsedup (res);
+				valid_json = parsed != NULL;
+				r_json_free (parsed);
+				if (!valid_json) {
+					r_core_return_code (core, R_CMD_RC_FAILURE);
+					R_LOG_ERROR ("Command output is not valid JSON");
+				}
+			}
+			if (is_json && !*res) {
+				pj_knull (pj, "res");
+			} else if (is_json && valid_json) {
 				pj_k (pj, "res");
 				pj_raw (pj, res);
 			} else {
 				pj_ks (pj, "res", res);
 			}
-			free (res);
-			pj_kb (pj, "error", false);
-		} else {
-			pj_kb (pj, "error", true);
+		} else if (!core->rc) {
+			r_core_return_code (core, R_CMD_RC_FAILURE);
 		}
+		r_log_del_callback (stderr_cb);
+		pj_kb (pj, "error", !res || core->rc != R_CMD_RC_SUCCESS);
+		free (res);
 		pj_kn (pj, "value", core->num->value);
-		pj_kn (pj, "code", core->rc);
 		if (!r_list_empty (stderr_list)) {
 			pj_ka (pj, "logs");
-			char *m;
+			char *message;
 			RListIter *iter;
-			r_list_foreach (stderr_list, iter, m) {
-				pj_raw (pj, m);
+			r_list_foreach (stderr_list, iter, message) {
+				pj_raw (pj, message);
 				if (iter->n) {
 					pj_raw (pj, ",");
 				}
@@ -3290,13 +3290,13 @@ static int cmd_json(void *data, const char *input) {
 			pj_end (pj);
 		}
 		r_list_free (stderr_list);
-		pj_kn (pj, "code", core->rc);
 	} else {
+		r_core_return_code (core, R_CMD_RC_FAILURE);
 		pj_ks (pj, "res", "");
 		pj_kb (pj, "error", true);
 		pj_kn (pj, "value", core->num->value);
-		pj_kn (pj, "code", core->rc);
 	}
+	pj_ki (pj, "code", core->rc);
 	pj_end (pj);
 	char *j_res = pj_drain (pj);
 	r_cons_printf (core->cons, "%s\n", j_res);
@@ -4747,6 +4747,7 @@ static int r_core_cmd_subst_i(RCore *core, RCmdContext *context, char *cmd, char
 			const char condition = *ptr;
 			*ptr = 0;
 			if (run) {
+				r_core_return_code (core, R_CMD_RC_SUCCESS);
 				ret = r_core_cmd_subst (core, context, cmd);
 				if (ret < 0) {
 					r_list_free (tmpenvs);
@@ -4761,6 +4762,7 @@ static int r_core_cmd_subst_i(RCore *core, RCmdContext *context, char *cmd, char
 			}
 		}
 		if (run) {
+			r_core_return_code (core, R_CMD_RC_SUCCESS);
 			ret = r_core_cmd_subst (core, context, cmd);
 		}
 		r_list_free (tmpenvs);

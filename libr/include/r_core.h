@@ -536,6 +536,7 @@ typedef int RCmdReturnCode;
 static inline void r_core_return_invalid_command(RCore *core, const char *basecmd, const char subcmd) {
 	R_LOG_ERROR ("Invalid `%c` subcommand, try `%s?`", subcmd? subcmd: ' ', basecmd);
 	r_core_return_value (core, 1);
+	r_core_return_code (core, R_CMD_RC_FAILURE);
 }
 
 R_API RList *r_core_list_themes(RCore *core);
