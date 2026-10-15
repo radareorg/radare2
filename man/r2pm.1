@@ -1,4 +1,4 @@
-.Dd September 30, 2026
+.Dd October 16, 2026
 .Dt R2PM 1
 .Sh NAME
 .Nm r2pm
@@ -20,8 +20,7 @@ Text output marks them as
 Add or delete external repository. Using '-a repository' adds a repository, and '-a -repository' deletes it. Use with no arguments to list all registered repos.
 .It Fl b
 Require a binary package for the target architecture, operating system and
-.Ev R2V
-version.
+package release.
 Use with
 .Fl i .
 Skip source checkout and build dependencies.
@@ -128,9 +127,21 @@ Directory for user documentation (default: ~/.local/share/radare2/prefix/doc)
 .It Ev R2PM_OFFLINE
 Disable online operations (default: 0)
 .It Ev R2V
-Release version requested by binary installers (defaults to the installed
+Radare2 version available to binary installers (defaults to the installed
 .Cm radare2 -qv
 version).
+Existing recipes may also use it as their package release.
+.It Ev R2PM_VERSION
+Package release requested by binary installers.
+An explicit environment value overrides the package's
+.Ic R2PM_VERSION_MAP
+table; otherwise the entry matching
+.Ev R2V
+is used.
+Without a table, the package release is the same as
+.Ev R2V .
+Resolved separately for each package without changing
+.Ev R2V .
 .It Ev R2PM_OS
 Target operating system exported to package scripts
 (for example linux, darwin or windows).
@@ -242,10 +253,40 @@ as a shell script on Unix, or
 as Windows commands.
 These blocks run without a source checkout; they must select an exact release
 using
-.Ev R2V , R2PM_OS , R2PM_ARCH
+.Ev R2PM_VERSION , R2PM_OS , R2PM_ARCH
 and
 .Ev R2PM_BITS ,
 download and install its files, and return a nonzero status on failure.
+Packages with their own release numbering can declare a compatibility table:
+.Bd -literal -offset indent
+R2PM_VERSION_MAP "6.2.2:1.1.0 6.2.4:1.2.3"
+.Ed
+Each entry contains an exact radare2 version, a colon and the associated package
+release.
+Separate entries with spaces, tabs or newlines.
+An assignment with
+.Ql =
+is also accepted.
+Multiline quoted values and heredocs share the metadata value reader.
+For example:
+.Bd -literal -offset indent
+R2PM_VERSION_MAP=<<EOF
+6.2.2:1.1.2
+6.2.4:1.1.5
+EOF
+.Ed
+The closing delimiter must appear alone on a line and match exactly.
+An empty or unterminated heredoc delimiter is an error.
+Values are read as text without shell expansion.
+The first matching entry selects the package release.
+If a table is defined but has no matching entry, binary installation fails
+before running the installer.
+Without a table, both versions are the same.
+Use
+.Ev R2PM_VERSION
+for the package release tag and asset names, and
+.Ev R2V
+for the radare2 version when selecting a compatible build.
 Unix scripts run with
 .Ql set -e
 and can call
@@ -289,9 +330,13 @@ Install the r2frida binary matching the installed radare2 version
 .Pp
   $ r2pm -bi r2frida
 .Pp
-Select a binary release explicitly (for example in CI)
+Select the radare2 version for an existing binary recipe (for example in CI)
 .Pp
   $ R2V=6.2.2 r2pm -bi r2frida
+.Pp
+Override an independently versioned package release
+.Pp
+  $ R2PM_VERSION=1.2.3 r2pm -bi mypackage
 .Pp
 Clean cache and then install (don't git pull on $R2PM_GITDIR/yara3)
 .Pp

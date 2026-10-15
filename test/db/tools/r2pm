@@ -202,6 +202,85 @@ ERROR: Option '-b' cannot be combined with '-UU'
 EOF
 RUN
 
+NAME=r2pm binary package versions are independent and scoped
+FILE=-
+CMDS=<<EOF
+%R2PM_DBDIR=scripts/r2pm/radare2-pm/db
+%R2PM_GITDIR=scripts/r2pm
+%R2PM_OFFLINE=1
+%XDG_DATA_HOME=/tmp/r2pm-versions-r2r
+%R2_LOG_LEVEL=1
+%R2V=6.2.4
+%R2PM_VERSION=
+%R2PM_TEST_FAIL=
+r2pm -qbi independent spaced unversioned
+r2pm -H R2PM_VERSION
+%R2V=6.2.2
+r2pm -qbi independent spaced
+%R2V=6.2.6
+r2pm -qbi independent spaced
+%R2V=6.2.8
+r2pm -qbi independent
+r2pm -qbi empty
+%R2V=6.2.4
+r2pm -qbi invalid
+r2pm -qbi commas
+r2pm -qbi unterminated
+%R2PM_VERSION=9.8.7
+r2pm -qbi independent unversioned
+r2pm -H R2PM_VERSION
+%R2PM_VERSION=
+%R2PM_TEST_FAIL=1
+r2pm -qbi independent
+%R2PM_TEST_FAIL=
+r2pm -H R2PM_VERSION
+r2pm -qbi unversioned
+r2pm -H R2V
+rmrf /tmp/r2pm-versions-r2r
+EOF
+EXPECT=<<EOF
+1.2.3 6.2.4
+1.1.5 6.2.4
+6.2.4 6.2.4
+1.1.0 6.2.2
+1.1.2 6.2.2
+1.2.3 6.2.6
+1.1.5 6.2.6
+9.8.7 6.2.4
+9.8.7 6.2.4
+1.2.3 6.2.4
+6.2.4 6.2.4
+9.8.7
+6.2.4
+EOF
+EXPECT_ERR=<<EOF
+ERROR: No binary release for 'independent' matching radare2 6.2.8 in R2PM_VERSION_MAP
+ERROR: No binary release for 'empty' matching radare2 6.2.8 in R2PM_VERSION_MAP
+ERROR: Invalid R2PM_VERSION_MAP entry for 'invalid': expected r2-version:package-version
+ERROR: Invalid R2PM_VERSION_MAP entry for 'commas': expected r2-version:package-version
+ERROR: Cannot find end of block
+ERROR: Binary install failed for 'independent'; re-run without -b to build from source
+EOF
+RUN
+
+NAME=r2pm metadata values share quoted and heredoc parsing
+FILE=-
+CMDS=<<EOF
+%R2PM_DBDIR=scripts/r2pm/radare2-pm/db
+%R2PM_GITDIR=scripts/r2pm
+%R2PM_OFFLINE=1
+r2pm -qd independent spaced unversioned empty
+EOF
+EXPECT=<<EOF
+inline documentation
+quoted documentation
+with "embedded quotes"
+heredoc documentation
+
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=r2pm -d requires package
 FILE=-
 CMDS=!r2pm -d
