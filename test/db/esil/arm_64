@@ -2356,3 +2356,24 @@ ret
 0x00000030
 EOF_EXPECT
 RUN
+
+NAME=ret x1 returns to x1
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+wx 20005fd6c0035fd6
+ar x1=0x40
+ar lr=0x80
+aes
+ar pc
+ar pc=4
+aes
+ar pc
+EOF
+EXPECT=<<EOF
+0x00000040
+0x00000080
+EOF
+RUN
+

@@ -2596,7 +2596,12 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	case ARM64_INS_ERETAB:
 #endif
 	case ARM64_INS_RET:
-		r_strbuf_set (&op->esil, "lr,pc,:=");
+		// ret xN returns to xN; a plain ret has no operand and returns to lr
+		if (OPCOUNT64 () > 0 && ISREG64 (0)) {
+			r_strbuf_setf (&op->esil, "%s,pc,:=", REG64 (0));
+		} else {
+			r_strbuf_set (&op->esil, "lr,pc,:=");
+		}
 		break;
 	case ARM64_INS_ERET:
 		r_strbuf_set (&op->esil, "lr,pc,:=");
