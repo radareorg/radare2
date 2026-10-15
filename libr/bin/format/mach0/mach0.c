@@ -2744,7 +2744,7 @@ RVecSegment *MACH0_(get_segments_vec)(RBinFile *bf, struct MACH0_(obj_t) * mo) {
 
 				s->vaddr = seg->vmaddr;
 				s->vsize = seg->vmsize;
-				s->size = seg->vmsize;
+				s->size = seg->filesize;
 				s->paddr = seg->fileoff;
 				s->paddr += bf->bo->boffset;
 				// TODO s->flags = seg->flags;

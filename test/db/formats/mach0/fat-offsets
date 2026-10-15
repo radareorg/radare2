@@ -73,3 +73,49 @@ EXPECT=<<EOF
 33e7174c48543d45f195a48d6887b2a0cb5525ea
 EOF
 RUN
+
+NAME=Fat Mach-O x86 segment extraction uses file sizes
+FILE=bins/mach0/ls-m1
+ARGS=-a x86 -b64 -e bin.relocs=false -e log.level=0
+CMDS=<<EOF
+rmrf .tmp/fat-x86-segments
+iSSx .tmp/fat-x86-segments
+e io.va=false
+o .tmp/fat-x86-segments/segment___TEXT_0.bin
+ph sha1 $s @ 0
+o-.
+o .tmp/fat-x86-segments/segment___LINKEDIT_2.bin
+?v $s
+ph sha1 $s @ 0
+o-.
+rmrf .tmp/fat-x86-segments
+EOF
+EXPECT=<<EOF
+623343a749ac3bc429c1177d2354a82bddc45418
+0x5c60
+4e6c0157c12d2de2dd56103d80720a55a0a77af3
+EOF
+RUN
+
+NAME=Fat Mach-O arm64 segment extraction uses file sizes
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b64 -e bin.relocs=false -e log.level=0
+CMDS=<<EOF
+rmrf .tmp/fat-arm64-segments
+iSSx .tmp/fat-arm64-segments
+e io.va=false
+o .tmp/fat-arm64-segments/segment___TEXT_0.bin
+ph sha1 $s @ 0
+o-.
+o .tmp/fat-arm64-segments/segment___LINKEDIT_3.bin
+?v $s
+ph sha1 $s @ 0
+o-.
+rmrf .tmp/fat-arm64-segments
+EOF
+EXPECT=<<EOF
+62f28c2d31aeeafc99420eebdaaf9976175c4553
+0x5aa0
+3d8cb411bc1f24876b44c2d25b57eee2df359d84
+EOF
+RUN
