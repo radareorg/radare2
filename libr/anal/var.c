@@ -1689,10 +1689,12 @@ typedef struct {
 	RAnalFunction *fcn;
 	RRegItem *copy;
 	RAnalBlock *first;
+	RBitset *called;
 	ut64 from;
 	int budget;
 	int bits;
 	bool dst_writeonly;
+	bool after_call;
 } FpCopyWalk;
 
 // width of the op's read of the copy, or 0; *ends when no later op can read it
@@ -1722,13 +1724,24 @@ static int copy_read_bits(FpCopyWalk *w, RAnalOp *op, bool *ends) {
 		}
 		r_unref (ri);
 	}
+	// a preserved v register keeps only its low 64 bits across a call
+	if (bits > 64 && w->after_call) {
+		*ends = true;
+		return 0;
+	}
 	const int calltype = op->type & 0xffff;
 	if (calltype == R_ANAL_OP_TYPE_CALL || calltype == R_ANAL_OP_TYPE_UCALL) {
 		const char *cc = r_anal_call_convention (w->anal, op);
 		const char *preserves = cc? r_anal_cc_regset (w->anal, cc, true): NULL;
 		*ends |= !r_anal_cc_location_in_regset (w->anal, w->copy->name, preserves, false);
+		w->after_call = true;
 	}
 	return bits;
+}
+
+static bool mark_called(ut64 addr, void *user) {
+	r_bitset_set (user, addr);
+	return true;
 }
 
 static bool fp_copy_block_cb(RAnalBlock *bb, void *user) {
@@ -1736,6 +1749,8 @@ static bool fp_copy_block_cb(RAnalBlock *bb, void *user) {
 	if (w->bits || !r_list_contains (bb->fcns, w->fcn)) {
 		return false;
 	}
+	// a call reaches a block through any of its paths, not the walk order
+	w->after_call = r_bitset_test (w->called, bb->addr);
 	const ut64 end = bb->addr + bb->size;
 	ut64 addr = bb == w->first? w->from: bb->addr;
 	while (addr < end && w->budget-- > 0) {
@@ -1755,6 +1770,9 @@ static bool fp_copy_block_cb(RAnalBlock *bb, void *user) {
 			return false;
 		}
 	}
+	if (w->after_call) {
+		r_anal_block_successor_addrs_foreach (bb, mark_called, w->called);
+	}
 	return w->budget > 0;
 }
 
@@ -1766,7 +1784,9 @@ static int copied_read_bits(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const 
 	};
 	const bool whole = w.copy && w.copy->size == src->size && w.copy->arena == src->arena && !same_reg (w.copy, src);
 	if (w.first && whole) {
+		w.called = r_bitset_new ();
 		r_anal_block_recurse_followthrough (w.first, fp_copy_block_cb, &w);
+		r_bitset_free (w.called);
 	}
 	r_unref (w.copy);
 	return w.bits;
