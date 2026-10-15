@@ -325,3 +325,21 @@ Usage: agD[format]  Show the current function dominator tree
 | agDv  show the dominator tree in interactive visual mode
 EOF
 RUN
+
+NAME=noninteractive input requests report JSON2 command failure
+FILE=--
+CMDS=<<EOF
+e scr.interactive=false
+{"cmd":"?ip"}
+{"cmd":"?iy test"}
+{"cmd":"?ik"}
+{"cmd":"?e recovered"}
+s 0
+EOF
+EXPECT=<<EOF
+{"res":"","error":true,"value":0,"logs":[{"type":"ERROR","origin":"cmd_help","message":"Not running in interactive mode"}],"code":1}
+{"res":"","error":true,"value":0,"logs":[{"type":"ERROR","origin":"cmd_help","message":"Not running in interactive mode"}],"code":1}
+{"res":"","error":true,"value":0,"logs":[{"type":"ERROR","origin":"cmd_help","message":"Not running in interactive mode"}],"code":1}
+{"res":"recovered\n","error":false,"value":0,"code":0}
+EOF
+RUN

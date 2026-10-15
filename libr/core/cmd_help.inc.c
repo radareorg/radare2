@@ -1574,6 +1574,7 @@ static int cmd_help(void *data, const char *input) {
 		r_cons_set_raw (core->cons, 0);
 		if (!r_cons_is_interactive (core->cons)) {
 			R_LOG_ERROR ("Not running in interactive mode");
+			r_core_return_code (core, R_CMD_RC_FAILURE);
 		} else {
 			switch (input[1]) {
 			case '?': // "?i?"
@@ -1593,6 +1594,7 @@ static int cmd_help(void *data, const char *input) {
 						r_core_return_value (core, r_core_yank_hud_path (core, input + 2, 0) == true);
 					} else {
 						R_LOG_WARN ("?ip requires scr.interactive=true");
+						r_core_return_code (core, R_CMD_RC_FAILURE);
 					}
 				}
 				break;
