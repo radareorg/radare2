@@ -865,6 +865,40 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ldr r1, [pc, r1]
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=4
+# load the word at pc + r1, pc reading 8 ahead
+wx 01109fe7 # ldr r1, [pc, r1]
+wx ddccbbaa @ 12
+aes
+ar r1
+EOF
+EXPECT=<<EOF
+0xaabbccdd
+EOF
+RUN
+
+NAME=ldr r1, [pc, -r1]
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=4
+# load the word at pc - r1, pc reading 8 ahead
+wx 01101fe7 # ldr r1, [pc, -r1]
+wx ddccbbaa @ 4
+aes
+ar r1
+EOF
+EXPECT=<<EOF
+0xaabbccdd
+EOF
+RUN
+
 NAME=ldrd r2, r3, [r1, r4]!
 FILE=malloc://0x200
 CMDS=<<EOF

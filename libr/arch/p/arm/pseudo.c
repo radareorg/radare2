@@ -693,7 +693,12 @@ static char *subvar(RAsmPluginSession *s, RAnalFunction *f, ut64 addr, int oplen
 			rip = (char *)r_str_casestr (tstr, "[pc, ");
 		}
 
-		if (rip && !strchr (rip + 4, ',')) {
+		// only an immediate offset makes a pc-relative literal, an index register does not
+		const char *imm = rip? rip + 4: NULL;
+		while (imm && (*imm == ' ' || *imm == '+' || *imm == '-' || *imm == '#')) {
+			imm++;
+		}
+		if (rip && !strchr (rip + 4, ',') && isdigit ((ut8)*imm)) {
 			rip += 4;
 			char *tstr_new, *ripend = strchr (rip, ']');
 			const char *neg = strchr (rip, '-');

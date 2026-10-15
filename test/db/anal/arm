@@ -1310,3 +1310,20 @@ type: swi
 val: 0x00010000
 EOF
 RUN
+
+NAME=arm ldr from pc plus an index register keeps the register in the listing
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+wx 01109fe70c109fe5
+pi 2
+e asm.pseudo=true
+pi 1
+EOF
+EXPECT=<<EOF
+ldr r1, [pc, r1]
+ldr r1, [0x00000018]
+r1 = [pc + r1]
+EOF
+RUN
