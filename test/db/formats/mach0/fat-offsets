@@ -119,3 +119,20 @@ EXPECT=<<EOF
 3d8cb411bc1f24876b44c2d25b57eee2df359d84
 EOF
 RUN
+
+NAME=Fat Mach-O arm64 section extraction preserves bytes
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b64 -e bin.relocs=false -e log.level=0
+CMDS=<<EOF
+rmrf .tmp/fat-arm64-sections
+iSx .tmp/fat-arm64-sections
+e io.va=false
+o .tmp/fat-arm64-sections/section_0.__TEXT.__text_0.bin
+ph sha1 $s @ 0
+o-.
+rmrf .tmp/fat-arm64-sections
+EOF
+EXPECT=<<EOF
+16cf10f874b4d2ff398f21a2ac2bb4dfc37784ae
+EOF
+RUN
