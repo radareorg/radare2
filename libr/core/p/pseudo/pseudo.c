@@ -1118,6 +1118,15 @@ static bool promote_call_comment(PDCState *state, RStrBuf *out, char *line) {
 		r_strbuf_append_n (out, line, body - line);
 		if (tailcall) {
 			r_strbuf_append (out, "return ");
+		} else if (ret && strcmp (ret, "void") && strcmp (ret, "VOID")) {
+			RAnal *anal = core->anal;
+			const char *cc = r_anal_cc_func (anal, callee);
+			const bool floating = R_STR_CMP_ANY (ret, "float", "double", "long double");
+			const char *loc = cc? (floating? r_anal_cc_fpret (anal, cc, 0): r_anal_cc_ret (anal, cc, 0)): NULL;
+			const char *reg = loc? r_anal_cc_location_first (anal, loc): NULL;
+			if (reg && r_reg_get (anal->reg, reg, -1)) {
+				r_strbuf_appendf (out, "%s = ", reg);
+			}
 		}
 		r_strbuf_appendf (out, "%s (", !strcmp (bare, callee)? base: callee);
 		free (target);

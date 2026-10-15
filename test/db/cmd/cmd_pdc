@@ -8,8 +8,8 @@ pdc @ main~strcmp
 EOF
 EXPECT=<<EOF
     dword [s2] = str.250382 // [0x804858f:4]=0x33303532 // "250382" // const char *s2
-    strcmp ("", "250382")
-    strcmp ("", "250382")
+    eax = strcmp ("", "250382")
+    eax = strcmp ("", "250382")
 EOF
 RUN
 
@@ -24,7 +24,7 @@ af @ 0
 pdc @ 0~puts
 EOF
 EXPECT=<<EOF
-    puts ("a ; b // c")
+    x0 = puts ("a ; b // c")
 EOF
 RUN
 
@@ -46,11 +46,29 @@ pdca @ 0~puts
 CC. @ 4
 EOF
 EXPECT=<<EOF
-    puts ("a (b), \" ; // c") // user note
-        puts ("a (b), \" ; // c") // user note
- 0x00000004 |         puts ("a (b), \" ; // c") // user note
- 0x00000004 | bl sym.imp.puts                |         puts ("a (b), \" ; // c") // user note
-puts ("a (b), \" ; // c") // user note
+    x0 = puts ("a (b), \" ; // c") // user note
+        x0 = puts ("a (b), \" ; // c") // user note
+ 0x00000004 |         x0 = puts ("a (b), \" ; // c") // user note
+ 0x00000004 | bl sym.imp.puts                |         x0 = puts ("a (b), \" ; // c") // user note
+x0 = puts ("a (b), \" ; // c") // user note
+EOF
+RUN
+
+NAME=pdc assigns floating return registers and omits void assignments
+FILE=malloc://4096
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 80000094c0035fd6 @ 0
+f sym.imp.pdc_result @ 0x200
+td double pdc_result(void);
+af @ 0
+pdc @ 0~pdc_result
+td void pdc_result(void);
+pdc @ 0~pdc_result
+EOF
+EXPECT=<<EOF
+    d0 = pdc_result ()
+    pdc_result ()
 EOF
 RUN
 
@@ -165,25 +183,25 @@ void entry0 (void) {
         push ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
         push (0)
-        MessageBoxA (0, 0x401000, 0x40100e, 0)
+        eax = MessageBoxA (0, 0x401000, 0x40100e, 0)
         push ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
-        puts ("LABEL")
+        eax = puts ("LABEL")
         esp += 4      // (pstr 0x0040100e) "LABEL"
         si--
         v = si - 0
     } while (si > 0);
     eax = dword [puts] // [0x4030dc:4]=0x30e8 reloc.crtdll.dll_puts // reloc.crtdll.dll_puts
     push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
-    puts ("Hello, World!")
-    GetProcessHeap ()
+    eax = puts ("Hello, World!")
+    eax = GetProcessHeap ()
     push (eax)
     push (">%p\\n") // 0x401014 // (pstr 0x00401014) ">%p\n"
-    printf (">%p\n", 0x30e8)
+    eax = printf (">%p\n", 0x30e8)
     push (0)
     push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
     push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
     push (0)
-    MessageBoxA (0, 0x401000, 0x401000, 0)
+    eax = MessageBoxA (0, 0x401000, 0x401000, 0)
     push (0)
     ExitProcess (0)
     return eax;
@@ -198,25 +216,25 @@ void entry0 (void) {
  0x0040201a |         push ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
  0x0040201f |         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
  0x00402024 |         push (0)
- 0x00402026 |         MessageBoxA (0, 0x401000, 0x40100e, 0)
+ 0x00402026 |         eax = MessageBoxA (0, 0x401000, 0x40100e, 0)
  0x0040202c |         push ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
- 0x00402031 |         puts ("LABEL")
+ 0x00402031 |         eax = puts ("LABEL")
  0x00402037 |         esp += 4      // (pstr 0x0040100e) "LABEL"
  0x0040203a |         si--
  0x0040203c |         v = si - 0
  0x00402040 |     } while (si > 0);
  0x00402042 |     eax = dword [puts] // [0x4030dc:4]=0x30e8 reloc.crtdll.dll_puts // reloc.crtdll.dll_puts
  0x00402047 |     push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
- 0x0040204c |     puts ("Hello, World!")
- 0x0040204e |     GetProcessHeap ()
+ 0x0040204c |     eax = puts ("Hello, World!")
+ 0x0040204e |     eax = GetProcessHeap ()
  0x00402054 |     push (eax)
  0x00402055 |     push (">%p\\n") // 0x401014 // (pstr 0x00401014) ">%p\n"
- 0x0040205a |     printf (">%p\n", 0x30e8)
+ 0x0040205a |     eax = printf (">%p\n", 0x30e8)
  0x00402060 |     push (0)
  0x00402062 |     push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
  0x00402067 |     push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
  0x0040206c |     push (0)
- 0x0040206e |     MessageBoxA (0, 0x401000, 0x401000, 0)
+ 0x0040206e |     eax = MessageBoxA (0, 0x401000, 0x401000, 0)
  0x00402074 |     push (0)
  0x00402076 |     ExitProcess (0)
  0x00402076 |     return eax;
@@ -731,8 +749,8 @@ pdc~printf ("Results
 pdc~printf ("msg
 EOF2
 EXPECT=<<EOF2
-    printf ("Results : a : %u , b: %ld\n", 30, 0x2710)
-    printf ("msg : %s\n", "")
+    rax = printf ("Results : a : %u , b: %ld\n", 30, 0x2710)
+    rax = printf ("msg : %s\n", "")
 EOF2
 RUN
 
@@ -744,7 +762,7 @@ s main
 pdc~printf ("IOLI
 EOF2
 EXPECT=<<EOF2
-    printf ("IOLI Crackme Level 0x00\n")
+    eax = printf ("IOLI Crackme Level 0x00\n")
 EOF2
 RUN
 
@@ -1687,8 +1705,8 @@ s main
 pdc~puts ("Booh,puts ("No no
 EOF
 EXPECT=<<EOF
-        puts ("Booh! Don't debug me!")
-            puts ("No no no! Don't patch me!")
+        eax = puts ("Booh! Don't debug me!")
+            eax = puts ("No no no! Don't patch me!")
 EOF
 RUN
 
@@ -1720,7 +1738,7 @@ s main
 pdc~printf ("Results
 EOF
 EXPECT=<<EOF
-    printf ("Results : a : %u , b: %ld\n", 30, 0x2710)
+    rax = printf ("Results : a : %u , b: %ld\n", 30, 0x2710)
 EOF
 RUN
 
