@@ -1039,6 +1039,65 @@ static const char *call_args_end(const char *args) {
 	return NULL;
 }
 
+static void append_call_args(RCore *core, RStrBuf *out, const char *callee, const char *args, const char *end) {
+	RAnal *anal = core->anal;
+	const char *cc = r_anal_cc_func (anal, callee);
+	const int word = cc? r_anal_cc_wordsize (anal, cc): 0;
+	bool slots_known = true;
+	const char *arg = args;
+	const char *p;
+	int index = 0;
+	int depth = 0;
+	for (p = args; p <= end; p++) {
+		if (p < end && (*p == '"' || *p == '\'')) {
+			p = skip_quoted (p) - 1;
+			continue;
+		}
+		if (p < end && *p == '(') {
+			depth++;
+		} else if (p < end && *p == ')') {
+			depth--;
+		}
+		if (p != end && (*p != ',' || depth)) {
+			continue;
+		}
+		const char *value = r_str_trim_head_ro (arg);
+		const char *last = p;
+		while (last > value && IS_WHITECHAR (last[-1])) {
+			last--;
+		}
+		char *type = r_type_func_args_type (anal->sdb_types, callee, index);
+		const bool pointer = type && strchr (type, '*');
+		if (type && !pointer && (r_anal_type_bitsize (anal, type) > word * 8
+				|| R_STR_CMP_ANY (type, "float", "double", "long double"))) {
+			slots_known = false;
+		}
+		const char *digits = value;
+		if (last - value > 2 && r_str_startswith (value, "0x")) {
+			digits += 2;
+		}
+		const bool zero = digits < last && digits + strspn (digits, "0") == last;
+		RAnalCCArgSlot slot;
+		const char *reg = NULL;
+		if (cc && slots_known && zero && (pointer || !type)
+				&& r_anal_cc_argslot (anal, cc, index, -1, false, &slot) && slot.reg
+				&& r_reg_get (anal->reg, slot.reg, -1)) {
+			reg = slot.reg;
+		}
+		free (type);
+		if (reg) {
+			r_strbuf_append (out, reg);
+		} else {
+			r_strbuf_append_n (out, value, last - value);
+		}
+		if (p != end) {
+			r_strbuf_append (out, ", ");
+		}
+		arg = p + 1;
+		index++;
+	}
+}
+
 static bool promote_call_comment(PDCState *state, RStrBuf *out, char *line) {
 	RCore *core = state->core;
 	char *body = (char *)r_str_trim_head_ro (line);
@@ -1130,10 +1189,10 @@ static bool promote_call_comment(PDCState *state, RStrBuf *out, char *line) {
 		}
 		r_strbuf_appendf (out, "%s (", !strcmp (bare, callee)? base: callee);
 		free (target);
-		free (callee);
 		if (end - open != 5 || strncmp (open + 1, "void", 4)) {
-			r_strbuf_append_n (out, open + 1, end - open - 1);
+			append_call_args (core, out, callee, open + 1, end);
 		}
+		free (callee);
 		r_strbuf_append (out, ")");
 		if (tailcall) {
 			r_strbuf_append (out, ";");

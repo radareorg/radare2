@@ -2094,3 +2094,25 @@ EXPECT=<<EOF
         goto helper;
 EOF
 RUN
+
+NAME=pdc keeps zero pointer arguments as calling convention registers
+FILE=malloc://4096
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 010800107f000094c0035fd6 @ 0
+f sym.imp.strcmp @ 0x200
+wx 68656c7000 @ 0x100
+af @ 0
+pdc @ 0~strcmp
+e pdc.structured=false
+pdc @ 0~strcmp
+fr sym.imp.strcmp sym.imp.pdc_scalar
+td int pdc_scalar(int category, const char *name);
+pdc @ 0~pdc_scalar
+EOF
+EXPECT=<<EOF
+    x0 = strcmp (x0, "help")
+        x0 = strcmp (x0, "help")
+        x0 = pdc_scalar (0, "help")
+EOF
+RUN
