@@ -3456,7 +3456,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 						",>>,<<,%d,%s,<<,+,0xffffffff,&,[%d],%s,%s,=",
 						addr + pcdelta, LSHIFT2(1), MEMINDEX(1), ldsz, ldext, REG(0));
 				} else {
-					if (ISREG(1)) {
+					if (HASMEMINDEX (1)) {
 						const char op_index = ISMEMINDEXSUB (1)? '-': '+';
 						r_strbuf_appendf (&op->esil, "%s,2,2,0x%"PFMT64x
 							",>>,<<,%c,0xffffffff,&,[%d],%s,%s,=",
