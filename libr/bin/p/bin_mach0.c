@@ -825,7 +825,7 @@ static bool load_resources(RBinFile *bf) {
 		}
 		resource->name = strdup (section->name);
 		resource->type = strdup (type);
-		resource->paddr = section->paddr;
+		resource->paddr = section->paddr + bf->bo->loadaddr;
 		resource->vaddr = section->vaddr;
 		resource->size = section->size;
 		resource->id = UT64_MAX;
@@ -841,8 +841,8 @@ static bool load_resources(RBinFile *bf) {
 		}
 		resource->name = strdup ("CodeSignature");
 		resource->type = strdup ("signature");
-		resource->paddr = mo->cs_paddr;
-		resource->vaddr = mo->cs_paddr;
+		resource->paddr = mo->cs_paddr + bf->bo->boffset + bf->bo->loadaddr;
+		resource->vaddr = resource->paddr;
 		resource->size = mo->cs_size;
 		resource->id = UT64_MAX;
 		resource->index = index++;
@@ -856,8 +856,8 @@ static bool load_resources(RBinFile *bf) {
 			}
 			resource->name = strdup ("Certificate");
 			resource->type = strdup ("certificate");
-			resource->paddr = mo->cert_paddr;
-			resource->vaddr = mo->cert_paddr;
+			resource->paddr = mo->cert_paddr + bf->bo->boffset + bf->bo->loadaddr;
+			resource->vaddr = resource->paddr;
 			resource->size = mo->cert_size;
 			resource->id = UT64_MAX;
 			resource->index = index++;
