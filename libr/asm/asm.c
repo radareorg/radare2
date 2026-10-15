@@ -690,13 +690,13 @@ static char *replace_directives(char *str) {
 	return o;
 }
 
-R_API void r_asm_list_directives(void) {
-	int i = 0;
-	const char *dir = directives[i++];
-	while (dir) {
-		printf ("%s\n", dir);
-		dir = directives[i++];
+R_API char *r_asm_list_directives(void) {
+	RStrBuf *sb = r_strbuf_new (NULL);
+	int i;
+	for (i = 0; directives[i]; i++) {
+		r_strbuf_appendf (sb, "%s\n", directives[i]);
 	}
+	return r_strbuf_drain (sb);
 }
 
 static int r_asm_assemble_single(RAsm *a, RAnalOp *op, const char *buf) {
