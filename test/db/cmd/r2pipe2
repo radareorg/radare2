@@ -177,3 +177,22 @@ EXPECT=<<EOF
 {"res":"recovered\n","error":false,"value":0,"code":0}
 EOF
 RUN
+
+NAME=r2pipe2 missing function signature reports failure and recovers
+FILE=malloc://16
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+{"cmd":"afsj"}
+wx c3 @ 4
+af @ 4
+s 4
+{"cmd":"afsj 0"}
+{"cmd":"afsj 4","json":true}
+s 0
+EOF
+EXPECT=<<EOF
+{"res":"","error":true,"value":0,"logs":[{"type":"ERROR","origin":"cmd_afsj","message":"Cannot find function in 0x00000000"}],"code":1}
+{"res":"","error":true,"value":0,"logs":[{"type":"ERROR","origin":"cmd_afsj","message":"Cannot find function in 0x00000000"}],"code":1}
+{"res":{"name":"fcn.00000004","noreturn":false,"ret":"void","callconv":"amd64","argc":0,"args":[]},"error":false,"value":4,"code":0}
+EOF
+RUN

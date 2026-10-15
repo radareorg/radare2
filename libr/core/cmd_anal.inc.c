@@ -5251,13 +5251,14 @@ static void printfcnjson(RCore *core, RAnalFunction *fcn) {
 }
 
 static void cmd_afsj(RCore *core, const char *arg) {
-	ut64 a = r_num_math (core->num, arg);
-	const ut64 addr = a? a: core->addr;
+	arg = r_str_trim_head_ro (arg);
+	const ut64 addr = *arg? r_num_math (core->num, arg): core->addr;
 	RAnalFunction *f = r_anal_get_fcn_in (core->anal, addr, -1);
 	if (f) {
 		printfcnjson (core, f);
 	} else {
 		R_LOG_ERROR ("Cannot find function in 0x%08"PFMT64x, addr);
+		r_core_return_code (core, R_CMD_RC_FAILURE);
 	}
 }
 
@@ -6838,7 +6839,7 @@ static int cmd_af(RCore *core, const char *input) {
 			cmd_afsr (core, input + 2);
 			break;
 		case 'j': // "afsj"
-			cmd_afsj (core, input + 2);
+			cmd_afsj (core, input + 3);
 			break;
 		case 0:
 		case 'q': // "afsq"
