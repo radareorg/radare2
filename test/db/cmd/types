@@ -2902,7 +2902,7 @@ EXPECT=<<EOF
 0x00000000 union bar {
 0x00000000   int a;
 0x00000000   short b;
-0x00000000 };
+0x00000004 };
 EOF
 RUN
 
@@ -2930,7 +2930,7 @@ EXPECT=<<EOF
 0x00000000 union value {
 0x00000000   int i;
 0x00000000   float f;
-0x00000000 };
+0x00000004 };
 EOF
 RUN
 
@@ -3139,8 +3139,8 @@ struct tpl {
   pair<int, char> p;
 };
 0x00000000 struct tpl {
-0x00000000   pair<int, char> p;
-0x00000001 };
+0x00000008   pair<int, char> p;
+0x00000008 };
 EOF
 RUN
 
@@ -3162,7 +3162,7 @@ union utpl {
 0x00000000 union utpl {
 0x00000000   pair<int, char> p[4];
 0x00000000   int32_t q;
-0x00000000 };
+0x00000004 };
 EOF
 RUN
 
@@ -5824,4 +5824,64 @@ var int16_t var_4h @ rbp-0x4
 var signed int var_8h @ rbp-0x8
 var int64_t var_10h @ rbp-0x10
 EOF_EXPECT
+RUN
+
+NAME=struct JSON and views preserve canonical aligned member offsets
+FILE=--
+ARGS=-b 64
+CMDS=<<EOF
+'td struct rea_vfs_prefix { int iVersion; int szOsFile; int mxPathname; void *pNext; const char *zName; void *pAppData; };
+tsj rea_vfs_prefix
+tss rea_vfs_prefix
+tsv rea_vfs_prefix
+EOF
+EXPECT=<<EOF
+{"name":"rea_vfs_prefix","format":"ddd[4].pzp iVersion szOsFile mxPathname pNext zName pAppData","fields":[{"name":"iVersion","type":"int","offset":0,"size":4},{"name":"szOsFile","type":"int","offset":4,"size":4},{"name":"mxPathname","type":"int","offset":8,"size":4},{"name":"pNext","type":"void *","offset":16,"size":8},{"name":"zName","type":"const char *","offset":24,"size":8},{"name":"pAppData","type":"void *","offset":32,"size":8}]}
+40
+0x00000000 struct rea_vfs_prefix {
+0x00000000   int iVersion;
+0x00000004   int szOsFile;
+0x00000008   int mxPathname;
+0x00000010   void *pNext;
+0x00000018   const char *zName;
+0x00000020   void *pAppData;
+0x00000028 };
+EOF
+RUN
+
+NAME=struct member array extents retain alignment gaps
+FILE=--
+ARGS=-b 64
+CMDS=<<EOF
+'td struct rea_layout { char tag; int values[3]; long long end; };
+tsj rea_layout
+tss rea_layout
+EOF
+EXPECT=<<EOF
+{"name":"rea_layout","format":"c[3].[3]dq tag values end","fields":[{"name":"tag","type":"char","offset":0,"size":1},{"name":"values","type":"int","offset":4,"size":12,"array_size":3},{"name":"end","type":"long long","offset":16,"size":8}]}
+24
+EOF
+RUN
+
+NAME=aggregate size uses maximum canonical member extent and rejects overflow
+FILE=--
+CMDS=<<EOF
+tk rea_gap=struct
+tk struct.rea_gap=a,b
+tk struct.rea_gap.a=int,16,0
+tk struct.rea_gap.b=int,4,0
+tss rea_gap
+tk rea_union=union
+tk union.rea_union=c,q
+tk union.rea_union.c=char,0,0
+tk union.rea_union.q=long long,0,0
+tss rea_union
+tk struct.rea_gap.a=int,18446744073709551615,0
+tss rea_gap
+EOF
+EXPECT=<<EOF
+20
+8
+0
+EOF
 RUN

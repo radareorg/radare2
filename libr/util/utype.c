@@ -466,7 +466,8 @@ static ut64 type_bitsize(Sdb *TDB, const char *type, const char **chain, int dep
 				}
 				char *query = r_str_newf ("%s.%s.%s", t, tmptype, name);
 				int elements = 0;
-				char *subtype = r_type_get_member (TDB, query, NULL, &elements);
+				ut64 offset = 0;
+				char *subtype = r_type_get_member (TDB, query, &offset, &elements);
 				free (query);
 				if (!subtype) {
 					break;
@@ -480,12 +481,14 @@ static ut64 type_bitsize(Sdb *TDB, const char *type, const char **chain, int dep
 					ret = UT64_MAX;
 					break;
 				}
-				if (!strcmp (t, "struct")) {
-					ret += member * elements;
-				} else {
-					ut64 sz = member * elements;
-					ret = sz > ret ? sz : ret;
+				ut64 end;
+				if (r_mul_overflow (member, (ut64)elements, &end)
+						|| r_mul_overflow (offset, (ut64)8, &offset)
+						|| r_add_overflow (offset, end, &end)) {
+					ret = UT64_MAX;
+					break;
 				}
+				ret = R_MAX (ret, end);
 				ptr = next;
 			} while (next);
 			free (members);
