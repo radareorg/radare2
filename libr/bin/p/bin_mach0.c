@@ -179,7 +179,7 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits, int limit) 
 			if (!buf) {
 				continue;
 			}
-			ut64 nread = r_buf_read_at (bf->buf, sec->paddr, buf, ss);
+			ut64 nread = r_buf_read_at (bf->buf, sec->paddr - bf->bo->boffset, buf, ss);
 			if (nread < sec->size) {
 				R_LOG_ERROR ("process_constructors: cannot process section %s", sec->name);
 				free (buf);
@@ -1201,7 +1201,8 @@ static RVecRBinTrycatch *trycatch(RBinFile *bf) {
 		return result;
 	}
 	ut8 *bytes = malloc (section->size);
-	if (!bytes || r_buf_read_at (bf->buf, section->paddr, bytes, section->size) != section->size) {
+	ut64 offset = r_bin_file_get_buffer_offset (bf, section->paddr);
+	if (!bytes || r_buf_read_at (bf->buf, offset, bytes, section->size) != section->size) {
 		free (bytes);
 		return result;
 	}

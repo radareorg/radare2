@@ -1,0 +1,75 @@
+NAME=Fat Mach-O x86 section hashes and string file offsets
+FILE=bins/mach0/ls-m1
+ARGS=-a x86 -b64 -e bin.relocs=false
+CMDS=<<EOF
+iSj sha1~{0}
+ph sha1 0x3a63 @ 0x1000039ac
+izj~{97.paddr}
+EOF
+EXPECT=<<EOF
+{"name":"0.__TEXT.__text","size":14947,"vsize":14947,"type":"REGULAR","perm":"-r-x","flags":2147484672,"sha1":"33e7174c48543d45f195a48d6887b2a0cb5525ea","paddr":31148,"vaddr":4294982060}
+33e7174c48543d45f195a48d6887b2a0cb5525ea
+48875
+EOF
+RUN
+
+NAME=Fat Mach-O arm64 section hashes and string file offsets
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b64 -e bin.relocs=false
+CMDS=<<EOF
+iSj sha1~{0}
+ph sha1 0x3c10 @ 0x100003830
+izj~{96.paddr}
+EOF
+EXPECT=<<EOF
+{"name":"0.__TEXT.__text","size":15376,"vsize":15376,"type":"REGULAR","perm":"-r-x","flags":2147484672,"sha1":"16cf10f874b4d2ff398f21a2ac2bb4dfc37784ae","paddr":112688,"vaddr":4294981680}
+16cf10f874b4d2ff398f21a2ac2bb4dfc37784ae
+130756
+EOF
+RUN
+
+NAME=Thin Mach-O section hashes
+FILE=bins/mach0/hello-macos-arm64-chained
+ARGS=-e bin.relocs=false
+CMDS=<<EOF
+iSj sha1~{0}
+ph sha1 0x350 @ 0x100003a7c
+EOF
+EXPECT=<<EOF
+{"name":"0.__TEXT.__text","size":848,"vsize":848,"type":"REGULAR","perm":"-r-x","flags":2147484672,"sha1":"166b6f168896f7ecef6cfd5866d364a38566bb6d","paddr":14972,"vaddr":4294982268}
+166b6f168896f7ecef6cfd5866d364a38566bb6d
+EOF
+RUN
+
+NAME=Fat Mach-O constructor reads use slice offsets and report file offsets
+FILE=bins/mach0/hellocxx-osx-fat-intel
+ARGS=-a x86 -b64 -e bin.relocs=false
+CMDS=<<EOF
+ieej~{0.hpaddr}
+ieej~{0.vaddr}
+e io.va=false
+p8 8 @ 0x5028
+EOF
+EXPECT=<<EOF
+20520
+4294970311
+c70b000001000000
+EOF
+RUN
+
+NAME=Fat Mach-O x86 section extraction preserves bytes
+FILE=bins/mach0/ls-m1
+ARGS=-a x86 -b64 -e bin.relocs=false -e log.level=0
+CMDS=<<EOF
+rmrf .tmp/fat-x86-sections
+iSx .tmp/fat-x86-sections
+e io.va=false
+o .tmp/fat-x86-sections/section_0.__TEXT.__text_0.bin
+ph sha1 $s @ 0
+o-.
+rmrf .tmp/fat-x86-sections
+EOF
+EXPECT=<<EOF
+33e7174c48543d45f195a48d6887b2a0cb5525ea
+EOF
+RUN

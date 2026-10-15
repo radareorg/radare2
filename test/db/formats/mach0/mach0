@@ -418,9 +418,9 @@ FILE=bins/mach0/ls-m1
 ARGS=-a arm -b64
 CMDS=iS~__text,auth_stubs,__cstring,__bss
 EXPECT=<<EOF
-0   0x00003830  0x3c10 0x100003830  0x3c10 -r-x 0x80000400 REGULAR          0.__TEXT.__text
-1   0x00007440   0x520 0x100007440   0x520 -r-x 0x80000408 SYMBOL_STUBS     1.__TEXT.__auth_stubs
-3   0x00007a3c   0x4e9 0x100007a3c   0x4e9 -r-x 0x2        CSTRINGS         3.__TEXT.__cstring
-10  0x00000000     0x0 0x10000c0d0   0x150 -rw- 0x1        ZEROFILL         10.__DATA.__bss
+0   0x0001b830  0x3c10 0x100003830  0x3c10 -r-x 0x80000400 REGULAR          0.__TEXT.__text
+1   0x0001f440   0x520 0x100007440   0x520 -r-x 0x80000408 SYMBOL_STUBS     1.__TEXT.__auth_stubs
+3   0x0001fa3c   0x4e9 0x100007a3c   0x4e9 -r-x 0x2        CSTRINGS         3.__TEXT.__cstring
+10  0x00018000     0x0 0x10000c0d0   0x150 -rw- 0x1        ZEROFILL         10.__DATA.__bss
 EOF
 RUN

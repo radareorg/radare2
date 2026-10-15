@@ -14,6 +14,15 @@ R_IPI bool r_bin_file_set_obj(RBin *bin, RBinFile *bf, RBinObject *obj);
 R_IPI RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const char *filename, const ut8 *bytes, ut64 sz, ut64 file_sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr);
 R_IPI bool r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz, bool steal_ptr);
 
+static inline ut64 r_bin_file_get_buffer_offset(RBinFile *bf, ut64 paddr) {
+	RBinObject *bo = bf->bo;
+	if (bo && (r_sub_overflow (paddr, bo->loadaddr, &paddr)
+			|| r_sub_overflow (paddr, bo->boffset, &paddr))) {
+		return UT64_MAX;
+	}
+	return paddr;
+}
+
 R_IPI RBinPlugin *r_bin_get_binplugin_any(RBin *bin);
 
 static inline Sdb *open_ordinalsdb(const char *sdbdir, const char *mod) {
