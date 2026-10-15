@@ -824,6 +824,14 @@ static bool test_anal_type_bitsize_struct_cycle(void) {
 	sdb_set (TDB, "struct.pair.a", "int32_t,0,0", 0);
 	sdb_set (TDB, "struct.pair.b", "int32_t,4,0", 0);
 	mu_assert_eq (r_type_get_bitsize (TDB, "pair"), 64, "An acyclic struct still measures its members");
+	sdb_set (TDB, "pair_t", "typedef", 0);
+	sdb_set (TDB, "typedef.pair_t", "pair", 0);
+	mu_assert_eq (r_type_get_bitsize (TDB, "pair_t"), 64, "A typedef measures its struct members");
+	sdb_set (TDB, "pairs_t", "typedef", 0);
+	sdb_set (TDB, "typedef.pairs_t", "pair_t[2]", 0);
+	mu_assert_eq (r_type_get_bitsize (TDB, "pairs_t"), 128, "An array typedef measures its struct elements");
+	sdb_set (TDB, "struct.pong.ping", "int32_t,0,0", 0);
+	mu_assert_eq (r_type_get_bitsize (TDB, "ping"), 32, "An acyclic struct measures members through a typedef");
 	r_anal_free (anal);
 	mu_end;
 }

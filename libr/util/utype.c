@@ -343,7 +343,7 @@ static ut64 type_ptr_bitsize(Sdb *R_NONNULL TDB) {
 	return bits? bits: 32;
 }
 
-// how many nested structs or unions a measurement follows before giving up
+// how many nested structs, unions or typedefs a measurement follows before giving up
 #define TYPE_CHAIN_MAX 32
 
 static bool type_array_parse(char *type, ut64 *elements) {
@@ -433,6 +433,7 @@ static ut64 type_bitsize(Sdb *TDB, const char *type, const char **chain, int dep
 		}
 		char *resolved = r_type_resolve_typedef (TDB, tmptype);
 		if (resolved) {
+			chain[depth] = tmptype;
 			size = type_bitsize (TDB, resolved, chain, depth + 1);
 			free (resolved);
 		}
