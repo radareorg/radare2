@@ -4,3 +4,16 @@ CMDS=q!
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=PE: corkami ownexports.exe - unused ordinals are no exports
+FILE=bins/pe/ownexports.exe
+CMDS=<<EOF
+iE
+f~Ordinal
+EOF
+EXPECT=<<EOF
+nth paddr      vaddr      bind   type size lib name   demangled
+---------------------------------------------------------------
+0   0x00000208 0x00401008 GLOBAL FUNC 0    MZ  export
+EOF
+RUN
