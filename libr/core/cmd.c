@@ -7240,11 +7240,10 @@ static char *core_cmd_str_context(RCore *core, RCmdContext *parent, const char *
 	}
 	cons->context->cmd_str_depth--;
 	r_cons_filter (cons);
-	const char *buffer = r_cons_get_buffer (cons, NULL);
-	char *result = strdup (r_str_get (buffer));
+	char *result = r_cons_drain (cons, NULL);
 	r_cons_pop (cons);
 	r_cons_echo (cons, NULL);
-	return result;
+	return result? result: strdup ("");
 }
 
 /* return: pointer to a buffer with the output of the command */

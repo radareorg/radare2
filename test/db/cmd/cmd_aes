@@ -125,6 +125,49 @@ INFO: Dummy: Operation executed
 EOF
 RUN
 
+NAME=esil soft pin deleting the function
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e5c3
+af
+aep soft.delete=af-*
+aep soft.delete @ 1
+pd 3
+afl
+EOF
+EXPECT=<<EOF
+/ 5: fcn.00000000 ();
+|           0x00000000      55             push rbp
+|           0x00000001      4889e5         mov rbp, rsp                ; [aep: soft.delete]
+
+            0x00000004      c3             ret
+EOF
+RUN
+
+NAME=esil soft pin resizing the disassembly block
+FILE=-
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 90909090c3c3
+aep soft.resize=b 4096
+aep soft.resize @ 2
+pd 5;b;?v $b;s;p8 6
+EOF
+EXPECT=<<EOF
+            0x00000000      90             nop
+            0x00000001      90             nop
+            0x00000002      90             nop                         ; [aep: soft.resize]
+
+            0x00000003      90             nop
+            0x00000004      c3             ret
+0x100
+0x100
+0x0
+90909090c3c3
+EOF
+RUN
+
 NAME=esil soft pins
 FILE=bins/elf/ls
 ARGS=-e bin.relocs.apply=true -e asm.lines=0 -e asm.bytes=0 -e asm.cmt.col=40
