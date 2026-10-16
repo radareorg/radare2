@@ -272,6 +272,96 @@ bool test_r_str_md2txt_rendering(void) {
 	mu_end;
 }
 
+bool test_r_str_md2txt_codeblocks(void) {
+	const RMarkdownOptions options = {
+		.color = true,
+		.utf8 = true,
+	};
+	const char *start = "  \x1b[48;5;234m" Color_WHITE " ";
+	const char *end = Color_RESET_BG Color_RESET "\n";
+	char *expected = r_str_newf ("%s12345678 %s%s9        %s%s         %s%sx        %s  after" Color_RESET "\n",
+		start, end, start, end, start, end, start, end);
+	char *s = r_str_md2txt_width ("```c\n123456789\n\nx\n```\nafter\n", &options, 12);
+	mu_assert_streq (s, expected, "wrapped rows have equal backgrounds and reset before prose");
+	free (s);
+	free (expected);
+
+	expected = r_str_newf ("%s12345678 %s", start, end);
+	s = r_str_md2txt_width ("```\n12345678\n```", &options, 12);
+	mu_assert_streq (s, expected, "exact width ends the row without an extra blank row");
+	free (s);
+	s = r_str_md2txt_width ("```\n12345678", &options, 12);
+	mu_assert_streq (s, expected, "unterminated final row is padded and reset");
+	free (s);
+	free (expected);
+
+	expected = r_str_newf ("%s1234 %s%s5678 %s%s9    %s", start, end, start, end, start, end);
+	s = r_str_md2txt_width ("\t123456789\n", &options, 8);
+	mu_assert_streq (s, expected, "indented code keeps its background across wrapped rows");
+	free (s);
+	free (expected);
+
+	expected = r_str_newf ("%s1234567  %s%s X       %s", start, end, start, end);
+	s = r_str_md2txt_width ("```\n1234567\tX\n```\n", &options, 12);
+	mu_assert_streq (s, expected, "tab expansion counts toward the row width");
+	free (s);
+	free (expected);
+
+	expected = r_str_newf ("%sé界é %s%s界   %s", start, end, start, end);
+	s = r_str_md2txt_width ("```\né界é界\n```\n", &options, 8);
+	mu_assert_streq (s, expected, "wrap by display columns without splitting UTF-8 or combining marks");
+	free (s);
+	free (expected);
+
+	s = r_str_md2txt_width ("```\n  123456  78```x\n```\n", NULL, 12);
+	mu_assert_streq (s, "     123456\n     78```x\n", "preserve spaces and literal backticks across plain code rows");
+	free (s);
+
+	expected = r_str_newf ("%s12345678 %s%s```x     %s", start, end, start, end);
+	s = r_str_md2txt_width ("```\n12345678```x\n```\n", &options, 12);
+	mu_assert_streq (s, expected, "wrapping does not interpret code as a closing fence");
+	free (s);
+	free (expected);
+
+	s = r_str_md2txt_width ("```\nabc\n```", NULL, 1);
+	mu_assert_streq (s, "a\nb\nc\n", "one-column screen drops margins and makes progress");
+	free (s);
+	s = r_str_md2txt_width ("```\n界x\n```", NULL, 2);
+	mu_assert_streq (s, "界\nx\n", "two-column screen fits wide characters");
+	free (s);
+	s = r_str_md2txt_width ("```\n界x\n```", NULL, 1);
+	mu_assert_streq (s, "?\nx\n", "wide character fallback stays within a one-column screen");
+	free (s);
+	expected = r_str_md2txt ("```\nx\n```", &options);
+	s = r_str_md2txt_width ("```\nx\n```", &options, 0);
+	mu_assert_streq (s, expected, "unspecified width keeps the default layout");
+	free (s);
+	free (expected);
+
+	const int widths[] = { 1, 2, 3, 4, 5, 8, 12, 40, 75, 120 };
+	char *code = r_str_repeat ("x", 300);
+	char *md = r_str_newf ("```\n%s\n\nshort\n```\n", code);
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (widths); i++) {
+		s = r_str_md2txt_width (md, &options, widths[i]);
+		mu_assert_notnull (s, "render code at each width");
+		mu_assert_eq (count_substr (s, "x"), 300, "wrapping preserves every code character");
+		char *row = s;
+		char *eol;
+		while ((eol = strchr (row, '\n'))) {
+			*eol = 0;
+			mu_assert_eq (r_str_len_utf8_ansi (row), widths[i], "every background row fits the requested width");
+			mu_assert ("every row resets its background", r_str_endswith (row, Color_RESET_BG Color_RESET));
+			row = eol + 1;
+		}
+		mu_assert_streq (row, "", "all code rows end in a newline");
+		free (s);
+	}
+	free (md);
+	free (code);
+	mu_end;
+}
+
 bool test_r_str_replace_char_once(void) {
 	char* str = strdup ("hello world");
 	(void) r_str_replace_char_once (str, 'l', 'x');
@@ -1207,6 +1297,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_any_against_loops);
 	mu_run_test (test_r_mem_mem);
 	mu_run_test (test_r_str_md2txt_rendering);
+	mu_run_test (test_r_str_md2txt_codeblocks);
 	mu_run_test (test_r_str_newf);
 	mu_run_test (test_r_str_replace_char_once);
 	mu_run_test (test_r_str_replace_char);
