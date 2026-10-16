@@ -6900,10 +6900,11 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 					if (numstart > hstr && numstart[-1] == '@') {
 						numstart--;
 					}
-					char* numstr = r_str_ndup (numstart, nptr - numstart);
-					if (numstr) {
-						hstr = r_str_replace (hstr, numstr, kwname, 0);
-						free (numstr);
+					// replace the number found here, not its first occurrence: `movw r0, 0` holds a 0 in `r0`
+					char *res = r_str_newf ("%.*s%s%s", (int)(numstart - hstr), hstr, kwname, nptr);
+					if (res) {
+						free (hstr);
+						hstr = res;
 					}
 					free (kwname);
 				}
