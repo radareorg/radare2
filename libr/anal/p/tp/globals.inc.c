@@ -18,7 +18,8 @@ static bool tp_global_data(TPState *tps, ut64 addr, ut64 size) {
 	if (!map || !(map->sperm & R_PERM_R) || (map->sperm & R_PERM_X)
 		|| map->id == tps->stack_map
 		|| (map->name && (r_str_startswith (map->name, "stack")
-			|| r_str_startswith (map->name, "heap") || r_str_startswith (map->name, "mem.")))
+			|| r_str_startswith (map->name, "heap") || r_str_startswith (map->name, "mem.")
+			|| !strcmp (map->name, ".got.r2")))
 		|| size > map->itv.size - (addr - map->itv.addr)
 		|| r_flag_get_by_spaces (anal->flb.f, false, addr, "imports", NULL)) {
 		return false;

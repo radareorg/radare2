@@ -4544,7 +4544,8 @@ static void anal_global_access(RCore *core, const RAnalOp *op, ut64 addr, int si
 	RIOMap *map = r_io_map_get_at (core->io, addr);
 	if (!map || !(map->sperm & R_PERM_R) || (map->sperm & R_PERM_X)
 		|| (map->name && (r_str_startswith (map->name, "mem.")
-			|| r_str_startswith (map->name, "stack") || r_str_startswith (map->name, "heap")))
+			|| r_str_startswith (map->name, "stack") || r_str_startswith (map->name, "heap")
+			|| !strcmp (map->name, ".got.r2")))
 		|| (ut64)size > map->itv.size - (addr - map->itv.addr)) {
 		return;
 	}
@@ -4592,7 +4593,7 @@ static void anal_global_access(RCore *core, const RAnalOp *op, ut64 addr, int si
 	if (((op->family == R_ANAL_OP_FAMILY_FPU && !op->sign) || op->datatype == R_ANAL_DATATYPE_FLOAT)
 		&& (size == 4 || size == 8)) {
 		type = size == 4? "float": "double";
-	} else if (size == anal->config->bits / 8 && value && value != UT64_MAX
+	} else if (size == anal->config->bits / 8 && value >= 0x100 && value != UT64_MAX
 		&& r_io_is_valid_offset (core->io, value, R_PERM_R)) {
 		type = "void *";
 	}
