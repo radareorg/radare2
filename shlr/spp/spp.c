@@ -261,13 +261,14 @@ S_API void spp_io(FILE *in, Output *out) {
 	int lines;
 	if (!p->buf.lbuf) {
 		p->buf.lbuf = calloc (1, 4096);
-	}
-	if (!p->buf.lbuf) {
-		fprintf (stderr, "Out of memory.\n");
-		return;
+		if (!p->buf.lbuf) {
+			fprintf (stderr, "Out of memory.\n");
+			return;
+		}
+		p->buf.lbuf_s = 4096;
 	}
 	p->buf.lbuf[0] = '\0';
-	p->buf.lbuf_s = 4096;
+	p->buf.lbuf_n = 0;
 	while (!feof (in)) {
 		buf[0] = '\0'; // ???
 		if (!fgets (buf, sizeof (buf) - 1, in)) {
