@@ -1609,6 +1609,34 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=mips and marks a stack alignment only from sp and a mask register
+FILE=-
+ARGS=-a mips -b 32 -e asm.bytes=false -e asm.stackptr=true
+CMDS=<<EOF
+wx e0ffbd2724e8a10324e81d01f0ffbd3324e8a00324e8bd0324e8090124e81d002440a1030800e003
+pd 10
+wx 24e8bd030800e0030000000024e809010800e0030000000024e8a0030800e00300000000
+/gj and sp, sp, sp~{0.classes}
+/gj and sp, t0, t1~{0.classes}
+/gj and sp, sp, zero~{0.classes}
+EOF
+EXPECT=<<EOF
+            0x00000000     0      addiu sp, sp, -0x20
+            0x00000004    32=     and sp, sp, at
+            0x00000008    32=     and sp, t0, sp
+            0x0000000c    32      andi sp, sp, 0xfff0
+            0x00000010    32      and sp, sp, zero
+            0x00000014    32      and sp, sp, sp
+            0x00000018    32      and sp, t0, t1
+            0x0000001c    32      and sp, zero, sp
+            0x00000020    32      and t0, sp, at
+            0x00000024    32      jr ra
+["logic","nop"]
+["pivot","logic","nop"]
+["pivot","logic","nop"]
+EOF
+RUN
+
 NAME=mips.gnu 64-bit stack adjustments come only from sp-to-sp add immediates
 FILE=-
 ARGS=-a mips.gnu -b 64 -e asm.bytes=false -e asm.stackptr=true
