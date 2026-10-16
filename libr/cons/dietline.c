@@ -1006,8 +1006,10 @@ static void selection_widget_select(RLine *line) {
 		size_t optlen = strlen (opt);
 		if (sp) {
 			int delta = sp - line->state.buffer.data + 1;
-			line->state.buffer.length = R_MIN (delta + optlen, R_LINE_BUFSIZE - 1);
+			optlen = R_MIN (optlen, R_LINE_BUFSIZE - 1 - delta);
+			line->state.buffer.length = delta + optlen;
 			memcpy (line->state.buffer.data + delta, opt, optlen);
+			line->state.buffer.data[line->state.buffer.length] = '\0';
 			line->state.buffer.index = line->state.buffer.length;
 			return;
 		}
@@ -1093,9 +1095,8 @@ R_API void r_line_autocomplete(RCons *cons) {
 		while (len_t > 0 && t[len_t - 1] == ' ') {
 			len_t--;
 		}
-		p[largv0] = '\0';
-
 		if ((p - line->state.buffer.data) + largv0 + 1 + len_t < plen) {
+			p[largv0] = '\0';
 			if (len_t > 0) {
 				int tt = largv0;
 				if (*t != ' ') {
@@ -1117,7 +1118,6 @@ R_API void r_line_autocomplete(RCons *cons) {
 		}
 	} else if (argc > 0) {
 		if (*p) {
-			// TODO: avoid overflow
 			const char *end_word = r_sub_str_rchr (line->state.buffer.data,
 				line->state.buffer.index,
 				line->state.buffer.length,
@@ -1143,6 +1143,11 @@ R_API void r_line_autocomplete(RCons *cons) {
 					min_common_len = j;
 				}
 				root = argv[i];
+			}
+			// the common prefix, the trailing text and the terminator must fit in the line buffer
+			int room = plen - 1 - (int)len_t;
+			if (min_common_len > room) {
+				min_common_len = R_MAX (room, 0);
 			}
 			if (len_t > 0) {
 				int tt = min_common_len;
