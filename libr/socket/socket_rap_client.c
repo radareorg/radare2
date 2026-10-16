@@ -3,6 +3,8 @@
 #include <r_socket.h>
 #include <r_util.h>
 
+#define RAP_CMD_MAX 16384
+
 static ut8 *r_rap_packet(ut8 type, ut32 len) {
 	size_t alloc_size;
 	if (r_add_overflow ((size_t)len, (size_t)5, &alloc_size)) {
@@ -74,12 +76,22 @@ R_API char *r_socket_rap_client_command(RSocket *s, const char *cmd, RCoreBind *
 	free (buf);
 	/* read response */
 	char bufr[8];
-	r_socket_read_block (s, (ut8*)bufr, 5);
+	if (r_socket_read_block (s, (ut8*)bufr, 5) != 5) {
+		R_LOG_ERROR ("Cannot read command reply");
+		return NULL;
+	}
 	while (bufr[0] == (char)(RAP_PACKET_CMD)) {
 		size_t cmd_len = r_read_at_be32 (bufr, 1);
+		if (cmd_len > RAP_CMD_MAX) {
+			R_LOG_ERROR ("cmd_len is wrong");
+			return NULL;
+		}
 		char *rcmd = calloc (1, cmd_len + 1);
 		if (rcmd) {
-			r_socket_read_block (s, (ut8*)rcmd, cmd_len);
+			if (r_socket_read_block (s, (ut8*)rcmd, cmd_len) != (int)cmd_len) {
+				free (rcmd);
+				return NULL;
+			}
 			// char *res = r_core_cmd_str (core, rcmd);
 			char *res = c->cmdStr (c->core, rcmd);
 			if (res) {
@@ -94,15 +106,17 @@ R_API char *r_socket_rap_client_command(RSocket *s, const char *cmd, RCoreBind *
 			free (rcmd);
 		}
 		/* read response */
-		bufr[0] = -1;
-		(void) r_socket_read_block (s, (ut8*)bufr, 5);
+		if (r_socket_read_block (s, (ut8*)bufr, 5) != 5) {
+			R_LOG_ERROR ("Cannot read command reply");
+			return NULL;
+		}
 	}
 	if (bufr[0] != (char)(RAP_PACKET_CMD | RAP_PACKET_REPLY)) {
 		R_LOG_ERROR ("Wrong reply for command 0x%02x", bufr[0]);
 		return NULL;
 	}
 	size_t cmd_len = r_read_at_be32 (bufr, 1);
-	if (cmd_len < 1 || cmd_len > 16384) {
+	if (cmd_len < 1 || cmd_len > RAP_CMD_MAX) {
 		R_LOG_ERROR ("cmd_len is wrong");
 		return NULL;
 	}
@@ -111,9 +125,10 @@ R_API char *r_socket_rap_client_command(RSocket *s, const char *cmd, RCoreBind *
 		R_LOG_ERROR ("Allocating cmd output");
 		return NULL;
 	}
-	r_socket_read_block (s, (ut8*)cmd_output, cmd_len);
-	//ensure the termination
-	cmd_output[cmd_len] = 0;
+	if (r_socket_read_block (s, (ut8*)cmd_output, cmd_len) != (int)cmd_len) {
+		free (cmd_output);
+		return NULL;
+	}
 	return cmd_output;
 }
 
