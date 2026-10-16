@@ -1574,6 +1574,9 @@ ARGS=-a mips -b 32 -e asm.bytes=false -e asm.stackptr=true
 CMDS=<<EOF
 wx e0ffbd2700c0dd2721e8a803e0ffbd27e0ffa4270800e003
 pd 6
+e asm.cpu=micro
+wx f14fb04f504c114cae4f000c
+pd 6
 EOF
 EXPECT=<<EOF
             0x00000000     0      addiu sp, sp, -0x20
@@ -1582,6 +1585,27 @@ EXPECT=<<EOF
             0x0000000c    32      addiu sp, sp, -0x20
             0x00000010    64+     addiu a0, sp, -0x20
             0x00000014    64      jr ra
+            0x00000000     0      addiusp -0x20
+            0x00000002    32+     addius5 sp, -8
+            0x00000004    40+     addius5 v0, -8
+            0x00000006    40      addiusp 0x20
+            0x00000008     8-     addius5 sp, 7
+            0x0000000a     1-     nop
+EOF
+RUN
+
+# Only a capstone v6 build tells IS_SP from == MIPS_REG_SP (it emits SP_64).
+NAME=mips 64-bit daddiu and daddi on sp adjust the stack
+FILE=-
+ARGS=-a mips -b 64 -e asm.bytes=false -e asm.stackptr=true
+CMDS=<<EOF
+wx e0ffbd67e0ffbd630800e003
+pd 3
+EOF
+EXPECT=<<EOF
+            0x00000000     0      daddiu sp, sp, -0x20
+            0x00000004    32+     daddi sp, sp, -0x20
+            0x00000008    64+     jr ra
 EOF
 RUN
 
