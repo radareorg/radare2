@@ -14,6 +14,11 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out);
 #define OPERAND(x) insn->detail->mips.operands[x]
 #define REGID(x)   OPERAND (x).reg
 #define IMM(x)     OPERAND (x).imm
+#if CS_API_MAJOR >= 6
+#define IS_SP(r)   ((r) == MIPS_REG_SP || (r) == MIPS_REG_SP_64)
+#else
+#define IS_SP(r)   ((r) == MIPS_REG_SP)
+#endif
 #define REG(x)     r_str_get (cs_reg_name (*handle, REGID (x)))
 #define MEMBASE(x) r_str_get (cs_reg_name (*handle, OPERAND (x).mem.base))
 #define MEMINDEX(x) OPERAND (x).mem.index
@@ -1479,9 +1484,19 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		SET_VAL (op, 2);
 		op->sign = (insn->id == MIPS_INS_ADDI || insn->id == MIPS_INS_ADD);
 		op->type = R_ANAL_OP_TYPE_ADD;
-		if (OPCOUNT () == 3 && REGID (0) == MIPS_REG_SP && REGID (1) == MIPS_REG_SP && OPERAND (2).type == MIPS_OP_IMM) {
+		if (OPCOUNT () == 3 && IS_SP (REGID (0)) && IS_SP (REGID (1)) && OPERAND (2).type == MIPS_OP_IMM) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -IMM(2);
+		}
+		break;
+	case MIPS_INS_ADDIUSP:
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = -IMM (0);
+		break;
+	case MIPS_INS_ADDIUS5:
+		if (IS_SP (REGID (0))) {
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = -IMM (1);
 		}
 		break;
 	case MIPS_INS_SUB:
