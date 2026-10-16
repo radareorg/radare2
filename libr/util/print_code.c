@@ -491,7 +491,7 @@ R_API char *r_print_code_indent(const char *s) {
 }
 
 static bool is_identifier_char(char c) {
-	return c == '_' || isalnum (c);
+	return c == '_' || isalnum ((ut8)c) || (ut8)c >= 0x80;
 }
 
 #define CCV(x,y) ((cc && cc->x) ? cc->x : (y))
@@ -504,7 +504,13 @@ R_API char *r_print_code_tocolor(const char *o, RConsCodeColors *cc) {
 		"if", "else", "while", "for", "switch", "case", "break",
 		"continue", "return", "goto", "do", "sizeof", "typedef",
 		"struct", "union", "enum", "volatile", "static",
-		"inline", "extern", "NULL", NULL
+		"inline", "extern", "NULL", "null", "true", "false",
+		"class", "public", "private", "protected", "new", "delete",
+		"try", "catch", "throw", "finally", "import", "from", "export",
+		"function", "let", "var", "async", "await", "def", "elif", "in",
+		"is", "not", "and", "or", "None", "True", "False", "lambda",
+		"fn", "pub", "impl", "trait", "match", "mut", "use", "mod",
+		"func", "package", "defer", "go", "range", "select", "chan", NULL
 	};
 
 	static const char *types[] = {
@@ -526,13 +532,18 @@ R_API char *r_print_code_tocolor(const char *o, RConsCodeColors *cc) {
 	bool in_preproc = false;
 
 	const char *color_string = CCV (string, Color_YELLOW);
-	const char *color_cpp = CCV(cpp, Color_CYAN);
-	const char *color_comment = CCV(cpp, Color_GREEN);
+	const char *color_cpp = CCV (cpp, Color_CYAN);
+	const char *color_comment = CCV (comment, Color_GREEN);
 	const char *color_number = CCV (number, Color_BLUE);
-	const char *color_keyword = CCV(keyword, Color_MAGENTA);
-	const char *color_types = CCV(types, Color_RED);
+	const char *color_keyword = CCV (keyword, Color_MAGENTA);
+	const char *color_types = CCV (types, Color_RED);
 
 	while (*p) {
+		if ((in_string || in_char) && *p == '\\' && p[1]) {
+			r_strbuf_append_n (out, p, 2);
+			p += 2;
+			continue;
+		}
 		if (!in_string && !in_char && !in_comment && *p == '#' && (p == o || *(p - 1) == '\n')) {
 			// Preprocessor
 			in_preproc = true;
@@ -559,12 +570,11 @@ R_API char *r_print_code_tocolor(const char *o, RConsCodeColors *cc) {
 			continue;
 		}
 		if (in_line_comment) {
-			r_strbuf_append_n (out, p, 1);
 			if (*p == '\n') {
 				in_line_comment = false;
 				r_strbuf_append (out, Color_RESET);
 			}
-			p++;
+			r_strbuf_append_n (out, p++, 1);
 			continue;
 		}
 

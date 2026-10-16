@@ -3978,7 +3978,7 @@ R_API char *r_core_md2txt(RCore *core, const char *md, bool slide_titles) {
 		.utf8_curvy = r_config_get_b (core->config, "scr.utf8.curvy"),
 		.slide_titles = slide_titles,
 	};
-	return r_str_md2txt_width (md, &options, r_cons_get_size (core->cons, NULL));
+	return r_str_md2txt_ex (md, &options, r_cons_get_size (core->cons, NULL), true);
 }
 
 /* Config helper function for PJ json encodings */

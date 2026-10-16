@@ -197,6 +197,7 @@ R_API void r_str_trim_emptylines(char *str);
 R_API int r_str_ntrim(char *str, int n);
 R_API char *r_str_md2txt(const char *md, const RMarkdownOptions *options);
 R_API char *r_str_md2txt_width(const char *md, const RMarkdownOptions *options, int width);
+R_API char *r_str_md2txt_ex(const char *md, const RMarkdownOptions *options, int width, bool highlight);
 R_API char *r_str_wrap(const char *str, int w);
 R_API char *r_str_trim_dup(const char *str);
 R_API char *r_str_trim_ndup(const char *str, size_t n);

@@ -544,10 +544,18 @@ R_API char *r_table_tofancystring(RTable *t) {
 	const char *br_corner = useUtf8 ? (useUtf8Curvy ? RUNE_CURVE_CORNER_BR : RUNE_CORNER_BR) : "'";
 	__table_adjust (t);
 
+	RList *headers = r_list_new ();
+	int maxlen = -1;
 	r_list_foreach (t->cols, iter, col) {
-		__strbuf_append_col_aligned_fancy (t, sb, col, col->name);
+		r_list_append (headers, col->name);
+		maxlen += col->width + 3;
 	}
-	int maxlen = r_str_len_utf8_ansi (r_strbuf_get (sb)) - 1;
+	RTableRow header = { .items = headers };
+	if (t->options.trim || !t->options.wrap || !wraprow (t, sb, &header, v_line)) {
+		row_fancy (t, sb, &header, v_line);
+		maxlen = r_str_len_utf8_ansi (r_strbuf_get (sb)) - 3;
+	}
+	r_list_free (headers);
 	char *h_line_str = r_str_repeat (h_line, maxlen);
 	{
 		char *s = r_str_newf ("%s%s%s\n", tl_corner, h_line_str, tr_corner);
@@ -555,7 +563,7 @@ R_API char *r_table_tofancystring(RTable *t) {
 		free (s);
 	}
 
-	r_strbuf_appendf (sb, "%s\n%s%s%s\n", v_line, l_intersect, h_line_str, r_intersect);
+	r_strbuf_appendf (sb, "%s%s%s\n", l_intersect, h_line_str, r_intersect);
 	r_list_foreach (t->rows, iter, row) {
 		if (t->options.trim || !t->options.wrap || !wraprow (t, sb, row, v_line)) {
 			row_fancy (t, sb, row, v_line);

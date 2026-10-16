@@ -2,23 +2,189 @@
 
 #include <r_bin.h>
 #include <r_util/r_table.h>
+#include <r_util/r_print.h>
+#include <ctype.h>
 
-static void fill_line(RStrBuf *sb, int maxcol) {
-	if (maxcol < 1) {
-		return;
+enum {
+	MD_BOLD = 1,
+	MD_ITALIC = 2,
+	MD_STRIKE = 4,
+	MD_CODE = 8,
+	MD_BLUE = 16,
+};
+
+static void md_style(RStrBuf *sb, int style) {
+	if (style & MD_BOLD) {
+		r_strbuf_append (sb, Color_BOLD);
 	}
-	r_strbuf_appendf (sb, "%*s", maxcol, "");
-	r_strbuf_append (sb, Color_RESET_BG);
-	r_strbuf_append (sb, Color_RESET);
-	r_strbuf_append (sb, "\n");
-}
-
-static void md_code_row_start(RStrBuf *sb, bool usecolor, int indent, int padding) {
-	r_strbuf_appendf (sb, "%*s", indent, "");
-	if (usecolor) {
+	if (style & MD_ITALIC) {
+		r_strbuf_append (sb, Color_ITALIC);
+	}
+	if (style & MD_STRIKE) {
+		r_strbuf_append (sb, Color_STRIKE);
+	}
+	if (style & MD_BLUE) {
+		r_strbuf_append (sb, Color_BBLUE);
+	}
+	if (style & MD_CODE) {
 		r_strbuf_append (sb, "\x1b[48;5;234m" Color_WHITE);
 	}
+}
+
+static char *md_wrap_text(const char *text, int width) {
+	RStrBuf *normalized = r_strbuf_new ("");
+	const char *p = text;
+	const char *end = text + strlen (text);
+	while (p < end) {
+		int len = R_MAX (1, r_utf8_decode ((const ut8 *)p, R_MIN (end - p, 4), NULL));
+		char rune[5] = {0};
+		memcpy (rune, p, len);
+		r_strbuf_append (normalized, width == 1 && r_str_len_utf8 (rune) > 1? "?": rune);
+		p += len;
+	}
+	char *wrapped = r_str_wrap (r_strbuf_get (normalized), width);
+	r_strbuf_free (normalized);
+	if (!wrapped) {
+		return NULL;
+	}
+	RStrBuf *out = r_strbuf_new ("");
+	int style = 0;
+	p = wrapped;
+	while (*p) {
+		if (*p == '\n') {
+			if (style) {
+				r_strbuf_append (out, Color_RESET);
+			}
+			r_strbuf_append (out, "\n");
+			md_style (out, style);
+			p++;
+			continue;
+		}
+		if (*p == '\x1b') {
+			static const struct {
+				const char *code;
+				int set;
+				int clear;
+			} attributes[] = {
+				{ Color_RESET, 0, -1 },
+				{ Color_BOLD, MD_BOLD, 0 },
+				{ Color_BOLD_RESET, 0, MD_BOLD },
+				{ Color_ITALIC, MD_ITALIC, 0 },
+				{ Color_ITALIC_RESET, 0, MD_ITALIC },
+				{ Color_STRIKE, MD_STRIKE, 0 },
+				{ Color_STRIKE_RESET, 0, MD_STRIKE },
+				{ Color_BBLUE, MD_BLUE, 0 },
+				{ "\x1b[48;5;234m", MD_CODE, 0 },
+				{ Color_RESET_BG, 0, MD_CODE },
+			};
+			size_t i;
+			for (i = 0; i < R_ARRAY_SIZE (attributes); i++) {
+				if (r_str_startswith (p, attributes[i].code)) {
+					style = (style & ~attributes[i].clear) | attributes[i].set;
+					break;
+				}
+			}
+		}
+		r_strbuf_append_n (out, p++, 1);
+	}
+	if (style) {
+		r_strbuf_append (out, Color_RESET);
+	}
+	free (wrapped);
+	return r_strbuf_drain (out);
+}
+
+static void md_append_wrapped(RStrBuf *out, const char *text, int width, const char *prefix, const char *continuation, bool color, bool newline) {
+	int prefix_width = R_MAX (strlen (prefix), strlen (continuation));
+	while (prefix_width >= width - 1 && *prefix == ' ' && *continuation == ' ') {
+		prefix++;
+		continuation++;
+		prefix_width--;
+	}
+	if (prefix_width >= width - 1) {
+		prefix = continuation = "";
+		prefix_width = 0;
+	}
+	char *wrapped = md_wrap_text (text, width - prefix_width);
+	if (!wrapped) {
+		return;
+	}
+	char *row = wrapped;
+	for (;;) {
+		char *eol = strchr (row, '\n');
+		if (eol) {
+			*eol = 0;
+		}
+		r_strbuf_append (out, prefix);
+		r_strbuf_append (out, row);
+		if (color) {
+			r_strbuf_append (out, Color_RESET);
+		}
+		if (eol || newline) {
+			r_strbuf_append (out, "\n");
+		}
+		if (!eol) {
+			break;
+		}
+		row = eol + 1;
+		prefix = continuation;
+	}
+	free (wrapped);
+}
+
+static void fill_line(RStrBuf *sb, int maxcol) {
+	if (maxcol > 0) {
+		r_strbuf_appendf (sb, "%*s", maxcol, "");
+	}
+	r_strbuf_append (sb, Color_RESET_BG Color_RESET "\n");
+}
+
+typedef enum {
+	MD_CODE_PLAIN,
+	MD_CODE_SYNTAX,
+	MD_CODE_DIFF,
+} MDCodeKind;
+
+static MDCodeKind md_code_kind(const char *info) {
+	info = r_str_trim_head_ro (info);
+	size_t len = strcspn (info, " \t");
+	if ((len == 4 && !r_str_ncasecmp (info, "diff", len))
+		|| (len == 5 && !r_str_ncasecmp (info, "patch", len))) {
+		return MD_CODE_DIFF;
+	}
+	if ((len == 4 && !r_str_ncasecmp (info, "text", len))
+		|| (len == 5 && !r_str_ncasecmp (info, "plain", len))
+		|| (len == 9 && !r_str_ncasecmp (info, "plaintext", len))) {
+		return MD_CODE_PLAIN;
+	}
+	return MD_CODE_SYNTAX;
+}
+
+static int md_code_color(const char *text, const char **foreground) {
+	static const char *colors[] = {
+		Color_YELLOW, Color_CYAN, Color_GREEN, Color_BLUE,
+		Color_MAGENTA, Color_RED, Color_RESET,
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (colors); i++) {
+		if (r_str_startswith (text, colors[i])) {
+			*foreground = !strcmp (colors[i], Color_RESET)? Color_WHITE: colors[i];
+			return strlen (colors[i]);
+		}
+	}
+	return 0;
+}
+
+static void md_code_row_start(RStrBuf *sb, bool usecolor, int indent, int padding, const char *background, const char *foreground) {
+	r_strbuf_appendf (sb, "%*s", indent, "");
+	if (usecolor) {
+		r_strbuf_append (sb, background);
+		r_strbuf_append (sb, Color_WHITE);
+	}
 	r_strbuf_appendf (sb, "%*s", padding, "");
+	if (usecolor && strcmp (foreground, Color_WHITE)) {
+		r_strbuf_append (sb, foreground);
+	}
 }
 
 static void md_code_row_end(RStrBuf *sb, bool usecolor, int padding) {
@@ -29,7 +195,7 @@ static void md_code_row_end(RStrBuf *sb, bool usecolor, int padding) {
 	r_strbuf_append (sb, "\n");
 }
 
-static const char *md_render_code_line(const char *b, RStrBuf *sb, int width, bool usecolor) {
+static const char *md_render_code_line(const char *b, RStrBuf *sb, int width, bool usecolor, bool highlight, const char *background, const char **foreground) {
 	const char *end = strchr (b, '\n');
 	if (!end) {
 		end = b + strlen (b);
@@ -38,8 +204,16 @@ static const char *md_render_code_line(const char *b, RStrBuf *sb, int width, bo
 	const int padding = width > 3? 1: 0;
 	const int content_width = width - indent - 2 * padding;
 	int col = 0;
-	md_code_row_start (sb, usecolor, indent, padding);
+	md_code_row_start (sb, usecolor, indent, padding, background, *foreground);
 	while (b < end) {
+		if (highlight && *b == '\x1b') {
+			int len = md_code_color (b, foreground);
+			if (len) {
+				r_strbuf_append (sb, *foreground);
+				b += len;
+				continue;
+			}
+		}
 		if (*b == '\r') {
 			b++;
 			continue;
@@ -62,7 +236,7 @@ static const char *md_render_code_line(const char *b, RStrBuf *sb, int width, bo
 		while (repeat-- > 0) {
 			if (col + columns > content_width) {
 				md_code_row_end (sb, usecolor, content_width - col + padding);
-				md_code_row_start (sb, usecolor, indent, padding);
+				md_code_row_start (sb, usecolor, indent, padding, background, *foreground);
 				col = 0;
 			}
 			r_strbuf_append (sb, text);
@@ -74,29 +248,45 @@ static const char *md_render_code_line(const char *b, RStrBuf *sb, int width, bo
 	return *end? end + 1: end;
 }
 
-static int md_render_hr(const char *b, RStrBuf *sb, const RMarkdownOptions *options, int maxcol) {
-	const char *eol = strchr (b, '\n');
-	const size_t len = eol? (size_t)(eol - b): strlen (b);
-	char *text = r_str_trim_ndup (b, len);
-	if (!text) {
-		return 0;
+static void md_render_code(RStrBuf *code, RStrBuf *out, int width, bool usecolor, bool highlight, MDCodeKind kind, bool fenced) {
+	if (r_strbuf_is_empty (code)) {
+		return;
 	}
-	const char *p = text;
-	while (*p == '-') {
-		p++;
+	highlight &= usecolor;
+	const char *text = r_strbuf_get (code);
+	char *colored = highlight && kind == MD_CODE_SYNTAX? r_print_code_tocolor (text, NULL): NULL;
+	const char *p = colored? colored: text;
+	const char *foreground = Color_WHITE;
+	while (*p) {
+		const char *background = "\x1b[48;5;234m";
+		if (highlight && kind == MD_CODE_DIFF) {
+			background = *p == '+'? "\x1b[48;5;22m": *p == '-'? "\x1b[48;5;52m": background;
+			foreground = r_str_startswith (p, "@@")? Color_CYAN: Color_WHITE;
+		}
+		if (!fenced && *p == '\n') {
+			r_strbuf_append (out, "\n");
+			p++;
+		} else {
+			p = md_render_code_line (p, out, width, usecolor, colored != NULL, background, &foreground);
+		}
 	}
-	if (p - text < 3 || *p) {
-		free (text);
-		return 0;
+	free (colored);
+	r_strbuf_set (code, "");
+}
+
+static bool md_render_hr(const char *line, RStrBuf *sb, const RMarkdownOptions *options, int maxcol) {
+	line = r_str_trim_head_ro (line);
+	size_t dashes = strspn (line, "-");
+	if (dashes < 3 || *r_str_trim_head_ro (line + dashes)) {
+		return false;
 	}
-	free (text);
 	const int width = maxcol / 2;
-	char *line = r_str_repeat (options && options->utf8? RUNE_LONG_LINE_HORIZ: "-", width);
-	if (line) {
-		r_strbuf_appendf (sb, "%*s%s\n", (maxcol - width) / 2, "", line);
-		free (line);
+	char *rule = r_str_repeat (options->utf8? RUNE_LONG_LINE_HORIZ: "-", width);
+	if (rule) {
+		r_strbuf_appendf (sb, "%*s%s\n", (maxcol - width) / 2, "", rule);
+		free (rule);
 	}
-	return (int)(eol? eol + 1 - b: len);
+	return true;
 }
 
 static bool md_table_is_sep(const char *line, size_t len) {
@@ -141,10 +331,6 @@ static RList *md_table_split_row(const char *line, size_t len) {
 		if (!have_sep) {
 			break;
 		}
-		if (!*p) {
-			r_list_append (cells, strdup (""));
-			break;
-		}
 	}
 	if (had_leading_pipe && !r_list_empty (cells)) {
 		char *last = r_list_last (cells);
@@ -156,27 +342,103 @@ static RList *md_table_split_row(const char *line, size_t len) {
 	return cells;
 }
 
-static int md_table_col_align(const char *cell, size_t len) {
-	char *s = r_str_trim_ndup (cell, len);
-	if (!s) {
-		return R_TABLE_ALIGN_LEFT;
-	}
-	size_t slen = strlen (s);
-	bool left = *s == ':';
-	bool right = slen > 0 && s[slen - 1] == ':';
-	free (s);
-	if (left && right) {
-		return R_TABLE_ALIGN_CENTER;
-	}
-	if (right) {
-		return R_TABLE_ALIGN_RIGHT;
-	}
-	return R_TABLE_ALIGN_LEFT;
-}
-
 static char *md_render_inline(const char *b, const RMarkdownOptions *options);
 
-static int md_render_table(const char *b, RStrBuf *out, const RMarkdownOptions *options) {
+static void md_table_render(RTable *table, RStrBuf *out, int width, bool color) {
+	int columns = r_list_length (table->cols);
+	int limit = (width - 1) / columns - 3;
+	RListIter *iter, *cell_iter;
+	RTableColumn *col;
+	RTableRow *row;
+	if (limit < 2) {
+		r_list_foreach (table->rows, iter, row) {
+			RListIter *column_iter = table->cols->head;
+			const char *cell;
+			r_list_foreach (row->items, cell_iter, cell) {
+				col = column_iter->data;
+				char *field = r_str_newf ("%s: %s", col->name, cell);
+				if (field) {
+					md_append_wrapped (out, field, width, "", "", color, true);
+					free (field);
+				}
+				column_iter = column_iter->n;
+			}
+			if (iter->n) {
+				r_strbuf_append (out, "\n");
+			}
+		}
+		if (r_list_empty (table->rows)) {
+			r_list_foreach (table->cols, iter, col) {
+				md_append_wrapped (out, col->name, width, "", "", color, true);
+			}
+		}
+		return;
+	}
+	r_list_foreach (table->cols, iter, col) {
+		col->maxWidth = R_MIN ((size_t)width, r_str_len_utf8_ansi (col->name) + 1);
+	}
+	r_list_foreach (table->rows, iter, row) {
+		RListIter *column_iter = table->cols->head;
+		const char *cell;
+		r_list_foreach (row->items, cell_iter, cell) {
+			col = column_iter->data;
+			int cell_width = R_MIN ((size_t)width, r_str_len_utf8_ansi (cell) + 1);
+			col->maxWidth = R_MAX (col->maxWidth, cell_width);
+			column_iter = column_iter->n;
+		}
+	}
+	const int budget = width - 1 - 3 * columns;
+	int high = budget;
+	while (limit < high) {
+		int middle = limit + (high - limit + 1) / 2;
+		ut64 used = 0;
+		r_list_foreach (table->cols, iter, col) {
+			used += R_MIN (middle, col->maxWidth);
+		}
+		if (used <= budget) {
+			limit = middle;
+		} else {
+			high = middle - 1;
+		}
+	}
+	int remaining = budget;
+	r_list_foreach (table->cols, iter, col) {
+		col->width = R_MIN (limit, col->maxWidth);
+		remaining -= col->width;
+	}
+	r_list_foreach (table->cols, iter, col) {
+		if (remaining && col->width < col->maxWidth) {
+			col->width++;
+			remaining--;
+		}
+		char *wrapped = md_wrap_text (col->name, col->width);
+		if (wrapped) {
+			free (col->name);
+			col->name = wrapped;
+		}
+	}
+	r_list_foreach (table->rows, iter, row) {
+		RListIter *column_iter = table->cols->head;
+		char *cell;
+		r_list_foreach (row->items, cell_iter, cell) {
+			col = column_iter->data;
+			char *wrapped = md_wrap_text (cell, col->width);
+			if (wrapped) {
+				free (cell);
+				cell_iter->data = wrapped;
+			}
+			column_iter = column_iter->n;
+		}
+	}
+	table->widthsDirty = false;
+	char *rendered = r_table_tofancystring (table);
+	if (rendered) {
+		r_strbuf_append (out, rendered);
+		free (rendered);
+	}
+}
+
+static int md_render_table(const char *b, RStrBuf *out, const RMarkdownOptions *options, int width) {
 	const char *header_end = strchr (b, '\n');
 	if (!header_end) {
 		return 0;
@@ -200,8 +462,8 @@ static int md_render_table(const char *b, RStrBuf *out, const RMarkdownOptions *
 	RList *seps = md_table_split_row (sep_start, sep_len);
 
 	RTableOptions table_options = {
-		.utf8 = options && options->utf8,
-		.utf8_curvy = options && options->utf8_curvy,
+		.utf8 = options->utf8,
+		.utf8_curvy = options->utf8_curvy,
 		.wrap = true,
 	};
 	RTable *t = r_table_new ("md", &table_options);
@@ -213,8 +475,8 @@ static int md_render_table(const char *b, RStrBuf *out, const RMarkdownOptions *
 		r_table_add_column (t, r_table_type ("string"), rh? rh: h, 0);
 		free (rh);
 		const char *sep_cell = r_list_get_n (seps, idx);
-		if (sep_cell) {
-			r_table_align (t, idx, md_table_col_align (sep_cell, strlen (sep_cell)));
+		if (sep_cell && r_str_endswith (sep_cell, ":")) {
+			r_table_align (t, idx, *sep_cell == ':'? R_TABLE_ALIGN_CENTER: R_TABLE_ALIGN_RIGHT);
 		}
 		idx++;
 	}
@@ -226,18 +488,7 @@ static int md_render_table(const char *b, RStrBuf *out, const RMarkdownOptions *
 	while (*p) {
 		const char *eol = strchr (p, '\n');
 		size_t len = eol? (size_t)(eol - p): strlen (p);
-		size_t i;
-		bool has_pipe = false;
-		bool only_ws = true;
-		for (i = 0; i < len; i++) {
-			if (p[i] == '|') {
-				has_pipe = true;
-			}
-			if (p[i] != ' ' && p[i] != '\t') {
-				only_ws = false;
-			}
-		}
-		if (only_ws || !has_pipe) {
+		if (!memchr (p, '|', len)) {
 			break;
 		}
 		RList *cells = md_table_split_row (p, len);
@@ -260,232 +511,258 @@ static int md_render_table(const char *b, RStrBuf *out, const RMarkdownOptions *
 			}
 		}
 		r_table_add_row_list (t, cells);
-		if (!eol) {
-			p += len;
-			break;
-		}
-		p = eol + 1;
+		p += len + (eol != NULL);
 	}
 
-	char *rendered = r_table_tofancystring (t);
+	md_table_render (t, out, width, options->color);
 	r_table_free (t);
-	if (R_STR_ISNOTEMPTY (rendered)) {
-		r_strbuf_append (out, rendered);
-	}
-	free (rendered);
 	return p - b;
 }
 
-static int md_emphasis(const char *b, RStrBuf *sb, bool *bold, bool *italic, bool *strike) {
-	char m = *b;
-	if (m != '*' && m != '_') {
-		return 0;
+static bool md_escaped(const char *b) {
+	return b[0] == '\\' && b[1] && strchr ("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~", b[1]);
+}
+
+static int md_marker_run(const char *b, const char *end) {
+	const char *p = b;
+	while (p < end && *p == *b) {
+		p++;
 	}
-	const bool dbl = (b[1] == m);
-	if (dbl) {
-		if (*bold) {
-			r_strbuf_append (sb, Color_BOLD_RESET);
-			*bold = false;
-			return 2;
-		}
-		const char *p = b + 2;
-		while (*p && *p != '\n') {
-			if (p[0] == m && p[1] == m) {
-				r_strbuf_append (sb, Color_BOLD);
-				*bold = true;
-				return 2;
-			}
-			p++;
-		}
-		return 0;
-	}
-	if (*italic) {
-		r_strbuf_append (sb, Color_ITALIC_RESET);
-		*italic = false;
-		return 1;
-	}
-	const char *p = b + 1;
-	while (*p && *p != '\n') {
-		if (p[0] == m && p[1] == m) {
+	return p - b;
+}
+
+static const char *md_closing_marker(const char *b, const char *end, int count) {
+	const char marker = *b;
+	const char *p = b + count;
+	while (p < end) {
+		if (marker != '`' && md_escaped (p)) {
 			p += 2;
 			continue;
 		}
-		if (p[0] == m) {
-			r_strbuf_append (sb, Color_ITALIC);
-			*italic = true;
-			return 1;
-		}
-		p++;
-	}
-	return 0;
-}
-
-static int md_strikethrough(const char *b, RStrBuf *sb, bool *strike) {
-	if (b[0] != '~' || b[1] != '~') {
-		return 0;
-	}
-	if (*strike) {
-		r_strbuf_append (sb, Color_STRIKE_RESET);
-		*strike = false;
-		return 2;
-	}
-	const char *p = b + 2;
-	while (*p && *p != '\n') {
-		if (p[0] == '~' && p[1] == '~') {
-			r_strbuf_append (sb, Color_STRIKE);
-			*strike = true;
-			return 2;
-		}
-		p++;
-	}
-	return 0;
-}
-
-static int md_backtick_run(const char *b) {
-	int n = 0;
-	while (b[n] == '`') {
-		n++;
-	}
-	return n;
-}
-
-static int md_render_code_span(const char *b, RStrBuf *sb, const RMarkdownOptions *options, int *cols) {
-	const int ticks = md_backtick_run (b);
-	if (ticks < 1) {
-		return 0;
-	}
-	const char *code = b + ticks;
-	const char *p = code;
-	while (*p && *p != '\n') {
-		if (*p == '`') {
-			int n = md_backtick_run (p);
-			if (n == ticks) {
-				const size_t code_len = p - code;
-				if (options && options->color) {
-					r_strbuf_append (sb, "\x1b[48;5;234m" Color_WHITE);
+		if (*p == marker) {
+			int run = md_marker_run (p, end);
+			if (marker == '`') {
+				if (run == count) {
+					return p;
 				}
-				r_strbuf_append_n (sb, code, code_len);
-				if (options && options->color) {
-					r_strbuf_append (sb, Color_RESET_BG);
-					r_strbuf_append (sb, Color_RESET);
-				}
-				if (cols) {
-					*cols = (int)code_len;
-				}
-				return (int)(p + ticks - b);
+			} else if (run >= count && (count != 1 || run != 2)
+				&& !isspace ((ut8)p[-1])
+				&& (marker != '_' || p + run == end || !isalnum ((ut8)p[run]))) {
+				return p + run - count;
 			}
-			p += n;
+			p += run;
+		} else if (marker != '`' && *p == '`') {
+			int ticks = md_marker_run (p, end);
+			const char *close = md_closing_marker (p, end, ticks);
+			p = close? close + ticks: p + ticks;
 		} else {
 			p++;
 		}
 	}
-	return 0;
+	return NULL;
+}
+
+static void md_inline(RStrBuf *sb, const char *text, const char *end, bool color, int style, int depth);
+
+static const char *md_link(RStrBuf *sb, const char *b, const char *end, bool color, int style, int depth) {
+	const char *label = b + 1;
+	const char *p = label;
+	int brackets = 1;
+	while (p < end && brackets) {
+		if (md_escaped (p)) {
+			p += 2;
+			continue;
+		}
+		if (*p == '[') {
+			brackets++;
+		} else if (*p == ']') {
+			brackets--;
+		}
+		if (brackets) {
+			p++;
+		}
+	}
+	if (p + 1 >= end || p[1] != '(') {
+		return NULL;
+	}
+	const char *label_end = p;
+	const char *url = p + 2;
+	while (url < end && isspace ((ut8)*url)) {
+		url++;
+	}
+	p = url;
+	int parentheses = 0;
+	bool angled = p < end && *p == '<';
+	if (angled) {
+		url = ++p;
+	}
+	while (p < end) {
+		if (md_escaped (p)) {
+			p += 2;
+			continue;
+		}
+		if (angled) {
+			if (*p == '>') {
+				break;
+			}
+		} else if (*p == '(') {
+			parentheses++;
+		} else if (*p == ')') {
+			if (!parentheses) {
+				break;
+			}
+			parentheses--;
+		} else if (isspace ((ut8)*p)) {
+			break;
+		}
+		p++;
+	}
+	const char *url_end = p;
+	if (angled) {
+		if (p == end || *p++ != '>') {
+			return NULL;
+		}
+	}
+	while (p < end && isspace ((ut8)*p)) {
+		p++;
+	}
+	if (p < end && (*p == '"' || *p == '\'')) {
+		char quote = *p++;
+		while (p < end && *p != quote) {
+			p += md_escaped (p)? 2: 1;
+		}
+		if (p == end) {
+			return NULL;
+		}
+		p++;
+		while (p < end && isspace ((ut8)*p)) {
+			p++;
+		}
+	}
+	if (p == end || *p != ')' || parentheses) {
+		return NULL;
+	}
+	md_inline (sb, label, label_end, color, style, depth + 1);
+	if (url_end > url && (label_end - label != url_end - url || memcmp (label, url, url_end - url))) {
+		r_strbuf_append (sb, " (");
+		while (url < url_end) {
+			if (md_escaped (url)) {
+				url++;
+			}
+			r_strbuf_append_n (sb, url++, 1);
+		}
+		r_strbuf_append (sb, ")");
+	}
+	return p + 1;
+}
+
+static void md_inline(RStrBuf *sb, const char *text, const char *end, bool color, int style, int depth) {
+	const char *b = text;
+	while (b < end) {
+		if (md_escaped (b)) {
+			r_strbuf_append_n (sb, b + 1, 1);
+			b += 2;
+			continue;
+		}
+		if (*b == '[' && depth < 32) {
+			const char *next = md_link (sb, b, end, color, style, depth);
+			if (next) {
+				b = next;
+				continue;
+			}
+		}
+		if (strchr ("`*_~", *b) && depth < 32) {
+			int run = md_marker_run (b, end);
+			int count = *b == '`'? run: R_MIN (run, *b == '~'? 2: 3);
+			bool emphasis = *b != '`';
+			bool valid = !emphasis || (b + count < end && !isspace ((ut8)b[count])
+				&& (*b != '_' || b == text || !isalnum ((ut8)b[-1]))
+				&& (*b != '~' || count == 2));
+			const char *close = valid? md_closing_marker (b, end, count): NULL;
+			if (close) {
+				int attr = *b == '`'? MD_CODE: *b == '~'? MD_STRIKE:
+					count == 3? MD_BOLD | MD_ITALIC: count == 2? MD_BOLD: MD_ITALIC;
+				if (color) {
+					md_style (sb, attr);
+				}
+				if (emphasis) {
+					md_inline (sb, b + count, close, color, style | attr, depth + 1);
+				} else {
+					r_strbuf_append_n (sb, b + count, close - b - count);
+				}
+				if (color) {
+					if (attr == MD_CODE) {
+						r_strbuf_append (sb, Color_RESET_BG Color_RESET);
+						md_style (sb, style);
+					} else {
+						if ((attr & MD_BOLD) && !(style & MD_BOLD)) {
+							r_strbuf_append (sb, Color_BOLD_RESET);
+						}
+						if ((attr & MD_ITALIC) && !(style & MD_ITALIC)) {
+							r_strbuf_append (sb, Color_ITALIC_RESET);
+						}
+						if ((attr & MD_STRIKE) && !(style & MD_STRIKE)) {
+							r_strbuf_append (sb, Color_STRIKE_RESET);
+						}
+					}
+				}
+				b = close + count;
+				continue;
+			}
+		}
+		if (*b == '\t') {
+			r_strbuf_append (sb, "  ");
+		} else if (*b != '\r') {
+			r_strbuf_append_n (sb, b, 1);
+		}
+		b++;
+	}
 }
 
 static char *md_render_inline(const char *b, const RMarkdownOptions *options) {
-	R_RETURN_VAL_IF_FAIL (b, NULL);
-	const bool useattrs = options && options->utf8;
 	RStrBuf *sb = r_strbuf_new ("");
-	bool bold = false;
-	bool italic = false;
-	bool strike = false;
-	while (*b) {
-		int ch = *b;
-		if (ch == '`') {
-			int n = md_render_code_span (b, sb, options, NULL);
-			if (n > 0) {
-				b += n;
-				continue;
-			}
-		}
-		if (useattrs && (ch == '*' || ch == '_')) {
-			int n = md_emphasis (b, sb, &bold, &italic, &strike);
-			if (n > 0) {
-				b += n;
-				continue;
-			}
-		}
-		if (useattrs && ch == '~') {
-			int n = md_strikethrough (b, sb, &strike);
-			if (n > 0) {
-				b += n;
-				continue;
-			}
-		}
-		r_strbuf_appendf (sb, "%c", ch);
-		b++;
-	}
+	md_inline (sb, b, b + strlen (b), options->color, 0, 0);
 	return r_strbuf_drain (sb);
-}
-
-static int md_title_level(const char *b) {
-	int level = 0;
-	while (level < 6 && b[level] == '#') {
-		level++;
-	}
-	if (level < 1) {
-		return 0;
-	}
-	const char next = b[level];
-	return (next == ' ' || next == '\t' || next == '\n' || next == '\r' || !next)
-		? level: 0;
 }
 
 static void md_render_slide_title(RStrBuf *sb, const char *title, size_t title_len, int level, int maxcol, bool usecolor) {
 	char *title_str = r_str_ndup (title, (int)title_len);
+	if (!title_str) {
+		return;
+	}
 	if (level == 1) {
 		char *big = r_str_ss (title_str, NULL, 0);
-		char *p = big;
-		char *nextline = strstr (p, "\n");
-		if (usecolor) {
-			r_strbuf_append (sb, Color_BLACK);
-			r_strbuf_append (sb, Color_BGGREEN);
+		if (!big) {
+			free (title_str);
+			return;
 		}
-		while (nextline) {
-			char *line = r_str_ndup (p, nextline - p);
-			r_strbuf_append (sb, line);
-			int col = strlen (line);
-			int i;
-			for (i = col; i < maxcol + 1; i++) {
-				r_strbuf_append (sb, " ");
-			}
-			if (usecolor) {
-				r_strbuf_append (sb, "  ");
-				r_strbuf_append (sb, " " Color_RESET_BG "" Color_RESET "\n" Color_BGGREEN "" Color_BLACK);
-			} else {
-				r_strbuf_append (sb, "   \n");
-			}
-			free (line);
+		char *p = big;
+		char *nextline;
+		if (usecolor) {
+			r_strbuf_append (sb, Color_BLACK Color_BGGREEN);
+		}
+		while ((nextline = strchr (p, '\n'))) {
+			int len = nextline - p;
+			r_strbuf_append_n (sb, p, len);
+			r_strbuf_appendf (sb, "%*s", R_MAX (0, maxcol + 1 - len), "");
+			r_strbuf_append (sb, usecolor? "   " Color_RESET_BG Color_RESET "\n" Color_BGGREEN Color_BLACK: "   \n");
 			p = nextline + 1;
-			nextline = strstr (p, "\n");
 		}
 		free (big);
-		if (usecolor) {
-			r_strbuf_append (sb, Color_RESET_BG "" Color_RESET "\n");
-		} else {
-			r_strbuf_append (sb, "\n");
-		}
+		r_strbuf_append (sb, usecolor? Color_RESET_BG Color_RESET "\n": "\n");
 		free (title_str);
 		return;
 	}
 
 	if (usecolor) {
-		r_strbuf_append (sb, Color_BLACK);
-		r_strbuf_append (sb, Color_BGBLUE);
+		r_strbuf_append (sb, Color_BLACK Color_BGBLUE);
 		fill_line (sb, maxcol + 4);
-		if (level > 2) {
-			r_strbuf_append (sb, Color_BLUE);
-			r_strbuf_append (sb, Color_BGCYAN);
-		} else {
-			r_strbuf_append (sb, Color_BLACK);
-			r_strbuf_append (sb, Color_BGBLUE);
-		}
+		r_strbuf_append (sb, level > 2? Color_BLUE Color_BGCYAN: Color_BLACK Color_BGBLUE);
 	}
 	r_strbuf_appendf (sb, "  %s", title_str);
 	if (usecolor) {
-		fill_line (sb, maxcol + 2 - 2 - (int)title_len);
-		r_strbuf_append (sb, Color_BLACK);
-		r_strbuf_append (sb, Color_BGBLUE);
+		fill_line (sb, maxcol + 2 - (int)r_str_len_utf8 (title_str));
+		r_strbuf_append (sb, Color_BLACK Color_BGBLUE);
 		fill_line (sb, maxcol + 4);
 	} else {
 		r_strbuf_append (sb, "\n");
@@ -493,179 +770,231 @@ static void md_render_slide_title(RStrBuf *sb, const char *title, size_t title_l
 	free (title_str);
 }
 
-static int md_render_title(const char *b, RStrBuf *sb, const RMarkdownOptions *options, int maxcol) {
-	const int level = md_title_level (b);
-	if (level < 1) {
-		return 0;
+static bool md_render_title(const char *b, RStrBuf *sb, const RMarkdownOptions *options, int maxcol) {
+	int level = 0;
+	while (level < 6 && b[level] == '#') {
+		level++;
 	}
-	const char *title = b + level;
-	while (*title == ' ' || *title == '\t') {
-		title++;
+	if (!level || (b[level] && !strchr (" \t\n\r", b[level]))) {
+		return false;
 	}
-	const char *end = title;
-	while (*end && *end != '\n' && *end != '\r') {
-		end++;
-	}
+	const char *title = b + level + strspn (b + level, " \t");
+	const char *end = title + strcspn (title, "\n\r");
 	const char *trimmed_end = end;
 	while (trimmed_end > title && (trimmed_end[-1] == ' ' || trimmed_end[-1] == '\t')) {
 		trimmed_end--;
 	}
 	const size_t title_len = trimmed_end - title;
-	const bool usecolor = options && options->color;
-	if (options && options->slide_titles) {
-		md_render_slide_title (sb, title, title_len, level, maxcol, usecolor);
-	} else {
-		int i;
-		if (usecolor) {
-			r_strbuf_append (sb, Color_BBLUE);
+	const bool usecolor = options->color;
+	bool slide_rendered = false;
+	if (options->slide_titles && maxcol > 4) {
+		RStrBuf *slide = r_strbuf_new ("");
+		md_render_slide_title (slide, title, title_len, level, maxcol - 4, usecolor);
+		slide_rendered = !r_strbuf_is_empty (slide) && r_str_bounds (r_strbuf_get (slide), NULL) <= maxcol;
+		if (slide_rendered) {
+			r_strbuf_append (sb, r_strbuf_get (slide));
 		}
-		for (i = 0; i < level; i++) {
-			r_strbuf_append (sb, "#");
-		}
-		if (usecolor) {
-			r_strbuf_append (sb, Color_RESET);
-		}
-		if (title_len > 0) {
-			r_strbuf_append (sb, " ");
-			if (usecolor) {
-				r_strbuf_append (sb, Color_BOLD);
-			}
-			r_strbuf_append_n (sb, title, title_len);
-			if (usecolor) {
-				r_strbuf_append (sb, Color_RESET);
-			}
-		}
-		r_strbuf_append (sb, "\n");
+		r_strbuf_free (slide);
 	}
-	while (*end == '\r' || *end == '\n') {
-		end++;
-		if (end[-1] == '\n') {
-			break;
+	if (!slide_rendered) {
+		RStrBuf *title_buf = r_strbuf_new ("");
+		if (usecolor) {
+			r_strbuf_append (title_buf, Color_BBLUE);
 		}
+		r_strbuf_append_n (title_buf, b, level);
+		if (usecolor) {
+			r_strbuf_append (title_buf, Color_RESET);
+		}
+		if (title_len) {
+			r_strbuf_append (title_buf, " ");
+			if (usecolor) {
+				r_strbuf_append (title_buf, Color_BOLD);
+			}
+			md_inline (title_buf, title, trimmed_end, usecolor, MD_BOLD, 0);
+			if (usecolor) {
+				r_strbuf_append (title_buf, Color_RESET);
+			}
+		}
+		md_append_wrapped (sb, r_strbuf_get (title_buf), maxcol, "", "", usecolor, true);
+		r_strbuf_free (title_buf);
 	}
-	return end - b;
+	return true;
 }
 
-R_API char *r_str_md2txt_width(const char *md, const RMarkdownOptions *options, int width) {
+static int md_fence(const char *line, int *indent) {
+	const char *p = line;
+	while (*p == ' ' && p - line < 3) {
+		p++;
+	}
+	*indent = p - line;
+	if (*p != '`' && *p != '~') {
+		return 0;
+	}
+	const char *start = p;
+	while (*p == *start) {
+		p++;
+	}
+	return p - start >= 3? p - start: 0;
+}
+
+static int md_list_marker(const char *line) {
+	const char *p = line;
+	if (*p == '-' || *p == '*' || *p == '+') {
+		p++;
+	} else {
+		while (isdigit ((ut8)*p) && p - line < 9) {
+			p++;
+		}
+		if (p == line || (*p != '.' && *p != ')')) {
+			return 0;
+		}
+		p++;
+	}
+	if (*p != ' ' && *p != '\t') {
+		return 0;
+	}
+	while (*p == ' ' || *p == '\t') {
+		p++;
+	}
+	return p - line;
+}
+
+R_API char *r_str_md2txt_ex(const char *md, const RMarkdownOptions *options, int width, bool highlight) {
 	R_RETURN_VAL_IF_FAIL (md, NULL);
 	RMarkdownOptions default_options = {0};
 	if (!options) {
 		options = &default_options;
 	}
-	const bool usecolor = options->color;
-	const bool useutf8 = options->utf8;
+	width = width > 0? width: 75;
+	RStrBuf *out = r_strbuf_new ("");
+	RStrBuf *code = r_strbuf_new ("");
+	MDCodeKind code_kind = MD_CODE_SYNTAX;
+	char fence_marker = 0;
+	int fence_length = 0;
+	int fence_indent = 0;
+	int list_indent = 0;
+	int list_quotes = 0;
 	const char *b = md;
-	RStrBuf *sb = r_strbuf_new ("");
-	int col = 0;
-	const int maxcol = 75;
-	const int code_width = width > 0? width: maxcol;
-	bool codeblock = false;
-	bool bold = false;
-	bool italic = false;
-	bool strike = false;
 	while (*b) {
-		if (col == 0) {
-			if (r_str_startswith (b, "```")) {
-				while (*b && *b != '\n') {
-					b++;
-				}
-				codeblock = !codeblock;
-				if (*b == '\n') {
-					b++;
-				}
-				continue;
-			}
-			if (codeblock || *b == '\t') {
-				if (!codeblock) {
-					b++;
-				}
-				b = md_render_code_line (b, sb, code_width, usecolor);
-				continue;
-			}
+		const char *eol = strchr (b, '\n');
+		const char *next = eol? eol + 1: b + strlen (b);
+		char *line = r_str_ndup (b, (eol? eol: next) - b);
+		if (!line) {
+			break;
 		}
-		int ch = *b;
-	repeat:
-		switch (ch) {
-		case 10: // '\n'
-			if (usecolor) {
-				r_strbuf_append (sb, Color_RESET);
-				r_strbuf_append (sb, "\n");
+		size_t length = strlen (line);
+		if (length && line[length - 1] == '\r') {
+			line[--length] = 0;
+		}
+		int indent;
+		int run = md_fence (line, &indent);
+		if (fence_length) {
+			if (run >= fence_length && line[indent] == fence_marker
+				&& !*r_str_trim_head_ro (line + indent + run)) {
+				md_render_code (code, out, width, options->color, highlight, code_kind, true);
+				fence_length = 0;
 			} else {
-				r_strbuf_append (sb, "\n");
+				int skip = 0;
+				while (skip < fence_indent && line[skip] == ' ') {
+					skip++;
+				}
+				r_strbuf_append (code, line + skip);
+				r_strbuf_append (code, "\n");
 			}
-			col = 0;
-			bold = false;
-			italic = false;
-			strike = false;
-			break;
-		case '\t':
-			r_strbuf_append (sb, "  ");
-			break;
-		case 13:
-			// ignore
-			break;
-		default:
-			if (col > maxcol) {
-				ch = 10;
-				if (*b == ' ') {
-					b++;
+		} else if (run && (line[indent] != '`' || !strchr (line + indent + run, '`'))) {
+			md_render_code (code, out, width, options->color, highlight, MD_CODE_SYNTAX, false);
+			code_kind = md_code_kind (line + indent + run);
+			fence_marker = line[indent];
+			fence_length = run;
+			fence_indent = indent;
+			list_indent = 0;
+		} else if (!*r_str_trim_head_ro (line)) {
+			r_strbuf_append (r_strbuf_is_empty (code)? out: code, "\n");
+		} else {
+			const char *content = line;
+			while (*content == ' ') {
+				content++;
+			}
+			indent = content - line;
+			int quotes = 0;
+			while (*content == '>') {
+				quotes++;
+				content++;
+				if (*content == ' ') {
+					content++;
+				}
+			}
+			if (quotes) {
+				indent = 0;
+				while (*content == ' ') {
+					indent++;
+					content++;
+				}
+			}
+			int marker = md_list_marker (content);
+			bool continuation = list_indent && quotes == list_quotes && indent >= list_indent;
+			bool indented_code = !quotes && !marker && (*line == '\t' || indent >= (continuation? list_indent + 4: 4));
+			if (!indented_code) {
+				md_render_code (code, out, width, options->color, highlight, MD_CODE_SYNTAX, false);
+			}
+			if (indented_code) {
+				int skip = *line == '\t'? 1: (continuation? list_indent: 0) + 4;
+				r_strbuf_append (code, line + skip);
+				r_strbuf_append (code, "\n");
+			} else if (!quotes && !marker && md_render_title (content, out, options, width)) {
+				list_indent = 0;
+			} else if (!quotes && md_render_hr (content, out, options, width)) {
+				list_indent = 0;
+			} else {
+				int table_length = !quotes && !marker? md_render_table (b, out, options, width): 0;
+				if (table_length) {
+					next = b + table_length;
+					list_indent = 0;
 				} else {
-					r_strbuf_append (sb, "-");
-				}
-				b--;
-				goto repeat;
-			}
-			if (col == 0) {
-				int tlen = md_render_title (b, sb, options, maxcol);
-				if (tlen > 0) {
-					b += tlen;
-					col = 0;
-					continue;
-				}
-				tlen = md_render_hr (b, sb, options, maxcol);
-				if (tlen > 0) {
-					b += tlen;
-					continue;
-				}
-				tlen = md_render_table (b, sb, options);
-				if (tlen > 0) {
-					b += tlen;
-					continue;
-				}
-				r_strbuf_append (sb, "  ");
-			}
-			if (ch == '`') {
-				int code_cols = 0;
-				int n = md_render_code_span (b, sb, options, &code_cols);
-				if (n > 0) {
-					b += n - 1;
-					col += code_cols;
-					break;
-				}
-			}
-			if (useutf8 && (ch == '*' || ch == '_')) {
-				int n = md_emphasis (b, sb, &bold, &italic, &strike);
-				if (n > 0) {
-					b += n - 1;
-					col++;
-					break;
+					RStrBuf *prefix = r_strbuf_new (width > 3? "  ": "");
+					int i;
+					for (i = 0; i < quotes; i++) {
+						r_strbuf_append (prefix, "> ");
+					}
+					r_strbuf_appendf (prefix, "%*s", indent, "");
+					RStrBuf *rest = r_strbuf_new (r_strbuf_get (prefix));
+					if (marker) {
+						int marker_width = marker;
+						for (i = 0; i < marker; i++) {
+							if (content[i] == '\t') {
+								r_strbuf_append (prefix, "  ");
+								marker_width++;
+							} else {
+								r_strbuf_append_n (prefix, content + i, 1);
+							}
+						}
+						r_strbuf_appendf (rest, "%*s", marker_width, "");
+						list_indent = indent + marker_width;
+						list_quotes = quotes;
+						content += marker;
+					} else if (!continuation) {
+						list_indent = 0;
+					}
+					char *rendered = md_render_inline (content, options);
+					if (rendered) {
+						md_append_wrapped (out, rendered, width, r_strbuf_get (prefix), r_strbuf_get (rest), options->color, eol != NULL);
+						free (rendered);
+					}
+					r_strbuf_free (prefix);
+					r_strbuf_free (rest);
 				}
 			}
-			if (useutf8 && ch == '~') {
-				int n = md_strikethrough (b, sb, &strike);
-				if (n > 0) {
-					b += n - 1;
-					col++;
-					break;
-				}
-			}
-			col++;
-			r_strbuf_appendf (sb, "%c", ch);
-			break;
 		}
-		b++;
+		free (line);
+		b = next;
 	}
-	return r_strbuf_drain (sb);
+	md_render_code (code, out, width, options->color, highlight, fence_length? code_kind: MD_CODE_SYNTAX, fence_length != 0);
+	r_strbuf_free (code);
+	return r_strbuf_drain (out);
+}
+
+R_API char *r_str_md2txt_width(const char *md, const RMarkdownOptions *options, int width) {
+	return r_str_md2txt_ex (md, options, width, false);
 }
 
 R_API char *r_str_md2txt(const char *md, const RMarkdownOptions *options) {

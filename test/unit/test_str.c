@@ -254,7 +254,7 @@ bool test_r_str_md2txt_rendering(void) {
 	mu_assert_eq (count_substr (s, "\x1b[48;5;234m" Color_WHITE "foo" Color_RESET_BG Color_RESET), 1, "markdown inline code rendering");
 	free (s);
 
-	s = r_str_md2txt ("| attr | plain |\n| --- | --- |\n| **cell** | ~~gone~~ |\n", &options);
+	s = r_str_md2txt ("| attr | plain |\n| --- | --- |\n| **cell** | ~~gone~~ |\n", &color_options);
 	mu_assert_eq (count_substr (s, "**cell**"), 0, "markdown table bold marker is not raw text");
 	mu_assert_eq (count_substr (s, "~~gone~~"), 0, "markdown table strike marker is not raw text");
 	mu_assert_eq (count_substr (s, Color_BOLD "cell" Color_BOLD_RESET), 1, "markdown table bold cell rendering");
@@ -268,6 +268,34 @@ bool test_r_str_md2txt_rendering(void) {
 	s = r_str_md2txt ("| attr |\n| --- |\n| `code` |\n", &table_code_options);
 	mu_assert_eq (count_substr (s, "`code`"), 0, "markdown table inline code marker is not raw text");
 	mu_assert_eq (count_substr (s, "\x1b[48;5;234m" Color_WHITE "code" Color_RESET_BG Color_RESET), 1, "markdown table inline code rendering");
+	free (s);
+	mu_end;
+}
+
+bool test_r_str_md2txt_tables_and_titles(void) {
+	char *s = r_str_md2txt_width (
+		"| left | center | right |\n| :--- | :---: | ---: |\n"
+		"| a\\|b | c | d |\n| x |\n| p | q | r | extra |\n", NULL, 40);
+	mu_assert_streq (s,
+		".--------------------------.\n"
+		"| left  | center  |  right |\n"
+		")--------------------------(\n"
+		"| a|b   |    c    |      d |\n"
+		"| x     |         |        |\n"
+		"| p     |    q    |      r |\n"
+		"`--------------------------'\n", "table alignment, escaped pipes and uneven rows");
+	free (s);
+
+	const RMarkdownOptions options = { .slide_titles = true };
+	s = r_str_md2txt_width ("## Title\n", &options, 20);
+	mu_assert_streq (s, "  Title\n", "slide title fits the available width");
+	free (s);
+	s = r_str_md2txt_width ("## Title\n", &options, 5);
+	mu_assert_streq (s, "##\nTitle\n", "oversized slide title falls back to wrapped text");
+	free (s);
+
+	s = r_str_md2txt_width ("  \t--- \t\n--\n---text\n", NULL, 12);
+	mu_assert_streq (s, "   ------\n  --\n  ---text\n", "horizontal rules allow whitespace but reject short runs and text");
 	free (s);
 	mu_end;
 }
@@ -1297,6 +1325,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_any_against_loops);
 	mu_run_test (test_r_mem_mem);
 	mu_run_test (test_r_str_md2txt_rendering);
+	mu_run_test (test_r_str_md2txt_tables_and_titles);
 	mu_run_test (test_r_str_md2txt_codeblocks);
 	mu_run_test (test_r_str_newf);
 	mu_run_test (test_r_str_replace_char_once);
