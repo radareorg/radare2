@@ -72,16 +72,6 @@ static char *collapse_whitespace(RStrs s) {
 	return out;
 }
 
-static const char *find_char_between(const char *p, const char *end, char ch) {
-	while (p < end) {
-		if (*p == ch) {
-			return p;
-		}
-		p++;
-	}
-	return NULL;
-}
-
 #include "pp.inc.c"
 
 static const char kvc_getch(KVCParser *kvc) {
