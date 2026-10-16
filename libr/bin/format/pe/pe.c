@@ -3829,6 +3829,10 @@ RVecPEExport *PE_(r_bin_pe_get_exports)(RBinPEObj *pe) {
 			forwarder_name[0] = '\0';
 			// get vaddr from AddressOfFunctions array
 			function_rva = r_read_at_ble32 ((ut8 *)func_rvas, i * sizeof (PE_VWord), pe->endian);
+			if (!function_rva) {
+				// an unused ordinal: RVA 0 is the DOS header, no export (the loader skips it too)
+				continue;
+			}
 			function_ordinal = i;
 			// have exports by name?
 			if (pe->export_directory->NumberOfNames > 0) {
