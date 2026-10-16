@@ -706,13 +706,16 @@ static bool rasm_asm(RAsmState *as, const char *buf, ut64 offset, ut64 len, int 
 				r_cons_printf (as->cons, "\n");
 			} else {
 				if (hexwords) {
+					const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->a->config);
 					size_t i = 0;
 					for (i = 0; i < acode->len; i += sizeof (ut32)) {
-						ut32 dword = r_read_ble32 (acode->bytes + i, R_SYS_ENDIAN);
-						r_cons_printf (as->cons, "0x%08x ", dword);
-						if ((i / 4) == 7) {
-							r_cons_printf (as->cons, "\n");
+						// zero-pad the last word instead of reading past the code
+						ut8 word[sizeof (ut32)] = {0};
+						memcpy (word, acode->bytes + i, R_MIN (sizeof (ut32), acode->len - i));
+						if (i > 0) {
+							r_cons_printf (as->cons, (i / 4) % 8? " ": "\n");
 						}
+						r_cons_printf (as->cons, "0x%08x", r_read_ble32 (word, be));
 					}
 					r_cons_printf (as->cons, "\n");
 				} else {
