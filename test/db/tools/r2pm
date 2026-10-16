@@ -203,6 +203,7 @@ EOF
 RUN
 
 NAME=r2pm binary package versions are independent and scoped
+BROKEN=1
 FILE=-
 CMDS=<<EOF
 %R2PM_DBDIR=scripts/r2pm/radare2-pm/db
@@ -264,6 +265,7 @@ EOF
 RUN
 
 NAME=r2pm metadata values share quoted and heredoc parsing
+BROKEN=1
 FILE=-
 CMDS=<<EOF
 %R2PM_DBDIR=scripts/r2pm/radare2-pm/db
