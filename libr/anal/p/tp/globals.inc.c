@@ -132,7 +132,8 @@ static bool tp_global_set(TPState *tps, ut64 addr, const char *type, const char 
 	}
 	range.remove = true;
 	r_flag_foreach_range (anal->flb.f, addr + 1, end, tp_global_range_cb, &range);
-	bool ok = r_anal_global_add (anal, addr, type, global_name);
+	bool ok = global? r_anal_global_retype (anal, addr, type)
+		: r_anal_global_add (anal, addr - anal->flb.f->base, type, global_name);
 	if (ok) {
 		sdb_setf (anal->sdb, type, 0, "global.inferred.0x%" PFMT64x, addr);
 		if (layout) {

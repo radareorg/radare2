@@ -1455,3 +1455,190 @@ EXPECT=<<EOF
 0x0000000000000038
 EOF
 RUN
+
+NAME=Flag deletion after changing the mask preserves another bucket
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+f old 4 @ 0x140
+f neighbor 4 @ 0x40
+e io.mask=0xff
+f-old
+fj
+f-neighbor
+fj
+EOF
+EXPECT=<<EOF
+[{"name":"neighbor","size":4,"addr":64}]
+[]
+EOF
+RUN
+
+NAME=Flag relocation after changing the mask removes its old index
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+f old 4 @ 0x140
+e io.mask=0xff
+f old 4 @ 0x60
+fj
+f-old
+fj
+EOF
+EXPECT=<<EOF
+[{"name":"old","size":4,"addr":96}]
+[]
+EOF
+RUN
+
+NAME=Masked base flags can be deleted after disabling the mask
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e io.mask=0xff
+fb 0x100
+f old 4 @ 0x140
+e io.mask=0
+f-old
+fj
+EOF
+EXPECT=<<EOF
+[]
+EOF
+RUN
+
+NAME=Masked base flag relocation preserves a sibling after a mask change
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e io.mask=0xff
+fb 0x100
+f old 4 @ 0x140
+f sibling 4 @ 0x40
+e io.mask=0xf
+f old 4 @ 0x6
+fj
+f-old
+fj
+f-sibling
+fj
+EOF
+EXPECT=<<EOF
+[{"name":"old","size":4,"addr":262},{"name":"sibling","size":4,"addr":320}]
+[{"name":"sibling","size":4,"addr":320}]
+[]
+EOF
+RUN
+
+NAME=DWARF globals retain absolute addresses with a nonzero flag base
+FILE=bins/elf/anal-globals
+CMDS=<<EOF
+fb 0x100
+aaa
+avg
+avg. @ obj.global_array
+is~global~FUNC~?
+f~obj.global_count~?
+avg~?
+aaa
+avg~?
+EOF
+EXPECT=<<EOF
+0x01000190 4 global.global_limit int const
+0x01002258 4 global.global_count int
+0x0100225c 1 global.global_byte unsigned char
+0x01002260 8 global.global_wide uint64_t
+0x01002268 12 global.global_array int[3]
+0x01002278 8 global.global_pointer int *
+0x01002280 8 global.global_pair GlobalPair
+0x01002288 4 global.main.local_static int
+0x0100228c 2 global.global_static short
+0x01002290 4 global.global_zero int
+int[3]
+0
+1
+10
+10
+EOF
+RUN
+
+NAME=Stripped ELF global inference retains absolute addresses with a nonzero flag base
+FILE=bins/elf/anal-globals-stripped
+CMDS=<<EOF
+fb 0x100
+iI~stripped
+is~OBJ~?
+avgj
+aaa
+avg
+aaa
+avg~?
+EOF
+EXPECT=<<EOF
+stripped true
+0
+[]
+0x01002258 4 global.0x1002258 uint32_t
+0x0100225c 1 global.0x100225c uint8_t
+0x01002260 8 global.0x1002260 uint64_t
+0x0100226c 4 global.0x100226c uint32_t
+0x01002278 8 global.0x1002278 void *
+0x01002280 4 global.0x1002280 uint32_t
+0x01002288 4 global.0x1002288 uint32_t
+0x0100228c 2 global.0x100228c int16_t
+0x01002290 4 global.0x1002290 uint32_t
+9
+EOF
+RUN
+
+NAME=TP global inference retains absolute addresses with a nonzero flag base
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+o malloc://128 0x2000 rw
+e asm.arch=x86
+e asm.bits=64
+wx 48c7c3002000008b038b4b04c3 @ 0
+fb 0x100
+aaa
+avgj
+tsc global_0x2000
+aaa
+avgj
+EOF
+EXPECT=<<EOF
+[{"name":"global.0x2000","addr":8192,"size":8,"type":"global_0x2000"}]
+struct global_0x2000 {
+  uint32_t field_0x0;
+  uint32_t field_0x4;
+};
+[{"name":"global.0x2000","addr":8192,"size":8,"type":"global_0x2000"}]
+EOF
+RUN
+
+NAME=Symbol registration retains absolute global addresses with a nonzero flag base
+FILE=bins/elf/anal-globals-symbols
+CMDS=<<EOF
+f-*
+fb 0x100
+io
+aa
+avg
+is~global~FUNC~?
+afl~global~?
+EOF
+EXPECT=<<EOF
+0x01000190 4 global.global_limit unknown
+0x01002258 4 global.global_count unknown
+0x0100225c 1 global.global_byte unknown
+0x01002260 8 global.global_wide unknown
+0x01002268 12 global.global_array unknown
+0x01002278 8 global.global_pointer unknown
+0x01002280 8 global.global_pair unknown
+0x01002288 4 global.main.local_static unknown
+0x0100228c 2 global.global_static unknown
+0x01002290 4 global.global_zero unknown
+0
+0
+EOF
+RUN

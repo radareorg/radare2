@@ -175,10 +175,28 @@ static RFlagsAtOffset *r_flag_get_nearest_list(RFlag *f, ut64 addr, int dir) {
 
 static void remove_addrmap(RFlag *f, RFlagItem *item) {
 	R_RETURN_IF_FAIL (f && item);
-	ut64 addr = f->mask? item->addr & f->mask: item->addr;
-	RFlagsAtOffset *flags = r_flag_get_nearest_list (f, addr, 0);
+	ut64 addresses[] = { item->addr, f->mask? item->addr & f->mask: item->addr };
+	RFlagsAtOffset *flags = NULL;
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (addresses); i++) {
+		RFlagsAtOffset *candidate = r_flag_get_nearest_list (f, addresses[i], 0);
+		if (candidate && flag_vec_delete_item (&candidate->flags, item)) {
+			flags = candidate;
+			break;
+		}
+	}
+	if (!flags) {
+		// The mask may have changed since this item was indexed.
+		RSkipListNode *it;
+		RFlagsAtOffset *candidate;
+		r_skiplist_foreach (f->by_addr, it, candidate) {
+			if (flag_vec_delete_item (&candidate->flags, item)) {
+				flags = candidate;
+				break;
+			}
+		}
+	}
 	if (flags) {
-		flag_vec_delete_item (&flags->flags, item);
 		if (RVecFlagItemPtr_empty (&flags->flags)) {
 			r_skiplist_delete (f->by_addr, flags);
 		}

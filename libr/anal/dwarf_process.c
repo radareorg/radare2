@@ -2370,7 +2370,8 @@ static bool integrate_dwarf_global(RAnal *anal, ut64 addr, const char *name, con
 		free (global_name);
 		global_name = unique_name;
 	}
-	bool added = global_name && r_anal_global_add (anal, addr, type, global_name);
+	bool added = global? r_anal_global_retype (anal, addr, type)
+		: global_name && r_anal_global_add (anal, addr - anal->flb.f->base, type, global_name);
 	if (added) {
 		global = r_anal_global_get (anal, addr);
 		r_flag_item_set_realname (anal->flb.f, global, name);

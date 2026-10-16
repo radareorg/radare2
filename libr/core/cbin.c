@@ -2811,7 +2811,7 @@ static void set_symbol_flag(RCore *core, RBinSymbol *symbol, const SymName *sn, 
 			char *global_name = core->bin->prefix
 				? r_str_newf ("%s.global.%s", core->bin->prefix, name)
 				: r_str_newf ("global.%s", name);
-			if (global_name && r_anal_global_add (core->anal, addr, NULL, global_name)) {
+			if (global_name && r_anal_global_add (core->anal, addr - core->flags->base, NULL, global_name)) {
 				RFlagItem *global = r_anal_global_get (core->anal, addr);
 				global->size = symbol->attr.size;
 				r_flag_item_set_realname (core->flags, global, display_name);

@@ -4603,7 +4603,8 @@ static void anal_global_access(RCore *core, const RAnalOp *op, ut64 addr, int si
 		return;
 	}
 	char *name = global? strdup (global->name): r_str_newf ("global.0x%" PFMT64x, addr);
-	if (name && r_anal_global_add (anal, addr, type, name)) {
+	if (name && (global? r_anal_global_retype (anal, addr, type)
+			: r_anal_global_add (anal, addr - anal->flb.f->base, type, name))) {
 		sdb_set (anal->sdb, key, type, 0);
 	}
 	free (name);
