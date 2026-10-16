@@ -57329,3 +57329,19 @@ stackop: inc
 stackptr: 32
 EOF
 RUN
+
+NAME=aap keeps a function whole when a prelude also hits inside it
+FILE=malloc://256
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+# clang's frame prologue: stp x29, x30, [sp, -0x20]!, then sub sp, sp, 0x280, which is a prelude too
+wx fd7bbea9fc0b00f9fd030091ff030ad1a8630091e0031f2a1f2003d5fc0b40f9fd7bc2a9ffc30a91c0035fd6
+aap
+afl
+EOF
+EXPECT=<<EOF
+0x00000000    1     44 fcn.00000000
+EOF
+RUN
+
