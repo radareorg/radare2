@@ -79,14 +79,19 @@ echo "$CWD" | grep -q ' '
 if [ $? = 0 ]; then
 	USEMESON=1
 fi
+[ "$USEMESON_SYMLINKS" != 1 ] && USEMESON_SYMLINKS=0
 if [ "$USEMESON" = 1 ]; then
 	rm -rf b
-	meson b
-	ninja -C b
+	meson setup b --prefix="${PREFIX:-/usr/local}" || exit 1
+	ninja -C b || exit 1
 	echo "[INFO] We need sudo to run the following command:"
-	echo "${SUDO} make symstall PWD='$PWD/b' BTOP='$PWD/b/binr'"
-	${SUDO} make symstall PWD="$PWD/b" BTOP="$PWD/b/binr"
-	exit $RV
+	echo "${SUDO} ninja -C b install"
+	if [ "$USEMESON_SYMLINKS" = 1 ]; then
+		./configure > /dev/null 2>&1
+		exec ${SUDO} make symstall PWD="$PWD/b" BTOP="$PWD/b/binr"
+	else
+		exec ${SUDO} ninja -C b install
+	fi
 fi
 
 export PAGER=cat
