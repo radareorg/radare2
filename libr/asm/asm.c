@@ -45,6 +45,22 @@ R_API bool r_asm_plugin_remove(RAsm *a, RAsmPlugin *plugin) {
 }
 
 /* pseudo.c - private api */
+
+// data directives can emit more than the 64 bytes r_anal_op_set_bytes() keeps
+static int asm_op_set_data(RAnalOp *op, const ut8 *data, int size) {
+	if (size < 1) {
+		return 0;
+	}
+	if (op->weakbytes) {
+		op->weakbytes = false;
+	} else if (op->bytes != op->bytes_buf) {
+		free (op->bytes);
+	}
+	op->bytes = r_mem_dup (data, size);
+	op->size = op->bytes? size: 0;
+	return op->size;
+}
+
 static int r_asm_pseudo_align(RAsmCode *acode, RAnalOp *op, const char *input) {
 	const char *err = NULL;
 	ut64 align_val = r_num_math_err (NULL, input, &err);
@@ -72,8 +88,7 @@ static int r_asm_pseudo_string(RAnalOp *op, char *input, bool zero) {
 	}
 	len = r_str_unescape (input) + (zero? 1: 0);
 	r_anal_op_set_mnemonic (op, op->addr, input);
-	r_anal_op_set_bytes (op, op->addr, (const ut8 *)input, len + 1);
-	return len;
+	return asm_op_set_data (op, (const ut8 *)input, len);
 }
 
 static int r_asm_pseudo_intN(RAsm *a, RAnalOp *op, char *input, int n, bool is_unsigned) {
@@ -187,7 +202,7 @@ static int r_asm_pseudo_byte(RAnalOp *op, char *input) {
 		}
 		buf[i] = num;
 	}
-	r_anal_op_set_bytes (op, 0, buf, len);
+	len = asm_op_set_data (op, buf, len);
 	free (buf);
 	return len;
 }
@@ -247,48 +262,56 @@ static int r_asm_pseudo_fill(RAsm *a, RAnalOp *op, const char *input) {
 	} else {
 		r_mem_copyloop (buf, pattern, (int)total, size);
 	}
-	r_anal_op_set_bytes (op, 0, buf, (int)total);
+	int len = asm_op_set_data (op, buf, (int)total);
 	free (buf);
-	return (int)total;
+	return len;
 }
 
-static int r_asm_pseudo_incbin(RAnalOp *op, char *input) {
+static int r_asm_pseudo_incbin(RAnalOp *op, const char *input) {
 	size_t bytes_read = 0;
-	r_str_replace_char (input, ',', ' ');
-	// int len = r_str_word_count (input);
-	r_str_word_set0 (input);
-	// const char *filename = r_str_word_get0 (input, 0);
+	// work on a copy, the directive is parsed once per stage
+	char *args = strdup (input);
+	if (!args) {
+		return -1;
+	}
+	r_str_replace_char (args, ',', ' ');
+	int nargs = r_str_word_count (args);
+	r_str_word_set0 (args);
+	const char *filename = r_str_word_get0 (args, 0);
 	const char *err = NULL;
-	size_t skip = (size_t)r_num_math_err (NULL, r_str_word_get0 (input, 1), &err);
-	size_t count = 0;
-	if (!err) {
-		count = (size_t)r_num_math_err (NULL, r_str_word_get0 (input, 2), &err);
+	size_t skip = 0, count = 0;
+	if (nargs > 1) {
+		skip = (size_t)r_num_math_err (NULL, r_str_word_get0 (args, 1), &err);
+	}
+	if (!err && nargs > 2) {
+		count = (size_t)r_num_math_err (NULL, r_str_word_get0 (args, 2), &err);
 	}
 	if (err) {
 		R_LOG_ERROR ("Invalid number in .incbin: %s", err);
+		free (args);
 		return -1;
 	}
-	char *content = r_file_slurp (input, &bytes_read);
+	char *content = r_file_slurp (filename, &bytes_read);
 	if (!content) {
-		R_LOG_ERROR ("Could not open '%s'", input);
+		R_LOG_ERROR ("Could not open '%s'", filename);
+		free (args);
 		return -1;
 	}
-	if (skip > 0) {
-		skip = skip > bytes_read? bytes_read: skip;
+	free (args);
+	if (skip > bytes_read) {
+		skip = bytes_read;
 	}
-	if (count > 0) {
-		count = count > bytes_read? 0: count;
-	} else {
-		count = bytes_read;
+	if (count < 1 || count > bytes_read - skip) {
+		count = bytes_read - skip;
 	}
-#if 0
-	// Need to handle arbitrary amount of data
-	r_unref (op->buf_inc);
-	op->buf_inc = r_buf_new_with_string (content + skip);
-#endif
-	// Terminate the original buffer
+	if (count > INT_MAX) {
+		R_LOG_ERROR ("File too large for .incbin");
+		free (content);
+		return -1;
+	}
+	int len = asm_op_set_data (op, (const ut8 *)content + skip, (int)count);
 	free (content);
-	return count;
+	return len;
 }
 
 R_API RAsm *r_asm_new(void) {
@@ -896,7 +919,7 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 		if (bytes) {
 			int size = r_hex_str2bin (ptr + 5, bytes);
 			if (size > 0) {
-				ret = r_anal_op_set_bytes (op, 0, bytes, size)? size: 0;
+				ret = asm_op_set_data (op, bytes, size);
 			}
 			free (bytes);
 		}
@@ -1338,27 +1361,18 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 					R_LOG_ERROR ("Cannot assemble '%s' at line %d", ptr_start, linenum);
 					goto fail;
 				}
+				if (!op.bytes || op.size < ret) {
+					R_LOG_ERROR ("Assembled size mismatch (%d of %d bytes) at line %d", op.size, ret, linenum);
+					goto fail;
+				}
 				acode->len = idx + ret;
 				char *newbuf = realloc (acode->bytes, (idx + ret) * 2);
 				if (!newbuf) {
 					goto fail;
 				}
 				acode->bytes = (ut8 *)newbuf;
-				if (op.size > 0) {
-					memcpy (acode->bytes + idx, op.bytes, op.size);
-				}
+				memcpy (acode->bytes + idx, op.bytes, ret);
 				memset (acode->bytes + idx + ret, 0, idx + ret);
-#if 0
-				if (op.buf_inc && r_buf_size (op.buf_inc) > 1) {
-					char *inc = r_buf_tostring (op.buf_inc);
-					r_unref (op.buf_inc);
-					op.buf_inc = NULL;
-					if (inc) {
-						ret += r_hex_str2bin (inc, acode->bytes + idx + ret);
-						free (inc);
-					}
-				}
-#endif
 			}
 		}
 	}
