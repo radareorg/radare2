@@ -167,11 +167,11 @@ static char *man_read(RCmdContext *ctx, const char *page) {
 
 				if (!strcmp (macro, "Sh")) {
 					// Section header
-					r_strbuf_appendf (sb, "\n## %s\n\n", args_trimmed? args_trimmed: "");
+					r_strbuf_appendf (sb, "%s## %s\n\n", r_strbuf_is_empty (sb)? "": "\n\n", args_trimmed? args_trimmed: "");
 					in_list = false;
 				} else if (!strcmp (macro, "Ss")) {
 					// Subsection header
-					r_strbuf_appendf (sb, "\n### %s\n\n", args_trimmed? args_trimmed: "");
+					r_strbuf_appendf (sb, "%s### %s\n\n", r_strbuf_is_empty (sb)? "": "\n\n", args_trimmed? args_trimmed: "");
 					in_list = false;
 				} else if (!strcmp (macro, "Pp")) {
 					// Paragraph break
@@ -210,6 +210,17 @@ static char *man_read(RCmdContext *ctx, const char *page) {
 				} else if (!strcmp (macro, "Nd")) {
 					// Description
 					r_strbuf_appendf (sb, " - %s", args_trimmed? args_trimmed: "");
+				} else if (!strcmp (macro, "Xr") && R_STR_ISNOTEMPTY (args_trimmed)) {
+					size_t name_len = strcspn (args_trimmed, " \t");
+					const char *tail = r_str_trim_head_ro (args_trimmed + name_len);
+					r_strbuf_append (sb, "`");
+					r_strbuf_append_n (sb, args_trimmed, name_len);
+					if (*tail && !strchr (".,;:!?)]", *tail)) {
+						size_t section_len = strcspn (tail, " \t");
+						r_strbuf_appendf (sb, "(%.*s)", (int)section_len, tail);
+						tail = r_str_trim_head_ro (tail + section_len);
+					}
+					r_strbuf_appendf (sb, "`%s\n", tail);
 				} else if (!strcmp (macro, "Ft")) {
 					// Function type
 					r_strbuf_appendf (sb, "\n**%s** ", args_trimmed? args_trimmed: "");
@@ -262,10 +273,14 @@ static char *man_read(RCmdContext *ctx, const char *page) {
 		// Clean up extra whitespace
 		res = r_str_replace_all (res, "\n\n\n", "\n\n");
 		res = r_str_replace_all (res, "\\-", "-");
+		char *rendered = r_core_md2txt (core, res, false);
+		free (res);
+		res = rendered;
 	}
 	return res;
 }
 
+// R2R test/db/cmd/posixshell
 static int man_run(RCmdContext *ctx) {
 	const ShellCommand *spec = ctx->handler_user;
 	const char *command = spec->name;

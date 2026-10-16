@@ -95,7 +95,7 @@ static char *md_wrap_text(const char *text, int width) {
 }
 
 static void md_append_wrapped(RStrBuf *out, const char *text, int width, const char *prefix, const char *continuation, bool color, bool newline) {
-	int prefix_width = R_MAX (strlen (prefix), strlen (continuation));
+	int prefix_width = R_MAX (r_str_len_utf8_ansi (prefix), r_str_len_utf8_ansi (continuation));
 	while (prefix_width >= width - 1 && *prefix == ' ' && *continuation == ' ') {
 		prefix++;
 		continuation++;
@@ -962,7 +962,19 @@ R_API char *r_str_md2txt_ex(const char *md, const RMarkdownOptions *options, int
 					if (marker) {
 						int marker_width = marker;
 						for (i = 0; i < marker; i++) {
-							if (content[i] == '\t') {
+							if (!i && !isdigit ((ut8)*content)) {
+								if (options->color) {
+									r_strbuf_append (prefix, Color_BBLUE);
+								}
+								if (options->utf8) {
+									r_strbuf_append (prefix, "•");
+								} else {
+									r_strbuf_append_n (prefix, content, 1);
+								}
+								if (options->color) {
+									r_strbuf_append (prefix, Color_RESET);
+								}
+							} else if (content[i] == '\t') {
 								r_strbuf_append (prefix, "  ");
 								marker_width++;
 							} else {
