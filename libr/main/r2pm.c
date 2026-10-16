@@ -1343,11 +1343,9 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global, bool binar
 }
 
 static bool r2pm_have_packages(void) {
-	char *gpath = r2pm_gitdir ();
-	char *pmpath = r_str_newf ("%s/%s", gpath, "radare2-pm");
-	bool res = r_file_is_directory (pmpath);
-	free (gpath);
-	free (pmpath);
+	char *dbdir = r2pm_dbdir ();
+	bool res = r_file_is_directory (dbdir);
+	free (dbdir);
 	return res;
 }
 
