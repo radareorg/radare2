@@ -71,6 +71,30 @@ Foo
 EOF
 RUN
 
+NAME=td tcc anonymous struct in typedef field names are not format strings
+FILE=--
+CMDS=<<EOF
+e types.plugin=tcc
+'td typedef struct { int a.%p.%p; char b[4]; } T;
+tk~typedef.T
+'td typedef struct { int a.b; char c[4]; } U;
+tk~typedef.U
+EOF
+EXPECT=<<EOF
+typedef.U=struct
+typedef.U.a.b=int32_t,0,0
+typedef.U.a.b.meta=0
+typedef.U.c=char,4,4
+typedef.U.c.meta=4
+typedef.U.fields=a.b,c
+<string>:1: error: ',' expected (got "%")
+<string>:1: error: ';' expected (got "p.")
+<string>:1: error: bracket expected
+<string>:1: error: '}' expected (got "%")
+<string>:1: error: declaration expected
+EOF
+RUN
+
 NAME=ts add and delete
 FILE=--
 CMDS=<<EOF
@@ -244,6 +268,35 @@ EXPECT=<<EOF
 | 0x00001144      4b9a           ldr r2, [JNINativeInterface]          ; JNINativeInterface.reserved0
 | 0x00001148      9a42           cmp r2, r3                            ; JNINativeInterface.reserved0
 14
+EOF
+RUN
+
+NAME=tcc: quote as last byte after an error
+FILE=malloc://32
+CMDS=<<EOF
+-e types.plugin=tcc
+af+ 0 f
+afb+ 0 0 16
+'CF #define A '' "
+EOF
+EXPECT=<<EOF
+<string>:1: error: empty character constant
+<string>:1: error: missing terminating " character
+EOF
+RUN
+
+NAME=tcc: string literal in a define
+FILE=malloc://32
+CMDS=<<EOF
+-e types.plugin=tcc
+af+ 0 f
+afb+ 0 0 16
+'CF #define S "x y"
+'CF int f(int a, char *s);
+afs
+EOF
+EXPECT=<<EOF
+int32_t f (int32_t a, char *s);
 EOF
 RUN
 
@@ -2878,6 +2931,37 @@ EXPECT=<<EXPECT
  a : 0x00000000 = 'A'
  b : 0x00000004 = 0x78563412
  c : 0x00000008 = 'B'
+EXPECT
+RUN
+
+NAME=tcc malformed preprocessor directives do not crash or hang
+FILE=--
+CMDS=<<CMDS
+-e types.plugin=tcc
+'td #pragma pack(3)
+'td #line 1 2
+'td #else
+'td #endif
+'td /* unterminated comment
+'td #if #"stale"
+'td int a[*1];
+'td struct ok { char a; int b; }
+tk ~struct.ok=
+CMDS
+EXPECT=<<EXPECT
+struct.ok=a,b
+<string>:1: error: invalid pack pragma
+<string>: error: #line
+<string>:1: error: #else without matching #if
+<string>:1: error: #endif without matching #if
+<string>:1: error: unexpected end of file in comment
+<string>:1: error: declaration expected
+<string>:1: error: identifier5 expected
+<string>:1: error: constant expression expected
+<string>:1: error: missing #endif
+<string>:1: error: declaration expected
+<string>:1: error: pointer expected
+<string>:1: error: declaration expected
 EXPECT
 RUN
 
@@ -5886,5 +5970,21 @@ EXPECT=<<EOF
 20
 8
 0
+EOF
+RUN
+
+NAME=tcc skipped include must not pop the include stack
+FILE=-
+CMDS=<<EOF
+e types.plugin=tcc
+'td #include "/x_overflow.h"
+'td #include "/missing.h"
+'td struct foo { int x; };
+ts foo
+?e done
+EOF
+EXPECT=<<EOF
+'pf d x
+done
 EOF
 RUN

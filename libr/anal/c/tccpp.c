@@ -506,6 +506,8 @@ ST_FUNC uint8_t *parse_comment(TCCState *s1, uint8_t *p) {
 								goto after_star;
 							}
 						}
+					} else if (c == CH_EOF) {
+						break;
 					}
 				} else {
 					break;
@@ -520,6 +522,7 @@ after_star:
 			p = s1->file->buf_ptr;
 			if (c == CH_EOF) {
 				tcc_error (s1, "unexpected end of file in comment");
+				return p;
 			} else if (c == '\\') {
 				p++;
 			}
@@ -552,7 +555,7 @@ static inline bool check_space(int t, int *spc) {
 static uint8_t *parse_pp_string(TCCState *s1, uint8_t *p, int sep, CString *str) {
 	int c;
 	p++;
-	while (tcc_nerr (s1) == 0) {
+	for (;;) {
 		c = *p;
 		if (c == sep) {
 			break;
@@ -1022,11 +1025,14 @@ static int expr_preprocess(TCCState *s1) {
 	tok_str_add (s1, &str, -1);	/* simulate end of file */
 	tok_str_add (s1, &str, 0);
 	/* now evaluate C constant expression */
+	int line_end_tok = s1->tok;
 	s1->macro_ptr = str.str;
 	next (s1);
 	c = expr_const (s1);
 	s1->macro_ptr = NULL;
 	tok_str_free (str.str);
+	// expr_const may stop early, leaving the current token inside the freed str
+	s1->tok = line_end_tok;
 	return c != 0;
 }
 
@@ -1192,6 +1198,7 @@ static void pragma_parse(TCCState *s1) {
 			if (s1->pack_stack_ptr <= s1->pack_stack) {
 stk_error:
 				tcc_error (s1, "out of pack stack");
+				return;
 			}
 			s1->pack_stack_ptr--;
 		} else {
@@ -1208,6 +1215,7 @@ stk_error:
 				if (s1->tok != TOK_CINT) {
 pack_error:
 					tcc_error (s1, "invalid pack pragma");
+					return;
 				}
 				val = s1->tokc.i;
 				if (val < 1 || val > 16 || (val & (val - 1)) != 0) {
@@ -1287,6 +1295,7 @@ read_name:
 					if (s1->tok != TOK_STR) {
 include_syntax:
 						tcc_error (s1, "'#include' expects \"FILENAME\" or <FILENAME>");
+						goto include_done;
 					}
 					strcat2 (buf, sizeof (buf), (char *) s1->tokc.cstr->data);
 					next (s1);
@@ -1311,6 +1320,7 @@ include_syntax:
 
 		if (s1->include_stack_ptr >= s1->include_stack + INCLUDE_STACK_SIZE) {
 			tcc_error (s1, "#include recursion too deep");
+			break;
 		}
 		/* store current file in stack, but increment stack later below */
 		*s1->include_stack_ptr = s1->file;
@@ -1335,7 +1345,7 @@ include_syntax:
 					continue;
 				}
 				path = s1->file->filename;
-				r_str_ncpy (buf1, path, tcc_basename (path) - path);
+				r_str_ncpy (buf1, path, tcc_basename (path) - path + 1);
 			} else {
 				/* search in all the include paths */
 				if (i < s1->nb_include_paths) {
@@ -1370,11 +1380,11 @@ include_syntax:
 				goto include_done;
 			}
 
-			bool skip = false;
 			if (strstr (buf1, "_overflow.h")) {
-				skip = true;
+				/* not parsed: no file is opened, so nothing to push on the include stack */
+				goto include_done;
 			}
-			if (!skip && tcc_open (s1, buf1) < 0) {
+			if (tcc_open (s1, buf1) < 0) {
 include_trynext:
 				continue;
 			}
@@ -1405,11 +1415,10 @@ include_trynext:
 			size_t dirname_len = (size_t) (e - s1->file->filename) + 1;
 			int filepath_len = snprintf (filepath, sizeof (filepath), "%.*s%s",
 				(int)dirname_len, s1->file->filename, buf);
-			bool skip = false;
 			if (strstr (s1->file->filename, "_overflow.h")) {
-				skip = true;
+				goto include_done;
 			}
-			if (!skip && (filepath_len < 0 || (size_t)filepath_len >= sizeof (filepath) || tcc_open (s1, filepath) < 0)) {
+			if (filepath_len < 0 || (size_t)filepath_len >= sizeof (filepath) || tcc_open (s1, filepath) < 0) {
 				if (!s1->dir_name) {
 					s1->dir_name = ".";
 				}
@@ -1459,12 +1468,14 @@ do_ifdef:
 do_if:
 		if (s1->ifdef_stack_ptr >= s1->ifdef_stack + IFDEF_STACK_SIZE) {
 			tcc_error (s1, "memory full");
+			break;
 		}
 		*s1->ifdef_stack_ptr++ = c;
 		goto test_skip;
 	case TOK_ELSE:
 		if (s1->ifdef_stack_ptr == s1->ifdef_stack) {
 			tcc_error (s1, "#else without matching #if");
+			break;
 		}
 		if (s1->ifdef_stack_ptr[-1] & 2) {
 			tcc_error (s1, "#else after #else");
@@ -1474,6 +1485,7 @@ do_if:
 	case TOK_ELIF:
 		if (s1->ifdef_stack_ptr == s1->ifdef_stack) {
 			tcc_error (s1, "#elif without matching #if");
+			break;
 		}
 		c = s1->ifdef_stack_ptr[-1];
 		if (c > 1) {
@@ -1500,6 +1512,7 @@ skip:
 	case TOK_ENDIF:
 		if (s1->ifdef_stack_ptr <= s1->file->ifdef_stack_ptr) {
 			tcc_error (s1, "#endif without matching #if");
+			break;
 		}
 		s1->ifdef_stack_ptr--;
 		/* '#ifndef macro' was at the start of file. Now we check if
@@ -1520,12 +1533,14 @@ skip:
 		next (s1);
 		if (s1->tok != TOK_CINT) {
 			tcc_error (s1, "#line");
+			break;
 		}
 		s1->file->line_num = s1->tokc.i - 1;	/* the line number will be incremented after */
 		next (s1);
 		if (s1->tok != TOK_LINEFEED) {
 			if (s1->tok != TOK_STR) {
 				tcc_error (s1, "#line");
+				break;
 			}
 			r_str_ncpy (s1->file->filename, (char *) s1->tokc.cstr->data, sizeof (s1->file->filename));
 		}
@@ -1571,7 +1586,12 @@ skip:
 	}
 	/* ignore other preprocess commands or #! for C scripts */
 	while (s1->tok != TOK_LINEFEED) {
-		next_nomacro (s1);
+		if (s1->macro_ptr) {
+			/* only next() pops a macro the directive left half read */
+			next (s1);
+		} else {
+			next_nomacro (s1);
+		}
 	}
 the_end:
 	s1->parse_flags = saved_parse_flags;
@@ -1730,6 +1750,7 @@ static void parse_number(TCCState *s1, const char *p) {
 		if (q >= s1->token_buf + STRING_MAX_SIZE) {
 num_too_long:
 			tcc_error (s1, "number too long");
+			return;
 		}
 		*q++ = ch;
 		ch = *p++;
@@ -2114,16 +2135,23 @@ parse_ident_fast:
 			}
 			// dot handling here too
 			if (isdot (c)) {
-				PEEKC (s1, c, p);
-				if (isdigit (c)) {
+				/* only look at the next byte: PEEKC may refill or reset the
+				   buffer p1 points into. a stray or CH_EOB after the dot ends
+				   the loop and is handled by the slower case below */
+				const int c1 = p[1];
+				if (isdigit (c1)) {
+					p++;
+					c = c1;
 					cstr_reset (&s1->tokcstr);
 					cstr_ccat (&s1->tokcstr, '.');
 					goto parse_num;
-				} else if (isdot (c)) {
+				} else if (isdot (c1)) {
+					p++;
+					c = c1;
 					goto parse_dots;
 				}
 			}
-			h = TOK_HASH_FUNC (h, *p);
+			h = TOK_HASH_FUNC (h, c);
 			p++;
 		}
 		if (c != '\\') {

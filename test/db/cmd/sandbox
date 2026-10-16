@@ -304,3 +304,20 @@ EXPECT=<<EOF
 done
 EOF
 RUN
+
+NAME=sandbox tcc include of an absolute path
+FILE=--
+CMDS=<<EOF
+e types.plugin=tcc
+e cfg.sandbox=true
+'td #include "/etc/hosts"
+?e done
+EOF
+EXPECT=<<EOF
+done
+EOF
+EXPECT_ERR=<<EOF
+include file './/etc/hosts' not found
+ERROR: Cannot parse C type declarations
+EOF
+RUN

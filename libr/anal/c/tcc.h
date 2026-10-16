@@ -793,8 +793,8 @@ ST_FUNC long long expr_const(TCCState *s1);
 #define ST_DATA
 #endif
 /********************************************************/
-R_API void tcc_appendf(TCCState *s, const char *fmt, ...);
-R_API void tcc_typedef_appendf(TCCState *s, const char *fmt, ...);
+R_API void tcc_appendf(TCCState *s, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
+R_API void tcc_typedef_appendf(TCCState *s, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 R_API void tcc_typedef_alias_fields(TCCState *s, const char *alias);
 
 extern void (*tcc_cb)(const char *, char **);
