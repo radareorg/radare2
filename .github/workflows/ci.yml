@@ -18,7 +18,7 @@ jobs:
 #    runs-on: ubuntu-22.04
 #    steps:
 #    - name: Checkout
-#      uses: actions/checkout@v7
+#      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 #    - name: Building r2 without network access
 #      run: |
 #        ./preconfigure
@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Setting up bad libnames
       run: |
         mkdir -p /tmp/fakelibs /tmp/fakeincs
@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Linting
       run: sys/lint.sh
     - name: Building without capstone
@@ -89,7 +89,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -106,7 +106,7 @@ jobs:
       run: make -C libr/anal/c2
     - name: Running tests
       run: r2r -o /tmp/r2r.json test/db/cmd
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         name: r2r.json
         path: /tmp/r2r.json
@@ -115,7 +115,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Installing capstone v5
       run: |
         git clone --branch v5 --single-branch --depth=1 https://github.com/capstone-engine/capstone
@@ -135,7 +135,7 @@ jobs:
 #    if: contains(github.ref, 'ci-')
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Building Radare2
       run: |
         python3 -m pip install --upgrade pip
@@ -147,7 +147,7 @@ jobs:
         export LD_LIBRARY_PATH=/usr/local/lib
         export R2R_SKIP_ARCHOS=1
         make tests
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         name: results.json
         path: test/results.json
@@ -156,7 +156,7 @@ jobs:
     continue-on-error: true
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Building Radare2 with Capstone 6
       run: |
         python3 -m pip install --upgrade pip
@@ -173,7 +173,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Install mipsbe toolchain
       run: |
         sudo apt-get update --assume-yes
@@ -194,7 +194,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Install the uefi toolchain
       run: |
         sudo apt-get update --assume-yes
@@ -202,7 +202,7 @@ jobs:
     - name: Build radare2 for UEFI
       run: make -C dist/uefi
     - name: Upload the EFI application
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         name: BOOTX64.EFI
         path: build-uefi/BOOTX64.EFI
@@ -212,7 +212,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Installing the musl runtime
       run: |
         sudo apt update --assume-yes
@@ -233,7 +233,7 @@ jobs:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Install dependencies
       run: |
         python3 -m pip install r2pipe --break-system-packages
@@ -249,7 +249,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: build and run
       run: |
         # test and build rpath installation
@@ -267,7 +267,7 @@ jobs:
     runs-on: macos-15-intel
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: build and run
       run: |
         # test and build rpath installation
@@ -283,7 +283,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     #- name: XXX this is not possible with make Install from a directory with spaces
     #  run: |
     #    git config pull.rebase false
@@ -319,7 +319,7 @@ jobs:
     continue-on-error: true
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Building Radare2
       run: |
         pip install r2pipe --break-system-packages
@@ -342,7 +342,7 @@ jobs:
         exit $status
     - name: Upload r2r tinyasan report
       if: always()
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         name: r2r-tinyasan.json
         path: r2r-tinyasan.json
@@ -359,7 +359,7 @@ jobs:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Building Radare2
       run: |
         pip install r2pipe --break-system-packages
@@ -384,7 +384,7 @@ jobs:
         exit $status
     - name: Upload r2r asan report
       if: always()
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         name: r2r-asan.json
         path: r2r-asan.json
@@ -400,18 +400,18 @@ jobs:
     runs-on: windows-2022
     steps:
     - name: Win configure Pagefile
-      uses: al-cheb/configure-pagefile-action@v1.5
+      uses: al-cheb/configure-pagefile-action@9b6da52fb72a3c6147c1aad2df22d8d905681adc # v1.5
       with:
           minimum-size: 16GB
           maximum-size: 16GB
           disk-root: "C:"
     - name: Checkout
-      uses: actions/checkout@v7
-    - uses: actions/setup-python@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
       with:
         python-version: '3.10'
     - name: Preparing nmake
-      uses: TheMrMilchmann/setup-msvc-dev@v4
+      uses: TheMrMilchmann/setup-msvc-dev@368ef7d1ee4d1171b31d4a7f67f4d954f903f5a9 # v4
       with:
         arch: x64
     - name: Install dependencies
@@ -442,13 +442,13 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Compiling
       run: |
         export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
         sudo apt-get --assume-yes install python3-wheel gperf python3-setuptools cabextract gperf gcc-mingw-w64
         sys/mingw32.sh
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         name: w32-mingw
         path: radare2*.zip
@@ -457,13 +457,13 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Compiling
       run: |
         export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
         sudo apt-get --assume-yes install python3-wheel gperf python3-setuptools cabextract gperf gcc-mingw-w64
         sys/mingw64.sh
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         name: w64-mingw
         path: radare2*.zip

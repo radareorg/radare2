@@ -27,9 +27,9 @@ jobs:
           sh ./configure --prefix=/usr
           make -j
           sudo make install
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Checkout our Testsuite Binaries
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       with:
           repository: radareorg/radare2-testbins
           ref: master
@@ -63,7 +63,7 @@ jobs:
         exit $status
     - name: Upload r2r report
       if: always()
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         name: r2r.json
         path: /tmp/r2r.json
@@ -84,9 +84,9 @@ jobs:
       run: |
           sh ./configure --prefix=/usr --without-debugger
           make -j && sudo make install
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Checkout our Testsuite Binaries
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       with:
           repository: radareorg/radare2-testbins
           ref: master
@@ -126,7 +126,7 @@ jobs:
           sh ./configure --prefix=/usr
           make -j
           sudo make install
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Configure, build and install
       env:
           CC: tcc
@@ -169,9 +169,9 @@ jobs:
       run: |
           sh ./configure --prefix=/usr --without-debugger
           make -j && sudo make install
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Checkout our Testsuite Binaries
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       with:
           repository: radareorg/radare2-testbins
           ref: master
@@ -218,9 +218,9 @@ jobs:
           sh ./configure --prefix=/usr
           make -j
           sudo make install
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Checkout our Testsuite Binaries
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       with:
           repository: radareorg/radare2-testbins
           ref: master

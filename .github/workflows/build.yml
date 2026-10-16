@@ -35,15 +35,15 @@ jobs:
       WASI_DOWNLOAD_DIR: ${{ github.workspace }}/.wasi-cache/distfiles
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Restore WASI SDK cache
-      uses: actions/cache@v6
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
       with:
         path: ${{ env.WASI_ROOT }}
         key: ${{ runner.os }}-${{ runner.arch }}-wasi-sdk-${{ hashFiles('sys/wasi-env.sh') }}
     - name: Installing with symlinks
       run: sys/wasi.sh
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         if-no-files-found: error
         name: linux-wasi
@@ -61,15 +61,15 @@ jobs:
       WASI_DOWNLOAD_DIR: ${{ github.workspace }}/.wasi-cache/distfiles
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Restore WASI SDK cache
-      uses: actions/cache@v6
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
       with:
         path: ${{ env.WASI_ROOT }}
         key: ${{ runner.os }}-${{ runner.arch }}-wasi-sdk-${{ hashFiles('sys/wasi-env.sh') }}
     - name: Installing with symlinks
       run: sys/wasi-api.sh
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         if-no-files-found: error
         name: linux-wasi-api
@@ -88,15 +88,15 @@ jobs:
       WASI_DOWNLOAD_DIR: ${{ github.workspace }}/.wasi-cache/distfiles
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Restore WASI SDK cache
-      uses: actions/cache@v6
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
       with:
         path: ${{ env.WASI_ROOT }}
         key: ${{ runner.os }}-${{ runner.arch }}-wasi-sdk-${{ hashFiles('sys/wasi-env.sh') }}
     - name: Installing with symlinks
       run: sys/wasi-browser.sh
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         if-no-files-found: error
         name: linux-wasi-browser
@@ -107,7 +107,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Test iOS packaging failure handling
       run: python3 test/scripts/test-ios-cydia.py
     - name: Installing with capstone, libuv and openssl
@@ -124,7 +124,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Creating zip and tarball
       run: sys/tarball.sh
     - name: Building from the generated tarball
@@ -136,7 +136,7 @@ jobs:
         ./configure --prefix=/tmp/tarball-install
         make -j$(nproc)
         make install
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         if-no-files-found: error
         name: tarball
@@ -147,7 +147,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Extract r2 version
       shell: bash
       run: echo "branch=`./configure -qV`" >> $GITHUB_OUTPUT
@@ -160,7 +160,7 @@ jobs:
       run: sudo make install
     - name: Create filc tarball
       run: tar -cJvf radare2-${{ steps.r2v.outputs.branch }}-filc.tar.xz /opt/r2filc
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         if-no-files-found: error
         name: filc
@@ -182,7 +182,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Extract r2 version
       shell: bash
       run: echo "branch=`./configure -qV`" >> $GITHUB_OUTPUT
@@ -209,7 +209,7 @@ jobs:
         make -C binr/blob
         tar cJvf radare2-${{ steps.r2v.outputs.branch }}-static-${{ matrix.arch }}.tar.xz r2-static
     - name: Pub
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         if-no-files-found: error
         name: linux-static-${{ matrix.arch }}
@@ -220,11 +220,11 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Packaging for RPM
       run: make -C dist/rpm
     - name: Pub
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         if-no-files-found: error
         name: linux-acr-rpm-64
@@ -240,7 +240,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Installing the i386 crosscompiler
       if: matrix.arch == 'i386'
       run: |
@@ -275,7 +275,7 @@ jobs:
         # testsuite on 32bit wont pass, lets just trust the unit
         # r2r -L -u -o results-i386.json db/cmd
     - name: Pub
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         if-no-files-found: error
         name: linux-acr-deb-${{ matrix.arch }}
@@ -287,18 +287,18 @@ jobs:
 #    container: centos:8
 #    steps:
 #    - name: Checkout
-#      uses: actions/checkout@v7
+#      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 #    - name: Prepare Skeleton
 #      run: |
 #        mkdir -p SOURCES SPECS
 #        cp -f dist/rpm/*spec SPECS
 #        wget -O https://github.com/radareorg/radare2/archive/master/radare2-5.1.0-git.tar.gz
 #    - name: rpmbuild
-#      uses: robertdebock/rpmbuild-action@1.1.1
+#      uses: robertdebock/rpmbuild-action@de58ddd728996ee3447f32a60ab5362ab07b96da # 1.1.1
 #    - name: Organize artifacts
 #      run: mv -v RPMS/*/*.rpm dist/rpm/*.rpm .
 #    - name: Pub
-#      uses: actions/upload-artifact@v7
+#      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
 #      with:
 #        name: linux-meson-rpm
 #        path: *.rpm
@@ -308,7 +308,7 @@ jobs:
 #    container: centos:8
 #    steps:
 #    - name: Checkout
-#      uses: actions/checkout@v7
+#      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 #    - name: Install tools for CentOS:8
 #      run: |
 #        yum install -y patch unzip git gcc make python38 python38-pip rpm-build rpmdevtools wget
@@ -329,7 +329,7 @@ jobs:
 #        rpmbuild -ba radare2.spec
 #        mv -v rpmbuild/RPMS/*/*.rpm .
 #    - name: Pub
-#      uses: actions/upload-artifact@v7
+#      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
 #      with:
 #        name: centos-meson-rpm
 #        path: *.rpm
@@ -345,7 +345,7 @@ jobs:
     runs-on: macos-15-intel
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Packaging
       env:
         ARCHFLAGS: '-arch ${{ matrix.arch }}'
@@ -353,7 +353,7 @@ jobs:
         LDFLAGS: '-headerpad_max_install_names' # Allow to relocate its dependencies using install_name_tool
       run: make -C dist/macos
     - name: Pub
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         if-no-files-found: error
         path: dist/macos/*.pkg
@@ -372,7 +372,7 @@ jobs:
             sdk: true
     runs-on: macos-15-intel
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Install ldid2 with Homebrew
       run: brew install ldid
     - name: Extract r2 version
@@ -390,7 +390,7 @@ jobs:
         popd
         mv /tmp/r2ios-sdk.zip dist/cydia/radare2/r2ios-sdk-${{ steps.r2v.outputs.branch }}.zip
     - if: ${{ matrix.sdk }}
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         if-no-files-found: error
         name: ios-${{ matrix.type }}
@@ -412,7 +412,7 @@ jobs:
             api: 16
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Install dependencies
       run: |
         sudo apt-get --assume-yes update
@@ -423,7 +423,7 @@ jobs:
         sys/android-ndk-install.sh "${{ matrix.api }}" "${{ matrix.arch }}"
         sys/android-build.sh "${{ matrix.arch }}"
         ls -l
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         if-no-files-found: error
         name: android-acr-${{ matrix.arch }}
@@ -433,7 +433,7 @@ jobs:
     if: ${{ github.event_name != 'pull_request' }}
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Install dependencies
       run: |
         sudo apt-get --assume-yes update
@@ -442,7 +442,7 @@ jobs:
       run: sys/android-ndk-install.sh 28 arm64
     - name: Build multi-ABI Android SDK
       run: sys/android-sdk.sh --api 28
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         name: android-sdk
         path: radare2-*-android-sdk.zip
@@ -461,7 +461,7 @@ jobs:
           # - aarch64
           # - arm
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Install dependencies
       run: |
         sudo apt-get --assume-yes update
@@ -481,7 +481,7 @@ jobs:
         cd /tmp
         rm -rf android-dir/include android-dir/lib
         tar --transform 's/android-dir/data\/data\/org.radareorg.radare2installer/g' -czvf radare2-${{ steps.r2v.outputs.branch }}-android-${{ matrix.arch }}.tar.gz android-dir/
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         if-no-files-found: error
         name: android-meson-${{ matrix.arch }}
@@ -495,14 +495,14 @@ jobs:
     runs-on: windows-2022
     steps:
     - name: Win configure Pagefile
-      uses: al-cheb/configure-pagefile-action@v1.5
+      uses: al-cheb/configure-pagefile-action@9b6da52fb72a3c6147c1aad2df22d8d905681adc # v1.5
       with:
           minimum-size: 16GB
           maximum-size: 16GB
           disk-root: "C:"
     - name: Checkout
-      uses: actions/checkout@v7
-    - uses: actions/setup-python@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
       with:
         python-version: '3.10'
     - name: Install dependencies
@@ -521,14 +521,14 @@ jobs:
         ninja -C build -j4 install
     - name: Create zip artifact
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w32.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w32
-#    - uses: actions/checkout@v7
+#    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 #      with:
 #        repository: radareorg/radare2-win-installer
 #        path: ./radare2-win-installer
 #    - name: Create installer
 #      shell: pwsh
 #      run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.r2v.outputs.branch }}
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         if-no-files-found: error
         name: w32-meson
@@ -540,18 +540,18 @@ jobs:
     runs-on: windows-2022
     steps:
     - name: Win configure Pagefile
-      uses: al-cheb/configure-pagefile-action@v1.5
+      uses: al-cheb/configure-pagefile-action@9b6da52fb72a3c6147c1aad2df22d8d905681adc # v1.5
       with:
           minimum-size: 16GB
           maximum-size: 16GB
           disk-root: "C:"
     - name: Checkout
-      uses: actions/checkout@v7
-    - uses: actions/setup-python@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
       with:
         python-version: '3.10'
     - name: Preparing nmake
-      uses: TheMrMilchmann/setup-msvc-dev@v4
+      uses: TheMrMilchmann/setup-msvc-dev@368ef7d1ee4d1171b31d4a7f67f4d954f903f5a9 # v4
       with:
         arch: x64
     - name: Install dependencies
@@ -579,7 +579,7 @@ jobs:
         cd prefix\bin
         dir
         7z a r2blob-${{ steps.r2v.outputs.branch }}-w64.zip r2blob.static.exe
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         if-no-files-found: error
         name: w64-static
@@ -589,18 +589,18 @@ jobs:
     runs-on: windows-2022
     steps:
     - name: Win configure Pagefile
-      uses: al-cheb/configure-pagefile-action@v1.5
+      uses: al-cheb/configure-pagefile-action@9b6da52fb72a3c6147c1aad2df22d8d905681adc # v1.5
       with:
           minimum-size: 16GB
           maximum-size: 16GB
           disk-root: "C:"
     - name: Checkout
-      uses: actions/checkout@v7
-    - uses: actions/setup-python@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
       with:
         python-version: '3.10'
     - name: Preparing nmake
-      uses: TheMrMilchmann/setup-msvc-dev@v4
+      uses: TheMrMilchmann/setup-msvc-dev@368ef7d1ee4d1171b31d4a7f67f4d954f903f5a9 # v4
       with:
         arch: x64
     - name: Install dependencies
@@ -622,14 +622,14 @@ jobs:
         ninja -C build install
     - name: Create zip artifact
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w64.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w64
-#    - uses: actions/checkout@v7
+#    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 #      with:
 #        repository: radareorg/radare2-win-installer
 #        path: ./radare2-win-installer
 #    - name: Create installer
 #      shell: pwsh
 #      run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.r2v.outputs.branch }}
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         if-no-files-found: error
         name: w64-meson
@@ -639,9 +639,9 @@ jobs:
   msys2-w64-meson:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Setup MSYS2
-      uses: msys2/setup-msys2@v2
+      uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2
       with:
         msystem: UCRT64
         update: true
@@ -662,9 +662,9 @@ jobs:
     runs-on: windows-11-arm
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Preparing MSVC for ARM64
-      uses: TheMrMilchmann/setup-msvc-dev@v4
+      uses: TheMrMilchmann/setup-msvc-dev@368ef7d1ee4d1171b31d4a7f67f4d954f903f5a9 # v4
       with:
         arch: arm64
     - name: Install dependencies
@@ -683,7 +683,7 @@ jobs:
         ninja -C build install
     - name: Create zip artifact
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w64-arm64.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w64-arm64
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         if-no-files-found: error
         name: msys2-w64-arm-meson
@@ -694,12 +694,12 @@ jobs:
     runs-on: windows-11-arm
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
-    - uses: actions/setup-python@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
       with:
         python-version: '3.12'
     - name: Preparing MSVC for ARM64
-      uses: TheMrMilchmann/setup-msvc-dev@v4
+      uses: TheMrMilchmann/setup-msvc-dev@368ef7d1ee4d1171b31d4a7f67f4d954f903f5a9 # v4
       with:
         arch: arm64
     - name: Install dependencies
@@ -718,7 +718,7 @@ jobs:
         ninja -C build install
     - name: Create zip artifact
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w64-arm64.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w64-arm64
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         if-no-files-found: error
         name: w64-arm-meson
@@ -729,13 +729,13 @@ jobs:
     if: ${{ github.event_name != 'pull_request' }}
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Extract r2 version
       shell: bash
       run: echo "branch=`./configure -qV`" >> $GITHUB_OUTPUT
       id: r2v
     - name: Build r2 in FreeBSD
-      uses: vmactions/freebsd-vm@v1
+      uses: vmactions/freebsd-vm@c46abacb49f09938ca4e1702d15d836285d694cc # v1
       with:
         usesh: true
         cache-after-prepare: true
@@ -755,7 +755,7 @@ jobs:
           # are visible, but do not gate the build job on them yet.
           r2r test/db/cmd || true
           cp /tmp/radare2-freebsd.tgz radare2-${{ steps.r2v.outputs.branch }}-freebsd.tgz
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         if-no-files-found: error
         name: freebsd
@@ -783,7 +783,7 @@ jobs:
         wget https://ftp.fau.de/debian/pool/main/liba/libabigail/abigail-tools_2.2-2_amd64.deb
         sudo dpkg -i abigail-tools_2.2-2_amd64.deb
     - name: Download Build
-      uses: actions/download-artifact@v8
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
       with:
         name: linux-static-amd64
         path: /tmp
@@ -822,7 +822,7 @@ jobs:
     runs-on: macos-15-intel
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Extract r2 version
       shell: bash
       run: echo "branch=`./configure -qV`" >> $GITHUB_OUTPUT
@@ -830,7 +830,7 @@ jobs:
     - name: Build XCFramework
       run: |
         make -C dist/sdk
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         if-no-files-found: error
         name: macos-xcframework
@@ -842,7 +842,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Install the UEFI toolchain
       run: |
         sudo apt-get update --assume-yes
@@ -851,7 +851,7 @@ jobs:
       run: make -C dist/uefi
     - name: Name the release asset
       run: mv build-uefi/BOOTX64.EFI radare2-`./configure -qV`-uefi-x86_64.efi
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         if-no-files-found: error
         name: linux-uefi
@@ -890,7 +890,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0 # Download all git history and tags
       - name: Check if is a release
@@ -941,7 +941,7 @@ jobs:
 #       dist/artifacts/msys2-w64-arm-meson/*.zip
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0 # Download all git history and tags
       - name: Extract r2 version
@@ -952,7 +952,7 @@ jobs:
         shell: bash
         run: ./sys/release-notes.sh | tee ./RELEASE_NOTES.md
       - name: Download artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           path: dist/artifacts
       - name: Generate checksums

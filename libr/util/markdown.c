@@ -594,7 +594,8 @@ static const char *md_link(RStrBuf *sb, const char *b, const char *end, bool col
 	int parentheses = 0;
 	bool angled = p < end && *p == '<';
 	if (angled) {
-		url = ++p;
+		p++;
+		url = p;
 	}
 	while (p < end) {
 		if (md_escaped (p)) {
