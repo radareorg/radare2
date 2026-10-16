@@ -3175,6 +3175,33 @@ static void ds_update_ref_lines(RDisasmState *ds) {
 	}
 }
 
+// the Cr command may delete any meta item, including its own: callers must not use it after this
+static void ds_print_meta_run(RDisasmState *ds, const char *str, ut64 size) {
+	RCore *core = ds->core;
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+		r_cons_printf (core->cons, "%s (Cr %d %s)\n", ds->cmtoken, (int)size, r_str_get (str));
+		return;
+	}
+	char *cmd = strdup (r_str_get (str));
+	// the command may seek or resize the block we are disassembling from
+	int obs = core->blocksize;
+	ut8 *oblock = core->block;
+	core->block = r_mem_dup (core->block, core->blocksize);
+	// XXX temporal seek causes UAF char *s = r_core_cmd_strf (core, "%s@%"PFMT64d, cmd, ds->at);
+	char *s = r_core_cmd_strf (core, "s %"PFMT64d";%s;s-", ds->at, cmd);
+	r_str_trim (s);
+	r_cons_printf (core->cons, "%s (Cr %d %s)\n%s", ds->cmtoken, (int)size, cmd, s);
+	free (s);
+	free (cmd);
+	free (core->block);
+	core->block = oblock;
+	core->blocksize = obs;
+	// the command may also delete the cached function and its blocks
+	ds->fcn = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+	ds->_bbget_fcn = NULL;
+	ds->_bbget_bb = NULL;
+}
+
 static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	RCore *core = ds->core;
 	RCons *cons = core->cons;
@@ -3238,7 +3265,8 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		size_t i = 0;
 		if (meta && meta_size > 0 && meta->type != R_META_TYPE_HIDE) {
 			// XXX this is just noise. should be rewritten
-			switch (meta->type) {
+			const int meta_type = meta->type;
+			switch (meta_type) {
 			case R_META_TYPE_DATA:
 #if 0
 				if (!R_STR_ISEMPTY (meta->str)) {
@@ -3259,13 +3287,9 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 				i += meta_size;
 				break;
 			case R_META_TYPE_RUN:
-				{
-					char *s = r_core_cmd_strf (core, "%s@%"PFMT64d, meta->str, ds->at);
-					r_str_trim (s);
-					r_cons_printf (cons, "%s (Cr %d %s)\n%s", ds->cmtoken, (int)meta_size, meta->str, s);
-					free (s);
-					i += meta_size;
-				}
+				ds_print_meta_run (ds, meta->str, meta_size);
+				meta = NULL;
+				i += meta_size;
 				break;
 			default:
 				break;
@@ -3276,7 +3300,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			r_anal_op_set_bytes (&ds->asmop, 0, buf, sz);
 			const char *tail = (meta_size > max_meta)? ellipsis: "";
 			r_strf_buffer (256);
-			switch (meta->type) {
+			switch (meta_type) {
 			case R_META_TYPE_STRING:
 				r_anal_op_set_mnemonic (&ds->asmop, 0, r_strf (".string \"%s%s\"", meta->str, tail));
 				break;
@@ -4002,23 +4026,12 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 			ret = true;
 			break;
 		case R_META_TYPE_RUN:
-			{
-				int obs = core->blocksize;
-				ut8 *oblock = core->block;
-				core->block = r_mem_dup (core->block, core->blocksize);
-				// XXX temporal seek causes UAF char *s = r_core_cmd_strf (core, "%s@%"PFMT64d, mi->str, ds->at);
-				char *s = r_core_cmd_strf (core, "s %"PFMT64d";%s;s-", ds->at, mi->str);
-				r_str_trim (s);
-				r_cons_printf (cons, "%s (Cr %d %s)\n%s", ds->cmtoken, (int)mi_size, mi->str, s);
-				free (s);
-				ds->asmop.size = mi_size;
-				ds->oplen = mi_size;
-				ret = true;
-				free (core->block);
-				core->block = oblock;
-				core->blocksize = obs;
-			}
-			break;
+			ds_print_meta_run (ds, mi->str, mi_size);
+			ds->asmop.size = mi_size;
+			ds->oplen = mi_size;
+			// the remaining nodes may be gone
+			RVecIntervalNodePtr_free (metas);
+			return true;
 		case R_META_TYPE_DATA:
 			hexlen = len - idx;
 			delta = ds->at - node->start;

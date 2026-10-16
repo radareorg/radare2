@@ -93,6 +93,89 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=Cr px with asm.meta=false
+FILE=-
+ARGS=-a x86 -b32
+CMDS=<<EOF
+wx 90909090c3c3
+e asm.meta=false
+Cr 2 px 2 @ 2
+pd 5
+EOF
+EXPECT=<<EOF
+            0x00000000      90             nop
+            0x00000001      90             nop
+; (Cr 2 px 2)
+- offset -   2 3  4 5  6 7  8 9  A B  C D  E F 1011  23456789ABCDEF01
+0x00000002  9090                                     ..            0x00000002      9090           .word 0x9090
+            0x00000004      c3             ret
+            0x00000005      c3             ret
+EOF
+RUN
+
+NAME=Cr deleting itself
+FILE=-
+ARGS=-a x86 -b32
+CMDS=<<EOF
+wx 90909090c3c3
+Cr 2 C-* @ 2
+pd 4
+e asm.meta=false
+Cr 2 C-* @ 2
+pd 4
+EOF
+EXPECT=<<EOF
+            0x00000000      90             nop
+            0x00000001      90             nop
+            0x00000002 ; (Cr 2 C-*)
+
+            0x00000004      c3             ret
+            0x00000000      90             nop
+            0x00000001      90             nop
+; (Cr 2 C-*)
+            0x00000002      9090           .word 0x9090
+            0x00000004      c3             ret
+EOF
+RUN
+
+NAME=Cr deleting the function being disassembled
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e5c3
+af
+Cr 1 af-* @ 1
+pd 4
+afl
+EOF
+EXPECT=<<EOF
+/ 5: fcn.00000000 ();
+|           0x00000000      55             push rbp
+|           0x00000001 ; (Cr 1 af-*)
+
+            0x00000002      89e5           mov ebp, esp
+            0x00000004      c3             ret
+EOF
+RUN
+
+NAME=Cr is not run under sandbox without exec
+FILE=-
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 90909090c3c3
+e cfg.sandbox.grain=none
+e cfg.sandbox=true
+Cr 2 ?e hi @ 2
+pd 3
+EOF
+EXPECT=<<EOF
+            0x00000000      90             nop
+            0x00000001      90             nop
+            0x00000002 ; (Cr 2 ?e hi)
+
+EOF
+RUN
+
 NAME=CCb
 FILE=malloc://64
 CMDS=<<EOF
