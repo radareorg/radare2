@@ -405,6 +405,8 @@ grub_xfs_iterate_dir(grub_fshelp_node_t dir,
 		{
 			struct grub_xfs_dir_entry *de = &diro->inode.data.dir.direntry[0];
 			int smallino = !diro->inode.data.dir.dirhead.smallino;
+			int inosize = smallino? sizeof (grub_uint32_t): sizeof (grub_uint64_t);
+			char *end = (char *)&diro->inode + (1 << diro->data->sblock.log2_inode);
 			int i;
 			grub_uint64_t parent;
 
@@ -430,7 +432,17 @@ grub_xfs_iterate_dir(grub_fshelp_node_t dir,
 
 			for (i = 0; i < diro->inode.data.dir.dirhead.count; i++) {
 				grub_uint64_t ino;
-				void *inopos = (((char *)de) + sizeof (struct grub_xfs_dir_entry) + de->len - 1);
+				void *inopos;
+
+				/* The name and the inode number after it have to be
+				inside the inode.  */
+				if ((char *)de + sizeof (struct grub_xfs_dir_entry) > end
+					|| (char *)de + sizeof (struct grub_xfs_dir_entry) + de->len - 1 + inosize > end) {
+					grub_error (GRUB_ERR_BAD_FS, "invalid XFS directory entry");
+					return 0;
+				}
+
+				inopos = (((char *)de) + sizeof (struct grub_xfs_dir_entry) + de->len - 1);
 #ifndef _MSC_VER
 				char name[de->len + 1];
 #else
@@ -449,7 +461,7 @@ grub_xfs_iterate_dir(grub_fshelp_node_t dir,
 					return 1;
 				}
 
-				de = ((struct grub_xfs_dir_entry *) (((char *)de) + sizeof (struct grub_xfs_dir_entry) + de->len + ((smallino? sizeof (grub_uint32_t): sizeof (grub_uint64_t))) - 1));
+				de = ((struct grub_xfs_dir_entry *) (((char *)de) + sizeof (struct grub_xfs_dir_entry) + de->len + inosize - 1));
 			}
 			break;
 		}
@@ -501,11 +513,22 @@ grub_xfs_iterate_dir(grub_fshelp_node_t dir,
 
 					if (*freetag == 0XFFFF) {
 						grub_uint16_t *skip = (grub_uint16_t *) (freetag + 1);
+						if (!*skip) {
+							break;
+						}
 
 						/* This entry is not used, go to the next one.  */
 						pos += grub_be_to_cpu16 (*skip);
 
 						continue;
+					}
+
+					/* The name and the byte after it have to be inside
+					the block.  */
+					if (pos + (int)sizeof (*direntry) + direntry->len >= dirblk_size) {
+						grub_error (GRUB_ERR_BAD_FS, "invalid XFS directory entry");
+						grub_free (dirblock);
+						return 0;
 					}
 
 					filename = &dirblock[pos + sizeof (*direntry)];
