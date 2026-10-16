@@ -313,6 +313,8 @@ typedef struct r_disasm_state_t {
 	RAnalFunction *_bbget_fcn;
 	RAnalBlock *_bbget_bb;
 	const ut8 *buf;
+	ut8 *saved_block;
+	ut32 saved_blocksize;
 	int len;
 	int maxrefs;
 	int foldxrefs;
@@ -753,17 +755,27 @@ static RStrEnc encstrtype(const char *es) {
 	return R_STRING_ENC_GUESS;
 }
 
-static RDisasmState *ds_init(RCore *core, bool for_json) {
-	RDisasmState *ds = R_NEW0 (RDisasmState);
-	ds->ssa = sdb_new0 ();
-	ds->core = core;
-	ds->addrbytes = core->io->addrbytes;
+static void ds_refresh_refs(RDisasmState *ds) {
+	RCore *core = ds->core;
 	ds->strip = r_config_get (core->config, "asm.strip");
 	ds->cmtoken = r_config_get (core->config, "asm.cmt.token");
 	ds->font_addr = r_config_get (core->config, "scr.font.addr");
 	ds->font_asm = r_config_get (core->config, "scr.font.asm");
 	ds->font_cmt = r_config_get (core->config, "scr.font.cmt");
 	ds->font_flag = r_config_get (core->config, "scr.font.flag");
+	ds->show_cmtoff = r_config_get (core->config, "asm.cmt.off");
+	if (!ds->show_cmtoff) {
+		ds->show_cmtoff = "nodup";
+	}
+	ds->flagspace_ports = r_flag_space_get (core->flags, "ports");
+}
+
+static RDisasmState *ds_init(RCore *core, bool for_json) {
+	RDisasmState *ds = R_NEW0 (RDisasmState);
+	ds->ssa = sdb_new0 ();
+	ds->core = core;
+	ds->addrbytes = core->io->addrbytes;
+	ds_refresh_refs (ds);
 	ds->pal_hint = core->cons->context->pal.jmp;
 	ds->pal_comment = core->cons->context->pal.comment;
 	#define P(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
@@ -969,10 +981,6 @@ static RDisasmState *ds_init(RCore *core, bool for_json) {
 	ds->show_anos = r_config_get_b (core->config, "asm.anos");
 	ds->show_cmtrefs = r_config_get_i (core->config, "asm.cmt.refs");
 	ds->cmtfold = r_config_get_i (core->config, "asm.cmt.fold");
-	ds->show_cmtoff = r_config_get (core->config, "asm.cmt.off");
-	if (!ds->show_cmtoff) {
-		ds->show_cmtoff = "nodup";
-	}
 	ds->show_functions = r_config_get_b (core->config, "asm.functions");
 	ds->nbytes = r_config_get_i (core->config, "asm.nbytes");
 	ds->show_asciidot = !strcmp (core->print->strconv_mode, "asciidot");
@@ -980,7 +988,6 @@ static RDisasmState *ds_init(RCore *core, bool for_json) {
 	core->print->bytespace = r_config_get_i (core->config, "asm.bytes.space");
 	ds->cursor = 0;
 	ds->nb = 0;
-	ds->flagspace_ports = r_flag_space_get (core->flags, "ports");
 	ds->lbytes = r_config_get_i (core->config, "asm.lbytes");
 	ds->show_cmt_right_default = r_config_get_b (core->config, "asm.cmt.right");
 	ds->show_cmt_right = ds->show_cmt_right_default;
@@ -1136,6 +1143,13 @@ static void ds_free(RDisasmState *ds) {
 	free (ds->_tabsbuf);
 	// Restore pal_batch and reload palette if needed
 	ds->core->cons->context->pal_batch = ds->pal_batch_save;
+	if (ds->saved_block) {
+		RCore *core = ds->core;
+		free (core->block);
+		core->block = ds->saved_block;
+		core->blocksize = ds->saved_blocksize;
+		r_core_block_size (core, core->blocksize);
+	}
 	R_FREE (ds);
 }
 
@@ -1615,6 +1629,55 @@ static void ds_begin_comment(RDisasmState *ds) {
 	}
 }
 
+// Embedded commands may invalidate every borrowed analysis or configuration pointer.
+static char *ds_run_command(RDisasmState *ds, const char *str, bool capture) {
+	RCore *core = ds->core;
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+		return NULL;
+	}
+	char *cmd = strdup (r_str_get (str));
+	if (!cmd) {
+		return NULL;
+	}
+	if (!ds->saved_block) {
+		ut8 *block = r_mem_dup (core->block, core->blocksize);
+		if (!block) {
+			free (cmd);
+			return NULL;
+		}
+		ds->saved_block = core->block;
+		ds->saved_blocksize = core->blocksize;
+		core->block = block;
+	}
+	const ut64 pdf_addr = ds->pdf? ds->pdf->addr: UT64_MAX;
+	const int blocksize = core->blocksize;
+	char *output = NULL;
+	if (capture) {
+		output = r_core_cmd_str_at (core, ds->at, cmd);
+	} else {
+		const ut64 addr = core->addr;
+		r_core_cmd0 (core, cmd);
+		r_core_seek (core, addr, true);
+	}
+	free (cmd);
+	r_core_block_size (core, blocksize);
+	if (ds->pdf) {
+		ds->pdf = r_anal_get_function_at (core->anal, pdf_addr);
+		if (!ds->pdf) {
+			ds->count = ds->lines + 1;
+		}
+	}
+	ds->fcn = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+	ds->_bbget_fcn = NULL;
+	ds->_bbget_bb = NULL;
+	ds->lastflag = NULL;
+	ds->sfi.name = NULL;
+	ds->ocomment = NULL;
+	ds->cursor_switch_op = NULL;
+	ds_refresh_refs (ds);
+	return output;
+}
+
 static void ds_print_pins(RDisasmState *ds) {
 	RCore *core = ds->core;
 	const char *lepin = r_anal_pin_at (core->anal, ds->at);
@@ -1625,7 +1688,7 @@ static void ds_print_pins(RDisasmState *ds) {
 			const char *cmd = r_anal_pin_get (core->anal, lepin);
 			if (cmd) {
 				r_cons_newline (ds->core->cons);
-				r_core_cmd0 (core, cmd);
+				ds_run_command (ds, cmd, false);
 			}
 		}
 	}
@@ -3178,28 +3241,13 @@ static void ds_update_ref_lines(RDisasmState *ds) {
 // the Cr command may delete any meta item, including its own: callers must not use it after this
 static void ds_print_meta_run(RDisasmState *ds, const char *str, ut64 size) {
 	RCore *core = ds->core;
-	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
-		r_cons_printf (core->cons, "%s (Cr %d %s)\n", ds->cmtoken, (int)size, r_str_get (str));
-		return;
+	r_cons_printf (core->cons, "%s (Cr %d %s)\n", ds->cmtoken, (int)size, r_str_get (str));
+	char *s = ds_run_command (ds, str, true);
+	if (s) {
+		r_str_trim (s);
+		r_cons_print (core->cons, s);
+		free (s);
 	}
-	char *cmd = strdup (r_str_get (str));
-	// the command may seek or resize the block we are disassembling from
-	int obs = core->blocksize;
-	ut8 *oblock = core->block;
-	core->block = r_mem_dup (core->block, core->blocksize);
-	// XXX temporal seek causes UAF char *s = r_core_cmd_strf (core, "%s@%"PFMT64d, cmd, ds->at);
-	char *s = r_core_cmd_strf (core, "s %"PFMT64d";%s;s-", ds->at, cmd);
-	r_str_trim (s);
-	r_cons_printf (core->cons, "%s (Cr %d %s)\n%s", ds->cmtoken, (int)size, cmd, s);
-	free (s);
-	free (cmd);
-	free (core->block);
-	core->block = oblock;
-	core->blocksize = obs;
-	// the command may also delete the cached function and its blocks
-	ds->fcn = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
-	ds->_bbget_fcn = NULL;
-	ds->_bbget_bb = NULL;
 }
 
 static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
@@ -3262,34 +3310,17 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	}
 	// handle meta here //
 	if (!ds->asm_meta) {
-		size_t i = 0;
 		if (meta && meta_size > 0 && meta->type != R_META_TYPE_HIDE) {
-			// XXX this is just noise. should be rewritten
 			const int meta_type = meta->type;
 			switch (meta_type) {
-			case R_META_TYPE_DATA:
-#if 0
-				if (!R_STR_ISEMPTY (meta->str)) {
-					r_cons_printf (".data: %s\n", meta->str);
-				}
-#endif
-				i += meta_size;
-				break;
-			case R_META_TYPE_STRING:
-				i += meta_size;
-				break;
 			case R_META_TYPE_FORMAT:
 				r_cons_printf (cons, ".format : %s\n", meta->str);
-				i += meta_size;
 				break;
 			case R_META_TYPE_MAGIC:
 				r_cons_printf (cons, ".magic : %s\n", meta->str);
-				i += meta_size;
 				break;
 			case R_META_TYPE_RUN:
 				ds_print_meta_run (ds, meta->str, meta_size);
-				meta = NULL;
-				i += meta_size;
 				break;
 			default:
 				break;
@@ -3345,7 +3376,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			}
 			}
 			ds->oplen = meta_size;
-			return i;
+			return meta_size;
 		}
 	}
 
@@ -7187,7 +7218,7 @@ toro:
 		if (core->print->flags & R_PRINT_FLAGS_UNALLOC) {
 			if (!core->anal->iob.is_valid_offset (core->anal->iob.io, ds->at, 0)) {
 				ds_begin_line (ds);
-				ds_print_labels (ds, f);
+				ds_print_labels (ds, ds->fcn);
 				ds_setup_print_pre (ds, false, false);
 				ds_print_lines_left (ds);
 				core->print->resetbg = (ds->asm_highlight == UT64_MAX);

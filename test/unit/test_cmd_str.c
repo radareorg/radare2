@@ -25,6 +25,35 @@ bool test_cmd_str_issue_18799(void) {
 	mu_end;
 }
 
+static int cmd_capture_failure(void *user, const char *input) {
+	return -1;
+}
+
+bool test_cmd_str_capture_lifetime(void) {
+	RCore *core = r_core_new ();
+	r_config_set_i (core->config, "scr.color", 0);
+	r_cons_print (core->cons, "parent\n");
+	char *output = r_core_cmd_str (core, "?e keep;?e drop");
+	char *filtered = r_core_cmd_str (core, "?e keep~keep");
+	mu_assert_streq_free (filtered, "keep\n", "capture applies filters");
+	char *empty = r_core_cmd_str (core, "?e drop~keep");
+	mu_assert_streq_free (empty, "", "empty capture is an owned string");
+	char *nested = r_core_cmd_str (core, "echo $(echo nested)");
+	mu_assert_streq_free (nested, "nested\n", "nested capture restores its parent");
+	char *redirected = r_core_cmd_str (core, "?e redirected > $capture");
+	mu_assert_streq_free (redirected, "", "redirected capture is empty");
+	redirected = r_core_cmd_str (core, "cat $capture");
+	mu_assert_streq_free (redirected, "redirected\n", "redirection retains output");
+	r_cmd_add (core->rcmd, "z", cmd_capture_failure);
+	char *failed = r_core_cmd_str (core, "z");
+	mu_assert_null (failed, "command failure remains distinct from empty output");
+	mu_assert_streq (r_cons_get_buffer (core->cons, NULL), "parent\n", "parent output survives captures");
+	r_cons_reset (core->cons);
+	r_core_free (core);
+	mu_assert_streq_free (output, "keep\ndrop\n", "captured output outlives its console");
+	mu_end;
+}
+
 bool test_multiple_cores_share_terminal(void) {
 	RCore *first = r_core_new ();
 	RCore *second = r_core_new ();
@@ -920,6 +949,7 @@ int all_tests(void) {
 	mu_run_test (test_dwarf_sdb_export_special_chars);
 	mu_run_test (test_foreach_instruction_bounds);
 	mu_run_test (test_cmd_str_issue_18799);
+	mu_run_test (test_cmd_str_capture_lifetime);
 	mu_run_test (test_multiple_cores_share_terminal);
 	mu_run_test (test_echo_context_binding_and_depth);
 	mu_run_test (test_prompt_utf8_ellipsis_width);

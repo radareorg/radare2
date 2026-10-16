@@ -176,6 +176,153 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=Cr restores seek and block size across repeated callbacks
+FILE=-
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 90909090c3c3
+Cr 1 s 0x40 @ 1
+Cr 1 b 32 @ 2
+Cr 1 b 4096 @ 3
+pd 6;s;b;?v $b;p8 6
+e asm.meta=false
+pd 6;s;b;?v $b;p8 6
+EOF
+EXPECT=<<EOF
+            0x00000000      90             nop
+            0x00000001 ; (Cr 1 s 0x40)
+
+            0x00000002 ; (Cr 1 b 32)
+
+            0x00000003 ; (Cr 1 b 4096)
+
+            0x00000004      c3             ret
+            0x00000005      c3             ret
+0x0
+0x100
+0x100
+90909090c3c3
+            0x00000000      90             nop
+; (Cr 1 s 0x40)
+            0x00000001      90             .hex 90
+; (Cr 1 b 32)
+            0x00000002      90             .hex 90
+; (Cr 1 b 4096)
+            0x00000003      90             .hex 90
+            0x00000004      c3             ret
+            0x00000005      c3             ret
+0x0
+0x100
+0x100
+90909090c3c3
+EOF
+RUN
+
+NAME=Cr refreshes borrowed configuration strings
+FILE=-
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 90909090c3c3
+Cr 1 e asm.cmt.token=CHANGED @ 2
+Cr 1 ?e alive @ 3
+pd 5
+e asm.meta=false
+pd 5
+EOF
+EXPECT=<<EOF
+            0x00000000      90             nop
+            0x00000001      90             nop
+            0x00000002 ; (Cr 1 e asm.cmt.token=CHANGED)
+
+            0x00000003 CHANGED (Cr 1 ?e alive)
+alive
+            0x00000004      c3             ret
+            0x00000000      90             nop
+            0x00000001      90             nop
+CHANGED (Cr 1 e asm.cmt.token=CHANGED)
+            0x00000002      90             .hex 90
+CHANGED (Cr 1 ?e alive)
+alive            0x00000003      90             .hex 90
+            0x00000004      c3             ret
+EOF
+RUN
+
+NAME=Cr deleting the cached symbol name
+FILE=-
+ARGS=-a x86 -b 64 -e asm.symbol=true
+CMDS=<<EOF
+wx 554889e5c3
+af
+Cr 1 af-* @ 1
+pd 4
+EOF
+EXPECT=<<EOF
+/ 5: fcn.00000000 ();
+|  fcn.00000000 + 0              0x00000000      55             push rbp
+|  fcn.00000000 + 1              0x00000001 ; (Cr 1 af-*)
+
+    + 0              0x00000002      89e5           mov ebp, esp
+    + 0              0x00000004      c3             ret
+EOF
+RUN
+
+NAME=Cr deleting the function stops pdf
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 554889e5c3
+af
+Cr 1 af-* @ 1
+pdf
+afl
+p8 5
+af
+e asm.meta=false
+Cr 1 af-* @ 1
+pdf
+afl
+p8 5
+EOF
+EXPECT=<<EOF
+/ 5: fcn.00000000 ();
+|           0x00000000      55             push rbp
+|           0x00000001 ; (Cr 1 af-*)
+
+554889e5c3
+/ 5: fcn.00000000 ();
+|           0x00000000      55             push rbp
+; (Cr 1 af-*)
+            0x00000001      48             .hex 48
+554889e5c3
+EOF
+RUN
+
+NAME=Cr short reads with padding disabled
+FILE=malloc://6
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+b 32
+wx 90909090c3c3
+e io.ff=false
+Cr 1 p8 8 @ 0
+Cr 1 p8 8 @ 4
+pd 6;s;b;p8 8
+EOF
+EXPECT=<<EOF
+            0x00000000 ; (Cr 1 p8 8)
+90909090c3c3ffff
+            0x00000001      90             nop
+            0x00000002      90             nop
+            0x00000003      90             nop
+            0x00000004 ; (Cr 1 p8 8)
+c3c3ffffffffffff
+            0x00000005      c3             ret
+0x0
+0x20
+90909090c3c3ffff
+EOF
+RUN
+
 NAME=CCb
 FILE=malloc://64
 CMDS=<<EOF
