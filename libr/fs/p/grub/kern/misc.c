@@ -113,7 +113,7 @@ char *
 grub_strncpy(char *dest, const char *src, int c) {
 	char *p = dest;
 
-	while ((*p++ = *src++) != '\0' && --c)
+	while (c-- > 0 && (*p++ = *src++) != '\0')
 		;
 
 	return dest;

@@ -120,6 +120,38 @@ static inline bool reloc_is_import(ELFOBJ *eo, const RBinElfReloc *rel) {
 	return rel->sym && rel->sym < eo->imports_by_ord_size && eo->imports_by_ord[rel->sym];
 }
 
+// a common symbol has no address until link time, so it gets a slot too
+static inline const RBinElfSpecialSym *special_sym(ELFOBJ *eo, ut64 ord) {
+	return eo->special_by_ord? ht_up_find (eo->special_by_ord, ord, NULL): NULL;
+}
+
+static inline bool reloc_has_slot(ELFOBJ *eo, const RBinElfReloc *rel) {
+	const RBinElfSpecialSym *ss = special_sym (eo, rel->sym);
+	return reloc_is_import (eo, rel) || (ss && ss->common);
+}
+
+// a tls symbol's value is an offset in the thread block, not an address
+static inline bool reloc_sym_is_tls(ELFOBJ *eo, const RBinElfReloc *rel) {
+	const RBinSymbol *sym = (rel->sym < eo->symbols_by_ord_size)? eo->symbols_by_ord[rel->sym]: NULL;
+	const char *type = sym? sym->type: reloc_is_import (eo, rel)? eo->imports_by_ord[rel->sym]->type: NULL;
+	return type && !strcmp (type, R_BIN_TYPE_TLS_STR);
+}
+
+// arches whose _patch_reloc points a code site at its slot
+static inline bool patch_redirects_code(ut16 e_machine) {
+	switch (e_machine) {
+	case EM_ARM:
+	case EM_AARCH64:
+	case EM_PPC64:
+	case EM_386:
+	case EM_X86_64:
+	case EM_BPF:
+	case EM_SBPF:
+		return true;
+	}
+	return false;
+}
+
 #ifndef R_BIN_CGC
 #include "../format/swift/swift.h"
 
@@ -332,6 +364,18 @@ static bool is_library_without_entrypoint(ELFOBJ *eo) {
 	return true;
 }
 
+// a debuginfo file keeps e_entry over a NOBITS .text that its segment loads without file bytes
+static bool is_in_load_memory(ELFOBJ *eo, ut64 vaddr) {
+	size_t i;
+	for (i = 0; eo->phdr && i < eo->phnum; i++) {
+		const Elf_(Phdr) *p = &eo->phdr[i];
+		if (p->p_type == PT_LOAD && vaddr >= p->p_vaddr && vaddr - p->p_vaddr < p->p_memsz) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static RList* entries(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 
@@ -342,14 +386,17 @@ static RList* entries(RBinFile *bf) {
 
 	ELFOBJ* eo = bf->bo->bin_obj;
 	ut64 paddr = Elf_(get_entry_offset) (eo);
-	if (paddr != UT64_MAX) {
+	const ut64 e_entry = Elf_(get_entry_vaddr) (eo);
+	const bool unbacked = paddr == UT64_MAX && e_entry && Elf_(is_executable) (eo)
+		&& is_in_load_memory (eo, e_entry);
+	if (paddr != UT64_MAX || unbacked) {
 		RBinAddr *ptr = R_NEW0 (RBinAddr);
 		if (!ptr) {
 			return ret;
 		}
 
 		ptr->paddr = paddr;
-		ptr->vaddr = Elf_(p2v) (eo, ptr->paddr);
+		ptr->vaddr = unbacked? e_entry: Elf_(p2v) (eo, ptr->paddr);
 		ptr->hpaddr = 0x18;  // e_entry offset in ELF header
 		ptr->hvaddr = UT64_MAX; // 0x18 + baddr (bf);
 
@@ -368,7 +415,7 @@ static RList* entries(RBinFile *bf) {
 					ptr->vaddr--;
 					ptr->bits = 16;
 				}
-				if (ptr->paddr & 1) {
+				if (ptr->paddr != UT64_MAX && (ptr->paddr & 1)) {
 					ptr->paddr--;
 					ptr->bits = 16;
 				}
@@ -1034,6 +1081,25 @@ static bool disp_fits(st64 x, int bits) {
 	return x >= -(1LL << (bits - 1)) && x < (1LL << (bits - 1));
 }
 
+// lld's overflow rule: 32 is unsigned, 8 and 16 take either sign
+static inline bool x86_64_fits(int type, ut64 v, int word) {
+	const int bits = word * 8;
+	switch (type) {
+	case R_X86_64_32:
+		return v < (1ULL << bits);
+	case R_X86_64_8:
+	case R_X86_64_16:
+		return v < (1ULL << bits) || disp_fits ((st64)v, bits);
+	case R_X86_64_32S:
+	case R_X86_64_PC8:
+	case R_X86_64_PC16:
+	case R_X86_64_PC32:
+	case R_X86_64_PLT32:
+		return disp_fits ((st64)v, bits);
+	}
+	return true;
+}
+
 // thumb2 movw/movt scatter their imm16 into imm4:i:imm3:imm8
 static ut32 thumb_mov_imm(ut32 hi, ut32 lo) {
 	return ((hi & 0xf) << 12) | (((hi >> 10) & 1) << 11) | (((lo >> 12) & 7) << 8) | (lo & 0xff);
@@ -1244,7 +1310,11 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		}
 		case R_ARM_THM_PC22:
 		case R_ARM_THM_JUMP24: {
-			const st64 target = S + addend - P;
+			// ld turns a blx to a thumb function into a bl
+			if (S & 1) {
+				lo |= 0x1000;
+			}
+			const st64 target = (S & ~1ULL) + addend - P;
 			// blx switches to arm state, so it needs 4 alignment
 			const st64 amask = (lo & 0x1000)? 1: 3;
 			// a thumb branch reaches +-16MB, leave the rest alone
@@ -1318,9 +1388,9 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		break;
 	case EM_AARCH64: {
 		int word = 0;
-		// only an import has a GOT entry here: the .got.r2 slot that S names
+		// only a slotted symbol has a GOT entry; S is its .got.r2 slot
 		if (aarch64_got_reloc (rel->type)) {
-			if (!reloc_is_import (bo, rel)) {
+			if (!reloc_has_slot (bo, rel)) {
 				R_LOG_DEBUG ("unpatched aarch64 got reloc %d at 0x%"PFMT64x, rel->type, rel->rva);
 				break;
 			}
@@ -1672,6 +1742,11 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			//eprintf ("relocation %d not handle at this time\n", rel->type);
 			break;
 		}
+		// ld refuses a value the field cannot hold
+		if (!x86_64_fits (rel->type, V, word)) {
+			R_LOG_WARN ("Reloc type %d at 0x%"PFMT64x" overflows with 0x%"PFMT64x" for x64, left unpatched", rel->type, P, V);
+			break;
+		}
 		switch (word) {
 		case 0:
 			break;
@@ -1859,8 +1934,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	if (eo->ehdr.e_type != ET_REL && eo->ehdr.e_type != ET_DYN && !is_ppc64v1_exec) {
 		return NULL;
 	}
-	ut64 size = eo->g_reloc_num * cdsz;
-	if (size == 0) {
+	if (!eo->g_reloc_num) {
 		return NULL;
 	}
 	RIOBank *bank = b->iob.bank_get (io, io->bank);
@@ -1889,24 +1963,6 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 			|| eo->ehdr.e_machine == EM_ARM)) {
 		n_vaddr = (n_vaddr + cdsz - 1) & ~(cdsz - 1);
 	}
-	// reserve at least that space
-	size = eo->g_reloc_num * cdsz;
-	char *muri = r_str_newf ("malloc://%" PFMT64u, size);
-	if (!muri) {
-		return NULL;
-	}
-	RIODesc *gotr2desc = b->iob.open_at (io, muri, R_PERM_R, 0664, n_vaddr);
-	free (muri);
-	if (!gotr2desc) {
-		return NULL;
-	}
-
-	RIOMap *gotr2map = b->iob.map_get_at (io, n_vaddr);
-	if (!gotr2map) {
-		return NULL;
-	}
-	gotr2map->name = strdup (".got.r2");
-
 	const RVecRBinElfReloc *relocs = Elf_(load_relocs) (eo);
 	if (!relocs) {
 		return NULL;
@@ -1932,58 +1988,76 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		}
 	}
 	const ut64 bias = elf_io_addr (bf, eo, eo->baddr) - eo->baddr;
+	const st64 shift = bf->bo->baddr_shift;
 	RBinElfReloc *reloc;
 	R_VEC_FOREACH (relocs, reloc) {
 		ut64 plt_entry_addr = vaddr;
 		ut64 sym_addr = UT64_MAX;
-		const bool is_import = reloc_is_import (eo, reloc);
+		const bool has_slot = reloc_has_slot (eo, reloc);
+		const RBinElfSpecialSym *ss = special_sym (eo, reloc->sym);
+		bool is_abs = false;
 
-		if (is_import) {
+		if (has_slot) {
 			bool found;
 			sym_addr = ht_uu_find (relocs_by_sym, reloc->sym, &found);
 			if (found) {
 				plt_entry_addr = sym_addr;
 			}
 		} else if (reloc->sym && reloc->sym < eo->symbols_by_ord_size && eo->symbols_by_ord[reloc->sym]) {
+			is_abs = ss && !ss->common;
 			RBinSymbol *sym = eo->symbols_by_ord[reloc->sym];
-			// a tls symbol's value is an offset in the thread block, not an address
-			const bool is_tls = sym->type && !strcmp (sym->type, R_BIN_TYPE_TLS_STR);
-			sym_addr = sym->vaddr;
-			if (!is_tls && sym_addr && sym_addr != UT64_MAX) {
+			sym_addr = is_abs? ss->value: sym->vaddr;
+			if (!is_abs && !reloc_sym_is_tls (eo, reloc) && sym_addr && sym_addr != UT64_MAX) {
 				sym_addr = elf_io_addr (bf, eo, sym_addr);
 			}
 			plt_entry_addr = sym_addr;
 		}
-		const bool resolved = sym_addr && sym_addr != UT64_MAX;
-		const ut64 raddr = resolved? sym_addr: vaddr;
+		const bool resolved = is_abs || (sym_addr && sym_addr != UT64_MAX);
+		const bool addressable = !resolved && reloc->sym && !reloc_sym_is_tls (eo, reloc);
+		const bool takes_slot = addressable && eo->ehdr.e_machine != EM_SBPF;
+		// symbol-less relocs have S = 0 (gABI); a tls value is no address
+		const ut64 raddr = resolved? sym_addr: addressable? vaddr: 0;
 		_patch_reloc (bf, eo, eo->ehdr.e_machine, &b->iob, reloc,
 			elf_io_addr (bf, eo, reloc->rva), raddr, bias, plt_entry_addr, toc_base);
-		ptr = reloc_convert (eo, reloc, n_vaddr - bf->bo->baddr_shift, ret);
+		RBinSymbol *csym = (takes_slot && ss && ss->common)? eo->symbols_by_ord[reloc->sym]: NULL;
+		if (csym) {
+			csym->vaddr = vaddr - shift;
+			csym->paddr = Elf_(v2p) (eo, csym->vaddr);
+		}
+		ptr = reloc_convert (eo, reloc, n_vaddr - shift, ret);
 		if (!ptr) {
 			continue;
 		}
-		// the loader fills a module id; it has no slot
-		const bool tls_module = (eo->ehdr.e_machine == EM_X86_64 && reloc->type == R_X86_64_DTPMOD64)
-			|| (eo->ehdr.e_machine == EM_PPC && reloc->type == R_PPC_DTPMOD32);
 		// a patched code site branches to the slot, so the slot is what the
 		// reloc describes; a data site holds the value and keeps its own vaddr
-		if (is_import && !tls_module) {
-			const st64 shift = bf->bo->baddr_shift;
+		const bool site_moves = has_slot
+			&& (patch_redirects_code (eo->ehdr.e_machine) || reloc_is_import (eo, reloc));
+		if (site_moves) {
 			RBinSection *s = r_bin_get_section_at (bf->bo, ptr->vaddr + shift, true);
 			if (s && (s->perm & R_PERM_X)) {
 				if (resolved) {
 					ptr->vaddr = sym_addr - shift;
-				} else if (eo->ehdr.e_machine != EM_SBPF) {
+				} else if (takes_slot) {
 					ptr->vaddr = vaddr - shift;
 				}
 			}
 		}
-		if (!resolved && eo->ehdr.e_machine != EM_SBPF && !tls_module) {
+		if (takes_slot) {
 			ht_uu_insert (relocs_by_sym, reloc->sym, vaddr);
 			vaddr += cdsz;
 		}
 	}
 	ht_uu_free (relocs_by_sym);
+	if (vaddr > n_vaddr) {
+		char *muri = r_str_newf ("malloc://%" PFMT64u, vaddr - n_vaddr);
+		if (muri && b->iob.open_at (io, muri, R_PERM_R, 0664, n_vaddr)) {
+			RIOMap *gotr2map = b->iob.map_get_at (io, n_vaddr);
+			if (gotr2map) {
+				gotr2map->name = strdup (".got.r2");
+			}
+		}
+		free (muri);
+	}
 	return ret;
 }
 

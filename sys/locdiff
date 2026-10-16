@@ -1,5 +1,7 @@
 #!/bin/sh
-cd "$(dirname $0)"/..
+if [ "$#" -eq 0 ]; then
+	cd "$(dirname "$0")/.." || exit 1
+fi
 # alias locdiff='echo $((`git diff |grep ^+ | wc -l`-`git diff |grep ^- | wc -l`))'
 #A=`hg diff $@ | grep -v '+++' | grep ^+ |wc -l`
 #B=`hg diff $@ | grep -v -- '---' | grep ^- |wc -l`

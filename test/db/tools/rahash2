@@ -6,11 +6,41 @@ bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a35 entropy: 3.27819072
 EOF
 RUN
 
+NAME=rahash2 entropy output modes
+FILE=-
+CMDS=<<EOF
+!rahash2 -qq -a entropy bins/elf/analysis/hello-linux-x86_64
+!rahash2 -j -a entropy bins/elf/analysis/hello-linux-x86_64
+!rahash2 -r -a entropy bins/elf/analysis/hello-linux-x86_64
+!rahash2 -j -a md5,entropy -s 123456789
+!rahash2 -J -a md5,entropy -s 123456789
+EOF
+EXPECT=<<EOF
+3.27819072
+[{"name":"entropy","hash":"3.27819072"}]
+bins/elf/analysis/hello-linux-x86_64: CC file entropy:3.27819072
+[{"name":"md5","hash":"25f9e794323b453885f5181f1b624d0b"},{"name":"entropy","hash":"3.16992500"}]
+{"md5":"25f9e794323b453885f5181f1b624d0b","entropy":"3.16992500"}
+EOF
+RUN
+
 NAME=rahash2 -a ssdeep
 FILE=-
 CMDS=!rahash2 -a ssdeep bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
-bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a35 ssdeep: 96:aPsZ7JSRX4hHmfSz/XWwZpxI9LGr5lar87cZGbbgb:aPeJiam6zWQpxKLElZE
+bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a35 ssdeep: 96:Gy7im/6GjuA9fuF/lsSULxe2RELk3MgmEof7EEa4BIUdoBU:GyXfk/lsSU8LkaEofDOeom
+EOF
+RUN
+
+NAME=rahash2 -a ssdeep small input
+FILE=-
+CMDS=<<EOF
+!rahash2 -a ssdeep -s 123456789
+!rahash2 -j -a md5,ssdeep -s 123456789
+EOF
+EXPECT=<<EOF
+0x00000000-0x00000008 ssdeep: 3:OWS:OWS
+[{"name":"md5","hash":"25f9e794323b453885f5181f1b624d0b"},{"name":"ssdeep","hash":"3:OWS:OWS"}]
 EOF
 RUN
 
@@ -1105,7 +1135,19 @@ NAME=rahash2 -j file ssdeep
 FILE=-
 CMDS=!rahash2 -j -a ssdeep bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
-[{"name":"ssdeep","hash":"96:aPsZ7JSRX4hHmfSz/XWwZpxI9LGr5lar87cZGbbgb:aPeJiam6zWQpxKLElZE"}]
+[{"name":"ssdeep","hash":"96:Gy7im/6GjuA9fuF/lsSULxe2RELk3MgmEof7EEa4BIUdoBU:GyXfk/lsSU8LkaEofDOeom"}]
+EOF
+RUN
+
+NAME=rahash2 -J file
+FILE=-
+CMDS=<<EOF
+!rahash2 -J -a md4,md5 bins/elf/analysis/hello-linux-x86_64
+!rahash2 -jj -a md5 bins/elf/analysis/hello-linux-x86_64
+EOF
+EXPECT=<<EOF
+{"md5":"c957bd5bd6204470256bc15248ccafd4","md4":"d4d61472a12d59be3a85e07ff9065658"}
+{"md5":"c957bd5bd6204470256bc15248ccafd4"}
 EOF
 RUN
 

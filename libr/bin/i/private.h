@@ -7,12 +7,21 @@
 
 R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, RBinFileOptions *opt, Sdb *sdb, bool steal_ptr);
 R_IPI RBinObject *r_bin_file_object_find_by_id(RBinFile *binfile, ut32 binobj_id);
-R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw);
+R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *a, int min, int raw, RStrBuf *output);
 R_IPI RBinFile *r_bin_file_find_by_object_id(RBin *bin, ut32 binobj_id);
 R_IPI RBinFile *r_bin_file_find_by_id(RBin *bin, ut32 binfile_id);
 R_IPI bool r_bin_file_set_obj(RBin *bin, RBinFile *bf, RBinObject *obj);
 R_IPI RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const char *filename, const ut8 *bytes, ut64 sz, ut64 file_sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr);
 R_IPI bool r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz, bool steal_ptr);
+
+static inline ut64 r_bin_file_get_buffer_offset(RBinFile *bf, ut64 paddr) {
+	RBinObject *bo = bf->bo;
+	if (bo && (r_sub_overflow (paddr, bo->loadaddr, &paddr)
+			|| r_sub_overflow (paddr, bo->boffset, &paddr))) {
+		return UT64_MAX;
+	}
+	return paddr;
+}
 
 R_IPI RBinPlugin *r_bin_get_binplugin_any(RBin *bin);
 

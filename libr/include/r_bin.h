@@ -235,6 +235,7 @@ typedef uint64_t RBinAttribute;
 #define R_BIN_ATTR_LATE (1ULL << 45)
 #define R_BIN_ATTR_GENERATOR (1ULL << 46)
 #define R_BIN_ATTR_DESTRUCTOR (1ULL << 47)
+#define R_BIN_ATTR_ABSOLUTE (1ULL << 48) // ELF SHN_ABS: a value no rebase moves
 
 typedef enum {
 	R_BIN_FIELD_KIND_VARIABLE,
@@ -656,7 +657,6 @@ struct r_bin_t {
 	RIDStorage *ids;
 	RMutaBind mb;
 	RList/*<RBinFile>*/ *binfiles;
-	PrintfCallback cb_printf;
 	int loadany;
 	RIOBind iob;
 	RConsBind consb;
@@ -882,7 +882,9 @@ typedef struct r_bin_class_t {
 		RListIter *_it;\
 		type_t *_el;\
 		r_list_foreach ((l), _it, _el) { \
-			_el->paddr += (o)->loadaddr;\
+			if (_el->paddr != UT64_MAX) { \
+				_el->paddr += (o)->loadaddr;\
+			} \
 		}\
 	} while (0)
 
@@ -1011,7 +1013,6 @@ R_API bool r_bin_ldr_add(RBin *bin, RBinLdrPlugin *foo);
 R_API bool r_bin_demangle_plugin_add(RBin *bin, RBinDemanglePlugin *plugin);
 R_API bool r_bin_demangle_plugin_remove(RBin *bin, RBinDemanglePlugin *plugin);
 R_API RBinDemanglePlugin *r_bin_demangle_plugin_find(RBin *bin, const char *name);
-R_API void r_bin_list(RBin *bin, PJ *pj, int format);
 R_API RBinPlugin *r_bin_get_binplugin_by_buffer(RBin *bin, RBinFile *bf, RBuffer *buf);
 R_API void r_bin_force_plugin(RBin *bin, const char *pname);
 
@@ -1025,7 +1026,7 @@ R_API ut64 r_bin_get_laddr(RBin *bin);
 R_API ut64 r_bin_get_size(RBin *bin);
 R_API RBinAddr *r_bin_get_sym(RBin *bin, int sym);
 R_API RVecRBinString *r_bin_raw_strings(RBinFile *a, int min);
-R_API RVecRBinString *r_bin_dump_strings(RBinFile *a, int min, int raw);
+R_API void r_bin_dump_strings(RBinFile *a, int min, int raw, RStrBuf *output);
 
 // use RBinFile instead
 R_API const RList *r_bin_get_entries(RBin *bin);
@@ -1064,7 +1065,7 @@ R_API RBinObject *r_bin_cur_object(RBin *bin);
 R_API bool r_bin_select(RBin *bin, const char *arch, int bits, const char *name);
 R_API bool r_bin_select_bfid(RBin *bin, ut32 bf_id);
 R_API bool r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name);
-R_API void r_bin_list_archs(RBin *bin, PJ *pj, RTable *t, int mode);
+R_API R_OWNED char *r_bin_list_archs(RBin *bin, PJ *pj, RTable *t, int mode);
 R_API RBuffer *r_bin_create(RBin *bin, const char *plugin_name, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt);
 R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RList *files);
 
@@ -1137,7 +1138,7 @@ R_API char *r_bin_demangle_rust(RBinFile *binfile, const char *str, ut64 vaddr);
 R_API char *r_bin_demangle_dlang(const char *str);
 R_API char *r_bin_demangle_ibmxl(const char *str);
 R_API RBinLanguage r_bin_demangle_type(const char *str);
-R_API void r_bin_demangle_list(RBin *bin);
+R_API char *r_bin_demangle_list(RBin *bin);
 R_API char *r_bin_demangle_plugin(RBin *bin, const char *name, const char *str);
 R_API const char *r_bin_get_meth_flag_string(ut64 flag, bool compact);
 

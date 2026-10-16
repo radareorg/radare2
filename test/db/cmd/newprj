@@ -23,6 +23,165 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=newprj global arrays retain custom types links formats and bounds after open
+FILE=malloc://0x1000
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+mkdir .tmp
+"td struct Pair { int x; int y; };"
+avg uint16_t[2][3] global.grid @ 0x100
+avg Pair[2] global.pairs @ 0x200
+avg int *[3] global.pointers @ 0x300
+prj save .tmp/newprj-globals.prj > /dev/null
+k anal/global.inferred.0x900=uint8_t
+prj open .tmp/newprj-globals.prj > /dev/null
+k anal/global.inferred.0x900
+prj load .tmp/newprj-globals.prj > /dev/null
+avgj
+tsc Pair
+tss Pair[2]
+tl
+Cf. @ 0x100
+Cf. @ 0x200~[0]
+Cf. @ 0x300
+Cf*~0x00000100[1]
+avg- @ 0x100
+tls 0x100
+Cf. @ 0x100
+avg uint32_t[4] global.pairs @ 0x200
+avgj
+Cf. @ 0x200
+rm .tmp/newprj-globals.prj
+EOF
+EXPECT=<<EOF
+[{"name":"global.grid","addr":256,"size":12,"type":"uint16_t[2][3]"},{"name":"global.pairs","addr":512,"size":16,"type":"Pair[2]"},{"name":"global.pointers","addr":768,"size":24,"type":"int *[3]"}]
+struct Pair {
+  int x;
+  int y;
+};
+16
+0x00000100 = uint16_t[2][3]
+0x00000200 = Pair[2]
+0x00000300 = int *[3]
+6w
+2dd
+3p
+12
+[{"name":"global.pairs","addr":512,"size":16,"type":"uint32_t[4]"},{"name":"global.pointers","addr":768,"size":24,"type":"int *[3]"}]
+4d
+EOF
+RUN
+
+NAME=newprj global inference remains refinable after loading
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+mkdir .tmp
+o malloc://128 0x2000 rw
+wx 0fb6042500200000c3 @ 0
+aar 9 @ 0
+prj save .tmp/newprj-global-inferred.prj > /dev/null
+avg int8_t global.0x2000 @ 0x2000
+prj load .tmp/newprj-global-inferred.prj > /dev/null
+avgj
+k anal/global.inferred.0x2000
+wx 488b042500200000c3 @ 0
+aar 9 @ 0
+avgj
+Cf. @ 0x2000
+rm .tmp/newprj-global-inferred.prj
+EOF
+EXPECT=<<EOF
+[{"name":"global.0x2000","addr":8192,"size":1,"type":"uint8_t"}]
+uint8_t
+[{"name":"global.0x2000","addr":8192,"size":8,"type":"uint64_t"}]
+q
+EOF
+RUN
+
+NAME=newprj rebases global type links formats and inference metadata
+FILE=malloc://0x400
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+mkdir .tmp
+avg uint32_t[4] global.array @ 0x100
+k anal/global.inferred.0x100=uint32_t[4]
+k anal/global.semantic.0x100=conflict
+k anal/global.layout.0x100=ArrayLayout
+k anal/global.field.conflict.0x100.0x4=true
+prj save .tmp/newprj-global-rebase.prj > /dev/null
+"k anal/~global.*"
+o--
+o malloc://0x400 0x1000 rw
+prj load .tmp/newprj-global-rebase.prj > /dev/null
+avgj
+tl
+Cf. @ 0x1100
+k anal/global.inferred.0x1100
+k anal/global.semantic.0x1100
+k anal/global.layout.0x1100
+k anal/global.field.conflict.0x1100.0x4
+tk link.00000100
+k anal/global.inferred.0x100
+rm .tmp/newprj-global-rebase.prj
+EOF
+EXPECT=<<EOF
+[{"name":"global.array","addr":4352,"size":16,"type":"uint32_t[4]"}]
+0x00001100 = uint32_t[4]
+4d
+uint32_t[4]
+conflict
+ArrayLayout
+true
+EOF
+RUN
+
+NAME=newprj manual globals replace inferred globals and remain protected from analysis
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+mkdir .tmp
+o malloc://128 0x2000 rw
+avg int8_t global.0x2000 @ 0x2000
+prj save .tmp/newprj-global-manual.prj > /dev/null
+avg- @ 0x2000
+wx 488b042500200000c3 @ 0
+aar 9 @ 0
+prj load .tmp/newprj-global-manual.prj > /dev/null
+aar 9 @ 0
+avgj
+rm .tmp/newprj-global-manual.prj
+EOF
+EXPECT=<<EOF
+[{"name":"global.0x2000","addr":8192,"size":1,"type":"int8_t"}]
+EOF
+RUN
+
+NAME=newprj rejects invalid and truncated type metadata without consuming the next entry
+FILE=hex://5250524a060000003900000007000000616674657200696e745b335d006c696e6b2e303030303031303000676c6f62616c2e696e6665727265642e3078313030001100000010000000ffffffff06000000001d000000110000000d000000ffffffffffffffff0001000000000000001d000000130000001b0000000600000000000000000100000000000000210000001200000006000000fffffffff0ffffffffffffff20000000000000000021000000020000000100000000000000ffffffff80000000000000000100000000
+ARGS=-n
+CMDS=<<EOF
+mkdir .tmp
+wtf .tmp/newprj-types-invalid.prj 206 2>/dev/null
+prj load .tmp/newprj-types-invalid.prj > /dev/null
+f~after
+rm .tmp/newprj-types-invalid.prj
+EOF
+EXPECT=<<EOF
+0x00000080 1 after
+EOF
+EXPECT_ERR=<<EOF
+WARN: Invalid type string index
+WARN: Truncated type record
+WARN: Invalid type address record
+WARN: Truncated type address record
+WARN: Invalid type address record
+WARN: Truncated type address record
+WARN: Invalid format record
+WARN: Truncated format record
+EOF
+RUN
+
 NAME=newprj quoted project filename
 FILE=malloc://0x1000
 CMDS=<<EOF

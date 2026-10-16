@@ -1,0 +1,10 @@
+NSString=struct
+struct.NSString=p0,p1,str,len
+struct.NSString.p0=void *,0,0
+struct.NSString.p0.meta=4
+struct.NSString.p1=size_t,4,0
+struct.NSString.p1.meta=4
+struct.NSString.str=char *,8,0
+struct.NSString.str.meta=4
+struct.NSString.len=int,12,0
+struct.NSString.len.meta=4

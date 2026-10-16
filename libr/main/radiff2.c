@@ -76,6 +76,8 @@ typedef struct {
 	ut64 offset_b;
 	ut64 length_a;
 	ut64 length_b;
+	const ut8 *bufa_end;
+	const ut8 *bufb_end;
 } RadiffOptions;
 
 static RCore *opencore(RadiffOptions *ro, const char *f) {
@@ -152,16 +154,13 @@ static RCore *opencore(RadiffOptions *ro, const char *f) {
 	return c;
 }
 
-static void readstr(char *s, int sz, const ut8 *buf, int len) {
-	*s = 0;
-	const int last = R_MIN (len, sz);
-	if (last > 0) {
-		s[sz - 1] = 0;
-		while (*s == '\n') {
-			s++;
-		}
-		r_str_ncpy (s, (char *)buf, last);
-	}
+// text from the change up to the next NUL, without reading past the buffer
+static char *diff_context(const ut8 *buf, int len, const ut8 *end) {
+	const int max = (end && buf < end)? (int)R_MIN (end - buf, ST32_MAX): len;
+	char *s = r_str_ndup ((const char *)buf, max);
+	char *e = s? r_str_escape (s): NULL;
+	free (s);
+	return e;
 }
 
 static int cb_xpatch(RDiff *d, void *user, RDiffOp *op) {
@@ -185,7 +184,6 @@ static int cb_xpatch(RDiff *d, void *user, RDiffOp *op) {
 static int cb(RDiff *d, void *user, RDiffOp *op) {
 	int i;
 	RadiffOptions *ro = (RadiffOptions *)user;
-	char s[256] = { 0 };
 	if (ro->showcount) {
 		ro->count++;
 		return 1;
@@ -194,45 +192,38 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 	case 'U': // 'U' in theory never handled here
 	case 'u':
 		if (op->a_len > 0) {
-			readstr (s, sizeof (s), op->a_buf, op->a_len);
-			if (*s) {
-				if (!ro->quiet) {
-					printf (Color_RED);
-				}
-				printf ("-0x%08" PFMT64x ":", op->a_off + ro->baddr);
-				int len = op->a_len; // R_MIN (op->a_len, strlen (op->a_buf));
-				for (i = 0; i < len; i++) {
-					printf ("%02x ", op->a_buf[i]);
-				}
-				if (!ro->quiet) {
-					char *p = r_str_escape ((const char *)op->a_buf);
-					printf (" \"%s\"", p);
-					free (p);
-					printf (Color_RESET);
-				}
-				printf ("\n");
+			if (!ro->quiet) {
+				printf (Color_RED);
 			}
+			printf ("-0x%08" PFMT64x ":", op->a_off + ro->baddr);
+			for (i = 0; i < op->a_len; i++) {
+				printf ("%02x ", op->a_buf[i]);
+			}
+			if (!ro->quiet) {
+				char *p = diff_context (op->a_buf, op->a_len, ro->bufa_end);
+				printf (" \"%s\"", r_str_get (p));
+				free (p);
+				printf (Color_RESET);
+			}
+			printf ("\n");
 		}
 		if (op->b_len > 0) {
-			readstr (s, sizeof (s), op->b_buf, op->b_len);
-			if (*s) {
-				if (!ro->quiet) {
-					printf (Color_GREEN);
-				}
-				printf ("+0x%08" PFMT64x ":", op->b_off + ro->baddr);
-				for (i = 0; i < op->b_len; i++) {
-					printf ("%02x ", op->b_buf[i]);
-				}
-				if (!ro->quiet) {
-					char *p = r_str_escape ((const char *)op->b_buf);
-					printf (" \"%s\"", p);
-					free (p);
-					printf (Color_RESET);
-				}
-				printf ("\n");
+			if (!ro->quiet) {
+				printf (Color_GREEN);
 			}
+			printf ("+0x%08" PFMT64x ":", op->b_off + ro->baddr);
+			for (i = 0; i < op->b_len; i++) {
+				printf ("%02x ", op->b_buf[i]);
+			}
+			if (!ro->quiet) {
+				char *p = diff_context (op->b_buf, op->b_len, ro->bufb_end);
+				printf (" \"%s\"", r_str_get (p));
+				free (p);
+				printf (Color_RESET);
+			}
+			printf ("\n");
 		}
-		break;
+		return 1;
 	case 'r':
 		if (ro->disasm) {
 			R_LOG_WARN ("r2cmds (-r) + disasm (-D) is not yet implemented");
@@ -1822,6 +1813,8 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 				r_cons_printf (ro.cons, "%s\n", res);
 				free (res);
 			} else {
+				ro.bufa_end = bufa + sza;
+				ro.bufb_end = bufb + szb;
 				r_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);
 				// r_diff_buffers_delta (d, bufa, (ut32)sza, bufb, (ut32)szb);
 			}

@@ -1,16 +1,22 @@
 NAME=r2pipe2 error
 FILE=--
-CMDS={
+CMDS=<<EOF
+{
+s 0
+EOF
 EXPECT=<<EOF
-{"res":"","error":true,"value":0,"code":0}
+{"res":"","error":true,"value":0,"code":1}
 EOF
 RUN
 
 NAME=r2pipe2 invalid
 FILE=--
-CMDS={"cmd":"invalid"}
+CMDS=<<EOF
+{"cmd":"invalid"}
+s 0
+EOF
 EXPECT=<<EOF
-{"res":"","error":false,"value":1,"code":0,"logs":[{"type":"ERROR","origin":"r_core_return_invalid_command","message":"Invalid `n` subcommand, try `i?`"}],"code":0}
+{"res":"","error":true,"value":1,"logs":[{"type":"ERROR","origin":"r_core_return_invalid_command","message":"Invalid `n` subcommand, try `i?`"}],"code":1}
 EOF
 RUN
 
@@ -18,7 +24,7 @@ NAME=r2pipe2 echo
 FILE=--
 CMDS={"cmd":"?e hello"}
 EXPECT=<<EOF
-{"res":"hello\n","error":false,"value":0,"code":0,"code":0}
+{"res":"hello\n","error":false,"value":0,"code":0}
 EOF
 RUN
 
@@ -26,7 +32,7 @@ NAME=r2pipe2 json
 FILE=-
 CMDS={"cmd":"ij", "json":true}
 EXPECT=<<EOF
-{"res":{"core":{"type":"","file":"malloc://512","fd":3,"size":512,"humansz":"512","iorw":true,"mode":"rwx","block":256,"format":"null"}},"error":false,"value":0,"code":0,"code":0}
+{"res":{"core":{"type":"","file":"malloc://512","fd":3,"size":512,"humansz":"512","iorw":true,"mode":"rwx","block":256,"format":"null"}},"error":false,"value":0,"code":0}
 EOF
 RUN
 
@@ -39,10 +45,9 @@ CMDS=<<EOF
 EOF
 EXPECT=<<EOF
 {
-  "res": ,
+  "res": null,
   "error": false,
   "value": 0,
-  "code": 0,
   "logs": [
     {
       "type": "INFO",
@@ -132,5 +137,62 @@ EXPECT=<<EOF
   ],
   "code": 0
 }
+EOF
+RUN
+
+NAME=r2pipe2 invalid command field types
+FILE=--
+CMDS=<<EOF
+{"cmd":123}
+{"cmd":null}
+{"cmd":{}}
+s 0
+EOF
+EXPECT=<<EOF
+{"res":"","error":true,"value":0,"code":1}
+{"res":"","error":true,"value":0,"code":1}
+{"res":"","error":true,"value":0,"code":1}
+EOF
+RUN
+
+NAME=r2pipe2 invalid JSON output stays a valid error envelope
+FILE=--
+CMDS=<<EOF
+{"cmd":"?e not JSON","json":true}
+s 0
+EOF
+EXPECT=<<EOF
+{"res":"not JSON","error":true,"value":0,"logs":[{"type":"ERROR","origin":"json.parse","message":"unexpected chars (not JSON)"},{"type":"ERROR","origin":"cmd_json","message":"Command output is not valid JSON"}],"code":1}
+EOF
+RUN
+
+NAME=r2pipe2 error status does not leak into the next request
+FILE=--
+CMDS=<<EOF
+{"cmd":"invalid"}
+{"cmd":"?e recovered"}
+EOF
+EXPECT=<<EOF
+{"res":"","error":true,"value":1,"logs":[{"type":"ERROR","origin":"r_core_return_invalid_command","message":"Invalid `n` subcommand, try `i?`"}],"code":1}
+{"res":"recovered\n","error":false,"value":0,"code":0}
+EOF
+RUN
+
+NAME=r2pipe2 missing function signature reports failure and recovers
+FILE=malloc://16
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+{"cmd":"afsj"}
+wx c3 @ 4
+af @ 4
+s 4
+{"cmd":"afsj 0"}
+{"cmd":"afsj 4","json":true}
+s 0
+EOF
+EXPECT=<<EOF
+{"res":"","error":true,"value":0,"logs":[{"type":"ERROR","origin":"cmd_afsj","message":"Cannot find function in 0x00000000"}],"code":1}
+{"res":"","error":true,"value":0,"logs":[{"type":"ERROR","origin":"cmd_afsj","message":"Cannot find function in 0x00000000"}],"code":1}
+{"res":{"name":"fcn.00000004","noreturn":false,"ret":"void","callconv":"amd64","argc":0,"args":[]},"error":false,"value":4,"code":0}
 EOF
 RUN

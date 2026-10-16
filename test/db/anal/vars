@@ -1169,3 +1169,235 @@ var int64_t var_10h @ sp+0x200
 stackframe: 528
 EOF
 RUN
+
+NAME=register arguments survive an IPA-RA leaf call and repeated recovery
+FILE=malloc://256
+ARGS=-a x86 -b64
+CMDS=<<EOF
+wx e83b0000008d047f01f0c3
+wx 83051000000001c3 @ 0x40
+af leaf @ 0x40
+af caller @ 0
+afv @ 0
+afva @ 0
+afv @ 0
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rdi
+arg int64_t arg2 @ rsi
+arg int64_t arg1 @ rdi
+arg int64_t arg2 @ rsi
+EOF
+RUN
+
+NAME=IPA-RA recovery tracks partial and conditional callee writes
+FILE=malloc://256
+ARGS=-a x86 -b64
+CMDS=<<EOF
+wx e83b0000008d047f01f0c3
+wx 31ff9090909090c3 @ 0x40
+af leaf @ 0x40
+af caller @ 0
+afv @ 0
+wx 40b70190909090c3 @ 0x40
+afva @ 0x40
+afv- @ 0
+afva @ 0
+afv @ 0
+wx 85c0740231ff90c3 @ 0x40
+af- @ 0x40
+af leaf @ 0x40
+afv- @ 0
+afva @ 0
+afv @ 0
+wx 85c0740231c090c3 @ 0x40
+afva @ 0x40
+afv- @ 0
+afva @ 0
+afv @ 0
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rsi
+arg int64_t arg1 @ rsi
+arg int64_t arg1 @ rsi
+arg int64_t arg1 @ rdi
+arg int64_t arg2 @ rsi
+EOF
+RUN
+
+NAME=IPA-RA recovery follows nested local calls and tail calls
+FILE=malloc://256
+ARGS=-a x86 -b64
+CMDS=<<EOF
+wx e83b0000008d047f01f0c3
+wx e83b000000c3 @ 0x40
+wx 83051000000001c3 @ 0x80
+af leaf @ 0x80
+af middle @ 0x40
+af caller @ 0
+afv @ 0
+wx e93b000000 @ 0x40
+af- @ 0x40
+af middle @ 0x40
+afv- @ 0
+afva @ 0
+afv @ 0
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rdi
+arg int64_t arg2 @ rsi
+arg int64_t arg1 @ rdi
+arg int64_t arg2 @ rsi
+EOF
+RUN
+
+NAME=IPA-RA recovery keeps ABI fallback for unknown indirect and recursive callees
+FILE=malloc://256
+ARGS=-a x86 -b64
+CMDS=<<EOF
+wx e83b0000008d047f01f0c3
+wx ffd0c3 @ 0x40
+af leaf @ 0x40
+af caller @ 0
+afvj @ 0
+wx e8fbffffffc3 @ 0x40
+af- @ 0x40
+af leaf @ 0x40
+afv- @ 0
+afva @ 0
+afvj @ 0
+wx e8fb000000c3 @ 0x40
+af- @ 0x40
+af leaf @ 0x40
+afv- @ 0
+afva @ 0
+afvj @ 0
+EOF
+EXPECT=<<EOF
+{"reg":[],"sp":[],"bp":[]}
+{"reg":[],"sp":[],"bp":[]}
+{"reg":[],"sp":[],"bp":[]}
+EOF
+RUN
+
+NAME=IPA-RA recovery includes implicit register writes
+FILE=malloc://256
+ARGS=-a x86 -b64
+CMDS=<<EOF
+wx e83b00000089d0c3
+wx f7e3c3 @ 0x40
+af leaf @ 0x40
+afv- @ 0x40
+af caller @ 0
+afvj @ 0
+EOF
+EXPECT=<<EOF
+{"reg":[],"sp":[],"bp":[]}
+EOF
+RUN
+
+NAME=IPA-RA recovery handles floating point arguments
+FILE=malloc://256
+ARGS=-a x86 -b64
+CMDS=<<EOF
+wx e83b000000f20f58c1c3
+wx 83051000000001c3 @ 0x40
+af leaf @ 0x40
+af caller @ 0
+afv @ 0
+wx 0f57c090909090c3 @ 0x40
+af- @ 0x40
+af leaf @ 0x40
+afv- @ 0
+afva @ 0
+afv @ 0
+EOF
+EXPECT=<<EOF
+arg double arg1 @ xmm0
+arg double arg2 @ xmm1
+arg double arg1 @ xmm1
+EOF
+RUN
+
+NAME=IPA-RA discards stale callee summaries after a code patch
+FILE=malloc://256
+ARGS=-a x86 -b64
+CMDS=<<EOF
+wx e83b0000008d047f01f0c3
+wx b801000000c3 @ 0x40
+af leaf @ 0x40
+af caller @ 0
+wx bf01000000c3 @ 0x40
+afv- @ 0
+afva @ 0
+afvj @ 0
+afva @ 0x40
+afva @ 0
+afv @ 0
+EOF
+EXPECT=<<EOF
+{"reg":[],"sp":[],"bp":[]}
+arg int64_t arg1 @ rsi
+EOF
+RUN
+
+NAME=IPA-RA discards summaries when the register profile changes
+FILE=malloc://256
+ARGS=-a x86 -b64
+CMDS=<<EOF
+wx e83b0000008d047f01f0c3
+wx 83051000000001c3 @ 0x40
+af leaf @ 0x40
+af caller @ 0
+e asm.bits=32
+afva @ 0x40
+e asm.bits=64
+afv- @ 0
+afva @ 0
+afvj @ 0
+afva @ 0x40
+afva @ 0
+afv @ 0
+EOF
+EXPECT=<<EOF
+{"reg":[],"sp":[],"bp":[]}
+arg int64_t arg1 @ rdi
+arg int64_t arg2 @ rsi
+EOF
+RUN
+
+NAME=GCC IPA-RA ELF recovers arguments used after a local call
+FILE=bins/elf/gcc-fipara/ipara_on
+CMDS=<<EOF
+aaa
+afv @ sym.use_after_call
+afva @ sym.use_after_call
+afv @ sym.use_after_call
+afvj @ sym.func1
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rdi
+arg int64_t arg2 @ rsi
+arg int64_t arg1 @ rdi
+arg int64_t arg2 @ rsi
+{"reg":[],"sp":[],"bp":[]}
+EOF
+RUN
+
+NAME=GCC without IPA-RA keeps saved register arguments
+FILE=bins/elf/gcc-fipara/ipara_off
+CMDS=<<EOF
+aaa
+afv @ sym.use_after_call
+afva @ sym.use_after_call
+afv @ sym.use_after_call
+afvj @ sym.func1
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rdi
+arg int64_t arg2 @ rsi
+arg int64_t arg1 @ rdi
+arg int64_t arg2 @ rsi
+{"reg":[],"sp":[],"bp":[]}
+EOF
+RUN

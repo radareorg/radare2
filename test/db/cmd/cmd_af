@@ -361,7 +361,240 @@ af
 afv
 EOF
 EXPECT=<<EOF
+arg float arg1 @ s0
+EOF
+RUN
+
+NAME=arm64 float args take the width of their first read, through a v copy
+FILE=malloc://1024
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 0000669e2100669ec0035fd6 @ 0
+wx 0028221e2128631ec0035fd6 @ 0x20
+wx 040000940000669ec0035fd6 @ 0x40
+wx c0035fd6 @ 0x50
+wx 281ca14e091ca04e2029291e0029601ec0035fd6 @ 0x60
+wx 081ca04ec0035fd6 @ 0x80
+wx 00d4214ec0035fd6 @ 0x100
+wx 081ca04e400000b42100679e0029281ec0035fd6 @ 0x110
+wx 081ca04e2800679e010000140029281ec0035fd6 @ 0x130
+wx 091ca04e2021211ec0035fd6 @ 0x150
+wx 0000261e0100669ec0035fd6 @ 0x170
+wx 081ca04e001da84eaeffff97c0035fd6 @ 0x190
+wx 081ca04eabffff970029281ec0035fd6 @ 0x1a0
+wx 011ca04ea7ffff972028211ec0035fd6 @ 0x1b0
+wx 081ca04e400000b4c0035fd60029281ec0035fd6 @ 0x1c0
+wx 081ca04eabffff970029281ec0035fd6 @ 0x1e0
+wx 081ca04e830100940029281ec0035fd6 @ 0x1f0
+wx 081ca04e610000b492ffff97c0035fd60085284ec0035fd6 @ 0x200
+wx 081ca04e20003fd60029281ec0035fd6 @ 0x220
+af @ 0x50
+af @ 0
+af @ 0x20
+af @ 0x40
+af @ 0x60
+af @ 0x80
+af @ 0x100
+af @ 0x110
+af @ 0x130
+af @ 0x150
+af @ 0x170
+af @ 0x190
+af @ 0x1a0
+af @ 0x1b0
+af @ 0x1c0
+af @ 0x1f0
+af @ 0x200
+af @ 0x220
+afv @ 0
+afv @ 0x20
+afv @ 0x40
+afv @ 0x60
+afv @ 0x80
+afv @ 0x100
+afv @ 0x110
+afv @ 0x130
+afv @ 0x150
+afv @ 0x170
+afvR @ 0x170
+afv @ 0x190
+afv @ 0x1a0
+afv @ 0x1b0
+afv @ 0x1c0
+afv @ 0x1f0
+afv @ 0x200
+afv @ 0x220
+e anal.cc=golang
+af @ 0x1e0
+afv @ 0x1e0
+EOF
+EXPECT=<<EOF
 arg double arg1 @ d0
+arg double arg2 @ d1
+arg float arg1 @ s0
+arg double arg2 @ d1
+arg float arg3 @ s2
+arg double arg4 @ d3
+arg float arg1 @ s0
+arg double arg2 @ d1
+arg double arg1 @ d0
+arg uint8_t[16] arg1 @ v0
+arg uint8_t[16] arg2 @ v1
+arg int64_t arg1 @ x1
+arg float arg2 @ s0
+arg int64_t arg1 @ x1
+arg double arg2 @ d0
+arg float arg1 @ s0
+arg float arg2 @ s1
+arg float arg1 @ s0
+      arg1  0x170,0x174
+arg double arg1 @ d0
+arg float arg1 @ s0
+arg double arg1 @ d0
+arg float arg1 @ s0
+arg float arg1 @ s0
+arg uint8_t[16] arg1 @ v0
+arg double arg1 @ d0
+arg double arg1 @ d0
+EOF
+RUN
+
+NAME=arm64 copied float width follows the callee calling convention
+FILE=malloc://128
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 081ca04e070000940029281ec0035fd6 @ 0
+wx 2800679ec0035fd6 @ 0x20
+wx 081ca04e070000940029281ec0035fd6 @ 0x40
+wx c0035fd6 @ 0x60
+af @ 0x20
+afc golang @ 0x20
+af @ 0x60
+af @ 0
+afv @ 0
+e anal.cc=golang
+af @ 0x40
+afv @ 0x40
+EOF
+EXPECT=<<EOF
+arg double arg1 @ d0
+arg float arg1 @ s0
+EOF
+RUN
+
+NAME=arm64 copied float width stops at a callee whose preserve list lacks the register
+FILE=malloc://512
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx c0035fd6 @ 0x50
+wx 081ca04eabffff970029281ec0035fd6 @ 0x1a0
+k anal/cc/cc.golang.preserve=x19
+af @ 0x50
+afc golang @ 0x50
+af @ 0x1a0
+afv @ 0x1a0
+EOF
+EXPECT=<<EOF
+arg double arg1 @ d0
+EOF
+RUN
+
+NAME=arm64 vector width is not taken from a preserved register after a call
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 081ca04e0700009400d5284ec0035fd6 @ 0
+wx e81f184ec0035fd6 @ 0x20
+af @ 0x20
+af @ 0
+afv @ 0
+EOF
+EXPECT=<<EOF
+arg double arg1 @ d0
+EOF
+RUN
+
+NAME=arm64 fp arithmetic, conversions and compares read and write their registers
+FILE=malloc://512
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 1038611e5190431fb29c661fc0035fd6 @ 0x0
+wx 3088621ec0035fd6 @ 0x40
+wx 1028611e5110631fc0035fd6 @ 0x80
+wx 3040611ec0035fd6 @ 0xc0
+wx 1040621e2900789e4a00799e7100629e9200639ec0035fd6 @ 0x100
+wx 0900649e2a00659e4b00709e6c00719e8d00609eae00619ecf00689ef000699ec0035fd6 @ 0x140
+wx 1020611e4004631e9414651ee0d79f1ac0035fd6 @ 0x180
+wx 0100629e2008611e4100789e20040091c0035fd6 @ 0x1c0
+af @ 0x0
+af @ 0x40
+af @ 0x80
+af @ 0xc0
+af @ 0x100
+af @ 0x140
+af @ 0x180
+af @ 0x1c0
+afv @ 0x0
+?e --
+afv @ 0x40
+?e --
+afv @ 0x80
+?e --
+afv @ 0xc0
+?e --
+afv @ 0x100
+?e --
+afv @ 0x140
+?e --
+afv @ 0x180
+?e --
+afv @ 0x1c0
+EOF
+EXPECT=<<EOF
+arg double arg1 @ d0
+arg double arg2 @ d1
+arg double arg3 @ d2
+arg double arg4 @ d3
+arg double arg5 @ d4
+arg double arg6 @ d5
+arg double arg7 @ d6
+arg double arg8 @ d7
+--
+arg double arg1 @ d1
+arg double arg2 @ d2
+--
+arg double arg1 @ d0
+arg double arg2 @ d1
+arg double arg3 @ d2
+arg double arg4 @ d3
+arg double arg5 @ d4
+--
+arg double arg1 @ d1
+--
+arg int64_t arg1 @ x3
+arg int64_t arg2 @ x4
+arg double arg3 @ d0
+arg double arg4 @ d1
+arg double arg5 @ d2
+--
+arg double arg1 @ d0
+arg double arg2 @ d1
+arg double arg3 @ d2
+arg double arg4 @ d3
+arg double arg5 @ d4
+arg double arg6 @ d5
+arg double arg7 @ d6
+arg double arg8 @ d7
+--
+arg double arg1 @ d0
+arg double arg2 @ d1
+arg double arg3 @ d2
+arg double arg4 @ d3
+arg double arg5 @ d4
+arg double arg6 @ d5
+--
+arg int64_t arg1 @ x0
+arg double arg2 @ d2
 EOF
 RUN
 
@@ -500,7 +733,10 @@ RUN
 
 NAME=afbt invalid suffix
 FILE=-
-CMDS=afbtx
+CMDS=<<EOF
+afbtx
+s 0
+EOF
 EXPECT_ERR=<<EOF
 ERROR: Invalid `x` subcommand, try `afbt?`
 EOF
@@ -511,6 +747,7 @@ FILE=-
 CMDS=<<EOF
 afbtj tbl=0x10
 afbt* tbl=0x10
+s 0
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Invalid `j` subcommand, try `afbt?`
@@ -689,5 +926,23 @@ afl~?
 EOF
 EXPECT=<<EOF
 1
+EOF
+RUN
+
+NAME=af reads a block again after cmd.fcn.new writes it
+FILE=malloc://256
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 7401c3e918000000cc @ 0
+wx 554889e5c3 @ 0x20
+"e cmd.fcn.new=wx 90c3 @ $$-0x1e"
+af @ 0
+afb @ 0
+EOF
+EXPECT=<<EOF
+0x00000000 0x00000002 00:0000 2 j 0x00000003 f 0x00000002
+0x00000002 0x00000003 00:0000 1 j 0x00000003
+0x00000003 0x00000008 00:0000 5 j 0x00000020
 EOF
 RUN

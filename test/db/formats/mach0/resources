@@ -15,3 +15,88 @@ CodeSignature
 Certificate
 EOF
 RUN
+
+NAME=Fat Mach-O x86 signature resource file offset and bytes
+FILE=bins/mach0/ls-m1
+ARGS=-a x86 -b64 -e bin.relocs=false
+CMDS=<<EOF
+iuj~{0.paddr}
+iuo CodeSignature
+e io.va=false
+p8 8 @ 0
+ph sha1 $s @ 0
+EOF
+EXPECT=<<EOF
+70464
+fade0cc000001427
+96fa527b7118dd119cdab0ab684ab4f30408acbf
+EOF
+RUN
+
+NAME=Fat Mach-O x86 certificate resource file offset and bytes
+FILE=bins/mach0/ls-m1
+ARGS=-a x86 -b64 -e bin.relocs=false
+CMDS=<<EOF
+iuj~{1.paddr}
+iuo Certificate
+e io.va=false
+p8 8 @ 0
+ph sha1 $s @ 0
+EOF
+EXPECT=<<EOF
+71173
+fade0b0100001162
+bcaf4c25af62f4350f7be0383355e6d60f800854
+EOF
+RUN
+
+NAME=Fat Mach-O arm64 signature resource file offset and bytes
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b64 -e bin.relocs=false
+CMDS=<<EOF
+iuj~{0.paddr}
+iuo CodeSignature
+e io.va=false
+p8 8 @ 0
+ph sha1 $s @ 0
+EOF
+EXPECT=<<EOF
+168192
+fade0cc0000014a7
+278e8cee1fe12ab73c32f1b666bbea8e872ba3a7
+EOF
+RUN
+
+NAME=Fat Mach-O arm64 certificate resource file offset and bytes
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b64 -e bin.relocs=false
+CMDS=<<EOF
+iuj~{1.paddr}
+iuo Certificate
+e io.va=false
+p8 8 @ 0
+ph sha1 $s @ 0
+EOF
+EXPECT=<<EOF
+169029
+fade0b0100001162
+3d2bd293bb25f1144bb7bb862fd00dc7acb19a50
+EOF
+RUN
+
+NAME=Fat Mach-O embedded plist resource file offset and bytes
+FILE=bins/mach0/libswiftCoreFoundation.dylib
+ARGS=-a arm -b64 -e bin.relocs=false
+CMDS=<<EOF
+iuj~{0.paddr}
+iuo 0
+e io.va=false
+p8 8 @ 0
+ph sha1 $s @ 0
+EOF
+EXPECT=<<EOF
+48464
+3c3f786d6c207665
+344ff83731cf267051684701da4e8cc23083966c
+EOF
+RUN

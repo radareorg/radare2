@@ -824,6 +824,37 @@ static bool test_anal_type_bitsize_struct_cycle(void) {
 	sdb_set (TDB, "struct.pair.a", "int32_t,0,0", 0);
 	sdb_set (TDB, "struct.pair.b", "int32_t,4,0", 0);
 	mu_assert_eq (r_type_get_bitsize (TDB, "pair"), 64, "An acyclic struct still measures its members");
+	sdb_set (TDB, "pair_t", "typedef", 0);
+	sdb_set (TDB, "typedef.pair_t", "pair", 0);
+	mu_assert_eq (r_type_get_bitsize (TDB, "pair_t"), 64, "A typedef measures its struct members");
+	sdb_set (TDB, "pairs_t", "typedef", 0);
+	sdb_set (TDB, "typedef.pairs_t", "pair_t[2]", 0);
+	mu_assert_eq (r_type_get_bitsize (TDB, "pairs_t"), 128, "An array typedef measures its struct elements");
+	sdb_set (TDB, "struct.pong.ping", "int32_t,0,0", 0);
+	mu_assert_eq (r_type_get_bitsize (TDB, "ping"), 32, "An acyclic struct measures members through a typedef");
+	r_anal_free (anal);
+	mu_end;
+}
+
+static bool test_anal_type_bitsize_arrays(void) {
+	RAnal *anal = r_anal_new ();
+	Sdb *types = anal->sdb_types;
+	sdb_set (types, "word", "type", 0);
+	sdb_num_set (types, "type.word.size", 16, 0);
+	sdb_set (types, "Ptr", "typedef", 0);
+	sdb_set (types, "typedef.Ptr", "word *", 0);
+	sdb_set (types, "Row", "typedef", 0);
+	sdb_set (types, "typedef.Row", "word[3]", 0);
+	anal->config->bits = 64;
+	mu_assert_eq (r_anal_type_bitsize (anal, "word[2][3]"), 96, "Multidimensional arrays measure every element");
+	mu_assert_eq (r_anal_type_bitsize (anal, "Row[2]"), 96, "Array typedef dimensions multiply");
+	mu_assert_eq (r_anal_type_bitsize (anal, "Ptr[3]"), 192, "Pointer typedef arrays use the target width");
+	mu_assert_eq (r_anal_type_bitsize (anal, "word (*)[3]"), 64, "A pointer to an array is one word");
+	mu_assert_eq (r_anal_type_bitsize (anal, "word[2]junk"), 0, "Trailing array text is rejected");
+	mu_assert_eq (r_anal_type_bitsize (anal, "word[18446744073709551615]"), 0, "Overflowing dimensions are rejected");
+	sdb_set (types, "Recursive", "typedef", 0);
+	sdb_set (types, "typedef.Recursive", "Recursive[2]", 0);
+	mu_assert_eq (r_anal_type_bitsize (anal, "Recursive"), 0, "Recursive array aliases are rejected");
 	r_anal_free (anal);
 	mu_end;
 }
@@ -848,6 +879,7 @@ int all_tests(void) {
 	mu_run_test (test_anal_get_base_type_typedef);
 	mu_run_test (test_anal_type_bitsize_struct_cycle);
 	mu_run_test (test_anal_type_bitsize_struct_recorded);
+	mu_run_test (test_anal_type_bitsize_arrays);
 	mu_run_test (test_anal_save_base_type_typedef);
 	mu_run_test (test_anal_get_base_type_atomic);
 	mu_run_test (test_anal_save_base_type_atomic);

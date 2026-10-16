@@ -23,6 +23,53 @@ bool test_r_bin(void) {
 	mu_end;
 }
 
+bool test_r_bin_plan9_symbol_names(void) {
+	const ut8 symbols[] =
+		"\x00\x00\x00\x01" "f" "old.c\0"
+		"\x00\x00\x00\x01" "f" "test.c\0"
+		"\x00\x00\x00\x00" "f" "ignored\0"
+		"\x00\x00\x00\x01" "z" "\0\x00\x01\x00\x00"
+		"\x00\x00\x00\x00" "z" "\0\x00\x00"
+		"\x00\x00\x00\x07" "a" "skipped\0"
+		"\x00\x00\x10\x20" "T" "text\0"
+		"\x00\x00\x20\x00" "D" "data\0";
+	ut8 bytes[32 + sizeof (symbols) - 1] = {0};
+	r_write_be32 (bytes, 0x1eb);
+	r_write_be32 (bytes + 20, 0x1020);
+	memcpy (bytes + 32, symbols, sizeof (symbols) - 1);
+	int i;
+	for (i = 0; i < 3; i++) {
+		size_t size = sizeof (bytes) - (i == 2? 1: 0);
+		r_write_be32 (bytes + 16, size - 32);
+		r_write_be32 (bytes + 28, i == 1? 1: 0);
+		RBuffer *buf = r_buf_new_with_bytes (bytes, size);
+		mu_assert_notnull (buf, "Plan 9 symbol buffer");
+		RBin *bin = r_bin_new ();
+		RIO *io = r_io_new ();
+		r_io_bind (io, &bin->iob);
+		RBinFileOptions opt = {0};
+		r_bin_file_options_init (&opt, -1, 0, 0, 0);
+		opt.filename = "symbols.p9";
+		opt.pluginname = "p9";
+		mu_assert_true (r_bin_open_buf (bin, buf, &opt), "Plan 9 symbols could not be opened");
+		RVecRBinSymbol *bin_symbols = r_bin_get_symbols_vec (bin);
+		mu_assert_notnull (bin_symbols, "Plan 9 symbols");
+		mu_assert_eq (RVecRBinSymbol_length (bin_symbols), i == 2? 1: 2, "Plan 9 symbol count");
+		RBinSymbol *symbol = RVecRBinSymbol_at (bin_symbols, 0);
+		mu_assert_streq (symbol->name->oname, "text", "Plan 9 text symbol name survives cleanup");
+		mu_assert_eq (symbol->vaddr, 0x1020, "Plan 9 text symbol address");
+		if (i != 2) {
+			symbol = RVecRBinSymbol_at (bin_symbols, 1);
+			mu_assert_streq (symbol->name->oname, "data", "Plan 9 data symbol name survives cleanup");
+			mu_assert_eq (symbol->vaddr, 0x2000, "Plan 9 data symbol address");
+		}
+		r_bin_free (bin);
+		r_io_free (io);
+		r_unref (buf);
+	}
+	mu_end;
+}
+
 bool test_r_bin_mach0_chained_fixups(void) {
 	const char *path = "bins/mach0/hello-macos-arm64-chained";
 	int i;
@@ -573,6 +620,7 @@ bool test_r_bin_elf_pn_xnum_phdr(void) {
 
 bool all_tests(void) {
 	mu_run_test(test_r_bin);
+	mu_run_test(test_r_bin_plan9_symbol_names);
 	mu_run_test(test_r_bin_mach0_chained_fixups);
 	mu_run_test(test_r_bin_jni_language);
 	mu_run_test(test_r_bin_languages);

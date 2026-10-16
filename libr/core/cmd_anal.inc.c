@@ -149,8 +149,10 @@ static RCoreHelpMessage help_msg_ap = {
 };
 
 static RCoreHelpMessage help_msg_avg = {
-	"Usage:", "avg", " # analyze variable global",
-	"avg", "", "list global variables",
+	"Usage:", "avg[j.?]", " # analyze variable global",
+	"avg", "", "list global variables and their types",
+	"avgj", "", "list global variables in JSON",
+	"avg.", "", "show the type of the global at the current address",
 	"avg", " [type] [name]", "add global variable with given type and name",
 	"avg-", "", "delete global",
 	NULL
@@ -492,6 +494,7 @@ static RCoreHelpMessage help_msg_aea = {
 	"aeae", "  [esil]", "show regs/memory accesses used the given expression",
 	"aea*", " [ops]", "create mem.* flags for memory accesses",
 	"aeab", "", "show regs used in current basic block",
+	"aeaB", " [addr]", "show regs used in the basic block containing addr",
 	"aeaf", "", "show regs used in current function",
 	"aear", " [ops]", "show regs read in N instructions",
 	"aeaw", " [ops]", "show regs written in N instructions",
@@ -5249,13 +5252,14 @@ static void printfcnjson(RCore *core, RAnalFunction *fcn) {
 }
 
 static void cmd_afsj(RCore *core, const char *arg) {
-	ut64 a = r_num_math (core->num, arg);
-	const ut64 addr = a? a: core->addr;
+	arg = r_str_trim_head_ro (arg);
+	const ut64 addr = *arg? r_num_math (core->num, arg): core->addr;
 	RAnalFunction *f = r_anal_get_fcn_in (core->anal, addr, -1);
 	if (f) {
 		printfcnjson (core, f);
 	} else {
 		R_LOG_ERROR ("Cannot find function in 0x%08"PFMT64x, addr);
+		r_core_return_code (core, R_CMD_RC_FAILURE);
 	}
 }
 
@@ -6836,7 +6840,7 @@ static int cmd_af(RCore *core, const char *input) {
 			cmd_afsr (core, input + 2);
 			break;
 		case 'j': // "afsj"
-			cmd_afsj (core, input + 2);
+			cmd_afsj (core, input + 3);
 			break;
 		case 0:
 		case 'q': // "afsq"
@@ -8539,11 +8543,13 @@ static int anal_esil_mem(RCore *core) {
 	if (fd < 0) {
 		return fd;
 	}
-	if (!r_io_map_add (core->io, fd, R_PERM_RW, 0LL, addr, size)) {
+	RIOMap *map = r_io_map_add (core->io, fd, R_PERM_RW, 0LL, addr, size);
+	if (!map) {
 		r_io_fd_close (core->io, fd);
 		R_LOG_ERROR ("Cannot create map for anal esil mem, fd %d got closed again", fd);
 		return -1;
 	}
+	r_io_map_set_name (map, "stack.anal");
 	const ut64 sp = addr + (size / 2);
 	r_reg_setv (core->anal->reg, "SP", sp);
 	r_reg_setv (core->anal->reg, "BP", sp);
@@ -8745,7 +8751,8 @@ static bool mymemwrite(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 		}
 	}
 	if (!r_io_is_valid_offset (esil->anal->iob.io, addr, 0)) {
-		return false;
+		// unlisted, but handled: a false return would abort the rest of the expression
+		return true;
 	}
 	n = R_NEW (AeaMemItem);
 	if (n) {
@@ -8765,7 +8772,9 @@ static bool mymemread(REsil *esil, ut64 addr, ut8 *buf, int len) {
 		}
 	}
 	if (!r_io_is_valid_offset (esil->anal->iob.io, addr, 0)) {
-		return false;
+		// unlisted, but read as io fills unmapped bytes: a false return aborts the expression
+		memset (buf, esil->anal->iob.io->Oxff, len);
+		return true;
 	}
 	n = R_NEW (AeaMemItem);
 	if (n) {
@@ -10005,9 +10014,10 @@ static void cmd_aea(RCore *core, const char *input, bool maxbytes) {
 			RAnalBlock *b;
 			RListIter *iter;
 			r_list_foreach (l, iter, b) {
-				cmd_aea_stuff (core, json? 'j': 0, b->addr, b->size, NULL, maxbytes);
+				cmd_aea_stuff (core, json? 'j': 0, b->addr, b->size, NULL, true);
 				break;
 			}
+			r_list_free (l);
 		}
 		break;
 	case 'f': // "aeaf"
@@ -10016,10 +10026,10 @@ static void cmd_aea(RCore *core, const char *input, bool maxbytes) {
 			if (fcn) {
 				switch (input[2]) {
 				case 'j': // "aeafj"
-					cmd_aea_stuff (core, 'j', r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn), NULL, maxbytes);
+					cmd_aea_stuff (core, 'j', r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn), NULL, true);
 					break;
 				default:
-					cmd_aea_stuff (core, 0, r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn), NULL, maxbytes);
+					cmd_aea_stuff (core, 0, r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn), NULL, true);
 					break;
 				}
 				break;
@@ -10031,10 +10041,10 @@ static void cmd_aea(RCore *core, const char *input, bool maxbytes) {
 		if (bb) {
 			switch (input[2]) {
 			case 'j': // "aeabj"
-				cmd_aea_stuff (core, 'j', bb->addr, bb->size, NULL, maxbytes);
+				cmd_aea_stuff (core, 'j', bb->addr, bb->size, NULL, true);
 				break;
 			default:
-				cmd_aea_stuff (core, 0, bb->addr, bb->size, NULL, maxbytes);
+				cmd_aea_stuff (core, 0, bb->addr, bb->size, NULL, true);
 				break;
 			}
 		}
@@ -16189,23 +16199,41 @@ static void cmd_anal_rtti(RCore *core, const char *input) {
 	}
 }
 
-static void cmd_avg(RCore *core, const char* input) {
+typedef struct {
+	RCore *core;
+	PJ *pj;
+} GlobalListContext;
+
+static bool list_global_variable(RFlagItem *global, void *user) {
+	GlobalListContext *ctx = user;
+	RFlagItemMeta *meta = r_flag_get_meta (ctx->core->flags, global->id);
+	const char *type = meta? meta->type: NULL;
+	if (ctx->pj) {
+		pj_o (ctx->pj);
+		pj_ks (ctx->pj, "name", global->name);
+		pj_kn (ctx->pj, "addr", global->addr);
+		pj_kn (ctx->pj, "size", global->size);
+		if (type) {
+			pj_ks (ctx->pj, "type", type);
+		}
+		pj_end (ctx->pj);
+	} else {
+		r_cons_printf (ctx->core->cons, "0x%08" PFMT64x " %" PFMT64u " %s %s\n",
+			global->addr, global->size, global->name, type? type: "unknown");
+	}
+	return true;
+}
+
+static void cmd_avg(RCore *core, const char *input) {
 	switch (input[0]) {
 	case ' ': // "avg "
-		if (strchr (input + 1, ' ')) {
+		{
 			char *a = r_str_trim_dup (input + 1);
-			char *b = strchr (a, ' ');
+			char *b = strrchr (a, ' ');
 			if (b) {
 				*b++ = 0;
+				r_str_trim (a);
 				r_anal_global_add (core->anal, core->addr, a, b);
-			} else {
-				RFlagItem *fi = r_anal_global_get (core->anal, core->addr);
-				if (fi) {
-					RFlagItemMeta *fim = r_flag_get_meta (core->flags, fi->id);
-					if (fim && fim->type) {
-						R_LOG_INFO ("type %s", fim->type);
-					}
-				}
 			}
 			free (a);
 		}
@@ -16213,8 +16241,35 @@ static void cmd_avg(RCore *core, const char* input) {
 	case '-': // "avg-"
 		r_anal_global_del (core->anal, core->addr);
 		break;
+	case '.': // "avg."
+		{
+			const char *type = r_anal_global_get_type (core->anal, core->addr);
+			if (type) {
+				r_cons_println (core->cons, type);
+			}
+		}
+		break;
 	case '\0': // "avg"
-		r_core_cmd0 (core, "fs+globals;f;fs-");
+	case 'j': // "avgj"
+		{
+			GlobalListContext ctx = { .core = core };
+			if (input[0] == 'j') {
+				ctx.pj = pj_new ();
+				if (!ctx.pj) {
+					break;
+				}
+				pj_a (ctx.pj);
+			}
+			RSpace *space = r_flag_space_get (core->flags, "globals");
+			if (space) {
+				r_flag_foreach_space (core->flags, space, list_global_variable, &ctx);
+			}
+			if (ctx.pj) {
+				pj_end (ctx.pj);
+				r_cons_println (core->cons, pj_string (ctx.pj));
+				pj_free (ctx.pj);
+			}
+		}
 		break;
 	case '?':
 		r_cons_cmd_help (core->cons, help_msg_avg);

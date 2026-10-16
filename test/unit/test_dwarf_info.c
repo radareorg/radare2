@@ -29,8 +29,8 @@ static bool teardown(void) {
 	return true;
 }
 
-// Helper macro to get attribute value at index with null check
-#define GET_ATTR(die, idx) (RVecDwarfAttrValue_at(die.attr_values, idx))
+// the attribute accessors read the unit the test has named cu
+#define GET_ATTR(die, idx) (r_bin_dwarf_die_attr (cu, &(die), idx))
 
 // Improved check macros with proper vector access and null checks
 #define check_attr_string(die, attr_idx, expect_string) do { \
@@ -93,8 +93,7 @@ static bool teardown(void) {
 } while (0)
 
 #define check_die_length(die, len) do { \
-	ut64 attr_count = RVecDwarfAttrValue_length(die.attr_values); \
-	mu_assert_eq(attr_count, len, "Wrong DIE attribute count"); \
+	mu_assert_eq(die.attr_count, len, "Wrong DIE attribute count"); \
 } while (0)
 
 #define check_die_tag(die, tg) do { \
@@ -147,6 +146,9 @@ bool test_dwarf3_c(void) {
 
 	check_attr_name (dies[0], 0, DW_AT_producer);
 	check_attr_string (dies[0], 2, "main.c");
+	mu_assert_eq (dies[0].attr_idx, 0, "Root attributes start the unit's attribute run");
+	mu_assert_eq (dies[1].attr_idx, 7, "The next die's attributes follow the root's");
+	mu_assert_null (r_bin_dwarf_die_attr (cu, &dies[0], 7), "No attribute past the die's count");
 	check_die_abbr_code (dies[1], 2);
 	check_die_abbr_code (dies[2], 3);
 	check_die_abbr_code (dies[3], 4);
@@ -480,9 +482,8 @@ bool test_dwarf_bad_strp_is_local(void) {
 	mu_assert_eq (RVecDwarfCompUnit_length (info->comp_units), 2,
 		"A bad string offset must not discard either CU");
 	RBinDwarfCompUnit *first = RVecDwarfCompUnit_at (info->comp_units, 0);
-	RBinDwarfAttrValue *producer = first && first->dies
-		? RVecDwarfAttrValue_at (RVecDwarfDie_at (first->dies, 0)->attr_values, 0)
-		: NULL;
+	RBinDwarfDie *root = first && first->dies? RVecDwarfDie_at (first->dies, 0): NULL;
+	RBinDwarfAttrValue *producer = root? r_bin_dwarf_die_attr (first, root, 0): NULL;
 	mu_assert_notnull (producer, "Missing bad-strp producer attribute");
 	mu_assert_eq (producer->string.offset, UT32_MAX,
 		"Bad string offset was not consumed");
@@ -606,10 +607,10 @@ bool test_dwarf_explicit_zero_rebase(void) {
 	mu_assert_notnull (abbrevs, "Couldn't parse rebase abbreviations");
 	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs);
 	mu_assert_notnull (info, "An underflowing address must not reject its CU");
-	RBinDwarfCompUnit *unit = RVecDwarfCompUnit_at (info->comp_units, 0);
-	mu_assert_notnull (unit, "Rebased CU is NULL");
-	RBinDwarfDie *root = RVecDwarfDie_at (unit->dies, 0);
-	RBinDwarfDie *function = RVecDwarfDie_at (unit->dies, 1);
+	RBinDwarfCompUnit *cu = RVecDwarfCompUnit_at (info->comp_units, 0);
+	mu_assert_notnull (cu, "Rebased CU is NULL");
+	RBinDwarfDie *root = RVecDwarfDie_at (cu->dies, 0);
+	RBinDwarfDie *function = RVecDwarfDie_at (cu->dies, 1);
 	mu_assert_notnull (root, "Rebased CU root is NULL");
 	mu_assert_notnull (function, "Rebased function DIE is NULL");
 	check_attr_address ((*root), 5, 0);
@@ -655,8 +656,8 @@ bool test_dwarf5_mixed_address_table_format(void) {
 	mu_assert_notnull (abbrevs, "Couldn't parse DWARF5 abbreviations");
 	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs);
 	mu_assert_notnull (info, "DWARF64 address table failed in a DWARF32 CU");
-	RBinDwarfCompUnit *unit = RVecDwarfCompUnit_at (info->comp_units, 0);
-	RBinDwarfDie *root = unit? RVecDwarfDie_at (unit->dies, 0): NULL;
+	RBinDwarfCompUnit *cu = RVecDwarfCompUnit_at (info->comp_units, 0);
+	RBinDwarfDie *root = cu? RVecDwarfDie_at (cu->dies, 0): NULL;
 	mu_assert_notnull (root, "DWARF5 root DIE is NULL");
 	check_attr_address ((*root), 6, 0x1140);
 	r_bin_dwarf_free_debug_info (info);
@@ -673,8 +674,8 @@ bool test_dwarf5_indexed_strings_and_addresses(void) {
 	mu_assert_notnull (abbrevs, "Failed parsing DWARF5 abbreviations");
 	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs);
 	mu_assert_notnull (info, "Failed parsing DWARF5 indexed forms");
-	RBinDwarfCompUnit *unit = RVecDwarfCompUnit_at (info->comp_units, 0);
-	RBinDwarfDie *root = unit? RVecDwarfDie_at (unit->dies, 0): NULL;
+	RBinDwarfCompUnit *cu = RVecDwarfCompUnit_at (info->comp_units, 0);
+	RBinDwarfDie *root = cu? RVecDwarfDie_at (cu->dies, 0): NULL;
 	mu_assert_notnull (root, "DWARF5 root DIE is NULL");
 	check_attr_string ((*root), 0, "clang version 18.1.8");
 	check_attr_string ((*root), 2, "dwarf-line.c");
@@ -682,6 +683,42 @@ bool test_dwarf5_indexed_strings_and_addresses(void) {
 	check_attr_address ((*root), 6, 0x1140);
 	r_bin_dwarf_free_debug_info (info);
 	RVecDwarfAbbrevDecl_free (abbrevs);
+	mu_end;
+}
+
+bool test_dwarf_find_die(void) {
+	RBinFileOptions opt = { 0 };
+	bool res = r_bin_open (bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
+	mu_assert ("dwarf4_many_comp_units.elf binary could not be opened", res);
+	RBinFile *bf = r_bin_cur (bin);
+	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bf);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, da);
+	mu_assert_notnull (info, "Failed parsing of debug_info");
+	mu_assert_eq (RVecDwarfCompUnit_length (info->comp_units), 2, "Incorrect number of info compilation units");
+	RBinDwarfCompUnit *first = RVecDwarfCompUnit_at (info->comp_units, 0);
+	RBinDwarfCompUnit *second = RVecDwarfCompUnit_at (info->comp_units, 1);
+	RBinDwarfDie *root = RVecDwarfDie_at (second->dies, 0);
+	mu_assert_eq (root->offset, 0x2cf, "Second unit root offset");
+	mu_assert_ptreq (r_bin_dwarf_find_die (info, 0x2cf, NULL), root, "Root of the second unit");
+	RBinDwarfDie *nested = RVecDwarfDie_at (second->dies, 20);
+	mu_assert_notnull (nested, "Nested die of the second unit is missing");
+	RBinDwarfCompUnit *found = NULL;
+	mu_assert_ptreq (r_bin_dwarf_find_die (info, nested->offset, &found), nested, "Nested die of the second unit");
+	mu_assert_ptreq (found, second, "The unit owning the nested die");
+	RBinDwarfDie *last = RVecDwarfDie_at (first->dies, 72);
+	mu_assert_notnull (last, "Null die of the first unit is missing");
+	mu_assert_eq (last->abbrev_code, 0, "Null die closes the first unit");
+	mu_assert_ptreq (r_bin_dwarf_find_die (info, last->offset, NULL), last, "Null die of the first unit");
+	mu_assert_ptreq (r_bin_dwarf_find_die (info, 0xb, NULL), RVecDwarfDie_at (first->dies, 0), "Root of the first unit");
+	mu_assert_null (r_bin_dwarf_find_die (info, 0, NULL), "First unit header is not a die");
+	mu_assert_null (r_bin_dwarf_find_die (info, 0x2c4, NULL), "Second unit header is not a die");
+	RBinDwarfDie *after_root = RVecDwarfDie_at (second->dies, 1);
+	mu_assert_notnull (after_root, "Second unit has a die after its root");
+	mu_assert ("The root attributes leave no gap to probe", after_root->offset > 0x2d0);
+	mu_assert_null (r_bin_dwarf_find_die (info, 0x2d0, NULL), "Offset inside a die is not a die");
+	mu_assert_null (r_bin_dwarf_find_die (info, 0x2c4 + 4 + 0x192, NULL), "Offset past the last unit");
+	r_bin_dwarf_free_debug_info (info);
+	RVecDwarfAbbrevDecl_free (da);
 	mu_end;
 }
 
@@ -705,6 +742,7 @@ bool all_tests(void) {
 	run_test_with_setup(test_dwarf_explicit_zero_rebase);
 	run_test_with_setup(test_dwarf5_mixed_address_table_format);
 	run_test_with_setup(test_dwarf5_indexed_strings_and_addresses);
+	run_test_with_setup(test_dwarf_find_die);
 	return tests_passed != tests_run;
 }
 

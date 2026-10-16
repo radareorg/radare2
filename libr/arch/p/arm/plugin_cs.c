@@ -1479,6 +1479,52 @@ static void arm64_esil_zext_wregs(RAnalOp *op) {
 	}
 }
 
+#if CS_API_MAJOR > 4
+static void arm64_subp_esil(RAnalOp *op, csh *handle, cs_insn *insn, bool flags, bool compare) {
+	const int first = compare? 0: 1;
+	char left[64], right[64];
+	snprintf (left, sizeof (left), "56,%s,~", REG64 (first));
+	snprintf (right, sizeof (right), "56,%s,~", REG64 (first + 1));
+	if (flags) {
+		r_strbuf_setf (&op->esil,
+			"%s,%s,==,$z,zf,:=,63,$s,nf,:=,64,$b,!,cf,:=,"
+			"63,%s,%s,^,%s,%s,-,%s,^,&,>>,vf,:=",
+			right, left, right, left, right, left, left);
+	}
+	if (!compare && (arm64_reg)REGID64 (0) != ARM64_REG_XZR) {
+		COMMA (&op->esil);
+		r_strbuf_appendf (&op->esil, "%s,%s,-,%s,=", right, left, REG64 (0));
+	}
+}
+#endif
+
+// the system registers the profile states, by encoding (op0:op1:CRn:CRm:op2)
+static const char *arm64_profile_sysreg(cs_insn *insn, int n) {
+	cs_arm64_op *op = &insn->detail->arm64.operands[n];
+#if CS_API_MAJOR < 6
+	// capstone 5 builds differ: the bundled one tags these sys, others use the mrs/msr types
+	ut32 enc;
+	if (op->type == ARM64_OP_SYS) {
+		enc = op->sys;
+	} else if (op->type == ARM64_OP_REG_MRS || op->type == ARM64_OP_REG_MSR) {
+		enc = op->reg;
+	} else {
+		return NULL;
+	}
+#else
+	if (op->type != AARCH64_OP_SYSREG) {
+		return NULL;
+	}
+	const ut32 enc = op->sysop.reg.sysreg;
+#endif
+	switch (enc) {
+	case 0xde82: return "tpidr_el0";
+	case 0xde83: return "tpidrro_el0";
+	case 0xda10: return "nzcv";
+	}
+	return NULL;
+}
+
 static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
@@ -1547,11 +1593,17 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 			REGBITS64 (1), REG64 (2), REGBITS64 (1), REG64 (1), REG64 (3), REG64 (0));
 		break;
 	case ARM64_INS_UMADDL:
+#if CS_API_MAJOR >= 6
+	case ARM64_INS_MADDPT:
+#endif
 	case ARM64_INS_MADD:
 		r_strbuf_setf (&op->esil, "%s,%s,*,%s,+,%s,=",
 			REG64 (2), REG64 (1), REG64 (3), REG64 (0));
 		break;
 	case ARM64_INS_UMSUBL:
+#if CS_API_MAJOR >= 6
+	case ARM64_INS_MSUBPT:
+#endif
 	case ARM64_INS_MSUB:
 		r_strbuf_setf (&op->esil, "%s,%s,*,%s,-,%s,=",
 			REG64 (2), REG64 (1), REG64 (3), REG64 (0));
@@ -1560,6 +1612,13 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		r_strbuf_setf (&op->esil, "%s,%s,*,0,-,%s,=",
 			REG64 (2), REG64 (1), REG64 (0));
 		break;
+#if CS_API_MAJOR >= 6
+	case ARM64_INS_ADDPT:
+		if (REG64 (0)[0] != 'z') {
+			OPCALL ("+");
+		}
+		break;
+#endif
 #if CS_API_MAJOR > 4
 	case ARM64_INS_ADDG:
 #endif
@@ -1570,6 +1629,30 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		r_strbuf_setf (&op->esil, "cf,%s,+,%s,+,%s,=",
 			REG64 (2), REG64 (1), REG64 (0));
 		break;
+#if CS_API_MAJOR > 4
+	case ARM64_INS_SUBG:
+		// Model address subtraction without the system-controlled tag selection.
+		OPCALL ("-");
+		break;
+	case ARM64_INS_SUBP:
+		arm64_subp_esil (op, handle, insn, false, false);
+		break;
+	case ARM64_INS_SUBPS:
+		arm64_subp_esil (op, handle, insn, true, false);
+		break;
+#if CS_API_MAJOR == 5
+	case ARM64_INS_CMPP:
+		arm64_subp_esil (op, handle, insn, true, true);
+		break;
+#endif
+#endif
+#if CS_API_MAJOR >= 6
+	case ARM64_INS_SUBPT:
+		if (REG64 (0)[0] != 'z') {
+			OPCALL ("-");
+		}
+		break;
+#endif
 	case ARM64_INS_SUB:
 		OPCALL ("-");
 		break;
@@ -2533,6 +2616,26 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	case ARM64_INS_UXTH:
 		r_strbuf_setf (&op->esil, "%s,0xffff,&,%s,=", REG64 (1), REG64 (0));
 		break;
+	case ARM64_INS_MRS:
+		{
+			const char *sr = arm64_profile_sysreg (insn, 1);
+			if (sr && !strcmp (sr, "nzcv")) {
+				r_strbuf_setf (&op->esil, "pstate,0xf0000000,&,%s,=", REG64 (0));
+			} else if (sr) {
+				r_strbuf_setf (&op->esil, "%s,%s,=", sr, REG64 (0));
+			}
+		}
+		break;
+	case ARM64_INS_MSR:
+		{
+			const char *sr = arm64_profile_sysreg (insn, 0);
+			if (sr && !strcmp (sr, "nzcv")) {
+				r_strbuf_setf (&op->esil, "%s,0xf0000000,&,pstate,0x0fffffff,&,|,pstate,=", REG64 (1));
+			} else if (sr) {
+				r_strbuf_setf (&op->esil, "%s,%s,=", REG64 (1), sr);
+			}
+		}
+		break;
 #if CS_API_MAJOR > 4
 	case ARM64_INS_RETAA:
 	case ARM64_INS_RETAB:
@@ -2540,7 +2643,12 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	case ARM64_INS_ERETAB:
 #endif
 	case ARM64_INS_RET:
-		r_strbuf_set (&op->esil, "lr,pc,:=");
+		// ret xN returns to xN; a plain ret has no operand and returns to lr
+		if (OPCOUNT64 () > 0 && ISREG64 (0)) {
+			r_strbuf_setf (&op->esil, "%s,pc,:=", REG64 (0));
+		} else {
+			r_strbuf_set (&op->esil, "lr,pc,:=");
+		}
 		break;
 	case ARM64_INS_ERET:
 		r_strbuf_set (&op->esil, "lr,pc,:=");
@@ -3049,10 +3157,14 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			addr + pcdelta, ARG (1), REG (0));
 		break;
 	case ARM_INS_MOV:
+#if CS_API_MAJOR > 4
+	case ARM_INS_MOVS: // capstone's id for thumb's 16-bit movs rd, rm and t2 movs.w with a shift
+#endif
 	case ARM_INS_VMOV:
 	case ARM_INS_MOVW:
-		if (as->config->bits == 16) {
-			MATH32 ("=");
+		// MATH32 ("=") left nothing for its mask, which aborted the esil before the flags
+		if (as->config->bits == 16 && !strcmp (ARG (1), "pc")) {
+			r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,=", addr + pcdelta, REG (0));
 		} else {
 			r_strbuf_appendf (&op->esil, "%s,%s,=", ARG (1), REG (0));
 		}
@@ -3400,7 +3512,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 						",>>,<<,%d,%s,<<,+,0xffffffff,&,[%d],%s,%s,=",
 						addr + pcdelta, LSHIFT2(1), MEMINDEX(1), ldsz, ldext, REG(0));
 				} else {
-					if (ISREG(1)) {
+					if (HASMEMINDEX (1)) {
 						const char op_index = ISMEMINDEXSUB (1)? '-': '+';
 						r_strbuf_appendf (&op->esil, "%s,2,2,0x%"PFMT64x
 							",>>,<<,%c,0xffffffff,&,[%d],%s,%s,=",
@@ -3740,6 +3852,24 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 		op->cycles = 1;
 		break;
+#if CS_API_MAJOR > 4
+	case ARM64_INS_SUBP:
+	case ARM64_INS_SUBPS:
+		op->cycles = 1;
+		op->sign = true;
+		op->type = insn->id == ARM64_INS_SUBPS && (arm64_reg)REGID64 (0) == ARM64_REG_XZR? R_ANAL_OP_TYPE_CMP: R_ANAL_OP_TYPE_SUB;
+		break;
+#if CS_API_MAJOR == 5
+	case ARM64_INS_CMPP:
+		op->type = R_ANAL_OP_TYPE_CMP;
+		op->sign = true;
+		break;
+#endif
+	case ARM64_INS_SUBG:
+#endif
+#if CS_API_MAJOR >= 6
+	case ARM64_INS_SUBPT:
+#endif
 	case ARM64_INS_SUB:
 		if (ISREG64(0) && (arm64_reg) REGID64(0) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
@@ -3752,6 +3882,12 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->cycles = 1;
 		/* fallthru */
 	case ARM64_INS_MSUB:
+#if CS_API_MAJOR >= 6
+	case ARM64_INS_MSUBPT:
+#endif
+	case ARM64_INS_FSUB:
+	case ARM64_INS_FMSUB:
+	case ARM64_INS_FNMSUB:
 	case ARM64_INS_SBC:
 	case ARM64_INS_NGC:
 	case ARM64_INS_NGCS:
@@ -3770,6 +3906,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_MUL:
 	case ARM64_INS_SMULL:
 	case ARM64_INS_FMUL:
+	case ARM64_INS_FNMUL:
 	case ARM64_INS_UMULL:
 		/* TODO: if next instruction is also a MUL, cycles are /=2 */
 		/* also known as Register Indexing Addressing */
@@ -3778,6 +3915,9 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		break;
 #if CS_API_MAJOR > 4
 	case ARM64_INS_ADDG:
+#endif
+#if CS_API_MAJOR >= 6
+	case ARM64_INS_ADDPT:
 #endif
 	case ARM64_INS_ADD:
 		if (ISREG64 (0) && (arm64_reg) REGID64 (0) == ARM64_REG_SP) {
@@ -3803,14 +3943,26 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_ADC:
 	case ARM64_INS_UMADDL:
 	case ARM64_INS_SMADDL:
+	case ARM64_INS_FADD:
 	case ARM64_INS_FMADD:
+	case ARM64_INS_FNMADD:
 	case ARM64_INS_MADD:
+#if CS_API_MAJOR >= 6
+	case ARM64_INS_MADDPT:
+#endif
 #if CS_API_MAJOR > 4
 	case ARM64_INS_ADDS:
 	case ARM64_INS_ADCS:
 #endif
 		op->type = R_ANAL_OP_TYPE_ADD;
 		break;
+#if CS_API_MAJOR >= 6
+	case ARM64_INS_MADPT:
+	case ARM64_INS_MLAPT:
+		op->type = R_ANAL_OP_TYPE_ADD;
+		op->family = R_ANAL_OP_FAMILY_VEC;
+		break;
+#endif
 	case ARM64_INS_CSEL:
 	case ARM64_INS_FCSEL:
 	case ARM64_INS_CSET:
@@ -3917,7 +4069,23 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		break;
 	case ARM64_INS_NEG:
 	case ARM64_INS_NEGS:
+	case ARM64_INS_FNEG:
 		op->type = R_ANAL_OP_TYPE_NOT;
+		break;
+	case ARM64_INS_FCVT:
+	case ARM64_INS_FCVTAS:
+	case ARM64_INS_FCVTAU:
+	case ARM64_INS_FCVTMS:
+	case ARM64_INS_FCVTMU:
+	case ARM64_INS_FCVTNS:
+	case ARM64_INS_FCVTNU:
+	case ARM64_INS_FCVTPS:
+	case ARM64_INS_FCVTPU:
+	case ARM64_INS_FCVTZS:
+	case ARM64_INS_FCVTZU:
+	case ARM64_INS_SCVTF:
+	case ARM64_INS_UCVTF:
+		op->type = R_ANAL_OP_TYPE_CAST;
 		break;
 	case ARM64_INS_CMP:
 		op->type = R_ANAL_OP_TYPE_CMP;
@@ -3926,6 +4094,9 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		}
 		break;
 	case ARM64_INS_FCMP:
+	case ARM64_INS_FCMPE:
+	case ARM64_INS_FCCMP:
+	case ARM64_INS_FCCMPE:
 	case ARM64_INS_CCMP:
 	case ARM64_INS_CCMN:
 	case ARM64_INS_CMN:
@@ -4399,6 +4570,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->cycles = 2;
 		break;
 	case ARM_INS_MOV:
+#if CS_API_MAJOR > 4
+	case ARM_INS_MOVS:
+#endif
 		if (REGID(0) == ARM_REG_PC) {
 			if (REGID(1) == ARM_REG_LR) {
 				op->type = op->cond == R_ANAL_CONDTYPE_AL ? R_ANAL_OP_TYPE_RET : R_ANAL_OP_TYPE_CRET;
@@ -4746,16 +4920,6 @@ static bool is_valid64(arm64_reg reg) {
 	return reg != ARM64_REG_INVALID;
 }
 
-static const char *reg_list[] = {
-	"x0", "x1", "x2", "x3", "x4",
-	"x5", "x6", "x7", "x8", "x9",
-	"x10", "x11", "x12", "x13", "x14",
-	"x15", "x16", "x17", "x18", "x19",
-	"x20", "x21", "x22", "x23", "x24",
-	"x25", "x26", "x27", "x28", "x29",
-	"x30"
-};
-
 static int parse_reg64_name(const char** reg_base, const char **reg_delta, csh handle, cs_insn *insn, int reg_num) {
 	cs_arm64_op armop = INSOP64 (reg_num);
 	switch (armop.type) {
@@ -5014,6 +5178,11 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 			}
 			set_src_dst (op, RVecRArchValue_at (&op->dsts, 0), &handle, insn, 0, bits);
 		}
+#if CS_API_MAJOR >= 6
+		if (bits == 64 && (insn->id == ARM64_INS_MADPT || insn->id == ARM64_INS_MLAPT)) {
+			set_src_dst (op, RVecRArchValue_at (&op->srcs, 2), &handle, insn, 0, bits);
+		}
+#endif
 		if (bits == 64) {
 			add_pair_slot (&op->srcs, insn);
 		}
@@ -5067,6 +5236,11 @@ static int analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 		buf = op->bytes;
 		len = op->size;
 	}
+#if CS_API_MAJOR < 6
+	if (as->config->bits == 64 && len >= 4 && hack_decode_cpa (op, r_read_le32 (buf), mask)) {
+		return op->size;
+	}
+#endif
 	RArchCSInsn csi;
 	bool ok = r_arch_cs_disasm_iter (*cs_handle, buf, len, addr, &csi);
 	cs_insn *insn = &csi.insn;

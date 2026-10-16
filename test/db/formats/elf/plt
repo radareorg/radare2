@@ -21,6 +21,22 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=aarch64 packed relocs: an import with a GOT slot too keeps its plt entry
+FILE=bins/elf/ls-toybox
+CMDS=<<EOF
+ii~ free$
+ii~ strncmp$
+ii~ bind$
+f~sym.imp.free$
+EOF
+EXPECT=<<EOF
+5   0x00075940 GLOBAL FUNC     free
+10  0x000759a0 GLOBAL FUNC     strncmp
+85  0x00076048 GLOBAL FUNC     bind
+0x00075940 16 sym.imp.free
+EOF
+RUN
+
 NAME=aarch64 16-byte plt stride keeps its entry math
 FILE=bins/elf/libarm64.so
 CMDS=<<EOF
@@ -198,5 +214,40 @@ EOF
 EXPECT=<<EOF
 1
 12  0x00003a00 0x00003a00 WEAK   FUNC   28        plt.__gmon_start__
+EOF
+RUN
+
+NAME=x86-64 ibt .plt.got: endbr64 bnd jmp stubs are named after their got slot
+FILE=bins/elf/ls-focal
+CMDS=<<EOF
+?v sym.imp.free
+?v sym.imp.malloc
+?v sym.imp.__cxa_finalize
+EOF
+EXPECT=<<EOF
+0x46d0
+0x46e0
+0x46f0
+EOF
+RUN
+
+NAME=x86-64 .plt.got: stub addresses are virtual when the segment is not identity mapped
+FILE=bins/elf/0pack
+CMDS=<<EOF
+?v sym.imp.strtoul
+EOF
+EXPECT=<<EOF
+0x455070
+EOF
+RUN
+
+NAME=i386 pic .plt.got: jmp [ebx + disp] stubs resolve through DT_PLTGOT
+FILE=bins/elf/libtest_32.so
+CMDS=<<EOF
+ii~__cxa_finalize,__gmon_start__
+EOF
+EXPECT=<<EOF
+5   0x00000380 WEAK   FUNC       __cxa_finalize
+6   0x00000388 WEAK   NOTYPE     __gmon_start__
 EOF
 RUN

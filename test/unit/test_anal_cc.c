@@ -599,6 +599,21 @@ bool test_r_anal_cc_free_unhooks(void) {
 	mu_end;
 }
 
+bool test_r_anal_cc_func_fallback(void) {
+	RAnal *anal = ref_anal ();
+	r_anal_set_cc_default (anal, "sectarian");
+	mu_assert_streq (r_anal_cc_func (anal, "example"), "sectarian", "missing convention uses the default");
+	sdb_set (anal->sdb_types, "func.example.cc", "cdecl", 0);
+	mu_assert_streq (r_anal_cc_func (anal, "example"), "sectarian", "unavailable convention uses the default");
+	r_anal_cc_set (anal, "r0 alternate(a0)");
+	sdb_set (anal->sdb_types, "func.example.cc", "alternate", 0);
+	mu_assert_streq (r_anal_cc_func (anal, "example"), "alternate", "available convention is preserved");
+	sdb_set (anal->sdb_types, "func.example.cc", "dyncc:a0:r0", 0);
+	mu_assert_streq (r_anal_cc_func (anal, "example"), "dyncc:a0:r0", "inline convention is preserved");
+	r_anal_free (anal);
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_anal_cc_set);
 	mu_run_test (test_r_anal_cc_set_self_err);
@@ -621,6 +636,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_anal_cc_argval);
 	mu_run_test (test_r_anal_cc_argval_stack);
 	mu_run_test (test_r_anal_cc_free_unhooks);
+	mu_run_test (test_r_anal_cc_func_fallback);
 	return tests_passed != tests_run;
 }
 

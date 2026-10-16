@@ -125,6 +125,7 @@ struct addr_t {
 	ut64 offset;
 	ut64 addr;
 	ut64 haddr;
+	ut64 hvaddr;
 	int last;
 };
 

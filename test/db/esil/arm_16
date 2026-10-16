@@ -1350,3 +1350,58 @@ EXPECT=<<EOF
 0x80000005
 EOF
 RUN
+
+NAME=movs r0, r1 moves and sets n
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+wx 0800
+ar r0=5
+ar r1=0x80000000
+aes
+ar r0
+ar nf
+ar zf
+EOF
+EXPECT=<<EOF
+0x80000000
+0x00000001
+0x00000000
+EOF
+RUN
+
+NAME=movs.w r0, r1 sets z
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+wx 5fea0100
+ar r0=5
+ar r1=0
+aes
+ar r0
+ar zf
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000001
+EOF
+RUN
+
+NAME=mov r0, pc reads the address plus 4
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+wx 7846 @ 0x10
+s 0x10
+ar pc=0x10
+aes
+ar r0
+EOF
+EXPECT=<<EOF
+0x00000014
+EOF
+RUN
+

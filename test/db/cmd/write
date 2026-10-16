@@ -260,6 +260,141 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=wx preserves wildcard bytes
+FILE=malloc://10
+CMDS=<<EOF
+wx aabbcc
+wx 31..88
+p8 3
+wx aabbcc
+wx 31??88
+p8 3
+/x 31??88
+wx 00010203040506070809
+b 4
+wx aa..cc....ff..112233
+p8 10
+EOF
+EXPECT=<<EOF
+31bb88
+31bb88
+0x00000000 hit0_0 31bb88
+aa01cc0304ff06112233
+EOF
+RUN
+
+NAME=wx preserves wildcard nibbles and odd final nibble
+FILE=malloc://5
+CMDS=<<EOF
+wx abcdef9876
+wx 3. .5 ?8 9? .
+p8 5
+wx .? ?? .. ??.
+p8 5
+wx abcdef
+wx 31.8a
+p8 3
+wx .
+wx ?
+p8 3
+wx a
+p8 3
+EOF
+EXPECT=<<EOF
+3bc5e89876
+3bc5e89876
+31c8af
+31c8af
+a1c8af
+EOF
+RUN
+
+NAME=wx wildcard nibbles with hex prefixes
+FILE=malloc://3
+CMDS=<<EOF
+wx abcdef
+wx 0x3. 0x?5 0x88
+p8 3
+/x 0x3. 0x?5 0x88
+EOF
+EXPECT=<<EOF
+3bc588
+0x00000000 hit0_0 3bc588
+EOF
+RUN
+
+NAME=wx wildcard writes use current cached bytes
+FILE=malloc://3
+CMDS=<<EOF
+e io.cache=true
+wx abcdef
+wx 3. .5 ?8
+p8 3
+wx .2 7? ..
+p8 3
+EOF
+EXPECT=<<EOF
+3bc5e8
+3275e8
+EOF
+RUN
+
+NAME=wx wildcard writes preserve seek behavior
+FILE=malloc://10
+CMDS=<<EOF
+wx 00010203040506070809
+s 2
+wx+ aa..bb
+?vi $$
+p8 10 @ 0
+wx 3? @ 8
+?vi $$
+e cfg.wseek=true
+wx ?f
+?vi $$
+p8 10 @ 0
+EOF
+EXPECT=<<EOF
+5
+0001aa03bb0506070809
+5
+6
+0001aa03bb0f06073809
+EOF
+RUN
+
+NAME=wx invalid wildcard input leaves bytes unchanged
+FILE=malloc://3
+CMDS=<<EOF
+wx abcdef
+wx 31..gg
+wx ?z
+p8 3
+EOF
+EXPECT=<<EOF
+abcdef
+EOF
+EXPECT_ERR=<<EOF
+ERROR: invalid hexpair string
+ERROR: invalid hexpair string
+EOF
+RUN
+
+NAME=wx incomplete read leaves masked write unchanged
+FILE=malloc://3
+CMDS=<<EOF
+wx abcdef
+wx 31..88 @ 1
+p8 3
+EOF
+EXPECT=<<EOF
+abcdef
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot read bytes to preserve masked nibbles
+EOF
+RUN
+
 ## "wxf" - write hex pairs from file
 
 NAME=wxf

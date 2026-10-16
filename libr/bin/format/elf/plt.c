@@ -234,7 +234,6 @@ ut64 Elf_(plt_ppc32_thunk)(ELFOBJ *eo, ut64 slot_vaddr) {
 #define X86_PLT_ENTRY_SIZE 0x10
 #define SPARC_OFFSET_PLT_ENTRY_FROM_GOT_ADDR -0x6
 #define X86_OFFSET_PLT_ENTRY_FROM_GOT_ADDR -0x6
-#define R_ELF_PART_RELRO 1
 #define COMPUTE_PLTGOT_POSITION(rel, pltgot_addr, n_initial_unused_entries) \
 	((rel->rva - pltgot_addr - n_initial_unused_entries * R_BIN_ELF_WORDSIZE) / R_BIN_ELF_WORDSIZE)
 
@@ -751,71 +750,74 @@ static ut64 get_import_addr_ppc(ELFOBJ *eo, RBinElfReloc *rel) {
 	return base;
 }
 
-static ut64 get_import_addr_x86_manual(ELFOBJ *eo, RBinElfReloc *rel) {
-	ut64 got_addr = eo->dyn_info.dt_pltgot;
-	if (got_addr == R_BIN_ELF_ADDR_MAX) {
+#define X86_PLTGOT_ENTRY_SIZE 8
+#define X86_IBT_PLTGOT_ENTRY_SIZE 16
+
+// the got slot a .plt.got stub jumps through: [endbr] [bnd] jmp [rip + disp]
+// on x86-64, jmp [disp] or jmp [ebx + disp] with ebx = DT_PLTGOT on i386
+static ut64 x86_pltgot_slot(ELFOBJ *eo, const ut8 *b, ut64 avail, ut64 va, ut64 *esize) {
+	ut64 k = 0;
+	*esize = X86_PLTGOT_ENTRY_SIZE;
+	if (b[0] == 0xf3 && b[1] == 0x0f && b[2] == 0x1e && (b[3] == 0xfa || b[3] == 0xfb)) {
+		k = 4;
+		*esize = X86_IBT_PLTGOT_ENTRY_SIZE;
+	}
+	if (b[k] == 0xf2) {
+		k++;
+	}
+	if (k + 6 > avail || b[k] != 0xff) {
 		return UT64_MAX;
 	}
-
-	ut64 got_offset = Elf_(v2p) (eo, got_addr);
-	if (got_offset == UT64_MAX) {
-		return UT64_MAX;
+	const st32 disp = (st32)r_read_le32 (b + k + 2);
+	if (eo->ehdr.e_machine == EM_X86_64) {
+		return (b[k + 1] == 0x25)? va + k + 6 + disp: UT64_MAX;
 	}
+	if (b[k + 1] == 0x25) {
+		return (ut32)disp;
+	}
+	const ut64 got = eo->dyn_info.dt_pltgot;
+	return (b[k + 1] == 0xa3 && got != R_BIN_ELF_ADDR_MAX)? (ut32)(got + disp): UT64_MAX;
+}
 
-	//XXX HACK ALERT!!!! full relro?? try to fix it
-	//will there always be .plt.got, what would happen if is .got.plt?
+// no lazy slot orders .plt.got, so each stub is named by the slot its jmp reads
+static HtUU *x86_build_pltgot_map(ELFOBJ *eo) {
+	HtUU *map = ht_uu_new0 ();
 	RBinElfSection *s = Elf_(plt_section_by_name) (eo, ".plt.got");
-	if (Elf_(has_relro) (eo) < R_ELF_PART_RELRO || !s) {
-		return UT64_MAX;
+	if (!map || !s || s->type == SHT_NOBITS) {
+		return map;
 	}
+	ut64 at = 0;
+	while (at < s->size) {
+		ut8 b[16] = {0};
+		if (r_buf_read_at (eo->b, s->offset + at, b, sizeof (b)) < 1) {
+			break;
+		}
+		ut64 esize;
+		const ut64 slot = x86_pltgot_slot (eo, b, s->size - at, s->rva + at, &esize);
+		if (slot != UT64_MAX) {
+			ht_uu_insert (map, slot, s->rva + at);
+		}
+		at += esize;
+	}
+	return map;
+}
 
-	ut8 buf[sizeof (Elf_(Addr))] = {0};
-	// Elf_(Addr) buf;
-
-	ut64 plt_addr = s->offset;
-	ut64 plt_sym_addr;
-
-	while (plt_addr + 2 + 4 < s->offset + s->size && plt_addr + 2 + 4 < eo->size) {
-		/*we try to locate the plt entry that correspond with the relocation
-		  since got does not point back to .plt. In this case it has the following
-		  form
-		  ff253a152000   JMP QWORD [RIP + 0x20153A]
-		  6690		     NOP
-		  ----
-		  ff25ec9f0408   JMP DWORD [reloc.puts_236]
-		  plt_addr + 2 to remove jmp opcode and get the imm reading 4
-		  and if RIP (plt_addr + 6) + imm == rel->offset
-		  return plt_addr, that will be our sym addr
-		  perhaps this hack doesn't work on 32 bits
-		  */
-		int res = r_buf_read_at (eo->b, plt_addr + 2, buf, sizeof (ut32));
-		if (res < 0) {
+static ut64 get_import_addr_x86_pltgot(ELFOBJ *eo, RBinElfReloc *rel) {
+	if (!eo->x86_pltgot_stubs) {
+		eo->x86_pltgot_stubs = x86_build_pltgot_map (eo);
+		if (!eo->x86_pltgot_stubs) {
 			return UT64_MAX;
 		}
-
-#if R_BIN_ELF64
-		plt_sym_addr = r_read_ble64 (buf, eo->endian);
-#else
-		plt_sym_addr = r_read_ble32 (buf, eo->endian);
-#endif
-
-		//relative address
-		if ((plt_addr + 6 + plt_sym_addr) == rel->rva) {
-			return plt_addr;
-		}
-		if (plt_sym_addr == rel->rva) {
-			return plt_addr;
-		}
-		plt_addr += 8;
 	}
-
-	return UT64_MAX;
+	bool found = false;
+	const ut64 stub = ht_uu_find (eo->x86_pltgot_stubs, rel->rva, &found);
+	return found? stub: UT64_MAX;
 }
 
 static ut64 get_import_addr_x86(ELFOBJ *eo, RBinElfReloc *rel) {
 	ut64 tmp = get_got_entry (eo, rel);
 	if (tmp == UT64_MAX) {
-		return get_import_addr_x86_manual (eo, rel);
+		return get_import_addr_x86_pltgot (eo, rel);
 	}
 	RBinElfSection *pltsec = Elf_(plt_section_by_name) (eo, ".plt.sec");
 	if (pltsec) {

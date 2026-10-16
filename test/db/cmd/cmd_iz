@@ -561,6 +561,7 @@ CMDS=<<EOF
 iz+~manually
 iz+?~manually
 iz+0x100
+s 0
 EOF
 EXPECT=<<EOF
 | iz+ [addr] ([len]) ([type])  add string manually (len=auto, type=auto-detect)

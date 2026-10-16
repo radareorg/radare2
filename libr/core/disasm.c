@@ -6084,8 +6084,8 @@ static void print_fcn_arg(RCore *core, int nth, const RAnalFuncArg *arg, int asm
 	}
 	if (arg->on_stack && !arg->value_set) {
 		fmt = NULL; // the slot is unmapped, so pf would format io fill bytes into a fabricated value
-	} else if (arg->on_stack && fmt && strcmp (fmt, "z")) {
-		fmt = NULL; // a stack slot holds the scalar itself; pf-dereferencing it formats unrelated memory
+	} else if (fmt && (strcmp (fmt, "z") || !r_io_is_valid_offset (core->io, arg->on_stack? arg->value: addr, R_PERM_R))) {
+		fmt = NULL; // arguments hold values; only readable string pointers should be dereferenced
 	}
 	if (fmt) {
 		char *res = NULL;

@@ -94,6 +94,7 @@ EXPECT=<<EOF
 |  ::|  :   0x00015698      1a044501       const-string v4, str.ERROR:_could_not_determine_root_access_to_this_device. ; 0x2ca6f ; "ERROR: could not determine root access to this device. |  ::|  :   ; "
 |  ::|  :   0x0001569c      6e2027024800   invoke-virtual {v8, v4}, Lcom/stericson/RootTools/SanityCheckRootTools.print(Ljava/lang/CharSequence;)V ; 0x227 ; method.protected.Lcom_stericson_RootTools_SanityCheckRootTools.Lcom_stericson_RootTools_SanityCheckRootTools.method.print_Ljava_lang_CharSequence__V
 |  `======< 0x000156a2      28ea           goto try.173.155b8.to
+|   :|  :   ; CODE XREF from entry0 @ 0x15668(x)
 |   :`----> 0x000156a4      22040b00       new-instance v4, Landroid/app/ProgressDialog; ; 0x2760
 |   :   :   0x000156a8      702012008400   invoke-direct {v4, v8}, Landroid/app/ProgressDialog.<init>(Landroid/content/Context;)V ; 0x12
 |   :   :   0x000156ae      5b84d100       iput-object v4, v8, Lcom/stericson/RootTools/SanityCheckRootTools;->mPDialog Landroid/app/ProgressDialog; ; field.class.Lcom_stericson_RootTools_SanityCheckRootTools.var.Lcom_stericson_RootTools_SanityCheckRootTools.ifield_mPDialog:Landroid_app_ProgressDialog_

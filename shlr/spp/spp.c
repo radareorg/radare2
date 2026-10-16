@@ -1,5 +1,6 @@
 /* MIT pancake <pancake@nopcode.org> (C) 2009-2021 */
 
+#include <limits.h>
 #include "spp.h"
 #include "r_api.h"
 #include "config.h"
@@ -74,18 +75,27 @@ static char *spp_run_str(SppProc *p, char *buf, int *rv) {
 }
 
 S_API void lbuf_strcat(SppBuf *dst, char *src) {
-	int len = strlen (src);
-	char *nbuf;
-	if (!dst->lbuf || (len + dst->lbuf_n) > dst->lbuf_s) {
-		nbuf = realloc (dst->lbuf, dst->lbuf_s << 1);
+	size_t len = strlen (src);
+	size_t need = (size_t)dst->lbuf_n + len + 1;
+	if (need > INT_MAX) {
+		fprintf (stderr, "Out of memory.\n");
+		return;
+	}
+	if (!dst->lbuf || need > (size_t)dst->lbuf_s) {
+		size_t nsize = (size_t)dst->lbuf_s * 2;
+		if (nsize < need || nsize > INT_MAX) {
+			nsize = need;
+		}
+		char *nbuf = realloc (dst->lbuf, nsize);
 		if (!nbuf) {
 			fprintf (stderr, "Out of memory.\n");
 			return;
 		}
 		dst->lbuf = nbuf;
+		dst->lbuf_s = (int)nsize;
 	}
 	memcpy (dst->lbuf + dst->lbuf_n, src, len + 1);
-	dst->lbuf_n += len;
+	dst->lbuf_n += (int)len;
 }
 
 S_API int do_fputs(Output *out, char *str) {
@@ -257,7 +267,7 @@ S_API void spp_io(FILE *in, Output *out) {
 		return;
 	}
 	p->buf.lbuf[0] = '\0';
-	p->buf.lbuf_s = 1024;
+	p->buf.lbuf_s = 4096;
 	while (!feof (in)) {
 		buf[0] = '\0'; // ???
 		if (!fgets (buf, sizeof (buf) - 1, in)) {

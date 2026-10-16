@@ -136,18 +136,27 @@ static bool sections_vec(RBinFile *bf) {
 	return true;
 }
 
-static RBinAddr *newEntry(ut64 hpaddr, ut64 paddr, int type, int bits) {
+static RBinAddr *newEntry(RBinFile *bf, ut64 hpaddr, ut64 vaddr, int type, int bits) {
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
-	ptr->paddr = paddr;
-	ptr->vaddr = paddr;
+	ptr->paddr = UT64_MAX;
+	ptr->vaddr = vaddr;
 	ptr->hpaddr = hpaddr;
 	ptr->bits = bits;
 	ptr->type = type;
 	// realign due to thumb
 	if (bits == 16 && ptr->vaddr & 1) {
 		// TODO add hint about thumb entrypoint
-		ptr->paddr--;
 		ptr->vaddr--;
+	}
+	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
+	RVecSegment *segments = MACH0_(get_segments_vec) (bf, mo);
+	RBinSection *segment;
+	R_VEC_FOREACH (segments, segment) {
+		if (segment->is_segment && ptr->vaddr >= segment->vaddr
+				&& ptr->vaddr - segment->vaddr < segment->size) {
+			ptr->paddr = segment->paddr + (ptr->vaddr - segment->vaddr);
+			break;
+		}
 	}
 	return ptr;
 }
@@ -179,8 +188,8 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits, int limit) 
 			if (!buf) {
 				continue;
 			}
-			ut64 nread = r_buf_read_at (bf->buf, sec->paddr, buf, ss);
-			if (nread < sec->size) {
+			st64 nread = r_buf_read_at (bf->buf, sec->paddr - bf->bo->boffset, buf, ss);
+			if (nread != ss) {
 				R_LOG_ERROR ("process_constructors: cannot process section %s", sec->name);
 				free (buf);
 				continue;
@@ -191,7 +200,7 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits, int limit) 
 						break;
 					}
 					ut32 addr32 = r_read_le32 (buf + i);
-					RBinAddr *ba = newEntry (sec->paddr + i, (ut64)addr32, type, bits);
+					RBinAddr *ba = newEntry (bf, sec->paddr + i, (ut64)addr32, type, bits);
 					r_list_append (ret, ba);
 				}
 			} else {
@@ -200,7 +209,7 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits, int limit) 
 						break;
 					}
 					ut64 addr64 = r_read_le64 (buf + i);
-					RBinAddr *ba = newEntry (sec->paddr + i, addr64, type, bits);
+					RBinAddr *ba = newEntry (bf, sec->paddr + i, addr64, type, bits);
 					r_list_append (ret, ba);
 				}
 			}
@@ -229,7 +238,8 @@ static RList *entries(RBinFile *bf) {
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	ptr->paddr = entry->offset + bo->boffset;
 	ptr->vaddr = entry->addr;
-	ptr->hpaddr = entry->haddr;
+	ptr->hpaddr = entry->haddr? entry->haddr + bo->boffset: 0;
+	ptr->hvaddr = entry->hvaddr;
 	ptr->bits = bits;
 	//realign due to thumb
 	if (bits == 16) {
@@ -559,7 +569,8 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		goto beach;
 	}
 
-	const int cdsz = obj->info ? obj->info->bits / 8 : 8;
+	const bool is64 = mo->hdr.magic == MH_MAGIC_64 || mo->hdr.magic == MH_CIGAM_64;
+	const int cdsz = is64 ? 8 : 4;
 
 	ut64 offset = 0;
 	RIOBank *bank = iob->bank_get (io, io->bank);
@@ -824,7 +835,7 @@ static bool load_resources(RBinFile *bf) {
 		}
 		resource->name = strdup (section->name);
 		resource->type = strdup (type);
-		resource->paddr = section->paddr;
+		resource->paddr = section->paddr + bf->bo->loadaddr;
 		resource->vaddr = section->vaddr;
 		resource->size = section->size;
 		resource->id = UT64_MAX;
@@ -840,8 +851,8 @@ static bool load_resources(RBinFile *bf) {
 		}
 		resource->name = strdup ("CodeSignature");
 		resource->type = strdup ("signature");
-		resource->paddr = mo->cs_paddr;
-		resource->vaddr = mo->cs_paddr;
+		resource->paddr = mo->cs_paddr + bf->bo->boffset + bf->bo->loadaddr;
+		resource->vaddr = resource->paddr;
 		resource->size = mo->cs_size;
 		resource->id = UT64_MAX;
 		resource->index = index++;
@@ -855,8 +866,8 @@ static bool load_resources(RBinFile *bf) {
 			}
 			resource->name = strdup ("Certificate");
 			resource->type = strdup ("certificate");
-			resource->paddr = mo->cert_paddr;
-			resource->vaddr = mo->cert_paddr;
+			resource->paddr = mo->cert_paddr + bf->bo->boffset + bf->bo->loadaddr;
+			resource->vaddr = resource->paddr;
 			resource->size = mo->cert_size;
 			resource->id = UT64_MAX;
 			resource->index = index++;
@@ -1200,7 +1211,8 @@ static RVecRBinTrycatch *trycatch(RBinFile *bf) {
 		return result;
 	}
 	ut8 *bytes = malloc (section->size);
-	if (!bytes || r_buf_read_at (bf->buf, section->paddr, bytes, section->size) != section->size) {
+	ut64 offset = r_bin_file_get_buffer_offset (bf, section->paddr);
+	if (!bytes || r_buf_read_at (bf->buf, offset, bytes, section->size) != section->size) {
 		free (bytes);
 		return result;
 	}

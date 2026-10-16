@@ -62,14 +62,16 @@ static void parseValue(RBinDexObj *dex) {
 	int size = arg + 1;
 
 	bprintf ("  value size = %d\n", size);
-	const char *typeName = className (dex, type);
+	char *typeName = className (dex, type);
 	if (typeName) {
 		bprintf ("      value value = %d (%s)\n", type, typeName);
 	} else {
 		bprintf ("      value value = %d\n", type);
 	}
-	const char *argName = className (dex, arg);
+	free (typeName);
+	char *argName = className (dex, arg);
 	bprintf ("      value type = %d (%s)\n", arg, r_str_get (argName));
+	free (argName);
 	bprintf ("      value ");
 	switch (type) {
 	case R_DEX_ENCVAL_BYTE:
@@ -168,11 +170,12 @@ static void readAnnotation(RBinDexObj *dex, bool readVisibility) {
 		for (i = 0; i < typeSize; i++) {
 			r_buf_uleb128 (buf, &stringIndex);
 			ut64 at = r_buf_seek (dex->b, 0, R_BUF_CUR);
-			const char *name = className (dex, stringIndex);
+			char *name = className (dex, stringIndex);
 			if (!name) {
 				break;
 			}
 			bprintf ("      Item %d %s\n", (int)stringIndex, name);
+			free (name);
 			r_buf_seek (dex->b, at, R_BUF_SET);
 			parseValue (dex);
 		}
@@ -439,7 +442,6 @@ R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 			continue;
 		}
 		int j;
-		char *cn = className (dex, c->class_id);
 		r_buf_seek (dex->b, at, R_BUF_SET);
 		ut32 classAnnotationsOffset = r_buf_read_le32 (dex->b);
 		ut32 fieldsCount = r_buf_read_le32 (dex->b);
@@ -450,6 +452,7 @@ R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 			continue;
 		}
 
+		char *cn = className (dex, c->class_id);
 		bprintf ("0x%08"PFMT64x"  annotationOffset\n", (ut64)at);
 		bprintf ("0x%08"PFMT64x"  classAnnotationOffset\n", (ut64)classAnnotationsOffset);
 		bprintf ("            className %s\n", cn);

@@ -1,0 +1,480 @@
+# Gio 2.0: https://docs.gtk.org/gio/
+
+GAppInfo=typedef
+typedef.GAppInfo=struct _GAppInfo
+
+GAppLaunchContext=typedef
+typedef.GAppLaunchContext=struct _GAppLaunchContext
+
+GCancellable=typedef
+typedef.GCancellable=struct _GCancellable
+
+GDBusInterfaceInfo=typedef
+typedef.GDBusInterfaceInfo=struct _GDBusInterfaceInfo
+
+GDBusProxy=typedef
+typedef.GDBusProxy=struct _GDBusProxy
+
+GDataInputStream=typedef
+typedef.GDataInputStream=struct _GDataInputStream
+
+GDesktopAppInfo=typedef
+typedef.GDesktopAppInfo=struct _GDesktopAppInfo
+
+GFile=typedef
+typedef.GFile=struct _GFile
+
+GFileEnumerator=typedef
+typedef.GFileEnumerator=struct _GFileEnumerator
+
+GFileInfo=typedef
+typedef.GFileInfo=struct _GFileInfo
+
+GFileInputStream=typedef
+typedef.GFileInputStream=struct _GFileInputStream
+
+GFileProgressCallback=typedef
+typedef.GFileProgressCallback=void (*)(goffset, goffset, gpointer)
+
+GInputStream=typedef
+typedef.GInputStream=struct _GInputStream
+
+GSettings=typedef
+typedef.GSettings=struct _GSettings
+
+GSettingsBackend=typedef
+typedef.GSettingsBackend=struct _GSettingsBackend
+
+GSettingsSchema=typedef
+typedef.GSettingsSchema=struct _GSettingsSchema
+
+GSettingsSchemaSource=typedef
+typedef.GSettingsSchemaSource=struct _GSettingsSchemaSource
+
+GStaticResource=typedef
+typedef.GStaticResource=struct _GStaticResource
+
+GSubprocess=typedef
+typedef.GSubprocess=struct _GSubprocess
+
+GBusType=enum
+enum.GBusType=G_BUS_TYPE_STARTER,G_BUS_TYPE_NONE,G_BUS_TYPE_SYSTEM,G_BUS_TYPE_SESSION
+enum.GBusType.G_BUS_TYPE_STARTER=0xffffffffffffffff
+enum.GBusType.0xffffffffffffffff=G_BUS_TYPE_STARTER
+enum.GBusType.G_BUS_TYPE_NONE=0x0
+enum.GBusType.0x0=G_BUS_TYPE_NONE
+enum.GBusType.G_BUS_TYPE_SYSTEM=0x1
+enum.GBusType.0x1=G_BUS_TYPE_SYSTEM
+enum.GBusType.G_BUS_TYPE_SESSION=0x2
+enum.GBusType.0x2=G_BUS_TYPE_SESSION
+
+GDBusCallFlags=enum
+enum.GDBusCallFlags=G_DBUS_CALL_FLAGS_NONE,G_DBUS_CALL_FLAGS_NO_AUTO_START,G_DBUS_CALL_FLAGS_ALLOW_INTERACTIVE_AUTHORIZATION
+enum.GDBusCallFlags.G_DBUS_CALL_FLAGS_NONE=0x0
+enum.GDBusCallFlags.0x0=G_DBUS_CALL_FLAGS_NONE
+enum.GDBusCallFlags.G_DBUS_CALL_FLAGS_NO_AUTO_START=0x1
+enum.GDBusCallFlags.0x1=G_DBUS_CALL_FLAGS_NO_AUTO_START
+enum.GDBusCallFlags.G_DBUS_CALL_FLAGS_ALLOW_INTERACTIVE_AUTHORIZATION=0x2
+enum.GDBusCallFlags.0x2=G_DBUS_CALL_FLAGS_ALLOW_INTERACTIVE_AUTHORIZATION
+
+GDBusProxyFlags=enum
+enum.GDBusProxyFlags=G_DBUS_PROXY_FLAGS_NONE,G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS,G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,G_DBUS_PROXY_FLAGS_GET_INVALIDATED_PROPERTIES,G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START_AT_CONSTRUCTION,G_DBUS_PROXY_FLAGS_NO_MATCH_RULE
+enum.GDBusProxyFlags.G_DBUS_PROXY_FLAGS_NONE=0x0
+enum.GDBusProxyFlags.0x0=G_DBUS_PROXY_FLAGS_NONE
+enum.GDBusProxyFlags.G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES=0x1
+enum.GDBusProxyFlags.0x1=G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES
+enum.GDBusProxyFlags.G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS=0x2
+enum.GDBusProxyFlags.0x2=G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS
+enum.GDBusProxyFlags.G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START=0x4
+enum.GDBusProxyFlags.0x4=G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START
+enum.GDBusProxyFlags.G_DBUS_PROXY_FLAGS_GET_INVALIDATED_PROPERTIES=0x8
+enum.GDBusProxyFlags.0x8=G_DBUS_PROXY_FLAGS_GET_INVALIDATED_PROPERTIES
+enum.GDBusProxyFlags.G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START_AT_CONSTRUCTION=0x10
+enum.GDBusProxyFlags.0x10=G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START_AT_CONSTRUCTION
+enum.GDBusProxyFlags.G_DBUS_PROXY_FLAGS_NO_MATCH_RULE=0x20
+enum.GDBusProxyFlags.0x20=G_DBUS_PROXY_FLAGS_NO_MATCH_RULE
+
+GFileCopyFlags=enum
+enum.GFileCopyFlags=G_FILE_COPY_NONE,G_FILE_COPY_OVERWRITE,G_FILE_COPY_BACKUP,G_FILE_COPY_NOFOLLOW_SYMLINKS,G_FILE_COPY_ALL_METADATA,G_FILE_COPY_NO_FALLBACK_FOR_MOVE,G_FILE_COPY_TARGET_DEFAULT_PERMS,G_FILE_COPY_TARGET_DEFAULT_MODIFIED_TIME
+enum.GFileCopyFlags.G_FILE_COPY_NONE=0x0
+enum.GFileCopyFlags.0x0=G_FILE_COPY_NONE
+enum.GFileCopyFlags.G_FILE_COPY_OVERWRITE=0x1
+enum.GFileCopyFlags.0x1=G_FILE_COPY_OVERWRITE
+enum.GFileCopyFlags.G_FILE_COPY_BACKUP=0x2
+enum.GFileCopyFlags.0x2=G_FILE_COPY_BACKUP
+enum.GFileCopyFlags.G_FILE_COPY_NOFOLLOW_SYMLINKS=0x4
+enum.GFileCopyFlags.0x4=G_FILE_COPY_NOFOLLOW_SYMLINKS
+enum.GFileCopyFlags.G_FILE_COPY_ALL_METADATA=0x8
+enum.GFileCopyFlags.0x8=G_FILE_COPY_ALL_METADATA
+enum.GFileCopyFlags.G_FILE_COPY_NO_FALLBACK_FOR_MOVE=0x10
+enum.GFileCopyFlags.0x10=G_FILE_COPY_NO_FALLBACK_FOR_MOVE
+enum.GFileCopyFlags.G_FILE_COPY_TARGET_DEFAULT_PERMS=0x20
+enum.GFileCopyFlags.0x20=G_FILE_COPY_TARGET_DEFAULT_PERMS
+enum.GFileCopyFlags.G_FILE_COPY_TARGET_DEFAULT_MODIFIED_TIME=0x40
+enum.GFileCopyFlags.0x40=G_FILE_COPY_TARGET_DEFAULT_MODIFIED_TIME
+
+GFileCreateFlags=enum
+enum.GFileCreateFlags=G_FILE_CREATE_NONE,G_FILE_CREATE_PRIVATE,G_FILE_CREATE_REPLACE_DESTINATION
+enum.GFileCreateFlags.G_FILE_CREATE_NONE=0x0
+enum.GFileCreateFlags.0x0=G_FILE_CREATE_NONE
+enum.GFileCreateFlags.G_FILE_CREATE_PRIVATE=0x1
+enum.GFileCreateFlags.0x1=G_FILE_CREATE_PRIVATE
+enum.GFileCreateFlags.G_FILE_CREATE_REPLACE_DESTINATION=0x2
+enum.GFileCreateFlags.0x2=G_FILE_CREATE_REPLACE_DESTINATION
+
+GFileQueryInfoFlags=enum
+enum.GFileQueryInfoFlags=G_FILE_QUERY_INFO_NONE,G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS
+enum.GFileQueryInfoFlags.G_FILE_QUERY_INFO_NONE=0x0
+enum.GFileQueryInfoFlags.0x0=G_FILE_QUERY_INFO_NONE
+enum.GFileQueryInfoFlags.G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS=0x1
+enum.GFileQueryInfoFlags.0x1=G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS
+
+GResourceLookupFlags=enum
+enum.GResourceLookupFlags=G_RESOURCE_LOOKUP_FLAGS_NONE
+enum.GResourceLookupFlags.G_RESOURCE_LOOKUP_FLAGS_NONE=0x0
+enum.GResourceLookupFlags.0x0=G_RESOURCE_LOOKUP_FLAGS_NONE
+
+GSubprocessFlags=enum
+enum.GSubprocessFlags=G_SUBPROCESS_FLAGS_NONE,G_SUBPROCESS_FLAGS_STDIN_PIPE,G_SUBPROCESS_FLAGS_STDIN_INHERIT,G_SUBPROCESS_FLAGS_STDOUT_PIPE,G_SUBPROCESS_FLAGS_STDOUT_SILENCE,G_SUBPROCESS_FLAGS_STDERR_PIPE,G_SUBPROCESS_FLAGS_STDERR_SILENCE,G_SUBPROCESS_FLAGS_STDERR_MERGE,G_SUBPROCESS_FLAGS_INHERIT_FDS,G_SUBPROCESS_FLAGS_SEARCH_PATH_FROM_ENVP
+enum.GSubprocessFlags.G_SUBPROCESS_FLAGS_NONE=0x0
+enum.GSubprocessFlags.0x0=G_SUBPROCESS_FLAGS_NONE
+enum.GSubprocessFlags.G_SUBPROCESS_FLAGS_STDIN_PIPE=0x1
+enum.GSubprocessFlags.0x1=G_SUBPROCESS_FLAGS_STDIN_PIPE
+enum.GSubprocessFlags.G_SUBPROCESS_FLAGS_STDIN_INHERIT=0x2
+enum.GSubprocessFlags.0x2=G_SUBPROCESS_FLAGS_STDIN_INHERIT
+enum.GSubprocessFlags.G_SUBPROCESS_FLAGS_STDOUT_PIPE=0x4
+enum.GSubprocessFlags.0x4=G_SUBPROCESS_FLAGS_STDOUT_PIPE
+enum.GSubprocessFlags.G_SUBPROCESS_FLAGS_STDOUT_SILENCE=0x8
+enum.GSubprocessFlags.0x8=G_SUBPROCESS_FLAGS_STDOUT_SILENCE
+enum.GSubprocessFlags.G_SUBPROCESS_FLAGS_STDERR_PIPE=0x10
+enum.GSubprocessFlags.0x10=G_SUBPROCESS_FLAGS_STDERR_PIPE
+enum.GSubprocessFlags.G_SUBPROCESS_FLAGS_STDERR_SILENCE=0x20
+enum.GSubprocessFlags.0x20=G_SUBPROCESS_FLAGS_STDERR_SILENCE
+enum.GSubprocessFlags.G_SUBPROCESS_FLAGS_STDERR_MERGE=0x40
+enum.GSubprocessFlags.0x40=G_SUBPROCESS_FLAGS_STDERR_MERGE
+enum.GSubprocessFlags.G_SUBPROCESS_FLAGS_INHERIT_FDS=0x80
+enum.GSubprocessFlags.0x80=G_SUBPROCESS_FLAGS_INHERIT_FDS
+enum.GSubprocessFlags.G_SUBPROCESS_FLAGS_SEARCH_PATH_FROM_ENVP=0x100
+enum.GSubprocessFlags.0x100=G_SUBPROCESS_FLAGS_SEARCH_PATH_FROM_ENVP
+
+g_app_info_get_description=func
+func.g_app_info_get_description.args=1
+func.g_app_info_get_description.arg.0=GAppInfo *,appinfo
+func.g_app_info_get_description.ret=const char *
+
+g_app_info_get_name=func
+func.g_app_info_get_name.args=1
+func.g_app_info_get_name.arg.0=GAppInfo *,appinfo
+func.g_app_info_get_name.ret=const char *
+
+g_app_info_launch=func
+func.g_app_info_launch.args=4
+func.g_app_info_launch.arg.0=GAppInfo *,appinfo
+func.g_app_info_launch.arg.1=GList *,files
+func.g_app_info_launch.arg.2=GAppLaunchContext *,context
+func.g_app_info_launch.arg.3=GError **,error
+func.g_app_info_launch.ret=gboolean
+
+g_data_input_stream_new=func
+func.g_data_input_stream_new.args=1
+func.g_data_input_stream_new.arg.0=GInputStream *,base_stream
+func.g_data_input_stream_new.ret=GDataInputStream *
+
+g_data_input_stream_read_line_utf8=func
+func.g_data_input_stream_read_line_utf8.args=4
+func.g_data_input_stream_read_line_utf8.arg.0=GDataInputStream *,stream
+func.g_data_input_stream_read_line_utf8.arg.1=gsize *,length
+func.g_data_input_stream_read_line_utf8.arg.2=GCancellable *,cancellable
+func.g_data_input_stream_read_line_utf8.arg.3=GError **,error
+func.g_data_input_stream_read_line_utf8.ret=char *
+
+g_dbus_error_strip_remote_error=func
+func.g_dbus_error_strip_remote_error.args=1
+func.g_dbus_error_strip_remote_error.arg.0=GError *,error
+func.g_dbus_error_strip_remote_error.ret=gboolean
+
+g_dbus_proxy_call_sync=func
+func.g_dbus_proxy_call_sync.args=7
+func.g_dbus_proxy_call_sync.arg.0=GDBusProxy *,proxy
+func.g_dbus_proxy_call_sync.arg.1=const gchar *,method_name
+func.g_dbus_proxy_call_sync.arg.2=GVariant *,parameters
+func.g_dbus_proxy_call_sync.arg.3=GDBusCallFlags,flags
+func.g_dbus_proxy_call_sync.arg.4=gint,timeout_msec
+func.g_dbus_proxy_call_sync.arg.5=GCancellable *,cancellable
+func.g_dbus_proxy_call_sync.arg.6=GError **,error
+func.g_dbus_proxy_call_sync.ret=GVariant *
+
+g_dbus_proxy_get_cached_property=func
+func.g_dbus_proxy_get_cached_property.args=2
+func.g_dbus_proxy_get_cached_property.arg.0=GDBusProxy *,proxy
+func.g_dbus_proxy_get_cached_property.arg.1=const gchar *,property_name
+func.g_dbus_proxy_get_cached_property.ret=GVariant *
+
+g_dbus_proxy_new_for_bus_sync=func
+func.g_dbus_proxy_new_for_bus_sync.args=8
+func.g_dbus_proxy_new_for_bus_sync.arg.0=GBusType,bus_type
+func.g_dbus_proxy_new_for_bus_sync.arg.1=GDBusProxyFlags,flags
+func.g_dbus_proxy_new_for_bus_sync.arg.2=GDBusInterfaceInfo *,info
+func.g_dbus_proxy_new_for_bus_sync.arg.3=const gchar *,name
+func.g_dbus_proxy_new_for_bus_sync.arg.4=const gchar *,object_path
+func.g_dbus_proxy_new_for_bus_sync.arg.5=const gchar *,interface_name
+func.g_dbus_proxy_new_for_bus_sync.arg.6=GCancellable *,cancellable
+func.g_dbus_proxy_new_for_bus_sync.arg.7=GError **,error
+func.g_dbus_proxy_new_for_bus_sync.ret=GDBusProxy *
+
+g_desktop_app_info_get_string=func
+func.g_desktop_app_info_get_string.args=2
+func.g_desktop_app_info_get_string.arg.0=GDesktopAppInfo *,info
+func.g_desktop_app_info_get_string.arg.1=const char *,key
+func.g_desktop_app_info_get_string.ret=char *
+
+g_desktop_app_info_new_from_keyfile=func
+func.g_desktop_app_info_new_from_keyfile.args=1
+func.g_desktop_app_info_new_from_keyfile.arg.0=GKeyFile *,key_file
+func.g_desktop_app_info_new_from_keyfile.ret=GDesktopAppInfo *
+
+g_file_copy=func
+func.g_file_copy.args=7
+func.g_file_copy.arg.0=GFile *,source
+func.g_file_copy.arg.1=GFile *,destination
+func.g_file_copy.arg.2=GFileCopyFlags,flags
+func.g_file_copy.arg.3=GCancellable *,cancellable
+func.g_file_copy.arg.4=GFileProgressCallback,progress_callback
+func.g_file_copy.arg.5=gpointer,progress_callback_data
+func.g_file_copy.arg.6=GError **,error
+func.g_file_copy.ret=gboolean
+
+g_file_delete=func
+func.g_file_delete.args=3
+func.g_file_delete.arg.0=GFile *,file
+func.g_file_delete.arg.1=GCancellable *,cancellable
+func.g_file_delete.arg.2=GError **,error
+func.g_file_delete.ret=gboolean
+
+g_file_enumerate_children=func
+func.g_file_enumerate_children.args=5
+func.g_file_enumerate_children.arg.0=GFile *,file
+func.g_file_enumerate_children.arg.1=const char *,attributes
+func.g_file_enumerate_children.arg.2=GFileQueryInfoFlags,flags
+func.g_file_enumerate_children.arg.3=GCancellable *,cancellable
+func.g_file_enumerate_children.arg.4=GError **,error
+func.g_file_enumerate_children.ret=GFileEnumerator *
+
+g_file_enumerator_iterate=func
+func.g_file_enumerator_iterate.args=5
+func.g_file_enumerator_iterate.arg.0=GFileEnumerator *,direnum
+func.g_file_enumerator_iterate.arg.1=GFileInfo **,out_info
+func.g_file_enumerator_iterate.arg.2=GFile **,out_child
+func.g_file_enumerator_iterate.arg.3=GCancellable *,cancellable
+func.g_file_enumerator_iterate.arg.4=GError **,error
+func.g_file_enumerator_iterate.ret=gboolean
+
+g_file_get_basename=func
+func.g_file_get_basename.args=1
+func.g_file_get_basename.arg.0=GFile *,file
+func.g_file_get_basename.ret=char *
+
+g_file_get_child=func
+func.g_file_get_child.args=2
+func.g_file_get_child.arg.0=GFile *,file
+func.g_file_get_child.arg.1=const char *,name
+func.g_file_get_child.ret=GFile *
+
+g_file_get_path=func
+func.g_file_get_path.args=1
+func.g_file_get_path.arg.0=GFile *,file
+func.g_file_get_path.ret=char *
+
+g_file_get_relative_path=func
+func.g_file_get_relative_path.args=2
+func.g_file_get_relative_path.arg.0=GFile *,parent
+func.g_file_get_relative_path.arg.1=GFile *,descendant
+func.g_file_get_relative_path.ret=char *
+
+g_file_info_get_name=func
+func.g_file_info_get_name.args=1
+func.g_file_info_get_name.arg.0=GFileInfo *,info
+func.g_file_info_get_name.ret=const char *
+
+g_file_load_contents=func
+func.g_file_load_contents.args=6
+func.g_file_load_contents.arg.0=GFile *,file
+func.g_file_load_contents.arg.1=GCancellable *,cancellable
+func.g_file_load_contents.arg.2=char **,contents
+func.g_file_load_contents.arg.3=gsize *,length
+func.g_file_load_contents.arg.4=char **,etag_out
+func.g_file_load_contents.arg.5=GError **,error
+func.g_file_load_contents.ret=gboolean
+
+g_file_make_directory=func
+func.g_file_make_directory.args=3
+func.g_file_make_directory.arg.0=GFile *,file
+func.g_file_make_directory.arg.1=GCancellable *,cancellable
+func.g_file_make_directory.arg.2=GError **,error
+func.g_file_make_directory.ret=gboolean
+
+g_file_make_directory_with_parents=func
+func.g_file_make_directory_with_parents.args=3
+func.g_file_make_directory_with_parents.arg.0=GFile *,file
+func.g_file_make_directory_with_parents.arg.1=GCancellable *,cancellable
+func.g_file_make_directory_with_parents.arg.2=GError **,error
+func.g_file_make_directory_with_parents.ret=gboolean
+
+g_file_move=func
+func.g_file_move.args=7
+func.g_file_move.arg.0=GFile *,source
+func.g_file_move.arg.1=GFile *,destination
+func.g_file_move.arg.2=GFileCopyFlags,flags
+func.g_file_move.arg.3=GCancellable *,cancellable
+func.g_file_move.arg.4=GFileProgressCallback,progress_callback
+func.g_file_move.arg.5=gpointer,progress_callback_data
+func.g_file_move.arg.6=GError **,error
+func.g_file_move.ret=gboolean
+
+g_file_new_build_filename=func
+func.g_file_new_build_filename.args=2
+func.g_file_new_build_filename.arg.0=const gchar *,first_element
+func.g_file_new_build_filename.arg.1=,...
+func.g_file_new_build_filename.ret=GFile *
+
+g_file_new_for_commandline_arg_and_cwd=func
+func.g_file_new_for_commandline_arg_and_cwd.args=2
+func.g_file_new_for_commandline_arg_and_cwd.arg.0=const gchar *,arg
+func.g_file_new_for_commandline_arg_and_cwd.arg.1=const gchar *,cwd
+func.g_file_new_for_commandline_arg_and_cwd.ret=GFile *
+
+g_file_new_for_path=func
+func.g_file_new_for_path.args=1
+func.g_file_new_for_path.arg.0=const char *,path
+func.g_file_new_for_path.ret=GFile *
+
+g_file_new_for_uri=func
+func.g_file_new_for_uri.args=1
+func.g_file_new_for_uri.arg.0=const char *,uri
+func.g_file_new_for_uri.ret=GFile *
+
+g_file_peek_path=func
+func.g_file_peek_path.args=1
+func.g_file_peek_path.arg.0=GFile *,file
+func.g_file_peek_path.ret=const char *
+
+g_file_query_default_handler=func
+func.g_file_query_default_handler.args=3
+func.g_file_query_default_handler.arg.0=GFile *,file
+func.g_file_query_default_handler.arg.1=GCancellable *,cancellable
+func.g_file_query_default_handler.arg.2=GError **,error
+func.g_file_query_default_handler.ret=GAppInfo *
+
+g_file_query_exists=func
+func.g_file_query_exists.args=2
+func.g_file_query_exists.arg.0=GFile *,file
+func.g_file_query_exists.arg.1=GCancellable *,cancellable
+func.g_file_query_exists.ret=gboolean
+
+g_file_read=func
+func.g_file_read.args=3
+func.g_file_read.arg.0=GFile *,file
+func.g_file_read.arg.1=GCancellable *,cancellable
+func.g_file_read.arg.2=GError **,error
+func.g_file_read.ret=GFileInputStream *
+
+g_file_replace_contents=func
+func.g_file_replace_contents.args=9
+func.g_file_replace_contents.arg.0=GFile *,file
+func.g_file_replace_contents.arg.1=const char *,contents
+func.g_file_replace_contents.arg.2=gsize,length
+func.g_file_replace_contents.arg.3=const char *,etag
+func.g_file_replace_contents.arg.4=gboolean,make_backup
+func.g_file_replace_contents.arg.5=GFileCreateFlags,flags
+func.g_file_replace_contents.arg.6=char **,new_etag
+func.g_file_replace_contents.arg.7=GCancellable *,cancellable
+func.g_file_replace_contents.arg.8=GError **,error
+func.g_file_replace_contents.ret=gboolean
+
+g_io_error_quark=func
+func.g_io_error_quark.args=0
+func.g_io_error_quark.ret=GQuark
+
+g_resources_enumerate_children=func
+func.g_resources_enumerate_children.args=3
+func.g_resources_enumerate_children.arg.0=const char *,path
+func.g_resources_enumerate_children.arg.1=GResourceLookupFlags,lookup_flags
+func.g_resources_enumerate_children.arg.2=GError **,error
+func.g_resources_enumerate_children.ret=char **
+
+g_settings_get_strv=func
+func.g_settings_get_strv.args=2
+func.g_settings_get_strv.arg.0=GSettings *,settings
+func.g_settings_get_strv.arg.1=const gchar *,key
+func.g_settings_get_strv.ret=gchar **
+
+g_settings_is_writable=func
+func.g_settings_is_writable.args=2
+func.g_settings_is_writable.arg.0=GSettings *,settings
+func.g_settings_is_writable.arg.1=const gchar *,name
+func.g_settings_is_writable.ret=gboolean
+
+g_settings_new_full=func
+func.g_settings_new_full.args=3
+func.g_settings_new_full.arg.0=GSettingsSchema *,schema
+func.g_settings_new_full.arg.1=GSettingsBackend *,backend
+func.g_settings_new_full.arg.2=const gchar *,path
+func.g_settings_new_full.ret=GSettings *
+
+g_settings_schema_source_get_default=func
+func.g_settings_schema_source_get_default.args=0
+func.g_settings_schema_source_get_default.ret=GSettingsSchemaSource *
+
+g_settings_schema_source_lookup=func
+func.g_settings_schema_source_lookup.args=3
+func.g_settings_schema_source_lookup.arg.0=GSettingsSchemaSource *,source
+func.g_settings_schema_source_lookup.arg.1=const gchar *,schema_id
+func.g_settings_schema_source_lookup.arg.2=gboolean,recursive
+func.g_settings_schema_source_lookup.ret=GSettingsSchema *
+
+g_settings_schema_unref=func
+func.g_settings_schema_unref.args=1
+func.g_settings_schema_unref.arg.0=GSettingsSchema *,schema
+func.g_settings_schema_unref.ret=void
+
+g_settings_set_strv=func
+func.g_settings_set_strv.args=3
+func.g_settings_set_strv.arg.0=GSettings *,settings
+func.g_settings_set_strv.arg.1=const gchar *,key
+func.g_settings_set_strv.arg.2=const gchar * const *,value
+func.g_settings_set_strv.ret=gboolean
+
+g_settings_sync=func
+func.g_settings_sync.args=0
+func.g_settings_sync.ret=void
+
+g_static_resource_fini=func
+func.g_static_resource_fini.args=1
+func.g_static_resource_fini.arg.0=GStaticResource *,static_resource
+func.g_static_resource_fini.ret=void
+
+g_static_resource_init=func
+func.g_static_resource_init.args=1
+func.g_static_resource_init.arg.0=GStaticResource *,static_resource
+func.g_static_resource_init.ret=void
+
+g_subprocess_new=func
+func.g_subprocess_new.args=4
+func.g_subprocess_new.arg.0=GSubprocessFlags,flags
+func.g_subprocess_new.arg.1=GError **,error
+func.g_subprocess_new.arg.2=const gchar *,argv0
+func.g_subprocess_new.arg.3=,...
+func.g_subprocess_new.ret=GSubprocess *
+
+g_subprocess_wait_check=func
+func.g_subprocess_wait_check.args=3
+func.g_subprocess_wait_check.arg.0=GSubprocess *,subprocess
+func.g_subprocess_wait_check.arg.1=GCancellable *,cancellable
+func.g_subprocess_wait_check.arg.2=GError **,error
+func.g_subprocess_wait_check.ret=gboolean
+
+g_unix_input_stream_new=func
+func.g_unix_input_stream_new.args=2
+func.g_unix_input_stream_new.arg.0=gint,fd
+func.g_unix_input_stream_new.arg.1=gboolean,close_fd
+func.g_unix_input_stream_new.ret=GInputStream *

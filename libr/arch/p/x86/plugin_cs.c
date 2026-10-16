@@ -616,7 +616,6 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_FICOMP:
 	case X86_INS_FINCSTP:
 	case X86_INS_FNCLEX:
-	case X86_INS_FNINIT:
 	case X86_INS_FNSTCW:
 	case X86_INS_FNSTSW:
 	case X86_INS_FPATAN:
@@ -664,6 +663,12 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			}
 			free (src);
 		}
+		break;
+	case X86_INS_FNINIT:
+		// the default control word, everything else cleared; ftw is fxsave's abridged tag, 0 = all empty
+		esilprintf (op, "0x37f,cwd,=,0,swd,=,0,ftw,=,0,fop,=,%s", (bits == 64)
+			? "0,frip,=,0,frdp,="
+			: "0,fip,=,0,fcs,=,0,foo,=,0,fos,=");
 		break;
 	case X86_INS_FLD1:
 		esilprintf (op,
@@ -3323,6 +3328,7 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case X86_INS_FXSAVE:
 	case X86_INS_FXSAVE64:
 	case X86_INS_FISTTP:
+		op->sign = insn->id == X86_INS_FISTTP;
 		op0_memimmhandle (op, insn, addr, regsz);
 		/* fallthu */
 	case X86_INS_FCOMPP:
@@ -3385,12 +3391,19 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		op->family = R_ANAL_OP_FAMILY_FPU;
 		break;
+	case X86_INS_FILD:
+		op0_memimmhandle (op, insn, addr, regsz);
+		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->family = R_ANAL_OP_FAMILY_FPU;
+		op->sign = true;
+		break;
 	case X86_INS_FIST:
 	case X86_INS_FISTP:
 	case X86_INS_FST:
 	case X86_INS_FSTP:
 	case X86_INS_FXRSTOR:
 	case X86_INS_FXRSTOR64:
+		op->sign = insn->id == X86_INS_FIST || insn->id == X86_INS_FISTP;
 		op0_memimmhandle (op, insn, addr, regsz);
 		/* fallthru */
 	case X86_INS_FSTPNCE:
@@ -3635,6 +3648,11 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case X86_INS_MOVDQ2Q:
 		{
 		op->type = R_ANAL_OP_TYPE_MOV;
+		op->sign = insn->id == X86_INS_MOVSX || insn->id == X86_INS_MOVSXD;
+		if (insn->id == X86_INS_MOVSS || (insn->id == X86_INS_MOVSD
+			&& (is_xmm_reg (INSOP (0)) || is_xmm_reg (INSOP (1))))) {
+			op->datatype = R_ANAL_DATATYPE_FLOAT;
+		}
 		op0_memimmhandle (op, insn, addr, regsz);
 		op1_memimmhandle (op, insn, addr, regsz);
 		if (INSOP (1).type == X86_OP_MEM) {
@@ -4588,6 +4606,25 @@ static char *get_reg_profile(RArchSession *as) {
 		//"drx	dr5	.32	20	0\n"
 		"drx	dr6	.32	24	0\n"
 		"drx	dr7	.32	28	0\n"
+		// the x87 state as the 32-bit fxsave lays it out (selector:offset pointers)
+		"fpu	cwd	.16	0	0\n"
+		"fpu	swd	.16	2	0\n"
+		"fpu	ftw	.16	4	0\n"
+		"fpu	fop	.16	6	0\n"
+		"fpu	fip	.32	8	0\n"
+		"fpu	fcs	.32	12	0\n"
+		"fpu	foo	.32	16	0\n"
+		"fpu	fos	.32	20	0\n"
+		"fpu	mxcsr	.32	24	0\n"
+		"fpu	mxcr_mask	.32	28	0\n"
+		"fpu	st0	.64	32	0\n"
+		"fpu	st1	.64	48	0\n"
+		"fpu	st2	.64	64	0\n"
+		"fpu	st3	.64	80	0\n"
+		"fpu	st4	.64	96	0\n"
+		"fpu	st5	.64	112	0\n"
+		"fpu	st6	.64	128	0\n"
+		"fpu	st7	.64	144	0\n"
 		"vec128@fpu    xmm0  .128 160  4\n"
 		"vec64@fpu    xmm0l .64 160  0\n"
 		"vec64@fpu    xmm0h .64 168  0\n"
@@ -4609,12 +4646,12 @@ static char *get_reg_profile(RArchSession *as) {
 		"fpu    xmm4h .64 232  0\n"
 
 		"vec128@fpu    xmm5  .128 240  4\n"
-		"fpu    vec1285l .64 240  0\n"
-		"fpu    vec1285h .64 248  0\n"
+		"fpu    xmm5l .64 240  0\n"
+		"fpu    xmm5h .64 248  0\n"
 
 		"vec128@fpu    xmm6  .128 256  4\n"
-		"fpu    vec1286l .64 256  0\n"
-		"fpu    vec1286h .64 264  0\n"
+		"fpu    xmm6l .64 256  0\n"
+		"fpu    xmm6h .64 264  0\n"
 
 		"vec128@fpu    xmm7  .128 272  4\n"
 		"fpu    xmm7l .64 272  0\n"

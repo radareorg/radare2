@@ -161,6 +161,24 @@ static void swap_strings(RFindCTX *ctx) {
 	free (copy);
 }
 
+static const char *skip_quoted(const char *s) {
+	const char quote = *s++;
+	while (*s && *s != '\n') {
+		if (*s == quote) {
+			return s + 1;
+		}
+		if (*s == '\\' && s[1]) {
+			s++;
+		}
+		s++;
+	}
+	return s;
+}
+
+static bool starts_quoted(const char *begin, const char *p) {
+	return *p == '"' || (*p == '\'' && (p == begin || (!isalnum ((ut8)p[-1]) && p[-1] != '_')));
+}
+
 // r2 renders comments as "<whitespace>; text", arch pseudo templates emit ';' with no space before it
 static bool is_comment_semicolon(const char *begin, const char *p) {
 	return *p == ';' && (p == begin || IS_WHITECHAR (p[-1]));
@@ -174,6 +192,10 @@ static void find_and_change(char *in, int len) {
 	char *start = in;
 	char *end = in + len;
 	for (ctx.linebegin = in; in < end; in++) {
+		if (!ctx.comment && starts_quoted (start, in)) {
+			in = (char *)skip_quoted (in) - 1;
+			continue;
+		}
 		if (*in == '\n' || !*in) {
 			if (ctx.type == TYPE_SYM && ctx.linecount < 1) {
 				ctx.linecount++;
@@ -476,8 +498,18 @@ static void remove_double_spaces(char *s) {
 }
 
 static char *next_comment(char *s, char *line_end) {
-	char *next = strstr (s, " // ");
-	return next && (!line_end || next < line_end)? next: NULL;
+	const char *begin = s;
+	while (*s && (!line_end || s < line_end)) {
+		if (starts_quoted (begin, s)) {
+			s = (char *)skip_quoted (s);
+			continue;
+		}
+		if (r_str_startswith (s, " // ")) {
+			return s;
+		}
+		s++;
+	}
+	return NULL;
 }
 
 static void dedup_comments(char *s) {
@@ -528,7 +560,9 @@ static char *comments_to_c(char *s) {
 	const char *chunk = s;
 	const char *p;
 	for (p = s; *p; p++) {
-		if (is_comment_semicolon (s, p)) {
+		if (starts_quoted (s, p)) {
+			p = skip_quoted (p) - 1;
+		} else if (is_comment_semicolon (s, p)) {
 			r_strbuf_append_n (sb, chunk, p - chunk);
 			r_strbuf_append (sb, "//");
 			chunk = p + 1;
@@ -545,7 +579,10 @@ static char *cleancomments(char *s) {
 	int spaces = 0;
 	bool ispfx = false;
 	while (*p) {
-		if (*p == '\n') {
+		if (starts_quoted (s, p)) {
+			p = (char *)skip_quoted (p);
+			continue;
+		} else if (*p == '\n') {
 			nl = p;
 			spaces = 0;
 			ispfx = true;
@@ -987,6 +1024,226 @@ static const char *cached_bb_raw(PDCState *state, RAnalBlock *bb) {
 	return ht_up_find (state->bbtext, bb->addr, NULL);
 }
 
+static const char *call_args_end(const char *args) {
+	int depth = 1;
+	const char *p = args;
+	while (*p) {
+		if (*p == '"' || *p == '\'') {
+			p = skip_quoted (p);
+			continue;
+		}
+		if (*p == '(') {
+			depth++;
+		} else if (*p == ')' && !--depth) {
+			return p;
+		}
+		p++;
+	}
+	return NULL;
+}
+
+static void append_call_args(RCore *core, RStrBuf *out, const char *callee, const char *args, const char *end) {
+	RAnal *anal = core->anal;
+	const char *cc = r_anal_cc_func (anal, callee);
+	const int word = cc? r_anal_cc_wordsize (anal, cc): 0;
+	bool slots_known = true;
+	const char *arg = args;
+	const char *p;
+	int index = 0;
+	int depth = 0;
+	for (p = args; p <= end; p++) {
+		if (p < end && (*p == '"' || *p == '\'')) {
+			p = skip_quoted (p) - 1;
+			continue;
+		}
+		if (p < end && *p == '(') {
+			depth++;
+		} else if (p < end && *p == ')') {
+			depth--;
+		}
+		if (p != end && (*p != ',' || depth)) {
+			continue;
+		}
+		const char *value = r_str_trim_head_ro (arg);
+		const char *last = p;
+		while (last > value && IS_WHITECHAR (last[-1])) {
+			last--;
+		}
+		char *type = r_type_func_args_type (anal->sdb_types, callee, index);
+		char *resolved = type? r_type_resolve_typedef (anal->sdb_types, type): NULL;
+		const char *effective = resolved? resolved: type;
+		const bool pointer = effective && strchr (effective, '*');
+		if (effective && !pointer && (r_anal_type_bitsize (anal, effective) > word * 8
+				|| R_STR_CMP_ANY (effective, "float", "double", "long double"))) {
+			slots_known = false;
+		}
+		const char *digits = value;
+		if (last - value > 2 && r_str_startswith (value, "0x")) {
+			digits += 2;
+		}
+		const bool zero = digits < last && digits + strspn (digits, "0") == last;
+		char *number_end;
+		ut64 address = strtoull (value, &number_end, 0);
+		const bool invalid_pointer = pointer && number_end > value && number_end == last
+			&& !r_io_is_valid_offset (core->io, address, R_PERM_R);
+		RAnalCCArgSlot slot;
+		const char *reg = NULL;
+		if (cc && slots_known && ((zero && (pointer || !type)) || invalid_pointer)
+				&& r_anal_cc_argslot (anal, cc, index, -1, false, &slot) && slot.reg
+				&& r_reg_get (anal->reg, slot.reg, -1)) {
+			reg = slot.reg;
+		}
+		free (resolved);
+		free (type);
+		if (reg) {
+			r_strbuf_append (out, reg);
+		} else {
+			r_strbuf_append_n (out, value, last - value);
+		}
+		if (p != end) {
+			r_strbuf_append (out, ", ");
+		}
+		arg = p + 1;
+		index++;
+	}
+}
+
+static bool promote_call_comment(PDCState *state, RStrBuf *out, char *line) {
+	RCore *core = state->core;
+	char *body = (char *)r_str_trim_head_ro (line);
+	if (r_str_startswith (body, "0x")) {
+		char *space = strchr (body, ' ');
+		body = space? (char *)r_str_trim_head_ro (space): body;
+	}
+	char *first = next_comment (body, NULL);
+	if (!first) {
+		return false;
+	}
+	const char *tail = first;
+	while (tail > body && IS_WHITECHAR (tail[-1])) {
+		tail--;
+	}
+	const bool tailcall = r_str_startswith (body, "goto ");
+	if (!tailcall && (tail - body < 2 || strncmp (tail - 2, "()", 2))) {
+		return false;
+	}
+	char *comment;
+	for (comment = first; comment; comment = next_comment (comment + 4, NULL)) {
+		char *text = comment + 4;
+		char *open = strchr (text, '(');
+		char *next = next_comment (text, NULL);
+		if (!open || (next && open >= next)) {
+			continue;
+		}
+		char *name = open;
+		while (name > text && (isalnum ((ut8)name[-1]) || strchr ("_.$:", name[-1]))) {
+			name--;
+		}
+		if (name == open) {
+			continue;
+		}
+		char *callee = r_str_ndup (name, open - name);
+		if (!callee) {
+			return false;
+		}
+		const char *ret = r_type_func_ret (core->anal->sdb_types, callee);
+		char *prefix = r_str_ndup (text, name - text);
+		if (!prefix) {
+			free (callee);
+			return false;
+		}
+		r_str_trim (prefix);
+		bool valid = !*prefix || (ret && !strcmp (prefix, ret));
+		free (prefix);
+		const char *end = valid? call_args_end (open + 1): NULL;
+		const char *after = end? r_str_trim_head_ro (end + 1): NULL;
+		if (!end || (next && end >= next) || (next? after != next + 1: *after)) {
+			free (callee);
+			continue;
+		}
+		const char *target_start = tailcall? body + 5: body;
+		char *target = r_str_ndup (target_start, tail - target_start - (tailcall? 0: 2));
+		if (!target) {
+			free (callee);
+			return false;
+		}
+		r_str_trim (target);
+		if (tailcall) {
+			RFlagItem *flag = r_flag_get (core->flags, target);
+			RAnalFunction *fcn = r_anal_get_function_byname (core->anal, target);
+			ut64 addr = flag? flag->addr: fcn? fcn->addr: r_num_get (NULL, target);
+			if ((!flag && !fcn && !r_anal_get_function_at (core->anal, addr))
+					|| r_anal_function_contains (state->fcn, addr)) {
+				free (target);
+				free (callee);
+				return false;
+			}
+		}
+		const char *base = r_str_startswith (target, "sym.imp.")? target + 8: target;
+		const char *bare = base;
+		while (*bare == '_') {
+			bare++;
+		}
+		r_strbuf_append_n (out, line, body - line);
+		if (tailcall) {
+			r_strbuf_append (out, "return ");
+		} else if (ret && strcmp (ret, "void") && strcmp (ret, "VOID")) {
+			RAnal *anal = core->anal;
+			const char *cc = r_anal_cc_func (anal, callee);
+			const bool floating = R_STR_CMP_ANY (ret, "float", "double", "long double");
+			const char *loc = cc? (floating? r_anal_cc_fpret (anal, cc, 0): r_anal_cc_ret (anal, cc, 0)): NULL;
+			const char *reg = loc? r_anal_cc_location_first (anal, loc): NULL;
+			if (reg && r_reg_get (anal->reg, reg, -1)) {
+				r_strbuf_appendf (out, "%s = ", reg);
+			}
+		}
+		r_strbuf_appendf (out, "%s (", !strcmp (bare, callee)? base: callee);
+		free (target);
+		if (end - open != 5 || strncmp (open + 1, "void", 4)) {
+			append_call_args (core, out, callee, open + 1, end);
+		}
+		free (callee);
+		r_strbuf_append (out, ")");
+		if (tailcall) {
+			r_strbuf_append (out, ";");
+		}
+		char *previous;
+		for (previous = first; previous != comment; previous = next_comment (previous + 4, NULL)) {
+			const char *text = previous + 4;
+			if (!r_str_startswith (text, "0x") && !r_str_startswith (text, "sym.")
+					&& !r_str_startswith (text, "reloc.") && !r_str_startswith (text, "[0x")) {
+				char *last = next_comment (previous + 4, NULL);
+				r_strbuf_append_n (out, previous, last - previous);
+			}
+		}
+		r_strbuf_append (out, end + 1);
+		return true;
+	}
+	return false;
+}
+
+static char *promote_calls(PDCState *state, char *code) {
+	RStrBuf *out = r_strbuf_new ("");
+	RList *lines = r_str_split_list (code, "\n", 0);
+	if (!lines) {
+		r_strbuf_free (out);
+		return code;
+	}
+	RListIter *iter;
+	char *line;
+	r_list_foreach (lines, iter, line) {
+		if (!promote_call_comment (state, out, line)) {
+			r_strbuf_append (out, line);
+		}
+		if (iter->n) {
+			r_strbuf_append (out, "\n");
+		}
+	}
+	r_list_free (lines);
+	free (code);
+	return r_strbuf_drain (out);
+}
+
 static char *fetch_bb_pseudo(PDCState *state, RAnalBlock *bb) {
 	const char *raw = cached_bb_raw (state, bb);
 	char *code = R_STR_ISEMPTY (raw)? NULL: strdup (raw);
@@ -1003,6 +1260,7 @@ static char *fetch_bb_pseudo(PDCState *state, RAnalBlock *bb) {
 	}
 	code[len - 1] = 0;
 	find_and_change (code, len);
+	code = promote_calls (state, code);
 	return fold_resolved_refs (state->core, code);
 }
 
@@ -1789,56 +2047,6 @@ static RAnalBlock *render_loop_while(PDCState *state, RAnalBlock *test_bb, RList
 	return r_anal_bb_from_offset (state->core->anal, test_bb->fail);
 }
 
-static int pdc_argnum_cmp(RAnalVar *const *a, RAnalVar *const *b) {
-	return r_anal_var_get_argnum (*a) - r_anal_var_get_argnum (*b);
-}
-
-// "type name, type name, ..." for the true args (isarg) ordered by argnum
-static char *pdc_signature_args(RAnal *anal, RAnalFunction *fcn) {
-	RVecAnalVarPtr *vars = r_anal_function_vars (anal, fcn);
-	if (!vars) {
-		return NULL;
-	}
-	RVecAnalVarPtr_sort (vars, pdc_argnum_cmp);
-	RStrBuf *sb = r_strbuf_new ("");
-	RAnalVar **it;
-	bool first = true;
-	R_VEC_FOREACH (vars, it) {
-		RAnalVar *var = *it;
-		if (!var->isarg) {
-			continue;
-		}
-		const char *nm = R_STR_ISNOTEMPTY (var->name)? var->name: var->regname;
-		const char *ty = R_STR_ISNOTEMPTY (var->type)? var->type: "int";
-		r_strbuf_appendf (sb, "%s%s %s", first? "": ", ", ty, nm? nm: "arg");
-		first = false;
-	}
-	RVecAnalVarPtr_free (vars);
-	return r_strbuf_drain (sb);
-}
-
-static char *pdc_return_type(const char *fs, const char *name) {
-	if (R_STR_ISEMPTY (fs)) {
-		return NULL;
-	}
-	const char *paren = strchr (fs, '(');
-	const char *nm = NULL;
-	const char *p = fs;
-	while ((p = strstr (p, name))) {
-		if (paren && p >= paren) {
-			break;
-		}
-		nm = p;
-		p += strlen (name);
-	}
-	if (!nm || nm == fs) {
-		return NULL;
-	}
-	char *ret = r_str_ndup (fs, nm - fs);
-	r_str_trim (ret);
-	return ret;
-}
-
 // the switch header is the one opener with a trailing comment; a '{' anywhere
 // else in a line is data, as in the label of case 123
 static bool pdc_line_opens_brace(const char *line) {
@@ -2515,9 +2723,9 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 		PRINTF ("\n");
 	}
 
-	char *fs = r_core_cmd_strf (core, "afs@0x%08" PFMT64x, state.fcn->addr);
+	char *fs = r_anal_function_get_signature_string (state.fcn);
 	{
-		char *cc = r_core_cmd_strf (core, "afci@0x%08" PFMT64x, state.fcn->addr);
+		char *cc = fcncc? r_anal_cc_get (core->anal, fcncc): NULL;
 		r_str_trim (cc);
 		if (R_STR_ISNOTEMPTY (cc)) {
 			if (state.show_addr || state.show_asm) {
@@ -2530,18 +2738,13 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 	if (state.show_addr || state.show_asm) {
 		print_pipe_header (&state, state.fcn->addr);
 	}
-	if (R_STR_ISNOTEMPTY (fs) && !(r_str_startswith (fs, "void") && strstr (fs, "()"))) {
-		// afs carries a real prototype (named/typed args): use it verbatim
+	if (R_STR_ISNOTEMPTY (fs)) {
+		fs = r_str_replace (fs, " ()", " (void)", false);
 		r_str_replace_char (fs, ';', ' ');
 		r_str_trim (fs);
 		PRINTF ("%s {", fs);
 	} else {
-		char *params = pdc_signature_args (core->anal, state.fcn);
-		char *rettype = pdc_return_type (fs, state.fcn->name);
-		PRINTF ("%s %s (%s) {", R_STR_ISNOTEMPTY (rettype)? rettype: "int", state.fcn->name,
-			R_STR_ISNOTEMPTY (params)? params: "void");
-		free (params);
-		free (rettype);
+		PRINTF ("int %s (void) {", state.fcn->name);
 	}
 	free (fs);
 	indent++;
@@ -2814,6 +3017,7 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 		s = comments_to_c (s);
 		s = r_str_replace (s, "goto ", "// goto loc_", true);
 		s = cleancomments (s);
+		s = promote_calls (&state, s);
 		s = fold_resolved_refs (core, s);
 		if (state.show_asm) {
 			RList *rows = r_str_split_list (s, "\n", 0);

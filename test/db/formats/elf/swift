@@ -113,7 +113,8 @@ FILE=malloc://512
 ARGS=-a arm -b 64 -e anal.cc=swift
 CMDS=<<EOF
 wx e00314aa3f000094c0035fd6
-wx 150280d2e00315aa36000094c0035fd6 @ 0x20
+# mov x21, x22; mov x0, x21; bl takebuf; ret
+wx f50316aae00315aa36000094c0035fd6 @ 0x20
 wx e20300aae00302aa2e000094c0035fd6 @ 0x40
 wx c0035fd6 @ 0x100
 td void takebuf(char *buffer);
@@ -130,5 +131,23 @@ EXPECT=<<EOF
 arg char * self @ x20
 arg char * error @ x21
 arg char * buffer @ x0
+EOF
+RUN
+
+NAME=swift constant error assignment stops callee argument type propagation
+FILE=malloc://512
+ARGS=-a arm -b 64 -e anal.cc=swift
+CMDS=<<EOF
+# mov x21, 16; mov x0, x21; bl takebuf; ret
+wx 150280d2e00315aa36000094c0035fd6 @ 0x20
+wx c0035fd6 @ 0x100
+td void takebuf(char *buffer);
+af takebuf @ 0x100
+af error_caller @ 0x20
+aaft
+afv @ 0x20
+EOF
+EXPECT=<<EOF
+arg int64_t error @ x21
 EOF
 RUN

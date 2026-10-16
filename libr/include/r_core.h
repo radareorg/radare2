@@ -487,6 +487,7 @@ struct r_core_t {
 	int (*r_main_ragg2)(int argc, const char **argv);
 	int (*r_main_rasm2)(int argc, const char **argv);
 	int (*r_main_rax2)(int argc, const char **argv);
+	int (*r_main_rapatch2)(int argc, const char **argv);
 	int skiplines; // used only for disasm
 	void *priv; // Its RCorePriv but only used internally to not break abi
 	bool esil_anal_stop; // sounds like must be deprecated
@@ -535,6 +536,7 @@ typedef int RCmdReturnCode;
 static inline void r_core_return_invalid_command(RCore *core, const char *basecmd, const char subcmd) {
 	R_LOG_ERROR ("Invalid `%c` subcommand, try `%s?`", subcmd? subcmd: ' ', basecmd);
 	r_core_return_value (core, 1);
+	r_core_return_code (core, R_CMD_RC_FAILURE);
 }
 
 R_API RList *r_core_list_themes(RCore *core);
@@ -666,6 +668,7 @@ R_API void r_core_anal_cc_init(RCore *core);
 R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, int followDepth, bool is_json);
 R_API void r_core_anal_esil_function(RCore *core, ut64 addr); /// TODO: better name and move to anal
 
+R_API void r_core_list_bin(RCore *core, PJ *pj, int mode);
 R_API bool r_core_list_bin_plugin(RCore *core, const char *name, PJ *pj, int json);
 R_API int r_core_list_io(RCore *core, const char *name, int mode);
 R_API void r_core_list_lang(RCore *core, int mode);

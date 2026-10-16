@@ -402,6 +402,10 @@ static void print_attr_value(const RBinDwarfAttrValue *val, RStrBuf *sb) {
 	case DW_FORM_block2:
 	case DW_FORM_block4:
 	case DW_FORM_exprloc:
+		if (val->kind == DW_AT_KIND_ADDRESS) {
+			r_strbuf_appendf (sb, "0x%" PFMT64x, val->address);
+			break;
+		}
 		r_strbuf_appendf (sb, "%" PFMT64u " byte block:", val->block.length);
 		for (i = 0; i < val->block.length; i++) {
 			r_strbuf_appendf (sb, " 0x%02x", val->block.data[i]);
@@ -488,7 +492,7 @@ static void print_attr_value(const RBinDwarfAttrValue *val, RStrBuf *sb) {
 		r_strbuf_appendf (sb, "0x%" PFMT64x, val->uconstant);
 		break;
 	default:
-		r_strbuf_appendf (sb, "Unknown attr value form %" PFMT64d "\n", val->attr_form);
+		r_strbuf_appendf (sb, "Unknown attr value form %u\n", val->attr_form);
 		break;
 	};
 }
@@ -507,26 +511,25 @@ static void print_comp_unit_header(const RBinDwarfCompUnit *unit, RStrBuf *sb) {
 	r_strbuf_append (sb, "\n");
 }
 
-static void print_die(const RBinDwarfDie *die, RStrBuf *sb) {
-	R_RETURN_IF_FAIL (die);
-	r_strbuf_appendf (sb, "<0x%" PFMT64x ">: Abbrev Number: %-4" PFMT64u " ", die->offset, die->abbrev_code);
+static void print_die(const RBinDwarfCompUnit *unit, const RBinDwarfDie *die, RStrBuf *sb) {
+	r_strbuf_appendf (sb, "<0x%" PFMT64x ">: Abbrev Number: %-4u ", die->offset, die->abbrev_code);
 	if (is_printable_tag (die->tag)) {
 		r_strbuf_appendf (sb, "(%s)\n", dwarf_tag_name_encodings[die->tag]);
 	} else {
 		r_strbuf_append (sb, "(Unknown abbrev tag)\n");
 	}
-	if (!die->abbrev_code || !die->attr_values) {
+	if (!die->abbrev_code) {
 		return;
 	}
 	RBinDwarfAttrValue *value;
-	R_VEC_FOREACH (die->attr_values, value) {
+	R_BIN_DWARF_DIE_FOREACH_ATTR (unit, die, value) {
 		if (!value->attr_name) {
 			continue;
 		}
 		if (is_printable_attr (value->attr_name)) {
 			r_strbuf_appendf (sb, "     %-25s : ", dwarf_attr_encodings[value->attr_name]);
 		} else {
-			r_strbuf_appendf (sb, "     AT_UNKWN [0x%-3" PFMT64x "]\t : ", value->attr_name);
+			r_strbuf_appendf (sb, "     AT_UNKWN [0x%-3x]\t : ", value->attr_name);
 		}
 		print_attr_value (value, sb);
 		r_strbuf_append (sb, "\n");
@@ -538,6 +541,6 @@ R_IPI void dwarf_print_comp_unit(const RBinDwarfCompUnit *unit, RStrBuf *sb) {
 	print_comp_unit_header (unit, sb);
 	RBinDwarfDie *die;
 	R_VEC_FOREACH (unit->dies, die) {
-		print_die (die, sb);
+		print_die (unit, die, sb);
 	}
 }

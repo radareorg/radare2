@@ -693,11 +693,18 @@ static char *subvar(RAsmPluginSession *s, RAnalFunction *f, ut64 addr, int oplen
 			rip = (char *)r_str_casestr (tstr, "[pc, ");
 		}
 
-		if (rip && !strchr (rip + 4, ',')) {
+		// only an immediate offset makes a pc-relative literal, an index register does not
+		const char *imm = rip? rip + 4: NULL;
+		while (imm && (*imm == ' ' || *imm == '+' || *imm == '-' || *imm == '#')) {
+			imm++;
+		}
+		if (rip && !strchr (rip + 4, ',') && isdigit ((ut8)*imm)) {
 			rip += 4;
 			char *tstr_new, *ripend = strchr (rip, ']');
 			const char *neg = strchr (rip, '-');
-			ut64 off = (oplen == 2 || strstr (tstr, ".w") || strstr(tstr, ".W")) ? 4 : 8;
+			// pseudo text drops the .w suffix, so the Thumb pc bias comes from the mode
+			const bool thumb = oplen == 2 || s->rasm->config->bits == 16;
+			ut64 off = thumb? 4: 8;
 			ut64 repl_num = (addr + off) & ~3;
 			if (!ripend) {
 				ripend = "]";
@@ -705,7 +712,8 @@ static char *subvar(RAsmPluginSession *s, RAnalFunction *f, ut64 addr, int oplen
 			if (neg) {
 				repl_num -= r_num_get (NULL, neg + 1);
 			} else {
-				repl_num += r_num_get (NULL, rip);
+				const char *plus = strchr (rip, '+');
+				repl_num += r_num_get (NULL, plus? plus + 1: rip);
 			}
 			rip -= 3;
 			*rip = 0;

@@ -1,7 +1,5 @@
 %global         gituser         radareorg
 %global         gitname         radare2
-%global         commit          151a020573abca7b926f71a801484dee830627d1
-%global         shortcommit     %(c=%{commit}; echo ${c:0:7})
 
 Name:           radare2
 # This version must be a valid and existing release number otherwise CI will fail

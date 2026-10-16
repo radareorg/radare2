@@ -1345,3 +1345,86 @@ EXPECT=<<EOF2
 EOF2
 EXPECT_ERR=
 RUN
+
+NAME=xfs directory entry name length is bounded by the block
+FILE=malloc://16384
+CMDS=<<EOF2
+# superblock: XFSB, 4k blocks, root inode 16, one ag, 256-byte inodes
+wx 58465342 @ 0
+wx 10 @ 6
+wx 10 @ 63
+wx 21 @ 87
+wx 0c09080406 @ 120
+# inode 16: root directory, one extent at block 2
+wx 494e41ed0202 @ 4096
+wx 10 @ 4158
+wx 01 @ 4167
+wx 01 @ 4175
+wx 400001 @ 4209
+# inode 17: "file", 15 bytes, one extent at block 3
+wx 494e81a40202 @ 4352
+wx 0f @ 4415
+wx 01 @ 4423
+wx 01 @ 4431
+wx 600001 @ 4465
+# directory block: ".", "..", free space, "file" just before the tail
+wx 58443242 @ 8192
+wx 10012e @ 8215
+wx 10022e2e @ 8231
+wx ffff0fb8 @ 8240
+wx 110466696c65 @ 12271
+wx 03 @ 12283
+wx 68656c6c6f2066726f6d207866730a @ 12288
+m /root xfs 0
+md /root
+mc /root/file
+m-/root
+# name length 23 puts the terminator past the end of the block
+wx 17 @ 12272
+m /root xfs 0
+m
+EOF2
+EXPECT=<<EOF2
+d .
+d ..
+f file
+hello from xfs
+
+EOF2
+RUN
+
+NAME=xfs inline directory entries are bounded by the inode
+FILE=malloc://16384
+CMDS=<<EOF2
+wx 58465342 @ 0
+wx 10 @ 6
+wx 10 @ 63
+wx 21 @ 87
+wx 0c09080406 @ 120
+# inode 16: root directory in inline format, one entry "file" -> inode 17
+wx 494e41ed0201 @ 4096
+wx 01000000001004000066696c6500000011 @ 4196
+# inode 17: "file", 15 bytes, one extent at block 3
+wx 494e81a40202 @ 4352
+wx 0f @ 4415
+wx 01 @ 4423
+wx 01 @ 4431
+wx 600001 @ 4465
+wx 68656c6c6f2066726f6d207866730a @ 12288
+m /root xfs 0
+md /root
+mc /root/file
+m-/root
+# name length 255 runs past the end of the inode
+wx ff @ 4202
+m /root xfs 0
+m
+EOF2
+EXPECT=<<EOF2
+d .
+d ..
+f file
+hello from xfs
+
+EOF2
+RUN

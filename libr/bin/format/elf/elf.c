@@ -114,15 +114,15 @@ enum {
 
 typedef struct reginfo {
 	ut32 regsize;
-	ut32 regdelta;
+	ut32 regoffset;
 } reginfo_t;
 
 static const reginfo_t reginf[ARCH_LEN] = {
-	{ 160, 0x5c },
-	{ 216, 0x84 },
-	{ 72, 0x5c },
-	{ 272, 0x84 },
-	{ 272, 0x84 }
+	{ 68, 72 },
+	{ 216, 112 },
+	{ 72, 72 },
+	{ 272, 112 },
+	{ 272, 112 }
 };
 
 static bool is_bin_etrel(ELFOBJ *eo) {
@@ -2116,6 +2116,18 @@ static ut64 get_entry_offset_from_shdr(ELFOBJ *eo) {
 	return UT64_MAX;
 }
 
+// e_entry, or the code a PPC64 ELFv1 descriptor at e_entry names
+ut64 Elf_(get_entry_vaddr)(ELFOBJ *eo) {
+	ut64 entry = eo->ehdr.e_entry;
+#if R_BIN_ELF64
+	ut64 code_addr = entry? ppc64v1_opd_deref (eo, entry): UT64_MAX;
+	if (code_addr != UT64_MAX) {
+		return code_addr;
+	}
+#endif
+	return entry;
+}
+
 ut64 Elf_(get_entry_offset)(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo, UT64_MAX);
 
@@ -2123,14 +2135,8 @@ ut64 Elf_(get_entry_offset)(ELFOBJ *eo) {
 		return UT64_MAX;
 	}
 
-	ut64 entry = eo->ehdr.e_entry;
+	ut64 entry = Elf_(get_entry_vaddr) (eo);
 	if (entry) {
-#if R_BIN_ELF64
-		ut64 code_addr = ppc64v1_opd_deref (eo, entry);
-		if (code_addr != UT64_MAX) {
-			entry = code_addr;
-		}
-#endif
 		return Elf_(v2p) (eo, entry);
 	}
 
@@ -2384,7 +2390,7 @@ static bool has_public_visibility_leaks(ELFOBJ *eo) {
 	RBinElfSymbol *symbol;
 	R_VEC_FOREACH (eo->g_symbols_vec, symbol) {
 		const char *name = symbol->name;
-		if (!name || !*name || symbol->is_imported || symbol->is_sht_null) {
+		if (R_STR_ISEMPTY (name) || symbol->st_shndx == SHN_UNDEF) {
 			continue;
 		}
 		if (strcmp (symbol->bind, R_BIN_BIND_GLOBAL_STR) && strcmp (symbol->bind, R_BIN_BIND_WEAK_STR)) {
@@ -3227,96 +3233,75 @@ char* Elf_(get_osabi_name)(ELFOBJ *eo) {
 	return strdup (eo->osabi);
 }
 
-typedef struct reg_offset_state {
-	size_t i;
-	ut64 offset;  // used as output parameter
-} RegOffsetState;
-
-static inline bool _calculate_reg_offset(ELFOBJ *eo, RegOffsetState *state) {
-	bool success = true;
-	ut64 offset = 0;
-	const ut64 p_offset = eo->phdr[state->i].p_offset;
-	while (true) {
-		ut8 elf_nhdr[sizeof (Elf_(Nhdr))] = {0};
-		const size_t elf_nhdr_size = sizeof (Elf_(Nhdr));
-		int ret = r_buf_read_at (eo->b, p_offset + offset, elf_nhdr, elf_nhdr_size);
-		if (ret != elf_nhdr_size) {
-			R_LOG_DEBUG ("Cannot read NOTES hdr from CORE file");
-			success = false;
-			break;
-		}
-
-		ut32 n_namesz = r_read_ble32 (elf_nhdr, eo->endian);
-		ut32 n_descsz = r_read_ble32 (elf_nhdr + 4, eo->endian);
-		ut32 n_type = r_read_ble32 (elf_nhdr + 8, eo->endian);
-		if (n_type == NT_PRSTATUS) {
-			break;
-		}
-
-		offset += elf_nhdr_size + round_up (n_descsz) + round_up (n_namesz);
+static const reginfo_t *core_reginfo(ELFOBJ *eo) {
+	switch (eo->ehdr.e_machine) {
+	case EM_386:
+	case EM_IAMCU: return &reginf[X86];
+	case EM_X86_64: return &reginf[X86_64];
+	case EM_ARM: return &reginf[ARM];
+	case EM_AARCH64: return &reginf[AARCH64];
 	}
+	return NULL;
+}
 
-	state->offset = offset;
-	return success;
+static bool read_core_note(ELFOBJ *eo, const Elf_(Phdr) *p, ut64 *offset, Elf_(Nhdr) *note, ut64 *desc) {
+	ut8 hdr[12], owner[6];
+	const ut64 size = r_buf_size (eo->b);
+	if (p->p_offset > size || p->p_filesz > size - p->p_offset
+		|| *offset > p->p_filesz || p->p_filesz - *offset < sizeof (hdr)
+		|| r_buf_read_at (eo->b, p->p_offset + *offset, hdr, sizeof (hdr)) != sizeof (hdr)) {
+		return false;
+	}
+	note->n_namesz = r_read_ble32 (hdr, eo->endian);
+	note->n_descsz = r_read_ble32 (hdr + 4, eo->endian);
+	note->n_type = r_read_ble32 (hdr + 8, eo->endian);
+	const ut64 namesz = round_up ((ut64)note->n_namesz);
+	const ut64 descsz = round_up ((ut64)note->n_descsz);
+	*offset += sizeof (hdr);
+	if (namesz > p->p_filesz - *offset || descsz > p->p_filesz - *offset - namesz) {
+		return false;
+	}
+	if ((note->n_namesz != 5 && note->n_namesz != 6)
+		|| r_buf_read_at (eo->b, p->p_offset + *offset, owner, note->n_namesz) != note->n_namesz
+		|| (note->n_namesz == 5? memcmp (owner, "CORE", 5): memcmp (owner, "LINUX", 6))) {
+		note->n_type = 0;
+	}
+	*desc = p->p_offset + *offset + namesz;
+	*offset += namesz + descsz;
+	return true;
 }
 
 ut8 *Elf_(grab_regstate)(ELFOBJ *eo, int *len) {
-	if (!eo->phdr) {
-		R_LOG_DEBUG ("Cannot find NOTE section");
+	const reginfo_t *regs = core_reginfo (eo);
+	if (!eo->phdr || !regs) {
 		return NULL;
 	}
-
 	size_t i;
 	for (i = 0; i < eo->phnum; i++) {
 		Elf_(Phdr) *p = &eo->phdr[i];
 		if (p->p_type != PT_NOTE) {
 			continue;
 		}
-
-		RegOffsetState state = { .i = i, .offset = 0 };
-		if (!_calculate_reg_offset (eo, &state)) {
-			break;
+		ut64 offset = 0, desc;
+		Elf_(Nhdr) note;
+		while (read_core_note (eo, p, &offset, &note, &desc)) {
+			if (note.n_type != NT_PRSTATUS || note.n_descsz < regs->regoffset + regs->regsize) {
+				continue;
+			}
+			ut8 *buf = malloc (regs->regsize);
+			if (!buf) {
+				return NULL;
+			}
+			if (r_buf_read_at (eo->b, desc + regs->regoffset, buf, regs->regsize) != regs->regsize) {
+				free (buf);
+				return NULL;
+			}
+			if (len) {
+				*len = regs->regsize;
+			}
+			return buf;
 		}
-
-		ut64 offset = state.offset;
-		int regdelta = 0;
-		int regsize = 0;
-		switch (eo->ehdr.e_machine) {
-		case EM_AARCH64:
-			regsize = reginf[AARCH64].regsize;
-			regdelta = reginf[AARCH64].regdelta;
-			break;
-		case EM_ARM:
-			regsize = reginf[ARM].regsize;
-			regdelta = reginf[ARM].regdelta;
-			break;
-		case EM_386:
-		case EM_IAMCU:
-			regsize = reginf[X86].regsize;
-			regdelta = reginf[X86].regdelta;
-			break;
-		case EM_X86_64:
-			regsize = reginf[X86_64].regsize;
-			regdelta = reginf[X86_64].regdelta;
-			break;
-		}
-
-		ut8 *buf = malloc (regsize);
-		if (!buf) {
-			break;
-		}
-		if (r_buf_read_at (eo->b, p->p_offset + offset + regdelta, buf, regsize) != regsize) {
-			free (buf);
-			R_LOG_DEBUG ("Cannot read register state from CORE file");
-			break;
-		}
-		if (len) {
-			*len = regsize;
-		}
-		return buf;
 	}
-
-	R_LOG_DEBUG ("Cannot find NOTE section");
 	return NULL;
 }
 
@@ -4245,8 +4230,9 @@ static bool populate_relocs_record(ELFOBJ *eo) {
 	}
 
 	size_t i = 0;
-	i = populate_relocs_record_from_android (eo, i, num_relocs);
+	// the plt relocs go first, so an import's own jump slot names its plt entry
 	i = populate_relocs_record_from_dynamic (eo, i, num_relocs);
+	i = populate_relocs_record_from_android (eo, i, num_relocs);
 	i = populate_relocs_record_from_mips_got (eo, i, num_relocs);
 	i = populate_relocs_record_from_section (eo, &starts, i, num_relocs);
 	RVecElfOff_fini (&starts);
@@ -4863,6 +4849,68 @@ static void _add_ehdr_section(RBinFile *bf, ELFOBJ *eo) {
 	ptr->is_segment = true;
 }
 
+static void add_core_sections(ELFOBJ *eo) {
+	const reginfo_t *regs = core_reginfo (eo);
+	if (eo->ehdr.e_type != ET_CORE || !eo->phdr || !regs) {
+		return;
+	}
+	ut32 first_tid = 0, tid = 0;
+	size_t i;
+	for (i = 0; i < eo->phnum; i++) {
+		Elf_(Phdr) *p = &eo->phdr[i];
+		if (p->p_type != PT_NOTE) {
+			continue;
+		}
+		ut64 offset = 0, desc;
+		Elf_(Nhdr) note;
+		while (read_core_note (eo, p, &offset, &note, &desc)) {
+			const char *name;
+			ut64 size = note.n_descsz;
+			switch (note.n_type) {
+			case NT_PRSTATUS:
+				tid = 0;
+				if (size < regs->regoffset + regs->regsize) {
+					continue;
+				}
+				tid = r_buf_read_ble32_at (eo->b, desc + (regs->regoffset == 112? 32: 24), eo->endian);
+				if (!first_tid) {
+					first_tid = tid;
+				}
+				desc += regs->regoffset;
+				size = regs->regsize;
+				name = ".reg";
+				break;
+			case NT_FPREGSET:
+				name = ".reg2";
+				break;
+			case NT_X86_XSTATE:
+				if (eo->ehdr.e_machine != EM_386 && eo->ehdr.e_machine != EM_X86_64) {
+					continue;
+				}
+				name = ".reg-xstate";
+				break;
+			default:
+				continue;
+			}
+			if (!tid || !size) {
+				continue;
+			}
+			int alias;
+			for (alias = 0; alias < (tid == first_tid? 2: 1); alias++) {
+				RBinSection *section = RVecRBinSection_emplace_back (&eo->cached_sections);
+				if (!section) {
+					return;
+				}
+				section->name = alias? strdup (name): r_str_newf ("%s/%u", name, tid);
+				section->paddr = desc;
+				section->vaddr = desc;
+				section->size = section->vsize = size;
+				section->perm = R_PERM_R;
+			}
+		}
+	}
+}
+
 static void _cache_bin_sections(RBinFile *bf, ELFOBJ *eo, const RVecRBinElfSection *elf_bin_sections) {
 	if (elf_bin_sections) {
 		_store_bin_sections (eo, elf_bin_sections);
@@ -4894,6 +4942,7 @@ static void _cache_bin_sections(RBinFile *bf, ELFOBJ *eo, const RVecRBinElfSecti
 		}
 	}
 
+	add_core_sections (eo);
 	_add_ehdr_section (bf, eo);
 }
 
@@ -5016,7 +5065,6 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 		new_symbol.st_other = READ8 (s, j);
 		new_symbol.st_shndx = READ16 (s, j);
 #endif
-		bool is_sht_null = false;
 		bool is_vaddr = false;
 		bool is_imported = new_symbol.st_shndx == STN_UNDEF;
 		int tsize = 0;
@@ -5033,7 +5081,6 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 		} else if (type == R_BIN_ELF_ALL_SYMBOLS) {
 			tsize = new_symbol.st_size;
 			toffset = (ut64) new_symbol.st_value;
-			is_sht_null = new_symbol.st_shndx == SHT_NULL;
 #if R_BIN_ELF64
 			if (ELF64_ST_TYPE (new_symbol.st_info) == STT_FUNC) {
 				ut64 code_addr = ppc64v1_opd_deref (eo, toffset);
@@ -5087,9 +5134,9 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 		psym->ordinal = i;
 		psym->in_shdr = false;
 		fill_symbol_bind_and_type (eo, psym, &new_symbol);
-		psym->is_sht_null = is_sht_null;
 		psym->is_vaddr = is_vaddr;
-		psym->is_imported = is_imported;
+		psym->st_shndx = new_symbol.st_shndx;
+		psym->st_value = new_symbol.st_value;
 		if (type == R_BIN_ELF_IMPORT_SYMBOLS && is_imported) {
 			const int limit = eo->limit;
 			if (limit > 0 && ++state->import_count >= limit) {
@@ -5349,6 +5396,34 @@ static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol *sym) {
 	}
 }
 
+#ifndef SHN_X86_64_LCOMMON
+#define SHN_X86_64_LCOMMON 0xff02
+#endif
+
+static inline bool is_common_shndx(ELFOBJ *eo, ut16 shndx) {
+	return shndx == SHN_COMMON || (eo->ehdr.e_machine == EM_X86_64 && shndx == SHN_X86_64_LCOMMON);
+}
+
+static void special_kv_free(HtUPKv *kv) {
+	free (kv->value);
+}
+
+static void set_special_by_ord(ELFOBJ *eo, const RBinElfSymbol *symbol) {
+	const bool common = is_common_shndx (eo, symbol->st_shndx);
+	if (!common && symbol->st_shndx != SHN_ABS) {
+		return;
+	}
+	if (!eo->special_by_ord) {
+		eo->special_by_ord = ht_up_new (NULL, special_kv_free, NULL);
+	}
+	RBinElfSpecialSym *ss = R_NEW (RBinElfSpecialSym);
+	ss->value = symbol->st_value;
+	ss->common = common;
+	if (!eo->special_by_ord || !ht_up_update (eo->special_by_ord, symbol->ordinal, ss)) {
+		free (ss);
+	}
+}
+
 // Fill sym with converted symbol data, returns true on success
 static void fill_symbol(ELFOBJ *eo, RBinElfSymbol *symbol, RBinSymbol *sym) {
 	ut64 paddr, vaddr;
@@ -5358,7 +5433,18 @@ static void fill_symbol(ELFOBJ *eo, RBinElfSymbol *symbol, RBinSymbol *sym) {
 			symbol->is_vaddr = false;
 		}
 	}
-	if (symbol->is_vaddr) {
+	if (symbol->st_shndx == SHN_ABS) {
+		// gABI: no relocation moves an absolute value; only a typed one aliasing the file keeps an offset
+		vaddr = symbol->st_value;
+		paddr = UT64_MAX;
+		const char *type = symbol->type;
+		if (type && (!strcmp (type, R_BIN_TYPE_FUNC_STR) || !strcmp (type, R_BIN_TYPE_OBJECT_STR))) {
+			const ut64 offset = Elf_(v2p) (eo, vaddr);
+			if (offset < eo->size) {
+				paddr = offset;
+			}
+		}
+	} else if (symbol->is_vaddr) {
 		paddr = UT64_MAX;
 		vaddr = symbol->offset;
 	} else {
@@ -5371,10 +5457,13 @@ static void fill_symbol(ELFOBJ *eo, RBinElfSymbol *symbol, RBinSymbol *sym) {
 	sym->forwarder = "NONE";
 	sym->bind = symbol->bind;
 	sym->type = symbol->type;
-	sym->is_imported = symbol->is_imported;
+	sym->is_imported = symbol->st_shndx == SHN_UNDEF;
 	sym->paddr = paddr;
 	sym->vaddr = vaddr;
 	sym->attr.size = symbol->size;
+	if (symbol->st_shndx == SHN_ABS) {
+		sym->attr.flags |= R_BIN_ATTR_ABSOLUTE;
+	}
 	sym->ordinal = symbol->ordinal;
 	if (eo->ehdr.e_machine == EM_ARM) {
 		_set_arm_thumb_bits (eo, sym);
@@ -5443,8 +5532,8 @@ static RVecRBinElfSymbol *parse_gnu_debugdata(ELFOBJ *eo, size_t *ret_size) {
 					ut64 paddr = Elf_(v2p) (eo, vaddr);
 					symbol->is_vaddr = paddr == UT64_MAX;
 					symbol->offset = symbol->is_vaddr? vaddr: paddr;
-					char *key = r_str_newf ("%"PFMT64x":%"PFMT64x":%d:%d:%s:%s:%s",
-						vaddr, symbol->size, symbol->is_imported, symbol->is_sht_null,
+					char *key = r_str_newf ("%"PFMT64x":%"PFMT64x":%d:%s:%s:%s",
+						vaddr, symbol->size, symbol->st_shndx == SHN_UNDEF,
 						symbol->bind, symbol->type, symbol->name);
 					bool duplicate = seen && key && ht_su_find (seen, key, NULL);
 					if (!duplicate) {
@@ -5522,6 +5611,8 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 	free (eo->symbols_by_ord);
 	eo->symbols_by_ord = symbols_by_ord;
 	eo->symbols_by_ord_size = symbols_by_ord? ord_size: 0;
+	ht_up_free (eo->special_by_ord);
+	eo->special_by_ord = NULL;
 	if (ret_ctr > ii->import_ret_ctr + max_ord) {
 		return NULL;
 	}
@@ -5545,7 +5636,7 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 		bool keep_symbol = true;
 		fill_symbol (eo, symbol, isym);
 		const bool can_store = symbols_by_ord && isym->ordinal < ord_size;
-		if (symbol->is_imported) {
+		if (symbol->st_shndx == SHN_UNDEF) {
 			if (limit > 0 && count >= limit) {
 				keep_symbol = false;
 			} else {
@@ -5557,6 +5648,7 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 			const ut32 ord = isym->ordinal;
 			r_bin_symbol_free (symbols_by_ord[ord]);
 			symbols_by_ord[ord] = isym;
+			set_special_by_ord (eo, symbol);
 		} else {
 			r_bin_symbol_free (isym);
 		}
@@ -5687,7 +5779,6 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 		sym.st_other = READ8 (s, j);
 		sym.st_shndx = READ16 (s, j);
 #endif
-		bool is_sht_null = false;
 		bool is_vaddr = false;
 		bool is_imported = sym.st_shndx == STN_UNDEF;
 		ut64 offset = 0;
@@ -5702,7 +5793,6 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 		} else {
 			tsize = sym.st_size;
 			toffset = (ut64)sym.st_value;
-			is_sht_null = sym.st_shndx == SHT_NULL;
 #if R_BIN_ELF64
 			if (ELF64_ST_TYPE (sym.st_info) == STT_FUNC) {
 				ut64 code_addr = ppc64v1_opd_deref (eo, toffset);
@@ -5765,9 +5855,9 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 
 		es->ordinal = k;
 		fill_symbol_bind_and_type (eo, es, &sym);
-		es->is_sht_null = is_sht_null;
 		es->is_vaddr = is_vaddr;
-		es->is_imported = is_imported;
+		es->st_shndx = sym.st_shndx;
+		es->st_value = sym.st_value;
 		(*ret_ctr)++;
 		if (type == R_BIN_ELF_IMPORT_SYMBOLS && is_imported) {
 			(*import_ret_ctr)++;
@@ -5884,7 +5974,7 @@ RVecRBinSymbol *Elf_(load_symbols_vec)(RBinFile *bf, ELFOBJ *eo) {
 	RBinSymbol **sbo = eo->ehdr.e_shnum? NULL: eo->symbols_by_ord;
 	const size_t sbo_size = eo->symbols_by_ord_size;
 	R_VEC_FOREACH (elf_symbols, symbol) {
-		if (symbol->is_sht_null) {
+		if (symbol->st_shndx == SHN_UNDEF) {
 			continue;
 		}
 		if (!eo->load_unnamed && r_bin_name_is_unnamed (symbol->name)) {
@@ -5893,8 +5983,9 @@ RVecRBinSymbol *Elf_(load_symbols_vec)(RBinFile *bf, ELFOBJ *eo) {
 		RBinSymbol sym;
 		fill_symbol (eo, symbol, &sym);
 		r_bin_register_symbol_language (bf, &sym);
-		if (sbo && !symbol->is_imported && symbol->ordinal < sbo_size && !sbo[symbol->ordinal]) {
+		if (sbo && symbol->ordinal < sbo_size && !sbo[symbol->ordinal]) {
 			sbo[symbol->ordinal] = r_bin_symbol_clone (&sym);
+			set_special_by_ord (eo, symbol);
 		}
 		RVecRBinSymbol_push_back (&eo->symbols_cache, &sym);
 	}
@@ -5948,7 +6039,7 @@ RVecRBinSymbol *Elf_(load_plt_symbols_vec)(RBinFile *bf, ELFOBJ *eo) {
 	RVecRBinElfSymbol *elf_imports = eo->g_imports_vec;
 	RBinElfSymbol *is;
 	R_VEC_FOREACH (elf_imports, is) {
-		if (!is->size || is->is_sht_null) {
+		if (!is->size) {
 			continue;
 		}
 		if (!eo->load_unnamed && r_bin_name_is_unnamed (is->name)) {
@@ -6064,6 +6155,8 @@ void Elf_(free)(ELFOBJ* eo) {
 	}
 	ht_uu_free (eo->rel_cache);
 	ht_uu_free (eo->ppc64_plt_stubs);
+	ht_uu_free (eo->x86_pltgot_stubs);
+	ht_up_free (eo->special_by_ord);
 	free (eo->ppc32_thunks);
 	sdb_free (eo->kv);
 	r_list_free (eo->inits);

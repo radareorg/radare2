@@ -223,7 +223,7 @@ static bool symbol_weak(RBinFile *bf, const char *symbol, bool weak) {
 	bool big_endian = Elf_(is_big_endian) (eo);
 	RBinElfSymbol *imp;
 	R_VEC_FOREACH (eo->g_imports_vec, imp) {
-		if (!imp->is_imported || strcmp (imp->name, symbol)) {
+		if (imp->st_shndx != SHN_UNDEF || strcmp (imp->name, symbol)) {
 			continue;
 		}
 		if (di->dt_syment > size - symtab

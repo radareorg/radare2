@@ -10,7 +10,7 @@ typedef struct dwarf_parse_context_t {
 	const RBinDwarfDie *all_dies;
 	const ut64 count;
 	Sdb *sdb;
-	HtUP/*<ut64 offset, DwarfDie *die>*/ *die_map;
+	const RBinDwarfDebugInfo *info;
 	HtUP/*<offset, RBinDwarfLocList*>*/  *locations;
 	RBinDwarfLocLists *loclists; // .debug_loclists, read on demand
 	RBinDwarfLocListForeach loclist_foreach;
@@ -73,38 +73,6 @@ static void variable_free(Variable *var) {
 		free (var->type);
 		free (var);
 	}
-}
-
-/* return -1 if attr isn't found */
-static inline st32 find_attr_idx(const RBinDwarfDie *die, st32 attr_name) {
-	R_RETURN_VAL_IF_FAIL (die, -1);
-	if (!die->attr_values) {
-		return -1;
-	}
-
-	R_VEC_FOREACH_I (die->attr_values, i) {
-		RBinDwarfAttrValue *value = RVecDwarfAttrValue_at(die->attr_values, i);
-		if (value->attr_name == attr_name) {
-			return i;
-		}
-	}
-	return -1;
-}
-
-/* return NULL if attr isn't found */
-static RBinDwarfAttrValue *find_attr(const RBinDwarfDie *die, st32 attr_name) {
-	R_RETURN_VAL_IF_FAIL (die, NULL);
-	if (!die->attr_values) {
-		return NULL;
-	}
-
-	RBinDwarfAttrValue *value;
-	R_VEC_FOREACH (die->attr_values, value) {
-		if (value->attr_name == attr_name) {
-			return value;
-		}
-	}
-	return NULL;
 }
 
 /**
@@ -181,22 +149,14 @@ static inline char *create_type_name_from_offset(RArena *arena, ut64 offset) {
 	return r_arena_push_strf (arena, "type_0x%" PFMT64x, offset);
 }
 
-static RBinDwarfAttrValue *get_die_attr(const RBinDwarfDie *die, int attr_name) {
-	st32 idx = find_attr_idx (die, attr_name);
-	if (idx == -1) {
-		return NULL;
-	}
-	return RVecDwarfAttrValue_at (die->attr_values, idx);
-}
-
 /**
  * @brief Get the DIE name or create unique one from it's offset
  *
  * @param die
  * @return char* DIEs name or NULL if error
  */
-static const char *get_die_name(RArena *arena, const RBinDwarfDie *die) {
-	RBinDwarfAttrValue *av = get_die_attr(die, DW_AT_name);
+static const char *get_die_name(RArena *arena, const RBinDwarfCompUnit *cu, const RBinDwarfDie *die) {
+	RBinDwarfAttrValue *av = r_bin_dwarf_die_find_attr (cu, die, DW_AT_name);
 	if (av && av->kind == DW_AT_KIND_STRING && av->string.content) {
 		return av->string.content;
 	}
@@ -209,14 +169,14 @@ static const char *get_die_name(RArena *arena, const RBinDwarfDie *die) {
  * @param die
  * @return ut64 size in bits or 0 if not found
  */
-static ut64 get_die_size(const RBinDwarfDie *die) {
+static ut64 get_die_size(const RBinDwarfCompUnit *cu, const RBinDwarfDie *die) {
 	ut64 size = 0;
-	RBinDwarfAttrValue *av = get_die_attr (die, DW_AT_byte_size);
+	RBinDwarfAttrValue *av = r_bin_dwarf_die_find_attr (cu, die, DW_AT_byte_size);
 
 	if (av) {
 		size = av->uconstant * CHAR_BIT;
 	} else {
-		av = get_die_attr (die, DW_AT_bit_size);
+		av = r_bin_dwarf_die_find_attr (cu, die, DW_AT_bit_size);
 
 		if (av) {
 			size = av->uconstant;
@@ -246,9 +206,9 @@ static void parse_array_type(Context *ctx, int idx, RStrBuf *strbuf) {
 			const RBinDwarfDie *child_die = &ctx->all_dies[j];
 			// right now we skip non direct descendats of the structure
 			// can be also DW_TAG_suprogram for class methods or tag for templates
-			if (child_depth == 1 && child_die->tag == DW_TAG_subrange_type && child_die->attr_values) {
+			if (child_depth == 1 && child_die->tag == DW_TAG_subrange_type) {
 				RBinDwarfAttrValue *value;
-				R_VEC_FOREACH(child_die->attr_values, value) {
+				R_BIN_DWARF_DIE_FOREACH_ATTR (ctx->unit, child_die, value) {
 					switch (value->attr_name) {
 					case DW_AT_upper_bound:
 						// The last index, so the extent is one more than it.
@@ -276,6 +236,21 @@ static void parse_array_type(Context *ctx, int idx, RStrBuf *strbuf) {
 	}
 }
 
+static const char *type_qualifier(ut16 tag) {
+	switch (tag) {
+	case DW_TAG_const_type:
+		return " const";
+	case DW_TAG_volatile_type:
+		return " volatile";
+	case DW_TAG_restrict_type:
+		return " restrict";
+	case DW_TAG_rvalue_reference_type:
+		return " &&";
+	default:
+		return " &";
+	}
+}
+
 /**
  * @brief Recursively parses type entry of a certain offset into strbuf
  *        saves type size into *size
@@ -291,11 +266,12 @@ static void parse_array_type(Context *ctx, int idx, RStrBuf *strbuf) {
  */
 static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *size, HtUP **visited) {
 	R_RETURN_VAL_IF_FAIL (strbuf, -1);
-	RBinDwarfDie *die = ht_up_find (ctx->die_map, offset, NULL);
+	RBinDwarfCompUnit *unit;
+	RBinDwarfDie *die = r_bin_dwarf_find_die (ctx->info, offset, &unit);
 	if (!die) {
 		return -1;
 	}
-	if (!die->attr_values) {
+	if (!die->attr_count) {
 		// A qualifier with no attribute at all qualifies `void`, which DWARF
 		// spells by omission; returning nothing here left `const void *`
 		// rendered as a bare ` *`.
@@ -331,23 +307,22 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 	}
 	set_u_add (*visited, offset);
 
-	st32 type_idx;
 	st32 tag;
 	const char *name = NULL;
 	// get size of first type DIE that has size
 	if (size && *size == 0) {
-		*size = get_die_size (die);
+		*size = get_die_size (unit, die);
 	}
-	RBinDwarfAttrValue *attr_values = die->attr_values->_start;
+	RBinDwarfAttrValue *type_attr;
 	switch (die->tag) {
 	// this should be recursive search for the type until you find base/user defined type
 	case DW_TAG_pointer_type:
-		type_idx = find_attr_idx (die, DW_AT_type);
-		if (type_idx == -1) {
+		type_attr = r_bin_dwarf_die_find_attr (unit, die, DW_AT_type);
+		if (!type_attr) {
 			r_strbuf_append (strbuf, "void");
 			r_strbuf_append (strbuf, " *");
 		} else {
-			tag = parse_type (ctx, attr_values[type_idx].reference, strbuf, size, visited);
+			tag = parse_type (ctx, type_attr->reference, strbuf, size, visited);
 			if (tag == DW_TAG_subroutine_type) {
 				strbuf_rev_prepend_char (strbuf, "(*)", '(');
 			} else if (tag == DW_TAG_pointer_type) {
@@ -367,17 +342,17 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 	case DW_TAG_enumeration_type:
 	case DW_TAG_union_type:
 	case DW_TAG_class_type:
-		name = get_die_name (ctx->arena, die);
+		name = get_die_name (ctx->arena, unit, die);
 		if (name) {
 			r_strbuf_append (strbuf, name);
 		}
 		break;
 	case DW_TAG_subroutine_type:
-		type_idx = find_attr_idx (die, DW_AT_type);
-		if (type_idx == -1) {
+		type_attr = r_bin_dwarf_die_find_attr (unit, die, DW_AT_type);
+		if (!type_attr) {
 			r_strbuf_append (strbuf, "void");
 		} else {
-			parse_type (ctx, attr_values[type_idx].reference, strbuf, size, visited);
+			parse_type (ctx, type_attr->reference, strbuf, size, visited);
 		}
 		r_strbuf_append (strbuf, " (");
 		if (die->has_children) { // has parameters
@@ -385,46 +360,20 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 		r_strbuf_append (strbuf, ")");
 		break;
 	case DW_TAG_array_type:
-		type_idx = find_attr_idx (die, DW_AT_type);
-		if (type_idx != -1) {
-			parse_type (ctx, attr_values[type_idx].reference, strbuf, size, visited);
-		}
-		parse_array_type (ctx, die - ctx->all_dies, strbuf);
-		break;
 	case DW_TAG_const_type:
-		type_idx = find_attr_idx (die, DW_AT_type);
-		if (type_idx != -1) {
-			parse_type (ctx, attr_values[type_idx].reference, strbuf, size, visited);
-		}
-		r_strbuf_append (strbuf, " const");
-		break;
 	case DW_TAG_volatile_type:
-		type_idx = find_attr_idx (die, DW_AT_type);
-		if (type_idx != -1) {
-			parse_type (ctx, attr_values[type_idx].reference, strbuf, size, visited);
-		}
-		r_strbuf_append (strbuf, " volatile");
-		break;
 	case DW_TAG_restrict_type:
-		type_idx = find_attr_idx (die, DW_AT_type);
-		if (type_idx != -1) {
-			parse_type (ctx, attr_values[type_idx].reference, strbuf, size, visited);
-		}
-		r_strbuf_append (strbuf, " restrict");
-		break;
 	case DW_TAG_rvalue_reference_type:
-		type_idx = find_attr_idx (die, DW_AT_type);
-		if (type_idx != -1) {
-			parse_type (ctx, attr_values[type_idx].reference, strbuf, size, visited);
-		}
-		r_strbuf_append (strbuf, " &&");
-		break;
 	case DW_TAG_reference_type:
-		type_idx = find_attr_idx (die, DW_AT_type);
-		if (type_idx != -1) {
-			parse_type (ctx, attr_values[type_idx].reference, strbuf, size, visited);
+		type_attr = r_bin_dwarf_die_find_attr (unit, die, DW_AT_type);
+		if (type_attr) {
+			parse_type (ctx, type_attr->reference, strbuf, size, visited);
 		}
-		r_strbuf_append (strbuf, " &");
+		if (die->tag == DW_TAG_array_type) {
+			parse_array_type (ctx, die - ctx->all_dies, strbuf);
+		} else {
+			r_strbuf_append (strbuf, type_qualifier (die->tag));
+		}
 		break;
 	default:
 		break;
@@ -448,7 +397,7 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 static RAnalStructMember *parse_struct_member(Context *ctx, ut64 idx, RAnalStructMember *result) {
 	R_RETURN_VAL_IF_FAIL (result, NULL);
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
-	if (!die->attr_values) {
+	if (!die->attr_count) {
 		return NULL;
 	}
 
@@ -460,10 +409,10 @@ static RAnalStructMember *parse_struct_member(Context *ctx, ut64 idx, RAnalStruc
 	r_strbuf_init (&strbuf);
 
 	RBinDwarfAttrValue *value;
-	R_VEC_FOREACH (die->attr_values, value) {
+	R_BIN_DWARF_DIE_FOREACH_ATTR (ctx->unit, die, value) {
 		switch (value->attr_name) {
 		case DW_AT_name:
-			name = get_die_name (ctx->arena, die);
+			name = get_die_name (ctx->arena, ctx->unit, die);
 			if (!name) {
 				goto cleanup;
 			}
@@ -536,7 +485,7 @@ cleanup:
  */
 static RAnalEnumCase *parse_enumerator(Context *ctx, ut64 idx, RAnalEnumCase *result) {
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
-	if (!die->attr_values) {
+	if (!die->attr_count) {
 		return NULL;
 	}
 
@@ -545,10 +494,10 @@ static RAnalEnumCase *parse_enumerator(Context *ctx, ut64 idx, RAnalEnumCase *re
 
 	// Enumerator has DW_AT_name and DW_AT_const_value
 	RBinDwarfAttrValue *value;
-	R_VEC_FOREACH(die->attr_values, value) {
+	R_BIN_DWARF_DIE_FOREACH_ATTR (ctx->unit, die, value) {
 		switch (value->attr_name) {
 		case DW_AT_name:
-			name = get_die_name (ctx->arena, die);
+			name = get_die_name (ctx->arena, ctx->unit, die);
 			if (!name) {
 				goto cleanup;
 			}
@@ -586,7 +535,7 @@ cleanup:
 static void parse_structure_type(Context *ctx, ut64 idx) {
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
 
-	if (find_attr_idx (die, DW_AT_declaration) != -1) {
+	if (r_bin_dwarf_die_find_attr (ctx->unit, die, DW_AT_declaration)) {
 		return;
 	}
 
@@ -602,27 +551,27 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 		return;
 	}
 
-	const char *name = get_die_name (ctx->arena, die);
+	const char *name = get_die_name (ctx->arena, ctx->unit, die);
 	if (!name) {
 		goto cleanup;
 	}
 	base_type->name = strdup (name);
 
 	// if it is definition of previous declaration (TODO Fix, big ugly hotfix addition)
-	st32 spec_attr_idx = find_attr_idx (die, DW_AT_specification);
-	if (spec_attr_idx != -1) {
-		RBinDwarfDie *decl_die = ht_up_find (ctx->die_map, RVecDwarfAttrValue_at(die->attr_values, spec_attr_idx)->reference, NULL);
+	RBinDwarfAttrValue *spec = r_bin_dwarf_die_find_attr (ctx->unit, die, DW_AT_specification);
+	if (spec) {
+		RBinDwarfCompUnit *decl_unit;
+		RBinDwarfDie *decl_die = r_bin_dwarf_find_die (ctx->info, spec->reference, &decl_unit);
 		if (!decl_die) {
 			goto cleanup;
 		}
-		st32 name_attr_idx = find_attr_idx (decl_die, DW_AT_name);
-		if (name_attr_idx != -1) {
+		if (r_bin_dwarf_die_find_attr (decl_unit, decl_die, DW_AT_name)) {
 			free (base_type->name);
-			base_type->name = strdup (get_die_name (ctx->arena, decl_die));
+			base_type->name = strdup (get_die_name (ctx->arena, decl_unit, decl_die));
 		}
 	}
 
-	base_type->size = get_die_size (die);
+	base_type->size = get_die_size (ctx->unit, die);
 
 	RAnalStructMember member = {0};
 	// Parse out all members, can this in someway be extracted to a function?
@@ -674,14 +623,14 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 		return;
 	}
 
-	const char *name = get_die_name (ctx->arena, die);
+	const char *name = get_die_name (ctx->arena, ctx->unit, die);
 	if (!name) {
 		goto cleanup;
 	}
 	base_type->name = strdup (name);
-	base_type->size = get_die_size (die);
+	base_type->size = get_die_size (ctx->unit, die);
 
-	RBinDwarfAttrValue *attr = get_die_attr (die, DW_AT_type);
+	RBinDwarfAttrValue *attr = r_bin_dwarf_die_find_attr (ctx->unit, die, DW_AT_type);
 	if (attr) {
 		RStrBuf strbuf;
 		r_strbuf_init (&strbuf);
@@ -731,7 +680,7 @@ cleanup:
  */
 static void parse_typedef(Context *ctx, ut64 idx) {
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
-	if (!die->attr_values) {
+	if (!die->attr_count) {
 		return;
 	}
 
@@ -742,10 +691,10 @@ static void parse_typedef(Context *ctx, ut64 idx) {
 	r_strbuf_init (&strbuf);
 
 	RBinDwarfAttrValue *value;
-	R_VEC_FOREACH(die->attr_values, value) {
+	R_BIN_DWARF_DIE_FOREACH_ATTR (ctx->unit, die, value) {
 		switch (value->attr_name) {
 		case DW_AT_name:
-			name = get_die_name (ctx->arena, die);
+			name = get_die_name (ctx->arena, ctx->unit, die);
 			if (!name) {
 				goto cleanup;
 			}
@@ -809,7 +758,7 @@ static const char *atomic_type_format(ut64 encoding, ut64 size) {
 
 static void parse_atomic_type(Context *ctx, ut64 idx) {
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
-	if (!die->attr_values) {
+	if (!die->attr_count) {
 		return;
 	}
 
@@ -817,7 +766,7 @@ static void parse_atomic_type(Context *ctx, ut64 idx) {
 	ut64 size = 0;
 	ut64 encoding = 0;
 	RBinDwarfAttrValue *value;
-	R_VEC_FOREACH(die->attr_values, value) {
+	R_BIN_DWARF_DIE_FOREACH_ATTR (ctx->unit, die, value) {
 		switch (value->attr_name) {
 		case DW_AT_name:
 			if (value->kind == DW_AT_KIND_STRING) {
@@ -859,20 +808,20 @@ static void parse_atomic_type(Context *ctx, ut64 idx) {
 	r_anal_base_type_free (base_type);
 }
 
-static const char *get_specification_die_name(const RBinDwarfDie *die) {
-	RBinDwarfAttrValue *attr = get_die_attr(die, DW_AT_linkage_name);
+static const char *get_specification_die_name(const RBinDwarfCompUnit *cu, const RBinDwarfDie *die) {
+	RBinDwarfAttrValue *attr = r_bin_dwarf_die_find_attr (cu, die, DW_AT_linkage_name);
 	if (attr && attr->string.content) {
 		return attr->string.content;
 	}
-	attr = get_die_attr(die, DW_AT_name);
+	attr = r_bin_dwarf_die_find_attr (cu, die, DW_AT_name);
 	if (attr && attr->string.content) {
 		return attr->string.content;
 	}
 	return NULL;
 }
 
-static void get_spec_die_type(Context *ctx, RBinDwarfDie *die, RStrBuf *ret_type) {
-	RBinDwarfAttrValue *attr = get_die_attr(die, DW_AT_type);
+static void get_spec_die_type(Context *ctx, const RBinDwarfCompUnit *cu, const RBinDwarfDie *die, RStrBuf *ret_type) {
+	RBinDwarfAttrValue *attr = r_bin_dwarf_die_find_attr (cu, die, DW_AT_type);
 	if (attr) {
 		ut64 size = 0;
 		parse_type (ctx, attr->reference, ret_type, &size, NULL);
@@ -889,15 +838,16 @@ static bool prefer_linkage_name(const char *lang) {
 }
 
 static void parse_abstract_origin(Context *ctx, ut64 offset, RStrBuf *type, const char **name) {
-	RBinDwarfDie *die = ht_up_find (ctx->die_map, offset, NULL);
-	if (!die || !die->attr_values) {
+	RBinDwarfCompUnit *unit;
+	RBinDwarfDie *die = r_bin_dwarf_find_die (ctx->info, offset, &unit);
+	if (!die) {
 		return;
 	}
 	ut64 size = 0;
 	bool has_linkage_name = false;
 	bool get_linkage_name = prefer_linkage_name (ctx->lang);
 	const RBinDwarfAttrValue *val;
-	R_VEC_FOREACH (die->attr_values, val) {
+	R_BIN_DWARF_DIE_FOREACH_ATTR (unit, die, val) {
 		switch (val->attr_name) {
 		case DW_AT_name:
 			if (!get_linkage_name || !has_linkage_name) {
@@ -1352,6 +1302,12 @@ static bool pick_location(Context *ctx, const RBinDwarfAttrValue *loc, bool at_e
 
 /* TODO move a lot of the parsing here into dwarf.c and do only processing here */
 static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrValue *loc, const RBinDwarfAttrValue *frame_base, bool is_frame_base, bool at_entry) {
+	if (loc->kind == DW_AT_KIND_ADDRESS) {
+		VariableLocation *location = R_NEW0 (VariableLocation);
+		location->kind = LOCATION_GLOBAL;
+		location->address = loc->address;
+		return location;
+	}
 	/* reg5 - val is in register 5
 	fbreg <leb> - offset from frame base
 	regx <leb> - contents is in register X
@@ -1534,6 +1490,7 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 				return NULL;
 			}
 			kind = LOCATION_GLOBAL; // address
+			i += addr_size - 1;
 			break;
 		}
 		case DW_OP_call_frame_cfa:
@@ -1569,14 +1526,14 @@ static bool parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 		int argNumber = 1;
 		const char *name = NULL;
 		// cache frame_base once instead of looking it up per-variable
-		const RBinDwarfAttrValue *frame_base = find_attr (die, DW_AT_frame_base);
+		const RBinDwarfAttrValue *frame_base = r_bin_dwarf_die_find_attr (ctx->unit, die, DW_AT_frame_base);
 		size_t j;
 		for (j = idx; child_depth > 0 && j < ctx->count; j++) {
 			const RBinDwarfDie *child_die = &ctx->all_dies[j];
 			RStrBuf type;
 			r_strbuf_init (&type);
 			if (child_die->tag == DW_TAG_formal_parameter || child_die->tag == DW_TAG_variable) {
-				if (!child_die->attr_values) {
+				if (!child_die->attr_count) {
 					if (child_depth == 1 && child_die->tag == DW_TAG_formal_parameter) {
 						complete = false;
 					}
@@ -1586,7 +1543,7 @@ static bool parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 				name = NULL;
 				has_linkage_name = false;
 				const RBinDwarfAttrValue *val;
-				R_VEC_FOREACH(child_die->attr_values, val) {
+				R_BIN_DWARF_DIE_FOREACH_ATTR (ctx->unit, child_die, val) {
 					switch (val->attr_name) {
 					case DW_AT_name:
 						if ((!get_linkage_name || !has_linkage_name) && val->kind == DW_AT_KIND_STRING) {
@@ -2036,7 +1993,7 @@ static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
  */
 static void parse_function(Context *ctx, ut64 idx) {
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
-	if (!die->attr_values) {
+	if (!die->attr_count) {
 		return;
 	}
 
@@ -2051,12 +2008,12 @@ static void parse_function(Context *ctx, ut64 idx) {
 	size_t address_count = 0;
 	RStrBuf ret_type;
 	r_strbuf_init (&ret_type);
-	if (find_attr_idx (die, DW_AT_declaration) != -1) {
+	if (r_bin_dwarf_die_find_attr (ctx->unit, die, DW_AT_declaration)) {
 		return; /* just declaration skip */
 	}
 	/* For rust binaries prefer regular name not linkage TODO */
 	RBinDwarfAttrValue *val;
-	R_VEC_FOREACH (die->attr_values, val) {
+	R_BIN_DWARF_DIE_FOREACH_ATTR (ctx->unit, die, val) {
 		switch (val->attr_name) {
 		case DW_AT_name:
 			if (!get_linkage_name || !has_linkage_name) {
@@ -2080,8 +2037,9 @@ static void parse_function(Context *ctx, ut64 idx) {
 			RStrBuf origin_type;
 			r_strbuf_init (&origin_type);
 			const char *origin_name = NULL;
-			RBinDwarfDie *origin_die = ht_up_find (ctx->die_map, val->reference, NULL);
-			has_ret_type |= origin_die && !!get_die_attr (origin_die, DW_AT_type);
+			RBinDwarfCompUnit *origin_unit;
+			RBinDwarfDie *origin_die = r_bin_dwarf_find_die (ctx->info, val->reference, &origin_unit);
+			has_ret_type |= origin_die && !!r_bin_dwarf_die_find_attr (origin_unit, origin_die, DW_AT_type);
 			parse_abstract_origin (ctx, val->reference, &origin_type, &origin_name);
 			if (!fcn.name) {
 				fcn.name = origin_name;
@@ -2094,12 +2052,13 @@ static void parse_function(Context *ctx, ut64 idx) {
 		}
 		case DW_AT_specification: /* reference to declaration DIE with more info */
 		{
-			RBinDwarfDie *spec_die = ht_up_find (ctx->die_map, val->reference, NULL);
+			RBinDwarfCompUnit *spec_unit;
+			RBinDwarfDie *spec_die = r_bin_dwarf_find_die (ctx->info, val->reference, &spec_unit);
 			if (spec_die) {
 				/* I assume that if specification has a name, this DIE hasn't */
-				fcn.name = get_specification_die_name (spec_die);
-				has_ret_type |= !!get_die_attr (spec_die, DW_AT_type);
-				get_spec_die_type (ctx, spec_die, &ret_type);
+				fcn.name = get_specification_die_name (spec_unit, spec_die);
+				has_ret_type |= !!r_bin_dwarf_die_find_attr (spec_unit, spec_die, DW_AT_type);
+				get_spec_die_type (ctx, spec_unit, spec_die, &ret_type);
 			}
 			break;
 		}
@@ -2206,10 +2165,8 @@ cleanup:
  * @param die
  * @return char* string literal language represantation for demangling BinDemangle
  */
-static const char *parse_comp_unit_lang(const RBinDwarfDie *die) {
-	R_RETURN_VAL_IF_FAIL (die, NULL);
-
-	RBinDwarfAttrValue *val = get_die_attr(die, DW_AT_language);
+static const char *parse_comp_unit_lang(const RBinDwarfCompUnit *cu, const RBinDwarfDie *die) {
+	RBinDwarfAttrValue *val = r_bin_dwarf_die_find_attr (cu, die, DW_AT_language);
 	const char *lang = "cxx"; // default fallback
 	if (!val) {
 		/* What to do now, it should have  one?, just assume C++ */
@@ -2258,6 +2215,50 @@ static const char *parse_comp_unit_lang(const RBinDwarfDie *die) {
 	return lang;
 }
 
+static void parse_global_variable(Context *ctx, const RBinDwarfDie *die) {
+	const RBinDwarfAttrValue *location_attr = r_bin_dwarf_die_find_attr (ctx->unit, die, DW_AT_location);
+	if (!location_attr || (location_attr->kind != DW_AT_KIND_ADDRESS
+		&& (location_attr->kind != DW_AT_KIND_BLOCK || !location_attr->block.data
+			|| location_attr->block.length != 1 + ctx->anal->config->bits / 8
+			|| location_attr->block.data[0] != DW_OP_addr))) {
+		return;
+	}
+	VariableLocation *location = parse_dwarf_location (ctx, location_attr, NULL, false, false);
+	if (!location || location->kind != LOCATION_GLOBAL) {
+		free (location);
+		return;
+	}
+	const char *name = NULL;
+	RStrBuf type;
+	r_strbuf_init (&type);
+	const RBinDwarfAttrValue *value;
+	R_BIN_DWARF_DIE_FOREACH_ATTR (ctx->unit, die, value) {
+		switch (value->attr_name) {
+		case DW_AT_name:
+			if (value->kind == DW_AT_KIND_STRING) {
+				name = value->string.content;
+			}
+			break;
+		case DW_AT_type:
+			parse_type (ctx, value->reference, &type, NULL, NULL);
+			break;
+		case DW_AT_specification:
+		case DW_AT_abstract_origin:
+			parse_abstract_origin (ctx, value->reference, &type, &name);
+			break;
+		default:
+			break;
+		}
+	}
+	if (name && type.len) {
+		sdb_setf (ctx->sdb, "global", 0, "global.0x%" PFMT64x, location->address);
+		sdb_setf (ctx->sdb, name, 0, "global.0x%" PFMT64x ".name", location->address);
+		sdb_setf (ctx->sdb, r_strbuf_get (&type), 0, "global.0x%" PFMT64x ".type", location->address);
+	}
+	r_strbuf_fini (&type);
+	free (location);
+}
+
 /**
  * @brief Delegates DIE to it's proper parsing method
  *
@@ -2268,7 +2269,7 @@ static void parse_type_entry(Context *ctx, ut64 idx) {
 	R_RETURN_IF_FAIL (ctx);
 
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
-	if (!die->attr_values) {
+	if (!die->attr_count) {
 		return;
 	}
 	switch (die->tag) {
@@ -2289,9 +2290,12 @@ static void parse_type_entry(Context *ctx, ut64 idx) {
 	case DW_TAG_subprogram:
 		parse_function (ctx, idx);
 		break;
+	case DW_TAG_variable:
+		parse_global_variable (ctx, die);
+		break;
 	case DW_TAG_compile_unit:
 		/* used for name demangling */
-		ctx->lang = parse_comp_unit_lang (die);
+		ctx->lang = parse_comp_unit_lang (ctx->unit, die);
 	default:
 		break;
 	}
@@ -2317,7 +2321,7 @@ R_API void r_anal_dwarf_process_info(const RAnal *anal, RAnalDwarfContext *ctx) 
 			.anal = anal,
 			.all_dies = unit->dies->_start,
 			.count = RVecDwarfDie_length(unit->dies),
-			.die_map = info->lookup_table,
+			.info = info,
 			.sdb = dwarf_sdb,
 			.locations = ctx->loc,
 			.loclists = ctx->loclists,
@@ -2340,6 +2344,49 @@ bool filter_sdb_function_names(void *user, const char *k, const char *v) {
 	return !strcmp (v, "fcn");
 }
 
+static bool remove_inferred_global(RFlagItem *flag, void *user) {
+	RAnal *anal = user;
+	if (flag->space && !strcmp (flag->space->name, "globals")) {
+		r_strf_var (key, 64, "global.inferred.0x%" PFMT64x, flag->addr);
+		const char *inferred = sdb_const_get (anal->sdb, key, NULL);
+		const char *type = r_anal_global_get_type (anal, flag->addr);
+		if (inferred && type && !strcmp (inferred, type)) {
+			r_anal_global_del (anal, flag->addr);
+		}
+	}
+	return true;
+}
+
+static bool integrate_dwarf_global(RAnal *anal, ut64 addr, const char *name, const char *type) {
+	RFlagItem *global = r_anal_global_get (anal, addr);
+	char *global_name = global? strdup (global->name): r_str_newf ("global.%s", name);
+	if (!global_name) {
+		return false;
+	}
+	r_name_filter (global_name, -1);
+	RFlagItem *existing = r_flag_get (anal->flb.f, global_name);
+	if (existing && existing->addr != addr) {
+		char *unique_name = r_str_newf ("%s.0x%" PFMT64x, global_name, addr);
+		free (global_name);
+		global_name = unique_name;
+	}
+	bool added = global_name && r_anal_global_add (anal, addr, type, global_name);
+	if (added) {
+		global = r_anal_global_get (anal, addr);
+		r_flag_item_set_realname (anal->flb.f, global, name);
+		ut64 end;
+		if (!r_add_overflow (addr, global->size, &end)) {
+			r_flag_foreach_range (anal->flb.f, addr + 1, end, remove_inferred_global, anal);
+		}
+	}
+	free (global_name);
+	return added;
+}
+
+static bool filter_sdb_global_names(void *user, const char *key, const char *value) {
+	return !strcmp (value, "global") && r_str_startswith (key, "global.0x");
+}
+
 static bool integrate_dwarf_var(RAnal *anal, RFlag *flags, RAnalFunction *fcn, const char *var_name, char *var_data, bool is_arg) {
 	R_RETURN_VAL_IF_FAIL (anal && flags && var_name && var_data, false);
 	char *extra = NULL;
@@ -2353,12 +2400,8 @@ static bool integrate_dwarf_var(RAnal *anal, RFlag *flags, RAnalFunction *fcn, c
 	if (*kind != 'r') {
 		offset = strtol (extra, NULL, 10);
 	}
-	if (*kind == 'g') { /* global, fixed addr TODO add size to variables? */
-		char *global_name = r_str_newf ("global_%s", var_name);
-		r_flag_unset_addr (flags, offset);
-		r_flag_set_next (flags, global_name, offset, 4);
-		free (global_name);
-		return true;
+	if (*kind == 'g') {
+		return integrate_dwarf_global (anal, strtoull (extra, NULL, 10), var_name, type);
 	}
 	if (!fcn) {
 		return false;
@@ -2399,12 +2442,22 @@ static bool integrate_dwarf_var(RAnal *anal, RFlag *flags, RAnalFunction *fcn, c
  * @param dwarf_sdb
  */
 R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwarf_sdb) {
-	R_RETURN_IF_FAIL (anal && dwarf_sdb);
+	R_RETURN_IF_FAIL (anal && flags && dwarf_sdb);
+	SdbListIter *it;
+	SdbKv *kv;
+	SdbList *globals = sdb_foreach_list_filter (dwarf_sdb, filter_sdb_global_names, false);
+	ls_foreach (globals, it, kv) {
+		const char *key = kv->base.key;
+		const char *name = sdb_const_getf (dwarf_sdb, NULL, "%s.name", key);
+		const char *type = sdb_const_getf (dwarf_sdb, NULL, "%s.type", key);
+		if (name && type) {
+			integrate_dwarf_global (anal, r_num_get (NULL, key + 7), name, type);
+		}
+	}
+	ls_free (globals);
 
 	/* get all entries with value == func */
 	SdbList *sdb_list = sdb_foreach_list_filter (dwarf_sdb, filter_sdb_function_names, false);
-	SdbListIter *it;
-	SdbKv *kv;
 	/* iterate all function entries */
 	ls_foreach (sdb_list, it, kv) {
 		char *func_sname = kv->base.key;

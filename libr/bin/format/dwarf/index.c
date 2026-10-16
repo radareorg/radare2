@@ -10,6 +10,16 @@ static bool dwarf_form_is_addrx(ut64 form) {
 	return form == DW_FORM_addrx || (form >= DW_FORM_addrx1 && form <= DW_FORM_addrx4);
 }
 
+static bool dwarf_location_addrx(const RBinDwarfAttrValue *value, ut64 *index) {
+	if (value->attr_name != DW_AT_location || value->attr_form != DW_FORM_exprloc
+		|| value->kind != DW_AT_KIND_BLOCK || value->block.length < 2
+		|| !value->block.data || value->block.data[0] != DW_OP_addrx) {
+		return false;
+	}
+	const ut8 *end = value->block.data + value->block.length;
+	return dwarf_read_uleb_index (value->block.data + 1, end, index) == end;
+}
+
 R_IPI bool dwarf_index_entry_offset(ut64 base, ut64 index, ut8 entry_size, size_t section_size, size_t *entry_offset) {
 	R_RETURN_VAL_IF_FAIL (entry_offset, false);
 	if (!entry_size || index > (UT64_MAX - base) / entry_size) {
@@ -143,14 +153,14 @@ R_IPI bool dwarf_comp_unit_index_bases(const RBinDwarfCompUnit *unit, bool need_
 		return true;
 	}
 	RBinDwarfDie *root = RVecDwarfDie_at (unit->dies, 0);
-	if (!root || !root->attr_values || (root->tag != DW_TAG_compile_unit
+	if (!root || !root->attr_count || (root->tag != DW_TAG_compile_unit
 			&& root->tag != DW_TAG_partial_unit && root->tag != DW_TAG_type_unit
 			&& root->tag != DW_TAG_skeleton_unit)) {
 		return false;
 	}
 	bool bad_loclists_base = false;
 	RBinDwarfAttrValue *value;
-	R_VEC_FOREACH (root->attr_values, value) {
+	R_BIN_DWARF_DIE_FOREACH_ATTR (unit, root, value) {
 		if (value->attr_name == DW_AT_str_offsets_base) {
 			if (*has_str_base || value->attr_form != DW_FORM_sec_offset
 				|| value->kind != DW_AT_KIND_REFERENCE) {
@@ -278,16 +288,14 @@ static DwarfIndexResolution dwarf_index_resolver_init_addr(DwarfIndexResolver *r
 	return resolver->addr_status;
 }
 
-static DwarfIndexResolution dwarf_index_resolver_resolve_die(DwarfIndexResolver *resolver, RBinDwarfDie *die) {
-	R_RETURN_VAL_IF_FAIL (resolver && resolver->bf && resolver->unit && die,
+static DwarfIndexResolution dwarf_index_resolver_resolve_unit(DwarfIndexResolver *resolver) {
+	R_RETURN_VAL_IF_FAIL (resolver && resolver->bf && resolver->unit,
 		DWARF_INDEX_RESOLUTION_MALFORMED);
 	DwarfIndexResolution result = DWARF_INDEX_RESOLUTION_OK;
-	if (!die->attr_values) {
-		return result;
-	}
 	RBinDwarfAttrValue *value;
-	R_VEC_FOREACH (die->attr_values, value) {
+	R_VEC_FOREACH (resolver->unit->attrs, value) {
 		size_t entry_offset;
+		ut64 address_index;
 		if (dwarf_form_is_strx (value->attr_form)
 			&& value->kind == DW_AT_KIND_STRING_INDEX) {
 			DwarfIndexResolution status = resolver->str_status;
@@ -317,8 +325,12 @@ static DwarfIndexResolution dwarf_index_resolver_resolve_die(DwarfIndexResolver 
 			value->string.offset = string_offset;
 			value->string.content = content;
 			value->kind = DW_AT_KIND_STRING;
-		} else if (dwarf_form_is_addrx (value->attr_form)
-			&& value->kind == DW_AT_KIND_ADDRESS_INDEX) {
+		} else if ((dwarf_form_is_addrx (value->attr_form)
+			&& value->kind == DW_AT_KIND_ADDRESS_INDEX)
+			|| dwarf_location_addrx (value, &address_index)) {
+			if (value->kind == DW_AT_KIND_ADDRESS_INDEX) {
+				address_index = value->address;
+			}
 			DwarfIndexResolution status = resolver->addr_status;
 			if (status == DWARF_INDEX_RESOLUTION_MALFORMED) {
 				return status;
@@ -327,7 +339,7 @@ static DwarfIndexResolution dwarf_index_resolver_resolve_die(DwarfIndexResolver 
 				result = status;
 				continue;
 			}
-			if (!dwarf_index_entry_offset (resolver->addr_base, value->address,
+			if (!dwarf_index_entry_offset (resolver->addr_base, address_index,
 					resolver->unit->hdr.address_size, resolver->addr_end,
 					&entry_offset)) {
 				return DWARF_INDEX_RESOLUTION_MALFORMED;
@@ -366,7 +378,7 @@ static DwarfIndexResolution dwarf_index_resolver_resolve_die(DwarfIndexResolver 
 }
 
 R_IPI DwarfIndexResolution dwarf_resolve_comp_unit_indexes(RBinFile *bf, RBinDwarfCompUnit *unit) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->rbin && unit && unit->dies,
+	R_RETURN_VAL_IF_FAIL (bf && bf->rbin && unit && unit->dies && unit->attrs,
 		DWARF_INDEX_RESOLUTION_MALFORMED);
 	DwarfIndexResolver resolver = {
 		.bf = bf,
@@ -378,20 +390,16 @@ R_IPI DwarfIndexResolution dwarf_resolve_comp_unit_indexes(RBinFile *bf, RBinDwa
 	bool need_str = false;
 	bool need_addr = false;
 	bool need_loclists = false;
-	RBinDwarfDie *die;
-	R_VEC_FOREACH (unit->dies, die) {
-		if (!die->attr_values) {
-			continue;
-		}
-		RBinDwarfAttrValue *value;
-		R_VEC_FOREACH (die->attr_values, value) {
-			need_str |= dwarf_form_is_strx (value->attr_form)
-				&& value->kind == DW_AT_KIND_STRING_INDEX;
-			need_addr |= dwarf_form_is_addrx (value->attr_form)
-				&& value->kind == DW_AT_KIND_ADDRESS_INDEX;
-			need_loclists |= value->kind == DW_AT_KIND_LOCLIST_INDEX
-				|| dwarf_attr_is_loclist5 (unit, value);
-		}
+	RBinDwarfAttrValue *value;
+	R_VEC_FOREACH (unit->attrs, value) {
+		ut64 address_index;
+		need_str |= dwarf_form_is_strx (value->attr_form)
+			&& value->kind == DW_AT_KIND_STRING_INDEX;
+		need_addr |= (dwarf_form_is_addrx (value->attr_form)
+			&& value->kind == DW_AT_KIND_ADDRESS_INDEX)
+			|| dwarf_location_addrx (value, &address_index);
+		need_loclists |= value->kind == DW_AT_KIND_LOCLIST_INDEX
+			|| dwarf_attr_is_loclist5 (unit, value);
 	}
 	if (!need_str && !need_addr && !need_loclists) {
 		return DWARF_INDEX_RESOLUTION_OK;
@@ -413,15 +421,5 @@ R_IPI DwarfIndexResolution dwarf_resolve_comp_unit_indexes(RBinFile *bf, RBinDwa
 			== DWARF_INDEX_RESOLUTION_MALFORMED) {
 		return DWARF_INDEX_RESOLUTION_MALFORMED;
 	}
-	DwarfIndexResolution result = DWARF_INDEX_RESOLUTION_OK;
-	R_VEC_FOREACH (unit->dies, die) {
-		DwarfIndexResolution status = dwarf_index_resolver_resolve_die (&resolver, die);
-		if (status == DWARF_INDEX_RESOLUTION_MALFORMED) {
-			return status;
-		}
-		if (status == DWARF_INDEX_RESOLUTION_UNAVAILABLE) {
-			result = status;
-		}
-	}
-	return result;
+	return dwarf_index_resolver_resolve_unit (&resolver);
 }

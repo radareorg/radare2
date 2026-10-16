@@ -823,3 +823,52 @@ EXPECT=<<EOF2
 EOF2
 EXPECT_ERR=
 RUN
+
+NAME=mc ext2 fast symlink with zero length
+FILE=malloc://0x20400
+CMDS=<<EOF2
+wx 01 @ 0x414
+wx 10 @ 0x428
+wx 53ef @ 0x438
+wx 01 @ 0x44c
+wx 80 @ 0x458
+wx 02 @ 0x460
+wx 03 @ 0x808
+wx ed41 @ 0xc80
+wx 04 @ 0xc85
+wx 05 @ 0xca8
+wx a48100000f @ 0x1180
+wx 06 @ 0x11a8
+wx ffa1 @ 0x1200
+wx 09 @ 0x1204
+wx 68656c6c6f2e747874 @ 0x1228
+wx 02 @ 0x1400
+wx 0c0001022e @ 0x1404
+wx 02 @ 0x140c
+wx 0c0002022e2e00000c @ 0x1410
+wx 1400090168656c6c6f2e747874 @ 0x141c
+wx 0d @ 0x142c
+wx d40304076c696e6b @ 0x1430
+w hello from ext2 @ 0x1800
+m /mnt ext2 0
+mc /mnt/link
+wx 00 @ 0x1204
+mc /mnt/link
+wx 414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141 @ 0x1228
+mc /mnt/link
+md /mnt
+mc /mnt/hello.txt
+EOF2
+EXPECT=<<EOF2
+hello from ext2
+d .
+d ..
+f hello.txt
+f link
+hello from ext2
+EOF2
+EXPECT_ERR=<<EOF2
+ERROR: Cannot open /mnt/link
+ERROR: Cannot open /mnt/link
+EOF2
+RUN

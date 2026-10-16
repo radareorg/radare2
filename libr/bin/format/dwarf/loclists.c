@@ -158,15 +158,8 @@ static bool loclist_foreach(const LoclistCtx *ctx, const ut8 *buf, const ut8 *li
 
 static ut64 comp_unit_low_pc(const RBinDwarfCompUnit *unit) {
 	RBinDwarfDie *root = RVecDwarfDie_at (unit->dies, 0);
-	if (root && root->attr_values) {
-		RBinDwarfAttrValue *value;
-		R_VEC_FOREACH (root->attr_values, value) {
-			if (value->attr_name == DW_AT_low_pc && value->kind == DW_AT_KIND_ADDRESS) {
-				return value->address;
-			}
-		}
-	}
-	return 0;
+	RBinDwarfAttrValue *low_pc = r_bin_dwarf_die_find_attr (unit, root, DW_AT_low_pc);
+	return low_pc && low_pc->kind == DW_AT_KIND_ADDRESS? low_pc->address: 0;
 }
 
 struct r_bin_dwarf_loclists_t {

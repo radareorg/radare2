@@ -58,7 +58,7 @@ e asm.arch=x86
 e anal.arch=x86
 e asm.bits=64
 e anal.cc=amd64
-wx 4889f8e8080000004889f8c390909090c3
+wx 4889f8e8080000004889f8c39090909031ffc3
 af @ 0
 afc amd64 @ 0
 af @ 0x10
@@ -182,9 +182,9 @@ EXPECT=<<EOF
 0x000048f4 0x00004901 00:0000 13 j 0x000045b1 f 0x00004901
 0x00004901 0x0000491a 00:0000 25 j 0x000045ba f 0x0000491a
 
-|           0x000039c2      mov dword [0x0021f558], 2                  ; [0x21f558:4]=1
+|           0x000039c2      mov dword [global.status.0x21f558], 2      ; [0x21f558:4]=1
 |           0x000039cc      call fcn.00015960
-|           0x000039d1      mov byte [0x00220618], 1                   ; [0x220618:1]=0
+|           0x000039d1      mov byte [global.0x220618], 1              ; [0x220618:1]=0
 EOF
 RUN
 
@@ -1527,10 +1527,11 @@ EXPECT=<<EOF
 |   ,=====< 0x00011414      jne 0x11424
 |   |||||   0x00011416      lea rbx, [rax + 4]
 |   |||||   0x0001141a      mov rax, qword [rip + 0xdeaf]              ; reloc.program_invocation_short_name
-|   |||||                                                              ; [0x1f2d0:8]=0x221f0
+|   |||||                                                              ; [0x1f2d0:8]=0x21b98
 |   |||||   0x00011421      mov qword [rax], rbx
 |   |||||   ; CODE XREFS from fcn.00011390 @ 0x113d0(x), 0x113e0(x), 0x113f4(x), 0x11414(x)
-|   ````--> 0x00011424      mov rax, qword [rip + 0xde3d]              ; [0x1f268:8]=0x21680
+|   ````--> 0x00011424      mov rax, qword [rip + 0xde3d]              ; global.0x1f268
+|       |                                                              ; [0x1f268:8]=0x21680
 EOF
 RUN
 
@@ -1561,13 +1562,16 @@ EXPECT=<<EOF
 |      ||   0x00003cc3      call sym.imp.isatty                        ; int isatty(int fd)
 |      ||   0x00003cc8      test eax, eax
 |     ,===< 0x00003cca      je 0x4c2e
-|     |||   0x00003cd0      mov dword [rip + 0x1d626], 2               ; [0x21300:4]=0
-|     |||   0x00003cda      mov byte [rip + 0x1d33f], 1                ; [0x21020:1]=0
+|     |||   0x00003cd0      mov dword [rip + 0x1d626], 2               ; global.0x21300
+|     |||                                                              ; [0x21300:4]=0
+|     |||   0x00003cda      mov byte [rip + 0x1d33f], 1                ; global.0x21020
+|     |||                                                              ; [0x21020:1]=0
 |    ,====< 0x00003ce1      jmp 0x3cf9
 |    ||||   ; CODE XREF from main @ 0x3cb2(x)
 |    ||`--> 0x00003ce3      mov esi, 5                                 ; int64_t arg2
 |    || |   0x00003ce8      xor edi, edi                               ; int64_t arg1
-|    || |   0x00003cea      mov dword [rip + 0x1d60c], 0               ; [0x21300:4]=0
+|    || |   0x00003cea      mov dword [rip + 0x1d60c], 0               ; global.0x21300
+|    || |                                                              ; [0x21300:4]=0
 |    || |   0x00003cf4      call fcn.00012740
 |    || |   ; CODE XREFS from main @ 0x3ce1(x), 0x4602(x), 0x4c38(x)
 |    `----> 0x00003cf9      lea rdi, [rip + 0x14fb4]                   ; str.QUOTING_STYLE
@@ -1603,13 +1607,16 @@ EXPECT=<<EOF
 |    | |    0x00003cc3      call sym.imp.isatty                        ; int isatty(int fd)
 |    | |    0x00003cc8      test eax, eax
 |  ,======< 0x00003cca      je 0x4c2e
-|  | | |    0x00003cd0      mov dword [rip + 0x1d626], 2               ; [0x21300:4]=0
-|  | | |    0x00003cda      mov byte [rip + 0x1d33f], 1                ; [0x21020:1]=0
+|  | | |    0x00003cd0      mov dword [rip + 0x1d626], 2               ; global.0x21300
+|  | | |                                                               ; [0x21300:4]=0
+|  | | |    0x00003cda      mov byte [rip + 0x1d33f], 1                ; global.0x21020
+|  | | |                                                               ; [0x21020:1]=0
 | ========< 0x00003ce1      jmp 0x3cf9
 |  | | |    ; CODE XREF from main @ 0x3cb2(x)
 |  | `----> 0x00003ce3      mov esi, 5                                 ; int64_t arg2
 |  |   |    0x00003ce8      xor edi, edi                               ; int64_t arg1
-|  |   |    0x00003cea      mov dword [rip + 0x1d60c], 0               ; [0x21300:4]=0
+|  |   |    0x00003cea      mov dword [rip + 0x1d60c], 0               ; global.0x21300
+|  |   |                                                               ; [0x21300:4]=0
 |  |   |    0x00003cf4      call fcn.00012740
 |  |   |    ; CODE XREFS from main @ 0x3ce1(x), 0x4602(x), 0x4c38(x)
 | --------> 0x00003cf9      lea rdi, [rip + 0x14fb4]                   ; str.QUOTING_STYLE
@@ -1644,13 +1651,16 @@ EXPECT=<<EOF
 |    | |    0x00003cc3      call sym.imp.isatty                        ; int isatty(int fd)
 |    | |    0x00003cc8      test eax, eax
 |  ,======< 0x00003cca      je 0x4c2e
-|  | | |    0x00003cd0      mov dword [rip + 0x1d626], 2               ; [0x21300:4]=0
-|  | | |    0x00003cda      mov byte [rip + 0x1d33f], 1                ; [0x21020:1]=0
+|  | | |    0x00003cd0      mov dword [rip + 0x1d626], 2               ; global.0x21300
+|  | | |                                                               ; [0x21300:4]=0
+|  | | |    0x00003cda      mov byte [rip + 0x1d33f], 1                ; global.0x21020
+|  | | |                                                               ; [0x21020:1]=0
 | ========< 0x00003ce1      jmp 0x3cf9
 |  | | |    ; CODE XREF from main @ 0x3cb2(x)
 |  | `----> 0x00003ce3      mov esi, 5                                 ; int64_t arg2
 |  |   |    0x00003ce8      xor edi, edi                               ; int64_t arg1
-|  |   |    0x00003cea      mov dword [rip + 0x1d60c], 0               ; [0x21300:4]=0
+|  |   |    0x00003cea      mov dword [rip + 0x1d60c], 0               ; global.0x21300
+|  |   |                                                               ; [0x21300:4]=0
 |  |   |    0x00003cf4      call fcn.00012740
 |  |   |    ; CODE XREFS from main @ 0x3ce1(x), 0x4602(x), 0x4c38(x)
 | --------> 0x00003cf9      lea rdi, [rip + 0x14fb4]                   ; str.QUOTING_STYLE
@@ -1791,7 +1801,7 @@ RUN
 
 NAME=No function
 FILE=malloc://0x50
-CMDS=aftm
+CMDS=aft
 EXPECT=<<EOF
 EOF
 RUN
@@ -1859,7 +1869,7 @@ tk func.CRTStartup.cc=THE_CC_THAT_NEVER_EXISTED
 tk func.CRTStartup.ret=eax
 aei
 aeim
-aftm
+aft
 EOF
 EXPECT=<<EOF
 1

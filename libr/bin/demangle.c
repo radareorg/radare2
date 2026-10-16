@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2024 - pancake */
+/* radare - LGPL - Copyright 2011-2026 - pancake */
 
 #include <r_bin.h>
 #include "i/private.h"
@@ -24,15 +24,15 @@ static char *demangle_trunc(RBinFile *bf, char *s) {
 	return s;
 }
 
-R_API void r_bin_demangle_list(RBin *bin) {
-	if (!bin) {
-		return;
-	}
+R_API char *r_bin_demangle_list(RBin *bin) {
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	RBinDemanglePlugin *plugin;
 	RListIter *iter;
+	RStrBuf *sb = r_strbuf_new ("");
 	r_list_foreach (bin->demangle_plugins, iter, plugin) {
-		bin->cb_printf ("%s\n", plugin->meta.name);
+		r_strbuf_appendf (sb, "%s\n", plugin->meta.name);
 	}
+	return r_strbuf_drain (sb);
 }
 
 static char *demangle_legacy_plugin(RBin *bin, const char *name, const char *str) {

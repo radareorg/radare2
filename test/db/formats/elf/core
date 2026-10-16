@@ -35,9 +35,8 @@ rflags = 0x00010246
 rsp = 0x7ffe70e05950
 --
             ;-- segment.LOAD14:
-        ,=< 0x7ffe70f68000      7f45           jg 0x7ffe70f68047       ; [15] -r-x segment size 8192 named LOAD14
+        ,=< 0x7ffe70f68000      7f45           jg 0x7ffe70f68047
 
-            ; [15] -r-x segment size 8192 named LOAD14
             ;-- segment.LOAD14:
         ,=< 0x7ffe70f68000      7f45           jg 0x7ffe70f68047
 EOF
@@ -45,9 +44,8 @@ RUN
 
 NAME=ELF: core sections with reg name
 FILE=bins/elf/analysis/core.1159
-BROKEN=1
-CMDS=iS~?reg;iS
+CMDS=iSj
 EXPECT=<<EOF
-6
+[{"name":".reg/1159","size":216,"vsize":216,"perm":"-r--","flags":0,"paddr":1148,"vaddr":1148},{"name":".reg","size":216,"vsize":216,"perm":"-r--","flags":0,"paddr":1148,"vaddr":1148},{"name":".reg2/1159","size":512,"vsize":512,"perm":"-r--","flags":0,"paddr":2460,"vaddr":2460},{"name":".reg2","size":512,"vsize":512,"perm":"-r--","flags":0,"paddr":2460,"vaddr":2460},{"name":".reg-xstate/1159","size":832,"vsize":832,"perm":"-r--","flags":0,"paddr":2992,"vaddr":2992},{"name":".reg-xstate","size":832,"vsize":832,"perm":"-r--","flags":0,"paddr":2992,"vaddr":2992}]
 EOF
 RUN

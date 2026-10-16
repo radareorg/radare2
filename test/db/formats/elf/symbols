@@ -283,3 +283,80 @@ nth vaddr      bind   type   lib name
             0x080485ee      6690           nop
 EOF
 RUN
+
+NAME=SHN_ABS symbols keep their value on x86-64 executables
+FILE=bins/elf/ifunc_rel64
+CMDS=is~LC_CTYPE_used
+EXPECT=<<EOF
+1043 ---------- 0x00000001 GLOBAL NOTYPE 0         _nl_current_LC_CTYPE_used
+EOF
+RUN
+
+NAME=SHN_ABS symbols keep their value on arm executables
+FILE=bins/elf/arm1.bin
+CMDS=is~LC_CTYPE_used
+EXPECT=<<EOF
+2240 ---------- 0x00000001 GLOBAL NOTYPE 0         _nl_current_LC_CTYPE_used
+EOF
+RUN
+
+NAME=SHN_ABS odd constants are not thumb addresses
+FILE=bins/elf/analysis/example.elf
+CMDS=is~ONMODE_Msk
+EXPECT=<<EOF
+21  ---------- 0x00000003 LOCAL  NOTYPE 0        NRF_POWER_RAMONx_RAMxON_ONMODE_Msk
+EOF
+RUN
+
+NAME=SHN_ABS constants keep their value under a rebase
+FILE=bins/elf/ifunc_rel64
+ARGS=-B 0x10000000
+CMDS=is~LC_CTYPE_used
+EXPECT=<<EOF
+1043 ---------- 0x00000001 GLOBAL NOTYPE 0         _nl_current_LC_CTYPE_used
+EOF
+RUN
+
+NAME=SHN_ABS values inside a segment are not moved by a rebase
+FILE=bins/elf/arm1.bin
+ARGS=-B 0x10000000
+CMDS=is~__exidx_start
+EXPECT=<<EOF
+2285 ---------- 0x0007a9d4 GLOBAL NOTYPE 0         __exidx_start
+EOF
+RUN
+
+NAME=SHN_ABS function in a mapped segment keeps its value
+FILE=bins/elf/abs_func_mapped
+CMDS=is~absfn
+EXPECT=<<EOF
+5   0x00001010 0x00401010 GLOBAL FUNC   4        absfn
+EOF
+RUN
+
+NAME=SHN_ABS function in a mapped segment at its file offset in physical mode
+FILE=bins/elf/abs_func_mapped
+ARGS=-e io.va=false
+CMDS=is~absfn
+EXPECT=<<EOF
+5   0x00001010 0x00001010 GLOBAL FUNC   4        absfn
+EOF
+RUN
+
+NAME=SHN_ABS function in a mapped segment is not moved by a rebase
+FILE=bins/elf/abs_func_mapped
+ARGS=-B 0x10000000
+CMDS=is~absfn
+EXPECT=<<EOF
+5   0x00001010 0x00401010 GLOBAL FUNC   4        absfn
+EOF
+RUN
+
+NAME=SHN_ABS function in a mapped segment is analysed
+FILE=bins/elf/abs_func_mapped
+CMDS=aa;afl
+EXPECT=<<EOF
+0x00401000    1     16 entry0
+0x00401010    1      4 sym.absfn
+EOF
+RUN

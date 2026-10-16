@@ -143,7 +143,7 @@ nth vaddr      bind   type   lib name
 3   ---------- GLOBAL FUNC       __libc_start_main
 4   ---------- WEAK   NOTYPE     __gmon_start__
 5   ---------- WEAK   NOTYPE     _ITM_registerTMCloneTable
-6   ---------- WEAK   FUNC       __cxa_finalize
+6   0x00001040 WEAK   FUNC       __cxa_finalize
 EOF
 RUN
 

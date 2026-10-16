@@ -1,0 +1,28 @@
+NAME=Darwin NSString records canonical offsets for each target width
+FILE=bins/mach0/mac-ls
+ARGS=-b 64
+CMDS=<<EOF
+tk struct.NSString.p0
+tk struct.NSString.p1
+tk struct.NSString.str
+tk struct.NSString.len
+-b32
+tk struct.NSString.p0
+tk struct.NSString.p1
+tk struct.NSString.str
+tk struct.NSString.len
+-b64
+tk struct.NSString.len
+EOF
+EXPECT=<<EOF
+void *,0,0
+size_t,8,0
+char *,16,0
+int,24,0
+void *,0,0
+size_t,4,0
+char *,8,0
+int,12,0
+int,24,0
+EOF
+RUN

@@ -297,6 +297,20 @@ CMDS=!printf 414141 | rax2 -s
 EXPECT=AAA
 RUN
 
+NAME=rax2 converts every line read from stdin
+FILE=-
+CMDS=<<EOF
+!printf '10\n0x20\n30\n' | rax2 -
+!printf '1f\r\n' | rax2 -
+EOF
+EXPECT=<<EOF
+0xa
+32
+0x1e
+Fx3f800000
+EOF
+RUN
+
 NAME=rax2 -s with C escapes on stdin
 FILE=-
 CMDS=!printf '%s' '\x41\x42' | rax2 -s
@@ -559,6 +573,28 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rax2 flags with negative numbers
+FILE=-
+CMDS=<<EOF
+!rax2 -d -1
+!rax2 -k -0x10
+!rax2 -f -1.5
+!rax2 -1.5g
+!rax2 -101d
+!rax2 -r -1 | grep ^int64
+!rax2 -j -1 | grep -o '"int64":"[^"]*"'
+EOF
+EXPECT=<<EOF
+-1
+0xfffffffffffffff0
+-1.5
+Gxbfc0
+-5
+int64   -1
+"int64":"-1"
+EOF
+RUN
+
 NAME=rax2 -X 0
 FILE=-
 CMDS=!rax2 -X 0
@@ -661,7 +697,24 @@ NAME=rax2 -j 0x1234
 FILE=-
 CMDS=!rax2 -j 0x1234
 EXPECT=<<EOF
-{"int32":"4660","uint32":"4660","int64":"4660","uint64":"4660","hex":"0x00001234","octal":"011064","unit":"4.6K","segment":"0000:0234","fvalue":"4660.0","float":"0.000000f","bf16":"Gx0000","double":"0.000000","binary":"0b0001001000110100","base36":"0_3lg","ternary":"0t20101121"}
+{"int32":"4660","uint32":"4660","int64":"4660","uint64":"4660","hex":"0x00001234","octal":"011064","unit":"4.6K","segment":"0000:1234","fvalue":"4660.0","float":"0.000000f","bf16":"Gx0000","double":"0.000000","binary":"0b0001001000110100","base36":"0_3lg","ternary":"0t20101121"}
+EOF
+RUN
+
+NAME=rax2 -r segment
+FILE=-
+CMDS=!rax2 -r 0xfffff 0x12345 | grep segment
+EXPECT=<<EOF
+segment f000:ffff
+segment 1000:2345
+EOF
+RUN
+
+NAME=rax2 -j segment
+FILE=-
+CMDS=!rax2 -j 0xfffff | grep -o '"segment":"[^"]*"'
+EXPECT=<<EOF
+"segment":"f000:ffff"
 EOF
 RUN
 

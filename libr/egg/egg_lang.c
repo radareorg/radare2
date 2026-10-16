@@ -996,9 +996,14 @@ static int parsedatachar(REgg *egg, char c) {
 	} else if (egg->lang.inlinectr == 0) {
 		/* capture value between parenthesis foo@data (NNN) { ... } */
 		if (c == ')') {
+			egg->lang.dstval[egg->lang.ndstval] = '\0';
 			egg->lang.stackframe = atoi (egg->lang.dstval);
 			egg->lang.ndstval = 0;
 		} else {
+			if (egg->lang.ndstval + 1 >= 4096) {
+				R_LOG_ERROR ("data size too large");
+				return -1;
+			}
 			egg->lang.dstval[egg->lang.ndstval++] = c;
 		}
 		return 0;

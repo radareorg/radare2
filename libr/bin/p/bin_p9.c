@@ -256,7 +256,12 @@ static void sym_fini_vec(Sym *s) {
 }
 
 R_VEC_TYPE_WITH_FINI(SymVec, Sym, sym_fini_vec)
-R_VEC_TYPE(StrVec, char *)
+
+static void str_fini_vec(char **name) {
+	free (*name);
+}
+
+R_VEC_TYPE_WITH_FINI(StrVec, char *, str_fini_vec)
 
 static st64 sym_read(RBinFile *bf, Sym *sym, const ut64 offset) {
 	st64 size = 0;
@@ -381,6 +386,7 @@ static bool symbols_vec(RBinFile *bf) {
 
 	ut64 offset = 0;
 	while (offset < o->header.syms) {
+		sym_fini_vec (&sym);
 		const st64 size = sym_read (bf, &sym, offset);
 		if (size == -1) {
 			goto error;
@@ -406,7 +412,9 @@ static bool symbols_vec(RBinFile *bf) {
 
 			char **name_ptr = StrVec_at (names, sym.value - 1);
 			if (name_ptr) {
+				free (*name_ptr);
 				*name_ptr = sym.name;
+				sym.name = NULL;
 			}
 			continue;
 		}
@@ -499,7 +507,8 @@ static bool symbols_vec(RBinFile *bf) {
 		}
 
 		RBinSymbol *bin_sym = RVecRBinSymbol_emplace_back (ret);
-		bin_sym->name = r_bin_name_new (sym.name);
+		bin_sym->name = r_bin_name_new_from (sym.name);
+		sym.name = NULL;
 		bin_sym->paddr = sym.value - baddr (bf);
 		// for kernels the header is not mapped
 		if (o->is_kernel) {
@@ -563,6 +572,7 @@ static bool symbols_vec(RBinFile *bf) {
 		}
 	}
 
+	sym_fini_vec (&sym);
 	ht_up_free (histories);
 	StrVec_free (names);
 	r_list_free (all_histories);

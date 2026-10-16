@@ -413,7 +413,9 @@ static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) 
 	RBinLanguage lang_type = r_bin_demangle_type (lang);
 	if (lang_type == R_BIN_LANG_NONE) {
 		if (!pj) {
-			r_bin_demangle_list (core->bin);
+			char *s = r_bin_demangle_list (core->bin);
+			r_cons_print (core->cons, s);
+			free (s);
 		}
 		r_core_return_value (core, 1);
 	}
@@ -2171,8 +2173,10 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 		int min = r_config_get_i (core->config, "bin.str.min");
 		if (bf) {
 			bf->strmode = mode;
-			RVecRBinString *res = r_bin_dump_strings (bf, min, 2);
-			RVecRBinString_free (res);
+			RStrBuf output = {0};
+			r_bin_dump_strings (bf, min, 2, &output);
+			r_cons_write (core->cons, r_strbuf_get (&output), r_strbuf_length (&output));
+			r_strbuf_fini (&output);
 		}
 	} else if (raw) {
 		bin_raw_strings (core, pj, mode, va, skip, count, type_filter);
@@ -3153,7 +3157,12 @@ static void cmd_iddlf(RCore *core) {
 		}
 		ut64 addr = sdb_num_getf (dwarf_sdb, NULL, "fcn.%s.addr", key);
 		int size = idd_symbol_size (core, name);
-		r_cons_printf (core->cons, "f sym.%s %d @ 0x%" PFMT64x "\n", name, size, addr);
+		bool valid_name = r_name_check (name);
+		char *flagname = valid_name? NULL: r_name_filter_dup (name);
+		if (valid_name || flagname) {
+			r_cons_printf (core->cons, "f sym.%s %d @ 0x%" PFMT64x "\n", flagname? flagname: name, size, addr);
+		}
+		free (flagname);
 	}
 	ls_free (l);
 }
@@ -4128,11 +4137,11 @@ static int cmd_info(void *data, const char *input) {
 		} else if (input[1] == 'j') {
 			RTable *t = r_core_table_new (core, "archs");
 			pj_o (pj); // weird
-			r_bin_list_archs (core->bin, pj, t, 'j');
+			print_owned (core, r_bin_list_archs (core->bin, pj, t, 'j'));
 			pj_end (pj);
 		} else {
 			RTable *t = r_core_table_new (core, "archs");
-			r_bin_list_archs (core->bin, NULL, t, 1);
+			print_owned (core, r_bin_list_archs (core->bin, NULL, t, 1));
 		}
 		break;
 	case 'e': // "ie"
@@ -4195,7 +4204,7 @@ static int cmd_info(void *data, const char *input) {
 			}
 			r_core_list_bin_plugin (core, plugin_name, pj, json);
 		} else {
-			r_bin_list (core->bin, pj, json);
+			r_core_list_bin (core, pj, json);
 		}
 		break;
 	}

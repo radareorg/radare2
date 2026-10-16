@@ -597,7 +597,12 @@ grub_ext2_read_symlink(grub_fshelp_node_t node) {
 		}
 	}
 
-	symlink = grub_malloc (grub_le_to_cpu32 (diro->inode.size) + 1);
+	grub_uint32_t size = grub_le_to_cpu32 (diro->inode.size);
+	if (size > EXT2_BLOCK_SIZE (diro->data)) {
+		grub_error (GRUB_ERR_BAD_FS, "symlink too long");
+		return 0;
+	}
+	symlink = grub_malloc (size + 1);
 	if (!symlink) {
 		return 0;
 	}
@@ -605,19 +610,17 @@ grub_ext2_read_symlink(grub_fshelp_node_t node) {
 	/* If the filesize of the symlink is bigger than
 	60 the symlink is stored in a separate block,
 	otherwise it is stored in the inode.  */
-	if (grub_le_to_cpu32 (diro->inode.size) <= 60) {
-		grub_strncpy (symlink,
-			diro->inode.symlink,
-			grub_le_to_cpu32 (diro->inode.size));
+	if (size <= 60) {
+		grub_memcpy (symlink, diro->inode.symlink, size);
 	} else {
-		grub_ext2_read_file (diro, 0, 0, 0, 0, grub_le_to_cpu32 (diro->inode.size), symlink);
+		grub_ext2_read_file (diro, 0, 0, 0, 0, size, symlink);
 		if (grub_errno) {
 			grub_free (symlink);
 			return 0;
 		}
 	}
 
-	symlink[grub_le_to_cpu32 (diro->inode.size)] = '\0';
+	symlink[size] = '\0';
 	return symlink;
 }
 

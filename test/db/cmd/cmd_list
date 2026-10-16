@@ -44,3 +44,36 @@ x86
 z80
 EOF
 RUN
+
+NAME=Lbq lists names from every bin plugin category
+FILE=-
+CMDS=<<EOF
+Lbq~^elf
+Lbq~^xtr.pemixed
+Lbq~^ldr.linux
+Lbq~^msvc
+EOF
+EXPECT=<<EOF
+elf64
+elf
+xtr.pemixed
+ldr.linux
+msvc
+EOF
+RUN
+
+NAME=Bin plugin lists use shared JSON metadata in every category
+FILE=-
+CMDS=<<EOF
+Lbj~{bin[0]}
+iLj~{xtr[0]}
+Lbj~{ldr}
+iLj~{dem[0]}
+EOF
+EXPECT=<<EOF
+{"name":"zimg","desc":"Compressed Linux Kernel Image","author":"ninjahacker","license":"LGPL-3.0-only"}
+{"name":"xtr.dyldcache","desc":"Extract binaries from Apple Dynamic Library Shared Cache","author":"pancake,nibble","license":"LGPL-3.0-only"}
+[{"name":"ldr.linux","desc":"Linux Kernel loader","author":"pancake","license":"MIT"}]
+{"name":"c++","desc":"C++ demangler","license":"GPL-2.0-or-later"}
+EOF
+RUN

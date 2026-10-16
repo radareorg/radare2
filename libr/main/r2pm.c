@@ -15,6 +15,7 @@
 #define R2PM_BUNINSTALL "\nR2PM_BUNINSTALL() {\n"
 #define R2PM_BUNINSTALL_WINDOWS "\nR2PM_BUNINSTALL_WINDOWS() {\n"
 #define R2PM_UNINSTALL_R2 "\nR2PM_UNINSTALL_R2() {\n"
+#define R2PM_VERSION_MAP "\nR2PM_VERSION_MAP"
 
 #if defined(__ANDROID__)
 #define R2PM_OS "android"
@@ -253,10 +254,9 @@ static char *r2pm_pkgdir(void) {
 }
 
 typedef enum {
-	TT_TEXTLINE,
-	TT_TEXTLINE_LIST,
+	TT_VALUE,
+	TT_WORDLIST,
 	TT_CODEBLOCK,
-	TT_ENDQUOTE,
 } R2pmTokenType;
 
 static void r2pm_register(const char *pkg, bool g, bool binary) {
@@ -310,6 +310,21 @@ static char *r2pm_pkgpath(const char *file) {
 	return NULL;
 }
 
+static char *r2pm_parse_block(const char *begin, const char *delimiter, size_t delimiter_length) {
+	const char *line = begin;
+	while (line) {
+		const char *next = strchr (line, '\n');
+		size_t length = next? (size_t)(next - line): strlen (line);
+		if (length == delimiter_length && !strncmp (line, delimiter, length)) {
+			const char *end = line > begin? line - 1: line;
+			return r_str_ndup (begin, end - begin);
+		}
+		line = next? next + 1: NULL;
+	}
+	R_LOG_ERROR ("Cannot find end of block");
+	return NULL;
+}
+
 static char *r2pm_parse(char *data, const char *token, R2pmTokenType type) {
 	r_str_normalize_newlines (data);
 	const char *begin = strstr (data, token);
@@ -317,41 +332,39 @@ static char *r2pm_parse(char *data, const char *token, R2pmTokenType type) {
 		return NULL;
 	}
 	begin += strlen (token);
-	const char *end = NULL;
-	switch (type) {
-	case TT_TEXTLINE:
-	case TT_TEXTLINE_LIST:
-		end = strchr (begin, '\n');
-		end = end? end: begin + strlen (begin);
-		if (type == TT_TEXTLINE) {
-			begin = r_str_trim_head_ro (begin);
-			if (*begin == '"') {
-				begin++;
-			}
-			if (end > begin && end[-1] == '"') {
-				end--;
-			} else if (begin > end) {
-				begin = end;
-			}
-		}
-		return r_str_ndup (begin, end - begin);
-	case TT_ENDQUOTE:
-		begin = strchr (begin, '\n');
-		begin = begin? begin + 1: NULL;
-		end = "\n\"\n";
-		break;
-	case TT_CODEBLOCK:
-		end = "\n}\n";
-		break;
+	if (type == TT_CODEBLOCK) {
+		return r2pm_parse_block (begin, "}", 1);
 	}
-	if (begin && end) {
-		const char *eoc = strstr (begin, end);
-		if (eoc) {
-			return r_str_ndup (begin, eoc - begin);
-		}
-		R_LOG_ERROR ("Cannot find end of thing");
+	begin += strspn (begin, " \t");
+	if (*begin == '=') {
+		begin += 1 + strspn (begin + 1, " \t");
 	}
-	return NULL;
+	const char *end = strchr (begin, '\n');
+	end = end? end: begin + strlen (begin);
+	if (r_str_startswith (begin, "<<")) {
+		const char *delimiter = begin + 2;
+		delimiter += strspn (delimiter, " \t");
+		const char *delimiter_end = end;
+		while (delimiter_end > delimiter && IS_WHITESPACE (delimiter_end[-1])) {
+			delimiter_end--;
+		}
+		size_t length = delimiter_end - delimiter;
+		if (!length || strcspn (delimiter, " \t\r\n") != length) {
+			R_LOG_ERROR ("Invalid heredoc delimiter");
+			return NULL;
+		}
+		return r2pm_parse_block (*end? end + 1: end, delimiter, length);
+	}
+	if (type == TT_VALUE && *begin == '"') {
+		begin++;
+		if (begin == end) {
+			return r2pm_parse_block (*end? end + 1: end, "\"", 1);
+		}
+		if (end > begin && end[-1] == '"') {
+			end--;
+		}
+	}
+	return r_str_ndup (begin, end - begin);
 }
 
 static char *r2pm_get(const char *file, const char *token, R2pmTokenType type) {
@@ -704,7 +717,7 @@ static void r2pm_setenv(R2Pm *r2pm) {
 }
 
 static int r2pm_doc_pkg(const char *pkg) {
-	char *docstr = r2pm_get (pkg, "\nR2PM_DOC=\"", TT_ENDQUOTE);
+	char *docstr = r2pm_get (pkg, "\nR2PM_DOC", TT_VALUE);
 	if (docstr) {
 		printf ("%s\n", docstr);
 		free (docstr);
@@ -743,9 +756,9 @@ static int r2pm_clean_pkg(const char *pkg) {
 }
 
 static bool r2pm_have_builddir(const char *pkg) {
-	char *url = r2pm_get (pkg, "\nR2PM_TGZ", TT_TEXTLINE);
+	char *url = r2pm_get (pkg, "\nR2PM_TGZ", TT_VALUE);
 	if (!url) {
-		url = r2pm_get (pkg, "\nR2PM_GIT", TT_TEXTLINE);
+		url = r2pm_get (pkg, "\nR2PM_GIT", TT_VALUE);
 	}
 	if (url) {
 		free (url);
@@ -756,7 +769,7 @@ static bool r2pm_have_builddir(const char *pkg) {
 
 static char *r2pm_source_dir(const char *srcdir, const char *pkg) {
 	char *pkgdir = r_file_new (srcdir, pkg, NULL);
-	char *dirname = r2pm_get (pkg, "\nR2PM_DIR ", TT_TEXTLINE);
+	char *dirname = r2pm_get (pkg, "\nR2PM_DIR ", TT_VALUE);
 	if (dirname) {
 		char *dir = r_file_new (pkgdir, dirname, NULL);
 		free (pkgdir);
@@ -976,7 +989,7 @@ static int r2pm_clone(const char *pkg) {
 	if (r_file_is_directory (srcdir)) {
 		git_source = git_pull (srcdir, true, 0);
 	} else {
-		char *url_list = r2pm_get (pkg, "\nR2PM_GIT ", TT_TEXTLINE_LIST);
+		char *url_list = r2pm_get (pkg, "\nR2PM_GIT ", TT_WORDLIST);
 		if (url_list) {
 			r_str_replace_ch (url_list, ',', ' ', true);
 			int url_ct, i;
@@ -990,7 +1003,7 @@ static int r2pm_clone(const char *pkg) {
 			r_str_argv_free (urls);
 			free (url_list);
 		} else {
-			char *url = r2pm_get (pkg, "\nR2PM_TGZ", TT_TEXTLINE);
+			char *url = r2pm_get (pkg, "\nR2PM_TGZ", TT_VALUE);
 			if (!url) {
 				R_LOG_INFO ("Nothing to pull");
 				free (srcdir);
@@ -1053,18 +1066,70 @@ static bool r2pm_check(const char *program) {
 	return found;
 }
 
+static char *r2pm_binary_version(char *data, const char *pkg, const char *r2_version) {
+	if (!strstr (data, R2PM_VERSION_MAP)) {
+		return strdup (r2_version);
+	}
+	char *mapping = r2pm_parse (data, R2PM_VERSION_MAP, TT_VALUE);
+	if (!mapping) {
+		return NULL;
+	}
+	char *selected = NULL;
+	char *save = NULL;
+	char *pair;
+	for (pair = r_str_tok_r (mapping, " \t\r\n", &save); pair; pair = r_str_tok_r (NULL, " \t\r\n", &save)) {
+		char *package_version = strchr (pair, ':');
+		if (!package_version || package_version == pair || !package_version[1] || strchr (package_version + 1, ':')) {
+			R_LOG_ERROR ("Invalid R2PM_VERSION_MAP entry for '%s': expected r2-version:package-version", pkg);
+			break;
+		}
+		*package_version++ = 0;
+		if (!strcmp (pair, r2_version)) {
+			selected = strdup (package_version);
+			break;
+		}
+	}
+	if (!pair) {
+		R_LOG_ERROR ("No binary release for '%s' matching radare2 %s in R2PM_VERSION_MAP", pkg, r2_version);
+	}
+	free (mapping);
+	return selected;
+}
+
 static int r2pm_install_binary_pkg(const char *pkg, bool global) {
+	char *path = r2pm_pkgpath (pkg);
+	char *data = path? r_file_slurp (path, NULL): NULL;
+	free (path);
 #if R2__WINDOWS__
-	char *script = r2pm_get (pkg, R2PM_BINSTALL_WINDOWS, TT_CODEBLOCK);
+	char *script = data? r2pm_parse (data, R2PM_BINSTALL_WINDOWS, TT_CODEBLOCK): NULL;
 #else
-	char *script = r2pm_get (pkg, R2PM_BINSTALL, TT_CODEBLOCK);
+	char *script = data? r2pm_parse (data, R2PM_BINSTALL, TT_CODEBLOCK): NULL;
 #endif
 	if (R_STR_ISEMPTY (script)) {
 		R_LOG_ERROR ("No binary package for '%s' on " R2PM_TRIPLET "; re-run without -b", pkg);
 		free (script);
+		free (data);
 		return 1;
 	}
-	if (r2pm_run_binary_script (script)) {
+	char *version = r_sys_getenv ("R2PM_VERSION");
+	if (R_STR_ISEMPTY (version)) {
+		char *r2_version = r_sys_getenv ("R2V");
+		char *package_version = r2pm_binary_version (data, pkg, r2_version);
+		free (r2_version);
+		if (!package_version) {
+			free (version);
+			free (script);
+			free (data);
+			return 1;
+		}
+		r_sys_setenv ("R2PM_VERSION", package_version);
+		free (package_version);
+	}
+	free (data);
+	int res = r2pm_run_binary_script (script);
+	r_sys_setenv ("R2PM_VERSION", version);
+	free (version);
+	if (res) {
 		R_LOG_ERROR ("Binary install failed for '%s'; re-run without -b to build from source", pkg);
 		return 1;
 	}
@@ -1074,7 +1139,7 @@ static int r2pm_install_binary_pkg(const char *pkg, bool global) {
 
 static int r2pm_install_pkg(const char *pkg, bool clean, bool global, bool binary) {
 	R_LOG_INFO ("Starting install for %s", pkg);
-	char *needs = binary? NULL: r2pm_get (pkg, "\nR2PM_NEEDS ", TT_TEXTLINE);
+	char *needs = binary? NULL: r2pm_get (pkg, "\nR2PM_NEEDS ", TT_VALUE);
 	if (needs) {
 		bool error = false;
 		char *dep;
@@ -1107,7 +1172,7 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global, bool binar
 			return -1;
 		}
 	}
-	char *conflict = r2pm_get (pkg, "\nR2PM_CONFLICT ", TT_TEXTLINE);
+	char *conflict = r2pm_get (pkg, "\nR2PM_CONFLICT ", TT_VALUE);
 	if (conflict) {
 		RListIter *iter, *iter2;
 		RList *l = r_str_split_list (conflict, " ", 0); // conflictive packages
@@ -1146,7 +1211,7 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global, bool binar
 		return r2pm_install_binary_pkg (pkg, global);
 	}
 	bool have_builddir = r2pm_have_builddir (pkg);
-	char *deps = r2pm_get (pkg, "\nR2PM_DEPS ", TT_TEXTLINE);
+	char *deps = r2pm_get (pkg, "\nR2PM_DEPS ", TT_VALUE);
 	if (deps) {
 		char *dep;
 		RListIter *iter;
@@ -1224,7 +1289,7 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global, bool binar
 	}
 	script = r_str_replace_all (script, "\n", " & ");
 
-	char *dirname = r2pm_get (pkg, "\nR2PM_DIR ", TT_TEXTLINE);
+	char *dirname = r2pm_get (pkg, "\nR2PM_DIR ", TT_VALUE);
 	char *esrcdir = r_str_escape_sh (srcdir);
 	char *etarget = r_str_escape_sh (dirname? dirname: pkg);
 	char *s = (esrcdir && etarget)
@@ -1246,7 +1311,7 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global, bool binar
 	R_LOG_INFO ("%s", script);
 	R_LOG_INFO ("EOF");
 	char *pkgdir = r_str_newf ("%s/%s", srcdir, pkg);
-	char *dirname = r2pm_get (pkg, "\nR2PM_DIR ", TT_TEXTLINE);
+	char *dirname = r2pm_get (pkg, "\nR2PM_DIR ", TT_VALUE);
 	if (dirname) {
 		free (pkgdir);
 		pkgdir = r_str_newf ("%s/%s/%s", srcdir, pkg, dirname);
@@ -1278,11 +1343,9 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global, bool binar
 }
 
 static bool r2pm_have_packages(void) {
-	char *gpath = r2pm_gitdir ();
-	char *pmpath = r_str_newf ("%s/%s", gpath, "radare2-pm");
-	bool res = r_file_is_directory (pmpath);
-	free (gpath);
-	free (pmpath);
+	char *dbdir = r2pm_dbdir ();
+	bool res = r_file_is_directory (dbdir);
+	free (dbdir);
 	return res;
 }
 
@@ -1484,7 +1547,7 @@ static const char *r2pm_platform(char **env) {
 }
 
 static RList *r2pm_pkg_platforms(char *data) {
-	char *declared = r2pm_parse (data, "\nR2PM_PLATFORMS ", TT_TEXTLINE);
+	char *declared = r2pm_parse (data, "\nR2PM_PLATFORMS ", TT_VALUE);
 	if (declared) {
 		r_str_trim (declared);
 	}
@@ -1554,7 +1617,7 @@ static char *r2pm_search(const char *grep, int mode, bool all) {
 		char *pkgpath = r_file_new (path, file, NULL);
 		char *data = r_file_slurp (pkgpath, NULL);
 		free (pkgpath);
-		char *desc = data? r2pm_parse (data, "\nR2PM_DESC ", TT_TEXTLINE): NULL;
+		char *desc = data? r2pm_parse (data, "\nR2PM_DESC ", TT_VALUE): NULL;
 		if (!desc || (R_STR_ISNOTEMPTY (grep) && !r_str_casestr (file, grep) && !r_str_casestr (desc, grep))) {
 			free (desc);
 			free (data);
@@ -1616,7 +1679,8 @@ static void r2pm_envhelp(void) {
 	"R2PM_OFFLINE=%d         # don't git pull\n"
 	"R2PM_TIME=YYYY-MM-DD\n"
 	"R2PM_PLATFORM=          # r2, unix, windows, qjs or any (overrides the search filter)\n"
-	"R2V=                    # binary release version (defaults to radare2 -qv)\n"
+	"R2V=                    # radare2 version for binary installers (defaults to radare2 -qv)\n"
+	"R2PM_VERSION=           # package release override (default: R2PM_VERSION_MAP or R2V)\n"
 	"R2PM_OS=" R2PM_OS "\n"
 	"R2PM_ARCH=" R_SYS_ARCH "\n"
 	"R2PM_BITS=" R2PM_BITS "\n"

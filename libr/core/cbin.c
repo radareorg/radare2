@@ -5,6 +5,7 @@
 #undef R_LOG_ORIGIN
 #define R_LOG_ORIGIN "core.bin"
 #include <r_core.h>
+#include <r_anal_priv.h>
 #include "cbin.h"
 #include "../bin/i/private.h"
 
@@ -39,6 +40,22 @@ static bool is_safe_r2_script_arg(const char *s) {
 	bool res = safe && !strcmp (safe, s);
 	free (safe);
 	return res;
+}
+
+static char *sdb_key_name(const char *key, const char *suffix, bool sanitize) {
+	const char *end = strstr (key, suffix);
+	if (!end) {
+		return NULL;
+	}
+	char *name = r_str_ndup (key, end - key);
+	if (name && sanitize) {
+		r_name_filter (name, -1);
+	}
+	return name;
+}
+
+static bool is_single_line(const char *s) {
+	return !strpbrk (s, "\r\n");
 }
 
 static void pair_bool(RCore *core, PJ *pj, const char *key, bool val) {
@@ -106,6 +123,13 @@ static ut64 rva(RBin *bin, ut64 paddr, ut64 vaddr, int va) {
 	return (va == VA_NOREBASE)? vaddr: paddr;
 }
 
+static ut64 compute_addr(RBin *bin, ut64 paddr, ut64 vaddr, int va) {
+	if (paddr == UT64_MAX && va == VA_TRUE && bin->cur && bin->cur->bo) {
+		return r_bin_file_get_vaddr (bin->cur, paddr, vaddr);
+	}
+	return paddr == UT64_MAX? vaddr: rva (bin, paddr, vaddr, va);
+}
+
 R_API bool r_core_bin_set_by_fd(RCore *core, ut64 bin_fd) {
 	if (r_bin_file_set_cur_by_fd (core->bin, bin_fd)) {
 		r_core_bin_set_cur (core, r_bin_cur (core->bin));
@@ -115,7 +139,6 @@ R_API bool r_core_bin_set_by_fd(RCore *core, ut64 bin_fd) {
 }
 
 R_API void r_core_bin_export_info(RCore *core, int mode) {
-	char *flagname = NULL, *offset = NULL;
 	SdbList *ls = NULL;
 	RBinFile *bf = r_bin_cur (core->bin);
 	if (!bf) {
@@ -141,23 +164,23 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 	ls_foreach (ls, iter, kv) {
 		char *k = sdbkv_key (kv);
 		char *v = sdbkv_value (kv);
-		char *dup = strdup (k);
-		// printf ("?e (%s) (%s)\n", k, v);
-		if ((flagname = strstr (dup, ".offset"))) {
-			*flagname = 0;
-			flagname = dup;
+		char *flagname = sdb_key_name (k, ".offset", IS_MODE_RAD (mode));
+		if (flagname) {
 			if (IS_MODE_RAD (mode)) {
-				r_cons_printf (core->cons, "'@%s'f %s\n", v, flagname);
+				if (is_single_line (v)) {
+					r_cons_printf (core->cons, "'@%s'f %s\n", v, flagname);
+				}
 			} else if (IS_MODE_SET (mode)) {
 				ut64 nv = r_num_math (core->num, v);
 				r_flag_set (core->flags, flagname, nv, 0);
 			}
-			free (offset);
-			offset = strdup (v);
 		}
-		if (strstr (dup, ".cparse")) {
+		free (flagname);
+		if (strstr (k, ".cparse")) {
 			if (IS_MODE_RAD (mode)) {
-				r_cons_printf (core->cons, "'td %s\n", v);
+				if (is_single_line (v)) {
+					r_cons_printf (core->cons, "'td %s\n", v);
+				}
 			} else if (IS_MODE_SET (mode)) {
 				char *code = r_str_newf ("%s;", v);
 				char *errmsg = NULL;
@@ -173,47 +196,39 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 				}
 			}
 		}
-		free (dup);
 	}
-	R_FREE (offset);
 	ls_foreach (ls, iter, kv) {
 		char *k = sdbkv_key (kv);
 		char *v = sdbkv_value (kv);
-		char *dup = strdup (k);
-		if ((flagname = strstr (dup, ".format"))) {
-			*flagname = 0;
-			if (!offset) {
-				offset = strdup ("0");
-			}
-			flagname = dup;
+		char *flagname = sdb_key_name (k, ".format", IS_MODE_RAD (mode));
+		if (flagname) {
 			if (IS_MODE_RAD (mode)) {
-				r_cons_printf (core->cons, "'pf.%s %s\n", flagname, v);
+				if (is_single_line (v)) {
+					r_cons_printf (core->cons, "'pf.%s %s\n", flagname, v);
+				}
 			} else if (IS_MODE_SET (mode)) {
 				sdb_set (core->print->formats, flagname, v, 0);
 			}
 		}
-		free (dup);
+		free (flagname);
 	}
 	ls_foreach (ls, iter, kv) {
 		char *k = sdbkv_key (kv);
 		char *v = sdbkv_value (kv);
-		char *dup = strdup (k);
-		if ((flagname = strstr (dup, ".format"))) {
-			*flagname = 0;
-			if (!offset) {
-				offset = strdup ("0");
-			}
-			flagname = dup;
+		char *flagname = sdb_key_name (k, ".format", false);
+		if (flagname) {
 			int fmtsize = r_print_format_struct_size (core->print, v, 0, 0);
 			const char *off = sdb_const_getf (db, NULL, "%s.offset", flagname);
 			if (fmtsize < 1) {
-				free (dup);
+				free (flagname);
 				continue;
 			}
 			fmtsize += 4;
 			if (off) {
 				if (IS_MODE_RAD (mode)) {
-					r_cons_printf (core->cons, "'@%s'Cf %d %s\n", off, fmtsize, v);
+					if (is_single_line (off) && is_single_line (v)) {
+						r_cons_printf (core->cons, "'@%s'Cf %d %s\n", off, fmtsize, v);
+					}
 				} else if (IS_MODE_SET (mode)) {
 					ut64 addr = r_num_get (NULL, off);
 					ut8 *buf = malloc (fmtsize);
@@ -229,11 +244,13 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 				}
 			}
 		}
-		if ((flagname = strstr (dup, ".size"))) {
-			*flagname = 0;
-			flagname = dup;
+		free (flagname);
+		flagname = sdb_key_name (k, ".size", IS_MODE_RAD (mode));
+		if (flagname) {
 			if (IS_MODE_RAD (mode)) {
-				r_cons_printf (core->cons, "fl %s %s\n", flagname, v);
+				if (is_single_line (v)) {
+					r_cons_printf (core->cons, "'fl %s %s\n", flagname, v);
+				}
 			} else if (IS_MODE_SET (mode)) {
 				RFlagItem *fi = r_flag_get (core->flags, flagname);
 				if (fi) {
@@ -243,10 +260,9 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 				}
 			}
 		}
-		free (dup);
+		free (flagname);
 	}
 leave:
-	free (offset);
 	ls_free (ls);
 	if (IS_MODE_SET (mode)) {
 		r_flag_space_pop (core->flags);
@@ -827,11 +843,66 @@ R_API void r_core_anal_cc_init(RCore *core) {
 	free (anal_arch);
 }
 
+typedef struct {
+	RList *libraries;
+	RStrBuf *types;
+} TypeLibraryMatch;
+
+static bool match_library_types(void *user, const char *key, const char *value) {
+	TypeLibraryMatch *match = user;
+	if (!r_str_startswith (key, "library.") || R_STR_ISEMPTY (value)) {
+		return true;
+	}
+	RListIter *iter;
+	const char *lib;
+	r_list_foreach (match->libraries, iter, lib) {
+		const char *name = r_file_basename (lib);
+		if (r_str_startswith (name, "lib")) {
+			name += 3;
+		}
+		if (r_str_glob (name, key + 8)) {
+			if (r_strbuf_length (match->types) && !r_strbuf_append (match->types, ",")) {
+				return false;
+			}
+			return r_strbuf_append (match->types, value);
+		}
+	}
+	return true;
+}
+
+static void set_library_types(RCore *core, RBinObject *obj) {
+	r_core_anal_type_init (core);
+	RAnalPriv *priv = R_ANAL_PRIV (core->anal);
+	RStrBuf *types = r_strbuf_new ("");
+	if (!types) {
+		return;
+	}
+	TypeLibraryMatch match = { obj? obj->libs: NULL, types };
+	if (!priv->types_index || !sdb_foreach (priv->types_index, match_library_types, &match)) {
+		r_strbuf_free (types);
+		return;
+	}
+	char *names = r_strbuf_drain (types);
+	if (!names) {
+		return;
+	}
+	if (!strcmp (priv->types_libraries? priv->types_libraries: "", names)) {
+		free (names);
+		return;
+	}
+	free (priv->types_libraries);
+	priv->types_libraries = names;
+	priv->types_dirty = true;
+}
+
 static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 	int i, j, v;
 	char str[32];
 	RBinInfo *info = r_bin_get_info (core->bin);
 	RBinFile *bf = r_bin_cur (core->bin);
+	if (IS_MODE_SET (mode)) {
+		set_library_types (core, bf? bf->bo: NULL);
+	}
 	if (!bf) {
 		if (IS_MODE_JSON (mode)) {
 			pj_o (pj);
@@ -1720,7 +1791,7 @@ static bool bin_entry(RCore *core, PJ *pj, int mode, ut64 laddr, int va, bool in
 				hvaddr = rva (core->bin, hpaddr, entry->hvaddr, va);
 			}
 		}
-		ut64 at = rva (core->bin, paddr, entry->vaddr, va);
+		ut64 at = compute_addr (core->bin, paddr, entry->vaddr, va);
 		const char *type = r_bin_entry_type_string (entry->type);
 		if (!type) {
 			type = "unknown";
@@ -1819,7 +1890,7 @@ static bool bin_entry(RCore *core, PJ *pj, int mode, ut64 laddr, int va, bool in
 		r_table_free (table);
 	} else if (IS_MODE_SET (mode)) {
 		if (entry) {
-			ut64 at = rva (core->bin, entry->paddr, entry->vaddr, va);
+			ut64 at = compute_addr (core->bin, entry->paddr, entry->vaddr, va);
 			r_core_seek (core, at, false);
 		}
 	} else if (IS_MODE_RAD (mode)) {
@@ -2734,6 +2805,20 @@ static void set_symbol_flag(RCore *core, RBinSymbol *symbol, const SymName *sn, 
 		if (sn->demname) {
 			fi->demangled = true;
 		}
+		if (!symbol->is_imported && symbol->type && !strcmp (symbol->type, R_BIN_TYPE_OBJECT_STR)
+			&& !r_anal_global_get (core->anal, addr)) {
+			const char *name = r_str_startswith (fn, "obj.")? fn + 4: fn;
+			char *global_name = core->bin->prefix
+				? r_str_newf ("%s.global.%s", core->bin->prefix, name)
+				: r_str_newf ("global.%s", name);
+			if (global_name && r_anal_global_add (core->anal, addr, NULL, global_name)) {
+				RFlagItem *global = r_anal_global_get (core->anal, addr);
+				global->size = symbol->attr.size;
+				r_flag_item_set_realname (core->flags, global, display_name);
+				r_flag_item_set_rawname (core->flags, global, sn->name);
+			}
+			free (global_name);
+		}
 	} else {
 		R_LOG_WARN ("Can't find flag (%s)", fn);
 	}
@@ -2836,12 +2921,16 @@ static bool its_an_export(RBinSymbol *s) {
 	return (s->bind && !strcmp (s->bind, R_BIN_BIND_GLOBAL_STR));
 }
 
-static ut64 compute_addr(RBin *bin, ut64 paddr, ut64 vaddr, int va) {
-	return paddr == UT64_MAX? vaddr: rva (bin, paddr, vaddr, va);
+// an absolute value is never rebased; in physical mode its mapped offset still applies
+static ut64 symbol_addr(RBin *bin, RBinSymbol *symbol, int va) {
+	if ((symbol->attr.flags & R_BIN_ATTR_ABSOLUTE) && va != VA_FALSE) {
+		return symbol->vaddr;
+	}
+	return compute_addr (bin, symbol->paddr, symbol->vaddr, va);
 }
 
 static void handle_arm_special_symbol(RCore *core, RBinSymbol *symbol, int va) {
-	ut64 addr = compute_addr (core->bin, symbol->paddr, symbol->vaddr, va);
+	ut64 addr = symbol_addr (core->bin, symbol, va);
 	const char *oname = r_bin_name_tostring2 (symbol->name, 'o');
 	// handle $a, $t, $d, $x and their numbered variants ($a.0, $t.1, etc)
 	if (oname[0] == '$' && oname[1] && (!oname[2] || oname[2] == '.')) {
@@ -2869,18 +2958,19 @@ static void handle_arm_special_symbol(RCore *core, RBinSymbol *symbol, int va) {
 	}
 }
 
-static void handle_arm_hint(RCore *core, RBinInfo *info, ut64 paddr, ut64 vaddr, int bits, int va) {
+static void handle_arm_hint(RCore *core, RBinInfo *info, ut64 addr, ut64 paddr, int bits) {
 	if (info->bits > 32) { // we look at 16 or 32 bit only
 		return;
 	}
 
 	int force_bits = 0;
-	ut64 addr = compute_addr (core->bin, paddr, vaddr, va);
-	if (paddr & 1 || bits == 16) {
+	// an entry with no file offset states its mode through bits alone
+	const bool odd = paddr != UT64_MAX && (paddr & 1);
+	if (odd || bits == 16) {
 		force_bits = 16;
 	} else if (info->bits == 16 && bits == 32) {
 		force_bits = 32;
-	} else if (! (paddr & 1) && bits == 32) {
+	} else if (!odd && bits == 32) {
 		force_bits = 32;
 	}
 	if (force_bits) {
@@ -2889,11 +2979,13 @@ static void handle_arm_hint(RCore *core, RBinInfo *info, ut64 paddr, ut64 vaddr,
 }
 
 static void handle_arm_symbol(RCore *core, RBinSymbol *symbol, RBinInfo *info, int va) {
-	handle_arm_hint (core, info, symbol->paddr, symbol->vaddr, symbol->bits, va);
+	ut64 addr = symbol_addr (core->bin, symbol, va);
+	handle_arm_hint (core, info, addr, symbol->paddr, symbol->bits);
 }
 
 static void handle_arm_entry(RCore *core, RBinAddr *entry, RBinInfo *info, int va) {
-	handle_arm_hint (core, info, entry->paddr, entry->vaddr, entry->bits, va);
+	ut64 addr = compute_addr (core->bin, entry->paddr, entry->vaddr, va);
+	handle_arm_hint (core, info, addr, entry->paddr, entry->bits);
 }
 
 static void select_flag_space(RCore *core, RBinSymbol *symbol) {
@@ -2991,7 +3083,7 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 		if (exponly && !its_an_export (symbol)) {
 			continue;
 		}
-		ut64 addr = compute_addr (core->bin, symbol->paddr, symbol->vaddr, va);
+		ut64 addr = symbol_addr (core->bin, symbol, va);
 		ut32 len = symbol->attr.size? symbol->attr.size: 1;
 		if (at != UT64_MAX) {
 			if (symbol->attr.size) {
@@ -5859,16 +5951,12 @@ R_API bool r_core_bin_set_arch_bits(RCore *core, const char *name, const char *_
 		free (arch);
 		arch = strdup (R_SYS_ARCH);
 	}
-	/* Find a file with the requested name/arch/bits */
-	RBinFile *binfile = r_bin_file_find_by_arch_bits (core->bin, arch, bits);
-	if (!binfile) {
-		free (arch);
-		return false;
-	}
+	RBinFile *previous = r_bin_cur (core->bin);
 	if (!r_bin_use_arch (core->bin, arch, bits, name)) {
 		free (arch);
 		return false;
 	}
+	RBinFile *binfile = r_bin_cur (core->bin);
 	R_FREE (arch);
 	// how bin.xtr plugins can inform
 	// if the binbuffer is bigger than the io allocated space, that means that rbin have
@@ -5886,7 +5974,7 @@ R_API bool r_core_bin_set_arch_bits(RCore *core, const char *name, const char *_
 	}
 	// set env if the binfile changed, we are dealing with xtr, or xtr_data
 	// is present (e.g. native fat Mach-O without xtr plugin)
-	if (curfile != binfile || binfile->curxtr || !r_list_empty (binfile->xtr_data)) {
+	if (previous != binfile || binfile->curxtr || !r_list_empty (binfile->xtr_data)) {
 		r_core_bin_set_cur (core, binfile);
 		return r_core_bin_set_env (core, binfile);
 	}

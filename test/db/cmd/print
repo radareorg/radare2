@@ -214,19 +214,12 @@ EXPECT=<<EOF
 0x1000015f3 call sym.imp.getenv
 0x1000015f3 "TERM"
 0x100001602 call sym.imp.tgetent
-0x100001602 "", ""
 0x100001621 call sym.imp.tgetstr
-0x100001621 "AF", ""
 0x100001637 call sym.imp.tgetstr
-0x100001637 "AB", ""
 0x10000164d call sym.imp.tgetstr
-0x10000164d "me", ""
 0x100001663 call sym.imp.tgetstr
-0x100001663 "md", ""
 0x100001679 call sym.imp.tgetstr
-0x100001679 "op", ""
 0x100001698 call sym.imp.tgetstr
-0x100001698 "oc", ""
 0x1000016e1 sym.func.100003b48
 0x1000016ed sym.func.100003b48
 0x1000016f0 call sym.imp.signal

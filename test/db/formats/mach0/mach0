@@ -68,7 +68,7 @@ pf.mach0_dylib_command @ 0x0000147c
 0x00001490  compat      1.0.0
 0x00001494  load_dylib  /usr/lib/libSystem.B.dylib
 --
-paddr=0x00000f14 vaddr=0x00001f14 haddr=0x00000464 type=program
+paddr=0x00000f14 vaddr=0x00001f14 haddr=0x00000464 vhaddr=0x00001464 type=program
 --
 6a0089e583e4f083ec10
 EOF
@@ -254,7 +254,7 @@ NAME=mach0 entrypoint i386 LC_MAIN
 FILE=bins/mach0/mach0-i386
 CMDS=ie=~addr
 EXPECT=<<EOF
-paddr=0x00000f80 vaddr=0x00001f80 haddr=0x00000240 type=program
+paddr=0x00000f80 vaddr=0x00001f80 haddr=0x00000240 vhaddr=0x00001240 type=program
 EOF
 RUN
 
@@ -262,11 +262,23 @@ NAME=mach0 entrypoint x86_64 LC_MAIN
 FILE=bins/mach0/mach0_2-x86_64
 CMDS=ie=~addr
 EXPECT=<<EOF
-paddr=0x00000f70 vaddr=0x100000f70 haddr=0x000002e0 type=program
+paddr=0x00000f70 vaddr=0x100000f70 haddr=0x000002e0 vhaddr=0x1000002e0 type=program
 EOF
 RUN
 
 # merged: osx mach0 ik
+NAME=mach0 LC_MAIN vhaddr addresses the entryoff field
+FILE=bins/mach0/hello-ios-arm64
+CMDS=<<EOF
+ie=
+pv8 @ 0x100000468
+EOF
+EXPECT=<<EOF
+paddr=0x00007f34 vaddr=0x100007f34 haddr=0x00000468 vhaddr=0x100000468 type=program
+0x0000000000007f34
+EOF
+RUN
+
 NAME=osx mach0 entrypoint
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
@@ -275,7 +287,7 @@ ie=~addr
 ik ***~uuid
 EOF
 EXPECT=<<EOF
-paddr=0x000013d8 vaddr=0x1000013d8 haddr=0x00000648 type=program
+paddr=0x000013d8 vaddr=0x1000013d8 haddr=0x00000648 vhaddr=0x100000648 type=program
 --
 info/mach0_uuid_command.format=[4]Ed[16]b (mach0_load_command_type)cmd cmdsize uuid
 info/mach0_cmd_8.format=mach0_uuid_command
@@ -288,7 +300,7 @@ NAME=mach0 exports trie
 FILE=bins/mach0/Alamofire-stripped
 CMDS=<<EOF
 iE~_AlamofireVersionString?
-psz@sym._AlamofireVersionString
+psz@obj._AlamofireVersionString
 EOF
 EXPECT=<<EOF
 1
@@ -410,5 +422,17 @@ FILE=bins/mach0/a.out
 CMDS=ik info/mach0.signing
 EXPECT=<<EOF
 unsigned
+EOF
+RUN
+
+NAME=mach0 section header flags: type and attribute bits
+FILE=bins/mach0/ls-m1
+ARGS=-a arm -b64
+CMDS=iS~__text,auth_stubs,__cstring,__bss
+EXPECT=<<EOF
+0   0x0001b830  0x3c10 0x100003830  0x3c10 -r-x 0x80000400 REGULAR          0.__TEXT.__text
+1   0x0001f440   0x520 0x100007440   0x520 -r-x 0x80000408 SYMBOL_STUBS     1.__TEXT.__auth_stubs
+3   0x0001fa3c   0x4e9 0x100007a3c   0x4e9 -r-x 0x2        CSTRINGS         3.__TEXT.__cstring
+10  0x00018000     0x0 0x10000c0d0   0x150 -rw- 0x1        ZEROFILL         10.__DATA.__bss
 EOF
 RUN

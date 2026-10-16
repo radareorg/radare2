@@ -8,8 +8,67 @@ pdc @ main~strcmp
 EOF
 EXPECT=<<EOF
     dword [s2] = str.250382 // [0x804858f:4]=0x33303532 // "250382" // const char *s2
-    sym.imp.strcmp () // int strcmp("", "250382")
-    sym.imp.strcmp () // int strcmp("", "250382")
+    eax = strcmp ("", "250382")
+    eax = strcmp ("", "250382")
+EOF
+RUN
+
+NAME=pdc preserves comment punctuation in string arguments
+FILE=malloc://4096
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 000800107f000094c0035fd6 @ 0
+f sym.imp.puts @ 0x200
+wx 61203b2062202f2f206300 @ 0x100
+af @ 0
+pdc @ 0~puts
+EOF
+EXPECT=<<EOF
+    x0 = puts ("a ; b // c")
+EOF
+RUN
+
+NAME=pdc promotes call hints in every output layout
+FILE=malloc://4096
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 000800107f000094c0035fd6 @ 0
+f sym.imp.puts @ 0x200
+wx 61202862292c2022203b202f2f206300 @ 0x100
+af @ 0
+CCu base64:dXNlcidzIG5vdGU= @ 4
+pdc @ 0~puts
+e pdc.structured=false
+pdc @ 0~puts
+pdco @ 0~puts
+pdca @ 0~puts
+.pdc* @ 0
+CC. @ 4
+EOF
+EXPECT=<<EOF
+    x0 = puts ("a (b), \" ; // c") // user's note
+        x0 = puts ("a (b), \" ; // c") // user's note
+ 0x00000004 |         x0 = puts ("a (b), \" ; // c") // user's note
+ 0x00000004 | bl sym.imp.puts                |         x0 = puts ("a (b), \" ; // c") // user's note
+x0 = puts ("a (b), \" ; // c") // user's note
+EOF
+RUN
+
+NAME=pdc assigns floating return registers and omits void assignments
+FILE=malloc://4096
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 80000094c0035fd6 @ 0
+f sym.imp.pdc_result @ 0x200
+td double pdc_result(void);
+af @ 0
+pdc @ 0~pdc_result
+td void pdc_result(void);
+pdc @ 0~pdc_result
+EOF
+EXPECT=<<EOF
+    d0 = pdc_result ()
+    pdc_result ()
 EOF
 RUN
 
@@ -124,27 +183,27 @@ void entry0 (void) {
         push ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
         push (0)
-        dword [MessageBoxA] () // 0x4030b8 // reloc.user32.dll_MessageBoxA // int MessageBoxA(0, 0x401000, 0x40100e, 0)
+        eax = MessageBoxA (0, 0x401000, 0x40100e, 0)
         push ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
-        dword [puts] () // 0x4030dc // reloc.crtdll.dll_puts // int puts("LABEL")
+        eax = puts ("LABEL")
         esp += 4      // (pstr 0x0040100e) "LABEL"
         si--
         v = si - 0
     } while (si > 0);
     eax = dword [puts] // [0x4030dc:4]=0x30e8 reloc.crtdll.dll_puts // reloc.crtdll.dll_puts
     push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
-    eax ()        // reloc.crtdll.dll_puts // int puts("Hello, World!")
-    dword [GetProcessHeap] () // 0x403088 // reloc.kernel32.dll_GetProcessHeap // HANDLE GetProcessHeap(void)
+    eax = puts ("Hello, World!")
+    eax = GetProcessHeap ()
     push (eax)
     push (">%p\\n") // 0x401014 // (pstr 0x00401014) ">%p\n"
-    dword [printf] () // 0x4030e0 // reloc.crtdll.dll_printf // int printf(">%p\n", 0x30e8)
+    eax = printf (">%p\n", 0x30e8)
     push (0)
     push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
     push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
     push (0)
-    dword [MessageBoxA] () // 0x4030b8 // reloc.user32.dll_MessageBoxA // int MessageBoxA(0, 0x401000, 0x401000, 0)
+    eax = MessageBoxA (0, 0x401000, 0x401000, 0)
     push (0)
-    dword [ExitProcess] () // 0x403084 // reloc.kernel32.dll_ExitProcess // VOID ExitProcess(0)
+    ExitProcess (0)
     return eax;
 }
 
@@ -157,27 +216,27 @@ void entry0 (void) {
  0x0040201a |         push ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
  0x0040201f |         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
  0x00402024 |         push (0)
- 0x00402026 |         dword [MessageBoxA] () // 0x4030b8 // reloc.user32.dll_MessageBoxA // int MessageBoxA(0, 0x401000, 0x40100e, 0)
+ 0x00402026 |         eax = MessageBoxA (0, 0x401000, 0x40100e, 0)
  0x0040202c |         push ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
- 0x00402031 |         dword [puts] () // 0x4030dc // reloc.crtdll.dll_puts // int puts("LABEL")
+ 0x00402031 |         eax = puts ("LABEL")
  0x00402037 |         esp += 4      // (pstr 0x0040100e) "LABEL"
  0x0040203a |         si--
  0x0040203c |         v = si - 0
  0x00402040 |     } while (si > 0);
  0x00402042 |     eax = dword [puts] // [0x4030dc:4]=0x30e8 reloc.crtdll.dll_puts // reloc.crtdll.dll_puts
  0x00402047 |     push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
- 0x0040204c |     eax ()        // reloc.crtdll.dll_puts // int puts("Hello, World!")
- 0x0040204e |     dword [GetProcessHeap] () // 0x403088 // reloc.kernel32.dll_GetProcessHeap // HANDLE GetProcessHeap(void)
+ 0x0040204c |     eax = puts ("Hello, World!")
+ 0x0040204e |     eax = GetProcessHeap ()
  0x00402054 |     push (eax)
  0x00402055 |     push (">%p\\n") // 0x401014 // (pstr 0x00401014) ">%p\n"
- 0x0040205a |     dword [printf] () // 0x4030e0 // reloc.crtdll.dll_printf // int printf(">%p\n", 0x30e8)
+ 0x0040205a |     eax = printf (">%p\n", 0x30e8)
  0x00402060 |     push (0)
  0x00402062 |     push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
  0x00402067 |     push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
  0x0040206c |     push (0)
- 0x0040206e |     dword [MessageBoxA] () // 0x4030b8 // reloc.user32.dll_MessageBoxA // int MessageBoxA(0, 0x401000, 0x401000, 0)
+ 0x0040206e |     eax = MessageBoxA (0, 0x401000, 0x401000, 0)
  0x00402074 |     push (0)
- 0x00402076 |     dword [ExitProcess] () // 0x403084 // reloc.kernel32.dll_ExitProcess // VOID ExitProcess(0)
+ 0x00402076 |     ExitProcess (0)
  0x00402076 |     return eax;
  0x00402076 | }
 
@@ -191,6 +250,8 @@ CMDS=<<EOF
 s 0x100003a54
 af
 pdc
+e pdc.structured=false
+pdc~strcoll
 EOF
 EXPECT=<<EOF
 // callconv: x0 arm64 (x0, x1, x2, x3, x4, x5, x6, x7, stack);
@@ -209,11 +270,12 @@ void sym.func.100003a54 (int64_t arg1, int64_t arg2) {
             x8 = x1 + 0x68 // arg2
             x1 = x0 + 0x68 // arg1
             x0 = x8
-            goto sym.imp.strcoll // int strcoll("", "")
+            return strcoll (x0, x1);
         }
     }
 }
 
+        return strcoll (x0, x1);
 EOF
 RUN
 
@@ -284,7 +346,7 @@ EXPECT=<<EOF
  0x100003a80 |             x8 = x1 + 0x68 // arg2
  0x100003a84 |             x1 = x0 + 0x68 // arg1
  0x100003a88 |             x0 = x8
- 0x100003a8c |             goto sym.imp.strcoll // int strcoll("", "")
+ 0x100003a8c |             return strcoll (x0, x1);
  0x100003a74 |         }
  0x100003a68 |     }
  0x100003a8c | }
@@ -683,12 +745,12 @@ FILE=bins/elf/format
 CMDS=<<EOF2
 aa
 s main
-pdc~printf("Results
-pdc~printf("msg
+pdc~printf ("Results
+pdc~printf ("msg
 EOF2
 EXPECT=<<EOF2
-    sym.imp.printf () // int printf("Results : a : %u , b: %ld\n", 30, 0x2710)
-    sym.imp.printf () // int printf("msg : %s\n", "")
+    rax = printf ("Results : a : %u , b: %ld\n", 30, 0x2710)
+    rax = printf ("msg : %s\n", "")
 EOF2
 RUN
 
@@ -697,10 +759,10 @@ FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF2
 aa
 s main
-pdc~printf("IOLI
+pdc~printf ("IOLI
 EOF2
 EXPECT=<<EOF2
-    sym.imp.printf () // int printf("IOLI Crackme Level 0x00\n")
+    eax = printf ("IOLI Crackme Level 0x00\n")
 EOF2
 RUN
 
@@ -887,7 +949,7 @@ EOF
 EXPECT=<<EOF
         switch (r12) { // jump table of 10 cases at 0x0001bca4
             case 0: // 0x00004056
-                qword [reloc.abort] () // [0x21ca8:8]=0 // void abort(void)
+                abort ()
                 break;
 EOF
 RUN
@@ -916,9 +978,9 @@ pdcj~{annotations[11]}
 pdcj~{annotations[12]}
 EOF
 EXPECT=<<EOF
-{"start":505,"end":557,"offset":4294982284,"type":"offset"}
-{"start":557,"end":605,"offset":4294982264,"type":"offset"}
-{"start":605,"end":652,"offset":4294982252,"type":"offset"}
+{"start":505,"end":538,"offset":4294982284,"type":"offset"}
+{"start":538,"end":586,"offset":4294982264,"type":"offset"}
+{"start":586,"end":633,"offset":4294982252,"type":"offset"}
 EOF
 RUN
 
@@ -1640,11 +1702,11 @@ ARGS=-e pdc.structured=1
 CMDS=<<EOF
 aa
 s main
-pdc~puts("Booh,puts("No no
+pdc~puts ("Booh,puts ("No no
 EOF
 EXPECT=<<EOF
-        sym.imp.puts () // int puts("Booh! Don't debug me!")
-            sym.imp.puts () // int puts("No no no! Don't patch me!")
+        eax = puts ("Booh! Don't debug me!")
+            eax = puts ("No no no! Don't patch me!")
 EOF
 RUN
 
@@ -1673,10 +1735,10 @@ ARGS=-e pdc.structured=1
 CMDS=<<EOF
 aa
 s main
-pdc~printf("Results
+pdc~printf ("Results
 EOF
 EXPECT=<<EOF
-    sym.imp.printf () // int printf("Results : a : %u , b: %ld\n", 30, 0x2710)
+    rax = printf ("Results : a : %u , b: %ld\n", 30, 0x2710)
 EOF
 RUN
 
@@ -2030,5 +2092,146 @@ EXPECT=<<EOF
         goto loc_0x00000024;
         goto loc_0x00000040;
         goto helper;
+EOF
+RUN
+
+NAME=pdc keeps zero pointer arguments as calling convention registers
+FILE=malloc://4096
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 010800107f000094c0035fd6 @ 0
+f sym.imp.strcmp @ 0x200
+wx 68656c7000 @ 0x100
+af @ 0
+pdc @ 0~strcmp
+e pdc.structured=false
+pdc @ 0~strcmp
+fr sym.imp.strcmp sym.imp.pdc_scalar
+td int pdc_scalar(int category, const char *name);
+pdc @ 0~pdc_scalar
+td typedef void *PdcPointer;
+td int pdc_scalar(PdcPointer context, const char *name);
+pdc @ 0~pdc_scalar
+EOF
+EXPECT=<<EOF
+    x0 = strcmp (x0, "help")
+        x0 = strcmp (x0, "help")
+        x0 = pdc_scalar (0, "help")
+        x0 = pdc_scalar (x0, "help")
+EOF
+RUN
+
+NAME=pdc recovers gettext calls from the gnome-extensions binary
+FILE=bins/elf/gnome-extensions
+CMDS=<<EOF
+af @ 0x3b40
+pdc @ 0x3b40~bind_textdomain_codeset
+pdc @ 0x3b40~strcmp:0
+EOF
+EXPECT=<<EOF
+    x0 = bind_textdomain_codeset ("gnome-shell", "UTF-8")
+        x0 = strcmp (x0, "help")
+EOF
+RUN
+
+NAME=pdc resolves GLib strings and preserves runtime GObject pointers
+FILE=bins/elf/gnome-extensions
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+af @ 0x5084
+pdc @ 0x5084~g_object_get_data,g_strcmp0
+e pdc.structured=false
+pdc @ 0x5084~g_object_get_data,g_strcmp0
+EOF
+EXPECT=<<EOF
+    x0 = g_object_get_data (x0, "desktop-id")
+    x0 = g_object_get_data (x0, "desktop-id")
+    return g_strcmp0 (x0, x1);
+        x0 = g_object_get_data (x0, "desktop-id")
+        x0 = g_object_get_data (x0, "desktop-id")
+        return g_strcmp0 (x0, x1);
+EOF
+RUN
+
+NAME=pdc resolves chained scalar and string pointer typedefs
+FILE=malloc://4096
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wa adr x0, 0x100 @ 0
+wa mov w1, 5 @ 4
+wa bl 0x200 @ 8
+wa ret @ 12
+wx 68656c6c6f00 @ 0x100
+td typedef char Letter;
+td typedef Letter Glyph;
+td typedef const Glyph *Message;
+td typedef unsigned int Count;
+td int pdc_alias(Message text, Count count);
+f sym.imp.pdc_alias @ 0x200
+af @ 0
+pdc @ 0~pdc_alias
+EOF
+EXPECT=<<EOF
+    x0 = pdc_alias ("hello", 5)
+EOF
+RUN
+
+NAME=pdc preserves readable empty string arguments
+FILE=malloc://4096
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wa adr x0, 0x100 @ 0
+wa adr x1, 0x120 @ 4
+wa bl 0x200 @ 8
+wa ret @ 12
+wx 00 @ 0x100
+wx 686900 @ 0x120
+f sym.imp.strcmp @ 0x200
+af @ 0
+pdc @ 0~strcmp
+EOF
+EXPECT=<<EOF
+    x0 = strcmp ("", "hi")
+EOF
+RUN
+
+NAME=pdc recovers IPA-RA arguments and returns the arithmetic destination
+FILE=malloc://256
+ARGS=-a x86 -b64
+CMDS=<<EOF
+wx e83b0000008d047f01f0c3
+wx 83051000000001c3 @ 0x40
+af leaf @ 0x40
+af use_after_call @ 0
+pdc @ 0
+EOF
+EXPECT=<<EOF
+// callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
+void use_after_call (int64_t arg1, int64_t arg2) {
+    0x40 ()       // leaf
+    eax = rdi + rdi*2 // arg1
+    eax += esi    // arg2
+    return eax    // rsp
+}
+
+EOF
+RUN
+
+NAME=pdc recovers GCC IPA-RA ELF arguments and arithmetic result
+FILE=bins/elf/gcc-fipara/ipara_on
+CMDS=<<EOF
+aaa
+pdc @ sym.use_after_call
+EOF
+EXPECT=<<EOF
+// callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
+void sym.use_after_call (int64_t arg1, int64_t arg2) {
+    // CALL XREF from main @ 0x1073(x)
+    sym.func1 ()
+    eax = rdi + rdi*2 // arg1
+    eax += esi    // arg2
+    return eax    // rsp
+}
+
 EOF
 RUN

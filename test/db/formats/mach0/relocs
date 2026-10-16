@@ -81,3 +81,23 @@ EXPECT=<<EOF
 201
 EOF
 RUN
+
+NAME=mach0 relocs apply slot stride is a pointer on bits 16
+FILE=malloc://18512
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+wff bins/mach0/FileDP
+wx 0000000c @ 8
+om 3 0x8000 0x10
+oba 0
+i~^bits
+ir~UNKNOWN
+EOF
+EXPECT=<<EOF
+bits     16
+0x00007010 0x00000000 UNKNOWN 0     NSAutoreleasePool
+0x00007014 0x00000000 UNKNOWN 0     NSFileManager
+0x00007018 0x00000000 UNKNOWN 0     NSString
+0x0000701c 0x00000000 UNKNOWN 0     __CFConstantStringClassReference
+EOF
+RUN

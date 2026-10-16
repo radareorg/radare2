@@ -1679,6 +1679,7 @@ static void indir(TCCState *s1) {
 			return;
 		}
 		expect (s1, "pointer");
+		return;
 	}
 	s1->vtop->type = *pointed_type (&s1->vtop->type);
 	/* Arrays and functions are never lvalues */
@@ -1991,6 +1992,7 @@ tok_identifier:
 			/* expect pointer on structure */
 			if (not_structured (&s1->vtop->type)) {
 				expect (s1, "struct or union");
+				return;
 			}
 			s = s1->vtop->type.ref;
 			/* find field */
@@ -2239,6 +2241,7 @@ static void decl_designator(TCCState *s1, CType *type, unsigned long c, long lon
 		if (s1->tok == '[') {
 			if (!(type->t & VT_ARRAY)) {
 				expect (s1, "array type");
+				return;
 			}
 			s = type->ref;
 			next (s1);
@@ -2277,6 +2280,7 @@ static void decl_designator(TCCState *s1, CType *type, unsigned long c, long lon
 struct_field:
 			if (not_structured (type)) {
 				expect (s1, "struct/union type");
+				return;
 			}
 			s = type->ref;
 			l |= SYM_FIELD;

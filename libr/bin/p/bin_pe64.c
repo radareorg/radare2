@@ -737,6 +737,7 @@ RBinPlugin r_bin_plugin_pe64 = {
 	.relocs = &relocs,
 	.get_vaddr = &get_vaddr,
 	.trycatch = &trycatch,
+	.create = &create,
 	.write = &r_bin_write_pe64,
 	.hashes = &compute_hashes,
 	.load_resources = &load_resources

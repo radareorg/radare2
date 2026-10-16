@@ -11,9 +11,9 @@ EXPECT=<<EOF
             ;-- func.100003c0c:
             0x100003c0c      55             push rbp
             0x100003c0d      4889e5         mov rbp, rsp
-paddr      vaddr       phaddr     vhaddr     type
--------------------------------------------------
-0x00007c0c 0x100003c0c 0x00000658 ---------- program
+paddr      vaddr       phaddr     vhaddr      type
+--------------------------------------------------
+0x00007c0c 0x100003c0c 0x00004658 0x100000658 program
 EOF
 RUN
 
@@ -48,9 +48,9 @@ EXPECT=<<EOF
             ;-- func.100003a90:
             0x100003a90      7f2303d5       pacibsp
             0x100003a94      fc6fbaa9       stp x28, x27, [sp,  -0x60]!
-paddr      vaddr       phaddr     vhaddr     type
--------------------------------------------------
-0x0001ba90 0x100003a90 0x00000600 ---------- program
+paddr      vaddr       phaddr     vhaddr      type
+--------------------------------------------------
+0x0001ba90 0x100003a90 0x00018600 0x100000600 program
 EOF
 RUN
 
@@ -67,9 +67,9 @@ EXPECT=<<EOF
             ;-- func.100003a90:
             0x100003a90      7f2303d5       pacibsp
             0x100003a94      fc6fbaa9       stp x28, x27, [sp, -0x60]!
-paddr      vaddr       phaddr     vhaddr     type
--------------------------------------------------
-0x0001ba90 0x100003a90 0x00000600 ---------- program
+paddr      vaddr       phaddr     vhaddr      type
+--------------------------------------------------
+0x0001ba90 0x100003a90 0x00018600 0x100000600 program
 EOF
 RUN
 
@@ -324,10 +324,10 @@ EXPECT=<<EOF
 0xf00000
 paddr      vaddr      phaddr     vhaddr     type
 ------------------------------------------------
-0x00001058 0x00f01058 0x00000648 ---------- program
+0x00001058 0x00f01058 0x00000648 0x00f00648 program
 554889e5415741564155
 ffffffffffffffffffff
-0x00001058 0x00f01058 0x00000648 ---------- program
+0x00001058 0x00f01058 0x00000648 0x00f00648 program
 EOF
 RUN
 
@@ -741,11 +741,11 @@ ob
 EOF
 EXPECT=<<EOF
 7
-137
+136
 7
 arch     arm
 baddr    0x4000
-binsz    65536
+binsz    49388
 bintype  mach0
 bits     32
 canary   false
@@ -773,10 +773,25 @@ subsys   darwin
 va       true
 -- o
  4 - r-- 0x00003f14 null://16148
+ 5 - r-- 0x000023a0 null://9120
 -- ob
-- 0 3 arm-32 ba:0x00000000 sz:65536 ./bins/mach0/test-arm32
-* 1 3 arm-32 ba:0x00004000 sz:65536 ./bins/mach0/test-arm32
+- 0 3 arm-32 ba:0x00000000 sz:49388 ./bins/mach0/test-arm32
+* 1 3 arm-32 ba:0x00004000 sz:49388 ./bins/mach0/test-arm32
 - 2 3 x86-64 ba:0x100000000 sz:72800 ./bins/mach0/ls-m1
+EOF
+RUN
+
+NAME=o* recognizes file maps of zero-padded Mach-O segments
+FILE=bins/mach0/ls-m1
+ARGS=-a x86 -b64
+CMDS=<<EOF
+om~?
+o*~^om
+om~?
+EOF
+EXPECT=<<EOF
+4
+4
 EOF
 RUN
 

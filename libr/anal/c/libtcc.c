@@ -227,10 +227,17 @@ ST_FUNC void tcc_close(TCCState *s1) {
 ST_FUNC int tcc_open(TCCState *s1, const char *filename) {
 	int fd;
 	if (!strcmp (filename, "-")) {
+		if (r_sandbox_enable (false)) {
+			return -1;
+		}
 		filename = "stdin";
 		fd = 0;
 	} else {
-		fd = open (filename, O_RDONLY | O_BINARY);
+		FILE *fp = r_sandbox_fopen (filename, "rb");
+		fd = fp? dup (fileno (fp)): -1;
+		if (fp) {
+			fclose (fp);
+		}
 	}
 	if ((s1->verbose == 2 && fd >= 0) || s1->verbose == 3) {
 		printf ("%s %*s%s\n", fd < 0? "nf": "->",
@@ -593,7 +600,13 @@ R_API void tcc_typedef_alias_fields(TCCState *s, const char *alias) {
 	if (s->typedefs) {
 		char **it;
 		R_VEC_FOREACH (s->typedefs, it) {
-			tcc_appendf (s, *it, alias);
+			// the stored line carries the field and type names, so it must not
+			// be used as a format string. only the first %s, written by
+			// struct_decl before any name, is the placeholder for the alias
+			*it = r_str_replace (*it, "%s", alias, 0);
+			if (*it) {
+				tcc_appendf (s, "%s", *it);
+			}
 		}
 		RVecCharPtr_free (s->typedefs);
 		s->typedefs = NULL;

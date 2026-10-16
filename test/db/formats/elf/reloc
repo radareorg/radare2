@@ -778,7 +778,7 @@ EOF
 EXPECT=<<EOF
 0x0000200c 0x0000100c SET_32 7     printf
 0x0000200c  0x00002018                                   . ..
-0x00001fec  0x00002028                                   ( ..
+0x00001fec  0x0000201c                                   . ..
 EOF
 RUN
 
@@ -793,7 +793,7 @@ EOF
 EXPECT=<<EOF
 0x0000400c 0x0000300c SET_32 7     __libc_start_main
 0x0000400c  0x0000401c                                   .@..
-0x00003ff4  0x00004038                                   8@..
+0x00003ff4  0x00004028                                   (@..
 EOF
 RUN
 
@@ -868,6 +868,188 @@ EOF
 EXPECT=<<EOF
 0x00000000001012c8
 0x0000000000103398
+EOF
+RUN
+
+NAME=ELF: absolute symbol values do not move under -B
+FILE=bins/elf/x86_64-abs-sym.so
+ARGS=-B 0x10000000 -e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x100033f0
+pv8 @ 0x100033f8
+pv8 @ 0x10003400
+pv8 @ 0x10003408
+pd 2 @ 0x100033f8~RELOC
+EOF
+EXPECT=<<EOF
+0x0000000000001234
+0x0000000000400100
+0x0000000000000000
+0x00000000100033f0
+            0x100033f8      .qword 0x0000000000400100 ; loc.abshit     ; RELOC 64 abshit @ 0x00400100
+            0x10003400      .qword 0x0000000000000000                  ; RELOC 64 abszero @ 0x00000000
+EOF
+RUN
+
+NAME=ELF: absolute symbol values in a section-less ELF under -B
+FILE=bins/elf/x86_64-abs-sym-noshdr.so
+ARGS=-B 0x10000000 -e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x100033f0
+pv8 @ 0x100033f8
+pv8 @ 0x10003400
+pv8 @ 0x10003408
+pd 2 @ 0x100033f8~RELOC
+EOF
+EXPECT=<<EOF
+0x0000000000001234
+0x0000000000400100
+0x0000000000000000
+0x00000000100033f0
+            0x100033f8      .qword 0x0000000000400100 ; loc.abshit     ; RELOC 64 abshit @ 0x00400100
+            0x10003400      .qword 0x0000000000000000                  ; RELOC 64 abszero @ 0x00000000
+EOF
+RUN
+
+NAME=ELF: ET_REL absolute symbols are not placed at the base
+FILE=bins/elf/x86_64-abs-sym.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x08000040
+pv8 @ 0x08000048
+pv8 @ 0x08000050
+pv8 @ 0x08000058
+irj~{}~sym_va
+EOF
+EXPECT=<<EOF
+0x0000000000001234
+0x0000000000400100
+0x0000000000000000
+0x0000000008000040
+    "sym_va": 4660,
+    "sym_va": 4194560,
+    "sym_va": 0,
+    "sym_va": 134217792,
+EOF
+RUN
+
+NAME=ELF: Thumb blx to an absolute Thumb function becomes a bl
+FILE=bins/elf/arm-abs-thumb-blx.o
+ARGS=-e bin.relocs.apply=true -e asm.sub.names=false
+CMDS=<<EOF
+pi 2 @ 0x08000034
+pv4 @ 0x08000044
+irj~{}~sym_va
+EOF
+EXPECT=<<EOF
+bl 0x8000100
+blx 0x8000040
+0x08000101
+    "sym_va": 134217984,
+    "sym_va": 134217792,
+    "sym_va": 134217984,
+EOF
+RUN
+
+NAME=ELF: ET_REL relocs against a common symbol share one unresolved slot
+FILE=bins/elf/x86_64-common-sym.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x08000040
+pv8 @ 0x08000048
+om~.got.r2
+irj~{}~sym_va
+is~cbuf
+EOF
+EXPECT=<<EOF
+0x00000000080000f4
+0x00000000080000f4
+- 6 fd: 4 +0x00000000 0x080000f4 - 0x080000fb rw- rw- .got.r2
+    "sym_va": 134217972,
+    "sym_va": 134217972,
+1   0x00000000 0x08000000 GLOBAL OBJ    8        cbuf
+EOF
+RUN
+
+# pd shows the loaded slot; irj sym_va stays unbiased like the reloc vaddr
+NAME=ELF: common symbol slot follows the load bias under -B
+FILE=bins/elf/x86_64-common-sym.o
+ARGS=-B 0x10000000 -e bin.relocs.apply=true
+CMDS=<<EOF
+pd 2 @ 0x10000040~RELOC[5-7]
+irj~{}~sym_va
+EOF
+EXPECT=<<EOF
+cbuf @ 0x100000f4
+cbuf @ 0x100000f4
+    "sym_va": 134217972,
+    "sym_va": 134217972,
+EOF
+RUN
+
+NAME=ELF: common symbol listing is unchanged when relocs are not applied
+FILE=bins/elf/x86_64-common-sym.o
+ARGS=-e bin.relocs.apply=false
+CMDS=<<EOF
+irj~{}~sym_va
+EOF
+EXPECT=<<EOF
+    "sym_va": 134217728,
+    "sym_va": 134217728,
+EOF
+RUN
+
+NAME=ELF: code relocs against common symbols take a slot like an import
+FILE=bins/elf/x86_64-common-code.o
+ARGS=-e bin.relocs.apply=true -e asm.sub.names=false
+CMDS=<<EOF
+pi 4 @ 0x08000040
+ir~ADD_32
+pv8 @ 0x08000059
+o-*
+EOF
+EXPECT=<<EOF
+mov rax, qword [rip + 0x17d]
+call 0x80001c4
+mov rax, qword [rip + 0x179]
+call 0x80001cc
+0x080001c4 0x00000043 ADD_32 2     cbuf - 0x08000047
+0x080001c4 0x00000048 ADD_32 4     cbuf - 0x0800004c
+0x080001cc 0x0000004f ADD_32 2     ext - 0x08000053
+0x080001cc 0x00000054 ADD_32 4     ext - 0x08000058
+0x00000000080001d4
+EOF
+RUN
+
+NAME=ELF: aarch64 GOT relocs against a common symbol load its slot
+FILE=bins/elf/aarch64-common-got.o
+ARGS=-e bin.relocs.apply=true -e asm.sub.names=false
+CMDS=<<EOF
+pi 4 @ 0x08000040
+irj~{}~sym_va
+EOF
+EXPECT=<<EOF
+adrp x0, 0x8000000
+ldr x0, [x0, 0x158]
+adrp x1, 0x8000000
+ldr x1, [x1, 0x160]
+    "sym_va": 134218072,
+    "sym_va": 134218072,
+EOF
+RUN
+
+NAME=ELF: absolute symbol values at the link base
+FILE=bins/elf/x86_64-abs-sym.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x004033f0
+pv8 @ 0x004033f8
+pv8 @ 0x00403408
+EOF
+EXPECT=<<EOF
+0x0000000000001234
+0x0000000000400100
+0x00000000004033f0
 EOF
 RUN
 
@@ -1098,7 +1280,7 @@ CMDS=<<EOF
 pv8 @ 0x100021c78
 EOF
 EXPECT=<<EOF
-0x0000000100023b68
+0x0000000100023560
 EOF
 RUN
 
@@ -1109,7 +1291,7 @@ CMDS=<<EOF
 p8 8 @ 0x21c78
 EOF
 EXPECT=<<EOF
-683b020000000000
+6035020000000000
 EOF
 RUN
 
@@ -1148,7 +1330,7 @@ EOF
 EXPECT=<<EOF
 0x100000b0f 0x0000007d ADD_32 4     __fentry__ - 0x08000081
 --
-0x100000b0f 0x100000b5e
+0x100000b0f 0x100000b26
 0x100001050 0 section..bss
 EOF
 RUN
@@ -1194,7 +1376,7 @@ CMDS=<<EOF
 ?v [0x50004ff8]
 EOF
 EXPECT=<<EOF
-0x50007bb0
+0x50007b98
 EOF
 RUN
 
@@ -1272,7 +1454,7 @@ iS~NOBITS
 is~rabin_cmd
 EOF
 EXPECT=<<EOF
-0x080384db 0x08040e2a
+0x080384db 0x08038962
 4   0x00040e40      0x0 0x08040e40  0x618a0 -rw- 0x3   NOBITS   .bss
 8   0x00040e40 0x08040e40 LOCAL  OBJ    8          rabin_cmd
 EOF
@@ -1304,7 +1486,7 @@ EOF
 EXPECT=<<EOF
 4   0x00009a83     0x0 0x08009a83     0x0 -rw- 0x3   NOBITS   .bss
 5   0x000055c8   0xe64 0x080055c8   0xe64 -r-- 0x2   PROGBITS .rodata
-0x08008703 0x080090be
+0x08008703 0x080087b6
 EOF
 RUN
 
@@ -1321,7 +1503,6 @@ vaddr      paddr      type   ntype name
 0x00002000 0x00001000 ADD_32 21    mul2
 0x00002004 0x00001004 ADD_32 21    sub2
 0x00002008 0x00001008 ADD_32 21    add2
-- 3 fd: 4 +0x00000000 0x0000200c - 0x00002017 rw- rw- .got.r2
 EOF
 RUN
 
@@ -1340,7 +1521,7 @@ vaddr      paddr      type   ntype name
 0x00002004 0x00001004 ADD_32 21    sub2
 0x00002008 0x00001008 ADD_32 21    __tls_get_addr_opt
 0x0000200c 0x0000100c ADD_32 21    add2
-- 3 fd: 4 +0x00000000 0x00002010 - 0x00002023 rw- rw- .got.r2
+- 3 fd: 4 +0x00000000 0x00002010 - 0x00002013 rw- rw- .got.r2
 EOF
 RUN
 
@@ -1355,7 +1536,61 @@ EXPECT=<<EOF
 0x00188588 0x00187588 ADD_64 16
 0x00188be0 0x00187be0 ADD_64 16    std::__once_callable
 0x00189bb8 0x00188bb8 ADD_64 16    std::__once_call
-0x000000000018fe30
+0x000000000018e640
+EOF
+RUN
+
+NAME=ELF: a symbol-less reloc takes no got.r2 slot
+FILE=bins/elf/x86_64-tailrela.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x10ce0
+pv8 @ 0x10d30
+om~.got.r2
+EOF
+EXPECT=<<EOF
+0x0000000000010e40
+0x0000000000010d28
+- 5 fd: 5 +0x00000000 0x00010e38 - 0x00010e47 rw- rw- .got.r2
+EOF
+RUN
+
+NAME=ELF: a symbol-less x86-64 TPOFF64 is applied as its addend
+FILE=bins/elf/libc-2.27.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x3ead60
+pv8 @ 0x3ead68
+EOF
+EXPECT=<<EOF
+0x0000000000000038
+0x0000000000000030
+EOF
+RUN
+
+NAME=ELF: a TLS import takes no got.r2 slot and is applied as 0
+FILE=bins/elf/tls/ext_tls
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x3fc8
+pv8 @ 0x3fd0
+EOF
+EXPECT=<<EOF
+0x0000000000000000
+0x0000000000004028
+EOF
+RUN
+
+NAME=ELF: a TLS import takes no got.r2 slot without section headers
+FILE=bins/elf/tls/ext_tls-noshdr
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x3fc8
+om~.got.r2
+EOF
+EXPECT=<<EOF
+0x0000000000000000
+- 6 fd: 5 +0x00000000 0x00004018 - 0x0000403f rw- rw- .got.r2
 EOF
 RUN
 
@@ -2171,6 +2406,61 @@ ir~?
 EOF
 EXPECT=<<EOF
 6
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=ELF: x86-64 R_X86_64_32 that does not fit is left alone
+FILE=bins/elf/analysis/test.obj
+ARGS=-B 0x100000000 -e bin.relocs.apply=true -e asm.sub.names=false
+CMDS=<<EOF
+pi 4 @ section..text
+EOF
+EXPECT=<<EOF
+push rbp
+mov rbp, rsp
+mov edi, 0
+call 0x1000002e8
+EOF
+EXPECT_ERR=<<EOF
+WARN: Reloc type 10 at 0x100000045 overflows with 0x10000005b for x64, left unpatched
+EOF
+RUN
+
+NAME=ELF: x86-64 R_X86_64_32S that does not fit is left alone
+FILE=bins/elf/test.ko
+ARGS=-B 0x100000000 -e bin.relocs.apply=true -e asm.sub.names=false
+CMDS=<<EOF
+pi 6 @ section..init.text
+EOF
+EXPECT=<<EOF
+call 0x100000b0f
+push rbp
+mov rdi, 0
+mov rbp, rsp
+call 0x100000b17
+mov rsi, 0
+EOF
+EXPECT_ERR=<<EOF
+WARN: Reloc type 11 at 0x100000085 overflows with 0x1000000ba for x64, left unpatched
+WARN: Reloc type 11 at 0x100000094 overflows with 0x100000f7f for x64, left unpatched
+WARN: Reloc type 11 at 0x10000009b overflows with 0x1000000c7 for x64, left unpatched
+WARN: Reloc type 11 at 0x1000000ac overflows with 0x1000000d0 for x64, left unpatched
+EOF
+RUN
+
+NAME=ELF: x86-64 R_X86_64_32 is unsigned, so 0x8000005b still fits
+FILE=bins/elf/analysis/test.obj
+ARGS=-B 0x80000000 -e bin.relocs.apply=true -e asm.sub.names=false
+CMDS=<<EOF
+pi 4 @ section..text
+EOF
+EXPECT=<<EOF
+push rbp
+mov rbp, rsp
+mov edi, 0x8000005b
+call 0x800002e8
 EOF
 EXPECT_ERR=<<EOF
 EOF

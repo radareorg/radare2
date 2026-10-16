@@ -20,6 +20,65 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=r+ keeps the end of the file
+FILE=malloc://8
+CMDS=<<EOF
+wx 6162636465666768
+r+2 @ 3
+r
+p8 10 @e:io.va=0
+r-2 @ 3
+r
+p8 8
+EOF
+EXPECT=<<EOF
+10
+61626364656465666768
+8
+6162636465666768
+EOF
+RUN
+
+NAME=r+ and r- at a mapped address
+FILE=malloc://8
+ARGS=-m 0x1000
+CMDS=<<EOF
+wx 6162636465666768 @ 0x1000
+r+2 @ 0x1003
+r
+p8 10 @ 0 @e:io.va=0
+r-2 @ 0x1003
+r
+p8 8 @ 0 @e:io.va=0
+EOF
+EXPECT=<<EOF
+10
+61626364656465666768
+8
+6162636465666768
+EOF
+RUN
+
+NAME=r+ and r- below the file size at a mapped address
+FILE=malloc://8
+ARGS=-m 4
+CMDS=<<EOF
+wx 6162636465666768 @ 4
+r+2 @ 7
+r
+p8 10 @ 0 @e:io.va=0
+r-2 @ 7
+r
+p8 8 @ 0 @e:io.va=0
+EOF
+EXPECT=<<EOF
+10
+61626364656465666768
+8
+6162636465666768
+EOF
+RUN
+
 NAME=r
 FILE=malloc://512
 CMDS=r
@@ -59,6 +118,154 @@ r- 304 @@s:0x0800 0x022b97a0 2048
 EOF
 EXPECT=<<EOF
 ok
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rapatch2 main from the REPL without PATH
+FILE=-
+CMDS=<<EOF
+r?~rapatch2?
+env PATH=
+rapatch2
+EOF
+EXPECT=<<EOF
+1
+Usage: rapatch2 [-p N] [-sv] [-R] [patchfile] ([targetfile])
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=REPL r2 JavaScript shortcut
+FILE=-
+ARGS=-NN
+CMDS=r2.cmd("?e shortcut").trim()
+EXPECT=<<EOF
+shortcut
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=REPL missing plugin diagnostics
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+r2mcp ignored
+r2ai ignored
+r2flutter ignored
+r2hermes ignored
+r2unity ignored
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: You need to install the plugin with r2pm -ci r2mcp
+ERROR: You need to install the plugin with r2pm -ci r2ai
+ERROR: You need to install the plugin with r2pm -ci r2flutter
+ERROR: You need to install the plugin with r2pm -ci r2hermes
+ERROR: You need to install the plugin with r2pm -ci r2unity
+EOF
+RUN
+
+NAME=REPL rejects tool name suffixes
+FILE=malloc://512
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+rax2suffix 33
+r2suffix
+r
+EOF
+EXPECT=<<EOF
+512
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid `a` subcommand, try `r?`
+ERROR: Invalid `2` subcommand, try `r?`
+EOF
+RUN
+
+NAME=rasm2 main from the REPL without PATH
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+rasm2 -a x86 -b 64 nop
+rasm2 -a x86 -b 64 -d 90
+rasm2 -a x86 -b 64 "mov rax, 33"
+?e after
+EOF
+EXPECT=<<EOF
+90
+nop
+48c7c021000000
+after
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rasm2 REPL output uses console filters and aliases
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+rasm2~Usage
+rasm2 -hh~include
+rasm2 -a x86 -b 64 -d 90c3~ret
+rasm2 -a x86 -b 64 nop >$assembled
+cat $assembled
+rasm2 -qv~?
+rasm2 -S invalid
+?e after
+EOF
+EXPECT=<<EOF
+Usage: rasm2 [-ACdDehHLBvw] [-a arch] [-b bits] [-s addr] [-S syntax]
+.include
+.incbin foo.bin include binary file
+ret
+90
+1
+after
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rasm2 REPL binary output preserves NUL bytes
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+rasm2 -a x86 -b 64 -B ".hex 410042" >$raw
+$**
+?e after
+EOF
+EXPECT=<<EOF
+$raw=base64:QQBC
+after
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rasm2 REPL keeps the passed console environment
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+env R2CONS=previous
+rasm2 -a x86 -b 64 nop
+env~R2CONS=previous?
+env~R2CONS=?
+rasm2 -S invalid
+env~R2CONS=previous?
+env~R2CONS=?
+?e after
+EOF
+EXPECT=<<EOF
+90
+0
+1
+0
+1
+after
 EOF
 EXPECT_ERR=
 RUN

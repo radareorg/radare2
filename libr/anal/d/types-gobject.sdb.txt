@@ -1,0 +1,315 @@
+# GObject 2.0: https://docs.gtk.org/gobject/
+
+GCallback=typedef
+typedef.GCallback=void (*)(void)
+
+GClosure=typedef
+typedef.GClosure=struct _GClosure
+
+GClosureNotify=typedef
+typedef.GClosureNotify=void (*)(gpointer, GClosure *)
+
+GObject=typedef
+typedef.GObject=struct _GObject
+
+GParamSpec=typedef
+typedef.GParamSpec=struct _GParamSpec
+
+GType=typedef
+typedef.GType=gsize
+
+GValue=typedef
+typedef.GValue=struct _GValue
+
+GWeakNotify=typedef
+typedef.GWeakNotify=void (*)(gpointer, GObject *)
+
+GConnectFlags=enum
+enum.GConnectFlags=G_CONNECT_DEFAULT,G_CONNECT_AFTER,G_CONNECT_SWAPPED
+enum.GConnectFlags.G_CONNECT_DEFAULT=0x0
+enum.GConnectFlags.0x0=G_CONNECT_DEFAULT
+enum.GConnectFlags.G_CONNECT_AFTER=0x1
+enum.GConnectFlags.0x1=G_CONNECT_AFTER
+enum.GConnectFlags.G_CONNECT_SWAPPED=0x2
+enum.GConnectFlags.0x2=G_CONNECT_SWAPPED
+
+g_object_add_weak_pointer=func
+func.g_object_add_weak_pointer.args=2
+func.g_object_add_weak_pointer.arg.0=GObject *,object
+func.g_object_add_weak_pointer.arg.1=gpointer *,weak_pointer_location
+func.g_object_add_weak_pointer.ret=void
+
+g_object_dup_data=func
+func.g_object_dup_data.args=4
+func.g_object_dup_data.arg.0=GObject *,object
+func.g_object_dup_data.arg.1=const gchar *,key
+func.g_object_dup_data.arg.2=GDuplicateFunc,dup_func
+func.g_object_dup_data.arg.3=gpointer,user_data
+func.g_object_dup_data.ret=gpointer
+
+g_object_dup_qdata=func
+func.g_object_dup_qdata.args=4
+func.g_object_dup_qdata.arg.0=GObject *,object
+func.g_object_dup_qdata.arg.1=GQuark,quark
+func.g_object_dup_qdata.arg.2=GDuplicateFunc,dup_func
+func.g_object_dup_qdata.arg.3=gpointer,user_data
+func.g_object_dup_qdata.ret=gpointer
+
+g_object_force_floating=func
+func.g_object_force_floating.args=1
+func.g_object_force_floating.arg.0=GObject *,object
+func.g_object_force_floating.ret=void
+
+g_object_freeze_notify=func
+func.g_object_freeze_notify.args=1
+func.g_object_freeze_notify.arg.0=GObject *,object
+func.g_object_freeze_notify.ret=void
+
+g_object_get=func
+func.g_object_get.args=3
+func.g_object_get.arg.0=gpointer,object
+func.g_object_get.arg.1=const gchar *,first_property_name
+func.g_object_get.arg.2=,...
+func.g_object_get.ret=void
+
+g_object_get_data=func
+func.g_object_get_data.args=2
+func.g_object_get_data.arg.0=GObject *,object
+func.g_object_get_data.arg.1=const gchar *,key
+func.g_object_get_data.ret=gpointer
+
+g_object_get_property=func
+func.g_object_get_property.args=3
+func.g_object_get_property.arg.0=GObject *,object
+func.g_object_get_property.arg.1=const gchar *,property_name
+func.g_object_get_property.arg.2=GValue *,value
+func.g_object_get_property.ret=void
+
+g_object_get_qdata=func
+func.g_object_get_qdata.args=2
+func.g_object_get_qdata.arg.0=GObject *,object
+func.g_object_get_qdata.arg.1=GQuark,quark
+func.g_object_get_qdata.ret=gpointer
+
+g_object_is_floating=func
+func.g_object_is_floating.args=1
+func.g_object_is_floating.arg.0=gpointer,object
+func.g_object_is_floating.ret=gboolean
+
+g_object_new=func
+func.g_object_new.args=3
+func.g_object_new.arg.0=GType,object_type
+func.g_object_new.arg.1=const gchar *,first_property_name
+func.g_object_new.arg.2=,...
+func.g_object_new.ret=gpointer
+
+g_object_new_valist=func
+func.g_object_new_valist.args=3
+func.g_object_new_valist.arg.0=GType,object_type
+func.g_object_new_valist.arg.1=const gchar *,first_property_name
+func.g_object_new_valist.arg.2=va_list,var_args
+func.g_object_new_valist.ret=GObject *
+
+g_object_new_with_properties=func
+func.g_object_new_with_properties.args=4
+func.g_object_new_with_properties.arg.0=GType,object_type
+func.g_object_new_with_properties.arg.1=guint,n_properties
+func.g_object_new_with_properties.arg.2=const char **,names
+func.g_object_new_with_properties.arg.3=const GValue *,values
+func.g_object_new_with_properties.ret=GObject *
+
+g_object_notify=func
+func.g_object_notify.args=2
+func.g_object_notify.arg.0=GObject *,object
+func.g_object_notify.arg.1=const gchar *,property_name
+func.g_object_notify.ret=void
+
+g_object_notify_by_pspec=func
+func.g_object_notify_by_pspec.args=2
+func.g_object_notify_by_pspec.arg.0=GObject *,object
+func.g_object_notify_by_pspec.arg.1=GParamSpec *,pspec
+func.g_object_notify_by_pspec.ret=void
+
+g_object_ref=func
+func.g_object_ref.args=1
+func.g_object_ref.arg.0=gpointer,object
+func.g_object_ref.ret=gpointer
+
+g_object_ref_sink=func
+func.g_object_ref_sink.args=1
+func.g_object_ref_sink.arg.0=gpointer,object
+func.g_object_ref_sink.ret=gpointer
+
+g_object_remove_weak_pointer=func
+func.g_object_remove_weak_pointer.args=2
+func.g_object_remove_weak_pointer.arg.0=GObject *,object
+func.g_object_remove_weak_pointer.arg.1=gpointer *,weak_pointer_location
+func.g_object_remove_weak_pointer.ret=void
+
+g_object_replace_data=func
+func.g_object_replace_data.args=6
+func.g_object_replace_data.arg.0=GObject *,object
+func.g_object_replace_data.arg.1=const gchar *,key
+func.g_object_replace_data.arg.2=gpointer,oldval
+func.g_object_replace_data.arg.3=gpointer,newval
+func.g_object_replace_data.arg.4=GDestroyNotify,destroy
+func.g_object_replace_data.arg.5=GDestroyNotify *,old_destroy
+func.g_object_replace_data.ret=gboolean
+
+g_object_replace_qdata=func
+func.g_object_replace_qdata.args=6
+func.g_object_replace_qdata.arg.0=GObject *,object
+func.g_object_replace_qdata.arg.1=GQuark,quark
+func.g_object_replace_qdata.arg.2=gpointer,oldval
+func.g_object_replace_qdata.arg.3=gpointer,newval
+func.g_object_replace_qdata.arg.4=GDestroyNotify,destroy
+func.g_object_replace_qdata.arg.5=GDestroyNotify *,old_destroy
+func.g_object_replace_qdata.ret=gboolean
+
+g_object_run_dispose=func
+func.g_object_run_dispose.args=1
+func.g_object_run_dispose.arg.0=GObject *,object
+func.g_object_run_dispose.ret=void
+
+g_object_set=func
+func.g_object_set.args=3
+func.g_object_set.arg.0=gpointer,object
+func.g_object_set.arg.1=const gchar *,first_property_name
+func.g_object_set.arg.2=,...
+func.g_object_set.ret=void
+
+g_object_set_data=func
+func.g_object_set_data.args=3
+func.g_object_set_data.arg.0=GObject *,object
+func.g_object_set_data.arg.1=const gchar *,key
+func.g_object_set_data.arg.2=gpointer,data
+func.g_object_set_data.ret=void
+
+g_object_set_data_full=func
+func.g_object_set_data_full.args=4
+func.g_object_set_data_full.arg.0=GObject *,object
+func.g_object_set_data_full.arg.1=const gchar *,key
+func.g_object_set_data_full.arg.2=gpointer,data
+func.g_object_set_data_full.arg.3=GDestroyNotify,destroy
+func.g_object_set_data_full.ret=void
+
+g_object_set_property=func
+func.g_object_set_property.args=3
+func.g_object_set_property.arg.0=GObject *,object
+func.g_object_set_property.arg.1=const gchar *,property_name
+func.g_object_set_property.arg.2=const GValue *,value
+func.g_object_set_property.ret=void
+
+g_object_set_qdata=func
+func.g_object_set_qdata.args=3
+func.g_object_set_qdata.arg.0=GObject *,object
+func.g_object_set_qdata.arg.1=GQuark,quark
+func.g_object_set_qdata.arg.2=gpointer,data
+func.g_object_set_qdata.ret=void
+
+g_object_set_qdata_full=func
+func.g_object_set_qdata_full.args=4
+func.g_object_set_qdata_full.arg.0=GObject *,object
+func.g_object_set_qdata_full.arg.1=GQuark,quark
+func.g_object_set_qdata_full.arg.2=gpointer,data
+func.g_object_set_qdata_full.arg.3=GDestroyNotify,destroy
+func.g_object_set_qdata_full.ret=void
+
+g_object_steal_data=func
+func.g_object_steal_data.args=2
+func.g_object_steal_data.arg.0=GObject *,object
+func.g_object_steal_data.arg.1=const gchar *,key
+func.g_object_steal_data.ret=gpointer
+
+g_object_steal_qdata=func
+func.g_object_steal_qdata.args=2
+func.g_object_steal_qdata.arg.0=GObject *,object
+func.g_object_steal_qdata.arg.1=GQuark,quark
+func.g_object_steal_qdata.ret=gpointer
+
+g_object_take_ref=func
+func.g_object_take_ref.args=1
+func.g_object_take_ref.arg.0=gpointer,object
+func.g_object_take_ref.ret=gpointer
+
+g_object_thaw_notify=func
+func.g_object_thaw_notify.args=1
+func.g_object_thaw_notify.arg.0=GObject *,object
+func.g_object_thaw_notify.ret=void
+
+g_object_unref=func
+func.g_object_unref.args=1
+func.g_object_unref.arg.0=gpointer,object
+func.g_object_unref.ret=void
+
+g_object_weak_ref=func
+func.g_object_weak_ref.args=3
+func.g_object_weak_ref.arg.0=GObject *,object
+func.g_object_weak_ref.arg.1=GWeakNotify,notify
+func.g_object_weak_ref.arg.2=gpointer,data
+func.g_object_weak_ref.ret=void
+
+g_object_weak_unref=func
+func.g_object_weak_unref.args=3
+func.g_object_weak_unref.arg.0=GObject *,object
+func.g_object_weak_unref.arg.1=GWeakNotify,notify
+func.g_object_weak_unref.arg.2=gpointer,data
+func.g_object_weak_unref.ret=void
+
+g_signal_connect_data=func
+func.g_signal_connect_data.args=6
+func.g_signal_connect_data.arg.0=gpointer,instance
+func.g_signal_connect_data.arg.1=const gchar *,detailed_signal
+func.g_signal_connect_data.arg.2=GCallback,c_handler
+func.g_signal_connect_data.arg.3=gpointer,data
+func.g_signal_connect_data.arg.4=GClosureNotify,destroy_data
+func.g_signal_connect_data.arg.5=GConnectFlags,connect_flags
+func.g_signal_connect_data.ret=gulong
+
+g_signal_connect_object=func
+func.g_signal_connect_object.args=5
+func.g_signal_connect_object.arg.0=gpointer,instance
+func.g_signal_connect_object.arg.1=const gchar *,detailed_signal
+func.g_signal_connect_object.arg.2=GCallback,c_handler
+func.g_signal_connect_object.arg.3=gpointer,gobject
+func.g_signal_connect_object.arg.4=GConnectFlags,connect_flags
+func.g_signal_connect_object.ret=gulong
+
+g_signal_emit=func
+func.g_signal_emit.args=4
+func.g_signal_emit.arg.0=gpointer,instance
+func.g_signal_emit.arg.1=guint,signal_id
+func.g_signal_emit.arg.2=GQuark,detail
+func.g_signal_emit.arg.3=,...
+func.g_signal_emit.ret=void
+
+g_signal_emit_by_name=func
+func.g_signal_emit_by_name.args=3
+func.g_signal_emit_by_name.arg.0=gpointer,instance
+func.g_signal_emit_by_name.arg.1=const gchar *,detailed_signal
+func.g_signal_emit_by_name.arg.2=,...
+func.g_signal_emit_by_name.ret=void
+
+g_signal_handler_block=func
+func.g_signal_handler_block.args=2
+func.g_signal_handler_block.arg.0=gpointer,instance
+func.g_signal_handler_block.arg.1=gulong,handler_id
+func.g_signal_handler_block.ret=void
+
+g_signal_handler_disconnect=func
+func.g_signal_handler_disconnect.args=2
+func.g_signal_handler_disconnect.arg.0=gpointer,instance
+func.g_signal_handler_disconnect.arg.1=gulong,handler_id
+func.g_signal_handler_disconnect.ret=void
+
+g_signal_handler_is_connected=func
+func.g_signal_handler_is_connected.args=2
+func.g_signal_handler_is_connected.arg.0=gpointer,instance
+func.g_signal_handler_is_connected.arg.1=gulong,handler_id
+func.g_signal_handler_is_connected.ret=gboolean
+
+g_signal_handler_unblock=func
+func.g_signal_handler_unblock.args=2
+func.g_signal_handler_unblock.arg.0=gpointer,instance
+func.g_signal_handler_unblock.arg.1=gulong,handler_id
+func.g_signal_handler_unblock.ret=void

@@ -84,6 +84,16 @@ static void do_hash_seed(RahashOptions *ro, const char *seed) {
 	}
 }
 
+static void do_hash_strprint(const char *s, PJ *pj, int rad) {
+	if (rad == 'j') {
+		pj_ks (pj, "hash", s);
+	} else if (rad == 'J') {
+		pj_s (pj, s);
+	} else {
+		printf ("%s%s", s, rad == 'n'? "": "\n");
+	}
+}
+
 static void do_hash_hexprint(const ut8 *c, int len, int ule, PJ *pj, int rad) {
 	int i;
 	char *buf = malloc (len * 2 + 1);
@@ -99,14 +109,20 @@ static void do_hash_hexprint(const ut8 *c, int len, int ule, PJ *pj, int rad) {
 			snprintf (buf + i * 2, (len - i) * 2 + 1, "%02x", c[i]);
 		}
 	}
-	if (rad == 'j') {
-		pj_ks (pj, "hash", buf);
-	} else if (rad == 'J') {
-		pj_s (pj, buf);
-	} else {
-		printf ("%s%s", buf, rad == 'n'? "": "\n");
-	}
+	do_hash_strprint (buf, pj, rad);
 	free (buf);
+}
+
+static void do_hash_valueprint(RHash *ctx, ut64 hash, int dlen, int ule, PJ *pj, int rad) {
+	if (hash & R_HASH_SSDEEP) {
+		do_hash_strprint ((const char *)ctx->digest, pj, rad);
+	} else if (dlen == R_HASH_SIZE_ENTROPY) {
+		char *s = r_str_newf ("%.8f", ctx->entropy);
+		do_hash_strprint (s, pj, rad);
+		free (s);
+	} else {
+		do_hash_hexprint (ctx->digest, dlen, ule, pj, rad);
+	}
 }
 
 static void do_hash_print(RHash *ctx, RahashOptions *ro, ut64 hash, int dlen, PJ *pj, int rad) {
@@ -122,52 +138,32 @@ static void do_hash_print(RHash *ctx, RahashOptions *ro, ut64 hash, int dlen, PJ
 				ro->to > 0? ro->to - 1: 0,
 				hname);
 		}
-		if (hash & R_HASH_SSDEEP) {
-			printf ("%s\n", ctx->digest);
-		} else if (dlen == R_HASH_SIZE_ENTROPY) {
-			printf ("%.8f\n", ctx->entropy);
-		} else {
-			do_hash_hexprint (c, dlen, ule, pj, rad);
-		}
+		do_hash_valueprint (ctx, hash, dlen, ule, pj, rad);
 		break;
 	case 1:
 		printf ("CC file %s:", hname);
-		do_hash_hexprint (c, dlen, ule, pj, rad);
+		do_hash_valueprint (ctx, hash, dlen, ule, pj, rad);
 		break;
 	case 3:
 		printf ("k file.%s=", hname);
-		if (hash & R_HASH_SSDEEP) {
-			printf ("%s\n", ctx->digest);
-		} else if (dlen == R_HASH_SIZE_ENTROPY) {
-			printf ("%.8f\n", ctx->entropy);
-		} else {
-			do_hash_hexprint (c, dlen, ule, pj, 0);
-		}
+		do_hash_valueprint (ctx, hash, dlen, ule, pj, 0);
 		break;
 	case 'n':
 		if (ro->quiet > 2) {
 			// print nothing
 		} else {
-			if (hash & R_HASH_SSDEEP) {
-				printf ("%s", ctx->digest);
-			} else {
-				do_hash_hexprint (c, dlen, ule, pj, rad);
-			}
+			do_hash_valueprint (ctx, hash, dlen, ule, pj, rad);
 		}
 		break;
 	case 'j':
 		pj_o (pj);
 		pj_ks (pj, "name", hname);
-		if (hash & R_HASH_SSDEEP) {
-			pj_ks (pj, "hash", (const char *)c);
-		} else {
-			do_hash_hexprint (c, dlen, ule, pj, rad);
-		}
+		do_hash_valueprint (ctx, hash, dlen, ule, pj, rad);
 		pj_end (pj);
 		break;
 	case 'J':
 		pj_k (pj, hname);
-		do_hash_hexprint (c, dlen, ule, pj, rad);
+		do_hash_valueprint (ctx, hash, dlen, ule, pj, rad);
 		break;
 	case 'Q':
 		// nothing to print
@@ -269,7 +265,7 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 				if (!*r_hash_name (i)) {
 					continue;
 				}
-				if (!ro->quiet && rad != 'j') {
+				if (!ro->quiet && rad != 'j' && rad != 'J') {
 					printf ("%s: ", file);
 				}
 				do_hash_print (ctx, ro, i, dlen, pj, ro->quiet? 'n': rad);
@@ -313,7 +309,7 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 			}
 		}
 	}
-	if (rad == 'j') {
+	if (rad == 'j' || rad == 'J') {
 		pj_end (pj);
 		printf ("%s\n", pj_string (pj));
 		pj_free (pj);

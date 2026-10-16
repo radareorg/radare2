@@ -2988,22 +2988,24 @@ func.mktemp.arg.0=char *,template
 func.mktemp.ret=char *
 
 objc_msgSend=func
-func.objc_msgSend.args=2
-func.objc_msgSend.arg.0=void *,instance
-func.objc_msgSend.arg.1=char *,selector
+func.objc_msgSend.args=3
+func.objc_msgSend.arg.0=void *,self
+func.objc_msgSend.arg.1=char *,op
+func.objc_msgSend.arg.2=,...
 func.objc_msgSend.ret=void *
 
 objc_msgSendSuper2=func
-func.objc_msgSendSuper2.args=2
-func.objc_msgSendSuper2.arg.0=void *,instance
-func.objc_msgSendSuper2.arg.1=char *,selector
+func.objc_msgSendSuper2.args=3
+func.objc_msgSendSuper2.arg.0=void *,super
+func.objc_msgSendSuper2.arg.1=char *,op
+func.objc_msgSendSuper2.arg.2=,...
 func.objc_msgSendSuper2.ret=void *
 
 objc_storeStrong=func
 func.objc_storeStrong.args=2
-func.objc_storeStrong.arg.0=void *,instance
-func.objc_storeStrong.arg.1=int,type
-func.objc_storeStrong.ret=void *
+func.objc_storeStrong.arg.0=void **,location
+func.objc_storeStrong.arg.1=void *,obj
+func.objc_storeStrong.ret=void
 
 objc_release=func
 func.objc_release.args=1
@@ -3012,13 +3014,13 @@ func.objc_release.ret=void
 
 objc_retain=func
 func.objc_retain.args=1
-func.objc_retain.arg.0=void *,instance
-func.objc_retain.ret=void
+func.objc_retain.arg.0=void *,obj
+func.objc_retain.ret=void *
 
 objc_retainAutoreleasedReturnValue=func
 func.objc_retainAutoreleasedReturnValue.args=1
-func.objc_retainAutoreleasedReturnValue.arg.0=void *,instance
-func.objc_retainAutoreleasedReturnValue.ret=void
+func.objc_retainAutoreleasedReturnValue.arg.0=void *,obj
+func.objc_retainAutoreleasedReturnValue.ret=void *
 
 objc_enumerationMutation=func
 func.objc_enumerationMutation.args=1
@@ -3030,6 +3032,12 @@ func.bindtextdomain.args=2
 func.bindtextdomain.arg.0=char *,domainname
 func.bindtextdomain.arg.1=char *,dirname
 func.bindtextdomain.ret=char *
+
+bind_textdomain_codeset=func
+func.bind_textdomain_codeset.args=2
+func.bind_textdomain_codeset.arg.0=const char *,domainname
+func.bind_textdomain_codeset.arg.1=const char *,codeset
+func.bind_textdomain_codeset.ret=char *
 
 textdomain=func
 func.textdomain.args=1

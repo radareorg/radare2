@@ -2034,7 +2034,8 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 		return true;
 	}
 
-	RVecRBinSection *list = r_bin_get_sections_vec (core->bin);
+	RVecRBinSection *list = bf? r_bin_file_get_sections_vec (bf): NULL;
+	const ut64 fdsize = r_io_desc_size (desc);
 	RList *maps = r_io_map_get_by_fd (core->io, desc->fd);
 	RListIter *iter;
 	RBinSection *sec;
@@ -2046,7 +2047,9 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 			R_VEC_FOREACH (list, sec) {
 				if (sec->is_segment) {
 					have_segments = true;
-					if (sec->vaddr == map->itv.addr && sec->vsize == map->itv.size) {
+					ut64 psize = sec->paddr < fdsize? R_MIN (sec->size, fdsize - sec->paddr): 0;
+					if (sec->vaddr == map->itv.addr && R_MIN (sec->vsize, psize) == map->itv.size
+							&& sec->paddr == map->delta) {
 						map_from_bin = true;
 						break;
 					}
@@ -2325,7 +2328,10 @@ static int cmd_open(void *data, const char *input) {
 			r_core_bin_set_arch_bits (core, filename, arch, bits);
 			RBinFile *file = NULL;
 			if (filename) {
-				file = r_bin_file_find_by_name (core->bin, filename);
+				file = r_bin_cur (core->bin);
+				if (!file || !file->file || strcmp (file->file, filename)) {
+					file = r_bin_file_find_by_name (core->bin, filename);
+				}
 				if (!file) {
 					R_LOG_ERROR ("Cannot find file %s", filename);
 				}

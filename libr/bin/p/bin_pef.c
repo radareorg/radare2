@@ -785,6 +785,7 @@ static bool imports_vec(RBinFile *bf) {
 			r_buf_read_at (bf->buf, at, &kind, 1);
 			ut32 symNamePtr = r_buf_read_be32_at (bf->buf, at) & 0xffffff;
 
+			r_bin_import_fini (ary[j]);
 			ary[j]->name = r_bin_name_new_from (r_buf_get_string (bf->buf, pef->ldrsec + loaderStringsOffset + symNamePtr));
 			ary[j]->libname = r_buf_get_string (bf->buf, pef->ldrsec + loaderStringsOffset + libNamePtr);
 			ary[j]->ordinal = j;

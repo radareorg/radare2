@@ -27,7 +27,7 @@ static const ut64 pow36[36] = {
 	9223372036854775808ULL,
 };
 
-static const int index36[0xff] = {
+static const int index36[0x100] = {
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -55,7 +55,7 @@ static const int index36[0xff] = {
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, // 256
+	-1, -1, -1, -1, -1, // 256
 };
 
 R_API ut64 b36_tonum(const char *s) {
@@ -66,7 +66,7 @@ R_API ut64 b36_tonum(const char *s) {
 	}
 	while (true) {
 		int idx = index36 [(unsigned char )*s];
-		if (idx < 0) {
+		if (idx < 0 || pos >= (int)R_ARRAY_SIZE (pow36)) {
 			break;
 		}
 		n += pow36[pos] * idx;

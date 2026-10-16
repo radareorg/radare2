@@ -435,56 +435,50 @@ static ut32 type_bytesize(RAnal *anal, const char *type, ut32 fallback) {
 }
 
 static void add_type_fields_to_json(RCore *core, PJ *pj, const char *struct_name, const char *type_name) {
-	const bool is_union = !strcmp (type_name, "union");
-	// Get struct members list
 	const char *value = sdb_const_getf (core->anal->sdb_types, NULL, "%s.%s", type_name, struct_name);
 	char *members = value? strdup (value): NULL;
 	if (!members) {
 		return;
 	}
-
 	pj_k (pj, "fields");
 	pj_a (pj);
-
-	ut32 current_offset = 0;
 	int i, nargs = r_str_split (members, ',');
 	for (i = 0; i < nargs; i++) {
 		const char *member_name = r_str_word_get0 (members, i);
-		if (!member_name || R_STR_ISEMPTY (member_name)) {
+		if (R_STR_ISEMPTY (member_name)) {
 			continue;
 		}
-		value = sdb_const_getf (core->anal->sdb_types, NULL, "%s.%s.%s", type_name, struct_name, member_name);
-		char *member_details = value? strdup (value): NULL;
-		if (!member_details) {
+		char *key = r_str_newf ("%s.%s.%s", type_name, struct_name, member_name);
+		ut64 offset = 0;
+		int count = 0;
+		char *type = r_type_get_member (core->anal->sdb_types, key, &offset, &count);
+		free (key);
+		if (!type) {
 			continue;
 		}
-		int details_len = r_str_split (member_details, ',');
-		if (details_len >= 3) {
-			const char *type = r_str_word_get0 (member_details, 0);
-			const char *arr_size_str = r_str_word_get0 (member_details, 2);
-			ut32 arr_size = r_num_get (NULL, arr_size_str);
-			arr_size = arr_size ? arr_size : 1;
-			ut32 size = type_bytesize (core->anal, type, 1) * arr_size;
-			pj_o (pj);
-			pj_ks (pj, "name", member_name);
-			pj_ks (pj, "type", type);
-			pj_ki (pj, "offset", current_offset);
-			pj_ki (pj, "size", size);
-			if (!is_union) {
-				current_offset += size;
-			}
-			if (arr_size > 1) {
-				pj_ki (pj, "array_size", arr_size);
-			}
-			pj_end (pj);
+		const ut64 array_size = count > 0? count: 1;
+		ut64 size;
+		if (r_mul_overflow ((ut64)type_bytesize (core->anal, type, 1), array_size, &size)) {
+			free (type);
+			continue;
 		}
-		free (member_details);
+		pj_o (pj);
+		pj_ks (pj, "name", member_name);
+		pj_ks (pj, "type", type);
+		pj_kn (pj, "offset", offset);
+		pj_kn (pj, "size", size);
+		if (array_size > 1) {
+			pj_kn (pj, "array_size", array_size);
+		}
+		pj_end (pj);
+		free (type);
 	}
 	pj_end (pj);
 	free (members);
 }
 
 static void showFormat(RCore *core, const char *name, int mode) {
+	r_core_return_code (core, R_CMD_RC_SUCCESS);
 	const char *isenum = sdb_const_get (core->anal->sdb_types, name, 0);
 	if (isenum && !strcmp (isenum, "enum")) {
 		R_LOG_INFO ("Type is an enum");
@@ -510,6 +504,7 @@ static void showFormat(RCore *core, const char *name, int mode) {
 				if (R_STR_ISNOTEMPTY (fmt)) {
 					if (strpbrk (fmt, "\r\n") || (mode && strpbrk (name, "\r\n"))) {
 						R_LOG_ERROR ("Cannot export a multiline type format");
+						r_core_return_code (core, R_CMD_RC_FAILURE);
 					} else if (mode) {
 						r_cons_printf (core->cons, "'pf.%s %s\n", name, fmt);
 					} else {
@@ -523,6 +518,7 @@ static void showFormat(RCore *core, const char *name, int mode) {
 			free (fmt);
 		} else {
 			R_LOG_ERROR ("Cannot find '%s' type", name);
+			r_core_return_code (core, R_CMD_RC_FAILURE);
 		}
 	}
 }
@@ -688,6 +684,22 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 	}
 }
 
+static bool save_parsed_type_result(RCore *core, char *out, char *errmsg) {
+	const bool success = out != NULL;
+	if (out) {
+		r_anal_save_parsed_type (core->anal, out);
+		free (out);
+	}
+	if (errmsg) {
+		R_LOG_ERROR ("%s", errmsg);
+		free (errmsg);
+	} else if (!success) {
+		R_LOG_ERROR ("Cannot parse C type declarations");
+	}
+	r_core_return_code (core, success? R_CMD_RC_SUCCESS: R_CMD_RC_FAILURE);
+	return success;
+}
+
 static void cmd_type_edit(RCore *core, const char *typename, const char *c_cmd) {
 	if (R_STR_ISEMPTY (typename)) {
 		R_LOG_ERROR ("Type name required");
@@ -705,17 +717,12 @@ static void cmd_type_edit(RCore *core, const char *typename, const char *c_cmd) 
 		char *str_trimmed = strdup (str);
 		r_str_trim (str_trimmed);
 		if (strcmp (tmp, str_trimmed)) {
-			r_core_callf (core, "t- %s", typename);
 			char *errmsg = NULL;
 			char *out = r_anal_cparse (core->anal, tmp, &errmsg);
 			if (out) {
-				r_anal_save_parsed_type (core->anal, out);
-				free (out);
+				r_core_callf (core, "t- %s", typename);
 			}
-			if (errmsg) {
-				R_LOG_ERROR ("%s", errmsg);
-				free (errmsg);
-			}
+			save_parsed_type_result (core, out, errmsg);
 		}
 		free (str_trimmed);
 		free (tmp);
@@ -1039,7 +1046,7 @@ static RList *collect_type_xrefs(RCore *core, const char *type_name) {
 	return xrefs;
 }
 
-static RList *collect_field_xrefs(RCore *core, const char *type_name, const char *field_name, ut32 field_offset) {
+static RList *collect_field_xrefs(RCore *core, const char *type_name, const char *field_name, ut64 field_offset) {
 	RList *xrefs = r_list_newf (type_xref_free);
 	if (!xrefs) {
 		return NULL;
@@ -1125,7 +1132,7 @@ static void append_xrefs_to_strbuf(RCore *core, RStrBuf *sb, RList *xrefs, bool 
 	}
 }
 
-static void print_struct_union_with_offsets(RCore *core, Sdb *TDB, SdbForeachCallback filter, const char *arg, bool is_union) {
+static void print_struct_union_with_offsets(RCore *core, Sdb *TDB, SdbForeachCallback filter, const char *arg) {
 	char *name = NULL;
 	SdbKv *kv;
 	SdbListIter *iter;
@@ -1169,7 +1176,6 @@ static void print_struct_union_with_offsets(RCore *core, Sdb *TDB, SdbForeachCal
 		}
 		r_strbuf_appendf (sb, "%s0x%08x%s %s %s%s%s {\n", color_addr, 0, color_reset, sdbkv_value (kv), color_name, name, color_reset);
 		char *p, *var = r_str_newf ("%s.%s", sdbkv_value (kv), name);
-		ut32 current_offset = 0;
 		for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
 			char *var2 = r_str_newf ("%s.%s", var, p);
 			if (var2) {
@@ -1177,9 +1183,7 @@ static void print_struct_union_with_offsets(RCore *core, Sdb *TDB, SdbForeachCal
 				int arrnum = 0;
 				char *val = r_type_get_member (TDB, var2, &moff, &arrnum);
 				if (val) {
-					ut32 arr_size = arrnum ? arrnum : 1;
-					ut32 size = type_bytesize (core->anal, val, 1) * arr_size;
-					r_strbuf_appendf (sb, "%s0x%08x%s   %s%s%s", color_addr, current_offset, color_reset, color_type, val, color_reset);
+					r_strbuf_appendf (sb, "%s0x%08"PFMT64x"%s   %s%s%s", color_addr, moff, color_reset, color_type, val, color_reset);
 					if (p && p[0] != '\0') {
 						r_strbuf_appendf (sb, "%s%s%s%s", strstr (val, " *")? "": " ", color_name, p, color_reset);
 						if (arrnum) {
@@ -1187,14 +1191,11 @@ static void print_struct_union_with_offsets(RCore *core, Sdb *TDB, SdbForeachCal
 						}
 					}
 					if (show_xrefs) {
-						RList *field_xrefs = collect_field_xrefs (core, name, p, current_offset);
+						RList *field_xrefs = collect_field_xrefs (core, name, p, moff);
 						append_xrefs_to_strbuf (core, sb, field_xrefs, use_color);
 						r_list_free (field_xrefs);
 					}
 					r_strbuf_append (sb, ";\n");
-					if (!is_union) {
-						current_offset += size;
-					}
 					free (val);
 				}
 				free (var2);
@@ -1202,7 +1203,7 @@ static void print_struct_union_with_offsets(RCore *core, Sdb *TDB, SdbForeachCal
 			free (p);
 		}
 		free (var);
-		r_strbuf_appendf (sb, "%s0x%08x%s };\n", color_addr, current_offset, color_reset);
+		r_strbuf_appendf (sb, "%s0x%08"PFMT64x"%s };\n", color_addr, r_anal_type_bitsize (core->anal, name) / 8, color_reset);
 		if (match) {
 			break;
 		}
@@ -1510,9 +1511,9 @@ static void print_type_view(RCore *core, const char *arg) {
 		const char *type_kind = sdb_const_get (TDB, arg, 0);
 		if (type_kind) {
 			if (!strcmp (type_kind, "struct")) {
-				print_struct_union_with_offsets (core, TDB, stdifstruct, arg, false);
+				print_struct_union_with_offsets (core, TDB, stdifstruct, arg);
 			} else if (!strcmp (type_kind, "union")) {
-				print_struct_union_with_offsets (core, TDB, stdifunion, arg, true);
+				print_struct_union_with_offsets (core, TDB, stdifunion, arg);
 			} else if (!strcmp (type_kind, "enum")) {
 				print_enum_with_offsets (core, TDB, arg);
 			} else if (!strcmp (type_kind, "type")) {
@@ -1531,8 +1532,8 @@ static void print_type_view(RCore *core, const char *arg) {
 			R_LOG_ERROR ("Type not found: %s", arg);
 		}
 	} else {
-		print_struct_union_with_offsets (core, TDB, stdifstruct, NULL, false);
-		print_struct_union_with_offsets (core, TDB, stdifunion, NULL, true);
+		print_struct_union_with_offsets (core, TDB, stdifstruct, NULL);
+		print_struct_union_with_offsets (core, TDB, stdifunion, NULL);
 		print_enum_with_offsets (core, TDB, NULL);
 		print_basic_type_with_offsets (core, TDB, NULL);
 		print_func_with_offsets (core, TDB, NULL);
@@ -2336,7 +2337,7 @@ static int cmd_type(void *data, const char *input) {
 			}
 			break;
 		case 'v': // "tuv"
-			print_struct_union_with_offsets (core, TDB, stdifunion, r_str_trim_head_ro (input + 2), true);
+			print_struct_union_with_offsets (core, TDB, stdifunion, r_str_trim_head_ro (input + 2));
 			break;
 		case ' ':
 			showFormat (core, r_str_trim_head_ro (input + 1), 0);
@@ -2504,7 +2505,7 @@ static int cmd_type(void *data, const char *input) {
 			}
 			break;
 		case 'v': // "tsv"
-			print_struct_union_with_offsets (core, TDB, stdifstruct, r_str_trim_head_ro (input + 2), false);
+			print_struct_union_with_offsets (core, TDB, stdifstruct, r_str_trim_head_ro (input + 2));
 			break;
 		case '?': // "ts?"
 			r_cons_cmd_help (core->cons, help_msg_ts);
@@ -2718,29 +2719,13 @@ static int cmd_type(void *data, const char *input) {
 					if (tmp) {
 						char *errmsg = NULL;
 						char *out = r_anal_cparse (core->anal, tmp, &errmsg);
-						if (out) {
-							// r_cons_print (core->cons, out);
-							r_anal_save_parsed_type (core->anal, out);
-							free (out);
-						}
-						if (errmsg) {
-							R_LOG_ERROR ("%s", errmsg);
-							free (errmsg);
-						}
+						save_parsed_type_result (core, out, errmsg);
 						free (tmp);
 					}
 				} else {
 					char *errmsg = NULL;
 					char *out = r_anal_cparse_file (core->anal, filename, dir, &errmsg);
-					if (out) {
-						// r_cons_print (core->cons, out);
-						r_anal_save_parsed_type (core->anal, out);
-						free (out);
-					}
-					if (errmsg) {
-						R_LOG_ERROR ("%s", errmsg);
-						free (errmsg);
-					}
+					save_parsed_type_result (core, out, errmsg);
 				}
 				free (homefile);
 			} else if (input[1] == 'u') {
@@ -2773,21 +2758,16 @@ static int cmd_type(void *data, const char *input) {
 					char *errmsg = NULL;
 					char *out = r_anal_cparse (core->anal, tmp, &errmsg);
 					if (out) {
-						// remove previous types and save new edited types
 						sdb_reset (TDB);
-						r_anal_save_parsed_type (core->anal, out);
-						free (out);
 					}
-					if (errmsg) {
-						R_LOG_ERROR ("%s", errmsg);
-						free (errmsg);
-					}
+					save_parsed_type_result (core, out, errmsg);
 					free (tmp);
 				}
 				free (str);
 			}
 		} else {
 			R_LOG_ERROR ("Sandbox: system call disabled");
+			r_core_return_code (core, R_CMD_RC_FAILURE);
 		}
 		break;
 	// td - parse string with cparse engine and load types from it
@@ -2809,15 +2789,8 @@ static int cmd_type(void *data, const char *input) {
 				char *errmsg = NULL;
 				char *out = r_anal_cparse (core->anal, tmp, &errmsg);
 				free (tmp);
-				if (out) {
-					r_anal_save_parsed_type (core->anal, out);
-					free (out);
-					free (errmsg);
+				if (save_parsed_type_result (core, out, errmsg)) {
 					break;
-				}
-				if (errmsg) {
-					R_LOG_ERROR ("%s", errmsg);
-					free (errmsg);
 				}
 				r_cons_any_key (core->cons, NULL);
 			}
@@ -2829,16 +2802,10 @@ static int cmd_type(void *data, const char *input) {
 			char *errmsg = NULL;
 			char *out = r_anal_cparse (core->anal, tmp, &errmsg);
 			free (tmp);
-			if (out) {
-				r_anal_save_parsed_type (core->anal, out);
-				free (out);
-			}
-			if (errmsg) {
-				R_LOG_ERROR ("%s", errmsg);
-				free (errmsg);
-			}
+			save_parsed_type_result (core, out, errmsg);
 		} else {
 			R_LOG_ERROR ("Invalid use of td. See td? for help");
+			r_core_return_code (core, R_CMD_RC_FAILURE);
 		}
 		break;
 	case 'v': // "tv"

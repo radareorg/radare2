@@ -11,7 +11,7 @@ EOF
 EXPECT=<<EOF
 16
 --
-paddr=0x00007fa4 vaddr=0x0000bfa4 haddr=0x00000344 type=program
+paddr=0x00007fa4 vaddr=0x0000bfa4 haddr=0x00000344 vhaddr=0x00004344 type=program
 --
 ldr pc, [reloc.strcmp]
 EOF

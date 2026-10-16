@@ -113,3 +113,102 @@ lw a0, -segment.LOAD0(gp)
 lw t9, -sym.imp.printf(gp)
 EOF
 RUN
+
+NAME=ESIL function and block access scopes use byte extents
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx b801000000c34889d890
+af+ 0 scope
+afb+ 0 0 6
+s 4
+aeafj
+aeAfj
+aeabj
+aeAbj
+aeaBj 0
+aeABj 0
+EOF
+EXPECT=<<EOF
+{"A":["rax","rsp","rip"],"I":["rsp"],"R":["rsp"],"W":["rax","rip","rsp"],"V":["1","0","8"],"@R":[0]}
+{"A":["rax","rsp","rip"],"I":["rsp"],"R":["rsp"],"W":["rax","rip","rsp"],"V":["1","0","8"],"@R":[0]}
+{"A":["rax","rsp","rip"],"I":["rsp"],"R":["rsp"],"W":["rax","rip","rsp"],"V":["1","0","8"],"@R":[0]}
+{"A":["rax","rsp","rip"],"I":["rsp"],"R":["rsp"],"W":["rax","rip","rsp"],"V":["1","0","8"],"@R":[0]}
+{"A":["rax","rsp","rip"],"I":["rsp"],"R":["rsp"],"W":["rax","rip","rsp"],"V":["1","0","8"],"@R":[0]}
+{"A":["rax","rsp","rip"],"I":["rsp"],"R":["rsp"],"W":["rax","rip","rsp"],"V":["1","0","8"],"@R":[0]}
+EOF
+RUN
+
+NAME=ESIL count mode still counts instructions and byte mode stops at its boundary
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx b801000000c34889d890
+aeaj 3
+aeAj 6
+aeAj 1
+EOF
+EXPECT=<<EOF
+{"A":["rax","rsp","rip","rbx"],"I":["rsp","rbx"],"R":["rsp","rbx"],"W":["rax","rip","rsp"],"V":["1","0","8"],"N":["rbx"],"@R":[0]}
+{"A":["rax","rsp","rip"],"I":["rsp"],"R":["rsp"],"W":["rax","rip","rsp"],"V":["1","0","8"],"@R":[0]}
+{"A":[],"I":[],"R":[],"W":[]}
+EOF
+RUN
+
+NAME=aea keeps the effects after an access to unmapped memory
+FILE=-
+ARGS=-a x86 -b64
+CMDS=<<EOF
+wx 53
+aea 1
+EOF
+EXPECT=<<EOF
+ I: rsp rbx
+ A: rsp rbx
+ R: rsp rbx
+ W: rsp
+ V: -8
+ N: rbx
+EOF
+RUN
+
+NAME=aea reads both registers of an arm64 stp to unmapped memory
+FILE=-
+ARGS=-a arm -b64
+CMDS=<<EOF
+wx fd7bbfa9
+aea 1
+EOF
+EXPECT=<<EOF
+ I: sp fp lr
+ A: sp fp lr
+ R: sp fp lr
+ W: sp
+ V: -16
+ N: fp lr
+EOF
+RUN
+
+NAME=aea reads unmapped memory as io fills it, with or without esil.nonull
+FILE=-
+ARGS=-a x86 -b64
+CMDS=<<EOF
+wx 5b
+ar rsp=0xdead0000
+aea 1
+e esil.nonull=true
+aea 1
+EOF
+EXPECT=<<EOF
+ I: rsp
+ A: rsp rbx
+ R: rsp
+ W: rsp rbx
+ V: 3735879688 -1
+ I: rsp
+ A: rsp rbx
+ R: rsp
+ W: rsp rbx
+ V: 3735879688 -1
+EOF
+RUN

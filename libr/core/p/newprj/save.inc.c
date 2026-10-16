@@ -108,6 +108,78 @@ static void rprj_vart_write(RPrjCursor *cur) {
 	rprj_meta_write (cur, R_META_TYPE_VARTYPE);
 }
 
+static void rprj_fmt_write(RPrjCursor *cur) {
+	rprj_meta_write (cur, R_META_TYPE_FORMAT);
+}
+
+static const char *rprj_sdb_addr(const char *key, ut64 *addr, const char **suffix) {
+	const char *number = NULL;
+	if (r_str_startswith (key, "global.inferred.0x") || r_str_startswith (key, "global.semantic.0x")
+		|| r_str_startswith (key, "global.layout.0x") || r_str_startswith (key, "global.field.conflict.0x")) {
+		number = strstr (key, ".0x");
+		if (number) {
+			number += 3;
+		}
+	} else if (r_str_startswith (key, "link.") || r_str_startswith (key, "offset.")
+		|| r_str_startswith (key, "calllink.")) {
+		number = strchr (key, '.') + 1;
+	}
+	if (!number || !isxdigit ((ut8)*number)) {
+		return NULL;
+	}
+	char *end;
+	errno = 0;
+	*addr = strtoull (number, &end, 16);
+	if (errno == ERANGE || (*end && *end != '.')) {
+		return NULL;
+	}
+	*suffix = end;
+	return number;
+}
+
+static bool rprj_type_write_cb(void *user, const char *key, const char *value) {
+	RPrjCursor *cur = user;
+	ut64 addr;
+	const char *suffix;
+	if (r_str_startswith (key, "range.") || rprj_sdb_addr (key, &addr, &suffix)) {
+		return true;
+	}
+	rprj_write_le32 (cur->b, rprj_st_append (cur->st, key));
+	rprj_write_le32 (cur->b, rprj_st_append (cur->st, value));
+	return true;
+}
+
+static bool rprj_sdb_addr_write_cb(void *user, const char *key, const char *value) {
+	RPrjCursor *cur = user;
+	ut64 addr;
+	const char *suffix;
+	if (rprj_sdb_addr (key, &addr, &suffix)) {
+		rprj_write_le32 (cur->b, rprj_st_append (cur->st, key));
+		rprj_write_le32 (cur->b, rprj_st_append (cur->st, value));
+		rprj_write_project_addr (cur->b, rprj_mod_addr (cur, addr));
+	}
+	return true;
+}
+
+static void rprj_type_write(RPrjCursor *cur) {
+	sdb_foreach (cur->core->anal->sdb_types, rprj_type_write_cb, cur);
+}
+
+static void rprj_tlnk_write(RPrjCursor *cur) {
+	sdb_foreach (cur->core->anal->sdb_types, rprj_sdb_addr_write_cb, cur);
+}
+
+static bool rprj_global_write_cb(void *user, const char *key, const char *value) {
+	if (r_str_startswith (key, "global.")) {
+		return rprj_sdb_addr_write_cb (user, key, value);
+	}
+	return true;
+}
+
+static void rprj_global_write(RPrjCursor *cur) {
+	sdb_foreach (cur->core->anal->sdb, rprj_global_write_cb, cur);
+}
+
 static void rprj_xref_write_one(RPrjCursor *cur, RAnalRef *ref) {
 	R2ProjectAddr from = rprj_mod_addr (cur, ref->at);
 	R2ProjectAddr to = rprj_mod_addr (cur, ref->addr);
@@ -480,9 +552,13 @@ static bool r_core_newprj_save(RCore *core, const char *file) {
 	rprj_write_entry (&cur, RPRJ_MAPS, rprj_maps_write);
 	rprj_write_entry (&cur, RPRJ_MODS, rprj_mods_write);
 	rprj_write_entry (&cur, RPRJ_EVAL, rprj_eval_write);
+	rprj_write_entry (&cur, RPRJ_TYPE, rprj_type_write);
 	rprj_write_entry (&cur, RPRJ_FLAG, rprj_flag_write);
+	rprj_write_entry (&cur, RPRJ_TLNK, rprj_tlnk_write);
+	rprj_write_entry (&cur, RPRJ_GLOB, rprj_global_write);
 	rprj_write_entry (&cur, RPRJ_CMNT, rprj_cmnt_write);
 	rprj_write_entry (&cur, RPRJ_VART, rprj_vart_write);
+	rprj_write_entry (&cur, RPRJ_FMT, rprj_fmt_write);
 	rprj_write_entry (&cur, RPRJ_HINT, rprj_hints_write);
 	rprj_write_entry (&cur, RPRJ_FUNC, rprj_function_write);
 	rprj_write_entry (&cur, RPRJ_XREF, rprj_xref_write);

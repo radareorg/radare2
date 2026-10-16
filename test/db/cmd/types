@@ -4,7 +4,7 @@ CMDS=<<EOF
 af;pdc~strcp
 EOF
 EXPECT=<<EOF
-    sym.imp.__strcpy_chk () // char *__strcpy_chk("", -1, 32)
+    x0 = __strcpy_chk ("", x1, 32)
 EOF
 RUN
 
@@ -68,6 +68,30 @@ Bar
 Foo
 'pf d a
 'pf zd hello world
+EOF
+RUN
+
+NAME=td tcc anonymous struct in typedef field names are not format strings
+FILE=--
+CMDS=<<EOF
+e types.plugin=tcc
+'td typedef struct { int a.%p.%p; char b[4]; } T;
+tk~typedef.T
+'td typedef struct { int a.b; char c[4]; } U;
+tk~typedef.U
+EOF
+EXPECT=<<EOF
+typedef.U=struct
+typedef.U.a.b=int32_t,0,0
+typedef.U.a.b.meta=0
+typedef.U.c=char,4,4
+typedef.U.c.meta=4
+typedef.U.fields=a.b,c
+<string>:1: error: ',' expected (got "%")
+<string>:1: error: ';' expected (got "p.")
+<string>:1: error: bracket expected
+<string>:1: error: '}' expected (got "%")
+<string>:1: error: declaration expected
 EOF
 RUN
 
@@ -247,6 +271,35 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=tcc: quote as last byte after an error
+FILE=malloc://32
+CMDS=<<EOF
+-e types.plugin=tcc
+af+ 0 f
+afb+ 0 0 16
+'CF #define A '' "
+EOF
+EXPECT=<<EOF
+<string>:1: error: empty character constant
+<string>:1: error: missing terminating " character
+EOF
+RUN
+
+NAME=tcc: string literal in a define
+FILE=malloc://32
+CMDS=<<EOF
+-e types.plugin=tcc
+af+ 0 f
+afb+ 0 0 16
+'CF #define S "x y"
+'CF int f(int a, char *s);
+afs
+EOF
+EXPECT=<<EOF
+int32_t f (int32_t a, char *s);
+EOF
+RUN
+
 NAME=t
 FILE=-
 CMDS=t~char,double,float,int,long,short,size,uid,void # basic universal types
@@ -281,6 +334,7 @@ CMDS=<<EOF
 t int
 t-*
 t int
+s 0
 EOF
 EXPECT=<<EOF
 'pf d
@@ -462,9 +516,11 @@ t~char,double,float,int,long,short,size,uid,void # basic universal types
 t~addr,date,dox,name
 ts~addr,date,dox,name
 t addr
+s 0
 EOF
 EXPECT_ERR=<<EOF
 ERROR: cpp: your compiler doesn't have support to my API
+ERROR: Cannot parse C type declarations
 ERROR: Cannot find 'addr' type
 EOF
 EXPECT=<<EOF
@@ -1763,7 +1819,7 @@ var pid_t pid @ rbp-0x14b8
 var int32_t var_14bch @ rbp-0x14bc
 var signed int var_14c0h @ rbp-0x14c0
 var int32_t var_14c4h @ rbp-0x14c4
-var int32_t options @ rbp-0x14c8
+var int32_t var_14c8h @ rbp-0x14c8
 var int64_t wstatus @ rbp-0x14cc
 var int32_t var_14d4h @ rbp-0x14d4
 var char ** var_14e0h @ rbp-0x14e0
@@ -1814,16 +1870,16 @@ EXPECT=<<EOF
 arg int argc @ r0
 arg char ** argv @ r1
 var uint32_t v5 @ sp+0x0
-var char * option @ fp-0xc
+var char * dest @ fp-0xc
 var pid_t var_14h @ fp-0x10
 var int32_t var_18h @ fp-0x14
-var char * options @ fp-0x18
+var char * var_1ch @ fp-0x18
 var char * s @ fp-0x1c
 var char * c @ fp-0x20
 var int32_t var_28h @ fp-0x24
 var char * src @ fp-0x28
 var int32_t var_30h @ fp-0x2c
-var char * v4 @ fp-0x30
+var char * v2 @ fp-0x30
 var pid_t pid @ fp-0x34
 var int32_t var_3ch @ fp-0x38
 var int32_t var_40h @ fp-0x3c
@@ -2878,6 +2934,37 @@ EXPECT=<<EXPECT
 EXPECT
 RUN
 
+NAME=tcc malformed preprocessor directives do not crash or hang
+FILE=--
+CMDS=<<CMDS
+-e types.plugin=tcc
+'td #pragma pack(3)
+'td #line 1 2
+'td #else
+'td #endif
+'td /* unterminated comment
+'td #if #"stale"
+'td int a[*1];
+'td struct ok { char a; int b; }
+tk ~struct.ok=
+CMDS
+EXPECT=<<EXPECT
+struct.ok=a,b
+<string>:1: error: invalid pack pragma
+<string>: error: #line
+<string>:1: error: #else without matching #if
+<string>:1: error: #endif without matching #if
+<string>:1: error: unexpected end of file in comment
+<string>:1: error: declaration expected
+<string>:1: error: identifier5 expected
+<string>:1: error: constant expression expected
+<string>:1: error: missing #endif
+<string>:1: error: declaration expected
+<string>:1: error: pointer expected
+<string>:1: error: declaration expected
+EXPECT
+RUN
+
 NAME=tsv struct with offsets
 FILE=--
 CMDS=<<EOF
@@ -2902,7 +2989,7 @@ EXPECT=<<EOF
 0x00000000 union bar {
 0x00000000   int a;
 0x00000000   short b;
-0x00000000 };
+0x00000004 };
 EOF
 RUN
 
@@ -2930,7 +3017,7 @@ EXPECT=<<EOF
 0x00000000 union value {
 0x00000000   int i;
 0x00000000   float f;
-0x00000000 };
+0x00000004 };
 EOF
 RUN
 
@@ -3139,8 +3226,8 @@ struct tpl {
   pair<int, char> p;
 };
 0x00000000 struct tpl {
-0x00000000   pair<int, char> p;
-0x00000001 };
+0x00000008   pair<int, char> p;
+0x00000008 };
 EOF
 RUN
 
@@ -3162,7 +3249,7 @@ union utpl {
 0x00000000 union utpl {
 0x00000000   pair<int, char> p[4];
 0x00000000   int32_t q;
-0x00000000 };
+0x00000004 };
 EOF
 RUN
 
@@ -5441,6 +5528,261 @@ func.longjmp_chk.noreturn=true
 EOF
 RUN
 
+NAME=GLib string and utility prototypes
+FILE=bins/elf/gnome-extensions
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+tfc g_strcmp0
+tfc g_str_equal
+tfc g_strdup
+tfc g_strsplit
+tfc g_strdup_printf
+tfc g_strdup_vprintf
+tfc g_strconcat
+tfc g_string_new
+tfc g_string_append_printf
+tfc g_utf8_validate
+tfc g_malloc_n
+tfc g_memdup
+tfc g_memdup2
+tfc g_shell_parse_argv
+tfc g_file_get_contents
+EOF
+EXPECT=<<EOF
+int g_strcmp0 (const char * str1, const char * str2);
+gboolean g_str_equal (gconstpointer v1, gconstpointer v2);
+gchar * g_strdup (const gchar * str);
+gchar ** g_strsplit (const gchar * string, const gchar * delimiter, gint max_tokens);
+gchar * g_strdup_printf (const gchar * format, ...);
+gchar * g_strdup_vprintf (const gchar * format, va_list args);
+gchar * g_strconcat (const gchar * string1, ...);
+GString * g_string_new (const gchar * init);
+void g_string_append_printf (GString * string, const gchar * format, ...);
+gboolean g_utf8_validate (const gchar * str, gssize max_len, const gchar ** end);
+gpointer g_malloc_n (gsize n_blocks, gsize n_block_bytes);
+gpointer g_memdup (gconstpointer mem, guint byte_size);
+gpointer g_memdup2 (gconstpointer mem, gsize byte_size);
+gboolean g_shell_parse_argv (const gchar * command_line, gint * argcp, gchar *** argvp, GError ** error);
+gboolean g_file_get_contents (const gchar * filename, gchar ** contents, gsize * length, GError ** error);
+EOF
+RUN
+
+NAME=GLib types follow the active binary
+FILE=bins/elf/gnome-extensions
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+tk g_strcmp0~?
+tk g_object_get_data~?
+tk g_file_copy~?
+o bins/elf/ls
+tk g_strcmp0~?
+tk g_object_get_data~?
+tk g_file_copy~?
+ob 0
+tk g_strcmp0~?
+tk g_object_get_data~?
+tk g_file_copy~?
+EOF
+EXPECT=<<EOF
+1
+1
+1
+0
+0
+0
+1
+1
+1
+EOF
+RUN
+
+NAME=GLib scalar types follow target pointer width
+FILE=bins/elf/gnome-extensions
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+tss gboolean
+tss gsize
+tss gssize
+tss gpointer
+tss GStrv
+tss gunichar
+tss gunichar2
+tss GType
+tss GCallback
+tss GClosureNotify
+e asm.bits=32
+tss gboolean
+tss gsize
+tss gssize
+tss gpointer
+tss GStrv
+tss gunichar
+tss gunichar2
+tss GType
+tss GCallback
+tss GClosureNotify
+EOF
+EXPECT=<<EOF
+4
+8
+8
+8
+8
+4
+2
+8
+8
+8
+4
+4
+4
+4
+4
+4
+2
+4
+4
+4
+EOF
+RUN
+
+NAME=GLib prototypes survive target OS changes
+FILE=bins/elf/gnome-extensions
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+tf g_strcmp0~func.g_strcmp0.ret=
+e asm.os=windows
+tf g_strcmp0~func.g_strcmp0.ret=
+e asm.os=macos
+tf g_strcmp0~func.g_strcmp0.ret=
+e asm.os=android
+tf g_strcmp0~func.g_strcmp0.ret=
+te GNormalizeMode 3
+te GFileTest 16
+EOF
+EXPECT=<<EOF
+func.g_strcmp0.ret=int
+func.g_strcmp0.ret=int
+func.g_strcmp0.ret=int
+func.g_strcmp0.ret=int
+G_NORMALIZE_ALL_COMPOSE
+G_FILE_TEST_EXISTS
+EOF
+RUN
+
+NAME=GLib imported functions use built-in prototypes
+FILE=bins/elf/gnome-extensions
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+af @ sym.imp.g_strcmp0
+afsq @ sym.imp.g_strcmp0
+af @ sym.imp.g_strdup
+afsq @ sym.imp.g_strdup
+af @ sym.imp.g_object_get_data
+afsq @ sym.imp.g_object_get_data
+af @ sym.imp.g_file_new_for_path
+afsq @ sym.imp.g_file_new_for_path
+EOF
+EXPECT=<<EOF
+int sym.imp.g_strcmp0 (const char *str1, const char *str2);
+gchar * sym.imp.g_strdup (const gchar *str);
+gpointer sym.imp.g_object_get_data (GObject *object, const gchar *key);
+GFile * sym.imp.g_file_new_for_path (const char *path);
+EOF
+RUN
+
+NAME=GLib collection and variant imports have prototypes
+FILE=bins/elf/gnome-extensions
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+tfc g_hash_table_new_full
+tfc g_option_context_parse
+tfc g_variant_dict_lookup
+tfc g_ptr_array_sort
+EOF
+EXPECT=<<EOF
+GHashTable * g_hash_table_new_full (GHashFunc hash_func, GEqualFunc key_equal_func, GDestroyNotify key_destroy_func, GDestroyNotify value_destroy_func);
+gboolean g_option_context_parse (GOptionContext * context, gint * argc, gchar *** argv, GError ** error);
+gboolean g_variant_dict_lookup (GVariantDict * dict, const gchar * key, const gchar * format_string, ...);
+void g_ptr_array_sort (GPtrArray * array, GCompareFunc compare_func);
+EOF
+RUN
+
+NAME=GObject data and signal imports have prototypes
+FILE=bins/elf/gnome-extensions
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+tfc g_object_get_data
+tfc g_object_set_data_full
+tfc g_object_ref
+tfc g_signal_connect_data
+tfc g_object_new
+tt GClosureNotify
+tt GDestroyNotify
+EOF
+EXPECT=<<EOF
+gpointer g_object_get_data (GObject * object, const gchar * key);
+void g_object_set_data_full (GObject * object, const gchar * key, gpointer data, GDestroyNotify destroy);
+gpointer g_object_ref (gpointer object);
+gulong g_signal_connect_data (gpointer instance, const gchar * detailed_signal, GCallback c_handler, gpointer data, GClosureNotify destroy_data, GConnectFlags connect_flags);
+gpointer g_object_new (GType object_type, const gchar * first_property_name, ...);
+void (*)(gpointer, GClosure *)
+void (*)(gpointer)
+EOF
+RUN
+
+NAME=GIO file and IPC imports have prototypes
+FILE=bins/elf/gnome-extensions
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+tfc g_file_copy
+tfc g_dbus_proxy_call_sync
+tfc g_subprocess_new
+tfc g_unix_input_stream_new
+tfc g_desktop_app_info_get_string
+tss GBusType
+tss GConnectFlags
+EOF
+EXPECT=<<EOF
+gboolean g_file_copy (GFile * source, GFile * destination, GFileCopyFlags flags, GCancellable * cancellable, GFileProgressCallback progress_callback, gpointer progress_callback_data, GError ** error);
+GVariant * g_dbus_proxy_call_sync (GDBusProxy * proxy, const gchar * method_name, GVariant * parameters, GDBusCallFlags flags, gint timeout_msec, GCancellable * cancellable, GError ** error);
+GSubprocess * g_subprocess_new (GSubprocessFlags flags, GError ** error, const gchar * argv0, ...);
+GInputStream * g_unix_input_stream_new (gint fd, gboolean close_fd);
+char * g_desktop_app_info_get_string (GDesktopAppInfo * info, const char * key);
+4
+4
+EOF
+RUN
+
+NAME=Indexed type loads include transitive dependencies
+FILE=bins/elf/gnome-extensions
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+t-*
+tol types-gio
+tk g_strcmp0
+tk g_object_get_data
+tk g_file_copy
+EOF
+EXPECT=<<EOF
+func
+func
+func
+EOF
+RUN
+
+NAME=Indexed type loads reject path traversal
+FILE=bins/elf/gnome-extensions
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+tol types-../types
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+WARN: Invalid type database name 'types-../types'
+EOF
+RUN
+
 NAME=a function keeps its prototype when a struct tag shares its name
 FILE=malloc://64
 ARGS=-a x86 -b 64
@@ -5551,5 +5893,98 @@ EXPECT=<<EOF
 {"name":"Empty","values":{}}
 {"name":"Full","values":{"Zero":0,"One":1}}
 {"name":"Last","values":{}}
+EOF
+RUN
+
+NAME=Signed access inference preserves fixed-width stack variables
+FILE=malloc://128
+ARGS=-a x86 -b 64
+CMDS=<<EOF_CMDS
+wx 554889e54883ec200fbe45ff0fbf45fc486345f8488b45f04883f8007c00c9c3
+af
+aaft
+afv
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+var int8_t var_1h @ rbp-0x1
+var int16_t var_4h @ rbp-0x4
+var signed int var_8h @ rbp-0x8
+var int64_t var_10h @ rbp-0x10
+EOF_EXPECT
+RUN
+
+NAME=struct JSON and views preserve canonical aligned member offsets
+FILE=--
+ARGS=-b 64
+CMDS=<<EOF
+'td struct rea_vfs_prefix { int iVersion; int szOsFile; int mxPathname; void *pNext; const char *zName; void *pAppData; };
+tsj rea_vfs_prefix
+tss rea_vfs_prefix
+tsv rea_vfs_prefix
+EOF
+EXPECT=<<EOF
+{"name":"rea_vfs_prefix","format":"ddd[4].pzp iVersion szOsFile mxPathname pNext zName pAppData","fields":[{"name":"iVersion","type":"int","offset":0,"size":4},{"name":"szOsFile","type":"int","offset":4,"size":4},{"name":"mxPathname","type":"int","offset":8,"size":4},{"name":"pNext","type":"void *","offset":16,"size":8},{"name":"zName","type":"const char *","offset":24,"size":8},{"name":"pAppData","type":"void *","offset":32,"size":8}]}
+40
+0x00000000 struct rea_vfs_prefix {
+0x00000000   int iVersion;
+0x00000004   int szOsFile;
+0x00000008   int mxPathname;
+0x00000010   void *pNext;
+0x00000018   const char *zName;
+0x00000020   void *pAppData;
+0x00000028 };
+EOF
+RUN
+
+NAME=struct member array extents retain alignment gaps
+FILE=--
+ARGS=-b 64
+CMDS=<<EOF
+'td struct rea_layout { char tag; int values[3]; long long end; };
+tsj rea_layout
+tss rea_layout
+EOF
+EXPECT=<<EOF
+{"name":"rea_layout","format":"c[3].[3]dq tag values end","fields":[{"name":"tag","type":"char","offset":0,"size":1},{"name":"values","type":"int","offset":4,"size":12,"array_size":3},{"name":"end","type":"long long","offset":16,"size":8}]}
+24
+EOF
+RUN
+
+NAME=aggregate size uses maximum canonical member extent and rejects overflow
+FILE=--
+CMDS=<<EOF
+tk rea_gap=struct
+tk struct.rea_gap=a,b
+tk struct.rea_gap.a=int,16,0
+tk struct.rea_gap.b=int,4,0
+tss rea_gap
+tk rea_union=union
+tk union.rea_union=c,q
+tk union.rea_union.c=char,0,0
+tk union.rea_union.q=long long,0,0
+tss rea_union
+tk struct.rea_gap.a=int,18446744073709551615,0
+tss rea_gap
+EOF
+EXPECT=<<EOF
+20
+8
+0
+EOF
+RUN
+
+NAME=tcc skipped include must not pop the include stack
+FILE=-
+CMDS=<<EOF
+e types.plugin=tcc
+'td #include "/x_overflow.h"
+'td #include "/missing.h"
+'td struct foo { int x; };
+ts foo
+?e done
+EOF
+EXPECT=<<EOF
+'pf d x
+done
 EOF
 RUN

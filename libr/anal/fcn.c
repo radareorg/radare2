@@ -1020,6 +1020,7 @@ typedef struct {
 	bool is_dalvik;
 	bool is_stm8;
 	bool walk_depth; // a fresh function's walk, so fcn->stack is trustworthy
+	ReadAhead ra; // one cache for the walk, so a block inside the last read reads no io
 } FcnWalk;
 
 // Schedule a block to be scanned once the current one finishes. False means the
@@ -1105,6 +1106,10 @@ static void walk_exit(FcnWalk *w, const WalkFrame *f) {
 		r_anal_function_remove_block (w->fcn, bb);
 	}
 	r_anal_block_update_hash (bb);
+	RAnalRegUsage *usage = r_anal_block_reg_usage (bb, NULL);
+	if (usage) {
+		usage->hash = r_swap_ut32 (bb->bbhash);
+	}
 	r_unref (bb);
 	if (f->exit.restore) {
 		w->fcn->stack = f->stack;
@@ -1121,8 +1126,7 @@ static void fcn_scan(FcnWalk *w, ut64 addr) {
 	RAnalFunction *fcn = w->fcn;
 	const ut64 len = w->len;
 	const char *variadic_reg = NULL;
-	ReadAhead ra_storage;
-	ReadAhead *ra = NULL;
+	ReadAhead *ra = &w->ra;
 	const char *bp_reg = NULL;
 	const char *sp_reg = NULL;
 	char op_dst_buf[32];
@@ -1306,10 +1310,6 @@ static void fcn_scan(FcnWalk *w, ut64 addr) {
 	}
 	bool has_variadic_reg = !!variadic_reg;
 	const bool nopskip = w->nopskip;
-	memset (&ra_storage, 0, sizeof (ra_storage));
-	ra = &ra_storage;
-	ra->cache_addr = UT64_MAX; // invalidate the cache
-
 	RAnalOp op_storage;
 	r_anal_op_init (&op_storage);
 	op = &op_storage;
@@ -1447,6 +1447,7 @@ noskip:
 			}
 		}
 		idx += oplen;
+		r_anal_block_reg_usage (bb, op);
 		delay.un_idx = idx;
 		if (anal->opt.delay && op->delay > 0 && !delay.pending) {
 			// Handle first pass through a branch delay jump:
@@ -1859,6 +1860,8 @@ noskip:
 					/// XXX RAnalFunction *fcn = r_anal_function_new (anal, op->jump);
 					RAnalFunction *nfcn = r_anal_create_function (anal, NULL, op->jump, 0, NULL);
 					r_anal_function (anal, nfcn? nfcn: fcn, op->jump, R_ANAL_REF_TYPE_CALL);
+					// cmd.fcn.new may have written io, so the next block reads it again
+					w->ra.cache_addr = UT64_MAX;
 #endif
 					gotoBeach (R_ANAL_RET_END);
 				}
@@ -2482,6 +2485,7 @@ beach:
 // Walk the blocks reachable from addr with an explicit stack of frames, scanning them in
 // the order the recursion this replaces scanned them and returning the value it returned.
 static int fcn_walk(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, bool follow) {
+	r_anal_reg_usage_check_profile (anal);
 	RCore *core = anal->coreb.core;
 	const char *arch = anal->config? anal->config->arch: R_SYS_ARCH;
 	FcnWalk w = {
@@ -2508,6 +2512,7 @@ static int fcn_walk(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, bool f
 	w.is_dalvik = w.is_x86 ? false : arch && !strncmp (arch, "dalvik", 6);
 	w.is_stm8 = (w.is_x86 || w.is_arm || w.is_dalvik || w.is_mips) ? false : arch && r_str_startswith (arch, "stm8");
 	w.walk_depth = r_list_empty (fcn->bbs);
+	w.ra.cache_addr = UT64_MAX;
 	RVecWalkFrame_init (&w.frames);
 	fcn_scan (&w, addr);
 	while (!RVecWalkFrame_empty (&w.frames)) {
@@ -2800,6 +2805,10 @@ R_API bool r_anal_function_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 
 
 	block->jump = jump;
 	block->fail = fail;
+	RAnalRegUsage *usage = r_anal_block_reg_usage (block, NULL);
+	if (usage) {
+		usage->unknown = true; // Handcrafted blocks do not establish a complete callee body.
+	}
 	if (diff) {
 		if (!block->diff) {
 			block->diff = r_anal_diff_new ();
@@ -3313,21 +3322,13 @@ beach:
 }
 
 R_API char *r_anal_function_get_signature_string(RAnalFunction *fcn) {
-	char *res = NULL;
-	char *type_name;
-
 	R_RETURN_VAL_IF_FAIL (fcn && fcn->anal && fcn->anal->sdb_types, NULL);
 	RAnalFunctionSignature *signature = r_anal_function_get_signature (fcn);
 	if (!signature) {
 		return NULL;
 	}
-	type_name = function_signature_type_name (fcn->anal, fcn);
-	if (type_name) {
-		res = function_signature_string (
-			R_STR_ISNOTEMPTY (fcn->name)? fcn->name: type_name,
-			signature->ret_type, signature->params, true, false);
-		free (type_name);
-	}
+	char *res = signature->signature;
+	signature->signature = NULL;
 	r_anal_function_signature_free (signature);
 	return res;
 }

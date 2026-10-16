@@ -120,7 +120,7 @@ fs *
 fs~?*
 EOF
 EXPECT=<<EOF
-9
+10
 EOF
 RUN
 

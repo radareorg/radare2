@@ -51,8 +51,33 @@ bool test_r_hex_str2binmask_dot_nibbles(void) {
 	mu_end;
 }
 
+bool test_r_hex_str2binmask_question_nibbles(void) {
+	ut8 keyword[3] = {0};
+	ut8 mask[3] = {0};
+	int len = r_hex_str2binmask ("0x3? 0x?5 0x88", keyword, mask);
+	mu_assert_eq (len, 3, "prefixed wildcard length");
+	mu_assert_memeq (keyword, "\x30\x05\x88", 3, "prefixed wildcard bytes");
+	mu_assert_memeq (mask, "\xf0\x0f\xff", 3, "prefixed wildcard masks");
+	len = r_hex_str2binmask ("?", keyword, mask);
+	mu_assert_eq (len, -1, "single wildcard is an odd nibble");
+	mu_assert_eq (keyword[0], 0, "single wildcard byte");
+	mu_assert_eq (mask[0], 0, "single wildcard mask");
+	mu_end;
+}
+
+bool test_r_hex_str2binmask_invalid(void) {
+	ut8 keyword[3] = {0};
+	ut8 mask[3] = {0};
+	mu_assert_eq (r_hex_str2binmask ("31..gg", keyword, mask), 0, "reject invalid masked hex");
+	mu_assert_eq (r_hex_str2binmask ("?z", keyword, mask), 0, "reject invalid masked nibble");
+	mu_assert_eq (r_hex_str2binmask ("", keyword, mask), 0, "reject empty hex");
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_hex_str2binmask_dot_nibbles);
+	mu_run_test (test_r_hex_str2binmask_question_nibbles);
+	mu_run_test (test_r_hex_str2binmask_invalid);
 	return tests_passed != tests_run;
 }
 

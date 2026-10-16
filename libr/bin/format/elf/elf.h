@@ -55,16 +55,22 @@ typedef struct r_bin_elf_section_t {
 typedef struct r_bin_elf_symbol_t {
 	ut64 offset;
 	ut64 size;
+	ut64 st_value;
 	ut32 ordinal;
+	ut16 st_shndx;
 	bool in_shdr;
-	bool is_sht_null;
 	bool is_vaddr; /* when true, offset is virtual address, otherwise it's physical */
-	bool is_imported;
 	const char *bind;
 	const char *type;
 	char name[ELF_STRING_LENGTH];
 	char libname[ELF_STRING_LENGTH];
 } RBinElfSymbol;
+
+// an SHN_ABS or common symbol, whose st_value is not an address
+typedef struct r_bin_elf_special_sym_t {
+	ut64 value;
+	bool common;
+} RBinElfSpecialSym;
 
 typedef struct r_bin_elf_reloc_t {
 	int sym;
@@ -168,6 +174,7 @@ struct Elf_(obj_t) {
 	size_t imports_by_ord_size;
 	RBinSymbol **symbols_by_ord;
 	size_t symbols_by_ord_size;
+	HtUP *special_by_ord; // ordinal -> RBinElfSpecialSym
 
 	int bss;
 	ut64 size;
@@ -198,6 +205,7 @@ struct Elf_(obj_t) {
 	RList *inits;
 	HtUU *rel_cache;
 	HtUU *ppc64_plt_stubs; // ppc64: slot_vaddr -> stub_vaddr (lazy, NULL until first use)
+	HtUU *x86_pltgot_stubs; // x86: got slot vaddr -> .plt.got stub vaddr (lazy)
 	ut64 arm64_plt_esize; // aarch64: measured plt entry stride, 0 until probed
 	ut64 *ppc32_thunks; // ppc32: plt slot index -> call thunk vaddr, lazy
 	ut64 ppc32_nthunks;
@@ -230,6 +238,7 @@ ut64 Elf_(get_baddr)(struct Elf_(obj_t) *bin);
 ut64 Elf_(p2v)(struct Elf_(obj_t) *bin, ut64 paddr);
 ut64 Elf_(v2p)(struct Elf_(obj_t) *bin, ut64 vaddr);
 ut64 Elf_(get_boffset)(struct Elf_(obj_t) *bin);
+ut64 Elf_(get_entry_vaddr)(struct Elf_(obj_t) *bin);
 ut64 Elf_(get_entry_offset)(struct Elf_(obj_t) *bin);
 ut64 Elf_(get_main_offset)(struct Elf_(obj_t) *bin);
 ut64 Elf_(get_init_offset)(struct Elf_(obj_t) *bin);

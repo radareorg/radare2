@@ -12,6 +12,30 @@ esil: st6,st7,=,st5,st6,=,st4,st5,=,st3,st4,=,st2,st3,=,st1,st2,=,st0,st1,=,32,0
 EOF
 RUN
 
+NAME=fninit resets the x87 control, status and tag words
+FILE=malloc://0x100
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx dbe3
+ar cwd=0x1234
+ar swd=0x3800
+ar ftw=0xff
+ar fop=0x1d9
+aes
+ar cwd
+ar swd
+ar ftw
+ar fop
+EOF
+EXPECT=<<EOF
+0x0000037f
+0x00000000
+0x00000000
+0x00000000
+EOF
+RUN
+
 NAME=fst dword [rsp] esil
 FILE=-
 CMDS=<<EOF
@@ -290,3 +314,21 @@ EXPECT=<<EOF
 0x4008000000000000
 EOF
 RUN
+
+NAME=x87 stack in 32-bit code
+FILE=malloc://0x100
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx d9e8d9ee
+aes
+aes
+ar st0
+ar st1
+EOF
+EXPECT=<<EOF
+0x00000000
+0x3ff0000000000000
+EOF
+RUN
+

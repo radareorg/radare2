@@ -1408,3 +1408,60 @@ typedef
 struct Ctx
 EOF
 RUN
+
+NAME=ARM constant argument does not rename an overwritten local
+FILE=malloc://256
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wa push {fp, lr} @ 0
+wa add fp, sp, 4 @ 4
+wa sub sp, sp, 8 @ 8
+wx 08001be5 @ 12
+wa mov r0, 1 @ 16
+wa bl 0x80 @ 20
+wa sub sp, fp, 4 @ 24
+wa pop {fp, pc} @ 28
+wa bx lr @ 0x80
+af @ 0x80
+afn helper @ 0x80
+af @ 0
+afn caller @ 0
+afs int helper(int options) @ 0x80
+aei
+aeim
+aaft
+afv @ 0
+EOF
+EXPECT=<<EOF
+var int32_t var_8h @ fp-0x8
+EOF
+RUN
+
+NAME=ARM constant ends an argument register copy chain
+FILE=malloc://256
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wa push {fp, lr} @ 0
+wa add fp, sp, 4 @ 4
+wa sub sp, sp, 8 @ 8
+wx 08301be5 @ 12
+wa mov r3, 1 @ 16
+wa mov r0, r3 @ 20
+wa bl 0x80 @ 24
+wa sub sp, fp, 4 @ 28
+wa pop {fp, pc} @ 32
+wa bx lr @ 0x80
+af @ 0x80
+afn helper @ 0x80
+af @ 0
+afn caller @ 0
+afs int helper(int options) @ 0x80
+aei
+aeim
+aaft
+afv @ 0
+EOF
+EXPECT=<<EOF
+var int32_t var_8h @ fp-0x8
+EOF
+RUN

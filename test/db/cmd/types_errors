@@ -1,0 +1,37 @@
+NAME=type parse failures and missing headers report command failure
+FILE=--
+CMDS=<<EOF
+{"cmd":"td int broken("}
+{"cmd":"td int recovered(int value)"}
+{"cmd":"to /__rea_missing_types_header__.h"}
+{"cmd":"td int recovered2(void)"}
+{"cmd":"tsj rea_type_does_not_exist"}
+{"cmd":"td int recovered3(void)"}
+s 0
+EOF
+EXPECT=<<EOF
+{"res":"","error":true,"value":1,"logs":[{"type":"ERROR","origin":"save_parsed_type_result","message":"at line 1: Cannot find ) in function definition"}],"code":1}
+{"res":"","error":false,"value":1,"code":0}
+{"res":"","error":true,"value":1,"logs":[{"type":"ERROR","origin":"save_parsed_type_result","message":"Cannot parse C type declarations"}],"code":1}
+{"res":"","error":false,"value":1,"code":0}
+{"res":"\n","error":true,"value":1,"logs":[{"type":"ERROR","origin":"showFormat","message":"Cannot find 'rea_type_does_not_exist' type"}],"code":1}
+{"res":"","error":false,"value":1,"code":0}
+EOF
+RUN
+
+NAME=sandbox denied type import reports failure and inline types remain available
+FILE=--
+CMDS=<<EOF
+e cfg.sandbox.grain=none
+e cfg.sandbox=true
+{"cmd":"to forbidden.h"}
+{"cmd":"td int sandbox_recovered(int value)"}
+tk func.sandbox_recovered.ret
+s 0
+EOF
+EXPECT=<<EOF
+{"res":"","error":true,"value":1,"logs":[{"type":"ERROR","origin":"cmd_type","message":"Sandbox: system call disabled"}],"code":1}
+{"res":"","error":false,"value":1,"code":0}
+int
+EOF
+RUN

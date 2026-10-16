@@ -2681,7 +2681,13 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8 *block, 
 			SdbKv *kv;
 			SdbList *sdbls = sdb_foreach_list (core->print->formats, true);
 			ls_foreach (sdbls, iter, kv) {
-				r_cons_printf (core->cons, "'pf.%s %s\n", sdbkv_key (kv), sdbkv_value (kv));
+				const char *key = sdbkv_key (kv);
+				const char *value = sdbkv_value (kv);
+				if (!strpbrk (value, "\r\n")) {
+					char *name = r_name_check (key)? NULL: r_name_filter_dup (key);
+					r_cons_printf (core->cons, "'pf.%s %s\n", name? name: key, value);
+					free (name);
+				}
 			}
 			/* delete a format */
 		} else if (input[1] && input[2] == '-') { // "pf-"
