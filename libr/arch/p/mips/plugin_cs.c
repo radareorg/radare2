@@ -1221,6 +1221,19 @@ static void t9_invalidate(PluginData *pd, RAnalOp *op, cs_insn *insn) {
 	}
 }
 
+// decode cannot see register values, so a mask held in a register is trusted
+static RAnalStackOp and_sp_stackop(cs_insn *insn) {
+	if (OPCOUNT () != 3 || REGID (0) != MIPS_REG_SP) {
+		return R_ANAL_STACK_NULL;
+	}
+	const bool sp1 = REGID (1) == MIPS_REG_SP;
+	const bool sp2 = REGID (2) == MIPS_REG_SP;
+	if (sp1 == sp2) {
+		return sp1? R_ANAL_STACK_NOP: R_ANAL_STACK_NULL;
+	}
+	return REGID (sp1? 2: 1) == MIPS_REG_ZERO? R_ANAL_STACK_NULL: R_ANAL_STACK_ALIGN;
+}
+
 // target is the first immediate operand; reg-first forms (bgezal, bltzal, ...) keep it in op1, not op0
 static void set_jump_target(RAnalOp *op, cs_insn *insn) {
 	int i;
@@ -1527,12 +1540,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->type = R_ANAL_OP_TYPE_XOR;
 		break;
 	case MIPS_INS_AND:
+		op->stackop = and_sp_stackop (insn);
+		/* fallthrough */
 	case MIPS_INS_ANDI:
 		SET_VAL (op,2);
 		op->type = R_ANAL_OP_TYPE_AND;
-		if (REGID(0) == MIPS_REG_SP) {
-			op->stackop = R_ANAL_STACK_ALIGN;
-		}
 		break;
 	case MIPS_INS_NOT:
 		op->type = R_ANAL_OP_TYPE_NOT;
