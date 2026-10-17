@@ -1489,3 +1489,17 @@ java
 dart
 EOF
 RUN
+
+NAME=ic- class after aa drops the cached class methods
+FILE=bins/mach0/objc-employee
+CMDS=<<EOF
+aa
+ic-Employee
+af-*
+aa
+afl~?
+EOF
+EXPECT=<<EOF
+22
+EOF
+RUN

@@ -74,6 +74,13 @@ static void import_cache_cleanup(RBinObject *o) {
 	r_bin_object_import_cache_cleanup (o);
 }
 
+static void symbol_cache_cleanup(RBinObject *o) {
+	ht_up_free (o->addr2klassmethod);
+	ht_up_free (o->symbol_addr_ht);
+	o->addr2klassmethod = NULL;
+	o->symbol_addr_ht = NULL;
+}
+
 static void clamp_list(RList *list, int limit) {
 	if (!list || limit < 1) {
 		return;
@@ -251,9 +258,7 @@ static void object_delete_items(RBinObject *o) {
 	R_RETURN_IF_FAIL (o);
 	ut32 i = 0;
 	r_strpool_free (o->pool);
-	ht_up_free (o->addr2klassmethod);
-	ht_up_free (o->symbol_addr_ht);
-	o->symbol_addr_ht = NULL;
+	symbol_cache_cleanup (o);
 	r_list_free (o->entries);
 	r_list_free (o->fields);
 	r_list_free (o->libs);
@@ -856,6 +861,8 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	const int limit = bin->options.limit;
 	int minlen = (bf->rbin->options.minstrlen > 0) ? bf->rbin->options.minstrlen : p->minstrlen;
 	bf->bo = bo;
+	// reloading moves or frees the symbols and methods these caches point to
+	symbol_cache_cleanup (bo);
 
 	if (p->info) {
 		r_bin_info_free (bo->info);

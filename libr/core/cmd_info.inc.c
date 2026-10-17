@@ -1264,6 +1264,7 @@ static void cmd_ic_sub(RCore *core, const char *input) {
 			} else {
 				// delete class!
 				r_list_delete (klasses, iter);
+				cmd_ic_invalidate_method_cache (core);
 				free (klass_name);
 				return;
 			}

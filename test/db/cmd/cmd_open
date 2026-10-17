@@ -877,3 +877,31 @@ EXPECT=<<EOF2
 32
 EOF2
 RUN
+
+NAME=obr after aa drops the cached class methods
+FILE=bins/mach0/objc-employee
+CMDS=<<EOF2
+aa
+obr 0x10000
+af-*
+aa
+afl~method.Employee?
+EOF2
+EXPECT=<<EOF2
+13
+EOF2
+RUN
+
+NAME=obr after aa drops the cached symbols
+FILE=bins/java/Hello.class
+CMDS=<<EOF2
+aa
+obr 0x10000
+af-*
+aa
+afl~?
+EOF2
+EXPECT=<<EOF2
+11
+EOF2
+RUN
