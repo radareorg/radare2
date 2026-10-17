@@ -15,6 +15,7 @@ typedef struct {
 	ut64 vaddr;
 	ut64 size;
 	const char *origin;
+	ut64 *values_left;
 } GResCtx;
 
 typedef struct {
@@ -210,18 +211,25 @@ static bool gres_add_value(const GResCtx *ctx, const GResItem *item, const char 
 	if (data_offset > UT64_MAX - ctx->paddr || data_offset > UT64_MAX - ctx->vaddr) {
 		return true;
 	}
+	// items and sections can alias the same value, which would be decoded and extracted once per item
+	if (value_size > *ctx->values_left) {
+		R_LOG_DEBUG ("Skipping overlapping resource at 0x%08"PFMT64x, ctx->paddr + data_offset);
+		return true;
+	}
+	*ctx->values_left -= value_size;
 	return gres_add_resource (resources, name, "gresource",
 		(flags & GRES_FLAG_COMPRESSED)? "zlib": NULL, ctx->origin,
 		ctx->paddr + data_offset, ctx->vaddr + data_offset, data_size);
 }
 
-static bool gres_parse_section(RBinFile *bf, const RBinSection *section, RVecRBinResource *resources) {
+static bool gres_parse_section(RBinFile *bf, const RBinSection *section, RVecRBinResource *resources, ut64 *values_left) {
 	GResCtx ctx = {
 		.buf = bf->buf,
 		.paddr = section->paddr,
 		.vaddr = section->vaddr,
 		.size = section->size,
 		.origin = section->name,
+		.values_left = values_left,
 	};
 	ut8 header[GRES_HEADER_SIZE];
 	if (!gres_read (&ctx, 0, header, sizeof (header))
@@ -326,10 +334,12 @@ bool Elf_(load_gresources)(RBinFile *bf, ELFOBJ *eo, RVecRBinResource *resources
 	if (!sections) {
 		return false;
 	}
+	// values of a real bundle never overlap, so their sizes cannot add up to more than the file
+	ut64 values_left = r_buf_size (bf->buf);
 	RBinSection *section;
 	R_VEC_FOREACH (sections, section) {
 		if (section->name && r_str_startswith (section->name, GRES_SECTION_PREFIX)
-			&& section->size && !gres_parse_section (bf, section, resources)) {
+			&& section->size && !gres_parse_section (bf, section, resources, &values_left)) {
 			return false;
 		}
 	}
