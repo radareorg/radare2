@@ -80,6 +80,12 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 	int i;
 	char *content = NULL;
 
+	// the declared size comes from a section header: never allocate beyond what the buffer holds
+	const ut64 file_size = r_buf_size (file_buf);
+	if (offset >= file_size) {
+		return NULL;
+	}
+	size = R_MIN (size, file_size - offset);
 	ut8 *buf = malloc (size);
 	if (!buf) {
 		return NULL;

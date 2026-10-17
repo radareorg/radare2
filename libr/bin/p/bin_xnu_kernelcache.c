@@ -258,6 +258,12 @@ static void ensure_kexts_initialized(RKernelCacheObj *obj, RBinFile *bf);
 
 static void r_kernel_cache_free(RKernelCacheObj *obj);
 
+// section sizes come from the file, check them against the buffer before allocating
+static bool range_in_buf(RBuffer *b, ut64 offset, ut64 size) {
+	const ut64 bsz = r_buf_size (b);
+	return offset <= bsz && size <= bsz - offset;
+}
+
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	RBuffer *fbuf = r_ref (buf);
 	struct MACH0_(opts_t) opts;
@@ -1080,7 +1086,7 @@ static void process_constructors(RKernelCacheObj *obj, struct MACH0_(obj_t) * ma
 			continue;
 		}
 
-		ut8 *buf = calloc (section->size, 1);
+		ut8 *buf = range_in_buf (obj->cache_buf, section->paddr + paddr, section->size)? calloc (section->size, 1): NULL;
 		if (!buf) {
 			break;
 		}
@@ -1136,7 +1142,7 @@ static void process_constructors_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKer
 			continue;
 		}
 
-		ut8 *buf = calloc (section->size, 1);
+		ut8 *buf = range_in_buf (obj->cache_buf, section->paddr, section->size)? calloc (section->size, 1): NULL;
 		if (!buf) {
 			break;
 		}
@@ -1535,7 +1541,7 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 		}
 	}
 
-	data_const = malloc (data_const_size);
+	data_const = range_in_buf (obj->cache_buf, data_const_offset, data_const_size)? malloc (data_const_size): NULL;
 	if (!data_const) {
 		goto beach;
 	}
@@ -1708,7 +1714,7 @@ static RList *resolve_mig_subsystem(RKernelCacheObj *obj) {
 		goto beach;
 	}
 
-	data_const = malloc (data_const_size);
+	data_const = range_in_buf (obj->cache_buf, data_const_offset, data_const_size)? malloc (data_const_size): NULL;
 	if (!data_const) {
 		goto beach;
 	}
@@ -2468,7 +2474,7 @@ static bool load_kext_text_blob(RBinFile *bf, RKext *kext, RKextTextBlob *blob) 
 		return false;
 	}
 
-	ut8 *buf = malloc (kext->text_range.size);
+	ut8 *buf = range_in_buf (obj->cache_buf, kext->text_range.offset, kext->text_range.size)? malloc (kext->text_range.size): NULL;
 	if (!buf) {
 		return false;
 	}
