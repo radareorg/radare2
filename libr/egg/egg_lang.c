@@ -1233,13 +1233,21 @@ static void rcc_next(REgg *egg) {
 			if (egg->lang.docall) {
 				for (i = 0; i < egg->lang.ninlines; i++) {
 					if (!strcmp (str, egg->lang.inlines[i].name)) {
-						p = egg->lang.inlines[i].body;
+						char *body = egg->lang.inlines[i].body;
 						egg->lang.docall = 0;
+						if (!body) {
+							R_LOG_ERROR ("Recursive expansion of inline '%s'", str);
+							break;
+						}
+						// take the body out while expanding it, so an inline cannot call itself forever
+						egg->lang.inlines[i].body = NULL;
+						rcc_reset_callname (egg);
 						e->comment (egg, "inline");
 						r_egg_lang_parsechar (egg, '\n'); /* FIX parsing issue */
-						for (; *p; p++) {
+						for (p = body; *p; p++) {
 							r_egg_lang_parsechar (egg, *p);
 						}
+						egg->lang.inlines[i].body = body;
 						egg->lang.docall = 0;
 						break;
 					}

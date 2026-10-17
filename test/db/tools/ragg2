@@ -811,3 +811,22 @@ EXPECT=<<EOF
 90
 EOF
 RUN
+
+NAME=ragg2 expands inlines
+FILE=-
+CMDS=!ragg2 -a x86 -b 32 -e 'z@inline(){ 1; } main@global(){ z(); z(); }'
+EXPECT=<<EOF
+b801000000b801000000c3
+EOF
+RUN
+
+NAME=ragg2 rejects a recursive inline
+FILE=-
+CMDS=!ragg2 -a x86 -b 32 -e 'z@inline(){ z(); } main@global(){ z(); }'
+EXPECT=<<EOF
+c3
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Recursive expansion of inline 'z'
+EOF
+RUN

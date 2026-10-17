@@ -50,3 +50,40 @@ EXPECT=<<EOF
 5589e581ec000800006a038b1c24b806000000cd8083c404cc81c4000800005dc3
 EOF
 RUN
+
+
+NAME=egg: inline calling itself
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.bits=64
+e asm.assembler=x86.nz
+e asm.arch=x86
+e asm.os=linux
+gi exec
+'g  z@inline(){ z(); } main@global(){ z(); }
+EOF
+EXPECT=<<EOF
+57b0bb4848690fb0c1578999e6316e58f70554916a01535fffeb48c3
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Recursive expansion of inline 'z'
+EOF
+RUN
+
+NAME=egg: inlines calling each other
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.bits=64
+e asm.assembler=x86.nz
+e asm.arch=x86
+e asm.os=linux
+gi exec
+'g  y@inline(){ z(); } z@inline(){ y(); } main@global(){ z(); }
+EOF
+EXPECT=<<EOF
+57b0bb4848690fb0c1578999e6316e58f70554916a01535fffeb48c3
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Recursive expansion of inline 'z'
+EOF
+RUN
