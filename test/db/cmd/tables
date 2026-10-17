@@ -131,3 +131,20 @@ size
 
 EOF
 RUN
+
+
+NAME=table query with an invalid column index
+FILE=bins/elf/ls
+CMDS=<<EOF
+is,[99]/strlen/1~?
+is,[-1]/minlen/1~?
+is,/maxlen/name/2~?
+is,[7]/maxlen/10~?
+EOF
+EXPECT=<<EOF
+2
+2
+2
+18
+EOF
+RUN
