@@ -1377,8 +1377,8 @@ R_API bool r_cons_write(RCons *cons, const void *data, size_t len) {
 	if (!cons->null) {
 		R_CRITICAL_ENTER (cons);
 		// str may point into the buffer that cons_palloc reallocates
-		const bool inbuf = ctx->buffer && str >= ctx->buffer && str < ctx->buffer + ctx->buffer_len;
-		const size_t off = inbuf? str - ctx->buffer: 0;
+		const size_t off = (uintptr_t)str - (uintptr_t)ctx->buffer;
+		const bool inbuf = ctx->buffer && off < ctx->buffer_len;
 		size_t done = 0;
 		while (done < len) {
 			const int want = R_MIN (SIXTEEN_MEGS, len - done);
