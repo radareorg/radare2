@@ -232,7 +232,7 @@ if arch_plugins.contains('x86_zydis')
 endif
 
 links = []
-incs = [platform_inc, '../xps']
+incs = [platform_inc, '../xps', '../../shlr']
 if get_option('use_v35')
 r_arch_sources += 'p/arm/plugin_v35.c'
 binaryninja = subproject('binaryninja')
