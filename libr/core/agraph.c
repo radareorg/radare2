@@ -1963,6 +1963,46 @@ err:
  * 4) reorder nodes in each layer to reduce the number of edge crossing
  * 5) assign x and y coordinates to each node
  * 6) restore the original graph, with long edges and cycles */
+// turn the dummy chains left by a previous layout back into plain edges
+static void remove_dummy_nodes(RAGraph *g) {
+	const RListIter *it;
+	RGraphNode *gn;
+	RANode *a;
+	RVecGraphNodePtr dummies;
+	RVecGraphNodePtr_init (&dummies);
+	graph_foreach_anode (r_graph_get_nodes (g->graph), it, gn, a) {
+		if (a->is_dummy) {
+			RVecGraphNodePtr_push_back (&dummies, &gn);
+			continue;
+		}
+		int nth = 0;
+		RGraphNode *gd;
+		while ((gd = r_graph_nth_neighbour (g->graph, gn, nth))) {
+			RANode *d = get_anode (gd);
+			if (!d || !d->is_dummy) {
+				nth++;
+				continue;
+			}
+			RANode *b = d;
+			int steps = g->graph->n_nodes;
+			while (b && b->is_dummy && steps-- > 0) {
+				b = get_anode (r_graph_nth_neighbour (g->graph, b->gnode, 0));
+			}
+			r_agraph_del_edge (g, a, d);
+			if (b && !b->is_dummy) {
+				r_agraph_add_edge_at (g, a, b, nth++);
+			}
+		}
+	}
+	RGraphNode **dn;
+	R_VEC_FOREACH (&dummies, dn) {
+		ranode_free (get_anode (*dn));
+		(*dn)->data = NULL;
+	}
+	r_graph_del_nodes (g->graph, &dummies);
+	RVecGraphNodePtr_fini (&dummies);
+}
+
 static void set_layout(RAGraph *g) {
 	RCons *cons = g->can->cons;
 	int i, j, k;
@@ -1970,6 +2010,7 @@ static void set_layout(RAGraph *g) {
 	r_list_free (g->edges);
 	g->edges = r_list_newf ((RListFree)aedge_free);
 
+	remove_dummy_nodes (g);
 	remove_cycles (g);
 	assign_layers (g);
 	create_dummy_nodes (g);
