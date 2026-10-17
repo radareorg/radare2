@@ -202,7 +202,8 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 		return 1;
 	}
 	ut64 fsize = r_io_desc_size (io->desc);
-	if (fsize < 1) {
+	// an empty file hashes like empty input, but a -t range cannot fit in it
+	if (fsize < 1 && ro->to > 0) {
 		R_LOG_ERROR ("Invalid file size");
 		return 1;
 	}
@@ -254,6 +255,11 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 					int len = ((j + bsize) > ro->to)? (ro->to - j): bsize;
 					r_io_pread_at (io, j, buf, len);
 					do_hash_internal (ctx, ro, hashbit, buf, len, pj, rad, 0);
+				}
+				// no block was read: hashes that r_hash_do_begin/end do not
+				// cover still need one pass over the empty input
+				if (fsize == 0 && !ro->s.buf && !(hashbit & (R_HASH_MD5 | R_HASH_SHA1 | R_HASH_SHA256 | R_HASH_SHA384 | R_HASH_SHA512))) {
+					do_hash_internal (ctx, ro, hashbit, buf, 0, pj, rad, 0);
 				}
 				if (ro->s.buf && !ro->s.prefix) {
 					do_hash_internal (ctx, ro, hashbit, ro->s.buf, ro->s.len, pj, rad, 0);
