@@ -1,0 +1,344 @@
+NAME=ext2 nested relative and absolute symlinks preserve nodes
+FILE=malloc://0x2400
+CMDS=<<EOF
+e log.level=0
+wv4 16 @ 0x400
+wv4 16 @ 0x404
+wv4 1 @ 0x414
+wv4 8192 @ 0x420
+wv4 16 @ 0x428
+wv2 0xef53 @ 0x438
+wv4 1 @ 0x44c
+wv2 128 @ 0x458
+wv4 2 @ 0x460
+wv4 3 @ 0x808
+wv2 0x41ed @ 0xc80
+wv4 1024 @ 0xc84
+wv4 5 @ 0xca8
+wv2 0x41ed @ 0xd00
+wv4 1024 @ 0xd04
+wv4 6 @ 0xd28
+wv2 0x81a4 @ 0xd80
+wv4 14 @ 0xd84
+wv4 7 @ 0xda8
+wv2 0xa1ff @ 0xe00
+wv4 1 @ 0xe04
+wx 6d @ 0xe28
+wv2 0xa1ff @ 0xe80
+wv4 1 @ 0xe84
+wx 6b @ 0xea8
+wv2 0xa1ff @ 0xf00
+wv4 1 @ 0xf04
+wx 2f @ 0xf28
+wv2 0xa1ff @ 0xf80
+wv4 11 @ 0xf84
+wx 6d2f68656c6c6f2e747874 @ 0xfa8
+wv2 0xa1ff @ 0x1000
+wv4 0 @ 0x1004
+wx 020000000c0001022e @ 0x1400
+wx 020000000c0002022e2e @ 0x140c
+wx 030000000c00010264 @ 0x1418
+wx 04000000dc03090168656c6c6f2e747874 @ 0x1424
+wx 030000000c0001022e @ 0x1800
+wx 020000000c0002022e2e @ 0x180c
+wx 050000000c0001076c @ 0x1818
+wx 060000000c0001076d @ 0x1824
+wx 070000000c0001076b @ 0x1830
+wx 080000000c00010775 @ 0x183c
+wx 09000000b803010765 @ 0x1848
+wx 73796d6c696e6b20636861696e0a @ 0x1c00
+m /mnt ext2 0
+md /mnt/d/l
+mc /mnt/d/l/hello.txt
+mc /mnt/d/u
+md /mnt/d/e
+mc /mnt/d/l/missing
+mc /mnt/d/e
+wv4 0xffffffff @ 0xf04
+mc /mnt/d/u
+wv4 1 @ 0xf04
+wx 6c @ 0xf28
+mc /mnt/d/u
+wx 2f @ 0xf28
+mc /mnt/d/u
+EOF
+EXPECT=<<EOF
+d .
+d ..
+d d
+f hello.txt
+symlink chain
+
+symlink chain
+
+d .
+d ..
+f l
+f m
+f k
+f u
+f e
+symlink chain
+
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=ext2 rejects truncated directory entries and names
+FILE=malloc://0x2400
+CMDS=<<EOF
+e log.level=0
+wv4 16 @ 0x400
+wv4 16 @ 0x404
+wv4 1 @ 0x414
+wv4 8192 @ 0x420
+wv4 16 @ 0x428
+wv2 0xef53 @ 0x438
+wv4 1 @ 0x44c
+wv2 128 @ 0x458
+wv4 2 @ 0x460
+wv4 3 @ 0x808
+wv2 0x41ed @ 0xc80
+wv4 1024 @ 0xc84
+wv4 5 @ 0xca8
+wx 020000000c0001022e @ 0x1400
+wx 02000000f40302022e2e @ 0x140c
+m /mnt ext2 0
+md /mnt
+m-/mnt
+wv4 18 @ 0xc84
+m /mnt ext2 0
+m~?
+wv4 20 @ 0xc84
+m /mnt ext2 0
+m~?
+wv4 21 @ 0xc84
+m /mnt ext2 0
+m~?
+wv4 1024 @ 0xc84
+wv2 7 @ 0x1404
+m /mnt ext2 0
+m~?
+wv2 12 @ 0x1404
+wx ff @ 0x1406
+m /mnt ext2 0
+m~?
+wx 01 @ 0x1406
+m /mnt ext2 0
+md /mnt
+EOF
+EXPECT=<<EOF
+d .
+d ..
+0
+0
+0
+0
+0
+d .
+d ..
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=ext2 double indirect block boundary
+FILE=malloc://0x2400
+CMDS=<<EOF
+e log.level=0
+wv4 16 @ 0x400
+wv4 16 @ 0x404
+wv4 1 @ 0x414
+wv4 8192 @ 0x420
+wv4 16 @ 0x428
+wv2 0xef53 @ 0x438
+wv4 1 @ 0x44c
+wv2 128 @ 0x458
+wv4 2 @ 0x460
+wv4 3 @ 0x808
+wv2 0x41ed @ 0xc80
+wv4 1024 @ 0xc84
+wv4 5 @ 0xca8
+wow 06000000 @ 0xca8!48
+wv4 5 @ 0xca8
+wv4 7 @ 0xcd8
+wv4 8 @ 0xcdc
+wx 020000000c0001022e @ 0x1400
+wx 02000000f40302022e2e @ 0x140c
+wv2 1024 @ 0x1804
+wow 06000000 @ 0x1c00!1024
+wow 07000000 @ 0x2000!1024
+wv4 0x4043000 @ 0xc84
+m /mnt ext2 0
+m~?
+m-/mnt
+wv4 0x4043400 @ 0xc84
+m /mnt ext2 0
+m~?
+EOF
+EXPECT=<<EOF
+1
+0
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=ext4 extent cycles depths and entry bounds
+FILE=malloc://0x3000
+CMDS=<<EOF
+e log.level=0
+wv4 16 @ 0x400
+wv4 16 @ 0x404
+wv4 1 @ 0x414
+wv4 8192 @ 0x420
+wv4 16 @ 0x428
+wv2 0xef53 @ 0x438
+wv4 1 @ 0x44c
+wv2 128 @ 0x458
+wv4 2 @ 0x460
+wv4 3 @ 0x808
+wv2 0x41ed @ 0xc80
+wv4 1024 @ 0xc84
+wv4 5 @ 0xca8
+wx 020000000c0001022e @ 0x1400
+wx 02000000f40302022e2e @ 0x140c
+wv4 0x80000 @ 0xca0
+wx 0af301000400010000000000000000000600000000000000 @ 0xca8
+wx 0af301005400000000000000000000000100000005000000 @ 0x1800
+m /mnt ext2 0
+md /mnt
+m-/mnt
+wx 0af301005400010000000000000000000600000000000000 @ 0x1800
+m /mnt ext2 0
+m~?
+wv2 2 @ 0xcae
+wx 0af301005400010000000000000000000700000000000000 @ 0x1800
+wx 0af301005400010000000000000000000600000000000000 @ 0x1c00
+m /mnt ext2 0
+m~?
+wx 0af301005400000000000000000000000100000005000000 @ 0x1800
+m /mnt ext2 0
+m~?
+wv2 6 @ 0xcae
+m /mnt ext2 0
+m~?
+wv2 1 @ 0xcae
+wv2 5 @ 0xcaa
+m /mnt ext2 0
+m~?
+wv2 1 @ 0xcaa
+wv2 86 @ 0x1804
+m /mnt ext2 0
+m~?
+wv2 84 @ 0x1804
+wv2 85 @ 0x1802
+m /mnt ext2 0
+m~?
+wv2 1 @ 0x1802
+m /mnt ext2 0
+md /mnt
+EOF
+EXPECT=<<EOF
+d .
+d ..
+0
+0
+0
+0
+0
+0
+0
+d .
+d ..
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=ext4 accepts maximum valid extent depth
+FILE=malloc://0x3000
+CMDS=<<EOF
+e log.level=0
+wv4 16 @ 0x400
+wv4 16 @ 0x404
+wv4 1 @ 0x414
+wv4 8192 @ 0x420
+wv4 16 @ 0x428
+wv2 0xef53 @ 0x438
+wv4 1 @ 0x44c
+wv2 128 @ 0x458
+wv4 2 @ 0x460
+wv4 3 @ 0x808
+wv2 0x41ed @ 0xc80
+wv4 1024 @ 0xc84
+wv4 5 @ 0xca8
+wx 020000000c0001022e @ 0x1400
+wx 02000000f40302022e2e @ 0x140c
+wv4 0x80000 @ 0xca0
+wx 0af301000400050000000000000000000600000000000000 @ 0xca8
+wx 0af301005400040000000000000000000700000000000000 @ 0x1800
+wx 0af301005400030000000000000000000800000000000000 @ 0x1c00
+wx 0af301005400020000000000000000000900000000000000 @ 0x2000
+wx 0af301005400010000000000000000000a00000000000000 @ 0x2400
+wx 0af301005400000000000000000000000100000005000000 @ 0x2800
+m /mnt ext2 0
+md /mnt
+EOF
+EXPECT=<<EOF
+d .
+d ..
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=ext2 rejects invalid block shifts
+FILE=malloc://0x2400
+CMDS=<<EOF
+e log.level=0
+wv4 16 @ 0x400
+wv4 16 @ 0x404
+wv4 1 @ 0x414
+wv4 8192 @ 0x420
+wv4 16 @ 0x428
+wv2 0xef53 @ 0x438
+wv4 1 @ 0x44c
+wv2 128 @ 0x458
+wv4 2 @ 0x460
+wv4 3 @ 0x808
+wv2 0x41ed @ 0xc80
+wv4 1024 @ 0xc84
+wv4 5 @ 0xca8
+wx 020000000c0001022e @ 0x1400
+wx 02000000f40302022e2e @ 0x140c
+wv4 7 @ 0x418
+m /mnt ext2 0
+m~?
+wv4 0xffffffff @ 0x418
+m /mnt ext2 0
+m~?
+wv4 0 @ 0x418
+m /mnt ext2 0
+md /mnt
+EOF
+EXPECT=<<EOF
+0
+0
+d .
+d ..
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=ext2 details escape control characters and preserve UTF-8
+FILE=bins/fs/ext2.img
+CMDS=<<EOF
+e io.cache=true
+wx c3a90a1b5b324a00 @ 0x478
+wx 2f6d6e740a466f726765643a207965730d00 @ 0x488
+mn~^Volume
+mn~^Last Mounted:
+EOF
+EXPECT=<<EOF
+Volume Name: é\n\x1b[2J
+Last Mounted: /mnt\nForged: yes\r
+EOF
+EXPECT_ERR=
+RUN

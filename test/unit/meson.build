@@ -43,6 +43,7 @@ if get_option('enable_tests')
     'egg_lang',
     'event',
     'flags',
+    'fs',
     'gdb',
     'glob',
     'graph',

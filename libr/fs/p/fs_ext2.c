@@ -123,7 +123,11 @@ static void details_ext2(RFSRoot *root, RStrBuf *sb) {
 
 	r_strbuf_appendf (sb, "Filesystem Type: %s\n", fs_type);
 	if (*volume_name) {
-		r_strbuf_appendf (sb, "Volume Name: %s\n", volume_name);
+		char *escaped = r_str_escape_utf8_keep_printable (volume_name, false, true);
+		if (escaped) {
+			r_strbuf_appendf (sb, "Volume Name: %s\n", escaped);
+			free (escaped);
+		}
 	}
 
 	r_strbuf_append (sb, "UUID: ");
@@ -136,7 +140,11 @@ static void details_ext2(RFSRoot *root, RStrBuf *sb) {
 	r_strbuf_append (sb, "\n");
 
 	if (*last_mounted) {
-		r_strbuf_appendf (sb, "Last Mounted: %s\n", last_mounted);
+		char *escaped = r_str_escape_utf8_keep_printable (last_mounted, false, true);
+		if (escaped) {
+			r_strbuf_appendf (sb, "Last Mounted: %s\n", escaped);
+			free (escaped);
+		}
 	}
 
 	if (mtime) {
