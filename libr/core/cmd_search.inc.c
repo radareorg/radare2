@@ -424,11 +424,19 @@ next:;
 	r_cons_break_pop (core->cons);
 }
 
+R_VEC_TYPE(RVecUT64, ut64);
+
 typedef struct {
 	RCore *core;
 	bool forward;
 	int preludecnt;
+	RVecUT64 *hits; // when set, the hit addresses are collected instead of analyzed
+	bool failed; // a hit could not be stored
 } UserPrelude;
+
+static int cmp_prelude_hit(const ut64 *a, const ut64 *b) {
+	return (*a > *b) - (*a < *b);
+}
 
 static int __backward_prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	UserPrelude *up = (UserPrelude*) user;
@@ -462,15 +470,27 @@ static void cmd_search_ag(RCore *core, const char *input) {
 	}
 }
 
-static int __prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
-	UserPrelude *up = (UserPrelude*) user;
-	RCore *core = up->core;
+static void prelude_analyze(RCore *core, ut64 addr) {
 	if (r_config_get_b (core->config, "anal.calls")) {
 		// XXX dont use RCore.cmdf here its slow
 		r_core_cmdf (core, "afr@0x%"PFMT64x, addr);
 	} else {
 		int depth = r_config_get_i (core->config, "anal.depth");
 		r_core_anal_fcn (core, addr, -1, R_ANAL_REF_TYPE_NULL, depth);
+	}
+}
+
+static int __prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
+	UserPrelude *up = (UserPrelude*) user;
+	if (up->hits) {
+		ut64 *slot = RVecUT64_emplace_back (up->hits);
+		if (!slot) {
+			up->failed = true;
+			return 0;
+		}
+		*slot = addr;
+	} else {
+		prelude_analyze (up->core, addr);
 	}
 	up->preludecnt++;
 	return 1;
@@ -496,7 +516,7 @@ static bool invalid_page(RCore *core, const ut8 *buf, size_t buf_size) {
 	return (count_00 == limit || count_ff == limit || count_oxff == limit);
 }
 
-R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen) {
+static int search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen, RVecUT64 *hits) {
 	size_t bs = core->blocksize;
 	ut64 at;
 	ut8 *b = (ut8 *) malloc (bs);
@@ -521,7 +541,7 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 	}
 	r_search_kw_add (core->search, kw);
 	r_search_begin (core->search);
-	UserPrelude up = {core, false, 0};
+	UserPrelude up = { core, false, 0, hits, false };
 	r_search_set_callback (core->search, &__prelude_cb_hit, &up);
 	for (at = from; at < to; at += bs) {
 		if (r_cons_is_breaked (core->cons)) {
@@ -541,6 +561,10 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 			R_LOG_ERROR ("update read error at 0x%08"PFMT64x, at);
 			break;
 		}
+		if (up.failed) {
+			R_LOG_ERROR ("aap: out of memory collecting preludes at 0x%08"PFMT64x, at);
+			break;
+		}
 	}
 	// r_search_reset might also benifet from having an if (s->data) R_FREE(s->data),
 	// but im not sure. Add a commit that puts it in there to this PR if it wouldn't
@@ -549,6 +573,10 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 	r_search_kw_reset (core->search);
 	free (b);
 	return up.preludecnt;
+}
+
+R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen) {
+	return search_prelude (core, from, to, buf, blen, mask, mlen, NULL);
 }
 
 R_API int r_core_search_uds(RCore *core, int mode) {
@@ -643,6 +671,12 @@ R_API int r_core_search_preludes(RCore *core, bool log) {
 	// 4GB scan region limit
 #define RANGE_LIMIT 0xffffffff
 	size_t fc0 = r_list_length (core->anal->fcns);
+	// every prelude of every range is searched before a function is made: the loosest patterns hit
+	// inside a function (clang's `sub sp, sp, N` after the prologue), and a function made there
+	// would cut off the one holding it. Analyzing from the lowest address keeps that one whole.
+	RVecUT64 hits;
+	RVecUT64_init (&hits);
+	bool collected = false;
 	r_list_foreach (list, iter, p) {
 		if ((r_itv_end (p->itv) - p->itv.addr) >= RANGE_LIMIT) {
 			// skip searching in large regions
@@ -675,10 +709,10 @@ R_API int r_core_search_preludes(RCore *core, bool log) {
 			if (preds) {
 				RListIter *iter;
 				RSearchKeyword *kw;
+				collected = true;
 				r_list_foreach (preds, iter, kw) {
-					ret = r_core_search_prelude (core, from, to,
-						kw->bin_keyword, kw->keyword_length,
-						kw->bin_binmask, kw->binmask_length);
+					search_prelude (core, from, to, kw->bin_keyword, kw->keyword_length,
+						kw->bin_binmask, kw->binmask_length, &hits);
 				}
 			} else {
 				if (log) {
@@ -691,6 +725,19 @@ R_API int r_core_search_preludes(RCore *core, bool log) {
 			R_LOG_INFO ("done");
 		}
 	}
+	if (collected) {
+		RVecUT64_sort (&hits, cmp_prelude_hit);
+		ut64 *at, last = UT64_MAX;
+		ret = 0;
+		R_VEC_FOREACH (&hits, at) {
+			if (*at != last && !r_cons_is_breaked (core->cons)) {
+				prelude_analyze (core, *at);
+				ret++;
+			}
+			last = *at;
+		}
+	}
+	RVecUT64_fini (&hits);
 	if (log) {
 		if (list) {
 			size_t fc1 = r_list_length (core->anal->fcns);
