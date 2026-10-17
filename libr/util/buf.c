@@ -208,10 +208,13 @@ R_API RBuffer *r_buf_new_sparse(ut8 Oxff) {
 }
 
 R_API RBuffer *r_buf_new_with_cache(RBuffer *sb, bool steal) {
+	R_RETURN_VAL_IF_FAIL (sb, NULL);
 	RBuffer *b = new_buffer (R_BUFFER_CACHE, NULL);
 	if (b) {
-		b->rb_cache->sb = sb;
-		b->rb_cache->is_bufowner = steal;
+		// the cache reads from sb for its whole lifetime, so it always
+		// holds a reference: either the caller's one (steal) or its own
+		b->rb_cache->sb = steal? sb: r_ref (sb);
+		b->rb_cache->is_bufowner = true;
 		b->rb_cache->length = r_buf_size (sb);
 	}
 	return b;

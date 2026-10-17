@@ -436,3 +436,15 @@ EXPECT=<<EOF
 10  0x00018000     0x0 0x10000c0d0   0x150 -rw- 0x1        ZEROFILL         10.__DATA.__bss
 EOF
 RUN
+
+NAME=mach0 chained fixup reload keeps the file buffer alive
+FILE=bins/mach0/hello-macos-arm64-chained
+CMDS=<<EOF
+ooi
+e bin.limit=0
+izz~?
+EOF
+EXPECT=<<EOF
+135
+EOF
+RUN
