@@ -1506,7 +1506,7 @@ static RList *classes(RBinFile *bf) {
 			}
 
 			ut64 offset = va2pa (section->vaddr, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
-			if (r_buf_read_at (cache->buf, offset, pointers, section->size) < section->size) {
+			if (r_buf_read_at (cache->buf, offset, pointers, section->size) != section->size) {
 				R_FREE (pointers);
 				continue;
 			}

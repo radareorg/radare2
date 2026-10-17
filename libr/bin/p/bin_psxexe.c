@@ -18,7 +18,7 @@ static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 
 static RBinInfo* info(RBinFile* bf) {
 	psxexe_header psxheader = {{0}};
-	if (r_buf_read_at (bf->buf, 0, (ut8*)&psxheader, sizeof (psxexe_header)) < sizeof (psxexe_header)) {
+	if (r_buf_read_at (bf->buf, 0, (ut8*)&psxheader, sizeof (psxexe_header)) != sizeof (psxexe_header)) {
 		R_LOG_ERROR ("Truncated Header");
 		return NULL;
 	}

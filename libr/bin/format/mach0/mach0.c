@@ -1048,7 +1048,7 @@ static bool parse_signature(struct MACH0_(obj_t) * mo, ut64 off) {
 	ut64 index_off = data + sizeof (struct super_blob_t);
 	for (i = 0; i < slots; i++, index_off += sizeof (struct blob_index_t)) {
 		struct blob_index_t bi = { 0 };
-		if (r_buf_read_at (mo->b, index_off, (ut8 *)&bi, sizeof (struct blob_index_t)) < sizeof (struct blob_index_t)) {
+		if (r_buf_read_at (mo->b, index_off, (ut8 *)&bi, sizeof (struct blob_index_t)) != sizeof (struct blob_index_t)) {
 			set_malformed_entitlement (mo);
 			break;
 		}
@@ -1141,7 +1141,7 @@ static bool parse_signature(struct MACH0_(obj_t) * mo, ut64 off) {
 			}
 			if (show_codesign) {
 				ut8 header[8] = { 0 };
-				if (r_buf_read_at (mo->b, slot_off, header, sizeof (header)) < sizeof (header)) {
+				if (r_buf_read_at (mo->b, slot_off, header, sizeof (header)) != sizeof (header)) {
 					break;
 				}
 				ut32 length = R_MIN (UT16_MAX, r_read_ble32 (header + 4, 1));
@@ -1180,7 +1180,7 @@ static bool parse_signature(struct MACH0_(obj_t) * mo, ut64 off) {
 				break;
 			}
 			ut64 req_off = slot_off + 16;
-			if (r_buf_read_at (mo->b, req_off, p, sizeof (p)) < sizeof (p)) {
+			if (r_buf_read_at (mo->b, req_off, p, sizeof (p)) != sizeof (p)) {
 				break;
 			}
 			p[sizeof (p) - 1] = 0;
@@ -3896,7 +3896,7 @@ static void parse_relocation_info(struct MACH0_(obj_t) * mo, RSkipList *relocs, 
 		return;
 	}
 
-	if (r_buf_read_at (mo->b, offset, (ut8 *)info, total_size) < total_size) {
+	if (r_buf_read_at (mo->b, offset, (ut8 *)info, total_size) != total_size) {
 		free (info);
 		return;
 	}

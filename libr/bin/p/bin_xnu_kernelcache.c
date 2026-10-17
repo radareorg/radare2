@@ -1077,7 +1077,7 @@ static void process_constructors(RKernelCacheObj *obj, struct MACH0_(obj_t) * ma
 		if (!buf) {
 			break;
 		}
-		if (r_buf_read_at (obj->cache_buf, section->paddr + paddr, buf, section->size) < section->size) {
+		if (r_buf_read_at (obj->cache_buf, section->paddr + paddr, buf, section->size) != section->size) {
 			free (buf);
 			break;
 		}
@@ -1133,7 +1133,7 @@ static void process_constructors_vec(RVecRBinSymbol *symbols, RBinFile *bf, RKer
 		if (!buf) {
 			break;
 		}
-		if (r_buf_read_at (obj->cache_buf, section->paddr, buf, section->size) < section->size) {
+		if (r_buf_read_at (obj->cache_buf, section->paddr, buf, section->size) != section->size) {
 			free (buf);
 			break;
 		}
@@ -1532,7 +1532,7 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 	if (!data_const) {
 		goto beach;
 	}
-	if (r_buf_read_at (obj->cache_buf, data_const_offset, data_const, data_const_size) < data_const_size) {
+	if (r_buf_read_at (obj->cache_buf, data_const_offset, data_const, data_const_size) != data_const_size) {
 		goto beach;
 	}
 
@@ -1705,7 +1705,7 @@ static RList *resolve_mig_subsystem(RKernelCacheObj *obj) {
 	if (!data_const) {
 		goto beach;
 	}
-	if (r_buf_read_at (obj->cache_buf, data_const_offset, data_const, data_const_size) < data_const_size) {
+	if (r_buf_read_at (obj->cache_buf, data_const_offset, data_const, data_const_size) != data_const_size) {
 		goto beach;
 	}
 
@@ -1864,7 +1864,7 @@ static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *
 		while (!found && level-- > 0) {
 			ut64 offset_in_got = addr_in_got - obj->pa2va_exec;
 			ut8 buf[sizeof (ut64)];
-			if (r_buf_read_at (cache_buf, offset_in_got, buf, sizeof (buf)) < sizeof (buf)) {
+			if (r_buf_read_at (cache_buf, offset_in_got, buf, sizeof (buf)) != sizeof (buf)) {
 				break;
 			}
 			ut64 addr = r_read_le64 (buf);
@@ -2368,7 +2368,10 @@ static ut32 scan_vtable_total_slots(RBinFile *bf, RKext *kext, ut64 start, const
 	}
 
 	ut8 *buf = malloc (span);
-	if (r_buf_read_at (obj->cache_buf, start_off, buf, span) < span) {
+	if (!buf) {
+		return 0;
+	}
+	if (r_buf_read_at (obj->cache_buf, start_off, buf, span) != span) {
 		free (buf);
 		return 0;
 	}
@@ -2455,7 +2458,10 @@ static bool load_kext_text_blob(RBinFile *bf, RKext *kext, RKextTextBlob *blob) 
 	}
 
 	ut8 *buf = malloc (kext->text_range.size);
-	if (r_buf_read_at (obj->cache_buf, kext->text_range.offset, buf, kext->text_range.size) < kext->text_range.size) {
+	if (!buf) {
+		return false;
+	}
+	if (r_buf_read_at (obj->cache_buf, kext->text_range.offset, buf, kext->text_range.size) != kext->text_range.size) {
 		free (buf);
 		return false;
 	}

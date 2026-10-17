@@ -60,7 +60,7 @@ static ut32 extract_rtm_from_modules(RBinMdmpObj *mdmp, ut32 major, ut32 minor, 
 			if (module->module_name_rva + sizeof (struct minidump_string) >= r_buf_size (mdmp->b)) {
 				continue;
 			}
-			if (r_buf_read_at (mdmp->b, module->module_name_rva, (ut8 *)&b, sizeof (b)) < sizeof (struct minidump_string)) {
+			if (r_buf_read_at (mdmp->b, module->module_name_rva, (ut8 *)&b, sizeof (b)) < (st64)sizeof (struct minidump_string)) {
 				continue;
 			}
 			/* Read length field using endian-safe API */
