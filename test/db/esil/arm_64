@@ -5151,3 +5151,335 @@ EXPECT=<<EOF
 0x00000001
 EOF
 RUN
+
+NAME=arm64 ESIL vector CLZ on 8-bit lanes
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 0148202e
+aei
+aeip
+aer v0l=0x0102040810204080
+aer v0h=0xffffffffffffffff
+aes
+aer v1l
+aer v1h
+EOF
+EXPECT=<<EOF
+0x706050403020100
+0x00000000
+EOF
+RUN
+
+NAME=arm64 ESIL vector CLZ on 8-bit lanes in big endian
+FILE=malloc://0x200
+ARGS=-a arm -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 0148202e
+aei
+aeip
+aer v0l=0x0102040810204080
+aer v0h=0xffffffffffffffff
+aes
+aer v1l
+aer v1h
+EOF
+EXPECT=<<EOF
+0x706050403020100
+0x00000000
+EOF
+RUN
+
+NAME=arm64 ESIL vector CLZ on 16-byte lanes replicates width for zeros
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2048206e
+aei
+aeip
+aer v1l=0x0102040810204080
+aer v1h=0x0000000000000000
+aer v0l=0xffffffffffffffff
+aer v0h=0xffffffffffffffff
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x706050403020100
+0x808080808080808
+EOF
+RUN
+
+NAME=arm64 ESIL vector CLZ on halfword lanes
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2048606e
+aei
+aeip
+aer v1l=0x0008000400020001
+aer v1h=0xffffffffffffffff
+aer v0l=0xffffffffffffffff
+aer v0h=0xffffffffffffffff
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0xc000d000e000f
+0x00000000
+EOF
+RUN
+
+NAME=arm64 ESIL vector CLZ on word lanes
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2048a06e
+aei
+aeip
+aer v1l=0x8000000000000001
+aer v1h=0x0000000100000000
+aer v0l=0xffffffffffffffff
+aer v0h=0xffffffffffffffff
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x0000001f
+0x1f00000020
+EOF
+RUN
+
+NAME=arm64 ESIL vector CLZ D-form zeroes upper half
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2048a02e
+aei
+aeip
+aer v1l=0x8000000000000001
+aer v1h=0x8899aabbccddeeff
+aer v0h=0xffffffffffffffff
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x0000001f
+0x00000000
+EOF
+RUN
+
+NAME=arm64 ESIL scalar CLZ keeps working
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2010c0da
+aei
+aeip
+aer x1=0x0000000000000001
+aes
+aer x0
+wx 2010c05a @ 0
+aeip
+aer w1=0x00000001
+aeip
+aes
+aer x0
+EOF
+EXPECT=<<EOF
+0x0000003f
+0x0000001f
+EOF
+RUN
+
+NAME=arm64 ESIL vector CNT on 8-bit lanes
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2058204e
+aei
+aeip
+aer v1l=0x0102040810204080
+aer v1h=0xff00f00f0f00f0f0
+aer v0l=0xffffffffffffffff
+aer v0h=0xffffffffffffffff
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x101010101010101
+0x800040404000404
+EOF
+RUN
+
+NAME=arm64 ESIL vector CNT on 8-bit lanes in big endian
+FILE=malloc://0x200
+ARGS=-a arm -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 2058204e
+aei
+aeip
+aer v1l=0x0102040810204080
+aer v1h=0xff00f00f0f00f0f0
+aer v0l=0xffffffffffffffff
+aer v0h=0xffffffffffffffff
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x101010101010101
+0x800040404000404
+EOF
+RUN
+
+NAME=arm64 ESIL vector CNT D-form zeroes upper half
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2058200e
+aei
+aeip
+aer v1l=0xff008001ff008001
+aer v0h=0xffffffffffffffff
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x800010108000101
+0x00000000
+EOF
+RUN
+
+NAME=arm64 ESIL vector CLS on 8-bit lanes
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2048204e
+aei
+aeip
+aer v1l=0x0102040810204080
+aer v1h=0xffffffffffffffff
+aer v0l=0xffffffffffffffff
+aer v0h=0xffffffffffffffff
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x605040302010000
+0x707070707070707
+EOF
+RUN
+
+NAME=arm64 ESIL vector CLS on 8-bit lanes in big endian
+FILE=malloc://0x200
+ARGS=-a arm -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 2048204e
+aei
+aeip
+aer v1l=0x0102040810204080
+aer v1h=0xffffffffffffffff
+aer v0l=0xffffffffffffffff
+aer v0h=0xffffffffffffffff
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x605040302010000
+0x707070707070707
+EOF
+RUN
+
+NAME=arm64 ESIL vector CLS on halfword lanes
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2048604e
+aei
+aeip
+aer v1l=0x0008000400020001
+aer v1h=0x8000ffff7fff0000
+aer v0l=0xffffffffffffffff
+aer v0h=0xffffffffffffffff
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0xb000c000d000e
+0xf0000000f
+EOF
+RUN
+
+NAME=arm64 ESIL vector CLS D-form zeroes upper half
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2048a00e
+aei
+aeip
+aer v1l=0x8000000000000001
+aer v0h=0xffffffffffffffff
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x0000001e
+0x00000000
+EOF
+RUN
+
+NAME=arm64 ESIL scalar CLS keeps working
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2014c0da
+aei
+aeip
+aer x1=0x0000000000000001
+aes
+aer x0
+wx 2014c0da @ 0
+aeip
+aer x1=0xffffffffffffff80
+aes
+aer x0
+wx 2014c0da @ 0
+aeip
+aer x1=0x8000000000000000
+aes
+aer x0
+EOF
+EXPECT=<<EOF
+0x0000003e
+0x00000038
+0x00000000
+EOF
+RUN
+
+NAME=arm64 ESIL scalar CLS word form uses 32-bit width
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2014c05a
+aei
+aeip
+aer x1=0xffffffffffffffff
+aer w1=0x00000001
+aes
+aer x0
+EOF
+EXPECT=<<EOF
+0x0000001e
+EOF
+RUN
