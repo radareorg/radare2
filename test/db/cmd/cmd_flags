@@ -695,3 +695,20 @@ EXPECT=<<EOF
 0x00000064 1 base64:NotB64
 EOF
 RUN
+
+NAME=fss keeps pushed space names after deleting the space
+FILE=-
+CMDS=<<EOF
+fs foo
+fs+bar
+fs-foo
+fss
+fs-
+fss
+EOF
+EXPECT=<<EOF
+0  foo
+1  bar (selected)
+0  * (selected)
+EOF
+RUN

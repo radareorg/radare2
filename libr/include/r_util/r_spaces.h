@@ -59,7 +59,7 @@ typedef struct r_spaces_t {
 	const char *name;
 	RSpace *current;
 	RRBTree *spaces;
-	RList *spacestack;
+	R_OWNED RList *spacestack; // copies of the pushed space names
 	REvent *event;
 } RSpaces;
 

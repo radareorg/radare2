@@ -34,7 +34,7 @@ R_API bool r_spaces_init(RSpaces *sp, const char *name) {
 		goto fail;
 	}
 	sp->current = NULL;
-	sp->spacestack = r_list_new ();
+	sp->spacestack = r_list_newf (free);
 	if (!sp->spacestack) {
 		goto fail;
 	}
@@ -170,7 +170,8 @@ R_API int r_spaces_count(RSpaces *sp, const char *name) {
 R_API bool r_spaces_push(RSpaces *sp, const char *name) {
 	R_RETURN_VAL_IF_FAIL (sp, false);
 
-	r_list_push (sp->spacestack, sp->current? sp->current->name: "*");
+	// own a copy, the space may be renamed or deleted while pushed
+	r_list_push (sp->spacestack, strdup (sp->current? sp->current->name: "*"));
 	r_spaces_set (sp, name);
 	return true;
 }
@@ -183,6 +184,7 @@ R_API bool r_spaces_pop(RSpaces *sp) {
 
 	RSpace *s = r_spaces_get (sp, name);
 	r_spaces_set (sp, s? s->name: NULL);
+	free (name);
 	return true;
 }
 
