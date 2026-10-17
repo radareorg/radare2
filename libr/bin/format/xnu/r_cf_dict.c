@@ -67,8 +67,12 @@ static RCFValueBool *r_cf_value_bool_new(bool value);
 static void r_cf_value_bool_free(RCFValueBool *bool_value);
 static void r_cf_value_bool_print(RCFValueBool *bool_value);
 
-static RCFValue *r_cf_value_clone(RCFValue *value);
+static R_OWNED RCFValue *r_cf_value_clone(RCFValue *value, R_INOUT ut64 *budget);
 static void r_cf_value_free(RCFValue *value);
+
+// IDREF deep-copies the referenced subtree, so bound the copies to stop exponential expansion
+#define R_CF_IDREF_VALUES_PER_BYTE 16
+#define R_CF_IDREF_VALUES_MAX (1 << 20)
 
 RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, int options) {
 	RList *idlist = NULL;
@@ -85,6 +89,7 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 		free (buf);
 		return NULL;
 	}
+	ut64 clone_budget = R_MIN ((ut64)buf_len * R_CF_IDREF_VALUES_PER_BYTE, R_CF_IDREF_VALUES_MAX);
 
 	RXml *x = r_xml_new (4096);
 
@@ -241,7 +246,7 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 						R_LOG_ERROR ("Element with IDREF already has content");
 						goto beach;
 					}
-					value = r_cf_value_clone (value);
+					value = r_cf_value_clone (value, &clone_budget);
 					if (!value) {
 						goto beach;
 					}
@@ -681,10 +686,15 @@ static void r_cf_value_bool_print(RCFValueBool *bool_value) {
 	}
 }
 
-static RCFValue *r_cf_value_clone(RCFValue *value) {
+static R_OWNED RCFValue *r_cf_value_clone(RCFValue *value, R_INOUT ut64 *budget) {
 	if (!value) {
 		return NULL;
 	}
+	if (!*budget) {
+		R_LOG_ERROR ("Too many values produced by IDREF expansion");
+		return NULL;
+	}
+	(*budget)--;
 
 	RCFValue *copy = NULL;
 
@@ -702,7 +712,7 @@ static RCFValue *r_cf_value_clone(RCFValue *value) {
 					copy = NULL;
 					break;
 				}
-				RCFValue *clone = r_cf_value_clone (item->value);
+				RCFValue *clone = r_cf_value_clone (item->value, budget);
 				if (!clone) {
 					free (key);
 					r_cf_value_dict_free (dict);
@@ -729,7 +739,7 @@ static RCFValue *r_cf_value_clone(RCFValue *value) {
 			RListIter *iter;
 			RCFValue *item;
 			r_list_foreach (((RCFValueArray *)value)->values, iter, item) {
-				RCFValue *clone = r_cf_value_clone (item);
+				RCFValue *clone = r_cf_value_clone (item, budget);
 				if (clone) {
 					r_cf_value_array_add (array, clone);
 					continue;
