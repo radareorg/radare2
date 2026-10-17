@@ -61,7 +61,7 @@ def gen_perm(n: int, seed: int) -> List[int]:
 
 # -------------------- C string literal parsing/rewriting --------------------
 
-STR_RE = re.compile(r'"([^"\\]|\\.)*"', re.DOTALL)
+STR_RE = re.compile(r'"([^"\\]|\\.)*"|//[^\n]*|/\*.*?\*/', re.DOTALL)
 
 OCT_RE = re.compile(r'^[0-7]{1,3}')
 HEX_RE = re.compile(r'^[0-9A-Fa-f]{1,2}')
@@ -119,6 +119,8 @@ def find_string_segments(text: str) -> List[Tuple[int, int, bytes]]:
     segs = []
     for m in STR_RE.finditer(text):
         full = m.group(0)
+        if not full.startswith('"'):
+            continue
         inner = full[1:-1]
         b = _decode_c_string_inner(inner)
         segs.append((m.start(), m.end(), b))
