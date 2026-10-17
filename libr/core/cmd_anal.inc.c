@@ -13608,8 +13608,8 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 				"hierarchic 1\n"
 				"label \"\"\n"
 				"directed 1\n");
-		r_agraph_foreach (core->graph, agraph_print_node_gml, NULL);
-		r_agraph_foreach_edge (core->graph, agraph_print_edge_gml, NULL);
+		r_agraph_foreach (core->graph, agraph_print_node_gml, core);
+		r_agraph_foreach_edge (core->graph, agraph_print_edge_gml, core);
 		r_cons_print (core->cons, "]\n");
 		break;
 	case 'w': // "aggw"

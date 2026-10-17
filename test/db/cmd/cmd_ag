@@ -302,3 +302,23 @@ agraph.w=0xd6
 *  *  *   *    *   *  *
 EOF
 RUN
+
+
+NAME=agg on an empty graph, aggg, and agt on a too small screen
+FILE=bins/elf/ls
+CMDS=<<EOF
+aggb~?
+agfb~?
+agn a
+aggg~label
+e scr.cols=1
+agt~?
+EOF
+EXPECT=<<EOF
+0
+0
+label ""
+    label  "a"
+0
+EOF
+RUN
