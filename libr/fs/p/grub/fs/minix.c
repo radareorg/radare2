@@ -178,9 +178,14 @@ grub_minix_read_file(struct grub_minix_data *data,
 	int i;
 	int blockcnt;
 
+	const grub_off_t size = GRUB_MINIX_INODE_SIZE (data);
+	if (pos < 0 || (grub_off_t)pos > size) {
+		grub_error (GRUB_ERR_OUT_OF_RANGE, "attempt to read past the end of file");
+		return -1;
+	}
 	/* Adjust len so it we can't read past the end of the file.  */
-	if (len + pos > GRUB_MINIX_INODE_SIZE (data)) {
-		len = GRUB_MINIX_INODE_SIZE (data) - pos;
+	if (len > size - pos) {
+		len = size - pos;
 	}
 
 	blockcnt = (len + pos + GRUB_MINIX_BSIZE - 1) / GRUB_MINIX_BSIZE;

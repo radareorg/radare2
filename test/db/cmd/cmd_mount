@@ -872,3 +872,27 @@ ERROR: Cannot open /mnt/link
 ERROR: Cannot open /mnt/link
 EOF2
 RUN
+
+NAME=mount minix directory whose size ends inside an entry
+FILE=malloc://0x3000
+TIMEOUT=10
+CMDS=<<EOF
+# superblock with the MINIX v1 magic 0x137f
+wx 20000c000100010008000000001c08107f13 @ 0x400
+# root inode: directory, size 1, zone numbers 10 and 0xffff
+wx ed410000010000000000000000010a00ffff @ 0x1000
+# zone 10: the entry "." and filler
+wx 01002e00 @ 0x2800
+wow 41 @ 0x2810!0x3f0
+m /mnt minix 0 || echo mount-failed
+# a root of size 16 holds one complete entry
+wx 10 @ 0x1004
+m /tmp minix 0
+md /tmp
+EOF
+EXPECT=<<EOF
+mount-failed
+d .
+EOF
+EXPECT_ERR=
+RUN
