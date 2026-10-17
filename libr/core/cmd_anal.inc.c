@@ -13461,6 +13461,11 @@ R_API void r_core_agraph_treemap(RCore *core, int use_utf, const char *input) {
 	w--;
 	h--;
 	RConsCanvas *canvas = r_cons_canvas_new (core->cons, w, h, R_CONS_CANVAS_FLAG_INHERIT);
+	if (!canvas) {
+		R_LOG_ERROR ("Cannot allocate a %dx%d canvas", w, h);
+		r_config_set_i (core->config, "scr.color", a);
+		return;
+	}
 	r_cons_canvas_box (canvas, 1, 1, w - 1, h - 1, "");
 	RListIter *iter;
 	RAnalFunction *fcn = NULL;
