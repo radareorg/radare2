@@ -91,13 +91,12 @@ static char *__io_reg_profile(RDebug *dbg) {
 		r_cons_pop (cons);
 		return drp;
 	}
-	const char *buf = r_cons_get_buffer (cons, NULL);
-	if (R_STR_ISNOTEMPTY (buf)) {
-		char *ret = strdup (buf);
-		r_cons_pop (cons);
+	char *ret = r_cons_drain (cons, NULL);
+	r_cons_pop (cons);
+	if (R_STR_ISNOTEMPTY (ret)) {
 		return ret;
 	}
-	r_cons_pop (cons);
+	free (ret);
 	return r_anal_get_reg_profile (dbg->anal);
 }
 

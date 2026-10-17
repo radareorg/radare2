@@ -6676,13 +6676,10 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					if (r_cons_is_breaked (cons)) {
 						break;
 					}
-					char *buf = NULL;
-					const char *tmp = NULL;
 					r_core_seek (core, flag->addr, true);
 					r_cons_push (cons);
 					r_core_cmd (core, cmd, 0);
-					tmp = r_cons_get_buffer (cons, NULL);
-					buf = tmp? strdup (tmp): NULL;
+					char *buf = r_cons_drain (cons, NULL);
 					r_cons_pop (cons);
 					if (buf) {
 						r_cons_print (cons, buf);
@@ -6993,11 +6990,10 @@ R_API char *r_core_cmd_file_str(RCore *core, const char *file, bool *ok) {
 	// Keep noflush set until pop.
 	core->cons->context->cmd_str_depth--;
 	r_cons_filter (core->cons);
-	const char *static_str = r_cons_get_buffer (core->cons, NULL);
-	char *retstr = strdup (r_str_get (static_str));
+	char *retstr = r_cons_drain (core->cons, NULL);
 	r_cons_pop (core->cons);
 	r_cons_echo (core->cons, NULL);
-	return retstr;
+	return retstr? retstr: strdup ("");
 }
 
 R_API bool r_core_cmd_command(RCore *core, const char *command) {
@@ -7271,11 +7267,10 @@ R_API RBuffer *r_core_cmd_tobuf(RCore *core, const char *cmd) {
 	cons->context->cmd_str_depth--;
 	r_cons_filter (cons);
 	size_t bsz;
-	const char *buf = r_cons_get_buffer (cons, &bsz);
-	RBuffer *out = r_buf_new_with_bytes ((const ut8*)buf, bsz);
+	char *buf = r_cons_drain (cons, &bsz);
+	RBuffer *out = buf? r_buf_new_with_pointers ((const ut8*)buf, bsz, true): r_buf_new ();
 	r_cons_pop (cons);
 	r_cons_echo (cons, NULL);
-	// buf is freed by r_cons_pop with its context
 	return out;
 }
 

@@ -308,11 +308,10 @@ R_API char *r_core_call_str_at(RCore *core, ut64 addr, const char *cmd) {
 	// Keep noflush set until pop.
 	core->cons->context->cmd_str_depth--;
 	r_cons_filter (core->cons);
-	const char *static_str = r_cons_get_buffer (core->cons, NULL);
-	char *retstr = strdup (r_str_get (static_str));
+	char *retstr = r_cons_drain (core->cons, NULL);
 	r_cons_pop (core->cons);
 	r_cons_echo (core->cons, NULL);
-	return retstr;
+	return retstr? retstr: strdup ("");
 }
 
 static void core_puts(RCore *core, const char *str) {

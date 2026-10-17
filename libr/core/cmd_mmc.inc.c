@@ -1365,8 +1365,7 @@ static void mmc_show_info(RCore *core, MMCState *state, int width, int height) {
 
 		r_cons_push (core->cons);
 		r_core_cmd0 (core, "mn");
-		const char *buffer = r_cons_get_buffer (core->cons, NULL);
-		char *mn_output = buffer? strdup (buffer): NULL;
+		char *mn_output = r_cons_drain (core->cons, NULL);
 		r_cons_pop (core->cons);
 
 		if (mn_output && *mn_output) {
