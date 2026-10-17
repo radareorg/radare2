@@ -455,6 +455,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rahash2 empty file
+FILE=-
+CMDS=<<EOF
+!rahash2 -a md5,sha256,xxhash,ssdeep /dev/null
+!rahash2 -qa md5 -t 0 /dev/null
+EOF
+EXPECT=<<EOF
+/dev/null: 0x00000000-0x00000000 md5: d41d8cd98f00b204e9800998ecf8427e
+/dev/null: 0x00000000-0x00000000 sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+/dev/null: 0x00000000-0x00000000 xxhash: 055dcc02
+/dev/null: 0x00000000-0x00000000 ssdeep: 3::
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid file size
+EOF
+RUN
+
 NAME=rahash2 -c with correct expected hash
 FILE=-
 CMDS=!rahash2 -a md5 -s "admin" -c 21232f297a57a5a743894a0e4a801fc3
