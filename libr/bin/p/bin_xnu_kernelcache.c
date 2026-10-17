@@ -10,6 +10,7 @@
 #include "../format/mach0/mach064_is_kernelcache.c"
 
 typedef bool(*ROnRebaseFunc)(ut64 offset, ut64 decorated_addr, void *user_data);
+typedef int (*RIOReadFunc)(RIO *io, RIODesc *fd, ut8 *buf, int count);
 
 typedef struct _RKernelCacheObj {
 	RBuffer *cache_buf;
@@ -19,7 +20,7 @@ typedef struct _RKernelCacheObj {
 	struct _RKextIndex *kexts;
 	struct MACH0_(obj_t) * mach0;
 	struct _RRebaseInfo *rebase_info;
-	int (*original_io_read) (RIO *io, RIODesc *fd, ut8 *buf, int count);
+	R_UNOWNED RIOPlugin *swizzled_io_plugin;
 	bool rebase_info_populated;
 	bool rebasing_buffer;
 	bool kexts_initialized;
@@ -78,6 +79,13 @@ typedef struct _RRebaseInfo {
 	ut64 multiplier;
 	ut64 kernel_base;
 } RRebaseInfo;
+
+// io plugins are shared process-wide, keep the replaced read callback until the last kernelcache using it is freed
+typedef struct _RSwizzledIOPlugin {
+	RIOPlugin *plugin;
+	RIOReadFunc original_io_read;
+	int users;
+} RSwizzledIOPlugin;
 
 typedef struct _RRebaseCtx {
 	ut64 off, eob;
@@ -178,7 +186,8 @@ static void r_rebase_info_free(RRebaseInfo *info);
 static void r_rebase_info_populate(RRebaseInfo *info, RKernelCacheObj *obj);
 static ut64 iterate_rebase_list(RBuffer *cache_buf, ut64 multiplier, ut64 start_offset, ROnRebaseFunc func, void *user_data);
 static ut64 r_rebase_offset_to_paddr(RKernelCacheObj *obj, const RVecSection *sections, ut64 offset);
-static void swizzle_io_read(RKernelCacheObj *obj, RIO *io);
+static void swizzle_io_read(RKernelCacheObj *obj, RBinFile *bf);
+static void unswizzle_io_read(RKernelCacheObj *obj);
 static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count);
 static void rebase_buffer(RKernelCacheObj *obj, ut64 off, RIODesc *fd, ut8 *buf, int count);
 static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RIODesc *fd, ut8 *buf, int count);
@@ -309,8 +318,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	}
 
 	if (rebase_info || main_mach0->chained_starts) {
-		RIO *io = bf->rbin->iob.io;
-		swizzle_io_read (obj, io);
+		swizzle_io_read (obj, bf);
 	}
 
 	return true;
@@ -2708,6 +2716,7 @@ static void r_kernel_cache_free(RKernelCacheObj *obj) {
 		obj->rebase_info = NULL;
 	}
 
+	unswizzle_io_read (obj);
 	r_list_free (obj->pending_bin_files);
 
 	R_FREE (obj);
@@ -2859,28 +2868,92 @@ static ut64 iterate_rebase_list(RBuffer *cache_buf, ut64 multiplier, ut64 start_
 	return cursor;
 }
 
-static void swizzle_io_read(RKernelCacheObj *obj, RIO *io) {
-	R_RETURN_IF_FAIL (io && io->desc && io->desc->plugin);
-	RIOPlugin *plugin = io->desc->plugin;
-	obj->original_io_read = plugin->read;
-	plugin->read = &kernelcache_io_read;
+static RSwizzledIOPlugin swizzled_io_plugins[8];
+
+static RSwizzledIOPlugin *get_swizzled_io_plugin(RIOPlugin *plugin) {
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (swizzled_io_plugins); i++) {
+		if (swizzled_io_plugins[i].plugin == plugin) {
+			return &swizzled_io_plugins[i];
+		}
+	}
+	return NULL;
+}
+
+static void swizzle_io_read(RKernelCacheObj *obj, RBinFile *bf) {
+	RIOBind *iob = &bf->rbin->iob;
+	if (!iob->io || !iob->desc_get) {
+		return;
+	}
+	// the plugin serving this kernelcache, not the one of the current io->desc
+	RIODesc *desc = iob->desc_get (iob->io, bf->fd);
+	if (!desc || !desc->plugin || !desc->plugin->read) {
+		return;
+	}
+	RIOPlugin *plugin = desc->plugin;
+	RSwizzledIOPlugin *swizzled = get_swizzled_io_plugin (plugin);
+	if (!swizzled) {
+		if (plugin->read == &kernelcache_io_read) {
+			return;
+		}
+		swizzled = get_swizzled_io_plugin (NULL); // free slot
+		if (!swizzled) {
+			R_LOG_WARN ("Too many swizzled io plugins, pointers will not be rebased");
+			return;
+		}
+		swizzled->plugin = plugin;
+		swizzled->original_io_read = plugin->read;
+		plugin->read = &kernelcache_io_read;
+	}
+	swizzled->users++;
+	obj->swizzled_io_plugin = plugin;
+}
+
+static void unswizzle_io_read(RKernelCacheObj *obj) {
+	if (!obj->swizzled_io_plugin) {
+		return;
+	}
+	RSwizzledIOPlugin *swizzled = get_swizzled_io_plugin (obj->swizzled_io_plugin);
+	obj->swizzled_io_plugin = NULL;
+	if (swizzled && --swizzled->users < 1) {
+		if (swizzled->plugin->read == &kernelcache_io_read) {
+			swizzled->plugin->read = swizzled->original_io_read;
+		}
+		memset (swizzled, 0, sizeof (RSwizzledIOPlugin));
+	}
+}
+
+static bool is_kernelcache_bf(RBinFile *bf, int fd) {
+	if (bf->fd != fd || !bf->bo || !bf->bo->bin_obj || !bf->bo->plugin) {
+		return false;
+	}
+	return !strcmp (bf->bo->plugin->meta.name, "kernelcache");
 }
 
 static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	R_RETURN_VAL_IF_FAIL (io, -1);
 	RCore *core = (RCore *)io->coreb.core;
 
-	if (!fd || !core || !core->bin || !core->bin->binfiles) {
+	if (!fd || !fd->plugin) {
 		return -1;
 	}
+	RSwizzledIOPlugin *swizzled = get_swizzled_io_plugin (fd->plugin);
+	if (!swizzled || !swizzled->original_io_read) {
+		return -1;
+	}
+	RIOReadFunc original_io_read = swizzled->original_io_read;
+	if (!core || !core->bin || !core->bin->binfiles) {
+		return original_io_read (io, fd, buf, count);
+	}
 
+	// the hooked plugin serves every file, only rebase the kernelcache ones
 	RKernelCacheObj *cache = NULL;
 	RListIter *iter;
 	RBinFile *bf;
 	RBinFile *bf2;
 	RListIter *iter2;
 	r_list_foreach (core->bin->binfiles, iter, bf) {
-		if (bf->fd == fd->fd && bf->bo && bf->bo->bin_obj) {
+		if (is_kernelcache_bf (bf, fd->fd)) {
 			cache = bf->bo->bin_obj;
 			if (cache->pending_bin_files) {
 				RListIter *to_remove = r_list_contains (cache->pending_bin_files, bf);
@@ -2894,7 +2967,7 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 
 	if (!cache) {
 		r_list_foreach (core->bin->binfiles, iter, bf) {
-			if (bf->fd == fd->fd && bf->bo && bf->bo->bin_obj) {
+			if (is_kernelcache_bf (bf, fd->fd)) {
 				RKernelCacheObj *obj = bf->bo->bin_obj;
 				if (obj->pending_bin_files) {
 					r_list_foreach (obj->pending_bin_files, iter2, bf2) {
@@ -2910,30 +2983,13 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 			}
 		}
 	}
-	if (!cache || !cache->original_io_read || cache->rebasing_buffer) {
-		if (cache) {
-			if ((!cache->rebasing_buffer && fd->plugin->read == &kernelcache_io_read) ||
-				(cache->rebasing_buffer && !cache->original_io_read)) {
-				return -1;
-			}
-			if (cache->rebasing_buffer) {
-				return cache->original_io_read (io, fd, buf, count);
-			}
-		}
-		if (fd->plugin->read == kernelcache_io_read) {
-			if (core->bin->options.verbose) {
-				R_LOG_ERROR ("Avoid recursive reads");
-			}
-			return -1;
-		}
-		return fd->plugin->read (io, fd, buf, count);
+	if (!cache || !cache->swizzled_io_plugin || cache->rebasing_buffer) {
+		// nothing to rebase, read as the io plugin did before being swizzled
+		return original_io_read (io, fd, buf, count);
 	}
 
 	if (cache->rebase_info) {
 		r_rebase_info_populate (cache->rebase_info, cache);
-	}
-	if (!cache->original_io_read) {
-		return -1;
 	}
 
 	// move into
@@ -2949,7 +3005,7 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		}
 	}
 	ut64 io_off = io->off;
-	int result = cache->original_io_read (io, fd, cache->internal_buffer, count);
+	int result = original_io_read (io, fd, cache->internal_buffer, count);
 	if (result == count) {
 		if (cache->mach0->chained_starts) {
 			rebase_buffer_fixup (cache, io_off, fd, cache->internal_buffer, count);
