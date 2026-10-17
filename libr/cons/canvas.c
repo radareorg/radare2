@@ -259,6 +259,9 @@ static const char *set_attr(RConsCanvas *c, const char *s) {
 		while (*p && *p != 'J' && *p != 'm' && *p != 'H') {
 			p++;
 		}
+		if (!*p) {
+			break;
+		}
 		p++;
 	}
 
@@ -606,7 +609,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 
 R_API const char *r_cons_canvas_attribute_at(RConsCanvas *c, int x, int y) {
 	R_RETURN_VAL_IF_FAIL (c, NULL);
-	const ut32 id = (x < 0 || y < 0)? 0: attrs_id_at (c->attrs, (ut64)y * c->w + x);
+	const ut32 id = (x < 0 || x >= c->w || y < 0 || y >= c->h)? 0: attrs_id_at (c->attrs, (ut64)y * c->w + x);
 	return id? attrs_style (c->attrs, id)->str: NULL;
 }
 
@@ -883,6 +886,10 @@ R_API void r_cons_canvas_circle(RConsCanvas *c, int x, int y, int w, int h, cons
 }
 
 R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const char *R_NULLABLE color) {
+	R_RETURN_IF_FAIL (c);
+	if (w < 1 || h < 1) {
+		return;
+	}
 	// NOTE: As long as utf and curvy flags are tied to the canvas, we need to
 	// regenerate the canvas to get such changes now. before the kons refactoring
 	// this changed when cconfig settings were modified. not sure if its worth.
@@ -890,71 +897,88 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 	const bool usecrv = c->flags & R_CONS_CANVAS_FLAG_CURVY;
 	const char *hline = useutf? RUNECODESTR_LINE_HORIZ: "-";
 	const char *vtmp = useutf? RUNECODESTR_LINE_VERT: "|";
-	RStrBuf *vline = r_strbuf_new (NULL);
-	if (color) {
-		r_strbuf_appendf (vline, Color_RESET "%s%s", color, vtmp);
-	} else {
-		r_strbuf_appendf (vline, Color_RESET "%s", vtmp);
-	}
 	const char *tl_corner = useutf? (usecrv? RUNECODESTR_CURVE_CORNER_TL: RUNECODESTR_CORNER_TL): ".";
 	const char *tr_corner = useutf? (usecrv? RUNECODESTR_CURVE_CORNER_TR: RUNECODESTR_CORNER_TR): ".";
 	const char *bl_corner = useutf? (usecrv? RUNECODESTR_CURVE_CORNER_BL: RUNECODESTR_CORNER_BL): "`";
 	const char *br_corner = useutf? (usecrv? RUNECODESTR_CURVE_CORNER_BR: RUNECODESTR_CORNER_BR): "'";
-	int i, x_mod;
-	int roundcorners = 0;
-	char *row = NULL, *row_ptr;
-
-	if (w < 1 || h < 1) {
-		return;
-	}
 	if (color) {
 		c->attr = color;
 	}
 	if (!c->color) {
 		c->attr = Color_RESET;
 	}
-	row = malloc (w + 1);
-	if (!row) {
-		return;
-	}
-	row[0] = roundcorners? '.': tl_corner[0];
-	if (w > 2) {
-		memset (row + 1, hline[0], w - 2);
-	}
-	if (w > 1) {
-		row[w - 1] = roundcorners? '.': tr_corner[0];
-	}
-	row[w] = 0;
-
-	row_ptr = row;
-	x_mod = x;
-	if (x < -c->sx) {
-		x_mod = R_MIN (-c->sx, x_mod + w);
-		row_ptr += x_mod - x;
-	}
-	if (G (x_mod, y)) {
-		W (row_ptr);
-	}
-	if (G (x_mod, y + h - 1)) {
-		row[0] = roundcorners? '\'': bl_corner[0];
-		row[w - 1] = roundcorners? '\'': br_corner[0];
-		W (row_ptr);
-	}
-	for (i = 1; i < h - 1; i++) {
-		if (G (x, y + i)) {
-			W (r_strbuf_get (vline));
+	const st64 from = R_MAX ((st64)y, -(st64)c->sy);
+	const st64 to = R_MIN (R_MIN ((st64)y + h, (st64)c->h - c->sy), (st64)ST32_MAX + 1);
+	const st64 right = (st64)x + w - 1;
+	const st64 bottom = (st64)y + h - 1;
+	const st64 row_from = R_MAX ((st64)x, -(st64)c->sx);
+	const st64 row_to = R_MIN (R_MIN (right + 1, (st64)c->w - c->sx), (st64)ST32_MAX + 1);
+	if (row_from < row_to && row_from <= ST32_MAX
+			&& ((y >= from && y < to) || (bottom >= from && bottom < to))) {
+		const size_t row_width = row_to - row_from;
+		char *row = malloc (row_width + 1);
+		if (!row) {
+			return;
 		}
-		if (G (x + w - 1, y + i)) {
-			W (r_strbuf_get (vline));
+		memset (row, hline[0], row_width);
+		row[row_width] = '\0';
+		if (row_from == x) {
+			row[0] = tl_corner[0];
+		}
+		if (row_to == right + 1 && w > 1) {
+			row[row_width - 1] = tr_corner[0];
+		}
+		if (y >= from && y < to && G ((int)row_from, y)) {
+			W (row);
+		}
+		if (bottom >= from && bottom < to && G ((int)row_from, (int)bottom)) {
+			if (row_from == x) {
+				row[0] = bl_corner[0];
+			}
+			if (row_to == right + 1) {
+				row[row_width - 1] = br_corner[0];
+			}
+			W (row);
+		}
+		free (row);
+	}
+	const bool left_visible = (st64)x + c->sx >= 0 && (st64)x + c->sx < c->w;
+	const bool right_visible = right <= ST32_MAX && right + c->sx >= 0 && right + c->sx < c->w;
+	st64 i;
+	const st64 sides_from = R_MAX (from, (st64)y + 1);
+	const st64 sides_to = R_MIN (to, (st64)y + h - 1);
+	if ((left_visible || right_visible) && sides_from < sides_to) {
+		char *vline = r_str_newf (Color_RESET "%s%s", color? color: "", vtmp);
+		if (vline) {
+			char *colored = r_str_ansi_resetbg (vline, c->bgcolor);
+			if (colored) {
+				free (vline);
+				vline = colored;
+			}
+			const char *saved_attr = c->attr;
+			const char *text = set_attr (c, vline);
+			const char *attr = c->attr;
+			c->attr = saved_attr;
+			for (i = sides_from; i < sides_to; i++) {
+				if (left_visible && G (x, (int)i)) {
+					c->attr = attr;
+					W (text);
+				}
+				if (right_visible && G ((int)right, (int)i)) {
+					c->attr = attr;
+					W (text);
+				}
+			}
+			free (vline);
 		}
 	}
-	free (row);
-	r_strbuf_free (vline);
 	if (color) {
 		c->attr = Color_RESET;
-		for (i = 0; i < h; i++) {
-			if (G (x + w, y + i)) {
-				W (Color_RESET);
+		if (right < ST32_MAX && right + 1 + c->sx >= 0 && right + 1 + c->sx < c->w) {
+			for (i = from; i < to; i++) {
+				if (G ((int)(right + 1), (int)i)) {
+					W (Color_RESET);
+				}
 			}
 		}
 	}
