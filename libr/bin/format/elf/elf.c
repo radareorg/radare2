@@ -951,17 +951,15 @@ static inline ut16 *_parse_edata(ELFOBJ *eo, EDataState *edata_state) {
 	return data;
 }
 
-typedef struct parse_vernaux_state_t {
-	int i;
-	int j;
-	Sdb *sdb;
-	ut16 *data;
-	const char *tmp_val;
-	const char *key;
-	bool check_def;  // used as output parameter
-} ParseVernauxState;
+// the DT_VERNEED and DT_VERDEF lists are walked once per object, not once per Versym entry
+typedef struct version_names_t {
+	HtUU *need; // vna_other -> vna_name
+	HtUU *def; // vd_ndx -> Verdaux offset
+	bool need_ok; // false when the walk stopped at an invalid record
+	bool def_ok;
+} VersionNames;
 
-static inline bool _maybe_parse_aux_ver_needed_info(ELFOBJ *eo, ParseVernauxState *state) {
+static bool load_verneed_names(ELFOBJ *eo, HtUU *names) {
 	if (!eo->version_info[DT_VERSIONTAGIDX (DT_VERNEED)]) {
 		return true;
 	}
@@ -971,8 +969,10 @@ static inline bool _maybe_parse_aux_ver_needed_info(ELFOBJ *eo, ParseVernauxStat
 	if (offset == UT64_MAX) {
 		return false;
 	}
+	// Verneed and Vernaux are the same size, a file only holds more records if they overlap or are shared
+	ut64 left = eo->size / sizeof (vn);
 	do {
-		if (offset > eo->size || offset + sizeof (vn) > eo->size) {
+		if (!left-- || offset > eo->size || offset + sizeof (vn) > eo->size) {
 			return false;
 		}
 
@@ -989,14 +989,10 @@ static inline bool _maybe_parse_aux_ver_needed_info(ELFOBJ *eo, ParseVernauxStat
 		vn.vn_aux = READ32 (svn, k);
 		vn.vn_next = READ32 (svn, k);
 
-		const int i = state->i;
-		const int j = state->j;
-		const ut16 *data = state->data;
-
 		Elf_(Vernaux) vna;
 		ut64 a_off = offset + vn.vn_aux;
 		do {
-			if (a_off > eo->size || a_off + sizeof (vna) > eo->size) {
+			if (!left-- || a_off > eo->size || a_off + sizeof (vna) > eo->size) {
 				return false;
 			}
 
@@ -1012,40 +1008,19 @@ static inline bool _maybe_parse_aux_ver_needed_info(ELFOBJ *eo, ParseVernauxStat
 			vna.vna_name = READ32 (svna, k);
 			vna.vna_next = READ32 (svna, k);
 			a_off += vna.vna_next;
-		} while (vna.vna_other != data[i + j] && vna.vna_next != 0);
+			// the first record with a given index wins
+			ht_uu_insert (names, vna.vna_other, vna.vna_name);
+		} while (vna.vna_next != 0);
 
-		if (vna.vna_other == data[i + j]) {
-			const char *name = strtab_str (eo->strtab, eo->strtab_size, vna.vna_name);
-			if (!name) {
-				return false;
-			}
-			char *val = r_str_newf ("%s(%s)", state->tmp_val, name);
-			sdb_set (state->sdb, state->key, val, 0);
-			free (val);
-			state->check_def = false;
-			return true;
-		}
 		offset += vn.vn_next;
 	} while (vn.vn_next);
 
 	return true;
 }
 
-typedef struct parse_ver_def_state_t {
-	int i;
-	int j;
-	Sdb *sdb;
-	const char *key;
-	const char *tmp_val;
-	ut16 *data;
-} ParseVerDefState;
-
-static inline bool _maybe_parse_version_definition_info(ELFOBJ *eo, ParseVerDefState *state) {
-	const int i = state->i;
-	const int j = state->j;
-	const ut16 *data = state->data;
+static bool load_verdef_names(ELFOBJ *eo, HtUU *names) {
 	const ut64 vinfoaddr = eo->version_info[DT_VERSIONTAGIDX (DT_VERDEF)];
-	if (!(data[i + j] != 0x8001 && vinfoaddr)) {
+	if (!vinfoaddr) {
 		return true;
 	}
 
@@ -1056,8 +1031,9 @@ static inline bool _maybe_parse_version_definition_info(ELFOBJ *eo, ParseVerDefS
 		return false;
 	}
 
+	ut64 left = eo->size / sizeof (vd);
 	do {
-		if (r_buf_read_at (eo->b, offset, svd, sizeof (svd)) != sizeof (svd)) {
+		if (!left-- || r_buf_read_at (eo->b, offset, svd, sizeof (svd)) != sizeof (svd)) {
 			R_LOG_DEBUG ("Cannot read Verdef for Versym");
 			return false;
 		}
@@ -1070,13 +1046,64 @@ static inline bool _maybe_parse_version_definition_info(ELFOBJ *eo, ParseVerDefS
 		vd.vd_hash = READ32 (svd, k);
 		vd.vd_aux = READ32 (svd, k);
 		vd.vd_next = READ32 (svd, k);
+		ht_uu_insert (names, vd.vd_ndx, offset + vd.vd_aux);
 		offset += vd.vd_next;
-	} while (vd.vd_ndx != (data[i + j] & 0x7FFF) && vd.vd_next != 0);
+	} while (vd.vd_next != 0);
 
-	if (vd.vd_ndx == (data[i + j] & 0x7FFF)) {
+	return true;
+}
+
+typedef struct parse_vernaux_state_t {
+	int i;
+	int j;
+	Sdb *sdb;
+	ut16 *data;
+	const char *tmp_val;
+	const char *key;
+	const VersionNames *names;
+	bool check_def;  // used as output parameter
+} ParseVernauxState;
+
+static inline bool _maybe_parse_aux_ver_needed_info(ELFOBJ *eo, ParseVernauxState *state) {
+	bool found = false;
+	const ut64 vna_name = ht_uu_find (state->names->need, state->data[state->i + state->j], &found);
+	if (!found) {
+		return state->names->need_ok;
+	}
+	const char *name = strtab_str (eo->strtab, eo->strtab_size, vna_name);
+	if (!name) {
+		return false;
+	}
+	char *val = r_str_newf ("%s(%s)", state->tmp_val, name);
+	sdb_set (state->sdb, state->key, val, 0);
+	free (val);
+	state->check_def = false;
+	return true;
+}
+
+typedef struct parse_ver_def_state_t {
+	int i;
+	int j;
+	Sdb *sdb;
+	const char *key;
+	const char *tmp_val;
+	ut16 *data;
+	const VersionNames *names;
+} ParseVerDefState;
+
+static inline bool _maybe_parse_version_definition_info(ELFOBJ *eo, ParseVerDefState *state) {
+	const int i = state->i;
+	const int j = state->j;
+	const ut16 *data = state->data;
+	if (data[i + j] == 0x8001) {
+		return true;
+	}
+
+	bool found = false;
+	const ut64 off_vda = ht_uu_find (state->names->def, data[i + j] & 0x7FFF, &found);
+	if (found) {
 		Elf_(Verdaux) vda;
 		ut8 svda[sizeof (Elf_(Verdaux))] = {0};
-		ut64 off_vda = offset - vd.vd_next + vd.vd_aux;
 		if (off_vda > eo->size || off_vda + sizeof (vda) > eo->size) {
 			return false;
 		}
@@ -1098,10 +1125,10 @@ static inline bool _maybe_parse_version_definition_info(ELFOBJ *eo, ParseVerDefS
 		free (fname);
 	}
 
-	return true;
+	return found || state->names->def_ok;
 }
 
-static Sdb *store_versioninfo_gnu_versym(ELFOBJ *eo, Elf_(Shdr) *shdr, int sz) {
+static Sdb *store_versioninfo_gnu_versym(ELFOBJ *eo, Elf_(Shdr) *shdr, int sz, const VersionNames *names) {
 	if (!eo->strtab) {
 		return NULL;
 	}
@@ -1149,6 +1176,7 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *eo, Elf_(Shdr) *shdr, int sz) {
 					.data = data,
 					.tmp_val = tmp_val,
 					.key = key,
+					.names = names,
 					.check_def = true,
 				};
 				if (!_maybe_parse_aux_ver_needed_info (eo, &vernaux_state)) {
@@ -1157,7 +1185,7 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *eo, Elf_(Shdr) *shdr, int sz) {
 					return sdb;
 				}
 
-				ParseVerDefState parse_vd_state = { .i = i, .j = j, .sdb = sdb, .key = key, .tmp_val = tmp_val, .data = data };
+				ParseVerDefState parse_vd_state = { .i = i, .j = j, .sdb = sdb, .key = key, .tmp_val = tmp_val, .data = data, .names = names };
 				if (vernaux_state.check_def && !_maybe_parse_version_definition_info (eo, &parse_vd_state)) {
 					free (tmp_val);
 					free (data);
@@ -1581,6 +1609,7 @@ static Sdb *store_versioninfo(ELFOBJ *eo) {
 	int num_verdef = 0;
 	int num_verneed = 0;
 	int num_versym = 0;
+	VersionNames names = {0};
 	size_t i;
 	for (i = 0; i < eo->ehdr.e_shnum; i++) {
 		Elf_(Shdr) *sh = &eo->shdr[i];
@@ -1608,12 +1637,20 @@ static Sdb *store_versioninfo(ELFOBJ *eo) {
 			sdb_ns_set (sdb_versioninfo, key, sdb);
 			break;
 		case SHT_GNU_versym:
-			sdb = store_versioninfo_gnu_versym (eo, sh, left);
+			if (!names.need) {
+				names.need = ht_uu_new0 ();
+				names.def = ht_uu_new0 ();
+				names.need_ok = load_verneed_names (eo, names.need);
+				names.def_ok = load_verdef_names (eo, names.def);
+			}
+			sdb = store_versioninfo_gnu_versym (eo, sh, left, &names);
 			snprintf (key, sizeof (key), "versym%d", num_versym++);
 			sdb_ns_set (sdb_versioninfo, key, sdb);
 			break;
 		}
 	}
+	ht_uu_free (names.need);
+	ht_uu_free (names.def);
 
 	return sdb_versioninfo;
 }
