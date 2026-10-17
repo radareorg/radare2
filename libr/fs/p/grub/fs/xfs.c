@@ -219,6 +219,7 @@ grub_xfs_read_block(grub_fshelp_node_t node, grub_disk_addr_t fileblock) {
 
 	if (node->inode.format == XFS_INODE_FORMAT_BTREE) {
 		grub_unaligned_uint64_t *keys;
+		int level = grub_be_to_cpu16 (node->inode.data.btree.level);
 
 		leaf = grub_malloc (node->data->sblock.bsize);
 		if (leaf == 0) {
@@ -248,10 +249,12 @@ grub_xfs_read_block(grub_fshelp_node_t node, grub_disk_addr_t fileblock) {
 				0,
 				node->data->sblock.bsize,
 				leaf)) {
+				grub_free (leaf);
 				return 0;
 			}
 
-			if (strncmp ((char *)leaf->magic, "BMAP", 4)) {
+			// each child is one level below its parent, so cycles cannot loop forever
+			if (strncmp ((char *)leaf->magic, "BMAP", 4) || grub_be_to_cpu16 (leaf->level) != --level) {
 				grub_free (leaf);
 				grub_error (GRUB_ERR_BAD_FS, "not a correct XFS BMAP node");
 				return 0;

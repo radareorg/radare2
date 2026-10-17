@@ -300,6 +300,7 @@ grub_hfsplus_read_block(grub_fshelp_node_t node, grub_disk_addr_t fileblock) {
 		int blk, ptr = 0;
 
 		/* Try to find this block in the current set of extents.  */
+		const int prevleft = blksleft;
 		blk = grub_hfsplus_find_block (extents, &blksleft);
 
 		/* The previous iteration of this loop allocated memory.  The
@@ -309,6 +310,11 @@ grub_hfsplus_read_block(grub_fshelp_node_t node, grub_disk_addr_t fileblock) {
 
 		if (blk != -1) {
 			return (blk + (node->data->embedded_offset >> (node->data->log2blksize - GRUB_DISK_SECTOR_BITS)));
+		}
+		// an overflow record without blocks would be looked up again forever
+		if (extents != &node->extents[0] && blksleft == prevleft) {
+			grub_error (GRUB_ERR_BAD_FS, "HFS+ extent overflow record without blocks");
+			break;
 		}
 
 		/* For the extent overflow file, extra extents can't be found in
@@ -596,6 +602,8 @@ grub_hfsplus_btree_iterate_node(struct grub_hfsplus_btree *btree,
 	int (*hook) (void *record, struct grub_hfsplus_btnode *node, void *closure),
 	void *closure) {
 	int rec;
+	// a chain longer than the number of nodes in the btree has a cycle
+	grub_uint64_t nodesleft = (btree->nodesize > 0)? btree->file.size / btree->nodesize: 0;
 
 	if (hook) {
 		for (;;) {
@@ -618,6 +626,10 @@ grub_hfsplus_btree_iterate_node(struct grub_hfsplus_btree *btree,
 
 			if (!first_node->next) {
 				break;
+			}
+			if (!nodesleft--) {
+				grub_error (GRUB_ERR_BAD_FS, "HFS+ btree leaf chain loops");
+				return 1;
 			}
 
 			if (grub_hfsplus_read_file (&btree->file, 0, 0, 0, (grub_be_to_cpu32 (first_node->next) * btree->nodesize), btree->nodesize, cnode) <= 0) {
@@ -656,6 +668,7 @@ grub_hfsplus_btree_search(struct grub_hfsplus_btree *btree,
 	}
 
 	grub_uint64_t currnode = btree->root;
+	int height = -1;
 	while (1) {
 		int match = 0;
 
@@ -666,6 +679,11 @@ grub_hfsplus_btree_search(struct grub_hfsplus_btree *btree,
 		}
 
 		struct grub_hfsplus_btnode *nodedesc = (struct grub_hfsplus_btnode *)node;
+		// each child is one level below its parent, so cycles cannot loop forever
+		if (height != -1 && nodedesc->height != height - 1) {
+			goto corrupt;
+		}
+		height = nodedesc->height;
 
 		/* Find the record in this tree.  */
 		for (rec = 0; rec < grub_be_to_cpu16 (nodedesc->count); rec++) {
