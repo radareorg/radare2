@@ -573,6 +573,8 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 
 	#define SET(T) r->type = R_BIN_RELOC_ ## T; r->additive = 0; return r
 	#define SETA(T) do { r->type = R_BIN_RELOC_ ## T; r->additive = !rel->implicit_addend; return r; } while (0)
+	#define SETP() do { if (sizeof (Elf_(Addr)) == 4) { SET (32); } SET (64); } while (0)
+	#define SETAP() do { if (sizeof (Elf_(Addr)) == 4) { SETA (32); } SETA (64); } while (0)
 	#define ADD(T, A) do { st32 _tmp; if (!r_add_overflow_st32 (r->addend, A, &_tmp)) { r->addend = _tmp; } SETA (T); } while (0)
 
 	// Early return if it's a CREL relocation - it was already set up in the initialization above
@@ -644,9 +646,9 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_X86_64_PLT32:     ADD(32,-(st64)P /* +L */); break;
 		case R_X86_64_GOT32:     ADD(32, got_addr); break;
 		case R_X86_64_PC32:      ADD(32,-(st64)P); break;
-		case R_X86_64_GLOB_DAT:  r->vaddr -= rel->sto; SET(64); break;
-		case R_X86_64_JUMP_SLOT: r->vaddr -= rel->sto; SET(64); break;
-		case R_X86_64_RELATIVE:  SETA(64); break;
+		case R_X86_64_GLOB_DAT:  r->vaddr -= rel->sto; SETP (); break;
+		case R_X86_64_JUMP_SLOT: r->vaddr -= rel->sto; SETP (); break;
+		case R_X86_64_RELATIVE:  SETAP (); break;
 		case R_X86_64_32:        ADD(32, 0); break;
 		case R_X86_64_32S:       ADD(32, 0); break;
 		case R_X86_64_16:        ADD(16, 0); break;
@@ -655,7 +657,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_X86_64_PC8:       ADD(8, -(st64)P); break;
 		case R_X86_64_GOTPCREL:  ADD(64, got_addr - P); break;
 		case R_X86_64_COPY:      ADD(64, 0); break; // XXX: copy symbol at runtime
-		case R_X86_64_IRELATIVE: r->is_ifunc = true; SET(64); break;
+		case R_X86_64_IRELATIVE: r->is_ifunc = true; SETP (); break;
 		case R_X86_64_TPOFF64:   ADD(64, 0); break;
 		case R_X86_64_DTPMOD64:  ADD(64, 0); break; // id of module containing symbol (keep it as zero)
 		case R_X86_64_DTPOFF64:  ADD(64, 0); break; // offset inside module's tls
@@ -714,11 +716,11 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		break;
 	case EM_AARCH64: switch (rel->type) {
 		case R_AARCH64_NONE: break;
-		case R_AARCH64_GLOB_DAT: SET (64); break;
-		case R_AARCH64_JUMP_SLOT: SET (64); break;
+		case R_AARCH64_GLOB_DAT: SETP (); break;
+		case R_AARCH64_JUMP_SLOT: SETP (); break;
 		case R_AARCH64_COPY: ADD (64, 0); break; // copy symbol at runtime
-		case R_AARCH64_RELATIVE: SETA (64); break;
-		case R_AARCH64_IRELATIVE: r->is_ifunc = true; SET (64); break;
+		case R_AARCH64_RELATIVE: SETAP (); break;
+		case R_AARCH64_IRELATIVE: r->is_ifunc = true; SETP (); break;
 		// data references
 		case R_AARCH64_PREL16: ADD (16, B); break;
 		case R_AARCH64_PREL32: ADD (32, B); break;
@@ -958,6 +960,8 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 	}
 #undef SET
 #undef SETA
+#undef SETP
+#undef SETAP
 #undef ADD
 	RVecRBinReloc_pop_back (out);
 	return NULL;
@@ -1493,11 +1497,14 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			break;
 		case R_AARCH64_RELATIVE:
 		case R_AARCH64_IRELATIVE:
-			word = 8;
+			word = sizeof (Elf_(Addr));
 			V = A + bias;
 			break;
 		case R_AARCH64_GLOB_DAT:
 		case R_AARCH64_JUMP_SLOT:
+			word = sizeof (Elf_(Addr));
+			V = S + A;
+			break;
 		case R_AARCH64_ABS64:
 			word = 8;
 			V = S + A;
@@ -1735,7 +1742,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			V = L + A - P;
 			break;
 		case R_X86_64_RELATIVE:
-			word = 8;
+			word = sizeof (Elf_(Addr));
 			V = A + bias;
 			break;
 		default:
