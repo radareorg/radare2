@@ -154,7 +154,7 @@ struct r_cmd_t {
 	RCons *(*get_cons)(void *data); // optional execution-console resolver
 	ut32 (*get_blocksize)(void *data); // optional block-size snapshot resolver
 	RCmdNullCb nullcallback;
-	RCmdItem *cmds[UT8_MAX];
+	RCmdItem *cmds[UT8_MAX + 1];
 	RCmdMacro macro;
 	RLibStore *libstore;
 	RCmdAlias aliases;
