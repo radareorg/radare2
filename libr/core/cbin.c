@@ -5721,6 +5721,10 @@ static void bin_mdmp_versioninfo(RCore *core, PJ *pj, int mode) {
 }
 
 static bool bin_versioninfo(RCore *core, PJ *pj, int mode) {
+	if (IS_MODE_RAD (mode)) {
+		// no r2 commands can import this information
+		return true;
+	}
 	if (IS_MODE_JSON (mode)) {
 		pj_a (pj);
 	}
