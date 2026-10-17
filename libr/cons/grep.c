@@ -713,10 +713,11 @@ R_API void r_cons_grepbuf(RCons *cons) {
 	}
 	if (grep->ascart) {
 		char *sbuf = r_str_ndup (cons->context->buffer, cons->context->buffer_len);
-		r_str_ansi_filter (sbuf, NULL, NULL, -1);
-		char *out = r_str_ss (sbuf, NULL, 0);
-		free (sbuf);
-		cons_buffer_set (cons->context, out);
+		if (sbuf) {
+			r_str_ansi_filter (sbuf, NULL, NULL, -1);
+			cons_buffer_set (cons->context, r_str_ss (sbuf, NULL, 0));
+			free (sbuf);
+		}
 		return;
 	}
 	if (grep->zoom) {
