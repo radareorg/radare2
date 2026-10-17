@@ -352,6 +352,38 @@ bool test_cons_empty_drain_reuses_buffer(void) {
 	mu_end;
 }
 
+static bool cons_write_self(size_t length) {
+	RCons *cons = r_cons_new ();
+	char *expect = malloc (length * 2);
+	mu_assert_notnull (expect, "expected output");
+	size_t i;
+	for (i = 0; i < length; i++) {
+		expect[i] = expect[length + i] = 'a' + i % 26;
+	}
+	// tight buffer like the one left by grep filters, with a neighbour so realloc moves it
+	RConsContext *ctx = cons->context;
+	free (ctx->buffer);
+	ctx->buffer = r_str_ndup (expect, length);
+	ctx->buffer_len = length;
+	ctx->buffer_sz = length + 1;
+	char *blocker = malloc (length);
+	mu_assert_true (r_cons_write (cons, ctx->buffer, length), "append the buffer to itself");
+	free (blocker);
+	mu_assert_eq (ctx->buffer_len, length * 2, "self append length");
+	mu_assert_true (!memcmp (ctx->buffer, expect, length * 2), "self append content");
+	free (expect);
+	r_cons_free (cons);
+	mu_end;
+}
+
+bool test_cons_write_self(void) {
+	return cons_write_self (64 * 1024);
+}
+
+bool test_cons_write_self_chunks(void) {
+	return cons_write_self (16 * 1024 * 1024 + 3);
+}
+
 bool test_cons_output_chunks(void) {
 	RCons *cons = r_cons_new ();
 	char *filename = NULL;
@@ -837,6 +869,8 @@ bool all_tests(void) {
 	mu_run_test (test_cons_multiple_roots_same_thread);
 	mu_run_test (test_cons_empty_drain_reuses_buffer);
 	mu_run_test (test_cons_output_chunks);
+	mu_run_test (test_cons_write_self);
+	mu_run_test (test_cons_write_self_chunks);
 	mu_run_test (test_cons_multiple_roots_across_threads);
 	mu_run_test (test_cons_timeout_keeps_earliest_deadline);
 	mu_run_test (test_cons_timeout_does_not_restart_expired_deadline);
