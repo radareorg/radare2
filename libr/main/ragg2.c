@@ -1,9 +1,10 @@
-/* radare - LGPL - Copyright 2011-2024 - pancake */
+/* radare - LGPL - Copyright 2011-2026 - pancake */
 
 #define R_LOG_ORIGIN "ragg2"
 
 #include <r_egg.h>
 #include <r_bin.h>
+#include <r_cons.h>
 #include <r_main.h>
 #include <r_util/r_print.h>
 #include <r_util.h>
@@ -27,7 +28,7 @@ static REggEnv env[] = {
 	{ "R2_NOPLUGINS", "do not load any plugin" }
 };
 
-static void ragg_show_env(bool show_desc);
+static void ragg_show_env(RCons *cons, bool show_desc);
 
 static bool __lib_egg_cb(RLibPlugin *pl, void *user, void *data) {
 	REggPlugin *hand = (REggPlugin *)data;
@@ -70,12 +71,12 @@ static void __es_free(REggState *es) {
 	}
 }
 
-static int usage(int v) {
-	printf ("Usage: ragg2 [-FOLsrxhvz] [-a arch] [-b bits] [-k os] [-o file] [-I path]\n"
+static int usage(RCons *cons, int v) {
+	r_cons_printf (cons, "Usage: ragg2 [-FOLsrxhvz] [-a arch] [-b bits] [-k os] [-o file] [-I path]\n"
 	"             [-i sc] [-E enc] [-B hex] [-c k=v] [-C file] [-p pad] [-q off]\n"
 	"             [-S string] [-f fmt] [-nN dword] [-dDw off:hex] [-e expr] file|f.asm|-\n");
 	if (v) {
-		printf (
+		r_cons_printf (cons,
 			" -a [arch]       select architecture (x86, mips, arm, ppc)\n"
 			" -b [bits]       register size (32, 64, ..)\n"
 			" -B [hexpairs]   append some hexpair bytes\n"
@@ -110,30 +111,31 @@ static int usage(int v) {
 			" -x              execute\n"
 			" -X [hexpairs]   execute rop chain, using the stack provided\n"
 			" -z              output in C string syntax\n");
-		ragg_show_env (true);
+		ragg_show_env (cons, true);
 	}
 	return 1;
 }
 
-static void list(REgg *egg) {
+static void list(RCons *cons, REgg *egg) {
 	RListIter *iter;
 	REggPlugin *p;
-	printf ("shellcodes:\n");
+	r_cons_printf (cons, "shellcodes:\n");
 	r_list_foreach (egg->libstore->plugins, iter, p) {
 		if (p->type == R_EGG_PLUGIN_SHELLCODE) {
-			printf ("%10s : %s\n", p->meta.name, p->meta.desc);
+			r_cons_printf (cons, "%10s : %s\n", p->meta.name, p->meta.desc);
 		}
 	}
-	printf ("encoders:\n");
+	r_cons_printf (cons, "encoders:\n");
 	r_list_foreach (egg->libstore->plugins, iter, p) {
 		if (p->type == R_EGG_PLUGIN_ENCODER) {
-			printf ("%10s : %s\n", p->meta.name, p->meta.desc);
+			r_cons_printf (cons, "%10s : %s\n", p->meta.name, p->meta.desc);
 		}
 	}
 }
 
-static int create(const char *format, const char *arch, int bits, const ut8 *code, int codelen) {
+static bool create(RCons *cons, const char *format, const char *arch, int bits, const ut8 *code, int codelen) {
 	RBin *bin = r_bin_new ();
+	bool ret = false;
 	r_libstore_load (bin->libstore);
 	RBinArchOptions opts;
 	RBuffer *b;
@@ -142,7 +144,8 @@ static int create(const char *format, const char *arch, int bits, const ut8 *cod
 	if (b) {
 		ut64 blen;
 		const ut8 *tmp = r_buf_data (b, &blen);
-		if (write (1, tmp, blen) != blen) {
+		ret = !blen || r_cons_write (cons, tmp, blen);
+		if (!ret) {
 			R_LOG_ERROR ("Failed to write buffer");
 		}
 		r_unref (b);
@@ -150,7 +153,7 @@ static int create(const char *format, const char *arch, int bits, const ut8 *cod
 		R_LOG_ERROR ("Cannot create binary for this format '%s'", format);
 	}
 	r_bin_free (bin);
-	return 0;
+	return ret;
 }
 
 static int openfile(const char *f, int x) {
@@ -174,33 +177,29 @@ static int openfile(const char *f, int x) {
 	if (r != 0) {
 		R_LOG_ERROR ("Could not resize");
 	}
-	close (1);
-#if !__wasi__
-	dup2 (fd, 1);
-#endif
 	return fd;
 }
 #define ISEXEC (fmt != 'r')
 
-static void ragg_env_print(const char *name) {
+static void ragg_env_print(RCons *cons, const char *name) {
 	char *value = r_sys_getenv (name);
-	printf ("%s\n", R_STR_ISNOTEMPTY (value)? value: "");
+	r_cons_printf (cons, "%s\n", R_STR_ISNOTEMPTY (value)? value: "");
 	free (value);
 }
 
-static void ragg_show_env(bool show_desc) {
+static void ragg_show_env(RCons *cons, bool show_desc) {
 	int id = 0;
 	for (id = 0; id < (sizeof (env) / sizeof (env[0])); id++) {
 		if (show_desc) {
-			printf ("%s\t%s\n", env[id].name, env[id].desc);
+			r_cons_printf (cons, "%s\t%s\n", env[id].name, env[id].desc);
 		} else {
-			printf ("%s=", env[id].name);
-			ragg_env_print (env[id].name);
+			r_cons_printf (cons, "%s=", env[id].name);
+			ragg_env_print (cons, env[id].name);
 		}
 	}
 }
 
-R_API int r_main_ragg2(int argc, const char **argv) {
+static int ragg2_main(RCons *cons, int argc, const char **argv) {
 	const char *file = NULL;
 	const char *padding = NULL;
 	const char *pattern = NULL;
@@ -227,10 +226,11 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 	const char *ofile = NULL;
 	int ofileauto = 0;
 	RBuffer *b;
-	int c, i, fd = -1;
+	int c, i, fd = -1, ret = 0;
+	bool file_context = false;
 
 	if (argc < 2) {
-		return usage (1);
+		return usage (cons, 1);
 	}
 
 	REggState *es = __es_new ();
@@ -238,10 +238,8 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 	RGetopt opt;
 	r_getopt_init (&opt, argc, argv, "a:b:B:c:C:d:D:e:E:f:FhH:i:I:k:Ln:N:o:Op:P:q:rsS:vw:xX:z");
 	if (argc == 2 && !strcmp (argv[1], "-H")) {
-		ragg_show_env (false);
-		__es_free (es);
-		free (sequence);
-		return 0;
+		ragg_show_env (cons, false);
+		goto beach;
 	}
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
@@ -267,9 +265,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 		case 'C':
 			if (R_STR_ISEMPTY (opt.arg)) {
 				R_LOG_ERROR ("Cannot open empty contents path");
-				free (sequence);
-				__es_free (es);
-				return 1;
+				goto fail;
 			}
 			contents = opt.arg;
 			break;
@@ -355,9 +351,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 		case 'I':
 			if (R_STR_ISEMPTY (opt.arg)) {
 				R_LOG_ERROR ("Cannot open empty include path");
-				free (sequence);
-				__es_free (es);
-				return 1;
+				goto fail;
 			}
 			r_egg_lang_include_path (es->e, opt.arg);
 			break;
@@ -415,41 +409,39 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 			show_execute_rop = 1;
 			break;
 		case 'L':
-			list (es->e);
-			__es_free (es);
-			free (sequence);
-			return 0;
+			list (cons, es->e);
+			goto beach;
 		case 'h':
-			__es_free (es);
-			free (sequence);
-			return usage (1);
+			ret = usage (cons, 1);
+			goto beach;
 		case 'H':
-			ragg_env_print (opt.arg);
-			__es_free (es);
-			free (sequence);
-			return 0;
+			ragg_env_print (cons, opt.arg);
+			goto beach;
 		case 'v':
-			free (sequence);
-			__es_free (es);
-			return r_main_version_print ("ragg2", 0);
+			{
+				char *version = r_str_version ("ragg2");
+				if (version) {
+					r_cons_println (cons, version);
+					free (version);
+				}
+			}
+			goto beach;
 		case 'z':
 			show_str = 1;
 			break;
 		case 'q':
 			get_offset = 1;
+			free (sequence);
 			sequence = strdup (opt.arg);
 			break;
 		default:
-			free (sequence);
-			__es_free (es);
-			return 1;
+			goto fail;
 		}
 	}
 
 	if (opt.ind == argc && !eggprg && !shellcode && !bytes && !contents && !encoder && !padding && !pattern && !append && !get_offset && !str) {
-		free (sequence);
-		__es_free (es);
-		return usage (0);
+		ret = usage (cons, 0);
+		goto beach;
 	}
 	if (opt.ind != argc) {
 		file = argv[opt.ind];
@@ -469,17 +461,13 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 	if (get_offset) {
 		if (strncmp (sequence, "0x", 2)) {
 			R_LOG_ERROR ("Need hex value with `0x' prefix e.g. 0x41414142");
-			free (sequence);
-			__es_free (es);
-			return 1;
+			goto fail;
 		}
 
 		get_offset = r_num_math (0, sequence);
-		printf ("Little endian: %d\n", r_debruijn_offset (get_offset, false));
-		printf ("Big endian: %d\n", r_debruijn_offset (get_offset, true));
-		free (sequence);
-		__es_free (es);
-		return 0;
+		r_cons_printf (cons, "Little endian: %d\n", r_debruijn_offset (get_offset, false));
+		r_cons_printf (cons, "Big endian: %d\n", r_debruijn_offset (get_offset, true));
+		goto beach;
 	}
 
 	// PPC32 and PPC64 ELFv1 are big-endian by convention. ppc64le will need
@@ -548,9 +536,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 	if (!r_egg_compile (es->e)) {
 		if (!fmt) {
 			R_LOG_ERROR ("r_egg_compile failed");
-			free (sequence);
-			__es_free (es);
-			return 1;
+			goto fail;
 		}
 	}
 
@@ -600,7 +586,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 		bytes = NULL;
 	}
 
-	/* set output (create output file if needed) */
+	// Create output files without redirecting the caller's stdout.
 	if (ofileauto) {
 		if (file) {
 			char *o, *q, *p = strdup (file);
@@ -621,14 +607,20 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 			R_LOG_ERROR ("cannot open file '%s'", opt.arg);
 			goto fail;
 		}
-		close (fd);
 	}
 	if (ofile) {
+		if (fd != -1) {
+			close (fd);
+		}
 		fd = openfile (ofile, ISEXEC);
 		if (fd == -1) {
 			R_LOG_ERROR ("cannot open file '%s'", ofile);
 			goto fail;
 		}
+	}
+	if (fd != -1) {
+		r_cons_push (cons);
+		file_context = true;
 	}
 
 	// assemble to binary
@@ -666,29 +658,25 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 	r_egg_finalize (es->e);
 
 	if (show_asm) {
-		printf ("%s\n", r_egg_get_assembly (es->e));
+		char *assembly = r_egg_get_assembly (es->e);
+		r_cons_println (cons, assembly);
+		free (assembly);
 	}
 
 	if (show_raw || show_hex || show_execute) {
 		if (show_execute) {
-			int r;
 			if (show_execute_rop) {
-				r = r_egg_run_rop (es->e);
+				ret = r_egg_run_rop (es->e);
 			} else {
-				r = r_egg_run (es->e);
+				ret = r_egg_run (es->e);
 			}
-			r_egg_free (es->e);
-			if (fd != -1) {
-				close (fd);
-			}
-			free (sequence);
-			return r;
+			goto beach;
 		}
 		b = r_egg_get_bin (es->e);
 		if (show_raw) {
 			ut64 blen;
 			const ut8 *tmp = r_buf_data (b, &blen);
-			if (write (1, tmp, blen) != blen) {
+			if (blen && !r_cons_write (cons, tmp, blen)) {
 				R_LOG_ERROR ("Failed to write buffer");
 				goto fail;
 			}
@@ -698,6 +686,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 				goto fail;
 			}
 			RPrint *p = r_print_new ();
+			r_cons_bind (cons, &p->consb);
 			ut64 tmpsz;
 			const ut8 *tmp = r_buf_data (b, &tmpsz);
 			switch (*format) {
@@ -709,48 +698,80 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 				break;
 			case 'r':
 				if (show_str) {
-					printf ("\"");
+					r_cons_printf (cons, "\"");
 					for (i = 0; i < tmpsz; i++) {
-						printf ("\\x%02x", tmp[i]);
+						r_cons_printf (cons, "\\x%02x", tmp[i]);
 					}
-					printf ("\"\n");
+					r_cons_printf (cons, "\"\n");
 				} else if (show_hex) {
 					r_buf_seek (b, 0, R_BUF_SET);
 					for (i = 0; i < tmpsz; i++) {
-						printf ("%02x", tmp[i]);
+						r_cons_printf (cons, "%02x", tmp[i]);
 					}
-					printf ("\n");
+					r_cons_printf (cons, "\n");
 				} // else show_raw is_above ()
 				break;
 			case 'p': // PE/python
 				if (strlen (format) > 2 && format[1] == 'y') { // Python
 					r_print_code (p, 0, tmp, tmpsz, 'p');
 				} else { // PE
-					create (format, arch, bits, tmp, tmpsz);
+					ret = !create (cons, format, arch, bits, tmp, tmpsz);
 				}
 				break;
 			case 'e': // ELF
 			case 'm': // MACH0
-				create (format, arch, bits, tmp, tmpsz);
+				ret = !create (cons, format, arch, bits, tmp, tmpsz);
 				break;
 			default:
 				R_LOG_ERROR ("unknown executable format (%s)", format);
-				goto fail;
+				ret = 1;
+				break;
 			}
 			r_print_free (p);
 		}
 	}
-	if (fd != -1) {
-		close (fd);
-	}
-	free (sequence);
-	__es_free (es);
-	return 0;
+	goto beach;
 fail:
+	ret = 1;
+beach:
+	if (file_context) {
+		size_t size;
+		char *output = r_cons_drain (cons, &size);
+		if (size && write (fd, output, size) != size) {
+			R_LOG_ERROR ("Failed to write output file");
+			ret = 1;
+		}
+		free (output);
+		r_cons_pop (cons);
+	}
 	if (fd != -1) {
 		close (fd);
 	}
+	free (bytes);
 	free (sequence);
 	__es_free (es);
-	return 1;
+	return ret;
+}
+
+R_API int r_main_ragg2(int argc, const char **argv) {
+	RCons *cons = (RCons *)(size_t)r_sys_getenv_asut64 ("R2CONS");
+	const bool own_cons = !cons;
+	if (own_cons) {
+		cons = r_cons_new ();
+	}
+	char *include_path = r_sys_getenv (R_EGG_INCDIR_ENV);
+	int ret = ragg2_main (cons, argc, argv);
+	r_sys_setenv (R_EGG_INCDIR_ENV, include_path);
+	free (include_path);
+	if (own_cons) {
+		size_t size;
+		char *output = r_cons_drain (cons, &size);
+		if (size && write (1, output, size) != size) {
+			R_LOG_ERROR ("Failed to write output");
+			ret = 1;
+		}
+		free (output);
+		r_cons_free (cons);
+	}
+	return ret;
 }
