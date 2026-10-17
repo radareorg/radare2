@@ -20,7 +20,12 @@ a "sub ip, 0x33" acf1330c
 a "sub r8, 0xf9" a8f1f908
 ad "adc r0, r1, 0x7b" 41f17b00
 ad "adc r0, r1, 0xaf00af" 41f1af10
-ad "adc r0, r1, -0x47ff4800" 41f1b820 # -0xb800b800
+a "adc r0, r1, -0x47ff4800" 41f1b820 # -0xb800b800
+REQUIRE=cs5
+d "adc r0, r1, -0x47ff4800" 41f1b820 # -0xb800b800
+REQUIRE=cs6
+d "adc r0, r1, 0xb800b800" 41f1b820 # -0xb800b800
+REQUIRE=
 ad "adc r0, r1, 0x26262626" 41f12630
 ad "adc r0, r1, 0x8f0000" 41f50f00
 ad "adc r0, r1, 0x1360000" 41f19b70
@@ -83,19 +88,39 @@ a "blx 0xF4002A6C" 02f064eb 0xF40003A0
 a "bl 0xF4002862" fff7b4ff 0xF40028F6
 a "blx 0xF4002AF4" 02f006ea 0xF40006E4
 ad "adr r6, 0x360" d8a6
+REQUIRE=cs5
 d "subw r8, pc, 0xec7" aff6c768
+REQUIRE=cs6
+d "adr.w r8, -0xec7" aff6c768
+REQUIRE=
 a "adr r8, -0xec7" aff6c768
+REQUIRE=cs5
 d "subw r2, pc, 0x10" aff21002
+REQUIRE=cs6
+d "adr.w r2, -0x10" aff21002
+REQUIRE=
 a "adr.w r2, -0x10" aff21002
+REQUIRE=cs5
 d "addw r8, pc, 0xa23" 0ff62328
+REQUIRE=cs6
+d "adr.w r8, 0xa23" 0ff62328
+REQUIRE=
 a "adr r8, 0xa23" 0ff62328
+REQUIRE=cs5
 d "addw r3, pc, 0x24" 0ff22403
+REQUIRE=cs6
+d "adr.w r3, 0x24" 0ff22403
+REQUIRE=
 a "adr.w r3, 0x24" 0ff22403
 d "adds r6, r2, 5" 561d
 a "add r6, r2, 5" 561d
 d "adds r7, 0xc3" c337
 a "add r7, 0xc3" c337
+REQUIRE=cs5
 d "add.w sb, ip, -0x4dff4e00" 0cf1b229 # 0xb200b200
+REQUIRE=cs6
+d "add.w sb, ip, 0xb200b200" 0cf1b229 # 0xb200b200
+REQUIRE=
 a "add r9, r12, -0x4dff4e00" 0cf1b229 # 0xb200b200
 ad "add.w r1, r3, 0x2c" 03f12c01
 d "adds.w sb, r2, 0x250000" 12f51419
@@ -231,7 +256,11 @@ d "cmn.w r1, r3, asr 30" 11eba37f
 a "cmn r1, r3, asr 30" 11eba37f
 ad "cmn.w r2, r5" 12eb050f
 ad "cmp r3, 0x73" 732b
+REQUIRE=cs5
 d "cmp.w r8, -0x54545455" b8f1ab3f # 0xabababab
+REQUIRE=cs6
+d "cmp.w r8, 0xabababab" b8f1ab3f # 0xabababab
+REQUIRE=
 a "cmp r8, -0x54545455" b8f1ab3f # 0xabababab
 ad "cmp.w r6, 0x23" b6f1230f
 ad "cmp r3, r4" a342
@@ -443,7 +472,11 @@ d "mls r6, sl, r2, r5" 0afb1256
 a "mls r6, r10, r2, r5" 0afb1256
 d "movs r6, 0x26" 2626
 a "mov r6, 0x26" 2626
+REQUIRE=cs5
 d "mov.w r7, -0x4dff4e00" 4ff0b227 # 0xb200b200
+REQUIRE=cs6
+d "mov.w r7, 0xb200b200" 4ff0b227 # 0xb200b200
+REQUIRE=
 a "mov r7, 0xb200b200" 4ff0b227
 d "movs.w fp, 0x130000" 5ff4981b
 a "movs r11, 0x00130000" 5ff4981b
@@ -498,7 +531,11 @@ a "mvn r10, r3, lsr 17" 6fea534a
 ad "mvn.w r1, r2" 6fea0201
 ad "nop" 00bf
 ad "nop.w" aff30080
+REQUIRE=cs5
 d "orn r6, sl, -0x54545455" 6af0ab36 # 0xabababab
+REQUIRE=cs6
+d "orn r6, sl, 0xabababab" 6af0ab36 # 0xabababab
+REQUIRE=
 a "orn r6, r10, 0xabababab" 6af0ab36
 d "orns r2, r3, 0x12800" 73f49432
 a "orns r2, r3, 0x00012800" 73f49432
@@ -652,7 +689,11 @@ d "rsbs r6, r6, 0" 7642
 a "rsb r6, 0" 7642
 d "rsb.w sb, r2, 0x16" c2f11609
 a "rsb r9, r2, 0x16" c2f11609
+REQUIRE=cs5
 d "rsbs.w r7, sb, -0x54ff5500" d9f1ab27 # 0xab00ab00
+REQUIRE=cs6
+d "rsbs.w r7, sb, 0xab00ab00" d9f1ab27 # 0xab00ab00
+REQUIRE=
 a "rsbs r7, r9, 0xab00ab00" d9f1ab27
 ad "rsb.w r2, r3, 0" c3f10002
 ad "rsbs.w r3, r5, 0" d5f10003
@@ -678,7 +719,11 @@ d "sbc r7, r2, 0xf30000" 62f57307
 a "sbc r7, r2, 0x00f30000" 62f57307
 d "sbc r1, r1, 0xfb" 61f1fb01
 a "sbc r1, 0xfb" 61f1fb01
+REQUIRE=cs5
 d "sbcs r2, r5, -0x54ff5500" 75f1ab22 # 0xab00ab00
+REQUIRE=cs6
+d "sbcs r2, r5, 0xab00ab00" 75f1ab22 # 0xab00ab00
+REQUIRE=
 a "sbcs r2, r5, 0xab00ab00" 75f1ab22
 d "sbcs r2, r5" aa41
 a "sbc r2, r5" aa41
