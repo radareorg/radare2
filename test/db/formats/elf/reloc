@@ -967,7 +967,7 @@ EXPECT=<<EOF
 - 6 fd: 4 +0x00000000 0x080000f4 - 0x080000fb rw- rw- .got.r2
     "sym_va": 134217972,
     "sym_va": 134217972,
-1   0x00000000 0x08000000 GLOBAL OBJ    8        cbuf
+1   ---------- ---------- GLOBAL OBJ    8        cbuf
 EOF
 RUN
 
@@ -987,15 +987,15 @@ cbuf @ 0x100000f4
 EOF
 RUN
 
-NAME=ELF: common symbol listing is unchanged when relocs are not applied
+NAME=ELF: an unapplied common symbol states no address
 FILE=bins/elf/x86_64-common-sym.o
 ARGS=-e bin.relocs.apply=false
 CMDS=<<EOF
 irj~{}~sym_va
+is~cbuf
 EOF
 EXPECT=<<EOF
-    "sym_va": 134217728,
-    "sym_va": 134217728,
+1   ---------- ---------- GLOBAL OBJ    8        cbuf
 EOF
 RUN
 

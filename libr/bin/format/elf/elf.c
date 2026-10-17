@@ -5433,7 +5433,11 @@ static void fill_symbol(ELFOBJ *eo, RBinElfSymbol *symbol, RBinSymbol *sym) {
 			symbol->is_vaddr = false;
 		}
 	}
-	if (symbol->st_shndx == SHN_ABS) {
+	if (is_common_shndx (eo, symbol->st_shndx)) {
+		// gABI: a common symbol's value is its alignment; it has no address until the link allocates it
+		vaddr = UT64_MAX;
+		paddr = UT64_MAX;
+	} else if (symbol->st_shndx == SHN_ABS) {
 		// gABI: no relocation moves an absolute value; only a typed one aliasing the file keeps an offset
 		vaddr = symbol->st_value;
 		paddr = UT64_MAX;
