@@ -598,6 +598,8 @@ static bool is_invalid(RAnalOp *op) {
 static int r_asm_disassemble_do(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 	r_anal_op_init (op);
 	if (len < 1 || !a->dcur) {
+		// callers expect a mnemonic even when no arch plugin is loaded
+		r_anal_op_set_mnemonic (op, a->pc, "invalid");
 		return 0;
 	}
 	int ret = 0;

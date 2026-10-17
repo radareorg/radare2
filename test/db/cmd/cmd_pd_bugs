@@ -537,3 +537,25 @@ EXPECT=<<EOF
             0x00001dee      jmp dword [reloc.std::string::size___const] ; 0x2030 ; [02] -r-x section size 54 named 2.__TEXT.__symbol_stub
 EOF
 RUN
+
+NAME=pd without a loaded arch plugin does not crash
+FILE=malloc://8
+CMDS=<<EOF
+e asm.arch=nonexistent
+e asm.ucase=true
+pd 1
+e asm.ucase=false
+e asm.capitalize=true
+pd 1
+e asm.tabs=4
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      00             invalid
+            0x00000000      00             invalid
+            0x00000000      00             invalid
+EOF
+EXPECT_ERR=<<EOF
+ERROR: asm.arch: cannot find 'nonexistent'
+EOF
+RUN
