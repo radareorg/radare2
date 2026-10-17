@@ -1,0 +1,141 @@
+# Minimal XFS images written into malloc:// with only the fields the grub
+# driver reads: the root directory inode is in btree format and its block map
+# btree root points at block 4. Block 4 is a BMAP leaf holding the extent of
+# the directory block (block 2); /file is inode 17 with one extent (block 3).
+
+NAME=xfs btree format directory inode
+FILE=malloc://20480
+CMDS=<<EOF
+wx 584653420010 @ 0x0
+wx 10 @ 0x3f
+wx 21 @ 0x57
+wx 0c09080406 @ 0x78
+wx 494e41ed0203 @ 0x1000
+wx 10 @ 0x103e
+wx 010001 @ 0x1065
+wx 04 @ 0x1077
+wx 494e81a40202 @ 0x1100
+wx 0f @ 0x113f
+wx 01 @ 0x114f
+wx 600001 @ 0x1171
+wx 10012e @ 0x2017
+wx 10022e2e @ 0x2027
+wx 110466696c65 @ 0x2037
+wx 030000000068656c6c6f2066726f6d207866730a @ 0x2ffb
+wx 424d415000000001 @ 0x4000
+wx 400001 @ 0x4025
+m /mnt xfs 0
+md /mnt
+mc /mnt/file
+EOF
+EXPECT=<<EOF
+d .
+d ..
+f file
+hello from xfs
+
+EOF
+RUN
+
+# same image with a root of level 2: block 4 is a level 1 node pointing at
+# the leaf in block 5
+NAME=xfs two level block map btree
+FILE=malloc://24576
+CMDS=<<EOF
+wx 584653420010 @ 0x0
+wx 10 @ 0x3f
+wx 21 @ 0x57
+wx 0c09080406 @ 0x78
+wx 494e41ed0203 @ 0x1000
+wx 10 @ 0x103e
+wx 020001 @ 0x1065
+wx 04 @ 0x1077
+wx 494e81a40202 @ 0x1100
+wx 0f @ 0x113f
+wx 01 @ 0x114f
+wx 600001 @ 0x1171
+wx 10012e @ 0x2017
+wx 10022e2e @ 0x2027
+wx 110466696c65 @ 0x2037
+wx 030000000068656c6c6f2066726f6d207866730a @ 0x2ffb
+wx 424d415000010001 @ 0x4000
+wx 05 @ 0x4027
+wx 424d415000000001 @ 0x5000
+wx 400001 @ 0x5025
+m /mnt xfs 0
+md /mnt
+mc /mnt/file
+EOF
+EXPECT=<<EOF
+d .
+d ..
+f file
+hello from xfs
+
+EOF
+RUN
+
+# block 4 is a level 1 node whose only pointer is block 4 itself: mounting
+# must fail instead of looping forever in grub_xfs_read_block
+NAME=xfs self referencing block map btree node
+FILE=malloc://20480
+TIMEOUT=30
+CMDS=<<EOF
+wx 584653420010 @ 0x0
+wx 10 @ 0x3f
+wx 21 @ 0x57
+wx 0c09080406 @ 0x78
+wx 494e41ed0203 @ 0x1000
+wx 10 @ 0x103e
+wx 010001 @ 0x1065
+wx 04 @ 0x1077
+wx 494e81a40202 @ 0x1100
+wx 0f @ 0x113f
+wx 01 @ 0x114f
+wx 600001 @ 0x1171
+wx 10012e @ 0x2017
+wx 10022e2e @ 0x2027
+wx 110466696c65 @ 0x2037
+wx 030000000068656c6c6f2066726f6d207866730a @ 0x2ffb
+wx 424d415000010001 @ 0x4000
+wx 04 @ 0x4027
+m /mnt xfs 0
+?v $?
+EOF
+EXPECT=<<EOF
+0x1
+EOF
+RUN
+
+# two level 1 nodes pointing at each other
+NAME=xfs block map btree cycle
+FILE=malloc://24576
+TIMEOUT=30
+CMDS=<<EOF
+wx 584653420010 @ 0x0
+wx 10 @ 0x3f
+wx 21 @ 0x57
+wx 0c09080406 @ 0x78
+wx 494e41ed0203 @ 0x1000
+wx 10 @ 0x103e
+wx 010001 @ 0x1065
+wx 04 @ 0x1077
+wx 494e81a40202 @ 0x1100
+wx 0f @ 0x113f
+wx 01 @ 0x114f
+wx 600001 @ 0x1171
+wx 10012e @ 0x2017
+wx 10022e2e @ 0x2027
+wx 110466696c65 @ 0x2037
+wx 030000000068656c6c6f2066726f6d207866730a @ 0x2ffb
+wx 424d415000010001 @ 0x4000
+wx 05 @ 0x4027
+wx 424d415000010001 @ 0x5000
+wx 04 @ 0x5027
+m /mnt xfs 0
+?v $?
+EOF
+EXPECT=<<EOF
+0x1
+EOF
+RUN
