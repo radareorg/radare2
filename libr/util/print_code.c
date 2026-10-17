@@ -81,6 +81,7 @@ static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, 
 	size_t i;
 
 	ws = R_MAX (1, R_MIN (ws, 8));
+	w = R_MAX (1, w);
 	bool be = (p && p->config)? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
 	int bits = ws * 8;
 	const char *fmtstr = bits_to_c_code_fmtstr (bits);
