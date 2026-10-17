@@ -52,6 +52,36 @@ EOF
 RUN
 
 
+NAME=egg: linux-x86-64 exec payload
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.bits=64
+e asm.assembler=x86.nz
+e asm.arch=x86
+e asm.os=linux
+gi exec
+g
+EOF
+EXPECT=<<EOF
+31c048bbd19d9691d08c97ff48f7db53545f995257545eb03b0f05
+EOF
+RUN
+
+NAME=egg: darwin-x86-64 exec payload ignores commented bytes
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.bits=64
+e asm.assembler=x86.nz
+e asm.arch=x86
+e asm.os=darwin
+gi exec
+g
+EOF
+EXPECT=<<EOF
+41b00249c1e0184983c817eb125f4983c0244c89c04831d252574889e60f05e8e9ffffff2f62696e2f7368
+EOF
+RUN
+
 NAME=egg: inline calling itself
 FILE=malloc://1024
 CMDS=<<EOF
@@ -63,7 +93,7 @@ gi exec
 'g  z@inline(){ z(); } main@global(){ z(); }
 EOF
 EXPECT=<<EOF
-57b0bb4848690fb0c1578999e6316e58f70554916a01535fffeb48c3
+31c048bbd19d9691d08c97ff48f7db53545f995257545eb03b0f05c3
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Recursive expansion of inline 'z'
@@ -81,7 +111,7 @@ gi exec
 'g  y@inline(){ z(); } z@inline(){ y(); } main@global(){ z(); }
 EOF
 EXPECT=<<EOF
-57b0bb4848690fb0c1578999e6316e58f70554916a01535fffeb48c3
+31c048bbd19d9691d08c97ff48f7db53545f995257545eb03b0f05c3
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Recursive expansion of inline 'z'
