@@ -2599,7 +2599,13 @@ static bool cb_cmddepth(void *user, void *data) {
 
 static bool cb_hexcols(void *user, void *data) {
 	RCore *core = (RCore *)user;
-	int c = R_MIN (1024, R_MAX (((RConfigNode *)data)->i_value, 0));
+	RConfigNode *node = (RConfigNode *)data;
+	if ((st64)node->i_value < 1) {
+		// used as a divisor and a step by the hexdump printers
+		R_LOG_ERROR ("hex.cols must be greater than 0");
+		return false;
+	}
+	int c = R_MIN (1024, node->i_value);
 	core->print->cols = c; // & ~1;
 	core->dbg->options.regcols = c / 4;
 	return true;

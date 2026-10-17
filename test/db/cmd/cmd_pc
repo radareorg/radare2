@@ -293,3 +293,36 @@ const uint8_t buffer[_BUFFER_SIZE] = {
 };
 EOF
 RUN
+
+
+NAME=pc with hex.cols too small
+CMDS=<<EOF
+e hex.cols=0
+e hex.cols
+e hex.cols=1
+pc 3
+pcw 8
+pcd 8
+pxi 4~?
+EOF
+FILE=bins/elf/analysis/hello-linux-x86_64
+EXPECT=<<EOF
+16
+#define _BUFFER_SIZE 3
+const uint8_t buffer[_BUFFER_SIZE] = {
+  0x31,
+  0xed,
+  0x49
+};
+#define _BUFFER_SIZE 2
+const uint32_t buffer[_BUFFER_SIZE] = {
+  0x8949ed31U,
+  0x89485ed1U
+};
+#define _BUFFER_SIZE 1
+const uint64_t buffer[_BUFFER_SIZE] = {
+  0x89485ed18949ed31ULL
+};
+6
+EOF
+RUN
