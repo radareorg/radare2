@@ -346,6 +346,10 @@ static bool parse_attributes(KVCParser *kvc) {
 			}
 		}
 		if (!duppedkey) {
+			if (kvc->attrs.count >= R_ARRAY_SIZE (kvc->attrs.keys)) {
+				R_LOG_WARN ("Too many attributes at line %d, ignoring @%.*s", kvc->line, (int)r_strs_len (attr_name), attr_name.a);
+				continue;
+			}
 			kvc->attrs.count++;
 			kvc->attrs.keys[atidx] = attr_name;
 		}
@@ -531,9 +535,13 @@ static bool parse_c_attributes(KVCParser *kvc) {
 	}
 	skip_spaces (kvc);
 	// Store attribute
-	int idx = kvc->attrs.count++;
-	kvc->attrs.keys[idx] = attr_name;
-	kvc->attrs.values[idx] = attr_value;
+	if (kvc->attrs.count < R_ARRAY_SIZE (kvc->attrs.keys)) {
+		int idx = kvc->attrs.count++;
+		kvc->attrs.keys[idx] = attr_name;
+		kvc->attrs.values[idx] = attr_value;
+	} else {
+		R_LOG_WARN ("Too many attributes at line %d, ignoring __attribute__((%.*s))", kvc->line, (int)r_strs_len (attr_name), attr_name.a);
+	}
 	kvc_getch (kvc);
 	return true;
 }
@@ -1190,7 +1198,8 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 	skip_spaces (kvc);
 	const char p0 = kvc_peek (kvc, 0);
 	if (p0 == ';') {
-		// forward declaration: struct Foo;
+		// forward declaration: struct Foo; its attributes must not leak into the next declaration
+		kvc->attrs.count = 0;
 		kvc_getch (kvc);
 		return true;
 	}

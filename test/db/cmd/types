@@ -5988,3 +5988,27 @@ EXPECT=<<EOF
 done
 EOF
 RUN
+
+NAME=td ignores an eleventh attribute on one line
+FILE=--
+CMDS=<<CMDS
+'td struct s { int x; /// @a @b @c @d @e @f @g @h @i @j @k }
+tk ~struct.s
+?e done
+CMDS
+EXPECT=<<EXPECT
+done
+EXPECT
+RUN
+
+NAME=td forward declaration attributes do not leak into the next type
+FILE=--
+CMDS=<<CMDS
+'td struct a __attribute__((x)); struct a __attribute__((x)); struct b { int y; };
+tk~struct.b
+CMDS
+EXPECT=<<EXPECT
+struct.b=y
+struct.b.y=int,0,0
+EXPECT
+RUN
