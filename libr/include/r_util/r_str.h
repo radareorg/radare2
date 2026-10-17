@@ -343,7 +343,7 @@ R_API const char *r_str_sep(const char *base, const char *sep);
 R_API const char *r_str_rsep(const char *base, const char *p, const char *sep);
 R_API char *r_str_donut(int size);
 R_API char *r_str_version(const char *program);
-R_API char *r_str_ss(const char* msg, const char *nl, int cs);
+R_API R_OWNED char *r_str_ss(const char * R_NONNULL msg, const char * R_NULLABLE nl, int cs);
 
 R_API char *r_font_render(const char *s, const char *family);
 R_API const char *r_font_name(int i);

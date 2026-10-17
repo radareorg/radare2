@@ -456,7 +456,8 @@ static const SevenSegments ss[] = {
 	{ '\0', {0}}
 };
 
-R_API char *r_str_ss(const char* msg, const char *nl, int cs) {
+R_API char *r_str_ss(const char * R_NONNULL msg, const char * R_NULLABLE nl, int cs) {
+	R_RETURN_VAL_IF_FAIL (msg, NULL);
 	if (!nl) {
 		nl = "\n";
 	}

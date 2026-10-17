@@ -904,3 +904,15 @@ EXPECT_ERR=<<EOF
 WARN: Internal less requires scr.interactive=true
 EOF
 RUN
+
+NAME=ascii art grep on empty output does not crash
+FILE=-
+CMDS=<<EOF
+s 0~?ea
+b 16~?ea
+?e ok
+EOF
+EXPECT=<<EOF
+ok
+EOF
+RUN
