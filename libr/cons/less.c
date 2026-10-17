@@ -54,7 +54,7 @@ R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, co
 		}
 	}
 	for (i = 0; i < lines_count; i++) {
-		mla[i] = r_list_new ();
+		mla[i] = r_list_newf (free);
 	}
 	r_cons_set_raw (cons, true);
 	r_cons_show_cursor (cons, false);

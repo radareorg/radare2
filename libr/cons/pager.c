@@ -106,7 +106,7 @@ R_IPI int pager_prev_match(int from, RList **mla) {
 	if (from < 1) {
 		return from;
 	}
-	for (l = from - 1; l > 0; l--) {
+	for (l = from - 1; l >= 0; l--) {
 		if (r_list_first (mla[l])) {
 			return l;
 		}
@@ -117,7 +117,7 @@ R_IPI int pager_prev_match(int from, RList **mla) {
 R_IPI bool pager_all_matches(const char *s, RRegex *rx, RList **mla, int *lines, int lcount) {
 	bool res = false;
 	RRegexMatch m = {0};
-	int l, slen;
+	int l;
 	for (l = 0; l < lcount; l++) {
 		m.rm_so = 0;
 		const char *loff = s + lines[l]; /* current line offset */
@@ -127,21 +127,33 @@ R_IPI bool pager_all_matches(const char *s, RRegex *rx, RList **mla, int *lines,
 		}
 		int *cpos = NULL;
 		int ncpos = r_str_ansi_filter (clean, NULL, &cpos, -1);
-		m.rm_eo = slen = strlen (clean);
+		if (ncpos < 0 || !cpos) {
+			free (cpos);
+			free (clean);
+			return false;
+		}
+		// The filter does not map the string terminator.
+		cpos[ncpos] = strlen (loff);
+		m.rm_eo = ncpos;
 		r_list_purge (mla[l]);
-		while (!r_regex_exec (rx, clean, 1, &m, R_REGEX_STARTEND)) {
-			if (!cpos || m.rm_so >= ncpos) {
-				break;
-			}
-			if (cpos) {
-				RRegexMatch *ms = R_NEW0 (RRegexMatch);
-				ms->rm_so = cpos[m.rm_so];
-				ms->rm_eo = cpos[m.rm_eo];
-				r_list_append (mla[l], ms);
-			}
-			m.rm_so = m.rm_eo;
-			m.rm_eo = slen;
+		int flags = R_REGEX_STARTEND;
+		while (!r_regex_exec (rx, clean, 1, &m, flags)) {
+			RRegexMatch *ms = R_NEW0 (RRegexMatch);
+			ms->rm_so = cpos[m.rm_so];
+			ms->rm_eo = m.rm_eo > m.rm_so? cpos[m.rm_eo - 1] + 1: ms->rm_so;
+			r_list_append (mla[l], ms);
 			res = true;
+			bool empty_match = m.rm_so == m.rm_eo;
+			m.rm_so = m.rm_eo;
+			if (empty_match) {
+				if (m.rm_so == ncpos) {
+					break;
+				}
+				int char_size = r_utf8_decode ((const ut8 *)clean + m.rm_so, ncpos - m.rm_so, NULL);
+				m.rm_so += R_MAX (1, char_size);
+			}
+			m.rm_eo = ncpos;
+			flags |= R_REGEX_NOTBOL;
 		}
 		free (cpos);
 		free (clean);
