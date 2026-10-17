@@ -4061,7 +4061,7 @@ R_API char *r_str_list_join(RList *str, const char *sep) {
 	RListIter *iter;
 	RStrBuf *sb = r_strbuf_new ("");
 	r_list_foreach_iter (str, iter) {
-		if (r_strbuf_length (sb) != 0) {
+		if (iter != str->head) {
 			r_strbuf_append (sb, sep);
 		}
 		r_strbuf_append (sb, iter->data);

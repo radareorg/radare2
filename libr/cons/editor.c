@@ -20,8 +20,7 @@ static void setcurline(RCons *cons) {
 	const char *nline = r_list_get_n (editor->lines, editor->n);
 	const char *curline = r_str_get (nline);
 	RLine *line = cons->line;
-	r_str_ncpy (line->state.buffer.data, curline, sizeof (line->state.buffer.data) - 1);
-	line->state.buffer.data[sizeof (line->state.buffer.data) - 1] = '\0';
+	r_str_ncpy (line->state.buffer.data, curline, sizeof (line->state.buffer.data));
 	line->state.buffer.index = line->state.buffer.length = strlen (line->state.buffer.data);
 	line->state.contents = (char*)curline;
 }
@@ -43,21 +42,15 @@ static bool saveline(RCons *cons, const char *str) {
 	if (!s) {
 		return false;
 	}
-	RListIter *inserted;
+	bool saved;
 	if (editor->n == r_list_length (editor->lines)) {
-		inserted = r_list_append (editor->lines, s);
+		saved = r_list_append (editor->lines, s);
+	} else if (str) {
+		saved = r_list_set_n (editor->lines, editor->n, s);
 	} else {
-		if (str) {
-			RListIter *iter = r_list_get_nth (editor->lines, editor->n);
-			if (iter) {
-				r_list_delete (editor->lines, iter);
-			}
-			inserted = r_list_insert (editor->lines, editor->n, s);
-		} else {
-			inserted = r_list_insert (editor->lines, editor->n, s);
-		}
+		saved = r_list_insert (editor->lines, editor->n, s);
 	}
-	if (!inserted) {
+	if (!saved) {
 		free (s);
 		return false;
 	}
@@ -69,19 +62,26 @@ static int up(RCons *cons, void *n) {
 	RConsEditor *editor = cons->editor;
 	R_LOG_DEBUG ("up");
 	if (editor->n > 0) {
+		if ((editor->n < r_list_length (editor->lines) || cons->line->state.buffer.length > 0)
+				&& !saveline (cons, cons->line->state.buffer.data)) {
+			return 0;
+		}
 		editor->n--;
+		setcurline (cons);
 	}
-	setcurline (cons);
 	return 0;
 }
 
 static int down(RCons *cons, void *n) {
 	RConsEditor *editor = cons->editor;
 	R_LOG_DEBUG ("down");
-	if (editor->n < r_list_length (editor->lines)) {
+	if (editor->n < r_list_length (editor->lines) || cons->line->state.buffer.length > 0) {
+		if (!saveline (cons, cons->line->state.buffer.data)) {
+			return 0;
+		}
 		editor->n++;
+		setcurline (cons);
 	}
-	setcurline (cons);
 	return 0;
 }
 
@@ -100,31 +100,40 @@ R_API char *r_cons_editor(RCons *cons, const char *file, const char *str, bool *
 	RLineState old_state = line->state;
 	line->state.prompt = NULL;
 	bool old_echo = cons->echo;
+	const bool edit_file = R_STR_ISNOTEMPTY (file);
 	char *result = NULL;
 
 	editor.lines = r_list_newf (free);
 	if (!editor.lines) {
 		goto beach;
 	}
-	if (R_STR_ISNOTEMPTY (file)) {
-		size_t sz = 0;
-		char *data = r_file_slurp (file, &sz);
+	if (str || edit_file) {
+		char *data = str? strdup (str): r_file_slurp (file, NULL);
 		if (!data) {
-			R_LOG_ERROR ("Failed to load '%s'", file);
+			R_LOG_ERROR ("Failed to load editor contents");
 			goto beach;
 		}
-		r_str_trim (data);
 		if (*data) {
 			RList *lines = r_str_split_duplist (data, "\n", false);
 			if (!lines) {
 				free (data);
-				R_LOG_ERROR ("Failed to load '%s'", file);
+				R_LOG_ERROR ("Failed to load editor contents");
 				goto beach;
 			}
 			r_list_free (editor.lines);
 			editor.lines = lines;
 		}
 		free (data);
+	}
+	RListIter *iter;
+	const char *text;
+	int line_number = 1;
+	r_list_foreach (editor.lines, iter, text) {
+		if (strlen (text) >= sizeof (line->state.buffer.data)) {
+			R_LOG_ERROR ("Line %d exceeds the editor limit of %d bytes", line_number, R_LINE_BUFSIZE - 1);
+			goto beach;
+		}
+		line_number++;
 	}
 	cons->editor = &editor;
 	R_LOG_INFO ("Loaded %d lines. Use ^D or '.' to save and quit", r_list_length (editor.lines));
@@ -139,7 +148,6 @@ R_API char *r_cons_editor(RCons *cons, const char *file, const char *str, bool *
 			break;
 		}
 		if (R_STR_ISNOTEMPTY (input)) {
-			r_str_trim ((char *)input);
 			if (!strcmp (input, ".")) {
 				break;
 			}
@@ -153,7 +161,7 @@ R_API char *r_cons_editor(RCons *cons, const char *file, const char *str, bool *
 					goto beach;
 				}
 			} else {
-				if (!saveline (cons, *input? input: "\\")) {
+				if (!saveline (cons, input)) {
 					goto beach;
 				}
 				editor.n++;
@@ -181,8 +189,7 @@ R_API char *r_cons_editor(RCons *cons, const char *file, const char *str, bool *
 	if (!result) {
 		goto beach;
 	}
-	r_str_trim (result);
-	if (file && !r_file_dump (file, (const ut8 *)result, -1, false)) {
+	if (edit_file && !r_file_dump (file, (const ut8 *)result, -1, false)) {
 		R_FREE (result);
 		goto beach;
 	}
