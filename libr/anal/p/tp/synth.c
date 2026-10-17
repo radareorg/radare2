@@ -768,6 +768,9 @@ void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec *recs)
 			if (argi < 0 || woff >= SYNTH_WINDOW / 2) {
 				continue; // negative offsets off a neighboring window land in the window tail
 			}
+			if ((asz == 4 || asz == 8) && (woff % asz)) {
+				continue; // misaligned wide accesses are rarely real struct fields
+			}
 			SynthField *sf = RVecSynthField_emplace_back (&vfields);
 			if (!sf) {
 				oom = true;

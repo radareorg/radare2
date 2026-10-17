@@ -1,0 +1,32 @@
+NAME=afts drops misaligned wide fields
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b078b4f058b57108b771801c801d001f0c3
+af
+afts
+EOF
+EXPECT=<<EOF
+struct fcn_00000000_arg0 {
+  uint32_t field_0x0;
+  uint8_t pad_0x4[12]; // gap
+  uint32_t field_0x10;
+  uint8_t pad_0x14[4]; // gap
+  uint32_t field_0x18;
+};
+EOF
+RUN
+
+NAME=afts keeps misaligned byte fields
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b070fb64f0501c8c3
+af
+afts~field
+EOF
+EXPECT=<<EOF
+  uint32_t field_0x0;
+  uint8_t field_0x5;
+EOF
+RUN
