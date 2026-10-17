@@ -282,7 +282,7 @@ R_API size_t r_str_nlen_w(const char *s, int n);
 R_API size_t r_wstr_clen(const char *s);
 R_API char *r_str_prepend(char *ptr, const char *string);
 R_API char *r_str_prefix_all(const char *s, const char *pfx);
-R_API char *r_str_append(char *ptr, const char *string);
+R_API R_OWNED char *r_str_append(R_OWNED char *ptr, R_NOALIAS const char *string);
 R_API char *r_str_append_owned(char *ptr, char *string);
 R_API char *r_str_appendf(char *ptr, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 R_API char *r_str_appendch(char *x, char y);
