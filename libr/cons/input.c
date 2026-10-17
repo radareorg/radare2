@@ -767,13 +767,24 @@ R_API int r_cons_readchar(RCons *cons) {
 	fd_set readfds;
 	sigset_t sigmask;
 	sigemptyset (&sigmask);
-	FD_ZERO (&readfds);
-	FD_SET (STDIN_FILENO, &readfds);
-	r_signal_sigmask (0, NULL, &sigmask);
-	sigdelset (&sigmask, SIGWINCH);
-	while (pselect (STDIN_FILENO + 1, &readfds, NULL, NULL, NULL, &sigmask) == -1) {
-		if (errno == EBADF) {
-			R_LOG_ERROR ("r_cons_readchar (cons): EBADF");
+	sigset_t blocked;
+	sigemptyset (&blocked);
+	sigaddset (&blocked, SIGUSR1);
+	sigaddset (&blocked, SIGUSR2);
+	r_signal_sigmask (SIG_BLOCK, &blocked, &sigmask);
+	sigset_t waitmask = sigmask;
+	sigdelset (&waitmask, SIGWINCH);
+	for (;;) {
+		r_cons_sleep_end (cons, bed);
+		bed = r_cons_sleep_begin (cons);
+		FD_ZERO (&readfds);
+		FD_SET (STDIN_FILENO, &readfds);
+		if (pselect (STDIN_FILENO + 1, &readfds, NULL, NULL, NULL, &waitmask) != -1) {
+			break;
+		}
+		if (errno != EINTR) {
+			r_signal_sigmask (SIG_SETMASK, &sigmask, NULL);
+			r_cons_sleep_end (cons, bed);
 			return -1;
 		}
 		if (sigwinchFlag) {
@@ -781,6 +792,7 @@ R_API int r_cons_readchar(RCons *cons) {
 			resizeWin (cons);
 		}
 	}
+	r_signal_sigmask (SIG_SETMASK, &sigmask, NULL);
 
 	ret = read (STDIN_FILENO, buf, 1);
 	r_cons_sleep_end (cons, bed);

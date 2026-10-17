@@ -2221,12 +2221,15 @@ static void *r_core_sleep_begin(RCore *core) {
 	return task;
 }
 
+static void core_signal_dispatch(RCore *core);
+
 static void r_core_sleep_end(RCore *core, void *user) {
 	R_CRITICAL_ENTER (core);
 	RCoreTask *task = (RCoreTask *)user;
 	if (task) {
 		r_core_task_sleep_end (task);
 	}
+	core_signal_dispatch (core);
 	R_CRITICAL_LEAVE (core);
 }
 
@@ -2505,24 +2508,72 @@ static bool cbcore(void *user, int type, const char *origin, const char *msg) {
 }
 
 #if R2__UNIX__
-static R_TH_LOCAL RCore *Gcore = NULL;
+static volatile sig_atomic_t pending_usr1;
+static volatile sig_atomic_t pending_usr2;
 
-static void cmdusr1(int p) {
-	const char *cmd = r_config_get (Gcore->config, "cmd.usr1");
-	if (R_STR_ISNOTEMPTY (cmd)) {
-		r_core_cmd0 (Gcore, cmd);
-		r_cons_flush (Gcore->cons);
-	}
-}
-
-static void cmdusr2(int p) {
-	const char *cmd = r_config_get (Gcore->config, "cmd.usr2");
-	if (R_STR_ISNOTEMPTY (cmd)) {
-		r_core_cmd0 (Gcore, cmd);
-		r_cons_flush (Gcore->cons);
+static void core_signal_handler(int sig) {
+	if (sig == SIGUSR1) {
+		pending_usr1 = 1;
+	} else if (sig == SIGUSR2) {
+		pending_usr2 = 1;
 	}
 }
 #endif
+
+R_API bool r_core_signal_init(RCore *core) {
+#if R2__UNIX__
+	RCorePriv *priv = core->priv;
+	if (priv->signals_enabled) {
+		return true;
+	}
+#if HAVE_SIGACTION
+	struct sigaction action = { 0 };
+	action.sa_handler = core_signal_handler;
+	sigemptyset (&action.sa_mask);
+	if (sigaction (SIGUSR1, &action, &priv->old_usr1)) {
+		return false;
+	}
+	if (sigaction (SIGUSR2, &action, &priv->old_usr2)) {
+		sigaction (SIGUSR1, &priv->old_usr1, NULL);
+		return false;
+	}
+#else
+	priv->old_usr1 = signal (SIGUSR1, core_signal_handler);
+	priv->old_usr2 = signal (SIGUSR2, core_signal_handler);
+#endif
+	priv->signals_enabled = true;
+#endif
+	return true;
+}
+
+static void core_signal_dispatch(RCore *core) {
+#if R2__UNIX__
+	RCorePriv *priv = core->priv;
+	if (!priv->signals_enabled || !r_th_tid_equal (core->cons->main_tid, r_th_self ())) {
+		return;
+	}
+	sigset_t blocked, previous;
+	sigemptyset (&blocked);
+	sigaddset (&blocked, SIGUSR1);
+	sigaddset (&blocked, SIGUSR2);
+	r_signal_sigmask (SIG_BLOCK, &blocked, &previous);
+	bool usr1 = pending_usr1;
+	bool usr2 = pending_usr2;
+	pending_usr1 = pending_usr2 = 0;
+	r_signal_sigmask (SIG_SETMASK, &previous, NULL);
+	int i;
+	for (i = 0; i < 2; i++) {
+		if (i? usr2: usr1) {
+			char *cmd = strdup (r_config_get (core->config, i? "cmd.usr2": "cmd.usr1"));
+			if (R_STR_ISNOTEMPTY (cmd)) {
+				r_core_cmd0 (core, cmd);
+				r_cons_flush (core->cons);
+			}
+			free (cmd);
+		}
+	}
+#endif
+}
 
 static void core_visual_init(RCoreVisual *visual) {
 	// Zero the entire struct first
@@ -2539,11 +2590,6 @@ static void core_visual_init(RCoreVisual *visual) {
 }
 
 R_API bool r_core_init(RCore *core) {
-#if R2__UNIX__
-	Gcore = core;
-	r_sys_signal (SIGUSR1, cmdusr1);
-	r_sys_signal (SIGUSR2, cmdusr2);
-#endif
 	r_w32_init ();
 	core->muta = r_muta_new ();
 	core->priv = R_NEW0 (RCorePriv);
@@ -2821,7 +2867,16 @@ R_API void r_core_fini(RCore *c) {
 		r_th_channel_free (c->chan);
 	}
 #if R2__UNIX__
-	Gcore = NULL;
+	if (priv->signals_enabled) {
+#if HAVE_SIGACTION
+		sigaction (SIGUSR1, &priv->old_usr1, NULL);
+		sigaction (SIGUSR2, &priv->old_usr2, NULL);
+#else
+		signal (SIGUSR1, priv->old_usr1);
+		signal (SIGUSR2, priv->old_usr2);
+#endif
+		pending_usr1 = pending_usr2 = 0;
+	}
 #endif
 	r_log_add_callback (cbcore, NULL);
 	r_muta_free (c->muta);
@@ -3151,6 +3206,7 @@ R_API int r_core_prompt(RCore *r, int sync) {
 }
 
 R_API int r_core_prompt_exec(RCore *r) {
+	core_signal_dispatch (r);
 	int ret = -1;
 	RCorePriv *priv = r->priv;
 	while (true) {
