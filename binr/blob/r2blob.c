@@ -4,6 +4,7 @@
 #include <r_util.h>
 
 int main(int argc, const char **argv) {
+	r_main_mycons ();
 	int rc = 1;
 	const char *prog_name = r_file_basename (argv[0]);
 	RMain *m = r_main_new (prog_name);

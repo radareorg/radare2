@@ -1041,3 +1041,12 @@ EXPECT=<<EOF
 if (!x0) goto 0x10
 EOF
 RUN
+
+NAME=rasm2 ignores a stale R2CONS
+FILE=-
+ENV=R2CONS=4416884320
+CMDS=!rasm2 -a x86 -b 32 -d 90
+EXPECT=<<EOF
+nop
+EOF
+RUN

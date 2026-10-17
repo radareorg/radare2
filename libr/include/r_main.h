@@ -6,6 +6,7 @@
 #include <r_types.h>
 #include <r_getopt.h>
 #include <r_cons.h>
+#include <r_util/r_sys.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,6 +29,10 @@ R_API int r_main_run(RMain *m, int argc, const char **argv);
 
 R_API RCons *r_main_cons_init(R_OUT bool *own_cons);
 R_API int r_main_cons_fini(RCons *cons, bool own_cons, int rc);
+// binr programs never run inside r2, drop the R2CONS pointer inherited from a parent r2
+static inline void r_main_mycons(void) {
+	r_sys_setenv ("R2CONS", NULL);
+}
 R_API int r_main_version_print(RCons * R_NULLABLE cons, const char *program, int rad);
 R_API int r_main_ravc2(int argc, const char **argv);
 R_API int r_main_rax2(int argc, const char **argv);

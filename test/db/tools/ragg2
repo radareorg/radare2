@@ -802,3 +802,12 @@ main:
 
 EOF
 RUN
+
+NAME=ragg2 ignores a stale R2CONS
+FILE=-
+ENV=R2CONS=4416884320
+CMDS=!ragg2 -B 90
+EXPECT=<<EOF
+90
+EOF
+RUN
