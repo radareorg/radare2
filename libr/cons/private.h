@@ -10,6 +10,7 @@ R_IPI int pager_prev_match(int from, RList **mla);
 R_IPI bool pager_all_matches(const char *s, RRegex *rx, RList **mla, int *lines, int lcount);
 R_IPI int *pager_splitlines(char *s, int *lines_count);
 R_IPI void pal_clone(RConsContext *ctx);
+R_IPI void cons_buffer_set(RConsContext *ctx, R_OWNED char * R_NULLABLE s);
 
 typedef struct r_cons_canvas_attrs_t RConsCanvasAttrs;
 R_IPI void canvas_attrs_set(RConsCanvasAttrs *a, ut64 loc, const char *style);

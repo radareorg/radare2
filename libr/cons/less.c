@@ -19,12 +19,7 @@ static const char *r_cons_less_help = \
 R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, const char * R_NULLABLE exitkeys) {
 	R_RETURN_VAL_IF_FAIL (R_STR_ISNOTEMPTY (str), 0);
 	if (!r_cons_is_interactive (cons)) {
-		// str may be the cons buffer itself, which r_cons_println reallocates
-		char *copy = strdup (str);
-		if (copy) {
-			r_cons_println (cons, copy);
-			free (copy);
-		}
+		r_cons_println (cons, str);
 		R_LOG_WARN ("Internal less requires scr.interactive=true");
 		return 0;
 	}

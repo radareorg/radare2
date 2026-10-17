@@ -5,6 +5,7 @@
 #include <r_util/r_json.h>
 #include <r_util/r_strbuf.h>
 #include <sdb/sdb.h>
+#include "private.h"
 
 // R2R db/cmd/cons_grep
 
@@ -647,18 +648,11 @@ static void colorcode(RCons *cons) {
 	RConsCodeColors codepal = r_cons_codecolors (cons);
 	char *cres = r_print_code_tocolor (res, &codepal);
 	free (res);
-	free (cons->context->buffer);
-	cons->context->buffer = cres;
-	cons->context->buffer_len = strlen (cres);
-	cons->context->buffer_sz = cons->context->buffer_len;
+	cons_buffer_set (cons->context, cres);
 }
 
 static void grep_set_count(RCons *cons, int count) {
-	RConsContext *ctx = cons->context;
-	free (ctx->buffer);
-	ctx->buffer = r_str_newf ("%d\n", count);
-	ctx->buffer_len = ctx->buffer? strlen (ctx->buffer): 0;
-	ctx->buffer_sz = ctx->buffer_len + 1;
+	cons_buffer_set (cons->context, r_str_newf ("%d\n", count));
 	if (cons->num) {
 		cons->num->value = count;
 	}
@@ -674,8 +668,7 @@ R_API void r_cons_grepbuf(RCons *cons) {
 	int ret, l = 0, tl = 0;
 	bool show = false;
 	if (cons->context->filter) {
-		cons->context->buffer_len = 0;
-		R_FREE (cons->context->buffer);
+		cons_buffer_set (cons->context, NULL);
 		return;
 	}
 	if (grep->codindent) {
@@ -684,10 +677,7 @@ R_API void r_cons_grepbuf(RCons *cons) {
 			char *res = r_print_code_indent (sbuf);
 			free (sbuf);
 			if (res) {
-				cons->context->buffer_len = strlen (res);
-				cons->context->buffer_sz = cons->context->buffer_len;
-				free (cons->context->buffer);
-				cons->context->buffer = res;
+				cons_buffer_set (cons->context, res);
 			}
 		}
 		return;
@@ -709,18 +699,7 @@ R_API void r_cons_grepbuf(RCons *cons) {
 			char *nres = r_print_json_indent (res, I(context->color_mode), "  ", NULL);
 			free (res);
 			free (sbuf);
-			if (nres) {
-				nres = r_str_append (nres, "\n");
-				free (cons->context->buffer);
-				cons->context->buffer = nres;
-				cons->context->buffer_len = strlen (nres);
-				cons->context->buffer_sz = cons->context->buffer_len;
-			} else {
-				cons->context->buffer_len = 0;
-				cons->context->buffer_sz = 0;
-				free (cons->context->buffer);
-				cons->context->buffer = strdup ("");
-			}
+			cons_buffer_set (cons->context, nres? r_str_append (nres, "\n"): strdup (""));
 		}
 		return;
 	}
@@ -737,19 +716,13 @@ R_API void r_cons_grepbuf(RCons *cons) {
 		r_str_ansi_filter (sbuf, NULL, NULL, -1);
 		char *out = r_str_ss (sbuf, NULL, 0);
 		free (sbuf);
-		free (cons->context->buffer);
-		cons->context->buffer = out;
-		cons->context->buffer_len = strlen (out);
-		cons->context->buffer_sz = cons->context->buffer_len;
+		cons_buffer_set (cons->context, out);
 		return;
 	}
 	if (grep->zoom) {
 		char *out = r_str_scale (in, grep->zoom * 2, grep->zoomy? grep->zoomy: grep->zoom);
 		if (out) {
-			free (cons->context->buffer);
-			cons->context->buffer = out;
-			cons->context->buffer_len = strlen (out);
-			cons->context->buffer_sz = cons->context->buffer_len;
+			cons_buffer_set (cons->context, out);
 		}
 		grep->zoom = 0;
 		grep->zoomy = 0;
@@ -764,20 +737,15 @@ R_API void r_cons_grepbuf(RCons *cons) {
 		gron (sb, node, "json");
 		char *out = r_strbuf_drain (sb);
 		r_json_free (node);
-		free (cons->context->buffer);
-		in = buf = cons->context->buffer = out;
-		len = cons->context->buffer_len = strlen (out);
-		cons->context->buffer_sz = len + 1;
+		cons_buffer_set (cons->context, out);
+		in = buf = out;
+		len = cons->context->buffer_len;
 		goto continuation;
 	}
 	if (grep->xml) {
 		// parse and indent xml
 		char *x = r_str_ndup (buf, len);
-		char *xi = r_xml_indent (x);
-		free (cons->context->buffer);
-		in = buf = cons->context->buffer = xi;
-		len = cons->context->buffer_len = strlen (xi);
-		cons->context->buffer_sz = len + 1;
+		cons_buffer_set (cons->context, r_xml_indent (x));
 		free (x);
 		return;
 	}
@@ -785,10 +753,7 @@ R_API void r_cons_grepbuf(RCons *cons) {
 		if (grep->json_path) {
 			char *u = sdb_json_get_str (cons->context->buffer, grep->json_path);
 			if (u) {
-				free (cons->context->buffer);
-				cons->context->buffer = u;
-				cons->context->buffer_len = strlen (u);
-				cons->context->buffer_sz = cons->context->buffer_len + 1;
+				cons_buffer_set (cons->context, u);
 				grep->json = false;
 				r_cons_newline (cons);
 			}
@@ -811,10 +776,7 @@ R_API void r_cons_grepbuf(RCons *cons) {
 			if (!out) {
 				return;
 			}
-			free (cons->context->buffer);
-			cons->context->buffer = out;
-			cons->context->buffer_len = strlen (out);
-			cons->context->buffer_sz = cons->context->buffer_len + 1;
+			cons_buffer_set (cons->context, out);
 			grep->json = false;
 			in = buf = out;
 			len = cons->context->buffer_len;
@@ -822,7 +784,7 @@ R_API void r_cons_grepbuf(RCons *cons) {
 			cons->context->grep_color = false;
 			if (grep->hud) {
 				grep->hud = false;
-				r_cons_hud_string (cons, cons->context->buffer);
+				free (r_cons_hud_string (cons, cons->context->buffer));
 				return;
 			}
 			if (grep->less) {
@@ -858,9 +820,7 @@ R_API void r_cons_grepbuf(RCons *cons) {
 			}
 		} else {
 			r_cons_less_str (cons, buf, NULL);
-			cons->context->buffer_len = 0;
-			cons->context->buffer_sz = 0;
-			R_FREE (cons->context->buffer);
+			cons_buffer_set (cons->context, NULL);
 		}
 		return;
 	}
@@ -974,40 +934,16 @@ continuation:
 		}
 	}
 
-	int ob_len = r_strbuf_length (ob);
-	cons->context->buffer_len = ob_len;
-
 	// count before uniq
 	if (grep->counter && !grep->sort_uniq) {
 		grep_set_count (cons, grep->charCounter? char_count: selected_lines);
 		r_strbuf_free (ob);
 		return;
 	}
-	if (ob_len >= cons->context->buffer_sz) {
-		cons->context->buffer_sz = ob_len + 1;
-		cons->context->buffer = r_strbuf_drain (ob);
-	} else {
-		memcpy (cons->context->buffer, r_strbuf_getbin (ob, NULL), ob_len);
-		cons->context->buffer[ob_len] = 0;
-		r_strbuf_free (ob);
-	}
+	cons_buffer_set (cons->context, r_strbuf_drain (ob));
 	ob = NULL;
 	if (grep->sort != -1 || grep->sort_invert) {
-#define INSERT_LINES(list) \
-		if (list) { \
-			*ptr = 0; \
-			r_list_foreach (list, iter, str) { \
-				int slen = strlen (str); \
-				if (slen > 0) { \
-					memcpy (ptr, str, slen); \
-					memcpy (ptr + slen, "\n", 2); \
-					ptr += slen + 1; \
-					output_lines++; \
-				} \
-			} \
-		}
 		RListIter *iter;
-		char *ptr = cons->context->buffer;
 		char *str;
 		int output_lines = 0;
 		RConsContext *ctx = cons->context;
@@ -1025,10 +961,18 @@ continuation:
 				r_list_free (ctx->unsorted_lines);
 				ctx->unsorted_lines = NULL;
 			}
-			cons->context->buffer_len = 0;
-			INSERT_LINES (ctx->unsorted_lines);
-			INSERT_LINES (ctx->sorted_lines);
-			cons->context->buffer_len = (ptr - cons->context->buffer);
+			RStrBuf *sb = r_strbuf_new ("");
+			RList *lists[2] = { ctx->unsorted_lines, ctx->sorted_lines };
+			int i;
+			for (i = 0; i < 2; i++) {
+				r_list_foreach (lists[i], iter, str) {
+					if (*str) {
+						r_strbuf_appendf (sb, "%s\n", str);
+						output_lines++;
+					}
+				}
+			}
+			cons_buffer_set (ctx, r_strbuf_drain (sb));
 			cons->lines = output_lines;
 			r_list_free (ctx->sorted_lines);
 			ctx->sorted_lines = NULL;
