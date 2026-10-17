@@ -662,3 +662,24 @@ EXPECT=<<EOF
 0x100
 EOF
 RUN
+
+NAME=seek line with offsets that wrap an int
+FILE=bins/mach0/mac-ls
+CMDS=<<EOF
+e lines.from=0x100002000
+e lines.to=0x100004000
+sl 9
+sl+2147483647
+sl
+sl-2147483647
+sl
+EOF
+EXPECT=<<EOF
+9
+9
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Line must be between 1 and 20
+ERROR: Line must be between 1 and 20
+EOF
+RUN

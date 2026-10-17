@@ -153,13 +153,16 @@ static void __seek_line_absolute(RCore *core, int numline) {
 }
 
 static void __seek_line_relative(RCore *core, int numlines) {
-	int curr = r_util_lines_getline (core->print->lines_cache, core->print->lines_cache_sz, core->addr);
-	if (numlines > 0 && curr + numlines >= core->print->lines_cache_sz - 1) {
-		R_LOG_ERROR ("Line must be < %d", core->print->lines_cache_sz - 1);
-	} else if (numlines < 0 && curr + numlines < 1) {
-		R_LOG_ERROR ("Line must be > 1");
+	RPrint *p = core->print;
+	if (!p->lines_cache || p->lines_cache_sz < 1) {
+		R_LOG_ERROR ("No lines cache, check lines.from and lines.to");
+		return;
+	}
+	const st64 numline = (st64)r_util_lines_getline (p->lines_cache, p->lines_cache_sz, core->addr) + numlines;
+	if (numline < 1 || numline > p->lines_cache_sz - 1) {
+		R_LOG_ERROR ("Line must be between 1 and %d", p->lines_cache_sz - 1);
 	} else {
-		r_core_seek (core, core->print->lines_cache[curr + numlines - 1], true);
+		r_core_seek (core, p->lines_cache[numline - 1], true);
 	}
 }
 
