@@ -1274,7 +1274,7 @@ R_API RIODesc *r_core_file_open(RCore *r, const char *file, int flags, ut64 load
 	}
 	if (r_io_desc_info (fd).listener) {
 		r_core_serve (r, fd);
-		r_io_desc_free (fd);
+		r_io_desc_close (fd);
 		fd = NULL;
 		goto beach;
 	}

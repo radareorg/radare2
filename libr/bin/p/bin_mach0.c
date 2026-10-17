@@ -509,6 +509,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	if (!io || !io->desc) {
 		return NULL;
 	}
+	const int curfd = io->desc->fd;
 
 	RBinObject *obj = r_bin_cur_object (b);
 	if (!obj || !obj->bin_obj) {
@@ -650,7 +651,11 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 
 beach:
 	RVecExtReloc_fini (&ext_relocs);
-	r_io_desc_free (gotr2desc);
+	if (gotr2desc) {
+		// open_at selected and mapped it, so close it and reselect the file
+		iob->fd_close (io, gotr2desc->fd);
+		iob->desc_use (io, curfd);
+	}
 	RVecRBinReloc_free (ret);
 	ht_uu_free (relocs_by_sym);
 	return NULL;

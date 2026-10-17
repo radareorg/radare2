@@ -176,7 +176,7 @@ R_API bool r_core_patch_unified(RCore *core, const char *patch, int level, bool 
 				res = false;
 			}
 			if (desc) {
-				r_io_desc_free (desc);
+				r_io_desc_close (desc);
 				desc = NULL;
 			}
 		} else if (r_str_startswith (line, "+++ ")) {
