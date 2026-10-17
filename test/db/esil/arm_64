@@ -2684,6 +2684,311 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=arm64 ESIL vector REV64 reverses each 64-bit half
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2008204e
+aei
+aeip
+aer v1l=0x0102030405060708
+aer v1h=0x090a0b0c0d0e0f10
+aer v0l=0xffffffffffffffff
+aer v0h=0xffffffffffffffff
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x807060504030201
+0x100f0e0d0c0b0a09
+EOF
+RUN
+
+NAME=arm64 ESIL vector REV64 reverses each 64-bit half in big endian
+FILE=malloc://0x200
+ARGS=-a arm -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 2008204e
+aei
+aeip
+aer v1l=0x0102030405060708
+aer v1h=0x090a0b0c0d0e0f10
+aer v0l=0xffffffffffffffff
+aer v0h=0xffffffffffffffff
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x807060504030201
+0x100f0e0d0c0b0a09
+EOF
+RUN
+
+NAME=arm64 ESIL vector REV64 D-form zeroes upper half
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2008200e
+aei
+aeip
+aer v1l=0x0102030405060708
+aer v1h=0x8899aabbccddeeff
+aer v0h=0xffffffffffffffff
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x807060504030201
+0x00000000
+EOF
+RUN
+
+NAME=arm64 ESIL vector REV64 reverses halfword elements within each half
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2008604e
+aei
+aeip
+aer v1l=0x0102030405060708
+aer v1h=0x090a0b0c0d0e0f10
+aer v0l=0xffffffffffffffff
+aer v0h=0xffffffffffffffff
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x708050603040102
+0xf100d0e0b0c090a
+EOF
+RUN
+
+NAME=arm64 ESIL vector REV64 reverses word elements within each half
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2008a04e
+aei
+aeip
+aer v1l=0x0102030405060708
+aer v1h=0x090a0b0c0d0e0f10
+aer v0l=0xffffffffffffffff
+aer v0h=0xffffffffffffffff
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x506070801020304
+0xd0e0f10090a0b0c
+EOF
+RUN
+
+NAME=arm64 ESIL vector REV32 reverses bytes within each word
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2008206e
+aei
+aeip
+aer v1l=0x0102030405060708
+aer v1h=0x090a0b0c0d0e0f10
+aer v0l=0xffffffffffffffff
+aer v0h=0xffffffffffffffff
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x403020108070605
+0xc0b0a09100f0e0d
+EOF
+RUN
+
+NAME=arm64 ESIL vector REV32 reverses bytes within each word in big endian
+FILE=malloc://0x200
+ARGS=-a arm -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 2008206e
+aei
+aeip
+aer v1l=0x0102030405060708
+aer v1h=0x090a0b0c0d0e0f10
+aer v0l=0xffffffffffffffff
+aer v0h=0xffffffffffffffff
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x403020108070605
+0xc0b0a09100f0e0d
+EOF
+RUN
+
+NAME=arm64 ESIL vector REV32 D-form zeroes upper half
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2008202e
+aei
+aeip
+aer v1l=0x0102030405060708
+aer v1h=0x8899aabbccddeeff
+aer v0h=0xffffffffffffffff
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x403020108070605
+0x00000000
+EOF
+RUN
+
+NAME=arm64 ESIL vector REV16 swaps bytes within each halfword
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2018204e
+aei
+aeip
+aer v1l=0x0102030405060708
+aer v1h=0x090a0b0c0d0e0f10
+aer v0l=0xffffffffffffffff
+aer v0h=0xffffffffffffffff
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x201040306050807
+0xa090c0b0e0d100f
+EOF
+RUN
+
+NAME=arm64 ESIL vector REV16 D-form zeroes upper half
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2018200e
+aei
+aeip
+aer v1l=0x0102030405060708
+aer v1h=0x8899aabbccddeeff
+aer v0h=0xffffffffffffffff
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x201040306050807
+0x00000000
+EOF
+RUN
+
+NAME=arm64 ESIL scalar REV reverses the doubleword
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 200cc0da
+aei
+aeip
+aer x1=0x0102030405060708
+aes
+aer x0
+EOF
+EXPECT=<<EOF
+0x807060504030201
+EOF
+RUN
+
+NAME=arm64 ESIL scalar REV reverses the doubleword in big endian
+FILE=malloc://0x200
+ARGS=-a arm -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 200cc0da
+aei
+aeip
+aer x1=0x0102030405060708
+aes
+aer x0
+EOF
+EXPECT=<<EOF
+0x807060504030201
+EOF
+RUN
+
+NAME=arm64 ESIL scalar REV reverses the word
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2008c05a
+aei
+aeip
+aer x1=0xffffffffffffffff
+aer w1=0x01020304
+aes
+aer x0
+EOF
+EXPECT=<<EOF
+0x04030201
+EOF
+RUN
+
+NAME=arm64 ESIL scalar REV16 swaps halfwords in the doubleword
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2004c0da
+aei
+aeip
+aer x1=0x0102030405060708
+aes
+aer x0
+EOF
+EXPECT=<<EOF
+0x201040306050807
+EOF
+RUN
+
+NAME=arm64 ESIL scalar REV16 swaps halfwords in the word
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2004c05a
+aei
+aeip
+aer x1=0xffffffffffffffff
+aer w1=0x01020304
+aes
+aer x0
+EOF
+EXPECT=<<EOF
+0x02010403
+EOF
+RUN
+
+NAME=arm64 ESIL scalar REV32 reverses bytes within each word
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2008c0da
+aei
+aeip
+aer x1=0x0102030405060708
+aes
+aer x0
+EOF
+EXPECT=<<EOF
+0x403020108070605
+EOF
+RUN
+
 NAME=arm64 ESIL scalar FP load into d zeroes upper bits
 FILE=malloc://0x200
 ARGS=-a arm -b 64
