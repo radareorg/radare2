@@ -13184,10 +13184,12 @@ R_API void cmd_agfb(RCore *core) {
 	r_cons_push (core->cons);
 	r_core_visual_graph (core, NULL, NULL, false);
 	r_config_set_i (core->config, "scr.color", c);
-	char *s = strdup (core->cons->context->buffer);
+	char *s = r_cons_drain (core->cons, NULL);
 	r_cons_pop (core->cons);
-	cmd_agfb2 (core, s);
-	free (s);
+	if (s) {
+		cmd_agfb2 (core, s);
+		free (s);
+	}
 }
 
 R_API void cmd_aggb(RCore *core) {
@@ -13198,14 +13200,17 @@ R_API void cmd_aggb(RCore *core) {
 	r_config_set_i (core->config, "graph.zoom", 1);
 	r_core_call (core, "agg");
 	r_config_set_i (core->config, "scr.color", c);
-	char *s = strdup (core->cons->context->buffer);
+	char *s = r_cons_drain (core->cons, NULL);
 	r_cons_pop (core->cons);
-	cmd_agfb2 (core, s);
+	if (s) {
+		cmd_agfb2 (core, s);
+		free (s);
+	}
 	r_config_set_i (core->config, "graph.zoom", ograph_zoom);
-	free (s);
 }
 
-R_API void cmd_agfb3(RCore *core, const char *s, int x, int y) {
+R_API void cmd_agfb3(RCore *core, const char * R_NONNULL s, int x, int y) {
+	R_RETURN_IF_FAIL (core && s);
 	int h, w = r_str_size (s, &h);
 	RConsPixel *p = r_cons_pixel_new (w, h);
 	r_cons_pixel_sets (p, 0, 0, s);
@@ -13213,7 +13218,8 @@ R_API void cmd_agfb3(RCore *core, const char *s, int x, int y) {
 	r_cons_pixel_free (p);
 }
 
-R_API void cmd_agfb2(RCore *core, const char *s) {
+R_API void cmd_agfb2(RCore *core, const char * R_NONNULL s) {
+	R_RETURN_IF_FAIL (core && s);
 	int h, w = r_str_size (s, &h);
 	RConsPixel *p = r_cons_pixel_new (w, h);
 	r_cons_pixel_sets (p, 0, 0, s);
