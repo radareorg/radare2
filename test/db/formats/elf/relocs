@@ -1,0 +1,13 @@
+NAME=x32 relative relocs keep 4-byte width
+FILE=bins/elf/x86_64-x32-relative.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pxw 16 @ 0x3000
+ir~ADD
+EOF
+EXPECT=<<EOF
+0x00003000  0x00001000 0x11223344 0x00001003 0x55667788  ....D3"......wfU
+0x00003000 0x00002000 ADD_32 8      0x00001000
+0x00003008 0x00002008 ADD_32 8      0x00001003
+EOF
+RUN
