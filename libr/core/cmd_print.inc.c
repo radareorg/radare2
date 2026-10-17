@@ -5793,7 +5793,7 @@ static void cmd_pp(RCore *core, const char *_input) {
 	const char *arg = r_str_nextword (input, ' ');
 	size_t i, j;
 	st64 len = arg? r_num_math (core->num, arg): core->blocksize;
-	if (len < 1) {
+	if (len < 1 || len > core->blocksize_max) {
 		R_LOG_ERROR ("Invalid length");
 		free (input);
 		return;
