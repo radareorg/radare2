@@ -500,6 +500,7 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 		goto err;
 	}
 	rs->align = ro->align;
+	rs->contiguous = true;
 	r_search_set_callback (rs, &hit, ro);
 	ut64 to = ro->to;
 	if (to == -1) {
