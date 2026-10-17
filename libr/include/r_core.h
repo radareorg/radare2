@@ -1072,8 +1072,8 @@ R_API int r_line_hist_offset_down(RLine *line);
 // TODO : move into debug or syscall++
 R_API char *cmd_syscall_dostr(RCore *core, st64 num, ut64 addr);
 R_API void cmd_agfb(RCore *core);
-R_API void cmd_agfb2(RCore *core, const char *s);
-R_API void cmd_agfb3(RCore *core, const char *s, int x, int y);
+R_API void cmd_agfb2(RCore *core, const char * R_NONNULL s);
+R_API void cmd_agfb3(RCore *core, const char * R_NONNULL s, int x, int y);
 
 R_API void r_print_list(RCore *core, const char *input);
 R_API void r_core_echo(RCore *core, const char *msg);

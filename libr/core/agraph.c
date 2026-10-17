@@ -3854,10 +3854,12 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, bool do_pr
 			agraph_print_nodes (g);
 			r_cons_canvas_print_region (g->can);
 			g->can = ocan;
-			char *s = strdup (cons->context->buffer);
+			char *s = r_cons_drain (cons, NULL);
 			r_cons_pop (cons);
-			cmd_agfb3 (core, s, w - 40, 2);
-			free (s);
+			if (s) {
+				cmd_agfb3 (core, s, w - 40, 2);
+				free (s);
+			}
 			g->can->h /= 4;
 			r_cons_flush (cons);
 		}
