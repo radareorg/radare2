@@ -70,7 +70,7 @@ R_IPI void pager_printpage(RCons *cons, const char *line, int *index, RList **ml
 		r_cons_reset_colors (cons);
 		// Calculate how many terminal lines this will take
 		int len = r_str_ansi_len (s);
-		int line_count = (terminal_width > 0) ? (len / terminal_width) + 1 : 1;
+		int line_count = (terminal_width > 0 && len > 0)? (len - 1) / terminal_width + 1: 1;
 		actual_lines += line_count;
 		if (i + 1 == to || actual_lines >= h) {
 			r_cons_print (cons, s);
