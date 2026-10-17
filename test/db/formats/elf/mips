@@ -1,6 +1,6 @@
 NAME=ELF: mips.elf
 FILE=bins/elf/analysis/mips.elf
-ARGS=-A
+ARGS=-A -e anal.vars=false
 CMDS=?v entry0
 EXPECT=<<EOF
 0x400ab0
