@@ -2025,7 +2025,11 @@ R_API char *r_cons_drain(RCons *cons, size_t *size) {
 	const size_t length = context->buffer_len;
 	char *output = NULL;
 	if (length) {
-		output = context->buffer;
+		// shrink the spare capacity, usually without moving the block
+		output = realloc (context->buffer, length + 1);
+		if (!output) {
+			output = context->buffer;
+		}
 		context->buffer = NULL;
 		context->buffer_len = 0;
 		context->buffer_sz = 0;
