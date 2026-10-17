@@ -2283,6 +2283,8 @@ static void __init_autocomplete_default(RCore *core) {
 	__foreach (core, projs, R_CORE_AUTOCMPLT_PRJT);
 	__foreach (core, mounts, R_CORE_AUTOCMPLT_MS);
 
+	RCoreAutocomplete *cat = r_core_autocomplete_find (core->autocomplete, "cat", true);
+	r_core_autocomplete_add (cat, "-m", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "-", R_CORE_AUTOCMPLT_MINS, true);
 	r_core_autocomplete_add (core->autocomplete, "zs", R_CORE_AUTOCMPLT_ZIGN, true);
 	r_core_autocomplete_add (core->autocomplete, "fs", R_CORE_AUTOCMPLT_FLSP, true);
