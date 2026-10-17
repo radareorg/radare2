@@ -260,3 +260,15 @@ EXPECT=<<EOF
       "name": "bar",
 EOF
 RUN
+
+NAME=command byte 0xff after a macro loop does not crash
+FILE=-
+CMDS=<<EOF
+?e x @@ a b c
+ÿx
+?e ok
+EOF
+EXPECT=<<EOF
+ok
+EOF
+RUN

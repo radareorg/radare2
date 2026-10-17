@@ -404,20 +404,20 @@ R_API bool r_cmd_foreach_prefix(const RCmd *cmd, const char *prefix, RCmdForeach
 	return res;
 }
 
-R_API bool r_cmd_add(RCmd *c, const char *cmd, RCmdCb cb) {
-	int idx = (ut8)cmd[0];
-	RCmdItem *item = c->cmds[idx];
+R_API bool r_cmd_add(RCmd *cmd, const char *name, RCmdCb cb) {
+	const ut8 idx = name[0];
+	RCmdItem *item = cmd->cmds[idx];
 	if (!item) {
 		item = R_NEW0 (RCmdItem);
-		c->cmds[idx] = item;
+		cmd->cmds[idx] = item;
 	}
-	strncpy (item->cmd, cmd, sizeof (item->cmd)-1);
+	strncpy (item->cmd, name, sizeof (item->cmd)-1);
 	item->callback = cb;
 	return true;
 }
 
 R_API void r_cmd_del(RCmd *cmd, const char *command) {
-	int idx = (ut8)command[0];
+	const ut8 idx = command[0];
 	R_FREE (cmd->cmds[idx]);
 }
 
@@ -679,7 +679,8 @@ R_IPI RCmdResult r_cmd_call_result(RCmd *cmd, RCmdContext *parent, const char *i
 			}
 		}
 	}
-	RCmdItem *item = cmd->cmds[(ut8)input[0]];
+	const ut8 idx = input[0];
+	RCmdItem *item = cmd->cmds[idx];
 	if (item && item->callback) {
 		result = cmd_result_from_legacy (item->callback (cmd->data, input + 1));
 		goto beach;
