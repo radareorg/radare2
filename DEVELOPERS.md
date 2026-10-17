@@ -106,14 +106,20 @@ r2 provides several empty macros to make function signatures more informative.
 
 * `R_OUT`: Parameter is output - written to instead of read.
 * `R_INOUT`: Parameter is read/write.
-* `R_OWNED`: Pointer ownership is transferred; check the API contract for direction.
+* `R_OWNED`: Pointer ownership is transferred. On a return value the caller
+  owns it; on a parameter the callee takes it.
 * `R_UNOWNED`: Pointer ownership is not transferred; a borrowed return value
   must not be freed by the caller.
+* `R_TRANSIENT`: Borrowed pointer only valid until the next call that mutates
+  its owner. Use it with `R_UNOWNED`.
+* `R_NOALIAS`: Argument must not point into storage modified by the call.
 * `R_NONNULL`: Pointer must not be null.
 * `R_NULLABLE`: Pointer may ne null.
 * `R_DEPRECATE`: Do not use in new code and will be removed in the future.
 * `R_IFNULL(x)`: Default value for a pointer when null.
 * `R_UNUSED`: Not used.
+
+See [doc/borrow.md](doc/borrow.md) for pointer lifetime rules.
 
 ## Code style
 

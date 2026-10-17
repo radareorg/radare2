@@ -37,6 +37,8 @@
 #define R_INOUT /* parameter is read and written */
 #define R_OWNED /* pointer ownership is transferred */
 #define R_UNOWNED /* pointer ownership is not transferred, it must not be freed by the caller */
+#define R_TRANSIENT /* borrowed pointer valid only until the next call that mutates its owner */
+#define R_NOALIAS /* argument must not point into storage modified by the call */
 #include "r_types_null.h"
 
 /* should not be used in new code and should/will be removed in the future */
