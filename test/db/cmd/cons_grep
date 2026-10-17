@@ -861,3 +861,46 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=grep json pager modifier does not read a freed buffer
+FILE=-
+CMDS=<<EOF
+?e [[[[[[["A"]]]]]]]~{}..
+EOF
+EXPECT=<<EOF
+[
+  [
+    [
+      [
+        [
+          [
+            [
+              A
+            ]
+          ]
+        ]
+      ]
+    ]
+  ]
+]
+[
+  [
+    [
+      [
+        [
+          [
+            [
+              A
+            ]
+          ]
+        ]
+      ]
+    ]
+  ]
+]
+
+EOF
+EXPECT_ERR=<<EOF
+WARN: Internal less requires scr.interactive=true
+EOF
+RUN
