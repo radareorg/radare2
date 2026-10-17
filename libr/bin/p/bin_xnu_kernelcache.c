@@ -107,6 +107,7 @@ typedef struct {
 	ut64 va;
 	ut32 slots_total;
 	ut32 slots_own;
+	bool sized;
 } RIOKitVTable;
 
 typedef struct {
@@ -2315,9 +2316,11 @@ static void compute_class_vtable_sizes(RList *classes, RBinFile *bf, RKext *kext
 }
 
 static void compute_vtable_sizes_for_class(RBinFile *bf, RKext *kext, RIOKitClass *c, const ut64 *vt_sorted, size_t n_sorted) {
-	if (!c->vt.instance.va || c->vt.instance.slots_total) {
+	if (!c->vt.instance.va || c->vt.instance.sized) {
 		return;
 	}
+	// set before visiting the parent: the parent chain comes from the file and may loop
+	c->vt.instance.sized = true;
 
 	ut32 total = scan_vtable_total_slots (bf, kext, c->vt.instance.va, vt_sorted, n_sorted);
 	c->vt.instance.slots_total = total;
@@ -2335,9 +2338,11 @@ static void compute_vtable_sizes_for_class(RBinFile *bf, RKext *kext, RIOKitClas
 }
 
 static void compute_metaclass_vtable_sizes_for_class(RBinFile *bf, RKext *kext, RIOKitClass *c, const ut64 *vt_sorted, size_t n_sorted) {
-	if (!c->vt.metaclass.va || c->vt.metaclass.slots_total) {
+	if (!c->vt.metaclass.va || c->vt.metaclass.sized) {
 		return;
 	}
+	// set before visiting the parent: the parent chain comes from the file and may loop
+	c->vt.metaclass.sized = true;
 
 	ut32 total = scan_vtable_total_slots (bf, kext, c->vt.metaclass.va, vt_sorted, n_sorted);
 	c->vt.metaclass.slots_total = total;
