@@ -186,7 +186,7 @@ static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RIODesc *fd, ut
 static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) * mach0);
 static RList *filter_kexts(RKernelCacheObj *obj, RBinFile *bf);
 static RList *carve_kexts(RKernelCacheObj *obj, RBinFile *bf);
-static RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf);
+static R_OWNED RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf);
 
 static bool sections_from_mach0(struct MACH0_(obj_t) *mach0, RBinFile *bf, ut64 paddr, char *prefix, RKernelCacheObj *obj);
 static void handle_data_sections(RBinSection *sect);
@@ -718,7 +718,7 @@ beach:
 	return NULL;
 }
 
-static RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf) {
+static R_OWNED RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf) {
 	RList *kexts = r_list_newf ((RListFree)&r_kext_free);
 	RBuffer *cache_buf = obj->cache_buf;
 	ut32 i, ncmds = r_buf_read_le32_at (cache_buf, 16);
@@ -744,7 +744,8 @@ static RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf) {
 			continue;
 		}
 		st32 padded_name_length = (st32) (cmdsize - 32);
-		char *padded_name = calloc (1, padded_name_length);
+		// the name may fill the command without a NUL, so keep a terminator after it
+		char *padded_name = calloc (1, padded_name_length + 1);
 		if (!padded_name) {
 			goto beach;
 		}
