@@ -1431,7 +1431,6 @@ static int rabin2_main(RCons *cons, int argc, const char **argv) {
 	pj_free (pj);
 	r_cons_flush (cons);
 	rabin_core_fini (&core, core_cons);
-	r_syscmd_popalld ();
 	free (state.stdin_buf);
 
 	return retval;

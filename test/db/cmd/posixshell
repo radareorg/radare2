@@ -1,3 +1,23 @@
+NAME=internal rabin2 preserves pushd stack
+FILE=-
+CMDS=<<EOF
+cd /
+pushd /dev
+rabin2 -Z malloc://16
+pwd
+popd
+pwd
+EOF
+EXPECT=<<EOF
+16
+/dev
+/
+EOF
+EXPECT_ERR=<<EOF
+/
+EOF
+RUN
+
 NAME=pushd;popd
 FILE=-
 CMDS=<<EOF
