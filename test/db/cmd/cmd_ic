@@ -1385,6 +1385,34 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=icc objc empty struct pointer type
+FILE=malloc://512
+CMDS=<<EOF
+ic+K
+ic+K..named ^{foo}
+ic+K..empty ^{
+'ic+K..cut ^{>x}
+ic*~td
+icc objc
+icc c
+EOF
+EXPECT=<<EOF
+'td struct K { foo named; void*  empty; void*  cut;};
+@interface K
+{
+	foo named;
+	id empty;
+	id cut;
+}
+@end
+typedef struct {
+    foo named; // 0x0
+    void* empty; // 0x0
+    void* cut; // 0x0
+} class_K;
+EOF
+RUN
+
 NAME=ic+ attributes
 FILE=malloc://512
 CMDS=<<EOF

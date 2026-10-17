@@ -58,7 +58,7 @@ static char *get_rp(const char *rtype) {
 
 // TODO: move this into r.bin.demangle
 // https://nshipster.com/type-encodings/
-static char *objc_type_toc(const char *objc_type) {
+static R_OWNED char *objc_type_toc(const char *objc_type) {
 	if (!objc_type) {
 		return strdup ("void*");
 	}
@@ -68,7 +68,10 @@ static char *objc_type_toc(const char *objc_type) {
 		if (b) {
 			*b = 0;
 		}
-		a[strlen (a) - 1] = 0;
+		const size_t len = strlen (a);
+		if (len > 0) {
+			a[len - 1] = 0;
+		}
 		return a;
 	}
 	if (*objc_type == '<') {
@@ -149,7 +152,7 @@ static bool objc_is_builtin_property_name(const char *name) {
 		|| !strcmp (name, "debugDescription");
 }
 
-static char *objc_decl_type(const char *field_type, bool *is_object) {
+static R_OWNED char *objc_decl_type(const char *field_type, bool *is_object) {
 	if (is_object) {
 		*is_object = false;
 	}
@@ -176,7 +179,7 @@ static char *objc_decl_type(const char *field_type, bool *is_object) {
 		return out? out: strdup ("id");
 	}
 	char *ftype = objc_type_toc (field_type);
-	if (!ftype || !strcmp (ftype, "unknown")) {
+	if (R_STR_ISEMPTY (ftype) || !strcmp (ftype, "unknown")) {
 		free (ftype);
 		if (is_object) {
 			*is_object = true;
