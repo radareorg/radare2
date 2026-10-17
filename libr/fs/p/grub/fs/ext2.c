@@ -261,6 +261,7 @@ struct grub_ext3_journal_sblock {
 };
 
 #define EXT4_EXT_MAGIC 0xf30a
+#define EXT4_MAX_EXTENT_DEPTH 5
 
 struct grub_ext4_extent_header {
 	grub_uint16_t magic;
@@ -314,22 +315,32 @@ grub_ext2_blockgroup(struct grub_ext2_data *data, int group, struct grub_ext2_bl
 static struct grub_ext4_extent_header *
 grub_ext4_find_leaf(struct grub_ext2_data *data, char *buf, struct grub_ext4_extent_header *ext_block, grub_uint32_t fileblock) {
 	struct grub_ext4_extent_idx *index;
+	unsigned int depth = grub_le_to_cpu16 (ext_block->depth);
+	unsigned int node_size = sizeof (data->inode->blocks);
+
+	if (depth > EXT4_MAX_EXTENT_DEPTH) {
+		return 0;
+	}
 
 	while (1) {
 		int i;
 		grub_disk_addr_t block;
+		unsigned int entries = grub_le_to_cpu16 (ext_block->entries);
+		unsigned int max = grub_le_to_cpu16 (ext_block->max);
 
 		index = (struct grub_ext4_extent_idx *) (ext_block + 1);
 
-		if (grub_le_to_cpu16 (ext_block->magic) != EXT4_EXT_MAGIC) {
+		if (grub_le_to_cpu16 (ext_block->magic) != EXT4_EXT_MAGIC
+			|| grub_le_to_cpu16 (ext_block->depth) != depth
+			|| entries > max || max > (node_size - sizeof (*ext_block)) / sizeof (*index)) {
 			return 0;
 		}
 
-		if (ext_block->depth == 0) {
+		if (depth == 0) {
 			return ext_block;
 		}
 
-		for (i = 0; i < grub_le_to_cpu16 (ext_block->entries) && i < grub_le_to_cpu16 (ext_block->max); i++) {
+		for (i = 0; i < entries; i++) {
 			if (fileblock < grub_le_to_cpu32 (index[i].block)) {
 				break;
 			}
@@ -350,6 +361,8 @@ grub_ext4_find_leaf(struct grub_ext2_data *data, char *buf, struct grub_ext4_ext
 		}
 
 		ext_block = (struct grub_ext4_extent_header *)buf;
+		node_size = EXT2_BLOCK_SIZE (data);
+		depth--;
 	}
 }
 
@@ -430,7 +443,7 @@ grub_ext2_read_block(grub_fshelp_node_t node, grub_disk_addr_t fileblock) {
 		grub_free (indir);
 	}
 	/* Double indirect.  */
-	else if (fileblock < (grub_disk_addr_t) (INDIRECT_BLOCKS + blksz / 4) *(grub_disk_addr_t) (blksz / 4 + 1)) {
+	else if (fileblock < INDIRECT_BLOCKS + (grub_disk_addr_t) (blksz / 4) * (blksz / 4 + 1)) {
 		unsigned int perblock = blksz / 4;
 		unsigned int rblock = fileblock - (INDIRECT_BLOCKS + blksz / 4);
 		grub_uint32_t *indir;
@@ -482,10 +495,10 @@ grub_ext2_read_file(grub_fshelp_node_t node,
 		void *closure),
 	void *closure,
 	int flags,
-	int pos,
+	grub_off_t pos,
 	grub_size_t len,
 	char *buf) {
-	return grub_fshelp_read_file (node->data->disk, node, read_hook, closure, flags, pos, len, buf, grub_ext2_read_block, node->inode.size, LOG2_EXT2_BLOCK_SIZE (node->data));
+	return grub_fshelp_read_file (node->data->disk, node, read_hook, closure, flags, pos, len, buf, grub_ext2_read_block, grub_le_to_cpu32 (node->inode.size), LOG2_EXT2_BLOCK_SIZE (node->data));
 }
 
 /* Read the inode INO for the file described by DATA into INODE.  */
@@ -552,6 +565,12 @@ grub_ext2_mount(grub_disk_t disk) {
 	/* Make sure this is an ext2 filesystem.  */
 	if (grub_le_to_cpu16 (data->sblock.magic) != EXT2_MAGIC) {
 		grub_error (GRUB_ERR_BAD_FS, "not an ext2 filesystem");
+		goto fail;
+	}
+
+	// Block sizes range from 1 KiB to 64 KiB.
+	if (grub_le_to_cpu32 (data->sblock.log2_block_size) > 6) {
+		grub_error (GRUB_ERR_BAD_FS, "invalid ext2 block size");
 		goto fail;
 	}
 
@@ -646,12 +665,17 @@ grub_ext2_iterate_dir(grub_fshelp_node_t dir,
 		while (fpos < grub_le_to_cpu32 (diro->inode.size)) {
 			struct ext2_dirent dirent;
 
-			grub_ext2_read_file (diro, NULL, NULL, 0, fpos, sizeof (dirent), (char *)&dirent);
-			if (grub_errno) {
+			grub_ssize_t nread = grub_ext2_read_file (diro, NULL, NULL, 0, fpos, sizeof (dirent), (char *)&dirent);
+			if (grub_errno || nread != sizeof (dirent)) {
+				grub_error (GRUB_ERR_BAD_FS, "truncated ext2 directory entry");
 				return 0;
 			}
 
-			if (dirent.direntlen == 0) {
+			unsigned int direntlen = grub_le_to_cpu16 (dirent.direntlen);
+			if (direntlen < sizeof (dirent)
+				|| direntlen > grub_le_to_cpu32 (diro->inode.size) - fpos
+				|| dirent.namelen > direntlen - sizeof (dirent)) {
+				grub_error (GRUB_ERR_BAD_FS, "invalid ext2 directory entry");
 				return 0;
 			}
 
@@ -663,8 +687,9 @@ grub_ext2_iterate_dir(grub_fshelp_node_t dir,
 				if (!filename) {
 					break;
 				}
-				grub_ext2_read_file (diro, 0, 0, 0, fpos + sizeof (struct ext2_dirent), dirent.namelen, filename);
-				if (grub_errno) {
+				nread = grub_ext2_read_file (diro, 0, 0, 0, fpos + sizeof (struct ext2_dirent), dirent.namelen, filename);
+				if (grub_errno || nread != dirent.namelen) {
+					grub_error (GRUB_ERR_BAD_FS, "truncated ext2 directory name");
 					grub_free (filename);
 					return 0;
 				}
@@ -720,7 +745,7 @@ grub_ext2_iterate_dir(grub_fshelp_node_t dir,
 				grub_free (filename);
 			}
 
-			fpos += grub_le_to_cpu16 (dirent.direntlen);
+			fpos += direntlen;
 		}
 	}
 

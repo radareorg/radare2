@@ -43,12 +43,10 @@ struct grub_fshelp_find_file_closure {
 	char *(*read_symlink) (grub_fshelp_node_t node);
 	int symlinknest;
 	enum grub_fshelp_filetype foundtype;
-	grub_fshelp_node_t currroot;
 };
 
-static void
-free_node(grub_fshelp_node_t node, struct grub_fshelp_find_file_closure *c) {
-	if (node != c->rootnode && node != c->currroot) {
+static void free_node(grub_fshelp_node_t node, struct grub_fshelp_find_file_closure *c, grub_fshelp_node_t currroot) {
+	if (node != c->rootnode && node != currroot) {
 		grub_free (node);
 	}
 }
@@ -92,8 +90,6 @@ find_file(const char *currpath, grub_fshelp_node_t currroot, grub_fshelp_node_t 
 	grub_fshelp_node_t currnode = currroot;
 	grub_fshelp_node_t oldnode = currroot;
 
-	c->currroot = currroot;
-
 	grub_strncpy (fpath, currpath, grub_strlen (currpath) + 1);
 
 	/* Remove all leading slashes.  */
@@ -103,6 +99,7 @@ find_file(const char *currpath, grub_fshelp_node_t currroot, grub_fshelp_node_t 
 
 	if (!*name) {
 		*currfound = currnode;
+		c->foundtype = type;
 		grub_free (fpath);
 		return 0;
 	}
@@ -123,7 +120,7 @@ find_file(const char *currpath, grub_fshelp_node_t currroot, grub_fshelp_node_t 
 		/* At this point it is expected that the current node is a
 		directory, check if this is true.  */
 		if (type != GRUB_FSHELP_DIR) {
-			free_node (currnode, c);
+			free_node (currnode, c, currroot);
 			grub_free (fpath);
 			return grub_error (GRUB_ERR_BAD_FILE_TYPE, "not a directory");
 		}
@@ -149,25 +146,25 @@ find_file(const char *currpath, grub_fshelp_node_t currroot, grub_fshelp_node_t 
 
 			/* Test if the symlink does not loop.  */
 			if (++ (c->symlinknest) == 8) {
-				free_node (currnode, c);
-				free_node (oldnode, c);
+				free_node (currnode, c, currroot);
+				free_node (oldnode, c, currroot);
 				grub_free (fpath);
 				return grub_error (GRUB_ERR_SYMLINK_LOOP,
 					"too deep nesting of symlinks");
 			}
 
 			symlink = c->read_symlink (currnode);
-			free_node (currnode, c);
+			free_node (currnode, c, currroot);
 
 			if (!symlink) {
-				free_node (oldnode, c);
+				free_node (oldnode, c, currroot);
 				grub_free (fpath);
 				return grub_errno;
 			}
 
 			/* The symlink is an absolute path, go back to the root inode.  */
 			if (symlink[0] == '/') {
-				free_node (oldnode, c);
+				free_node (oldnode, c, currroot);
 				oldnode = c->rootnode;
 			}
 
@@ -177,13 +174,15 @@ find_file(const char *currpath, grub_fshelp_node_t currroot, grub_fshelp_node_t 
 			grub_free (symlink);
 
 			if (grub_errno) {
-				free_node (oldnode, c);
+				free_node (oldnode, c, currroot);
 				grub_free (fpath);
 				return grub_errno;
 			}
 		}
 
-		free_node (oldnode, c);
+		if (oldnode != currnode) {
+			free_node (oldnode, c, currroot);
+		}
 
 		/* Found the node!  */
 		if (!next || *next == '\0') {
@@ -252,8 +251,13 @@ grub_fshelp_read_file(grub_disk_t disk, grub_fshelp_node_t node, void(*read_hook
 	grub_disk_addr_t i, blockcnt;
 	int blocksize = 1 << (log2blocksize + GRUB_DISK_SECTOR_BITS);
 
+	if (pos > filesize) {
+		grub_error (GRUB_ERR_OUT_OF_RANGE, "attempt to read past the end of file");
+		return -1;
+	}
+
 	/* Adjust LEN so it we can't read past the end of the file.  */
-	if (pos + len > filesize) {
+	if (len > filesize - pos) {
 		len = filesize - pos;
 	}
 
