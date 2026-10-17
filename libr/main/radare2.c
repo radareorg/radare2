@@ -944,6 +944,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		return 1;
 	}
 	mr.r = r;
+	if (!r_core_signal_init (r)) {
+		R_LOG_ERROR ("Cannot initialize user signal handlers");
+		mainr2_fini (&mr);
+		return 1;
+	}
 	r->r_main_radare2 = r_main_radare2;
 	r->r_main_radiff2 = r_main_radiff2;
 	r->r_main_rapatch2 = r_main_rapatch2;

@@ -21,6 +21,15 @@ typedef struct {
 } RCoreGraphCapture;
 
 typedef struct r_core_priv_t {
+#if R2__UNIX__
+	bool signals_enabled;
+#if HAVE_SIGACTION
+	struct sigaction old_usr1, old_usr2;
+#else
+	void (*old_usr1)(int);
+	void (*old_usr2)(int);
+#endif
+#endif
 	// arch cache
 	int old_bits;
 	char *old_arch;
