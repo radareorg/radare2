@@ -26,7 +26,7 @@ typedef struct _RCFParseState {
 	RCFParsePhase phase;
 	RCFIDState idstate;
 	ut32 id;
-	char *key;
+	R_OWNED char *key; // pending dict key, moved into the next RCFKeyValue
 	RCFValueType value_type;
 	RCFValueDict *dict;
 	RCFValueArray *array;
@@ -35,7 +35,7 @@ typedef struct _RCFParseState {
 static RCFParseState *r_cf_parse_state_new(RCFParsePhase phase);
 static void r_cf_parse_state_free(RCFParseState *state);
 
-static RCFKeyValue *r_cf_key_value_new(char *key, RCFValue *value);
+static RCFKeyValue *r_cf_key_value_new(R_OWNED char *key, R_OWNED RCFValue *value);
 static void r_cf_key_value_free(RCFKeyValue *key_value);
 
 static RCFValueDict *r_cf_value_dict_new(void);
@@ -205,11 +205,17 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 					R_LOG_ERROR ("NULL key not supported");
 					goto beach;
 				}
+				free (next_state->key);
 				next_state->key = content;
 			}
 
 			if (state->phase != R_CF_STATE_IN_KEY) {
 				RCFValue *value = NULL;
+
+				if (next_state->phase == R_CF_STATE_IN_DICT && !next_state->key) {
+					R_LOG_ERROR ("Missing key for dict value");
+					goto beach;
+				}
 
 				if (idlist && state->idstate == R_CF_ID_STATE_REF) {
 					value = r_list_get_n (idlist, (int)state->id);
@@ -290,11 +296,16 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 				if (next_state->phase == R_CF_STATE_IN_DICT) {
 					if (value) {
 						RCFKeyValue *key_value = r_cf_key_value_new (next_state->key, value);
+						// the pair owns the key now, the next value needs its own
+						next_state->key = NULL;
 						r_cf_value_dict_add (next_state->dict, key_value);
 					} else if (state->phase != R_CF_STATE_IN_IGNORE) {
 						R_LOG_ERROR ("Missing value for key %s", next_state->key);
 						r_cf_value_free ((RCFValue *)value);
 						goto beach;
+					} else {
+						// skipped value, its key is consumed too
+						R_FREE (next_state->key);
 					}
 				} else if (next_state->phase == R_CF_STATE_IN_ARRAY) {
 					if (value) {
@@ -403,11 +414,13 @@ static RCFParseState *r_cf_parse_state_new(RCFParsePhase phase) {
 
 static void r_cf_parse_state_free(RCFParseState *state) {
 	if (state) {
+		// a pending key that no value consumed
+		free (state->key);
 		R_FREE (state);
 	}
 }
 
-static RCFKeyValue *r_cf_key_value_new(char *key, RCFValue *value) {
+static RCFKeyValue *r_cf_key_value_new(R_OWNED char *key, R_OWNED RCFValue *value) {
 	RCFKeyValue *key_value = R_NEW0 (RCFKeyValue);
 	if (!key_value) {
 		return NULL;
