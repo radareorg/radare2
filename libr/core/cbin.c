@@ -3985,12 +3985,17 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 	}
 	// run the formats now
 	if (!print_segments && r_config_get_b (core->config, "bin.meta")) {
+		// every word becomes a metadata item, so bound the total of all the formats too
+		ut64 budget = 1024 * 1024 * 8;
 		R_VEC_FOREACH (sections, section) {
 			if (R_STR_ISNOTEMPTY (section->format)) {
 				// This is damn slow if section vsize is HUGE
-				if (section->vsize < 1024 * 1024 * 2) {
+				if (section->vsize < 1024 * 1024 * 2 && section->vsize <= budget) {
+					budget -= section->vsize;
 					R_LOG_DEBUG ("(section %s) %s @ 0x%" PFMT64x, section->name, section->format, section->vaddr);
 					r_core_call_at (core, section->vaddr, section->format);
+				} else {
+					R_LOG_DEBUG ("Skipping the format of section %s, too large", section->name);
 				}
 			}
 		}

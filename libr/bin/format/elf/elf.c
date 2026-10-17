@@ -1210,6 +1210,7 @@ typedef struct process_verdef_state_t {
 	const char *vstart;
 	size_t vstart_off;
 	Sdb *sdb_verdef;
+	ut64 *aux_left;
 } ProcessVerdefState;
 
 static inline bool _process_verdef(ELFOBJ *eo, ProcessVerdefState *state) {
@@ -1221,6 +1222,10 @@ static inline bool _process_verdef(ELFOBJ *eo, ProcessVerdefState *state) {
 
 	int j;
 	for (j = 1; j < state->vd_cnt; j++) {
+		// break if aux->vda_next is 0 (last entry), otherwise it will parse the same entry vd_cnt times
+		if (aux->vda_next < sizeof (Elf_(Verdaux))) {
+			break;
+		}
 		if (shdr->sh_size - vstart_off < aux->vda_next) {
 			return false;
 		}
@@ -1236,6 +1241,10 @@ static inline bool _process_verdef(ELFOBJ *eo, ProcessVerdefState *state) {
 		aux->vda_name = READ32 (vstart, k);
 		aux->vda_next = READ32 (vstart, k);
 		if (aux->vda_name > eo->dynstr_size) {
+			return false;
+		}
+		// many Verdef can share one Verdaux list, dont parse more entries than the section can hold
+		if (!(*state->aux_left)--) {
 			return false;
 		}
 
@@ -1265,6 +1274,7 @@ typedef struct process_verdefs_state_t {
 static inline bool _process_verdefs(ELFOBJ *eo, ProcessVerdefsState *state) {
 	Elf_(Shdr) *shdr = state->shdr;
 	char *end = (char *)state->defs + state->shsize; //& shdr->sh_size;
+	ut64 aux_left = shdr->sh_size / sizeof (Elf_(Verdaux));
 	ut32 cnt;
 	size_t i;
 	for (cnt = 0, i = 0; cnt < shdr->sh_info && i < shdr->sh_size; cnt++) {
@@ -1330,13 +1340,15 @@ static inline bool _process_verdefs(ELFOBJ *eo, ProcessVerdefsState *state) {
 			.vstart = vstart,
 			.vstart_off = vstart_off,
 			.sdb_verdef = sdb_verdef,
+			.aux_left = &aux_left,
 		};
 		if (!_process_verdef (eo, &verdef_state)) {
 			sdb_free (sdb_verdef);
 			return false;
 		}
 
-		if (!verdef->vd_next || shdr->sh_size - i < verdef->vd_next) {
+		// records smaller than the header would overlap the next one
+		if (verdef->vd_next < sizeof (Elf_(Verdef)) || shdr->sh_size - i < verdef->vd_next) {
 			sdb_free (sdb_verdef);
 			return false;
 		}
@@ -1424,6 +1436,8 @@ static inline bool _process_verneed_state(ELFOBJ *eo, ProcessVerneedState *state
 	ut64 i;
 	ut8 *fend = need - shdr->sh_offset + eo->size;
 	end = R_MIN (fend, end);
+	// many Verneed can share one Vernaux list, dont parse more entries than the section can hold
+	ut64 aux_left = shdr->sh_size / sizeof (Elf_(Vernaux));
 
 	char key[32] = {0};
 
@@ -1485,6 +1499,10 @@ static inline bool _process_verneed_state(ELFOBJ *eo, ProcessVerneedState *state
 				sdb_free (sdb_version);
 				return false;
 			}
+			if (!aux_left--) {
+				sdb_free (sdb_version);
+				return false;
+			}
 			// XXX this is awfully slow and unnecessary
 			Sdb *sdb_vernaux = sdb_new0 ();
 			if (!sdb_vernaux) {
@@ -1516,8 +1534,8 @@ static inline bool _process_verneed_state(ELFOBJ *eo, ProcessVerneedState *state
 		sdb_ns_set (state->sdb, key, sdb_version);
 
 		i += entry->vn_next;
-		// break if entry->vn_next is 0, otherwise it will iterate infinitely
-		if (!entry->vn_next) {
+		// break if entry->vn_next is 0 (last entry), smaller steps would overlap the next one
+		if (entry->vn_next < sizeof (Elf_(Verneed))) {
 			break;
 		}
 	}
@@ -5509,7 +5527,7 @@ static RVecRBinElfSymbol *parse_gnu_debugdata(ELFOBJ *eo, size_t *ret_size) {
 	}
 	ut64 addr = section->offset;
 	ut64 size = section->size;
-	if (size < 10) {
+	if (size < 10 || addr > eo->size || size > eo->size - addr) {
 		return NULL;
 	}
 	ut8 *data = malloc (size + 1);
@@ -5912,9 +5930,19 @@ static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 	RVecRBinElfSymbol *ret = type == R_BIN_ELF_ALL_SYMBOLS? parse_gnu_debugdata (eo, &ret_ctr): NULL;
 	int i;
 	size_t shnum = eo->ehdr.e_shnum;
+	ut64 symtabs_size = 0;
 	for (i = 0; i < shnum; i++) {
 		if (!section_matters (eo, i, type, shdr_size)) {
 			continue;
+		}
+		// sections do not overlap in the file, so all the symbol tables fit in it
+		const Elf_(Shdr) *sh = &eo->shdr[i];
+		if (sh->sh_offset < eo->size) {
+			symtabs_size += R_MIN (sh->sh_size, eo->size - sh->sh_offset);
+		}
+		if (symtabs_size > eo->size) {
+			R_LOG_WARN ("Ignoring overlapping symbol tables");
+			break;
 		}
 		ProcessSectionState state = {
 			.i = i,

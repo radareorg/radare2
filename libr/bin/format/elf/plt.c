@@ -651,7 +651,9 @@ void Elf_(plt_ppc64v1_load_text_stubs)(RBinFile *bf, ELFOBJ *eo) {
 		.rel_by_glink = ht_uu_new0 (),
 		.rel_by_slot = ht_uu_new0 (),
 		.toc = got? got->rva + 0x8000: 0,
-		.budget = PPC64_TEXT_SCAN_MAX,
+		// the code ranges of a sane file do not overlap, so together they fit
+		// in it: headers aliasing the same bytes must not buy another pass
+		.budget = R_MIN (PPC64_TEXT_SCAN_MAX, r_buf_size (eo->b)),
 	};
 	if (!sc.rel_by_glink || !sc.rel_by_slot) {
 		goto beach;
