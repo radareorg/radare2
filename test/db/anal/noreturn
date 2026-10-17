@@ -17,6 +17,7 @@ RUN
 NAME=noreturn keeps pigz indirect tail call and caller CFG (#20961)
 FILE=bins/elf/pigz
 CMDS=<<EOF
+e anal.vars=false
 aaa
 afij @ sym.fail~{0.noreturn}
 afij @ sym.join_~{0.noreturn}

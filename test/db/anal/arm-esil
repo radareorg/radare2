@@ -179,6 +179,7 @@ NAME=arm plt stubs on libarm.so reach even thumb entries
 FILE=bins/elf/libarm.so
 ARGS=-e bin.relocs.apply=true
 CMDS=<<EOF
+e anal.vars=false
 aaa
 ax~0x3e158~CODE
 ax*~axc~!axc 0x3e~1 0x3e,3 0x3e,5 0x3e,7 0x3e,9 0x3e,b 0x3e,d 0x3e,f 0x3e~?
@@ -236,6 +237,7 @@ NAME=arm libgcc unwind wrapper and pic veneer keep their odd targets
 FILE=bins/elf/libmagic.so
 ARGS=-e bin.relocs.apply=true
 CMDS=<<EOF
+e anal.vars=false
 aaa
 ax~0x7fec
 ax~0x12ef8
