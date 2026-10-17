@@ -367,7 +367,7 @@ R_API int r_main_rafs2(int argc, const char **argv) {
 			rafs2_free (s);
 			return ret;
 		case 'v':
-			ret = r_main_version_print ("rafs2", 0);
+			ret = r_main_version_print (NULL, "rafs2", 0);
 			rafs2_free (s);
 			return ret;
 		case 'h':

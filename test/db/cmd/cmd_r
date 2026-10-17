@@ -269,3 +269,140 @@ after
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=ragg2 main from the REPL without PATH
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+ragg2 -a x86 -b 64 -e "main@global{main(123)}"
+ragg2 -a x86 -b 32 -e "main@global{main(123)}"
+ragg2 -B 410042 -z
+ragg2 -S "hello world"
+?e after
+EOF
+EXPECT=<<EOF
+48c7c07b00000050c3
+6a7bc3
+"\x41\x00\x42"
+68656c6c6f20776f726c64
+after
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=ragg2 REPL output uses console filters and aliases
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+ragg2~Usage
+ragg2 -L~encoders
+ragg2 -v~birth~?
+r2pm -jv >$version
+cat $version~name~?
+r2pm -qv~?
+ragg2 -H
+ragg2 -H R2_NOPLUGINS
+ragg2 -q 0x45414146~Big
+ragg2 -B 4142 >$compiled
+cat $compiled
+ragg2 -a x86 -b 64 -s -e "main@global{main(123)}"~ret
+?e after
+EOF
+EXPECT=<<EOF
+Usage: ragg2 [-FOLsrxhvz] [-a arch] [-b bits] [-k os] [-o file] [-I path]
+encoders:
+1
+1
+1
+R2_NOPLUGINS=1
+1
+Big endian: 12
+4142
+  ret
+after
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=ragg2 REPL code formats use console output
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+ragg2 -B 4142 -f c~const
+ragg2 -B 4142 -f python >$python
+cat $python
+ragg2 -B 4142 -f javascript >$javascript
+cat $javascript
+?e after
+EOF
+EXPECT=<<EOF
+const unsigned char cstr[2] = ""\
+import struct
+buf = struct.pack ("2B", *[
+0x41,0x42])
+[65,66]
+after
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=ragg2 REPL binary output preserves NUL bytes
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+ragg2 -r -B 410042 >$raw
+$**
+?e after
+EOF
+EXPECT=<<EOF
+$raw=base64:QQBC
+after
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=ragg2 REPL restores include paths after success and errors
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+env EGG_INCDIR=original
+ragg2 -I temporary -B 41
+env EGG_INCDIR
+ragg2 -I temporary -q invalid
+env EGG_INCDIR
+ragg2 -B 42
+?e after
+EOF
+EXPECT=<<EOF
+41
+original
+original
+42
+after
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Need hex value with `0x' prefix e.g. 0x41414142
+EOF
+RUN
+
+NAME=ragg2 REPL executable output can be captured in aliases
+FILE=malloc://512
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+ragg2 -a x86 -b 64 -f elf -B 410042 >$elf
+wff $elf
+p8 16
+?e after
+EOF
+EXPECT=<<EOF
+7f454c46020101000000000000000000
+after
+EOF
+EXPECT_ERR=
+RUN

@@ -825,7 +825,9 @@ static void rasm_show_env(RCons *cons, bool show_desc) {
 	}
 }
 
-static int rasm2_main(RCons *cons, int argc, const char *argv[]) {
+R_API int r_main_rasm2(int argc, const char *argv[]) {
+	bool own_cons;
+	RCons *cons = r_main_cons_init (&own_cons);
 	const char *arch = R_SYS_ARCH;
 	const char *filters = NULL;
 	const char *file = NULL;
@@ -841,7 +843,7 @@ static int rasm2_main(RCons *cons, int argc, const char *argv[]) {
 	bool analinfo = false;
 
 	if (argc < 2) {
-		return rasm_show_help (cons, 1);
+		return r_main_cons_fini (cons, own_cons, rasm_show_help (cons, 1));
 	}
 
 	char *log_level = r_sys_getenv ("R2_LOG_LEVEL");
@@ -852,7 +854,7 @@ static int rasm2_main(RCons *cons, int argc, const char *argv[]) {
 	R_FREE (log_level);
 	RAsmState *as = rasm_new (cons);
 	if (!as) {
-		return 1;
+		return r_main_cons_fini (cons, own_cons, 1);
 	}
 	char *env_arch = r_sys_getenv ("RASM2_ARCH");
 	char *env_bits = r_sys_getenv ("RASM2_BITS");
@@ -982,17 +984,7 @@ static int rasm2_main(RCons *cons, int argc, const char *argv[]) {
 			}
 			break;
 		case 'v':
-			{
-				int mode = 0;
-				if (as->opt.quiet) {
-					mode = 'q';
-				}
-				char *version = mode == 'q'? strdup (R2_VERSION): r_str_version ("rasm2");
-				if (version) {
-					r_cons_println (cons, version);
-					free (version);
-				}
-			}
+			ret = r_main_version_print (cons, "rasm2", as->opt.quiet? 'q': 0);
 			goto beach;
 		case 'w':
 			whatsop = true;
@@ -1270,25 +1262,5 @@ beach:
 	if (fd != -1) {
 		close (fd);
 	}
-	return ret;
-}
-
-R_API int r_main_rasm2(int argc, const char **argv) {
-	RCons *cons = (RCons *)(size_t)r_sys_getenv_asut64 ("R2CONS");
-	const bool own_cons = !cons;
-	if (own_cons) {
-		cons = r_cons_new ();
-	}
-	int ret = rasm2_main (cons, argc, argv);
-	if (own_cons) {
-		size_t size;
-		char *output = r_cons_drain (cons, &size);
-		if (size && write (1, output, size) != size) {
-			R_LOG_ERROR ("Failed to write output");
-			ret = 1;
-		}
-		free (output);
-		r_cons_free (cons);
-	}
-	return ret;
+	return r_main_cons_fini (cons, own_cons, ret);
 }

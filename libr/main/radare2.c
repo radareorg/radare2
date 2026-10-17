@@ -933,7 +933,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		} else if (mr.quiet) {
 			mode = 'q';
 		}
-		int res = r_main_version_print ("radare2", mode);
+		int res = r_main_version_print (NULL, "radare2", mode);
 		mainr2_fini (&mr);
 		return res;
 	}

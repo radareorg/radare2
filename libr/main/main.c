@@ -48,7 +48,31 @@ R_API int r_main_run(RMain *m, int argc, const char **argv) {
 	return m->main (argc, argv);
 }
 
-R_API int r_main_version_print(const char *progname, int mode) {
+R_API RCons *r_main_cons_init(bool *own_cons) {
+	R_RETURN_VAL_IF_FAIL (own_cons, NULL);
+	RCons *cons = (RCons *)(size_t)r_sys_getenv_asut64 ("R2CONS");
+	*own_cons = !cons;
+	return cons? cons: r_cons_new ();
+}
+
+R_API int r_main_cons_fini(RCons *cons, bool own_cons, int rc) {
+	R_RETURN_VAL_IF_FAIL (cons, 1);
+	if (own_cons) {
+		size_t size;
+		char *output = r_cons_drain (cons, &size);
+		if (size && write (1, output, size) != size) {
+			R_LOG_ERROR ("Failed to write output");
+			rc = 1;
+		}
+		free (output);
+		r_cons_free (cons);
+	}
+	return rc;
+}
+
+R_API int r_main_version_print(RCons *cons, const char *progname, int mode) {
+	R_RETURN_VAL_IF_FAIL (progname, 1);
+	char *version;
 	PJ *pj;
 	switch (mode) {
 	case 'j':
@@ -69,23 +93,22 @@ R_API int r_main_version_print(const char *progname, int mode) {
 		pj_ki (pj, "patch", R2_VERSION_PATCH);
 		pj_end (pj);
 		pj_end (pj);
-		char *s = pj_drain (pj);
-		printf ("%s\n", s);
-		free (s);
+		version = pj_drain (pj);
 		break;
 	case 'q':
-		printf ("%s\n", R2_VERSION);
-		// mainr2_fini (&mr);
+		version = strdup (R2_VERSION);
 		break;
 	default:
-		{
-			char *s = r_str_version (progname);
-			if (s) {
-				printf ("%s\n", s);
-				free (s);
-			}
-		}
+		version = r_str_version (progname);
 		break;
+	}
+	if (version) {
+		if (cons) {
+			r_cons_println (cons, version);
+		} else {
+			puts (version);
+		}
+		free (version);
 	}
 	return 0;
 }

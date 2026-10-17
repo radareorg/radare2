@@ -99,7 +99,7 @@ R_API int r_main_rapatch2(int argc, const char **argv) {
 			ro.reverse = true;
 			break;
 		case 'v':
-			return r_main_version_print ("rapatch2", 0);
+			return r_main_version_print (NULL, "rapatch2", 0);
 		default:
 			return show_help (0);
 		}

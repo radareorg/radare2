@@ -1497,7 +1497,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			ro.quiet = true;
 			break;
 		case 'v':
-			return r_main_version_print ("radiff2", 0);
+			return r_main_version_print (NULL, "radiff2", 0);
 		case 'V':
 			ro.verbose = true;
 			break;
