@@ -1013,13 +1013,13 @@ R_API void r_table_filter(RTable *t, int nth, int op, const char *un) {
 			match = nn&&un&&strstr (nn, un);
 			break;
 		case 's':
-			match = strlen (nn) == atoi (un);
+			match = nn && strlen (nn) == atoi (un);
 			break;
 		case 'l':
-			match = strlen (nn) > atoi (un);
+			match = nn && strlen (nn) > atoi (un);
 			break;
 		case 'L':
-			match = strlen (nn) < atoi (un);
+			match = nn && strlen (nn) < atoi (un);
 			break;
 		case '\0':
 			break;
