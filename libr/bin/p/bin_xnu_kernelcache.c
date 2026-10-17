@@ -89,6 +89,7 @@ typedef struct _RSwizzledIOPlugin {
 
 typedef struct _RRebaseCtx {
 	ut64 off, eob;
+	ut64 end; // end of the range being walked, its tail is covered by another range
 	ut8 *buf;
 	int count;
 	RKernelCacheObj *obj;
@@ -2819,32 +2820,60 @@ static void r_rebase_info_free(RRebaseInfo *info) {
 	}
 }
 
-static void r_rebase_info_populate(RRebaseInfo *info, RKernelCacheObj *obj) {
-	const RVecSection *sections = NULL;
-	int i = 0;
+typedef struct {
+	ut8 *visited; // one bit per 4 bytes of the file
+	ut64 nbits;
+	ut64 last; // last link walked by the current chain
+} RRebaseWalk;
 
+static bool on_populate_link(ut64 offset, ut64 decorated_addr, RRebaseWalk *walk) {
+	const ut64 bit = offset >> 2;
+	if (walk->visited && bit < walk->nbits) {
+		const ut8 mask = 1 << (bit & 7);
+		if (walk->visited[bit >> 3] & mask) {
+			// the rest of this chain was already walked by another start
+			return false;
+		}
+		walk->visited[bit >> 3] |= mask;
+	}
+	walk->last = offset;
+	return true;
+}
+
+static int rebase_range_cmp(const void *a, const void *b) {
+	const ut64 oa = ((const RFileRange *)a)->offset;
+	const ut64 ob = ((const RFileRange *)b)->offset;
+	return (oa > ob) - (oa < ob);
+}
+
+static void r_rebase_info_populate(RRebaseInfo *info, RKernelCacheObj *obj) {
 	if (obj->rebase_info_populated) {
 		return;
 	}
 	obj->rebase_info_populated = true;
-
-	for (; i < info->n_ranges; i++) {
-		if (info->ranges[i].size != UT64_MAX) {
-			return;
-		} else if (sections == NULL) {
-			sections = MACH0_(load_sections) (obj->mach0);
-			if (!sections) {
-				return;
-			}
-		}
-		info->ranges[i].offset = r_rebase_offset_to_paddr (obj, sections, info->ranges[i].offset);
-		ut64 end = iterate_rebase_list (obj->cache_buf, info->multiplier, info->ranges[i].offset, NULL, NULL);
-		if (end != UT64_MAX) {
-			info->ranges[i].size = end - info->ranges[i].offset + 8;
-		} else {
-			info->ranges[i].size = 0;
-		}
+	const RVecSection *sections = MACH0_(load_sections) (obj->mach0);
+	if (!sections) {
+		return;
 	}
+	ut64 i;
+	for (i = 0; i < info->n_ranges; i++) {
+		info->ranges[i].offset = r_rebase_offset_to_paddr (obj, sections, info->ranges[i].offset);
+	}
+	// walk chains in file order so repeated starts are found as visited links
+	qsort (info->ranges, info->n_ranges, sizeof (RFileRange), rebase_range_cmp);
+	RRebaseWalk walk = { .nbits = r_buf_size (obj->cache_buf) / 4 + 1 };
+	walk.visited = calloc (1, walk.nbits / 8 + 1);
+	// read the links raw instead of through kernelcache_io_read
+	const bool was_rebasing = obj->rebasing_buffer;
+	obj->rebasing_buffer = true;
+	for (i = 0; i < info->n_ranges; i++) {
+		walk.last = UT64_MAX;
+		const ut64 start = info->ranges[i].offset;
+		ut64 end = iterate_rebase_list (obj->cache_buf, info->multiplier, start, (ROnRebaseFunc)on_populate_link, &walk);
+		info->ranges[i].size = (end == UT64_MAX || walk.last == UT64_MAX)? 0: walk.last - start + 8;
+	}
+	obj->rebasing_buffer = was_rebasing;
+	free (walk.visited);
 }
 
 static ut64 r_rebase_offset_to_paddr(RKernelCacheObj *obj, const RVecSection *sections, ut64 offset) {
@@ -3037,6 +3066,9 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 }
 
 static bool on_rebase_pointer(ut64 offset, ut64 decorated_addr, RRebaseCtx *ctx) {
+	if (offset >= ctx->end) {
+		return false;
+	}
 	if (offset < ctx->off) {
 		return true;
 	}
@@ -3072,10 +3104,14 @@ static void rebase_buffer(RKernelCacheObj *obj, ut64 off, RIODesc *fd, ut8 *buf,
 	ctx.count = count;
 	ctx.obj = obj;
 
+	// ranges are sorted by start offset
 	for (; i < obj->rebase_info->n_ranges; i++) {
 		ut64 start = obj->rebase_info->ranges[i].offset;
-		ut64 end = start + obj->rebase_info->ranges[i].size;
-		if (end >= off && start <= eob) {
+		if (start > eob) {
+			break;
+		}
+		ctx.end = start + obj->rebase_info->ranges[i].size;
+		if (ctx.end > start && ctx.end >= off) {
 			iterate_rebase_list (obj->cache_buf, obj->rebase_info->multiplier, start, (ROnRebaseFunc)on_rebase_pointer, &ctx);
 		}
 	}
