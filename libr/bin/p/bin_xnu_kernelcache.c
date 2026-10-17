@@ -193,7 +193,7 @@ static void rebase_buffer(RKernelCacheObj *obj, ut64 off, RIODesc *fd, ut8 *buf,
 static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RIODesc *fd, ut8 *buf, int count);
 
 static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) * mach0);
-static RList *filter_kexts(RKernelCacheObj *obj, RBinFile *bf);
+static R_OWNED RList *filter_kexts(RKernelCacheObj *obj, RBinFile *bf);
 static RList *carve_kexts(RKernelCacheObj *obj, RBinFile *bf);
 static R_OWNED RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf);
 
@@ -475,13 +475,15 @@ static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) * m
 	return prelink_range;
 }
 
-static RList *filter_kexts(RKernelCacheObj *obj, RBinFile *bf) {
+static R_OWNED RList *filter_kexts(RKernelCacheObj *obj, RBinFile *bf) {
 	RCFValueArray *kext_array = NULL;
 	RListIter *iter;
 	RCFKeyValue *item;
 	r_list_foreach (obj->prelink_info->pairs, iter, item) {
 		if (!strcmp (item->key, "_PrelinkInfoDictionary")) {
-			kext_array = (RCFValueArray *)item->value;
+			if (item->value->type == R_CF_ARRAY) {
+				kext_array = (RCFValueArray *)item->value;
+			}
 			break;
 		}
 	}
@@ -499,6 +501,9 @@ static RList *filter_kexts(RKernelCacheObj *obj, RBinFile *bf) {
 	RKext *prev_kext = NULL;
 	RCFValueDict *kext_item;
 	r_list_foreach (kext_array->values, iter, kext_item) {
+		if (kext_item->type != R_CF_DICT) {
+			continue;
+		}
 		RKext *kext = R_NEW0 (RKext);
 		int kext_incomplete = 5;
 		RListIter *internal_iter;
