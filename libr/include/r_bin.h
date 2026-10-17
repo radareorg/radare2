@@ -586,7 +586,7 @@ typedef struct r_bin_file_t {
 	int narch;
 	struct r_bin_xtr_plugin_t *curxtr;
 	// struct r_bin_plugin_t *curplugin; // use o->plugin
-	RList *xtr_data;
+	R_OWNED RList *xtr_data; // replaced by r_bin_open_bins and r_bin_file_xtr_load
 	Sdb *sdb;
 	Sdb *sdb_info;
 	RBinAddrLineStore addrline;
@@ -993,7 +993,7 @@ R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt);
 R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt);
 /* Open a multi-bin container where slice enumeration was done upstream
  * (e.g. by r_fs_dir_bins). `xtr_data` is taken ownership of. */
-R_API bool r_bin_open_bins(RBin *bin, const char *filename, RBinFileOptions *opt, RList *xtr_data);
+R_API bool r_bin_open_bins(RBin *bin, const char *filename, RBinFileOptions *opt, R_OWNED RList *xtr_data);
 R_API bool r_bin_reload(RBin *bin, ut32 bf_id, ut64 baseaddr);
 R_API R_OWNED char *r_bin_cmd(RBin *bin, const char *input);
 

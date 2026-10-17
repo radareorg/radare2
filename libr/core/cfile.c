@@ -840,15 +840,19 @@ static void mach0_dsym_umount_fd(RCore *core, int fd) {
 	}
 }
 
-static RBinFile *mach0_load_matching_slice(RBin *bin, RBinFile *main_bf, RBinFile *dsym_bf) {
+static R_UNOWNED RBinFile *mach0_load_matching_slice(RBin *bin, RBinFile *main_bf, RBinFile *dsym_bf) {
 	if (dsym_bf->bo) {
 		return mach0_identity_matches (main_bf, dsym_bf)? dsym_bf: NULL;
 	}
 	if (!dsym_bf->xtr_data) {
 		return NULL;
 	}
+	RBinFile *matching_bf = NULL;
 	RBinXtrData *xtr_data;
 	RListIter *iter;
+	// slices share the name of dsym_bf, reopening one as a container would free the list being walked
+	const bool old_use_xtr = bin->options.use_xtr;
+	bin->options.use_xtr = false;
 	r_list_foreach (dsym_bf->xtr_data, iter, xtr_data) {
 		if (!xtr_data || !xtr_data->buf) {
 			continue;
@@ -862,11 +866,13 @@ static RBinFile *mach0_load_matching_slice(RBin *bin, RBinFile *main_bf, RBinFil
 		}
 		RBinFile *slice_bf = r_bin_cur (bin);
 		if (slice_bf && slice_bf != main_bf && slice_bf != dsym_bf && mach0_identity_matches (main_bf, slice_bf)) {
-			return slice_bf;
+			matching_bf = slice_bf;
+			break;
 		}
 		mach0_dsym_delete_fd_binfiles (bin, main_bf, dsym_bf, dsym_bf->fd);
 	}
-	return NULL;
+	bin->options.use_xtr = old_use_xtr;
+	return matching_bf;
 }
 
 static bool load_mach0_dsym_file(RCore *core, RBinFile *main_bf, const char *dsym_path) {

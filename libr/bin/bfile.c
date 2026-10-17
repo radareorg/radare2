@@ -1112,7 +1112,8 @@ R_IPI RBinFile *r_bin_file_xtr_load(RBin *bin, RBinXtrPlugin *xtr, const char *f
 			bin->cur = bf;
 		}
 	}
-	r_list_free (bf->xtr_data);
+	// buf may be owned by the list being replaced, so free it after extracting
+	RList *old_xtr_data = bf->xtr_data;
 	bf->xtr_data = NULL;
 	if (xtr->extractall_from_buffer) {
 		bf->xtr_data = xtr->extractall_from_buffer (bin, buf);
@@ -1122,6 +1123,7 @@ R_IPI RBinFile *r_bin_file_xtr_load(RBin *bin, RBinXtrPlugin *xtr, const char *f
 		R_LOG_WARN ("TODO: Implement extractall_from_buffer in '%s' xtr.bin plugin", xtr->meta.name);
 		bf->xtr_data = xtr->extractall_from_bytes (bin, bytes, sz);
 	}
+	r_list_free (old_xtr_data);
 	if (bf->xtr_data) {
 		RListIter *iter;
 		RBinXtrData *x;
