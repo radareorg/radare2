@@ -36,7 +36,9 @@ become invalid when:
 - `r_cons_filter`, `r_cons_grepbuf` or `r_cons_highlight` replace it
 - `r_cons_drain` takes it, or `r_cons_pop` frees the pushed context
 
-`r_cons_printf` arguments are `R_NOALIAS`: they are formatted in place.
+`r_cons_write`, `r_cons_print` and `r_cons_println` are alias-safe: they accept a
+source inside the buffer. `r_cons_printf` arguments are `R_NOALIAS`: they are
+formatted in place.
 
 Example: `?e [[[["A"]]]]~{}..` passed the cons buffer to `r_cons_less_str`,
 which printed it into itself; the buffer was reallocated before the copy and

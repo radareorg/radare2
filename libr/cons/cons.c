@@ -152,6 +152,13 @@ static bool cons_palloc(RCons *cons, size_t moar) {
 
 #include "private.h"
 
+R_IPI void cons_buffer_set(RConsContext *ctx, R_OWNED char * R_NULLABLE s) {
+	free (ctx->buffer);
+	ctx->buffer = s;
+	ctx->buffer_len = s? strlen (s): 0;
+	ctx->buffer_sz = s? ctx->buffer_len + 1: 0;
+}
+
 typedef struct {
 	bool breaked;
 	RConsEvent event_interrupt;
@@ -814,14 +821,10 @@ R_API void r_cons_filter(RCons *cons) {
 	}
 	/* html */
 	if (ctx->is_html) {
-		int newlen = 0;
 		char *input = r_str_ndup (ctx->buffer, ctx->buffer_len);
-		char *res = r_str_html_strip (input, &newlen);
+		char *res = r_str_html_strip (input, NULL);
 		if (res) {
-			free (ctx->buffer);
-			ctx->buffer = res;
-			ctx->buffer_len = newlen;
-			ctx->buffer_sz = newlen;
+			cons_buffer_set (ctx, res);
 		}
 		free (input);
 	}
@@ -1363,54 +1366,45 @@ R_API bool r_cons_write(RCons *cons, const void *data, size_t len) {
 	R_RETURN_VAL_IF_FAIL (data && len > 0, false);
 	const char *str = data;
 	RConsContext *ctx = cons->context;
-	if (len < 1 || ctx->breaked) {
+	if (ctx->breaked) {
 		return false;
 	}
-	if (len > SIXTEEN_MEGS) {
-		size_t left = len;
-		size_t chunk_off = 0;
-		while (left > 0) {
-			size_t chunk_left = R_MIN (SIXTEEN_MEGS, left);
-			if (!r_cons_write (cons, (const ut8*)data + chunk_off, chunk_left)) {
-				return false;
-			}
-			left -= chunk_left;
-			chunk_off += chunk_left;
-		}
-		return true;
+	if (cons->echo && write (2, str, len) != (int)len) {
+		return false;
 	}
-
-	if (cons->echo) {
-		int rlen = write (2, str, len);
-		if (rlen != (int)len) {
-			return false;
-		}
-	}
-	if (str && len > 0 && !cons->null) {
+	const bool brk = cons->break_word && r_mem_mem ((const ut8 *)str, len, (const ut8 *)cons->break_word, cons->break_word_len);
+	bool ret = true;
+	if (!cons->null) {
 		R_CRITICAL_ENTER (cons);
-		if (cons_palloc (cons, len + 1)) {
-			int choplen = kons_chop (cons, len);
-			if (choplen > len || choplen < 1) {
-				// R_LOG_ERROR ("CHOP ISSUE");
-				R_CRITICAL_LEAVE (cons);
-				return 0;
+		// str may point into the buffer that cons_palloc reallocates
+		const bool inbuf = ctx->buffer && str >= ctx->buffer && str < ctx->buffer + ctx->buffer_len;
+		const size_t off = inbuf? str - ctx->buffer: 0;
+		size_t done = 0;
+		while (done < len) {
+			const int want = R_MIN (SIXTEEN_MEGS, len - done);
+			const int n = kons_chop (cons, want);
+			if (n < 1 || !cons_palloc (cons, n + 1)) {
+				ret = false;
+				break;
 			}
-			len = choplen;
-			memcpy (ctx->buffer + ctx->buffer_len, str, len);
-			ctx->buffer_len += len;
+			const char *src = inbuf? ctx->buffer + off: str;
+			memmove (ctx->buffer + ctx->buffer_len, src + done, n);
+			ctx->buffer_len += n;
 			ctx->buffer[ctx->buffer_len] = 0;
+			if (n < want) {
+				break;
+			}
+			done += n;
 		}
 		R_CRITICAL_LEAVE (cons);
 	}
 	if (ctx->flush) {
 		r_cons_flush (cons);
 	}
-	if (cons->break_word && str && len > 0) {
-		if (r_mem_mem ((const ut8 *)str, len, (const ut8 *)cons->break_word, cons->break_word_len)) {
-			ctx->breaked = true;
-		}
+	if (brk) {
+		ctx->breaked = true;
 	}
-	return len;
+	return ret;
 }
 
 R_API void r_cons_mark(RCons *cons, ut64 addr, const char *name) {
@@ -1949,57 +1943,32 @@ R_API char *r_cons_lastline_utf8_ansi_len(RCons *cons, int *len) {
 #endif
 
 R_API void r_cons_highlight(RCons *cons, const char *word) {
-	int l, *cpos = NULL;
-	char *rword = NULL, *res, *clean = NULL;
-	char *inv[2] = {
-		R_CONS_INVERT (true, true),
-		R_CONS_INVERT (false, true)
-	};
-	const int linv[2] = {
-		strlen (inv[0]),
-		strlen (inv[1])
-	};
-
 	if (!cons->enable_highlight) {
 		r_cons_enable_highlight (cons, true);
 		return;
 	}
 	RConsContext *C = cons->context;
-	if (R_STR_ISNOTEMPTY (word) && C->buffer) {
-		int word_len = strlen (word);
-		char *orig;
-		clean = r_str_ndup (C->buffer, C->buffer_len);
-		l = r_str_ansi_filter (clean, &orig, &cpos, -1);
-		free (C->buffer);
-		C->buffer = orig;
-		if (cons->highlight) {
-			if (strcmp (word, cons->highlight)) {
-				free (cons->highlight);
-				cons->highlight = strdup (word);
-			}
-		} else {
-			cons->highlight = strdup (word);
-		}
-		rword = malloc (word_len + linv[0] + linv[1] + 1);
-		if (!rword) {
-			free (cpos);
-			free (clean);
-			return;
-		}
-		strcpy (rword, inv[0]);
-		strcpy (rword + linv[0], word);
-		strcpy (rword + linv[0] + word_len, inv[1]);
-		res = r_str_replace_thunked (C->buffer, clean, cpos, l, word, rword, 1);
-		if (res) {
-			C->buffer = res;
-			C->buffer_len = C->buffer_sz = strlen (res);
-		}
-		free (rword);
-		free (clean);
-		free (cpos);
-	} else {
+	if (R_STR_ISEMPTY (word) || !C->buffer) {
 		R_FREE (cons->highlight);
+		return;
 	}
+	if (!cons->highlight || strcmp (word, cons->highlight)) {
+		free (cons->highlight);
+		cons->highlight = strdup (word);
+	}
+	int *cpos = NULL;
+	char *clean = r_str_ndup (C->buffer, C->buffer_len);
+	int l = clean? r_str_ansi_filter (clean, NULL, &cpos, -1): -1;
+	char *rword = r_str_newf ("%s%s%s", R_CONS_INVERT (true, true), word, R_CONS_INVERT (false, true));
+	if (l > 0 && cpos && rword) {
+		// reallocs the buffer in place, or frees it and returns NULL
+		char *res = r_str_replace_thunked (C->buffer, clean, cpos, l, word, rword, 1);
+		C->buffer = NULL;
+		cons_buffer_set (C, res);
+	}
+	free (rword);
+	free (clean);
+	free (cpos);
 }
 
 R_API void r_cons_set_interactive(RCons *cons, bool x) {
