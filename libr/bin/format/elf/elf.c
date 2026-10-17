@@ -4462,14 +4462,6 @@ static bool is_wordable_section(const char *name) {
 
 static void dtproceed(RBinFile *bf, ut64 preinit_addr, ut64 preinit_size, int symtype) {
 	ELFOBJ *eo = R_UNWRAP3 (bf, bo, bin_obj);
-	RListIter *iter;
-	RBinAddr *ba;
-	r_list_foreach (eo->inits, iter, ba) {
-		if (preinit_addr == ba->paddr) {
-			return;
-		}
-	}
-
 	int big_endian = Elf_(is_big_endian) (eo);
 	ut64 _baddr = Elf_(get_baddr) (bf->bo->bin_obj);
 	ut64 from = Elf_(v2p) (eo, preinit_addr);
@@ -4497,7 +4489,7 @@ static void dtproceed(RBinFile *bf, ut64 preinit_addr, ut64 preinit_size, int sy
 			R_LOG_DEBUG ("v2p failed for 0x%08"PFMT64x, addr);
 			break;
 		}
-		ba = R_NEW0 (RBinAddr);
+		RBinAddr *ba = R_NEW0 (RBinAddr);
 		ba->paddr = caddr;
 		ba->vaddr = addr;
 		ba->hpaddr = at;
@@ -4557,64 +4549,39 @@ static bool parse_pt_dynamic(RBinFile *bf, RBinSection *ptr) {
 			R_LOG_DEBUG ("RELR entry size: 0x%08"PFMT64x, entry.d_un.d_val);
 			eo->dyn_info.dt_relrent = entry.d_un.d_val;
 			break;
+		// the last value of a repeated tag wins, like in the dynamic linker
 		case DT_INIT_ARRAY:
-			R_LOG_DEBUG ("init array");
 			init_addr = entry.d_un.d_val;
-			if (init_size != UT64_MAX) {
-				dtproceed (bf, init_addr, init_size, R_BIN_ENTRY_TYPE_INIT);
-				init_addr = UT64_MAX;
-				init_size = UT64_MAX;
-			}
 			break;
 		case DT_INIT_ARRAYSZ:
 			init_size = entry.d_un.d_val;
-			R_LOG_DEBUG ("init array size");
-			if (init_addr != UT64_MAX) {
-				dtproceed (bf, init_addr, init_size, R_BIN_ENTRY_TYPE_INIT);
-				init_addr = UT64_MAX;
-				init_size = UT64_MAX;
-			}
 			break;
 		case DT_FINI_ARRAY:
-			R_LOG_DEBUG ("fini array");
 			fini_addr = entry.d_un.d_val;
-			if (fini_size != UT64_MAX) {
-				dtproceed (bf, fini_addr, fini_size, R_BIN_ENTRY_TYPE_FINI);
-				fini_addr = UT64_MAX;
-				fini_size = UT64_MAX;
-			}
 			break;
 		case DT_FINI_ARRAYSZ:
 			fini_size = entry.d_un.d_val;
-			R_LOG_DEBUG ("fini array size");
-			if (fini_addr != UT64_MAX) {
-				dtproceed (bf, fini_addr, fini_size, R_BIN_ENTRY_TYPE_FINI);
-				fini_addr = UT64_MAX;
-				fini_size = UT64_MAX;
-			}
 			break;
 		case DT_PREINIT_ARRAY:
-			R_LOG_DEBUG ("preinit array");
 			preinit_addr = entry.d_un.d_val;
-			if (preinit_size != UT64_MAX) {
-				dtproceed (bf, preinit_addr, preinit_size, R_BIN_ENTRY_TYPE_PREINIT);
-				preinit_addr = UT64_MAX;
-				preinit_size = UT64_MAX;
-			}
 			break;
 		case DT_PREINIT_ARRAYSZ:
-			R_LOG_DEBUG ("preinit array size");
 			preinit_size = entry.d_un.d_val;
-			if (preinit_addr != UT64_MAX) {
-				dtproceed (bf, preinit_addr, preinit_size, R_BIN_ENTRY_TYPE_PREINIT);
-				preinit_addr = UT64_MAX;
-				preinit_size = UT64_MAX;
-			}
 			break;
 		default:
 			R_LOG_DEBUG ("add dt.dyn.entry tag=%d value=0x%08"PFMT64x, entry.d_tag, (ut64)entry.d_un.d_val);
 			break;
 		}
+	}
+	// expand each array once, repeated tags must not read it again
+	if (preinit_addr != UT64_MAX && preinit_size != UT64_MAX) {
+		dtproceed (bf, preinit_addr, preinit_size, R_BIN_ENTRY_TYPE_PREINIT);
+	}
+	if (init_addr != UT64_MAX && init_size != UT64_MAX) {
+		dtproceed (bf, init_addr, init_size, R_BIN_ENTRY_TYPE_INIT);
+	}
+	if (fini_addr != UT64_MAX && fini_size != UT64_MAX) {
+		dtproceed (bf, fini_addr, fini_size, R_BIN_ENTRY_TYPE_FINI);
 	}
 	return true;
 }
@@ -4718,6 +4685,7 @@ TODO: ptr->flags = elf_flags_tostring (section->flags);
 
 static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) {
 	Elf_(Phdr) *phdr = eo->phdr;
+	bool found_dynamic = false;
 	// program headers is another section
 	ut16 mach = eo->ehdr.e_machine;
 
@@ -4756,7 +4724,11 @@ static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) 
 		switch (phdr[i].p_type) {
 		case PT_DYNAMIC:
 			ptr->name = strdup ("DYNAMIC");
-			parse_pt_dynamic (bf, ptr);
+			// only the first one counts, like in get_dynamic_segment
+			if (!found_dynamic) {
+				found_dynamic = true;
+				parse_pt_dynamic (bf, ptr);
+			}
 			break;
 		case PT_LOOS:
 			ptr->name = r_str_newf ("LOOS");

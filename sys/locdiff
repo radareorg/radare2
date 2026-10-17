@@ -1,4 +1,5 @@
 #!/bin/sh
-A="$(git diff "$@" | grep -v '+++' | grep -c ^+)"
-B="$(git diff "$@" | grep -v -- '---' | grep -c ^-)"
+X="${@:-.}"
+A="$(git diff "$X" | grep -v '+++' | grep -c ^+)"
+B="$(git diff "$X" | grep -v -- '---' | grep -c ^-)"
 echo "$((A-B))"
