@@ -215,8 +215,8 @@ static ut64 *build_sorted_vtable_starts(RList *classes, size_t *out_n);
 static int ut64_compare(const void *pa, const void *pb);
 static ut64 next_vtable_after(const ut64 *arr, size_t n, ut64 self_start);
 static bool load_kext_text_blob(RBinFile *bf, RKext *kext, RKextTextBlob *blob);
-static const ut8 *text_ptr(const RKextTextBlob *tb, ut64 va);
-static const ut8 *text_ptr_n(const RKextTextBlob *tb, ut64 va, size_t n);
+static R_UNOWNED const ut8 *text_ptr(const RKextTextBlob *tb, ut64 va);
+static R_UNOWNED const ut8 *text_ptr_n(const RKextTextBlob *tb, ut64 va, size_t n);
 static bool try_read_exec_va(RBinFile *bf, RKext *kext, ut64 va, void *dst, size_t len);
 static bool try_read_data_va(RBinFile *bf, RKext *kext, ut64 va, void *dst, size_t len);
 static bool try_read_printable_cstr(RBinFile *bf, RKext *kext, ut64 va, char **cstr);
@@ -2160,7 +2160,7 @@ static void find_class_vtables(RList *classes, RBinFile *bf, RKext *kext) {
 	const int meta_back = 256;
 
 	ut64 pc;
-	for (pc = tb.va; pc + 16 <= tb.va + tb.size; pc += 4) {
+	for (pc = tb.va; text_ptr_n (&tb, pc, 16); pc += 4) {
 		const ut32 insn = r_read_le32 (text_ptr (&tb, pc));
 
 		int reg_n;
@@ -2465,18 +2465,20 @@ static bool load_kext_text_blob(RBinFile *bf, RKext *kext, RKextTextBlob *blob) 
 	return true;
 }
 
-static const ut8 *text_ptr(const RKextTextBlob *tb, ut64 va) {
-	if (va < tb->va || va + 4 > tb->va + tb->size) {
-		return NULL;
-	}
-	return tb->buf + (va - tb->va);
+static R_UNOWNED const ut8 *text_ptr(const RKextTextBlob *tb, ut64 va) {
+	return text_ptr_n (tb, va, 4);
 }
 
-static const ut8 *text_ptr_n(const RKextTextBlob *tb, ut64 va, size_t n) {
-	if (va < tb->va || va + n > tb->va + tb->size) {
+static R_UNOWNED const ut8 *text_ptr_n(const RKextTextBlob *tb, ut64 va, size_t n) {
+	if (va < tb->va) {
 		return NULL;
 	}
-	return tb->buf + (va - tb->va);
+	// compare offsets, va + n and tb->va + tb->size can overflow
+	const ut64 off = va - tb->va;
+	if (off > tb->size || n > tb->size - off) {
+		return NULL;
+	}
+	return tb->buf + off;
 }
 
 static bool try_read_exec_va(RBinFile *bf, RKext *kext, ut64 va, void *dst, size_t len) {
