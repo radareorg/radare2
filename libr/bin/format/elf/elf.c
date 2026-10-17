@@ -5489,11 +5489,14 @@ static RBinElfSection *getsection_byname(ELFOBJ *eo, const char *name) {
 	return NULL;
 }
 
+// the mini debuginfo is a stripped down copy of the file carrying it, so that file bounds its unpacked size
+#define GNU_DEBUGDATA_MAXRATIO 4
+
 static RVecRBinElfSymbol *parse_gnu_debugdata(ELFOBJ *eo, size_t *ret_size) {
 	if (ret_size) {
 		*ret_size = 0;
 	}
-	if (eo->is_debugdata) {
+	if (eo->is_debugdata || eo->debugdata_rejected) {
 		return NULL;
 	}
 	if (!eo->sections_loaded) {
@@ -5520,6 +5523,10 @@ static RVecRBinElfSymbol *parse_gnu_debugdata(ELFOBJ *eo, size_t *ret_size) {
 	}
 	size_t osize;
 	ut8 *odata = r_sys_unxz (data, size, &osize);
+	if (odata && osize / GNU_DEBUGDATA_MAXRATIO > eo->size) {
+		R_LOG_WARN ("Ignoring .gnu_debugdata, it unpacks to %"PFMT64u" bytes (xzbomb)", (ut64)osize);
+		R_FREE (odata);
+	}
 	if (odata) {
 		RBuffer *newelf = r_buf_new_with_pointers (odata, osize, false);
 		ELFOBJ* newobj = Elf_(new_buf) (newelf, eo->user_baddr, false, false);
@@ -5566,6 +5573,7 @@ static RVecRBinElfSymbol *parse_gnu_debugdata(ELFOBJ *eo, size_t *ret_size) {
 		free (data);
 		return symbols;
 	}
+	eo->debugdata_rejected = true;
 	free (data);
 	return NULL;
 }

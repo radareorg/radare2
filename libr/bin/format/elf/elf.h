@@ -225,6 +225,7 @@ struct Elf_(obj_t) {
 	RVecRBinElfField g_fields;
 	int limit;
 	bool is_debugdata; // decompressed .gnu_debugdata, must not recurse
+	bool debugdata_rejected; // .gnu_debugdata failed to unpack, do not run xz again
 	char *osabi;
 	RVecRBinTrycatch trycatch;
 	bool trycatch_loaded;
