@@ -21,7 +21,7 @@ typedef struct {
 } RCoreGraphCapture;
 
 typedef struct r_core_priv_t {
-#if R2__UNIX__
+#if R2__UNIX__ && !__wasi__
 	bool signals_enabled;
 #if HAVE_SIGACTION
 	struct sigaction old_usr1, old_usr2;

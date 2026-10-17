@@ -2507,7 +2507,7 @@ static bool cbcore(void *user, int type, const char *origin, const char *msg) {
 	return false;
 }
 
-#if R2__UNIX__
+#if R2__UNIX__ && !__wasi__
 static volatile sig_atomic_t pending_usr1;
 static volatile sig_atomic_t pending_usr2;
 
@@ -2521,7 +2521,7 @@ static void core_signal_handler(int sig) {
 #endif
 
 R_API bool r_core_signal_init(RCore *core) {
-#if R2__UNIX__
+#if R2__UNIX__ && !__wasi__
 	RCorePriv *priv = core->priv;
 	if (priv->signals_enabled) {
 		return true;
@@ -2547,7 +2547,7 @@ R_API bool r_core_signal_init(RCore *core) {
 }
 
 static void core_signal_dispatch(RCore *core) {
-#if R2__UNIX__
+#if R2__UNIX__ && !__wasi__
 	RCorePriv *priv = core->priv;
 	if (!priv->signals_enabled || !r_th_tid_equal (core->cons->main_tid, r_th_self ())) {
 		return;
@@ -2866,7 +2866,7 @@ R_API void r_core_fini(RCore *c) {
 	if (c->chan) {
 		r_th_channel_free (c->chan);
 	}
-#if R2__UNIX__
+#if R2__UNIX__ && !__wasi__
 	if (priv->signals_enabled) {
 #if HAVE_SIGACTION
 		sigaction (SIGUSR1, &priv->old_usr1, NULL);
