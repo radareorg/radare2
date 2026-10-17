@@ -115,3 +115,186 @@ EXPECT=<<EOF
 format   dyldcache
 EOF
 RUN
+
+
+NAME=dsc rebase only the part of the read covered by the slide info
+FILE=malloc://8192
+ARGS=-nw
+CMDS=<<EOF
+e log.level=1
+wx 64796c645f763120202061726d363400
+wv4 0x70 @ 0x10
+wv4 2 @ 0x14
+wv8 0x100000 @ 0x28
+wv8 0x200 @ 0x38
+wv8 0x100 @ 0x40
+wv8 0x1000 @ 0x78
+wv8 0x10 @ 0x98
+wv8 0x1000 @ 0xa0
+wv4 2 @ 0x200
+wv4 0x1000 @ 0x204
+wv4 40 @ 0x208
+wv4 1 @ 0x20c
+wv8 0x00ff000000000000 @ 0x218
+wv8 0x100000 @ 0x220
+wv2 2 @ 0x228
+wv8 0x0006000000001000 @ 0x1008
+wv8 0x2000 @ 0x1020
+wtf .tmp_dsc_rebase 8192
+on dsc://.tmp_dsc_rebase
+p8 40 @ 0x1000
+p8 24 @ 0xff8
+o-*
+rm .tmp_dsc_rebase
+EOF
+EXPECT=<<EOF
+00000000000000000010100000000000000000000000000000000000000000000020000000000000
+000000000000000000000000000000000010100000000000
+EOF
+RUN
+
+
+NAME=dsc slide info v2 pointer straddling the start of a read
+FILE=malloc://2048
+ARGS=-nw
+CMDS=<<EOF
+e log.level=1
+wx 64796c645f763120202061726d363400
+wv4 0x70 @ 0x10
+wv4 2 @ 0x14
+wv8 0x800 @ 0x28
+wv8 0x200 @ 0x38
+wv8 0x100 @ 0x40
+wv8 0x180000000 @ 0x70
+wv8 0x400 @ 0x78
+wv8 0x180000400 @ 0x90
+wv8 0x400 @ 0x98
+wv8 0x400 @ 0xa0
+wv4 2 @ 0x200
+wv4 0x1000 @ 0x204
+wv4 40 @ 0x208
+wv4 1 @ 0x20c
+wv8 0x00ffff0000000000 @ 0x218
+wv8 0x1000 @ 0x220
+wv8 0x0000010000000000 @ 0x400
+wv8 0x0000020000000100 @ 0x404
+wv8 0x55 @ 0x40c
+wtf .tmp_dsc_slide2 2048
+on dsc://.tmp_dsc_slide2
+b 16
+p8 16 @ 0x408
+o-*
+rm .tmp_dsc_slide2
+EOF
+EXPECT=<<EOF
+00020000551000000000000000000000
+EOF
+RUN
+
+NAME=dsc slide info v2 chain going backwards
+FILE=malloc://2048
+ARGS=-nw
+CMDS=<<EOF
+e log.level=1
+wx 64796c645f763120202061726d363400
+wv4 0x70 @ 0x10
+wv4 2 @ 0x14
+wv8 0x800 @ 0x28
+wv8 0x200 @ 0x38
+wv8 0x100 @ 0x40
+wv8 0x180000000 @ 0x70
+wv8 0x400 @ 0x78
+wv8 0x180000400 @ 0x90
+wv8 0x400 @ 0x98
+wv8 0x400 @ 0xa0
+wv4 2 @ 0x200
+wv4 0x1000 @ 0x204
+wv4 40 @ 0x208
+wv4 1 @ 0x20c
+wv8 0xfffffffffffffffc @ 0x218
+wv2 2 @ 0x228
+wv8 0xfffffffffffffffc @ 0x408
+wtf .tmp_dsc_back 2048
+on dsc://.tmp_dsc_back
+b 16
+p8 16 @ 0x408
+o-*
+rm .tmp_dsc_back
+EOF
+EXPECT=<<EOF
+00000000000000000000000000000000
+EOF
+RUN
+
+NAME=dsc slide info v1 read shorter than a pointer
+FILE=malloc://2048
+ARGS=-nw
+CMDS=<<EOF
+e log.level=1
+wx 64796c645f763120202061726d363400
+wv4 0x70 @ 0x10
+wv4 2 @ 0x14
+wv8 0x800 @ 0x28
+wv8 0x200 @ 0x38
+wv8 0x100 @ 0x40
+wv8 0x180000000 @ 0x70
+wv8 0x400 @ 0x78
+wv8 0x180000400 @ 0x90
+wv8 0x400 @ 0x98
+wv8 0x400 @ 0xa0
+wv4 1 @ 0x200
+wv4 24 @ 0x204
+wv4 1 @ 0x208
+wv4 32 @ 0x20c
+wv4 1 @ 0x210
+wv4 128 @ 0x214
+wx ff @ 0x220
+wx 41424344 @ 0x400
+wtf .tmp_dsc_slide1 2048
+on dsc://.tmp_dsc_slide1
+b 4
+p8 4 @ 0x400
+o-*
+rm .tmp_dsc_slide1
+EOF
+EXPECT=<<EOF
+41424344
+EOF
+RUN
+
+NAME=dsc slide info v2 chain looping before the read
+FILE=malloc://2048
+TIMEOUT=10
+ARGS=-nw
+CMDS=<<EOF
+e log.level=1
+wx 64796c645f763120202061726d363400
+wv4 0x70 @ 0x10
+wv4 2 @ 0x14
+wv8 0x800 @ 0x28
+wv8 0x200 @ 0x38
+wv8 0x100 @ 0x40
+wv8 0x180000000 @ 0x70
+wv8 0x400 @ 0x78
+wv8 0x180000400 @ 0x90
+wv8 0x400 @ 0x98
+wv8 0x400 @ 0xa0
+wv4 2 @ 0x200
+wv4 0x1000 @ 0x204
+wv4 40 @ 0x208
+wv4 1 @ 0x20c
+wv8 0xfffffffffffffffc @ 0x218
+wv8 8 @ 0x400
+wv8 0xfffffffffffffff8 @ 0x408
+wv8 0x55 @ 0x410
+wtf .tmp_dsc_loop 2048
+on dsc://.tmp_dsc_loop
+b 16
+p8 16 @ 0x410
+o-*
+rm .tmp_dsc_loop
+EOF
+EXPECT=<<EOF
+55000000000000000000000000000000
+EOF
+RUN

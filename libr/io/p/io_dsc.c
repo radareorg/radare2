@@ -981,7 +981,7 @@ static void dsc_slice_rebase_bytes(RIODscSlice * slice, ut64 off_local, ut8 * bu
 
 static RList * dsc_slice_get_rebase_infos_by_range(RIODscSlice * slice, ut64 off_local, int size) {
 	ut64 slice_size = slice->end - slice->start;
-	if (off_local + size > slice_size  || size == 0) {
+	if (size < 1 || off_local + size > slice_size) {
 		return NULL;
 	}
 
@@ -1008,8 +1008,9 @@ static RList * dsc_slice_get_rebase_infos_by_range(RIODscSlice * slice, ut64 off
 
 			trimmed_info->info = info;
 
-			ut64 trimmed_end = (ffo >= end) ? slice->end : ffo;
-			ut64 trimmed_start = (off_local < start) ? slice->start : off_local;
+			// intersect the read with this slide info range so buf_off + count stays inside the read
+			ut64 trimmed_end = (ffo >= end) ? end : ffo;
+			ut64 trimmed_start = (off_local < start) ? start : off_local;
 
 			trimmed_info->off_local = trimmed_start;
 			trimmed_info->count = trimmed_end - trimmed_start;
@@ -1024,7 +1025,7 @@ static RList * dsc_slice_get_rebase_infos_by_range(RIODscSlice * slice, ut64 off
 
 static void rebase_bytes_v1(RIODscSlice * slice, RDyldRebaseInfo1 *rebase_info, ut8 *buf, ut64 offset, int count, ut64 buf_off) {
 	ut64 in_buf = buf_off;
-	while (in_buf < count) {
+	while (in_buf < count + buf_off) {
 		ut64 offset_in_data = offset - rebase_info->start_of_data;
 		ut64 page_index = offset_in_data / rebase_info->page_size;
 		ut64 page_offset = offset_in_data % rebase_info->page_size;
@@ -1046,7 +1047,7 @@ static void rebase_bytes_v1(RIODscSlice * slice, RDyldRebaseInfo1 *rebase_info, 
 		ut8 b = entry[entry_index];
 
 		if (b & (1 << offset_in_entry)) {
-			if (in_buf <= count - 8) {
+			if (in_buf + 8 <= count + buf_off) {
 				ut64 value = r_read_le64 (buf + in_buf);
 				value += rebase_info->slide;
 				r_write_le64 (buf + in_buf, value);
@@ -1080,7 +1081,8 @@ static bool bt_seek(RIODscSlice *slice, const BtCtx *ctx, ut64 page_offset, ut64
 		return true;
 	}
 	ut64 back_size = page_offset - *first_rebase_off;
-	ut64 padding = (8 - (back_size % 8)) % 8;
+	// the last pointer of the walk may begin right before the read and end inside it
+	ut64 padding = 7;
 	ut64 back_len = back_size + padding;
 	ut8 *back_bytes = NULL;
 	ut8 *tofree = NULL;
@@ -1100,12 +1102,17 @@ static bool bt_seek(RIODscSlice *slice, const BtCtx *ctx, ut64 page_offset, ut64
 		back_bytes = tofree;
 	}
 	ut64 cursor = 0;
-	while (cursor <= back_len - 8) {
+	// walk until the chain reaches the read, so the next pointer never begins before it
+	while (cursor < back_size) {
 		if (step->stop0 && !*delta) {
 			break;
 		}
 		ut64 raw_value = r_read_le64 (back_bytes + cursor);
 		*delta = ((raw_value & step->mask) >> step->shift) * step->scale;
+		if (cursor + *delta < cursor) {
+			// a distance that wraps around would walk forever
+			*delta = 0;
+		}
 		cursor += *delta;
 		if (!*delta) {
 			break;
@@ -1144,7 +1151,8 @@ static void rebase_bytes_v2(RIODscSlice * slice, RDyldRebaseInfo2 *rebase_info, 
 				}
 				while (delta) {
 					ut64 position = in_buf + first_rebase_off - page_offset;
-					if (position + 8 > count) {
+					// position wraps when the chain goes before the read
+					if (position >= count + buf_off || count + buf_off - position < 8) {
 						break;
 					}
 					ut64 raw_value = r_read_le64 (buf + position);
@@ -1200,7 +1208,7 @@ static void rebase_bytes_v5(RIODscSlice * slice, RDyldRebaseInfo5 *rebase_info, 
 			}
 			do {
 				ut64 position = in_buf + first_rebase_off - page_offset;
-				if (position + 8 > count) {
+				if (position >= count + buf_off || count + buf_off - position < 8) {
 					break;
 				}
 				ut64 raw_value = r_read_le64 (buf + position);
@@ -1252,7 +1260,7 @@ static void rebase_bytes_v3(RIODscSlice * slice, RDyldRebaseInfo3 *rebase_info, 
 			}
 			do {
 				ut64 position = in_buf + first_rebase_off - page_offset;
-				if (position + 8 > count) {
+				if (position >= count + buf_off || count + buf_off - position < 8) {
 					break;
 				}
 				ut64 raw_value = r_read_le64 (buf + position);
