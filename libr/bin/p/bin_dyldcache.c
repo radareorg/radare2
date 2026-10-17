@@ -435,7 +435,7 @@ static HtSU *create_path_to_index(RBuffer *cache_buf, cache_img_t *img, cache_hd
 	return path_to_idx;
 }
 
-static void carve_deps_at_address(RDyldCache *cache, cache_img_t *img, HtSU *path_to_idx, ut64 address, int *deps, bool printing) {
+static void carve_deps_at_address(RDyldCache *cache, cache_img_t *img, cache_hdr_t *hdr, HtSU *path_to_idx, ut64 address, int *deps, bool printing) {
 	ut64 pa = va2pa (address, cache->n_maps, cache->maps, cache->buf, 0, NULL, NULL);
 	if (pa == UT64_MAX) {
 		return;
@@ -476,7 +476,7 @@ static void carve_deps_at_address(RDyldCache *cache, cache_img_t *img, HtSU *pat
 				bool found;
 				const char *key = (const char *) cursor + path_offset;
 				size_t dep_index = (size_t)ht_su_find (path_to_idx, key, &found);
-				if (!found || dep_index >= cache->hdr->imagesCount) {
+				if (!found || dep_index >= hdr->imagesCount) {
 					R_LOG_WARN ("alien dep '%s'", key);
 					break;
 				}
@@ -567,13 +567,19 @@ static void create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 		goto end;
 	}
 
+	ut32 i;
 	target_libs = r_sys_getenv ("R_DYLDCACHE_FILTER");
 	if (target_libs) {
 		target_lib_names = r_str_split_list (target_libs, ":", 0);
 		if (!target_lib_names) {
 			goto end;
 		}
-		deps = R_NEWS0 (int, cache->hdr->imagesCount);
+		// deps is indexed by the image index of every header, so size it for the largest image table
+		ut32 max_images = 0;
+		for (i = 0; i < cache->n_hdr; i++) {
+			max_images = R_MAX (max_images, cache->hdr[i].imagesCount);
+		}
+		deps = R_NEWS0 (int, max_images);
 		if (!deps) {
 			goto end;
 		}
@@ -591,7 +597,6 @@ static void create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 		}
 	}
 
-	ut32 i;
 	for (i = 0; i < cache->n_hdr; i++) {
 		cache_hdr_t *hdr = &cache->hdr[i];
 		ut64 hdr_offset = cache->hdr_offset[i];
@@ -650,7 +655,7 @@ static void create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 					ut32 k;
 					for (k = extras[j].dependentsStartArrayIndex; k < depListCount && depArray[k] != 0xffff; k++) {
 						ut16 dep_index = depArray[k] & 0x7fff;
-						if (dep_index >= cache->hdr->imagesCount) {
+						if (dep_index >= hdr->imagesCount) {
 							R_LOG_ERROR ("invalid dep index");
 							continue;
 						}
@@ -666,7 +671,7 @@ static void create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 						free (dep_name);
 					}
 				} else if (load_deps && path_to_idx) {
-					carve_deps_at_address (cache, img, path_to_idx, img[j].address, deps, printing);
+					carve_deps_at_address (cache, img, hdr, path_to_idx, img[j].address, deps, printing);
 				}
 			}
 

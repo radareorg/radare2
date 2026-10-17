@@ -68,3 +68,50 @@ EXPECT=<<EOF
 32323232
 EOF
 RUN
+
+NAME=dsc filter with a later header declaring more images
+FILE=malloc://4096
+ARGS=-nw
+CMDS=<<EOF
+e log.level=1
+wx 64796c645f763120207838365f363400
+wv4 0x200 @ 0x10
+wv4 1 @ 0x14
+wv4 0x220 @ 0x18
+wv4 1 @ 0x1c
+wv8 0x180000000 @ 0x20
+wv8 0x800 @ 0x28
+wv8 0x180000000 @ 0x200
+wv8 0x800 @ 0x208
+wv4 5 @ 0x218
+wv4 5 @ 0x21c
+wx 0006008001000000000000000000000000000000000000000005000000000000 @ 0x220
+w /usr/lib/libobjc.A.dylib @ 0x500
+wx cffaedfe0700000103000000060000000000000000000000 @ 0x600
+wx 64796c645f763120207838365f363400 @ 0x800
+wv4 0x200 @ 0x810
+wv4 1 @ 0x814
+wv4 0x220 @ 0x818
+wv4 32 @ 0x81c
+wv8 0x180000000 @ 0x820
+wv8 0x800 @ 0x828
+wv8 0x180000800 @ 0xa00
+wv8 0x800 @ 0xa08
+wv4 5 @ 0xa18
+wv4 5 @ 0xa1c
+b 1024
+wX 000e008001000000000000000000000000000000000000000005000000000000 @ 0xa20
+b 256
+w /usr/lib/libobjc.A.dylib @ 0xd00
+wx cffaedfe0700000103000000060000000000000000000000 @ 0xe00
+wtf .tmp_dsc_filter 4096
+%R_DYLDCACHE_FILTER=libsystem_c
+o dsc://.tmp_dsc_filter
+i~format
+o-*
+rm .tmp_dsc_filter
+EOF
+EXPECT=<<EOF
+format   dyldcache
+EOF
+RUN
