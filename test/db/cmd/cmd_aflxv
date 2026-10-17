@@ -1,6 +1,7 @@
 NAME=aflxv
 FILE=bins/elf/analysis/linux_x64_endbr64
 CMDS=<<EOF
+e anal.vars=false
 aaa
 aflxv @ 0x00005ec0
 EOF

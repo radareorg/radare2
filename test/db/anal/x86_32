@@ -745,6 +745,7 @@ RUN
 NAME=mac-ls switch count
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
+e anal.vars=false
 aaa
 f~?switch
 EOF
@@ -757,6 +758,7 @@ RUN
 NAME=mac-ls main switch
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
+e anal.vars=false
 s main;af
 f~switch
 f~?case
@@ -1064,6 +1066,7 @@ RUN
 NAME=ls_amd64 all switches
 FILE=bins/jmptbl/ls_amd64
 CMDS=<<EOF
+e anal.vars=false
 aaa
 CC. @@ switch
 EOF

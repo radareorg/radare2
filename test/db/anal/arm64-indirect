@@ -2,6 +2,7 @@ NAME=arm64 unknown indirect exit is not proof of noreturn
 FILE=bins/mach0/WheresMyBrowser
 ARGS=-a arm -b 64
 CMDS=<<EOF
+e anal.vars=false
 aaaa
 afij @ 0x100023174~{0.noreturn}
 abj @ 0x1000231a4~{0.size}
@@ -22,6 +23,7 @@ NAME=arm64 computed BR keeps reachable epilogue and returning callers
 FILE=bins/mach0/BatteryLife.arm_64.1
 ARGS=-a arm -b 64
 CMDS=<<EOF
+e anal.vars=false
 aaaa
 afij @ 0x100013adc~{0.noreturn}
 abj @ 0x100013f88~{0.jump}

@@ -1,6 +1,7 @@
 NAME=abp
 FILE=bins/mach0/mac-ls2
 CMDS=<<EOF
+e anal.vars=false
 aaa
 abp 0x10000168b @ 0x1000011e8
 EOF
@@ -19,6 +20,7 @@ RUN
 NAME=abp2
 FILE=bins/mach0/mac-ls2
 CMDS=<<EOF
+e anal.vars=false
 aaa
 abp 0x1000015ac @ 0x1000011e8
 EOF
@@ -37,6 +39,7 @@ RUN
 NAME=abp3
 FILE=bins/mach0/mac-ls2
 CMDS=<<EOF
+e anal.vars=false
 aaa
 abp 0x1000016cd @ 0x1000011e8
 EOF
@@ -57,6 +60,7 @@ RUN
 NAME=abpj
 FILE=bins/mach0/mac-ls2
 CMDS=<<EOF
+e anal.vars=false
 aaa
 abpj 0x10000168b @ 0x1000011e8
 EOF

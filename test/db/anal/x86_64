@@ -2811,6 +2811,7 @@ RUN
 NAME=xrefs and overlapping basic blocks
 FILE=bins/elf/analysis/ls-linux-x86_64-zlul
 CMDS=<<EOF
+e anal.vars=false
 aaa
 axt main
 EOF
@@ -2836,6 +2837,7 @@ RUN
 NAME=noreturn of reloc-functions
 FILE=bins/elf/ls
 CMDS=<<EOF
+e anal.vars=false
 aaa
 afbr 0x80b0
 EOF

@@ -188,7 +188,7 @@ EOF
 RUN
 
 NAME=aflmc
-ARGS=-A
+ARGS=-A -e anal.vars=false
 FILE=bins/elf/ls-focal
 CMDS=<<EOF
 aflmc.@main
