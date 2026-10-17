@@ -8626,13 +8626,12 @@ static int cmd_print(void *data, const char *input) {
 				int h, w = r_cons_get_size (core->cons, &h);
 				int colwidth = r_config_get_i (core->config, "hex.cols") * 2;
 				core->print->width = (colwidth == 32)? w: colwidth; // w;
-				int bs = core->blocksize;
-				if (len == bs) {
-					len = (h * w) / 3;
-					r_core_block_size (core, len);
+				const int n = (len == core->blocksize)? (h * w) / 3: len;
+				ut8 *buf = r_core_readblock (core, n);
+				if (buf) {
+					r_print_string (core->print, core->addr, buf, n, R_PRINT_STRING_WRAP);
+					free (buf);
 				}
-				r_print_string (core->print, core->addr, block, len, R_PRINT_STRING_WRAP);
-				r_core_block_size (core, bs);
 			}
 			break;
 		case '+': // "ps+"

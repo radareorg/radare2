@@ -1171,3 +1171,32 @@ EXPECT=<<EOF
 1f0167d51c8f6e4eb1f0286f52cf9cf97d904baf9ddda8a4
 EOF
 RUN
+
+NAME=pss reads a private copy, not the freed block
+FILE=malloc://65536
+CMDS=<<EOF
+wow 41 @ 0!0x10000
+pss~?\\x
+pss~?A
+b
+EOF
+EXPECT=<<EOF
+0
+8
+0x100
+EOF
+RUN
+
+NAME=pss with @x: and explicit length
+FILE=malloc://32
+CMDS=<<EOF
+pss 2 @x:41424344
+pss @x:41424344~?ABCD
+b
+EOF
+EXPECT=<<EOF
+AB
+1
+0x100
+EOF
+RUN
