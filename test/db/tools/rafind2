@@ -403,3 +403,16 @@ EXPECT=<<EOF
 0xfe
 EOF
 RUN
+
+NAME=rafind2 adjacent hits
+FILE=--
+CMDS=<<EOF
+!rafind2 -s xx hex://7878414243787878787878
+EOF
+EXPECT=<<EOF
+0x0
+0x5
+0x7
+0x9
+EOF
+RUN
