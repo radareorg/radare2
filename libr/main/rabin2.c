@@ -1178,29 +1178,37 @@ static int rabin2_main(RCons *cons, int argc, const char **argv) {
 
 	if (R_STR_ISNOTEMPTY (file) && action & R_BIN_REQ_DLOPEN) {
 #if R2__UNIX__ && HAVE_FORK
-		int child = r_sys_fork ();
+		int child = r_sandbox_check (R_SANDBOX_GRAIN_EXEC)? r_sys_fork (): -1;
 		if (child == -1) {
 			rabin_core_fini (&core, core_cons);
 			free (state.stdin_buf);
 			return 1;
 		}
-		if (child == 0) {
+		if (child > 0) {
+			int status;
+			int waited;
+			do {
+				waited = waitpid (child, &status, 0);
+			} while (waited == -1 && errno == EINTR);
+			rabin_core_fini (&core, core_cons);
 			free (state.stdin_buf);
-			return waitpid (child, NULL, 0);
+			return waited == child && WIFEXITED (status)? WEXITSTATUS (status): 1;
 		}
 #endif
 		void *addr = r_lib_dl_open (file, false);
+		int rc = addr? 0: 1;
 		if (addr) {
 			R_LOG_INFO ("%s is loaded at 0x%" PFMT64x, file, (ut64) (size_t) (addr));
 			r_lib_dl_close (addr);
-			rabin_core_fini (&core, core_cons);
-			free (state.stdin_buf);
-			return 0;
+		} else {
+			R_LOG_ERROR ("Cannot open the '%s' library", file);
 		}
-		R_LOG_ERROR ("Cannot open the '%s' library", file);
+#if R2__UNIX__ && HAVE_FORK
+		r_sys_exit (rc, true);
+#endif
 		rabin_core_fini (&core, core_cons);
 		free (state.stdin_buf);
-		return 0;
+		return rc;
 	}
 	if (action & R_BIN_REQ_PACKAGE) {
 		RList *files = r_list_newf (NULL);
