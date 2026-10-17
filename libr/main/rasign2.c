@@ -311,7 +311,7 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 	}
 	if (conf.show_version) {
 		int mode = conf.quiet? 'q': 0;
-		return r_main_version_print ("rasign2", mode);
+		return r_main_version_print (NULL, "rasign2", mode);
 	}
 
 	if (conf.a_cnt > 2) {

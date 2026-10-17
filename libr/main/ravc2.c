@@ -112,11 +112,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	}
 
 	if (version) {
-		if (quiet) {
-			printf ("%s\n", R2_VERSION);
-			return 0;
-		}
-		return r_main_version_print ("ravc2", rad);
+		return r_main_version_print (NULL, "ravc2", quiet? 'q': rad);
 	}
 	if (opt.ind >= argc) {
 		R_LOG_ERROR ("Try ravc2 -h");

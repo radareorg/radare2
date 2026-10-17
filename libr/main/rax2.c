@@ -350,7 +350,7 @@ static bool rax(RNum *num, char *str, int len, int last, RaxActions *flags, RaxM
 			case 'i': flags->ipaddr2num = !flags->ipaddr2num; break;
 			case 'j': flags->jsonbases = !flags->jsonbases; break;
 			case 'b': flags->forcebase = !flags->forcebase; break;
-			case 'v': return r_main_version_print ("rax2", 0);
+			case 'v': return r_main_version_print (NULL, "rax2", 0);
 			case '\0': return !use_stdin (num, flags, mode, pj);
 			default:
 				help_usage ();

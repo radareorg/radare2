@@ -299,6 +299,9 @@ env PATH=
 ragg2~Usage
 ragg2 -L~encoders
 ragg2 -v~birth~?
+r2pm -jv >$version
+cat $version~name~?
+r2pm -qv~?
 ragg2 -H
 ragg2 -H R2_NOPLUGINS
 ragg2 -q 0x45414146~Big
@@ -310,6 +313,8 @@ EOF
 EXPECT=<<EOF
 Usage: ragg2 [-FOLsrxhvz] [-a arch] [-b bits] [-k os] [-o file] [-I path]
 encoders:
+1
+1
 1
 R2_NOPLUGINS=1
 1

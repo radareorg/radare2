@@ -106,7 +106,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 
 	if (show_version) {
 		int mode = list_json? 'j': 0;
-		return r_main_version_print ("r2agent", mode);
+		return r_main_version_print (NULL, "r2agent", mode);
 	}
 
 	if (list_sessions) {

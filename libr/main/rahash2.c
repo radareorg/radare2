@@ -629,7 +629,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		}
 	}
 	if (show_version) {
-		ret (r_main_version_print ("rahash2", rad));
+		ret (r_main_version_print (NULL, "rahash2", rad));
 	}
 
 	if (listplugins) {

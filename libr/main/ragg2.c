@@ -119,18 +119,20 @@ static int usage(RCons *cons, int v) {
 static void list(RCons *cons, REgg *egg) {
 	RListIter *iter;
 	REggPlugin *p;
-	r_cons_printf (cons, "shellcodes:\n");
+	RStrBuf *sb = r_strbuf_new ("shellcodes:\n");
 	r_list_foreach (egg->libstore->plugins, iter, p) {
 		if (p->type == R_EGG_PLUGIN_SHELLCODE) {
-			r_cons_printf (cons, "%10s : %s\n", p->meta.name, p->meta.desc);
+			r_strbuf_appendf (sb, "%10s : %s\n", p->meta.name, p->meta.desc);
 		}
 	}
-	r_cons_printf (cons, "encoders:\n");
+	r_strbuf_append (sb, "encoders:\n");
 	r_list_foreach (egg->libstore->plugins, iter, p) {
 		if (p->type == R_EGG_PLUGIN_ENCODER) {
-			r_cons_printf (cons, "%10s : %s\n", p->meta.name, p->meta.desc);
+			r_strbuf_appendf (sb, "%10s : %s\n", p->meta.name, p->meta.desc);
 		}
 	}
+	r_cons_print (cons, r_strbuf_get (sb));
+	r_strbuf_free (sb);
 }
 
 static bool create(RCons *cons, const char *format, const char *arch, int bits, const ut8 *code, int codelen) {
@@ -199,7 +201,9 @@ static void ragg_show_env(RCons *cons, bool show_desc) {
 	}
 }
 
-static int ragg2_main(RCons *cons, int argc, const char **argv) {
+R_API int r_main_ragg2(int argc, const char **argv) {
+	bool own_cons;
+	RCons *cons = r_main_cons_init (&own_cons);
 	const char *file = NULL;
 	const char *padding = NULL;
 	const char *pattern = NULL;
@@ -230,9 +234,10 @@ static int ragg2_main(RCons *cons, int argc, const char **argv) {
 	bool file_context = false;
 
 	if (argc < 2) {
-		return usage (cons, 1);
+		return r_main_cons_fini (cons, own_cons, usage (cons, 1));
 	}
 
+	char *include_path = r_sys_getenv (R_EGG_INCDIR_ENV);
 	REggState *es = __es_new ();
 
 	RGetopt opt;
@@ -418,13 +423,7 @@ static int ragg2_main(RCons *cons, int argc, const char **argv) {
 			ragg_env_print (cons, opt.arg);
 			goto beach;
 		case 'v':
-			{
-				char *version = r_str_version ("ragg2");
-				if (version) {
-					r_cons_println (cons, version);
-					free (version);
-				}
-			}
+			ret = r_main_version_print (cons, "ragg2", 0);
 			goto beach;
 		case 'z':
 			show_str = 1;
@@ -750,28 +749,7 @@ beach:
 	free (bytes);
 	free (sequence);
 	__es_free (es);
-	return ret;
-}
-
-R_API int r_main_ragg2(int argc, const char **argv) {
-	RCons *cons = (RCons *)(size_t)r_sys_getenv_asut64 ("R2CONS");
-	const bool own_cons = !cons;
-	if (own_cons) {
-		cons = r_cons_new ();
-	}
-	char *include_path = r_sys_getenv (R_EGG_INCDIR_ENV);
-	int ret = ragg2_main (cons, argc, argv);
 	r_sys_setenv (R_EGG_INCDIR_ENV, include_path);
 	free (include_path);
-	if (own_cons) {
-		size_t size;
-		char *output = r_cons_drain (cons, &size);
-		if (size && write (1, output, size) != size) {
-			R_LOG_ERROR ("Failed to write output");
-			ret = 1;
-		}
-		free (output);
-		r_cons_free (cons);
-	}
-	return ret;
+	return r_main_cons_fini (cons, own_cons, ret);
 }

@@ -1736,19 +1736,10 @@ static void r2pm_varprint(const char *name) {
 	free (v);
 }
 
-static int r2pm_main_return(RCons *cons, bool own_cons, int rc) {
-	if (own_cons) {
-		r_cons_flush (cons);
-		r_cons_free (cons);
-	}
-	return rc;
-}
-
 R_API int r_main_r2pm(int argc, const char **argv) {
-	bool own_cons = false;
 	RCons *cons = r_cons_global (NULL);
-	if (!cons) {
-		own_cons = true;
+	const bool own_cons = !cons;
+	if (own_cons) {
 		cons = r_cons_new ();
 	}
 #if R2__UNIX__
@@ -1756,7 +1747,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	while (!wd) {
 		if (chdir ("..") == -1) {
 			R_LOG_ERROR ("Cannot chdir one dir up");
-			return r2pm_main_return (cons, own_cons, 1);
+			return r_main_cons_fini (cons, own_cons, 1);
 		}
 		free (wd);
 		wd = getcwd (NULL, 0);
@@ -1784,7 +1775,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	if (argc == 2 && !strcmp (argv[1], "-H")) {
 		r2pm_setenv (&r2pm);
 		r2pm_envhelp ();
-		return r2pm_main_return (cons, own_cons, 0);
+		return r_main_cons_fini (cons, own_cons, 0);
 	}
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
@@ -1883,7 +1874,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	}
 	r2pm_setenv (&r2pm);
 	if (r2pm_check_arguments (&r2pm, argc, opt.ind, action)) {
-		return r2pm_main_return (cons, own_cons, 1);
+		return r_main_cons_fini (cons, own_cons, 1);
 	}
 	if (r2pm.plugdir) {
 		if (r2pm.clean) {
@@ -1894,7 +1885,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 			free (plugdir);
 		} else {
 			R_LOG_ERROR ("-p requires -c");
-			return r2pm_main_return (cons, own_cons, 1);
+			return r_main_cons_fini (cons, own_cons, 1);
 		}
 	}
 	if (r2pm.init) {
@@ -1904,21 +1895,16 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		r2pm_upgrade (r2pm.force);
 	}
 	if (r2pm.version) {
-		int mode = 0;
-		if (r2pm.json) {
-			mode = 'j';
-		} else if (r2pm.quiet) {
-			mode = 'q';
-		}
-		return r2pm_main_return (cons, own_cons, r_main_version_print ("r2pm", mode));
+		int mode = r2pm.json? 'j': r2pm.quiet? 'q': 0;
+		return r_main_cons_fini (cons, own_cons, r_main_version_print (cons, "r2pm", mode));
 	}
 	if (r2pm.envhelp) {
 		r2pm_varprint (opt.arg);
-		return r2pm_main_return (cons, own_cons, r2pm.rc);
+		return r_main_cons_fini (cons, own_cons, r2pm.rc);
 	}
 	if (r2pm.help || argc == 1) {
 		printf ("%s", helpmsg);
-		return r2pm_main_return (cons, own_cons, r2pm.rc);
+		return r_main_cons_fini (cons, own_cons, r2pm.rc);
 	}
 	{
 		char *dbdir = r2pm_dbdir ();
@@ -1946,7 +1932,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		if (res > 255) {
 			res = 1;
 		}
-		return r2pm_main_return (cons, own_cons, res);
+		return r_main_cons_fini (cons, own_cons, res);
 	}
 	if (r2pm.add) {
 		if (opt.ind == argc) {
@@ -1956,7 +1942,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 				r2pm_add (&r2pm, argv[i]);
 			}
 		}
-		return r2pm_main_return (cons, own_cons, 0);
+		return r_main_cons_fini (cons, own_cons, 0);
 	}
 	RList *targets = r_list_newf (free);
 	for (i = opt.ind; i < argc; i++) {
@@ -2024,10 +2010,10 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	}
 	r_list_free (targets);
 	if (res != -1) {
-		return r2pm_main_return (cons, own_cons, res);
+		return r_main_cons_fini (cons, own_cons, res);
 	}
 	if (r2pm.init || opt.ind == 1) {
-		return r2pm_main_return (cons, own_cons, 0);
+		return r_main_cons_fini (cons, own_cons, 0);
 	}
-	return r2pm_main_return (cons, own_cons, 1);
+	return r_main_cons_fini (cons, own_cons, 1);
 }

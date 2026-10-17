@@ -5,6 +5,7 @@
 
 #include <r_types.h>
 #include <r_getopt.h>
+#include <r_cons.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,7 +26,9 @@ R_API RMain *r_main_new(const char *name);
 R_API void r_main_free(RMain *m);
 R_API int r_main_run(RMain *m, int argc, const char **argv);
 
-R_API int r_main_version_print(const char *program, int rad);
+R_API RCons *r_main_cons_init(R_OUT bool *own_cons);
+R_API int r_main_cons_fini(RCons *cons, bool own_cons, int rc);
+R_API int r_main_version_print(RCons * R_NULLABLE cons, const char *program, int rad);
 R_API int r_main_ravc2(int argc, const char **argv);
 R_API int r_main_rax2(int argc, const char **argv);
 R_API int r_main_rarun2(int argc, const char **argv);

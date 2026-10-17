@@ -847,7 +847,7 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 			rafind_options_fini (&ro);
 			int mode = ro.json? 'j': ro.quiet? 'q'
 							: 0;
-			return r_main_version_print ("rafind2", mode);
+			return r_main_version_print (NULL, "rafind2", mode);
 		case 'h':
 			rafind_options_fini (&ro);
 			return show_help (argv[0], 0);
