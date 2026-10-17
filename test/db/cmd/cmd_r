@@ -406,3 +406,15 @@ after
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=in-process radiff2 keeps the session console alive
+FILE=-
+CMDS=<<EOF
+radiff2 malloc://8 malloc://8
+radiff2 malloc://8 malloc://8
+?e alive
+EOF
+EXPECT=<<EOF
+alive
+EOF
+RUN

@@ -72,6 +72,7 @@ typedef struct {
 	ut64 baddr;
 	bool thready;
 	RCons *cons;
+	bool own_cons;
 	ut64 offset_a;
 	ut64 offset_b;
 	ut64 length_a;
@@ -1079,10 +1080,7 @@ static void radiff_options_init(RadiffOptions *ro) {
 	ro->evals = r_list_newf (NULL);
 	ro->mode = MODE_DIFF;
 	ro->gmode = GRAPH_DEFAULT_MODE;
-	ro->cons = r_cons_singleton ();
-	if (!ro->cons) {
-		ro->cons = r_cons_new ();
-	}
+	ro->cons = r_main_cons_init (&ro->own_cons);
 	ro->offset_a = 0;
 	ro->offset_b = 0;
 	ro->length_a = UT64_MAX;
@@ -1093,7 +1091,7 @@ static void radiff_options_fini(RadiffOptions *ro) {
 	r_list_free (ro->runcmd);
 	r_list_free (ro->evals);
 	r_core_free (ro->core);
-	r_cons_free (ro->cons);
+	r_main_cons_fini (ro->cons, ro->own_cons, 0);
 }
 
 static void fileobj(RadiffOptions *ro, const char *ro_file, const ut8 *buf, size_t sz) {
