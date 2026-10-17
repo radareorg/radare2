@@ -3790,6 +3790,15 @@ static ut64 reloc_section_extent(ELFOBJ *eo, RVecElfOff *starts, size_t i, Elf_(
 	return ssize <= eo->size - section->offset? ssize: 0;
 }
 
+static size_t get_num_relocs_crel_at(ELFOBJ *eo, ut64 vaddr) {
+	CrelInfo crel = {0};
+	crel.current_pos = Elf_(v2p) (eo, vaddr);
+	if (crel.current_pos == UT64_MAX || !read_crel_header (eo, &crel)) {
+		return 0;
+	}
+	return R_MIN (crel.count, eo->size);
+}
+
 static size_t get_num_relocs_sections(ELFOBJ *eo, RVecElfOff *starts) {
 	if (!eo->sections_loaded) {
 		return 0;
@@ -3808,6 +3817,11 @@ static size_t get_num_relocs_sections(ELFOBJ *eo, RVecElfOff *starts) {
 		if (rel_mode == DT_RELR) {
 			// bitmap words expand to many relocs, so count them exactly
 			ret += get_num_relocs_relr_at (eo, section->rva, ssize);
+			i++;
+			continue;
+		}
+		if (rel_mode == DT_CREL) {
+			ret += get_num_relocs_crel_at (eo, section->rva);
 			i++;
 			continue;
 		}

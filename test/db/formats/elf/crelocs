@@ -69,3 +69,16 @@ EXPECT=<<EOF
 2
 EOF
 RUN
+
+NAME=ELF: i386 crel relocs from every crel section are listed
+FILE=bins/elf/i386-crel-implicit.o
+CMDS=<<EOF
+ir~0x08
+EOF
+EXPECT=<<EOF
+0x08000035 0x00000035 SET_32 2     g
+0x0800003a 0x0000003a SET_32 1     v
+0x08000048 0x00000048 SET_32 1     v
+0x0800004c 0x0000004c SET_32 1     f
+EOF
+RUN
