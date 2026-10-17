@@ -4184,6 +4184,8 @@ static int cmd_info(void *data, const char *input) {
 	case 'H': // "iH"
 		if (question) {
 			r_cons_cmd_help (core->cons, help_msg_iH);
+		} else if (mode & R_MODE_RADARE) {
+			RBININFO ("fields", R_CORE_BIN_ACC_FIELDS, NULL, 0);
 		} else if (!bin_header (core, mode, pj)) {
 			/// XXX header vs fields wtf
 			if (!r_core_bin_info (core, R_CORE_BIN_ACC_HEADER, pj, mode, va, NULL, NULL)) {

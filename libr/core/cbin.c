@@ -4080,7 +4080,7 @@ static bool bin_fields(RCore *core, PJ *pj, int mode, int va) {
 				}
 			}
 			if (!field->format_named && R_STR_ISNOTEMPTY (field->format)) {
-				r_cons_printf (core->cons, "pf.%s %s\n", fname, field->format);
+				r_cons_printf (core->cons, "'pf.%s %s\n", fname, field->format);
 			}
 		} else if (IS_MODE_JSON (mode)) {
 			pj_o (pj);

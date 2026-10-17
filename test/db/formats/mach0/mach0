@@ -448,3 +448,22 @@ EXPECT=<<EOF
 135
 EOF
 RUN
+
+
+NAME=mach0 headers filter controls and quote script output
+FILE=malloc://16384
+CMDS=<<EOF
+wff bins/mach0/hello-objc-osx
+wx 780a3b3f652070776e3b603f652070776e6027220d091b00 @ 0x8d0
+oba 0
+iH~pwn
+iH*~header.header
+.iH*
+?v header.header
+EOF
+EXPECT=<<EOF
+0x1000008d0  load_dylib  x.;?e pwn;`?e pwn`'"...
+'f header.header 1 0x00000000
+0x0
+EOF
+RUN

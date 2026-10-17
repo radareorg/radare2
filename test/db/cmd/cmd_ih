@@ -50,50 +50,50 @@ EXPECT=<<EOF
 'f header.ELF 1 0x00000000
 'f header.ELF.value 1 0x464c457f
 '@0x0'Cd4
-pf.ELF x
+'pf.ELF x
 'f header.Type 1 0x00000010
 'f header.Type.value 1 0x00000002
-pf.Type w
+'pf.Type w
 'f header.Machine 1 0x00000012
 'f header.Machine.value 1 0x00000003
-pf.Machine w
+'pf.Machine w
 'f header.Version 1 0x00000014
 'f header.Version.value 1 0x00000001
 '@0x14'Cd4
-pf.Version x
+'pf.Version x
 'f header.EntryPoint 1 0x00000018
 'f header.EntryPoint.value 1 0x08048300
 '@0x18'Cd4
-pf.EntryPoint x
+'pf.EntryPoint x
 'f header.PhOff 1 0x0000001c
 'f header.PhOff.value 1 0x00000034
 '@0x1c'Cd4
-pf.PhOff x
+'pf.PhOff x
 'f header.ShOff 1 0x00000020
 'f header.ShOff.value 1 0x000007cc
 '@0x20'Cd4
-pf.ShOff x
+'pf.ShOff x
 'f header.Flags 1 0x00000024
 '@0x24'Cd4
-pf.Flags x
+'pf.Flags x
 'f header.EhSize 1 0x00000028
 'f header.EhSize.value 1 0x00000034
-pf.EhSize w
+'pf.EhSize w
 'f header.PhentSize 1 0x0000002a
 'f header.PhentSize.value 1 0x00000020
-pf.PhentSize w
+'pf.PhentSize w
 'f header.PhNum 1 0x0000002c
 'f header.PhNum.value 1 0x00000008
-pf.PhNum w
+'pf.PhNum w
 'f header.ShentSize 1 0x0000002e
 'f header.ShentSize.value 1 0x00000028
-pf.ShentSize w
+'pf.ShentSize w
 'f header.ShNum 1 0x00000030
 'f header.ShNum.value 1 0x0000001e
-pf.ShNum w
+'pf.ShNum w
 'f header.ShrStrndx 1 0x00000032
 'f header.ShrStrndx.value 1 0x0000001b
-pf.ShrStrndx w
+'pf.ShrStrndx w
 'fs-
 --
 [
@@ -325,5 +325,22 @@ pf.ShrStrndx w
 --
 0x00001323
 4.8K
+EOF
+RUN
+
+NAME=iH* emits header commands and applies them
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+iH*~header.EntryPoint,pf.EntryPoint
+.iH*
+?v header.EntryPoint
+?v header.EntryPoint.value
+EOF
+EXPECT=<<EOF
+'f header.EntryPoint 1 0x00000018
+'f header.EntryPoint.value 1 0x08048300
+'pf.EntryPoint x
+0x18
+0x8048300
 EOF
 RUN

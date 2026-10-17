@@ -5244,6 +5244,9 @@ char *MACH0_(mach_headerfields)(RBinFile *bf, int mode) {
 		{
 			ut32 str_off = r_buf_read_ble32_at (buf, addr, isBe);
 			char *id = r_buf_get_string (buf, addr + str_off - 8);
+			if (id) {
+				r_str_filter (id, -1);
+			}
 			p ("0x%08" PFMT64x "  current     %d.%d.%d\n",
 				pvaddr + 8,
 				r_buf_read_le16_at (buf, addr + 10),
@@ -5276,6 +5279,7 @@ char *MACH0_(mach_headerfields)(RBinFile *bf, int mode) {
 			{
 				ut8 name[17] = { 0 };
 				r_buf_read_at (buf, addr, name, sizeof (name) - 1);
+				r_str_filter ((char *)name, -1);
 				p ("0x%08" PFMT64x "  name        %s\n", pvaddr, name);
 				ut32 nsects = r_buf_read_le32_at (buf, addr - 8 + (is64? 64: 48));
 				ut64 off = is64? 72: 56;
@@ -5295,6 +5299,9 @@ char *MACH0_(mach_headerfields)(RBinFile *bf, int mode) {
 			{
 				ut32 str_off = r_buf_read_ble32_at (buf, addr, isBe);
 				char *load_dylib = r_buf_get_string (buf, addr + str_off - 8);
+				if (load_dylib) {
+					r_str_filter (load_dylib, -1);
+				}
 				p ("0x%08" PFMT64x "  current     %d.%d.%d\n",
 					pvaddr + 8,
 					r_buf_read_le16_at (buf, addr + 10),
@@ -5316,6 +5323,9 @@ char *MACH0_(mach_headerfields)(RBinFile *bf, int mode) {
 		case LC_RPATH:
 			{
 				char *rpath = r_buf_get_string (buf, addr + 4);
+				if (rpath) {
+					r_str_filter (rpath, -1);
+				}
 				p ("0x%08" PFMT64x "  rpath       %s\n",
 					pvaddr + 4,
 					r_str_get (rpath));

@@ -4,3 +4,25 @@ CMDS=q!
 EXPECT=<<EOF
 EOF
 RUN
+
+
+NAME=PE: headers filter controls and quote script output
+FILE=malloc://35328
+CMDS=<<EOF
+wff bins/pe/pemixed.exe
+wx 760a603f652058601b00 @ 11024
+oba 0
+iH~VersionString,?e,Stream 0
+iH*~header.Machine,pf.Machine
+.iH*
+?v header.Machine.value
+EOF
+EXPECT=<<EOF
+  VersionString: v.`?e X`.
+  Stream 0: #~
+'f header.Machine 1 0x000000e4
+'f header.Machine.value 1 0x0000014c
+'pf.Machine x
+0x14c
+EOF
+RUN

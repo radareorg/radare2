@@ -220,6 +220,7 @@ static bool sections_vec(RBinFile *bf) {
 				}
 				r_magic_from_ebcdic (hdr20d.Symbol, sizeof (hdr20d.Symbol), cad);
 				cad[8] = '\0';
+				r_str_filter ((char *)cad, -1);
 				a = (hdr20d.Address[0] * 65536) + (hdr20d.Address[1] * 256) + (hdr20d.Address[2]);
 				b = (hdr20d.ID_or_Length[0] * 65536) + (hdr20d.ID_or_Length[1] * 256) + (hdr20d.ID_or_Length[2]);
 				sym++;

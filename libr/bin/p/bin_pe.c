@@ -335,13 +335,17 @@ static char *header(RBinFile *bf, int mode) {
 		p ("Metadata Header:\n");
 		p ("  Signature: 0x%08"PFMT64x"\n", mh->Signature);
 		p ("  Version: %d.%d\n", mh->MajorVersion, mh->MinorVersion);
-		p ("  VersionString: %s\n", mh->VersionString);
+		char *version = r_str_escape_utf8 (mh->VersionString, true, false);
+		p ("  VersionString: %s\n", r_str_get (version));
+		free (version);
 		p ("  Flags: 0x%x\n", mh->Flags);
 		p ("  Streams: %d\n", mh->NumberOfStreams);
 		if (pe->streams) {
 			for (i = 0; i < mh->NumberOfStreams; i++) {
 				PE_(image_metadata_stream) * stream = pe->streams[i];
-				p ("  Stream %d: %s\n", i, stream->Name);
+				char *name = r_str_escape_utf8 (stream->Name, true, false);
+				p ("  Stream %d: %s\n", i, r_str_get (name));
+				free (name);
 				p ("    offset: 0x%08"PFMT64x" size: 0x%x\n", (ut64)stream->Offset, stream->Size);
 			}
 		}

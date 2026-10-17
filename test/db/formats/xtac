@@ -112,3 +112,24 @@ nth paddr      vaddr      bind type size lib name         demangled
 92  0x0000ba18 0x0000ba18 NONE FUNC 0        x86.0013663f
 EOF
 RUN
+
+
+NAME=XTAC: headers filter controls and quote script output
+FILE=malloc://65536
+CMDS=<<EOF
+wff bins/xta/user32.xta.jc
+wx 78000a003b0060003f0065002000580060001b000000 @ 0x38
+oba 0
+iH~module name:0
+iH*~CCu:0
+.iH*
+CC. @ 0x38
+?v header.mod_name
+EOF
+EXPECT=<<EOF
+  module name : x\u0a00;`?e X`\u1b00
+'@0x38'CCu base64:eFx1MGEwMDtgP2UgWGBcdTFiMDA=
+x\u0a00;`?e X`\u1b00
+0x38
+EOF
+RUN
