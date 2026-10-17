@@ -1438,7 +1438,9 @@ static int rabin2_main(RCons *cons, int argc, const char **argv) {
 R_API int r_main_rabin2(int argc, const char **argv) {
 	bool own_cons;
 	RCons *cons = r_main_cons_init (&own_cons);
+	bool interactive = r_cons_is_interactive (cons);
 	int ret = rabin2_main (cons, argc, argv);
+	cons->context->is_interactive = interactive;
 	return r_main_cons_fini (cons, own_cons, ret);
 }
 
