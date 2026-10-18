@@ -4653,3 +4653,46 @@ EXPECT=<<EOF
 ]
 EOF
 RUN
+
+NAME=mach0 swift type descriptors repeated in __swift5_types are listed once
+FILE=bins/mach0/Alamofire-stripped
+CMDS=<<EOF
+icq~__C.sockaddr,__C.FileAttributeKey
+EOF
+EXPECT=<<EOF
+0x0006f7e8 [0x0006f7e8 - 0x0006f7e8] swift __C.sockaddr
+0x0006ebf8 [0x0006ebf8 - 0x0006ebf8] swift __C.sockaddr_in
+0x0006ec4c [0x0006ec4c - 0x0006ec4c] swift __C.FileAttributeKey
+EOF
+RUN
+
+NAME=mach0 swift field lists shared by many types do not add up to more than the file
+# synthetic, six struct descriptors point at the same field descriptor of 16 records
+FILE=bins/mach0/swift-shared-fields
+TIMEOUT=10
+CMDS=<<EOF
+icq~?
+ic~property?
+EOF
+EXPECT=<<EOF
+6
+96
+EOF
+RUN
+
+NAME=mach0 swift types repeated 1024 times in __swift5_types load once
+FILE=bins/mach0/swift-repeated-types
+TIMEOUT=10
+CMDS=<<EOF
+icq~?
+ic~property?
+EOF
+EXPECT=<<EOF
+1
+64
+EOF
+EXPECT_ERR=<<EOF
+WARN: The swift metadata adds up to more than 4 times the file size, ignoring the rest
+ERROR: Chopped classlist data
+EOF
+RUN

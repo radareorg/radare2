@@ -71,6 +71,22 @@ static char *swift_str(RBinSwiftLoader *ld, ut64 va) {
 	return (*buf && (ut8)*buf != 0xff)? strdup (buf): NULL;
 }
 
+// everything fits in the file, but it can be shared, overlap or loop, so bound what walking it adds up to
+static bool swift_account(RBinSwiftLoader *ld, ut64 size) {
+	// parents are charged on every visit, so allow some slack over the file size
+	const ut64 max = 4 * ld->bf->size;
+	if (ld->walked_size == UT64_MAX) {
+		return false;
+	}
+	if (size > max || ld->walked_size > max - size) {
+		R_LOG_WARN ("The swift metadata adds up to more than 4 times the file size, ignoring the rest");
+		ld->walked_size = UT64_MAX;
+		return false;
+	}
+	ld->walked_size += size;
+	return true;
+}
+
 // fully qualified dotted name of a context descriptor ("CryptoKit.P256.Signing")
 static char *swift_context_qualname(RBinSwiftLoader *ld, ut64 va);
 
@@ -110,7 +126,7 @@ static char *swift_symref_resolve(void *user, ut64 addr, bool indirect) {
 }
 
 static char *swift_context_qualname(RBinSwiftLoader *ld, ut64 va) {
-	if (ld->depth > 12) {
+	if (ld->depth > 12 || !swift_account (ld, 12)) {
 		return NULL;
 	}
 	const ut32 flags = (ut32)swift_s32 (ld, va);
@@ -152,7 +168,7 @@ static char *swift_context_qualname(RBinSwiftLoader *ld, ut64 va) {
 // mangled context chain ("9CryptoKit4P256O7SigningO9PublicKeyV") used to
 // attribute symbols to types; returns NULL for non-nominal contexts
 static char *swift_context_mangled(RBinSwiftLoader *ld, ut64 va) {
-	if (ld->depth > 12) {
+	if (ld->depth > 12 || !swift_account (ld, 12)) {
 		return NULL;
 	}
 	const ut32 flags = (ut32)swift_s32 (ld, va);
@@ -214,7 +230,11 @@ static char *swift_read_typeref(RBinSwiftLoader *ld, ut64 va) {
 			i++;
 		}
 	}
-	return (i > 0)? r_bin_demangle_swift_typeref (buf, R_MIN (i, n), va, swift_symref_resolve, ld): NULL;
+	i = R_MIN (i, n);
+	if (i < 1 || !swift_account (ld, i)) {
+		return NULL;
+	}
+	return r_bin_demangle_swift_typeref (buf, i, va, swift_symref_resolve, ld);
 }
 
 static SwiftType swift_parse_type_entry(RBinSwiftLoader *ld, ut64 typeaddr) {
@@ -317,6 +337,9 @@ static void swift_parse_fields(RBinSwiftLoader *ld, RBinClass *klass, ut64 fd, u
 		R_LOG_DEBUG ("Unexpected swift field descriptor at 0x%08"PFMT64x, fd);
 		return;
 	}
+	if (!swift_account (ld, (ut64)nfields * 12)) {
+		return;
+	}
 	ut32 i;
 	for (i = 0; i < nfields; i++) {
 		const ut64 rec = fd + 16 + (i * 12);
@@ -368,6 +391,9 @@ static void swift_parse_vtable(RBinSwiftLoader *ld, RBinClass *klass, ut64 vt, c
 	const ut32 vtsize = (ut32)swift_s32 (ld, vt + 4);
 	if (vtsize > MAX_SWIFT_MEMBERS) {
 		R_LOG_DEBUG ("Truncated insane swift vtable at 0x%08"PFMT64x, vt);
+		return;
+	}
+	if (!swift_account (ld, (ut64)vtsize * 8)) {
 		return;
 	}
 	ut32 i;
@@ -477,6 +503,7 @@ static void swift_parse_type(RBinSwiftLoader *ld, RList *list, SwiftType st) {
 
 static void swift_parse_protocols(RBinSwiftLoader *ld, RList *list, ut64 va, ut64 size) {
 	RBinFile *bf = ld->bf;
+	RBitset *seen = r_bitset_new ();
 	ut32 i;
 	for (i = 0; i < size / 4; i++) {
 		const ut64 entry = va + (i * 4);
@@ -491,6 +518,10 @@ static void swift_parse_protocols(RBinSwiftLoader *ld, RList *list, ut64 va, ut6
 		if ((swift_s32 (ld, pd) & 0x1f) != SWIFT_CDK_PROTOCOL) {
 			continue;
 		}
+		if (!r_bitset_set (seen, pd)) {
+			R_LOG_DEBUG ("Repeated protocol descriptor 0x%08"PFMT64x" in swift5_protos", pd);
+			continue;
+		}
 		char *qname = swift_context_qualname (ld, pd);
 		if (R_STR_ISEMPTY (qname)) {
 			free (qname);
@@ -503,7 +534,7 @@ static void swift_parse_protocols(RBinSwiftLoader *ld, RList *list, ut64 va, ut6
 		klass->addr = pd;
 		const st32 atrel = swift_s32 (ld, pd + 20);
 		char *assoc = atrel? swift_str (ld, pd + 20 + atrel): NULL;
-		if (R_STR_ISNOTEMPTY (assoc)) {
+		if (R_STR_ISNOTEMPTY (assoc) && swift_account (ld, strlen (assoc))) {
 			RList *names = r_str_split_list (assoc, " ", 0);
 			RListIter *iter;
 			const char *an;
@@ -524,6 +555,7 @@ static void swift_parse_protocols(RBinSwiftLoader *ld, RList *list, ut64 va, ut6
 		r_list_append (list, klass);
 		free (qname);
 	}
+	r_bitset_free (seen);
 }
 
 // attribute exported swift symbols ($s<context><member>...) to their types
@@ -625,7 +657,9 @@ R_IPI void r_bin_swift_load_classes(RBinSwiftLoader *ld, RList *out, ut64 types_
 		}
 	}
 	ld->mangled_ht = ht_pp_new0 ();
+	ld->walked_size = 0;
 	swift_build_metadata_map (ld);
+	RBitset *seen = r_bitset_new ();
 	ut32 i;
 	for (i = 0; i < types_size / 4; i++) {
 		if (limit > 0 && r_list_length (out) >= limit) {
@@ -641,10 +675,16 @@ R_IPI void r_bin_swift_load_classes(RBinSwiftLoader *ld, RList *out, ut64 types_
 			continue;
 		}
 		SwiftType st = swift_parse_type_entry (ld, entry + word);
-		if (st.valid) {
-			swift_parse_type (ld, out, st);
+		if (!st.valid) {
+			continue;
 		}
+		if (!r_bitset_set (seen, st.addr)) {
+			R_LOG_DEBUG ("Repeated type descriptor 0x%08"PFMT64x" in swift5_types", st.addr);
+			continue;
+		}
+		swift_parse_type (ld, out, st);
 	}
+	r_bitset_free (seen);
 	if (protos_size > 0) {
 		swift_parse_protocols (ld, out, protos_va, protos_size);
 	}

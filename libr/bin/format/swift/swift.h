@@ -23,6 +23,8 @@ typedef struct r_bin_swift_loader_t {
 	// type context descriptor vaddr -> type metadata vaddr, used to read the
 	// static field-offset vector for fixed-layout structs
 	HtUU *meta_by_desc;
+	// bytes of descriptors, member lists and mangled names walked so far
+	ut64 walked_size;
 	int depth;
 } RBinSwiftLoader;
 
