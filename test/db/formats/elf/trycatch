@@ -97,7 +97,7 @@ ec linehl white blue
 pd 2 @ 0x1303
 EOF
 EXPECT=<<EOF
-            [44m[34m     [1;32mcall[33m [32m0x1110[27;22;24;25;28;39m[0m
+            [44m[37m     [1;32mcall[33m [32m0x1110[27;22;24;25;28;39m[0m
                  [36mmov[37m ebx[0m,[37m [32m0[0m
 EOF
 RUN

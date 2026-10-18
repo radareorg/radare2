@@ -1465,3 +1465,50 @@ EXPECT=<<EOF
 var int32_t var_8h @ fp-0x8
 EOF
 RUN
+
+NAME=aaft recursive call retyping a local as an array frees the traced var
+FILE=malloc://512
+ARGS=-a x86 -b 64 -m 0x401000
+TIMEOUT=10
+CMDS=<<EOF
+wx c3900f0bc3900f0b48897c24e0c3900f0b554889e54881ec0001000048897de085ff751d48b84141414141414141488945e8c645f000488d7de8e8c1ffffffeb14b80100000039c0480f447de84889c7e8bcffffffc9c3900f0b554889e54883ec20bf10000000e898ffffff488945f8488b7df8e898ffffffc9c3900f0be88effffffe8d2ffffffc3 @ 0x401000
+f sym.puts @ 0x401000
+f sym.malloc @ 0x401004
+f sym.recur @ 0x401011
+f sym.typer @ 0x40105a
+af @ sym.puts
+af @ sym.malloc
+af @ sym.recur
+af @ sym.typer
+afva @@F
+aaft
+afv @ sym.recur
+?e --
+afv @ sym.typer
+EOF
+EXPECT=<<EOF
+arg char [9] arg1 @ rdi
+var char [9] var_20h @ rbp-0x20
+--
+var void * var_8h @ rbp-0x8
+EOF
+RUN
+
+NAME=aft retyping a reg arg dst as a struct drops stack vars while iterating
+FILE=malloc://512
+ARGS=-a x86 -b 64
+TIMEOUT=10
+CMDS=<<EOF
+wx 554889e548897df0488975f80fbe45f00fbe4df101c80fbf4df201c80345f44898480345f85dc3
+af
+'td struct S { char a; char b; short c; int d; long e; };
+'afvr rdi s S
+aft
+afv
+EOF
+EXPECT=<<EOF
+arg S s @ rdi
+arg int64_t arg2 @ rsi
+var S var_10h @ rbp-0x10
+EOF
+RUN

@@ -184,6 +184,8 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 						R_LOG_DEBUG ("retype var %s", name);
 						tp_apply_arg_type (tps, baddr, j, var, op, &chain, name, type, memref, true,
 							fcn_name, in_stack, place, soff, addr, userfnc);
+						// retyping a recursive callee arg as an aggregate may free var
+						var = r_anal_get_used_function_var (anal, op->addr);
 					}
 					res = true;
 				} else {
@@ -543,6 +545,7 @@ static void type_match_op_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 ad
 			R_LOG_DEBUG ("CC can %s %s", Cc, fcn_name);
 			if (Cc && r_anal_cc_exist (anal, Cc)) {
 				type_match (tps, fcn_name, addr, bb_addr, Cc, c->prev_idx, c->tp.userfnc);
+				var = r_anal_get_used_function_var (anal, aop->addr);
 				tp_call_effect (tps, fcn_name, Cc);
 				c->prev_idx = etrace->cur_idx;
 				R_FREE (c->tp.ret_type);
@@ -735,12 +738,11 @@ R_API void r_anal_type_match(RAnal *anal, RAnalFunction *fcn) {
 	}
 
 	// Type propagation for register based args
+	// var_retype can delete stack vars from fcn->vars, walk a snapshot of the reg ones
+	RVecAnalVarPtr *rvars = r_anal_var_vec (anal, fcn, R_ANAL_VAR_KIND_REG);
 	RAnalVar **rvarp;
-	R_VEC_FOREACH (&fcn->vars, rvarp) {
+	R_VEC_FOREACH (rvars, rvarp) {
 		RAnalVar *rvar = *rvarp;
-		if (rvar->kind != R_ANAL_VAR_KIND_REG) {
-			continue;
-		}
 		RAnalVar *lvar = r_anal_var_get_dst_var (rvar);
 		RRegItem *i = r_reg_index_get (anal->reg, rvar->delta);
 		if (i && lvar && rvar->type) {
@@ -754,6 +756,7 @@ R_API void r_anal_type_match(RAnal *anal, RAnalFunction *fcn) {
 			}
 		}
 	}
+	RVecAnalVarPtr_free (rvars);
 beach:
 	tp_state_fini (&ctx.tp);
 	tps_fini (tps);
