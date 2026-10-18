@@ -1140,6 +1140,15 @@ ERROR: Cannot open empty path
 EOF
 RUN
 
+NAME=rahash2 -f -t every file
+FILE=-
+CMDS=!rahash2 -a md5 -f 0 -t 3 bins/elf/analysis/hello-linux-x86_64 bins/elf/analysis/hello-linux-x86_64
+EXPECT=<<EOF
+bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00000003 md5: d1531b1622de54fe3a0187c3344600e9
+bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00000003 md5: d1531b1622de54fe3a0187c3344600e9
+EOF
+RUN
+
 NAME=rahash2 -j file
 FILE=-
 CMDS=!rahash2 -j -a md4,md5 bins/elf/analysis/hello-linux-x86_64
