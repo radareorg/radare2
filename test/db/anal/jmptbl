@@ -688,6 +688,7 @@ CC.@0x0000b630
 CC.@0x0000baf0
 EOF
 EXPECT=<<EOF
+switch table (7 cases) at 0xe080
 switch table (7 cases) at 0xe09c
 switch table (15 cases) at 0xe100
 switch table (31 cases) at 0xe13c
