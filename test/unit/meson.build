@@ -21,6 +21,7 @@ if get_option('enable_tests')
     'base64',
     'big',
     'bin',
+    'bin_create',
     'bin_demangle',
     'bin_trycatch',
     'bitmap',
