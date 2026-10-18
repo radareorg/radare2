@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2026 - pancake */
 
-#include <r_core.h>
+#include <r_core_priv.h>
 #include "visual_modes.h"
 #include <r_vec.h>
 
@@ -3913,23 +3913,20 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_cons_flush (core->cons);
 			r_core_vmark (core, r_cons_readchar (core->cons));
 			break;
-		case 'M':
-			r_cons_gotoxy (core->cons, 0, 0);
-			if (r_core_vmark_dump (core, 'v')) {
-				r_cons_printf (core->cons, R_CONS_CLEAR_LINE"Remove a shortcut key from the list\n");
-				r_cons_flush (core->cons);
-				const int ch = r_cons_readchar (core->cons);
+		case 'M': {
+			int ch = r_core_vmark_select (core, true);
+			if (ch >= 0) {
 				r_core_vmark_del (core, ch);
 			}
 			break;
-		case '\'':
-			r_cons_gotoxy (core->cons, 0, 2);
-			if (r_core_vmark_dump (core, 'v')) {
-				r_cons_flush (core->cons);
-				const int ch = r_cons_readchar (core->cons);
+		}
+		case '\'': {
+			int ch = r_core_vmark_select (core, false);
+			if (ch >= 0) {
 				r_core_vmark_seek (core, ch, NULL);
 			}
 			break;
+		}
 		case 'y':
 			if (core->print->ocur == -1) {
 				r_core_yank (core, core->addr + core->print->cur, 1);

@@ -1,3 +1,113 @@
+NAME=visual marks scroll with arrows page keys and mouse wheel before deletion
+FILE=-
+CMDS=<<EOF
+e scr.wheel=false
+e scr.wheel.speed=2
+e scr.cols=80
+e scr.rows=5
+fv J 0x10
+fv K 0x20
+fv a 0x30
+fv b 0x40
+fv c 0x50
+fv j 0x60
+fv k 0x70
+fv q 0x80
+"<\x1b[B\x1b[A\x1b[6~\x1b[6~\x1b[6~\x1b[5~\x1b[<65;1;1M\x1b[<64;1;1Mq"
+VMq @e:scr.interactive=true > $marks
+cat $marks~1-3/8~?
+cat $marks~2-4/8~?
+cat $marks~4-6/8~?
+cat $marks~6-8/8~?
+cat $marks~7-8/8~?
+cat $marks~3-5/8~?
+cat $marks~5-7/8~?
+fvj
+EOF
+EXPECT=<<EOF
+1
+1
+1
+1
+0
+1
+1
+[{"ord":74,"key":"J","addr":16},{"ord":75,"key":"K","addr":32},{"ord":97,"key":"a","addr":48},{"ord":98,"key":"b","addr":64},{"ord":99,"key":"c","addr":80},{"ord":106,"key":"j","addr":96},{"ord":107,"key":"k","addr":112}]
+EOF
+RUN
+
+NAME=visual marks preserve letter shortcuts and seek after scrolling
+FILE=-
+CMDS=<<EOF
+e scr.wheel=false
+e scr.feedback=0
+e scr.cols=80
+e scr.rows=5
+e cmd.vprompt=f vmark_target=$$
+fv J 0x10
+fv K 0x20
+fv j 0x30
+fv k 0x40
+fv q 0x50
+"<'jQ"
+Vp @e:scr.interactive=true > /dev/null
+?v vmark_target
+"<'kQ"
+Vp @e:scr.interactive=true > /dev/null
+?v vmark_target
+"<'JQ"
+Vp @e:scr.interactive=true > /dev/null
+?v vmark_target
+"<'KQ"
+Vp @e:scr.interactive=true > /dev/null
+?v vmark_target
+"<'\x1b[B\x1b[6~\x1b[<64;1;1MqQ"
+Vp @e:scr.interactive=true > /dev/null
+?v vmark_target
+EOF
+EXPECT=<<EOF
+0x30
+0x40
+0x10
+0x20
+0x50
+EOF
+RUN
+
+NAME=visual marks crop narrow and one-row terminals
+FILE=-
+CMDS=<<EOF
+e scr.wheel=false
+e scr.cols=24
+e scr.rows=3
+f abcdefghijklmnopqrstuvwxyz @ 0x10
+fv a 0x10
+fv b 0x20
+<z
+VMq @e:scr.interactive=true > $marks
+cat $marks~1-1/2~?
+cat $marks~abcdef~?
+cat $marks~abcdefg~?
+cat $marks~0x00000020~?
+e scr.cols=8
+e scr.rows=1
+<z
+VMq @e:scr.interactive=true > $marks
+cat $marks~vmarks~?
+cat $marks~0x0000~?
+fvj
+EOF
+EXPECT=<<EOF
+1
+1
+0
+0
+0
+0
+[{"ord":97,"key":"a","addr":16},{"ord":98,"key":"b","addr":32}]
+EOF
+RUN
+
 NAME=visual exception hint jumps from inside a protected region
 FILE=bins/elf/ClassCpp.out
 CMDS=<<EOF
