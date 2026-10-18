@@ -3924,7 +3924,7 @@ static void parse_relocation_info(struct MACH0_(obj_t) * mo, RSkipList *relocs, 
 		reloc->pc_relative = a_info.r_pcrel;
 		reloc->size = a_info.r_length;
 		r_str_ncpy (reloc->name, sym_name, sizeof (reloc->name) - 1);
-		r_skiplist_insert (relocs, reloc);
+		r_skiplist_insert_autofree (relocs, reloc);
 		free (sym_name);
 	}
 	free (info);
@@ -4517,7 +4517,7 @@ static bool _load_relocations(struct MACH0_(obj_t) * mo) {
 	return true;
 }
 
-const RSkipList *MACH0_(load_relocs)(struct MACH0_(obj_t) * mo) {
+const RSkipList *R_UNOWNED MACH0_(load_relocs)(struct MACH0_(obj_t) * mo) {
 	R_RETURN_VAL_IF_FAIL (mo, NULL);
 
 	if (mo->relocs_loaded) {

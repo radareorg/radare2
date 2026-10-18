@@ -21,6 +21,7 @@ Unannotated `const char *` parameters are borrowed for the duration of the call.
 - Copy only to keep data across such a call. Prefer taking ownership (`r_cons_drain`, `r_strbuf_drain`) over `strdup` followed by freeing the original.
 - A function that appends from a caller pointer into a growable buffer must either handle a source inside that buffer (alias-safe) or mark the parameter `R_NOALIAS`.
 - `R_WEAK` is a linker attribute, not a lifetime hint.
+- Container insertion can transfer ownership conditionally: `r_skiplist_insert` returns the existing node on duplicates without freeing the supplied data. Use `r_skiplist_insert_autofree` with a `freefn` to release rejected duplicates. Do not mark conditional transfers as unconditionally `R_OWNED`.
 
 ## RCons buffer
 
