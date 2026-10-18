@@ -216,6 +216,10 @@ static RList *swift_classes(RBinFile *bf) {
 		if (!s->name) {
 			continue;
 		}
+		// sh_size is the walker's loop bound, only trust what the file backs
+		if (!eo->inmem && (s->paddr > eo->size || s->size > eo->size - s->paddr)) {
+			continue;
+		}
 		if (strstr (s->name, "swift5_type_metadata")) {
 			types_va = s->vaddr;
 			types_size = s->size;

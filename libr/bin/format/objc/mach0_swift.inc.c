@@ -67,5 +67,5 @@ static void parse_swift_classes(RBinFile *bf, RList *ret, MetaSections *ms, cons
 		.symbols = symbols,
 	};
 	r_bin_swift_load_classes (&ld, ret, ms->types.vaddr, ms->types.size,
-		ms->protos.have? ms->protos.vaddr: 0, ms->protos.size, limit);
+		ms->protos.have? ms->protos.vaddr: 0, ms->protos.have? ms->protos.size: 0, limit);
 }

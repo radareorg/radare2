@@ -47,10 +47,18 @@ static bool swift_names_only(RBinFile *bf) {
 	return bf && bf->rbin && bf->rbin->options.classes_names_only;
 }
 
-static st32 swift_s32(RBinSwiftLoader *ld, ut64 va) {
+// false when va is not backed by the file, which reads as zero otherwise
+static bool swift_read_s32(RBinSwiftLoader *ld, ut64 va, st32 *v) {
 	ut8 b[4] = {0};
-	ld->read_at (ld->user, va, b, sizeof (b));
-	return (st32)r_read_le32 (b);
+	const int n = ld->read_at (ld->user, va, b, sizeof (b));
+	*v = (st32)r_read_le32 (b);
+	return n == sizeof (b);
+}
+
+static st32 swift_s32(RBinSwiftLoader *ld, ut64 va) {
+	st32 v;
+	swift_read_s32 (ld, va, &v);
+	return v;
 }
 
 static char *swift_str(RBinSwiftLoader *ld, ut64 va) {
@@ -472,7 +480,10 @@ static void swift_parse_protocols(RBinSwiftLoader *ld, RList *list, ut64 va, ut6
 	ut32 i;
 	for (i = 0; i < size / 4; i++) {
 		const ut64 entry = va + (i * 4);
-		const st32 rel = swift_s32 (ld, entry);
+		st32 rel;
+		if (!swift_read_s32 (ld, entry, &rel)) {
+			break; // the section declares more entries than the file holds
+		}
 		if (!rel) {
 			continue;
 		}
@@ -622,7 +633,10 @@ R_IPI void r_bin_swift_load_classes(RBinSwiftLoader *ld, RList *out, ut64 types_
 			break;
 		}
 		const ut64 entry = types_va + (i * 4);
-		const st32 word = swift_s32 (ld, entry);
+		st32 word;
+		if (!swift_read_s32 (ld, entry, &word)) {
+			break; // the section declares more entries than the file holds
+		}
 		if (!word) {
 			continue;
 		}
