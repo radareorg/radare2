@@ -3060,11 +3060,14 @@ static int walk_exports_trie(struct MACH0_(obj_t) * bin, ut64 trie_off, ut64 siz
 	}
 
 	RList *states = r_list_newf ((RListFree)free);
-	if (!states) {
+	// every node of a trie has a single parent, so no offset can be entered twice
+	RBitmap *visited = r_bitmap_new ((size_t)size);
+	if (!states || !visited) {
 		goto beach;
 	}
 
 	RTrieState *root = R_NEW0 (RTrieState);
+	r_bitmap_set (visited, 0);
 	root->node = trie;
 	root->i = 0;
 	root->label = NULL;
@@ -3165,18 +3168,13 @@ static int walk_exports_trie(struct MACH0_(obj_t) * bin, ut64 trie_off, ut64 siz
 			R_FREE (next);
 			goto beach;
 		}
-		{
-			// avoid loops
-			RListIter *it;
-			RTrieState *s;
-			r_list_foreach (states, it, s) {
-				if (s->node == next->node) {
-					R_LOG_WARN ("malformed export trie %d", __LINE__);
-					R_FREE (next);
-					goto beach;
-				}
-			}
+		// avoid loops and shared subtrees, those make the walk exponential
+		if (r_bitmap_test (visited, (size_t)tr)) {
+			R_LOG_WARN ("malformed export trie %d", __LINE__);
+			R_FREE (next);
+			goto beach;
 		}
+		r_bitmap_set (visited, (size_t)tr);
 		next->i = 0;
 		state->i++;
 		state->next_child = p;
@@ -3185,6 +3183,7 @@ static int walk_exports_trie(struct MACH0_(obj_t) * bin, ut64 trie_off, ut64 siz
 
 beach:
 	r_list_free (states);
+	r_bitmap_free (visited);
 	R_FREE (trie);
 	return count;
 }
