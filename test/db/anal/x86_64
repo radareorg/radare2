@@ -4498,3 +4498,26 @@ EXPECT=<<EOF
 0x00000010    1      5 fcn.00000010
 EOF
 RUN
+
+NAME=branches to UT64_MAX do not create duplicate blocks
+FILE=malloc://4096
+ARGS=-a x86 -b 64 -m 0xfffffffffffff000
+TIMEOUT=10
+CMDS=<<EOF
+wx e8180000000f847c0f00000f84760f00000f84700f0000b8c3c3c3c3c30f84640f0000e8f0ffffffc3 @ 0xfffffffffffff078
+s 0xfffffffffffff078
+af
+afb
+aaa
+afl
+EOF
+EXPECT=<<EOF
+0xfffffffffffff078 0xfffffffffffff083 00:0000 11 f 0xfffffffffffff083
+0xfffffffffffff083 0xfffffffffffff089 00:0000 6 f 0xfffffffffffff089
+0xfffffffffffff089 0xfffffffffffff08f 00:0000 6 f 0xfffffffffffff08f
+0xfffffffffffff08f 0xfffffffffffff090 00:0000 1
+0xfffffffffffff078    4     24 fcn.fffffffffffff078
+0xfffffffffffff095    2     12 fcn.fffffffffffff095
+0xfffffffffffff090    1      1 fcn.fffffffffffff090
+EOF
+RUN

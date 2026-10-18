@@ -236,7 +236,8 @@ R_API RList *r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size) {
 
 R_API RAnalBlock *r_anal_create_block(RAnal *anal, ut64 addr, ut64 size) {
 	R_RETURN_VAL_IF_FAIL (anal, NULL);
-	if (r_anal_get_block_at (anal, addr)) {
+	// UT64_MAX is never found by r_anal_get_block_at, so it can't be kept unique in bb_tree
+	if (addr == UT64_MAX || r_anal_get_block_at (anal, addr)) {
 		return NULL;
 	}
 	R_CRITICAL_ENTER (anal);
@@ -294,7 +295,7 @@ R_API bool r_anal_block_relocate(RAnalBlock *block, ut64 addr, ut64 size) {
 		r_anal_block_update_hash (block);
 		return true;
 	}
-	if (r_anal_get_block_at (block->anal, addr)) {
+	if (addr == UT64_MAX || r_anal_get_block_at (block->anal, addr)) {
 		// Two blocks at the same addr is illegal you know...
 		return false;
 	}
