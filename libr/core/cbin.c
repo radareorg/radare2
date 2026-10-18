@@ -3250,7 +3250,9 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 			if (safetyName) {
 				pj_ks (pj, "unsafe", safetyName);
 			}
-			pj_ks (pj, "type", symbol->type);
+			if (symbol->type) {
+				pj_ks (pj, "type", symbol->type);
+			}
 			if (symbol->attr.flags) {
 				char *flags = r_core_bin_attr_tostring (core, symbol->attr.flags, mode);
 				pj_k (pj, "flags");

@@ -52,3 +52,21 @@ va       true
             0x0000803e      cd6c00         call 0x006c
 EOF
 RUN
+
+NAME=MSX symbols without type in JSON
+FILE=bins/msx/testmsx.rom
+CMDS=isj
+EXPECT=<<EOF
+[{"name":"ROMSignature","flagname":"sym.ROMSignature","realname":"ROMSignature","ordinal":0,"size":0,"vaddr":0,"paddr":0,"is_imported":false},{"name":"InitAddress","flagname":"sym.InitAddress","realname":"InitAddress","ordinal":0,"size":0,"vaddr":32810,"paddr":32810,"is_imported":false},{"name":"RuntimeAddress","flagname":"sym.RuntimeAddress","realname":"RuntimeAddress","ordinal":0,"size":0,"vaddr":0,"paddr":0,"is_imported":false},{"name":"DeviceAddress","flagname":"sym.DeviceAddress","realname":"DeviceAddress","ordinal":0,"size":0,"vaddr":0,"paddr":0,"is_imported":false},{"name":"PointAddress","flagname":"sym.PointAddress","realname":"PointAddress","ordinal":0,"size":0,"vaddr":0,"paddr":0,"is_imported":false}]
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=MSX current symbol without type in JSON
+FILE=bins/msx/testmsx.rom
+CMDS=isj. @ 0x802a
+EXPECT=<<EOF
+{"name":"InitAddress","flagname":"sym.InitAddress","realname":"InitAddress","ordinal":0,"size":0,"vaddr":32810,"paddr":32810,"is_imported":false}
+EOF
+EXPECT_ERR=
+RUN
