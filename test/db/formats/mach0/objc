@@ -1253,6 +1253,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=objc list entry with a forward offset and nonzero image index
+FILE=bins/mach0/objc-unshared-lists
+ARGS=-n
+CMDS=<<EOF
+e io.cache=true
+wx 8101000001000000 @ 0x258
+wx 0800000001000000ffff700300000000 @ 0x180
+oba 0
+ic~?method
+EOF
+EXPECT=<<EOF
+40
+EOF
+RUN
+
 NAME=aao bounds objc method count outside __objc_const
 FILE=malloc://8192
 TIMEOUT=10
