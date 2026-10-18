@@ -38,10 +38,82 @@ D main
 EOF
 RUN
 
-NAME=dlang deep Q backref chain does not overflow
+NAME=dlang deep Q backref chain demangles
 FILE=-
 CMDS=!rabin2 -D dlang _D1aQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQc
 EXPECT=<<EOF
-_D1aQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQcQc
+a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a
+EOF
+RUN
+
+NAME=dlang short Q backref chain
+FILE=-
+CMDS=!rabin2 -D dlang _D3foo3barQiQcFZv
+EXPECT=<<EOF
+foo.bar.foo.foo()
+EOF
+RUN
+
+NAME=dlang Q backref chain to template instance
+FILE=-
+CMDS=!rabin2 -D dlang _D1a__T1bTiZQiQc
+EXPECT=<<EOF
+a.b!(int).b!(int).b!(int)
+EOF
+RUN
+
+NAME=dlang Q backref chain into template
+FILE=-
+CMDS=!rabin2 -D dlang _D8demangle__T3fooTiZQhQcFZv
+EXPECT=<<EOF
+demangle.foo!(int).foo.foo()
+EOF
+RUN
+
+NAME=dlang Q backref past start
+FILE=-
+CMDS=!rabin2 -D dlang _D1aQz
+EXPECT=<<EOF
+_D1aQz
+EOF
+RUN
+
+NAME=dlang Q backref zero offset
+FILE=-
+CMDS=!rabin2 -D dlang _D1aQa
+EXPECT=<<EOF
+_D1aQa
+EOF
+RUN
+
+NAME=dlang Q backref unterminated
+FILE=-
+CMDS=!rabin2 -D dlang _D1aQ
+EXPECT=<<EOF
+_D1aQ
+EOF
+RUN
+
+NAME=dlang Q backref multi-digit past start
+FILE=-
+CMDS=!rabin2 -D dlang _D1aQBa
+EXPECT=<<EOF
+_D1aQBa
+EOF
+RUN
+
+NAME=dlang type nesting at depth limit
+FILE=-
+CMDS=!rabin2 -D dlang _D1aPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPi
+EXPECT=<<EOF
+a
+EOF
+RUN
+
+NAME=dlang type nesting past depth limit
+FILE=-
+CMDS=!rabin2 -D dlang _D1aPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPi
+EXPECT=<<EOF
+_D1aPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPi
 EOF
 RUN

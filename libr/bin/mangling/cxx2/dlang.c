@@ -10,12 +10,14 @@
 #include "cxx2.h"
 
 #define D_MAX_DEPTH 200
+#define D_MAX_BACKREF_HOPS (1 << 20)
 
 typedef struct {
 	const char *buf; // mangled bytes after the "_D" prefix
 	const char *p;
 	const char *end;
 	int depth;
+	ut32 backref_hops;
 	bool fail;
 } DCTX;
 
@@ -110,15 +112,22 @@ static const char *d_backref_target(DCTX *c) {
 }
 
 // <identifier> = <number> <name> | template instance | Q backref
-static void d_identifier_impl(DCTX *c, RStrBuf *o) {
+static void d_identifier(DCTX *c, RStrBuf *o) {
 	// back reference to an earlier identifier
-	if (d_peek (c) == 'Q') {
+	const char *saved = NULL;
+	while (d_peek (c) == 'Q') {
+		// targets strictly move backwards, so chains are walked iteratively
 		const char *target = d_backref_target (c);
-		if (c->fail) {
+		if (c->fail || ++c->backref_hops > D_MAX_BACKREF_HOPS) {
+			c->fail = true;
 			return;
 		}
-		const char *saved = c->p;
+		if (!saved) {
+			saved = c->p;
+		}
 		c->p = target;
+	}
+	if (saved) {
 		d_identifier (c, o);
 		c->p = saved;
 		return;
@@ -166,18 +175,6 @@ static void d_identifier_impl(DCTX *c, RStrBuf *o) {
 	}
 	r_strbuf_append_n (o, c->p, n);
 	c->p += n;
-}
-
-// bounded-recursion entry: a chain of Q back-references must not recurse past
-// D_MAX_DEPTH (d_type/d_qualified guard their own recursion the same way)
-static void d_identifier(DCTX *c, RStrBuf *o) {
-	if (c->fail || c->depth > D_MAX_DEPTH) {
-		c->fail = true;
-		return;
-	}
-	c->depth++;
-	d_identifier_impl (c, o);
-	c->depth--;
 }
 
 // is N<x> a function attribute (pure/nothrow/.../@live) rather than a type
@@ -250,7 +247,7 @@ static void d_func_prefix(DCTX *c) {
 
 // <type>
 static bool d_type(DCTX *c, RStrBuf *o) {
-	if (c->fail || c->depth > D_MAX_DEPTH) {
+	if (c->fail || c->depth >= D_MAX_DEPTH) {
 		c->fail = true;
 		return false;
 	}
@@ -378,7 +375,7 @@ static bool d_type(DCTX *c, RStrBuf *o) {
 // symbol becomes "(params)". A trailing non-function type is the variable's
 // type and is omitted.
 static void d_qualified(DCTX *c, RStrBuf *o) {
-	if (c->fail || c->depth > D_MAX_DEPTH) {
+	if (c->fail || c->depth >= D_MAX_DEPTH) {
 		c->fail = true;
 		return;
 	}
