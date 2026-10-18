@@ -1,119 +1,118 @@
-/* radare - LGPL - Copyright 2015-2025 - pancake */
+/* radare - LGPL - Copyright 2015-2026 - pancake */
 
 #include <r_io.h>
 #include <r_socket.h>
 
-#define R2P(x) ((R2Pipe*)(x)->data)
+typedef struct {
+	R2Pipe *pipe;
+	ut64 offset;
+} R2PipeIO;
+
+#define R2P(x) ((R2PipeIO*)(x)->data)
+
+static RJson *__request(RIODesc *fd, const char *request) {
+	if (r2pipe_write (R2P (fd)->pipe, request) < 1) {
+		return NULL;
+	}
+	char *response = r2pipe_read (R2P (fd)->pipe);
+	RJson *json = response? r_json_parsedup (response): NULL;
+	free (response);
+	if (json && json->type != R_JSON_OBJECT) {
+		r_json_free (json);
+		return NULL;
+	}
+	return json;
+}
+
+static int __result(const RJson *json, int count) {
+	const RJson *result = json? r_json_get (json, "result"): NULL;
+	if (!result || result->type != R_JSON_INTEGER || result->num.u_value > count) {
+		return -1;
+	}
+	return result->num.u_value;
+}
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-	if (!fd || !fd->data) {
+	if (!fd || !fd->data || count < 0) {
 		return -1;
 	}
-	RStrBuf *sb = r_strbuf_new ("");
+	PJ *pj = pj_new ();
+	pj_o (pj);
+	pj_ks (pj, "op", "write");
+	pj_kn (pj, "address", R2P (fd)->offset);
+	pj_k (pj, "data");
+	pj_a (pj);
 	int i;
 	for (i = 0; i < count; i++) {
-		r_strbuf_appendf (sb, "%s%d", i ? "," : "", buf[i]);
+		pj_n (pj, buf[i]);
 	}
-	char *nums = r_strbuf_drain (sb);
-	//TODO PJ (?)
-	char *fmt = r_str_newf ("{\"op\":\"write\",\"address\":%" PFMT64d ",\"data\":[%s]}",
-		io->off, nums);
-	free (nums);
-	int rv = r2pipe_write (R2P (fd), fmt);
-	free (fmt);
-	if (rv < 1) {
-		R_LOG_ERROR ("r2pipe_write failed");
-		return -1;
+	pj_end (pj);
+	pj_end (pj);
+	RJson *json = __request (fd, pj_string (pj));
+	pj_free (pj);
+	int result = __result (json, count);
+	if (result > 0) {
+		R2P (fd)->offset += result;
 	}
-	char *res = r2pipe_read (R2P (fd));
-	if (!res) {
-		return -1;
-	}
-	int rescount = -1;
-	/* TODO: parse json back */
-	char *r = strstr (res, "result");
-	if (r && r[6]) {
-		rescount = atoi (r + 6 + 1);
-	}
-	free (res);
-	return rescount;
+	r_json_free (json);
+	return result;
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
-	if (!fd || !fd->data) {
+	if (!fd || !fd->data || count < 0) {
 		return -1;
 	}
-	if (count > 1024) {
-		count = 1024;
+	char *request = r_str_newf ("{\"op\":\"read\",\"address\":%"PFMT64u",\"count\":%d}",
+		R2P (fd)->offset, count);
+	RJson *json = __request (fd, request);
+	free (request);
+	int result = __result (json, count);
+	if (!result) {
+		goto beach;
 	}
-	//TODO PJ (?)
-	char *fmt = r_str_newf ("{\"op\":\"read\",\"address\":%" PFMT64d ",\"count\":%d}",
-		io->off, count);
-	int rv = r2pipe_write (R2P (fd), fmt);
-	free (fmt);
-	if (rv < 1) {
-		R_LOG_ERROR ("r2pipe_write failed");
-		return -1;
+	const RJson *data = json? r_json_get (json, "data"): NULL;
+	if (result < 0 || !data || data->type != R_JSON_ARRAY || data->children.count < result) {
+		result = -1;
+		goto beach;
 	}
-	char *res = r2pipe_read (R2P (fd));
-	if (!res) {
-		return -1;
-	}
-
-	int rescount = -1;
-	/* TODO: parse json back */
-	char *r = strstr (res, "result");
-	if (r) {
-		rescount = atoi (r + 6 + 2);
-	}
-	r = strstr (res, "data");
-	if (r) {
-		char *arr = strchr (r, ':');
-		if (!arr || arr[1] != '[') {
+	const RJson *item = data->children.first;
+	int i;
+	for (i = 0; i < result; i++, item = item->next) {
+		if (item->type != R_JSON_INTEGER || item->num.u_value > UT8_MAX) {
+			result = -1;
 			goto beach;
 		}
-		char num[128];
-		int bufi = 0, numi = 0;
-		num[0] = 0;
-		for (arr += 2; bufi < count && *arr; arr++) {
-			const char c = *arr;
-			if (isdigit ((ut8)c)) {
-				if (numi < (int)sizeof (num) - 1) {
-					num[numi++] = c;
-					num[numi] = 0;
-				}
-			} else if (c == ' ' || c == ',' || c == ']') {
-				if (num[0]) {
-					buf[bufi++] = atoi (num);
-					num[0] = 0;
-					numi = 0;
-				}
-			} else if (c != 'n' && c != 'u' && c != 'l') {
-				goto beach;
-			}
-		}
+		buf[i] = item->num.u_value;
 	}
+	R2P (fd)->offset += result;
 beach:
-	free (res);
-	return rescount;
+	r_json_free (json);
+	return result;
 }
 
 static bool __close(RIODesc *fd) {
 	if (!fd || !fd->data) {
 		return false;
 	}
-	r2pipe_close (fd->data);
-	fd->data = NULL;
+	r2pipe_close (R2P (fd)->pipe);
+	R_FREE (fd->data);
 	return true;
 }
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
-	case R_IO_SEEK_SET: return offset;
-	case R_IO_SEEK_CUR: return io->off + offset;
-	case R_IO_SEEK_END: return UT64_MAX - 1;
+	case R_IO_SEEK_SET:
+		break;
+	case R_IO_SEEK_CUR:
+		offset += R2P (fd)->offset;
+		break;
+	case R_IO_SEEK_END:
+		offset = UT64_MAX - 1;
+		break;
+	default:
+		return UT64_MAX;
 	}
-	return offset;
+	return R2P (fd)->offset = offset;
 }
 
 static bool __check(RIO *io, const char *pathname, bool many) {
@@ -124,11 +123,18 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (!__check (io, pathname, false)) {
 		return NULL;
 	}
-	R2Pipe *r2p = r2pipe_open (pathname + 9);
-	if (!r2p) {
+	R2Pipe *pipe = r2pipe_open (pathname + 9);
+	if (!pipe) {
 		return NULL;
 	}
-	return r_io_desc_new (io, &r_io_plugin_r2pipe, pathname, rw, mode, r2p);
+	R2PipeIO *r2p = R_NEW0 (R2PipeIO);
+	r2p->pipe = pipe;
+	RIODesc *desc = r_io_desc_new (io, &r_io_plugin_r2pipe, pathname, rw, mode, r2p);
+	if (!desc) {
+		r2pipe_close (pipe);
+		free (r2p);
+	}
+	return desc;
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *msg) {
@@ -138,24 +144,17 @@ static char *__system(RIO *io, RIODesc *fd, const char *msg) {
 	pj_ks (pj, "op", "system");
 	pj_ks (pj, "cmd", msg);
 	pj_end (pj);
-	const char *fmt = pj_string (pj);
-	int rv = r2pipe_write (R2P (fd), fmt);
+	RJson *json = __request (fd, pj_string (pj));
 	pj_free (pj);
-	if (rv < 1) {
-		R_LOG_ERROR ("r2pipe_write failed");
-		return NULL;
+	const RJson *result = json? r_json_get (json, "result"): NULL;
+	char *response = NULL;
+	if (result && result->type == R_JSON_STRING) {
+		response = strdup (result->str_value);
+	} else if (result && result->type == R_JSON_INTEGER) {
+		response = r_str_newf ("%"PFMT64d, result->num.s_value);
 	}
-	char *res = r2pipe_read (R2P (fd));
-	if (R_LIKELY (res)) {
-		/* TODO: parse json back */
-		char *r = strstr (res, "result");
-		if (r) {
-			int rescount = atoi (r + 6 + 1);
-			R_LOG_INFO ("RESULT %d", rescount);
-		}
-		free (res);
-	}
-	return NULL;
+	r_json_free (json);
+	return response;
 }
 
 RIOPlugin r_io_plugin_r2pipe = {
