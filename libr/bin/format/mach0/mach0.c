@@ -2885,27 +2885,48 @@ const RVecSection *MACH0_(load_sections)(struct MACH0_(obj_t) * mo) {
 	return &mo->sections_cache;
 }
 
-static bool parse_import_stub(struct MACH0_(obj_t) * bin, struct symbol_t *symbol, int idx) {
-	size_t i, j, nsyms, stridx;
-	const char *symstr;
-	if (idx < 0) {
-		return false;
+// one slot per symbol, holding (section << 32 | entry) of the first indirect symbol entry that refers to it
+static R_OWNED ut64 *indirectsyms_index_new(struct MACH0_(obj_t) * mo) {
+	if (!mo || !mo->sects) {
+		return NULL;
 	}
-	symbol->offset = 0LL;
-	symbol->addr = 0LL;
-	symbol->name = NULL;
-	symbol->is_imported = true;
+	if (!mo->indirectsyms || mo->nindirectsyms <= 0) {
+		return NULL;
+	}
+	if (!mo->symtab || mo->nsymtab <= 0) {
+		return NULL;
+	}
+	const size_t size = (size_t)mo->nsymtab * sizeof (ut64);
+	ut64 *table = malloc (size);
+	if (table) {
+		memset (table, 0xff, size);
+	}
+	return table;
+}
 
-	if (!bin || !bin->sects) {
-		return false;
+// walk up to count entries of the section and fill the slots of the symbols not seen yet
+static ut64 indirectsyms_index_add(struct MACH0_(obj_t) * mo, ut64 *table, ut32 nsect, ut64 count) {
+	const struct MACH0_(section) *sect = &mo->sects[nsect];
+	ut64 j;
+	for (j = 0; j < count && sect->reserved1 + j < (ut64)mo->nindirectsyms; j++) {
+		const ut32 idx = mo->indirectsyms[sect->reserved1 + j];
+		if (idx < (ut32)mo->nsymtab && table[idx] == UT64_MAX) {
+			table[idx] = ((ut64)nsect << 32) | j;
+		}
 	}
-	if (!bin->indirectsyms || bin->nindirectsyms <= 0) {
-		return false;
+	return j;
+}
+
+// resolve every import stub in a single pass, rescanning the stubs per symbol is cubic on overlapping tables
+static R_OWNED ut64 *index_import_stubs(struct MACH0_(obj_t) * bin) {
+	size_t i;
+	ut64 *stubs = indirectsyms_index_new (bin);
+	if (!stubs) {
+		return NULL;
 	}
-	if (!bin->symtab || bin->nsymtab <= 0) {
-		return false;
-	}
-	for (i = 0; i < bin->nsects; i++) {
+	// every stub owns one indirect symbol entry, so overlapping sections cannot make us walk more than that
+	ut64 left = bin->nindirectsyms;
+	for (i = 0; i < bin->nsects && left > 0; i++) {
 		struct MACH0_(section) *sect = &bin->sects[i];
 		if ((sect->flags & SECTION_TYPE) == S_SYMBOL_STUBS && sect->reserved2 > 0) {
 			ut64 sect_size = sect->size;
@@ -2918,42 +2939,48 @@ static bool parse_import_stub(struct MACH0_(obj_t) * bin, struct symbol_t *symbo
 				R_LOG_DEBUG ("Invalid symbol table size");
 				sect_size = bin->size - sect->offset;
 			}
-			nsyms = (int) (sect_size / sect_fragment);
-			for (j = 0; j < nsyms; j++) {
-				if ((ut64)sect->reserved1 + j >= (ut64)bin->nindirectsyms) {
-					continue;
-				}
-				if (idx != bin->indirectsyms[sect->reserved1 + j]) {
-					continue;
-				}
-				if (idx >= bin->nsymtab) {
-					continue;
-				}
-				symbol->type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
-				int delta = j * sect->reserved2;
-				if (delta < 0) {
-					R_LOG_DEBUG ("corrupted reserved2 value leads to int overflow");
-					continue;
-				}
-				symbol->offset = sect->offset + delta;
-				symbol->addr = sect->addr + delta;
-				symbol->size = 0;
-				stridx = bin->symtab[idx].n_strx;
-				if (stridx < bin->symstrlen) {
-					symstr = (char *)bin->symstr + stridx;
-				} else {
-					symstr = "???";
-				}
-				// Remove the extra underscore that every import seems to have in Mach-O.
-				if (*symstr == '_') {
-					symstr++;
-				}
-				symbol->name = strdup (symstr);
-				return true;
-			}
+			left -= indirectsyms_index_add (bin, stubs, i, R_MIN (left, sect_size / sect_fragment));
 		}
 	}
-	return false;
+	return stubs;
+}
+
+static bool parse_import_stub(struct MACH0_(obj_t) * bin, const ut64 *stubs, struct symbol_t *symbol, int idx) {
+	size_t stridx;
+	const char *symstr;
+	if (idx < 0) {
+		return false;
+	}
+	symbol->offset = 0LL;
+	symbol->addr = 0LL;
+	symbol->name = NULL;
+	symbol->is_imported = true;
+
+	if (!stubs || idx >= bin->nsymtab || stubs[idx] == UT64_MAX) {
+		return false;
+	}
+	struct MACH0_(section) *sect = &bin->sects[stubs[idx] >> 32];
+	symbol->type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
+	int delta = (ut32)stubs[idx] * sect->reserved2;
+	if (delta < 0) {
+		R_LOG_DEBUG ("corrupted reserved2 value leads to int overflow");
+		return false;
+	}
+	symbol->offset = sect->offset + delta;
+	symbol->addr = sect->addr + delta;
+	symbol->size = 0;
+	stridx = bin->symtab[idx].n_strx;
+	if (stridx < bin->symstrlen) {
+		symstr = (char *)bin->symstr + stridx;
+	} else {
+		symstr = "???";
+	}
+	// Remove the extra underscore that every import seems to have in Mach-O.
+	if (*symstr == '_') {
+		symstr++;
+	}
+	symbol->name = strdup (symstr);
+	return true;
 }
 
 static int hash_find_or_insert(HtPP *hash, const char *name, ut64 addr) {
@@ -3502,8 +3529,10 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 	}
 
 	to = R_MIN ((ut32)mo->nsymtab, ds->iundefsym + ds->nundefsym);
+	ut64 *stubs = NULL;
 	if (to > ds->iundefsym) {
 		r_bin_file_add_language (bf, R_BIN_LANG_C);
+		stubs = index_import_stubs (mo);
 	}
 	for (i = ds->iundefsym; i < to; i++) {
 		struct symbol_t symbol;
@@ -3512,7 +3541,7 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 			break;
 		}
 
-		if (parse_import_stub (mo, &symbol, i) && symbol.addr >= 100) {
+		if (parse_import_stub (mo, stubs, &symbol, i) && symbol.addr >= 100) {
 			if (symbol.name && strstr (symbol.name, "<redacted>")) {
 				free (symbol.name);
 				continue;
@@ -3542,6 +3571,7 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 			free (symbol.name);
 		}
 	}
+	free (stubs);
 
 	for (i = 0; i < mo->nsymtab && i < symbols_count; i++) {
 		struct MACH0_(nlist) *st = &mo->symtab[i];
@@ -3723,19 +3753,33 @@ static inline ut8 relfrom_wordsize(size_t ws) {
 	return 0;
 }
 
-static struct reloc_t *parse_import_ptr(struct MACH0_(obj_t) * mo, int jota) {
+// only the first section of the given type is taken into account
+static R_OWNED ut64 *index_import_ptrs(struct MACH0_(obj_t) * mo, ut32 stype) {
+	int i;
+	for (i = 0; i < mo->nsects; i++) {
+		if ((mo->sects[i].flags & SECTION_TYPE) == stype) {
+			ut64 *ptrs = indirectsyms_index_new (mo);
+			if (ptrs) {
+				indirectsyms_index_add (mo, ptrs, i, UT64_MAX);
+			}
+			return ptrs;
+		}
+	}
+	return NULL;
+}
+
+static struct reloc_t *parse_import_ptr(struct MACH0_(obj_t) * mo, const ut64 *lazy_ptrs, const ut64 *nonlazy_ptrs, int jota) {
 	int idx = mo->dysymtab.iundefsym + jota;
-	int i, j, sym;
 	if (idx < 0 || idx >= mo->nsymtab) {
 		return NULL;
 	}
 	const size_t wordsize = get_word_size (mo);
-	const ut32 stype = ((mo->symtab[idx].n_desc & REFERENCE_TYPE) == REFERENCE_FLAG_UNDEFINED_LAZY)
-		? S_LAZY_SYMBOL_POINTERS
-		: S_NON_LAZY_SYMBOL_POINTERS;
+	const bool lazy = (mo->symtab[idx].n_desc & REFERENCE_TYPE) == REFERENCE_FLAG_UNDEFINED_LAZY;
+	const ut32 stype = lazy? S_LAZY_SYMBOL_POINTERS: S_NON_LAZY_SYMBOL_POINTERS;
+	const ut64 *ptrs = lazy? lazy_ptrs: nonlazy_ptrs;
 
 	int type = relfrom_wordsize (wordsize);
-	if (!type) {
+	if (!type || !ptrs) {
 		return NULL;
 	}
 	struct reloc_t *reloc = R_NEW0 (struct reloc_t);
@@ -3744,26 +3788,13 @@ static struct reloc_t *parse_import_ptr(struct MACH0_(obj_t) * mo, int jota) {
 	reloc->offset = 0;
 	reloc->addend = 0;
 	reloc->ntype = stype;
-	for (i = 0; i < mo->nsects; i++) {
-		struct MACH0_(section) *sect = &mo->sects[i];
-		if ((sect->flags & SECTION_TYPE) == stype) {
-			for (j = 0, sym = -1; sect->reserved1 + j < mo->nindirectsyms; j++) {
-				int indidx = sect->reserved1 + j;
-				if (indidx < 0 || indidx >= mo->nindirectsyms) {
-					break;
-				}
-				if (idx == mo->indirectsyms[indidx]) {
-					sym = j;
-					break;
-				}
-			}
-			reloc->offset = sym == -1? 0: sect->offset + sym * wordsize;
-			reloc->addr = sym == -1? 0: sect->addr + sym * wordsize;
-			return reloc;
-		}
+	if (ptrs[idx] != UT64_MAX) {
+		struct MACH0_(section) *sect = &mo->sects[ptrs[idx] >> 32];
+		const ut32 sym = (ut32)ptrs[idx];
+		reloc->offset = sect->offset + sym * wordsize;
+		reloc->addr = sect->addr + sym * wordsize;
 	}
-	free (reloc);
-	return NULL;
+	return reloc;
 }
 
 static void fill_import(RBin *rbin, const char *orig_name, RBinImport *imp) {
@@ -4493,14 +4524,18 @@ static bool _load_relocations(struct MACH0_(obj_t) * mo) {
 	struct dysymtab_command *ds = &mo->dysymtab;
 	if (mo->symtab && mo->symstr && mo->sects && mo->indirectsyms) {
 		int j, amount = clamp_count (ds->nundefsym, mo->limit);
+		ut64 *lazy_ptrs = index_import_ptrs (mo, S_LAZY_SYMBOL_POINTERS);
+		ut64 *nonlazy_ptrs = index_import_ptrs (mo, S_NON_LAZY_SYMBOL_POINTERS);
 		for (j = 0; j < amount; j++) {
-			struct reloc_t *reloc = parse_import_ptr (mo, j);
+			struct reloc_t *reloc = parse_import_ptr (mo, lazy_ptrs, nonlazy_ptrs, j);
 			if (!reloc) {
 				break;
 			}
 			reloc->ord = j;
 			r_skiplist_insert_autofree (mo->relocs_cache, reloc);
 		}
+		free (lazy_ptrs);
+		free (nonlazy_ptrs);
 	}
 
 	if (mo->symtab && ds->extreloff && ds->nextrel) {

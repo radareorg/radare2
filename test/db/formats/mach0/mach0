@@ -488,3 +488,16 @@ format   mach064
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=mach0 overlapping stub sections resolve imports in one pass
+FILE=bins/mach0/overlapping-stub-sections
+TIMEOUT=10
+CMDS=<<EOF
+i~^format
+is~?
+EOF
+EXPECT=<<EOF
+format   mach064
+2
+EOF
+RUN
