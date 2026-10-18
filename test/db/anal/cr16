@@ -1,0 +1,47 @@
+NAME=cr16 branch, jump and scond with the reserved condition
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=cr16
+e asm.bits=16
+wx ba54fa55ad54ed554517e517a66ee66f
+pi 1
+pi 1 @ 2
+pi 1 @ 4
+pi 1 @ 6
+pi 1 @ 8
+pi 1 @ 10
+pi 1 @ 12
+pi 1 @ 14
+EOF
+EXPECT=<<EOF
+bls 0xff5a
+invalid
+jls r6
+invalid
+jlo (r3, r2)
+invalid
+sls r3
+invalid
+EOF
+RUN
+
+NAME=cr16 lpr and spr with an unnamed processor register
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=cr16
+e asm.bits=16
+wx 2270e2712272e2730270
+pi 1
+pi 1 @ 2
+pi 1 @ 4
+pi 1 @ 6
+pi 1 @ 8
+EOF
+EXPECT=<<EOF
+lpr r1, psr
+invalid
+spr psr, r1
+invalid
+invalid
+EOF
+RUN
