@@ -1330,7 +1330,7 @@ EOF
 EXPECT=<<EOF
 0x100000b0f 0x0000007d ADD_32 4     __fentry__ - 0x08000081
 --
-0x100000b0f 0x100000b26
+0x100000b0f 0x100000f86
 0x100001050 0 section..bss
 EOF
 RUN
@@ -1545,13 +1545,56 @@ FILE=bins/elf/x86_64-tailrela.so
 ARGS=-e bin.relocs.apply=true
 CMDS=<<EOF
 pv8 @ 0x10ce0
+pv8 @ 0x10d20
 pv8 @ 0x10d30
 om~.got.r2
 EOF
 EXPECT=<<EOF
 0x0000000000010e40
+0x0000000000010e48
 0x0000000000010d28
-- 5 fd: 5 +0x00000000 0x00010e38 - 0x00010e47 rw- rw- .got.r2
+- 5 fd: 5 +0x00000000 0x00010e38 - 0x00010e4f rw- rw- .got.r2
+EOF
+RUN
+
+NAME=ELF: an i386 import addend stays inside its own got.r2 slot
+FILE=bins/elf/i386-vtable-addend.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv4 @ 0x3294
+om~.got.r2
+EOF
+EXPECT=<<EOF
+0x000032b4
+- 6 fd: 5 +0x00000000 0x000032a4 - 0x000032c3 rw- rw- .got.r2
+EOF
+RUN
+
+NAME=ELF: an x86-64 typeinfo addend does not land on the next import slot
+FILE=bins/elf/dwarf3_cpp.elf
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x3d78
+pv8 @ 0x3d88
+pv8 @ 0x3fd8
+pv8 @ 0x3fe0
+EOF
+EXPECT=<<EOF
+0x0000000000004038
+0x0000000000004050
+0x0000000000004058
+0x0000000000004060
+EOF
+RUN
+
+NAME=ELF: imports without an addend keep one word per got.r2 slot
+FILE=bins/elf/analysis/hello-linux-i386-pie
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+om~.got.r2
+EOF
+EXPECT=<<EOF
+- 4 fd: 5 +0x00000000 0x000018e0 - 0x000018fb rw- rw- .got.r2
 EOF
 RUN
 
