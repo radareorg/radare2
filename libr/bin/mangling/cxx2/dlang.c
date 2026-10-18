@@ -21,6 +21,7 @@ typedef struct {
 
 static bool d_type(DCTX *c, RStrBuf *o);
 static void d_qualified(DCTX *c, RStrBuf *o);
+static void d_identifier(DCTX *c, RStrBuf *o);
 
 static inline char d_peek(DCTX *c) {
 	return (c->p < c->end) ? *c->p : 0;
@@ -109,7 +110,7 @@ static const char *d_backref_target(DCTX *c) {
 }
 
 // <identifier> = <number> <name> | template instance | Q backref
-static void d_identifier(DCTX *c, RStrBuf *o) {
+static void d_identifier_impl(DCTX *c, RStrBuf *o) {
 	// back reference to an earlier identifier
 	if (d_peek (c) == 'Q') {
 		const char *target = d_backref_target (c);
@@ -165,6 +166,18 @@ static void d_identifier(DCTX *c, RStrBuf *o) {
 	}
 	r_strbuf_append_n (o, c->p, n);
 	c->p += n;
+}
+
+// bounded-recursion entry: a chain of Q back-references must not recurse past
+// D_MAX_DEPTH (d_type/d_qualified guard their own recursion the same way)
+static void d_identifier(DCTX *c, RStrBuf *o) {
+	if (c->fail || c->depth > D_MAX_DEPTH) {
+		c->fail = true;
+		return;
+	}
+	c->depth++;
+	d_identifier_impl (c, o);
+	c->depth--;
 }
 
 // is N<x> a function attribute (pure/nothrow/.../@live) rather than a type
