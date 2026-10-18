@@ -908,7 +908,9 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			// TODO: move some args into the ro struct
 			_ret |= do_hash (ro, argv[i], algo, io, bsize, rad, ule, compareBin);
 			ro->to = to;
-			r_io_desc_close (desc);
+			if (desc) {
+				r_io_desc_close (desc);
+			}
 		}
 	}
 beach:
