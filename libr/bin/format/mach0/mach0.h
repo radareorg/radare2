@@ -294,7 +294,7 @@ RVecSegment *MACH0_(get_segments_vec)(RBinFile *bf, struct MACH0_(obj_t) *mo);
 const bool MACH0_(load_symbols)(struct MACH0_(obj_t) *mo);
 void MACH0_(pull_symbols)(struct MACH0_(obj_t) *mo, RBinSymbolCallback cb, void *user);
 RVecRBinImport *MACH0_(load_imports)(RBinFile* bf, struct MACH0_(obj_t) *bin);
-const RSkipList *MACH0_(load_relocs)(struct MACH0_(obj_t) *bin);
+const RSkipList *R_UNOWNED MACH0_(load_relocs)(struct MACH0_(obj_t) *bin);
 struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) *bin);
 const RVecMach0Lib *MACH0_(load_libs)(struct MACH0_(obj_t) *bin);
 ut64 MACH0_(get_baddr)(struct MACH0_(obj_t) *bin);
