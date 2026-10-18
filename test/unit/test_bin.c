@@ -70,6 +70,157 @@ bool test_r_bin_plan9_symbol_names(void) {
 	mu_end;
 }
 
+enum { P9_ROOT = 1, P9_A_C, P9_B_H, P9_C_H };
+
+typedef struct {
+	ut32 line; // global line where the entry starts
+	ut8 file; // P9_A_C, P9_B_H, P9_C_H, or 0 to end the included file
+} Plan9Hist;
+
+// Plan 9 386 a.out with one source history attached to its text symbol at
+// 0x1020, followed by a pc/line table starting at that address
+static RBuffer *plan9_history_binary(const Plan9Hist *hist, size_t count, const ut8 *pcline, ut32 pcsz) {
+	const char *names[] = { "/", "a.c", "b.h", "c.h" };
+	// header, names of up to 9 bytes, entries of up to 12, the text symbol
+	ut8 *bytes = calloc (1, 32 + R_ARRAY_SIZE (names) * 9 + count * 12 + 10 + pcsz);
+	if (!bytes) {
+		return NULL;
+	}
+	ut8 *p = bytes + 32;
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (names); i++) {
+		r_write_be32 (p, i + 1);
+		p[4] = 'f';
+		memcpy (p + 5, names[i], strlen (names[i]));
+		p += 5 + strlen (names[i]) + 1;
+	}
+	for (i = 0; i < count; i++) {
+		// a zero byte, then the name indexes of "/" and the file up to a zero
+		r_write_be32 (p, hist[i].line);
+		p[4] = 'z';
+		if (hist[i].file) {
+			r_write_be16 (p + 6, P9_ROOT);
+			r_write_be16 (p + 8, hist[i].file);
+		}
+		p += hist[i].file? 12: 8;
+	}
+	r_write_be32 (p, 0x1020);
+	memcpy (p + 4, "Tmain", 5);
+	p += 10;
+	const ut32 syms = p - bytes - 32;
+	memcpy (p, pcline, pcsz);
+	p += pcsz;
+	r_write_be32 (bytes, 0x1eb);
+	r_write_be32 (bytes + 16, syms);
+	r_write_be32 (bytes + 20, 0x1020);
+	r_write_be32 (bytes + 28, pcsz);
+	RBuffer *buf = r_buf_new_with_bytes (bytes, p - bytes);
+	free (bytes);
+	return buf;
+}
+
+static RBin *plan9_open(RBuffer *buf, RIO *io) {
+	RBin *bin = r_bin_new ();
+	r_io_bind (io, &bin->iob);
+	RBinFileOptions opt = {0};
+	r_bin_file_options_init (&opt, -1, 0, 0, 0);
+	opt.filename = "history.p9";
+	opt.pluginname = "p9";
+	if (!r_bin_open_buf (bin, buf, &opt)) {
+		r_bin_free (bin);
+		return NULL;
+	}
+	return bin;
+}
+
+static char *plan9_addrline(RBin *bin, ut64 addr) {
+	const RBinAddrline *al = r_bin_addrline_get (bin, addr);
+	return al? r_str_newf ("%s:%u", r_bin_addrline_str (bin, al->file), al->line): strdup ("<none>");
+}
+
+bool test_r_bin_plan9_history_lines(void) {
+	const Plan9Hist hist[] = {
+		{ 1, P9_A_C },
+		{ 3, P9_B_H },
+		{ 5, P9_C_H },
+		{ 8, 0 },
+		{ 10, 0 },
+		{ 20, 0 },
+	};
+	// lines 2, 4, 6, 9 and 12 at 0x1020..0x1024
+	const ut8 pcline[] = { 2, 2, 2, 3, 3 };
+	RBuffer *buf = plan9_history_binary (hist, R_ARRAY_SIZE (hist), pcline, sizeof (pcline));
+	mu_assert_notnull (buf, "Plan 9 history buffer");
+	RIO *io = r_io_new ();
+	RBin *bin = plan9_open (buf, io);
+	mu_assert_notnull (bin, "Plan 9 history binary could not be opened");
+	mu_assert_streq_free (plan9_addrline (bin, 0x1020), "/a.c:2", "line before the first include");
+	mu_assert_streq_free (plan9_addrline (bin, 0x1021), "/b.h:2", "line in an included file");
+	mu_assert_streq_free (plan9_addrline (bin, 0x1022), "/c.h:2", "line in a nested include");
+	mu_assert_streq_free (plan9_addrline (bin, 0x1023), "/b.h:4", "line after the nested include");
+	mu_assert_streq_free (plan9_addrline (bin, 0x1024), "/a.c:5", "line after the include");
+	r_bin_free (bin);
+	r_io_free (io);
+	r_unref (buf);
+	mu_end;
+}
+
+bool test_r_bin_plan9_history_end(void) {
+	// eight entries fill the first allocation of the history vector, and the
+	// last include never ends, so the walk runs into the end of the vector
+	const Plan9Hist hist[] = {
+		{ 1, P9_A_C },
+		{ 2, P9_B_H },
+		{ 3, 0 },
+		{ 4, P9_C_H },
+		{ 5, 0 },
+		{ 6, P9_B_H },
+		{ 7, 0 },
+		{ 8, P9_C_H },
+	};
+	// line 100 at 0x1020, past every entry of the history
+	const ut8 pcline[] = { 0, 0, 0, 0, 100 };
+	RBuffer *buf = plan9_history_binary (hist, R_ARRAY_SIZE (hist), pcline, sizeof (pcline));
+	mu_assert_notnull (buf, "Plan 9 history buffer");
+	RIO *io = r_io_new ();
+	RBin *bin = plan9_open (buf, io);
+	mu_assert_notnull (bin, "Plan 9 history binary could not be opened");
+	mu_assert_streq_free (plan9_addrline (bin, 0x1020), "<unknown>:93", "line past the end of the history");
+	r_bin_free (bin);
+	r_io_free (io);
+	r_unref (buf);
+	mu_end;
+}
+
+bool test_r_bin_plan9_history_depth(void) {
+	// includes nested deeper than the stack could recurse, none of them ended
+	const size_t count = 1 << 18;
+	Plan9Hist *hist = R_NEWS0 (Plan9Hist, count);
+	mu_assert_notnull (hist, "Plan 9 history entries");
+	hist[0].line = 1;
+	hist[0].file = P9_A_C;
+	size_t i;
+	for (i = 1; i < count; i++) {
+		hist[i].line = i + 1;
+		hist[i].file = (i & 1)? P9_B_H: P9_C_H;
+	}
+	// line 3 at 0x1020, then line count + 100 at 0x1021
+	ut8 pcline[6] = { 3, 0 };
+	r_write_be32 (pcline + 2, count + 97);
+	RBuffer *buf = plan9_history_binary (hist, count, pcline, sizeof (pcline));
+	free (hist);
+	mu_assert_notnull (buf, "Plan 9 history buffer");
+	RIO *io = r_io_new ();
+	RBin *bin = plan9_open (buf, io);
+	mu_assert_notnull (bin, "Plan 9 history binary could not be opened");
+	mu_assert_streq_free (plan9_addrline (bin, 0x1020), "/b.h:2", "line in the first include");
+	mu_assert_streq_free (plan9_addrline (bin, 0x1021), "<unknown>:101", "line past the deepest include");
+	r_bin_free (bin);
+	r_io_free (io);
+	r_unref (buf);
+	mu_end;
+}
+
 bool test_r_bin_mach0_chained_fixups(void) {
 	const char *path = "bins/mach0/hello-macos-arm64-chained";
 	int i;
@@ -621,6 +772,9 @@ bool test_r_bin_elf_pn_xnum_phdr(void) {
 bool all_tests(void) {
 	mu_run_test(test_r_bin);
 	mu_run_test(test_r_bin_plan9_symbol_names);
+	mu_run_test(test_r_bin_plan9_history_lines);
+	mu_run_test(test_r_bin_plan9_history_end);
+	mu_run_test(test_r_bin_plan9_history_depth);
 	mu_run_test(test_r_bin_mach0_chained_fixups);
 	mu_run_test(test_r_bin_jni_language);
 	mu_run_test(test_r_bin_languages);
