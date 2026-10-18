@@ -398,8 +398,9 @@ virtualmouse:
 	case 'Z': // SHIFT-TAB
 		r_panels_handle_tab_key (core, true);
 		break;
-	case 'M':
-		handle_vmark (core);
+	case 'm':
+	case '\'':
+		handle_vmark (core, key);
 		break;
 	case 'E':
 		r_core_visual_colors (core);
@@ -413,7 +414,7 @@ virtualmouse:
 		free (cmd);
 	}
 		break;
-	case 'm':
+	case 'M':
 		r_panels_set_mode (core, PANEL_MODE_MENU);
 		r_panels_clear_panels_menu (core);
 		r_panels_get_cur_panel (panels)->view->refresh = true;

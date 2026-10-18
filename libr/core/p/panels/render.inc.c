@@ -657,9 +657,9 @@ static void r_panels_refresh(RCore *core) {
 			r_strbuf_append (title, " > ");
 		} else {
 			if (panels->can->color) {
-				r_strbuf_appendf (title, "%s[m]"Color_RESET, PANEL_HL_COLOR);
+				r_strbuf_appendf (title, "%s[M]"Color_RESET, PANEL_HL_COLOR);
 			} else {
-				r_strbuf_append (title, "[m]");
+				r_strbuf_append (title, "[M]");
 			}
 		}
 		int menu_first, menu_last;

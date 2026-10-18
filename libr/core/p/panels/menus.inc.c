@@ -1013,7 +1013,7 @@ static void handle_menu(RCore *core, const int key) {
 				return;
 			}
 			// fallthrough
-		case 'm':
+		case 'M':
 		case 'Q':
 		case '=':
 		case -1:
@@ -1085,7 +1085,7 @@ static void handle_menu(RCore *core, const int key) {
 			(void)(menu->root->sub[menu->root->selectedIndex]->cb (core));
 		}
 		break;
-	case 'm':
+	case 'M':
 	case 'q':
 	case 'Q':
 	case -1:

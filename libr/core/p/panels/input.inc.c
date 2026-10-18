@@ -208,6 +208,8 @@ static bool r_panels_handle_zoom_mode(RCore *core, const int key) {
 	case ']':
 	case '=':
 	case 'm':
+	case 'M':
+	case '\'':
 	case 'i':
 		return false;
 	case 9:
@@ -556,6 +558,9 @@ static bool r_panels_handle_window_mode(RCore *core, const int key) {
 	case '?':
 	case '|':
 	case '-':
+	case 'm':
+	case 'M':
+	case '\'':
 		return false;
 	}
 	return true;
@@ -581,6 +586,8 @@ static bool r_panels_handle_cursor_mode(RCore *core, const int key) {
 	case 'K':
 	case 'l':
 	case 'm':
+	case 'M':
+	case '\'':
 	case 'Z':
 	case '"':
 	case 9:
@@ -1244,44 +1251,20 @@ static void handle_refs(RCore *core, RPanel *panel, ut64 tmp) {
 	}
 }
 
-static void add_vmark(RCore *core) {
-	char *msg = r_str_newf (R_CONS_CLEAR_LINE"Set shortcut key for 0x%"PFMT64x": ", core->addr);
-	int ch = r_panels_show_status (core, msg);
-	free (msg);
-	r_core_vmark (core, ch);
-}
-
-static void handle_vmark(RCore *core) {
+static void handle_vmark(RCore *core, int key) {
 	RPanel *cur = r_panels_get_cur_panel (core->panels);
-	if (!r_panels_check_panel_type (cur, "pd")) {
-		return;
+	ut64 addr = core->addr;
+	r_cons_switchbuf (core->cons, false);
+	r_core_seek (core, cur->model->addr, true);
+	r_core_visual_cmd (core, key == 'm'? "m": "'");
+	if (key == '\'' && core->addr != cur->model->addr) {
+		r_panels_set_panel_addr (core, cur, core->addr);
+		r_panels_seek_all (core, core->addr);
+		r_panels_reset_scroll_pos (cur);
+	} else {
+		r_core_seek (core, addr, true);
 	}
-	RCons *cons = core->cons;
-	int act = r_panels_show_status (core, "Visual Mark  s:set -:remove \':use: ");
-	switch (act) {
-	case 's':
-		add_vmark (core);
-		break;
-	case '-':
-		r_cons_gotoxy (core->cons, 0, 0);
-		if (r_core_vmark_dump (core, 0)) {
-			r_cons_printf (cons, R_CONS_CLEAR_LINE"Remove a shortcut key from the list\n");
-			r_cons_flush (cons);
-			r_cons_set_raw (cons, true);
-			int ch = r_cons_readchar (cons);
-			r_core_vmark_del (core, ch);
-		}
-		break;
-	case '\'':
-		r_cons_gotoxy (core->cons, 0, 0);
-		if (r_core_vmark_dump (core, 0)) {
-			r_cons_flush (cons);
-			r_cons_set_raw (cons, true);
-			int ch = r_cons_readchar (core->cons);
-			r_core_vmark_seek (core, ch, NULL);
-			r_panels_set_panel_addr (core, cur, core->addr);
-		}
-	}
+	r_panels_set_refresh_all (core, true, true);
 }
 
 static void set_dcb(RCore *core, RPanel *p) {
