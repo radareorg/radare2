@@ -252,7 +252,8 @@ static bool objc_find_refs(RCore *core) {
 	ut64 off;
 	size_t total_xrefs = 0;
 	bool readSuccess = true;
-	for (off = 0; off < objc->_data->vsize && readSuccess; off += objc2ClassSize) {
+	const ut64 ss_data = R_MIN (objc->_data->vsize, objc->file_size);
+	for (off = 0; off < ss_data && readSuccess; off += objc2ClassSize) {
 		if (!readSuccess || r_cons_is_breaked (core->cons)) {
 			break;
 		}
@@ -280,7 +281,7 @@ static bool objc_find_refs(RCore *core) {
 
 		classMethodsVA += 8; // advance to start of class methods array
 		ut64 max_delta = objc->_const->vaddr + objc->_const->vsize - classMethodsVA;
-		ut64 max_count = max_delta / objc2ClassMethSize;
+		ut64 max_count = R_MIN (max_delta, objc->file_size) / objc2ClassMethSize;
 		if (count > max_count) {
 			R_LOG_WARN ("Clamping objc method count from %u to %u", (unsigned int)count, (unsigned int)max_count);
 			count = max_count;
