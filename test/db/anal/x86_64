@@ -4482,3 +4482,19 @@ var int64_t var_8h @ rsp+0x8
 arg int64_t arg_8h @ rsp+0x20
 EOF
 RUN
+
+NAME=aap flushes short preludes at the range end across tiny blocks
+FILE=malloc://21
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e search.badpages=false
+b 3
+wx 554889e5c3 @ 16
+aap
+afl
+EOF
+EXPECT=<<EOF
+0x00000010    1      5 fcn.00000010
+EOF
+RUN
