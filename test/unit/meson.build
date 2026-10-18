@@ -89,6 +89,7 @@ if get_option('enable_tests')
     'vec',
     'crbtree',
     'visual_hints',
+    'winkd',
     'xpatch'
   ]
 
@@ -127,6 +128,7 @@ if get_option('enable_tests')
         r_muta_dep,
         r_magic_dep,
         gdb_dep,
+        winkd_dep,
         lrt,
       ],
       install: false,
