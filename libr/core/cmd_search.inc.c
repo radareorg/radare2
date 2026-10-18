@@ -524,7 +524,7 @@ static int search_prelude(RCore *core, RSearch *search, ut64 from, ut64 to) {
 	RSearchKeyword *kw;
 	const bool badpages = r_config_get_b (core->config, "search.badpages");
 	const int afuncali = r_arch_info (core->anal->arch, R_ARCH_INFO_FUNC_ALIGN);
-	const int ufuncali = r_config_get_i (core->config, "cfg.fcnalign");
+	const int ufuncali = r_config_get_i (core->config, "anal.fcnalign");
 	r_list_foreach (search->kws, iter, kw) {
 		if (ufuncali > 1) {
 			kw->align = ufuncali;

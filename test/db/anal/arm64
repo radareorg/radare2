@@ -57381,3 +57381,20 @@ EXPECT=<<EOF
 0x00000100    1     44 fcn.00000100
 EOF
 RUN
+
+NAME=aap honors anal.fcnalign for every keyword
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+e anal.fcnalign=16
+e search.badpages=false
+wx fd7bbea9c0035fd6 @ 4
+wx fd7bbea9c0035fd6 @ 32
+aap
+afl
+EOF
+EXPECT=<<EOF
+0x00000020    1      8 fcn.00000020
+EOF
+RUN
