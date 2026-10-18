@@ -3,22 +3,43 @@
 #include <r_socket.h>
 #include <r_util.h>
 
+#if !R2_NETWORK
+R_API char *r_socket_http_post(const char *url, const char **headers, const char *data, int *code, int *rlen) {
+	if (code) {
+		*code = 0;
+	}
+	if (rlen) {
+		*rlen = 0;
+	}
+	return NULL;
+}
+
+R_API char *r_socket_http_get(const char *url, const char **headers, int *code, int *rlen) {
+	return r_socket_http_post (url, headers, NULL, code, rlen);
+}
+
+R_API bool r_socket_http_download(const char *url, const char **headers, const char *filepath) {
+	return false;
+}
+#else
 #if R2__WINDOWS__
 #include <wininet.h>
 #endif
 
 #if R2_WASM_BROWSER || R2_WASM_HTTP
-extern char* r2_js_http_get(const char *url, const char *headers_str, int *code, int *rlen) __attribute__((import_module("r2"), import_name("http_get")));
-extern char* r2_js_http_post(const char *url, const char *headers_str, const char *data, int *code, int *rlen) __attribute__((import_module("r2"), import_name("http_post")));
+extern char *r2_js_http_request(int post, const char *url, const char *headers, const char *data, int *code, int *rlen) __attribute__((import_module("r2"), import_name("http_request")));
 
-static char *socket_http_headers(const char **headers) {
+static char *socket_http_request(int post, const char *url, const char **headers, const char *data, int *code, int *rlen) {
 	size_t count = 0;
 	if (headers) {
 		while (headers[count]) {
 			count++;
 		}
 	}
-	return r_str_array_join (headers, count, "\n");
+	char *fields = r_str_array_join (headers, count, "\n");
+	char *res = r2_js_http_request (post, url, fields, data, code, rlen);
+	free (fields);
+	return res;
 }
 #endif
 
@@ -235,10 +256,7 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 		return NULL;
 	}
 #if R2_WASM_BROWSER || R2_WASM_HTTP
-	char *headers_str = socket_http_headers (headers);
-	char *res = r2_js_http_get (url, headers_str, code, rlen);
-	free (headers_str);
-	return res;
+	return socket_http_request (false, url, headers, NULL, code, rlen);
 #elif __wasi__
 	return NULL;
 #endif
@@ -448,10 +466,7 @@ R_API char *r_socket_http_post(const char *url, const char *headers[], const cha
 		return NULL;
 	}
 #if R2_WASM_BROWSER || R2_WASM_HTTP
-	char *headers_str = socket_http_headers (headers);
-	char *res = r2_js_http_post (url, headers_str, data, code, rlen);
-	free (headers_str);
-	return res;
+	return socket_http_request (true, url, headers, data, code, rlen);
 #elif __wasi__
 	return NULL;
 #endif
@@ -602,3 +617,5 @@ R_API char *r_socket_http_post(const char *url, const char *headers[], const cha
 	r_socket_write (s, (void *)data, strlen (data));
 	return socket_http_answer (s, NULL, code, rlen, 0);
 }
+
+#endif

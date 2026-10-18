@@ -1,5 +1,6 @@
 // Run fetch on another thread while the synchronous WASM import waits.
 import { Worker, workerData, parentPort } from 'node:worker_threads';
+import { parseHeaders } from './wasm-http.mjs';
 
 export function createNodeHttp({ enabled = false, timeout = 30000, maxResponse = 16 * 1024 * 1024 } = {}) {
   if (!enabled) return { request() { throw new Error('HTTP disabled'); }, close() {} };
@@ -31,7 +32,7 @@ if (workerData?.r2http) {
     const control = new Int32Array(shared, 0, 3);
     const output = new Uint8Array(shared, 12);
     try {
-      const response = await fetch(url, { method, headers, body, signal: AbortSignal.timeout(timeout) });
+      const response = await fetch(url, { method, headers: parseHeaders(headers), body, signal: AbortSignal.timeout(timeout) });
       let length = 0;
       if (response.body) {
         for await (const chunk of response.body) {
