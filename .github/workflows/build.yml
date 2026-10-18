@@ -55,8 +55,17 @@ jobs:
     # Serialize behind linux-wasi so the first master run after a cache-key
     # change can reuse the freshly saved WASI SDK cache in this workflow.
     needs: linux-wasi
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - network: '0'
+            suffix: ''
+          - network: '1'
+            suffix: '-net'
     runs-on: ubuntu-22.04
     env:
+      WASI_NETWORK: ${{ matrix.network }}
       WASI_ROOT: ${{ github.workspace }}/.wasi-cache
       WASI_DOWNLOAD_DIR: ${{ github.workspace }}/.wasi-cache/distfiles
     steps:
@@ -70,16 +79,24 @@ jobs:
     - name: Installing with symlinks
       run: sys/wasi-api.sh
     - name: Test packaged WASI API
+      if: matrix.network == '0'
       run: |
         version=$(./configure -qV)
         unzip -p "radare2-$version-wasi-api.zip" "radare2-$version-wasi-api/radare2.wasm" > "$RUNNER_TEMP/radare2-api.wasm"
         node test/scripts/test-wasi-api.cjs "$RUNNER_TEMP/radare2-api.wasm" "$version"
+    - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+      if: matrix.network == '1'
+      with:
+        node-version: '22'
+    - name: Test host sockets and sandbox policy
+      if: matrix.network == '1'
+      run: node test/scripts/wasm-network.mjs binr/radare2/radare2.wasm
     - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         if-no-files-found: error
-        name: linux-wasi-api
+        name: linux-wasi-api${{ matrix.suffix }}
         path: |
-          radare2-*-wasi-api.zip
+          radare2-*-wasi-api${{ matrix.suffix }}.zip
 
   # WASI Browser
   linux-wasi-browser:
@@ -938,7 +955,7 @@ jobs:
         dist/artifacts/linux-acr-deb-i386/radare2-dev_*.deb
         dist/artifacts/linux-wasi/*.zip
         dist/artifacts/linux-wasi-browser/*.zip
-        dist/artifacts/linux-wasi-api/*.zip
+        dist/artifacts/linux-wasi-api*/*.zip
         dist/artifacts/w64-static/*.zip
         dist/artifacts/w64-arm-meson/*.zip
         dist/artifacts/linux-uefi/*.efi

@@ -85,10 +85,8 @@ wasi_build_tools() {
 	mkdir -p "$OUTPUT_DIR"
 
 	for a in ${TOOLS} ; do
-		if [ ! -f "binr/$a/$a.wasm" ]; then
-			echo "Building $a..."
-			make -C "binr/$a" -s || ERR=1
-		fi
+		echo "Building $a..."
+		make -C "binr/$a" -s || ERR=1
 		cp -f binr/$a/$a.wasm "$OUTPUT_DIR" || ERR=1
 	done
 
