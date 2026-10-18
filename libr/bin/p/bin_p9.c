@@ -305,7 +305,7 @@ static st64 sym_read(RBinFile *bf, Sym *sym, const ut64 offset) {
 
 
 
-static int apply_history(RBinFile *bf, ut64 pc, ut64 line, Sym *base, Sym **ret) {
+static int apply_history(RBinFile *bf, ut64 pc, ut64 line, Sym *base, Sym *end, Sym **ret) {
 	// start of current level
 	Sym *start = base;
 	// current entry
@@ -314,12 +314,12 @@ static int apply_history(RBinFile *bf, ut64 pc, ut64 line, Sym *base, Sym **ret)
 	st64 delta = h->value;
 
 	// see fline in libmach
-	while (h && h->name && line > h->value) {
+	while (h && h < end && h->name && line > h->value) {
 		if (strlen (h->name)) {
 			if (start == base) {
 				start = h++;
 			} else {
-				int k = apply_history (bf, pc, line, start, &h);
+				int k = apply_history (bf, pc, line, start, end, &h);
 				if (k <= 0) {
 					return k;
 				}
@@ -344,7 +344,7 @@ static int apply_history(RBinFile *bf, ut64 pc, ut64 line, Sym *base, Sym **ret)
 		return -1;
 	}
 
-	char *name = h->name? start->name: "<unknown>";
+	char *name = (h < end && h->name)? start->name: "<unknown>";
 	if (start != base) {
 		line = line - start->value + 1;
 	} else {
@@ -568,7 +568,8 @@ static bool symbols_vec(RBinFile *bf) {
 		pc += o->pcq;
 
 		if (history && prev != line && SymVec_length (history) > 1) {
-			apply_history (bf, pc, line, SymVec_at (history, 0), NULL);
+			Sym *first = SymVec_at (history, 0);
+			apply_history (bf, pc, line, first, first + SymVec_length (history), NULL);
 		}
 	}
 
