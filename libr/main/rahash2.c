@@ -213,7 +213,7 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 	if (bsize == 0 || bsize > fsize) {
 		bsize = fsize;
 	}
-	if (ro->to == 0LL) {
+	if (ro->to == 0LL || ro->to > fsize) {
 		ro->to = fsize;
 	}
 	if (ro->from > ro->to) {
