@@ -12,6 +12,7 @@ LDFLAGS+=-L$(LTOP)/bin -lr_bin
 LDFLAGS+=-L$(LTOP)/io -lr_io
 endif
 SHLR=$(LTOP)/../shlr
+include $(STOP)/java/deps.mk
 
 ifeq ($(WITHPIC),1)
 all: ${ALL_TARGETS}

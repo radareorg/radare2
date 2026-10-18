@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2011-2026 - pancake */
 
 #include <r_bin.h>
-#include "descriptor.h"
+#include <r_java/descriptor.h>
 
 // JVM access_flags shared by classes, fields and methods.
 #define JAVA_ACC_PUBLIC 0x0001

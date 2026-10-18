@@ -2,7 +2,7 @@
 
 #include <r_anal.h>
 #include <r_anal_priv.h>
-#include "../../../shlr/java/descriptor.h"
+#include <r_java/descriptor.h>
 
 #define JNI_MIN_TABLE_METHODS 2
 #define JNI_MAX_DATA_SECTION (64 * 1024 * 1024)

@@ -3,8 +3,8 @@
 #define R_LOG_ORIGIN "java.class"
 
 #include <math.h>
-#include "class.h"
-#include "descriptor.h"
+#include <r_java/class.h>
+#include <r_java/descriptor.h>
 
 static inline RBinName *bn_new(const char *name) {
 	R_RETURN_VAL_IF_FAIL (name, NULL);

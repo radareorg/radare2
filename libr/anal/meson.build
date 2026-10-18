@@ -78,6 +78,7 @@ r_anal = library('r_anal', r_anal_sources,
   c_args: library_cflags,
   dependencies: [
     r_util_dep,
+    java_dep,
     r_reg_dep,
     r_asm_dep,
     r_arch_dep,

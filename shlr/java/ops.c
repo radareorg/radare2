@@ -1,8 +1,8 @@
 /* radare - LGPL - Copyright 2007-2022 - pancake */
 
 #include <stdio.h>
-#include "code.h"
-#include "ops.h"
+#include <r_java/code.h>
+#include <r_java/ops.h>
 
 R_IPI const struct java_op JAVA_OPS[JAVA_OPS_COUNT] = {
 	{ "nop", 0x00, 1, R_ANAL_JAVA_NOP },

@@ -2,9 +2,7 @@
 
 #include <r_core.h>
 
-#include "../../../shlr/java/ops.h"
-#include "../../../shlr/java/class.h"
-#include "../../../shlr/java/code.h"
+#include <r_java/class.h>
 
 typedef struct found_idx_t {
 	ut16 idx;

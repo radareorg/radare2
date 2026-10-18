@@ -3,8 +3,7 @@
 #define R_LOG_ORIGIN "bin.java"
 
 #include <r_bin.h>
-#include "../../shlr/java/class.h"
-#include "../../shlr/java/code.h"
+#include <r_java/class.h>
 
 static bool add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj) {
 	char value[SDB_NUM_BUFSZ] = {0};

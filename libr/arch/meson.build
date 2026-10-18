@@ -260,6 +260,7 @@ r_arch_dep = declare_dependency(link_with: r_arch, include_directories: [incs])
 if get_option('blob')
 static_deps = [
   r_util_static_dep,
+  java_static_dep,
   capstone_dep,
 ]
 if arch_plugins.contains('x86_zydis')
