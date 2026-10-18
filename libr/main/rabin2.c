@@ -492,17 +492,23 @@ static int rabin_do_operation(RCons *cons, RBin *bin, const char *op, int rad, c
 		}
 		break;
 	case 'r':
-		r_bin_wr_scn_resize (bin, ptr, r_num_math (NULL, ptr2));
-		rc = r_bin_wr_output (bin, output);
+		if (!ptr || !ptr2 || !*ptr2) {
+			goto _rabin_do_operation_error;
+		}
+		rc = r_bin_wr_scn_resize (bin, ptr, r_num_math (NULL, ptr2)) != UT64_MAX && r_bin_wr_output (bin, output);
 		break;
 	case 'p':
 	case 'P':
 		{
+			if (!ptr || !ptr2 || !*ptr2) {
+				goto _rabin_do_operation_error;
+			}
 			int perms = (int)r_num_math (NULL, ptr2);
 			if (perms < 1) {
 				perms = r_str_rwx (ptr2);
 				if (perms < 0) {
 					R_LOG_ERROR ("Invalid permissions string (%s)", ptr2);
+					goto error;
 				}
 			}
 			if (arg[0] == 'P') {
