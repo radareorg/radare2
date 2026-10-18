@@ -241,80 +241,31 @@ static bool rafind_replace_at(RafindOptions *ro, ut64 addr, ut32 match_len) {
 }
 static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	RafindOptions *ro = (RafindOptions *)user;
-	ut8 *buf = ro->buf;
-	int delta = addr - ro->cur;
-	if (ro->cur > addr && (ro->cur - addr == kw->keyword_length - 1)) {
-		// This case occurs when there is hit in search left over
-		delta = ro->cur - addr;
+	const bool showstr = ro->json || (ro->showstr && !ro->rad);
+	const bool hexdump = ro->pr && !ro->json && !ro->rad && !ro->showstr;
+	ut8 buf[128];
+	char str[128];
+	if (showstr || hexdump) {
+		memset (buf, 0, sizeof (buf));
+		r_io_pread_at (ro->io, addr, buf, showstr? sizeof (buf): R_MIN (ro->bsize, 64));
 	}
-	if (delta > 0 && delta >= ro->bsize) {
-		R_LOG_ERROR ("Invalid delta %d from 0x%08" PFMT64x, delta, addr);
-		return 0;
-	}
-	if (delta != 0) {
-		// rollback the buffer and reset the delta
-		buf = calloc (1, ro->bsize * 2);
-		if (!buf) {
-			R_LOG_ERROR ("Cannot allocate")
-			return 0;
-		}
-		r_io_pread_at (ro->io, addr, buf, ro->bsize * 2);
-		delta = 0;
-	}
-	char _str[128];
-	char *str = _str;
-	*_str = 0;
-	if (ro->showstr) {
-		if (ro->widestr) {
-			str = _str;
-			int i, j = 0;
-			for (i = delta; buf[i] && i < sizeof (_str) - 1; i++) {
-				char ch = buf[i];
-				if (ch == '"' || ch == '\\') {
-					ch = '\'';
-				}
-				if (!IS_PRINTABLE (ch)) {
-					break;
-				}
-				str[j++] = ch;
-				i++;
-				if (j > 80) {
-					strcpy (str + j, "...");
-					j += 3;
-					break;
-				}
-				if (buf[i]) {
-					break;
-				}
-			}
-			str[j] = 0;
-		} else {
-			size_t i;
-			for (i = 0; i < sizeof (_str) - 1; i++) {
-				char ch = buf[delta + i];
-				if (ch == '"' || ch == '\\') {
-					ch = '\'';
-				}
-				if (!ch || !IS_PRINTABLE (ch)) {
-					break;
-				}
-				str[i] = ch;
-			}
-			str[i] = 0;
-		}
-	} else {
-		size_t i;
-		for (i = 0; i < sizeof (_str) - 1; i++) {
-			char ch = buf[delta + i];
+	if (showstr) {
+		int step = ro->showstr && ro->widestr? 2: 1;
+		int i, j = 0;
+		for (i = 0; i < sizeof (buf) && j < sizeof (str) - 1; i += step) {
+			char ch = buf[i];
 			if (ch == '"' || ch == '\\') {
 				ch = '\'';
 			}
 			if (!ch || !IS_PRINTABLE (ch)) {
 				break;
 			}
-			str[i] = ch;
+			str[j++] = ch;
+			if (step == 2 && buf[i + 1]) {
+				break;
+			}
 		}
-		str[i] = 0;
+		str[j] = 0;
 	}
 	if (ro->json) {
 		pj_o (ro->pj);
@@ -335,13 +286,10 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			printf ("0x%" PFMT64x "\n", addr);
 			if (ro->pr) {
 				int bs = R_MIN (ro->bsize, 64);
-				r_print_hexdump (ro->pr, addr, (ut8 *)buf + delta, bs, 16, 1, 1);
+				r_print_hexdump (ro->pr, addr, buf, bs, 16, 1, 1);
 				r_cons_flush (ro->cons);
 			}
 		}
-	}
-	if (buf != ro->buf) {
-		free (buf);
 	}
 	if (ro->replace) {
 		if (kw->keyword_length > 0) {
