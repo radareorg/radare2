@@ -255,9 +255,10 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 
 	if (data && datalen>0) {
 		/* append data */
+		ut64 dlen = datalen;
 		W (p_datafsz, &filesize, 8);
 		W (p_datava, &datava, 8);
-		W (p_datasz, &datalen, 8);
+		W (p_datasz, &dlen, 8);
 		p_tmp = datava - baddr;
 		W (p_datapa, &p_tmp, 8);
 		B (data, datalen);
