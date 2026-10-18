@@ -1012,6 +1012,14 @@ static int regsize64(cs_insn *insn, int n) {
 #define REGBITS64(x) (8 * regsize64 (insn, x))
 #define REGBITS32(x) (8 * regsize32 (insn, x))
 
+static inline bool is_vector_op(const cs_arm64_op *op) {
+#if CS_API_MAJOR == 4
+	return op->vess || op->vas;
+#else
+	return op->vas;
+#endif
+}
+
 static int vector_size(cs_arm64_op *op) {
 #if CS_API_MAJOR == 4
 	if (op->vess) {
@@ -1152,12 +1160,7 @@ static void vector64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int 
 	if (op.vector_index != -1) {
 		i = op.vector_index;
 	}
-#if CS_API_MAJOR == 4
-	const bool isvessas = (op.vess || op.vas);
-#else
-	const bool isvessas = op.vas;
-#endif
-	if (isvessas && i != -1) {
+	if (is_vector_op (&op) && i != -1) {
 		int size = vector_size (&op);
 		int shift = i * size;
 		char *regc = "l";
@@ -1188,12 +1191,7 @@ static void vector64_dst_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, 
 	if (op.vector_index != -1) {
 		i = op.vector_index;
 	}
-#if CS_API_MAJOR == 4
-	const bool isvessas = (op.vess || op.vas);
-#else
-	const bool isvessas = op.vas;
-#endif
-	if (isvessas && i != -1) {
+	if (is_vector_op (&op) && i != -1) {
 		int size = vector_size (&op);
 		int shift = i * size;
 		char *regc = "l";
@@ -1284,12 +1282,7 @@ static void arg64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int i, 
 		r_strbuf_appendf (sb, "0x%"PFMT64x",", r_num_bitmask (zeroext));
 	}
 
-#if CS_API_MAJOR == 4
-	const bool isvessas = (op.vess || op.vas);
-#else
-	const bool isvessas = op.vas;
-#endif
-	if (isvessas) {
+	if (is_vector_op (&op)) {
 		VEC64_APPEND (sb, n, i);
 	} else {
 		if (n > 0 && ISIMM64 (n) && !ISMEM64 (n)) {
