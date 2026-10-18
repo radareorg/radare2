@@ -1,0 +1,13 @@
+NAME=s390: headers filter controls and quote script output
+FILE=malloc://128
+CMDS=<<EOF
+wx 200000000100002025796f8540e779250000000000000010
+oba 0
+iH~X
+iH*
+.iH*
+EOF
+EXPECT=<<EOF
+       01   .`?e X`.   0x00   0x0000   (   16) 0x0010
+EOF
+RUN

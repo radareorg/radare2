@@ -1483,6 +1483,8 @@ struct r_dyld_chained_starts_in_segment {
 	uint32_t max_valid_pointer;
 	uint16_t page_count;
 	ut16 * page_start;
+	// synthesised from BIND_OPCODE_THREADED: chains span the segment instead of one page
+	bool threaded;
 };
 
 enum {

@@ -128,3 +128,16 @@ EXPECT=<<EOF
 3 *
 EOF
 RUN
+
+NAME=mach0 chained fixups with 8 byte pages walk each pointer once
+FILE=bins/mach0/chained-fixups-tiny-pages
+TIMEOUT=10
+CMDS=<<EOF
+i~^format
+ir~?
+EOF
+EXPECT=<<EOF
+format   mach064
+2050
+EOF
+RUN

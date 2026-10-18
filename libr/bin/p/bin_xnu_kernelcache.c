@@ -3159,7 +3159,9 @@ static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RIODesc *fd, ut
 					continue;
 				}
 				ut64 cursor = start + page_idx * page_size + page_start;
-				while (cursor < eob && cursor < end) {
+				// chained fixups never leave their page, threaded bind starts span the segment
+				const ut64 chain_end = obj->chained_starts[i]->threaded? end: R_MIN (end, start + (page_idx + 1) * page_size);
+				while (cursor < eob && cursor < chain_end) {
 					ut64 raw_ptr = 0;
 					ut64 in_buf = 0;
 					const bool is_in_buf = cursor >= off && (in_buf = cursor - off) + 8 <= count64;

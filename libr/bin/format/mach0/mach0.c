@@ -1910,6 +1910,7 @@ static bool parse_threaded_rebase(struct MACH0_(obj_t) * mo) {
 								}
 								mo->chained_starts[seg_idx] = cur_seg;
 								cur_seg->pointer_format = DYLD_CHAINED_PTR_ARM64E;
+								cur_seg->threaded = true;
 								cur_seg->page_size = ps;
 								cur_seg->page_count = ((segment_size + (ps - 1)) & ~ (ps - 1)) / ps;
 								if (cur_seg->page_count > 0) {
@@ -5560,7 +5561,12 @@ void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) * mo, ut64 limit_start,
 					continue;
 				}
 				ut64 cursor = start + page_idx * page_size + page_start;
-				while (cursor < limit_end && cursor < end) {
+				// chained fixups never leave their page, threaded bind starts span the segment
+				ut64 chain_end = end;
+				if (!starts->threaded) {
+					chain_end = R_MIN (end, start + (page_idx + 1) * page_size);
+				}
+				while (cursor < limit_end && cursor < chain_end) {
 					ut8 tmp[8];
 					bool previous_rebasing = mo->rebasing_buffer;
 					mo->rebasing_buffer = true;
