@@ -516,30 +516,42 @@ static bool invalid_page(RCore *core, const ut8 *buf, size_t buf_size) {
 	return (count_00 == limit || count_ff == limit || count_oxff == limit);
 }
 
-static int search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen, RVecUT64 *hits) {
+static int search_prelude(RCore *core, ut64 from, ut64 to, RVecUT64 *hits) {
+	if (r_list_empty (core->search->kws)) {
+		return 0;
+	}
 	size_t bs = core->blocksize;
 	ut64 at;
 	ut8 *b = (ut8 *) malloc (bs);
 	if (!b) {
-		return 0;
+		r_search_kw_reset (core->search);
+		return -1;
 	}
 	// TODO: handle sections ?
 	if (from >= to) {
 		R_LOG_ERROR ("aap: Invalid search range 0x%08"PFMT64x " - 0x%08"PFMT64x, from, to);
 		free (b);
-		return 0;
+		r_search_kw_reset (core->search);
+		return -1;
 	}
 	r_search_reset (core->search, R_SEARCH_KEYWORD);
-	RSearchKeyword *kw = r_search_keyword_new (buf, blen, mask, mlen, NULL);
+	RListIter *iter;
+	RSearchKeyword *kw;
 	const bool badpages = r_config_get_b (core->config, "search.badpages");
 	const int afuncali = r_arch_info (core->anal->arch, R_ARCH_INFO_FUNC_ALIGN);
 	const int ufuncali = r_config_get_i (core->config, "cfg.fcnalign");
-	if (ufuncali > 1) {
-		kw->align = ufuncali;
-	} else if (afuncali > 1) {
-		kw->align = afuncali;
+	r_list_foreach (core->search->kws, iter, kw) {
+		if (ufuncali > 1) {
+			kw->align = ufuncali;
+		} else if (afuncali > 1) {
+			kw->align = afuncali;
+		}
 	}
-	r_search_kw_add (core->search, kw);
+	ut64 maxhits = core->search->maxhits;
+	if (hits) {
+		// A previous search limit must not hide earlier addresses in later keywords.
+		core->search->maxhits = 0;
+	}
 	r_search_begin (core->search);
 	UserPrelude up = { core, false, 0, hits, false };
 	r_search_set_callback (core->search, &__prelude_cb_hit, &up);
@@ -557,26 +569,31 @@ static int search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf, int b
 			R_LOG_DEBUG ("Invalid read at 0x%08"PFMT64x, at);
 			break;
 		}
-		if (r_search_update (core->search, at, b, core->blocksize) == -1) {
-			R_LOG_ERROR ("update read error at 0x%08"PFMT64x, at);
-			break;
-		}
-		if (up.failed) {
-			R_LOG_ERROR ("aap: out of memory collecting preludes at 0x%08"PFMT64x, at);
+		if (r_search_update (core->search, at, b, bs) == -1) {
+			if (up.failed) {
+				R_LOG_ERROR ("aap: out of memory collecting preludes at 0x%08"PFMT64x, at);
+			} else {
+				R_LOG_ERROR ("update read error at 0x%08"PFMT64x, at);
+			}
+			up.failed = true;
 			break;
 		}
 	}
-	// r_search_reset might also benifet from having an if (s->data) R_FREE(s->data),
-	// but im not sure. Add a commit that puts it in there to this PR if it wouldn't
-	// break anything. (don't have to worry about this happening again, since all
-	// searches start by resetting core->search) For now we use `r_search_kw_reset`
+	r_search_set_callback (core->search, NULL, NULL);
+	core->search->maxhits = maxhits;
 	r_search_kw_reset (core->search);
 	free (b);
-	return up.preludecnt;
+	return up.failed ? -1 : up.preludecnt;
 }
 
 R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen) {
-	return search_prelude (core, from, to, buf, blen, mask, mlen, NULL);
+	r_search_kw_reset (core->search);
+	RSearchKeyword *kw = r_search_keyword_new (buf, blen, mask, mlen, NULL);
+	if (!kw) {
+		return -1;
+	}
+	r_search_kw_add (core->search, kw);
+	return search_prelude (core, from, to, NULL);
 }
 
 R_API int r_core_search_uds(RCore *core, int mode) {
@@ -671,13 +688,14 @@ R_API int r_core_search_preludes(RCore *core, bool log) {
 	// 4GB scan region limit
 #define RANGE_LIMIT 0xffffffff
 	size_t fc0 = r_list_length (core->anal->fcns);
-	// every prelude of every range is searched before a function is made: the loosest patterns hit
-	// inside a function (clang's `sub sp, sp, N` after the prologue), and a function made there
-	// would cut off the one holding it. Analyzing from the lowest address keeps that one whole.
+	// RSearch reports hits per keyword; ranges can also arrive out of address order.
 	RVecUT64 hits;
 	RVecUT64_init (&hits);
 	bool collected = false;
 	r_list_foreach (list, iter, p) {
+		if (r_cons_is_breaked (core->cons)) {
+			break;
+		}
 		if ((r_itv_end (p->itv) - p->itv.addr) >= RANGE_LIMIT) {
 			// skip searching in large regions
 			R_LOG_WARN ("aap: skipping large range, please check 'anal.in' variable");
@@ -699,6 +717,7 @@ R_API int r_core_search_preludes(RCore *core, bool log) {
 				int kwlen = r_hex_str2bin (prelude, kw);
 				if (kwlen < 1) {
 					R_LOG_ERROR ("Invalid prelude hex string (%s)", prelude);
+					free (kw);
 					break;
 				}
 				ret = r_core_search_prelude (core, from, to, kw, kwlen, NULL, 0);
@@ -707,13 +726,13 @@ R_API int r_core_search_preludes(RCore *core, bool log) {
 		} else {
 			RList *preds = r_anal_preludes (core->anal);
 			if (preds) {
-				RListIter *iter;
 				RSearchKeyword *kw;
 				collected = true;
-				r_list_foreach (preds, iter, kw) {
-					search_prelude (core, from, to, kw->bin_keyword, kw->keyword_length,
-						kw->bin_binmask, kw->binmask_length, &hits);
+				r_search_kw_reset (core->search);
+				while ((kw = r_list_pop_head (preds))) {
+					r_search_kw_add (core->search, kw);
 				}
+				ret = search_prelude (core, from, to, &hits);
 			} else {
 				if (log) {
 					R_LOG_WARN ("ap: Unsupported asm.arch and asm.bits");
@@ -721,11 +740,14 @@ R_API int r_core_search_preludes(RCore *core, bool log) {
 			}
 			r_list_free (preds);
 		}
+		if (ret < 0) {
+			break;
+		}
 		if (log) {
 			R_LOG_INFO ("done");
 		}
 	}
-	if (collected) {
+	if (collected && ret >= 0) {
 		RVecUT64_sort (&hits, cmp_prelude_hit);
 		ut64 *at, last = UT64_MAX;
 		ret = 0;

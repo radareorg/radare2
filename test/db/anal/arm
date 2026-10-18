@@ -1349,3 +1349,18 @@ ldr r1, [0x00000018]
 r1 = [pc + r1]
 EOF
 RUN
+
+NAME=aap overlapping prelude masks and alignment
+FILE=malloc://256
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+wx f0472de91eff2fe1
+wx f0472de91eff2fe1 @ 33
+aap
+afl
+EOF
+EXPECT=<<EOF
+0x00000000    1      8 fcn.00000000
+EOF
+RUN
