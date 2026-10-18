@@ -419,14 +419,23 @@ static bool brute_force_match(RSearch *s, RSearchKeyword *kw, const ut8 *buf, in
 	return j == kw->keyword_length;
 }
 
+typedef struct {
+	ut64 end;
+	int len;
+	int align;
+	ut8 data[];
+} RSearchOrdered;
+
 static int search_kw_ordered_scan(RSearch *s, ut64 from, const ut8 *buf, size_t len, size_t starts) {
-	size_t i;
-	for (i = 0; i < starts; i++) {
+	RSearchOrdered *state = s->data;
+	size_t i = (state->align - from % state->align) % state->align;
+	for (; i < starts; i += state->align) {
 		RListIter *iter;
 		RSearchKeyword *kw;
 		ut64 addr = from + i;
 		r_list_foreach (s->kws, iter, kw) {
-			if (kw->keyword_length > len - i || (!s->overlap && addr < kw->last)) {
+			if (kw->keyword_length > len - i || (kw->align > 1 && addr % kw->align)
+				|| (!s->overlap && addr < kw->last)) {
 				continue;
 			}
 			if (brute_force_match (s, kw, buf + i, 0) != s->inverse) {
@@ -456,16 +465,29 @@ static int search_kw_ordered_update(RSearch *s, ut64 from, const ut8 *buf, int l
 	if (r_add_overflow_ut64 (from, len, &end)) {
 		return -1;
 	}
-	RSearchLeftover *left = s->data;
+	RSearchOrdered *left = s->data;
 	if (!left) {
 		size_t size;
 		if (r_mul_overflow ((size_t)(longest - 1), (size_t)2, &size)
-			|| r_add_overflow (size, sizeof (RSearchLeftover), &size)) {
+			|| r_add_overflow (size, sizeof (RSearchOrdered), &size)) {
 			return -1;
 		}
 		left = calloc (1, size);
 		if (!left) {
 			return -1;
+		}
+		RListIter *iter;
+		RSearchKeyword *kw;
+		r_list_foreach (s->kws, iter, kw) {
+			int align = R_MAX (1, kw->align);
+			while (align) {
+				int rem = left->align % align;
+				left->align = align;
+				align = rem;
+			}
+		}
+		if (s->align > 1) {
+			left->align = s->align;
 		}
 		left->end = from;
 		s->data = left;
