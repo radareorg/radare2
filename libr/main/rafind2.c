@@ -184,6 +184,14 @@ static bool rafind_match_bininfo(RafindOptions *ro, const char *file) {
 	return match;
 }
 
+static int replace_hit_cmp(const void *a, const void *b) {
+	const ReplaceHit *ha = a, *hb = b;
+	if (ha->addr != hb->addr) {
+		return ha->addr < hb->addr? 1: -1;
+	}
+	return (ha->len < hb->len) - (ha->len > hb->len);
+}
+
 static bool rafind_replace_at(RafindOptions *ro, ut64 addr, ut32 match_len) {
 	if (!ro->replace || !ro->repbuf || ro->replen < 0) {
 		return false;
@@ -599,12 +607,15 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 		ReplaceHit *rh;
 		RListIter *it;
 		if (ro->insert) {
-			r_list_foreach_prev (ro->hits, it, rh) {
-				rafind_replace_at (ro, rh->addr, rh->len);
+			r_list_sort (ro->hits, replace_hit_cmp);
+		}
+		ut64 next = UT64_MAX;
+		r_list_foreach (ro->hits, it, rh) {
+			if (ro->insert && rh->len > next - rh->addr) {
+				continue;
 			}
-		} else {
-			r_list_foreach (ro->hits, it, rh) {
-				rafind_replace_at (ro, rh->addr, rh->len);
+			if (rafind_replace_at (ro, rh->addr, rh->len)) {
+				next = rh->addr;
 			}
 		}
 	}

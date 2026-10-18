@@ -48,6 +48,9 @@ Start searching from address 'from'
 Read the contents of the file and use it as keyword
 .It Fl g
 Insert the replacement and resize the file (only with -R)
+.Pp
+Replacements are applied from highest to lowest address. Overlapping hits are
+skipped in favor of the rightmost hit, or the longest hit at the same address.
 .It Fl h
 Show help message
 .It Fl i

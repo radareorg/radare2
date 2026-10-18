@@ -416,3 +416,71 @@ EXPECT=<<EOF
 0x9
 EOF
 RUN
+
+NAME=rafind2 shrink unordered keywords
+FILE=hex://41414242
+ARGS=-n
+CMDS=<<EOF
+e log.level=0
+wtf rafind2-shrink-unordered-keywords.bin 4
+!rafind2 -s BB -s AA -g -R s:Z rafind2-shrink-unordered-keywords.bin > /dev/null
+o rafind2-shrink-unordered-keywords.bin
+p8 $s
+o-.
+rm rafind2-shrink-unordered-keywords.bin
+EOF
+EXPECT=<<EOF
+5a5a
+EOF
+RUN
+
+NAME=rafind2 grow unordered keywords across blocks
+FILE=hex://4141424241414242
+ARGS=-n
+CMDS=<<EOF
+e log.level=0
+wtf rafind2-grow-unordered-keywords-across-blocks.bin 8
+!rafind2 -b 3 -s BB -s AA -g -R s:XYZ rafind2-grow-unordered-keywords-across-blocks.bin > /dev/null
+o rafind2-grow-unordered-keywords-across-blocks.bin
+p8 $s
+o-.
+rm rafind2-grow-unordered-keywords-across-blocks.bin
+EOF
+EXPECT=<<EOF
+58595a58595a58595a58595a
+EOF
+RUN
+
+NAME=rafind2 resize overlapping keywords
+FILE=hex://41414141
+ARGS=-n
+CMDS=<<EOF
+e log.level=0
+wtf rafind2-resize-overlapping-keywords.bin 4
+!rafind2 -s AAA -s AA -g -R s:Z rafind2-resize-overlapping-keywords.bin > /dev/null
+o rafind2-resize-overlapping-keywords.bin
+p8 $s
+o-.
+rm rafind2-resize-overlapping-keywords.bin
+EOF
+EXPECT=<<EOF
+5a5a
+EOF
+RUN
+
+NAME=rafind2 resize duplicate and same-address keywords
+FILE=hex://41414242
+ARGS=-n
+CMDS=<<EOF
+e log.level=0
+wtf rafind2-resize-duplicate-and-same-address-keywords.bin 4
+!rafind2 -s AA -s AABB -s AABB -g -R s:Z rafind2-resize-duplicate-and-same-address-keywords.bin > /dev/null
+o rafind2-resize-duplicate-and-same-address-keywords.bin
+p8 $s
+o-.
+rm rafind2-resize-duplicate-and-same-address-keywords.bin
+EOF
+EXPECT=<<EOF
+5a
+EOF
+RUN
