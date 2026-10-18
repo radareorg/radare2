@@ -57350,15 +57350,19 @@ FILE=malloc://256
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
-b 18
+e search.bsize
+e search.bsize=18
 e search.maxhits=1
 /x ffffffff
 wx fd7bbea9fc0b00f9fd030091ff030ad1a8630091e0031f2a1f2003d5fc0b40f9fd7bc2a9ffc30a91c0035fd6 @ 16
 aap
 afl
+b
 EOF
 EXPECT=<<EOF
+0x00010000
 0x00000010    1     44 fcn.00000010
+0x100
 EOF
 RUN
 
