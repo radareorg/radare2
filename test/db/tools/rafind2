@@ -195,10 +195,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rafind2 -a -b 0x3
+NAME=rafind2 hexdump across small blocks
 FILE=-
-CMDS=!rafind2 -X -s 250382 -b 0x3 bins/elf/ioli/crackme0x00
+CMDS=!rafind2 -cX -s 250382 -b 0x3 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
+0x58f
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000058f  3235 30                                  250
 EOF
 RUN
 
@@ -482,5 +485,41 @@ rm rafind2-resize-duplicate-and-same-address-keywords.bin
 EOF
 EXPECT=<<EOF
 5a
+EOF
+RUN
+
+NAME=rafind2 offset and flag output across small blocks
+FILE=--
+CMDS=<<EOF
+!rafind2 -b 3 -s abcdef hex://5f61626364656600
+!rafind2 -b 3 -r -s abcdef hex://5f61626364656600
+EOF
+EXPECT=<<EOF
+0x1
+f hit0_0 = 0x00000001 # hex://5f61626364656600
+EOF
+RUN
+
+NAME=rafind2 string context with small blocks
+FILE=--
+CMDS=!rafind2 -b 2 -Z -s ab hex://5f61626364656600
+EXPECT=<<EOF
+0x1 abcdef
+EOF
+RUN
+
+NAME=rafind2 wide string context with small blocks
+FILE=--
+CMDS=!rafind2 -b 2 -Z -S ab hex://5f006100620063000000
+EXPECT=<<EOF
+0x2 abc
+EOF
+RUN
+
+NAME=rafind2 JSON context with small blocks
+FILE=--
+CMDS=!rafind2 -b 2 -j -s ab hex://5f61626364656600
+EXPECT=<<EOF
+[{"file":"hex://5f61626364656600","offset":1,"type":"string","data":"abcdef"}]
 EOF
 RUN
