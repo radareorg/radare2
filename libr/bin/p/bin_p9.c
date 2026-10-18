@@ -303,9 +303,19 @@ static st64 sym_read(RBinFile *bf, Sym *sym, const ut64 offset) {
 	return size;
 }
 
+// a level of the history walk, saved while an included file is walked
+typedef struct {
+	Sym *base;
+	Sym *start;
+	st64 delta;
+} HistLevel;
 
+R_VEC_TYPE(HistLevelVec, HistLevel)
 
-static int apply_history(RBinFile *bf, ut64 pc, ut64 line, Sym *base, Sym *end, Sym **ret) {
+// see fline in libmach, which recurses where this pushes a level
+static void apply_history(RBinFile *bf, ut64 pc, ut64 line, Sym *base, Sym *end) {
+	HistLevelVec levels;
+	HistLevelVec_init (&levels);
 	// start of current level
 	Sym *start = base;
 	// current entry
@@ -313,24 +323,34 @@ static int apply_history(RBinFile *bf, ut64 pc, ut64 line, Sym *base, Sym *end, 
 	// sum of size of files this level
 	st64 delta = h->value;
 
-	// see fline in libmach
-	while (h && h < end && h->name && line > h->value) {
+	while (h < end && h->name && line > h->value) {
 		if (strlen (h->name)) {
 			if (start == base) {
 				start = h++;
 			} else {
-				int k = apply_history (bf, pc, line, start, end, &h);
-				if (k <= 0) {
-					return k;
+				// an include inside the file at start: walk it as a new level
+				HistLevel *level = HistLevelVec_emplace_back (&levels);
+				if (!level) {
+					goto beach;
 				}
+				level->base = base;
+				level->start = start;
+				level->delta = delta;
+				base = start;
+				delta = start->value;
 			}
 		} else {
 			if (start == base) {
-				// end of recursion level
-				if (ret) {
-					*ret = h;
+				// end of this level
+				if (HistLevelVec_empty (&levels)) {
+					goto beach;
 				}
-				return 1;
+				// back to the including file, whose include ends here too
+				HistLevel *level = HistLevelVec_last (&levels);
+				base = level->base;
+				start = level->start;
+				delta = level->delta;
+				HistLevelVec_pop_back (&levels);
 			}
 
 			// end of included file
@@ -338,10 +358,6 @@ static int apply_history(RBinFile *bf, ut64 pc, ut64 line, Sym *base, Sym *end, 
 			h++;
 			start = base;
 		}
-	}
-
-	if (!h) {
-		return -1;
 	}
 
 	char *name = (h < end && h->name)? start->name: "<unknown>";
@@ -352,7 +368,8 @@ static int apply_history(RBinFile *bf, ut64 pc, ut64 line, Sym *base, Sym *end, 
 	}
 
 	bf->addrline.al_add (&bf->addrline, pc, name, NULL, line, 0);
-	return 0;
+beach:
+	HistLevelVec_fini (&levels);
 }
 
 static bool symbols_vec(RBinFile *bf) {
@@ -568,8 +585,7 @@ static bool symbols_vec(RBinFile *bf) {
 		pc += o->pcq;
 
 		if (history && prev != line && SymVec_length (history) > 1) {
-			Sym *first = SymVec_at (history, 0);
-			apply_history (bf, pc, line, first, first + SymVec_length (history), NULL);
+			apply_history (bf, pc, line, R_VEC_START_ITER (history), R_VEC_END_ITER (history));
 		}
 	}
 
