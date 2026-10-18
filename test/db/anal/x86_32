@@ -2962,6 +2962,7 @@ EOF
 RUN
 
 NAME=long basic blocks
+REQUIRE=cs5
 FILE=bins/elf/analysis/movfuscator
 CMDS=<<EOF
 af
@@ -2971,6 +2972,20 @@ EOF
 EXPECT=<<EOF
 12
 size: 16512
+EOF
+RUN
+
+NAME=long basic blocks (cs6)
+REQUIRE=cs6
+FILE=bins/elf/analysis/movfuscator
+CMDS=<<EOF
+af
+afb~?
+afi~size
+EOF
+EXPECT=<<EOF
+12
+size: 16510
 EOF
 RUN
 
