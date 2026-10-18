@@ -1,3 +1,11 @@
+# Prelude search buffers
+
+`search.bsize` controls the read buffer used by prelude searches (`aap`). It
+defaults to 65536 bytes (64 KiB), independently of the core block size set by `b`.
+Use `e search.bsize=4K` to override it. Valid sizes are 1 through 2147483647 bytes;
+allocations and reads are capped at the search range size. Other search commands
+continue to use their existing block sizes.
+
 # Ordered keyword streams
 
 `r_search_new()` and `r_search_set_mode()` accept keyword mode flags without

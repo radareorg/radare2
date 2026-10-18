@@ -515,7 +515,7 @@ static int search_prelude(RCore *core, RSearch *search, ut64 from, ut64 to) {
 		R_LOG_ERROR ("aap: Invalid search range 0x%08"PFMT64x " - 0x%08"PFMT64x, from, to);
 		return -1;
 	}
-	size_t bs = core->blocksize;
+	size_t bs = R_MIN (r_config_get_i (core->config, "search.bsize"), to - from);
 	ut8 *b = malloc (bs);
 	if (!b) {
 		return -1;

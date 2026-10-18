@@ -4489,7 +4489,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 e search.badpages=false
-b 3
+e search.bsize=3
 wx 554889e5c3 @ 16
 aap
 afl

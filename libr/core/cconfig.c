@@ -3115,6 +3115,15 @@ static bool cb_contiguous(void *user, void *data) {
 	return true;
 }
 
+static bool cb_search_bsize(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *)data;
+	if (!node->i_value || node->i_value > ST32_MAX) {
+		R_LOG_ERROR ("search.bsize must be between 1 and 2147483647");
+		return false;
+	}
+	return true;
+}
+
 static bool cb_searchalign(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -5041,6 +5050,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("search.contiguous", "true", &cb_contiguous, "accept contiguous/adjacent search hits");
 	SETB ("search.verbose", "false", "make the output of search commands verbose");
 	SETICB ("search.align", 0, &cb_searchalign, "only catch aligned search hits");
+	SETICB ("search.bsize", 64 * 1024, &cb_search_bsize, "read block size for prelude searches (aap), independent of b");
 	SETI ("search.chunk", 0, "chunk size for /+ (default size is asm.bits/8");
 	SETI ("search.esilcombo", 8, "stop search after N consecutive hits");
 	SETI ("search.distance", 0, "search string distance");
