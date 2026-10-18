@@ -1422,3 +1422,55 @@ EXPECT=<<EOF
 RABIN2_RESRAW=
 EOF
 RUN
+
+NAME=rabin2 -O invalid arguments (#15449)
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+!rabin2 -O r ${R2_FILE}
+!rabin2 -O r/.data ${R2_FILE}
+!rabin2 -O p ${R2_FILE}
+!rabin2 -O p/.data ${R2_FILE}
+!rabin2 -O p/.data/foo -o /dev/null ${R2_FILE}
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Unknown operation. use -O help
+ERROR: Unknown operation. use -O help
+ERROR: Unknown operation. use -O help
+ERROR: Unknown operation. use -O help
+ERROR: Invalid permissions string (foo)
+EOF
+RUN
+
+NAME=rabin2 -O section resize and permissions (#15449)
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+rmrf .tmp/rabin2-mod
+!rabin2 -O r/.data/1024 -o .tmp/rabin2-mod ${R2_FILE} 2>/dev/null
+!rabin2 -S .tmp/rabin2-mod | grep '\.data$'
+!rabin2 -O p/.data/rwx -o .tmp/rabin2-mod ${R2_FILE}
+!rabin2 -S .tmp/rabin2-mod | grep '\.data$'
+rmrf .tmp/rabin2-mod
+EOF
+EXPECT=<<EOF
+24  0x000006ac  0x400 0x080496ac  0x400 -rw- 0x3   PROGBITS    .data
+24  0x000006ac    0x8 0x080496ac    0x8 -rwx 0x7   PROGBITS    .data
+EOF
+RUN
+
+NAME=rabin2 -O cross-endian ELF rejection (#15449)
+FILE=bins/elf/hello.ppc
+CMDS=<<EOF
+!rabin2 -O r/.data/8 -o /dev/null ${R2_FILE}
+!rabin2 -O p/.data/rwx -o /dev/null ${R2_FILE}
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cross-endian ELF section resizing is not supported
+ERROR: Cannot perform operation
+ERROR: Cross-endian ELF section permission patching is not supported
+ERROR: Cannot patch section '.data' permissions (unsupported or not found)
+ERROR: Cannot perform operation
+EOF
+RUN
+
+
+

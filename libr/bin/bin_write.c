@@ -12,7 +12,7 @@ R_API ut64 r_bin_wr_scn_resize(RBin *bin, const char *name, ut64 size) {
 	if (scn_resize) {
 		return scn_resize (bf, name, size);
 	}
-	return 0;
+	return UT64_MAX;
 }
 
 R_API bool r_bin_wr_scn_perms(RBin *bin, const char *name, int perms) {
