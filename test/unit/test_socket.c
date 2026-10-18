@@ -1,4 +1,5 @@
 #include <r_socket.h>
+#include <r_util.h>
 #include "minunit.h"
 
 #if R2_NETWORK && R2__UNIX__ && !__wasi__
