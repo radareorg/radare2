@@ -2150,3 +2150,40 @@ EXPECT=<<EOF
 0x00002000
 EOF
 RUN
+
+NAME=Suppressed adjacent hits preserve keyword count
+FILE=hex://7878787878784142437878
+ARGS=-n
+CMDS=<<EOF_CMDS
+e search.contiguous=false
+e search.show=false
+/ xx
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+hit0_0
+hit0_1
+EOF_EXPECT
+EXPECT_ERR=<<EOF_ERR
+WARN: 0x00000002 Sequential hit ignored
+WARN: 0x00000004 Sequential hit ignored
+EOF_ERR
+RUN
+
+NAME=Suppressed adjacent hits preserve overlap state across blocks
+FILE=hex://7878787878784142437878
+ARGS=-n
+CMDS=<<EOF_CMDS
+e search.contiguous=false
+e search.show=false
+b 3
+/ xx
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+hit0_0
+hit0_1
+EOF_EXPECT
+EXPECT_ERR=<<EOF_ERR
+WARN: 0x00000002 Sequential hit ignored
+WARN: 0x00000004 Sequential hit ignored
+EOF_ERR
+RUN
