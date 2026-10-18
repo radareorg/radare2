@@ -168,6 +168,41 @@ bool test_r_hex_no_code(void) {
 	mu_end;
 }
 
+bool test_r_hex_from_code_truncated(void) {
+	// heap copies so reads past the terminator are caught by asan
+	char *s = strdup ("\"ab");
+	char *r = r_hex_from_code (s);
+	mu_assert_streq (r, "6162", "unterminated string without assignment");
+	free (r);
+	free (s);
+	s = strdup ("");
+	r = r_hex_no_code (s);
+	mu_assert_null (r, "empty input");
+	free (s);
+	s = strdup ("char a=\"ab");
+	r = r_hex_from_code (s);
+	mu_assert_streq (r, "6162", "unterminated c string");
+	free (r);
+	free (s);
+	s = strdup ("int a=/* */");
+	r = r_hex_from_code (s);
+	mu_assert_streq (r, "", "c comment at end of input");
+	free (r);
+	free (s);
+	s = strdup ("a=#");
+	r = r_hex_from_code (s);
+	mu_assert_streq (r, "", "python comment at end of input");
+	free (r);
+	free (s);
+	s = strdup ("a=# x\n");
+	r = r_hex_from_code (s);
+	mu_assert_streq (r, "", "python comment ending the input");
+	free (r);
+	free (s);
+
+	mu_end;
+}
+
 bool test_str2bin_alloc (void) {
 	R_ALIGNED(8) ut8 *buf = NULL;
 	int len;
@@ -274,6 +309,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_hex_from_py);
 	mu_run_test (test_r_hex_from_code);
 	mu_run_test (test_r_hex_no_code);
+	mu_run_test (test_r_hex_from_code_truncated);
 	mu_run_test (test_str2bin_alloc);
 	mu_run_test (test_str2bin_dup);
 	mu_run_test (test_bin2str_empty);
