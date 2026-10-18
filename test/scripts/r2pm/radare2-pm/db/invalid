@@ -1,0 +1,14 @@
+R2PM_BEGIN
+
+R2PM_DESC "Binary fixture with a missing package version"
+R2PM_VERSION_MAP="6.2.4:"
+
+R2PM_BINSTALL() {
+	printf '%s %s\n' "$R2PM_VERSION" "$R2V"
+}
+
+R2PM_BINSTALL_WINDOWS() {
+	(echo %R2PM_VERSION% %R2V%)
+}
+
+R2PM_END

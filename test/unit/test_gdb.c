@@ -537,6 +537,9 @@ static char *connect_transcript(libgdbr_t *g, const char **replies) {
 	int lfd = socket (AF_INET, SOCK_STREAM, 0);
 	if (lfd < 0 || bind (lfd, (struct sockaddr *)&sa, salen) || listen (lfd, 1)
 	    || getsockname (lfd, (struct sockaddr *)&sa, &salen) || gdbr_init (g, false)) {
+		if (lfd >= 0) {
+			close (lfd);
+		}
 		return NULL;
 	}
 	g->num_retries = 4;
@@ -558,6 +561,7 @@ static bool test_gdb_connect_probes(void) {
 		"PacketSize=1000;QStartNoAckMode+", "OK", "QC1", "vCont;c;C;s;S", "OK", "OK", NULL
 	};
 	char *sent = connect_transcript (&g, gdbserver);
+	mu_assert_notnull (sent, "connect to gdbserver stub");
 	// no lldb packet, no qProcessInfo, and 'g' is not asked before registers are read
 	mu_assert_streq_free (sent,
 		"qSupported:multiprocess+;qRelocInsn+;xmlRegisters=i386\n"
@@ -572,6 +576,7 @@ static bool test_gdb_connect_probes(void) {
 		"OK", "OK", "QC1c03", "vCont;c;C;s;S", "OK", "OK", NULL
 	};
 	sent = connect_transcript (&g, lldb);
+	mu_assert_notnull (sent, "connect to lldb stub");
 	mu_assert_streq_free (sent,
 		"qSupported:multiprocess+;qRelocInsn+;xmlRegisters=i386\n"
 		"QStartNoAckMode\nQThreadSuffixSupported\nqC\nvCont?\nHg1c03\nHc-1\n", "lldb connect");

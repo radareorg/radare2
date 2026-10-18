@@ -26,9 +26,9 @@ $(UNITS_BINDIR)/test_gdb: test_gdb.c ../../shlr/gdb/lib/libgdbr.a
 asan:
 	CFLAGS=-fsanitize=address $(MAKE) ASAN=1
 
-$(UNITS_BINDIR)/%: %.c
+$(UNITS_BINDIR)/%: %.c Makefile
 	mkdir -p "$(UNITS_BINDIR)"
-	$(CC) $(CPPFLAGS) $(CFLAGS) $< -o $@ $(LDFLAGS) $(LDLIBS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -MMD -MP -MF $@.d -MT $@ $< -o $@ $(LDFLAGS) $(LDLIBS)
 
 # keep the built-in %: %.c rule from dropping binaries next to the sources
 test_%: $(UNITS_BINDIR)/test_%
@@ -44,7 +44,9 @@ run: $(BINS)
 	echo unit$$r ; exit $$r
 
 clean:
-	rm -f $(BINS)
+	rm -f $(BINS) $(BINS:=.d)
 	-rm -fd "$(UNITS_BINDIR)"
+
+-include $(BINS:=.d)
 
 .PHONY: all

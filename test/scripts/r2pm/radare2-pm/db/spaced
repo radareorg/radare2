@@ -1,0 +1,22 @@
+R2PM_BEGIN
+
+R2PM_DESC "Binary fixture with multiline version mapping"
+R2PM_DOC="
+quoted documentation
+with "embedded quotes"
+"
+R2PM_VERSION_MAP=<<EOF
+6.2.40:9.9.9 6.2.2:1.1.2
+
+	6.2.4:1.1.5	6.2.6:1.1.5
+EOF
+
+R2PM_BINSTALL() {
+	printf '%s %s\n' "$R2PM_VERSION" "$R2V"
+}
+
+R2PM_BINSTALL_WINDOWS() {
+	(echo %R2PM_VERSION% %R2V%)
+}
+
+R2PM_END

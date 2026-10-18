@@ -1,0 +1,17 @@
+R2PM_BEGIN
+
+R2PM_DESC "Binary fixture with an unterminated heredoc"
+
+R2PM_BINSTALL() {
+	exit 1
+}
+
+R2PM_BINSTALL_WINDOWS() {
+	exit /b 1
+}
+
+R2PM_VERSION_MAP=<<EOF
+6.2.4:7.7.7
+EOF_EXTRA
+
+R2PM_END

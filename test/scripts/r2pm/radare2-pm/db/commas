@@ -1,0 +1,14 @@
+R2PM_BEGIN
+
+R2PM_DESC "Binary fixture with unsupported comma separators"
+R2PM_VERSION_MAP="6.2.2:1.1.0,6.2.4:1.2.3"
+
+R2PM_BINSTALL() {
+	exit 1
+}
+
+R2PM_BINSTALL_WINDOWS() {
+	exit /b 1
+}
+
+R2PM_END
