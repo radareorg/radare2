@@ -79,7 +79,7 @@ jobs:
     - name: Installing with symlinks
       run: sys/wasi-api.sh
     - name: Test packaged WASI API
-      if: matrix.network == '0'
+      if: matrix.http == '0'
       run: |
         version=$(./configure -qV)
         unzip -p "radare2-$version-wasi-api.zip" "radare2-$version-wasi-api/radare2.wasm" > "$RUNNER_TEMP/radare2-api.wasm"
