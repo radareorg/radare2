@@ -472,6 +472,16 @@ ERROR: Invalid file size
 EOF
 RUN
 
+NAME=rahash2 empty stdin
+FILE=-
+CMDS=!rahash2 -a md5 - < /dev/null
+EXPECT=<<EOF
+-: 0x00000000-0x00000000 md5: d41d8cd98f00b204e9800998ecf8427e
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
 NAME=rahash2 -c with correct expected hash
 FILE=-
 CMDS=!rahash2 -a md5 -s "admin" -c 21232f297a57a5a743894a0e4a801fc3
