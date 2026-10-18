@@ -17,6 +17,11 @@ extern char* r2_js_http_post(const char *url, const char *headers_str, const cha
 
 /* Check sandbox network permission for URL or host */
 static bool socket_http_sandbox_check(const char *url_or_host) {
+#if __wasi__
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_SOCKET)) {
+		return false;
+	}
+#endif
 	if (r_sandbox_check (R_SANDBOX_GRAIN_NETWORK)) {
 		/* NETWORK grain is set, allow all */
 		return true;
@@ -30,7 +35,7 @@ static bool socket_http_sandbox_check(const char *url_or_host) {
 }
 
 static bool socket_http_requires_curl(const char *url) {
-#if !HAVE_LIB_SSL && !R2__WINDOWS__
+#if !HAVE_LIB_SSL && !R2__WINDOWS__ && !R2_WASI_NETWORK
 	return r_str_startswith (url, "https://");
 #else
 	return false;
@@ -220,6 +225,10 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 		return NULL;
 	}
 #if R2_WASM_BROWSER
+	// Browser hosts may follow redirects outside the initial URL's origin.
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_NETWORK)) {
+		return NULL;
+	}
 	if ((void*)r2_js_http_get != NULL) {
 		char *headers_str = NULL;
 		if (headers) {
@@ -437,6 +446,10 @@ R_API char *r_socket_http_post(const char *url, const char *headers[], const cha
 		return NULL;
 	}
 #if R2_WASM_BROWSER
+	// Browser hosts may follow redirects outside the initial URL's origin.
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_NETWORK)) {
+		return NULL;
+	}
 	if ((void*)r2_js_http_post != NULL) {
 		char *headers_str = NULL;
 		if (headers) {

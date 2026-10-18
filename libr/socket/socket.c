@@ -19,7 +19,9 @@
 
 R_LIB_VERSION(r_socket);
 
-#if NETWORK_DISABLED
+#if __wasi__ && R2_WASI_NETWORK
+#include "socket_wasi.inc.c"
+#elif NETWORK_DISABLED
 /* no network */
 R_API RSocket *r_socket_new(bool is_ssl) {
 	return NULL;
@@ -859,6 +861,36 @@ R_API int r_socket_write(RSocket *s, const void *buf, int len) {
 	return (ret == -1)? -1: delta;
 }
 
+R_API int r_socket_read(RSocket *s, unsigned char *buf, int len) {
+	if (!s) {
+		return -1;
+	}
+#if HAVE_LIB_SSL
+	if (s->is_ssl) {
+		if (s->bio) {
+			return BIO_read (s->bio, buf, len);
+		}
+		return SSL_read (s->sfd, buf, len);
+	}
+#endif
+	if (s->proto == R_SOCKET_PROTO_SERIAL) {
+		return read (s->fd, (char *)buf, len);
+	}
+	return recv (s->fd, (char *)buf, len, 0);
+}
+
+R_API RSocket *r_socket_new_from_fd(int fd) {
+	RSocket *s = R_NEW0 (RSocket);
+	if (s) {
+		s->fd = fd;
+		s->proto = R_SOCKET_PROTO_DEFAULT;
+	}
+	return s;
+}
+
+#endif // EMSCRIPTEN
+
+#if !NETWORK_DISABLED || (__wasi__ && R2_WASI_NETWORK)
 R_API int r_socket_puts(RSocket *s, char *buf) {
 	return r_socket_write (s, buf, strlen (buf));
 }
@@ -889,24 +921,6 @@ R_API void r_socket_printf(RSocket *s, const char *fmt, ...) {
 		}
 		va_end (ap);
 	}
-}
-
-R_API int r_socket_read(RSocket *s, unsigned char *buf, int len) {
-	if (!s) {
-		return -1;
-	}
-#if HAVE_LIB_SSL
-	if (s->is_ssl) {
-		if (s->bio) {
-			return BIO_read (s->bio, buf, len);
-		}
-		return SSL_read (s->sfd, buf, len);
-	}
-#endif
-	if (s->proto == R_SOCKET_PROTO_SERIAL) {
-		return read (s->fd, (char *)buf, len);
-	}
-	return recv (s->fd, (char *)buf, len, 0);
 }
 
 R_API int r_socket_read_block(RSocket *s, ut8 *buf, int len) {
@@ -961,15 +975,6 @@ R_API int r_socket_gets(RSocket *s, char *buf, int size) {
 	return i;
 }
 
-R_API RSocket *r_socket_new_from_fd(int fd) {
-	RSocket *s = R_NEW0 (RSocket);
-	if (s) {
-		s->fd = fd;
-		s->proto = R_SOCKET_PROTO_DEFAULT;
-	}
-	return s;
-}
-
 R_API ut8 *r_socket_slurp(RSocket *s, int *len) {
 	int blockSize = 4096;
 	ut8 *ptr, *buf = malloc (blockSize);
@@ -1008,4 +1013,4 @@ R_API ut8 *r_socket_slurp(RSocket *s, int *len) {
 	return buf;
 }
 
-#endif // EMSCRIPTEN
+#endif
