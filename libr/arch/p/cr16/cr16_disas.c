@@ -91,6 +91,15 @@ static const char *ops_biti[] = {
 	[0x2]		= "tbit",
 };
 
+// 4-bit fields can encode reserved codes that have no name in these tables
+static inline const char *cr16_cond_name(const ut8 cond) {
+	return cond < R_ARRAY_SIZE (cr16_conds)? cr16_conds[cond]: NULL;
+}
+
+static inline const char *cr16_dedicated_reg_name(const ut8 reg) {
+	return reg < R_ARRAY_SIZE (dedicated_regs)? dedicated_regs[reg]: NULL;
+}
+
 static inline ut8 cr16_get_opcode_low(const ut16 instr) {
 	return (instr >> 9) & 0xF;
 }
@@ -583,6 +592,10 @@ static int cr16_decode_slpr(const ut8 *instr, struct cr16_cmd *cmd, int len) {
 		return -1;
 	}
 	ut16 c = r_read_le16 (instr);
+	const char *preg = cr16_dedicated_reg_name (cr16_get_dstreg (c));
+	if (!preg) {
+		return -1;
+	}
 
 	const char *ins = instrs_4bit[c >> 9];
 	if (ins) {
@@ -594,13 +607,11 @@ static int cr16_decode_slpr(const ut8 *instr, struct cr16_cmd *cmd, int len) {
 	switch (c >> 9) {
 	case CR16_LPR:
 		snprintf (cmd->operands, CR16_INSTR_MAXLEN - 1,
-				"%s, %s",cr16_regs_names[cr16_get_srcreg(c)],
-				dedicated_regs[cr16_get_dstreg(c)]);
+				"%s, %s", cr16_regs_names[cr16_get_srcreg (c)], preg);
 		break;
 	case CR16_SPR:
 		snprintf (cmd->operands, CR16_INSTR_MAXLEN - 1,
-				"%s, %s", dedicated_regs[cr16_get_dstreg(c)],
-				cr16_regs_names[cr16_get_srcreg(c)]);
+				"%s, %s", preg, cr16_regs_names[cr16_get_srcreg (c)]);
 		break;
 	}
 
@@ -691,8 +702,11 @@ static int cr16_decode_jmp(const ut8 *instr, struct cr16_cmd *cmd, int len) {
 		if (((c >> 5) & 0xf) == 0xE) {
 			snprintf(cmd->instr, CR16_INSTR_MAXLEN - 1, "jump");
 		} else {
-			snprintf(cmd->instr, CR16_INSTR_MAXLEN - 1, "j%s",
-				cr16_conds[cr16_get_dstreg(c)]);
+			const char *cond = cr16_cond_name (cr16_get_dstreg (c));
+			if (!cond) {
+				return -1;
+			}
+			snprintf (cmd->instr, CR16_INSTR_MAXLEN - 1, "j%s", cond);
 		}
 		snprintf(cmd->operands, CR16_INSTR_MAXLEN - 1, "%s",
 			cr16_regs_names[cr16_get_srcreg(c)]);
@@ -715,8 +729,11 @@ static int cr16_decode_jmp(const ut8 *instr, struct cr16_cmd *cmd, int len) {
 					cr16_regs_names[cr16_get_srcreg(c) + 1],
 					cr16_regs_names[cr16_get_srcreg(c)]);
 		} else if (cr16_get_dstreg(c) != 0xE) {
-			snprintf(cmd->instr, CR16_INSTR_MAXLEN - 1, "j%s",
-					cr16_conds[cr16_get_dstreg(c)]);
+			const char *cond = cr16_cond_name (cr16_get_dstreg (c));
+			if (!cond) {
+				return -1;
+			}
+			snprintf (cmd->instr, CR16_INSTR_MAXLEN - 1, "j%s", cond);
 			snprintf(cmd->operands, CR16_INSTR_MAXLEN - 1, "(%s, %s)",
 					cr16_regs_names[cr16_get_srcreg(c) + 1],
 					cr16_regs_names[cr16_get_srcreg(c)]);
@@ -802,8 +819,11 @@ static int cr16_decode_bcond_br(const ut8 *instr, struct cr16_cmd *cmd, int len)
 		}
 		cmd->type = CR16_TYPE_JUMP;
 	} else {
-		snprintf (cmd->instr, CR16_INSTR_MAXLEN - 1, "b%s",
-				cr16_conds[cr16_get_cond (c)]);
+		const char *cond = cr16_cond_name (cr16_get_cond (c));
+		if (!cond) {
+			return -1;
+		}
+		snprintf (cmd->instr, CR16_INSTR_MAXLEN - 1, "b%s", cond);
 		if (c & 0x1) {
 			return -1;
 		}
@@ -1094,8 +1114,11 @@ static int cr16_decode_scond(const ut8 *instr, struct cr16_cmd *cmd, int len) {
 	if (c & 1) {
 		return -1;
 	}
-	snprintf (cmd->instr, sizeof (cmd->instr) - 1, "s%s",
-			cr16_conds[cr16_get_dstreg (c)]);
+	const char *cond = cr16_cond_name (cr16_get_dstreg (c));
+	if (!cond) {
+		return -1;
+	}
+	snprintf (cmd->instr, sizeof (cmd->instr) - 1, "s%s", cond);
 	snprintf(cmd->operands, sizeof (cmd->operands) - 1, "%s",
 			cr16_regs_names[cr16_get_srcreg (c)]);
 	cmd->type = CR16_TYPE_SCOND;
