@@ -1,5 +1,261 @@
 /* radare2 - LGPL - Copyright 2014-2026 - pancake, vane11ope */
 
+typedef struct {
+	RCore *core;
+	RConsCanvas *can;
+	RPanelPos pos;
+	ut8 keys[UT8_MAX + 1];
+	char *lines[UT8_MAX + 1];
+	int count;
+	int selected;
+	int offset;
+	int rows;
+	bool failed;
+} RPanelsMarkModal;
+
+static void r_panels_mark_write(RConsCanvas *can, int x, int y, int width, const char *text) {
+	if (width < 1 || x < 0 || y < 0 || y >= can->h) {
+		return;
+	}
+	char *cropped = r_str_ansi_crop (text, 0, 0, width, 1);
+	if (cropped) {
+		r_cons_canvas_write_at (can, cropped, x, y);
+		free (cropped);
+	}
+}
+
+static bool r_panels_mark_draw(RPanelsMarkModal *modal) {
+	RCore *core = modal->core;
+	RCons *cons = core->cons;
+	int height, width = r_panels_get_size (core, &height);
+	RPanelPos *pos = &modal->pos;
+	pos->w = R_MIN (80, width > 8? width - 4: width);
+	pos->h = R_MIN (20, height > 8? height - 4: height);
+	pos->x = (width - pos->w) / 2;
+	pos->y = (height - pos->h) / 2;
+	if (!modal->can) {
+		modal->can = r_cons_canvas_new (cons, pos->w, pos->h, R_CONS_CANVAS_FLAG_INHERIT);
+		if (!modal->can) {
+			return false;
+		}
+	} else if (!r_cons_canvas_resize (modal->can, pos->w, pos->h)) {
+		return false;
+	}
+	RConsCanvas *can = modal->can;
+	can->color = core->panels->can->color;
+	modal->rows = R_MAX (0, pos->h - 4);
+	modal->selected = R_CLAMP (modal->selected, 0, R_MAX (0, modal->count - 1));
+	if (modal->selected < modal->offset) {
+		modal->offset = modal->selected;
+	} else if (modal->selected >= modal->offset + modal->rows) {
+		modal->offset = modal->selected - modal->rows + 1;
+	}
+	modal->offset = R_CLAMP (modal->offset, 0, R_MAX (0, modal->count - modal->rows));
+	can->attr = Color_RESET;
+	r_cons_canvas_background (can, Color_RESET);
+	r_cons_canvas_fill (can, 0, 0, pos->w, pos->h, ' ');
+	r_cons_canvas_box (can, 0, 0, pos->w, pos->h, PANEL_HL_COLOR);
+	char title[64];
+	snprintf (title, sizeof (title), "Visual marks [%d-%d/%d]", modal->count? modal->offset + 1: 0,
+		R_MIN (modal->offset + modal->rows, modal->count), modal->count);
+	r_panels_mark_write (can, 2, 1, pos->w - 10, title);
+	r_panels_mark_write (can, pos->w - 7, 1, 5, "[Esc]");
+	int i;
+	for (i = 0; i < modal->rows && modal->offset + i < modal->count; i++) {
+		int index = modal->offset + i;
+		bool selected = index == modal->selected;
+		can->attr = selected && can->color? cons->context->pal.widget_sel: Color_RESET;
+		r_cons_canvas_background (can, can->attr);
+		r_cons_canvas_fill (can, 1, i + 2, pos->w - 2, 1, ' ');
+		r_panels_mark_write (can, 1, i + 2, 1, selected? ">": " ");
+		r_panels_mark_write (can, 3, i + 2, pos->w - 10, modal->lines[index]);
+		r_panels_mark_write (can, pos->w - 6, i + 2, 3, "[x]");
+	}
+	can->attr = Color_RESET;
+	r_cons_canvas_background (can, Color_RESET);
+	if (!modal->count) {
+		r_panels_mark_write (can, 2, 2, pos->w - 4, "No visual marks. Use m<key> to set one.");
+	}
+	if (modal->rows > 0 && modal->count > modal->rows) {
+		int thumb_size = R_MAX (1, modal->rows * modal->rows / modal->count);
+		int thumb = modal->offset * (modal->rows - thumb_size) / (modal->count - modal->rows);
+		bool utf8 = r_config_get_b (core->config, "scr.utf8");
+		for (i = 0; i < modal->rows; i++) {
+			bool active = i >= thumb && i < thumb + thumb_size;
+			r_panels_mark_write (can, pos->w - 2, i + 2, 1,
+				active? (utf8? "█": "#"): (utf8? "│": "|"));
+		}
+	}
+	r_panels_mark_write (can, 2, pos->h - 2, pos->w - 4, "Enter: seek  BS/[x]: unset  Arrows/PgUp/PgDn/Wheel");
+	char *text = r_cons_canvas_tostring (can);
+	if (!text) {
+		return false;
+	}
+	char *line = text;
+	int notch = r_config_get_i (core->config, "scr.notch");
+	for (i = 0; line && i < pos->h; i++) {
+		char *next = strchr (line, '\n');
+		if (next) {
+			*next++ = 0;
+		}
+		r_cons_gotoxy (cons, pos->x + 1, pos->y + notch + i + 1);
+		r_cons_print (cons, line);
+		line = next;
+	}
+	free (text);
+	r_cons_flush (cons);
+	return true;
+}
+
+static void r_panels_mark_resize(void *user) {
+	RPanelsMarkModal *modal = user;
+	r_panels_do_panels_resize (modal->core);
+	modal->failed = !r_panels_mark_draw (modal);
+}
+
+static void r_panels_mark_delete(RPanelsMarkModal *modal) {
+	if (!modal->count) {
+		return;
+	}
+	int i = modal->selected;
+	r_core_vmark_del (modal->core, modal->keys[i]);
+	free (modal->lines[i]);
+	for (; i + 1 < modal->count; i++) {
+		modal->keys[i] = modal->keys[i + 1];
+		modal->lines[i] = modal->lines[i + 1];
+	}
+	modal->count--;
+}
+
+static int r_panels_vmark_modal(RCore *core) {
+	RPanelsMarkModal modal = { .core = core };
+	RCons *cons = core->cons;
+	RConsEvent resize = cons->event_resize;
+	void *event_data = cons->event_data;
+	bool mouse = cons->mouse;
+	int ret = -1, i;
+	for (i = 0; i <= UT8_MAX; i++) {
+		ut64 addr = r_core_vmark_get (core, i);
+		if (addr == UT64_MAX) {
+			continue;
+		}
+		char key[8];
+		if (IS_PRINTABLE (i)) {
+			snprintf (key, sizeof (key), "'%c", i);
+		} else {
+			snprintf (key, sizeof (key), "\\x%02x", i);
+		}
+		RFlagItem *flag = r_flag_get_at (core->flags, addr, false);
+		const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+		char *line = r_str_newf ("[%s] 0x%08"PFMT64x"  %s%s%s", key, addr,
+			flag? flag->name: "", R_STR_ISNOTEMPTY (comment)? " ; ": "", r_str_get (comment));
+		if (!line) {
+			goto beach;
+		}
+		r_str_replace_char (line, '\n', ' ');
+		r_str_replace_char (line, '\r', ' ');
+		r_str_replace_char (line, '\t', ' ');
+		modal.keys[modal.count] = i;
+		modal.lines[modal.count++] = line;
+	}
+	cons->event_resize = NULL;
+	cons->event_data = &modal;
+	cons->event_resize = r_panels_mark_resize;
+	r_cons_enable_mouse (cons, true);
+	while (!modal.failed && r_panels_mark_draw (&modal)) {
+		int raw = r_cons_readchar (cons);
+		if (raw == -1) {
+			break;
+		}
+		if (raw == 0x1b && !cons->input_state.readbuffer_length) {
+			int next = r_cons_readchar_timeout (cons, 100);
+			if (next == -1) {
+				break;
+			}
+			char byte = next;
+			if (!r_cons_readpush (cons, &byte, 1)) {
+				break;
+			}
+		}
+		bool navigation = raw == 0x1b || (ut8)raw == 0x9b;
+#if R2__WINDOWS__
+		navigation |= cons->is_arrow || cons->mouse_event;
+#endif
+		int key = navigation? r_cons_arrow_to_hjkl (cons, raw): raw;
+		bool mouse_event = navigation && cons->mouse_event;
+		int step = mouse_event? R_CLAMP (r_config_get_i (core->config, "scr.wheel.speed"), 1, UT8_MAX): 1;
+		if (mouse_event && (cons->drag_event || (key != 'j' && key != 'k'))) {
+			int x, y;
+			if (cons->drag_event || !r_cons_get_click (cons, &x, &y)) {
+				continue;
+			}
+			x -= modal.pos.x + 1;
+			y -= modal.pos.y + 1 + r_config_get_i (core->config, "scr.notch");
+			if (x < 0 || x >= modal.pos.w || y < 0 || y >= modal.pos.h
+					|| (y == 1 && x >= modal.pos.w - 7)) {
+				break;
+			}
+			if (y < 2 || y >= 2 + modal.rows) {
+				continue;
+			}
+			if (x == modal.pos.w - 2 && modal.count > modal.rows) {
+				modal.offset = modal.rows > 1? (y - 2) * (modal.count - modal.rows) / (modal.rows - 1): 0;
+				modal.selected = modal.offset;
+				continue;
+			}
+			if (x < 1 || x >= modal.pos.w - 2 || modal.offset + y - 2 >= modal.count) {
+				continue;
+			}
+			modal.selected = modal.offset + y - 2;
+			if (x >= modal.pos.w - 6 && x < modal.pos.w - 3) {
+				r_panels_mark_delete (&modal);
+				continue;
+			}
+			ret = modal.keys[modal.selected];
+			break;
+		}
+		if (navigation) {
+			int delta;
+			switch (key) {
+			case 'j': delta = step; break;
+			case 'k': delta = -step; break;
+			case 'J': case 'l': delta = R_MAX (1, modal.rows); break;
+			case 'K': case 'h': delta = -R_MAX (1, modal.rows); break;
+			default: goto beach;
+			}
+			modal.selected = R_CLAMP (modal.selected + delta, 0, R_MAX (0, modal.count - 1));
+			if (mouse_event || R_ABS (delta) > 1) {
+				modal.offset = R_CLAMP (modal.offset + delta, 0, R_MAX (0, modal.count - modal.rows));
+				modal.selected = R_MAX (modal.selected, modal.offset);
+			}
+		} else if (key == 127 || key == 8) {
+			r_panels_mark_delete (&modal);
+		} else if (key == '\r' || key == '\n') {
+			if (modal.count) {
+				ret = modal.keys[modal.selected];
+				break;
+			}
+		} else if (key >= 0 && key <= UT8_MAX && r_core_vmark_get (core, key) != UT64_MAX) {
+			ret = key;
+			break;
+		} else if (key == 'q' || key == '\'' || key == 3) {
+			break;
+		}
+	}
+beach:
+	cons->event_resize = NULL;
+	cons->event_data = event_data;
+	cons->event_resize = resize;
+	if (cons->mouse != mouse) {
+		r_cons_enable_mouse (cons, mouse);
+	}
+	r_cons_canvas_free (modal.can);
+	for (i = 0; i < modal.count; i++) {
+		free (modal.lines[i]);
+	}
+	return ret;
+}
+
 static bool r_panels_draw_modal(RCore *core, RModal *modal, int range_end, int start, const char *name) {
 	if (start < modal->offset) {
 		return true;

@@ -1123,9 +1123,10 @@ static void cmd_curl(RCore *core, const char *arg) {
 		char *earg = r_str_escape_sh (arg);
 		r_sys_cmdf ("curl \"%s\"", earg);
 		free (earg);
-	} else
-#endif
+	} else {
+#else
 	{
+#endif
 		char *postdata = NULL;
 		arg = r_str_trim_head_ro (arg);
 		if (r_str_startswith (arg, "-D")) {

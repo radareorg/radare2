@@ -203,6 +203,7 @@ static void r_panels_move_panel_to_tab(RCore *core, int dst);
 static void handle_tab_new_with_cur_panel(RCore *core);
 static void r_panels_open_tab_menu(RCore *core);
 static void r_panels_create_modal(RCore *core, RPanel *panel);
+static int r_panels_vmark_modal(RCore *core);
 static void r_panels_set_rcb(RPanels *ps, RPanel *p);
 static int add_cmdf_panel(RCore *core, char *input, char *str);
 static void replace_cmd(RCore *core, const char *title, const char *cmd);

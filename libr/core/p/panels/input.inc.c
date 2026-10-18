@@ -1253,16 +1253,21 @@ static void handle_refs(RCore *core, RPanel *panel, ut64 tmp) {
 
 static void handle_vmark(RCore *core, int key) {
 	RPanel *cur = r_panels_get_cur_panel (core->panels);
-	ut64 addr = core->addr;
 	r_cons_switchbuf (core->cons, false);
-	r_core_seek (core, cur->model->addr, true);
-	r_core_visual_cmd (core, key == 'm'? "m": "'");
-	if (key == '\'' && core->addr != cur->model->addr) {
-		r_panels_set_panel_addr (core, cur, core->addr);
-		r_panels_seek_all (core, core->addr);
-		r_panels_reset_scroll_pos (cur);
-	} else {
+	if (key == 'm') {
+		ut64 addr = core->addr;
+		r_core_seek (core, cur->model->addr, true);
+		r_core_visual_cmd (core, "m");
 		r_core_seek (core, addr, true);
+	} else {
+		int mark = r_panels_vmark_modal (core);
+		if (mark >= 0) {
+			cur = r_panels_get_cur_panel (core->panels);
+			r_core_vmark_seek (core, mark, NULL);
+			r_panels_set_panel_addr (core, cur, core->addr);
+			r_panels_seek_all (core, core->addr);
+			r_panels_reset_scroll_pos (cur);
+		}
 	}
 	r_panels_set_refresh_all (core, true, true);
 }
