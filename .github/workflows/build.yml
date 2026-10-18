@@ -59,13 +59,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - network: '0'
+          - http: '0'
             suffix: ''
-          - network: '1'
-            suffix: '-net'
+          - http: '1'
+            suffix: '-http'
     runs-on: ubuntu-22.04
     env:
-      WASI_NETWORK: ${{ matrix.network }}
+      WASI_HTTP: ${{ matrix.http }}
       WASI_ROOT: ${{ github.workspace }}/.wasi-cache
       WASI_DOWNLOAD_DIR: ${{ github.workspace }}/.wasi-cache/distfiles
     steps:
@@ -85,12 +85,12 @@ jobs:
         unzip -p "radare2-$version-wasi-api.zip" "radare2-$version-wasi-api/radare2.wasm" > "$RUNNER_TEMP/radare2-api.wasm"
         node test/scripts/test-wasi-api.cjs "$RUNNER_TEMP/radare2-api.wasm" "$version"
     - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
-      if: matrix.network == '1'
+      if: matrix.http == '1'
       with:
         node-version: '22'
-    - name: Test host sockets and sandbox policy
-      if: matrix.network == '1'
-      run: node test/scripts/wasm-network.mjs binr/radare2/radare2.wasm
+    - name: Test HTTP imports and sandbox policy
+      if: matrix.http == '1'
+      run: node test/scripts/wasm-http.mjs binr/radare2/radare2.wasm
     - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         if-no-files-found: error

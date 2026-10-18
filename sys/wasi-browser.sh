@@ -5,10 +5,6 @@ OSNAME=`uname`
 . `dirname $0`/wasi-env.sh
 . `dirname $0`/wasi-common.sh
 
-if [ "${WASI_NETWORK:-0}" = 1 ]; then
-	export CFLAGS="${CFLAGS} -DR2_WASI_NETWORK=1"
-fi
-
 TOOLS="rax2 rafs2 radiff2 rahash2 radare2 rasm2 rabin2 rafind2"
 
 # Setup WASI SDK
@@ -40,7 +36,6 @@ make -s -j${MAKE_JOBS} || exit 1
 # Build tools and package
 R2V=`./configure -qV`
 D="radare2-$R2V-wasi-browser"
-[ "${WASI_NETWORK:-0}" = 1 ] && D="$D-net"
 
 wasi_build_tools "$TOOLS" "$D"
 ERR=$?

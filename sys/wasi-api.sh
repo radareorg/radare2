@@ -6,10 +6,10 @@ OSNAME=`uname`
 . `dirname $0`/wasi-common.sh
 
 TOOLS="radare2"
-NETWORK_SUFFIX=""
-if [ "${WASI_NETWORK:-0}" = 1 ]; then
-	export CFLAGS="${CFLAGS} -DR2_WASI_NETWORK=1"
-	NETWORK_SUFFIX="-net"
+HTTP_SUFFIX=""
+if [ "${WASI_HTTP:-0}" = 1 ]; then
+	export CFLAGS="${CFLAGS} -DR2_WASM_HTTP=1"
+	HTTP_SUFFIX="-http"
 fi
 
 # Setup WASI SDK
@@ -23,7 +23,7 @@ make -s -j${MAKE_JOBS} libs || exit 1
 
 # Build tools and package
 R2V=`./configure -qV`
-D="radare2-$R2V-wasi-api${NETWORK_SUFFIX}"
+D="radare2-$R2V-wasi-api${HTTP_SUFFIX}"
 
 wasi_build_tools "$TOOLS" "$D"
 ERR=$?
