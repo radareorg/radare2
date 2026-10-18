@@ -141,7 +141,6 @@ R_IPI int r_search_hit_sz(RSearch *s, RSearchKeyword *kw, ut64 addr, ut32 sz) {
 	}
 	if (!s->contiguous) {
 		if (kw->last && addr == kw->last) {
-			kw->count--;
 			kw->last = s->bckwrds? addr: addr + sz;
 			R_LOG_WARN ("0x%08"PFMT64x" Sequential hit ignored", addr);
 			return 1;
