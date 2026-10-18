@@ -76,9 +76,19 @@ static int search_magic_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 }
 
 R_API int r_search_set_mode(RSearch *s, int mode) {
+	const int flags = mode & ~R_SEARCH_MODE_MASK;
+	if (flags && ((mode & R_SEARCH_MODE_MASK) != R_SEARCH_KEYWORD
+		|| (flags & ~(R_SEARCH_ORDERED | R_SEARCH_UNIQUE))
+		|| !(flags & R_SEARCH_ORDERED))) {
+		return false;
+	}
+	if (((s->mode ^ mode) & R_SEARCH_ORDERED) && s->datafree) {
+		s->datafree (s->data);
+		s->data = NULL;
+	}
 	s->update = NULL;
 	bool ok = true;
-	switch (mode) {
+	switch (mode & R_SEARCH_MODE_MASK) {
 	case R_SEARCH_KEYWORD: s->update = search_kw_update; break;
 	case R_SEARCH_REGEXP: s->update = search_regexp_update; break;
 	case R_SEARCH_AES: s->update = search_aes_update; break;
@@ -107,6 +117,10 @@ R_API int r_search_set_mode(RSearch *s, int mode) {
 
 R_API void r_search_begin(RSearch *s) {
 	R_RETURN_IF_FAIL (s);
+	if ((s->mode & R_SEARCH_ORDERED) && s->datafree) {
+		s->datafree (s->data);
+		s->data = NULL;
+	}
 	RListIter *iter;
 	RSearchKeyword *kw;
 	r_list_foreach (s->kws, iter, kw) {
@@ -405,8 +419,103 @@ static bool brute_force_match(RSearch *s, RSearchKeyword *kw, const ut8 *buf, in
 	return j == kw->keyword_length;
 }
 
+static int search_kw_ordered_scan(RSearch *s, ut64 from, const ut8 *buf, size_t len, size_t starts) {
+	size_t i;
+	for (i = 0; i < starts; i++) {
+		RListIter *iter;
+		RSearchKeyword *kw;
+		ut64 addr = from + i;
+		r_list_foreach (s->kws, iter, kw) {
+			if (kw->keyword_length > len - i || (!s->overlap && addr < kw->last)) {
+				continue;
+			}
+			if (brute_force_match (s, kw, buf + i, 0) != s->inverse) {
+				ut64 nhits = s->nhits;
+				int ret = r_search_hit_new (s, kw, addr);
+				if (ret != 1) {
+					return ret;
+				}
+				if ((s->mode & R_SEARCH_UNIQUE) && s->nhits != nhits) {
+					break;
+				}
+			}
+		}
+	}
+	return 1;
+}
+
+static int search_kw_ordered_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
+	if (s->bckwrds || len < 0 || (len && !buf)) {
+		return -1;
+	}
+	const int longest = get_longest (s);
+	if (longest < 1) {
+		return 0;
+	}
+	ut64 end;
+	if (r_add_overflow_ut64 (from, len, &end)) {
+		return -1;
+	}
+	RSearchLeftover *left = s->data;
+	if (!left) {
+		size_t size;
+		if (r_mul_overflow ((size_t)(longest - 1), (size_t)2, &size)
+			|| r_add_overflow (size, sizeof (RSearchLeftover), &size)) {
+			return -1;
+		}
+		left = calloc (1, size);
+		if (!left) {
+			return -1;
+		}
+		left->end = from;
+		s->data = left;
+	}
+	if (from < left->end) {
+		return -1;
+	}
+	ut64 nhits = s->nhits;
+	int ret = 1;
+	if (!len || from != left->end) {
+		ret = search_kw_ordered_scan (s, left->end - left->len, left->data, left->len, left->len);
+		left->len = 0;
+		if (!len || ret != 1) {
+			goto done;
+		}
+	}
+	size_t prefix = R_MIN (longest - 1, len);
+	size_t total = left->len + prefix;
+	memcpy (left->data + left->len, buf, prefix);
+	size_t starts = total >= longest ? total - longest + 1 : 0;
+	ret = search_kw_ordered_scan (s, from - left->len, left->data, total, starts);
+	if (ret != 1) {
+		goto done;
+	}
+	if (len < longest - 1) {
+		left->len = total - starts;
+		memmove (left->data, left->data + starts, left->len);
+	} else {
+		starts = len >= longest ? len - longest + 1 : 0;
+		ret = search_kw_ordered_scan (s, from, buf, len, starts);
+		if (ret != 1) {
+			goto done;
+		}
+		left->len = longest - 1;
+		memcpy (left->data, buf + len - left->len, left->len);
+	}
+	left->end = end;
+done:
+	if (ret != 1) {
+		left->len = 0;
+		left->end = end;
+	}
+	return ret ? s->nhits - nhits : -1;
+}
+
 // Supported search variants: backward, binmask, icase, inverse, overlap
 R_IPI int search_kw_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
+	if (s->mode & R_SEARCH_ORDERED) {
+		return search_kw_ordered_update (s, from, buf, len);
+	}
 	RSearchKeyword *kw;
 	RListIter *iter;
 	RSearchLeftover *left;
@@ -529,6 +638,9 @@ R_API void r_search_set_read_cb(RSearch *s, RSearchRCb cb, void *user) {
 // backward search: from points to the right endpoint
 // forward search: from points to the left endpoint
 R_API int r_search_update(RSearch *s, ut64 from, const ut8 *buf, long len) {
+	if ((s->mode & R_SEARCH_ORDERED) && (len < 0 || len > INT_MAX)) {
+		return -1;
+	}
 	int ret = -1;
 	if (s->update) {
 		if (s->maxhits && s->nhits >= s->maxhits) {
@@ -624,7 +736,7 @@ R_API RList *r_search_find(RSearch *s, ut64 addr, const ut8 *buf, int len) {
 /* --- keywords --- */
 R_API bool r_search_kw_add(RSearch *s, RSearchKeyword *kw) {
 	R_RETURN_VAL_IF_FAIL (s && kw, false);
-	if (kw->keyword_length < 1) {
+	if (kw->keyword_length < 1 || ((s->mode & R_SEARCH_ORDERED) && s->data)) {
 		return false;
 	}
 	s->longest = R_MAX ((int)kw->keyword_length, s->longest);

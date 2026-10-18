@@ -424,18 +424,15 @@ next:;
 	r_cons_break_pop (core->cons);
 }
 
-R_VEC_TYPE(RVecUT64, ut64);
-
 typedef struct {
 	RCore *core;
 	bool forward;
 	int preludecnt;
-	RVecUT64 *hits; // when set, the hit addresses are collected instead of analyzed
-	bool failed; // a hit could not be stored
 } UserPrelude;
 
-static int cmp_prelude_hit(const ut64 *a, const ut64 *b) {
-	return (*a > *b) - (*a < *b);
+static int cmp_prelude_range(const void *a, const void *b) {
+	const RIOMap *ma = a, *mb = b;
+	return (ma->itv.addr > mb->itv.addr) - (ma->itv.addr < mb->itv.addr);
 }
 
 static int __backward_prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
@@ -482,16 +479,10 @@ static void prelude_analyze(RCore *core, ut64 addr) {
 
 static int __prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	UserPrelude *up = (UserPrelude*) user;
-	if (up->hits) {
-		ut64 *slot = RVecUT64_emplace_back (up->hits);
-		if (!slot) {
-			up->failed = true;
-			return 0;
-		}
-		*slot = addr;
-	} else {
-		prelude_analyze (up->core, addr);
+	if (r_cons_is_breaked (up->core->cons)) {
+		return 0;
 	}
+	prelude_analyze (up->core, addr);
 	up->preludecnt++;
 	return 1;
 }
@@ -516,84 +507,77 @@ static bool invalid_page(RCore *core, const ut8 *buf, size_t buf_size) {
 	return (count_00 == limit || count_ff == limit || count_oxff == limit);
 }
 
-static int search_prelude(RCore *core, ut64 from, ut64 to, RVecUT64 *hits) {
-	if (r_list_empty (core->search->kws)) {
+static int search_prelude(RCore *core, RSearch *search, ut64 from, ut64 to) {
+	if (r_list_empty (search->kws)) {
 		return 0;
 	}
-	size_t bs = core->blocksize;
-	ut64 at;
-	ut8 *b = (ut8 *) malloc (bs);
-	if (!b) {
-		r_search_kw_reset (core->search);
-		return -1;
-	}
-	// TODO: handle sections ?
 	if (from >= to) {
 		R_LOG_ERROR ("aap: Invalid search range 0x%08"PFMT64x " - 0x%08"PFMT64x, from, to);
-		free (b);
-		r_search_kw_reset (core->search);
 		return -1;
 	}
-	r_search_reset (core->search, R_SEARCH_KEYWORD);
+	size_t bs = core->blocksize;
+	ut8 *b = malloc (bs);
+	if (!b) {
+		return -1;
+	}
 	RListIter *iter;
 	RSearchKeyword *kw;
 	const bool badpages = r_config_get_b (core->config, "search.badpages");
 	const int afuncali = r_arch_info (core->anal->arch, R_ARCH_INFO_FUNC_ALIGN);
 	const int ufuncali = r_config_get_i (core->config, "cfg.fcnalign");
-	r_list_foreach (core->search->kws, iter, kw) {
+	r_list_foreach (search->kws, iter, kw) {
 		if (ufuncali > 1) {
 			kw->align = ufuncali;
 		} else if (afuncali > 1) {
 			kw->align = afuncali;
 		}
 	}
-	ut64 maxhits = core->search->maxhits;
-	if (hits) {
-		// A previous search limit must not hide earlier addresses in later keywords.
-		core->search->maxhits = 0;
-	}
-	r_search_begin (core->search);
-	UserPrelude up = { core, false, 0, hits, false };
-	r_search_set_callback (core->search, &__prelude_cb_hit, &up);
-	for (at = from; at < to; at += bs) {
-		if (r_cons_is_breaked (core->cons)) {
+	search->align = core->search->align;
+	search->contiguous = core->search->contiguous;
+	search->overlap = core->search->overlap;
+	search->distance = core->search->distance;
+	r_search_begin (search);
+	UserPrelude up = { core, false, 0 };
+	r_search_set_callback (search, &__prelude_cb_hit, &up);
+	ut64 at = from;
+	int ret = 0;
+	while (at < to && !r_cons_is_breaked (core->cons)) {
+		size_t len = R_MIN (bs, to - at);
+		if (!r_io_is_valid_offset (core->io, at, 0) || !r_io_read_at (core->io, at, b, len)) {
 			break;
 		}
-		if (!r_io_is_valid_offset (core->io, at, 0)) {
-			break;
-		}
-		if (!r_io_read_at (core->io, at, b, bs)) {
-			break;
-		}
-		if (badpages && invalid_page (core, b, bs)) {
+		if (badpages && invalid_page (core, b, len)) {
 			R_LOG_DEBUG ("Invalid read at 0x%08"PFMT64x, at);
 			break;
 		}
-		if (r_search_update (core->search, at, b, bs) == -1) {
-			if (up.failed) {
-				R_LOG_ERROR ("aap: out of memory collecting preludes at 0x%08"PFMT64x, at);
-			} else {
-				R_LOG_ERROR ("update read error at 0x%08"PFMT64x, at);
-			}
-			up.failed = true;
+		ret = r_search_update (search, at, b, len);
+		if (ret < 0) {
 			break;
 		}
+		at += len;
 	}
-	r_search_set_callback (core->search, NULL, NULL);
-	core->search->maxhits = maxhits;
-	r_search_kw_reset (core->search);
+	if (ret >= 0 && (search->mode & R_SEARCH_ORDERED) && !r_cons_is_breaked (core->cons)) {
+		ret = r_search_update (search, at, NULL, 0);
+	}
+	if (ret < 0 && !r_cons_is_breaked (core->cons)) {
+		R_LOG_ERROR ("Prelude search failed at 0x%08"PFMT64x, at);
+	}
+	r_search_set_callback (search, NULL, NULL);
 	free (b);
-	return up.failed ? -1 : up.preludecnt;
+	return ret < 0 ? -1 : up.preludecnt;
 }
 
 R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen) {
-	r_search_kw_reset (core->search);
 	RSearchKeyword *kw = r_search_keyword_new (buf, blen, mask, mlen, NULL);
 	if (!kw) {
 		return -1;
 	}
-	r_search_kw_add (core->search, kw);
-	return search_prelude (core, from, to, NULL);
+	RSearch *search = r_search_new (R_SEARCH_KEYWORD);
+	r_search_kw_add (search, kw);
+	search->maxhits = core->search->maxhits;
+	int ret = search_prelude (core, search, from, to);
+	r_search_free (search);
+	return ret;
 }
 
 R_API int r_core_search_uds(RCore *core, int mode) {
@@ -669,105 +653,76 @@ R_API int r_core_search_uds(RCore *core, int mode) {
 }
 
 R_API int r_core_search_preludes(RCore *core, bool log) {
-	int ret = -1;
-	const char *prelude = r_config_get (core->config, "anal.prelude");
-	ut64 from = UT64_MAX;
-	ut64 to = UT64_MAX;
 	const char *where = r_config_get (core->config, "anal.in");
-
 	RList *list = r_core_get_boundaries_prot (core, R_PERM_X, where, "search");
-	RListIter *iter;
-	RIOMap *p;
-
 	if (!list) {
 		return -1;
 	}
-
-	// 256MB scan region limit
-	// #define RANGE_LIMIT 0xfffffff
-	// 4GB scan region limit
-#define RANGE_LIMIT 0xffffffff
+	RSearch *search = r_search_new (R_SEARCH_KEYWORD | R_SEARCH_ORDERED | R_SEARCH_UNIQUE);
+	const char *prelude = r_config_get (core->config, "anal.prelude");
+	if (R_STR_ISNOTEMPTY (prelude)) {
+		RSearchKeyword *kw = r_search_keyword_new_hex (prelude, NULL, NULL);
+		if (!kw) {
+			R_LOG_ERROR ("Invalid prelude hex string (%s)", prelude);
+			r_search_free (search);
+			r_list_free (list);
+			return -1;
+		}
+		r_search_kw_add (search, kw);
+	} else {
+		RList *preds = r_anal_preludes (core->anal);
+		RSearchKeyword *kw;
+		while (preds && (kw = r_list_pop_head (preds))) {
+			r_search_kw_add (search, kw);
+		}
+		r_list_free (preds);
+	}
+	int ret = 0;
 	size_t fc0 = r_list_length (core->anal->fcns);
-	// RSearch reports hits per keyword; ranges can also arrive out of address order.
-	RVecUT64 hits;
-	RVecUT64_init (&hits);
-	bool collected = false;
+	RListIter *iter, *next;
+	RIOMap *p;
+	r_list_foreach_safe (list, iter, next, p) {
+		if (r_io_map_size (p) >= UT32_MAX) {
+			R_LOG_WARN ("aap: skipping large range, please check 'anal.in' variable");
+			r_list_delete (list, iter);
+		} else if (log && !(p->perm & R_PERM_X)) {
+			r_list_delete (list, iter);
+		}
+	}
+	// Order the ranges once; hits are analyzed directly in address order.
+	r_list_sort (list, cmp_prelude_range);
 	r_list_foreach (list, iter, p) {
 		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
-		if ((r_itv_end (p->itv) - p->itv.addr) >= RANGE_LIMIT) {
-			// skip searching in large regions
-			R_LOG_WARN ("aap: skipping large range, please check 'anal.in' variable");
-			continue;
+		ut64 from = p->itv.addr;
+		ut64 to = r_itv_end (p->itv);
+		while (iter->n) {
+			RIOMap *next = iter->n->data;
+			if (next->itv.addr > to) {
+				break;
+			}
+			to = R_MAX (to, r_itv_end (next->itv));
+			iter = iter->n;
 		}
 		if (log) {
-			eprintf ("\r[>] Scanning %s 0x%"PFMT64x " - 0x%"PFMT64x " ",
-				r_str_rwx_i (p->perm), p->itv.addr, r_itv_end (p->itv));
-			if (!(p->perm & R_PERM_X)) {
-				R_LOG_INFO ("skip");
-				continue;
-			}
+			eprintf ("\r[>] Scanning %s 0x%"PFMT64x " - 0x%"PFMT64x " ", r_str_rwx_i (p->perm), from, to);
 		}
-		from = p->itv.addr;
-		to = r_itv_end (p->itv);
-		if (R_STR_ISNOTEMPTY (prelude)) {
-			ut8 *kw = malloc (strlen (prelude) + 1);
-			if (kw) {
-				int kwlen = r_hex_str2bin (prelude, kw);
-				if (kwlen < 1) {
-					R_LOG_ERROR ("Invalid prelude hex string (%s)", prelude);
-					free (kw);
-					break;
-				}
-				ret = r_core_search_prelude (core, from, to, kw, kwlen, NULL, 0);
-				free (kw);
-			}
-		} else {
-			RList *preds = r_anal_preludes (core->anal);
-			if (preds) {
-				RSearchKeyword *kw;
-				collected = true;
-				r_search_kw_reset (core->search);
-				while ((kw = r_list_pop_head (preds))) {
-					r_search_kw_add (core->search, kw);
-				}
-				ret = search_prelude (core, from, to, &hits);
-			} else {
-				if (log) {
-					R_LOG_WARN ("ap: Unsupported asm.arch and asm.bits");
-				}
-			}
-			r_list_free (preds);
-		}
-		if (ret < 0) {
+		int hits = search_prelude (core, search, from, to);
+		if (hits < 0) {
+			ret = -1;
 			break;
 		}
+		ret += hits;
 		if (log) {
 			R_LOG_INFO ("done");
 		}
 	}
-	if (collected && ret >= 0) {
-		RVecUT64_sort (&hits, cmp_prelude_hit);
-		ut64 *at, last = UT64_MAX;
-		ret = 0;
-		R_VEC_FOREACH (&hits, at) {
-			if (*at != last && !r_cons_is_breaked (core->cons)) {
-				prelude_analyze (core, *at);
-				ret++;
-			}
-			last = *at;
-		}
-	}
-	RVecUT64_fini (&hits);
 	if (log) {
-		if (list) {
-			size_t fc1 = r_list_length (core->anal->fcns);
-			R_LOG_INFO ("Found %d new functions based on preludes", (int)(fc1 - fc0));
-		} else {
-			R_LOG_ERROR ("No executable regions to scan, cannot analyze anything");
-		}
+		size_t fc1 = r_list_length (core->anal->fcns);
+		R_LOG_INFO ("Found %d new functions based on preludes", (int)(fc1 - fc0));
 	}
+	r_search_free (search);
 	r_list_free (list);
 	return ret;
 }
