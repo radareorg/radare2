@@ -69,6 +69,11 @@ jobs:
         key: ${{ runner.os }}-${{ runner.arch }}-wasi-sdk-${{ hashFiles('sys/wasi-env.sh') }}
     - name: Installing with symlinks
       run: sys/wasi-api.sh
+    - name: Test packaged WASI API
+      run: |
+        version=$(./configure -qV)
+        unzip -p "radare2-$version-wasi-api.zip" "radare2-$version-wasi-api/radare2.wasm" > "$RUNNER_TEMP/radare2-api.wasm"
+        node test/scripts/test-wasi-api.cjs "$RUNNER_TEMP/radare2-api.wasm" "$version"
     - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         if-no-files-found: error
