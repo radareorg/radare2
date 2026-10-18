@@ -1,359 +1,144 @@
-# WebAssembly (WASI) Support in radare2
+# WebAssembly (WASI) support
 
-## Introduction
+Build with WASI SDK 29 using `sys/wasi.sh` (CLI), `sys/wasi-api.sh`
+(reactor exporting the C APIs), or `sys/wasi-browser.sh` (browser console
+and HTTP imports). Set `WASI_SDK` and `WASI_SYSROOT` to use an installed SDK.
+These builds disable native debugging, process execution and raw sockets.
+Only explicitly preopened directories are shared with the guest.
 
-radare2 can be compiled to WebAssembly (WASM) using the WASI (WebAssembly System Interface) standard, allowing it to run in web browsers or other WASM-compatible environments. This enables radare2 to be used in client-side applications without server-side execution.
+## Optional HTTP GET and POST
 
-## Building radare2 for WASI
-
-To build radare2 for WASI, you need the WASI SDK installed. The build process is automated in `sys/wasi.sh`.
-
-### Prerequisites
-
-- Install the WASI SDK from https://github.com/WebAssembly/wasi-sdk/releases
-- Set the `WASI_SDK` environment variable to the installation path
-
-### Building
-
-Run the WASI build script:
-
-```bash
-./sys/wasi.sh
-```
-
-This script configures radare2 with the following options:
-
-```bash
-./configure \
-  --with-static-themes \
-  --without-gperf \
-  --with-compiler=wasi \
-  --disable-debugger \
-  --without-fork \
-  --with-ostype=wasi \
-  --with-checks-level=0 \
-  --disable-threads \
-  --without-dylink \
-  --with-libr \
-  --without-gpl
-```
-
-Then compiles and packages the WASM binaries for tools like `radare2`, `rabin2`, etc., into a `radare2-<version>-wasi.zip` file.
-
-## Instantiating the WASM Module
-
-To use the generated `.wasm` files in a web application, instantiate them using the WebAssembly API.
-
-### Basic Instantiation
-
-```javascript
-const response = await fetch('radare2.wasm');
-const buffer = await response.arrayBuffer();
-const module = await WebAssembly.compile(buffer);
-
-// Define imports
-const imports = {
-  r2: {
-    is_tty: () => 1,  // Assume TTY available
-    set_raw_mode: (raw) => { /* set terminal mode */ },
-    key_next: () => { /* return next key code */ },
-    http_get: (url, headers_str, code_ptr, rlen_ptr) => {
-      // Implement HTTP GET using fetch
-      // Allocate memory for response, set code and rlen
-      return response_ptr;
-    },
-    http_post: (url, headers_str, data, code_ptr, rlen_ptr) => {
-      // Implement HTTP POST using fetch
-      return response_ptr;
-    }
-  }
-};
-
-const instance = await WebAssembly.instantiate(module, imports);
-```
-
-### Import Functions
-
-The WASM module requires the following imports in the `r2` module:
-
-- `is_tty()`: Returns 1 if running in a TTY environment, 0 otherwise
-- `set_raw_mode(raw)`: Set terminal to raw mode (raw=1) or cooked mode (raw=0)
-- `key_next()`: Return the next key code from input
-- `http_get(url, headers_str, code_ptr, rlen_ptr)`: Perform HTTP GET request
-- `http_post(url, headers_str, data, code_ptr, rlen_ptr)`: Perform HTTP POST request
-
-For HTTP functions:
-- `url`: Null-terminated string
-- `headers_str`: Headers as "Header: value\nHeader2: value\n"
-- `data`: POST data (for POST only)
-- `code_ptr`: Pointer to int for HTTP status code
-- `rlen_ptr`: Pointer to int for response length
-- Return: Pointer to allocated response string in WASM memory
-
-## Using with xterm.js
-
-xterm.js is a terminal emulator for the web. To integrate radare2 WASM with xterm.js:
-
-1. Set up xterm.js in your HTML:
-
-```html
-<div id="terminal"></div>
-<script src="https://cdn.jsdelivr.net/npm/xterm@5/lib/xterm.min.js"></script>
-```
-
-2. Initialize xterm.js and connect to WASM I/O:
-
-```javascript
-const term = new Terminal();
-term.open(document.getElementById('terminal'));
-
-// WASM memory buffer
-let wasmMemory;
-
-// Instantiate WASM with imports
-const imports = {
-  r2: {
-    is_tty: () => 1,
-    set_raw_mode: (raw) => {
-      // Configure xterm.js for raw/cooked mode
-      term.setOption('cursorBlink', !raw);
-    },
-    key_next: () => {
-      // This is tricky - xterm.js input is event-driven
-      // You might need to buffer input or use a promise-based approach
-      return term.buffer.active.getLine(term.buffer.active.cursorY).translateToString(
-        term.buffer.active.cursorX
-      ).charCodeAt(0) || 0;
-    },
-    http_get: async (urlPtr, headersPtr, codePtr, rlenPtr) => {
-      const url = getStringFromWasm(urlPtr);
-      const headers = getStringFromWasm(headersPtr);
-      
-      try {
-        const response = await fetch(url, {
-          headers: parseHeaders(headers)
-        });
-        
-        const data = await response.text();
-        const dataPtr = allocateStringInWasm(data);
-        
-        setInt32(codePtr, response.status);
-        setInt32(rlenPtr, data.length);
-        
-        return dataPtr;
-      } catch (error) {
-        setInt32(codePtr, 500);
-        setInt32(rlenPtr, 0);
-        return 0;
-      }
-    },
-    http_post: async (urlPtr, headersPtr, dataPtr, codePtr, rlenPtr) => {
-      const url = getStringFromWasm(urlPtr);
-      const headers = getStringFromWasm(headersPtr);
-      const data = getStringFromWasm(dataPtr);
-      
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: parseHeaders(headers),
-          body: data
-        });
-        
-        const responseData = await response.text();
-        const responsePtr = allocateStringInWasm(responseData);
-        
-        setInt32(codePtr, response.status);
-        setInt32(rlenPtr, responseData.length);
-        
-        return responsePtr;
-      } catch (error) {
-        setInt32(codePtr, 500);
-        setInt32(rlenPtr, 0);
-        return 0;
-      }
-    }
-  }
-};
-
-WebAssembly.instantiateStreaming(fetch('radare2.wasm'), imports)
-  .then(({ instance }) => {
-    wasmMemory = instance.exports.memory;
-    
-    // Connect WASM stdout to xterm.js
-    // This requires hooking the WASM write functions or using WASI stdout
-    
-    // For input, you may need to handle xterm.js 'data' events
-    term.onData(data => {
-      // Send data to WASM input buffer
-    });
-  });
-```
-
-### Helper Functions
-
-```javascript
-function getStringFromWasm(ptr) {
-  const view = new Uint8Array(wasmMemory.buffer);
-  let str = '';
-  let i = ptr;
-  while (view[i]) {
-    str += String.fromCharCode(view[i]);
-    i++;
-  }
-  return str;
-}
-
-function allocateStringInWasm(str) {
-  const bytes = new TextEncoder().encode(str + '\0');
-  const ptr = instance.exports.malloc(bytes.length);
-  const view = new Uint8Array(wasmMemory.buffer);
-  view.set(bytes, ptr);
-  return ptr;
-}
-
-function setInt32(ptr, value) {
-  const view = new DataView(wasmMemory.buffer);
-  view.setInt32(ptr, value, true);
-}
-
-function parseHeaders(headersStr) {
-  const headers = {};
-  headersStr.split('\n').forEach(line => {
-    const [key, ...valueParts] = line.split(':');
-    if (key && valueParts.length) {
-      headers[key.trim()] = valueParts.join(':').trim();
-    }
-  });
-  return headers;
-}
-```
-
-## Limitations
-
-- WASI build disables some features like debugger and threading
-- Network access is limited to HTTP via imports
-- File system access is restricted to WASI APIs
-- Performance may be lower than native builds
-
-## Examples
-
-See the radare2 web interface at `shlr/www/` for examples of WASM integration.
-## Optional host networking
-
-A normal WASI build still has no socket creation/connect implementation.
-WASI Preview1's receive/send imports alone cannot enable radare2 networking.
-To build the host-socket variant from a **clean checkout**:
+The HTTP API variant reuses the browser build's existing `r2.http_get` and
+`r2.http_post` imports. There is no low-level socket ABI or WebSocket proxy.
 
 ```sh
-WASI_NETWORK=1 sys/wasi-api.sh
-# radare2-<version>-wasi-api-net.zip
+# Use a clean checkout when changing build flags.
+WASI_HTTP=1 sys/wasi-api.sh
+# Produces radare2-<version>-wasi-api-http.zip
 ```
 
-`WASI_NETWORK=1 sys/wasi-browser.sh` also builds a `-wasi-browser-net.zip`
-variant. Clean the build before switching between these variants; compiler
-flags are not dependency-tracked. The regular API/browser artifacts retain
-their existing import sets. Release CI builds both API variants.
+Release CI builds both ordinary and HTTP API variants. The ordinary API
+build retains its import set and has no HTTP access. Browser builds already
+include these HTTP imports; no extra browser variant is needed.
 
-The host must supply the synchronous `r2net` imports below. Returning `-1`
-from all imports disables the transport. Hosts must use their own per-instance
-handle table, not expose arbitrary OS descriptors, and close all remaining
-handles when destroying an instance. No process-spawning imports are added.
+`r_socket_http_get()`, `r_socket_http_post()` and `r_socket_http_download()`
+keep their C signatures and ownership rules. WASM routes GET/POST directly
+to the host, including HTTPS, before the native curl/socket code. The
+`R2_CURL` environment variable cannot make these APIs spawn a process in WASM.
+The built-in `curl` command and HTTP file IO use the same C APIs.
 
-| Import | Arguments | Result |
+Two gates apply independently: the host adapter defaults to `enabled: false`,
+and each C request checks the radare2 sandbox. When sandboxing is enabled,
+**both `socket` and `network` grains are required**, even for localhost:
+host clients can follow redirects to other hosts. No execution permission is
+required. Tightening the sandbox prevents subsequent requests. It does not
+cancel a synchronous request already in progress. Browser CORS, restricted
+headers and credential policies still apply.
+
+## Host ABI
+
+| Import in `r2` | wasm32 arguments | Result |
 | --- | --- | --- |
-| `connect` | host string, port string, protocol (6 TCP / 17 UDP), TLS boolean, timeout seconds | handle or -1 |
-| `listen` | port string, loopback-only boolean, protocol | handle or -1 |
-| `accept` | listener handle | connected handle or -1 |
-| `read` / `write` | handle, buffer pointer, byte count | transferred bytes, EOF 0, or -1 |
-| `close` | handle | 0 or -1 |
-| `ready` | handle, seconds, microseconds | readable 1, timeout 0, error -1 |
-| `block_time` | handle, blocking boolean, seconds, microseconds | 0 or -1 |
-| `peer` | handle, output buffer, capacity including NUL | string length or -1 |
+| `http_get` | url, headers, status pointer, length pointer | response pointer or 0 |
+| `http_post` | url, headers, data, status pointer, length pointer | response pointer or 0 |
 
-All arguments/results are wasm32 `i32`; strings are UTF-8 and NUL-terminated.
-Buffers belong to the guest and must be bounds-checked by the host. A returned
-handle is opaque and is not a WASI file descriptor. Unsupported operations
-must fail, rather than use a shell or another transport implicitly.
+Strings are UTF-8 and NUL-terminated; headers are newline-separated
+`Name: value` lines (or NULL). POST data is a string, matching the existing
+C API. Status/length output pointers may be NULL. On failure return NULL
+with status/length zero; HTTP error responses can still return a body and
+status such as 404. Allocate the response with the **guest's** `malloc`,
+append NUL, and report the body length in **bytes**, excluding NUL. The C
+caller owns and frees that buffer. Binary responses may contain NUL bytes.
 
-### Sandbox policy
+`sys/wasm-http.mjs` handles encoding, bounds checks and response ownership:
 
-There are two independent gates: the embedding application's network opt-in,
-and radare2's sandbox policy. Denying either prevents network access.
+```js
+import { createHttpImports } from './sys/wasm-http.mjs';
+let instance;
+const r2 = createHttpImports(() => instance.exports, {
+  enabled: true,
+  // Optional synchronous application callback:
+  // request(method, url, headers, body) => ({ status, body: Uint8Array })
+});
+// Instantiate with { ...wasiImports, r2 }, then initialize the reactor.
+```
 
-- Socket operations require the `socket` grain. Non-loopback connections and
-  listeners additionally require `network`. `localhost` is canonicalized to
-  `127.0.0.1`; the localhost exception does not accept hostname prefixes.
-- Reads, writes, accept, readiness and socket configuration recheck policy,
-  including on sockets opened before the sandbox was enabled/tightened.
-- Closing sockets remains possible after revocation, to release resources.
-- Browser HTTP callbacks require **both** `socket` and `network`, because the
-  browser may follow redirects beyond the initial URL. Browser CORS and origin
-  restrictions still apply; this does not grant raw TCP access to browsers.
+The ABI is synchronous. A plain async function or Promise-returning `fetch`
+callback cannot be passed directly as an import. For custom callbacks,
+`headers` is an array of `[name, value]` pairs and `body` is the POST string
+(or undefined for GET). Accept only HTTP(S) and enforce application-specific
+host restrictions inside your callback if needed.
 
-### Node.js
+## Browser
 
-`sys/wasm-network-node.mjs` provides a TCP/TLS transport, with optional TCP
-listeners. UDP, TLS listeners and Unix sockets are not implemented by this
-adapter. TLS uses Node's default certificate verification. Socket IO runs on
-another worker thread so synchronous WASM calls do not block its event loop.
-A host call has a 30-second deadline by default; on expiry the adapter destroys
-its worker and all handles. Supply `timeout` in milliseconds to change it.
+Use the helper's default request implementation in a **dedicated Web Worker**.
+It performs synchronous XMLHttpRequest and returns byte-exact response data.
+The host UI stays responsive. With the browser CLI build, merge the returned
+HTTP functions into your existing `r2` console imports (`is_tty`,
+`set_raw_mode`, `key_next`, etc.); with the HTTP reactor only the two HTTP
+functions are needed in that namespace. Both still require a WASI provider.
+
+```js
+// Inside the Worker; wasiImports comes from your browser WASI provider.
+const { instance: loaded } = await WebAssembly.instantiate(wasmBytes, {
+  ...wasiImports,
+  r2: createHttpImports(() => instance.exports, { enabled: true }),
+});
+instance = loaded;
+instance.exports._initialize();
+const core = instance.exports.r_core_new();
+// Use the C API; send command results back to the UI with postMessage.
+instance.exports.r_core_free(core);
+```
+
+## Node.js
+
+Node's fetch is asynchronous, so the small adapter runs it on another worker
+while the C call waits. It exposes only whole HTTP requests, no socket handles.
+It defaults to a 30-second deadline and a 16 MiB response limit, configurable
+as `timeout` (milliseconds) and `maxResponse` (bytes). TLS uses normal
+certificate verification. Close the worker when finished.
 
 ```js
 import { readFileSync } from 'node:fs';
 import { WASI } from 'node:wasi';
-import { createNetworkImports } from './sys/wasm-network.mjs';
-import { createNodeTransport } from './sys/wasm-network-node.mjs';
+import { createHttpImports } from './sys/wasm-http.mjs';
+import { createNodeHttp } from './sys/wasm-http-node.mjs';
 
-const network = true; // Both helpers default to false.
 let instance;
-const transport = await createNodeTransport({ enabled: network });
+const http = createNodeHttp({ enabled: true });
 const wasi = new WASI({ version: 'preview1', args: ['radare2'],
   env: {}, preopens: {}, returnOnExit: true });
 try {
   ({ instance } = await WebAssembly.instantiate(readFileSync('radare2.wasm'), {
     ...wasi.getImportObject(),
-    ...createNetworkImports(() => instance.exports, { enabled: network, transport }),
+    r2: createHttpImports(() => instance.exports, { enabled: true, request: http.request }),
   }));
   wasi.initialize(instance);
   const core = instance.exports.r_core_new();
-  // Use r_core_cmd_str / r_core_file_open as usual, then release the core.
+  // Call r_core_cmd_str / r_socket_http_get / r_socket_http_post, then free results.
   instance.exports.r_core_free(core);
 } finally {
-  await transport.close();
+  await http.close();
 }
 ```
 
-Do not run a test server on the same Node event loop that makes synchronous
-WASM calls: run it in another worker/process. The regression test demonstrates
-this arrangement: `node test/scripts/wasm-network.mjs path/to/radare2.wasm`.
+## Python and AI clients
 
-### Browser JavaScript
+The Python Wasmer wrapper in `radareorg/radare2-r2pipe/python-wasm` accepts
+`open(wasm='radare2.wasm', network=True)` and provides HTTP(S) GET/POST through
+Python's standard library. Networking defaults off there too.
 
-For HTTP with the existing browser build, use the explicit opt-in helper in a
-**dedicated Worker**. Merge these functions into the other `r2` console imports:
+For r2ai compiled into the guest, `e r2ai.http.backend=socket` selects the
+existing `r_socket_http_*` path; `e r2ai.stream=false` requests a complete
+response. Native plugins cannot be dynamically loaded into a WASM build.
+WASI QuickJS exposes `r2.http(method, url, headers, data?)`, returning
+`{status, body}`, for scripts such as decai to use the same C APIs without
+shelling out. `headers` is the newline-separated string described above.
+No arbitrary shell command emulation is provided.
 
-```js
-import { createBrowserHttpImports, createNetworkImports } from './sys/wasm-network.mjs';
-let instance;
-const imports = {
-  // Include your WASI imports here.
-  r2: {
-    // Include is_tty, set_raw_mode, key_next, etc. here.
-    ...createBrowserHttpImports(() => instance.exports, { enabled: true }),
-  },
-  ...createNetworkImports(() => instance.exports), // Raw sockets remain disabled.
-};
-// Instantiate your browser module with imports, then run its entry point.
+Run the real C API regression with:
+
+```sh
+node test/scripts/wasm-http.mjs binr/radare2/radare2.wasm
 ```
-
-This helper uses synchronous XMLHttpRequest in the Worker, because these C
-imports return synchronously. Returning a Promise from an import is incorrect.
-A browser cannot supply raw TCP/UDP. To use `r2net` there, provide an application
-transport backed by a WebSocket proxy and a separate worker/message bridge,
-subject to the same explicit opt-in and sandbox checks. No proxy is configured
-or started automatically.
-
-The Python counterpart is `r2pipe_wasm.open(wasm=..., network=True)` in
-`radareorg/radare2-r2pipe/python-wasm`; it supports TCP, connected UDP, TLS clients
-and TCP listeners through Python's socket/SSL modules.

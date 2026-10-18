@@ -7,9 +7,19 @@
 #include <wininet.h>
 #endif
 
-#if R2_WASM_BROWSER
+#if R2_WASM_BROWSER || R2_WASM_HTTP
 extern char* r2_js_http_get(const char *url, const char *headers_str, int *code, int *rlen) __attribute__((import_module("r2"), import_name("http_get")));
 extern char* r2_js_http_post(const char *url, const char *headers_str, const char *data, int *code, int *rlen) __attribute__((import_module("r2"), import_name("http_post")));
+
+static char *socket_http_headers(const char **headers) {
+	size_t count = 0;
+	if (headers) {
+		while (headers[count]) {
+			count++;
+		}
+	}
+	return r_str_array_join (headers, count, "\n");
+}
 #endif
 
 #define SOCKET_HTTP_MAX_HEADER_LENGTH 0x2000
@@ -17,11 +27,10 @@ extern char* r2_js_http_post(const char *url, const char *headers_str, const cha
 
 /* Check sandbox network permission for URL or host */
 static bool socket_http_sandbox_check(const char *url_or_host) {
-#if __wasi__
-	if (!r_sandbox_check (R_SANDBOX_GRAIN_SOCKET)) {
-		return false;
-	}
-#endif
+#if R2_WASM_BROWSER || R2_WASM_HTTP
+	// Host HTTP clients may follow redirects beyond the initial host.
+	return r_sandbox_check (R_SANDBOX_GRAIN_SOCKET) && r_sandbox_check (R_SANDBOX_GRAIN_NETWORK);
+#else
 	if (r_sandbox_check (R_SANDBOX_GRAIN_NETWORK)) {
 		/* NETWORK grain is set, allow all */
 		return true;
@@ -32,10 +41,11 @@ static bool socket_http_sandbox_check(const char *url_or_host) {
 		return false;
 	}
 	return true;
+#endif
 }
 
 static bool socket_http_requires_curl(const char *url) {
-#if !HAVE_LIB_SSL && !R2__WINDOWS__ && !R2_WASI_NETWORK
+#if !HAVE_LIB_SSL && !R2__WINDOWS__
 	return r_str_startswith (url, "https://");
 #else
 	return false;
@@ -224,27 +234,13 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 	if (!socket_http_sandbox_check (url)) {
 		return NULL;
 	}
-#if R2_WASM_BROWSER
-	// Browser hosts may follow redirects outside the initial URL's origin.
-	if (!r_sandbox_check (R_SANDBOX_GRAIN_NETWORK)) {
-		return NULL;
-	}
-	if ((void*)r2_js_http_get != NULL) {
-		char *headers_str = NULL;
-		if (headers) {
-			RStrBuf *sb = r_strbuf_new ("");
-			const char **h = headers;
-			while (*h) {
-				r_strbuf_append (sb, *h);
-				r_strbuf_append (sb, "\n");
-				h++;
-			}
-			headers_str = r_strbuf_drain (sb);
-		}
-		char *res = r2_js_http_get (url, headers_str, code, rlen);
-		free (headers_str);
-		return res;
-	}
+#if R2_WASM_BROWSER || R2_WASM_HTTP
+	char *headers_str = socket_http_headers (headers);
+	char *res = r2_js_http_get (url, headers_str, code, rlen);
+	free (headers_str);
+	return res;
+#elif __wasi__
+	return NULL;
 #endif
 	const bool use_curl = socket_http_use_curl (url);
 	const bool requires_curl = socket_http_requires_curl (url);
@@ -441,31 +437,23 @@ R_API bool r_socket_http_download(const char *url, const char **headers, const c
 }
 
 R_API char *r_socket_http_post(const char *url, const char *headers[], const char *data, int *code, int *rlen) {
+	if (code) {
+		*code = 0;
+	}
+	if (rlen) {
+		*rlen = 0;
+	}
 	/* Check sandbox network permission */
 	if (!socket_http_sandbox_check (url)) {
 		return NULL;
 	}
-#if R2_WASM_BROWSER
-	// Browser hosts may follow redirects outside the initial URL's origin.
-	if (!r_sandbox_check (R_SANDBOX_GRAIN_NETWORK)) {
-		return NULL;
-	}
-	if ((void*)r2_js_http_post != NULL) {
-		char *headers_str = NULL;
-		if (headers) {
-			RStrBuf *sb = r_strbuf_new ("");
-			const char **h = headers;
-			while (*h) {
-				r_strbuf_append (sb, *h);
-				r_strbuf_append (sb, "\n");
-				h++;
-			}
-			headers_str = r_strbuf_drain (sb);
-		}
-		char *res = r2_js_http_post (url, headers_str, data, code, rlen);
-		free (headers_str);
-		return res;
-	}
+#if R2_WASM_BROWSER || R2_WASM_HTTP
+	char *headers_str = socket_http_headers (headers);
+	char *res = r2_js_http_post (url, headers_str, data, code, rlen);
+	free (headers_str);
+	return res;
+#elif __wasi__
+	return NULL;
 #endif
 	const bool use_curl = socket_http_use_curl (url);
 	const bool requires_curl = socket_http_requires_curl (url);

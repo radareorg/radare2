@@ -448,6 +448,68 @@ static JSValue r2plugin_unload(JSContext *ctx, JSValueConst this_val, int argc, 
 	return JS_NewBool (ctx, res);
 }
 
+#if __wasi__
+// Direct HTTP for guest scripts; uses the same sandbox checks as C callers.
+static JSValue r2http(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+	if (argc < 3) {
+		return JS_ThrowTypeError (ctx, "http(method, url, headers, data?)");
+	}
+	const char *method = JS_ToCString (ctx, argv[0]);
+	const char *url = JS_ToCString (ctx, argv[1]);
+	const char *fields = JS_ToCString (ctx, argv[2]);
+	const char *data = argc > 3? JS_ToCString (ctx, argv[3]): NULL;
+	char *body = NULL;
+	const char **headers = NULL;
+	char *buffer = NULL;
+	int code = 0, length = 0;
+	JSValue result = JS_EXCEPTION;
+	if (!method || !url || !fields || (argc > 3 && !data)) {
+		goto beach;
+	}
+	buffer = strdup (fields);
+	if (!buffer) {
+		JS_ThrowOutOfMemory (ctx);
+		goto beach;
+	}
+	int count = r_str_split (buffer, '\n');
+	headers = R_NEWS0 (const char *, (size_t)count + 1);
+	if (!headers) {
+		JS_ThrowOutOfMemory (ctx);
+		goto beach;
+	}
+	int i;
+	char *field = buffer;
+	for (i = 0; i < count; i++) {
+		headers[i] = field;
+		field += strlen (field) + 1;
+	}
+	if (!strcmp (method, "GET")) {
+		body = r_socket_http_get (url, (const char **)headers, &code, &length);
+	} else if (!strcmp (method, "POST")) {
+		body = r_socket_http_post (url, (const char **)headers, data? data: "", &code, &length);
+	} else {
+		JS_ThrowTypeError (ctx, "Expected GET or POST");
+		goto beach;
+	}
+	if (!body) {
+		JS_ThrowInternalError (ctx, "HTTP request failed or denied");
+		goto beach;
+	}
+	result = JS_NewObject (ctx);
+	JS_SetPropertyStr (ctx, result, "status", JS_NewInt32 (ctx, code));
+	JS_SetPropertyStr (ctx, result, "body", JS_NewStringLen (ctx, body, length));
+beach:
+	free (headers);
+	free (buffer);
+	free (body);
+	JS_FreeCString (ctx, method);
+	JS_FreeCString (ctx, url);
+	JS_FreeCString (ctx, fields);
+	JS_FreeCString (ctx, data);
+	return result;
+}
+#endif
+
 static JSValue r2fdump(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
 	size_t plen;
 	const char *a0 = NULL;
@@ -691,6 +753,9 @@ static const JSCFunctionListEntry js_r2_funcs[] = {
 	JS_CFUNC_DEF ("callAt", 2, r2callAt),
 	JS_CFUNC_DEF ("syscmd", 1, r2syscmd),
 	JS_CFUNC_DEF ("syscmds", 1, r2syscmds),
+#if __wasi__
+	JS_CFUNC_DEF ("http", 4, r2http),
+#endif
 	// disk
 	JS_CFUNC_DEF ("fdump", 2, r2fdump),
 	JS_CFUNC_DEF ("fload", 1, r2fload),
