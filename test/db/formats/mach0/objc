@@ -1215,3 +1215,22 @@ EXPECT=<<EOF
 0x1003eb2d0 [0x1002e0524 - 0x1002e08e0]    956 objc class 1032 HashtagIntentResponse :: INIntentResponse
 EOF
 RUN
+
+NAME=objc lists shared between entries are bounded by the file size
+FILE=bins/mach0/objc-shared-lists
+CMDS=ic~?method
+EXPECT=<<EOF
+340
+EOF
+EXPECT_ERR=<<EOF
+WARN: The objc lists add up to more than 4 times the file size, ignoring the rest
+EOF
+RUN
+
+NAME=objc lists that are not shared keep all their methods
+FILE=bins/mach0/objc-unshared-lists
+CMDS=ic~?method
+EXPECT=<<EOF
+40
+EOF
+RUN

@@ -267,6 +267,7 @@ struct MACH0_(obj_t) {
 	ut32 exports_trie_size;
 	RInterval lastrange;
 	ut64 lastrange_pa;
+	ut64 objc_lists_size; // bytes of all the objc lists walked so far
 };
 
 typedef struct {

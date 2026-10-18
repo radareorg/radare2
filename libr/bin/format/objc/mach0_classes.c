@@ -280,6 +280,22 @@ static mach0_ut va2pa(RBinFile *bf, mach0_ut p, ut32 *offset, ut32 *left) {
 	return r;
 }
 
+// every list fits in its segment, but lists can be shared or overlap, so bound what all the walks add up to
+static bool account_list(RBinFile *bf, ut64 size) {
+	struct MACH0_(obj_t) *mo = (struct MACH0_(obj_t) *)bf->bo->bin_obj;
+	const ut64 budget = 4 * bf->size; // protocol method lists are walked once per adopting class
+	if (mo->objc_lists_size == UT64_MAX) {
+		return false;
+	}
+	if (size > budget || mo->objc_lists_size > budget - size) {
+		R_LOG_WARN ("The objc lists add up to more than 4 times the file size, ignoring the rest");
+		mo->objc_lists_size = UT64_MAX;
+		return false;
+	}
+	mo->objc_lists_size += size;
+	return true;
+}
+
 static int sort_by_offset(const RBinField *a, const RBinField *b) {
 	if (a->attr.offset > b->attr.offset) {
 		return 1;
@@ -332,6 +348,9 @@ static void get_ivar_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
 	il.count = r_read_ble (&sivarlist[4], bigendian, 32);
 	if (il.entsize != sizeof (i) || il.count > (left - sizeof (il)) / sizeof (i)) {
 		R_LOG_DEBUG ("Invalid ivar list at 0x%08"PFMT64x, (ut64)p);
+		return;
+	}
+	if (!account_list (bf, (ut64)il.count * sizeof (i))) {
 		return;
 	}
 	p += sizeof (struct MACH0_(SIVarList));
@@ -523,6 +542,9 @@ static void get_objc_property_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
 		R_LOG_DEBUG ("Invalid property list at 0x%08"PFMT64x, (ut64)p);
 		return;
 	}
+	if (!account_list (bf, (ut64)opl.count * sizeof (op))) {
+		return;
+	}
 
 	p += sizeof (struct MACH0_(SObjcPropertyList));
 	offset += sizeof (struct MACH0_(SObjcPropertyList));
@@ -634,6 +656,9 @@ static void iterate_list_of_lists(RBinFile *bf, OnList cb, void * ctx, mach0_ut 
 	if (entsize < 1 || count > (left - sizeof (tmp)) / entsize) {
 		return;
 	}
+	if (!account_list (bf, (ut64)count * entsize)) {
+		return;
+	}
 
 	p += sizeof (tmp);
 
@@ -722,6 +747,9 @@ static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_na
 	size_t read_size = is_small ? 3 * sizeof (ut32): sizeof (struct MACH0_(SMethod));
 	if (ml.count > (left - sizeof (ml)) / read_size) {
 		R_LOG_DEBUG ("Invalid method list at 0x%08"PFMT64x, (ut64)p);
+		return;
+	}
+	if (!account_list (bf, (ut64)ml.count * read_size)) {
 		return;
 	}
 
@@ -920,6 +948,9 @@ static void get_protocol_list(RBinFile *bf, RBinClass *klass, objc_cache_opt_inf
 	}
 	pl.count = r_read_ble (&spl[0], bigendian, 8 * sizeof (mach0_ut));
 	if (pl.count < 1 || pl.count > (left - sizeof (pl)) / ptr_size) {
+		return;
+	}
+	if (!account_list (bf, (ut64)pl.count * ptr_size)) {
 		return;
 	}
 
@@ -1459,7 +1490,9 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 		return NULL;
 	}
 	const bool bigendian = bf->bo->info->big_endian;
-	const RSkipList *relocs = MACH0_(load_relocs) (bf->bo->bin_obj);
+	struct MACH0_(obj_t) *mo = (struct MACH0_(obj_t) *)bf->bo->bin_obj;
+	const RSkipList *relocs = MACH0_(load_relocs) (mo);
+	mo->objc_lists_size = 0;
 
 	/* check if it's Swift */
 	MetaSections ms = metadata_sections_init (bf);
