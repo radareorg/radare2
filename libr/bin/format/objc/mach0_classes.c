@@ -58,11 +58,6 @@ typedef struct {
 	objc_cache_opt_info *oi;
 } ProtocolListOfListsCtx;
 
-typedef struct {
-	ut64 image_index: 16;
-	st64 list_offset: 48;
-} ListOfListsEntry;
-
 typedef void (* OnList)(mach0_ut p, void * ctx);
 
 static bool load_unnamed(RBinFile *bf) {
@@ -669,7 +664,7 @@ static void iterate_list_of_lists(RBinFile *bf, OnList cb, void * ctx, mach0_ut 
 			return;
 		}
 
-		ListOfListsEntry entry = {0};
+		ut8 entry[sizeof (ut64)];
 		if (r + left < r || r + entsize < r) {
 			break;
 		}
@@ -682,18 +677,18 @@ static void iterate_list_of_lists(RBinFile *bf, OnList cb, void * ctx, mach0_ut 
 		if (left < entsize) {
 			break;
 		}
-		size_t mines = R_MIN (entsize, sizeof (entry));
 		if (entsize < sizeof (entry)) {
 			R_LOG_WARN ("wrong lole size, breaking, not enough to read");
 			break;
 		} else if (entsize != sizeof (entry)) {
 			R_LOG_WARN ("wrong lole size. fuzzed blob?");
 		}
-		if (r_buf_read_at (bf->buf, r, (ut8*)&entry, mines) != mines) {
+		if (r_buf_read_at (bf->buf, r, entry, sizeof (entry)) != sizeof (entry)) {
 			break;
 		}
 
-		mach0_ut list_address = p + entry.list_offset;
+		st64 list_offset = (st64)r_read_ble64 (entry, bigendian) >> 16;
+		mach0_ut list_address = p + list_offset;
 		cb (list_address, ctx);
 
 		p += entsize;
