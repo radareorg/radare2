@@ -92,6 +92,7 @@ RUN
 
 NAME=panels pinned graph keeps its function across seek and explicit refresh
 FILE=-
+TIMEOUT=10
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 "$capture=v @e:scr.interactive=true > $panel"
@@ -100,7 +101,7 @@ wx 85c0740290c3c3
 wx ccc3 @ 0x100
 af
 af @ 0x100
-<mlljljjjjj =jjj qQ
+<Mlljljjjjj =jjj qQ
 v @e:scr.interactive=true > /dev/null
 s 0x100
 <=jj Q

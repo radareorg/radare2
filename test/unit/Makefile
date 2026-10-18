@@ -28,7 +28,7 @@ asan:
 
 $(UNITS_BINDIR)/%: %.c Makefile
 	mkdir -p "$(UNITS_BINDIR)"
-	$(CC) $(CPPFLAGS) $(CFLAGS) -MMD -MP -MF $@.d -MT $@ $< -o $@ $(LDFLAGS) $(LDLIBS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -MD -MF $@.d $< -o $@ $(LDFLAGS) $(LDLIBS)
 
 # keep the built-in %: %.c rule from dropping binaries next to the sources
 test_%: $(UNITS_BINDIR)/test_%

@@ -426,13 +426,14 @@ RUN
 
 NAME=panels edit menu skips separator and toggles io.cache
 FILE=-
+TIMEOUT=10
 CMDS=<<EOF
 e scr.wheel=false
 e io.cache=false
-<mljjjjjjjjjjl xQ
+<Mljjjjjjjjjjl xQ
 v @e:scr.interactive=true > /dev/null
 e io.cache
-<mljjjjjjjjjjlj xQ
+<Mljjjjjjjjjjlj xQ
 v @e:scr.interactive=true > /dev/null
 e io.cache
 EOF
@@ -444,10 +445,11 @@ RUN
 
 NAME=panels settings submenu preserves order and callbacks
 FILE=-
+TIMEOUT=10
 CMDS=<<EOF
 e scr.wheel=false
 e scr.bgfill=false
-<mljljjjjl qqqqQ
+<Mljljjjjl qqqqQ
 v @e:scr.interactive=true > /dev/null
 e scr.bgfill
 EOF
@@ -458,6 +460,7 @@ RUN
 
 NAME=panels graph analysis recovers missing function and switches to tiny
 FILE=-
+TIMEOUT=10
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 "$capture=v @e:scr.interactive=true > $panel"
@@ -467,7 +470,7 @@ e scr.rows=30
 e scr.utf8=false
 e log.level=0
 wx 85c0740290c3c3
-<mlljljjjjj Q
+<Mlljljjjjj Q
 $capture > /dev/null
 cat $panel~No function~?
 aflc
@@ -504,6 +507,7 @@ RUN
 
 NAME=panels graph options refresh cached output and preserve cache preference
 FILE=-
+TIMEOUT=10
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 "$capture=v @e:scr.interactive=true > $panel"
@@ -516,7 +520,7 @@ e graph.body=true
 e graph.edges=1
 wx 85c0740290c3c3
 af
-"<mlljljjjjj \x1b[<2;10;25MjlqqQ"
+"<Mlljljjjjj \x1b[<2;10;25MjlqqQ"
 $capture > /dev/null
 cat $panel~Edges (simple)~?
 "<\x1b[<2;10;6Mjljj Q"
@@ -759,6 +763,7 @@ RUN
 
 NAME=panels opening a new panel clears the previous byte selection
 FILE=-
+TIMEOUT=10
 CMDS=<<EOF
 e scr.wheel=false
 e scr.utf8=false
@@ -768,7 +773,7 @@ e hex.cols=8
 wx 4142434445464748
 <exc 16\nQ
 v @e:scr.interactive=true > /dev/null
-"<\x1b[<0;39;5M\x1b[<0;39;5mmlljljjjjj i5a\nQQ"
+"<\x1b[<0;39;5M\x1b[<0;39;5mMlljljjjjj i5a\nQQ"
 v @e:scr.interactive=true > /dev/null
 p8 8
 EOF
