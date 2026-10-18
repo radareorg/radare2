@@ -738,7 +738,7 @@ static bool parse_dysymtab(struct MACH0_(obj_t) * mo, ut64 off) {
 		if (!size_tab) {
 			return false;
 		}
-		if (ds->tocoff > mo->size || ds->tocoff + size_tab > mo->size) {
+		if (!fits_in (mo->size, ds->tocoff, size_tab)) {
 			return false;
 		}
 		if (! (mo->toc = calloc (mo->ntoc, sizeof (struct dylib_table_of_contents)))) {
@@ -765,8 +765,7 @@ static bool parse_dysymtab(struct MACH0_(obj_t) * mo, ut64 off) {
 		if (!size_tab) {
 			return false;
 		}
-		if (ds->modtaboff > mo->size ||
-			ds->modtaboff + size_tab > mo->size) {
+		if (!fits_in (mo->size, ds->modtaboff, size_tab)) {
 			return false;
 		}
 		if (! (mo->modtab = calloc (mo->nmodtab, sizeof (struct MACH0_(dylib_module))))) {
@@ -811,8 +810,7 @@ static bool parse_dysymtab(struct MACH0_(obj_t) * mo, ut64 off) {
 			mo->nindirectsyms = 0;
 			return false;
 		}
-		if (ds->indirectsymoff > mo->size ||
-			ds->indirectsymoff + size_tab > mo->size) {
+		if (!fits_in (mo->size, ds->indirectsymoff, size_tab)) {
 			mo->nindirectsyms = 0;
 			return false;
 		}
@@ -822,8 +820,8 @@ static bool parse_dysymtab(struct MACH0_(obj_t) * mo, ut64 off) {
 			return false;
 		}
 		for (i = 0; i < mo->nindirectsyms; i++) {
-			len = r_buf_read_at (mo->b, ds->indirectsymoff + i * sizeof (ut32), idsyms, 4);
-			if (len == -1) {
+			len = r_buf_read_at (mo->b, ds->indirectsymoff + i * sizeof (ut32), idsyms, sizeof (ut32));
+			if (len != sizeof (ut32)) {
 				R_LOG_ERROR ("read (indirect syms)");
 				R_FREE (mo->indirectsyms);
 				mo->nindirectsyms = 0;

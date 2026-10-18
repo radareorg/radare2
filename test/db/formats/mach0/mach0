@@ -467,3 +467,24 @@ EXPECT=<<EOF
 0x0
 EOF
 RUN
+
+NAME=mach0 dysymtab indirect symbol table range wraps in 32 bits
+FILE=bins/mach0/dysymtab-indirect-range-wrap
+CMDS=i~^format
+EXPECT=<<EOF
+format   mach064
+EOF
+EXPECT_ERR=<<EOF
+ERROR: parsing dysymtab
+WARN: Cannot initialize items
+EOF
+RUN
+
+NAME=mach0 dysymtab indirect symbol table ending at eof
+FILE=bins/mach0/dysymtab-indirect-end-at-eof
+CMDS=i~^format
+EXPECT=<<EOF
+format   mach064
+EOF
+EXPECT_ERR=
+RUN
