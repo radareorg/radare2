@@ -2166,56 +2166,36 @@ static int cmd_ooi(RCore *r, const char *file, ut64 baseaddr) {
 }
 
 
-static bool cmd_onn(RCore *core, const char* input) {
-	const char *arg0 = input;
-	while (*arg0 && *arg0 != ' ') {
-		arg0++;
-	}
-	arg0 = r_str_trim_head_ro (arg0);
-	if (!*arg0) {
+static bool cmd_onn(RCore *core, const char *input) {
+	const char *args = strchr (input, ' ');
+	int argc = 0;
+	char **argv = args? r_str_argv (args, &argc): NULL;
+	if (argc < 1 || argc > 2) {
 		r_cons_cmd_help_match (core->cons, help_msg_on, "onn", 0, false);
+		r_str_argv_free (argv);
 		return false;
 	}
-	char *ptr = r_str_trim_dup (arg0);
-	int perms = R_PERM_R;
-	char *arg_perm = strchr (ptr, ' ');
-	if (arg_perm) {
-		*arg_perm++ = 0;
-		arg0 = ptr;
-		perms = r_str_rwx (arg_perm);
-		if (perms < 0) {
-			R_LOG_WARN ("Invalid permissions string");
-			perms = 0;
-		}
+	int perms = argc == 2? r_str_rwx (argv[1]): R_PERM_R;
+	if (perms < 0) {
+		R_LOG_WARN ("Invalid permissions string");
+		perms = 0;
 	}
-	Onn on = {arg0, NULL, core};
-	ut64 addr = 0LL;
-	// check if file is opened already
+	Onn on = {argv[0], NULL, core};
 	if (r_str_startswith (input, "nnu")) {
 		r_id_storage_foreach (&core->io->files, find_desc_by_name, &on);
 		if (on.desc) {
 			core->io->desc = on.desc;
+			r_str_argv_free (argv);
 			return true;
 		}
 	}
-
-	RIODesc *desc = r_io_open_at (core->io, ptr, perms, 0644, addr);
-	if (!desc || desc->fd == -1) {
-		R_LOG_ERROR ("Cannot onn open file '%s'", ptr);
-		free (ptr);
-		return false;
+	RIODesc *desc = r_io_open_nomap (core->io, argv[0], perms, 0644);
+	bool ok = desc && desc->fd != -1;
+	if (!ok) {
+		R_LOG_ERROR ("Cannot onn open file '%s'", argv[0]);
 	}
-	RList *maps = r_io_map_get_by_fd (core->io, desc->fd);
-	if (maps) {
-		RIOMap *map;
-		RListIter *iter;
-		r_list_foreach (maps, iter, map) {
-			r_io_map_del (core->io, map->id);
-		}
-		r_list_free (maps);
-	}
-	free (ptr);
-	return true;
+	r_str_argv_free (argv);
+	return ok;
 }
 
 static int cmd_on(RCore *core, int argc, char *argv[]) {

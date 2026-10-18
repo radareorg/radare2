@@ -1,0 +1,17 @@
+NAME=onn quoted URI and unique reopen without maps
+FILE=--
+CMDS=<<EOF2
+onn "hex://01 02" rw
+onnu "hex://01 02" rw
+onnu "hex://01 02"
+oq
+omj
+e io.va=false
+p8 2
+EOF2
+EXPECT=<<EOF2
+3
+[]
+0102
+EOF2
+RUN
