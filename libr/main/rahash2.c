@@ -863,6 +863,8 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 
 	io = r_io_new ();
 	r_libstore_load (io->libstore);
+	// do_hash sets ro->to to the file size when -t is not given
+	const ut64 to = ro->to;
 	for (_ret = 0, i = opt.ind; i < argc; i++) {
 		file = argv[i];
 		if (file && !*file) {
@@ -905,7 +907,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			}
 			// TODO: move some args into the ro struct
 			_ret |= do_hash (ro, argv[i], algo, io, bsize, rad, ule, compareBin);
-			ro->to = 0;
+			ro->to = to;
 			r_io_desc_close (desc);
 		}
 	}
