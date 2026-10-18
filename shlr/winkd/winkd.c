@@ -173,6 +173,21 @@ void winkd_ctx_free(WindCtx **ctx) {
 #define PKT_REQ(p) ((kd_req_t *) (((kd_packet_t *)p)->data))
 #define PKT_STC(p) ((kd_stc_64 *) (((kd_packet_t *)p)->data))
 
+// smallest payload the consumers of PKT_REQ / PKT_STC expect for a data packet
+static size_t kd_min_payload(const kd_packet_t *pkt) {
+	if (pkt->leader != KD_PACKET_DATA) {
+		return 0;
+	}
+	switch (pkt->type) {
+	case KD_PACKET_TYPE_STATE_MANIPULATE:
+		return sizeof (kd_req_t);
+	case KD_PACKET_TYPE_STATE_CHANGE64:
+		return sizeof (kd_stc_64);
+	default:
+		return 0;
+	}
+}
+
 static int winkd_copy_read_mem_response(uint8_t *buf, int count, kd_packet_t *pkt) {
 	kd_req_t *rr = PKT_REQ (pkt);
 	if (rr->ret) {
@@ -256,6 +271,11 @@ int winkd_wait_packet(WindCtx *ctx, const uint32_t type, kd_packet_t **p) {
 		if (pkt->type == KD_PACKET_TYPE_UNUSED) {
 			retries++;
 			continue;
+		}
+		if (pkt->length < kd_min_payload (pkt)) {
+			WIND_DBG eprintf ("Truncated payload (%u bytes) for packet type %08x\n", pkt->length, pkt->type);
+			ret = KD_E_MALFORMED;
+			break;
 		}
 
 		// eprintf ("Received %08x\n", pkt->type);

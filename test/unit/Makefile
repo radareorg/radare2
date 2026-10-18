@@ -25,6 +25,10 @@ $(UNITS_BINDIR)/test_gdb: CPPFLAGS+=-I../../shlr/gdb/include
 $(UNITS_BINDIR)/test_gdb: LDLIBS:=../../shlr/gdb/lib/libgdbr.a $(LDLIBS)
 $(UNITS_BINDIR)/test_gdb: test_gdb.c ../../shlr/gdb/lib/libgdbr.a
 
+$(UNITS_BINDIR)/test_winkd: CPPFLAGS+=-I../../shlr/winkd
+$(UNITS_BINDIR)/test_winkd: LDLIBS:=../../shlr/winkd/libr_winkd.a $(LDLIBS)
+$(UNITS_BINDIR)/test_winkd: test_winkd.c ../../shlr/winkd/libr_winkd.a
+
 asan:
 	CFLAGS=-fsanitize=address $(MAKE) ASAN=1
 
