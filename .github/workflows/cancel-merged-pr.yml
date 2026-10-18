@@ -1,0 +1,47 @@
+name: Cancel merged PR runs
+
+on:
+  pull_request_target:
+    types: [closed]
+
+permissions:
+  actions: write
+
+jobs:
+  cancel:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            for (const status of ['queued', 'in_progress', 'waiting', 'pending', 'requested']) {
+              const runs = await github.paginate(github.rest.actions.listWorkflowRunsForRepo, {
+                ...context.repo,
+                event: 'pull_request',
+                branch: pr.head.ref,
+                status,
+                per_page: 100
+              });
+              for (const run of runs) {
+                // Merged and fork PRs can have an empty pull_requests array.
+                const matches = run.pull_requests.some(p => p.number === pr.number)
+                  || (run.pull_requests.length === 0
+                    && run.head_repository?.id === pr.head.repo?.id
+                    && run.head_branch === pr.head.ref
+                    && run.head_sha === pr.head.sha);
+                if (run.event !== 'pull_request' || run.status === 'completed' || !matches) {
+                  continue;
+                }
+                try {
+                  await github.rest.actions.cancelWorkflowRun({...context.repo, run_id: run.id});
+                  core.info(`Cancelled PR #${pr.number} run ${run.id}`);
+                } catch (error) {
+                  // A run can finish between listing it and cancelling it.
+                  if (error.status !== 409) {
+                    throw error;
+                  }
+                }
+              }
+            }
