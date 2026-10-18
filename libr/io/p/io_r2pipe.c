@@ -39,7 +39,9 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	PJ *pj = pj_new ();
 	pj_o (pj);
 	pj_ks (pj, "op", "write");
-	pj_kn (pj, "address", R2P (fd)->offset);
+	char address[19];
+	snprintf (address, sizeof (address), "0x%"PFMT64x, R2P (fd)->offset);
+	pj_ks (pj, "address", address);
 	pj_k (pj, "data");
 	pj_a (pj);
 	int i;
@@ -62,7 +64,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	if (!fd || !fd->data || count < 0) {
 		return -1;
 	}
-	char *request = r_str_newf ("{\"op\":\"read\",\"address\":%"PFMT64u",\"count\":%d}",
+	char *request = r_str_newf ("{\"op\":\"read\",\"address\":\"0x%"PFMT64x"\",\"count\":%d}",
 		R2P (fd)->offset, count);
 	RJson *json = __request (fd, request);
 	free (request);

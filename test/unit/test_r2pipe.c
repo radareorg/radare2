@@ -24,6 +24,7 @@ static bool test_r2pipe_404(void) {
 
 #if R2__UNIX__
 static const char *self;
+static const ut64 io_high_base = 0xfedcba9876543000ULL;
 static const char *bad_replies[] = {
 	"null", "{\"result\":2,\"data\":[1]}", "{\"result\":-1}",
 	"{\"result\":1,\"data\":[256]}", "{\"result\":1,\"data\":[null]}",
@@ -33,6 +34,8 @@ static const char *bad_replies[] = {
 static int io_backend(void) {
 	ut8 memory[8192] = {0};
 	char line[65536];
+	char wire_address[32] = "";
+	ut64 last_address = 0;
 	putchar (0);
 	fflush (stdout);
 	while (fgets (line, sizeof (line), stdin)) {
@@ -41,7 +44,16 @@ static int io_backend(void) {
 			return 1;
 		}
 		const char *op = r_json_get_str (request, "op");
-		ut64 address = r_json_get_num (request, "address");
+		const RJson *field = r_json_get (request, "address");
+		ut64 address = 0;
+		if (field) {
+			address = field->type == R_JSON_STRING? r_num_get (NULL, field->str_value): field->num.u_value;
+			r_str_ncpy (wire_address, field->type == R_JSON_STRING? field->str_value: "number", sizeof (wire_address));
+			last_address = address;
+		}
+		if (address >= io_high_base && address - io_high_base < sizeof (memory)) {
+			address -= io_high_base;
+		}
 		if (address == 9010) {
 			printf (" { \"data\" : [ 7 ], \"result\" : 1 }%c", 0);
 		} else if (address == 9011) {
@@ -52,7 +64,11 @@ static int io_backend(void) {
 			PJ *pj = pj_new ();
 			pj_o (pj);
 			if (!strcmp (op, "system")) {
-				pj_ks (pj, "result", r_json_get_str (request, "cmd"));
+				const char *cmd = r_json_get_str (request, "cmd");
+				char parsed_address[19];
+				snprintf (parsed_address, sizeof (parsed_address), "0x%"PFMT64x, last_address);
+				pj_ks (pj, "result", !strcmp (cmd, "wire-address")? wire_address:
+					!strcmp (cmd, "last-address")? parsed_address: cmd);
 			} else {
 				const RJson *data = r_json_get (request, "data");
 				int count = data? data->children.count: r_json_get_num (request, "count");
@@ -121,9 +137,36 @@ static bool test_r2pipe_io(void) {
 	char *result = r_io_desc_system (a, "hello \"world\"");
 	mu_assert_streq (result, "hello \"world\"", "decode system reply");
 	free (result);
+	mu_assert_eq (r_io_fd_write_at (io, a->fd, io_high_base + 17, expected, 4), 4, "high uint64 write");
+	result = r_io_desc_system (a, "wire-address");
+	mu_assert_streq (result, "0xfedcba9876543011", "write address is an exact hexadecimal string");
+	free (result);
+	mu_assert_eq (r_io_fd_read_at (io, a->fd, io_high_base + 17, actual, 4), 4, "high uint64 read");
+	mu_assert_memeq (actual, expected, 4, "high uint64 round trip");
+	result = r_io_desc_system (a, "wire-address");
+	mu_assert_streq (result, "0xfedcba9876543011", "read address is an exact hexadecimal string");
+	free (result);
+	mu_assert_eq (r_io_fd_read_at (io, a->fd, UT64_MAX, actual, 1), 0, "maximum uint64 offset");
+	result = r_io_desc_system (a, "wire-address");
+	mu_assert_streq (result, "0xffffffffffffffff", "maximum uint64 wire value");
+	free (result);
 	r_io_free (io);
 	mu_end;
 }
+static bool test_r2pipe_io_numeric_address(void) {
+	char *command = r_str_newf ("\"%s\" --io-backend", self);
+	R2Pipe *pipe = r2pipe_open (command);
+	free (command);
+	mu_assert_notnull (pipe, "legacy numeric backend");
+	char *reply = r2pipe_cmd (pipe, "{\"op\":\"read\",\"address\":18446744073709551615,\"count\":1}");
+	free (reply);
+	reply = r2pipe_cmd (pipe, "{\"op\":\"system\",\"cmd\":\"last-address\"}");
+	mu_assert_streq (reply, "{\"result\":\"0xffffffffffffffff\"}", "legacy uint64 number stays exact in C");
+	free (reply);
+	r2pipe_close (pipe);
+	mu_end;
+}
+
 #endif
 
 static int all_tests(void) {
@@ -132,6 +175,7 @@ static int all_tests(void) {
 	mu_run_test (test_r2pipe_404);
 #if R2__UNIX__
 	mu_run_test (test_r2pipe_io);
+	mu_run_test (test_r2pipe_io_numeric_address);
 #endif
 	return tests_passed != tests_run;
 }
