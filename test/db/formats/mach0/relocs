@@ -141,3 +141,16 @@ format   mach064
 2050
 EOF
 RUN
+
+NAME=mach0 repeated LC_DYLD_CHAINED_FIXUPS commands are parsed once
+FILE=bins/mach0/chained-fixups-repeated-commands
+TIMEOUT=10
+CMDS=<<EOF
+i~^format
+ir~?
+EOF
+EXPECT=<<EOF
+format   mach064
+2
+EOF
+RUN

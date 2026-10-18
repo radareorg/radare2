@@ -1800,8 +1800,10 @@ static bool parse_chained_fixups(struct MACH0_(obj_t) * mo, ut32 offset, ut32 si
 		return false;
 	}
 	mo->segs_count = (int)segs_to_parse;
-	size_t i;
+	size_t i, j;
 	ut64 cursor = starts_at + sizeof (ut32);
+	// segments do not share page_start arrays, so together they fit in the blob
+	ut64 starts_left = starts_size;
 	for (i = 0; i < segs_to_parse; i++) {
 		ut32 seg_off;
 		if ((seg_off = r_buf_read_le32_at (mo->b, cursor)) == UT32_MAX || !seg_off) {
@@ -1818,15 +1820,21 @@ static bool parse_chained_fixups(struct MACH0_(obj_t) * mo, ut32 offset, ut32 si
 		}
 		if (cur_seg->page_count > 0) {
 			ut64 page_starts_size = (ut64)cur_seg->page_count * sizeof (ut16);
-			if (page_starts_size > starts_size - seg_off - 22) {
+			if (page_starts_size > starts_size - seg_off - 22 || page_starts_size > starts_left) {
 				return false;
 			}
-			ut16 *page_start = malloc (sizeof (ut16) * cur_seg->page_count);
+			starts_left -= page_starts_size;
+			ut16 *page_start = malloc (page_starts_size);
 			if (!page_start) {
 				return false;
 			}
-			if (r_buf_fread_at (mo->b, starts_at + seg_off + 22, (ut8 *)page_start, "s", cur_seg->page_count) != cur_seg->page_count * 2) {
+			// read the whole array at once, r_buf_fread_at does one read per element
+			if (r_buf_read_at (mo->b, starts_at + seg_off + 22, (ut8 *)page_start, page_starts_size) != page_starts_size) {
+				free (page_start);
 				return false;
+			}
+			for (j = 0; j < cur_seg->page_count; j++) {
+				page_start[j] = r_read_le16 (&page_start[j]);
 			}
 			cur_seg->page_start = page_start;
 		}
@@ -2403,7 +2411,8 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 			break;
 		}
 	}
-	bool have_chained_starts = false;
+	ut32 fixups_off = 0;
+	ut32 fixups_size = 0;
 	for (i = 0, off = sizeof (struct MACH0_(mach_header)) + mo->header_at;
 		i < mo->hdr.ncmds;
 		i++, off += lc.cmdsize) {
@@ -2478,15 +2487,16 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 			if (!skip_chained_fixups) {
 				ut8 buf[8];
 				if (r_buf_read_at (mo->b, off + 8, buf, sizeof (buf)) == sizeof (buf)) {
-					ut32 dataoff = r_read_ble32 (buf, mo->big_endian);
-					ut32 datasize = r_read_ble32 (buf + 4, mo->big_endian);
-					R_LOG_DEBUG ("chained fixups at 0x%08x with size %d", (ut64)dataoff, (int)datasize);
-					have_chained_starts = parse_chained_fixups (mo, dataoff, datasize);
+					// parsed once after the loop, the last command wins if duplicated
+					fixups_off = r_read_ble32 (buf, mo->big_endian);
+					fixups_size = r_read_ble32 (buf + 4, mo->big_endian);
+					R_LOG_DEBUG ("chained fixups at 0x%08x with size %d", fixups_off, (int)fixups_size);
 				}
 			}
 			break;
 		}
 	}
+	bool have_chained_starts = fixups_size && parse_chained_fixups (mo, fixups_off, fixups_size);
 
 	// old arm64e binaries have no LC_DYLD_CHAINED_FIXUPS, they encode the
 	// chains as threaded rebase opcodes inside LC_DYLD_INFO instead
