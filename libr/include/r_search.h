@@ -34,6 +34,7 @@ enum {
 // Keyword mode flags; ordered streams are forward-only and flushed with (end, NULL, 0).
 #define R_SEARCH_ORDERED (1 << 16)
 #define R_SEARCH_UNIQUE (1 << 17)
+#define R_SEARCH_PREFILTER (1 << 18)
 #define R_SEARCH_MODE_MASK 0xffff
 
 #define R_SEARCH_DISTANCE_MAX 10

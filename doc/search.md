@@ -9,6 +9,10 @@ changing the `RSearch` layout or adding exported functions:
 - Add `R_SEARCH_UNIQUE` to report only the first accepted keyword at each address.
   Later keywords at that address are not evaluated or counted. This flag requires
   `R_SEARCH_ORDERED`.
+- Add `R_SEARCH_PREFILTER` to compile a 256-bit first-byte lookup for exact
+  ordered searches. It rejects impossible bytes before walking the keyword list,
+  including masked and case-insensitive patterns. It is ignored with distance or
+  inverse matching. Use it for longer scans; short streams can avoid its setup cost.
 
 Register keywords before feeding data. Adding keywords after an ordered stream
 has started fails without taking ownership of the new keyword. Keyword bytes,

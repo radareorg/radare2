@@ -78,7 +78,7 @@ static int search_magic_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 R_API int r_search_set_mode(RSearch *s, int mode) {
 	const int flags = mode & ~R_SEARCH_MODE_MASK;
 	if (flags && ((mode & R_SEARCH_MODE_MASK) != R_SEARCH_KEYWORD
-		|| (flags & ~(R_SEARCH_ORDERED | R_SEARCH_UNIQUE))
+		|| (flags & ~(R_SEARCH_ORDERED | R_SEARCH_UNIQUE | R_SEARCH_PREFILTER))
 		|| !(flags & R_SEARCH_ORDERED))) {
 		return false;
 	}
@@ -423,6 +423,8 @@ typedef struct {
 	ut64 end;
 	int len;
 	int align;
+	bool filter;
+	ut8 first[32];
 	ut8 data[];
 } RSearchOrdered;
 
@@ -430,6 +432,9 @@ static int search_kw_ordered_scan(RSearch *s, ut64 from, const ut8 *buf, size_t 
 	RSearchOrdered *state = s->data;
 	size_t i = (state->align - from % state->align) % state->align;
 	for (; i < starts; i += state->align) {
+		if (state->filter && !(state->first[buf[i] >> 3] & (1U << (buf[i] & 7)))) {
+			continue;
+		}
 		RListIter *iter;
 		RSearchKeyword *kw;
 		ut64 addr = from + i;
@@ -476,9 +481,21 @@ static int search_kw_ordered_update(RSearch *s, ut64 from, const ut8 *buf, int l
 		if (!left) {
 			return -1;
 		}
+		left->filter = (s->mode & R_SEARCH_PREFILTER) && !s->distance && !s->inverse;
 		RListIter *iter;
 		RSearchKeyword *kw;
 		r_list_foreach (s->kws, iter, kw) {
+			if (left->filter) {
+				int ch;
+				ut8 mask = kw->binmask_length ? kw->bin_binmask[0] : 0xff;
+				ut8 b = kw->icase ? tolower (kw->bin_keyword[0]) : kw->bin_keyword[0];
+				for (ch = 0; ch < 256; ch++) {
+					ut8 a = kw->icase ? tolower (ch) : ch;
+					if ((a & mask) == (b & mask)) {
+						left->first[ch >> 3] |= 1U << (ch & 7);
+					}
+				}
+			}
 			int align = R_MAX (1, kw->align);
 			while (align) {
 				int rem = left->align % align;

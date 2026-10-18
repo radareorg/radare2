@@ -658,7 +658,7 @@ R_API int r_core_search_preludes(RCore *core, bool log) {
 	if (!list) {
 		return -1;
 	}
-	RSearch *search = r_search_new (R_SEARCH_KEYWORD | R_SEARCH_ORDERED | R_SEARCH_UNIQUE);
+	RSearch *search = r_search_new (R_SEARCH_KEYWORD | R_SEARCH_ORDERED | R_SEARCH_UNIQUE | R_SEARCH_PREFILTER);
 	const char *prelude = r_config_get (core->config, "anal.prelude");
 	if (R_STR_ISNOTEMPTY (prelude)) {
 		RSearchKeyword *kw = r_search_keyword_new_hex (prelude, NULL, NULL);
