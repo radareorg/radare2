@@ -7,6 +7,7 @@ DESCRIPTION The UNIX-like reverse engineering toolkit ;
 LANG_C!
 
 ARG_DISABLE DEBUGGER debugger disable native debugger features ;
+ARG_DISABLE R2_NETWORK network disable socket and HTTP networking ;
 
 USE_DL
 

@@ -1,7 +1,7 @@
 #include <r_socket.h>
 #include "minunit.h"
 
-#if R2__UNIX__ && !__wasi__
+#if R2_NETWORK && R2__UNIX__ && !__wasi__
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -50,9 +50,34 @@ static bool test_r_socket_http_handle_upload(void) {
 	mu_end;
 }
 
+#if !R2_NETWORK
+static bool test_network_disabled(void) {
+	RSocket socket = { .fd = -1 };
+	mu_assert_null (r_socket_new (false), "no socket allocation");
+	mu_assert (!r_socket_connect (&socket, "localhost", "1", R_SOCKET_PROTO_TCP, 1), "no connect");
+	mu_assert (!r_socket_listen (&socket, "1", NULL), "no listen");
+	mu_assert (!r_socket_spawn (&socket, "false", 1), "no spawn");
+	mu_assert_null (r_socket_accept (&socket), "no accept");
+	mu_assert_eq (r_socket_read (&socket, NULL, 0), -1, "no read");
+	mu_assert_eq (r_socket_write (&socket, NULL, 0), -1, "no write");
+	r_sys_setenv ("R2_CURL", "1");
+	int code = 1, length = 1;
+	mu_assert_null (r_socket_http_get ("https://localhost/", NULL, &code, &length), "no HTTP GET");
+	mu_assert_eq (code, 0, "clear status");
+	mu_assert_eq (length, 0, "clear length");
+	mu_assert_null (r_socket_http_post ("https://localhost/", NULL, "", NULL, NULL), "no HTTP POST");
+	mu_assert (!r_socket_http_download ("https://localhost/", NULL, "unused"), "no download");
+	r_sys_setenv ("R2_CURL", NULL);
+	mu_end;
+}
+#endif
+
 static int all_tests(void) {
 	mu_run_test (test_r_socket_http_handle_upload);
-#if R2__UNIX__ && !__wasi__
+#if !R2_NETWORK
+	mu_run_test (test_network_disabled);
+#endif
+#if R2_NETWORK && R2__UNIX__ && !__wasi__
 	mu_run_test (test_r_socket_gets_buffer_limit);
 #endif
 	return tests_passed != tests_run;

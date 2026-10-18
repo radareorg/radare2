@@ -11,7 +11,7 @@
 #include "i/isotp.h"
 #endif
 
-#if EMSCRIPTEN || __wasi__ || defined(__serenity__) || defined(__MINGW32__)
+#if !R2_NETWORK || EMSCRIPTEN || __wasi__ || defined(__serenity__) || defined(__MINGW32__)
 #define NETWORK_DISABLED 1
 #else
 #define NETWORK_DISABLED 0
@@ -31,7 +31,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 	return false;
 }
 R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
-	return -1;
+	return false;
 }
 R_API bool r_socket_close_fd(RSocket *s) {
 	return false;

@@ -6,10 +6,20 @@ and HTTP imports). Set `WASI_SDK` and `WASI_SYSROOT` to use an installed SDK.
 These builds disable native debugging, process execution and raw sockets.
 Only explicitly preopened directories are shared with the guest.
 
+## Build without networking
+
+`./configure --disable-network` or `meson setup build -Dnetwork=false` disables
+libr_socket networking on native and WASI targets. Socket operations use failure
+stubs (`false`, `NULL` or `-1`, according to the return type). HTTP GET/POST and
+download also fail, including with `R2_CURL=1`; the built-in `curl` command cannot
+launch external curl. Disabled builds contain no host HTTP imports, even when
+WASM HTTP was requested. This is a build capability limit, independent of the
+runtime sandbox. It does not restrict programs explicitly launched with `!` or
+third-party plugins implementing their own networking.
+
 ## Optional HTTP GET and POST
 
-The HTTP API variant reuses the browser build's existing `r2.http_get` and
-`r2.http_post` imports. There is no low-level socket ABI or WebSocket proxy.
+The HTTP API and browser variants use one `r2.http_request` import. There is no low-level socket ABI or WebSocket proxy.
 
 ```sh
 # Use a clean checkout when changing build flags.
@@ -39,8 +49,13 @@ headers and credential policies still apply.
 
 | Import in `r2` | wasm32 arguments | Result |
 | --- | --- | --- |
-| `http_get` | url, headers, status pointer, length pointer | response pointer or 0 |
-| `http_post` | url, headers, data, status pointer, length pointer | response pointer or 0 |
+| `http_request` | post, url, headers, data, status pointer, length pointer | response pointer or 0 |
+
+`post` is 0 for GET and 1 for POST. This replaces the earlier two-import ABI;
+update host adapters together with the module. Imports are required at
+instantiation: an omitted callback causes a WebAssembly link error. The supplied
+adapter installs a denial callback when disabled, allowing radare2 to start
+and returning an HTTP failure without a host request.
 
 Strings are UTF-8 and NUL-terminated; headers are newline-separated
 `Name: value` lines (or NULL). POST data is a string, matching the existing
@@ -65,7 +80,7 @@ const r2 = createHttpImports(() => instance.exports, {
 
 The ABI is synchronous. A plain async function or Promise-returning `fetch`
 callback cannot be passed directly as an import. For custom callbacks,
-`headers` is an array of `[name, value]` pairs and `body` is the POST string
+`headers` is a newline-separated string of `Name: value` lines and `body` is the POST string
 (or undefined for GET). Accept only HTTP(S) and enforce application-specific
 host restrictions inside your callback if needed.
 
@@ -75,8 +90,8 @@ Use the helper's default request implementation in a **dedicated Web Worker**.
 It performs synchronous XMLHttpRequest and returns byte-exact response data.
 The host UI stays responsive. With the browser CLI build, merge the returned
 HTTP functions into your existing `r2` console imports (`is_tty`,
-`set_raw_mode`, `key_next`, etc.); with the HTTP reactor only the two HTTP
-functions are needed in that namespace. Both still require a WASI provider.
+`set_raw_mode`, `key_next`, etc.); with the HTTP reactor only the HTTP
+function are needed in that namespace. Both still require a WASI provider.
 
 ```js
 // Inside the Worker; wasiImports comes from your browser WASI provider.

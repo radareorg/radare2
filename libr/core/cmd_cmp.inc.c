@@ -1114,11 +1114,18 @@ static void _core_cmp_info(RCore *core, const char *input) {
 }
 
 static void cmd_curl(RCore *core, const char *arg) {
+#if !R2_NETWORK
+	R_LOG_ERROR ("Network support disabled at build time");
+	return;
+#endif
+#if !__wasi__
 	if (r_sys_getenv_asbool ("R2_CURL")) {
 		char *earg = r_str_escape_sh (arg);
 		r_sys_cmdf ("curl \"%s\"", earg);
 		free (earg);
-	} else {
+	} else
+#endif
+	{
 		char *postdata = NULL;
 		arg = r_str_trim_head_ro (arg);
 		if (r_str_startswith (arg, "-D")) {

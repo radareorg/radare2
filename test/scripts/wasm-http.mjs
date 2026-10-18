@@ -18,9 +18,9 @@ globalThis.XMLHttpRequest = class {
   send() { calls++; this.status = 200; this.response = new Uint8Array([1, 0, 3]).buffer; }
 };
 try {
-  assert.equal(createHttpImports(() => fake).http_get(128, 0, 64, 68), 0);
+  assert.equal(createHttpImports(() => fake).http_request(0, 128, 0, 0, 64, 68), 0);
   assert.equal(calls, 0);
-  const pointer = createHttpImports(() => fake, { enabled: true }).http_get(128, 0, 64, 68);
+  const pointer = createHttpImports(() => fake, { enabled: true }).http_request(0, 128, 0, 0, 64, 68);
   assert.deepEqual([...new Uint8Array(memory.buffer, pointer, 4)], [1, 0, 3, 0]);
   assert.equal(new DataView(memory.buffer).getInt32(64, true), 200);
   assert.equal(new DataView(memory.buffer).getInt32(68, true), 3);
@@ -38,6 +38,7 @@ const server = new Worker(`
       }
       res.writeHead(201); res.end(Buffer.concat(chunks)); return;
     }
+    if (req.url === '/curl') { res.end(Buffer.concat(chunks).toString() || 'curl-get'); return; }
     res.writeHead(req.url === '/missing' ? 404 : 200);
     res.end(Buffer.from([144,0,195]));
   }).listen(0,'127.0.0.1',function(){parentPort.postMessage(this.address().port)});
@@ -50,7 +51,7 @@ try {
   for (const enabled of [false, true]) {
     let e, requests = 0;
     const wasi = new WASI({ version: 'preview1', args: ['radare2'], env: { R2_CURL: '1' }, preopens: {}, returnOnExit: true });
-    const r2 = createHttpImports(() => e, { enabled, request: (...args) => { requests++; return http.request(...args); } });
+    const r2 = createHttpImports(() => e, { enabled, request: (...args) => { assert.equal(typeof args[2], "string"); requests++; return http.request(...args); } });
     const { instance } = await WebAssembly.instantiate(bytes, { ...wasi.getImportObject(), r2 });
     e = instance.exports;
     wasi.initialize(instance);
@@ -73,6 +74,19 @@ try {
         return { status: view.getInt32(code, true), body: new Uint8Array(e.memory.buffer, result >>> 0, size).slice() };
       } finally { for (const p of [url, code, length, h1, h2, headers, data, result]) if (p) e.free(p); }
     }
+    const core = e.r_core_new();
+    assert.ok(core);
+    function command(text) {
+      const p = alloc(text), out = e.r_core_cmd_str(core, p);
+      try {
+        const memory = new Uint8Array(e.memory.buffer), start = out >>> 0;
+        return new TextDecoder().decode(memory.subarray(start, memory.indexOf(0, start))).trim();
+      } finally { e.free(p); if (out) e.free(out); }
+    }
+    command('e scr.color=0');
+    assert.equal(command(`curl http://127.0.0.1:${port}/curl`), enabled ? 'curl-get' : '');
+    assert.equal(command(`curl -D hello http://127.0.0.1:${port}/curl`), enabled ? 'hello' : '');
+    e.r_core_free(core);
     if (!enabled) {
       assert.equal(call('GET'), null); assert.equal(call('POST', '/post'), null);
       assert.equal(requests, 0); continue;
