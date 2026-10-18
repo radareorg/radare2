@@ -65,6 +65,7 @@ ec var.type rgb:99a
 ec var.addr rgb:666
 
 ec widget.bg white rgb:07f
+ec widget.sel rgb:ccffff rgb:223355
 
 # ec graph.box4=white
 # ""e graph.gv.node=fillcolor="#303030" color=lightgray bgcolor=red fontcolor=white penwidth=2 style=filled fontname="Courier Bold" fontsize=14 shape=box

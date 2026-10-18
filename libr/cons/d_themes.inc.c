@@ -328,6 +328,7 @@ static const char * const theme_bluy = \
 	"ec var.addr rgb:666\n"
 	"\n"
 	"ec widget.bg white rgb:07f\n"
+	"ec widget.sel rgb:ccffff rgb:223355\n"
 	"\n"
 	"# ec graph.box4=white\n"
 	"# \"\"e graph.gv.node=fillcolor=\"#303030\" color=lightgray bgcolor=red fontcolor=white penwidth=2 style=filled fontname=\"Courier Bold\" fontsize=14 shape=box\n"
@@ -611,8 +612,8 @@ static const char * const theme_catppuccin = \
 	"ec ai.write rgb:8bd5ca # Teal\n"
 	"ec ai.exec rgb:a6da95 # Green\n"
 	"ec ai.ascii rgb:eed49f # Yellow\n"
-	"ec widget.bg rgb:363a4f # Some kind of grey\n"
-	"ec widget.sel rgb:b7bdf8 # Lavender\n"
+	"ec widget.bg rgb:cad3f5 rgb:363a4f # Some kind of grey\n"
+	"ec widget.sel rgb:24273a rgb:b7bdf8 # Lavender\n"
 ;
 static const char * const theme_cga = \
 	"ecd\n"
@@ -2283,6 +2284,7 @@ static const char * const theme_unsea = \
 	"ec var.addr rgb:666\n"
 	"\n"
 	"ec widget.bg white rgb:07f\n"
+	"ec widget.sel rgb:ccffff rgb:223355\n"
 	"\n"
 	"# ec graph.box4=white\n"
 	"# \"\"e graph.gv.node=fillcolor=\"#303030\" color=lightgray bgcolor=red fontcolor=white penwidth=2 style=filled fontname=\"Courier Bold\" fontsize=14 shape=box\n"

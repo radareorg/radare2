@@ -146,6 +146,29 @@ static void rgb_gen(RCons *cons, RConsColorMode mode, char *outstr, size_t sz, u
 	}
 }
 
+static st8 rgb_ansi16(ut8 r, ut8 g, ut8 b) {
+	static const RColor colors[] = {
+		RColor_BLACK, RColor_RED, RColor_GREEN, RColor_YELLOW,
+		RColor_BLUE, RColor_MAGENTA, RColor_CYAN, RColor_WHITE,
+		RColor_BBLACK, RColor_BRED, RColor_BGREEN, RColor_BYELLOW,
+		RColor_BBLUE, RColor_BMAGENTA, RColor_BCYAN, RColor_BWHITE
+	};
+	int best_distance = ST32_MAX;
+	st8 best = 0;
+	int i;
+	for (i = 0; i < 16; i++) {
+		int dr = r - colors[i].r;
+		int dg = g - colors[i].g;
+		int db = b - colors[i].b;
+		int distance = dr * dr + dg * dg + db * db;
+		if (distance < best_distance) {
+			best_distance = distance;
+			best = i;
+		}
+	}
+	return best;
+}
+
 /* Return the computed color string for the specified color in the specified mode */
 R_API char *r_cons_rgb_str_mode(RCons *cons, char *outstr, size_t sz, RColor *rcolor) {
 	if (!rcolor) {
@@ -164,13 +187,19 @@ R_API char *r_cons_rgb_str_mode(RCons *cons, char *outstr, size_t sz, RColor *rc
 		return outstr;
 	}
 	// If the color handles both foreground and background, also add background
+	st8 foreground_id = rcolor->id16;
 	if (rcolor->a == ALPHA_FGBG) {
-		rgb_gen (cons, mode, outstr, sz, 0, ALPHA_BG, rcolor->r2, rcolor->g2, rcolor->b2, rcolor->id16);
+		st8 background_id = rcolor->id16;
+		if (mode == COLOR_MODE_16) {
+			foreground_id = rgb_ansi16 (rcolor->r, rcolor->g, rcolor->b);
+			background_id = rgb_ansi16 (rcolor->r2, rcolor->g2, rcolor->b2);
+		}
+		rgb_gen (cons, mode, outstr, sz, 0, ALPHA_BG, rcolor->r2, rcolor->g2, rcolor->b2, background_id);
 	}
 	// APPEND
 	size_t len = strlen (outstr);
 	rgb_gen (cons, mode, outstr + len, sz - len,
-			rcolor->attr, rcolor->a, rcolor->r, rcolor->g, rcolor->b, rcolor->id16);
+		rcolor->attr, rcolor->a, rcolor->r, rcolor->g, rcolor->b, foreground_id);
 
 	return outstr;
 }

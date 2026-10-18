@@ -57,5 +57,5 @@ ec ai.read rgb:8aadf4 # Blue
 ec ai.write rgb:8bd5ca # Teal
 ec ai.exec rgb:a6da95 # Green
 ec ai.ascii rgb:eed49f # Yellow
-ec widget.bg rgb:363a4f # Some kind of grey
-ec widget.sel rgb:b7bdf8 # Lavender
+ec widget.bg rgb:cad3f5 rgb:363a4f # Some kind of grey
+ec widget.sel rgb:24273a rgb:b7bdf8 # Lavender
