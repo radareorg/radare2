@@ -109,6 +109,9 @@ R_API char* r_hex_from_py(const char *code) {
 	for (; *code && *code != '[' && *code != '\''
 	  && *code != '"'; code++) {
 		code = skip_comment_py (code);
+		if (!*code) {
+			break;
+		}
 	}
 	if (*code == '[') {
 		out = r_hex_from_py_array (out, code);
@@ -214,6 +217,9 @@ R_API char *r_hex_from_c(const char *code) {
 	}
 	for (; *code != '\0' && *code != '{' && *code != '"'; code++) {
 		code = skip_comment_c (code);
+		if (!*code) {
+			break;
+		}
 	}
 	if (*code == '{') {
 		out = r_hex_from_c_array (out, code);
@@ -223,7 +229,7 @@ R_API char *r_hex_from_c(const char *code) {
 		do {
 			code = s1;
 			out = r_hex_from_c_str (out, &code);
-			if (!out) {
+			if (!out || !*code) {
 				break;
 			}
 			s1 = strchr (code + 1, '"');
@@ -300,16 +306,16 @@ R_API char *r_hex_no_code(const char *code) {
 	*ret = '\0';
 	char *out = ret;
 	out = r_hex_from_c_str (out, &code);
-	code = strchr (code + 1, '"');
 	if (!out) {
 		free (ret);
 		return NULL;
 	}
+	code = *code? strchr (code + 1, '"'): NULL;
 	*out = '\0';
 	while (out && code) {
 		*out = '\0';
 		out = r_hex_from_c_str (out, &code);
-		code = strchr (code + 1, '"');
+		code = *code? strchr (code + 1, '"'): NULL;
 	}
 	return ret;
 }
