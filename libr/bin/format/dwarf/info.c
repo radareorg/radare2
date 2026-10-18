@@ -36,6 +36,9 @@ static void free_comp_dir_entry(HtUPKv *kv) {
 }
 
 static RBinDwarfAbbrevDecl *abbrev_find(const RVecDwarfAbbrevDecl *decls, ut64 abbrev_offset) {
+	if (RVecDwarfAbbrevDecl_empty (decls)) {
+		return NULL;
+	}
 	RBinDwarfAbbrevDecl key = { .offset = abbrev_offset };
 	return bsearch (&key, decls->_start, RVecDwarfAbbrevDecl_length (decls), sizeof (key), abbrev_cmp);
 }

@@ -437,6 +437,34 @@ static RBinSection *dwarf_test_find_section(RBinFile *bf, const char *name) {
 	return NULL;
 }
 
+static bool test_dwarf_empty_abbrev(void) {
+	RBinFileOptions opt = { 0 };
+	mu_assert ("Could not open DWARF fixture", r_bin_open (bin, "bins/elf/dwarf3_c.elf", &opt));
+	RBinFile *bf = r_bin_cur (bin);
+	RBinSection *section = dwarf_test_find_section (bf, ".debug_abbrev");
+	mu_assert_notnull (section, "Missing .debug_abbrev section");
+	static const ut8 empty_abbrev[] = { 0, 0, 1 };
+	section->bytes = r_slice (empty_abbrev, sizeof (empty_abbrev));
+	section->size = sizeof (empty_abbrev);
+	RVecDwarfAbbrevDecl *decls = r_bin_dwarf_parse_abbrev (bf);
+	mu_assert_notnull (decls, "Failed to parse empty abbreviations");
+	mu_assert ("Abbreviations must be empty", RVecDwarfAbbrevDecl_empty (decls));
+	char *printed = r_bin_dwarf_print_info (bf, decls);
+	mu_assert_streq (printed, "", "No debug info should be printed");
+	free (printed);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, decls);
+	mu_assert_notnull (info, "Failed to parse debug info");
+	mu_assert_eq (RVecDwarfCompUnit_length (info->comp_units), 0, "Unit without abbreviations must be skipped");
+	r_bin_dwarf_free_debug_info (info);
+	mu_assert ("Failed to parse compilation directories", r_bin_dwarf_parse_comp_dirs (bf, decls));
+	RList *files = r_bin_dwarf_parse_comp_unit_files (bf, decls);
+	mu_assert_notnull (files, "Failed to parse source files");
+	mu_assert_eq (r_list_length (files), 0, "No source files without abbreviations");
+	r_list_free (files);
+	RVecDwarfAbbrevDecl_free (decls);
+	mu_end;
+}
+
 static RBuffer *dwarf_test_clone_info_patch(const char *path, ut64 info_offset, const ut8 *patch, size_t patch_size) {
 	RBinFileOptions opt = { 0 };
 	if (!r_bin_open (bin, path, &opt)) {
@@ -732,6 +760,7 @@ bool test_dwarf_find_die(void) {
 } while (0)
 
 bool all_tests(void) {
+	run_test_with_setup(test_dwarf_empty_abbrev);
 	run_test_with_setup(test_dwarf3_c);
 	run_test_with_setup(test_dwarf4_cpp_multiple_modules);
 	run_test_with_setup(test_dwarf2_big_endian);
