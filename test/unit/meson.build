@@ -97,8 +97,12 @@ if get_option('enable_tests')
   endif
 
   foreach test : tests
+    test_inc = [platform_inc]
+    if test == 'bin_demangle'
+      test_inc += java_inc
+    endif
     exe = executable('test_@0@'.format(test), 'test_@0@.c'.format(test),
-      include_directories: [platform_inc],
+      include_directories: test_inc,
       dependencies: [
         r_util_dep,
         r_main_dep,

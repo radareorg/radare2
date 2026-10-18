@@ -1,5 +1,5 @@
 #include <r_bin.h>
-#include "../../shlr/java/descriptor.h"
+#include <r_java/descriptor.h>
 #include "minunit.h"
 
 static char *unit_demangle(RBinFile *bf, const char *symbol, ut64 vaddr) {

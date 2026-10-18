@@ -1,8 +1,8 @@
 /* radare - Apache 2.0 - Copyright 2013 - Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
-#include <r_anal.h>
-
 #ifndef R2_JAVA_OPS_H
 #define R2_JAVA_OPS_H
+
+#include <r_types.h>
 
 enum {
 	R_ANAL_JAVA_ILL_OP = -1, /* illegal instruction // trap */

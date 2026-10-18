@@ -19,6 +19,8 @@ endif
 
 all: $(BINS)
 
+$(UNITS_BINDIR)/test_bin_demangle: CPPFLAGS+=-I../../shlr/java/include
+
 $(UNITS_BINDIR)/test_gdb: CPPFLAGS+=-I../../shlr/gdb/include
 $(UNITS_BINDIR)/test_gdb: LDLIBS:=../../shlr/gdb/lib/libgdbr.a $(LDLIBS)
 $(UNITS_BINDIR)/test_gdb: test_gdb.c ../../shlr/gdb/lib/libgdbr.a

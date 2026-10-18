@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2011-2026 - pancake */
 
 #include <r_bin.h>
-#include "../../../shlr/java/descriptor.h"
+#include <r_java/descriptor.h>
 
 R_API char *r_bin_demangle_java(const char *str) {
 	if (R_STR_ISEMPTY (str)) {

@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "code.h"
+#include <r_java/class.h>
 #include <sdb/sdb.h>
 
 int main() {

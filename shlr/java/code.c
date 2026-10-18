@@ -1,9 +1,9 @@
 /* radare - LGPL - Copyright 2007-2026 - pancake */
 
 #include <r_anal.h>
-#include "ops.h"
-#include "code.h"
-#include "class.h"
+#include <r_java/class.h>
+#include <r_java/code.h>
+#include <r_java/ops.h>
 
 #ifndef R_API
 #define R_API

@@ -66,7 +66,7 @@ java_files = [
   #'java/main.c',
 ]
 
-java_inc = [platform_inc, include_directories('java')]
+java_inc = [platform_inc, include_directories('java/include')]
 
 libr2java = static_library('r2java', java_files,
   dependencies: [r_util_dep],
