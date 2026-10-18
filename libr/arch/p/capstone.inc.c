@@ -89,6 +89,11 @@ static bool r_arch_cs_init(RArchSession *as, csh *cs_handle) {
 		switch (as->config->syntax) {
 		case R_ARCH_SYNTAX_ATT:
 			cs_option (*cs_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_ATT);
+#if CS_API_MAJOR >= 6
+			if (CSINC_ARCH == CS_ARCH_X86) {
+				cs_option (*cs_handle, CS_OPT_DETAIL, CS_OPT_DETAIL_INTEL_ORDER);
+			}
+#endif
 			break;
 		case R_ARCH_SYNTAX_MASM:
 			cs_option (*cs_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_MASM);
