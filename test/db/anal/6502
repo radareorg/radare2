@@ -10,3 +10,34 @@ EXPECT=<<EOF
 5
 EOF
 RUN
+
+NAME=6502 zignature mask of a truncated instruction
+FILE=malloc://1024
+ARGS=-a 6502
+CMDS=<<EOF
+za foo a e820
+z
+b 2
+wx e820
+ao 2~mask
+EOF
+EXPECT=<<EOF
+foo:
+  bytes: e820
+  mask: ffff
+mask: ff
+mask: ff
+EOF
+RUN
+
+NAME=6502 zg on blocks ending inside an instruction
+FILE=bins/vsf/c64-rambo2-norom.vsf
+CMDS=<<EOF
+aaa
+zg
+z~?
+EOF
+EXPECT=<<EOF
+2564
+EOF
+RUN

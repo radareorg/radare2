@@ -67,8 +67,10 @@ R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb) {
 				if ((oplen = r_anal_op (anal, op, 0, buf+idx, bb->size-idx, R_ARCH_OP_MASK_BASIC)) < 1) {
 					break;
 				}
-				if (op->nopcode != 0) {
-					memset (bb->fingerprint+idx+op->nopcode, 0, oplen-op->nopcode);
+				// plugins can report the full length of an instruction that does not fit
+				const int len = R_MIN (oplen, bb->size - idx);
+				if (op->nopcode > 0 && op->nopcode < len) {
+					memset (bb->fingerprint + idx + op->nopcode, 0, len - op->nopcode);
 				}
 				idx += oplen;
 				r_anal_op_fini (op);

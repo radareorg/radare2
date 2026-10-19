@@ -485,8 +485,10 @@ R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 		if (oplen < 1) {
 			break;
 		}
-		if ((op->ptr != UT64_MAX || op->jump != UT64_MAX) && op->nopcode != 0) {
-			memset (ret + idx + op->nopcode, 0, oplen - op->nopcode);
+		// plugins can report the full length of an instruction that does not fit
+		const int len = R_MIN (oplen, size - idx);
+		if ((op->ptr != UT64_MAX || op->jump != UT64_MAX) && op->nopcode > 0 && op->nopcode < len) {
+			memset (ret + idx + op->nopcode, 0, len - op->nopcode);
 		}
 		idx += oplen;
 		at += oplen;
