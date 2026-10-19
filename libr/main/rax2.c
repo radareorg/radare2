@@ -522,13 +522,13 @@ dotherax:
 			R_LOG_ERROR (errstr);
 			return false;
 		}
-		if (n >> 31) {
-			// is >32bit
-			n = (st64) (st32)n;
-		} else if (n >> 14) {
-			n = (st64) (st16)n;
-		} else if (n >> 7) {
+		// read the value as signed in the smallest width that holds it
+		if (n <= UT8_MAX) {
 			n = (st64) (st8)n;
+		} else if (n <= UT16_MAX) {
+			n = (st64) (st16)n;
+		} else if (n <= UT32_MAX) {
+			n = (st64) (st32)n;
 		}
 		printf ("%" PFMT64d "\n", n);
 		return true;
