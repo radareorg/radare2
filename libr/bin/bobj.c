@@ -796,10 +796,32 @@ fail:
 	return NULL;
 }
 
+static ut32 symbol_filter_hash(const void *name) {
+	return r_str_hash (name);
+}
+
+static void symbol_filter_free(HtPPKv *kv) {
+	sdb_gh_free (kv->key);
+}
+
+static HtPP *symbol_filter_new(size_t symbols) {
+	// Each symbol can add both an address key and a name key.
+	ut32 capacity = symbols <= UT32_MAX / 2? symbols * 2: 0;
+	HtPP *ht = ht_pp_new_size (capacity, NULL, symbol_filter_free, NULL);
+	if (ht) {
+		ht->opt.hashfn = symbol_filter_hash;
+	}
+	return ht;
+}
+
 static bool filter_classes(RBinFile *bf, RList *list) {
 	bool rc = true;
 	HtSU *db = ht_su_new0 ();
-	HtPP *ht = ht_pp_new0 ();
+	HtPP *ht = symbol_filter_new (0);
+	if (!ht) {
+		ht_su_free (db);
+		return false;
+	}
 	RListIter *iter;
 	RBinClass *cls;
 	RBinSymbol *sym;
@@ -919,7 +941,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		}
 		if (bin->filter && bin->options.load_unnamed) {
 			RBinSymbol *sym;
-			HtPP *ht = ht_pp_new0 ();
+			HtPP *ht = symbol_filter_new (RVecRBinSymbol_length (&bo->symbols_vec));
 			if (ht) {
 				R_VEC_FOREACH (&bo->symbols_vec, sym) {
 					r_bin_filter_sym (bf, ht, sym->vaddr, sym);
