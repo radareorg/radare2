@@ -323,3 +323,33 @@ EXPECT=<<EOF
 --
 EOF
 RUN
+
+NAME=zfd on FLIRT files truncated after a MORE flag
+FILE=--
+CMDS=<<EOF
+zfd bins/other/sigs/truncated-more-modules.sig
+zfd bins/other/sigs/truncated-more-public-names.sig
+?e alive
+EOF
+EXPECT=<<EOF
+alive
+EOF
+EXPECT_ERR=<<EOF
+ERROR: flirt parse tree error
+ERROR: We encountered a problem while parsing the file
+ERROR: flirt parse tree error
+ERROR: We encountered a problem while parsing the file
+EOF
+RUN
+
+NAME=zfs merge does not delete the function being matched
+FILE=bins/elf/flirt-top-of-memory
+CMDS=<<EOF
+aa
+zfs bins/other/sigs/flirt-wrap-size.sig
+aflc
+EOF
+EXPECT=<<EOF
+2
+EOF
+RUN

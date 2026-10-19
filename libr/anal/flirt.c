@@ -555,13 +555,13 @@ static bool module_match_buffer(RAnal *anal, const RFlirtModule *module, ut8 *b,
 			ut32 next_module_function_size;
 
 			// get function size from flirt signature
-			ut64 flirt_fcn_size = module->length - flirt_func->offset;
+			ut64 flirt_fcn_size = (module->length > flirt_func->offset)? module->length - flirt_func->offset: 0;
 			RFlirtFunction *next_flirt_func;
 			RListIter *next_flirt_func_it = flirt_func_it->n;
 			while (next_flirt_func_it) {
 				next_flirt_func = next_flirt_func_it->data;
 				if (!next_flirt_func->is_local && !next_flirt_func->negative_offset) {
-					flirt_fcn_size = next_flirt_func->offset - flirt_func->offset;
+					flirt_fcn_size = (next_flirt_func->offset > flirt_func->offset)? next_flirt_func->offset - flirt_func->offset: 0;
 					break;
 				}
 				next_flirt_func_it = next_flirt_func_it->n;
@@ -573,9 +573,11 @@ static bool module_match_buffer(RAnal *anal, const RFlirtModule *module, ut8 *b,
 				RListIter *iter_tmp;
 				RAnalFunction *fcn;
 				r_list_foreach_safe (anal->fcns, iter, iter_tmp, fcn) {
-					if (fcn != next_module_function &&
-						fcn->addr >= next_module_function->addr + next_module_function_size &&
-						fcn->addr < next_module_function->addr + flirt_fcn_size) {
+					// compare distances because the sums can wrap, the caller is iterating
+					// anal->fcns too, so only functions behind this one can be absorbed
+					const ut64 delta = fcn->addr - next_module_function->addr;
+					if (fcn->addr > next_module_function->addr &&
+						delta >= next_module_function_size && delta < flirt_fcn_size) {
 						RListIter *iter_bb;
 						RAnalBlock *block;
 						r_list_foreach (fcn->bbs, iter_bb, block) {
@@ -865,6 +867,7 @@ static ut8 read_module_public_functions(RFlirt *f, RFlirtModule *module, ut8 *fl
 		R_LOG_DEBUG ("flirt: %04X:%s", function->offset, function->name);
 		*flags = current_byte;
 		r_list_append (module->public_functions, function);
+		function = NULL; // owned by the list
 	} while (*flags & IDASIG__PARSE__MORE_PUBLIC_NAMES);
 #if DEBUG
 	eprintf ("\n");
@@ -924,6 +927,7 @@ static bool parse_leaf(RFlirt *f, RFlirtNode *node) {
 				}
 			}
 			r_list_append (node->module_list, module);
+			module = NULL; // owned by the list
 		} while (flags & IDASIG__PARSE__MORE_MODULES_WITH_SAME_CRC);
 	} while (flags & IDASIG__PARSE__MORE_MODULES); // same prefix but different crc
 
