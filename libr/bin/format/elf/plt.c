@@ -173,7 +173,8 @@ static bool ppc32_index_thunks(ut64 *slots, ut64 nrel, const PPC32Thunk *thunks,
 static bool ppc32_build_thunk_map(ELFOBJ *eo) {
 	const ut64 got = eo->dyn_info.dt_pltgot;
 	const ut64 nrel = Elf_(plt_num_relocs) (eo);
-	if (got == R_BIN_ELF_ADDR_MAX || !nrel) {
+	// the declared DT_PLTRELSZ must not truncate the arrays on 32 bit size_t
+	if (got == R_BIN_ELF_ADDR_MAX || !nrel || nrel >= SIZE_MAX / (sizeof (PPC32Thunk) * PPC32_THUNKS_PER_SLOT)) {
 		return false;
 	}
 	const ut64 glink = read32_at (eo, got);
