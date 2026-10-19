@@ -3,6 +3,7 @@
 #include <r_fs.h>
 #include <r_lib.h>
 #include <r_util.h>
+#include <sdb/ht_uu.h>
 
 // UBI Magic numbers
 #define UBI_EC_HDR_MAGIC       0x55424923 // "UBI#"
@@ -22,6 +23,8 @@
 #define UBIFS_MAX_KEY_LEN   16
 #define UBIFS_SK_LEN        8
 #define UBIFS_ROOT_INO      1
+#define UBIFS_MAX_INDEX_DEPTH 64
+#define UBIFS_MAX_INDEX_NODES 262144
 
 // UBIFS node types
 #define UBIFS_INO_NODE  0
@@ -308,7 +311,8 @@ static ubifs_key_t ubifs_parse_key(const ut8 *key_buf) {
 	return key;
 }
 
-static bool ubifs_walk_index(ubifs_ctx_t *ctx, ut32 lnum, ut32 offs);
+static bool ubifs_walk_index(ubifs_ctx_t *ctx, ut32 lnum, ut32 offs, HtUU *visited, ut32 depth, ut32 *remaining);
+static bool ubifs_free_inode_cb(void *user, const ut64 key, const void *value);
 static ubifs_inode_t *ubifs_get_inode(ubifs_ctx_t *ctx, ut64 ino_num);
 static ut64 ubifs_lookup_path(ubifs_ctx_t *ctx, const char *path);
 
@@ -354,7 +358,17 @@ static ut32 ubifs_min_node_len(ut8 node_type) {
 	}
 }
 
-static bool ubifs_walk_index(ubifs_ctx_t *ctx, ut32 lnum, ut32 offs) {
+static bool ubifs_walk_index(ubifs_ctx_t *ctx, ut32 lnum, ut32 offs, HtUU *visited, ut32 depth, ut32 *remaining) {
+	ut64 location = ((ut64)lnum << 32) | offs;
+	bool found = false;
+	if (depth >= UBIFS_MAX_INDEX_DEPTH || !*remaining) {
+		return false;
+	}
+	ht_uu_find (visited, location, &found);
+	if (found || !ht_uu_insert (visited, location, 1)) {
+		return false;
+	}
+	(*remaining)--;
 	ut64 offset = (ut64)lnum * ctx->leb_size + offs;
 
 	ubifs_ch_t ch;
@@ -406,7 +420,7 @@ static bool ubifs_walk_index(ubifs_ctx_t *ctx, ut32 lnum, ut32 offs) {
 			ut32 br_lnum = r_read_le32 ((ut8 *)&br->lnum);
 			ut32 br_offs = r_read_le32 ((ut8 *)&br->offs);
 
-			ret = ubifs_walk_index (ctx, br_lnum, br_offs);
+			ret = ubifs_walk_index (ctx, br_lnum, br_offs, visited, depth + 1, remaining);
 			branch_ptr += branch_size;
 		}
 		break;
@@ -557,7 +571,16 @@ static bool fs_ubifs_mount(RFSRoot *root) {
 
 	free (mst_buf);
 
-	if (!ubifs_walk_index (ctx, ctx->root_lnum, ctx->root_offs)) {
+	HtUU *visited = ht_uu_new0 ();
+	if (!visited) {
+		goto fail;
+	}
+	ut32 remaining = UBIFS_MAX_INDEX_NODES;
+	bool ok = ubifs_walk_index (ctx, ctx->root_lnum, ctx->root_offs, visited, 0, &remaining);
+	ht_uu_free (visited);
+	if (!ok) {
+		R_LOG_ERROR ("Invalid UBIFS index");
+		goto fail;
 	}
 
 	ctx->mounted = true;
@@ -566,6 +589,7 @@ static bool fs_ubifs_mount(RFSRoot *root) {
 
 fail:
 	if (ctx->inodes) {
+		ht_up_foreach (ctx->inodes, ubifs_free_inode_cb, NULL);
 		ht_up_free (ctx->inodes);
 	}
 	free (ctx);

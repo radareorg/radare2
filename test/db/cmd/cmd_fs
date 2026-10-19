@@ -1125,6 +1125,19 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=reject cyclic UBIFS index
+FILE=bins/fs/ubifs-index-cycle.img
+ARGS=-n
+CMDS=<<EOF
+m /mnt ubifs 0
+m
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Invalid UBIFS index
+EOF
+RUN
+
 NAME=haikufs
 FILE=bins/fs/haiku.bfs
 ARGS=-n
