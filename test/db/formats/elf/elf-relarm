@@ -357,3 +357,29 @@ EXPECT=<<EOF
             0x00126558      .qword 0x00000000000f22f0 ; sym..datadiv_decode13403071575248320347; RELOC 64 .datadiv_decode13403071575248320347 @ 0x000f22f0
 EOF
 RUN
+
+NAME=ARM MOVT REL addend is signed imm16
+FILE=bins/elf/arm-movt-rel-addend.o
+ARGS=-e bin.relocs.apply=true
+CMDS=pi 2 @ 0x0800005c
+EXPECT=<<EOF
+movw r0, 0x16c
+movt r0, 0x800
+EOF
+RUN
+
+NAME=ARM MOVW/MOVT ABS and PREL REL addends are signed imm16
+FILE=bins/elf/arm-movt-prel.o
+ARGS=-e bin.relocs.apply=true
+CMDS=pi 8 @ 0x08000034
+EXPECT=<<EOF
+movw r0, 0x18c
+movt r0, 0x800
+movw r1, 0x148
+movt r1, 0
+movw r2, 0x150
+movt r2, 0
+movw r3, 0x134
+movt r3, 0
+EOF
+RUN
