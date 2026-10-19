@@ -94,6 +94,17 @@ de011e09
 EOF
 RUN
 
+NAME=ph fletcher64 sums modulo 2^32-1
+FILE=-
+CMDS=<<EOF
+w hello-world
+ph fletcher64 11
+EOF
+EXPECT=<<EOF
+2497f78adc47ff49
+EOF
+RUN
+
 NAME=crca 'hello world'
 FILE=-
 CMDS=<<EOF

@@ -68,8 +68,8 @@ R_API ut32 r_hash_fletcher32(const ut8 *data, size_t len) {
 R_API ut64 r_hash_fletcher64(const ut8 *addr, size_t len) {
 	const ut8 *p32 = addr;
 	const ut8 *p32end = addr + len;
-	ut32 lo32 = 0;
-	ut32 hi32 = 0;
+	ut64 lo32 = 0;
+	ut64 hi32 = 0;
 
 	ut8 word[sizeof (ut32)];
 	while (p32 < p32end) {
@@ -77,9 +77,9 @@ R_API ut64 r_hash_fletcher64(const ut8 *addr, size_t len) {
 		memset (word, 0, sizeof (word));
 		memcpy (word, p32, R_MIN (sizeof (word), left));
 		ut32 w = r_read_le32 (word);
-		lo32 += w;
+		lo32 = (lo32 + w) % UT32_MAX;
 		p32 += sizeof (ut32);
-		hi32 += lo32;
+		hi32 = (hi32 + lo32) % UT32_MAX;
 	}
-	return ((ut64)hi32 << 32) | lo32;
+	return (hi32 << 32) | lo32;
 }
