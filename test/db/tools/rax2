@@ -660,6 +660,30 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rax2 -w picks the width that holds the value
+FILE=-
+CMDS=<<EOF
+!rax2 -w 0x7f 0x80 0xff 0x100 0x1234 0x8000 0xffff 0x10000
+!rax2 -w 0x7fffffff 0x80000000 0xffffffff 0x100000000 0x7fffffffffffffff 0xffffffffffffffff
+EOF
+EXPECT=<<EOF
+127
+-128
+-1
+256
+4660
+-32768
+-1
+65536
+2147483647
+-2147483648
+-1
+4294967296
+9223372036854775807
+-1
+EOF
+RUN
+
 NAME=rax2 -K
 FILE=-
 CMDS=!printf 1 | rax2 -K | grep -c 0x00000001
