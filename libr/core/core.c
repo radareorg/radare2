@@ -260,6 +260,10 @@ static const char *cfgget(RCore *core, const char *k) {
 	return r_config_get (core->config, k);
 }
 
+static bool cfgset(RCore *core, const char *k, const char *v) {
+	return r_config_set (core->config, k, v);
+}
+
 static ut64 numget(RCore *core, const char *k) {
 	return r_num_math (core->num, k);
 }
@@ -337,6 +341,7 @@ R_API void r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->cfgGetB = (RCoreConfigGetB)cfggetb;
 	bnd->cfgGetI = (RCoreConfigGetI)cfggeti;
 	bnd->cfgGet = (RCoreConfigGet)cfgget;
+	bnd->cfgSet = (RCoreConfigSet)cfgset;
 	bnd->numGet = (RCoreNumGet)numget;
 	bnd->isMapped = (RCoreIsMapped)__isMapped;
 	bnd->syncDebugMaps = (RCoreDebugMapsSync)__syncDebugMaps;

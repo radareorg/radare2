@@ -258,10 +258,9 @@ static int __flags_cat(RFSRoot *root, RFSFile *file, const char *path) {
 	} else {
 		last = path;
 	}
-	char *res = root->cob.cmdStrF (root->cob.core, "?v %s", last);
+	char *res = r_str_newf ("0x%"PFMT64x"\n", root->cob.numGet (root->cob.core, last));
 	file->ptr = NULL;
 	file->data = (ut8*)res;
-	file->p = root->p;
 	file->size = strlen (res);
 	return file->size;
 }
@@ -269,7 +268,8 @@ static int __flags_cat(RFSRoot *root, RFSFile *file, const char *path) {
 static int __bsize_write(RFSFile *file, ut64 addr, const ut8 *data, int len) {
 	R_RETURN_VAL_IF_FAIL (file, -1);
 	void *core = file->root->cob.core;
-	char *res = file->root->cob.cmdStrF (core, "b %s", data);
+	// raw calls keep the data from being parsed as commands
+	char *res = file->root->cob.cmdStrF (core, "'b %s", data);
 	free (res);
 	return len;
 }
@@ -287,7 +287,7 @@ static int __bsize_cat(RFSRoot *root, RFSFile *file, const char *path) {
 static int __seek_write(RFSFile *file, ut64 addr, const ut8 *data, int len) {
 	R_RETURN_VAL_IF_FAIL (file, -1);
 	void *core = file->root->cob.core;
-	char *res = file->root->cob.cmdStrF (core, "s %s", data);
+	char *res = file->root->cob.cmdStrF (core, "'s %s", data);
 	free (res);
 	return len;
 }
@@ -304,13 +304,14 @@ static int __seek_cat(RFSRoot *root, RFSFile *file, const char *path) {
 
 static int __cfg_write(RFSFile *file, ut64 addr, const ut8 *data, int len) {
 	R_RETURN_VAL_IF_FAIL (file, -1);
-	const char *a = file->name;
-	void *core = file->root->cob.core;
-	char *prefix = strdup (file->path + strlen ("/cfg/"));
-	char *res = file->root->cob.cmdStrF (core, "e %s.%s=%s", prefix, a, data);
-	free (prefix);
-	free (res);
-	return len;
+	RCoreBind *cob = &file->root->cob;
+	char *key = r_str_newf ("%s.%s", file->path + strlen ("/cfg/"), file->name);
+	char *value = r_str_ndup ((const char *)data, len);
+	r_str_trim (value);
+	const bool ok = cob->cfgSet (cob->core, key, value);
+	free (key);
+	free (value);
+	return ok? len: -1;
 }
 
 static int __cfg_cat(RFSRoot *root, RFSFile *file, const char *path) {
@@ -318,12 +319,16 @@ static int __cfg_cat(RFSRoot *root, RFSFile *file, const char *path) {
 	if (strlen (path) < 6) {
 		return -1;
 	}
-	char *a = strdup (path + 5);
-	r_str_replace_char (a, '/', '.');
-	char *res = root->cob.cmdStrF (root->cob.core, "e %s", a);
+	char *key = strdup (path + 5);
+	r_str_replace_char (key, '/', '.');
+	const char *value = root->cob.cfgGet (root->cob.core, key);
+	free (key);
+	if (!value) {
+		return -1;
+	}
+	char *res = r_str_newf ("%s\n", value);
 	file->ptr = NULL;
 	file->data = (ut8*)res;
-	file->p = root->p;
 	file->size = strlen (res);
 	return file->size;
 }
@@ -334,11 +339,13 @@ static RList *__flags(RFSRoot *root, const char *path) {
 	if (!strncmp (path, "/flags/", 7)) {
 		prefix = path + 7;
 	}
-	char *cmd = prefix
-		? r_str_newf ("fq@F:%s", prefix)
-		: strdup ("fsq");
-	RList *res = fscmd (root, cmd, prefix? 'f': 'd');
-	free (cmd);
+	if (!prefix) {
+		return fscmd (root, "fsq", 'd');
+	}
+	// same as "fq@F:prefix" without parsing the path as part of the command
+	root->cob.cmdf (root->cob.core, "'fs+%s", prefix);
+	RList *res = fscmd (root, "fq", 'f');
+	root->cob.cmd (root->cob.core, "fs-");
 	return res;
 }
 
@@ -349,7 +356,7 @@ static RList *__cfg(RFSRoot *root, const char *path) {
 		prefix = path + 5;
 	}
 	char *cmd = prefix
-		? r_str_newf ("es %s", prefix)
+		? r_str_newf ("'es %s", prefix)
 		: strdup ("es");
 	char *res = root->cob.cmdStr (root->cob.core, cmd);
 	free (cmd);

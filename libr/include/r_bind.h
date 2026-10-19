@@ -31,6 +31,7 @@ typedef void (*RCoreSeekArchBits)(void *core, ut64 addr);
 typedef bool (*RCoreConfigGetB)(void *core, const char *key);
 typedef ut64 (*RCoreConfigGetI)(void *core, const char *key);
 typedef const char *(*RCoreConfigGet)(void *core, const char *key);
+typedef bool (*RCoreConfigSet)(void *core, const char *key, const char *value);
 typedef ut64 (*RCoreNumGet)(void *core, const char *str);
 typedef void *(*RCorePJWithEncoding)(void *core);
 
@@ -52,6 +53,7 @@ typedef struct r_core_bind_t {
 	RCoreConfigGetB cfgGetB;
 	RCoreConfigGetI cfgGetI;
 	RCoreConfigGet cfgGet;
+	RCoreConfigSet cfgSet;
 	RCoreNumGet numGet;
 	RCoreIsMapped isMapped;
 	RCoreDebugMapsSync syncDebugMaps;

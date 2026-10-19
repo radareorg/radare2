@@ -324,6 +324,31 @@ EOF2
 EXPECT_ERR=
 RUN
 
+NAME=r2 filesystem paths and data are not parsed as commands
+FILE=-
+CMDS=<<EOF2
+e log.level=0
+m /r2 r2
+$u=m- /r2
+'mc /r2/cfg/asm.bits;$u
+'mc /r2/flags/foo;$u
+'md /r2/cfg/asm;$u
+'md /r2/flags/foo;$u
+'mw /r2/cfg/asm/bits 32;$u
+'mw /r2/bsize 32;$u
+'mw /r2/seek 0;$u
+fss
+m
+EOF2
+EXPECT=<<EOF2
+0x0
+
+0  * (selected)
+r2	0x0	/r2
+EOF2
+EXPECT_ERR=
+RUN
+
 NAME=mount empty files do not read or replace the clipboard
 FILE=-
 CMDS=<<EOF2
