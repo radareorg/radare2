@@ -123,35 +123,31 @@ R_API R_UNOWNED RCoreCmpWatcher *r_core_cmpwatch_get(RCore *core, ut64 addr) {
 R_API bool r_core_cmpwatch_add(RCore *core, ut64 addr, int size, const char *cmd) {
 	R_RETURN_VAL_IF_FAIL (core && size > 0, false);
 
-	bool found = false;
+	// Take the snapshot before touching the list, so a failed read leaves
+	// an existing watcher (still owned by core->watchers) untouched
+	ut8 *ndata = malloc (size);
+	if (!ndata) {
+		return false;
+	}
+	if (r_io_nread_at (core->io, addr, ndata, size) != size) {
+		free (ndata);
+		return false;
+	}
+
 	RCoreCmpWatcher *cmpw = r_core_cmpwatch_get (core, addr);
 	if (!cmpw) {
 		cmpw = R_NEW0 (RCoreCmpWatcher);
 		cmpw->addr = addr;
+		r_list_append (core->watchers, cmpw);
 	} else {
+		// Don't append a duplicate, just replace its contents
 		R_FREE (cmpw->odata);
-		R_FREE (cmpw->ndata);
-		R_FREE (cmpw->cmd);
-		found = true;
+		free (cmpw->ndata);
+		free (cmpw->cmd);
 	}
 	cmpw->size = size;
 	cmpw->cmd = cmd? strdup (cmd): NULL;
-	cmpw->odata = NULL;
-	cmpw->ndata = malloc (size);
-	if (!cmpw->ndata) {
-		r_core_cmpwatch_free (cmpw);
-		return false;
-	}
-
-	if (r_io_nread_at (core->io, addr, cmpw->ndata, size) != size) {
-		r_core_cmpwatch_free (cmpw);
-		return false;
-	}
-
-	// Don't append a duplicate
-	if (!found) {
-		r_list_append (core->watchers, cmpw);
-	}
+	cmpw->ndata = ndata;
 	return true;
 }
 

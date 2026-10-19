@@ -64,6 +64,33 @@ cw 0x00000064 4 p8
 EOF
 RUN
 
+NAME=cw failed re-add keeps the existing watcher
+CMDS=<<EOF
+cw 0 4 p8
+cw 0 0x1000 px # past the end of the map: fails, keeps the old watcher
+cw*
+?e ---
+cwu
+cw
+?e ---
+cwd 0
+cw*
+EOF
+EXPECT=<<EOF
+cw 0x00000000 4 p8
+---
+0x00000000
+  old: 00000000 => new: 00000000
+  cmd: 00000000
+
+---
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Failed to add watcher
+ERROR: No watchers exist
+EOF
+RUN
+
 NAME=cw with cwu update
 CMDS=<<EOF
 cw 0 4 p8
