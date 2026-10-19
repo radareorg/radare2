@@ -11,6 +11,8 @@ void lua_header_free(RLuaHeader *lhead) {
 }
 
 static void lua_func_free(void *f) {
+	LuaFunction *func = f;
+	free (func->name_ptr);
 	free (f);
 }
 
@@ -45,7 +47,7 @@ static ut64 parseProtos(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64
 
 static int storeLuaFunction(RLuaHeader *lh, LuaFunction *function) {
 	if (!lh->functionList) {
-		lh->functionList = r_list_new ();
+		lh->functionList = r_list_newf ((RListFree)lua_func_free);
 		if (!lh->functionList) {
 			return 0;
 		}
@@ -488,10 +490,10 @@ ut64 lua53parseFunction(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64
 		parseStruct->onFunction (lh, function, parseStruct);
 	}
 	if (!storeLuaFunction (lh, function)) {
-		free (function);
+		lua_func_free (function);
 	}
 	return offset;
 beach:
-	free (function);
+	lua_func_free (function);
 	return 0;
 }
