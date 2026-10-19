@@ -3146,6 +3146,13 @@ flags
 0x00002000 16 section..got.plt
 0x0000200c 4 reloc.puts
 0x00002010 4 reloc.__libc_start_main
+0x00002020 4 rsym.puts
+0x00002024 4 rsym.__libc_start_main
+0x00002028 4 rsym._ITM_deregisterTMCloneTable
+0x0000202c 4 rsym.__cxa_finalize
+0x00002030 4 rsym.__gmon_start__
+0x00002034 4 rsym._Jv_RegisterClasses
+0x00002038 4 rsym._ITM_registerTMCloneTable
 EOF
 RUN
 

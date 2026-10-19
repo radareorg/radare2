@@ -25,6 +25,24 @@ EXPECT=<<EOF
 0x00021f18  time  reloc.timegm
 0x00021f50  env  reloc.unsetenv
 0x00021f90  process  reloc.exit
+0x00023560  env  rsym.getenv
+0x00023588  alloc  rsym.free
+0x00023590  process  rsym.abort
+0x000235c0  string  rsym.strcpy
+0x00023600  fs  rsym.readlink
+0x00023610  env  rsym.setenv
+0x00023650  string  rsym.strlen
+0x00023690  string  rsym.snprintf
+0x000236b0  fs  rsym.lseek
+0x000236b8  time  rsym.gettimeofday
+0x00023720  alloc  rsym.calloc
+0x00023770  time  rsym.tzset
+0x000237a0  alloc  rsym.malloc
+0x000237c8  time  rsym.mktime
+0x000237e0  alloc  rsym.realloc
+0x00023800  time  rsym.timegm
+0x00023838  env  rsym.unsetenv
+0x00023878  process  rsym.exit
 EOF
 RUN
 

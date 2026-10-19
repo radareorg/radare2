@@ -115,7 +115,7 @@ pd 1 @0x00091004
 iE~0x0008ce50
 EOF
 EXPECT=<<EOF
-            0x00091004      488b159d88..   mov rdx, qword [reloc.vtable_for_std::bad_alloc] ; new:57:5 ; [0x1898a8:8]=0
+            0x00091004      488b159d88..   mov rdx, qword [reloc.vtable_for_std::bad_alloc] ; new:57:5 ; [0x1898a8:8]=0x180d28 global.vtable_for_std::bad_alloc
 --
 3770 0x0008ce50 0x0008ce50 GLOBAL FUNC 609      _ZNSi6ignoreEl                                                                                                                       std::istream::ignore(long)
 3771 0x0008ce50 0x0008ce50 GLOBAL FUNC 609      _ZNSi6ignoreEl                                                                                                                       std::istream::ignore(long)

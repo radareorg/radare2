@@ -49,6 +49,21 @@ EXPECT=<<EOF
     "name": "reloc.__cxa_rethrow",
     "size": 8,
     "addr": 16456
+  },
+  {
+    "name": "rsym._ZSt17__throw_bad_allocv",
+    "size": 8,
+    "addr": 16520
+  },
+  {
+    "name": "rsym._ZSt20__throw_length_errorPKc",
+    "size": 8,
+    "addr": 16536
+  },
+  {
+    "name": "rsym.__cxa_rethrow",
+    "size": 8,
+    "addr": 16568
   }
 ]
 EOF
