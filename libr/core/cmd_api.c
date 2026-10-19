@@ -1027,17 +1027,26 @@ R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, in
 				return NULL;
 			}
 		} else {
+			bool known = false;
 			for (i = 0; i < *labels_n; i++) {
 		//	eprintf("---| chk '%s'\n", labels[i].name);
-				if (!strcmp (ptr + 1, labels[i].name)) {
-					i = 0;
+				if (!strcmp (ptr, labels[i].name)) {
+					known = true;
 					break;
 				}
 			}
 			/* Add label */
 		//	eprintf("===> ADD LABEL(%s)\n", ptr);
-			if (i == 0) {
-				strncpy (labels[*labels_n].name, ptr, 64);
+			if (!known) {
+				if (*labels_n >= MACRO_LABELS) {
+					R_LOG_ERROR ("Too many labels in macro (max %d)", MACRO_LABELS);
+					return NULL;
+				}
+				if (strlen (ptr) >= sizeof (labels[0].name)) {
+					R_LOG_ERROR ("Label name '%s' is too long", ptr);
+					return NULL;
+				}
+				r_str_ncpy (labels[*labels_n].name, ptr, sizeof (labels[0].name));
 				labels[*labels_n].ptr = ptr + strlen (ptr) + 1;
 				*labels_n = *labels_n + 1;
 			}
@@ -1123,7 +1132,12 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 				ptr2 = r_cmd_macro_label_process (mac, &(labels[0]), &labels_n, ptr);
 				if (!ptr2) {
 					R_LOG_ERROR ("Oops. invalid label name");
-					break;
+					if (end) {
+						*end = '\n';
+					}
+					mac->macro_level--;
+					free (str);
+					goto out_clean;
 				} else if (ptr != ptr2) {
 					ptr = ptr2;
 					if (end) {

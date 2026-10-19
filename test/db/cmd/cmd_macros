@@ -272,3 +272,32 @@ EXPECT=<<EOF
 ok
 EOF
 RUN
+
+NAME=labels: backward goto to a second label
+FILE=malloc://32
+CMDS=<<EOF
+f n=2
+(loop;first:;?e a;second:;?e b;f n=`?vi n-1`;?= n;?!.second:;?e c)
+.(loop)
+EOF
+EXPECT=<<EOF
+a
+b
+b
+c
+EOF
+RUN
+
+NAME=labels: too many labels in a macro
+FILE=malloc://32
+CMDS=<<EOF
+(many;l0:;l1:;l2:;l3:;l4:;l5:;l6:;l7:;l8:;l9:;l10:;l11:;l12:;l13:;l14:;l15:;l16:;l17:;l18:;l19:;l20:;?e unreachable)
+.(many)
+?e done
+(j)~{macros[0].cmds}
+EOF
+EXPECT=<<EOF
+done
+l0:\nl1:\nl2:\nl3:\nl4:\nl5:\nl6:\nl7:\nl8:\nl9:\nl10:\nl11:\nl12:\nl13:\nl14:\nl15:\nl16:\nl17:\nl18:\nl19:\nl20:\n?e unreachable
+EOF
+RUN
