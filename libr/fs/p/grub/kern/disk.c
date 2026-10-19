@@ -437,7 +437,6 @@ grub_disk_read(grub_disk_t disk, grub_disk_addr_t sector, grub_off_t offset, gru
 				tmp_buf = p;
 
 				if ((disk->dev->read) (disk, sector, num, tmp_buf)) {
-					eprintf ("%s read failed\n", disk->name);
 					grub_errno = GRUB_ERR_BAD_FS;
 					goto finish;
 				}

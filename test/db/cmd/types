@@ -232,6 +232,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=List type links as json
+CMDS=<<EOF
+tl int = 0x4
+w test @ 0x10
+tl char * = 0x10
+tlj
+tllj
+EOF
+EXPECT=<<EOF
+{"types":[{"0x00000004":"int"},{"0x00000010":"char *"}]}
+{"types":[{"int":[{"type":"d","offset":4,"value":0}]},{"char *":[{"type":"z","offset":16,"value":"test"}]}]}
+EOF
+RUN
+
 NAME=jni and SoP
 FILE=bins/elf/libverifyPass.so
 CMDS=<<EOF

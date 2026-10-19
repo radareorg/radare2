@@ -1675,9 +1675,15 @@ static void print_enum_in_c_format(RCore *core, Sdb *TDB, const char *arg, bool 
 	ls_free (l);
 }
 
+// print_keys callbacks always get a TypePrintCtx, pj is only set in json mode
+typedef struct {
+	RCore *core;
+	RCons *cons; // output of the running command, not necessarily core->cons
+	PJ *pj;
+} TypePrintCtx;
+
 static bool printkey_cb(void *user, const char *k, const char *v) {
-	RCore *core = (RCore *)user;
-	r_cons_println (core->cons, k);
+	r_cons_println (((TypePrintCtx *)user)->cons, k);
 	return true;
 }
 
@@ -1718,11 +1724,6 @@ static void printFunctionTypeC(RCore *core, const char *input) {
 	r_cons_printf (core->cons, ");\n");
 	free (res);
 }
-
-typedef struct {
-	RCore *core;
-	PJ *pj;
-} TypePrintCtx;
 
 static void printFunctionTypeJson(TypePrintCtx *ctx, const char *input) {
 	RCore *core = ctx->core;
@@ -1797,11 +1798,11 @@ static void printFunctionTypeJson(TypePrintCtx *ctx, const char *input) {
 
 static void printFunctionType(RCore *core, const char *input) {
 	PJ *pj = r_core_pj_new (core);
-	TypePrintCtx ctx = { .core = core, .pj = pj };
+	TypePrintCtx ctx = { .core = core, .cons = core->cons, .pj = pj };
 	printFunctionTypeJson (&ctx, input);
 	char *s = pj_drain (pj);
 	if (s) {
-		r_cons_printf (core->cons, "%s", s);
+		r_cons_printf (ctx.cons, "%s", s);
 		free (s);
 	}
 }
@@ -1828,44 +1829,55 @@ static bool stdiflink(void *p, const char *k, const char *v) {
 }
 
 static bool print_link_cb(void *p, const char *k, const char *v) {
-	RCore *core = (RCore *)p;
-	r_cons_printf (core->cons, "0x%s = %s\n", k + strlen ("link."), v);
+	r_cons_printf (((TypePrintCtx *)p)->cons, "0x%s = %s\n", k + strlen ("link."), v);
 	return true;
 }
 
 static bool print_link_json_cb(void *p, const char *k, const char *v) {
-	RCore *core = (RCore *)p;
-	r_cons_printf (core->cons, "{\"0x%s\":\"%s\"}", k + strlen ("link."), v);
+	PJ *pj = ((TypePrintCtx *)p)->pj;
+	char *addr = r_str_newf ("0x%s", k + strlen ("link."));
+	pj_o (pj);
+	pj_ks (pj, addr, v);
+	pj_end (pj);
+	free (addr);
 	return true;
 }
 
 static bool print_link_r_cb(void *p, const char *k, const char *v) {
-	RCore *core = (RCore *)p;
-	r_cons_printf (core->cons, "tl %s = 0x%s\n", v, k + strlen ("link."));
+	r_cons_printf (((TypePrintCtx *)p)->cons, "tl %s = 0x%s\n", v, k + strlen ("link."));
 	return true;
 }
 
 static bool print_link_readable_cb(void *p, const char *k, const char *v) {
-	RCore *core = (RCore *)p;
+	TypePrintCtx *ctx = (TypePrintCtx *)p;
+	RCore *core = ctx->core;
 	char *fmt = r_type_format (core->anal->sdb_types, v);
 	if (!fmt) {
 		R_LOG_ERROR ("Can't find type %s", v);
 		return 1;
 	}
-	r_cons_printf (core->cons, "(%s)\n", v);
+	r_cons_printf (ctx->cons, "(%s)\n", v);
 	ut64 at = (ut64)strtoull (k + strlen ("link."), NULL, 16);
 	r_core_callf_at (core, at, "pf %s", fmt);
 	return true;
 }
 
 static bool print_link_readable_json_cb(void *p, const char *k, const char *v) {
-	RCore *core = (RCore *)p;
+	TypePrintCtx *ctx = (TypePrintCtx *)p;
+	RCore *core = ctx->core;
 	char *fmt = r_type_format (core->anal->sdb_types, v);
 	if (fmt) {
-		r_cons_printf (core->cons, "{\"%s\":", v);
 		ut64 at = (ut64)strtoull (k + strlen ("link."), NULL, 16);
-		r_core_callf_at (core, at, "pfj %s", fmt);
-		r_cons_printf (core->cons, "}");
+		char *s = r_core_cmd_strf_at (core, at, "pfj %s", fmt);
+		if (s) {
+			r_str_trim (s);
+		}
+		pj_o (ctx->pj);
+		pj_k (ctx->pj, v);
+		pj_raw (ctx->pj, R_STR_ISNOTEMPTY (s)? s: "null");
+		pj_end (ctx->pj);
+		free (s);
+		free (fmt);
 	} else {
 		R_LOG_ERROR ("Can't find type %s", v);
 	}
@@ -1877,8 +1889,7 @@ static bool stdiftype(void *p, const char *k, const char *v) {
 }
 
 static bool print_typelist_r_cb(void *p, const char *k, const char *v) {
-	RCore *core = (RCore *)p;
-	r_cons_printf (core->cons, "'tk %s=%s\n", k, v);
+	r_cons_printf (((TypePrintCtx *)p)->cons, "'tk %s=%s\n", k, v);
 	return true;
 }
 
@@ -1913,7 +1924,7 @@ static void print_keys(RCore *core, SdbForeachCallback filter, SdbForeachCallbac
 	SdbKv *kv;
 
 	PJ *pj = NULL;
-	TypePrintCtx ctx = { .core = core, .pj = NULL };
+	TypePrintCtx ctx = { .core = core, .cons = core->cons };
 	if (json) {
 		pj = r_core_pj_new (core);
 		pj_o (pj);
@@ -1927,18 +1938,14 @@ static void print_keys(RCore *core, SdbForeachCallback filter, SdbForeachCallbac
 			continue;
 		}
 		if (v) {
-			if (json) {
-				printfn_cb (&ctx, k, v);
-			} else {
-				printfn_cb (core, k, v);
-			}
+			printfn_cb (&ctx, k, v);
 		}
 	}
 	if (pj) {
 		pj_end (pj);
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		r_cons_println (core->cons, s);
+		r_cons_println (ctx.cons, s);
 		free (s);
 	}
 	ls_free (l);
@@ -2981,7 +2988,8 @@ static int cmd_type(void *data, const char *input) {
 			char *query = r_str_newf ("link.%08" PFMT64x, addr);
 			const char *link = sdb_const_get (TDB, query, 0);
 			if (link) {
-				print_link_readable_cb (core, query, link);
+				TypePrintCtx ctx = { .core = core, .cons = core->cons };
+				print_link_readable_cb (&ctx, query, link);
 			}
 			free (ptr);
 			free (query);
