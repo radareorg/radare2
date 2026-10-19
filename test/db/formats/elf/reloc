@@ -1557,6 +1557,67 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ELF: import addends below and above S stay in its .got.r2 area, an oversized one is left unpatched
+FILE=bins/elf/x86_64-import-addend-range.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+om~.got.r2[5,7]
+pv8 @ 0x3460
+pv8 @ 0x3468
+pv8 @ 0x3470
+pv8 @ 0x3478
+pv8 @ 0x3480
+pv8 @ 0x3488
+pv8 @ 0x3490
+pv8 @ 0x3498
+EOF
+EXPECT=<<EOF
+0x000034a0 0x000044df
+0x00000000000034a0
+0x00000000000034b0
+0x0000000000000000
+0x00000000000034c0
+0x00000000000044c0
+0x0000000000000000
+0x00000000000044d0
+0x00000000000044d8
+EOF
+EXPECT_ERR=<<EOF
+WARN: No .got.r2 room for ext_b+8192 at 0x3470, reloc left unpatched
+WARN: No .got.r2 room for ext_f+4096 at 0x3488, reloc left unpatched
+EOF
+RUN
+
+NAME=ELF: ET_REL import slots stop below .bss and the rest are left unpatched
+FILE=bins/elf/x86_64-etrel-span-budget.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+om~.got.r2[5,7]
+iS~.bss[3]
+pv8 @ section..data
+pv8 @ section..data+0x28
+EOF
+EXPECT=<<EOF
+0x080004a2 0x08000661
+0x08000668
+0x00000000080004e2
+0x0000000000000000
+EOF
+EXPECT_ERR=<<EOF
+WARN: No .got.r2 room for ext_6+64 at 0x8000069, reloc left unpatched
+WARN: No .got.r2 room for ext_7+64 at 0x8000071, reloc left unpatched
+WARN: No .got.r2 room for ext_8+64 at 0x8000079, reloc left unpatched
+WARN: No .got.r2 room for ext_9+64 at 0x8000081, reloc left unpatched
+WARN: No .got.r2 room for ext_10+64 at 0x8000089, reloc left unpatched
+WARN: No .got.r2 room for ext_11+64 at 0x8000091, reloc left unpatched
+WARN: No .got.r2 room for ext_12+64 at 0x8000099, reloc left unpatched
+WARN: No .got.r2 room for ext_13+64 at 0x80000a1, reloc left unpatched
+WARN: No .got.r2 room for ext_14+64 at 0x80000a9, reloc left unpatched
+WARN: No .got.r2 room for ext_15+64 at 0x80000b1, reloc left unpatched
+WARN: No .got.r2 room for ext_16+64 at 0x80000b9, reloc left unpatched
+EOF
+RUN
+
 NAME=ELF: an i386 import addend stays inside its own got.r2 slot
 FILE=bins/elf/i386-vtable-addend.so
 ARGS=-e bin.relocs.apply=true
