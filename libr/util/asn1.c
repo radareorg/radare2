@@ -375,7 +375,7 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 			break;
 		case TAG_BOOLEAN:
 			name = "BOOLEAN";
-			if (obj->sector) {
+			if (obj->sector && obj->length > 0) {
 				string = r_str_bool (obj->sector[0] != 0);
 			}
 			break;
@@ -527,10 +527,8 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 		string = asn1str->string;
 	}
 
-	// Adapt size for BITSTRING
-	if (obj->tag == TAG_BITSTRING) {
-		obj->length++;
-	}
+	// Include the skipped unused-bits octet only in the displayed size.
+	const ut32 display_length = obj->length + (obj->tag == TAG_BITSTRING? 1: 0);
 
 	switch (fmtmode) {
 	case 'q': // pFaq
@@ -552,7 +550,7 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 		// return pj_drain (pj);
 		pj_o (pj);
 		pj_kn (pj, "offset", obj->offset);
-		pj_kn (pj, "length", obj->length);
+		pj_kn (pj, "length", display_length);
 		pj_ks (pj, "form", obj->form? "cons": "prim");
 		pj_ks (pj, "name", name);
 		if (R_STR_ISNOTEMPTY (string)) {
@@ -585,7 +583,7 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 				r_strbuf_append (sb, "└── ");
 			}
 		}
-		r_strbuf_appendf (sb, " [@ 0x%" PFMT64x "](0x%x + 0x%x)", obj->offset, hlen, obj->length);
+		r_strbuf_appendf (sb, " [@ 0x%" PFMT64x "](0x%x + 0x%x)", obj->offset, hlen, display_length);
 		if (obj->tag == TAG_BITSTRING || obj->tag == TAG_INTEGER || obj->tag == TAG_GENERALSTRING) {
 			char *hexstr = asn1_hexstring (obj, NULL, depth, fmtmode);
 			if (hexstr) {
@@ -623,7 +621,7 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 			r_strbuf_appendf (sb, "%8s %4s %s %6s %5s %4s %-20s: %s", "OFFSET", "HDR", "+", "OBJ", "DEPTH", "FORM", "NAME", "VALUE\n");
 		}
 		r_strbuf_appendf (sb, "%#8" PFMT64x, obj->offset);
-		r_strbuf_appendf (sb, " %#4x + %#6x %5d %4s %-20s: ", hlen, obj->length, depth, obj->form? "cons": "prim", name);
+		r_strbuf_appendf (sb, " %#4x + %#6x %5d %4s %-20s: ", hlen, display_length, depth, obj->form? "cons": "prim", name);
 		if (obj->tag == TAG_BITSTRING || obj->tag == TAG_INTEGER || obj->tag == TAG_GENERALSTRING) {
 			char *hexstr = asn1_hexstring (obj, NULL, depth, fmtmode);
 			if (hexstr) {
@@ -647,7 +645,7 @@ R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ
 		}
 
 		// We may have a bit length diffrent than the length
-		if (obj->length * 8 != obj->bitlength) {
+		if (display_length * 8 != obj->bitlength) {
 			r_strbuf_appendf (sb, " (%u bits)", obj->bitlength);
 		}
 		r_strbuf_append (sb, "\n");

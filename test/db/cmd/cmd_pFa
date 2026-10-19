@@ -55,8 +55,49 @@ pFa
 EOF
 EXPECT=<<EOF
   OFFSET  HDR +    OBJ DEPTH FORM NAME                : VALUE
-       0  0x2 +    0x8     0 prim BIT_STRING          : 016e500dc0000000 (55 bits)
+       0  0x2 +    0x8     0 prim BIT_STRING          : 016e500dc00000 (55 bits)
 
+EOF
+RUN
+
+NAME=pFa BIT_STRING at the end of the block
+FILE=-
+CMDS=<<EOF
+e scr.utf8=true
+wx 3004030200ff41
+b 6
+pFa
+pFat
+pFaj
+EOF
+EXPECT=<<EOF
+  OFFSET  HDR +    OBJ DEPTH FORM NAME                : VALUE
+       0  0x2 +    0x4     0 cons SEQUENCE            : 30
+     0x2  0x2 +    0x2     1 prim BIT_STRING          : ff (8 bits)
+
+.
+├─┬  [@ 0x0](0x2 + 0x4) - 30
+│ └──  [@ 0x2](0x2 + 0x2) - ff
+
+{"offset":0,"length":4,"form":"cons","name":"SEQUENCE","children":[{"offset":2,"length":2,"form":"prim","name":"BIT_STRING","value":"ff"}]}
+EOF
+RUN
+
+NAME=pFa BOOLEAN with empty and valid content
+FILE=-
+CMDS=<<EOF
+wx 018100ff
+b 3
+pFaj
+wx 010100
+pFaj
+wx 0101ff
+pFaj
+EOF
+EXPECT=<<EOF
+{"offset":0,"length":0,"form":"prim","name":"BOOLEAN"}
+{"offset":0,"length":1,"form":"prim","name":"BOOLEAN","value":"false"}
+{"offset":0,"length":1,"form":"prim","name":"BOOLEAN","value":"true"}
 EOF
 RUN
 

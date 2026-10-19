@@ -354,6 +354,9 @@ R_API RASN1String *asn1_stringify_sector(RASN1Object *object) {
 	case TAG_EOC:
 		return NULL;
 	case TAG_BOOLEAN:
+		if (!object->sector || !object->length) {
+			return NULL;
+		}
 		return newstr (r_str_bool (object->sector[0]));
 	case TAG_REAL:
 	case TAG_INTEGER:
