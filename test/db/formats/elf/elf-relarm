@@ -157,15 +157,109 @@ pi 2 @ sym.g
 p8 8 @ sym.g
 EOF
 EXPECT=<<EOF
-movw r0, 0x1c8
+movw r0, 0x1cc
 movt r0, 0x800
 bne.w sym.back
-beq.w 0x80441d0
+beq.w 0x80441d4
 bx lr
-f24010c8f6c00000f47faff9f004a0c5
+f24010ccf6c00000f47faff9f004a0c7
 movw r3, 0x5a
 movt r3, 0x800
 f240035af6c00300
+EOF
+RUN
+
+NAME=ELF: an oversized thumb movw/movt pair is left whole, an arm movw at ext-4 is patched
+FILE=bins/elf/arm-thumb-movw-oversized.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+om~.got.r2[5,7]
+pi 2 @ sym.f
+pi 2 @ sym.g
+pi 1 @ sym.h
+EOF
+EXPECT=<<EOF
+0x08000114 0x0800011b
+movw r0, 0x2000
+movt r0, 0x2000
+movw r1, 0x118
+movt r1, 0x800
+movw r2, 0x114
+EOF
+EXPECT_ERR=<<EOF
+WARN: No .got.r2 room for ext+8192 at 0x8000034, reloc left unpatched
+EOF
+RUN
+
+NAME=ELF: a cramped import's addend-0 movw/movt pair is patched whole, warned once
+FILE=malloc://16
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+o-*
+o malloc://16 0x08000118
+o bins/elf/arm-thumb-movw-oversized.o
+om~.got.r2[5,7]
+pi 2 @ sym.g
+pi 1 @ sym.h
+EOF
+EXPECT=<<EOF
+0x08000114 0x08000117
+movw r1, 0x114
+movt r1, 0x800
+movw r2, 0xfffc
+EOF
+EXPECT_ERR=<<EOF
+WARN: No .got.r2 room for ext+8192 at 0x8000034, reloc left unpatched
+EOF
+RUN
+
+NAME=ELF: interleaved movw/movt pairs are skipped or patched by their own addend
+FILE=bins/elf/arm-movw-interleaved.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+om~.got.r2[5,7]
+ir~0x00000034[0]
+pi 4 @ sym.f
+pi 4 @ sym.g
+EOF
+EXPECT=<<EOF
+0x080001ac 0x080001af
+0x08000034
+movw r0, 0x2000
+movw r1, 0x1ac
+movt r0, 0x2000
+movt r1, 0x800
+movw r2, 0x2000
+movw r3, 0x1ac
+movt r2, 0x2000
+movt r3, 0x800
+EOF
+EXPECT_ERR=<<EOF
+WARN: No .got.r2 room for ext+8192 at 0x8000034, reloc left unpatched
+EOF
+RUN
+
+NAME=ELF: a movt reloc listed before its movw is still judged by its own addend
+FILE=bins/elf/arm-movw-interleaved-rev.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+om~.got.r2[5,7]
+pi 4 @ sym.f
+pi 4 @ sym.g
+EOF
+EXPECT=<<EOF
+0x080001ac 0x080001af
+movw r0, 0x2000
+movw r1, 0x1ac
+movt r0, 0x2000
+movt r1, 0x800
+movw r2, 0x2000
+movw r3, 0x1ac
+movt r2, 0x2000
+movt r3, 0x800
+EOF
+EXPECT_ERR=<<EOF
+WARN: No .got.r2 room for ext+8192 at 0x8000050, reloc left unpatched
 EOF
 RUN
 
@@ -178,10 +272,10 @@ pi 1 @ sym.f+12
 p8 16 @ sym.f
 EOF
 EXPECT=<<EOF
-movw r0, 0xffec
-movt r0, 0x7ff
-beq.w 0x80a00f4
-4ff6ec70c0f2ff703ff0ffaf20f05888
+movw r0, 0xec
+movt r0, 0x800
+beq.w 0x80a01f4
+40f2ec00c0f600003ff0ffaf20f0d888
 EOF
 RUN
 
@@ -363,7 +457,7 @@ FILE=bins/elf/arm-movt-rel-addend.o
 ARGS=-e bin.relocs.apply=true
 CMDS=pi 2 @ 0x0800005c
 EXPECT=<<EOF
-movw r0, 0x16c
+movw r0, 0x170
 movt r0, 0x800
 EOF
 RUN
