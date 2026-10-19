@@ -10527,7 +10527,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 	int i, j;
 	RAnalOp analop, op;
 	r_anal_op_init (&analop);
-	r_anal_op_set_bytes (&analop, core->addr, buf, sizeof (ut64));
+	r_anal_op_set_bytes (&analop, core->addr, buf, sizeof (buf));
 	(void)r_anal_op (core->anal, &analop, core->addr, buf, sizeof (buf), R_ARCH_OP_MASK_DISASM);
 	int last = R_MIN (sizeof (buf), analop.size);
 	if (analop.size > sizeof (buf)) {
@@ -10560,8 +10560,8 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 		for (j = 0; j < 8; j++) {
 			bool bit = R_BIT_CHK (byte, 7 - j);
 			r_anal_op_init (&op);
-			ut8 newbuf[sizeof (ut64)] = {0};
-			memcpy (&newbuf, &buf, sizeof (ut64));
+			ut8 newbuf[sizeof (buf)];
+			memcpy (newbuf, buf, sizeof (buf));
 			ut8 *newbyte = newbuf + i;
 			if (bit) {
 				newbuf[i] = R_BIT_UNSET (newbyte, 7 - j);
@@ -10569,7 +10569,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 				newbuf[i] = R_BIT_SET (newbyte, 7 - j);
 			}
 			r_anal_op_set_bytes (&op, core->addr, newbuf, sizeof (newbuf));
-			(void)r_anal_op (core->anal, &op, core->addr, newbuf, sizeof (ut64), R_ARCH_OP_MASK_DISASM);
+			(void)r_anal_op (core->anal, &op, core->addr, newbuf, sizeof (newbuf), R_ARCH_OP_MASK_DISASM);
 			// r_cons_printf (core->cons, "%d %s\n%d %s\n\n", (i*8) + j, analop.mnemonic, (i*8)+j, op.mnemonic);
 			int word_change = compare_mnemonics (analop.mnemonic, op.mnemonic);
 			r_anal_op_fini (&op);
