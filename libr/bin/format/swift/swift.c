@@ -9,6 +9,7 @@
 #include "swift.h"
 
 #define MAX_SWIFT_MEMBERS 256
+#define MAX_SWIFT_DEPTH 12 // nested contexts below the outermost one
 
 enum {
 	SWIFT_CDK_MODULE = 0,
@@ -126,7 +127,7 @@ static char *swift_symref_resolve(void *user, ut64 addr, bool indirect) {
 }
 
 static char *swift_context_qualname(RBinSwiftLoader *ld, ut64 va) {
-	if (ld->depth > 12 || !swift_account (ld, 12)) {
+	if (ld->depth > MAX_SWIFT_DEPTH || !swift_account (ld, 12)) {
 		return NULL;
 	}
 	const ut32 flags = (ut32)swift_s32 (ld, va);
@@ -168,7 +169,7 @@ static char *swift_context_qualname(RBinSwiftLoader *ld, ut64 va) {
 // mangled context chain ("9CryptoKit4P256O7SigningO9PublicKeyV") used to
 // attribute symbols to types; returns NULL for non-nominal contexts
 static char *swift_context_mangled(RBinSwiftLoader *ld, ut64 va) {
-	if (ld->depth > 12 || !swift_account (ld, 12)) {
+	if (ld->depth > MAX_SWIFT_DEPTH || !swift_account (ld, 12)) {
 		return NULL;
 	}
 	const ut32 flags = (ut32)swift_s32 (ld, va);
@@ -573,15 +574,18 @@ static void swift_attach_symbols(RBinSwiftLoader *ld) {
 		RBinClass *klass = NULL;
 		const char *rest = NULL;
 		const char *q = p;
+		const char *end = p + strlen (p);
 		bool in_module = true;
-		while (isdigit (*q) && *q != '0') {
+		// swift_context_mangled () never builds keys with more contexts than this
+		int depth;
+		for (depth = 0; depth <= MAX_SWIFT_DEPTH && isdigit (*q) && *q != '0'; depth++) {
 			const int n = atoi (q);
 			q = r_str_trim_head_digits (q);
-			if (n < 1 || n > (int)strlen (q)) {
+			if (n < 1 || n > end - q) {
 				break;
 			}
 			q += n;
-			if (strchr ("CVO", *q)) {
+			if (*q && strchr ("CVO", *q)) {
 				q++;
 				char *prefix = r_str_ndup (p, q - p);
 				RBinClass *k = ht_pp_find (ld->mangled_ht, prefix, NULL);

@@ -4696,3 +4696,16 @@ WARN: The swift metadata adds up to more than 4 times the file size, ignoring th
 ERROR: Chopped classlist data
 EOF
 RUN
+
+NAME=swift symbols with deeply nested contexts load quickly
+FILE=bins/mach0/swift-nested-symbol-contexts
+TIMEOUT=10
+CMDS=<<EOF
+i~^lang
+is~?
+EOF
+EXPECT=<<EOF
+lang     swift
+682
+EOF
+RUN
