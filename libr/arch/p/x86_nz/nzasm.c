@@ -1479,6 +1479,23 @@ static int opcmov(RArchSession *a, ut8 *data, const Opcode *op) {
 		return -1;
 	}
 
+	if (op->operands[0].type & OT_WORD) {
+		data[l++] = 0x66;
+	}
+	// REX.W for 64 bit operands, REX.R / REX.B for r8-r15 (the memory base has no extended flag)
+	int rex = 0;
+	if (a->config->bits == 64 && op->operands[0].type & OT_QWORD) {
+		rex |= 8;
+	}
+	if (op->operands[0].extended) {
+		rex |= 4;
+	}
+	if (!(op->operands[1].type & OT_MEMORY) && op->operands[1].extended) {
+		rex |= 1;
+	}
+	if (rex) {
+		data[l++] = 0x40 | rex;
+	}
 	data[l++] = 0x0f;
 	char *cmov = op->mnemonic + 4;
 	if (!strcmp (cmov, "o")) {
