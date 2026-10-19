@@ -1931,35 +1931,86 @@ static RVecRBinTrycatch *trycatch(RBinFile *bf) {
 #define GOTR2_ADDEND_MAX 0x1000
 #define GOTR2_GROWTH_MAX (1 << 20)
 
-static ut64 slot_addend(RBinFile *bf, ELFOBJ *eo, RIOBind *iob, const RBinElfReloc *rel) {
-	const ut16 m = eo->ehdr.e_machine;
-	// a lazy arm slot holds plt0, not an addend
-	const bool arm_rel = m == EM_ARM && rel->mode == DT_REL && rel->type != R_ARM_JUMP_SLOT;
-	const bool i386_rel = m == EM_386 && rel->implicit_addend
-		&& (rel->type == R_386_32 || rel->type == R_386_PC32);
-	st64 a = rel->addend;
-	if (arm_rel || i386_rel) {
-		ut8 buf[4];
-		if (iob->read_at (iob->io, elf_io_addr (bf, eo, rel->rva), buf, 4) != 4) {
-			return 0;
+// kinds whose addend is an offset from S; pc biases and got entries are not
+static bool addend_is_offset(ut16 machine, int type) {
+	switch (machine) {
+	case EM_X86_64:
+		return type == R_X86_64_64 || type == R_X86_64_32 || type == R_X86_64_32S;
+	case EM_386:
+		return type == R_386_32;
+	case EM_PPC:
+		return type == R_PPC_ADDR32;
+	case EM_PPC64:
+		return type == R_PPC64_ADDR64;
+	case EM_ARM:
+		switch (type) {
+		case R_ARM_ABS32:
+		case R_ARM_TARGET1:
+		case R_ARM_REL32:
+		case R_ARM_MOVW_ABS_NC:
+		case R_ARM_THM_MOVW_ABS_NC:
+		case R_ARM_MOVT_ABS:
+		case R_ARM_THM_MOVT_ABS:
+			return true;
 		}
-		a = arm_rel? arm_rel_addend (eo, rel, buf): (st32)r_read_ble32 (buf, eo->endian);
-	} else if (rel->implicit_addend) {
-		return 0;
+		break;
+	case EM_AARCH64:
+		switch (type) {
+		case R_AARCH64_ABS64:
+		case R_AARCH64_ABS32:
+		case R_AARCH64_PREL64:
+		case R_AARCH64_PREL32:
+		case R_AARCH64_PREL16:
+		case R_AARCH64_ADR_PREL_PG_HI21:
+		case R_AARCH64_ADR_PREL_PG_HI21_NC:
+		case R_AARCH64_ADD_ABS_LO12_NC:
+		case R_AARCH64_LDST8_ABS_LO12_NC:
+		case R_AARCH64_LDST16_ABS_LO12_NC:
+		case R_AARCH64_LDST32_ABS_LO12_NC:
+		case R_AARCH64_LDST64_ABS_LO12_NC:
+		case R_AARCH64_CALL26:
+		case R_AARCH64_JUMP26:
+			return true;
+		}
+		break;
 	}
-	return (a > 0 && a < GOTR2_ADDEND_MAX)? a: 0;
+	return false;
 }
 
-// ET_REL puts NOBITS after 8 bytes per reloc; spans get what slots leave
-static ut64 span_budget(RBinFile *bf, ELFOBJ *eo, ut64 base, size_t cdsz) {
-	if (eo->ehdr.e_type != ET_REL) {
-		return GOTR2_GROWTH_MAX;
+static bool offset_addend(RBinFile *bf, ELFOBJ *eo, RIOBind *iob, const RBinElfReloc *rel, st64 *a) {
+	const ut16 m = eo->ehdr.e_machine;
+	if (!addend_is_offset (m, rel->type)) {
+		return false;
 	}
+	*a = rel->addend;
+	if (rel->implicit_addend && (m == EM_ARM || m == EM_386 || m == EM_PPC)) {
+		ut8 buf[4];
+		if (iob->read_at (iob->io, elf_io_addr (bf, eo, rel->rva), buf, 4) != 4) {
+			return false;
+		}
+		*a = (m == EM_ARM)? arm_rel_addend (eo, rel, buf): (st32)r_read_ble32 (buf, eo->endian);
+	}
+	return true;
+}
+
+enum { SLOT_CRAMPED = 1, SLOT_WARNED = 2 };
+
+static inline bool offset_fits(st64 a) {
+	return a > -GOTR2_ADDEND_MAX && a < GOTR2_ADDEND_MAX;
+}
+
+// slots may grow up to the next io map, after room for one slot per reloc
+static ut64 span_budget(RBin *b, ELFOBJ *eo, ut64 base, size_t cdsz) {
+	RIOBank *bank = b->iob.bank_get (b->iob.io, b->iob.io->bank);
 	ut64 limit = UT64_MAX;
-	RBinElfSection *s;
-	R_VEC_FOREACH (&eo->g_sections, s) {
-		if (s->type == SHT_NOBITS) {
-			limit = R_MIN (limit, elf_io_addr (bf, eo, s->rva));
+	if (bank) {
+		RListIter *iter;
+		RIOMapRef *mapref;
+		r_list_foreach (bank->maprefs, iter, mapref) {
+			RIOMap *map = b->iob.map_get (b->iob.io, mapref->id);
+			if (map && r_io_map_from (map) >= base) {
+				limit = R_MIN (limit, r_io_map_from (map));
+			}
 		}
 	}
 	if (limit == UT64_MAX) {
@@ -2030,21 +2081,31 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		return NULL;
 	}
 	HtUU *relocs_by_sym = ht_uu_new0 ();
-	HtUU *addend_by_sym = ht_uu_new0 ();
-	if (!relocs_by_sym || !addend_by_sym) {
+	// a slot's room must be known before its first reloc patches it
+	HtUU *lead_by_sym = ht_uu_new0 ();
+	HtUU *tail_by_sym = ht_uu_new0 ();
+	HtUU *slot_flags = ht_uu_new0 ();
+	if (!relocs_by_sym || !lead_by_sym || !tail_by_sym || !slot_flags) {
 		ht_uu_free (relocs_by_sym);
-		ht_uu_free (addend_by_sym);
+		ht_uu_free (lead_by_sym);
+		ht_uu_free (tail_by_sym);
+		ht_uu_free (slot_flags);
 		RVecRBinReloc_free (ret);
 		return NULL;
 	}
 	RBinElfReloc *reloc;
 	R_VEC_FOREACH (relocs, reloc) {
-		const ut64 a = reloc_has_slot (eo, reloc)? slot_addend (bf, eo, &b->iob, reloc): 0;
-		if (a > ht_uu_find (addend_by_sym, reloc->sym, NULL)) {
-			ht_uu_update (addend_by_sym, reloc->sym, a);
+		st64 a;
+		if (!reloc_has_slot (eo, reloc) || !offset_addend (bf, eo, &b->iob, reloc, &a) || !offset_fits (a)) {
+			continue;
+		}
+		HtUU *side = (a < 0)? lead_by_sym: tail_by_sym;
+		const ut64 mag = R_ABS (a);
+		if (mag > ht_uu_find (side, reloc->sym, NULL)) {
+			ht_uu_update (side, reloc->sym, mag);
 		}
 	}
-	ut64 budget = span_budget (bf, eo, n_vaddr, cdsz);
+	ut64 budget = span_budget (b, eo, n_vaddr, cdsz);
 	ut64 vaddr = n_vaddr;
 	ut64 toc_base = UT64_MAX;
 	if (eo->ehdr.e_machine == EM_PPC64) {
@@ -2083,13 +2144,44 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		const bool resolved = is_abs || (sym_addr && sym_addr != UT64_MAX);
 		const bool addressable = !resolved && reloc->sym && !reloc_sym_is_tls (eo, reloc);
 		const bool takes_slot = addressable && eo->ehdr.e_machine != EM_SBPF;
+		// S follows the lead: S + A and a word read there stay inside
+		ut64 lead = 0, tail = 0;
+		const ut64 old_flags = ht_uu_find (slot_flags, reloc->sym, NULL);
+		ut64 flags = old_flags;
+		if (takes_slot) {
+			lead = R_ROUND (ht_uu_find (lead_by_sym, reloc->sym, NULL), cdsz);
+			tail = R_ROUND (ht_uu_find (tail_by_sym, reloc->sym, NULL), cdsz);
+			if (lead + tail > budget) {
+				flags |= SLOT_CRAMPED;
+				lead = tail = 0;
+			}
+			budget -= lead + tail;
+			plt_entry_addr = vaddr + lead;
+		}
+		const ut64 slot = vaddr + lead;
+		st64 a = 0;
+		const bool offset = has_slot && offset_addend (bf, eo, &b->iob, reloc, &a) && a;
+		const bool skip = offset && (!offset_fits (a) || (flags & SLOT_CRAMPED));
+		if (skip && !(flags & SLOT_WARNED)) {
+			RBinImport *imp = reloc_is_import (eo, reloc)? eo->imports_by_ord[reloc->sym]: NULL;
+			RBinSymbol *sym = (!imp && reloc->sym < eo->symbols_by_ord_size)? eo->symbols_by_ord[reloc->sym]: NULL;
+			RBinName *name = imp? imp->name: sym? sym->name: NULL;
+			R_LOG_WARN ("No .got.r2 room for %s%+"PFMT64d" at 0x%"PFMT64x", reloc left unpatched",
+				name? r_bin_name_tostring (name): "?", a, reloc->rva);
+			flags |= SLOT_WARNED;
+		}
+		if (flags != old_flags) {
+			ht_uu_update (slot_flags, reloc->sym, flags);
+		}
 		// symbol-less relocs have S = 0 (gABI); a tls value is no address
-		const ut64 raddr = resolved? sym_addr: addressable? vaddr: 0;
-		_patch_reloc (bf, eo, eo->ehdr.e_machine, &b->iob, reloc,
-			elf_io_addr (bf, eo, reloc->rva), raddr, bias, plt_entry_addr, toc_base);
+		const ut64 raddr = resolved? sym_addr: addressable? slot: 0;
+		if (!skip) {
+			_patch_reloc (bf, eo, eo->ehdr.e_machine, &b->iob, reloc,
+				elf_io_addr (bf, eo, reloc->rva), raddr, bias, plt_entry_addr, toc_base);
+		}
 		RBinSymbol *csym = (takes_slot && ss && ss->common)? eo->symbols_by_ord[reloc->sym]: NULL;
 		if (csym) {
-			csym->vaddr = vaddr - shift;
+			csym->vaddr = slot - shift;
 			csym->paddr = Elf_(v2p) (eo, csym->vaddr);
 		}
 		ptr = reloc_convert (eo, reloc, n_vaddr - shift, ret);
@@ -2098,7 +2190,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		}
 		// a patched code site branches to the slot, so the slot is what the
 		// reloc describes; a data site holds the value and keeps its own vaddr
-		const bool site_moves = has_slot
+		const bool site_moves = has_slot && !skip
 			&& (patch_redirects_code (eo->ehdr.e_machine) || reloc_is_import (eo, reloc));
 		if (site_moves) {
 			RBinSection *s = r_bin_get_section_at (bf->bo, ptr->vaddr + shift, true);
@@ -2106,24 +2198,19 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 				if (resolved) {
 					ptr->vaddr = sym_addr - shift;
 				} else if (takes_slot) {
-					ptr->vaddr = vaddr - shift;
+					ptr->vaddr = slot - shift;
 				}
 			}
 		}
 		if (takes_slot) {
-			ht_uu_insert (relocs_by_sym, reloc->sym, vaddr);
-			const ut64 a = ht_uu_find (addend_by_sym, reloc->sym, NULL);
-			ut64 span = R_ROUND (a, cdsz);
-			if (span > budget) {
-				R_LOG_DEBUG ("no room for the 0x%"PFMT64x" addend span of reloc sym %d", a, reloc->sym);
-				span = 0;
-			}
-			budget -= span;
-			vaddr += cdsz + span;
+			ht_uu_insert (relocs_by_sym, reloc->sym, slot);
+			vaddr += lead + cdsz + tail;
 		}
 	}
 	ht_uu_free (relocs_by_sym);
-	ht_uu_free (addend_by_sym);
+	ht_uu_free (lead_by_sym);
+	ht_uu_free (tail_by_sym);
+	ht_uu_free (slot_flags);
 	if (vaddr > n_vaddr) {
 		char *muri = r_str_newf ("malloc://%" PFMT64u, vaddr - n_vaddr);
 		if (muri && b->iob.open_at (io, muri, R_PERM_R, 0664, n_vaddr)) {
