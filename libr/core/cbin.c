@@ -2645,11 +2645,8 @@ static char *construct_symbol_flagname(const char *pfx, const char *libname, con
 	char *s = r_str_newf ("%s.%s%s%s", pfx, r_str_get (libname), libname? "_": "", symname);
 	if (s) {
 		r_name_filter (s, -1);
-		char *R = r_name_filter_quoted_shell (s);
-		free (s);
-		return R;
 	}
-	return NULL;
+	return s;
 }
 
 /* Return a unique flag name derived from `basename`. If a flag with that
@@ -2826,7 +2823,8 @@ static void set_symbol_flag(RCore *core, RBinSymbol *symbol, const SymName *sn, 
 }
 
 // TODO: this allow_mutation is hacky and must disappear
-static void snInit(RCore *core, SymName *sn, RBinSymbol *sym, const char *lang, bool bin_demangle, bool keep_lib, bool allow_mutation) {
+static void snInit(RCore *core, SymName *sn, RBinSymbol *sym, const char *lang, bool bin_demangle, bool keep_lib, int mode) {
+	const bool allow_mutation = IS_MODE_SET (mode);
 	bin_demangle &= !!lang;
 	if (!core || !sym || !sym->name) {
 		return;
@@ -2840,7 +2838,15 @@ static void snInit(RCore *core, SymName *sn, RBinSymbol *sym, const char *lang, 
 
 	sn->name = r_str_newf ("%s%s", sym->is_imported? "imp.": "", sym_name);
 	sn->libname = sym->libname? strdup (sym->libname): NULL;
+	sn->demname = NULL;
+	if (bin_demangle && sym->paddr && !has_stored_objc_name) {
+		sn->demname = r_bin_demangle (core->bin->cur, lang, sn->name, sym->vaddr, keep_lib);
+	}
+	if (!allow_mutation && !IS_MODE_JSON (mode)) {
+		return;
+	}
 	const char *pfx = symbol_flag_prefix (sym);
+	sn->demflag = sn->demname? construct_symbol_flagname (pfx, sym->libname, sn->demname): NULL;
 	const char *symname = sym_name;
 	char *resymname = NULL;
 	if (sym->dup_count > 0) {
@@ -2889,15 +2895,6 @@ static void snInit(RCore *core, SymName *sn, RBinSymbol *sym, const char *lang, 
 		sn->classflag = NULL;
 		sn->methname = NULL;
 		sn->methflag = NULL;
-	}
-	sn->demname = NULL;
-	sn->demflag = NULL;
-	if (bin_demangle && sym->paddr && !has_stored_objc_name) {
-		sn->demname = r_bin_demangle (core->bin->cur, lang, sn->name, sym->vaddr, keep_lib);
-		if (sn->demname) {
-			// XXX LEAK
-			sn->demflag = construct_symbol_flagname (pfx, sym->libname, sn->demname);
-		}
 	}
 }
 
@@ -3028,7 +3025,6 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 	RTable *table = r_core_table_new (core, "symbols");
 	bool bin_demangle = r_config_get_b (core->config, "bin.demangle");
 	const bool keep_lib = r_config_get_b (core->config, "bin.demangle.pfxlib");
-	const bool allow_mutation = IS_MODE_SET (mode);
 	if (IS_MODE_JSON (mode)) {
 		if (!printHere) {
 			pj_a (pj);
@@ -3103,8 +3099,9 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 			}
 		}
 		SymName sn = { 0 };
-		snInit (core, &sn, symbol, lang, bin_demangle, keep_lib, IS_MODE_SET (mode));
-		char *r_symbol_name = r_str_escape_utf8 (sn.name, false, true);
+		snInit (core, &sn, symbol, lang, bin_demangle, keep_lib, mode);
+		char *r_symbol_name = IS_MODE_SET (mode) || IS_MODE_NORMAL (mode)
+			? NULL: r_str_escape_utf8 (sn.name, false, true);
 
 		if (IS_MODE_SET (mode) && (is_section_symbol (symbol) || is_file_symbol (symbol))) {
 			/*
@@ -3159,63 +3156,10 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 						r_flag_item_set_rawname (core->flags, fi2, sn.name);
 					}
 				}
-			} else {
-				const char *n = sn.demname? sn.demname: name;
-				const char *fn = sn.nameflag;
-				/* Ignore duplicate sym.* names if the target address already holds one. */
-				if (IS_MODE_RAD (mode) && r_str_startswith (fn, "sym.")) {
-					RFlagItem *fi_at = NULL;
-					const RVecFlagItemPtr *lst = r_flag_get_vec (core->flags, addr);
-					if (lst) {
-						RFlagItem **it;
-						RFlagItem *fi;
-						r_flag_item_vec_foreach (lst, it, fi) {
-							if (fi && fi->name && r_str_startswith (fi->name, "sym.")) {
-								fi_at = fi;
-								break;
-							}
-						}
-					}
-					if (fi_at) {
-						continue; /* already printed/added a sym.* for this addr */
-					}
-				}
-				char *fnp = (core->bin->prefix)? r_str_newf ("%s.%s", core->bin->prefix, fn): strdup (r_str_get (fn));
-				if (addr == UT64_MAX) {
-					R_LOG_DEBUG ("Cannot resolve symbol address %s", n);
-				} else {
-					RFlagItem *fi = r_flag_get (core->flags, fnp); // addr, false);
-					if (fi) {
-						fi->size = symbol->attr.size;
-					} else {
-						fi = r_flag_set (core->flags, fnp, addr, symbol->attr.size);
-					}
-					if (fi) {
-						r_flag_item_set_realname (core->flags, fi, n);
-						RFlagItem *fi2 = r_flag_get (core->flags, fnp);
-						if (fi2) {
-							r_flag_item_set_rawname (core->flags, fi2, sn.name);
-						}
-						// if (fi->addr == 0x10e670) eprintf ("SWE RAW NAME OF 0x%"PFMT64x".. %s\n", fi->addr, fi->rawname);
-						const bool is_demangled = (bool) (size_t)sn.demname;
-						if (is_demangled) {
-							fi->demangled = true;
-						}
-					} else if (fn) {
-						R_LOG_WARN ("Can't find flag (%s)", fn);
-					}
-				}
-				free (fnp);
 			}
-			if (!allow_mutation) {
-				R_FREE (sn.nameflag);
-				sn.nameflag = sn.methflag? strdup (sn.methflag): NULL;
-			}
-			if (allow_mutation) {
-				set_symbol_flag (core, symbol, &sn, addr, sn.demname? sn.demname: name, mode);
-				if (is_dotnet) {
-					set_symbol_arch (core, info, symbol);
-				}
+			set_symbol_flag (core, symbol, &sn, addr, sn.demname? sn.demname: name, mode);
+			if (is_dotnet) {
+				set_symbol_arch (core, info, symbol);
 			}
 			if (sn.demname) {
 				ut64 size = symbol->attr.size > 0? symbol->attr.size: 1;
