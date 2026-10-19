@@ -254,12 +254,8 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		}
 	} break;
 	case 'J': { // "pcJ"
-		char *out = malloc (len * 3);
-		r_print_printf (p, "var buffer = new Buffer(\"");
-		out[0] = 0;
-		r_base64_encode (out, buf, len);
-		r_print_printf (p, "%s", out);
-		r_print_printf (p, "\", 'base64');\n");
+		char *out = r_base64_encode_dyn (buf, len);
+		r_print_printf (p, "var buffer = new Buffer(\"%s\", 'base64');\n", r_str_get (out));
 		free (out);
 	} break;
 	case 'n': // "pcn"
