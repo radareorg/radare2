@@ -38,7 +38,6 @@ void i8080_disasm (RAnalOp *op, RStrBuf *sb) {
 		// truncated
 		op->mnemonic = strdup ("truncated");
 		op->size = -2; // opcode->size;
-		R_FREE (op->bytes);
 		return;
 	}
 	op->size = opcode->size;

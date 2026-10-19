@@ -223,3 +223,23 @@ ERROR: Cannot assemble 'ds 0x7fffffff' at line 1
 ERROR: Cannot assemble 'db "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"' at line 1
 EOF
 RUN
+
+NAME=pa data directives followed by instructions on encoders that own op->bytes
+FILE=--
+CMDS=<<EOF
+pa .byte 1,,nop @a:mips
+pa .byte 1,,nop @a:riscv
+pa .byte 1,,nop @a:8051
+pa .byte 1,,nop @a:ppc.nz
+pa .byte 1,,nop @a:cil
+pa .byte 1,,nop @a:i4004
+EOF
+EXPECT=<<EOF
+0100000000
+0113000000
+0100
+0100000060
+0100
+0100
+EOF
+RUN

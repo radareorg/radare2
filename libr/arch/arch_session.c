@@ -54,13 +54,21 @@ R_API bool r_arch_session_reset(RArchSession *ai) {
 	return false;
 }
 
+// encoders replace op->bytes with their own buffer, never let them free the inline one
+static bool session_encode(RArchSession *ai, RArchPluginEncodeCallback encode, RAnalOp *op, RArchEncodeMask mask) {
+	if (!encode) {
+		return false;
+	}
+	if (op->weakbytes) {
+		op->bytes = NULL;
+		op->weakbytes = false;
+	}
+	return encode (ai, op, mask);
+}
+
 R_API bool r_arch_session_patch(RArchSession *ai, RAnalOp *op, RArchEncodeMask mask) {
 	R_RETURN_VAL_IF_FAIL (ai && op, false);
-	RArchPluginEncodeCallback encode = R_UNWRAP3 (ai, plugin, encode);
-	if (encode != NULL) {
-		return encode (ai, op, mask);
-	}
-	return false;
+	return session_encode (ai, R_UNWRAP3 (ai, plugin, encode), op, mask);
 }
 
 R_API bool r_arch_session_encode(RArchSession *ai, RAnalOp *op, RArchEncodeMask mask) {
@@ -70,10 +78,7 @@ R_API bool r_arch_session_encode(RArchSession *ai, RAnalOp *op, RArchEncodeMask 
 		ai = ai->encoder;
 		encode = R_UNWRAP3 (ai, plugin, encode);
 	}
-	if (encode != NULL) {
-		return encode (ai, op, mask);
-	}
-	return false;
+	return session_encode (ai, encode, op, mask);
 }
 
 R_API RList *r_arch_session_preludes(RArchSession *s) {

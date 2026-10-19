@@ -305,13 +305,7 @@ R_API bool r_arch_esilcb(RArch *a, REsil *esil, RArchEsilAction action) {
 }
 
 R_API bool r_arch_encode(RArch *a, RAnalOp *op, RArchEncodeMask mask) {
-	RArchSession *session = a->session;
-	RArchPluginEncodeCallback encode = R_UNWRAP3 (session, plugin, encode);
-	if (!encode && session->encoder) {
-		session = session->encoder;
-		encode = R_UNWRAP3 (session, plugin, encode);
-	}
-	return encode? encode (session, op, mask): false;
+	return a->session && r_arch_session_encode (a->session, op, mask);
 }
 
 R_API bool r_arch_decode(RArch *a, RAnalOp *op, RArchDecodeMask mask) {
