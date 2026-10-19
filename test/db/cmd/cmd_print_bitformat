@@ -41,6 +41,18 @@ V\__/\______________________________________________________________/
 EOF
 RUN
 
+NAME=pfb field past bit 1024
+FILE=bins/other/cows128.data
+CMDS=<<EOF
+pfb 64.64.64.64.64.64.64.64.64.64.64.64.64.64.64.64.64b~@[1-]
+pfb 64.64.64.64.64.64.64.64.64.64.64.64.64.64.64.64.64b~?
+EOF
+EXPECT=<<EOF
+0xc296adc198adc399 @ 1024 + 64
+3
+EOF
+RUN
+
 NAME=pbwb
 FILE=-
 CMDS=<<EOF

@@ -2365,8 +2365,14 @@ static void pfb(RCore *core, const char *arg, int mode) {
 		r_cons_printf (core->cons, "     0x%08" PFMT64x "\n", bv);
 		RLart *la;
 		RListIter *iter;
-		char firstline[1024] = { 0 };
-		memset (firstline, ' ', sizeof (firstline) - 1);
+		// one column per bit, the connector of the last field sits at most at bpos
+		char *firstline = r_str_pad (NULL, 0, ' ', bpos + 2);
+		if (!firstline) {
+			r_bitmap_free (bm);
+			lart_free (lart);
+			r_list_free (lnames);
+			return;
+		}
 		int padsz = 0;
 		r_list_foreach (lart, iter, la) {
 			if (la->skip) {
@@ -2412,6 +2418,7 @@ static void pfb(RCore *core, const char *arg, int mode) {
 			free (pad2);
 			free (v);
 		}
+		free (firstline);
 	}
 	r_bitmap_free (bm);
 	lart_free (lart);
