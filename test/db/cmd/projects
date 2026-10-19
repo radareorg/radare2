@@ -29,6 +29,20 @@ omu 3 0x0000c000 0x00000100 0x00000300 r--
 EOF
 RUN
 
+NAME=P* without an open file
+FILE=malloc://64
+CMDS=<<EOF
+P*~^o=
+o--
+P*~^o=
+?e alive
+EOF
+EXPECT=<<EOF
+o=3
+alive
+EOF
+RUN
+
 NAME=Reloading a project twice fails
 FILE=bins/mach0/ls-m1
 ARGS=-a x86 -b 64

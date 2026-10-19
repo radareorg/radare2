@@ -85,3 +85,18 @@ sym.func.10000699c 0x1000069bc [CALL:--x] bl sym.imp.write
 sym.func.10000699c 0x1000069bc [CALL:--x] bl sym.imp.write
 EOF
 RUN
+
+NAME=aad and axm without references
+FILE=bins/elf/analysis/main
+CMDS=<<EOF
+ax-*
+aad
+axm 0x1180
+axm 0x1180 0x1190
+ax
+?e ok
+EOF
+EXPECT=<<EOF
+ok
+EOF
+RUN

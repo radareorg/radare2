@@ -385,3 +385,27 @@ WARN: ESIL trap 'read-err' (3735928559) at 0x00000008
 WARN: ESIL step-over forced PC to 0x00000005 (see e??esil.stepover.force)
 EOF
 RUN
+
+NAME=aes without an arch session
+FILE=bins/elf/analysis/main
+CMDS=<<EOF
+aeip
+e asm.arch=nope
+aes
+aeso
+aec
+?e ok
+EOF
+EXPECT=<<EOF
+ok
+EOF
+EXPECT_ERR=<<EOF
+ERROR: asm.arch: cannot find 'nope'
+ERROR: Cannot step without an arch plugin session
+ERROR: ESIL stopped at 0x00400410: step error
+ERROR: Cannot step without an arch plugin session
+ERROR: ESIL stopped at 0x00400410: step error
+ERROR: Cannot step without an arch plugin session
+ERROR: ESIL stopped at 0x00400410: step error
+EOF
+RUN

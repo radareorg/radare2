@@ -119,3 +119,30 @@ EXPECT=<<EOF
 /usr
 EOF
 RUN
+
+NAME=sh mktemp without arguments reports usage and keeps running
+FILE=-
+CMDS=<<EOF
+sh mktemp
+?e alive
+EOF
+EXPECT=<<EOF
+alive
+EOF
+EXPECT_ERR=<<EOF
+INFO: Usage: mktemp [-d] [file|directory]
+EOF
+RUN
+
+NAME=pa .extern without the exec grain
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain=none
+e cfg.sandbox=true
+pa .extern x~alive
+?e alive
+EOF
+EXPECT=<<EOF
+alive
+EOF
+RUN

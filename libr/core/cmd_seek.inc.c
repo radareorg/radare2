@@ -316,11 +316,11 @@ static int cmd_seek_opcode_backward(RCore *core, int numinstr) {
 			val = bufsize;
 			addr = (bufsize >= addr)? 0: addr - bufsize;
 		} else {
-			RArchSession *as = r_ref (core->anal->arch->session);
-			if (!as) {
+			if (!core->anal->arch->session) {
 				R_LOG_DEBUG ("Cannot find arch session");
 				return 0;
 			}
+			RArchSession *as = r_ref (core->anal->arch->session);
 			ut8 *buf = malloc (bufsize);
 			if (!buf) {
 				return 0;
@@ -381,11 +381,11 @@ static int cmd_seek_opcode_forward(RCore *core, int numinstr) {
 		}
 		addr += bufsize;
 	} else  {
-		RArchSession *as = r_ref (core->anal->arch->session);
-		if (!as) {
+		if (!core->anal->arch->session) {
 			R_LOG_DEBUG ("Cannot find arch session");
 			return 0;
 		}
+		RArchSession *as = r_ref (core->anal->arch->session);
 		ut8 *buf = malloc (bufsize);
 		if (!buf) {
 			return 0;

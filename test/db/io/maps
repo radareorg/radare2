@@ -186,3 +186,59 @@ EXPECT=<<EOF
 - 1 fd: 4 +0x00000000 0x0804a020 - 0x0804a023 rw- rw- mmap.LOAD1
 EOF
 RUN
+
+NAME=rejected wrap-around map leaves no stale mapref in the bank
+FILE=malloc://1024
+CMDS=<<EOF
+om 3 0xfffffffffffffe00 0x400 0
+om
+om-2
+om-3
+om 3 0xfffffffffffff000 0x2000 0xfffffffffffff000
+om
+EOF
+EXPECT=<<EOF
+- 3 fd: 3 +0x00000000 0xfffffffffffffe00 - 0xffffffffffffffff rwx rwx
+* 2 fd: 3 +0x00000200 0x00000000 - 0x000001ff rwx rwx
+- 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx rwx
+* 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx rwx
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot add map
+EOF
+RUN
+
+NAME=omp and oma. with attribute strings
+FILE=malloc://1024
+CMDS=<<EOF
+omp 1 rwx heap+paged+private
+omp 1 rwx bogus
+oma. stack
+oma.
+om
+EOF
+EXPECT=<<EOF
+stack
+* 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx rwx
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid meta type string
+EOF
+RUN
+
+NAME=omo lists overlay chunks from applied relocs
+FILE=bins/elf/analysis/pie
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+omo~?
+omo*~?
+omoj~{[0].addr}
+omo?~?
+EOF
+EXPECT=<<EOF
+4
+4
+5948
+1
+EOF
+RUN

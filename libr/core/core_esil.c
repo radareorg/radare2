@@ -547,10 +547,11 @@ R_API bool r_core_esil_single_step(RCore *core) {
 		return false;
 	}
 	// intentionally not using r_anal_op here, because this function is a fucking fever dream
-	RArchSession *as = r_ref (core->anal->arch->session);
-	if (!as) {
+	if (!core->anal->arch->session) {
+		R_LOG_ERROR ("Cannot step without an arch plugin session");
 		return false;
 	}
+	RArchSession *as = r_ref (core->anal->arch->session);
 	RAnalOp op;
 	r_anal_op_init (&op);
 	r_anal_op_set_bytes (&op, pc, buf, max_opsize);

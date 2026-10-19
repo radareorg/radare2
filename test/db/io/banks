@@ -78,3 +78,20 @@ ERROR: Expect a mapid number
 ERROR: Expect a mapid number
 EOF
 RUN
+
+NAME=omb+ ombg omba on a map the bank already holds keep a single mapref
+FILE=malloc://1024
+CMDS=<<EOF
+omb+ 1
+ombg
+omba 1
+om
+om-1
+om
+?e done
+EOF
+EXPECT=<<EOF
+* 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx rwx
+done
+EOF
+RUN

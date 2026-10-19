@@ -11888,14 +11888,16 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		}
 		//get all xrefs pointing to addr
 		RVecAnalRef *list = r_anal_xrefs_get (core->anal, addr);
-		RAnalRef *ref;
-		R_VEC_FOREACH (list, ref) {
-			r_cons_printf (core->cons, "0x%"PFMT64x" %s %s\n", ref->addr,
-				r_anal_ref_perm_tostring (ref),
-				r_anal_ref_type_tostring (ref->type));
-			r_anal_xrefs_set (core->anal, ref->addr, at, ref->type);
+		if (list) {
+			RAnalRef *ref;
+			R_VEC_FOREACH (list, ref) {
+				r_cons_printf (core->cons, "0x%"PFMT64x" %s %s\n", ref->addr,
+					r_anal_ref_perm_tostring (ref),
+					r_anal_ref_type_tostring (ref->type));
+				r_anal_xrefs_set (core->anal, ref->addr, at, ref->type);
+			}
+			RVecAnalRef_free (list);
 		}
-		RVecAnalRef_free (list);
 		free (ptr);
 	} break;
 	case 'v': // "axv"
@@ -14642,13 +14644,15 @@ static void r_core_anal_info(RCore *core, const char *input) {
 
 static void cmd_anal_aad(RCore *core, const char *input) {
 	RVecAnalRef *list = r_anal_refs_get (core->anal, UT64_MAX);
-	RAnalRef *ref;
-	R_VEC_FOREACH (list, ref) {
-		if (r_io_is_valid_offset (core->io, ref->addr, false)) {
-			r_core_anal_fcn (core, ref->at, ref->addr, R_ANAL_REF_TYPE_NULL, 1);
+	if (list) {
+		RAnalRef *ref;
+		R_VEC_FOREACH (list, ref) {
+			if (r_io_is_valid_offset (core->io, ref->addr, false)) {
+				r_core_anal_fcn (core, ref->at, ref->addr, R_ANAL_REF_TYPE_NULL, 1);
+			}
 		}
+		RVecAnalRef_free (list);
 	}
-	RVecAnalRef_free (list);
 }
 
 static bool archIsThumbable(RCore *core) {

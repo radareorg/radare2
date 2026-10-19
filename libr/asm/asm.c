@@ -837,8 +837,9 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 	} else if (r_str_startswith (ptr, ".extern")) {
 		char *str = r_str_trim_dup (ptr + strlen (".extern"));
 		if (!r_asm_code_equ_get (acode, str)) {
+			// fails without the exec grain, as in the sandboxed http server
 			void *p = r_lib_dl_open ("libr_core." R_LIB_EXT, false);
-			void *a = r_lib_dl_sym (p, str);
+			void *a = p? r_lib_dl_sym (p, str): NULL;
 			if (a) {
 				char *val = r_str_newf ("%p", a);
 				// Will be good to have a separate api for R2_590 to let the caller resolve those pointers
@@ -848,9 +849,9 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 			} else {
 				R_LOG_WARN ("Cannot resolve '%s'", str);
 			}
-			free (str);
 			r_lib_dl_close (p);
 		}
+		free (str);
 		ret = 0;
 	} else if (r_str_startswith (ptr, ".string ")) {
 		char *str = r_str_trim_dup (ptr + 8);

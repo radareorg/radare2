@@ -47,3 +47,20 @@ EXPECT=<<EOF
        | generative:result_5,ebx,= |
 EOF
 RUN
+
+NAME=aeg rejects unknown tokens
+FILE=--
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+aeg foo,++~ok
+aeg foo,!~ok
+aeg foo,DUP,+~ok
+aeg foo,[4]~ok
+aeg 1,foo,=[4]~ok
+aeg foo,$c~ok
+?e ok
+EOF
+EXPECT=<<EOF
+ok
+EOF
+RUN

@@ -1067,6 +1067,13 @@ static void cmd_oma(RCore *core, const char *input) {
 	}
 }
 
+// a bank must reference a map once, so raise it instead of adding it again
+static void bank_map_top(RCore *core, ut32 mapid) {
+	if (!r_io_bank_map_priorize (core->io, core->io->bank, mapid)) {
+		r_io_bank_map_add_top (core->io, core->io->bank, mapid);
+	}
+}
+
 static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 	const char cmd = argv[0][1];
 	// the argument can be glued to the command ("ombaN") or passed apart ("omba N")
@@ -1093,7 +1100,7 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 		if (isdigit (arg[0])) {
 			int mapid = atoi (arg);
 			if (r_io_map_get (core->io, mapid)) {
-				r_io_bank_map_add_top (core->io, core->io->bank, mapid);
+				bank_map_top (core, mapid);
 			} else {
 				R_LOG_ERROR ("Invalid map id");
 			}
@@ -1134,7 +1141,7 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 				do {
 					RIOMap *map = r_id_storage_get (&core->io->maps, mapid);
 					if (map) {
-						r_io_bank_map_add_top (core->io, core->io->bank, map->id);
+						bank_map_top (core, map->id);
 					}
 				} while (r_id_storage_get_next (&core->io->maps, &mapid));
 			}
@@ -1143,7 +1150,7 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 	case '+': // "omb+ [name]"
 		if (isdigit (arg[0])) {
 			// add a map to the current bank (we cant name a bank with a number)
-			r_io_bank_map_add_top (core->io, core->io->bank, atoi (arg));
+			bank_map_top (core, atoi (arg));
 		} else {
 			RIOBank *bank = r_io_bank_new (arg);
 			if (bank) {
@@ -1353,19 +1360,22 @@ static void cmd_open_map(RCore *core, const char *input) {
 			const char mode = input[2];
 			PJ *pj = NULL;
 			RIOOverlayForeach cb = overlay_print_diff_cb;
+			void *user = core; // the plain and the r2 callbacks take the core, the json one the pj
 			if (mode == '*') {
 				cb = overlay_print_diff_r2_cb;
 			} else if (mode == 'j') {
 				cb = overlay_print_diff_pj_cb;
 				pj = r_core_pj_new (core);
 				pj_a (pj);
+				user = pj;
 			} else if (mode == '?') {
 				r_cons_cmd_help_match (core->cons, help_msg_om, "omo", 0, true);
+				break;
 			} else if (mode) {
 				r_core_return_invalid_command (core, "omo", input[2]);
 				break;
 			}
-			r_io_bank_overlay_foreach (core->io, core->io->bank, cb, pj);
+			r_io_bank_overlay_foreach (core->io, core->io->bank, cb, user);
 			if (pj) {
 				pj_end (pj);
 				char *s = pj_drain (pj);

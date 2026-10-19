@@ -472,7 +472,10 @@ static bool project_save_script(RCore *core, const char *file, int opts, const c
 	if (opts & R_CORE_PRJ_IO_MAPS) {
 		r_core_cmd (core, "o*", 0);
 		r_core_cmd (core, "om*", 0);
-		r_cons_printf (cons, "o=%d\n", core->io->desc->fd);
+		// no current fd after o-- or when r2 was started without a file
+		if (core->io->desc) {
+			r_cons_printf (cons, "o=%d\n", core->io->desc->fd);
+		}
 		flush (core, sb);
 	}
 	r_core_cmd0 (core, "tcc*");

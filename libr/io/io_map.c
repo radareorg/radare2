@@ -191,6 +191,8 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut6
 		map[1] = io_map_new (io, fd, desc->perm & perm, perm & R_PERM_RWX, delta, addr, size);
 		if (!map[1]) {
 			if (map[0]) {
+				// the first half is already referenced by the bank
+				r_io_bank_del_map (io, io->bank, map[0]->id);
 				r_id_storage_delete (&io->maps, map[0]->id);
 				free (map[0]);
 			}
@@ -199,6 +201,7 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut6
 		}
 		if (!r_io_bank_map_add_top (io, io->bank, map[1]->id)) {
 			if (map[0]) {
+				r_io_bank_del_map (io, io->bank, map[0]->id);
 				r_id_storage_delete (&io->maps, map[0]->id);
 				free (map[0]);
 			}
@@ -237,6 +240,8 @@ R_API RIOMap *r_io_map_add_bottom(RIO *io, int fd, int perm, ut64 delta, ut64 ad
 		map[1] = io_map_new (io, fd, desc->perm & perm, perm & R_PERM_RWX, delta, addr, size);
 		if (!map[1]) {
 			if (map[0]) {
+				// the first half is already referenced by the bank
+				r_io_bank_del_map (io, io->bank, map[0]->id);
 				r_id_storage_delete (&io->maps, map[0]->id);
 				free (map[0]);
 			}
@@ -245,6 +250,7 @@ R_API RIOMap *r_io_map_add_bottom(RIO *io, int fd, int perm, ut64 delta, ut64 ad
 		}
 		if (!r_io_bank_map_add_bottom (io, io->bank, map[1]->id)) {
 			if (map[0]) {
+				r_io_bank_del_map (io, io->bank, map[0]->id);
 				r_id_storage_delete (&io->maps, map[0]->id);
 				free (map[0]);
 			}
@@ -824,9 +830,14 @@ static const char *metaflagname[16] = {
 R_API bool r_io_map_setattr_fromstring(RIOMap *map, const char *s) {
 	int i, maptype;
 	for (maptype = 0; maptype < R_IO_MAP_META_TYPE_LAST; maptype++) {
+		if (R_STR_ISEMPTY (metatypename[maptype])) {
+			// the empty name of the "none" type is found in any string
+			continue;
+		}
 		if (strstr (s, metatypename[maptype])) {
 			ut32 mapflag = 0;
-			for (i = 0; i < R_IO_MAP_META_FLAG_LAST; i++) {
+			// metaflagname has fewer names than R_IO_MAP_META_FLAG_LAST entries
+			for (i = 0; i < R_IO_MAP_META_FLAG_LAST && metaflagname[i]; i++) {
 				if (strstr (s, metaflagname[i])) {
 					mapflag |= (1 << i);
 				}

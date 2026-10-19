@@ -78,15 +78,24 @@ R_API int r_sys_tem_statement(const char *l) {
 		}
 		if (!strcmp (progname, "ls")) {
 			char *s = r_syscmd_ls (sbs, 80);
-			eprintf ("%s\n", s);
-			free (s);
+			if (s) {
+				eprintf ("%s\n", s);
+				free (s);
+			}
 		} else if (!strcmp (progname, "mktemp")) {
-			char *d = r_syscmd_mktemp (sbs);
+			// takes the whole line and skips the command name
+			char *d = r_syscmd_mktemp (l);
+			free (sbs);
+			if (!d) {
+				return 1;
+			}
 			printf ("%s\n", d);
 			free (d);
-			return d? 0: 1;
+			return 0;
 		} else if (!strcmp (progname, "mkdir")) {
-			return r_syscmd_mkdir (sbs);
+			bool ok = r_syscmd_mkdir (l);
+			free (sbs);
+			return ok? 0: 1;
 		} else if (!strcmp (progname, "pwd")) {
 			char *wd = r_sys_getdir ();
 			eprintf ("%s\n", wd);
