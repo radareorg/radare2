@@ -94,7 +94,17 @@ static inline ut32 alias_hash(const char *key, size_t len) {
 }
 
 static ut32 alias_hashfn(const void *key) {
-	return alias_hash (key, strlen (key));
+	// Short callback keys need only one scan, without a separate strlen.
+	const char *name = key;
+	ut32 h = 5381;
+	size_t i = 0;
+	while (i < 32 && name[i]) {
+		h = h * 33 + (ut8)name[i++];
+	}
+	if (i < 32 || !name[i]) {
+		return h;
+	}
+	return (ut32)r_str_hash64_seed (name, i + strlen (name + i), 0);
 }
 
 R_API void r_cmd_alias_init(RCmd *cmd) {
@@ -107,10 +117,7 @@ R_API void r_cmd_alias_init(RCmd *cmd) {
 	opt.calcsizeV = alias_calcsizeV;
 	opt.freefn = alias_freefn;
 	opt.elem_size = sizeof (HtPPKv);
-	cmd->aliases = ht_pp_new_size (16, NULL, alias_freefn, NULL);
-	if (cmd->aliases) {
-		cmd->aliases->opt = opt;
-	}
+	cmd->aliases = ht_pp_new_opt (&opt);
 }
 
 R_API RCmd *r_cmd_new(void *data) {
