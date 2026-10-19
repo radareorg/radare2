@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #define R_LOG_ORIGIN "cmdapi"
 #include <r_core.h>
@@ -645,6 +645,10 @@ R_IPI RCmdResult r_cmd_call_result(RCmd *cmd, RCmdContext *parent, const char *i
 	RCore *core = cmd->data;
 	RCons *capture = NULL;
 	RCmdResult result;
+	// Skipping redundant single quotes on command calls
+	while (*input == '\'') {
+		input++;
+	}
 	if (!*input) {
 		if (!cmd->nullcallback) {
 			return cmd_result (R_CMD_ACTION_UNHANDLED, 127);
