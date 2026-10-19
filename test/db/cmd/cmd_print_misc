@@ -16,3 +16,17 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=pth counts seconds since 1904
+FILE=malloc://12
+CMDS=<<EOF
+e cfg.bigendian=true
+wx 00000000ffffffff7c25b080
+pth 12
+EOF
+EXPECT=<<EOF
+Fri Jan  1 00:00:00 1904
+Mon Feb  6 06:28:15 2040
+Thu Jan  1 00:00:00 1970
+EOF
+RUN
