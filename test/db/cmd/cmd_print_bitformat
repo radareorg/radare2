@@ -143,6 +143,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pbwb partial byte past blocksize
+FILE=-
+CMDS=<<EOF
+wx 0f @ 4
+b 1
+wb 00000000 00000000 00000000 00000000 1010
+b 8
+p8 8
+EOF
+EXPECT=<<EOF
+00000000af000000
+EOF
+RUN
+
 NAME=pbwb invalid chars
 FILE=-
 CMDS=<<EOF

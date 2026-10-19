@@ -2431,7 +2431,9 @@ static int cmd_wb(void *data, const char *input) {
 
 	// Write any possible remaining ui bits
 	if (bits_read != 0) {
-		ut8 b = core->block[block_offset];
+		// read through io, block_offset can be past the block
+		ut8 b = 0;
+		r_io_read_at (core->io, core->addr + block_offset, &b, 1);
 		// Shift left and right to zero bits_read most significant bits
 		b <<= bits_read;
 		b >>= bits_read;
