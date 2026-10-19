@@ -1,3 +1,35 @@
+NAME=bin charset overrides environment and can be cleared
+FILE=-
+CMDS=<<EOF
+%RABIN2_CHARSET=ascii
+wx c8c5d3d3d600
+e bin.charset=ebcdic37
+izzj
+%RABIN2_CHARSET=
+e bin.charset=
+izzj
+EOF
+EXPECT=<<EOF
+[{"vaddr":0,"paddr":0,"ordinal":0,"size":6,"length":5,"section":"","type":"ascii","string":"HELLO"}]
+[]
+EOF
+RUN
+
+NAME=bin charset rejects non charset plugins
+FILE=-
+CMDS=<<EOF
+e bin.charset=ebcdic37
+e bin.charset=aes
+e bin.charset
+EOF
+EXPECT=<<EOF
+ebcdic37
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Unknown string charset 'aes'
+EOF
+RUN
+
 NAME=ebcdic37 rabin env
 FILE=-
 CMDS=<<EOF

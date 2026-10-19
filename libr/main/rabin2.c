@@ -15,7 +15,7 @@ typedef struct {
 static Rabin2Env env[] = {
 	{ "R2_NOPLUGINS", "                      # same as r2 -N. Dont load shared plugins" },
 	{ "RABIN2_ARGS", "                      # ignore cli and use these program arguments" },
-	{ "RABIN2_CHARSET", "e cfg.charset         # set default value charset for -z strings" },
+	{ "RABIN2_CHARSET", "e bin.charset         # set default charset for -z strings" },
 	// TODO { "RABIN2_MACHO_CODESIGN",	"" },
 	{ "RABIN2_STRALIGN", "e bin.str.align       # only accept aligned strings (default=0)" },
 	{ "RABIN2_DEBASE64", "e bin.str.debase64    # try to debase64 all strings" },
@@ -731,7 +731,7 @@ static int rabin2_main(RCons *cons, int argc, const char **argv) {
 		free (tmp);
 	}
 	if ((tmp = r_sys_getenv ("RABIN2_CHARSET"))) {
-		r_config_set (core.config, "cfg.charset", tmp);
+		r_config_set (core.config, "bin.charset", tmp);
 		free (tmp);
 	}
 	if ((tmp = r_sys_getenv ("RABIN2_LANG"))) {
