@@ -23,7 +23,8 @@ RABIN2_CHARSET=pokered rabin2 -zzz game.gb
 `cfg.charset` selects the charset used when printing raw memory. The current
 conversion path for string scanning still assumes that decoded bytes correspond
 to source bytes; charsets that expand text can produce incorrect offsets and
-truncate results.
+truncate results. See the [string scanner investigation](strings-scanner.md) for
+real binary examples and the proposed experimental implementation.
 
 ## Program args
 
