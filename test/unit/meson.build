@@ -26,6 +26,7 @@ if get_option('enable_tests')
     'bin_trycatch',
     'bitmap',
     'bitset',
+    'bloom',
     'buf',
     'cmd_str',
     'cmd_api',

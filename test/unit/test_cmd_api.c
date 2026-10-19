@@ -429,11 +429,43 @@ static bool test_r_core_plugin_fini(void) {
 	mu_end;
 }
 
+static bool test_r_cmd_alias_growth(void) {
+	RCmd *cmd = r_cmd_new (NULL);
+	mu_assert_notnull (cmd, "new alias command table");
+	char names[256][128];
+	const size_t lengths[] = {3, 8, 31, 32, 33, 127};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (names); i++) {
+		size_t len = lengths[i % R_ARRAY_SIZE (lengths)];
+		memset (names[i], 'a', len);
+		snprintf (names[i] + len - 3, 4, "%03x", (unsigned int)i);
+		mu_assert_true (r_cmd_alias_set_cmd (cmd, names[i], "pd 4"), "insert alias");
+	}
+	for (i = 0; i < R_ARRAY_SIZE (names); i++) {
+		RCmdAliasVal *value = r_cmd_alias_get (cmd, names[i]);
+		mu_assert_notnull (value, "alias after table growth");
+		mu_assert_streq ((char *)value->data, "pd 4", "alias value");
+		mu_assert_true (r_cmd_alias_set_cmd (cmd, names[i], "pd 8"), "update alias");
+	}
+	for (i = 0; i < R_ARRAY_SIZE (names); i++) {
+		RCmdAliasVal *value = r_cmd_alias_get (cmd, names[i]);
+		mu_assert_notnull (value, "updated alias exists");
+		mu_assert_streq ((char *)value->data, "pd 8", "updated alias value");
+		mu_assert_true (r_cmd_alias_del (cmd, names[i]), "delete alias");
+		mu_assert_null (r_cmd_alias_get (cmd, names[i]), "deleted alias is missing");
+	}
+	mu_assert_true (r_cmd_alias_set_cmd (cmd, "", "empty"), "empty alias key");
+	mu_assert_notnull (r_cmd_alias_get (cmd, ""), "find empty alias");
+	r_cmd_free (cmd);
+	mu_end;
+}
+
 static int all_tests(void) {
 	mu_run_test (test_r_cmd_register);
 	mu_run_test (test_r_cmd_unregister);
 	mu_run_test (test_r_cmd_prefix_registry);
 	mu_run_test (test_r_cmd_alias_after_dispatch);
+	mu_run_test (test_r_cmd_alias_growth);
 	mu_run_test (test_r_cmd_registry_dispatch);
 	mu_run_test (test_r_cmd_multiword_dispatch);
 	mu_run_test (test_r_cmd_context_args);

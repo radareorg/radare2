@@ -1,6 +1,11 @@
 #include <r_util.h>
 #include "minunit.h"
 
+#if R2__UNIX__
+#include <sys/mman.h>
+#include <unistd.h>
+#endif
+
 static int count_substr(const char *s, const char *needle) {
 	const size_t nlen = strlen (needle);
 	int n = 0;
@@ -615,7 +620,87 @@ bool test_r_str_case(void) {
 	mu_end;
 }
 
-//TODO test r_str_hash64, r_str_hash
+bool test_r_str_hash(void) {
+	const struct {
+		size_t len;
+		ut64 unseeded;
+		ut64 seeded;
+	} vectors[] = {
+		{ 0, 0x0000000000000000ULL, 0x53664f3506f0828cULL },
+		{ 1, 0x7c3cfe8d96c011c9ULL, 0xf92718aa1736f3e4ULL },
+		{ 2, 0x73ccba549b859c0bULL, 0xb0627860b1b88acaULL },
+		{ 3, 0xb9c8ec872fff68cbULL, 0x977de89f4d523973ULL },
+		{ 4, 0x230d09ec9e4cbda1ULL, 0xe0ef0b6ddfca38cbULL },
+		{ 5, 0xa0c9339eb6acd71bULL, 0x87a4b86a90382583ULL },
+		{ 6, 0x4e79ab0f92015180ULL, 0x6e86853833f33365ULL },
+		{ 7, 0xfe3ab750003637f7ULL, 0x7c58236b8827855bULL },
+		{ 8, 0x89ec650c9e2ce0c8ULL, 0x782e4396ce7fff2dULL },
+		{ 9, 0x044cd6e7db8e5a0bULL, 0xbeb3957529d87740ULL },
+		{ 15, 0x0d2e409194b7eb98ULL, 0x225a06e8a0a61604ULL },
+		{ 16, 0x5e8d1ebe5cc7f089ULL, 0xa7ba092204ae5c1eULL },
+		{ 17, 0xb78790269c20c5bfULL, 0x2babc558818d49baULL },
+		{ 31, 0x8626783cd091c57fULL, 0x27112c62bab55944ULL },
+		{ 32, 0xa685685dd856ea38ULL, 0x8c99efdc8e8aa020ULL },
+		{ 33, 0x983e10ed2bbdbef5ULL, 0xf17c942f27a57ec2ULL },
+		{ 63, 0x80770024cd01bfc4ULL, 0x96729c7cb6cc40d9ULL },
+		{ 64, 0x7d0aad0cf0dbdb83ULL, 0x9bae0d2cb530c523ULL },
+		{ 65, 0x5dd1cb7f5543c5ecULL, 0xe4a03247930e5cb1ULL },
+		{ 255, 0x2fc5fc2c82f8422dULL, 0xd8d2255270c171c2ULL },
+		{ 256, 0x28a81c228389ef61ULL, 0xe9df122d0ee1f8f4ULL },
+		{ 257, 0xc58936fcc8317d68ULL, 0xd458bcc92840fde7ULL },
+	};
+	ut8 data[273];
+	size_t offset, i;
+	for (offset = 0; offset < 16; offset++) {
+		for (i = 0; i < 257; i++) {
+			data[offset + i] = (ut8)(i * 37 + 11);
+		}
+		for (i = 0; i < R_ARRAY_SIZE (vectors); i++) {
+			const char *s = (const char *)data + offset;
+			mu_assert_eq (r_str_hash64_seed (s, vectors[i].len, 0), vectors[i].unseeded, "unseeded binary hash");
+			mu_assert_eq (r_str_hash64_seed (s, vectors[i].len, 0xfedcba9876543210ULL), vectors[i].seeded, "seeded binary hash");
+		}
+	}
+	mu_assert_eq (r_str_hash (NULL), 0, "null hash");
+	mu_assert_eq (r_str_hash64 (NULL), 0, "null hash64");
+	mu_assert_eq (r_str_hash64_seed (NULL, 0, 0), 0, "empty null slice");
+	const char *strings[] = { "", "a", "abc", "abcdefg", "abcdefgh", "abcdefghi", "123456789", "\xc3\xa9\xff" };
+	for (i = 0; i < R_ARRAY_SIZE (strings); i++) {
+		ut64 h = r_str_hash64_seed (strings[i], strlen (strings[i]), 0);
+		mu_assert_eq (r_str_hash64 (strings[i]), h, "string and byte hashes agree");
+		mu_assert_eq (r_str_hash (strings[i]), (ut32)h, "32-bit truncation");
+	}
+	mu_assert_eq (r_str_hash ("123456789"), 0xe047eeab, "strhash regression value");
+	mu_assert_neq (r_str_hash64 ("reloc.fixup.hs"), r_str_hash64 ("reloc.fixup.iR"), "distinct flag names");
+	mu_end;
+}
+
+bool test_r_str_hash_bounds(void) {
+#if R2__UNIX__
+	long page_size = sysconf (_SC_PAGESIZE);
+	mu_assert_true (page_size >= 128, "page size");
+	char *map = mmap (NULL, page_size * 2, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
+	mu_assert_true (map != MAP_FAILED, "map guard pages");
+	char *end = map + page_size;
+	mu_assert_eq (mprotect (end, page_size, PROT_NONE), 0, "protect next page");
+	char expected[66];
+	memset (expected, 'a', sizeof (expected));
+	size_t len;
+	for (len = 0; len <= 65; len++) {
+		memset (end - len, 'a', len);
+		ut64 h = r_str_hash64_seed (expected, len, 0);
+		mu_assert_eq (r_str_hash64_seed (end - len, len, 0), h, "binary slice at page boundary");
+		char *s = end - len - 1;
+		memset (s, 'a', len);
+		s[len] = 0;
+		mu_assert_eq (r_str_hash64 (s), h, "string at page boundary");
+		mu_assert_eq (r_str_hash (s), (ut32)h, "hash32 at page boundary");
+	}
+	mu_assert_eq (munmap (map, page_size * 2), 0, "unmap guard pages");
+#endif
+	mu_end;
+}
+
 //TODO test r_str_delta (WTF!)
 
 bool test_r_str_split(void) {
@@ -1524,6 +1609,8 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_bool);
 	mu_run_test (test_r_str_trim);
 	mu_run_test (test_r_str_case);
+	mu_run_test (test_r_str_hash);
+	mu_run_test (test_r_str_hash_bounds);
 	mu_run_test (test_r_str_split);
 	mu_run_test (test_r_str_split_list);
 	mu_run_test (test_r_str_tokenize);

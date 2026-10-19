@@ -81,8 +81,20 @@ static int alias_cmp(const void *k1, const void *k2) {
 	return strcmp ((const char *)k1, (const char *)k2);
 }
 
-static ut32 alias_hashfn(const void *k_in) {
-	return r_str_hash (k_in);
+static inline ut32 alias_hash(const char *key, size_t len) {
+	if (len > 32) {
+		return (ut32)r_str_hash64_seed (key, len, 0);
+	}
+	ut32 h = 5381;
+	size_t i;
+	for (i = 0; i < len; i++) {
+		h = h * 33 + (ut8)key[i];
+	}
+	return h;
+}
+
+static ut32 alias_hashfn(const void *key) {
+	return alias_hash (key, strlen (key));
 }
 
 R_API void r_cmd_alias_init(RCmd *cmd) {
@@ -94,7 +106,11 @@ R_API void r_cmd_alias_init(RCmd *cmd) {
 	opt.calcsizeK = alias_calcsizeK;
 	opt.calcsizeV = alias_calcsizeV;
 	opt.freefn = alias_freefn;
-	cmd->aliases = ht_pp_new_opt (&opt);
+	opt.elem_size = sizeof (HtPPKv);
+	cmd->aliases = ht_pp_new_size (16, NULL, alias_freefn, NULL);
+	if (cmd->aliases) {
+		cmd->aliases->opt = opt;
+	}
 }
 
 R_API RCmd *r_cmd_new(void *data) {
@@ -233,7 +249,17 @@ R_API bool r_cmd_alias_set_raw(RCmd *cmd, const char *k, const ut8 *v, int sz, b
 
 R_API RCmdAliasVal *r_cmd_alias_get(RCmd *cmd, const char *k) {
 	R_RETURN_VAL_IF_FAIL (cmd && cmd->aliases && k, NULL);
-	return ht_pp_find (cmd->aliases, k, NULL);
+	const size_t len = strlen (k);
+	HtPP *aliases = cmd->aliases;
+	HtPPBucket *bucket = &aliases->table[alias_hash (k, len) % aliases->size];
+	ut32 i;
+	for (i = 0; i < bucket->count; i++) {
+		HtPPKv *kv = &bucket->arr[i];
+		if (kv->key_len == (ut32)len && (kv->key == k || !memcmp (kv->key, k, len))) {
+			return kv->value;
+		}
+	}
+	return NULL;
 }
 
 /* Returns a new copy of v->data. If !v->is_str, hex escaped */

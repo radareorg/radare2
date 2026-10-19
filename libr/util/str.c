@@ -298,31 +298,48 @@ R_API R_MUSTUSE char *r_str_r2_prefix(const char *str) {
 	return res;
 }
 
-// Compute a modified 64 bit DJB hash of a string
-// The fisrt addition is replaced by a xor for speed
-// See the XOR version in http://www.cse.yorku.ca/~oz/hash.html
-// seeded, eight bytes per round, words read little endian so the result does not depend on the host
-R_API ut64 r_str_hash64_seed(const char *s, size_t len, ut64 seed) {
+static inline ut64 str_hash_tail(const char *s, size_t len) {
+	if (len >= 4) {
+		return r_read_le32 (s) | ((ut64)r_read_le32 (s + len - 4) << ((len - 4) * 8));
+	}
+	if (len >= 2) {
+		return r_read_le16 (s) | ((ut64)(ut8)s[len - 1] << ((len - 1) * 8));
+	}
+	return len? (ut8)*s: 0;
+}
+
+// Read little-endian words without accessing bytes beyond the supplied length.
+static inline FUNC_ATTR_ALWAYS_INLINE ut64 str_hash64_seed(const char *s, size_t len, ut64 seed) {
 	ut64 h = seed ^ ((ut64)len * 0x9e3779b97f4a7c15ULL);
-	ut64 w;
-	size_t i, j;
-	for (i = 0; i + 8 <= len; i += 8) {
-		for (w = 0, j = 0; j < 8; j++) {
-			w |= (ut64)(ut8)s[i + j] << (8 * j);
-		}
-		h = (h ^ w) * 0xff51afd7ed558ccdULL;
+	while (len >= 8) {
+		h = (h ^ r_read_le64 (s)) * 0xff51afd7ed558ccdULL;
 		h ^= h >> 32;
+		s += 8;
+		len -= 8;
 	}
-	for (w = 0, j = 0; i + j < len; j++) {
-		w |= (ut64)(ut8)s[i + j] << (8 * j);
-	}
-	h = (h ^ w) * 0xc4ceb9fe1a85ec53ULL;
+	h = (h ^ str_hash_tail (s, len)) * 0xc4ceb9fe1a85ec53ULL;
 	h ^= h >> 29;
 	return h;
 }
 
+R_API ut64 r_str_hash64_seed(const char *s, size_t len, ut64 seed) {
+	return str_hash64_seed (s, len, seed);
+}
+
 R_API ut64 r_str_hash64(const char *s) {
-	return s? r_str_hash64_seed (s, strlen (s), 0): 0;
+	if (!s || !*s) {
+		return 0;
+	}
+	if (!s[1]) {
+		return str_hash64_seed (s, 1, 0);
+	}
+	if (!s[2]) {
+		return str_hash64_seed (s, 2, 0);
+	}
+	if (!s[3]) {
+		return str_hash64_seed (s, 3, 0);
+	}
+	return str_hash64_seed (s, strlen (s), 0);
 }
 
 R_API ut32 r_str_hash(const char *s) {

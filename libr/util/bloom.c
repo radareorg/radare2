@@ -13,8 +13,16 @@ typedef struct r_bloom_t {
 #define BF_BIT_SET(arr, i)   ((arr)[(i)/8] |= (1 << ((i) % 8)))
 #define BF_BIT_CHECK(arr, i) ((arr)[(i)/8] & (1 << ((i) % 8)))
 
-static ut32 default_bloom_hash(const void *data, size_t len, ut32 seed) {
-	return (ut32)r_str_hash64_seed (data, len, seed);
+static inline ut64 default_bloom_hash(const void *data, size_t len, size_t k, ut64 *step) {
+	// A byte has a small enough domain to give each value its own bit range.
+	if (len == 1) {
+		*step = 1;
+		return ((ut64)*(const ut8 *)data + 1) * k;
+	}
+	ut64 hash = r_str_hash64_seed (data, len, 0);
+	// Derive the remaining positions without rescanning the input.
+	*step = (hash >> 32) | 1;
+	return hash;
 }
 
 R_API RBloom * R_NULLABLE r_bloom_new(size_t m, size_t k, RBloomHashFunc * hash_funcs) {
@@ -32,23 +40,19 @@ R_API bool r_bloom_init(RBloom *bf, size_t m, size_t k, RBloomHashFunc * hash_fu
 	R_RETURN_VAL_IF_FAIL (bf, false);
 	bf->m = m;
 	bf->k = k;
-	bf->array_size = (m + 7) / 8;
+	bf->array_size = m / 8 + (m % 8 != 0);
 	bf->bit_array = (ut8*) calloc (bf->array_size, sizeof (ut8));
 	if (! bf->bit_array) {
 		return false;
 	}
-	bf->hash_funcs = R_NEWS (RBloomHashFunc, k);
-	if (! bf->hash_funcs) {
-		free (bf->bit_array);
-		return false;
-	}
+	bf->hash_funcs = NULL;
 	if (hash_funcs) {
-		memcpy (bf->hash_funcs, hash_funcs, k * sizeof (RBloomHashFunc));
-	} else {
-		size_t i;
-		for (i = 0; i < k; i++) {
-			bf->hash_funcs[i] = default_bloom_hash;
+		bf->hash_funcs = R_NEWS (RBloomHashFunc, k);
+		if (!bf->hash_funcs) {
+			free (bf->bit_array);
+			return false;
 		}
+		memcpy (bf->hash_funcs, hash_funcs, k * sizeof (RBloomHashFunc));
 	}
 	return true;
 }
@@ -91,9 +95,12 @@ R_API bool r_bloom_add(RBloom *bf, const void * data, size_t len) {
 	R_RETURN_VAL_IF_FAIL (bf && data, false);
 	bool changed = false;
 	size_t i;
+	ut64 step = 0;
+	ut64 hash = bf->hash_funcs? 0: default_bloom_hash (data, len, bf->k, &step);
 	for (i = 0; i < bf->k; i++) {
-		ut32 hash = bf->hash_funcs[i] (data, len, seedfrom (i));
-		size_t index = hash % bf->m;
+		ut64 value = bf->hash_funcs? bf->hash_funcs[i] (data, len, seedfrom (i)): hash;
+		size_t index = (size_t)value % bf->m;
+		hash += step;
 #if 0
 		BF_BIT_SET (bf->bit_array, index);
 #else
@@ -109,9 +116,17 @@ R_API bool r_bloom_add(RBloom *bf, const void * data, size_t len) {
 R_API bool r_bloom_check(RBloom *bf, const void * data, size_t len) {
 	R_RETURN_VAL_IF_FAIL (bf && data, false);
 	size_t i;
+	ut64 step = 0;
+	ut64 hash = bf->hash_funcs? 0: default_bloom_hash (data, len, bf->k, &step);
+	if (!bf->hash_funcs && bf->k == 2) {
+		size_t a = (size_t)hash % bf->m;
+		size_t b = (size_t)(hash + step) % bf->m;
+		return ((bf->bit_array[a / 8] >> (a % 8)) & (bf->bit_array[b / 8] >> (b % 8))) & 1;
+	}
 	for (i = 0; i < bf->k; i++) {
-		ut32 hash = bf->hash_funcs[i] (data, len, seedfrom (i));
-		size_t index = hash % bf->m;
+		ut64 value = bf->hash_funcs? bf->hash_funcs[i] (data, len, seedfrom (i)): hash;
+		size_t index = (size_t)value % bf->m;
+		hash += step;
 		if (! BF_BIT_CHECK (bf->bit_array, index)) {
 			return false;
 		}
