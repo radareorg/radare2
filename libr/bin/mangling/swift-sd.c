@@ -105,6 +105,12 @@ static const SwiftType flags[] = {
 };
 
 static const char *getnum(const char *n, int *num) {
+	if (isdigit ((ut8)n[0]) && !isdigit ((ut8)n[1])) {
+		if (num) {
+			*num = n[0] - '0';
+		}
+		return n + 1;
+	}
 	if (num && *n) {
 		int snum = atoi (n);
 		if (snum > 0) {
