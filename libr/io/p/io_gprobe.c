@@ -703,19 +703,17 @@ static int gprobe_send_request_sp(struct gport *port, RBuffer *request) {
 }
 
 static void gprobe_print(RBuffer *buf) {
-	const char *s = r_buf_tostring (buf);
-	size_t para_len = r_buf_size (buf) - (strlen (s) + 1);
-	printf ("> ");
-	if (para_len > 0) {
-		ut8 *para_buf = malloc (para_len);
-		r_buf_read_at (buf, strlen (s) + 1, para_buf, para_len);
-		/* this is a hack only, to resolve the parameter list we would need a custom printf */
-		printf (s, *para_buf);
-		free (para_buf);
-	} else {
-		printf ("%s", s);
+	char *s = r_buf_tostring (buf);
+	if (!s) {
+		return;
 	}
-	printf ("\n");
+	// the text comes from the device, so never use it as a format string
+	const size_t len = strlen (s);
+	const ut64 size = r_buf_size (buf);
+	char *params = (len + 1 < size)? r_hex_bin2strdup ((const ut8 *)s + len + 1, size - len - 1): NULL;
+	printf ("> %s%s%s\n", s, params? " ": "", r_str_get (params));
+	free (params);
+	free (s);
 }
 
 static int get_reply(struct gport *port, ut8 cmd, RBuffer **reply_ret) {
