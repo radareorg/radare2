@@ -554,6 +554,7 @@ R_API bool r_anal_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut6
 
 // The block a case targets, adopted into the function. UT64_MAX when it exists
 // already; otherwise the case address, which still has to be scanned.
+// It may delete blocks: hold a reference to any block used after it.
 static ut64 case_target_to_scan(RAnal *anal, RAnalFunction *fcn, JmptblTargetCtx *ctx, ut64 jmpptr, int stack) {
 	if (!jmpptr || jmpptr == UT64_MAX || ht_up_find_kv (ctx->analyzed_targets, jmpptr, NULL)) {
 		return UT64_MAX;
@@ -563,9 +564,10 @@ static ut64 case_target_to_scan(RAnal *anal, RAnalFunction *fcn, JmptblTargetCtx
 }
 
 // The dispatch block, found again if a case's scan split the switch instruction
-// away from it. The switch op is carried over: it belongs to the instruction.
-static RAnalBlock *switch_block_refetch(RAnal *anal, RAnalBlock *block, ut64 ip) {
-	if (!block || r_anal_block_contains (block, ip)) {
+// away from it or a case lookup deleted it. The switch op is carried over: it
+// belongs to the instruction.
+static R_OWNED RAnalBlock *switch_block_refetch(RAnal *anal, R_OWNED RAnalBlock *block, ut64 ip) {
+	if (!block || (r_anal_block_contains (block, ip) && r_anal_get_block_at (anal, block->addr) == block)) {
 		return block;
 	}
 	RAnalBlock *found = r_anal_get_block_at (anal, ip);
@@ -593,6 +595,8 @@ static RAnalBlock *switch_block_refetch(RAnal *anal, RAnalBlock *block, ut64 ip)
 	if (found != block && found->switch_op == block->switch_op) {
 		block->switch_op = NULL;
 	}
+	found = r_ref (found);
+	r_unref (block);
 	return found;
 }
 
@@ -792,6 +796,10 @@ static bool switch_apply_flagged(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bl
 	}
 	ut32 i;
 	ut32 last_applied = 0;
+	// case scans may delete the caller's block
+	if (block) {
+		block = r_ref (block);
+	}
 	for (i = 0; i < ncases; i++) {
 		const ut32 idx = inverse? (ncases - 1 - i): i;
 		if (idx == default_slot) {
@@ -864,6 +872,7 @@ static bool switch_apply_flagged(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bl
 			need_vtbl? spec->vtbl_addr: UT64_MAX, last_applied, def, esize);
 		switch_op_apply_spec (block, spec);
 	}
+	r_unref (block);
 	free (jmptbl);
 	free (vtbl);
 	jmptbl_target_ctx_fini (&target_ctx);
@@ -1063,7 +1072,7 @@ struct r_anal_switch_cursor_t {
 	SwitchCursorKind kind;
 	RAnal *anal;
 	RAnalFunction *fcn;
-	RAnalBlock *block; // the dispatch block, found again when a case's scan splits it
+	R_OWNED RAnalBlock *block; // the dispatch block, found again when a case's scan splits or deletes it
 	ut64 ip; // the switch instruction
 	JmptblTargetCtx ctx;
 	ut64 idx; // the next entry
@@ -1097,7 +1106,7 @@ static bool jmptbl_case_resolve(RAnal *anal, const JmptblArch *a, ut64 ip, ut64 
 	return !anal->limit || (*jmpptr >= anal->limit->from && *jmpptr <= anal->limit->to);
 }
 
-static RAnalSwitchCursor *switch_cursor_new(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut64 ip, int ret0);
+static RAnalSwitchCursor *switch_cursor_new(RAnal *anal, RAnalFunction *fcn, R_UNOWNED RAnalBlock *block, ut64 ip, int ret0);
 static int switch_cursor_run(RAnalSwitchCursor *c, const RAnalScanSink *sink);
 
 R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut64 ip, st64 start_casenum_shift, ut64 jmptbl_loc, ut64 casetbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0, const RAnalScanSink *sink) {
@@ -1550,6 +1559,10 @@ R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 	RBitset *s = r_bitset_new ();
 	RAnalCaseOp *kase;
 	RListIter *iter;
+	// case scans may delete the caller's block
+	if (bb) {
+		bb = r_ref (bb);
+	}
 	r_list_foreach (cases, iter, kase) {
 		const ut64 scan = jmptbl_apply_caseop (anal, fcn, bb, s, saddr, loadsz, kase, INT_MAX);
 		if (scan != UT64_MAX) {
@@ -1560,6 +1573,7 @@ R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 	}
 	apply_switch (anal, fcn, bb, saddr, saddr, jaddr, UT64_MAX,
 		r_list_length (cases), UT64_MAX, loadsz);
+	r_unref (bb);
 	r_bitset_free (s);
 }
 
@@ -1629,14 +1643,14 @@ R_IPI bool r_anal_jmptbl_arm64_from_br(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 	return switch_cursor_run (c, sink);
 }
 
-static RAnalSwitchCursor *switch_cursor_new(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut64 ip, int ret0) {
+static RAnalSwitchCursor *switch_cursor_new(RAnal *anal, RAnalFunction *fcn, R_UNOWNED RAnalBlock *block, ut64 ip, int ret0) {
 	RAnalSwitchCursor *c = R_NEW0 (RAnalSwitchCursor);
 	if (!c) {
 		return NULL;
 	}
 	c->anal = anal;
 	c->fcn = fcn;
-	c->block = block;
+	c->block = block? r_ref (block): NULL;
 	c->ip = ip;
 	c->ret0 = ret0;
 	jmptbl_target_ctx_init (&c->ctx, anal, ip);
@@ -1776,7 +1790,8 @@ static bool switch_cursor_arm64_next(RAnalSwitchCursor *c, ut64 *target) {
 	return false;
 }
 
-static RAnalBlock *switch_cursor_block(RAnalSwitchCursor *c) {
+// valid until the next step
+static R_TRANSIENT RAnalBlock *switch_cursor_block(RAnalSwitchCursor *c) {
 	if (c->scanned) {
 		c->block = switch_block_refetch (c->anal, c->block, c->ip);
 		c->scanned = false;
@@ -1848,6 +1863,7 @@ R_IPI void r_anal_switch_cursor_finish(RAnalSwitchCursor *c) {
 	}
 	}
 	jmptbl_target_ctx_fini (&c->ctx);
+	r_unref (c->block);
 	free (c);
 }
 

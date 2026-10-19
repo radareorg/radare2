@@ -68,7 +68,10 @@ static void block_free(RAnalBlock *bb) {
 		if (R_ANAL_PRIV (anal)->reg_usage) {
 			ht_up_delete (R_ANAL_PRIV (anal)->reg_usage, (ut64)(size_t)bb);
 		}
-		r_rbtree_aug_delete (&anal->bb_tree, &bb->addr, __bb_addr_cmp, NULL, NULL, NULL, __max_end);
+		// a deleted block kept alive by a reference is no longer in the tree, and its address may have a new block
+		if (r_rbtree_find (anal->bb_tree, &bb->addr, __bb_addr_cmp, NULL) == &bb->_rb) {
+			r_rbtree_aug_delete (&anal->bb_tree, &bb->addr, __bb_addr_cmp, NULL, NULL, NULL, __max_end);
+		}
 	}
 	free (bb->esil);
 	r_anal_cond_free (bb->cond);

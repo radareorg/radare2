@@ -962,3 +962,66 @@ EXPECT=<<EOF
 0
 EOF
 RUN
+
+NAME=afbt keeps switch cases after a case deletes the dispatch block
+FILE=malloc://1024
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e anal.nopskip=false
+e anal.jmp.mid=false
+wx b890909090b890909090b890909090b890909090b890909090b8909090909090c3 @ 0
+wx c3 @ 0x310
+wx 08000000100000001003000010030000 @ 0x200
+af+ 0 split_switch
+afb+ 0 0 33
+s 0x10
+afbt tbl=0x200 esz=4 n=4 base=0
+afbi @ 0x10~cases:,switch_at,case.
+EOF
+EXPECT=<<EOF
+cases: 4
+switch_at: 0x00000010
+case.0: 0x00000008
+case.1: 0x00000010
+case.2: 0x00000310
+case.3: 0x00000310
+EOF
+RUN
+
+NAME=arm switch keeps its cases after a case deletes the dispatch block
+FILE=malloc://1024
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 0010a0e30020a0e3030050e300f19f971eff2fe1240100000c0100002c0100002c010000010050e12af01f15 @ 0x100
+wx 1eff2fe1 @@s:0x12c 0x18c 4
+af @ 0x100
+afbi @ 0x10c~cases:,switch_at,case.
+EOF
+EXPECT=<<EOF
+cases: 4
+switch_at: 0x0000010c
+case.0: 0x00000124
+case.1: 0x0000010c
+case.2: 0x0000012c
+case.3: 0x0000012c
+EOF
+RUN
+
+NAME=x86 switch keeps its cases after a case deletes the dispatch block
+FILE=malloc://1024
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 488d15f900000083f805c39090909090909090b0b8ffe09090c331c0c3 @ 0x100
+wx 14ffffff15ffffff14ffffff1affffff @ 0x200
+af @ 0x100
+afbi @ 0x115~cases:,switch_at,case.
+EOF
+EXPECT=<<EOF
+cases: 4
+switch_at: 0x00000115
+case.0: 0x00000114
+case.1: 0x00000115
+case.2: 0x00000114
+case.3: 0x0000011a
+EOF
+RUN
