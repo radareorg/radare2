@@ -1,6 +1,6 @@
 /* radare - MIT - Copyright 2025 - pancake */
 
-#include <r_util/r_bloom.h>
+#include <r_util.h>
 
 typedef struct r_bloom_t {
 	size_t m; // number of bits
@@ -13,15 +13,8 @@ typedef struct r_bloom_t {
 #define BF_BIT_SET(arr, i)   ((arr)[(i)/8] |= (1 << ((i) % 8)))
 #define BF_BIT_CHECK(arr, i) ((arr)[(i)/8] & (1 << ((i) % 8)))
 
-// A simple djb2-variant hash function that supports binary data
 static ut32 default_bloom_hash(const void *data, size_t len, ut32 seed) {
-	const ut8 *ptr = (const ut8*) data;
-	ut32 hash = 5381 ^ seed;
-	size_t i;
-	for (i = 0; i < len; i++) {
-		hash = ((hash << 5) + hash) + ptr[i]; /* hash * 33 + c */
-	}
-	return hash;
+	return (ut32)r_str_hash64_seed (data, len, seed);
 }
 
 R_API RBloom * R_NULLABLE r_bloom_new(size_t m, size_t k, RBloomHashFunc * hash_funcs) {

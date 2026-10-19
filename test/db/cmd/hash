@@ -46,7 +46,7 @@ w 123456789
 ph strhash 9
 EOF
 EXPECT=<<EOF
-94b4004c
+abee47e0
 EOF
 RUN
 

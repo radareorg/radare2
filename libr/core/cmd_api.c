@@ -82,18 +82,7 @@ static int alias_cmp(const void *k1, const void *k2) {
 }
 
 static ut32 alias_hashfn(const void *k_in) {
-	/* djb2 algorithm by Dan Bernstein */
-	ut32 hash = 5381;
-	ut8 c;
-	const char *k = k_in;
-
-	while (*k) {
-		c = *k++;
-		/* hash * 33 + c */
-		hash += (hash << 5) + c;
-	}
-
-	return hash;
+	return r_str_hash (k_in);
 }
 
 R_API void r_cmd_alias_init(RCmd *cmd) {

@@ -20,12 +20,7 @@ R_IPI bool alignCheck(REsil *esil, ut64 addr) {
 
 static ut32 esil_ops_hash(const void *k) {
 	const RStrs *s = k;
-	ut32 h = CDB_HASHSTART;
-	const char *p;
-	for (p = s->a; p < s->b; p++) {
-		h = (h + (h << 5)) ^ (ut8)*p;
-	}
-	return h;
+	return (ut32)r_str_hash64_seed (s->a, r_strs_len (*s), 0);
 }
 
 static ut32 esil_ops_keysize(const void *k) {

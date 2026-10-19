@@ -301,18 +301,30 @@ R_API R_MUSTUSE char *r_str_r2_prefix(const char *str) {
 // Compute a modified 64 bit DJB hash of a string
 // The fisrt addition is replaced by a xor for speed
 // See the XOR version in http://www.cse.yorku.ca/~oz/hash.html
-R_API ut64 r_str_hash64(const char *s) {
-	ut64 len, h = 5381;
-	if (!s) {
-		return 0;
+// seeded, eight bytes per round, words read little endian so the result does not depend on the host
+R_API ut64 r_str_hash64_seed(const char *s, size_t len, ut64 seed) {
+	ut64 h = seed ^ ((ut64)len * 0x9e3779b97f4a7c15ULL);
+	ut64 w;
+	size_t i, j;
+	for (i = 0; i + 8 <= len; i += 8) {
+		for (w = 0, j = 0; j < 8; j++) {
+			w |= (ut64)(ut8)s[i + j] << (8 * j);
+		}
+		h = (h ^ w) * 0xff51afd7ed558ccdULL;
+		h ^= h >> 32;
 	}
-	for (len = strlen (s); len > 0; len--) {
-		h = (h ^ (h << 5)) ^ *s++;
+	for (w = 0, j = 0; i + j < len; j++) {
+		w |= (ut64)(ut8)s[i + j] << (8 * j);
 	}
+	h = (h ^ w) * 0xc4ceb9fe1a85ec53ULL;
+	h ^= h >> 29;
 	return h;
 }
 
-// Compute a modified 32bit DJB hash of a string.
+R_API ut64 r_str_hash64(const char *s) {
+	return s? r_str_hash64_seed (s, strlen (s), 0): 0;
+}
+
 R_API ut32 r_str_hash(const char *s) {
 	return (ut32)r_str_hash64 (s);
 }
