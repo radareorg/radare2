@@ -1913,3 +1913,19 @@ Usage: zf[dlsz] filename   # Manage FLIRT signatures
 | zfz filename             open FLIRT file and get sig commands (zfz flirt_file > zignatures.sig)
 EOF
 RUN
+
+NAME=za R/d rejected by a bad zignspace name
+FILE=-
+CMDS=<<EOF
+zs 1a
+za foo R QUJD
+za foo d QUJD
+zs ok
+za foo R QUJD
+z*
+EOF
+EXPECT=<<EOF
+zs ok
+za foo R QUJD
+EOF
+RUN

@@ -189,13 +189,8 @@ static inline bool za_add(RCore *core, const char *input) {
 						it->demangled = dec;
 					}
 					ret = r_sign_add_item (core->anal, it);
-					if (!ret) {
-						free (dec);
-						r_sign_item_free (it);
-					}
-				} else {
-					r_sign_item_free (it);
 				}
+				r_sign_item_free (it); // owns dec
 			}
 			break;
 		}
