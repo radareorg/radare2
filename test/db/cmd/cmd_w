@@ -261,6 +261,39 @@ idx=1 addr=0x00000002 size=3 030000 -> 555555 (written)
 EOF
 RUN
 
+NAME=wc- touching the start or end of a cache entry trims it
+FILE=malloc://64
+ARGS=-e io.cache=true
+CMDS=<<EOF
+wx 43434343
+wc- $$ $$
+wc
+wx 4545454545454545 @ 0x10
+wc- 0x16 0x17
+wc
+wc- 0x12 0x13
+wc
+p8 8 @ 0x10
+wc- 0x11 0x30
+wc
+wcr
+wc
+?e done
+EOF
+EXPECT=<<EOF
+idx=0 addr=0x00000001 size=3 000000 -> 434343 (not written)
+idx=0 addr=0x00000001 size=3 000000 -> 434343 (not written)
+idx=1 addr=0x00000010 size=6 000000000000 -> 454545454545 (not written)
+idx=0 addr=0x00000001 size=3 000000 -> 434343 (not written)
+idx=1 addr=0x00000010 size=2 0000 -> 4545 (not written)
+idx=2 addr=0x00000014 size=2 0000 -> 4545 (not written)
+4545000045450000
+idx=0 addr=0x00000001 size=3 000000 -> 434343 (not written)
+idx=1 addr=0x00000010 size=1 00 -> 45 (not written)
+done
+EOF
+RUN
+
 NAME=w
 FILE=-
 CMDS=<<EOF

@@ -334,13 +334,15 @@ R_API bool r_io_cache_at(RIO *io, ut64 addr) {
 R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to, bool many) {
 	R_RETURN_VAL_IF_FAIL (io && from <= to, 0);
 	RInterval itv = (RInterval){from, (to + 1) - from};
-	RIOCacheItem **iter;
 	ut32 invalidated_cache_bytes = 0;
 	RIOCacheLayer *layer;
 	RListIter *liter;
 	r_list_foreach (io->cache.layers, liter, layer) {
-		R_VEC_FOREACH_PREV (layer->vec, iter) {
-			RIOCacheItem *ci = *iter;
+		// walk backwards by index: splitting an item pushes its tail into the
+		// vector, which can reallocate the storage a pointer iterator refers to
+		size_t idx;
+		for (idx = RVecRIOCacheItemPtr_length (layer->vec); idx > 0; idx--) {
+			RIOCacheItem *ci = *RVecRIOCacheItemPtr_at (layer->vec, idx - 1);
 			if (!r_itv_overlap (itv, ci->itv)) {
 				continue;
 			}
@@ -354,7 +356,9 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to, bool many) {
 				iocache_layer_remove_item (layer->vec, ci);
 				continue;
 			}
-			if (r_itv_include (ci->itv, itv)) {
+			// split only when the hole is strictly inside the item, a hole touching
+			// either end just trims that end below (splitting would leave a 0 sized half)
+			if (r_itv_include (ci->itv, itv) && r_itv_begin (itv) > r_itv_begin (ci->itv) && r_itv_end (itv) < r_itv_end (ci->itv)) {
 				RInterval iitv = (RInterval){r_itv_end (itv), r_itv_end (ci->itv) - r_itv_end (itv)};
 				RIOCacheItem *_ci = iocache_item_new (io, &iitv);
 				if (!_ci) {
@@ -403,19 +407,15 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to, bool many) {
 			}
 			if (r_itv_begin (ci->itv) < r_itv_begin (itv)) {
 				ci->itv.size = itv.addr - ci->itv.addr;
+				// shrinking, so keeping the old buffers on failure is fine
 				ut8 *cidata = realloc (ci->data, (size_t)r_itv_size (ci->itv));
-				if (!cidata) {
-					R_LOG_ERROR ("Invalid size");
-					continue;
+				if (cidata) {
+					ci->data = cidata;
 				}
 				ut8 *ciodata = realloc (ci->odata, (size_t)r_itv_size (ci->itv));
-				if (!ciodata) {
-					R_LOG_ERROR ("Invalid size");
-					R_FREE (cidata);
-					continue;
+				if (ciodata) {
+					ci->odata = ciodata;
 				}
-				ci->data = cidata;
-				ci->odata = ciodata;
 				if (ci->tree_itv) {
 					if (!r_itv_overlap (ci->itv, ci->tree_itv[0])) {
 						invalidated_cache_bytes += r_itv_size (ci->tree_itv[0]);
@@ -429,9 +429,10 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to, bool many) {
 				}
 				continue;
 			}
-			memcpy (ci->data, &ci->data[r_itv_end (itv) - r_itv_begin (ci->itv)],
+			// src and dst overlap when more bytes remain than are dropped
+			memmove (ci->data, &ci->data[r_itv_end (itv) - r_itv_begin (ci->itv)],
 				r_itv_end (ci->itv) - r_itv_end (itv));
-			memcpy (ci->odata, &ci->odata[r_itv_end (itv) - r_itv_begin (ci->itv)],
+			memmove (ci->odata, &ci->odata[r_itv_end (itv) - r_itv_begin (ci->itv)],
 				r_itv_end (ci->itv) - r_itv_end (itv));
 			ci->itv.size = r_itv_end (ci->itv) - r_itv_end (itv);
 			ci->itv.addr = r_itv_end (itv);	//this feels so wrong

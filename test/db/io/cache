@@ -196,6 +196,25 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=io.cache: wc- splitting the last entry of a full cache vector
+FILE=malloc://65536
+CMDS=<<EOF
+e io.cache=true
+wx 0011223344556677 @@= 0x1000 0x1010 0x1020 0x1030 0x1040 0x1050 0x1060 0x1000
+wc~?
+wc- 0x1002 0x1003
+wc~?
+p8 8 @ 0x1000
+wc~idx=9
+EOF
+EXPECT=<<EOF
+8
+10
+0011000044556677
+idx=9 addr=0x00001004 size=4 00000000 -> 44556677 (not written)
+EOF
+RUN
+
 NAME=pcache commit keeps the selected fd and cache mode
 FILE=malloc://128
 CMDS=<<EOF
