@@ -326,3 +326,14 @@ const uint64_t buffer[_BUFFER_SIZE] = {
 6
 EOF
 RUN
+
+NAME=pcJ one byte
+FILE=malloc://4
+CMDS=<<EOF
+wx 41
+pcJ 1
+EOF
+EXPECT=<<EOF
+var buffer = new Buffer("QQ==", 'base64');
+EOF
+RUN
