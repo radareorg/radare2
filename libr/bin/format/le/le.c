@@ -3,6 +3,9 @@
 #include "le.h"
 #include <r_bin.h>
 
+// each repetition of an iterated page record is a section, bound the expansion
+#define LE_MAX_SECTIONS 0x10000
+
 static const char *__get_module_type(RBinLEObj *bin) {
 	switch (bin->header->mflags & M_TYPE_MASK) {
 	case M_TYPE_EXE: return "Program module (EXE)";
@@ -509,8 +512,15 @@ static bool create_iter_sections(RVecRBinSection *sections, RBinLEObj *bin, RBin
 		}
 		ut16 i;
 		for (i = 0; i < iter_n && remaining; i++) {
+			if (RVecRBinSection_length (sections) >= LE_MAX_SECTIONS) {
+				R_LOG_WARN ("Too many iterated sections in %s.page.%u", sec->name, cur_page);
+				return false;
+			}
 			ut64 size = R_MIN ((ut64)data_size, remaining);
 			RBinSection *s = RVecRBinSection_emplace_back (sections);
+			if (!s) {
+				return false;
+			}
 			s->name = r_str_newf ("%s.page.%u.iter.%d", sec->name, cur_page, iter_cnt);
 			s->bits = sec->bits;
 			s->perm = sec->perm;
@@ -528,6 +538,9 @@ static bool create_iter_sections(RVecRBinSection *sections, RBinLEObj *bin, RBin
 	}
 	if (remaining) {
 		RBinSection *s = RVecRBinSection_emplace_back (sections);
+		if (!s) {
+			return false;
+		}
 		s->name = r_str_newf ("%s.page.%u.iter.zerofill", sec->name, cur_page);
 		s->bits = sec->bits;
 		s->perm = sec->perm;

@@ -487,3 +487,14 @@ vaddr      paddr      type   ntype name
 0x00010666 0x00001c66 SET_32 8     EMXLIBC.770
 EOF
 RUN
+
+NAME=LX iterated page sections are bounded
+FILE=bins/le/lx-iterated-page-bomb
+CMDS=iS~iter?
+EXPECT=<<EOF
+65536
+EOF
+EXPECT_ERR=<<EOF
+WARN: Too many iterated sections in obj.1.page.0
+EOF
+RUN
