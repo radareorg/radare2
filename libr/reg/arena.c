@@ -258,14 +258,15 @@ R_API void r_reg_arena_swap(RReg *reg, int copy) {
 		RListIter *ia = reg->regset[i].cur;
 		RListIter *ib = reg->regset[i].pool->head;
 		RRegArena *new_cur = ib->data; // will receive writes after swap
-		r_reg_arena_materialize (new_cur);
-		if (new_cur && new_cur->bytes) {
-			RListIter *it;
-			RRegArena *a;
-			r_list_foreach (reg->regset[i].pool, it, a) {
-				if (a != new_cur && a->shared && a->bytes == new_cur->bytes) {
-					r_reg_arena_materialize (a);
-				}
+		RRegArena *old_cur = ia->data;
+		const ut8 *new_bytes = new_cur->bytes;
+		const ut8 *old_bytes = old_cur->bytes;
+		// pop frees from the tail, so no arena may borrow from one that moves above it
+		RListIter *it;
+		RRegArena *a;
+		r_list_foreach (reg->regset[i].pool, it, a) {
+			if (a->shared && a->bytes && (a->bytes == new_bytes || a->bytes == old_bytes || a == new_cur || a == old_cur)) {
+				r_reg_arena_materialize (a);
 			}
 		}
 		void *tmp = ia->data;

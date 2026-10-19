@@ -201,6 +201,12 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	if (!arena) {
 		return false;
 	}
+	// arps can shrink the arena below what the profile needs
+	const int end = BITS2BYTES (item->offset + item->size);
+	if (end > arena->size) {
+		R_LOG_WARN ("RRegSetOverflow %d vs %d", end, arena->size);
+		return false;
+	}
 	if (!value && !r_reg_get_value (reg, item)) {
 		return true;
 	}
@@ -239,21 +245,10 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 		r_write_ble8 (src, (ut8) (value & UT8_MAX));
 		break;
 	case 1:
-		if (value) {
+		{
 			ut8 *buf = arena->bytes + (item->offset / 8);
-			int bit = (item->offset % 8);
-			ut8 mask = (1 << bit);
-			buf[0] = (buf[0] & (0xff ^ mask)) | mask;
-		} else {
-			int idx = item->offset / 8;
-			if (idx + item->size > arena->size) {
-				R_LOG_WARN ("RRegSetOverflow %d vs %d", idx + item->size, arena->size);
-				return false;
-			}
-			ut8 *buf = arena->bytes + idx;
-			int bit = item->offset % 8;
-			ut8 mask = 0xff ^ (1 << bit);
-			buf[0] = (buf[0] & mask) | 0;
+			const ut8 mask = 1 << (item->offset % 8);
+			*buf = value? (*buf | mask): (*buf & ~mask);
 		}
 		return true;
 	case 128:

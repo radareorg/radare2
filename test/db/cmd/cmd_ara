@@ -112,3 +112,31 @@ reg
 swift
 EOF
 RUN
+
+NAME=aras keeps borrowed arena bytes alive across ara- and arw
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+ar rax=0x1234
+aras
+ara+
+aras
+ara-
+ara-
+ar*~r15,rax
+aras
+ara+
+aras
+ara-
+arw 41414141
+aras
+ar*~r15,rax
+EOF
+EXPECT=<<EOF
+f rax 8 0x00000000
+f r15 8 0x00000000
+f rax 8 0x00000000
+f r15 8 0x41414141
+EOF
+RUN

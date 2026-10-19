@@ -83,17 +83,22 @@ R_API void *r_arena_alloc_aligned(RArena *arena, size_t size, size_t alignment) 
 	size_t required = aligned_offset + size;
 
 	// Check if allocation fits in current block
-	if (required > block->capacity) {
-		if (size > arena->block_size) {
+	if (required < size || required > block->capacity) {
+		// a fresh block may need alignment padding too
+		const size_t padding = alignment - 1;
+		if (size > arena->block_size || padding > arena->block_size - size) {
+			if (size > SIZE_MAX - sizeof (RArenaBlock) - padding) {
+				return NULL;
+			}
 			// Try to satisfy this allocation with huge-block
-			RArenaBlock *blk = arena_block_new (size);
+			RArenaBlock *blk = arena_block_new (size + padding);
 			if (!blk) {
 				return NULL;
 			}
 			blk->next = arena->huge;
 			arena->huge = blk;
 			arena->total_allocated += size;
-			return blk->data;
+			return (void *)align_address ((uintptr_t)blk->data, alignment);
 		}
 		RArenaBlock *new_block = arena_block_new (arena->block_size);
 		if (!new_block) {

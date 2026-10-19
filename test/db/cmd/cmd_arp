@@ -482,3 +482,42 @@ EXPECT_ERR=<<EOF
 ERROR: [r_reg_set_profile_string] Parse error @ line 3 (Invalid syntax: Wrong number of columns)
 EOF
 RUN
+
+NAME=ar 1bit register on a shrunk arena stays inside the arena
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+arps 8
+ar zf=1
+ar zf
+arps 160
+ar zf=1
+ar zf
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000001
+EOF
+EXPECT_ERR=<<EOF
+WARN: RRegSetOverflow 145 vs 8
+EOF
+RUN
+
+NAME=ar 4bit register on a shrunk arena stays inside the arena
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+arps 56
+ar gef=5
+ar gef
+arps 68
+ar gef=5
+ar gef
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000005
+EOF
+RUN
