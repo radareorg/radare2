@@ -1,3 +1,5 @@
 eco bluy
 e scr.responsive=true
 e scr.wheel.hscroll=true
+e r2ai.http.backend=socket
+e r2ai.stream=false

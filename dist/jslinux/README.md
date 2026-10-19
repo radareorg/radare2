@@ -3,16 +3,16 @@
 Boots a riscv64 Linux in the browser using Fabrice Bellard's
 [JSLinux](https://bellard.org/jslinux/) (the MIT-licensed
 [TinyEMU](https://bellard.org/tinyemu/) compiled to WebAssembly) with a
-static, size-optimized radare2 and a compact TinyCC toolchain injected
-into the busybox rootfs.
+static, size-optimized radare2, r2ai, decai and a compact TinyCC toolchain
+injected into the busybox rootfs.
 
 radare2 is cross-compiled from this source tree as **one static binary**
 (`r2blob`, all the r2 tools multiplexed busybox-style through argv[0])
 with a musl riscv64 toolchain from
 [toolchains.bootlin.com](https://toolchains.bootlin.com). The plugin set
 comes from `dist/plugins-cfg/plugins.jslinux.cfg`, with QuickJS included
-and Capstone omitted. Deploying it into the guest is literally copying
-that one file plus a dozen symlinks.
+and Capstone omitted. The C r2ai plugin is linked into that binary through
+XPS; decai is installed as a QuickJS script in the guest plugin directory.
 
 ## Usage
 
@@ -36,16 +36,19 @@ Other targets and knobs:
 make r2                        # only build work/r2blob
 make tcc                       # only build and stage TinyCC
 make run                       # boot the image in a natively-built temu
-make ROOT_MB=96                # bigger guest disk (default 32MB)
+make ROOT_MB=96                # bigger guest disk (default 16MB)
 make SHIP_TCC=0                # omit TinyCC from the guest image
 make R2BLOB=/path/to/r2blob    # reuse a prebuilt riscv64 static blob
 make TC_VER=2024.05-1          # pick another bootlin toolchain release
+make R2AI_COMMIT=<commit>      # pin another revision of both AI clients
 make docker DOCKER_TARGET=r2   # build only r2blob in Docker
 ```
 
 Note: `make` reconfigures the radare2 source tree for the riscv64 cross
 build (like the other `dist/` cross pipelines); rebuild your native r2
-afterwards.
+afterwards. It also points `libr/xps/p/r2ai` at the downloaded sources.
+Move an existing directory at that path aside first. A prebuilt `R2BLOB`
+must already include QuickJS and the static r2ai plugin.
 
 ## How it works
 
@@ -56,6 +59,9 @@ afterwards.
    `--without-capstone --without-zydis --without-gpl --with-static-themes`,
    compiled with `-Oz -ffunction-sections -fdata-sections`, and `binr/blob/r2blob` is
    linked with `-static -Wl,--gc-sections` and stripped.
+   The pinned `R2AI_COMMIT` archive supplies the r2ai sources; the build runs
+   `make -C libr/xps EXTERNAL_PLUGINS=r2ai` before configuring plugins and
+   preserves that selection during the library build.
 3. TinyCC is downloaded at the exact commit pinned by `TCC_COMMIT`, built
    as a stripped static riscv64 compiler with `-Oz`, then staged with its
    runtime, a compact musl userspace header set and the shared musl loader.
@@ -64,6 +70,9 @@ afterwards.
 4. The pristine 4MB `root-riscv64.bin` ext2 image from the jslinux demo
    tarball is grown with `resize2fs` and `r2blob` is injected with
    `debugfs` (no root privileges needed anywhere).
+   The same r2ai archive supplies the prebuilt `decai/decai.r2.js`, installed
+   at `/root/.local/share/radare2/plugins/decai.r2.js`. No TypeScript compiler
+   is needed for image builds. Its license is under `/usr/share/licenses/r2ai`.
 5. The image is split into 256KB blocks (TinyEMU `splitimg` format). A
    generated service worker precaches only the bootable app shell when offline
    storage is requested. Without it, disk blocks simply stream on demand. The
@@ -203,11 +212,18 @@ already in progress. The transport requires socket, network and filesystem
 access, and refuses operation under `cfg.sandbox=true`, which prohibits the
 temporary-file writes.
 
-Scripts can now call `r2.http()` through this transport. With decai installed,
-use its default `http=auto` or `decai -e http=r2`; forcing `http=curl` bypasses
-it. With the C r2ai plugin installed, select `e r2ai.http.backend=socket` and
-keep `e r2ai.stream=false`. These AI plugins still need to be packaged into
-the guest image. The PHP endpoint and a rebuilt guest r2 are both required.
+Scripts can now call `r2.http()` through this transport. Both AI clients are
+included: `decai -h` and `r2ai -h` work in a normal guest r2 session.
+decai uses its default `http=auto`; `decai -e http=r2` explicitly selects
+this API, while forcing `http=curl` bypasses it. `/etc/radare2rc` selects
+`e r2ai.http.backend=socket` and `e r2ai.stream=false` for the C plugin.
+Set each client's provider, model and base URL to match the configured
+upstream. Credentials and relay settings remain runtime configuration;
+they are not included in the image. The PHP endpoint is also required.
+
+For an OpenAI-compatible upstream at `https://llm.example/v1`, use
+`e r2ai.baseurl=https://llm.example/v1` and
+`decai -e baseurl=https://llm.example`. decai appends `/v1` itself.
 
 Run the relay regression locally, without contacting an AI provider:
 

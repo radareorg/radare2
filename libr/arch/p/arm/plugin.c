@@ -2,7 +2,6 @@
 
 #include <r_arch.h>
 #include <sdb/ht_uu.h>
-#include "./cs_version.h"
 #include "./asm-arm.h"
 
 static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {

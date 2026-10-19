@@ -339,6 +339,7 @@ typedef struct {
 	RCorePluginSession *session;
 	int calls;
 	int legacy_calls;
+	int fini_calls;
 	bool context_ok;
 } CorePluginState;
 
@@ -399,6 +400,35 @@ static bool test_r_core_plugin_context_callback(void) {
 	mu_end;
 }
 
+static bool test_core_plugin_fini(RCorePluginSession *cps) {
+	CorePluginState *state = cps->data;
+	RCore *core = cps->core;
+	state->fini_calls++;
+	state->context_ok = core->config && core->cons && core->io && core->bin && core->rcmd;
+	if (state->context_ok) {
+		r_config_lock (core->config, false);
+		state->context_ok = r_config_rm (core->config, "test.plugin");
+	}
+	return true;
+}
+
+static bool test_r_core_plugin_fini(void) {
+	RCore *core = r_core_new ();
+	RCorePlugin plugin = {
+		.meta = { .name = "test-fini-plugin" },
+		.init = test_core_plugin_init,
+		.fini = test_core_plugin_fini,
+	};
+	r_config_lock (core->config, false);
+	r_config_set (core->config, "test.plugin", "loaded");
+	r_config_lock (core->config, true);
+	mu_assert_true (r_core_plugin_add (core->rcmd, &plugin), "add plugin with finalizer");
+	r_core_free (core);
+	mu_assert_eq (core_plugin_state.fini_calls, 1, "finalize plugin once");
+	mu_assert_true (core_plugin_state.context_ok, "plugin finalizer can use core resources");
+	mu_end;
+}
+
 static int all_tests(void) {
 	mu_run_test (test_r_cmd_register);
 	mu_run_test (test_r_cmd_unregister);
@@ -410,6 +440,7 @@ static int all_tests(void) {
 	mu_run_test (test_r_core_call_context_args);
 	mu_run_test (test_r_cmd_unregister_current);
 	mu_run_test (test_r_core_plugin_context_callback);
+	mu_run_test (test_r_core_plugin_fini);
 	return tests_passed != tests_run;
 }
 

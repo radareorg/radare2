@@ -3,7 +3,8 @@
 # Builds a self-contained static website (www/) that boots a riscv64
 # Linux (Fabrice Bellard's JSLinux, MIT-licensed TinyEMU compiled to
 # WASM) with size-optimized static radare2 and TinyCC injected into the
-# rootfs. TinyCC can be omitted with SHIP_TCC=0.
+# rootfs, with the r2ai plugin and decai script. TinyCC can be omitted
+# with SHIP_TCC=0.
 #
 # radare2 is cross-compiled as a single static binary (r2blob, all the
 # r2 tools in one executable, busybox-style) using a musl riscv64
@@ -42,6 +43,13 @@ TC_NAME ?= riscv64-lp64d--musl--stable-$(TC_VER)
 TC_URL ?= https://toolchains.bootlin.com/downloads/releases/toolchains/riscv64-lp64d/tarballs/$(TC_NAME).tar.xz
 TCDIR = $(abspath $(WORK)/$(TC_NAME))
 CC_WRAP = $(abspath $(WORK)/bin/rv64-musl-gcc)
+
+# Both AI clients come from the same revision, including the prebuilt JS.
+R2AI_COMMIT ?= 0509bf6755e06114d03c88e0f83a835fde492ed4
+R2AI_URL ?= https://github.com/radareorg/r2ai/archive/$(R2AI_COMMIT).tar.gz
+R2AI_SRC = $(WORK)/r2ai-$(R2AI_COMMIT)
+AI_ROOT = $(WORK)/ai-root-$(R2AI_COMMIT)
+DECAI = $(AI_ROOT)/root/.local/share/radare2/plugins/decai.r2.js
 
 # TinyCC's default branch is "mob". This pins its HEAD as of 2026-08-08;
 # changing the commit changes both the download and build directories.
@@ -164,6 +172,7 @@ docker: docker-build
 			JSLINUX_VER="$(JSLINUX_VER)" JSLINUX_URL="$(JSLINUX_URL)" \
 			TINYEMU_URL="$(TINYEMU_URL)" TC_VER="$(TC_VER)" \
 			TC_NAME="$(TC_NAME)" TC_URL="$(TC_URL)" \
+			R2AI_COMMIT="$(R2AI_COMMIT)" R2AI_URL="$(R2AI_URL)" \
 			SHIP_TCC="$(SHIP_TCC)" TCC_COMMIT="$(TCC_COMMIT)" \
 			TCC_URL="$(TCC_URL)" TCC_RUNNER="$(TCC_RUNNER)" \
 			TCC_CFLAGS="$(TCC_CFLAGS)" \
@@ -281,6 +290,23 @@ $(TCC_STAMP): $(TCC_SRC)/.stamp $(CC_WRAP) Makefile
 	touch $@
 	@du -sh $(TCC_ROOT)
 
+# -- AI clients -----------------------------------------------------------
+
+$(WORK)/dl/r2ai-$(R2AI_COMMIT).tar.gz:
+	mkdir -p $(WORK)/dl
+	$(CURL) -o $@.tmp $(R2AI_URL)
+	mv $@.tmp $@
+
+$(R2AI_SRC)/.stamp: $(WORK)/dl/r2ai-$(R2AI_COMMIT).tar.gz
+	tar -xzf $< -C $(WORK)
+	touch $@
+
+$(DECAI): $(R2AI_SRC)/.stamp Makefile
+	mkdir -p $(dir $@)
+	mkdir -p $(AI_ROOT)/usr/share/licenses/r2ai
+	install -m 644 $(R2AI_SRC)/LICENSE $(AI_ROOT)/usr/share/licenses/r2ai/LICENSE
+	install -m 644 $(R2AI_SRC)/decai/decai.r2.js $@
+
 # -- radare2 cross build ---------------------------------------------------
 
 ifneq ($(R2BLOB),)
@@ -289,9 +315,13 @@ $(WORK)/r2blob: $(R2BLOB)
 	cp -f $< $@
 else
 # the wrapper is order-only: regenerating it must not retrigger this build
-$(WORK)/r2blob: Makefile | $(CC_WRAP)
+$(WORK)/r2blob: Makefile $(R2AI_SRC)/.stamp $(R2_ROOT)/dist/plugins-cfg/plugins.jslinux.cfg | $(CC_WRAP)
 	@echo "[r2] cross-building static r2blob for riscv64 (this reconfigures the source tree!)"
+	@test ! -e $(R2_ROOT)/libr/xps/p/r2ai || test -L $(R2_ROOT)/libr/xps/p/r2ai || \
+		{ echo "Move the existing libr/xps/p/r2ai directory before building JSLinux"; exit 1; }
 	-$(MAKE) -C $(R2_ROOT) clean > /dev/null 2>&1
+	ln -sfn $(abspath $(R2AI_SRC)) $(R2_ROOT)/libr/xps/p/r2ai
+	$(MAKE) -C $(R2_ROOT)/libr/xps EXTERNAL_PLUGINS=r2ai
 	cd $(R2_ROOT) && CC=$(CC_WRAP) HOST_CC=cc CFLAGS="$(R2_CFLAGS)" ./configure \
 		--host=riscv64-unknown-linux-musl --with-ostype=gnulinux \
 		--prefix=/usr $(R2_CONFIGURE_FLAGS)
@@ -300,7 +330,7 @@ $(WORK)/r2blob: Makefile | $(CC_WRAP)
 	cd $(R2_ROOT) && ./configure-plugins --with-ostype=gnulinux \
 		$(filter-out --without-gpl,$(R2_CONFIGURE_FLAGS))
 	$(MAKE) -C $(R2_ROOT) libs -j$(JOBS) CC=$(CC_WRAP) HOST_CC=cc \
-		LIBS_TARGET=sublibs WITH_LIBS=0 WITH_LIBR=1
+		LIBS_TARGET=sublibs WITH_LIBS=0 WITH_LIBR=1 EXTERNAL_PLUGINS=r2ai
 	cd $(R2_ROOT)/binr/blob && rm -f r2blob && \
 		LDFLAGS="-static -Wl,--gc-sections" $(MAKE) CC=$(CC_WRAP) build
 	@STRIP="$$(ls $(TCDIR)/bin/riscv64-linux-strip 2> /dev/null || \
@@ -332,9 +362,9 @@ $(ROOTFS_CONFIG): rootfs-config-force
 	if cmp -s $@.tmp $@; then rm -f $@.tmp; else mv -f $@.tmp $@; fi
 
 $(WORK)/root-r2.bin: $(WORK)/r2blob $(JSL)/.stamp $(GUEST_FILES) \
-		setuprootfs.sh $(ROOTFS_CONFIG) $(TCC_ROOTFS_DEPS)
+		setuprootfs.sh $(ROOTFS_CONFIG) $(TCC_ROOTFS_DEPS) $(DECAI)
 	./setuprootfs.sh $(JSL)/root-riscv64.bin $@ $(WORK)/r2blob \
-		$(ROOT_MB) "$(R2_LINKS)" $(TCC_ROOTFS_ARGS)
+		$(ROOT_MB) "$(R2_LINKS)" $(TCC_ROOTFS_ARGS) "$(abspath $(AI_ROOT))"
 
 # split into fixed-size chunks so the browser only downloads the blocks
 # it actually reads (same format as TinyEMU's splitimg tool)

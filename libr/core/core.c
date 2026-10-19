@@ -2884,11 +2884,17 @@ R_API void r_core_fini(RCore *c) {
 	}
 #endif
 	r_log_add_callback (cbcore, NULL);
-	r_muta_free (c->muta);
-	r_th_lock_free (c->lock);
 	r_core_task_cancel_all (c, true);
 	r_core_task_join (&c->tasks, NULL, -1);
 	r_core_wait (c);
+	// Plugin finalizers need the configuration and other core resources alive.
+	r_libstore_free (c->libstore);
+	c->libstore = NULL;
+	r_lib_free (c->lib);
+	c->lib = NULL;
+	r_core_plugins_fini (c->rcmd);
+	r_muta_free (c->muta);
+	r_th_lock_free (c->lock);
 	// update_sdb (c);
 	//  clear namespace references before freeing components that own the child sdbs
 	sdb_ns_reset (c->sdb);
@@ -2924,10 +2930,6 @@ R_API void r_core_fini(RCore *c) {
 	r_list_free (c->scripts);
 	r_core_task_scheduler_fini (&c->tasks);
 	free (c->sessionfile);
-	r_libstore_free (c->libstore);
-	c->libstore = NULL;
-	r_lib_free (c->lib);
-	c->lib = NULL;
 	r_event_free (c->ev);
 	r_core_esil_fini (&c->esil);
 	if (c->anal->esil) {
@@ -2968,7 +2970,6 @@ R_API void r_core_fini(RCore *c) {
 	free (c->times);
 	free (priv->old_arch);
 	ht_up_free (priv->debug_replay);
-	// Free cmd and its plugins before freeing event system
 	r_cmd_free (c->rcmd);
 	c->rcmd = NULL;
 	free (priv);
