@@ -10,10 +10,9 @@ radare2 is cross-compiled from this source tree as **one static binary**
 (`r2blob`, all the r2 tools multiplexed busybox-style through argv[0])
 with a musl riscv64 toolchain from
 [toolchains.bootlin.com](https://toolchains.bootlin.com). The plugin set
-comes from `dist/plugins-cfg/plugins.jslinux.cfg` and is the smallest
-useful one: **ELF only, riscv arch only, no debugger, no QuickJS, no
-capstone**. Deploying it into the guest is literally copying that one
-file plus a dozen symlinks.
+comes from `dist/plugins-cfg/plugins.jslinux.cfg`, with QuickJS included
+and Capstone omitted. Deploying it into the guest is literally copying
+that one file plus a dozen symlinks.
 
 ## Usage
 
@@ -54,9 +53,8 @@ afterwards.
    `-static` produce a fully self-contained binary that runs on the 4.15
    guest kernel.
 2. radare2 is configured with `plugins.jslinux.cfg` and
-   `--disable-debugger --without-qjs --without-capstone --without-zydis
-   --without-gpl --without-dylink --disable-loadlibs`, compiled with
-   `-Oz -ffunction-sections -fdata-sections`, and `binr/blob/r2blob` is
+   `--without-capstone --without-zydis --without-gpl --with-static-themes`,
+   compiled with `-Oz -ffunction-sections -fdata-sections`, and `binr/blob/r2blob` is
    linked with `-static -Wl,--gc-sections` and stripped.
 3. TinyCC is downloaded at the exact commit pinned by `TCC_COMMIT`, built
    as a stripped static riscv64 compiler with `-Oz`, then staged with its
@@ -101,6 +99,10 @@ afterwards.
 - The color themes are compiled into the r2 binary
   (`--with-static-themes`) since no r2 share directory is installed in
   the guest image, so `eco` and friends work as usual.
+- QuickJS is enabled by default. Scripts can use the same synchronous
+  `r2.http(method, url, headers, data?)` API as native r2 and WASI builds.
+  It returns `{status, body}` through `r_socket_http_*`; enabling the binding
+  does not itself provide browser networking to the Linux guest.
 - Uploads: the page ships an empty in-memory 9p filesystem
   (`www/netfs`, generated with TinyEMU's `build_filelist`); files
   uploaded from the browser appear in **/mnt/tmp** inside the guest.
@@ -173,9 +175,9 @@ Relay errors use HTTP 4xx/5xx with `{"error":"..."}`. The endpoint is excluded
 from the offline cache and sends `Cache-Control: no-store`.
 
 The PHP file supplies the browser-to-provider relay only. The current guest
-still needs a `r_socket_http_*` adapter over its 9p filesystem, QuickJS enabled
-for decai, the AI plugins packaged, and decai switched from external curl to
-the direct HTTP API. Deploying the PHP file alone does not enable AI commands.
+still needs a `r_socket_http_*` adapter over its 9p filesystem, the AI plugins
+packaged, and decai switched from external curl to the direct HTTP API.
+Deploying the PHP file alone does not enable AI commands.
 
 Run the relay regression locally, without contacting an AI provider:
 

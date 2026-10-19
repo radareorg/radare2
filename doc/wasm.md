@@ -147,10 +147,18 @@ Python's standard library. Networking defaults off there too.
 For r2ai compiled into the guest, `e r2ai.http.backend=socket` selects the
 existing `r_socket_http_*` path; `e r2ai.stream=false` requests a complete
 response. Native plugins cannot be dynamically loaded into a WASM build.
-WASI QuickJS exposes `r2.http(method, url, headers, data?)`, returning
-`{status, body}`, for scripts such as decai to use the same C APIs without
-shelling out. `headers` is the newline-separated string described above.
-No arbitrary shell command emulation is provided.
+All QuickJS-enabled builds expose `r2.http(method, url, headers, data?)`,
+returning `{status, body}` synchronously. `method` is `GET` or `POST`,
+`headers` is a newline-separated string (use `""` for no headers), and
+`data` is the optional POST string. `body` is a JavaScript string, including
+embedded NULs; this is a text API, not a binary buffer API. HTTP error
+responses retain their status and body. Transport failures, disabled
+networking and sandbox denials throw an exception.
+
+The binding delegates to `r_socket_http_get/post` on every platform. Native
+builds use their existing socket/curl transport; WASI HTTP builds use the host
+import described above. Scripts need no platform-specific HTTP implementation.
+WASI builds still provide no arbitrary shell command emulation.
 
 Run the real C API regression with:
 

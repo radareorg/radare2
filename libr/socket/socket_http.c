@@ -77,6 +77,26 @@ static bool socket_http_use_curl(const char *url) {
 	return r_sys_getenv_asbool ("R2_CURL") || socket_http_requires_curl (url);
 }
 
+static void socket_http_send_headers(RSocket *s, const char **headers, bool post) {
+	bool content_type = false;
+	if (headers) {
+		const char **header;
+		for (header = headers; *header; header++) {
+			if (!**header) {
+				continue;
+			}
+			if (!r_str_ncasecmp (*header, "Content-Type:", 13)) {
+				content_type = true;
+			}
+			r_socket_printf (s, "%s\r\n", *header);
+		}
+	}
+	if (post && !content_type) {
+		r_socket_printf (s, "Content-Type: application/x-www-form-urlencoded\r\n");
+	}
+	r_socket_printf (s, "\r\n");
+}
+
 static size_t socket_slurp(RSocket *s, RBuffer *buf) {
 	size_t i;
 	if (r_socket_ready (s, 1, 0) != 1) {
@@ -134,6 +154,12 @@ static char *socket_http_answer(RSocket *s, const char *headers[], int *code, in
 
 	olen -= delta;
 	*dn = 0; // chop headers
+	if (code) {
+		int status;
+		if (sscanf (buf, "HTTP/%*s %3d", &status) == 1 && status >= 100 && status <= 599) {
+			*code = status;
+		}
+	}
 
 	/* Follow redirects */
 	p = r_str_casestr (buf, "Location:");
@@ -421,9 +447,9 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 			"GET /%s HTTP/1.1\r\n"
 			"User-Agent: radare2 " R2_VERSION "\r\n"
 			"Accept: */*\r\n"
-			"Host: %s:%s\r\n"
-			"\r\n",
+			"Host: %s:%s\r\n",
 			path, host, port);
+		socket_http_send_headers (s, headers, false);
 		response = socket_http_answer (s, NULL, code, rlen, redirections);
 	} else {
 		R_LOG_ERROR ("Cannot connect to %s:%s", host, port);
@@ -609,13 +635,14 @@ R_API char *r_socket_http_post(const char *url, const char *headers[], const cha
 		"User-Agent: radare2 " R2_VERSION "\r\n"
 		"Accept: */*\r\n"
 		"Host: %s:%d\r\n"
-		"Content-Length: %i\r\n"
-		"Content-Type: application/x-www-form-urlencoded\r\n"
-		"\r\n",
+		"Content-Length: %i\r\n",
 		path, host, atoi (port), (int)strlen (data));
+	socket_http_send_headers (s, headers, true);
 	free (uri);
 	r_socket_write (s, (void *)data, strlen (data));
-	return socket_http_answer (s, NULL, code, rlen, 0);
+	char *response = socket_http_answer (s, NULL, code, rlen, 0);
+	r_socket_free (s);
+	return response;
 }
 
 #endif

@@ -41,6 +41,34 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=qjs generic HTTP binding and argument errors
+FILE=-
+CMDS=<<EOF
+'js console.log(typeof r2.http)
+'js try { r2.http("GET", "http://localhost/"); } catch (e) { console.log(e.name + ": " + e.message); }
+'js try { r2.http("PUT", "http://localhost/", ""); } catch (e) { console.log(e.name + ": " + e.message); }
+EOF
+EXPECT=<<EOF
+function
+TypeError: http(method, url, headers, data?)
+TypeError: Expected GET or POST
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=qjs HTTP respects sandbox denial
+FILE=-
+ARGS=-e log.level=0
+CMDS=<<EOF
+'js r2.cmd("e cfg.sandbox.grain=none;e cfg.sandbox=true"); for (const method of ["GET", "POST"]) { try { r2.http(method, "http://192.0.2.1/", ""); } catch (e) { console.log(e.name + ": " + e.message); } }
+EOF
+EXPECT=<<EOF
+InternalError: HTTP request failed or denied
+InternalError: HTTP request failed or denied
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=qjs loading, running and unloading of core plugins
 FILE=-
 CMDS=<<EOF

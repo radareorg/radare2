@@ -28,6 +28,11 @@ compiler and does not load a kernel module or access kernel memory.
  * To check HTTP sandbox enforcement on a local server, use `make http-sandbox`
    after building and installing this checkout. This requires Python 3 and
    permission to open localhost sockets.
+ * To check the QuickJS HTTP binding with native socket and curl transports,
+   run `python3 test/scripts/test-quickjs-http.py` from the repository root
+   after building. This requires QuickJS, networking, Python 3 and localhost
+   sockets; the curl transport is tested when curl is installed. Set `R2`
+   to select another radare2 executable.
 
 ## Failure Levels
 

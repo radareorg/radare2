@@ -8,9 +8,9 @@
 # radare2 is cross-compiled as a single static binary (r2blob, all the
 # r2 tools in one executable, busybox-style) using a musl riscv64
 # toolchain from toolchains.bootlin.com, with the minimal plugin set
-# from dist/plugins-cfg/plugins.jslinux.cfg: no debugger, no qjs, only
-# ELF and the riscv arch. Shipping r2 into the guest image is just
-# copying that one binary plus symlinks.
+# from dist/plugins-cfg/plugins.jslinux.cfg, with QuickJS included.
+# Shipping r2 into the guest image is just copying that one binary
+# plus symlinks.
 #
 # Usage:
 #   make check-tools     # verify host dependencies
@@ -90,8 +90,7 @@ R2_CFLAGS ?= -Oz -ffunction-sections -fdata-sections
 # the 16 binr/ programs, the merged libr.a/libr.so and every shared library
 # are pure waste here, since the blob is one static binary symlinked to all
 # the tool names inside the image (busybox-style).
-R2_CONFIGURE_FLAGS ?= --without-qjs \
-	--without-capstone --without-zydis --without-gpl \
+R2_CONFIGURE_FLAGS ?= --without-capstone --without-zydis --without-gpl \
 	--with-checks-level=0 --with-libr --with-static-themes
 R2_LINKS = r2 radare2 rabin2 rasm2 rax2 rahash2 rafind2 radiff2 ragg2 rarun2 ravc2 rafs2
 JOBS ?= $(shell nproc 2> /dev/null || echo 4)
@@ -290,7 +289,7 @@ $(WORK)/r2blob: $(R2BLOB)
 	cp -f $< $@
 else
 # the wrapper is order-only: regenerating it must not retrigger this build
-$(WORK)/r2blob: | $(CC_WRAP)
+$(WORK)/r2blob: Makefile | $(CC_WRAP)
 	@echo "[r2] cross-building static r2blob for riscv64 (this reconfigures the source tree!)"
 	-$(MAKE) -C $(R2_ROOT) clean > /dev/null 2>&1
 	cd $(R2_ROOT) && CC=$(CC_WRAP) HOST_CC=cc CFLAGS="$(R2_CFLAGS)" ./configure \

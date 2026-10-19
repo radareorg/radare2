@@ -448,8 +448,7 @@ static JSValue r2plugin_unload(JSContext *ctx, JSValueConst this_val, int argc, 
 	return JS_NewBool (ctx, res);
 }
 
-#if __wasi__
-// Direct HTTP for guest scripts; uses the same sandbox checks as C callers.
+// Use the same HTTP transport and sandbox checks as C callers.
 static JSValue r2http(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
 	if (argc < 3) {
 		return JS_ThrowTypeError (ctx, "http(method, url, headers, data?)");
@@ -508,7 +507,6 @@ beach:
 	JS_FreeCString (ctx, data);
 	return result;
 }
-#endif
 
 static JSValue r2fdump(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
 	size_t plen;
@@ -753,9 +751,7 @@ static const JSCFunctionListEntry js_r2_funcs[] = {
 	JS_CFUNC_DEF ("callAt", 2, r2callAt),
 	JS_CFUNC_DEF ("syscmd", 1, r2syscmd),
 	JS_CFUNC_DEF ("syscmds", 1, r2syscmds),
-#if __wasi__
 	JS_CFUNC_DEF ("http", 4, r2http),
-#endif
 	// disk
 	JS_CFUNC_DEF ("fdump", 2, r2fdump),
 	JS_CFUNC_DEF ("fload", 1, r2fload),
