@@ -134,3 +134,46 @@ EXPECT=<<EOF2
 4641414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141
 EOF2
 RUN
+
+NAME=pa .fill sizes behave like gas
+FILE=malloc://64
+TIMEOUT=10
+CMDS=<<EOF2
+e asm.arch=x86
+e asm.bits=64
+'pa nop;.fill 2;nop
+'pa nop;.fill 2,2;nop
+'pa nop;.fill -1,1,0x41;nop
+'pa nop;.fill 2,-1,0x41;nop
+'pa .hex 9090;.fill 0x80000000,1,0x41
+'pa nop;.fill 0x10000,0x10000
+'pa nop;.fill 0x100000004,1,0x41
+EOF2
+EXPECT=<<EOF2
+90000090
+900000000090
+9090
+9090
+EOF2
+EXPECT_ERR=<<EOF2
+WARN: .fill with a negative repeat is ignored
+WARN: .fill with a negative size is ignored
+ERROR: Too large .fill
+ERROR: Too large .fill
+ERROR: Too large .fill
+EOF2
+RUN
+
+NAME=pa comments between statements emit no bytes
+FILE=malloc://64
+CMDS=<<EOF2
+e asm.arch=x86
+e asm.bits=64
+'pa nop;/* a */;/* b */;nop
+'pa .hex 9090;/* a */;/* b */;.hex 41
+EOF2
+EXPECT=<<EOF2
+9090
+909041
+EOF2
+RUN

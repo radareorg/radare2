@@ -207,47 +207,48 @@ static int r_asm_pseudo_byte(RAnalOp *op, char *input) {
 	return len;
 }
 
-static int r_asm_pseudo_fill(RAsm *a, RAnalOp *op, const char *input) {
-	int repeat = 1, size = 0;
+static int r_asm_pseudo_fill(RAsm *a, RAnalOp *op, const char *input, bool verbose) {
+	// .fill repeat[,size[,value]] like gas
+	st64 repeat = 1, size = 1;
 	ut32 value = 0;
-	size_t total = 0;
-	if (strchr (input, ',')) {
-		char *p = strdup (input);
-		if (!p) {
-			return -1;
-		}
-		if (r_str_split (p, ',') != 3) {
-			R_LOG_ERROR ("Invalid usage of .fill repeat,size,value");
-			free (p);
-			return -1;
-		}
-		char *q = p + strlen (p) + 1;
-		char *r = q + strlen (q) + 1;
-
-		const char *err = NULL;
-		repeat = (int)r_num_math_err (NULL, r_str_trim_head_ro (p), &err);
-		if (!err) {
-			size = (int)r_num_math_err (NULL, r_str_trim_head_ro (q), &err);
-			if (!err) {
-				value = (ut32)r_num_math_err (NULL, r_str_trim_head_ro (r), &err);
-			}
-		}
-
-		if (err) {
-			R_LOG_ERROR ("Invalid number in .fill: %s", err);
-			free (p);
-			return -1;
-		}
-		free (p);
-	} else {
-		const char *err = NULL;
-		size = (int)r_num_math_err (NULL, input, &err);
-		if (err) {
-			R_LOG_ERROR ("Invalid number in .fill: %s", err);
-			return -1;
-		}
+	char *args = strdup (input);
+	if (!args) {
+		return -1;
 	}
-	if (repeat < 1 || size < 1 || r_mul_overflow ((size_t)repeat, (size_t)size, &total) || total > INT_MAX) {
+	const int nargs = r_str_split (args, ',');
+	if (nargs > 3) {
+		R_LOG_ERROR ("Invalid usage of .fill repeat,size,value");
+		free (args);
+		return -1;
+	}
+	const char *err = NULL;
+	const char *arg = args;
+	repeat = (st64)r_num_math_err (NULL, r_str_trim_head_ro (arg), &err);
+	if (!err && nargs > 1) {
+		arg += strlen (arg) + 1;
+		size = (st64)r_num_math_err (NULL, r_str_trim_head_ro (arg), &err);
+	}
+	if (!err && nargs > 2) {
+		arg += strlen (arg) + 1;
+		value = (ut32)r_num_math_err (NULL, r_str_trim_head_ro (arg), &err);
+	}
+	free (args);
+	if (err) {
+		R_LOG_ERROR ("Invalid number in .fill: %s", err);
+		return -1;
+	}
+	if (repeat < 0 || size < 0) {
+		if (verbose) {
+			R_LOG_WARN (".fill with a negative %s is ignored", repeat < 0? "repeat": "size");
+		}
+		return 0;
+	}
+	ut64 total;
+	if (r_mul_overflow ((ut64)repeat, (ut64)size, &total) || total > INT_MAX) {
+		R_LOG_ERROR ("Too large .fill");
+		return -1;
+	}
+	if (!total) {
 		return 0;
 	}
 	ut8 *buf = calloc (1, total);
@@ -256,11 +257,11 @@ static int r_asm_pseudo_fill(RAsm *a, RAnalOp *op, const char *input) {
 	}
 	ut8 pattern[sizeof (value)] = { 0 };
 	r_write_ble32 (pattern, value, R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config));
-	if (size > sizeof (pattern)) {
+	if ((size_t)size > sizeof (pattern)) {
 		memcpy (buf, pattern, sizeof (pattern));
-		r_mem_copyloop (buf, buf, (int)total, size);
+		r_mem_copyloop (buf, buf, (int)total, (int)size);
 	} else {
-		r_mem_copyloop (buf, pattern, (int)total, size);
+		r_mem_copyloop (buf, pattern, (int)total, (int)size);
 	}
 	int len = asm_op_set_data (op, buf, (int)total);
 	free (buf);
@@ -813,7 +814,7 @@ static void *htpp_strdup(const void *v) {
 	return (void *)strdup ((char *)v);
 }
 
-static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_start, R_INOUT ut64 *off) {
+static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_start, R_INOUT ut64 *off, bool last_stage) {
 	const char *asmcpu = R_UNWRAP3 (a, config, cpu);
 	int ret = -1;
 	char *ptr = ptr_start;
@@ -906,7 +907,7 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 			ret = 0;
 		}
 	} else if (r_str_startswith (ptr, ".fill ")) {
-		ret = r_asm_pseudo_fill (a, op, ptr + 6);
+		ret = r_asm_pseudo_fill (a, op, ptr + 6, last_stage);
 		if (ret < 0) {
 			return ret;
 		}
@@ -1156,7 +1157,8 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 		return NULL;
 	}
 	acode->assembly = strdup (assembly);
-	acode->bytes = calloc (1, 64);
+	size_t bytes_size = 64;
+	acode->bytes = calloc (1, bytes_size);
 
 	char *lbuf = strdup (assembly);
 	if (a->use_spp) {
@@ -1249,7 +1251,7 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 		inComment = false;
 		r_asm_set_pc (a, pc);
 		linenum = 0;
-		for (idx = ret = i = 0, off = a->pc; i <= ctr; i++, idx += ret) {
+		for (idx = ret = i = 0, off = a->pc; i <= ctr; i++) {
 			buf_token = tokens[i];
 			if (!buf_token) {
 				continue;
@@ -1300,6 +1302,7 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 			}
 			r_asm_set_pc (a, a->pc + ret);
 			off = a->pc;
+			idx += ret;
 			ret = 0;
 			if (!*ptr_start) {
 				continue;
@@ -1342,7 +1345,7 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 				continue;
 			}
 			if (*ptr_start == '.') { /* pseudo */
-				ret = parse_asm_directive (a, &op, acode, ptr_start, &off);
+				ret = parse_asm_directive (a, &op, acode, ptr_start, &off, stage == STAGES - 1);
 				if (ret < 0) {
 					goto fail;
 				} else if (ret == 0) {
@@ -1358,6 +1361,12 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 				ret = r_asm_assemble_single (a, &op, str);
 				free (str);
 			}
+			// RAsmCode.len is an int
+			size_t len = 0;
+			if (ret > 0 && (r_add_overflow ((size_t)idx, (size_t)ret, &len) || len > INT_MAX)) {
+				R_LOG_ERROR ("Assembled code is too large at line %d", linenum);
+				goto fail;
+			}
 			if (stage == STAGES - 1) {
 				if (ret < 1) {
 					R_LOG_ERROR ("Cannot assemble '%s' at line %d", ptr_start, linenum);
@@ -1367,14 +1376,18 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 					R_LOG_ERROR ("Assembled size mismatch (%d of %d bytes) at line %d", op.size, ret, linenum);
 					goto fail;
 				}
-				acode->len = idx + ret;
-				char *newbuf = realloc (acode->bytes, (idx + ret) * 2);
-				if (!newbuf) {
-					goto fail;
+				if (len > bytes_size) {
+					size_t new_size;
+					ut8 *newbuf = r_mul_overflow (len, (size_t)2, &new_size)? NULL: realloc (acode->bytes, new_size);
+					if (!newbuf) {
+						goto fail;
+					}
+					memset (newbuf + bytes_size, 0, new_size - bytes_size);
+					acode->bytes = newbuf;
+					bytes_size = new_size;
 				}
-				acode->bytes = (ut8 *)newbuf;
 				memcpy (acode->bytes + idx, op.bytes, ret);
-				memset (acode->bytes + idx + ret, 0, idx + ret);
+				acode->len = (int)len;
 			}
 		}
 	}
