@@ -10670,11 +10670,8 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 				for (i = 0; i < last; i++) {
 					ut8 *byte = buf + i;
 					r_cons_print (core->cons, " ");
-					if (pj) {
-						pj_a (pj);
-					}
 					if (i == 4) {
-						r_strbuf_append (sb, "| ");
+						r_cons_print (core->cons, "| ");
 					}
 					for (j = 0; j < 8; j++) {
 						bool bit = R_BIT_CHK (byte, 7 - j);
