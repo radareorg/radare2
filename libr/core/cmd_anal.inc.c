@@ -14732,6 +14732,32 @@ static void cmd_anal_aaw(RCore *core, const char *input) {
 	}
 }
 
+static int aav_range_cmp(const void *_a, const void *_b) {
+	const RIOMap *a = _a, *b = _b;
+	const ut64 abegin = r_io_map_begin (a);
+	const ut64 bbegin = r_io_map_begin (b);
+	return (abegin > bbegin)? 1: (abegin < bbegin)? -1: 0;
+}
+
+// sections and maps can alias or overlap each other, every address must be scanned and targeted only once
+static void aav_merge_ranges(RList *list, bool forcemode) {
+	RListIter *iter, *iter2;
+	RIOMap *map, *prev = NULL;
+	r_list_sort (list, aav_range_cmp);
+	r_list_foreach_safe (list, iter, iter2, map) {
+		// ranges at address zero are not valid targets, the ones they overlap must not become part of them
+		const bool mergeable = prev && (forcemode || r_io_map_begin (prev) || !r_io_map_begin (map));
+		if (mergeable && r_io_map_begin (map) < r_io_map_end (prev)) {
+			if (r_io_map_end (map) > r_io_map_end (prev)) {
+				r_io_map_set_size (prev, r_io_map_end (map) - r_io_map_begin (prev));
+			}
+			r_list_delete (list, iter);
+			continue;
+		}
+		prev = map;
+	}
+}
+
 static void cmd_anal_aav(RCore *core, const char *input) {
 	R_RETURN_IF_FAIL (*input == 'v');
 	const bool relative = input[1] == 'r'; // "aavr"
@@ -14777,6 +14803,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 		if (!list) {
 			goto beach;
 		}
+		aav_merge_ranges (list, forcemode);
 		RListIter *iter, *iter2;
 		RIOMap *map, *map2;
 		ut64 from = UT64_MAX;
@@ -14820,6 +14847,10 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 					R_LOG_INFO ("aav: 0x%08"PFMT64x"-0x%08"PFMT64x" in 0x%"PFMT64x"-0x%"PFMT64x, from, to, begin, end);
 				}
 				(void)r_core_search_value_in_range (core, relative, map->itv, from, to, vsize, aav_cb, (void *)(size_t)asterisk);
+			}
+			if (relative && (forcemode || from)) {
+				// relative hits do not depend on the target range, one pass over the list finds them all
+				break;
 			}
 		}
 		r_list_free (list);
