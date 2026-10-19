@@ -2596,7 +2596,7 @@ wx 20ec621e
 ao 1~esil:
 EOF
 EXPECT=<<EOF
-esil: d1,d0,=
+esil: d1,d0,=,0,v0h,=
 EOF
 RUN
 
@@ -2619,7 +2619,7 @@ aes
 ar d0
 EOF
 EXPECT=<<EOF
-esil: zf,?{,d1,}{,d2,},d0,=
+esil: zf,?{,d1,}{,d2,},d0,=,0,v0h,=
 0x3ff0000000000000
 0x4000000000000000
 EOF
@@ -2645,5 +2645,314 @@ EOF
 EXPECT=<<EOF
 0x00000007
 0xfffffffb
+EOF
+RUN
+
+NAME=arm64 ESIL scalar FP load into d zeroes upper bits
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 000040fd
+wx 0123456789abcdef @ 0x100
+aei
+aeip
+aer x0=0x100
+aer v0h=0xdeadbeefdeadbeef
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0xefcdab8967452301
+0x00000000
+EOF
+RUN
+
+NAME=arm64 ESIL scalar FP load into s zeroes upper bits
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 000040bd
+wx 0123456789abcdef @ 0x100
+aei
+aeip
+aer x0=0x100
+aer v0=0xdeadbeefdeadbeef
+aer v0h=0xdeadbeefdeadbeef
+aes
+aer v0
+aer v0h
+EOF
+EXPECT=<<EOF
+0x00000000000000000000000067452301
+0x00000000
+EOF
+RUN
+
+NAME=arm64 ESIL fadd s zeroes bits above the word
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2028221e
+aei
+aeip
+aer s1=0x3f800000
+aer s2=0x40000000
+aer v0=0xdeadbeefdeadbeef
+aer v0h=0xdeadbeefdeadbeef
+aes
+aer v0
+aer v0h
+EOF
+EXPECT=<<EOF
+0x00000000000000000000000040400000
+0x00000000
+EOF
+RUN
+
+NAME=arm64 ESIL fmov s zeroes bits above the word
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2040201e
+aei
+aeip
+aer s1=0x3f800000
+aer v0=0xdeadbeefdeadbeef
+aer v0h=0xdeadbeefdeadbeef
+aes
+aer v0
+aer v0h
+EOF
+EXPECT=<<EOF
+0x0000000000000000000000003f800000
+0x00000000
+EOF
+RUN
+
+NAME=arm64 ESIL fmov d zeroes upper half
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2040601e
+aei
+aeip
+aer d1=0x0123456789abcdef
+aer v0h=0xdeadbeefdeadbeef
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x123456789abcdef
+0x00000000
+EOF
+RUN
+
+NAME=arm64 ESIL ldp d clears both destinations
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 0004406d
+wx 0123456789abcdef0123456789abcdef @ 0x100
+aei
+aeip
+aer x0=0x100
+aer v0l=0xdeadbeefdeadbeef
+aer v1l=0xdeadbeefdeadbeef
+aer v0h=0xdeadbeef
+aer v1h=0xdeadbeef
+aes
+aer v0l
+aer v0h
+aer v1l
+aer v1h
+EOF
+EXPECT=<<EOF
+0xefcdab8967452301
+0x00000000
+0xefcdab8967452301
+0x00000000
+EOF
+RUN
+
+NAME=arm64 ESIL ldp s clears both destinations
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 0004402d
+wx 0123456789abcdef0123456789abcdef @ 0x100
+aei
+aeip
+aer x0=0x100
+aer v0l=0xdeadbeefdeadbeef
+aer v1l=0xdeadbeefdeadbeef
+aer v0h=0xdeadbeef
+aer v1h=0xdeadbeef
+aes
+aer v0l
+aer v0h
+aer v1l
+aer v1h
+EOF
+EXPECT=<<EOF
+0x67452301
+0x00000000
+0xefcdab89
+0x00000000
+EOF
+RUN
+
+NAME=arm64 ESIL mov vector 64 bit destination
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 201ca10e
+aei
+aeip
+aer v0l=0x1111
+aer v0h=0x2222
+aer v1l=0x1234
+aer v1h=0xdeadbeef
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x00001234
+0x00000000
+EOF
+RUN
+
+NAME=arm64 ESIL mov vector 128 bit destination
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 201ca14e
+aei
+aeip
+aer v0l=0x1111
+aer v0h=0x2222
+aer v1l=0x1234
+aer v1h=0xdeadbeef
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x00001234
+0xdeadbeef
+EOF
+RUN
+
+NAME=arm64 ESIL ldr b0 uses vector alias and clears upper bits
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 0000403d
+wx 0123456789abcdef @ 0x100
+aei
+aeip
+aer x0=0x100
+aer v0l=0xdeadbeefdeadbeef
+aer v0h=0xdeadbeef
+aes
+aer b0
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x00000000
+EOF
+RUN
+
+NAME=arm64 ESIL ldr b31 uses vector alias and clears upper bits
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 1f00403d
+wx 0123456789abcdef @ 0x100
+aei
+aeip
+aer x0=0x100
+aer v31l=0xdeadbeefdeadbeef
+aer v31h=0xdeadbeef
+aes
+aer b31
+aer v31l
+aer v31h
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x00000000
+EOF
+RUN
+
+NAME=arm64 ESIL ldr h0 uses vector alias and clears upper bits
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 0000407d
+wx 0123456789abcdef @ 0x100
+aei
+aeip
+aer x0=0x100
+aer v0l=0xdeadbeefdeadbeef
+aer v0h=0xdeadbeef
+aes
+aer h0
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x00002301
+0x00002301
+0x00000000
+EOF
+RUN
+
+NAME=arm64 ESIL ldr h31 uses vector alias and clears upper bits
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 1f00407d
+wx 0123456789abcdef @ 0x100
+aei
+aeip
+aer x0=0x100
+aer v31l=0xdeadbeefdeadbeef
+aer v31h=0xdeadbeef
+aes
+aer h31
+aer v31l
+aer v31h
+EOF
+EXPECT=<<EOF
+0x00002301
+0x00002301
+0x00000000
+EOF
+RUN
+
+NAME=arm64 ESIL lane insert preserves other lanes
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx c01e0c4e
+aei
+aeip
+aer v0l=0x1111111122222222
+aer v0h=0x3333
+aer w22=0x12345678
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x1234567822222222
+0x00003333
 EOF
 RUN
