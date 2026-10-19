@@ -1172,3 +1172,24 @@ CMDS=pfp %1$s
 EXPECT=<<EOF2
 EOF2
 RUN
+
+NAME=pf colors pointer values by the memory they point to
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=<<EOF
+e io.cache=true
+wv8 entry0 @ section..data
+wv8 section..data @ section..data+8
+e scr.color=1
+pf qq code rw @ section..data
+pf [2]x arr @ section..data
+e scr.color=0
+pf qq code rw @ section..data
+EOF
+EXPECT=<<EOF
+ code : 0x00600900 = (qword)[31m0x0000000000400410[0m
+   rw : 0x00600908 = (qword)[34m0x0000000000600900[0m
+ arr : 0x00600900 = [ [31m0x00400410[0m, 0x00000000 ]
+ code : 0x00600900 = (qword)0x0000000000400410
+   rw : 0x00600908 = (qword)0x0000000000600900
+EOF
+RUN
