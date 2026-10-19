@@ -302,32 +302,23 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 				runes++;
 			} else if (r && r < 0x100 && strchr ("\b\v\f\n\r\t\a\033\\", (char)r)) {
 				/* Print the escape code */
-				if (strings_nofp) {
-					rc = 2;
-					if (r && r < 0x100 && strchr ("\n\r\t\033\\", (char)r)) {
-						runes++; // accept it as it is
-						rc = 1;
-					} else {
-						rc = 1;
-						r = 0;
-						break;
-					}
-				} else {
-					if (r < 93) {
-						tmp[0] = '\\';
-						tmp[1] = "       abtnvfr             e  "
-							"                              "
-							"                              "
-							"  \\"[r];
-					} else {
-						// string too long
-						break;
-					}
-					rc = 2;
-					tmp[rc] = 0;
-					r_strbuf_append (sb, (const char *)tmp);
-					runes++;
+				if (strings_nofp && !strchr ("\n\r\t\033\\", (char)r)) {
+					break;
 				}
+				if (r < 93) {
+					tmp[0] = '\\';
+					tmp[1] = "       abtnvfr             e  "
+						"                              "
+						"                              "
+						"  \\"[r];
+				} else {
+					// string too long
+					break;
+				}
+				rc = 2;
+				tmp[rc] = 0;
+				r_strbuf_append (sb, (const char *)tmp);
+				runes++;
 			} else {
 				/* \0 marks the end of C-strings */
 				break;
