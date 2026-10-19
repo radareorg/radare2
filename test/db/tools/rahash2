@@ -1111,6 +1111,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rahash2 -E sm4-ecb pads a partial block
+FILE=-
+CMDS=!rahash2 -E sm4-ecb -S "0123456789abcdeffedcba9876543210" -x "0123456789abcdeffedcba987654321000" | rax2 -S
+EXPECT=<<EOF
+681edf34d206965e86b3e94f536e42462677f46b09c122cc975533105bd4a22a
+EOF
+RUN
+
+NAME=rahash2 -D sm4-ecb rejects a partial block
+FILE=-
+CMDS=!rahash2 -D sm4-ecb -S "0123456789abcdeffedcba9876543210" -x "681edf34d206965e86b3e94f536e424600" | rax2 -S
+EXPECT=<<EOF
+EOF
+RUN
+
 NAME=rahash2 -a fletcher8 -s hello-world
 FILE=-
 CMDS=!rahash2 -a fletcher8 -s hello-world

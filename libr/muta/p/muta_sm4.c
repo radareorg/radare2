@@ -25,13 +25,27 @@ static int sm4_get_key_size(RMutaSession *cry) {
 }
 
 static bool update(RMutaSession *ms, const ut8 *buf, int len) {
-	ut8 *obuf = calloc (1, len);
+	if (len < 1) {
+		return false;
+	}
+	const int tail = len % SM4_BLOCK_SIZE;
+	if (tail && ms->dir == R_MUTA_OP_DECRYPT) {
+		R_LOG_ERROR ("Length must be a multiple of %d for decryption", SM4_BLOCK_SIZE);
+		return false;
+	}
+	// encryption zero pads the last partial block
+	const int size = len + (tail? SM4_BLOCK_SIZE - tail: 0);
+	ut8 *obuf = calloc (1, size);
 	if (!obuf) {
 		return false;
 	}
-	/* SM4 encryption or decryption */
-	sm4_crypt (ms->sm4_sk, buf, obuf, len);
-	r_muta_session_append (ms, obuf, len);
+	sm4_crypt (ms->sm4_sk, buf, obuf, len - tail);
+	if (tail) {
+		ut8 last[SM4_BLOCK_SIZE] = {0};
+		memcpy (last, buf + len - tail, tail);
+		sm4_round (ms->sm4_sk, last, obuf + len - tail);
+	}
+	r_muta_session_append (ms, obuf, size);
 	free (obuf);
 	return true;
 }
