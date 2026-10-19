@@ -175,12 +175,14 @@ static int rd_otherbasenumber(PluginData *pd, const char **p, int *valid) {
 	if (**p == '0' || !isalnum ((const unsigned char)**p)) {
 		return set_invalid (valid);
 	}
+	// the character after '@' is the base: '1'..'9' select 2..10, 'b'..'z' select 2..26
 	const char c = **p;
 	(*p)++;
-	if (isalpha ((const unsigned char)**p)) {
-		return rd_number (pd, p, NULL, tolower ((unsigned char)c) - 'a' + 1);
+	const int base = isalpha ((const unsigned char)c)? tolower ((const unsigned char)c) - 'a' + 1: c - '0' + 1;
+	if (base < 2) {
+		return set_invalid (valid);
 	}
-	return rd_number (pd, p, NULL, c - '0' + 1);
+	return rd_number (pd, p, NULL, base);
 }
 
 static int rd_character(PluginData *pd, const char **p, int *valid) {
@@ -397,6 +399,9 @@ static int rd_value(PluginData *pd, const char **p, int *valid, int level, int *
 		(*p)++;
 		dummy_check = 0;
 		retval = not ^ (sign *do_rd_expr (pd, p, ')', valid, level, &dummy_check));
+		if (**p != ')') {
+			return set_invalid (valid);
+		}
 		++*p;
 		return retval;
 	case '0':
@@ -1964,7 +1969,9 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf, int _
 						break;
 					}
 				}
-				++ptr;
+				if (*ptr) {
+					++ptr;
+				}
 			} else {
 				/* Read expression.  */
 				skipword (pd, &ptr, ',');

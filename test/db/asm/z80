@@ -1150,3 +1150,8 @@ d "sla [ix+0x15]" ddcb1526
 d "sll [iy+0x2a]" fdcb2a36
 d "sra [ix+0x40]" ddcb402e
 d "srl [iy+0x50]" fdcb503e
+a "ld a, (1+2)*3" 3e09
+a "ld a, (1" 3e01
+a "ld a, @911" 3e00
+a "ld a, @z0" 3e00
+a "ld a, @h17" 3e00
