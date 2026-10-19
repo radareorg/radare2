@@ -8,8 +8,10 @@ static bool rtr_visual(RCore *core, TextLog T, const char *cmd) {
 			char *ret;
 			r_cons_clear00 (core->cons);
 			ret = rtrcmd (T, cmd);
-			r_cons_println (core->cons, ret);
-			free (ret);
+			if (ret) {
+				r_cons_println (core->cons, ret);
+				free (ret);
+			}
 			r_cons_flush (core->cons);
 			if (r_cons_is_breaked (core->cons)) {
 				break;
@@ -230,13 +232,8 @@ static void __rtr_shell(RCore *core, int nth) {
 				str = r_socket_http_get (uri, NULL, NULL, &len);
 				if (str) {
 					str[len] = 0;
-					res = strstr (str, "\n\n");
-					if (res) {
-						res = strstr (res + 1, "\n\n");
-					}
-					res = res? res + 2: str;
-					const char *tail = (res[strlen (res) - 1] == '\n')? "": "\n";
-					printf ("%s%s", res, tail);
+					const char *tail = r_str_endswith (str, "\n")? "": "\n";
+					printf ("%s%s", str, tail);
 					r_line_hist_add (core->cons->line, str);
 					free (str);
 				}

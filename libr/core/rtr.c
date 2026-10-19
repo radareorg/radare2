@@ -94,22 +94,13 @@ static void http_logf(RCore *core, const char *fmt, ...) {
 }
 
 static char *rtrcmd(TextLog T, const char *str) {
-	char *res, *ptr2;
 	char *ptr = r_str_uri_encode (str);
 	char *uri = r_str_newf ("http://%s:%s/%s%s", T.host, T.port, T.file, ptr? ptr: str);
-	int len;
 	free (ptr);
-	ptr2 = r_socket_http_get (uri, NULL, NULL, &len);
+	// the body comes NUL terminated without headers, and the caller frees it
+	char *res = r_socket_http_get (uri, NULL, NULL, NULL);
 	free (uri);
-	if (ptr2) {
-		ptr2[len] = 0;
-		res = strstr (ptr2, "\n\n");
-		if (res) {
-			res = strstr (res + 1, "\n\n");
-		}
-		return res? res + 2: ptr2;
-	}
-	return NULL;
+	return res;
 }
 
 static void showcursor(RCore *core, int x) {
@@ -144,11 +135,15 @@ static void rtr_textlog_chat(RCore *core, TextLog T) {
 			strcpy (msg, "T");
 		}
 		ret = rtrcmd (T, msg);
-		r_cons_println (core->cons, ret);
-		free (ret);
+		if (ret) {
+			r_cons_println (core->cons, ret);
+			free (ret);
+		}
 		ret = rtrcmd (T, "Tl");
-		lastmsg = atoi (ret)-1;
-		free (ret);
+		if (ret) {
+			lastmsg = atoi (ret) - 1;
+			free (ret);
+		}
 		if (r_cons_fgets (core->cons, buf, sizeof (buf), 0, NULL) < 0) {
 			goto beach;
 		}
