@@ -9523,7 +9523,7 @@ static int cmd_print(void *data, const char *input) {
 					if (rad) {
 						r_cons_printf (core->cons, "wx+ ");
 					}
-					print_bytes (core, block + i, R_MIN (cols, len - cols), "%02x", 0);
+					print_bytes (core, block + i, R_MIN (cols, len - i), "%02x", 0);
 				}
 			} else if (input[1] == 'd') { // "p8d"
 				int i;

@@ -297,6 +297,25 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=p8x last row length
+FILE=malloc://16
+CMDS=<<EOF
+w hello world
+e hex.cols=4
+p8x 11
+p8x 3
+p8x* 5
+EOF
+EXPECT=<<EOF
+68656c6c
+6f20776f
+726c64
+68656c
+wx+ 68656c6c
+wx+ 6f
+EOF
+RUN
+
 NAME=pi 3
 FILE=malloc://512
 CMDS=<<EOF
