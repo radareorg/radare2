@@ -6691,7 +6691,7 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 				R_VEC_FOREACH (refs, refi) {
 					if (pj) {
 						RAnalFunction *f = r_anal_get_fcn_in (core->anal, refi->addr, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
-						char *dst = r_str_newf ((f? f->name: "0x%08" PFMT64x), refi->addr);
+						char *dst = f? strdup (f->name): r_str_newf ("0x%08" PFMT64x, refi->addr);
 						char *dst2 = NULL;
 						RAnalOp *op = r_core_anal_op (core, refi->addr, R_ARCH_OP_MASK_BASIC);
 						RBinReloc *rel = r_core_getreloc (core, refi->addr, op->size);
