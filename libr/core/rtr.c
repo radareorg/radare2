@@ -1092,8 +1092,9 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		r_socket_close (s);
 		r_strf_var (portstr, 32, "%d", rh->port);
 		if (!r_socket_connect (s, rh->host, portstr, R_SOCKET_PROTO_TCP, 0)) {
+			// the socket is owned by the host table until '=-', keep it (closed) for the next retry
 			R_LOG_ERROR ("Cannot connect to '%s' (%d)", rh->host, rh->port);
-			r_socket_free (s);
+			r_core_return_value (core, R_CMD_RC_FAILURE);
 			return;
 		}
 		r_socket_write (s, (ut8*)cmd, cmd_len);
