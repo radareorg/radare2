@@ -1271,11 +1271,9 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 				break;
 			case R_ARM_MOVW_ABS_NC:
 			case R_ARM_MOVW_PREL_NC:
-				addend = ((insn >> 4) & 0xf000) | (insn & 0x0fff);
-				break;
 			case R_ARM_MOVT_ABS:
 			case R_ARM_MOVT_PREL:
-				addend = (((insn >> 4) & 0xf000) | (insn & 0x0fff)) << 16;
+				addend = (st16)(((insn >> 4) & 0xf000) | (insn & 0x0fff));
 				break;
 			default:
 				addend = (st32)r_read_ble32 (buf, bo->endian);
