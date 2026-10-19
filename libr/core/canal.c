@@ -5987,6 +5987,9 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 		if (xrefs) {
 			RAnalRef *xref;
 			R_VEC_FOREACH (xrefs, xref) {
+				if (r_cons_is_breaked (core->cons)) {
+					break;
+				}
 				RAnalOp *xrefop = r_core_op_anal (core, xref->addr, R_ARCH_OP_MASK_ALL);
 				if (!xrefop) {
 					R_LOG_ERROR ("Cannot analyze opcode at 0x%08" PFMT64x, xref->addr);

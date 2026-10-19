@@ -1006,7 +1006,14 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 
 	// Cache all recursive successors of block here.
 	// These are the candidates that we might have to remove from functions later.
-	HtUP *succs = ht_up_new (NULL, noreturn_successor_free, NULL); // maps block addr (ut64) => NoreturnSuccessor *
+	// the successors are blocks of the functions holding block, size the table once for them
+	ut32 nsuccs = 0;
+	RListIter *fit;
+	RAnalFunction *owner;
+	r_list_foreach (block->fcns, fit, owner) {
+		nsuccs += r_list_length (owner->bbs);
+	}
+	HtUP *succs = ht_up_new_size (nsuccs, NULL, noreturn_successor_free, NULL); // maps block addr (ut64) => NoreturnSuccessor *
 	if (!succs) {
 		return block;
 	}
@@ -1092,12 +1099,18 @@ typedef struct {
 	size_t cur_succ_count;
 } AutomergeCtx;
 
-static bool count_successors_cb(ut64 addr, void *user) {
+// Called on the successors cur_pred inherited from the block that was just merged into it
+static bool automerge_merged_successor_cb(ut64 addr, void *user) {
 	if (addr == UT64_MAX) {
 		return true;
 	}
 	AutomergeCtx *ctx = user;
 	ctx->cur_succ_count++;
+	RAnalBlock *block = ht_up_find (ctx->blocks, addr, NULL);
+	if (block && ht_up_find (ctx->predecessors, (ut64) (size_t)block, NULL)) {
+		// its single predecessor was the merged block, which is freed now, so point to cur_pred instead
+		ht_up_update (ctx->predecessors, (ut64) (size_t)block, ctx->cur_pred);
+	}
 	return true;
 }
 
@@ -1152,15 +1165,15 @@ static bool automerge_get_predecessors_cb(void *user, ut64 k) {
 // i.e. if there are no other blocks that have this block as one of their successors
 R_API void r_anal_block_automerge(RList *blocks) {
 	R_RETURN_IF_FAIL (blocks);
+	const ut32 count = r_list_length (blocks);
 	AutomergeCtx ctx = {
-		.predecessors = ht_up_new0 (),
-		.visited_blocks = ht_up_new0 (),
-		.blocks = ht_up_new0 ()
+		.predecessors = ht_up_new_size (count, NULL, NULL, NULL),
+		.visited_blocks = ht_up_new_size (count, NULL, NULL, NULL),
+		.blocks = ht_up_new_size (count, NULL, NULL, NULL)
 	};
 
 	SetU *relevant_fcns = set_u_new ();
-	RList *fixup_candidates = r_list_new (); // used further down
-	if (!ctx.predecessors || !ctx.visited_blocks || !ctx.blocks || !relevant_fcns || !fixup_candidates) {
+	if (!ctx.predecessors || !ctx.visited_blocks || !ctx.blocks || !relevant_fcns) {
 		goto beach;
 	}
 
@@ -1192,34 +1205,19 @@ R_API void r_anal_block_automerge(RList *blocks) {
 			continue;
 		}
 
-		// We are about to merge block into predecessor
-		// However if there are other blocks that have block as the predecessor,
-		// we would uaf after the merge since block will be freed.
-		RListIter *bit;
-		RAnalBlock *clock;
-		for (bit = it->n; bit && (clock = bit->data, 1); bit = bit->n) {
-			RAnalBlock *fixup_pred = ht_up_find (ctx.predecessors, (ut64) (size_t)clock, NULL);
-			if (fixup_pred == block) {
-				r_list_push (fixup_candidates, clock);
-			}
-		}
-
 		if (r_anal_block_merge (predecessor, block)) { // r_anal_block_merge () does checks like contiguous, to that's fine
 			// block was merged into predecessor, it is now freed!
-			// Update number of successors of the predecessor
+			// Update number of successors of the predecessor and make sure all
+			// blocks that had block as their predecessor now point to predecessor,
+			// or we would uaf. Those are exactly the successors predecessor inherited.
+			ctx.cur_pred = predecessor;
 			ctx.cur_succ_count = 0;
-			r_anal_block_successor_addrs_foreach (predecessor, count_successors_cb, &ctx);
+			r_anal_block_successor_addrs_foreach (predecessor, automerge_merged_successor_cb, &ctx);
 			ht_up_update (ctx.visited_blocks, (ut64) (size_t)predecessor, (void *)ctx.cur_succ_count);
-			r_list_foreach (fixup_candidates, bit, clock) {
-				// Make sure all previous pointers to block now go to predecessor
-				ht_up_update (ctx.predecessors, (ut64) (size_t)clock, predecessor);
-			}
 			// Remove it from the list
 			r_list_split_iter (blocks, it);
 			free (it);
 		}
-
-		r_list_purge (fixup_candidates);
 	}
 
 beach:
@@ -1227,5 +1225,4 @@ beach:
 	ht_up_free (ctx.visited_blocks);
 	ht_up_free (ctx.blocks);
 	set_u_free (relevant_fcns);
-	r_list_free (fixup_candidates);
 }
