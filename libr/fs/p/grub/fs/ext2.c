@@ -616,11 +616,8 @@ grub_ext2_read_symlink(grub_fshelp_node_t node) {
 		}
 	}
 
-	grub_uint32_t size = grub_le_to_cpu32 (diro->inode.size);
-	if (size > EXT2_BLOCK_SIZE (diro->data)) {
-		grub_error (GRUB_ERR_BAD_FS, "symlink too long");
-		return 0;
-	}
+	/* Clamp corrupt sizes to one block and keep whatever part of the target can be read.  */
+	const grub_uint32_t size = R_MIN (grub_le_to_cpu32 (diro->inode.size), EXT2_BLOCK_SIZE (diro->data));
 	symlink = grub_malloc (size + 1);
 	if (!symlink) {
 		return 0;

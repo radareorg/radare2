@@ -32,6 +32,7 @@
 #define GRUB_MINIX_LOG2_BSIZE 1
 #define GRUB_MINIX_ROOT_INODE 1
 #define GRUB_MINIX_MAX_SYMLNK_CNT 8
+#define GRUB_MINIX_MAX_SYMLNK_LEN 4096
 #define GRUB_MINIX_SBLOCK 2
 
 #define GRUB_MINIX_IFDIR 0040000U
@@ -267,20 +268,19 @@ grub_minix_read_inode(struct grub_minix_data *data, int ino) {
 number of the directory the symlink is relative to.  */
 static grub_err_t
 grub_minix_lookup_symlink(struct grub_minix_data *data, int ino) {
-#ifndef _MSC_VER
-	char symlink[GRUB_MINIX_INODE_SIZE (data) + 1];
-#else
-	char *symlink = grub_malloc (GRUB_MINIX_INODE_SIZE (data) + 1);
-#endif
 	if (++data->linknest > GRUB_MINIX_MAX_SYMLNK_CNT) {
 		return grub_error (GRUB_ERR_SYMLINK_LOOP, "too deep nesting of symlinks");
 	}
-
-	if (grub_minix_read_file (data, 0, 0, 0, GRUB_MINIX_INODE_SIZE (data), symlink) < 0) {
+	/* Clamp corrupt sizes and keep whatever part of the target can be read.  */
+	const grub_size_t size = R_MIN (GRUB_MINIX_INODE_SIZE (data), GRUB_MINIX_MAX_SYMLNK_LEN);
+	char *symlink = grub_zalloc (size + 1);
+	if (!symlink) {
 		return grub_errno;
 	}
-
-	symlink[GRUB_MINIX_INODE_SIZE (data)] = '\0';
+	if (grub_minix_read_file (data, 0, 0, 0, size, symlink) < 0) {
+		grub_free (symlink);
+		return grub_errno;
+	}
 
 	/* The symlink is an absolute path, go back to the root inode.  */
 	if (symlink[0] == '/') {
@@ -288,15 +288,13 @@ grub_minix_lookup_symlink(struct grub_minix_data *data, int ino) {
 	}
 
 	/* Now load in the old inode.  */
-	if (grub_minix_read_inode (data, ino)) {
-		return grub_errno;
+	if (!grub_minix_read_inode (data, ino)) {
+		grub_minix_find_file (data, symlink);
+		if (grub_errno) {
+			grub_error (grub_errno, "cannot follow symlink `%s'", symlink);
+		}
 	}
-
-	grub_minix_find_file (data, symlink);
-	if (grub_errno) {
-		grub_error (grub_errno, "cannot follow symlink `%s'", symlink);
-	}
-
+	grub_free (symlink);
 	return grub_errno;
 }
 

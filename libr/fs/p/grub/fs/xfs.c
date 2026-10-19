@@ -27,6 +27,7 @@
 #include <r_types.h>
 
 #define XFS_INODE_EXTENTS 9
+#define GRUB_XFS_MAX_SYMLNK_LEN 4096
 
 #define XFS_INODE_FORMAT_INO 1
 #define XFS_INODE_FORMAT_EXT 2
@@ -315,11 +316,12 @@ grub_xfs_read_file(grub_fshelp_node_t node,
 
 static char *
 grub_xfs_read_symlink(grub_fshelp_node_t node) {
-	int size = grub_be_to_cpu64 (node->inode.size);
+	/* Clamp corrupt sizes and keep whatever part of the target can be read.  */
+	const grub_size_t size = R_MIN (grub_be_to_cpu64 (node->inode.size), GRUB_XFS_MAX_SYMLNK_LEN);
 
 	switch (node->inode.format) {
 	case XFS_INODE_FORMAT_INO:
-		return grub_strndup (node->inode.data.raw, size);
+		return grub_strndup (node->inode.data.raw, R_MIN (size, sizeof (node->inode.data.raw)));
 
 	case XFS_INODE_FORMAT_EXT:
 		{
@@ -332,11 +334,11 @@ grub_xfs_read_symlink(grub_fshelp_node_t node) {
 			}
 
 			numread = grub_xfs_read_file (node, 0, 0, 0, 0, size, symlink);
-			if (numread != size) {
+			if (numread < 0) {
 				grub_free (symlink);
 				return 0;
 			}
-			symlink[size] = '\0';
+			symlink[numread] = '\0';
 			return symlink;
 		}
 	}

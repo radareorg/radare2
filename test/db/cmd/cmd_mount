@@ -949,3 +949,27 @@ EXPECT_ERR=<<EOF
 ERROR: Cannot open /root/link
 EOF
 RUN
+
+NAME=mount xfs clamps corrupt symlink sizes
+FILE=bins/fs/xfs-symlink-size.img
+CMDS=<<EOF
+m /mnt xfs 0
+md /mnt
+mc /mnt/link
+e io.cache=true
+wx 01 @ 0x1205
+wx 0000000000000100 @ 0x1238
+wow 2e2f @ 0x1264!156
+mc /mnt/link
+EOF
+EXPECT=<<EOF
+d .
+d ..
+f file
+f link
+hello from xfs
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot open /mnt/link
+EOF
+RUN

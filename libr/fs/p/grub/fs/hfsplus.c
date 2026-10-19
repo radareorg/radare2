@@ -33,6 +33,7 @@
 #define GRUB_HFSPLUS_MAGIC 0x482B
 #define GRUB_HFSPLUSX_MAGIC 0x4858
 #define GRUB_HFSPLUS_SBLOCK 2
+#define GRUB_HFSPLUS_MAX_SYMLNK_LEN 4096
 
 /* A HFS+ extent.  */
 R_PACKED(
@@ -577,20 +578,18 @@ static int grub_hfsplus_cmp_extkey(struct grub_hfsplus_key *keya,
 
 static char *
 grub_hfsplus_read_symlink(grub_fshelp_node_t node) {
-	char *symlink;
-	grub_ssize_t numread;
-
-	symlink = grub_malloc (node->size + 1);
+	/* Clamp corrupt sizes and keep whatever part of the target can be read.  */
+	const grub_size_t size = R_MIN (node->size, GRUB_HFSPLUS_MAX_SYMLNK_LEN);
+	char *symlink = grub_malloc (size + 1);
 	if (!symlink) {
 		return 0;
 	}
-
-	numread = grub_hfsplus_read_file (node, 0, 0, 0, 0, node->size, symlink);
-	if (numread != (grub_ssize_t)node->size) {
+	grub_ssize_t numread = grub_hfsplus_read_file (node, 0, 0, 0, 0, size, symlink);
+	if (numread < 0) {
 		grub_free (symlink);
 		return 0;
 	}
-	symlink[node->size] = '\0';
+	symlink[numread] = '\0';
 
 	return symlink;
 }
