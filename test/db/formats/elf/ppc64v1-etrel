@@ -156,7 +156,7 @@ FILE=bins/elf/random_39855/random_39855.oo
 ARGS=-e bin.relocs.apply=true
 CMDS=ir~0x000101c4
 EXPECT=<<EOF
-0x080101c4 0x000101c4 ADD_32 261   .text + 0x08000000
+0x080101c4 0x000101c4 ADD_32 261   .text
 EOF
 RUN
 
