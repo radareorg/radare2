@@ -1104,8 +1104,6 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 	r_cons_break_push (core->cons, NULL, NULL);
 	r_list_foreach (mac->macros, iter, m) {
 		if (!strcmp (str, m->name)) {
-			char *ptr = m->code;
-			char *end = strchr (ptr, '\n');
 			if (m->nargs != 0 && nargs != m->nargs) {
 				R_LOG_ERROR ("Macro '%s' expects %d args, not %d", m->name, m->nargs, nargs);
 				mac->macro_level--;
@@ -1113,6 +1111,16 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 				r_cons_break_pop (core->cons);
 				return false;
 			}
+			// the body can remove or redefine this same macro, so walk a private copy of its code
+			char *code = strdup (m->code);
+			if (!code) {
+				mac->macro_level--;
+				free (str);
+				r_cons_break_pop (core->cons);
+				return false;
+			}
+			char *ptr = code;
+			char *end = strchr (ptr, '\n');
 			mac->brk = 0;
 			do {
 				if (end) {
@@ -1120,9 +1128,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 				}
 				if (r_cons_is_breaked (core->cons)) {
 					R_LOG_INFO ("Interrupted at (%s)", ptr);
-					if (end) {
-						*end = '\n';
-					}
+					free (code);
 					free (str);
 					r_cons_break_pop (core->cons);
 					return false;
@@ -1132,10 +1138,8 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 				ptr2 = r_cmd_macro_label_process (mac, &(labels[0]), &labels_n, ptr);
 				if (!ptr2) {
 					R_LOG_ERROR ("Oops. invalid label name");
-					if (end) {
-						*end = '\n';
-					}
 					mac->macro_level--;
+					free (code);
 					free (str);
 					goto out_clean;
 				} else if (ptr != ptr2) {
@@ -1154,6 +1158,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 					// quit, exits the macro. like a break
 					Gvalue = mac->num->value;
 					if (r < 0) {
+						free (code);
 						free (str);
 						r_cons_break_pop (core->cons);
 						return r;
@@ -1164,6 +1169,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 					ptr = end + 1;
 				} else {
 					mac->macro_level--;
+					free (code);
 					free (str);
 					goto out_clean;
 				}
@@ -1171,11 +1177,14 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 				/* Fetch next command */
 				end = strchr (ptr, '\n');
 			} while (!mac->brk);
+			free (code);
 			if (mac->brk) {
 				mac->macro_level--;
 				free (str);
 				goto out_clean;
 			}
+			// the list node may have been deleted by the body, do not iterate from it
+			break;
 		}
 	}
 	R_LOG_ERROR ("No macro named '%s'", str);
