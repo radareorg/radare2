@@ -54,7 +54,7 @@ static REsilOp *esil_ops_find(HtPP *ops, RStrs key) {
 	for (i = 0; i < bucket->count; i++) {
 		HtPPKv *kv = &bucket->arr[i];
 		const RStrs *name = kv->key;
-		if (kv->key_len == (ut32)len && !memcmp (key.a, name->a, len)) {
+		if (kv->key_len == len && !memcmp (key.a, name->a, len)) {
 			return kv->value;
 		}
 	}
