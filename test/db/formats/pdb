@@ -298,7 +298,7 @@ FILE=bins/pdb/truncated-type-records.pdb
 TIMEOUT=10
 CMDS=<<EOF
 i~^bintype
-idpi bins/pdb/truncated-type-records.pdb~struct
+idpi bins/pdb/truncated-type-records.pdb
 idpij bins/pdb/truncated-type-records.pdb
 o--
 ?e closed
@@ -306,7 +306,9 @@ EOF
 EXPECT=<<EOF
 bintype  pdb
 struct S { // size 0x4
-{"types":[{"type":"structure","name":"S","size":4,"members":[{"member_type":"notype_t","member_name":"","offset":0}]}]}
+  int32_t a; // offset +0x0
+};
+{"types":[{"type":"structure","name":"S","size":4,"members":[{"member_type":"int32_t","member_name":"a","offset":0}]}]}
 closed
 EOF
 RUN

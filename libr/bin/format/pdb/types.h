@@ -44,10 +44,12 @@ typedef struct R_STREAM_FILE_{
 struct stpi_stream_t;
 // XXX awful names
 typedef void (*free_func)(struct stpi_stream_t *, void *);
-typedef void (*get_value_name)(struct stpi_stream_t *, void *type, char **res_name);
+typedef void (*get_value_name)(struct stpi_stream_t *, void *type, R_OUT R_UNOWNED char **res_name);
+// unlike get_value_name the printed type name is allocated
+typedef void (*get_print_type_)(struct stpi_stream_t *, void *type, R_OUT R_OWNED char **res_name);
 typedef void (*get_value)(struct stpi_stream_t *, void *type, int *res);
 typedef void (*get_value_name_len)(struct stpi_stream_t *, void *type, int *res);
-typedef void (*get_member_list)(struct stpi_stream_t *, void *type, RList **l);
+typedef void (*get_member_list)(struct stpi_stream_t *, void *type, R_OUT R_UNOWNED RList **l);
 typedef int (*get_arg_type_)(struct stpi_stream_t *, void *type, void **ret_type);
 typedef int (*get_val_type)(struct stpi_stream_t *, void *type, void **ret_type);
 
@@ -65,7 +67,6 @@ typedef get_arg_type_ get_index_;
 typedef get_arg_type_ get_mlist_;
 typedef get_arg_type_ get_modified_type_;
 typedef get_value get_index_val;
-typedef get_value_name get_print_type_;
 
 // start of refactoring the simple type to mode and kind
 typedef enum {
@@ -697,58 +698,15 @@ typedef struct {
 
 R_PACKED(
 typedef struct {
-	char *name;
+	R_OWNED char *name;
 	ut32 size;
 }) SCString;
 
-R_PACKED(
-typedef struct {
-	SCString name;
-}) SNoVal;
-
-R_PACKED(
-typedef struct {
-	char value;
-	SCString name;
-}) SVal_LF_CHAR;
-
-R_PACKED(
-typedef struct {
-	st16 value;
-	SCString name;
-}) SVal_LF_SHORT;
-
-R_PACKED(
-typedef struct {
-	ut16 value;
-	SCString name;
-}) SVal_LF_USHORT;
-
-typedef struct {
-	st32 value;
-	SCString name;
-} SVal_LF_LONG;
-
-typedef struct {
-	ut32 value;
-	SCString name;
-} SVal_LF_ULONG;
-
+// numeric leaf (inline below LF_CHAR or LF_CHAR..LF_UQUADWORD) and the name that follows it
 typedef struct {
 	st64 value;
 	SCString name;
-} SVal_LF_QUADWORD;
-
-typedef struct {
-	ut64 value;
-	SCString name;
-} SVal_LF_UQUADWORD;
-
-R_PACKED(
-typedef struct {
-	ut16 value_or_type;
-	void *name_or_val;
-}) SVal;
+} SVal;
 
 R_PACKED(
 typedef struct {

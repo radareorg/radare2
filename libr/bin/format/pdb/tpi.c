@@ -679,109 +679,12 @@ static STypeInfo parse_simple_type(ut32 idx) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void get_sval_name_len(SVal *val, int *res_len) {
-	if (!val->name_or_val) {
-		*res_len = 0;
-		return;
-	}
-	if (val->value_or_type < eLF_CHAR) {
-		SCString *scstr = (SCString *)val->name_or_val;
-		*res_len = scstr->size;
-	} else {
-		switch (val->value_or_type) {
-		case eLF_ULONG:
-			{
-				SVal_LF_ULONG *lf_ulong;
-				lf_ulong = (SVal_LF_ULONG *)val->name_or_val;
-				*res_len = lf_ulong->name.size;
-				break;
-			}
-		case eLF_USHORT:
-			{
-				SVal_LF_USHORT *lf_ushort;
-				lf_ushort = (SVal_LF_USHORT *)val->name_or_val;
-				*res_len = lf_ushort->name.size;
-				break;
-			}
-		default:
-			*res_len = 0;
-			printf ("get_sval_name_len: Skipping unsupported type (%d)\n", val->value_or_type);
-			break;
-		}
-	}
+static void get_sval_name_len(const SVal *val, R_OUT int *res_len) {
+	*res_len = val->name.size;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-static void get_sval_name(STpiStream *ss, SVal *val, char **name) {
-	if (!val->name_or_val) {
-		*name = NULL;
-		return;
-	}
-	if (val->value_or_type < eLF_CHAR) {
-		SCString *scstr;
-		scstr = (SCString *)val->name_or_val;
-		if (scstr) {
-			*name = scstr->name;
-		} else {
-			*name = NULL;
-		}
-	} else {
-		switch (val->value_or_type) {
-		case eLF_UQUADWORD:
-			{
-				SVal_LF_UQUADWORD *lf_uquadword;
-				lf_uquadword = (SVal_LF_UQUADWORD *)val->name_or_val;
-				*name = lf_uquadword->name.name;
-				break;
-			}
-		case eLF_QUADWORD:
-			{
-				SVal_LF_QUADWORD *lf_quadword;
-				lf_quadword = (SVal_LF_QUADWORD *)val->name_or_val;
-				*name = lf_quadword->name.name;
-				break;
-			}
-		case eLF_CHAR:
-			{
-				SVal_LF_CHAR *lf_char;
-				lf_char = (SVal_LF_CHAR *)val->name_or_val;
-				*name = lf_char->name.name;
-				break;
-			}
-		case eLF_ULONG:
-			{
-				SVal_LF_ULONG *lf_ulong;
-				lf_ulong = (SVal_LF_ULONG *)val->name_or_val;
-				*name = lf_ulong->name.name;
-				break;
-			}
-		case eLF_LONG:
-			{
-				SVal_LF_LONG *lf_long;
-				lf_long = (SVal_LF_LONG *)val->name_or_val;
-				*name = lf_long->name.name;
-				break;
-			}
-		case eLF_USHORT:
-			{
-				SVal_LF_USHORT *lf_ushort;
-				lf_ushort = (SVal_LF_USHORT *)val->name_or_val;
-				*name = lf_ushort->name.name;
-				break;
-			}
-		case eLF_SHORT:
-			{
-				SVal_LF_SHORT *lf_short;
-				lf_short = (SVal_LF_SHORT *)val->name_or_val;
-				*name = lf_short->name.name;
-				break;
-			}
-		default:
-			*name = NULL;
-			R_LOG_ERROR ("Skipping unsupported type (%d)", val->value_or_type);
-			break;
-		}
-	}
+static void get_sval_name(STpiStream *ss, const SVal *val, R_OUT R_UNOWNED char **name) {
+	*name = val->name.name;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1181,71 +1084,8 @@ static void get_enum_members(STpiStream *ss, void *type, RList **l) {
 	}
 }
 
-static void get_sval_val(SVal *val, int *res) {
-	if (val->value_or_type < eLF_CHAR) {
-		*res = val->value_or_type;
-		return;
-	}
-	if (!val->name_or_val) {
-		*res = 0;
-		return;
-	}
-	switch (val->value_or_type) {
-	case eLF_UQUADWORD:
-		{
-			SVal_LF_UQUADWORD *lf_uqword;
-			lf_uqword = (SVal_LF_UQUADWORD *)val->name_or_val;
-			*res = lf_uqword->value;
-			break;
-		}
-	case eLF_QUADWORD:
-		{
-			SVal_LF_QUADWORD *lf_qword;
-			lf_qword = (SVal_LF_QUADWORD *)val->name_or_val;
-			*res = lf_qword->value;
-			break;
-		}
-	case eLF_ULONG:
-		{
-			SVal_LF_ULONG *lf_ulong;
-			lf_ulong = (SVal_LF_ULONG *)val->name_or_val;
-			*res = lf_ulong->value;
-			break;
-		}
-	case eLF_LONG:
-		{
-			SVal_LF_LONG *lf_long;
-			lf_long = (SVal_LF_LONG *)val->name_or_val;
-			*res = lf_long->value;
-			break;
-		}
-	case eLF_USHORT:
-		{
-			SVal_LF_USHORT *lf_ushort;
-			lf_ushort = (SVal_LF_USHORT *)val->name_or_val;
-			*res = lf_ushort->value;
-			break;
-		}
-	case eLF_SHORT:
-		{
-			SVal_LF_SHORT *lf_short;
-			lf_short = (SVal_LF_SHORT *)val->name_or_val;
-			*res = lf_short->value;
-			break;
-		}
-	case eLF_CHAR:
-		{
-			SVal_LF_CHAR *lf_char;
-			lf_char = (SVal_LF_CHAR *)val->name_or_val;
-			*res = lf_char->value;
-			break;
-		}
-
-	default:
-		*res = 0;
-		R_LOG_ERROR ("Skipping unsupported type (%d)", val->value_or_type);
-		break;
-	}
+static void get_sval_val(const SVal *val, R_OUT int *res) {
+	*res = (int)val->value;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1419,77 +1259,7 @@ static void get_union_val(STpiStream *ss, void *type, int *res) {
 }
 
 static void free_sval(SVal *val) {
-	if (!val || !val->name_or_val) {
-		return;
-	}
-	if (val->value_or_type < eLF_CHAR) {
-		SCString *scstr;
-		scstr = (SCString *)val->name_or_val;
-		R_FREE (scstr->name);
-		R_FREE (val->name_or_val);
-		return;
-	}
-	switch (val->value_or_type) {
-	case eLF_ULONG:
-		{
-			SVal_LF_ULONG *lf_ulong;
-			lf_ulong = (SVal_LF_ULONG *)val->name_or_val;
-			R_FREE (lf_ulong->name.name);
-			R_FREE (val->name_or_val);
-			break;
-		}
-	case eLF_LONG:
-		{
-			SVal_LF_LONG *lf_long;
-			lf_long = (SVal_LF_LONG *)val->name_or_val;
-			R_FREE (lf_long->name.name);
-			R_FREE (val->name_or_val);
-			break;
-		}
-	case eLF_SHORT:
-		{
-			SVal_LF_SHORT *lf_short;
-			lf_short = (SVal_LF_SHORT *)val->name_or_val;
-			R_FREE (lf_short->name.name);
-			R_FREE (val->name_or_val);
-			break;
-		}
-	case eLF_USHORT:
-		{
-			SVal_LF_USHORT *lf_ushort;
-			lf_ushort = (SVal_LF_USHORT *)val->name_or_val;
-			R_FREE (lf_ushort->name.name);
-			R_FREE (val->name_or_val);
-			break;
-		}
-	case eLF_CHAR:
-		{
-			SVal_LF_CHAR *lf_char;
-			lf_char = (SVal_LF_CHAR *)val->name_or_val;
-			R_FREE (lf_char->name.name);
-			R_FREE (val->name_or_val);
-			break;
-		}
-	case eLF_UQUADWORD:
-		{
-			SVal_LF_UQUADWORD *lf_uqword;
-			lf_uqword = (SVal_LF_UQUADWORD *)val->name_or_val;
-			R_FREE (lf_uqword->name.name);
-			R_FREE (val->name_or_val);
-			break;
-		}
-	case eLF_QUADWORD:
-		{
-			SVal_LF_QUADWORD *lf_qword;
-			lf_qword = (SVal_LF_QUADWORD *)val->name_or_val;
-			R_FREE (lf_qword->name.name);
-			R_FREE (val->name_or_val);
-			break;
-		}
-	default:
-		printf ("free_sval()::not supproted type\n");
-		break;
-	}
+	R_FREE (val->name.name);
 }
 
 static void free_lf_enumerate(STpiStream *ss, void *type_info) {
@@ -1858,7 +1628,7 @@ static void get_onemethod_print_type(STpiStream *ss, void *type, char **name) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void init_scstring(SCString *cstr, unsigned int size, char *name) {
+void init_scstring(R_OUT SCString *cstr, unsigned int size, const char *name) {
 	cstr->size = size;
 	cstr->name = strdup (name);
 }
@@ -1868,7 +1638,7 @@ void deinit_scstring(SCString *cstr) {
 	free (cstr->name);
 }
 
-int parse_sctring(SCString *sctr, ut8 *leaf_data, ut32 *read_bytes, ut32 len) {
+int parse_sctring(R_OUT SCString *sctr, ut8 *leaf_data, ut32 *read_bytes, ut32 len) {
 	ut32 c = 0;
 	sctr->name = NULL;
 	sctr->size = 0;
@@ -1882,145 +1652,48 @@ int parse_sctring(SCString *sctr, ut8 *leaf_data, ut32 *read_bytes, ut32 len) {
 		c++;
 	}
 	*read_bytes += (c + 1);
-	init_scstring (sctr, c + 1, (char *)leaf_data);
+	init_scstring (sctr, c + 1, (const char *)leaf_data);
 	return 1;
 }
 
-static int parse_sval(SVal *val, ut8 *leaf_data, ut32 *read_bytes, ut32 len) {
-	val->name_or_val = 0;
+static int parse_sval(R_OUT SVal *val, ut8 *leaf_data, ut32 *read_bytes, ut32 len) {
 	if (!can_read (*read_bytes, 2, len)) {
 		return 0;
 	}
-	val->value_or_type = r_read_le16 (leaf_data);
+	const ut16 leaf = r_read_le16 (leaf_data);
 	leaf_data += 2;
 	*read_bytes += 2;
-	if (val->value_or_type < eLF_CHAR) {
-		SCString *sctr = R_NEW0 (SCString);
-		parse_sctring (sctr, leaf_data, read_bytes, len);
-		val->name_or_val = sctr;
-	} else {
-		switch (val->value_or_type) {
-		case eLF_UQUADWORD:
-			{
-				if (!can_read (*read_bytes, 8, len)) {
-					return 0;
-				}
-				SVal_LF_UQUADWORD lf_uqword;
-				lf_uqword.value = r_read_le64 (leaf_data);
-				leaf_data += 8;
-				*read_bytes += 8;
-				parse_sctring (&lf_uqword.name, leaf_data, read_bytes, len);
-				val->name_or_val = R_NEW0 (SVal_LF_UQUADWORD);
-				memcpy (val->name_or_val, &lf_uqword, sizeof (SVal_LF_UQUADWORD));
-				break;
-			}
-		case eLF_QUADWORD:
-			{
-				if (!can_read (*read_bytes, 8, len)) {
-					return 0;
-				}
-				SVal_LF_QUADWORD lf_qword;
-				lf_qword.value = (st64)r_read_le64 (leaf_data);
-				leaf_data += 8;
-				*read_bytes += 8;
-				parse_sctring (&lf_qword.name, leaf_data, read_bytes, len);
-				val->name_or_val = malloc (sizeof (SVal_LF_QUADWORD));
-				if (!val->name_or_val) {
-					break;
-				}
-				memcpy (val->name_or_val, &lf_qword, sizeof (SVal_LF_QUADWORD));
-				break;
-			}
-		case eLF_CHAR:
-			{
-				if (!can_read (*read_bytes, 1, len)) {
-					return 0;
-				}
-				SVal_LF_CHAR lf_char;
-				lf_char.value = (st8)leaf_data[0];
-				leaf_data += 1;
-				*read_bytes += 1;
-				parse_sctring (&lf_char.name, leaf_data, read_bytes, len);
-				val->name_or_val = malloc (sizeof (SVal_LF_CHAR));
-				if (!val->name_or_val) {
-					break;
-				}
-				memcpy (val->name_or_val, &lf_char, sizeof (SVal_LF_CHAR));
-				break;
-			}
-		case eLF_LONG:
-			{
-				if (!can_read (*read_bytes, 4, len)) {
-					return 0;
-				}
-				SVal_LF_LONG lf_long;
-				lf_long.value = (st32)r_read_le32 (leaf_data);
-				leaf_data += 4;
-				*read_bytes += 4;
-				parse_sctring (&lf_long.name, leaf_data, read_bytes, len);
-				val->name_or_val = malloc (sizeof (SVal_LF_LONG));
-				if (!val->name_or_val) {
-					break;
-				}
-				memcpy (val->name_or_val, &lf_long, sizeof (SVal_LF_LONG));
-				break;
-			}
-		case eLF_ULONG:
-			{
-				if (!can_read (*read_bytes, 4, len)) {
-					return 0;
-				}
-				SVal_LF_ULONG lf_ulong;
-				lf_ulong.value = r_read_le32 (leaf_data);
-				leaf_data += 4;
-				*read_bytes += 4;
-				parse_sctring (&lf_ulong.name, leaf_data, read_bytes, len);
-				val->name_or_val = malloc (sizeof (SVal_LF_ULONG));
-				if (!val->name_or_val) {
-					break;
-				}
-				memcpy (val->name_or_val, &lf_ulong, sizeof (SVal_LF_ULONG));
-				break;
-			}
-		case eLF_SHORT:
-			{
-				if (!can_read (*read_bytes, 2, len)) {
-					return 0;
-				}
-				SVal_LF_SHORT lf_short;
-				lf_short.value = (st16)r_read_le16 (leaf_data);
-				leaf_data += 2;
-				*read_bytes += 2;
-				parse_sctring (&lf_short.name, leaf_data, read_bytes, len);
-				val->name_or_val = malloc (sizeof (SVal_LF_SHORT));
-				if (!val->name_or_val) {
-					break;
-				}
-				memcpy (val->name_or_val, &lf_short, sizeof (SVal_LF_SHORT));
-				break;
-			}
-		case eLF_USHORT:
-			{
-				if (!can_read (*read_bytes, 2, len)) {
-					return 0;
-				}
-				SVal_LF_USHORT lf_ushort;
-				lf_ushort.value = r_read_le16 (leaf_data);
-				leaf_data += 2;
-				*read_bytes += 2;
-				parse_sctring (&lf_ushort.name, leaf_data, read_bytes, len);
-				val->name_or_val = malloc (sizeof (SVal_LF_USHORT));
-				if (!val->name_or_val) {
-					break;
-				}
-				memcpy (val->name_or_val, &lf_ushort, sizeof (SVal_LF_USHORT));
-				break;
-			}
-		default:
-			R_LOG_WARN ("parse_sval: Skipping unsupported type (%d)", val->value_or_type);
+	int size = 0;
+	switch (leaf) {
+	case eLF_CHAR: size = 1; break;
+	case eLF_SHORT: case eLF_USHORT: size = 2; break;
+	case eLF_LONG: case eLF_ULONG: size = 4; break;
+	case eLF_QUADWORD: case eLF_UQUADWORD: size = 8; break;
+	default:
+		if (leaf >= eLF_CHAR) {
+			R_LOG_WARN ("parse_sval: Skipping unsupported type (%d)", leaf);
 			return 0;
 		}
+		// values below LF_CHAR are stored inline in the leaf
+		val->value = leaf;
+		break;
 	}
+	if (size) {
+		if (!can_read (*read_bytes, size, len)) {
+			return 0;
+		}
+		switch (leaf) {
+		case eLF_CHAR: val->value = (st8)leaf_data[0]; break;
+		case eLF_SHORT: val->value = (st16)r_read_le16 (leaf_data); break;
+		case eLF_USHORT: val->value = r_read_le16 (leaf_data); break;
+		case eLF_LONG: val->value = (st32)r_read_le32 (leaf_data); break;
+		case eLF_ULONG: val->value = r_read_le32 (leaf_data); break;
+		default: val->value = (st64)r_read_le64 (leaf_data); break;
+		}
+		leaf_data += size;
+		*read_bytes += size;
+	}
+	parse_sctring (&val->name, leaf_data, read_bytes, len);
 	return 1;
 }
 
@@ -2029,7 +1702,6 @@ static int parse_lf_enumerate(SLF_ENUMERATE *lf_enumerate, const ut8 *leaf_data,
 	if (!can_read (*read_bytes, 2, len)) {
 		return 0;
 	}
-	lf_enumerate->enum_value.name_or_val = 0;
 	lf_enumerate->fldattr.fldattr = r_read_le16 (leaf_data);
 	leaf_data += 2;
 	*read_bytes += 2;
@@ -2049,7 +1721,6 @@ static int parse_lf_nesttype(SLF_NESTTYPE *lf_nesttype, const ut8 *leaf_data, ut
 	if (!can_read (*read_bytes, fixed_size, len)) {
 		return 0;
 	}
-	lf_nesttype->name.name = 0;
 	lf_nesttype->pad = r_read_le16 (leaf_data);
 	lf_nesttype->index = r_read_le32 (leaf_data + 2);
 	leaf_data += fixed_size;
@@ -2064,7 +1735,6 @@ static int parse_lf_method(SLF_METHOD *lf_method, const ut8 *leaf_data, ut32 *re
 	if (!can_read (*read_bytes, fixed_size, len)) {
 		return 0;
 	}
-	lf_method->name.name = 0;
 	lf_method->count = r_read_le16 (leaf_data);
 	lf_method->mlist = r_read_le32 (leaf_data + 2);
 	leaf_data += fixed_size;
@@ -2085,7 +1755,6 @@ static int parse_lf_member(SLF_MEMBER *lf_member, const ut8 *leaf_data, ut32 *re
 	if (!can_read (*read_bytes, fixed_size, len)) {
 		return 0;
 	}
-	lf_member->offset.name_or_val = 0;
 	lf_member->fldattr.fldattr = r_read_le16 (leaf_data);
 	lf_member->index = r_read_le32 (leaf_data + 2);
 	leaf_data += fixed_size;
@@ -2106,8 +1775,6 @@ static int parse_lf_onemethod(SLF_ONEMETHOD *lf_onemethod, const ut8 *leaf_data,
 	if (!can_read (*read_bytes, fixed_size, len)) {
 		return 0;
 	}
-	lf_onemethod->val.str_data.name = 0;
-	lf_onemethod->val.val = 0;
 	lf_onemethod->fldattr.fldattr = r_read_le16 (leaf_data);
 	lf_onemethod->index = r_read_le32 (leaf_data + 2);
 	leaf_data += fixed_size;
@@ -2350,7 +2017,6 @@ static int parse_lf_enum(SLF_ENUM *lf_enum, const ut8 *leaf_data, ut32 *read_byt
 	if (!can_read (*read_bytes, fixed_size, len)) {
 		return 0;
 	}
-	lf_enum->name.name = 0;
 	lf_enum->count = r_read_le16 (leaf_data);
 	lf_enum->prop.cv_property = r_read_le16 (leaf_data + 2);
 	lf_enum->utype = r_read_le32 (leaf_data + 4);
@@ -2373,7 +2039,6 @@ static int parse_lf_class(SLF_CLASS *lf_class, const ut8 *leaf_data, ut32 *read_
 	if (!can_read (*read_bytes, fixed_size, len)) {
 		return 0;
 	}
-	lf_class->size.name_or_val = 0;
 	lf_class->count = r_read_le16 (leaf_data);
 	lf_class->prop.cv_property = r_read_le16 (leaf_data + 2);
 	lf_class->field_list = r_read_le32 (leaf_data + 4);
@@ -2397,7 +2062,6 @@ static int parse_lf_structure(SLF_STRUCTURE *lf_structure, const ut8 *leaf_data,
 	if (!can_read (*read_bytes, fixed_size, len)) {
 		return 0;
 	}
-	lf_structure->size.name_or_val = 0;
 	lf_structure->count = r_read_le16 (leaf_data);
 	lf_structure->prop.cv_property = r_read_le16 (leaf_data + 2);
 	lf_structure->field_list = r_read_le32 (leaf_data + 4);
@@ -2438,7 +2102,6 @@ static int parse_lf_array(SLF_ARRAY *lf_array, const ut8 *leaf_data, ut32 *read_
 	if (!can_read (*read_bytes, fixed_size, len)) {
 		return 0;
 	}
-	lf_array->size.name_or_val = 0;
 	lf_array->element_type = r_read_le32 (leaf_data);
 	lf_array->index_type = r_read_le32 (leaf_data + 4);
 	leaf_data += fixed_size;
@@ -2475,7 +2138,6 @@ static int parse_lf_arglist(SLF_ARGLIST *lf_arglist, const ut8 *leaf_data, ut32 
 	if (!can_read (*read_bytes, 4, len)) {
 		return 0;
 	}
-	lf_arglist->arg_type = 0;
 	lf_arglist->count = r_read_le32 (leaf_data);
 	leaf_data += 4;
 	*read_bytes += 4;
@@ -2546,7 +2208,6 @@ static int parse_lf_union(SLF_UNION *lf_union, const ut8 *leaf_data, ut32 *read_
 	if (!can_read (*read_bytes, fixed_size, len)) {
 		return 0;
 	}
-	lf_union->size.name_or_val = 0;
 	lf_union->count = r_read_le16 (leaf_data);
 	lf_union->prop.cv_property = r_read_le16 (leaf_data + 2);
 	lf_union->field_list = r_read_le32 (leaf_data + 4);
@@ -2585,7 +2246,6 @@ static int parse_lf_vtshape(SLF_VTSHAPE *lf_vtshape, const ut8 *leaf_data, ut32 
 	if (!can_read (*read_bytes, 2, len)) {
 		return 0;
 	}
-	lf_vtshape->vt_descriptors = 0;
 	lf_vtshape->count = r_read_le16 (leaf_data);
 	leaf_data += 2;
 	*read_bytes += 2;
@@ -2607,6 +2267,7 @@ static int parse_lf_vtshape(SLF_VTSHAPE *lf_vtshape, const ut8 *leaf_data, ut32 
 	return *read_bytes - start;
 }
 
+// leaf structs start zeroed: a truncated record keeps empty fields its destructor can free
 #define PARSE_LF(lf_type, lf_func) \
 	{ \
 		lf_type *lf = R_NEW0 (lf_type); \

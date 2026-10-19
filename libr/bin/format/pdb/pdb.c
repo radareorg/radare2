@@ -951,29 +951,42 @@ static char *get_enum_base_type_name(STpiStream *ss, STypeInfo *type_info) {
 	return base_type_name;
 }
 
+// members without a name come from truncated records
+static bool member_info(STpiStream *ss, STypeInfo *m, R_OUT R_UNOWNED char **name, R_OUT int *val, R_OUT R_OWNED char ** R_NULLABLE type) {
+	*name = NULL;
+	*val = 0;
+	if (m->get_name) {
+		m->get_name (ss, m, name);
+	}
+	if (!*name) {
+		return false;
+	}
+	if (m->get_val) {
+		m->get_val (ss, m, val);
+	}
+	if (type) {
+		*type = NULL;
+		if (m->get_print_type) {
+			m->get_print_type (ss, m, type);
+		}
+	}
+	return true;
+}
+
 static void print_struct(STpiStream *ss, const char *name, const int size, const RList *members, RStrBuf *sb) {
 	if (!name || !sb) {
 		return;
 	}
 	r_strbuf_appendf (sb, "struct %s { // size 0x%x\n", name, size);
-
-	STypeInfo *type_info;
-	RListIter *member_iter;
-	r_list_foreach (members, member_iter, type_info) {
-		char *member_name = NULL;
-		if (type_info->get_name) {
-			type_info->get_name (ss, type_info, &member_name);
+	STypeInfo *m;
+	RListIter *iter;
+	r_list_foreach (members, iter, m) {
+		char *member_name, *type_name;
+		int offset;
+		if (member_info (ss, m, &member_name, &offset, &type_name)) {
+			r_strbuf_appendf (sb, "  %s %s; // offset +0x%x\n", type_name, member_name, offset);
+			free (type_name);
 		}
-		int offset = 0;
-		if (type_info->get_val) {
-			type_info->get_val (ss, type_info, &offset);
-		}
-		char *type_name = NULL;
-		if (type_info->get_print_type) {
-			type_info->get_print_type (ss, type_info, &type_name);
-		}
-		r_strbuf_appendf (sb, "  %s %s; // offset +0x%x\n", type_name, member_name, offset);
-		R_FREE (type_name);
 	}
 	r_strbuf_append (sb, "};\n");
 }
@@ -984,24 +997,15 @@ static void print_union(STpiStream *ss, const char *name, const int size, const 
 	}
 	const char *n = R_STR_ISEMPTY (name)? "<unnamed>": name;
 	r_strbuf_appendf (sb, "union %s { // size 0x%x\n", n, size);
-
-	STypeInfo *type_info;
-	RListIter *member_iter;
-	r_list_foreach (members, member_iter, type_info) {
-		char *member_name = NULL;
-		if (type_info->get_name) {
-			type_info->get_name (ss, type_info, &member_name);
+	STypeInfo *m;
+	RListIter *iter;
+	r_list_foreach (members, iter, m) {
+		char *member_name, *type_name;
+		int offset;
+		if (member_info (ss, m, &member_name, &offset, &type_name)) {
+			r_strbuf_appendf (sb, "  %s %s;\n", type_name, member_name);
+			free (type_name);
 		}
-		int offset = 0;
-		if (type_info->get_val) {
-			type_info->get_val (ss, type_info, &offset);
-		}
-		char *type_name = NULL;
-		if (type_info->get_print_type) {
-			type_info->get_print_type (ss, type_info, &type_name);
-		}
-		r_strbuf_appendf (sb, "  %s %s;\n", type_name, member_name);
-		R_FREE (type_name);
 	}
 	r_strbuf_append (sb, "};\n");
 }
@@ -1011,19 +1015,14 @@ static void print_enum(STpiStream *ss, const char *name, const char *type, const
 		return;
 	}
 	r_strbuf_appendf (sb, "enum %s { // type: %s\n", name, type);
-
-	STypeInfo *type_info;
-	RListIter *member_iter;
-	r_list_foreach (members, member_iter, type_info) {
-		char *member_name = NULL;
-		if (type_info->get_name) {
-			type_info->get_name (ss, type_info, &member_name);
+	STypeInfo *m;
+	RListIter *iter;
+	r_list_foreach (members, iter, m) {
+		char *member_name;
+		int value;
+		if (member_info (ss, m, &member_name, &value, NULL)) {
+			r_strbuf_appendf (sb, "  %s = %d,\n", member_name, value);
 		}
-		int value = 0;
-		if (type_info->get_val) {
-			type_info->get_val (ss, type_info, &value);
-		}
-		r_strbuf_appendf (sb, "  %s = %d,\n", member_name, value);
 	}
 	r_strbuf_append (sb, "};\n");
 }
@@ -1109,9 +1108,12 @@ static void print_types_json(const RBinPdb *pdb, PJ *pj, STpiStream *ss, const R
 		if (type_info->get_name) {
 			type_info->get_name (ss, type_info, &name);
 		}
-		// skip nameless (truncated) types like the regular listing does
-		if (!name) {
-			continue;
+		// nameless types come from truncated records, the regular listing skips them too
+		if (R_STR_ISEMPTY (name)) {
+			if (type_info->leaf_type != eLF_UNION) {
+				continue;
+			}
+			name = "<unnamed>";
 		}
 		int size = 0;
 		if (type_info->get_val) {
@@ -1143,24 +1145,17 @@ static void print_types_json(const RBinPdb *pdb, PJ *pj, STpiStream *ss, const R
 					STypeInfo *minfo;
 					RListIter *member_iter;
 					r_list_foreach (members, member_iter, minfo) {
+						char *member_name, *type_name;
+						int offset;
+						if (!member_info (ss, minfo, &member_name, &offset, &type_name)) {
+							continue;
+						}
 						pj_o (pj);
-						char *member_name = NULL;
-						if (minfo->get_name) {
-							minfo->get_name (ss, minfo, &member_name);
-						}
-						int offset = 0;
-						if (minfo->get_val) {
-							minfo->get_val (ss, minfo, &offset);
-						}
-						char *type_name = NULL;
-						if (minfo->get_print_type) {
-							minfo->get_print_type (ss, minfo, &type_name);
-						}
 						pj_ks (pj, "member_type", type_name);
-						pj_ks (pj, "member_name", r_str_get (member_name));
+						pj_ks (pj, "member_name", member_name);
 						pj_kN (pj, "offset", offset);
 						pj_end (pj);
-						R_FREE (type_name);
+						free (type_name);
 					}
 				}
 				pj_end (pj);
@@ -1179,16 +1174,13 @@ static void print_types_json(const RBinPdb *pdb, PJ *pj, STpiStream *ss, const R
 					STypeInfo *minfo;
 					RListIter *member_iter;
 					r_list_foreach (members, member_iter, minfo) {
+						char *member_name;
+						int value;
+						if (!member_info (ss, minfo, &member_name, &value, NULL)) {
+							continue;
+						}
 						pj_o (pj);
-						char *member_name = NULL;
-						if (minfo->get_name) {
-							minfo->get_name (ss, minfo, &member_name);
-						}
-						int value = 0;
-						if (minfo->get_val) {
-							minfo->get_val (ss, minfo, &value);
-						}
-						pj_ks (pj, "enum_name", r_str_get (member_name));
+						pj_ks (pj, "enum_name", member_name);
 						pj_kn (pj, "enum_val", value);
 						pj_end (pj);
 					}

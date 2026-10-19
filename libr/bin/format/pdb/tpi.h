@@ -4,8 +4,8 @@
 void init_tpi_stream(STpiStream *tpi_stream);
 bool parse_tpi_stream(STpiStream *ss, R_STREAM_FILE *stream);
 // TODO: Remove to separate file
-int parse_sctring(SCString *sctr, ut8 *leaf_data, ut32 *read_bytes, ut32 len);
-void init_scstring(SCString *cstr, ut32 size, char *name);
+int parse_sctring(R_OUT SCString *sctr, ut8 *leaf_data, ut32 *read_bytes, ut32 len);
+void init_scstring(R_OUT SCString *cstr, ut32 size, const char *name);
 
 // Free a dynamically allocated simple type (tpi_idx == 0)
 static inline void tpi_free_simple_type(SType *t) {
