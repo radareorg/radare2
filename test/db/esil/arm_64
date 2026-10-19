@@ -5483,3 +5483,64 @@ EXPECT=<<EOF
 0x0000001e
 EOF
 RUN
+
+NAME=arm64 ESIL ins moves a single vector lane
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 20440c6e # ins v0.s[1], v1.s[2]
+aei
+aeip
+aer v0l=0x1111111122222222
+aer v0h=0x3333333344444444
+aer v1l=0xaaaabbbbccccdddd
+aer v1h=0x5555666677778888
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x7777888822222222
+0x3333333344444444
+EOF
+RUN
+
+NAME=arm64 ESIL ins inserts upper-half lane from lower half
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 20041e6e # ins v0.h[7], v1.h[0]
+aei
+aeip
+aer v0l=0x1111111122222222
+aer v0h=0x3333333344444444
+aer v1l=0xaaaabbbbccccdddd
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x1111111122222222
+0xdddd333344444444
+EOF
+RUN
+
+NAME=arm64 ESIL mov lane insert from GPR keeps other lanes
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 201c0c4e # mov v0.s[1], w1
+aei
+aeip
+aer v0l=0x1111111122222222
+aer v0h=0x3333333344444444
+aer x1=0x11111111deadbeef
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0xdeadbeef22222222
+0x3333333344444444
+EOF
+RUN
