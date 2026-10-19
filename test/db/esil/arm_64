@@ -2417,3 +2417,210 @@ EXPECT=<<EOF
 EOF
 RUN
 
+
+NAME=csel with an always condition has no else arm
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 20e0829a
+ao 1~esil:
+EOF
+EXPECT=<<EOF
+esil: x1,x0,=
+EOF
+RUN
+
+NAME=csel with a condition keeps both arms
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2000829a
+ao 1~esil:
+EOF
+EXPECT=<<EOF
+esil: zf,?{,x1,}{,x2,},x0,=
+EOF
+RUN
+
+NAME=csinv selects the inverted register
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2000825a
+ao 1~esil:
+aei
+aeim
+ar zf=0
+ar x2=5
+ar x0=0xffffffffffffffff
+aes
+ar x0
+EOF
+EXPECT=<<EOF
+esil: zf,?{,w1,}{,w2,-1,^,},w0,=,w0,x0,=
+0xfffffffa
+EOF
+RUN
+
+NAME=csneg selects the negated register
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2004825a
+ao 1~esil:
+EOF
+EXPECT=<<EOF
+esil: zf,?{,w1,}{,w2,0,-,},w0,=,w0,x0,=
+EOF
+RUN
+
+NAME=csinv selects the first register when the condition holds
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2000825a
+aei
+aeim
+ar zf=1
+ar x1=7
+ar x2=5
+ar x0=0xffffffffffffffff
+aes
+ar x0
+EOF
+EXPECT=<<EOF
+0x00000007
+EOF
+RUN
+
+NAME=cinv inverts the register when the condition holds
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2010815a
+ao 1~esil:
+aei
+aeim
+ar x1=5
+ar zf=1
+aes
+ar x0
+ar pc=0
+ar zf=0
+aes
+ar x0
+EOF
+EXPECT=<<EOF
+esil: zf,?{,w1,-1,^,}{,w1,},w0,=,w0,x0,=
+0xfffffffa
+0x00000005
+EOF
+RUN
+
+NAME=cneg negates the register when the condition holds
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 201481da
+ao 1~esil:
+aei
+aeim
+ar x1=5
+ar zf=1
+aes
+ar x0
+ar pc=0
+ar zf=0
+aes
+ar x0
+EOF
+EXPECT=<<EOF
+esil: zf,?{,x1,0,-,}{,x1,},x0,=
+0xfffffffffffffffb
+0x00000005
+EOF
+RUN
+
+NAME=csetm w0 sets all 32 bits and clears the upper half
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx e0139f5a
+ao 1~esil:
+aei
+aeim
+ar x0=0x1234567812345678
+ar zf=1
+aes
+ar x0
+ar pc=0
+ar zf=0
+aes
+ar x0
+EOF
+EXPECT=<<EOF
+esil: zf,?{,0xffffffff,}{,0,},w0,=,w0,x0,=
+0xffffffff
+0x00000000
+EOF
+RUN
+
+NAME=csetm x0 sets all 64 bits
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx e0139fda
+ao 1~esil:
+aei
+aeim
+ar zf=1
+aes
+ar x0
+ar pc=0
+ar zf=0
+aes
+ar x0
+EOF
+EXPECT=<<EOF
+esil: zf,?{,-1,}{,0,},x0,=
+0xffffffffffffffff
+0x00000000
+EOF
+RUN
+
+NAME=fcsel with an always condition has no else arm
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 20ec621e
+ao 1~esil:
+EOF
+EXPECT=<<EOF
+esil: d1,d0,=
+EOF
+RUN
+
+NAME=fcsel selects by the condition
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 200c621e
+ao 1~esil:
+aei
+aeim
+ar d1=0x3ff0000000000000
+ar d2=0x4000000000000000
+ar zf=1
+aes
+ar d0
+ar pc=0
+ar zf=0
+aes
+ar d0
+EOF
+EXPECT=<<EOF
+esil: zf,?{,d1,}{,d2,},d0,=
+0x3ff0000000000000
+0x4000000000000000
+EOF
+RUN
