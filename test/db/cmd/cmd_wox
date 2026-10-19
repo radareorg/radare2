@@ -114,6 +114,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=wox invalid key size
+FILE=-
+CMDS=<<EOF
+e cfg.bigendian=false
+w helloworld
+wox3+0xabcdef@!10
+wox64+0@!10
+p8 14
+wox2+0xabcd@!10
+p8 14
+EOF
+EXPECT=<<EOF
+68656c6c6f776f726c6400000000
+a5cea1c7a2dca2d9a1cf00000000
+EOF
+RUN
+
 NAME=wox be 8-bit
 FILE=-
 CMDS=<<EOF

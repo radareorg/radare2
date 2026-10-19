@@ -304,6 +304,10 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 				case 8:
 					r_write_ble64 (str, n, be);
 					break;
+				default:
+					// the key lives in an 8 byte buffer and must be fully initialized
+					R_LOG_ERROR ("Invalid key size %d. Use 1, 2, 4 or 8", numsize);
+					goto beach;
 				}
 				len = numsize;
 			}
