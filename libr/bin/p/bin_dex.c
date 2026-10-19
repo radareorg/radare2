@@ -856,7 +856,7 @@ static RBinInfo *info(RBinFile *bf) {
 		ut32 cc = __adler32 (tmp + 12, tmpsz - 12);
 		if (fc != cc) {
 			eprintf ("# adler32 checksum doesn't match. Type this to fix it:\n");
-			eprintf ("wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8\n");
+			eprintf ("wx `ph sha1 $s-32 @32` @12 ; wv4 0x`ph adler32 $s-12 @12` @8 @e:cfg.bigendian=false\n");
 		}
 	}
 	ret->arch = strdup ("dalvik");
