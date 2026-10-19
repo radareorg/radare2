@@ -55,3 +55,29 @@ EXPECT=<<EOF
 ffff0000
 EOF
 RUN
+
+NAME=io ff physical read past eof
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=<<EOF
+e io.va=false
+y 16 @ $s-4
+y
+y 16 @ $s
+y
+e io.ff=false
+y 16 @ $s-4
+y
+y 16 @ $s
+y
+o--
+y 16
+y
+EOF
+EXPECT=<<EOF
+0x00001a32 16 6e697400ffffffffffffffffffffffff
+0x00001a36 16 ffffffffffffffffffffffffffffffff
+0x00001a32 16 6e697400000000000000000000000000
+0x00001a36 16 00000000000000000000000000000000
+0x00400410 16 00000000000000000000000000000000
+EOF
+RUN

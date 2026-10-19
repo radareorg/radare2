@@ -158,11 +158,10 @@ R_API void r_io_close_all(RIO* io) {
 
 R_API int r_io_pread_at(RIO* io, ut64 paddr, ut8* buf, int len) {
 	R_RETURN_VAL_IF_FAIL (io && buf && len >= 0, -1);
+	// most callers ignore short and failed reads, so never leave the buffer unfilled
+	memset (buf, io->ff? io->Oxff: 0, len);
 	if (!io->desc) {
 		return -1;
-	}
-	if (io->ff) {
-		memset (buf, io->Oxff, len);
 	}
 	// XXX io->desc is wrong because it assumes the current desc which shouldnt exist
 	return r_io_desc_read_at (io->desc, paddr, buf, len);
