@@ -34,6 +34,17 @@ const uint8_t buffer[_BUFFER_SIZE] = {
 EOF
 RUN
 
+NAME=pcv signed java bytes
+FILE=malloc://4
+CMDS=<<EOF
+wx 90c37f80
+pcv 4
+EOF
+EXPECT=<<EOF
+byte[] ba = {-112,-61,127,-128};
+EOF
+RUN
+
 # merged: pca hello-linux-x86_64; pcs hello-linux-x86_64; pcS hello-linux-x86_64; pcJ hello-linux-x86_64; pcj hello-linux-x86_64; pcp hello-linux-x86_64
 NAME=pc* hello-linux-x86_64
 FILE=bins/elf/analysis/hello-linux-x86_64

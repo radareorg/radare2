@@ -311,7 +311,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		r_print_printf (p, "byte[] ba = {");
 		for (i = 0; !r_print_is_interrupted (p) && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
-			r_print_printf (p, "%d%s", buf[i], (i + 1 < len)? ",": "");
+			r_print_printf (p, "%d%s", (st8)buf[i], (i + 1 < len)? ",": "");
 			r_print_cursor (p, i, 1, 0);
 		}
 		r_print_printf (p, "};\n");
