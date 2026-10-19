@@ -25,7 +25,10 @@ static bool r_io_ar_close(RIODesc *fd) {
 	if (!fd || !fd->data) {
 		return false;
 	}
-	return ar_close ((RArFp *)fd->data);
+	// ar_close returns 0 like close(2), but RIO expects true when the desc is closed
+	ar_close ((RArFp *)fd->data);
+	fd->data = NULL;
+	return true;
 }
 
 static RIODesc *r_io_ar_open(RIO *io, const char *file, int rw, int mode) {

@@ -331,10 +331,11 @@ R_API int ar_open_all_cb(const char *arname, RArOpenManyCB cb, void *user) {
 
 	if (*refc == 1) {
 		// the cb closed all the RArFp's, so we free these resources
+		free (refc);
 		r_unref (b);
 	} else {
-		// return refc to true value
-		refc--;
+		// return refc to true value, the last ar_close frees b and refc
+		(*refc)--;
 	}
 
 	return r;

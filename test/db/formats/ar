@@ -57,3 +57,19 @@ EXPECT=<<EOF
 0x00000000  6c6f 6e67 7370 6163 650a ffff ffff ffff  longspace.......
 EOF
 RUN
+
+NAME=ar reopen and close
+FILE=ar://bins/ar/filetable_spaces.a// s_spaces
+CMDS=<<EOF
+oo
+o~?
+ps 10
+o-*
+o~?
+EOF
+EXPECT=<<EOF
+1
+shortspace
+0
+EOF
+RUN
