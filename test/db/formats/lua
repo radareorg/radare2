@@ -10,3 +10,19 @@ EXPECT=<<EOF
 0x0000003b 4 func.=mainfunc
 EOF
 RUN
+
+NAME=lua53 symbols are stable across repeated obr
+FILE=bins/lua/61a79b66-a78a-46ce-823c-93d04df0a306
+CMDS=<<EOF
+isq~?
+obr 0x10000
+isq~?
+obr 0x20000
+isq~?
+EOF
+EXPECT=<<EOF
+162
+162
+162
+EOF
+RUN
