@@ -3,6 +3,7 @@
 #include <r_fs.h>
 #include <r_lib.h>
 #include <r_util.h>
+#include <sdb/ht_uu.h>
 
 // BFS Magic numbers
 #define BFS_SUPER_MAGIC1 0x42465331 // "BFS1"
@@ -489,7 +490,10 @@ static bool fs_bfs_mount(RFSRoot *root) {
 	return true;
 
 fail:
-	ht_up_free (ctx->inodes);
+	if (ctx->inodes) {
+		ht_up_foreach (ctx->inodes, bfs_free_inode_cb, NULL);
+		ht_up_free (ctx->inodes);
+	}
 	free (ctx);
 	return false;
 }
@@ -526,7 +530,7 @@ static bool bfs_walk_directory(BeosFS *ctx, BeosInode *dir_inode, ut64 parent_in
 	if (!node_size) {
 		node_size = ctx->block_size;
 	}
-	if (node_size > ctx->block_size) {
+	if (node_size < sizeof (BeosTreeNodeHead) || node_size > ctx->block_size) {
 		return false;
 	}
 	ut32 level = bfs_read32 (ctx, (ut8 *)&super.max_depth);
@@ -583,27 +587,40 @@ static bool bfs_walk_directory(BeosFS *ctx, BeosInode *dir_inode, ut64 parent_in
 		}
 	}
 
+	ut64 stream_size = bfs_read64 (ctx, (ut8 *)&dir_inode->data.datastream.size);
+	ut64 remaining = R_MIN (stream_size / node_size, 1ULL << 20);
+	HtUU *visited = ht_uu_new0 ();
+	if (!visited) {
+		free (node_buf);
+		return false;
+	}
 	while (1) {
 		ut16 prev_end = 0;
 		ut16 i;
+		bool found = false;
 
+		if (!remaining || node_off > stream_size - node_size) {
+			goto fail;
+		}
+		ht_uu_find (visited, node_off, &found);
+		if (found || !ht_uu_insert (visited, node_off, 1)) {
+			goto fail;
+		}
+		remaining--;
 		if (!bfs_read_stream (ctx, dir_inode, node_off, node_buf, node_size)) {
-			free (node_buf);
-			return false;
+			goto fail;
 		}
 		BeosTreeNodeHead *node_head = (BeosTreeNodeHead *)node_buf;
 		ut16 key_count = bfs_read16 (ctx, (ut8 *)&node_head->all_key_count);
 		ut16 key_length = bfs_read16 (ctx, (ut8 *)&node_head->all_key_length);
 		size_t key_section = sizeof (BeosTreeNodeHead) + key_length;
 		if (key_section > node_size) {
-			free (node_buf);
-			return false;
+			goto fail;
 		}
 		size_t align_pad = (BTREE_ALIGN - (key_section % BTREE_ALIGN)) % BTREE_ALIGN;
 		size_t required_size = sizeof (BeosTreeNodeHead) + key_length + align_pad + key_count * sizeof (ut16) + key_count * sizeof (ut64);
 		if (required_size > node_size) {
-			free (node_buf);
-			return false;
+			goto fail;
 		}
 		ut8 *key_data = node_buf + sizeof (BeosTreeNodeHead);
 		ut16 *key_offsets = (ut16 *) (key_data + key_length + align_pad);
@@ -663,7 +680,9 @@ static bool bfs_walk_directory(BeosFS *ctx, BeosInode *dir_inode, ut64 parent_in
 			mode = bfs_read32 (ctx, (ut8 *)&cache->inode->mode);
 			if (bfs_is_directory (mode) && !cache->parsed) {
 				cache->parsed = true;
-				bfs_walk_directory (ctx, cache->inode, cache->inode_num);
+				if (!bfs_walk_directory (ctx, cache->inode, cache->inode_num)) {
+					goto fail;
+				}
 			}
 		}
 		node_off = bfs_read64 (ctx, (ut8 *)&node_head->right);
@@ -672,8 +691,14 @@ static bool bfs_walk_directory(BeosFS *ctx, BeosInode *dir_inode, ut64 parent_in
 		}
 	}
 
+	ht_uu_free (visited);
 	free (node_buf);
 	return true;
+
+fail:
+	ht_uu_free (visited);
+	free (node_buf);
+	return false;
 }
 
 static RList *fs_bfs_dir(RFSRoot *root, const char *path, int view) {

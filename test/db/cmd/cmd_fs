@@ -1138,6 +1138,19 @@ ERROR: Invalid UBIFS index
 EOF
 RUN
 
+NAME=reject cyclic BFS directory siblings
+FILE=bins/fs/bfs-sibling-cycle.img
+ARGS=-n
+CMDS=<<EOF
+m /mnt bfs 0
+m
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Failed to walk root directory B+tree
+EOF
+RUN
+
 NAME=haikufs
 FILE=bins/fs/haiku.bfs
 ARGS=-n
