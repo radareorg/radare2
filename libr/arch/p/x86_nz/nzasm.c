@@ -5655,6 +5655,11 @@ static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *ty
 
 static void parse_segment_offset(RArchSession *a, const char *str, size_t *pos, Operand *op, int reg_index) {
 	int nextpos = *pos;
+	if ((size_t)reg_index >= R_ARRAY_SIZE (op->regs)) {
+		// too many registers before the segment override
+		op->type = 0; // Make the result invalid
+		return;
+	}
 	const char *c = strchr (str + nextpos, ':');
 	if (c) {
 		nextpos ++; // Skip the ':'
