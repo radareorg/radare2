@@ -342,16 +342,6 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 			// reduce false positives
 			int j, num_blocks;
 			int *freq_list = NULL, expected_ascii, actual_ascii, num_chars;
-			if (str_type == R_STRING_TYPE_ASCII) {
-				for (j = 0; j < tmplen; j++) {
-					char ch = tmpstr[j];
-					if (ch != '\n' && ch != '\r' && ch != '\t') {
-						if (!IS_PRINTABLE (ch)) {
-							continue;
-						}
-					}
-				}
-			}
 			switch (str_type) {
 			case R_STRING_TYPE_UTF8:
 			case R_STRING_TYPE_WIDE:
