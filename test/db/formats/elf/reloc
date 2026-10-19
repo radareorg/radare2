@@ -1570,6 +1570,19 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ELF: an arm rel import addend stays inside its own got.r2 slot
+FILE=bins/elf/arm-vtable-addend.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pxw 16 @ 0x30270
+om~.got.r2
+EOF
+EXPECT=<<EOF
+0x00030270  0x00030288 0x0003028c 0x00030290 0x00030294  ................
+- 6 fd: 5 +0x00000000 0x00030280 - 0x00030297 rw- rw- .got.r2
+EOF
+RUN
+
 NAME=ELF: an x86-64 typeinfo addend does not land on the next import slot
 FILE=bins/elf/dwarf3_cpp.elf
 ARGS=-e bin.relocs.apply=true

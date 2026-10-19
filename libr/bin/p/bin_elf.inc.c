@@ -1194,6 +1194,58 @@ static inline bool arm_reloc_thumb_bit(ELFOBJ *eo, const RBinElfReloc *rel, ut64
 	return !strcmp (sym->type, R_BIN_TYPE_FUNC_STR) || !strcmp (sym->type, R_BIN_TYPE_LOPROC_STR);
 }
 
+// a rel site keeps its addend in place: the word, or the encoded immediate
+static st64 arm_rel_addend(ELFOBJ *bo, const RBinElfReloc *rel, const ut8 *buf) {
+	if (rel->mode != DT_REL) {
+		return rel->addend;
+	}
+	const ut32 insn = r_read_ble32 (buf, bo->endian);
+	const ut32 hi = r_read_ble16 (buf, bo->endian);
+	const ut32 lo = r_read_ble16 (buf + 2, bo->endian);
+	switch (rel->type) {
+	case R_ARM_CALL:
+	case R_ARM_JUMP24:
+	case R_ARM_PC24: {
+		st32 imm = (st32)((insn & 0x00ffffff) << 2);
+		if (imm & 0x02000000) {
+			imm |= ~0x03ffffff;
+		}
+		return imm;
+	}
+	case R_ARM_THM_PC22:
+	case R_ARM_THM_JUMP24: {
+		const ut32 sb = (hi >> 10) & 1;
+		// i1/i2 are stored inverted against the sign
+		const ut32 i1 = ((lo >> 13) & 1) ^ sb ^ 1;
+		const ut32 i2 = ((lo >> 11) & 1) ^ sb ^ 1;
+		st32 imm = (sb << 24) | (i1 << 23) | (i2 << 22)
+			| ((hi & 0x3ff) << 12) | ((lo & 0x7ff) << 1);
+		if (sb) {
+			imm |= ~0x01ffffff;
+		}
+		return imm;
+	}
+	case R_ARM_THM_JUMP19: {
+		// j1/j2 are not inverted here, unlike b.w T4
+		st32 imm = (((hi >> 10) & 1) << 20) | (((lo >> 11) & 1) << 19)
+			| (((lo >> 13) & 1) << 18) | ((hi & 0x3f) << 12) | ((lo & 0x7ff) << 1);
+		if (imm & 0x100000) {
+			imm |= ~0x1fffff;
+		}
+		return imm;
+	}
+	case R_ARM_THM_MOVW_ABS_NC:
+	case R_ARM_THM_MOVT_ABS:
+		return (st16)thumb_mov_imm (hi, lo);
+	case R_ARM_MOVW_ABS_NC:
+	case R_ARM_MOVW_PREL_NC:
+	case R_ARM_MOVT_ABS:
+	case R_ARM_MOVT_PREL:
+		return (st16)(((insn >> 4) & 0xf000) | (insn & 0x0fff));
+	}
+	return (st32)insn;
+}
+
 static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 P, ut64 S, ut64 bias, ut64 L, ut64 toc) {
 	ut64 V = 0;
 	ut64 A = rel->addend;
@@ -1217,65 +1269,14 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 	}
 	case EM_ARM:
 	{
-		st64 addend = rel->addend;
 		if (iob->read_at (iob->io, P, buf, 4) != 4) {
 			return;
 		}
+		const st64 addend = arm_rel_addend (bo, rel, buf);
 		ut32 insn = r_read_ble32 (buf, bo->endian);
 		ut32 hi = r_read_ble16 (buf, bo->endian);
 		ut32 lo = r_read_ble16 (buf + 2, bo->endian);
 		const ut32 T = arm_reloc_thumb_bit (bo, rel, L);
-		if (rel->mode == DT_REL) {
-			switch (rel->type) {
-			case R_ARM_CALL:
-			case R_ARM_JUMP24:
-			case R_ARM_PC24: {
-				st32 imm = (st32)((insn & 0x00ffffff) << 2);
-				if (imm & 0x02000000) {
-					imm |= ~0x03ffffff;
-				}
-				addend = imm;
-				break;
-			}
-			case R_ARM_THM_PC22:
-			case R_ARM_THM_JUMP24: {
-				const ut32 sb = (hi >> 10) & 1;
-				// i1/i2 are stored inverted against the sign
-				const ut32 i1 = ((lo >> 13) & 1) ^ sb ^ 1;
-				const ut32 i2 = ((lo >> 11) & 1) ^ sb ^ 1;
-				st32 imm = (sb << 24) | (i1 << 23) | (i2 << 22)
-					| ((hi & 0x3ff) << 12) | ((lo & 0x7ff) << 1);
-				if (sb) {
-					imm |= ~0x01ffffff;
-				}
-				addend = imm;
-				break;
-			}
-			case R_ARM_THM_JUMP19: {
-				// j1/j2 are not inverted here, unlike b.w T4
-				st32 imm = (((hi >> 10) & 1) << 20) | (((lo >> 11) & 1) << 19)
-					| (((lo >> 13) & 1) << 18) | ((hi & 0x3f) << 12) | ((lo & 0x7ff) << 1);
-				if (imm & 0x100000) {
-					imm |= ~0x1fffff;
-				}
-				addend = imm;
-				break;
-			}
-			case R_ARM_THM_MOVW_ABS_NC:
-			case R_ARM_THM_MOVT_ABS:
-				addend = (st16)thumb_mov_imm (hi, lo);
-				break;
-			case R_ARM_MOVW_ABS_NC:
-			case R_ARM_MOVW_PREL_NC:
-			case R_ARM_MOVT_ABS:
-			case R_ARM_MOVT_PREL:
-				addend = (st16)(((insn >> 4) & 0xf000) | (insn & 0x0fff));
-				break;
-			default:
-				addend = (st32)r_read_ble32 (buf, bo->endian);
-				break;
-			}
-		}
 		switch (rel->type) {
 		case R_ARM_RELATIVE:
 			V = addend + bias;
@@ -1931,15 +1932,20 @@ static RVecRBinTrycatch *trycatch(RBinFile *bf) {
 #define GOTR2_GROWTH_MAX (1 << 20)
 
 static ut64 slot_addend(RBinFile *bf, ELFOBJ *eo, RIOBind *iob, const RBinElfReloc *rel) {
+	const ut16 m = eo->ehdr.e_machine;
+	// a lazy arm slot holds plt0, not an addend
+	const bool arm_rel = m == EM_ARM && rel->mode == DT_REL && rel->type != R_ARM_JUMP_SLOT;
+	const bool i386_rel = m == EM_386 && rel->implicit_addend
+		&& (rel->type == R_386_32 || rel->type == R_386_PC32);
 	st64 a = rel->addend;
-	if (rel->implicit_addend) {
+	if (arm_rel || i386_rel) {
 		ut8 buf[4];
-		// arm rel words add theirs too, but no corpus file has one to test
-		if (eo->ehdr.e_machine != EM_386 || rel->type != R_386_32
-				|| iob->read_at (iob->io, elf_io_addr (bf, eo, rel->rva), buf, 4) != 4) {
+		if (iob->read_at (iob->io, elf_io_addr (bf, eo, rel->rva), buf, 4) != 4) {
 			return 0;
 		}
-		a = (st32)r_read_ble32 (buf, eo->endian);
+		a = arm_rel? arm_rel_addend (eo, rel, buf): (st32)r_read_ble32 (buf, eo->endian);
+	} else if (rel->implicit_addend) {
+		return 0;
 	}
 	return (a > 0 && a < GOTR2_ADDEND_MAX)? a: 0;
 }
@@ -2033,7 +2039,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	}
 	RBinElfReloc *reloc;
 	R_VEC_FOREACH (relocs, reloc) {
-		const ut64 a = reloc->sym? slot_addend (bf, eo, &b->iob, reloc): 0;
+		const ut64 a = reloc_has_slot (eo, reloc)? slot_addend (bf, eo, &b->iob, reloc): 0;
 		if (a > ht_uu_find (addend_by_sym, reloc->sym, NULL)) {
 			ht_uu_update (addend_by_sym, reloc->sym, a);
 		}
