@@ -33,6 +33,12 @@ compiler and does not load a kernel module or access kernel memory.
    after building. This requires QuickJS, networking, Python 3 and localhost
    sockets; the curl transport is tested when curl is installed. Set `R2`
    to select another radare2 executable.
+ * To check the JSLinux guest HTTP transport, run
+   `python3 test/scripts/test-jslinux-guest-http.py` after building. It uses
+   QuickJS and a local filesystem mock of TinyEMU's XHR protocol; it needs
+   neither an AI provider nor a running emulator. The PHP relay is tested
+   separately with `python3 test/scripts/test-jslinux-http.py` (PHP cURL and
+   localhost sockets required).
 
 ## Failure Levels
 

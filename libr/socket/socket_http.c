@@ -43,6 +43,8 @@ static char *socket_http_request(int post, const char *url, const char **headers
 }
 #endif
 
+#include "socket_http_fscmd.inc.c"
+
 #define SOCKET_HTTP_MAX_HEADER_LENGTH 0x2000
 #define SOCKET_HTTP_MAX_REDIRECTS 5
 
@@ -286,6 +288,10 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 #elif __wasi__
 	return NULL;
 #endif
+	char *relay_response = NULL;
+	if (socket_http_fscmd (false, url, headers, NULL, code, rlen, &relay_response)) {
+		return relay_response;
+	}
 	const bool use_curl = socket_http_use_curl (url);
 	const bool requires_curl = socket_http_requires_curl (url);
 	if (use_curl) {
@@ -496,6 +502,10 @@ R_API char *r_socket_http_post(const char *url, const char *headers[], const cha
 #elif __wasi__
 	return NULL;
 #endif
+	char *relay_response = NULL;
+	if (socket_http_fscmd (true, url, headers, data, code, rlen, &relay_response)) {
+		return relay_response;
+	}
 	const bool use_curl = socket_http_use_curl (url);
 	const bool requires_curl = socket_http_requires_curl (url);
 	if (use_curl) {

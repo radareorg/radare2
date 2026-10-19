@@ -174,16 +174,51 @@ a base64-encoded body, including upstream errors such as 401 and 429:
 Relay errors use HTTP 4xx/5xx with `{"error":"..."}`. The endpoint is excluded
 from the offline cache and sends `Cache-Control: no-store`.
 
-The PHP file supplies the browser-to-provider relay only. The current guest
-still needs a `r_socket_http_*` adapter over its 9p filesystem, the AI plugins
-packaged, and decai switched from external curl to the direct HTTP API.
-Deploying the PHP file alone does not enable AI commands.
+The guest's `r_socket_http_get/post` APIs can use TinyEMU's existing filesystem
+XHR command through `/mnt/.fscmd`. This transport is available in normal Unix
+builds and is selected at runtime, without another build flag or an emulator
+patch. Configure it in the guest shell before starting r2, for example:
+
+```sh
+export R2_HTTP_RELAY=https://radare.org/your-jslinux-directory/http.php
+export R2_HTTP_UPSTREAM=https://llm.example/v1
+export R2_HTTP_TOKEN=your-relay-access-token
+r2
+```
+
+`R2_HTTP_UPSTREAM` must match the upstream base configured in PHP. Only requests
+under this exact base are accepted; the guest strips it to obtain the relay's
+`path`. For example, `https://llm.example/v1/chat/completions` becomes
+`/chat/completions`. Set the AI client's base URL accordingly. Requests to other
+origins or base paths fail, and relay errors do not fall back to sockets or
+curl. Unset `R2_HTTP_RELAY` to restore ordinary HTTP transport selection.
+
+`R2_HTTP_FS` optionally selects another shared filesystem mount (default
+`/mnt`); it must contain `.fscmd` and a writable `tmp` directory.
+`R2_HTTP_TIMEOUT` sets the guest wait in seconds (default 130; nonpositive
+values also use the default). Request and response files use a private
+directory and are removed on completion or failure. A timeout stops the
+guest's wait; the existing TinyEMU interface does not cancel a browser XHR
+already in progress. The transport requires socket, network and filesystem
+access, and refuses operation under `cfg.sandbox=true`, which prohibits the
+temporary-file writes.
+
+Scripts can now call `r2.http()` through this transport. With decai installed,
+use its default `http=auto` or `decai -e http=r2`; forcing `http=curl` bypasses
+it. With the C r2ai plugin installed, select `e r2ai.http.backend=socket` and
+keep `e r2ai.stream=false`. These AI plugins still need to be packaged into
+the guest image. The PHP endpoint and a rebuilt guest r2 are both required.
 
 Run the relay regression locally, without contacting an AI provider:
 
 ```sh
 python3 test/scripts/test-jslinux-http.py  # from the repository root
+python3 test/scripts/test-jslinux-guest-http.py
 ```
+
+The second test runs the rebuilt r2 against a filesystem mock of TinyEMU's
+XHR command, covering request envelopes, URL mapping, errors, limits, sandbox
+denial and cleanup. It does not boot the browser emulator.
 
 ## Licensing
 
