@@ -45,8 +45,8 @@ static void addSection(RLuaHeader *lh, RBinFile *bf, const char *name, ut64 addr
 }
 
 static void addSections(RLuaHeader *lh, LuaFunction *func, ParseStruct *parseStruct) {
-	char *string = (func->name_size == 0 || func->name_ptr == 0)
-		? r_str_newf ("0x%"PFMT64x, func->offset) : func->name_ptr;
+	bool ownedString = func->name_size == 0 || func->name_ptr == 0;
+	char *string = ownedString? r_str_newf ("0x%"PFMT64x, func->offset): func->name_ptr;
 
 	r_strf_buffer (R_BIN_SIZEOF_STRINGS);
 
@@ -63,7 +63,9 @@ static void addSections(RLuaHeader *lh, LuaFunction *func, ParseStruct *parseStr
 	addSection (lh, bf, r_strf ("debuginfo.%s", string),
 			func->debug_offset, func->offset + func->size - func->debug_offset, false);
 
-	free (string);
+	if (ownedString) {
+		free (string);
+	}
 }
 
 static bool sections_vec(RBinFile *bf) {

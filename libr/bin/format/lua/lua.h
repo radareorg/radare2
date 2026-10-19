@@ -5,7 +5,7 @@
 typedef struct lua_function {
 	ut64 offset;
 
-	char *name_ptr; // only valid in onFunction methon
+	char *name_ptr; // owned by this LuaFunction, freed in lua_func_free
 	ut64 name_size;
 
 	ut64 lineDefined;
