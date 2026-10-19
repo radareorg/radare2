@@ -830,3 +830,14 @@ EXPECT_ERR=<<EOF
 ERROR: Recursive expansion of inline 'z'
 EOF
 RUN
+
+NAME=ragg2 if after more blocks than the ifelse table holds
+FILE=--
+CMDS=<<EOF
+ragg2 -a x86 -b 64 -e 'main@global(16,0) { .var0 = 5; {}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}if (.var0) { .var0 = 0; } }'
+?e alive
+EOF
+EXPECT=<<EOF
+alive
+EOF
+RUN

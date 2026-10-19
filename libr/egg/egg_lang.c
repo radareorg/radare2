@@ -873,6 +873,16 @@ static void set_nested(REgg *egg, const char *s) {
 	}
 }
 
+// nestedi[ctx] counts every block opened at that level, ifelse_table[ctx] only has room for the first 32
+static char **ifelse_slot(REgg *egg, int ctx) {
+	int col = egg->lang.nestedi[ctx] - 1;
+	if (col < 0 || col >= R_ARRAY_SIZE (egg->lang.ifelse_table[ctx])) {
+		R_LOG_ERROR ("%s:%d too many blocks in this scope for an if", egg->lang.file, egg->lang.line);
+		return NULL;
+	}
+	return &egg->lang.ifelse_table[ctx][col];
+}
+
 static void rcc_context(REgg *egg, int delta) {
 	REggEmit *emit = egg->remit;
 
@@ -1077,6 +1087,12 @@ static int parseinlinechar(REgg *egg, char c) {
 				return 1;
 			} else /* register */
 				if (egg->lang.dstval && egg->lang.dstvar) {
+					if (egg->lang.ninlines >= R_ARRAY_SIZE (egg->lang.inlines)) {
+						R_LOG_ERROR ("Too many inline functions");
+						R_FREE (egg->lang.dstvar);
+						R_FREE (egg->lang.dstval);
+						return -1;
+					}
 					egg->lang.dstval[egg->lang.ndstval] = '\0';
 					// printf (" /* END OF LANG_MODE_INLINE (%s)(%s) */\n", egg->lang.dstvar, egg->lang.dstval);
 					egg->lang.inlines[egg->lang.ninlines].name = r_str_trim_dup (egg->lang.dstvar);
@@ -1463,10 +1479,12 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 					strstr (egg->lang.elem, "else")) {
 					*egg->lang.elem = '\x00';
 					egg->lang.elem_n = 0;
-					R_FREE (egg->lang.ifelse_table[CTX][egg->lang.nestedi[CTX] - 1])
-					egg->lang.ifelse_table[CTX][egg->lang.nestedi[CTX] - 1] =
-						r_str_newf ("  __end_%d_%d_%d",
+					char **slot = ifelse_slot (egg, CTX);
+					if (slot) {
+						free (*slot);
+						*slot = r_str_newf ("  __end_%d_%d_%d",
 							egg->lang.nfunctions, CTX, egg->lang.nestedi[CTX]);
+					}
 				}
 					tmp_ptr = r_str_newf ("__begin_%d_%d_%d",
 						egg->lang.nfunctions, CTX, egg->lang.nestedi[CTX]);
@@ -1488,9 +1506,11 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 					tmp_ptr = r_str_newf ("__ifelse_%d_%d", CTX - 1, egg->lang.nestedi[CTX - 1] - 1);
 					e->jmp (egg, tmp_ptr, 0);
 					R_FREE (tmp_ptr);
-					egg->lang.ifelse_table[CTX - 1][egg->lang.nestedi[CTX - 1] - 1] =
-						r_str_newf ("__end_%d_%d_%d",
+					char **slot = ifelse_slot (egg, CTX - 1);
+					if (slot) {
+						*slot = r_str_newf ("__end_%d_%d_%d",
 							egg->lang.nfunctions, CTX - 1, egg->lang.nestedi[CTX - 1] - 1);
+					}
 				}
 				tmp_ptr = r_str_newf ("__end_%d_%d_%d",
 					egg->lang.nfunctions, CTX - 1, egg->lang.nestedi[CTX - 1] - 1);
