@@ -1,6 +1,7 @@
 # merged: CCf-*
 NAME=CC-*
 FILE=bins/mach0/FileDP
+ARGS=-e bin.relocs.apply=false
 CMDS=<<EOF
 C*~?
 CC~?
