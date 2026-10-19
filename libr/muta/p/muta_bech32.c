@@ -8,6 +8,9 @@ typedef enum {
 	BECH32_ENCODING_BECH32M
 } bech32_encoding;
 
+// BIP-173 limit for a whole encoded string: hrp + '1' + data + 6 checksum chars
+#define BECH32_MAX_LEN 90
+
 static uint32_t bech32_polymod_step(ut32 pre) {
 	uint8_t b = pre >> 25;
 	return ((pre & 0x1FFFFFF) << 5) ^
@@ -57,7 +60,7 @@ static int bech32_encode(char *output, const char *hrp, const uint8_t *data, siz
 		chk = bech32_polymod_step (chk) ^ (ch >> 5);
 		i++;
 	}
-	if (i + 7 + data_len > 90) {
+	if (i + 7 + data_len > BECH32_MAX_LEN) {
 		return 0;
 	}
 	chk = bech32_polymod_step (chk);
@@ -88,7 +91,7 @@ static bech32_encoding bech32_decode(char *hrp, uint8_t *data, int data_len, con
 	uint32_t chk = 1;
 	size_t i, input_len = strlen (input);
 	int have_lower = 0, have_upper = 0;
-	if (input_len < 8 || input_len > 90) {
+	if (input_len < 8 || input_len > BECH32_MAX_LEN) {
 		return BECH32_ENCODING_NONE;
 	}
 	data_len = 0;
@@ -161,30 +164,40 @@ static int bech32_get_key_size(RMutaSession *ms) {
 }
 
 static bool update(RMutaSession *ms, const ut8 *buf, int len) {
-	const int enc = BECH32_ENCODING_BECH32;
-	char *hrp = malloc (ms->key_len + 1); // HRP need to be null-terminated
-	if (!hrp) {
+	// every valid bech32 string fits in BECH32_MAX_LEN, so fixed buffers are enough
+	char hrp[BECH32_MAX_LEN + 1] = {0};
+	char str[BECH32_MAX_LEN + 1];
+	ut8 data[BECH32_MAX_LEN];
+	if (len < 1 || ms->key_len > BECH32_MAX_LEN) {
 		return false;
 	}
-	hrp[ms->key_len] = 0;
-	memcpy (hrp, ms->key, ms->key_len);
-	char *in_out = r_str_ndup ((const char *)buf, len);
-	char *data = r_str_ndup ((const char *)buf, len);
+	if (ms->key_len > 0) {
+		memcpy (hrp, ms->key, ms->key_len);
+	}
 	switch (ms->dir) {
 	case R_MUTA_OP_ENCRYPT:
-		bech32_encode (in_out, hrp, buf, len, enc);
-		break;
+		if (!bech32_encode (str, hrp, buf, len, BECH32_ENCODING_BECH32)) {
+			return false;
+		}
+		r_muta_session_append (ms, (const ut8 *)str, strlen (str));
+		return true;
 	case R_MUTA_OP_DECRYPT:
-		bech32_decode (hrp, (ut8 *)data, len, in_out);
-		break;
+		if (len > BECH32_MAX_LEN) {
+			return false;
+		}
+		memcpy (str, buf, len);
+		str[len] = 0;
+		if (bech32_decode (hrp, data, 0, str) == BECH32_ENCODING_NONE) {
+			return false;
+		}
+		// the input is hrp + '1' + data + 6 checksum chars
+		r_muta_session_append (ms, data, strlen (str) - strlen (hrp) - 7);
+		return true;
 	default:
 		R_LOG_ERROR ("Choose decrypt or encrypt");
 		break;
 	}
-	free (hrp);
-	free (data);
-	free (in_out);
-	return true;
+	return false;
 }
 
 static bool end(RMutaSession *ms, const ut8 *buf, int len) {

@@ -875,6 +875,26 @@ CMDS=!rahash2 -E base91 -s "hello world" | rahash2 -D base91 -s -
 EXPECT=hello world
 RUN
 
+NAME=rahash2 -E bech32
+FILE=-
+CMDS=!rahash2 -E bech32 -S s:bc -x "00010203040506070809"
+EXPECT=bc1qpzry9x8gfaur95s
+RUN
+
+NAME=rahash2 -D bech32
+FILE=-
+CMDS=!rahash2 -D bech32 -s bc1qpzry9x8gfaur95s | rax2 -S
+EXPECT=<<EOF
+00010203040506070809
+EOF
+RUN
+
+NAME=rahash2 -D bech32 with a long hrp
+FILE=-
+CMDS=!rahash2 -D bech32 -s aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1qqqqqq
+EXPECT=
+RUN
+
 NAME=rahash2 -E rc2
 FILE=-
 CMDS=!rahash2 -E rc2 -S key -s "helloworld123456" | rax2 -S 
