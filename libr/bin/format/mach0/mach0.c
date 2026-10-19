@@ -481,7 +481,7 @@ static bool parse_segments(struct MACH0_(obj_t) * mo, ut64 off) {
 			return false;
 		}
 
-		if (! (mo->sects = r_renew_array (mo->sects, mo->nsects, sizeof (struct MACH0_(section))))) {
+		if (! (mo->sects = r_array_resize (mo->sects, mo->nsects, sizeof (struct MACH0_(section))))) {
 			r_sys_perror ("realloc (sects)");
 			mo->nsects = sect;
 			return false;

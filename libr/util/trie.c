@@ -100,7 +100,7 @@ static bool trie_node_insert_child(RTrieNode *node, size_t index, RTrieNode *chi
 	if (node->children_count == node->children_capacity) {
 		/* children have distinct first bytes, so capacity never exceeds 256 */
 		size_t capacity = node->children_capacity? node->children_capacity * 2: 4;
-		RTrieNode **children = r_renew_array (node->children, capacity, sizeof (RTrieNode *));
+		RTrieNode **children = r_array_resize (node->children, capacity, sizeof (RTrieNode *));
 		if (!children) {
 			return false;
 		}

@@ -43,7 +43,7 @@ R_API int r_strs_store_add(RStrsStore *ss, const char *s, int len) {
 		if (r_mul_overflow (ss->cap, (ut32)2, &nc)) {
 			return -1;
 		}
-		RStrsEntry *ne = r_renew_array (ss->entries, nc, sizeof (RStrsEntry));
+		RStrsEntry *ne = r_array_resize (ss->entries, nc, sizeof (RStrsEntry));
 		if (!ne) {
 			return -1;
 		}
@@ -67,7 +67,7 @@ R_API void r_strs_store_seal(RStrsStore *ss) {
 		}
 	}
 	if (ss->cap > ss->count && ss->count > 0) {
-		RStrsEntry *ne = r_renew_array (ss->entries, ss->count, sizeof (RStrsEntry));
+		RStrsEntry *ne = r_array_resize (ss->entries, ss->count, sizeof (RStrsEntry));
 		if (ne) {
 			ss->entries = ne;
 			ss->cap = ss->count;

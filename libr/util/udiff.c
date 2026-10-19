@@ -118,7 +118,7 @@ static st32 lev_parse_matrix(Levrow *matrix, ut32 len, bool invert, RLevOp **chg
 				goto leave;
 			}
 			size *= 2;
-			RLevOp *tmp = r_renew_array (changes, 1 + size, sizeof (RLevOp));
+			RLevOp *tmp = r_array_resize (changes, 1 + size, sizeof (RLevOp));
 			if (!tmp) {
 				goto leave;
 			}
@@ -147,7 +147,7 @@ static st32 lev_parse_matrix(Levrow *matrix, ut32 len, bool invert, RLevOp **chg
 			goto leave;
 		}
 		size += j - (size - insert);
-		RLevOp *tmp = r_renew_array (changes, 1 + size, sizeof (RLevOp));
+		RLevOp *tmp = r_array_resize (changes, 1 + size, sizeof (RLevOp));
 		if (!tmp) {
 			goto leave;
 		}

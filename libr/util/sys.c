@@ -649,7 +649,7 @@ R_API char *r_sys_getenv(const char *key) {
 			goto err_r_sys_get_env;
 		}
 	} else if (TMP_BUFSIZE < dwRet) {
-		tmp_ptr = (LPTSTR)r_renew_array (envbuf, dwRet, sizeof (TCHAR));
+		tmp_ptr = (LPTSTR)r_array_resize (envbuf, dwRet, sizeof (TCHAR));
 		if (!tmp_ptr) {
 			goto err_r_sys_get_env;
 		}

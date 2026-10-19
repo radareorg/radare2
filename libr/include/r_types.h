@@ -376,7 +376,7 @@ static inline void *r_new_array(size_t count, size_t size) {
 	return malloc (count * size);
 }
 
-static inline void *r_renew_array(void *ptr, size_t count, size_t size) {
+static inline void *r_array_resize(void *ptr, size_t count, size_t size) {
 	if (size && count > SIZE_MAX / size) {
 		return NULL;
 	}

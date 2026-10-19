@@ -41,7 +41,7 @@ static size_t idxs_lower_bound(const RBitset *b, ut64 needle, bool *found) {
 static bool idxs_insert(RBitset *b, ut64 idx, size_t pos) {
 	if (b->idxs_count == b->idxs_cap) {
 		size_t ncap = b->idxs_cap ? b->idxs_cap * 2 : 8;
-		ut64 *narr = r_renew_array (b->idxs, ncap, sizeof (ut64));
+		ut64 *narr = r_array_resize (b->idxs, ncap, sizeof (ut64));
 		if (!narr) {
 			return false;
 		}

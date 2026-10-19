@@ -416,11 +416,11 @@ int test_checked_array_alloc(void) {
 	a[3] = 7;
 	mu_assert_null (r_new_array (SIZE_MAX / 2 + 1, 2), "r_new_array wrapping product");
 	mu_assert_null (R_NEWS (ut64, SIZE_MAX), "R_NEWS wrapping product");
-	mu_assert_null (r_renew_array (a, SIZE_MAX, sizeof (ut32)), "r_renew_array wrapping product");
-	mu_assert_eq (a[3], 7, "r_renew_array keeps the old block on failure");
-	ut32 *b = r_renew_array (a, 8, sizeof (ut32));
-	mu_assert_notnull (b, "r_renew_array grow");
-	mu_assert_eq (b[3], 7, "r_renew_array keeps contents");
+	mu_assert_null (r_array_resize (a, SIZE_MAX, sizeof (ut32)), "r_array_resize wrapping product");
+	mu_assert_eq (a[3], 7, "r_array_resize keeps the old block on failure");
+	ut32 *b = r_array_resize (a, 8, sizeof (ut32));
+	mu_assert_notnull (b, "r_array_resize grow");
+	mu_assert_eq (b[3], 7, "r_array_resize keeps contents");
 	free (b);
 	mu_end;
 }
