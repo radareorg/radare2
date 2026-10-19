@@ -536,8 +536,8 @@ NAME=rax2 -H linux osx
 FILE=-
 CMDS=!rax2 -H linux osx
 EXPECT=<<EOF
-0x5ca62a43
-0xad593a1
+0x90d3ced7
+0xda90d7cd
 EOF
 RUN
 

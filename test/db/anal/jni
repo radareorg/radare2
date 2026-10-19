@@ -23,13 +23,13 @@ EXPECT=<<EOF
 overloaded
 ([ILjava/lang/String;)Ljava/lang/Object;
 jobject|jclass
-jni.overloaded.fd920b56
-jni.overloaded.0ad484cd
+jni.overloaded.5b9ce2bd
+jni.overloaded.bb032eb5
 sym.exact_native
 2
-jobject jni.overloaded.fd920b56 (JNIEnv *env, jobject receiver, jintArray arg0, jstring arg1);
+jobject jni.overloaded.5b9ce2bd (JNIEnv *env, jobject receiver, jintArray arg0, jstring arg1);
 (nofunc) 0x27d8 [DATA:--x] invalid
-jobject jni.overloaded.fd920b56 (JNIEnv *env, jobject receiver, jintArray arg0, jstring arg1) {
+jobject jni.overloaded.5b9ce2bd (JNIEnv *env, jobject receiver, jintArray arg0, jstring arg1) {
 EOF
 RUN
 
@@ -42,7 +42,7 @@ s `k anal/jni/table.0.method.0.function`
 afs
 EOF
 EXPECT=<<EOF
-jobject jni.overloaded.fd920b56 (JNIEnv *env, jobject receiver, jintArray arg0, jstring arg1);
+jobject jni.overloaded.5b9ce2bd (JNIEnv *env, jobject receiver, jintArray arg0, jstring arg1);
 EOF
 RUN
 
@@ -83,8 +83,8 @@ P- r2r_jni003_test >/dev/null
 EOF
 EXPECT=<<EOF
 2
-jni.overloaded.fd920b56
-jobject jni.overloaded.fd920b56 (JNIEnv *env, jobject receiver, jintArray arg0, jstring arg1);
+jni.overloaded.5b9ce2bd
+jobject jni.overloaded.5b9ce2bd (JNIEnv *env, jobject receiver, jintArray arg0, jstring arg1);
 1
 EOF
 RUN

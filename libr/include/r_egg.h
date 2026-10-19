@@ -126,18 +126,18 @@ EOF
 
 // TODO: use R_SYS_OS imho
 
-#define R_EGG_OS_LINUX 0x5ca62a43
-#define R_EGG_OS_OSX 0x0ad593a1
-#define R_EGG_OS_DARWIN 0xd86d1ae2
-#define R_EGG_OS_WATCHOS 0x14945c70
-#define R_EGG_OS_IOS 0x0ad58830
-#define R_EGG_OS_MACOS 0x5cb23c16
-#define R_EGG_OS_W32 0x0ad5fbb3
-#define R_EGG_OS_WINDOWS 0x05b7de9a
-#define R_EGG_OS_BEOS 0x506108be
-#define R_EGG_OS_FREEBSD 0x73a72944
-#define R_EGG_OS_SOLARIS 0x13a42414
-#define R_EGG_OS_OPENBSD 0x43a12a1c
+#define R_EGG_OS_LINUX 0x90d3ced7
+#define R_EGG_OS_OSX 0xda90d7cd
+#define R_EGG_OS_DARWIN 0x1480d5a6
+#define R_EGG_OS_WATCHOS 0x7405ef9f
+#define R_EGG_OS_IOS 0xfe35ba80
+#define R_EGG_OS_MACOS 0xd9641b70
+#define R_EGG_OS_W32 0x7101ffef
+#define R_EGG_OS_WINDOWS 0x00f2c590
+#define R_EGG_OS_BEOS 0xede33f6b
+#define R_EGG_OS_FREEBSD 0x2ba842ad
+#define R_EGG_OS_SOLARIS 0xda945a2d
+#define R_EGG_OS_OPENBSD 0x30b62e8c
 
 #if __APPLE__
 #define R_EGG_OS_DEFAULT R_EGG_OS_OSX
