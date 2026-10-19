@@ -3372,19 +3372,25 @@ static bool cb_binprefix(void *user, void *data) {
 	}
 	if (node->value && *node->value) {
 		if (!strcmp (node->value, "auto")) {
-			if (!core->bin->file) {
+			RBinFile *bf = r_bin_cur (core->bin);
+			if (!bf || !bf->file) {
 				return false;
 			}
-			char *name = (char *)r_file_basename (core->bin->file);
-			if (name) {
-				r_name_filter (name, strlen (name));
-				r_str_filter (name, strlen (name));
-				core->bin->prefix = strdup (name);
-				free (name);
+			// r_file_basename() points into the binfile name, filter a copy
+			char *name = strdup (r_file_basename (bf->file));
+			if (!name) {
+				return false;
 			}
+			r_name_filter (name, strlen (name));
+			r_str_filter (name, strlen (name));
+			free (core->bin->prefix);
+			core->bin->prefix = name;
 		} else {
-			core->bin->prefix = node->value;
+			free (core->bin->prefix);
+			core->bin->prefix = strdup (node->value);
 		}
+	} else {
+		R_FREE (core->bin->prefix);
 	}
 	return true;
 }

@@ -740,6 +740,7 @@ R_API void r_bin_free(RBin *bin) {
 		free (bin->srcdir);
 		free (bin->strenc);
 		free (bin->sdbdir);
+		free (bin->prefix);
 		// r_bin_free_bin_files (bin);
 		r_list_free (bin->binfiles);
 		char **pat;

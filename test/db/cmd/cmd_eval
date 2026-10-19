@@ -318,3 +318,23 @@ false
 true
 EOF
 RUN
+
+NAME=bin.prefix auto takes the binfile basename and can be reset
+FILE=bins/elf/ls
+CMDS=<<EOF
+e bin.prefix=auto
+is*~_obstack_free
+e bin.prefix=pfx
+is*~_obstack_free
+e bin.prefix=
+is*~_obstack_free
+e bin.prefix=auto
+i~^file
+EOF
+EXPECT=<<EOF
+'f ls.sym._obstack_free 101 0x00015e00
+'f pfx.sym._obstack_free 101 0x00015e00
+'f sym._obstack_free 101 0x00015e00
+file     bins/elf/ls
+EOF
+RUN

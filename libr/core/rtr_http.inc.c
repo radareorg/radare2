@@ -670,8 +670,12 @@ the_end:
 	HTTP_REBIND_CONFIG (core->cons->teefile, "file.output");
 	HTTP_REBIND_CONFIG (core->cons->teefile, "scr.tee");
 	HTTP_REBIND_CONFIG (core->dbg->options.malloc, "dbg.malloc");
-	HTTP_REBIND_CONFIG (core->bin->prefix, "bin.prefix");
 #undef HTTP_REBIND_CONFIG
+	// bin.prefix keeps its own copy, so recompute it from the operator config
+	RConfigNode *prefix_node = r_config_node_get (origcfg, "bin.prefix");
+	if (prefix_node && prefix_node->setter) {
+		prefix_node->setter (core, prefix_node);
+	}
 	r_config_free (newcfg);
 	if (newblk != origblk) {
 		free (newblk);

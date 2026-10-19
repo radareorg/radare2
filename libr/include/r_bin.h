@@ -668,7 +668,7 @@ struct r_bin_t {
 	char *srcdir; // dir.source
 	char *srcdir_base; // dir.source.base
 	char *sdbdir; // dir.binsdb
-	char *prefix; // bin.prefix
+	char * R_OWNED R_NULLABLE prefix; // bin.prefix
 	char *strenc;
 	ut64 filter_rules;
 	RStrConstPool constpool;
