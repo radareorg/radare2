@@ -164,8 +164,9 @@ R_API bool r_lang_setup(RLang *lang) {
 		if (p->setup) {
 			return p->setup (lang->session);
 		}
-		if (p->fini) {
-			p->fini (lang->session);
+		if (p->fini && !p->fini (lang->session)) {
+			// the session is still in use, keep it as is
+			return false;
 		}
 		if (p->init) {
 			(void)p->init (lang->session);

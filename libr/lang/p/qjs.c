@@ -142,6 +142,7 @@ typedef struct qjs_plugin_manager_t {
 	RVecArchPlugin arch_plugins;
 	RVecIoPlugin io_plugins;
 	RVecAsmPlugin asm_plugins;
+	int cmd_depth; // r2 commands issued from JS that have not returned yet
 } QjsPluginManager;
 
 static bool plugin_manager_init(QjsPluginManager *pm, RCore *core, JSRuntime *rt) {
@@ -228,7 +229,9 @@ static bool plugin_manager_remove_parse_plugin(QjsPluginManager *pm, const char 
 
 	size_t index = RVecAsmPlugin_find_index (&pm->asm_plugins, (void *)name, compare_parse_plugin_name);
 	if (index != SZT_MAX) {
+		pm->cmd_depth++;
 		pm->core->lang->cmdf (pm->core, "Lp-%s", name);
+		pm->cmd_depth--;
 		RVecAsmPlugin_remove (&pm->asm_plugins, index);
 		return true;
 	}
@@ -241,7 +244,9 @@ static bool plugin_manager_remove_core_plugin(QjsPluginManager *pm, const char *
 
 	size_t index = RVecCorePlugin_find_index (&pm->core_plugins, (void *)name, compare_core_plugin_name);
 	if (index != SZT_MAX) {
+		pm->cmd_depth++;
 		pm->core->lang->cmdf (pm->core, "L-%s", name);
+		pm->cmd_depth--;
 		// JS_FreeValue (pm->default_ctx.ctx, pm->default_ctx.call_func);
 		RVecCorePlugin_remove (&pm->core_plugins, index);
 		return true;
@@ -278,7 +283,9 @@ static bool plugin_manager_remove_arch_plugin(QjsPluginManager *pm, const char *
 	size_t index = RVecArchPlugin_find_index (&pm->arch_plugins, (void *)arch, compare_arch_plugin_arch);
 	if (index != SZT_MAX) {
 		QjsArchPlugin *ap = RVecArchPlugin_at (&pm->arch_plugins, index);
+		pm->cmd_depth++;
 		pm->core->lang->cmdf (pm->core, "L-%s", ap->name);
+		pm->cmd_depth--;
 		RVecArchPlugin_remove (&pm->arch_plugins, index);
 		return true;
 	}
@@ -587,9 +594,11 @@ static JSValue r2cmd0(JSContext *ctx, JSValueConst this_val, int argc, JSValueCo
 	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
 	int ret = 0;
 	if (R_STR_ISNOTEMPTY (n)) {
+		pm->cmd_depth++;
 		pm->core->lang->cmdf (pm->core, "'e scr.null=true");
 		ret = pm->core->lang->cmdf (pm->core, "%s", n);
 		pm->core->lang->cmdf (pm->core, "'e scr.null=false");
+		pm->cmd_depth--;
 	}
 	JS_FreeCString (ctx, n);
 	return JS_NewInt32 (ctx, ret);
@@ -603,9 +612,11 @@ static JSValue r2call0(JSContext *ctx, JSValueConst this_val, int argc, JSValueC
 	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
 	int ret = 0;
 	if (R_STR_ISNOTEMPTY (n)) {
+		pm->cmd_depth++;
 		pm->core->lang->cmdf (pm->core, "'e scr.null=true");
 		ret = pm->core->lang->cmdf (pm->core, "'%s", n);
 		pm->core->lang->cmdf (pm->core, "'e scr.null=false");
+		pm->cmd_depth--;
 	}
 	JS_FreeCString (ctx, n);
 	return JS_NewInt32 (ctx, ret);
@@ -618,7 +629,9 @@ static JSValue r2cmd(JSContext *ctx, JSValueConst this_val, int argc, JSValueCon
 	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
 	char *ret = NULL;
 	if (R_STR_ISNOTEMPTY (n)) {
+		pm->cmd_depth++;
 		ret = pm->core->lang->cmd_str (pm->core, n);
+		pm->cmd_depth--;
 	}
 	JSValue res = JS_NewString (ctx, r_str_get (ret));
 	JS_FreeCString (ctx, n);
@@ -638,7 +651,9 @@ static JSValue r2callAt(JSContext *ctx, JSValueConst this_val, int argc, JSValue
 	char *ret = NULL;
 	if (R_STR_ISNOTEMPTY (n)) {
 		ut64 at = r_num_math (pm->core->num, n);
+		pm->cmd_depth++;
 		ret = pm->core->lang->call_at (pm->core, at, c);
+		pm->cmd_depth--;
 	}
 	JSValue res = JS_NewString (ctx, r_str_get (ret));
 	JS_FreeCString (ctx, c);
@@ -1119,6 +1134,11 @@ static bool fini(RLangSession *s) {
 	R_RETURN_VAL_IF_FAIL (s && s->plugin_data, false);
 
 	QjsPluginManager *pm = s->plugin_data;
+	if (pm->cmd_depth > 0) {
+		// reached from r2.cmd() and friends: the runtime is still executing
+		R_LOG_ERROR ("Cannot reset the JavaScript VM while a script is running");
+		return false;
+	}
 
 	QjsContext *qctx = &pm->default_ctx;
 	plugin_manager_fini (pm);

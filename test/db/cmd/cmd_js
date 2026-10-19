@@ -17,6 +17,28 @@ ERROR: [uninitialized]
 EOF
 RUN
 
+NAME=js! from a running script must not free the live runtime
+FILE=-
+CMDS=<<EOF
+'js var a = 123; r2.cmd("js!"); r2.log(a)
+'js r2.cmd("js 1"), r2.cmd("#!!"); r2.log(a)
+'js r2.plugin("core", function () { return { name: "x;js!", call: function (s) { return false; } }; }); r2.unload("core", "x;js!"); r2.log(a)
+js!
+'js r2.log(typeof a)
+EOF
+EXPECT=<<EOF
+123
+123
+123
+undefined
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot reset the JavaScript VM while a script is running
+ERROR: Cannot reset the JavaScript VM while a script is running
+ERROR: Cannot reset the JavaScript VM while a script is running
+EOF
+RUN
+
 NAME=qjs echo binding output paths
 FILE=-
 CMDS=<<EOF
