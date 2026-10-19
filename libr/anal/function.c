@@ -118,7 +118,7 @@ R_API void r_anal_function_free(RAnalFunction *fcn) {
 	if (ht_up_find (anal->ht_addr_fun, fcn->addr, NULL) == fcn) {
 		ht_up_delete (anal->ht_addr_fun, fcn->addr);
 	}
-	if (ht_pp_find (anal->ht_name_fun, fcn->name, NULL) == fcn) {
+	if (fcn->name && ht_pp_find (anal->ht_name_fun, fcn->name, NULL) == fcn) {
 		ht_pp_delete (anal->ht_name_fun, fcn->name);
 	}
 
@@ -231,16 +231,19 @@ R_API RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr) {
 
 R_API bool r_anal_function_relocate(RAnalFunction *fcn, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (fcn, false);
+	RAnal *anal = fcn->anal;
 	if (fcn->addr == addr) {
 		return true;
 	}
-	if (r_anal_get_function_at (fcn->anal, addr)) {
+	if (r_anal_get_function_at (anal, addr)) {
 		return false;
 	}
-	ht_up_delete (fcn->anal->ht_addr_fun, fcn->addr);
+	if (r_anal_get_function_at (anal, fcn->addr) == fcn) {
+		ht_up_delete (anal->ht_addr_fun, fcn->addr);
+		ht_up_insert (anal->ht_addr_fun, addr, fcn);
+	}
 	fcn->addr = addr;
 	fcn->meta.numrefs = -1;
-	ht_up_insert (fcn->anal->ht_addr_fun, addr, fcn);
 	r_anal_function_bump_dirty_epoch (fcn);
 	return true;
 }
@@ -250,30 +253,30 @@ R_API bool r_anal_function_rename(RAnalFunction *fcn, const char *name) {
 	RAnal *anal = fcn->anal;
 	RAnalFunction *existing = ht_pp_find (anal->ht_name_fun, name, NULL);
 	if (existing) {
-		if (existing == fcn) {
-			// fcn->name == name, nothing to do
-			return true;
-		}
-		return false;
+		return existing == fcn;
 	}
-	char *newname = strdup (name);
-	if (R_LIKELY (newname)) {
-		bool in_tree = ht_pp_delete (anal->ht_name_fun, fcn->name);
-		free (fcn->name);
-		fcn->name = newname;
-		if (in_tree) {
-			// only re-insert if it really was in the tree before
-			ht_pp_insert (anal->ht_name_fun, fcn->name, fcn);
-		}
-		{
-			// TODO: maybe we want to know which was the old name?
-			REventFunction event = { .addr = fcn->addr, .fcn = fcn };
-			r_event_send (anal->ev, R_EVENT_FUNCTION_RENAMED, &event);
-		}
-		r_anal_function_bump_dirty_epoch (fcn);
+	if (fcn->name && !strcmp (fcn->name, name)) {
 		return true;
 	}
-	return false;
+	char *newname = strdup (name);
+	if (!newname) {
+		return false;
+	}
+	char *oldname = fcn->name;
+	bool registered = oldname && ht_pp_find (anal->ht_name_fun, oldname, NULL) == fcn;
+	if (registered) {
+		ht_pp_delete (anal->ht_name_fun, oldname);
+		ht_pp_insert (anal->ht_name_fun, newname, fcn);
+	}
+	fcn->name = newname;
+	r_anal_function_bump_dirty_epoch (fcn);
+	REventFunction event = { .addr = fcn->addr, .fcn = fcn };
+	r_event_send (anal->ev, R_EVENT_FUNCTION_RENAMED, &event);
+	if (registered && anal->cb.on_fcn_rename) {
+		anal->cb.on_fcn_rename (anal, anal->user, fcn, oldname);
+	}
+	free (oldname);
+	return true;
 }
 
 R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb) {

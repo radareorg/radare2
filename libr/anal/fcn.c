@@ -879,14 +879,15 @@ static inline bool has_vars(RAnal *anal, ut64 addr) {
 
 static void fcn_rename_readdr(RAnalFunction *fcn, ut64 to) {
 	r_strf_var (addrstr, 64, "%08"PFMT64x, fcn->addr);
+	if (!r_anal_function_relocate (fcn, to)) {
+		return;
+	}
 	char *s = strstr (fcn->name, addrstr);
 	if (s) {
-		char *pfx = r_str_ndup (fcn->name, s - fcn->name);
-		free (fcn->name);
-		fcn->name = r_str_newf ("%s%08"PFMT64x, pfx, to);
-		free (pfx);
+		char *name = r_str_newf ("%.*s%08"PFMT64x, (int)(s - fcn->name), fcn->name, to);
+		r_anal_function_rename (fcn, name);
+		free (name);
 	}
-	fcn->addr = to;
 }
 
 // Resolve short, local constant constructions without carrying values across

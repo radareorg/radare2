@@ -12,6 +12,35 @@ foobar
 EOF
 RUN
 
+NAME=rename API updates flags and notifies only on success
+FILE=malloc://4096
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+af+ 0x100 original
+af+ 0x200 occupied
+afb+ 0x100 0x100 4
+e cmd.fcn.rename=?e renamed
+an updated @ 0x100
+afn updated @ 0x100
+afnq occupied @ 0x100
+afn @ 0x100
+f@F:functions
+f-*
+?v original
+?v updated
+?v occupied
+EOF
+EXPECT=<<EOF
+renamed
+updated
+0x00000100 0 updated
+0x00000200 0 occupied
+0x0
+0x100
+0x200
+EOF
+RUN
+
 NAME=afn interrupt handler
 FILE=-
 CMDS=<<EOF

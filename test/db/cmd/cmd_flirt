@@ -78,6 +78,7 @@ EOF
 EXPECT=<<EOF
 0x004004d1 86 flirt.__malloc_assert.constprop.13
 0x00400527 35 flirt.__gconv_release_step.part.1
+0x0040054a 79 flirt.length_mismatch
 0x00400b70 613 flirt.get_common_indeces.constprop.1
 0x00400de0 1657 flirt.__libc_start_main
 0x00401460 385 flirt.__libc_check_standard_fds
@@ -106,6 +107,7 @@ EXPECT=<<EOF
 0x0040ea50 288 flirt.__new_exitfn
 0x0040ec70 250 flirt.__cxa_atexit
 0x0040f430 542 flirt.__correctly_grouped_prefixmb
+0x0040f650 192 flirt.___asprintf
 0x0040f710 368 flirt.locked_vfxprintf
 0x0040f880 784 flirt.__fxprintf
 0x0040fe20 33103 flirt._IO_fflush
@@ -139,6 +141,7 @@ EXPECT=<<EOF
 0x0042b6b0 1022 flirt.__memcmp_sse2
 0x00447cf0 1568 flirt.handle_amd
 0x00448310 37 flirt.__cache_sysconf
+0x00448380 9 flirt.__wmemcpy
 0x004491d0 80 flirt.__get_child_max
 0x004492c0 288 flirt.__libc_open64
 0x004493e0 160 flirt.__open64_nocancel
@@ -203,7 +206,7 @@ EXPECT=<<EOF
 0x0045f800 13172 flirt._IO_vfprintf_internal
 0x00462b80 976 flirt.hack_digit
 0x00465a50 11033 flirt.___printf_fp
-0x00468470 192 flirt.___asprintf
+0x00468470 192 flirt.___asprintf_468470
 0x00468530 11072 flirt._i18n_number_rewrite
 0x0046b070 13435 flirt._IO_vfwprintf
 0x0046e540 1929 flirt.__parse_one_specmb
@@ -228,7 +231,8 @@ EXPECT=<<EOF
 0x00472480 102 flirt.__strtok_r
 0x00472cc0 218 flirt.__argz_create_sep
 0x00472da0 183 flirt.__argz_add_sep
-0x00473890 9 flirt.__wmemcpy
+0x00473890 9 flirt.__wmemcpy_473890
+0x004738a0 9 flirt.__wmemcpy_4738a0
 0x00473ab0 480 flirt.__wcrtomb
 0x00473c90 806 flirt.__wcsrtombs
 0x00473fc0 32 flirt.__wcschrnul
@@ -268,7 +272,7 @@ EXPECT=<<EOF
 0x0047f5c0 240 flirt._dl_add_to_slotinfo
 0x0047f6b0 416 flirt._dl_get_origin
 0x0047f850 197 flirt._dl_scope_free
-0x00480690 48 flirt.length_mismatch
+0x00480690 48 flirt.length_mismatch_480690
 0x004806c0 210 flirt._dl_exception_create
 0x004807a0 729 flirt._dl_exception_create_format
 0x00480a80 38 flirt._dl_exception_free
@@ -291,7 +295,8 @@ EXPECT=<<EOF
 0x004832a0 1378 flirt.__mpn_impn_mul_n
 0x00483810 431 flirt.__mpn_impn_sqr_n_basecase
 0x004839c0 1262 flirt.__mpn_impn_sqr_n
-0x00483f50 173 flirt.__mpn_sub_n
+0x00483f50 173 flirt.__mpn_sub_n_483f50
+0x00484000 235 flirt.__mpn_addmul_1
 0x004840f0 144 flirt.__mpn_extract_double
 0x00484180 185 flirt.__mpn_extract_long_double
 0x00484240 286 flirt.__mpn_extract_float128
@@ -313,7 +318,8 @@ EXPECT=<<EOF
 0x00487960 101 flirt._dl_tlsdesc_resolve_hold_fixup
 0x004879d0 25 flirt._dl_unmap
 0x00487cf0 83 flirt._dl_addr_inside_object
-0x00487e00 235 flirt.__mpn_addmul_1
+0x00487d50 173 flirt.__mpn_sub_n
+0x00487e00 235 flirt.__mpn_addmul_1_487e00
 0x004895d0 877 flirt._dl_init
 0x00489940 1806 flirt._dl_check_map_versions
 0x0048fa10 478 flirt.__dl_iterate_phdr

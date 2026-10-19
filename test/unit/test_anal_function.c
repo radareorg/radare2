@@ -100,8 +100,92 @@ bool test_r_anal_function_relocate(void) {
 	mu_assert_neq (r_anal_function_dirty_epoch (fa), revision_epoch,
 		"rename bumps the function revision epoch");
 
+	RAnalFunction *pending = r_anal_function_new (anal);
+	pending->addr = fa->addr;
+	mu_assert_false (r_anal_function_relocate (pending, fb->addr), "pending relocation rejects occupied address");
+	mu_assert_true (r_anal_function_relocate (pending, 0x5678), "relocate pending function");
+	mu_assert_null (r_anal_get_function_at (anal, pending->addr), "relocating does not register a pending function");
+	mu_assert_ptreq (r_anal_get_function_at (anal, fa->addr), fa, "pending relocation keeps registered function");
+	assert_invariants (anal);
+	r_anal_function_free (pending);
+
 	assert_leaks (anal);
 	r_anal_free (anal);
+	mu_end;
+}
+
+static int function_renamed_cb(RAnal *anal, void *user, RAnalFunction *fcn, const char *oldname) {
+	int *count = user;
+	mu_assert_streq (oldname, "original", "callback receives old name");
+	mu_assert_streq (fcn->name, "renamed", "callback sees new name");
+	mu_assert_null (r_anal_get_function_byname (anal, oldname), "old name removed before callback");
+	mu_assert_ptreq (r_anal_get_function_byname (anal, fcn->name), fcn, "new name indexed before callback");
+	(*count)++;
+	return 0;
+}
+
+bool test_r_anal_function_rename(void) {
+	RAnal *anal = r_anal_new ();
+	RAnalFunction *fcn = r_anal_create_function (anal, "original", 0x100, 0, NULL);
+	RAnalFunction *other = r_anal_create_function (anal, "occupied", 0x200, 0, NULL);
+	int count = 0;
+	anal->user = &count;
+	anal->cb.on_fcn_rename = function_renamed_cb;
+	mu_assert_false (r_anal_function_rename (fcn, other->name), "duplicate rename fails");
+	mu_assert_streq (fcn->name, "original", "failed rename keeps name");
+	mu_assert_true (r_anal_function_rename (fcn, "renamed"), "rename succeeds");
+	mu_assert_true (r_anal_function_rename (fcn, fcn->name), "renaming to own name succeeds");
+	mu_assert_eq (count, 1, "callback runs once for a changed name");
+	assert_invariants (anal);
+
+	RAnalFunction *pending = r_anal_function_new (anal);
+	pending->addr = 0x300;
+	pending->name = strdup (other->name);
+	mu_assert_true (r_anal_function_rename_unique (pending, "occupied"), "unique rename adds address suffix");
+	mu_assert_streq (pending->name, "occupied_300", "unique name");
+	mu_assert_ptreq (r_anal_get_function_byname (anal, "occupied"), other, "pending rename preserves other index entry");
+	mu_assert_null (r_anal_get_function_byname (anal, pending->name), "pending rename does not register function");
+	mu_assert_eq (count, 1, "pending rename does not notify core");
+	assert_invariants (anal);
+	mu_assert_true (r_anal_add_function (anal, pending), "register renamed function");
+	mu_assert_true (r_anal_function_rename_unique (pending, "occupied"), "unique rename is idempotent");
+	assert_invariants (anal);
+
+	RAnalFunction *collision = r_anal_create_function (anal, "occupied_100", 0x400, 0, NULL);
+	mu_assert_false (r_anal_function_rename_unique (fcn, "occupied"), "occupied fallback also fails");
+	mu_assert_streq (fcn->name, "renamed", "failed fallback preserves name");
+	mu_assert_ptreq (r_anal_get_function_byname (anal, collision->name), collision, "fallback preserves other function");
+	mu_assert_eq (count, 1, "failed fallback does not notify");
+	mu_assert_true (r_anal_function_delete (anal, pending), "delete renamed function");
+	mu_assert_null (r_anal_get_function_byname (anal, "occupied_300"), "delete removes new name");
+	assert_invariants (anal);
+	r_anal_free (anal);
+	mu_end;
+}
+
+bool test_r_core_function_rename(void) {
+	RCore *core = r_core_new ();
+	RAnalFunction *fcn = r_anal_create_function (core->anal, "original", 0x100, 0, NULL);
+	RFlagItem *flag = r_flag_get (core->flags, fcn->name);
+	r_flag_item_set_comment (core->flags, flag, "keep this comment");
+	mu_assert_true (r_anal_function_rename (fcn, "renamed"), "rename through analysis API");
+	mu_assert_ptreq (r_flag_get (core->flags, "renamed"), flag, "rename preserves flag identity");
+	mu_assert_null (r_flag_get (core->flags, "original"), "old flag name removed");
+	mu_assert_streq (r_flag_get_meta (core->flags, flag->id)->comment, "keep this comment", "rename preserves metadata");
+	RAnalFunction *other = r_anal_create_function (core->anal, "occupied", 0x200, 0, NULL);
+	mu_assert_false (r_anal_function_rename (fcn, other->name), "reject duplicate name");
+	mu_assert_ptreq (r_flag_get (core->flags, "renamed"), flag, "failed rename preserves flag");
+	r_flag_unset (core->flags, flag);
+	RFlagItem *symbol = r_flag_set_inspace (core->flags, R_FLAGS_FS_SYMBOLS, "renamed", fcn->addr, 32);
+	mu_assert_true (r_anal_function_rename (fcn, "from_symbol"), "rename function sharing symbol name");
+	mu_assert_ptreq (r_flag_get (core->flags, "renamed"), symbol, "rename preserves binary symbol");
+	flag = r_flag_get (core->flags, fcn->name);
+	mu_assert_notnull (flag, "rename creates a function flag");
+	mu_assert_streq (flag->space->name, R_FLAGS_FS_FUNCTIONS, "new flag belongs to functions space");
+	r_flag_unset (core->flags, flag);
+	mu_assert_true (r_anal_function_rename (fcn, "missing_flag"), "rename with missing flag");
+	mu_assert_notnull (r_flag_get (core->flags, fcn->name), "missing flag recreated");
+	r_core_free (core);
 	mu_end;
 }
 
@@ -774,6 +858,8 @@ bool test_r_anal_function_switches_foreach(void) {
 
 int all_tests(void) {
 	mu_run_test (test_r_anal_function_relocate);
+	mu_run_test (test_r_anal_function_rename);
+	mu_run_test (test_r_core_function_rename);
 	mu_run_test (test_r_anal_function_labels);
 	mu_run_test (test_r_anal_str_to_fcn_returns_status);
 	mu_run_test (test_r_core_anal_fcn_prefers_exact_start_match);

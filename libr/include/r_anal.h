@@ -1091,13 +1091,27 @@ R_API RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr);
 
 R_API bool r_anal_function_delete(RAnal *anal, RAnalFunction *fcn);
 
-// rhange the entrypoint of fcn
+// Change the entrypoint of fcn without registering a function that has not been added yet
 // This can fail (and return false) if there is already another function at the new address
 R_API bool r_anal_function_relocate(RAnalFunction *fcn, ut64 addr);
 
-// rename the given function
+// Rename the function and notify on_fcn_rename with its old name if registered
 // This can fail (and return false) if there is another function with the name given
 R_API bool r_anal_function_rename(RAnalFunction *fcn, const char *name);
+
+// R2_640: make this public; try an address suffix when the requested name is taken
+static inline bool r_anal_function_rename_unique(RAnalFunction *fcn, const char *name) {
+	if (!fcn || R_STR_ISEMPTY (name)) {
+		return false;
+	}
+	if (r_anal_function_rename (fcn, name)) {
+		return true;
+	}
+	char *unique = r_str_newf ("%s_%"PFMT64x, name, fcn->addr);
+	bool renamed = unique && r_anal_function_rename (fcn, unique);
+	free (unique);
+	return renamed;
+}
 
 R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb);
 R_API void r_anal_function_remove_block(RAnalFunction *fcn, RAnalBlock *bb);

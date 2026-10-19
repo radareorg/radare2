@@ -599,10 +599,14 @@ static bool module_match_buffer(RAnal *anal, const RFlirtModule *module, ut8 *b,
 				continue;
 			}
 			name = r_name_filter_dup (flirt_func->name + name_offs);
-			free (next_module_function->name);
-			next_module_function->name = r_str_newf ("flirt.%s", name);
-			anal->flb.set (anal->flb.f, next_module_function->name,
+			char *flirt_name = r_str_newf ("flirt.%s", name);
+			r_anal_function_rename_unique (next_module_function, flirt_name);
+			free (flirt_name);
+			RFlagItem *flag = anal->flb.set (anal->flb.f, next_module_function->name,
 				next_module_function->addr, next_module_function_size);
+			if (flag) {
+				flag->space = r_flag_space_cur (anal->flb.f);
+			}
 			R_LOG_INFO ("Found %s", next_module_function->name);
 			free (name);
 		}

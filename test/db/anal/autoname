@@ -288,14 +288,14 @@ EXPECT=<<EOF
 0x100005638   82   1840 sub.printf_100005638
 0x100005d68    6    156 sub.printf_100005d68
 0x100005e04   34    740 sub.mbrtowc_100005e04
-0x100006184    1     32 sub.printf_100006184
-0x1000060e8   11    196 sub.printf_1000060e8
+0x100006184    1     32 fcn.100006184
+0x1000060e8   11    196 sym.func.1000060e8
 0x1000061dc    7    180 sub.tputs_1000061dc
 0x100006290   14    176 sub.putchar_100006290
 0x10000636c   13    232 sub.printf_10000636c
-0x100006454   39    828 sub.printf_100006454
+0x100006454   39    828 sub.putchar_100006454
 0x100006790   19    408 sub.warnx_100006790
-0x100006928    3     72 sub.tputs_100006928
+0x100006928    3     72 sub.getpid_100006928
 0x100006970    5     44 sub.abort_100006970
 0x10000699c    1     52 sub.write_10000699c
 0x1000069d0    1     28 sub.putchar_1000069d0
@@ -428,5 +428,27 @@ EOF2
 EXPECT=<<EOF2
 sub.foo
 sub.foo_200
+EOF2
+RUN
+
+NAME=aan keeps the function name index in sync
+FILE=bins/elf/pltrel/add.so
+CMDS=<<EOF2
+aa
+aan
+afn @ 0x1040
+f-*
+?v fcn.00001040
+?v loc.imp.__cxa_finalize
+af-0x1040
+?v fcn.00001040
+?v loc.imp.__cxa_finalize
+EOF2
+EXPECT=<<EOF2
+loc.imp.__cxa_finalize
+0x0
+0x1040
+0x0
+0x0
 EOF2
 RUN
