@@ -674,6 +674,7 @@ grub_udf_iterate_dir(grub_fshelp_node_t dir,
 		}
 
 		if (grub_udf_read_icb (dir->data, &dirent.icb, child)) {
+			grub_free (child);
 			return 0;
 		}
 
@@ -685,20 +686,16 @@ grub_udf_iterate_dir(grub_fshelp_node_t dir,
 			}
 		} else {
 			enum grub_fshelp_filetype type;
-#ifndef _MSC_VER
-			grub_uint8_t raw[dirent.file_ident_length];
-			grub_uint16_t utf16[dirent.file_ident_length - 1];
-			grub_uint8_t filename[dirent.file_ident_length * 2];
-#else
-			grub_uint8_t *raw = grub_malloc (dirent.file_ident_length);
-			grub_uint16_t *utf16 = grub_malloc (dirent.file_ident_length - 1);
-			grub_uint8_t *filename = grub_malloc (dirent.file_ident_length * 2);
-#endif
+			/* The name length is 8 bit, an UTF-16 unit takes up to 3 UTF-8 bytes.  */
+			grub_uint8_t raw[256] = {0};
+			grub_uint16_t utf16[255];
+			grub_uint8_t filename[255 * 3 + 1];
 			grub_size_t utf16len = 0;
 
 			type = ((dirent.characteristics & GRUB_UDF_FID_CHAR_DIRECTORY)? (GRUB_FSHELP_DIR): (GRUB_FSHELP_REG));
 
 			if ((grub_udf_read_file (dir, 0, 0, 0, offset, dirent.file_ident_length, (char *)raw)) != dirent.file_ident_length) {
+				grub_free (child);
 				return 0;
 			}
 
@@ -716,19 +713,21 @@ grub_udf_iterate_dir(grub_fshelp_node_t dir,
 					utf16[i] = (raw[2 * i + 1] << 8) | raw[2 * i + 2];
 				}
 			}
-			if (raw[0] == 8 || raw[0] == 16) {
+			if (dirent.file_ident_length && (raw[0] == 8 || raw[0] == 16)) {
 				*grub_utf16_to_utf8 (filename, utf16, utf16len) = '\0';
 
 				if (hook ((char *)filename, type, child, closure)) {
 					return 1;
 				}
+			} else {
+				/* The hook owns the nodes it gets, free the ones it never sees.  */
+				grub_free (child);
 			}
 		}
 
 		/* Align to dword boundary.  */
 		offset = (offset + dirent.file_ident_length + 3) &(~3);
 	}
-	grub_free (child);
 	return 0;
 }
 

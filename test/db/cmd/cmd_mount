@@ -983,3 +983,26 @@ d ..
 f A
 EOF
 RUN
+
+NAME=m udf mounts and lists udf.img
+FILE=bins/fs/udf.img
+CMDS=<<EOF2
+m /u udf 0
+md /u
+md /u/bin
+mc /u/README.md
+EOF2
+EXPECT=<<EOF2
+d .
+d ..
+f README.md
+d bin
+d etc
+d .
+d ..
+f ls
+This is an ISO9660 filesystem
+
+EOF2
+EXPECT_ERR=
+RUN
