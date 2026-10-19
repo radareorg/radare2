@@ -1262,7 +1262,11 @@ static void cmd_ic_sub(RCore *core, const char *input) {
 			if (field_name || super_name || method_name) {
 				klass = k;
 			} else {
-				// delete class!
+				// drop the name lookup first or ic+ gets the freed class back
+				RBinObject *bo = r_bin_cur_object (core->bin);
+				if (bo && k->name && ht_pp_find (bo->classes_ht, k->name->oname, NULL) == k) {
+					ht_pp_delete (bo->classes_ht, k->name->oname);
+				}
 				r_list_delete (klasses, iter);
 				cmd_ic_invalidate_method_cache (core);
 				free (klass_name);

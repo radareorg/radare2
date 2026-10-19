@@ -845,8 +845,8 @@ static void r_bin_object_rebuild_classes_ht(RBinObject *bo) {
 	RListIter *it;
 	RBinClass *klass;
 	r_list_foreach (bo->classes, it, klass) {
-		if (klass->name) {
-			ht_pp_insert (bo->classes_ht, klass->name, klass);
+		if (klass->name && klass->name->oname) {
+			ht_pp_insert (bo->classes_ht, klass->name->oname, klass);
 		}
 	}
 }

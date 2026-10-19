@@ -1531,3 +1531,25 @@ EXPECT=<<EOF
 22
 EOF
 RUN
+
+NAME=ic- then ic+ recreates the class
+FILE=bins/elf/ls
+CMDS=<<EOF
+s 0
+ic+AAA
+ic+AAA.first
+ic-AAA
+ic+AAA.meth
+icq~AAA?
+ic*~AAA
+ic-AAA
+icq~AAA?
+EOF
+EXPECT=<<EOF
+1
+'f class.AAA = 0x0
+'f method.AAA.meth = 0x0
+'td struct AAA { char empty[0];};
+0
+EOF
+RUN
