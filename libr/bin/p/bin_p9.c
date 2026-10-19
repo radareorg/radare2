@@ -303,73 +303,36 @@ static st64 sym_read(RBinFile *bf, Sym *sym, const ut64 offset) {
 	return size;
 }
 
-// a level of the history walk, saved while an included file is walked
-typedef struct {
-	Sym *base;
-	Sym *start;
-	st64 delta;
-} HistLevel;
-
-R_VEC_TYPE(HistLevelVec, HistLevel)
-
-// see fline in libmach, which recurses where this pushes a level
-static void apply_history(RBinFile *bf, ut64 pc, ut64 line, Sym *base, Sym *end) {
-	HistLevelVec levels;
-	HistLevelVec_init (&levels);
-	// start of current level
-	Sym *start = base;
-	// current entry
-	Sym *h = base;
-	// sum of size of files this level
-	st64 delta = h->value;
-
-	while (h < end && h->name && line > h->value) {
-		if (strlen (h->name)) {
-			if (start == base) {
-				start = h++;
-			} else {
-				// an include inside the file at start: walk it as a new level
-				HistLevel *level = HistLevelVec_emplace_back (&levels);
-				if (!level) {
-					goto beach;
-				}
-				level->base = base;
-				level->start = start;
-				level->delta = delta;
-				base = start;
-				delta = start->value;
-			}
-		} else {
-			if (start == base) {
-				// end of this level
-				if (HistLevelVec_empty (&levels)) {
-					goto beach;
-				}
-				// back to the including file, whose include ends here too
-				HistLevel *level = HistLevelVec_last (&levels);
-				base = level->base;
-				start = level->start;
-				delta = level->delta;
-				HistLevelVec_pop_back (&levels);
-			}
-
-			// end of included file
-			delta += h->value - start->value;
-			h++;
-			start = base;
+// see fline in libmach: empty names close the innermost open file
+static void apply_history(RBinFile *bf, ut64 pc, ut64 line, Sym *first, Sym *end) {
+	size_t depth = 0;
+	Sym *h;
+	for (h = first; h < end && h->name && line > h->value; h++) {
+		if (*h->name) {
+			depth++;
+		} else if (!depth || !--depth) {
+			return;
 		}
 	}
-
-	char *name = (h < end && h->name)? start->name: "<unknown>";
-	if (start != base) {
-		line = line - start->value + 1;
-	} else {
-		line = line - delta + 1;
+	// walk back to the open file, summing the lines of its closed includes
+	ut64 nested = 0;
+	ut64 closed_at = 0;
+	depth = 0;
+	Sym *file = h;
+	while (file > first) {
+		file--;
+		if (!*file->name) {
+			if (!depth++) {
+				closed_at = file->value;
+			}
+		} else if (!depth) {
+			break;
+		} else if (!--depth) {
+			nested += closed_at - file->value;
+		}
 	}
-
-	bf->addrline.al_add (&bf->addrline, pc, name, NULL, line, 0);
-beach:
-	HistLevelVec_fini (&levels);
+	const char *name = (h < end && h->name)? file->name: "<unknown>";
+	bf->addrline.al_add (&bf->addrline, pc, name, NULL, line - file->value - nested + 1, 0);
 }
 
 static bool symbols_vec(RBinFile *bf) {

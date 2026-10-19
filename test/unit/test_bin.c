@@ -147,18 +147,21 @@ bool test_r_bin_plan9_history_lines(void) {
 		{ 10, 0 },
 		{ 20, 0 },
 	};
-	// lines 2, 4, 6, 9 and 12 at 0x1020..0x1024
-	const ut8 pcline[] = { 2, 2, 2, 3, 3 };
+	// lines 1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 20 and 21
+	const ut8 pcline[] = { 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 8, 1 };
+	const char *expected[] = {
+		"/a.c:1", "/a.c:2", "/a.c:3", "/b.h:2", "/b.h:3", "/c.h:2",
+		"/c.h:4", "/b.h:4", "/b.h:5", "/a.c:5", "/a.c:13", "<none>",
+	};
 	RBuffer *buf = plan9_history_binary (hist, R_ARRAY_SIZE (hist), pcline, sizeof (pcline));
 	mu_assert_notnull (buf, "Plan 9 history buffer");
 	RIO *io = r_io_new ();
 	RBin *bin = plan9_open (buf, io);
 	mu_assert_notnull (bin, "Plan 9 history binary could not be opened");
-	mu_assert_streq_free (plan9_addrline (bin, 0x1020), "/a.c:2", "line before the first include");
-	mu_assert_streq_free (plan9_addrline (bin, 0x1021), "/b.h:2", "line in an included file");
-	mu_assert_streq_free (plan9_addrline (bin, 0x1022), "/c.h:2", "line in a nested include");
-	mu_assert_streq_free (plan9_addrline (bin, 0x1023), "/b.h:4", "line after the nested include");
-	mu_assert_streq_free (plan9_addrline (bin, 0x1024), "/a.c:5", "line after the include");
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (expected); i++) {
+		mu_assert_streq_free (plan9_addrline (bin, 0x1020 + i), expected[i], "source history file and line");
+	}
 	r_bin_free (bin);
 	r_io_free (io);
 	r_unref (buf);
