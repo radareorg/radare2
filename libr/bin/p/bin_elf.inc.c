@@ -726,8 +726,8 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_AARCH64_RELATIVE: SETAP (); break;
 		case R_AARCH64_IRELATIVE: r->is_ifunc = true; SETP (); break;
 		// data references
-		case R_AARCH64_PREL16: ADD (16, B); break;
-		case R_AARCH64_PREL32: ADD (32, B); break;
+		case R_AARCH64_PREL16: ADD (16, 0); break;
+		case R_AARCH64_PREL32: ADD (32, 0); break;
 		case R_AARCH64_PREL64:
 			r->addend = (st64) sym_vaddr + rel->addend - rel->rva;
 			r->type = R_BIN_RELOC_64;

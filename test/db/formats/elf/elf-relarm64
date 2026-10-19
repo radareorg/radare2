@@ -48,7 +48,7 @@ vaddr      paddr      type   ntype name
 0x08000044 0x00000044 ADD_32 283   local_target
 0x0800004c 0x0000004c ADD_32 279   local_target
 0x08000050 0x00000050 ADD_32 280   local_target
-0x08000068 0x00000068 ADD_32 261   extern_target + 0x08000000
+0x08000068 0x00000068 ADD_32 261   extern_target
 0x0800006c 0x0000006c ADD_32 258   local_target
 0x08000070 0x00000070 ADD_64 257   local_target
 0x08000320 0x00000048 ADD_32 283   extern_target
@@ -115,5 +115,29 @@ p8 24 @ 0x08000040
 EOF
 EXPECT=<<EOF
 0100009021ac40f90200009042ac40f943080058c0035fd6
+EOF
+RUN
+
+NAME=ELF: aarch64 PREL32 section-symbol addends omit the link base
+FILE=bins/elf/ptx/ptx_ops.o
+CMDS=<<EOF
+ir~0x08001f9c,0x08001fbc
+EOF
+EXPECT=<<EOF
+0x08001f9c 0x00001f9c ADD_32 261   .text + 0x00000024
+0x08001fbc 0x00001fbc ADD_32 261   .text + 0x00000088
+EOF
+RUN
+
+NAME=ELF: aarch64 PREL16 and PREL32 list S + A without the link base
+FILE=bins/elf/aarch64-prel16.o
+CMDS=<<EOF
+ir~ADD_
+EOF
+EXPECT=<<EOF
+0x08000044 0x00000044 ADD_16 262   ext16
+0x08000046 0x00000046 ADD_16 262   ext16 + 0x00000004
+0x08000048 0x00000048 ADD_32 261   ext32
+0x0800004c 0x0000004c ADD_32 261   ext32 + 0x00000008
 EOF
 RUN
