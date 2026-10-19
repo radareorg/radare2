@@ -2984,7 +2984,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 			pj_kn (pj, "addr", core->addr + idx);
 			{
-				char *bytes = r_hex_bin2strdup (buf + idx, size);
+				char *bytes = r_hex_bin2strdup (buf + idx, R_MAX (R_MIN (size, len - idx), 0));
 				pj_ks (pj, "bytes", bytes);
 				free (bytes);
 			}
@@ -3148,10 +3148,12 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 						free (maskstr);
 					} else {
 						ut8 *mask = r_anal_mask (core->anal, instlen, buf + idx, core->addr + idx);
-						char *maskstr = r_hex_bin2strdup (mask, size);
-						printline ("mask", "%s\n", maskstr);
-						free (maskstr);
-						free (mask);
+						if (mask) {
+							char *maskstr = r_hex_bin2strdup (mask, instlen);
+							printline ("mask", "%s\n", maskstr);
+							free (maskstr);
+							free (mask);
+						}
 					}
 				} else {
 					R_LOG_DEBUG ("invalid instlen for 0x%"PFMT64x, op.addr);
@@ -3176,7 +3178,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 #endif
 			printline ("bytes", "%s", "");
-			int minsz = R_MIN (len, size);
+			int minsz = R_MIN (len - idx, size);
 			minsz = R_MAX (minsz, 0);
 			for (j = 0; j < minsz; j++) {
 				r_cons_printf (core->cons, "%02x", buf[idx + j]);

@@ -55,6 +55,65 @@ mask: 0000807f
 EOF
 RUN
 
+NAME=ao mask and bytes are limited to the bytes in the block
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=bpf
+e asm.bits=64
+wx b700000001000000
+b 1
+ao 1~mask,bytes
+b 8
+ao 1~mask,bytes
+EOF
+EXPECT=<<EOF
+mask: ff
+bytes: b7
+mask: ffffffffffffffff
+bytes: b700000001000000
+EOF
+RUN
+
+NAME=ao mask and bytes ignore a size hint larger than the block
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 90909090
+ahs 64
+b 1
+ao 1~mask,bytes
+b 8
+aoj~{[0].bytes}
+EOF
+EXPECT=<<EOF
+mask: ff
+bytes: 90
+9090909000000000
+EOF
+RUN
+
+NAME=ao bytes of a later opcode stop at the end of the block
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 90909090
+ahs 64 @ 3
+b 4
+ao 4~bytes
+b 32
+aoj 4~{[3].bytes}
+EOF
+EXPECT=<<EOF
+bytes: 90
+bytes: 90
+bytes: 90
+bytes: 90
+9000000000000000000000000000000000000000000000000000000000
+EOF
+RUN
+
 NAME=aob
 FILE=-
 CMDS=<<EOF
