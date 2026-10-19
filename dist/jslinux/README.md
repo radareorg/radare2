@@ -117,6 +117,72 @@ afterwards.
   input; focus loss and visual-viewport changes hide the extra keys and refit
   the terminal when iOS dismisses its keyboard.
 
+## Optional PHP HTTP relay
+
+`web/http.php` supplies the server side of an HTTP bridge for AI clients.
+Place it beside the page on a PHP-enabled host such as the radare.org
+deployment. `make relay` copies just this file to `www/http.php`; `make www`
+also includes it. PHP 7.4 or later with the cURL extension is required.
+The ordinary `make serve` server only serves static files and cannot execute PHP.
+
+Configure these environment variables in the PHP server or PHP-FPM pool:
+
+- `R2_HTTP_UPSTREAM`: the fixed upstream base URL, for example
+  `https://llm.example/v1` or `http://127.0.0.1:11434` for Ollama running
+  on the web server.
+- `R2_HTTP_TOKEN`: a private access token supplied by each relay client.
+  Keep it out of the static page and offline bundle.
+
+Both are required; an unconfigured relay returns HTTP 503. Upstream API keys
+are supplied separately in the request headers. `localhost` here refers to
+the PHP server, not the browser user's machine. With the relay on the same
+origin as the page, upstream providers do not need to enable browser CORS.
+All requests and supplied API keys pass through the PHP server.
+
+The bridge protocol is a POST to `http.php` with a JSON body. It also accepts
+JSON sent as `application/octet-stream`, as used by TinyEMU's filesystem XHR:
+
+```json
+{
+  "token": "your-relay-access-token",
+  "method": "POST",
+  "path": "/chat/completions",
+  "headers": "Content-Type: application/json\nAuthorization: Bearer your-api-key",
+  "data": "{\"model\":\"your-model\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}],\"stream\":false}"
+}
+```
+
+`path` is appended to `R2_HTTP_UPSTREAM`; clients cannot select another host.
+`method` defaults to `GET`, `path` to `/`, and `headers` and `data` to empty
+strings. Headers are newline-separated; accepted names are listed in the PHP
+file. GET requests cannot carry data. Request envelopes are limited to 2 MiB,
+responses to 16 MiB, and requests to 120 seconds with a 10-second connection
+timeout. The web server's own timeouts must accommodate the chosen model.
+Redirects are returned without following them. TLS certificate verification
+remains enabled. This endpoint buffers complete responses; use non-streaming
+AI requests.
+
+A completed upstream request returns HTTP 200 with the upstream status and
+a base64-encoded body, including upstream errors such as 401 and 429:
+
+```json
+{"status":200,"body":"aGVsbG8=","encoding":"base64"}
+```
+
+Relay errors use HTTP 4xx/5xx with `{"error":"..."}`. The endpoint is excluded
+from the offline cache and sends `Cache-Control: no-store`.
+
+The PHP file supplies the browser-to-provider relay only. The current guest
+still needs a `r_socket_http_*` adapter over its 9p filesystem, QuickJS enabled
+for decai, the AI plugins packaged, and decai switched from external curl to
+the direct HTTP API. Deploying the PHP file alone does not enable AI commands.
+
+Run the relay regression locally, without contacting an AI provider:
+
+```sh
+python3 test/scripts/test-jslinux-http.py  # from the repository root
+```
+
 ## Licensing
 
 TinyEMU is MIT-licensed; the JSLinux demo files (`jslinux.js`,

@@ -81,6 +81,9 @@ self.addEventListener("fetch", function (event) {
 	if (url.origin !== scope.origin || url.pathname.indexOf(scope.pathname) !== 0) {
 		return;
 	}
+	if (url.pathname === new URL("http.php", scope).pathname) {
+		return;
+	}
 
 	event.respondWith((async function () {
 		const cache = await caches.open(R2_CACHE_NAME);

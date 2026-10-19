@@ -116,7 +116,7 @@ DOCKER_IMAGE ?= radare2-jslinux-builder
 DOCKER_PLATFORM ?= linux/amd64
 DOCKER_TARGET ?= all
 
-.PHONY: all www r2 tcc image docker docker-build serve run clean mrproper check-tools
+.PHONY: all www r2 tcc image relay docker docker-build serve run clean mrproper check-tools
 
 ifeq ($(USE_DOCKER),1)
 all: docker
@@ -135,8 +135,10 @@ image: $(WORK)/root-r2.bin
 www: $(WWW)/.runtime.stamp $(WWW)/index.html $(WWW)/favicon.ico \
 	$(WWW)/apple-touch-icon.png $(WWW)/manifest.webmanifest \
 	$(WWW)/root-riscv64.cfg $(WWW)/serve.py $(WWW)/root-r2/blk.txt \
-	$(WWW)/netfs/head $(WWW)/offline-files.js $(WWW)/service-worker.js
+	$(WWW)/netfs/head $(WWW)/offline-files.js $(WWW)/service-worker.js $(WWW)/http.php
 endif
+
+relay: $(WWW)/http.php
 
 .PHONY: dist
 
@@ -397,6 +399,10 @@ $(WWW)/root-riscv64.cfg: web/root-riscv64.cfg
 	cp -f $< $@
 
 $(WWW)/serve.py: web/serve.py
+	mkdir -p $(WWW)
+	cp -f $< $@
+
+$(WWW)/http.php: web/http.php
 	mkdir -p $(WWW)
 	cp -f $< $@
 
