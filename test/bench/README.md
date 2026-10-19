@@ -3,6 +3,65 @@ Benchmark testsuite
 
 Run `make` and compare results with runs of previous commits.
 
+## ANSI cropping
+
+`ansi_crop.c` compares two built versions of `r_str_ansi_crop`. Preserve the
+original utility library before rebuilding with the patch. Build both versions
+with the same compiler and optimization flags; for example, configure with
+`./configure CFLAGS=-O2`, then run `make -j2` from the repository root.
+
+From `test/bench`, on macOS:
+
+```sh
+make ansi_crop
+./ansi_crop /tmp/libr_util-before.dylib ../../libr/util/libr_util.dylib
+```
+
+On Linux, use the corresponding `.so` paths and set
+`LD_LIBRARY_PATH=../../libr/util` for the benchmark executable. Keep copies of
+the actual library files, since symlinks into a rebuilt checkout change with it.
+The benchmark rejects two paths resolving to the same function.
+
+Each dataset is checked for identical output before timing. The timed work is
+one crop plus `free`, including the crop's allocation. Inputs are prepared
+outside timing. Each case calibrates its iteration count against the baseline,
+then alternates execution order over seven trials and reports median nanoseconds
+per call. Datasets cover empty/short strings, panel titles, plain and colored
+panels, scrolling, UTF-8, dense color changes, a 1 MiB line, and the top/bottom
+of a 10,000-line buffer. These are function timings, not whole-application FPS.
+Remove the benchmark executable with `make clean-ansi-crop`.
+
+### Recorded comparison (2026-10-19)
+
+Apple M1 Max, macOS 27.0.1, Apple clang 21.0.0, `-O2`. Both libraries were built
+from the root in the same isolated source tree, starting at `c2da12582c` and
+then applying the crop patch. The normal checkout's build flags were unchanged.
+
+| Case | Input bytes | Before ns/call | After ns/call | Speedup |
+| --- | ---: | ---: | ---: | ---: |
+| Empty | 0 | 15.9 | 20.2 | 0.79x |
+| Short ASCII | 3 | 27.5 | 24.5 | 1.12x |
+| ASCII title | 32 | 120.5 | 63.6 | 1.90x |
+| ANSI title | 54 | 157.5 | 81.3 | 1.94x |
+| ASCII panel | 3,320 | 7,541.2 | 3,640.1 | 2.07x |
+| ANSI panel | 4,400 | 9,915.8 | 4,644.6 | 2.13x |
+| ANSI panel with scroll offsets | 4,400 | 11,245.2 | 5,139.6 | 2.19x |
+| Uncropped ASCII | 3,320 | 13,830.8 | 6,606.4 | 2.09x |
+| UTF-8 panel | 4,160 | 7,361.1 | 4,661.9 | 1.58x |
+| Dense ANSI | 1,640 | 3,317.4 | 2,225.4 | 1.49x |
+| Long line | 1,048,576 | 865,990 | 82,520 | 10.49x |
+| Large buffer, top 25 rows | 1,100,000 | 470,800 | 33,080 | 14.23x |
+| Large buffer, bottom 25 rows | 1,100,000 | 1,525,310 | 175,390 | 8.70x |
+
+The empty-input case regresses by 4.3 ns. The implementation removes ten lines
+(90 to 80), uses `strlen`/`strchr` for sizing and skipped text, bypasses Unicode
+width decoding for ASCII, and copies CSI sequences with `memcpy`. Height checks
+run only when a newline advances the row. The allocation excludes skipped rows
+and reserves reset sequences only for the requested height, with overflow checks.
+For the bottom-25-rows case, the requested allocation falls from 1,140,001 to
+2,851 bytes, calculated from the input length and reset counts. Each call still
+uses one allocation. ANSI, UTF-8 and trailing-newline behavior are preserved.
+
 ## String matching macros
 
 After building radare2, compare all four `R_STR_*_ANY` macros against loops and

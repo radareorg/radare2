@@ -694,6 +694,44 @@ bool test_r_str_rchr(void) {
 	mu_end;
 }
 
+bool test_r_str_ansi_crop(void) {
+	const struct {
+		const char *input, *expected;
+		ut32 x, y, x2, y2;
+	} cases[] = {
+		{ NULL, "", 0, 0, 10, 1 },
+		{ "", "", 0, 0, 10, 1 },
+		{ "abc", "", 2, 0, 2, 1 },
+		{ "abc", "", 0, 1, 3, 1 },
+		{ "abcdef", "bcd", 1, 0, 4, 1 },
+		{ "abc", "", 9, 0, 12, 1 },
+		{ "abc\ndef", "", 0, 2, 3, 3 },
+		{ "ab\ncd\nef", "ab\x1b[0m", 0, 0, 2, 1 },
+		{ "ab\n", "ab\x1b[0m\n", 0, 0, 2, 1 },
+		{ "ab\ncd", "cd", 0, 1, 2, 2 },
+		{ "\n\n", "\x1b[0m", 0, 0, 2, 1 },
+		{ "a\nb\nc", "a\x1b[0m\nb\x1b[0m\nc", 0, 0, UT32_MAX, UT32_MAX },
+		{ "\x1b[31mabc\x1b[0mDEF", "\x1b[31mbc\x1b[0m", 1, 0, 3, 1 },
+		{ "ab\x1b[31mcd", "ab\x1b[31m", 0, 0, 2, 1 },
+		{ "\x1b[31mabc\nDEF", "DEF", 0, 1, 3, 2 },
+		{ "aé€𝄞z", "é€𝄞", 1, 0, 4, 1 },
+		{ "a世界z", " 界z", 2, 0, 6, 1 },
+		{ "a世界z", "a", 0, 0, 2, 1 },
+		{ "a\x1b[123", "a\x1b[123", 0, 0, 20, 1 },
+		{ "a\x1b[123\nb", "a\x1b[123\nb", 0, 0, 20, 1 },
+		{ "ab\x1b", "ab\x1b", 0, 0, 3, 1 },
+		{ "a\xf0\x9f", "a\xf0\x9f", 0, 0, 2, 1 },
+		{ "abc\n", "", 0, UT32_MAX - 1, 3, UT32_MAX },
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (cases); i++) {
+		char *cropped = r_str_ansi_crop (cases[i].input, cases[i].x, cases[i].y, cases[i].x2, cases[i].y2);
+		mu_assert_streq (cropped, cases[i].expected, "ANSI crop preserves bytes and display boundaries");
+		free (cropped);
+	}
+	mu_end;
+}
+
 bool test_r_str_ansi_len(void) {
 	int len;
 
@@ -1349,6 +1387,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_sub_str_lchr);
 	mu_run_test (test_r_sub_str_rchr);
 	mu_run_test (test_r_str_rchr);
+	mu_run_test (test_r_str_ansi_crop);
 	mu_run_test (test_r_str_ansi_len);
 	mu_run_test (test_r_str_len_utf8_ansi);
 	mu_run_test (test_r_str_len_utf8_ansi_truncated_utf8_tail);

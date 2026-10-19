@@ -2296,17 +2296,15 @@ R_API char *r_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
 	}
 	char *r = ret;
 	while (*str) {
-		if (ch >= y2) {
-			if (r > ret) {
-				r--;
-			}
-			break;
-		}
 		if (*str == '\n') {
 			memcpy (r, Color_RESET "\n", sizeof (Color_RESET));
 			r += sizeof (Color_RESET);
 			str++;
 			ch++;
+			if (ch == y2 && *str) {
+				r--;
+				break;
+			}
 			cw = 0;
 		} else {
 			if ((*str & 0xc0) == 0x80) {
