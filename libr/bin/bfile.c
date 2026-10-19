@@ -174,7 +174,13 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 		}
 	}
 	r_buf_read_at (bf->buf, from, buf, len);
-	const char *charset = getenv ("RABIN2_CHARSET");
+	const char *charset = sdb_const_get (bin->sdb, "bin.charset", NULL);
+	if (R_STR_ISEMPTY (charset)) {
+		charset = getenv ("RABIN2_CHARSET");
+	}
+	if (R_STR_ISEMPTY (charset) && bf->bo && bf->bo->info) {
+		charset = bf->bo->info->charset;
+	}
 	if (R_STR_ISNOTEMPTY (charset) && bin->mb.muta) {
 		// Decode the buffer using the specified charset
 		RMutaSession *ms = bin->mb.muta_use (bin->mb.muta, charset);
@@ -202,7 +208,7 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 			free (obuf);
 			bin->mb.muta_session_free (ms);
 		} else {
-			R_LOG_ERROR ("Invalid value for RABIN2_CHARSET");
+			R_LOG_ERROR ("Unknown string charset '%s'", charset);
 		}
 	}
 	RCons *cons = bin->consb.cons;
