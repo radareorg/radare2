@@ -396,8 +396,8 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 	R_RETURN_VAL_IF_FAIL (s->data, false);
 
 	PluginData *pd = s->data;
-	ut8 data[32] = { 0 };
-	const int len = z80asm (pd, data, op->mnemonic);
+	ut8 data[64] = { 0 }; // r_anal_op_set_bytes keeps 64 bytes
+	const int len = z80asm (pd, data, sizeof (data), op->mnemonic);
 	if (len > 0) {
 		r_anal_op_set_bytes (op, op->addr, data, len);
 		return true;

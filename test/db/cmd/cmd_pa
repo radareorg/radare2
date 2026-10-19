@@ -197,3 +197,29 @@ ERROR: Cannot assemble 'mov eax, [eax+ebx+ecx+es:0x10]' at line 1
 ERROR: Cannot assemble 'a al,al,[al+al+al+al+al+al+al+al+al+al+al+al+al+al+al+al+al+al+al+al+al+al+al+al+al+al+al+al+al+al+al+al+al+es:0x41414141' at line 1
 EOF
 RUN
+
+NAME=pa z80 data directives bounded by the encoder buffer
+FILE=-
+ARGS=-a z80
+TIMEOUT=10
+CMDS=<<EOF
+pa ds 64
+pa db "\101\102\000\377"
+pa db "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+pa ds 65
+pa ds 0x7fffffff
+pa db "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+pa ld a, b
+EOF
+EXPECT=<<EOF
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+414200ff
+61616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161
+78
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'ds 65' at line 1
+ERROR: Cannot assemble 'ds 0x7fffffff' at line 1
+ERROR: Cannot assemble 'db "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"' at line 1
+EOF
+RUN

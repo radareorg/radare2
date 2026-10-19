@@ -14,3 +14,11 @@ str_any: str_any.c ../../libr/include/r_util/r_str_any.h
 .PHONY: clean-str-any
 clean-str-any:
 	rm -f str_any
+
+ansi_crop: ansi_crop.c
+	$(CC) $(CPPFLAGS) -O2 -I../../libr/include -I../../subprojects/sdb/include $< \
+		-o $@ $(LDFLAGS) -L../../libr/util -lr_util
+
+.PHONY: clean-ansi-crop
+clean-ansi-crop:
+	rm -f ansi_crop

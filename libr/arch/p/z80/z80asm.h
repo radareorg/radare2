@@ -173,6 +173,7 @@ struct reference
 typedef struct plugin_data_t {
 	uint8_t *obuf;
 	int obuflen;
+	int obufsz;
 	/* current line, address and file */
 	int addr;
 	int file;
@@ -204,6 +205,6 @@ typedef struct plugin_data_t {
 } PluginData;
 
 /* Assembler API */
-R_IPI int z80asm(PluginData *pd, unsigned char *outbuf, const char *s);
+R_IPI int z80asm(PluginData *pd, unsigned char *outbuf, int outbufsz, const char *s);
 
 #endif

@@ -15,8 +15,16 @@ static int rd_label(PluginData *pd, const char **p, bool *exists, struct label *
 static int rd_character(PluginData *pd, const char **p, int *valid);
 static int compute_ref(PluginData *pd, struct reference *ref, int allow_invalid);
 
-#define write_one_byte(x, y) pd->obuf[pd->obuflen++] = x
-#define wrtb(x) pd->obuf[pd->obuflen++] = x
+// count every byte but store only the ones that fit
+static void write_byte(PluginData *pd, int b) {
+	if (pd->obuflen < pd->obufsz) {
+		pd->obuf[pd->obuflen] = b;
+	}
+	pd->obuflen++;
+}
+
+#define write_one_byte(x, y) write_byte (pd, x)
+#define wrtb(x) write_byte (pd, x)
 
 /* Z80 opcode encoding constants */
 #define Z80_HL_ENCODING 6 /* [hl] register encoding for bit/res/set/shift ops */
@@ -1303,13 +1311,14 @@ static int rd_sp(PluginData *pd, const char **p) {
 	return 1;
 }
 
-static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
+static int assemble(PluginData *pd, const char *str, unsigned char *_obuf, int _obufsz) {
 	const char *ptr;
 	char *bufptr;
 	int r, s; /* registers */
 
 	pd->obuflen = 0;
 	pd->obuf = _obuf;
+	pd->obufsz = _obufsz;
 	int cmd, cont = 1;
 	pd->z80buffer = strdup (str);
 	if (!cont) {
@@ -2003,7 +2012,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 			pd->writebyte = 0;
 			break;
 		}
-		for (i = 0; i < r; i++) {
+		for (i = 0; i < r && pd->obuflen <= pd->obufsz; i++) {
 			write_one_byte (0, 0);
 		}
 		break;
@@ -2035,9 +2044,9 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf) {
 	}
 
 	free (pd->z80buffer);
-	return pd->obuflen;
+	return pd->obuflen > pd->obufsz? -1: pd->obuflen;
 }
 
-R_IPI int z80asm(PluginData *pd, unsigned char *outbuf, const char *s) {
-	return assemble (pd, s, outbuf);
+R_IPI int z80asm(PluginData *pd, unsigned char *outbuf, int outbufsz, const char *s) {
+	return assemble (pd, s, outbuf, outbufsz);
 }
