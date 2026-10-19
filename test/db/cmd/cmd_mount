@@ -921,3 +921,31 @@ d .
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=mount reiserfs recovers entries from a corrupt leaf
+FILE=bins/fs/reiserfs-corrupt.img
+CMDS=md /root
+EXPECT=<<EOF
+d .
+f link
+EOF
+RUN
+
+NAME=mount reiserfs symlink to the root directory
+FILE=bins/fs/reiserfs-link-root.img
+CMDS=<<EOF
+md /root
+mc /root/hello.txt
+mc /root/link
+EOF
+EXPECT=<<EOF
+d .
+f hello.txt
+f link
+hello from reiserfs
+
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot open /root/link
+EOF
+RUN

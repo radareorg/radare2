@@ -506,8 +506,10 @@ grub_reiserfs_get_item(struct grub_reiserfs_data *data,
 			/* Internal node. Navigate to the child that should contain
 			the searched key.  */
 			struct grub_reiserfs_key *keys = (struct grub_reiserfs_key *) (block_header + 1);
+			/* Clamp to the ITEM_COUNT keys and ITEM_COUNT + 1 children that fit in the block.  */
+			item_count = R_MIN (item_count, (block_size - sizeof (*block_header) - sizeof (struct grub_reiserfs_disk_child))
+				/ (sizeof (*keys) + sizeof (struct grub_reiserfs_disk_child)));
 			struct grub_reiserfs_disk_child *children = ((struct grub_reiserfs_disk_child *) (keys + item_count));
-
 			for (i = 0;
 				i < item_count && grub_reiserfs_compare_keys (key, &(keys[i])) >= 0;
 				i++) {
@@ -541,6 +543,8 @@ grub_reiserfs_get_item(struct grub_reiserfs_data *data,
 		} else {
 			/* Leaf node.  Check that the key is actually present.  */
 			item_headers = (struct grub_reiserfs_item_header *) (block_header + 1);
+			/* Clamp to the item headers that fit in the block.  */
+			item_count = R_MIN (item_count, (block_size - sizeof (*block_header)) / sizeof (*item_headers));
 			for (i = 0;
 				i < item_count && (grub_reiserfs_compare_keys (key, &(item_headers[i].key)) != 0);
 				i++) {
@@ -656,6 +660,10 @@ grub_reiserfs_mount(grub_disk_t disk) {
 		grub_error (GRUB_ERR_BAD_FS, "not a ReiserFS filesystem");
 		goto fail;
 	}
+	/* Blocks are whole sectors, assume the default size when the superblock says otherwise.  */
+	if (grub_le_to_cpu16 (data->superblock.block_size) < GRUB_DISK_SECTOR_SIZE) {
+		data->superblock.block_size = grub_cpu_to_le16 (4096);
+	}
 	data->disk = disk;
 	return data;
 
@@ -690,7 +698,8 @@ grub_reiserfs_iterate_dir(grub_fshelp_node_t item,
 		goto fail;
 	}
 	block_size = grub_le_to_cpu16 (data->superblock.block_size);
-	block_header = grub_malloc (block_size);
+	/* One more byte to terminate a name which ends with the block.  */
+	block_header = grub_malloc (block_size + 1);
 	if (!block_header) {
 		goto fail;
 	}
@@ -703,7 +712,7 @@ grub_reiserfs_iterate_dir(grub_fshelp_node_t item,
 	do {
 		struct grub_reiserfs_directory_header *directory_headers;
 		struct grub_fshelp_node directory_item = { 0 };
-		grub_uint16_t entry_count, entry_number;
+		grub_uint16_t entry_count, entry_number, item_location, item_size;
 		struct grub_reiserfs_item_header *item_headers;
 
 		grub_disk_read (data->disk,
@@ -716,8 +725,13 @@ grub_reiserfs_iterate_dir(grub_fshelp_node_t item,
 		}
 
 		item_headers = (struct grub_reiserfs_item_header *) (block_header + 1);
-		directory_headers = ((struct grub_reiserfs_directory_header *) ((char *)block_header + grub_le_to_cpu16 (item_headers[block_position].item_location)));
-		entry_count = grub_le_to_cpu16 (item_headers[block_position].u.entry_count);
+		/* Clamp the item to the block and the entry headers to the item.  */
+		item_location = R_MIN (grub_le_to_cpu16 (item_headers[block_position].item_location), block_size);
+		item_size = R_MIN (grub_le_to_cpu16 (item_headers[block_position].item_size), block_size - item_location);
+		directory_headers = ((struct grub_reiserfs_directory_header *) ((char *)block_header + item_location));
+		entry_count = R_MIN (grub_le_to_cpu16 (item_headers[block_position].u.entry_count), item_size / sizeof (*directory_headers));
+		/* The first entry name is the last on disk, it ends with the item.  */
+		((char *)directory_headers)[item_size] = 0;
 		for (entry_number = 0; entry_number < entry_count; entry_number++) {
 			struct grub_reiserfs_directory_header *directory_header = &directory_headers[entry_number];
 			grub_uint16_t entry_state = grub_le_to_cpu16 (directory_header->state);
@@ -728,6 +742,10 @@ grub_reiserfs_iterate_dir(grub_fshelp_node_t item,
 				enum grub_fshelp_filetype entry_type;
 				char *entry_name;
 
+				/* Skip names outside the item, keep listing the others.  */
+				if (grub_le_to_cpu16 (directory_header->location) >= item_size) {
+					continue;
+				}
 				entry_name = (((char *)directory_headers) + grub_le_to_cpu16 (directory_header->location));
 				entry_key.directory_id = directory_header->directory_id;
 				entry_key.object_id = directory_header->object_id;
@@ -985,7 +1003,10 @@ grub_reiserfs_open(struct grub_file *file, const char *name) {
 
 fail:
 	R_WARN_IF_FAIL (grub_errno != GRUB_ERR_NONE);
-	grub_free (found);
+	/* A path resolving to "/" yields ROOT itself, which is not malloc'ed.  */
+	if (found != &root) {
+		grub_free (found);
+	}
 	grub_free (data);
 	return grub_errno;
 }
