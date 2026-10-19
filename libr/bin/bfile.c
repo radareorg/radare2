@@ -181,7 +181,7 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 	if (R_STR_ISEMPTY (charset) && bf->bo && bf->bo->info) {
 		charset = bf->bo->info->charset;
 	}
-	if (R_STR_ISNOTEMPTY (charset) && bin->mb.muta) {
+	if (R_STR_ISNOTEMPTY (charset) && strcmp (charset, "none") && bin->mb.muta) {
 		// Decode the buffer using the specified charset
 		RMutaSession *ms = bin->mb.muta_use (bin->mb.muta, charset);
 		if (ms) {
