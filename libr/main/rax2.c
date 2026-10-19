@@ -126,7 +126,7 @@ static bool format_output(RNum *num, char mode, const char *s, RaxMode m, RaxAct
 		{
 			int n2 = (int)n;
 			float *f = (float *)&n2;
-			printf ("%ff\n", *f);
+			printf ("%.9gf\n", *f);
 		}
 		break;
 	case 'V':

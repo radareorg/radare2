@@ -199,7 +199,23 @@ NAME=rax2 Fx40551ed8
 FILE=-
 CMDS=!rax2 Fx40551ed8
 EXPECT=<<EOF
-3.330008f
+3.33000755f
+EOF
+RUN
+
+NAME=rax2 Fx small and large floats
+FILE=-
+CMDS=<<EOF
+!rax2 Fx33d6bf95
+!rax2 Fx00000001
+!rax2 Fx7f7fffff
+!rax2 Fx3f800000
+EOF
+EXPECT=<<EOF
+1.00000001e-07f
+1.40129846e-45f
+3.40282347e+38f
+1f
 EOF
 RUN
 
