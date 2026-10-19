@@ -305,3 +305,22 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ab-* with functions
+FILE=bins/mach0/mac-ls2
+CMDS=<<EOF
+af
+ablc
+ab-*
+ablc
+afb
+afl
+af-*
+aflc
+EOF
+EXPECT=<<EOF
+116
+0
+0x1000011e8    0      0 main
+0
+EOF
+RUN

@@ -269,6 +269,80 @@ bool test_r_anal_block_delete(void) {
 	mu_end;
 }
 
+bool test_r_anal_block_reset(void) {
+	RAnal *anal = r_anal_new ();
+	r_anal_block_reset (anal);
+	RAnalFunction *fcn = r_anal_create_function (anal, "owner", 0x100, 0, NULL);
+	RAnalFunction *shared_owner = r_anal_create_function (anal, "shared", 0x200, 0, NULL);
+	RAnalFunction *unregistered = r_anal_function_new (anal);
+	unregistered->name = strdup ("unregistered");
+	RAnalBlock *first = r_anal_create_block (anal, 0x100, 0x10);
+	RAnalBlock *second = r_anal_create_block (anal, 0x200, 0x20);
+	r_anal_create_block (anal, 0x300, 0x10);
+	r_anal_function_add_block (fcn, first);
+	r_anal_function_add_block (shared_owner, first);
+	r_anal_function_add_block (unregistered, second);
+	r_anal_function_add_block (fcn, second);
+	r_unref (first);
+	r_unref (second);
+	mu_assert_eq (r_anal_function_linear_size (fcn), 0x120, "cached range before reset");
+	fcn->meta.numcallrefs = 3;
+	assert_invariants (anal);
+
+	r_anal_block_reset (anal);
+	mu_assert_null (anal->bb_tree, "reset clears tree");
+	mu_assert_eq (r_list_length (anal->fcns), 2, "reset keeps functions");
+	mu_assert_eq (r_list_length (fcn->bbs), 0, "reset clears function blocks");
+	mu_assert_eq (r_list_length (shared_owner->bbs), 0, "reset clears shared blocks");
+	mu_assert_eq (r_list_length (unregistered->bbs), 0, "reset follows unregistered owners");
+	mu_assert_eq (r_anal_function_linear_size (fcn), 0, "reset invalidates cached range");
+	mu_assert_eq (fcn->meta.numcallrefs, -1, "reset invalidates cached call count");
+	assert_invariants (anal);
+	r_anal_function_free (unregistered);
+
+	r_anal_block_reset (anal);
+	RAnalBlock *replacement = r_anal_create_block (anal, 0x100, 0x30);
+	r_anal_function_add_block (fcn, replacement);
+	r_unref (replacement);
+	mu_assert_eq (r_anal_function_linear_size (fcn), 0x30, "function reusable after reset");
+	assert_invariants (anal);
+	assert_leaks (anal);
+	r_anal_free (anal);
+	mu_end;
+}
+
+bool test_r_anal_block_reset_refs(void) {
+	RAnal *anal = r_anal_new ();
+	RAnalFunction *fcn = r_anal_create_function (anal, "owner", 0x100, 0, NULL);
+	RAnalFunction *shared_owner = r_anal_create_function (anal, "shared", 0x200, 0, NULL);
+	RAnalBlock *block = r_anal_create_block (anal, 0x100, 0x10);
+	r_anal_function_add_block (fcn, block);
+	r_anal_function_add_block (shared_owner, block);
+	RList *retained = r_anal_get_blocks_in (anal, 0x100);
+	r_unref (block);
+	block = r_list_first (retained);
+	RAnalBlock *orphan = r_anal_create_block (anal, 0x300, 0x10);
+	r_ref (orphan);
+
+	r_anal_block_reset (anal);
+	mu_assert_eq (r_ref_count (block), 1, "reset preserves query reference");
+	mu_assert_eq (r_list_length (block->fcns), 0, "retained block has no owners");
+	mu_assert_null (block->anal, "retained block detached from analysis");
+	mu_assert_eq (r_ref_count (orphan), 1, "reset releases orphan creation reference");
+	mu_assert_null (orphan->anal, "retained orphan detached from analysis");
+
+	RAnalBlock *replacement = r_anal_create_block (anal, 0x100, 0x20);
+	r_anal_function_add_block (fcn, replacement);
+	r_unref (replacement);
+	r_list_free (retained);
+	mu_assert_eq (blocks_count (anal), 1, "releasing old block keeps replacement");
+	assert_invariants (anal);
+	assert_leaks (anal);
+	r_anal_free (anal);
+	r_unref (orphan);
+	mu_end;
+}
+
 bool test_r_anal_block_set_size(void) {
 	RAnal *anal = r_anal_new ();
 	assert_invariants (anal);
@@ -801,6 +875,8 @@ int all_tests(void) {
 	mu_run_test (test_r_anal_block_merge);
 	mu_run_test (test_r_anal_block_merge_in_function);
 	mu_run_test (test_r_anal_block_delete);
+	mu_run_test (test_r_anal_block_reset);
+	mu_run_test (test_r_anal_block_reset_refs);
 	mu_run_test (test_r_anal_block_set_size);
 	mu_run_test (test_r_anal_block_relocate);
 	mu_run_test (test_r_anal_block_query);

@@ -119,11 +119,32 @@ static void block_unref(RAnalBlock *block) {
 	r_unref (block);
 }
 
-R_API void r_anal_block_reset(RAnal *a) {
-	if (a->bb_tree) {
-		r_rbtree_free (a->bb_tree, __block_free_rb, NULL);
-		a->bb_tree = NULL;
+static void block_reset_rb(RBNode *node, void *user) {
+	RAnalBlock *block = unwrap (node);
+	RListIter *iter;
+	RAnalFunction *fcn;
+	// Clear owner lists in bulk; release their block references in tree order.
+	r_list_foreach (block->fcns, iter, fcn) {
+		r_list_purge (fcn->bbs);
+		fcn->meta._min = UT64_MAX;
+		fcn->meta.numcallrefs = -1;
 	}
+	// Functionless blocks retain their creation reference until reset.
+	int refs = R_MAX (1, r_list_length (block->fcns));
+	r_list_purge (block->fcns);
+	block->anal = NULL;
+	while (refs-- > 0) {
+		r_unref (block);
+	}
+}
+
+R_API void r_anal_block_reset(RAnal *a) {
+	R_RETURN_IF_FAIL (a);
+	RBTree tree = a->bb_tree;
+	a->bb_tree = NULL;
+	ht_up_free (R_ANAL_PRIV (a)->reg_usage);
+	R_ANAL_PRIV (a)->reg_usage = NULL;
+	r_rbtree_free (tree, block_reset_rb, NULL);
 }
 
 R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr) {
