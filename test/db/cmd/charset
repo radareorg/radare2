@@ -1,3 +1,15 @@
+NAME=Scanned charset strings preserve question marks
+FILE=-
+CMDS=<<EOF
+wx c8c5d3d3d66fe6d6d9d3c400
+e bin.charset=ebcdic37
+izzj
+EOF
+EXPECT=<<EOF
+[{"vaddr":0,"paddr":0,"ordinal":0,"size":12,"length":11,"section":"","type":"ascii","string":"HELLO?WORLD"}]
+EOF
+RUN
+
 NAME=bin charset overrides environment and can be cleared
 FILE=-
 CMDS=<<EOF

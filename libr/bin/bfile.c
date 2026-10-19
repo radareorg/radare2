@@ -192,15 +192,8 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 			if (outlen > 0 && obuf) {
 				ut8 *out = calloc (len, 1);
 				if (out) {
-					int i;
 					int cpy = R_MIN ((int)len, outlen);
 					memcpy (out, obuf, cpy);
-					// TODO unknown chars should be translated to null bytes
-					for (i = 0; i < cpy; i++) {
-						if (out[i] == '?') {
-							out[i] = 0;
-						}
-					}
 					free (buf);
 					buf = out;
 				}
