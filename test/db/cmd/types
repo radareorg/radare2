@@ -6012,3 +6012,50 @@ struct.b=y
 struct.b.y=int,0,0
 EXPECT
 RUN
+
+NAME=tss measures nested empty aggregates sharing member types once
+FILE=--
+TIMEOUT=10
+CMDS=<<EOF
+'td union L0 {char z[0];};
+'td union L1 {union L0 a; union L0 b; union L0 c; union L0 d;};
+'td union L2 {union L1 a; union L1 b; union L1 c; union L1 d;};
+'td union L3 {union L2 a; union L2 b; union L2 c; union L2 d;};
+'td union L4 {union L3 a; union L3 b; union L3 c; union L3 d;};
+'td union L5 {union L4 a; union L4 b; union L4 c; union L4 d;};
+'td union L6 {union L5 a; union L5 b; union L5 c; union L5 d;};
+'td union L7 {union L6 a; union L6 b; union L6 c; union L6 d;};
+'td union L8 {union L7 a; union L7 b; union L7 c; union L7 d;};
+'td union L9 {union L8 a; union L8 b; union L8 c; union L8 d;};
+'td union L10 {union L9 a; union L9 b; union L9 c; union L9 d;};
+'td union L11 {union L10 a; union L10 b; union L10 c; union L10 d;};
+'td union L12 {union L11 a; union L11 b; union L11 c; union L11 d;};
+'td union L13 {union L12 a; union L12 b; union L12 c; union L12 d;};
+'td union L14 {union L13 a; union L13 b; union L13 c; union L13 d;};
+'td union L15 {union L14 a; union L14 b; union L14 c; union L14 d;};
+'td struct S0 {char z[0];};
+'td struct S1 {struct S0 a; struct S0 b; struct S0 c; struct S0 d;};
+'td struct S2 {struct S1 a; struct S1 b; struct S1 c; struct S1 d;};
+'td struct S3 {struct S2 a; struct S2 b; struct S2 c; struct S2 d;};
+'td struct S4 {struct S3 a; struct S3 b; struct S3 c; struct S3 d;};
+'td struct S5 {struct S4 a; struct S4 b; struct S4 c; struct S4 d;};
+'td struct S6 {struct S5 a; struct S5 b; struct S5 c; struct S5 d;};
+'td struct S7 {struct S6 a; struct S6 b; struct S6 c; struct S6 d;};
+'td struct S8 {struct S7 a; struct S7 b; struct S7 c; struct S7 d;};
+'td struct S9 {struct S8 a; struct S8 b; struct S8 c; struct S8 d;};
+'td struct S10 {struct S9 a; struct S9 b; struct S9 c; struct S9 d;};
+'td struct S11 {struct S10 a; struct S10 b; struct S10 c; struct S10 d;};
+'td struct S12 {struct S11 a; struct S11 b; struct S11 c; struct S11 d;};
+'td struct S13 {struct S12 a; struct S12 b; struct S12 c; struct S12 d;};
+'td struct S14 {struct S13 a; struct S13 b; struct S13 c; struct S13 d;};
+'td struct S15 {struct S14 a; struct S14 b; struct S14 c; struct S14 d;};
+k anal/types/type.L15.size~?
+tss L15
+tss S15
+EOF
+EXPECT=<<EOF
+0
+1
+172
+EOF
+RUN

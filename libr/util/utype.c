@@ -3,6 +3,7 @@
 // R2R db/cmd/types
 
 #include <r_util.h>
+#include <sdb/ht_su.h>
 
 R_API bool r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 	const char *kind = sdb_const_getf (TDB, NULL, "link.%08" PFMT64x, at);
@@ -378,7 +379,8 @@ static bool type_array_parse(char *type, ut64 *elements) {
 }
 
 // UT64_MAX means an aggregate reached itself; r_type_get_bitsize turns that into 0
-static ut64 type_bitsize(Sdb *TDB, const char *type, const char **chain, int depth) {
+// sizes caches the aggregates measured in this walk so shared member types are measured once
+static ut64 type_bitsize(Sdb *TDB, const char *type, const char **chain, int depth, HtSU *sizes) {
 	if (depth >= TYPE_CHAIN_MAX) {
 		return UT64_MAX;
 	}
@@ -390,7 +392,7 @@ static ut64 type_bitsize(Sdb *TDB, const char *type, const char **chain, int dep
 		ut64 elements, bits = 0;
 		if (type_array_parse (base, &elements)) {
 			type_trim_qualifiers (base);
-			bits = type_bitsize (TDB, base, chain, depth);
+			bits = type_bitsize (TDB, base, chain, depth, sizes);
 			if (bits == UT64_MAX || r_mul_overflow (bits, elements, &bits)) {
 				bits = UT64_MAX;
 			}
@@ -434,7 +436,7 @@ static ut64 type_bitsize(Sdb *TDB, const char *type, const char **chain, int dep
 		char *resolved = r_type_resolve_typedef (TDB, tmptype);
 		if (resolved) {
 			chain[depth] = tmptype;
-			size = type_bitsize (TDB, resolved, chain, depth + 1);
+			size = type_bitsize (TDB, resolved, chain, depth + 1, sizes);
 			free (resolved);
 		}
 		return size;
@@ -443,6 +445,11 @@ static ut64 type_bitsize(Sdb *TDB, const char *type, const char **chain, int dep
 		const ut64 recorded = sdb_num_getf (TDB, NULL, "type.%s.size", tmptype);
 		if (recorded) {
 			return recorded;
+		}
+		bool measured = false;
+		const ut64 known = ht_su_find (sizes, tmptype, &measured);
+		if (measured) {
+			return known;
 		}
 		int i;
 		for (i = 0; i < depth; i++) {
@@ -475,7 +482,7 @@ static ut64 type_bitsize(Sdb *TDB, const char *type, const char **chain, int dep
 				if (elements == 0) {
 					elements = 1;
 				}
-				const ut64 member = type_bitsize (TDB, subtype, chain, depth + 1);
+				const ut64 member = type_bitsize (TDB, subtype, chain, depth + 1, sizes);
 				free (subtype);
 				if (member == UT64_MAX) {
 					ret = UT64_MAX;
@@ -493,6 +500,9 @@ static ut64 type_bitsize(Sdb *TDB, const char *type, const char **chain, int dep
 			} while (next);
 			free (members);
 		}
+		if (ret != UT64_MAX) {
+			ht_su_insert (sizes, tmptype, ret);
+		}
 		return ret;
 	}
 	return 0;
@@ -506,7 +516,9 @@ R_API ut64 r_type_get_bitsize(Sdb *R_NONNULL TDB, const char *R_NONNULL type) {
 	}
 	type_trim_qualifiers (normalized);
 	const char *chain[TYPE_CHAIN_MAX];
-	const ut64 bits = type_bitsize (TDB, normalized, chain, 0);
+	HtSU *sizes = ht_su_new0 ();
+	const ut64 bits = type_bitsize (TDB, normalized, chain, 0, sizes);
+	ht_su_free (sizes);
 	free (normalized);
 	return bits == UT64_MAX? 0: bits;
 }
@@ -528,10 +540,17 @@ static const char *type_aggregate_kind(Sdb *R_NONNULL TDB, const char *R_NONNULL
 	return NULL;
 }
 
-static char *type_get_memb(Sdb *R_NONNULL TDB, const char *R_NONNULL kind, const char *R_NONNULL type, int offset, const char *R_NONNULL path) {
+// seen holds the (kind, type, offset) already searched, overlapping union members share them
+static char *type_get_memb_at(Sdb *R_NONNULL TDB, const char *R_NONNULL kind, const char *R_NONNULL type, int offset, const char *R_NONNULL path, HtSU *seen, int depth) {
 	int i, next_offset = 0;
 
-	if (offset < 0) {
+	if (offset < 0 || depth >= TYPE_CHAIN_MAX) {
+		return NULL;
+	}
+	char *key = r_str_newf ("%s.%s.%d", kind, type, offset);
+	const bool fresh = ht_su_insert (seen, key, 1);
+	free (key);
+	if (!fresh) {
 		return NULL;
 	}
 	const char *value = sdb_const_getf (TDB, NULL, "%s.%s", kind, type);
@@ -589,7 +608,7 @@ static char *type_get_memb(Sdb *R_NONNULL TDB, const char *R_NONNULL kind, const
 			if (nested_kind) {
 				char *nested_path = r_str_newf ("%s.%s", path, name);
 				if (nested_path) {
-					res = type_get_memb (TDB, nested_kind, nested_name, offset - cur_offset, nested_path);
+					res = type_get_memb_at (TDB, nested_kind, nested_name, offset - cur_offset, nested_path, seen, depth + 1);
 					free (nested_path);
 				}
 				if (res) {
@@ -604,9 +623,16 @@ static char *type_get_memb(Sdb *R_NONNULL TDB, const char *R_NONNULL kind, const
 	return res;
 }
 
+static char *type_get_memb(Sdb *R_NONNULL TDB, const char *R_NONNULL kind, const char *R_NONNULL type, int offset) {
+	HtSU *seen = ht_su_new0 ();
+	char *res = type_get_memb_at (TDB, kind, type, offset, type, seen, 0);
+	ht_su_free (seen);
+	return res;
+}
+
 R_API char *r_type_get_struct_memb(Sdb *R_NONNULL TDB, const char *R_NONNULL type, int offset) {
 	R_RETURN_VAL_IF_FAIL (TDB && type, NULL);
-	return type_get_memb (TDB, "struct", type, offset, type);
+	return type_get_memb (TDB, "struct", type, offset);
 }
 
 // XXX this function is slow!
@@ -624,7 +650,7 @@ R_API RList *r_type_get_by_offset(Sdb *R_NONNULL TDB, ut64 offset) {
 		const char *vv = sdbkv_value (kv);
 		if (type_kind_is_aggregate (vv)
 			&& !r_str_startswith (kk, "struct.") && !r_str_startswith (kk, "union.")) {
-			char *res = type_get_memb (TDB, vv, kk, offset, kk);
+			char *res = type_get_memb (TDB, vv, kk, offset);
 			if (res) {
 				r_list_append (offtypes, res);
 			}
