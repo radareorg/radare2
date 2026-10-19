@@ -7,24 +7,8 @@
 #include <r_asm.h>
 
 #define MAXARGS 4
-#define BUFSIZE 64
 
-static void concat(char *buf, size_t len, const char** args) {
-	const char *arg;
-	char *dest = buf;
-	int arg_len;
-
-	while ((arg = *args++)) {
-		if (snprintf (dest, len, "%s", arg) >= len) {
-			break;
-		}
-		arg_len = strlen (arg);
-		dest += arg_len;
-		len -= arg_len;
-	}
-}
-
-static int replace(int argc, char *argv[], char *newstr, size_t len) {
+static char *replace(int argc, char *argv[]) {
 	int i;
 	struct {
 		const char *op;
@@ -58,34 +42,29 @@ static int replace(int argc, char *argv[], char *newstr, size_t len) {
 
 	if (argc > 0 && argv[0]) {
 		for (i = 0; ops[i].op; i++) {
-			if (!strcmp (ops[i].op, argv[0]) && newstr) {
-				concat (newstr, len, ops[i].res);
-				return true;
+			if (!strcmp (ops[i].op, argv[0])) {
+				RStrBuf *sb = r_strbuf_new ("");
+				const char **arg;
+				for (arg = ops[i].res; *arg; arg++) {
+					r_strbuf_append (sb, *arg);
+				}
+				return r_strbuf_drain (sb);
 			}
 		}
 	}
-	return false;
+	return NULL;
 }
 
-static int tokenize(const char* in, char* out[]) {
-	int len = strlen (in), count = 0, i = 0, tokenlen = 0, seplen = 0;
-	char *token, *buf = (char*) in;
-	const char* tokcharset = ", \t\n";
-
-	while (i < len) {
-		tokenlen = strcspn (buf, tokcharset);
-		token = calloc (tokenlen + 1, sizeof (char));
-		memcpy (token, buf, tokenlen);
-		out[count] = token;
-		i += tokenlen;
-		buf += tokenlen;
-		count++;
-
-		seplen = strspn (buf, tokcharset);
-		i += seplen;
-		buf += seplen;
+static int tokenize(const char *in, char *out[]) {
+	const char *tokcharset = ", \t\n";
+	int count = 0;
+	in += strspn (in, tokcharset);
+	while (*in && count < MAXARGS) {
+		const size_t tokenlen = strcspn (in, tokcharset);
+		out[count++] = r_str_ndup (in, tokenlen);
+		in += tokenlen;
+		in += strspn (in, tokcharset);
 	}
-
 	return count;
 }
 
@@ -93,19 +72,12 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 	int i;
 	char *argv[MAXARGS] = { NULL, NULL, NULL, NULL };
 	int argc = tokenize (data, argv);
-	// XXX deprecate and make replace return the *
-	char *str = malloc (BUFSIZE);
-	r_str_ncpy (str, data, BUFSIZE);
-
-	if (!replace (argc, argv, str, BUFSIZE)) {
-		strcpy (str, data);
-	}
-	for (i = 0; i < MAXARGS; i++) {
+	char *str = replace (argc, argv);
+	for (i = 0; i < argc; i++) {
 		free (argv[i]);
 	}
-	if (!strcmp (str, data)) {
-		free (str);
-		return NULL;
+	if (str && !strcmp (str, data)) {
+		R_FREE (str);
 	}
 	return str;
 }
