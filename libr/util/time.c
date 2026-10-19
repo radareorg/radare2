@@ -135,7 +135,7 @@ R_API ut64 r_time_hfs_today(ut32 hfsts, int tz) {
 	const ut32 hfs_unix_delta = 2082844800;
 	ut64 t = hfsts;
 	t += tz * 60 * 60;
-	t += hfs_unix_delta;
+	t -= hfs_unix_delta;
 	return t;
 }
 
@@ -149,7 +149,7 @@ R_API int r_print_date_hfs(RPrint *p, const ut8 *buf, int len) {
 		time_t t = r_read_ble32 (buf, be);
 		if (p->datefmt[0]) {
 			t += p->datezone * 60 * 60;
-			t += hfs_unix_delta;
+			t -= hfs_unix_delta;
 			r_print_printf (p, "%s\n", r_time_secs_tostring (t));
 			ret = sizeof (time_t);
 		}
