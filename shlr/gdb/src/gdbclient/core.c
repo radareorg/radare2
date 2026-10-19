@@ -1139,8 +1139,8 @@ end:
 
 int gdbr_write_register(libgdbr_t *g, int regnum, char *value, int len) {
 	int ret = -1;
-	char command[255] = {0};
-	if (!g || !g->stub_features.P) {
+	char *command = NULL;
+	if (!g || !g->stub_features.P || len < 0) {
 		return -1;
 	}
 	if (!gdbr_lock_enter (g)) {
@@ -1148,16 +1148,13 @@ int gdbr_write_register(libgdbr_t *g, int regnum, char *value, int len) {
 	}
 
 	gdbr_regs_invalidate (g);
-	ret = snprintf (command, sizeof (command) - 1, "%s%x=", CMD_WRITEREG, regnum);
-	if (len + ret >= sizeof (command)) {
-		R_LOG_ERROR ("%s: command buffer is too small, expected: %d, actual: %d",
-		        __func__, len + ret, sizeof(command));
-		ret = -1;
+	// "P<regnum>=" plus two hex digits per byte and the terminator
+	command = malloc ((size_t)len * 2 + 16);
+	if (!command) {
 		goto end;
 	}
-	// Pad with zeroes
-	memset (command + ret, atoi ("0"), len);
-	pack_hex (value, len, (command + ret));
+	ret = sprintf (command, "%s%x=", CMD_WRITEREG, regnum);
+	pack_hex (value, len, command + ret);
 	if (send_reg_msg (g, command) < 0) {
 		ret = -1;
 		goto end;
@@ -1175,6 +1172,7 @@ int gdbr_write_register(libgdbr_t *g, int regnum, char *value, int len) {
 	ret = 0;
 end:
 	gdbr_lock_leave (g);
+	free (command);
 	return ret;
 }
 

@@ -66,7 +66,7 @@ static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len, in
 			goto exit_err;
 		}
 		subret_space = tmp2 + 2 - tmp;
-		if (!(tmp2 = strstr (tmp, "href="))) {
+		if (!(tmp2 = strstr (tmp, "href=\""))) {
 			goto exit_err;
 		}
 		tmp2 += 6;
@@ -79,16 +79,6 @@ static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len, in
 		*tmp3 = tmpchar;
 		if (!subret) {
 			goto exit_err;
-		}
-		if (subret_len <= subret_space) {
-			memcpy (tmp, subret, subret_len);
-			memcpy (tmp + subret_len, tmp + subret_space,
-				retlen - (tmp + subret_space - ret));
-			retlen -= subret_space - subret_len;
-			ret[retlen] = '\0';
-			tmp = strstr (tmp3, "<xi:include");
-			free (subret);
-			continue;
 		}
 		if (subret_len > subret_space) {
 			int ptrdiff = tmp - ret;
@@ -106,7 +96,8 @@ static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len, in
 		retlen += subret_len - subret_space;
 		ret[retlen] = '\0';
 		free (subret);
-		tmp = strstr (tmp3, "<xi:include");
+		// the included document has its own includes resolved already
+		tmp = strstr (tmp + subret_len, "<xi:include");
 	}
 	*tot_len = retlen;
 	return ret;
