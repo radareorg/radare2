@@ -1475,6 +1475,45 @@ static void arm64_esil_zext_wregs(RAnalOp *op) {
 	}
 }
 
+// Narrow FP/SIMD writes clear the rest of the register; lane inserts preserve it.
+static void arm64_esil_zext_vupper(RAnalOp *op, csh *handle, cs_insn *insn) {
+	if (R_STR_ISEMPTY (r_strbuf_get (&op->esil))) {
+		return;
+	}
+	int i;
+	// The lane index of an indexed structure access applies to every
+	// register in its list, so one indexed write operand means all the
+	// vector writes of the instruction are lane inserts. These keep the
+	// rest of their register and must not be zero-extended.
+	for (i = 0; i < OPCOUNT64 (); i++) {
+		cs_arm64_op o = INSOP64 (i);
+		if (o.type == ARM64_OP_REG && (o.access & CS_AC_WRITE) && o.vector_index != -1) {
+			return;
+		}
+	}
+	for (i = 0; i < OPCOUNT64 (); i++) {
+		cs_arm64_op dst = INSOP64 (i);
+		const char *name;
+		int bits, n;
+		if (dst.type != ARM64_OP_REG || !(dst.access & CS_AC_WRITE) || dst.vector_index != -1) {
+			continue;
+		}
+		name = cs_reg_name (*handle, dst.reg);
+		if (!name || !strchr ("bhsdvq", name[0]) || !isdigit ((ut8)name[1])) {
+			continue;
+		}
+		bits = dst.vas? vas_count (dst.vas) * vector_size (&dst): REGBITS64 (i);
+		if (bits < 8 || bits >= 128) {
+			continue;
+		}
+		n = atoi (name + 1);
+		if (bits < 64) {
+			r_strbuf_appendf (&op->esil, ",0x%"PFMT64x",v%dl,&=", bitmask_by_width[bits - 1], n);
+		}
+		r_strbuf_appendf (&op->esil, ",0,v%dh,=", n);
+	}
+}
+
 #if CS_API_MAJOR > 4
 static void arm64_subp_esil(RAnalOp *op, csh *handle, cs_insn *insn, bool flags, bool compare) {
 	const int first = compare? 0: 1;
@@ -2771,6 +2810,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	}
 
 	arm64_esil_zext_wregs (op);
+	arm64_esil_zext_vupper (op, handle, insn);
 	r_strbuf_append (&op->esil, postfix);
 
 	return 0;

@@ -1271,7 +1271,7 @@ za sym.memset g cc=28 nbbs=35 edges=47 ebbs=8 bbsum=460
 za sym.memset o 0x00012180
 za sym.memset R bWVtc2V0
 za sym.memset t void * sym.memset (void *s, int c, size_t n)
-za sym.memset v tr10:c:int, tr6:s:void *, tr14:n:size_t
+za sym.memset v tr6:c:int, tr4:s:void *, tr8:n:size_t
 za sym.memset h 82e8b18bbf263f9ed0e31d6b68099efe6eb8805a429444f8aa119af00c47369c
 EOF
 RUN
@@ -1298,7 +1298,7 @@ za sym.strnlen g cc=7 nbbs=11 edges=14 ebbs=2 bbsum=196
 za sym.strnlen o 0x000131a4
 za sym.strnlen R c3Rybmxlbg==
 za sym.strnlen t void sym.strnlen (int64_t arg1, int64_t arg2, int64_t arg3)
-za sym.strnlen v tr10:arg2:int64_t, tr6:arg1:int64_t, tr22:arg3:int64_t
+za sym.strnlen v tr6:arg2:int64_t, tr4:arg1:int64_t, tr12:arg3:int64_t
 za sym.strnlen h c573e9053dfa735f51cca8aea51eda71ca46fd402d11feb4d7f8ccf1b3b46d72
 --
 za sym._vfprintf_r b ff0314d1fd7b00a9fd030091f35301a9f30302aaf55b02a9f76303a9f70300aaf80303aaf96b04a9fa0301aafb7305a9e827066d6a170094000040f9e06700f989efff97e05700f9020180d2e0a3059101008052a4ecff97b70000b4e052:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000ffffffffffffffffff000000ffffffffffffffffffffffffffffffffff000000ff000000ffff
