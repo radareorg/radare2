@@ -130,7 +130,17 @@ static inline ut32 flag_name_hash(const char *name, size_t len) {
 }
 
 static ut32 flag_name_hashfn(const void *key) {
-	return flag_name_hash (key, strlen (key));
+	// Keep short-key updates to one hashing pass before the table's strlen.
+	const char *name = key;
+	ut32 h = CDB_HASHSTART;
+	size_t i = 0;
+	while (i < 32 && name[i]) {
+		h = (h + (h << 5)) ^ name[i++];
+	}
+	if (i < 32 || !name[i]) {
+		return h;
+	}
+	return (ut32)r_str_hash64_seed (name, i + strlen (name + i), 0);
 }
 
 static RFlagItem *flag_find_name(RFlag *f, const char *name) {
