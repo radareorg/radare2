@@ -393,7 +393,6 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 				}
 				R_FREE (block_list);
 				if (num_blocks > R_STRING_MAX_UNI_BLOCKS) {
-					needle++;
 					continue;
 				}
 			}
