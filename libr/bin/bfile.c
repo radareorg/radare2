@@ -1070,6 +1070,11 @@ R_API void r_bin_file_free(void /*RBinFile*/ *_bf) {
 		return;
 	}
 	RBinFile *bf = _bf;
+	// bin->file aliases the arena-owned name of the current binfile,
+	// so it must not outlive it (see r_bin_file_set_obj)
+	if (bf->rbin && bf->rbin->file == bf->file) {
+		bf->rbin->file = NULL;
+	}
 	RBinPlugin *plugin = R_UNWRAP3 (bf, bo, plugin);
 	// Binary format objects are connected to the
 	// RBinObject, so the plugin must destroy the

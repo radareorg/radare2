@@ -764,6 +764,22 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ob-* drops the current file name
+FILE=bins/elf/analysis/x86-simple
+CMDS=<<EOF
+ob-*
+iddi x
+?e done
+ob
+o bins/elf/analysis/x86-simple
+is~?
+EOF
+EXPECT=<<EOF
+done
+2
+EOF
+RUN
+
 NAME=obf
 FILE=--
 CMDS=<<EOF
