@@ -1006,3 +1006,23 @@ This is an ISO9660 filesystem
 EOF2
 EXPECT_ERR=
 RUN
+
+NAME=mc on ubifs file larger than the volume
+FILE=bins/fs/ubifs-oversize.img
+CMDS=<<EOF2
+md /root
+mc /root/file
+mc /root/file
+?e alive
+EOF2
+EXPECT=<<EOF2
+r file
+alive
+EOF2
+EXPECT_ERR=<<EOF2
+WARN: File size (11) exceeds filesystem size (0)
+ERROR: Cannot read /root/file
+WARN: File size (11) exceeds filesystem size (0)
+ERROR: Cannot read /root/file
+EOF2
+RUN

@@ -851,6 +851,12 @@ static int fs_ubifs_read(RFSFile *file, ut64 addr, int len) {
 
 	ubifs_ctx_t *ctx = (ubifs_ctx_t *)root->ptr;
 	ut64 file_size = r_read_le64 ((ut8 *)&inode->ino->size);
+	// a file cannot be larger than the volume, read whatever fits
+	const ut64 max_fs_size = (ut64)ctx->leb_size * ctx->leb_cnt;
+	if (file_size > max_fs_size) {
+		R_LOG_WARN ("File size (%"PFMT64u") exceeds filesystem size (%"PFMT64u")", file_size, max_fs_size);
+		file_size = max_fs_size;
+	}
 
 	if (addr >= file_size) {
 		return 0;
@@ -860,16 +866,7 @@ static int fs_ubifs_read(RFSFile *file, ut64 addr, int len) {
 		len = file_size - addr;
 	}
 
-	if (file->data) {
-		free (file->data);
-	}
-
-	ut64 max_fs_size = (ut64)ctx->leb_size * ctx->leb_cnt;
-	if (file_size > max_fs_size) {
-		R_LOG_ERROR ("File size (%"PFMT64u") exceeds filesystem size (%"PFMT64u")", file_size, max_fs_size);
-		return -1;
-	}
-
+	free (file->data);
 	file->data = calloc (1, file_size);
 	if (!file->data) {
 		return -1;
