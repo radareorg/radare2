@@ -470,3 +470,25 @@ match 0.916667 sym.func.100007330
 match 0.916667 sym.func.100007360
 EOF
 RUN
+
+NAME=ccd pads at most to colpad size
+FILE=bins/elf/ls
+CMDS=<<EOF
+e scr.color=0
+b 8
+e hex.cols=1000000
+ccd $$
+?e --
+e hex.cols=16
+ccd $$+1
+EOF
+EXPECT=<<EOF
+ 0x00005ae0  endbr64                                                                                = 0x00005ae0  endbr64
+ 0x00005ae4  xor ebp, ebp                                                                                = 0x00005ae4  xor ebp, ebp
+ 0x00005ae6  mov r9, rdx                                                                                = 0x00005ae6  mov r9, rdx
+--
+ 0x00005ae0  endbr64                          ! 0x00005ae1  invalid
+ 0x00005ae4  xor ebp, ebp                     ! 0x00005ae2  in eax, dx
+ 0x00005ae6  mov r9, rdx                      ! 0x00005ae3  mov ecx, edx
+EOF
+RUN

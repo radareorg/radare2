@@ -695,12 +695,8 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 
 			// show output
 			bool iseq = !strcmp (opa, opb); // op.mnemonic, op2.mnemonic);
-			memset (colpad, ' ', sizeof (colpad));
-			{
-				int pos = strlen (opa); // op.mnemonic);
-				pos = (pos > cols)? 0: cols - pos;
-				colpad[pos] = 0;
-			}
+			// hex.cols is unbounded, the padding must not exceed colpad
+			r_str_pad (colpad, sizeof (colpad), ' ', cols - (int)strlen (opa));
 			if (hascolor) {
 				r_cons_print (core->cons, iseq? pal->graph_true: pal->graph_false);
 			}
