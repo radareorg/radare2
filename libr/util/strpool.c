@@ -56,7 +56,7 @@ static bool strpool_resize_count(RStrpool *p) {
 	R_RETURN_VAL_IF_FAIL (p, false);
 	if (p->count + 8 >= p->isize) {
 		const size_t ns = p->isize + 32;
-		ut32 *ni = realloc (p->idxs, (sizeof (int) * ns));
+		ut32 *ni = r_renew_array (p->idxs, ns, sizeof (int));
 		if (ni) {
 			p->idxs = ni;
 			p->isize = ns;

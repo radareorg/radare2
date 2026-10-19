@@ -49,7 +49,7 @@ static int splitlines(const char *a, int len, struct line **lr) {
 		}
 	}
 
-	*lr = l = (struct line *)malloc (sizeof (struct line) * i);
+	*lr = l = R_NEWS (struct line, i);
 	if (!l) {
 		return -1;
 	}
@@ -235,7 +235,7 @@ static struct hunklist diff(struct line *a, int an, struct line *b, int bn) {
 	t = equatelines (a, an, b, bn);
 	pos = (struct pos *)calloc (bn? bn: 1, sizeof (struct pos));
 	/* we can't have more matches than lines in the shorter file */
-	l.head = l.base = (struct hunk *)malloc (sizeof (struct hunk) *((an < bn? an: bn) + 1));
+	l.head = l.base = R_NEWS (struct hunk, (an < bn? an: bn) + 1);
 	l.end = l.base + ((an < bn? an: bn) + 1);
 
 	if (pos && l.base && t) {

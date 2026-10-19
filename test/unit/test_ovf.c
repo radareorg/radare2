@@ -410,6 +410,21 @@ int test_generic_overflow(void) {
 }
 #endif
 
+int test_checked_array_alloc(void) {
+	ut32 *a = R_NEWS (ut32, 4);
+	mu_assert_notnull (a, "R_NEWS small count");
+	a[3] = 7;
+	mu_assert_null (r_new_array (SIZE_MAX / 2 + 1, 2), "r_new_array wrapping product");
+	mu_assert_null (R_NEWS (ut64, SIZE_MAX), "R_NEWS wrapping product");
+	mu_assert_null (r_renew_array (a, SIZE_MAX, sizeof (ut32)), "r_renew_array wrapping product");
+	mu_assert_eq (a[3], 7, "r_renew_array keeps the old block on failure");
+	ut32 *b = r_renew_array (a, 8, sizeof (ut32));
+	mu_assert_notnull (b, "r_renew_array grow");
+	mu_assert_eq (b[3], 7, "r_renew_array keeps contents");
+	free (b);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_ut8_add_overflow);
 	mu_run_test (test_st8_add_overflow);
@@ -449,6 +464,7 @@ int all_tests(void) {
 
 	mu_run_test (test_boundary_signed_unsigned);
 	mu_run_test (test_negative_boundary);
+	mu_run_test (test_checked_array_alloc);
 
 #if R_HAVE_BUILTIN_OVERFLOW || (!defined(_MSC_VER) && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
 	mu_run_test (test_generic_overflow);

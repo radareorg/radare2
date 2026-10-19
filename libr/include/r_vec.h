@@ -159,11 +159,7 @@ extern "C" {
 
 // Overflow-safe realloc wrapper (like reallocarray)
 static inline void *r_vec_realloc(void *ptr, size_t nmemb, size_t size) {
-	size_t total;
-	if (r_mul_overflow (nmemb, size, &total)) {
-		return NULL;
-	}
-	return realloc (ptr, total);
+	return r_renew_array (ptr, nmemb, size);
 }
 
 // Overflow-safe capacity growth (returns 0 on overflow)

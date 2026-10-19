@@ -90,7 +90,7 @@ static bool id_storage_reallocate(RIDStorage *storage, ut32 size) {
 	if (!storage) {
 		return false;
 	}
-	void **data = realloc (storage->data, size * sizeof (void*));
+	void **data = r_renew_array (storage->data, size, sizeof (void*));
 	if (!data) {
 		return false;
 	}
@@ -109,7 +109,7 @@ static bool oid_storage_preallocate(ROIDStorage *st, ut32 size) {
 		st->psize = 0;
 		return false;
 	}
-	ut32 *permutation = realloc (st->permutation, size * sizeof (ut32));
+	ut32 *permutation = r_renew_array (st->permutation, size, sizeof (ut32));
 	if (!permutation) {
 		return false;
 	}

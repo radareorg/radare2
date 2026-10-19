@@ -44,7 +44,7 @@ R_API bool r_bloom_init(RBloom *bf, size_t m, size_t k, RBloomHashFunc * hash_fu
 	if (! bf->bit_array) {
 		return false;
 	}
-	bf->hash_funcs = (RBloomHashFunc *) malloc (k * sizeof (RBloomHashFunc));
+	bf->hash_funcs = R_NEWS (RBloomHashFunc, k);
 	if (! bf->hash_funcs) {
 		free (bf->bit_array);
 		return false;
