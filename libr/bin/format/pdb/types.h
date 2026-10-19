@@ -708,15 +708,13 @@ typedef struct {
 	SCString name;
 } SVal;
 
-R_PACKED(
 typedef struct {
 	ut32 element_type;
 	ut32 index_type;
 	SVal size;
 	ut8 pad;
-}) SLF_ARRAY;
+} SLF_ARRAY;
 
-R_PACKED(
 typedef struct {
 	ut16 count;
 	UCV_PROPERTY prop; // // property attribute field
@@ -725,16 +723,15 @@ typedef struct {
 	ut32 vshape; // type index of vshape table for this class
 	SVal size;
 	ut8 pad;
-}) SLF_STRUCTURE, SLF_CLASS;
+} SLF_STRUCTURE, SLF_CLASS;
 
-R_PACKED(
 typedef struct {
 	ut16 count;
 	UCV_PROPERTY prop;
 	ut32 field_list;
 	SVal size;
 	ut32 pad;
-}) SLF_UNION;
+} SLF_UNION;
 
 R_PACKED(
 typedef struct {
@@ -761,14 +758,13 @@ typedef struct {
 	ut8 pad;
 }) SLF_ENUM;
 
-R_PACKED(
 typedef struct {
 	UCV_fldattr fldattr;
 	SVal enum_value;
 	ut8 pad;
 
 	free_func free_;
-}) SLF_ENUMERATE;
+} SLF_ENUMERATE;
 
 R_PACKED(
 typedef struct {
@@ -789,7 +785,6 @@ typedef struct {
 	free_func free_;
 }) SLF_METHOD;
 
-R_PACKED(
 typedef struct {
 	UCV_fldattr fldattr;
 	ut32 index;
@@ -798,7 +793,7 @@ typedef struct {
 
 	// TODO: remove free_
 	free_func free_;
-}) SLF_MEMBER;
+} SLF_MEMBER;
 
 R_PACKED(
 typedef struct {
