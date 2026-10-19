@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2026 - pancake */
 
-#if R2__UNIX__ && !__wasi__
+#if R2__UNIX__ && !__wasi__ && !R2_UEFI
 
 #define HTTP_FSCMD_MAX_REQUEST (2 * 1024 * 1024)
 #define HTTP_FSCMD_MAX_BODY (16 * 1024 * 1024)
@@ -156,7 +156,7 @@ static bool socket_http_fscmd(bool post, const char *url, const char **headers, 
 		return false;
 	}
 	*response = NULL;
-#if R2__UNIX__ && !__wasi__
+#if R2__UNIX__ && !__wasi__ && !R2_UEFI
 	char *upstream = r_sys_getenv ("R2_HTTP_UPSTREAM");
 	char *token = r_sys_getenv ("R2_HTTP_TOKEN");
 	char *root = r_sys_getenv ("R2_HTTP_FS");
