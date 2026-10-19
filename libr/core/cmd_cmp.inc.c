@@ -431,12 +431,18 @@ static int radare_compare_unified(RCore *core, ut64 of, ut64 od, int len) {
 	return true;
 }
 
-static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len, int mode) {
+// compare d with len bytes at the current address, which can be more than the block
+static int radare_compare(RCore *core, const ut8 *d, int len, int mode) {
 	int i, eq = 0;
 	PJ *pj = NULL;
 	if (len < 1) {
 		return 0;
 	}
+	ut8 *f = malloc (len);
+	if (!f) {
+		return 0;
+	}
+	r_io_read_at (core->io, core->addr, f, len);
 	if (mode == 'j') {
 		pj = r_core_pj_new (core);
 		pj_o (pj);
@@ -482,7 +488,9 @@ static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len, int 
 		pj_end (pj); // End array
 		pj_end (pj); // End object
 		r_cons_println (core->cons, pj_string (pj));
+		pj_free (pj);
 	}
+	free (f);
 	return len - eq;
 }
 
@@ -1375,13 +1383,13 @@ static int cmd_cmp(void *data, const char *input) {
 			r_cons_cmd_help_match (core->cons, help_msg_c, "c*", 0, true);
 			goto cleanup;
 		}
-		val = radare_compare (core, block, (ut8 *) input + 2,
+		val = radare_compare (core, (ut8 *) input + 2,
 			strlen (input + 2) + 1, '*');
 		break;
 	case ' ': { // "c"
 		char *str = strdup (input + 1);
 		int len = r_str_unescape (str);
-		val = radare_compare (core, block, (ut8 *) str, len, 0);
+		val = radare_compare (core, (ut8 *) str, len, 0);
 		free (str);
 		break;
 	}
@@ -1389,7 +1397,7 @@ static int cmd_cmp(void *data, const char *input) {
 		if (input[1] == ' ') {
 			char *str = strdup (input + 2);
 			int len = r_str_unescape (str);
-			val = radare_compare (core, block, (ut8 *) str, len, 'j');
+			val = radare_compare (core, (ut8 *) str, len, 'j');
 			free (str);
 		} else {
 			r_cons_cmd_help_match (core->cons, help_msg_c, "cj", 0, true);
@@ -1421,7 +1429,16 @@ static int cmd_cmp(void *data, const char *input) {
 			free (filled);
 			goto cleanup;
 		}
-		ret = r_hex_bin2str (block, strlen (input) / 2, (char *) buf);
+		ut8 *cur = malloc (strlen (input) / 2 + 1);
+		if (!cur) {
+			free (buf);
+			free (filled);
+			goto cleanup;
+		}
+		// '.' wildcards take the current bytes, which can go past the block
+		r_io_read_at (core->io, addr, cur, strlen (input) / 2);
+		ret = r_hex_bin2str (cur, strlen (input) / 2, (char *) buf);
+		free (cur);
 		for (i = 0; i < ret * 2; i++) {
 			if (filled[i] == '.') {
 				filled[i] = buf[i];
@@ -1432,7 +1449,7 @@ static int cmd_cmp(void *data, const char *input) {
 		if (ret < 1) {
 			R_LOG_ERROR ("Cannot parse hexpair");
 		} else {
-			val = radare_compare (core, block, buf, ret, mode);
+			val = radare_compare (core, buf, ret, mode);
 		}
 		free (buf);
 		free (filled);
@@ -1444,7 +1461,7 @@ static int cmd_cmp(void *data, const char *input) {
 					    input + 1), buf, bs)) {
 				R_LOG_ERROR ("Cannot read hexdump");
 			} else {
-				val = radare_compare (core, block, buf, bs, mode);
+				val = radare_compare (core, buf, bs, mode);
 			}
 			free (buf);
 		}
@@ -1464,7 +1481,7 @@ static int cmd_cmp(void *data, const char *input) {
 			if (fread (buf, 1, bs, fd) < 1) {
 				R_LOG_ERROR ("Cannot read file %s", input + 2);
 			} else {
-				val = radare_compare (core, block, buf, bs, 0);
+				val = radare_compare (core, buf, bs, 0);
 			}
 			free (buf);
 		}
@@ -1551,13 +1568,13 @@ static int cmd_cmp(void *data, const char *input) {
 			}
 		} else if (width == '2') {
 			r_write_ble16 (&cmp_val.v16, r_num_math (core->num, arg), be);
-			val = radare_compare (core, block, (ut8 *) &cmp_val.v16, sizeof (wordcmp.v16), mode);
+			val = radare_compare (core, (ut8 *) &cmp_val.v16, sizeof (wordcmp.v16), mode);
 		} else if (width == '4') {
 			r_write_ble32 (&cmp_val.v32, r_num_math (core->num, arg), be);
-			val = radare_compare (core, block, (ut8 *) &cmp_val.v32, sizeof (wordcmp.v32), mode);
+			val = radare_compare (core, (ut8 *) &cmp_val.v32, sizeof (wordcmp.v32), mode);
 		} else if (width == '8') {
 			r_write_ble64 (&cmp_val.v64, r_num_math (core->num, arg), be);
-			val = radare_compare (core, block, (ut8 *) &cmp_val.v64, sizeof (wordcmp.v64), mode);
+			val = radare_compare (core, (ut8 *) &cmp_val.v64, sizeof (wordcmp.v64), mode);
 		}
 		break;
 	}

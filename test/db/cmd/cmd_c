@@ -95,3 +95,26 @@ wx 89 @ 0x00005ae5
 wx 89 @ 0x00005ae6
 EOF
 RUN
+
+NAME=cmd_c compares the whole input past the block size
+FILE=malloc://64
+CMDS=<<EOF
+w hello
+b 4
+c hexxo
+?e --
+cj hexxo
+?e --
+cx 68..787800
+EOF
+EXPECT=<<EOF
+0x00000002 (byte=03)   6c 'l'  ->  78 'x'
+0x00000003 (byte=04)   6c 'l'  ->  78 'x'
+--
+{"diff_bytes":[{"offset":2,"rel_offset":2,"value":108,"cmp_value":120},{"offset":3,"rel_offset":3,"value":108,"cmp_value":120}],"equal_bytes":3,"total_bytes":5}
+--
+0x00000002 (byte=03)   6c 'l'  ->  78 'x'
+0x00000003 (byte=04)   6c 'l'  ->  78 'x'
+0x00000004 (byte=05)   6f 'o'  ->  00 ' '
+EOF
+RUN
