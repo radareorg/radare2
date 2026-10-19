@@ -154,7 +154,7 @@ static RFlagItem *flag_find_name(RFlag *f, const char *name) {
 	ut32 i;
 	for (i = 0; i < bucket->count; i++) {
 		HtPPKv *kv = &bucket->arr[i];
-		if (kv->key_len == (ut32)len && (kv->key == name || !memcmp (kv->key, name, len))) {
+		if (kv->key_len == len && (kv->key == name || !memcmp (kv->key, name, len))) {
 			return kv->value;
 		}
 	}

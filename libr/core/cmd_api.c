@@ -262,7 +262,7 @@ R_API RCmdAliasVal *r_cmd_alias_get(RCmd *cmd, const char *k) {
 	ut32 i;
 	for (i = 0; i < bucket->count; i++) {
 		HtPPKv *kv = &bucket->arr[i];
-		if (kv->key_len == (ut32)len && (kv->key == k || !memcmp (kv->key, k, len))) {
+		if (kv->key_len == len && (kv->key == k || !memcmp (kv->key, k, len))) {
 			return kv->value;
 		}
 	}
