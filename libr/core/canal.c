@@ -545,22 +545,13 @@ static void r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) 
 	RVecAnalRef_free (refs);
 }
 
-static void function_rename(RFlag *flags, RAnalFunction *fcn) {
+static void function_rename(RAnalFunction *fcn) {
 	if (r_str_startswith (fcn->name, "loc.")) {
-		char *fcnname = fcn->name;
-		fcn->type = R_ANAL_FCN_TYPE_FCN;
-		const char *fcnpfx = r_anal_functiontype_tostring (fcn->type);
-		const char *restofname = fcn->name + strlen ("loc.");
-		if (R_STR_ISEMPTY (fcnpfx)) {
-			fcn->name = strdup (restofname);
-		} else {
-			fcn->name = r_str_newf ("%s.%s", fcnpfx, restofname);
+		char *name = r_str_newf ("fcn.%s", fcn->name + 4);
+		if (r_anal_function_rename (fcn, name)) {
+			fcn->type = R_ANAL_FCN_TYPE_FCN;
 		}
-		RFlagItem *f = r_flag_get_in (flags, fcn->addr);
-		if (f) {
-			r_flag_rename (flags, f, fcn->name);
-		}
-		free (fcnname);
+		free (name);
 	}
 }
 
@@ -594,13 +585,8 @@ static void autoname_tail_jmp_stub(RCore *core, RAnalFunction *fcn) {
 	}
 	if (impname) {
 		char *newname = r_str_newf ("sub.%s", impname);
-		if (r_anal_get_function_byname (core->anal, newname)) {
-			// duplicate names make r_anal_add_function drop the function
-			free (newname);
-			newname = r_str_newf ("sub.%s_%"PFMT64x, impname, fcn->addr);
-		}
-		free (fcn->name);
-		fcn->name = newname;
+		r_anal_function_rename_unique (fcn, newname);
+		free (newname);
 	}
 }
 
@@ -615,12 +601,8 @@ static void autoname_imp_trampoline(RCore *core, RAnalFunction *fcn) {
 				RFlagItem *flg = r_flag_get_in (core->flags, ref->addr);
 				if (flg && r_str_startswith (flg->name, "sym.imp.")) {
 					char *newname = r_str_newf ("sub.%s", flg->name + 8);
-					if (r_anal_get_function_byname (core->anal, newname)) {
-						free (newname);
-						newname = r_str_newf ("sub.%s_%"PFMT64x, flg->name + 8, fcn->addr);
-					}
-					free (fcn->name);
-					fcn->name = newname;
+					r_anal_function_rename_unique (fcn, newname);
+					free (newname);
 				}
 			}
 		}
@@ -2074,7 +2056,7 @@ R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 			// because we found a call to this address
 			const int rt = R_ANAL_REF_TYPE_MASK (reftype);
 			if (rt == R_ANAL_REF_TYPE_CALL && fcn->type == R_ANAL_FCN_TYPE_LOC) {
-				function_rename (core->flags, fcn);
+				function_rename (fcn);
 			}
 			return 0;  // already analyzed function
 		}

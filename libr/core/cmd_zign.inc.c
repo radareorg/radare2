@@ -556,20 +556,15 @@ static void apply_name(RCore *core, RAnalFunction *fcn, RSignItem *it, bool rad)
 		}
 		return;
 	}
-	RFlagItem *flag = r_flag_get (core->flags, fcn->name);
-	if (flag && flag->space && strcmp (flag->space->name, R_FLAGS_FS_FUNCTIONS)) {
-		r_flag_rename (core->flags, flag, name);
+	if (!r_anal_function_rename (fcn, name)) {
+		return;
 	}
-	r_anal_function_rename (fcn, name);
 	// set alternate spelling as realname for the function flag if available
 	if (R_STR_ISNOTEMPTY (alt)) {
 		RFlagItem *nf = r_flag_get (core->flags, fcn->name);
 		if (nf) {
 			r_flag_item_set_realname (core->flags, nf, alt);
 		}
-	}
-	if (core->anal->cb.on_fcn_rename) {
-		core->anal->cb.on_fcn_rename (core->anal, core->anal->user, fcn, name);
 	}
 }
 

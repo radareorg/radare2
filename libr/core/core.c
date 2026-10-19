@@ -40,11 +40,80 @@ static int on_fcn_delete(RAnal *_anal, void *_user, RAnalFunction *fcn) {
 	return 0;
 }
 
-static int on_fcn_rename(RAnal *_anal, void *_user, RAnalFunction *fcn, const char *oname) {
+static void rename_fcnsig(RAnalFunction *fcn, const char *oname, const char *nname) {
+	RAnal *anal = fcn->anal;
+#define DB anal->sdb_types
+	if (!strcmp (oname, nname)) {
+		return;
+	}
+	char *type_name = r_type_func_key (DB, nname);
+	const bool declared = type_name != NULL;
+	free (type_name);
+	if (declared) {
+		char *linked = r_type_link_at (DB, fcn->addr);
+		char *source = r_type_func_key (DB, oname);
+		if (!linked && source) {
+			r_type_set_link (DB, source, fcn->addr);
+		}
+		free (source);
+		free (linked);
+		return;
+	}
+	// rename type
+	const char *type = sdb_const_get (DB, oname, 0);
+	if (type && !strcmp (type, "func")) {
+		sdb_rename (DB, oname, nname, 0);
+	}
+	// rename args
+	char *k = r_str_newf ("func.%s.args", oname);
+	char *v;
+	const char *argstr = sdb_const_get (DB, k, 0);
+	if (R_STR_ISEMPTY (argstr)) {
+		free (k);
+		return;
+	}
+	int i, args = r_num_get (NULL, argstr);
+	sdb_unset (DB, k, 0);
+	free (k);
+	r_strf_buffer (16);
+	sdb_setf (DB, r_strf ("%d", (int)args), 0, "func.%s.args", nname);
+	// rename arg#
+	for (i = 0; i < args; i++) {
+		k = r_str_newf ("func.%s.arg.%d", oname, i);
+		v = r_str_newf ("func.%s.arg.%d", nname, i);
+		sdb_rename (DB, k, v, 0);
+		free (k);
+		free (v);
+	}
+	// unset the leftovers
+	for (; i < args + 8; i++) {
+		k = r_str_newf ("func.%s.arg.%d", oname, i);
+		sdb_unset (DB, k, 0);
+		free (k);
+	}
+	// rename ret
+	k = r_str_newf ("func.%s.ret", oname);
+	v = sdb_get (DB, k, 0);
+	sdb_unset (DB, k, 0);
+	free (k);
+	k = r_str_newf ("func.%s.ret", nname);
+	sdb_set (DB, k, v, 0);
+	free (k);
+	free (v);
+#undef DB
+}
+
+static int on_fcn_rename(RAnal *anal, void *_user, RAnalFunction *fcn, const char *oname) {
 	RCore *core = (RCore *)_user;
+	RFlagItem *flag = r_flag_get (core->flags, oname);
+	if (flag && flag->space && !strcmp (flag->space->name, R_FLAGS_FS_FUNCTIONS)) {
+		r_flag_rename (core->flags, flag, fcn->name);
+	} else {
+		anal->flg_fcn_set (core->flags, fcn->name, fcn->addr, r_anal_function_size_from_entry (fcn));
+	}
+	rename_fcnsig (fcn, oname, fcn->name);
 	const char *cmd = r_config_get (core->config, "cmd.fcn.rename");
 	if (R_STR_ISNOTEMPTY (cmd)) {
-		// XXX: wat do with old name here?
 		ut64 oaddr = core->addr;
 		ut64 addr = fcn->addr;
 		r_core_seek (core, addr, true);

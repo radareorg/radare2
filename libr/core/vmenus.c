@@ -3204,21 +3204,6 @@ R_API void r_core_visual_mounts(RCore *core) {
 }
 
 // helper
-static void function_rename(RCore *core, ut64 addr, const char *name) {
-	RListIter *iter;
-	RAnalFunction *fcn;
-
-	r_list_foreach (core->anal->fcns, iter, fcn) {
-		if (fcn->addr == addr) {
-			r_flag_unset_name (core->flags, fcn->name);
-			free (fcn->name);
-			fcn->name = strdup (name);
-			r_flag_set (core->flags, name, addr, r_anal_function_size_from_entry (fcn));
-			break;
-		}
-	}
-}
-
 static void variable_rename(RCore *core, ut64 addr, int vindex, const char *name) {
 	RAnalFunction* fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 	if (!fcn) {
@@ -3781,7 +3766,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 					{
 					const char *newname = r_cons_visual_readln (core->cons, "New name: ", NULL);
 					if (*newname) {
-						function_rename (core, addr, newname);
+						r_anal_function_rename (f, newname);
 					}
 					}
 					break;

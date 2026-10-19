@@ -97,22 +97,6 @@ static char *jni_function_name(JniScanContext *ctx, JniMethod *method) {
 	return unique_name;
 }
 
-static void jni_function_rename(RAnal *anal, RAnalFunction *fcn, const char *name) {
-	char *old_name = strdup (fcn->name);
-	if (!r_anal_function_rename (fcn, name)) {
-		free (old_name);
-		return;
-	}
-	if (anal->flb.f) {
-		RFlagItem *flag = r_flag_get_by_spaces (anal->flb.f, false,
-			fcn->addr, "functions", NULL);
-		if (flag && !strcmp (flag->name, old_name)) {
-			r_flag_rename (anal->flb.f, flag, name);
-		}
-	}
-	free (old_name);
-}
-
 static bool jni_function_has_prototype(RAnal *anal, RAnalFunction *fcn) {
 	r_anal_types_prepare (anal);
 	char *linked_name = r_type_link_at (anal->sdb_types, fcn->addr);
@@ -190,7 +174,7 @@ static RAnalFunction *jni_materialize_method(JniScanContext *ctx,
 		fcn = r_anal_create_function (ctx->anal, name,
 			method->function_addr, R_ANAL_FCN_TYPE_FCN, NULL);
 	} else if (jni_function_name_is_generic (fcn->name)) {
-		jni_function_rename (ctx->anal, fcn, name);
+		r_anal_function_rename (fcn, name);
 	}
 	free (name);
 	if (!fcn) {

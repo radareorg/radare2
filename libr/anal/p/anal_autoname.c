@@ -316,20 +316,14 @@ static void autoname_all(RAnal *anal) {
 		RAnalFunction *fcn;
 		bool changed = false;
 		r_list_foreach (anal->fcns, it, fcn) {
-			if (!r_str_startswith (fcn->name, "fcn.")
-				&& !r_str_startswith (fcn->name, "sym.func.")) {
-				continue;
-			}
 			char *name = autoname_fcn (anal, fcn, 0);
 			if (!name) {
 				continue;
 			}
-			char *cmd = r_str_newf ("fr %s %s", fcn->name, name);
-			anal->coreb.cmd (anal->coreb.core, cmd);
-			free (cmd);
-			free (fcn->name);
-			fcn->name = name;
-			changed = true;
+			if (r_anal_function_rename (fcn, name)) {
+				changed = true;
+			}
+			free (name);
 		}
 		if (!changed) {
 			break;
