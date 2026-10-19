@@ -145,6 +145,32 @@ AAAAAAAAA...
 EOF
 RUN
 
+NAME=cxx demangle bounds nested local names, special names and packs
+FILE=malloc://70000
+CMDS=<<EOF
+iD cxx _ZZZ1fvE1gvE1x
+iD cxx _ZGVZ1fvE1x
+iD cxx _ZThn8_ZN1A1fEvE1x
+iD cxx _Z1fIJiJicEEEvv
+wow 5a @ 0!65536
+iD cxx _Z`ps 65000 @ 0`
+wow 4741 @ 0!65536
+iD cxx _Z`ps 65000 @ 0`
+wow 4a @ 0!65536
+iD cxx _Z1fI`ps 65000 @ 0`
+wow 3166494c5f5a @ 0!65536
+iD cxx _Z`ps 65000 @ 0`
+?e done
+EOF
+EXPECT=<<EOF
+f()::g()::x
+guard variable for f()::x
+non-virtual thunk to A::f()::x
+void f<int, int, char>()
+done
+EOF
+RUN
+
 # merged: bin freepascal detection
 NAME=freepascal detection
 FILE=bins/efi/freepascal_test_dwarf

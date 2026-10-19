@@ -302,6 +302,12 @@ struct d_info_checkpoint
 /* Maximum number of times d_print_comp may be called recursively.  */
 #define MAX_RECURSION_COUNT 512
 
+/* Upper bound on the number of components (2 * strlen (mangled)) accepted
+   by d_demangle_callback.  The parser recurses once per nested
+   <local-name>, <special-name> or <expr-primary> without any counter, so
+   this is what bounds its stack use (libiberty PR 87675).  */
+#define DEMANGLE_RECURSION_LIMIT 2048
+
 enum { D_PRINT_BUFFER_LENGTH = 256 };
 struct d_print_info
 {
@@ -6226,6 +6232,11 @@ d_demangle_callback (const char *mangled, int options,
     }
 
   cplus_demangle_init_info (mangled, options, strlen (mangled), &di);
+
+  /* PR 87675 - Check for a mangled string that is so long
+     that we do not have enough stack space to demangle it.  */
+  if (di.num_comps > DEMANGLE_RECURSION_LIMIT)
+    return 0;
 
   {
     di.comps = calloc (di.num_comps, sizeof (*di.comps));

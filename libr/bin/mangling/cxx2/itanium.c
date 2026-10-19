@@ -1219,6 +1219,10 @@ static Node *parse_template_args(CTX *c, bool tag) {
 
 // <template-arg> ::= <type> | X <expr> E | <expr-primary> | J <arg>* E
 static Node *parse_template_arg(CTX *c) {
+	if (c->fail || c->depth > MAX_DEPTH) {
+		c->fail = true;
+		return NULL;
+	}
 	char ch = peek (c);
 	if (ch == 'X') {
 		c->p++;
@@ -1236,6 +1240,8 @@ static Node *parse_template_arg(CTX *c) {
 		if (list) {
 			list->flags |= F_PACKARG;
 		}
+		// packs nest (J J J ... E E E), so they count against the depth
+		c->depth++;
 		while (peek (c) && peek (c) != 'E') {
 			Node *a = parse_template_arg (c);
 			if (c->fail) {
@@ -1243,6 +1249,7 @@ static Node *parse_template_arg(CTX *c) {
 			}
 			node_push_kid (c, list, a);
 		}
+		c->depth--;
 		(void)eat (c, 'E');
 		return list;
 	}
@@ -1617,17 +1624,22 @@ static Node *parse_encoding(CTX *c, bool top) {
 		c->fail = true;
 		return NULL;
 	}
+	// local, special and expr-primary names nest encodings without a counted production
 	char ch = peek (c);
 	if ((ch == 'T' || ch == 'G') && peek2 (c) != 0) {
 		// could be a special-name; but 'T...' could also be a template-param
 		// type which never starts an encoding, so treat as special-name.
+		c->depth++;
 		Node *sp = parse_special_name (c);
+		c->depth--;
 		return sp;
 	}
 	// the entity name establishes the <template-param> scope for the signature
 	bool outer_tag = c->tagging;
 	c->tagging = true;
+	c->depth++;
 	Node *name = parse_name (c);
+	c->depth--;
 	c->tagging = outer_tag;
 	if (c->fail || !name) {
 		return NULL;
