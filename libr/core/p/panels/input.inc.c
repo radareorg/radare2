@@ -686,12 +686,12 @@ static void r_panels_call_visual_graph(RCore *core) {
 		return;
 	}
 	RPanels *panels = core->panels;
-	r_cons_canvas_free (panels->can);
-	panels->can = NULL;
 	int ocolor = r_config_get_i (core->config, "scr.color");
 	r_core_visual_graph (core, NULL, NULL, true);
 	r_config_set_i (core->config, "scr.color", ocolor);
 	int h, w = r_panels_get_size (core, &h);
+	r_panels_resize_layout (panels, w, h);
+	r_cons_canvas_free (panels->can);
 	panels->can = r_panels_create_new_canvas (core, w, h);
 }
 
