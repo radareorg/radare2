@@ -1167,6 +1167,24 @@ bins/elf/analysis/hello-linux-x86_64: 0x00000010-0x00001a35 md5: 2f4f88b1d8e6ea4
 EOF
 RUN
 
+NAME=rahash2 -B -f -t ends the last block at -t
+FILE=-
+CMDS=!rahash2 -a md5 -B -b 4 -f 0x10 -t 0x19 bins/elf/analysis/hello-linux-x86_64
+EXPECT=<<EOF
+0x00000010-0x00000013 md5: d4b0a4b122e47cd9e7b3581a6a28290c
+0x00000014-0x00000017 md5: 4352d88a78aa39750bf70cd6f27bcaa5
+0x00000018-0x00000019 md5: 0ba4067c95d8d92744702afdd1697107
+EOF
+RUN
+
+NAME=rahash2 -b -f -t hashes the exact range
+FILE=-
+CMDS=!rahash2 -a md5 -b 4 -f 0x10 -t 0x19 bins/elf/analysis/hello-linux-x86_64
+EXPECT=<<EOF
+bins/elf/analysis/hello-linux-x86_64: 0x00000010-0x00000019 md5: b2751074461e5fbd1f65e5fd7b6af994
+EOF
+RUN
+
 NAME=rahash2 -j file
 FILE=-
 CMDS=!rahash2 -j -a md4,md5 bins/elf/analysis/hello-linux-x86_64

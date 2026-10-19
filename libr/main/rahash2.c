@@ -253,8 +253,15 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 				}
 				for (j = ro->from; j < ro->to; j += bsize) {
 					int len = ((j + bsize) > ro->to)? (ro->to - j): bsize;
-					r_io_pread_at (io, j, buf, len);
+					if (r_io_pread_at (io, j, buf, len) != len) {
+						R_LOG_ERROR ("Cannot read %d bytes at 0x%08" PFMT64x, len, j);
+						ret = 1;
+						break;
+					}
 					do_hash_internal (ctx, ro, hashbit, buf, len, pj, rad, 0);
+				}
+				if (ret) {
+					break;
 				}
 				// no block was read: hashes that r_hash_do_begin/end do not
 				// cover still need one pass over the empty input
@@ -299,21 +306,31 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 				f = ro->from;
 				t = ro->to;
 				for (j = f; j < t; j += bsize) {
-					int nsize = (j + bsize < fsize)? bsize: (fsize - j);
-					r_io_pread_at (io, j, buf, bsize);
-					ro->from = j;
-					ro->to = j + bsize;
-					if (ro->to > fsize) {
-						ro->to = fsize;
+					int len = R_MIN (bsize, t - j);
+					if (r_io_pread_at (io, j, buf, len) != len) {
+						R_LOG_ERROR ("Cannot read %d bytes at 0x%08" PFMT64x, len, j);
+						ret = 1;
+						break;
 					}
-					do_hash_internal (ctx, ro, hashbit, buf, nsize, pj, rad, 1);
+					ro->from = j;
+					ro->to = j + len;
+					do_hash_internal (ctx, ro, hashbit, buf, len, pj, rad, 1);
 				}
 				// Commented out to fix issue #23371
 				// do_hash_internal (ctx, ro, hashbit, NULL, 0, pj, rad, 1);
 				ro->from = ofrom;
 				ro->to = oto;
+				if (ret) {
+					break;
+				}
 			}
 		}
+	}
+	if (ret) {
+		pj_free (pj);
+		r_hash_free (ctx);
+		free (buf);
+		return ret;
 	}
 	if (rad == 'j' || rad == 'J') {
 		pj_end (pj);
