@@ -444,8 +444,8 @@ static bool fs_bfs_mount(RFSRoot *root) {
 	if (!ctx->inode_size) {
 		ctx->inode_size = ctx->block_size;
 	}
-	if (ctx->inode_size > ctx->block_size) {
-		R_LOG_ERROR ("Invalid BFS inode size: larger than block size");
+	if (ctx->inode_size < sizeof (BeosInode) || ctx->inode_size > ctx->block_size) {
+		R_LOG_ERROR ("Invalid BFS inode size");
 		goto fail;
 	}
 	ctx->ag_shift = bfs_read32 (ctx, (ut8 *)&sb.ag_shift);
