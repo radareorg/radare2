@@ -1185,6 +1185,9 @@ R_API RList *r_bin_dwarf_parse_line(RBinFile *bf, int mode, char **text) {
 		/* parse the line number program */
 		RStrBuf *sb = text? r_strbuf_new (NULL): NULL;
 		parse_line_raw (bf->rbin, buf, section->bytes.len, mode, sb);
+		if (bf->addrline.al_lock) {
+			bf->addrline.al_lock (&bf->addrline);
+		}
 		if (text) {
 			*text = r_strbuf_drain (sb);
 		}
