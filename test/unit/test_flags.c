@@ -238,8 +238,40 @@ bool test_r_flag_utf8(void) {
 	mu_end;
 }
 
+bool test_r_flag_hash_reserve(void) {
+	RFlag *flags = r_flag_new ();
+	mu_assert_notnull (flags, "new flag table");
+	char names[256][128];
+	const size_t lengths[] = {3, 8, 31, 32, 33, 127};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (names); i++) {
+		size_t len = lengths[i % R_ARRAY_SIZE (lengths)];
+		memset (names[i], 'a', len);
+		snprintf (names[i] + len - 2, 3, "%02x", (unsigned int)i);
+		mu_assert_notnull (r_flag_set (flags, names[i], 0x1000 + i * 16, 16), "insert flag");
+	}
+	r_flag_reserve (flags, 2048);
+	for (i = 0; i < R_ARRAY_SIZE (names); i++) {
+		RFlagItem *item = r_flag_get (flags, names[i]);
+		mu_assert_notnull (item, "flag survives reserve");
+		mu_assert_eq (item->addr, 0x1000 + i * 16, "flag address survives reserve");
+	}
+	const char *long_name = "sym.long.flag.name.crossing.the.hash.threshold";
+	RFlagItem *item = r_flag_get (flags, names[0]);
+	mu_assert_true (r_flag_rename (flags, item, long_name), "rename short flag to long");
+	mu_assert_ptreq (r_flag_get (flags, long_name), item, "find renamed long flag");
+	mu_assert_null (r_flag_get (flags, names[0]), "old short name is gone");
+	mu_assert_true (r_flag_rename (flags, item, "short"), "rename long flag to short");
+	mu_assert_ptreq (r_flag_get (flags, "short"), item, "find renamed short flag");
+	mu_assert_true (r_flag_unset_name (flags, "short"), "unset renamed flag");
+	mu_assert_null (r_flag_get (flags, "short"), "renamed flag is gone");
+	r_flag_free (flags);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_flag_get_set);
+	mu_run_test (test_r_flag_hash_reserve);
 	mu_run_test (test_r_flag_by_spaces);
 	mu_run_test (test_r_flag_get_at);
 	mu_run_test (test_r_flag_rename_unset_all);

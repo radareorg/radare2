@@ -191,11 +191,43 @@ bool test_define_recursion(void) {
 	mu_end;
 }
 
+static bool lookup_test_op(REsil *esil) {
+	return esil != NULL;
+}
+
+bool test_op_lookup_growth(void) {
+	REsil *esil = r_esil_new (NULL);
+	mu_assert_notnull (esil, "new esil");
+	REsilOp *dup = r_esil_get_op (esil, R_STRS_LIT ("DUP"));
+	mu_assert_notnull (dup, "builtin op");
+	const char slice[] = "DUP,remaining";
+	mu_assert_ptreq (r_esil_get_op (esil, r_strs_from_len (slice, 3)), dup, "bounded op lookup");
+	mu_assert_null (r_esil_get_op (esil, r_strs_from (slice)), "long missing op");
+	mu_assert_null (r_esil_get_op (esil, r_strs_from (NULL)), "empty op");
+	char names[256][32];
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (names); i++) {
+		snprintf (names[i], sizeof (names[i]), "CUSTOM_%03u_LONG", (unsigned int)i);
+		mu_assert_true (r_esil_set_op (esil, names[i], lookup_test_op, 0, 0, R_ESIL_OP_TYPE_CUSTOM, NULL), "add custom op");
+	}
+	for (i = 0; i < R_ARRAY_SIZE (names); i++) {
+		REsilOp *op = r_esil_get_op (esil, r_strs_from (names[i]));
+		mu_assert_notnull (op, "custom op after table growth");
+		mu_assert_true (op->code == lookup_test_op, "custom callback");
+	}
+	r_esil_del_op (esil, names[128]);
+	mu_assert_null (r_esil_get_op (esil, r_strs_from (names[128])), "deleted op");
+	mu_assert_ptreq (r_esil_get_op (esil, R_STRS_LIT ("DUP")), dup, "builtin survives growth");
+	r_esil_free (esil);
+	mu_end;
+}
+
 int main(int argc, char **argv) {
 	mu_run_test (test_setup_keeps_custom_interfaces);
 	mu_run_test (test_setup_installs_default_interfaces);
 	mu_run_test (test_reg_alias_op);
 	mu_run_test (test_define_op);
 	mu_run_test (test_define_recursion);
+	mu_run_test (test_op_lookup_growth);
 	return tests_passed != tests_run;
 }

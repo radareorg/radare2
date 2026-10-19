@@ -125,12 +125,38 @@ static bool flag_vec_delete_item(RVecFlagItemPtr *flags, const RFlagItem *item) 
 	return false;
 }
 
+static inline ut32 flag_name_hash(const char *name, size_t len) {
+	return len > 32? (ut32)r_str_hash64_seed (name, len, 0): sdb_hash (name);
+}
+
+static ut32 flag_name_hashfn(const void *key) {
+	return flag_name_hash (key, strlen (key));
+}
+
+static RFlagItem *flag_find_name(RFlag *f, const char *name) {
+	HtPP *names = f->ht_name;
+	if (!names || !names->count || !name) {
+		return NULL;
+	}
+	const size_t len = strlen (name);
+	ut32 hash = flag_name_hash (name, len);
+	HtPPBucket *bucket = &names->table[hash % names->size];
+	ut32 i;
+	for (i = 0; i < bucket->count; i++) {
+		HtPPKv *kv = &bucket->arr[i];
+		if (kv->key_len == (ut32)len && (kv->key == name || !memcmp (kv->key, name, len))) {
+			return kv->value;
+		}
+	}
+	return NULL;
+}
+
 static ut64 num_callback(RNum *user, const char *name, bool *ok) {
 	RFlag *f = (RFlag *)user;
 	if (ok) {
 		*ok = false;
 	}
-	RFlagItem *fi = ht_pp_find (f->ht_name, name, NULL);
+	RFlagItem *fi = flag_find_name (f, name);
 	if (fi) {
 		// XXX this is not efficient
 		const char *alias = r_flag_item_set_alias (f, fi, NULL);
@@ -284,7 +310,7 @@ static bool set_flag_item_name(RFlag *f, RFlagItem *item, const RFlagFilteredNam
 	if (item->name && !strcmp (item->name, fname->name)) {
 		return false;
 	}
-	RFlagItem *existing = ht_pp_find (f->ht_name, fname->name, NULL);
+	RFlagItem *existing = flag_find_name (f, fname->name);
 	if (existing && existing != item) {
 		return false;
 	}
@@ -330,7 +356,7 @@ static void ht_free_flag(HtPPKv *kv) {
 static HtPP *flag_ht_name_new(void) {
 	HtPPOptions opt = {
 		.cmp = (HtPPListComparator)strcmp,
-		.hashfn = (HtPPHashFunction)sdb_hash,
+		.hashfn = flag_name_hashfn,
 		.dupkey = NULL,
 		.dupvalue = NULL,
 		.calcsizeK = (HtPPCalcSizeK)strlen,
@@ -426,7 +452,7 @@ R_API void r_flag_reserve(RFlag *f, ut64 count) {
 	if (!nh) {
 		return;
 	}
-	nh->opt.dupkey = NULL;
+	nh->opt = old->opt;
 	ht_pp_foreach (old, flag_ht_migrate, nh);
 	old->opt.freefn = NULL;
 	ht_pp_free (old);
@@ -708,7 +734,7 @@ R_API bool r_flag_exist_at(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64
 /* Otherwise, NULL is returned. */
 R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
 	R_RETURN_VAL_IF_FAIL (f, NULL);
-	RFlagItem *r = ht_pp_find (f->ht_name, name, NULL);
+	RFlagItem *r = flag_find_name (f, name);
 	return r? evalFlag (f, r): NULL;
 }
 
@@ -1296,7 +1322,7 @@ R_API int r_flag_unset_glob(RFlag *f, const char *glob) {
  * returns true if the item is found and unset, false otherwise. */
 R_API bool r_flag_unset_name(RFlag *f, const char *name) {
 	R_RETURN_VAL_IF_FAIL (f, false);
-	RFlagItem *item = ht_pp_find (f->ht_name, name, NULL);
+	RFlagItem *item = flag_find_name (f, name);
 	if (item && r_flag_unset (f, item)) {
 		R_DIRTY_SET (f);
 		return true;

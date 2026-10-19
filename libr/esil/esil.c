@@ -20,17 +20,45 @@ R_IPI bool alignCheck(REsil *esil, ut64 addr) {
 
 static ut32 esil_ops_hash(const void *k) {
 	const RStrs *s = k;
-	return (ut32)r_str_hash64_seed (s->a, r_strs_len (*s), 0);
+	size_t len = s->b - s->a;
+	if (len <= 3) {
+		const ut8 *p = (const ut8 *)s->a;
+		ut32 h = p[0] | ((ut32)p[len / 2] << 8) | ((ut32)p[len - 1] << 16);
+		h = (h ^ (len * 0x9e3779b9U)) * 0x9e3779b1U;
+		return h ^ (h >> 16);
+	}
+	if (len <= 8) {
+		ut64 w = r_read_le32 (s->a) | ((ut64)r_read_le32 (s->b - 4) << 32);
+		ut64 h = (w ^ (len * 0x9e3779b97f4a7c15ULL)) * 0xc4ceb9fe1a85ec53ULL;
+		return h >> 32;
+	}
+	return (ut32)r_str_hash64_seed (s->a, len, 0);
 }
 
 static ut32 esil_ops_keysize(const void *k) {
-	return (ut32)r_strs_len (*(const RStrs *)k);
+	const RStrs *s = k;
+	return (ut32)(s->b - s->a);
 }
 
 static int esil_ops_cmp(const void *a, const void *b) {
 	// HT checks key_len equality before calling cmp — plain memcmp suffices
 	const RStrs *sa = a;
-	return memcmp (sa->a, ((const RStrs *)b)->a, r_strs_len (*sa));
+	return memcmp (sa->a, ((const RStrs *)b)->a, sa->b - sa->a);
+}
+
+static REsilOp *esil_ops_find(HtPP *ops, RStrs key) {
+	// Operator tables use fixed-size entries and nonempty RStrs keys.
+	const size_t len = key.b - key.a;
+	HtPPBucket *bucket = &ops->table[esil_ops_hash (&key) % ops->size];
+	ut32 i;
+	for (i = 0; i < bucket->count; i++) {
+		HtPPKv *kv = &bucket->arr[i];
+		const RStrs *name = kv->key;
+		if (kv->key_len == (ut32)len && !memcmp (key.a, name->a, len)) {
+			return kv->value;
+		}
+	}
+	return NULL;
 }
 
 static bool esil_voyeurs_init(REsil *esil) {
@@ -73,7 +101,11 @@ static HtPP *esil_ops_new(void) {
 		.freefn = esil_ops_kv_free,
 		.elem_size = sizeof (HtPPKv),
 	};
-	return ht_pp_new_opt (&opt);
+	HtPP *ops = ht_pp_new_size (128, NULL, esil_ops_kv_free, NULL);
+	if (ops) {
+		ops->opt = opt;
+	}
+	return ops;
 }
 
 // Average token width for sizing the string ring (stacksize * 32 bytes).
@@ -313,7 +345,7 @@ R_API void r_esil_del_voyeur(REsil *esil, ut32 vid) {
 R_API bool r_esil_set_op(REsil *esil, const char *op, REsilOpCb code, ut32 push, ut32 pop, ut32 type, const char *info) {
 	R_RETURN_VAL_IF_FAIL (code && R_STR_ISNOTEMPTY (op) && esil && esil->ops, false);
 	const RStrs k = r_strs_from (op);
-	REsilOp *eop = ht_pp_find (esil->ops, &k, NULL);
+	REsilOp *eop = esil_ops_find (esil->ops, k);
 	if (!eop) {
 		eop = R_NEW0 (REsilOp);
 		eop->name = k; // points at caller's const char* — must outlive esil
@@ -374,7 +406,7 @@ R_API REsilOp *r_esil_get_op(REsil *esil, RStrs w) {
 	if (r_strs_empty (w) || !esil->ops) {
 		return NULL;
 	}
-	return ht_pp_find (esil->ops, &w, NULL);
+	return esil_ops_find (esil->ops, w);
 }
 
 R_API void r_esil_del_op(REsil *esil, const char *op) {
