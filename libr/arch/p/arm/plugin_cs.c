@@ -128,6 +128,9 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 #define ARM64_INS_TST ARM64_INS_ALIAS_TST
 #define ARM64_INS_CSET ARM64_INS_ALIAS_CSET
 #define ARM64_INS_CINC ARM64_INS_ALIAS_CINC
+#define ARM64_INS_CSETM ARM64_INS_ALIAS_CSETM
+#define ARM64_INS_CINV ARM64_INS_ALIAS_CINV
+#define ARM64_INS_CNEG ARM64_INS_ALIAS_CNEG
 #define ARM64_INS_MVN ARM64_INS_ALIAS_MVN
 #define ARM64_INS_BFI ARM64_INS_ALIAS_BFI
 #define ARM64_INS_BFXIL ARM64_INS_ALIAS_BFXIL
@@ -1525,6 +1528,28 @@ static const char *arm64_profile_sysreg(cs_insn *insn, int n) {
 	return NULL;
 }
 
+// always-true conditions emit no opener, so only the taken arm is written
+static void arm64_esil_cond_select(RAnalOp *op, const char *postfix, const char *taken, const char *other, const char *dst) {
+	if (*postfix) {
+		r_strbuf_appendf (&op->esil, "%s,}{,%s,},%s,=", taken, other, dst);
+	} else {
+		r_strbuf_appendf (&op->esil, "%s,%s,=", taken, dst);
+	}
+}
+
+static const char *arm64_esil_cond_alt(int id) {
+	switch (id) {
+	case ARM64_INS_CINC:
+	case ARM64_INS_CSINC:
+		return "1,%s,+";
+	case ARM64_INS_CINV:
+	case ARM64_INS_CSINV:
+		return "%s,-1,^";
+	default:
+		return "%s,0,-";
+	}
+}
+
 static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
@@ -2286,19 +2311,35 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		break;
 	case ARM64_INS_FCSEL:
 	case ARM64_INS_CSEL: // csel Wd, Wn, Wm --> Wd := (cond) ? Wn : Wm
-		r_strbuf_appendf (&op->esil, "%s,}{,%s,},%s,=", REG64 (1), REG64 (2), REG64 (0));
+		arm64_esil_cond_select (op, postfix, REG64 (1), REG64 (2), REG64 (0));
 		postfix = "";
 		break;
 	case ARM64_INS_CSET: // cset Wd --> Wd := (cond) ? 1 : 0
-		r_strbuf_appendf (&op->esil, "1,}{,0,},%s,=", REG64 (0));
+		arm64_esil_cond_select (op, postfix, "1", "0", REG64 (0));
+		postfix = "";
+		break;
+	case ARM64_INS_CSETM: // csetm Wd --> Wd := (cond) ? -1 : 0
+		arm64_esil_cond_select (op, postfix, REGBITS64 (0) == 32 ? "0xffffffff" : "-1", "0", REG64 (0));
 		postfix = "";
 		break;
 	case ARM64_INS_CINC: // cinc Wd, Wn --> Wd := (cond) ? (Wn+1) : Wn
-		r_strbuf_appendf (&op->esil, "1,%s,+,}{,%s,},%s,=", REG64 (1), REG64 (1), REG64 (0));
+	case ARM64_INS_CINV: // cinv Wd, Wn --> Wd := (cond) ? NOT(Wn) : Wn
+	case ARM64_INS_CNEG: // cneg Wd, Wn --> Wd := (cond) ? -Wn : Wn
+		{
+			char *alt = r_str_newf (arm64_esil_cond_alt (insn->id), REG64 (1));
+			arm64_esil_cond_select (op, postfix, alt, REG64 (1), REG64 (0));
+			free (alt);
+		}
 		postfix = "";
 		break;
 	case ARM64_INS_CSINC: // csinc Wd, Wn, Wm --> Wd := (cond) ? Wn : (Wm+1)
-		r_strbuf_appendf (&op->esil, "%s,}{,1,%s,+,},%s,=", REG64 (1), REG64 (2), REG64 (0));
+	case ARM64_INS_CSINV: // csinv Wd, Wn, Wm --> Wd := (cond) ? Wn : NOT(Wm)
+	case ARM64_INS_CSNEG: // csneg Wd, Wn, Wm --> Wd := (cond) ? Wn : -Wm
+		{
+			char *alt = r_str_newf (arm64_esil_cond_alt (insn->id), REG64 (2));
+			arm64_esil_cond_select (op, postfix, REG64 (1), alt, REG64 (0));
+			free (alt);
+		}
 		postfix = "";
 		break;
 	case ARM64_INS_STXRB:
