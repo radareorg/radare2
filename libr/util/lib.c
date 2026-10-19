@@ -131,7 +131,7 @@ R_API char *r_lib_path(const char *libname) {
 		r_sys_perror ("SearchPath");
 		goto err;
 	}
-	path = malloc (count * sizeof (WCHAR));
+	path = R_NEWS (WCHAR, count);
 	if (!path) {
 		goto err;
 	}

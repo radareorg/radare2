@@ -7,7 +7,7 @@ R_API RStrsStore *r_strs_store_new(ut32 capacity) {
 	ut32 ecap = capacity? capacity: 16;
 	ut32 bcap = ecap * 16;
 	ss->base = malloc (bcap);
-	ss->entries = malloc (ecap * sizeof (RStrsEntry));
+	ss->entries = R_NEWS (RStrsEntry, ecap);
 	if (!ss->base || !ss->entries) {
 		r_strs_store_free (ss);
 		return NULL;
@@ -43,7 +43,7 @@ R_API int r_strs_store_add(RStrsStore *ss, const char *s, int len) {
 		if (r_mul_overflow (ss->cap, (ut32)2, &nc)) {
 			return -1;
 		}
-		RStrsEntry *ne = realloc (ss->entries, nc * sizeof (RStrsEntry));
+		RStrsEntry *ne = r_array_resize (ss->entries, nc, sizeof (RStrsEntry));
 		if (!ne) {
 			return -1;
 		}
@@ -67,7 +67,7 @@ R_API void r_strs_store_seal(RStrsStore *ss) {
 		}
 	}
 	if (ss->cap > ss->count && ss->count > 0) {
-		RStrsEntry *ne = realloc (ss->entries, ss->count * sizeof (RStrsEntry));
+		RStrsEntry *ne = r_array_resize (ss->entries, ss->count, sizeof (RStrsEntry));
 		if (ne) {
 			ss->entries = ne;
 			ss->cap = ss->count;
@@ -158,7 +158,7 @@ R_API RStrsStore *r_strs_store_split(const char *s, int len, const char *seps, b
 		}
 	}
 	RStrsStore *ss = R_NEW0 (RStrsStore);
-	ss->entries = malloc (tokens * sizeof (RStrsEntry));
+	ss->entries = R_NEWS (RStrsEntry, tokens);
 	if (!ss->entries) {
 		free (ss);
 		return NULL;

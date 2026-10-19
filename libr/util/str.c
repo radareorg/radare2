@@ -2643,7 +2643,7 @@ R_API char **r_str_argv(const char *cmdline, int *_argc) {
 		return NULL;
 	}
 
-	char **argv = malloc (argv_len * sizeof (char *));
+	char **argv = R_NEWS (char *, argv_len);
 	if (!argv) {
 		return NULL;
 	}
@@ -2730,7 +2730,7 @@ R_API char **r_str_argv(const char *cmdline, int *_argc) {
 		argv[argc++] = strdup (&args[arg_begin]);
 		if (argc >= argv_len) {
 			argv_len *= 2;
-			char **tmp = realloc (argv, argv_len * sizeof (char *));
+			char **tmp = r_array_resize (argv, argv_len, sizeof (char *));
 			if (!tmp) {
 				free (args);
 				free (argv);
@@ -2741,7 +2741,7 @@ R_API char **r_str_argv(const char *cmdline, int *_argc) {
 		arg_begin = args_current;
 	} while (cmdline[cmdline_current++] != '\0');
 	argv[argc] = NULL;
-	char **tmp = realloc (argv, (argc + 1) * sizeof (char *));
+	char **tmp = r_array_resize (argv, argc + 1, sizeof (char *));
 	if (tmp) {
 		argv = tmp;
 	} else {

@@ -100,7 +100,7 @@ static bool trie_node_insert_child(RTrieNode *node, size_t index, RTrieNode *chi
 	if (node->children_count == node->children_capacity) {
 		/* children have distinct first bytes, so capacity never exceeds 256 */
 		size_t capacity = node->children_capacity? node->children_capacity * 2: 4;
-		RTrieNode **children = realloc (node->children, capacity * sizeof (RTrieNode *));
+		RTrieNode **children = r_array_resize (node->children, capacity, sizeof (RTrieNode *));
 		if (!children) {
 			return false;
 		}
@@ -239,7 +239,7 @@ R_API bool r_trie_insert(RTrie *trie, RStrs key, void *value) {
 			middle->value = value;
 		}
 		middle->children_capacity = key_suffix_len? 2: 1;
-		middle->children = malloc (middle->children_capacity * sizeof (RTrieNode *));
+		middle->children = R_NEWS (RTrieNode *, middle->children_capacity);
 		if (!middle->children || (key_suffix_len && !leaf)) {
 			if (leaf) {
 				trie_node_free_shallow (leaf);

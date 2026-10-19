@@ -376,6 +376,13 @@ static inline void *r_new_array(size_t count, size_t size) {
 	return malloc (count * size);
 }
 
+static inline void *r_array_resize(void *ptr, size_t count, size_t size) {
+	if (size && count > SIZE_MAX / size) {
+		return NULL;
+	}
+	return realloc (ptr, count * size);
+}
+
 #define BITS2BYTES(x) (((x)/8)+(((x)%8)?1:0))
 #define ZERO_FILL(x) memset (&x, 0, sizeof (x))
 #define R_NEWS0(x,y) (x*)calloc(y, sizeof (x))

@@ -1640,7 +1640,7 @@ static int bin_pe_init_imports(RBinPEObj *pe) {
 		pe->import_directory_offset = import_dir_offset;
 		if (import_dir_size >= dir_size) {
 			do {
-				new_import_dir = (PE_(image_import_directory) *)realloc (import_dir, ((1 + indx) * dir_size));
+				new_import_dir = (PE_(image_import_directory) *)r_array_resize (import_dir, 1 + indx, dir_size);
 				if (!new_import_dir) {
 					R_LOG_ERROR ("malloc (import directory)");
 					R_FREE (import_dir);
@@ -2048,7 +2048,7 @@ static Var *Pe_r_bin_pe_parse_var(RBinPEObj *pe, PE_DWord *curAddr) {
 		free_Var (var);
 		return NULL;
 	}
-	var->Value = (ut32 *)malloc (var->numOfValues * sizeof (*var->Value));
+	var->Value = (ut32 *)r_new_array (var->numOfValues, sizeof (*var->Value));
 	if (!var->Value) {
 		R_LOG_WARN ("malloc (Var Value)");
 		free_Var (var);
@@ -2135,7 +2135,7 @@ static VarFileInfo *Pe_r_bin_pe_parse_var_file_info(RBinPEObj *pe, PE_DWord *cur
 	}
 	align32 (*curAddr);
 	while (startAddr + varFileInfo->wLength > *curAddr) {
-		Var **tmp = (Var **)realloc (varFileInfo->Children, (varFileInfo->numOfChildren + 1) * sizeof (*varFileInfo->Children));
+		Var **tmp = (Var **)r_array_resize (varFileInfo->Children, varFileInfo->numOfChildren + 1, sizeof (*varFileInfo->Children));
 		if (!tmp) {
 			R_LOG_WARN ("realloc (VarFileInfo Children)");
 			free_VarFileInfo (varFileInfo);
@@ -2203,7 +2203,7 @@ static String *Pe_r_bin_pe_parse_string(RBinPEObj *pe, PE_DWord *curAddr) {
 			R_LOG_WARN ("check (String szKey)");
 			goto out_error;
 		}
-		tmpKey = (ut16 *)realloc (string->szKey, (i + 1) * sizeof (ut16));
+		tmpKey = (ut16 *)r_array_resize (string->szKey, i + 1, sizeof (ut16));
 		if (!tmpKey) {
 			R_LOG_WARN ("realloc (String szKey)");
 			goto out_error;
@@ -2295,7 +2295,7 @@ static StringTable *Pe_r_bin_pe_parse_string_table(RBinPEObj *pe, PE_DWord *curA
 	*curAddr += EIGHT_HEX_DIG_UTF_16_LEN;
 	align32 (*curAddr);
 	while (startAddr + stringTable->wLength > *curAddr) {
-		String **tmp = (String **)realloc (stringTable->Children, (stringTable->numOfChildren + 1) * sizeof (*stringTable->Children));
+		String **tmp = (String **)r_array_resize (stringTable->Children, stringTable->numOfChildren + 1, sizeof (*stringTable->Children));
 		if (!tmp) {
 			R_LOG_WARN ("realloc (StringTable Children)");
 			free_StringTable (stringTable);
@@ -2385,7 +2385,7 @@ static StringFileInfo *Pe_r_bin_pe_parse_string_file_info(RBinPEObj *pe, PE_DWor
 	align32 (*curAddr);
 
 	while (startAddr + stringFileInfo->wLength > *curAddr) {
-		StringTable **tmp = (StringTable **)realloc (stringFileInfo->Children, (stringFileInfo->numOfChildren + 1) * sizeof (*stringFileInfo->Children));
+		StringTable **tmp = (StringTable **)r_array_resize (stringFileInfo->Children, stringFileInfo->numOfChildren + 1, sizeof (*stringFileInfo->Children));
 		if (!tmp) {
 			R_LOG_WARN ("realloc (StringFileInfo Children)");
 			free_StringFileInfo (stringFileInfo);
@@ -3532,7 +3532,7 @@ static int bin_pe_init_security(RBinPEObj *pe) {
 
 	PE_DWord offset = paddr;
 	while (offset < paddr + size) {
-		Pe_certificate **tmp = (Pe_certificate **)realloc (security_directory->certificates, (security_directory->length + 1) * sizeof (Pe_certificate *));
+		Pe_certificate **tmp = (Pe_certificate **)r_array_resize (security_directory->certificates, security_directory->length + 1, sizeof (Pe_certificate *));
 		if (!tmp) {
 			return false;
 		}
@@ -3806,7 +3806,7 @@ RVecPEExport *PE_(r_bin_pe_get_exports)(RBinPEObj *pe) {
 		// Build an ordinal->name-index map so each function resolves its name
 		// in O(1) instead of rescanning AddressOfOrdinals for every function.
 		if (nfuncs > 0 && pe->export_directory->NumberOfNames > 0) {
-			ord2name = malloc (nfuncs * sizeof (st32));
+			ord2name = R_NEWS (st32, nfuncs);
 			if (!ord2name) {
 				goto beach;
 			}

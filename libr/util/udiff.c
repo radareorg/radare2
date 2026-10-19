@@ -118,7 +118,7 @@ static st32 lev_parse_matrix(Levrow *matrix, ut32 len, bool invert, RLevOp **chg
 				goto leave;
 			}
 			size *= 2;
-			RLevOp *tmp = realloc (changes, (1 + size) * sizeof (RLevOp));
+			RLevOp *tmp = r_array_resize (changes, 1 + size, sizeof (RLevOp));
 			if (!tmp) {
 				goto leave;
 			}
@@ -147,7 +147,7 @@ static st32 lev_parse_matrix(Levrow *matrix, ut32 len, bool invert, RLevOp **chg
 			goto leave;
 		}
 		size += j - (size - insert);
-		RLevOp *tmp = realloc (changes, (1 + size) * sizeof (RLevOp));
+		RLevOp *tmp = r_array_resize (changes, 1 + size, sizeof (RLevOp));
 		if (!tmp) {
 			goto leave;
 		}
@@ -417,7 +417,7 @@ R_API bool r_diff_buffers_distance_levenshtein(RDiff *diff, const ut8 *a, ut32 l
 		b = t;
 	}
 
-	if (sizeof (ut32) > SIZE_MAX / (lb + 1) || ! (d = malloc ((lb + 1) * sizeof (ut32)))) {
+	if (! (d = R_NEWS (ut32, lb + 1))) {
 		return false;
 	}
 	for (i = 0; i <= lb; i++) {

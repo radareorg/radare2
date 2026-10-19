@@ -86,7 +86,7 @@ int omap_remap(void *stream, int address) {
 		if (len > SIZE_MAX / sizeof (unsigned int)) {
 			return -1;
 		}
-		omap_stream->froms = malloc (len * sizeof (unsigned int));
+		omap_stream->froms = r_new_array (len, sizeof (unsigned int));
 		if (!omap_stream->froms) {
 			return -1;
 		}

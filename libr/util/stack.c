@@ -51,7 +51,7 @@ R_API bool r_stack_push(RStack *s, void *el) {
 		if (n_elems <= s->n_elems) {
 			return false;
 		}
-		void **elems = realloc (s->elems, n_elems * sizeof (void *));
+		void **elems = r_array_resize (s->elems, n_elems, sizeof (void *));
 		if (!elems) {
 			return false;
 		}
