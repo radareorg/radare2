@@ -1007,11 +1007,21 @@ static int process_1byte_op(RArchSession *a, ut8 *data, const Opcode *op, int op
 				}
 			}
 		} else if (op->operands[1].type & OT_REGALL) {
+			// REX.R / REX.B for r8-r15 in 8, 16 and 32 bit forms (64 bit ones got REX.W above)
+			const int rex_rb = (op->operands[1].extended ? 4 : 0) | (op->operands[0].extended ? 1 : 0);
 			if (op->operands[0].type & OT_BYTE && op->operands[1].type & OT_BYTE) {
+				if (op->operands[0].rex_prefixed) {
+					data[l - 1] |= rex_rb;
+				} else if (rex_rb || op->operands[1].rex_prefixed) {
+					data[l++] = 0x40 | rex_rb;
+				}
 				data[l++] = op1;
 			} else if (op->operands[0].type & (OT_WORD | OT_DWORD) && op->operands[1].type & (OT_WORD | OT_DWORD)) {
 				if (op->operands[0].type & OT_WORD) {
 					data[l++] = 0x66;
+				}
+				if (rex_rb) {
+					data[l++] = 0x40 | rex_rb;
 				}
 				data[l++] = op1 + 0x1;
 			}
