@@ -973,3 +973,13 @@ EXPECT_ERR=<<EOF
 ERROR: Cannot open /mnt/link
 EOF
 RUN
+
+NAME=mount iso9660 joliet volume with rock ridge names
+FILE=bins/fs/iso-joliet-rockridge.iso
+CMDS=md /root
+EXPECT=<<EOF
+d .
+d ..
+f A
+EOF
+RUN

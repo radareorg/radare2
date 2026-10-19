@@ -618,36 +618,27 @@ grub_iso9660_iterate_dir(grub_fshelp_node_t dir,
 			from the iso9660 filesystem.  */
 			if (!filename) {
 				name[dirent.namelen] = '\0';
-				filename = grub_strrchr (name, ';');
-				if (filename) {
-					*filename = '\0';
-				}
-
 				if (dirent.namelen == 1 && name[0] == 0) {
 					filename = ".";
 				} else if (dirent.namelen == 1 && name[0] == 1) {
 					filename = "..";
 				} else {
-					filename = name;
+					/* Only the iso9660 name is UCS-2 on joliet, rock ridge names are plain strings.  */
+					if (dir->data->joliet) {
+						filename = grub_iso9660_convert_string ((grub_uint16_t *)name, dirent.namelen >> 1);
+						if (!filename) {
+							free (node);
+							goto err;
+						}
+						c.filename_alloc = 1;
+					} else {
+						filename = name;
+					}
+					char *semicolon = grub_strrchr (filename, ';');
+					if (semicolon) {
+						*semicolon = '\0';
+					}
 				}
-			}
-
-			if (dir->data->joliet) {
-				char *oldname, *semicolon;
-
-				oldname = filename;
-				filename = grub_iso9660_convert_string ((grub_uint16_t *)oldname, dirent.namelen >> 1);
-
-				semicolon = grub_strrchr (filename, ';');
-				if (semicolon) {
-					*semicolon = '\0';
-				}
-
-				if (c.filename_alloc) {
-					grub_free (oldname);
-				}
-
-				c.filename_alloc = 1;
 			}
 
 			if (hook (filename, c.type, node, closure)) {
