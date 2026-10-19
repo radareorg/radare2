@@ -293,3 +293,20 @@ tagCOINITBASE
 EOF
 RUN
 
+NAME=PDB truncated type records
+FILE=bins/pdb/truncated-type-records.pdb
+TIMEOUT=10
+CMDS=<<EOF
+i~^bintype
+idpi bins/pdb/truncated-type-records.pdb~struct
+idpij bins/pdb/truncated-type-records.pdb
+o--
+?e closed
+EOF
+EXPECT=<<EOF
+bintype  pdb
+struct S { // size 0x4
+{"types":[{"type":"structure","name":"S","size":4,"members":[{"member_type":"notype_t","member_name":"","offset":0}]}]}
+closed
+EOF
+RUN

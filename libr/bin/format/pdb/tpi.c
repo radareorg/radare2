@@ -680,6 +680,10 @@ static STypeInfo parse_simple_type(ut32 idx) {
 
 ///////////////////////////////////////////////////////////////////////////////
 static void get_sval_name_len(SVal *val, int *res_len) {
+	if (!val->name_or_val) {
+		*res_len = 0;
+		return;
+	}
 	if (val->value_or_type < eLF_CHAR) {
 		SCString *scstr = (SCString *)val->name_or_val;
 		*res_len = scstr->size;
@@ -709,6 +713,10 @@ static void get_sval_name_len(SVal *val, int *res_len) {
 
 ///////////////////////////////////////////////////////////////////////////////
 static void get_sval_name(STpiStream *ss, SVal *val, char **name) {
+	if (!val->name_or_val) {
+		*name = NULL;
+		return;
+	}
 	if (val->value_or_type < eLF_CHAR) {
 		SCString *scstr;
 		scstr = (SCString *)val->name_or_val;
@@ -1178,6 +1186,10 @@ static void get_sval_val(SVal *val, int *res) {
 		*res = val->value_or_type;
 		return;
 	}
+	if (!val->name_or_val) {
+		*res = 0;
+		return;
+	}
 	switch (val->value_or_type) {
 	case eLF_UQUADWORD:
 		{
@@ -1407,7 +1419,7 @@ static void get_union_val(STpiStream *ss, void *type, int *res) {
 }
 
 static void free_sval(SVal *val) {
-	if (!val) {
+	if (!val || !val->name_or_val) {
 		return;
 	}
 	if (val->value_or_type < eLF_CHAR) {
@@ -2597,11 +2609,7 @@ static int parse_lf_vtshape(SLF_VTSHAPE *lf_vtshape, const ut8 *leaf_data, ut32 
 
 #define PARSE_LF(lf_type, lf_func) \
 	{ \
-		lf_type *lf = (lf_type *)malloc (sizeof (lf_type)); \
-		if (!lf) { \
-			free (leaf_data); \
-			return 0; \
-		} \
+		lf_type *lf = R_NEW0 (lf_type); \
 		parse_ ## lf_func (lf, leaf_data + 2, &read_bytes, type->length); \
 		type->type_data.type_info = (void *)lf; \
 		init_stype_info (&type->type_data); \
@@ -2621,6 +2629,10 @@ static int parse_tpi_stypes(R_STREAM_FILE *stream, SType *type) {
 		return 0;
 	}
 	stream_file_read (stream, type->length, (char *)leaf_data);
+	if (stream->error) {
+		free (leaf_data);
+		return 0;
+	}
 	type->type_data.leaf_type = r_read_le16 (leaf_data);
 	read_bytes += 2;
 	switch (type->type_data.leaf_type) {
@@ -2638,17 +2650,7 @@ static int parse_tpi_stypes(R_STREAM_FILE *stream, SType *type) {
 		PARSE_LF (SLF_STRUCTURE, lf_structure);
 		break;
 	case eLF_POINTER:
-		{
-			// PARSE_LF (SLF_POINTER, lf_pointer);
-			SLF_POINTER *lf = (SLF_POINTER *)malloc (sizeof (SLF_POINTER));
-			if (!lf) {
-				free (leaf_data);
-				return 0;
-			}
-			parse_lf_pointer (lf, leaf_data + 2, &read_bytes, type->length);
-			type->type_data.type_info = (void *)lf;
-			init_stype_info (&type->type_data);
-		}
+		PARSE_LF (SLF_POINTER, lf_pointer);
 		break;
 	case eLF_ARRAY:
 		PARSE_LF (SLF_ARRAY, lf_array);

@@ -1109,6 +1109,10 @@ static void print_types_json(const RBinPdb *pdb, PJ *pj, STpiStream *ss, const R
 		if (type_info->get_name) {
 			type_info->get_name (ss, type_info, &name);
 		}
+		// skip nameless (truncated) types like the regular listing does
+		if (!name) {
+			continue;
+		}
 		int size = 0;
 		if (type_info->get_val) {
 			type_info->get_val (ss, type_info, &size);
@@ -1153,7 +1157,7 @@ static void print_types_json(const RBinPdb *pdb, PJ *pj, STpiStream *ss, const R
 							minfo->get_print_type (ss, minfo, &type_name);
 						}
 						pj_ks (pj, "member_type", type_name);
-						pj_ks (pj, "member_name", member_name);
+						pj_ks (pj, "member_name", r_str_get (member_name));
 						pj_kN (pj, "offset", offset);
 						pj_end (pj);
 						R_FREE (type_name);
@@ -1184,7 +1188,7 @@ static void print_types_json(const RBinPdb *pdb, PJ *pj, STpiStream *ss, const R
 						if (minfo->get_val) {
 							minfo->get_val (ss, minfo, &value);
 						}
-						pj_ks (pj, "enum_name", member_name);
+						pj_ks (pj, "enum_name", r_str_get (member_name));
 						pj_kn (pj, "enum_val", value);
 						pj_end (pj);
 					}
