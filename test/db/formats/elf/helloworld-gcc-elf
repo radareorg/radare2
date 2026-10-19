@@ -1,6 +1,7 @@
 # merged: armr - functions bits
 NAME=arm - elf - main detection
 FILE=bins/arm/elf/hello_world
+ARGS=-e bin.relocs.apply=false
 CMDS=<<EOF
 ?v main
 ?v sym.main

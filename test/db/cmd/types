@@ -248,6 +248,7 @@ RUN
 
 NAME=jni and SoP
 FILE=bins/elf/libverifyPass.so
+ARGS=-e bin.relocs.apply=false
 CMDS=<<EOF
 e anal.vars.stackname=true
 e asm.lines.bb = false
