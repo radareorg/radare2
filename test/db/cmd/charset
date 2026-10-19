@@ -17,12 +17,15 @@ CMDS=<<EOF
 wx c8c5d3d3d600
 e bin.charset=ebcdic37
 izzj
+e bin.charset=none
+izzj
 %RABIN2_CHARSET=
 e bin.charset=
 izzj
 EOF
 EXPECT=<<EOF
 [{"vaddr":0,"paddr":0,"ordinal":0,"size":6,"length":5,"section":"","type":"ascii","string":"HELLO"}]
+[]
 []
 EOF
 RUN

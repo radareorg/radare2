@@ -1149,10 +1149,11 @@ static bool cb_bincharset(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (*node->value == '?') {
 		update_cfgcharsets_options (core, node);
+		SETOPTIONS (node, "none", NULL);
 		print_node_options (user, node);
 		return false;
 	}
-	if (*node->value && !r_muta_algo_supports (core->muta, node->value, R_MUTA_TYPE_CHARSET)) {
+	if (*node->value && strcmp (node->value, "none") && !r_muta_algo_supports (core->muta, node->value, R_MUTA_TYPE_CHARSET)) {
 		R_LOG_ERROR ("Unknown string charset '%s'", node->value);
 		return false;
 	}
