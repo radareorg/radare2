@@ -131,6 +131,22 @@ static ut64 pf_read_value(const ut8 *buf, int size, bool endian) {
 	return value;
 }
 
+// color a pointer-sized value by what it points to, like pxr does
+static void pf_print_hexvalue(RPrintFormat *pf, const char *fmt, ut64 value) {
+	RPrint *p = pf->p;
+	const char *color = NULL;
+	if (p->colorfor && (p->flags & R_PRINT_FLAGS_COLOR)) {
+		color = p->colorfor (p->user, value, 0, true);
+	}
+	if (color) {
+		r_print_printf (p, "%s", color);
+	}
+	r_print_printf (p, fmt, value);
+	if (color) {
+		r_print_printf (p, Color_RESET);
+	}
+}
+
 static int r_get_size(RNum *num, ut8 *buf, int endian, const char *s) {
 	size_t len = strlen (s);
 	if (s[0] == '*' && len >= 4) { // value pointed by the address
@@ -196,7 +212,7 @@ static void pf_qword(RPrintFormat *pf, const char *setval, ut64 seeki, ut8 *buf,
 				if (MUSTSEESTRUCT) {
 					r_print_printf (p, "%" PFMT64u, addr64);
 				} else {
-					r_print_printf (p, "0x%016" PFMT64x, addr64);
+					pf_print_hexvalue (pf, "0x%016" PFMT64x, addr64);
 				}
 			}
 		} else {
@@ -209,7 +225,7 @@ static void pf_qword(RPrintFormat *pf, const char *setval, ut64 seeki, ut8 *buf,
 					if (MUSTSEESTRUCT) {
 						r_print_printf (p, "%" PFMT64u, addr64);
 					} else {
-						r_print_printf (p, "0x%016" PFMT64x, addr64);
+						pf_print_hexvalue (pf, "0x%016" PFMT64x, addr64);
 					}
 				}
 				PF_ELEM_ADVANCE (elem);
@@ -812,7 +828,7 @@ static void pf_hexflag(RPrintFormat *pf, const char *setval, ut64 seeki, ut8 *bu
 			if (ISQUIET && (addr32 == UT32_MAX)) {
 				r_print_printf (p, "-1");
 			} else {
-				r_print_printf (p, "0x%08" PFMT64x, (ut64)addr32);
+				pf_print_hexvalue (pf, "0x%08" PFMT64x, (ut64)addr32);
 			}
 		} else {
 			if (!SEEVALUE) {
@@ -821,7 +837,7 @@ static void pf_hexflag(RPrintFormat *pf, const char *setval, ut64 seeki, ut8 *bu
 			while (size--) {
 				updateAddr (buf + i, size - i, endian, &addr, NULL);
 				if (PF_ELEM_SHOULD_PRINT (elem)) {
-					r_print_printf (p, "0x%08" PFMT64x, addr);
+					pf_print_hexvalue (pf, "0x%08" PFMT64x, addr);
 				}
 				PF_ELEM_ADVANCE (elem);
 				PF_PRINT_SEPARATOR (p, size, elem);
