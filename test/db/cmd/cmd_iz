@@ -224,6 +224,66 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=izzzqj quiet JSON
+FILE=-
+CMDS=<<EOF
+w abcd\00012345\0efghi\0
+izzqj
+izzzqj
+izzzjq
+izzzqj~{}
+EOF
+EXPECT=<<EOF
+[{"vaddr":0,"string":"abcd"},{"vaddr":5,"string":"12345"},{"vaddr":11,"string":"efghi"}]
+[{"vaddr":0,"string":"abcd"},{"vaddr":5,"string":"12345"},{"vaddr":11,"string":"efghi"}]
+[{"vaddr":0,"string":"abcd"},{"vaddr":5,"string":"12345"},{"vaddr":11,"string":"efghi"}]
+[
+  {
+    "vaddr": 0,
+    "string": "abcd"
+  },
+  {
+    "vaddr": 5,
+    "string": "12345"
+  },
+  {
+    "vaddr": 11,
+    "string": "efghi"
+  }
+]
+EOF
+RUN
+
+NAME=izzzqj JSON escaping
+FILE=hex://61626364225c71756f74650061626364c3a900
+CMDS=<<EOF
+izzqj
+izzzqj
+EOF
+EXPECT=<<EOF
+[{"vaddr":0,"string":"abcd\"\\\\quote"},{"vaddr":12,"string":"abcdé"}]
+[{"vaddr":0,"string":"abcd\"\\\\quote"},{"vaddr":12,"string":"abcdé"}]
+EOF
+RUN
+
+NAME=izzz empty strings
+FILE=malloc://64
+CMDS=<<EOF
+izzz
+izzzq
+izzzqq
+izzz*
+izzzj
+izzzqj
+izzzjq
+EOF
+EXPECT=<<EOF
+[]
+[]
+[]
+EOF
+RUN
+
 NAME=iz utf16le
 BROKEN=1
 FILE=bins/elf/strenc

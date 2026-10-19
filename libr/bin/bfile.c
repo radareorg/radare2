@@ -55,6 +55,14 @@ static void print_string(const RBinStringScanOptions *options, RBinString *strin
 	ut64 vaddr = io->va ? r_bin_get_vaddr (bin, string->paddr, string->vaddr) : string->paddr;
 
 	switch (bf->strmode) {
+	case R_MODE_JSON | R_MODE_SIMPLE:
+		if (pj) {
+			pj_o (pj);
+			pj_kn (pj, "vaddr", vaddr);
+			pj_ks (pj, "string", string->string);
+			pj_end (pj);
+		}
+		break;
 	case R_MODE_JSON:
 		if (pj) {
 			pj_o (pj);
@@ -159,7 +167,7 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 	RBinSection *s = NULL;
 	bool ascii_only = false;
 	PJ *pj = NULL;
-	if (bf->strmode == R_MODE_JSON && options->output) {
+	if ((bf->strmode & R_MODE_JSON) && options->output) {
 		pj = pj_new ();
 		if (pj) {
 			pj_a (pj);
