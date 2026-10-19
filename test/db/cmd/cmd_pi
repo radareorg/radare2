@@ -41,3 +41,28 @@ mov r9, rdx
 pop rsi
 EOF
 RUN
+
+NAME=pI and pD with a negative length bigger than the blocksize
+FILE=malloc://1024
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wow 90 @!255
+wx c3 @ 255
+b 4
+s 256
+pI -256~nop?
+pI -256~ret?
+pD -256~nop?
+pD -256~ret?
+b
+s
+EOF
+EXPECT=<<EOF
+255
+1
+255
+1
+0x4
+0x100
+EOF
+RUN

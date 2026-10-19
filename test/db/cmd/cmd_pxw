@@ -118,3 +118,33 @@ EXPECT=<<EOF
 0xfffffffffffffff0  0xffffffffffffffff  0xffffffffffffffff   ................
 EOF
 RUN
+
+NAME=px subcommands with a negative length bigger than the blocksize
+FILE=malloc://1024
+CMDS=<<EOF
+wv4 0x11111111 @ 0x200
+wv4 0x22222222 @ 0x204
+wv4 0x33333333 @ 0x208
+b 4
+s 0x20c
+pxW -12
+pxw -12
+pxh -12
+pxo -12
+p8 -12
+b
+s
+EOF
+EXPECT=<<EOF
+0x00000200 0x11111111
+0x00000204 0x22222222
+0x00000208 0x33333333
+0x00000200  0x11111111 0x22222222 0x33333333             ....""""3333
+0x00000200  0x1111 0x1111 0x2222 0x2222 0x3333 0x3333             ....""""3333
+- offset -    0  1   2  3   4  5   6  7   8  9   A  B   C  D   E  F  0123456789ABCDEF
+0x00000200  021021 021021 042042 042042 063063 063063            ....""""3333
+111111112222222233333333
+0x4
+0x20c
+EOF
+RUN

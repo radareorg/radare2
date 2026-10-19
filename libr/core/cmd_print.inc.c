@@ -7803,10 +7803,10 @@ static int cmd_pd(RCore *core, const char *input, int len, int l, ut8 *block) {
 			if (block1) {
 				if (*input == 'D') { // pD
 					free (block1);
-					if (! (block1 = malloc (bs1))) {
+					if (! (block1 = malloc (l))) {
 						goto beach;
 					}
-					r_io_read_at (core->io, addr - l, block1, bs1);
+					r_io_read_at (core->io, addr - l, block1, l);
 					int dislen = r_core_print_disasm (core, addr - l, block1, l, l, 0, NULL, true, formatted_json, NULL, NULL);
 					r_core_return_value (core, dislen);
 				} else { // pd
@@ -8164,14 +8164,13 @@ static int cmd_print(void *data, const char *input) {
 				input[0] != 'I' && input[0] != 'o' && input[0] != 'h') {
 				if (l < 0) {
 					off = core->addr + l;
-					len = l = -l;
+					l = -l;
 					tmpseek = core->addr;
-				} else {
-					len = l;
-					if (l > core->blocksize) {
-						if (!r_core_block_size (core, l)) {
-							goto beach;
-						}
+				}
+				len = l;
+				if (l > core->blocksize) {
+					if (!r_core_block_size (core, l)) {
+						goto beach;
 					}
 				}
 			} else {

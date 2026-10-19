@@ -8000,7 +8000,6 @@ static bool handle_backwards_disasm(RCore *core, int *nb_opcodes, int *nb_bytes)
 					r_core_block_size (core, obsz);
 					return false;
 				}
-				r_core_block_size (core, obsz);
 			} else {
 				r_io_read_at (core->io, core->addr, core->block, *nb_bytes);
 			}
