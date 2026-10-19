@@ -147,11 +147,15 @@ static void pf_print_hexvalue(RPrintFormat *pf, const char *fmt, ut64 value) {
 	}
 }
 
-static int r_get_size(RNum *num, ut8 *buf, int endian, const char *s) {
-	size_t len = strlen (s);
-	if (s[0] == '*' && len >= 4) { // value pointed by the address
+static int fmtsize(RNum *num, ut8 *buf, int len, int endian, const char *s) {
+	size_t slen = strlen (s);
+	if (s[0] == '*' && slen >= 4) { // value pointed by the address
 		ut64 addr;
 		int offset = (int)r_num_math (num, s + 1);
+		if (offset < 0 || offset > len - 4) {
+			R_LOG_ERROR ("Array size pointer %d is out of the buffer (%d)", offset, len);
+			return 0;
+		}
 		(void)updateAddr (buf + offset, 4, endian, &addr, NULL);
 		return addr;
 	}
@@ -1714,6 +1718,35 @@ static char *get_format_type(const char fmt, const char arg) {
 	return type? strdup (type): NULL;
 }
 
+// bytes of one array element, 0 when the format char has no fixed size
+static int fmt_elemsize(const char fmt, const char arg) {
+	if (!fmt) {
+		return 0;
+	}
+	if (strchr ("bcCXBE", fmt)) {
+		return 1;
+	}
+	if (strchr ("wWg", fmt)) {
+		return 2;
+	}
+	if (strchr ("doixftsT", fmt)) {
+		return 4;
+	}
+	if (strchr ("qFS", fmt)) {
+		return 8;
+	}
+	if (fmt == 'Q') {
+		return 16;
+	}
+	if (fmt == 'G') {
+		return sizeof (long double);
+	}
+	if ((fmt == 'n' || fmt == 'N') && arg && strchr ("1248", arg)) {
+		return arg - '0';
+	}
+	return 0;
+}
+
 static void pf_init(RPrintFormat *pf, RPrint *p, int mode) {
 	memset (pf, 0, sizeof (RPrintFormat));
 	pf->mode = mode;
@@ -1801,7 +1834,8 @@ R_API int r_print_format_sizeof(RPrint *p, const char *f, int mode, int n) {
 			}
 			*end = '\0';
 			tabsize_set = true;
-			tabsize = r_num_math (NULL, fmt + i + 1);
+			// same RNum as the printer, so $$ and flags size the buffer like they print
+			tabsize = r_num_math (p? p->num: NULL, fmt + i + 1);
 			*end = ']';
 			while (fmt[i++] != ']') {
 				;
@@ -1813,35 +1847,11 @@ R_API int r_print_format_sizeof(RPrint *p, const char *f, int mode, int n) {
 		switch (fmt[i]) {
 		case '.':
 			idx--;
-			// fallthrough
-		case 'c':
-		case 'b':
-		case 'X':
-			size += tabsize * 1;
-			break;
-		case 'w':
-			size += tabsize * 2;
+			size += tabsize;
 			break;
 		case ':':
 			idx--;
-			// fallthrough
-		case 'd':
-		case 'o':
-		case 'i':
-		case 'x':
-		case 'f':
-		case 's':
-		case 't':
 			size += tabsize * 4;
-			break;
-		case 'S':
-		case 'q':
-		case 'F':
-			size += tabsize * 8;
-			break;
-		case 'G': // long double (10 byte aligned to 16)
-		case 'Q': // uint128
-			size += tabsize * 16;
 			break;
 		case 'z':
 		case 'Z':
@@ -1989,27 +1999,17 @@ R_API int r_print_format_sizeof(RPrint *p, const char *f, int mode, int n) {
 			break;
 		case 'n':
 		case 'N':
-			if (fmt[i + 1] == '1') {
-				size += tabsize * 1;
-			} else if (fmt[i + 1] == '2') {
-				size += tabsize * 2;
-			} else if (fmt[i + 1] == '4') {
-				size += tabsize * 4;
-			} else if (fmt[i + 1] == '8') {
-				size += tabsize * 8;
-			} else {
-				R_LOG_ERROR ("Invalid n format in (%s)", fmt);
-				free (o);
-				free (args);
-				return -2;
+			{
+				const int n = fmt_elemsize (fmt[i], fmt[i + 1]);
+				if (!n) {
+					R_LOG_ERROR ("Invalid n format in (%s)", fmt);
+					free (o);
+					free (args);
+					return -2;
+				}
+				size += tabsize * n;
+				i++;
 			}
-			i++;
-			break;
-		case 'g':
-			size += tabsize * 2;
-			break;
-		case 'T':
-			size += tabsize * 4;
 			break;
 		case 'u':
 			size += tabsize * 1; // At least one byte
@@ -2017,8 +2017,8 @@ R_API int r_print_format_sizeof(RPrint *p, const char *f, int mode, int n) {
 		case 'D':
 			// size += tabsize * 4; // XXX: D is variable size
 			break;
-		case 'U':
 		default:
+			size += tabsize * fmt_elemsize (fmt[i], 0);
 			break;
 		}
 		idx++;
@@ -2244,7 +2244,7 @@ R_API int r_print_format_internal(RPrint *p, RPrintFormat *pf, ut64 seek, const 
 					goto beach;
 				}
 				*end = '\0';
-				size = r_get_size (p->num, buf, pf->endian, arg + 1);
+				size = fmtsize (p->num, buf, len, pf->endian, arg + 1);
 				arg = end + 1;
 				*end = ']';
 			} else {
@@ -2329,6 +2329,11 @@ R_API int r_print_format_internal(RPrint *p, RPrintFormat *pf, ut64 seek, const 
 					elem = r_num_math (NULL, bracket + 1) + 1; // +1 to handle 0 index easily
 					for (; bracket < end; bracket++) {
 						*bracket = '\0';
+					}
+					// only array fields have elements
+					if (size < 1 || elem < 1 || elem > size) {
+						R_LOG_ERROR ("Field '%s' has no element %d", fieldname, elem - 1);
+						goto beach;
 					}
 					size += elem * ARRAYINDEX_COEF;
 				} else {
@@ -2550,6 +2555,13 @@ R_API int r_print_format_internal(RPrint *p, RPrintFormat *pf, ut64 seek, const 
 				/* format chars */
 				// before to enter in the switch statement check buf boundaries due to  updateAddr
 				// might go beyond its len and it's usually called in each of the following functions
+				// the printers loop on the array size without looking at len
+				int elemsize = fmt_elemsize (tmp, arg[1]);
+				int nelems = (size == -1)? 1: ((size >= ARRAYINDEX_COEF)? size % ARRAYINDEX_COEF: size);
+				if (nelems < 0 || (elemsize > 0 && nelems > (len - i) / elemsize)) {
+					R_LOG_WARN ("format string (%s) array of %d elements is too large for this buffer (%d, %d)", formatname, nelems, i, len);
+					goto beach;
+				}
 				switch (tmp) {
 				case 'u':
 					i += pf_uleb (pf, setval, seeki, buf, i, size, len);

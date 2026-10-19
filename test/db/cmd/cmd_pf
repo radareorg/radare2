@@ -1193,3 +1193,62 @@ EXPECT=<<EOF
    rw : 0x00600908 = (qword)0x0000000000600900
 EOF
 RUN
+
+NAME=pf array size from a flag or $$ sizes the buffer and is bounded by it
+FILE=malloc://64
+CMDS=<<EOF2
+wx 04000000
+wx 1111111111111111222222222222222233333333333333334444444444444444 @ 16
+b 16
+f n=4
+pfs [n]q
+s 16
+pf [n]q
+s 4
+pfs [$$]q
+s 16
+pf [$$]w
+s 0
+pf [*0x0]q
+pf [*0x1000]b
+?e done
+EOF2
+EXPECT=<<EOF2
+32
+0x00000010 = (qword)[ 0x1111111111111111, 0x2222222222222222, 0x3333333333333333, 0x4444444444444444 ]
+32
+0x00000010 = [ 0x1111, 0x1111, 0x1111, 0x1111, 0x2222, 0x2222, 0x2222, 0x2222, 0x3333, 0x3333, 0x3333, 0x3333, 0x4444, 0x4444, 0x4444, 0x4444 ]
+0x00000000 = [  ]
+done
+EOF2
+RUN
+
+NAME=pf field selector index is checked against the array size
+FILE=malloc://32
+CMDS=<<EOF2
+wx 0011223344556677
+pf.foo X a
+pf.bar [4]b a
+pf.skipq .q a b
+pf.foo.a[1]
+pf.foo.a[0]
+pf.bar.a[0]
+pf.bar.a[3]
+pf.bar.a[4]
+pf.bar.a[-1]
+pf.skipq.a[-2]
+?e done
+EOF2
+EXPECT=<<EOF2
+ a : 0x00000000 = [ 0x00 ]
+ a : 0x00000003 = [ 0x33 ]
+done
+EOF2
+EXPECT_ERR=<<EOF2
+ERROR: Field 'a' has no element 1
+ERROR: Field 'a' has no element 0
+ERROR: Field 'a' has no element 4
+ERROR: Field 'a' has no element -1
+ERROR: Field 'a' has no element -2
+EOF2
+RUN
