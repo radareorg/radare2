@@ -145,9 +145,10 @@ R_API int r_hash_parity(const ut8 *buf, ut64 len) {
 /* These functions comes from 0xFFFF */
 /* fmi: nopcode.org/0xFFFF */
 R_API ut16 r_hash_xorpair(const ut8 *a, ut64 len) {
-	ut16 result = 0, *b = (ut16 *)a;
-	for (len >>= 1; len--; b++) {
-		result ^= *b;
+	ut16 result = 0;
+	ut64 i;
+	for (i = 0; i + 1 < len; i += 2) {
+		result ^= r_read_le16 (a + i);
 	}
 	return result;
 }

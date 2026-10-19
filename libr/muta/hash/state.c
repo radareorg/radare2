@@ -152,7 +152,7 @@ R_API ut8 *r_hash_do_elf(RHash *ctx, const ut8 *input, int len) {
 		hash = elf_hash (s);
 		free (s);
 	}
-	memcpy (ctx->digest, &hash, sizeof (unsigned long));
+	r_write_le32 (ctx->digest, (ut32)hash);
 	return ctx->digest;
 }
 
