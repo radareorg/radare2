@@ -91,3 +91,31 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=cd looks up CDPATH
+FILE=-
+CMDS=<<EOF
+cd /
+%CDPATH=/nonexistent:/usr
+cd share
+pwd
+cd /
+cd ./usr
+pwd
+cd /
+%CDPATH=:/nonexistent
+cd usr
+pwd
+cd /
+%CDPATH=
+cd usr
+pwd
+EOF
+EXPECT=<<EOF
+/usr/share
+/usr/share
+/usr
+/usr
+/usr
+EOF
+RUN

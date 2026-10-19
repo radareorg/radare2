@@ -57,7 +57,7 @@ static RCoreHelpMessage help_msg_c = {
 	"ccd", " [at]", "compares in two disasm columns of block size",
 	"ccdf", " [at]", "compares function disasm with the other function",
 	"ccdd", " [at]", "compares decompiler output (e cmd.pdc=pdg|pdd)",
-	"cd", " [dir]", "chdir",
+	"cd", " [dir]", "chdir (relative dirs are also looked up in CDPATH)",
 	// "cc", " [offset]", "code bindiff current block against offset"
 	// "cD", " [file]", "like above, but using radiff -b",
 	"cf", " [file]", "compare contents of file at current seek",
@@ -1271,6 +1271,36 @@ static void core_cmd_cg(RCore *core, const char *input) {
 	r_cons_global (core->cons);
 }
 
+// Like a POSIX shell, look up a relative directory in each CDPATH entry
+// (an empty entry is the current directory), unless it starts with . or ..
+// Not used in the sandbox, where it would reveal which directories exist
+static char *cdpath_find(const char *dir) {
+	if (r_sandbox_enable (false) || r_file_is_abspath (dir) || !strcmp (dir, ".") || !strcmp (dir, "..")
+			|| r_str_startswith (dir, "./") || r_str_startswith (dir, "../")) {
+		return NULL;
+	}
+	char *cdpath = r_sys_getenv ("CDPATH");
+	if (R_STR_ISEMPTY (cdpath)) {
+		free (cdpath);
+		return NULL;
+	}
+	char *found = NULL;
+	RList *entries = r_str_split_list (cdpath, R_SYS_ENVSEP, 0);
+	RListIter *iter;
+	char *entry;
+	r_list_foreach (entries, iter, entry) {
+		char *path = *entry? r_file_new (entry, dir, NULL): strdup (dir);
+		if (r_file_is_directory (path)) {
+			found = path;
+			break;
+		}
+		free (path);
+	}
+	r_list_free (entries);
+	free (cdpath);
+	return found;
+}
+
 static int cmd_cmp(void *data, const char *input) {
 	int ret = 0, i, mode = 0;
 	RCore *core = (RCore *)data;
@@ -1480,11 +1510,20 @@ static int cmd_cmp(void *data, const char *input) {
 					R_LOG_ERROR ("Cannot find home");
 				}
 			} else {
+				char *found = cdpath_find (input + 1);
 				free (oldcwd);
 				oldcwd = r_sys_getdir ();
-				if (r_sandbox_chdir (input + 1) == -1) {
+				if (r_sandbox_chdir (found? found: input + 1) == -1) {
 					R_LOG_ERROR ("Cannot chdir to %s", input + 1);
+				} else if (found && strcmp (found, input + 1)) {
+					// shells print the new directory when a CDPATH entry picked it
+					char *cwd = r_sys_getdir ();
+					if (cwd) {
+						r_cons_println (core->cons, cwd);
+						free (cwd);
+					}
 				}
+				free (found);
 			}
 		} else {
 			char *home = r_sys_getenv (R_SYS_HOME);
