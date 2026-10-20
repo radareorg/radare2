@@ -40,6 +40,8 @@ typedef struct r_diff_t {
 	bool verbose;
 	int type;
 	char *diff_cmd;
+	char *label_a;
+	char *label_b;
 	int (*callback)(struct r_diff_t *diff, void *user, RDiffOp *op);
 } RDiff;
 
@@ -83,6 +85,7 @@ R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b
 R_API bool r_diff_buffers_distance_myers(RDiff *diff, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity);
 R_API bool r_diff_buffers_distance_levenshtein(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity);
 R_API char *r_diff_buffers_unified(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb);
+R_API void r_diff_set_labels(RDiff *d, const char *label_a, const char *label_b);
 /* static method !??! */
 R_API int r_diff_lines(const char *file1, const char *sa, int la, const char *file2, const char *sb, int lb);
 R_API int r_diff_set_delta(RDiff *d, int delta);

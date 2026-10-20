@@ -113,6 +113,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=radiff2 -U shows the input names
+FILE=-
+CMDS=!radiff2 -U hex://610a62 hex://610a63
+EXPECT=<<EOF
+--- hex://610a62
++++ hex://610a63
+@@ -1,2 +1,2 @@
+ a
+-b
+\ No newline at end of file
++c
+\ No newline at end of file
+EOF
+RUN
+
 NAME=radiff2 -AC (elf files)
 FILE=-
 CMDS=!!radiff2 -AC bins/other/radiff2/true bins/other/radiff2/false~?\(1.000000\)
