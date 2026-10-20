@@ -532,7 +532,7 @@ static int r_core_file_load_for_debug(RCore *r, ut64 baseaddr, const char * R_NU
 		}
 	}
 	if (!strcmp (plugin_name, "dex")) {
-		r_core_cmd0 (r, "'(fix-dex;wx `ph sha1 $s-32 @32` @12 ; wv4 0x`ph adler32 $s-12 @12` @8 @e:cfg.bigendian=false)");
+		r_core_cmd0 (r, "'(fix-dex;wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8)");
 	}
 
 	return true;
@@ -625,7 +625,7 @@ repeat:
 	}
 
 	if (plugin && !strcmp (plugin->meta.name, "dex")) {
-		r_core_cmd0 (r, "'(fix-dex;wx `ph sha1 $s-32 @32` @12 ; wv4 0x`ph adler32 $s-12 @12` @8 @e:cfg.bigendian=false)");
+		r_core_cmd0 (r, "'(fix-dex;wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8)");
 	}
 	R_CRITICAL_LEAVE (r);
 	return fd;
@@ -1077,7 +1077,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		desc->perm |= R_PERM_X;
 	}
 	if (plugin && plugin->meta.name && !strcmp (plugin->meta.name, "dex")) {
-		r_core_cmd0 (r, "'(fix-dex;wx `ph sha1 $s-32 @32` @12;wv4 0x`ph adler32 $s-12 @12` @8 @e:cfg.bigendian=false)");
+		r_core_cmd0 (r, "'(fix-dex;wx `ph sha1 $s-32 @32` @12;wx `ph adler32 $s-12 @12` @8)");
 	}
 	if (!r_config_get_b (r->config, "cfg.debug")) {
 		load_gp (r);
