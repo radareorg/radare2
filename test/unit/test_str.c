@@ -331,9 +331,27 @@ bool test_r_str_md2txt_codeblocks(void) {
 	};
 	const char *start = "  \x1b[48;5;234m" Color_WHITE " ";
 	const char *end = Color_RESET_BG Color_RESET "\n";
-	char *expected = r_str_newf ("%s12345678 %s%s9        %s%s         %s%sx        %s  after" Color_RESET "\n",
+	char *expected = r_str_newf ("%s       %s%sx      %s%s123456 %s", start, end, start, end, start, end);
+	char *s = r_str_md2txt_width ("```\n\nx\n123456\n```\n", &options, 80);
+	mu_assert_streq (s, expected, "code backgrounds fit the longest line, including blank and shorter rows");
+	free (s);
+	free (expected);
+
+	expected = r_str_newf ("%sé界é  X %s%sz       %s", start, end, start, end);
+	s = r_str_md2txt_width ("    é界é\tX\r\n    z\n", &options, 80);
+	mu_assert_streq (s, expected, "indented code width accounts for Unicode, tabs and carriage returns");
+	free (s);
+	free (expected);
+
+	expected = r_str_newf ("%sx %s%sabc %s", start, end, start, end);
+	s = r_str_md2txt_ex ("```c\nx\n```\n```text\nabc\n```\n", &options, 80, true);
+	mu_assert_streq (s, expected, "highlighted blocks keep their margins and use independent widths");
+	free (s);
+	free (expected);
+
+	expected = r_str_newf ("%s12345678 %s%s9        %s%s         %s%sx        %s  after" Color_RESET "\n",
 		start, end, start, end, start, end, start, end);
-	char *s = r_str_md2txt_width ("```c\n123456789\n\nx\n```\nafter\n", &options, 12);
+	s = r_str_md2txt_width ("```c\n123456789\n\nx\n```\nafter\n", &options, 12);
 	mu_assert_streq (s, expected, "wrapped rows have equal backgrounds and reset before prose");
 	free (s);
 	free (expected);

@@ -195,14 +195,34 @@ static void md_code_row_end(RStrBuf *sb, bool usecolor, int padding) {
 	r_strbuf_append (sb, "\n");
 }
 
-static const char *md_render_code_line(const char *b, RStrBuf *sb, int width, bool usecolor, bool highlight, const char *background, const char **foreground) {
+static int md_code_width(const char *text, int max_width) {
+	const char *end = text + strlen (text);
+	int width = 1;
+	int col = 0;
+	while (text < end) {
+		int len = R_MAX (1, r_utf8_decode ((const ut8 *)text, R_MIN (end - text, 4), NULL));
+		char rune[5] = {0};
+		memcpy (rune, text, len);
+		if (*text == '\n') {
+			col = 0;
+		} else if (*text != '\r') {
+			int columns = *text == '\t'? 2: r_str_len_utf8 (rune);
+			if (columns >= max_width - col) {
+				return max_width;
+			}
+			col += columns;
+			width = R_MAX (width, col);
+		}
+		text += len;
+	}
+	return width;
+}
+
+static const char *md_render_code_line(const char *b, RStrBuf *sb, int content_width, int indent, int padding, bool usecolor, bool highlight, const char *background, const char **foreground) {
 	const char *end = strchr (b, '\n');
 	if (!end) {
 		end = b + strlen (b);
 	}
-	const int indent = width > 5? 2: 0;
-	const int padding = width > 3? 1: 0;
-	const int content_width = width - indent - 2 * padding;
 	int col = 0;
 	md_code_row_start (sb, usecolor, indent, padding, background, *foreground);
 	while (b < end) {
@@ -254,6 +274,12 @@ static void md_render_code(RStrBuf *code, RStrBuf *out, int width, bool usecolor
 	}
 	highlight &= usecolor;
 	const char *text = r_strbuf_get (code);
+	const int indent = width > 5? 2: 0;
+	const int padding = width > 3? 1: 0;
+	int content_width = width - indent - 2 * padding;
+	if (usecolor) {
+		content_width = md_code_width (text, content_width);
+	}
 	char *colored = highlight && kind == MD_CODE_SYNTAX? r_print_code_tocolor (text, NULL): NULL;
 	const char *p = colored? colored: text;
 	const char *foreground = Color_WHITE;
@@ -267,7 +293,7 @@ static void md_render_code(RStrBuf *code, RStrBuf *out, int width, bool usecolor
 			r_strbuf_append (out, "\n");
 			p++;
 		} else {
-			p = md_render_code_line (p, out, width, usecolor, colored != NULL, background, &foreground);
+			p = md_render_code_line (p, out, content_width, indent, padding, usecolor, colored != NULL, background, &foreground);
 		}
 	}
 	free (colored);
