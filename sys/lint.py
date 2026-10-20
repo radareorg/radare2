@@ -169,6 +169,7 @@ MESSAGES = {
 	"arch-lib-type-anal": "arch plugin should use R_LIB_TYPE_ARCH, not R_LIB_TYPE_ANAL",
 	"eprintf-warning": "eprintf 'Warning:' message, use R_LOG_WARN",
 	"header-compound-literal": "C99 compound literal in a public header is not C++, MSVC rejects it",
+	"header-format-macro-space": "missing space between string literal and format macro, C++11 treats it as a literal suffix",
 }
 
 # The checks below are a 1:1 port of the git grep pipelines of the old
@@ -350,6 +351,9 @@ CHECKS = [
 	Check("header-compound-literal",
 		[Rx(rb"(?:\breturn|[=?:,(])[ \t]*\((?:const[ \t]+|struct[ \t]+)*[A-Za-z_]\w*[ \t]*\)[ \t]*\{")],
 		numbered=True, filters=[(rb"^libr/include/.*\.h:", True), (rb"#[ \t]*define", False)]),
+	Check("header-format-macro-space",
+		[Rx(rb'"(?:\\.|[^"\\\r\n])*"(?:PFMT|PRI)[A-Za-z0-9_]+\b')], prefixes=EVERYWHERE,
+		numbered=True, filters=[(rb"^[^:]+\.h:", True)]),
 ]
 
 # printed after the c++ compat check, like in the old lint.sh

@@ -51,7 +51,7 @@ R_API double r_prof_end(RProfile *p);
 
 #if R_TIME_PROFILE_ENABLED
 #define R_TIME_PROFILE_BEGIN ut64 __now__ = r_time_now_mono()
-#define R_TIME_PROFILE_END eprintf ("%s %"PFMT64d"\n", __FUNCTION__, r_time_now_mono() - __now__)
+#define R_TIME_PROFILE_END eprintf ("%s %" PFMT64d "\n", __FUNCTION__, r_time_now_mono() - __now__)
 #else
 #define R_TIME_PROFILE_BEGIN do{}while(0)
 #define R_TIME_PROFILE_END do{}while(0)

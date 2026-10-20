@@ -452,7 +452,7 @@ static inline void generic_print_address_func(bfd_vma address, struct disassembl
 	if (!sb) { \
 		return; \
 	} \
-	r_strbuf_appendf (sb, "0x%08"PFMT64x, (ut64)address); \
+	r_strbuf_appendf (sb, "0x%08" PFMT64x, (ut64)address); \
 }
 
 #define DECLARE_GENERIC_FPRINTF_FUNC() \
@@ -473,7 +473,7 @@ static inline void generic_print_address_func(bfd_vma address, struct disassembl
 	if (!buf_global) { \
 		return; \
 	} \
-	r_strbuf_appendf (buf_global, "0x%08"PFMT64x, (ut64)address); \
+	r_strbuf_appendf (buf_global, "0x%08" PFMT64x, (ut64)address); \
 }
 
 #ifdef __cplusplus

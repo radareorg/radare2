@@ -1107,7 +1107,7 @@ static inline bool r_anal_function_rename_unique(RAnalFunction *fcn, const char 
 	if (r_anal_function_rename (fcn, name)) {
 		return true;
 	}
-	char *unique = r_str_newf ("%s_%"PFMT64x, name, fcn->addr);
+	char *unique = r_str_newf ("%s_%" PFMT64x, name, fcn->addr);
 	bool renamed = unique && r_anal_function_rename (fcn, unique);
 	free (unique);
 	return renamed;
