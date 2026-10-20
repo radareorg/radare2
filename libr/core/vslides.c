@@ -179,12 +179,11 @@ static void slides_refresh(void *user) {
 
 R_API void r_core_visual_slides(RCore *core, const char *file) {
 	R_RETURN_IF_FAIL (core && file);
-	if (!r_config_get_b (core->config, "scr.interactive")) {
+	const bool interactive = r_config_get_b (core->config, "scr.interactive");
+	if (!interactive) {
 		R_LOG_ERROR ("Requires scr.interactive=true");
 		return;
 	}
-	r_config_set_b (core->config, "scr.interactive", false);
-	bool having_fun = true;
 	if (!*file) {
 		return;
 	}
@@ -195,6 +194,9 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 	}
 	RList *list = r_str_split_list (data, "\n", 0);
 
+	const bool mouse = core->cons->mouse;
+	r_config_set_b (core->config, "scr.interactive", false);
+	bool having_fun = true;
 	int ch;
 	int page = 1;
 	int mode = 1;
@@ -222,6 +224,9 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 		core->cons->event_resize = NULL;
 		core->cons->event_data = event_data;
 		core->cons->event_resize = resize;
+		if (ch < 0) {
+			break;
+		}
 		switch (ch) {
 		case 'J':
 		case 'K':
@@ -246,7 +251,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 			break;
 		case 'h':
 			sx--;
-			if (sy < 0) {
+			if (sx < 0) {
 				sx = 0;
 			}
 			break;
@@ -282,7 +287,9 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 			eprintf (" e    = open vim to edit the current slide\n");
 			eprintf (" 12   = show 1 or two pages\n");
 			eprintf (" :    = enter command\n");
-			r_cons_any_key (core->cons, NULL);
+			if (r_cons_any_key (core->cons, NULL) < 0) {
+				having_fun = false;
+			}
 			break;
 		case 'e':
 		case '!':
@@ -315,25 +322,34 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 			}
 			break;
 		case ':':
-			r_cons_show_cursor (core->cons, true);
-			r_cons_set_raw (core->cons, false);
-			r_cons_flush (core->cons);
-			while (1) {
-				char cmd[1024];
-				*cmd = 0;
-				r_line_set_prompt (core->cons->line, ":> ");
-				if (r_cons_fgets (core->cons, cmd, sizeof (cmd), 0, NULL) < 0) {
-					cmd[0] = '\0';
-				}
-				r_core_cmd0 (core, cmd);
-				if (!cmd[0]) {
+			{
+				char *prompt = r_line_get_prompt (core->cons->line);
+				if (!prompt) {
 					break;
 				}
+				r_cons_show_cursor (core->cons, true);
+				r_cons_set_raw (core->cons, false);
 				r_cons_flush (core->cons);
+				while (1) {
+					char cmd[1024];
+					*cmd = 0;
+					r_line_set_prompt (core->cons->line, ":> ");
+					if (r_cons_fgets (core->cons, cmd, sizeof (cmd), 0, NULL) < 0) {
+						having_fun = false;
+						break;
+					}
+					r_core_cmd0 (core, cmd);
+					if (!cmd[0]) {
+						break;
+					}
+					r_cons_flush (core->cons);
+				}
+				r_line_set_prompt (core->cons->line, prompt);
+				free (prompt);
+				r_cons_show_cursor (core->cons, false);
+				r_cons_set_raw (core->cons, true);
+				r_cons_clear (core->cons);
 			}
-			r_cons_show_cursor (core->cons, false);
-			r_cons_set_raw (core->cons, true);
-			r_cons_clear (core->cons);
 			break;
 		default:
 			page = gotokey (&state, list, ch, page);
@@ -342,8 +358,10 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 	}
 	r_cons_set_raw (core->cons, 0);
 	r_cons_show_cursor (core->cons, true);
+	r_cons_enable_mouse (core->cons, mouse);
+	clearkeys (&state);
 	r_list_free (list);
 	free (data);
-	r_config_set_b (core->config, "scr.interactive", true);
+	r_config_set_b (core->config, "scr.interactive", interactive);
 	r_cons_clear00 (core->cons);
 }
