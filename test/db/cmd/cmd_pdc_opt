@@ -1,0 +1,375 @@
+NAME=pdc optimization is opt-in
+FILE=malloc://0x2000
+ARGS=-a arm -b 64 -e anal.vars=false
+CMDS=<<EOF
+wx 080000b0089142f9c0035fd6
+af
+pdc~=
+EOF
+EXPECT=<<EOF
+    x8 = 0x1000
+    x8 = [x8 + 0x520]
+EOF
+RUN
+
+NAME=pdc arm64 numeric page and offset
+FILE=malloc://0x2000
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF
+wx 080000b008811491080140f9c0035fd6
+af
+pdc~=
+EOF
+EXPECT=<<EOF
+    x8 = [0x1520]
+EOF
+RUN
+
+NAME=pdc arm64 load and call chain preserves two dereferences
+FILE=malloc://0x2000
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF
+wx 080000b0089142f9130140f9e00313aa1c000094130080d2c0035fd6
+af
+af+ 0x80 ferror
+f sym.imp.ferror=0x80
+f reloc.fixup.color=0x1000
+pdc~=
+EOF
+EXPECT=<<EOF
+    x0 = ferror ([[reloc.fixup.color + 0x520]])
+    x19 = 0
+EOF
+RUN
+
+NAME=pdc arm64 call keeps a live saved register
+FILE=malloc://0x2000
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF
+wx 080000b0089142f9130140f9e00313aa1c000094c0035fd6
+af
+af+ 0x80 ferror
+f sym.imp.ferror=0x80
+f reloc.fixup.color=0x1000
+pdc~=
+EOF
+EXPECT=<<EOF
+    x19 = [[reloc.fixup.color + 0x520]]
+    x0 = ferror (x19)
+EOF
+RUN
+
+NAME=pdc arm64 copies preserve repeated register uses
+FILE=malloc://0x2000
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF
+wx e80301aa0001088b080080d2c0035fd6
+af
+pdc~=
+EOF
+EXPECT=<<EOF
+    x8 = x1
+    x0 = x8 + x8
+    x8 = 0
+EOF
+RUN
+
+NAME=pdc arm64 aliases keep a full register live
+FILE=malloc://0x2000
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF
+wx 280040f9e00308aae203082a080080d2c0035fd6
+af
+pdc~=
+EOF
+EXPECT=<<EOF
+    x8 = [x1]
+    x0 = x8
+    w2 = w8
+    x8 = 0
+EOF
+RUN
+
+NAME=pdc arm64 store is a folding barrier
+FILE=malloc://0x2000
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF
+wx 280040f9480000f9e00308aa080080d2c0035fd6
+af
+pdc~=
+EOF
+EXPECT=<<EOF
+    x8 = [x1]
+    [x2] = x8
+    x0 = x8
+    x8 = 0
+EOF
+RUN
+
+NAME=pdc arm64 writeback load keeps its base update
+FILE=malloc://0x2000
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF
+wx 288440f8e00308aa080080d2c0035fd6
+af
+pdc~=
+EOF
+EXPECT=<<EOF
+    x8 = [x1] + 8
+    x0 = x8
+    x8 = 0
+EOF
+RUN
+
+NAME=pdc arm64 independent loads keep their order
+FILE=malloc://0x2000
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF
+wx 280040f9490040f90001098b090080d2080080d2c0035fd6
+af
+pdc~=
+EOF
+EXPECT=<<EOF
+    x8 = [x1]
+    x0 = x8 + [x2]
+    x9 = 0
+    x8 = 0
+EOF
+RUN
+
+NAME=pdc arm64 narrow arithmetic keeps its truncation
+FILE=malloc://0x2000
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF
+wx e8ff9f5208050011e00308aac0035fd6
+af
+pdc~=
+EOF
+EXPECT=<<EOF
+    w8 = 0xffff
+    w8 += 1
+    x0 = x8
+EOF
+RUN
+
+NAME=pdc arm32 movw movt constant
+FILE=malloc://0x2000
+ARGS=-a arm -b 32 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF
+wx 340201e3780645e31eff2fe1
+af
+pdc~=
+EOF
+EXPECT=<<EOF
+    r0 = 0x56781234
+EOF
+RUN
+
+NAME=pdc arm32 flag updates are preserved
+FILE=malloc://0x2000
+ARGS=-a arm -b 32 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF
+wx 0100a0e3020090e21eff2fe1
+af
+pdc~=
+EOF
+EXPECT=<<EOF
+    r0 = 1
+    r0 += 2
+EOF
+RUN
+
+NAME=pdc mips high low constant
+FILE=malloc://0x2000
+ARGS=-a mips -b 32 -e anal.vars=false -e cfg.bigendian=true -e pdc.optimize=true
+CMDS=<<EOF
+wx 3c0212343442567803e0000800000000
+af
+pdc~=
+EOF
+EXPECT=<<EOF
+    v0 = 0x12345678
+EOF
+RUN
+
+NAME=pdc mips address arithmetic wraps at register width
+FILE=malloc://0x2000
+ARGS=-a mips -b 32 -e anal.vars=false -e cfg.bigendian=true -e pdc.optimize=true
+CMDS=<<EOF
+wx 3c02ffff3442ffff244200088c42000003e0000800000000
+af
+pdc~=
+EOF
+EXPECT=<<EOF
+    v0 = [0x7]
+EOF
+RUN
+
+NAME=pdc ppc high low constant
+FILE=malloc://0x2000
+ARGS=-a ppc -b 64 -e anal.vars=false -e cfg.bigendian=true -e pdc.optimize=true
+CMDS=<<EOF
+wx 3c601234606356784e800020
+af
+pdc~=
+EOF
+EXPECT=<<EOF
+    r3 = 0x12345678
+EOF
+RUN
+
+NAME=pdco optimized expression keeps the consumer address
+FILE=malloc://0x2000
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF
+wx 080000b008811491080140f9c0035fd6
+af
+pdco~=
+EOF
+EXPECT=<<EOF
+ 0x00000008 |     x8 = [0x1520]
+EOF
+RUN
+
+NAME=pdc arm32 repeated movt overwrites its field
+FILE=malloc://64
+ARGS=-a arm -b 32 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF2
+wx 340201e3ff0f4fe3780645e31eff2fe1
+af
+pdc~=
+EOF2
+EXPECT=<<EOF2
+    r0 = 0x56781234
+EOF2
+RUN
+
+NAME=pdc arm64 repeated movk overwrites its field
+FILE=malloc://64
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF2
+wx 804682d2e0ffbff200cfaaf2c0035fd6
+af
+pdc~=
+EOF2
+EXPECT=<<EOF2
+    x0 = 0x56781234
+EOF2
+RUN
+
+NAME=pdc dead pure assignment before an overwrite
+FILE=malloc://64
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF2
+wx 280080d2480080d2c0035fd6
+af
+pdc~=
+EOF2
+EXPECT=<<EOF2
+    x8 = 2
+EOF2
+RUN
+
+NAME=pdc keeps register values at basic block boundaries
+FILE=malloc://64
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF2
+wx 280080d201000014e00308aac0035fd6
+af
+pdc~=
+EOF2
+EXPECT=<<EOF2
+    x8 = 1
+    x0 = x8
+EOF2
+RUN
+
+NAME=pdc removes setup already represented by a recovered string argument
+FILE=malloc://0x2000
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF2
+wx 080000b0e00308aa1e000094c0035fd6
+w hello @ 0x1000
+af
+af+ 0x80 puts
+f sym.imp.puts=0x80
+pdc~=
+EOF2
+EXPECT=<<EOF2
+    x0 = puts ("hello")
+EOF2
+RUN
+
+NAME=pdc ppc sign extends a high immediate
+FILE=malloc://64
+ARGS=-a ppc -b 64 -e cfg.bigendian=true -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF2
+wx 3c60ffff606380014e800020
+af
+pdc~=
+EOF2
+EXPECT=<<EOF2
+    r3 = 0xffffffffffff8001
+EOF2
+RUN
+
+NAME=pdc arm64 movk without an explicit shift
+FILE=malloc://128
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF2
+wx 40079ad2c0b9adf240c5a4f2804c93f2c0035fd6
+af
+pdc~=
+EOF2
+EXPECT=<<EOF2
+    x0 = 0x262a9a64
+EOF2
+RUN
+
+NAME=pdc keeps stack pointer updates
+FILE=malloc://128
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF2
+wx ff4300d1bf030091c0035fd6
+af
+pdc~=
+EOF2
+EXPECT=<<EOF2
+    sp -= 0x10
+    sp = x29
+EOF2
+RUN
+
+NAME=pdc linear mode shares expression optimization
+FILE=malloc://0x2000
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true -e pdc.structured=false
+CMDS=<<EOF2
+wx 080000b0089142f9130140f9e00313aa1c000094130080d2c0035fd6
+af
+af+ 0x80 ferror
+f sym.imp.ferror=0x80
+f reloc.fixup.color=0x1000
+pdc~=
+EOF2
+EXPECT=<<EOF2
+        x0 = ferror ([[reloc.fixup.color + 0x520]])
+        x19 = 0
+EOF2
+RUN
+
+NAME=pdc mips delay slots are optimization barriers
+FILE=malloc://256
+ARGS=-a mips -b 32 -e cfg.bigendian=true -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF2
+wx 3c0212340c0000203442567834429abc03e0000800000000
+af
+af+ 0x80 ferror
+f sym.imp.ferror=0x80
+pdc~=
+EOF2
+EXPECT=<<EOF2
+    v0 = 0x1234 << 16
+    v0 |= 0x5678
+    v0 |= 0x9abc
+EOF2
+RUN
