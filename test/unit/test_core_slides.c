@@ -63,7 +63,48 @@ bool test_slides_cleanup(void) {
 	mu_end;
 }
 
+bool test_slides_mouse_wheel(void) {
+	char *filename = NULL;
+	int fd = r_file_mkstemp ("r2-slides-wheel", &filename);
+	mu_assert ("temporary slide deck", fd >= 0);
+	close (fd);
+	mu_assert_true (r_file_dump (filename, (const ut8 *)"# Slide\none\ntwo\nthree\nfour\nfive\nsix\n", -1, false), "write slide deck");
+	RCore *core = r_core_new ();
+	RCons *cons = core->cons;
+	r_config_set_b (core->config, "scr.interactive", true);
+	cons->force_columns = 40;
+	cons->force_rows = 4;
+	cons->context->noflush = true;
+	char *down = r_str_repeat ("\x1b[<65;1;1M", 8);
+	char *up = r_str_repeat ("\x1b[<64;1;1M", 8);
+	char *keys = r_str_newf ("%s%sq", down, up);
+	mu_assert_true (r_cons_readpush (cons, keys, strlen (keys)), "queue wheel events");
+	free (keys);
+	free (up);
+	free (down);
+	r_core_visual_slides (core, filename);
+	char *output = strdup (r_cons_get_buffer (cons, NULL));
+	r_str_ansi_strip (output);
+	char *scrolled = strstr (output, "     five");
+	mu_assert_notnull (scrolled, "wheel down reveals content below the screen");
+	mu_assert_notnull (strstr (scrolled, "     one"), "wheel up returns to earlier slide content");
+	mu_assert_false (cons->mouse, "restore disabled mouse reporting after wheel navigation");
+	free (output);
+	r_core_free (core);
+	r_file_rm (filename);
+	free (filename);
+	mu_end;
+}
+
 #if R2__UNIX__
+static bool slides_mouse_enabled_on_read;
+
+static void *slides_check_mouse(void *user) {
+	RCore *core = user;
+	slides_mouse_enabled_on_read = core->cons->mouse;
+	return NULL;
+}
+
 bool test_slides_eof(void) {
 	char *filename = NULL;
 	int fd = r_file_mkstemp ("r2-slides-eof", &filename);
@@ -81,7 +122,13 @@ bool test_slides_eof(void) {
 	core->cons->context->noflush = true;
 	core->cons->event_resize = slides_resize;
 	core->cons->event_data = core;
+	core->cons->cb_sleep_begin = slides_check_mouse;
+	core->cons->cb_sleep_end = NULL;
 	r_core_visual_slides (core, filename);
+	mu_assert_true (slides_mouse_enabled_on_read, "enable mouse reporting while reading slide input");
+	r_config_set_b (core->config, "scr.wheel", false);
+	r_core_visual_slides (core, filename);
+	mu_assert_false (slides_mouse_enabled_on_read, "honor disabled wheel reporting");
 	dup2 (saved_stdin, STDIN_FILENO);
 	close (saved_stdin);
 	mu_assert_true (r_config_get_b (core->config, "scr.interactive"), "EOF restores interactive mode");
@@ -97,6 +144,7 @@ bool test_slides_eof(void) {
 int all_tests(void) {
 	mu_run_test (test_slides_load_failure);
 	mu_run_test (test_slides_cleanup);
+	mu_run_test (test_slides_mouse_wheel);
 #if R2__UNIX__
 	mu_run_test (test_slides_eof);
 #endif

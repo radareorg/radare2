@@ -133,7 +133,7 @@ static void render(SlidesState *state, RCore *core, RList *list, int mode, int p
 	int h, w = r_cons_get_size (core->cons, &h);
 	if (mode == 2) {
 		w /= 2;
-		char *o2 = r_str_ansi_crop (o, sx, sy, w, h);
+		char *o2 = r_str_ansi_crop (o, sx, sy, (ut32)sx + w, (ut32)sy + h);
 		char *prefix = r_str_pad (NULL, 0, ' ', w);
 		char *no = r_str_prefix_all (o2, prefix);
 		free (prefix);
@@ -142,7 +142,7 @@ static void render(SlidesState *state, RCore *core, RList *list, int mode, int p
 		o = no;
 		r_cons_print (cons, o);
 	} else {
-		char *no = r_str_ansi_crop (o, sx, sy, w, h);
+		char *no = r_str_ansi_crop (o, sx, sy, (ut32)sx + w, (ut32)sy + h);
 		if (no) {
 			r_cons_print (cons, no);
 			free (no);
@@ -204,7 +204,6 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 	int sy = 0;
 	r_cons_set_raw (core->cons, 1);
 	r_cons_show_cursor (core->cons, false);
-	r_cons_enable_mouse (core->cons, false);
 	int total_pages = count_pages (list);
 	SlidesState state = {0};
 	while (having_fun) {
@@ -214,6 +213,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 		SlidesView view = { &state, core, list, mode, page, sx, sy, total_pages };
 		slides_refresh (&view);
 		r_cons_set_raw (core->cons, true);
+		r_cons_enable_mouse (core->cons, r_config_get_b (core->config, "scr.wheel"));
 		RConsEvent resize = core->cons->event_resize;
 		void *event_data = core->cons->event_data;
 		core->cons->event_resize = NULL;
@@ -279,6 +279,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 			}
 			break;
 		case '?':
+			r_cons_enable_mouse (core->cons, false);
 			eprintf ("Keys:\n");
 			eprintf (" np   = next/prev slide\n");
 			eprintf (" hjkl = scroll current slide left/down/up/right\n");
@@ -295,6 +296,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 		case '!':
 			//
 			{
+				r_cons_enable_mouse (core->cons, false);
 				r_config_set_b (core->config, "scr.interactive", true);
 				r_core_cmdf (core, "vim %s", file);
 				char *ndata = r_file_slurp (file, NULL);
@@ -327,6 +329,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 				if (!prompt) {
 					break;
 				}
+				r_cons_enable_mouse (core->cons, false);
 				r_cons_show_cursor (core->cons, true);
 				r_cons_set_raw (core->cons, false);
 				r_cons_flush (core->cons);

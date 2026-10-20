@@ -5,7 +5,7 @@ This is an introductory course to radare2
 
 `?E Welcome to r2land`
 
-`o;pd 4`
+`o;pi 4`
 
 --gotokey:i:insert
 Press 'n' for next slide (or the spacebar)
