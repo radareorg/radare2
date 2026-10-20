@@ -163,7 +163,7 @@ struct grub_xfs_data {
 	(((fsb) >> (data)->sblock.log2_agblk) *(data)->agsize + ((fsb) &((1LL << (data)->sblock.log2_agblk) - 1)))
 
 #define GRUB_XFS_EXTENT_OFFSET(exts, ex) \
-	((grub_be_to_cpu32 (exts[ex][0]) & ~ (1 << 31)) << 23 | grub_be_to_cpu32 (exts[ex][1]) >> 9)
+	((grub_uint64_t)(grub_be_to_cpu32 (exts[ex][0]) & 0x7fffffffU) << 23 | grub_be_to_cpu32 (exts[ex][1]) >> 9)
 
 #define GRUB_XFS_EXTENT_BLOCK(exts, ex) \
 	((grub_uint64_t) (grub_be_to_cpu32 (exts[ex][1]) &(0x1ff)) << 43 | (grub_uint64_t)grub_be_to_cpu32 (exts[ex][2]) << 11 | grub_be_to_cpu32 (exts[ex][3]) >> 21)
@@ -454,10 +454,10 @@ grub_xfs_iterate_dir(grub_fshelp_node_t dir,
 				char *name = grub_malloc (de->len + 1);
 #endif
 				if (smallino) {
-					ino = grub_be_to_cpu32 (*(grub_uint32_t *)inopos);
+					ino = r_read_be32 (inopos);
 					ino = grub_cpu_to_be64 (ino);
 				} else {
-					ino = *(grub_uint64_t *)inopos;
+					grub_memcpy (&ino, inopos, sizeof (ino));
 				}
 
 				grub_memcpy (name, de->name, de->len);

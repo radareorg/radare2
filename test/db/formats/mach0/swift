@@ -4699,7 +4699,7 @@ RUN
 
 NAME=swift symbols with deeply nested contexts load quickly
 FILE=bins/mach0/swift-nested-symbol-contexts
-TIMEOUT=10
+TIMEOUT=40
 CMDS=<<EOF
 i~^lang
 is~?

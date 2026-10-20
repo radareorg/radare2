@@ -322,7 +322,7 @@ bool test_r_anal_block_reset_refs(void) {
 	r_unref (block);
 	block = r_list_first (retained);
 	RAnalBlock *orphan = r_anal_create_block (anal, 0x300, 0x10);
-	r_ref (orphan);
+	(void)r_ref (orphan);
 
 	r_anal_block_reset (anal);
 	mu_assert_eq (r_ref_count (block), 1, "reset preserves query reference");
