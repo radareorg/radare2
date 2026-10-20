@@ -5,6 +5,13 @@
 #include <r_cons.h>
 #include <zip.h>
 
+// limits to avoid memory exhaustion with crafted archives (zipbombs)
+#define R_IO_ZIP_MAX_ENTRY_SIZE (1ULL << 30) /* 1 GiB per entry */
+#define R_IO_ZIP_MAX_TOTAL_SIZE (2ULL << 30) /* 2 GiB for all the entries in *all:// */
+#define R_IO_ZIP_MAX_ENTRIES 4096
+#define R_IO_ZIP_MAX_RATIO 1000
+#define R_IO_ZIP_RATIO_SLACK (1024 * 1024)
+
 typedef enum {
 	R_IO_PARENT_ZIP = 0x0001,
 	R_IO_CHILD_FILE = 0x0002,
@@ -142,34 +149,45 @@ static RBuffer *r_io_zip_read_entry(struct zip_file *zf, ut64 size) {
 	return b;
 }
 
-static bool r_io_zip_slurp_file(RIOZipFileObj *zfo) {
-	R_RETURN_VAL_IF_FAIL (zfo, false);
-	bool res = false;
-	struct zip *za = r_io_zip_open_archive (zfo->archivename, zfo->perm, zfo->mode, zfo->rw);
-	if (!za) {
+static bool r_io_zip_entry_size_ok(struct zip_stat *sb) {
+	const ut64 need = ZIP_STAT_SIZE | ZIP_STAT_COMP_SIZE;
+	if ((sb->valid & need) != need) {
 		return false;
 	}
-	if (zfo->entry != -1) {
-		struct zip_file *zFile = zip_fopen_index (za, zfo->entry, 0);
-		if (!zFile) {
-			zip_close (za);
-			return false;
-		}
-		struct zip_stat sb;
-		zip_stat_init (&sb);
-		if (!zip_stat_index (za, zfo->entry, 0, &sb)) {
-			RBuffer *b = r_io_zip_read_entry (zFile, sb.size);
-			if (b) {
-				r_unref (zfo->b);
-				zfo->b = b;
-				zfo->opened = true;
-				res = true;
-			}
-		}
-		zip_fclose (zFile);
+	const char *name = r_str_get (sb->name);
+	if (sb->size > R_IO_ZIP_MAX_ENTRY_SIZE) {
+		R_LOG_ERROR ("Entry '%s' is too large (%" PFMT64u " bytes)", name, (ut64)sb->size);
+		return false;
 	}
-	zip_close (za);
-	return res;
+	if (sb->size > R_IO_ZIP_RATIO_SLACK && sb->comp_size < (sb->size - R_IO_ZIP_RATIO_SLACK) / R_IO_ZIP_MAX_RATIO) {
+		R_LOG_ERROR ("Entry '%s' has a suspicious compression ratio, possible zipbomb", name);
+		return false;
+	}
+	return true;
+}
+
+static bool r_io_zip_slurp_entry(struct zip *za, RIOZipFileObj *zfo) {
+	if (zfo->entry == -1) {
+		return false;
+	}
+	struct zip_stat sb;
+	zip_stat_init (&sb);
+	if (zip_stat_index (za, zfo->entry, 0, &sb) || !r_io_zip_entry_size_ok (&sb)) {
+		return false;
+	}
+	struct zip_file *zFile = zip_fopen_index (za, zfo->entry, 0);
+	if (!zFile) {
+		return false;
+	}
+	RBuffer *b = r_io_zip_read_entry (zFile, sb.size);
+	zip_fclose (zFile);
+	if (!b) {
+		return false;
+	}
+	r_unref (zfo->b);
+	zfo->b = b;
+	zfo->opened = true;
+	return true;
 }
 
 static RList *r_io_zip_get_files(char *archivename, ut32 perm, int mode, int rw) {
@@ -268,7 +286,7 @@ static RIOZipFileObj *alloc_zipfileobj(const char *archivename, const char *file
 			if (!strcmp (sb.name, filename)) {
 				zfo = r_io_zip_create_new_file (
 					archivename, filename, &sb, perm, mode, rw);
-				r_io_zip_slurp_file (zfo);
+				r_io_zip_slurp_entry (za, zfo);
 				break;
 			}
 		}
@@ -324,9 +342,12 @@ static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 	ut64 i, num_entries = zip_get_num_files (za);
+	ut64 total = 0;
 	for (i = 0; i < num_entries; i++) {
 		zip_stat_init (&sb);
-		zip_stat_index (za, i, 0, &sb);
+		if (zip_stat_index (za, i, 0, &sb) || !sb.name) {
+			continue;
+		}
 		bool append = false;
 		if (r_str_startswith (file, "apkall://") || r_str_startswith (file, "apk://")) {
 			if (!strcmp (sb.name, "AndroidManifest.xml")) {
@@ -338,12 +359,28 @@ static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode) {
 			append = true;
 		}
 		if (append) {
+			if (r_list_length (list_fds) >= R_IO_ZIP_MAX_ENTRIES) {
+				R_LOG_WARN ("Too many entries, only the first %d are opened", R_IO_ZIP_MAX_ENTRIES);
+				break;
+			}
+			if (sb.size > R_IO_ZIP_MAX_TOTAL_SIZE - total) {
+				R_LOG_WARN ("Archive contents exceed the %" PFMT64u " bytes budget, stopping at '%s'", (ut64)R_IO_ZIP_MAX_TOTAL_SIZE, sb.name);
+				break;
+			}
 			RIOZipFileObj *zfo = r_io_zip_create_new_file (zip_filename, sb.name, &sb, perm, mode, rw);
-			r_io_zip_slurp_file (zfo);
+			if (!r_io_zip_slurp_entry (za, zfo)) {
+				r_io_zip_free_zipfileobj (zfo);
+				continue;
+			}
+			total += r_buf_size (zfo->b);
 			zfo->io_backref = io;
 			char *name = r_str_newf ("zip://%s//%s", zip_filename, sb.name);
 			RIODesc *res = r_io_desc_new (io, &r_io_plugin_zip, name, rw, mode, zfo);
 			free (name);
+			if (!res) {
+				r_io_zip_free_zipfileobj (zfo);
+				continue;
+			}
 			r_list_append (list_fds, res);
 			if (r_str_startswith (zip_uri, "zip0://")) {
 				break;
