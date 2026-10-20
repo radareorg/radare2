@@ -1608,48 +1608,91 @@ static const char *arm64_esil_cond_alt(int id) {
 	}
 }
 
-// LD1/ST1 single and multiple structures and LD1R: contiguous per-element
-// accesses in the ISA for r { for e } order, plus post-index writeback
+// LD1/ST1/LD2-4/ST2-4 single and multiple structures and LD1R/LD2R-4R:
+// contiguous per-element accesses in the ISA loop order (for r { for e }
+// for the LD1/ST1 family, for e { for r } when interleaving), plus
+// post-index writeback
 static void arm64_esil_vec_ldst(RAnalOp *op, csh *handle, cs_insn *insn, bool big_endian) {
 	const ut32 id = insn->id;
 	const int argc = OPCOUNT64 ();
 	int memi = argc - 1;
+	bool is_store, interleave, replicate, indexed;
+	int nregs, r, lanes, ebytes, total, k;
+	int lane; // shared lane index of the indexed (single structure) forms
+	cs_arm64_op op0;
+	const char *base;
+	ut64 disp, off;
 	if (!ISMEM64 (memi)) {
 		memi--; // LD1 keeps the post-index offset in a separate operand
 	}
 	if (memi < 1 || !ISMEM64 (memi) || !ISREG64 (0) || !is_vector_op (&INSOP64 (0))) {
 		return;
 	}
-	const cs_arm64_op op0 = INSOP64 (0);
-	const bool indexed = op0.vector_index != -1;
-	const int lanes = indexed? 1: vas_count (op0.vas);
-	const int ebytes = vector_size (&op0) / 8;
-	const int nregs = indexed? 1: memi;
-	if (lanes < 1 || ebytes < 1 || ebytes > 8 || nregs < 1 || nregs > 4) {
-		return;
+	is_store = false;
+	interleave = false;
+	replicate = false;
+	switch (id) {
+	case ARM64_INS_ST1:
+		is_store = true;
+		break;
+	case ARM64_INS_ST2:
+	case ARM64_INS_ST3:
+	case ARM64_INS_ST4:
+		is_store = true;
+		interleave = true;
+		break;
+	case ARM64_INS_LD2:
+	case ARM64_INS_LD3:
+	case ARM64_INS_LD4:
+		interleave = true;
+		break;
+	case ARM64_INS_LD1R:
+	case ARM64_INS_LD2R:
+	case ARM64_INS_LD3R:
+	case ARM64_INS_LD4R:
+		replicate = true;
+		break;
+	default:
+		break;
 	}
-	int r;
+	nregs = memi;
+	lane = -1;
 	for (r = 0; r < nregs; r++) {
 		if (!ISREG64 (r) || !is_vector_op (&INSOP64 (r))) {
 			return;
 		}
+		if (INSOP64 (r).vector_index != -1) {
+			lane = INSOP64 (r).vector_index;
+		}
 	}
-	const char *base = MEMBASE64 (memi);
+	op0 = INSOP64 (0);
+	indexed = lane != -1;
+	lanes = indexed? 1: vas_count (op0.vas);
+	ebytes = vector_size (&op0) / 8;
+	if (lanes < 1 || ebytes < 1 || ebytes > 8 || nregs < 1 || nregs > 4) {
+		return;
+	}
+	base = MEMBASE64 (memi);
+	// no structure form has an addressing offset, so element addressing
+	// starts at the base: v5 reports disp 0 while v6 parks the post-index
+	// delta there, which the element loop must not see
+	disp = (ut64)MEMDISP64 (memi);
 #if CS_API_MAJOR == 6
-	// v6 parks the post-index delta in the memory operand's disp, but the
-	// structure forms have no signed-offset addressing to load from
-	const st64 sdisp = ISWRITEBACK64 ()? 0: MEMDISP64 (memi);
-#else
-	const st64 sdisp = MEMDISP64 (memi);
+	if (ISWRITEBACK64 ()) {
+		disp = 0;
+	}
 #endif
-	const ut64 disp = sdisp < 0? -(ut64)sdisp: (ut64)sdisp;
-	const bool is_store = id == ARM64_INS_ST1;
-	ut64 off = disp;
-	int e;
-	if (!big_endian && !indexed && id != ARM64_INS_LD1R && lanes * ebytes == 16) {
-		// LD1/ST1 Q forms fill whole registers from contiguous memory:
-		// two 8-byte accesses per register instead of one per element,
-		// only while the little-endian data order matches the lane order
+	// one memory access per (register, lane) element: linear per register for
+	// LD1/ST1, per lane across registers when interleaving, one element
+	// replicated over the lanes for LDxR, shared lane for the indexed forms
+	total = indexed? nregs: nregs * lanes;
+	off = disp;
+	if (!big_endian && !indexed && !interleave && !replicate && lanes * ebytes == 16) {
+		// LD1/ST1 family Q forms fill whole registers from contiguous
+		// memory: two 8-byte accesses per register instead of one per
+		// element. Only while the data is little-endian, when the memory
+		// order matches the lane order; the per-element loop below decodes
+		// every element value through the data byte order instead
 		for (r = 0; r < nregs; r++) {
 			ut64 lo = disp + (ut64)r * 16;
 			if (is_store) {
@@ -1663,23 +1706,56 @@ static void arm64_esil_vec_ldst(RAnalOp *op, csh *handle, cs_insn *insn, bool bi
 				COMMA (&op->esil);
 			}
 		}
-	} else {
+	} else if (replicate && ebytes < 8 && (lanes * ebytes == 16 || lanes * ebytes == 8)) {
+		// LDxR replicates one element over the whole register or over the
+		// low 64 bits: read it once and spread it across the lanes with a
+		// multiply; the single element read stays correct under
+		// cfg.bigendian because esil decodes its value
+		ut64 spread = UT64_MAX / (((ut64)1 << (ebytes * 8)) - 1);
+		const bool full = lanes * ebytes == 16;
 		for (r = 0; r < nregs; r++) {
-			for (e = 0; e < lanes; e++) {
-				if (r || e) {
-					COMMA (&op->esil);
-				}
-				if (is_store) {
-					VECARG64_APPEND (&op->esil, r, indexed? -1: e, 0);
-					r_strbuf_appendf (&op->esil, ",0x%" PFMT64x ",%s,+,=[%d]", off, base, ebytes);
-				} else {
-					r_strbuf_appendf (&op->esil, "0x%" PFMT64x ",%s,+,[%d],", off, base, ebytes);
-					VEC64_DST_APPEND (&op->esil, r, indexed? -1: e);
-					r_strbuf_append (&op->esil, ",=");
-				}
-				if (!indexed && id != ARM64_INS_LD1R) {
-					off += ebytes; // LD1R reads the same element for all lanes
-				}
+			if (full) {
+				r_strbuf_appendf (&op->esil, "0x%" PFMT64x ",%s,+,[%d],0x%" PFMT64x ",*,tmp,=,tmp,%sl,=,tmp,%sh,=",
+					disp + (ut64)r * ebytes, base, ebytes, spread, REG64 (r), REG64 (r));
+			} else {
+				// the D forms leave the upper half to the zeroing below
+				r_strbuf_appendf (&op->esil, "0x%" PFMT64x ",%s,+,[%d],0x%" PFMT64x ",*,tmp,=,tmp,%sl,=",
+					disp + (ut64)r * ebytes, base, ebytes, spread, REG64 (r));
+			}
+			if (r + 1 < nregs) {
+				COMMA (&op->esil);
+			}
+		}
+	} else {
+		for (k = 0; k < total; k++) {
+			int rr, el;
+			if (indexed) {
+				rr = k;
+				el = lane;
+				off = disp + (ut64)k * ebytes;
+			} else if (replicate) {
+				rr = k / lanes;
+				el = k % lanes;
+				off = disp + (ut64)rr * ebytes; // re-read for each lane
+			} else if (interleave) {
+				rr = k % nregs;
+				el = k / nregs;
+				off = disp + (ut64)k * ebytes;
+			} else {
+				rr = k / lanes;
+				el = k % lanes;
+				off = disp + (ut64)k * ebytes;
+			}
+			if (k > 0) {
+				COMMA (&op->esil);
+			}
+			if (is_store) {
+				VECARG64_APPEND (&op->esil, rr, el, 0);
+				r_strbuf_appendf (&op->esil, ",0x%" PFMT64x ",%s,+,=[%d]", off, base, ebytes);
+			} else {
+				r_strbuf_appendf (&op->esil, "0x%" PFMT64x ",%s,+,[%d],", off, base, ebytes);
+				VEC64_DST_APPEND (&op->esil, rr, el);
+				r_strbuf_append (&op->esil, ",=");
 			}
 		}
 	}
@@ -1703,8 +1779,8 @@ static void arm64_esil_vec_ldst(RAnalOp *op, csh *handle, cs_insn *insn, bool bi
 			r_strbuf_appendf (&op->esil, ",%s,%s,+,%s,=", REG64 (memi + 1), base, base);
 			return;
 		} else {
-			// Capstone omits the fixed post-index immediate of ST1 and LD1R
-			off = (indexed || id == ARM64_INS_LD1R)? (ut64)ebytes:
+			// Capstone omits the fixed post-index immediate of these forms
+			off = (indexed || replicate)? (ut64)nregs * ebytes:
 				(ut64)nregs * lanes * ebytes;
 		}
 		r_strbuf_appendf (&op->esil, ",0x%" PFMT64x ",%s,+,%s,=", off, base, base);
@@ -2673,6 +2749,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		break;
 	}
 	case ARM64_INS_LDP: // ldp x29, x30, [sp], 0x10
+	case ARM64_INS_LDNP: // ldnp q0, q1, [x1] (relaxed non-temporal pair load)
 	{
 		const int disp = (int)MEMDISP64 (2);
 		char sign = (disp >= 0)? '+': '-';
@@ -2724,7 +2801,16 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		break;
 	case ARM64_INS_LD1:
 	case ARM64_INS_LD1R:
+	case ARM64_INS_LD2:
+	case ARM64_INS_LD2R:
+	case ARM64_INS_LD3:
+	case ARM64_INS_LD3R:
+	case ARM64_INS_LD4:
+	case ARM64_INS_LD4R:
 	case ARM64_INS_ST1:
+	case ARM64_INS_ST2:
+	case ARM64_INS_ST3:
+	case ARM64_INS_ST4:
 		arm64_esil_vec_ldst (op, handle, insn, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config));
 		break;
 	case ARM64_INS_RBIT:
