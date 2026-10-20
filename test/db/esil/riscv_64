@@ -67,3 +67,44 @@ EXPECT=<<EOF
 0x00000ff2
 EOF
 RUN
+NAME=riscv64 sraiw sign-extends a word loaded by lw
+FILE=malloc://0x100
+ARGS=-a riscv -b 64
+CMDS=<<EOF
+wx 83250500 1bd51540
+ar a0=0x80
+wv4 0x80000000 @ 0x80
+aei
+aeip
+aes
+ar a1
+aes
+ar a0
+EOF
+EXPECT=<<EOF
+0x80000000
+0xffffffffc0000000
+EOF
+RUN
+
+NAME=riscv64 sraw masks the shift and sign-extends the low word
+FILE=malloc://0x100
+ARGS=-a riscv -b 64
+CMDS=<<EOF
+wx 3bd5c540
+ar a1=0x80000000
+ar a2=0x21
+aei
+aeip
+aes
+ar a0
+ar a1=0x40000000
+ar pc=0
+aes
+ar a0
+EOF
+EXPECT=<<EOF
+0xffffffffc0000000
+0x20000000
+EOF
+RUN
