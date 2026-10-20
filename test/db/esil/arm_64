@@ -2624,3 +2624,26 @@ esil: zf,?{,d1,}{,d2,},d0,=
 0x4000000000000000
 EOF
 RUN
+
+NAME=csneg executes both arms
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2004825a
+aei
+aeim
+ar x1=7
+ar x2=5
+ar zf=1
+aes
+ar x0
+ar pc=0
+ar zf=0
+aes
+ar x0
+EOF
+EXPECT=<<EOF
+0x00000007
+0xfffffffb
+EOF
+RUN
