@@ -417,7 +417,7 @@ static int __strbuf_append_col_aligned_fancy(RTable *t, RStrBuf *sb, RTableColum
 	if (trimmed) {
 		str = trimmed;
 	}
-	int ll = r_strbuf_length (sb);
+	const size_t ll = sb->len;
 	int len = r_str_len_utf8_ansi (str);
 	int pad = R_MAX (0, col->width - len);
 	int left = 0;
@@ -591,7 +591,7 @@ static int __strbuf_append_col_aligned(RTable *t, RStrBuf *sb, RTableColumn *col
 	if (trimmed) {
 		str = trimmed;
 	}
-	int ll = r_strbuf_length (sb);
+	const size_t ll = sb->len;
 	if (nopad) {
 		r_strbuf_appendf (sb, "%s", str);
 	} else {
