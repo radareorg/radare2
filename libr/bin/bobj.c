@@ -275,7 +275,6 @@ static void object_delete_items(RBinObject *o) {
 	r_list_free (o->classes);
 	ht_pp_free (o->classes_ht);
 	r_list_free (o->lines);
-	sdb_free (o->kv);
 	r_list_free (o->mem);
 	for (i = 0; i < R_BIN_SYM_LAST; i++) {
 		free (o->binsym[i]);
@@ -731,7 +730,6 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	bo->obj_size = (bytes_sz >= sz + offset)? sz: 0;
 	bo->boffset = offset;
 	bo->regstate = NULL;
-	bo->kv = sdb_new0 (); // XXX bf->sdb bf->bo->sdb wtf
 	bo->baddr = baseaddr;
 	bo->classes = r_list_newf ((RListFree)r_bin_class_free);
 	bo->classes_ht = ht_pp_new0 ();
@@ -767,18 +765,18 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	r_bin_set_baddr (bf->rbin, bo->baddr);
 	r_bin_object_set_items (bf, bo);
 
-	bf->sdb_info = bo->kv;
+	// bo->kv borrows bf->sdb, which holds the plugin kv as the "info" namespace
+	bo->kv = bf->sdb;
+	if (plugin->get_sdb && !sdb_ns (bo->kv, "info", 0)) {
+		sdb_ns_set (bo->kv, "info", plugin->get_sdb (bf));
+	}
+	bf->sdb_info = sdb_ns (bo->kv, "info", 1);
 	Sdb *root_bin_sdb = bf->rbin->sdb;
 	if (root_bin_sdb) {
-		Sdb *bdb = bf->sdb; // sdb_new0 ();
-		if (!sdb_ns (bdb, "info", 0)) {
-			sdb_ns_set (bdb, "info", bo->kv);
-		}
-		bo->kv = bdb;
-		sdb_set (bf->sdb, "archs", "0:0:x86:32", 0); // x86??
-		sdb_ns_set (root_bin_sdb, "cur", bdb); // bf->sdb);
+		sdb_set (bo->kv, "archs", "0:0:x86:32", 0); // x86??
+		sdb_ns_set (root_bin_sdb, "cur", bo->kv);
 		r_strf_var (fdns, 32, "fd.%d", bf->fd);
-		sdb_ns_set (root_bin_sdb, fdns, bdb); // bf->sdb);
+		sdb_ns_set (root_bin_sdb, fdns, bo->kv);
 	}
 	return bo;
 
@@ -792,7 +790,6 @@ fail:
 	}
 	ht_pp_free (bo->classes_ht);
 	r_list_free (bo->classes);
-	sdb_free (bo->kv);
 	ht_up_free (bo->strings_db);
 	free (bo);
 	bf->bo = NULL;
@@ -1016,13 +1013,6 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	}
 	if (p->lines) {
 		bo->lines = p->lines (bf);
-	}
-	if (p->get_sdb) {
-		Sdb* new_kv = p->get_sdb (bf);
-		if (new_kv != bo->kv) {
-			sdb_free (bo->kv);
-		}
-		bo->kv = new_kv;
 	}
 	if (bin->filter_rules & R_BIN_REQ_RESOURCES) {
 		r_bin_file_get_resources (bf);

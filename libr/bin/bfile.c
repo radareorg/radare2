@@ -1087,10 +1087,6 @@ R_API void r_bin_file_free(void /*RBinFile*/ *_bf) {
 	if (bf->curxtr && bf->curxtr->destroy && bf->xtr_obj) {
 		bf->curxtr->free_xtr ((void *)(bf->xtr_obj));
 	}
-	// Avoid double-free: r_bin_object_new aliases bo->kv to bf->sdb
-	if (bf->bo && bf->bo->kv == bf->sdb) {
-		bf->bo->kv = NULL;
-	}
 	sdb_free (bf->sdb);
 	// Cleanup DWARF metadata
 	R_FREE (bf->dwarf_metadata.comp_dir);

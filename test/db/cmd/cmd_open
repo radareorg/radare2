@@ -963,3 +963,22 @@ EXPECT=<<EOF2
 11
 EOF2
 RUN
+
+NAME=obr keeps bin/cur/info alive across o--
+FILE=bins/elf/ls
+CMDS=<<EOF2
+obr 0x10000
+iI~baddr
+k bin/cur/info/elf.relro
+o--
+k bin/cur/info/elf.relro
+o bins/elf/ls
+k bin/cur/info/elf.relro
+EOF2
+EXPECT=<<EOF2
+baddr    0x10000
+full
+full
+full
+EOF2
+RUN
