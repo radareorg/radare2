@@ -372,7 +372,7 @@ R_API bool r_lang_prompt(RLang *lang) {
 			} else {
 				char *foo, *code = NULL;
 				do {
-					foo = r_cons_editor (lang->cons, NULL, code, NULL);
+					foo = r_cons_editor (lang->cons, NULL, code, 0, NULL);
 					if (!foo) {
 						free (code);
 						break;

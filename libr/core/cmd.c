@@ -876,10 +876,10 @@ static int cmd_alias(void *data, const char *input) {
 					char *n;
 					if (v) {
 						char *v_str = r_cmd_alias_val_strdup (v);
-						n = r_cons_editor (core->cons, NULL, v_str, NULL);
+						n = r_cons_editor (core->cons, NULL, v_str, 0, NULL);
 						free (v_str);
 					} else {
-						n = r_cons_editor (core->cons, NULL, NULL, NULL);
+						n = r_cons_editor (core->cons, NULL, NULL, 0, NULL);
 					}
 
 					if (n) {

@@ -2919,8 +2919,10 @@ R_API void __cons_cb_fkey(RCore *core, int fkey) {
 	}
 }
 
-static char *r_core_editor_cb(void *core, const char *file, const char *str, bool *canceled) {
-	return r_core_editor (core, file, str, canceled);
+static char *core_editor_line(const RCore *core, const char *file, const char *str, int start_line, bool *canceled);
+
+static char *r_core_editor_cb(void *core, const char *file, const char *str, int start_line, bool *canceled) {
+	return core_editor_line (core, file, str, start_line, canceled);
 }
 
 R_API void r_core_bind_cons(RCore *core) {
@@ -3791,7 +3793,21 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 }
 #endif
 
+static bool editor_supports_line(const char *editor) {
+	int argc;
+	char **argv = r_str_argv (editor, &argc);
+	const char *name = argv && argc? r_file_basename (argv[0]): "";
+	bool supported = !strcmp (name, "vi") || !strcmp (name, "vim") || !strcmp (name, "nvim")
+		|| !strcmp (name, "gvim") || !strcmp (name, "view");
+	r_str_argv_free (argv);
+	return supported;
+}
+
 R_API char *r_core_editor(const RCore *core, const char *file, const char *str, bool *canceled) {
+	return core_editor_line (core, file, str, 0, canceled);
+}
+
+static char *core_editor_line(const RCore *core, const char *file, const char *str, int start_line, bool *canceled) {
 	if (canceled) {
 		*canceled = false;
 	}
@@ -3849,7 +3865,7 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str, 
 		RCons *cons = core->cons;
 		RConsEditorCallback cb_editor = cons->cb_editor;
 		cons->cb_editor = NULL;
-		char *result = r_cons_editor (cons, name, NULL, &was_canceled);
+		char *result = r_cons_editor (cons, name, NULL, start_line, &was_canceled);
 		cons->cb_editor = cb_editor;
 		if (!result && !was_canceled) {
 			goto beach;
@@ -3867,7 +3883,9 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str, 
 		if (!escaped_name) {
 			goto beach;
 		}
-		const int rc = r_sys_cmdf ("%s \"%s\"", editor, escaped_name);
+		const int rc = start_line > 0 && editor_supports_line (editor)
+			? r_sys_cmdf ("%s +%d \"+normal! zt\" \"%s\"", editor, start_line, escaped_name)
+			: r_sys_cmdf ("%s \"%s\"", editor, escaped_name);
 		free (escaped_name);
 		if (rc) {
 			R_LOG_ERROR ("Editor command failed");

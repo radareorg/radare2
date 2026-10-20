@@ -418,7 +418,7 @@ typedef struct r_cons_canvas_t {
 
 typedef struct r_cons_editor_t RConsEditor;
 
-typedef char *(*RConsEditorCallback)(void *core, const char *file, const char *str, R_OUT bool * R_NULLABLE canceled);
+typedef char *(*RConsEditorCallback)(void *core, const char *file, const char *str, int start_line, R_OUT bool * R_NULLABLE canceled);
 typedef int (*RConsClickCallback)(void *core, int x, int y);
 typedef void (*RConsBreakCallback)(void *core);
 typedef void *(*RConsSleepBeginCallback)(void *core);
@@ -939,7 +939,8 @@ R_API void r_cons_context_break_push(RCons *cons, RConsContext *context, RConsBr
 R_API void r_cons_context_break_pop(RCons *cons, RConsContext *context, bool sig);
 
 /* control */
-R_API char *r_cons_editor(RCons *cons, const char *file, const char *str, R_OUT bool * R_NULLABLE canceled);
+// start_line is one-based; zero starts at the beginning.
+R_API char *r_cons_editor(RCons *cons, const char *file, const char *str, int start_line, R_OUT bool * R_NULLABLE canceled);
 R_API void r_cons_stdout_open(const char *file, int append);
 R_API int  r_cons_stdout_set_fd(int fd);
 R_API int r_cons_get_cur_line(void);

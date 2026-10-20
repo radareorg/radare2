@@ -85,14 +85,14 @@ static int down(RCons *cons, void *n) {
 	return 0;
 }
 
-R_API char *r_cons_editor(RCons *cons, const char *file, const char *str, bool *canceled) {
+R_API char *r_cons_editor(RCons *cons, const char *file, const char *str, int start_line, bool *canceled) {
 	if (canceled) {
 		*canceled = false;
 	}
 	R_RETURN_VAL_IF_FAIL (cons && cons->line, NULL);
 	// bool visual = false; // TODO: should be an argument
 	if (cons->cb_editor) {
-		return cons->cb_editor (cons->line->user, file, str, canceled);
+		return cons->cb_editor (cons->line->user, file, str, start_line, canceled);
 	}
 	RConsEditor editor = { 0 };
 	RConsEditor *old_editor = cons->editor;
@@ -135,6 +135,7 @@ R_API char *r_cons_editor(RCons *cons, const char *file, const char *str, bool *
 		}
 		line_number++;
 	}
+	editor.n = R_MIN (R_MAX (start_line, 1) - 1, R_MAX (0, r_list_length (editor.lines) - 1));
 	cons->editor = &editor;
 	R_LOG_INFO ("Loaded %d lines. Use ^D or '.' to save and quit", r_list_length (editor.lines));
 	line->state.hist_up = up;

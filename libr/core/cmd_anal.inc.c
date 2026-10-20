@@ -16957,7 +16957,7 @@ static void cmd_ano(RCore *core, const char *input) {
 		if (fcn) {
 			char *f = anopath (core, fcn);
 			if (f) {
-				free (r_cons_editor (core->cons, f, NULL, NULL));
+				free (r_cons_editor (core->cons, f, NULL, 0, NULL));
 				free (f);
 			}
 		} else {
@@ -17025,13 +17025,13 @@ static void cmd_ano(RCore *core, const char *input) {
 					r_str_trim (s);
 					if (R_STR_ISEMPTY (s)) {
 						r_file_rm (f);
-						free (r_cons_editor (core->cons, f, NULL, NULL));
+						free (r_cons_editor (core->cons, f, NULL, 0, NULL));
 					} else {
 						r_cons_printf (core->cons, "%s\n", s);
 					}
 					free (s);
 				} else {
-					free (r_cons_editor (core->cons, f, NULL, NULL));
+					free (r_cons_editor (core->cons, f, NULL, 0, NULL));
 				}
 				free (f);
 			}

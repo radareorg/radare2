@@ -64,6 +64,20 @@ static int count_pages(RList *list) {
 	return pages;
 }
 
+static int slide_line(RList *list, int page) {
+	int line = 1;
+	int current_page = 0;
+	RListIter *iter;
+	const char *text;
+	r_list_foreach (list, iter, text) {
+		if (r_str_startswith (text, "# ") && ++current_page == page) {
+			return line;
+		}
+		line++;
+	}
+	return 1;
+}
+
 static void render(SlidesState *state, RCore *core, RList *list, int mode, int page, int sx, int sy) {
 	RCons *cons = core->cons;
 	char *s;
@@ -285,7 +299,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 			eprintf (" hjkl = scroll current slide left/down/up/right\n");
 			eprintf (" JK   = scroll current slide one screen down/up (PgDn/PgUp)\n");
 			eprintf (" q    = quit the slides\n");
-			eprintf (" e    = open vim to edit the current slide\n");
+			eprintf (" e    = edit the current slide with cfg.editor\n");
 			eprintf (" 12   = show 1 or two pages\n");
 			eprintf (" :    = enter command\n");
 			if (r_cons_any_key (core->cons, NULL) < 0) {
@@ -294,11 +308,12 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 			break;
 		case 'e':
 		case '!':
-			//
 			{
 				r_cons_enable_mouse (core->cons, false);
+				r_cons_show_cursor (core->cons, true);
+				r_cons_set_raw (core->cons, false);
 				r_config_set_b (core->config, "scr.interactive", true);
-				r_core_cmdf (core, "vim %s", file);
+				free (r_cons_editor (core->cons, file, NULL, slide_line (list, page), NULL));
 				char *ndata = r_file_slurp (file, NULL);
 				if (ndata) {
 					r_list_free (list);
@@ -308,6 +323,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 					total_pages = count_pages (list);
 				}
 				r_config_set_b (core->config, "scr.interactive", false);
+				r_cons_show_cursor (core->cons, false);
 			}
 			break;
 		case 'r': // reload

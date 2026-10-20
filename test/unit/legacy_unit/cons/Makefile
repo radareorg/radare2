@@ -2,10 +2,7 @@ CFLAGS+=-I../../include
 LDFLAGS+=-lr_cons -L../../libr/cons
 LDFLAGS+=-lr_util -L../../libr/util
 
-all: graph test-rgb editor
-
-editor: editor.o
-	$(CC) -o editor editor.o $(LDFLAGS)
+all: graph test-rgb
 
 test-rgb: test-rgb.o
 	$(CC) -o test-rgb test-rgb.o $(LDFLAGS)
