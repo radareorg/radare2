@@ -68,7 +68,7 @@ static bool simplehash_update(RMutaSession *ms, const ut8 *buf, int len) {
 		digest[0] = r_hash_mod255 (buf, len);
 	} else if (!strcmp (algo->name, "adler32")) {
 		ut32 res = r_hash_adler32 (buf, len);
-		r_write_be32 (digest, res);
+		r_write_le32 (digest, res);
 	} else if (!strcmp (algo->name, "luhn")) {
 		digest[0] = (ut8)r_hash_luhn (buf, len);
 	} else if (!strcmp (algo->name, "elf")) {

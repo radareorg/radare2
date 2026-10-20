@@ -2026,17 +2026,19 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=fix-dex stores the adler32 checksum little-endian
+NAME=fix-dex writes the adler32 hexpairs in DEX order
 FILE=bins/dex/Hello.dex
 CMDS=<<EOF
 e io.cache=true
 wx 41 @ 200
 .(fix-dex)
 pv4 @ 8
+p8 4 @ 8
 ph adler32 $s-12 @ 12
 EOF
 EXPECT=<<EOF
 0x73a1788b
-73a1788b
+8b78a173
+8b78a173
 EOF
 RUN

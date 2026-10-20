@@ -83,6 +83,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ph adler32 prints the same hexpairs as rahash2
+FILE=-
+CMDS=<<EOF
+w 123456789
+ph adler32 9
+EOF
+EXPECT=<<EOF
+de011e09
+EOF
+RUN
+
 NAME=crca 'hello world'
 FILE=-
 CMDS=<<EOF
