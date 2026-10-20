@@ -1105,7 +1105,7 @@ static bool runword_push(REsil *esil, RStrs w) {
 	if (r_esil_push (esil, w)) {
 		return true;
 	}
-	R_LOG_DEBUG ("ESIL stack is full");
+	R_LOG_ERROR ("ESIL stack is full");
 	esil->trap = 1;
 	esil->trap_code = 1;
 	return false;
