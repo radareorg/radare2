@@ -358,34 +358,41 @@ R_API bool r_sandbox_check(int mask) {
 	return !G_enabled || (G_graintype & mask) != 0;
 }
 
+// only the dotted quad form of 127.0.0.0/8, "127.example.com" is a name that resolves anywhere
+static bool is_ipv4_loopback(const char *host) {
+	ut32 b, c, d;
+	int len = 0;
+	if (host[strspn (host, "0123456789.")]) {
+		return false;
+	}
+	return sscanf (host, "127.%3u.%3u.%3u%n", &b, &c, &d, &len) == 3
+		&& !host[len] && b < 256 && c < 256 && d < 256;
+}
+
 R_API bool r_sandbox_check_localhost(const char *str) {
 	R_RETURN_VAL_IF_FAIL (str, false);
 	const char *peekaboo = strstr (str, "://");
 	if (peekaboo) {
 		str = peekaboo + 3;
 	}
-	const char *end = strchr (str, '/');
-	if (!end) {
-		if (*str != ':' && *str != '[') {
-			end = strchr (str, ':');
-		}
-		if (!end) {
-			end = strchr (str, '?');
-		}
-	}
-	char *host = end? r_str_ndup (str, end - str): strdup (str);
-	char *authority = strchr (host, '@');
+	char *host = r_str_ndup (str, strcspn (str, "/?#"));
+	char *authority = strrchr (host, '@');
 	if (authority) {
 		char *nhost = strdup (authority + 1);
 		free (host);
 		host = nhost;
 	}
+	// chop the numeric ":port" so only complete host names are compared below
+	char *port = (*host == '[')? strchr (host, ']'): host;
+	port = port? strchr (port, ':'): NULL;
+	if (port && r_str_isnumber (port + 1)) {
+		*port = 0;
+	}
 	bool ret = 0
 		|| !strcmp (host, "0.0.0.0")
 		|| !strcmp (host, "localhost")
-		|| r_str_startswith (host, "localhost:")
-		|| r_str_startswith (host, "127.")
-		|| r_str_startswith (host, "[::1]")
+		|| is_ipv4_loopback (host)
+		|| !strcmp (host, "[::1]")
 		|| !strcmp (host, "::1")
 		|| !strcmp (host, "::");
 	free (host);
