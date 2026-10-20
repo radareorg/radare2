@@ -607,37 +607,30 @@ R_API char *r_socket_http_post(const char *url, const char *headers[], const cha
 			}
 		}
 
-		// Parse the response
-		if (res) {
-			// Parse HTTP status code from header
-			if (code) {
-				char *status_line = strstr (res, "HTTP/");
-				if (status_line) {
-					char *space = strchr (status_line, ' ');
-					if (space) {
-						*code = atoi (space + 1);
-					} else {
-						*code = 200; // Default success
-					}
-				} else {
-					*code = 200; // Default success
-				}
+		// with -L curl dumps one header block per response, the body follows the last one
+		char *body = res;
+		int status = 200;
+		while (r_str_startswith (body, "HTTP/")) {
+			char *end = strstr (body, "\r\n\r\n");
+			if (!end) {
+				break;
 			}
-
-			// Separate headers from body
-			char *body = strstr (res, "\r\n\r\n");
-			if (body) {
-				body += 4;
-				// Move the body to the beginning of the string
-				char *new_res = strdup (body);
-				free (res);
-				res = new_res;
+			const char *space = strchr (body, ' ');
+			status = space? atoi (space + 1): 200;
+			body = end + 4;
+			if (status >= 200 && (status < 300 || status >= 400)) {
+				break;
 			}
-
-			free (error);
-			if (rlen) {
-				*rlen = strlen (res);
-			}
+		}
+		if (code) {
+			*code = status;
+		}
+		const size_t skip = body - res;
+		const size_t body_len = ((size_t)len >= skip)? len - skip: strlen (body);
+		memmove (res, body, body_len + 1);
+		free (error);
+		if (rlen) {
+			*rlen = body_len;
 		}
 
 		return res;
