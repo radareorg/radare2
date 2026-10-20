@@ -1914,19 +1914,10 @@ static size_t str_ansi_length(const char *s, size_t left) {
 			i++;
 		}
 	} else if ((ut8)*s >= 0x80) {
-		int len = r_str_nlen (s, R_MIN (left, r_utf8_size ((const ut8 *)s)));
-		int n = r_utf8_decode ((const ut8 *)s, len, NULL);
+		int n = r_utf8_decode ((const ut8 *)s, left == SIZE_MAX? -1: R_MIN (left, 4), NULL);
 		i = n > 0? n: 1;
 	}
 	return i;
-}
-
-static int display_decode(const char *s, size_t left, RRune *ch) {
-	if ((ut8)*s < 0x80) {
-		*ch = (ut8)*s;
-		return 1;
-	}
-	return r_utf8_decode ((const ut8 *)s, left >= 4? -1: r_str_nlen (s, left), ch);
 }
 
 static size_t display_skip_ansi(const char *s, size_t i, size_t left, bool ansi) {
@@ -1936,17 +1927,17 @@ static size_t display_skip_ansi(const char *s, size_t i, size_t left, bool ansi)
 	return i;
 }
 
-static size_t display_cluster(const char *s, size_t left, bool ansi, int *w) {
-	RRune ch;
-	int n = display_decode (s, left, &ch);
+static inline FUNC_ATTR_ALWAYS_INLINE size_t display_cluster(const char *s, size_t left, bool ansi, int *w) {
+	RRune ch = (ut8)*s;
+	int n = ch < 0x80? 1: r_utf8_decode ((const ut8 *)s, R_MIN (left, 4), &ch);
 	if (n < 1) {
 		*w = ((ut8)*s & 0xc0) == 0x80? 0: 1;
 		return 1;
 	}
-	ut8 p = RUNE_PROPS (ch);
+	ut8 p = R_BETWEEN (0x4e00, ch, 0x9fff)? 2: RUNE_PROPS (ch);
 	*w = p & RUNE_WIDTH_MASK;
 	size_t len = n;
-	if (!(p & ~RUNE_WIDTH_MASK) || len == left || !s[len] || ((ut8)s[len] < 0x80 && (!ansi || s[len] != 0x1b))) {
+	if (!(p & ~RUNE_WIDTH_MASK) || len == left || ((ut8)s[len] < 0x80 && (!ansi || s[len] != 0x1b))) {
 		return len;
 	}
 	ut8 flags = p;
@@ -1956,7 +1947,7 @@ static size_t display_cluster(const char *s, size_t left, bool ansi, int *w) {
 			break;
 		}
 		RRune f;
-		n = display_decode (s + i, left - i, &f);
+		n = r_utf8_decode ((const ut8 *)s + i, R_MIN (left - i, 4), &f);
 		if (n < 1) {
 			break;
 		}
@@ -1991,15 +1982,16 @@ static size_t display_cluster(const char *s, size_t left, bool ansi, int *w) {
 
 static size_t str_dwidth(const char *s, size_t slen, bool ansi) {
 	size_t i = 0, len = 0;
-	const size_t max = slen > 0? slen: SIZE_MAX;
-	while (i < max && s[i]) {
+	const char *end = slen? memchr (s, 0, slen): s + strlen (s);
+	const size_t max = end? end - s: slen;
+	while (i < max) {
 		const ut8 c = (ut8)s[i];
 		if (ansi && c == 0x1b) {
 			i += str_ansi_length (s + i, max - i);
 			continue;
 		}
 		// Keep plain ASCII runs out of Unicode property lookups.
-		if (c < 0x80 && (i + 1 == max || ((ut8)s[i + 1] < 0x80 && (!ansi || s[i + 1] != 0x1b)))) {
+		if (c < 0x80 && (!R_BETWEEN ('#', c, '9') || i + 1 == max || ((ut8)s[i + 1] < 0x80 && (!ansi || s[i + 1] != 0x1b)))) {
 			len++;
 			i++;
 			continue;

@@ -889,6 +889,8 @@ bool test_r_str_unicode_width(void) {
 	mu_assert_eq (r_str_ansi_nlen (bounded, sizeof (bounded)), 1, "bounded input needs no terminator");
 	char bounded_ansi[] = { '\x1b', '[', '3', '1', 'm', 'a' };
 	mu_assert_eq (r_str_ansi_nlen (bounded_ansi, sizeof (bounded_ansi)), 1, "bounded ANSI input needs no terminator");
+	mu_assert_eq (r_str_ansi_nlen ("abc", 128), 3, "bounded width stops at the terminator");
+	mu_assert_eq (r_str_ansi_nlen ("a\xe2", 128), 2, "truncated UTF-8 stops at the terminator");
 	mu_end;
 }
 
