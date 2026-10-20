@@ -4,7 +4,7 @@ WRAP_wrap_git_url:=https://github.com/capstone-engine/capstone.git
 WRAP_wrap_git_revision:=51360daf925e50d4da383cff2278107e6ffd8074
 WRAP_wrap_git_patch_directory:=capstone-v5
 WRAP_wrap_git_directory:=capstone-v5
-WRAP_wrap_git_diff_files:=capstone-v5/capstone-patches/fix-x86-16.patch,capstone-v5/capstone-patches/fix-arm-post-index.patch,capstone-v5/capstone-patches/fix-x86-att-detail.patch,capstone-v5/capstone-patches/fix-sh-unistd-collision.patch
+WRAP_wrap_git_diff_files:=capstone-v5/capstone-patches/fix-x86-16.patch,capstone-v5/capstone-patches/fix-arm-post-index.patch,capstone-v5/capstone-patches/fix-x86-att-detail.patch,capstone-v5/capstone-patches/fix-sh-unistd-collision.patch,capstone-v5/capstone-patches/fix-x86-rotate-mem-access.patch
 WRAP_wrap_git_depth:=1
 
 .PHONY: capstone-v5_clean capstone-v5_all
@@ -17,7 +17,7 @@ capstone-v5_all:
 	cd capstone-v5 && git fetch --depth=1 origin 51360daf925e50d4da383cff2278107e6ffd8074
 	cd capstone-v5 && git checkout FETCH_HEAD
 	cp -rf packagefiles/capstone-v5/* capstone-v5
-	for a in capstone-v5/capstone-patches/fix-x86-16.patch capstone-v5/capstone-patches/fix-arm-post-index.patch capstone-v5/capstone-patches/fix-x86-att-detail.patch capstone-v5/capstone-patches/fix-sh-unistd-collision.patch ; do echo "patch -d capstone-v5 -p1 < $$a" ; patch -d capstone-v5 -p1 < $$a ; done
+	for a in capstone-v5/capstone-patches/fix-x86-16.patch capstone-v5/capstone-patches/fix-arm-post-index.patch capstone-v5/capstone-patches/fix-x86-att-detail.patch capstone-v5/capstone-patches/fix-sh-unistd-collision.patch capstone-v5/capstone-patches/fix-x86-rotate-mem-access.patch ; do echo "patch -d capstone-v5 -p1 < $$a" ; patch -d capstone-v5 -p1 < $$a ; done
 
 capstone-v5_clean:
 	rm -rf capstone-v5

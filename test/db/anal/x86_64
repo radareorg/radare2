@@ -4521,3 +4521,46 @@ EXPECT=<<EOF
 0xfffffffffffff090    1      1 fcn.fffffffffffff090
 EOF
 RUN
+
+NAME=x86_64 rotate memory destination is read and written
+ARGS=-a x86 -b 64
+FILE=malloc://16
+CMDS=<<EOF
+wx d303;aoj~{[0].opex.operands[0].rw}
+wx d30b;aoj~{[0].opex.operands[0].rw}
+wx d313;aoj~{[0].opex.operands[0].rw}
+wx d31b;aoj~{[0].opex.operands[0].rw}
+wx d103;aoj~{[0].opex.operands[0].rw}
+wx c10305;aoj~{[0].opex.operands[0].rw}
+wx d10b;aoj~{[0].opex.operands[0].rw}
+wx d113;aoj~{[0].opex.operands[0].rw}
+wx d11b;aoj~{[0].opex.operands[0].rw}
+wx c10b05;aoj~{[0].opex.operands[0].rw}
+wx c11305;aoj~{[0].opex.operands[0].rw}
+wx c11b05;aoj~{[0].opex.operands[0].rw}
+wx d203;aoj~{[0].opex.operands[0].rw}
+wx 66d303;aoj~{[0].opex.operands[0].rw}
+wx 48d303;aoj~{[0].opex.operands[0].rw}
+wx d323;aoj~{[0].opex.operands[0].rw}
+wx d3c3;aoj~{[0].opex.operands[0].rw}
+EOF
+EXPECT=<<EOF
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+EOF
+RUN
