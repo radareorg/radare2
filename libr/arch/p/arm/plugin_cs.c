@@ -1488,6 +1488,26 @@ static void arm64_esil_zext_vupper(RAnalOp *op, csh *handle, cs_insn *insn) {
 	if (R_STR_ISEMPTY (r_strbuf_get (&op->esil))) {
 		return;
 	}
+	switch (insn->id) {
+	case ARM64_INS_LD1:
+	case ARM64_INS_LD2:
+	case ARM64_INS_LD3:
+	case ARM64_INS_LD4:
+	case ARM64_INS_LD1R:
+	case ARM64_INS_LD2R:
+	case ARM64_INS_LD3R:
+	case ARM64_INS_LD4R:
+	case ARM64_INS_ST1:
+	case ARM64_INS_ST2:
+	case ARM64_INS_ST3:
+	case ARM64_INS_ST4:
+		// structure accesses write whole register lists through their own
+		// ESIL, including the upper-half zeroing of D-form loads; the access
+		// bits capstone v5 reports for these forms are unreliable
+		return;
+	default:
+		break;
+	}
 	int i;
 	// The lane index of an indexed structure access applies to every
 	// register in its list, so one indexed write operand means all the
@@ -1587,6 +1607,109 @@ static const char *arm64_esil_cond_alt(int id) {
 		return "%s,-1,^";
 	default:
 		return "%s,0,-";
+	}
+}
+
+// LD1/ST1 single and multiple structures and LD1R: contiguous per-element
+// accesses in the ISA for r { for e } order, plus post-index writeback
+static void arm64_esil_vec_ldst(RAnalOp *op, csh *handle, cs_insn *insn, bool big_endian) {
+	const ut32 id = insn->id;
+	const int argc = OPCOUNT64 ();
+	int memi = argc - 1;
+	if (!ISMEM64 (memi)) {
+		memi--; // LD1 keeps the post-index offset in a separate operand
+	}
+	if (memi < 1 || !ISMEM64 (memi) || !ISREG64 (0) || !is_vector_op (&INSOP64 (0))) {
+		return;
+	}
+	const cs_arm64_op op0 = INSOP64 (0);
+	const bool indexed = op0.vector_index != -1;
+	const int lanes = indexed? 1: vas_count (op0.vas);
+	const int ebytes = vector_size (&op0) / 8;
+	const int nregs = indexed? 1: memi;
+	if (lanes < 1 || ebytes < 1 || ebytes > 8 || nregs < 1 || nregs > 4) {
+		return;
+	}
+	int r;
+	for (r = 0; r < nregs; r++) {
+		if (!ISREG64 (r) || !is_vector_op (&INSOP64 (r))) {
+			return;
+		}
+	}
+	const char *base = MEMBASE64 (memi);
+#if CS_API_MAJOR == 6
+	// v6 parks the post-index delta in the memory operand's disp, but the
+	// structure forms have no signed-offset addressing to load from
+	const st64 sdisp = ISWRITEBACK64 ()? 0: MEMDISP64 (memi);
+#else
+	const st64 sdisp = MEMDISP64 (memi);
+#endif
+	const ut64 disp = sdisp < 0? -(ut64)sdisp: (ut64)sdisp;
+	const bool is_store = id == ARM64_INS_ST1;
+	ut64 off = disp;
+	int e;
+	if (!big_endian && !indexed && id != ARM64_INS_LD1R && lanes * ebytes == 16) {
+		// LD1/ST1 Q forms fill whole registers from contiguous memory:
+		// two 8-byte accesses per register instead of one per element,
+		// only while the little-endian data order matches the lane order
+		for (r = 0; r < nregs; r++) {
+			ut64 lo = disp + (ut64)r * 16;
+			if (is_store) {
+				r_strbuf_appendf (&op->esil, "%sl,0x%" PFMT64x ",%s,+,=[8],%sh,0x%" PFMT64x ",%s,+,=[8]",
+					REG64 (r), lo, base, REG64 (r), lo + 8, base);
+			} else {
+				r_strbuf_appendf (&op->esil, "0x%" PFMT64x ",%s,+,[8],%sl,=,0x%" PFMT64x ",%s,+,[8],%sh,=",
+					lo, base, REG64 (r), lo + 8, base, REG64 (r));
+			}
+			if (r + 1 < nregs) {
+				COMMA (&op->esil);
+			}
+		}
+	} else {
+		for (r = 0; r < nregs; r++) {
+			for (e = 0; e < lanes; e++) {
+				if (r || e) {
+					COMMA (&op->esil);
+				}
+				if (is_store) {
+					VECARG64_APPEND (&op->esil, r, indexed? -1: e, 0);
+					r_strbuf_appendf (&op->esil, ",0x%" PFMT64x ",%s,+,=[%d]", off, base, ebytes);
+				} else {
+					r_strbuf_appendf (&op->esil, "0x%" PFMT64x ",%s,+,[%d],", off, base, ebytes);
+					VEC64_DST_APPEND (&op->esil, r, indexed? -1: e);
+					r_strbuf_append (&op->esil, ",=");
+				}
+				if (!indexed && id != ARM64_INS_LD1R) {
+					off += ebytes; // LD1R reads the same element for all lanes
+				}
+			}
+		}
+	}
+	if (!is_store && !indexed && lanes * ebytes == 8) {
+		// structures that only fill the low 64 bits of each register zero the
+		// upper halves, for every register of the list; the zext pass skips
+		// these instructions, so zero them all here
+		for (r = 0; r < nregs; r++) {
+			r_strbuf_appendf (&op->esil, ",0,%sh,=", REG64 (r));
+		}
+	}
+	bool wb = ISWRITEBACK64 ();
+#if CS_API_MAJOR == 6
+	// v6 flags lane-indexed structures as writeback even without a post operand
+	wb = wb && (!indexed || OPCOUNT64 () > memi + 1 || MEMDISP64 (memi) != 0);
+#endif
+	if (wb) {
+		if (memi + 1 < argc && ISIMM64 (memi + 1)) {
+			off = (ut64)IMM64 (memi + 1);
+		} else if (memi + 1 < argc && ISREG64 (memi + 1)) {
+			r_strbuf_appendf (&op->esil, ",%s,%s,+,%s,=", REG64 (memi + 1), base, base);
+			return;
+		} else {
+			// Capstone omits the fixed post-index immediate of ST1 and LD1R
+			off = (indexed || id == ARM64_INS_LD1R)? (ut64)ebytes:
+				(ut64)nregs * lanes * ebytes;
+		}
+		r_strbuf_appendf (&op->esil, ",0x%" PFMT64x ",%s,+,%s,=", off, base, base);
 	}
 }
 
@@ -2600,6 +2723,11 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		// (rn:rm) >> lsb: the high half shifts left by regsize - lsb
 		r_strbuf_setf (&op->esil, "%" PFMT64d ",%s,>>,%d,%s,<<,|,%s,=",
 			IMM64 (3), REG64 (2), (int)(REGBITS64 (1) - IMM64 (3)), REG64 (1), REG64 (0));
+		break;
+	case ARM64_INS_LD1:
+	case ARM64_INS_LD1R:
+	case ARM64_INS_ST1:
+		arm64_esil_vec_ldst (op, handle, insn, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config));
 		break;
 	case ARM64_INS_RBIT:
 		// slightly shorter expression to reverse bits
