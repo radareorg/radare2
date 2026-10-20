@@ -1038,7 +1038,7 @@ R_API int r_sys_cmdbg(const char *str) {
 
 R_API int r_sys_cmd(const char *str) {
 	if (r_sandbox_enable (0)) {
-		return false;
+		return -1;
 	}
 	// setvbuf (stdout, NULL, _IONBF, 0);
 	return r_sandbox_system (str, 1);
