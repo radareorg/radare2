@@ -3191,3 +3191,465 @@ EXPECT=<<EOF
 s:1 z:0 c:1 o:0 p:0
 EOF
 RUN
+
+NAME=arm64 ESIL ld1 single structure and ld1r fill all lanes
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2070404c # ld1 {v0.16b}, [x1] spreads 16 bytes into the byte lanes
+aei
+aeip
+aer v0l=0x1111111111111111
+aer v0h=0x1111111111111111
+aer x1=0x100
+wx 000102030405060708090a0b0c0d0e0f @ 0x100
+aes
+aer v0l
+aer v0h
+wx 2078df4c @ 0 # ld1 {v0.4s}, [x1], #16 loads words and walks the base
+aei
+aeip
+aer v0l=0x1111111111111111
+aer v0h=0x1111111111111111
+aer x1=0x100
+wx 11111111222222223333333344444444 @ 0x100
+aes
+aer v0l
+aer v0h
+aer x1
+wx 20c8404d @ 0 # ld1r {v0.4s}, [x1] replicates the word into every lane
+aei
+aeip
+aer v0l=0x1111111111111111
+aer v0h=0x1111111111111111
+aer x1=0x100
+wx efbeadde @ 0x100
+aes
+aer v0l
+aer v0h
+wx 20ccdf4d @ 0 # ld1r {v0.2d}, [x1], #8 replicates the dword and advances
+aei
+aeip
+aer v0l=0x1111111111111111
+aer v0h=0x1111111111111111
+aer x1=0x100
+wx 8877665544332211 @ 0x100
+aes
+aer v0l
+aer v0h
+aer x1
+wx 2074404c @ 0 # ld1 {v0.8h}, [x1] fills the halfword lanes across both halves
+aei
+aeip
+aer v0l=0x1111111111111111
+aer v0h=0x1111111111111111
+aer x1=0x100
+wx 11112222333344445555666677778888 @ 0x100
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x706050403020100
+0xf0e0d0c0b0a0908
+0x2222222211111111
+0x4444444433333333
+0x00000110
+0xdeadbeefdeadbeef
+0xdeadbeefdeadbeef
+0x1122334455667788
+0x1122334455667788
+0x00000108
+0x4444333322221111
+0x8888777766665555
+EOF
+RUN
+
+NAME=arm64 ESIL ld1 multiple structures load linearly per register
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2028404c # ld1 {v0.4s-v3.4s}, [x1] gives each register 4 consecutive words
+aei
+aeip
+aer v0l=0x1111111111111111
+aer v0h=0x1111111111111111
+aer v1l=0x1111111111111111
+aer v1h=0x1111111111111111
+aer v2l=0x1111111111111111
+aer v2h=0x1111111111111111
+aer v3l=0x1111111111111111
+aer v3h=0x1111111111111111
+aer x1=0x100
+wx 0000000b0100000b0200000b0300000b0400000b0500000b0600000b0700000b0800000b0900000b0a00000b0b00000b0c00000b0d00000b0e00000b0f00000b @ 0x100
+aes
+aer v0l
+aer v0h
+aer v1l
+aer v1h
+aer v2l
+aer v2h
+aer v3l
+aer v3h
+wx 2068400c @ 0 # ld1 {v0.2s-v2.2s}, [x1] two-word structures zero the upper halves
+aei
+aeip
+aer v0l=0x1111111111111111
+aer v0h=0xbbbbbbbbbbbbbbbb
+aer v1l=0x1111111111111111
+aer v1h=0xbbbbbbbbbbbbbbbb
+aer v2l=0x1111111111111111
+aer v2h=0xbbbbbbbbbbbbbbbb
+aer x1=0x100
+wx 0000000c0100000c0200000c0300000c0400000c0500000c @ 0x100
+aes
+aer v0l
+aer v0h
+aer v1l
+aer v1h
+aer v2l
+aer v2h
+wx 20a8c24c @ 0 # ld1 {v0.4s, v1.4s}, [x1], x2 adds the register offset to the base
+aei
+aeip
+aer v0l=0x1111111111111111
+aer v0h=0x1111111111111111
+aer v1l=0x1111111111111111
+aer v1h=0x1111111111111111
+aer x1=0x100
+aer x2=0x20
+wx 0000000d0100000d0200000d0300000d0400000d0500000d0600000d0700000d @ 0x100
+aes
+aer v0l
+aer v0h
+aer v1l
+aer v1h
+aer x1
+EOF
+EXPECT=<<EOF
+0xb0000010b000000
+0xb0000030b000002
+0xb0000050b000004
+0xb0000070b000006
+0xb0000090b000008
+0xb00000b0b00000a
+0xb00000d0b00000c
+0xb00000f0b00000e
+0xc0000010c000000
+0x00000000
+0xc0000030c000002
+0x00000000
+0xc0000050c000004
+0x00000000
+0xd0000010d000000
+0xd0000030d000002
+0xd0000050d000004
+0xd0000070d000006
+0x00000120
+EOF
+RUN
+
+NAME=arm64 ESIL ld1 D forms zero the upper 64 bits
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 207c400c # ld1 {v0.1d}, [x1] writes bits 63:0 only
+aei
+aeip
+aer v0l=0x1111111111111111
+aer v0h=0xbbbbbbbbbbbbbbbb
+aer x1=0x100
+wx 8877665544332211 @ 0x100
+aes
+aer v0l
+aer v0h
+wx 2074400c @ 0 # ld1 {v0.4h}, [x1] fills the D form halfword lanes
+aei
+aeip
+aer v0l=0x1111111111111111
+aer v0h=0xbbbbbbbbbbbbbbbb
+aer x1=0x100
+wx 1111222233334444 @ 0x100
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x1122334455667788
+0x00000000
+0x4444333322221111
+0x00000000
+EOF
+RUN
+
+NAME=arm64 ESIL ld1 indexed lane loads keep the other lanes
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2080404d # ld1 {v0.s}[2], [x1] replaces only word lane 2
+aei
+aeip
+aer v0l=0xaaaaaaaaaaaaaaaa
+aer v0h=0xbbbbbbbbbbbbbbbb
+aer x1=0x100
+wx beefabec @ 0x100
+aes
+aer v0l
+aer v0h
+wx 2080df4d @ 0 # ld1 {v0.s}[2], [x1], #4 also advances the base by the element
+aei
+aeip
+aer v0l=0xaaaaaaaaaaaaaaaa
+aer v0h=0xbbbbbbbbbbbbbbbb
+aer x1=0x100
+wx beefabec @ 0x100
+aes
+aer v0h
+aer x1
+wx 2084404d @ 0 # ld1 {v0.d}[1], [x1] replaces the full upper half
+aei
+aeip
+aer v0l=0xaaaaaaaaaaaaaaaa
+aer v0h=0xbbbbbbbbbbbbbbbb
+aer x1=0x100
+wx 8877665544332211 @ 0x100
+aes
+aer v0l
+aer v0h
+wx 2090400d @ 0 # ld1 {v0.s}[1], [x1] replaces word lane 1 of the lower half
+aei
+aeip
+aer v0l=0xaaaaaaaaaaaaaaaa
+aer v0h=0xbbbbbbbbbbbbbbbb
+aer x1=0x100
+wx efbeadde @ 0x100
+aes
+aer v0l
+aer v0h
+wx 2058400d @ 0 # ld1 {v0.h}[3], [x1] replaces halfword lane 3 at the top of the lower half
+aei
+aeip
+aer v0l=0xaaaaaaaaaaaaaaaa
+aer v0h=0xbbbbbbbbbbbbbbbb
+aer x1=0x100
+wx edfe @ 0x100
+aes
+aer v0l
+aer v0h
+wx 2014400d @ 0 # ld1 {v0.b}[5], [x1] replaces byte lane 5 inside the lower half
+aei
+aeip
+aer v0l=0xaaaaaaaaaaaaaaaa
+aer v0h=0xbbbbbbbbbbbbbbbb
+aer x1=0x100
+wx 5a @ 0x100
+aes
+aer v0l
+aer v0h
+wx 2014404d @ 0 # ld1 {v0.b}[13], [x1] replaces byte lane 13 inside the upper half
+aei
+aeip
+aer v0l=0xaaaaaaaaaaaaaaaa
+aer v0h=0xbbbbbbbbbbbbbbbb
+aer x1=0x100
+wx 5a @ 0x100
+aes
+aer v0l
+aer v0h
+wx 2084400d @ 0 # ld1 {v0.d}[0], [x1] replaces the full lower half
+aei
+aeip
+aer v0l=0xaaaaaaaaaaaaaaaa
+aer v0h=0xbbbbbbbbbbbbbbbb
+aer x1=0x100
+wx efcdab89674523f1 @ 0x100
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0xaaaaaaaaaaaaaaaa
+0xbbbbbbbbecabefbe
+0xbbbbbbbbecabefbe
+0x00000104
+0xaaaaaaaaaaaaaaaa
+0x1122334455667788
+0xdeadbeefaaaaaaaa
+0xbbbbbbbbbbbbbbbb
+0xfeedaaaaaaaaaaaa
+0xbbbbbbbbbbbbbbbb
+0xaaaa5aaaaaaaaaaa
+0xbbbbbbbbbbbbbbbb
+0xaaaaaaaaaaaaaaaa
+0xbbbb5abbbbbbbbbb
+0xf123456789abcdef
+0xbbbbbbbbbbbbbbbb
+EOF
+RUN
+
+NAME=arm64 ESIL st1 single and multiple structures store linearly
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e hex.header=false
+wx 2070004c # st1 {v0.16b}, [x1] writes the byte lanes in order
+aei
+aeip
+aer v0l=0x0706050403020100
+aer v0h=0x0f0e0d0c0b0a0908
+aer x1=0x100
+wx ffffffffffffffffffffffffffffffff @ 0x100
+aes
+px 16 @ 0x100
+aer v0h
+wx 20789f4c @ 0 # st1 {v0.4s}, [x1], #16 stores the words and walks the base
+aei
+aeip
+aer v0l=0x2222222211111111
+aer v0h=0x4444444433333333
+aer x1=0x100
+wx ffffffffffffffffffffffffffffffff @ 0x100
+aes
+px 16 @ 0x100
+aer x1
+wx 2028004c @ 0 # st1 {v0.4s-v3.4s}, [x1] concatenates the register contents
+aei
+aeip
+aer v0l=0x0e0000010e000000
+aer v0h=0x0e0000030e000002
+aer v1l=0x0e0000050e000004
+aer v1h=0x0e0000070e000006
+aer v2l=0x0e0000090e000008
+aer v2h=0x0e00000b0e00000a
+aer v3l=0x0e00000d0e00000c
+aer v3h=0x0e00000f0e00000e
+aer x1=0x100
+wx ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff @ 0x100
+aes
+px 64 @ 0x100
+aer v1h
+aer v3h
+wx 20a89f4c @ 0 # st1 {v0.4s, v1.4s}, [x1], #32 stores both and advances the base
+aei
+aeip
+aer v0l=0x0d0000010d000000
+aer v0h=0x0d0000030d000002
+aer v1l=0x0d0000050d000004
+aer v1h=0x0d0000070d000006
+aer x1=0x100
+wx ffffffffffffffffffffffffffffffffffffffffffffffffffffffff @ 0x100
+aes
+px 32 @ 0x100
+aer x1
+wx 20a8000c @ 0 # st1 {v0.2s, v1.2s}, [x1] stores the D form structures
+aei
+aeip
+aer v0l=0x2222222211111111
+aer v1l=0x4444444433333333
+aer v1h=0xbbbbbbbbbbbbbbbb
+aer x1=0x100
+wx ffffffffffffffffffffffff @ 0x100
+aes
+px 16 @ 0x100
+aer v1h
+EOF
+EXPECT=<<EOF
+0x00000100  0001 0203 0405 0607 0809 0a0b 0c0d 0e0f  ................
+0xf0e0d0c0b0a0908
+0x00000100  1111 1111 2222 2222 3333 3333 4444 4444  ....""""3333DDDD
+0x00000110
+0x00000100  0000 000e 0100 000e 0200 000e 0300 000e  ................
+0x00000110  0400 000e 0500 000e 0600 000e 0700 000e  ................
+0x00000120  0800 000e 0900 000e 0a00 000e 0b00 000e  ................
+0x00000130  0c00 000e 0d00 000e 0e00 000e 0f00 000e  ................
+0xe0000070e000006
+0xe00000f0e00000e
+0x00000100  0000 000d 0100 000d 0200 000d 0300 000d  ................
+0x00000110  0400 000d 0500 000d 0600 000d 0700 000d  ................
+0x00000120
+0x00000100  1111 1111 2222 2222 3333 3333 4444 4444  ....""""3333DDDD
+0xbbbbbbbbbbbbbbbb
+EOF
+RUN
+
+NAME=arm64 ESIL st1 indexed byte and doubleword stores
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e hex.header=false
+wx 200c000d # st1 {v0.b}[3], [x1] stores only byte lane 3
+aei
+aeip
+aer v0l=0x7766554433221100
+aer x1=0x100
+wx ffffffff @ 0x100
+aes
+px 4 @ 0x100
+wx 2084004d @ 0 # st1 {v0.d}[1], [x1] stores the full upper half
+aei
+aeip
+aer v0h=0x1122334455667788
+aer x1=0x100
+wx ffffffffffffffff @ 0x100
+aes
+px 8 @ 0x100
+EOF
+EXPECT=<<EOF
+0x00000100  33ff ffff                                3...
+0x00000100  8877 6655 4433 2211                      .wfUD3".
+EOF
+RUN
+
+NAME=arm64 ESIL structure Q-form accesses honor cfg.bigendian
+FILE=malloc://0x200
+ARGS=-a arm -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+e hex.header=false
+wx 2070404c @ 0 # ld1 {v0.16b}, [x1] loads every byte lane as its own value
+wx 000102030405060708090a0b0c0d0e0f @ 0x100
+aei
+aeip
+aer x1=0x100
+aes
+aer v0l
+aer v0h
+wx 20a4404c @ 0 # ld1 {v0.8h, v1.8h}, [x1] decodes halfwords in the data order
+wx 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f @ 0x100
+aei
+aeip
+aer x1=0x100
+aes
+aer v0l
+aer v0h
+aer v1l
+aer v1h
+wx 2070004c @ 0 # st1 {v0.16b}, [x1] stores byte lanes in address order
+wx ffffffffffffffffffffffffffffffff @ 0x100
+aei
+aeip
+aer v0l=0xf7e6d5c4b3a29180
+aer v0h=0x1f0e1d0c0b0a0908
+aer x1=0x100
+aes
+px 16 @ 0x100
+wx 20c0404d @ 0 # ld1r {v0.16b}, [x1] replicates the byte value into every lane
+wx 2a @ 0x100
+aei
+aeip
+aer x1=0x100
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x706050403020100
+0xf0e0d0c0b0a0908
+0x607040502030001
+0xe0f0c0d0a0b0809
+0x1617141512131011
+0x1e1f1c1d1a1b1819
+0x00000100  8091 a2b3 c4d5 e6f7 0809 0a0b 0c1d 0e1f  ................
+0x2a2a2a2a2a2a2a2a
+0x2a2a2a2a2a2a2a2a
+EOF
+RUN
