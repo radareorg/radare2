@@ -80,6 +80,67 @@ static bool socket_http_use_curl(const char *url) {
 		&& (r_sys_getenv_asbool ("R2_CURL") || socket_http_requires_curl (url));
 }
 
+typedef struct {
+	char *host;
+	char *port;
+	char *path;
+} SocketHttpUrl;
+
+static void socket_http_url_fini(SocketHttpUrl *u) {
+	free (u->host);
+	free (u->port);
+	free (u->path);
+}
+
+// split the authority like r_sandbox_check_localhost does, so the checked host is the connected one
+static bool socket_http_url_parse(SocketHttpUrl *u, const char *url, bool ssl) {
+	const char *authority = strstr (url, "://");
+	if (!authority) {
+		R_LOG_ERROR ("Invalid URI");
+		return false;
+	}
+	authority += 3;
+	const size_t authority_len = strcspn (authority, "/?#");
+	char *hostport = r_str_ndup (authority, authority_len);
+	char *at = strrchr (hostport, '@');
+	char *host = at? at + 1: hostport;
+	char *port = NULL;
+	if (*host == '[') {
+		char *end = strchr (++host, ']');
+		port = end? end + 1: NULL;
+		if (!end || (*port && *port != ':')) {
+			R_LOG_ERROR ("Invalid IPv6 host in URI");
+			free (hostport);
+			return false;
+		}
+		*end = 0;
+	} else {
+		port = strchr (host, ':');
+	}
+	if (port && *port == ':') {
+		*port++ = 0;
+	}
+	const char *path = authority + authority_len;
+	if (*path == '/') {
+		path++;
+	}
+	u->host = strdup (host);
+	u->port = strdup (R_STR_ISNOTEMPTY (port)? port: ssl? "443": "80");
+	u->path = r_str_ndup (path, strcspn (path, "#"));
+	free (hostport);
+	if (!*u->host) {
+		R_LOG_ERROR ("Missing host in URI");
+		socket_http_url_fini (u);
+		return false;
+	}
+	return true;
+}
+
+static void socket_http_send_host(RSocket *s, SocketHttpUrl *u) {
+	const bool ipv6 = strchr (u->host, ':');
+	r_socket_printf (s, "Host: %s%s%s:%s\r\n", ipv6? "[": "", u->host, ipv6? "]": "", u->port);
+}
+
 static void socket_http_send_headers(RSocket *s, const char **headers, bool post) {
 	bool content_type = false;
 	if (headers) {
@@ -413,58 +474,31 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 		return http_get_w32 (url, code, rlen);
 	}
 #endif
-	RSocket *s;
-	bool ssl = r_str_startswith (url, "https://");
-	char *response, *host, *path, *port = "80";
-	char *uri = strdup (url);
-	if (!uri) {
+	const bool ssl = r_str_startswith (url, "https://");
+	SocketHttpUrl u = {0};
+	if (!socket_http_url_parse (&u, url, ssl)) {
 		return NULL;
 	}
-	host = strstr (uri, "://");
-	if (!host) {
-		free (uri);
-		R_LOG_ERROR ("r_socket_http_get: Invalid URI");
-		return NULL;
-	}
-	host += 3;
-	port = strchr (host, ':');
-	if (!port) {
-#if HAVE_LIB_SSL
-		port = ssl? "443": "80";
-#else
-		port = "80";
-#endif
-		path = host;
-	} else {
-		*port++ = 0;
-		path = port;
-	}
-	path = strchr (path, '/');
-	if (!path) {
-		path = "";
-	} else {
-		*path++ = 0;
-	}
-	s = r_socket_new (ssl);
+	RSocket *s = r_socket_new (ssl);
 	if (!s) {
 		R_LOG_ERROR ("Cannot create socket");
-		free (uri);
+		socket_http_url_fini (&u);
 		return NULL;
 	}
-	if (r_socket_connect_tcp (s, host, port, 0)) {
+	char *response = NULL;
+	if (r_socket_connect_tcp (s, u.host, u.port, 0)) {
 		r_socket_printf (s,
 			"GET /%s HTTP/1.1\r\n"
 			"User-Agent: radare2 " R2_VERSION "\r\n"
-			"Accept: */*\r\n"
-			"Host: %s:%s\r\n",
-			path, host, port);
+			"Accept: */*\r\n",
+			u.path);
+		socket_http_send_host (s, &u);
 		socket_http_send_headers (s, headers, false);
 		response = socket_http_answer (s, NULL, code, rlen, redirections);
 	} else {
-		R_LOG_ERROR ("Cannot connect to %s:%s", host, port);
-		response = NULL;
+		R_LOG_ERROR ("Cannot connect to %s:%s", u.host, u.port);
 	}
-	free (uri);
+	socket_http_url_fini (&u);
 	r_socket_free (s);
 	return response;
 }
@@ -608,49 +642,32 @@ R_API char *r_socket_http_post(const char *url, const char *headers[], const cha
 
 		return res;
 	}
-	bool ssl = r_str_startswith (url, "https://");
-	char *uri = strdup (url);
-	char *host = strstr (uri, "://");
-	if (!host) {
-		free (uri);
-		R_LOG_ERROR ("Invalid URI");
+	const bool ssl = r_str_startswith (url, "https://");
+	SocketHttpUrl u = {0};
+	if (!socket_http_url_parse (&u, url, ssl)) {
 		return NULL;
-	}
-	host += 3;
-	char *port = strchr (host, ':');
-	char *path = strchr (host, '/');
-	if (port && (!path || (path && port < path))) {
-		*port++ = 0;
-	} else {
-		port = ssl? "443": "80";
-	}
-	if (path) {
-		*path++ = 0;
-	} else {
-		path = "";
 	}
 	RSocket *s = r_socket_new (ssl);
 	if (!s) {
 		R_LOG_ERROR ("Cannot create socket");
-		free (uri);
+		socket_http_url_fini (&u);
 		return NULL;
 	}
-	if (!r_socket_connect_tcp (s, host, port, 0)) {
-		R_LOG_ERROR ("Cannot connect to %s:%s", host, port);
-		free (uri);
+	if (!r_socket_connect_tcp (s, u.host, u.port, 0)) {
+		R_LOG_ERROR ("Cannot connect to %s:%s", u.host, u.port);
+		socket_http_url_fini (&u);
 		r_socket_free (s);
 		return NULL;
 	}
-	/* Send */
 	r_socket_printf (s,
 		"POST /%s HTTP/1.0\r\n"
 		"User-Agent: radare2 " R2_VERSION "\r\n"
 		"Accept: */*\r\n"
-		"Host: %s:%d\r\n"
 		"Content-Length: %i\r\n",
-		path, host, atoi (port), (int)strlen (data));
+		u.path, (int)strlen (data));
+	socket_http_send_host (s, &u);
 	socket_http_send_headers (s, headers, true);
-	free (uri);
+	socket_http_url_fini (&u);
 	r_socket_write (s, (void *)data, strlen (data));
 	char *response = socket_http_answer (s, NULL, code, rlen, 0);
 	r_socket_free (s);
