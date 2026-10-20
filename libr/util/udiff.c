@@ -22,8 +22,19 @@ R_API RDiff *r_diff_new(void) {
 R_API void r_diff_free(RDiff *d) {
 	if (d) {
 		free (d->diff_cmd);
+		free (d->label_a);
+		free (d->label_b);
 		free (d);
 	}
+}
+
+// names shown in the ---/+++ header of r_diff_buffers_unified instead of the temporary files
+R_API void r_diff_set_labels(RDiff *d, const char *label_a, const char *label_b) {
+	R_RETURN_IF_FAIL (d);
+	free (d->label_a);
+	free (d->label_b);
+	d->label_a = label_a? strdup (label_a): NULL;
+	d->label_b = label_b? strdup (label_b): NULL;
 }
 
 R_API int r_diff_set_callback(RDiff *d, RDiffCallback callback, void *user) {
@@ -318,7 +329,16 @@ R_API char *r_diff_buffers_unified(RDiff *d, const ut8 *a, int la, const ut8 *b,
 	char *err = NULL;
 	char *out = NULL;
 	int out_len;
-	char *diff_cmdline = r_str_newf ("%s %s %s", d->diff_cmd, fa, fb);
+	char *diff_cmdline;
+	if (d->label_a && d->label_b) {
+		char *la_sh = r_str_escape_sh (d->label_a);
+		char *lb_sh = r_str_escape_sh (d->label_b);
+		diff_cmdline = r_str_newf ("%s -L \"%s\" -L \"%s\" %s %s", d->diff_cmd, la_sh, lb_sh, fa, fb);
+		free (la_sh);
+		free (lb_sh);
+	} else {
+		diff_cmdline = r_str_newf ("%s %s %s", d->diff_cmd, fa, fb);
+	}
 	if (diff_cmdline) {
 		(void)r_sys_cmd_str_full (diff_cmdline, NULL, 0, &out, &out_len, &err);
 		free (diff_cmdline);
