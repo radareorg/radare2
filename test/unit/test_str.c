@@ -35,6 +35,12 @@ bool test_r_str_wrap(void) {
 	mu_assert_streq (s, res, "error, invalid string wrapping");
 	free (s);
 	free (res);
+	s = r_str_wrap ("☑️xy⬜z👩‍💻x🟠", 3);
+	mu_assert_streq (s, "☑️x\ny⬜\nz👩‍💻\nx🟠", "wrap preserves emoji clusters and counts their display cells");
+	free (s);
+	s = r_str_wrap ("a☑\x1b[31m️\x1b[0mb", 2);
+	mu_assert_streq (s, "a\n☑\x1b[31m️\x1b[0m\nb", "wrap preserves selectors across ANSI colors");
+	free (s);
 	mu_end;
 }
 
@@ -296,6 +302,24 @@ bool test_r_str_md2txt_tables_and_titles(void) {
 
 	s = r_str_md2txt_width ("  \t--- \t\n--\n---text\n", NULL, 12);
 	mu_assert_streq (s, "   ------\n  --\n  ---text\n", "horizontal rules allow whitespace but reject short runs and text");
+	free (s);
+	mu_end;
+}
+
+bool test_r_str_md2txt_emoji_table(void) {
+	const RMarkdownOptions options = { .utf8 = true };
+	char *s = r_str_md2txt_width (
+		"| s | x |\n| --- | --- |\n"
+		"| ☑️xy | ⬜z |\n| 👩‍💻x | 🟠 |\n| ♠ | Ａ |\n", &options, 13);
+	mu_assert_streq (s,
+		"┌───────────┐\n"
+		"│ s   │ x   │\n"
+		"│───────────│\n"
+		"│ ☑️x │ ⬜z │\n"
+		"│ y   │     │\n"
+		"│ 👩‍💻x │ 🟠  │\n"
+		"│ ♠   │ Ａ  │\n"
+		"└───────────┘\n", "markdown table wraps and pads Unicode cells to fixed columns");
 	free (s);
 	mu_end;
 }
@@ -810,6 +834,61 @@ bool test_r_str_len_utf8_ansi_truncated_utf8_tail(void) {
 	mu_assert_eq (len, 1, "len(truncated 4-byte utf8 tail)");
 	mu_assert_eq (r_utf8_decode ((const ut8 *)s1 + 3, -1, NULL), 0, "decode rejects truncated utf8 tail");
 	mu_assert_eq (r_utf8_decode ((const ut8 *)s2, -1, NULL), 0, "decode rejects truncated 4-byte utf8 tail");
+	mu_end;
+}
+
+bool test_r_str_unicode_width(void) {
+	const struct {
+		const char *text;
+		int width;
+	} cases[] = {
+		{ "☑️ uncommitted", 14 },
+		{ "⬜", 2 },
+		{ "🟠", 2 },
+		{ "🟡", 2 },
+		{ "✅", 2 },
+		{ "☑", 1 },
+		{ "☀", 1 },
+		{ "☀️", 2 },
+		{ "❤", 1 },
+		{ "❤️", 2 },
+		{ "☀︎", 1 },
+		{ "♠♣♥♦✓", 5 },
+		{ "ＡＢＣ", 6 },
+		{ "𰀀", 2 },
+		{ "é", 1 },
+		{ "a\xe1\xaa\xb0", 1 },
+		{ "שָ", 1 },
+		{ "\xe2\x80\x8b", 0 },
+		{ "👩‍💻", 2 },
+		{ "👨‍👩‍👧‍👦", 2 },
+		{ "👩‍☀️", 2 },
+		{ "👩‍☀︎", 3 },
+		{ "👍🏽", 2 },
+		{ "1️⃣", 2 },
+		{ "1⃣", 2 },
+		{ "a‍b", 2 },
+		{ "a️", 1 },
+		{ "👩‍💻x⬜", 5 },
+		{ "\x1b[31m☑️\x1b[0m", 2 },
+		{ "☑\x1b[31m️\x1b[0m", 2 },
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (cases); i++) {
+		mu_assert_eq (r_str_len_utf8_ansi (cases[i].text), cases[i].width, cases[i].text);
+		mu_assert_eq (r_str_ansi_len (cases[i].text), cases[i].width, cases[i].text);
+		mu_assert_eq (r_str_display_width (cases[i].text), cases[i].width, cases[i].text);
+		if (!strchr (cases[i].text, '\x1b')) {
+			mu_assert_eq (r_str_len_utf8 (cases[i].text), cases[i].width, cases[i].text);
+			mu_assert_eq (r_utf8_display_width ((const ut8 *)cases[i].text), cases[i].width, cases[i].text);
+		}
+	}
+	mu_assert_eq (r_str_ansi_nlen ("☑️", 3), 1, "bounded width excludes the selector");
+	mu_assert_eq (r_str_ansi_nlen ("☑️", 6), 2, "bounded width includes the selector");
+	char bounded[] = { (char)0xe2, (char)0x98, (char)0x91 };
+	mu_assert_eq (r_str_ansi_nlen (bounded, sizeof (bounded)), 1, "bounded input needs no terminator");
+	char bounded_ansi[] = { '\x1b', '[', '3', '1', 'm', 'a' };
+	mu_assert_eq (r_str_ansi_nlen (bounded_ansi, sizeof (bounded_ansi)), 1, "bounded ANSI input needs no terminator");
 	mu_end;
 }
 
@@ -1364,6 +1443,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_mem_mem);
 	mu_run_test (test_r_str_md2txt_rendering);
 	mu_run_test (test_r_str_md2txt_tables_and_titles);
+	mu_run_test (test_r_str_md2txt_emoji_table);
 	mu_run_test (test_r_str_md2txt_codeblocks);
 	mu_run_test (test_r_str_newf);
 	mu_run_test (test_r_str_replace_char_once);
@@ -1391,6 +1471,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_ansi_len);
 	mu_run_test (test_r_str_len_utf8_ansi);
 	mu_run_test (test_r_str_len_utf8_ansi_truncated_utf8_tail);
+	mu_run_test (test_r_str_unicode_width);
 	mu_run_test (test_r_str_utf16_to_utf8);
 	mu_run_test (test_r_str_uri_decode);
 	mu_run_test (test_r_str_utf8_charsize);

@@ -1869,29 +1869,18 @@ R_API char *r_str_format_msvc_argv(size_t argc, const char **argv) {
 	return r_strbuf_drain_nofree (&sb);
 }
 
-static int rune_display_width(RRune ch) {
-	if (ch == 0x200d || R_BETWEEN (0x0300, ch, 0x036f) ||
-		R_BETWEEN (0xfe00, ch, 0xfe0f) ||
-		R_BETWEEN (0xe0100, ch, 0xe01ef)) {
-		return 0;
-	}
-	if (ch < 0x80) {
-		return 1;
-	}
-	// CJK and wide characters
-	if ((ch >= 0x1100 && ch <= 0x115F) || // Hangul Jamo
-		(ch >= 0x2600 && ch <= 0x27BF) || // Emoji symbols
-		(ch >= 0x2E80 && ch <= 0x9FFF) || // CJK
-		(ch >= 0xAC00 && ch <= 0xD7AF) || // Hangul Syllables
-		(ch >= 0xF900 && ch <= 0xFAFF) || // CJK Compatibility Ideographs
-		(ch >= 0xFE10 && ch <= 0xFE1F) || // Vertical Forms
-		(ch >= 0xFE30 && ch <= 0xFE4F) || // CJK Compatibility Forms
-		(ch >= 0x1F000 && ch <= 0x1FAFF) || // Emojis and symbols
-		(ch >= 0x20000 && ch <= 0x2FFFF)) { // CJK Extension B, C, D, E, F
-		return 2;
-	}
-	return 1;
-}
+enum {
+	RUNE_WIDTH_MASK = 3,
+	RUNE_VARIATION = 4,
+	RUNE_PICTOGRAPHIC = 8,
+	RUNE_MODIFIER_BASE = 16,
+	RUNE_REGIONAL = 32,
+	RUNE_KEYCAP = 64,
+};
+
+#include "str_utf8_width.inc.c"
+
+#define RUNE_PROPS(c) (utf8_width_pages[(utf8_width_index[(c) >> 7] << 7) | ((c) & 0x7f)])
 
 /* Skip past a CSI sequence (escape [ ... terminator) and return new position */
 static const char *__ansi_skip_csi(const char *str) {
@@ -1908,61 +1897,116 @@ static const char *__ansi_skip_csi(const char *str) {
 	return str;
 }
 
-static size_t __str_ansi_length(char const *str) {
+static size_t str_ansi_length(const char *s, size_t left) {
 	size_t i = 1;
-	if (str[0] == 0x1b) {
-		if (str[1] == '[') {
+	if (*s == 0x1b) {
+		if (i < left && s[i] == '[') {
 			i++;
-			while (str[i] && str[i] != 'J' && str[i] != 'm' && str[i] != 'H' && str[i] != 'K') {
+			while (i < left && s[i] && s[i] != 'J' && s[i] != 'm' && s[i] != 'H' && s[i] != 'K') {
 				i++;
 			}
-		} else if (str[1] == '#') {
-			while (str[i] && str[i] != 'q') {
+		} else if (i < left && s[i] == '#') {
+			while (i < left && s[i] && s[i] != 'q') {
 				i++;
 			}
 		}
-		if (str[i]) {
+		if (i < left && s[i]) {
 			i++;
 		}
-	} else {
-		// not ANSI, get UTF-8 length
-		RRune ch;
-		int len = r_utf8_decode ((const ut8 *)str, -1, &ch);
-		i = len > 0? len: 1;
+	} else if ((ut8)*s >= 0x80) {
+		int len = r_str_nlen (s, R_MIN (left, r_utf8_size ((const ut8 *)s)));
+		int n = r_utf8_decode ((const ut8 *)s, len, NULL);
+		i = n > 0? n: 1;
 	}
 	return i;
 }
 
-static size_t str_dwidth(const char *str, size_t slen, bool ansi) {
-	size_t i = 0, len = 0;
-	const size_t maxlen = slen > 0? slen: (size_t)-1;
-	while (str[i] && i < maxlen) {
-		const ut8 c = (ut8)str[i];
-		if (c < 0x80) {
-			// ascii fast path: one column per byte, no utf8 decoding needed
-			if (ansi && c == 0x1b) {
-				i += __str_ansi_length (str + i);
-				continue;
+static int display_decode(const char *s, size_t left, RRune *ch) {
+	if ((ut8)*s < 0x80) {
+		*ch = (ut8)*s;
+		return 1;
+	}
+	return r_utf8_decode ((const ut8 *)s, left >= 4? -1: r_str_nlen (s, left), ch);
+}
+
+static size_t display_skip_ansi(const char *s, size_t i, size_t left, bool ansi) {
+	while (ansi && i < left && s[i] == 0x1b) {
+		i += str_ansi_length (s + i, left - i);
+	}
+	return i;
+}
+
+static size_t display_cluster(const char *s, size_t left, bool ansi, int *w) {
+	RRune ch;
+	int n = display_decode (s, left, &ch);
+	if (n < 1) {
+		*w = ((ut8)*s & 0xc0) == 0x80? 0: 1;
+		return 1;
+	}
+	ut8 p = RUNE_PROPS (ch);
+	*w = p & RUNE_WIDTH_MASK;
+	size_t len = n;
+	if (!(p & ~RUNE_WIDTH_MASK) || len == left || !s[len] || ((ut8)s[len] < 0x80 && (!ansi || s[len] != 0x1b))) {
+		return len;
+	}
+	ut8 flags = p;
+	for (;;) {
+		size_t i = display_skip_ansi (s, len, left, ansi);
+		if (i == left || (ut8)s[i] < 0x80) {
+			break;
+		}
+		RRune f;
+		n = display_decode (s + i, left - i, &f);
+		if (n < 1) {
+			break;
+		}
+		ut8 fprops = RUNE_PROPS (f);
+		if ((p & RUNE_VARIATION) && R_BETWEEN (0xfe0e, f, 0xfe0f)) {
+			*w = f == 0xfe0f? 2: p & RUNE_WIDTH_MASK;
+			if (f == 0xfe0e) {
+				flags &= ~RUNE_PICTOGRAPHIC;
 			}
+		} else if (((flags & RUNE_KEYCAP) && f == 0x20e3)
+				|| (flags & fprops & RUNE_REGIONAL)) {
+			*w = 2;
+			flags &= ~(RUNE_KEYCAP | RUNE_REGIONAL);
+		} else if ((flags & RUNE_MODIFIER_BASE) && R_BETWEEN (0x1f3fb, f, 0x1f3ff)) {
+			flags &= ~RUNE_MODIFIER_BASE;
+		} else if (ch == 0x200d && (flags & fprops & RUNE_PICTOGRAPHIC)) {
+			size_t end = display_skip_ansi (s, i + n, left, ansi);
+			if ((fprops & RUNE_VARIATION) && left - end >= 3 && !strncmp (s + end, "\xef\xb8\x8e", 3)) {
+				break;
+			}
+			*w = 2;
+			flags = fprops;
+		} else if (fprops & RUNE_WIDTH_MASK) {
+			break;
+		}
+		ch = f;
+		p = fprops;
+		len = i + n;
+	}
+	return len;
+}
+
+static size_t str_dwidth(const char *s, size_t slen, bool ansi) {
+	size_t i = 0, len = 0;
+	const size_t max = slen > 0? slen: SIZE_MAX;
+	while (i < max && s[i]) {
+		const ut8 c = (ut8)s[i];
+		if (ansi && c == 0x1b) {
+			i += str_ansi_length (s + i, max - i);
+			continue;
+		}
+		// Keep plain ASCII runs out of Unicode property lookups.
+		if (c < 0x80 && (i + 1 == max || ((ut8)s[i + 1] < 0x80 && (!ansi || s[i + 1] != 0x1b)))) {
 			len++;
 			i++;
 			continue;
 		}
-		if ((c & 0xc0) == 0x80) {
-			i++;
-			continue;
-		}
-		RRune ch;
-		const size_t left_sz = maxlen - i;
-		const int left = slen > 0? R_MIN (left_sz, INT_MAX): -1;
-		int ulen = r_utf8_decode ((const ut8 *)str + i, left, &ch);
-		if (ulen > 0) {
-			len += rune_display_width (ch);
-			i += ulen;
-		} else {
-			len++;
-			i++;
-		}
+		int w;
+		i += display_cluster (s + i, max - i, ansi, &w);
+		len += w;
 	}
 	return (ansi && slen > 0 && len < 1)? 1: len;
 }
@@ -1989,7 +2033,7 @@ static size_t __str_ansi_sanitize_length(char const *str) {
 R_API size_t r_str_ansi_strip(char *str) {
 	size_t i = 0;
 	while (str[i]) {
-		size_t chlen = __str_ansi_length (str + i);
+		size_t chlen = str_ansi_length (str + i, SIZE_MAX);
 		size_t sanitize_len = __str_ansi_sanitize_length (str + i);
 		if (str[i] == 0x1b && chlen > 1) {
 			r_str_cpy (str + i, str + i + chlen);
@@ -2149,7 +2193,7 @@ R_API size_t r_wstr_clen(const char *s) {
 R_API const char *r_str_ansi_chrn(const char *str, size_t n) {
 	int len, i, li;
 	for (li = i = len = 0; str[i] && (n != len); i++) {
-		size_t chlen = __str_ansi_length (str + i);
+		size_t chlen = str_ansi_length (str + i, SIZE_MAX);
 		if (chlen > 1) {
 			if (str[i] == 0x1b) {
 				// ANSI escape sequence, skip without incrementing len
@@ -2159,7 +2203,7 @@ R_API const char *r_str_ansi_chrn(const char *str, size_t n) {
 				RRune ch;
 				int ulen = r_utf8_decode ((const ut8 *)str + i, chlen, &ch);
 				if (ulen > 0) {
-					len += rune_display_width (ch);
+					len += (RUNE_PROPS (ch) & RUNE_WIDTH_MASK);
 				} else {
 					len += 1; // invalid, assume 1
 				}
@@ -2241,7 +2285,7 @@ R_API int r_str_ansi_filter(char *str, char **R_NULLABLE out, int **R_NULLABLE c
 
 	for (i = j = 0; i < len; i++) {
 		if (tmp[i] == 0x1b) {
-			size_t chlen = __str_ansi_length (str + i);
+			size_t chlen = str_ansi_length (str + i, SIZE_MAX);
 			if (chlen > 1) {
 				i += chlen;
 				i--;
@@ -2858,7 +2902,7 @@ R_API const char *r_strstr_ansi(const char *a, const char *b) {
 			if (v) {
 				return v;
 			}
-			p = ch + __str_ansi_length (ch);
+			p = ch + str_ansi_length (ch, SIZE_MAX);
 		}
 	} while (ch);
 	return strstr (p, b);
@@ -3296,15 +3340,6 @@ R_API char *r_str_crop(const char *str, unsigned int x, unsigned int y,
 	return ret;
 }
 
-static int wrap_width(const char *str, size_t len) {
-	if (*str == 0x1b) {
-		return 0;
-	}
-	RRune ch;
-	int ulen = r_utf8_decode ((const ut8 *)str, len, &ch);
-	return ulen > 0? rune_display_width (ch): 1;
-}
-
 R_API char *r_str_wrap(const char *str, int w) {
 	if (w < 1 || !str) {
 		return strdup ("");
@@ -3322,10 +3357,12 @@ R_API char *r_str_wrap(const char *str, int w) {
 	char *line = r;
 	char *last = NULL;
 	char *end = r + r_size;
+	const char *send = str + str_len;
 	int cw = 0;
 	int lastw = 0;
 	while (*str && r + 1 < end) {
-		size_t len = __str_ansi_length (str);
+		int dw = 0;
+		size_t len = *str == 0x1b? str_ansi_length (str, send - str): display_cluster (str, send - str, true, &dw);
 		if (*str == '\t') {
 			str++;
 			continue;
@@ -3341,7 +3378,6 @@ R_API char *r_str_wrap(const char *str, int w) {
 			cw = 0;
 			continue;
 		}
-		int dw = wrap_width (str, len);
 		if (dw > 0 && cw + dw > w && r > line) {
 			if (last) {
 				int tail = cw - lastw;
