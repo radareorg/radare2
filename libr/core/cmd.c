@@ -2720,7 +2720,7 @@ static int __runMain(RCons *cons, RMainCallback cb, const char *arg) {
 	char **args = r_str_argv (a, &argc);
 	r_sys_setenv_asut64 ("R2CONS", (ut64)(size_t)cons);
 	int res = cb? cb (argc, (const char **)args): -1;
-	free (args);
+	r_str_argv_free (args);
 	free (a);
 	return res;
 }
@@ -2744,6 +2744,7 @@ static bool cmd_r2cmd(RCore *core, const char *_input) {
 			{ "rapatch2", core->r_main_rapatch2, false },
 			{ "rasm2", core->r_main_rasm2, false },
 			{ "rabin2", core->r_main_rabin2, false },
+			{ "rahash2", core->r_main_rahash2, false },
 			{ "ragg2", core->r_main_ragg2, false },
 			{ "rafs2", core->r_main_rafs2, false },
 			{ "ravc2", core->r_main_ravc2, false },
@@ -2848,7 +2849,7 @@ static int cmd_resize(void *data, const char *input) {
 	int ret;
 
 	if (cmd_r2cmd (core, input)) {
-		return true;
+		return core->num->value;
 	}
 
 	ut64 oldsize = (core->io->desc) ? r_io_fd_size (core->io, core->io->desc->fd): 0;

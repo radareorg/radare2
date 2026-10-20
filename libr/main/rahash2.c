@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #define R_LOG_ORIGIN "rahash2"
 
@@ -8,6 +8,7 @@
 #include <r_muta.h>
 
 typedef struct {
+	RCons *cons;
 	int quiet;
 	int iterations;
 	bool incremental; //  = true;
@@ -84,17 +85,17 @@ static void do_hash_seed(RahashOptions *ro, const char *seed) {
 	}
 }
 
-static void do_hash_strprint(const char *s, PJ *pj, int rad) {
+static void do_hash_strprint(RCons *cons, const char *s, PJ *pj, int rad) {
 	if (rad == 'j') {
 		pj_ks (pj, "hash", s);
 	} else if (rad == 'J') {
 		pj_s (pj, s);
 	} else {
-		printf ("%s%s", s, rad == 'n'? "": "\n");
+		r_cons_printf (cons, "%s%s", s, rad == 'n'? "": "\n");
 	}
 }
 
-static void do_hash_hexprint(const ut8 *c, int len, int ule, PJ *pj, int rad) {
+static void do_hash_hexprint(RCons *cons, const ut8 *c, int len, int ule, PJ *pj, int rad) {
 	int i;
 	char *buf = malloc (len * 2 + 1);
 	if (!buf) {
@@ -109,19 +110,19 @@ static void do_hash_hexprint(const ut8 *c, int len, int ule, PJ *pj, int rad) {
 			snprintf (buf + i * 2, (len - i) * 2 + 1, "%02x", c[i]);
 		}
 	}
-	do_hash_strprint (buf, pj, rad);
+	do_hash_strprint (cons, buf, pj, rad);
 	free (buf);
 }
 
-static void do_hash_valueprint(RHash *ctx, ut64 hash, int dlen, int ule, PJ *pj, int rad) {
+static void do_hash_valueprint(RCons *cons, RHash *ctx, ut64 hash, int dlen, int ule, PJ *pj, int rad) {
 	if (hash & R_HASH_SSDEEP) {
-		do_hash_strprint ((const char *)ctx->digest, pj, rad);
+		do_hash_strprint (cons, (const char *)ctx->digest, pj, rad);
 	} else if (dlen == R_HASH_SIZE_ENTROPY) {
 		char *s = r_str_newf ("%.8f", ctx->entropy);
-		do_hash_strprint (s, pj, rad);
+		do_hash_strprint (cons, s, pj, rad);
 		free (s);
 	} else {
-		do_hash_hexprint (ctx->digest, dlen, ule, pj, rad);
+		do_hash_hexprint (cons, ctx->digest, dlen, ule, pj, rad);
 	}
 }
 
@@ -133,37 +134,37 @@ static void do_hash_print(RHash *ctx, RahashOptions *ro, ut64 hash, int dlen, PJ
 	switch (rad) {
 	case 0:
 		if (!ro->quiet) {
-			printf ("0x%08" PFMT64x "-0x%08" PFMT64x " %s: ",
+			r_cons_printf (ro->cons, "0x%08" PFMT64x "-0x%08" PFMT64x " %s: ",
 				ro->from,
 				ro->to > 0? ro->to - 1: 0,
 				hname);
 		}
-		do_hash_valueprint (ctx, hash, dlen, ule, pj, rad);
+		do_hash_valueprint (ro->cons, ctx, hash, dlen, ule, pj, rad);
 		break;
 	case 1:
-		printf ("CC file %s:", hname);
-		do_hash_valueprint (ctx, hash, dlen, ule, pj, rad);
+		r_cons_printf (ro->cons, "CC file %s:", hname);
+		do_hash_valueprint (ro->cons, ctx, hash, dlen, ule, pj, rad);
 		break;
 	case 3:
-		printf ("k file.%s=", hname);
-		do_hash_valueprint (ctx, hash, dlen, ule, pj, 0);
+		r_cons_printf (ro->cons, "k file.%s=", hname);
+		do_hash_valueprint (ro->cons, ctx, hash, dlen, ule, pj, 0);
 		break;
 	case 'n':
 		if (ro->quiet > 2) {
 			// print nothing
 		} else {
-			do_hash_valueprint (ctx, hash, dlen, ule, pj, rad);
+			do_hash_valueprint (ro->cons, ctx, hash, dlen, ule, pj, rad);
 		}
 		break;
 	case 'j':
 		pj_o (pj);
 		pj_ks (pj, "name", hname);
-		do_hash_valueprint (ctx, hash, dlen, ule, pj, rad);
+		do_hash_valueprint (ro->cons, ctx, hash, dlen, ule, pj, rad);
 		pj_end (pj);
 		break;
 	case 'J':
 		pj_k (pj, hname);
-		do_hash_valueprint (ctx, hash, dlen, ule, pj, rad);
+		do_hash_valueprint (ro->cons, ctx, hash, dlen, ule, pj, rad);
 		break;
 	case 'Q':
 		// nothing to print
@@ -171,7 +172,7 @@ static void do_hash_print(RHash *ctx, RahashOptions *ro, ut64 hash, int dlen, PJ
 	case 'q':
 	default:
 		o = r_print_randomart (c, dlen, ro->from);
-		printf ("%s\n%s\n", hname, o);
+		r_cons_printf (ro->cons, "%s\n%s\n", hname, o);
 		free (o);
 		break;
 	}
@@ -279,13 +280,13 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 					continue;
 				}
 				if (!ro->quiet && rad != 'j' && rad != 'J') {
-					printf ("%s: ", file);
+					r_cons_printf (ro->cons, "%s: ", file);
 				}
 				do_hash_print (ctx, ro, i, dlen, pj, ro->quiet? 'n': rad);
 				if (ro->quiet == 1) {
-					printf (" %s\n", file);
+					r_cons_printf (ro->cons, " %s\n", file);
 				} else if (ro->quiet > 0 && ro->quiet < 3 && !rad) {
-					printf ("\n");
+					r_cons_newline (ro->cons);
 				}
 			}
 		}
@@ -334,7 +335,7 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 	}
 	if (rad == 'j' || rad == 'J') {
 		pj_end (pj);
-		printf ("%s\n", pj_string (pj));
+		r_cons_println (ro->cons, pj_string (pj));
 		pj_free (pj);
 	}
 
@@ -348,12 +349,12 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 	return ret;
 }
 
-static int do_help(int line) {
-	printf ("Usage: rahash2 [-BehjkLqRrvX] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...\n");
+static int do_help(RCons *cons, int line) {
+	r_cons_println (cons, "Usage: rahash2 [-BehjkLqRrvX] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...");
 	if (line) {
 		return 0;
 	}
-	printf (
+	r_cons_print (cons,
 		" -a algo     comma separated list of algorithms (default is 'sha256')\n"
 		" -b bsize    specify the size of the block (instead of full file)\n"
 		" -B          show per-block hash\n"
@@ -381,10 +382,10 @@ static int do_help(int line) {
 	return 0;
 }
 
-static void algolist(int mode) {
+static void algolist(RCons *cons, int mode) {
 	RMuta *cry = r_muta_new ();
 	char *s = r_muta_list (cry, (int)R_MUTA_TYPE_ALL, mode);
-	printf ("%s", s);
+	r_cons_print (cons, s);
 	free (s);
 	r_muta_free (cry);
 }
@@ -419,18 +420,18 @@ static void print_result(RahashOptions *ro, const ut8 *result, int result_size) 
 			pj_end (pj);
 			pj_end (pj);
 			char *s = pj_drain (pj);
-			printf ("%s\n", s);
+			r_cons_println (ro->cons, s);
 			free (s);
 		}
 		break;
 	case 'x':
 		for (i = 0; i < result_size; i++) {
-			printf ("%02x", result[i]);
+			r_cons_printf (ro->cons, "%02x", result[i]);
 		}
-		printf ("\n");
+		r_cons_newline (ro->cons);
 		break;
 	default:
-		if (write (1, result, result_size) != result_size) {
+		if (result_size > 0 && !r_cons_write (ro->cons, result, result_size)) {
 			R_LOG_WARN ("cannot write result");
 		}
 		break;
@@ -452,6 +453,8 @@ static int encrypt_or_decrypt(RahashOptions *ro, const char *hashstr, int hashst
 
 				if (iv && !r_muta_session_set_iv (cj, iv, ivlen)) {
 					R_LOG_ERROR ("Invalid IV");
+					r_muta_session_free (cj);
+					r_muta_free (cry);
 					return 0;
 				}
 
@@ -466,6 +469,7 @@ static int encrypt_or_decrypt(RahashOptions *ro, const char *hashstr, int hashst
 			} else {
 				R_LOG_ERROR ("Invalid key");
 			}
+			r_muta_session_free (cj);
 			r_muta_free (cry);
 			return 0;
 		} else {
@@ -499,11 +503,15 @@ static int encrypt_or_decrypt_file(RahashOptions *ro, const char *filename, cons
 				}
 				if (!buf) {
 					R_LOG_ERROR ("Cannot open '%s'", filename);
+					r_muta_session_free (cj);
+					r_muta_free (cry);
 					return -1;
 				}
 				if (iv && !r_muta_session_set_iv (cj, iv, ivlen)) {
 					R_LOG_ERROR ("Invalid IV");
 					free (buf);
+					r_muta_session_free (cj);
+					r_muta_free (cry);
 					return 0;
 				}
 
@@ -519,6 +527,7 @@ static int encrypt_or_decrypt_file(RahashOptions *ro, const char *filename, cons
 			} else {
 				R_LOG_ERROR ("Invalid key");
 			}
+			r_muta_session_free (cj);
 			r_muta_free (cry);
 			return 0;
 		} else {
@@ -561,6 +570,8 @@ static bool check_base_flags(RahashOptions *ro) {
 }
 
 R_API int r_main_rahash2(int argc, const char **argv) {
+	bool own_cons;
+	RCons *cons = r_main_cons_init (&own_cons);
 	ut64 i;
 	int c, rad = 0, bsize = 0, numblocks = 0, ule = 0;
 	const char *file = NULL;
@@ -586,6 +597,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 	bool listplugins = false;
 	int _ret = 0;
 
+	ro->cons = cons;
 	ro->direction = -1;
 	ro->incremental = true;
 #define ret(x) \
@@ -644,22 +656,22 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		case 'f': ro->from = r_num_math (NULL, opt.arg); break;
 		case 't': ro->to = 1 + r_num_math (NULL, opt.arg); break;
 		case 'v': show_version = true; break;
-		case 'h': ret (do_help (0));
+		case 'h': ret (do_help (cons, 0));
 		case 's': setHashString (opt.arg, 0); break;
 		case 'x': setHashString (opt.arg, 1); break;
 		case 'c': compareStr = opt.arg; break;
-		default: ret (do_help (0));
+		default: ret (do_help (cons, 0));
 		}
 	}
 	if (show_version) {
-		ret (r_main_version_print (NULL, "rahash2", rad));
+		ret (r_main_version_print (cons, "rahash2", rad));
 	}
 
 	if (listplugins) {
 		if (rad == 'j' && ro->quiet) {
 			rad = 'J';
 		}
-		algolist (rad);
+		algolist (cons, rad);
 		ret (0);
 	}
 	algo = r_list_empty (algos)? strdup ("sha1"): r_str_list_join (algos, ",");
@@ -686,14 +698,12 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		compareBin_len = r_hex_str2bin (compareStr, compareBin);
 		if (compareBin_len < 1) {
 			R_LOG_ERROR ("Invalid -c hex hash");
-			free (compareBin);
 			ret (1);
 		}
 		if (compareBin_len != r_hash_size (algobit)) {
 			R_LOG_ERROR ("Given -c hash has %d byte(s) but the selected algorithm returns %d byte(s)",
 				compareBin_len,
 				r_hash_size (algobit));
-			free (compareBin);
 			ret (1);
 		}
 	}
@@ -717,10 +727,14 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		// TODO: support -f and -t
 		char *eptype = r_str_escape_sh (ptype);
 		for (i = opt.ind; i < argc; i++) {
-			printf ("%s:\n", argv[i]);
+			r_cons_printf (cons, "%s:\n", argv[i]);
 			char *eargv = r_str_escape_sh (argv[i]);
 			if (eptype && eargv) {
-				r_sys_cmdf ("r2 -qfnc \"p==%s 100\" \"%s\"", eptype, eargv);
+				char *output = r_sys_cmd_strf ("r2 -qfnc \"p==%s 100\" \"%s\"", eptype, eargv);
+				if (output) {
+					r_cons_print (cons, output);
+					free (output);
+				}
 			}
 			free (eargv);
 		}
@@ -768,7 +782,6 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			}
 			free (hashstr);
 			hashstr = (char *)out;
-			/* out memleaks here, hashstr can't be freed */
 		} else {
 			if (!bytes_read) {
 				hashstr_len = strlen (hashstr);
@@ -800,17 +813,20 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			char *str = (char *)nhashstr;
 			int strsz = hashstr_len;
 			if (ro->_s) {
-				// alloc/concat/resize
-				str = malloc (strsz + ro->s.len);
+				if (ro->s.len < 0 || r_add_overflow_st32 (hashstr_len, ro->s.len, &strsz)) {
+					ret (1);
+				}
+				str = malloc (R_MAX (1, strsz));
+				if (!str) {
+					ret (1);
+				}
 				if (ro->s.prefix) {
 					memcpy (str, ro->s.buf, ro->s.len);
 					memcpy (str + ro->s.len, nhashstr, hashstr_len);
 				} else {
 					memcpy (str, nhashstr, hashstr_len);
-					memcpy (str + strsz, ro->s.buf, ro->s.len);
+					memcpy (str + hashstr_len, ro->s.buf, ro->s.len);
 				}
-				strsz += ro->s.len;
-				str[strsz] = 0;
 			}
 			algobit = r_hash_name_to_bits (algo);
 			if (algobit == 0) {
@@ -852,24 +868,17 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			}
 			if (rad == 'j' || rad == 'J') {
 				pj_end (pj);
-				printf ("%s\n", pj_string (pj));
+				r_cons_println (cons, pj_string (pj));
 				pj_free (pj);
 			}
 			if (str != nhashstr) {
-				hashstr = NULL;
+				free (str);
 			}
-			if (ro->_s) {
-				if (str != nhashstr) {
-					R_FREE (str);
-				}
-				R_FREE (ro->s.buf);
-			}
-			hashstr = NULL;
 			ret (_ret);
 		}
 	}
 	if (opt.ind >= argc) {
-		ret (do_help (1));
+		ret (do_help (cons, 1));
 	}
 	if (numblocks) {
 		bsize = -bsize;
@@ -934,9 +943,11 @@ beach:
 	r_list_free (algos);
 	free (algo);
 	free (hashstr);
+	free (compareBin);
+	free (ro->s.buf);
 	r_io_free (io);
 	free (iv);
 
-	return _ret;
+	return r_main_cons_fini (cons, own_cons, _ret);
 #undef ret
 }

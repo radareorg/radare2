@@ -418,3 +418,154 @@ EXPECT=<<EOF
 alive
 EOF
 RUN
+
+NAME=rahash2 main from the REPL without PATH
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+rahash2 -a md5 -s abc
+rahash2 -q -a sha1 -s "hello world"
+rahash2 -q -a md5 -x 616263
+rahash2 -q -a md5 -s ""
+?e after
+EOF
+EXPECT=<<EOF
+0x00000000-0x00000002 md5: 900150983cd24fb0d6963f7d28e17f72
+2aae6c35c94fcfb415dbe95f408b9ce91ee846ed
+900150983cd24fb0d6963f7d28e17f72
+d41d8cd98f00b204e9800998ecf8427e
+after
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rahash2 REPL output uses console filters and aliases
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+rahash2~Usage
+rahash2 -h~Usage
+rahash2 -L~md5~?
+rahash2 -jv~{name}
+rahash2 -q -a md5 -s abc >$hash
+cat $hash
+rahash2 -j -a md5 -s abc
+rahash2 -J -a md5 -s abc
+?e after
+EOF
+EXPECT=<<EOF
+Usage: rahash2 [-BehjkLqRrvX] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...
+Usage: rahash2 [-BehjkLqRrvX] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...
+1
+rahash2
+900150983cd24fb0d6963f7d28e17f72
+[{"name":"md5","hash":"900150983cd24fb0d6963f7d28e17f72"}]
+{"md5":"900150983cd24fb0d6963f7d28e17f72"}
+after
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rahash2 REPL hashes files and blocks
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+rahash2 -qq -a md5 malloc://4
+rahash2 -j -a md5 malloc://4
+rahash2 -B -b 2 -a md5 malloc://4
+?e after
+EOF
+EXPECT=<<EOF
+f1d3ff8443297732862df21dc4e57262
+[{"name":"md5","hash":"f1d3ff8443297732862df21dc4e57262"}]
+0x00000000-0x00000001 md5: c4103f122d27677c9db144cae1394a66
+0x00000002-0x00000003 md5: c4103f122d27677c9db144cae1394a66
+after
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rahash2 REPL binary output preserves NUL bytes
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+rahash2 -D base64 -s QQBC >$raw
+$**
+rahash2 -X -D base64 -s QQBC
+rahash2 -j -E base64 -x 410042
+rahash2 -E base64 -x 410042 >$encoded
+cat $encoded
+?e after
+EOF
+EXPECT=<<EOF
+$raw=base64:QQBC
+410042
+{"algo":"base64","mode":"encrypt","data":[81,81,66,67]}
+QQBC
+after
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rahash2 REPL reports failures and remains usable
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+rahash2 -a invalid -s abc
+?v $?
+rahash2 -a md5 -c zz -s abc
+?v $?
+rahash2 -a md5 -c 00 -s abc
+?v $?
+rahash2 -qqq -a md5 -c 00000000000000000000000000000000 malloc://4
+?v $?
+rahash2 -qqq -a md5 -c f1d3ff8443297732862df21dc4e57262 malloc://4
+?v $?
+rahash2 -q -a md5 -s abc
+?v $?
+?e after
+EOF
+EXPECT=<<EOF
+0x1
+0x1
+0x1
+0x1
+0x0
+900150983cd24fb0d6963f7d28e17f72
+0x0
+after
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid algorithm. See -E, -D maybe?
+ERROR: Invalid -c hex hash
+ERROR: Given -c hash has 1 byte(s) but the selected algorithm returns 16 byte(s)
+EOF
+RUN
+
+NAME=rahash2 REPL keeps options local to each invocation
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+rahash2 -q -a md5 -S s:seed -s abc
+rahash2 -q -a md5 -S ^s:seed -s abc
+rahash2 -q -a md5 -f 1 -t 3 -s xabcx
+rahash2 -q -a md5 -s abc
+rahash2 -q -a md5 -s abc
+?e after
+EOF
+EXPECT=<<EOF
+175b444114a8dd5256128a6310ed8965
+196d127761e0501b24ab74842ec36a8b
+900150983cd24fb0d6963f7d28e17f72
+900150983cd24fb0d6963f7d28e17f72
+900150983cd24fb0d6963f7d28e17f72
+after
+EOF
+EXPECT_ERR=
+RUN

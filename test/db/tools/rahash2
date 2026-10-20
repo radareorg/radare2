@@ -1,3 +1,21 @@
+NAME=rahash2 standalone ignores an inherited console pointer
+FILE=-
+CMDS=<<EOF
+env R2CONS=1
+!rahash2 -q -a md5 -s abc
+rahash2 -q -a md5 -s abc
+!rahash2 -q -a md5 -s abc
+?e after
+EOF
+EXPECT=<<EOF
+900150983cd24fb0d6963f7d28e17f72
+900150983cd24fb0d6963f7d28e17f72
+900150983cd24fb0d6963f7d28e17f72
+after
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=rahash2 -a entropy
 FILE=-
 CMDS=!rahash2 -a entropy bins/elf/analysis/hello-linux-x86_64
