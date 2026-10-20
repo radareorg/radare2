@@ -2563,3 +2563,35 @@ EXPECT=<<EOF
 0x00000007
 EOF
 RUN
+
+NAME=mips32 addi negative operand no overflow
+FILE=malloc://16
+ARGS=-a mips -b 32
+CMDS=<<EOF
+wx ffff2821
+aei
+ar t1=0xa5a50003
+ar t0=0x77
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0xa5a50002
+EOF
+RUN
+
+NAME=mips32 addi negative overflow traps
+FILE=malloc://16
+ARGS=-a mips -b 32
+CMDS=<<EOF
+wx ffff2821
+aei
+ar t1=0x80000000
+ar t0=0x77
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0x00000077
+EOF
+RUN
