@@ -2235,3 +2235,26 @@ void sym.use_after_call (int64_t arg1, int64_t arg2) {
 
 EOF
 RUN
+
+NAME=pdc renders an unconditional self loop with a body as while true
+FILE=malloc://32
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 4889c7ebfb
+af
+pdc~while,do {,rdi = rax
+?e --
+wx 4889c775fb
+af-*
+af
+pdc~while,do {,rdi = rax
+EOF
+EXPECT=<<EOF
+    while (true) {
+        rdi = rax
+--
+    do {
+        rdi = rax
+    } while (v);
+EOF
+RUN
