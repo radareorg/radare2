@@ -1101,6 +1101,16 @@ R_API bool r_esil_dumpstack(REsil *esil) {
 	return ret;
 }
 
+static bool runword_push(REsil *esil, RStrs w) {
+	if (r_esil_push (esil, w)) {
+		return true;
+	}
+	R_LOG_DEBUG ("ESIL stack is full");
+	esil->trap = 1;
+	esil->trap_code = 1;
+	return false;
+}
+
 static bool runword(REsil *esil, RStrs w) {
 	// Brace checks inlined — r_strs_equals_str wouldn't inline at -O0.
 	const size_t wlen = (size_t)(w.b - w.a);
@@ -1132,7 +1142,7 @@ static bool runword(REsil *esil, RStrs w) {
 			esil->trap_code = 1;
 			return true;
 		}
-		return r_esil_push (esil, w);
+		return runword_push (esil, w);
 	}
 	REsilOp *op = r_esil_get_op (esil, w);
 	if (op) {
@@ -1184,7 +1194,7 @@ static bool runword(REsil *esil, RStrs w) {
 		esil->trap_code = 1;
 		return true;
 	}
-	return r_esil_push (esil, w);
+	return runword_push (esil, w);
 }
 
 /* Return start of the nth comma-separated word within [str, eol). */
