@@ -139,15 +139,23 @@ R_API bool r_th_lock_enter(RThreadLock *thl) {
 
 	// initialize static locks on acquisition
 	if (!(thl->type & R_TH_LOCK_TYPE_HEAP)) {
+#if HAVE_PTHREAD
+		static pthread_mutex_t initialization_lock = PTHREAD_MUTEX_INITIALIZER;
+		pthread_mutex_lock (&initialization_lock);
+#else
 		while (r_atomic_exchange (&thl->activating, true)) {
 			// spinning
 		}
+#endif
 		if (!thl->active) {
 			_lock_init (thl, false);
 			thl->active = true;
 		}
-		// finish spinning
+#if HAVE_PTHREAD
+		pthread_mutex_unlock (&initialization_lock);
+#else
 		r_atomic_store (&thl->activating, false);
+#endif
 	}
 #if HAVE_PTHREAD
 	return pthread_mutex_lock (&thl->lock) == 0;

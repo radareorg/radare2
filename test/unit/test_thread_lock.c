@@ -180,6 +180,44 @@ bool test_lock_multiple_threads(void) {
 	mu_end;
 }
 
+#define STATIC_LOCK_ITERATIONS 10000
+
+static RThreadFunctionRet increment_static_lock(RThread *th) {
+	r_th_sem_wait (th->user);
+	int i;
+	for (i = 0; i < STATIC_LOCK_ITERATIONS; i++) {
+		r_th_lock_enter (test_lock);
+		shared_counter++;
+		r_th_lock_leave (test_lock);
+	}
+	return R_TH_STOP;
+}
+
+bool test_lock_static_multiple_threads(void) {
+	RThreadLock lock = R_THREAD_LOCK_INIT;
+	RThreadSemaphore *start = r_th_sem_new (0);
+	mu_assert_notnull (start, "start semaphore");
+	test_lock = &lock;
+	shared_counter = 0;
+	int i;
+	for (i = 0; i < NUM_THREADS; i++) {
+		threads[i] = r_th_new (increment_static_lock, start, 0);
+		mu_assert_notnull (threads[i], "static lock thread");
+		mu_assert_true (r_th_start (threads[i]), "start static lock thread");
+	}
+	for (i = 0; i < NUM_THREADS; i++) {
+		r_th_sem_post (start);
+	}
+	for (i = 0; i < NUM_THREADS; i++) {
+		r_th_wait (threads[i]);
+		r_th_free (threads[i]);
+	}
+	mu_assert_eq (shared_counter, NUM_THREADS * STATIC_LOCK_ITERATIONS, "static lock protects every increment");
+	r_th_lock_free (&lock);
+	r_th_sem_free (start);
+	mu_end;
+}
+
 bool test_lock_wait(void) {
 	// Initialize counter
 	shared_counter = 0;
@@ -249,6 +287,7 @@ int all_tests(void) {
 	mu_run_test(test_lock_recursive);
 	mu_run_test(test_lock_non_recursive);
 	mu_run_test(test_lock_multiple_threads);
+	mu_run_test (test_lock_static_multiple_threads);
 	mu_run_test(test_lock_wait);
 #endif
 	mu_run_test(test_atomic_operations);

@@ -666,7 +666,8 @@ R_API void r_cons_grepbuf(RCons *cons) {
 	bool count_range = grep->charCounter && grep->range_line != 2;
 	bool generated_range = false;
 	const char *in = buf;
-	int ret, l = 0, tl = 0;
+	int ret, tl = 0;
+	size_t l = 0;
 	bool show = false;
 	if (cons->context->filter) {
 		cons_buffer_set (cons->context, NULL);
@@ -836,7 +837,7 @@ continuation:
 	// resolve negative line ranges
 	if (grep->range_line != 2 && (grep->f_line < 0 || grep->l_line <= 0)) {
 		int total_lines = 0;
-		while ((int) (size_t) (in - buf) < len) {
+		while ((size_t)(in - buf) < len) {
 			const char *p = strchr (in, '\n');
 			if (!p) {
 				break;
@@ -861,7 +862,7 @@ continuation:
 	RStrBuf line = {0};
 
 	in = buf;
-	while ((int) (size_t) (in - buf) < len) {
+	while ((size_t)(in - buf) < len) {
 		const char *p = strchr (in, '\n');
 		if (!p) {
 			break;

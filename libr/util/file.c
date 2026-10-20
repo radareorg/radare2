@@ -733,7 +733,7 @@ R_API bool r_file_dump_line(const char *file, int line, const char *msg, bool re
 		r_strbuf_append (sb, ptr + i + 1);
 		free (str);
 	}
-	int sblen = r_strbuf_length (sb);
+	size_t sblen = r_strbuf_length (sb);
 	char *res = r_strbuf_drain (sb);
 	eprintf ("%s\n", res);
 	bool rc = r_file_dump (file, (const ut8*)res, sblen, false);
@@ -909,7 +909,7 @@ R_API bool r_file_touch(const char *file) {
 	return r_file_dump (file, NULL, 0, true);
 }
 
-R_API bool r_file_dump(const char *file, const ut8 *buf, int len, bool append) {
+R_API bool r_file_dump(const char *file, const ut8 *buf, st64 len, bool append) {
 	R_RETURN_VAL_IF_FAIL (!R_STR_ISEMPTY (file), false);
 	FILE *fd = r_sandbox_fopen (file, append? "ab": "wb");
 	if (!fd) {

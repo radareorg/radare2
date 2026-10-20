@@ -62,7 +62,7 @@ R_API char *r_file_slurp_random_line(const char *file);
 R_API char *r_file_slurp_random_line_count(const char *file, int *linecount);
 R_API int r_file_slurp_mmap(const char *file, ut64 addr, ut8 *buf, int len);
 R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz);
-R_API bool r_file_dump(const char *file, const ut8 *buf, int len, bool append);
+R_API bool r_file_dump(const char *file, const ut8 *buf, st64 len, bool append);
 R_API bool r_file_dump_line(const char *file, int line, const char *msg, bool replace);
 R_API bool r_file_touch(const char *file);
 R_API bool r_file_hexdump(const char *file, const ut8 *buf, int len, int append);

@@ -1794,12 +1794,12 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 
 static int print_strbuf_printf(RCons *cons, const char *fmt, ...) {
 	RStrBuf *sb = cons->user;
-	int len = r_strbuf_length (sb);
+	const size_t len = r_strbuf_length (sb);
 	va_list ap;
 	va_start (ap, fmt);
 	bool appended = r_strbuf_vappendf (sb, fmt, ap);
 	va_end (ap);
-	return appended? r_strbuf_length (sb) - len: -1;
+	return appended? (int)(r_strbuf_length (sb) - len): -1;
 }
 
 R_API void r_print_hexdump_strbuf(RPrint *p, RStrBuf *sb, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz) {

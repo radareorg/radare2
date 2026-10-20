@@ -248,8 +248,8 @@ R_API void r_str_trim(char *str) {
 	r_str_ntrim (str, strlen (str));
 }
 
-R_API int r_str_ntrim(char *str, int length) {
-	R_RETURN_VAL_IF_FAIL (str && length >= 0, -1);
+R_API size_t r_str_ntrim(char *str, size_t length) {
+	R_RETURN_VAL_IF_FAIL (str, 0);
 	// r_str_trim_head (str);
 	char *p = str;
 	for (; *p && IS_WHITECHAR (*p) && length > 0; p++) {
@@ -260,7 +260,7 @@ R_API int r_str_ntrim(char *str, int length) {
 	}
 	// r_str_trim_tail (str);
 	while (length > 0) {
-		const int newlength = length - 1;
+		const size_t newlength = length - 1;
 		if (IS_WHITECHAR (str[newlength])) {
 			str[newlength] = '\0';
 		} else {

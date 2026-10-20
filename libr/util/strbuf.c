@@ -82,7 +82,7 @@ R_API bool r_strbuf_is_empty(RStrBuf *sb) {
 	return sb->len == 0;
 }
 
-R_API int r_strbuf_length(RStrBuf *sb) {
+R_API size_t r_strbuf_length(RStrBuf *sb) {
 	R_RETURN_VAL_IF_FAIL (sb, 0);
 	return sb->len;
 }
@@ -571,7 +571,7 @@ R_API void r_strbuf_trim(RStrBuf *sb) {
 	if (!s) {
 		return;
 	}
-	int len = r_str_ntrim (s, (int)sb->len);
+	size_t len = r_str_ntrim (s, sb->len);
 	if (sb->weakref) {
 		r_strbuf_setbin (sb, (const ut8 *)s, len);
 		free (s);
