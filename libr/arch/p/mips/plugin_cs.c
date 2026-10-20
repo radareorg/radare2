@@ -193,8 +193,8 @@ static inline void es_div(RArchSession *as, RAnalOp *op, int id, const char *rs,
 static inline void es_add_ck(RAnalOp *op, const char *a1, const char *a2, const char *re, int bit) {
 	ut64 mask = 1ULL << (bit-1);
 	r_strbuf_appendf (&op->esil,
-		"%d,0x%" PFMT64x ",%s,%s,^,&,>>,%d,0x%" PFMT64x ",%s,%s,+,&,>>,|,1,==,$z,?{,0x%"PFMT64x",1,TRAP,}{,%s,%s,+,%s,=,}",
-		bit-2, mask, a1, a2, bit-1, mask, a1, a2, op->addr, a1, a2, re);
+		"0x%" PFMT64x ",%s,%s,%s,+,^,%s,%s,%s,+,^,&,&,?{,0x%" PFMT64x ",1,TRAP,}{,%s,%s,+,%s,=,}",
+		mask, a1, a1, a2, a2, a1, a2, op->addr, a1, a2, re);
 }
 
 #define PROTECT_ZERO() \
