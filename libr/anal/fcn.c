@@ -178,7 +178,8 @@ static const char *fcn_call_convention(RAnal *anal, RAnalOp *op, RAnalFunction *
 	*callee_type = fcn_call_type (anal, op, callee);
 	const char *type_cc = *callee_type? r_anal_cc_func (anal, *callee_type): NULL;
 	const char *cc = *callee? r_anal_function_cc (*callee): type_cc;
-	if (*callee && type_cc && (!cc || !strcmp (cc, r_anal_cc_default (anal)))) {
+	const char *defcc = r_anal_cc_default (anal);
+	if (*callee && type_cc && (!cc || (defcc && !strcmp (cc, defcc)))) {
 		cc = type_cc;
 	}
 	return cc;
