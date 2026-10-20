@@ -2317,8 +2317,14 @@ static void render_loop(PDCState *state, PdcRegion *r, RAnalBlock *bb, int inden
 	}
 	const ut64 at = bb_cond_addr (bb);
 	if (!body) {
-		print_line (state, bb->addr, indent, "do {");
+		// an unconditional self edge never exits, so there is nothing to test
+		const bool forever = bb->fail == UT64_MAX;
+		print_line (state, bb->addr, indent, forever? "while (true) {": "do {");
 		render_bb_body_lines (state, bb, indent + 1);
+		if (forever) {
+			print_insn_line (state, at, indent, "}");
+			return;
+		}
 		char *tc = cond_str (state, bb, false);
 		print_insn_line (state, at, indent, "} while (%s);", tc);
 		free (tc);
