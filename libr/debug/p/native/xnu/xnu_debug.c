@@ -181,7 +181,7 @@ static thread_t getcurthread(RDebug *dbg) {
 	} else {
 		th = -1;
 	}
-	vm_deallocate (t, (vm_address_t)threads, n_threads * sizeof (thread_act_t));
+	vm_deallocate (mach_task_self (), (vm_address_t)threads, n_threads * sizeof (thread_act_t));
 	return th;
 }
 
