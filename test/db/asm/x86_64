@@ -170,6 +170,17 @@ a "lea rax,[rip-0]" 488d0500000000
 a "lea rax,[rip-10]" 488d05f6ffffff
 a "lea rax,[rip]" 488d0500000000
 a "lea rdi,[rip+0x1011]" 488d3d11100000
+a "lea rax, [rsp + 8]" 488d442408
+a "lea rax, [r12]" 498d0424
+a "lea rax, [r13]" 498d4500
+a "lea r9, [r10 + 8]" 4d8d4a08
+a "lea rax, [rax + rbx*4 + 0x100]" 488d849800010000
+a "lea r9, [r10 + r11*8 - 8]" 4f8d4cdaf8
+a "lea rdx, [rcx*8]" 488d14cd00000000
+a "lea eax, [rdi + rsi]" 8d0437
+a "lea ax, [rdi + 2]" 668d4702
+a "lea eax, [edi + 4]" 678d4704
+a "lea rax, dword [rdi]" 488d07
 aB "lea rax, [0x803]" 488d042503080000
 aB "lea rax, 0x803" 488d042503080000
 a "mov [rsi], rbx" 48891e

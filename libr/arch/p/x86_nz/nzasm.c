@@ -2555,7 +2555,7 @@ static int op_reg_mem64(ut8 *data, const Operand *reg, const Operand *mem, ut8 o
 	ut8 modrm[16];
 	ut8 rex = 0;
 	int l = 0;
-	if (mem->explicit_size && !(mem->dest_size & reg->type & ALL_SIZE)) {
+	if (opcode != 0x8d && mem->explicit_size && !(mem->dest_size & reg->type & ALL_SIZE)) {
 		return -1;
 	}
 	if (reg->type & OT_QWORD) {
@@ -2591,6 +2591,14 @@ static int oplea(RArchSession *a, ut8 *data, const Opcode *op) {
 	st32 offset = 0;
 	int reg = 0;
 	int rm = 0;
+	if (a->config->bits == 64 && op->operands[0].type & OT_REGTYPE & OT_GPREG && op->operands[1].type & OT_MEMORY
+			&& !(op->operands[1].type & OT_REGTYPE & OT_SEGMENTREG)
+			&& (op->operands[1].regs[0] != X86R_UNDEFINED || op->operands[1].regs[1] != X86R_UNDEFINED)) {
+		if (op->operands[0].type & OT_BYTE) {
+			return -1;
+		}
+		return op_reg_mem64 (data, &op->operands[0], &op->operands[1], 0x8d);
+	}
 	if (op->operands[0].type & OT_REGALL && op->operands[1].type & (OT_MEMORY | OT_CONSTANT)) {
 		if (a->config->bits == 64) {
 			data[l++] = 0x48;
