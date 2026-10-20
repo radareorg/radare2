@@ -987,28 +987,51 @@ R_API char *r_str_md2txt_ex(const char *md, const RMarkdownOptions *options, int
 					RStrBuf *rest = r_strbuf_new (r_strbuf_get (prefix));
 					if (marker) {
 						int marker_width = marker;
-						for (i = 0; i < marker; i++) {
-							if (!i && !isdigit ((ut8)*content)) {
-								if (options->color) {
-									r_strbuf_append (prefix, Color_BBLUE);
-								}
-								if (options->utf8) {
-									r_strbuf_append (prefix, "•");
+						int source_marker = marker;
+						const char *task = content + marker;
+						bool checkbox = !isdigit ((ut8)*content) && task[0] == '['
+							&& (task[1] == ' ' || task[1] == 'x' || task[1] == 'X')
+							&& task[2] == ']' && (!task[3] || isspace ((ut8)task[3]));
+						if (checkbox) {
+							bool checked = task[1] != ' ';
+							const char *box = options->utf8? checked? "􁁛": "􀟈": checked? "[x]": "[ ]";
+							if (options->color) {
+								r_strbuf_append (prefix, Color_BBLUE);
+							}
+							int spacing = options->utf8? 2: 1;
+							r_strbuf_appendf (prefix, "%s%*s", box, spacing, "");
+							if (options->color) {
+								r_strbuf_append (prefix, Color_RESET);
+							}
+							marker_width = r_str_len_utf8 (box) + spacing;
+							marker += 3;
+							while (content[marker] == ' ' || content[marker] == '\t') {
+								marker++;
+							}
+						} else {
+							for (i = 0; i < marker; i++) {
+								if (!i && !isdigit ((ut8)*content)) {
+									if (options->color) {
+										r_strbuf_append (prefix, Color_BBLUE);
+									}
+									if (options->utf8) {
+										r_strbuf_append (prefix, "•");
+									} else {
+										r_strbuf_append_n (prefix, content, 1);
+									}
+									if (options->color) {
+										r_strbuf_append (prefix, Color_RESET);
+									}
+								} else if (content[i] == '\t') {
+									r_strbuf_append (prefix, "  ");
+									marker_width++;
 								} else {
-									r_strbuf_append_n (prefix, content, 1);
+									r_strbuf_append_n (prefix, content + i, 1);
 								}
-								if (options->color) {
-									r_strbuf_append (prefix, Color_RESET);
-								}
-							} else if (content[i] == '\t') {
-								r_strbuf_append (prefix, "  ");
-								marker_width++;
-							} else {
-								r_strbuf_append_n (prefix, content + i, 1);
 							}
 						}
 						r_strbuf_appendf (rest, "%*s", marker_width, "");
-						list_indent = indent + marker_width;
+						list_indent = indent + source_marker;
 						list_quotes = quotes;
 						content += marker;
 					} else if (!continuation) {
