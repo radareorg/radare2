@@ -1645,7 +1645,10 @@ R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
 	r_ref_init (c, r_cons_context_free_internal);
 	init_cons_capture (c);
 	if (ctx->lastOutput) {
-		c->lastOutput = r_mem_dup (ctx->lastOutput, ctx->lastLength);
+		c->lastOutput = ctx->lastLength? malloc (ctx->lastLength): NULL;
+		if (c->lastOutput) {
+			memcpy (c->lastOutput, ctx->lastOutput, ctx->lastLength);
+		}
 		c->lastLength = c->lastOutput? ctx->lastLength: 0;
 	}
 	c->noflush = true;
@@ -1891,8 +1894,7 @@ R_API char *r_cons_lastline(RCons *cons, int *len) {
 		}
 	}
 	if (len) {
-		int delta = b - start;
-		*len = c->buffer_len - delta;
+		*len = (int)(start + c->buffer_len - b);
 	}
 	return b;
 }

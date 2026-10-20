@@ -864,8 +864,8 @@ R_API char *r_str_ndup(const char *ptr, int len) {
 	if (!ptr || len < 0) {
 		return NULL;
 	}
-	size_t plen = r_str_nlen (ptr, len);
-	size_t olen = R_MIN (len, plen);
+	const char *nul = memchr (ptr, 0, len);
+	const size_t olen = nul? (size_t)(nul - ptr): (size_t)len;
 	char *out = malloc (olen + 1);
 	if (!out) {
 		return NULL;
@@ -2262,7 +2262,11 @@ R_API int r_str_ansi_filter(char *str, char **R_NULLABLE out, int **R_NULLABLE c
 		return 0;
 	}
 	if (len < 0) {
-		len = strlen (str);
+		const size_t slen = strlen (str);
+		if (slen > INT_MAX - 1) {
+			return -1;
+		}
+		len = slen;
 	}
 	char *tmp = malloc (len + 1);
 	if (!tmp) {
@@ -3471,8 +3475,8 @@ R_API bool r_str_endswith(const char *str, const char *needle) {
 	if (!*needle) {
 		return true;
 	}
-	int slen = strlen (str);
-	int nlen = strlen (needle);
+	size_t slen = strlen (str);
+	size_t nlen = strlen (needle);
 	if (!slen || !nlen || slen < nlen) {
 		return false;
 	}
@@ -3753,9 +3757,9 @@ R_API char *r_str_highlight(char *str, const char *word, const char *color, cons
 	if (!*str) {
 		return NULL;
 	}
-	ut32 i = 0, j = 0, to_copy;
+	size_t i = 0, j = 0, to_copy;
 	char *start = str;
-	ut32 l_str = strlen (str);
+	size_t l_str = strlen (str);
 	ut32 l_reset = strlen (color_reset);
 	ut32 l_color = color? strlen (color): 0;
 	if (!color) {

@@ -85,7 +85,7 @@ typedef struct r_cons_mark_t {
 	const char *name;
 	int row;
 	int col;
-	int pos;
+	size_t pos;
 } RConsMark;
 
 typedef struct r_cons_fd_pair {
@@ -442,7 +442,7 @@ typedef struct r_cons_context_t {
 	RStrConstPool constpool; // Pool for mark names
 	size_t buffer_len;
 	size_t buffer_sz;
-	int lastLength;
+	size_t lastLength;
 	int sorted_column; // -1
 	bool breaked;
 	bool was_breaked;
