@@ -3880,3 +3880,18 @@ EXPECT=<<EOF
 int fixedslots("AA", "BB")
 EOF
 RUN
+
+NAME=x86 bp alias survives a 32 to 16 bits switch inside a function
+FILE=malloc://32
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 5531c031c031c090 @ 0
+wx 89e58b460266c3 @ 8
+ahb 16 @ 8
+af @ 0
+afv
+EOF
+EXPECT=<<EOF
+var int16_t var_2h @ bp+0x2
+EOF
+RUN

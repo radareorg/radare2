@@ -827,8 +827,10 @@ static void analyze_retpoline(RAnal *anal, RAnalOp *op) {
 	}
 }
 
-static inline bool op_is_set_bp(RAnal *anal, const char *op_dst, const char *op_src, const char *bp_reg, const char *sp_reg) {
-	return op_src && !strcmp (sp_reg, op_src) && r_anal_reg_same (anal, bp_reg, op_dst);
+// read aliases at use: r_anal_op can switch asm.bits and reload the reg profile, freeing them
+static inline bool op_is_set_bp(RAnal *anal, const char *op_dst, const char *op_src) {
+	const char *sp_reg = anal->reg->alias[R_REG_ALIAS_SP];
+	return op_src && sp_reg && !strcmp (sp_reg, op_src) && r_anal_reg_same (anal, anal->reg->alias[R_REG_ALIAS_BP], op_dst);
 }
 
 R_API void r_anal_function_syncstack(RAnalFunction *fcn, RAnalOp *op) {
@@ -1129,8 +1131,6 @@ static void fcn_scan(FcnWalk *w, ut64 addr) {
 	const ut64 len = w->len;
 	const char *variadic_reg = NULL;
 	ReadAhead *ra = &w->ra;
-	const char *bp_reg = NULL;
-	const char *sp_reg = NULL;
 	char op_dst_buf[32];
 	char op_src_buf[32];
 	const char *op_dst = NULL;
@@ -1299,13 +1299,6 @@ static void fcn_scan(FcnWalk *w, ut64 addr) {
 			R_LOG_WARN ("Skipping large memory region");
 		}
 		maxlen = 0;
-	}
-	const char *_bp_reg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
-	const char *_sp_reg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
-	const bool has_stack_regs = _bp_reg && _sp_reg;
-	if (has_stack_regs) {
-		bp_reg = _bp_reg;
-		sp_reg = _sp_reg;
 	}
 	if (is_amd64) {
 		variadic_reg = "rax";
@@ -1558,7 +1551,7 @@ noskip:
 				}
 			}
 			// a load or store through sp names sp as a base; only a register move makes bp the frame pointer
-			if (has_stack_regs && op_is_set_bp (anal, op_dst, op_src, bp_reg, sp_reg) && !dst->memref && !src0->memref) {
+			if (op_is_set_bp (anal, op_dst, op_src) && !dst->memref && !src0->memref) {
 				fcn->bp_off = fcn->stack;
 			}
 			// Is this a mov of immediate value into a register?
@@ -1602,7 +1595,7 @@ noskip:
 					pair->leaddr = op->ptr; // XXX movdisp is dupped but seems to be trashed sometimes(?), better track leaddr separately
 					r_list_append (anal->leaddrs, pair);
 				}
-				if (has_stack_regs && op_is_set_bp (op, bp_reg, sp_reg)) {
+				if (op_is_set_bp (anal, op_dst, op_src)) {
 					fcn->bp_off = fcn->stack - op->src[0]->delta;
 				}
 				if (op->dst && op->dst->reg && op->dst->reg->name && op->ptr > 0 && op->ptr != UT64_MAX) {
@@ -1626,7 +1619,7 @@ noskip:
 				lea_cnt++;
 				r_list_append (anal->leaddrs, pair);
 			}
-			if (has_stack_regs && op_is_set_bp (anal, op_dst, op_src, bp_reg, sp_reg)) {
+			if (op_is_set_bp (anal, op_dst, op_src)) {
 				fcn->bp_off = fcn->stack - src0->delta;
 			}
 			if (dst && dst->reg && op->ptr > 0 && op->ptr != UT64_MAX) {
@@ -2379,17 +2372,10 @@ analopfinish:
 			}
 			break;
 		}
-		if (has_stack_regs && op_dst_writeonly) {
-			if (op_is_set_bp (anal, op_dst, op_src, bp_reg, sp_reg) && !dst->memref && !src0->memref && src1) {
-				switch (op->type & R_ANAL_OP_TYPE_MASK) {
-				case R_ANAL_OP_TYPE_ADD:
-					fcn->bp_off = fcn->stack - src1->imm;
-					break;
-				case R_ANAL_OP_TYPE_SUB:
-					fcn->bp_off = fcn->stack + src1->imm;
-					break;
-				}
-			}
+		const ut32 optype = op->type & R_ANAL_OP_TYPE_MASK;
+		if (op_dst_writeonly && src1 && (optype == R_ANAL_OP_TYPE_ADD || optype == R_ANAL_OP_TYPE_SUB)
+				&& op_is_set_bp (anal, op_dst, op_src) && !dst->memref && !src0->memref) {
+			fcn->bp_off = (optype == R_ANAL_OP_TYPE_ADD)? fcn->stack - src1->imm: fcn->stack + src1->imm;
 		}
 #if 0
 		if (anal->opt.vars && !varset) {

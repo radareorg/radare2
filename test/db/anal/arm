@@ -1364,3 +1364,20 @@ EXPECT=<<EOF
 0x00000000    1      8 fcn.00000000
 EOF
 RUN
+
+NAME=arm bp alias survives a bits switch inside a function
+FILE=malloc://32
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 0100a0e3ff8300d1fd030091a00700f9a00740f9c0035fd6
+ahb 32 @ 0
+ahb 64 @ 4
+af
+afi~size
+afv
+EOF
+EXPECT=<<EOF
+size: 24
+var int64_t var_8h @ x29+0x8
+EOF
+RUN
