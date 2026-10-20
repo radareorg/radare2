@@ -7,6 +7,8 @@
 #include "free.h"
 
 #define MENU_Y 1
+// menu text is written 2 columns into the box; keep a blank column before the right border
+#define MENU_BOX_PAD 4
 #define PANEL_HEADER_H 1
 #define PANEL_FOOTER_H 1
 #define PANEL_HL_COLOR core->cons->context->pal.graph_box2

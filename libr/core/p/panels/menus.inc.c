@@ -198,7 +198,7 @@ static RStrBuf *r_panels_draw_menu(RCore *core, RPanelsMenuItem *item, int max_i
 	int i, first, last;
 	bool top_ell, bot_ell;
 	r_panels_menu_visible_range (item, max_items, &first, &last, &top_ell, &bot_ell);
-	// widest visible line: "  " + name + "          "; ellipsis rows are 5 wide
+	// row: "  " + name padded to content_w + "    " + submenu arrow; ellipsis rows are 5 wide
 	int content_w = top_ell || bot_ell? 5: 0;
 	for (i = first; i <= last; i++) {
 		const char *name = item->sub[i]->name;
@@ -206,6 +206,7 @@ static RStrBuf *r_panels_draw_menu(RCore *core, RPanelsMenuItem *item, int max_i
 			content_w = R_MAX (content_w, r_str_ansi_len (name));
 		}
 	}
+	const char *submenu_arrow = r_config_get_b (core->config, "scr.utf8")? "\u25B6": ">";
 	if (top_ell) {
 		r_strbuf_append (buf, "  (...)          \n");
 	}
@@ -213,16 +214,15 @@ static RStrBuf *r_panels_draw_menu(RCore *core, RPanelsMenuItem *item, int max_i
 		const char *name = item->sub[i]->name;
 		if (r_panels_menu_is_separator (name)) {
 			r_strbuf_append (buf, Color_WHITE);
-			r_panels_menu_hline (core, buf, content_w + 8);
+			r_panels_menu_hline (core, buf, content_w + 7);
 			r_strbuf_append (buf, Color_RESET"\n");
 			continue;
 		}
-		if (i == item->selectedIndex) {
-			r_strbuf_appendf (buf, "%s> %s"Color_RESET, PANEL_HL_COLOR, name);
-		} else {
-			r_strbuf_appendf (buf, "  %s", name);
-		}
-		r_strbuf_append (buf, "          \n");
+		const bool selected = i == item->selectedIndex;
+		const char *arrow = item->sub[i]->cb == open_menu_cb? submenu_arrow: " ";
+		const int pad = content_w - r_str_ansi_len (name) + 4;
+		r_strbuf_appendf (buf, "%s%s%s%*s%s"Color_RESET"\n", selected? PANEL_HL_COLOR: "",
+			selected? "> ": "  ", name, pad, "", arrow);
 	}
 	if (bot_ell) {
 		r_strbuf_append (buf, "  (...)          \n");
@@ -241,7 +241,7 @@ static void r_panels_update_menu_contents(RCore *core, RPanelsMenu *menu, RPanel
 	}
 	free (p->model->title);
 	p->model->title = r_strbuf_drain (buf);
-	p->view->pos.w = r_str_bounds (p->model->title, &p->view->pos.h);
+	p->view->pos.w = r_str_bounds (p->model->title, &p->view->pos.h) + MENU_BOX_PAD;
 	p->view->pos.h += 2;
 	if (p->view->pos.y + p->view->pos.h > can->h - PANEL_FOOTER_H) {
 		p->view->pos.h = can->h - PANEL_FOOTER_H - p->view->pos.y;
@@ -284,7 +284,7 @@ static void r_panels_menu_push(RCore *core, RPanelsMenuItem *item, int x, int y)
 	RPanelPos *pos = &p->view->pos;
 	free (p->model->title);
 	p->model->title = r_strbuf_drain (buf);
-	pos->w = r_str_bounds (p->model->title, &pos->h);
+	pos->w = r_str_bounds (p->model->title, &pos->h) + MENU_BOX_PAD;
 	pos->h += 2;
 	if (y + pos->h > can->h - PANEL_FOOTER_H) {
 		pos->h = can->h - PANEL_FOOTER_H - y;

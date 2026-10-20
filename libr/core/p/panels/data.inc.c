@@ -308,7 +308,7 @@ static const MenuItem menus[] = {
 	{ "File", "File and project operations", open_menu_cb },
 	{ "Edit", "Clipboard and write operations", open_menu_cb },
 	{ "View", "Open analysis and data views", open_menu_cb },
-	{ "Analyze", "Core analysis actions and plugin commands", open_menu_cb },
+	{ "Analysis", "Core analysis actions and plugin commands", open_menu_cb },
 	{ "Search", "String, code and pattern searches", open_menu_cb },
 	{ "Debug", "Execution, breakpoints and emulation", open_menu_cb },
 	{ "Tools", "Tools, shells and file manager", open_menu_cb },
@@ -319,7 +319,7 @@ static const MenuItem menus[] = {
 static const MenuItem file_items[] = {
 	{ "New", "Open a new file", add_cmd_panel },
 	{ "Open File", "Prompt for a file and open it", open_file_cb },
-	{ "Reopen...", "Reopen the current file with a different mode", open_menu_cb },
+	{ "Reopen", "Reopen the current file with a different mode", open_menu_cb },
 	{ "Close File", "Close the current file descriptor", close_file_cb },
 	{ "--", NULL, NULL },
 	{ "Open Project", "Load a project into the current session", project_open_cb },
@@ -333,10 +333,10 @@ static const MenuItem file_items[] = {
 static const MenuItem settings_items[] = {
 	{ "Edit radare2rc", "Open the user radare2rc file", r2rc_cb },
 	{ "--", NULL, NULL },
-	{ "Color Themes...", NULL, open_menu_cb },
-	{ "Decompiler...", NULL, open_menu_cb },
-	{ "Disassembly...", NULL, open_menu_cb },
-	{ "Screen...", NULL, open_menu_cb },
+	{ "Color Themes", NULL, open_menu_cb },
+	{ "Decompiler", NULL, open_menu_cb },
+	{ "Disassembly", NULL, open_menu_cb },
+	{ "Screen", NULL, open_menu_cb },
 	{ "--", NULL, NULL },
 	{ "Save Layout", "Save the current panels layout", save_layout_cb },
 	{ "Load Layout", "Load a saved or default layout", open_menu_cb },
@@ -392,7 +392,7 @@ static const MenuItem emulate_items[] = {
 };
 
 static const MenuItem debug_items[] = {
-	{ "Emulate...", "ESIL execution helpers", open_menu_cb },
+	{ "Emulate", "ESIL execution helpers", open_menu_cb },
 	{ "Add Watchpoint", "Set a watchpoint at an address", watch_points_cb },
 	{ "Continue", "Resume execution", continue_cb },
 	{ "Reload", "Reload the current debugging session", reload_cb },
@@ -410,13 +410,13 @@ static const MenuItem analyze_items[] = {
 	{ "Calls", "Analyze calls and callees", calls_cb },
 	{ "Preludes", "Find function preludes", aap_cb },
 	{ "References", "Analyze references", references_cb },
-	{ "Plugins...", "Browse analysis plugin commands", open_menu_cb },
+	{ "Plugins", "Browse analysis plugin commands", open_menu_cb },
 	{ NULL, NULL, NULL }
 };
 
 static const MenuItem help_items[] = {
 	{ "Toggle Help", "Toggle the panels help view", help_cb },
-	{ "Manpages...", "Browse bundled manpages", open_menu_cb },
+	{ "Manpages", "Browse bundled manpages", open_menu_cb },
 	{ "--", NULL, NULL },
 	{ "License", "Show the software license", license_cb },
 	{ "Version", "Show the short version", version_cb },
