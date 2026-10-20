@@ -321,3 +321,20 @@ include file './/etc/hosts' not found
 ERROR: Cannot parse C type declarations
 EOF
 RUN
+
+NAME=sandbox blocks the ===errmsg stderr redirection
+FILE=--
+CMDS=<<EOF
+e cfg.sandbox=true
+===errmsg
+===-errmsg
+?e done
+EOF
+EXPECT=<<EOF
+done
+EOF
+EXPECT_ERR=<<EOF
+ERROR: The === command is disabled in sandbox mode
+ERROR: The === command is disabled in sandbox mode
+EOF
+RUN

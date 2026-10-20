@@ -944,49 +944,57 @@ R_API void r_core_rtr_remove(RCore *core, const char *input) {
 
 R_API void r_core_rtr_event(RCore *core, const char *input) {
 	RCorePriv *priv = core->priv;
+	// creates a fifo in the temporary directory and replaces the stderr of the process
+	if (r_sandbox_enable (false)) {
+		R_LOG_ERROR ("The === command is disabled in sandbox mode");
+		return;
+	}
+#if R2__UNIX__ && !__wasi__
 	if (*input == '-') {
-		input++;
-		if (!strcmp (input, "errmsg")) {
-			if (priv->errmsg_tmpfile) {
-				r_file_rm (priv->errmsg_tmpfile);
-				priv->errmsg_tmpfile = NULL;
-				if (priv->errmsg_fd > 0) {
-					close (priv->errmsg_fd);
-				}
-			}
+		if (!strcmp (input + 1, "errmsg") && priv->errmsg_tmpfile) {
+			dup2 (priv->errmsg_stderr, 2);
+			close (priv->errmsg_stderr);
+			close (priv->errmsg_fd);
+			r_file_rm (priv->errmsg_tmpfile);
+			R_FREE (priv->errmsg_tmpfile);
 		}
 		return;
 	}
 	if (!strcmp (input, "errmsg")) {
 		// TODO: support udp, tcp, rap, ...
-#if R2__UNIX__ && !__wasi__
-		char *f = r_file_temp ("errmsg");
-		r_cons_println (core->cons, f);
-		r_file_rm (f);
-		priv->errmsg_tmpfile = strdup (f);
-		int e = mkfifo (f, 0644);
-		if (e == -1) {
-			r_sys_perror ("mkfifo");
-		} else {
-			int ff = open (f, O_RDWR);
-			if (ff != -1) {
-				dup2 (ff, 2);
-				priv->errmsg_fd = ff;
-			} else {
-				R_LOG_ERROR ("Cannot open fifo: %s", f);
-			}
+		if (priv->errmsg_tmpfile) {
+			R_LOG_ERROR ("Already redirected to %s", priv->errmsg_tmpfile);
+			return;
 		}
-		// r_core_event (core, );
-		free (priv->s);
-		free (f);
-		// TODO: those files are leaked when closing r_core_free () should be deleted
-#else
-		R_LOG_ERROR ("Not supported for your platform");
-#endif
-	} else {
-		R_LOG_INFO ("Input (%s)", input);
-		R_LOG_INFO ("Event types: errmsg, stdin, stdout, stderr, #fdn");
+		char *f = r_file_temp ("errmsg");
+		r_file_rm (f);
+		if (mkfifo (f, 0600) == -1) {
+			r_sys_perror ("mkfifo");
+			free (f);
+			return;
+		}
+		int fd = open (f, O_RDWR);
+		if (fd == -1) {
+			R_LOG_ERROR ("Cannot open fifo: %s", f);
+			r_file_rm (f);
+			free (f);
+			return;
+		}
+		r_cons_println (core->cons, f);
+		priv->errmsg_stderr = dup (2);
+		dup2 (fd, 2);
+		priv->errmsg_fd = fd;
+		priv->errmsg_tmpfile = f;
+		return;
 	}
+#else
+	if (!strcmp (input, "errmsg") || !strcmp (input, "-errmsg")) {
+		R_LOG_ERROR ("Not supported for your platform");
+		return;
+	}
+#endif
+	R_LOG_INFO ("Input (%s)", input);
+	R_LOG_INFO ("Event types: errmsg, stdin, stdout, stderr, #fdn");
 }
 
 R_API void r_core_rtr_session(RCore *core, const char *input) {

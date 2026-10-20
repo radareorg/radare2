@@ -38,8 +38,9 @@ typedef struct r_core_priv_t {
 	RThread *httpthread;
 	RThread *rapthread;
 	const char *listenport;
-	char *errmsg_tmpfile;
-	int errmsg_fd; // -1
+	char *errmsg_tmpfile; // fifo that replaces stderr after ===errmsg
+	int errmsg_fd;
+	int errmsg_stderr; // original stderr, restored by ===-errmsg
 	bool regnums;
 	bool tags_loaded;
 	bool autocomplete_loaded;
