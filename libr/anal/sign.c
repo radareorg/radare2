@@ -3351,6 +3351,11 @@ out:
 
 R_API bool r_sign_save(RAnal *a, const char *file) {
 	R_RETURN_VAL_IF_FAIL (a && file, false);
+	// sdb creates the file and its directories by itself
+	if (r_sandbox_enable (false) && !r_sandbox_check_writepath (file)) {
+		R_LOG_ERROR ("Cannot save zignatures to %s in sandbox mode", file);
+		return false;
+	}
 
 	if (sdb_isempty (a->sdb_zigns)) {
 		R_LOG_WARN ("no zignatures to save");

@@ -2671,7 +2671,9 @@ static int cmd_kuery(void *data, const char *input) {
 			if (ns) {
 				*ns++ = 0;
 				Sdb *db = sdb_ns_path (core->sdb, ns, 0);
-				if (db) {
+				if (r_sandbox_enable (false) && !r_sandbox_check_writepath (fn)) {
+					R_LOG_ERROR ("Cannot write %s in sandbox mode", fn);
+				} else if (db) {
 					sdb_file (db, fn);
 					sdb_sync (db);
 				} else {

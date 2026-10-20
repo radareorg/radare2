@@ -231,6 +231,10 @@ R_API bool r_file_fexists(const char *fmt, ...) {
 
 R_API bool r_file_exists(const char *str) {
 	R_RETURN_VAL_IF_FAIL (str, false);
+	// files the sandbox does not let us open do not exist for the caller
+	if (r_sandbox_enable (false) && !r_sandbox_check_path (str) && !r_sandbox_check_writepath (str)) {
+		return false;
+	}
 	return r_file_is_regular (str);
 }
 

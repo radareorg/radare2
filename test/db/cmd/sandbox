@@ -338,3 +338,21 @@ ERROR: The === command is disabled in sandbox mode
 ERROR: The === command is disabled in sandbox mode
 EOF
 RUN
+
+NAME=sandbox refuses zos and kd writes
+FILE=--
+CMDS=<<EOF
+za foo b 90
+e cfg.sandbox=true
+zos zigns.sdb
+kd zigns.sdb anal
+?e done
+EOF
+EXPECT=<<EOF
+done
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot save zignatures to zigns.sdb in sandbox mode
+ERROR: Cannot write zigns.sdb in sandbox mode
+EOF
+RUN
