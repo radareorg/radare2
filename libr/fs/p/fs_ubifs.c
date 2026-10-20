@@ -304,7 +304,7 @@ static ubifs_key_t ubifs_parse_key(const ut8 *key_buf) {
 	ut32 hkey = r_read_le32 (key_buf);
 	ut32 lkey = r_read_le32 (key_buf + 4);
 
-	key.ino_num = hkey & UBIFS_S_KEY_BLOCK_MASK;
+	key.ino_num = hkey;
 	key.key_type = lkey >> 29;
 	key.khash = lkey;
 
@@ -503,6 +503,38 @@ static bool ubifs_walk_index(ubifs_ctx_t *ctx, ut32 lnum, ut32 offs, HtUU *visit
 	return ret;
 }
 
+// every commit appends a master node to LEBs 1 and 2, the highest sqnum is the current one
+static bool ubifs_find_master(ubifs_ctx_t *ctx) {
+	const ut64 align = ctx->min_io_size? ctx->min_io_size: 8;
+	const ut64 step = (sizeof (ubifs_mst_node_t) + align - 1) / align * align;
+	ut64 best_sqnum = 0;
+	bool found = false;
+	ut32 lnum;
+	for (lnum = 1; lnum <= 2; lnum++) {
+		ut64 offs;
+		for (offs = 0; offs + sizeof (ubifs_mst_node_t) <= ctx->leb_size; offs += step) {
+			const ut64 at = (ut64)lnum * ctx->leb_size + offs;
+			// only the fixed part of the master node is used, whatever its declared length
+			ubifs_mst_node_t mst;
+			if (!ubifs_read_ch (ctx, at, &mst.ch) || mst.ch.node_type != UBIFS_MST_NODE) {
+				break;
+			}
+			const ut64 sqnum = r_read_le64 ((ut8 *)&mst.ch.sqnum);
+			if (r_read_le32 ((ut8 *)&mst.ch.len) < sizeof (mst) || (found && sqnum <= best_sqnum)) {
+				continue;
+			}
+			if (!ubifs_read_at (ctx, at, (ut8 *)&mst, sizeof (mst))) {
+				break;
+			}
+			ctx->root_lnum = r_read_le32 ((ut8 *)&mst.root_lnum);
+			ctx->root_offs = r_read_le32 ((ut8 *)&mst.root_offs);
+			best_sqnum = sqnum;
+			found = true;
+		}
+	}
+	return found;
+}
+
 static ubifs_inode_t *ubifs_get_inode(ubifs_ctx_t *ctx, ut64 ino_num) {
 	return ht_up_find (ctx->inodes, ino_num, NULL);
 }
@@ -554,29 +586,10 @@ static bool fs_ubifs_mount(RFSRoot *root) {
 
 	free (sb_buf);
 
-	ut64 mst_offset = ctx->leb_size;
-	if (!ubifs_read_ch (ctx, mst_offset, &ch)) {
-		R_LOG_ERROR ("Failed to read UBIFS master node");
+	if (!ubifs_find_master (ctx)) {
+		R_LOG_ERROR ("Cannot find a valid UBIFS master node");
 		goto fail;
 	}
-
-	if (ch.node_type != UBIFS_MST_NODE) {
-		R_LOG_ERROR ("Invalid master node type: %d", ch.node_type);
-		goto fail;
-	}
-
-	ut32 mst_len = r_read_le32 ((ut8 *)&ch.len);
-	if (mst_len < sizeof (ubifs_mst_node_t)) {
-		R_LOG_ERROR ("Truncated UBIFS master node");
-		goto fail;
-	}
-	// only the fixed part of the master node is used, whatever its declared length
-	ubifs_mst_node_t mst;
-	if (!ubifs_read_at (ctx, mst_offset, (ut8 *)&mst, sizeof (mst))) {
-		goto fail;
-	}
-	ctx->root_lnum = r_read_le32 ((ut8 *)&mst.root_lnum);
-	ctx->root_offs = r_read_le32 ((ut8 *)&mst.root_offs);
 
 	HtUU *visited = ht_uu_new0 ();
 	if (!visited) {

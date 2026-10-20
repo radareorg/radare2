@@ -1056,3 +1056,46 @@ EXPECT=<<EOF2
  ----------------------------
 EOF2
 RUN
+
+NAME=ubifs inode numbers above 29 bits
+FILE=bins/fs/ubifs-oversize.img
+CMDS=<<EOF2
+e io.cache=true
+wx 02000020 @ 0x40c8
+wx 02000020 @ 0x40f8
+wx 02000020 @ 0x4198
+m /mnt ubifs 0
+md /mnt
+EOF2
+EXPECT=<<EOF2
+r file
+EOF2
+RUN
+
+NAME=ubifs ignores a stale master node in LEB 1
+FILE=bins/fs/ubifs.img
+ARGS=-n
+CMDS=<<EOF2
+e io.cache=true
+wx ffffffff @ 0x3ffb0
+m /mnt ubifs 0
+md /mnt/etc~banner$
+EOF2
+EXPECT=<<EOF2
+r banner
+EOF2
+RUN
+
+NAME=ubifs follows the root of the newest master node
+FILE=bins/fs/ubifs.img
+ARGS=-n
+CMDS=<<EOF2
+e io.cache=true
+wx ffffffff @ 0x7ff30
+m /mnt ubifs 0
+EOF2
+EXPECT=
+EXPECT_ERR=<<EOF2
+ERROR: Invalid UBIFS index
+EOF2
+RUN
