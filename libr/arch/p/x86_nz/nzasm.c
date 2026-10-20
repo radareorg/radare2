@@ -107,6 +107,7 @@ typedef struct operand_t {
 			st8 offset_sign;
 			Register regs[2];
 			int scale[2];
+			bool regs_ext[2];
 		};
 		struct {
 			ut64 immediate;
@@ -2471,6 +2472,119 @@ static int opjc(RArchSession *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+// ModRM, SIB and displacement for a [base + index * scale + disp] operand in 64-bit mode
+static int encode_mem64(ut8 *data, int reg, const Operand *mem, ut8 *rex) {
+	int l = 0;
+	Register base = mem->regs[0];
+	Register index = mem->regs[1];
+	int scale = mem->scale[1];
+	bool base_ext = mem->regs_ext[0];
+	bool index_ext = mem->regs_ext[1];
+	if (mem->scale[0] > 1) {
+		// [index * scale + base] or [index * scale]
+		if (index != X86R_UNDEFINED && mem->scale[1] > 1) {
+			return -1;
+		}
+		index = mem->regs[0];
+		index_ext = mem->regs_ext[0];
+		base = mem->regs[1];
+		base_ext = mem->regs_ext[1];
+		scale = mem->scale[0];
+	}
+	if (index == X86R_ESP && !index_ext) {
+		if (scale > 1 || base == X86R_UNDEFINED) {
+			return -1;
+		}
+		// rsp can't be an index, but [rsp + reg] is [reg + rsp]
+		index = base;
+		index_ext = base_ext;
+		base = X86R_ESP;
+		base_ext = false;
+	}
+	if (scale == 0) {
+		scale = 1;
+	}
+	if (scale != 1 && scale != 2 && scale != 4 && scale != 8) {
+		return -1;
+	}
+	st64 disp = (st64)mem->offset * mem->offset_sign;
+	if (index == X86R_RIP || (index == X86R_ESP && !index_ext)) {
+		return -1;
+	}
+	if (base == X86R_RIP) {
+		if (index != X86R_UNDEFINED) {
+			return -1;
+		}
+		data[l++] = (reg & 7) << 3 | 5;
+		r_write_le32 (data + l, (ut32)disp);
+		return l + 4;
+	}
+	if (base_ext) {
+		*rex |= 1;
+	}
+	if (index_ext) {
+		*rex |= 2;
+	}
+	int mod = 2;
+	if (base == X86R_UNDEFINED) {
+		mod = 0;
+	} else if (disp == 0 && (base & 7) != X86R_EBP) {
+		mod = 0;
+	} else if (disp >= -128 && disp <= 127) {
+		mod = 1;
+	}
+	if (index == X86R_UNDEFINED && base != X86R_UNDEFINED && (base & 7) != X86R_ESP) {
+		data[l++] = mod << 6 | (reg & 7) << 3 | (base & 7);
+	} else {
+		int sib_index = (index == X86R_UNDEFINED)? 4: (index & 7);
+		int sib_base = (base == X86R_UNDEFINED)? 5: (base & 7);
+		data[l++] = mod << 6 | (reg & 7) << 3 | 4;
+		data[l++] = getsib (scale) << 6 | sib_index << 3 | sib_base;
+	}
+	if (mod == 1) {
+		data[l++] = (ut8)disp;
+	} else if (mod == 2 || base == X86R_UNDEFINED) {
+		r_write_le32 (data + l, (ut32)disp);
+		l += 4;
+	}
+	return l;
+}
+
+// opcode with a general purpose register and a memory operand in 64-bit mode
+static int op_reg_mem64(ut8 *data, const Operand *reg, const Operand *mem, ut8 opcode) {
+	ut8 modrm[16];
+	ut8 rex = 0;
+	int l = 0;
+	if (mem->explicit_size && !(mem->dest_size & reg->type & ALL_SIZE)) {
+		return -1;
+	}
+	if (reg->type & OT_QWORD) {
+		rex |= 8;
+	}
+	if (reg->extended) {
+		rex |= 4;
+	}
+	int n = encode_mem64 (modrm, reg->reg, mem, &rex);
+	if (n < 0) {
+		return -1;
+	}
+	if (mem->regs[0] != X86R_UNDEFINED && !(mem->reg_size & OT_QWORD)) {
+		data[l++] = 0x67; // 32-bit address registers
+	}
+	if (reg->type & OT_WORD) {
+		data[l++] = 0x66;
+	}
+	if (rex || reg->rex_prefixed) {
+		if ((reg->type & OT_BYTE) && reg->reg >= 4 && !reg->rex_prefixed && !reg->extended) {
+			return -1; // ah, ch, dh and bh can't be encoded with a REX prefix
+		}
+		data[l++] = 0x40 | rex;
+	}
+	data[l++] = opcode;
+	memcpy (data + l, modrm, n);
+	return l + n;
+}
+
 static int oplea(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	int mod = 0;
@@ -2810,6 +2924,12 @@ static int opmov(RArchSession *a, ut8 *data, const Opcode *op) {
 				&& !(op->operands[0].type & OT_REGTYPE & OT_GPREG)) {
 			return -1;
 		}
+		if (bits == 64 && op->operands[0].type & OT_MEMORY && !(op->operands[0].type & OT_REGTYPE & OT_SEGMENTREG)
+				&& (op->operands[0].regs[0] != X86R_UNDEFINED || op->operands[0].regs[1] != X86R_UNDEFINED)
+				&& (op->operands[1].type & OT_REGTYPE & OT_GPREG)) {
+			return op_reg_mem64 (data, &op->operands[1], &op->operands[0],
+				(op->operands[1].type & OT_BYTE)? 0x88: 0x89);
+		}
 		// Check reg sizes match
 		if (op->operands[0].type & OT_REGTYPE && op->operands[1].type & OT_REGTYPE) {
 			if (!((op->operands[0].type & ALL_SIZE) & (op->operands[1].type & ALL_SIZE))) {
@@ -2953,16 +3073,6 @@ static int opmov(RArchSession *a, ut8 *data, const Opcode *op) {
 			return l;
 		}
 
-		if (op->operands[0].type & OT_BYTE && bits == 64 && op->operands[1].regs[0]) {
-			if (op->operands[1].regs[0] >= X86R_R8 && op->operands[0].reg < 4) {
-				data[l++] = 0x41;
-				data[l++] = 0x8a;
-				data[l++] = op->operands[0].reg << 3 | (op->operands[1].regs[0] - 8);
-				return l;
-			}
-			return -1;
-		}
-
 		if (op->operands[1].type & OT_REGTYPE & OT_SEGMENTREG) {
 			if (op->operands[1].scale[0] == 0) {
 				return -1;
@@ -2975,6 +3085,12 @@ static int opmov(RArchSession *a, ut8 *data, const Opcode *op) {
 			data[l++] = offset >> 16;
 			data[l++] = offset >> 24;
 			return l;
+		}
+
+		if (bits == 64 && (op->operands[1].regs[0] != X86R_UNDEFINED || op->operands[1].regs[1] != X86R_UNDEFINED)
+				&& (op->operands[0].type & OT_REGTYPE & OT_GPREG)) {
+			return op_reg_mem64 (data, &op->operands[0], &op->operands[1],
+				(op->operands[0].type & OT_BYTE)? 0x8a: 0x8b);
 		}
 
 		if (bits == 64) {
@@ -5772,9 +5888,11 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 		// part := address | [factor *] register
 		// address := part {+ part}*
 		op->offset = op->scale[0] = op->scale[1] = 0;
+		op->regs_ext[0] = op->regs_ext[1] = false;
 
 		ut64 temp = 1;
 		Register reg = X86R_UNDEFINED;
+		bool reg_ext = false;
 		bool first_reg = true;
 		while (str[pos] != ']') {
 			if (pos > nextpos) {
@@ -5792,6 +5910,7 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 						if (reg_index < 2) {
 							op->regs[reg_index] = reg;
 							op->scale[reg_index] = temp;
+							op->regs_ext[reg_index] = reg_ext;
 						}
 						reg_index++;
 					} else {
@@ -5818,7 +5937,9 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 
 				// Reset nextpos: parseReg wants to parse from the beginning
 				nextpos = pos;
-				reg = parseReg (a, str, &nextpos, &reg_type, &op->extended, &op->rex_prefixed);
+				reg_ext = false;
+				reg = parseReg (a, str, &nextpos, &reg_type, &reg_ext, &op->rex_prefixed);
+				op->extended |= reg_ext;
 
 				if (first_reg) {
 					op->reg = reg;
