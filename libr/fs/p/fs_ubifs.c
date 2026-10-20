@@ -312,18 +312,22 @@ static ubifs_key_t ubifs_parse_key(const ut8 *key_buf) {
 }
 
 static bool ubifs_walk_index(ubifs_ctx_t *ctx, ut32 lnum, ut32 offs, HtUU *visited, ut32 depth, ut32 *remaining);
-static bool ubifs_free_inode_cb(void *user, const ut64 key, const void *value);
 static ubifs_inode_t *ubifs_get_inode(ubifs_ctx_t *ctx, ut64 ino_num);
 static ut64 ubifs_lookup_path(ubifs_ctx_t *ctx, const char *path);
 
-static void ubifs_free_inode(ubifs_inode_t *inode) {
-	if (!inode) {
-		return;
-	}
+static void ubifs_inode_kv_free(HtUPKv *kv) {
+	ubifs_inode_t *inode = kv->value;
 	r_list_free (inode->data_nodes);
 	r_list_free (inode->dent_nodes);
 	free (inode->ino);
 	free (inode);
+}
+
+static void ubifs_ctx_free(ubifs_ctx_t *ctx) {
+	if (ctx) {
+		ht_up_free (ctx->inodes);
+		free (ctx);
+	}
 }
 
 static bool ubifs_read_at(ubifs_ctx_t *ctx, ut64 offset, ut8 *buf, int len) {
@@ -341,6 +345,33 @@ static bool ubifs_read_ch(ubifs_ctx_t *ctx, ut64 offset, ubifs_ch_t *ch) {
 		return false;
 	}
 	return true;
+}
+
+// reads only the header and the name, so entries near the end of the image are kept
+static bool ubifs_read_dent(ubifs_ctx_t *ctx, ut64 offset, char name[256], ut64 *inum) {
+	ubifs_dent_node_t dent;
+	if (!ubifs_read_at (ctx, offset, (ut8 *)&dent, sizeof (dent))) {
+		return false;
+	}
+	ut16 nlen = r_read_le16 ((ut8 *)&dent.nlen);
+	if (nlen == 0 || nlen > 255 || !ubifs_read_at (ctx, offset + sizeof (dent), (ut8 *)name, nlen)) {
+		return false;
+	}
+	name[nlen] = 0;
+	*inum = r_read_le64 ((ut8 *)&dent.inum);
+	return true;
+}
+
+static ubifs_inode_t *ubifs_ensure_inode(ubifs_ctx_t *ctx, ut64 ino_num) {
+	ubifs_inode_t *inode = ht_up_find (ctx->inodes, ino_num, NULL);
+	if (!inode) {
+		inode = R_NEW0 (ubifs_inode_t);
+		inode->ino_num = ino_num;
+		inode->data_nodes = r_list_newf (free);
+		inode->dent_nodes = r_list_newf (free);
+		ht_up_insert (ctx->inodes, ino_num, inode);
+	}
+	return inode;
 }
 
 static ut32 ubifs_min_node_len(ut8 node_type) {
@@ -365,7 +396,11 @@ static bool ubifs_walk_index(ubifs_ctx_t *ctx, ut32 lnum, ut32 offs, HtUU *visit
 		return false;
 	}
 	ht_uu_find (visited, location, &found);
-	if (found || !ht_uu_insert (visited, location, 1)) {
+	if (found) {
+		// cycles and shared subtrees are skipped, the rest of the index is still walked
+		return true;
+	}
+	if (!ht_uu_insert (visited, location, 1)) {
 		return false;
 	}
 	(*remaining)--;
@@ -388,13 +423,16 @@ static bool ubifs_walk_index(ubifs_ctx_t *ctx, ut32 lnum, ut32 offs, HtUU *visit
 		return true;
 	}
 
-	ut8 *buf = calloc (1, node_len);
-	if (!buf) {
-		return false;
-	}
-
-	if (!ubifs_read_at (ctx, offset, buf, node_len)) {
-		free (buf);
+	// only the fixed part of each node is used, index branches are read one by one,
+	// so no node sized buffer is held while recursing
+	union {
+		ubifs_idx_node_t idx;
+		ubifs_ino_node_t ino;
+		ubifs_dent_node_t dent;
+		ubifs_data_node_t data;
+	} node;
+	ut8 *buf = (ut8 *)&node;
+	if (!ubifs_read_at (ctx, offset, buf, ubifs_min_node_len (node_type))) {
 		return false;
 	}
 
@@ -406,7 +444,6 @@ static bool ubifs_walk_index(ubifs_ctx_t *ctx, ut32 lnum, ut32 offs, HtUU *visit
 		ut16 child_cnt = r_read_le16 ((ut8 *)&idx->child_cnt);
 		ut32 branches_size = node_len - sizeof (ubifs_idx_node_t);
 		ut32 branch_size = child_cnt > 0 ? branches_size / child_cnt : 0;
-		ut8 *branch_ptr;
 		ut16 i;
 
 		ut32 max_children = branches_size / sizeof (ubifs_branch_t);
@@ -414,14 +451,17 @@ static bool ubifs_walk_index(ubifs_ctx_t *ctx, ut32 lnum, ut32 offs, HtUU *visit
 			break;
 		}
 
-		branch_ptr = buf + sizeof (ubifs_idx_node_t);
+		ut64 branch_off = offset + sizeof (ubifs_idx_node_t);
 		for (i = 0; i < child_cnt && ret; i++) {
-			ubifs_branch_t *br = (ubifs_branch_t *)branch_ptr;
-			ut32 br_lnum = r_read_le32 ((ut8 *)&br->lnum);
-			ut32 br_offs = r_read_le32 ((ut8 *)&br->offs);
+			ubifs_branch_t br;
+			if (!ubifs_read_at (ctx, branch_off, (ut8 *)&br, sizeof (br))) {
+				break;
+			}
+			ut32 br_lnum = r_read_le32 ((ut8 *)&br.lnum);
+			ut32 br_offs = r_read_le32 ((ut8 *)&br.offs);
 
 			ret = ubifs_walk_index (ctx, br_lnum, br_offs, visited, depth + 1, remaining);
-			branch_ptr += branch_size;
+			branch_off += branch_size;
 		}
 		break;
 	}
@@ -430,15 +470,7 @@ static bool ubifs_walk_index(ubifs_ctx_t *ctx, ut32 lnum, ut32 offs, HtUU *visit
 		ubifs_ino_node_t *ino = (ubifs_ino_node_t *)buf;
 		ubifs_key_t key = ubifs_parse_key (ino->key);
 
-		ubifs_inode_t *inode = ht_up_find (ctx->inodes, key.ino_num, NULL);
-		if (!inode) {
-			inode = R_NEW0 (ubifs_inode_t);
-			inode->ino_num = key.ino_num;
-			inode->data_nodes = r_list_new ();
-			inode->dent_nodes = r_list_new ();
-			ht_up_insert (ctx->inodes, key.ino_num, inode);
-		}
-
+		ubifs_inode_t *inode = ubifs_ensure_inode (ctx, key.ino_num);
 		if (!inode->ino) {
 			inode->ino = R_NEW0 (ubifs_ino_node_t);
 			memcpy (inode->ino, ino, sizeof (ubifs_ino_node_t));
@@ -450,15 +482,7 @@ static bool ubifs_walk_index(ubifs_ctx_t *ctx, ut32 lnum, ut32 offs, HtUU *visit
 		ubifs_dent_node_t *dent = (ubifs_dent_node_t *)buf;
 		ubifs_key_t key = ubifs_parse_key (dent->key);
 
-		ubifs_inode_t *inode = ht_up_find (ctx->inodes, key.ino_num, NULL);
-		if (!inode) {
-			inode = R_NEW0 (ubifs_inode_t);
-			inode->ino_num = key.ino_num;
-			inode->data_nodes = r_list_new ();
-			inode->dent_nodes = r_list_new ();
-			ht_up_insert (ctx->inodes, key.ino_num, inode);
-		}
-
+		ubifs_inode_t *inode = ubifs_ensure_inode (ctx, key.ino_num);
 		ut64 *dent_off = R_NEW (ut64);
 		*dent_off = offset;
 		r_list_append (inode->dent_nodes, dent_off);
@@ -469,22 +493,13 @@ static bool ubifs_walk_index(ubifs_ctx_t *ctx, ut32 lnum, ut32 offs, HtUU *visit
 		ubifs_data_node_t *data = (ubifs_data_node_t *)buf;
 		ubifs_key_t key = ubifs_parse_key (data->key);
 
-		ubifs_inode_t *inode = ht_up_find (ctx->inodes, key.ino_num, NULL);
-		if (!inode) {
-			inode = R_NEW0 (ubifs_inode_t);
-			inode->ino_num = key.ino_num;
-			inode->data_nodes = r_list_new ();
-			inode->dent_nodes = r_list_new ();
-			ht_up_insert (ctx->inodes, key.ino_num, inode);
-		}
+		ubifs_inode_t *inode = ubifs_ensure_inode (ctx, key.ino_num);
 		ut64 *data_off = R_NEW (ut64);
 		*data_off = offset;
 		r_list_append (inode->data_nodes, data_off);
 		break;
 	}
 	}
-
-	free (buf);
 	return ret;
 }
 
@@ -498,7 +513,7 @@ static bool fs_ubifs_mount(RFSRoot *root) {
 	ubifs_ctx_t *ctx = R_NEW0 (ubifs_ctx_t);
 	ctx->iob = &root->iob;
 	ctx->delta = root->delta;
-	ctx->inodes = ht_up_new0 ();
+	ctx->inodes = ht_up_new (NULL, ubifs_inode_kv_free, NULL);
 
 	ubifs_ch_t ch;
 	if (!ubifs_read_ch (ctx, 0, &ch)) {
@@ -555,21 +570,13 @@ static bool fs_ubifs_mount(RFSRoot *root) {
 		R_LOG_ERROR ("Truncated UBIFS master node");
 		goto fail;
 	}
-	ut8 *mst_buf = calloc (1, mst_len);
-	if (!mst_buf) {
+	// only the fixed part of the master node is used, whatever its declared length
+	ubifs_mst_node_t mst;
+	if (!ubifs_read_at (ctx, mst_offset, (ut8 *)&mst, sizeof (mst))) {
 		goto fail;
 	}
-
-	if (!ubifs_read_at (ctx, mst_offset, mst_buf, mst_len)) {
-		free (mst_buf);
-		goto fail;
-	}
-
-	ubifs_mst_node_t *mst = (ubifs_mst_node_t *)mst_buf;
-	ctx->root_lnum = r_read_le32 ((ut8 *)&mst->root_lnum);
-	ctx->root_offs = r_read_le32 ((ut8 *)&mst->root_offs);
-
-	free (mst_buf);
+	ctx->root_lnum = r_read_le32 ((ut8 *)&mst.root_lnum);
+	ctx->root_offs = r_read_le32 ((ut8 *)&mst.root_offs);
 
 	HtUU *visited = ht_uu_new0 ();
 	if (!visited) {
@@ -588,33 +595,14 @@ static bool fs_ubifs_mount(RFSRoot *root) {
 	return true;
 
 fail:
-	if (ctx->inodes) {
-		ht_up_foreach (ctx->inodes, ubifs_free_inode_cb, NULL);
-		ht_up_free (ctx->inodes);
-	}
-	free (ctx);
+	ubifs_ctx_free (ctx);
 	return false;
-}
-
-static bool ubifs_free_inode_cb(void *user, const ut64 key, const void *value) {
-	ubifs_free_inode ((ubifs_inode_t *)value);
-	return true;
 }
 
 static void fs_ubifs_umount(RFSRoot *root) {
 	R_RETURN_IF_FAIL (root);
 
-	ubifs_ctx_t *ctx = root->ptr;
-	if (!ctx) {
-		return;
-	}
-
-	if (ctx->inodes) {
-		ht_up_foreach (ctx->inodes, ubifs_free_inode_cb, NULL);
-		ht_up_free (ctx->inodes);
-	}
-
-	free (ctx);
+	ubifs_ctx_free (root->ptr);
 	root->ptr = NULL;
 }
 
@@ -645,23 +633,11 @@ static RList *fs_ubifs_dir(RFSRoot *root, const char *path, int view) {
 	RListIter *iter;
 	ut64 *dent_off;
 	r_list_foreach (dir_inode->dent_nodes, iter, dent_off) {
-		ut8 buf[512];
-		if (!ubifs_read_at (ctx, *dent_off, buf, sizeof (buf))) {
+		char name[256];
+		ut64 target_inum;
+		if (!ubifs_read_dent (ctx, *dent_off, name, &target_inum)) {
 			continue;
 		}
-
-		ubifs_dent_node_t *dent = (ubifs_dent_node_t *)buf;
-		ut16 nlen = r_read_le16 ((ut8 *)&dent->nlen);
-		ut64 target_inum = r_read_le64 ((ut8 *)&dent->inum);
-
-		if (nlen == 0 || nlen > 255) {
-			continue;
-		}
-
-		char name[256] = { 0 };
-		ut8 *name_ptr = buf + sizeof (ubifs_dent_node_t);
-		memcpy (name, name_ptr, R_MIN (nlen, 255));
-		name[nlen] = 0;
 
 		ubifs_inode_t *target_inode = ubifs_get_inode (ctx, target_inum);
 		if (!target_inode || !target_inode->ino) {
@@ -740,25 +716,10 @@ static ut64 ubifs_lookup_path(ubifs_ctx_t *ctx, const char *path) {
 		RListIter *iter;
 		ut64 *dent_off;
 		r_list_foreach (dir_inode->dent_nodes, iter, dent_off) {
-			ut8 buf[512];
-			if (!ubifs_read_at (ctx, *dent_off, buf, sizeof (buf))) {
-				continue;
-			}
-
-			ubifs_dent_node_t *dent = (ubifs_dent_node_t *)buf;
-			ut16 nlen = r_read_le16 ((ut8 *)&dent->nlen);
-
-			if (nlen == 0 || nlen > 255) {
-				continue;
-			}
-
-			char name[256] = { 0 };
-			ut8 *name_ptr = buf + sizeof (ubifs_dent_node_t);
-			memcpy (name, name_ptr, R_MIN (nlen, 255));
-			name[nlen] = 0;
-
-			if (strcmp (name, component) == 0) {
-				dir_inum = r_read_le64 ((ut8 *)&dent->inum);
+			char name[256];
+			ut64 inum;
+			if (ubifs_read_dent (ctx, *dent_off, name, &inum) && !strcmp (name, component)) {
+				dir_inum = inum;
 				found = true;
 				break;
 			}
@@ -862,14 +823,15 @@ static int fs_ubifs_read(RFSFile *file, ut64 addr, int len) {
 		return 0;
 	}
 
-	if (addr + len > file_size) {
-		len = file_size - addr;
-	}
-
-	free (file->data);
-	file->data = calloc (1, file_size);
-	if (!file->data) {
+	// file->data holds [addr, addr + len), sized for the request so callers can use file->size bytes
+	ut8 *out = calloc (1, (size_t)len + 1);
+	if (!out) {
 		return -1;
+	}
+	free (file->data);
+	file->data = out;
+	if (len > file_size - addr) {
+		len = file_size - addr;
 	}
 
 	RListIter *iter;
@@ -883,9 +845,15 @@ static int fs_ubifs_read(RFSFile *file, ut64 addr, int len) {
 
 		ubifs_data_node_t *data_node = (ubifs_data_node_t *)hdr_buf;
 		ut32 data_size = r_read_le32 ((ut8 *)&data_node->size);
+		ut32 node_len = r_read_le32 ((ut8 *)&data_node->ch.len);
 		ut16 compr_type = r_read_le16 ((ut8 *)&data_node->compr_type);
 
-		if (data_size == 0 || data_size > UBIFS_BLOCK_SIZE * 2) {
+		// size is the uncompressed length, the stored payload is the rest of the node
+		if (data_size == 0 || data_size > UBIFS_BLOCK_SIZE || node_len <= sizeof (ubifs_data_node_t)) {
+			continue;
+		}
+		ut32 comp_size = node_len - sizeof (ubifs_data_node_t);
+		if (comp_size > UBIFS_BLOCK_SIZE * 2) {
 			continue;
 		}
 
@@ -893,16 +861,16 @@ static int fs_ubifs_read(RFSFile *file, ut64 addr, int len) {
 		ut32 block_num = key.khash & UBIFS_S_KEY_BLOCK_MASK;
 		ut64 file_offset = (ut64)block_num * UBIFS_BLOCK_SIZE;
 
-		if (file_offset >= file_size) {
+		if (file_offset >= addr + len || file_offset + data_size <= addr) {
 			continue;
 		}
 
-		ut8 *comp_buf = calloc (1, data_size);
+		ut8 *comp_buf = calloc (1, comp_size);
 		if (!comp_buf) {
 			continue;
 		}
 
-		if (!ubifs_read_at (ctx, *data_off + sizeof (ubifs_data_node_t), comp_buf, data_size)) {
+		if (!ubifs_read_at (ctx, *data_off + sizeof (ubifs_data_node_t), comp_buf, comp_size)) {
 			free (comp_buf);
 			continue;
 		}
@@ -913,12 +881,12 @@ static int fs_ubifs_read(RFSFile *file, ut64 addr, int len) {
 
 		if (compr_type == UBIFS_COMPR_NONE) {
 			uncomp_buf = comp_buf;
-			uncomp_size = data_size;
+			uncomp_size = comp_size;
 		} else if (compr_type == UBIFS_COMPR_ZLIB) {
 			// Decompress ZLIB (raw deflate format)
 			int src_consumed = 0;
 			int dst_len = 0;
-			uncomp_buf = r_inflate_raw (comp_buf, data_size, &src_consumed, &dst_len);
+			uncomp_buf = r_inflate_raw (comp_buf, comp_size, &src_consumed, &dst_len);
 			if (uncomp_buf && dst_len > 0) {
 				uncomp_size = dst_len;
 				need_free = true;
@@ -935,9 +903,15 @@ static int fs_ubifs_read(RFSFile *file, ut64 addr, int len) {
 			// Files using ZSTD compression cannot be read
 		}
 
+		uncomp_size = R_MIN (uncomp_size, data_size);
 		if (uncomp_buf && uncomp_size > 0) {
-			ut32 copy_size = R_MIN (uncomp_size, file_size - file_offset);
-			memcpy (file->data + file_offset, uncomp_buf, copy_size);
+			// copy only the overlap of this block with [addr, addr + len)
+			ut64 src = addr > file_offset? addr - file_offset: 0;
+			ut64 dst = file_offset + src - addr;
+			if (src < uncomp_size) {
+				ut64 copy_size = R_MIN (uncomp_size - src, (ut64)len - dst);
+				memcpy (out + dst, uncomp_buf + src, copy_size);
+			}
 		}
 
 		if (need_free && uncomp_buf) {
@@ -952,10 +926,7 @@ static int fs_ubifs_read(RFSFile *file, ut64 addr, int len) {
 static void fs_ubifs_close(RFSFile *file) {
 	R_RETURN_IF_FAIL (file);
 
-	if (file->data) {
-		free (file->data);
-		file->data = NULL;
-	}
+	R_FREE (file->data);
 }
 
 static void fs_ubifs_details(RFSRoot *root, RStrBuf *sb) {

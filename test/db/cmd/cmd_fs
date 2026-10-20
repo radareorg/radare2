@@ -1125,17 +1125,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=reject cyclic UBIFS index
+NAME=cyclic UBIFS index mounts skipping the cycle
 FILE=bins/fs/ubifs-index-cycle.img
 ARGS=-n
 CMDS=<<EOF
 m /mnt ubifs 0
 m
 EOF
-EXPECT=
-EXPECT_ERR=<<EOF
-ERROR: Invalid UBIFS index
+EXPECT=<<EOF
+ubifs	0x0	/mnt
 EOF
+EXPECT_ERR=
 RUN
 
 NAME=reject cyclic BFS directory siblings

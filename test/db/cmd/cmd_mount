@@ -1026,3 +1026,33 @@ WARN: File size (11) exceeds filesystem size (0)
 ERROR: Cannot read /root/file
 EOF2
 RUN
+
+NAME=ubifs master node with a huge declared length
+FILE=bins/fs/ubifs-oversize.img
+CMDS=<<EOF
+e io.cache=true
+wx ffffff7f @ 0x2010
+m /mnt ubifs 0
+md /mnt
+EOF
+EXPECT=<<EOF
+r file
+EOF
+RUN
+
+NAME=mg ubifs file range in multiple chunks
+FILE=bins/fs/ubifs.img
+ARGS=-n
+CMDS=<<EOF2
+m /mnt ubifs 0
+b 8
+mg /mnt/etc/banner 250 30
+cat banner
+?e
+rm banner
+EOF2
+EXPECT=<<EOF2
+
+ ----------------------------
+EOF2
+RUN
