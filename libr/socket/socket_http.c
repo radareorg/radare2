@@ -48,6 +48,14 @@ static char *socket_http_request(int post, const char *url, const char **headers
 #define SOCKET_HTTP_MAX_HEADER_LENGTH 0x2000
 #define SOCKET_HTTP_MAX_REDIRECTS 5
 
+static bool socket_http_requires_curl(const char *url) {
+#if !HAVE_LIB_SSL && !R2__WINDOWS__
+	return r_str_startswith (url, "https://");
+#else
+	return false;
+#endif
+}
+
 /* Check sandbox network permission for URL or host */
 static bool socket_http_sandbox_check(const char *url_or_host) {
 #if R2_WASM_BROWSER || R2_WASM_HTTP
@@ -59,7 +67,7 @@ static bool socket_http_sandbox_check(const char *url_or_host) {
 		return true;
 	}
 	/* Check if host is localhost (function handles URL parsing internally) */
-	if (!r_sandbox_check_localhost (url_or_host)) {
+	if (socket_http_requires_curl (url_or_host) || !r_sandbox_check_localhost (url_or_host)) {
 		R_LOG_ERROR ("sandbox: network access denied for '%s'", url_or_host);
 		return false;
 	}
@@ -67,16 +75,9 @@ static bool socket_http_sandbox_check(const char *url_or_host) {
 #endif
 }
 
-static bool socket_http_requires_curl(const char *url) {
-#if !HAVE_LIB_SSL && !R2__WINDOWS__
-	return r_str_startswith (url, "https://");
-#else
-	return false;
-#endif
-}
-
 static bool socket_http_use_curl(const char *url) {
-	return r_sys_getenv_asbool ("R2_CURL") || socket_http_requires_curl (url);
+	return r_sandbox_check (R_SANDBOX_GRAIN_NETWORK)
+		&& (r_sys_getenv_asbool ("R2_CURL") || socket_http_requires_curl (url));
 }
 
 static void socket_http_send_headers(RSocket *s, const char **headers, bool post) {
@@ -408,8 +409,10 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 		return res;
 	}
 #if R2__WINDOWS__
-	return http_get_w32 (url, code, rlen);
-#else
+	if (r_sandbox_check (R_SANDBOX_GRAIN_NETWORK)) {
+		return http_get_w32 (url, code, rlen);
+	}
+#endif
 	RSocket *s;
 	bool ssl = r_str_startswith (url, "https://");
 	char *response, *host, *path, *port = "80";
@@ -464,7 +467,6 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 	free (uri);
 	r_socket_free (s);
 	return response;
-#endif
 }
 
 R_API char *r_socket_http_get(const char *url, const char **headers, int *code, int *rlen) {
