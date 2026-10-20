@@ -1,0 +1,77 @@
+NAME=pmd defaults to block size without reading past the requested text
+FILE=malloc://19
+CMDS=<<EOF
+wx 2a2a616c7068612a2a0a2a2a626574612a2a0a
+b 10
+pmd
+b
+s
+EOF
+EXPECT=<<EOF
+  alpha
+0xa
+0x0
+EOF
+RUN
+
+NAME=pmd accepts file size and expressions without changing seek or block size
+FILE=malloc://19
+CMDS=<<EOF
+wx 2a2a616c7068612a2a0a2a2a626574612a2a0a
+b 4
+pmd $s
+s 10
+pmd $s-10
+b
+s
+EOF
+EXPECT=<<EOF
+  alpha
+  beta
+  beta
+0x4
+0xa
+EOF
+RUN
+
+NAME=pmd accepts shorter and zero lengths and stops at end of file
+FILE=malloc://19
+CMDS=<<EOF
+wx 2a2a616c7068612a2a0a2a2a626574612a2a0a
+pmd 10
+pmd 0
+pmd 100
+EOF
+EXPECT=<<EOF
+  alpha
+  alpha
+  beta
+EOF
+RUN
+
+NAME=pmd terminates Markdown at an embedded NUL
+FILE=malloc://19
+CMDS=<<EOF
+wx 2a2a616c7068612a2a002a2a626574612a2a0a
+pmd $s
+?e
+EOF
+EXPECT=<<EOF
+  alpha
+EOF
+RUN
+
+NAME=pmd rejects negative and oversized lengths
+FILE=-
+CMDS=<<EOF
+pmd -1
+pmd 0x80000000
+pmd 0x100000000
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Invalid Markdown length
+ERROR: Invalid Markdown length
+ERROR: Invalid Markdown length
+EOF
+RUN

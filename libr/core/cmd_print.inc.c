@@ -72,8 +72,9 @@ static RCoreHelpMessage help_msg_p8 = {
 };
 
 static RCoreHelpMessage help_msg_pm = {
-	"Usage: pm", "[file|directory]", "Set libmagic reference file or directory (see /m?)",
+	"Usage: pm[d]", " [file|directory|len]", "Print magic data or render Markdown",
 	"pm", " [file|directory]", "set libmagic reference (see /m?)",
+	"pmd", " [len]", "render Markdown at current address (default: block size; pmd $s for whole file)",
 	"e", " dir.magic", "defaults to " R_JOIN_2_PATHS (R2_PREFIX, R2_SDB_MAGIC),
 	NULL
 };
@@ -210,6 +211,7 @@ static RCoreHelpMessage help_msg_p = {
 	"pK", " [len]", "print key in randomart whole-screen mosaic",
 	"pl", "[?][format] [arg]", "print list of data (pl Ffvc)",
 	"pm", "[?] [magic]", "print libmagic data (see pm? and /m?)",
+	"pmd", " [len]", "render N bytes as Markdown (default: block size)",
 	"po", "[?] hex", "print operation applied to block (see po?)",
 	"pp", "[?][sz] [len]", "print patterns, (see pp?)",
 	"pq", "[?][is] [len]", "print QR code with the first Nbytes",
@@ -8094,6 +8096,44 @@ static void cmd_pxc(RCore *core, const char *input, int l, int len) {
 	core->print->use_comments = ocomments;
 }
 
+static int cmd_print_md(RCore *core, const char *input) {
+	if (*input == '?') {
+		r_cons_cmd_help_match (core->cons, help_msg_pm, "pmd", 0, true);
+		return 0;
+	}
+	input = r_str_trim_head_ro (input);
+	const char *error = NULL;
+	ut64 length = *input? r_num_math_err (core->num, input, &error): core->blocksize;
+	size_t size;
+	if (error || length > ST32_MAX || r_add_overflow_size_t ((size_t)length, 1, &size)) {
+		R_LOG_ERROR ("Invalid Markdown length");
+		return 1;
+	}
+	if (!length) {
+		return 0;
+	}
+	char *markdown = malloc (size);
+	if (!markdown) {
+		R_LOG_ERROR ("Cannot allocate Markdown buffer");
+		return 1;
+	}
+	int nread = r_io_nread_at (core->io, core->addr, (ut8 *)markdown, (int)length);
+	if (nread < 0) {
+		R_LOG_ERROR ("Cannot read Markdown at 0x%08"PFMT64x, core->addr);
+		free (markdown);
+		return 1;
+	}
+	markdown[nread] = 0;
+	char *text = r_core_md2txt (core, markdown, false);
+	free (markdown);
+	if (!text) {
+		return 1;
+	}
+	r_cons_print (core->cons, text);
+	free (text);
+	return 0;
+}
+
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	st64 l;
@@ -8105,6 +8145,10 @@ static int cmd_print(void *data, const char *input) {
 	ut64 tmpseek = UT64_MAX;
 	i = l = len = ret = 0;
 	n = off = from = to = at = ate = piece = 0;
+
+	if (input[0] == 'm' && input[1] == 'd') { // "pmd"
+		return cmd_print_md (core, input + 2);
+	}
 
 	/* !strncmp (input, "du", 2) */
 	if (input[0] == 'd' && input[1] == 'u') { // "pdu"
