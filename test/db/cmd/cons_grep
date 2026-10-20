@@ -925,3 +925,52 @@ EXPECT=<<EOF
 ok
 EOF
 RUN
+
+NAME=Markdown grep renders headings and inline formatting
+FILE=-
+CMDS=<<EOF
+e scr.color=0
+e scr.utf8=false
+?e \x23 Title\n**bold** and _italic_ and \x60code\x60~:D
+?e **unfiltered**
+EOF
+EXPECT=<<EOF
+# Title
+  bold and italic and code
+**unfiltered**
+EOF
+RUN
+
+NAME=Markdown grep honors terminal width and UTF-8
+FILE=-
+CMDS=<<EOF
+e scr.color=0
+e scr.cols=12
+e scr.utf8=false
+?e one two three four~:D
+?e \x60\x60\x60c\n123456789\n\x60\x60\x60~:D
+?e - item~:D
+e scr.utf8=true
+?e - item~:D
+EOF
+EXPECT=<<EOF
+  one two
+  three four
+   12345678
+   9
+  - item
+  • item
+EOF
+RUN
+
+NAME=Markdown grep on empty output does not crash
+FILE=-
+CMDS=<<EOF
+s 0~:D
+b 16~:D
+?e ok
+EOF
+EXPECT=<<EOF
+ok
+EOF
+RUN

@@ -52,6 +52,7 @@ static RCoreHelpMessage help_detail_tilde = {
 	" :)",       "", "parse C-like output from decompiler",
 	" :))",      "", "code syntax highlight",
 	" :}",       "", "indent C code honoring braces",
+	" :D",       "", "render Markdown as text",
 	" <50",      "", "perform zoom to the given text width on the buffer",
 	" <>",       "", "xml indentation",
 	" {:",       "", "human friendly indentation (yes, it's a smiley)",
@@ -77,6 +78,7 @@ static RCoreHelpMessage help_detail_tilde = {
 	" pd~mov",   "", "disasm and grep for mov",
 	" pi~[0]",   "", "show only opcode",
 	" i~0x400$", "", "show lines ending with 0x400",
+	" cat README.md~:D", "", "render a Markdown file",
 	NULL
 };
 
@@ -173,6 +175,9 @@ R_API void r_cons_grep_expression(RCons *cons, const char *str) {
 					ptr++;
 				} else if (ptr[1] == '}') { // ":}"
 					grep->codindent = true;
+					ptr++;
+				} else if (ptr[1] == 'D') { // ":D"
+					grep->markdown = true;
 					ptr++;
 				}
 				goto while_end;
@@ -671,6 +676,22 @@ R_API void r_cons_grepbuf(RCons *cons) {
 	bool show = false;
 	if (cons->context->filter) {
 		cons_buffer_set (cons->context, NULL);
+		return;
+	}
+	if (grep->markdown) {
+		char *sbuf = r_str_ndup (buf, len);
+		if (sbuf) {
+			RMarkdownOptions options = {
+				.color = cons->context->color_mode > 0,
+				.utf8 = cons->use_utf8,
+				.utf8_curvy = cons->use_utf8_curvy,
+			};
+			char *res = r_str_md2txt_ex (sbuf, &options, r_cons_get_size (cons, NULL), true);
+			free (sbuf);
+			if (res) {
+				cons_buffer_set (cons->context, res);
+			}
+		}
 		return;
 	}
 	if (grep->codindent) {
