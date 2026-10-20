@@ -106,3 +106,31 @@ EXPECT=<<EOF
 0xffffffff
 EOF
 RUN
+
+NAME=dalvik shr-long uses bit 63 as sign under bits=32
+FILE=malloc://0x100
+ARGS=-a dalvik -b 32
+CMDS=<<EOF
+wx a4000204a4000204
+aei
+aeip
+ar v2=0x80000000
+ar v3=1
+ar v4=1
+aes
+ar v0
+ar v1
+ar v2=0
+ar v3=0x80000000
+ar v4=0x41
+aes
+ar v0
+ar v1
+EOF
+EXPECT=<<EOF
+0xc0000000
+0x00000000
+0x00000000
+0xc0000000
+EOF
+RUN

@@ -1,0 +1,35 @@
+NAME=ebpf arsh32 sign-fills a negative word
+FILE=malloc://0x100
+ARGS=-a bpf -b 64
+CMDS=<<EOF
+wx c401000001000000c401000001000000
+aei
+aeip
+ar r1=0x80000000
+aes
+ar r1
+ar r1=0x7ffffffe
+aes
+ar r1
+EOF
+EXPECT=<<EOF
+0xc0000000
+0x3fffffff
+EOF
+RUN
+
+NAME=sbpf arsh32 sign-fills a negative word
+FILE=malloc://0x100
+ARGS=-a sbpf -b 64
+CMDS=<<EOF
+wx c401000001000000
+aei
+aeip
+ar r1=0x80000000
+aes
+ar r1
+EOF
+EXPECT=<<EOF
+0xc0000000
+EOF
+RUN

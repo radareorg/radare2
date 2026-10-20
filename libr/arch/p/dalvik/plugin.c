@@ -408,6 +408,10 @@ static void dalvik_math_op(RAnalOp* op, const ut8* data, int len, RAnalOpMask ma
 		} else if (ot == OP_LONG) {
 			esilprintf (op, GETWIDE "," GETWIDE ",%s," SETWIDE,
 				vC+1, vC, vB+1, vB, operation, vA, vA+1);
+		} else if (ot == OP_LONG_SHFT && !strcmp (operation, "ASR")) {
+			// ((w ^ m) >> s) ^ m with m = -(sign), independent of the literal width
+			esilprintf (op, "31,v%u,>>,0,-,0x3f,v%u,&,31,v%u,>>,0,-," GETWIDE ",^,>>,^," SETWIDE,
+				vB+1, vC, vB+1, vB+1, vB, vA, vA+1);
 		} else if (ot == OP_LONG_SHFT) {
 			esilprintf (op, "v%u," GETWIDE ",%s," SETWIDE,
 				vC, vB+1, vB, operation, vA, vA+1);

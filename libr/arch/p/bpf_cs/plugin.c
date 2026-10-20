@@ -589,6 +589,15 @@ void bpf_alu(RArchSession *a, RAnalOp *op, cs_insn *insn, const char* operation,
 			} else {
 				esilprintf (op, "%s,%s,%s=", REG (1), REG (0), operation);
 			}
+		} else if (!strcmp (operation, "ASR")) {
+			if (OP (1).type == BPF_OP_IMM) {
+				op->val = IMM (1);
+				esilprintf (op, "%" PFMT64d ",0x1f,&,32,%s,~,ASR,0xffffffff,&,%s,=",
+					IMM (1), REG (0), REG (0));
+			} else {
+				esilprintf (op, "%s,0x1f,&,32,%s,~,ASR,0xffffffff,&,%s,=",
+					REG (1), REG (0), REG (0));
+			}
 		} else {
 			if (OP (1).type == BPF_OP_IMM) {
 				op->val = IMM (1);
