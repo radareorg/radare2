@@ -6,6 +6,17 @@ typedef struct slides_state_t {
 	char *keys[256];
 } SlidesState;
 
+typedef struct slides_view_t {
+	SlidesState *state;
+	RCore *core;
+	RList *list;
+	int mode;
+	int page;
+	int sx;
+	int sy;
+	int total_pages;
+} SlidesView;
+
 static void clearkeys(SlidesState *state) {
 	int i;
 	for (i = 0; i < 256; i++) {
@@ -149,6 +160,23 @@ static void render_title(RCore *core, int page, int mode, int total) {
 			(mode == 2)? "pages": "page", page, total);
 }
 
+static void slides_refresh(void *user) {
+	SlidesView *view = user;
+	RCons *cons = view->core->cons;
+	RConsEvent resize = cons->event_resize;
+	cons->event_resize = NULL;
+	clearkeys (view->state);
+	r_cons_clear00 (cons);
+	if (view->mode == 2) {
+		render (view->state, view->core, view->list, 2, view->page + 1, view->sx, view->sy);
+	}
+	r_cons_gotoxy (cons, 0, 0);
+	render (view->state, view->core, view->list, 1, view->page, view->sx, view->sy);
+	render_title (view->core, view->page, view->mode, view->total_pages);
+	r_cons_flush (cons);
+	cons->event_resize = resize;
+}
+
 R_API void r_core_visual_slides(RCore *core, const char *file) {
 	R_RETURN_IF_FAIL (core && file);
 	if (!r_config_get_b (core->config, "scr.interactive")) {
@@ -181,19 +209,29 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 		if (page > total_pages) {
 			page = total_pages;
 		}
-		clearkeys (&state);
-		r_cons_clear00 (core->cons);
-		if (mode == 2) {
-			render (&state, core, list, 2, page + 1, sx, sy);
-		}
-		r_cons_gotoxy (core->cons, 0, 0);
-		render (&state, core, list, 1, page, sx, sy);
-		render_title (core, page, mode, total_pages);
-		r_cons_flush (core->cons);
+		SlidesView view = { &state, core, list, mode, page, sx, sy, total_pages };
+		slides_refresh (&view);
 		r_cons_set_raw (core->cons, true);
+		RConsEvent resize = core->cons->event_resize;
+		void *event_data = core->cons->event_data;
+		core->cons->event_resize = NULL;
+		core->cons->event_data = &view;
+		core->cons->event_resize = slides_refresh;
 		ch = r_cons_readchar (core->cons);
 		ch = r_cons_arrow_to_hjkl (core->cons, ch);
+		core->cons->event_resize = NULL;
+		core->cons->event_data = event_data;
+		core->cons->event_resize = resize;
 		switch (ch) {
+		case 'J':
+		case 'K':
+			{
+				int height;
+				r_cons_get_size (core->cons, &height);
+				int step = R_MAX (1, height - 1);
+				sy = (ch == 'J')? R_MIN (sy, INT_MAX - step) + step: R_MAX (0, sy - step);
+			}
+			break;
 		case 'j':
 			sy++;
 			break;
@@ -239,6 +277,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 			eprintf ("Keys:\n");
 			eprintf (" np   = next/prev slide\n");
 			eprintf (" hjkl = scroll current slide left/down/up/right\n");
+			eprintf (" JK   = scroll current slide one screen down/up (PgDn/PgUp)\n");
 			eprintf (" q    = quit the slides\n");
 			eprintf (" e    = open vim to edit the current slide\n");
 			eprintf (" 12   = show 1 or two pages\n");
