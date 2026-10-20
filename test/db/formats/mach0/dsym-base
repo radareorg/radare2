@@ -12,6 +12,6 @@ EXPECT=<<EOF2
 0x100003f64
 main_100003f64
 0
-int dbg.main ();
+int dbg.main (int argc, char **argv, char **envp);
 EOF2
 RUN
