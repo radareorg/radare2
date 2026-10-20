@@ -5,7 +5,26 @@
 ```console
 bin.strings  =  [true]  - load strings from file
 bin.rawstr   =  [false] - load strings from unknown rbin
+bin.charset  =  []      - charset for scanning strings (bin.charset=? lists plugins)
 ```
+
+`bin.charset` selects a muta charset for the string scanner. An explicit value
+takes precedence over `RABIN2_CHARSET`, followed by the bin plugin's
+`RBinInfo.charset` default. An empty value enables these defaults;
+`bin.charset=none` disables conversion, including environment and plugin defaults.
+This selection also applies to raw string scans; it does not depend on loading
+core settings from the bin plugin. For example:
+
+```console
+r2 -e bin.charset=ebcdic37 mainframe.bin
+RABIN2_CHARSET=pokered rabin2 -zzz game.gb
+```
+
+`cfg.charset` selects the charset used when printing raw memory. The current
+conversion path for string scanning still assumes that decoded bytes correspond
+to source bytes; charsets that expand text can produce incorrect offsets and
+truncate results. See the [string scanner investigation](strings-scanner.md) for
+real binary examples and the proposed experimental implementation.
 
 ## Program args
 

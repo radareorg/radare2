@@ -174,8 +174,14 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 		}
 	}
 	r_buf_read_at (bf->buf, from, buf, len);
-	const char *charset = getenv ("RABIN2_CHARSET");
-	if (R_STR_ISNOTEMPTY (charset) && bin->mb.muta) {
+	const char *charset = sdb_const_get (bin->sdb, "bin.charset", NULL);
+	if (R_STR_ISEMPTY (charset)) {
+		charset = getenv ("RABIN2_CHARSET");
+	}
+	if (R_STR_ISEMPTY (charset) && bf->bo && bf->bo->info) {
+		charset = bf->bo->info->charset;
+	}
+	if (R_STR_ISNOTEMPTY (charset) && strcmp (charset, "none") && bin->mb.muta) {
 		// Decode the buffer using the specified charset
 		RMutaSession *ms = bin->mb.muta_use (bin->mb.muta, charset);
 		if (ms) {
@@ -186,15 +192,8 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 			if (outlen > 0 && obuf) {
 				ut8 *out = calloc (len, 1);
 				if (out) {
-					int i;
 					int cpy = R_MIN ((int)len, outlen);
 					memcpy (out, obuf, cpy);
-					// TODO unknown chars should be translated to null bytes
-					for (i = 0; i < cpy; i++) {
-						if (out[i] == '?') {
-							out[i] = 0;
-						}
-					}
 					free (buf);
 					buf = out;
 				}
@@ -202,7 +201,7 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 			free (obuf);
 			bin->mb.muta_session_free (ms);
 		} else {
-			R_LOG_ERROR ("Invalid value for RABIN2_CHARSET");
+			R_LOG_ERROR ("Unknown string charset '%s'", charset);
 		}
 	}
 	RCons *cons = bin->consb.cons;
@@ -302,32 +301,23 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 				runes++;
 			} else if (r && r < 0x100 && strchr ("\b\v\f\n\r\t\a\033\\", (char)r)) {
 				/* Print the escape code */
-				if (strings_nofp) {
-					rc = 2;
-					if (r && r < 0x100 && strchr ("\n\r\t\033\\", (char)r)) {
-						runes++; // accept it as it is
-						rc = 1;
-					} else {
-						rc = 1;
-						r = 0;
-						break;
-					}
-				} else {
-					if (r < 93) {
-						tmp[0] = '\\';
-						tmp[1] = "       abtnvfr             e  "
-							"                              "
-							"                              "
-							"  \\"[r];
-					} else {
-						// string too long
-						break;
-					}
-					rc = 2;
-					tmp[rc] = 0;
-					r_strbuf_append (sb, (const char *)tmp);
-					runes++;
+				if (strings_nofp && !strchr ("\n\r\t\033\\", (char)r)) {
+					break;
 				}
+				if (r < 93) {
+					tmp[0] = '\\';
+					tmp[1] = "       abtnvfr             e  "
+						"                              "
+						"                              "
+						"  \\"[r];
+				} else {
+					// string too long
+					break;
+				}
+				rc = 2;
+				tmp[rc] = 0;
+				r_strbuf_append (sb, (const char *)tmp);
+				runes++;
 			} else {
 				/* \0 marks the end of C-strings */
 				break;
@@ -351,16 +341,6 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 			// reduce false positives
 			int j, num_blocks;
 			int *freq_list = NULL, expected_ascii, actual_ascii, num_chars;
-			if (str_type == R_STRING_TYPE_ASCII) {
-				for (j = 0; j < tmplen; j++) {
-					char ch = tmpstr[j];
-					if (ch != '\n' && ch != '\r' && ch != '\t') {
-						if (!IS_PRINTABLE (ch)) {
-							continue;
-						}
-					}
-				}
-			}
 			switch (str_type) {
 			case R_STRING_TYPE_UTF8:
 			case R_STRING_TYPE_WIDE:
@@ -393,7 +373,6 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 				}
 				R_FREE (block_list);
 				if (num_blocks > R_STRING_MAX_UNI_BLOCKS) {
-					needle++;
 					continue;
 				}
 			}
