@@ -861,6 +861,38 @@ bool test_cons_canvas_print_rows(void) {
 	mu_end;
 }
 
+bool test_cons_less_mouse_scroll(void) {
+	const char *text = "one\ntwo\nthree\nfour\nfive";
+	const char *keys[] = {
+		"\x1b[<64;1;1Mjjjj\x1b[<65;1;1M\x1b[<65;1;1M"
+		"\x1b[<66;1;1M\x1b[<67;1;1Mq",
+		"G\x1b[<64;1;1M\x1b[<65;1;1Mq",
+		"Ghlq",
+		"\x1b[<64;1;1M\x1b[<65;1;1M\x1b[<66;1;1M\x1b[<67;1;1Mq"
+	};
+	const char *expected[] = {
+		"\rone\ntwo\nthree\rtwo\nthree\nfour\rthree\nfour\nfive\rfour\nfive\rfive",
+		"\rone\ntwo\nthree\rthree\nfour\nfive\rtwo\nthree\nfour\rthree\nfour\nfive",
+		"\rone\ntwo\nthree\rthree\nfour\nfive\rone\ntwo\nthree\rfour\nfive",
+		"\rone"
+	};
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (keys); i++) {
+		RCons *cons = r_cons_new ();
+		cons->force_columns = 8;
+		cons->force_rows = 3;
+		cons->context->is_interactive = true;
+		cons->context->noflush = true;
+		mu_assert_true (r_cons_readpush (cons, keys[i], strlen (keys[i])), "queue pager keys");
+		mu_assert_eq (r_cons_less_str (cons, i == 3? "one": text, NULL), 0, "pager exits");
+		char *output = strdup (cons->context->buffer);
+		r_cons_free (cons);
+		r_str_ansi_strip (output);
+		mu_assert_streq_free (output, expected[i], "wheel boundaries stay still and keyboard paging still works");
+	}
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_cons);
 	mu_run_test (test_cons_to_html);
@@ -887,6 +919,7 @@ bool all_tests(void) {
 	mu_run_test (test_cons_canvas_resize_reuses_rows);
 	mu_run_test (test_cons_canvas_many_attributes);
 	mu_run_test (test_cons_canvas_print_rows);
+	mu_run_test (test_cons_less_mouse_scroll);
 	return tests_passed != tests_run;
 }
 

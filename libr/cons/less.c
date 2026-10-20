@@ -29,6 +29,7 @@ R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, co
 	RRegex *rx = NULL;
 	int w, h, ch, to, ui = 1, from = 0, i;
 	int ret = 0;
+	int last_from = -1, last_w = -1, last_h = -1;
 
 	// rcons kills str after flushing the buffer, so we must keep a copy
 	char *ostr = strdup (str);
@@ -65,24 +66,34 @@ R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, co
 		h = R_MAX (1, h);
 		from = R_MAX (0, R_MIN (from, lines_count - 1));
 		to = from + R_MIN (h, lines_count - from);
-		pager_printpage (cons, p, lines, mla, from, to, w);
+		if (from != last_from || w != last_w || h != last_h) {
+			pager_printpage (cons, p, lines, mla, from, to, w);
+			last_from = from;
+			last_w = w;
+			last_h = h;
+		}
 		ch = r_cons_readchar (cons);
 		if (exitkeys && ch > 0 && strchr (exitkeys, ch)) {
 			ret = ch;
 			break;
 		}
 		ch = r_cons_arrow_to_hjkl (cons, ch);
+		if (cons->mouse_event && (ch == 'h' || ch == 'l')) {
+			continue;
+		}
 		switch (ch) {
 		case '_':
 			free (r_cons_hud_string (cons, ostr));
 			r_cons_set_raw (cons, true);
 			r_cons_show_cursor (cons, false);
+			last_from = -1;
 			break;
 		case '?':
 			if (!in_help) {
 				(void)r_cons_less_str (cons, r_cons_less_help, NULL);
 				r_cons_set_raw (cons, true);
 				r_cons_show_cursor (cons, false);
+				last_from = -1;
 			}
 			break;
 		case 'h': // ^B
@@ -113,6 +124,7 @@ R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, co
 			}
 			break;
 		case '/': { /* search */
+			last_from = -1;
 			char *prompt = r_line_get_prompt (cons->line);
 			if (!prompt) {
 				break;
