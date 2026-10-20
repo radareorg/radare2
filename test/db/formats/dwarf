@@ -27,7 +27,7 @@ afs @ 0x130e
 EOF
 EXPECT=<<EOF
 main_1169
-int dbg.main ();
+int dbg.main (int argc, char **argv, char **envp);
 Bird_Bird_
 void dbg.Bird__Bird__ (Bird * const this);
 void dbg.Bird__Bird__ (Bird * const this);
