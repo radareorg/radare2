@@ -2258,3 +2258,17 @@ EXPECT=<<EOF
     } while (v);
 EOF
 RUN
+
+NAME=pdc structured renders a mips self loop as while true
+FILE=malloc://64
+ARGS=-a mips -b 32 -e cfg.bigendian=false -e pdc.structured=1
+CMDS=<<EOF
+wx 01000224feff001000000000
+af
+pdc~while,goto,v0 = 0 + 1
+EOF
+EXPECT=<<EOF
+    while (true) {
+        v0 = 0 + 1
+EOF
+RUN
