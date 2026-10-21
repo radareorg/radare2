@@ -1465,6 +1465,22 @@ R_API char *r_str_sanitize_r2(const char *buf) {
 	return new_buf;
 }
 
+// the argument itself when an r2 script can replay it verbatim, base64:<b64> otherwise
+R_API char *r_str_r2arg(const char *arg) {
+	R_RETURN_VAL_IF_FAIL (arg, NULL);
+	if (*arg && r_str_is_printable (arg) && !r_str_startswith (arg, "base64:")) {
+		char *safe = r_str_sanitize_r2 (arg);
+		if (!strcmp (safe, arg)) {
+			return safe;
+		}
+		free (safe);
+	}
+	char *b64 = r_base64_encode_dyn ((const ut8 *)arg, -1);
+	char *res = r_str_newf ("base64:%s", r_str_get (b64));
+	free (b64);
+	return res;
+}
+
 R_API char *r_str_escape_sql(const char *buf) {
 	R_RETURN_VAL_IF_FAIL (buf, NULL);
 	char *res = r_str_replace (strdup (buf), "'", "\\'", true);

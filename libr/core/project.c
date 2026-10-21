@@ -197,13 +197,19 @@ typedef struct {
 } ProjectState;
 
 // extract the binary file path from the "o " line in the project rc script data
-static char *project_extract_file(const char *rc_data) {
+R_IPI char *r_core_project_file(const char *rc_data) {
 	const char *line = strstr (rc_data, "\no \"");
 	if (line) {
 		line += 4; // skip \no "
 		const char *end = strchr (line, '"');
 		if (end) {
-			return r_str_ndup (line, end - line);
+			char *file = r_str_ndup (line, end - line);
+			if (r_str_startswith (file, "base64:")) {
+				char *decoded = (char *)sdb_decode (file + 7, NULL);
+				free (file);
+				return decoded;
+			}
+			return file;
 		}
 	}
 	return NULL;
@@ -250,7 +256,7 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 		free (prj_path);
 		return false;
 	}
-	char *prj_file = sandbox? NULL: project_extract_file (rc_data);
+	char *prj_file = sandbox? NULL: r_core_project_file (rc_data);
 	if (prj_file && !strstr (prj_file, "://") && !r_file_exists (prj_file)) {
 		R_LOG_ERROR ("File associated with the project is missing: %s", prj_file);
 		if (r_config_get_b (core->config, "prj.prompt") && scr_interactive) {
@@ -258,11 +264,15 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 			char *new_path = r_cons_input (core->cons, prompt);
 			free (prompt);
 			if (R_STR_ISNOTEMPTY (new_path)) {
-				char *old_o_line = r_str_newf ("o \"%s\"", prj_file);
-				char *new_o_line = r_str_newf ("o \"%s\"", new_path);
+				char *old_arg = r_str_r2arg (prj_file);
+				char *new_arg = r_str_r2arg (new_path);
+				char *old_o_line = r_str_newf ("o \"%s\"", old_arg);
+				char *new_o_line = r_str_newf ("o \"%s\"", new_arg);
 				rc_data = r_str_replace (rc_data, old_o_line, new_o_line, 0);
 				free (old_o_line);
 				free (new_o_line);
+				free (old_arg);
+				free (new_arg);
 			}
 			free (new_path);
 		}

@@ -279,22 +279,9 @@ static void cmd_Pi(RCore *core, const char *input, const char *fileproject) {
 	if (stat (rc_path, &st) == 0) {
 		mtime_str = r_time_secs_tostring (st.st_mtime);
 	}
-	// parse "o " line from rc.r2 to get file path
-	char *file_str = NULL;
-	{
-		char *rc_data = r_file_slurp (rc_path, NULL);
-		if (rc_data) {
-			const char *line = strstr (rc_data, "\no \"");
-			if (line) {
-				line += 4; // skip \no "
-				const char *end = strchr (line, '"');
-				if (end) {
-					file_str = r_str_ndup (line, end - line);
-				}
-			}
-			free (rc_data);
-		}
-	}
+	char *rc_data = r_file_slurp (rc_path, NULL);
+	char *file_str = rc_data? r_core_project_file (rc_data): NULL;
+	free (rc_data);
 	char *notes = NULL;
 	if (r_file_exists (notes_path)) {
 		notes = r_file_slurp (notes_path, NULL);

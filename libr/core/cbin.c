@@ -32,16 +32,6 @@ static void pair(RCore *core, const char *key, const char *val) {
 	}
 }
 
-static bool is_safe_r2_script_arg(const char *s) {
-	if (!R_STR_ISNOTEMPTY (s) || !r_str_is_printable (s)) {
-		return false;
-	}
-	char *safe = r_str_sanitize_r2 (s);
-	bool res = safe && !strcmp (safe, s);
-	free (safe);
-	return res;
-}
-
 static char *sdb_key_name(const char *key, const char *suffix, bool sanitize) {
 	const char *end = strstr (key, suffix);
 	if (!end) {
@@ -5074,15 +5064,9 @@ static bool bin_libs(RCore *core, PJ *pj, int mode) {
 			// Nothing to set.
 			// TODO: load libraries with iomaps?
 		} else if (IS_MODE_RAD (mode)) {
-			if (is_safe_r2_script_arg (lib)) {
-				r_cons_printf (core->cons, "'CCa entry0 %s\n", lib);
-			} else {
-				char *b64 = sdb_encode ((const ut8 *)lib, -1);
-				if (b64) {
-					r_cons_printf (core->cons, "'CCa entry0 base64:%s\n", b64);
-					free (b64);
-				}
-			}
+			char *arg = r_str_r2arg (lib);
+			r_cons_printf (core->cons, "'CCa entry0 %s\n", arg);
+			free (arg);
 		} else if (IS_MODE_JSON (mode)) {
 			pj_s (pj, lib);
 		} else {
@@ -6020,9 +6004,9 @@ static bool r_core_bin_file_print(RCore *core, RBinFile *bf, PJ *pj, int mode) {
 	switch (mode) {
 	case '*':
 		{
-			char *n = r_name_filter_shell (name);
-			r_cons_printf (core->cons, "oba 0x%08" PFMT64x " %s # %d\n", bf->bo->boffset, n, bf->id);
-			free (n);
+			char *arg = r_str_r2arg (r_str_get (name));
+			r_cons_printf (core->cons, "oba 0x%08" PFMT64x " %s # %d\n", bf->bo->boffset, arg, bf->id);
+			free (arg);
 			break;
 		}
 	case 'q':

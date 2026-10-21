@@ -891,6 +891,7 @@ R_API int r_core_project_list(RCore *core, int mode);
 R_API bool r_core_project_save_script(RCore *core, const char *file, int opts);
 R_API bool r_core_project_save(RCore *core, const char *file);
 R_API char *r_core_project_name(RCore *core, const char *file);
+R_IPI char *r_core_project_file(const char *rc_data);
 R_API char *r_core_project_notes_file(RCore *core, const char *file);
 R_API void r_core_project_undirty(RCore *core);
 R_API char *r_core_sysenv_begin(RCore *core, const char *cmd);
