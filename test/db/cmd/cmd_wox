@@ -249,3 +249,21 @@ EXPECT=<<EOF
 0x00000010  1110 1312 1514 1716 1918 1b1a 1d1c 1f1e  ................
 EOF
 RUN
+
+NAME=woe word sizes stop at the last whole word of the block
+FILE=malloc://16
+CMDS=<<EOF
+wx ffffffffffffffff
+b 6
+woe 1 0 1 4
+b 3
+woe 0x4142 0 1 2
+b 1
+woe 0x41414141 0 1 8
+b 8
+p8
+EOF
+EXPECT=<<EOF
+42410000ffffffff
+EOF
+RUN
