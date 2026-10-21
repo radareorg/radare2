@@ -1929,3 +1929,23 @@ zs ok
 za foo R QUJD
 EOF
 RUN
+
+NAME=zcn matches names shorter than the zignspace
+FILE=--
+CMDS=<<EOF
+zs old
+za f b 9090c3
+za h b 9090c3
+zs libcrypto_1_1_1
+za f b 9090c3
+za g b 9090c3
+zcn old
+?e --
+zcn! old
+EOF
+EXPECT=<<EOF
+0xffffffffffffffff 0xffffffffffffffff 1.00000 B f
+--
+0xffffffffffffffff 0xffffffffffffffff 0.00000 G f
+EOF
+RUN

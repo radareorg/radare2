@@ -1594,15 +1594,13 @@ R_API char *r_sign_diff_by_name(RAnal *a, RSignOptions *options, const char *oth
 	RListIter *itr2;
 	RSignItem *si;
 	RSignItem *si2;
-	size_t current_space_name_len = strlen (current_space->name);
-	size_t other_space_name_len = strlen (other_space->name);
 
 	r_list_foreach (la, itr, si) {
 		if (strstr (si->name, "imp.")) {
 			continue;
 		}
 		r_list_foreach (lb, itr2, si2) {
-			if (strcmp (si->name + current_space_name_len + 1, si2->name + other_space_name_len + 1)) {
+			if (strcmp (si->name, si2->name)) {
 				continue;
 			}
 			// TODO: add config variable for threshold
