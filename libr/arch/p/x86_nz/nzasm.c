@@ -165,6 +165,8 @@ static int is_al_reg(const Operand *op) {
 }
 
 static int oprep(RArchSession *a, ut8 *data, const Opcode *op);
+static int op_reg_mem(int bits, ut8 *data, const Operand *reg, const Operand *mem, ut8 opcode);
+static bool use_op_reg_mem(int bits, const Operand *mem);
 
 // Minimal VEX.3 prefix emission for selected BMI2 GPR ops (SHLX/SHRX/SARX)
 // Encodes: VEX.NDS.LZ.0F38.Wx with computed R', X', B', vvvv'
@@ -908,6 +910,18 @@ static int process_1byte_op(RArchSession *a, ut8 *data, const Opcode *op, int op
 	st32 offset = 0;
 	int ebp_reg = 0;
 
+	const int bits = a->config->bits;
+	for (int i = 0; i < 2; i++) {
+		const Operand *mem = &op->operands[i];
+		const Operand *reg = &op->operands[1 - i];
+		if (mem->type & OT_MEMORY && !(mem->type & OT_REGTYPE & OT_SEGMENTREG)
+				&& (mem->regs[0] != X86R_UNDEFINED || mem->regs[1] != X86R_UNDEFINED)
+				&& use_op_reg_mem (bits, mem)
+				&& reg->type & OT_REGTYPE & OT_GPREG && !(reg->type & OT_MEMORY)) {
+			// op1 is r/m8, r8; +1 r/m, r; +2 r8, r/m8; +3 r, r/m
+			return op_reg_mem (bits, data, reg, mem, op1 + i * 2 + ((reg->type & OT_BYTE)? 0: 1));
+		}
+	}
 	if (!op->operands[1].is_good_flag) {
 		return -1;
 	}
@@ -920,7 +934,6 @@ static int process_1byte_op(RArchSession *a, ut8 *data, const Opcode *op, int op
 		return l;
 	}
 
-	const int bits = a->config->bits;
 	if (bits == 64) {
 		if (!(op->operands[0].type & op->operands[1].type)) {
 			return -1;
