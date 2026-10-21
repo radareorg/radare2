@@ -84,7 +84,7 @@ jobs:
         version=$(./configure -qV)
         unzip -p "radare2-$version-wasi-api.zip" "radare2-$version-wasi-api/radare2.wasm" > "$RUNNER_TEMP/radare2-api.wasm"
         node test/scripts/test-wasi-api.cjs "$RUNNER_TEMP/radare2-api.wasm" "$version"
-    - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
       if: matrix.http == '1'
       with:
         node-version: '22'
