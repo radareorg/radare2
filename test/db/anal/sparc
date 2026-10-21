@@ -876,3 +876,86 @@ if (((unsigned) v) <= 0) goto 0x24
 if (v >= 0) goto 0x28
 EOF
 RUN
+
+NAME=SPARC scalar return register alias
+FILE=malloc://16
+ARGS=-a sparc -b 32
+CMDS=<<EOF
+arn R0
+k anal/cc/cc.sparc.ret0
+EOF
+EXPECT=<<EOF
+o0
+o0
+EOF
+RUN
+
+NAME=SPARC indexed memory operand details
+FILE=malloc://128
+ARGS=-a sparc -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx c2020009d2220009c2022004d222200481c200099fc20009
+aoj 1 @ 0~{0.opex}
+aoj 1 @ 4~{0.opex}
+aoj 1 @ 8~{0.opex}
+aoj 1 @ 12~{0.opex}
+aoj 1 @ 16~{0.opex}
+aoj 1 @ 20~{0.opex}
+EOF
+EXPECT=<<EOF
+{"operands":[{"type":"mem","base":"o0","index":"o1","disp":0},{"type":"reg","value":"g1"}]}
+{"operands":[{"type":"reg","value":"o1"},{"type":"mem","base":"o0","index":"o1","disp":0}]}
+{"operands":[{"type":"mem","base":"o0","disp":4},{"type":"reg","value":"g1"}]}
+{"operands":[{"type":"reg","value":"o1"},{"type":"mem","base":"o0","disp":4}]}
+{"operands":[{"type":"mem","base":"o0","index":"o1","disp":0}]}
+{"operands":[{"type":"mem","base":"o0","index":"o1","disp":0}]}
+EOF
+RUN
+
+NAME=SPARC computed transfers do not invent direct jump targets
+FILE=malloc://128
+ARGS=-a sparc -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 81c2000981c220049fc200099fc220044000000281c7e00881c3e008
+aoj 1 @ 0~{0.type}
+aoj 1 @ 0~jump
+aoj 1 @ 0~{0.delay}
+aoj 1 @ 4~{0.type}
+aoj 1 @ 4~jump
+aoj 1 @ 4~{0.delay}
+aoj 1 @ 8~{0.type}
+aoj 1 @ 8~jump
+aoj 1 @ 8~{0.fail}
+aoj 1 @ 8~{0.delay}
+aoj 1 @ 12~{0.type}
+aoj 1 @ 12~jump
+aoj 1 @ 12~{0.fail}
+aoj 1 @ 12~{0.delay}
+aoj 1 @ 16~{0.type}
+aoj 1 @ 16~{0.jump}
+aoj 1 @ 16~{0.fail}
+aoj 1 @ 20~{0.type}
+aoj 1 @ 20~{0.delay}
+aoj 1 @ 24~{0.type}
+aoj 1 @ 24~{0.delay}
+EOF
+EXPECT=<<EOF
+ujmp
+1
+ujmp
+1
+ucall
+16
+1
+ucall
+20
+1
+call
+24
+24
+ret
+1
+ret
+1
+EOF
+RUN
