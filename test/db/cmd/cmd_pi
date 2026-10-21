@@ -66,3 +66,29 @@ EXPECT=<<EOF
 0x100
 EOF
 RUN
+
+NAME=pi with more bytes than the block can grow to
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 9090c3
+bm 512
+piE 600
+piE -600 @ 1000
+piE 3
+?e alive
+EOF
+EXPECT=<<EOF
+0x00000000 ,
+0x00000001 ,
+0x00000002 rsp,[8],rip,=,8,rsp,+=
+alive
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Block size 600 is too big
+ERROR: Cannot read that much!
+ERROR: Block size 600 is too big
+ERROR: Cannot read that much!
+EOF
+RUN
