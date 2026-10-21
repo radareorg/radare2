@@ -91,7 +91,7 @@ struct _WindCtx {
 	RList *plist_cache;
 	RList *tlist_cache;
 	ut64 dbg_addr;
-	WindProc *target;
+	R_OWNED WindProc *target;
 	RThreadLock *dontmix;
 	RMutaBind *mb;
 };
