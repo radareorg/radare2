@@ -1257,6 +1257,8 @@ a "lea eax, [ebp+24]" 8d4518
 a "lea eax, [ebx+24]" 8d4318
 a "lea eax, [ebx+4]" 8d4304
 a "lea eax, [ecx]" 8d01
+a "lea eax, [ebx+ecx*2+0x10]" 8d444b10
+a "lea eax, [ebp+eax*2]" 8d444500
 a "lea eax, [esp]" 8d0424
 a "lea ebx, [4]" 8d1d04000000
 a "lea ebx, [eax+24]" 8d5818
@@ -1404,7 +1406,7 @@ a "mov byte [eax], al" 8800
 a "mov eax, eax" 89c0
 a "mov eax, [eax]" 8b00
 a "mov [eax+eax], eax" 890400
-aB "mov eax,[eax+ebx*4+32]" 8b449820
+a "mov eax,[eax+ebx*4+32]" 8b449820
 a "mov [eax+eax], ebx" 891c00
 a "mov [eax+eax], ecx" 890c00
 a "mov eax, [ebp]" 8b4500
@@ -1414,14 +1416,21 @@ a "mov eax, [ebx]" 8b03
 a "mov eax,[ecx*8+64]" 8b04cd40000000
 a "mov [ecx*8+64], eax" 8904cd40000000
 a "mov [eax+ecx], eax" 890408
+a "mov eax, dword [ebx + ecx*2 + 0x10]" 8b444b10
+a "mov eax, [ebx+ecx*4]" 8b048b
+a "mov [ebx+ecx*2+16], eax" 89444b10
+a "mov ecx, [ebp+esi*4+0x1000]" 8b8cb500100000
+a "mov ax, [ebx+esi*2]" 668b0473
+a "mov cl, [esi+edi]" 8a0c3e
+a "mov [esp+eax], edx" 891404
 a "mov eax, [esi]" 8b06
 a "mov eax, [esp+4]" 8b442404
 a "mov eax, esp" 89e0
 a "mov eax, [esp]" 8b0424
 a "mov ebp, 0" bd00000000
-a "mov [ebp+4], eax" 898504000000
-a "mov [ebp+4], ebx" 899d04000000
-a "mov [ebp+4], ecx" 898d04000000
+a "mov [ebp+4], eax" 894504
+a "mov [ebp+4], ebx" 895d04
+a "mov [ebp+4], ecx" 894d04
 a "mov ebx, 0" bb00000000
 a "mov [ebx+2], ebx" 895b02
 a "mov [ebx-2], ecx" 894bfe
