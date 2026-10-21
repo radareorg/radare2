@@ -60,6 +60,9 @@ r_core_sources += r_core_additional_sources
 if get_option('want_panels')
   r_core_sources += [ 'p/panels/plugin.c' ]
 endif
+if get_option('want_mmc')
+  r_core_sources += [ 'p/mmc/plugin.c' ]
+endif
 
 r_core_inc = [
   'i/heap/jemalloc',

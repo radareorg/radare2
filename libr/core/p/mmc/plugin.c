@@ -1,7 +1,5 @@
 /* radare - LGPL - Copyright 2025 - MiKi (mikelloc) */
 
-#if R_INCLUDE_BEGIN
-
 #include <r_core.h>
 
 #define MMC_COLOR_BG_FG "\x1b[34m"
@@ -1864,6 +1862,12 @@ static bool cmd_mmc(RCmdContext *ctx) {
 		return true;
 	}
 
+	const size_t argc = r_cmdctx_argc (ctx);
+	if (!r_strs_empty (ctx->subcmd) || argc > 2 || (argc && !*r_cmdctx_arg (ctx, 0).a)) {
+		R_LOG_ERROR ("Usage: mmc [left_path] [right_path]");
+		return false;
+	}
+
 	if (!r_config_get_b (core->config, "scr.interactive")) {
 		R_LOG_ERROR ("mmc requires scr.interactive");
 		return false;
@@ -2123,4 +2127,28 @@ static bool cmd_mmc(RCmdContext *ctx) {
 	return true;
 }
 
+static RCmdResult mmc_callback(RCmdContext *ctx) {
+	RCore *core = ctx->user;
+	const int status = cmd_mmc (ctx)? 0: 1;
+	r_core_return_value (core, status);
+	return (RCmdResult) { .status = status };
+}
+
+RCorePlugin r_core_plugin_mmc = {
+	.meta = {
+		.name = "mmc",
+		.desc = "Mountpoint Miknight Commander file manager",
+		.license = "LGPL-3.0-only",
+		.author = "MiKi (mikelloc)",
+	},
+	.command = "mmc",
+	.call_ctx = mmc_callback,
+};
+
+#ifndef R2_PLUGIN_INCORE
+RLibStruct radare_plugin = {
+	.type = R_LIB_TYPE_CORE,
+	.data = &r_core_plugin_mmc,
+	.version = R2_VERSION
+};
 #endif

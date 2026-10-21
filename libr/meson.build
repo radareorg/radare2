@@ -27,6 +27,9 @@ core_plugins += [ 'prj', 'writedwarf', 'agD', 'pseudo' ]
 if get_option('want_panels')
   core_plugins += [ 'panels' ]
 endif
+if get_option('want_mmc')
+  core_plugins += [ 'mmc' ]
+endif
 egg_plugins = [ 'xor' ]
 debug_plugins = [ 'null', 'io', 'esil', 'rap' ]
 lang_plugins = [ 'lib', 'pipe', 'qjs', 'tsc', 'spp' ]

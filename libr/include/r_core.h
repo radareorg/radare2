@@ -1099,6 +1099,7 @@ extern RCorePlugin r_core_plugin_writedwarf;
 extern RCorePlugin r_core_plugin_agD;
 extern RCorePlugin r_core_plugin_pseudo;
 extern RCorePlugin r_core_plugin_panels;
+extern RCorePlugin r_core_plugin_mmc;
 
 R_IPI void r_core_plugins_init(RCmd *cmd);
 R_IPI void r_core_plugins_load(RCmd *cmd);
