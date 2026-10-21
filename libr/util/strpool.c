@@ -57,6 +57,16 @@ static int strpool_find(RStrpool *p, const char *w, ut32 h) {
 	return -1;
 }
 
+static int strpool_find_linear(RStrpool *p, const char *w) {
+	int i;
+	for (i = 0; i < p->count; i++) {
+		if (!strcmp (p->str + p->idxs[i], w)) {
+			return i;
+		}
+	}
+	return -1;
+}
+
 // make room for count strings, false when the pool is small or too large to be indexed
 static bool strpool_index_fit(RStrpool *p, int count) {
 	if (count < STRPOOL_LINEAR_MAX || count >= STRPOOL_POS_MASK) {
@@ -208,7 +218,7 @@ static int strpool_push(RStrpool *p, const char *s) {
 // dedup selects whether an existing copy is returned instead of appending
 static int strpool_insert(RStrpool *p, const char *s, bool dedup) {
 	if (!strpool_index_fit (p, p->count + 1)) {
-		const int pos = dedup? r_strpool_get (p, s): -1;
+		const int pos = dedup? strpool_find_linear (p, s): -1;
 		return pos < 0? strpool_push (p, s): pos;
 	}
 	const ut32 h = strpool_hash (p, s);
@@ -276,12 +286,5 @@ R_API int r_strpool_get(RStrpool *p, const char *w) {
 	if (strpool_index_fit (p, p->count)) {
 		return strpool_find (p, w, strpool_hash (p, w));
 	}
-	int i;
-	for (i = 0; i < p->count; i++) {
-		const char *v = r_strpool_get_nth (p, i);
-		if (!strcmp (v, w)) {
-			return i;
-		}
-	}
-	return -1;
+	return strpool_find_linear (p, w);
 }
