@@ -621,3 +621,123 @@ EXPECT=<<EOF
 0x00000040
 EOF
 RUN
+
+NAME=mips64 MSA bz.d tests both lanes and executes the delay slot (le)
+FILE=malloc://64
+ARGS=-a mips -b 64 -e cfg.bigendian=false
+CMDS=<<EOF
+wx 03007f4701000825
+aei
+ar pc=0
+ar t0=0
+ar w31l=0x0
+ar w31h=0x0
+aes 2
+ar pc
+ar t0
+ar pc=0
+ar t0=0
+ar w31l=0x0
+ar w31h=0x8000000000000000
+aes 2
+ar pc
+ar t0
+ar pc=0
+ar t0=0
+ar w31l=0x8000000000000000
+ar w31h=0x0
+aes 2
+ar pc
+ar t0
+ar pc=0
+ar t0=0
+ar w31l=0x1
+ar w31h=0x2
+aes 2
+ar pc
+ar t0
+ar w0l=0x123456789abcdef0
+ar w0h=0xfedcba9876543210
+ar w0l
+ar w0h
+ar w31l
+ar w31h
+ar w0
+EOF
+EXPECT=<<EOF
+0x00000010
+0x00000001
+0x00000010
+0x00000001
+0x00000010
+0x00000001
+0x00000008
+0x00000001
+0x123456789abcdef0
+0xfedcba9876543210
+0x00000001
+0x00000002
+0xfedcba9876543210123456789abcdef0
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=mips64 MSA bz.d tests both lanes and executes the delay slot (be)
+FILE=malloc://64
+ARGS=-a mips -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 477f000325080001
+aei
+ar pc=0
+ar t0=0
+ar w31l=0x0
+ar w31h=0x0
+aes 2
+ar pc
+ar t0
+ar pc=0
+ar t0=0
+ar w31l=0x0
+ar w31h=0x8000000000000000
+aes 2
+ar pc
+ar t0
+ar pc=0
+ar t0=0
+ar w31l=0x8000000000000000
+ar w31h=0x0
+aes 2
+ar pc
+ar t0
+ar pc=0
+ar t0=0
+ar w31l=0x1
+ar w31h=0x2
+aes 2
+ar pc
+ar t0
+ar w0l=0x123456789abcdef0
+ar w0h=0xfedcba9876543210
+ar w0l
+ar w0h
+ar w31l
+ar w31h
+EOF
+EXPECT=<<EOF
+0x00000010
+0x00000001
+0x00000010
+0x00000001
+0x00000010
+0x00000001
+0x00000008
+0x00000001
+0x123456789abcdef0
+0xfedcba9876543210
+0x00000001
+0x00000002
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
