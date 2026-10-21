@@ -569,3 +569,128 @@ after
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=rahash2 streaming preserves filters and captures
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+e scr.flush=true
+rahash2 -B -b 2 -a md5 malloc://4~?
+rahash2 -B -b 2 -a md5 malloc://4~0x00000002
+rahash2 -B -b 2 -a md5 malloc://4 >$hashes
+cat $hashes
+rahash2 -q -a md5 malloc://4
+rahash2 -qq -a md5 malloc://4
+rahash2 -qqq -a md5 malloc://4
+.rahash2 -R -a md5 -s abc
+k file.md5
+e scr.flush=false
+?e after
+EOF
+EXPECT=<<EOF
+2
+0x00000002-0x00000003 md5: c4103f122d27677c9db144cae1394a66
+0x00000000-0x00000001 md5: c4103f122d27677c9db144cae1394a66
+0x00000002-0x00000003 md5: c4103f122d27677c9db144cae1394a66
+f1d3ff8443297732862df21dc4e57262 malloc://4
+f1d3ff8443297732862df21dc4e57262
+900150983cd24fb0d6963f7d28e17f72
+after
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rahash2 streaming keeps JSON and binary captures intact
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+e scr.flush=true
+rahash2 -j -B -b 2 -a md5 malloc://4 >$json
+cat $json
+rahash2 -J -a md5 malloc://4 >$object
+cat $object
+rahash2 -D base64 -s QQBC >$raw
+$**~raw
+rahash2 -j -a md5 -s abc~{[0].hash}
+e scr.flush=false
+?e after
+EOF
+EXPECT=<<EOF
+[{"name":"md5","hash":"c4103f122d27677c9db144cae1394a66"},{"name":"md5","hash":"c4103f122d27677c9db144cae1394a66"}]
+{"md5":"f1d3ff8443297732862df21dc4e57262"}
+$raw=base64:QQBC
+900150983cd24fb0d6963f7d28e17f72
+after
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rahash2 plots run without PATH and preserve the caller
+FILE=hex://90909090
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+s 1
+b 2
+e asm.bits=32
+rahash2 -p e malloc://256~?
+rahash2 -p b malloc://256 >$plot
+cat $plot~malloc
+cat $plot~?
+rahash2 -p ? malloc://256~Usage
+rahash2 -p e malloc://256 malloc://512~malloc
+?v $$
+?v $b
+e asm.bits
+e scr.interactive
+p8 2
+?e after
+EOF
+EXPECT=<<EOF
+15
+malloc://256:
+15
+Usage: p=[=bep?][qj] [N] ([len]) ([offset])   show entropy/printable chars/chars bars
+malloc://256:
+malloc://512:
+0x1
+0x2
+32
+false
+9090
+after
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rahash2 plot failures leave the shell usable
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+rahash2 -p e ""
+?v $?
+rahash2 -p e /missing-rahash2-input
+?v $?
+rahash2 -p e malloc://256 >$plot
+?v $?
+cat $plot~?
+rahash2 -q -a md5 -s abc
+?e after
+EOF
+EXPECT=<<EOF
+0x1
+/missing-rahash2-input:
+0x1
+0x0
+15
+900150983cd24fb0d6963f7d28e17f72
+after
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot open empty path
+ERROR: Cannot open '/missing-rahash2-input'
+EOF
+RUN

@@ -4,11 +4,15 @@
 
 #include <r_io.h>
 #include <r_main.h>
+#include <r_core.h>
 #include <r_util/r_print.h>
 #include <r_muta.h>
 
+// R2R db/tools/rahash2 db/cmd/cmd_r
+
 typedef struct {
 	RCons *cons;
+	bool own_cons;
 	int quiet;
 	int iterations;
 	bool incremental; //  = true;
@@ -21,6 +25,12 @@ typedef struct {
 	RHashSeed s;
 	const char *algorithm;
 } RahashOptions;
+
+static void rahash_flush(RahashOptions *ro) {
+	if (ro->own_cons || ro->cons->context->flush) {
+		r_cons_flush (ro->cons);
+	}
+}
 
 static void compare_hashes(const RHash *ctx, RahashOptions *ro, const ut8 *compare, int length, int *ret, int rad) {
 	if (R_LIKELY (compare)) {
@@ -190,6 +200,9 @@ static int do_hash_internal(RHash *ctx, RahashOptions *ro, ut64 hash, const ut8 
 		r_hash_do_spice (ctx, hash, ro->iterations, ro->_s);
 	}
 	do_hash_print (ctx, ro, hash, dlen, pj, rad);
+	if (!pj) {
+		rahash_flush (ro);
+	}
 	return 1;
 }
 
@@ -288,6 +301,9 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 				} else if (ro->quiet > 0 && ro->quiet < 3 && !rad) {
 					r_cons_newline (ro->cons);
 				}
+				if (!pj) {
+					rahash_flush (ro);
+				}
 			}
 		}
 		if (ro->_s) {
@@ -337,6 +353,7 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 		pj_end (pj);
 		r_cons_println (ro->cons, pj_string (pj));
 		pj_free (pj);
+		rahash_flush (ro);
 	}
 
 	int mode = rad;
@@ -372,6 +389,7 @@ static int do_help(RCons *cons, int line) {
 		" -k          show hash using the openssh's randomkey algorithm\n"
 		" -q          run in quiet mode (-qq to show only the hash)\n"
 		" -L          list muta plugins (combines with -q, used by -a, -E and -D)\n"
+		" -p type     plot file statistics using p== (see -p ?)\n"
 		" -r          output radare commands\n"
 		" -R          output radare2 sdb commands (k file.<algo>=...)\n"
 		" -s string   hash this string instead of files\n"
@@ -569,6 +587,36 @@ static bool check_base_flags(RahashOptions *ro) {
 	return false;
 }
 
+static int print_plot(RahashOptions *ro, const char *file, const char *type) {
+	if (R_STR_ISEMPTY (file)) {
+		R_LOG_ERROR ("Cannot open empty path");
+		return 1;
+	}
+	RCore *core = r_core_new ();
+	int ret = 1;
+	if (!core) {
+		r_cons_global (ro->cons);
+		return ret;
+	}
+	core->cons->context->noflush = true;
+	r_config_set_b (core->config, "scr.interactive", false);
+	r_config_set_b (core->config, "io.va", false);
+	r_config_set_i (core->config, "scr.color", ro->cons->context->color_mode);
+	r_config_set_b (core->config, "scr.utf8", ro->cons->use_utf8);
+	r_cons_printf (ro->cons, "%s:\n", file);
+	if (r_core_file_open (core, file, R_PERM_R, 0)) {
+		r_core_cmdf (core, "p==%s 100", type);
+		ret = core->rc;
+	} else {
+		R_LOG_ERROR ("Cannot open '%s'", file);
+	}
+	r_cons_merge_output (ro->cons, core->cons);
+	r_core_free (core);
+	r_cons_global (ro->cons);
+	rahash_flush (ro);
+	return ret;
+}
+
 R_API int r_main_rahash2(int argc, const char **argv) {
 	bool own_cons;
 	RCons *cons = r_main_cons_init (&own_cons);
@@ -598,6 +646,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 	int _ret = 0;
 
 	ro->cons = cons;
+	ro->own_cons = own_cons;
 	ro->direction = -1;
 	ro->incremental = true;
 #define ret(x) \
@@ -725,21 +774,10 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		// TODO: support p=%s (horizontal bars)
 		// TODO: list supported statistical metrics
 		// TODO: support -f and -t
-		char *eptype = r_str_escape_sh (ptype);
 		for (i = opt.ind; i < argc; i++) {
-			r_cons_printf (cons, "%s:\n", argv[i]);
-			char *eargv = r_str_escape_sh (argv[i]);
-			if (eptype && eargv) {
-				char *output = r_sys_cmd_strf ("r2 -qfnc \"p==%s 100\" \"%s\"", eptype, eargv);
-				if (output) {
-					r_cons_print (cons, output);
-					free (output);
-				}
-			}
-			free (eargv);
+			_ret |= print_plot (ro, argv[i], ptype);
 		}
-		free (eptype);
-		ret (0);
+		ret (_ret);
 	}
 	// convert iv to hex or string.
 	if (ivseed) {
