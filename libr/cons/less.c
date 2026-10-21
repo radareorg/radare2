@@ -8,6 +8,7 @@
 static const char *r_cons_less_help = \
 	" u/space  - page up/down (same as ^B / ^F)\n"
 	" jk       - line down/up\n"
+	" wheel    - scroll up/down\n"
 	" gG       - begin/end buffer\n"
 	" /        - search in buffer\n"
 	" _        - enter the hud mode\n"
@@ -57,7 +58,9 @@ R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, co
 	for (i = 0; i < lines_count; i++) {
 		mla[i] = r_list_newf (free);
 	}
+	const bool mouse_enabled = cons->mouse;
 	r_cons_set_raw (cons, true);
+	r_cons_enable_mouse (cons, true);
 	r_cons_show_cursor (cons, false);
 	r_cons_reset (cons);
 	h = 0;
@@ -85,6 +88,7 @@ R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, co
 		case '_':
 			free (r_cons_hud_string (cons, ostr));
 			r_cons_set_raw (cons, true);
+			r_cons_enable_mouse (cons, true);
 			r_cons_show_cursor (cons, false);
 			last_from = -1;
 			break;
@@ -180,6 +184,7 @@ R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, co
 	free (lines);
 	free (p);
 	r_cons_reset_colors (cons);
+	r_cons_enable_mouse (cons, mouse_enabled);
 	r_cons_set_raw (cons, false);
 	r_cons_show_cursor (cons, true);
 	free (ostr);
