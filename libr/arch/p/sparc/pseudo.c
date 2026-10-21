@@ -263,16 +263,9 @@ static char *subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int opl
 			if (!reg) {
 				reg = anal->reg->alias[R_REG_ALIAS_SP];
 			}
-			char *tmpf;
 			//TODO: honor asm pseudo
-			if (R_ABS (delta) < 10) {
-				tmpf = "%d(%s)";
-			} else if (delta > 0) {
-				tmpf = "0x%x(%s)";
-			} else {
-				tmpf = "-0x%x(%s)";
-			}
-			oldstr = r_str_newf (tmpf, R_ABS (delta), reg);
+			const ut64 adelta = R_ABS (delta);
+			oldstr = r_str_newf ((adelta < 10)? "%s%" PFMT64u "(%s)": "%s0x%" PFMT64x "(%s)", delta < 0? "-": "", adelta, reg);
 			if (ucase) {
 				char *comma = strchr (oldstr, ',');
 				if (comma) {
@@ -293,7 +286,6 @@ static char *subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int opl
 			free (oldstr);
 		}
 		r_list_foreach (bpargs, iter, var) {
-			char *tmpf = NULL;
 			st64 delta = p->get_ptr_at
 				? p->get_ptr_at (f, var->delta, addr)
 				: ST64_MAX;
@@ -309,14 +301,8 @@ static char *subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int opl
 			if (!reg) {
 				reg = anal->reg->alias[R_REG_ALIAS_BP];
 			}
-			if (R_ABS (delta) < 10) {
-				tmpf = "%d(%s)";
-			} else if (delta > 0) {
-				tmpf = "0x%x(%s)";
-			} else {
-				tmpf = "-0x%x(%s)";
-			}
-			oldstr = r_str_newf (tmpf, R_ABS (delta), reg);
+			const ut64 adelta = R_ABS (delta);
+			oldstr = r_str_newf ((adelta < 10)? "%s%" PFMT64u "(%s)": "%s0x%" PFMT64x "(%s)", delta < 0? "-": "", adelta, reg);
 			if (ucase) {
 				char *comma = strchr (oldstr, ',');
 				if (comma) {
