@@ -1035,6 +1035,9 @@ static bool walk_code_section(FcnWalk *w, ut64 addr) {
 	if (anal->opt.noncode || !anal->binb.get_vsect_at || !anal->binb.bin) {
 		return true;
 	}
+	if (anal->iob.io && !anal->iob.io->va) {
+		return true;
+	}
 	if (addr >= w->section_from && addr < w->section_to) {
 		return w->section_exec;
 	}
