@@ -289,43 +289,36 @@ int run_m_list(tms320_dasm_t *dasm) {
 	return 1;
 }
 
-int vreplace(char *string, const char *token, const char *fmt, va_list args) {
-	char data[64];
-	char *pos;
-
-	pos = strstr (string, token);
+// replace the first token found and return the position right after the inserted text
+static char *vreplace(char *string, const char *token, const char *fmt, va_list args) {
+	char *pos = strstr (string, token);
 	if (!pos) {
-		return 0;
+		return NULL;
 	}
-
+	char data[64];
 	vsnprintf (data, sizeof (data), fmt, args);
-
-	memmove (pos + strlen (data), pos + strlen (token), strlen (pos + strlen (token)) + 1);
-	memmove (pos, data, strlen (data));
-
-	return 1;
+	const size_t data_len = strlen (data);
+	const size_t token_len = strlen (token);
+	memmove (pos + data_len, pos + token_len, strlen (pos + token_len) + 1);
+	memcpy (pos, data, data_len);
+	return pos + data_len;
 }
 
-int replace(char *string, const char *token, const char *fmt, ...) {
-	int result;
+static void replace(char *string, const char *token, const char *fmt, ...) {
 	va_list args;
-
 	va_start (args, fmt);
-	result = vreplace (string, token, fmt, args);
+	vreplace (string, token, fmt, args);
 	va_end (args);
-
-	return result;
 }
 
-void substitute(char *string, const char *token, const char *fmt, ...) {
-	int result;
+// replaced text is never rescanned, it may contain the token itself
+static void substitute(char *string, const char *token, const char *fmt, ...) {
 	va_list args;
-
 	do {
 		va_start (args, fmt);
-		result = vreplace (string, token, fmt, args);
+		string = vreplace (string, token, fmt, args);
 		va_end (args);
-	} while (result);
+	} while (string);
 }
 
 const char *get_xreg_str(ut8 key, char *str) {
