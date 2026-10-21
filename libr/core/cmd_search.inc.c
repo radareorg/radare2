@@ -403,16 +403,19 @@ static void cmd_search_bin(RCore *core, RInterval itv) {
 				RBinFileOptions opt = {
 					.pluginname = plug->meta.name,
 					.baseaddr = 0,
-					.loadaddr = 0,
-					.sz = 4096,
+					.loadaddr = from,
+					.sz = to - from,
 					.xtr_idx = 0,
 					.rawstr = core->bin->options.rawstr,
 					.fd = fd,
 				};
-				r_bin_open_io (core->bin, &opt);
-				size = plug->size (core->bin->cur);
-				if (size > 0) {
-					r_cons_printf (core->cons, "size %d\n", size);
+				// size () only understands the object parsed by its own plugin
+				RBinFile *bf = r_bin_open_io (core->bin, &opt)? core->bin->cur: NULL;
+				if (bf && bf->bo && bf->bo->plugin == plug) {
+					size = plug->size (bf);
+					if (size > 0) {
+						r_cons_printf (core->cons, "size %d\n", size);
+					}
 				}
 			}
 		}
