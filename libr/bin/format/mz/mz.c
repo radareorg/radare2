@@ -130,7 +130,6 @@ bool r_bin_mz_load_segments(const struct r_bin_mz_obj_t *bin, ut64 filesize, RVe
 	section = RVecRBinSection_emplace_back (segments);
 	section->name = strdup (".mzhdr");
 	section->paddr = 0;
-	section->vsize = hdroff;
 	section->size = hdroff;
 	section->perm = R_PERM_R;
 

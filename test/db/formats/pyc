@@ -104,13 +104,13 @@ CMDS=<<EOF
 iS~Bat
 EOF
 EXPECT=<<EOF
-30  0x00001f0d   0x2a 0x00001f0d   0x2a ---- 0x0   ---- <module>.Bat
-31  0x00001f5f    0xa 0x00001f5f    0xa ---- 0x0   ---- <module>.Bat.__init__
-32  0x00001fca    0x8 0x00001fca    0x8 ---- 0x0   ---- <module>.Bat.say
-33  0x00002037    0x4 0x00002037    0x4 ---- 0x0   ---- <module>.Bat.sonar
-34  0x00002103   0x1c 0x00002103   0x1c ---- 0x0   ---- <module>.Batman
-35  0x00002143   0x44 0x00002143   0x44 ---- 0x0   ---- <module>.Batman.__init__
-36  0x00002235    0x4 0x00002235    0x4 ---- 0x0   ---- <module>.Batman.sing
+30  0x00001f0d   0x2a 0x00001f0d   0x2a -r-x 0x0   ---- <module>.Bat
+31  0x00001f5f    0xa 0x00001f5f    0xa -r-x 0x0   ---- <module>.Bat.__init__
+32  0x00001fca    0x8 0x00001fca    0x8 -r-x 0x0   ---- <module>.Bat.say
+33  0x00002037    0x4 0x00002037    0x4 -r-x 0x0   ---- <module>.Bat.sonar
+34  0x00002103   0x1c 0x00002103   0x1c -r-x 0x0   ---- <module>.Batman
+35  0x00002143   0x44 0x00002143   0x44 -r-x 0x0   ---- <module>.Batman.__init__
+36  0x00002235    0x4 0x00002235    0x4 -r-x 0x0   ---- <module>.Batman.sing
 EOF
 EXPECT_ERR=
 RUN
@@ -137,7 +137,7 @@ EXPECT=<<EOF
             ;-- <module>:
             0x0000002a      6400           load_const  Multiline strings can be written
     using three "s, and are often used
-    as documentation. ; [00] ---- section size 3218 named <module>
+    as documentation. ; [00] -r-x section size 3218 named <module>
             0x0000002c      5a00           store_name __doc__
             0x0000002e      6401           load_const True
         ,=< 0x00000030      6f0a           jump_if_false_or_pop 10
@@ -215,7 +215,7 @@ EXPECT=<<EOF
             ;-- section._module_:
             ;-- entry0:
             ;-- <module>:
-            0x0000001e      640000         load_const CodeObject(hello_world) from hello.py ; [00] ---- section size 25 named <module>
+            0x0000001e      640000         load_const CodeObject(hello_world) from hello.py ; [00] -r-x section size 25 named <module>
             0x00000021      840000         make_function
             0x00000024      5a0000         store_name hello_world
             0x00000027      640100         load_const 'world'
@@ -239,7 +239,7 @@ EXPECT=<<EOF
             ;-- section._module_:
             ;-- <module>:
 / 25: entry0 ();
-|           0x0000001e      640000         load_const CodeObject(hello_world) from hello.py ; [00] ---- section size 25 named <module>
+|           0x0000001e      640000         load_const CodeObject(hello_world) from hello.py ; [00] -r-x section size 25 named <module>
 |           0x00000021      840000         make_function
 |           0x00000024      5a0000         store_name hello_world
 |           0x00000027      640100         load_const 'world'
