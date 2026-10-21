@@ -923,7 +923,7 @@ static int cmd_help(void *data, const char *input) {
 					R_LOG_ERROR ("Division by Zero");
 				}
 				if (err) {
-					R_LOG_ERROR (err);
+					R_LOG_ERROR ("%s", err);
 					continue;
 				}
 				char *asnum  = r_num_as_string (NULL, n, false);

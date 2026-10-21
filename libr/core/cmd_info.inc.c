@@ -453,7 +453,7 @@ static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) 
 		if (res) {
 			r_cons_println (core->cons, res);
 		} else {
-			R_LOG_ERROR (err);
+			R_LOG_ERROR ("%s", err);
 		}
 	}
 	free (args);

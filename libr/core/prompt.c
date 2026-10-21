@@ -377,7 +377,7 @@ R_API char *r_core_prompt_format(RCore *core, const char *fmt) {
 			if (p[1] == '(' || p[1] == '{') {
 				char *err = handle_dollar_case (core, sb, &p);
 				if (err) {
-					R_LOG_WARN (err);
+					R_LOG_WARN ("%s", err);
 				}
 			} else {
 				r_strbuf_append_n (sb, p, 1);

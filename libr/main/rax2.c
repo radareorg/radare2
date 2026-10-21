@@ -101,7 +101,7 @@ static bool format_output(RNum *num, char mode, const char *s, RaxMode m, RaxAct
 	const char *errstr = NULL;
 	ut64 n = r_num_math_err (num, s, &errstr);
 	if (errstr) {
-		R_LOG_ERROR (errstr);
+		R_LOG_ERROR ("%s", errstr);
 		return false;
 	}
 	char strbits[65];
@@ -465,7 +465,7 @@ dotherax:
 		if (n < 1 || r_str_startswith (str, "0x")) {
 			ut64 q = r_num_math_err (num, str, &errstr);
 			if (errstr) {
-				R_LOG_ERROR (errstr);
+				R_LOG_ERROR ("%s", errstr);
 				free (buf);
 				return false;
 			}
@@ -481,7 +481,7 @@ dotherax:
 	if (flags->binarynum) { // -x
 		ut64 n = r_num_math_err (num, str, &errstr);
 		if (errstr) {
-			R_LOG_ERROR (errstr);
+			R_LOG_ERROR ("%s", errstr);
 			return false;
 		}
 		if (n >> 32) {
@@ -519,7 +519,7 @@ dotherax:
 	} else if (flags->signedword) { // -w
 		ut64 n = r_num_math_err (num, str, &errstr);
 		if (errstr) {
-			R_LOG_ERROR (errstr);
+			R_LOG_ERROR ("%s", errstr);
 			return false;
 		}
 		// read the value as signed in the smallest width that holds it
@@ -535,7 +535,7 @@ dotherax:
 	} else if (flags->binaryraw) { // -c
 		ut64 n = r_num_math_err (num, str, &errstr);
 		if (errstr) {
-			R_LOG_ERROR (errstr);
+			R_LOG_ERROR ("%s", errstr);
 			return false;
 		}
 		if (n >> 32) {
@@ -569,7 +569,7 @@ dotherax:
 		char buf[8] = { 0 };
 		r_num_units (buf, sizeof (buf), r_num_math_err (NULL, str, &errstr));
 		if (errstr) {
-			R_LOG_ERROR (errstr);
+			R_LOG_ERROR ("%s", errstr);
 			return false;
 		}
 		printf ("%s\n", buf);
@@ -588,14 +588,14 @@ dotherax:
 		}
 		ut32 n = r_num_math_err (num, ts, &errstr);
 		if (errstr) {
-			R_LOG_ERROR (errstr);
+			R_LOG_ERROR ("%s", errstr);
 			return false;
 		}
 		RPrint *p = r_print_new ();
 		if (gmt) {
 			p->datezone = r_num_math_err (num, gmt, &errstr);
 			if (errstr) {
-				R_LOG_ERROR (errstr);
+				R_LOG_ERROR ("%s", errstr);
 				return false;
 			}
 		}
@@ -650,7 +650,7 @@ dotherax:
 		const char *errstr = NULL;
 		ut64 n = r_num_math_err (num, str, &errstr);
 		if (errstr) {
-			R_LOG_ERROR (errstr);
+			R_LOG_ERROR ("%s", errstr);
 			return false;
 		}
 		if (num->dbz) { // XXX should be done in errstr already
@@ -709,7 +709,7 @@ dotherax:
 		const char *errstr = NULL;
 		ut64 n = r_num_math_err (num, str, &errstr);
 		if (errstr) {
-			R_LOG_ERROR (errstr);
+			R_LOG_ERROR ("%s", errstr);
 			return false;
 		}
 		if (num->dbz) { // XXX should be done in errstr already
@@ -819,7 +819,7 @@ dotherax:
 			const char *errstr = NULL;
 			ut32 ip32 = (ut32)r_num_math_err (NULL, str, &errstr);
 			if (errstr) {
-				R_LOG_ERROR (errstr);
+				R_LOG_ERROR ("%s", errstr);
 				return false;
 			}
 			ut8 ip[4] = { ip32 & 0xff, (ip32 >> 8) & 0xff, (ip32 >> 16) & 0xff, ip32 >> 24 };
