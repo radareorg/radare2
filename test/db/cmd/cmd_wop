@@ -67,6 +67,39 @@ helloworld
 EOF
 RUN
 
+NAME=woE woD rc2 ciphertext with zero byte
+FILE=-
+CMDS=<<EOF
+b 8
+w hello12x
+woE rc2 s:key
+p8
+woD rc2 s:key
+ps
+EOF
+EXPECT=<<EOF
+9817008391bebea2
+hello12x
+EOF
+RUN
+
+NAME=woE woD rc2 unaligned length
+FILE=-
+CMDS=<<EOF
+b 12
+w helloworld12
+woE rc2 s:key
+b 16
+p8
+woD rc2 s:key
+ps
+EOF
+EXPECT=<<EOF
+a9c85c7650456d8f4e2af6454d95ac39
+helloworld12
+EOF
+RUN
+
 NAME=woE woD sm4
 FILE=-
 CMDS=<<EOF
