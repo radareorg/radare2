@@ -176,6 +176,8 @@ static bool plugin_init(RCorePluginSession *cps) {
 	r_config_node_desc (node, "emit structured if/else instead of goto in pdc");
 	node = r_config_set_b (cfg, "pdc.trycatch", true);
 	r_config_node_desc (node, "render the exception regions of the bin as try/catch blocks");
+	node = r_config_set_b (cfg, "pdc.optimize", false);
+	r_config_node_desc (node, "simplify register expressions and remove dead assignments in pdc");
 	r_config_lock (cfg, true);
 	return true;
 }
@@ -187,6 +189,7 @@ static bool plugin_fini(RCorePluginSession *cps) {
 	if (core->config) {
 		r_config_rm (core->config, "pdc.structured");
 		r_config_rm (core->config, "pdc.trycatch");
+		r_config_rm (core->config, "pdc.optimize");
 	}
 	return true;
 }

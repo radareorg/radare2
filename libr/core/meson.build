@@ -48,6 +48,7 @@ r_core_sources += [
   'p/core_agD.c',
   'p/pseudo/plugin.c',
   'p/pseudo/pdc_ast.c',
+  'p/pseudo/pdc_opt.c',
   'p/pseudo/pseudo.c',
   'p/core_writedwarf.c',
   'p/core_prj.c',
