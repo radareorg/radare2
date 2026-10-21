@@ -882,11 +882,17 @@ a "add dword [esp+8], 1" 8344240801
 a "add eax, 1" 83c001
 a "add eax, 3" 83c003
 a "add eax, dword [eax]" 0300
+a "cmp eax, dword [ebp - 8]" 3b45f8
+a "add eax, [ebx+ecx*2+0x10]" 03444b10
+a "or ecx, dword [eax + ebx*8]" 0b0cd8
+a "sub dword [ebx - 0x200], ecx" 298b00feffff
+a "xor al, byte [esi - 1]" 3246ff
+a "and word [ebx + esi*2], dx" 66211473
 a "add [eax], eax" 0100
 a "add esi,-334" 81c6b2feffff
 a "add byte [0x45342], al" 000542530400
 a "add byte [0x45a42], 0x24" 8005425a040024
-a "add byte [eax + eax], bl" 001c
+a "add byte [eax + eax], bl" 001c00
 aB "addpd xmm0, xmmword [eax]" 660f5800
 aB "addps xmm0, xmmword [eax]" 0f5800
 aB "addsd xmm0, qword [eax]" F20F5800

@@ -30,9 +30,17 @@ a "add dword[rax], 123" 83007b
 a "add qword[rax], 123" 4883007b
 a "add qword[rax], rsi" 480130
 a "add qword[rax], rdi" 480138
-aB "add word[rax], di" 660138
+a "add word[rax], di" 660138
 a "add r13, r15" 4d01fd
 a "add r15, rbx" 4901df
+a "add r8, qword [rbx]" 4c0303
+a "add rax, qword [r9]" 490301
+a "cmp r10, qword [rsp + 8]" 4c3b542408
+a "cmp rax, qword [rbp - 8]" 483b45f8
+a "sub r15, qword [r12 + r13*8 + 0x40]" 4f2b7cec40
+a "add qword [r8 + 8], r9" 4d014808
+a "xor r8d, dword [rax]" 443300
+a "add sil, byte [rbx]" 400233
 a "add rax, 44" 4883c02c
 a "add rax, r8" 4c01c0
 a "add r10, r9" 4d01ca
@@ -112,8 +120,8 @@ a "cmp dword[rax-0x1234], 0x8765" 81b8ccedffff65870000
 a "cmp qword[rax-0x1234], 0x8765" 4881b8ccedffff65870000
 a "cmp qword[rsp-0x1111], rsi" 4839b424efeeffff
 a "cmp byte[rsp-0x1111], al" 388424efeeffff
-aB "cmp word[rsp-0x1111], dx" 66399424efeeffff
-a "cmp dword[rdi-0x9888], ecx" 67398f7867ffff
+a "cmp word[rsp-0x1111], dx" 66399424efeeffff
+a "cmp dword[rdi-0x9888], ecx" 398f7867ffff
 a "cmp qword[rsp-0x9888], rax" 483984247867ffff
 a "cmp rax, 33" 4883f821
 a "cmp rax, rbx" 4839d8
@@ -320,7 +328,7 @@ a "sub dword[rax], 123" 83287b
 a "sub qword[rax], 123" 4883287b
 a "sub qword[rax], rsi" 482930
 a "sub qword[rax], rdi" 482938
-aB "sub word[rax], di" 662938
+a "sub word[rax], di" 662938
 a "sub rax, 44" 4883e82c
 a "sub rax, rbx" 4829d8
 a "sub r9, rbx" 4929d9
@@ -390,10 +398,10 @@ a "or byte[rax-0x56], al" 0840aa
 a "or byte[rax-0x90000], dh" 08b00000f7ff
 a "or byte[rdi-0x90000], ch" 08af0000f7ff
 a "or byte[rsp-0x90000], bl" 089c240000f7ff
-aB "or word[rsp-0x90000], dx" 660994240000f7ff
-aB "or word[rax-0x902320], si" 6609b0e0dc6fff
-aB "or dword[rax-0x902320], edx" 0990e0dc6fff
-aB "or dword[rdx-0x902320], ecx" 098ae0dc6fff
+a "or word[rsp-0x90000], dx" 660994240000f7ff
+a "or word[rax-0x902320], si" 6609b0e0dc6fff
+a "or dword[rax-0x902320], edx" 0990e0dc6fff
+a "or dword[rdx-0x902320], ecx" 098ae0dc6fff
 a "or qword[rdx-0x902320], rax" 480982e0dc6fff
 a "or qword[rdx-0x902320], rsi" 4809b2e0dc6fff
 ad "push r8" 4150
