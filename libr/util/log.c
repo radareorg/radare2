@@ -254,16 +254,10 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 			r_strbuf_appendf (sb, " [%s:%d]", func, line);
 		}
 	}
-	char ts[32] = {0};
 	if (rlog->show_ts) {
-		ut64 now = r_time_now ();
-		if (rlog->color) {
-			r_strbuf_appendf (sb, ts, sizeof (ts), Color_CYAN "[ts:%" PFMT64u "]" Color_RESET, now);
-		} else {
-			r_strbuf_appendf (sb, ts, sizeof (ts), "[ts:%" PFMT64u "]", now);
-		}
+		r_strbuf_appendf (sb, " %s[ts:%" PFMT64u "]%s", rlog->color? Color_CYAN: "", r_time_now (), rlog->color? Color_RESET: "");
 	}
-	r_strbuf_appendf (sb, "%s %s\n", ts, out);
+	r_strbuf_appendf (sb, " %s\n", out);
 	char *s = r_strbuf_drain (sb);
 	sb = NULL;
 	if (!rlog->quiet) {
