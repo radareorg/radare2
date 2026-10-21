@@ -4564,3 +4564,42 @@ EXPECT=<<EOF
 3
 EOF
 RUN
+
+NAME=Analysis stops at nonexecutable ELF section inside executable map
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+e io.cache=true
+wx 4040c3 @ 0x80484a6
+s 0x80484a6
+af
+afij~{[0].realsz}
+af-*
+e anal.in=io.maps
+af
+afij~{[0].realsz}
+af-*
+e anal.in=io.maps.x
+s 0x80484a8
+af
+afl~?
+EOF
+EXPECT=<<EOF
+2
+3
+0
+EOF
+RUN
+
+NAME=Analysis without binary sections keeps executable map fallback
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 40c3
+af
+afij~{[0].realsz}
+EOF
+EXPECT=<<EOF
+2
+EOF
+RUN
