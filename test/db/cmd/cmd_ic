@@ -1586,6 +1586,7 @@ RUN
 
 NAME=ic+ preserves UTF-8 class, field, base and selector names
 FILE=malloc://512
+ARGS=-e asm.flags.utf8=true
 CMDS=<<EOF
 ic+🦀
 ic+🦀:基础
@@ -1655,4 +1656,24 @@ fs classes
 'f method.Foo.operator = 0x0
 'td struct Foo { char empty[0];};
 EOF
+RUN
+
+NAME=ic ** keeps unsafe names and encoding prefixes distinct
+FILE=malloc://512
+CMDS=<<EOF2
+'ic+Foo;Bar.method+
+ic+Foo_Bar.method
+ic+r2name_466f6f3b426172
+.ic 0 **
+'ic-Foo;Bar
+.ic 0 **
+ic-Foo_Bar
+.ic 0 **
+acl
+EOF2
+EXPECT=<<EOF2
+Foo_Bar
+r2name_466f6f3b426172
+r2name_72326e616d655f3436366636663362343236313732
+EOF2
 RUN

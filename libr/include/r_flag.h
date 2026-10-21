@@ -84,6 +84,7 @@ typedef struct r_flag_t {
 	bool realnames;
 	bool autospace;    /* auto-assign flagspace by name prefix */
 	R_DIRTY_VAR;
+	bool utf8;        /* preserve UTF-8 in new flag names */
 	ut32 lastid;
 	Sdb *tags;
 	RNum *num;
@@ -139,6 +140,9 @@ R_API void r_flag_del_meta(RFlag *f, ut32 id);
 #define r_flag_bind_init(x) memset (&x, 0, sizeof (x))
 R_API void r_flag_bind(RFlag *io, RFlagBind *bnd);
 R_API RFlag *r_flag_new(void);
+static inline bool r_flag_name_filter(RFlag *f, char *name) {
+	return r_name_filter_utf8 (name, -1, f->utf8);
+}
 R_API void r_flag_free(RFlag *f);
 R_API void r_flag_reserve(RFlag *f, ut64 count);
 R_API char *r_flag_list(RFlag *f, int rad, const char *pfx);

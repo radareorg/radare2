@@ -215,6 +215,11 @@ bool test_r_flag_metadata_lifetime(void) {
 
 bool test_r_flag_utf8(void) {
 	RFlag *flags = r_flag_new ();
+	mu_assert_false (flags->utf8, "ASCII names by default");
+	RFlagItem *ascii = r_flag_set (flags, "sym.名字", 0, 1);
+	mu_assert_notnull (ascii, "create filtered flag");
+	mu_assert_streq (ascii->name, "sym.", "filter UTF-8 by default");
+	flags->utf8 = true;
 	RFlagItem *crab = r_flag_set (flags, "🦀", 0x10, 1);
 	RFlagItem *rocket = r_flag_set (flags, "🚀", 0x20, 1);
 	mu_assert_notnull (crab, "create emoji flag");
@@ -225,6 +230,10 @@ bool test_r_flag_utf8(void) {
 	mu_assert_ptreq (r_flag_get (flags, "🚀"), rocket, "lookup second name");
 	mu_assert_true (r_flag_rename (flags, crab, "👩‍💻"), "rename to joined emoji");
 	mu_assert_ptreq (r_flag_get (flags, "👩‍💻"), crab, "lookup joined emoji");
+	flags->utf8 = false;
+	mu_assert_ptreq (r_flag_get (flags, "👩‍💻"), crab, "toggle preserves existing names");
+	mu_assert_true (r_flag_rename (flags, rocket, "rocket.火箭"), "rename with UTF-8 disabled");
+	mu_assert_streq (rocket->name, "rocket.", "rename respects ASCII mode");
 	r_flag_free (flags);
 	mu_end;
 }

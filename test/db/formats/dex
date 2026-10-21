@@ -85,7 +85,7 @@ class LHello
 public static
 public
 --
-'f method.LHello.public.static.LHello.method.main([Ljava/lang/String;)V = 0x1c0
+'f method.LHello.public.static.LHello.method.main__Ljava_lang_String__V = 0x1c0
 EOF
 RUN
 
