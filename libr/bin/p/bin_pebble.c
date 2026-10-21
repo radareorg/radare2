@@ -203,6 +203,7 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->bclass = r_str_ndup (pai.name, 32);
 	r_str_sanitize (ret->bclass);
 	ret->rclass = r_str_ndup (pai.company, 32);
+	r_str_sanitize (ret->rclass);
 	ret->os = strdup ("pebble");
 	ret->subsystem = strdup ("pebble");
 	ret->machine = strdup ("watch");

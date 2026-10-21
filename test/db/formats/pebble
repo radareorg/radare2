@@ -44,3 +44,21 @@ Pebble trampoline hits: 1
 Pebble stub resolver complete: 32 named stubs
 EOF
 RUN
+
+NAME=Pebble: company name with newlines stays on one config line
+FILE=malloc://512
+CMDS=<<EOF
+wx 50424c4150500000080105000100000180000000000000006d7961707000000000000000000000000000000000000000000000000000000041434d450a3f652050574e45440a @ 0
+obf
+i*~file.type
+e file.type
+e log.quiet=true
+.i*
+?e SAFE
+EOF
+EXPECT=<<EOF
+'e file.type=ACME_?e PWNED_
+ACME_?e PWNED_
+SAFE
+EOF
+RUN
