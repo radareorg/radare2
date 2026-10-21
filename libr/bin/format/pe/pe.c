@@ -1168,17 +1168,27 @@ const char *PE_(bin_pe_compute_authentihash)(RBinPEObj *pe) {
 	PE_DWord security_dir_offset = data_dir_security->VirtualAddress;
 	ut32 security_dir_size = data_dir_security->Size;
 
+	// hash the file without the checksum, the security entry and the certificate table, in file order
+	ut64 skip[3][2] = {
+		{ checksum_paddr, 4 },
+		{ security_entry_offset, 8 },
+		{ security_dir_offset, security_dir_size }
+	};
+	int i;
+	for (i = 2; i > 0 && skip[i][0] < skip[i - 1][0]; i--) {
+		ut64 tmp[2] = { skip[i][0], skip[i][1] };
+		memcpy (skip[i], skip[i - 1], sizeof (tmp));
+		memcpy (skip[i - 1], tmp, sizeof (tmp));
+	}
 	RBuffer *buf = r_buf_new ();
-	r_buf_append_buf_slice (buf, pe->b, 0, checksum_paddr);
-	r_buf_append_buf_slice (buf, pe->b,
-		checksum_paddr + 4,
-		security_entry_offset - checksum_paddr - 4);
-	r_buf_append_buf_slice (buf, pe->b,
-		security_entry_offset + 8,
-		security_dir_offset - security_entry_offset - 8);
-	r_buf_append_buf_slice (buf, pe->b,
-		security_dir_offset + security_dir_size,
-		r_buf_size (pe->b) - security_dir_offset - security_dir_size);
+	ut64 at = 0;
+	for (i = 0; i < 3; i++) {
+		if (skip[i][0] > at) {
+			r_buf_append_buf_slice (buf, pe->b, at, skip[i][0] - at);
+		}
+		at = R_MAX (at, skip[i][0] + skip[i][1]);
+	}
+	r_buf_append_buf_slice (buf, pe->b, at, UT64_MAX);
 
 	ut64 len;
 	const ut8 *data = r_buf_data (buf, &len);

@@ -423,6 +423,12 @@ R_API bool r_buf_append_buf(RBuffer *b, RBuffer *a) {
 
 R_API bool r_buf_append_buf_slice(RBuffer *b, RBuffer *a, ut64 offset, ut64 size) {
 	R_RETURN_VAL_IF_FAIL (b && a && !b->readonly, false);
+	// never allocate more than the source can provide
+	const ut64 asz = r_buf_size (a);
+	if (offset >= asz) {
+		return false;
+	}
+	size = R_MIN (size, asz - offset);
 	ut8 *tmp = R_NEWS (ut8, size);
 	bool res = false;
 	if (tmp) {
