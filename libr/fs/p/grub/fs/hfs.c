@@ -707,9 +707,14 @@ grub_hfs_iterate_records(struct grub_hfs_data *data, int type, int idx, int this
 			return grub_errno;
 		}
 
-		/* Iterate over all records in this node.  */
+		// records live between the node descriptor and the offset table at the end of the node
+		const int reccnt = grub_be_to_cpu16 (node.node.reccnt);
+		const int table = nodesize - 2 * reccnt;
+		if (table < (int)sizeof (struct grub_hfs_node)) {
+			break;
+		}
 		int i;
-		for (i = 0; i < grub_be_to_cpu16 (node.node.reccnt); i++) {
+		for (i = 0; i < reccnt; i++) {
 			int pos = (nodesize >> 1) - 1 - i;
 			R_PACKED (
 				struct pointer {
@@ -717,17 +722,23 @@ grub_hfs_iterate_records(struct grub_hfs_data *data, int type, int idx, int this
 					grub_uint8_t key;
 				}) *
 				pnt;
-			int off = grub_be_to_cpu16 (node.offsets[pos]);
-			if (off > (sizeof (node.rawnode) - sizeof (struct grub_hfs_record))) {
-				// eprintf ("Prevent HFS oobread\n");
-				break;
+			const int off = grub_be_to_cpu16 (node.offsets[pos]);
+			if (off < (int)sizeof (struct grub_hfs_node) || off + 2 > table) {
+				continue;
 			}
 			pnt = (struct pointer *) (node.rawnode + off);
+			const int keylen = pnt->keylen;
+			const int dataoff = off + 1 + keylen + (keylen + 1) % 2;
+			// hooks read the whole key and at least the 4 byte node pointer of index records
+			const int minkey = type == 0? 6: sizeof (struct grub_hfs_extent_key);
+			if (dataoff + 4 > table || keylen < minkey || (type == 0 && keylen < 6 + (ut8)node.rawnode[off + 6])) {
+				continue;
+			}
 			struct grub_hfs_record rec = {
 				&pnt->key,
-				pnt->keylen,
-				&pnt->key + pnt->keylen + (pnt->keylen + 1) % 2,
-				nodesize - grub_be_to_cpu16 (node.offsets[pos]) - pnt->keylen - 1
+				keylen,
+				node.rawnode + dataoff,
+				table - dataoff
 			};
 
 			if (node_hook (&node.node, &rec, closure)) {
