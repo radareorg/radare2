@@ -16,18 +16,28 @@ static const char *parse_alias(RReg *reg, char **tok, const int n) {
 // Sizes prepended with a dot are expressed in bits
 // strtoul with base 0 allows the input to be in decimal/octal/hex format
 
-static ut64 parse_size(char *s, char **end) {
+// bit counts are stored in ints, larger values are rejected through end
+static int parse_size(char *s, char **end) {
+	ut64 bits;
 	if (*s == '.') {
-		return strtoul (s + 1, end, 10);
+		bits = strtoull (s + 1, end, 10);
+	} else {
+		char *has_dot = strchr (s, '.');
+		if (has_dot) {
+			*has_dot++ = 0;
+		}
+		const ut64 bytes = strtoull (s, end, 0);
+		bits = (bytes > INT_MAX / 8)? UT64_MAX: bytes << 3;
+		if (has_dot) {
+			const ut64 extra = strtoull (has_dot, end, 0);
+			bits = (extra > INT_MAX)? UT64_MAX: bits + extra;
+		}
 	}
-	char *has_dot = strchr (s, '.');
-	if (has_dot) {
-		*has_dot++ = 0;
-		ut64 a = strtoul (s, end, 0) << 3;
-		ut64 b = strtoul (has_dot, end, 0);
-		return a + b;
+	if (bits > INT_MAX) {
+		*end = "!";
+		return 0;
 	}
-	return strtoul (s, end, 0) << 3;
+	return (int)bits;
 }
 
 // returns the bit offset just past the last reserved byte in the given arena.
@@ -178,6 +188,9 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 		if (*end) {
 			return "Invalid packed size";
 		}
+		if ((st64)vsize * vcount > INT_MAX - voff) {
+			return "Invalid size";
+		}
 		RRegVBank *vb = RVecRegVBank_emplace_back (&reg->regset[type2].vbanks);
 		if (!vb) {
 			return "Unable to allocate memory";
@@ -221,7 +234,7 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	} else {
 		item->offset = parse_size (tok[3], &end);
 	}
-	if (*end) {
+	if (*end || item->offset > INT_MAX - item->size) {
 		r_reg_item_free (item);
 		return "Invalid offset";
 	}

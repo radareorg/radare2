@@ -521,3 +521,18 @@ EXPECT=<<EOF
 0x00000005
 EOF
 RUN
+
+NAME=arp rejects offsets and sizes that do not fit the register arena
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+arp scripts/badrp_offset.r2
+arp scripts/badrp_size.r2
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Parse error @ line 3 (Invalid offset)
+ERROR: Parse error @ line 3 (Invalid size)
+EOF
+RUN
