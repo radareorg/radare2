@@ -1,0 +1,38 @@
+# Source: Reflow test/bin/swift-bridge/bridge-samples.swift, module BridgeSamples.
+# BridgeName descriptor fieldOffsetVectorOffset at 0x1294 is 0x7fffffff,
+# so its field remains named but its static offset read is unavailable.
+NAME=Swift-only metadata preserves verified zero and unknown field offsets
+FILE=bins/mach0/swift-bridge-layout
+CMDS=<<EOF
+icj~{0.classname}
+icj~{0.fields[0].name}
+icj~{0.fields[0].offset}
+icj~{0.fields[1].name}
+icj~{0.fields[1].offset}
+?e `icj~{0.fields[0]}`~?attr
+icj~{1.classname}
+icj~{1.fields[0].name}
+?e `icj~{1.fields[0]}`~?offset
+icj~{2.classname}
+icj~{2.fields[0].name}
+?e `icj~{2.fields[0]}`~?offset
+icj~{2.fields[1].name}
+?e `icj~{2.fields[1]}`~?offset
+EOF
+EXPECT=<<EOF
+BridgeSamples.BridgePoint
+x
+0
+y
+4
+0
+BridgeSamples.BridgeName
+bridgeName
+0
+BridgeSamples.BridgeBox
+value
+0
+tag
+0
+EOF
+RUN
