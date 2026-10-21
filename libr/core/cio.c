@@ -217,20 +217,10 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 			for (i = n = 0; i < bsz; i++, n += step) {
 				buf[i] = (ut8)(n % dif) + from;
 			}
-		} else if (wordsize == 2) {
-			ut16 num16 = from;
-			for (i = 0; i < bsz; i += wordsize, num16 += step) {
-				r_write_le16 (buf + i, num16);
-			}
-		} else if (wordsize == 4) {
-			ut32 num32 = from;
-			for (i = 0; i < bsz; i += wordsize, num32 += step) {
-				r_write_le32 (buf + i, num32);
-			}
-		} else if (wordsize == 8) {
-			ut64 num64 = from;
-			for (i = 0; i < bsz; i += wordsize, num64 += step) {
-				r_write_le64 (buf + i, num64);
+		} else if (wordsize == 2 || wordsize == 4 || wordsize == 8) {
+			ut64 num = from;
+			for (i = 0; i + wordsize <= bsz; i += wordsize, num += step) {
+				r_write_ble (buf + i, num, false, wordsize * 8);
 			}
 		} else {
 			R_LOG_ERROR ("Invalid word size. Use 1, 2, 4 or 8");

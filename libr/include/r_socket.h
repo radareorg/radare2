@@ -24,8 +24,9 @@ R_LIB_VERSION_HEADER(r_socket);
 #endif
 
 #if HAVE_LIB_SSL
-#include <openssl/ssl.h>
-#include <openssl/err.h>
+typedef struct ssl_ctx_st SSL_CTX;
+typedef struct ssl_st SSL;
+typedef struct bio_st BIO;
 #endif
 
 #if R2__UNIX__

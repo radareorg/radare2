@@ -7954,6 +7954,16 @@ static ut64 bwdisasm_window(RCore *core, ut64 from, int nb_opcodes, int *nbytes)
 	return start;
 }
 
+// fill the block with n bytes from the current address, growing it if needed
+static bool read_block(RCore *core, int n) {
+	if (n > core->blocksize && !r_core_block_size (core, n)) {
+		R_LOG_ERROR ("Cannot read that much!");
+		return false;
+	}
+	r_io_read_at (core->io, core->addr, core->block, n);
+	return true;
+}
+
 static bool handle_backwards_disasm(RCore *core, int *nb_opcodes, int *nb_bytes) {
 	if (!*nb_opcodes && !*nb_bytes) {
 		return false;
@@ -7977,37 +7987,16 @@ static bool handle_backwards_disasm(RCore *core, int *nb_opcodes, int *nb_bytes)
 				core->addr = old_offset;
 				nbytes = core->blocksize;
 			}
-			if (nbytes > core->blocksize) {
-				r_core_block_size (core, nbytes);
-				if (nbytes > core->blocksize) {
-					R_LOG_ERROR ("Cannot read that much!");
-					return false;
-				}
-			}
-			r_io_read_at (core->io, core->addr, core->block, nbytes);
+			return read_block (core, nbytes);
 		}
 	} else {
 		if (*nb_bytes < 0) { // Disassemble backward `nb_bytes` bytes
 			*nb_bytes = -*nb_bytes;
 			core->addr -= *nb_bytes;
-			if (*nb_bytes > core->blocksize) {
-				ut64 obsz = core->blocksize;
-				r_core_block_size (core, *nb_bytes);
-				if (core->blocksize == *nb_bytes) {
-					r_io_read_at (core->io, core->addr, core->block, *nb_bytes);
-				} else {
-					R_LOG_ERROR ("Cannot read that much!");
-					r_core_block_size (core, obsz);
-					return false;
-				}
-			} else {
-				r_io_read_at (core->io, core->addr, core->block, *nb_bytes);
-			}
-		} else {
-			if (*nb_bytes > core->blocksize) {
-				r_core_block_size (core, *nb_bytes);
-				r_io_read_at (core->io, core->addr, core->block, *nb_bytes);
-			}
+			return read_block (core, *nb_bytes);
+		}
+		if (*nb_bytes > core->blocksize) {
+			return read_block (core, *nb_bytes);
 		}
 	}
 	return true;

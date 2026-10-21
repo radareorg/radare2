@@ -172,6 +172,37 @@ static inline void es_drotr(RAnalOp *op, const char *cnt, const char *rt, const 
 		cnt, rt, cnt, rt, rd);
 }
 
+static void es_msa_bz(RAnalOp *op, const cs_insn *insn, const char *reg, const char *target) {
+	r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x), op->addr);
+	const char *suffix = strrchr (insn->mnemonic, '.');
+	if (suffix && suffix[1] == 'v') {
+		r_strbuf_appendf (&op->esil, "%sl,%sh,|,!", reg, reg);
+	} else {
+		int bits = 64;
+		if (suffix) {
+			switch (suffix[1]) {
+			case 'b': bits = 8; break;
+			case 'h': bits = 16; break;
+			case 'w': bits = 32; break;
+			}
+		}
+		ut64 mask = UT64_MAX >> (64 - bits);
+		int half, shift;
+		r_strbuf_append (&op->esil, "0");
+		for (half = 0; half < 2; half++) {
+			for (shift = 0; shift < 64; shift += bits) {
+				if (bits == 64) {
+					r_strbuf_appendf (&op->esil, ",%s%c,!,|", reg, half? 'h': 'l');
+				} else {
+					r_strbuf_appendf (&op->esil, ",0x%"PFMT64x",%d,%s%c,>>,&,!,|",
+						mask, shift, reg, half? 'h': 'l');
+				}
+			}
+		}
+	}
+	r_strbuf_appendf (&op->esil, ",?{," ES_J_D ("%s") ",}", target);
+}
+
 // the quotient goes to lo and the remainder to hi, sharing one narrowing shape
 static inline void es_div(RArchSession *as, RAnalOp *op, int id, const char *rs, const char *rt, bool mod) {
 	const bool sign = id == MIPS_INS_DIV || id == MIPS_INS_DDIV;
@@ -448,6 +479,16 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 			r_strbuf_appendf (&op->esil, "%d,%s,~,%s,=",
 				(insn->id == MIPS_INS_SEB)? 8: 16, ARG (1), ARG (0));
 			break;
+		case MIPS_INS_CLZ:
+		case MIPS_INS_DCLZ:
+			r_strbuf_appendf (&op->esil, "%d,%s,CLZ,%s,=",
+				(insn->id == MIPS_INS_CLZ)? 32: 64, ARG (1), ARG (0));
+			break;
+		case MIPS_INS_CLO:
+		case MIPS_INS_DCLO:
+			r_strbuf_appendf (&op->esil, "%d,0xffffffffffffffff,%s,^,CLZ,%s,=",
+				(insn->id == MIPS_INS_CLO)? 32: 64, ARG (1), ARG (0));
+			break;
 		case MIPS_INS_WSBH:
 			r_strbuf_appendf (&op->esil,
 				"8,0xff00ff00,%s,&,>>,8,0x00ff00ff,%s,&,<<,|,%s,=",
@@ -626,6 +667,14 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 					addr, ARG (0), ARG (1));
 				break;
 		case MIPS_INS_BZ:
+#if CS_API_MAJOR >= 6
+		case MIPS_INS_BZ_B:
+		case MIPS_INS_BZ_H:
+		case MIPS_INS_BZ_W:
+		case MIPS_INS_BZ_V:
+#endif
+				es_msa_bz (op, insn, ARG (0), ARG (1));
+				break;
 		case MIPS_INS_BEQZ:
 				r_strbuf_appendf (&op->esil, ES_TRAP_DS ("0x%"PFMT64x) "%s,!,?{," ES_J_D ("%s") ",}",
 					addr, ARG (0), ARG (1));
@@ -1322,8 +1371,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	cs_insn *insn = &csi.insn;
 	if (!ok || insn->size < 1) {
 		op->size = mips_archinfo (as, R_ARCH_INFO_INVOP_SIZE);
+		op->type = R_ANAL_OP_TYPE_ILL;
 		if (mask & R_ARCH_OP_MASK_DISASM) {
-			op->type = R_ANAL_OP_TYPE_ILL;
 			op->mnemonic = strdup ("invalid");
 		}
 		return true;
@@ -1587,6 +1636,12 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	case MIPS_INS_J:
 	case MIPS_INS_B:
 	case MIPS_INS_BZ:
+#if CS_API_MAJOR >= 6
+	case MIPS_INS_BZ_B:
+	case MIPS_INS_BZ_H:
+	case MIPS_INS_BZ_W:
+	case MIPS_INS_BZ_V:
+#endif
 	case MIPS_INS_BEQ:
 	case MIPS_INS_BEQC:
 	case MIPS_INS_BEQZ:
@@ -1817,7 +1872,19 @@ static char *get_reg_profile(RArchSession * as) {
 		"gpr	t	.64	280	0\n";
 		break;
 	}
-	return p? strdup (p): NULL;
+	RStrBuf profile;
+	r_strbuf_init (&profile);
+	r_strbuf_set (&profile, p);
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
+	int i;
+	for (i = 0; i < 32; i++) {
+		r_strbuf_appendf (&profile,
+			"vec128@fpu\tw%d\t.128\t%d\t0\n"
+			"fpu\tw%dl\t.64\t%d\t0\n"
+			"fpu\tw%dh\t.64\t%d\t0\n",
+			i, i * 16, i, i * 16 + (be? 8: 0), i, i * 16 + (be? 0: 8));
+	}
+	return r_strbuf_drain_nofree (&profile);
 }
 
 static char *mnemonics(RArchSession *as, int id, bool json) {

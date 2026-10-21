@@ -271,7 +271,7 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 	if (!die) {
 		return -1;
 	}
-	if (!die->attr_count) {
+	if (!die->attr_count && die->tag != DW_TAG_subroutine_type && die->tag != DW_TAG_pointer_type) {
 		// A qualifier with no attribute at all qualifies `void`, which DWARF
 		// spells by omission; returning nothing here left `const void *`
 		// rendered as a bare ` *`.
@@ -308,6 +308,7 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 	set_u_add (*visited, offset);
 
 	st32 tag;
+	st32 result = (st32)die->tag;
 	const char *name = NULL;
 	// get size of first type DIE that has size
 	if (size && *size == 0) {
@@ -323,8 +324,12 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 			r_strbuf_append (strbuf, " *");
 		} else {
 			tag = parse_type (ctx, type_attr->reference, strbuf, size, visited);
+			if (tag < 0) {
+				result = -1;
+				goto cleanup;
+			}
 			if (tag == DW_TAG_subroutine_type) {
-				strbuf_rev_prepend_char (strbuf, "(*)", '(');
+				strbuf_rev_append_char (strbuf, "*)(", "(");
 			} else if (tag == DW_TAG_pointer_type) {
 				if (!strbuf_rev_append_char (strbuf, "*", "(*")) {
 					strbuf_rev_prepend_char (strbuf, "*", '*');
@@ -352,10 +357,82 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 		if (!type_attr) {
 			r_strbuf_append (strbuf, "void");
 		} else {
-			parse_type (ctx, type_attr->reference, strbuf, size, visited);
+			tag = parse_type (ctx, type_attr->reference, strbuf, size, visited);
+			// Returning another callable needs a nested C declarator, not concatenation.
+			if (tag < 0 || strchr (r_strbuf_get (strbuf), '(')) {
+				result = -1;
+				goto cleanup;
+			}
 		}
 		r_strbuf_append (strbuf, " (");
-		if (die->has_children) { // has parameters
+		RBinDwarfAttrValue *prototyped = r_bin_dwarf_die_find_attr (unit, die, DW_AT_prototyped);
+		bool prototype_known = prototyped && prototyped->flag;
+		const RBinDwarfDie *cu_die = RVecDwarfDie_at (unit->dies, 0);
+		RBinDwarfAttrValue *language = cu_die? r_bin_dwarf_die_find_attr (unit, cu_die, DW_AT_language): NULL;
+		if (language) {
+			switch (language->uconstant) {
+			case DW_LANG_C_plus_plus:
+			case DW_LANG_C_plus_plus_03:
+			case DW_LANG_C_plus_plus_11:
+			case DW_LANG_C_plus_plus_14:
+			case DW_LANG_C_plus_plus_17:
+			case DW_LANG_C_plus_plus_20:
+			case DW_LANG_C_plus_plus_23:
+			case DW_LANG_ObjC_plus_plus:
+				prototype_known = true;
+				break;
+			default:
+				break;
+			}
+		}
+		bool first_parameter = true;
+		if (die->has_children) {
+			int depth = 1;
+			size_t j;
+			const size_t count = RVecDwarfDie_length (unit->dies);
+			for (j = (size_t)(die - unit->dies->_start) + 1; depth > 0 && j < count; j++) {
+				const RBinDwarfDie *child = RVecDwarfDie_at (unit->dies, j);
+				if (depth == 1 && (child->tag == DW_TAG_formal_parameter || child->tag == DW_TAG_unspecified_parameters)) {
+					// A lone unspecified child also represents an old C declaration with unknown arity.
+					if (child->tag == DW_TAG_unspecified_parameters && first_parameter && !prototype_known) {
+						if (child->has_children) {
+							result = -1;
+							goto cleanup;
+						}
+						continue;
+					}
+					if (!first_parameter) {
+						r_strbuf_append (strbuf, ", ");
+					}
+					first_parameter = false;
+					if (child->tag == DW_TAG_unspecified_parameters) {
+						r_strbuf_append (strbuf, "...");
+					} else {
+						RBinDwarfAttrValue *parameter_type = r_bin_dwarf_die_find_attr (unit, child, DW_AT_type);
+						RStrBuf parameter;
+						r_strbuf_init (&parameter);
+						if (!parameter_type || parse_type (ctx, parameter_type->reference, &parameter, NULL, visited) < 0 || !parameter.len) {
+							r_strbuf_append (strbuf, "?");
+						} else {
+							r_strbuf_append (strbuf, r_strbuf_get (&parameter));
+						}
+						r_strbuf_fini (&parameter);
+					}
+				}
+				if (child->has_children) {
+					depth++;
+				}
+				if (child->abbrev_code == 0) {
+					depth--;
+				}
+			}
+			if (depth > 0) {
+				result = -1;
+				goto cleanup;
+			}
+		}
+		if (first_parameter && prototype_known) {
+			r_strbuf_append (strbuf, "void");
 		}
 		r_strbuf_append (strbuf, ")");
 		break;
@@ -367,7 +444,10 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 	case DW_TAG_reference_type:
 		type_attr = r_bin_dwarf_die_find_attr (unit, die, DW_AT_type);
 		if (type_attr) {
-			parse_type (ctx, type_attr->reference, strbuf, size, visited);
+			if (parse_type (ctx, type_attr->reference, strbuf, size, visited) < 0) {
+				result = -1;
+				goto cleanup;
+			}
 		}
 		if (die->tag == DW_TAG_array_type) {
 			parse_array_type (ctx, die - ctx->all_dies, strbuf);
@@ -378,11 +458,13 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 	default:
 		break;
 	}
+cleanup:
+	set_u_delete (*visited, offset);
 	if (root) {
 		set_u_free (*visited);
 		free (visited);
 	}
-	return (st32)die->tag;
+	return result;
 }
 
 /**
@@ -700,7 +782,9 @@ static void parse_typedef(Context *ctx, ut64 idx) {
 			}
 			break;
 		case DW_AT_type:
-			parse_type (ctx, value->reference, &strbuf, &size, NULL);
+			if (parse_type (ctx, value->reference, &strbuf, &size, NULL) < 0) {
+				goto cleanup;
+			}
 			type = r_strbuf_drain_nofree (&strbuf);
 			if (!type) {
 				goto cleanup;

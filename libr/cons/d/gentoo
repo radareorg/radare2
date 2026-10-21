@@ -46,7 +46,7 @@ ec ai.read rgb:e0e0e0
 ec ai.write rgb:d0d0d0
 ec ai.exec rgb:f0f0f0
 ec ai.seq rgb:f03030
-ec ai.ascii rgb:f03030
+ec str rgb:f03030
 ec graph.box rgb:3030f0
 ec graph.box2 cyan
 ec graph.box3 rgb:30f030

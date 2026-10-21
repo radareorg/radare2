@@ -1311,6 +1311,17 @@ R_API char *r_str_sanitize_sdb_key(const char *s) {
 	}
 	char *cur = ret;
 	while (len > 0) {
+		if ((ut8)*s >= 0x80) {
+			RRune ch;
+			int size = r_utf8_decode ((const ut8 *)s, R_MIN (len, 4), &ch);
+			if (size > 1 && ch >= 0xa0 && ch != 0x2028 && ch != 0x2029) {
+				memcpy (cur, s, size);
+				cur += size;
+				s += size;
+				len -= size;
+				continue;
+			}
+		}
 		char c = *s;
 		if (! (c >= 'a' && c <= 'z') && ! (c >= 'A' && c <= 'Z') && ! (c >= '0' && c <= '9') && c != '_' && c != ':') {
 			c = '_';
@@ -1463,6 +1474,22 @@ R_API char *r_str_sanitize_r2(const char *buf) {
 		r_str_sanitize (new_buf);
 	}
 	return new_buf;
+}
+
+// the argument itself when an r2 script can replay it verbatim, base64:<b64> otherwise
+R_API char *r_str_r2arg(const char *arg) {
+	R_RETURN_VAL_IF_FAIL (arg, NULL);
+	if (*arg && r_str_is_printable (arg) && !r_str_startswith (arg, "base64:")) {
+		char *safe = r_str_sanitize_r2 (arg);
+		if (!strcmp (safe, arg)) {
+			return safe;
+		}
+		free (safe);
+	}
+	char *b64 = r_base64_encode_dyn ((const ut8 *)arg, -1);
+	char *res = r_str_newf ("base64:%s", r_str_get (b64));
+	free (b64);
+	return res;
 }
 
 R_API char *r_str_escape_sql(const char *buf) {

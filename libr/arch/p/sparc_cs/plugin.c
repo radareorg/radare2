@@ -44,6 +44,9 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			if (op->mem.base != SPARC_REG_INVALID) {
 				pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
 			}
+			if (op->mem.index != SPARC_REG_INVALID) {
+				pj_ks (pj, "index", cs_reg_name (handle, op->mem.index));
+			}
 			pj_ki (pj, "disp", op->mem.disp);
 			break;
 		default:
@@ -218,10 +221,6 @@ performed in big-endian byte order.
 		case SPARC_INS_CALL:
 			switch (INSOP(0).type) {
 			case SPARC_OP_MEM:
-#if !CS_SIX
-				break;
-#endif
-
 			case SPARC_OP_REG:
 				op->type = R_ANAL_OP_TYPE_UCALL;
 				op->delay = 1;
@@ -252,9 +251,12 @@ performed in big-endian byte order.
 		case SPARC_INS_JMP:
 #endif
 		case SPARC_INS_JMPL:
-			op->type = R_ANAL_OP_TYPE_JMP;
+			op->type = R_ANAL_OP_TYPE_UJMP;
 			op->delay = 1;
-			op->jump = INSOP(0).imm;
+			if (INSOP (0).type == SPARC_OP_IMM) {
+				op->type = R_ANAL_OP_TYPE_JMP;
+				op->jump = INSOP (0).imm;
+			}
 			break;
 		case SPARC_INS_LDD:
 		case SPARC_INS_LD:
@@ -421,7 +423,7 @@ static char *regs(RArchSession *as) {
 		"=A3	i3\n"
 		"=A4	i4\n"
 		"=A5	i5\n"
-		"=R0	i7\n"
+		"=R0	o0\n"
 		"gpr	psr	.32	0	0\n"
 		"gpr	pc	.32	4	0\n"
 		"gpr	npc	.32	8	0\n"

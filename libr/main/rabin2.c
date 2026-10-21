@@ -741,7 +741,7 @@ static int rabin2_main(RCons *cons, int argc, const char **argv) {
 	if (r_sys_getenv_asbool ("RABIN2_VERBOSE")) {
 		r_config_set_b (core.config, "bin.verbose", true);
 	}
-	r_config_set_b (core.config, "bin.demangle.trylib", r_sys_getenv_asbool ("RABIN2_DEMAN_TRYLIB"));
+	r_config_set_b (core.config, "bin.demangle.trylib", r_sys_getenv_asbool ("RABIN2_DEMANGLE_TRYLIB"));
 	r_config_set_b (core.config, "bin.demangle", r_sys_getenv_asbool ("RABIN2_DEMANGLE"));
 	if ((tmp = r_sys_getenv ("RABIN2_MAXSTRBUF"))) {
 		r_config_set (core.config, "bin.str.maxbuf", tmp);
@@ -1054,7 +1054,7 @@ static int rabin2_main(RCons *cons, int argc, const char **argv) {
 		}
 		file = argv[opt.ind + 1];
 		type = r_bin_demangle_type (do_demangle);
-		bin->options.demangle_trylib = (type == R_BIN_LANG_SWIFT && r_sys_getenv_asbool ("RABIN2_DEMAN_TRYLIB"));
+		bin->options.demangle_trylib = type == R_BIN_LANG_SWIFT && r_config_get_b (core.config, "bin.demangle.trylib");
 		if (!strcmp (file, "-")) {
 			for (;;) {
 				char *s = stdin_gets (&state);

@@ -27,6 +27,9 @@ LDFLAGS+=${LINK}
 ifeq ($(WITHPIC),1)
 ALL_TARGETS=
 PLUGS=java.mk agD.mk
+ifneq ($(filter p/mmc.mk,${STATIC_CORE_PLUGINS}),)
+PLUGS+=mmc.mk
+endif
 ifneq ($(filter p/panels.mk,${STATIC_CORE_PLUGINS}),)
 PLUGS+=panels.mk
 endif
@@ -36,9 +39,9 @@ all: ${ALL_TARGETS}
 endif
 
 clean:
-	-rm -f *.${EXT_SO} *.o ${STATIC_OBJ} panels/*.o
+	-rm -f *.${EXT_SO} *.o ${STATIC_OBJ} panels/*.o mmc/*.o
 
 mrproper: clean
-	-rm -f *.d panels/*.d
+	-rm -f *.d panels/*.d mmc/*.d
 
 .PHONY: all clean mrproper

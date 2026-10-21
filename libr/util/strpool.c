@@ -25,30 +25,24 @@ R_API RStrpool * R_NULLABLE r_strpool_new(void) {
 	return p;
 }
 
-static char *strpool_alloc(RStrpool *p, int l) {
+static char *strpool_alloc(RStrpool *p, size_t l) {
 	R_RETURN_VAL_IF_FAIL (p, NULL);
-	char *ret = p->str + p->len;
-	if ((p->len + l) >= p->size) {
-		ut64 osize = p->size;
-		if (l >= R_STRPOOL_INC) {
-			p->size += l + R_STRPOOL_INC;
-		} else {
-			p->size += R_STRPOOL_INC;
-		}
-		if (p->size < osize) {
-			p->size = osize;
+	const ut64 len = (ut64)p->len + l;
+	if (len >= (ut64)p->size) {
+		// len and size are int offsets
+		if (len >= ST32_MAX) {
 			return NULL;
 		}
-		ret = realloc (p->str, p->size);
-		if (!ret) {
-			free (p->str);
-			p->str = NULL;
+		const ut64 size = R_MIN (R_MAX ((ut64)p->size * 2, len + R_STRPOOL_INC), ST32_MAX);
+		char *str = realloc (p->str, size);
+		if (!str) {
 			return NULL;
 		}
-		p->str = ret;
-		ret += p->len;
+		p->str = str;
+		p->size = size;
 	}
-	p->len += l;
+	char *ret = p->str + p->len;
+	p->len = len;
 	return ret;
 }
 
@@ -67,7 +61,7 @@ static bool strpool_resize_count(RStrpool *p) {
 	return true;
 }
 
-static int strpool_memcat(RStrpool *p, const char *s, int len) {
+static int strpool_memcat(RStrpool *p, const char *s, size_t len) {
 	char *ptr = strpool_alloc (p, len);
 	if (!ptr) {
 		return -1;
@@ -135,7 +129,7 @@ R_API int r_strpool_add(RStrpool *p, const char *s) {
 
 R_API int r_strpool_append(RStrpool *p, const char *s) {
 	R_RETURN_VAL_IF_FAIL (p && s, -1);
-	const int l = strlen (s) + 1;
+	const size_t l = strlen (s) + 1;
 	const int idx = strpool_memcat (p, s, l);
 	if (idx < 0) {
 		return -1;

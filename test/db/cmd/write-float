@@ -30,3 +30,23 @@ EXPECT=<<EOF
 0x00000000 = 42
 EOF
 RUN
+
+NAME=cfloat profiles whose field sizes sum past INT_MAX are rejected
+FILE=-
+CMDS=<<EOF
+e cfg.float=custom:64,2147483647,2147483585,0,0,0
+e cfg.float
+wvg -1.5
+pf F
+"pa .cfloat 10 2147483647 2147483647 0 0 0;.float 1.5"
+"pa .cfloat 1 15 112 16383 0 0;.float 1.5"
+EOF
+EXPECT=<<EOF
+ieee754
+0x00000000 = -1.5
+0000000000000000000000000080ff3f
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid .cfloat field sizes
+EOF
+RUN

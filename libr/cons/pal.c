@@ -65,7 +65,7 @@ static struct {
 	COLOR_KEY ("ai.write", ai_write),
 	COLOR_KEY ("ai.exec", ai_exec),
 	COLOR_KEY ("ai.seq", ai_seq),
-	COLOR_KEY ("ai.ascii", ai_ascii),
+	COLOR_KEY ("str", str),
 	COLOR_KEY ("graph.box", graph_box),
 	COLOR_KEY ("graph.box2", graph_box2),
 	COLOR_KEY ("graph.box3", graph_box3),
@@ -281,7 +281,7 @@ R_API void r_cons_pal_init(RCons *cons) {
 	ctx->cpal.ai_write      = (RColor) RColor_BLUE;
 	ctx->cpal.ai_exec       = (RColor) RColor_RED;
 	ctx->cpal.ai_seq        = (RColor) RColor_MAGENTA;
-	ctx->cpal.ai_ascii      = (RColor) RColor_YELLOW;
+	ctx->cpal.str           = (RColor) RColor_YELLOW;
 
 	ctx->cpal.gui_cflow          = (RColor) RColor_YELLOW;
 	ctx->cpal.gui_dataoffset     = (RColor) RColor_YELLOW;
@@ -695,6 +695,9 @@ R_API void r_cons_pal_list(RCons *cons, int rad, const char *arg) {
  * r_cons_pal_reload () must be called after this function
  * so the changes take effect. */
 R_API bool r_cons_pal_set(RCons *cons, const char *key, const char *val) {
+	if (!strcmp (key, "ai.ascii")) {
+		key = "str";
+	}
 	size_t i;
 	for (i = 0; keys[i].name; i++) {
 		if (!strcmp (key, keys[i].name)) {
@@ -716,6 +719,9 @@ R_API bool r_cons_pal_set(RCons *cons, const char *key, const char *val) {
 
 /* Get the named RColor */
 R_API RColor r_cons_pal_get(RCons *cons, const char *key) {
+	if (!strcmp (key, "ai.ascii")) {
+		key = "str";
+	}
 	size_t i;
 	for (i = 0; keys[i].name; i++) {
 		if (!strcmp (key, keys[i].name)) {
@@ -798,7 +804,7 @@ R_API char *r_cons_rainbow_get(RCons *cons, int idx, int last, bool bg) {
 R_API RConsCodeColors r_cons_codecolors(RCons *cons) {
 	RConsContext *ctx = cons->context;
 	RConsCodeColors cc = {0};
-	cc.string = ctx->pal.ai_ascii; // = Color_YELLOW;
+	cc.string = ctx->pal.str; // = Color_YELLOW;
 	cc.cpp = ctx->pal.label; // = Color_CYAN;
 	cc.comment = ctx->pal.comment; // = Color_GREEN;
 	cc.types = ctx->pal.comment;

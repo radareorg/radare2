@@ -712,3 +712,56 @@ EXPECT=<<EOF
 0  * (selected)
 EOF
 RUN
+
+NAME=UTF-8 flags are opt-in and toggling preserves existing names
+FILE=malloc://512
+CMDS=<<EOF2
+e asm.flags.utf8
+s 0x10
+fD. sym.名字
+f~sym.
+e asm.flags.utf8=true
+f 中文=0x20
+fr 中文 🚀
+f~🚀
+e asm.flags.utf8=false
+s 0x30
+fD. symbol.名字
+f~symbol.
+f~🚀
+EOF2
+EXPECT=<<EOF2
+false
+0x00000010 1 sym.
+0x00000020 1 🚀
+0x00000030 1 symbol.
+0x00000020 1 🚀
+EOF2
+RUN
+
+NAME=UTF-8 flags preserve binary strings only when enabled
+FILE=bins/elf/strenc
+ARGS=-e asm.flags.utf8=true
+CMDS=f~str.utf8
+EXPECT=<<EOF2
+0x004021ff 61 str.utf8__u00a2u20acU00010348_in_yellow:e_33m_¢€𐍈_e_0m_n
+EOF2
+RUN
+
+NAME=UTF-8 flag commands require explicit permission
+FILE=malloc://512
+CMDS=<<EOF2
+f 名字=0x10
+f~?
+e asm.flags.utf8=true
+f 名字=0x10
+f~?
+EOF2
+EXPECT=<<EOF2
+0
+1
+EOF2
+EXPECT_ERR=<<EOF2
+ERROR: Invalid flag name '名字'
+EOF2
+RUN

@@ -54,7 +54,7 @@ ec var.name white
 ec ai.read cyan
 ec ai.write cyan
 ec ai.exec green
-ec ai.ascii blue
+ec str blue
 
 ec widget.bg white gray
 ec widget.sel black cyan

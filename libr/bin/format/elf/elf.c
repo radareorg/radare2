@@ -3487,24 +3487,76 @@ typedef struct {
 	ut32 symidx;      // Current symbol index
 	ut32 type;        // Current relocation type
 	st64 addend;      // Current addend
-	ut64 section_offset; // File offset of the section
-	ut64 current_pos; // Current position within the section
+	RBuffer *b;       // Slice of the section bytes holding the stream
+	ut64 current_pos; // Current position within the slice
 	bool header_read; // Whether header has been read
 } CrelInfo;
 
-static bool read_crel_header(ELFOBJ *eo, CrelInfo *info) {
+static bool crel_open(ELFOBJ *eo, CrelInfo *info, ut64 offset, ut64 size) {
+	memset (info, 0, sizeof (*info));
+	ut64 end;
+	if (!size || r_add_overflow_ut64 (offset, size, &end) || end > eo->size) {
+		return false;
+	}
+	info->b = r_buf_new_slice (eo->b, offset, size);
+	return info->b != NULL;
+}
+
+// opens the stream at vaddr within the allocated section that contains it
+static bool crel_open_at(ELFOBJ *eo, CrelInfo *info, ut64 vaddr) {
+	memset (info, 0, sizeof (*info));
+	size_t i;
+	for (i = 0; eo->shdr && i < eo->ehdr.e_shnum; i++) {
+		const Elf_(Shdr) *sh = &eo->shdr[i];
+		if (sh->sh_type == SHT_NOBITS || !(sh->sh_flags & SHF_ALLOC)) {
+			continue;
+		}
+		if (vaddr < sh->sh_addr || vaddr - sh->sh_addr >= sh->sh_size) {
+			continue;
+		}
+		ut64 section_end;
+		if (r_add_overflow_ut64 (sh->sh_offset, sh->sh_size, &section_end) || section_end > eo->size) {
+			return false;
+		}
+		ut64 delta = vaddr - sh->sh_addr;
+		return crel_open (eo, info, sh->sh_offset + delta, sh->sh_size - delta);
+	}
+	return false;
+}
+
+static void crel_close(CrelInfo *info) {
+	r_unref (info->b);
+}
+
+static bool crel_leb_complete(const ut8 *data, int bytes_read) {
+	return bytes_read > 0 && !(data[bytes_read - 1] & 0x80);
+}
+
+static int crel_read_avail(CrelInfo *info, ut8 *buf, int buf_size) {
+	ut64 size = r_buf_size (info->b);
+	if (info->current_pos >= size) {
+		return 0;
+	}
+	int avail = (int)R_MIN ((ut64)buf_size, size - info->current_pos);
+	return r_buf_read_at (info->b, info->current_pos, buf, avail) == avail? avail: 0;
+}
+
+static bool read_crel_header(CrelInfo *info) {
 	if (!info || info->header_read) {
 		return false;
 	}
 	ut8 header_buf[16] = {0}; // Max ULEB128 size for 64-bit
-	int res = r_buf_read_at (eo->b, info->current_pos, header_buf, sizeof (header_buf));
-	if (res <= 0) {
+	int avail = crel_read_avail (info, header_buf, sizeof (header_buf));
+	if (avail <= 0) {
 		return false;
 	}
 	ut64 header_val = 0;
 	int bytes_read = 0;
-	read_uleb128 (header_buf, sizeof (header_buf), &header_val, &bytes_read);
-	info->count = header_val >> 3;
+	read_uleb128 (header_buf, avail, &header_val, &bytes_read);
+	if (!crel_leb_complete (header_buf, bytes_read)) {
+		return false;
+	}
+	info->count = R_MIN (header_val >> 3, r_buf_size (info->b));
 	info->addend_bit = (header_val >> 2) & 1;
 	info->shift = header_val & 3;
 	info->current_pos += bytes_read;
@@ -3512,20 +3564,10 @@ static bool read_crel_header(ELFOBJ *eo, CrelInfo *info) {
 	return true;
 }
 
-// decodes one entry of the CREL stream that info is positioned in
-static bool read_crel_reloc(ELFOBJ *eo, CrelInfo *info, RBinElfReloc *r, ut64 vaddr, ut64 *next_offset) {
-	ut64 offset = Elf_(v2p) (eo, vaddr);
-	if (offset == UT64_MAX) {
-		return false;
-	}
-	// vaddr is neither the stream start nor its cursor: a new stream
-	if (offset != info->section_offset && offset != info->current_pos) {
-		memset (info, 0, sizeof (*info));
-		info->section_offset = offset;
-		info->current_pos = offset;
-	}
+// decodes the next entry of the CREL stream held by info
+static bool read_crel_reloc(CrelInfo *info, RBinElfReloc *r) {
 	if (!info->header_read) {
-		if (!read_crel_header (eo, info)) {
+		if (!read_crel_header (info)) {
 			return false;
 		}
 	}
@@ -3533,8 +3575,8 @@ static bool read_crel_reloc(ELFOBJ *eo, CrelInfo *info, RBinElfReloc *r, ut64 va
 		return false;
 	}
 	ut8 buf[64] = {0};
-	int res = r_buf_read_at (eo->b, info->current_pos, buf, sizeof (buf));
-	if (res <= 0) {
+	int avail = crel_read_avail (info, buf, sizeof (buf));
+	if (avail <= 0) {
 		return false;
 	}
 	int read_pos = 0;
@@ -3545,7 +3587,10 @@ static bool read_crel_reloc(ELFOBJ *eo, CrelInfo *info, RBinElfReloc *r, ut64 va
 	if (b & 0x80) {
 		int bytes_read = 0;
 		ut64 high_bits = 0;
-		read_uleb128 (&buf[read_pos], sizeof (buf) - read_pos, &high_bits, &bytes_read);
+		read_uleb128 (&buf[read_pos], avail - read_pos, &high_bits, &bytes_read);
+		if (!crel_leb_complete (&buf[read_pos], bytes_read)) {
+			return false;
+		}
 		read_pos += bytes_read;
 		delta_offset = delta_offset | (high_bits << (7 - flag_bits));
 		delta_offset -= (0x80 >> flag_bits);
@@ -3554,21 +3599,30 @@ static bool read_crel_reloc(ELFOBJ *eo, CrelInfo *info, RBinElfReloc *r, ut64 va
 	if (flags & 1) {
 		st64 delta_symidx = 0;
 		int bytes_read = 0;
-		read_sleb128 (&buf[read_pos], sizeof (buf) - read_pos, &delta_symidx, &bytes_read);
+		read_sleb128 (&buf[read_pos], avail - read_pos, &delta_symidx, &bytes_read);
+		if (!crel_leb_complete (&buf[read_pos], bytes_read)) {
+			return false;
+		}
 		read_pos += bytes_read;
 		info->symidx += delta_symidx;
 	}
 	if (flags & 2) {
 		st64 delta_type = 0;
 		int bytes_read = 0;
-		read_sleb128 (&buf[read_pos], sizeof (buf) - read_pos, &delta_type, &bytes_read);
+		read_sleb128 (&buf[read_pos], avail - read_pos, &delta_type, &bytes_read);
+		if (!crel_leb_complete (&buf[read_pos], bytes_read)) {
+			return false;
+		}
 		read_pos += bytes_read;
 		info->type += delta_type;
 	}
 	if ((flags & 4) && info->addend_bit) {
 		st64 delta_addend = 0;
 		int bytes_read = 0;
-		read_sleb128 (&buf[read_pos], sizeof (buf) - read_pos, &delta_addend, &bytes_read);
+		read_sleb128 (&buf[read_pos], avail - read_pos, &delta_addend, &bytes_read);
+		if (!crel_leb_complete (&buf[read_pos], bytes_read)) {
+			return false;
+		}
 		read_pos += bytes_read;
 		info->addend += delta_addend;
 	}
@@ -3582,9 +3636,6 @@ static bool read_crel_reloc(ELFOBJ *eo, CrelInfo *info, RBinElfReloc *r, ut64 va
 	r->sym = info->symidx;
 	r->type = info->type;
 	r->addend = info->addend_bit ? info->addend : 0;
-	if (next_offset) {
-		*next_offset = info->current_pos - offset;
-	}
 	return true;
 }
 
@@ -3703,8 +3754,10 @@ static bool read_reloc(ELFOBJ *eo, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 v
 	// RELR is fully expanded by populate_relr_at, not one entry at a time
 	if (rel_mode == DT_CREL) {
 		// one entry only, so decoder state does not outlive the call
-		CrelInfo crel = {0};
-		return read_crel_reloc (eo, &crel, r, vaddr, NULL);
+		CrelInfo crel;
+		bool ok = crel_open_at (eo, &crel, vaddr) && read_crel_reloc (&crel, r);
+		crel_close (&crel);
+		return ok;
 	}
 	ut64 offset = Elf_(v2p) (eo, vaddr);
 	if (offset == UT64_MAX) {
@@ -3760,6 +3813,12 @@ static size_t get_num_relocs_android(ELFOBJ *eo) {
 	return (count > 0)? (size_t)count: 0;
 }
 
+static size_t get_num_relocs_crel(CrelInfo *crel) {
+	size_t count = read_crel_header (crel)? crel->count: 0;
+	crel_close (crel);
+	return count;
+}
+
 static size_t get_num_relocs_dynamic(ELFOBJ *eo) {
 	const RBinElfDynamicInfo *di = &eo->dyn_info;
 	size_t res = get_num_relocs_android (eo);
@@ -3776,6 +3835,12 @@ static size_t get_num_relocs_dynamic(ELFOBJ *eo) {
 	// table for the exact count instead of assuming one reloc per entry
 	if (di->dt_relr != R_BIN_ELF_ADDR_MAX && di->relrsz_read) {
 		res += get_num_relocs_relr_at (eo, di->dt_relr, di->relrsz_read);
+	}
+	if (di->dt_crel != R_BIN_ELF_ADDR_MAX) {
+		CrelInfo crel;
+		if (crel_open_at (eo, &crel, di->dt_crel)) {
+			res += get_num_relocs_crel (&crel);
+		}
 	}
 	return res + get_num_relocs_dynamic_plt (eo) + get_num_relocs_mips_got (eo);
 }
@@ -3863,6 +3928,14 @@ static size_t get_num_relocs_sections(ELFOBJ *eo, RVecElfOff *starts) {
 		if (rel_mode == DT_RELR) {
 			// bitmap words expand to many relocs, so count them exactly
 			ret += get_num_relocs_relr_at (eo, section->rva, ssize);
+			i++;
+			continue;
+		}
+		if (rel_mode == DT_CREL) {
+			CrelInfo crel;
+			if (crel_open (eo, &crel, section->offset, ssize)) {
+				ret += get_num_relocs_crel (&crel);
+			}
 			i++;
 			continue;
 		}
@@ -4054,11 +4127,11 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 	// parse crel - Compact Relocations
 	if (di->dt_crel != R_BIN_ELF_ADDR_MAX) {
 		// CREL uses variable-length encoding, so we can't use the same approach as above
-		CrelInfo crel = {0};
-		ut64 next_offset = 0;
-		while (pos < num_relocs) {
+		CrelInfo crel;
+		crel_open_at (eo, &crel, di->dt_crel);
+		while (crel.b && pos < num_relocs) {
 			RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
-			if (!read_crel_reloc (eo, &crel, reloc, di->dt_crel + next_offset, &next_offset)) {
+			if (!read_crel_reloc (&crel, reloc)) {
 				RVecRBinElfReloc_pop_back (&eo->g_relocs);
 				break;
 			}
@@ -4070,6 +4143,7 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 			fix_rva_and_offset_exec_file (eo, reloc);
 			pos++;
 		}
+		crel_close (&crel);
 	}
 	return pos;
 }
@@ -4189,12 +4263,11 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, RVecElfOff *starts
 				i++;
 				continue;
 			}
-			CrelInfo crel = {0};
-			ut64 next_offset = 0;
-			ut64 j = 0;
-			while (j < ssize && pos <= num_relocs) {
+			CrelInfo crel;
+			crel_open (eo, &crel, section->offset, ssize);
+			while (crel.b && pos < num_relocs) {
 				RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
-				if (!read_crel_reloc (eo, &crel, reloc, section->rva + j, &next_offset)) {
+				if (!read_crel_reloc (&crel, reloc)) {
 					RVecRBinElfReloc_pop_back (&eo->g_relocs);
 					break;
 				}
@@ -4214,8 +4287,8 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, RVecElfOff *starts
 				}
 				fix_rva_and_offset (eo, reloc, i);
 				pos++;
-				j += next_offset;
 			}
+			crel_close (&crel);
 		} else {
 			// Standard REL/RELA handling
 			size_t size = get_size_rel_mode (rel_mode);
@@ -5708,6 +5781,12 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 	size_t *const import_ret_ctr = state->import_ret_ctr;
 
 	Elf_(Shdr) *sh = &eo->shdr[i];
+	if (!sh->sh_size) {
+		if (!*state->ret) {
+			*state->ret = RVecRBinElfSymbol_new ();
+		}
+		return *state->ret != NULL;
+	}
 	Elf_(Shdr) *strtab_section = &eo->shdr[sh->sh_link];
 	if (strtab_section->sh_size > ST32_MAX || strtab_section->sh_size + 8 > eo->size) {
 		R_LOG_ERROR ("size (syms strtab)");
@@ -5987,7 +6066,8 @@ static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 
 bool Elf_(load_symbols)(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo, false);
-	if (!eo->g_symbols_vec) {
+	if (!eo->symbols_loaded) {
+		eo->symbols_loaded = true;
 		eo->g_symbols_vec = Elf_(load_symbols_from) (eo, R_BIN_ELF_ALL_SYMBOLS);
 	}
 	return eo->g_symbols_vec != NULL;
@@ -5995,7 +6075,8 @@ bool Elf_(load_symbols)(ELFOBJ *eo) {
 
 bool Elf_(load_imports)(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo, false);
-	if (!eo->g_imports_vec) {
+	if (!eo->imports_loaded) {
+		eo->imports_loaded = true;
 		eo->g_imports_vec = Elf_(load_symbols_from) (eo, R_BIN_ELF_IMPORT_SYMBOLS);
 	}
 	return eo->g_imports_vec != NULL;

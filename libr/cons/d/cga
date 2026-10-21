@@ -64,7 +64,7 @@ ec ai.read rgb:0ff
 ec ai.write rgb:f0f
 ec ai.exec rgb:f0f
 ec ai.seq rgb:f0f
-ec ai.ascii rgb:f0f
+ec str rgb:f0f
 
 ec var rgb:f0f
 ec var.type rgb:f0f

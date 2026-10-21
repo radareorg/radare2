@@ -8,9 +8,11 @@ extern "C" {
 R_API bool r_name_validate_char(const char ch);
 R_API bool r_name_validate_first(const char ch);
 R_API bool r_name_check(const char *s);
+R_API bool r_name_check_utf8(const char *s, bool utf8);
 R_API const char *r_name_filter_ro(const char *a);
 R_API bool r_name_filter_flag(char *s);
 R_API bool r_name_filter(char *name, int maxlen);
+R_API bool r_name_filter_utf8(char *name, int maxlen, bool utf8);
 R_API char *r_name_filter_dup(const char *name);
 R_API char *r_name_filter_shell(const char *s);
 R_API char *r_name_filter_quoted_shell(const char *s);

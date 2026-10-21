@@ -1015,7 +1015,8 @@ static pyc_object *get_object_at_depth(PycUnmarshalCtx *ctx, RBuffer *buffer, in
 		break;
 	case TYPE_STOPITER:
 	case TYPE_ELLIPSIS:
-		ret = R_NEW0 (pyc_object); // XXX: type is not set proper?
+		ret = R_NEW0 (pyc_object);
+		ret->type = type;
 		break;
 	case TYPE_UNKNOWN:
 		R_LOG_DEBUG ("Get not implemented for type 0x%x", type);

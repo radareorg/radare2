@@ -445,17 +445,12 @@ R_API char *r_anal_rtti_msvc_demangle_class_name(RVTableContext *context, const 
 		return NULL;
 	}
 	char *ret = context->anal->binb.demangle (NULL, "msvc", name, 0, false);
-	if (ret && *ret) {
-		char *n = strchr (ret, ' ');
-		n++;
-		if (R_STR_ISNOTEMPTY (n)) {
-			char *tmp = strdup (n);
-			free (ret);
-			ret = tmp;
-		} else {
-			R_FREE (ret);
-		}
-	} else {
+	// drop the "class " or "struct " keyword, builtin types like __m128d have none
+	char *n = ret? strchr (ret, ' '): NULL;
+	if (n) {
+		memmove (ret, n + 1, strlen (n + 1) + 1);
+	}
+	if (R_STR_ISEMPTY (ret)) {
 		R_FREE (ret);
 	}
 	return ret;

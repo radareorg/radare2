@@ -2958,11 +2958,9 @@ static void set_access_info(RArchSession *as, RAnalOp *op, csh handle, cs_insn *
 				case CS_AC_WRITE:
 					val->access = R_PERM_W;
 					break;
-#if CS_API_MAJOR >= 6
-				case CS_AC_READ_WRITE:
+				case CS_AC_READ | CS_AC_WRITE:
 					val->access = R_PERM_RW;
 					break;
-#endif
 				case CS_AC_INVALID:
 					val->access = 0;
 					break;
@@ -4351,6 +4349,24 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		}
 		op->size = 1;
 	} else {
+		switch (insn->id) {
+		case X86_INS_ROL:
+		case X86_INS_ROR:
+		case X86_INS_RCL:
+		case X86_INS_RCR: {
+			cs_x86 *x = &insn->detail->x86;
+			int i;
+			for (i = 0; i < x->op_count; i++) {
+				if (x->operands[i].type == X86_OP_MEM) {
+					// Capstone 5 marks rotate memory destinations as read-only.
+					x->operands[i].access = CS_AC_READ | CS_AC_WRITE;
+				}
+			}
+			break;
+		}
+		default:
+			break;
+		}
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = r_str_newf ("%s%s%s",
 				insn->mnemonic,

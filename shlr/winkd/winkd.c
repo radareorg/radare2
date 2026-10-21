@@ -116,13 +116,15 @@ bool winkd_set_target(WindCtx *ctx, uint32_t pid) {
 		RList *l = winkd_list_process (ctx);
 		r_list_foreach (l, it, p) {
 			if (p->uniqueid == pid) {
-				ctx->target = p;
+				// own a copy, the process list cache is dropped on every continue
+				free (ctx->target);
+				ctx->target = r_mem_dup (p, sizeof (WindProc));
 				return true;
 			}
 		}
 		return false;
 	}
-	ctx->target = NULL;
+	R_FREE (ctx->target);
 	return true;
 }
 
@@ -163,6 +165,7 @@ void winkd_ctx_free(WindCtx **ctx) {
 	}
 	r_list_free ((*ctx)->plist_cache);
 	r_list_free ((*ctx)->tlist_cache);
+	free ((*ctx)->target);
 	io_desc_t *desc = (*ctx)->desc;
 	desc->iob->close (desc->fp);
 	R_FREE (desc);
@@ -936,7 +939,7 @@ int winkd_sync(WindCtx *ctx) {
 	kd_stc_64 *stc64 = (kd_stc_64 *)s->data;
 	ctx->cpu = stc64->cpu;
 	ctx->cpu_count = stc64->cpu_count;
-	ctx->target = NULL;
+	R_FREE (ctx->target);
 	r_list_free (ctx->plist_cache);
 	ctx->plist_cache = NULL;
 	r_list_free (ctx->tlist_cache);

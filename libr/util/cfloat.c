@@ -101,6 +101,20 @@ R_API const RCFloatProfile *r_cfloat_profile_from_name(const char *name) {
 	return NULL;
 }
 
+// every field must fit in RCFloatValue, so their sum cannot wrap either
+R_API bool r_cfloat_profile_valid(const RCFloatProfile *profile) {
+	R_RETURN_VAL_IF_FAIL (profile, false);
+	const int max_bits = sizeof (((RCFloatValue *)0)->words) * 8;
+	const int sign_bits = profile->sign_bits;
+	const int exp_bits = profile->exp_bits;
+	const int mant_bits = profile->mant_bits;
+	if (sign_bits < 0 || sign_bits > max_bits || exp_bits < 0 || exp_bits > max_bits || mant_bits < 0 || mant_bits > max_bits) {
+		return false;
+	}
+	const int total_bits = sign_bits + exp_bits + mant_bits;
+	return total_bits > 0 && total_bits <= max_bits;
+}
+
 R_API bool r_cfloat_profile_from_bits(int bits, RCFloatProfile *profile) {
 	R_RETURN_VAL_IF_FAIL (profile, false);
 	switch (bits) {
@@ -239,6 +253,9 @@ static bool set_fraction_bits(RCFloatValue *value, int bit_offset, int num_bits,
 
 R_API bool r_cfloat_parse_ex(const ut8 *buf, size_t buf_size, const RCFloatProfile *profile, RCFloatValue *out) {
 	R_RETURN_VAL_IF_FAIL (buf && profile && out, false);
+	if (!r_cfloat_profile_valid (profile)) {
+		return false;
+	}
 
 	const int total_bits = profile->sign_bits + profile->exp_bits + profile->mant_bits;
 	if (buf_size * 8 < (size_t)total_bits) {
@@ -253,6 +270,9 @@ R_API bool r_cfloat_parse_ex(const ut8 *buf, size_t buf_size, const RCFloatProfi
 
 R_API double r_cfloat_value_to_double(const RCFloatValue *value, const RCFloatProfile *profile) {
 	R_RETURN_VAL_IF_FAIL (value && profile, NAN);
+	if (!r_cfloat_profile_valid (profile)) {
+		return NAN;
+	}
 
 	int mant_pos = 0;
 	int exp_pos = profile->mant_bits;
@@ -382,6 +402,9 @@ R_API void r_cfloat_value_from_double(RCFloatValue *value, double d, const RCFlo
 	R_RETURN_IF_FAIL (value && profile);
 
 	memset (value->words, 0, sizeof (value->words));
+	if (!r_cfloat_profile_valid (profile)) {
+		return;
+	}
 
 	int mant_pos = 0;
 	int exp_pos = profile->mant_bits;
@@ -458,6 +481,9 @@ R_API void r_cfloat_value_from_longdouble(RCFloatValue *value, long double ld, c
 
 R_API bool r_cfloat_write_ex(const RCFloatValue *value, const RCFloatProfile *profile, ut8 *buf, size_t buf_size) {
 	R_RETURN_VAL_IF_FAIL (value && profile && buf, false);
+	if (!r_cfloat_profile_valid (profile)) {
+		return false;
+	}
 
 	const int total_bits = profile->sign_bits + profile->exp_bits + profile->mant_bits;
 	if (buf_size * 8 < (size_t)total_bits) {

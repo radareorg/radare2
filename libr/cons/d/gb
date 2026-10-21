@@ -63,7 +63,7 @@ ec ai.read rgb:e0f8cf
 ec ai.write rgb:86c06c
 ec ai.exec rgb:86c06c
 ec ai.seq rgb:86c06c
-ec ai.ascii rgb:86c06c
+ec str rgb:86c06c
 
 ec var rgb:86c06c
 ec var.type rgb:86c06c

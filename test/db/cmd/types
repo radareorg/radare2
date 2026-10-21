@@ -5425,9 +5425,9 @@ tsc Bird
 EOF
 EXPECT=<<EOF
 _vptr_Bird
-int (**)(),2,0
+int (**)(...),2,0
 struct Bird {
-  int (**)() _vptr_Bird;
+  int (**)(...) _vptr_Bird;
 };
 EOF
 RUN

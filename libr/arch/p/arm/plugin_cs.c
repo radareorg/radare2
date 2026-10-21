@@ -1012,6 +1012,14 @@ static int regsize64(cs_insn *insn, int n) {
 #define REGBITS64(x) (8 * regsize64 (insn, x))
 #define REGBITS32(x) (8 * regsize32 (insn, x))
 
+static inline bool is_vector_op(const cs_arm64_op *op) {
+#if CS_API_MAJOR == 4
+	return op->vess || op->vas;
+#else
+	return op->vas;
+#endif
+}
+
 static int vector_size(cs_arm64_op *op) {
 #if CS_API_MAJOR == 4
 	if (op->vess) {
@@ -1152,12 +1160,7 @@ static void vector64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int 
 	if (op.vector_index != -1) {
 		i = op.vector_index;
 	}
-#if CS_API_MAJOR == 4
-	const bool isvessas = (op.vess || op.vas);
-#else
-	const bool isvessas = op.vas;
-#endif
-	if (isvessas && i != -1) {
+	if (is_vector_op (&op) && i != -1) {
 		int size = vector_size (&op);
 		int shift = i * size;
 		char *regc = "l";
@@ -1188,12 +1191,7 @@ static void vector64_dst_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, 
 	if (op.vector_index != -1) {
 		i = op.vector_index;
 	}
-#if CS_API_MAJOR == 4
-	const bool isvessas = (op.vess || op.vas);
-#else
-	const bool isvessas = op.vas;
-#endif
-	if (isvessas && i != -1) {
+	if (is_vector_op (&op) && i != -1) {
 		int size = vector_size (&op);
 		int shift = i * size;
 		char *regc = "l";
@@ -1284,12 +1282,7 @@ static void arg64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int i, 
 		r_strbuf_appendf (sb, "0x%"PFMT64x",", r_num_bitmask (zeroext));
 	}
 
-#if CS_API_MAJOR == 4
-	const bool isvessas = (op.vess || op.vas);
-#else
-	const bool isvessas = op.vas;
-#endif
-	if (isvessas) {
+	if (is_vector_op (&op)) {
 		VEC64_APPEND (sb, n, i);
 	} else {
 		if (n > 0 && ISIMM64 (n) && !ISMEM64 (n)) {
@@ -1479,6 +1472,45 @@ static void arm64_esil_zext_wregs(RAnalOp *op) {
 	}
 	if (regs & (1u << 31)) {
 		r_strbuf_append (&op->esil, ",wsp,sp,=");
+	}
+}
+
+// Narrow FP/SIMD writes clear the rest of the register; lane inserts preserve it.
+static void arm64_esil_zext_vupper(RAnalOp *op, csh *handle, cs_insn *insn) {
+	if (R_STR_ISEMPTY (r_strbuf_get (&op->esil))) {
+		return;
+	}
+	int i;
+	// The lane index of an indexed structure access applies to every
+	// register in its list, so one indexed write operand means all the
+	// vector writes of the instruction are lane inserts. These keep the
+	// rest of their register and must not be zero-extended.
+	for (i = 0; i < OPCOUNT64 (); i++) {
+		cs_arm64_op o = INSOP64 (i);
+		if (o.type == ARM64_OP_REG && (o.access & CS_AC_WRITE) && o.vector_index != -1) {
+			return;
+		}
+	}
+	for (i = 0; i < OPCOUNT64 (); i++) {
+		cs_arm64_op dst = INSOP64 (i);
+		const char *name;
+		int bits, n;
+		if (dst.type != ARM64_OP_REG || !(dst.access & CS_AC_WRITE) || dst.vector_index != -1) {
+			continue;
+		}
+		name = cs_reg_name (*handle, dst.reg);
+		if (!name || !strchr ("bhsdvq", name[0]) || !isdigit ((ut8)name[1])) {
+			continue;
+		}
+		bits = dst.vas? vas_count (dst.vas) * vector_size (&dst): REGBITS64 (i);
+		if (bits < 8 || bits >= 128) {
+			continue;
+		}
+		n = atoi (name + 1);
+		if (bits < 64) {
+			r_strbuf_appendf (&op->esil, ",0x%"PFMT64x",v%dl,&=", bitmask_by_width[bits - 1], n);
+		}
+		r_strbuf_appendf (&op->esil, ",0,v%dh,=", n);
 	}
 }
 
@@ -2778,6 +2810,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	}
 
 	arm64_esil_zext_wregs (op);
+	arm64_esil_zext_vupper (op, handle, insn);
 	r_strbuf_append (&op->esil, postfix);
 
 	return 0;
@@ -3042,7 +3075,7 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 		MATH32 ("ROR");
 		break;
 	case ARM_INS_SVC:
-		r_strbuf_setf (&op->esil, "%s,$", ARG (0));
+		r_strbuf_appendf (&op->esil, "%s,$", ARG (0));
 		break;
 	case ARM_INS_PUSH:
 #if 0

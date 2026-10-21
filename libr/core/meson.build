@@ -48,6 +48,7 @@ r_core_sources += [
   'p/core_agD.c',
   'p/pseudo/plugin.c',
   'p/pseudo/pdc_ast.c',
+  'p/pseudo/pdc_opt.c',
   'p/pseudo/pseudo.c',
   'p/core_writedwarf.c',
   'p/core_prj.c',
@@ -58,6 +59,9 @@ r_core_sources += r_core_additional_sources
 
 if get_option('want_panels')
   r_core_sources += [ 'p/panels/plugin.c' ]
+endif
+if get_option('want_mmc')
+  r_core_sources += [ 'p/mmc/plugin.c' ]
 endif
 
 r_core_inc = [

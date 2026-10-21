@@ -637,13 +637,14 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		break;
 	case EXCEPTION_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		obj->streams.exception = R_NEW (struct minidump_exception_stream);
-		if (!obj->streams.exception) {
-			break;
+		if (obj->streams.exception) {
+			break; // keep the first one
 		}
+		obj->streams.exception = R_NEW (struct minidump_exception_stream);
 
 		r = r_buf_fread_at (obj->b, entry->location.rva, (ut8 *)obj->streams.exception, "4i2l2i15l2i", 1);
 		if (r != sizeof (*obj->streams.exception)) {
+			R_FREE (obj->streams.exception);
 			break;
 		}
 
@@ -664,11 +665,12 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 
 		break;
 	case SYSTEM_INFO_STREAM:
-		obj->streams.system_info = R_NEW (struct minidump_system_info);
-		if (!obj->streams.system_info) {
-			break;
+		if (obj->streams.system_info) {
+			break; // keep the first one
 		}
+		obj->streams.system_info = R_NEW (struct minidump_system_info);
 		if (!read_system_info (obj->b, entry->location.rva, obj->streams.system_info)) {
+			R_FREE (obj->streams.system_info);
 			break;
 		}
 
@@ -746,7 +748,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		break;
 	case COMMENT_STREAM_A:
 		/* TODO: Not yet fully parsed or utilised */
-		if (entry->location.data_size < 1 || entry->location.data_size > r_buf_size (obj->b)) {
+		if (obj->streams.comments_a || entry->location.data_size < 1 || entry->location.data_size > r_buf_size (obj->b)) {
 			break;
 		}
 		obj->streams.comments_a = R_NEWS (ut8, entry->location.data_size);
@@ -755,6 +757,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		}
 		r = r_buf_read_at (obj->b, entry->location.rva, obj->streams.comments_a, entry->location.data_size);
 		if (r != entry->location.data_size) {
+			R_FREE (obj->streams.comments_a);
 			break;
 		}
 
@@ -766,7 +769,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		break;
 	case COMMENT_STREAM_W:
 		/* TODO: Not yet fully parsed or utilised */
-		if (entry->location.data_size < 1 || entry->location.data_size > r_buf_size (obj->b)) {
+		if (obj->streams.comments_w || entry->location.data_size < 1 || entry->location.data_size > r_buf_size (obj->b)) {
 			break;
 		}
 		obj->streams.comments_w = R_NEWS (ut8, entry->location.data_size);
@@ -775,6 +778,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		}
 		r = r_buf_read_at (obj->b, entry->location.rva, obj->streams.comments_w, entry->location.data_size);
 		if (r != entry->location.data_size) {
+			R_FREE (obj->streams.comments_w);
 			break;
 		}
 
@@ -786,12 +790,13 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		break;
 	case HANDLE_DATA_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		obj->streams.handle_data = R_NEW (struct minidump_handle_data_stream);
-		if (!obj->streams.handle_data) {
-			break;
+		if (obj->streams.handle_data) {
+			break; // keep the first one
 		}
+		obj->streams.handle_data = R_NEW (struct minidump_handle_data_stream);
 		r = r_buf_read_at (obj->b, entry->location.rva, (ut8 *)obj->streams.handle_data, sizeof (*obj->streams.handle_data));
 		if (r != sizeof (*obj->streams.handle_data)) {
+			R_FREE (obj->streams.handle_data);
 			break;
 		}
 
@@ -803,12 +808,13 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		break;
 	case FUNCTION_TABLE_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		obj->streams.function_table = R_NEW (struct minidump_function_table_stream);
-		if (!obj->streams.function_table) {
-			break;
+		if (obj->streams.function_table) {
+			break; // keep the first one
 		}
+		obj->streams.function_table = R_NEW (struct minidump_function_table_stream);
 		r = r_buf_read_at (obj->b, entry->location.rva, (ut8 *)obj->streams.function_table, sizeof (*obj->streams.function_table));
 		if (r != sizeof (*obj->streams.function_table)) {
+			R_FREE (obj->streams.function_table);
 			break;
 		}
 

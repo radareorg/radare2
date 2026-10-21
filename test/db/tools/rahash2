@@ -1172,7 +1172,7 @@ NAME=rahash2 -a fletcher64 -s hello-world
 FILE=-
 CMDS=!rahash2 -a fletcher64 -s hello-world
 EXPECT=<<EOF
-0x00000000-0x0000000a fletcher64: 49ff47dc88f79724
+0x00000000-0x0000000a fletcher64: 49ff47dc8af79724
 EOF
 RUN
 

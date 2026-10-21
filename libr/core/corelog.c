@@ -132,7 +132,9 @@ R_API void r_core_log_add(RCore *core, const char *msg) {
 	if (!core || !core->log) {
 		return;
 	}
-	r_strpool_append (core->log->sp, msg);
+	if (r_strpool_append (core->log->sp, msg) < 0) {
+		return;
+	}
 	core->log->last++;
 	if (R_STR_ISNOTEMPTY (core->cmdlog)) {
 		if (core->in_log_process) {

@@ -1401,3 +1401,32 @@ arg int64_t arg2 @ rsi
 {"reg":[],"sp":[],"bp":[]}
 EOF
 RUN
+
+NAME=a callee with more register vars than the convention has argument slots
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx e8fb000000c3
+wx 4889f8c3 @ 0x100
+af @ 0x100
+af @ 0
+afvr rdi a1 int @ 0x100
+afvr rsi a2 int @ 0x100
+afvr rdx a3 int @ 0x100
+afvr rcx a4 int @ 0x100
+afvr r8 a5 int @ 0x100
+afvr r9 a6 int @ 0x100
+afvr rax a7 int @ 0x100
+afvr rbx a8 int @ 0x100
+afva @ 0
+afv @ 0
+EOF
+EXPECT=<<EOF
+arg int a1 @ rdi
+arg int a2 @ rsi
+arg int a3 @ rdx
+arg int a4 @ rcx
+arg int a5 @ r8
+arg int a6 @ r9
+EOF
+RUN

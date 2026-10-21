@@ -262,6 +262,48 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=aaef names call-clobbered locals with signed displacements
+FILE=bins/mach0/markdown-test
+ARGS=-NN -e bin.relocs.apply=true
+CMDS=<<EOF
+s 0x100001e1c
+af
+afv~var_4h
+aaef
+afv~var_clob_
+aaef
+afv~var_clob_
+afvn result var_clob_4h
+aaef
+afv~result
+EOF
+EXPECT=<<EOF
+var int32_t var_4h @ x29-0x4
+var int64_t var_clob_10h @ sp+0x10
+var int32_t var_clob_4h @ x29-0x4
+var int64_t var_clob_10h @ sp+0x10
+var int32_t var_clob_4h @ x29-0x4
+var int32_t result @ x29-0x4
+EOF
+RUN
+
+NAME=aaef avoids call-clobbered local name collisions
+FILE=bins/mach0/markdown-test
+ARGS=-NN -e bin.relocs.apply=true
+CMDS=<<EOF
+s 0x100001e1c
+af
+afvn var_clob_4h var_10h
+aaef
+afv~var_clob_
+EOF
+EXPECT=<<EOF
+var int64_t var_clob_10h @ sp+0x10
+var int32_t var_clob_4h_2 @ x29-0x4
+var int64_t var_clob_4h @ x29-0x10
+EOF
+RUN
+
 NAME=aae keeps Thumb syscall addresses aligned after invalid and null instructions
 FILE=malloc://0x200
 ARGS=-a arm -b 16 -e asm.os=s110

@@ -18,8 +18,8 @@ wx 2028621e
 aeg~generative
 EOF
 EXPECT=<<EOF
-         | generative:d2,d1,F+ |        |
-                | generative:result_8,d0,= |
+             | generative:d2,d1,F+ |                           |                           | generative:0,v0h,= |
+                             | generative:result_8,d0,= |
 EOF
 RUN
 

@@ -423,7 +423,7 @@ EXPECT=<<EOF
  4 - rw- 0x00000008 null://8
 --
 o "bins/elf/analysis/main" 0x00400000 r-x
-onnu null://8 rw-
+onnu "null://8" rw-
 omu 4 0x00600910 0x00000008 0x00000000 rw- mmap.LOAD1
 omu 3 0x006006e0 0x00000230 0x000006e0 r-- fmap.LOAD1
 omu 3 0x00400000 0x000006dc 0x00000000 r-x fmap.LOAD0

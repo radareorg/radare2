@@ -210,7 +210,10 @@ typedef struct r_cons_palette_t {
 	RColor ai_write;
 	RColor ai_exec;
 	RColor ai_seq;
-	RColor ai_ascii;
+	union {
+		RColor str;
+		R_DEPRECATE RColor ai_ascii; // Deprecated: use str.
+	};
 	RColor gui_cflow;
 	RColor gui_dataoffset;
 	RColor gui_background;
@@ -287,7 +290,10 @@ typedef struct r_cons_printable_palette_t {
 	char *ai_write;
 	char *ai_exec;
 	char *ai_seq;
-	char *ai_ascii;
+	union {
+		char *str;
+		R_DEPRECATE char *ai_ascii; // Deprecated: use str.
+	};
 	char *ai_unmap;
 	char *gui_cflow;
 	char *gui_dataoffset;

@@ -982,3 +982,17 @@ full
 full
 EOF2
 RUN
+
+NAME=o* encodes uris that would inject commands
+FILE=--
+CMDS=<<EOF
+onn base64:bWFsbG9jOi8vMTYiOz9lIFBXTkVEOyM=
+o*
+.o*
+o
+EOF
+EXPECT=<<EOF
+onnu "base64:bWFsbG9jOi8vMTYiOz9lIFBXTkVEOyM=" rw-
+ 3 * rw- 0x00000010 malloc://16";?e PWNED;#
+EOF
+RUN

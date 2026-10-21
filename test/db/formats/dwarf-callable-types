@@ -1,0 +1,43 @@
+# Source: Reflow test/bin/callable-dwarf/callable-dwarf.c.
+NAME=DWARF callable typedefs retain complete parameter lists
+FILE=bins/mach0/dwarf-callable-types
+CMDS=<<EOF
+aaa
+tk typedef.Repeat
+tk typedef.Nested
+tk typedef.DoublePointer
+tk typedef.Variadic
+tk typedef.VoidCallback
+tk typedef.UnknownCallback
+tk typedef.WithContext
+tk typedef.Factory~?
+tk typedef.QualifiedFactory~?
+tk typedef.FactoryArray~?
+EOF
+EXPECT=<<EOF
+int (*)(int, int)
+long (*)(int (*)(int), int)
+int (**)(int)
+int (*)(char const *, ...)
+void (*)(void)
+void (*)()
+void (*)(void *)
+0
+0
+0
+EOF
+RUN
+
+NAME=DWARF C++ ellipsis and zero-argument callback types
+FILE=bins/mach0/dwarf-callable-types-cpp
+CMDS=<<EOF
+e anal.dwarf=true
+aaa
+tk typedef.EllipsisOnly
+tk typedef.CppNoArguments
+EOF
+EXPECT=<<EOF
+void (*)(...)
+void (*)(void)
+EOF
+RUN

@@ -134,3 +134,29 @@ EXPECT=<<EOF
 0xc0000000
 EOF
 RUN
+
+NAME=dalvik shr-long/2addr and overlapping registers sign-extend under bits=32
+FILE=malloc://0x100
+ARGS=-a dalvik -b 32
+CMDS=<<EOF
+wx c420a4000002
+aei
+aeip
+ar v0=0
+ar v1=0x80000000
+ar v2=1
+aes
+ar v0
+ar v1
+ar v2=1
+aes
+ar v0
+ar v1
+EOF
+EXPECT=<<EOF
+0x00000000
+0xc0000000
+0x00000000
+0xe0000000
+EOF
+RUN

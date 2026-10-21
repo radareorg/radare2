@@ -441,7 +441,7 @@ static void jni_scan_section(JniScanContext *ctx, const RBinSection *section) {
 	}
 	ut8 *buf = R_NEWS (ut8, size);
 	const int nread = ctx->anal->iob.read_at (ctx->anal->iob.io, section_addr, buf, (int)size);
-	if (nread < min_size) {
+	if (nread < 0 || (size_t)nread < min_size) {
 		free (buf);
 		return;
 	}

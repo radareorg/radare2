@@ -2014,6 +2014,16 @@ static bool desc_list_cmds_cb2(void *user, void *data, ut32 id) {
 	return true;
 }
 
+static void desc_print_open(RPrint *p, RBinFile *bf, const char *uri, int perm) {
+	char *arg = r_str_r2arg (uri);
+	if (bf) {
+		r_print_printf (p, "o \"%s\" 0x%08"PFMT64x" %s\n", arg, bf->bo->baddr, r_str_rwx_i (perm));
+	} else {
+		r_print_printf (p, "onnu \"%s\" %s\n", arg, r_str_rwx_i (perm));
+	}
+	free (arg);
+}
+
 static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 	RCore *core = (RCore *)user;
 	RPrint *p = core->print;
@@ -2023,21 +2033,21 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 		if (r_config_get_b (core->config, "prj.files") && *r_config_get (core->config, "prj.name")) {
 			const char *buri = strstr (desc->uri, "://")? desc->uri: r_file_basename (desc->uri);
 			r_print_printf (p, "pushd %s/%s\n", r_config_get (core->config, "dir.projects"), r_config_get (core->config, "prj.name"));
-			r_print_printf (p, "o \"%s\" 0x%08"PFMT64x" %s\n", buri, bf->bo->baddr, r_str_rwx_i (desc->perm));
+			desc_print_open (p, bf, buri, desc->perm);
 			r_print_printf (p, "popd\n");
 		} else if (r_config_get_b (core->config, "prj.abspath") && !strstr (desc->uri, "://")) {
 			char *apath = r_file_abspath (desc->uri);
-			r_print_printf (p, "o \"%s\" 0x%08"PFMT64x" %s\n", r_str_get_fail (apath, desc->uri), bf->bo->baddr, r_str_rwx_i (desc->perm));
+			desc_print_open (p, bf, r_str_get_fail (apath, desc->uri), desc->perm);
 			free (apath);
 		} else {
-			r_print_printf (p, "o \"%s\" 0x%08"PFMT64x" %s\n", desc->uri, bf->bo->baddr, r_str_rwx_i (desc->perm));
+			desc_print_open (p, bf, desc->uri, desc->perm);
 		}
 	} else if (r_config_get_b (core->config, "prj.abspath") && !strstr (desc->uri, "://")) {
 		char *apath = r_file_abspath (desc->uri);
-		r_print_printf (p, "onnu %s %s\n", r_str_get_fail (apath, desc->uri), r_str_rwx_i (desc->perm));
+		desc_print_open (p, NULL, r_str_get_fail (apath, desc->uri), desc->perm);
 		free (apath);
 	} else {
-		r_print_printf (p, "onnu %s %s\n", desc->uri, r_str_rwx_i (desc->perm));
+		desc_print_open (p, NULL, desc->uri, desc->perm);
 	}
 	if (strstr (desc->uri, "null://")) {
 		// null descs dont want to be mapped
@@ -2189,6 +2199,13 @@ static bool cmd_onn(RCore *core, const char *input) {
 	if (perms < 0) {
 		R_LOG_WARN ("Invalid permissions string");
 		perms = 0;
+	}
+	if (r_str_startswith (argv[0], "base64:")) {
+		char *decoded = (char *)sdb_decode (argv[0] + 7, NULL);
+		if (decoded) {
+			free (argv[0]);
+			argv[0] = decoded;
+		}
 	}
 	Onn on = {argv[0], NULL, core};
 	if (r_str_startswith (input, "nnu")) {

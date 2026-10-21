@@ -59,6 +59,6 @@ ec ai.read white . bold
 ec ai.write white . bold
 ec ai.exec red . bold
 ec ai.seq green . bold
-ec ai.ascii yellow . bold
+ec str yellow . bold
 ec widget.bg yellow black
 ec widget.sel black yellow

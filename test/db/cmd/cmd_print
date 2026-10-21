@@ -1219,3 +1219,28 @@ AB
 0x100
 EOF
 RUN
+
+NAME=prgl lz4 block
+FILE=malloc://64
+CMDS=<<EOF
+wx 104101001042
+b 6
+prgl
+EOF
+EXPECT=<<EOF
+wx+414141414142
+EOF
+RUN
+
+NAME=prgl rejects lz4 match offset 0
+FILE=malloc://64
+CMDS=<<EOF
+wx 104100001042
+b 6
+prgl
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Invalid input size 0
+EOF
+RUN

@@ -1074,7 +1074,7 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 				.big_endian = atoi (r_str_word_get0 (args, 4)),
 				.explicit_leading_bit = atoi (r_str_word_get0 (args, 5))
 			};
-			if (fp.sign_bits < 0 || fp.exp_bits < 0 || fp.mant_bits < 0) {
+			if (!r_cfloat_profile_valid (&fp)) {
 				R_LOG_ERROR ("Invalid .cfloat field sizes");
 				ret = -1;
 			} else {
@@ -1258,7 +1258,7 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 				continue;
 			}
 			if (inComment) {
-				if (r_str_startswith (ptr_start, "*/")) {
+				if (strstr (buf_token, "*/")) {
 					inComment = false;
 				}
 				continue;

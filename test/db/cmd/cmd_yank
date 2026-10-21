@@ -138,3 +138,20 @@ ERROR: Invalid file yank range
 ERROR: Invalid file yank range
 EOF
 RUN
+
+NAME=file yank without address or file name stays inside the argument
+FILE=malloc://16
+CMDS=<<EOF
+ywx 1122
+yf 10 0000000000000000000
+yf 10
+y8
+EOF
+EXPECT=<<EOF
+1122
+EOF
+EXPECT_ERR=<<EOF
+ERROR: File must be specified
+ERROR: Address must be specified
+EOF
+RUN

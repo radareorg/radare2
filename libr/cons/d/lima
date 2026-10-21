@@ -62,7 +62,7 @@ ec ai.read rgb:8e2
 ec ai.write rgb:9e2
 ec ai.exec rgb:af2
 ec ai.seq rgb:ef0
-ec ai.ascii rgb:ef0
+ec str rgb:ef0
 
 ec widget.bg rgb:ef0 rgb:060
 ec widget.sel black rgb:af2

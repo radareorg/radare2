@@ -297,7 +297,7 @@ static void swift_build_metadata_map(RBinSwiftLoader *ld) {
 		// type metadata symbols end in "N" (nominal type metadata), but not
 		// "Mn" (descriptor), "Ma" (access fn) or the "M*"/"W*" helpers.
 		const size_t l = strlen (sn);
-		if (l < 3 || sn[l - 1] != 'N' || sn[l - 2] == 'M') {
+		if (l < 3 || sn[l - 1] != 'N' || sn[l - 2] == 'M' || sym->vaddr > UT64_MAX - 15) {
 			continue;
 		}
 		// second word of the metadata points to its context descriptor
@@ -322,13 +322,21 @@ static ut64 swift_struct_field_offset(RBinSwiftLoader *ld, ut64 desc, ut32 i) {
 	if (!found || !meta) {
 		return UT64_MAX;
 	}
-	// StructDescriptor: numFields @ +20, fieldOffsetVectorOffset (words) @ +24
-	const ut32 nfields = (ut32)swift_s32 (ld, desc + 20);
-	const ut32 fovo = (ut32)swift_s32 (ld, desc + 24);
-	if (!fovo || i >= nfields || nfields > 2048) {
+	st32 flags, nfields, fovo, offset;
+	if (desc > UT64_MAX - 27 || !swift_read_s32 (ld, desc, &flags)
+			|| (flags & (1 << 7)) || SWIFT_TCD_METAINIT ((ut32)flags >> 16)) {
 		return UT64_MAX;
 	}
-	return (ut64)(ut32)swift_s32 (ld, meta + (fovo * 8) + (i * 4));
+	// StructDescriptor: numFields @ +20, fieldOffsetVectorOffset (words) @ +24
+	if (!swift_read_s32 (ld, desc + 20, &nfields) || !swift_read_s32 (ld, desc + 24, &fovo)
+			|| nfields < 1 || nfields > 2048 || i >= (ut32)nfields || fovo < 2) {
+		return UT64_MAX;
+	}
+	const ut64 delta = (ut64)(ut32)fovo * 8 + (ut64)i * 4;
+	if (meta > UT64_MAX - delta - 3 || !swift_read_s32 (ld, meta + delta, &offset) || offset < 0) {
+		return UT64_MAX;
+	}
+	return (ut64)offset;
 }
 
 static void swift_parse_fields(RBinSwiftLoader *ld, RBinClass *klass, ut64 fd, ut64 desc, bool is_struct, bool is_enum) {
@@ -378,12 +386,13 @@ static void swift_parse_fields(RBinSwiftLoader *ld, RBinClass *klass, ut64 fd, u
 			const ut64 off = swift_struct_field_offset (ld, desc, i);
 			if (off != UT64_MAX) {
 				field->attr.offset = (int)off;
+				field->attr.flags |= R_BIN_ATTR_FIELD_OFFSET;
 			}
 		}
 		if (is_enum) {
-			field->attr.flags = R_BIN_ATTR_ENUM;
+			field->attr.flags |= R_BIN_ATTR_ENUM;
 		} else if (!(rflags & 2)) {
-			field->attr.flags = R_BIN_ATTR_CONST; // let, not var
+			field->attr.flags |= R_BIN_ATTR_CONST; // let, not var
 		}
 	}
 }

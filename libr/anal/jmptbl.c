@@ -471,7 +471,8 @@ static ut8 *jmptbl_read_table(RAnal *anal, ut64 addr, ut64 *entries, ut64 sz) {
 		ut8 *table = malloc (table_bytes);
 		if (table) {
 			const int nread = anal->iob.read_at (anal->iob.io, addr, table, table_bytes);
-			if (nread >= sz) {
+			// read_at returns -1 on failure, never compare it unsigned
+			if (nread > 0 && (ut64)nread >= sz) {
 				*entries = nread / sz;
 				return table;
 			}

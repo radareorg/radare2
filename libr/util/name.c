@@ -53,17 +53,35 @@ R_API bool r_name_validate_first(const char ch) {
 	return false;
 }
 
-R_API bool r_name_check(const char *s) {
+static int name_utf8_size(const char *s) {
+	if ((ut8)*s < 0x80) {
+		return 0;
+	}
+	RRune ch;
+	int size = r_utf8_decode ((const ut8 *)s, -1, &ch);
+	return size > 1 && ch >= 0xa0 && ch != 0x2028 && ch != 0x2029? size: 0;
+}
+
+R_API bool r_name_check_utf8(const char *s, bool utf8) {
 	R_RETURN_VAL_IF_FAIL (s, false);
-	if (!r_name_validate_first (*s)) {
+	int size = utf8? name_utf8_size (s): 0;
+	if (!size && !r_name_validate_first (*s)) {
 		return false;
 	}
-	for (s++; *s; s++) {
+	for (s += size? size: 1; *s; s++) {
+		if (utf8 && (ut8)*s >= 0x80 && (size = name_utf8_size (s))) {
+			s += size - 1;
+			continue;
+		}
 		if (!valid_name_char[(ut8)*s]) {
 			return false;
 		}
 	}
 	return true;
+}
+
+R_API bool r_name_check(const char *s) {
+	return r_name_check_utf8 (s, false);
 }
 
 static inline bool is_special_char(char n) {
@@ -77,44 +95,47 @@ R_API const char *r_name_filter_ro(const char *a) {
 	return a - 1;
 }
 
-R_API bool r_name_filter(char *s, int maxlen) {
+R_API bool r_name_filter_utf8(char *s, int maxlen, bool utf8) {
 	R_RETURN_VAL_IF_FAIL (s, false);
 	if (R_STR_ISEMPTY (s)) {
 		return false;
 	}
 	size_t count = 0;
 	r_str_trim_head (s);
-	bool valid = r_name_validate_first (*s);
+	if (!*s) {
+		return false;
+	}
+	int size = utf8? name_utf8_size (s): 0;
+	bool valid = size || r_name_validate_first (*s);
 	if (!valid) {
 		*s = '_';
 	}
-	for (s++; *s; s++) {
+	s += size? size: 1;
+	char *out = s;
+	for (; *s; s++, count++) {
 		if (maxlen > 0 && count > maxlen) {
 			valid = false;
-			*s = 0;
 			break;
 		}
-		if (*s == '\\') {
+		if (utf8 && (ut8)*s >= 0x80 && (size = name_utf8_size (s))) {
+			memmove (out, s, size);
+			out += size;
+			s += size - 1;
+		} else if (r_name_validate_char (*s)) {
+			*out++ = *s;
+		} else {
 			valid = false;
-			if (is_special_char (s[1])) {
-				*s = '_';
-			} else {
-				r_str_cpy (s, s + 1);
-				s--;
+			if (r_name_validate_dash (*s) && (*s != '\\' || is_special_char (s[1]))) {
+				*out++ = '_';
 			}
 		}
-		if (!r_name_validate_char (*s)) {
-			valid = false;
-			if (r_name_validate_dash (*s)) {
-				*s = '_';
-			} else {
-				r_str_cpy (s, s + 1);
-				s--;
-			}
-		}
-		count++;
 	}
+	*out = 0;
 	return valid;
+}
+
+R_API bool r_name_filter(char *s, int maxlen) {
+	return r_name_filter_utf8 (s, maxlen, false);
 }
 
 R_API char *r_name_filter_dup(const char *name) {

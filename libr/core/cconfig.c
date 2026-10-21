@@ -978,6 +978,13 @@ static bool cb_flag_realnames(void *user, void *data) {
 	return true;
 }
 
+static bool cb_flag_utf8(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	core->flags->utf8 = node->i_value;
+	return true;
+}
+
 static bool cb_flag_autospace(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -1461,16 +1468,15 @@ static bool cb_cfg_float(void *user, void *data) {
 		bool explicit_leading_bit = atoi (r_list_get_n (list, 5));
 		r_list_free (list);
 		free (dup);
-		// Validate ranges
-		if (sign_bits < 0 || exp_bits < 0 || mant_bits < 0 || sign_bits + exp_bits + mant_bits > 64) {
-			return false;
-		}
 		profile.sign_bits = sign_bits;
 		profile.exp_bits = exp_bits;
 		profile.mant_bits = mant_bits;
 		profile.bias = bias;
 		profile.big_endian = big_endian;
 		profile.explicit_leading_bit = explicit_leading_bit;
+		if (!r_cfloat_profile_valid (&profile) || sign_bits + exp_bits + mant_bits > 64) {
+			return false;
+		}
 	} else {
 		// Check if it's a named profile
 		const RCFloatProfile *p = r_cfloat_profile_from_name (value);
@@ -4281,6 +4287,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETS ("asm.strip", "", "strip all instructions given comma separated types");
 	SETB ("asm.optype", "false", "show opcode type next to the instruction bytes");
 	SETB ("asm.flags", "true", "show flags");
+	SETCB ("asm.flags.utf8", "false", &cb_flag_utf8, "preserve UTF-8 in newly created or renamed flag names");
 	SETB ("asm.flags.prefix", "true", "show ;-- before the flags");
 	SETICB ("asm.flags.maxname", 0, &cb_maxname, "maximum length of flag name with smart chopping");
 	SETI ("asm.flags.limit", 0, "maximum number of flags to show in a single offset");

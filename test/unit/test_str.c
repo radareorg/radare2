@@ -992,6 +992,53 @@ bool test_r_str_sanitize_sdb_key(void) {
 	char *s = r_str_sanitize_sdb_key("rada.re2<is>::Cool");
 	mu_assert_streq (s, "rada_re2_is_::Cool", "sanitize");
 	free (s);
+	s = r_str_sanitize_sdb_key ("🦀.👩‍💻:café");
+	mu_assert_streq (s, "🦀_👩‍💻:café", "preserve UTF-8 in SDB keys");
+	free (s);
+	s = r_str_sanitize_sdb_key ("a\xc0\xaf\xc2\x85\xe2\x80\xa8");
+	mu_assert_streq (s, "a_______", "replace malformed UTF-8 and line controls");
+	free (s);
+	mu_end;
+}
+
+bool test_r_name_utf8(void) {
+	const char *valid_names[] = { "Foo", "_foo", ":foo", "foo.bar::baz", "🦀", "👩‍💻", "café", "e\xcc\x81", "名字" };
+	const char *invalid_names[] = {
+		"", "1foo", "foo-bar", "foo;bar", "foo bar", "foo\nbar", "foo\x7f", "foo\xc2\x85",
+		"foo\xe2\x80\xa8", "foo\xe2\x80\xa9", "foo\x80", "foo\xc0\xaf", "foo\xed\xa0\x80",
+		"foo\xf4\x90\x80\x80", "foo\xf0\x9f\xa6", "\xf0", "\xe2\x80", "\xc2"
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (valid_names); i++) {
+		mu_assert_true (r_name_check_utf8 (valid_names[i], true), "accept UTF-8 name");
+		char *name = strdup (valid_names[i]);
+		mu_assert_true (r_name_filter_utf8 (name, -1, true), "UTF-8 name needs no filtering");
+		mu_assert_streq (name, valid_names[i], "preserve UTF-8 bytes");
+		free (name);
+	}
+	for (i = 0; i < R_ARRAY_SIZE (invalid_names); i++) {
+		mu_assert_false (r_name_check_utf8 (invalid_names[i], true), "reject invalid name");
+		char *name = strdup (invalid_names[i]);
+		mu_assert_false (r_name_filter_utf8 (name, -1, true), "filter invalid name");
+		mu_assert ("filtered name is valid or empty", !*name || r_name_check_utf8 (name, true));
+		free (name);
+	}
+	char name[] = "🦀\\🚀;x";
+	mu_assert_false (r_name_filter_utf8 (name, -1, true), "filter punctuation next to UTF-8");
+	mu_assert_streq (name, "🦀🚀_x", "do not split the preceding UTF-8 sequence");
+	char compact[] = "a+🦀=b\\c\\n";
+	mu_assert_false (r_name_filter_utf8 (compact, -1, true), "compact punctuation in place");
+	mu_assert_streq (compact, "a🦀bc_n", "preserve UTF-8 and escaped control spelling");
+	char bounded[] = "a+🦀🚀z";
+	mu_assert_false (r_name_filter_utf8 (bounded, 1, true), "limit after removed punctuation");
+	mu_assert_streq (bounded, "a🦀", "truncate at a UTF-8 boundary");
+	mu_assert_false (r_name_check ("名字"), "generic names remain ASCII by default");
+	char ascii[] = "sym.名字";
+	mu_assert_false (r_name_filter (ascii, -1), "generic filter defaults to ASCII");
+	mu_assert_streq (ascii, "sym.", "strip UTF-8 without opt-in");
+	char spaces[] = "   ";
+	mu_assert_false (r_name_filter (spaces, -1), "filter whitespace-only name");
+	mu_assert_streq (spaces, "", "empty after trimming");
 	mu_end;
 }
 
@@ -1497,6 +1544,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_utf8_charsize);
 	mu_run_test (test_r_str_utf8_charsize_prev);
 	mu_run_test (test_r_str_sanitize_sdb_key);
+	mu_run_test (test_r_name_utf8);
 	mu_run_test (test_r_str_escape_sh);
 	mu_run_test (test_r_str_unescape);
 	mu_run_test (test_r_str_constpool);

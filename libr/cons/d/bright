@@ -44,7 +44,7 @@ ec ai.read rgb:00ff00
 ec ai.write rgb:0000ff
 ec ai.exec rgb:ff0000
 ec ai.seq rgb:ff00ff
-ec ai.ascii rgb:ffff00
+ec str rgb:ffff00
 
 ec gui.cflow rgb:ffff00
 ec gui.dataoffset rgb:ffff00

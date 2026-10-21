@@ -1793,6 +1793,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			R_UNUSED_RESULT (write (1, "\xd1\xff\xd1\xff\x04", 5));
 		}
 		if (ro.diffmode == 'U') {
+			r_diff_set_labels (d, ro.file, ro.file2);
 			char *res = r_diff_buffers_unified (d, bufa, (int)sza, bufb, (int)szb);
 			if (res) {
 				printf ("%s", res);

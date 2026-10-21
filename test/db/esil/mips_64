@@ -573,3 +573,171 @@ EXPECT=<<EOF
 0x00000001
 EOF
 RUN
+
+NAME=clz, clo, dclz and dclo count over 32 and 64 bits
+FILE=malloc://16
+ARGS=-a mips -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 70821020708210217082102470821025
+aei
+ar v0=0x77
+ar a0=0x1000
+aes
+ar v0
+ar v0=0x77
+ar a0=0xfffffffffffff000
+aes
+ar v0
+ar v0=0x77
+ar a0=0x1000
+aes
+ar v0
+ar v0=0x77
+ar a0=0xfffffffffffff000
+aes
+ar v0
+ar pc=0
+ar a0=0xffffffff00000000
+aes
+ar v0
+ar a0=0x00000000ffffffff
+aes
+ar v0
+ar a0=0
+aes
+ar v0
+ar a0=-1
+aes
+ar v0
+EOF
+EXPECT=<<EOF
+0x00000013
+0x00000014
+0x00000033
+0x00000034
+0x00000020
+0x00000020
+0x00000040
+0x00000040
+EOF
+RUN
+
+NAME=mips64 MSA bz.d tests both lanes and executes the delay slot (le)
+FILE=malloc://64
+ARGS=-a mips -b 64 -e cfg.bigendian=false
+CMDS=<<EOF
+wx 03007f4701000825
+aei
+ar pc=0
+ar t0=0
+ar w31l=0x0
+ar w31h=0x0
+aes 2
+ar pc
+ar t0
+ar pc=0
+ar t0=0
+ar w31l=0x0
+ar w31h=0x8000000000000000
+aes 2
+ar pc
+ar t0
+ar pc=0
+ar t0=0
+ar w31l=0x8000000000000000
+ar w31h=0x0
+aes 2
+ar pc
+ar t0
+ar pc=0
+ar t0=0
+ar w31l=0x1
+ar w31h=0x2
+aes 2
+ar pc
+ar t0
+ar w0l=0x123456789abcdef0
+ar w0h=0xfedcba9876543210
+ar w0l
+ar w0h
+ar w31l
+ar w31h
+ar w0
+EOF
+EXPECT=<<EOF
+0x00000010
+0x00000001
+0x00000010
+0x00000001
+0x00000010
+0x00000001
+0x00000008
+0x00000001
+0x123456789abcdef0
+0xfedcba9876543210
+0x00000001
+0x00000002
+0xfedcba9876543210123456789abcdef0
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=mips64 MSA bz.d tests both lanes and executes the delay slot (be)
+FILE=malloc://64
+ARGS=-a mips -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 477f000325080001
+aei
+ar pc=0
+ar t0=0
+ar w31l=0x0
+ar w31h=0x0
+aes 2
+ar pc
+ar t0
+ar pc=0
+ar t0=0
+ar w31l=0x0
+ar w31h=0x8000000000000000
+aes 2
+ar pc
+ar t0
+ar pc=0
+ar t0=0
+ar w31l=0x8000000000000000
+ar w31h=0x0
+aes 2
+ar pc
+ar t0
+ar pc=0
+ar t0=0
+ar w31l=0x1
+ar w31h=0x2
+aes 2
+ar pc
+ar t0
+ar w0l=0x123456789abcdef0
+ar w0h=0xfedcba9876543210
+ar w0l
+ar w0h
+ar w31l
+ar w31h
+EOF
+EXPECT=<<EOF
+0x00000010
+0x00000001
+0x00000010
+0x00000001
+0x00000010
+0x00000001
+0x00000008
+0x00000001
+0x123456789abcdef0
+0xfedcba9876543210
+0x00000001
+0x00000002
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
