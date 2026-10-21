@@ -1153,7 +1153,6 @@ static const char *arg(RArchSession *as, csh *handle, cs_insn *insn, char *buf, 
 
 #define VEC64(n) insn->detail->arm64.operands[n].vess
 #define VEC64_APPEND(sb, n, i) vector64_append(sb, handle, insn, n, i)
-#define VEC64_MASK(sh, sz) (bitmask_by_width[63]^(bitmask_by_width[sz>0?sz-1:0]<<sh))
 
 static void vector64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int i) {
 	cs_arm64_op op = INSOP64 (n);
@@ -1191,30 +1190,31 @@ static void vector64_dst_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, 
 	if (op.vector_index != -1) {
 		i = op.vector_index;
 	}
-	if (is_vector_op (&op) && i != -1) {
-		int size = vector_size (&op);
-		int shift = i * size;
-		char *regc = "l";
-		size_t s = sizeof (bitmask_by_width) / sizeof (*bitmask_by_width);
-		size_t index = size > 0? (size - 1) % s: 0;
-		if (index >= BITMASK_BY_WIDTH_COUNT) {
-			index = 0;
-		}
-		ut64 mask = bitmask_by_width[index];
-		if (shift >= 64) {
-			shift -= 64;
-			regc = "h";
-		}
-		if (shift > 0 && shift < 64) {
-			r_strbuf_appendf (sb, "%d,SWAP,0x%"PFMT64x",&,<<,%s%s,0x%"PFMT64x",&,|,%s%s",
-				shift, mask, REG64 (n), regc, VEC64_MASK (shift, size), REG64 (n), regc);
-		} else {
-			int dimsize = size % 64;
-			r_strbuf_appendf (sb, "0x%"PFMT64x",&,%s%s,0x%"PFMT64x",&,|,%s%s",
-				mask, REG64 (n), regc, VEC64_MASK (shift, dimsize), REG64 (n), regc);
-		}
-	} else {
+	if (!is_vector_op (&op) || i == -1) {
 		r_strbuf_append (sb, REG64 (n));
+		return;
+	}
+	int size = vector_size (&op);
+	int shift = i * size;
+	char *regc = "l";
+	if (shift >= 64) {
+		shift -= 64;
+		regc = "h";
+	}
+	// the lane covers the whole half; the final '=' comes from the caller
+	if (size >= 64 && !shift) {
+		r_strbuf_appendf (sb, "%s%s", REG64 (n), regc);
+		return;
+	}
+	ut64 mask = (size > 0 && size <= 64)? bitmask_by_width[size - 1]: 1;
+	// keep the old bits that lie outside the lane being written
+	ut64 clear = shift? ~(mask << shift): ~mask;
+	if (shift) {
+		r_strbuf_appendf (sb, "%d,SWAP,0x%"PFMT64x",&,<<,%s%s,0x%"PFMT64x",&,|,%s%s",
+			shift, mask, REG64 (n), regc, clear, REG64 (n), regc);
+	} else {
+		r_strbuf_appendf (sb, "0x%"PFMT64x",&,%s%s,0x%"PFMT64x",&,|,%s%s",
+			mask, REG64 (n), regc, clear, REG64 (n), regc);
 	}
 }
 
