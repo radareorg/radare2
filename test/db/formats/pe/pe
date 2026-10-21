@@ -119,6 +119,7 @@ e asm.arch=x86
 e anal.arch=x86
 e asm.bits=32
 wx 6a046a036a026a01ff15e42141008b442404c3 @ 0x40f000
+e anal.in=io.maps
 af+ 0x40f000 pe_import_pop
 afb+ 0x40f000 0x40f000 0x13
 s 0x40f000
