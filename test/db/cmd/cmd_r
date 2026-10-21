@@ -843,6 +843,7 @@ FILE=hex://90909090
 ARGS=-NN
 CMDS=<<EOF
 env PATH=
+env R2CORE=caller
 s 1
 b 2
 e asm.arch=x86
@@ -859,6 +860,8 @@ rafind2 -E 0 hex://00000000
 e asm.bits
 e scr.interactive
 p8 2
+env PATH
+env R2CORE
 ?e after
 EOF
 EXPECT=<<EOF
@@ -882,6 +885,35 @@ EXPECT=<<EOF
 32
 false
 9090
+
+caller
 after
 EOF
+RUN
+
+NAME=rafind2 restores the environment after core open failures
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=caller-path
+env R2CORE=caller-core
+rafind2 -ci /missing-rafind2-input
+?v $?
+env PATH
+env R2CORE
+rafind2 -cz hex://61626364656600
+env PATH
+env R2CORE
+?e after
+EOF
+EXPECT=<<EOF
+0x1
+caller-path
+caller-core
+0x00000000 abcdef
+caller-path
+caller-core
+after
+EOF
+EXPECT_ERR=
 RUN

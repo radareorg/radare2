@@ -415,11 +415,12 @@ static int show_help(RCons *cons, const char *argv0, int line) {
 }
 
 static int rafind_open_core(RafindOptions *ro, const char *file, const ut8 *data, int datalen) {
+	char *path = r_sys_getenv ("PATH");
+	char *r2core = r_sys_getenv ("R2CORE");
 	RCore *core = r_core_new ();
 	int ret = 1;
 	if (!core) {
-		r_cons_global (ro->cons);
-		return ret;
+		goto beach;
 	}
 	core->cons->context->noflush = true;
 	r_config_set_b (core->config, "scr.interactive", false);
@@ -467,9 +468,15 @@ static int rafind_open_core(RafindOptions *ro, const char *file, const ut8 *data
 	}
 	ret = core->rc;
 beach:
-	r_cons_merge_output (ro->cons, core->cons);
+	if (core) {
+		r_cons_merge_output (ro->cons, core->cons);
+	}
 	r_core_free (core);
 	r_cons_global (ro->cons);
+	r_sys_setenv ("PATH", path);
+	r_sys_setenv ("R2CORE", r2core);
+	free (path);
+	free (r2core);
 	return ret;
 }
 
@@ -845,10 +852,11 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 			}
 			break;
 		case 'v':
-			int mode = ro.json? 'j': ro.quiet? 'q'
-							: 0;
-			ret = r_main_version_print (ro.cons, "rafind2", mode);
-			goto beach;
+			{
+				int mode = ro.json? 'j': ro.quiet? 'q': 0;
+				ret = r_main_version_print (ro.cons, "rafind2", mode);
+				goto beach;
+			}
 		case 'h':
 			ret = show_help (ro.cons, argv[0], 0);
 			goto beach;
