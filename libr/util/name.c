@@ -53,12 +53,26 @@ R_API bool r_name_validate_first(const char ch) {
 	return false;
 }
 
+static int name_utf8_size(const char *s) {
+	if ((ut8)*s < 0x80) {
+		return 0;
+	}
+	RRune ch;
+	int size = r_utf8_decode ((const ut8 *)s, -1, &ch);
+	return size > 1 && ch >= 0xa0 && ch != 0x2028 && ch != 0x2029? size: 0;
+}
+
 R_API bool r_name_check(const char *s) {
 	R_RETURN_VAL_IF_FAIL (s, false);
-	if (!r_name_validate_first (*s)) {
+	int size = name_utf8_size (s);
+	if (!size && !r_name_validate_first (*s)) {
 		return false;
 	}
-	for (s++; *s; s++) {
+	for (s += size? size: 1; *s; s++) {
+		if ((ut8)*s >= 0x80 && (size = name_utf8_size (s))) {
+			s += size - 1;
+			continue;
+		}
 		if (!valid_name_char[(ut8)*s]) {
 			return false;
 		}
@@ -84,15 +98,25 @@ R_API bool r_name_filter(char *s, int maxlen) {
 	}
 	size_t count = 0;
 	r_str_trim_head (s);
-	bool valid = r_name_validate_first (*s);
+	if (!*s) {
+		return false;
+	}
+	int size = name_utf8_size (s);
+	bool valid = size || r_name_validate_first (*s);
 	if (!valid) {
 		*s = '_';
 	}
-	for (s++; *s; s++) {
+	s += size? size: 1;
+	while (*s) {
 		if (maxlen > 0 && count > maxlen) {
 			valid = false;
 			*s = 0;
 			break;
+		}
+		if ((ut8)*s >= 0x80 && (size = name_utf8_size (s))) {
+			s += size;
+			count++;
+			continue;
 		}
 		if (*s == '\\') {
 			valid = false;
@@ -100,7 +124,8 @@ R_API bool r_name_filter(char *s, int maxlen) {
 				*s = '_';
 			} else {
 				r_str_cpy (s, s + 1);
-				s--;
+				count++;
+				continue;
 			}
 		}
 		if (!r_name_validate_char (*s)) {
@@ -109,10 +134,12 @@ R_API bool r_name_filter(char *s, int maxlen) {
 				*s = '_';
 			} else {
 				r_str_cpy (s, s + 1);
-				s--;
+				count++;
+				continue;
 			}
 		}
 		count++;
+		s++;
 	}
 	return valid;
 }

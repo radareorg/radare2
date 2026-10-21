@@ -902,112 +902,112 @@ EXPECT=<<EOF
 --
 fs classes
 'f class._JNIEnv = 0x6060
-'f method._JNIEnv.FindClass(char_const*) = 0x6060
-'f method._JNIEnv.DeleteLocalRef(_jobject*) = 0x606a
-'f method._JNIEnv.NewObject(_jclass*,__jmethodID*,_...) = 0x6074
-'f method._JNIEnv.GetObjectClass(_jobject*) = 0x608e
-'f method._JNIEnv.GetMethodID(_jclass*,_char_const*,_char_const*) = 0x6098
-'f method._JNIEnv.CallObjectMethod(_jobject*,__jmethodID*,_...) = 0x60a4
-'f method._JNIEnv.CallVoidMethod(_jobject*,__jmethodID*,_...) = 0x60c0
-'f method._JNIEnv.GetStaticMethodID(_jclass*,_char_const*,_char_const*) = 0x60dc
-'f method._JNIEnv.CallStaticObjectMethod(_jclass*,__jmethodID*,_...) = 0x60ea
-'f method._JNIEnv.CallStaticIntMethod(_jclass*,__jmethodID*,_...) = 0x695e
-'f method._JNIEnv.CallStaticVoidMethod(_jclass*,__jmethodID*,_...) = 0x697c
+'f method._JNIEnv.FindClass_char_const_ = 0x6060
+'f method._JNIEnv.DeleteLocalRef__jobject_ = 0x606a
+'f method._JNIEnv.NewObject__jclass___jmethodID__..._ = 0x6074
+'f method._JNIEnv.GetObjectClass__jobject_ = 0x608e
+'f method._JNIEnv.GetMethodID__jclass__char_const__char_const_ = 0x6098
+'f method._JNIEnv.CallObjectMethod__jobject___jmethodID__..._ = 0x60a4
+'f method._JNIEnv.CallVoidMethod__jobject___jmethodID__..._ = 0x60c0
+'f method._JNIEnv.GetStaticMethodID__jclass__char_const__char_const_ = 0x60dc
+'f method._JNIEnv.CallStaticObjectMethod__jclass___jmethodID__..._ = 0x60ea
+'f method._JNIEnv.CallStaticIntMethod__jclass___jmethodID__..._ = 0x695e
+'f method._JNIEnv.CallStaticVoidMethod__jclass___jmethodID__..._ = 0x697c
 'td struct _JNIEnv { char empty[0];};
 'f class.SystemClassLoaderInjector = 0x699c
-'f method.SystemClassLoaderInjector.inject(_JNIEnv*,__jobject*,__jstring*,__jstring*) = 0x74f8
-'f method.SystemClassLoaderInjector.findBaseDexClassloader(_JNIEnv*,__jobject*) = 0x699c
-'f method.SystemClassLoaderInjector.getField(_JNIEnv*,__jobject*,__jobject*,__jstring*) = 0x6a2c
-'f method.SystemClassLoaderInjector.getPathList(_JNIEnv*,__jobject*) = 0x6abc
-'f method.SystemClassLoaderInjector.getDexElements(_JNIEnv*,__jobject*) = 0x6af4
-'f method.SystemClassLoaderInjector.setField(_JNIEnv*,__jobject*,__jobject*,__jstring*,__jobject*) = 0x6b1c
-'f method.SystemClassLoaderInjector.combineArray(_JNIEnv*,__jobject*,__jobject*) = 0x6bb0
-'f method.SystemClassLoaderInjector.injectAboveEqualApiLevel14(_JNIEnv*,__jobject*,__jstring*,__jstring*) = 0x6d00
-'f method.SystemClassLoaderInjector.appendArray(_JNIEnv*,__jobject*,__jobject*) = 0x6e5c
-'f method.SystemClassLoaderInjector.injectInAliyunOs(_JNIEnv*,__jobject*,__jstring*,__jstring*) = 0x6f68
-'f method.SystemClassLoaderInjector.injectBelowApiLevel14(_JNIEnv*,__jobject*,__jstring*,__jstring*) = 0x720c
+'f method.SystemClassLoaderInjector.inject__JNIEnv___jobject___jstring___jstring_ = 0x74f8
+'f method.SystemClassLoaderInjector.findBaseDexClassloader__JNIEnv___jobject_ = 0x699c
+'f method.SystemClassLoaderInjector.getField__JNIEnv___jobject___jobject___jstring_ = 0x6a2c
+'f method.SystemClassLoaderInjector.getPathList__JNIEnv___jobject_ = 0x6abc
+'f method.SystemClassLoaderInjector.getDexElements__JNIEnv___jobject_ = 0x6af4
+'f method.SystemClassLoaderInjector.setField__JNIEnv___jobject___jobject___jstring___jobject_ = 0x6b1c
+'f method.SystemClassLoaderInjector.combineArray__JNIEnv___jobject___jobject_ = 0x6bb0
+'f method.SystemClassLoaderInjector.injectAboveEqualApiLevel14__JNIEnv___jobject___jstring___jstring_ = 0x6d00
+'f method.SystemClassLoaderInjector.appendArray__JNIEnv___jobject___jobject_ = 0x6e5c
+'f method.SystemClassLoaderInjector.injectInAliyunOs__JNIEnv___jobject___jstring___jstring_ = 0x6f68
+'f method.SystemClassLoaderInjector.injectBelowApiLevel14__JNIEnv___jobject___jstring___jstring_ = 0x720c
 'td struct SystemClassLoaderInjector { char empty[0];};
 'f class.std::exception = 0x8884
-'f method.std::exception.destructor.~exception() = 0x8884
-'f method.std::exception.const.what()_const = 0x88f4
-'f method.std::exception.destructor.~exception() = 0x8914
+'f method.std::exception.destructor._exception__ = 0x8884
+'f method.std::exception.const.what___const = 0x88f4
+'f method.std::exception.destructor._exception__ = 0x8914
 'td struct std::exception { char empty[0];};
 'f class.std::bad_exception = 0x889c
-'f method.std::bad_exception.destructor.~bad_exception() = 0x889c
-'f method.std::bad_exception.const.what()_const = 0x8904
-'f method.std::bad_exception.destructor.~bad_exception() = 0x8930
+'f method.std::bad_exception.destructor._bad_exception__ = 0x889c
+'f method.std::bad_exception.const.what___const = 0x8904
+'f method.std::bad_exception.destructor._bad_exception__ = 0x8930
 'td struct std::bad_exception { char empty[0];};
 'f class.__cxxabiv1::__forced_unwind = 0x88c4
-'f method.__cxxabiv1::__forced_unwind.destructor.~__forced_unwind() = 0x88c4
-'f method.__cxxabiv1::__forced_unwind.destructor.~__forced_unwind() = 0x894c
+'f method.__cxxabiv1::__forced_unwind.destructor.___forced_unwind__ = 0x88c4
+'f method.__cxxabiv1::__forced_unwind.destructor.___forced_unwind__ = 0x894c
 'td struct __cxxabiv1::__forced_unwind { char empty[0];};
 'f class.__cxxabiv1::__foreign_exception = 0x88dc
-'f method.__cxxabiv1::__foreign_exception.destructor.~__foreign_exception() = 0x88dc
-'f method.__cxxabiv1::__foreign_exception.destructor.~__foreign_exception() = 0x8968
+'f method.__cxxabiv1::__foreign_exception.destructor.___foreign_exception__ = 0x88dc
+'f method.__cxxabiv1::__foreign_exception.destructor.___foreign_exception__ = 0x8968
 'td struct __cxxabiv1::__foreign_exception { char empty[0];};
 'f class.__eh_globals_init = 0x8984
-'f method.__eh_globals_init.destructor.~__eh_globals_init() = 0x8984
+'f method.__eh_globals_init.destructor.___eh_globals_init__ = 0x8984
 'td struct __eh_globals_init { char empty[0];};
 'f class.__cxxabiv1::__fundamental_type_info = 0x94e4
-'f method.__cxxabiv1::__fundamental_type_info.destructor.~__fundamental_type_info() = 0x94e4
-'f method.__cxxabiv1::__fundamental_type_info.destructor.~__fundamental_type_info() = 0x950c
+'f method.__cxxabiv1::__fundamental_type_info.destructor.___fundamental_type_info__ = 0x94e4
+'f method.__cxxabiv1::__fundamental_type_info.destructor.___fundamental_type_info__ = 0x950c
 'td struct __cxxabiv1::__fundamental_type_info { char empty[0];};
 'f class.std::type_info = 0x97bc
-'f method.std::type_info.destructor.~type_info() = 0x97bc
-'f method.std::type_info.const.__is_pointer_p()_const = 0x97d4
-'f method.std::type_info.const.__is_function_p()_const = 0x97dc
-'f method.std::type_info.const.__do_catch(std::type_info_const*,_void**,_unsigned_int)_const = 0x9854
-'f method.std::type_info.const.__do_upcast(__cxxabiv1::__class_type_info_const*,_void**)_const = 0x97e4
-'f method.std::type_info.const.operator==(std::type_info_const&)_const = 0x9808
-'f method.std::type_info.destructor.~type_info() = 0x97ec
+'f method.std::type_info.destructor._type_info__ = 0x97bc
+'f method.std::type_info.const.__is_pointer_p___const = 0x97d4
+'f method.std::type_info.const.__is_function_p___const = 0x97dc
+'f method.std::type_info.const.__do_catch_std::type_info_const__void__unsigned_int__const = 0x9854
+'f method.std::type_info.const.__do_upcast___cxxabiv1::__class_type_info_const__void__const = 0x97e4
+'f method.std::type_info.const.operator_std::type_info_const__const = 0x9808
+'f method.std::type_info.destructor._type_info__ = 0x97ec
 'td struct std::type_info { char empty[0];};
 'f class.__cxxabiv1::__pointer_type_info = 0x9528
-'f method.__cxxabiv1::__pointer_type_info.const.__is_pointer_p()_const = 0x9528
-'f method.__cxxabiv1::__pointer_type_info.destructor.~__pointer_type_info() = 0x9530
-'f method.__cxxabiv1::__pointer_type_info.destructor.~__pointer_type_info() = 0x9558
-'f method.__cxxabiv1::__pointer_type_info.const.__pointer_catch(__cxxabiv1::__pbase_type_info_const*,_void**,_unsigned_int)_const = 0x9574
+'f method.__cxxabiv1::__pointer_type_info.const.__is_pointer_p___const = 0x9528
+'f method.__cxxabiv1::__pointer_type_info.destructor.___pointer_type_info__ = 0x9530
+'f method.__cxxabiv1::__pointer_type_info.destructor.___pointer_type_info__ = 0x9558
+'f method.__cxxabiv1::__pointer_type_info.const.__pointer_catch___cxxabiv1::__pbase_type_info_const__void__unsigned_int__const = 0x9574
 'td struct __cxxabiv1::__pointer_type_info { char empty[0];};
 'f class.__cxxabiv1::__pbase_type_info = 0x9dd0
-'f method.__cxxabiv1::__pbase_type_info.destructor.~__pbase_type_info() = 0x9df0
-'f method.__cxxabiv1::__pbase_type_info.const.__do_catch(std::type_info_const*,_void**,_unsigned_int)_const = 0x9e34
-'f method.__cxxabiv1::__pbase_type_info.const.__pointer_catch(__cxxabiv1::__pbase_type_info_const*,_void**,_unsigned_int)_const = 0x9dd0
-'f method.__cxxabiv1::__pbase_type_info.destructor.~__pbase_type_info() = 0x9e18
+'f method.__cxxabiv1::__pbase_type_info.destructor.___pbase_type_info__ = 0x9df0
+'f method.__cxxabiv1::__pbase_type_info.const.__do_catch_std::type_info_const__void__unsigned_int__const = 0x9e34
+'f method.__cxxabiv1::__pbase_type_info.const.__pointer_catch___cxxabiv1::__pbase_type_info_const__void__unsigned_int__const = 0x9dd0
+'f method.__cxxabiv1::__pbase_type_info.destructor.___pbase_type_info__ = 0x9e18
 'td struct __cxxabiv1::__pbase_type_info { char empty[0];};
 'f class.__cxxabiv1::__si_class_type_info = 0x95f4
-'f method.__cxxabiv1::__si_class_type_info.destructor.~__si_class_type_info() = 0x95f4
-'f method.__cxxabiv1::__si_class_type_info.destructor.~__si_class_type_info() = 0x961c
-'f method.__cxxabiv1::__si_class_type_info.const.__do_find_public_src(int,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*)_const = 0x9638
-'f method.__cxxabiv1::__si_class_type_info.const.__do_dyncast(int,___cxxabiv1::__class_type_info::__sub_kind,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__dyncast_result&)_const = 0x969c
-'f method.__cxxabiv1::__si_class_type_info.const.__do_upcast(__cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__upcast_result&)_const = 0x977c
+'f method.__cxxabiv1::__si_class_type_info.destructor.___si_class_type_info__ = 0x95f4
+'f method.__cxxabiv1::__si_class_type_info.destructor.___si_class_type_info__ = 0x961c
+'f method.__cxxabiv1::__si_class_type_info.const.__do_find_public_src_int__void_const____cxxabiv1::__class_type_info_const__void_const__const = 0x9638
+'f method.__cxxabiv1::__si_class_type_info.const.__do_dyncast_int____cxxabiv1::__class_type_info::__sub_kind____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__dyncast_result__const = 0x969c
+'f method.__cxxabiv1::__si_class_type_info.const.__do_upcast___cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__upcast_result__const = 0x977c
 'td struct __cxxabiv1::__si_class_type_info { char empty[0];};
 'f class.__cxxabiv1::__class_type_info = 0x9868
-'f method.__cxxabiv1::__class_type_info.destructor.~__class_type_info() = 0x98d8
-'f method.__cxxabiv1::__class_type_info.const.__do_upcast(__cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__upcast_result&)_const = 0x991c
-'f method.__cxxabiv1::__class_type_info.const.__do_catch(std::type_info_const*,_void**,_unsigned_int)_const = 0x9948
-'f method.__cxxabiv1::__class_type_info.const.__do_upcast(__cxxabiv1::__class_type_info_const*,_void**)_const = 0x9868
-'f method.__cxxabiv1::__class_type_info.const.__do_find_public_src(int,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*)_const = 0x98c4
-'f method.__cxxabiv1::__class_type_info.destructor.~__class_type_info() = 0x9900
-'f method.__cxxabiv1::__class_type_info.const.__do_dyncast(int,___cxxabiv1::__class_type_info::__sub_kind,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info_const*,_void_const*,___cxxabiv1::__class_type_info::__dyncast_result&)_const = 0x998c
+'f method.__cxxabiv1::__class_type_info.destructor.___class_type_info__ = 0x98d8
+'f method.__cxxabiv1::__class_type_info.const.__do_upcast___cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__upcast_result__const = 0x991c
+'f method.__cxxabiv1::__class_type_info.const.__do_catch_std::type_info_const__void__unsigned_int__const = 0x9948
+'f method.__cxxabiv1::__class_type_info.const.__do_upcast___cxxabiv1::__class_type_info_const__void__const = 0x9868
+'f method.__cxxabiv1::__class_type_info.const.__do_find_public_src_int__void_const____cxxabiv1::__class_type_info_const__void_const__const = 0x98c4
+'f method.__cxxabiv1::__class_type_info.destructor.___class_type_info__ = 0x9900
+'f method.__cxxabiv1::__class_type_info.const.__do_dyncast_int____cxxabiv1::__class_type_info::__sub_kind____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info_const__void_const____cxxabiv1::__class_type_info::__dyncast_result__const = 0x998c
 'td struct __cxxabiv1::__class_type_info { char empty[0];};
 'f class.__gnu_cxx::__concurrence_lock_error = 0x126b0
-'f method.__gnu_cxx::__concurrence_lock_error.const.what()_const = 0x126b0
-'f method.__gnu_cxx::__concurrence_lock_error.destructor.~__concurrence_lock_error() = 0x126f8
-'f method.__gnu_cxx::__concurrence_lock_error.destructor.~__concurrence_lock_error() = 0x12750
+'f method.__gnu_cxx::__concurrence_lock_error.const.what___const = 0x126b0
+'f method.__gnu_cxx::__concurrence_lock_error.destructor.___concurrence_lock_error__ = 0x126f8
+'f method.__gnu_cxx::__concurrence_lock_error.destructor.___concurrence_lock_error__ = 0x12750
 'td struct __gnu_cxx::__concurrence_lock_error { char empty[0];};
 'f class.__gnu_cxx::__concurrence_unlock_error = 0x126c0
-'f method.__gnu_cxx::__concurrence_unlock_error.const.what()_const = 0x126c0
-'f method.__gnu_cxx::__concurrence_unlock_error.destructor.~__concurrence_unlock_error() = 0x126d0
-'f method.__gnu_cxx::__concurrence_unlock_error.destructor.~__concurrence_unlock_error() = 0x12720
+'f method.__gnu_cxx::__concurrence_unlock_error.const.what___const = 0x126c0
+'f method.__gnu_cxx::__concurrence_unlock_error.destructor.___concurrence_unlock_error__ = 0x126d0
+'f method.__gnu_cxx::__concurrence_unlock_error.destructor.___concurrence_unlock_error__ = 0x12720
 'td struct __gnu_cxx::__concurrence_unlock_error { char empty[0];};
 'f class.std::bad_cast = 0x12bc8
-'f method.std::bad_cast.destructor.~bad_cast() = 0x12bd8
-'f method.std::bad_cast.const.what()_const = 0x12bc8
-'f method.std::bad_cast.destructor.~bad_cast() = 0x12c00
+'f method.std::bad_cast.destructor._bad_cast__ = 0x12bd8
+'f method.std::bad_cast.const.what___const = 0x12bc8
+'f method.std::bad_cast.destructor._bad_cast__ = 0x12c00
 'td struct std::bad_cast { char empty[0];};
 'f class.std::bad_typeid = 0x12c1c
-'f method.std::bad_typeid.destructor.~bad_typeid() = 0x12c2c
-'f method.std::bad_typeid.const.what()_const = 0x12c1c
-'f method.std::bad_typeid.destructor.~bad_typeid() = 0x12c54
+'f method.std::bad_typeid.destructor._bad_typeid__ = 0x12c2c
+'f method.std::bad_typeid.const.what___const = 0x12c1c
+'f method.std::bad_typeid.destructor._bad_typeid__ = 0x12c54
 'td struct std::bad_typeid { char empty[0];};
 --
 typedef struct {
@@ -1551,5 +1551,108 @@ EXPECT=<<EOF
 'f method.AAA.meth = 0x0
 'td struct AAA { char empty[0];};
 0
+EOF
+RUN
+
+NAME=ic+ preserves binary names and sanitizes command exports
+FILE=malloc://512
+CMDS=<<EOF
+'ic+Evil;}
+'ic+Evil;}:Base
+'ic+Evil;}..x;};y int;}
+icqq
+ic*
+EOF
+EXPECT=<<EOF
+Evil;}
+fs classes
+'f class.Evil_ = 0x0
+'f super.Evil_.Base = 0
+'f field.Evil_.field.x__y = 0x00000000
+'td struct Evil__ { int__ x___y;};
+EOF
+RUN
+
+NAME=ic 0 ** emits class and method commands
+FILE=bins/mach0/hello-objc
+CMDS=ic 0 **
+EXPECT=<<EOF
+'ac Person
+'acm Person sayHello 0x100000da0
+'acm Person name 0x100000df0
+'acm Person setName: 0x100000e20
+EOF
+RUN
+
+NAME=ic+ preserves UTF-8 class, field, base and selector names
+FILE=malloc://512
+CMDS=<<EOF
+ic+🦀
+ic+🦀:基础
+ic+🦀.👩‍💻:
+ic+🦀..café int
+icqq
+ic*
+ic 0 **
+EOF
+EXPECT=<<EOF
+🦀
+fs classes
+'f class.🦀 = 0x0
+'f super.🦀.基础 = 0
+'f method.🦀.👩‍💻: = 0x0
+'f field.🦀.field.café = 0x00000000
+'td struct 🦀 { int café;};
+'ac 🦀
+'acm 🦀 👩‍💻: 0x00000000
+EOF
+RUN
+
+NAME=ic* keeps Unicode and language keywords in type names
+FILE=malloc://512
+CMDS=<<EOF
+ic+🦀
+ic+r2name_f09fa680
+ic+struct
+ic*~td
+EOF
+EXPECT=<<EOF
+'td struct 🦀 { char empty[0];};
+'td struct r2name_f09fa680 { char empty[0];};
+'td struct struct { char empty[0];};
+EOF
+RUN
+
+NAME=ic* sanitizes command syntax in field types
+FILE=malloc://512
+CMDS=<<EOF
+'ic+Safe..value int;}
+ic*
+EOF
+EXPECT=<<EOF
+fs classes
+'f class.Safe = 0x0
+'f field.Safe.field.value = 0x00000000
+'td struct Safe { int__ value;};
+EOF
+RUN
+
+NAME=ic+ preserves C++ destructor and operator names but filters flags
+FILE=malloc://512
+CMDS=<<EOF
+'ic+Foo.~Foo
+'ic+Foo.operator+
+icj~{[0].methods[0].name}
+icj~{[0].methods[1].name}
+ic*
+EOF
+EXPECT=<<EOF
+~Foo
+operator+
+fs classes
+'f class.Foo = 0x0
+'f method.Foo._Foo = 0x0
+'f method.Foo.operator = 0x0
+'td struct Foo { char empty[0];};
 EOF
 RUN

@@ -1311,6 +1311,17 @@ R_API char *r_str_sanitize_sdb_key(const char *s) {
 	}
 	char *cur = ret;
 	while (len > 0) {
+		if ((ut8)*s >= 0x80) {
+			RRune ch;
+			int size = r_utf8_decode ((const ut8 *)s, R_MIN (len, 4), &ch);
+			if (size > 1 && ch >= 0xa0 && ch != 0x2028 && ch != 0x2029) {
+				memcpy (cur, s, size);
+				cur += size;
+				s += size;
+				len -= size;
+				continue;
+			}
+		}
 		char c = *s;
 		if (! (c >= 'a' && c <= 'z') && ! (c >= 'A' && c <= 'Z') && ! (c >= '0' && c <= '9') && c != '_' && c != ':') {
 			c = '_';

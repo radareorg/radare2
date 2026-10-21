@@ -4771,15 +4771,21 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 			}
 		} else if (IS_MODE_RAD (mode)) {
 			char *n = r_name_filter_shell (name);
+			char *cn = r_str_sanitize_r2 (cname);
+			if (!n || !cn) {
+				free (n);
+				free (cn);
+				free (name);
+				continue;
+			}
 			r_cons_printf (core->cons, "'f class.%s = 0x%" PFMT64x "\n", n, at_min);
 			if (c->super) {
-				const char *cn = cname;
 				RListIter *iter;
 				RBinName *bn;
 				r_list_foreach (c->super, iter, bn) {
 					char *fsk = strdup (r_bin_name_tostring2 (bn, pref));
 					r_name_filter (fsk, -1);
-					r_cons_printf (core->cons, "'f super.%s.%s = %d\n", cn, fsk, c->index);
+					r_cons_printf (core->cons, "'f super.%s.%s = %d\n", n, fsk, c->index);
 					free (fsk);
 				}
 			}
@@ -4787,26 +4793,14 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 				R_VEC_FOREACH (&c->methods, sym) {
 				char *mflags = r_bin_attr_tostring (sym->attr.flags, false);
 				r_str_replace_char (mflags, ' ', '.');
-				const char *n = cname; //  r_name_filter_shell (cname);
-				char *sn = r_bin_name_tostring (sym->name); // r_name_filter_shell (sym->name); // symbol contains classname
+				const char *sn = r_bin_name_tostring (sym->name);
 				const char *predot = R_STR_ISNOTEMPTY (mflags)? ".": "";
 				ut64 maddr = compute_addr (core->bin, sym->paddr, sym->vaddr, va);
-				char *cmd = r_str_newf ("'f method.%s%s%s.%s = 0x%" PFMT64x "\n", n, predot, mflags, sn, maddr);
-				// free (n);
-				// free (sn);
-				if (cmd) {
-					// use namefilter thing to create the right flag
-					r_str_replace_char (cmd, ' ', '_');
-					if (strlen (cmd) > 2) {
-						cmd[2] = ' ';
-					}
-					char *eq = (char *)r_str_rchr (cmd, NULL, '=');
-					if (eq && eq != cmd) {
-						eq[-1] = eq[1] = ' ';
-					}
-					r_str_replace_char (cmd, '\n', 0);
-					r_cons_printf (core->cons, "%s\n", cmd);
-					free (cmd);
+				char *flagname = r_str_newf ("method.%s%s%s.%s", cname, predot, mflags, sn);
+				if (flagname) {
+					r_name_filter (flagname, -1);
+					r_cons_printf (core->cons, "'f %s = 0x%" PFMT64x "\n", flagname, maddr);
+					free (flagname);
 				}
 				R_FREE (mflags);
 				}
@@ -4825,7 +4819,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 
 			// C struct
 			if (!names_only) {
-				r_cons_printf (core->cons, "'td struct %s {", cname);
+				r_cons_printf (core->cons, "'td struct %s {", cn);
 				if (RVecRBinField_empty (&c->fields)) {
 					// XXX workaround because we cant register empty structs yet
 					// XXX https://github.com/radareorg/radare2/issues/16342
@@ -4836,17 +4830,26 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 						const char *tn = f->type? r_bin_name_tostring (f->type): NULL;
 						char *n = objc_name_toc (fn);
 						char *t = objc_type_toc (tn);
+						if (!n) {
+							free (t);
+							continue;
+						}
 						if (R_STR_ISEMPTY (t)) {
 							free (t);
 							t = strdup ("void* ");
 						}
-						r_cons_printf (core->cons, " %s %s;", t, n);
+						if (t) {
+							r_str_sanitize (t);
+							r_str_sanitize (n);
+							r_cons_printf (core->cons, " %s %s;", t, n);
+						}
 						free (t);
 						free (n);
 					}
 				}
 				r_cons_printf (core->cons, "};\n");
 			}
+			free (cn);
 			free (n);
 		} else if (IS_MODE_JSON (mode)) {
 			pj_o (pj);
