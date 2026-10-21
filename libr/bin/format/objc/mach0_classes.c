@@ -1513,7 +1513,8 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 		parse_swift_classes (bf, ret, &ms, relocs, limit);
 	}
 	if (!ms.clslist.size || !ms.clslist.have) {
-		goto get_classes_error;
+		metadata_sections_fini (&ms);
+		return ret;
 	}
 
 	if (!ms.clslist.have) {

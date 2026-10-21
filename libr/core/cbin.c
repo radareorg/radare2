@@ -4960,13 +4960,14 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 					if (lang && *lang != '?') {
 						pj_ks (pj, "lang", lang);
 					}
-					if (f->attr.flags) {
-						char *mflags = r_core_bin_attr_tostring (core, f->attr.flags, mode);
+					const ut64 attr = f->attr.flags & ~R_BIN_ATTR_FIELD_OFFSET;
+					if (attr) {
+						char *mflags = r_core_bin_attr_tostring (core, attr, mode);
 						pj_k (pj, "attr");
 						pj_j (pj, mflags);
 						free (mflags);
 					}
-					if (f->attr.offset) {
+					if (f->attr.offset || (f->attr.flags & R_BIN_ATTR_FIELD_OFFSET)) {
 						pj_kn (pj, "offset", f->attr.offset);
 					}
 					if (f->attr.size > 0) {
