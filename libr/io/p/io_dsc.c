@@ -1456,7 +1456,7 @@ static RDyldRebaseInfo *get_rebase_info(int fd, ut64 slideInfoOffset, ut64 slide
 		}
 
 		ut64 page_starts_offset = offset + size;
-		ut64 page_starts_size = slide_info.page_starts_count * 2;
+		ut64 page_starts_size = (ut64)slide_info.page_starts_count * 2;
 
 		if (page_starts_size + size > slideInfoSize) {
 			R_LOG_ERROR ("Size mismatch in slide info v5");
@@ -1505,7 +1505,7 @@ static RDyldRebaseInfo *get_rebase_info(int fd, ut64 slideInfoOffset, ut64 slide
 		}
 
 		ut64 page_starts_offset = offset + size;
-		ut64 page_starts_size = slide_info.page_starts_count * 2;
+		ut64 page_starts_size = (ut64)slide_info.page_starts_count * 2;
 
 		if (page_starts_size + size > slideInfoSize) {
 			R_LOG_ERROR ("Size mismatch in slide info v3");
@@ -1551,28 +1551,29 @@ static RDyldRebaseInfo *get_rebase_info(int fd, ut64 slideInfoOffset, ut64 slide
 			return NULL;
 		}
 
+		const ut64 starts_size = (ut64)slide_info.page_starts_count * 2;
+		const ut64 extras_size = (ut64)slide_info.page_extras_count * 2;
 		if (slide_info.page_starts_offset == 0 ||
 				slide_info.page_starts_offset > slideInfoSize ||
-				slide_info.page_starts_offset + slide_info.page_starts_count * 2 > slideInfoSize) {
+				slide_info.page_starts_offset + starts_size > slideInfoSize) {
 			R_LOG_ERROR ("Size mismatch in slide info v%d page starts", slide_info_version);
 			return NULL;
 		}
 
 		if (slide_info.page_extras_offset > slideInfoSize ||
-				slide_info.page_extras_offset + slide_info.page_extras_count * 2 > slideInfoSize) {
+				slide_info.page_extras_offset + extras_size > slideInfoSize) {
 			R_LOG_ERROR ("Size mismatch in slide info v%d page extras", slide_info_version);
 			return NULL;
 		}
 
 		if (slide_info.page_starts_count > 0) {
-			ut64 size = slide_info.page_starts_count * 2;
 			ut64 at = slideInfoOffset + slide_info.page_starts_offset;
-			tmp_buf_1 = malloc (size);
+			tmp_buf_1 = malloc (starts_size);
 			if (!tmp_buf_1) {
 				goto beach;
 			}
 			bool got_starts = false;
-			RIO_FREAD_AT_INTO (fd, at, tmp_buf_1, "s", size, slide_info.page_starts_count, got_starts);
+			RIO_FREAD_AT_INTO (fd, at, tmp_buf_1, "s", starts_size, slide_info.page_starts_count, got_starts);
 			if (!got_starts) {
 				R_LOG_ERROR ("Could not read slide info v%d page starts", slide_info_version);
 				goto beach;
@@ -1580,14 +1581,13 @@ static RDyldRebaseInfo *get_rebase_info(int fd, ut64 slideInfoOffset, ut64 slide
 		}
 
 		if (slide_info.page_extras_count > 0) {
-			ut64 size = slide_info.page_extras_count * 2;
 			ut64 at = slideInfoOffset + slide_info.page_extras_offset;
-			tmp_buf_2 = malloc (size);
+			tmp_buf_2 = malloc (extras_size);
 			if (!tmp_buf_2) {
 				goto beach;
 			}
 			bool got_extras = false;
-			RIO_FREAD_AT_INTO (fd, at, tmp_buf_2, "s", size, slide_info.page_extras_count, got_extras);
+			RIO_FREAD_AT_INTO (fd, at, tmp_buf_2, "s", extras_size, slide_info.page_extras_count, got_extras);
 			if (!got_extras) {
 				R_LOG_ERROR ("Could not read slide info v%d page extras", slide_info_version);
 				goto beach;
@@ -1623,29 +1623,30 @@ static RDyldRebaseInfo *get_rebase_info(int fd, ut64 slideInfoOffset, ut64 slide
 			return NULL;
 		}
 
+		const ut64 toc_size = (ut64)slide_info.toc_count * 2;
+		const ut64 entries_bytes = (ut64)slide_info.entries_count * slide_info.entries_size;
 		if (slide_info.toc_offset == 0 ||
 			slide_info.toc_offset > slideInfoSize ||
-			slide_info.toc_offset + slide_info.toc_count * 2 > slideInfoSize) {
+			slide_info.toc_offset + toc_size > slideInfoSize) {
 			R_LOG_ERROR ("Size mismatch in slide info v1 toc offset");
 			return NULL;
 		}
 
 		if (slide_info.entries_offset == 0 ||
 			slide_info.entries_offset > slideInfoSize ||
-			slide_info.entries_offset + slide_info.entries_count * slide_info.entries_size > slideInfoSize) {
+			slide_info.entries_offset + entries_bytes > slideInfoSize) {
 			R_LOG_ERROR ("Size mismatch in slide info v1 entries offset");
 			return NULL;
 		}
 
 		if (slide_info.toc_count > 0) {
-			ut64 size = slide_info.toc_count * 2;
 			ut64 at = slideInfoOffset + slide_info.toc_offset;
-			tmp_buf_1 = malloc (size);
+			tmp_buf_1 = malloc (toc_size);
 			if (!tmp_buf_1) {
 				goto beach;
 			}
 			bool got_toc = false;
-			RIO_FREAD_AT_INTO (fd, at, tmp_buf_1, "s", size, slide_info.toc_count, got_toc);
+			RIO_FREAD_AT_INTO (fd, at, tmp_buf_1, "s", toc_size, slide_info.toc_count, got_toc);
 			if (!got_toc) {
 				R_LOG_ERROR ("Could not read slide info v1 toc");
 				goto beach;
@@ -1653,14 +1654,13 @@ static RDyldRebaseInfo *get_rebase_info(int fd, ut64 slideInfoOffset, ut64 slide
 		}
 
 		if (slide_info.entries_count > 0) {
-			ut64 size = (ut64) slide_info.entries_count * (ut64) slide_info.entries_size;
 			ut64 at = slideInfoOffset + slide_info.entries_offset;
-			tmp_buf_2 = malloc (size);
+			tmp_buf_2 = malloc (entries_bytes);
 			if (!tmp_buf_2) {
 				goto beach;
 			}
 			bool got_entries = false;
-			RIO_FREAD_AT_INTO_DIRECT (fd, at, tmp_buf_2, size, got_entries);
+			RIO_FREAD_AT_INTO_DIRECT (fd, at, tmp_buf_2, entries_bytes, got_entries);
 			if (!got_entries) {
 				R_LOG_ERROR ("Could not read slide info v1 entries");
 				goto beach;
