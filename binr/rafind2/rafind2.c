@@ -1,8 +1,9 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #include <r_main.h>
 
 int main(int argc, const char **argv) {
+	r_main_mycons ();
 	return r_main_rafind2 (argc, argv);
 }
 

@@ -694,3 +694,194 @@ ERROR: Cannot open empty path
 ERROR: Cannot open '/missing-rahash2-input'
 EOF
 RUN
+
+NAME=rafind2 main from the REPL without PATH
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+rafind2 -b 2 -s ab hex://5f61626364656600
+rafind2 -x 6162 hex://5f61626364656600
+rafind2 -e /a.c/ hex://5f61626364656600
+rafind2 -b 2 -Z -S ab hex://5f006100620063000000
+rafind2 -V 1:97 hex://5f61626364656600
+rafind2 -s "hello world" hex://68656c6c6f20776f726c6400
+rafind2 -s ab hex://616200 hex://5f616200
+?e after
+EOF
+EXPECT=<<EOF
+0x1
+0x1
+0x1
+0x2 abc
+0x1
+0x0
+hex://616200: 0x0
+hex://5f616200: 0x1
+after
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rafind2 REPL output uses console filters and aliases
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+r?~rafind2?
+rafind2~Usage
+rafind2 -h~Usage
+rafind2 -jv~{name}
+rafind2 -qv~?
+rafind2 -s ab hex://5f61626364656600 >$hits
+cat $hits
+rafind2 -b 2 -j -s ab hex://5f61626364656600
+.rafind2 -r -s ab hex://5f61626364656600
+?v hit0_0
+?e after
+EOF
+EXPECT=<<EOF
+1
+Usage: rafind2 [-mBXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|S] str] [-x hex] [-R str] [-I str] [-g] -|file|dir ..
+Usage: rafind2 [-mBXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|S] str] [-x hex] [-R str] [-I str] [-g] -|file|dir ..
+rafind2
+1
+0x1
+[{"file":"hex://5f61626364656600","offset":1,"type":"string","data":"abcdef"}]
+0x1
+after
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rafind2 REPL captures hexdumps
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+rafind2 -cX -s 250382 -b 3 bins/elf/ioli/crackme0x00 >$dump
+cat $dump
+rafind2 -cX -s 250382 -b 3 bins/elf/ioli/crackme0x00~0x0000058f
+?e after
+EOF
+EXPECT=<<EOF
+0x58f
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000058f  3235 30                                  250
+0x0000058f  3235 30                                  250
+after
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rafind2 REPL reports failures and remains usable
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+rafind2 -b 1 -s ab hex://616200
+?v $?
+rafind2 -R h:zz -s ab hex://616200
+?v $?
+rafind2 -V 3:1 hex://616200
+?v $?
+rafind2 -s ab ""
+?v $?
+rafind2 -s ab /missing-rafind2-input
+?v $?
+rafind2 -s ab hex://616200
+?v $?
+?e after
+EOF
+EXPECT=<<EOF
+0x1
+0x1
+0x1
+0x1
+0x1
+0x0
+0x0
+after
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid blocksize <= 1
+ERROR: Invalid replace string
+ERROR: Invalid value size. Must be 1, 2, 4 or 8
+ERROR: Cannot open empty path
+ERROR: Cannot open file '/missing-rafind2-input'
+EOF
+RUN
+
+NAME=rafind2 streaming preserves filters and captures
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+e scr.flush=true
+rafind2 -s ab hex://616200616200~?
+rafind2 -s ab hex://616200616200~0x3
+rafind2 -s ab hex://616200616200 >$hits
+cat $hits
+.rafind2 -r -s ab hex://5f616200
+?v hit0_0
+e scr.flush=false
+?e after
+EOF
+EXPECT=<<EOF
+2
+0x3
+0x0
+0x3
+0x1
+after
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rafind2 internal core modes without PATH preserve the caller
+FILE=hex://90909090
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+s 1
+b 2
+e asm.arch=x86
+e asm.bits=32
+rafind2 -z hex://61626364656600 >$strings
+cat $strings
+rafind2 -jz hex://61626364656600~{}
+rafind2 -ci bins/elf/ioli/crackme0x00~ELF
+rafind2 -cm -f 0 -t 64 bins/elf/ioli/crackme0x00 >$magic
+cat $magic
+rafind2 -E 0 hex://00000000
+?v $$
+?v $b
+e asm.bits
+e scr.interactive
+p8 2
+?e after
+EOF
+EXPECT=<<EOF
+0x00000000 abcdef
+[
+  {
+    "vaddr": 0,
+    "paddr": 0,
+    "ordinal": 0,
+    "size": 7,
+    "length": 6,
+    "section": "",
+    "type": "ascii",
+    "string": "abcdef"
+  }
+]
+0x00000000 0 ELF 32-bit LSB executable, Intel 80386, version 1
+0x00000000 0 hit0_0 ELF 32-bit LSB executable, Intel 80386, version 1
+0x1
+0x2
+32
+false
+9090
+after
+EOF
+RUN
