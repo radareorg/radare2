@@ -48,7 +48,7 @@ static char *snes_disass(struct snes_asm_flags snesflags, ut64 pc, const ut8 *bu
 		if (*buf == 0x44 || *buf == 0x54) { // mvp and mvn
 			buf_asm = r_strf (s_op->name, buf[1], buf[2]);
 		} else if (*buf == 0x82) { // brl
-			buf_asm = r_strf (s_op->name, pc + 3 + (st16)r_read_le16(buf + 1));
+			buf_asm = r_strf (s_op->name, (ut32)(pc + 3 + (st16)r_read_le16 (buf + 1)));
 		} else {
 			buf_asm = r_strf (s_op->name, r_read_le16 (buf + 1));
 		}

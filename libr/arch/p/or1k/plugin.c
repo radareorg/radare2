@@ -62,7 +62,7 @@ static char *insn_to_str(ut64 addr, insn_t *descr, insn_extra_t *extra, ut32 ins
 	case INSN_X:
 		return r_str_newf (type_descr->format, name);
 	case INSN_N:
-		return r_str_newf (type_descr->format, name, (sign_extend (o.n, get_operand_mask (type_descr, INSN_OPER_N)) << 2) + addr);
+		return r_str_newf (type_descr->format, name, (ut32)((sign_extend (o.n, get_operand_mask (type_descr, INSN_OPER_N)) << 2) + addr));
 	case INSN_K:
 		return r_str_newf (type_descr->format, name, o.k);
 	case INSN_DK:

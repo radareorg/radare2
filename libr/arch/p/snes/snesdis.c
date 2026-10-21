@@ -28,7 +28,7 @@ static int snesDisass(int M_flag, int X_flag, ut64 pc, RAnalOp *op, const ut8 *b
 		if (*buf == 0x44 || *buf == 0x54) { // mvp and mvn
 			op->mnemonic = r_str_newf (s_op->name, buf[1], buf[2]);
 		} else if (*buf == 0x82) { // brl
-			op->mnemonic = r_str_newf (s_op->name, pc + 3 + (st16)r_read_le16(buf + 1));
+			op->mnemonic = r_str_newf (s_op->name, (ut32)(pc + 3 + (st16)r_read_le16 (buf + 1)));
 		} else {
 			op->mnemonic = r_str_newf (s_op->name, r_read_le16 (buf + 1));
 		}
