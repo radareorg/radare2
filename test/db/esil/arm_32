@@ -3748,3 +3748,17 @@ EXPECT=<<EOF
 0x40000000
 EOF
 RUN
+
+NAME=arm32 svceq esil is conditional
+FILE=malloc://16
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 0000000f000000ef
+aoe 1
+aoe 1 @ 4
+EOF
+EXPECT=<<EOF
+0x00000000 zf,?{,0,$,}
+0x00000004 0,$
+EOF
+RUN
