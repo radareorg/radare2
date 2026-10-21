@@ -477,3 +477,23 @@ EXPECT=<<EOF
 0x20000000
 EOF
 RUN
+
+NAME=loongarch64 sra.w and sll.w use rk[4:0] as shift count
+FILE=malloc://0x100
+ARGS=-a loongarch -b 64
+CMDS=<<EOF
+wx a4181800a4181700
+aei
+ar a1=0x80000000
+ar a2=0x21
+aes
+ar a0
+ar a1=1
+aes
+ar a0
+EOF
+EXPECT=<<EOF
+0xffffffffc0000000
+0x00000002
+EOF
+RUN
