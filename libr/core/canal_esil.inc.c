@@ -332,11 +332,6 @@ static ut64 delta_for_access(RAnalOp *op, RPerm type) {
 	return 0;
 }
 
-static char *esilbreak_clobbered_varname(RAnalOp *op, RPerm type, int stack_off) {
-	ut64 delta = delta_for_access (op, type);
-	return r_str_newf (VARPREFIX"_clob_%"PFMT64x"h", delta? delta: (ut64)R_ABS (stack_off));
-}
-
 static bool esilbreak_is_default_stack_var(const char *name) {
 	return r_str_startswith (name, VARPREFIX"_") && !r_str_startswith (name, VARPREFIX"_clob_");
 }
@@ -354,26 +349,27 @@ static void handle_var_stack_access(REsil *esil, ut64 addr, RPerm type, int len,
 		return;
 	}
 	int stack_off = addr - ctx->initial_sp;
+	ut64 delta = delta_for_access (ctx->op, type);
 	RAnalVar *var = r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_SPV, stack_off);
 	if (!var) {
 		var = r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_BPV, stack_off);
 	}
 	if (!var && stack_off >= -fcn->maxstack) {
 		char *varname = clobbered_write
-			? esilbreak_clobbered_varname (ctx->op, type, stack_off)
+			? r_anal_function_autoname_var (fcn, R_ANAL_VAR_KIND_SPV, VARPREFIX"_clob", delta? delta: stack_off)
 			: fcn->anal->opt.varname_stack
 			? r_str_newf (VARPREFIX"_%xh", R_ABS (stack_off))
-			: r_anal_function_autoname_var (fcn, R_ANAL_VAR_KIND_SPV, VARPREFIX, delta_for_access (ctx->op, type));
+			: r_anal_function_autoname_var (fcn, R_ANAL_VAR_KIND_SPV, VARPREFIX, delta);
 		var = r_anal_function_set_var (fcn, stack_off, R_ANAL_VAR_KIND_SPV, NULL, len, false, varname);
 		free (varname);
 	}
 	if (var && clobbered_write && esilbreak_is_default_stack_var (var->name)) {
-		char *varname = esilbreak_clobbered_varname (ctx->op, type, stack_off);
+		char *varname = r_anal_function_autoname_var (fcn, var->kind, VARPREFIX"_clob", delta? delta: stack_off);
 		r_anal_var_rename (fcn->anal, var, varname);
 		free (varname);
 	}
 	if (var) {
-		r_anal_var_set_access (fcn->anal, var, regname, ctx->op->addr, type, delta_for_access (ctx->op, type));
+		r_anal_var_set_access (fcn->anal, var, regname, ctx->op->addr, type, delta);
 	}
 }
 
