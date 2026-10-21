@@ -83,16 +83,24 @@ static st64 buf_cache_read(RBuffer *b, ut8 *buf, ut64 len) {
 	ut64 addr = b->rb_cache->offset;
 	if ((UT64_MAX - len + 1) < addr) {
 		st64 ret = buf_cache_read (b, buf, UT64_MAX - addr + 1);
+		if (ret != UT64_MAX - addr + 1) {
+			return ret;
+		}
 		len = len - (UT64_MAX - addr + 1);
 		buf_cache_seek (b, 0LL, R_BUF_SET);
-		return ret + buf_cache_read (b, &buf[UT64_MAX - addr + 1], len);
+		return ret + R_MAX (0, buf_cache_read (b, &buf[UT64_MAX - addr + 1], len));
 	}
+	// only the bytes actually read are valid, cached patches apply on top of them
+	const st64 ret = r_buf_read_at (b->rb_cache->sb, addr, buf, len);
+	if (ret < 1) {
+		return ret;
+	}
+	len = ret;
 	RInterval itv = (RInterval){addr, len};
-	r_buf_read_at (b->rb_cache->sb, addr, buf, len);
 	RIOCacheLayer *layer = b->rb_cache->cl; // r_list_last (io->cache.layers);
 	RRBNode *node = _find_entry_ci_node (layer->tree, &itv);
 	if (!node) {
-		return len;
+		return ret;
 	}
 	RIOCacheItem *ci = (RIOCacheItem *)node->data;
 	while (ci && r_itv_overlap (ci->tree_itv[0], itv)) {
@@ -120,7 +128,7 @@ static st64 buf_cache_read(RBuffer *b, ut8 *buf, ut64 len) {
 		}
 		ci = node? (RIOCacheItem *)node->data: NULL;
 	}
-	return len;
+	return ret;
 }
 
 static int _ci_start_cmp_cb(void *incoming, void *in, void *user) {
