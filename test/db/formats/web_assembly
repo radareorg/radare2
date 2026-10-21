@@ -223,3 +223,19 @@ nth paddr      vaddr      bind   type size lib name                demangled
 29  0x000002d3 0x000002d3 GLOBAL FUNC 11       f64_nearest_hi
 EOF
 RUN
+
+NAME=WASM: empty export section
+FILE=malloc://11
+ARGS=-n -w
+CMDS=<<EOF
+wx 0061736d01000000070100
+oba 0
+i~^bintype[1]
+iEq
+EOF
+EXPECT=<<EOF
+wasm
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
