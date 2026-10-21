@@ -256,7 +256,7 @@ static bool reg_dead(RBitset *dead, RRegItem *reg, int action) {
 }
 
 // Count uses including overlapping register aliases, ignoring names and quoted strings.
-static int expr_regs(RReg *regs, char *text, RBitset *dead, RRegItem *needle, char **use) {
+static int expr_regs(RReg *regs, char *text, RBitset *dead, int action, RRegItem *needle, char **use) {
 	int count = 0;
 	char *p = text;
 	while (*p) {
@@ -271,7 +271,7 @@ static int expr_regs(RReg *regs, char *text, RBitset *dead, RRegItem *needle, ch
 			*p = 0;
 			RRegItem *reg = find_reg (regs, name);
 			if (reg && dead) {
-				reg_dead (dead, reg, -1);
+				reg_dead (dead, reg, action);
 			}
 			if (reg && needle && reg->arena == needle->arena
 					&& reg->offset < (st64)needle->offset + needle->size
@@ -285,6 +285,42 @@ static int expr_regs(RReg *regs, char *text, RBitset *dead, RRegItem *needle, ch
 		}
 	}
 	return count;
+}
+
+static const char *expr_end(const char *s) {
+	char close = *s == '['? ']': ')';
+	char open = *s;
+	int depth = 0;
+	const char *p;
+	for (p = s; *p; p++) {
+		if (*p == '"' || *p == '\'') {
+			p = pdc_skip_quoted (p) - 1;
+		} else if (*p == open) {
+			depth++;
+		} else if (*p == close && !--depth) {
+			return p;
+		}
+	}
+	return NULL;
+}
+
+static bool expr_atom(const char *rhs) {
+	if (R_STR_ISEMPTY (rhs)) {
+		return false;
+	}
+	if (strspn (rhs, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.$:") == strlen (rhs)
+			|| ((*rhs == '"' || *rhs == '\'') && !*pdc_skip_quoted (rhs))) {
+		return true;
+	}
+	static const char *sizes[] = { "byte ", "word ", "dword ", "qword ", "oword ", "xmmword ", "ymmword ", "zmmword " };
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (sizes); i++) {
+		if (r_str_startswith (rhs, sizes[i])) {
+			rhs += strlen (sizes[i]);
+			break;
+		}
+	}
+	return (*rhs == '[' || *rhs == '(') && expr_end (rhs) == rhs + strlen (rhs) - 1;
 }
 
 static PdcExpr parse_expr(RCore *core, char *line) {
@@ -318,9 +354,15 @@ static PdcExpr parse_expr(RCore *core, char *line) {
 		}
 		end++;
 	}
-	expr.rhs = compound? r_str_newf ("%s %c (%.*s)", expr.dst->name, compound, (int)(end - rhs), rhs): r_str_ndup (rhs, end - rhs);
+	expr.rhs = r_str_ndup (rhs, end - rhs);
 	if (expr.rhs) {
 		r_str_trim (expr.rhs);
+	}
+	if (compound && expr.rhs) {
+		bool atom = expr_atom (expr.rhs);
+		char *value = r_str_newf ("%s %c %s%s%s", expr.dst->name, compound, atom? "": "(", expr.rhs, atom? "": ")");
+		free (expr.rhs);
+		expr.rhs = value;
 	}
 	return expr;
 }
@@ -381,7 +423,7 @@ static bool prepare_expr(RAnalOp *op, PdcExpr *expr) {
 	return pure && writes_dst;
 }
 
-static void call_dead(RCore *core, RBitset *dead, RAnalOp *op) {
+static void call_dead(RCore *core, RBitset *dead, RBitset *live, RAnalOp *op) {
 	const char *cc = r_anal_call_convention (core->anal, op);
 	if (!cc) {
 		r_bitset_reset (dead);
@@ -391,7 +433,15 @@ static void call_dead(RCore *core, RBitset *dead, RAnalOp *op) {
 	RRegItem *reg;
 	r_list_foreach (r_reg_get_list (core->anal->reg, R_REG_TYPE_ALL), it, reg) {
 		if (r_anal_cc_isclobber (core->anal, cc, reg->name)) {
-			reg_dead (dead, reg, 1);
+			if (reg->offset >= 0 && reg->size > 0) {
+				ut64 bit = ((ut64)reg->arena << 32) + reg->offset;
+				int i;
+				for (i = 0; i < reg->size; i++) {
+					if (!r_bitset_test (live, bit + i)) {
+						r_bitset_set (dead, bit + i);
+					}
+				}
+			}
 		}
 	}
 	int i;
@@ -402,27 +452,10 @@ static void call_dead(RCore *core, RBitset *dead, RAnalOp *op) {
 			r_anal_cc_roleloc (core->anal, cc, roles[i - maxarg]);
 		char *arg = loc? strdup (loc): NULL;
 		if (arg) {
-			expr_regs (core->anal->reg, arg, dead, NULL, NULL);
+			expr_regs (core->anal->reg, arg, dead, -1, NULL, NULL);
 			free (arg);
 		}
 	}
-}
-
-static const char *expr_end(const char *s) {
-	char close = *s == '['? ']': ')';
-	char open = *s;
-	int depth = 0;
-	const char *p;
-	for (p = s; *p; p++) {
-		if (*p == '"' || *p == '\'') {
-			p = pdc_skip_quoted (p) - 1;
-		} else if (*p == open) {
-			depth++;
-		} else if (*p == close && !--depth) {
-			return p;
-		}
-	}
-	return NULL;
 }
 
 static char *fold_number(RCore *core, const char *value, int bits) {
@@ -433,6 +466,7 @@ static char *fold_number(RCore *core, const char *value, int bits) {
 	ut8 operators[64] = {0};
 	int depth = 0;
 	char previous = 0;
+	bool calculated = false;
 	const char *p;
 	for (p = value; *p; p++) {
 		if (*p == '(') {
@@ -446,6 +480,7 @@ static char *fold_number(RCore *core, const char *value, int bits) {
 			}
 		} else if (strchr ("+-|<&", *p) && !((*p == '+' || *p == '-')
 				&& (!previous || strchr ("(+-|<&", previous)))) {
+			calculated = true;
 			ut8 kind = *p == '-'? '+': *p;
 			if (operators[depth] && operators[depth] != kind) {
 				return NULL;
@@ -455,6 +490,9 @@ static char *fold_number(RCore *core, const char *value, int bits) {
 		if (!IS_WHITECHAR (*p)) {
 			previous = *p;
 		}
+	}
+	if (!calculated) {
+		return NULL;
 	}
 	const char *err = NULL;
 	ut64 number = r_num_math_err (NULL, value, &err);
@@ -496,6 +534,59 @@ static char *fold_value(RCore *core, char *rhs, RRegItem *dst) {
 	return rhs;
 }
 
+static bool freeze_pc(RCore *core, RAnalOp *op, PdcExpr *expr, RRegItem *pc) {
+	if (!pc) {
+		return true;
+	}
+	char *use = NULL;
+	int count = expr_regs (core->anal->reg, expr->rhs, NULL, 0, pc, &use);
+	if (!count) {
+		return true;
+	}
+	size_t length = strspn (use, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.$:");
+	bool exact = length == strlen (pc->name) && !strncmp (use, pc->name, length);
+	if (count != (exact? 1: 2)) {
+		return false;
+	}
+	char saved = use[length];
+	use[length] = 0;
+	RRegItem *source = find_reg (core->anal->reg, use);
+	use[length] = saved;
+	const char *arch = r_config_get (core->config, "asm.arch");
+	ut64 value;
+	bool arm = !strcmp (arch, "arm") && r_config_get_i (core->config, "asm.bits") == 32;
+	if (!strcmp (arch, "x86")) {
+		value = op->addr + op->size;
+	} else if (arm && op->size == 4 && (op->type == R_ANAL_OP_TYPE_ADD
+			|| op->type == R_ANAL_OP_TYPE_SUB || op->type == R_ANAL_OP_TYPE_MOV)) {
+		value = op->addr + 8;
+	} else {
+		return false;
+	}
+	if (source->size > 0 && source->size < 64) {
+		value &= UT64_MAX >> (64 - source->size);
+	}
+	char *rhs = r_str_newf ("%.*s0x%" PFMT64x "%s", (int)(use - expr->rhs), expr->rhs, value, use + length);
+	if (!rhs) {
+		return false;
+	}
+	// ARM's shifted register operands can observe a different architectural PC.
+	if (arm && strspn (rhs, "0123456789abcdefABCDEFxX ()+-") != strlen (rhs)) {
+		free (rhs);
+		return false;
+	}
+	free (expr->rhs);
+	expr->rhs = rhs;
+	return true;
+}
+
+static void expr_live(RCore *core, PdcExpr *expr, RBitset *live) {
+	if (expr->dst) {
+		reg_dead (live, expr->dst, -1);
+	}
+	expr_regs (core->anal->reg, expr->rhs? expr->rhs: expr->body, live, 1, NULL, NULL);
+}
+
 static bool preserves_load_order(const char *rhs, const char *use) {
 	const char *p;
 	for (p = rhs; *p; p++) {
@@ -518,8 +609,10 @@ char *pdc_optimize(RCore *core, char *code) {
 	}
 	RList *lines = r_str_split_duplist (code, "\n", false);
 	RBitset *dead = r_bitset_new ();
+	RBitset *live = r_bitset_new ();
 	RRegItem *sp = find_reg (core->anal->reg, "SP");
 	RRegItem *bp = find_reg (core->anal->reg, "BP");
+	RRegItem *pc = find_reg (core->anal->reg, "PC");
 	const int bits = r_config_get_i (core->config, "asm.bits");
 	RListIter *it;
 	char *line;
@@ -542,18 +635,17 @@ char *pdc_optimize(RCore *core, char *code) {
 			&& expr.dst->size == bits && op->stackop == R_ANAL_STACK_NULL
 			&& (!sp || expr.dst->arena != sp->arena || expr.dst->offset != sp->offset)
 			&& (!bp || expr.dst->arena != bp->arena || expr.dst->offset != bp->offset)
-			&& expr.rhs && !strpbrk (expr.rhs, ";=?") && prepare_expr (op, &expr);
+			&& expr.rhs && !strpbrk (expr.rhs, ";=?") && prepare_expr (op, &expr)
+			&& freeze_pc (core, op, &expr, pc);
 		bool call = op && !delayed && expr.dst && expr.rhs && (op->type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_CALL;
 		char *use = NULL;
 		bool remove = false;
 		bool fold = pure && next_safe && next.rhs && reg_dead (dead, expr.dst, 0)
-			&& expr_regs (core->anal->reg, next.rhs, NULL, expr.dst, &use) == 1
+			&& expr_regs (core->anal->reg, next.rhs, NULL, 0, expr.dst, &use) == 1
 			&& (!strchr (expr.rhs, '[') || preserves_load_order (next.rhs, use))
 			&& strlen (expr.rhs) + strlen (next.rhs) < 1024;
 		if (fold) {
-			bool atom = strspn (expr.rhs, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.$:") == strlen (expr.rhs)
-				|| ((*expr.rhs == '[' || *expr.rhs == '(') && expr_end (expr.rhs) == expr.rhs + strlen (expr.rhs) - 1)
-				|| ((*expr.rhs == '"' || *expr.rhs == '\'') && !*pdc_skip_quoted (expr.rhs));
+			bool atom = expr_atom (expr.rhs);
 			char *rhs = r_str_newf ("%.*s%s%s%s%s", (int)(use - next.rhs), next.rhs, atom? "": "(", expr.rhs, atom? "": ")", use + strlen (expr.dst->name));
 			if (rhs) {
 				rhs = fold_value (core, rhs, next.dst);
@@ -572,11 +664,12 @@ char *pdc_optimize(RCore *core, char *code) {
 		}
 		if (!fold) {
 			if (next.rhs) {
-				expr_regs (core->anal->reg, next.rhs, dead, NULL, NULL);
+				expr_regs (core->anal->reg, next.rhs, dead, -1, NULL, NULL);
 			}
 			if (pure && reg_dead (dead, expr.dst, 0) && !strchr (r_strbuf_get (&op->esil), '[')) {
 				remove = true;
 			} else {
+				expr_live (core, &expr, live);
 				free (next.rhs);
 				next = expr;
 				expr.rhs = NULL;
@@ -586,11 +679,13 @@ char *pdc_optimize(RCore *core, char *code) {
 					r_bitset_reset (dead);
 				} else {
 					if (call) {
-						call_dead (core, dead, op);
+						call_dead (core, dead, live, op);
 					}
 					reg_dead (dead, next.dst, 1);
 				}
 			}
+		} else {
+			expr_live (core, &expr, live);
 		}
 		if (remove) {
 			free (line);
@@ -603,5 +698,6 @@ char *pdc_optimize(RCore *core, char *code) {
 	r_anal_op_free (op);
 	free (next.rhs);
 	r_bitset_free (dead);
+	r_bitset_free (live);
 	return drain_lines (lines, code);
 }

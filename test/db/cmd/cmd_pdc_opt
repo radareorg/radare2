@@ -373,3 +373,185 @@ EXPECT=<<EOF2
     v0 |= 0x9abc
 EOF2
 RUN
+
+NAME=pdc call keeps a caller-clobbered register read afterwards
+FILE=malloc://256
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF2
+wx a80080d21f00009401050091c0035fd6
+af
+af+ 0x80 ferror
+f sym.imp.ferror=0x80
+pdc~=
+EOF2
+EXPECT=<<EOF2
+    x8 = 5
+    x0 = ferror (x0)
+    x1 = x8 + 1
+EOF2
+RUN
+
+NAME=pdc call keeps a caller-clobbered register read through an alias
+FILE=malloc://256
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF2
+wx a80080d21f00009401050011c0035fd6
+af
+af+ 0x80 ferror
+f sym.imp.ferror=0x80
+pdc~=
+EOF2
+EXPECT=<<EOF2
+    x8 = 5
+    x0 = ferror (x0)
+    w1 = w8 + 1
+EOF2
+RUN
+
+NAME=pdc call keeps a caller-clobbered register used by a comparison
+FILE=malloc://256
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF2
+wx a80080d21f0000941f0100f1c0035fd6
+af
+af+ 0x80 ferror
+f sym.imp.ferror=0x80
+pdc~=
+EOF2
+EXPECT=<<EOF2
+    x8 = 5
+    x0 = ferror (x0)
+    v = x8 - 0
+EOF2
+RUN
+
+NAME=pdc call removes a definition overwritten before its next read
+FILE=malloc://256
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF2
+wx a80080d21f000094e80080d201050091c0035fd6
+af
+af+ 0x80 ferror
+f sym.imp.ferror=0x80
+pdc~=
+EOF2
+EXPECT=<<EOF2
+    x0 = ferror (x0)
+    x8 = 7
+    x1 = x8 + 1
+EOF2
+RUN
+
+NAME=pdc call still removes an unused caller-clobbered definition
+FILE=malloc://256
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF2
+wx a80080d21f000094c0035fd6
+af
+af+ 0x80 ferror
+f sym.imp.ferror=0x80
+pdc~=
+EOF2
+EXPECT=<<EOF2
+    x0 = ferror (x0)
+EOF2
+RUN
+
+NAME=pdc arm32 freezes PC at the producer address
+FILE=malloc://64
+ARGS=-a arm -b 32 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF2
+wx 04208fe20200a0e10020a0e31eff2fe1
+af
+pdco~=
+EOF2
+EXPECT=<<EOF2
+ 0x00000004 |     r0 = 0xc
+ 0x00000008 |     r2 = 0
+EOF2
+RUN
+
+NAME=pdc x86 freezes RIP at the producer next instruction
+FILE=malloc://0x2000
+ARGS=-a x86 -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF2
+wx 488d0500100000488b004889c148c7c000000000c3
+af
+pdco~=
+EOF2
+EXPECT=<<EOF2
+ 0x0000000a |     rcx = qword [0x1007]
+ 0x0000000d |     rax = 0
+EOF2
+RUN
+
+NAME=pdc x86 preserves the resolved PC-relative flag
+FILE=malloc://0x2000
+ARGS=-a x86 -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF2
+wx 488d0500100000488b004889c148c7c000000000c3
+af
+f obj.g=0x1007
+pdco~=
+EOF2
+EXPECT=<<EOF2
+ 0x0000000a |     rcx = qword [obj.g]
+ 0x0000000d |     rax = 0
+EOF2
+RUN
+
+NAME=pdc x86 typed dereference does not add redundant parentheses
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF2
+wx 488b024889c148c7c000000000c3
+af
+pdc~=
+EOF2
+EXPECT=<<EOF2
+    rcx = qword [rdx]
+    rax = 0
+EOF2
+RUN
+
+NAME=pdc compound addition leaves an atomic operand unparenthesized
+FILE=malloc://64
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF2
+wx e80301aa08050091e00308aa080080d2c0035fd6
+af
+pdc~=
+EOF2
+EXPECT=<<EOF2
+    x0 = (x1 + 1)
+    x8 = 0
+EOF2
+RUN
+
+NAME=pdc compound or leaves an atomic operand unparenthesized
+FILE=malloc://64
+ARGS=-a arm -b 32 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF2
+wx 0120a0e1042082e30200a0e10020a0e31eff2fe1
+af
+pdc~=
+EOF2
+EXPECT=<<EOF2
+    r0 = (r1 | 4)
+    r2 = 0
+EOF2
+RUN
+
+NAME=pdc copied decimal literals preserve their notation
+FILE=malloc://64
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF2
+wx 480080d2e00308aa080080d2c0035fd6
+af
+pdc~=
+EOF2
+EXPECT=<<EOF2
+    x0 = 2
+    x8 = 0
+EOF2
+RUN
