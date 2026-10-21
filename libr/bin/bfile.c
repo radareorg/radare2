@@ -1376,15 +1376,20 @@ R_API RList *r_bin_file_set_hashes(RBin *bin, RList/*<RBinFileHash*/ *new_hashes
 	return prev_hashes;
 }
 
+static void class_set_super(RBinClass *c, const char *super) {
+	if (R_STR_ISNOTEMPTY (super)) {
+		r_list_free (c->super);
+		c->super = r_list_newf ((RListFree)r_bin_name_free);
+		r_list_append (c->super, r_bin_name_new (super));
+	}
+}
+
 R_API RBinClass *r_bin_class_new(const char *name, const char *super, ut64 attr) {
 	R_RETURN_VAL_IF_FAIL (name, NULL);
 	RBinClass *c = R_NEW0 (RBinClass);
 	if (c) {
 		c->name = r_bin_name_new (name);
-		if (R_STR_ISNOTEMPTY (super)) {
-			c->super = r_list_newf (free);
-			r_list_append (c->super, r_bin_name_new (super));
-		}
+		class_set_super (c, super);
 		RVecRBinSymbol_init (&c->methods);
 		RVecRBinField_init (&c->fields);
 		c->attr.flags = attr;
@@ -1435,11 +1440,7 @@ R_API RBinClass *r_bin_file_add_class(RBinFile *bf, const char *name, const char
 	}
 	RBinClass *c = __getClass (bf, name);
 	if (c) {
-		if (R_STR_ISNOTEMPTY (super)) {
-			r_list_free (c->super);
-			c->super = r_list_newf (free);
-			r_list_append (c->super, strdup (super));
-		}
+		class_set_super (c, super);
 		return c;
 	}
 	c = r_bin_class_new (name, super, attr);
