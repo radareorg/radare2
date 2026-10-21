@@ -66,13 +66,8 @@ static char *r_8051_disas(ut64 pc, const ut8 *buf, int len, int *olen) {
 			if (len > 2) {
 				if ((arg1 == A_ADDR16) || (arg1 == A_IMM16)) {
 					disasm = r_str_newf (name, 0x100 * buf[1] + buf[2]);
-				} else if (arg1 == A_IMM16) {
-					disasm = r_str_newf (name, 0x100 * buf[1] + buf[2]);
 				} else if (arg2 == A_OFFSET) {
-					if (mask != A_NONE) {
-						// @Ri, immediate, offset; Rn, immediate, offset
-						disasm = r_str_newf (name, buf[0] & mask, buf[1], arg_offset (pc + 3, buf[1]));
-					} else if (arg1 == A_BIT) {
+					if (arg1 == A_BIT) {
 						// bit, offset
 						disasm = r_str_newf (name, arg_bit (buf[1]), buf[1] & 0x07, arg_offset (pc + 3, buf[2]));
 					} else {
