@@ -57,10 +57,6 @@ static const PicMidrangeOpInfo pic_midrange_op_info[PIC_MIDRANGE_OPCODE_INVALID]
 	{ "movwi", PIC_MIDRANGE_OP_ARGS_1N_6K}
 };
 
-static const char *PicMidrangeFsrOps[] = {
-	"++FSR%d", "--FSR%d", "FSR%d++", "FSR%d--"
-};
-
 PicMidrangeOpcode pic_midrange_get_opcode(ut16 instr) {
 	if (instr & (1 << 14)) {
 		return PIC_MIDRANGE_OPCODE_INVALID;
@@ -158,7 +154,6 @@ static const PicMidrangeOpInfo *pic_midrange_get_op_info(PicMidrangeOpcode opcod
 char *pic_midrange_disassemble(const ut8 *b, int l, int *opsz) {
 	r_strf_buffer (64);
 	const char *buf_asm = NULL;
-	char fsr_op[6];
 	st16 branch;
 	if (!b || l < 2) {
 		return NULL;
@@ -223,12 +218,13 @@ char *pic_midrange_disassemble(const ut8 *b, int l, int *opsz) {
 	case PIC_MIDRANGE_OP_ARGS_11K:
 		buf_asm = r_strf ("%s 0x%x", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_11K_MASK_K);
 		break;
-	case PIC_MIDRANGE_OP_ARGS_1N_2M:
-		snprintf (fsr_op, sizeof (fsr_op),
-			PicMidrangeFsrOps[instr & PIC_MIDRANGE_OP_ARGS_1N_2M_MASK_M],
-			(instr & PIC_MIDRANGE_OP_ARGS_1N_2M_MASK_N) >> 2);
-		buf_asm = r_strf ("%s %s", op_info->mnemonic, fsr_op);
+	case PIC_MIDRANGE_OP_ARGS_1N_2M: {
+		const int mode = instr & PIC_MIDRANGE_OP_ARGS_1N_2M_MASK_M;
+		const char *incdec = (mode & 1)? "--": "++";
+		buf_asm = r_strf ("%s %sFSR%d%s", op_info->mnemonic, mode < 2? incdec: "",
+			(instr & PIC_MIDRANGE_OP_ARGS_1N_2M_MASK_N) >> 2, mode < 2? "": incdec);
 		break;
+	}
 	}
 	return buf_asm? strdup (buf_asm): NULL;
 }

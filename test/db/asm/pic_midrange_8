@@ -1,0 +1,6 @@
+d "moviw ++FSR0" 1000
+d "moviw --FSR0" 1100
+d "moviw FSR0++" 1200
+d "moviw FSR0--" 1300
+d "movwi ++FSR1" 1c00
+d "movwi FSR1--" 1f00
