@@ -1651,6 +1651,13 @@ static RDyldRebaseInfo *get_rebase_info(int fd, ut64 slideInfoOffset, ut64 slide
 				R_LOG_ERROR ("Could not read slide info v1 toc");
 				goto beach;
 			}
+			ut32 i;
+			for (i = 0; i < slide_info.toc_count; i++) {
+				if (((ut16 *)tmp_buf_1)[i] >= slide_info.entries_count) {
+					R_LOG_ERROR ("Invalid entry index in slide info v1 toc");
+					goto beach;
+				}
+			}
 		}
 
 		if (slide_info.entries_count > 0) {
