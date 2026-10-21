@@ -1463,6 +1463,11 @@ static RDyldRebaseInfo *get_rebase_info(int fd, ut64 slideInfoOffset, ut64 slide
 			return NULL;
 		}
 
+		if (!slide_info.page_size) {
+			R_LOG_ERROR ("Invalid page size in slide info v5");
+			return NULL;
+		}
+
 		if (page_starts_size > 0) {
 			tmp_buf_1 = malloc (page_starts_size);
 			if (!tmp_buf_1) {
@@ -1509,6 +1514,11 @@ static RDyldRebaseInfo *get_rebase_info(int fd, ut64 slideInfoOffset, ut64 slide
 
 		if (page_starts_size + size > slideInfoSize) {
 			R_LOG_ERROR ("Size mismatch in slide info v3");
+			return NULL;
+		}
+
+		if (!slide_info.page_size) {
+			R_LOG_ERROR ("Invalid page size in slide info v3");
 			return NULL;
 		}
 
@@ -1563,6 +1573,11 @@ static RDyldRebaseInfo *get_rebase_info(int fd, ut64 slideInfoOffset, ut64 slide
 		if (slide_info.page_extras_offset > slideInfoSize ||
 				slide_info.page_extras_offset + extras_size > slideInfoSize) {
 			R_LOG_ERROR ("Size mismatch in slide info v%d page extras", slide_info_version);
+			return NULL;
+		}
+
+		if (!slide_info.page_size) {
+			R_LOG_ERROR ("Invalid page size in slide info v%d", slide_info_version);
 			return NULL;
 		}
 
