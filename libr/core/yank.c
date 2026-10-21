@@ -4,7 +4,7 @@
 
 static ut32 find_next_char(const char *input, char b) {
 	ut32 i = 0;
-	for (; *input != b; i++, input++) {
+	for (; *input && *input != b; i++, input++) {
 		/* nothing */
 	}
 	return i;
@@ -353,7 +353,7 @@ R_API bool r_core_yank_file_ex(RCore *core, const char *input) {
 	}
 	// get the addr/offset from in the file we want to read
 	adv += find_next_char (inp + adv, ' ');
-	if (adv == 0) {
+	if (!inp[adv]) {
 		free (inp);
 		R_LOG_ERROR ("Address must be specified");
 		return res;
@@ -361,13 +361,12 @@ R_API bool r_core_yank_file_ex(RCore *core, const char *input) {
 	adv++;
 
 	ut64 next = find_next_char (inp + adv, ' ');
-	if (next) {
-		inp[adv + next] = 0;
-	} else {
+	if (!next || !inp[adv + next]) {
 		R_LOG_ERROR ("File must be specified");
 		free (inp);
 		return res;
 	}
+	inp[adv + next] = 0;
 	ut64 addr = r_num_math (core->num, inp + adv);
 	adv += next + 1;
 	bool b = perform_file_yank (core, addr, len, inp + adv);
