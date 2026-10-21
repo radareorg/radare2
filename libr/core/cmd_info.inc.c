@@ -114,6 +114,7 @@ static RCoreHelpMessage help_msg_icplus = {
 	"ic+??", "", "show usage examples",
 	"", "[attr]", "attribute words: getter, static, final, ..",
 	"", "key=value", "numeric or string keys: size=, offset=, ns=, lang=",
+	"", "names", "nonempty UTF-8 names without control characters",
 	NULL
 };
 
@@ -125,6 +126,7 @@ static RCoreHelpMessage help_msg_icplus_examples = {
 	"ic+Foo._new", " factory", "factory method (static constructor)",
 	"ic+Foo..count", " int offset=0x10 final", "final int field at struct offset 0x10",
 	"ic+Foo..name", " property static", "static property",
+	"'ic+Foo.~Foo", "", "raw command preserves syntax characters such as ~",
 	NULL
 };
 
@@ -1154,7 +1156,11 @@ static RBinClass *cmd_ic_get_or_add_class(RCore *core, RList *klasses, const cha
 
 static char *cmd_ic_single_colon(char *s) {
 	char *p = s;
+	const char *method = strchr (s, '.');
 	while ((p = strchr (p, ':'))) {
+		if (method && p > method) {
+			return NULL;
+		}
 		if ((p == s || p[-1] != ':') && p[1] != ':') {
 			return p;
 		}
@@ -1315,6 +1321,25 @@ static void cmd_ic_field_update(RBinField *f, const char *s) {
 	}
 }
 
+static bool cmd_ic_check_name(const char *name) {
+	const ut8 *p = (const ut8 *)name;
+	if (*p) {
+		while (*p) {
+			RRune ch;
+			int size = r_utf8_decode (p, -1, &ch);
+			if (!size || ch <= 0x20 || (ch >= 0x7f && ch <= 0x9f) || ch == 0x2028 || ch == 0x2029) {
+				break;
+			}
+			p += size;
+		}
+		if (!*p) {
+			return true;
+		}
+	}
+	R_LOG_ERROR ("Invalid class or member name; see ic+?");
+	return false;
+}
+
 void cmd_ic_add(RCore *core, const char *input) {
 	const char ch0 = *input;
 	if (ch0 == 0 || ch0 == '?') {
@@ -1331,6 +1356,9 @@ void cmd_ic_add(RCore *core, const char *input) {
 		return;
 	}
 	char *klass_name = strdup (input);
+	if (!klass_name) {
+		return;
+	}
 	char *tail = (char *)r_str_trim_head_wp (klass_name);
 	if (*tail) {
 		*tail++ = 0;
@@ -1342,6 +1370,10 @@ void cmd_ic_add(RCore *core, const char *input) {
 		field_name += 2;
 		if (R_STR_ISEMPTY (klass_name) || R_STR_ISEMPTY (field_name)) {
 			R_LOG_ERROR ("Usage: ic+[klassname]..[fieldname] [type]");
+			free (klass_name);
+			return;
+		}
+		if (!cmd_ic_check_name (klass_name) || !cmd_ic_check_name (field_name)) {
 			free (klass_name);
 			return;
 		}
@@ -1379,6 +1411,10 @@ void cmd_ic_add(RCore *core, const char *input) {
 			free (klass_name);
 			return;
 		}
+		if (!cmd_ic_check_name (klass_name) || !cmd_ic_check_name (super_name)) {
+			free (klass_name);
+			return;
+		}
 		RBinClass *klass = cmd_ic_get_or_add_class (core, klasses, klass_name);
 		if (!klass) {
 			R_LOG_ERROR ("Cannot add class %s", klass_name);
@@ -1392,6 +1428,10 @@ void cmd_ic_add(RCore *core, const char *input) {
 		return;
 	}
 	char *method_name = r_str_after (klass_name, '.');
+	if (!cmd_ic_check_name (klass_name) || (method_name && !cmd_ic_check_name (method_name))) {
+		free (klass_name);
+		return;
+	}
 	RBinClass *klass = cmd_ic_get_or_add_class (core, klasses, klass_name);
 	if (!klass) {
 		R_LOG_ERROR ("Cannot add class %s", klass_name);
@@ -1572,6 +1612,26 @@ static bool isjvm(RCore *core) {
 	} \
 	r_core_bin_info (core, x, pj, mode, va, NULL, y);
 
+static char *cmd_ic_sdb_name(const char *name) {
+	char *safe = r_str_sanitize_sdb_key (name);
+	if (safe && !strcmp (safe, name) && !r_str_startswith (name, "r2name_")) {
+		return safe;
+	}
+	free (safe);
+	if (!name) {
+		return NULL;
+	}
+	RStrBuf *encoded = r_strbuf_new ("r2name_");
+	const char *p;
+	for (p = name; *p; p++) {
+		if (!r_strbuf_appendf (encoded, "%02x", (ut8)*p)) {
+			r_strbuf_free (encoded);
+			return NULL;
+		}
+	}
+	return r_strbuf_drain (encoded);
+}
+
 static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_array, bool va, int idx, const char *cls_name, int *count, bool is_doublerad) {
 	const bool iova = va; // r_config_get_b (core->config, "io.va");
 	const int pref = r_config_get_b (core->config, "asm.demangle")? 'd': 0;
@@ -1589,13 +1649,22 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 			continue;
 		}
 		if (is_doublerad) {
-			r_cons_printf (core->cons, "'ac %s\n", kname);
+			char *sk = cmd_ic_sdb_name (kname);
+			if (!sk) {
+				continue;
+			}
+			r_cons_printf (core->cons, "'ac %s\n", sk);
 			if (!names_only) {
 				R_VEC_FOREACH (&cls->methods, sym) {
-					const char *name = r_bin_name_tostring2 (sym->name, pref);
-					r_cons_printf (core->cons, "'ac %s %s 0x%08" PFMT64x "\n", kname, name, iova? sym->vaddr: sym->paddr);
+					char *name = cmd_ic_sdb_name (r_bin_name_tostring2 (sym->name, pref));
+					if (!name) {
+						continue;
+					}
+					r_cons_printf (core->cons, "'acm %s %s 0x%08" PFMT64x "\n", sk, name, iova? sym->vaddr: sym->paddr);
+					free (name);
 				}
 			}
+			free (sk);
 			continue;
 		}
 		bool listed_classes = false;

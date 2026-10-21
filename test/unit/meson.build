@@ -31,6 +31,7 @@ if get_option('enable_tests')
     'cmd_api',
     'config',
     'cons',
+    'core_bin_classes',
     'core_prompt',
     'core_slides',
     'core_task',

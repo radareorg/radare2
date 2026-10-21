@@ -213,12 +213,29 @@ bool test_r_flag_metadata_lifetime(void) {
 	mu_end;
 }
 
+bool test_r_flag_utf8(void) {
+	RFlag *flags = r_flag_new ();
+	RFlagItem *crab = r_flag_set (flags, "🦀", 0x10, 1);
+	RFlagItem *rocket = r_flag_set (flags, "🚀", 0x20, 1);
+	mu_assert_notnull (crab, "create emoji flag");
+	mu_assert_notnull (rocket, "create distinct emoji flag");
+	mu_assert_streq (crab->name, "🦀", "preserve first name");
+	mu_assert_streq (rocket->name, "🚀", "preserve second name");
+	mu_assert_ptreq (r_flag_get (flags, "🦀"), crab, "lookup first name");
+	mu_assert_ptreq (r_flag_get (flags, "🚀"), rocket, "lookup second name");
+	mu_assert_true (r_flag_rename (flags, crab, "👩‍💻"), "rename to joined emoji");
+	mu_assert_ptreq (r_flag_get (flags, "👩‍💻"), crab, "lookup joined emoji");
+	r_flag_free (flags);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_flag_get_set);
 	mu_run_test (test_r_flag_by_spaces);
 	mu_run_test (test_r_flag_get_at);
 	mu_run_test (test_r_flag_rename_unset_all);
 	mu_run_test (test_r_flag_metadata_lifetime);
+	mu_run_test (test_r_flag_utf8);
 	return tests_passed != tests_run;
 }
 
