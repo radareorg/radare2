@@ -1044,18 +1044,17 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut32 opcode) {
 	case LA_INS_MOD_W:
 		r_strbuf_appendf (&op->esil, ES_SX32(ES_W("%s")","ES_W("%s")",%%")",%s,=", LA_RJ(), LA_RK(), LA_RD());
 		break;
-		/* FIXME rk only bits 0~4 are used*/
 	case LA_INS_SLL_W:
-		r_strbuf_appendf (&op->esil, ES_SX32("%s,"ES_W("%s")",<<")",%s,=", LA_RK(), LA_RJ(), LA_RD());
+		r_strbuf_appendf (&op->esil, ES_SX32("0x1f,%s,&,"ES_W("%s")",<<")",%s,=", LA_RK(), LA_RJ(), LA_RD());
 		break;
 	case LA_INS_SRL_W:
-		r_strbuf_appendf (&op->esil,ES_SX32("%s,"ES_W("%s")",>>")",%s,=", LA_RK(), LA_RJ(), LA_RD());
+		r_strbuf_appendf (&op->esil,ES_SX32("0x1f,%s,&,"ES_W("%s")",>>")",%s,=", LA_RK(), LA_RJ(), LA_RD());
 		break;
 	case LA_INS_SRA_W:
-		r_strbuf_appendf (&op->esil,ES_SX32("%s,"ES_SX32("%s")",ASR")",%s,=", LA_RK(), LA_RJ(), LA_RD());
+		r_strbuf_appendf (&op->esil,ES_SX32("0x1f,%s,&,"ES_SX32("%s")",ASR")",%s,=", LA_RK(), LA_RJ(), LA_RD());
 		break;
 	case LA_INS_ROTR_W:
-		r_strbuf_appendf (&op->esil,ES_SX32("%s,"ES_W("%s")",ROR")",%s,=", LA_RK(), LA_RJ(), LA_RD());
+		r_strbuf_appendf (&op->esil,ES_SX32("0x1f,%s,&,"ES_W("%s")",ROR")",%s,=", LA_RK(), LA_RJ(), LA_RD());
 		break;
 	case LA_INS_SLLI_W:
 		r_strbuf_appendf (&op->esil,ES_SX32("%d,"ES_W("%s")",<<")",%s,=", I_I5(opcode), LA_RJ(), LA_RD());
