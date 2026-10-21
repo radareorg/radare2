@@ -798,3 +798,15 @@ nth paddr vaddr len size section type string
 [{"vaddr":134513840,"paddr":1200,"ordinal":0,"size":13,"length":12,"section":".rodata","type":"ascii","string":"Hello world!"}]
 EOF
 RUN
+
+NAME=iz with bin.str.debase64 keeps iterating the string list
+FILE=bins/elf/base64_string.elf
+ARGS=-e bin.str.debase64=true
+CMDS=<<EOF
+iz~ascii
+EOF
+EXPECT=<<EOF
+0   0x00000040 0x00001000 4   3    .data   ascii ABC
+1   0x00000045 0x00001005 13  14   .data   ascii second string
+EOF
+RUN
