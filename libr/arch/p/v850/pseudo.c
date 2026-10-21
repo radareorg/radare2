@@ -189,16 +189,15 @@ static char *subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int opl
 	if (!data) {
 		return NULL;
 	}
-	char *r0 = strstr (data, "[r0]");
+	const char *r0 = strstr (data, "[r0]");
 	if (r0) {
-		char *neg = strstr (data, " -");
+		const char *neg = strstr (data, " -");
 		if (neg && neg < r0) {
 			char *n = r_str_ndup (r_str_trim_head_ro (neg), (int)(size_t)(r0 - neg - 1));
 			int negdelta = strstr (n, "0x")? -((int)r_num_get (NULL, n + 1)): atoi (n);
 			free (n);
-			*neg = 0;
-			ut64 addr = UT32_MAX + negdelta + 1;
-			return r_str_newf ("%s 0x%"PFMT64x"%s", data, addr, r0 + 4);
+			const ut64 at = UT32_MAX + negdelta + 1;
+			return r_str_newf ("%.*s 0x%"PFMT64x"%s", (int)(neg - data), data, at, r0 + 4);
 		}
 	}
 	return NULL;
