@@ -117,7 +117,6 @@ static TCCState *new_tcc(RAnal *anal) {
 
 
 static char *types_parse_text(RAnal *anal, const char *code) {
-	char **error_msg = NULL;
 	char *str = NULL;
 	TCCState *s1 = new_tcc (anal);
 	if (!s1) {
@@ -125,7 +124,7 @@ static char *types_parse_text(RAnal *anal, const char *code) {
 		return NULL;
 	}
 	tcc_set_callback (s1, &__appendString, &str);
-	tcc_set_error_func (s1, (void *)error_msg, __errorFunc);
+	tcc_set_error_func (s1, NULL, __errorFunc);
 
 	// load saved types from sdb into the tcc context
 	LoadContext ctx = {anal, s1};
@@ -135,10 +134,6 @@ static char *types_parse_text(RAnal *anal, const char *code) {
 		R_FREE (str);
 	}
 	tcc_delete (s1);
-	if (error_msg) {
-		R_LOG_ERROR ("tcc: %s", error_msg);
-		free (error_msg);
-	}
 	return str;
 }
 
@@ -148,9 +143,8 @@ static char *types_parse_file(RAnal *anal, const char *path, const char *dir) {
 	if (!s1) {
 		return NULL;
 	}
-	char **error_msg = NULL;
 	tcc_set_callback (s1, &__appendString, &str);
-	tcc_set_error_func (s1, (void *)error_msg, __errorFunc);
+	tcc_set_error_func (s1, NULL, __errorFunc);
 
 	// load saved types from sdb into the tcc context
 	LoadContext ctx = {anal, s1};
@@ -173,10 +167,6 @@ static char *types_parse_file(RAnal *anal, const char *path, const char *dir) {
 	r_list_free (dirs);
 	free (d);
 	tcc_delete (s1);
-	if (error_msg) {
-		R_LOG_ERROR ("tcc: %s", error_msg);
-		free (error_msg);
-	}
 	return str;
 }
 
