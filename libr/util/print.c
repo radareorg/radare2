@@ -2684,8 +2684,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 		}
 		case '$':
 			colorize_append (&sb, num, '$');
-			i++;
-			break;
+			continue;
 		case '+':
 		case '-':
 		case '/':
