@@ -231,7 +231,7 @@ static RI8051Reg registers[] = {
 #define flag_b "8,$b,c,:=,"
 #define flag_ac "3,$c,ac,:=,"
 #define flag_ab "3,$b,ac,:=,"
-#define flag_ov "6,$c,ov,:=,"
+#define flag_ov "7,$c,6,$c,^,ov,:=,"
 #define flag_ob "7,$b,6,$b,^,ov,:=,"
 #define flag_p "0xff,a,&=,$p,!,p,:=,"
 
