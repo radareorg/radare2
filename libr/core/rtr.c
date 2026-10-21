@@ -73,7 +73,7 @@ R_API void r_core_wait(RCore *core) {
 	thread_kill_free (&priv->rapthread);
 }
 
-static void http_logf(RCore *core, const char *fmt, ...) {
+static R_PRINTF_CHECK(2, 3) void http_logf(RCore *core, const char *fmt, ...) {
 	bool http_log_enabled = r_config_get_b (core->config, "http.log");
 	va_list ap;
 	va_start (ap, fmt);

@@ -290,7 +290,7 @@ int run_m_list(tms320_dasm_t *dasm) {
 }
 
 // replace the first token found and return the position right after the inserted text
-static char *vreplace(char *string, const char *token, const char *fmt, va_list args) {
+static R_PRINTF_CHECK(3, 0) char *vreplace(char *string, const char *token, const char *fmt, va_list args) {
 	char *pos = strstr (string, token);
 	if (!pos) {
 		return NULL;
@@ -304,7 +304,7 @@ static char *vreplace(char *string, const char *token, const char *fmt, va_list 
 	return pos + data_len;
 }
 
-static void replace(char *string, const char *token, const char *fmt, ...) {
+static R_PRINTF_CHECK(3, 4) void replace(char *string, const char *token, const char *fmt, ...) {
 	va_list args;
 	va_start (args, fmt);
 	vreplace (string, token, fmt, args);
@@ -312,7 +312,7 @@ static void replace(char *string, const char *token, const char *fmt, ...) {
 }
 
 // replaced text is never rescanned, it may contain the token itself
-static void substitute(char *string, const char *token, const char *fmt, ...) {
+static R_PRINTF_CHECK(3, 4) void substitute(char *string, const char *token, const char *fmt, ...) {
 	va_list args;
 	do {
 		va_start (args, fmt);
@@ -765,13 +765,13 @@ void decode_swap(tms320_dasm_t *dasm) {
 	char tmp[64];
 
 	if (field_valid (dasm, k6)) {
-		substitute (dasm->syntax, "SWAP ( )", get_swap_str (field_value (dasm, k6), tmp));
+		substitute (dasm->syntax, "SWAP ( )", "%s", get_swap_str (field_value (dasm, k6), tmp));
 	}
 }
 
 void decode_relop(tms320_dasm_t *dasm) {
 	if (field_valid (dasm, cc)) {
-		substitute (dasm->syntax, "RELOP", get_relop_str (field_value (dasm, cc), NULL));
+		substitute (dasm->syntax, "RELOP", "%s", get_relop_str (field_value (dasm, cc), NULL));
 	}
 }
 

@@ -14,7 +14,7 @@ typedef const char * const RCoreHelpMessage[];
 #endif
 
 typedef int (*RCoreCmd)(void *core, const char *cmd);
-typedef int (*RCoreCmdF)(void *user, const char *fmt, ...);
+typedef int (*RCoreCmdF)(void *user, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 typedef char *(*RCoreCallAt)(void *user, ut64 addr, const char *cmd);
 typedef int (*RCoreDebugBpHit)(void *core, void *bp);
 typedef void (*RCoreDebugSyscallHit)(void *core);

@@ -912,7 +912,7 @@ R_API int r_cons_win_printf(RCons *cons, bool vmode, const char *fmt, ...) R_PRI
 R_API int r_cons_win_eprintf(RCons *cons, bool vmode, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
 R_IPI void r_cons_win_clear(RCons *cons);
 R_IPI void r_cons_win_clear_line(RCons *cons, int fd);
-R_API int r_cons_win_vhprintf(RCons *cons, DWORD hdl, bool vmode, const char *fmt, va_list ap);
+R_API int r_cons_win_vhprintf(RCons *cons, DWORD hdl, bool vmode, const char *fmt, va_list ap) R_PRINTF_CHECK(4, 0);
 
 #endif
 
@@ -1214,7 +1214,7 @@ R_API void r_cons_print(RCons *cons, const char *str);
 R_API void r_cons_newline(RCons *cons);
 R_API bool r_cons_write(RCons *cons, const void *str, size_t len);
 R_API void r_cons_memset(RCons *cons, char ch, int len);
-R_API void r_cons_printf_list(RCons *cons, const char *format, R_NOALIAS va_list ap);
+R_API void r_cons_printf_list(RCons *cons, const char *format, R_NOALIAS va_list ap) R_PRINTF_CHECK(2, 0);
 R_API int r_cons_printf(RCons *cons, const char *format, R_NOALIAS ...) R_PRINTF_CHECK(2, 3);
 R_API void r_cons_gotoxy(RCons * R_NONNULL cons, int x, int y);
 R_API void r_cons_set_interactive(RCons *cons, bool x);
@@ -1267,7 +1267,7 @@ typedef int (*RConsGetSize)(RCons *cons, int *rows);
 typedef int (*RConsGetCursor)(RCons *cons, int *rows);
 typedef bool (*RConsIsBreaked)(RCons *cons);
 typedef void (*RConsFlush)(RCons *cons);
-typedef int (*RConsPrintfCallback)(RCons *cons, const char *format, ...);
+typedef int (*RConsPrintfCallback)(RCons *cons, const char *format, ...) R_PRINTF_CHECK(2, 3);
 typedef bool (*RConsWriteCallback)(RCons *cons, const void *data, size_t len);
 typedef void (*RConsGrepCallback)(RCons *cons, const char *grep);
 typedef struct r_cons_bind_t {

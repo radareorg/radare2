@@ -167,7 +167,7 @@ typedef struct r_egg_emit_t {
 	char *(*syscall)(REgg *egg, int num);
 	void (*trap)(REgg *egg);
 	void (*frame_end)(REgg *egg, int sz, int ctx);
-	void (*comment)(REgg *egg, const char *fmt, ...);
+	void (*comment)(REgg *egg, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 	void (*push_arg)(REgg *egg, int xs, int num, const char *str);
 	void (*set_string)(REgg *egg, const char *dstvar, const char *str, int j);
 	void (*equ)(REgg *egg, const char *key, const char *value);

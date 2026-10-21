@@ -18,23 +18,23 @@ typedef struct {
 
 #define R_STRBUF_SAFEGET(sb) (r_strbuf_get (sb) ? r_strbuf_get (sb) : "")
 R_API RStrBuf *r_strbuf_new(const char *s);
-R_API RStrBuf *r_strbuf_newf(const char *fmt, ...);
+R_API RStrBuf *r_strbuf_newf(const char *fmt, ...) R_PRINTF_CHECK(1, 2);
 R_API const char *r_strbuf_set(RStrBuf *sb, const char *s); // return = the string or NULL on fail
 R_API bool r_strbuf_slice(RStrBuf *sb, int from, int len);
 R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, size_t len);
 R_API void r_strbuf_trim(RStrBuf *sb);
 R_API ut8* r_strbuf_getbin(RStrBuf *sb, int *len);
 R_API const char *r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) R_PRINTF_CHECK(2, 3); // return = the string or NULL on fail
-R_API const char *r_strbuf_vsetf(RStrBuf *sb, const char *fmt, va_list ap); // return = the string or NULL on fail
+R_API const char *r_strbuf_vsetf(RStrBuf *sb, const char *fmt, va_list ap) R_PRINTF_CHECK(2, 0); // return = the string or NULL on fail
 R_API bool r_strbuf_append(RStrBuf *sb, R_NOALIAS const char *s);
 R_API bool r_strbuf_append_n(RStrBuf *sb, R_NOALIAS const char *s, size_t l);
 R_API bool r_strbuf_pad(RStrBuf *sb, char ch, int sz);
 R_API bool r_strbuf_prepend(RStrBuf *sb, const char *s);
 R_API bool r_strbuf_prepend_n(RStrBuf *sb, const char *s, size_t l);
 R_API bool r_strbuf_appendf(RStrBuf *sb, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
-R_API bool r_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap);
+R_API bool r_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap) R_PRINTF_CHECK(2, 0);
 R_API bool r_strbuf_prependf(RStrBuf *sb, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
-R_API bool r_strbuf_vprependf(RStrBuf *sb, const char *fmt, va_list ap);
+R_API bool r_strbuf_vprependf(RStrBuf *sb, const char *fmt, va_list ap) R_PRINTF_CHECK(2, 0);
 R_API R_UNOWNED R_TRANSIENT char *r_strbuf_get(RStrBuf *sb); // R2_590 rename _tostring, avoid clash on line 40
 R_API R_OWNED char *r_strbuf_drain(RStrBuf *sb);
 R_API char *r_strbuf_drain_nofree(RStrBuf *sb); // rename to _tostring() or asstring() ?
@@ -46,7 +46,7 @@ R_API void r_strbuf_free(RStrBuf *sb);
 R_API void r_strbuf_fini(RStrBuf *sb);
 R_API void r_strbuf_init(RStrBuf *sb);
 R_API char *r_strbuf_tostring(RStrBuf *sb);
-R_API const char *r_strbuf_initf(RStrBuf *sb, const char *fmt, ...); // same as init + setf for convenience
+R_API const char *r_strbuf_initf(RStrBuf *sb, const char *fmt, ...) R_PRINTF_CHECK(2, 3); // same as init + setf for convenience
 R_API bool r_strbuf_copy(RStrBuf *dst, RStrBuf *src);
 R_API bool r_strbuf_equals(RStrBuf *sa, RStrBuf *sb);
 R_API bool r_strbuf_reserve(RStrBuf *sb, size_t len);

@@ -701,7 +701,7 @@ R_API char *tcc_fileextension(const char *name);
 R_API void tcc_error_noabort(const char *fmt, ...);
 R_API void tcc_error(TCCState *s1, const char *fmt, ...);
 R_API void tcc_warning(TCCState *s1, const char *fmt, ...);
-R_API void strcat_printf(char *buf, int buf_size, const char *fmt, ...);
+R_API void strcat_printf(char *buf, int buf_size, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
 
 /* other utilities */
 ST_FUNC void dynarray_add(void ***ptab, int *nb_ptr, void *data);

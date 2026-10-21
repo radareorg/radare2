@@ -130,13 +130,13 @@ R_API void r_arena_free(RArena *arena);
 // spush_ funcs return slices
 R_API char *r_arena_push_str(RArena *arena, const char *str);
 R_API char *r_arena_move_str(RArena *arena, char *str);
-R_API char *r_arena_push_strf(RArena *arena, const char *fmt, ...);
+R_API char *r_arena_push_strf(RArena *arena, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 R_API char *r_arena_push_strn(RArena *arena, const char *str, size_t n);
 R_API void *r_arena_push(RArena *arena, const void *mem, size_t n);
 R_API void *r_arena_move(RArena *arena, void *mem, size_t n);
 
 R_API RSlice r_arena_spush_str(RArena *arena, const char *str);
-R_API RSlice r_arena_spush_strf(RArena *arena, const char *fmt, ...);
+R_API RSlice r_arena_spush_strf(RArena *arena, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 R_API RSlice r_arena_spush_strn(RArena *arena, const char *str, size_t n);
 R_API RSlice r_arena_spush(RArena *arena, const RSlice other);
 

@@ -264,7 +264,7 @@ R_API char *r_arena_move_str(RArena *arena, char *str) {
 	return copy;
 }
 
-static char *r_arena_push_vstrf(RArena *arena, const char *fmt, va_list ap) {
+static R_PRINTF_CHECK(2, 0) char *r_arena_push_vstrf(RArena *arena, const char *fmt, va_list ap) {
 	R_RETURN_VAL_IF_FAIL (arena && fmt, NULL);
 
 	if (!strchr (fmt, '%')) {

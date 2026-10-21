@@ -90,7 +90,7 @@ static const EvmOpDef opcodes[256] = {
 	[EVM_OP_SELFDESTRUCT] = { "selfdestruct", 1 },
 };
 
-static void settxtf(EvmOp *op, const char *fmt, ...) {
+static R_PRINTF_CHECK(2, 3) void settxtf(EvmOp *op, const char *fmt, ...) {
 	if (strchr (fmt, '%')) {
 		va_list ap;
 		va_start (ap, fmt);

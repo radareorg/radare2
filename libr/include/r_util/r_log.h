@@ -68,8 +68,8 @@ typedef struct r_log_source_t {
 R_API bool r_log_init(void);
 R_API void r_log_fini(void);
 R_API bool r_log_match(int level, const char *origin);
-R_API void r_log_message(RLogLevel level, const char *origin, const char *func, int line, const char *fmt, ...);
-R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func, int line, const char *fmt, va_list ap);
+R_API void r_log_message(RLogLevel level, const char *origin, const char *func, int line, const char *fmt, ...) R_PRINTF_CHECK(5, 6);
+R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func, int line, const char *fmt, va_list ap) R_PRINTF_CHECK(5, 0);
 R_API void r_log_add_callback(RLogCallback cb, void *user);
 R_API void r_log_del_callback(RLogCallback cb);
 
@@ -116,7 +116,7 @@ R_API int r_log_level_fromstring(const char *);
 R_API const char *r_log_level_tocolor(int i);
 
 R_API void r_log(const char *funcname, const char *filename, ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...) R_PRINTF_CHECK(6, 7);
-R_API void r_vlog(const char *funcname, const char *filename, ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, va_list args);
+R_API void r_vlog(const char *funcname, const char *filename, ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, va_list args) R_PRINTF_CHECK(6, 0);
 
 #ifdef __cplusplus
 }
