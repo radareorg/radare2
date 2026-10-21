@@ -1099,3 +1099,17 @@ EXPECT_ERR=<<EOF2
 ERROR: Invalid UBIFS index
 EOF2
 RUN
+
+NAME=md path with a trailing /..
+FILE=--
+CMDS=<<EOF
+m /t tmp
+mw /t/h hello
+md /t/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/..
+md /t/h/../
+EOF
+EXPECT=<<EOF
+r h
+r h
+EOF
+RUN

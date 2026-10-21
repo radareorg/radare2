@@ -29,7 +29,11 @@ R_API void r_str_trim_path(char *s) {
 				if (s == p && *p == '/') {
 					dst = p + 1;
 				}
-				src = src + 2;
+				src += 2;
+				if (!*src) {
+					// trailing "/..", do not step over the terminator
+					break;
+				}
 			} else {
 				*dst = *src;
 				dst++;
