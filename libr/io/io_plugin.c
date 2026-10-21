@@ -39,7 +39,9 @@ R_API int r_io_plugin_read(RIODesc *desc, ut8 *buf, int len) {
 	if (!desc->plugin->read) {
 		return -1;
 	}
-	return desc->plugin->read (desc->io, desc, buf, len);
+	// never trust plugins reporting more bytes than requested
+	const int ret = desc->plugin->read (desc->io, desc, buf, len);
+	return R_MIN (ret, len);
 }
 
 R_API int r_io_plugin_write(RIODesc *desc, const ut8 *buf, int len) {

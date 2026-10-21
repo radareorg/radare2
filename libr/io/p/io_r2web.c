@@ -48,7 +48,8 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 			if (ret < 0) {
 				ret = -ret;
 			}
-			memcpy (buf, tmp, R_MIN (count, ret));
+			ret = R_MIN (count, ret);
+			memcpy (buf, tmp, ret);
 			free (tmp);
 			r2w->addr += ret;
 		}

@@ -894,7 +894,7 @@ static int gdbr_read_memory_page(libgdbr_t *g, ut64 address, ut8 *buf, int len) 
 			goto end;
 		}
 		int delta = (pkt * data_sz);
-		int left = R_MIN (g->data_len, len - delta);
+		int left = R_MIN (g->data_len, data_sz);
 		if (left > 0) {
 			memcpy (buf + delta, g->data, left);
 			ret_len += left;
