@@ -246,3 +246,126 @@ nop
 alive
 EOF
 RUN
+
+NAME=radiff2 disassembly expands changed immediates
+FILE=-
+CMDS=<<EOF
+!radiff2 -qD -a x86 -b 64 hex://90b801000000c3 hex://90b802000000c3
+EOF
+EXPECT=<<EOF
+--- 0x00000001  b801000000
+- 0x00000001  mov eax, 1
++++ 0x00000001  b802000000
++ 0x00000001  mov eax, 2
+EOF
+RUN
+
+NAME=radiff2 disassembly merges fragments of one instruction
+FILE=-
+CMDS=<<EOF
+!radiff2 -qD -a x86 -b 64 hex://b801000203c3 hex://b804000506c3
+EOF
+EXPECT=<<EOF
+--- 0x00000000  b801000203
+- 0x00000000  mov eax, 0x3020001
++++ 0x00000000  b804000506
++ 0x00000000  mov eax, 0x6050004
+EOF
+RUN
+
+NAME=radiff2 disassembly uses instruction addresses and base
+FILE=-
+CMDS=<<EOF
+!radiff2 -qD -a x86 -b 64 hex://90e800000000c3 hex://90e801000000c3
+!radiff2 -qD -a x86 -b 64 -B 0x1000 hex://90740490c3 hex://90eb0490c3
+EOF
+EXPECT=<<EOF
+--- 0x00000001  e800000000
+- 0x00000001  call 6
++++ 0x00000001  e801000000
++ 0x00000001  call 7
+--- 0x00001001  7404
+- 0x00001001  je 0x1007
++++ 0x00001001  eb04
++ 0x00001001  jmp 0x1007
+EOF
+RUN
+
+NAME=radiff2 disassembly keeps separate changes aligned
+FILE=-
+CMDS=<<EOF
+!radiff2 -qD -a x86 -b 64 hex://b80100000090b802000000c3 hex://b80300000090b804000000c3
+EOF
+EXPECT=<<EOF
+--- 0x00000000  b801000000
+- 0x00000000  mov eax, 1
++++ 0x00000000  b803000000
++ 0x00000000  mov eax, 3
+--- 0x00000006  b802000000
+- 0x00000006  mov eax, 2
++++ 0x00000006  b804000000
++ 0x00000006  mov eax, 4
+EOF
+RUN
+
+NAME=radiff2 disassembly honors independent offsets and lengths
+FILE=-
+CMDS=<<EOF
+!radiff2 -qD -a x86 -b 64 -o 1:2 -l 5 hex://90b801000000c3 hex://9090b802000000c3
+EOF
+EXPECT=<<EOF
+--- 0x00000001  b801000000
+- 0x00000001  mov eax, 1
++++ 0x00000002  b802000000
++ 0x00000002  mov eax, 2
+EOF
+RUN
+
+NAME=radiff2 disassembly bounds short inputs
+FILE=-
+CMDS=<<EOF
+!radiff2 -qD -a x86 -b 64 hex://90 hex://c3
+!radiff2 -qD -a x86 -b 64 hex://0f hex://90
+!radiff2 -qD -a x86 -b 64 hex://90 hex://90
+EOF
+EXPECT=<<EOF
+--- 0x00000000  90
+- 0x00000000  nop
++++ 0x00000000  c3
++ 0x00000000  ret
+--- 0x00000000  0f
+- 0x00000000  invalid
++++ 0x00000000  90
++ 0x00000000  nop
+EOF
+RUN
+
+NAME=radiff2 disassembly expands fixed width instructions
+FILE=-
+CMDS=<<EOF
+!radiff2 -qD -a arm -b 32 hex://0100a0e31eff2fe1 hex://0200a0e31eff2fe1
+EOF
+EXPECT=<<EOF
+--- 0x00000000  0100a0e3
+- 0x00000000  mov r0, 1
++++ 0x00000000  0200a0e3
++ 0x00000000  mov r0, 2
+EOF
+RUN
+
+NAME=radiff2 disassembly follows different instruction lengths
+FILE=-
+CMDS=!radiff2 -qD -a x86 -b 64 hex://b801000000900f1f00c3 hex://90b802000000909090c3
+EXPECT=<<EOF
+--- 0x00000000  b801000000900f1f00
+- 0x00000000  mov eax, 1
+- 0x00000005  nop
+- 0x00000006  nop dword [rax]
++++ 0x00000000  90b802000000909090
++ 0x00000000  nop
++ 0x00000001  mov eax, 2
++ 0x00000006  nop
++ 0x00000007  nop
++ 0x00000008  nop
+EOF
+RUN

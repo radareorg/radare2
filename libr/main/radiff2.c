@@ -286,6 +286,8 @@ static void disasm_flush(RadiffOptions *ro) {
 static void disasm_diff(RadiffOptions *ro, RDiffOp *op) {
 	if (!ro->disasm_a.core) {
 		ro->disasm_a.core = opencore (ro, ro->file);
+	}
+	if (!ro->disasm_b.core) {
 		ro->disasm_b.core = opencore (ro, ro->file2);
 	}
 	if (!ro->disasm_a.core || !ro->disasm_b.core) {
