@@ -18,6 +18,7 @@
 .Op Fl I Ar iv
 .Op Fl S Ar seed
 .Op Fl x Ar hexstr
+.Op Fl p Ar type
 .Op Ar file ...
 .Sh DESCRIPTION
 A utility for computing, verifying, and displaying hash values for each block of a file, with a default block size of 32768 bytes. Reads from standard input using '-' and supports comparison against known hashes via exit status codes.
@@ -59,6 +60,8 @@ Show hash using the openssh's randomkey algorithm
 Run in quiet mode (-qq to show only the hash)
 .It Fl L
 List muta plugins (combines with -q, used by -a, -E and -D)
+.It Fl p Ar type
+Plot file statistics using the p== command. Use -p ? to list plot types.
 .It Fl r
 .No Output radare commands (comments), for example:
 .Bd -literal -offset indent

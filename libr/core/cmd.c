@@ -4509,6 +4509,7 @@ static int r_core_cmd_subst_i(RCore *core, RCmdContext *context, char *cmd, char
 	char unterminated_quote;
 	char *arroba = NULL;
 	char *grep = NULL;
+	bool grep_noflush = false;
 	RIODesc *tmpdesc = NULL;
 	bool old_iova = r_config_get_b (core->config, "io.va");
 	bool pamode = (core->io? !core->io->va: false);
@@ -5178,6 +5179,10 @@ escape_backtick:
 	if (*cmd != '.' || cmd_subst_parse_dot_grep (cmd)) {
 		grep = r_cons_grep_strip (cmd, quotestr);
 	}
+	if (grep) {
+		grep_noflush = cons->context->noflush;
+		cons->context->noflush = true;
+	}
 
 	/* temporary seek commands */
 	if (*cmd != '"') {
@@ -5758,6 +5763,7 @@ beach:
 		free (old_grep);
 		r_cons_grep_expression (cons, grep);
 		free (grep);
+		cons->context->noflush = grep_noflush;
 	}
 	if (scr_html != -1) {
 		r_cons_flush (cons);
