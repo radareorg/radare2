@@ -525,6 +525,22 @@ rbp,8,rsp,-,=[8],8,rsp,-=
 EOF
 RUN
 
+NAME=rasm2 -E with hex starting with a letter
+FILE=-
+CMDS=<<EOF
+!rasm2 -a x86 -b 64 -E c3
+!rasm2 -a x86 -b 64 -E -d c3
+!rasm2 -a x86 -b 64 -E 'push rbp'
+!rasm2 -a x86 -b 32 -E aaa
+EOF
+EXPECT=<<EOF
+rsp,[8],rip,=,8,rsp,+=
+rsp,[8],rip,=,8,rsp,+=
+rbp,8,rsp,-,=[8],8,rsp,-=
+0,cf,:=,0,af,:=,9,al,>,?{,10,al,-=,1,ah,+=,1,cf,:=,1,af,:=,}
+EOF
+RUN
+
 NAME=rasm2 -a x86 -b 64 -Aj 0x55
 FILE=-
 CMDS=!rasm2 -a x86 -b 64 -Aj 0x55

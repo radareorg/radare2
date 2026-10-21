@@ -1183,7 +1183,8 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 		if (dis) {
 			char *usrstr = strdup (opt.argv[opt.ind]);
 			if (dis == 3) {
-				if (isalpha (usrstr[0]) & 0xff) {
+				const int hexlen = r_hex_str_is_valid (usrstr);
+				if (hexlen <= 0 || hexlen % 2) {
 					// assemble and get the string back
 					as->a->use_spp = as->opt.use_spp;
 					RAsmCode *acode = r_asm_assemble (as->a, usrstr);
