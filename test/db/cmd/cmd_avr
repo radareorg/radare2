@@ -13,6 +13,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=avrD msvc builtin type without class keyword
+FILE=--
+CMDS=e anal.cxxabi=msvc;"avrD .?AU__m128d@@@@"
+EXPECT=<<EOF
+__m128d
+EOF
+RUN
+
 NAME=avrD msvc namespaces
 FILE=--
 CMDS=e anal.cxxabi=msvc;"avrD .?AVClassInInnerNamespace@InnerNamespace@OuterNamespace@@"
