@@ -4603,3 +4603,17 @@ EXPECT=<<EOF
 2
 EOF
 RUN
+
+NAME=Analysis with io.va=false does not use virtual section addresses
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+o bins/elf/analysis/x86-helloworld-gcc 0 rx
+e io.va=false
+s 0x300
+af
+afij~{[0].realsz}
+EOF
+EXPECT=<<EOF
+34
+EOF
+RUN
