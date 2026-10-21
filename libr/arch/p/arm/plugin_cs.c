@@ -3042,7 +3042,7 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 		MATH32 ("ROR");
 		break;
 	case ARM_INS_SVC:
-		r_strbuf_setf (&op->esil, "%s,$", ARG (0));
+		r_strbuf_appendf (&op->esil, "%s,$", ARG (0));
 		break;
 	case ARM_INS_PUSH:
 #if 0
