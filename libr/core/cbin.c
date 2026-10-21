@@ -4770,22 +4770,19 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 				}
 			}
 		} else if (IS_MODE_RAD (mode)) {
-			char *n = r_name_filter_shell (name);
 			char *cn = r_str_sanitize_r2 (cname);
-			if (!n || !cn) {
-				free (n);
-				free (cn);
+			if (!cn) {
 				free (name);
 				continue;
 			}
-			r_cons_printf (core->cons, "'f class.%s = 0x%" PFMT64x "\n", n, at_min);
+			r_cons_printf (core->cons, "'f class.%s = 0x%" PFMT64x "\n", name, at_min);
 			if (c->super) {
 				RListIter *iter;
 				RBinName *bn;
 				r_list_foreach (c->super, iter, bn) {
 					char *fsk = strdup (r_bin_name_tostring2 (bn, pref));
 					r_name_filter (fsk, -1);
-					r_cons_printf (core->cons, "'f super.%s.%s = %d\n", n, fsk, c->index);
+					r_cons_printf (core->cons, "'f super.%s.%s = %d\n", name, fsk, c->index);
 					free (fsk);
 				}
 			}
@@ -4850,7 +4847,6 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 				r_cons_printf (core->cons, "};\n");
 			}
 			free (cn);
-			free (n);
 		} else if (IS_MODE_JSON (mode)) {
 			pj_o (pj);
 			pj_ks (pj, "classname", cname);
