@@ -21,3 +21,28 @@ EXPECT=<<EOF2
 EOF2
 EXPECT_ERR=
 RUN
+
+NAME=esil ring exhaustion traps on long non-numeric word
+FILE=--
+ARGS=-e esil.stack.depth=3 -e asm.arch=x86 -e asm.bits=64
+CMDS=ae aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,rax,=
+EXPECT=
+EXPECT_ERR=<<EOF2
+ERROR: ESIL stack is full
+INFO: ESIL TRAP type 1 code 0x00000001 unhandled
+EOF2
+RUN
+
+NAME=esil register word with small stack does not trap
+FILE=--
+ARGS=-e esil.stack.depth=3 -e asm.arch=x86 -e asm.bits=64
+CMDS=<<EOF2
+ar rbx=0x42
+ae rbx,rax,=
+ar rax
+EOF2
+EXPECT=<<EOF2
+0x00000042
+EOF2
+EXPECT_ERR=
+RUN
