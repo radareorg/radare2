@@ -107,7 +107,7 @@ static void addString(const ut8 *buf, ut64 offset, ut64 length, ParseStruct *par
 	binstring->vaddr = binstring->paddr = offset;
 	binstring->ordinal = 0;
 	binstring->size = length;
-	binstring->length = length;
+	binstring->length = binstring->string? strlen (binstring->string): 0;
 }
 
 static void addSymbol(RVecRBinSymbol *vec, char *name, ut64 addr, ut32 size, const char *type) {

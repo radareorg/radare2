@@ -1015,44 +1015,23 @@ static ut8 *get_strings(RCore *c, int *len) {
 		}
 	}
 	RBinString *old = NULL;
-	ut8 *buf, *ptr;
-
 	RVecRBinStringPtr_sort (&list, bs_ptr_cmp);
 
-	*len = 0;
-
+	// length counts characters, not the bytes in string
+	RStrBuf *sb = r_strbuf_new ("");
 	RBinString **it;
-	R_VEC_FOREACH (&list, it) {
-		str = *it;
-		if (!old || (old && bs_cmp (old, str) != 0)) {
-			*len += str->length + 1;
-			old = str;
-		}
-	}
-
-	ptr = buf = malloc (*len + 1);
-	if (!ptr) {
-		RVecRBinStringPtr_fini (&list);
-		return NULL;
-	}
-
-	old = NULL;
-
 	R_VEC_FOREACH (&list, it) {
 		str = *it;
 		if (old && bs_cmp (old, str) == 0) {
 			continue;
 		}
-		memcpy (ptr, str->string, str->length);
-		ptr += str->length;
-		*ptr++ = '\n';
+		r_strbuf_append (sb, str->string);
+		r_strbuf_append (sb, "\n");
 		old = str;
 	}
-	*ptr = 0;
-
-	*len = strlen ((const char *)buf);
+	*len = r_strbuf_length (sb);
 	RVecRBinStringPtr_fini (&list);
-	return buf;
+	return (ut8 *)r_strbuf_drain (sb);
 }
 
 static char *get_graph_commands(RCore *c, ut64 off) {
