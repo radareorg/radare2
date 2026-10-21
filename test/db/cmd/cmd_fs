@@ -1493,3 +1493,35 @@ Cannot find the HFS root directory
 ERROR: Invalid path
 EOF
 RUN
+
+NAME=m sfs clamps the extent B-tree node count to the block
+FILE=bins/fs/sfs-btree-nodes.img
+CMDS=<<EOF
+m /mnt sfs 0
+mo /mnt/big.bin
+ph md5 1500
+EOF
+EXPECT=<<EOF
+b0ad504aab73045928568f818d37f71f
+EOF
+RUN
+
+NAME=m sfs rejects an invalid blocksize
+FILE=bins/fs/sfs-blocksize-0.img
+CMDS=<<EOF
+m /mnt sfs 0
+m
+EOF
+EXPECT=
+RUN
+
+NAME=m sfs stops on a directory container cycle
+FILE=bins/fs/sfs-dir-cycle.img
+CMDS=<<EOF
+m /mnt sfs 0
+ls /mnt
+EOF
+EXPECT=<<EOF
+f hello.txt
+EOF
+RUN

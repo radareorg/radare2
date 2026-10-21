@@ -25,6 +25,7 @@
 #include <grub/types.h>
 #include <grub/fshelp.h>
 #include <r_types.h>
+#include <sdb/set.h>
 /* The common header for a block.  */
 R_PACKED(
 	struct grub_sfs_bheader {
@@ -154,16 +155,29 @@ grub_sfs_read_extent(struct grub_sfs_data *data, unsigned int block, int *size, 
 
 	next = grub_be_to_cpu32 (data->rblock.btree);
 	tree = (struct grub_sfs_btree *)treeblock;
+	SetU *visited = set_u_new ();
 
 	/* Handle this level in the btree.  */
 	do {
+		// stop on loops and on levels without a matching key
+		if (set_u_contains (visited, next)) {
+			break;
+		}
+		set_u_add (visited, next);
 		grub_disk_read (data->disk, next, 0, data->blocksize, treeblock);
 		if (grub_errno) {
+			set_u_free (visited);
 			grub_free (treeblock);
 			return grub_errno;
 		}
 
-		for (i = grub_be_to_cpu16 (tree->nodes) - 1; i >= 0; i--) {
+		// only read the records that fit in the block
+		const unsigned int recsize = tree->leaf? sizeof (struct grub_sfs_btree_extent): sizeof (struct grub_sfs_btree_node);
+		int nodes = grub_be_to_cpu16 (tree->nodes);
+		if (tree->nodesize) {
+			nodes = R_MIN (nodes, (int)((data->blocksize - offsetof (struct grub_sfs_btree, node) - recsize) / tree->nodesize + 1));
+		}
+		for (i = nodes - 1; i >= 0; i--) {
 
 #define EXTNODE(tree, index) \
 	((struct grub_sfs_btree_node *) (((char *)&(tree)->node[0]) + (index) *(tree)->nodesize))
@@ -183,6 +197,7 @@ grub_sfs_read_extent(struct grub_sfs_data *data, unsigned int block, int *size, 
 				*size = grub_be_to_cpu16 (extent->size);
 				*nextext = grub_be_to_cpu32 (extent->next);
 
+				set_u_free (visited);
 				grub_free (treeblock);
 				return 0;
 			}
@@ -191,6 +206,7 @@ grub_sfs_read_extent(struct grub_sfs_data *data, unsigned int block, int *size, 
 		}
 	} while (!tree->leaf);
 
+	set_u_free (visited);
 	grub_free (treeblock);
 
 	return grub_error (GRUB_ERR_FILE_READ_ERROR, "SFS extent not found");
@@ -272,6 +288,11 @@ grub_sfs_mount(grub_disk_t disk) {
 	}
 
 	data->blocksize = grub_be_to_cpu32 (data->rblock.blocksize);
+	// SFS block sizes are powers of two big enough for the root object container
+	if (data->blocksize < 512 || data->blocksize > 65536 || (data->blocksize & (data->blocksize - 1))) {
+		grub_error (GRUB_ERR_BAD_FS, "invalid SFS blocksize");
+		goto fail;
+	}
 	rootobjc_data = grub_malloc (data->blocksize);
 	if (!rootobjc_data) {
 		goto fail;
@@ -360,6 +381,7 @@ grub_sfs_iterate_dir(grub_fshelp_node_t dir,
 	struct grub_sfs_objc *objc;
 	unsigned int next = dir->block;
 	int pos;
+	SetU *visited = set_u_new ();
 
 	objc_data = grub_malloc (data->blocksize);
 	if (!objc_data) {
@@ -368,7 +390,8 @@ grub_sfs_iterate_dir(grub_fshelp_node_t dir,
 
 	/* The Object container can consist of multiple blocks, iterate over
 	every block.  */
-	while (next) {
+	while (next && !set_u_contains (visited, next)) {
+		set_u_add (visited, next);
 		grub_disk_read (data->disk, next, 0, data->blocksize, objc_data);
 		if (grub_errno) {
 			goto fail;
@@ -418,6 +441,7 @@ grub_sfs_iterate_dir(grub_fshelp_node_t dir,
 			}
 
 			if (grub_sfs_create_node (filename, block, grub_be_to_cpu32 (obj->file_dir.file.size), type, data, hook, closure)) {
+				set_u_free (visited);
 				grub_free (objc_data);
 				return 1;
 			}
@@ -427,6 +451,7 @@ grub_sfs_iterate_dir(grub_fshelp_node_t dir,
 	}
 
 fail:
+	set_u_free (visited);
 	grub_free (objc_data);
 	return 0;
 }
