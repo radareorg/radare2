@@ -3065,7 +3065,6 @@ static RBinJavaAttrInfo *r_bin_java_code_attr_new(RBinJavaObj *bin, ut8 *buffer,
 			attr->info.code_attr.code_length);
 		return attr;
 	}
-	bin->current_code_attr = attr;
 	{
 		int len = attr->info.code_attr.code_length;
 		memset (attr->info.code_attr.code, 0, len);
@@ -3110,6 +3109,9 @@ static RBinJavaAttrInfo *r_bin_java_code_attr_new(RBinJavaObj *bin, ut8 *buffer,
 	// // eprintf ("	code Attributes_count: %d\n", attr->info.code_attr.attributes_count);
 	// XXX - attr->info.code_attr.attributes is not freed because one of the code attributes is improperly parsed.
 	attr->info.code_attr.attributes = r_list_newf (r_bin_java_attribute_free);
+	// nested StackMapTable attributes read implicit_frame from it, never expose a freed one
+	RBinJavaAttrInfo *prev_code_attr = bin->current_code_attr;
+	bin->current_code_attr = attr;
 	for (k = 0; k < attr->info.code_attr.attributes_count; k++) {
 		int size = (offset < sz)? sz - offset: 0;
 		if (size > sz || size <= 0) {
@@ -3136,6 +3138,7 @@ static RBinJavaAttrInfo *r_bin_java_code_attr_new(RBinJavaObj *bin, ut8 *buffer,
 		// break;
 		// }
 	}
+	bin->current_code_attr = prev_code_attr;
 	if (attr->info.code_attr.implicit_frame == NULL) {
 		// build a default implicit_frame
 		attr->info.code_attr.implicit_frame = r_bin_java_default_stack_frame ();
