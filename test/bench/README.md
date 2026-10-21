@@ -3,6 +3,27 @@ Benchmark testsuite
 
 Run `make` and compare results with runs of previous commits.
 
+## String pools
+
+After building radare2, run `make -C test/bench strpool` and then:
+
+```sh
+LD_LIBRARY_PATH="$PWD/libr/util" DYLD_LIBRARY_PATH="$PWD/libr/util" test/bench/strpool
+```
+
+The benchmark checks returned positions and reports total microseconds and
+index bytes for distinct appends, duplicate appends, rebuilding a duplicate
+pool after `r_strpool_lock`, and distinct deduplicating adds. It runs increasing
+pool sizes to expose quadratic rebuilds. Append timings include string copying
+and, for distinct names, formatting. Rebuild timings include only the first
+lookup after releasing the index. Append-only index bytes are measured before
+any lookup. These are synthetic timings, not whole-application measurements.
+
+For a before/after comparison, copy the original utility library to a separate
+directory before rebuilding and select it with the same library-path variables.
+Use identical library build flags and repeat runs to account for timing noise.
+Remove the executable with `make -C test/bench clean-strpool`.
+
 ## ANSI cropping
 
 `ansi_crop.c` compares two built versions of `r_str_ansi_crop`. Preserve the

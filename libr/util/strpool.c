@@ -25,12 +25,20 @@ static ut32 strpool_hash(RStrpool *p, const char *s) {
 }
 
 static void strpool_index_put(RStrpool *p, int pos, ut32 h) {
+	const ut32 tag = STRPOOL_TAG (h);
 	const ut32 mask = p->index_size - 1;
 	ut32 i = h & mask;
 	while (p->index[i]) {
+		const ut32 slot = p->index[i];
+		if ((slot >> 24) == tag) {
+			const int first = (slot & STRPOOL_POS_MASK) - 1;
+			if (!strcmp (p->str + p->idxs[first], p->str + p->idxs[pos])) {
+				return;
+			}
+		}
 		i = (i + 1) & mask;
 	}
-	p->index[i] = (STRPOOL_TAG (h) << 24) | (ut32)(pos + 1);
+	p->index[i] = (tag << 24) | (ut32)(pos + 1);
 }
 
 static int strpool_find(RStrpool *p, const char *w, ut32 h) {
@@ -228,6 +236,9 @@ R_API int r_strpool_add(RStrpool *p, const char *s) {
 
 R_API int r_strpool_append(RStrpool *p, const char *s) {
 	R_RETURN_VAL_IF_FAIL (p && s, -1);
+	if (!p->index) {
+		return strpool_push (p, s);
+	}
 	return strpool_insert (p, s, false);
 }
 
