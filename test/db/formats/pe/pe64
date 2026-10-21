@@ -33,3 +33,13 @@ machine  ARM64
 cc       arm64
 EOF
 RUN
+
+NAME=pe64 main detection with a call on the last byte of the entry buffer
+FILE=bins/pe/main_call_last_byte.exe
+CMDS=<<EOF
+iM
+EOF
+EXPECT=<<EOF
+vaddr=0x140001100 paddr=0x00000300
+EOF
+RUN

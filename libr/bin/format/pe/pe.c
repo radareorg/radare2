@@ -83,6 +83,9 @@ static inline bool read_jump(RBinPEObj *pe, RBinPEAddr *addr, ut8 *b, int len) {
 }
 
 static inline bool follow_offset(RBinPEObj *pe, RBinPEAddr *addr, size_t offset, ut8 *b, int len) {
+	if (offset + 5 > len) {
+		return false;
+	}
 	const st32 off = r_read_le32 (b + offset + 1) + offset + 5;
 	return read_jump (pe, peaddr_add (addr, off), b, len);
 }
