@@ -778,7 +778,9 @@ static RCmdResult mount_callback(RCmdContext *ctx) {
 	const MountCommand *command = ctx->handler_user;
 	const size_t argc = r_cmdctx_argc (ctx);
 	bool ok = false;
-	if (r_cmdctx_help (ctx)) {
+	if (!strcmp (command->name, "m") && r_strs_startswith (ctx->subcmd, "mc")) {
+		R_LOG_ERROR ("The mmc core plugin is not compiled in or loaded");
+	} else if (r_cmdctx_help (ctx)) {
 		ok = mount_help (ctx);
 	} else if (!r_strs_empty (ctx->subcmd) || argc < command->min_args || argc > command->max_args
 			|| (argc && !*r_cmdctx_arg (ctx, 0).a)) {
