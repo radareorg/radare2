@@ -1298,6 +1298,8 @@ static int disassemble(RArchSession *as, RAnalOp *op, const ut8 *buf, int len) {
 			disasm_obj.mach = bfd_mach_mips6000;
 		} else if (!r_str_casecmp (cpu, "mips3")) {
 			disasm_obj.mach = bfd_mach_mips4000;
+		} else if (!r_str_casecmp (cpu, "r5900")) {
+			disasm_obj.mach = bfd_mach_mips5900;
 		} else if (!r_str_casecmp (cpu, "mips4")) {
 			disasm_obj.mach = bfd_mach_mips5000;
 		} else if (!r_str_casecmp (cpu, "mips5")) {
@@ -2213,7 +2215,7 @@ const RArchPlugin r_arch_plugin_mips_gnu = {
 		.desc = "MIPS RISC architecture",
 		.license = "GPL-3.0-only",
 	},
-	.cpus = "micro,mips1,mips2,mips3,mips4,mips5,mips64r2,mips32r2,mips64,mips32,loongson3a,gs464,gs464e,gs264e,loongson2e,loongson2f,mips32/64",
+	.cpus = "micro,mips1,mips2,mips3,r5900,mips4,mips5,mips64r2,mips32r2,mips64,mips32,loongson3a,gs464,gs464e,gs264e,loongson2e,loongson2f,mips32/64",
 	.arch = "mips",
 	.bits = R_SYS_BITS_PACK2 (32, 64),
 	.info = mips_archinfo,
