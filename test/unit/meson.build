@@ -35,6 +35,7 @@ if get_option('enable_tests')
     'core_task',
     'debruijn',
     'debug',
+    'debug_liveness',
     'debug_session',
     'diff',
     'dwarf',

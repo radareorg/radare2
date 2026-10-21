@@ -261,25 +261,29 @@ static int xnu_signal_reason(int sig) {
 		return R_DEBUG_REASON_SEGFAULT;
 	case SIGSTOP:
 		return R_DEBUG_REASON_STOPPED;
+	case SIGTRAP:
+		return R_DEBUG_REASON_BREAKPOINT;
 	default:
 		return R_DEBUG_REASON_SIGNAL;
 	}
 }
 #endif
 
-static bool xnu_restore_exception_ports(int pid) {
+static bool xnu_restore_exception_ports(int pid, bool is_dead) {
 	kern_return_t kr;
 	int i;
-	task_t task = pid_to_task (pid);
-	if (!task) {
-		return false;
-	}
-	for (i = 0; i < ex.count; i++) {
-		kr = task_set_exception_ports (task, ex.masks[i], ex.ports[i],
-					       ex.behaviors[i], ex.flavors[i]);
-		if (kr != KERN_SUCCESS) {
-			R_LOG_ERROR ("fail to restore exception ports");
+	if (!is_dead) {
+		task_t task = pid_to_task (pid);
+		if (!task) {
 			return false;
+		}
+		for (i = 0; i < ex.count; i++) {
+			kr = task_set_exception_ports (task, ex.masks[i], ex.ports[i],
+						       ex.behaviors[i], ex.flavors[i]);
+			if (kr != KERN_SUCCESS) {
+				R_LOG_ERROR ("fail to restore exception ports");
+				return false;
+			}
 		}
 	}
 	kr = mach_port_deallocate (mach_task_self (), ex.exception_port);
@@ -409,7 +413,7 @@ static int handle_exception_message(RDebug *dbg, exc_msg *msg, int *ret_code) {
 		break;
 	case EXC_SOFTWARE:
 #if XNU_PTRACE_STEP
-		if (ptrace_attach_signal && xnu_ptrace_step) {
+		if (ptrace_attach_signal) {
 			break;
 		}
 		if (ptrace_step_signal) {
@@ -436,16 +440,15 @@ static int handle_exception_message(RDebug *dbg, exc_msg *msg, int *ret_code) {
 		break;
 	case EXC_BREAKPOINT:
 #if XNU_PTRACE_STEP
-		if (xnu_ptrace_step) {
-			*ret_code = KERN_FAILURE;
-			break;
-		}
-#endif
+		// Forward to BSD so PT_STEP and PT_CONTINUE receive a ptrace stop.
+		*ret_code = KERN_FAILURE;
+#else
 		kr = task_suspend (msg->task.name);
 		if (kr != KERN_SUCCESS) {
 			R_LOG_ERROR ("failed to suspend task breakpoint");
 		}
 		ret = R_DEBUG_REASON_BREAKPOINT;
+#endif
 		break;
 	default:
 		R_LOG_ERROR ("UNKNOWN");
@@ -516,13 +519,23 @@ static int __xnu_wait(RDebug *dbg, int pid) {
 #if XNU_PTRACE_STEP
 		const bool ptrace_attach_signal = xnu_ptrace_attach_stop
 			&& xnu_exception_is_signal (&msg, SIGSTOP);
-		const bool ptrace_signal = xnu_ptrace_step && msg.exception == EXC_SOFTWARE
+		const bool ptrace_signal = msg.exception == EXC_SOFTWARE
 			&& msg.code_cnt > 1 && msg.code.values[0] == EXC_SOFT_SIGNAL;
 #endif
 		reason = handle_exception_message (dbg, &msg, &ret_code);
 #if XNU_PTRACE_STEP
-		const bool retry_step = xnu_ptrace_step &&
-			(ret_code == KERN_FAILURE || ptrace_attach_signal);
+		const bool retry_exception = ret_code == KERN_FAILURE &&
+			(xnu_ptrace_step || msg.exception == EXC_BREAKPOINT);
+		bool retry_attach = ptrace_attach_signal;
+		if (ptrace_attach_signal && !xnu_ptrace_step) {
+			// Clear the ptrace attach stop before replying to its Mach exception.
+			if (r_debug_ptrace (dbg, PT_CONTINUE, pid, (caddr_t)1, 0) == -1) {
+				r_sys_perror ("ptrace-continue attach stop");
+				ret_code = KERN_FAILURE;
+				reason = R_DEBUG_REASON_ERROR;
+				retry_attach = false;
+			}
+		}
 #endif
 		encode_reply (&reply, &msg.hdr, ret_code);
 #if XNU_PTRACE_STEP
@@ -542,9 +555,11 @@ static int __xnu_wait(RDebug *dbg, int pid) {
 			if (kr != KERN_SUCCESS) {
 				R_LOG_ERROR ("failed to deallocate reply port");
 			}
+			reason = R_DEBUG_REASON_ERROR;
+			break;
 		}
 #if XNU_PTRACE_STEP
-		if (retry_step) {
+		if (retry_exception || retry_attach) {
 			continue;
 		}
 #endif
@@ -568,9 +583,7 @@ bool xnu_create_exception_thread(RDebug *dbg, int pid) {
 		R_LOG_ERROR ("xnu_start_exception_thread: cannot get task for pid %d", pid);
 		return false;
 	}
-#if XNU_PTRACE_STEP
-	xnu_ptrace_attach_stop = r_debug_ptrace (dbg, PT_ATTACHEXC, pid, 0, 0) != -1;
-#else
+#if !XNU_PTRACE_STEP
 	r_debug_ptrace (dbg, PT_ATTACHEXC, pid, 0, 0);
 #endif
 	if (!MACH_PORT_VALID (task_self)) {
@@ -599,6 +612,9 @@ bool xnu_create_exception_thread(RDebug *dbg, int pid) {
 		R_LOG_ERROR ("Termination notification request failed");
 	}
 	ex.exception_port = exception_port;
+#if XNU_PTRACE_STEP
+	xnu_ptrace_attach_stop = r_debug_ptrace (dbg, PT_ATTACHEXC, pid, 0, 0) != -1;
+#endif
 	return true;
 #endif
 }

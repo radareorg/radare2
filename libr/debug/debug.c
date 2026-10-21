@@ -1803,7 +1803,7 @@ R_API bool r_debug_is_dead(RDebug *dbg) {
 		return false;
 	}
 	bool is_dead = (dbg->pid < 0 && strncmp (plugin->meta.name, "gdb", 3)) || (dbg->reason.type == R_DEBUG_REASON_DEAD);
-	if (dbg->pid > 0 && plugin && plugin->kill) {
+	if (!is_dead && dbg->pid > 0 && plugin && plugin->kill) {
 		is_dead = !plugin->kill (dbg, dbg->pid, false, 0);
 	}
 #if 0
