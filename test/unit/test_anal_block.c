@@ -577,6 +577,34 @@ static bool addr_list_cb(ut64 addr, void *user) {
 	return true;
 }
 
+static bool block_addr_list_cb(RAnalBlock *block, void *user) {
+	return addr_list_cb (block->addr, user);
+}
+
+bool test_r_anal_block_recurse_missing_successors(void) {
+	RAnal *anal = r_anal_new ();
+	RAnalBlock *a = r_anal_create_block (anal, 0x100, 0x10);
+	RAnalBlock *b = r_anal_create_block (anal, 0x110, 0x10);
+	RAnalBlock *c = r_anal_create_block (anal, 0x120, 0x10);
+	a->jump = 0;
+	a->fail = b->addr;
+	b->fail = 0xdead;
+	r_anal_block_add_switch_case (b, b->addr, 1, c->addr);
+	RList *visited = r_list_newf (free);
+	r_anal_block_recurse_depth_first (a, block_addr_list_cb, block_addr_list_cb, visited);
+	mu_assert_eq (r_list_length (visited), 6, "enter and exit all reachable blocks");
+	mu_assert_eq (*(ut64 *)r_list_get_n (visited, 1), b->addr, "missing jump keeps fallthrough");
+	mu_assert_eq (*(ut64 *)r_list_get_n (visited, 2), c->addr, "missing fail keeps switch cases");
+	mu_assert_eq (*(ut64 *)r_list_get_n (visited, 5), a->addr, "root exits last");
+	r_list_free (visited);
+	r_unref (a);
+	r_unref (b);
+	r_unref (c);
+	assert_leaks (anal);
+	r_anal_free (anal);
+	mu_end;
+}
+
 bool test_r_anal_block_successors(void) {
 	RAnal *anal = r_anal_new ();
 	assert_invariants (anal);
@@ -881,6 +909,7 @@ int all_tests(void) {
 	mu_run_test (test_r_anal_block_relocate);
 	mu_run_test (test_r_anal_block_query);
 	mu_run_test (test_r_anal_block_successors);
+	mu_run_test (test_r_anal_block_recurse_missing_successors);
 	mu_run_test (test_r_anal_switch_spec_limits_ncases);
 	mu_run_test (test_r_anal_block_automerge);
 	return tests_passed != tests_run;

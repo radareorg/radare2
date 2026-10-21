@@ -619,8 +619,16 @@ R_API bool r_anal_block_recurse_depth_first(RAnalBlock *block, RAnalBlockCb cb, 
 		cur_bb = cur_ctx->bb;
 		if (cur_bb->jump != UT64_MAX && !r_bitset_test (visited, cur_bb->jump)) {
 			cur_bb = r_anal_get_block_at (anal, cur_bb->jump);
+			if (!cur_bb) {
+				r_bitset_set (visited, cur_ctx->bb->jump);
+				continue;
+			}
 		} else if (cur_bb->fail != UT64_MAX && !r_bitset_test (visited, cur_bb->fail)) {
 			cur_bb = r_anal_get_block_at (anal, cur_bb->fail);
+			if (!cur_bb) {
+				r_bitset_set (visited, cur_ctx->bb->fail);
+				continue;
+			}
 		} else {
 			RAnalCaseOp *cop = NULL;
 			if (cur_bb->switch_op && !cur_ctx->switch_it) {
