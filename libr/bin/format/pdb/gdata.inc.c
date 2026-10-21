@@ -17,9 +17,11 @@ static int parse_global(const ut8 *data, ut32 data_size, SGlobal *global) {
 		if (!can_read (read_bytes, 1, data_size)) {
 			return 0;
 		}
-		global->name.size = data[read_bytes];
+		// the name is length prefixed and may not be NUL terminated
+		const ut32 size = R_MIN (data[read_bytes], data_size - read_bytes - 1);
 		read_bytes++;
-		init_scstring (&global->name, global->name.size, (char *) (data + read_bytes));
+		init_scstring (&global->name, size, (char *) (data + read_bytes));
+		read_bytes += size;
 	}
 	return read_bytes;
 }
@@ -57,8 +59,11 @@ static void parse_gdata_stream(STpiStream *ss, void *stream, R_STREAM_FILE *stre
 		if ((leaf_type == 0x110E) || (leaf_type == 0x1009)) {
 			SGlobal *global = R_NEW0 (SGlobal);
 			global->leaf_type = leaf_type;
-			parse_global (data + 2, len - 2, global);
-			r_list_append (data_stream->globals_list, global);
+			if (parse_global (data + 2, len - 2, global)) {
+				r_list_append (data_stream->globals_list, global);
+			} else {
+				free_global (global);
+			}
 		}
 		free (data);
 	}

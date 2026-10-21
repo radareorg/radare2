@@ -1630,7 +1630,7 @@ static void get_onemethod_print_type(STpiStream *ss, void *type, char **name) {
 ///////////////////////////////////////////////////////////////////////////////
 void init_scstring(R_OUT SCString *cstr, unsigned int size, const char *name) {
 	cstr->size = size;
-	cstr->name = strdup (name);
+	cstr->name = r_str_ndup (name, size);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
