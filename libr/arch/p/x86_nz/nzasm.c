@@ -2608,6 +2608,113 @@ static bool use_op_reg_mem(int bits, const Operand *mem) {
 	return bits == 64 || (bits == 32 && (mem->reg_size & OT_DWORD) && mem->regs[0] != X86R_RIP);
 }
 
+// bt, bts, btr and btc: r/m with a bit index in a register (0F A3/AB/B3/BB /r) or an imm8 (0F BA /4-/7)
+static int opbt(RArchSession *a, ut8 *data, const Opcode *op) {
+	if (op->operands_count != 2) {
+		return -1;
+	}
+	const Operand *dst = &op->operands[0];
+	const Operand *src = &op->operands[1];
+	const int bits = a->config->bits;
+	int ext = 4;
+	ut8 opcode = 0xa3;
+	if (!strcmp (op->mnemonic, "bts")) {
+		ext = 5;
+		opcode = 0xab;
+	} else if (!strcmp (op->mnemonic, "btr")) {
+		ext = 6;
+		opcode = 0xb3;
+	} else if (!strcmp (op->mnemonic, "btc")) {
+		ext = 7;
+		opcode = 0xbb;
+	}
+	if (src->type & OT_MEMORY) {
+		return -1;
+	}
+	const bool imm = src->type & OT_CONSTANT;
+	if (!imm && ((src->type & OT_REGTYPE) != (OT_GPREG & OT_REGTYPE)
+			|| src->reg == X86R_RIP)) {
+		return -1;
+	}
+	ut32 size = dst->type & ALL_SIZE;
+	if (dst->type & OT_MEMORY) {
+		size = dst->explicit_size? (dst->dest_size & ALL_SIZE): 0;
+		if (!imm) {
+			if (size && !(size & src->type)) {
+				return -1;
+			}
+			size = src->type & ALL_SIZE;
+		}
+	} else if ((dst->type & OT_REGTYPE) != (OT_GPREG & OT_REGTYPE)
+			|| dst->reg == X86R_RIP || (!imm && size != (src->type & ALL_SIZE))) {
+		return -1;
+	}
+	if (size != OT_WORD && size != OT_DWORD && (size != OT_QWORD || bits != 64)) {
+		return -1;
+	}
+	const st64 bit = (st64)src->immediate * src->sign;
+	if (imm && (bit < 0 || bit > 255)) {
+		return -1;
+	}
+
+	ut8 rex = (size == OT_QWORD)? 8: 0;
+	const int reg = imm? ext: src->reg;
+	if (!imm && src->extended) {
+		rex |= 4;
+	}
+	ut8 modrm[16];
+	int n = 1;
+	int l = 0;
+	if (dst->type & OT_MEMORY) {
+		if (bits == 16) {
+			return -1;
+		}
+		if (bits == 32 && dst->regs[0] == X86R_UNDEFINED && dst->regs[1] == X86R_UNDEFINED) {
+			// [disp32] without a SIB byte, which 64-bit mode reads as rip-relative
+			modrm[0] = (reg & 7) << 3 | 5;
+			r_write_le32 (modrm + 1, (ut32)(dst->offset * dst->offset_sign));
+			n = 5;
+		} else {
+			n = encode_mem (modrm, reg, dst, &rex);
+		}
+		if (n < 0) {
+			return -1;
+		}
+		if (dst->regs[0] != X86R_UNDEFINED) {
+			if ((dst->reg_size & OT_REGTYPE) != (OT_GPREG & OT_REGTYPE)
+					|| !(dst->reg_size & (bits == 64? (OT_DWORD | OT_QWORD): OT_DWORD))
+					|| (bits == 32 && dst->regs[0] == X86R_RIP)) {
+				return -1;
+			}
+			if (bits == 64 && !(dst->reg_size & OT_QWORD)) {
+				data[l++] = 0x67;
+			}
+		}
+	} else {
+		if (dst->extended) {
+			rex |= 1;
+		}
+		modrm[0] = 0xc0 | (reg & 7) << 3 | (dst->reg & 7);
+	}
+	if (size == ((bits == 16)? OT_DWORD: OT_WORD)) {
+		data[l++] = 0x66;
+	}
+	if (rex) {
+		if (bits != 64) {
+			return -1;
+		}
+		data[l++] = 0x40 | rex;
+	}
+	data[l++] = 0x0f;
+	data[l++] = imm? 0xba: opcode;
+	memcpy (data + l, modrm, n);
+	l += n;
+	if (imm) {
+		data[l++] = (ut8)bit;
+	}
+	return l;
+}
+
 static int oplea(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	int mod = 0;
@@ -5172,6 +5279,10 @@ static const LookupTable oplookup[] = {
 	{ "bsr", 0, &opbs, 0},
 	{ "tzcnt", 0, &opbs, 0},
 	{ "bswap", 0, &opbswap, 0},
+	{ "bt", 0, &opbt, 0},
+	{ "btc", 0, &opbt, 0},
+	{ "btr", 0, &opbt, 0},
+	{ "bts", 0, &opbt, 0},
 	{ "call", 0, &opcall, 0},
 	{ "cbw", 0, NULL, 0x6698, 2},
 	{ "cdq", 0, NULL, 0x99, 1},
@@ -5925,6 +6036,7 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 		Register reg = X86R_UNDEFINED;
 		bool reg_ext = false;
 		bool first_reg = true;
+		ut32 addr_size = 0;
 		while (str[pos] != ']') {
 			if (pos > nextpos) {
 				break;
@@ -5994,6 +6106,11 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 				if (!(reg_type & OT_GPREG)) {
 					op->type = 0;	// Make the result invalid
 				}
+				// Base and index must have the same width
+				if (addr_size && (reg_type & ALL_SIZE) != addr_size) {
+					op->type = 0;
+				}
+				addr_size = reg_type & ALL_SIZE;
 			} else {
 				const char *p = strchr (str, '+');
 				op->offset_sign = 1;
