@@ -398,6 +398,10 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 					depth--;
 				}
 			}
+			if (depth > 0) {
+				result = -1;
+				goto cleanup;
+			}
 		}
 		if (first_parameter) {
 			RBinDwarfAttrValue *prototyped = r_bin_dwarf_die_find_attr (unit, die, DW_AT_prototyped);
@@ -415,7 +419,10 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 	case DW_TAG_reference_type:
 		type_attr = r_bin_dwarf_die_find_attr (unit, die, DW_AT_type);
 		if (type_attr) {
-			parse_type (ctx, type_attr->reference, strbuf, size, visited);
+			if (parse_type (ctx, type_attr->reference, strbuf, size, visited) < 0) {
+				result = -1;
+				goto cleanup;
+			}
 		}
 		if (die->tag == DW_TAG_array_type) {
 			parse_array_type (ctx, die - ctx->all_dies, strbuf);

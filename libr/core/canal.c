@@ -685,7 +685,7 @@ static void trycatch_depth(RAnal *anal, RAnalFunction *fcn, ut64 to) {
 	}
 	const int len = r_anal_bb_opaddr_at (bb, to - 1) - bb->addr;
 	ut8 *buf = malloc (R_MAX (len, 1));
-	if (!buf || !anal->iob.read_at (anal->iob.io, bb->addr, buf, len)) {
+	if (!buf || anal->iob.read_at (anal->iob.io, bb->addr, buf, len) < 1) {
 		free (buf);
 		return;
 	}

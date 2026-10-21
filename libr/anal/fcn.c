@@ -3701,7 +3701,7 @@ static void update_var_analysis(RAnalFunction *fcn, int align, ut64 from, ut64 t
 	if (!buf) {
 		return;
 	}
-	if (anal->iob.read_at (anal->iob.io, from, buf, len) < len) {
+	if (anal->iob.read_at (anal->iob.io, from, buf, len) != len) {
 		free (buf);
 		return;
 	}

@@ -1025,3 +1025,40 @@ case.2: 0x00000114
 case.3: 0x0000011a
 EOF
 RUN
+
+NAME=arm64 byte jump table in a readable map
+FILE=malloc://0x1000
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 1f140071c8000054c9370010aa0700102b6960384a090b8b40011fd6c0035fd6 @ 0x100
+wx c0035fd6c0035fd6c0035fd6c0035fd6c0035fd6c0035fd6c0035fd6c0035fd6 @ 0x200
+wx 000102030405 @ 0x800
+af @ 0x100
+afbi @ 0x108~cases:
+f~case.~?
+EOF
+EXPECT=<<EOF
+cases: 6
+7
+EOF
+RUN
+
+NAME=arm64 jump table in an unreadable map is not a switch
+FILE=malloc://0x1000
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 1f140071c8000054c9370010aa0700102b6960384a090b8b40011fd6c0035fd6 @ 0x100
+wx c0035fd6c0035fd6c0035fd6c0035fd6c0035fd6c0035fd6c0035fd6c0035fd6 @ 0x200
+wx 000102030405 @ 0x800
+om 3 0x800 8 0x800 --- table
+af @ 0x100
+afbi @ 0x108~cases:~?
+f~case.~?
+afi @ 0x100~num-bbs
+EOF
+EXPECT=<<EOF
+0
+0
+num-bbs: 3
+EOF
+RUN
