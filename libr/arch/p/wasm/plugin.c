@@ -206,6 +206,8 @@ static inline bool scope_to_cache(HtUP *cache, CFScope *sc) {
 	CFInfo *nfo = R_NEW (CFInfo);
 	nfo->jump = UT64_MAX;
 	nfo->fail = UT64_MAX;
+	// find_br_scope leaves a br without a target scope untouched
+	nfo->type = R_ANAL_OP_TYPE_ILL;
 	if (nfo) {
 		switch (sc->opcode) {
 		case WASM_OP_IF:

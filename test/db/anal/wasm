@@ -78,3 +78,16 @@ INFO: Artificially reducing size of section data by 0x2f bytes so it fits in the
 ERROR: Failed to parse entry 0/48 of vec at 0xb0
 EOF
 RUN
+
+NAME=wasm br without a target scope is an illegal op
+FILE=hex://0061736d01000000010401600000030201000a080106000c010c010b
+CMDS=ao 2 @ entry0~^type
+EXPECT=<<EOF
+type: ill
+type: ill
+EOF
+EXPECT_ERR=<<EOF
+WARN: ignoring br at 0x17, references non-existent address
+WARN: ignoring br at 0x19, references non-existent address
+EOF
+RUN
