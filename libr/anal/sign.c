@@ -3121,6 +3121,20 @@ static bool sign_load_r2(RAnal *a, const char *path) {
 	return true;
 }
 
+static RList *json_strlist(const RJson *array) {
+	if (!array || array->type != R_JSON_ARRAY) {
+		return NULL;
+	}
+	RList *list = r_list_newf (free);
+	const RJson *p;
+	for (p = array->children.first; p; p = p->next) {
+		if (p->type == R_JSON_STRING) {
+			r_list_append (list, strdup (p->str_value));
+		}
+	}
+	return list;
+}
+
 static bool load_json_signature(RAnal *a, const RJson *child) {
 	const char *n = r_json_type (child);
 	if (strcmp (n, "object")) {
@@ -3150,14 +3164,15 @@ static bool load_json_signature(RAnal *a, const RJson *child) {
 	if (jd && jd->type == R_JSON_STRING) {
 		it->demangled = strdup (jd->str_value);
 	}
-	const RJson *bytes = r_json_get (child, "bytes");
-	const RJson *mask = r_json_get (child, "mask");
-	if (bytes && mask) {
+	const char *bytes = r_json_get_str (child, "bytes");
+	const char *mask = r_json_get_str (child, "mask");
+	// the mask is applied to every byte, it cannot be shorter
+	if (bytes && mask && strlen (bytes) == strlen (mask)) {
 		it->bytes = R_NEW0 (RSignBytes);
-		it->bytes->bytes = (ut8*)strdup (bytes->str_value);
-		it->bytes->size = r_hex_str2bin (bytes->str_value, it->bytes->bytes);
-		it->bytes->mask = (ut8*)strdup (mask->str_value);
-		(void)r_hex_str2bin (mask->str_value, it->bytes->mask);
+		it->bytes->bytes = (ut8*)strdup (bytes);
+		it->bytes->size = r_hex_str2bin (bytes, it->bytes->bytes);
+		it->bytes->mask = (ut8*)strdup (mask);
+		(void)r_hex_str2bin (mask, it->bytes->mask);
 	}
 
 	const RJson *types = r_json_get (child, "types");
@@ -3169,51 +3184,25 @@ static bool load_json_signature(RAnal *a, const RJson *child) {
 	if (next && next->type == R_JSON_STRING) {
 		it->next = strdup (next->str_value);
 	}
-	const RJson *addr = r_json_get (child, "addr");
-	if (addr) {
-		it->addr = addr->num.u_value;
+	if (r_json_get (child, "addr")) {
+		it->addr = r_json_get_num (child, "addr");
 	}
 	const RJson *graph = r_json_get (child, "graph");
-	if (graph && graph ->type == R_JSON_OBJECT) {
-		const RJson *bcc = r_json_get (graph, "cc");
-		const RJson *nbb = r_json_get (graph, "nbbs");
-		const RJson *edg = r_json_get (graph, "edges");
-		const RJson *ebb = r_json_get (graph, "ebbs");
-		const RJson *bbs = r_json_get (graph, "bbsum");
+	if (graph && graph->type == R_JSON_OBJECT) {
 		it->graph = R_NEW0 (RSignGraph);
-		it->graph->cc = bcc? bcc->num.u_value: 0;
-		it->graph->nbbs = nbb? nbb->num.u_value: 0;
-		it->graph->edges = edg? edg->num.u_value: 0;
-		it->graph->ebbs = ebb? ebb->num.u_value: 0;
-		it->graph->bbsum = bbs? bbs->num.u_value: 0;
+		it->graph->cc = r_json_get_num (graph, "cc");
+		it->graph->nbbs = r_json_get_num (graph, "nbbs");
+		it->graph->edges = r_json_get_num (graph, "edges");
+		it->graph->ebbs = r_json_get_num (graph, "ebbs");
+		it->graph->bbsum = r_json_get_num (graph, "bbsum");
 	}
-	const RJson *refs = r_json_get (child, "refs");
-	if (refs) {
-		it->refs = r_list_new ();
-		RJson *p = refs->children.first;
-		while (p) {
-			if (p->type == R_JSON_STRING) {
-				r_list_append (it->refs, strdup (p->str_value));
-			}
-			p = p->next;
-		}
-	}
-	const RJson *xrefs = r_json_get (child, "xrefs");
-	if (xrefs) {
-		it->xrefs = r_list_new ();
-		RJson *p = xrefs->children.first;
-		while (p) {
-			if (p->type == R_JSON_STRING) {
-				r_list_append (it->xrefs, strdup (p->str_value));
-			}
-			p = p->next;
-		}
-	}
+	it->refs = json_strlist (r_json_get (child, "refs"));
+	it->xrefs = json_strlist (r_json_get (child, "xrefs"));
 	const RJson *hash = r_json_get (child, "hash");
-	if (hash && hash->type == R_JSON_OBJECT) {
-		const RJson *bbhash = r_json_get (hash, "bbhash");
+	const char *bbhash = (hash && hash->type == R_JSON_OBJECT)? r_json_get_str (hash, "bbhash"): NULL;
+	if (bbhash) {
 		it->hash = R_NEW0 (RSignHash);
-		it->hash->bbhash = strdup (bbhash->str_value);
+		it->hash->bbhash = strdup (bbhash);
 	}
 
 	r_sign_set_item (a->sdb_zigns, it, NULL);
@@ -3229,7 +3218,7 @@ static bool sign_load_json(RAnal *a, const char *path) {
 	}
 	bool res = false;
 	RJson *rj = r_json_parse (text);
-	if (rj->type != R_JSON_ARRAY) {
+	if (!rj || rj->type != R_JSON_ARRAY) {
 		R_LOG_ERROR ("Invalid json");
 	} else {
 		res = true;
