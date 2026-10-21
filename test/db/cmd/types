@@ -6073,3 +6073,22 @@ EXPECT=<<EOF
 172
 EOF
 RUN
+
+NAME=aaft on chained backward jumps keeps the loop map linear
+FILE=malloc://16384
+ARGS=-a x86 -b 64 -e types.bbstate=true
+CMDS=<<EOF
+# 8000 jumps to the previous instruction: every block heads a loop holding the rest of the chain
+wx 9090
+wow 75fc @ 2!16000
+wx c3 @ 16002
+af
+aaft
+afi~^size
+afb~?
+EOF
+EXPECT=<<EOF
+size: 16003
+8002
+EOF
+RUN
