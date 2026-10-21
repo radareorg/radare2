@@ -582,7 +582,7 @@ static void analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf
 		bit_r; xi (c, "&");
 		break;
 	case 0x83: /* movc a, @a+pc */
-		r_strbuf_append (&op->esil, "a,pc,--,+,[1],a,=,0xff,a,&=,$p,!,p,:=,");
+		r_strbuf_append (&op->esil, "a,pc,+,[1],a,=,0xff,a,&=,$p,!,p,:=,");
 		break;
 	case 0x84: /* div ab */
 		// note: escape % if this becomes a format string

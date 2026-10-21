@@ -1982,7 +1982,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 83
-wx 10 @0xf0
+wx 10 @0xf1
 ar a=0xf0
 aes
 ar pc; ar psw; ar a
