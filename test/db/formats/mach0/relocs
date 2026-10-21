@@ -154,3 +154,14 @@ format   mach064
 2
 EOF
 RUN
+
+NAME=mach0 threaded bind chain applied many times is walked once
+FILE=bins/mach0/threaded-bind-reapply
+TIMEOUT=10
+CMDS=<<EOF
+ir~SET_64?
+EOF
+EXPECT=<<EOF
+2000
+EOF
+RUN

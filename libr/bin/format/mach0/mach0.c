@@ -2,6 +2,7 @@
 
 #define R_LOG_ORIGIN "bin.macho"
 
+#include <sdb/set.h>
 #include "mach0.h"
 
 // R2R db/formats/mach0/strip
@@ -4128,7 +4129,10 @@ typedef struct {
 	ut64 segment_end_addr;
 	bool done;
 	bool stop;
+	SetU *walked; // threaded links whose chain was already applied to the end
 } RBindOpState;
+
+R_VEC_TYPE (RVecChainAddr, ut64);
 
 static HtPP *build_symbol_ordinal_cache(struct MACH0_(obj_t) * mo) {
 	HtPP *cache = ht_pp_new0 ();
@@ -4229,7 +4233,15 @@ static void apply_threaded_bind(struct MACH0_(obj_t) * mo, RVecRelocRef *threade
 	int cur_seg_idx = (state->seg_idx != -1)? state->seg_idx: 0;
 	struct MACH0_(segment_command) *cur_seg = &mo->segs[cur_seg_idx];
 	ut64 n_threaded_binds = RVecRelocRef_length (threaded_binds);
+	RVecChainAddr links;
+	RVecChainAddr_init (&links);
+	// a walk cut by a bad ordinal may get further once the table grows, so only complete walks are remembered
+	bool complete = true;
 	while (state->addr < state->segment_end_addr) {
+		// the rest of this chain was applied before and relocs are deduplicated by address
+		if (set_u_contains (state->walked, state->addr)) {
+			break;
+		}
 		ut8 tmp[8];
 		ut64 paddr = state->addr - cur_seg->vmaddr + cur_seg->fileoff;
 		mo->rebasing_buffer = true;
@@ -4263,12 +4275,14 @@ static void apply_threaded_bind(struct MACH0_(obj_t) * mo, RVecRelocRef *threade
 		if (ordinal != -1) {
 			if (ordinal >= n_threaded_binds) {
 				R_LOG_DEBUG ("Malformed bind chain");
+				complete = false;
 				break;
 			}
 			struct reloc_t **ref_slot = RVecRelocRef_at (threaded_binds, ordinal);
 			struct reloc_t *ref = ref_slot? *ref_slot: NULL;
 			if (!ref) {
 				R_LOG_DEBUG ("Inconsistent bind opcodes");
+				complete = false;
 				break;
 			}
 			struct reloc_t *reloc = R_NEW0 (struct reloc_t);
@@ -4281,11 +4295,19 @@ static void apply_threaded_bind(struct MACH0_(obj_t) * mo, RVecRelocRef *threade
 			}
 			r_skiplist_insert_autofree (mo->relocs_cache, reloc);
 		}
+		RVecChainAddr_push_back (&links, &state->addr);
 		state->addr += delta * wordsize;
 		if (!delta) {
 			break;
 		}
 	}
+	ut64 *link;
+	if (complete) {
+		R_VEC_FOREACH (&links, link) {
+			set_u_add (state->walked, *link);
+		}
+	}
+	RVecChainAddr_fini (&links);
 }
 
 static bool parse_bind_op_threaded(struct MACH0_(obj_t) * mo, RVecRelocRef **threaded_binds, RBindOpState *state, ut8 op, ut8 imm, size_t wordsize, ut8 **p, ut8 *end) {
@@ -4493,6 +4515,7 @@ static bool _load_relocations(struct MACH0_(obj_t) * mo) {
 			return false;
 		}
 		HtPP *ord_cache = build_symbol_ordinal_cache (mo);
+		SetU *walked = set_u_new ();
 
 		size_t partition_sizes[] = { bind_size, lazy_size, weak_size };
 		size_t pidx;
@@ -4503,7 +4526,7 @@ static bool _load_relocations(struct MACH0_(obj_t) * mo) {
 				break;
 			}
 
-			RBindOpState state = { 0 };
+			RBindOpState state = { .walked = walked };
 			struct MACH0_(segment_command) *seg0 = &mo->segs[0];
 			state.seg_idx = -1;
 			state.sym_ord = -1;
@@ -4517,6 +4540,7 @@ static bool _load_relocations(struct MACH0_(obj_t) * mo) {
 					R_FREE (opcodes);
 					RVecRelocRef_free (threaded_binds);
 					ht_pp_free (ord_cache);
+					set_u_free (walked);
 					return false;
 				}
 			}
@@ -4528,6 +4552,7 @@ static bool _load_relocations(struct MACH0_(obj_t) * mo) {
 		R_FREE (opcodes);
 		RVecRelocRef_free (threaded_binds);
 		ht_pp_free (ord_cache);
+		set_u_free (walked);
 		threaded_binds = NULL;
 	}
 
