@@ -1258,7 +1258,7 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 				continue;
 			}
 			if (inComment) {
-				if (r_str_startswith (ptr_start, "*/")) {
+				if (strstr (buf_token, "*/")) {
 					inComment = false;
 				}
 				continue;

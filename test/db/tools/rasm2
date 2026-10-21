@@ -1050,3 +1050,29 @@ EXPECT=<<EOF
 nop
 EOF
 RUN
+
+NAME=rasm2 block comments do not leave holes or misplace labels
+FILE=--
+CMDS=<<EOF
+rasm2 -a x86 -b 64 'nop;/* c */;nop'
+rasm2 -a x86 -b 64 'movabs rax, 0x1122334455667788;/**/;/**/;/**/;nop'
+rasm2 -a x86 -b 64 'a:;nop;/**/;jmp a'
+EOF
+EXPECT=<<EOF
+9090
+48b8887766554433221190
+90ebfd
+EOF
+RUN
+
+NAME=rasm2 block comments spanning statements
+FILE=--
+CMDS=<<EOF
+rasm2 -a x86 -b 64 'nop;/* a ;b */;nop'
+rasm2 -a x86 -b 64 'nop;/* a ;b; c */;int3'
+EOF
+EXPECT=<<EOF
+9090
+90cc
+EOF
+RUN
