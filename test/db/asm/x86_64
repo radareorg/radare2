@@ -1420,6 +1420,14 @@ ad "rdseed rax" 480fc7f8
 ad "rdseed ax" 660fc7f8
 ad "bsf rax, rbx" 480fbcc3
 ad "bsf eax, ebx" 0fbcc3
+ad "bt rax, 3" 480fbae003
+ad "bts dword [rax], 5" 0fba2805
+ad "btr rax, r8" 4c0fb3c0
+ad "btc r9, rax" 490fbbc1
+ad "bt qword [r13], rcx" 490fa34d00
+ad "bts word [rsp + 8], 0xf" 660fba6c24080f
+ad "btr dword [r8 + r9*2 - 0x20], r10d" 470fb35448e0
+ad "btc qword [rip + 0x10], 0x3f" 480fba3d100000003f
 ad "tzcnt rax, rbx" f3480fbcc3
 ad "tzcnt eax, ebx" f30fbcc3
 ad "andn eax, ebx, ecx" c4e260f2c1

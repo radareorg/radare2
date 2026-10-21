@@ -280,3 +280,53 @@ INFO: Example (bf16): .cfloat 1 8 7 127 0 0
 INFO: Example (x86-80): .cfloat 1 15 64 16383 0 1
 EOF
 RUN
+
+NAME=Invalid x86 32bit bit test operands
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+pa bt eax, 1, ecx
+pa bt eax, cr0
+pa bt cr0, 1
+pa bts eax, eip
+pa btr dword [ax], 1
+pa bt dword [eip], 1
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'bt eax, 1, ecx' at line 1
+ERROR: Cannot assemble 'bt eax, cr0' at line 1
+ERROR: Cannot assemble 'bt cr0, 1' at line 1
+ERROR: Cannot assemble 'bts eax, eip' at line 1
+ERROR: Cannot assemble 'btr dword [ax], 1' at line 1
+ERROR: Cannot assemble 'bt dword [eip], 1' at line 1
+EOF
+RUN
+
+NAME=Invalid x86 64bit bit test operands
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+pa bt eax, 1, ecx
+pa bt rax, cr0
+pa bt cr0, 1
+pa bt rip, 1
+pa btc rax, rip
+pa btr dword [ax], 1
+pa bt dword [rax + ecx], 1
+pa bts dword [eax + rcx], 1
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'bt eax, 1, ecx' at line 1
+ERROR: Cannot assemble 'bt rax, cr0' at line 1
+ERROR: Cannot assemble 'bt cr0, 1' at line 1
+ERROR: Cannot assemble 'bt rip, 1' at line 1
+ERROR: Cannot assemble 'btc rax, rip' at line 1
+ERROR: Cannot assemble 'btr dword [ax], 1' at line 1
+ERROR: Cannot assemble 'bt dword [rax + ecx], 1' at line 1
+ERROR: Cannot assemble 'bts dword [eax + rcx], 1' at line 1
+EOF
+RUN
