@@ -1371,8 +1371,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	cs_insn *insn = &csi.insn;
 	if (!ok || insn->size < 1) {
 		op->size = mips_archinfo (as, R_ARCH_INFO_INVOP_SIZE);
+		op->type = R_ANAL_OP_TYPE_ILL;
 		if (mask & R_ARCH_OP_MASK_DISASM) {
-			op->type = R_ANAL_OP_TYPE_ILL;
 			op->mnemonic = strdup ("invalid");
 		}
 		return true;

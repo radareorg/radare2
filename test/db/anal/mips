@@ -1111,7 +1111,7 @@ aav
 pd 1 @ 0x0040decc~?andi
 EOF
 EXPECT=<<EOF
-1274
+1273
 --
 1
 EOF
@@ -1125,7 +1125,7 @@ aac
 afl~?
 EOF
 EXPECT=<<EOF
-10
+7
 EOF
 RUN
 
@@ -1654,5 +1654,57 @@ EXPECT=<<EOF
             0x00000018    64+     daddiu sp, sp, -32
             0x0000001c    96+     daddi sp, sp, -32
             0x00000020   128+     jr ra
+EOF
+RUN
+
+NAME=mips32 function analysis stops at invalid instructions (le)
+FILE=malloc://32
+ARGS=-a mips -b 32 -e cfg.bigendian=false
+CMDS=<<EOF
+wx 01000824295c8f3c020009240800e00300000000
+af
+afij~{0.size}
+EOF
+EXPECT=<<EOF
+8
+EOF
+RUN
+
+NAME=mips32 function analysis stops at invalid instructions (be)
+FILE=malloc://32
+ARGS=-a mips -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 240800013c8f5c292409000203e0000800000000
+af
+afij~{0.size}
+EOF
+EXPECT=<<EOF
+8
+EOF
+RUN
+
+NAME=mips64 function analysis stops at invalid instructions (le)
+FILE=malloc://32
+ARGS=-a mips -b 64 -e cfg.bigendian=false
+CMDS=<<EOF
+wx 01000824295c8f3c020009240800e00300000000
+af
+afij~{0.size}
+EOF
+EXPECT=<<EOF
+8
+EOF
+RUN
+
+NAME=mips64 function analysis stops at invalid instructions (be)
+FILE=malloc://32
+ARGS=-a mips -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 240800013c8f5c292409000203e0000800000000
+af
+afij~{0.size}
+EOF
+EXPECT=<<EOF
+8
 EOF
 RUN
