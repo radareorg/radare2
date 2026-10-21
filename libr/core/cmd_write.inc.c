@@ -1880,12 +1880,13 @@ static int cmd_wt(RCore *core, const char *input) {
 			ut64 sent = 0;
 			R_LOG_INFO ("Connection created. Sending data to TCP socket");
 			while (sent < sz) {
-				bool sockret = r_socket_write (sock, buf + sent, sz - sent);
-				if (!sockret) {
+				const int n = r_socket_write (sock, buf + sent, (int)R_MIN (sz - sent, INT_MAX));
+				if (n < 1) {
 					R_LOG_ERROR ("Socket write error");
 					ret = 1;
 					break;
 				}
+				sent += n;
 			}
 		} else {
 			R_LOG_ERROR ("Connection to %s failed", host_port);

@@ -856,7 +856,7 @@ R_API int r_socket_write(RSocket *s, const void *buf, int len) {
 			break;
 		}
 		if (ret == len) {
-			return len;
+			return delta + ret;
 		}
 		delta += ret;
 		len -= ret;
