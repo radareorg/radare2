@@ -3895,3 +3895,45 @@ EXPECT=<<EOF
 var int16_t var_2h @ bp+0x2
 EOF
 RUN
+
+NAME=x86_32 intel rotate memory destination is read and written
+ARGS=-a x86 -b 32 -e asm.syntax=intel
+FILE=malloc://16
+CMDS=<<EOF
+wx d303;aoj~{[0].opex.operands[0].rw}
+wx d10b;aoj~{[0].opex.operands[0].rw}
+wx c10b05;aoj~{[0].opex.operands[0].rw}
+wx d203;aoj~{[0].opex.operands[0].rw}
+wx 66c11b05;aoj~{[0].opex.operands[0].rw}
+wx ff33;aoj~{[0].opex.operands[0].rw}
+EOF
+EXPECT=<<EOF
+3
+3
+3
+3
+3
+1
+EOF
+RUN
+
+NAME=x86_32 att rotate memory destination is read and written
+ARGS=-a x86 -b 32 -e asm.syntax=att
+FILE=malloc://16
+CMDS=<<EOF
+wx d303;aoj~{[0].opex.operands[0].rw}
+wx d10b;aoj~{[0].opex.operands[0].rw}
+wx c10b05;aoj~{[0].opex.operands[0].rw}
+wx d203;aoj~{[0].opex.operands[0].rw}
+wx 66c11b05;aoj~{[0].opex.operands[0].rw}
+wx ff33;aoj~{[0].opex.operands[0].rw}
+EOF
+EXPECT=<<EOF
+3
+3
+3
+3
+3
+1
+EOF
+RUN
