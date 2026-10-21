@@ -237,7 +237,7 @@ static bool r_debug_qnx_attach(RDebug *dbg, int pid) {
 				qnxr_attach (pd->desc, pid);
 			}
 		} else {
-			R_LOG_ERROR ("underlying IO descriptor isn't a QNX one", __func__);
+			R_LOG_ERROR ("underlying IO descriptor isn't a QNX one");
 			return false;
 		}
 	}

@@ -232,7 +232,7 @@ static RBinAddr *r_xcoff_get_entry(RBinCoffObj *obj) {
 	/* Read the actual entrypoint */
 	ut32 entry_vaddr = r_buf_read_be32_at (obj->b, ptr_offset);
 	if (entry_vaddr == UT32_MAX) {
-		R_LOG_WARN ("__start vaddr invalid (vaddr=%#x off=%#x)", ptr_vaddr, ptr_offset);
+		R_LOG_WARN ("__start vaddr invalid (vaddr=%#" PFMT64x " off=%#" PFMT64x ")", ptr_vaddr, ptr_offset);
 		return NULL;
 	}
 
@@ -245,7 +245,7 @@ static RBinAddr *r_xcoff_get_entry(RBinCoffObj *obj) {
 	ut32 text_vaddr = obj->scn_hdrs[sntext - 1].s_vaddr;
 	ut32 text_size = obj->scn_hdrs[sntext - 1].s_size;
 	if (entry_vaddr < text_vaddr || entry_vaddr >= text_vaddr + text_size) {
-		R_LOG_WARN ("*__start OOB (vaddr=%#lx text=%#lx..%#lx)", entry_vaddr, text_vaddr, text_vaddr + text_size);
+		R_LOG_WARN ("*__start OOB (vaddr=%#x text=%#x..%#x)", entry_vaddr, text_vaddr, text_vaddr + text_size);
 		return NULL;
 	}
 
@@ -505,7 +505,7 @@ static bool r_bin_xcoff_init_ldsyms(RBinCoffObj *obj) {
 	}
 	ret = r_buf_fread_at (obj->b, offset, (ut8 *)obj->x_ldsyms, "8cIS2c2I", obj->x_ldhdr.l_nsyms);
 	if (ret != size) {
-		R_LOG_DEBUG ("failed to read loader symbol table (%lu, %lu)", ret, size);
+		R_LOG_DEBUG ("failed to read loader symbol table (%d, %" PFMTSZu ")", ret, size);
 		R_FREE (obj->x_ldsyms);
 		return false;
 	}

@@ -324,7 +324,7 @@ static void sym_set_content_type(RBinSymbol *sym, int t) {
 		sym->type = "VOID";
 		break;
 	default:
-		R_LOG_WARN ("Unknown type 0x%x offset: 0x%x ord: %d", t, sym->paddr, sym->ordinal);
+		R_LOG_WARN ("Unknown type 0x%x offset: 0x%" PFMT64x " ord: %d", t, sym->paddr, sym->ordinal);
 	}
 }
 

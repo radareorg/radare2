@@ -313,7 +313,7 @@ static const char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 	ut64 typeidx_bufsize = (ut64)list_size * sizeof (ut16);
 	if (typeidx_bufsize > bin->size - params_data) {
 		R_LOG_DEBUG ("truncated typeidx buffer from %"PFMT64u" to %"PFMT64u,
-			params_data + typeidx_bufsize, bin->size);
+			params_data + typeidx_bufsize, (ut64)bin->size);
 		return NULL;
 	}
 	ut8 stack_typeidx_buf[DEX_PROTO_STACK_PARAMS * sizeof (ut16)];

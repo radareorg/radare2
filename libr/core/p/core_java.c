@@ -900,7 +900,7 @@ static bool r_cmd_java_handle_reload_bin(RCore *core, const char *cmd) {
 		buf_size = r_io_size (core->io);
 		buf = calloc (1, buf_size);
 		if (!buf) {
-			R_LOG_ERROR ("Cannot allocate %d", buf_size);
+			R_LOG_ERROR ("Cannot allocate %" PFMT64u, buf_size);
 			return false;
 		}
 		r_io_read_at (core->io, addr, buf, buf_size);

@@ -1428,7 +1428,7 @@ static bool symbols_vec(RBinFile *bf) {
 		switch (magic) {
 		case MH_MAGIC_64:
 			if (MACH0_(load_symbols) (kext->mach0)) {
-				R_LOG_DEBUG ("--> %d / %d", RVecRBinSymbol_length (kext->mach0->symbols_vec), RVecRBinSymbol_length (&symbols));
+				R_LOG_DEBUG ("--> %" PFMTSZu " / %" PFMTSZu, RVecRBinSymbol_length (kext->mach0->symbols_vec), RVecRBinSymbol_length (&symbols));
 				RVecRBinSymbol_append (&symbols, kext->mach0->symbols_vec, &bin_symbol_copy);
 			}
 

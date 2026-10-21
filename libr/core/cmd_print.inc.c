@@ -7877,7 +7877,7 @@ static int cmd_pd(RCore *core, const char *input, int len, int l, ut8 *block) {
 						NULL);
 					r_core_return_value (core, dislen);
 				} else {
-					R_LOG_ERROR ("Cannot allocate %" PFMT64d " byte(s)", addrbytes * l);
+					R_LOG_ERROR ("Cannot allocate %" PFMTSZu " byte(s)", addrbytes * l);
 				}
 			} else {
 				ut8 *buf = core->block;

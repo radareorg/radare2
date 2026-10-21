@@ -910,7 +910,7 @@ static bool cmd_wfs(RCore *core, const char *input) {
 		}
 		r_socket_free (c);
 		if (r_io_write_at (core->io, core->addr, buf, done)) {
-			R_LOG_INFO ("Written %d bytes", done);
+			R_LOG_INFO ("Written %" PFMT64u " bytes", done);
 		} else {
 			cmd_write_fail (core);
 		}

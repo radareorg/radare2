@@ -4394,7 +4394,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 			size_t left = R_MIN (to - at, core->blocksize);
 			// TODO: this can be probably enhanced
 			if (!r_io_read_at (core->io, at, buf, left)) {
-				R_LOG_ERROR ("Failed to read %d bytes at 0x%08" PFMT64x, left, at);
+				R_LOG_ERROR ("Failed to read %" PFMTSZu " bytes at 0x%08" PFMT64x, left, at);
 				break;
 			}
 			if (left < core->blocksize) {

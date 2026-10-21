@@ -2479,7 +2479,7 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 				mo->exports_trie_off = r_read_ble32 (buf, mo->big_endian) + mo->symbols_off;
 				mo->exports_trie_size = r_read_ble32 (buf + 4, mo->big_endian);
 				if (mo->verbose) {
-					R_LOG_INFO ("exports trie at 0x%x size %d", mo->exports_trie_off, mo->exports_trie_size);
+					R_LOG_INFO ("exports trie at 0x%" PFMT64x " size %d", mo->exports_trie_off, mo->exports_trie_size);
 				}
 			}
 			break;

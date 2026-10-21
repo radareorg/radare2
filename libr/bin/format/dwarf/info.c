@@ -95,7 +95,7 @@ R_API void r_bin_dwarf_free_debug_info(RBinDwarfDebugInfo *inf) {
 static const ut8 *fill_block_data(const ut8 *buf, const ut8 *buf_end, RBinDwarfBlock *block) {
 	const size_t available = buf_end - buf;
 	if (available < block->length) {
-		R_LOG_WARN ("not enough to fill block: have %d but need %d", available, block->length);
+		R_LOG_WARN ("not enough to fill block: have %" PFMTSZu " but need %" PFMT64u, available, block->length);
 		block->length = 0;
 		block->data = NULL;
 		return NULL;
@@ -214,7 +214,7 @@ static const ut8 *parse_attr_value(DwarfStrSections *sections, const ut8 *obuf, 
 				value->block.data = buf;
 				buf += value->block.length;
 			} else {
-				R_LOG_WARN ("not enough to fill block1: have %zu but need %zu", available, value->block.length);
+				R_LOG_WARN ("not enough to fill block1: have %" PFMTSZu " but need %" PFMT64u, available, value->block.length);
 				return NULL;
 			}
 		} else {
@@ -256,7 +256,7 @@ static const ut8 *parse_attr_value(DwarfStrSections *sections, const ut8 *obuf, 
 				value->block.data = buf;
 				buf += value->block.length;
 			} else {
-				R_LOG_WARN ("not enough to fill block4: have %zu but need %zu", available, value->block.length);
+				R_LOG_WARN ("not enough to fill block4: have %" PFMTSZu " but need %" PFMT64u, available, value->block.length);
 				return NULL;
 			}
 		} else {
@@ -275,7 +275,7 @@ static const ut8 *parse_attr_value(DwarfStrSections *sections, const ut8 *obuf, 
 				value->block.data = buf;
 				buf += value->block.length;
 			} else {
-				R_LOG_WARN ("not enough to fill block: have %zu but need %zu", available, value->block.length);
+				R_LOG_WARN ("not enough to fill block: have %" PFMTSZu " but need %" PFMT64u, available, value->block.length);
 				return NULL;
 			}
 		} else {

@@ -23,7 +23,7 @@ static int bflt_init_hdr(struct r_bin_bflt_obj *bin) {
 
 	int len = r_buf_read_at (bin->b, 0, bhdr, BFLT_HDR_SIZE);
 	if (len < BFLT_HDR_SIZE) {
-		R_LOG_WARN ("read bFLT hdr failed: expected %d bytes, got %d", BFLT_HDR_SIZE, len);
+		R_LOG_WARN ("read bFLT hdr failed: expected %" PFMTSZu " bytes, got %d", BFLT_HDR_SIZE, len);
 		goto fail;
 	}
 

@@ -331,7 +331,7 @@ bool check_header(RBuffer *b) {
 	{ \
 		lh->x = r_buf_read8 (buf); \
 		if (!is_valid_num_size (lh->x)) { \
-			R_LOG_WARN ("Invalid size 0x%x for " #x " at offset: 0x%lx", lh->x, where); \
+			R_LOG_WARN ("Invalid size 0x%x for " #x " at offset: 0x%" PFMT64x, lh->x, where); \
 			goto bad_header_ret; \
 		} \
 		where = add_symbol (lh, buf, symname, where, "NUM"); \
@@ -342,7 +342,7 @@ RLuaHeader *r_lua_load_header(RBuffer *buf) {
 	ut64 start = r_buf_tell (buf);
 	RLuaHeader *lh = lua_header_new (); // TODO use this when removing global
 	if (!lh || !check_header (buf)) {
-		R_LOG_DEBUG ("Bad lua magic at offset 0x" PFMT64x, start);
+		R_LOG_DEBUG ("Bad lua magic at offset 0x%" PFMT64x, start);
 		goto bad_header_ret;
 	}
 	ut64 where = add_symbol (lh, buf, "lua-header", start, "NOTYPE");

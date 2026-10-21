@@ -5262,7 +5262,7 @@ repeat_arroba:
 						goto fuji;
 					}
 				} else {
-					R_LOG_ERROR ("Unknown envvar @%");
+					R_LOG_ERROR ("Unknown envvar @%%");
 				}
 				free (n);
 			}

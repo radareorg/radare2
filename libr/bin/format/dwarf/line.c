@@ -167,7 +167,7 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 		if (i == 0) {
 			hdr->file_names = calloc (sizeof (file_entry), count);
 			if (!hdr->file_names) {
-				R_LOG_ERROR ("Cannot calloc %d", count);
+				R_LOG_ERROR ("Cannot calloc %" PFMTSZu, count);
 				break;
 			}
 			hdr->file_names_count = count;
@@ -271,7 +271,7 @@ static const ut8 *ut64_form_value(RBin *bin, entry_descriptor desc, const ut8 *b
 		buf += 8;
 		return buf;
 	default:
-		R_LOG_DEBUG ("Expected data form but got: %#x", desc.form);
+		R_LOG_DEBUG ("Expected data form but got: %#" PFMT64x, desc.form);
 		return NULL;
 	}
 }
@@ -314,14 +314,14 @@ static const ut8 *str_form_value(RBinFile *bf, entry_descriptor desc, const ut8 
 		buf += slen + 1;
 		return buf;
 	default:
-		R_LOG_DEBUG ("Expected form type string but got: %#x", desc.form);
+		R_LOG_DEBUG ("Expected form type string but got: %#" PFMT64x, desc.form);
 		return NULL;
 	}
 }
 
 static const ut8 *data16_form_value(entry_descriptor desc, const ut8 *buf, const ut8 *buf_end, ut8 val[16]) {
 	if (desc.form != DW_FORM_data16 || buf + 16 >= buf_end) {
-		R_LOG_DEBUG ("Expected form type data16 but got: %#x", desc.form);
+		R_LOG_DEBUG ("Expected form type data16 but got: %#" PFMT64x, desc.form);
 		return NULL;
 	}
 	memcpy (val, buf, 16);
@@ -371,13 +371,13 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 				case DW_LNCT_path:
 					buf = str_form_value (bf, desc, buf, buf_end, hdr->is_64bit, &name);
 					if (buf == NULL || name == NULL) {
-						R_LOG_DEBUG ("Invalid description (%#x) for directory %d %d", desc.form, i, ndir_entry);
+						R_LOG_DEBUG ("Invalid description (%#" PFMT64x ") for directory %" PFMT64u " %" PFMT64u, desc.form, i, ndir_entry);
 						return NULL;
 					}
 					add_sdb_include_dir (s, name, i);
 					break;
 				default:
-					R_LOG_DEBUG ("Invalid description type (%#x)", desc.type);
+					R_LOG_DEBUG ("Invalid description type (%#" PFMT64x ")", desc.type);
 					// TODO: Skip this value instead of failing?
 					return NULL;
 				}
@@ -432,7 +432,7 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 			case DW_LNCT_path:
 				buf = str_form_value (bf, desc, buf, buf_end, hdr->is_64bit, &name);
 				if (buf == NULL || name == NULL) {
-					R_LOG_DEBUG ("Invalid description (%#x) for file path", desc.form);
+					R_LOG_DEBUG ("Invalid description (%#" PFMT64x ") for file path", desc.form);
 					return NULL;
 				}
 				file->name = strdup (name);
@@ -440,7 +440,7 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 			case DW_LNCT_timestamp:
 				buf = ut64_form_value (bin, desc, buf, buf_end, &data);
 				if (buf == NULL) {
-					R_LOG_DEBUG ("Invalid description (%#x,%#x) for file timestamp", desc.type, desc.form);
+					R_LOG_DEBUG ("Invalid description (%#" PFMT64x ",%#" PFMT64x ") for file timestamp", desc.type, desc.form);
 					return NULL;
 				}
 				file->mod_time = data;
@@ -448,7 +448,7 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 			case DW_LNCT_directory_index:
 				buf = ut64_form_value (bin, desc, buf, buf_end, &data);
 				if (buf == NULL) {
-					R_LOG_DEBUG ("Invalid description (%#x,%#x) for file dir index", desc.type, desc.form);
+					R_LOG_DEBUG ("Invalid description (%#" PFMT64x ",%#" PFMT64x ") for file dir index", desc.type, desc.form);
 					return NULL;
 				}
 				if (file->name == NULL) {
@@ -488,7 +488,7 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 			case DW_LNCT_size:
 				buf = ut64_form_value (bin, desc, buf, buf_end, &data);
 				if (buf == NULL) {
-					R_LOG_DEBUG ("Invalid description (%#x,%#x) for file size", desc.type, desc.form);
+					R_LOG_DEBUG ("Invalid description (%#" PFMT64x ",%#" PFMT64x ") for file size", desc.type, desc.form);
 					return NULL;
 				}
 				file->file_len = data;
@@ -496,13 +496,13 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 			case DW_LNCT_MD5:
 				buf = data16_form_value (desc, buf, buf_end, file->md5sum);
 				if (buf == NULL) {
-					R_LOG_DEBUG ("Invalid description (%#x,%#x) for file checksum", desc.type, desc.form);
+					R_LOG_DEBUG ("Invalid description (%#" PFMT64x ",%#" PFMT64x ") for file checksum", desc.type, desc.form);
 					return NULL;
 				}
 				file->has_checksum = true;
 				break;
 			default:
-				R_LOG_DEBUG ("Invalid or unsupported DW line number content type %#x", desc.type);
+				R_LOG_DEBUG ("Invalid or unsupported DW line number content type %#" PFMT64x, desc.type);
 				return NULL;
 			}
 		}

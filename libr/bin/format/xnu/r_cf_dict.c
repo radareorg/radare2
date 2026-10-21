@@ -121,7 +121,7 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 
 		RXmlRet r = r_xml_parse (x, doc);
 		if (r < 0) {
-			R_LOG_ERROR ("Parse at :%08" PFMT64d ":%" PFMT64d " byte offset %" PFMT64d, x->line, x->byte, x->total);
+			R_LOG_ERROR ("Parse at :%08u:%" PFMT64d " byte offset %" PFMT64d, x->line, x->byte, x->total);
 			goto beach;
 		}
 
@@ -231,7 +231,7 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 				if (idlist && state->idstate == R_CF_ID_STATE_REF) {
 					value = r_list_get_n (idlist, (int)state->id);
 					if (!value) {
-						R_LOG_ERROR ("Missing value for IDREF %"PFMT64d, state->id);
+						R_LOG_ERROR ("Missing value for IDREF %u", state->id);
 						goto beach;
 					}
 					if (state->phase == R_CF_STATE_IN_DICT) {
@@ -299,7 +299,7 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 						if (value) {
 							r_list_insert (idlist, state->id, value);
 						} else {
-							R_LOG_WARN ("Missing value for ID %"PFMT64d, state->id);
+							R_LOG_WARN ("Missing value for ID %u", state->id);
 						}
 					}
 				}

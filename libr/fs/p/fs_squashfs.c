@@ -46,12 +46,12 @@ static int fs_sqsh_mapper_map(const struct SqshMapper *mapper, sqsh_index_t offs
 
 	ut8 *buf = calloc (size, 1);
 	if (!buf) {
-		R_LOG_ERROR ("cannot allocate %d bytes", size);
+		R_LOG_ERROR ("cannot allocate %" PFMTSZu " bytes", size);
 		return -1;
 	}
 	int res = root->iob.read_at (root->iob.io, offset, buf, size);
 	if (res != size) {
-		R_LOG_ERROR ("cannot allocate %d bytes", size);
+		R_LOG_ERROR ("cannot allocate %" PFMTSZu " bytes", size);
 		free (buf);
 		return -1;
 	}

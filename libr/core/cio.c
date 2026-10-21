@@ -272,21 +272,21 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 				switch (numsize) {
 				case 1:
 					if (n > UT8_MAX) {
-						R_LOG_ERROR ("%d doesnt fit in ut8.max", n);
+						R_LOG_ERROR ("%" PFMT64u " doesnt fit in ut8.max", n);
 						goto beach;
 					}
 					str[0] = n;
 					break;
 				case 2:
 					if (n > UT16_MAX) {
-						R_LOG_ERROR ("%d doesnt fit in ut16.max", n);
+						R_LOG_ERROR ("%" PFMT64u " doesnt fit in ut16.max", n);
 						goto beach;
 					}
 					r_write_ble16 (str, n, be);
 					break;
 				case 4:
 					if (n > UT32_MAX) {
-						R_LOG_ERROR ("%d doesnt fit in ut32.max", n);
+						R_LOG_ERROR ("%" PFMT64u " doesnt fit in ut32.max", n);
 						goto beach;
 					}
 					r_write_ble32 (str, n, be);

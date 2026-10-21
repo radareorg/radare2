@@ -4666,15 +4666,15 @@ static bool parse_pt_dynamic(RBinFile *bf, RBinSection *ptr) {
 		}
 		switch (entry.d_tag) {
 		case DT_RELR:
-			R_LOG_DEBUG ("RELR section found at 0x%08"PFMT64x, entry.d_un.d_ptr);
+			R_LOG_DEBUG ("RELR section found at 0x%08"PFMT64x, (ut64)entry.d_un.d_ptr);
 			eo->dyn_info.dt_relr = dyn_link_ptr (eo, entry.d_tag, entry.d_un.d_ptr);
 			break;
 		case DT_RELRSZ:
-			R_LOG_DEBUG ("RELR section size: 0x%08"PFMT64x, entry.d_un.d_val);
+			R_LOG_DEBUG ("RELR section size: 0x%08"PFMT64x, (ut64)entry.d_un.d_val);
 			eo->dyn_info.dt_relrsz = entry.d_un.d_val;
 			break;
 		case DT_RELRENT:
-			R_LOG_DEBUG ("RELR entry size: 0x%08"PFMT64x, entry.d_un.d_val);
+			R_LOG_DEBUG ("RELR entry size: 0x%08"PFMT64x, (ut64)entry.d_un.d_val);
 			eo->dyn_info.dt_relrent = entry.d_un.d_val;
 			break;
 		// the last value of a repeated tag wins, like in the dynamic linker
@@ -4697,7 +4697,7 @@ static bool parse_pt_dynamic(RBinFile *bf, RBinSection *ptr) {
 			preinit_size = entry.d_un.d_val;
 			break;
 		default:
-			R_LOG_DEBUG ("add dt.dyn.entry tag=%d value=0x%08"PFMT64x, entry.d_tag, (ut64)entry.d_un.d_val);
+			R_LOG_DEBUG ("add dt.dyn.entry tag=%" PFMT64d " value=0x%08"PFMT64x, (st64)entry.d_tag, (ut64)entry.d_un.d_val);
 			break;
 		}
 	}

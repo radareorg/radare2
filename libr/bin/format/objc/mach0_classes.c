@@ -74,7 +74,7 @@ static bool adjust_bounds(RBinFile *bf, MetaSection *ms, const char *sname) {
 		return false;
 	}
 	if (ms->addr + ms->size >= bf->size) {
-		R_LOG_DEBUG ("Truncating swift5.fieldmd section", sname);
+		R_LOG_DEBUG ("Truncating %s section", sname);
 		ms->size = bf->size - ms->addr;
 	}
 	return true;
