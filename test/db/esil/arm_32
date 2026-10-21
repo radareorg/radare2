@@ -3762,3 +3762,19 @@ EXPECT=<<EOF
 0x00000004 0,$
 EOF
 RUN
+
+NAME=arm32 bfc bfi conditional esil
+FILE=malloc://16
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 1f00c7071f00cfe71100c707
+aoe 1
+aoe 1 @ 4
+aoe 1 @ 8
+EOF
+EXPECT=<<EOF
+0x00000000 zf,?{,18446744073709551360,r0,&,0xffffffff,&,r0,=,}
+0x00000004 18446744073709486080,r0,&,0xffffffff,&,r0,=
+0x00000008 zf,?{,18446744073709551360,r0,&,0,255,r1,&,<<,|,0xffffffff,&,r0,=,}
+EOF
+RUN

@@ -2983,7 +2983,7 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 		}
 		break;
 	case ARM_INS_UDF:
-		r_strbuf_setf (&op->esil, "%s,TRAP", ARG (0));
+		r_strbuf_appendf (&op->esil, "%s,TRAP", ARG (0));
 		break;
 	case ARM_INS_SADD16:
 	case ARM_INS_SADD8:
@@ -3088,7 +3088,7 @@ PUSH { r4, r5, r6, r7, lr }
 
 20,sp,-=,r4,sp,=[4],r5,sp,4,+,=[4],r6,sp,8,+,=[4],r7,sp,12,+,=[4],lr,sp,16,+,=[4]
 #endif
-		r_strbuf_setf (&op->esil, "%d,sp,-=,%s,sp,=[4]", insn->detail->arm.op_count * 4, REG (0));
+		r_strbuf_appendf (&op->esil, "%d,sp,-=,%s,sp,=[4]", insn->detail->arm.op_count * 4, REG (0));
 		for (i = 1; i < insn->detail->arm.op_count; i++) {
 			r_strbuf_appendf (&op->esil, ",%s,sp,%d,+,=[4]", REG (i), i * 4);
 		}
@@ -3716,7 +3716,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			ut64 shift = IMM(2);
 			ut64 notmask = ~(mask << shift);
 			// notmask,dst,&,lsb,mask,src,&,<<,|,dst,=
-			r_strbuf_setf (&op->esil, "%"PFMT64u",%s,&,%"PFMT64u",%"PFMT64u",%s,&,<<,|,0xffffffff,&,%s,=",
+			r_strbuf_appendf (&op->esil, "%"PFMT64u",%s,&,%"PFMT64u",%"PFMT64u",%s,&,<<,|,0xffffffff,&,%s,=",
 				notmask, REG(0), shift, mask, REG(1), REG(0));
 		}
 		break;
@@ -3732,7 +3732,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			ut64 shift = IMM(1);
 			ut64 notmask = ~(mask << shift);
 			// notmask,dst,&,dst,=
-			r_strbuf_setf (&op->esil, "%"PFMT64u",%s,&,0xffffffff,&,%s,=",
+			r_strbuf_appendf (&op->esil, "%"PFMT64u",%s,&,0xffffffff,&,%s,=",
 				notmask, REG(0), REG(0));
 		}
 		break;
