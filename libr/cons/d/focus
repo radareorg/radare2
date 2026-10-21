@@ -24,6 +24,7 @@ ec b0xff red
 ec btext yellow
 ec other rgb:666
 ec num rgb:ff0
+ec str rgb:ff0
 ec reg rgb:6f0 rgb:000
 ec fline rgb:fc0
 ec flow rgb:ff3

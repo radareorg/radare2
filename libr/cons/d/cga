@@ -37,6 +37,7 @@ ec cmp rgb:0ff
 ec reg rgb:f0f
 ec creg rgb:f0f
 ec num rgb:0ff
+ec str rgb:0ff
 ec help rgb:0ff
 ec trap rgb:000 rgb:f0f
 ec ucall rgb:f0f

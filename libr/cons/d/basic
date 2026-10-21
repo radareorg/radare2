@@ -27,6 +27,7 @@ ec push cyan
 ec reg yellow
 ec creg yellow
 ec num cyan
+ec str cyan
 ec invalid red
 ec swi cyan
 ec cmp white

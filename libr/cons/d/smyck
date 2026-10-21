@@ -16,6 +16,7 @@ ec comment rgb:9df
 ec usrcmt rgb:9f4
 ec ret rgb:d66
 ec num rgb:bb5
+ec str rgb:bb5
 ec fline rgb:2bc
 ec flow rgb:888
 ec flow2 rgb:ddd

@@ -34,6 +34,7 @@ ec cmp rgb:a7f
 ec reg rgb:f5d
 ec creg rgb:f5d
 ec num rgb:72d
+ec str rgb:72d
 ec crypto rgb:75d
 ec linehl rgb:fdf
 ec graph.true rgb:f5d

@@ -26,6 +26,7 @@ ec math rgb:cad3f5 # Gray
 ec mov rgb:f4dbd6 # Rosewater
 ec nop rgb:7dc4e4 # Sapphire
 ec num rgb:f5a97f # Peach
+ec str rgb:f5a97f
 ec addr rgb:8aadf4 # Blue
 ec other rgb:cad3f5 # Gray
 ec pop rgb:8bd5ca # Teal

@@ -37,6 +37,7 @@ ec cmp cyan
 ec reg rgb:f0f0f0
 ec creg yellow
 ec num yellow black
+ec str yellow
 ec mov rgb:d0d0d0
 ec var white
 ec var.type yellow

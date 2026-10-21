@@ -26,6 +26,7 @@ ec creg blue
 ec trap red
 ec swi green
 ec num blue
+ec str blue
 ec b0x7f gray
 ec b0xff red
 ec b0x00 rgb:777

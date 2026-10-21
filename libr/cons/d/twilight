@@ -29,6 +29,7 @@ ec invalid rgb:c64
 ec mov rgb:aaa
 ec nop rgb:445
 ec num rgb:aaa
+ec str rgb:aaa
 ec addr rgb:788
 ec pop rgb:bb7
 ec prompt rgb:788

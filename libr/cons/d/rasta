@@ -32,6 +32,7 @@ ec swi red
 ec cmp yellow
 ec reg green
 ec num red
+ec str red
 ec mov yellow
 ec crypto yellow
 ec args green

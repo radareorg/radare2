@@ -13,6 +13,7 @@ ec comment rgb:82607e
 ec usrcmt rgb:f3c5ff
 ec ret rgb:ffaa7f
 ec num rgb:d25032
+ec str rgb:d25032
 ec fline rgb:2bc
 ec flow rgb:00b1ab
 ec flow2 rgb:ddd

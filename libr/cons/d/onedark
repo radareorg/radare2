@@ -26,6 +26,7 @@ ec pop rgb:61afef
 ec cmp rgb:060
 ec nop rgb:abb2bf
 ec num rgb:be5046
+ec str rgb:be5046
 ec reg rgb:e5c07b
 ec fline rgb:fc0
 ec flow rgb:98c379

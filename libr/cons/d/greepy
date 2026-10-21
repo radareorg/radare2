@@ -25,6 +25,7 @@ ec math rgb:fff
 ec mov rgb:fff
 ec nop rgb:fff
 ec num rgb:0f0
+ec str rgb:0f0
 ec addr rgb:0f0
 ec other rgb:999
 ec pop rgb:999

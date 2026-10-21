@@ -38,6 +38,7 @@ ec cmp rgb:aaa
 ec reg rgb:3cf
 ec creg rgb:09f
 ec num white
+ec str white
 ec mov rgb:99a
 ec ai.read rgb:e33
 ec ai.write rgb:33e

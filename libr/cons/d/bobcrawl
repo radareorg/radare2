@@ -36,6 +36,7 @@ ec cmp rgb:d75f00
 ec reg rgb:73adad
 ec creg rgb:73adad
 ec num rgb:d25032
+ec str rgb:d25032
 ec mov rgb:ebebeb
 ec linehl rgb:00003f
 ec ai.read rgb:00ff00

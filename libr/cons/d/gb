@@ -37,6 +37,7 @@ ec trap rgb:86c06c
 ec reg rgb:e0f8cf
 ec creg rgb:e8f8cf
 ec num rgb:e0f8cf
+ec str rgb:e0f8cf
 ec help rgb:e0f8cf
 ec trap rgb:000 rgb:86c06c
 ec ucall rgb:86c06c
