@@ -365,6 +365,26 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 			}
 		}
 		r_strbuf_append (strbuf, " (");
+		RBinDwarfAttrValue *prototyped = r_bin_dwarf_die_find_attr (unit, die, DW_AT_prototyped);
+		bool prototype_known = prototyped && prototyped->flag;
+		const RBinDwarfDie *cu_die = RVecDwarfDie_at (unit->dies, 0);
+		RBinDwarfAttrValue *language = cu_die? r_bin_dwarf_die_find_attr (unit, cu_die, DW_AT_language): NULL;
+		if (language) {
+			switch (language->uconstant) {
+			case DW_LANG_C_plus_plus:
+			case DW_LANG_C_plus_plus_03:
+			case DW_LANG_C_plus_plus_11:
+			case DW_LANG_C_plus_plus_14:
+			case DW_LANG_C_plus_plus_17:
+			case DW_LANG_C_plus_plus_20:
+			case DW_LANG_C_plus_plus_23:
+			case DW_LANG_ObjC_plus_plus:
+				prototype_known = true;
+				break;
+			default:
+				break;
+			}
+		}
 		bool first_parameter = true;
 		if (die->has_children) {
 			int depth = 1;
@@ -373,6 +393,14 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 			for (j = (size_t)(die - unit->dies->_start) + 1; depth > 0 && j < count; j++) {
 				const RBinDwarfDie *child = RVecDwarfDie_at (unit->dies, j);
 				if (depth == 1 && (child->tag == DW_TAG_formal_parameter || child->tag == DW_TAG_unspecified_parameters)) {
+					// A lone unspecified child also represents an old C declaration with unknown arity.
+					if (child->tag == DW_TAG_unspecified_parameters && first_parameter && !prototype_known) {
+						if (child->has_children) {
+							result = -1;
+							goto cleanup;
+						}
+						continue;
+					}
 					if (!first_parameter) {
 						r_strbuf_append (strbuf, ", ");
 					}
@@ -403,11 +431,8 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 				goto cleanup;
 			}
 		}
-		if (first_parameter) {
-			RBinDwarfAttrValue *prototyped = r_bin_dwarf_die_find_attr (unit, die, DW_AT_prototyped);
-			if (prototyped && prototyped->flag) {
-				r_strbuf_append (strbuf, "void");
-			}
+		if (first_parameter && prototype_known) {
+			r_strbuf_append (strbuf, "void");
 		}
 		r_strbuf_append (strbuf, ")");
 		break;

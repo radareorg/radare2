@@ -554,6 +554,8 @@ extern "C" {
 #define DW_LANG_C99                     0x000c
 #define DW_LANG_Ada95                   0x000d
 #define DW_LANG_Fortran95               0x000e
+#define DW_LANG_C_plus_plus_03          0x0019
+#define DW_LANG_C_plus_plus_11          0x001a
 #define DW_LANG_PLI                     0x000f
 #define DW_LANG_ObjC                    0x0010
 #define DW_LANG_ObjC_plus_plus          0x0011
