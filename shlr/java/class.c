@@ -504,6 +504,10 @@ static RBinJavaRefMetas R_BIN_JAVA_REF_METAS[] = {
 	{ "InvokeInterface", R_BIN_JAVA_REF_INVOKEINTERFACE }
 };
 
+static const char *ref_kind_name(ut8 kind) {
+	return R_BIN_JAVA_REF_METAS[kind < R_ARRAY_SIZE (R_BIN_JAVA_REF_METAS)? kind: 0].name;
+}
+
 static RBinJavaElementValueMetas R_BIN_JAVA_ELEMENT_VALUE_METAS[] = {
 	{ "Byte", R_BIN_JAVA_EV_TAG_BYTE, NULL },
 	{ "Char", R_BIN_JAVA_EV_TAG_CHAR, NULL },
@@ -5436,17 +5440,16 @@ static void r_bin_java_print_methodhandle_cp_summary(RBinJavaCPTypeObj *obj) {
 	ut8 ref_kind = obj->info.cp_method_handle.reference_kind;
 	eprintf ("MethodHandle ConstantPool Type (%d) ", obj->metas->ord);
 	eprintf ("	Offset: 0x%08" PFMT64x "", obj->file_offset);
-	eprintf ("	Reference Kind = (0x%02x) %s\n", ref_kind, R_BIN_JAVA_REF_METAS[ref_kind].name);
+	eprintf ("	Reference Kind = (0x%02x) %s\n", ref_kind, ref_kind_name (ref_kind));
 	eprintf ("	Reference Index = %d\n", obj->info.cp_method_handle.reference_index);
 }
 
 static char *r_bin_java_print_methodhandle_cp_stringify(RBinJavaCPTypeObj *obj) {
-	ut8 ref_kind = obj->info.cp_method_handle.reference_kind;
 	return r_str_newf ("%d.0x%04" PFMT64x ".%s.%s.%d",
 		obj->metas->ord,
 		obj->file_offset + obj->loadaddr,
 		((RBinJavaCPTypeMetas *)obj->metas->type_info)->name,
-		R_BIN_JAVA_REF_METAS[ref_kind].name,
+		ref_kind_name (obj->info.cp_method_handle.reference_kind),
 		obj->info.cp_method_handle.reference_index);
 }
 
