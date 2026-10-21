@@ -3504,8 +3504,9 @@ static bool io_create_mem_map(RIO *io, RBinSection *sec, ut64 at, ut64 gap) {
 		return false;
 	}
 	// let the section refere to the map as a memory-map
-	free (map->name);
-	map->name = r_str_newf ("mmap.%s", sec->name);
+	char *map_name = r_str_newf ("mmap.%s", sec->name);
+	r_io_map_set_name (map, map_name);
+	free (map_name);
 	return true;
 }
 
@@ -3513,8 +3514,9 @@ static void add_section(RCore *core, RBinSection *sec, ut64 addr, int fd) {
 	if (sec->backing_fd > 0) {
 		RIOMap *map = r_io_map_add (core->io, sec->backing_fd, R_PERM_RWX, 0LL, addr, sec->vsize);
 		if (map) {
-			free (map->name);
-			map->name = r_str_newf ("unpack.%s", sec->name);
+			char *map_name = r_str_newf ("unpack.%s", sec->name);
+			r_io_map_set_name (map, map_name);
+			free (map_name);
 		} else {
 			R_LOG_ERROR ("map failed!");
 		}
@@ -3555,11 +3557,9 @@ static void add_section(RCore *core, RBinSection *sec, ut64 addr, int fd) {
 	}
 	RIOMap *map = r_io_map_add (core->io, fd, perm, sec->paddr, addr, size);
 	if (map) {
-		free (map->name);
-		map->name = map_name;
-	} else {
-		free (map_name);
+		r_io_map_set_name (map, map_name);
 	}
+	free (map_name);
 }
 
 struct io_bin_section_info_t {

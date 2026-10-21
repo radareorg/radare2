@@ -393,7 +393,8 @@ R_API void r_io_map_fini(RIO* io) {
 R_API void r_io_map_set_name(RIOMap* map, const char* name) {
 	R_RETURN_IF_FAIL (map && name);
 	free (map->name);
-	map->name = strdup (name);
+	// map names are replayed as commands by om*, keep r2 syntax out of them
+	map->name = r_str_sanitize_r2 (name);
 }
 
 R_API void r_io_map_del_name(RIOMap* map) {

@@ -242,3 +242,16 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=map names cannot carry commands into om* and om**
+FILE=-
+CMDS=<<EOF
+'omn 0 a;s 1#`x`
+om*
+om**
+EOF
+EXPECT=<<EOF
+omu 3 0x00000000 0x00000200 0x00000000 rwx a_s 1__x_
+f iomap.a_s 1__x_=0x0
+EOF
+RUN
