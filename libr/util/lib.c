@@ -570,7 +570,7 @@ R_API bool r_lib_add_handler(RLib *lib, int type, const char *desc, RLibCallback
 	R_RETURN_VAL_IF_FAIL (lib && desc, false);
 	RLibHandler *handler = NULL;
 	if (lib->handlers_bytype[type]) {
-		R_LOG_DEBUG ("Redefining library handler constructor for %s (%d)", type, r_lib_type_tostring (type));
+		R_LOG_DEBUG ("Redefining library handler constructor for %s (%d)", r_lib_type_tostring (type), type);
 		handler = lib->handlers_bytype[type];
 	}
 	if (!handler) {

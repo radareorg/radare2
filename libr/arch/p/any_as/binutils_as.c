@@ -8,7 +8,7 @@ int binutils_assemble(RArchSession *arch, RAnalOp *op, const char *buf, const ch
 		as = user_as;
 	}
 	if (R_STR_ISEMPTY (as)) {
-		R_LOG_ERROR ("Please set %s env to define a %s assembler program", env, arch->arch);
+		R_LOG_ERROR ("Please set %s env to define a %s assembler program", env, arch->config->arch);
 		return 1;
 	}
 
