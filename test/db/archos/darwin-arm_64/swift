@@ -1,18 +1,18 @@
 NAME=swift demangling trylib false
 FILE=-
 CMDS=<<EOF
-%RABIN2_SWIFTLIB=0
+%RABIN2_DEMANGLE_TRYLIB=0
 !!rabin2 -D swift _TFC4test7MyClass9calculatefS0_FT1xSi_Si
 EOF
 EXPECT=<<EOF
-test.MyClass.calculate (self) -> (): , ) ()...i
+test.MyClass.calculate (self) -> (): , ) (__...i)
 EOF
 RUN
 
 NAME=swift demangling trylib true
 FILE=-
 CMDS=<<EOF
-%RABIN2_SWIFTLIB=1
+%RABIN2_DEMANGLE_TRYLIB=1
 !!rabin2 -D swift _TFC4test7MyClass9calculatefS0_FT1xSi_Si
 EOF
 EXPECT=<<EOF
@@ -27,7 +27,7 @@ CMDS=<<EOF
 iD swift _TFC4test7MyClass9calculatefS0_FT1xSi_Si
 EOF
 EXPECT=<<EOF
-test.MyClass.calculate (self) -> (): , ) ()...i
+test.MyClass.calculate (self) -> (): , ) (__...i)
 EOF
 RUN
 
