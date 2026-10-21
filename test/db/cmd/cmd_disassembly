@@ -326,3 +326,48 @@ EXPECT=<<EOF
        |    0x00000019                    8b 10  mov edx, dword [eax]
 EOF
 RUN
+
+NAME=asm.sub.tail rewrites numbers relative to the current address
+FILE=malloc://0x10000
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+s 0x1000
+wx b834120000b800100000e8f60f0000
+e asm.sub.tail=true
+pi 3
+EOF
+EXPECT=<<EOF
+mov eax, ..234
+mov eax, ..0
+call ..2005
+EOF
+RUN
+
+NAME=asm.sub.tail with rewrites longer than the numbers
+FILE=hex://03f30d0a000000006300000000000000000100000040000000730400000064000053280100000073400000003939392039393920393939203939392039393920393939203939392039393920393939203939392039393920393939203939392039393920393939203939392028000000002800000000280000000028000000007304000000612e707973080000003c6d6f64756c653e010000007300000000
+CMDS=<<EOF
+e asm.sub.tail=true
+pi 1
+EOF
+EXPECT=<<EOF
+load_const '999 ..3e7 ..3e7 ..3e7 ..3e7 ..3e7 ..3e7 ..3e7 ..3e7 ..3e7 ..3e7 ..3e7 ..3e7 ..3e7 ..3e7 ..3e7 '
+EOF
+RUN
+
+NAME=asm.sub.reg replaces registers with their role names
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.sub.reg=true
+e asm.bytes=false
+e asm.addr=false
+wx 4889e5488b4508
+pd 2
+EOF
+EXPECT=<<EOF
+                 mov BP, SP
+                 mov R0, qword [BP + 8]
+EOF
+RUN

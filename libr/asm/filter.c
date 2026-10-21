@@ -26,24 +26,6 @@ static bool isvalidflag(RFlagItem *flag) {
 	return false;
 }
 
-static char *findEnd(const char *s) {
-	while (*s == 'x' || IS_HEXCHAR (*s)) {
-		s++;
-		// also skip ansi escape codes here :?
-	}
-	return strdup (s);
-}
-
-// replace the number at dst in place, only when src fits in its digits
-static void insert(char *dst, const char *src) {
-	char *endNum = findEnd (dst);
-	if (strlen (src) <= strlen (dst) - strlen (endNum)) {
-		strcpy (dst, src);
-		strcpy (dst + strlen (src), endNum);
-	}
-	free (endNum);
-}
-
 static char *replace_number_token(char *data, char *num_start, char *num_end, const char *value) {
 	char old = *num_start;
 	*num_start = 0;
@@ -444,18 +426,19 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 					free (hdata);
 					return str;
 				}
-				if (p->subtail) { //  && off > UT32_MAX && addr > UT32_MAX)
-					if (off != UT64_MAX) {
-						if (off == addr) {
-							insert (ptr, "$$");
-						} else {
-							ut64 tail = r_num_tail_base (NULL, addr, off);
-							if (tail != UT64_MAX) {
-								char str[128];
-								snprintf (str, sizeof (str), "..%" PFMT64x, tail);
-								insert (ptr, str);
-							}
+				if (p->subtail && off != UT64_MAX) {
+					ut64 tail = (off == addr)? 0: r_num_tail_base (NULL, addr, off);
+					if (tail != UT64_MAX) {
+						char *num = (off == addr)? strdup ("$$"): r_str_newf ("..%" PFMT64x, tail);
+						const size_t at = ptr - hdata;
+						char *res = replace_number_token (hdata, ptr, ptr2, num);
+						if (res) {
+							free (hdata);
+							hdata = res;
+							ptr = hdata + at;
+							ptr2 = ptr + strlen (num);
 						}
+						free (num);
 					}
 				}
 			}
@@ -656,8 +639,7 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 		}
 		ptr = ptr2;
 	}
-	free (hdata);
-	return NULL;
+	return hdata;
 }
 
 static char *apply_camel_syntax(const char *str) {
