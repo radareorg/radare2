@@ -62,14 +62,14 @@ static int name_utf8_size(const char *s) {
 	return size > 1 && ch >= 0xa0 && ch != 0x2028 && ch != 0x2029? size: 0;
 }
 
-R_API bool r_name_check(const char *s) {
+R_API bool r_name_check_utf8(const char *s, bool utf8) {
 	R_RETURN_VAL_IF_FAIL (s, false);
-	int size = name_utf8_size (s);
+	int size = utf8? name_utf8_size (s): 0;
 	if (!size && !r_name_validate_first (*s)) {
 		return false;
 	}
 	for (s += size? size: 1; *s; s++) {
-		if ((ut8)*s >= 0x80 && (size = name_utf8_size (s))) {
+		if (utf8 && (ut8)*s >= 0x80 && (size = name_utf8_size (s))) {
 			s += size - 1;
 			continue;
 		}
@@ -78,6 +78,10 @@ R_API bool r_name_check(const char *s) {
 		}
 	}
 	return true;
+}
+
+R_API bool r_name_check(const char *s) {
+	return r_name_check_utf8 (s, false);
 }
 
 static inline bool is_special_char(char n) {
@@ -91,7 +95,7 @@ R_API const char *r_name_filter_ro(const char *a) {
 	return a - 1;
 }
 
-R_API bool r_name_filter(char *s, int maxlen) {
+R_API bool r_name_filter_utf8(char *s, int maxlen, bool utf8) {
 	R_RETURN_VAL_IF_FAIL (s, false);
 	if (R_STR_ISEMPTY (s)) {
 		return false;
@@ -101,7 +105,7 @@ R_API bool r_name_filter(char *s, int maxlen) {
 	if (!*s) {
 		return false;
 	}
-	int size = name_utf8_size (s);
+	int size = utf8? name_utf8_size (s): 0;
 	bool valid = size || r_name_validate_first (*s);
 	if (!valid) {
 		*s = '_';
@@ -113,7 +117,7 @@ R_API bool r_name_filter(char *s, int maxlen) {
 			valid = false;
 			break;
 		}
-		if ((ut8)*s >= 0x80 && (size = name_utf8_size (s))) {
+		if (utf8 && (ut8)*s >= 0x80 && (size = name_utf8_size (s))) {
 			memmove (out, s, size);
 			out += size;
 			s += size - 1;
@@ -128,6 +132,10 @@ R_API bool r_name_filter(char *s, int maxlen) {
 	}
 	*out = 0;
 	return valid;
+}
+
+R_API bool r_name_filter(char *s, int maxlen) {
+	return r_name_filter_utf8 (s, maxlen, false);
 }
 
 R_API char *r_name_filter_dup(const char *name) {

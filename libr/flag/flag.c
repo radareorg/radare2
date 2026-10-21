@@ -14,10 +14,8 @@ R_LIB_VERSION (r_flag);
 static bool flag_count_foreach(RFlagItem *fi, void *user);
 
 typedef struct r_flag_filtered_name_t {
-	const char *original;
 	const char *name;
 	char *heap;
-	bool filtered;
 	char stack[FLAG_NAME_STACK_BUFSZ];
 } RFlagFilteredName;
 
@@ -228,13 +226,11 @@ static RFlagsAtOffset *flags_at_addr(RFlag *f, ut64 addr) {
 	return res;
 }
 
-static bool filter_item_name(RFlagFilteredName *filtered, const char * R_NONNULL name) {
+static bool filter_item_name(RFlag *f, RFlagFilteredName *filtered, const char * R_NONNULL name) {
 	R_RETURN_VAL_IF_FAIL (filtered && name, false);
-	filtered->original = name;
 	filtered->name = NULL;
 	filtered->heap = NULL;
-	filtered->filtered = false;
-	if (r_name_check (name)) {
+	if (r_name_check_utf8 (name, f->utf8)) {
 		filtered->name = name;
 		return true;
 	}
@@ -251,24 +247,13 @@ static bool filter_item_name(RFlagFilteredName *filtered, const char * R_NONNULL
 		filtered->heap = res;
 	}
 	r_str_trim (res);
-	r_name_filter (res, 0);
+	r_flag_name_filter (f, res);
 	filtered->name = res;
-	filtered->filtered = true;
 	return true;
 }
 
 static void filtered_item_name_fini(RFlagFilteredName *filtered) {
 	free (filtered->heap);
-}
-
-static char *push_filtered_item_name(RFlag *f, const RFlagFilteredName *filtered) {
-	R_RETURN_VAL_IF_FAIL (f && f->names && filtered && filtered->original, NULL);
-	char *pooled = r_arena_push_str (f->names, filtered->original);
-	if (pooled && filtered->filtered) {
-		r_str_trim (pooled);
-		r_name_filter (pooled, 0);
-	}
-	return pooled;
 }
 
 static void set_name(RFlagItem *item, char *pooled_name) {
@@ -303,7 +288,7 @@ static bool set_flag_item_name(RFlag *f, RFlagItem *item, const RFlagFilteredNam
 	if (existing && existing != item) {
 		return false;
 	}
-	char *pooled = push_filtered_item_name (f, fname);
+	char *pooled = r_arena_push_str (f->names, fname->name);
 	if (!pooled) {
 		return false;
 	}
@@ -324,10 +309,10 @@ static bool update_flag_item_name(RFlag *f, RFlagItem *item, const char *newname
 		return false;
 	}
 	RFlagFilteredName fname;
-	if (!filter_item_name (&fname, newname)) {
+	if (!filter_item_name (f, &fname, newname)) {
 		return false;
 	}
-	if (!r_name_check (fname.name)) {
+	if (!r_name_check_utf8 (fname.name, f->utf8)) {
 		filtered_item_name_fini (&fname);
 		return false;
 	}
@@ -1043,11 +1028,11 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 addr, ut32 size) {
 	}
 	bool is_new = false;
 	RFlagFilteredName itemname;
-	if (!filter_item_name (&itemname, name)) {
+	if (!filter_item_name (f, &itemname, name)) {
 		return NULL;
 	}
 	// this should never happen because the name is filtered before..
-	if (!r_name_check (itemname.name)) {
+	if (!r_name_check_utf8 (itemname.name, f->utf8)) {
 		R_LOG_ERROR ("Invalid flag name '%s'", name);
 		filtered_item_name_fini (&itemname);
 		return NULL;

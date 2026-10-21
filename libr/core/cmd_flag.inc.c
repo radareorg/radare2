@@ -1016,6 +1016,17 @@ static int flag_space_stack_list(RCore *core, int mode) {
 	return i;
 }
 
+static char *flag_name_filter_dup(RCore *core, const char *name) {
+	char *filtered = strdup (name);
+	if (filtered) {
+		r_flag_name_filter (core->flags, filtered);
+		if (!*filtered) {
+			R_FREE (filtered);
+		}
+	}
+	return filtered;
+}
+
 typedef struct {
 	RCore *core;
 	int rad;
@@ -1031,7 +1042,7 @@ static bool print_function_labels_cb(void *user, const ut64 addr, const void *v)
 	case '*':
 	case 1:
 		{
-			char *fname = r_name_filter_dup (name);
+			char *fname = flag_name_filter_dup (ctx->core, name);
 			if (fname) {
 				r_cons_printf (cons, "'@0x%08"PFMT64x"'f.%s\n", addr, fname);
 				free (fname);
@@ -1057,7 +1068,7 @@ static void print_flag_color(RCore *core, RFlagItem *fi, bool rad) {
 		return;
 	}
 	if (rad) {
-		char *fname = r_name_filter_dup (fi->name);
+		char *fname = strdup (fi->name);
 		if (fname) {
 			r_cons_printf (core->cons, "'fc %s=%s\n", fname, fim->color);
 			free (fname);
@@ -1336,7 +1347,7 @@ static bool cmd_flag_add(RCore * R_NONNULL core, const char *str, bool addsign) 
 		}
 	}
 	if (addFlag) {
-		if (!r_name_check (cstr)) {
+		if (!r_name_check_utf8 (cstr, core->flags->utf8)) {
 			R_LOG_ERROR ("Invalid flag name '%s'", cstr);
 			return false;
 		}
@@ -2116,7 +2127,7 @@ static int cmd_flag(void *data, const char *input) {
 			r_flag_item_vec_foreach (list, iter, fi) {
 				RFlagItemMeta *fim = r_flag_get_meta (core->flags, fi->id);
 				if (fim && fim->color) {
-					char *fname = r_name_filter_dup (fi->name);
+					char *fname = strdup (fi->name);
 					if (fname) {
 						r_cons_printf (core->cons, "'fc %s=%s\n", fname, fim->color);
 						free (fname);
@@ -2313,7 +2324,7 @@ static int cmd_flag(void *data, const char *input) {
 				switch (mode) {
 				case '*':
 					{
-					char *fname = r_name_filter_dup (item->name);
+					char *fname = strdup (item->name);
 					if (fname) {
 						r_cons_printf (core->cons, "'f %s = 0x%08"PFMT64x"\n", fname, item->addr);
 						free (fname);
@@ -2392,7 +2403,7 @@ static int cmd_flag(void *data, const char *input) {
 		case ' ':
 			{
 				char *orig = r_str_trim_dup (input + 2);
-				char *nfn = r_name_filter_dup (orig);
+				char *nfn = flag_name_filter_dup (core, orig);
 				r_cons_printf (core->cons, "%s\n", nfn);
 				free (nfn);
 				free (orig);
@@ -2401,7 +2412,7 @@ static int cmd_flag(void *data, const char *input) {
 		case '*':
 			if (input[2] == ' ') {
 				char *orig = r_str_trim_dup (input + 3);
-				char *nfn = r_name_filter_dup (orig);
+				char *nfn = flag_name_filter_dup (core, orig);
 				r_cons_printf (core->cons, "f %s\n", nfn);
 				free (nfn);
 				free (orig);
@@ -2412,7 +2423,7 @@ static int cmd_flag(void *data, const char *input) {
 		case '.':
 			if (input[2] == ' ') {
 				char *orig = r_str_trim_dup (input + 3);
-				char *nfn = r_name_filter_dup (orig);
+				char *nfn = flag_name_filter_dup (core, orig);
 				r_flag_set (core->flags, nfn, core->addr, 1);
 				free (nfn);
 				free (orig);
@@ -2423,7 +2434,7 @@ static int cmd_flag(void *data, const char *input) {
 		case 'j':
 			if (input[2] == ' ') {
 				char *orig = r_str_trim_dup (input + 2);
-				char *nfn = r_name_filter_dup (orig);
+				char *nfn = flag_name_filter_dup (core, orig);
 				PJ *pj = r_core_pj_new (core);
 				pj_o (pj);
 				pj_ks (pj, "orig", orig);

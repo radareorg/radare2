@@ -978,6 +978,13 @@ static bool cb_flag_realnames(void *user, void *data) {
 	return true;
 }
 
+static bool cb_flag_utf8(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	core->flags->utf8 = node->i_value;
+	return true;
+}
+
 static bool cb_flag_autospace(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -4280,6 +4287,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETS ("asm.strip", "", "strip all instructions given comma separated types");
 	SETB ("asm.optype", "false", "show opcode type next to the instruction bytes");
 	SETB ("asm.flags", "true", "show flags");
+	SETCB ("asm.flags.utf8", "false", &cb_flag_utf8, "preserve UTF-8 in newly created or renamed flag names");
 	SETB ("asm.flags.prefix", "true", "show ;-- before the flags");
 	SETICB ("asm.flags.maxname", 0, &cb_maxname, "maximum length of flag name with smart chopping");
 	SETI ("asm.flags.limit", 0, "maximum number of flags to show in a single offset");

@@ -25,6 +25,7 @@ bool test_class_name_registration(void) {
 		r_core_cmd0 (core, invalid_commands[i]);
 		mu_assert_eq (r_list_length (r_bin_get_classes (core->bin)), 0, "rejection must not create a class");
 	}
+	mu_assert_false (core->flags->utf8, "ASCII flag representations by default");
 	r_core_cmd0 (core, "ic+🦀");
 	r_core_cmd0 (core, "ic+🦀..café int");
 	r_core_cmd0 (core, "ic+🦀.👩‍💻:");
@@ -34,6 +35,12 @@ bool test_class_name_registration(void) {
 	mu_assert_streq (r_bin_name_tostring (klass->name), "🦀", "preserve class spelling");
 	mu_assert_eq (RVecRBinSymbol_length (&klass->methods), 1, "selector is a method, not a superclass");
 	mu_assert_eq (RVecRBinField_length (&klass->fields), 1, "UTF-8 field");
+	mu_assert_streq (r_bin_name_tostring (RVecRBinSymbol_at (&klass->methods, 0)->name), "👩‍💻:", "preserve symbol spelling with ASCII flags");
+	char *ascii_script = r_core_cmd_str (core, "ic*");
+	mu_assert_notnull (strstr (ascii_script, "'f class._ ="), "filter only the flag representation");
+	mu_assert_notnull (strstr (ascii_script, "'td struct 🦀 { int café;};"), "preserve class and field type names");
+	free (ascii_script);
+	r_config_set_b (core->config, "asm.flags.utf8", true);
 	char *script = r_core_cmd_str (core, "ic*");
 	mu_assert_notnull (script, "export UTF-8 types");
 	char *type_command = strstr (script, "'td struct 🦀 { int café;};");
@@ -69,6 +76,7 @@ bool test_class_imported_name_export(void) {
 	memset (field, 0, sizeof (*field));
 	field->name = r_bin_name_new ("value;}");
 	field->type = r_bin_name_new ("int;};f injected=1");
+	mu_assert_notnull (r_bin_file_add_class (bf, "Bad\nf injected=1\n", "Base\nf injected=1\n", 0), "keep imported class and base newlines");
 	char *script = r_core_cmd_str (core, "ic*");
 	mu_assert_notnull (script, "export class script");
 	mu_assert_null (strstr (script, "Evil;}"), "escape imported class name");

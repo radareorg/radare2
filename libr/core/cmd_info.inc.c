@@ -3217,8 +3217,11 @@ static void cmd_iddlf(RCore *core) {
 		}
 		ut64 addr = sdb_num_getf (dwarf_sdb, NULL, "fcn.%s.addr", key);
 		int size = idd_symbol_size (core, name);
-		bool valid_name = r_name_check (name);
-		char *flagname = valid_name? NULL: r_name_filter_dup (name);
+		bool valid_name = r_name_check_utf8 (name, core->flags->utf8);
+		char *flagname = valid_name? NULL: strdup (name);
+		if (flagname) {
+			r_flag_name_filter (core->flags, flagname);
+		}
 		if (valid_name || flagname) {
 			r_cons_printf (core->cons, "f sym.%s %d @ 0x%" PFMT64x "\n", flagname? flagname: name, size, addr);
 		}

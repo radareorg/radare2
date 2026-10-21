@@ -1010,28 +1010,32 @@ bool test_r_name_utf8(void) {
 	};
 	size_t i;
 	for (i = 0; i < R_ARRAY_SIZE (valid_names); i++) {
-		mu_assert_true (r_name_check (valid_names[i]), "accept UTF-8 name");
+		mu_assert_true (r_name_check_utf8 (valid_names[i], true), "accept UTF-8 name");
 		char *name = strdup (valid_names[i]);
-		mu_assert_true (r_name_filter (name, -1), "UTF-8 name needs no filtering");
+		mu_assert_true (r_name_filter_utf8 (name, -1, true), "UTF-8 name needs no filtering");
 		mu_assert_streq (name, valid_names[i], "preserve UTF-8 bytes");
 		free (name);
 	}
 	for (i = 0; i < R_ARRAY_SIZE (invalid_names); i++) {
-		mu_assert_false (r_name_check (invalid_names[i]), "reject invalid name");
+		mu_assert_false (r_name_check_utf8 (invalid_names[i], true), "reject invalid name");
 		char *name = strdup (invalid_names[i]);
-		mu_assert_false (r_name_filter (name, -1), "filter invalid name");
-		mu_assert ("filtered name is valid or empty", !*name || r_name_check (name));
+		mu_assert_false (r_name_filter_utf8 (name, -1, true), "filter invalid name");
+		mu_assert ("filtered name is valid or empty", !*name || r_name_check_utf8 (name, true));
 		free (name);
 	}
 	char name[] = "🦀\\🚀;x";
-	mu_assert_false (r_name_filter (name, -1), "filter punctuation next to UTF-8");
+	mu_assert_false (r_name_filter_utf8 (name, -1, true), "filter punctuation next to UTF-8");
 	mu_assert_streq (name, "🦀🚀_x", "do not split the preceding UTF-8 sequence");
 	char compact[] = "a+🦀=b\\c\\n";
-	mu_assert_false (r_name_filter (compact, -1), "compact punctuation in place");
+	mu_assert_false (r_name_filter_utf8 (compact, -1, true), "compact punctuation in place");
 	mu_assert_streq (compact, "a🦀bc_n", "preserve UTF-8 and escaped control spelling");
 	char bounded[] = "a+🦀🚀z";
-	mu_assert_false (r_name_filter (bounded, 1), "limit after removed punctuation");
+	mu_assert_false (r_name_filter_utf8 (bounded, 1, true), "limit after removed punctuation");
 	mu_assert_streq (bounded, "a🦀", "truncate at a UTF-8 boundary");
+	mu_assert_false (r_name_check ("名字"), "generic names remain ASCII by default");
+	char ascii[] = "sym.名字";
+	mu_assert_false (r_name_filter (ascii, -1), "generic filter defaults to ASCII");
+	mu_assert_streq (ascii, "sym.", "strip UTF-8 without opt-in");
 	char spaces[] = "   ";
 	mu_assert_false (r_name_filter (spaces, -1), "filter whitespace-only name");
 	mu_assert_streq (spaces, "", "empty after trimming");
