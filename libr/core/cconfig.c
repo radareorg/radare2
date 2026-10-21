@@ -1461,16 +1461,15 @@ static bool cb_cfg_float(void *user, void *data) {
 		bool explicit_leading_bit = atoi (r_list_get_n (list, 5));
 		r_list_free (list);
 		free (dup);
-		// Validate ranges
-		if (sign_bits < 0 || exp_bits < 0 || mant_bits < 0 || sign_bits + exp_bits + mant_bits > 64) {
-			return false;
-		}
 		profile.sign_bits = sign_bits;
 		profile.exp_bits = exp_bits;
 		profile.mant_bits = mant_bits;
 		profile.bias = bias;
 		profile.big_endian = big_endian;
 		profile.explicit_leading_bit = explicit_leading_bit;
+		if (!r_cfloat_profile_valid (&profile) || sign_bits + exp_bits + mant_bits > 64) {
+			return false;
+		}
 	} else {
 		// Check if it's a named profile
 		const RCFloatProfile *p = r_cfloat_profile_from_name (value);
