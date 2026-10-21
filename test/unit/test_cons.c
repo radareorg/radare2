@@ -893,6 +893,28 @@ bool test_cons_less_mouse_scroll(void) {
 	mu_end;
 }
 
+bool test_cons_string_palette_alias(void) {
+	mu_assert_eq (r_offsetof (RConsPalette, str), r_offsetof (RConsPalette, ai_ascii), "color field alias preserves layout");
+	mu_assert_eq (r_offsetof (RConsPrintablePalette, str), r_offsetof (RConsPrintablePalette, ai_ascii), "printable field alias preserves layout");
+	RCons *cons = r_cons_new ();
+	mu_assert_true (r_cons_pal_set (cons, "str", "rgb:123456"), "set string color");
+	RColor color = r_cons_pal_get (cons, "ai.ascii");
+	mu_assert_eq (color.r, 0x12, "legacy key reads red");
+	mu_assert_eq (color.g, 0x34, "legacy key reads green");
+	mu_assert_eq (color.b, 0x56, "legacy key reads blue");
+	mu_assert_true (r_cons_pal_set (cons, "ai.ascii", "rgb:abcdef"), "set legacy string color");
+	color = r_cons_pal_get (cons, "str");
+	mu_assert_eq (color.r, 0xab, "canonical key reads red");
+	mu_assert_eq (color.g, 0xcd, "canonical key reads green");
+	mu_assert_eq (color.b, 0xef, "canonical key reads blue");
+	r_cons_pal_reload (cons);
+	RConsCodeColors codecolors = r_cons_codecolors (cons);
+	mu_assert_ptreq (codecolors.string, cons->context->pal.str, "syntax highlighter uses string color");
+	mu_assert_ptreq (codecolors.string, cons->context->pal.ai_ascii, "legacy printable field shares string color");
+	r_cons_free (cons);
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_cons);
 	mu_run_test (test_cons_to_html);
@@ -920,6 +942,7 @@ bool all_tests(void) {
 	mu_run_test (test_cons_canvas_many_attributes);
 	mu_run_test (test_cons_canvas_print_rows);
 	mu_run_test (test_cons_less_mouse_scroll);
+	mu_run_test (test_cons_string_palette_alias);
 	return tests_passed != tests_run;
 }
 

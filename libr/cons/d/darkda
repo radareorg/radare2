@@ -13,7 +13,6 @@ ec comment rgb:82607e
 ec usrcmt rgb:f3c5ff
 ec ret rgb:ffaa7f
 ec num rgb:d25032
-ec str rgb:d25032
 ec fline rgb:2bc
 ec flow rgb:00b1ab
 ec flow2 rgb:ddd
@@ -59,7 +58,7 @@ ec ai.read rgb:be077e
 ec ai.write rgb:df077e
 ec ai.exec rgb:9dd600
 ec ai.seq rgb:9dd600
-ec ai.ascii rgb:d25032
+ec str rgb:d25032
 
 ec widget.bg rgb:099 rgb:444
 ec widget.sel rgb:000 yellow

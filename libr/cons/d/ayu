@@ -3,7 +3,7 @@ ecd
 ec ai.exec rgb:6d6
 ec ai.read rgb:66d
 ec ai.write rgb:d66
-ec ai.ascii rgb:ffd580
+ec str rgb:ffd580
 ec args rgb:2bc
 ec b0x00 rgb:789
 ec b0x7f rgb:677
@@ -34,7 +34,6 @@ ec linehl rgb:42505e       # highlight color when using asm.highlight
 ec mov white               # mov instructions
 ec nop rgb:a7c             # nop instructions
 ec num rgb:f85             # numbers
-ec str rgb:f85
 ec addr rgb:d74            # offset in visual mode
 ec other rgb:888
 ec prompt rgb:5de          # color for main r2 prompt

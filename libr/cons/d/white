@@ -26,7 +26,6 @@ ec creg blue
 ec trap red
 ec swi green
 ec num blue
-ec str blue
 ec b0x7f gray
 ec b0xff red
 ec b0x00 rgb:777
@@ -57,7 +56,7 @@ ec ai.read magenta
 ec ai.write magenta
 ec ai.exec blue
 ec ai.seq black
-ec ai.ascii black
+ec str black
 
 ec widget.bg blue white
 ec widget.sel black yellow

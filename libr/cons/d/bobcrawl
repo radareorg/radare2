@@ -36,14 +36,13 @@ ec cmp rgb:d75f00
 ec reg rgb:73adad
 ec creg rgb:73adad
 ec num rgb:d25032
-ec str rgb:d25032
 ec mov rgb:ebebeb
 ec linehl rgb:00003f
 ec ai.read rgb:00ff00
 ec ai.write rgb:0000ff
 ec ai.exec rgb:ff0000
 ec ai.seq rgb:ff00ff
-ec ai.ascii rgb:ffff00
+ec str rgb:ffff00
 ec graph.box=rgb:9e9e9e
 ec graph.box2 rgb:5f87d7
 ec graph.box3 rgb:af5f87
@@ -69,7 +68,7 @@ ec ai.read rgb:a55f00
 ec ai.write rgb:d75f00
 ec ai.exec rgb:ff5f87
 ec ai.seq rgb:9dd600
-ec ai.ascii rgb:d25032
+ec str rgb:d25032
 
 ec widget.bg rgb:099 rgb:444
 ec widget.sel rgb:000 yellow

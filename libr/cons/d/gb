@@ -37,7 +37,6 @@ ec trap rgb:86c06c
 ec reg rgb:e0f8cf
 ec creg rgb:e8f8cf
 ec num rgb:e0f8cf
-ec str rgb:e0f8cf
 ec help rgb:e0f8cf
 ec trap rgb:000 rgb:86c06c
 ec ucall rgb:86c06c
@@ -64,7 +63,7 @@ ec ai.read rgb:e0f8cf
 ec ai.write rgb:86c06c
 ec ai.exec rgb:86c06c
 ec ai.seq rgb:86c06c
-ec ai.ascii rgb:86c06c
+ec str rgb:86c06c
 
 ec var rgb:86c06c
 ec var.type rgb:86c06c

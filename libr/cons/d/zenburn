@@ -26,7 +26,6 @@ ec invalid rgb:ff8
 ec mov rgb:cd9
 ec nop rgb:8a8
 ec num rgb:c88
-ec str rgb:c88
 ec addr rgb:aaa
 ec pop rgb:ffc
 ec prompt rgb:d50
@@ -61,7 +60,7 @@ ec ai.read rgb:f87
 ec ai.write rgb:c88
 ec ai.exec rgb:cd9
 ec ai.seq rgb:ddc
-ec ai.ascii rgb:ddc
+ec str rgb:ddc
 
 ec widget.bg rgb:8dd rgb:333
 ec widget.sel white rgb:b52 bold

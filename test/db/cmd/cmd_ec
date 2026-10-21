@@ -74,7 +74,7 @@ ec ai.read rgb:c0b070
 ec ai.write rgb:c0a060
 ec ai.exec rgb:d0b070
 ec ai.seq rgb:906000
-ec ai.ascii rgb:f0e0c0
+ec str rgb:f0e0c0
 ec graph.box rgb:403010
 ec graph.box2 rgb:c0a060
 ec graph.box3 rgb:c0a060
@@ -189,7 +189,7 @@ EXPECT=<<EOF
  [34m##[0m  ai.write
  [31m##[0m  ai.exec
  [35m##[0m  ai.seq
- [33m##[0m  ai.ascii
+ [33m##[0m  str
  [0m##[0m  graph.box
  [33m##[0m  graph.box2
  [35m##[0m  graph.box3
@@ -261,7 +261,7 @@ EXPECT=<<EOF
  [94m##[0m  ai.write
  [91m##[0m  ai.exec
  [95m##[0m  ai.seq
- [93m##[0m  ai.ascii
+ [93m##[0m  str
  [94m##[0m  graph.box
  [92m##[0m  graph.box2
  [95m##[0m  graph.box3
@@ -372,6 +372,27 @@ EXPECT=<<EOF
 0x8
 0x00000030 1 b64.legacy
 literal;f b64.separator
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=str palette key and deprecated ai.ascii alias color code strings
+FILE=-
+CMDS=<<EOF
+e scr.color=3
+ec str rgb:123456
+ec*~^ec str
+?e "\"hello\""~:))
+ec ai.ascii rgb:abcdef
+ec*~^ec str
+?e "\"hello\""~:))
+ec*~ai.ascii
+EOF
+EXPECT=<<EOF
+ec str rgb:123456
+[38;2;18;52;86m"hello[38;2;18;52;86m"[0m
+ec str rgb:abcdef
+[38;2;171;205;239m"hello[38;2;171;205;239m"[0m
 EOF
 EXPECT_ERR=
 RUN

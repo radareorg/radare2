@@ -25,7 +25,6 @@ ec math rgb:fff
 ec mov rgb:fff
 ec nop rgb:fff
 ec num rgb:0f0
-ec str rgb:0f0
 ec addr rgb:0f0
 ec other rgb:999
 ec pop rgb:999
@@ -61,7 +60,7 @@ ec ai.read rgb:eee
 ec ai.write rgb:0f0
 ec ai.exec rgb:fff
 ec ai.seq rgb:f0f
-ec ai.ascii rgb:f0f
+ec str rgb:f0f
 
 ec widget.bg rgb:f0f rgb:0f0
 ec widget.sel rgb:0f0 rgb:f0f

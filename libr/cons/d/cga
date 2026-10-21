@@ -37,7 +37,6 @@ ec cmp rgb:0ff
 ec reg rgb:f0f
 ec creg rgb:f0f
 ec num rgb:0ff
-ec str rgb:0ff
 ec help rgb:0ff
 ec trap rgb:000 rgb:f0f
 ec ucall rgb:f0f
@@ -65,7 +64,7 @@ ec ai.read rgb:0ff
 ec ai.write rgb:f0f
 ec ai.exec rgb:f0f
 ec ai.seq rgb:f0f
-ec ai.ascii rgb:f0f
+ec str rgb:f0f
 
 ec var rgb:f0f
 ec var.type rgb:f0f

@@ -32,7 +32,6 @@ ec swi red
 ec cmp yellow
 ec reg green
 ec num red
-ec str red
 ec mov yellow
 ec crypto yellow
 ec args green
@@ -63,7 +62,7 @@ ec ai.read green
 ec ai.write green
 ec ai.exec yellow
 ec ai.seq red
-ec ai.ascii red
+ec str red
 
 ec widget.bg yellow black
 ec widget.sel black green

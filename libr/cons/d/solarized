@@ -22,7 +22,6 @@ ec math rgb:28d
 ec mov rgb:3a9
 ec nop rgb:577
 ec num rgb:eee
-ec str rgb:eee
 ec addr rgb:9aa
 ec other rgb:577
 ec pop rgb:688
@@ -58,7 +57,7 @@ ec ai.read rgb:39e
 ec ai.write rgb:577
 ec ai.exec rgb:ab4
 ec ai.seq rgb:899
-ec ai.ascii rgb:899
+ec str rgb:899
 
 # background of the terminal must be 134 o 033
 # xterm -fn 10x20 -bg rgb:00/30/30 -fg rgb:e0/e0/e0 -e "r2 -c 'eco solarized' /bin/ls"

@@ -4,7 +4,7 @@ ecd
 ec ai.exec rgb:689d6a
 ec ai.read rgb:458588
 ec ai.write rgb:cc241d
-ec ai.ascii rgb:fabd2f
+ec str rgb:fabd2f
 ec args rgb:b8bb26
 ec b0x00 rgb:665c54
 ec b0x7f rgb:504945
@@ -35,7 +35,6 @@ ec linehl rgb:3c3836
 ec mov rgb:ebdbb2
 ec nop rgb:928374
 ec num rgb:d3869b
-ec str rgb:d3869b
 ec addr rgb:d65d0e
 ec other rgb:7c6f64
 ec prompt rgb:8ec07c

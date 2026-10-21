@@ -24,7 +24,6 @@ ec crypto rgb:366
 ec mov rgb:666
 ec nop rgb:444
 ec num rgb:99a
-ec str rgb:99a
 ec addr rgb:366
 ec other rgb:bbb
 ec prompt rgb:366
@@ -58,7 +57,7 @@ ec ai.read rgb:266
 ec ai.write rgb:366
 ec ai.exec rgb:368
 ec ai.seq rgb:d38
-ec ai.ascii rgb:99a
+ec str rgb:99a
 
 ec widget.bg rgb:366 black
 ec widget.sel rgb:44f rgb:123

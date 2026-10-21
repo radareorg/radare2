@@ -24,7 +24,6 @@ ec b0xff red
 ec btext yellow
 ec other rgb:666
 ec num rgb:ff0
-ec str rgb:ff0
 ec reg rgb:6f0 rgb:000
 ec fline rgb:fc0
 ec flow rgb:ff3
@@ -37,7 +36,7 @@ ec ai.read green
 ec ai.write blue
 ec ai.exec red
 ec ai.seq rgb:ff00ff
-ec ai.ascii rgb:ffff00
+ec str rgb:ffff00
 
 ec graph.box blue
 ec graph.box2 yellow
@@ -59,7 +58,7 @@ ec ai.read rgb:8f0
 ec ai.write rgb:6f0
 ec ai.exec rgb:f3f
 ec ai.seq white
-ec ai.ascii yellow
+ec str yellow
 
 ec widget.bg rgb:ff0 rgb:000
 ec widget.sel rgb:000 rgb:0f0

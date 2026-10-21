@@ -1609,7 +1609,7 @@ R_API void r_core_autocomplete(RCore *core, RLineCompletion *completion, RLineBu
 			ADDARG ("ai.write");
 			ADDARG ("ai.exec");
 			ADDARG ("ai.seq");
-			ADDARG ("ai.ascii");
+			ADDARG ("str");
 			ADDARG ("ai.unmap");
 			ADDARG ("graph.box");
 			ADDARG ("graph.box2");
@@ -2120,7 +2120,7 @@ R_API char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, PJ *pj, int de
 	}
 	{
 		ut8 buf[128], widebuf[256];
-		const char *c = r_config_get_i (core->config, "scr.color")? core->cons->context->pal.ai_ascii: "";
+		const char *c = r_config_get_i (core->config, "scr.color")? core->cons->context->pal.str: "";
 		const char *cend = (c && *c)? Color_RESET: "";
 		int len, r;
 		if (r_io_read_at (core->io, value, buf, sizeof (buf))) {
@@ -2247,7 +2247,7 @@ R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, ut8 ch, bo
 		return core->cons->context->pal.ai_seq; // Color_MAGENTA;
 	}
 	if (type & R_ANAL_ADDR_TYPE_ASCII) {
-		return core->cons->context->pal.ai_ascii; // Color_YELLOW;
+		return core->cons->context->pal.str; // Color_YELLOW;
 	}
 	return NULL;
 }

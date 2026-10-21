@@ -27,7 +27,6 @@ ec push cyan
 ec reg yellow
 ec creg yellow
 ec num cyan
-ec str cyan
 ec invalid red
 ec swi cyan
 ec cmp white
@@ -55,7 +54,7 @@ ec var.name white
 ec ai.read cyan
 ec ai.write cyan
 ec ai.exec green
-ec ai.ascii blue
+ec str blue
 
 ec widget.bg white gray
 ec widget.sel black cyan

@@ -16,7 +16,6 @@ ec comment rgb:9df
 ec usrcmt rgb:9f4
 ec ret rgb:d66
 ec num rgb:bb5
-ec str rgb:bb5
 ec fline rgb:2bc
 ec flow rgb:888
 ec flow2 rgb:ddd
@@ -42,7 +41,7 @@ ec ai.read rgb:66d
 ec ai.write rgb:d66
 ec ai.exec rgb:6d6
 ec ai.seq rgb:fd6
-ec ai.ascii white
+ec str white
 ec graph.box rgb:9df
 ec graph.box2 rgb:9df
 ec graph.box3 rgb:9df
