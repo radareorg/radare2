@@ -22,3 +22,11 @@ ansi_crop: ansi_crop.c
 .PHONY: clean-ansi-crop
 clean-ansi-crop:
 	rm -f ansi_crop
+
+strpool: strpool.c
+	$(CC) $(CPPFLAGS) -O2 -I../../libr/include -I../../subprojects/sdb/include $< \
+		-o $@ $(LDFLAGS) -L../../libr/util -lr_util
+
+.PHONY: clean-strpool
+clean-strpool:
+	rm -f strpool
