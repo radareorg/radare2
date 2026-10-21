@@ -1979,20 +1979,21 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				if (callee) {
 					const char *cc = r_anal_cc_func (anal, callee);
 					if (cc && !strcmp (fcn->callconv, cc)) {
-						callee_rargs = R_MIN (max_count, func_fixed_args (TDB, callee));
+						callee_rargs = func_fixed_args (TDB, callee);
 					}
 				}
 			}
 		} else if (!f->is_variadic && fcn->callconv && f->callconv && !strcmp (fcn->callconv, f->callconv)) {
 			callee = r_type_func_guess (TDB, f->name);
 			if (callee) {
-				callee_rargs = R_MIN (max_count, func_fixed_args (TDB, callee));
+				callee_rargs = func_fixed_args (TDB, callee);
 			}
 			callee_rargs = callee_rargs? callee_rargs: positional_reg_args (f);
 		}
 		int i;
-		const int total = callee_rargs;
-		for (i = 0; i < callee_rargs; i++) {
+		// a callee may hold more register vars than reg_set has argument slots
+		const int total = R_MIN (callee_rargs, max_count);
+		for (i = 0; i < total; i++) {
 			const char *vname = NULL;
 			char *type = NULL;
 			char *name = NULL;
