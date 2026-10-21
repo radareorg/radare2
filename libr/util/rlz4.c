@@ -203,7 +203,8 @@ R_API int r_lz4_decompress_block(ut8 *g_buf, const int comp_len, int *pp, ut8 *o
 			break;
 		}
 		LOAD_16_TO (ip, tmp);
-		if (p < tmp) {
+		// offset 0 is invalid, it would skip output without writing it
+		if (!tmp || p < tmp) {
 			return -1;
 		}
 		s = p - tmp;
