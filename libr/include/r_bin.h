@@ -564,6 +564,7 @@ struct r_bin_addrline_store_t {
 	RBinAddrLineFiles al_files;
 	RBinAddrLineForeach al_foreach;
 	RBinAddrLineStr al_str;
+	RBinAddrLineReset al_lock; // done adding, release lookup indexes until the next add
 };
 
 // XXX: RBinFile may hold more than one RBinObject?

@@ -187,7 +187,9 @@ static bool __matchString(char *entry, char *filter, char *mask, const int mask_
 static RList *hud_filter(RHudData *data, bool simple, int selected_index) {
 	RListIter *iter;
 	char *current_entry;
-	char mask[HUD_BUF_SIZE];
+	// one mask byte per entry char, reused across entries
+	char *mask = NULL;
+	size_t mask_size = 0;
 	char *p, *x;
 	int j, rows;
 	(void)r_cons_get_size (data->cons, &rows);
@@ -197,8 +199,17 @@ static RList *hud_filter(RHudData *data, bool simple, int selected_index) {
 	int visible_index = 0;
 	RList *res = r_list_newf (free);
 	r_list_foreach (data->list, iter, current_entry) {
-		memset (mask, 0, HUD_BUF_SIZE);
-		if (*data->user_input && !__matchString (current_entry, data->user_input, mask, HUD_BUF_SIZE)) {
+		const size_t entry_size = strlen (current_entry) + 1;
+		if (entry_size > mask_size) {
+			char *m = realloc (mask, entry_size);
+			if (!m) {
+				break;
+			}
+			mask = m;
+			mask_size = entry_size;
+		}
+		memset (mask, 0, entry_size);
+		if (*data->user_input && !__matchString (current_entry, data->user_input, mask, entry_size)) {
 			continue;
 		}
 		if (++counter == rows + data->hud->top_entry_n) {
@@ -231,7 +242,7 @@ static RList *hud_filter(RHudData *data, bool simple, int selected_index) {
 					RStrBuf *sb = r_strbuf_newf (" %c ", marker);
 					// Instead of printing one char at the time
 					// (which would be slow), we group substrings of the same color
-					for (j = 0; p[j] && j < HUD_BUF_SIZE; j++) {
+					for (j = 0; p[j]; j++) {
 						if (mask[j] != last_mask) {
 							char tmp = p[j];
 							p[j] = 0;
@@ -275,6 +286,7 @@ static RList *hud_filter(RHudData *data, bool simple, int selected_index) {
 		}
 		data->current_entry_n++;
 	}
+	free (mask);
 	return res;
 }
 

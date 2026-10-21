@@ -81,6 +81,7 @@ if get_option('enable_tests')
     'str',
     'strbuf',
     'strpool',
+    'strpool_oom',
     'scanf',
     'printf',
     'table',

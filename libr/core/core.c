@@ -2134,8 +2134,8 @@ R_API char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, PJ *pj, int de
 				}
 				break;
 			case 2:
-				r = r_utf8_encode_str ((const RRune *)buf, widebuf, sizeof (widebuf) - 1);
-				if (r == -1) {
+				r = r_str_utf16_to_utf8 (widebuf, sizeof (widebuf), buf, len * 2, false);
+				if (r < 0) {
 					R_LOG_ERROR ("Something was wrong with refs");
 				} else {
 					if (pj) {

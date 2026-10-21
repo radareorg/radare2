@@ -1454,3 +1454,42 @@ hello from xfs
 
 EOF2
 RUN
+
+NAME=m hfs record key length past the node
+FILE=malloc://4096
+CMDS=<<EOF
+wx 4244 @ 0x400
+wx 00000200 @ 0x414
+wx 0004 @ 0x41c
+wx 03564f4c @ 0x424
+wx 00020002 @ 0x486
+wx 00000002 @ 0x496
+wx 0100000100000001000000010000000100000001000000010200002500000002 @ 0x808
+wx 000e @ 0x9fe
+wx 0100000100000001000000010000000100000001000000010200002500000002 @ 0xc08
+wx 000e @ 0xdfe
+wx ff @ 0xe08
+wx ff000002 @ 0xa08
+wx 09000000000103564f4c01000000000000000002 @ 0xa0e
+wx 0900000000020361626302 @ 0xa22
+wx 00000014 @ 0xa40
+wx 0022000e @ 0xbfc
+m /root hfs 0
+m
+md /root
+m- /root
+wx 28000000000103564f4c01000000000000000002 @ 0xbe0
+wx 01e0 @ 0xbfe
+m /root hfs 0
+m
+md /root
+EOF
+EXPECT=<<EOF
+hfs	0x0	/root
+f abc
+EOF
+EXPECT_ERR=<<EOF
+Cannot find the HFS root directory
+ERROR: Invalid path
+EOF
+RUN

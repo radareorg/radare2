@@ -894,11 +894,11 @@ static void parse_atomic_type(Context *ctx, ut64 idx) {
 
 static const char *get_specification_die_name(const RBinDwarfCompUnit *cu, const RBinDwarfDie *die) {
 	RBinDwarfAttrValue *attr = r_bin_dwarf_die_find_attr (cu, die, DW_AT_linkage_name);
-	if (attr && attr->string.content) {
+	if (attr && attr->kind == DW_AT_KIND_STRING && attr->string.content) {
 		return attr->string.content;
 	}
 	attr = r_bin_dwarf_die_find_attr (cu, die, DW_AT_name);
-	if (attr && attr->string.content) {
+	if (attr && attr->kind == DW_AT_KIND_STRING && attr->string.content) {
 		return attr->string.content;
 	}
 	return NULL;
@@ -934,14 +934,16 @@ static void parse_abstract_origin(Context *ctx, ut64 offset, RStrBuf *type, cons
 	R_BIN_DWARF_DIE_FOREACH_ATTR (unit, die, val) {
 		switch (val->attr_name) {
 		case DW_AT_name:
-			if (!get_linkage_name || !has_linkage_name) {
+			if ((!get_linkage_name || !has_linkage_name) && val->kind == DW_AT_KIND_STRING) {
 				*name = val->string.content;
 			}
 			break;
 		case DW_AT_linkage_name:
 		case DW_AT_MIPS_linkage_name:
-			*name = val->string.content;
-			has_linkage_name = true;
+			if (val->kind == DW_AT_KIND_STRING) {
+				*name = val->string.content;
+				has_linkage_name = true;
+			}
 			break;
 		case DW_AT_type:
 			parse_type (ctx, val->reference, type, &size, NULL);
@@ -2100,14 +2102,16 @@ static void parse_function(Context *ctx, ut64 idx) {
 	R_BIN_DWARF_DIE_FOREACH_ATTR (ctx->unit, die, val) {
 		switch (val->attr_name) {
 		case DW_AT_name:
-			if (!get_linkage_name || !has_linkage_name) {
+			if ((!get_linkage_name || !has_linkage_name) && val->kind == DW_AT_KIND_STRING) {
 				fcn.name = val->string.content;
 			}
 			break;
 		case DW_AT_linkage_name:
 		case DW_AT_MIPS_linkage_name:
-			fcn.name = val->string.content;
-			has_linkage_name = true;
+			if (val->kind == DW_AT_KIND_STRING) {
+				fcn.name = val->string.content;
+				has_linkage_name = true;
+			}
 			break;
 		case DW_AT_low_pc:
 			low_pc = val->address;

@@ -1,0 +1,11 @@
+NAME=dotnet: duplicated class names keep their superclass
+FILE=bins/pe/mitigation_nothing.exe
+CMDS=<<EOF
+icq~State
+ic~State ::
+EOF
+EXPECT=<<EOF
+0x00000000 [0x00000000 - 0x00000000] cil State System.Enum
+0x00000000 [0x00000000 - 0x00000000]      0 cil class 238 State :: System.Enum
+EOF
+RUN

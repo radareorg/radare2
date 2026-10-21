@@ -83,6 +83,57 @@ bool test_r_strpool_append_duplicates(void) {
 	mu_end;
 }
 
+bool test_r_strpool_append_without_index(void) {
+	RStrpool *p = r_strpool_new ();
+	int i;
+	for (i = 0; i < 4096; i++) {
+		mu_assert_eq (r_strpool_append (p, "duplicate"), i, "append stores every copy");
+	}
+	mu_assert_null (p->index, "append-only pool needs no lookup index");
+	mu_assert_eq (r_strpool_get (p, "duplicate"), 0, "first lookup finds the first copy");
+	mu_assert_eq (r_strpool_append (p, "new"), 4096, "append after a lookup");
+	mu_assert_eq (r_strpool_get (p, "new"), 4096, "existing index tracks appends");
+	r_strpool_lock (p);
+	mu_assert_eq (r_strpool_append (p, "later"), 4097, "append after releasing the index");
+	mu_assert_null (p->index, "append does not recreate a released index");
+	mu_assert_eq (r_strpool_add (p, "duplicate"), 0, "add rebuilds and deduplicates");
+	mu_assert_eq (r_strpool_get (p, "later"), 4097, "rebuild includes later appends");
+	r_strpool_free (p);
+	mu_end;
+}
+
+bool test_r_strpool_rebuild_duplicates(void) {
+	RStrpool *p = r_strpool_new ();
+	int i;
+	for (i = 0; i < 4096; i++) {
+		r_strpool_append (p, i % 2? "beta": "alpha");
+	}
+	int rebuild;
+	for (rebuild = 0; rebuild < 2; rebuild++) {
+		r_strpool_lock (p);
+		mu_assert_eq (r_strpool_get (p, "alpha"), 0, "first alpha after rebuild");
+		mu_assert_eq (r_strpool_get (p, "beta"), 1, "first beta after rebuild");
+		mu_assert_eq (r_strpool_get (p, "missing"), -1, "missing string after rebuild");
+		ut32 occupied = 0, slot;
+		for (slot = 0; slot < p->index_size; slot++) {
+			occupied += p->index[slot] != 0;
+		}
+		mu_assert_eq (occupied, 2, "duplicates occupy only one slot per distinct string");
+	}
+	for (i = 0; i < 4096; i++) {
+		r_strpool_append (p, "alpha");
+	}
+	mu_assert_eq (r_strpool_add (p, "alpha"), 0, "first copy survives index growth");
+	mu_assert_eq (r_strpool_get (p, "beta"), 1, "other string survives index growth");
+	ut32 occupied = 0, slot;
+	for (slot = 0; slot < p->index_size; slot++) {
+		occupied += p->index[slot] != 0;
+	}
+	mu_assert_eq (occupied, 2, "growing the index does not insert duplicate slots");
+	r_strpool_free (p);
+	mu_end;
+}
+
 bool test_r_strpool_many(void) {
 	RStrpool *p = r_strpool_new ();
 	int i;
@@ -191,6 +242,8 @@ int all_tests(void) {
 	mu_run_test (test_r_strpool_append_keeps_first);
 	mu_run_test (test_r_strpool_add_returns_first);
 	mu_run_test (test_r_strpool_append_duplicates);
+	mu_run_test (test_r_strpool_append_without_index);
+	mu_run_test (test_r_strpool_rebuild_duplicates);
 	mu_run_test (test_r_strpool_many);
 	mu_run_test (test_r_strpool_slice_and_empty);
 	mu_run_test (test_r_strpool_truncate);

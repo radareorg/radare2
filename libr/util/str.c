@@ -2319,6 +2319,7 @@ R_API int r_str_ansi_filter(char *str, char **R_NULLABLE out, int **R_NULLABLE c
 			j++;
 		}
 	}
+	cps[j] = i;
 	str[j] = tmp[i];
 	if (out) {
 		*out = tmp;
