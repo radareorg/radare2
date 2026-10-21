@@ -1069,7 +1069,9 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 			dbg->coreb.cmd (dbg->coreb.core, ".e cmd.step @r:PC");
 		}
 		if (!ret) {
-			R_LOG_ERROR ("Stepping failed!");
+			if (dbg->reason.type != R_DEBUG_REASON_DEAD) {
+				R_LOG_ERROR ("Stepping failed!");
+			}
 			return steps_taken;
 		}
 		if (dbg->session && dbg->recoil_mode == R_DBG_RECOIL_NONE) {

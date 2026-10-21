@@ -4,15 +4,33 @@
 
 static int kill_calls;
 static bool pid_exists;
+static RDebugReasonType step_reason;
 
 static bool mock_kill(RDebug *dbg, int pid, int tid, int sig) {
 	kill_calls++;
 	return pid_exists;
 }
 
+static bool mock_step(RDebug *dbg) {
+	dbg->reason.type = step_reason;
+	return false;
+}
+
+static const char *mock_config_get(void *core, const char *key) {
+	return NULL;
+}
+
+static bool count_step_errors(void *user, int type, const char *origin, const char *msg) {
+	if (type == R_LOG_LEVEL_ERROR && msg && strstr (msg, "Stepping failed!")) {
+		(*(int *)user)++;
+	}
+	return true;
+}
+
 static RDebugPlugin mock_plugin = {
 	.meta = { .name = "liveness-test" },
 	.kill = mock_kill,
+	.step = mock_step,
 };
 
 static RDebugPluginSession mock_session = {
@@ -69,12 +87,46 @@ bool test_negative_pid_is_dead(void) {
 	mu_end;
 }
 
+bool test_step_exit_is_not_an_error(void) {
+	RDebug dbg = make_debugger (123, R_DEBUG_REASON_BREAKPOINT, true);
+	dbg.bp = r_bp_new ();
+	dbg.coreb.cfgGet = mock_config_get;
+	step_reason = R_DEBUG_REASON_DEAD;
+	int errors = 0;
+	r_log_add_callback (count_step_errors, &errors);
+	int steps = r_debug_step (&dbg, 1);
+	r_log_del_callback (count_step_errors);
+	r_bp_free (dbg.bp);
+	mu_assert_eq (steps, 0, "an exit does not complete a step");
+	mu_assert_eq (dbg.reason.type, R_DEBUG_REASON_DEAD, "retain the exit reason");
+	mu_assert_eq (errors, 0, "an exit during stepping is not a stepping error");
+	mu_end;
+}
+
+bool test_step_failure_reports_error(void) {
+	RDebug dbg = make_debugger (123, R_DEBUG_REASON_BREAKPOINT, true);
+	dbg.bp = r_bp_new ();
+	dbg.coreb.cfgGet = mock_config_get;
+	step_reason = R_DEBUG_REASON_ERROR;
+	int errors = 0;
+	r_log_add_callback (count_step_errors, &errors);
+	int steps = r_debug_step (&dbg, 1);
+	r_log_del_callback (count_step_errors);
+	r_bp_free (dbg.bp);
+	mu_assert_eq (steps, 0, "a failed step does not advance the step count");
+	mu_assert_eq (dbg.reason.type, R_DEBUG_REASON_ERROR, "retain the failure reason");
+	mu_assert_eq (errors, 1, "a genuine step failure must still report an error");
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_dead_reason_survives_existing_pid);
 	mu_run_test (test_kill_skips_dead_target);
 	mu_run_test (test_live_target_is_probed);
 	mu_run_test (test_missing_target_becomes_dead);
 	mu_run_test (test_negative_pid_is_dead);
+	mu_run_test (test_step_exit_is_not_an_error);
+	mu_run_test (test_step_failure_reports_error);
 	return tests_passed != tests_run;
 }
 
