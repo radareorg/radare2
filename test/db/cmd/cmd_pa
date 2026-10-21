@@ -243,3 +243,40 @@ EXPECT=<<EOF
 0100
 EOF
 RUN
+
+NAME=pa .byte with several values
+FILE=--
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+pa .byte 1 2 3
+pa .byte 1,2,3
+pa .db 1	2
+"pa .byte 1 2;nop"
+pa .byte 1:2:3:4
+EOF
+EXPECT=<<EOF
+010203
+010203
+0102
+010290
+01
+EOF
+RUN
+
+NAME=pa .cfloat with a single word
+FILE=--
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+pa .cfloat 1:8:23:127:0:0
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: The .cfloat directive expects 6 arguments: (sign_bits, exp_bits, mant_bits, bias, big_endian, explicit_leading_bit)
+INFO: Example (float): .cfloat 1 8 23 127 0 0
+INFO: Example (double): .cfloat 1 11 52 1023 0 0
+INFO: Example (bf16): .cfloat 1 8 7 127 0 0
+INFO: Example (x86-80): .cfloat 1 15 64 16383 0 1
+EOF
+RUN

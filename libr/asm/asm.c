@@ -177,34 +177,33 @@ static int r_asm_pseudo_float(RAsm *a, RAnalOp *op, char *input, const RCFloatPr
 	return -1;
 }
 
-static int r_asm_pseudo_byte(RAnalOp *op, char *input) {
-	int i, len = 0;
-	r_str_replace_char (input, ',', ' ');
-	len = r_str_word_count (input);
-	r_str_word_set0 (input);
-	ut8 *buf = malloc (len);
-	if (!buf) {
-		return 0;
+static int r_asm_pseudo_byte(RAnalOp *op, const char *input) {
+	// work on a copy, the directive is parsed once per stage
+	char *args = strdup (input);
+	if (!args) {
+		return -1;
 	}
-	for (i = 0; i < len; i++) {
-		const char *word = r_str_word_get0 (input, i);
+	r_str_replace_char (args, ',', ' ');
+	r_str_replace_char (args, '\t', ' ');
+	int i, len = r_str_word_set0 (args);
+	ut8 *buf = malloc (R_MAX (len, 1));
+	for (i = 0; buf && i < len; i++) {
 		const char *err = NULL;
-		int num = (int)r_num_math_err (NULL, word, &err);
+		int num = (int)r_num_math_err (NULL, r_str_word_get0 (args, i), &err);
 		if (err) {
 			R_LOG_ERROR ("Invalid number in .byte: %s", err);
-			free (buf);
-			return -1;
+			break;
 		}
 		if (num < 0 || num > 255) {
 			R_LOG_ERROR ("byte value %d out of range (0-255)", num);
-			free (buf);
-			return -1;
+			break;
 		}
 		buf[i] = num;
 	}
-	len = asm_op_set_data (op, buf, len);
+	const int ret = !buf? 0: (i < len)? -1: asm_op_set_data (op, buf, len);
 	free (buf);
-	return len;
+	free (args);
+	return ret;
 }
 
 static int r_asm_pseudo_fill(RAsm *a, RAnalOp *op, const char *input, bool verbose) {
@@ -276,8 +275,7 @@ static int r_asm_pseudo_incbin(RAnalOp *op, const char *input) {
 		return -1;
 	}
 	r_str_replace_char (args, ',', ' ');
-	int nargs = r_str_word_count (args);
-	r_str_word_set0 (args);
+	const int nargs = r_str_word_set0 (args);
 	const char *filename = r_str_word_get0 (args, 0);
 	const char *err = NULL;
 	size_t skip = 0, count = 0;
@@ -1054,7 +1052,7 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 		char *args = r_str_trim_dup (ptr + strlen (".cfloat "));
 		ret = -1;
 		if (args) {
-			if (r_str_word_count (args) == 6) {
+			if (r_str_word_set0 (args) == 6) {
 				ret = 0;
 			} else {
 				R_LOG_ERROR ("The .cfloat directive expects 6 arguments: (sign_bits, exp_bits, mant_bits, bias, big_endian, explicit_leading_bit)");
@@ -1065,7 +1063,6 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 			}
 		}
 		if (ret == 0) {
-			r_str_word_set0 (args);
 			RCFloatProfile fp = {
 				.sign_bits = atoi (r_str_word_get0 (args, 0)),
 				.exp_bits = atoi (r_str_word_get0 (args, 1)),
