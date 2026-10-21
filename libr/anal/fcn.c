@@ -1023,9 +1023,35 @@ typedef struct {
 	bool is_amd64;
 	bool is_dalvik;
 	bool is_stm8;
+	ut64 section_from;
+	ut64 section_to;
+	bool section_exec;
 	bool walk_depth; // a fresh function's walk, so fcn->stack is trustworthy
 	ReadAhead ra; // one cache for the walk, so a block inside the last read reads no io
 } FcnWalk;
+
+static bool walk_code_section(FcnWalk *w, ut64 addr) {
+	RAnal *anal = w->anal;
+	if (anal->opt.noncode || !anal->binb.get_vsect_at || !anal->binb.bin) {
+		return true;
+	}
+	if (addr >= w->section_from && addr < w->section_to) {
+		return w->section_exec;
+	}
+	RBinSection *section = anal->binb.get_vsect_at (anal->binb.bin, addr);
+	RBinObject *bo = anal->binb.bin->cur? anal->binb.bin->cur->bo: NULL;
+	if (!section || !bo || section->is_segment) {
+		return true;
+	}
+	ut64 from = bo->baddr_shift + section->vaddr;
+	if (from > addr || section->vsize > UT64_MAX - from) {
+		return true;
+	}
+	w->section_from = from;
+	w->section_to = from + section->vsize;
+	w->section_exec = (section->perm & R_PERM_X) != 0;
+	return w->section_exec;
+}
 
 // Schedule a block to be scanned once the current one finishes. False means the
 // walk can no longer grow: the failure sticks, so no later successor is scheduled
@@ -1196,6 +1222,11 @@ static void fcn_scan(FcnWalk *w, ut64 addr) {
 		return;
 	}
 
+	if (!walk_code_section (w, addr)) {
+		w->last_ret = R_ANAL_RET_ERROR;
+		return;
+	}
+
 	RAnalFunction *fcn_at_addr = r_anal_get_function_at (anal, addr);
 	if (fcn_at_addr && fcn_at_addr != fcn) {
 		w->last_ret = R_ANAL_RET_ERROR;
@@ -1326,7 +1357,7 @@ repeat:
 		if (flagbounds && bb->size > 0 && anal->flb.get_at && anal->flb.get_at (anal->flb.f, at, false)) {
 			gotoBeach (R_ANAL_RET_END);
 		}
-		if (!anal->iob.is_valid_offset (anal->iob.io, at, code_perm)) {
+		if (!walk_code_section (w, at) || !anal->iob.is_valid_offset (anal->iob.io, at, code_perm)) {
 			gotoBeach (R_ANAL_RET_END);
 		}
 		ut64 bytes_read = R_MIN (len - at_delta, sizeof (buf));
