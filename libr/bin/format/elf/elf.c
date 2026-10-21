@@ -5781,6 +5781,12 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 	size_t *const import_ret_ctr = state->import_ret_ctr;
 
 	Elf_(Shdr) *sh = &eo->shdr[i];
+	if (!sh->sh_size) {
+		if (!*state->ret) {
+			*state->ret = RVecRBinElfSymbol_new ();
+		}
+		return *state->ret != NULL;
+	}
 	Elf_(Shdr) *strtab_section = &eo->shdr[sh->sh_link];
 	if (strtab_section->sh_size > ST32_MAX || strtab_section->sh_size + 8 > eo->size) {
 		R_LOG_ERROR ("size (syms strtab)");
@@ -6060,7 +6066,8 @@ static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 
 bool Elf_(load_symbols)(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo, false);
-	if (!eo->g_symbols_vec) {
+	if (!eo->symbols_loaded) {
+		eo->symbols_loaded = true;
 		eo->g_symbols_vec = Elf_(load_symbols_from) (eo, R_BIN_ELF_ALL_SYMBOLS);
 	}
 	return eo->g_symbols_vec != NULL;
@@ -6068,7 +6075,8 @@ bool Elf_(load_symbols)(ELFOBJ *eo) {
 
 bool Elf_(load_imports)(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo, false);
-	if (!eo->g_imports_vec) {
+	if (!eo->imports_loaded) {
+		eo->imports_loaded = true;
 		eo->g_imports_vec = Elf_(load_symbols_from) (eo, R_BIN_ELF_IMPORT_SYMBOLS);
 	}
 	return eo->g_imports_vec != NULL;
