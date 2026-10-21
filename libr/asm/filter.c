@@ -3,8 +3,6 @@
 #include <r_asm.h>
 #include <r_util/r_type.h>
 
-#define FILTER_DWORD 0
-
 #define isx86separator(x) ( \
 	(x) == ' ' || (x) == '\t' || (x) == '\n' || (x) == '\r' || \
 	(x) == ',' || (x) == ';' || (x) == '[' || (x) == ']' || \
@@ -36,10 +34,13 @@ static char *findEnd(const char *s) {
 	return strdup (s);
 }
 
+// replace the number at dst in place, only when src fits in its digits
 static void insert(char *dst, const char *src) {
 	char *endNum = findEnd (dst);
-	strcpy (dst, src);
-	strcpy (dst + strlen (src), endNum);
+	if (strlen (src) <= strlen (dst) - strlen (endNum)) {
+		strcpy (dst, src);
+		strcpy (dst + strlen (src), endNum);
+	}
 	free (endNum);
 }
 
@@ -69,21 +70,6 @@ static char *replace_enum_hint(RAsm *a, RAnalHint *hint, ut64 off, char *data, c
 	char *res = replace_number_token (data, num_start, num_end, ename);
 	free (ename);
 	return res;
-}
-
-// TODO: move into r_util/r_str
-static void replaceWords(char *s, const char *k, const char *v) {
-	for (;;) {
-		char *p = strstr (s, k);
-		if (!p) {
-			break;
-		}
-		char *s = p + strlen (k);
-		char *d = p + strlen (v);
-		memmove (d, s, strlen (s) + 1);
-		memmove (p, v, strlen (v));
-		s = p + strlen (v);
-	}
 }
 
 static char *findNextNumber(char *op) {
@@ -155,9 +141,10 @@ static char *findNextNumber(char *op) {
 	return NULL;
 }
 
-static void __replaceRegisters(RReg *reg, char *s, bool x86) {
+// aliases can be longer than the register names, so s may be reallocated
+static char *__replaceRegisters(RReg *reg, char *s, bool x86) {
 	int i;
-	for (i = 0; i < 64; i++) {
+	for (i = 0; s && i < 64; i++) {
 		const char *k = r_reg_alias_getname (reg, i);
 		if (!k || i == R_REG_ALIAS_PC) {
 			continue;
@@ -166,15 +153,15 @@ static void __replaceRegisters(RReg *reg, char *s, bool x86) {
 		if (!v) {
 			break;
 		}
-		if (x86 && *k == 'r') {
-			replaceWords (s, k, v);
+		s = r_str_replace (s, k, v, true);
+		if (s && x86 && *k == 'r') {
 			char *reg32 = strdup (k);
 			*reg32 = 'e';
-			replaceWords (s, reg32, v);
-		} else {
-			replaceWords (s, k, v);
+			s = r_str_replace (s, reg32, v, true);
+			free (reg32);
 		}
 	}
+	return s;
 }
 
 static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint, const char *data) {
@@ -213,15 +200,15 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 		free (hdata);
 		return 0;
 	}
-#if FILTER_DWORD
-	replaceWords (ptr, "dword ", src);
-	replaceWords (ptr, "qword ", src);
-#endif
 	if (p->subreg) {
-		__replaceRegisters (a->analb.anal->reg, ptr, false);
+		hdata = __replaceRegisters (a->analb.anal->reg, hdata, false);
 		if (x86) {
-			__replaceRegisters (a->analb.anal->reg, ptr, true);
+			hdata = __replaceRegisters (a->analb.anal->reg, hdata, true);
 		}
+		if (!hdata) {
+			return NULL;
+		}
+		ptr = hdata;
 	}
 	ptr2 = NULL;
 	// remove "dword" 2
