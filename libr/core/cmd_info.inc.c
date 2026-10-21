@@ -1621,15 +1621,14 @@ static char *cmd_ic_sdb_name(const char *name) {
 	if (!name) {
 		return NULL;
 	}
-	RStrBuf *encoded = r_strbuf_new ("r2name_");
-	const char *p;
-	for (p = name; *p; p++) {
-		if (!r_strbuf_appendf (encoded, "%02x", (ut8)*p)) {
-			r_strbuf_free (encoded);
-			return NULL;
-		}
+	size_t len = strlen (name);
+	if (len > INT_MAX / 2) {
+		return NULL;
 	}
-	return r_strbuf_drain (encoded);
+	char *hex = r_hex_bin2strdup ((const ut8 *)name, len);
+	char *encoded = hex? r_str_newf ("r2name_%s", hex): NULL;
+	free (hex);
+	return encoded;
 }
 
 static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_array, bool va, int idx, const char *cls_name, int *count, bool is_doublerad) {

@@ -1026,6 +1026,12 @@ bool test_r_name_utf8(void) {
 	char name[] = "🦀\\🚀;x";
 	mu_assert_false (r_name_filter (name, -1), "filter punctuation next to UTF-8");
 	mu_assert_streq (name, "🦀🚀_x", "do not split the preceding UTF-8 sequence");
+	char compact[] = "a+🦀=b\\c\\n";
+	mu_assert_false (r_name_filter (compact, -1), "compact punctuation in place");
+	mu_assert_streq (compact, "a🦀bc_n", "preserve UTF-8 and escaped control spelling");
+	char bounded[] = "a+🦀🚀z";
+	mu_assert_false (r_name_filter (bounded, 1), "limit after removed punctuation");
+	mu_assert_streq (bounded, "a🦀", "truncate at a UTF-8 boundary");
 	char spaces[] = "   ";
 	mu_assert_false (r_name_filter (spaces, -1), "filter whitespace-only name");
 	mu_assert_streq (spaces, "", "empty after trimming");

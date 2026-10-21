@@ -107,40 +107,26 @@ R_API bool r_name_filter(char *s, int maxlen) {
 		*s = '_';
 	}
 	s += size? size: 1;
-	while (*s) {
+	char *out = s;
+	for (; *s; s++, count++) {
 		if (maxlen > 0 && count > maxlen) {
 			valid = false;
-			*s = 0;
 			break;
 		}
 		if ((ut8)*s >= 0x80 && (size = name_utf8_size (s))) {
-			s += size;
-			count++;
-			continue;
-		}
-		if (*s == '\\') {
+			memmove (out, s, size);
+			out += size;
+			s += size - 1;
+		} else if (r_name_validate_char (*s)) {
+			*out++ = *s;
+		} else {
 			valid = false;
-			if (is_special_char (s[1])) {
-				*s = '_';
-			} else {
-				r_str_cpy (s, s + 1);
-				count++;
-				continue;
+			if (r_name_validate_dash (*s) && (*s != '\\' || is_special_char (s[1]))) {
+				*out++ = '_';
 			}
 		}
-		if (!r_name_validate_char (*s)) {
-			valid = false;
-			if (r_name_validate_dash (*s)) {
-				*s = '_';
-			} else {
-				r_str_cpy (s, s + 1);
-				count++;
-				continue;
-			}
-		}
-		count++;
-		s++;
 	}
+	*out = 0;
 	return valid;
 }
 
