@@ -435,6 +435,10 @@ static inline bool is_true_or_false(const char *s) {
 R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *value) {
 	R_RETURN_VAL_IF_FAIL (cfg && cfg->ht, NULL);
 	R_RETURN_VAL_IF_FAIL (!IS_NULLSTR (name), NULL);
+	if (value && strpbrk (value, "\r\n")) {
+		R_LOG_ERROR ("Config values cannot contain newlines");
+		return NULL;
+	}
 	char *ov = NULL;
 	ut64 oi;
 	RConfigNode *node = r_config_node_get (cfg, name);
