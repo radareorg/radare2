@@ -590,7 +590,6 @@ static void mmc_view_file(RCore *core, MMCState *state) {
 		int line_offset, remaining, line_bytes;
 		int chars_per_line, char_offset, text_pos, spaces;
 		int num_shortcuts, footer_len, ch;
-		char text_line[512];
 		ut8 byte;
 		RConsCanvas *canvas;
 		char *title, *info1, *info2, *pline;
@@ -684,11 +683,10 @@ static void mmc_view_file(RCore *core, MMCState *state) {
 				r_strbuf_fini (&ascii_sb);
 			}
 		} else {
-			chars_per_line = pane_w - 2;
+			chars_per_line = R_MAX (pane_w - 2, 0);
 			char_offset = offset;
-
-			for (i = 0; i < max_lines && char_offset < (int)size; i++) {
-				memset (text_line, 0, sizeof (text_line));
+			char *text_line = malloc (chars_per_line + 1);
+			for (i = 0; text_line && i < max_lines && char_offset < (int)size; i++) {
 				text_pos = 0;
 
 				while (text_pos < chars_per_line && char_offset < (int)size) {
@@ -714,6 +712,7 @@ static void mmc_view_file(RCore *core, MMCState *state) {
 				r_cons_canvas_write_at (canvas, pline, pane_x + 1, content_y + i);
 				free (pline);
 			}
+			free (text_line);
 		}
 
 		r_cons_canvas_print (canvas);
@@ -1041,7 +1040,6 @@ static void mmc_draw_file_preview(RCore *core, RConsCanvas *canvas, MMCState *st
 	const char *mode_str;
 	bool is_active;
 	int chars_per_line, char_offset, line_chars;
-	char text_line[512];
 	char *line_str;
 
 	is_active = (state->active == &state->right);
@@ -1163,11 +1161,11 @@ static void mmc_draw_file_preview(RCore *core, RConsCanvas *canvas, MMCState *st
 			r_strbuf_fini (&ascii_sb);
 		}
 	} else {
-		chars_per_line = w - 4;
+		chars_per_line = R_MAX (w - 4, 0);
 		char_offset = state->preview_offset;
-		for (line = 0; line < max_lines && char_offset < (int)size; line++) {
+		char *text_line = malloc (chars_per_line + 1);
+		for (line = 0; text_line && line < max_lines && char_offset < (int)size; line++) {
 			line_chars = 0;
-			text_line[0] = '\0';
 
 			while (char_offset < (int)size && line_chars < chars_per_line) {
 				byte = data[char_offset++];
@@ -1194,6 +1192,7 @@ static void mmc_draw_file_preview(RCore *core, RConsCanvas *canvas, MMCState *st
 			r_cons_canvas_write_at (canvas, line_str, x + 2, content_y + line);
 			free (line_str);
 		}
+		free (text_line);
 	}
 
 	free (data);

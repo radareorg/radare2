@@ -1113,3 +1113,21 @@ r h
 r h
 EOF
 RUN
+
+NAME=mmc text view and preview with lines wider than 512 columns
+FILE=malloc://4096
+CMDS=<<EOF2
+e scr.cols=1200
+e scr.rows=40
+b 3000
+wow 41
+m /t tmp
+mw /t/f `pr`
+<jvtqItq
+mmc /t / @e:scr.interactive=true > /dev/null
+?e done
+EOF2
+EXPECT=<<EOF2
+done
+EOF2
+RUN
