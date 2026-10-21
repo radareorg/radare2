@@ -48,12 +48,74 @@ static RList *list_from_pycobj(pyc_object *obj) {
 	return NULL;
 }
 
-static char *generic_array_obj_tostring(RList *l);
+// names are string objects, any other type keeps no C string in data
+static const char *str_from_pycobj(pyc_object *obj) {
+	if (obj) {
+		switch (obj->type) {
+		case TYPE_ASCII:
+		case TYPE_INTERNED:
+		case TYPE_STRING:
+		case TYPE_STRINGREF:
+		case TYPE_UNICODE:
+			return obj->data;
+		default:
+			break;
+		}
+	}
+	return NULL;
+}
+
+static char *obj_tostring(pyc_object *obj);
+
+static char *generic_array_obj_tostring(RList *l) {
+	RListIter *iter;
+	pyc_object *e;
+	RStrBuf *sb = r_strbuf_new ("(");
+	r_list_foreach (l, iter, e) {
+		char *s = obj_tostring (e);
+		r_strbuf_appendf (sb, "%s%s", iter == l->head? "": ",", r_str_get (s));
+		free (s);
+	}
+	r_strbuf_append (sb, ")");
+	return r_strbuf_drain (sb);
+}
+
+static char *obj_tostring(pyc_object *obj) {
+	if (!obj) {
+		return NULL;
+	}
+	switch (obj->type) {
+	case TYPE_CODE_v0:
+	case TYPE_CODE_v1: {
+		pyc_code_object *co = obj->data;
+		return r_str_newf ("CodeObject(%s) from %s",
+			r_str_get (str_from_pycobj (co->name)),
+			r_str_get (str_from_pycobj (co->filename)));
+	}
+	case TYPE_DICT:
+	case TYPE_TUPLE:
+	case TYPE_SET:
+	case TYPE_FROZENSET:
+	case TYPE_LIST:
+	case TYPE_SMALL_TUPLE:
+		return generic_array_obj_tostring (obj->data);
+	case TYPE_STRING:
+	case TYPE_INTERNED:
+	case TYPE_STRINGREF:
+		return r_str_newf ("'%s'", (char *)obj->data);
+	case TYPE_ELLIPSIS:
+		return strdup ("Ellipsis");
+	case TYPE_STOPITER:
+		return strdup ("StopIteration");
+	default:
+		// the remaining scalar types keep their text in data
+		return r_str_new (obj->data);
+	}
+}
 
 static char *parse_arg(pyc_opcode_object *op, ut32 oparg, pyc_code_object *cobj, RList *interned_table, RList *opcode_arg_fmt) {
 	pyc_object *t = NULL;
 	char *arg = NULL;
-	pyc_code_object *tmp_cobj;
 	pyc_arg_fmt *fmt;
 	RListIter *i = NULL;
 
@@ -75,40 +137,11 @@ static char *parse_arg(pyc_opcode_object *op, ut32 oparg, pyc_code_object *cobj,
 		if (!consts) {
 			return NULL;
 		}
-		t = (pyc_object *)r_list_get_n (consts, oparg);
-		if (!t) {
-			return NULL;
-		}
-		switch (t->type) {
-		case TYPE_CODE_v0:
-		case TYPE_CODE_v1:
-			tmp_cobj = t->data;
-			arg = r_str_newf ("CodeObject(%s) from %s",
-				(const char *)tmp_cobj->name->data,
-				(const char *)tmp_cobj->filename->data);
-			break;
-		case TYPE_TUPLE:
-		case TYPE_SET:
-		case TYPE_FROZENSET:
-		case TYPE_LIST:
-		case TYPE_SMALL_TUPLE:
-			arg = generic_array_obj_tostring (t->data);
-			break;
-		case TYPE_STRING:
-		case TYPE_INTERNED:
-		case TYPE_STRINGREF:
-			arg = r_str_newf ("'%s'", (char *)t->data);
-			break;
-		default:
-			arg = strdup (t->data);
-		}
+		arg = obj_tostring (r_list_get_n (consts, oparg));
 	}
 	if (op->type & HASNAME) {
 		if (names) {
-			t = (pyc_object *)r_list_get_n (names, oparg);
-			if (t) {
-				return strdup (t->data);
-			}
+			return r_str_new (str_from_pycobj (r_list_get_n (names, oparg)));
 		}
 		return NULL;
 	}
@@ -117,10 +150,7 @@ static char *parse_arg(pyc_opcode_object *op, ut32 oparg, pyc_code_object *cobj,
 	}
 	if (op->type & HASLOCAL) {
 		if (varnames) {
-			t = (pyc_object *)r_list_get_n (varnames, oparg);
-			if (t) {
-				return strdup (t->data);
-			}
+			return r_str_new (str_from_pycobj (r_list_get_n (varnames, oparg)));
 		}
 		return NULL;
 	}
@@ -142,36 +172,10 @@ static char *parse_arg(pyc_opcode_object *op, ut32 oparg, pyc_code_object *cobj,
 		} else {
 			return r_str_newf ("%u", oparg);
 		}
-		if (!t) {
-			return NULL;
-		}
-		arg = strdup (t->data);
+		arg = r_str_new (str_from_pycobj (t));
 	}
 	if (op->type & (HASVARGS | HASNARGS)) {
 		arg = r_str_newf ("%u", oparg);
 	}
 	return arg;
-}
-
-static char *generic_array_obj_tostring(RList *l) {
-	RListIter *iter = NULL;
-	pyc_object *e = NULL;
-
-	RStrBuf *rbuf = r_strbuf_new (NULL);
-
-	r_list_foreach (l, iter, e) {
-		r_strbuf_append (rbuf, e->data);
-		r_strbuf_append (rbuf, ",");
-	}
-
-	char *buf = r_strbuf_get (rbuf);
-	if (*buf) {
-		/* remove last , */
-		buf[strlen (buf) - 1] = '\0';
-		char *r = r_str_newf ("(%s)", buf);
-		r_strbuf_free (rbuf);
-		return r;
-	}
-	r_strbuf_free (rbuf);
-	return NULL;
 }
