@@ -261,9 +261,10 @@ R_API char *r_str_html_strip(const char *ptr, int *newlen) {
 		if (esc == 2) {
 			// TODO: use dword comparison here
 			if (ptr[0] == '0' && ptr[1] == 'J') { // R_CONS_CLEAR_FROM_CURSOR_TO_END
-				ptr += 2;
+				ptr++;
+				str = ptr + 1;
 				esc = 0;
-				str = ptr;
+				continue;
 			} else if (ptr[0] == '1' && ptr[1] == 'm') {
 				// standalone bold: \x1b[1m
 				has_bold = true;
@@ -277,16 +278,16 @@ R_API char *r_str_html_strip(const char *ptr, int *newlen) {
 				has_bold = true;
 				ptr++;
 				continue;
-			} else if (!memcmp (ptr, "2K", 2)) {
-				ptr += 2;
+			} else if (ptr[0] == '2' && ptr[1] == 'K') {
+				ptr++;
+				str = ptr + 1;
 				esc = 0;
-				str = ptr;
 				continue;
 			} else if (ptr[0] == '2' && ptr[1] == 'J') {
 				r_strbuf_append (res, "<hr />");
 				ptr++;
+				str = ptr + 1;
 				esc = 0;
-				str = ptr;
 				continue;
 			} else if (isdigit (ptr[0]) && ptr[1] == ';' && isdigit (ptr[2])) {
 				const char *m = strchr (ptr, 'm');
@@ -306,28 +307,6 @@ R_API char *r_str_html_strip(const char *ptr, int *newlen) {
 					str = ptr + 1;
 					esc = 0;
 				}
-			} else if (r_str_startswith (ptr, "48;5;") || r_str_startswith (ptr, "48;2;")) {
-				const char *end = strchr (ptr, 'm');
-				gethtmlrgb (ptr, background_color, sizeof (background_color));
-				need_to_set = true;
-				ptr = end;
-				str = ptr + 1;
-				esc = 0;
-			} else if (r_str_startswith (ptr, "38;5;") || r_str_startswith (ptr, "38;2;")) {
-				const char *end = strchr (ptr, 'm');
-				gethtmlrgb (ptr, text_color, sizeof (text_color));
-				need_to_set = true;
-				if (end) {
-					ptr = end;
-					str = ptr + 1;
-				}
-				esc = 0;
-			} else if ((ptr[0] == '0' || ptr[0] == '1') && ptr[1] == ';' && isdigit (ptr[2])) {
-				// bg color is kind of ignored, but no glitch so far
-				ptr += 4;
-				esc = 0;
-				str = ptr;
-				continue;
 			} else if (ptr[0] == '0' && ptr[1] == 'm') {
 				ptr++;
 				str = ptr + 1;
@@ -355,7 +334,7 @@ R_API char *r_str_html_strip(const char *ptr, int *newlen) {
 				esc = 0;
 				continue;
 				// invert color
-			} else if (ptr[0] == '3' && ptr[2] == 'm') {
+			} else if (ptr[0] == '3' && ptr[1] && ptr[2] == 'm') {
 				const char *htmlColor = gethtmlcolor (ptr[1]);
 				if (htmlColor) {
 					r_str_ncpy (text_color, htmlColor, sizeof (text_color));
@@ -365,7 +344,7 @@ R_API char *r_str_html_strip(const char *ptr, int *newlen) {
 				str = ptr + 1;
 				esc = 0;
 				continue;
-			} else if ((ptr[0] == '4' || ptr[0] == '9') && ptr[2] == 'm') {
+			} else if ((ptr[0] == '4' || ptr[0] == '9') && ptr[1] && ptr[2] == 'm') {
 				const char *htmlColor = gethtmlcolor (ptr[1]);
 				if (htmlColor) {
 					r_str_ncpy (background_color, htmlColor, sizeof (background_color));

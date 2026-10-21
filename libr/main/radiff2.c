@@ -44,6 +44,14 @@ enum {
 };
 
 typedef struct {
+	RCore *core;
+	const ut8 *buf;
+	ut64 size;
+	ut64 offset;
+	ut64 cursor;
+} RadiffDisasm;
+
+typedef struct {
 	ut64 gdiff_start;
 	bool zignatures;
 	const char *file;
@@ -59,6 +67,9 @@ typedef struct {
 	int gmode;
 	bool disasm;
 	bool pdc;
+	RadiffDisasm disasm_a;
+	RadiffDisasm disasm_b;
+	RDiffOp disasm_pending;
 	bool quiet;
 	RCore *core;
 	const char *arch;
@@ -182,6 +193,120 @@ static int cb_xpatch(RDiff *d, void *user, RDiffOp *op) {
 	return 0;
 }
 
+static ut64 disasm_address(RadiffOptions *ro, RadiffDisasm *dis, ut64 off) {
+	ut64 paddr = dis->offset + off;
+	RBinObject *obj = r_bin_cur_object (dis->core->bin);
+	RBinSection *section = obj? r_bin_get_section_at (obj, paddr, false): NULL;
+	if (ro->useva && section) {
+		return r_bin_get_vaddr (dis->core->bin, paddr,
+			section->vaddr + paddr - section->paddr) + ro->baddr;
+	}
+	return paddr + ro->baddr;
+}
+
+static void disasm_range(RadiffOptions *ro, RadiffDisasm *dis, ut64 *off, ut32 *len) {
+	if (!*len || *off >= dis->size) {
+		return;
+	}
+	ut64 end = *off + R_MIN ((ut64)*len, dis->size - *off);
+	ut64 start = 0;
+	ut64 paddr = dis->offset + *off;
+	RBinObject *obj = r_bin_cur_object (dis->core->bin);
+	RBinSection *section = obj? r_bin_get_section_at (obj, paddr, false): NULL;
+	if (section && section->paddr > dis->offset) {
+		start = section->paddr - dis->offset;
+	}
+	// Symbols provide instruction boundaries without analyzing the whole file.
+	ut64 addr = disasm_address (ro, dis, *off);
+	r_flag_space_push (dis->core->flags, R_FLAGS_FS_SYMBOLS);
+	RFlagItem *flag = r_flag_get_at (dis->core->flags, addr - ro->baddr, true);
+	if (flag) {
+		ut64 flag_addr = flag->addr + ro->baddr;
+		if (flag_addr <= addr && addr - flag_addr <= *off - start) {
+			start = *off - (addr - flag_addr);
+		}
+	}
+	r_flag_space_pop (dis->core->flags);
+	if (dis->cursor >= start && dis->cursor <= *off) {
+		start = dis->cursor;
+	}
+	ut64 cursor = start;
+	while (cursor < end) {
+		RAnalOp insn;
+		r_asm_set_pc (dis->core->rasm, addr + cursor - *off);
+		int size = r_asm_disassemble (dis->core->rasm, &insn,
+			dis->buf + cursor, R_MIN (dis->size - cursor, ST32_MAX));
+		r_anal_op_fini (&insn);
+		size = R_MIN (R_MAX (size, 1), dis->size - cursor);
+		if (cursor <= *off) {
+			start = cursor;
+		}
+		dis->cursor = cursor;
+		cursor += size;
+	}
+	*off = start;
+	*len = cursor - start;
+}
+
+static void disasm_print(RadiffOptions *ro, RadiffDisasm *dis, ut64 off, ut32 len, bool added) {
+	const char *prefix = added? "+": "-";
+	const char *color = ro->quiet? "": added? Color_GREEN: Color_RED;
+	ut64 end = off + len;
+	ut64 addr = disasm_address (ro, dis, off);
+	r_cons_printf (ro->cons, "%s%s%s 0x%08" PFMT64x "  ", prefix, prefix, prefix,
+		dis->offset + off + ro->baddr);
+	ut64 i;
+	for (i = off; i < end; i++) {
+		r_cons_printf (ro->cons, "%02x", dis->buf[i]);
+	}
+	r_cons_newline (ro->cons);
+	while (off < end) {
+		RAnalOp insn;
+		r_asm_set_pc (dis->core->rasm, addr);
+		int size = r_asm_disassemble (dis->core->rasm, &insn,
+			dis->buf + off, R_MIN (end - off, ST32_MAX));
+		r_cons_printf (ro->cons, "%s%s 0x%08" PFMT64x "  %s%s\n", color,
+			prefix, addr, r_str_get (insn.mnemonic), ro->quiet? "": Color_RESET);
+		r_anal_op_fini (&insn);
+		size = R_MIN (R_MAX (size, 1), end - off);
+		off += size;
+		addr += size;
+	}
+}
+
+static void disasm_flush(RadiffOptions *ro) {
+	RDiffOp *op = &ro->disasm_pending;
+	if (op->a_buf) {
+		disasm_print (ro, &ro->disasm_a, op->a_off, op->a_len, false);
+		disasm_print (ro, &ro->disasm_b, op->b_off, op->b_len, true);
+		op->a_buf = NULL;
+	}
+}
+
+static void disasm_diff(RadiffOptions *ro, RDiffOp *op) {
+	if (!ro->disasm_a.core) {
+		ro->disasm_a.core = opencore (ro, ro->file);
+		ro->disasm_b.core = opencore (ro, ro->file2);
+	}
+	if (!ro->disasm_a.core || !ro->disasm_b.core) {
+		return;
+	}
+	RDiffOp expanded = *op;
+	disasm_range (ro, &ro->disasm_a, &expanded.a_off, &expanded.a_len);
+	disasm_range (ro, &ro->disasm_b, &expanded.b_off, &expanded.b_len);
+	RDiffOp *pending = &ro->disasm_pending;
+	if (pending->a_buf && expanded.a_off <= pending->a_off + pending->a_len
+			&& expanded.b_off <= pending->b_off + pending->b_len) {
+		pending->a_len = R_MAX (pending->a_off + pending->a_len,
+			expanded.a_off + expanded.a_len) - pending->a_off;
+		pending->b_len = R_MAX (pending->b_off + pending->b_len,
+			expanded.b_off + expanded.b_len) - pending->b_off;
+	} else {
+		disasm_flush (ro);
+		*pending = expanded;
+	}
+}
+
 static int cb(RDiff *d, void *user, RDiffOp *op) {
 	int i;
 	RadiffOptions *ro = (RadiffOptions *)user;
@@ -271,71 +396,18 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 	case 0:
 	default:
 		if (ro->disasm) {
-			int i;
-			printf ("--- 0x%08" PFMT64x "  ", op->a_off + ro->baddr);
-			if (!ro->core) {
-				ro->core = opencore (ro, ro->file);
-			}
-			for (i = 0; i < op->a_len; i++) {
-				printf ("%02x", op->a_buf[i]);
-			}
-			printf ("\n");
-			if (ro->core) {
-				int len = R_MAX (4, op->a_len);
-				RAsmCode *ac = r_asm_mdisassemble (ro->core->rasm, op->a_buf, len);
-				char *acbufasm = strdup (ac->assembly);
-				if (ro->quiet) {
-					char *bufasm = r_str_prefix_all (acbufasm, "- ");
-					printf ("%s\n", bufasm);
-					free (bufasm);
-				} else {
-					char *bufasm = r_str_prefix_all (acbufasm, Color_RED "- ");
-					printf ("%s" Color_RESET, bufasm);
-					free (bufasm);
-				}
-				free (acbufasm);
-				r_asm_code_free (ac);
-			}
-		} else {
-			printf ("0x%08" PFMT64x " ", op->a_off + ro->baddr);
-			for (i = 0; i < op->a_len; i++) {
-				printf ("%02x", op->a_buf[i]);
-			}
+			disasm_diff (ro, op);
+			return 1;
 		}
-		if (ro->disasm) {
-			int i;
-			printf ("+++ 0x%08" PFMT64x "  ", op->b_off + ro->baddr);
-			if (!ro->core) {
-				ro->core = opencore (ro, ro->file);
-			}
-			for (i = 0; i < op->b_len; i++) {
-				printf ("%02x", op->b_buf[i]);
-			}
-			printf ("\n");
-			if (ro->core) {
-				int len = R_MAX (4, op->b_len);
-				RAsmCode *ac = r_asm_mdisassemble (ro->core->rasm, op->b_buf, len);
-				char *acbufasm = strdup (ac->assembly);
-				if (ro->quiet) {
-					char *bufasm = r_str_prefix_all (acbufasm, "+ ");
-					printf ("%s\n", bufasm);
-					free (bufasm);
-					free (acbufasm);
-				} else {
-					char *bufasm = r_str_prefix_all (acbufasm, Color_GREEN "+ ");
-					printf ("%s\n" Color_RESET, bufasm);
-					free (bufasm);
-					free (acbufasm);
-				}
-				// r_asm_code_free (ac);
-			}
-		} else {
-			printf (" => ");
-			for (i = 0; i < op->b_len; i++) {
-				printf ("%02x", op->b_buf[i]);
-			}
-			printf (" 0x%08" PFMT64x "\n", op->b_off + ro->baddr);
+		printf ("0x%08" PFMT64x " ", op->a_off + ro->baddr);
+		for (i = 0; i < op->a_len; i++) {
+			printf ("%02x", op->a_buf[i]);
 		}
+		printf (" => ");
+		for (i = 0; i < op->b_len; i++) {
+			printf ("%02x", op->b_buf[i]);
+		}
+		printf (" 0x%08" PFMT64x "\n", op->b_off + ro->baddr);
 		return 1;
 	}
 	return 0;
@@ -1090,6 +1162,8 @@ static void radiff_options_init(RadiffOptions *ro) {
 static void radiff_options_fini(RadiffOptions *ro) {
 	r_list_free (ro->runcmd);
 	r_list_free (ro->evals);
+	r_core_free (ro->disasm_a.core);
+	r_core_free (ro->disasm_b.core);
 	r_core_free (ro->core);
 	r_main_cons_fini (ro->cons, ro->own_cons, 0);
 }
@@ -1811,10 +1885,17 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 				r_cons_printf (ro.cons, "%s\n", res);
 				free (res);
 			} else {
+				ro.disasm_a.buf = bufa;
+				ro.disasm_a.size = sza;
+				ro.disasm_a.offset = ro.offset_a;
+				ro.disasm_b.buf = bufb;
+				ro.disasm_b.size = szb;
+				ro.disasm_b.offset = ro.offset_b;
 				ro.bufa_end = bufa + sza;
 				ro.bufb_end = bufb + szb;
 				r_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);
-				// r_diff_buffers_delta (d, bufa, (ut32)sza, bufb, (ut32)szb);
+				disasm_flush (&ro);
+				r_cons_flush (ro.cons);
 			}
 		}
 		if (ro.diffmode == 'j') {

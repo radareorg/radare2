@@ -566,3 +566,14 @@ EXPECT_ERR=<<EOF
 ERROR: No function to graph
 EOF
 RUN
+
+NAME=agg node body ending in an unterminated ANSI escape
+FILE=-
+CMDS=<<EOF
+agn a base64:V1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXVwpRUVFRG1s=
+agg~QQQQ
+EOF
+EXPECT=<<EOF
+| QQQQ                                     |
+EOF
+RUN

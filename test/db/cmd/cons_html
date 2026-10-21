@@ -38,3 +38,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+
+NAME=html filter with escapes at the end of the output
+FILE=-
+CMDS=<<EOF
+e scr.color=1
+e scr.html=true
+?en A\x1b[2K
+?en B\x1b[0J
+?en C\x1b[2JD
+?en E\x1b[3
+?en F\x1b[4
+?en G\x1b[2KH
+?e .
+EOF
+EXPECT=<<EOF
+ABC<hr />DE[3F[4GH.
+EOF
+RUN
