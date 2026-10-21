@@ -448,6 +448,16 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 			r_strbuf_appendf (&op->esil, "%d,%s,~,%s,=",
 				(insn->id == MIPS_INS_SEB)? 8: 16, ARG (1), ARG (0));
 			break;
+		case MIPS_INS_CLZ:
+		case MIPS_INS_DCLZ:
+			r_strbuf_appendf (&op->esil, "%d,%s,CLZ,%s,=",
+				(insn->id == MIPS_INS_CLZ)? 32: 64, ARG (1), ARG (0));
+			break;
+		case MIPS_INS_CLO:
+		case MIPS_INS_DCLO:
+			r_strbuf_appendf (&op->esil, "%d,0xffffffffffffffff,%s,^,CLZ,%s,=",
+				(insn->id == MIPS_INS_CLO)? 32: 64, ARG (1), ARG (0));
+			break;
 		case MIPS_INS_WSBH:
 			r_strbuf_appendf (&op->esil,
 				"8,0xff00ff00,%s,&,>>,8,0x00ff00ff,%s,&,<<,|,%s,=",
