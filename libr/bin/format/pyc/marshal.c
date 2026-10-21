@@ -1096,6 +1096,7 @@ static bool extract_sections_symbols(PycUnmarshalCtx *ctx, pyc_object *obj, RVec
 	section->vaddr = cobj->start_offset;
 	section->size = size;
 	section->vsize = size;
+	section->perm = R_PERM_RX;
 	if (cobj->consts->type != TYPE_TUPLE && cobj->consts->type != TYPE_SMALL_TUPLE) {
 		free (prefix);
 		return false;
