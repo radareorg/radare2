@@ -11,6 +11,7 @@ extern "C" {
 /* Use GMP's data struct */
 #define RNumBig mpz_t
 #elif HAVE_LIB_SSL
+typedef struct bignum_st BIGNUM;
 #define RNumBig BIGNUM
 #else
 /* Use default impl */

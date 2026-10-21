@@ -7,6 +7,11 @@
 #include <r_lib.h>
 #include <errno.h>
 
+#if HAVE_LIB_SSL
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#endif
+
 #if __linux__ && !R2_UEFI
 #include "i/isotp.h"
 #endif

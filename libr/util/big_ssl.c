@@ -1,6 +1,8 @@
 #include <r_util.h>
 
 #if HAVE_LIB_SSL
+#include <openssl/bn.h>
+
 R_API RNumBig *r_big_new(void) {
 	return BN_new ();
 }
