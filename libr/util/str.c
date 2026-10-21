@@ -2047,22 +2047,24 @@ static size_t __str_ansi_sanitize_length(char const *str) {
 	return i;
 }
 
-// remove ansi escape codes from string, decolorizing it
-// TODO : optimize by just using two counter variables instead of strcpy ()
+// remove ansi escape codes from string in place, decolorizing it
 R_API size_t r_str_ansi_strip(char *str) {
-	size_t i = 0;
-	while (str[i]) {
-		size_t chlen = str_ansi_length (str + i, SIZE_MAX);
-		size_t sanitize_len = __str_ansi_sanitize_length (str + i);
-		if (str[i] == 0x1b && chlen > 1) {
-			r_str_cpy (str + i, str + i + chlen);
+	size_t r = 0, w = 0;
+	while (str[r]) {
+		const size_t chlen = str_ansi_length (str + r, SIZE_MAX);
+		const size_t sanitize_len = __str_ansi_sanitize_length (str + r);
+		if (str[r] == 0x1b && chlen > 1) {
+			r += chlen;
 		} else if (sanitize_len > 0) {
-			r_str_cpy (str + i, str + i + sanitize_len);
+			r += sanitize_len;
 		} else {
-			i += chlen;
+			memmove (str + w, str + r, chlen);
+			w += chlen;
+			r += chlen;
 		}
 	}
-	return i;
+	str[w] = 0;
+	return w;
 }
 
 #if 0
