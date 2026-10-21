@@ -2,8 +2,6 @@
 
 #if R_INCLUDE_BEGIN
 
-#include "../cmd_mmc.inc.c"
-
 static RCoreHelpMessage help_msg_m = {
 	"Usage:", "m[-?*dgy] [...] ", "Mountpoints management",
 	"m", " /mnt ext2 0", "mount ext2 fs at /mnt with delta 0 on IO",
@@ -761,9 +759,6 @@ static bool mount_command(RCmdContext *ctx) {
 
 static bool mount_help(RCmdContext *ctx) {
 	const MountCommand *command = ctx->handler_user;
-	if (!strcmp (command->name, "mmc")) {
-		return cmd_mmc (ctx);
-	}
 	if (!strcmp (command->name, "mf")) {
 		r_cons_cmd_help (ctx->cons, help_msg_mf);
 	} else if (!strcmp (command->name, "m:")) {
@@ -831,7 +826,6 @@ static bool r_core_cmd_mount_init(RCmd *cmd) {
 		{ "mwf", mount_write, "mwf [diskfile] [r2filepath]", 2, 2, 0 },
 		{ "my", mount_yank, "my [file]", 1, 1, 0 },
 		{ "ms", mount_shell, "ms [path]", 0, 1, 0 },
-		{ "mmc", cmd_mmc, "mmc [left_path] [right_path]", 0, 2, 0 },
 		{ "mf", mount_help, "mf[no] [path] [name|offset]", 0, 0, 0 },
 		{ "m:", mount_command, "m:[plugin-command]", 0, 0, R_CMD_ARGS_ATTACHED | R_CMD_ARGS_VERBATIM },
 	};
