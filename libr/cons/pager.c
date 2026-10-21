@@ -132,8 +132,6 @@ R_IPI bool pager_all_matches(const char *s, RRegex *rx, RList **mla, int *lines,
 			free (clean);
 			return false;
 		}
-		// The filter does not map the string terminator.
-		cpos[ncpos] = strlen (loff);
 		m.rm_eo = ncpos;
 		r_list_purge (mla[l]);
 		int flags = R_REGEX_STARTEND;
