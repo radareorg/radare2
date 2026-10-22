@@ -2479,3 +2479,14 @@ movw r1, 0xfff8
 EOF
 RUN
 
+NAME=ELF: ARM R_ARM_THM_MOVW_ABS_NC against a Thumb function sets the Thumb bit
+FILE=bins/elf/arm-thumb-movw-thumb-bit-2.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pi 2 @ sym.thf
+EOF
+EXPECT=<<EOF
+movw r0, 0x35
+movt r0, 0x800
+EOF
+RUN
