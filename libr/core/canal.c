@@ -5979,7 +5979,22 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 				}
 				ut64 call_addr = xref->addr;
 				ut64 chop_addr = call_addr + xrefop->size;
+				int delay = xrefop->delay;
 				r_anal_op_free (xrefop);
+				// Delay slots execute before a noreturn call transfers control.
+				while (delay > 0) {
+					RAnalOp *slot = r_core_op_anal (core, chop_addr, R_ARCH_OP_MASK_BASIC);
+					if (!slot || slot->size < 1 || slot->type == R_ANAL_OP_TYPE_ILL
+							|| r_add_overflow (chop_addr, (ut64)slot->size, &chop_addr)) {
+						r_anal_op_free (slot);
+						break;
+					}
+					r_anal_op_free (slot);
+					delay--;
+				}
+				if (delay > 0) {
+					continue;
+				}
 				if (R_ANAL_REF_TYPE_MASK (xref->type) != R_ANAL_REF_TYPE_CALL) {
 					continue;
 				}

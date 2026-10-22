@@ -124,3 +124,27 @@ EXPECT=<<EOF
 0x6
 EOF
 RUN
+
+NAME=Noreturn propagation preserves a MIPS call delay slot
+ARGS=-a mips -b 32 -e cfg.bigendian=true
+FILE=-
+CMDS=<<EOF
+wx 0c0000082404ffff03e0000800000000
+wx 03e0000800000000 @ 0x20
+af @ 0
+abj @ 0~{0.size}
+tn 0x20
+aanr
+abj @ 0~{0.size}
+agfj @ 0~{0.blocks[0].ops[1].opcode}
+abj @ 0~jump~?
+abj @ 0~fail~?
+EOF
+EXPECT=<<EOF
+16
+8
+addiu a0, zero, -1
+0
+0
+EOF
+RUN
