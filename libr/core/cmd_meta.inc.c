@@ -197,7 +197,7 @@ static bool print_meta_offset(RCore *core, ut64 addr, PJ *pj) {
 	}
 	int line = al->line;
 
-	r_cons_printf (core->cons, "file: %s\nline: %d\ncolu: %d\naddr: 0x%08"PFMT64x"\n", al_file, line, al->column, addr);
+	r_cons_printf (core->cons, "file: %s\nline: %u\ncolu: %u\naddr: 0x%08"PFMT64x"\n", al_file, al->line, al->column, addr);
 	int line_old = line;
 	if (line >= 2) {
 		line -= 2;
@@ -279,10 +279,10 @@ static bool print_addrinfo2(void *user, const RBinAddrline *item) {
 		if (fs->filter_format) {
 			// TODO add column if defined
 			char *sfile = r_str_sanitize_r2 (file);
-			r_cons_printf (fs->core->cons, "'CL 0x%08"PFMT64x" %s:%d\n", item->addr, sfile, item->line);
+			r_cons_printf (fs->core->cons, "'CL 0x%08"PFMT64x" %s:%u\n", item->addr, sfile, item->line);
 			free (sfile);
 		} else {
-			r_cons_printf (fs->core->cons, "file: %s\nline: %d\ncolu: %d\naddr: 0x%08"PFMT64x"\n",
+			r_cons_printf (fs->core->cons, "file: %s\nline: %u\ncolu: %u\naddr: 0x%08"PFMT64x"\n",
 				file, item->line, item->column, item->addr);
 		}
 		fs->filter_count++;

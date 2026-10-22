@@ -235,7 +235,8 @@ static RCodeMeta *cld_build(RCore *core, RAnalFunction *fcn) {
 			R_LOG_WARN ("CLd: source line span for %s is too large, truncating", f->file);
 			maxline = f->minline + CLD_MAX_SPAN;
 		}
-		ut32 line;
+		// 64 bit counter: a ut32 one wraps forever when maxline is UT32_MAX
+		ut64 line;
 		for (line = f->minline; line <= maxline; line++) {
 			CLdLine *cl = ht_up_find (f->lines, line, NULL);
 			if (!path && !cl) {
@@ -247,7 +248,7 @@ static RCodeMeta *cld_build(RCore *core, RAnalFunction *fcn) {
 			if (text) {
 				r_strbuf_append (sb, text);
 			} else if (!path && cl) {
-				r_strbuf_appendf (sb, "// %s:%u", r_file_basename (f->file), line);
+				r_strbuf_appendf (sb, "// %s:%u", r_file_basename (f->file), (ut32)line);
 			}
 			size_t lend = r_strbuf_length (sb);
 			if (cl && cl->cmt) {

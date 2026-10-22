@@ -238,3 +238,28 @@ EXPECT=<<EOF
 offset
 EOF
 RUN
+
+NAME=CLd terminates when a function is at source line 0xffffffff
+FILE=bins/elf/dwarf-line-ffffffff
+TIMEOUT=10
+CMDS=<<EOF
+af
+CLd
+CL*
+CL @ entry0
+EOF
+EXPECT=<<EOF
+// /nonexistent/x.c:4294967295 @ 0x00400100 entry0
+// x.c:4294967295  // [01] -r-x section size 11 named .text
+'CL 0x00400100 /nonexistent/x.c:4294967295
+'CL 0x00400101 /nonexistent/x.c:4294967295
+file: /nonexistent/x.c
+line: 4294967295
+colu: 0
+addr: 0x00400100
+file: /nonexistent/x.c
+line: 4294967295
+colu: 0
+addr: 0x00400101
+EOF
+RUN
