@@ -1786,6 +1786,13 @@ a "push dword [esi+4]" ff7604
 a "push dword [esi]" ff36
 a "push dword [esp+4]" ff742404
 a "push dword [esp]" ff3424
+a "push dword [eax+ebx*4]" ff3498
+a "pop dword [0x1000]" 8f0500100000
+a "call dword [ebp]" ff5500
+a "jmp dword [esp]" ff2424
+a "jmp word [eax]" 66ff20
+a "push ax" 6650
+a "dec byte [0x1000]" fe0d00100000
 a "push [esp+4]" ff742404
 a "push [esp]" ff3424
 a "push eax" 50

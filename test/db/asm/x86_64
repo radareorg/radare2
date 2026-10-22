@@ -306,6 +306,24 @@ a "neg dword [rip+0x100]" f71d00010000
 a "pop rax" 58
 a "pop qword[rax]" 8f00
 a "pop qword[rsi]" 8f06
+a "push qword [r12]" 41ff3424
+a "push qword [rax+rbx*4]" ff3498
+a "pop qword [r13+4]" 418f4504
+a "pop word [rax]" 668f00
+a "call qword [rbp]" ff5500
+a "call qword [rax+r9*8+0x10]" 42ff54c810
+a "call r9" 41ffd1
+a "jmp qword [rsp]" ff2424
+a "jmp qword [rip+0x100]" ff2500010000
+a "jmp r15" 41ffe7
+a "jmp rax" ffe0 0x7fff00000000
+a "jmp qword [rax]" ff20 0x7fff00000000
+a "jmp qword [eax]" 67ff20
+a "push ax" 6650
+a "pop r9w" 664159
+a "inc qword [rax+r9*8+0x10]" 4aff44c810
+a "dec dword [eax]" 67ff08
+a "inc byte [0x1000]" fe042500100000
 a "pop qword[rdi]" 8f07
 a "pop qword[rsp]" 8f0424
 a "pop qword[rbp]" 8f4500
