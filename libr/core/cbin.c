@@ -5378,7 +5378,7 @@ static void bin_elf_versioninfo(RCore *core, PJ *pj, int mode) {
 	}
 
 	do {
-		char *verneed_path = r_str_newf (format, "verneed", num_verneed++);
+		r_strf_var (verneed_path, 128, format, "verneed", num_verneed++);
 		if (! (sdb = sdb_ns_path (core->sdb, verneed_path, 0))) {
 			break;
 		}
@@ -5467,7 +5467,6 @@ static void bin_elf_versioninfo(RCore *core, PJ *pj, int mode) {
 			pj_end (pj);
 			pj_end (pj);
 		}
-		free (verneed_path);
 	} while (sdb);
 	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
