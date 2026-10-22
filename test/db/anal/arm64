@@ -57402,3 +57402,49 @@ EXPECT=<<EOF
 0x00000020    1      8 fcn.00000020
 EOF
 RUN
+
+NAME=arm64 post-indexed structure accesses on SP account for the stack
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx e07b9f4c @ 0
+wx e07bdf4c @ 4
+wx e08bdf4c @ 8
+wx e0cfdf4d @ 12
+wx e073404c @ 16
+wx 20789f4c @ 20
+ao 1 @ 0~type,stackop,stackptr
+ao 1 @ 4~type,stackop,stackptr
+ao 1 @ 8~type,stackop,stackptr
+ao 1 @ 12~type,stackop,stackptr
+ao 1 @ 16~type,stackop,stackptr
+ao 1 @ 20~stackop,stackptr
+EOF
+EXPECT=<<EOF
+type: store
+stackop: inc
+stackptr: 18446744073709551600
+type: load
+stackop: inc
+stackptr: 18446744073709551600
+type: load
+stackop: inc
+stackptr: 18446744073709551584
+type: load
+stackop: inc
+stackptr: 18446744073709551608
+type: load
+EOF
+RUN
+
+NAME=arm64 structure register walks on SP keep the stack depth
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx e007c24c @ 0
+ao 1 @ 0~type,stackop,stackptr
+EOF
+EXPECT=<<EOF
+type: load
+EOF
+RUN
