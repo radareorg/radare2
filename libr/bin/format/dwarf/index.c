@@ -2,6 +2,9 @@
 
 #include "dwarf.h"
 
+// zero bytes accepted after a lone string offsets contribution, checked again for every split unit
+#define DWARF_CONTRIBUTION_PADDING_MAX 64
+
 static bool dwarf_form_is_strx(ut64 form) {
 	return form == DW_FORM_strx || (form >= DW_FORM_strx1 && form <= DW_FORM_strx4);
 }
@@ -99,7 +102,8 @@ static bool dwarf_string_offsets_contribution(const ut8 *data, size_t section_si
 			is_64bit, false, 0, end)) {
 		return false;
 	}
-	return *end == limit || dwarf_is_zero_padding (data + *end, data + limit);
+	return *end == limit || (limit - *end <= DWARF_CONTRIBUTION_PADDING_MAX
+		&& dwarf_is_zero_padding (data + *end, data + limit));
 }
 
 static bool dwarf_string_offsets_base(const ut8 *data, size_t section_size, bool be, ut64 base, size_t *end, ut8 *entry_size) {
