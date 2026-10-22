@@ -760,6 +760,10 @@ R_API bool r_io_bank_locate(RIO *io, const ut32 bankid, ut64 *addr, const ut64 s
 	}
 	RIOSubMap fake_sm;
 	fake_sm.itv.addr = *addr + (load_align - *addr % load_align) % load_align;
+	if (fake_sm.itv.addr < *addr) {
+		// overflow from aligning the start address => no location
+		return false;
+	}
 	fake_sm.itv.size = size;
 	fake_sm.mapref = (const RIOMapRef) {0};
 	RRBNode *entry = r_crbtree_find_node (bank->submaps, &fake_sm, _find_intersection_sm_cb, NULL);
@@ -788,6 +792,10 @@ R_API bool r_io_bank_locate(RIO *io, const ut32 bankid, ut64 *addr, const ut64 s
 			RIOSubMap *sm = (RIOSubMap *)entry->data;
 			fake_sm.itv.addr = (r_io_submap_to (sm) + 1) +
 				(load_align - ((r_io_submap_to (sm) + 1) % load_align)) % load_align;
+			if (fake_sm.itv.addr <= r_io_submap_to (sm)) {
+				// overflow, searching again from the bottom may never end => no location
+				return false;
+			}
 			entry = r_crbtree_find_node (bank->submaps, &fake_sm, _find_intersection_sm_cb, NULL);
 		} while (entry);
 		res = fake_sm.itv.addr;

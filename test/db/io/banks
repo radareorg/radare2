@@ -95,3 +95,19 @@ EXPECT=<<EOF
 done
 EOF
 RUN
+
+NAME=io map locate does not loop when maps reach the top of the address space
+FILE=--
+TIMEOUT=10
+CMDS=<<EOF
+o null://0xfffffffffffff000 0
+aeim
+?e ok
+EOF
+EXPECT=<<EOF
+ok
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Couldn't locate suitable address for aeim stack
+EOF
+RUN
