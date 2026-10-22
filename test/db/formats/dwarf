@@ -5383,3 +5383,40 @@ EXPECT=<<EOF
 opened
 EOF
 RUN
+
+NAME=dwarf5 line header directory and file tables
+FILE=bins/elf/dwarf5-line-tables
+CMDS=<<EOF
+id~Table:,     d
+EOF
+EXPECT=<<EOF
+ The Directory Table:
+  0     d
+ The File Name Table:
+  1     0       0         0                                           d
+EOF
+RUN
+
+NAME=dwarf5 line header file count past the end of the section
+FILE=bins/elf/dwarf5-line-file-count
+TIMEOUT=10
+CMDS=<<EOF
+id~Table:,     d
+EOF
+EXPECT=<<EOF
+ The Directory Table:
+  0     d
+ The File Name Table:
+EOF
+RUN
+
+NAME=dwarf5 line header directory count past the end of the section
+FILE=bins/elf/dwarf5-line-dir-count
+TIMEOUT=10
+CMDS=<<EOF
+id~Table:,     d
+EOF
+EXPECT=<<EOF
+ The Directory Table:
+EOF
+RUN

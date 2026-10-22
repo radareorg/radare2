@@ -1433,6 +1433,90 @@ bool test_big_endian_dwarf2(void) {
 	mu_end;
 }
 
+static bool test_dwarf5_line_header_bounds(void) {
+	RBinFileOptions opt = { 0 };
+	mu_assert ("Could not open DWARF fixture", r_bin_open (bin, "bins/elf/dwarf3_c.elf", &opt));
+	RBinFile *bf = r_bin_cur (bin);
+	RVecRBinSection *sections = r_bin_file_get_sections_vec (bf);
+	RBinSection *section, *line_section = NULL;
+	R_VEC_FOREACH (sections, section) {
+		if (!strcmp (section->name, ".debug_line")) {
+			line_section = section;
+			break;
+		}
+	}
+	mu_assert_notnull (line_section, "Missing .debug_line section");
+	static const struct {
+		ut8 type;
+		ut8 form;
+		ut8 size;
+	} cases[] = {
+		{ DW_LNCT_timestamp, DW_FORM_data1, 1 },
+		{ DW_LNCT_timestamp, DW_FORM_data2, 2 },
+		{ DW_LNCT_timestamp, DW_FORM_data4, 4 },
+		{ DW_LNCT_timestamp, DW_FORM_data8, 8 },
+		{ DW_LNCT_timestamp, DW_FORM_udata, 1 },
+		{ DW_LNCT_MD5, DW_FORM_data16, 16 },
+		{ DW_LNCT_path, DW_FORM_string, 2 },
+		{ DW_LNCT_path, DW_FORM_strp, 4 },
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (cases); i++) {
+		ut8 line[64] = { 0 };
+		r_write_le16 (line + 4, 5);
+		line[6] = 8;
+		static const ut8 fields[] = { 1, 1, 1, 0, 1, 1, 1, DW_LNCT_path, DW_FORM_string, 0 };
+		memcpy (line + 12, fields, sizeof (fields));
+		size_t offset = 12 + sizeof (fields);
+		bool path = cases[i].type == DW_LNCT_path;
+		line[offset++] = path? 1: 2;
+		if (!path) {
+			line[offset++] = DW_LNCT_path;
+			line[offset++] = DW_FORM_string;
+		}
+		line[offset++] = cases[i].type;
+		line[offset++] = cases[i].form;
+		line[offset++] = 1;
+		if (!path) {
+			line[offset++] = 'f';
+			line[offset++] = 0;
+		}
+		if (cases[i].form == DW_FORM_string) {
+			line[offset] = 'f';
+		} else if (cases[i].form == DW_FORM_udata) {
+			line[offset] = 0x7f;
+		} else if (!path) {
+			memset (line + offset, 0xff, cases[i].size);
+		}
+		offset += cases[i].size;
+		r_write_le32 (line, offset + 8 - 4);
+		r_write_le32 (line + 8, offset - 12);
+		line_section->bytes = r_slice (line, offset + 8);
+		RList *files = r_bin_dwarf_parse_line_files (bf);
+		mu_assert_notnull (files, "Could not parse line files");
+		mu_assert_eq (r_list_length (files), 1, "Value ending exactly at the header boundary must be accepted");
+		if (cases[i].form != DW_FORM_strp) {
+			mu_assert_streq (r_list_first (files), "f", "Wrong line file name");
+		}
+		r_list_free (files);
+
+		r_write_le32 (line + 8, offset - 13);
+		files = r_bin_dwarf_parse_line_files (bf);
+		mu_assert_notnull (files, "Could not parse truncated line files");
+		mu_assert_eq (r_list_length (files), 0, "Truncated value must not consume opcode bytes");
+		r_list_free (files);
+
+		r_write_le32 (line + 8, offset - 12);
+		r_write_le32 (line, offset - 5);
+		files = r_bin_dwarf_parse_line_files (bf);
+		mu_assert_notnull (files, "Could not parse truncated line unit");
+		mu_assert_eq (r_list_length (files), 0, "Header must not extend past its unit");
+		r_list_free (files);
+	}
+	line_section->bytes = r_slice (NULL, 0);
+	mu_end;
+}
+
 #define run_test_with_setup(test_func) do { \
 	if (!setup()) { \
 		printf("Setup failed for " #test_func "\n"); \
@@ -1443,6 +1527,7 @@ bool test_big_endian_dwarf2(void) {
 } while (0)
 
 bool all_tests(void) {
+	run_test_with_setup(test_dwarf5_line_header_bounds);
 	run_test_with_setup(test_dwarf_cpp_empty_line_info);
 	run_test_with_setup(test_dwarf2_cpp_many_comp_units);
 	run_test_with_setup(test_dwarf3_c_basic);
