@@ -697,3 +697,20 @@ ad "tbnz w30, 0xf, 4" 3E007837
 ad "tbnz w11, 0x1d, 0x18" CB00E837
 ad "msub x7, x8, x9, x5" 0795099b
 ad "str x2, [x16, 0x2058]" 022e10f9
+ad "subs x0, x1, 1" 200400f1
+ad "subs x0, x1, x2" 200002eb
+ad "sub w0, w1, w2" 2000024b
+ad "sub w0, w1, 0x10" 20400051
+ad "add x0, x0, 1, lsl 12" 00044091
+a "add x0, x0, 0x1000" 00044091
+ad "sub sp, sp, 1, lsl 12" ff0740d1
+ad "sub x0, x1, 1" 200400d1
+a "add x0, x1, -1" 200400d1
+ad "add x0, x0, w28, uxtw" 00403c8b
+ad "sub x0, x0, w28, sxtw 2" 00c83ccb
+ad "adds x0, x0, x28, lsl 3" 000c1cab
+ad "adds x0, x0, w28, uxtw" 00403cab
+ad "add x0, sp, x1" e063218b
+ad "cmp x0, 0xfff" 1ffc3ff1
+ad "cmp w0, 1, lsl 12" 1f044071
+ad "cmp x0, x1, lsl 3" 1f0c01eb
