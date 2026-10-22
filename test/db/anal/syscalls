@@ -92,3 +92,59 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=Linux x86 32 syscall register convention
+FILE=-
+CMDS=<<EOF
+-a x86
+-b 32
+-e asm.os=linux
+tcc x86syscall
+EOF
+EXPECT=<<EOF
+eax x86syscall (ebx, ecx, edx, esi, edi, ebp);
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Linux arm 32 syscall register convention
+FILE=-
+CMDS=<<EOF
+-a arm
+-b 32
+-e asm.os=linux
+tcc armsyscall
+EOF
+EXPECT=<<EOF
+r0 armsyscall (r0, r1, r2, r3, r4, r5, r6);
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Linux arm 64 syscall register convention
+FILE=-
+CMDS=<<EOF
+-a arm
+-b 64
+-e asm.os=linux
+tcc arm64syscall
+EOF
+EXPECT=<<EOF
+x0 arm64syscall (x0, x1, x2, x3, x4, x5);
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Linux mips 32 syscall register convention
+FILE=-
+CMDS=<<EOF
+-a mips
+-b 32
+-e asm.os=linux
+tcc o32syscall
+EOF
+EXPECT=<<EOF
+v0 o32syscall (a0, a1, a2, a3, stack);
+EOF
+EXPECT_ERR=
+RUN

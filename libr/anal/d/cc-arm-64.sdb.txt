@@ -127,3 +127,12 @@ cc.golang.ret14=x14
 cc.golang.ret15=x15
 cc.golang.retn=16
 cc.golang.fpret0={d0,s0,v0,q0}
+
+arm64syscall=cc
+cc.arm64syscall.arg0=x0
+cc.arm64syscall.arg1=x1
+cc.arm64syscall.arg2=x2
+cc.arm64syscall.arg3=x3
+cc.arm64syscall.arg4=x4
+cc.arm64syscall.arg5=x5
+cc.arm64syscall.ret0=x0

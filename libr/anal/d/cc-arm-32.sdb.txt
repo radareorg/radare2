@@ -32,3 +32,13 @@ cc.swift.preserve=r4,r5,r6,r7,r9,r10,r11,sp,d8,d9,d10,d11,d12,d13,d14,d15
 cc.swift.self=sl
 cc.swift.error=r8
 cc.swift.ret0=r0
+
+armsyscall=cc
+cc.armsyscall.arg0=r0
+cc.armsyscall.arg1=r1
+cc.armsyscall.arg2=r2
+cc.armsyscall.arg3=r3
+cc.armsyscall.arg4=r4
+cc.armsyscall.arg5=r5
+cc.armsyscall.arg6=r6
+cc.armsyscall.ret0=r0

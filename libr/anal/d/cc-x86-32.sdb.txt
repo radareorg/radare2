@@ -80,3 +80,12 @@ cc.golang.argn=stack
 cc.golang.stackalloc=lower
 cc.golang.pop=caller
 cc.golang.ret0=stack
+
+x86syscall=cc
+cc.x86syscall.arg0=ebx
+cc.x86syscall.arg1=ecx
+cc.x86syscall.arg2=edx
+cc.x86syscall.arg3=esi
+cc.x86syscall.arg4=edi
+cc.x86syscall.arg5=ebp
+cc.x86syscall.ret0=eax
