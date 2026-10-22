@@ -52,7 +52,7 @@ static int get_ws_optype(const ut8 *buf, int len) {
 static const ut8 *get_ws_next_token(const ut8 *buf, int len) {
 	const ut8 *ret;
 	ret = buf;
-	while (len - (ret - buf)) {
+	while (ret - buf < len) {
 		switch (*ret) {
 		case ' ':
 		case '\t':
@@ -67,12 +67,15 @@ static const ut8 *get_ws_next_token(const ut8 *buf, int len) {
 static st32 get_ws_val(const ut8 *buf, int len) {
 	ut8 sig;
 	int i, ret = 0;
+	const ut8 *end = buf + len;
 	const ut8 *tok = get_ws_next_token (buf, len);
+	if (!tok) {
+		return 0;
+	}
 	sig = (*tok == '\t');
-	len -= (tok - buf) + 1;
 	for (i = 0; i < 30; i++) { // XXX : conceptually wrong
 		tok++;
-		tok = get_ws_next_token (tok, len);
+		tok = get_ws_next_token (tok, end - tok);
 		if (!tok || *tok == 10) {
 			if (sig) {
 				return ret * (-1);
@@ -81,17 +84,16 @@ static st32 get_ws_val(const ut8 *buf, int len) {
 		}
 		ret = (ret << 1);
 		ret = ret + (*tok == '\t');
-		len = len - (tok - buf) - 1;
 	}
 	return sig? ret * (-1): ret;
 }
 
 static int test_ws_token_exist(const ut8 *buf, ut8 token, int len) {
+	const ut8 *end = buf + len;
 	const ut8 *ptr = get_ws_next_token (buf, len);
 	int size = 1;
-	while (ptr && *ptr != token && (len > 0)) {
-		len = len - (ptr - buf);
-		ptr = get_ws_next_token (ptr + 1, len - 1);
+	while (ptr && *ptr != token) {
+		ptr = get_ws_next_token (ptr + 1, end - ptr - 1);
 		size++;
 	}
 	return size;

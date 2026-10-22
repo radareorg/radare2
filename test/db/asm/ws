@@ -1,5 +1,5 @@
 dB "push 1" 202020090a # https://github.com/radareorg/radare2/commit/306adb7a504c3f00eefd79195eb166bb3648e416
-dB "mark 67" 0a202020092020202009090a
+d "mark 67" 0a202020092020202009090a
 d "dup" 200a20
 d "puti" 090a2009
 dB "push 10" 202020092009200a # https://github.com/radareorg/radare2/commit/306adb7a504c3f00eefd79195eb166bb3648e416
@@ -11,4 +11,6 @@ d "mod" 09200909
 d "store" 090920
 d "load" 090909
 d "exit" 0a0a0a
-dB "jmp 67" 0a200a20092020202009090a
+d "jmp 67" 0a200a20092020202009090a
+d "mark 15" 0a2020200909090978
+d "jz -15" 0a09200909090909780a
