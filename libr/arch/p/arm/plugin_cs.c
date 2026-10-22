@@ -668,6 +668,18 @@ static int vas_size(arm64_vas vas) {
 		return 16;
 	case ARM64_VAS_1S:
 		return 32;
+#if CS_API_MAJOR == 6
+	case AARCH64LAYOUT_VL_B:
+		return 8;
+	case AARCH64LAYOUT_VL_H:
+		return 16;
+	case AARCH64LAYOUT_VL_S:
+		return 32;
+	case AARCH64LAYOUT_VL_D:
+		return 64;
+	case AARCH64LAYOUT_VL_Q:
+		return 128;
+#endif
 #if CS_API_MAJOR < 6
 	case ARM64_VAS_1B:
 		return 8;
@@ -701,6 +713,15 @@ static int vas_count(arm64_vas vas) {
 		return 4;
 	case ARM64_VAS_2H:
 		return 2;
+#if CS_API_MAJOR == 6
+	// v6 encodes a scalar lane as a bare layout without element count
+	case AARCH64LAYOUT_VL_B:
+	case AARCH64LAYOUT_VL_H:
+	case AARCH64LAYOUT_VL_S:
+	case AARCH64LAYOUT_VL_D:
+	case AARCH64LAYOUT_VL_Q:
+		return 1;
+#endif
 #if CS_API_MAJOR < 6
 	case ARM64_VAS_1B:
 	case ARM64_VAS_1H:
@@ -1513,7 +1534,7 @@ static void arm64_esil_zext_vupper(RAnalOp *op, csh *handle, cs_insn *insn) {
 	// rest of their register and must not be zero-extended.
 	for (i = 0; i < OPCOUNT64 (); i++) {
 		cs_arm64_op o = INSOP64 (i);
-		if (o.type == ARM64_OP_REG && (o.access & CS_AC_WRITE) && o.vector_index != -1) {
+		if (ISREG64 (i) && (o.access & CS_AC_WRITE) && o.vector_index != -1) {
 			return;
 		}
 	}
@@ -1521,7 +1542,7 @@ static void arm64_esil_zext_vupper(RAnalOp *op, csh *handle, cs_insn *insn) {
 		cs_arm64_op dst = INSOP64 (i);
 		const char *name;
 		int bits, n;
-		if (dst.type != ARM64_OP_REG || !(dst.access & CS_AC_WRITE) || dst.vector_index != -1) {
+		if (!ISREG64 (i) || !(dst.access & CS_AC_WRITE) || dst.vector_index != -1) {
 			continue;
 		}
 		name = cs_reg_name (*handle, dst.reg);
