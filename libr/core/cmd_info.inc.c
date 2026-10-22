@@ -456,6 +456,7 @@ static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) 
 			R_LOG_ERROR ("%s", err);
 		}
 	}
+	free (res);
 	free (args);
 	return;
 }
