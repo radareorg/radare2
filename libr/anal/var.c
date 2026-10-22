@@ -1152,12 +1152,34 @@ R_API R_OWNED char *r_anal_function_autoname_var(RAnalFunction *fcn, char kind, 
 				varname = r_str_newf ("%s_%s_%xh", pfx, k, uptr);
 				return varname;
 			}
-			int i = 2;
-			do {
-				free (varname);
-				varname = r_str_newf ("%s_%xh_%u", pfx, uptr, i++);
-			} while (r_anal_function_get_var_byname (fcn, varname));
-			return varname;
+			// lowest free _<n> suffix in one pass: N variables take at most N suffixes
+			const size_t len = strlen (varname);
+			RBitmap *taken = r_bitmap_new (RVecAnalVarPtr_length (&fcn->vars) + 3);
+			if (!taken) {
+				return varname;
+			}
+			R_VEC_FOREACH (&fcn->vars, it) {
+				const char *name = (*it)->name;
+				if (strncmp (name, varname, len) || name[len] != '_') {
+					continue;
+				}
+				const char *suffix = name + len + 1;
+				if (!isdigit ((ut8)*suffix) || *suffix == '0') {
+					continue;
+				}
+				char *end;
+				const unsigned long n = strtoul (suffix, &end, 10);
+				if (!*end) {
+					r_bitmap_set (taken, n);
+				}
+			}
+			size_t i = 2;
+			while (r_bitmap_test (taken, i)) {
+				i++;
+			}
+			r_bitmap_free (taken);
+			free (varname);
+			return r_str_newf ("%s_%xh_%u", pfx, uptr, (unsigned int)i);
 		}
 	}
 	return varname;

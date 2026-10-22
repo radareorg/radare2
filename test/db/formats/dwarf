@@ -5431,3 +5431,14 @@ EXPECT=<<EOF
 opened
 EOF
 RUN
+
+NAME=dwarf5 split units do not rescan the str_offsets zero padding
+FILE=bins/elf/dwarf5-split-str-offsets-padding
+TIMEOUT=15
+CMDS=<<EOF
+?e opened
+EOF
+EXPECT=<<EOF
+opened
+EOF
+RUN

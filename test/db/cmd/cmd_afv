@@ -55,3 +55,20 @@ hello
 arg int64_t redef @ rsp+0x28
 EOF
 RUN
+
+NAME=afv autonames thousands of colliding stack variables in linear passes
+FILE=malloc://32768
+ARGS=-a x86 -b 64
+TIMEOUT=15
+CMDS=<<EOF
+wow ff742408 @ 0!32000
+wx c3 @ 32000
+af
+afv~?
+afv~var_8h_7998 @
+EOF
+EXPECT=<<EOF
+8000
+var int64_t var_8h_7998 @ rsp+0x10
+EOF
+RUN
