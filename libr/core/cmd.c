@@ -5215,6 +5215,7 @@ escape_backtick:
 		ut8 *buf;
 
 		*ptr++ = '\0';
+		r_str_trim_tail (cmd);
 repeat_arroba:
 		arroba = (ptr[0] && ptr[1] && ptr[2])?  strchr (ptr + 2, '@'): NULL;
 		if (r_str_startswith (ptr, "@@@")) { // "@@@@"

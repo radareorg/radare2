@@ -1,3 +1,113 @@
+NAME=partial address modifiers trim cipher names
+FILE=malloc://128
+ARGS=-a x86 -b 64 -e search.in=io.maps
+CMDS=<<EOF
+/ca aes @..0
+/ca sm4   @..0
+/ca aes @...80
+/ca sm4   @...80
+EOF
+EXPECT=
+EXPECT_ERR=
+RUN
+
+NAME=partial address modifiers trim calling convention names
+FILE=malloc://128
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+tcc void customcc (rax);
+tcc customcc @..0
+tcc customcc   @...80
+tcc- customcc @..0
+tcc~customcc
+tcc void customcc (rax);
+tcc- customcc   @...80
+tcc~customcc
+EOF
+EXPECT=<<EOF
+void customcc (rax);
+void customcc (rax);
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=partial address modifiers trim visual mark and flag space deletion
+FILE=malloc://128
+CMDS=<<EOF
+fv a 1
+fv b 2
+fv-* @..0
+fvj
+fv a 1
+fv b 2
+fv-*   @...80
+fvj
+fs foo
+f test 1 1
+fs *
+fs-foo @..0
+fsj~foo
+fs foo
+f test 1 1
+fs *
+fs-foo   @...80
+fsj~foo
+EOF
+EXPECT=<<EOF
+[]
+[]
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=partial address modifiers trim exported type names
+FILE=malloc://128
+CMDS=<<EOF
+'td struct Foo { int x; };
+'td enum E { A=1 };
+tsc Foo @..0
+tsc Foo   @...80
+tec E @..0
+tec E   @...80
+EOF
+EXPECT=<<EOF
+struct Foo {
+  int x;
+};
+struct Foo {
+  int x;
+};
+enum E {
+	A = 1
+};
+enum E {
+	A = 1
+};
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=partial address modifiers trim instruction families and register names
+FILE=malloc://2
+ARGS=-a x86 -b 64 -e search.in=io.maps
+CMDS=<<EOF
+wx 90c3
+/af cpu @..0
+/af cpu   @...2
+aer rax @..0
+aer rax   @...2
+EOF
+EXPECT=<<EOF
+0x00000000 cpu nop 1 nop
+0x00000001 cpu ret 1 ret
+0x00000000 cpu nop 1 nop
+0x00000001 cpu ret 1 ret
+0x00000000
+0x00000000
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=@c:
 FILE=--
 CMDS=<<EOF
