@@ -2228,3 +2228,17 @@ EXPECT=<<EOF
 0x0007ce88  0x0000000000008c25                       %.......
 EOF
 RUN
+
+NAME=elf/arm64 ET_REL lists PREL64 and MOVW_UABS relocs
+FILE=bins/elf/aarch64-prel64-movw.o
+CMDS=ir
+EXPECT=<<EOF
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x08000044 0x00000044 SET_16 263   f + 0x00000040
+0x08000048 0x00000048 SET_16 266   f + 0x00000800
+0x0800004c 0x0000004c SET_16 268   f
+0x08000050 0x00000050 SET_16 269   f
+0x08000054 0x00000054 SET_64 260   f - 0x00000014
+EOF
+RUN

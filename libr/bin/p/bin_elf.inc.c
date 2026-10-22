@@ -730,8 +730,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_AARCH64_PREL32: ADD (32, 0); break;
 		case R_AARCH64_PREL64:
 			r->addend = (st64) sym_vaddr + rel->addend - rel->rva;
-			r->type = R_BIN_RELOC_64;
-			break;
+			SET (64);
 		case R_AARCH64_ABS64: ADD (64, 0); break;
 		case R_AARCH64_ABS32: ADD (32, 0); break;
 		case R_AARCH64_ABS16: ADD (16, 0); break;
@@ -759,22 +758,18 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_AARCH64_MOVW_UABS_G0:
 		case R_AARCH64_MOVW_UABS_G0_NC:
 			r->addend = sym_vaddr & 0xFFFF;
-			r->type = R_BIN_RELOC_16;
-			break;
+			SET (16);
 		case R_AARCH64_MOVW_UABS_G1:
 		case R_AARCH64_MOVW_UABS_G1_NC:
 			r->addend = (sym_vaddr >> 16) & 0xFFFF;
-			r->type = R_BIN_RELOC_16;
-			break;
+			SET (16);
 		case R_AARCH64_MOVW_UABS_G2:
 		case R_AARCH64_MOVW_UABS_G2_NC:
 			r->addend = (sym_vaddr >> 32) & 0xFFFF;
-			r->type = R_BIN_RELOC_16;
-			break;
+			SET (16);
 		case R_AARCH64_MOVW_UABS_G3:
 			r->addend = (sym_vaddr >> 48) & 0xFFFF;
-			r->type = R_BIN_RELOC_16;
-			break;
+			SET (16);
 #if 0
 		case R_AARCH64_TLS_TPREL64:
 			r->type = R_BIN_RELOC_TLS;
