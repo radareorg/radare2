@@ -133,6 +133,7 @@ typedef struct r_x86nz_opcode_t {
 	Operand operands[MAX_OPERANDS];
 	bool has_bnd;
 	bool has_notrack;
+	bool has_lock;
 } Opcode;
 
 static bool immediate_out_of_range(int bits, ut64 immediate) {
@@ -6476,7 +6477,12 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 static int parseOpcode(RArchSession *a, const char *op, Opcode *out) {
 	out->has_bnd = false;
 	out->has_notrack = false;
+	out->has_lock = false;
 	bool isrepop = false;
+	if (r_str_startswith (op, "lock ")) {
+		out->has_lock = true;
+		op += 5;
+	}
 	if (r_str_startswith (op, "notrack ")) {
 		out->has_notrack = true;
 		op += 8;
@@ -6529,6 +6535,35 @@ static int parseOpcode(RArchSession *a, const char *op, Opcode *out) {
 err:
 	R_FREE (out->mnemonic);
 	return -1;
+}
+
+// instructions that accept a lock prefix, always with a memory destination
+static bool is_lockable(const Opcode *op) {
+	static const char *const lockable[] = {
+		"add", "adc", "and", "btc", "btr", "bts", "dec", "inc", "neg",
+		"not", "or", "sbb", "sub", "xadd", "xchg", "xor", NULL
+	};
+	if (!(op->operands[0].type & OT_MEMORY)) {
+		return false;
+	}
+	int i;
+	for (i = 0; lockable[i]; i++) {
+		if (!r_str_casecmp (op->mnemonic, lockable[i])) {
+			return true;
+		}
+	}
+	return false;
+}
+
+// put the lock prefix after any 0x66 / 0x67 prefix the encoder wrote, like GNU as
+static int insert_lock_prefix(ut8 *data, int len) {
+	int k = 0;
+	while (k < len && (data[k] == 0x66 || data[k] == 0x67)) {
+		k++;
+	}
+	memmove (data + k + 1, data + k, len - k);
+	data[k] = 0xf0;
+	return len + 1;
 }
 
 static int oprep(RArchSession *a, ut8 *data, const Opcode *op) {
@@ -6604,6 +6639,9 @@ R_API int x86nz_assemble(RArchSession *a, RAnalOp *ao, const char *str) {
 	}
 	for (lt_ptr = oplookup; strcmp (lt_ptr->mnemonic, "null"); lt_ptr++) {
 		if (!r_str_casecmp (instr.mnemonic, lt_ptr->mnemonic)) {
+			if (instr.has_lock && !is_lockable (&instr)) {
+				break;
+			}
 			if (lt_ptr->opcode > 0) {
 				if (!lt_ptr->only_x32 || a->config->bits != 64) {
 					int pl = 0;
@@ -6637,7 +6675,10 @@ R_API int x86nz_assemble(RArchSession *a, RAnalOp *ao, const char *str) {
 					}
 					data = __data + pl;
 					retval = lt_ptr->opdo (a, data, &instr);
-					retval += pl;
+					if (retval > 0 && instr.has_lock) {
+						retval = insert_lock_prefix (data, retval);
+					}
+					retval = (retval > 0)? retval + pl: -1;
 				}
 			}
 			break;

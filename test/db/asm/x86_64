@@ -306,6 +306,16 @@ a "neg dword [rip+0x100]" f71d00010000
 a "pop rax" 58
 a "pop qword[rax]" 8f00
 a "pop qword[rsi]" 8f06
+a "lock add dword [rax], ecx" f00108
+a "lock inc qword [rbx+8]" f048ff4308
+a "lock dec byte [rsp]" f0fe0c24
+a "lock not word [rbp-4]" 66f0f755fc
+a "lock neg dword [r8+rcx*4]" f041f71c88
+a "lock sub qword [rip+0x10], rax" f048290510000000
+a "lock bts dword [rax], 3" f00fba2803
+a "lock btr qword [rbx+8], rcx" f0480fb34b08
+a "lock or byte [rsp], 5" f0800c2405
+a "lock add word [eax], cx" 6766f00108
 a "push qword [r12]" 41ff3424
 a "push qword [rax+rbx*4]" ff3498
 a "pop qword [r13+4]" 418f4504
