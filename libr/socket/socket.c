@@ -122,6 +122,35 @@ R_API bool r_socket_is_connected(RSocket *s) {
 #endif
 }
 
+/* waits until the socket is readable (or writable when wr is set) */
+/* returns -1 on error, 0 on timeout, 1 when ready */
+static int socket_wait(RSocket *s, bool wr, ut32 secs, ut32 usecs) {
+#if HAVE_POLL
+	// an fd_set only has room for descriptors below FD_SETSIZE, so
+	// FD_SET() and select() on any other descriptor corrupt the stack
+	struct pollfd pfd = { .fd = s->fd, .events = wr? POLLOUT: POLLIN };
+	ut64 msecs = ((ut64)secs * 1000) + (((ut64)usecs + 999) / 1000);
+	int ret = poll (&pfd, 1, (int)R_MIN (msecs, INT_MAX));
+	if (ret > 0 && (pfd.revents & POLLNVAL)) {
+		errno = EBADF;
+		return -1;
+	}
+	return ret;
+#else
+#if R2__UNIX__
+	if (s->fd < 0 || s->fd >= FD_SETSIZE) {
+		errno = s->fd < 0? EBADF: EINVAL;
+		return -1;
+	}
+#endif
+	fd_set fds;
+	FD_ZERO (&fds);
+	FD_SET (s->fd, &fds);
+	struct timeval tv = { secs, usecs };
+	return select (s->fd + 1, wr? NULL: &fds, wr? &fds: NULL, NULL, &tv);
+#endif
+}
+
 #if R2__UNIX__
 static bool __connect_unix(RSocket *s, const char *file) {
 	struct sockaddr_un addr;
@@ -417,12 +446,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 				goto success;
 			}
 			if (errno == EINPROGRESS) {
-				struct timeval tv = { timeout, 0 };
-				fd_set wfds;
-				FD_ZERO (&wfds);
-				FD_SET (s->fd, &wfds);
-
-				if (select (s->fd + 1, NULL, &wfds, NULL, &tv) != -1) {
+				if (socket_wait (s, true, timeout, 0) != -1) {
 					if (r_socket_is_connected (s)) {
 						freeaddrinfo (res);
 						goto success;
@@ -454,16 +478,7 @@ success:
 			int error = SSL_get_error (s->sfd, ret);
 			int tries = 10;
 			while (tries && ret && (error == SSL_ERROR_WANT_READ || error == SSL_ERROR_WANT_WRITE)) {
-				struct timeval tv = { 1, 0 };
-				fd_set rfds, wfds;
-				FD_ZERO (&rfds);
-				FD_ZERO (&wfds);
-				if (error == SSL_ERROR_WANT_READ) {
-					FD_SET (s->fd, &rfds);
-				} else {
-					FD_SET (s->fd, &wfds);
-				}
-				if ((ret = select (s->fd + 1, &rfds, &wfds, NULL, &tv)) < 1) {
+				if (socket_wait (s, error == SSL_ERROR_WANT_WRITE, 1, 0) < 1) {
 					r_socket_close (s);
 					return false;
 				}
@@ -714,21 +729,10 @@ R_API RSocket *r_socket_accept(RSocket *s) {
 }
 
 R_API RSocket *r_socket_accept_timeout(RSocket *s, unsigned int timeout) {
-	fd_set read_fds;
-	fd_set except_fds;
-
-	FD_ZERO (&read_fds);
-	FD_SET (s->fd, &read_fds);
-
-	FD_ZERO (&except_fds);
-	FD_SET (s->fd, &except_fds);
-
-	struct timeval t = { timeout, 0 };
-
-	int r = select (s->fd + 1, &read_fds, NULL, &except_fds, &t);
+	int r = socket_wait (s, false, timeout, 0);
 	if (r < 0) {
 		r_sys_perror ("select");
-	} else if (r > 0 && FD_ISSET (s->fd, &read_fds)) {
+	} else if (r > 0) {
 		return r_socket_accept (s);
 	}
 
@@ -783,7 +787,6 @@ R_API int r_socket_flush(RSocket *s) {
 /* waits secs until new data is received.	  */
 /* returns -1 on error, 0 is false, 1 is true */
 R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
-	fd_set rfds;
 	if (secs < 0) {
 		secs = 0;
 	}
@@ -793,10 +796,7 @@ R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 	if (s->fd == R_INVALID_SOCKET) {
 		return -1;
 	}
-	FD_ZERO (&rfds);
-	FD_SET (s->fd, &rfds);
-	struct timeval tv = { secs, usecs };
-	return select (s->fd + 1, &rfds, NULL, NULL, &tv);
+	return socket_wait (s, false, secs, usecs);
 }
 
 R_API char *r_socket_tostring(RSocket *s) {
