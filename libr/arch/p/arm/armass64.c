@@ -1491,21 +1491,38 @@ static ut32 adr(ArmOp *op, int addr) {
 	return data;
 }
 
-static ut32 stp(ArmOp *op, int k) {
+// stp/ldp rt, rt2, [rn{, #imm}] or [rn, #imm]! or [rn], #imm
+static ut32 stp(ArmOp *op, bool load) {
 	ut32 data = UT32_MAX;
-
-	if (op->operands[3].immediate & 0x7) {
-		return data;
+	check_cond (op->operands_count == 3 || op->operands_count == 4);
+	check_cond (op->operands[0].type == ARM_GPR && op->operands[1].type == ARM_GPR && op->operands[2].type == ARM_GPR);
+	check_cond (!(op->operands[0].reg_type & ARM_SP) && !(op->operands[1].reg_type & ARM_SP));
+	check_cond (op->operands[2].reg_type & ARM_REG64);
+	const bool is64 = op->operands[0].reg_type & ARM_REG64;
+	check_cond (is64 == !!(op->operands[1].reg_type & ARM_REG64));
+	check_cond (!load || op->operands[0].reg != op->operands[1].reg);
+	st64 imm = 0;
+	bool post = false;
+	if (op->operands_count == 4) {
+		check_cond (op->operands[3].type == ARM_CONSTANT);
+		imm = (st64)op->operands[3].immediate;
+		post = !op->operands[3].preindex;
 	}
-	if (k == 0x000040a9 && (op->operands[0].reg == op->operands[1].reg)) {
-		return data;
+	check_cond (!post || !op->writeback);
+	const int size = is64? 8: 4;
+	check_cond (imm % size == 0);
+	imm /= size;
+	check_cond (imm >= -64 && imm <= 63);
+	ut32 insn = is64? 0xa8000000: 0x28000000;
+	insn |= post? 0x00800000: op->writeback? 0x01800000: 0x01000000;
+	if (load) {
+		insn |= 0x00400000;
 	}
-
-	data = k;
-	data |= encode2regs (op);
-	data += (op->operands[3].immediate & 0x8) << 20;
-	data += (op->operands[3].immediate >> 4) << 8;
-	return data;
+	insn |= ((ut32)imm & 0x7f) << 15;
+	insn |= (op->operands[1].reg & 0x1f) << 10;
+	insn |= (op->operands[2].reg & 0x1f) << 5;
+	insn |= op->operands[0].reg & 0x1f;
+	return r_swap_ut32 (insn);
 }
 
 static ut32 exception(ArmOp *op, ut32 k) {
@@ -2235,9 +2252,9 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 			*op = reglsop (&ops, 0x000000f8);
 		}
 	} else if (r_str_startswith (str, "stp")) {
-		*op = stp (&ops, 0x000000a9);
+		*op = stp (&ops, false);
 	} else if (r_str_startswith (str, "ldp")) {
-		*op = stp (&ops, 0x000040a9);
+		*op = stp (&ops, true);
 	} else if (r_str_startswith (str, "sub") && !r_str_startswith (str, "subg") && !r_str_startswith (str, "subp")) { // w, skip this for mte versions of sub, e.g. subg, subp ins
 		*op = arithmetic (&ops, 0xd1);
 	} else if (r_str_startswith (str, "madd ")) {
