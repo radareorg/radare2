@@ -20,7 +20,7 @@ static RCoreHelpMessage help_msg_w = {
 	//"wA", "[?] r 0", "alter/modify opcode at current seek (see wA?)",
 	"wb", " 011001", "write bits in bit big endian (see pb)",
 	"wB", "[-]0xVALUE", "set or unset bits with given value (also wB-0x2000)",
-	"wc", "[?][jir+-*?]", "write cache list/undo/commit/reset (io.cache)",
+	"wc", "[?][jirx+-*?]", "write cache list/undo/commit/reset (io.cache)",
 	"wd", " [off] [n]", "copy 'n' bytes from 'off' to $$ (memcpy) (see y?)",
 	"we", "[?] [nNsxX] [arg]", "extend write operations (insert instead of replace)",
 	"wf", "[fs] -|file", "write contents of file at current offset",
@@ -86,7 +86,7 @@ static RCoreHelpMessage help_msg_wa = {
 };
 
 static RCoreHelpMessage help_msg_wc = {
-	"Usage:", "wc[jir+-*?]", "  # See `e io.cache = true`",
+	"Usage:", "wc[jirx+-*?]", "  # See `e io.cache = true`",
 	"wc", "", "list all write changes in the current cache layer",
 	"wc*", "", "print write commands to replicate the patches in the current cache layer",
 	"wc**", "", "same as 'wc*' but for all the cache layers",
@@ -107,6 +107,7 @@ static RCoreHelpMessage help_msg_wc = {
 	"wcr", "", "revert all writes in the cache",
 	"wcs", "", "squash the consecutive write ops",
 	"wcu", "", "undo last change",
+	"wcx", "", "show all cached writes as two-column hexdiffs (before / after)",
 	NULL
 };
 
@@ -1546,6 +1547,12 @@ static int cmd_wc(void *data, const char *input) {
 			free (res);
 		}
 		break;
+	case 'x': // "wcx"
+		if (input[1] == '?') {
+			r_cons_cmd_help_match (core->cons, help_msg_wc, "wcx", 0, true);
+			break;
+		}
+		// fall through
 	case 'd':
 		{
 			RIOCacheLayer *layer;
@@ -1555,6 +1562,11 @@ static int cmd_wc(void *data, const char *input) {
 				// list (io, layer, pj, rad);
 				R_VEC_FOREACH (layer->vec, iter) {
 					RIOCacheItem *ci = *iter;
+					if (input[0] == 'x') {
+						r_print_hexdiff (core->print, ci->itv.addr, ci->odata,
+							ci->itv.addr, ci->data, ci->itv.size, true);
+						continue;
+					}
 					r_cons_printf (core->cons, "0x%08"PFMT64x":\n", ci->itv.addr);
 					char *a = r_hex_bin2strdup (ci->data, ci->itv.size);
 					char *b = r_hex_bin2strdup (ci->odata, ci->itv.size);
