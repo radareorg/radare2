@@ -74,3 +74,21 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=syscall JSON exposes arity and argument formats
+FILE=-
+CMDS=<<EOF
+-a x86
+-b 64
+-e asm.os=linux
+asj 41
+asj 39
+asj 99999
+EOF
+EXPECT=<<EOF
+[{"name":"socket","swi":128,"num":41,"args":3,"sargs":"ixx domain type protocol"}]
+[{"name":"getpid","swi":128,"num":39,"args":0,"sargs":""}]
+[]
+EOF
+EXPECT_ERR=
+RUN

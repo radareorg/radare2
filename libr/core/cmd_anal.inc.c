@@ -1196,7 +1196,7 @@ static RCoreHelpMessage help_msg_as = {
 	"as", "", "show current syscall and arguments",
 	"as", " 4", "show syscall 4 based on asm.os and current regs/mem",
 	"asc[a]", " 4", "dump syscall info in .asm or .h",
-	"asj", "", "list of syscalls in JSON",
+	"asj", " [num]", "list syscall metadata in JSON (optionally filter by number)",
 	"asl", "", "list of syscalls by asm.os and asm.arch",
 	"asl", " close", "returns the syscall number for close",
 	"asl", " 4", "returns the name of the syscall number 4",
@@ -11340,15 +11340,27 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 			r_list_free (list);
 		}
 		break;
-	case 'j': // "asj"
+	case 'j': { // "asj"
+		bool filter = input[1] == ' ';
+		const char *err = NULL;
+		st64 number = filter? r_num_math_err (core->num, input + 2, &err): -1;
+		if (filter && (err || r_num_failed (core->num) || number < 0 || number > INT_MAX)) {
+			R_LOG_ERROR ("Invalid syscall number");
+			break;
+		}
 		pj = r_core_pj_new (core);
 		pj_a (pj);
 		list = r_syscall_list (core->anal->syscall);
 		r_list_foreach (list, iter, si) {
+			if (filter && si->num != number) {
+				continue;
+			}
 			pj_o (pj);
 			pj_ks (pj, "name", si->name);
 			pj_ki (pj, "swi", si->swi);
 			pj_ki (pj, "num", si->num);
+			pj_ki (pj, "args", si->args);
+			pj_ks (pj, "sargs", r_str_get (si->sargs));
 			pj_end (pj);
 		}
 		pj_end (pj);
@@ -11358,6 +11370,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		}
 		r_list_free (list);
 		break;
+	}
 	case '\0': {
 		st64 num = -1;
 		RAnalOp *op = r_core_anal_op (core, core->addr, R_ARCH_OP_MASK_BASIC);
