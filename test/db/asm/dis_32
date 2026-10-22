@@ -1,0 +1,3 @@
+d "call 42(fp), 18(mp)" 04cb122a
+d "jmp 42(fp), 18(mp)" 0dcb122a
+d "bgtf 42(fp), 18(mp)" 67cb122a
