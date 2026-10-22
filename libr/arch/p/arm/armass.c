@@ -6251,7 +6251,20 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 						return 0;
 					}
 
-					ret = getreg (ao->a[2]);
+					// [rn, #-imm] and [rn, -rm] subtract the offset: clear the U bit and encode its magnitude
+					const char *offset = ao->a[2];
+					if (!rex && offset) {
+						while (*offset == '#' || *offset == '$') {
+							offset++;
+						}
+						if (*offset == '-') {
+							offset++;
+							ao->o &= ~0x8000;
+						} else {
+							offset = ao->a[2];
+						}
+					}
+					ret = getreg (offset);
 					if (ret != -1) {
 						if (rex) {
 							ao->o |= 1;
@@ -6274,10 +6287,14 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 							ao->o |= shift;
 						}
 					} else {
-						int num = getnum (ao->a[2]) & 0xfff;
+						ut64 value = getnum (offset);
 						if (err) {
 							break;
 						}
+						if (!rex && value > 0xfff) {
+							return 0;
+						}
+						int num = value & 0xfff;
 						if (rex) {
 							ao->o |= 1;
 						} else if (strstr (str, "],")) {
