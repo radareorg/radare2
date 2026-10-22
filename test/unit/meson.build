@@ -33,6 +33,7 @@ if get_option('enable_tests')
     'config',
     'cons',
     'core_bin_classes',
+    'core_disasm',
     'core_prompt',
     'core_slides',
     'core_task',

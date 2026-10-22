@@ -4349,23 +4349,29 @@ static void ds_print_bytes(RDisasmState *ds) {
 						cp--;
 					}
 					const size_t cut = cp - nstr;
+					const char *reset = "";
+					if ((ds->print->flags & R_PRINT_FLAGS_COLOR) || ds->print->cur_enabled) {
+						reset = ds->print->resetbg? Color_RESET: Color_RESET_NOBG;
+					}
+					const size_t reset_len = strlen (reset);
 					// the ellipsis and padding land after the cut
-					char *tmp = realloc (nstr, cut + ds->nbytes + 4);
+					char *tmp = realloc (nstr, cut + reset_len + ds->nbytes + 4);
 					if (tmp) {
 						off = true;
 						nstr = tmp;
 						char *p = nstr + cut;
 						p[0] = '.';
 						p[1] = '.';
+						memcpy (p + 2, reset, reset_len);
+						p += 2 + reset_len;
 						if (ds->show_bytes_align) {
-							p[2] = '\0';
+							p[0] = '\0';
 						} else if (core->print->bytespace) {
-							const int pos = ds->nbytes + 2;
-							memset (p + 2, ' ', pos - 2);
-							p[pos] = 0;
+							memset (p, ' ', ds->nbytes);
+							p[ds->nbytes] = 0;
 						} else {
-							p[2] = ' ';
-							p[3] = '\0';
+							p[0] = ' ';
+							p[1] = '\0';
 						}
 					}
 				}
