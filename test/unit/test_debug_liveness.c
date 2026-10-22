@@ -1,14 +1,28 @@
 #include <r_debug.h>
+#include <r_io.h>
 #include <signal.h>
 #include "minunit.h"
 
 static int kill_calls;
 static bool pid_exists;
+static bool select_success;
+static bool select_updates_pid;
+static int probed_pid;
+static RIO mock_io;
 static RDebugReasonType step_reason;
 
 static bool mock_kill(RDebug *dbg, int pid, int tid, int sig) {
 	kill_calls++;
+	probed_pid = pid;
 	return pid_exists;
+}
+
+static bool mock_select(RDebug *dbg, int pid, int tid) {
+	if (select_success && select_updates_pid) {
+		dbg->pid = pid;
+		dbg->tid = tid;
+	}
+	return select_success;
 }
 
 static bool mock_step(RDebug *dbg) {
@@ -30,6 +44,7 @@ static bool count_step_errors(void *user, int type, const char *origin, const ch
 static RDebugPlugin mock_plugin = {
 	.meta = { .name = "liveness-test" },
 	.kill = mock_kill,
+	.select = mock_select,
 	.step = mock_step,
 };
 
@@ -40,8 +55,13 @@ static RDebugPluginSession mock_session = {
 static RDebug make_debugger(int pid, RDebugReasonType reason, bool exists) {
 	kill_calls = 0;
 	pid_exists = exists;
+	select_success = true;
+	select_updates_pid = false;
+	probed_pid = -1;
 	RDebug dbg = {
 		.pid = pid,
+		.tid = pid,
+		.iob = { .io = &mock_io },
 		.current = &mock_session,
 		.reason = { .type = reason },
 	};
@@ -53,6 +73,64 @@ bool test_dead_reason_survives_existing_pid(void) {
 	mu_assert_true (r_debug_is_dead (&dbg), "a zombie PID must not override a dead reason");
 	mu_assert_eq (kill_calls, 0, "known-dead targets must not be probed");
 	mu_assert_eq (dbg.reason.type, R_DEBUG_REASON_DEAD, "retain the dead reason");
+	mu_end;
+}
+
+bool test_select_live_target_clears_dead_reason(void) {
+	RDebug dbg = make_debugger (123, R_DEBUG_REASON_DEAD, true);
+	mu_assert_true (r_debug_select (&dbg, 222, 222), "select a different target");
+	mu_assert_eq (dbg.reason.type, R_DEBUG_REASON_UNKNOWN, "clear the old target's dead reason");
+	mu_assert_false (r_debug_is_dead (&dbg), "the new target is alive");
+	mu_assert_eq (kill_calls, 1, "probe the new target");
+	mu_assert_eq (probed_pid, 222, "probe the selected PID");
+	mu_end;
+}
+
+bool test_select_live_target_after_pid_reset(void) {
+	RDebug dbg = make_debugger (-1, R_DEBUG_REASON_DEAD, true);
+	mu_assert_true (r_debug_select (&dbg, 222, 222), "select a target after the old PID was reset");
+	mu_assert_false (r_debug_is_dead (&dbg), "the selected target is alive");
+	mu_assert_eq (kill_calls, 1, "probe the selected target");
+	mu_assert_eq (probed_pid, 222, "probe the selected PID");
+	mu_end;
+}
+
+bool test_select_callback_updates_pid(void) {
+	RDebug dbg = make_debugger (123, R_DEBUG_REASON_DEAD, true);
+	select_updates_pid = true;
+	mu_assert_true (r_debug_select (&dbg, 222, 222), "select through a callback that updates the PID");
+	mu_assert_eq (dbg.reason.type, R_DEBUG_REASON_UNKNOWN, "compare with the PID from before the callback");
+	mu_assert_false (r_debug_is_dead (&dbg), "the new target is alive");
+	mu_assert_eq (kill_calls, 1, "probe the new target");
+	mu_assert_eq (probed_pid, 222, "probe the selected PID");
+	mu_end;
+}
+
+bool test_select_same_target_keeps_dead_reason(void) {
+	RDebug dbg = make_debugger (123, R_DEBUG_REASON_DEAD, true);
+	mu_assert_true (r_debug_select (&dbg, 123, 124), "select another thread of the same target");
+	mu_assert_true (r_debug_is_dead (&dbg), "the same target stays dead");
+	mu_assert_eq (dbg.reason.type, R_DEBUG_REASON_DEAD, "retain the dead reason");
+	mu_assert_eq (kill_calls, 0, "do not probe a known-dead target");
+	mu_end;
+}
+
+bool test_failed_select_keeps_dead_reason(void) {
+	RDebug dbg = make_debugger (123, R_DEBUG_REASON_DEAD, true);
+	select_success = false;
+	mu_assert_false (r_debug_select (&dbg, 222, 222), "the backend rejects selection");
+	mu_assert_eq (dbg.pid, 123, "retain the previous PID");
+	mu_assert_eq (dbg.tid, 123, "retain the previous TID");
+	mu_assert_true (r_debug_is_dead (&dbg), "the previous target stays dead");
+	mu_assert_eq (dbg.reason.type, R_DEBUG_REASON_DEAD, "retain the dead reason");
+	mu_assert_eq (kill_calls, 0, "do not probe a known-dead target");
+	mu_end;
+}
+
+bool test_select_keeps_live_stop_reason(void) {
+	RDebug dbg = make_debugger (123, R_DEBUG_REASON_BREAKPOINT, true);
+	mu_assert_true (r_debug_select (&dbg, 222, 222), "select a different target");
+	mu_assert_eq (dbg.reason.type, R_DEBUG_REASON_BREAKPOINT, "do not change other stop reasons");
 	mu_end;
 }
 
@@ -121,6 +199,12 @@ bool test_step_failure_reports_error(void) {
 
 int all_tests(void) {
 	mu_run_test (test_dead_reason_survives_existing_pid);
+	mu_run_test (test_select_live_target_clears_dead_reason);
+	mu_run_test (test_select_live_target_after_pid_reset);
+	mu_run_test (test_select_callback_updates_pid);
+	mu_run_test (test_select_same_target_keeps_dead_reason);
+	mu_run_test (test_failed_select_keeps_dead_reason);
+	mu_run_test (test_select_keeps_live_stop_reason);
 	mu_run_test (test_kill_skips_dead_target);
 	mu_run_test (test_live_target_is_probed);
 	mu_run_test (test_missing_target_becomes_dead);

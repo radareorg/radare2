@@ -677,6 +677,7 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 	if (pid < 0 || tid < 0) {
 		return false;
 	}
+	const int old_pid = dbg->pid;
 	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
 	if (plugin && plugin->select) {
 		if (!plugin->select (dbg, pid, tid)) {
@@ -685,6 +686,9 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 	}
 	dbg->pid = pid;
 	dbg->tid = tid;
+	if (old_pid != pid && dbg->reason.type == R_DEBUG_REASON_DEAD) {
+		dbg->reason.type = R_DEBUG_REASON_UNKNOWN;
+	}
 	if (dbg->pid != -1) {
 		char *pidcmd = r_str_newf ("pid %d", dbg->pid);
 		if (pidcmd) {
