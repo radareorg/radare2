@@ -2746,6 +2746,7 @@ static bool cmd_r2cmd(RCore *core, const char *_input) {
 			{ "rapatch2", core->r_main_rapatch2, false },
 			{ "rasm2", core->r_main_rasm2, false },
 			{ "rabin2", core->r_main_rabin2, false },
+			{ "rafind2", core->r_main_rafind2, false },
 			{ "rahash2", core->r_main_rahash2, false },
 			{ "ragg2", core->r_main_ragg2, false },
 			{ "rafs2", core->r_main_rafs2, false },
