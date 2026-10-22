@@ -62,6 +62,13 @@ static char *mnemonic(struct dis_instr *instr) {
 	return r_strbuf_drain (sb);
 }
 
+// without a loaded dis module (rasm2, raw bytes) there is no pc table to look in
+static ut64 resolve_pc(RBinDisObj *o, ut64 pc) {
+	bool found = false;
+	ut64 addr = o? ht_uu_find (o->pcs, pc, &found): 0;
+	return found? addr: UT64_MAX;
+}
+
 static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	R_RETURN_VAL_IF_FAIL (s && op, false);
 
@@ -102,8 +109,6 @@ static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	op->size = r_buf_tell (buf);
 	r_unref (buf);
 
-	bool found;
-	ut64 addr;
 	switch (instr.opcode) {
 	case DIS_OP_NOP:
 		op->type = R_ANAL_OP_TYPE_NOP;
@@ -115,20 +120,12 @@ static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	case DIS_OP_JMP:
 		op->type = R_ANAL_OP_TYPE_JMP;
-		addr = ht_uu_find (o->pcs, instr.dop_imm1, &found);
-		if (!found) {
-			addr = UT64_MAX;
-		}
-		op->jump = addr;
+		op->jump = resolve_pc (o, instr.dop_imm1);
 		break;
 	case DIS_OP_CALL:
 		op->type = R_ANAL_OP_TYPE_CALL;
 		op->fail = op->addr + op->size;
-		addr = ht_uu_find (o->pcs, instr.dop_imm1, &found);
-		if (!found) {
-			addr = UT64_MAX;
-		}
-		op->jump = addr;
+		op->jump = resolve_pc (o, instr.dop_imm1);
 		break;
 	case DIS_OP_RET:
 		op->type = R_ANAL_OP_TYPE_RET;
@@ -302,11 +299,7 @@ static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	case DIS_OP_BEQL:
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->fail = op->addr + op->size;
-		addr = ht_uu_find (o->pcs, instr.dop_imm1, &found);
-		if (!found) {
-			addr = UT64_MAX;
-		}
-		op->jump = addr;
+		op->jump = resolve_pc (o, instr.dop_imm1);
 		break;
 	case DIS_OP_SLICEA:
 	case DIS_OP_SLICELA:
