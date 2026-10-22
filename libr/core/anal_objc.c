@@ -249,6 +249,8 @@ static bool objc_find_refs(RCore *core) {
 	}
 	R_LOG_INFO ("Parsing metadata in ObjC to find hidden xrefs");
 
+	// classes may share or overlap their method lists, handle every method once
+	SetU *seen = set_u_new ();
 	ut64 off;
 	size_t total_xrefs = 0;
 	bool readSuccess = true;
@@ -296,6 +298,10 @@ static bool objc_find_refs(RCore *core) {
 			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
+			if (set_u_contains (seen, va)) {
+				continue;
+			}
+			set_u_add (seen, va);
 			bool found = false;
 			ut64 selRefVA = getRefPtr (objc, va, &found);
 			if (!found) {
@@ -319,6 +325,7 @@ static bool objc_find_refs(RCore *core) {
 			RVecAnalRef_free (xrefs);
 		}
 	}
+	set_u_free (seen);
 	// R_LOG_INFO ("Found %u objc xrefs", (unsigned int)total_xrefs);
 
 	const ut64 va_selrefs = objc->_selrefs->vaddr;
