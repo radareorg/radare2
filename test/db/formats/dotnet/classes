@@ -9,3 +9,14 @@ EXPECT=<<EOF
 0x00000000 [0x00000000 - 0x00000000]      0 cil class 238 State :: System.Enum
 EOF
 RUN
+
+NAME=dotnet signature elements resolve tokens without walking the symbol list
+FILE=bins/pe/dotnet-sig-missing-typedef.exe
+TIMEOUT=60
+CMDS=<<EOF
+?e opened
+EOF
+EXPECT=<<EOF
+opened
+EOF
+RUN

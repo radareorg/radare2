@@ -35,6 +35,8 @@ typedef struct _PE {
 	const uint8_t *data;
 	size_t data_size;
 	void *object;
+	HtUP *symbols_by_token; // token -> DotNetSymbol (owned by the symbol list)
+	HtPP *typedefs_by_name; // full name -> first typedef DotNetSymbol with it
 } PE;
 
 static char *pe_get_dotnet_string(PE *pe, const uint8_t *string_offset, ut32 string_index) {
@@ -702,15 +704,30 @@ static ut32 dotnet_typedef_or_ref_token(ut32 coded) {
 	return tag < R_ARRAY_SIZE (tables) && rid? ((ut32)tables[tag] << 24) | rid: 0;
 }
 
-static DotNetSymbol *dotnet_symbol_by_token(RList *symbols, ut32 token) {
-	RListIter *iter;
-	DotNetSymbol *sym;
-	r_list_foreach (symbols, iter, sym) {
-		if (sym->token == token) {
-			return sym;
+static char *dotnet_symbol_fullname(const DotNetSymbol *sym);
+
+// append to the list and index by token and typedef name, the first symbol wins like a list walk would
+static void dotnet_symbol_add(PE *pe, RList *symbols, DotNetSymbol *sym) {
+	r_list_append (symbols, sym);
+	if (pe->symbols_by_token) {
+		ht_up_insert (pe->symbols_by_token, sym->token, sym);
+	}
+	if (pe->typedefs_by_name && sym->type && !strcmp (sym->type, "typedef")) {
+		char *name = dotnet_symbol_fullname (sym);
+		if (name) {
+			ht_pp_insert (pe->typedefs_by_name, name, sym);
+			free (name);
 		}
 	}
-	return NULL;
+}
+
+// Every CLASS/VALUETYPE element of every signature resolves a token, so this
+// must not walk the symbol list: rows, elements and symbols are all file-chosen.
+static DotNetSymbol *dotnet_symbol_by_token(PE *pe, ut32 token) {
+	if (!pe->symbols_by_token) {
+		return NULL;
+	}
+	return ht_up_find (pe->symbols_by_token, token, NULL);
 }
 
 static char *dotnet_symbol_fullname(const DotNetSymbol *sym) {
@@ -760,12 +777,12 @@ static void dotnet_parse_tilde_typeref(PE *pe, PTILDE_HEADER tilde_header,
 		sym->namespace = strdup (r_str_get (namespace));
 		sym->type = strdup ("typeref");
 		sym->token = 0x01000000 | (i + 1);
-		r_list_append (symbols, sym);
+		dotnet_symbol_add (pe, symbols, sym);
 	}
 }
 
 static char *dotnet_parse_field_sig(PE *pe, PSTREAM_HEADER blob_hdr,
-	ut64 metadata_root, ut32 blob_index, RList *symbols);
+	ut64 metadata_root, ut32 blob_index);
 
 // Parse Field table to collect field information for types
 static void dotnet_parse_tilde_field(
@@ -833,7 +850,7 @@ static void dotnet_parse_tilde_field(
 					? r_read_le32 (row_ptr + 2 + index_sizes.string)
 					: r_read_le16 (row_ptr + 2 + index_sizes.string);
 				char *field_type = dotnet_parse_field_sig (pe, streams->blob,
-					metadata_root, signature_index, symbols);
+					metadata_root, signature_index);
 				// Get field name from string stream
 				if (index_sizes.string == 4) {
 					name = pe_get_dotnet_string (pe, string_offset, r_read_le32 (row_ptr + 2));
@@ -841,51 +858,6 @@ static void dotnet_parse_tilde_field(
 					name = pe_get_dotnet_string (pe, string_offset, r_read_le16 (row_ptr + 2));
 				}
 
-				if (R_STR_ISNOTEMPTY (name)) {
-					// Find which typedef this field belongs to
-					RListIter *iter;
-					DotNetTypeDefInfo *td;
-					r_list_foreach (typedef_info, iter, td) {
-						if (field_idx >= td->field_list_start && field_idx < td->field_list_end) {
-							// Find the corresponding DotNetSymbol
-							char *full_name;
-							if (R_STR_ISNOTEMPTY (td->namespace)) {
-								full_name = r_str_newf ("%s.%s", td->namespace, td->class_name);
-							} else {
-								full_name = strdup (td->class_name);
-							}
-							RListIter *sym_iter;
-							DotNetSymbol *sym;
-							r_list_foreach (symbols, sym_iter, sym) {
-								if (sym->type && !strcmp (sym->type, "typedef")) {
-									char *sym_full_name;
-									const char *ns = sym->namespace;
-									if (R_STR_ISNOTEMPTY (ns)) {
-										sym_full_name = r_str_newf ("%s.%s", ns, sym->name);
-									} else {
-										sym_full_name = strdup (sym->name);
-									}
-									if (!strcmp (sym_full_name, full_name)) {
-										DotNetField *field = R_NEW0 (DotNetField);
-										field->name = strdup (name);
-										field->type_name = strdup (r_str_get_fail (field_type, "unknown"));
-										field->flags = flags;
-										field->token = 0x04000000 | field_idx;
-										if (!sym->fields) {
-											sym->fields = r_list_newf (dotnet_field_free);
-										}
-										r_list_append (sym->fields, field);
-										free (sym_full_name);
-										break;
-									}
-									free (sym_full_name);
-								}
-							}
-							free (full_name);
-							break;
-						}
-					}
-				}
 				if (R_STR_ISNOTEMPTY (name)) {
 					DotNetTypeDefInfo *owner = NULL;
 					RListIter *iter;
@@ -896,23 +868,36 @@ static void dotnet_parse_tilde_field(
 							break;
 						}
 					}
+					char *classname = owner? (R_STR_ISNOTEMPTY (owner->namespace)
+						? r_str_newf ("%s.%s", owner->namespace, owner->class_name)
+						: strdup (owner->class_name)): NULL;
+					DotNetSymbol *sym = classname? ht_pp_find (pe->typedefs_by_name, classname, NULL): NULL;
+					if (sym) {
+						DotNetField *field = R_NEW0 (DotNetField);
+						field->name = strdup (name);
+						field->type_name = strdup (r_str_get_fail (field_type, "unknown"));
+						field->flags = flags;
+						field->token = 0x04000000 | field_idx;
+						if (!sym->fields) {
+							sym->fields = r_list_newf (dotnet_field_free);
+						}
+						r_list_append (sym->fields, field);
+					}
 					DotNetSymbol *field_symbol = R_NEW0 (DotNetSymbol);
 					field_symbol->short_name = strdup (name);
 					field_symbol->return_type = strdup (r_str_get_fail (field_type, "unknown"));
 					field_symbol->flags = flags;
 					field_symbol->token = 0x04000000 | field_idx;
 					field_symbol->type = strdup ("field");
-					if (owner) {
-						field_symbol->classname = R_STR_ISNOTEMPTY (owner->namespace)
-							? r_str_newf ("%s.%s", owner->namespace, owner->class_name)
-							: strdup (owner->class_name);
-						field_symbol->name = r_str_newf ("%s.%s", field_symbol->classname, name);
+					if (classname) {
+						field_symbol->classname = classname;
+						field_symbol->name = r_str_newf ("%s.%s", classname, name);
 					} else {
 						field_symbol->name = strdup (name);
 					}
 					field_symbol->signature = r_str_newf ("%s:%s", field_symbol->name,
 						r_str_get_fail (field_type, "unknown"));
-					r_list_append (symbols, field_symbol);
+					dotnet_symbol_add (pe, symbols, field_symbol);
 				}
 				free (field_type);
 
@@ -1050,7 +1035,7 @@ static void dotnet_parse_tilde_typedef(
 					sym->vaddr = 0; // TypeDefs don't have direct RVAs
 					sym->size = 0;
 					sym->fields = r_list_newf (dotnet_field_free);
-					r_list_append (symbols, sym);
+					dotnet_symbol_add (pe, symbols, sym);
 				}
 
 				row_ptr += row_size;
@@ -1154,7 +1139,7 @@ static char *dotnet_type_alias(ut8 element) {
 	}
 }
 
-static char *dotnet_parse_sig_type(const ut8 **p, const ut8 *end, RList *symbols, int depth) {
+static char *dotnet_parse_sig_type(PE *pe, const ut8 **p, const ut8 *end, int depth) {
 	if (*p >= end || depth > 32) {
 		return NULL;
 	}
@@ -1169,11 +1154,11 @@ static char *dotnet_parse_sig_type(const ut8 **p, const ut8 *end, RList *symbols
 		{
 			const ut8 *before = *p;
 			dotnet_read_compressed_uint (p, end);
-			return *p == before? NULL: dotnet_parse_sig_type (p, end, symbols, depth + 1);
+			return *p == before? NULL: dotnet_parse_sig_type (pe, p, end, depth + 1);
 		}
 	case ELEMENT_TYPE_PINNED:
 	case ELEMENT_TYPE_SENTINEL:
-		return dotnet_parse_sig_type (p, end, symbols, depth + 1);
+		return dotnet_parse_sig_type (pe, p, end, depth + 1);
 	case ELEMENT_TYPE_CLASS:
 	case ELEMENT_TYPE_VALUETYPE:
 		{
@@ -1182,14 +1167,14 @@ static char *dotnet_parse_sig_type(const ut8 **p, const ut8 *end, RList *symbols
 			if (*p == before) {
 				return NULL;
 			}
-			DotNetSymbol *sym = dotnet_symbol_by_token (symbols, dotnet_typedef_or_ref_token (coded));
+			DotNetSymbol *sym = dotnet_symbol_by_token (pe, dotnet_typedef_or_ref_token (coded));
 			return sym? dotnet_symbol_fullname (sym): r_str_newf ("type_token.0x%08x", dotnet_typedef_or_ref_token (coded));
 		}
 	case ELEMENT_TYPE_PTR:
 	case ELEMENT_TYPE_BYREF:
 	case ELEMENT_TYPE_SZARRAY:
 		{
-			char *inner = dotnet_parse_sig_type (p, end, symbols, depth + 1);
+			char *inner = dotnet_parse_sig_type (pe, p, end, depth + 1);
 			if (!inner) {
 				return NULL;
 			}
@@ -1208,7 +1193,7 @@ static char *dotnet_parse_sig_type(const ut8 **p, const ut8 *end, RList *symbols
 		}
 	case ELEMENT_TYPE_ARRAY:
 		{
-			char *inner = dotnet_parse_sig_type (p, end, symbols, depth + 1);
+			char *inner = dotnet_parse_sig_type (pe, p, end, depth + 1);
 			if (!inner) {
 				return NULL;
 			}
@@ -1238,7 +1223,7 @@ static char *dotnet_parse_sig_type(const ut8 **p, const ut8 *end, RList *symbols
 		}
 	case ELEMENT_TYPE_GENERICINST:
 		{
-			char *base = dotnet_parse_sig_type (p, end, symbols, depth + 1);
+			char *base = dotnet_parse_sig_type (pe, p, end, depth + 1);
 			if (!base) {
 				return NULL;
 			}
@@ -1252,7 +1237,7 @@ static char *dotnet_parse_sig_type(const ut8 **p, const ut8 *end, RList *symbols
 			r_strbuf_append (sb, "<");
 			ut32 i;
 			for (i = 0; i < count; i++) {
-				char *arg = dotnet_parse_sig_type (p, end, symbols, depth + 1);
+				char *arg = dotnet_parse_sig_type (pe, p, end, depth + 1);
 				if (!arg) {
 					r_strbuf_free (sb);
 					free (base);
@@ -1273,7 +1258,7 @@ static char *dotnet_parse_sig_type(const ut8 **p, const ut8 *end, RList *symbols
 }
 
 static bool dotnet_parse_method_sig(PE *pe, PSTREAM_HEADER blob_hdr,
-		ut64 metadata_root, ut32 blob_index, RList *symbols, DotNetMethodSig *sig) {
+		ut64 metadata_root, ut32 blob_index, DotNetMethodSig *sig) {
 	memset (sig, 0, sizeof (*sig));
 	sig->parameters = r_list_newf (free);
 	if (!sig->parameters || !blob_hdr || !blob_index) {
@@ -1314,7 +1299,7 @@ static bool dotnet_parse_method_sig(PE *pe, PSTREAM_HEADER blob_hdr,
 	if (p == before || count > 0xffff) {
 		return false;
 	}
-	sig->return_type = dotnet_parse_sig_type (&p, end, symbols, 0);
+	sig->return_type = dotnet_parse_sig_type (pe, &p, end, 0);
 	if (!sig->return_type) {
 		return false;
 	}
@@ -1323,7 +1308,7 @@ static bool dotnet_parse_method_sig(PE *pe, PSTREAM_HEADER blob_hdr,
 		if (p < end && *p == ELEMENT_TYPE_SENTINEL) {
 			p++;
 		}
-		char *type = dotnet_parse_sig_type (&p, end, symbols, 0);
+		char *type = dotnet_parse_sig_type (pe, &p, end, 0);
 		if (!type) {
 			return false;
 		}
@@ -1333,7 +1318,7 @@ static bool dotnet_parse_method_sig(PE *pe, PSTREAM_HEADER blob_hdr,
 }
 
 static char *dotnet_parse_field_sig(PE *pe, PSTREAM_HEADER blob_hdr,
-		ut64 metadata_root, ut32 blob_index, RList *symbols) {
+		ut64 metadata_root, ut32 blob_index) {
 	if (!blob_hdr || !blob_index) {
 		return NULL;
 	}
@@ -1353,11 +1338,11 @@ static char *dotnet_parse_field_sig(PE *pe, PSTREAM_HEADER blob_hdr,
 	if (p >= end || *p++ != 0x06) {
 		return NULL;
 	}
-	return dotnet_parse_sig_type (&p, end, symbols, 0);
+	return dotnet_parse_sig_type (pe, &p, end, 0);
 }
 
 static char *dotnet_parse_type_spec_sig(PE *pe, PSTREAM_HEADER blob_hdr,
-		ut64 metadata_root, ut32 blob_index, RList *symbols) {
+		ut64 metadata_root, ut32 blob_index) {
 	if (!blob_hdr || !blob_index) {
 		return NULL;
 	}
@@ -1373,7 +1358,7 @@ static char *dotnet_parse_type_spec_sig(PE *pe, PSTREAM_HEADER blob_hdr,
 	if (p == before || size > (ut64)(heap_end - p) || !size) {
 		return NULL;
 	}
-	return dotnet_parse_sig_type (&p, p + size, symbols, 0);
+	return dotnet_parse_sig_type (pe, &p, p + size, 0);
 }
 
 static void dotnet_parse_tilde_typespec(PE *pe, PTILDE_HEADER tilde_header,
@@ -1392,7 +1377,7 @@ static void dotnet_parse_tilde_typespec(PE *pe, PTILDE_HEADER tilde_header,
 		}
 		ut32 blob_index = index_sizes.blob == 4? r_read_le32 (table): r_read_le16 (table);
 		char *name = dotnet_parse_type_spec_sig (pe, streams->blob,
-			metadata_root, blob_index, symbols);
+			metadata_root, blob_index);
 		if (!name) {
 			continue;
 		}
@@ -1405,7 +1390,7 @@ static void dotnet_parse_tilde_typespec(PE *pe, PTILDE_HEADER tilde_header,
 		sym->short_name = strdup (name);
 		sym->type = strdup ("typespec");
 		sym->token = 0x1b000000 | (i + 1);
-		r_list_append (symbols, sym);
+		dotnet_symbol_add (pe, symbols, sym);
 	}
 }
 
@@ -1558,7 +1543,7 @@ static void dotnet_parse_tilde_methoddef(
 					uint32_t method_idx = i + 1;
 					DotNetMethodSig method_sig = { 0 };
 					bool have_sig = dotnet_parse_method_sig (pe, streams->blob,
-						metadata_root, sig_idx, symbols, &method_sig);
+						metadata_root, sig_idx, &method_sig);
 					bool has_this = have_sig && method_sig.has_this;
 					ut32 args = have_sig? r_list_length (method_sig.parameters) + (has_this? 1: 0): 0;
 					sym->param_count = (args > 0xffff)? 0xffff: (ut16)args;
@@ -1593,7 +1578,7 @@ static void dotnet_parse_tilde_methoddef(
 					// Set is_native based on ImplFlags
 					// IL = 0x0000, Native = 0x0001, OPTIL = 0x0002, Runtime = 0x0003
 					sym->is_native = (impl_flags & 0x0003) == 0x0001;
-					r_list_append (symbols, sym);
+					dotnet_symbol_add (pe, symbols, sym);
 					dotnet_method_sig_fini (&method_sig);
 				}
 
@@ -1645,7 +1630,7 @@ static void dotnet_parse_tilde_methoddef(
 				if (R_STR_ISNOTEMPTY (name)) {
 					DotNetSymbol *sym = R_NEW0 (DotNetSymbol);
 					sym->short_name = strdup (name);
-					DotNetSymbol *parent = dotnet_symbol_by_token (symbols, parent_token);
+					DotNetSymbol *parent = dotnet_symbol_by_token (pe, parent_token);
 					sym->classname = dotnet_symbol_fullname (parent);
 					sym->name = sym->classname
 						? r_str_newf ("%s.%s", sym->classname, name): strdup (name);
@@ -1655,7 +1640,7 @@ static void dotnet_parse_tilde_methoddef(
 					sym->token = 0x0A000000 | (i + 1);
 					DotNetMethodSig method_sig = { 0 };
 					if (dotnet_parse_method_sig (pe, streams->blob, metadata_root,
-							signature_index, symbols, &method_sig)) {
+							signature_index, &method_sig)) {
 						sym->is_instance = method_sig.has_this;
 						ut32 args = r_list_length (method_sig.parameters) + (method_sig.has_this? 1: 0);
 						sym->param_count = args > 0xffff? 0xffff: (ut16)args;
@@ -1666,13 +1651,13 @@ static void dotnet_parse_tilde_methoddef(
 							string_offset, 0, 0);
 					} else {
 						sym->return_type = dotnet_parse_field_sig (pe, streams->blob,
-							metadata_root, signature_index, symbols);
+							metadata_root, signature_index);
 						if (sym->return_type) {
 							sym->signature = r_str_newf ("%s:%s", sym->name, sym->return_type);
 						}
 					}
 					dotnet_method_sig_fini (&method_sig);
-					r_list_append (symbols, sym);
+					dotnet_symbol_add (pe, symbols, sym);
 				}
 
 				row_ptr += row_size;
@@ -1857,7 +1842,7 @@ static void dotnet_parse_tilde_methoddef(
 }
 
 static char *dotnet_parse_method_instantiation(PE *pe, PSTREAM_HEADER blob_hdr,
-		ut64 metadata_root, ut32 blob_index, RList *symbols) {
+		ut64 metadata_root, ut32 blob_index) {
 	if (!blob_hdr || !blob_index) {
 		return NULL;
 	}
@@ -1885,7 +1870,7 @@ static char *dotnet_parse_method_instantiation(PE *pe, PSTREAM_HEADER blob_hdr,
 	RStrBuf *sb = r_strbuf_new ("<");
 	ut32 i;
 	for (i = 0; i < count; i++) {
-		char *type = dotnet_parse_sig_type (&p, end, symbols, 0);
+		char *type = dotnet_parse_sig_type (pe, &p, end, 0);
 		if (!type) {
 			r_strbuf_free (sb);
 			return NULL;
@@ -1927,7 +1912,7 @@ static void dotnet_parse_tilde_standalonesig(PE *pe, PTILDE_HEADER tilde_header,
 		ut32 blob_index = index_sizes.blob == 4? r_read_le32 (table): r_read_le16 (table);
 		DotNetMethodSig method_sig = { 0 };
 		if (!dotnet_parse_method_sig (pe, streams->blob, metadata_root,
-				blob_index, symbols, &method_sig)) {
+				blob_index, &method_sig)) {
 			dotnet_method_sig_fini (&method_sig);
 			continue;
 		}
@@ -1947,7 +1932,7 @@ static void dotnet_parse_tilde_standalonesig(PE *pe, PTILDE_HEADER tilde_header,
 		sym->ret_count = strcmp (method_sig.return_type, "void")? 1: 0;
 		sym->type = strdup ("standalonesig");
 		sym->token = 0x11000000 | (i + 1);
-		r_list_append (symbols, sym);
+		dotnet_symbol_add (pe, symbols, sym);
 		dotnet_method_sig_fini (&method_sig);
 	}
 }
@@ -1973,9 +1958,9 @@ static void dotnet_parse_tilde_methodspec(PE *pe, PTILDE_HEADER tilde_header,
 		ut32 method_token = ((coded & 1)? 0x0a000000: 0x06000000) | (coded >> 1);
 		ut32 blob_index = index_sizes.blob == 4
 			? r_read_le32 (table + method_size): r_read_le16 (table + method_size);
-		DotNetSymbol *base = dotnet_symbol_by_token (symbols, method_token);
+		DotNetSymbol *base = dotnet_symbol_by_token (pe, method_token);
 		char *arguments = dotnet_parse_method_instantiation (pe, streams->blob,
-			metadata_root, blob_index, symbols);
+			metadata_root, blob_index);
 		DotNetSymbol *sym = R_NEW0 (DotNetSymbol);
 		if (!sym) {
 			free (arguments);
@@ -1992,7 +1977,7 @@ static void dotnet_parse_tilde_methodspec(PE *pe, PTILDE_HEADER tilde_header,
 		sym->ret_count = base? base->ret_count: 0;
 		sym->type = strdup ("methodspec");
 		sym->token = 0x2b000000 | (i + 1);
-		r_list_append (symbols, sym);
+		dotnet_symbol_add (pe, symbols, sym);
 		free (arguments);
 	}
 }
@@ -2298,6 +2283,9 @@ static void dotnet_parse_tilde(PE *pe, ut64 metadata_root, PSTREAMS streams, RLi
 	}
 
 	// Now parse the tables with the row information we collected
+	// Index the symbols by token so signature decoding does not walk the list
+	pe->symbols_by_token = ht_up_new0 ();
+	pe->typedefs_by_name = ht_pp_new0 ();
 	// Collect typedef metadata for method and field association
 	RList *typedef_info = dotnet_collect_typedefs (pe, metadata_root, streams, rows, index_sizes);
 
@@ -2317,6 +2305,10 @@ static void dotnet_parse_tilde(PE *pe, ut64 metadata_root, PSTREAMS streams, RLi
 
 	// Clean up typedef info
 	r_list_free (typedef_info);
+	ht_up_free (pe->symbols_by_token);
+	pe->symbols_by_token = NULL;
+	ht_pp_free (pe->typedefs_by_name);
+	pe->typedefs_by_name = NULL;
 }
 
 static RList *dotnet_parse_com(PE *pe, ut64 baddr) {
