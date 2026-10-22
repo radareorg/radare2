@@ -2682,15 +2682,26 @@ static bool item_addto_collisions(RSignItem *it, const char *add) {
 			return false;
 		}
 	}
-	RList *l = it->collisions;
-	if (r_list_find (l, (void *)add, list_str_cmp)) {
-		return true;
-	}
+	// searching for dups here makes update_collide cubic, item_sort_collisions drops them
 	char *dup = strdup (add);
 	if (!dup) {
 		return false;
 	}
-	return r_list_append (l, dup) != NULL;
+	return r_list_append (it->collisions, dup) != NULL;
+}
+
+// sort the collision list and drop dups (same name in different zignspaces)
+static void item_sort_collisions(RSignItem *it) {
+	RListIter *iter, *next;
+	const char *col, *prev = NULL;
+	r_list_sort (it->collisions, list_str_cmp);
+	r_list_foreach_safe (it->collisions, iter, next, col) {
+		if (prev && !strcmp (prev, col)) {
+			r_list_delete (it->collisions, iter);
+		} else {
+			prev = col;
+		}
+	}
 }
 
 static bool update_collide(RVecRSignItemPtr *sigs, int start, int end, int type) {
@@ -2865,7 +2876,7 @@ R_API bool r_sign_resolve_collisions(RAnal *a) {
 	R_VEC_FOREACH (sigs, p) {
 		RSignItem *it = *p;
 		if (it->collisions) {
-			r_list_sort (it->collisions, list_str_cmp);
+			item_sort_collisions (it);
 			r_sign_add_item (a, it);
 		}
 	}

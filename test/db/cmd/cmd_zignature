@@ -1949,3 +1949,18 @@ EXPECT=<<EOF
 0xffffffffffffffff 0xffffffffffffffff 0.00000 G f
 EOF
 RUN
+
+NAME=zac resolves large groups of identical zignatures in quadratic time
+FILE=--
+TIMEOUT=20
+CMDS=<<EOF
+zo bins/other/zign-2000-colliding.sdb.txt
+zac
+z~?collisions
+z~?b:n1999
+EOF
+EXPECT=<<EOF
+2000
+1999
+EOF
+RUN
