@@ -95,6 +95,21 @@ ERROR: Cannot assemble 'not dword [rax+0x80000000]' at line 1
 EOF
 RUN
 
+NAME=x86 lock needs a lockable instruction with a memory destination
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+pa lock add eax, ecx
+pa lock mov dword [rax], ecx
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'lock add eax, ecx' at line 1
+ERROR: Cannot assemble 'lock mov dword [rax], ecx' at line 1
+EOF
+RUN
+
 NAME=asm.spp with an unterminated tag
 FILE=malloc://64
 CMDS=<<EOF
