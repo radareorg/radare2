@@ -32,15 +32,36 @@ static inline ut64 dwarf_read_offset(RBin *bin, bool is_64bit, const ut8 **buf, 
 	return result;
 }
 
-static int add_sdb_include_dir(Sdb *s, const char *incl, int idx) {
-	if (!s || !incl) {
-		return false;
+static inline void include_dir_fini(char **dir) {
+	free (*dir);
+}
+
+// directory table of one line header, kept as a vector: a sdb array made every append quadratic
+R_VEC_TYPE_WITH_FINI (RVecIncludeDir, char *, include_dir_fini);
+
+static void include_dir_set(RVecIncludeDir *dirs, ut64 idx, const char *dir) {
+	char *copy = strdup (dir);
+	if (idx < RVecIncludeDir_length (dirs)) {
+		char **slot = RVecIncludeDir_at (dirs, idx);
+		free (*slot);
+		*slot = copy;
+	} else {
+		char **slot = RVecIncludeDir_emplace_back (dirs);
+		if (slot) {
+			*slot = copy;
+		} else {
+			free (copy);
+		}
 	}
-	return sdb_array_set (s, "includedirs", idx, incl, 0);
+}
+
+static char *include_dir_dup(RVecIncludeDir *dirs, ut64 idx) {
+	char **slot = idx < RVecIncludeDir_length (dirs)? RVecIncludeDir_at (dirs, idx): NULL;
+	return slot? strdup (*slot): NULL;
 }
 
 // Parses source file header of DWARF version <= 4
-static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const ut8 *buf_end, RBinDwarfLineHeader *hdr, Sdb *sdb, int mode, RStrBuf *sb, int debug_line_offset) {
+static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const ut8 *buf_end, RBinDwarfLineHeader *hdr, RVecIncludeDir *dirs, int mode, RStrBuf *sb, int debug_line_offset) {
 	int i = 0;
 	size_t count = 1;
 	const ut8 *tmp_buf = NULL;
@@ -61,7 +82,7 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 		if (sb && mode == R_MODE_PRINT) {
 			r_strbuf_appendf (sb, "  %d     %s\n", i + 1, str);
 		}
-		add_sdb_include_dir (sdb, str, i);
+		include_dir_set (dirs, i, str);
 		free (str);
 		i++;
 		buf += len + 1;
@@ -112,7 +133,7 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 				char *include_dir = NULL;
 				char *include_dir_alloc = NULL; // track allocated memory
 				if (id_idx > 0) {
-					include_dir_alloc = sdb_array_get (sdb, "includedirs", id_idx - 1, 0);
+					include_dir_alloc = include_dir_dup (dirs, id_idx - 1);
 					include_dir = include_dir_alloc;
 					if (include_dir && include_dir[0] != '/') {
 						// Look up comp_dir for this specific compilation unit
@@ -181,8 +202,6 @@ static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const u
 
 beach:
 	free (fn);
-	sdb_free (sdb);
-
 	return buf;
 }
 
@@ -333,7 +352,7 @@ static const ut8 *data16_form_value(entry_descriptor desc, const ut8 *buf, const
 // Because this function needs ability to parse a lot of FORMS just like debug info
 // I'll complete this function after completing debug_info parsing and merging
 // for the meanwhile I am skipping the space.
-static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, const ut8 *buf_end, RBinDwarfLineHeader *hdr, Sdb *s, int mode, RStrBuf *sb) {
+static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, const ut8 *buf_end, RBinDwarfLineHeader *hdr, RVecIncludeDir *dirs, int mode, RStrBuf *sb) {
 	RBin *bin = bf? bf->rbin: NULL;
 	if (!bin) {
 		return NULL;
@@ -374,7 +393,7 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 						R_LOG_DEBUG ("Invalid description (%#" PFMT64x ") for directory %" PFMT64u " %" PFMT64u, desc.form, i, ndir_entry);
 						return NULL;
 					}
-					add_sdb_include_dir (s, name, i);
+					include_dir_set (dirs, i, name);
 					break;
 				default:
 					R_LOG_DEBUG ("Invalid description type (%#" PFMT64x ")", desc.type);
@@ -383,7 +402,7 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 				}
 			}
 			if (sb && mode == R_MODE_PRINT) {
-				char *include_dir = sdb_array_get (s, "includedirs", i, 0);
+				char *include_dir = include_dir_dup (dirs, i);
 				r_strbuf_appendf (sb, "  %" PFMT64u "     %s\n", i, include_dir);
 				free (include_dir);
 			}
@@ -457,7 +476,7 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 				file->id_idx = data;
 
 				// prepend directory to the file name
-				char *dir = sdb_array_get (s, "includedirs", file->id_idx, 0);
+				char *dir = include_dir_dup (dirs, file->id_idx);
 				const char *filename = file->name;
 				if (dir == NULL || !strcmp (filename, dir)) {
 					free (dir);
@@ -469,7 +488,7 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 					file->name = r_str_newf ("%s/%s", dir, filename);
 					free ((char *)filename);
 				} else {
-					char *comp_unit_dir = sdb_array_get (s, "includedirs", 0, 0);
+					char *comp_unit_dir = include_dir_dup (dirs, 0);
 					if (comp_unit_dir == NULL || !strcmp (filename, comp_unit_dir)) {
 						free (comp_unit_dir);
 						free (dir);
@@ -536,8 +555,6 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 	if (sb && mode == R_MODE_PRINT) {
 		r_strbuf_append (sb, "\n");
 	}
-
-	sdb_free (s);
 	return buf;
 }
 
@@ -615,17 +632,14 @@ static const ut8 *parse_line_header(RBin *bin, RBinFile *bf, const ut8 *buf, con
 		hdr->std_opcode_lengths = NULL;
 	}
 
-	// XXX dat leaks
-	Sdb *sdb = sdb_new (NULL, NULL, 0);
-	if (!sdb) {
-		return NULL;
-	}
-
+	RVecIncludeDir dirs;
+	RVecIncludeDir_init (&dirs);
 	if (hdr->version < 5) {
-		buf = parse_line_header_source (bf, buf, buf_end, hdr, sdb, mode, sb, debug_line_offset);
+		buf = parse_line_header_source (bf, buf, buf_end, hdr, &dirs, mode, sb, debug_line_offset);
 	} else {
-		buf = parse_line_header_source_dwarf5 (bf, buf, buf_end, hdr, sdb, mode, sb);
+		buf = parse_line_header_source_dwarf5 (bf, buf, buf_end, hdr, &dirs, mode, sb);
 	}
+	RVecIncludeDir_fini (&dirs);
 	R_FREE (hdr->std_opcode_lengths);
 
 	return buf;

@@ -5372,3 +5372,14 @@ EXPECT=<<EOF
 opened
 EOF
 RUN
+
+NAME=dwarf line header with many include directories opens in linear time
+FILE=bins/elf/dwarf-100k-include-dirs
+TIMEOUT=10
+CMDS=<<EOF
+?e opened
+EOF
+EXPECT=<<EOF
+opened
+EOF
+RUN
