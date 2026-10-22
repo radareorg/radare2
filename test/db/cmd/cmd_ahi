@@ -496,3 +496,24 @@ mov edi, -1
 0
 EOF
 RUN
+
+NAME=ahi numeric IPv4 base matches its letter alias
+FILE=-
+CMDS=<<EOF
+ahi 32
+ahi
+ahi i
+ahi
+ahi 31
+ahi
+ahi 36
+ahi
+EOF
+EXPECT=<<EOF
+32
+32
+31
+36
+EOF
+EXPECT_ERR=
+RUN
