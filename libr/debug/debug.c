@@ -677,6 +677,7 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 	if (pid < 0 || tid < 0) {
 		return false;
 	}
+	const int old_pid = dbg->pid;
 	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
 	if (plugin && plugin->select) {
 		if (!plugin->select (dbg, pid, tid)) {
@@ -685,6 +686,9 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 	}
 	dbg->pid = pid;
 	dbg->tid = tid;
+	if (old_pid != pid && dbg->reason.type == R_DEBUG_REASON_DEAD) {
+		dbg->reason.type = R_DEBUG_REASON_UNKNOWN;
+	}
 	if (dbg->pid != -1) {
 		char *pidcmd = r_str_newf ("pid %d", dbg->pid);
 		if (pidcmd) {
@@ -1069,7 +1073,9 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 			dbg->coreb.cmd (dbg->coreb.core, ".e cmd.step @r:PC");
 		}
 		if (!ret) {
-			R_LOG_ERROR ("Stepping failed!");
+			if (dbg->reason.type != R_DEBUG_REASON_DEAD) {
+				R_LOG_ERROR ("Stepping failed!");
+			}
 			return steps_taken;
 		}
 		if (dbg->session && dbg->recoil_mode == R_DBG_RECOIL_NONE) {
@@ -1803,7 +1809,7 @@ R_API bool r_debug_is_dead(RDebug *dbg) {
 		return false;
 	}
 	bool is_dead = (dbg->pid < 0 && strncmp (plugin->meta.name, "gdb", 3)) || (dbg->reason.type == R_DEBUG_REASON_DEAD);
-	if (dbg->pid > 0 && plugin && plugin->kill) {
+	if (!is_dead && dbg->pid > 0 && plugin && plugin->kill) {
 		is_dead = !plugin->kill (dbg, dbg->pid, false, 0);
 	}
 #if 0
