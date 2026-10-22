@@ -104,12 +104,23 @@ static struct {
 	{ 0x17, "auipc", 'I', 2, 0, 0 }, // auipc t0, 0x0
 	{ 0x2013, "slti", 'I', 3, 0, 0 },
 	{ 0x3013, "sltiu", 'I', 3, 0, 0 },
-	{ 0x5013, "srai", 'I', 3, 0, 0 },
+	{ 0x1013, "slli", 'H', 3, 0, 0 },
+	{ 0x5013, "srli", 'H', 3, 0, 0 },
+	{ 0x40005013, "srai", 'H', 3, 0, 0 },
+	{ 0x0003, "lb", 'I', 3, 0, 0 },
+	{ 0x1003, "lh", 'I', 3, 0, 0 },
 	{ 0x2003, "lw", 'I', 3, 0, 0 },
-	{ 0x2023, "sw", 'I', 3, 0, 0 },
+	{ 0x3003, "ld", 'I', 3, 0, 0 },
+	{ 0x4003, "lbu", 'I', 3, 0, 0 },
+	{ 0x5003, "lhu", 'I', 3, 0, 0 },
+	{ 0x6003, "lwu", 'I', 3, 0, 0 },
+	{ 0x0023, "sb", 'S', 3, 0, 0 },
+	{ 0x1023, "sh", 'S', 3, 0, 0 },
+	{ 0x2023, "sw", 'S', 3, 0, 0 },
+	{ 0x3023, "sd", 'S', 3, 0, 0 },
 	// Type 'J' not yet implemented
-	{ 0x67, "jr", 'I', 2, 0, 0 }, // alias for jalr zero, rX
-	{ 0x67, "jalr", 'I', 2, 0, 0 },
+	{ 0x67, "jr", 'R', 3, 0, 0 }, // alias for jalr zero, rX
+	{ 0x67, "jalr", 'R', 3, 0, 0 },
 	{ 0 }
 };
 
@@ -122,12 +133,29 @@ static int riscv_ri(ut8 *b, int op, int rt, int imm) {
 	return 4;
 }
 
-static int riscv_rri(ut8 *b, int op, int rs, int rt, int imm) {
+static int riscv_rri(ut8 *b, ut32 op, int rs, int rt, int imm) {
+	if (rs < 0 || rt < 0 || imm < -2048 || imm > 2047) {
+		return -1;
+	}
 	ut32 *insn = (ut32 *)b;
 	*insn |= op;
 	*insn |= (rt << 7);
 	*insn |= (rs << 15);
-	*insn |= (imm << 20);
+	*insn |= ((ut32)imm & 0xfff) << 20;
+	return 4;
+}
+
+// sw rs2, imm(rs1)
+static int riscv_store(ut8 *b, ut32 op, int rs1, int rs2, int imm) {
+	if (rs1 < 0 || rs2 < 0 || imm < -2048 || imm > 2047) {
+		return -1;
+	}
+	ut32 *insn = (ut32 *)b;
+	*insn |= op;
+	*insn |= ((ut32)imm & 0x1f) << 7;
+	*insn |= rs1 << 15;
+	*insn |= rs2 << 20;
+	*insn |= (((ut32)imm >> 5) & 0x7f) << 25;
 	return 4;
 }
 
@@ -198,6 +226,29 @@ R_IPI int riscv_assemble(const char *str, ut64 pc, ut8 *out) {
 			case 1: sscanf (s, "%31s %31s", w0, w1); break;
 			case 0: sscanf (s, "%31s", w0); break;
 			}
+			if (ops[i].type == 'R') {
+				// jalr rs, jalr rd, rs, jalr rd, imm(rs), jr rs or jr imm(rs)
+				const bool jr = !strcmp (w0, "jr");
+				const int n = (*w1 != 0) + (*w2 != 0) + (*w3 != 0);
+				int rd = jr? 0: 1;
+				int rs = -1;
+				int imm = 0;
+				if (n == 1) {
+					rs = getreg (w1);
+				} else if (n == 2 && hasp) {
+					imm = getreg (w1);
+					rs = getreg (w2);
+				} else if (n == 2 && !jr) {
+					rd = getreg (w1);
+					rs = getreg (w2);
+				} else if (n == 3 && !jr) {
+					rd = getreg (w1);
+					rs = getreg (hasp? w3: w2);
+					imm = getreg (hasp? w2: w3);
+				}
+				free (s);
+				return riscv_rri (out, ops[i].op, rs, rd, imm);
+			}
 			if (hasp) {
 				char tmp[32];
 				strcpy (tmp, w2);
@@ -227,6 +278,25 @@ R_IPI int riscv_assemble(const char *str, ut64 pc, ut8 *out) {
 						return riscv_ri (out, op, rs, imm);
 					}
 					break;
+				}
+			case 'H': // slli rd, rs, shamt
+				{
+					const int rt = getreg (w1);
+					const int rs = getreg (w2);
+					const int shamt = getreg (w3);
+					free (s);
+					if (shamt < 0 || shamt > 63) {
+						return -1;
+					}
+					return riscv_rri (out, ops[i].op, rs, rt, shamt);
+				}
+			case 'S': // sw rs2, imm(rs1)
+				{
+					const int rs2 = getreg (w1);
+					const int rs1 = getreg (w2);
+					const int imm = getreg (w3);
+					free (s);
+					return riscv_store (out, ops[i].op, rs1, rs2, imm);
 				}
 			case 'N': // nop
 				memset (out, 0, 4);
