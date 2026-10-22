@@ -79,6 +79,12 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 #endif
 		memset (buf, 0, sizeof (buf));
 		xx = r_socket_gets (hr->s, buf, sizeof (buf));
+		if (xx < 0) {
+			// peer closed or receive timeout before the end of the headers
+			r_socket_http_close (hr);
+			r_socket_http_free (hr);
+			return NULL;
+		}
 		yy = r_socket_ready (hr->s, 0, 20 * 1000); // this function uses usecs as argument
 		if (!yy || (!xx && !pxx)) {
 			break;
