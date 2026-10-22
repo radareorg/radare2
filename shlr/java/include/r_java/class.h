@@ -5,6 +5,7 @@
 
 #include <r_types.h>
 #include <r_list.h>
+#include <r_vec.h>
 #include <r_bin.h>
 #include <sdb/sdb.h>
 
@@ -731,6 +732,8 @@ typedef struct r_bin_java_lines_t {
 	int *line;
 } RBinJavaLines;
 
+R_VEC_TYPE (RVecJavaCPObj, RBinJavaCPTypeObj *);
+
 typedef struct r_bin_java_obj_t {
 	struct r_bin_java_classfile_t cf;
 	RBinJavaClass2 cf2;
@@ -782,6 +785,7 @@ typedef struct r_bin_java_obj_t {
 	RList* fields_list;
 	RList* methods_list;
 	RList* cp_list;
+	RVecJavaCPObj cp_items; // cp_list indexed by constant pool index
 	RList* interfaces_list;
 	RList* attrs_list;
 	RList* imports_list;

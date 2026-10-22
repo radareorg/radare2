@@ -89,3 +89,14 @@ EXPECT=<<EOF
 4.0x0025.MethodHandle.Unknown.1
 EOF
 RUN
+
+NAME=java constant pool lookups are constant time with 20000 chained Methodrefs
+FILE=bins/java/methodref-chain-20000.class
+TIMEOUT=10
+CMDS=<<EOF
+ii~?
+EOF
+EXPECT=<<EOF
+20002
+EOF
+RUN

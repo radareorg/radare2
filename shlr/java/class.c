@@ -115,26 +115,26 @@ static ut64 r_bin_java_find_method_offset(RBinJavaObj *bin, const char *method_n
 static ut8 *r_bin_java_get_attr_buf(RBinJavaObj *bin, ut64 sz, const ut64 offset, const ut8 *buf, const ut64 len);
 static void r_bin_java_get_class_info_json(RBinJavaObj *bin, PJ *pj);
 static char *r_bin_java_get_desc_from_bin_cp_list(RBinJavaObj *bin, ut64 idx);
-static char *r_bin_java_get_desc_from_cp_item_list(RList *cp_list, ut64 idx);
+static char *r_bin_java_get_desc_from_cp_item_list(RBinJavaObj *bin, ut64 idx);
 static void r_bin_java_get_field_json_definition(RBinJavaObj *bin, RBinJavaField *fm_type, PJ *pj);
 static void r_bin_java_get_field_json_definitions(RBinJavaObj *bin, PJ *pj);
 static void r_bin_java_get_fm_type_definition_json(RBinJavaObj *bin, RBinJavaField *fm_type, PJ *pj, bool is_method);
 static void r_bin_java_get_import_json_definitions(RBinJavaObj *bin, PJ *pj);
 static char *r_bin_java_get_item_desc_from_bin_cp_list(RBinJavaObj *bin, RBinJavaCPTypeObj *obj);
-static char *r_bin_java_get_item_desc_from_cp_item_list(RList *cp_list, RBinJavaCPTypeObj *obj, int depth);
+static char *r_bin_java_get_item_desc_from_cp_item_list(RBinJavaObj *bin, RBinJavaCPTypeObj *obj, int depth);
 static char *r_bin_java_get_item_name_from_bin_cp_list(RBinJavaObj *bin, RBinJavaCPTypeObj *obj);
-static char *r_bin_java_get_item_name_from_cp_item_list(RList *cp_list, RBinJavaCPTypeObj *obj, int depth);
+static char *r_bin_java_get_item_name_from_cp_item_list(RBinJavaObj *bin, RBinJavaCPTypeObj *obj, int depth);
 static RBinJavaAttrInfo *r_bin_java_get_method_code_attribute(const RBinJavaField *method);
 static ut64 r_bin_java_get_method_code_offset(RBinJavaField *fm_type);
 static ut64 r_bin_java_get_method_code_size(RBinJavaField *fm_type);
 static void r_bin_java_get_method_json_definition(RBinJavaObj *bin, RBinJavaField *fm_type, PJ *pj);
 static void r_bin_java_get_method_json_definitions(RBinJavaObj *bin, PJ *pj);
 static char *r_bin_java_get_name_from_bin_cp_list(RBinJavaObj *bin, ut64 idx);
-static char *r_bin_java_get_name_from_cp_item_list(RList *cp_list, ut64 idx);
+static char *r_bin_java_get_name_from_cp_item_list(RBinJavaObj *bin, ut64 idx);
 static char *r_bin_java_get_utf8_from_bin_cp_list(RBinJavaObj *bin, ut64 idx);
-static char *r_bin_java_get_utf8_from_cp_item_list(RList *cp_list, ut64 idx);
+static char *r_bin_java_get_utf8_from_cp_item_list(RBinJavaObj *bin, ut64 idx);
 static ut32 r_bin_java_get_utf8_len_from_bin_cp_list(RBinJavaObj *bin, ut64 idx);
-static ut32 r_bin_java_get_utf8_len_from_cp_item_list(RList *cp_list, ut64 idx);
+static ut32 r_bin_java_get_utf8_len_from_cp_item_list(RBinJavaObj *bin, ut64 idx);
 static ut64 r_bin_java_parse_attrs(RBinJavaObj *bin, const ut64 offset, const ut8 *buf, const ut64 len);
 static ut64 r_bin_java_parse_cp_pool(RBinJavaObj *bin, const ut64 offset, const ut8 *buf, const ut64 len);
 static ut64 r_bin_java_parse_fields(RBinJavaObj *bin, const ut64 offset, const ut8 *buf, const ut64 len);
@@ -166,7 +166,7 @@ static ut8 *r_bin_java_cp_get_8bytes(ut8 tag, ut32 *out_sz, const ut8 *buf, cons
 static ut8 *r_bin_java_cp_get_utf8(ut8 tag, ut32 *out_sz, const ut8 *buf, const ut64 len);
 
 R_API RBinJavaCPTypeObj *r_bin_java_get_item_from_bin_cp_list(RBinJavaObj *bin, ut64 idx);
-static RBinJavaCPTypeObj *r_bin_java_get_item_from_cp_item_list(RList *cp_list, ut64 idx);
+static RBinJavaCPTypeObj *r_bin_java_get_item_from_cp_item_list(RBinJavaObj *bin, ut64 idx);
 // Internal CP allocation functions - used only via callback table
 static RBinJavaCPTypeObj *class_cp_new(RBinJavaObj *bin, ut8 *buffer, ut64 offset);
 static RBinJavaCPTypeObj *fieldref_cp_new(RBinJavaObj *bin, ut8 *buffer, ut64 offset);
@@ -648,6 +648,7 @@ static void r_bin_java_reset_bin_info(RBinJavaObj *bin) {
 	r_list_free (bin->fields_list);
 	r_list_free (bin->attrs_list);
 	r_list_free (bin->cp_list);
+	RVecJavaCPObj_clear (&bin->cp_items);
 	r_list_free (bin->interfaces_list);
 	r_str_constpool_fini (&bin->constpool);
 	r_str_constpool_init (&bin->constpool);
@@ -1374,12 +1375,12 @@ rvalue: new char* for caller to free.
  */
 static char *r_bin_java_get_utf8_from_bin_cp_list(RBinJavaObj *bin, ut64 idx) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
-	return r_bin_java_get_utf8_from_cp_item_list (bin->cp_list, idx);
+	return r_bin_java_get_utf8_from_cp_item_list (bin, idx);
 }
 
 static ut32 r_bin_java_get_utf8_len_from_bin_cp_list(RBinJavaObj *bin, ut64 idx) {
 	R_RETURN_VAL_IF_FAIL (bin, 0);
-	return r_bin_java_get_utf8_len_from_cp_item_list (bin->cp_list, idx);
+	return r_bin_java_get_utf8_len_from_cp_item_list (bin, idx);
 }
 
 static char *r_bin_java_get_name_from_bin_cp_list(RBinJavaObj *bin, ut64 idx) {
@@ -1390,7 +1391,7 @@ static char *r_bin_java_get_name_from_bin_cp_list(RBinJavaObj *bin, ut64 idx) {
 	the list will be walked and then the IDX will be checked.
 	rvalue: new char* for caller to free.
 	 */
-	return r_bin_java_get_name_from_cp_item_list (bin->cp_list, idx);
+	return r_bin_java_get_name_from_cp_item_list (bin, idx);
 }
 
 static char *r_bin_java_get_desc_from_bin_cp_list(RBinJavaObj *bin, ut64 idx) {
@@ -1401,7 +1402,7 @@ static char *r_bin_java_get_desc_from_bin_cp_list(RBinJavaObj *bin, ut64 idx) {
 	the list will be walked and then the IDX will be checked.
 	rvalue: new char* for caller to free.
 	 */
-	return r_bin_java_get_desc_from_cp_item_list (bin->cp_list, idx);
+	return r_bin_java_get_desc_from_cp_item_list (bin, idx);
 }
 
 R_API RBinJavaCPTypeObj *r_bin_java_get_item_from_bin_cp_list(RBinJavaObj *bin, ut64 idx) {
@@ -1415,7 +1416,7 @@ R_API RBinJavaCPTypeObj *r_bin_java_get_item_from_bin_cp_list(RBinJavaObj *bin, 
 	if (idx > bin->cp_count || idx == 0) {
 		return r_bin_java_get_java_null_cp ();
 	}
-	return r_bin_java_get_item_from_cp_item_list (bin->cp_list, idx);
+	return r_bin_java_get_item_from_cp_item_list (bin, idx);
 }
 
 static char *r_bin_java_get_item_name_from_bin_cp_list(RBinJavaObj *bin, RBinJavaCPTypeObj *obj) {
@@ -1429,7 +1430,7 @@ static char *r_bin_java_get_item_name_from_bin_cp_list(RBinJavaObj *bin, RBinJav
 	 */
 	if (bin && obj) {
 		res = r_bin_java_get_item_name_from_cp_item_list (
-			bin->cp_list, obj, MAX_CPITEMS);
+			bin, obj, MAX_CPITEMS);
 	}
 	return res;
 }
@@ -1442,75 +1443,52 @@ static char *r_bin_java_get_item_desc_from_bin_cp_list(RBinJavaObj *bin, RBinJav
 	@param obj object to look up the name for
 	@rvalue char*(user frees) or NULL
 	 */
-	return bin? r_bin_java_get_item_desc_from_cp_item_list (bin->cp_list, obj, MAX_CPITEMS): NULL;
+	return bin? r_bin_java_get_item_desc_from_cp_item_list (bin, obj, MAX_CPITEMS): NULL;
 }
 
-static char *r_bin_java_get_utf8_from_cp_item_list(RList *cp_list, ut64 idx) {
+static char *r_bin_java_get_utf8_from_cp_item_list(RBinJavaObj *bin, ut64 idx) {
 	/*
 	Search through the Constant Pool list for the given CP Index.
-	If the idx not found by directly going to the list index,
-	the list will be walked and then the IDX will be checked.
 	rvalue: new char* for caller to free.
 	 */
 	char *value = NULL;
-	RListIter *iter;
-	if (!cp_list) {
-		return NULL;
-	}
-	RBinJavaCPTypeObj *item = (RBinJavaCPTypeObj *)r_list_get_n (cp_list, idx);
+	RBinJavaCPTypeObj *item = r_bin_java_get_item_from_cp_item_list (bin, idx);
 	if (item && item->tag == R_BIN_JAVA_CP_UTF8 && item->metas->ord == idx) {
 		value = convert_string ((const char *)item->info.cp_utf8.bytes, item->info.cp_utf8.length);
 	}
-	if (!value) {
-		r_list_foreach (cp_list, iter, item) {
-			if (item && (item->tag == R_BIN_JAVA_CP_UTF8) && item->metas->ord == idx) {
-				value = convert_string ((const char *)item->info.cp_utf8.bytes, item->info.cp_utf8.length);
-				break;
-			}
-		}
-	}
 	return value;
 }
 
-static ut32 r_bin_java_get_utf8_len_from_cp_item_list(RList *cp_list, ut64 idx) {
+static ut32 r_bin_java_get_utf8_len_from_cp_item_list(RBinJavaObj *bin, ut64 idx) {
 	/*
 	Search through the Constant Pool list for the given CP Index.
-	If the idx not found by directly going to the list index,
-	the list will be walked and then the IDX will be checked.
 	rvalue: new ut32 .
 	 */
 	ut32 value = -1;
-	RListIter *iter;
-	if (!cp_list) {
-		return 0;
-	}
-	RBinJavaCPTypeObj *item = (RBinJavaCPTypeObj *)r_list_get_n (cp_list, idx);
+	RBinJavaCPTypeObj *item = r_bin_java_get_item_from_cp_item_list (bin, idx);
 	if (item && (item->tag == R_BIN_JAVA_CP_UTF8) && item->metas->ord == idx) {
 		value = item->info.cp_utf8.length;
-	}
-	if (value == -1) {
-		r_list_foreach (cp_list, iter, item) {
-			if (item && (item->tag == R_BIN_JAVA_CP_UTF8) && item->metas->ord == idx) {
-				value = item->info.cp_utf8.length;
-				break;
-			}
-		}
 	}
 	return value;
 }
 
-static RBinJavaCPTypeObj *r_bin_java_get_item_from_cp_item_list(RList *cp_list, ut64 idx) {
+static RBinJavaCPTypeObj *r_bin_java_get_item_from_cp_item_list(RBinJavaObj *bin, ut64 idx) {
 	/*
 	Search through the Constant Pool list for the given CP Index.
 	rvalue: RBinJavaObj *
 	 */
-	if (cp_list == NULL) {
-		return NULL;
-	}
-	return (RBinJavaCPTypeObj *)r_list_get_n (cp_list, idx);
+	RBinJavaCPTypeObj **slot = (bin && idx < RVecJavaCPObj_length (&bin->cp_items))
+		? RVecJavaCPObj_at (&bin->cp_items, idx): NULL;
+	return slot? *slot: NULL;
 }
 
-static char *r_bin_java_get_item_name_from_cp_item_list(RList *cp_list, RBinJavaCPTypeObj *obj, int depth) {
+// cp_list position is the constant pool index, cp_items resolves it in constant time
+static void cp_append(RBinJavaObj *bin, RBinJavaCPTypeObj *obj) {
+	r_list_append (bin->cp_list, obj);
+	RVecJavaCPObj_push_back (&bin->cp_items, &obj);
+}
+
+static char *r_bin_java_get_item_name_from_cp_item_list(RBinJavaObj *bin, RBinJavaCPTypeObj *obj, int depth) {
 	/*
 	Given a constant pool object Class, FieldRef, MethodRef, or InterfaceMethodRef
 	return the actual descriptor string.
@@ -1518,24 +1496,24 @@ static char *r_bin_java_get_item_name_from_cp_item_list(RList *cp_list, RBinJava
 	@param obj object to look up the name for
 	@rvalue ut8*(user frees) or NULL
 	 */
-	if (!obj || !cp_list || depth < 0) {
+	if (!obj || !bin || depth < 0) {
 		return NULL;
 	}
 	switch (obj->tag) {
 	case R_BIN_JAVA_CP_NAMEANDTYPE:
 		return r_bin_java_get_utf8_from_cp_item_list (
-			cp_list, obj->info.cp_name_and_type.name_idx);
+			bin, obj->info.cp_name_and_type.name_idx);
 	case R_BIN_JAVA_CP_CLASS:
 		return r_bin_java_get_utf8_from_cp_item_list (
-			cp_list, obj->info.cp_class.name_idx);
+			bin, obj->info.cp_class.name_idx);
 	// XXX - Probably not good form, but they are the same memory structure
 	case R_BIN_JAVA_CP_FIELDREF:
 	case R_BIN_JAVA_CP_INTERFACEMETHOD_REF:
 	case R_BIN_JAVA_CP_METHODREF:
 		obj = r_bin_java_get_item_from_cp_item_list (
-			cp_list, obj->info.cp_method.name_and_type_idx);
+			bin, obj->info.cp_method.name_and_type_idx);
 		return r_bin_java_get_item_name_from_cp_item_list (
-			cp_list, obj, depth - 1);
+			bin, obj, depth - 1);
 	default:
 		return NULL;
 	case 0:
@@ -1545,7 +1523,7 @@ static char *r_bin_java_get_item_name_from_cp_item_list(RList *cp_list, RBinJava
 	return NULL;
 }
 
-static char *r_bin_java_get_name_from_cp_item_list(RList *cp_list, ut64 idx) {
+static char *r_bin_java_get_name_from_cp_item_list(RBinJavaObj *bin, ut64 idx) {
 	/*
 	Given a constant pool object Class, FieldRef, MethodRef, or InterfaceMethodRef
 	return the actual descriptor string.
@@ -1554,52 +1532,49 @@ static char *r_bin_java_get_name_from_cp_item_list(RList *cp_list, ut64 idx) {
 	@rvalue ut8*(user frees) or NULL
 	 */
 	RBinJavaCPTypeObj *obj = r_bin_java_get_item_from_cp_item_list (
-		cp_list, idx);
-	if (obj && cp_list) {
+		bin, idx);
+	if (obj) {
 		return r_bin_java_get_item_name_from_cp_item_list (
-			cp_list, obj, MAX_CPITEMS);
+			bin, obj, MAX_CPITEMS);
 	}
 	return NULL;
 }
 
-static char *r_bin_java_get_item_desc_from_cp_item_list(RList *cp_list, RBinJavaCPTypeObj *obj, int depth) {
+static char *r_bin_java_get_item_desc_from_cp_item_list(RBinJavaObj *bin, RBinJavaCPTypeObj *obj, int depth) {
 	/*
 	Given a constant pool object FieldRef, MethodRef, or InterfaceMethodRef
 	return the actual descriptor string.
 	@rvalue ut8*(user frees) or NULL
 	 */
-	if (!obj || !cp_list || depth < 0) {
+	if (!obj || !bin || depth < 0) {
 		return NULL;
 	}
 	switch (obj->tag) {
 	case R_BIN_JAVA_CP_NAMEANDTYPE:
-		return r_bin_java_get_utf8_from_cp_item_list (cp_list,
+		return r_bin_java_get_utf8_from_cp_item_list (bin,
 			obj->info.cp_name_and_type.descriptor_idx);
 	// XXX - Probably not good form, but they are the same memory structure
 	case R_BIN_JAVA_CP_FIELDREF:
 	case R_BIN_JAVA_CP_INTERFACEMETHOD_REF:
 	case R_BIN_JAVA_CP_METHODREF:
-		obj = r_bin_java_get_item_from_cp_item_list (cp_list,
+		obj = r_bin_java_get_item_from_cp_item_list (bin,
 			obj->info.cp_method.name_and_type_idx);
 		return r_bin_java_get_item_desc_from_cp_item_list (
-			cp_list, obj, depth - 1);
+			bin, obj, depth - 1);
 	default:
 		return NULL;
 	}
 	return NULL;
 }
 
-static char *r_bin_java_get_desc_from_cp_item_list(RList *cp_list, ut64 idx) {
+static char *r_bin_java_get_desc_from_cp_item_list(RBinJavaObj *bin, ut64 idx) {
 	/*
 	Given a constant pool object FieldRef, MethodRef, or InterfaceMethodRef
 	return the actual descriptor string.
 	@rvalue ut8*(user frees) or NULL
 	 */
-	RBinJavaCPTypeObj *obj = r_bin_java_get_item_from_cp_item_list (cp_list, idx);
-	if (!cp_list) {
-		return NULL;
-	}
-	return r_bin_java_get_item_desc_from_cp_item_list (cp_list, obj, MAX_CPITEMS);
+	RBinJavaCPTypeObj *obj = r_bin_java_get_item_from_cp_item_list (bin, idx);
+	return r_bin_java_get_item_desc_from_cp_item_list (bin, obj, MAX_CPITEMS);
 }
 
 /**
@@ -1794,24 +1769,25 @@ static ut64 r_bin_java_parse_cp_pool(RBinJavaObj *bin, const ut64 offset, const 
 	}
 	const ut8 *cp_buf = buf + offset;
 	r_list_free (bin->cp_list);
+	RVecJavaCPObj_clear (&bin->cp_items);
 	bin->cp_list = r_list_newf (r_bin_java_constant_pool);
 	bin->cp_offset = offset;
 	memcpy ((char *)&bin->cp_count, cp_buf, 2);
 	bin->cp_count = R_BIN_JAVA_USHORT (cp_buf, 0) - 1;
 	adv += 2;
 	R_LOG_DEBUG ("ConstantPoolCount %d", bin->cp_count);
-	r_list_append (bin->cp_list, r_bin_java_get_java_null_cp ());
+	cp_append (bin, r_bin_java_get_java_null_cp ());
 	for (ord = 1, bin->cp_idx = 0; bin->cp_idx < bin->cp_count && adv < len; ord++, bin->cp_idx++) {
 		obj = r_bin_java_read_next_constant_pool_item (bin, offset + adv, buf, len);
 		if (obj) {
 			obj->metas->ord = ord;
 			obj->idx = ord;
-			r_list_append (bin->cp_list, obj);
+			cp_append (bin, obj);
 			if (obj->tag == R_BIN_JAVA_CP_LONG || obj->tag == R_BIN_JAVA_CP_DOUBLE) {
 				// i++;
 				ord++;
 				bin->cp_idx++;
-				r_list_append (bin->cp_list, &R_BIN_JAVA_NULL_TYPE);
+				cp_append (bin, &R_BIN_JAVA_NULL_TYPE);
 			}
 			adv += ((RBinJavaCPTypeMetas *)obj->metas->type_info)->allocs->calc_size (obj);
 			if (offset + adv > len) {
@@ -2713,6 +2689,7 @@ R_API void *r_bin_java_free(RBinJavaObj *bin) {
 	// sdb_free (bin->kv);
 	// free up the constant pool list
 	r_list_free (bin->cp_list);
+	RVecJavaCPObj_fini (&bin->cp_items);
 	// free up the fields list
 	r_list_free (bin->fields_list);
 	// free up methods list
@@ -4355,15 +4332,14 @@ static RBinJavaStackMapFrame *r_bin_java_stack_map_frame_new(ut8 *buffer, ut64 s
 }
 
 static ut16 r_bin_java_find_cp_class_ref_from_name_idx(RBinJavaObj *bin, ut16 name_idx) {
-	ut16 pos, len = (ut16)r_list_length (bin->cp_list);
-	RBinJavaCPTypeObj *item;
-	for (pos = 0; pos < len; pos++) {
-		item = (RBinJavaCPTypeObj *)r_list_get_n (bin->cp_list, pos);
+	RBinJavaCPTypeObj **it;
+	R_VEC_FOREACH (&bin->cp_items, it) {
+		RBinJavaCPTypeObj *item = *it;
 		if (item && item->tag == R_BIN_JAVA_CP_CLASS && item->info.cp_class.name_idx == name_idx) {
-			break;
+			return (ut16)(it - R_VEC_START_ITER (&bin->cp_items));
 		}
 	}
-	return (pos != len)? pos: 0;
+	return 0;
 }
 
 static RBinJavaStackMapFrame *r_bin_java_default_stack_frame(void) {
@@ -7786,7 +7762,7 @@ R_API RBinJavaCPTypeObj *r_bin_java_get_item_from_cp(RBinJavaObj *bin, int i) {
 	if (i < 1 || i > bin->cf.cp_count) {
 		return &R_BIN_JAVA_NULL_TYPE;
 	}
-	RBinJavaCPTypeObj *obj = (RBinJavaCPTypeObj *)r_list_get_n (bin->cp_list, i);
+	RBinJavaCPTypeObj *obj = r_bin_java_get_item_from_cp_item_list (bin, i);
 	return obj? obj: &R_BIN_JAVA_NULL_TYPE;
 }
 
