@@ -697,3 +697,12 @@ ad "tbnz w30, 0xf, 4" 3E007837
 ad "tbnz w11, 0x1d, 0x18" CB00E837
 ad "msub x7, x8, x9, x5" 0795099b
 ad "str x2, [x16, 0x2058]" 022e10f9
+ad "ldp x0, x1, [sp, 0x10]" e00741a9
+ad "ldp x0, x1, [sp]" e00740a9
+ad "stp x29, x30, [sp, -0x10]!" fd7bbfa9
+ad "ldp x29, x30, [sp], 0x10" fd7bc1a8
+ad "stp x0, x1, [x2, 0x1f8]" 40841fa9
+ad "ldp x0, x1, [x2, -0x200]" 400460a9
+ad "stp w0, w1, [x2, 8]" 40040129
+ad "ldp w3, w4, [sp, -0x100]!" e313e029
+ad "stp xzr, x30, [x28], -8" 9ffbbfa8
