@@ -181,3 +181,21 @@ EXPECT=<<EOF
 0x60000000
 EOF
 RUN
+
+NAME=decimal exponent
+FILE=-
+CMDS=<<EOF
+?v 1e10
+?v 2e-3
+?v 1.5e3
+?v 0x1e-2
+?v 1e5h
+EOF
+EXPECT=<<EOF
+0x2540be400
+0x0
+0x5dc
+0x1c
+0x1e5
+EOF
+RUN

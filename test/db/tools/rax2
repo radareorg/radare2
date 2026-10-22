@@ -219,6 +219,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rax2 floats with an exponent
+FILE=-
+CMDS=<<EOF
+!rax2 1.00000001e-07f
+!rax2 1.40129846e-45f
+!rax2 3.40282347e+38f
+!rax2 1e10f
+!rax2 1e-40f
+EOF
+EXPECT=<<EOF
+Fx33d6bf95
+Fx00000001
+Fx7f7fffff
+Fx501502f9
+Fx000116c2
+EOF
+RUN
+
 NAME=rax2 1.5g
 FILE=-
 CMDS=!rax2 1.5g

@@ -315,6 +315,33 @@ static bool cin_get(RNum *num, RNumCalc *nc, char *c) {
 	return true;
 }
 
+// "12e" or "1.5E": a decimal mantissa followed by the exponent marker
+static bool is_decimal_exponent_start(const char *str, int len) {
+	if (len < 2 || !isdigit ((ut8)*str) || (str[len - 1] != 'e' && str[len - 1] != 'E')) {
+		return false;
+	}
+	bool dot = false;
+	int i;
+	for (i = 1; i < len - 1; i++) {
+		if (str[i] == '.' && !dot) {
+			dot = true;
+		} else if (!isdigit ((ut8)str[i])) {
+			return false;
+		}
+	}
+	return true;
+}
+
+// "1e10", "2e-3" or "1.5E+3f", but not hex like "0x1e5" or "1e5h"
+static bool is_decimal_float_exponent(const char *str) {
+	if (!isdigit ((ut8)*str) || r_str_startswith (str, "0x") || !strpbrk (str, "eE")) {
+		return false;
+	}
+	char *end;
+	(void)strtod (str, &end);
+	return end != str && (!*end || !strcmp (end, "f"));
+}
+
 static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
 	double d = 0;
 	char str[R_NUMCALC_STRSZ + 1]; // TODO: move into the heap?
@@ -322,7 +349,9 @@ static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
 	char c;
 	str[0] = 0;
 	while (cin_get (num, nc, &c)) {
-		if (c != '_' && c != ':' && c != '.' && !isalnum ((ut8)c)) {
+		const bool exponent_sign = (c == '+' || c == '-') && is_decimal_exponent_start (str, i)
+			&& !nc->oc && nc->calc_buf && isdigit ((ut8)nc->calc_buf[nc->calc_i]);
+		if (!exponent_sign && c != '_' && c != ':' && c != '.' && !isalnum ((ut8)c)) {
 			cin_putback (num, nc, c);
 			break;
 		}
@@ -331,7 +360,7 @@ static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
 		}
 	}
 	str[i] = 0;
-	bool floating = isdigit ((ut8)*str) && strchr (str, '.');
+	bool floating = isdigit ((ut8)*str) && (strchr (str, '.') || is_decimal_float_exponent (str));
 	if (floating) {
 		char *end;
 		d = strtod (str, &end);
