@@ -39,4 +39,6 @@
 #define DUPMAX 255
 //_POSIX2_RE_DUP_MAX	/* xxx is this right? */
 #define INTFINITY (DUPMAX + 1)
+/* max sops in a compiled strip: nested x{n} multiply, so DUPMAX alone is no bound */
+#define MAXSTRIP (1 << 22)
 #define NC (CHAR_MAX - CHAR_MIN + 1)

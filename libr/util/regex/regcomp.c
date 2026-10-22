@@ -1559,6 +1559,10 @@ static void enlarge(struct parse *p, sopno size) {
 	if (p->ssize >= size) {
 		return;
 	}
+	if (size > MAXSTRIP) { /* e.g. (((a{255}){255}){255}){255} */
+		SETERROR (R_REGEX_ESPACE);
+		return;
+	}
 
 	sp = (sop *)realloc (p->strip, size * sizeof (sop));
 	if (!sp) {

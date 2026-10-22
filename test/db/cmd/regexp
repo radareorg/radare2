@@ -61,3 +61,19 @@ EXPECT=<<EOF
 [{"addr":0,"type":"string","data":"HELLO WORLD"}]
 EOF
 RUN
+
+NAME=regex nested bounded repetitions do not expand without limit
+FILE=malloc://64
+TIMEOUT=10
+CMDS=<<EOF
+wx 61616162630a
+/e /(((a{255}){255}){255}){255}/
+/e /ab+c/
+EOF
+EXPECT=<<EOF
+0x00000002 hit1_0 "aaabc"
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot compile '(((a{255}){255}){255}){255}' regexp
+EOF
+RUN
