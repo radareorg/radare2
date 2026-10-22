@@ -1777,6 +1777,11 @@ char* gdbr_exec_file_read(libgdbr_t *g, int pid) {
 			goto end;
 		}
 		g->data[g->data_len] = '\0';
+		const size_t slice = strlen (g->data + 1);
+		if (slice > GDBR_PATH_MAX - off) {
+			ret = -1;
+			goto end;
+		}
 		if (g->data[0] == 'l') {
 			if (g->data_len == 1) {
 				break;
@@ -1784,11 +1789,12 @@ char* gdbr_exec_file_read(libgdbr_t *g, int pid) {
 			path = r_str_append (path, g->data + 1);
 			break;
 		}
-		if (g->data[0] != 'm') {
+		// a slice without data makes no progress
+		if (g->data[0] != 'm' || !slice) {
 			ret = -1;
 			goto end;
 		}
-		off += strlen (g->data + 1);
+		off += slice;
 		if (!(path = r_str_append (path, g->data + 1))) {
 			ret = -1;
 			goto end;
@@ -1839,6 +1845,7 @@ RList* gdbr_pids_list(libgdbr_t *g, int pid) {
 	int ret = -1;
 	RList *list = NULL;
 	int tpid = -1, ttid = -1;
+	size_t nids = 0;
 	char *ptr, *ptr2, *exec_file;
 	RDebugPid *dpid = NULL;
 	RListIter *iter = NULL;
@@ -1879,6 +1886,10 @@ RList* gdbr_pids_list(libgdbr_t *g, int pid) {
 		g->data[g->data_len] = '\0';
 		ptr = g->data + 1;
 		while (ptr) {
+			if (++nids > GDBR_THREADS_MAX) {
+				ret = -1;
+				goto end;
+			}
 			if ((ptr2 = strchr (ptr, ','))) {
 				*ptr2 = '\0';
 				ptr2++;
@@ -1945,6 +1956,7 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid) {
 	int ret = -1;
 	RList *list = NULL;
 	int tpid = -1, ttid = -1;
+	size_t nids = 0;
 	char *ptr, *ptr2, *exec_file;
 	RDebugPid *dpid = NULL;
 	RListIter *iter = NULL;
@@ -1977,6 +1989,10 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid) {
 		g->data[g->data_len] = '\0';
 		ptr = g->data + 1;
 		while (ptr) {
+			if (++nids > GDBR_THREADS_MAX) {
+				ret = -1;
+				goto end;
+			}
 			if ((ptr2 = strchr (ptr, ','))) {
 				*ptr2 = '\0';
 				ptr2++;

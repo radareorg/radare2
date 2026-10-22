@@ -26,6 +26,12 @@ static inline bool gdbr_reg_byte_end(const gdb_reg_t *reg, size_t *end) {
 	return true;
 }
 
+/* The remote serves these in pieces and says which piece is the last, so the sum needs a limit:
+ * the bytes of a qXfer object, those of the path of a program, the ids of a thread list. */
+#define GDBR_XFER_MAX ((size_t)1 << 22)
+#define GDBR_PATH_MAX ((size_t)4096)
+#define GDBR_THREADS_MAX ((size_t)1 << 16)
+
 /* Half the largest length a ssize_t (data_max) states, so growing to it never wraps */
 #define GDBR_GROW_MAX ((size_t)1 << (sizeof (ssize_t) * 8 - 2))
 

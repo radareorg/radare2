@@ -12,7 +12,8 @@
 #define MAX_PID_CHARS (5)
 #define MAX_FEATURE_DEPTH (16)
 
-static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len, int depth) {
+// left: the bytes the description, its inclusions too, may still take
+static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len, ut64 *left, int depth) {
 	if (depth >= MAX_FEATURE_DEPTH) {
 		*tot_len = 0;
 		return NULL;
@@ -39,6 +40,11 @@ static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len, in
 			break;
 		}
 		status = g->data[0];
+		// a slice without data makes no progress
+		if (g->data_len == 1 || g->data_len - 1 > *left) {
+			goto exit_err;
+		}
+		*left -= g->data_len - 1;
 		r_strbuf_append_n (sb, g->data + 1, g->data_len - 1);
 		retlen += g->data_len - 1;
 		off = retlen;
@@ -75,7 +81,7 @@ static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len, in
 		}
 		tmpchar = *tmp3;
 		*tmp3 = '\0';
-		subret = gdbr_read_feature (g, tmp2, &subret_len, depth + 1);
+		subret = gdbr_read_feature (g, tmp2, &subret_len, left, depth + 1);
 		*tmp3 = tmpchar;
 		if (!subret) {
 			goto exit_err;
@@ -127,6 +133,10 @@ static char *gdbr_read_osdata(libgdbr_t *g, const char *file, ut64 *tot_len) {
 			break;
 		}
 		status = g->data[0];
+		// a slice without data makes no progress
+		if (g->data_len == 1 || g->data_len - 1 > GDBR_XFER_MAX - retlen) {
+			goto exit_err;
+		}
 		r_strbuf_append_n (sb, g->data + 1, g->data_len - 1);
 		retlen += g->data_len - 1;
 		off = retlen;
@@ -467,8 +477,8 @@ int gdbr_read_target_xml(libgdbr_t *g) {
 		return -1;
 	}
 	char *data;
-	ut64 len;
-	if (!(data = gdbr_read_feature (g, "target.xml", &len, 0))) {
+	ut64 len, left = GDBR_XFER_MAX;
+	if (!(data = gdbr_read_feature (g, "target.xml", &len, &left, 0))) {
 		return -1;
 	}
 	gdbr_parse_target_xml (g, data, len);
