@@ -877,7 +877,7 @@ static ut32 tb(ArmOp *op) {
 
 	ut64 maxis = R_ABS (delta);
 	if ((delta & 3) || maxis > 0x7fff) {
-		R_LOG_ERROR ("invalid destination for %s (delta=%lld)", op->mnemonic, delta);
+		R_LOG_ERROR ("invalid destination for %s (delta=%"PFMT64d")", op->mnemonic, delta);
 		return UT32_MAX;
 	}
 
