@@ -1822,6 +1822,12 @@ a "rol byte [eax], cl" d200
 a "rol dword [eax], 0" c10000
 a "rol dword [eax], 1" d100
 a "rol dword [eax], cl" d300
+a "shl ax, 1" 66d1e0
+a "rol si, cl" 66d3c6
+a "sar byte [esp], 4" c03c2404
+a "shr dword [0x1000], 1" d12d00100000
+a "shl ecx" d1e1
+a "sal byte [ebx+8], cl" d26308
 aB "roundpd xmm0, xmm0, 0" 660f3a09c000
 aB "roundps xmm0, xmm0, 0" 660f3a08c000
 aB "roundsd xmm0, xmm0, 0" 660f3a0bc000

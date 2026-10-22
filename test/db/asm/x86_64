@@ -1407,12 +1407,21 @@ aB "fnsave dword [rdi + rdi*8]" dd34ff
 a "ror al, 1" d0c8
 a "ror ah, 1" d0cc
 a "ror ah, 0xd6" c0ccd6
-a "ror di, 0xd6" cfd6
+a "ror di, 0xd6" 66c1cfd6
 a "ror byte[rax], 1" d008
-aB "ror byte[rax-0x2a], 1" d048d6
-aB "ror byte[rax-0x2a], 0x2a" c048d62a
-aB "ror byte[rax], 0x2a" c048d62a
-aB "ror byte[r15-0x2a], 1" 41d04fd6
+a "ror byte[rax-0x2a], 1" d048d6
+a "ror byte[rax-0x2a], 0x2a" c048d62a
+a "ror byte[rax], 0x2a" c0082a
+a "ror byte[r15-0x2a], 1" 41d04fd6
+a "sal eax, 1" d1e0
+a "shl eax" d1e0
+a "shl r8b, 3" 41c0e003
+a "shr sil, cl" 40d2ee
+a "rol ax, 1" 66d1c0
+a "rcl qword [r13+rax*2], cl" 49d3544500
+a "shr word [rsp], 4" 66c12c2404
+a "sar dword [rbp], cl" d37d00
+a "rcr r11, 7" 49c1db07
 ad "call qword [rip + 8]" ff1508000000
 ad "call qword [rip - 8]" ff15f8ffffff
 ad "add r8, 3" 4983c003
