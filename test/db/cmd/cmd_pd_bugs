@@ -80,9 +80,9 @@ EXPECT=<<EOF
 [36m|[0m           [32mentry0[0m+0x9                      [33m48[36m83[36me4[36mf0[0m       [33mand[37m rsp[0m,[33m[33m [32m0xfffffffffffffff0[0m[0m
 [36m|[0m           [32mentry0[0m+0xd                      [33m50[0m             [35mpush[37m rax[0m[0m
 [36m|[0m           [32mentry0[0m+0xe                      [33m54[0m             [35mpush[37m rsp[0m[0m
-[36m|[0m           [32mentry0[0m+0xf                      [33m4c[36m8b[36m05[36me6[36m93[36m..   [36mmov[37m r8[0m,[33m qword[33m [0m[[33mreloc.fixup.UHH_[0m][37m[0m[31m [31m; [[31m0x1f220[31m:8]=0x16ee0[0m
-[36m|[0m           [32mentry0[0m+0x16                     [33m48[36m8b[36m0d[36me7[36m93[36m..   [36mmov[37m rcx[0m,[33m qword[33m [0m[[33mreloc.fixup.UHAWAVAUATSH8[0m][37m[0m[31m [31m; [[31m0x1f228[31m:8]=0x16e60[0m
-[36m|[0m           [32mentry0[0m+0x1d                     [33m48[36m8b[33m3d[36me8[36m93[36m..   [36mmov[37m rdi[0m,[33m qword[33m [0m[[33mreloc.fixup.UHAWAVAUATSHH[0m][37m[0m[31m [31m; [[31m0x1f230[31m:8]=0x3bd0 main[0m
+[36m|[0m           [32mentry0[0m+0xf                      [33m4c[36m8b[36m05[36me6[36m93[36m..[0m   [36mmov[37m r8[0m,[33m qword[33m [0m[[33mreloc.fixup.UHH_[0m][37m[0m[31m [31m; [[31m0x1f220[31m:8]=0x16ee0[0m
+[36m|[0m           [32mentry0[0m+0x16                     [33m48[36m8b[36m0d[36me7[36m93[36m..[0m   [36mmov[37m rcx[0m,[33m qword[33m [0m[[33mreloc.fixup.UHAWAVAUATSH8[0m][37m[0m[31m [31m; [[31m0x1f228[31m:8]=0x16e60[0m
+[36m|[0m           [32mentry0[0m+0x1d                     [33m48[36m8b[33m3d[36me8[36m93[36m..[0m   [36mmov[37m rdi[0m,[33m qword[33m [0m[[33mreloc.fixup.UHAWAVAUATSHH[0m][37m[0m[31m [31m; [[31m0x1f230[31m:8]=0x3bd0 main[0m
 EOF
 RUN
 

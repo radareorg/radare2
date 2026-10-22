@@ -809,7 +809,7 @@ pd 1
 EOF
 EXPECT=<<EOF
             0x00005e6e      488d3d339b..   lea rdi, section..fini_array ; 0x1f9a8
-            [32m0x00005e6e[0m      [33m48[36m8d[33m3d[33m33[36m9b[36m..   [36mlea[37m rdi[0m,[33m[33m section..fini_array[0m[31m [31m; 0x1f9a8[0m
+            [32m0x00005e6e[0m      [33m48[36m8d[33m3d[33m33[36m9b[36m..[0m   [36mlea[37m rdi[0m,[33m[33m section..fini_array[0m[31m [31m; 0x1f9a8[0m
 EOF
 RUN
 
