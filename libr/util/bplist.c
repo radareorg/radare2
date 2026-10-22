@@ -109,7 +109,7 @@ static ut64 UINT_TO_HOST(const char *data, int n) {
 #define float_bswap32(x) (x)
 #endif
 
-static bool parse_bin_node_at_index(RBPlist *bplist, ut32 node_index);
+static bool parse_bin_node_at_index(RBPlist *bplist, ut64 node_index);
 
 static bool parse_uint_node(RBPlist *bplist, const char **bnode, ut8 size) {
 	size = 1 << size; // make length less misleading
@@ -202,44 +202,30 @@ static bool parse_data_node(RBPlist *bplist, const char **bnode, ut64 size) {
 	return true;
 }
 
+// the count references at p must lie before the offset table
+static bool refs_fit(RBPlist *bplist, const char *p, ut64 count) {
+	ut64 bytes;
+	return p <= bplist->offset_table && !r_mul_overflow (count, bplist->ref_size, &bytes)
+		&& bytes <= (ut64)(bplist->offset_table - p);
+}
+
+static ut64 ref_at(RBPlist *bplist, const char *p, ut64 idx) {
+	return UINT_TO_HOST (p + idx * bplist->ref_size, bplist->ref_size);
+}
+
 static bool parse_dict_node(RBPlist *bplist, const char** bnode, ut64 size) {
-	ut64 j;
+	// keys first, then values; the pj depth limit also stops objects that contain themselves
+	if (size > UT64_MAX / 2 || !refs_fit (bplist, *bnode, size * 2) || !pj_o (bplist->pj)) {
+		R_LOG_ERROR ("invalid dict of %" PRIu64 " entries", size);
+		return false;
+	}
 	bool res = true;
-
-	pj_o (bplist->pj);
-	for (j = 0; j < size; j++) {
-		ut64 str_i = j * bplist->ref_size;
-		ut64 str_j = (j + size) * bplist->ref_size;
-		const char *index1_ptr = (*bnode) + str_i;
-		const char *index2_ptr = (*bnode) + str_j;
-
-		if ((index1_ptr < bplist->data || index1_ptr + bplist->ref_size > bplist->offset_table) ||
-				(index2_ptr < bplist->data || index2_ptr + bplist->ref_size > bplist->offset_table)) {
-			R_LOG_ERROR ("dict entry %" PRIu64 " is outside of valid range", j);
-			return false;
-		}
-
-		ut64 index1 = UINT_TO_HOST(index1_ptr, bplist->ref_size);
-		ut64 index2 = UINT_TO_HOST(index2_ptr, bplist->ref_size);
-
-		if (index1 >= bplist->num_objects) {
-			R_LOG_ERROR ("dict entry %" PRIu64 ": key index (%" PRIu64 ") must be smaller than the number of objects (%" PRIu64 ")", j, index1, bplist->num_objects);
-			return false;
-		}
-		if (index2 >= bplist->num_objects) {
-			R_LOG_ERROR ("dict entry %" PRIu64 ": value index (%" PRIu64 ") must be smaller than the number of objects (%" PRIu64 ")", j, index1, bplist->num_objects);
-			return false;
-		}
-		/* key */
-		if (!parse_bin_node_at_index (bplist, index1)) {
-			R_LOG_ERROR ("cannot find key");
-			return false;
-		}
-		pj_kraw (bplist->pj);
-		/* value */
-		if (!parse_bin_node_at_index (bplist, index2)) {
-			res = false;
-			break;
+	ut64 j;
+	for (j = 0; res && j < size; j++) {
+		res = parse_bin_node_at_index (bplist, ref_at (bplist, *bnode, j));
+		if (res) {
+			pj_kraw (bplist->pj);
+			res = parse_bin_node_at_index (bplist, ref_at (bplist, *bnode, j + size));
 		}
 	}
 	pj_end (bplist->pj);
@@ -247,32 +233,14 @@ static bool parse_dict_node(RBPlist *bplist, const char** bnode, ut64 size) {
 }
 
 static bool parse_array_node(RBPlist *bplist, const char** bnode, const ut64 size) {
+	if (!refs_fit (bplist, *bnode, size) || !pj_a (bplist->pj)) {
+		R_LOG_ERROR ("invalid array of %" PRIu64 " items", size);
+		return false;
+	}
 	bool res = true;
 	ut64 j;
-	ut64 index1;
-
-	pj_a (bplist->pj);
-	for (j = 0; j < size; j++) {
-		ut64 str_j = j * bplist->ref_size;
-		const char *index1_ptr = (*bnode) + str_j;
-
-		if (index1_ptr < bplist->data || index1_ptr + bplist->ref_size > bplist->offset_table) {
-			R_LOG_ERROR ("array item %" PRIu64 " is outside of valid range", j);
-			return false;
-		}
-
-		index1 = UINT_TO_HOST(index1_ptr, bplist->ref_size);
-
-		if (index1 >= bplist->num_objects) {
-			R_LOG_ERROR ("array item %" PRIu64 " object index (%" PRIu64 ") must be smaller than the number of objects (%" PRIu64 ")", j, index1, bplist->num_objects);
-			return false;
-		}
-
-		/* process value node */
-		if (!parse_bin_node_at_index (bplist, index1)) {
-			res = false;
-			break;
-		}
+	for (j = 0; res && j < size; j++) {
+		res = parse_bin_node_at_index (bplist, ref_at (bplist, *bnode, j));
 	}
 	pj_end (bplist->pj);
 	return res;
@@ -420,25 +388,23 @@ static bool parse_bin_node(RBPlist *bplist, const char** object) {
 	return true;
 }
 
-static bool parse_bin_node_at_index(RBPlist *bplist, ut32 node_index) {
+static bool parse_bin_node_at_index(RBPlist *bplist, ut64 node_index) {
+	// shared objects are printed once per reference, so bound the output
+	if (r_strbuf_length (&bplist->pj->sb) > 64 * 1024 * 1024) {
+		R_LOG_ERROR ("plist output too large");
+		return false;
+	}
 	if (node_index >= bplist->num_objects) {
-		R_LOG_ERROR ("node index (%u) must be smaller than the number of objects (%" PRIu64 ")", node_index, bplist->num_objects);
+		R_LOG_ERROR ("node index (%" PRIu64 ") must be smaller than the number of objects (%" PRIu64 ")", node_index, bplist->num_objects);
 		return false;
 	}
+	// the offset table was checked to hold num_objects entries
 	const char *idx_ptr = bplist->offset_table + node_index * bplist->offset_size;
-	if (idx_ptr < bplist->offset_table ||
-			idx_ptr >= bplist->offset_table + bplist->num_objects * bplist->offset_size) {
-		R_LOG_ERROR ("node index %u points outside of valid range", node_index);
+	const char *ptr = bplist->data + UINT_TO_HOST (idx_ptr, bplist->offset_size);
+	if (ptr < bplist->data || ptr >= bplist->offset_table) {
+		R_LOG_ERROR ("offset for node index %" PRIu64 " points outside of valid range", node_index);
 		return false;
 	}
-
-	const char* ptr = bplist->data + UINT_TO_HOST(idx_ptr, bplist->offset_size);
-	/* make sure the node offset is in a sane range */
-	if ((ptr < bplist->data) || (ptr >= bplist->offset_table)) {
-		R_LOG_ERROR ("offset for node index %u points outside of valid range", node_index);
-		return false;
-	}
-	/* finally parse node */
 	return parse_bin_node (bplist, &ptr);
 }
 
