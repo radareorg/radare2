@@ -713,6 +713,12 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 				}
 				lastcol = IS_PRINTABLE (ch) ? color_text: color_other;
 			}
+			if (n >= 0 && p->colorfor) {
+				const char *color = p->colorfor (p->user, n + i, r_hex_pair2bin (s), false);
+				if (color) {
+					lastcol = color;
+				}
+			}
 			r_strbuf_append (sb, lastcol);
 		}
 		if (s[0] == '.') {

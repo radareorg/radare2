@@ -278,6 +278,9 @@ typedef struct r_disasm_state_t {
 	bool pal_batch_save; // saved pal_batch to restore on ds_free
 
 	RFlagItem *lastflag;
+	RFlagItem *colorflag;
+	char *flagcolor;
+	ut64 flagcolor_from, flagcolor_next;
 	RAnalHint *hint;
 	RPrint *print;
 
@@ -1141,6 +1144,7 @@ static void ds_free(RDisasmState *ds) {
 	free (ds->osl);
 	free (ds->sl);
 	free (ds->_tabsbuf);
+	free (ds->flagcolor);
 	// Restore pal_batch and reload palette if needed
 	ds->core->cons->context->pal_batch = ds->pal_batch_save;
 	if (ds->saved_block) {
@@ -3724,30 +3728,51 @@ static char *get_reloff(RDisasmState *ds, ut64 at, st64 *delta) {
 	return r_core_get_reloff (ds->core, ds->show_reloff_to, at, delta);
 }
 
+static const char *ds_flag_color(RDisasmState *ds, ut64 at, bool instruction) {
+	RFlag *flags = ds->core->flags;
+	if (at < ds->flagcolor_from || at >= ds->flagcolor_next) {
+		RFlagItem *flag = r_flag_get_at (flags, at, true);
+		RFlagsAtOffset *next = at == UT64_MAX? NULL: r_skiplist_get_geq_key (flags->by_addr, at + 1);
+		ds->flagcolor_from = flag? flag->addr: 0;
+		ds->flagcolor_next = next? next->addr: UT64_MAX;
+		if (flag != ds->colorflag) {
+			ds->colorflag = flag;
+			R_FREE (ds->flagcolor);
+			const char *color = flag? r_flag_item_set_color (flags, flag, NULL): NULL;
+			if (R_STR_ISNOTEMPTY (color)) {
+				ds->flagcolor = r_cons_pal_parse (ds->core->cons, color, NULL);
+			}
+		}
+	}
+	RFlagItem *flag = ds->colorflag;
+	ut64 start = instruction? ds->at: at;
+	return flag && flag->size && (start < flag->addr || start - flag->addr < flag->size)? ds->flagcolor: NULL;
+}
+
+static const char *ds_byte_color(void *user, ut64 offset, ut8 ch, bool verbose) {
+	RDisasmState *ds = user;
+	return ds_flag_color (ds, ds->core->addr + offset, false);
+}
+
 static void ds_print_offset(RDisasmState *ds) {
 	RCore *core = ds->core;
 	RCons *cons = core->cons;
 	ut64 at = ds->vat;
 
 	bool hasCustomColor = false;
-	// probably tooslow
-	RFlagItem *f = r_flag_get_at (core->flags, at, 1);
+	RFlagItem *f = ds->show_flag_in_offset? r_flag_get_at (core->flags, at, true): NULL;
 	const char *fcolor = NULL;
 	if (f && ds->show_flag_in_offset && f->addr == at) {
 		ds_newline (ds);
 		if (ds_show_flags (ds, false)) {
 			ds_begin_cont (ds);
 		}
-		fcolor = r_flag_item_set_color (core->flags, f, NULL);
 	}
-	if (ds->show_color && f && fcolor) {
-		if (ds->at >= f->addr && ds->at < f->addr + f->size) {
-			char *k = r_cons_pal_parse (cons, fcolor, NULL);
-			if (R_STR_ISNOTEMPTY (k)) {
-				r_cons_printf (cons, "%s", k);
-				hasCustomColor = true;
-				free (k);
-			}
+	if (ds->show_color && ds->show_offset) {
+		fcolor = ds_flag_color (ds, ds->at + R_MAX (ds->oplen - 1, 0), true);
+		if (R_STR_ISNOTEMPTY (fcolor)) {
+			r_cons_print (cons, fcolor);
+			hasCustomColor = true;
 		}
 	}
 	// r_print_set_screenbounds (core->print, at);
@@ -3772,7 +3797,7 @@ static void ds_print_offset(RDisasmState *ds) {
 			core->print->flags = 0;
 			print_offset_font (core, ds->font_addr, at, (at == ds->dest) || show_trace, delta, label);
 			core->print->flags = of;
-			r_cons_print (core->cons, Color_RESET);
+			r_cons_print (core->cons, core->print->resetbg? Color_RESET: Color_RESET_NOBG);
 		} else {
 			if (ds->show_offset_focus) {
 				ut64 bb = r_anal_get_bbaddr (core->anal, at);
@@ -4333,7 +4358,10 @@ static void ds_print_bytes(RDisasmState *ds) {
 				ds->print->nbcolor = 0;
 			}
 			// R2R db/cmd/cmd_disassembly
-			nstr = r_print_hexpair (ds->print, str, n);
+			RPrint print = *ds->print;
+			print.user = ds;
+			print.colorfor = ds_byte_color;
+			nstr = r_print_hexpair (&print, str, n);
 			if (r_str_ansi_len (nstr) > nb) {
 				if (!core->print->bytespace) { //  && !ds->show_bytes_align) {
 					if (nb % 2) {
