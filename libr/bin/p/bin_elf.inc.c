@@ -1345,7 +1345,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		}
 		case R_ARM_THM_MOVW_ABS_NC:
 		case R_ARM_THM_MOVT_ABS: {
-			const ut64 val = S + addend;
+			const ut64 val = (S + addend) | T;
 			thumb_mov_set_imm (&hi, &lo, (rel->type == R_ARM_THM_MOVT_ABS)? val >> 16: val);
 			r_write_ble16 (buf, hi, bo->endian);
 			r_write_ble16 (buf + 2, lo, bo->endian);
