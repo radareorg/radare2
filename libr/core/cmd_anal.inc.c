@@ -2970,6 +2970,10 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (jesil && *jesil) {
 				pj_ks (pj, "esil", jesil);
 			}
+			if (hint && hint->immbase) {
+				pj_ki (pj, "immbase", hint->immbase);
+				pj_ki (pj, "nword", hint->nword);
+			}
 			pj_kb (pj, "sign", op.sign);
 			if (op.prefix > 0) {
 				pj_kn (pj, "prefix", op.prefix);

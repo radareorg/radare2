@@ -8193,6 +8193,10 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 
 		pj_o (pj);
 		pj_kn (pj, "addr", at);
+		if (ds->hint && ds->hint->immbase) {
+			pj_ki (pj, "immbase", ds->hint->immbase);
+			pj_ki (pj, "nword", ds->hint->nword);
+		}
 		if (ds->analop.ptr != UT64_MAX) {
 			pj_kn (pj, "ptr", ds->analop.ptr);
 		}
