@@ -67,3 +67,14 @@ ad "brhs 0xe" 0df0 0xa
 ad "brts 0x10" 0ef0 0xc
 ad "brie 0x12" 0ff0 0xe
 d "invalid" ffff 2
+ad "out 0x1, r1" 11b8
+a "out 1, r1" 11b8
+ad "sbi 0xc, 5" 659a
+ad "cbi 0x1, 0" 0898
+ad "sbic 0x1f, 2" fa99
+ad "sbis 0xa, 5" 559b
+ad "ld r10, -z" a290
+ad "ld r11, -x" be90
+ad "ld r1, -y" 1a90
+ad "st -x, r11" be92
+ad "st -z, r29" d293
