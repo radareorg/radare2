@@ -2818,3 +2818,54 @@ EOF
 EXPECT_ERR=<<EOF
 EOF
 RUN
+
+NAME=clz and clo count leading bits in 32-bit little-endian mode
+FILE=malloc://16
+ARGS=-a mips -b 32
+CMDS=<<EOF
+wx 2010827021108270
+aei
+ar v0=0x77
+ar a0=0x1000
+aes
+ar v0
+ar v0=0x77
+ar a0=0xfffff000
+aes
+ar v0
+ar pc=0
+ar a0=0
+aes
+ar v0
+ar a0=0xffffffff
+aes
+ar v0
+EOF
+EXPECT=<<EOF
+0x00000013
+0x00000014
+0x00000020
+0x00000020
+EOF
+RUN
+
+NAME=clz and clo stop at the top bit in 32-bit big-endian mode
+FILE=malloc://16
+ARGS=-a mips -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 7082102070821021
+aei
+ar v0=0x77
+ar a0=0x80000000
+aes
+ar v0
+ar v0=0x77
+ar a0=0x7fffffff
+aes
+ar v0
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000000
+EOF
+RUN
