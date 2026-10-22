@@ -283,6 +283,12 @@ a "ble 0xc" 010000da
 a "cmn r0, 8" 080070e3
 a "teq r6, 4" 040036e3
 a "tst r2, 1" 010012e3
+a "cmnhi r10, 417792" 660a7a83
+a "teqeq r11, 1856" 1d0d3b03
+a "tstmi r9, 108, 12" 6c061943
+a "cmple sp, 236, 30" ec0f5dd3
+a "cmp r1, 256" 010c51e3
+a "cmp r0, 0x80000000" 020150e3
 a "adc r0, r0, r0, lsl 2" 0001a0e0
 a "adc r0, r0, r0, lsl 0" 0000a0e0
 a "adc r0, r0, r0, lsr 2" 2001a0e0
