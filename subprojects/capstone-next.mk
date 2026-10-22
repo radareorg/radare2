@@ -7,14 +7,14 @@ WRAP_wrap_git_directory:=capstone-next
 WRAP_wrap_git_diff_files:=capstone-next/capstone-patches/fix-x86-16.patch
 WRAP_wrap_git_depth:=1
 
-.PHONY: capstone-next_clean capstone-next_all
+.PHONY: capstone-next capstone-next_clean capstone-next_all
 
 capstone-next:
-	if [ ! -d "capstone-next" ] || ! (cd "capstone-next" 2>/dev/null && test "$$(git rev-parse HEAD 2>/dev/null)" = "$$(git rev-parse 'd01f16f4f64fff65b450cb4d6be0bf0c6da809a0^{commit}' 2>/dev/null)"); then rm -rf "capstone-next"; ${MAKE} capstone-next_all; fi
+	if [ ! -d "capstone-next" ] || ! (cd "capstone-next" 2>/dev/null && test "$$(git rev-parse HEAD 2>/dev/null)" = "$$(git rev-parse --verify 'refs/acr-wrap/d01f16f4f64fff65b450cb4d6be0bf0c6da809a0^{commit}' 2>/dev/null || git rev-parse --verify 'd01f16f4f64fff65b450cb4d6be0bf0c6da809a0^{commit}' 2>/dev/null)"); then rm -rf "capstone-next"; ${MAKE} capstone-next_all; fi
 
 capstone-next_all:
 	git clone --no-checkout --depth=1 https://github.com/capstone-engine/capstone.git capstone-next
-	cd capstone-next && git fetch --depth=1 origin d01f16f4f64fff65b450cb4d6be0bf0c6da809a0
+	cd capstone-next && git fetch --depth=1 origin d01f16f4f64fff65b450cb4d6be0bf0c6da809a0:refs/acr-wrap/d01f16f4f64fff65b450cb4d6be0bf0c6da809a0
 	cd capstone-next && git checkout FETCH_HEAD
 	cp -rf packagefiles/capstone-next/* capstone-next
 	for a in capstone-next/capstone-patches/fix-x86-16.patch ; do echo "patch -d capstone-next -p1 < $$a" ; patch -d capstone-next -p1 < $$a ; done

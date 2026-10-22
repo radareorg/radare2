@@ -58,6 +58,7 @@ all: libs
 # everything but the binr/ programs
 libs: plugins.cfg libr/include/r_version.h
 	@libr/count.sh reset
+	${MAKE} -C subprojects
 	${MAKE} -C shlr sdbs
 	${MAKE} -C shlr/zip
 	${MAKE} -C libr/util

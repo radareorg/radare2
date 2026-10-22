@@ -6,14 +6,14 @@ WRAP_wrap_git_directory:=binaryninja
 WRAP_wrap_git_patch_directory:=binaryninja
 WRAP_wrap_git_depth:=1
 
-.PHONY: binaryninja_clean binaryninja_all
+.PHONY: binaryninja binaryninja_clean binaryninja_all
 
 binaryninja:
-	if [ ! -d "binaryninja" ] || ! (cd "binaryninja" 2>/dev/null && test "$$(git rev-parse HEAD 2>/dev/null)" = "$$(git rev-parse 'ba13f6ec7d0ce9a18a03a1c895fb72d18e03014a^{commit}' 2>/dev/null)"); then rm -rf "binaryninja"; ${MAKE} binaryninja_all; fi
+	if [ ! -d "binaryninja" ] || ! (cd "binaryninja" 2>/dev/null && test "$$(git rev-parse HEAD 2>/dev/null)" = "$$(git rev-parse --verify 'refs/acr-wrap/ba13f6ec7d0ce9a18a03a1c895fb72d18e03014a^{commit}' 2>/dev/null || git rev-parse --verify 'ba13f6ec7d0ce9a18a03a1c895fb72d18e03014a^{commit}' 2>/dev/null)"); then rm -rf "binaryninja"; ${MAKE} binaryninja_all; fi
 
 binaryninja_all:
 	git clone --no-checkout --depth=1 https://github.com/Vector35/binaryninja-api.git binaryninja
-	cd binaryninja && git fetch --depth=1 origin ba13f6ec7d0ce9a18a03a1c895fb72d18e03014a
+	cd binaryninja && git fetch --depth=1 origin ba13f6ec7d0ce9a18a03a1c895fb72d18e03014a:refs/acr-wrap/ba13f6ec7d0ce9a18a03a1c895fb72d18e03014a
 	cd binaryninja && git checkout FETCH_HEAD
 	cp -rf packagefiles/binaryninja/* binaryninja
 

@@ -6,14 +6,14 @@ WRAP_wrap_git_directory:=qjs
 WRAP_wrap_git_patch_directory:=qjs
 WRAP_wrap_git_depth:=1
 
-.PHONY: qjs_clean qjs_all
+.PHONY: qjs qjs_clean qjs_all
 
 qjs:
-	if [ ! -d "qjs" ] || ! (cd "qjs" 2>/dev/null && test "$$(git rev-parse HEAD 2>/dev/null)" = "$$(git rev-parse 'b51e5278439b2fa0510fbb1f3b3dff9f0064d5d7^{commit}' 2>/dev/null)"); then rm -rf "qjs"; ${MAKE} qjs_all; fi
+	if [ ! -d "qjs" ] || ! (cd "qjs" 2>/dev/null && test "$$(git rev-parse HEAD 2>/dev/null)" = "$$(git rev-parse --verify 'refs/acr-wrap/b51e5278439b2fa0510fbb1f3b3dff9f0064d5d7^{commit}' 2>/dev/null || git rev-parse --verify 'b51e5278439b2fa0510fbb1f3b3dff9f0064d5d7^{commit}' 2>/dev/null)"); then rm -rf "qjs"; ${MAKE} qjs_all; fi
 
 qjs_all:
 	git clone --no-checkout --depth=1 https://github.com/quickjs-ng/quickjs.git qjs
-	cd qjs && git fetch --depth=1 origin b51e5278439b2fa0510fbb1f3b3dff9f0064d5d7
+	cd qjs && git fetch --depth=1 origin b51e5278439b2fa0510fbb1f3b3dff9f0064d5d7:refs/acr-wrap/b51e5278439b2fa0510fbb1f3b3dff9f0064d5d7
 	cd qjs && git checkout FETCH_HEAD
 	cp -rf packagefiles/qjs/* qjs
 

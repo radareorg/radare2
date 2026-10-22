@@ -7,14 +7,14 @@ WRAP_wrap_git_directory:=capstone-v4
 WRAP_wrap_git_diff_files:=capstone-v4/capstone-patches/v4/capstone-calloc.patch,capstone-v4/capstone-patches/v4/fix-x86-16.patch,capstone-v4/capstone-patches/v4/sparc-crash.patch,capstone-v4/capstone-patches/v4/sstream-null.patch
 WRAP_wrap_git_depth:=1
 
-.PHONY: capstone-v4_clean capstone-v4_all
+.PHONY: capstone-v4 capstone-v4_clean capstone-v4_all
 
 capstone-v4:
-	if [ ! -d "capstone-v4" ] || ! (cd "capstone-v4" 2>/dev/null && test "$$(git rev-parse HEAD 2>/dev/null)" = "$$(git rev-parse 'd7e459d026b19d6c3a7b743bfc475d919ff03f74^{commit}' 2>/dev/null)"); then rm -rf "capstone-v4"; ${MAKE} capstone-v4_all; fi
+	if [ ! -d "capstone-v4" ] || ! (cd "capstone-v4" 2>/dev/null && test "$$(git rev-parse HEAD 2>/dev/null)" = "$$(git rev-parse --verify 'refs/acr-wrap/d7e459d026b19d6c3a7b743bfc475d919ff03f74^{commit}' 2>/dev/null || git rev-parse --verify 'd7e459d026b19d6c3a7b743bfc475d919ff03f74^{commit}' 2>/dev/null)"); then rm -rf "capstone-v4"; ${MAKE} capstone-v4_all; fi
 
 capstone-v4_all:
 	git clone --no-checkout --depth=1 https://github.com/capstone-engine/capstone.git capstone-v4
-	cd capstone-v4 && git fetch --depth=1 origin d7e459d026b19d6c3a7b743bfc475d919ff03f74
+	cd capstone-v4 && git fetch --depth=1 origin d7e459d026b19d6c3a7b743bfc475d919ff03f74:refs/acr-wrap/d7e459d026b19d6c3a7b743bfc475d919ff03f74
 	cd capstone-v4 && git checkout FETCH_HEAD
 	cp -rf packagefiles/capstone-v4/* capstone-v4
 	for a in capstone-v4/capstone-patches/v4/capstone-calloc.patch capstone-v4/capstone-patches/v4/fix-x86-16.patch capstone-v4/capstone-patches/v4/sparc-crash.patch capstone-v4/capstone-patches/v4/sstream-null.patch ; do echo "patch -d capstone-v4 -p1 < $$a" ; patch -d capstone-v4 -p1 < $$a ; done

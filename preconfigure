@@ -21,13 +21,13 @@ else
 fi
 
 echo "[*] Checking subprojects... "
-${MAKE} -C subprojects > /dev/null
+${MAKE} -C subprojects > /dev/null || exit 1
 
 printf "[*] Running configure... "
 CFGARGS=""
 if [ `uname` = Linux ]; then
 	CFGARGS="${CFGARGS} --with-rpath"
 fi
-./configure ${CFGARGS} > /dev/null 2>&1
+./configure ${CFGARGS} > /dev/null 2>&1 || exit 1
 echo OK
 echo "[*] Ready. You can now run 'make'."

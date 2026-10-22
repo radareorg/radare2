@@ -7,14 +7,14 @@ WRAP_wrap_git_depth:=1
 WRAP_wrap_git_patch_directory:=sdb
 WRAP_wrap_git_diff_files:=sdb/archive-create.patch
 
-.PHONY: sdb_clean sdb_all
+.PHONY: sdb sdb_clean sdb_all
 
 sdb:
-	if [ ! -d "sdb" ] || ! (cd "sdb" 2>/dev/null && test "$$(git rev-parse HEAD 2>/dev/null)" = "$$(git rev-parse '2.5.8^{commit}' 2>/dev/null)"); then rm -rf "sdb"; ${MAKE} sdb_all; fi
+	if [ ! -d "sdb" ] || ! (cd "sdb" 2>/dev/null && test "$$(git rev-parse HEAD 2>/dev/null)" = "$$(git rev-parse --verify 'refs/acr-wrap/2.5.8^{commit}' 2>/dev/null || git rev-parse --verify '2.5.8^{commit}' 2>/dev/null)"); then rm -rf "sdb"; ${MAKE} sdb_all; fi
 
 sdb_all:
 	git clone --no-checkout --depth=1 https://github.com/radareorg/sdb.git sdb
-	cd sdb && git fetch --depth=1 origin 2.5.8
+	cd sdb && git fetch --depth=1 origin 2.5.8:refs/acr-wrap/2.5.8
 	cd sdb && git checkout FETCH_HEAD
 	cp -rf packagefiles/sdb/* sdb
 	for a in sdb/archive-create.patch ; do echo "patch -d sdb -p1 < $$a" ; patch -d sdb -p1 < $$a ; done
