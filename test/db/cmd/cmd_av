@@ -93,3 +93,16 @@ EXPECT=<<EOF
 [{"offset":4197608,"methods":[{"offset":4197064,"name":"method.A.greet__"},{"offset":4197368,"name":"method.C.printValue__"}]},{"offset":4197640,"methods":[{"offset":4197064,"name":"method.A.greet__"},{"offset":4197250,"name":"method.B.printValue__"}]},{"offset":4197672,"methods":[{"offset":4197064,"name":"method.A.greet__"},{"offset":4197108,"name":"method.A.printValue__"}]}]
 EOF
 RUN
+
+NAME=av does not walk zero-filled memory as a vtable
+FILE=bins/elf/vtable-zerofill-rodata
+CMDS=<<EOF
+aaa
+av~?
+acll~virtual_?
+EOF
+EXPECT=<<EOF
+0
+0
+EOF
+RUN

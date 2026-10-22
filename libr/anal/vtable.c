@@ -6,6 +6,7 @@
 #include <r_vec.h>
 
 #define VTABLE_BUFF_SIZE 10
+#define VTABLE_METHODS_MAX 0x4000
 
 #define VTABLE_READ_ADDR_FUNC(fname, read_fname, sz) \
 	static bool fname(RAnal *anal, ut64 addr, ut64 *buf) {\
@@ -97,6 +98,13 @@ static bool vtable_section_can_contain_vtables(RBinSection *section) {
 		!strcmp (section->name, ".data.rel.ro") ||
 		!strcmp (section->name, ".data.rel.ro.local") ||
 		r_str_endswith (section->name, "__const");
+}
+
+// memory the loader fills with zeros instead of taking it from the file
+static bool vtable_addr_is_zerofill(RAnal *anal, ut64 addr) {
+	RIOMap *map = anal->iob.map_get_at (anal->iob.io, addr);
+	const char *name = map? anal->iob.fd_get_name (anal->iob.io, map->fd): NULL;
+	return name && r_str_startswith (name, "null://");
 }
 
 static bool section_can_contain_rtti(RBinSection *section) {
@@ -202,11 +210,21 @@ R_API RVTableInfo *r_anal_vtable_parse_at(RVTableContext *context, ut64 addr) {
 
 	RVTableMethodInfo meth;
 	while (vtable_is_value_in_text_section (context, addr, &meth.addr)) {
+		// zero-filled memory holds no vtable slots, only a file does
+		if (vtable_addr_is_zerofill (context->anal, addr)) {
+			break;
+		}
 		meth.vtable_offset = addr - vtable->saddr;
 		RVTableMethodInfo *slot = RVecRVTableMethodInfo_emplace_back (&vtable->methods);
+		if (!slot) {
+			break;
+		}
 		*slot = meth;
 
 		addr += context->word_size;
+		if (RVecRVTableMethodInfo_length (&vtable->methods) >= VTABLE_METHODS_MAX) {
+			break;
+		}
 
 		// a ref means the vtable has ended
 		const ut64 number_of_refs = r_anal_xrefs_count_at (context->anal, addr);
@@ -264,6 +282,10 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 				break;
 			}
 			if (!anal->iob.is_valid_offset (anal->iob.io, startAddress, 0)) {
+				break;
+			}
+			// vtables are constant data, the rest of the section has no contents
+			if (vtable_addr_is_zerofill (anal, startAddress)) {
 				break;
 			}
 
