@@ -1151,3 +1151,22 @@ ERROR: Cannot assemble 'cbi sph, 1' at line 1
 ERROR: Cannot assemble 'sbic sreg, 1' at line 1
 EOF
 RUN
+
+NAME=rasm2 arm32 reject unencodable and out of range immediates
+FILE=-
+CMDS=<<EOF
+!rasm2 -a arm -b 32 "eor r0, r0, 0x101"
+!rasm2 -a arm -b 32 "add r0, r1, 0x100000000"
+!rasm2 -a arm -b 32 "mov r0, 0x100000000"
+!rasm2 -a arm -b 32 "cmp r3, 0x100000000"
+!rasm2 -a arm -b 32 "add r0, r1, -2147483649"
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'eor r0, r0, 0x101' at line 1
+ERROR: Cannot assemble 'add r0, r1, 0x100000000' at line 1
+ERROR: Cannot assemble 'mov r0, 0x100000000' at line 1
+ERROR: Cannot assemble 'cmp r3, 0x100000000' at line 1
+ERROR: Cannot assemble 'add r0, r1, -2147483649' at line 1
+EOF
+RUN
