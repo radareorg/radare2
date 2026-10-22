@@ -148,3 +148,37 @@ v0 o32syscall (a0, a1, a2, a3, stack);
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=MIPS o32 syscall numbers and networking metadata
+FILE=-
+CMDS=<<EOF
+-a mips
+-b 32
+-e asm.os=linux
+asj 4183
+asj 4170
+asl mmap2
+asl rt_sigaction
+asl rt_sigprocmask
+asl sysctl
+asl fstat64
+asl fcntl64
+asl gettid
+asl set_thread_area
+asl exit_group
+EOF
+EXPECT=<<EOF
+[{"name":"socket","swi":4000,"num":4183,"args":3,"sargs":"ixx domain type protocol"}]
+[{"name":"connect","swi":4000,"num":4170,"args":3,"sargs":"ipi fd addr addrlen"}]
+0x1072
+0x1062
+0x1063
+0x1039
+0x1077
+0x107c
+0x107e
+0x10bb
+0x1096
+EOF
+EXPECT_ERR=
+RUN
