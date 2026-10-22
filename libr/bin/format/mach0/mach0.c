@@ -2,8 +2,8 @@
 
 #define R_LOG_ORIGIN "bin.macho"
 
-#include <sdb/set.h>
 #include "mach0.h"
+#include <sdb/set.h>
 
 // R2R db/formats/mach0/strip
 // R2R db/formats/zip
