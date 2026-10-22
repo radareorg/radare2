@@ -13,6 +13,8 @@ extern "C" {
 #define ASN1_JSON_EMPTY "{}"
 
 #define ASN1_OID_LEN  64
+// real X.509 / PKCS#7 structures are a few dozen levels deep at most
+#define ASN1_MAX_DEPTH 64
 
 /* Masks */
 #define ASN1_CLASS    0xC0 /* Bits 8 and 7 */

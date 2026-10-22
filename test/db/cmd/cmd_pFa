@@ -128,3 +128,17 @@ EXPECT=<<EOF
 
 EOF
 RUN
+
+NAME=pFa stops at the asn1 nesting limit on deep indefinite-length sequences
+FILE=malloc://200004
+TIMEOUT=30
+CMDS=<<EOF
+wow 3080 @ 0!200000
+pFa 200002~?
+pFa 200002~ 64 cons
+EOF
+EXPECT=<<EOF
+66
+    0x80  0x2 + 0x30c40    64 cons SEQUENCE            : 30
+EOF
+RUN

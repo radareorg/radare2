@@ -7,8 +7,8 @@
 
 #include <r_util.h>
 
-static ut32 asn1_ber_indefinite(const ut8 *buffer, ut32 length) {
-	if (!buffer || length < 3) {
+static ut32 asn1_ber_indefinite(const ut8 *buffer, ut32 length, int depth) {
+	if (!buffer || length < 3 || depth > ASN1_MAX_DEPTH) {
 		return 0;
 	}
 	const ut8 *next = buffer + 2;
@@ -19,7 +19,7 @@ static ut32 asn1_ber_indefinite(const ut8 *buffer, ut32 length) {
 		}
 		if (next[0] == 0x80 && (next[-1] & ASN1_FORM) == FORM_CONSTRUCTED) {
 			next--;
-			int sz = asn1_ber_indefinite (next, end - next);
+			int sz = asn1_ber_indefinite (next, end - next, depth + 1);
 			if (sz < 1) {
 				break;
 			}
@@ -72,7 +72,7 @@ static RASN1Object *asn1_parse_header(const ut8 *buffer_base, const ut8 *buffer,
 			if (length < 3) {
 				goto out_error;
 			}
-			length64 = asn1_ber_indefinite (obj->sector, length - 2);
+			length64 = asn1_ber_indefinite (obj->sector, length - 2, 0);
 		}
 		obj->length = (ut32)length64;
 	} else {
@@ -126,8 +126,11 @@ static ut32 asn1_count_objects(const ut8 *buffer, ut32 length) {
 	return counter;
 }
 
-// should be internal -- rename object to message imho
-R_API RASN1Object *r_asn1_object_parse(const ut8 *buffer_base, const ut8 *buffer, ut32 length, int fmtmode) {
+static RASN1Object *asn1_object_parse(const ut8 *buffer_base, const ut8 *buffer, ut32 length, int fmtmode, int depth) {
+	if (depth > ASN1_MAX_DEPTH) {
+		R_LOG_DEBUG ("ASN.1: nested deeper than %d levels", ASN1_MAX_DEPTH);
+		return NULL;
+	}
 	RASN1Object *object = asn1_parse_header (buffer_base, buffer, length);
 	if (object && (object->form == FORM_CONSTRUCTED)) {
 		const ut8 *next = object->sector;
@@ -155,7 +158,7 @@ R_API RASN1Object *r_asn1_object_parse(const ut8 *buffer_base, const ut8 *buffer
 			}
 			ut32 i;
 			for (i = 0; next >= buffer && next < end && i < count; i++) {
-				RASN1Object *inner = r_asn1_object_parse (buffer_base, next, end - next, fmtmode);
+				RASN1Object *inner = asn1_object_parse (buffer_base, next, end - next, fmtmode, depth + 1);
 				if (!inner || next == inner->sector) {
 					r_asn1_object_free (inner);
 					break;
@@ -166,6 +169,11 @@ R_API RASN1Object *r_asn1_object_parse(const ut8 *buffer_base, const ut8 *buffer
 		}
 	}
 	return object;
+}
+
+// should be internal -- rename object to message imho
+R_API RASN1Object *r_asn1_object_parse(const ut8 *buffer_base, const ut8 *buffer, ut32 length, int fmtmode) {
+	return asn1_object_parse (buffer_base, buffer, length, fmtmode, 0);
 }
 
 R_API RAsn1 *r_asn1_new(const ut8 *buffer, int length, int fmtmode) {
