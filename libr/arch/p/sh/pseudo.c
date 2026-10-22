@@ -5,8 +5,8 @@
 #include <r_anal.h>
 #include <r_asm.h>
 
-static int replace(int argc, const char *argv[], char *newstr) {
-	int i,j,k;
+static char *replace(int argc, const char *argv[]) {
+	int i, j;
 	struct {
 		const char *op;
 		const char *str;
@@ -118,37 +118,29 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "xor.b",   "B ^= A" },
 		{ NULL }
 	};
-
+	RStrBuf *sb = r_strbuf_new ("");
 	for (i = 0; ops[i].op; i++) {
 		if (!strcmp (ops[i].op, argv[0])) {
-			if (newstr) {
-				for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
-					if (ops[i].str[j] >= 'A' && ops[i].str[j] <= 'J') {
-						const char *w = argv[ops[i].str[j] - '@'];
-						if (w) {
-							strcpy (newstr + k, w);
-							k += strlen(w) - 1;
-						}
-					} else {
-						newstr[k] = ops[i].str[j];
+			const char *str = ops[i].str;
+			for (j = 0; str[j]; j++) {
+				if (str[j] >= 'A' && str[j] <= 'J') {
+					const char *w = argv[str[j] - '@'];
+					if (w) {
+						r_strbuf_append (sb, w);
 					}
+				} else {
+					r_strbuf_append_n (sb, str + j, 1);
 				}
-				newstr[k] = '\0';
 			}
-			return true;
+			return r_strbuf_drain (sb);
 		}
 	}
 
-	/* TODO: this is slow */
-	if (newstr) {
-		newstr[0] = '\0';
-		for (i = 0; i < argc; i++) {
-			strcat (newstr, argv[i]);
-			strcat (newstr, (i == 0 || i == argc - 1) ? " ":", ");
-		}
+	for (i = 0; i < argc; i++) {
+		r_strbuf_append (sb, argv[i]);
+		r_strbuf_append (sb, (i == 0 || i == argc - 1)? " ": ", ");
 	}
-
-	return false;
+	return r_strbuf_drain (sb);
 }
 
 #define WSZ 128
@@ -163,9 +155,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 		return false;
 	}
 	memcpy (buf, data, len + 1);
-	char *str = malloc (strlen (data) + 128);
-	// XXX use rstrbuf
-	strcpy (str, data);
+	char *str = NULL;
 
 	r_str_trim (buf);
 	if (*buf) {
@@ -252,8 +242,10 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 					nw++;
 				}
 			}
-			replace (nw, wa, str);
+			str = replace (nw, wa);
 		}
+	} else {
+		str = strdup (data);
 	}
 	free (buf);
 	return str;
