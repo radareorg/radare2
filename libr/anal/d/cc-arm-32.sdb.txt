@@ -41,4 +41,5 @@ cc.armsyscall.arg3=r3
 cc.armsyscall.arg4=r4
 cc.armsyscall.arg5=r5
 cc.armsyscall.arg6=r6
+cc.armsyscall.clobber=r0
 cc.armsyscall.ret0=r0

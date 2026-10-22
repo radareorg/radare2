@@ -75,6 +75,7 @@ cc.amd64syscall.arg3=r10
 cc.amd64syscall.arg4=r8
 cc.amd64syscall.arg5=r9
 cc.amd64syscall.pop=caller
+cc.amd64syscall.clobber=rax,rcx,r11
 cc.amd64syscall.ret0=rax
 
 p9=cc

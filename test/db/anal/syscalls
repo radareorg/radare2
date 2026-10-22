@@ -144,7 +144,7 @@ CMDS=<<EOF
 tcc o32syscall
 EOF
 EXPECT=<<EOF
-v0 o32syscall (a0, a1, a2, a3, stack);
+v0 o32syscall (a0, a1, a2, a3, stack) a3;
 EOF
 EXPECT_ERR=
 RUN
@@ -179,6 +179,26 @@ EXPECT=<<EOF
 0x107e
 0x10bb
 0x1096
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Linux syscall clobbers differ from C caller-saved registers
+FILE=-
+CMDS=<<EOF
+-a x86
+-b 64
+-e asm.os=linux
+tcck~cc.amd64syscall.clobber
+-a mips
+-b 32
+tcck~cc.o32syscall.clobber
+tcck~cc.o32syscall.error
+EOF
+EXPECT=<<EOF
+cc.amd64syscall.clobber=rax,rcx,r11
+cc.o32syscall.clobber=v0,v1,a3
+cc.o32syscall.error=a3
 EOF
 EXPECT_ERR=
 RUN

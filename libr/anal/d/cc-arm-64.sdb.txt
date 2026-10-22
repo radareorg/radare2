@@ -135,4 +135,5 @@ cc.arm64syscall.arg2=x2
 cc.arm64syscall.arg3=x3
 cc.arm64syscall.arg4=x4
 cc.arm64syscall.arg5=x5
+cc.arm64syscall.clobber=x0
 cc.arm64syscall.ret0=x0

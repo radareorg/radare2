@@ -88,4 +88,5 @@ cc.x86syscall.arg2=edx
 cc.x86syscall.arg3=esi
 cc.x86syscall.arg4=edi
 cc.x86syscall.arg5=ebp
+cc.x86syscall.clobber=eax
 cc.x86syscall.ret0=eax
