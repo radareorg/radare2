@@ -5420,3 +5420,14 @@ EXPECT=<<EOF
  The Directory Table:
 EOF
 RUN
+
+NAME=dwarf strings longer than the limit are not copied per reference
+FILE=bins/elf/dwarf-49mb-shared-name
+TIMEOUT=15
+CMDS=<<EOF
+?e opened
+EOF
+EXPECT=<<EOF
+opened
+EOF
+RUN

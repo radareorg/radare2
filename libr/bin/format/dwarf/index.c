@@ -314,16 +314,13 @@ static DwarfIndexResolution dwarf_index_resolver_resolve_unit(DwarfIndexResolver
 			ut64 string_offset = resolver->str_offset_size == 8
 				? r_read_ble64 (resolver->str_offsets + entry_offset, resolver->be)
 				: r_read_ble32 (resolver->str_offsets + entry_offset, resolver->be);
-			if (string_offset > SIZE_MAX) {
+			if (string_offset >= resolver->str_section->bytes.len) {
 				return DWARF_INDEX_RESOLUTION_MALFORMED;
 			}
-			const char *content = dwarf_get_section_string (resolver->bf,
-				resolver->str_section, (size_t)string_offset);
-			if (!content) {
-				return DWARF_INDEX_RESOLUTION_MALFORMED;
-			}
+			// like DW_FORM_strp, a string too long or not terminated only loses its content
 			value->string.offset = string_offset;
-			value->string.content = content;
+			value->string.content = dwarf_get_section_string (resolver->bf,
+				resolver->str_section, (size_t)string_offset);
 			value->kind = DW_AT_KIND_STRING;
 		} else if ((dwarf_form_is_addrx (value->attr_form)
 			&& value->kind == DW_AT_KIND_ADDRESS_INDEX)

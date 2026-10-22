@@ -2,8 +2,6 @@
 
 #include "dwarf.h"
 
-#define DWARF_STRING_MAX ((size_t)0xfff)
-
 static inline void include_dir_fini(char **dir) {
 	free (*dir);
 }

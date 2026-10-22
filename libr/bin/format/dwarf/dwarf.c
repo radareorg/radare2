@@ -162,7 +162,8 @@ R_IPI const char *dwarf_get_section_string(RBinFile *bf, RBinSection *section, s
 	if (!data || offset >= len) {
 		return NULL;
 	}
-	if (!memchr (data + offset, 0, len - offset)) {
+	// one string can be referenced by every DIE and each reference copies it again
+	if (!memchr (data + offset, 0, R_MIN (len - offset, DWARF_STRING_MAX))) {
 		return NULL;
 	}
 

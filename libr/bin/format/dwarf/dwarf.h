@@ -6,6 +6,9 @@
 #include <r_bin.h>
 #include <r_bin_dwarf.h>
 
+// longest string accepted from .debug_str, .debug_line_str and the line tables
+#define DWARF_STRING_MAX ((size_t)0xfff)
+
 #define READ8(buf) \
 	(((buf) + sizeof (ut8) <= buf_end)? ((ut8 *)buf)[0]: 0); \
 	(buf) += sizeof (ut8)
