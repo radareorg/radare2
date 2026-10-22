@@ -181,6 +181,31 @@ mov r9, rdx
 EOF
 RUN
 
+NAME=wao whitespace before address (x86)
+FILE=malloc://1024
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 31ed4989d1
+wao nop@..2
+p8 5
+wx 31ed4989d1
+wao nop @..2
+p8 5
+wx 31ed4989d1
+wao   nop   @..2
+p8 5
+wx 31ed4989d1
+wao trap @ 2
+p8 5
+EOF
+EXPECT=<<EOF
+31ed909090
+31ed909090
+31ed909090
+31edcc89d1
+EOF
+RUN
+
 # wao : modify operation of current opcode
 NAME=wao trap (x86)
 FILE=malloc://1024
