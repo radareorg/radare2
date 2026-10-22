@@ -65,7 +65,7 @@ static int panels_command(RCore *core, const char *input) {
 					pan->model->bgcolor = r_str_newf (Color_RESET"%s", r);
 					free (r);
 				} else {
-					R_LOG_ERROR ("Invalid color %sXXX"Color_RESET, r);
+					R_LOG_ERROR ("Invalid color %s", input + 2);
 				}
 			}
 		} else {

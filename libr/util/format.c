@@ -2739,7 +2739,7 @@ R_API int r_print_format_internal(RPrint *p, RPrintFormat *pf, ut64 seek, const 
 					if (fmtname) {
 						r_print_format_register (pf, fmtname, setval);
 					} else {
-						R_LOG_ERROR ("Unknown register %s", fmtname);
+						R_LOG_ERROR ("Missing register name");
 					}
 					break;
 				case '?':

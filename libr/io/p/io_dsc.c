@@ -1292,7 +1292,7 @@ static RDSCHeader * dsc_read_header(int fd, ut64 offset) {
 	ut8 tmp[16];
 
 	if (lseek (fd, offset, SEEK_SET) < 0) {
-		R_LOG_ERROR ("Cannot seek at header offset 0x%llx", offset);
+		R_LOG_ERROR ("Cannot seek at header offset 0x%"PFMT64x, offset);
 		return NULL;
 	}
 	if (read (fd, tmp, 16) != 16) {
@@ -1302,24 +1302,24 @@ static RDSCHeader * dsc_read_header(int fd, ut64 offset) {
 		return NULL;
 	}
 	if (read (fd, tmp, 4) != 4) {
-		R_LOG_ERROR ("Cannot read header size at offset 0x%llx", offset + 4);
+		R_LOG_ERROR ("Cannot read header size at offset 0x%"PFMT64x, offset + 4);
 		return NULL;
 	}
 	if (lseek (fd, offset, SEEK_SET) < 0) {
-		R_LOG_ERROR ("Cannot seek at header offset 0x%llx", offset);
+		R_LOG_ERROR ("Cannot seek at header offset 0x%"PFMT64x, offset);
 		return NULL;
 	}
 
 	ut32 header_size = r_read_le32 (tmp);
 	if (header_size > 4096 || header_size == 0) {
-		R_LOG_ERROR ("Invalid header size at offset 0x%llx", offset + 4);
+		R_LOG_ERROR ("Invalid header size at offset 0x%"PFMT64x, offset + 4);
 		return NULL;
 	}
 
 	ut8 * header_data = malloc (header_size);
 
 	if (read (fd, header_data, header_size) != header_size) {
-		R_LOG_ERROR ("Cannot read header data at offset 0x%llx", offset);
+		R_LOG_ERROR ("Cannot read header data at offset 0x%"PFMT64x, offset);
 		free (header_data);
 		return NULL;
 	}

@@ -634,7 +634,7 @@ R_API bool r_cons_is_breaked(RCons *cons) {
 		const ut64 now = r_time_now_mono ();
 		if (now > cons->timeout) {
 			if (!cons->timeout_break) {
-				R_LOG_INFO ("Timeout interruption after %"PFMT64u"s", (now - cons->timeout) / R_USEC_PER_SEC);
+				R_LOG_INFO ("Timeout interruption after %"PFMT64u"s", (ut64)((now - cons->timeout) / R_USEC_PER_SEC));
 			}
 			C->breaked = true;
 			C->was_breaked = true;

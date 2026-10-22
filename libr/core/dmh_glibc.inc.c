@@ -126,7 +126,7 @@ static GH(section_content) GH(get_section_content)(RCore *core, const char *path
 	st64 read_size = r_buf_read_at (libc_bf->buf, paddr, content.buf, content.size);
 
 	if (read_size != content.size) {
-		R_LOG_ERROR ("get_section_content: section read unexpected content.size: %#08x  (section->size: %d)", read_size, content.size);
+		R_LOG_ERROR ("Cannot read section: got %"PFMT64d" bytes, expected %"PFMT64u, read_size, (ut64)content.size);
 		free (content.buf);
 		content.buf = NULL;
 	}
