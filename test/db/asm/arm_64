@@ -706,3 +706,8 @@ ad "ldp x0, x1, [x2, -0x200]" 400460a9
 ad "stp w0, w1, [x2, 8]" 40040129
 ad "ldp w3, w4, [sp, -0x100]!" e313e029
 ad "stp xzr, x30, [x28], -8" 9ffbbfa8
+ad "stp d8, d9, [sp, -0x10]!" e827bf6d
+ad "ldp d8, d9, [sp], 0x10" e827c16c
+ad "stp s0, s1, [x0, 8]" 0004012d
+ad "ldp q0, q1, [x0, 0x20]" 000441ad
+ad "stp q2, q3, [sp, -0x40]!" e20fbead

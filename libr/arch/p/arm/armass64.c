@@ -25,7 +25,8 @@ typedef enum regtype_t {
 	ARM_REG32 = 2,
 	ARM_SP = 4,
 	ARM_PC = 8,
-	ARM_SIMD = 16
+	ARM_SIMD = 16,
+	ARM_REG128 = 32
 } RegType;
 
 typedef enum shifttype_t {
@@ -1491,16 +1492,24 @@ static ut32 adr(ArmOp *op, int addr) {
 	return data;
 }
 
-// stp/ldp rt, rt2, [rn{, #imm}] or [rn, #imm]! or [rn], #imm
+// stp/ldp rt, rt2, [rn{, #imm}] or [rn, #imm]! or [rn], #imm with w, x, s, d or q pairs
 static ut32 stp(ArmOp *op, bool load) {
 	ut32 data = UT32_MAX;
 	check_cond (op->operands_count == 3 || op->operands_count == 4);
-	check_cond (op->operands[0].type == ARM_GPR && op->operands[1].type == ARM_GPR && op->operands[2].type == ARM_GPR);
-	check_cond (!(op->operands[0].reg_type & ARM_SP) && !(op->operands[1].reg_type & ARM_SP));
-	check_cond (op->operands[2].reg_type & ARM_REG64);
-	const bool is64 = op->operands[0].reg_type & ARM_REG64;
-	check_cond (is64 == !!(op->operands[1].reg_type & ARM_REG64));
+	const bool fp = op->operands[0].type == ARM_FP;
+	check_cond ((fp || op->operands[0].type == ARM_GPR) && op->operands[1].type == op->operands[0].type);
+	check_cond (op->operands[0].reg_type == op->operands[1].reg_type && !(op->operands[0].reg_type & ARM_SP));
+	check_cond (op->operands[2].type == ARM_GPR && op->operands[2].reg_type & ARM_REG64);
 	check_cond (!load || op->operands[0].reg != op->operands[1].reg);
+	int size;
+	ut32 insn;
+	if (fp) {
+		size = (op->operands[0].reg_type & ARM_REG128)? 16: (op->operands[0].reg_type & ARM_REG64)? 8: 4;
+		insn = (size == 16)? 0xac000000: (size == 8)? 0x6c000000: 0x2c000000;
+	} else {
+		size = (op->operands[0].reg_type & ARM_REG64)? 8: 4;
+		insn = (size == 8)? 0xa8000000: 0x28000000;
+	}
 	st64 imm = 0;
 	bool post = false;
 	if (op->operands_count == 4) {
@@ -1509,11 +1518,9 @@ static ut32 stp(ArmOp *op, bool load) {
 		post = !op->operands[3].preindex;
 	}
 	check_cond (!post || !op->writeback);
-	const int size = is64? 8: 4;
 	check_cond (imm % size == 0);
 	imm /= size;
 	check_cond (imm >= -64 && imm <= 63);
-	ut32 insn = is64? 0xa8000000: 0x28000000;
 	insn |= post? 0x00800000: op->writeback? 0x01800000: 0x01000000;
 	if (load) {
 		insn |= 0x00400000;
@@ -1692,6 +1699,25 @@ static bool parseOperands(char *str, ArmOp *op) {
 
 		while (token[0] == ' ' || token[0] == '[' || token[0] == ']') {
 			token++;
+		}
+
+		// SIMD and FP scalar registers s0-s31, d0-d31 and q0-q31
+		if ((token[0] == 's' || token[0] == 'd' || token[0] == 'q') && isdigit ((ut8)token[1])) {
+			if (operand >= MAX_OPERANDS) {
+				free (t);
+				return false;
+			}
+			op->operands_count++;
+			op->operands[operand].type = ARM_FP;
+			op->operands[operand].reg_type = (token[0] == 's')? ARM_REG32: (token[0] == 'd')? ARM_REG64: ARM_REG128;
+			op->operands[operand].reg = r_num_math (NULL, token + 1);
+			if (op->operands[operand].reg > 31) {
+				free (t);
+				return false;
+			}
+			operand++;
+			token = next;
+			continue;
 		}
 
 		if (r_str_startswith (token, "lsl")) {
