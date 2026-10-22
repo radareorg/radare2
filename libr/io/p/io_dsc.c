@@ -710,6 +710,9 @@ static bool dsc_dig_one_slice(RIODscObject * dsc, int fd, const char * file_name
 	}
 
 	RIODscSlice * slice = RIODscSlices_emplace_back (&dsc->slices);
+	if (!slice) {
+		return false;
+	}
 	memset (slice, 0, sizeof (RIODscSlice));
 
 	slice->fd = fd;
