@@ -2,9 +2,9 @@
 
 #include <r_asm.h>
 
-static int replace(int argc, const char *argv[], char *newstr) {
+static char *replace(int argc, const char *argv[]) {
 #define MAXPSEUDOOPS 10
-	int i, j, k, d;
+	int i, j, d;
 	char ch;
 	struct {
 		int narg;
@@ -54,10 +54,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "sub", "# = # - #", { 1, 2, 3 } },
 		{ 0, NULL }
 	};
-	if (!newstr) {
-		return false;
-	}
-
+	RStrBuf *sb = r_strbuf_new ("");
 	for (i = 0; ops[i].op; i++) {
 		if (ops[i].narg) {
 			if (argc - 1 != ops[i].narg) {
@@ -65,49 +62,42 @@ static int replace(int argc, const char *argv[], char *newstr) {
 			}
 		}
 		if (!strcmp (ops[i].op, argv[0])) {
-			if (newstr) {
-				d = 0;
-				j = 0;
-				ch = ops[i].str[j];
-				for (j = 0, k = 0; ch != '\0'; j++, k++) {
-					ch = ops[i].str[j];
-					if (ch == '#') {
-						if (d >= MAXPSEUDOOPS) {
-							// XXX Shouldn't ever happen...
-							continue;
-						}
-						int idx = ops[i].args[d];
-						d++;
-						if (idx <= 0) {
-							// XXX Shouldn't ever happen...
-							continue;
-						}
-						const char *w = argv[idx];
-						if (w) {
-							strcpy (newstr + k, w);
-							k += strlen (w) - 1;
-						}
-					} else {
-						newstr[k] = ch;
+			d = 0;
+			for (j = 0; (ch = ops[i].str[j]); j++) {
+				if (ch == '#') {
+					if (d >= MAXPSEUDOOPS) {
+						// XXX Shouldn't ever happen...
+						continue;
 					}
+					int idx = ops[i].args[d];
+					d++;
+					if (idx <= 0) {
+						// XXX Shouldn't ever happen...
+						continue;
+					}
+					const char *w = argv[idx];
+					if (w) {
+						r_strbuf_append (sb, w);
+					}
+				} else {
+					r_strbuf_append_n (sb, &ch, 1);
 				}
-				newstr[k] = '\0';
 			}
-			r_str_replace_char (newstr, '{', '(');
-			r_str_replace_char (newstr, '}', ')');
-			return true;
+			char *res = r_strbuf_drain (sb);
+			r_str_replace_char (res, '{', '(');
+			r_str_replace_char (res, '}', ')');
+			return res;
 		}
 	}
 
-	/* TODO: this is slow */
-	newstr[0] = '\0';
 	for (i = 0; i < argc; i++) {
-		strcat (newstr, argv[i]);
-		strcat (newstr, (!i || i == argc - 1)? " ": ",");
+		r_strbuf_append (sb, argv[i]);
+		r_strbuf_append (sb, (!i || i == argc - 1)? " ": ",");
 	}
-	r_str_replace_char (newstr, '{', '(');
-	r_str_replace_char (newstr, '}', ')');
-	return false;
+	char *res = r_strbuf_drain (sb);
+	r_str_replace_char (res, '{', '(');
+	r_str_replace_char (res, '}', ')');
+	return res;
 }
 
 static char *patch(RAsmPluginSession *aps, RAnalOp *aop, const char *op) {
@@ -148,8 +138,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 		return NULL;
 	}
 	memcpy (buf, data, len + 1);
-	char *str = malloc (len + 128);
-	strcpy (str, data);
+	char *str = NULL;
 	if (*buf) {
 		*w0 = *w1 = *w2 = *w3 = '\0';
 		ptr = strchr (buf, ' ');
@@ -176,7 +165,6 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 			}
 			if (!ptr) {
 				eprintf ("Unbalanced bracket\n");
-				free (str);
 				free (buf);
 				return NULL;
 			}
@@ -234,16 +222,13 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 					nw++;
 				}
 			}
-			replace (nw, wa, str);
+			str = replace (nw, wa);
 		}
+	} else {
+		str = strdup (data);
 	}
-	{
-		char *s = strdup (str);
-		s = r_str_replace (s, "+ -", "- ", 1);
-		s = r_str_replace (s, "- -", "+ ", 1);
-		strcpy (str, s);
-		free (s);
-	}
+	str = r_str_replace (str, "+ -", "- ", 1);
+	str = r_str_replace (str, "- -", "+ ", 1);
 	free (buf);
 	return str;
 }

@@ -7,8 +7,8 @@
 
 // https://www.ti.com/lit/ug/spru732j/spru732j.pdf
 
-static int replace(int argc, const char *argv[], char *newstr) {
-	int i, j, k;
+static char *replace(int argc, const char *argv[]) {
+	int i, j;
 	struct {
 		int narg;
 		const char *op;
@@ -33,7 +33,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{2, "mvklh", "2 = (half) 1" },// mvk 1, a0 -> a0 = 1
 		{3, "band", "3 = 1 & 2" },   //
 		{1, "zero", "1 = zero" },
-		{3, "andn", "4 = 1 ~ 2" }, //
+		{3, "andn", "3 = 1 ~ 2" }, //
 		{3, "cmpgtu", "3 = 1 cmpgtu 2" }, //
 		{3, "cmpeq", "3 = 1 == 2" }, //
 		{3, "cmpge", "3 = 1 >= 2" }, //
@@ -94,10 +94,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{0, "nop", "" },
 		{0, NULL}
 	};
-	if (!newstr) {
-		return false;
-	}
-
+	RStrBuf *sb = r_strbuf_new ("");
 	for (i = 0; ops[i].op; i++) {
 		if (ops[i].narg) {
 			if (argc - 1 != ops[i].narg) {
@@ -105,36 +102,28 @@ static int replace(int argc, const char *argv[], char *newstr) {
 			}
 		}
 		if (!strcmp (ops[i].op, argv[0])) {
-			for (j = k = 0; ops[i].str[j]; j++, k++) {
-				if (isdigit (ops[i].str[j])) {
-					int index = ops[i].str[j] - '0';
-					if (index >= 0 && index < argc) {
-						const char *w = argv[index];
-						if (!R_STR_ISEMPTY (w)) {
-							r_str_cpy (newstr + k, w);
-							k += strlen (w) - 1;
-						}
+			const char *str = ops[i].str;
+			for (j = 0; str[j]; j++) {
+				if (isdigit (str[j])) {
+					int index = str[j] - '0';
+					if (index < argc && R_STR_ISNOTEMPTY (argv[index])) {
+						r_strbuf_append (sb, argv[index]);
 					}
 				} else {
-					newstr[k] = ops[i].str[j];
+					r_strbuf_append_n (sb, str + j, 1);
 				}
 			}
-			newstr[k] = '\0';
 			if (argc == 4 && argv[2][0] == '[') {
-				strcat (newstr + k, "+");
-				strcat (newstr + k + 3, argv[2]);
+				r_strbuf_append (sb, "+");
 			}
-			return true;
+			return r_strbuf_drain (sb);
 		}
 	}
-
-	/* TODO: this is slow */
-	newstr[0] = '\0';
 	for (i = 0; i < argc; i++) {
-		strcat (newstr, argv[i]);
-		strcat (newstr, (i == 0 || i == argc - 1) ? " " : ",");
+		r_strbuf_append (sb, argv[i]);
+		r_strbuf_append (sb, (i == 0 || i == argc - 1) ? " " : ",");
 	}
-	return false;
+	return r_strbuf_drain (sb);
 }
 
 static char *parse(RAsmPluginSession *aps, const char *data) {
@@ -165,9 +154,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 			}
 		}
 	}
-	char *str = malloc (strlen (data) + 128);
-	strcpy (str, data);
-	replace (nw, wa, str);
+	char *str = replace (nw, wa);
 
 	free (buf);
 	r_list_free (list);

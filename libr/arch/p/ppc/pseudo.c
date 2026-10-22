@@ -293,8 +293,8 @@ static const char* getspr(const char *reg) {
 	return cspr;
 }
 
-static int replace(int argc, const char *argv[], char *newstr) {
-	int i,j,k;
+static char *replace(int argc, const char *argv[]) {
+	int i, j;
 	static struct {
 		const char *op;
 		const char *str;
@@ -1463,132 +1463,123 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	};
 
 	char ppc_mask[32] = {0}; // enough to represent max val of 0xffffffffffffffff
+	RStrBuf *sb = r_strbuf_new ("");
 	for (i = 0; ops[i].op; i++) {
 		if (!strcmp (ops[i].op, argv[0])) {
-			if (newstr) {
-				for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
-					if (can_replace(ops[i].str, j, ops[i].max_operands)) {
-						if (op_needs_cr0 (argv[0]) && argv[ops[i].max_operands][0] == 0) {
-							char* tmp = (char*) argv[ops[i].max_operands];
-							argv[ops[i].max_operands] = argv[ops[i].max_operands - 1];
-							if (ops[i].max_operands == 3) {
-								argv[2] = argv[1];
-							}
-							tmp[0] = 'c';
-							tmp[1] = 'r';
-							tmp[2] = '0';
-							tmp[3] = '\0';
-							argv[1] = tmp;
+			for (j = 0; ops[i].str[j] != '\0'; j++) {
+				if (can_replace(ops[i].str, j, ops[i].max_operands)) {
+					if (op_needs_cr0 (argv[0]) && argv[ops[i].max_operands][0] == 0) {
+						char* tmp = (char*) argv[ops[i].max_operands];
+						argv[ops[i].max_operands] = argv[ops[i].max_operands - 1];
+						if (ops[i].max_operands == 3) {
+							argv[2] = argv[1];
 						}
-						int letter = ops[i].str[j] - '@';
-						const char *w = argv[letter];
-						// eprintf("%s:%d %s\n", ops[i].op, letter, w);
-						// word rotates duplicate the word into both halves, so a wrapping mask keeps high bits
-						if (letter == 4 && (r_str_startswith (argv[0], "rlwinm")
-								|| r_str_startswith (argv[0], "rlwimi")
-								|| r_str_startswith (argv[0], "rlwnm"))) {
-							w = ppc_mask;
-							//MASK(MB+32, ME+32)
-							ut64 MB = PPC_UT64(argv[4]) + 32;
-							ut64 ME = PPC_UT64(argv[5]) + 32;
-							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (MB, ME));
-						} else if (letter == 4 && (r_str_startswith (argv[0], "rldcl") || r_str_startswith (argv[0], "rldicl"))) {
-							w = ppc_mask;
-							//MASK(MB, 63)
-							ut64 MB = PPC_UT64(argv[4]);
-							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (MB, 63));
-						} else if (letter == 4 && !strcmp (argv[0], "rldic")) {
-							w = ppc_mask;
-							//MASK(MB, 63 - SH)
-							ut64 MB = PPC_UT64(argv[4]);
-							ut64 ME = 63 - PPC_UT64(argv[3]);
-							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (MB, ME));
-						} else if (letter == 4 && (r_str_startswith (argv[0], "rldcr") || r_str_startswith (argv[0], "rldicr"))) {
-							w = ppc_mask;
-							//MASK(0, ME)
-							ut64 ME = PPC_UT64(argv[4]);
-							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (0, ME));
-						} else if (letter == 4 && r_str_startswith (argv[0], "rldimi")) {
-							// first mask (normal)
-							w = ppc_mask;
-							//MASK(MB, 63 - SH)
-							ut64 MB = PPC_UT64(argv[4]);
-							ut64 ME = 63 - PPC_UT64(argv[3]);
-							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (MB, ME));
-						} else if (letter == 5 && r_str_startswith (argv[0], "rldimi")) {
-							// second mask (inverted)
-							w = ppc_mask;
-							//MASK(MB, 63 - SH)
-							ut64 MB = PPC_UT64(argv[4]);
-							ut64 ME = 63 - PPC_UT64(argv[3]);
-							ut64 inverted = ~ (mask64 (MB, ME));
-							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, inverted);
-						} else if (letter == 5 && r_str_startswith (argv[0], "rlwimi")) {
-							w = ppc_mask;
-							//MASK(MB+32, ME+32) inverted
-							ut64 MB = PPC_UT64(argv[4]) + 32;
-							ut64 ME = PPC_UT64(argv[5]) + 32;
-							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, ~mask64 (MB, ME));
-						} else if (letter == 1 && op_is_trap (argv[0])) {
-							int to = PPC_UT64 (w);
-							switch(to) {
-								case 4:
-									w = "==";
-									break;
-								case 1:
-								case 8:
-									w = ">";
-									break;
-								case 5:
-								case 12:
-									w = ">=";
-									break;
-								case 2:
-								case 16:
-									w = "<";
-									break;
-								case 6:
-								case 20:
-									w = "<=";
-									break;
-								case 24:
-									w = "!=";
-									break;
-								case 31:
-									// If no parameters t[dw][i] 32, 0, 0 just TRAP
-									w = "==";
-									break;
-								default:
-									w = "?";
-									break;
-							}
-						} else if ((letter == 2 && !strcmp (argv[0], "mfspr")) || (letter == 1 && !strcmp (argv[0], "mtspr"))) {
-							w = getspr (w);
-						}
-						if (w) {
-							strcpy (newstr + k, w);
-							k += strlen (w) - 1;
-						}
-					} else {
-						newstr[k] = ops[i].str[j];
+						tmp[0] = 'c';
+						tmp[1] = 'r';
+						tmp[2] = '0';
+						tmp[3] = '\0';
+						argv[1] = tmp;
 					}
+					int letter = ops[i].str[j] - '@';
+					const char *w = argv[letter];
+					// eprintf("%s:%d %s\n", ops[i].op, letter, w);
+					// word rotates duplicate the word into both halves, so a wrapping mask keeps high bits
+					if (letter == 4 && (r_str_startswith (argv[0], "rlwinm")
+							|| r_str_startswith (argv[0], "rlwimi")
+							|| r_str_startswith (argv[0], "rlwnm"))) {
+						w = ppc_mask;
+						//MASK(MB+32, ME+32)
+						ut64 MB = PPC_UT64(argv[4]) + 32;
+						ut64 ME = PPC_UT64(argv[5]) + 32;
+						snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (MB, ME));
+					} else if (letter == 4 && (r_str_startswith (argv[0], "rldcl") || r_str_startswith (argv[0], "rldicl"))) {
+						w = ppc_mask;
+						//MASK(MB, 63)
+						ut64 MB = PPC_UT64(argv[4]);
+						snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (MB, 63));
+					} else if (letter == 4 && !strcmp (argv[0], "rldic")) {
+						w = ppc_mask;
+						//MASK(MB, 63 - SH)
+						ut64 MB = PPC_UT64(argv[4]);
+						ut64 ME = 63 - PPC_UT64(argv[3]);
+						snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (MB, ME));
+					} else if (letter == 4 && (r_str_startswith (argv[0], "rldcr") || r_str_startswith (argv[0], "rldicr"))) {
+						w = ppc_mask;
+						//MASK(0, ME)
+						ut64 ME = PPC_UT64(argv[4]);
+						snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (0, ME));
+					} else if (letter == 4 && r_str_startswith (argv[0], "rldimi")) {
+						// first mask (normal)
+						w = ppc_mask;
+						//MASK(MB, 63 - SH)
+						ut64 MB = PPC_UT64(argv[4]);
+						ut64 ME = 63 - PPC_UT64(argv[3]);
+						snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (MB, ME));
+					} else if (letter == 5 && r_str_startswith (argv[0], "rldimi")) {
+						// second mask (inverted)
+						w = ppc_mask;
+						//MASK(MB, 63 - SH)
+						ut64 MB = PPC_UT64(argv[4]);
+						ut64 ME = 63 - PPC_UT64(argv[3]);
+						ut64 inverted = ~ (mask64 (MB, ME));
+						snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, inverted);
+					} else if (letter == 5 && r_str_startswith (argv[0], "rlwimi")) {
+						w = ppc_mask;
+						//MASK(MB+32, ME+32) inverted
+						ut64 MB = PPC_UT64(argv[4]) + 32;
+						ut64 ME = PPC_UT64(argv[5]) + 32;
+						snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, ~mask64 (MB, ME));
+					} else if (letter == 1 && op_is_trap (argv[0])) {
+						int to = PPC_UT64 (w);
+						switch(to) {
+							case 4:
+								w = "==";
+								break;
+							case 1:
+							case 8:
+								w = ">";
+								break;
+							case 5:
+							case 12:
+								w = ">=";
+								break;
+							case 2:
+							case 16:
+								w = "<";
+								break;
+							case 6:
+							case 20:
+								w = "<=";
+								break;
+							case 24:
+								w = "!=";
+								break;
+							case 31:
+								// If no parameters t[dw][i] 32, 0, 0 just TRAP
+								w = "==";
+								break;
+							default:
+								w = "?";
+								break;
+						}
+					} else if ((letter == 2 && !strcmp (argv[0], "mfspr")) || (letter == 1 && !strcmp (argv[0], "mtspr"))) {
+						w = getspr (w);
+					}
+					if (w) {
+						r_strbuf_append (sb, w);
+					}
+				} else {
+					r_strbuf_append_n (sb, ops[i].str + j, 1);
 				}
-				newstr[k]='\0';
 			}
-			return true;
+			return r_strbuf_drain (sb);
 		}
 	}
-
-	/* TODO: this is slow */
-	if (newstr) {
-		newstr[0] = '\0';
-		for (i = 0; i < argc; i++) {
-			strcat (newstr, argv[i]);
-			strcat (newstr, (i == 0 || i == argc - 1) ? " ":", ");
-		}
+	for (i = 0; i < argc; i++) {
+		r_strbuf_append (sb, argv[i]);
+		r_strbuf_append (sb, (i == 0 || i == argc - 1) ? " ":", ");
 	}
-
-	return false;
+	return r_strbuf_drain (sb);
 }
 
 #define WSZ 128
@@ -1639,8 +1630,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 	r_str_replace_char (buf, '(', ',');
 	r_str_replace_char (buf, ')', ' ');
 	r_str_trim (buf);
-	char *str = malloc (strlen (data) + 128);
-	strcpy (str, data);
+	char *str = NULL;
 	if (*buf) {
 		w0[0] = '\0';
 		w1[0] = '\0';
@@ -1732,9 +1722,8 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 					nw++;
 				}
 			}
-			replace (nw, wa, str);
 			{
-				char *p = strdup (str);
+				char *p = replace (nw, wa);
 				p = r_str_replace (p, "+ -", "- ", 0);
 				p = r_str_replace (p, " + ]", "]  ", 0);
 				//  p = r_str_replace (p, "if (r0 == r0) trap", "trap            ", 0);
@@ -1754,10 +1743,11 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 					REPLACE ("%s = %s >>", "%s >>=");
 					REPLACE ("%s = %s <<", "%s <<=");
 				}
-				strcpy (str, p);
-				free (p);
+				str = p;
 			}
 		}
+	} else {
+		str = strdup (data);
 	}
 	free (buf);
 	return str;
