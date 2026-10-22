@@ -782,7 +782,7 @@ void decode_cond(tms320_dasm_t *dasm) {
 		substitute (dasm->syntax, "cond", "%s", get_cond_str (field_value (dasm, CCCCCCC), tmp));
 	}
 
-	substitute (dasm->syntax, "[label, ]", "");
+	substitute (dasm->syntax, "[label, ]", "%s", "");
 }
 
 void decode_registers(tms320_dasm_t *dasm) {
@@ -904,7 +904,7 @@ void decode_registers(tms320_dasm_t *dasm) {
 		break;
 	case 0x11: // SS   DD
 		if (field_value (dasm, SS) == field_value (dasm, DD)) {
-			substitute (dasm->syntax, "[, ACy]", "");
+			substitute (dasm->syntax, "[, ACy]", "%s", "");
 			substitute (dasm->syntax, "[ACx,] ACy", "ACy");
 		} else {
 			substitute (dasm->syntax, "[, ACy]", ", ACy");

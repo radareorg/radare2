@@ -1312,8 +1312,8 @@ static bool r_cmd_java_handle_flags_str(RCore *core, const char *cmd) {
 	const char *p = cmd? cmd + 2: NULL;
 	char *flags_str = NULL;
 
-	R_LOG_DEBUG ("r_cmd_java_handle_flags_str: ftype = %c, idx = %s", f_type, p);
 	if (p) {
+		R_LOG_DEBUG ("r_cmd_java_handle_flags_str: ftype = %c, idx = %s", f_type, p);
 		flag_value = r_cmd_java_is_valid_input_num_value (core, p)? r_cmd_java_get_input_num_value (core, p): (ut32)-1;
 	}
 
@@ -1351,8 +1351,8 @@ static bool r_cmd_java_handle_flags_str_at(RCore *core, const char *cmd) {
 	const char *p = cmd? cmd + 2: NULL;
 	char *flags_str = NULL;
 
-	R_LOG_DEBUG ("r_cmd_java_handle_flags_str_at: ftype = 0x%02x, idx = %s", f_type, p);
 	if (p) {
+		R_LOG_DEBUG ("r_cmd_java_handle_flags_str_at: ftype = 0x%02x, idx = %s", f_type, p);
 		flag_value = 0;
 		ut64 cur_offset = core->addr;
 		ut64 flag_value_addr = r_cmd_java_is_valid_input_num_value (core, p)

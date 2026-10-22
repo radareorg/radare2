@@ -1880,12 +1880,13 @@ static int cmd_wt(RCore *core, const char *input) {
 			ut64 sent = 0;
 			R_LOG_INFO ("Connection created. Sending data to TCP socket");
 			while (sent < sz) {
-				bool sockret = r_socket_write (sock, buf + sent, sz - sent);
-				if (!sockret) {
+				const int n = r_socket_write (sock, buf + sent, (int)R_MIN (sz - sent, INT_MAX));
+				if (n < 1) {
 					R_LOG_ERROR ("Socket write error");
 					ret = 1;
 					break;
 				}
+				sent += n;
 			}
 		} else {
 			R_LOG_ERROR ("Connection to %s failed", host_port);
@@ -2205,9 +2206,14 @@ static int cmd_wa(void *data, const char *input) {
 		case ' ':
 		case '*':
 		case 'l':
-		case '+':
-			asm_patch (core, r_str_trim_head_ro (input + 1), input[1]);
+		case '+': {
+			char *operation = r_str_trim_dup (input + 1);
+			if (operation) {
+				asm_patch (core, operation, input[1]);
+				free (operation);
+			}
 			break;
+		}
 		default:
 			r_cons_cmd_help (core->cons, help_msg_wao);
 			break;

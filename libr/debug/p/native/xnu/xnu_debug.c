@@ -2,6 +2,7 @@
 
 #define R_LOG_ORIGIN "debug.xnu"
 
+#include <TargetConditionals.h>
 #include <r_userconf.h>
 #if DEBUGGER
 
@@ -348,19 +349,26 @@ bool xnu_detach(RDebug *dbg, int pid) {
 	return r_debug_ptrace (dbg, PT_DETACH, pid, NULL, 0);
 #else
 	// Not calling PT_DETACH results in a zombie
-	int r = r_debug_ptrace (dbg, PT_DETACH, pid, NULL, 0);
-	if (r < 0) {
-		r_sys_perror ("ptrace(PT_DETACH)");
+	const bool is_dead = pid < 0 || dbg->reason.type == R_DEBUG_REASON_DEAD;
+	int r = 0;
+	if (!is_dead) {
+		r = r_debug_ptrace (dbg, PT_DETACH, pid, NULL, 0);
+		if (r < 0) {
+			r_sys_perror ("ptrace(PT_DETACH)");
+		}
 	}
 #if XNU_PTRACE_STEP
-	if (r >= 0 && !xnu_reply_pending_exception ()) {
+	if (is_dead) {
+		xnu_discard_pending_exception ();
+	} else if (r >= 0 && !xnu_reply_pending_exception ()) {
 		r = -1;
 	}
 	xnu_ptrace_step = false;
+	xnu_ptrace_attach_stop = false;
 #endif
 	//do the cleanup necessary
 	//XXX check for errors and ref counts
-	(void)xnu_restore_exception_ports (pid);
+	(void)xnu_restore_exception_ports (pid, is_dead);
 	kern_return_t kr = mach_port_deallocate (mach_task_self (), task_dbg);
 	if (kr != KERN_SUCCESS) {
 		R_LOG_ERROR ("xnu_detach: failed to deallocate port");
@@ -437,7 +445,8 @@ bool xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 	}
 #if XNU_PTRACE_STEP
 	if (pending_exception_reply_valid) {
-		if (r_debug_ptrace (dbg, PT_CONTINUE, pid, (caddr_t)1, 0) == -1) {
+		int signal = sig != -1 ? sig : dbg->reason.signum;
+		if (r_debug_ptrace (dbg, PT_CONTINUE, pid, (caddr_t)1, signal) == -1) {
 			r_sys_perror ("ptrace-continue");
 			return false;
 		}

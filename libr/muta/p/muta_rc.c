@@ -185,7 +185,7 @@ static void rc2_crypt(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf, in
 		idx += 1;
 		if (idx % RC2_BLOCK_SIZE == 0) {
 			rc2_crypt8 (state, (const ut8 *)data_block, (ut8 *)crypted_block);
-			strncpy (ptr, crypted_block, RC2_BLOCK_SIZE);
+			memcpy (ptr, crypted_block, RC2_BLOCK_SIZE);
 			ptr += RC2_BLOCK_SIZE;
 			idx = 0;
 		}
@@ -198,7 +198,7 @@ static void rc2_crypt(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf, in
 			idx++;
 		}
 		rc2_crypt8 (state, (const ut8 *)data_block, (ut8 *)crypted_block);
-		r_str_ncpy (ptr, crypted_block, RC2_BLOCK_SIZE);
+		memcpy (ptr, crypted_block, RC2_BLOCK_SIZE);
 	}
 }
 
@@ -457,7 +457,14 @@ static bool rc_update(RMutaSession *ms, const ut8 *buf, int len) {
 		return false;
 	}
 
-	ut8 *obuf = calloc (1, len);
+	int size = len;
+	if (!strcmp (ms->subtype, "rc2") && ms->flag == R_MUTA_OP_ENCRYPT && len % RC2_BLOCK_SIZE) {
+		// rc2_crypt emits the zero padded last block
+		if (r_add_overflow (len, RC2_BLOCK_SIZE - (len % RC2_BLOCK_SIZE), &size)) {
+			return false;
+		}
+	}
+	ut8 *obuf = calloc (1, size);
 	if (!obuf) {
 		return false;
 	}
@@ -500,7 +507,7 @@ static bool rc_update(RMutaSession *ms, const ut8 *buf, int len) {
 		return false;
 	}
 
-	r_muta_session_append (ms, obuf, len);
+	r_muta_session_append (ms, obuf, size);
 	free (obuf);
 	return true;
 }

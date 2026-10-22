@@ -1525,3 +1525,17 @@ EXPECT=<<EOF
 f hello.txt
 EOF
 RUN
+
+NAME=m ntfs refuses resident values outside of the MFT record
+FILE=bins/fs/ntfs-resident-oob.img
+CMDS=<<EOF
+md /root
+mc /root/file
+EOF
+EXPECT=<<EOF
+f file
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot open /root/file
+EOF
+RUN

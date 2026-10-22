@@ -2956,3 +2956,141 @@ EXPECT=<<EOF
 0x00003333
 EOF
 RUN
+
+NAME=arm64 ESIL mov to 64-bit vector lane writes the whole half directly
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 201c184e # mov v0.d[1], x1 replaces the whole upper half
+aei
+aeip
+aer v0l=0xaaaaaaaaaaaaaaaa
+aer v0h=0xbbbbbbbbbbbbbbbb
+aer x1=0x1122334455667788
+aes
+aer v0l
+aer v0h
+wx 401c084e @ 0 # mov v0.d[0], x2 replaces the whole lower half
+aei
+aeip
+aer v0l=0xaaaaaaaaaaaaaaaa
+aer v0h=0xbbbbbbbbbbbbbbbb
+aer x2=0x99aabbccddeeff00
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0xaaaaaaaaaaaaaaaa
+0x1122334455667788
+0x99aabbccddeeff00
+0xbbbbbbbbbbbbbbbb
+EOF
+RUN
+
+NAME=arm64 ESIL mov to sub-dword vector lane keeps the other lanes
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 201c044e # mov v0.s[0], w1 replaces word lane 0 at the bottom of the lower half
+aei
+aeip
+aer v0l=0xaaaaaaaaaaaaaaaa
+aer v0h=0xbbbbbbbbbbbbbbbb
+aer w1=0x24680f13
+aes
+aer v0l
+aer v0h
+wx 201c0c4e @ 0 # mov v0.s[1], w1 replaces word lane 1 of the lower half
+aei
+aeip
+aer v0l=0xaaaaaaaaaaaaaaaa
+aer v0h=0xbbbbbbbbbbbbbbbb
+aer w1=0xdeadbeef
+aes
+aer v0l
+aer v0h
+wx 201c144e @ 0 # mov v0.s[2], w1 replaces word lane 2 at the bottom of the upper half
+aei
+aeip
+aer v0l=0xaaaaaaaaaaaaaaaa
+aer v0h=0xbbbbbbbbbbbbbbbb
+aer w1=0x10fd5e01
+aes
+aer v0l
+aer v0h
+wx 201c1c4e @ 0 # mov v0.s[3], w1 replaces word lane 3 inside the upper half
+aei
+aeip
+aer v0l=0xaaaaaaaaaaaaaaaa
+aer v0h=0xbbbbbbbbbbbbbbbb
+aer w1=0xcafe1234
+aes
+aer v0l
+aer v0h
+wx 201c0e4e @ 0 # mov v0.h[3], w1 replaces halfword lane 3 at the top of the lower half
+aei
+aeip
+aer v0l=0xaaaaaaaaaaaaaaaa
+aer v0h=0xbbbbbbbbbbbbbbbb
+aer w1=0xfeed
+aes
+aer v0l
+aer v0h
+wx 201c0b4e @ 0 # mov v0.b[5], w1 replaces byte lane 5 inside the lower half
+aei
+aeip
+aer v0l=0xaaaaaaaaaaaaaaaa
+aer v0h=0xbbbbbbbbbbbbbbbb
+aer w1=0x3c
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0xaaaaaaaa24680f13
+0xbbbbbbbbbbbbbbbb
+0xdeadbeefaaaaaaaa
+0xbbbbbbbbbbbbbbbb
+0xaaaaaaaaaaaaaaaa
+0xbbbbbbbb10fd5e01
+0xaaaaaaaaaaaaaaaa
+0xcafe1234bbbbbbbb
+0xfeedaaaaaaaaaaaa
+0xbbbbbbbbbbbbbbbb
+0xaaaa3caaaaaaaaaa
+0xbbbbbbbbbbbbbbbb
+EOF
+RUN
+
+NAME=arm64 ESIL mov to 64-bit vector lane emits a direct assignment
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 201c184e # mov v0.d[1], x1
+e asm.esil=true
+pd 1
+wx 401c084e @ 0 # mov v0.d[0], x2
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      201c184e       x1,v0h,=
+            0x00000000      401c084e       x2,v0l,=
+EOF
+RUN
+
+NAME=arm64 ESIL per-lane vector FP on 64-bit lanes writes each half directly
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 20d4624e # fadd v0.2d, v1.2d, v2.2d replaces both 64-bit lanes whole
+e asm.esil=true
+pd 1
+wx 20dc626e @ 0 # fmul v0.2d, v1.2d, v2.2d replaces both 64-bit lanes whole
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      20d4624e       128,DUP,0xffffffffffffffff,v2l,&,F2D,128,0xffffffffffffffff,v1l,&,F2D,F+,D2F,v0l,=,128,DUP,0xffffffffffffffff,v2h,&,F2D,128,0xffffffffffffffff,v1h,&,F2D,F+,D2F,v0h,=
+            0x00000000      20dc626e       128,DUP,0xffffffffffffffff,v2l,&,F2D,128,0xffffffffffffffff,v1l,&,F2D,F*,D2F,v0l,=,128,DUP,0xffffffffffffffff,v2h,&,F2D,128,0xffffffffffffffff,v1h,&,F2D,F*,D2F,v0h,=
+EOF
+RUN

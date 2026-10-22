@@ -2220,7 +2220,6 @@ static void parse_function(Context *ctx, ut64 idx) {
 		r_strbuf_append (&ret_type, "void");
 	}
 
-	R_WARN_IF_FAIL (ctx->lang);
 	char *demangled_name = NULL;
 	if (ctx->anal->binb.demangle) {
 		const char *mangled_name = fcn.name;

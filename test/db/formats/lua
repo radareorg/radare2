@@ -26,3 +26,15 @@ EXPECT=<<EOF
 162
 EOF
 RUN
+
+NAME=lua53 string with an embedded NUL reports the copied length
+FILE=bins/lua/string-nul.luac
+CMDS=<<EOF
+iz~ascii
+izj~{[0].length}
+EOF
+EXPECT=<<EOF
+0   0x0000004a 0x0000004a 2   11           ascii ab
+2
+EOF
+RUN

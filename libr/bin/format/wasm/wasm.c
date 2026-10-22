@@ -1483,7 +1483,7 @@ static RVecWasmPtr *parse_sub_section_vec(RBinWasmObj *bin, RBinWasmSection *sec
 	*cache = sec->id == R_BIN_WASM_SECTION_TYPE
 		? parse_type_section (bin, bound)
 		: parse_vec (bin, bound, parser, pfree);
-	if (sorter) {
+	if (sorter && *cache) {
 		RVecWasmPtr_sort (*cache, sorter);
 	}
 	return *cache;

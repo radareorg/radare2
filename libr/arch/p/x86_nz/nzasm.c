@@ -165,6 +165,8 @@ static int is_al_reg(const Operand *op) {
 }
 
 static int oprep(RArchSession *a, ut8 *data, const Opcode *op);
+static int op_reg_mem(int bits, ut8 *data, const Operand *reg, const Operand *mem, ut8 opcode);
+static bool use_op_reg_mem(int bits, const Operand *mem);
 
 // Minimal VEX.3 prefix emission for selected BMI2 GPR ops (SHLX/SHRX/SARX)
 // Encodes: VEX.NDS.LZ.0F38.Wx with computed R', X', B', vvvv'
@@ -908,6 +910,18 @@ static int process_1byte_op(RArchSession *a, ut8 *data, const Opcode *op, int op
 	st32 offset = 0;
 	int ebp_reg = 0;
 
+	const int bits = a->config->bits;
+	for (int i = 0; i < 2; i++) {
+		const Operand *mem = &op->operands[i];
+		const Operand *reg = &op->operands[1 - i];
+		if (mem->type & OT_MEMORY && !(mem->type & OT_REGTYPE & OT_SEGMENTREG)
+				&& (mem->regs[0] != X86R_UNDEFINED || mem->regs[1] != X86R_UNDEFINED)
+				&& use_op_reg_mem (bits, mem)
+				&& reg->type & OT_REGTYPE & OT_GPREG && !(reg->type & OT_MEMORY)) {
+			// op1 is r/m8, r8; +1 r/m, r; +2 r8, r/m8; +3 r, r/m
+			return op_reg_mem (bits, data, reg, mem, op1 + i * 2 + ((reg->type & OT_BYTE)? 0: 1));
+		}
+	}
 	if (!op->operands[1].is_good_flag) {
 		return -1;
 	}
@@ -920,7 +934,6 @@ static int process_1byte_op(RArchSession *a, ut8 *data, const Opcode *op, int op
 		return l;
 	}
 
-	const int bits = a->config->bits;
 	if (bits == 64) {
 		if (!(op->operands[0].type & op->operands[1].type)) {
 			return -1;
@@ -2472,8 +2485,8 @@ static int opjc(RArchSession *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-// ModRM, SIB and displacement for a [base + index * scale + disp] operand in 64-bit mode
-static int encode_mem64(ut8 *data, int reg, const Operand *mem, ut8 *rex) {
+// ModRM, SIB and displacement for a [base + index * scale + disp] operand in 32 or 64-bit mode
+static int encode_mem(ut8 *data, int reg, const Operand *mem, ut8 *rex) {
 	int l = 0;
 	Register base = mem->regs[0];
 	Register index = mem->regs[1];
@@ -2550,8 +2563,8 @@ static int encode_mem64(ut8 *data, int reg, const Operand *mem, ut8 *rex) {
 	return l;
 }
 
-// opcode with a general purpose register and a memory operand in 64-bit mode
-static int op_reg_mem64(ut8 *data, const Operand *reg, const Operand *mem, ut8 opcode) {
+// opcode with a general purpose register and a memory operand in 32 or 64-bit mode
+static int op_reg_mem(int bits, ut8 *data, const Operand *reg, const Operand *mem, ut8 opcode) {
 	ut8 modrm[16];
 	ut8 rex = 0;
 	int l = 0;
@@ -2564,11 +2577,15 @@ static int op_reg_mem64(ut8 *data, const Operand *reg, const Operand *mem, ut8 o
 	if (reg->extended) {
 		rex |= 4;
 	}
-	int n = encode_mem64 (modrm, reg->reg, mem, &rex);
+	int n = encode_mem (modrm, reg->reg, mem, &rex);
 	if (n < 0) {
 		return -1;
 	}
-	if (mem->regs[0] != X86R_UNDEFINED && !(mem->reg_size & OT_QWORD)) {
+	if (bits == 32) {
+		if (rex || reg->rex_prefixed) {
+			return -1;
+		}
+	} else if (mem->regs[0] != X86R_UNDEFINED && !(mem->reg_size & OT_QWORD)) {
 		data[l++] = 0x67; // 32-bit address registers
 	}
 	if (reg->type & OT_WORD) {
@@ -2585,19 +2602,24 @@ static int op_reg_mem64(ut8 *data, const Operand *reg, const Operand *mem, ut8 o
 	return l + n;
 }
 
+// 64-bit mode, or 32-bit mode with 32-bit address registers other than eip
+static bool use_op_reg_mem(int bits, const Operand *mem) {
+	return bits == 64 || (bits == 32 && (mem->reg_size & OT_DWORD) && mem->regs[0] != X86R_RIP);
+}
+
 static int oplea(RArchSession *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	int mod = 0;
 	st32 offset = 0;
 	int reg = 0;
 	int rm = 0;
-	if (a->config->bits == 64 && op->operands[0].type & OT_REGTYPE & OT_GPREG && op->operands[1].type & OT_MEMORY
+	if (use_op_reg_mem (a->config->bits, &op->operands[1]) && op->operands[0].type & OT_REGTYPE & OT_GPREG && op->operands[1].type & OT_MEMORY
 			&& !(op->operands[1].type & OT_REGTYPE & OT_SEGMENTREG)
 			&& (op->operands[1].regs[0] != X86R_UNDEFINED || op->operands[1].regs[1] != X86R_UNDEFINED)) {
 		if (op->operands[0].type & OT_BYTE) {
 			return -1;
 		}
-		return op_reg_mem64 (data, &op->operands[0], &op->operands[1], 0x8d);
+		return op_reg_mem (a->config->bits, data, &op->operands[0], &op->operands[1], 0x8d);
 	}
 	if (op->operands[0].type & OT_REGALL && op->operands[1].type & (OT_MEMORY | OT_CONSTANT)) {
 		if (a->config->bits == 64) {
@@ -2932,10 +2954,10 @@ static int opmov(RArchSession *a, ut8 *data, const Opcode *op) {
 				&& !(op->operands[0].type & OT_REGTYPE & OT_GPREG)) {
 			return -1;
 		}
-		if (bits == 64 && op->operands[0].type & OT_MEMORY && !(op->operands[0].type & OT_REGTYPE & OT_SEGMENTREG)
+		if (use_op_reg_mem (bits, &op->operands[0]) && op->operands[0].type & OT_MEMORY && !(op->operands[0].type & OT_REGTYPE & OT_SEGMENTREG)
 				&& (op->operands[0].regs[0] != X86R_UNDEFINED || op->operands[0].regs[1] != X86R_UNDEFINED)
 				&& (op->operands[1].type & OT_REGTYPE & OT_GPREG)) {
-			return op_reg_mem64 (data, &op->operands[1], &op->operands[0],
+			return op_reg_mem (bits, data, &op->operands[1], &op->operands[0],
 				(op->operands[1].type & OT_BYTE)? 0x88: 0x89);
 		}
 		// Check reg sizes match
@@ -3095,9 +3117,9 @@ static int opmov(RArchSession *a, ut8 *data, const Opcode *op) {
 			return l;
 		}
 
-		if (bits == 64 && (op->operands[1].regs[0] != X86R_UNDEFINED || op->operands[1].regs[1] != X86R_UNDEFINED)
+		if (use_op_reg_mem (bits, &op->operands[1]) && (op->operands[1].regs[0] != X86R_UNDEFINED || op->operands[1].regs[1] != X86R_UNDEFINED)
 				&& (op->operands[0].type & OT_REGTYPE & OT_GPREG)) {
-			return op_reg_mem64 (data, &op->operands[0], &op->operands[1],
+			return op_reg_mem (bits, data, &op->operands[0], &op->operands[1],
 				(op->operands[0].type & OT_BYTE)? 0x8a: 0x8b);
 		}
 

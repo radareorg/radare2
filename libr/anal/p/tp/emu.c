@@ -499,8 +499,15 @@ static bool tp_bb_leads_to(RAnal *anal, ut64 from, ut64 to) {
 	return bb && !r_anal_block_successor_addrs_foreach (bb, tp_bb_edge_cb, &to);
 }
 
-typedef struct {
-	SetU *members; // loop blocks, header included
+typedef struct tp_loop_hdr_t {
+	ut64 addr;
+	bool natural; // false when the walk met irreducible flow: the full snapshot restore is used instead
+	struct tp_loop_hdr_t *uf; // union-find link to the outermost loop built so far
+	struct tp_loop_hdr_t *parent; // enclosing loop in the loop forest
+	RVecUT64 kids; // directly nested loop headers
+	RVecUT64 pend; // outside predecessors left for the enclosing loop
+	size_t next_kid;
+	ut32 pre, post; // loop forest dfs interval, a nested loop's interval is inside its parent's
 	RVecUT64 srcs; // back-edge sources
 	size_t acc_start; // trace access range recorded while the header block was emulated
 	size_t acc_end;
@@ -509,7 +516,8 @@ typedef struct {
 
 static void tp_loophdr_kv_free(HtUPKv *kv) {
 	TPLoopHdr *hdr = kv->value;
-	set_u_free (hdr->members);
+	RVecUT64_fini (&hdr->kids);
+	RVecUT64_fini (&hdr->pend);
 	RVecUT64_fini (&hdr->srcs);
 	free (hdr);
 }
@@ -546,6 +554,7 @@ static bool tp_backedge_cb(ut64 addr, void *user) {
 	TPLoopHdr *hdr = ht_up_find (bs->headers, addr, NULL);
 	if (!hdr) {
 		hdr = R_NEW0 (TPLoopHdr);
+		hdr->addr = addr;
 		if (!ht_up_insert (bs->headers, addr, hdr)) {
 			free (hdr);
 			bs->oom = true;
@@ -582,53 +591,101 @@ static bool tp_pred_cb(ut64 addr, void *user) {
 	return true;
 }
 
-// grow the loop's member set backward from its back-edge sources, never crossing the header
-static bool tp_loop_members_cb(void *user, const ut64 ha, const void *v) {
-	TPBackEdgeScan *bs = user;
-	TPLoopHdr *hdr = (TPLoopHdr *)v;
-	bool found = false;
-	const ut64 hpos = ht_uu_find (bs->order, ha, &found);
-	hdr->members = found? set_u_new (): NULL;
-	if (!hdr->members) {
-		return true;
+static TPLoopHdr *tp_loop_root(TPLoopHdr *hdr) {
+	TPLoopHdr *root = hdr;
+	while (root->uf != root) {
+		root = root->uf;
 	}
-	set_u_add (hdr->members, ha);
-	// set_u_add cannot report failure; an unnoticed missing member would misapply the partial restore
-	bool ok = set_u_contains (hdr->members, ha);
+	while (hdr != root) {
+		TPLoopHdr *next = hdr->uf;
+		hdr->uf = root;
+		hdr = next;
+	}
+	return root;
+}
+
+static bool tp_vec_push_all(RVecUT64 *dst, RVecUT64 *src) {
+	bool ok = true;
+	ut64 *pa;
+	if (src) {
+		R_VEC_FOREACH (src, pa) {
+			ok &= tp_vec_push (dst, *pa);
+		}
+	}
+	return ok;
+}
+
+// walk back from the back-edge sources, adopting the inner loops already built instead of copying their blocks
+static bool tp_loop_build(TPBackEdgeScan *bs, HtUU *loop_of, TPLoopHdr *hdr, ut64 hpos) {
+	hdr->natural = true;
+	hdr->uf = hdr;
 	RVecUT64 stack;
 	RVecUT64_init (&stack);
-	ut64 *pa;
-	R_VEC_FOREACH (&hdr->srcs, pa) {
-		ok &= tp_vec_push (&stack, *pa);
-	}
+	// a block missing from loop_of would misapply the partial restore
+	bool ok = ht_uu_insert (loop_of, hdr->addr, hdr->addr) && tp_vec_push_all (&stack, &hdr->srcs);
 	while (ok && !RVecUT64_empty (&stack)) {
 		const ut64 cur = *RVecUT64_last (&stack);
 		RVecUT64_pop_back (&stack);
-		if (set_u_contains (hdr->members, cur)) {
+		bool found = false;
+		const ut64 inner = ht_uu_find (loop_of, cur, &found);
+		if (found) {
+			TPLoopHdr *root = tp_loop_root (ht_up_find (bs->headers, inner, NULL));
+			if (root != hdr) {
+				root->uf = root->parent = hdr;
+				ok &= tp_vec_push (&hdr->kids, root->addr);
+				ok &= tp_vec_push_all (&stack, ht_up_find (bs->preds, root->addr, NULL));
+				ok &= tp_vec_push_all (&stack, &root->pend);
+			}
 			continue;
 		}
 		const ut64 cpos = ht_uu_find (bs->order, cur, &found);
 		// a block before the header in rpo means irreducible flow, not a natural loop
 		if (!found || cpos < hpos) {
-			ok = false;
-			break;
+			hdr->natural = false;
+			ok &= tp_vec_push (&hdr->pend, cur);
+			continue;
 		}
-		set_u_add (hdr->members, cur);
-		ok &= set_u_contains (hdr->members, cur);
-		RVecUT64 *pv = ht_up_find (bs->preds, cur, NULL);
-		if (pv) {
-			R_VEC_FOREACH (pv, pa) {
-				ok &= tp_vec_push (&stack, *pa);
-			}
-		}
+		ok &= ht_uu_insert (loop_of, cur, hdr->addr);
+		ok &= tp_vec_push_all (&stack, ht_up_find (bs->preds, cur, NULL));
 	}
 	RVecUT64_fini (&stack);
-	if (!ok) {
-		// a NULL member set falls back to the full snapshot restore
-		set_u_free (hdr->members);
-		hdr->members = NULL;
+	return ok;
+}
+
+// number the loop forest so that loop nesting is an interval check
+static bool tp_loop_number_cb(void *user, const ut64 ha, const void *v) {
+	TPBackEdgeScan *bs = user;
+	TPLoopHdr *root = (TPLoopHdr *)v;
+	if (root->parent) {
+		return true;
 	}
-	return true;
+	RVecUT64 stack;
+	RVecUT64_init (&stack);
+	root->pre = (ut32)bs->pos++;
+	bool ok = tp_vec_push (&stack, ha);
+	while (ok && !RVecUT64_empty (&stack)) {
+		TPLoopHdr *top = ht_up_find (bs->headers, *RVecUT64_last (&stack), NULL);
+		if (top->next_kid < RVecUT64_length (&top->kids)) {
+			const ut64 kid = *RVecUT64_at (&top->kids, top->next_kid++);
+			TPLoopHdr *kh = ht_up_find (bs->headers, kid, NULL);
+			kh->pre = (ut32)bs->pos++;
+			ok = tp_vec_push (&stack, kid);
+		} else {
+			top->post = (ut32)bs->pos++;
+			RVecUT64_pop_back (&stack);
+		}
+	}
+	bs->oom |= !ok;
+	RVecUT64_fini (&stack);
+	return ok;
+}
+
+// a natural loop holds a block whose innermost loop is the header itself or nested inside it
+static bool tp_loop_has(HtUP *headers, HtUU *loop_of, TPLoopHdr *hdr, ut64 addr) {
+	bool found = false;
+	const ut64 inner = ht_uu_find (loop_of, addr, &found);
+	TPLoopHdr *ih = found? ht_up_find (headers, inner, NULL): NULL;
+	return ih && hdr->pre <= ih->pre && ih->post <= hdr->post;
 }
 
 static void tp_scan_edges(RAnal *anal, RVecUT64 *bblist, size_t reachable, RAnalAddrCb cb, TPBackEdgeScan *bs) {
@@ -643,8 +700,9 @@ static void tp_scan_edges(RAnal *anal, RVecUT64 *bblist, size_t reachable, RAnal
 	}
 }
 
-// mark emulation-order back-edge targets in the entry-reachable prefix and precompute each loop's member set
-static HtUP *tp_loop_headers(RAnal *anal, RVecUT64 *bblist, size_t reachable) {
+// mark emulation-order back-edge targets in the entry-reachable prefix and build their loop forest
+static HtUP *tp_loop_headers(RAnal *anal, RVecUT64 *bblist, size_t reachable, HtUU **loop_of) {
+	*loop_of = NULL;
 	if (!reachable) {
 		return NULL;
 	}
@@ -661,8 +719,20 @@ static HtUP *tp_loop_headers(RAnal *anal, RVecUT64 *bblist, size_t reachable) {
 			bs.preds = ht_up_new (NULL, tp_u64vec_kv_free, NULL);
 			if (bs.preds) {
 				tp_scan_edges (anal, bblist, reachable, tp_pred_cb, &bs);
+				*loop_of = bs.oom? NULL: ht_uu_new0 ();
+				// inner loops come later in rpo, so build them first
+				for (i = reachable; *loop_of && i > 0; i--) {
+					TPLoopHdr *hdr = ht_up_find (bs.headers, *RVecUT64_at (bblist, i - 1), NULL);
+					if (hdr && !tp_loop_build (&bs, *loop_of, hdr, i - 1)) {
+						bs.oom = true;
+						break;
+					}
+				}
 				if (!bs.oom) {
-					ht_up_foreach (bs.headers, tp_loop_members_cb, &bs);
+					bs.pos = 0;
+					ht_up_foreach (bs.headers, tp_loop_number_cb, &bs);
+				}
+				if (!bs.oom) {
 					ret = bs.headers;
 				}
 			}
@@ -672,6 +742,8 @@ static HtUP *tp_loop_headers(RAnal *anal, RVecUT64 *bblist, size_t reachable) {
 	ht_up_free (bs.preds);
 	if (!ret) {
 		ht_up_free (bs.headers);
+		ht_uu_free (*loop_of);
+		*loop_of = NULL;
 	}
 	return ret;
 }
@@ -712,7 +784,7 @@ static void tp_restore_block_writes(TypeTrace *tt, TPLoopHdr *hdr, const ut8 *sn
 }
 
 // a full restore rewinds the stack too; a loop exit keeps its live state
-static bool tp_restore_pred_state(TPState *tps, RVecUT64 *bblist, int j, ut64 bbat, HtUP *bbstate, HtUP *loop_headers, int arena_size) {
+static bool tp_restore_pred_state(TPState *tps, RVecUT64 *bblist, int j, ut64 bbat, HtUP *bbstate, HtUP *loop_headers, HtUU *loop_of, int arena_size) {
 	if (j < 1) {
 		return false;
 	}
@@ -732,7 +804,7 @@ static bool tp_restore_pred_state(TPState *tps, RVecUT64 *bblist, int j, ut64 bb
 		TPBBSnap *s = ht_up_find (bbstate, pa, NULL);
 		if (s) {
 			TPLoopHdr *hdr = ht_up_find (loop_headers, pa, NULL);
-			const bool loop_exit = hdr && hdr->members && !set_u_contains (hdr->members, bbat) && set_u_contains (hdr->members, prev);
+			const bool loop_exit = hdr && hdr->natural && !tp_loop_has (loop_headers, loop_of, hdr, bbat) && tp_loop_has (loop_headers, loop_of, hdr, prev);
 			// untraced call in header: restore exit whole
 			if (loop_exit && !hdr->has_call) {
 				tp_restore_block_writes (&tps->tt, hdr, s->regs, arena_size);
@@ -786,7 +858,8 @@ TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_ops, TPE
 	TypeTrace *etrace = &tps->tt;
 	RIO *io = anal->iob.io;
 	HtUP *bbstate = (restore_state && tps->cfg_bbstate)? ht_up_new (NULL, tp_bbstate_kv_free, NULL): NULL;
-	HtUP *loop_headers = bbstate? tp_loop_headers (anal, &bblist, reachable): NULL;
+	HtUU *loop_of = NULL;
+	HtUP *loop_headers = bbstate? tp_loop_headers (anal, &bblist, reachable, &loop_of): NULL;
 	if (bbstate) {
 		tp_track_reset (tps);
 	}
@@ -796,7 +869,7 @@ TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_ops, TPE
 	for (j = 0; j < bblist_size; j++) {
 		const ut64 bbat = *RVecUT64_at (&bblist, j);
 		tps->bb_trace_start = VecTraceOp_length (&etrace->db.ops);
-		tps->lineage_reset = bbstate && tp_restore_pred_state (tps, &bblist, j, bbat, bbstate, loop_headers, arena_size);
+		tps->lineage_reset = bbstate && tp_restore_pred_state (tps, &bblist, j, bbat, bbstate, loop_headers, loop_of, arena_size);
 		TPLoopHdr *cur_hdr = ht_up_find (loop_headers, bbat, NULL);
 		if (cur_hdr) {
 			cur_hdr->acc_start = VecAccess_length (&etrace->db.accesses);
@@ -936,6 +1009,7 @@ TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_ops, TPE
 beach:
 	etrace->track.size = 0;
 	ht_up_free (loop_headers);
+	ht_uu_free (loop_of);
 	ht_up_free (bbstate);
 	r_anal_op_fini (&aop);
 	r_anal_op_free (next_op); // a cached lookahead op may still be live on a break/budget exit

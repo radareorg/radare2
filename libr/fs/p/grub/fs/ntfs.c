@@ -81,8 +81,21 @@ free_attr(struct grub_ntfs_attr *at) {
 	grub_free (at->sbuf);
 }
 
+// the attribute header and its resident value must be inside [pa, end)
+static bool attr_fits(const char *pa, const char *end) {
+	if (pa >= end || end - pa < 0x18) {
+		return false;
+	}
+	const grub_uint32_t alen = u32at (pa, 4);
+	if (alen < 0x18 || alen > end - pa) {
+		return false;
+	}
+	return pa[8] || (grub_uint64_t)u16at (pa, 0x14) + u32at (pa, 0x10) <= alen;
+}
+
 static char *
 find_attr(struct grub_ntfs_attr *at, unsigned char attr) {
+	const grub_size_t mft_bytes = at->mft->data->mft_size << BLK_SHR;
 	if (at->flags & AF_ALST) {
 retry:
 		while (at->attr_nxt < at->attr_end) {
@@ -107,7 +120,10 @@ retry:
 				}
 
 				new_pos = &at->emft_buf[u16at (at->emft_buf, 0x14)];
-				while ((unsigned char)*new_pos != 0xFF) {
+				while (new_pos < at->emft_buf + mft_bytes && (unsigned char)*new_pos != 0xFF) {
+					if (!attr_fits (new_pos, at->emft_buf + mft_bytes)) {
+						break;
+					}
 					if (((unsigned char)*new_pos ==
 						(unsigned char)*at->attr_cur) &&
 						(u16at (new_pos, 0xE) == u16at (at->attr_cur, 0x18))) {
@@ -124,7 +140,11 @@ retry:
 		return NULL;
 	}
 	at->attr_cur = at->attr_nxt;
-	while ((unsigned char)*at->attr_cur != 0xFF) {
+	while (at->attr_cur < at->mft->buf + mft_bytes && (unsigned char)*at->attr_cur != 0xFF) {
+		if (!attr_fits (at->attr_cur, at->mft->buf + mft_bytes)) {
+			grub_error (GRUB_ERR_BAD_FS, "attribute outside of the MFT record");
+			return NULL;
+		}
 		at->attr_nxt += u16at (at->attr_cur, 4);
 		if ((unsigned char)*at->attr_cur == AT_ATTRIBUTE_LIST) {
 			at->attr_end = at->attr_cur;
@@ -325,7 +345,7 @@ read_data(struct grub_ntfs_attr *at, char *pa, char *dest, grub_disk_addr_t ofs,
 		if (ofs + len > u32at (pa, 0x10)) {
 			return grub_error (GRUB_ERR_BAD_FS, "read out of range");
 		}
-		pa += u32at (pa, 0x14) + ofs;
+		pa += u16at (pa, 0x14) + ofs;
 		if (dest) {
 			grub_memcpy (dest, pa, len);
 		}

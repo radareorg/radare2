@@ -2900,7 +2900,7 @@ static int cmd_resize(void *data, const char *input) {
 	case '-': // "r-"
 		delta = (st64)r_num_math (core->num, input);
 		if (delta < 0 && -(st64)delta > oldsize) {
-			R_LOG_WARN ("Cannot resize below zero %lld %lld", delta, oldsize);
+			R_LOG_WARN ("Cannot resize below zero %"PFMT64d" %"PFMT64d, delta, (st64)oldsize);
 			r_core_return_code (core, 1);
 			return true;
 		}

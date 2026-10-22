@@ -710,6 +710,9 @@ static bool dsc_dig_one_slice(RIODscObject * dsc, int fd, const char * file_name
 	}
 
 	RIODscSlice * slice = RIODscSlices_emplace_back (&dsc->slices);
+	if (!slice) {
+		return false;
+	}
 	memset (slice, 0, sizeof (RIODscSlice));
 
 	slice->fd = fd;
@@ -1292,7 +1295,7 @@ static RDSCHeader * dsc_read_header(int fd, ut64 offset) {
 	ut8 tmp[16];
 
 	if (lseek (fd, offset, SEEK_SET) < 0) {
-		R_LOG_ERROR ("Cannot seek at header offset 0x%llx", offset);
+		R_LOG_ERROR ("Cannot seek at header offset 0x%"PFMT64x, offset);
 		return NULL;
 	}
 	if (read (fd, tmp, 16) != 16) {
@@ -1302,24 +1305,24 @@ static RDSCHeader * dsc_read_header(int fd, ut64 offset) {
 		return NULL;
 	}
 	if (read (fd, tmp, 4) != 4) {
-		R_LOG_ERROR ("Cannot read header size at offset 0x%llx", offset + 4);
+		R_LOG_ERROR ("Cannot read header size at offset 0x%"PFMT64x, offset + 4);
 		return NULL;
 	}
 	if (lseek (fd, offset, SEEK_SET) < 0) {
-		R_LOG_ERROR ("Cannot seek at header offset 0x%llx", offset);
+		R_LOG_ERROR ("Cannot seek at header offset 0x%"PFMT64x, offset);
 		return NULL;
 	}
 
 	ut32 header_size = r_read_le32 (tmp);
 	if (header_size > 4096 || header_size == 0) {
-		R_LOG_ERROR ("Invalid header size at offset 0x%llx", offset + 4);
+		R_LOG_ERROR ("Invalid header size at offset 0x%"PFMT64x, offset + 4);
 		return NULL;
 	}
 
 	ut8 * header_data = malloc (header_size);
 
 	if (read (fd, header_data, header_size) != header_size) {
-		R_LOG_ERROR ("Cannot read header data at offset 0x%llx", offset);
+		R_LOG_ERROR ("Cannot read header data at offset 0x%"PFMT64x, offset);
 		free (header_data);
 		return NULL;
 	}
@@ -1463,6 +1466,11 @@ static RDyldRebaseInfo *get_rebase_info(int fd, ut64 slideInfoOffset, ut64 slide
 			return NULL;
 		}
 
+		if (!slide_info.page_size) {
+			R_LOG_ERROR ("Invalid page size in slide info v5");
+			return NULL;
+		}
+
 		if (page_starts_size > 0) {
 			tmp_buf_1 = malloc (page_starts_size);
 			if (!tmp_buf_1) {
@@ -1509,6 +1517,11 @@ static RDyldRebaseInfo *get_rebase_info(int fd, ut64 slideInfoOffset, ut64 slide
 
 		if (page_starts_size + size > slideInfoSize) {
 			R_LOG_ERROR ("Size mismatch in slide info v3");
+			return NULL;
+		}
+
+		if (!slide_info.page_size) {
+			R_LOG_ERROR ("Invalid page size in slide info v3");
 			return NULL;
 		}
 
@@ -1563,6 +1576,11 @@ static RDyldRebaseInfo *get_rebase_info(int fd, ut64 slideInfoOffset, ut64 slide
 		if (slide_info.page_extras_offset > slideInfoSize ||
 				slide_info.page_extras_offset + extras_size > slideInfoSize) {
 			R_LOG_ERROR ("Size mismatch in slide info v%d page extras", slide_info_version);
+			return NULL;
+		}
+
+		if (!slide_info.page_size) {
+			R_LOG_ERROR ("Invalid page size in slide info v%d", slide_info_version);
 			return NULL;
 		}
 

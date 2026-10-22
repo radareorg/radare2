@@ -312,3 +312,15 @@ struct S { // size 0x4
 closed
 EOF
 RUN
+
+NAME=pdb S_PUB32_ST names use their length byte
+FILE=--
+CMDS=<<EOF
+idpi bins/pdb/pub32st-name-length.pdb~.text
+idpi bins/pdb/pub32st-unterminated.pdb~.text
+EOF
+EXPECT=<<EOF
+0x00001010  2  .text  foo
+0x00001010  2  .text  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+EOF
+RUN

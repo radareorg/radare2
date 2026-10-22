@@ -5361,3 +5361,14 @@ k anal/dwarf/*~name
 EOF
 EXPECT=
 RUN
+
+NAME=dwarf function name made of escape bytes is stripped in linear time
+FILE=bins/elf/dwarf-esc-function-name
+TIMEOUT=30
+CMDS=<<EOF
+?e opened
+EOF
+EXPECT=<<EOF
+opened
+EOF
+RUN

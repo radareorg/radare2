@@ -1292,7 +1292,8 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			if (tries_size > 0) {
 				int j, m = 0;
 				ut64 offorig = r_buf_tell (b);
-				for (j = 0; j < tries_size; j++) {
+				for (j = 0; j < tries_size && dex->trycatch_budget > 0; j++) {
+					dex->trycatch_budget--; // a catch-all only try adds a region too
 					ut64 offset = MC + t + j * 8;
 					if (offset >= dex->size || offset < MC) {
 						break;
@@ -1329,7 +1330,8 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 						size = -size;
 					}
 
-					for (m = 0; m < size; m++) {
+					for (m = 0; m < size && dex->trycatch_budget > 0; m++) {
+						dex->trycatch_budget--;
 						ut64 handler_type;
 						r = r_buf_uleb128 (b, &handler_type);
 						if (r <= 0) {
@@ -1351,6 +1353,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 									const char *tn = getstr (dex, dex->types[handler_type].descriptor_id);
 									if (tn) {
 										tc->type = strdup (tn);
+										dex->trycatch_budget -= R_MIN (dex->trycatch_budget, strlen (tn));
 									}
 								}
 							}
@@ -1363,6 +1366,9 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 								pf ("          (error) -> 0x%04"PFMT64x"\n", handler_addr);
 							}
 						}
+					}
+					if (!dex->trycatch_budget) {
+						break;
 					}
 					if (catch_all) {
 						ut64 handler_addr;
@@ -1666,6 +1672,8 @@ static bool dex_loadcode(RBinFile *bf) {
 	}
 
 	dex->trycatch_loaded = true;
+	// try items can share a handler list and methods can share a code item, so bound the whole expansion
+	dex->trycatch_budget = dex->size;
 	if (dex->classes) {
 		if (!names_only) {
 			ut64 amount = sizeof (int) * dex->header.method_size;
@@ -1681,6 +1689,9 @@ static bool dex_loadcode(RBinFile *bf) {
 				pf ("Class #%u            -\n", (unsigned int)i);
 			}
 			parse_class (bf, c, i, methods, &sym_count);
+		}
+		if (!dex->trycatch_budget) {
+			R_LOG_WARN ("Too many catch handlers, ignoring the remaining ones");
 		}
 	}
 	if (methods) {
