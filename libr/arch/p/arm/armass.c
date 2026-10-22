@@ -6396,19 +6396,12 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				ao->o |= reg << 8;
 				reg = getreg (ao->a[2]);
 				if (reg == -1) {
-					int imm = getnum(ao->a[2]);
-					if (imm && !(imm & (imm - 1)) && imm > 255) {
-						int r;
-						for (r = 0; r != 32; r += 2) {
-							if (!(imm & ~0xff)) {
-								ao->o |= (r << 15) | (imm << 24) | 2;
-								break;
-							}
-							imm = (imm << 2) | (imm >> 30);
-						}
-					} else {
-						ao->o |= (imm << 24) | 2;
+					// an 8 bit value rotated right by an even amount, like mov
+					int immed = getimmed8 (ao->a[2]);
+					if (err) {
+						return 0;
 					}
+					ao->o |= 2 | (immed & 0xff) << 24 | (immed >> 8) << 16;
 				} else {
 					ao->o |= reg << 24;
 				}
