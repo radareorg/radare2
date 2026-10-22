@@ -260,6 +260,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=radiff2 disassembly with eval has no leading blank lines
+FILE=-
+CMDS=!radiff2 -e bin.relocs.apply=true -qD -a x86 -b 64 hex://90 hex://c3
+EXPECT=<<EOF
+--- 0x00000000  90
+- 0x00000000  nop
++++ 0x00000000  c3
++ 0x00000000  ret
+EOF
+RUN
+
 NAME=radiff2 disassembly merges fragments of one instruction
 FILE=-
 CMDS=<<EOF

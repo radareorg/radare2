@@ -105,7 +105,7 @@ static RCore *opencore(RadiffOptions *ro, const char *f) {
 	r_config_set_b (c->config, "scr.interactive", false);
 	r_list_foreach (ro->evals, iter, e) {
 		char *res = r_config_eval (c->config, e, false, NULL);
-		r_cons_println (c->cons, res);
+		r_cons_print (c->cons, res);
 		free (res);
 	}
 	if (ro->arch) {
