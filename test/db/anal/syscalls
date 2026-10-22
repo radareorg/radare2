@@ -202,3 +202,19 @@ cc.o32syscall.error=a3
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=i386 old mmap takes an argument-structure pointer
+FILE=-
+CMDS=<<EOF
+-a x86
+-b 32
+-e asm.os=linux
+asj 90
+asj 192
+EOF
+EXPECT=<<EOF
+[{"name":"mmap","swi":128,"num":90,"args":1,"sargs":"p args"}]
+[{"name":"mmap2","swi":128,"num":192,"args":6,"sargs":"xixxii addr len prot flags fd pgoff"}]
+EOF
+EXPECT_ERR=
+RUN
