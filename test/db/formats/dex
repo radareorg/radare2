@@ -2055,3 +2055,24 @@ EXPECT=<<EOF
 0x00000028 0x00000028 0x12345678 dex_endian
 EOF
 RUN
+
+NAME=DEX try items with their own catch handler list
+FILE=bins/dex/trycatch-own-lists.dex
+CMDS=<<EOF
+iw~?
+EOF
+EXPECT=<<EOF
+400
+EOF
+RUN
+
+NAME=DEX try items sharing one catch handler list are bounded
+FILE=bins/dex/trycatch-shared-list.dex
+CMDS=<<EOF
+e log.quiet=true
+iw~?
+EOF
+EXPECT=<<EOF
+550
+EOF
+RUN

@@ -149,6 +149,7 @@ typedef struct r_bin_dex_obj_t {
 	RVecRBinClass classes_vec;
 	RVecRBinTrycatch trycatch;
 	bool trycatch_loaded;
+	ut64 trycatch_budget; // try items, catch handlers and type name bytes dex_loadcode can still expand
 	RList *lines_list;
 	ut64 code_from;
 	ut64 code_to;
