@@ -656,6 +656,7 @@ static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeS
 	if (*buf == '?') {
 		size_t res = get_operator_code (sd, buf, names_l, memorize);
 		if (!res) {
+			r_list_free (names_l);
 			return 0;
 		}
 		memorize = true;
