@@ -911,7 +911,8 @@ static int process_1byte_op(RArchSession *a, ut8 *data, const Opcode *op, int op
 	int ebp_reg = 0;
 
 	const int bits = a->config->bits;
-	for (int i = 0; i < 2; i++) {
+	int i;
+	for (i = 0; i < 2; i++) {
 		const Operand *mem = &op->operands[i];
 		const Operand *reg = &op->operands[1 - i];
 		if (mem->type & OT_MEMORY && !(mem->type & OT_REGTYPE & OT_SEGMENTREG)
