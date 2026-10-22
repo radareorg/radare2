@@ -1,0 +1,18 @@
+d "mw A, C" 0802
+d "mw A, 0x02" 0002
+d "lw A, C" 1802
+d "sw C, B" 2a01
+d "sw 0x0102, A" 200102
+d "push C" 3a
+d "push 0x05" 3005
+d "pop C" 4a
+d "lda 0x102" 500102
+d "jnz C" 6a
+d "jnz 0x05" 6005
+d "inb A, B" 7801
+d "add A, H" 9805
+d "sbb A, B" f801
+d "mw A, ?" 0806
+d "mw A, ?" 08ff
+d "mw ?, A" 0e00
+d "pop ?" 4e
