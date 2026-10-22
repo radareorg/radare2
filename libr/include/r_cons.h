@@ -600,6 +600,7 @@ typedef struct r_cons_t {
 	HANDLE hStderr;
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 #endif
+	struct r_cons_t *output_cons; // borrowed destination for flushed output
 } RCons;
 
 #define R_CONS_KEY_F1 0xf1

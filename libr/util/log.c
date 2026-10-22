@@ -301,7 +301,7 @@ R_API void r_log_add_callback(RLogCallback cb, void *user) {
 	RVecRLogCallbackUser_push_back (rlog->cbs, &cbu);
 }
 
-R_API void r_log_del_callback(RLogCallback cb) {
+static void log_del_callback(RLogCallback cb, void *user, bool match_user) {
 	if (r_log_init () && rlog->cbs) {
 		if (rlog->iterating) {
 			R_LOG_ERROR ("cannot delete log callback while iterating");
@@ -310,13 +310,21 @@ R_API void r_log_del_callback(RLogCallback cb) {
 		size_t i = 0;
 		RLogCallbackUser *p;
 		R_VEC_FOREACH (rlog->cbs, p) {
-			if (cb == p->cb) {
+			if (cb == p->cb && (!match_user || user == p->user)) {
 				RVecRLogCallbackUser_remove (rlog->cbs, i);
 				return;
 			}
 			i++;
 		}
 	}
+}
+
+R_API void r_log_del_callback(RLogCallback cb) {
+	log_del_callback (cb, NULL, false);
+}
+
+R_API void r_log_del_callback_user(RLogCallback cb, void *user) {
+	log_del_callback (cb, user, true);
 }
 
 R_API void r_log(const char *funcname, const char *filename, ut32 lineno, RLogLevel level, const char *origin, const char *fmtstr, ...) {

@@ -245,7 +245,7 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=rasm2 REPL keeps the passed console environment
+NAME=rasm2 REPL restores the caller console environment
 FILE=-
 ARGS=-NN
 CMDS=<<EOF
@@ -261,9 +261,9 @@ env~R2CONS=?
 EOF
 EXPECT=<<EOF
 90
-0
 1
-0
+1
+1
 1
 after
 EOF
@@ -916,4 +916,191 @@ caller-core
 after
 EOF
 EXPECT_ERR=
+RUN
+
+NAME=radare2 mains use independent cores without PATH
+FILE=malloc://8
+ARGS=-NN
+CMDS=<<EOF_CMDS
+env PATH=
+wx aa
+s 3
+radare2 -NNq -c "wx 112233;p8 3" -
+r2 -NNq -c "p8 3" -
+s
+p8 1 @ 0
+?e after
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+112233
+000000
+0x3
+aa
+after
+EOF_EXPECT
+EXPECT_ERR=
+RUN
+
+NAME=radare2 REPL help and version use console output
+FILE=-
+ARGS=-NN
+CMDS=<<EOF_CMDS
+env PATH=
+radare2~Usage?
+r2 -h~Usage?
+radare2 -hh~R2_USER_PLUGINS?
+radare2 -jv~{name}
+r2 -qv~?
+radare2 -H VERSION_MAJOR >$major
+cat $major
+r2 -V~r_anal?
+?e after
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+1
+1
+1
+radare2
+1
+6
+1
+after
+EOF_EXPECT
+EXPECT_ERR=
+RUN
+
+NAME=radare2 REPL captures nested filters and raw bytes
+FILE=-
+ARGS=-NN
+CMDS=<<EOF_CMDS
+radare2 -NNq -c "?e hidden~visible" -c "?e visible" - >$nested
+?e captured
+cat $nested
+r2 -NNq -c "wx 410042;pr 3" - >$raw
+wff $raw
+p8 3
+r2 -NNq -c "rasm2 -a x86 nop;radare2 -h~Usage?" -
+?e after
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+captured
+visible
+410042
+90
+1
+after
+EOF_EXPECT
+EXPECT_ERR=
+RUN
+
+NAME=radare2 REPL quick and forced quits leave the caller alive
+FILE=-
+ARGS=-NN
+CMDS=<<EOF_CMDS
+r2 -NNQ -c "?e quick" -
+radare2 -NNq -c "q!!" -
+?e forced
+r2 -NNq -c "q!!!" -
+?e leak
+radare2 -NNLQ -c "?e listed" -
+r2 -NNq -c "q 7" -
+?vi $?
+?e after
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+quick
+forced
+leak
+listed
+7
+after
+EOF_EXPECT
+EXPECT_ERR=
+RUN
+
+NAME=radare2 REPL restores stderr on success and failure
+FILE=-
+ARGS=-NN
+CMDS=<<EOF_CMDS
+r2 -NN2q -c "invalid" -
+invalid
+radare2 -NN2q /does/not/exist/r2-internal
+invalid
+r2 -NN1q -c "?e redirected" -
+invalid
+?e after
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+redirected
+after
+EOF_EXPECT
+EXPECT_ERR=<<EOF_ERR
+ERROR: Invalid `n` subcommand, try `i?`
+ERROR: Invalid `n` subcommand, try `i?`
+ERROR: Invalid `n` subcommand, try `i?`
+EOF_ERR
+RUN
+
+NAME=radare2 REPL restores startup environment and log settings
+FILE=-
+ARGS=-NN
+CMDS=<<EOF_CMDS
+env R2_NOPLUGINS=0
+e log.level=0
+radare2 -NNq -c "?e inner" -
+env R2_NOPLUGINS
+invalid
+r2 -NNq -c "?e second" -
+invalid
+rasm2 -a x86 nop
+?e after
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+inner
+0
+second
+90
+after
+EOF_EXPECT
+EXPECT_ERR=
+RUN
+
+NAME=radare2 REPL restores caller directory
+FILE=-
+ARGS=-NN
+CMDS=<<EOF_CMDS
+radare2 -NNq -c "?e inner" ..
+cat scripts/palette.r2~ec comment?
+?e after
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+inner
+1
+after
+EOF_EXPECT
+EXPECT_ERR=
+RUN
+
+NAME=radare2 REPL cannot sandbox the caller process
+FILE=-
+ARGS=-NN
+CMDS=<<EOF_CMDS
+radare2 -NNSq -c "?e unreachable" -
+?vi $?
+e cfg.sandbox
+r2 -NNq -c "e cfg.sandbox=true;e cfg.sandbox" -
+e cfg.sandbox
+?e after
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+1
+false
+false
+false
+after
+EOF_EXPECT
+EXPECT_ERR=<<EOF_ERR
+ERROR: Sandbox requires a standalone radare2 process
+ERROR: Sandbox requires a standalone radare2 process
+EOF_ERR
 RUN
