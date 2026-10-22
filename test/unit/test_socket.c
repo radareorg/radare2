@@ -3,8 +3,32 @@
 #include "minunit.h"
 
 #if R2_NETWORK && R2__UNIX__ && !__wasi__
+#include <errno.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
+static bool test_r_socket_ready(void) {
+	int fds[2];
+	mu_assert_eq (socketpair (AF_UNIX, SOCK_STREAM, 0, fds), 0, "create socket pair");
+	RSocket socket = { .fd = fds[0] };
+	mu_assert_eq (r_socket_ready (&socket, 0, 0), 0, "idle socket is not ready");
+	mu_assert_eq (write (fds[1], "A", 1), 1, "write input byte");
+	mu_assert_eq (r_socket_ready (&socket, 0, 0), 1, "socket with data is ready");
+	ut8 byte = 0;
+	mu_assert_eq (r_socket_read (&socket, &byte, 1), 1, "read input byte");
+	mu_assert_eq (byte, 'A', "read expected byte");
+	mu_assert_eq (r_socket_ready (&socket, 0, 0), 0, "drained socket is not ready");
+	close (fds[1]);
+	mu_assert_eq (r_socket_ready (&socket, 0, 0), 1, "socket at EOF is ready");
+	mu_assert_eq (r_socket_read (&socket, &byte, 1), 0, "read EOF");
+	r_socket_close_fd (&socket);
+	errno = 0;
+	int ready = r_socket_ready (&socket, 0, 0);
+	int error = errno;
+	mu_assert_eq (ready, -1, "closed descriptor is an error");
+	mu_assert_eq (error, EBADF, "closed descriptor reports EBADF");
+	mu_end;
+}
 
 static bool test_r_socket_gets_buffer_limit(void) {
 	int fds[2];
@@ -79,6 +103,7 @@ static int all_tests(void) {
 	mu_run_test (test_network_disabled);
 #endif
 #if R2_NETWORK && R2__UNIX__ && !__wasi__
+	mu_run_test (test_r_socket_ready);
 	mu_run_test (test_r_socket_gets_buffer_limit);
 #endif
 	return tests_passed != tests_run;

@@ -11,10 +11,13 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_socket);
 
+#if HAVE_POLL
+#include <poll.h>
+#endif
+
 #if R2__UNIX__
 #include <netinet/in.h>
 #include <sys/un.h>
-#include <poll.h>
 #include <arpa/inet.h>
 #ifndef __wasi__
 #include <netdb.h>

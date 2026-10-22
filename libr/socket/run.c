@@ -885,6 +885,15 @@ static bool redirect_socket_to_pty(RSocket *sock) {
 		r_sys_perror ("opening pty");
 		return false;
 	}
+#if !HAVE_POLL && R2__UNIX__
+	if (fdm < 0 || fdm >= FD_SETSIZE || sock->fd < 0 || sock->fd >= FD_SETSIZE) {
+		close (fdm);
+		close (fds);
+		errno = fdm < 0 || sock->fd < 0? EBADF: EINVAL;
+		r_sys_perror ("select error");
+		return false;
+	}
+#endif
 
 	pid_t child_pid = r_sys_fork ();
 
@@ -905,26 +914,44 @@ static bool redirect_socket_to_pty(RSocket *sock) {
 
 		char *buff = NULL;
 		int sockfd = sock->fd;
+#if HAVE_POLL
+		// poll() instead of select(): descriptors above FD_SETSIZE do not fit in an fd_set
+		struct pollfd pfds[2] = {
+			{ .fd = fdm, .events = POLLIN },
+			{ .fd = sockfd, .events = POLLIN },
+		};
+#else
 		int max_fd = fdm > sockfd? fdm: sockfd;
+#endif
 
 		while (true) {
+#if HAVE_POLL
+			if (poll (pfds, 2, -1) == -1) {
+				r_sys_perror ("poll error");
+				break;
+			}
+			bool pty_ready = pfds[0].revents;
+			bool socket_ready = pfds[1].revents;
+#else
 			fd_set readfds;
 			FD_ZERO (&readfds);
 			FD_SET (fdm, &readfds);
 			FD_SET (sockfd, &readfds);
-
 			if (select (max_fd + 1, &readfds, NULL, NULL, NULL) == -1) {
 				r_sys_perror ("select error");
 				break;
 			}
+			bool pty_ready = FD_ISSET (fdm, &readfds);
+			bool socket_ready = FD_ISSET (sockfd, &readfds);
+#endif
 
-			if (FD_ISSET (fdm, &readfds)) {
+			if (pty_ready) {
 				if (fd_forward (fdm, sockfd, &buff) != 0) {
 					break;
 				}
 			}
 
-			if (FD_ISSET (sockfd, &readfds)) {
+			if (socket_ready) {
 				if (fd_forward (sockfd, fdm, &buff) != 0) {
 					break;
 				}
