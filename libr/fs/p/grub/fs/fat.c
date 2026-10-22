@@ -142,6 +142,10 @@ struct grub_fat_data {
 	grub_uint32_t file_cluster;
 	grub_uint32_t cur_cluster_num;
 	grub_uint32_t cur_cluster;
+	/* Cycle detection for the cluster chain (Brent): a cluster already
+	walked and the chain position at which the next one is remembered.  */
+	grub_uint32_t loop_cluster;
+	grub_uint32_t loop_cluster_num;
 
 	grub_uint32_t uuid;
 };
@@ -365,6 +369,8 @@ grub_fat_read_data(grub_disk_t disk, struct grub_fat_data *data, void(*read_hook
 	if (logical_cluster < data->cur_cluster_num) {
 		data->cur_cluster_num = 0;
 		data->cur_cluster = data->file_cluster;
+		data->loop_cluster = data->file_cluster;
+		data->loop_cluster_num = 1;
 	}
 
 	while (len) {
@@ -417,8 +423,18 @@ grub_fat_read_data(grub_disk_t disk, struct grub_fat_data *data, void(*read_hook
 				return -1;
 			}
 
+			/* A chain that comes back to a cluster it already walked never ends.  */
+			if (next_cluster == data->loop_cluster) {
+				grub_error (GRUB_ERR_BAD_FS, "loop in cluster chain at %u", next_cluster);
+				return -1;
+			}
+
 			data->cur_cluster = next_cluster;
 			data->cur_cluster_num++;
+			if (data->cur_cluster_num == data->loop_cluster_num) {
+				data->loop_cluster = next_cluster;
+				data->loop_cluster_num <<= 1;
+			}
 		}
 
 		/* Read the data here.  */

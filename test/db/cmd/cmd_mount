@@ -302,6 +302,32 @@ EOF2
 EXPECT_ERR=
 RUN
 
+NAME=mount directory listing stops on a looping FAT cluster chain
+FILE=bins/fs/fat.img
+TIMEOUT=10
+CMDS=<<EOF2
+e log.level=0
+e io.cache=true
+# Fill the rest of the ETC directory cluster with orphan long name entries
+# so that no free entry terminates the listing.
+b 0x780
+wX 01000000000000000000000f0000000000000000000000000000000000000000 @ 0x4e80
+# Point the FAT12 entry of the ETC cluster (3) back at itself.
+wx 3000 @ 0x204
+md /root/etc
+md /root/bin
+EOF2
+EXPECT=<<EOF2
+d .
+d ..
+f services
+d .
+d ..
+f ls
+EOF2
+EXPECT_ERR=
+RUN
+
 NAME=mount reads use cached filesystem content
 FILE=-
 CMDS=<<EOF2
