@@ -67,7 +67,6 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 #define MEMDISP(x) insn->detail->arm.operands[x].mem.disp
 #define MEMDISP64(x) (ut64)insn->detail->arm64.operands[x].mem.disp
 #define ISIMM(x) (insn->detail->arm.operands[x].type == ARM_OP_IMM)
-#define ISIMM64(x) ((arm64_op_type)insn->detail->arm64.operands[x].type & (ARM64_OP_IMM | ARM64_OP_CIMM | ARM64_OP_FP))
 #define ISREG(x) (insn->detail->arm.operands[x].type == ARM_OP_REG)
 #define ISREG64(x) ((arm64_op_type)insn->detail->arm64.operands[x].type == ARM64_OP_REG)
 #define ISMEM(x) (insn->detail->arm.operands[x].type == ARM_OP_MEM)
@@ -91,6 +90,7 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 		SHIFTTYPE(x) == ARM_SFT_RRX_REG)
 #define ISWRITEBACK32() (insn->detail->arm.writeback == true)
 #define ISWRITEBACK64() (insn->detail->arm64.writeback == true)
+#define ISIMM64(x) ((arm64_op_type)insn->detail->arm64.operands[x].type & (ARM64_OP_IMM | ARM64_OP_CIMM | ARM64_OP_FP))
 #define PSTATE() op->pstate
 #define SYS() (ut64)op->sys
 #define PREFETCH() op->prefetch
@@ -103,6 +103,10 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 		SHIFTTYPE(x) == ARM_SFT_LSR_REG || SHIFTTYPE(x) == ARM_SFT_ROR_REG)
 #define ISWRITEBACK32() (insn->detail->writeback == true)
 #define ISWRITEBACK64() ISWRITEBACK32 ()
+// the v6 operand enum is sparse, so its types cannot be tested with &
+#define ISIMM64(x) ((arm64_op_type)insn->detail->arm64.operands[x].type == ARM64_OP_IMM || \
+	(arm64_op_type)insn->detail->arm64.operands[x].type == ARM64_OP_CIMM || \
+	(arm64_op_type)insn->detail->arm64.operands[x].type == ARM64_OP_FP)
 #define PSTATE() op->sysop.alias.pstateimm0_15
 #define SYS() (ut64)op->sysop.reg.tlbi
 #define PREFETCH() op->sysop.alias.prfm
