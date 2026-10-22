@@ -1116,3 +1116,14 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=mach0 iH lists build version tools only up to the end of the file
+FILE=bins/mach0/build-version-huge-cmdsize
+TIMEOUT=10
+CMDS=<<EOF
+iH~?
+EOF
+EXPECT=<<EOF
+1503
+EOF
+RUN

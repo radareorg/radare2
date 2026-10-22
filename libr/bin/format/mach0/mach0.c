@@ -5235,10 +5235,12 @@ char *MACH0_(mach_headerfields)(RBinFile *bf, int mode) {
 		int lcSize = word;
 		word &= 0xFFFFFF;
 		p ("0x%08" PFMT64x "  cmdsize     %d\n", pvaddr - 4, word);
-		if (lcSize < 1) {
+		if (lcSize < 8) {
 			R_LOG_WARN ("Invalid size for a load command");
 			break;
 		}
+		// the entries of a command are listed up to the end of the buffer at most
+		lcSize = (int)R_MIN ((ut64)lcSize, length - (addr - 8));
 		switch (lcType) {
 		case LC_BUILD_VERSION:
 			{
