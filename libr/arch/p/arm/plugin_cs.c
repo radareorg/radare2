@@ -1611,6 +1611,79 @@ static const char *arm64_esil_cond_alt(int id) {
 // LD1/ST1/LD2-4/ST2-4 single and multiple structures and LD1R/LD2R-4R:
 // contiguous per-element accesses in the ISA loop order (for r { for e }
 // for the LD1/ST1 family, for e { for r } when interleaving), plus
+// post-indexed structure forms walk the base by the architecture-fixed access
+// footprint; Capstone omits that immediate for most of them, so derive it.
+// Returns the memory operand index, or -1 when the layout is unknown or the
+// delta is only known at runtime (register walk)
+static int vec_ldst_wb(cs_insn *insn, st64 *off) {
+	if (!ISWRITEBACK64 ()) {
+		return -1;
+	}
+	const int argc = OPCOUNT64 ();
+	int memi = argc - 1;
+	if (!ISMEM64 (memi)) {
+		memi--; // LD1 keeps the post-index offset in a separate operand
+	}
+	if (memi < 1 || !ISMEM64 (memi)) {
+		return -1;
+	}
+	int r;
+	for (r = 0; r < memi; r++) {
+		if (!ISREG64 (r) || !is_vector_op (&INSOP64 (r))) {
+			return -1;
+		}
+	}
+	if (memi + 1 < argc && ISIMM64 (memi + 1)) {
+		*off = (st64)IMM64 (memi + 1);
+		return memi;
+	}
+	if (memi + 1 < argc && ISREG64 (memi + 1)) {
+		return -1;
+	}
+	bool indexed = false;
+	for (r = 0; r < memi; r++) {
+		if (INSOP64 (r).vector_index != -1) {
+			indexed = true;
+			break;
+		}
+	}
+#if CS_API_MAJOR == 6
+	// v6 flags lane-indexed structures as writeback even without a post operand
+	if (indexed && MEMDISP64 (memi) == 0) {
+		return -1;
+	}
+#endif
+	bool replicate = false;
+	switch (insn->id) {
+	case ARM64_INS_LD1R:
+	case ARM64_INS_LD2R:
+	case ARM64_INS_LD3R:
+	case ARM64_INS_LD4R:
+		replicate = true;
+		break;
+	default:
+		break;
+	}
+	int ebytes = vector_size (&INSOP64 (0)) / 8;
+	int lanes = indexed? 1: vas_count (INSOP64 (0).vas);
+	if (memi > 4 || ebytes < 1 || ebytes > 8 || lanes < 1) {
+		return -1;
+	}
+	*off = (indexed || replicate)? (st64)memi * ebytes: (st64)memi * lanes * ebytes;
+	return memi;
+}
+
+// post-indexed structure accesses on SP move the stack by the writeback
+// delta, like the pre/post-indexed pair forms
+static void arm64_vec_ldst_stack(RAnalOp *op, cs_insn *insn) {
+	st64 off;
+	int memi = vec_ldst_wb (insn, &off);
+	if (memi >= 0 && (arm64_reg)REGBASE64 (memi) == ARM64_REG_SP) {
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = -off;
+	}
+}
+
 // post-index writeback
 static void arm64_esil_vec_ldst(RAnalOp *op, csh *handle, cs_insn *insn, bool big_endian) {
 	const ut32 id = insn->id;
@@ -1773,17 +1846,12 @@ static void arm64_esil_vec_ldst(RAnalOp *op, csh *handle, cs_insn *insn, bool bi
 	wb = wb && (!indexed || OPCOUNT64 () > memi + 1 || MEMDISP64 (memi) != 0);
 #endif
 	if (wb) {
-		if (memi + 1 < argc && ISIMM64 (memi + 1)) {
-			off = (ut64)IMM64 (memi + 1);
-		} else if (memi + 1 < argc && ISREG64 (memi + 1)) {
+		st64 wboff;
+		if (memi + 1 < argc && ISREG64 (memi + 1)) {
 			r_strbuf_appendf (&op->esil, ",%s,%s,+,%s,=", REG64 (memi + 1), base, base);
-			return;
-		} else {
-			// Capstone omits the fixed post-index immediate of these forms
-			off = (indexed || replicate)? (ut64)nregs * ebytes:
-				(ut64)nregs * lanes * ebytes;
+		} else if (vec_ldst_wb (insn, &wboff) >= 0) {
+			r_strbuf_appendf (&op->esil, ",0x%" PFMT64x ",%s,+,%s,=", (ut64)wboff, base, base);
 		}
-		r_strbuf_appendf (&op->esil, ",0x%" PFMT64x ",%s,+,%s,=", off, base, base);
 	}
 }
 
@@ -4515,6 +4583,26 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -(st64)IMM64 (2);
 		}
+		break;
+	case ARM64_INS_ST1:
+	case ARM64_INS_ST2:
+	case ARM64_INS_ST3:
+	case ARM64_INS_ST4:
+		// the fixed post-index offset is derived by vec_ldst_wb when
+		// Capstone leaves the operand out
+		op->type = R_ANAL_OP_TYPE_STORE;
+		arm64_vec_ldst_stack (op, insn);
+		break;
+	case ARM64_INS_LD1:
+	case ARM64_INS_LD1R:
+	case ARM64_INS_LD2:
+	case ARM64_INS_LD2R:
+	case ARM64_INS_LD3:
+	case ARM64_INS_LD3R:
+	case ARM64_INS_LD4:
+	case ARM64_INS_LD4R:
+		op->type = R_ANAL_OP_TYPE_LOAD;
+		arm64_vec_ldst_stack (op, insn);
 		break;
 	case ARM64_INS_LDUR:
 	case ARM64_INS_LDURB:
