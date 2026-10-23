@@ -1015,174 +1015,138 @@ static int print_sep(RMagic *ms, int firstline) {
  *	If a continuation matches, we bump the current continuation level
  *	so that higher-level continuations are processed.
  */
-static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut32 *min_bytes, const ut8 *s, size_t nbytes, int mode) {
-	ut32 magindex = 0;
-	unsigned int cont_level = 0;
-	int need_separator = 0;
-	int returnval = 0; /* if a match is found it is set to 1*/
-	int firstline = 1; /* a flag to print X\n  X\n- X */
-	int printed_something = 0;
+static bool root_prefix_matches(const struct r_magic_root *root, const ut8 *s, size_t nbytes) {
+	return !root->prefix_len || (magic_hasbytes (nbytes, root->offset, root->prefix_len) && !memcmp (s + root->offset, root->prefix, root->prefix_len));
+}
 
-	if (__magic_file_check_mem (ms, cont_level) == -1) {
+// Returns -1 on error, 0 on mismatch, 1 on match and 2 when the data is too short
+static int mtest(RMagic *ms, const struct mlist *ml, ut32 idx, const ut8 *s, size_t nbytes, unsigned int cont_level) {
+	struct r_magic *m = &ml->magic[idx];
+	const int got = mget (ms, s, m, nbytes, cont_level);
+	if (got <= 0) {
+		return got? -1: (m->reln == '!')? 1: 2;
+	}
+	return magiccheck (ms, m);
+}
+
+static int match(RMagic *ms, const struct mlist *ml, const ut8 *s, size_t nbytes, int mode) {
+	int returnval = 0;
+	ut32 i;
+
+	if (__magic_file_check_mem (ms, 0) == -1) {
 		return -1;
 	}
-	for (magindex = 0; magindex < nmagic; magindex++) {
-		int flush;
-		struct r_magic *m = &magic[magindex];
-
-		if ((m->flag & BINTEST) != mode) {
-			/* Skip sub-tests */
-			while (magindex < nmagic - 1 && magic[magindex + 1].cont_level != 0) {
-				magindex++;
-			}
-			continue; /* Skip to next top-level test*/
-		}
-		if (min_bytes && min_bytes[magindex] > nbytes) {
-			while (magindex < nmagic - 1 && magic[magindex + 1].cont_level) {
-				magindex++;
-			}
+	ut32 rootindex;
+	for (rootindex = 0; rootindex < ml->nroots; rootindex++) {
+		const struct r_magic_root *root = &ml->roots[rootindex];
+		if (root->bintest != mode || !root_prefix_matches (root, s, nbytes)) {
 			continue;
 		}
-
+		struct r_magic *m = &ml->magic[root->start];
 		ms->offset = m->offset;
 		ms->line = m->lineno;
-
-		/* if main entry matches, print it... */
-		flush = !mget (ms, s, m, nbytes, cont_level);
-		if (flush) {
-			if (m->reln == '!') {
-				flush = 0;
-			}
-		} else {
-			int ret = magiccheck (ms, m);
-			if (ret == -1) {
-				return -1;
-			}
-			if (!ret) {
-				flush++;
-			}
+		int ret = mtest (ms, ml, root->start, s, nbytes, 0);
+		if (ret == -1) {
+			return -1;
 		}
-		if (flush) {
-			// Main test failed, so skip its continuations.
-			while (magindex < nmagic - 1 && magic[magindex + 1].cont_level) {
-				magindex++;
-			}
+		if (ret != 1) {
 			continue;
 		}
-
-		// Track whether later output needs a separator.
+		const bool firstline = r_strbuf_is_empty (&ms->o.sb);
+		bool printed_something = false;
+		bool need_separator = false;
 		if (*R_MAGIC_DESC) {
-			need_separator = 1;
-			printed_something = 1;
+			need_separator = true;
+			printed_something = true;
 			if (print_sep (ms, firstline) == -1) {
 				return -1;
 			}
 		}
-
-		if ((ms->c.li[cont_level].off = mprint (ms, m)) == -1) {
+		if ((ms->c.li[0].off = mprint (ms, m)) == -1) {
 			return -1;
 		}
-
-		/* and any continuations that match */
-		if (__magic_file_check_mem (ms, ++cont_level) == -1) {
+		unsigned int cont_level = 1;
+		if (__magic_file_check_mem (ms, cont_level) == -1) {
 			return -1;
 		}
-
-		while (++magindex < nmagic - 1 && magic[magindex].cont_level != 0) {
-			m = &magic[magindex];
-			ms->line = m->lineno; /* for messages */
-
+		for (i = root->start + 1; i < root->end; i++) {
+			m = &ml->magic[i];
+			ms->line = m->lineno;
 			if (cont_level < m->cont_level) {
 				continue;
 			}
-			if (cont_level > m->cont_level) {
-				// Drop back to the current continuation level.
-				cont_level = m->cont_level;
-			}
+			// Drop back to the level of this continuation
+			cont_level = m->cont_level;
+			struct level_info *li = &ms->c.li[cont_level];
 			ms->offset = m->offset;
 			if (m->flag & OFFADD) {
 				ms->offset += ms->c.li[cont_level - 1].off;
 			}
-
-			if (m->cond == COND_ELSE || m->cond == COND_ELIF) {
-				if (ms->c.li[cont_level].last_match == 1) {
-					continue;
-				}
-			}
-			if (min_bytes && min_bytes[magindex] > nbytes) {
+			if ((m->cond == COND_ELSE || m->cond == COND_ELIF) && li->last_match == 1) {
 				continue;
 			}
-			flush = !mget (ms, s, m, nbytes, cont_level);
-			if (flush && m->reln != '!') {
-				continue;
-			}
-
-			switch (flush? 1: magiccheck (ms, m)) {
-			case -1:
+			ret = mtest (ms, ml, i, s, nbytes, cont_level);
+			if (ret == -1) {
 				return -1;
-			case 0:
-				ms->c.li[cont_level].last_match = 0;
-				break;
-			default:
-				ms->c.li[cont_level].last_match = 1;
-				if (m->type != FILE_DEFAULT) {
-					ms->c.li[cont_level].got_match = 1;
-				} else if (ms->c.li[cont_level].got_match) {
-					ms->c.li[cont_level].got_match = 0;
-					break;
-				}
-				// Print any required separator before this message.
-				if (*R_MAGIC_DESC) {
-					printed_something = 1;
+			}
+			if (ret == 2) {
+				continue;
+			}
+			li->last_match = ret;
+			if (!ret) {
+				continue;
+			}
+			if (m->type != FILE_DEFAULT) {
+				li->got_match = 1;
+			} else if (li->got_match) {
+				li->got_match = 0;
+				continue;
+			}
+			if (*R_MAGIC_DESC) {
+				if (!printed_something) {
+					printed_something = true;
 					if (print_sep (ms, firstline) == -1) {
 						return -1;
 					}
 				}
-				/* space if previous printed */
-				if (need_separator && ((m->flag & NOSPACE) == 0) && *R_MAGIC_DESC) {
-					if (__magic_file_printf (ms, " ") == -1) {
-						return -1;
-					}
-					need_separator = 0;
-				}
-				if ((ms->c.li[cont_level].off = mprint (ms, m)) == -1) {
+				if (need_separator && !(m->flag & NOSPACE) && __magic_file_printf (ms, " ") == -1) {
 					return -1;
 				}
-				if (*R_MAGIC_DESC) {
-					need_separator = 1;
-				}
-
-				// Process any deeper continuations.
-				if (__magic_file_check_mem (ms, ++cont_level) == -1) {
-					return -1;
-				}
-				break;
+				need_separator = true;
+			}
+			if ((li->off = mprint (ms, m)) == -1) {
+				return -1;
+			}
+			// Process any deeper continuations
+			if (__magic_file_check_mem (ms, ++cont_level) == -1) {
+				return -1;
 			}
 		}
 		if (printed_something) {
-			firstline = 0;
 			returnval = 1;
-		}
-		if ((ms->flags & R_MAGIC_CONTINUE) == 0 && printed_something) {
-			return 1; /* don't keep searching */
+			if (!(ms->flags & R_MAGIC_CONTINUE)) {
+				break;
+			}
 		}
 	}
-	return returnval; /* This is hit if -k is set or there is no match */
+	return returnval;
 }
 
-/*
- * softmagic - lookup one file in parsed, in-memory copy of database
- * Passed the name and FILE * of one file to be typed.
- */
-/*ARGSUSED1*/ /* nbytes passed for regularity, maybe need later */
 int __magic_file_softmagic(RMagic *ms, const ut8 *buf, size_t nbytes, int mode) {
 	struct mlist *ml;
-	int rv;
+	int rv = 0;
 	R_VEC_FOREACH (&ms->mlist, ml) {
-		if ((rv = match (ms, ml->magic, ml->nmagic, ml->min_bytes, buf, nbytes, mode)) != 0) {
-			return rv;
+		const int ret = match (ms, ml, buf, nbytes, mode);
+		if (ret == -1) {
+			return -1;
+		}
+		if (ret) {
+			rv = 1;
+			if (!(ms->flags & R_MAGIC_CONTINUE)) {
+				break;
+			}
 		}
 	}
-	return 0;
+	return rv;
 }
 #endif
