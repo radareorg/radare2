@@ -487,10 +487,15 @@ This is manual: slide redraws do not repeat the write.
    Ctrl-R      reload the deck from disk
    R / r       next / previous color theme
    ?           show navigation help
-   q           leave slides and return to radare2
+   /           search text; n / p visit individual matches
+   q           cancel search; press again to leave slides
 ```
 
 Editing uses **cfg.editor**. Saving and returning reloads the file.
+
+Search sets **scr.highlight** and shows **[match/total]** beside the page index.
+It wraps through static slide text, including headings and fenced code.
+Live command output is excluded; indexing does not execute other slides.
 
 Plain reload preserves your current page and scroll offsets,
 subject to the new page count. Resize also redraws immediately.
