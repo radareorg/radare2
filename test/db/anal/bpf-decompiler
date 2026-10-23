@@ -31,3 +31,52 @@ esil: 4294967296,r9,=
 =A4    r5
 EOF
 RUN
+
+NAME=BPF relative calls keep signed offsets and helper IDs separate
+FILE=malloc://24
+ARGS=-a bpf -b 64
+CMDS=<<EOF
+wx 851000000200000085100000feffffff8500000001000000
+ao 3~type:,jump:,esil:
+EOF
+EXPECT=<<EOF
+type: call
+esil: 0x18,pc,=
+jump: 0x00000018
+type: call
+esil: 0x0,pc,=
+jump: 0x00000000
+type: call
+esil: 0x1,$
+EOF
+RUN
+NAME=BPF ELF relocations patch mapped instructions and import calls
+FILE=bins/bpf/solana-hello.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<CMDS
+s sym.entrypoint
+ao 5~esil:,jump:
+CMDS
+EXPECT=<<EXPECT
+esil: 134217840,r1,=
+esil: 14,r2,=
+esil: 0x8000180,pc,=
+jump: 0x08000180
+esil: 0,r0,=
+esil: 8,sp,+=,sp,[8],pc,=
+EXPECT
+RUN
+
+NAME=BPF ELF lddw relocation keeps a section addend
+FILE=bins/bpf/solana-accounts.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<CMDS
+ao 3 @ 0x8000158~esil:,jump:
+CMDS
+EXPECT=<<EXPECT
+esil: 134218137,r1,=
+esil: 10,r2,=
+esil: 0x8000300,pc,=
+jump: 0x08000300
+EXPECT
+RUN

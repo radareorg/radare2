@@ -1793,9 +1793,9 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			}
 			// Write as split 32-bit values to immediate fields (rva+4 and rva+12)
 			r_write_le32 (buf, (ut32)(V & UT32_MAX));
-			iob->overlay_write_at (iob->io, rel->rva + 4 + B, buf, 4);
+			iob->overlay_write_at (iob->io, P + 4, buf, 4);
 			r_write_le32 (buf, (ut32)(V >> 32));
-			iob->overlay_write_at (iob->io, rel->rva + 12 + B, buf, 4);
+			iob->overlay_write_at (iob->io, P + 12, buf, 4);
 			break;
 		}
 
@@ -1827,7 +1827,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 				// Apply relocation: B + addend
 				ut64 result = B + addend;
 				// Get the virtual address where this relocation should be written
-				ut64 write_vaddr = rel->rva + B;
+				ut64 write_vaddr = P;
 				// Write to both immediate fields (lddw instruction)
 				r_write_le32 (buf, (ut32)(result & UT32_MAX));
 				iob->overlay_write_at (iob->io, write_vaddr + 4, buf, 4);
@@ -1845,13 +1845,23 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 					rel->rva + B, refd_addr_32, result);
 
 				// Write full 64-bit value at rel->rva
-				ut64 write_vaddr = rel->rva + B;
+				ut64 write_vaddr = P;
 				r_write_le64 (buf, result);
 				iob->overlay_write_at (iob->io, write_vaddr, buf, 8);
 			}
 			break;
 		}
 		case R_BPF_64_32: { // 32-bit function/syscall ID for call instruction
+			if (e_machine == EM_BPF && bo->ehdr.e_type == ET_REL) {
+				if (r_buf_read_at (bo->b, rel->offset + 4, buf, 4) != 4) {
+					break;
+				}
+				st64 addend = ((st64)(st32)r_read_ble32 (buf, bo->endian) + 1) * 8;
+				st64 offset = ((st64)(S - P) + addend) / 8 - 1;
+				r_write_ble32 (buf, offset, bo->endian);
+				iob->overlay_write_at (iob->io, P + 4, buf, 4);
+				break;
+			}
 			const char *sym_name = NULL;
 			ut64 sym_addr = 0;
 			if (rel->sym) {
@@ -1877,7 +1887,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 				ut32 hash_value = murmur3_32 (sym_name, strlen (sym_name), 0);
 				R_LOG_DEBUG ("sBPF R_BPF_64_32: syscall '%s' -> hash 0x%08x", sym_name, hash_value);
 				r_write_le32 (buf, hash_value);
-				iob->overlay_write_at (iob->io, rel->rva + 4 + B, buf, 4);
+				iob->overlay_write_at (iob->io, P + 4, buf, 4);
 			} else if (sym_addr > 0) {
 				// This is a regular function call - compute PC-relative offset
 				st64 current_pc = rel->rva / 8;  // Current instruction in units
@@ -1886,11 +1896,11 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 				R_LOG_DEBUG ("sBPF R_BPF_64_32: function '%s' at 0x%"PFMT64x" -> offset %d (0x%x)",
 					sym_name, sym_addr, offset, offset);
 				r_write_le32 (buf, offset);
-				iob->overlay_write_at (iob->io, rel->rva + 4 + B, buf, 4);
+				iob->overlay_write_at (iob->io, P + 4, buf, 4);
 			} else {
 				R_LOG_WARN ("sBPF R_BPF_64_32: symbol '%s' has no address", sym_name);
 				r_write_le32 (buf, 0);
-				iob->overlay_write_at (iob->io, rel->rva + 4 + B, buf, 4);
+				iob->overlay_write_at (iob->io, P + 4, buf, 4);
 			}
 			break;
 		}
@@ -1964,7 +1974,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	// branch and lo12 relocs cannot encode a misaligned import slot address
 	if (eo->ehdr.e_type == ET_REL && (eo->ehdr.e_machine == EM_PPC64
 			|| eo->ehdr.e_machine == EM_PPC || eo->ehdr.e_machine == EM_AARCH64
-			|| eo->ehdr.e_machine == EM_ARM)) {
+			|| eo->ehdr.e_machine == EM_ARM || eo->ehdr.e_machine == EM_BPF)) {
 		n_vaddr = (n_vaddr + cdsz - 1) & ~(cdsz - 1);
 	}
 	const RVecRBinElfReloc *relocs = Elf_(load_relocs) (eo);

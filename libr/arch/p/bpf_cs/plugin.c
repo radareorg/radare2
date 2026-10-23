@@ -430,6 +430,9 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 				break;
 			case BPF_INS_CALL: ///< eBPF only
 				op->type = R_ANAL_OP_TYPE_CALL;
+				if ((op->bytes[1] >> 4) == 1) {
+					op->jump = op->addr + insn->size + (st64)(st32)IMM (0) * 8;
+				}
 				break;
 			case BPF_INS_EXIT: ///< eBPF only
 				//op->type = R_ANAL_OP_TYPE_TRAP;
@@ -724,9 +727,11 @@ static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr) 
 		CJMP ("<=");
 		break;
 	case BPF_INS_CALL:	///< eBPF only
-		// the call immediate is almost never used as an addr so its an INT
-		// maybe this will change in the future once the relocs are added?
-		esilprintf (op, "pc,sp,=[8],8,sp,-=,0x%" PFMT64x ",$", IMM (0));
+		if (op->jump != UT64_MAX) {
+			esilprintf (op, "0x%" PFMT64x ",pc,=", op->jump);
+		} else {
+			esilprintf (op, "0x%" PFMT64x ",$", IMM (0));
+		}
 		break;
 	case BPF_INS_EXIT:	///< eBPF only
 		esilprintf (op, "8,sp,+=,sp,[8],pc,=");
