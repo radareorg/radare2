@@ -1090,17 +1090,18 @@ saved.comment
 END
 RUN
 
-NAME=newprj direct opening executes commands without maps
+NAME=newprj direct opening skips embedded commands when not interactive
 FILE=malloc://256
 CMDS=<<END
 mkdir .tmp
 wx 5250524a05000000090000000700000000220000000400000016000000662073617665642e636f6d6d616e643d307831323334
 wtf .tmp/newprj-script.prj 51 2>/dev/null
-!r2 -Nq -c 'fd 0x1234' .tmp/newprj-script.prj
+!r2 -Nq -e scr.color=0 -c 'fd 0x1234~saved;?e done' .tmp/newprj-script.prj 2>&1
 rm .tmp/newprj-script.prj
 END
 EXPECT=<<END
-saved.command
+WARN: Skipping 1 commands embedded in the project, load it with scr.interactive=true to review them
+done
 END
 RUN
 
@@ -1365,4 +1366,26 @@ WARN: Invalid signal record at 0x00000019
 WARN: Invalid signal record at 0x00000021
 WARN: Truncated signal record at 0x00000029
 EOF
+RUN
+
+NAME=newprj skips command hook evals when not interactive
+FILE=malloc://256
+CMDS=<<END
+mkdir .tmp
+wx 5250524a060000002f0000000700000000636d642e65786974003f6520455849542d484f4f4b0061736d2e62797465730066616c7365001c0000000a00000002000000010000000a0000001700000021000000
+wtf .tmp/newprj-hook.prj 83 2>/dev/null
+e scr.color=0
+e asm.bytes=true
+prj load .tmp/newprj-hook.prj
+e asm.bytes
+e cmd.exit
+rm .tmp/newprj-hook.prj
+END
+EXPECT=<<END
+false
+
+END
+EXPECT_ERR=<<END
+WARN: Skipping 1 commands embedded in the project, load it with scr.interactive=true to review them
+END
 RUN

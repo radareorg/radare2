@@ -53,7 +53,11 @@ static RCmdResult prj_open(RCmdContext *ctx, const char *file) {
 		R_LOG_ERROR ("Cannot find project file: %s", file);
 		return (RCmdResult) { .status = 1 };
 	}
-	if (r_config_get_b (core->config, "scr.interactive")
+	// nothing to discard when the session is the project file being opened
+	RBinFile *bf = r_bin_cur (core->bin);
+	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
+	const bool reopen = plugin && !strcmp (plugin->meta.name, "prj") && bf->file && !strcmp (bf->file, file);
+	if (!reopen && r_config_get_b (core->config, "scr.interactive")
 			&& !r_cons_yesno (ctx->cons, 'n', "Opening a project discards the current session (files, flags, anal, config). Continue? (y/N)")) {
 		R_LOG_INFO ("Aborted");
 		return (RCmdResult) { .status = 1 };

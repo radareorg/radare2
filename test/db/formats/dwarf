@@ -131,7 +131,7 @@ k anal/types/fcnlink.00025ad0
 af @ 0x25ad0
 afs @ 0x25ad0
 iddi
-k anal/dwarf/fcn.check.typed_name
+k anal/dwarf/*~^fcn.core::unicode::printable::check::h1d9e8c426a95acd5.typed_name=
 k anal/types/fcnlink.00025ad0
 ?e --
 k anal/types/struct.ExitCode.__0
@@ -139,10 +139,10 @@ k anal/types/type.ExitCode.size
 tss ExitCode
 EOF
 EXPECT=<<EOF
-check
+core_unicode_printable_check_h1d9e8c426a95acd5
 bool sym.core__unicode__printable__check__h1d9e8c426a95acd5__clone_llvm3277309261110959063_ (u16 x, &[(u8, u8)] singletonuppers, &[u8] singletonlowers, &[u8] normal);
-check
-check
+fcn.core::unicode::printable::check::h1d9e8c426a95acd5.typed_name=core_unicode_printable_check_h1d9e8c426a95acd5
+core_unicode_printable_check_h1d9e8c426a95acd5
 --
 ExitCode,0,0
 0x8

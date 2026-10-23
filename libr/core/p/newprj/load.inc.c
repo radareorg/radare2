@@ -96,6 +96,15 @@ static void rprj_sdb_addr_load(RPrjCursor *cur, int mode, ut64 next_entry, bool 
 	}
 }
 
+// evals that make r2 run commands later, unless they keep the current value
+static bool rprj_eval_runs(RCore *core, const char *name, const char *value) {
+	if (!*value || !(r_str_startswith (name, "cmd.") || r_str_startswith (name, "key.") || !strcmp (name, "scr.pager") || !strcmp (name, "cfg.editor"))) {
+		return false;
+	}
+	RConfigNode *node = r_config_node_get (core->config, name);
+	return !node || (!r_config_node_is_bool (node) && strcmp (node->value, value));
+}
+
 static void rprj_eval_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 	RBuffer *b = cur->b;
 	RCore *core = cur->core;
@@ -135,7 +144,7 @@ static void rprj_eval_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 				r_strbuf_appendf (cur->out, "'e %s=%s\n", name, curval);
 			}
 		}
-		if (mode & R_CORE_NEWPRJ_MODE_LOAD) {
+		if ((mode & R_CORE_NEWPRJ_MODE_LOAD) && (cur->run_cmds || !rprj_eval_runs (core, name, value))) {
 			r_config_set (core->config, name, value);
 		}
 	}
@@ -1569,7 +1578,7 @@ static void rprj_cmds_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 		if (mode & R_CORE_NEWPRJ_MODE_LOG) {
 			r_strbuf_appendf (cur->out, "      '%s'\n", script);
 		}
-		if (mode & R_CORE_NEWPRJ_MODE_CMD) {
+		if ((mode & R_CORE_NEWPRJ_MODE_CMD) && cur->run_cmds) {
 			r_core_cmd0 (core, script);
 		}
 		free (script);
@@ -1577,6 +1586,65 @@ static void rprj_cmds_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 	if (mode & R_CORE_NEWPRJ_MODE_LOG) {
 		r_strbuf_append (cur->out, "    ]\n");
 	}
+}
+
+// list the Cmds strings and command hook evals of the project, escaped so they show what will run
+static int rprj_cmds_list(RPrjCursor *cur, RStrBuf *sb) {
+	RBuffer *b = cur->b;
+	const ut64 last = r_buf_size (b);
+	ut64 at = RPRJ_HEADER_SIZE;
+	R2ProjectEntry entry;
+	int count = 0;
+	while (at < last && r_buf_seek (b, at, SEEK_SET) >= 0 && rprj_entry_read (b, &entry)) {
+		if (entry.size < RPRJ_ENTRY_SIZE || entry.size > last - at) {
+			break;
+		}
+		const ut64 next_entry = at + entry.size;
+		ut32 n, k, v;
+		char *script;
+		if (entry.type == RPRJ_CMDS) {
+			while (r_buf_at (b) < next_entry && rprj_string_read (b, next_entry, &script)) {
+				char *escaped = r_str_escape_utf8 (script, false, true);
+				r_strbuf_appendf (sb, "  %s\n", escaped);
+				free (escaped);
+				free (script);
+				count++;
+			}
+		} else if (entry.type == RPRJ_EVAL && rprj_entry_has (b, next_entry, 4) && rprj_read_le32 (b, &n)) {
+			while (n-- > 0 && rprj_entry_has (b, next_entry, 8) && rprj_read_le32 (b, &k) && rprj_read_le32 (b, &v)) {
+				const char *name = rprj_st_get (cur->st, k);
+				const char *value = rprj_st_get (cur->st, v);
+				if (name && value && rprj_eval_runs (cur->core, name, value)) {
+					char *escaped = r_str_escape_utf8 (value, false, true);
+					r_strbuf_appendf (sb, "  e %s=%s\n", name, escaped);
+					free (escaped);
+					count++;
+				}
+			}
+		}
+		at = next_entry;
+	}
+	return count;
+}
+
+// embedded commands only run after the user reviews and accepts them
+static bool rprj_cmds_approve(RPrjCursor *cur) {
+	RCore *core = cur->core;
+	RStrBuf *sb = r_strbuf_new ("");
+	const int count = rprj_cmds_list (cur, sb);
+	bool run = !count;
+	if (count && r_cons_is_interactive (core->cons)) {
+		r_cons_printf (core->cons, "This project runs %d embedded command(s):\n%s", count, r_strbuf_get (sb));
+		r_cons_flush (core->cons);
+		run = r_cons_yesno (core->cons, 'n', "Run them? (y/N)");
+		if (!run) {
+			R_LOG_INFO ("Skipping %d commands embedded in the project", count);
+		}
+	} else if (count) {
+		R_LOG_WARN ("Skipping %d commands embedded in the project, load it with scr.interactive=true to review them", count);
+	}
+	r_strbuf_free (sb);
+	return run;
 }
 
 static void rprj_restore_io_maps(RPrjCursor *cur) {
@@ -1619,21 +1687,14 @@ static void rprj_load_mods(RPrjCursor *cur, ut8 **out_buf) {
 	r_unref (mods);
 }
 
-static char *r_core_newprj_load(RCore *core, const char *file, int mode) {
-	RBuffer *b = r_buf_new_from_file (file);
-	if (!b) {
-		R_LOG_ERROR ("Cannot open file");
-		return NULL;
-	}
+static char *rprj_load(RCore *core, RBuffer *b, int mode) {
 	R2ProjectHeader hdr;
 	if (!rprj_header_read (b, &hdr)) {
 		R_LOG_ERROR ("Invalid file type");
-		r_unref (b);
 		return NULL;
 	}
 	if (hdr.version < 5 || hdr.version > RPRJ_VERSION) {
 		R_LOG_ERROR ("Unsupported project version %d (this build understands version %d)", hdr.version, RPRJ_VERSION);
-		r_unref (b);
 		return NULL;
 	}
 	R2ProjectStringTable st = {0};
@@ -1663,6 +1724,7 @@ static char *r_core_newprj_load(RCore *core, const char *file, int mode) {
 		R_LOG_ERROR ("Invalid string table (RPRJ_STRS) in project file");
 		goto done;
 	}
+	cur.run_cmds = (mode & (R_CORE_NEWPRJ_MODE_LOAD | R_CORE_NEWPRJ_MODE_CMD)) && rprj_cmds_approve (&cur);
 	if (mode & R_CORE_NEWPRJ_MODE_RIO) {
 		if (core->dbg) {
 			r_bp_del_all (core->dbg->bp);
@@ -1769,10 +1831,35 @@ done:
 	free (modsbuf);
 	RVecPrjMod_fini (&cur.mods);
 	free (st.data);
-	r_unref (b);
 	if (!valid) {
 		r_strbuf_free (out);
 		return NULL;
 	}
 	return r_strbuf_drain (out);
+}
+
+typedef struct {
+	RCore *core;
+	RBuffer *b;
+	int mode;
+} RPrjLoad;
+
+static void *rprj_load_cb(void *user) {
+	RPrjLoad *load = user;
+	return rprj_load (load->core, load->b, load->mode);
+}
+
+// prj.sandbox confines binary projects like the rc.r2 scripts in project.c
+static char *r_core_newprj_load(RCore *core, const char *file, int mode) {
+	RBuffer *b = r_buf_new_from_file (file);
+	if (!b) {
+		R_LOG_ERROR ("Cannot open file");
+		return NULL;
+	}
+	RPrjLoad load = { core, b, mode };
+	char *out = r_config_get_b (core->config, "prj.sandbox")
+		? r_sandbox_run (R_SANDBOX_GRAIN_DISK | R_SANDBOX_GRAIN_FILES, rprj_load_cb, &load)
+		: rprj_load (core, b, mode);
+	r_unref (b);
+	return out;
 }
