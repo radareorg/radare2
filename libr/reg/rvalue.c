@@ -178,6 +178,14 @@ R_API ut64 r_reg_get_value_by_role(RReg *reg, RRegAlias alias) {
 	return res;
 }
 
+static bool item_is_zero(RReg *reg, RRegItem *item, RRegArena *arena) {
+	if (item->size <= 64) {
+		return !r_reg_get_value (reg, item);
+	}
+	const int off = item->offset / 8;
+	return r_mem_is_zero (arena->bytes + off, BITS2BYTES (item->offset + item->size) - off);
+}
+
 R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	R_RETURN_VAL_IF_FAIL (reg && item, false);
 	ut8 bytes[32] = {0};
@@ -198,7 +206,7 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 		R_LOG_WARN ("RRegSetOverflow %d vs %d", end, arena->size);
 		return false;
 	}
-	if (!value && !r_reg_get_value (reg, item)) {
+	if (!value && item_is_zero (reg, item, arena)) {
 		return true;
 	}
 	r_reg_arena_materialize (arena);
@@ -243,13 +251,10 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 		}
 		return true;
 	case 128:
-		// function takes an ut64 as argument, which doesnt allow us to reach 128
+	case 256:
+		// a ut64 reaches only the low qword
 		r_write_ble64 (src, value, be);
 		break;
-	case 256:
-		R_LOG_DEBUG ("TODO: 256 bit register handling not implemented");
-		// XXX 128 & 256 bit
-		return false; // (ut64)r_reg_get_longdouble (reg, item);
 	default:
 		R_LOG_WARN ("Bit size %d not supported", item->size);
 		return false;
