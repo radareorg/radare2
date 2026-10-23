@@ -10,6 +10,7 @@
 #include <r_util/r_assert.h>
 #include "../capstone.inc.c"
 #include "arm_hacks.inc.c"
+#include "arm_code_endian.h"
 #include "asm_arm_hacks.inc.c"
 #include "arm_regprofile.inc.c"
 
@@ -17,6 +18,7 @@ typedef char RStringShort[32];
 
 typedef struct plugin_data_t {
 	bool bigendian;
+	bool code_bigendian;
 	int bits;
 	char *cpu;
 	csh cs_handle;
@@ -5383,6 +5385,9 @@ static bool plugin_changed(RArchSession *as) {
 	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config) != pd->bigendian) {
 		return true;
 	}
+	if (r_arm_code_is_big_endian (as->config) != pd->code_bigendian) {
+		return true;
+	}
 	return strcmp (r_str_get (pd->cpu), r_str_get (as->config->cpu)) != 0;
 }
 
@@ -5463,6 +5468,7 @@ static bool init(RArchSession* as) {
 	PluginData *pd = as->data;
 	pd->bits = as->config->bits;
 	pd->bigendian = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
+	pd->code_bigendian = r_arm_code_is_big_endian (as->config);
 	pd->cpu = as->config->cpu? strdup (as->config->cpu): NULL;
 	pd->ht_it = ht_uu_new0 ();
 	if (!pd->ht_it) {

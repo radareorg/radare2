@@ -21,10 +21,8 @@ decoding on AArch64 it is ignored — the value is always LE.
 
 ## AArch32 (`bits` is 16 or 32)
 
-AArch32 is different: BE32 (legacy, ARMv5-) really does have big-endian
-instruction words and is driven by `cfg.bigendian`; BE8 AArch32 (ARMv6+)
-behaves like AArch64 (LE instructions, BE data) and is signalled by the
-`EF_ARM_BE8` flag in `e_flags`. The AArch32 backends currently treat
-`cfg.bigendian` as instruction-stream endian — distinguishing BE8 vs BE32
-from ELF flags is a separate, unfinished piece of work. The disabled stub at
-`libr/arch/p/arm/gnu/arm-dis.c:6837` (`#if 0`) is the starting point.
+AArch32 is different: BE32 (legacy, ARMv5-) has big-endian instruction
+words and follows `cfg.bigendian`; BE8 AArch32 (ARMv6+) has LE instructions
+and BE data. For ELF, `EF_ARM_BE8` in `e_flags` is exposed through `asm.abi`,
+and the ARM decoders use it to decode instructions as little-endian while
+leaving `cfg.bigendian` unchanged for data reads.
