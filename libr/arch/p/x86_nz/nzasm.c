@@ -2790,19 +2790,19 @@ static int op_rm_ext(int bits, ut8 *data, const Operand *rm, int ext, ut8 opcode
 
 // push, pop, call and jmp with a register or memory operand: the stack width needs no REX.W
 static int op_rm_near(int bits, ut8 *data, const Operand *rm, int ext, ut8 opcode) {
-	const ut32 near = (bits == 64)? OT_QWORD: OT_DWORD;
+	const ut32 width = (bits == 64)? OT_QWORD: OT_DWORD;
 	ut32 size = (rm->type & OT_MEMORY)? (rm->dest_size & ALL_SIZE): (rm->type & ALL_SIZE);
 	if (!size && (rm->type & OT_MEMORY)) {
-		size = near;
+		size = width;
 	}
 	if (bits == 64 && size == OT_DWORD && !(rm->type & OT_MEMORY)) {
-		size = near; // call eax has always meant call rax here
+		size = width; // call eax has always meant call rax here
 	}
-	if (size != near && size != OT_WORD) {
+	if (size != width && size != OT_WORD) {
 		return -1;
 	}
 	Operand o = *rm;
-	if (size == near) {
+	if (size == width) {
 		o.type = (o.type & ~ALL_SIZE) | OT_DWORD;
 		o.dest_size = OT_DWORD;
 	}
