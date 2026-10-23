@@ -489,7 +489,6 @@ static size_t get_operator_code(SDemangler *sd, const char *buf, RList *names_l,
 				size_t len;
 				char *str = NULL;
 				if (parse_microsoft_rtti_mangled_name (sd, str_skip_n (buf, 2), &str, &len) != eDemanglerErrOK) {
-					r_list_free (names_l);
 					return 0;
 				}
 				read_len += len + 2;
@@ -510,7 +509,6 @@ static size_t get_operator_code(SDemangler *sd, const char *buf, RList *names_l,
 					free (b);
 					free (c);
 					free (d);
-					r_list_free (names_l);
 					return 0;
 				}
 				read_len += state.amount_of_read_chars + 1;
@@ -534,13 +532,11 @@ static size_t get_operator_code(SDemangler *sd, const char *buf, RList *names_l,
 		case 'X': SET_OPERATOR_CODE ("placement_new_closure"); break;
 		case 'Y': SET_OPERATOR_CODE ("placement_delete_closure"); break;
 		default:
-			r_list_free (names_l);
 			return 0;
 		}
 		read_len++;
 		break;
 	default:
-		r_list_free (names_l);
 		return 0;
 	}
 	read_len++;
@@ -570,6 +566,7 @@ static size_t get_template(SDemangler *sd, const char *buf, SStrInfo *str_info, 
 		}
 		size_t i = get_operator_code (sd, buf, names_l, memorize);
 		if (!i) {
+			r_list_free (names_l);
 			free_type_code_str_struct (&type_code_str);
 			r_list_free (new_abbr_names);
 			return 0;

@@ -4090,3 +4090,19 @@ EXPECT_ERR=<<EOF
 ERROR: Cannot find plugin aitodo_missing_plugin
 EOF
 RUN
+
+NAME=iD msvc with unknown operator codes
+FILE=-
+CMDS=<<EOF
+"iD msvc ??_!A@@YAXXZ"
+"iD msvc ??_R1A@@"
+?e ok
+EOF
+EXPECT=<<EOF
+ok
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+EOF
+RUN
