@@ -219,6 +219,13 @@ static bool test_r_magic_regex_stays_in_buffer(void) {
 	mu_end;
 }
 
+static bool test_r_magic_escapes_unprintable_description(void) {
+	const ut8 probe[] = "ABCD";
+	const bool ok = check_magic_output ("0 string ABCD A\001B\002C\n", probe, 4, "A\\001B\\002C");
+	mu_assert_true (ok, "magic probes");
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_magic_load_text_buffer);
 	mu_run_test (test_r_magic_load_compiled_buffer);
@@ -232,6 +239,7 @@ int all_tests(void) {
 	mu_run_test (test_r_magic_load_accepts_null_magic_path);
 	mu_run_test (test_r_magic_api_version_matches_header_constant);
 	mu_run_test (test_r_magic_regex_stays_in_buffer);
+	mu_run_test (test_r_magic_escapes_unprintable_description);
 	return tests_passed != tests_run;
 }
 
