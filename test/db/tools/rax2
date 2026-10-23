@@ -837,3 +837,21 @@ ERROR: number won't fit into 64 bits
 ERROR: number won't fit into 64 bits
 EOF
 RUN
+
+NAME=rax2 -K reads only the seed bytes it allocated
+FILE=-
+CMDS=!rax2 -K 0b
+EXPECT=<<EOF
++--[0x0000000b]---+
+|                 |
+|                 |
+|                 |
+|                 |
+|      E S        |
+|       . .       |
+|        .        |
+|                 |
+|                 |
++-----------------+
+EOF
+RUN

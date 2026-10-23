@@ -456,7 +456,8 @@ dotherax:
 	if (flags->randomart) { // -K
 		int n = ((strlen (str)) >> 1) + 1;
 		char *s = NULL;
-		buf = (ut8 *)calloc (1, n);
+		// *m below reads a ut32 seed, so keep room for it on short inputs
+		buf = (ut8 *)calloc (1, R_MAX (n, (int)sizeof (ut32)));
 		if (!buf) {
 			return false;
 		}
