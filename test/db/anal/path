@@ -228,3 +228,21 @@ pdb @@= 0x000067d0 0x00004df0 0x000132d0 0x000132de 0x00004960
 \           0x00004964      f2ff2535e4..   bnd jmp qword [reloc.strrchr] ; [0x22da0:8]=0x4290
 EOF
 RUN
+
+NAME=abpe does not recurse forever through a self calling function
+FILE=-
+ARGS=-a x86 -b 64
+TIMEOUT=10
+CMDS=<<EOF
+s 0x10
+wx 55e8faffffff5dc3
+af
+abpe* 0x100
+?e done
+EOF
+EXPECT=<<EOF
+f orip=`dr?PC`
+aepc orip
+done
+EOF
+RUN

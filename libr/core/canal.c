@@ -4086,12 +4086,12 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 	return false;
 }
 
-static RList *anal_graph_to(RCore *core, ut64 addr, int depth, HtUP *avoid) {
+static RList *anal_graph_to(RCore *core, ut64 addr, int depth, HtUP *avoid, HtUP *tried) {
 	RAnalFunction *cur_fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
 	RList *list = r_list_new ();
 	HtUP *state = ht_up_new0 ();
 
-	if (!list || !state || !cur_fcn) {
+	if (!list || !state || !cur_fcn || depth < 0) {
 		r_list_free (list);
 		ht_up_free (state);
 		return NULL;
@@ -4110,11 +4110,12 @@ static RList *anal_graph_to(RCore *core, ut64 addr, int depth, HtUP *avoid) {
 		RAnalRef *xref;
 		R_VEC_FOREACH (xrefs, xref) {
 			int rt = R_ANAL_REF_TYPE_MASK (xref->type);
-			if (rt == R_ANAL_REF_TYPE_CALL) {
+			// walk every call site only once, the callgraph may contain cycles
+			if (rt == R_ANAL_REF_TYPE_CALL && ht_up_insert (tried, xref->addr, NULL)) {
 				ut64 offset = core->addr;
 				core->addr = xref->addr;
 				r_list_free (list);
-				list = anal_graph_to (core, addr, depth - 1, avoid);
+				list = anal_graph_to (core, addr, depth - 1, avoid, tried);
 				core->addr = offset;
 				if (list && r_list_length (list)) {
 					RVecAnalRef_free (xrefs);
@@ -4136,7 +4137,9 @@ R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
 	RList *path, *paths = r_list_new ();
 	HtUP *avoid = ht_up_new0 ();
 	while (n) {
-		path = anal_graph_to (core, addr, depth, avoid);
+		HtUP *tried = ht_up_new0 ();
+		path = anal_graph_to (core, addr, depth, avoid, tried);
+		ht_up_free (tried);
 		if (path) {
 			r_list_append (paths, path);
 			if (r_list_length (path) >= 2) {
