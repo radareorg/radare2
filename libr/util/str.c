@@ -3661,8 +3661,9 @@ R_API RList *r_str_split_duplist(const char *_str, const char *c, bool trim) {
 	char *str = strdup (_str);
 	char *aux = str;
 	size_t clen = strlen (c);
+	// Avoid ASan's full suffix scan in strstr for single-character delimiters.
 	while (aux) {
-		char *next = strstr (aux, c);
+		char *next = clen == 1? strchr (aux, *c): strstr (aux, c);
 		if (next) {
 			*next = '\0';
 			next += clen;
