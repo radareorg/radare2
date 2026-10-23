@@ -3130,3 +3130,64 @@ EXPECT=<<EOF
             0x00000000      20dc626e       128,DUP,0xffffffffffffffff,v2l,&,F2D,128,0xffffffffffffffff,v1l,&,F2D,F*,D2F,v0l,=,128,DUP,0xffffffffffffffff,v2h,&,F2D,128,0xffffffffffffffff,v1h,&,F2D,F*,D2F,v0h,=
 EOF
 RUN
+
+NAME=fccmp d0, d1, 0xa, mi sets nzcv or compares (arm.v35)
+FILE=malloc://0x200
+REQUIRE=arm.v35
+CMDS=<<EOF
+e asm.arch=arm.v35
+e asm.bits=64
+wx 0a44611e
+ar pstate=0
+aes
+arcq
+ar pc=0
+ar pstate=0x80000000
+ar d1=0x3ff0000000000000
+aes
+arcq
+EOF
+EXPECT=<<EOF
+s:1 z:0 c:1 o:0 p:0
+s:1 z:0 c:0 o:0 p:0
+EOF
+RUN
+
+NAME=ccmp x2, 1, 0xa, eq sets nzcv or compares (arm.v35)
+FILE=malloc://0x200
+REQUIRE=arm.v35
+CMDS=<<EOF
+e asm.arch=arm.v35
+e asm.bits=64
+wx 4a0841fa
+ar pstate=0
+ar x2=1
+aes
+arcq
+ar pc=0
+ar pstate=0x40000000
+aes
+arcq
+EOF
+EXPECT=<<EOF
+s:1 z:0 c:1 o:0 p:0
+s:0 z:1 c:1 o:0 p:0
+EOF
+RUN
+
+NAME=ccmn x2, 1, 0xa, eq with eq false sets nzcv (arm.v35)
+FILE=malloc://0x200
+REQUIRE=arm.v35
+CMDS=<<EOF
+e asm.arch=arm.v35
+e asm.bits=64
+wx 4a0841ba
+ar pstate=0
+ar x2=1
+aes
+arcq
+EOF
+EXPECT=<<EOF
+s:1 z:0 c:1 o:0 p:0
+EOF
+RUN
