@@ -697,10 +697,10 @@ static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr) 
 		CJMP ("==,$z");
 		break;
 	case BPF_INS_JGT:
-		CJMP ("==,63,$c,$z,|,!");
+		CJMP ("==,64,$b,$z,|,!");
 		break;
 	case BPF_INS_JGE:
-		CJMP ("==,63,$c,!");
+		CJMP ("==,64,$b,!");
 		break;
 	case BPF_INS_JSET:
 		CJMP ("&");
@@ -715,13 +715,13 @@ static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr) 
 		CJMP (">=");
 		break;
 	case BPF_INS_JLT:	///< eBPF only
-		CJMP ("==,63,$c");
+		CJMP ("==,64,$b");
 		break;
 	case BPF_INS_JSLT:	///< eBPF only
 		CJMP ("<");
 		break;
 	case BPF_INS_JLE:	///< eBPF only
-		CJMP ("==,63,$c,$z,|");
+		CJMP ("==,64,$b,$z,|");
 		break;
 	case BPF_INS_JSLE:	///< eBPF only
 		CJMP ("<=");
