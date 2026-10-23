@@ -953,49 +953,34 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 	}
 
 	v = __magic_file_signextend (ms, m, v);
+	const bool is_unsigned = m->flag & UNSIGNED;
 	switch (m->reln) {
 	case 'x':
-		magic_debug (ms, "%" PFMT64u " == *any* = 1", (ut64)v);
 		matched = 1;
 		break;
 	case '!':
 		matched = v != l;
-		magic_debug (ms, "%" PFMT64u " != %" PFMT64u " = %d", (ut64)v, (ut64)l, matched);
 		break;
 	case '=':
 		matched = v == l;
-		magic_debug (ms, "%" PFMT64u " == %" PFMT64u " = %d", (ut64)v, (ut64)l, matched);
 		break;
 	case '>':
-		if (m->flag & UNSIGNED) {
-			matched = v > l;
-			magic_debug (ms, "%" PFMT64u " > %" PFMT64u " = %d", (ut64)v, (ut64)l, matched);
-		} else {
-			matched = (ut64)v > (ut64)l;
-			magic_debug (ms, "%" PFMT64u " > %" PFMT64u " = %d", (st64)v, (st64)l, matched);
-		}
+		matched = is_unsigned? v > l: (st64)v > (st64)l;
 		break;
 	case '<':
-		if (m->flag & UNSIGNED) {
-			matched = v < l;
-			magic_debug (ms, "%" PFMT64u " < %" PFMT64u " = %d", (ut64)v, (ut64)l, matched);
-		} else {
-			matched = (ut64)v < (ut64)l;
-			magic_debug (ms, "%" PFMT64d " < %" PFMT64d " = %d", (st64)v, (st64)l, matched);
-		}
+		matched = is_unsigned? v < l: (st64)v < (st64)l;
 		break;
 	case '&':
 		matched = (v & l) == l;
-		magic_debug (ms, "((%" PFMT64x " & %" PFMT64x ") == %" PFMT64x ") = %d", (ut64)v, (ut64)l, (ut64)l, matched);
 		break;
 	case '^':
 		matched = (v & l) != l;
-		magic_debug (ms, "((%" PFMT64x " & %" PFMT64x ") != %" PFMT64x ") = %d", (ut64)v, (ut64)l, (ut64)l, matched);
 		break;
 	default:
 		__magic_file_magerror (ms, "cannot happen: invalid relation `%c'", m->reln);
 		return -1;
 	}
+	magic_debug (ms, "0x%" PFMT64x " %c 0x%" PFMT64x " = %d", v, m->reln, l, matched);
 	return matched;
 }
 
