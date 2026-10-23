@@ -651,6 +651,10 @@ static bool grep_token_selected(RConsGrep *grep, int col, int cols) {
 
 static void colorcode(RCons *cons) {
 	char *res = r_str_ndup (cons->context->buffer, cons->context->buffer_len);
+	if (!res) {
+		return;
+	}
+	r_str_ansi_strip (res);
 	RConsCodeColors codepal = r_cons_codecolors (cons);
 	char *cres = r_print_code_tocolor (res, &codepal);
 	free (res);
