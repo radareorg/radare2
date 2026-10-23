@@ -109,6 +109,37 @@ static void magic_root_prefix(struct r_magic_root *root, const struct r_magic *m
 	root->offset = m->offset;
 }
 
+static ut32 magic_root_bucket(const struct r_magic_root *root) {
+	return (root->prefix_len && !root->offset)? root->prefix[0]: 256;
+}
+
+// Stable sort of the roots by bucket, so each bucket keeps the database order
+static bool magic_bucket_roots(RMagic *ms, struct mlist *ml) {
+	if (!ml->nroots) {
+		return true;
+	}
+	struct r_magic_root *sorted = R_NEWS (struct r_magic_root, ml->nroots);
+	ut32 i, pos[257] = {0};
+	if (!sorted) {
+		__magic_file_oomem (ms, sizeof (struct r_magic_root) * ml->nroots);
+		return false;
+	}
+	memset (ml->bucket, 0, sizeof (ml->bucket));
+	for (i = 0; i < ml->nroots; i++) {
+		ml->bucket[magic_root_bucket (&ml->roots[i]) + 1]++;
+	}
+	for (i = 0; i < 257; i++) {
+		ml->bucket[i + 1] += ml->bucket[i];
+		pos[i] = ml->bucket[i];
+	}
+	for (i = 0; i < ml->nroots; i++) {
+		sorted[pos[magic_root_bucket (&ml->roots[i])]++] = ml->roots[i];
+	}
+	free (ml->roots);
+	ml->roots = sorted;
+	return true;
+}
+
 static bool magic_index(RMagic *ms, struct mlist *ml) {
 	size_t max_bytes = 0;
 	ut32 i, nroots = 0;
@@ -132,7 +163,7 @@ static bool magic_index(RMagic *ms, struct mlist *ml) {
 		max_bytes = R_MAX (max_bytes, magic_max_bytes (m));
 	}
 	ml->bytes_max = (ut32)max_bytes;
-	return true;
+	return magic_bucket_roots (ms, ml);
 }
 
 static bool magic_mlist_add(RMagic *ms, RVecMagicMList *mlist, struct r_magic *magic, ut32 nmagic, int mapped) {

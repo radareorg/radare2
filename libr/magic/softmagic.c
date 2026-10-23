@@ -1036,9 +1036,13 @@ static int match(RMagic *ms, const struct mlist *ml, const ut8 *s, size_t nbytes
 	if (__magic_file_check_mem (ms, 0) == -1) {
 		return -1;
 	}
-	ut32 rootindex;
-	for (rootindex = 0; rootindex < ml->nroots; rootindex++) {
-		const struct r_magic_root *root = &ml->roots[rootindex];
+	// Merge the roots indexed by the first byte with the unindexed ones in database order
+	const struct r_magic_root *a = ml->roots + ml->bucket[nbytes? s[0]: 256];
+	const struct r_magic_root *a_end = ml->roots + (nbytes? ml->bucket[s[0] + 1]: ml->bucket[256]);
+	const struct r_magic_root *b = ml->roots + ml->bucket[256];
+	const struct r_magic_root *b_end = ml->roots + ml->bucket[257];
+	while (a < a_end || b < b_end) {
+		const struct r_magic_root *root = (b == b_end || (a < a_end && a->start < b->start))? a++: b++;
 		if (root->bintest != mode || !root_prefix_matches (root, s, nbytes)) {
 			continue;
 		}
