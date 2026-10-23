@@ -5442,3 +5442,19 @@ EXPECT=<<EOF
 opened
 EOF
 RUN
+
+NAME=compressed .debug_line counts its inflated size for the startup limit
+FILE=bins/elf/dwarf-compressed-20mb-line
+TIMEOUT=30
+CMDS=<<EOF
+?e opened
+CL~?
+EOF
+EXPECT=<<EOF
+opened
+0
+EOF
+EXPECT_ERR=<<EOF
+WARN: Skipping automatic DWARF addrline load for large .debug_line section (19MB). Use `idx` to list source files or `id` to dump debug info explicitly, or `e bin.dbginfo=false` to disable it; `id` can produce several GB of output
+EOF
+RUN

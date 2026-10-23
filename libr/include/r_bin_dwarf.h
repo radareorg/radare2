@@ -967,6 +967,7 @@ typedef struct r_bin_dwarf_loc_list_t {
 R_API R_OWNED char *r_bin_dwarf_print_aranges(RBinFile *bf);
 // Optional line text is owned by the caller.
 R_API RList *r_bin_dwarf_parse_line(RBinFile *bf, int mode, char **text);
+R_API ut64 r_bin_dwarf_line_size(RBinFile *bf, const char **section_name);
 R_API RList *r_bin_dwarf_parse_line_files(RBinFile *bf);
 R_API RVecDwarfAbbrevDecl *r_bin_dwarf_parse_abbrev(RBinFile *bf);
 R_API bool r_bin_dwarf_parse_comp_dirs(RBinFile *bf, RVecDwarfAbbrevDecl *da);

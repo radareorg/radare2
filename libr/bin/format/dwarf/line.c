@@ -577,8 +577,7 @@ beach:
 #define DWARF_ADDRLINE_STORE_LIMIT (16 * 1024 * 1024)
 
 static bool dwarf_line_store_is_large(RBinFile *bf) {
-	RBinSection *section = dwarf_get_section (bf, DWARF_SN_LINE);
-	return section && section->size > DWARF_ADDRLINE_STORE_LIMIT;
+	return r_bin_dwarf_line_size (bf, NULL) > DWARF_ADDRLINE_STORE_LIMIT;
 }
 
 static inline void add_sdb_addrline(RBinFile *bf, ut64 addr, const char *file, ut64 line, ut64 column, int mode, RStrBuf *sb) {

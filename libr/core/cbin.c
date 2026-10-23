@@ -1207,27 +1207,12 @@ static void file_lines_free_kv(HtPPKv *kv) {
 #define BIN_DWARF_STARTUP_LINE_LIMIT (16 * 1024 * 1024)
 
 static bool bin_addrline_is_large_dwarf(RBinFile *bf, const char **section_name, ut64 *section_size) {
-	RBinObject *o = bf? bf->bo: NULL;
-	if (!o) {
-		return false;
+	// compressed line tables count with their inflated size
+	const ut64 size = (bf && bf->bo)? r_bin_dwarf_line_size (bf, section_name): 0;
+	if (section_size) {
+		*section_size = size;
 	}
-	RBinSection *section;
-	R_VEC_FOREACH (&o->sections_vec, section) {
-		const char *name = section->name;
-		if (!name || strstr (name, "debug_line_str")) {
-			continue;
-		}
-		if (strstr (name, "debug_line") || strstr (name, "dwline")) {
-			if (section_name) {
-				*section_name = name;
-			}
-			if (section_size) {
-				*section_size = section->size;
-			}
-			return section->size > BIN_DWARF_STARTUP_LINE_LIMIT;
-		}
-	}
-	return false;
+	return size > BIN_DWARF_STARTUP_LINE_LIMIT;
 }
 
 static void bin_addrline_warn_large_dwarf(RBinFile *bf, bool skipped) {

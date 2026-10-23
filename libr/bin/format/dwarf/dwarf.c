@@ -57,12 +57,46 @@ R_IPI RBinSection *dwarf_get_section(RBinFile *bf, int sn) {
 				if (sn == DWARF_SN_LOC && strstr (section->name, "debug_loclists")) {
 					continue;
 				}
+				if (sn == DWARF_SN_LINE && strstr (section->name, "debug_line_str")) {
+					continue;
+				}
 				/* accept matching section, including compressed or zdebug variants */
 				return section;
 			}
 		}
 	}
 	return NULL;
+}
+
+static bool dwarf_is_elf(RBinFile *bf) {
+	RBinInfo *info = bf->bo->info;
+	return info && info->rclass && r_str_startswith (info->rclass, "elf");
+}
+
+// .zdebug_* or SHF_COMPRESSED sections
+static bool dwarf_section_is_compressed(RBinSection *section, bool is_elf) {
+	return (section->name && strstr (section->name, "zdebug"))
+		|| (is_elf && R_BIN_ELF_SCN_IS_COMPRESSED (section->flags));
+}
+
+// size of the line table as parsed, read from the compression header without inflating
+R_API ut64 r_bin_dwarf_line_size(RBinFile *bf, const char **section_name) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, 0);
+	RBinSection *section = dwarf_get_section (bf, DWARF_SN_LINE);
+	if (!section) {
+		return 0;
+	}
+	if (section_name) {
+		*section_name = section->name;
+	}
+	const bool is_elf = dwarf_is_elf (bf);
+	if (is_elf && dwarf_section_is_compressed (section, is_elf)) {
+		const bool is64 = r_buf_read8_at (bf->buf, EI_CLASS) == ELFCLASS64;
+		const bool be = r_bin_is_big_endian (bf->rbin);
+		const ut64 at = r_bin_file_get_buffer_offset (bf, section->paddr);
+		return is64? r_buf_read_ble64_at (bf->buf, at + 8, be): r_buf_read_ble32_at (bf->buf, at + 4, be);
+	}
+	return section->size;
 }
 
 // this function caches full section data in section->bytes
@@ -75,12 +109,8 @@ R_IPI const ut8 *dwarf_get_section_bytes(RBinFile *bf, RBinSection *section) {
 	if (!bf->buf || offset > r_buf_size (bf->buf) || section->size > r_buf_size (bf->buf) - offset) {
 		return NULL;
 	}
-	/* Handle compressed DWARF sections (.zdebug_* or SHF_COMPRESSED) */
-	RBinInfo *info = bf->bo->info;
-	const bool is_elf = info && info->rclass && r_str_startswith (info->rclass, "elf");
-	const bool compressed = (section->name && strstr (section->name, "zdebug"))
-		|| (is_elf && R_BIN_ELF_SCN_IS_COMPRESSED (section->flags));
-	if (compressed) {
+		const bool is_elf = dwarf_is_elf (bf);
+	if (dwarf_section_is_compressed (section, is_elf)) {
 		if (!is_elf) {
 			return NULL;
 		}
@@ -133,6 +163,8 @@ R_IPI const ut8 *dwarf_get_section_bytes(RBinFile *bf, RBinSection *section) {
 		}
 		if ((ut64)dst_len != ch_size) {
 			R_LOG_WARN ("DWARF: decompressed %d bytes, expected %" PFMT64u, dst_len, ch_size);
+			// the header states the size, size guards rely on it
+			dst_len = (int)R_MIN ((ut64)dst_len, ch_size);
 		}
 
 		// allocate 1 byte more to safely treat any offset as string if needed
