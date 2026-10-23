@@ -34,7 +34,21 @@ static inline void __cons_write_ll(RCons *cons, const char *buf, int len) {
 #endif
 }
 
+static inline bool cons_output_redirected(RCons *cons) {
+	RConsFdPair *pair;
+	R_VEC_FOREACH (&cons->fds, pair) {
+		if (pair->fd_src == cons->fdout) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static inline void __cons_write(RCons *cons, const char *obuf, size_t olen) {
+	if (cons->output_cons && cons->fdout == 1 && !cons_output_redirected (cons)) {
+		r_cons_write (cons->output_cons, obuf, olen);
+		return;
+	}
 	const size_t bucket = 64 * 1024;
 	size_t i;
 	for (i = 0; olen - i > bucket; i += bucket) {

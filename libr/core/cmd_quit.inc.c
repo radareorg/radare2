@@ -31,7 +31,7 @@ static int cmd_Quit(void *data, const char *input) {
 	const int rv = arg? r_num_math (core->num, arg): 0;
 	if (exclamations > 0) { // "q!"
 		r_config_set_b (core->config, "scr.hist.save", false);
-		if (exclamations > 1) {
+		if (exclamations > 1 && !core->cons->is_embedded) {
 			if (!r_sandbox_enable (false)) {
 				r_cons_flush (core->cons);
 				exit (rv);
