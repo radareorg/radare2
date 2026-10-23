@@ -498,6 +498,18 @@ static inline int bytify(int v) {
 	return 1;
 }
 
+R_API FILE *r_sandbox_popen(const char *cmd, const char *mode) {
+	R_RETURN_VAL_IF_FAIL (cmd && mode, NULL);
+	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_EXEC, NULL);
+#if R2__WINDOWS__
+	return _popen (cmd, mode);
+#elif LIBC_HAVE_SYSTEM
+	return popen (cmd, mode);
+#else
+	return NULL;
+#endif
+}
+
 R_API int r_sandbox_system(const char *x, int n) {
 	R_RETURN_VAL_IF_FAIL (x, -1);
 	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_EXEC, -1);

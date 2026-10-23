@@ -25,7 +25,7 @@ static TAG_CALLBACK(sh_default) {
 	if (eof)
 #endif
 #if HAVE_FORK
-	int r = system (buf);
+	int r = r_sandbox_system (buf, 1);
 	if (errno) {
 		printf ("system '%s' (%d) failed: %s\n", buf, r, strerror (errno));
 	}
@@ -55,7 +55,7 @@ static PUT_CALLBACK(sh_fputs) {
 		char str[1024]; // XXX
 		sprintf (str, "echo '%s' | %s", buf, sh_pipe_cmd); // XXX
 #if HAVE_FORK
-		int r = system (str);
+		int r = r_sandbox_system (str, 1);
 		if (errno) {
 			printf ("system '%s' (%d) failed: %s\n", str, r, strerror (errno));
 		}
