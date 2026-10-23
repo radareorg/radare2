@@ -1087,10 +1087,10 @@ static bool esil_peek_n(REsil *esil, int bits) {
 		if (bits == 128) {
 			ut8 a[sizeof (ut64) * 2] = {0};
 			ret = r_esil_mem_read (esil, addr, a, bytes);
-			const ut64 b = r_read_ble64 (&a, be);
-			const ut64 c = r_read_ble64 (&a[8], be);
-			r_esil_pushnum (esil, b);
-			r_esil_pushnum (esil, c);
+			const ut8 *lo = be? a + 8: a;
+			const ut8 *hi = be? a: a + 8;
+			r_esil_pushnum (esil, r_read_ble64 (lo, be));
+			r_esil_pushnum (esil, r_read_ble64 (hi, be));
 			return ret;
 		}
 		const ut64 bitmask = r_num_genmask (bits - 1);
