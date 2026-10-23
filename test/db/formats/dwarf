@@ -5458,3 +5458,17 @@ EXPECT_ERR=<<EOF
 WARN: Skipping automatic DWARF addrline load for large .debug_line section (19MB). Use `idx` to list source files or `id` to dump debug info explicitly, or `e bin.dbginfo=false` to disable it; `id` can produce several GB of output
 EOF
 RUN
+
+NAME=dwarf compressed sections inflating far beyond their size are ignored
+FILE=bins/elf/dwarf-info-zlib-bomb
+ARGS=-e log.level=0
+TIMEOUT=30
+CMDS=<<EOF
+id~?
+?e done
+EOF
+EXPECT=<<EOF
+2
+done
+EOF
+RUN

@@ -100,78 +100,62 @@ R_API ut64 r_bin_dwarf_line_size(RBinFile *bf, const char **section_name) {
 }
 
 // this function caches full section data in section->bytes
-R_IPI const ut8 *dwarf_get_section_bytes(RBinFile *bf, RBinSection *section) {
-	if (section->bytes.len && section->bytes.ptr) {
-		return section->bytes.ptr;
-	}
+// compiler generated debug sections inflate 2-10x, a run of identical bytes about 1000x
+#define DWARF_MAX_INFLATE_RATIO 64
 
+// inflate an ELF compressed section, NULL when invalid or a decompression bomb
+static ut8 *dwarf_inflate(RBinFile *bf, RBinSection *section, ut64 offset, int *dst_len) {
+	const ut64 raw_size = section->size;
+	const bool is64 = r_buf_read8_at (bf->buf, EI_CLASS) == ELFCLASS64;
+	const size_t header_size = is64? 24: 12;
+	if (raw_size <= header_size || raw_size > ST32_MAX) {
+		return NULL;
+	}
+	ut8 *rawbuf = calloc (1, raw_size);
+	if (!rawbuf || r_buf_read_at (bf->buf, offset, rawbuf, raw_size) != raw_size) {
+		free (rawbuf);
+		return NULL;
+	}
+	const bool be = r_bin_is_big_endian (bf->rbin);
+	// Elf64_Chdr: type, reserved, size, align. Elf32_Chdr: type, size, align. Only zlib (1)
+	const ut32 ch_type = r_read_ble32 (rawbuf, be);
+	const ut64 ch_size = is64? r_read_ble64 (rawbuf + 8, be): r_read_ble32 (rawbuf + 4, be);
+	ut8 *decomp = (ch_type == 1)? r_inflate (rawbuf + header_size, (int)(raw_size - header_size), NULL, dst_len): NULL;
+	free (rawbuf);
+	if (decomp && (ut64)*dst_len / DWARF_MAX_INFLATE_RATIO > raw_size) {
+		R_LOG_WARN ("DWARF: ignoring %s, %" PFMT64u " bytes inflate to %d", r_str_get (section->name), raw_size, *dst_len);
+		R_FREE (decomp);
+	} else if (decomp && (ut64)*dst_len != ch_size) {
+		R_LOG_WARN ("DWARF: decompressed %d bytes, expected %" PFMT64u, *dst_len, ch_size);
+		// the header states the size, size guards rely on it
+		*dst_len = (int)R_MIN ((ut64)*dst_len, ch_size);
+	}
+	return decomp;
+}
+
+// this function caches full section data in section->bytes, an empty slice marks a failed inflate
+R_IPI const ut8 *dwarf_get_section_bytes(RBinFile *bf, RBinSection *section) {
+	if (section->bytes.ptr) {
+		return section->bytes.len? section->bytes.ptr: NULL;
+	}
 	ut64 offset = r_bin_file_get_buffer_offset (bf, section->paddr);
 	if (!bf->buf || offset > r_buf_size (bf->buf) || section->size > r_buf_size (bf->buf) - offset) {
 		return NULL;
 	}
-		const bool is_elf = dwarf_is_elf (bf);
+	const bool is_elf = dwarf_is_elf (bf);
 	if (dwarf_section_is_compressed (section, is_elf)) {
-		if (!is_elf) {
-			return NULL;
-		}
-		ut64 raw_size = section->size;
-		if (raw_size < 12 || raw_size > ST32_MAX) {
-			return NULL;
-		}
-		ut8 *rawbuf = calloc (1, raw_size);
-		if (!rawbuf) {
-			return NULL;
-		}
-		if (!r_buf_read_at (bf->buf, offset, rawbuf, raw_size)) {
-			free (rawbuf);
-			return NULL;
-		}
-		bool is64 = r_buf_read8_at (bf->buf, EI_CLASS) == ELFCLASS64;
-		bool be = r_bin_is_big_endian (bf->rbin);
-		/* Parse compression header */
-		if (is64 && raw_size < 24) {
-			free (rawbuf);
-			return NULL;
-		}
-		ut32 ch_type = r_read_ble32 (rawbuf, be);
-		ut64 ch_size = 0;
-		size_t header_size = 0;
-		if (is64) {
-			/* Elf64_Chdr: type (4), reserved (4), size (8), align (8) */
-			ch_size = r_read_ble64 (rawbuf + 8, be);
-			header_size = 24;
-		} else {
-			/* Elf32_Chdr: type (4), size (4), align (4) */
-			ch_size = r_read_ble32 (rawbuf + 4, be);
-			header_size = 12;
-		}
-		/* Only support zlib compression (type 1) */
-		if (ch_type != 1) {
-			free (rawbuf);
-			return NULL;
-		}
-		if (raw_size <= header_size) {
-			free (rawbuf);
-			return NULL;
-		}
-		/* Decompress data after header */
 		int dst_len = 0;
-		ut8 *decomp = r_inflate (rawbuf + header_size, (int) (raw_size - header_size), NULL, &dst_len);
-		free (rawbuf);
+		ut8 *decomp = is_elf? dwarf_inflate (bf, section, offset, &dst_len): NULL;
 		if (!decomp) {
+			// inflating again on every lookup would be as expensive as the first time
+			static const ut8 failed = 0;
+			section->bytes = r_slice (&failed, 0);
 			return NULL;
 		}
-		if ((ut64)dst_len != ch_size) {
-			R_LOG_WARN ("DWARF: decompressed %d bytes, expected %" PFMT64u, dst_len, ch_size);
-			// the header states the size, size guards rely on it
-			dst_len = (int)R_MIN ((ut64)dst_len, ch_size);
-		}
-
 		// allocate 1 byte more to safely treat any offset as string if needed
 		RSlice buf = r_arena_scalloc (bf->arena, dst_len + 1);
 		memcpy ((void *)buf.ptr, decomp, dst_len);
 		free (decomp);
-
 		section->bytes = buf;
 		return buf.ptr;
 	}
