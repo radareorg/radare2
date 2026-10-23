@@ -71,85 +71,41 @@ static bool magic_hasbytes(size_t nbytes, st64 offset, size_t need) {
  */
 #define R_MAGIC_DESC ((ms->flags & R_MAGIC_MIME)? m->mimetype: m->desc)
 
-static int check_fmt(RMagic *ms, struct r_magic *m) {
-	RRegex rx = { 0 };
-	int rc;
-
-	if (!strchr (R_MAGIC_DESC, '%')) {
-		return 0;
+static bool desc_wants_string(const char *desc) {
+	const char *p = desc;
+	while ((p = strchr (p, '%'))) {
+		p++;
+		p += strspn (p, "-0123456789.");
+		if (*p == 's') {
+			return true;
+		}
 	}
-
-	rc = r_regex_init (&rx, "%[-0-9\\.]*s", R_REGEX_EXTENDED | R_REGEX_NOSUB);
-	if (rc) {
-		char *errmsg = r_regex_error (&rx, rc);
-		__magic_file_magerror (ms, "regex error %d, (%s)", rc, errmsg);
-		free (errmsg);
-		return -1;
-	} else {
-		rc = r_regex_exec (&rx, R_MAGIC_DESC, 0, 0, 0);
-		r_regex_fini (&rx);
-		return !rc;
-	}
+	return false;
 }
 
 static st32 mprint(RMagic *ms, struct r_magic *m) {
-	ut64 v;
-	float vf;
-	double vd;
-	ut64 t = 0;
-	char *buf = NULL;
 	union VALUETYPE *const p = &ms->ms_value;
+	const char *desc = R_MAGIC_DESC;
+	const bool as_str = desc_wants_string (desc);
 	char pp[ASCTIME_BUF_MAXLEN];
+	char num[32];
+	ut64 v;
+	ut64 t;
+	int rc;
 
 	switch (m->type) {
 	case FILE_BYTE:
 		v = __magic_file_signextend (ms, m, (ut64)p->b);
-		switch (check_fmt (ms, m)) {
-		case -1:
-			return -1;
-		case 1:
-			buf = malloc (2);
-			if (snprintf (buf, 2, "%c", (ut8)v) < 0) {
-				free (buf);
-				return -1;
-			}
-			if (__magic_file_printf (ms, R_MAGIC_DESC, buf) == -1) {
-				free (buf);
-				return -1;
-			}
-			break;
-		default:
-			if (__magic_file_printf (ms, R_MAGIC_DESC, (ut8)v) == -1) {
-				return -1;
-			}
-			break;
-		}
+		snprintf (num, sizeof (num), "%c", (ut8)v);
+		rc = as_str? __magic_file_printf (ms, desc, num): __magic_file_printf (ms, desc, (ut8)v);
 		t = ms->offset + sizeof (char);
 		break;
 	case FILE_SHORT:
 	case FILE_BESHORT:
 	case FILE_LESHORT:
 		v = __magic_file_signextend (ms, m, (ut64)p->h);
-		switch (check_fmt (ms, m)) {
-		case -1:
-			return -1;
-		case 1:
-			buf = malloc (32);
-			if (snprintf (buf, 32, "%hu", (unsigned short)v) < 0) {
-				free (buf);
-				return -1;
-			}
-			if (__magic_file_printf (ms, R_MAGIC_DESC, buf) == -1) {
-				free (buf);
-				return -1;
-			}
-			break;
-		default:
-			if (__magic_file_printf (ms, R_MAGIC_DESC, (unsigned short)v) == -1) {
-				return -1;
-			}
-			break;
-		}
+		snprintf (num, sizeof (num), "%hu", (unsigned short)v);
+		rc = as_str? __magic_file_printf (ms, desc, num): __magic_file_printf (ms, desc, (unsigned short)v);
 		t = ms->offset + sizeof (short);
 		break;
 	case FILE_LONG:
@@ -157,188 +113,93 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 	case FILE_LELONG:
 	case FILE_MELONG:
 		v = __magic_file_signextend (ms, m, (ut64)p->l);
-		switch (check_fmt (ms, m)) {
-		case -1:
-			return -1;
-		case 1:
-			buf = malloc (32);
-			if (snprintf (buf, 32, "%u", (ut32)v) < 0) {
-				free (buf);
-				return -1;
-			}
-			if (__magic_file_printf (ms, R_MAGIC_DESC, buf) == -1) {
-				free (buf);
-				return -1;
-			}
-			break;
-		default:
-			if (__magic_file_printf (ms, R_MAGIC_DESC, (ut32)v) == -1) {
-				return -1;
-			}
-			break;
-		}
+		snprintf (num, sizeof (num), "%u", (ut32)v);
+		rc = as_str? __magic_file_printf (ms, desc, num): __magic_file_printf (ms, desc, (ut32)v);
 		t = ms->offset + sizeof (st32);
 		break;
 	case FILE_QUAD:
 	case FILE_BEQUAD:
 	case FILE_LEQUAD:
 		v = __magic_file_signextend (ms, m, p->q);
-		if (__magic_file_printf (ms, R_MAGIC_DESC, (ut64)v) == -1) {
-			return -1;
-		}
+		rc = __magic_file_printf (ms, desc, (ut64)v);
 		t = ms->offset + sizeof (ut64);
 		break;
-
 	case FILE_STRING:
 	case FILE_PSTRING:
 	case FILE_BESTRING16:
 	case FILE_LESTRING16:
 		if (m->reln == '=' || m->reln == '!') {
-			if (__magic_file_printf (ms, R_MAGIC_DESC, m->value.s) == -1) {
-				return -1;
-			}
+			rc = __magic_file_printf (ms, desc, m->value.s);
 			t = ms->offset + m->vallen;
 		} else {
 			if (*m->value.s == '\0') {
 				p->s[strcspn (p->s, "\n")] = '\0';
 			}
-			if (__magic_file_printf (ms, R_MAGIC_DESC, p->s) == -1) {
-				return -1;
-			}
-			t = ms->offset + strlen (p->s);
-			if (m->type == FILE_PSTRING) {
-				t++;
-			}
+			rc = __magic_file_printf (ms, desc, p->s);
+			t = ms->offset + strlen (p->s) + (m->type == FILE_PSTRING);
 		}
 		break;
 	case FILE_DATE:
 	case FILE_BEDATE:
 	case FILE_LEDATE:
 	case FILE_MEDATE:
-		if (__magic_file_printf (ms, R_MAGIC_DESC, __magic_file_fmttime (p->l, 1, pp)) == -1) {
-			return -1;
-		}
+		rc = __magic_file_printf (ms, desc, __magic_file_fmttime (p->l, 1, pp));
 		t = ms->offset + sizeof (time_t);
 		break;
 	case FILE_LDATE:
 	case FILE_BELDATE:
 	case FILE_LELDATE:
 	case FILE_MELDATE:
-		if (__magic_file_printf (ms, R_MAGIC_DESC, __magic_file_fmttime (p->l, 0, pp)) == -1) {
-			return -1;
-		}
+		rc = __magic_file_printf (ms, desc, __magic_file_fmttime (p->l, 0, pp));
 		t = ms->offset + sizeof (time_t);
 		break;
 	case FILE_QDATE:
 	case FILE_BEQDATE:
 	case FILE_LEQDATE:
-		if (__magic_file_printf (ms, R_MAGIC_DESC, __magic_file_fmttime ((ut32)p->q, 1, pp)) == -1) {
-			return -1;
-		}
+		rc = __magic_file_printf (ms, desc, __magic_file_fmttime ((ut32)p->q, 1, pp));
 		t = ms->offset + sizeof (ut64);
 		break;
 	case FILE_QLDATE:
 	case FILE_BEQLDATE:
 	case FILE_LEQLDATE:
-		if (__magic_file_printf (ms, R_MAGIC_DESC, __magic_file_fmttime ((ut32)p->q, 0, pp)) == -1) {
-			return -1;
-		}
+		rc = __magic_file_printf (ms, desc, __magic_file_fmttime ((ut32)p->q, 0, pp));
 		t = ms->offset + sizeof (ut64);
 		break;
 	case FILE_FLOAT:
 	case FILE_BEFLOAT:
 	case FILE_LEFLOAT:
-		vf = p->f;
-		switch (check_fmt (ms, m)) {
-		case -1:
-			return -1;
-		case 1:
-			buf = malloc (32);
-			if (snprintf (buf, 32, "%g", vf) < 0) {
-				free (buf);
-				return -1;
-			}
-			if (__magic_file_printf (ms, R_MAGIC_DESC, buf) == -1) {
-				free (buf);
-				return -1;
-			}
-			break;
-		default:
-			if (__magic_file_printf (ms, R_MAGIC_DESC, vf) == -1) {
-				return -1;
-			}
-			break;
-		}
+		snprintf (num, sizeof (num), "%g", p->f);
+		rc = as_str? __magic_file_printf (ms, desc, num): __magic_file_printf (ms, desc, p->f);
 		t = ms->offset + sizeof (float);
 		break;
 	case FILE_DOUBLE:
 	case FILE_BEDOUBLE:
 	case FILE_LEDOUBLE:
-		vd = p->d;
-		switch (check_fmt (ms, m)) {
-		case -1:
-			return -1;
-		case 1:
-			buf = malloc (32);
-			if (snprintf (buf, 32, "%g", vd) < 0) {
-				free (buf);
-				return -1;
-			}
-			if (__magic_file_printf (ms, R_MAGIC_DESC, buf) == -1) {
-				free (buf);
-				return -1;
-			}
-			break;
-		default:
-			if (__magic_file_printf (ms, R_MAGIC_DESC, vd) == -1) {
-				return -1;
-			}
-			break;
-		}
+		snprintf (num, sizeof (num), "%g", p->d);
+		rc = as_str? __magic_file_printf (ms, desc, num): __magic_file_printf (ms, desc, p->d);
 		t = ms->offset + sizeof (double);
 		break;
 	case FILE_REGEX:
 		{
-			char *const cp = r_str_ndup ((const char *)ms->search.s, ms->search.rm_len);
-			if (!cp) {
-				__magic_file_oomem (ms, ms->search.rm_len);
-				return -1;
-			}
-			const int rval = __magic_file_printf (ms, R_MAGIC_DESC, cp);
+			char *cp = r_str_ndup (ms->search.s, ms->search.rm_len);
+			rc = __magic_file_printf (ms, desc, r_str_get (cp));
 			free (cp);
-			if (rval == -1) {
-				return -1;
-			}
-			if ((m->str_flags & REGEX_OFFSET_START)) {
-				t = ms->search.offset;
-			} else {
-				t = ms->search.offset + ms->search.rm_len;
-			}
-			break;
-		}
-
-	case FILE_SEARCH:
-		if (__magic_file_printf (ms, R_MAGIC_DESC, m->value.s) == -1) {
-			return -1;
-		}
-		if ((m->str_flags & REGEX_OFFSET_START)) {
-			t = ms->search.offset;
-		} else {
-			t = ms->search.offset + m->vallen;
+			t = ms->search.offset + ((m->str_flags & REGEX_OFFSET_START)? 0: ms->search.rm_len);
 		}
 		break;
+	case FILE_SEARCH:
+		rc = __magic_file_printf (ms, desc, m->value.s);
+		t = ms->search.offset + ((m->str_flags & REGEX_OFFSET_START)? 0: m->vallen);
+		break;
 	case FILE_DEFAULT:
-		if (__magic_file_printf (ms, R_MAGIC_DESC, m->value.s) == -1) {
-			return -1;
-		}
+		rc = __magic_file_printf (ms, desc, m->value.s);
 		t = ms->offset;
 		break;
 	default:
 		__magic_file_magerror (ms, "invalid m->type (%d) in mprint()", m->type);
 		return -1;
 	}
-	free (buf);
-	return t;
+	return rc == -1? -1: (st32)t;
 }
 
 #define DO_CVT(fld, cast) \
