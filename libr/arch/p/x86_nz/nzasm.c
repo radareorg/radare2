@@ -167,6 +167,7 @@ static int is_al_reg(const Operand *op) {
 static int oprep(RArchSession *a, ut8 *data, const Opcode *op);
 static int op_reg_mem(int bits, ut8 *data, const Operand *reg, const Operand *mem, ut8 opcode);
 static bool use_op_reg_mem(int bits, const Operand *mem);
+static int encode_mem(ut8 *data, int reg, const Operand *mem, ut8 *rex);
 
 // Minimal VEX.3 prefix emission for selected BMI2 GPR ops (SHLX/SHRX/SARX)
 // Encodes: VEX.NDS.LZ.0F38.Wx with computed R', X', B', vvvv'
@@ -1666,6 +1667,49 @@ static int opmovx(RArchSession *a, ut8 *data, const Opcode *op) {
 		opc = 0xbe + word;
 	}
 
+	const Operand *dst = &op->operands[0];
+	const Operand *src = &op->operands[1];
+	const int bits = a->config->bits;
+	// r16/r32/r64 from an 8 or 16-bit register or memory operand
+	if (op->operands_count != 2 || (dst->type & (OT_MEMORY | OT_BYTE)) || !(dst->type & OT_GPREG & OT_REGTYPE)) {
+		return -1;
+	}
+	if (src->type & OT_MEMORY) {
+		if (src->explicit_size && !(src->dest_size & (OT_BYTE | OT_WORD))) {
+			return -1;
+		}
+	} else if (!(src->type & (OT_BYTE | OT_WORD))) {
+		return -1;
+	}
+	if ((src->type & OT_MEMORY) && use_op_reg_mem (bits, src)) {
+		// [base + index * scale + disp], RIP-relative and absolute operands
+		ut8 modrm[16];
+		ut8 rex = 0;
+		if (dst->type & OT_QWORD) {
+			rex |= 8;
+		}
+		if (dst->extended) {
+			rex |= 4;
+		}
+		int n = encode_mem (modrm, dst->reg, src, &rex);
+		if (n < 0 || (bits == 32 && rex)) {
+			return -1;
+		}
+		if (bits == 64 && src->regs[0] != X86R_UNDEFINED && !(src->reg_size & OT_QWORD)) {
+			data[l++] = 0x67; // 32-bit address registers
+		}
+		if (dst->type & OT_WORD) {
+			data[l++] = 0x66;
+		}
+		if (rex) {
+			data[l++] = 0x40 | rex;
+		}
+		data[l++] = 0x0f;
+		data[l++] = opc;
+		memcpy (data + l, modrm, n);
+		return l + n;
+	}
+
 	// Build addressing info first
 	bool mem = (op->operands[1].type & OT_MEMORY) != 0;
 	int base = mem ? op->operands[1].regs[0] : 0;
@@ -1709,12 +1753,20 @@ static int opmovx(RArchSession *a, ut8 *data, const Opcode *op) {
 			rex |= 0x01; // B for r/m reg
 			need_rex = true;
 		}
+		if (src->rex_prefixed) {
+			need_rex = true; // sil, dil, spl and bpl
+		} else if (need_rex && (src->type & OT_BYTE) && src->reg >= 4 && !src->extended) {
+			return -1; // ah, ch, dh and bh can't be encoded with a REX prefix
+		}
 	} else {
 		// Do not set REX.B for memory base without explicit extended flag support.
 		// Memory operands here do not carry per-base extended state, so keep B = 0.
 	}
 
 	// Emit bytes in normal order
+	if (((dst->type & OT_WORD) != 0) != (bits == 16)) {
+		data[l++] = 0x66; // operand size other than the mode's default
+	}
 	if (need_rex) {
 		data[l++] = rex;
 	}

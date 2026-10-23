@@ -24,3 +24,5 @@ d "jmp 0xc6" e9c300
 ad "bt ax, cx" 0fa3c8
 ad "bts eax, 7" 660fbae807
 ad "btr cx, 0xf" 0fbaf10f
+a "movzx ax, bl" 0fb6c3
+a "movsx eax, bl" 660fbec3
