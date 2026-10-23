@@ -3147,6 +3147,10 @@ static int find_regop(cs_insn *insn) {
 	return -1;
 }
 
+static bool is_address_immediate_insn(cs_insn *insn) {
+	return insn->id == X86_INS_MOV || insn->id == X86_INS_MOVABS;
+}
+
 static void op1_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 	if (op->refptr < 1 || op->ptr == UT64_MAX) {
 		switch (INSOP (1).type) {
@@ -3166,7 +3170,7 @@ static void op1_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 			}
 			break;
 		case X86_OP_IMM:
-			if ((INSOP (1).imm > 10) &&
+			if (is_address_immediate_insn (insn) && (INSOP (1).imm > 10) &&
 				(INSOP (0).reg != X86_REG_RSP) && (INSOP (0).reg != X86_REG_ESP)) {
 				op->ptr = INSOP (1).imm;
 			}
@@ -3179,7 +3183,7 @@ static void op1_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 	if (op->ptr == UT64_MAX) {
 		int immop = find_immop (insn);
 		int regop = find_regop (insn);
-		if (immop >= 0 && INSOP (immop).imm > 10) {
+		if (is_address_immediate_insn (insn) && immop >= 0 && INSOP (immop).imm > 10) {
 			bool is_stack_reg = false;
 			if (regop >= 0) {
 				x86_reg reg = INSOP (regop).reg;
@@ -3276,7 +3280,7 @@ static void inscmp(RAnalOp *op, ut64 addr, cs_insn *insn, int regsz) {
 			}
 			break;
 		case X86_OP_IMM:
-			op->val = op->ptr = INSOP(1).imm;
+			op->val = INSOP(1).imm;
 			break;
 		default:
 			break;
