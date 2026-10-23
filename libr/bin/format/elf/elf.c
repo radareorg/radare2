@@ -628,12 +628,15 @@ static void fill_dynamic_entries(ELFOBJ *eo, ut64 loaded_offset, ut64 dyn_size) 
 			di->dt_rela = d.d_un.d_ptr;
 			break;
 		case DT_RELR:
+		case DT_ANDROID_RELR:
 			di->dt_relr = d.d_un.d_ptr;
 			break;
 		case DT_RELRSZ:
+		case DT_ANDROID_RELRSZ:
 			di->dt_relrsz = d.d_un.d_val;
 			break;
 		case DT_RELRENT:
+		case DT_ANDROID_RELRENT:
 			di->dt_relrent = d.d_un.d_val;
 			break;
 		case DT_RELASZ:
