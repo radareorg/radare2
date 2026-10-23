@@ -304,6 +304,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=128bit register view on big endian
+FILE=malloc://0x200
+ARGS=-a arm -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+ar v0l=0x08090a0b0c0d0e0f
+ar v0h=0x0001020304050607
+ar q0
+ar q0=123
+ar q0
+ar v0l
+EOF
+EXPECT=<<EOF
+0x000102030405060708090a0b0c0d0e0f
+0x0000000000000000000000000000007b
+0x0000007b
+EOF
+RUN
+
 NAME=ldr x25, [sp, -0x28]
 FILE=malloc://0x200
 CMDS=<<EOF

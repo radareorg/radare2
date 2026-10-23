@@ -12,6 +12,7 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 	if (!regset->arena) {
 		return 0LL;
 	}
+	const bool be = (reg->endian & R_SYS_ENDIAN_BIG) == R_SYS_ENDIAN_BIG;
 	switch (item->size) {
 	case 80: // word + qword
 		if (regset->arena->bytes && (off + 10 <= regset->arena->size)) {
@@ -33,8 +34,8 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 		break;
 	case 128: // qword + qword
 		if (regset->arena->bytes && (off + 16 <= regset->arena->size)) {
-			val->v128.Low = r_read_le64 (regset->arena->bytes + off);
-			val->v128.High = r_read_le64 (regset->arena->bytes + off + 8);
+			val->v128.Low = r_read_ble64 (regset->arena->bytes + off, be);
+			val->v128.High = r_read_ble64 (regset->arena->bytes + off + 8, be);
 		} else {
 			R_LOG_WARN ("null or oob arena for current regset");
 		}
