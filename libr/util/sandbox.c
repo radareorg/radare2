@@ -311,7 +311,8 @@ R_API bool r_sandbox_grain_parse(const char *R_NONNULL expr, int *R_NONNULL mask
 		{ "disk", R_SANDBOX_GRAIN_DISK },
 		{ "network", R_SANDBOX_GRAIN_NETWORK },
 		{ "environ", R_SANDBOX_GRAIN_ENVIRON },
-		{ "hidden", R_SANDBOX_GRAIN_HIDDEN }
+		{ "hidden", R_SANDBOX_GRAIN_HIDDEN },
+		{ "script", R_SANDBOX_GRAIN_SCRIPT }
 	};
 	expr = r_str_trim_head_ro (expr);
 	int result = *expr == '!'? R_SANDBOX_GRAIN_ALL: R_SANDBOX_GRAIN_NONE;

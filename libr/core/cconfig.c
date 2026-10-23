@@ -1666,6 +1666,7 @@ static RCoreHelpMessage help_msg_grain = {
 	"network", "", "allow non-localhost network connections and HTTP requests",
 	"environ", "", "allow environment variable read, write, clear operations",
 	"hidden", "", "allow reading hidden files and directories",
+	"script", "", "allow running scripts with the rlang plugins (js, #!, .r2.js)",
 	NULL
 };
 // clang-format on
@@ -4511,7 +4512,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("cfg.fortunes.tts", "false", "speak out the fortune");
 	SETS ("cfg.prefixdump", "dump", "filename prefix for automated dumps");
 	SETCB ("cfg.sandbox", "false", &cb_cfgsanbox, "sandbox mode disables systems and open on upper directories");
-	SETCB ("cfg.sandbox.grain", "all", &cb_cfgsanbox_grain, "select sandbox permissions (all, none, disk, files, exec, socket, network, environ, hidden); !name removes a permission");
+	SETCB ("cfg.sandbox.grain", "all", &cb_cfgsanbox_grain, "select sandbox permissions (all, none, disk, files, exec, socket, network, environ, hidden, script); !name removes a permission");
 	SETB ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "use little (false) or big (true) endianness");
 	SETCB ("cfg.float", "ieee754", &cb_cfg_float, "FPU profile for floating point operations (use -e cfg.float=? for list)");
