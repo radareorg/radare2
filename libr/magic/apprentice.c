@@ -317,12 +317,10 @@ static int apprentice_sort(const void *a, const void *b) {
 	size_t sa = apprentice_r_magic_strength (ma->mp);
 	size_t sb = apprentice_r_magic_strength (mb->mp);
 	if (sa == sb) {
-		return 0;
+		// Keep equal strength entries in file order on every libc
+		return (ma->mp->lineno > mb->mp->lineno) - (ma->mp->lineno < mb->mp->lineno);
 	}
-	if (sa > sb) {
-		return -1;
-	}
-	return 1;
+	return (sa > sb)? -1: 1;
 }
 
 static void set_test_type(struct r_magic *mstart, struct r_magic *m) {
