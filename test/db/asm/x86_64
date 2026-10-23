@@ -9,6 +9,17 @@ ad "movsx eax, byte [rbx]" 0fbe03
 ad "movsx eax, word [rbx]" 0fbf03
 ad "movzx rax, al" 480fb6c0
 ad "movsx rax, al" 480fbec0
+a "movzx eax, byte [rax + rcx*4 + 8]" 0fb6448808
+a "movsx r10, word [r15 + r14*2]" 4f0fbf1477
+a "movzx ecx, byte [r12]" 410fb60c24
+a "movzx r12w, byte [r13]" 66450fb66500
+a "movzx eax, byte [rsp + rax]" 0fb60404
+a "movzx eax, byte [rip + 0x10]" 0fb60510000000
+a "movzx eax, byte [0x1234]" 0fb6042534120000
+a "movzx eax, byte [eax]" 670fb600
+a "movsx ax, byte [rbx + 8]" 660fbe4308
+a "movsx ax, bl" 660fbec3
+a "movzx eax, sil" 400fb6c6
 d "lea rax, [rip + 0xff9]" 488d05f90f0000
 ad "nop" 90
 ad "mov r11, qword [rbp + 8]" 4c8b5d08
