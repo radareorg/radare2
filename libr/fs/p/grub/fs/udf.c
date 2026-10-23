@@ -365,11 +365,21 @@ grub_udf_get_block(struct grub_udf_data *data,
 	return (U32 (data->pds[data->pms[part_ref]->type1.part_num].start) + U32 (block));
 }
 
+// the allocation descriptors or embedded data, which follow the extended attributes in the one block kept in the node
+static char *grub_udf_alloc_descs(grub_fshelp_node_t node, grub_uint32_t *len) {
+	const bool is_fe = U16 (node->fe.tag.tag_ident) == GRUB_UDF_TAG_IDENT_FE;
+	char *ext_attr = is_fe? (char *)node->fe.ext_attr: (char *)node->efe.ext_attr;
+	const grub_uint32_t room = is_fe? sizeof (node->fe.ext_attr): sizeof (node->efe.ext_attr);
+	const grub_uint32_t ea_len = U32 (is_fe? node->fe.ext_attr_length: node->efe.ext_attr_length);
+	*len = U32 (is_fe? node->fe.alloc_descs_length: node->efe.alloc_descs_length);
+	return (ea_len > room || *len > room - ea_len)? NULL: ext_attr + ea_len;
+}
+
 static grub_err_t
 grub_udf_read_icb(struct grub_udf_data *data,
 	struct grub_udf_long_ad *icb,
 	struct grub_fshelp_node *node) {
-	grub_uint32_t block;
+	grub_uint32_t block, len;
 
 	block = grub_udf_get_block (data,
 		icb->block.part_ref,
@@ -387,6 +397,9 @@ grub_udf_read_icb(struct grub_udf_data *data,
 		(U16 (node->fe.tag.tag_ident) != GRUB_UDF_TAG_IDENT_EFE)) {
 		return grub_error (GRUB_ERR_BAD_FS, "invalid fe/efe descriptor");
 	}
+	if (!grub_udf_alloc_descs (node, &len)) {
+		return grub_error (GRUB_ERR_BAD_FS, "invalid fe/efe descriptor lengths");
+	}
 
 	node->part_ref = icb->block.part_ref;
 	node->data = data;
@@ -395,16 +408,11 @@ grub_udf_read_icb(struct grub_udf_data *data,
 
 static grub_disk_addr_t
 grub_udf_read_block(grub_fshelp_node_t node, grub_disk_addr_t fileblock) {
-	char *ptr;
-	int len;
+	grub_uint32_t len;
 	grub_disk_addr_t filebytes;
-
-	if (U16 (node->fe.tag.tag_ident) == GRUB_UDF_TAG_IDENT_FE) {
-		ptr = (char *)&node->fe.ext_attr[0] + U32 (node->fe.ext_attr_length);
-		len = U32 (node->fe.alloc_descs_length);
-	} else {
-		ptr = (char *)&node->efe.ext_attr[0] + U32 (node->efe.ext_attr_length);
-		len = U32 (node->efe.alloc_descs_length);
+	char *ptr = grub_udf_alloc_descs (node, &len);
+	if (!ptr) {
+		return 0;
 	}
 
 	if ((U16 (node->fe.icbtag.flags) & GRUB_UDF_ICBTAG_FLAG_AD_MASK) == GRUB_UDF_ICBTAG_FLAG_AD_SHORT) {
@@ -454,12 +462,14 @@ grub_udf_read_file(grub_fshelp_node_t node,
 	switch (U16 (node->fe.icbtag.flags) & GRUB_UDF_ICBTAG_FLAG_AD_MASK) {
 	case GRUB_UDF_ICBTAG_FLAG_AD_IN_ICB:
 		{
-			char *ptr;
-
-			ptr = ((U16 (node->fe.tag.tag_ident) == GRUB_UDF_TAG_IDENT_FE)? ((char *)&node->fe.ext_attr[0] + U32 (node->fe.ext_attr_length)): ((char *)&node->efe.ext_attr[0] + U32 (node->efe.ext_attr_length)));
-
+			// the embedded data is alloc_descs_length bytes, whatever file_size says
+			grub_uint32_t size;
+			char *ptr = grub_udf_alloc_descs (node, &size);
+			if (!ptr || pos < 0 || (grub_uint32_t)pos > size) {
+				return -1;
+			}
+			len = R_MIN (len, size - pos);
 			grub_memcpy (buf, ptr + pos, len);
-
 			return len;
 		}
 

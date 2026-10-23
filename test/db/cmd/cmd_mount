@@ -1232,3 +1232,52 @@ hello
 0x1
 EOF2
 RUN
+
+NAME=fb file list record past the end of the list
+FILE=malloc://2048
+CMDS=<<EOF2
+wx 46424152010601000100000000000000
+wx fe00020000000500000000000000612e74787400 @ 0x200
+wx fe00020000000500000000000000622e74787400 @ 0x300
+w hello @ 0x400
+m /mnt fb 0
+md /mnt
+mc /mnt/a.txt
+mc /mnt/b.txt
+EOF2
+EXPECT=<<EOF2
+f a.txt
+hello
+EOF2
+RUN
+
+NAME=mount udf embedded file data is bounded by its entry
+FILE=bins/fs/udf.img
+TIMEOUT=10
+CMDS=<<EOF2
+e log.level=0
+e io.cache=true
+m /mnt udf 0
+mc /mnt/README.md
+# Store README.md's 30 bytes inside its file entry (AD_IN_ICB, alloc_descs_length=30).
+wx 3302 @ 0x84822
+wx 1e000000 @ 0x848ac
+wx 5468697320697320616e2049534f393636302066696c6573797374656d0a @ 0x849ac
+mc /mnt/README.md
+# A file_size larger than the embedded data must not read past it.
+wx 0008000000000000 @ 0x84838
+mc /mnt/README.md || echo read-failed
+# An ext_attr_length that does not fit in the entry must be rejected.
+wx 00100000 @ 0x848a8
+mc /mnt/README.md || echo open-failed
+EOF2
+EXPECT=<<EOF2
+This is an ISO9660 filesystem
+
+This is an ISO9660 filesystem
+
+read-failed
+open-failed
+EOF2
+EXPECT_ERR=
+RUN
