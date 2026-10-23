@@ -286,6 +286,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=128bit peek and poke halves on big endian
+FILE=malloc://0x200
+ARGS=-a arm -b 64 -e cfg.bigendian=true -e hex.header=false
+CMDS=<<EOF
+woe 1
+ae 0,[16],q0,=
+ar v0l
+ar v0h
+ae q0,0x10,=[16]
+x 16 @ 0x10
+EOF
+EXPECT=<<EOF
+0x8090a0b0c0d0e0f
+0x1020304050607
+0x00000010  0001 0203 0405 0607 0809 0a0b 0c0d 0e0f  ................
+EOF
+RUN
+
 NAME=ldr x25, [sp, -0x28]
 FILE=malloc://0x200
 CMDS=<<EOF
