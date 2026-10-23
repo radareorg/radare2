@@ -127,3 +127,24 @@ EXPECT=<<EOF
 0x00000018
 EOF
 RUN
+
+NAME=BPF ALU64 immediates sign extend while ALU32 zero extends
+FILE=malloc://24
+ARGS=-a bpf -b 64
+CMDS=<<EOF
+wx b7010000ffffffff07010000f7ffffffb4010000ffffffff
+aei
+aeip
+aes
+ar r1
+aes
+ar r1
+aes
+ar r1
+EOF
+EXPECT=<<EOF
+0xffffffffffffffff
+0xfffffffffffffff6
+0xffffffff
+EOF
+RUN

@@ -587,8 +587,8 @@ void bpf_alu(RArchSession *a, RAnalOp *op, cs_insn *insn, const char* operation,
 	if (OPCOUNT == 2 && a->config->bits == 64) { // eBPF
 		if (bits == 64) {
 			if (OP (1).type == BPF_OP_IMM) {
-				op->val = IMM (1);
-				esilprintf (op, "%" PFMT64d ",%s,%s=", IMM (1), REG (0), operation);
+				op->val = (ut64)(st64)(st32)IMM (1);
+				esilprintf (op, "%" PFMT64u ",%s,%s=", op->val, REG (0), operation);
 			} else {
 				esilprintf (op, "%s,%s,%s=", REG (1), REG (0), operation);
 			}
@@ -841,7 +841,8 @@ static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr) 
 	}
 	case BPF_INS_MOV64:
 		if (OP (1).type == BPF_OP_IMM) {
-			esilprintf (op, "%" PFMT64d ",%s,=", IMM (1), REG (0));
+			op->val = (ut64)(st64)(st32)IMM (1);
+			esilprintf (op, "%" PFMT64u ",%s,=", op->val, REG (0));
 		} else {
 			esilprintf (op, "%s,%s,=", REG (1), REG (0));
 		}
