@@ -748,6 +748,29 @@ bool test_r_str_split_list(void) {
 	mu_end;
 }
 
+bool test_r_str_split_duplist(void) {
+	const char *separators[] = { ",", "::" };
+	const char *inputs[] = { ", first ,, last,", ":: first :::: last::" };
+	const char *expected[] = { "", "first", "", "last", "" };
+	size_t i, j;
+	for (i = 0; i < R_ARRAY_SIZE (separators); i++) {
+		RList *list = r_str_split_duplist (inputs[i], separators[i], true);
+		mu_assert_eq (r_list_length (list), R_ARRAY_SIZE (expected), "keep empty split fields");
+		for (j = 0; j < R_ARRAY_SIZE (expected); j++) {
+			mu_assert_streq (r_list_get_n (list, j), expected[j], "split and trim fields");
+		}
+		r_list_free (list);
+		list = r_str_split_duplist (" a ", separators[i], false);
+		mu_assert_streq (r_list_get_n (list, 0), " a ", "preserve spaces without trimming");
+		r_list_free (list);
+		list = r_str_split_duplist ("", separators[i], false);
+		mu_assert_eq (r_list_length (list), 1, "empty input gives one empty field");
+		mu_assert_streq (r_list_get_n (list, 0), "", "empty input field");
+		r_list_free (list);
+	}
+	mu_end;
+}
+
 bool test_r_str_tokenize(void) {
 	//XXX r_str_word0 doesn't work on "hello      world" to
 	// tokenize into ["hello", "world"]
@@ -1613,6 +1636,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_hash_bounds);
 	mu_run_test (test_r_str_split);
 	mu_run_test (test_r_str_split_list);
+	mu_run_test (test_r_str_split_duplist);
 	mu_run_test (test_r_str_tokenize);
 	mu_run_test (test_r_str_char_count);
 	mu_run_test (test_r_str_word_count);
