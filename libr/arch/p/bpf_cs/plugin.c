@@ -668,12 +668,17 @@ void bpf_jump(RArchSession *a, RAnalOp *op, cs_insn *insn, char *condition) {
 				condition, op->jump, op->fail);
 		}
 	} else if (OPCOUNT > 1) { // eBPF
+		const bool word = (op->bytes[0] & 7) == 6;
+		const bool sign = insn->id == BPF_INS_JSGT || insn->id == BPF_INS_JSGE
+			|| insn->id == BPF_INS_JSLT || insn->id == BPF_INS_JSLE;
+		const char *extend = !word? "": sign? ",32,SWAP,~": ",0xffffffff,&";
 		if (OP (1).type == BPF_OP_IMM) {
-			esilprintf (op, "%" PFMT64d ",%s,%s,?{,0x%" PFMT64x ",pc,=,}",
-				IMM (1), REG (0), condition, op->jump);
+			ut64 value = word && !sign? IMM (1): (ut64)(st64)(st32)IMM (1);
+			esilprintf (op, "%" PFMT64u ",%s%s,%s,?{,0x%" PFMT64x ",pc,=,}",
+				value, REG (0), extend, condition, op->jump);
 		} else {
-			esilprintf (op, "%s,%s,%s,?{,0x%" PFMT64x ",pc,=,}",
-				REG (1), REG (0), condition, op->jump);
+			esilprintf (op, "%s%s,%s%s,%s,?{,0x%" PFMT64x ",pc,=,}",
+				REG (1), extend, REG (0), extend, condition, op->jump);
 		}
 	}
 }

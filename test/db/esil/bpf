@@ -148,3 +148,56 @@ EXPECT=<<EOF
 0xffffffff
 EOF
 RUN
+
+NAME=BPF branches sign extend immediates and truncate JMP32 operands
+REQUIRE=cs6
+FILE=malloc://32
+ARGS=-a bpf -b 64
+CMDS=<<EOF
+wx 15010100ffffffffc5010100ffffffffae21010000000000ce21010000000000
+aei
+ar r1=0xffffffffffffffff
+ar pc=0
+aes
+ar pc
+ar pc=8
+aes
+ar pc
+ar r1=0x100000001
+ar r2=2
+ar pc=16
+aes
+ar pc
+ar r1=0xffffffff
+ar r2=0
+ar pc=24
+aes
+ar pc
+EOF
+EXPECT=<<EOF
+0x00000010
+0x00000010
+0x00000020
+0x00000028
+EOF
+RUN
+
+NAME=BPF comparison immediates sign extend to the full register width
+FILE=malloc://16
+ARGS=-a bpf -b 64
+CMDS=<<CMDS
+wx 15010100ffffffffc5010100ffffffff
+aei
+ar r1=0xffffffffffffffff
+ar pc=0
+aes
+ar pc
+ar pc=8
+aes
+ar pc
+CMDS
+EXPECT=<<EXPECT
+0x00000010
+0x00000010
+EXPECT
+RUN
