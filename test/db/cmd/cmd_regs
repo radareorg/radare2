@@ -97,3 +97,63 @@ EXPECT=<<EOF
 0x9
 EOF
 RUN
+
+NAME=zero write to a 128bit reg whose low qword is zero
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+ar v0l=0xdead
+ar q0=0
+ar v0l
+ar v0h=0xbeef
+ar q0=0
+ar v0h
+ar v0h=1
+ar q0=1
+ar v0h
+ar x0=0x100
+ar x0=0
+ar x0
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000000
+0x00000000
+0x00000000
+EOF
+RUN
+
+NAME=zero write to a 128bit reg on big endian
+FILE=malloc://0x200
+ARGS=-a arm -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+ar v0l=0xdead
+ar q0=0
+ar v0l
+ar v0h=0xbeef
+ar q0=0
+ar v0h
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000000
+EOF
+RUN
+
+NAME=writes to a 256bit register land
+FILE=malloc://0x100
+ARGS=-a kvx
+CMDS=<<EOF
+ar r0r1r2r3=7
+ar r0
+ar r1=6
+ar r0r1r2r3=0
+ar r0
+ar r1
+EOF
+EXPECT=<<EOF
+0x00000007
+0x00000000
+0x00000000
+EOF
+RUN
