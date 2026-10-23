@@ -63,3 +63,37 @@ EXPECT=<<EOF
 EOF
 RUN
 
+
+NAME=reading a 128bit reg gives its low qword
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+ar q0=5
+?v q0
+ae q0,x1,=
+ar x1
+ar v0h=1
+?v q0
+ar x2=7
+?v x2
+EOF
+EXPECT=<<EOF
+0x5
+0x00000005
+0x5
+0x7
+EOF
+RUN
+
+NAME=reading a 256bit reg gives its low qword
+FILE=malloc://0x200
+ARGS=-a kvx
+CMDS=<<EOF
+ar r0=9
+ar r1=3
+?v r0r1r2r3
+EOF
+EXPECT=<<EOF
+0x9
+EOF
+RUN
