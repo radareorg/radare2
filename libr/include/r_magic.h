@@ -207,6 +207,7 @@ struct r_magic_root {
 struct mlist {
 	struct r_magic *magic;		/* array of magic entries */
 	struct r_magic_root *roots;	/* top-level tests */
+	struct r_regex_t **rx;		/* compiled regex per entry, if any */
 	ut32 bucket[258];		/* roots[bucket[b]..bucket[b+1]] start with byte b at offset 0, bucket[256].. are unindexed */
 	ut32 nmagic;			/* number of entries in array */
 	ut32 nroots;			/* number of top-level tests */

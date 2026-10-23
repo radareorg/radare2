@@ -793,7 +793,7 @@ static ut64 file_strncmp(const char *s1, const char *s2, size_t len, ut32 flags)
 	return v;
 }
 
-static int magiccheck(RMagic *ms, struct r_magic *m) {
+static int magiccheck(RMagic *ms, struct r_magic *m, const RRegex *rx) {
 	ut64 l = m->value.q;
 	ut64 v;
 	float fl, fv;
@@ -903,47 +903,21 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 	}
 	case FILE_REGEX:
 		{
-			int rc;
-			RRegex rx = { 0 };
-			char *errmsg;
-
-			if (!ms->search.s) {
+			RRegexMatch pmatch[1] = {{ .rm_so = 0, .rm_eo = ms->search.s_len }};
+			if (!ms->search.s || !rx) {
 				return 0;
 			}
-
-			l = 0;
-			rc = r_regex_init (&rx, m->value.s, R_REGEX_EXTENDED | R_REGEX_NEWLINE | ((m->str_flags & STRING_IGNORE_CASE)? R_REGEX_ICASE: 0));
-			if (rc) {
-				errmsg = r_regex_error (&rx, rc);
-				__magic_file_magerror (ms, "regex error %d, (%s)", rc, errmsg);
-				free (errmsg);
-				v = (ut64)-1;
-			} else {
-				RRegexMatch pmatch[1];
-				pmatch[0].rm_so = 0;
-				pmatch[0].rm_eo = ms->search.s_len;
-				rc = r_regex_exec (&rx, (const char *)ms->search.s, 1, pmatch, R_REGEX_STARTEND);
-				switch (rc) {
-				case 0:
-					ms->search.s += (int)pmatch[0].rm_so;
-					ms->search.offset += (size_t)pmatch[0].rm_so;
-					ms->search.rm_len = (size_t) (pmatch[0].rm_eo - pmatch[0].rm_so);
-					v = 0;
-					break;
-				case R_REGEX_NOMATCH:
-					v = 1;
-					break;
-				default:
-					errmsg = r_regex_error (&rx, rc);
-					__magic_file_magerror (ms, "regexec error %d, (%s)", rc, errmsg);
-					free (errmsg);
-					v = UT64_MAX;
-					break;
-				}
-				r_regex_fini (&rx);
-			}
-			if (v == (ut64)-1) {
+			const int rc = r_regex_exec (rx, ms->search.s, 1, pmatch, R_REGEX_STARTEND);
+			if (rc && rc != R_REGEX_NOMATCH) {
+				__magic_file_magerror (ms, "regexec error %d", rc);
 				return -1;
+			}
+			l = 0;
+			v = rc == R_REGEX_NOMATCH;
+			if (!v) {
+				ms->search.s += pmatch[0].rm_so;
+				ms->search.offset += pmatch[0].rm_so;
+				ms->search.rm_len = pmatch[0].rm_eo - pmatch[0].rm_so;
 			}
 			break;
 		}
@@ -1026,7 +1000,7 @@ static int mtest(RMagic *ms, const struct mlist *ml, ut32 idx, const ut8 *s, siz
 	if (got <= 0) {
 		return got? -1: (m->reln == '!')? 1: 2;
 	}
-	return magiccheck (ms, m);
+	return magiccheck (ms, m, ml->rx? ml->rx[idx]: NULL);
 }
 
 static int match(RMagic *ms, const struct mlist *ml, const ut8 *s, size_t nbytes, int mode) {

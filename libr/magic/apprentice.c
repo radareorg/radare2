@@ -161,6 +161,22 @@ static bool magic_index(RMagic *ms, struct mlist *ml) {
 		}
 		ml->roots[ml->nroots - 1].end = i + 1;
 		max_bytes = R_MAX (max_bytes, magic_max_bytes (m));
+		if (m->type != FILE_REGEX) {
+			continue;
+		}
+		if (!ml->rx && !(ml->rx = R_NEWS0 (RRegex *, ml->nmagic))) {
+			__magic_file_oomem (ms, sizeof (RRegex *) * ml->nmagic);
+			return false;
+		}
+		const int flags = R_REGEX_EXTENDED | R_REGEX_NEWLINE | ((m->str_flags & STRING_IGNORE_CASE)? R_REGEX_ICASE: 0);
+		RRegex *rx = R_NEW0 (RRegex);
+		if (r_regex_init (rx, m->value.s, flags)) {
+			ms->line = m->lineno;
+			__magic_file_magwarn (ms, "invalid regex `%s'", m->value.s);
+			free (rx);
+		} else {
+			ml->rx[i] = rx;
+		}
 	}
 	ml->bytes_max = (ut32)max_bytes;
 	return magic_bucket_roots (ms, ml);
