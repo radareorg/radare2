@@ -31,6 +31,7 @@ typedef struct slides_view_t {
 	int sy;
 	int total_pages;
 	SlidesSearch *search;
+	int transition;
 } SlidesView;
 
 static void clearkeys(SlidesState *state) {
@@ -558,7 +559,7 @@ static void slide_search_next(SlidesSearch *search, int *page, int step) {
 	}
 }
 
-static void render(SlidesState *state, RCore *core, RList *list, int mode, int page, int *scroll_x, int *scroll_y, SlidesSearch *search) {
+static char *render(SlidesState *state, RCore *core, RList *list, int mode, int page, int *scroll_x, int *scroll_y, SlidesSearch *search) {
 	RCons *cons = core->cons;
 	int h, columns = r_cons_get_size (cons, &h);
 	int offset = mode == 2? columns / 2: 0;
@@ -581,18 +582,14 @@ static void render(SlidesState *state, RCore *core, RList *list, int mode, int p
 	sy = R_MAX (0, sy);
 	char *cropped = r_str_ansi_crop (output, sx, sy, (ut32)sx + width, (ut32)sy + R_MAX (0, h - 1));
 	free (output);
-	if (cropped) {
-		if (offset) {
-			char *prefix = r_str_pad (NULL, 0, ' ', offset);
-			char *positioned = r_str_prefix_all (cropped, prefix);
-			r_cons_print (cons, positioned);
-			free (positioned);
-			free (prefix);
-		} else {
-			r_cons_print (cons, cropped);
-		}
+	if (cropped && offset) {
+		char *prefix = r_str_pad (NULL, 0, ' ', offset);
+		char *positioned = r_str_prefix_all (cropped, prefix);
 		free (cropped);
+		cropped = positioned;
+		free (prefix);
 	}
+	return cropped;
 }
 
 static void render_page_index(RCore *core, int page, int total, SlidesSearch *search) {
@@ -628,6 +625,63 @@ static void render_page_index(RCore *core, int page, int total, SlidesSearch *se
 	free (index);
 }
 
+static void slides_print_rows(RCons *cons, RList *lines, int first, int count, int y) {
+	RListIter *iter = r_list_get_nth (lines, first);
+	while (iter && count-- > 0) {
+		r_cons_gotoxy (cons, 1, y++);
+		r_cons_printf (cons, "%s" Color_RESET, (const char *)iter->data);
+		iter = iter->n;
+	}
+}
+
+static bool slides_animate(SlidesView *view, const char *left, const char *right) {
+	RCons *cons = view->core->cons;
+	int height, width = r_cons_get_size (cons, &height);
+	if (!view->transition || height < 4 || !cons->vtmode || cons->context->noflush
+			|| !r_config_get_b (view->core->config, "scr.demo")) {
+		return false;
+	}
+	RList *left_lines = r_str_split_duplist (left, "\n", false);
+	RList *right_lines = right? r_str_split_duplist (right, "\n", false): NULL;
+	if (!left_lines || (right && !right_lines)) {
+		r_list_free (left_lines);
+		r_list_free (right_lines);
+		return false;
+	}
+	int rows = height - 1;
+	int frame, previous = 0;
+	bool complete = false;
+	// Keep the footer stationary while the slide scrolls through the content area.
+	r_cons_printf (cons, Color_RESET "\x1b[1;%dr", rows);
+	for (frame = 1; frame <= 12; frame++) {
+		int current_height;
+		if (r_cons_get_size (cons, &current_height) != width || current_height != height || r_cons_is_breaked (cons)) {
+			break;
+		}
+		int position = (ut64)rows * frame * frame * (36 - 2 * frame) / (12 * 12 * 12);
+		int count = position - previous;
+		if (count > 0) {
+			r_cons_printf (cons, "\x1b[%d%c", count, view->transition > 0? 'S': 'T');
+			int first = view->transition > 0? previous: rows - position;
+			int y = view->transition > 0? rows - count + 1: 1;
+			if (right_lines) {
+				slides_print_rows (cons, right_lines, first, count, y);
+			}
+			slides_print_rows (cons, left_lines, first, count, y);
+			r_cons_flush (cons);
+		}
+		previous = position;
+		if (frame < 12) {
+			r_sys_usleep (14000);
+		}
+		complete = frame == 12;
+	}
+	r_cons_print (cons, "\x1b[r");
+	r_list_free (left_lines);
+	r_list_free (right_lines);
+	return complete;
+}
+
 static void slides_refresh(void *user) {
 	SlidesView *view = user;
 	RCons *cons = view->core->cons;
@@ -640,12 +694,24 @@ static void slides_refresh(void *user) {
 		slide_search_next (view->search, &view->page, 0);
 	}
 	clearkeys (view->state);
-	r_cons_clear00 (cons);
+	char *right = NULL;
 	if (view->mode == 2) {
-		render (view->state, view->core, view->list, 2, view->page + 1, &view->sx, &view->sy, view->search);
+		right = render (view->state, view->core, view->list, 2, view->page + 1, &view->sx, &view->sy, view->search);
 	}
-	r_cons_gotoxy (cons, 0, 0);
-	render (view->state, view->core, view->list, view->mode == 2? 0: 1, view->page, &view->sx, &view->sy, view->search);
+	char *left = render (view->state, view->core, view->list, view->mode == 2? 0: 1, view->page, &view->sx, &view->sy, view->search);
+	if (!left || !slides_animate (view, left, right)) {
+		r_cons_clear00 (cons);
+		if (right) {
+			r_cons_print (cons, right);
+		}
+		r_cons_gotoxy (cons, 0, 0);
+		if (left) {
+			r_cons_print (cons, left);
+		}
+	}
+	free (left);
+	free (right);
+	view->transition = 0;
 	render_page_index (view->core, view->page, view->total_pages, view->search);
 	r_cons_flush (cons);
 	view->search->focus = false;
@@ -677,6 +743,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 	int mode = 1;
 	int sx = 0;
 	int sy = 0;
+	int transition = 0;
 	r_cons_set_raw (core->cons, 1);
 	r_cons_show_cursor (core->cons, false);
 	int total_pages = count_pages (list);
@@ -686,8 +753,9 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 		if (page > total_pages) {
 			page = total_pages;
 		}
-		SlidesView view = { &state, core, list, mode, page, sx, sy, total_pages, &search };
+		SlidesView view = { &state, core, list, mode, page, sx, sy, total_pages, &search, transition };
 		slides_refresh (&view);
+		transition = 0;
 		r_cons_set_raw (core->cons, true);
 		r_cons_enable_mouse (core->cons, r_config_get_b (core->config, "scr.wheel"));
 		RConsEvent resize = core->cons->event_resize;
@@ -758,6 +826,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 				slide_search_next (&search, &page, 1);
 				break;
 			}
+			transition = page < total_pages? 1: 0;
 			page += mode;
 			sx = sy = 0;
 			break;
@@ -767,6 +836,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 				slide_search_next (&search, &page, -1);
 				break;
 			}
+			transition = page > 1? -1: 0;
 			sx = sy = 0;
 			page -= mode;
 			if (page < 1) {

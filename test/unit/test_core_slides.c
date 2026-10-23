@@ -141,6 +141,73 @@ bool test_slides_footer(void) {
 	mu_end;
 }
 
+static int slides_count_transitions(const char *output, const char *sequence) {
+	int count = 0;
+	while ((output = strstr (output, sequence))) {
+		count++;
+		output += strlen (sequence);
+	}
+	return count;
+}
+
+bool test_slides_transitions(void) {
+	char *filename = NULL;
+	int fd = r_file_mkstemp ("r2-slides-transitions", &filename);
+	mu_assert ("temporary slide deck", fd >= 0);
+	close (fd);
+	const char *deck = "# First\n--font=plain\n`f first_draws=first_draws+1`\none\n"
+		"# Last\n--font=plain\n`f last_draws=last_draws+1`\ntwo\n";
+	mu_assert_true (r_file_dump (filename, (const ut8 *)deck, -1, false), "write slide deck");
+	int i;
+	for (i = 0; i < 4; i++) {
+		char *capture = NULL;
+		fd = r_file_mkstemp ("r2-slides-output", &capture);
+		mu_assert ("temporary output capture", fd >= 0);
+		RCore *core = r_core_new ();
+		RCons *cons = core->cons;
+		r_config_set_b (core->config, "scr.interactive", true);
+		r_config_set_b (core->config, "scr.demo", i != 0);
+		r_config_set_i (core->config, "scr.color", 0);
+		cons->force_columns = 40;
+		cons->force_rows = i == 2? 3: 10;
+		cons->vtmode = 2;
+		r_flag_set (core->flags, "first_draws", 0, 1);
+		r_flag_set (core->flags, "last_draws", 0, 1);
+		int saved_fdout = cons->fdout;
+		cons->fdout = fd;
+		const char *keys = i == 3? "2nNq": "NnnNq";
+		mu_assert_true (r_cons_readpush (cons, keys, strlen (keys)), "queue slide transitions and boundary navigation");
+		r_core_visual_slides (core, filename);
+		cons->fdout = saved_fdout;
+		close (fd);
+		char *output = r_file_slurp (capture, NULL);
+		mu_assert_notnull (output, "read captured transitions");
+		if (i == 1 || i == 3) {
+			mu_assert_eq (slides_count_transitions (output, "\x1b[1;9r"), 2, "animate only actual slide changes");
+			mu_assert_notnull (strstr (output, "\x1b[1S"), "forward navigation scrolls up");
+			mu_assert_notnull (strstr (output, "\x1b[1T"), "backward navigation scrolls down");
+			mu_assert_eq (slides_count_transitions (output, "\x1b[r"), 2, "restore scrolling region after each transition");
+		} else {
+			mu_assert_null (strstr (output, "\x1b[1;"), "disabled demo and small screens redraw without animation");
+		}
+		if (i != 3) {
+			RFlagItem *first = r_flag_get (core->flags, "first_draws");
+			RFlagItem *last = r_flag_get (core->flags, "last_draws");
+			mu_assert_notnull (first, "first slide command executed");
+			mu_assert_notnull (last, "last slide command executed");
+			mu_assert_eq (first->addr, 3, "first slide commands execute once per refresh");
+			mu_assert_eq (last->addr, 2, "last slide commands execute once per refresh");
+		}
+		free (output);
+		r_core_free (core);
+		r_file_rm (capture);
+		free (capture);
+	}
+	r_file_rm (filename);
+	free (filename);
+	mu_end;
+}
+
 static const char *slides_search_word;
 static RCore *slides_search_core;
 static bool slides_search_highlight;
@@ -265,6 +332,7 @@ int all_tests(void) {
 	mu_run_test (test_slides_cleanup);
 	mu_run_test (test_slides_mouse_wheel);
 	mu_run_test (test_slides_footer);
+	mu_run_test (test_slides_transitions);
 	mu_run_test (test_slides_search);
 #if R2__UNIX__
 	mu_run_test (test_slides_eof);
