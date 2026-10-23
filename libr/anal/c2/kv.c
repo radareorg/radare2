@@ -1275,7 +1275,9 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		RStrs member_dimm = { 0 };
 		member_type.a = kvc->s.a;
 		// Support function pointer fields: allow parentheses when scanning semicolon
-		if (r_strs_find_strs ((RStrs){ member_type.a, kvc->s.b }, R_STRS_LIT ("(*"))) {
+		// only look inside this member, searching the rest of the input is quadratic
+		const char *semi = r_strs_findc (kvc->s, ';');
+		if (r_strs_find_strs ((RStrs){ member_type.a, semi? semi: kvc->s.b }, R_STRS_LIT ("(*"))) {
 			member_type.b = scan_to_semicolon (kvc, true);
 		} else {
 			member_type.b = scan_to_semicolon (kvc, false);

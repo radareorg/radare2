@@ -6092,3 +6092,17 @@ size: 16003
 8002
 EOF
 RUN
+
+NAME=@aligned attribute on field before a function pointer field
+FILE=--
+CMDS=<<CMDS
+'td struct bar { char gap; int val __attribute__((__aligned__(8))); }; struct cow { void (*fp)(int); };
+tk ~struct.bar
+CMDS
+EXPECT=<<EXPECT
+struct.bar=gap,val
+struct.bar.gap=char,0,0
+struct.bar.val=int,8,0
+struct.bar.val.@.aligned=8
+EXPECT
+RUN
