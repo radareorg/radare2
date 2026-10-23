@@ -3213,15 +3213,16 @@ static int walk_exports(struct MACH0_(obj_t) * bin, RExportsIterator iterator, v
 }
 
 static void _update_main_addr_if_needed(struct MACH0_(obj_t) * mo, const RBinSymbol *sym) {
+	const char *name = r_bin_name_tostring2 (sym->name, 'o');
+	// An exact entry symbol overrides an earlier mangled-name heuristic.
+	if (!strcmp (name, "_main") || !strcmp (name, "main")) {
+		mo->main_addr = sym->vaddr;
+		return;
+	}
 	if (!mo->main_addr || mo->main_addr == UT64_MAX) {
-		const char *name = r_bin_name_tostring2 (sym->name, 'o');
 		if (!strcmp (name, "__Dmain")) {
 			mo->main_addr = sym->vaddr;
 		} else if (strstr (name, "4main") && !strstr (name, "STATIC")) {
-			mo->main_addr = sym->vaddr;
-		} else if (!strcmp (name, "_main")) {
-			mo->main_addr = sym->vaddr;
-		} else if (!strcmp (name, "main")) {
 			mo->main_addr = sym->vaddr;
 		}
 	}
@@ -3378,6 +3379,7 @@ static void _fill_exports(struct MACH0_(obj_t) * mo, const char *name, ut64 flag
 	sym->name = r_bin_name_new (name);
 	sym->bind = R_BIN_BIND_GLOBAL_STR;
 	sym->ordinal = (*context->ordinal)++;
+	_update_main_addr_if_needed (mo, sym);
 	_enrich_symbol (context->bf, mo, context->symcache, sym, 0);
 }
 
@@ -3460,6 +3462,7 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 		.boffset = obj->boffset,
 		.ordinal = &ordinal,
 	};
+	mo->main_addr = UT64_MAX;
 	walk_exports (mo, _fill_exports, &fill_context);
 
 	if (!mo->symtab || !mo->symstr) {
@@ -3482,7 +3485,6 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 		return;
 	}
 	j = 0; // symbol_idx
-	mo->main_addr = UT64_MAX;
 	int bits = MACH0_(get_bits_from_hdr) (&mo->hdr);
 	bool is_stripped = true;
 	const int limit = bf->rbin->options.limit;

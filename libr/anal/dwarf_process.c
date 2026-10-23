@@ -912,10 +912,9 @@ static void get_spec_die_type(Context *ctx, const RBinDwarfCompUnit *cu, const R
 	}
 }
 
-/* For some languages linkage name is more informative like C++,
- * but for Rust it's rubbish and the normal name is fine */
+// Linkage names retain namespaces, including Rust's distinction from C main.
 static bool prefer_linkage_name(const char *lang) {
-	if (!lang || !strcmp (lang, "rust") || !strcmp (lang, "ada")) {
+	if (!lang || !strcmp (lang, "ada")) {
 		return false;
 	}
 	return true;
@@ -2097,7 +2096,6 @@ static void parse_function(Context *ctx, ut64 idx) {
 	if (r_bin_dwarf_die_find_attr (ctx->unit, die, DW_AT_declaration)) {
 		return; /* just declaration skip */
 	}
-	/* For rust binaries prefer regular name not linkage TODO */
 	RBinDwarfAttrValue *val;
 	R_BIN_DWARF_DIE_FOREACH_ATTR (ctx->unit, die, val) {
 		switch (val->attr_name) {

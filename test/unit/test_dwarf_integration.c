@@ -280,23 +280,23 @@ static bool test_dwarf_function_parsing_rust(void) {
 	mu_assert_notnull (sdb, "No dwarf function information in db");
 	const char *value = NULL;
 
-	check_kv ("fcn.main.addr", "0x5750");
-	check_kv ("fcn.main.name", "main");
-	check_kv ("fcn.main.var.numbers", "s,128,i32[10]");
-	check_kv ("fcn.main.var.strings", "s,312,&str[5]");
-	// check_kv ("fcn.main.vars", "numbers,arg0,arg0,strings,arg0,arg0"); Fix these collision by unique renaming in future
-	check_kv ("fcn.lang_start_internal.sig", "isize lang_start_internal(&Fn<()> main,isize argc,u8 ** argv);");
+	check_kv ("fcn.rust::main::h523dcf5432fcfd88.addr", "0x5750");
+	check_kv ("fcn.rust::main::h523dcf5432fcfd88.name", "rust::main::h523dcf5432fcfd88");
+	check_kv ("fcn.rust::main::h523dcf5432fcfd88.var.numbers", "s,128,i32[10]");
+	check_kv ("fcn.rust::main::h523dcf5432fcfd88.var.strings", "s,312,&str[5]");
+	// check_kv ("fcn.rust::main::h523dcf5432fcfd88.vars", "numbers,arg0,arg0,strings,arg0,arg0"); Fix these collision by unique renaming in future
+	check_kv ("fcn.std::rt::lang_start_internal::h58283c2b5ed737c9.sig", "isize std::rt::lang_start_internal::h58283c2b5ed737c9(&Fn<()> main,isize argc,u8 ** argv);");
 
-	check_kv ("bubble_sort__str_", "fcn");
-	check_kv ("bubble_sort_i32_", "fcn");
-	check_kv ("fcn.bubble_sort_i32_.args", "values");
-	check_kv ("fcn.bubble_sort_i32_.vars", "n,swapped,iter,__next,val,i");
-	check_kv ("fcn.bubble_sort_i32_.var.iter", "s,112,Range<usize>");
-	check_kv ("fcn.bubble_sort_i32_.var.i", "s,176,usize");
-	check_kv ("fcn.bubble_sort_i32_.name", "bubble_sort<i32>");
-	check_kv ("fcn.bubble_sort_i32_.addr", "0x5270");
-	const char *typed_bubble = sdb_const_get (sdb, "fcn.bubble_sort_i32_.typed_name", NULL);
-	mu_assert_notnull ("Missing typed name for bubble_sort_i32_", typed_bubble);
+	check_kv ("rust::bubble_sort::h7ea83ee077a91c25", "fcn");
+	check_kv ("rust::bubble_sort::h0777bc845caabc60", "fcn");
+	check_kv ("fcn.rust::bubble_sort::h0777bc845caabc60.args", "values");
+	check_kv ("fcn.rust::bubble_sort::h0777bc845caabc60.vars", "n,swapped,iter,__next,val,i");
+	check_kv ("fcn.rust::bubble_sort::h0777bc845caabc60.var.iter", "s,112,Range<usize>");
+	check_kv ("fcn.rust::bubble_sort::h0777bc845caabc60.var.i", "s,176,usize");
+	check_kv ("fcn.rust::bubble_sort::h0777bc845caabc60.name", "rust::bubble_sort::h0777bc845caabc60");
+	check_kv ("fcn.rust::bubble_sort::h0777bc845caabc60.addr", "0x5270");
+	const char *typed_bubble = sdb_const_get (sdb, "fcn.rust::bubble_sort::h0777bc845caabc60.typed_name", NULL);
+	mu_assert_notnull ("Missing typed name for rust::bubble_sort::h0777bc845caabc60", typed_bubble);
 	sdb = anal->sdb_types;
 	char *typed_bubble_kind = strdup (typed_bubble);
 	check_kv (typed_bubble_kind, "func");
