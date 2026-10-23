@@ -206,6 +206,19 @@ static bool test_r_magic_api_version_matches_header_constant(void) {
 	mu_end;
 }
 
+static bool test_r_magic_regex_stays_in_buffer(void) {
+	const char magic_source[] = "0 regex/1 !ABC miss\n0 regex/1 B[C]$ tail\n";
+	RMagic *ms = r_magic_new (R_MAGIC_CHECK_TEXT);
+	ut8 *probe = malloc (3);
+	mu_assert_notnull (probe, "malloc failed");
+	memcpy (probe, "ABC", 3);
+	mu_assert_true (r_magic_load_buffer (ms, (const ut8 *)magic_source, sizeof (magic_source) - 1), "load failed");
+	mu_assert_streq (r_magic_buffer (ms, probe, 3), "tail", "regex bounded by the probe size");
+	free (probe);
+	r_magic_free (ms);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_magic_load_text_buffer);
 	mu_run_test (test_r_magic_load_compiled_buffer);
@@ -218,6 +231,7 @@ int all_tests(void) {
 	mu_run_test (test_r_magic_getflags_returns_current_flags);
 	mu_run_test (test_r_magic_load_accepts_null_magic_path);
 	mu_run_test (test_r_magic_api_version_matches_header_constant);
+	mu_run_test (test_r_magic_regex_stays_in_buffer);
 	return tests_passed != tests_run;
 }
 

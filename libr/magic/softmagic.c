@@ -605,44 +605,32 @@ static int mcopy(RMagic *ms, union VALUETYPE *p, int type, int indir, const ut8 
 	if (indir == 0) {
 		switch (type) {
 		case FILE_SEARCH:
-			ms->search.s = (const char *)s + offset;
-			ms->search.s_len = nbytes - offset;
-			ms->search.offset = offset;
-			return 0;
 		case FILE_REGEX:
-			{
-				const char *b;
-				const char *c;
-				const char *last; /* end of search region */
-				const char *buf; /* start of search region */
-				size_t lines;
-
-				if (!s) {
-					ms->search.s_len = 0;
-					ms->search.s = NULL;
-					return 0;
-				}
-				buf = (const char *)s + offset;
-				last = (const char *)s + nbytes;
-				/* mget () guarantees buf <= last */
-				for (lines = linecnt, b = buf;
-					lines && ((b = strchr (c = b, '\n')) || (b = strchr (c, '\r')));
-					lines--, b++) {
-					last = b;
-					if (b[0] == '\r' && b[1] == '\n') {
-						b++;
-					}
-				}
-				if (lines) {
-					last = (const char *)s + nbytes;
-				}
-
-				ms->search.s = buf;
-				ms->search.s_len = last - buf;
-				ms->search.offset = offset;
-				ms->search.rm_len = 0;
+			if (!s || offset > nbytes) {
+				ms->search.s = NULL;
+				ms->search.s_len = 0;
 				return 0;
 			}
+			{
+				const char *buf = (const char *)s + offset;
+				const char *end = (const char *)s + nbytes;
+				const char *last = end;
+				size_t lines = (type == FILE_REGEX)? linecnt: 0;
+				// Regex tests only see the first linecnt lines
+				for (; lines && buf < end; lines--) {
+					const char *nl = memchr (buf, '\n', end - buf);
+					if (!nl && !(nl = memchr (buf, '\r', end - buf))) {
+						break;
+					}
+					last = nl;
+					buf = nl + ((nl[0] == '\r' && nl + 1 < end && nl[1] == '\n')? 2: 1);
+				}
+				ms->search.s = (const char *)s + offset;
+				ms->search.s_len = (lines? end: last) - ms->search.s;
+				ms->search.offset = offset;
+				ms->search.rm_len = 0;
+			}
+			return 0;
 		case FILE_BESTRING16:
 		case FILE_LESTRING16:
 			{
@@ -932,19 +920,9 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 				v = (ut64)-1;
 			} else {
 				RRegexMatch pmatch[1];
-#ifndef R_REGEX_STARTEND
-#define R_REGEX_STARTEND 0
-				size_t l = ms->search.s_len - 1;
-				char c = ms->search.s[l];
-				((char *) (intptr_t)ms->search.s)[l] = '\0';
-#else
 				pmatch[0].rm_so = 0;
 				pmatch[0].rm_eo = ms->search.s_len;
-#endif
 				rc = r_regex_exec (&rx, (const char *)ms->search.s, 1, pmatch, R_REGEX_STARTEND);
-#if R_REGEX_STARTEND == 0
-				((char *) (intptr_t)ms->search.s)[l] = c;
-#endif
 				switch (rc) {
 				case 0:
 					ms->search.s += (int)pmatch[0].rm_so;
