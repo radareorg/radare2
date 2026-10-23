@@ -676,28 +676,24 @@ R_API char *r_reg_parse_gdb_profile(const char *profile_file) {
 }
 
 R_API char *r_reg_profile_to_cc(RReg *reg) {
+	R_RETURN_VAL_IF_FAIL (reg, NULL);
 	const char *r0 = r_reg_alias_getname (reg, R_REG_ALIAS_R0);
-	const char *a0 = r_reg_alias_getname (reg, R_REG_ALIAS_A0);
-	const char *a1 = r_reg_alias_getname (reg, R_REG_ALIAS_A1);
-	const char *a2 = r_reg_alias_getname (reg, R_REG_ALIAS_A2);
-	const char *a3 = r_reg_alias_getname (reg, R_REG_ALIAS_A3);
-
 	if (!r0) {
-		r0 = a0;
+		r0 = r_reg_alias_getname (reg, R_REG_ALIAS_A0);
 	}
 	if (!r0) {
-		// it is mandatory to have at least =A0 defined in the reg profile
-		// this will be enforced in reg/profile at parsing time
 		return NULL;
 	}
-	if (a3 && a2 && a1) {
-		return r_str_newf ("%s reg(%s, %s, %s, %s)", r0, a0, a1, a2, a3);
+	RStrBuf *sb = r_strbuf_new (NULL);
+	r_strbuf_appendf (sb, "%s reg(", r0);
+	int i;
+	for (i = R_REG_ALIAS_A0; i <= R_REG_ALIAS_A9; i++) {
+		const char *arg = r_reg_alias_getname (reg, i);
+		if (!arg) {
+			break;
+		}
+		r_strbuf_appendf (sb, "%s%s", i == R_REG_ALIAS_A0? "": ", ", arg);
 	}
-	if (a2 && a1) {
-		return r_str_newf ("%s reg(%s, %s, %s)", r0, a0, a1, a2);
-	}
-	if (a1) {
-		return r_str_newf ("%s reg(%s, %s)", r0, a0, a1);
-	}
-	return r_str_newf ("%s reg(%s)", r0, a0);
+	r_strbuf_append (sb, ")");
+	return r_strbuf_drain (sb);
 }
