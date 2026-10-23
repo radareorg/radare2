@@ -1467,13 +1467,12 @@ static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr) 
 			esilprintf (op, "%s,0xffffffff,&,%s,=", REG (1), REG (0));
 		}
 		break;
-	case BPF_INS_LDDW:	///< eBPF only: load 64-bit imm
-	{
-		if (OPCOUNT > 1 && OP(0).type == BPF_OP_REG && OP(1).type == BPF_OP_IMM) {
-			// Get the full 64-bit immediate value from the 16-byte instruction
-			ut64 val = r_read_ble64((insn->bytes)+8, 0) + IMM(1);
-			esilprintf (op, "%" PFMT64d ",%s,=", val, REG(0));
-		}
+	case BPF_INS_LDDW: {
+		const bool big_endian = R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
+		ut64 val = r_read_ble32 (insn->bytes + 4, big_endian);
+		val |= (ut64)r_read_ble32 (insn->bytes + 12, big_endian) << 32;
+		op->val = val;
+		esilprintf (op, "%" PFMT64u ",%s,=", val, REG (0));
 		break;
 	}
 	case BPF_INS_MOV64:
@@ -1638,6 +1637,7 @@ static char *regs(RArchSession *as) {
 		"=A1    r2\n"
 		"=A2    r3\n"
 		"=A3    r4\n"
+		"=A4    r5\n"
 		"=R0    r0\n"
 		"=SP    sp\n"
 		"=BP    r10\n"
