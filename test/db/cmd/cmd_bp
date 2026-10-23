@@ -1,0 +1,19 @@
+NAME=asm arch updates breakpoint plugin
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+e dbg.bpsize
+dbh~*
+e asm.arch=x86
+e asm.bits=64
+e dbg.bpsize
+dbh~*
+EOF
+EXPECT=<<EOF
+4
+bp * arm
+1
+bp * x86
+EOF
+RUN
