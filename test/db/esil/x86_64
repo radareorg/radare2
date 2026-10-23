@@ -2171,3 +2171,20 @@ EXPECT=<<EOF
 0x000000ff
 EOF
 RUN
+
+NAME=zydis sar on narrow memory operands sign-fills at -b 64
+FILE=malloc://0x200
+ARGS=-a x86 -b 64 -e anal.arch=x86.zydis
+CMDS=<<EOF
+wx d138; aei; aeim; wx 00000080 @ 0x100; ar rax=0x100; aes; pv4 @ 0x100
+wx 66d138 @ 0; ar PC=0; wx 0080 @ 0x100; aes; pv4 @ 0x100
+wx d038 @ 0; ar PC=0; wx 80 @ 0x100; aes; pv4 @ 0x100
+wx d138 @ 0; ar PC=0; wx 00000040 @ 0x100; aes; pv4 @ 0x100
+EOF
+EXPECT=<<EOF
+0xc0000000
+0xc000c000
+0xc000c0c0
+0x20000000
+EOF
+RUN
