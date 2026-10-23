@@ -6,7 +6,7 @@
 NAME=xfs btree format directory inode
 FILE=malloc://20480
 CMDS=<<EOF
-wx 584653420010 @ 0x0
+wx 58465342000010 @ 0x0
 wx 10 @ 0x3f
 wx 21 @ 0x57
 wx 0c09080406 @ 0x78
@@ -42,7 +42,7 @@ RUN
 NAME=xfs two level block map btree
 FILE=malloc://24576
 CMDS=<<EOF
-wx 584653420010 @ 0x0
+wx 58465342000010 @ 0x0
 wx 10 @ 0x3f
 wx 21 @ 0x57
 wx 0c09080406 @ 0x78
@@ -81,7 +81,7 @@ NAME=xfs self referencing block map btree node
 FILE=malloc://20480
 TIMEOUT=30
 CMDS=<<EOF
-wx 584653420010 @ 0x0
+wx 58465342000010 @ 0x0
 wx 10 @ 0x3f
 wx 21 @ 0x57
 wx 0c09080406 @ 0x78
@@ -112,7 +112,7 @@ NAME=xfs block map btree cycle
 FILE=malloc://24576
 TIMEOUT=30
 CMDS=<<EOF
-wx 584653420010 @ 0x0
+wx 58465342000010 @ 0x0
 wx 10 @ 0x3f
 wx 21 @ 0x57
 wx 0c09080406 @ 0x78
