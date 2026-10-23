@@ -610,6 +610,18 @@ static void render_page_index(RCore *core, int page, int total, SlidesSearch *se
 	length = R_MIN (length, width);
 	bool color = r_config_get_i (core->config, "scr.color") > 0;
 	RConsPrintablePalette *pal = &core->cons->context->pal;
+	r_cons_gotoxy (core->cons, 1, R_MAX (1, height));
+	r_cons_print (core->cons, Color_RESET R_CONS_CLEAR_LINE);
+	int bar_width = width - length - 1;
+	if (bar_width >= 3) {
+		int flags = core->print->flags;
+		core->print->flags &= ~R_PRINT_FLAGS_HEADER;
+		r_cons_print (core->cons, color? pal->prompt: "");
+		// The progress bar reserves 15 columns internally and adds two brackets.
+		r_print_progressbar (core->print, total? (ut64)page * 100 / total: 0, bar_width + 13, NULL);
+		core->print->flags = flags;
+		r_cons_print (core->cons, color? Color_RESET: "");
+	}
 	r_cons_gotoxy (core->cons, width - length + 1, R_MAX (1, height));
 	r_cons_printf (core->cons, "%s%s%s%s", color? pal->prompt: "",
 		color? pal->widget_bg: "", visible, color? Color_RESET: "");

@@ -96,6 +96,51 @@ bool test_slides_mouse_wheel(void) {
 	mu_end;
 }
 
+bool test_slides_footer(void) {
+	char *filename = NULL;
+	int fd = r_file_mkstemp ("r2-slides-footer", &filename);
+	mu_assert ("temporary slide deck", fd >= 0);
+	close (fd);
+	mu_assert_true (r_file_dump (filename, (const ut8 *)"# First\n--font=plain\n# Last\n--font=plain\n", -1, false), "write slide deck");
+	const int widths[] = { 1, 6, 7, 8, 20, 80, 160 };
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (widths); i++) {
+		RCore *core = r_core_new ();
+		RCons *cons = core->cons;
+		r_config_set_b (core->config, "scr.interactive", true);
+		r_config_set_b (core->config, "scr.utf8", false);
+		r_config_set_i (core->config, "scr.color", 0);
+		cons->force_columns = widths[i];
+		cons->force_rows = 10;
+		cons->context->noflush = true;
+		int flags = core->print->flags;
+		mu_assert_true (r_cons_readpush (cons, "nNq", 3), "queue slide navigation");
+		r_core_visual_slides (core, filename);
+		mu_assert_eq (core->print->flags, flags, "footer preserves print flags");
+		char *output = strdup (r_cons_get_buffer (cons, NULL));
+		r_str_ansi_strip (output);
+		if (widths[i] >= 7) {
+			int cells = widths[i] - 6;
+			char *filled = r_str_repeat ("#", cells);
+			char *bar = r_str_newf ("[%s]2/2", filled);
+			mu_assert_notnull (strstr (output, bar), "progress bar fills footer width beside counter");
+			free (bar);
+			free (filled);
+		} else {
+			mu_assert_null (strchr (output, '['), "omit progress bar when counter needs the space");
+		}
+		if (widths[i] >= 3) {
+			mu_assert_notnull (strstr (output, "1/2"), "first slide counter remains visible");
+			mu_assert_notnull (strstr (output, "2/2"), "last slide counter remains visible");
+		}
+		free (output);
+		r_core_free (core);
+	}
+	r_file_rm (filename);
+	free (filename);
+	mu_end;
+}
+
 static const char *slides_search_word;
 static RCore *slides_search_core;
 static bool slides_search_highlight;
@@ -219,6 +264,7 @@ int all_tests(void) {
 	mu_run_test (test_slides_load_failure);
 	mu_run_test (test_slides_cleanup);
 	mu_run_test (test_slides_mouse_wheel);
+	mu_run_test (test_slides_footer);
 	mu_run_test (test_slides_search);
 #if R2__UNIX__
 	mu_run_test (test_slides_eof);
