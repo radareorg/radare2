@@ -559,6 +559,10 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 			break;
 		}
 		thread_list.number_of_threads = r_buf_read_le32_at (obj->b, entry->location.rva);
+		// pf consumes the list format lengths on load, clamp them to the stream
+		offset = entry->location.rva + sizeof (thread_list);
+		ut32 max_threads = safe_loop_count (offset, thread_list.number_of_threads,
+			sizeof (struct minidump_thread), stream_end, "Thread");
 
 		sdb_set (obj->kv, "mdmp_thread.format", "ddddq?? "
 			"ThreadId SuspendCount PriorityClass Priority "
@@ -567,15 +571,18 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		sdb_num_set (obj->kv, "mdmp_thread_list.offset",
 			entry->location.rva, 0);
 		sdb_set (obj->kv, "mdmp_thread_list.format",
-			r_strf ("d[%d]? "
+			r_strf ("d[%u]? "
 				"NumberOfThreads (mdmp_thread)Threads",
-				thread_list.number_of_threads),
+				max_threads),
 			0);
 
 		/* TODO: Not yet fully parsed or utilised */
 		break;
 	case MODULE_LIST_STREAM:
 		module_list.number_of_modules = r_buf_read_le32_at (obj->b, entry->location.rva);
+		offset = entry->location.rva + sizeof (module_list);
+		ut32 max_modules = safe_loop_count (offset, module_list.number_of_modules,
+			sizeof (struct minidump_module), stream_end, "Module");
 
 		sdb_set (obj->kv, "mdmp_module.format", "qddtd???qq "
 			"BaseOfImage SizeOfImage CheckSum "
@@ -587,14 +594,11 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		sdb_num_set (obj->kv, "mdmp_module_list.offset",
 			entry->location.rva, 0);
 		sdb_set (obj->kv, "mdmp_module_list.format",
-			r_strf ("d[%d]? "
+			r_strf ("d[%u]? "
 				"NumberOfModule (mdmp_module)Modules",
-				module_list.number_of_modules),
+				max_modules),
 			0);
 
-		offset = entry->location.rva + sizeof (module_list);
-		ut32 max_modules = safe_loop_count (offset, module_list.number_of_modules,
-			sizeof (struct minidump_module), stream_end, "Module");
 		for (i = 0; i < max_modules; i++) {
 			struct minidump_module *module = read_module (obj->b, offset);
 			if (!module) {
@@ -609,19 +613,19 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 			break;
 		}
 		memory_list.number_of_memory_ranges = r_buf_read_le32_at (obj->b, entry->location.rva);
+		offset = entry->location.rva + sizeof (memory_list);
+		ut32 max_memory_ranges = safe_loop_count (offset, memory_list.number_of_memory_ranges,
+			sizeof (struct minidump_memory_descriptor), stream_end, "Memory");
 
 		sdb_num_set (obj->kv, "mdmp_memory_list.offset",
 			entry->location.rva, 0);
 		sdb_set (obj->kv, "mdmp_memory_list.format",
-			r_strf ("d[%d]? "
+			r_strf ("d[%u]? "
 				"NumberOfMemoryRanges "
 				"(mdmp_memory_descriptor)MemoryRanges ",
-				memory_list.number_of_memory_ranges),
+				max_memory_ranges),
 			0);
 
-		offset = entry->location.rva + sizeof (memory_list);
-		ut32 max_memory_ranges = safe_loop_count (offset, memory_list.number_of_memory_ranges,
-			sizeof (struct minidump_memory_descriptor), stream_end, "Memory");
 		for (i = 0; i < max_memory_ranges; i++) {
 			struct minidump_memory_descriptor *desc = R_NEW (struct minidump_memory_descriptor);
 			if (!desc) {
@@ -690,6 +694,9 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 			break;
 		}
 		thread_ex_list.number_of_threads = r_buf_read_le32_at (obj->b, entry->location.rva);
+		offset = entry->location.rva + sizeof (thread_ex_list);
+		ut32 max_ex_threads = safe_loop_count (offset, thread_ex_list.number_of_threads,
+			sizeof (struct minidump_thread_ex), stream_end, "Thread");
 
 		sdb_set (obj->kv, "mdmp_thread_ex.format", "ddddq??? "
 			"ThreadId SuspendCount PriorityClass Priority "
@@ -699,15 +706,12 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		sdb_num_set (obj->kv, "mdmp_thread_ex_list.offset",
 			entry->location.rva, 0);
 		sdb_set (obj->kv, "mdmp_thread_ex_list.format",
-			r_strf ("d[%d]? NumberOfThreads "
+			r_strf ("d[%u]? NumberOfThreads "
 				"(mdmp_thread_ex)Threads",
-				thread_ex_list.number_of_threads),
+				max_ex_threads),
 			0);
 
-		offset = entry->location.rva + sizeof (thread_ex_list);
-		ut32 max_threads = safe_loop_count (offset, thread_ex_list.number_of_threads,
-			sizeof (struct minidump_thread_ex), stream_end, "Thread");
-		for (i = 0; i < max_threads; i++) {
+		for (i = 0; i < max_ex_threads; i++) {
 			struct minidump_thread_ex *thread = R_NEW (struct minidump_thread_ex);
 			if (!thread) {
 				break;
@@ -722,20 +726,20 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		break;
 	case MEMORY_64_LIST_STREAM:
 		read_memory64_list (obj->b, entry->location.rva, &memory64_list);
+		offset = entry->location.rva + sizeof (memory64_list);
+		ut32 max_memory64_ranges = safe_loop_count (offset, memory64_list.number_of_memory_ranges,
+			sizeof (struct minidump_memory_descriptor64), stream_end, "Memory64");
 
 		sdb_num_set (obj->kv, "mdmp_memory64_list.offset",
 			entry->location.rva, 0);
 		sdb_set (obj->kv, "mdmp_memory64_list.format",
-			r_strf ("qq[%"PFMT64d"]? NumberOfMemoryRanges "
+			r_strf ("qq[%u]? NumberOfMemoryRanges "
 				"BaseRva "
 				"(mdmp_memory_descriptor64)MemoryRanges",
-				memory64_list.number_of_memory_ranges),
+				max_memory64_ranges),
 			0);
 
 		obj->streams.memories64.base_rva = memory64_list.base_rva;
-		offset = entry->location.rva + sizeof (memory64_list);
-		ut32 max_memory64_ranges = safe_loop_count (offset, memory64_list.number_of_memory_ranges,
-			sizeof (struct minidump_memory_descriptor64), stream_end, "Memory64");
 		for (i = 0; i < max_memory64_ranges; i++) {
 			struct minidump_memory_descriptor64 *desc = R_NEW (struct minidump_memory_descriptor64);
 			if (!desc) {
@@ -882,6 +886,9 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		if (!read_memory_info_list (obj->b, entry->location.rva, &memory_info_list)) {
 			break;
 		}
+		offset = entry->location.rva + sizeof (memory_info_list);
+		ut32 max_mem_infos = safe_loop_count (offset, memory_info_list.number_of_entries,
+			sizeof (struct minidump_memory_info), stream_end, "MemoryInfo");
 
 		sdb_set (obj->kv, "mdmp_memory_info.format",
 			"qq[4]Edq[4]E[4]E[4]Ed BaseAddress AllocationBase "
@@ -891,14 +898,11 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		sdb_num_set (obj->kv, "mdmp_memory_info_list.offset",
 			entry->location.rva, 0);
 		sdb_set (obj->kv, "mdmp_memory_info_list.format",
-			r_strf ("ddq[%"PFMT64d"]? SizeOfHeader SizeOfEntry "
+			r_strf ("ddq[%u]? SizeOfHeader SizeOfEntry "
 				"NumberOfEntries (mdmp_memory_info)MemoryInfo",
-				memory_info_list.number_of_entries),
+				max_mem_infos),
 			0);
 
-		offset = entry->location.rva + sizeof (memory_info_list);
-		ut32 max_mem_infos = safe_loop_count (offset, memory_info_list.number_of_entries,
-			sizeof (struct minidump_memory_info), stream_end, "MemoryInfo");
 		for (i = 0; i < max_mem_infos; i++) {
 			struct minidump_memory_info *info = R_NEW (struct minidump_memory_info);
 			if (!info) {
