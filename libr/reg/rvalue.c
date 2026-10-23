@@ -151,21 +151,11 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 		}
 	case 128:
 	case 256:
-		// XXX 128 & 256 bit
-		{
-#if R2_NO_LONG_DOUBLE
-			double ld = r_reg_get_longdouble (reg, item);
-#else
-			long double ld = r_reg_get_longdouble (reg, item);
-#endif
-			if (isnan (ld)) {
-				return UT64_MAX;
-			}
-			if (ld >= (long double)UT64_MIN && fmaxl (ld, (long double) UT64_MAX) != ld) {
-				return (ut64) ld;
-			}
-			return UT64_MAX;
+		if (off + BITS2BYTES (item->size) <= regset->arena->size) {
+			return r_read_ble64 (regset->arena->bytes + off, be);
 		}
+		R_LOG_WARN ("%dbit oob read %d", item->size, off);
+		break;
 	default:
 		R_LOG_WARN ("Bit size %d not supported", item->size);
 		break;
