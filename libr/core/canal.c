@@ -2177,81 +2177,59 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 	return true;
 }
 
-R_API void r_core_anal_datarefs(RCore *core, ut64 addr) {
+static void anal_graph_refs(RCore *core, ut64 addr, bool datarefs) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
-	if (fcn) {
-		bool found = false;
-		RVecAnalRef *refs = r_anal_function_get_refs (fcn);
-		if (!refs) {
-			return;
+	if (!fcn) {
+		R_LOG_ERROR ("Not in a function. Use 'df' to define it");
+		return;
+	}
+	RVecAnalRef *refs = r_anal_function_get_refs (fcn);
+	if (!refs) {
+		return;
+	}
+	char *me = r_str_arg_escape (fcn->name);
+	if (!me) {
+		RVecAnalRef_free (refs);
+		return;
+	}
+	bool found = !datarefs;
+	if (found) {
+		r_cons_printf (core->cons, "'agn %s\n", me);
+	}
+	RAnalRef *ref;
+	R_VEC_FOREACH (refs, ref) {
+		if (ref->addr == UT64_MAX) {
+			continue;
 		}
-		char *me = r_str_arg_escape (fcn->name);
-		if (!me) {
-			RVecAnalRef_free (refs);
-			return;
-		}
-
-		RAnalRef *ref;
-		R_VEC_FOREACH (refs, ref) {
-			if (ref->addr == UT64_MAX) {
-				continue;
-			}
-
+		if (datarefs) {
 			RBinObject *obj = r_bin_cur_object (core->bin);
 			RBinSection *binsec = r_bin_get_section_at (obj, ref->addr, true);
-			if (binsec && binsec->is_data) {
-				if (!found) {
-					r_cons_printf (core->cons, "'agn %s\n", me);
-					found = true;
-				}
-				RFlagItem *item = r_flag_get_in (core->flags, ref->addr);
-				r_strf_buffer (32);
-				char *dst = r_str_arg_escape (item? item->name: r_strf ("0x%08"PFMT64x, ref->addr));
-				if (dst) {
-					r_cons_printf (core->cons, "'agn %s\n'age %s %s\n", dst, me, dst);
-					free (dst);
-				}
+			if (!binsec || !binsec->is_data) {
+				continue;
 			}
 		}
-		free (me);
-		RVecAnalRef_free (refs);
-	} else {
-		R_LOG_ERROR ("Not in a function. Use 'df' to define it");
+		if (!found) {
+			r_cons_printf (core->cons, "'agn %s\n", me);
+			found = true;
+		}
+		RFlagItem *item = r_flag_get_in (core->flags, ref->addr);
+		r_strf_buffer (32);
+		char *dst = r_str_arg_escape (item? item->name: r_strf ("0x%08"PFMT64x, ref->addr));
+		if (dst) {
+			r_cons_printf (core->cons, "'agn %s\n'age %s %s\n", dst, me, dst);
+			free (dst);
+		}
 	}
+	free (me);
+	RVecAnalRef_free (refs);
+}
+
+R_API void r_core_anal_datarefs(RCore *core, ut64 addr) {
+	anal_graph_refs (core, addr, true);
 }
 
 R_API void r_core_anal_coderefs(RCore *core, ut64 addr) {
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
-	if (fcn) {
-		RVecAnalRef *refs = r_anal_function_get_refs (fcn);
-		if (!refs) {
-			return;
-		}
-		char *me = r_str_arg_escape (fcn->name);
-		if (!me) {
-			RVecAnalRef_free (refs);
-			return;
-		}
-		r_cons_printf (core->cons, "'agn %s\n", me);
-
-		RAnalRef *ref;
-		R_VEC_FOREACH (refs, ref) {
-			if (ref->addr == UT64_MAX) {
-				continue;
-			}
-			r_strf_buffer (32);
-			RFlagItem *item = r_flag_get_in (core->flags, ref->addr);
-			char *dst = r_str_arg_escape (item? item->name: r_strf ("0x%08"PFMT64x, ref->addr));
-			if (dst) {
-				r_cons_printf (core->cons, "'agn %s\n'age %s %s\n", dst, me, dst);
-				free (dst);
-			}
-		}
-		free (me);
-		RVecAnalRef_free (refs);
-	} else {
-		R_LOG_ERROR ("Not in a function. Use 'df' to define it");
-	}
+	anal_graph_refs (core, addr, false);
 }
 
 static void add_single_addr_xrefs(RCore *core, ut64 addr, RGraph *graph) {

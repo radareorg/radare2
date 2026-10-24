@@ -12862,20 +12862,30 @@ static void agraph_print_node_dot(RANode *n, void *user) {
 	}
 }
 
-static void agraph_print_node(RANode *n, void *user) {
-	RCore *core = (RCore *)user;
-	size_t len = strlen (n->body);
-
-	if (len > 0 && n->body[len - 1] == '\n') {
-		len--;
+static void agraph_print_node_cmd(RCons *cons, const char *prefix, const char *name, const char *body) {
+	char *title = r_str_arg_escape (name);
+	if (!title) {
+		return;
 	}
-	char *encbody = r_base64_encode_dyn ((const ut8*)n->body, len);
-	char *title = r_str_arg_escape (n->title);
-	if (title && encbody) {
-		r_cons_printf (core->cons, "agn \"%s\" base64:%s\n", title, encbody);
+	char *encbody = NULL;
+	if (body) {
+		size_t len = strlen (body);
+		if (len > 0 && body[len - 1] == '\n') {
+			len--;
+		}
+		encbody = r_base64_encode_dyn ((const ut8*)body, len);
+	}
+	if (!body || encbody) {
+		r_cons_printf (cons, "%sagn \"%s\"%s%s\n", prefix, title,
+			body? " base64:": "", encbody? encbody: "");
 	}
 	free (title);
 	free (encbody);
+}
+
+static void agraph_print_node(RANode *n, void *user) {
+	RCore *core = (RCore *)user;
+	agraph_print_node_cmd (core->cons, "", n->title, n->body);
 }
 
 static char *getViewerPath(void) {
@@ -13603,40 +13613,29 @@ static void print_graph_agg(RCore *core, RGraph /*RGraphNodeInfo*/ *graph) {
 	RCons *cons = core->cons;
 	r_list_foreach (graph->nodes, it, node) {
 		print_node = node->data;
-		char *title = r_str_arg_escape (print_node->title);
-		if (!title) {
-			continue;
-		}
-		if (R_STR_ISNOTEMPTY (print_node->body)) {
-			int len = strlen (print_node->body);
-
-			if (len > 0 && print_node->body[len - 1] == '\n') {
-				len--;
-			}
-			char *encbody = r_base64_encode_dyn ((const ut8*)print_node->body, len);
-			if (encbody) {
-				r_cons_printf (cons, "'agn \"%s\" base64:%s\n", title, encbody);
-			}
-			free (encbody);
-		} else {
-			r_cons_printf (cons, "'agn \"%s\"\n", title);
-		}
-		free (title);
+		agraph_print_node_cmd (cons, "'", print_node->title,
+			R_STR_ISNOTEMPTY (print_node->body)? print_node->body: NULL);
 	}
 	r_list_foreach (graph->nodes, it, node) {
 		print_node = node->data;
+		if (RVecGraphNodePtr_empty (&node->out_nodes)) {
+			continue;
+		}
+		char *from_title = r_str_arg_escape (print_node->title);
+		if (!from_title) {
+			continue;
+		}
 		RGraphNode **edge_it;
 		R_VEC_FOREACH (&node->out_nodes, edge_it) {
 			target = *edge_it;
 			RGraphNodeInfo *to = target->data;
-			char *from_title = r_str_arg_escape (print_node->title);
 			char *to_title = r_str_arg_escape (to->title);
-			if (from_title && to_title) {
+			if (to_title) {
 				r_cons_printf (cons, "'age \"%s\" \"%s\"\n", from_title, to_title);
 			}
-			free (from_title);
 			free (to_title);
 		}
+		free (from_title);
 	}
 }
 
