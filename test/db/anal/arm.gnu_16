@@ -355,3 +355,25 @@ type: jmp
 jump: 0x00000040
 EOF
 RUN
+
+NAME=arm16 swift cc, default stays arm16
+FILE=malloc://64
+ARGS=-a arm -b 16
+CMDS=<<EOF
+e anal.cc
+afcl
+k anal/cc/cc.swift.self
+k anal/cc/cc.swift.error
+k anal/cc/cc.swift.clobber
+EOF
+EXPECT=<<EOF
+arm16
+arm16
+arm32
+reg
+swift
+sl
+r8
+r0,r1,r2,r3,r8,r12,lr,d0,d1,d2,d3,d4,d5,d6,d7,d16,d17,d18,d19,d20,d21,d22,d23,d24,d25,d26,d27,d28,d29,d30,d31
+EOF
+RUN
