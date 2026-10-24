@@ -319,11 +319,14 @@ a "jmp r15" 41ffe7
 a "jmp rax" ffe0 0x7fff00000000
 a "jmp qword [rax]" ff20 0x7fff00000000
 a "jmp qword [eax]" 67ff20
+a "jmp [0x1000]" ff242500100000
+a "call [0x1000]" ff142500100000
 a "push ax" 6650
 a "pop r9w" 664159
 a "inc qword [rax+r9*8+0x10]" 4aff44c810
 a "dec dword [eax]" 67ff08
 a "inc byte [0x1000]" fe042500100000
+a "inc byte [eax+0x80000000]" 67fe8000000080
 a "pop qword[rdi]" 8f07
 a "pop qword[rsp]" 8f0424
 a "pop qword[rbp]" 8f4500
