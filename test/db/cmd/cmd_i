@@ -3425,6 +3425,56 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ii sig column lists imports with no function signature
+FILE=bins/elf/analysis/cris-dosfsck
+CMDS=ii,sig/eq/false,type/eq/FUNC,name/cols
+EXPECT=<<EOF
+name
+----
+__register_frame_info
+_IO_getc
+__fxstat64
+__deregister_frame_info
+EOF
+RUN
+
+NAME=ii sig column is false for non-function imports
+FILE=bins/elf/analysis/mips-main
+CMDS=<<EOF
+ii,type/eq/NOTYPE,sig/eq/true~?
+ii,type/eq/NOTYPE,sig/eq/false,name/cols
+EOF
+EXPECT=<<EOF
+2
+name
+----
+_ITM_registerTMCloneTable
+_Jv_RegisterClasses
+_ITM_deregisterTMCloneTable
+EOF
+RUN
+
+NAME=ii sig column with every signature known
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=ii,sig/eq/false,type/eq/FUNC,name/cols
+EXPECT=<<EOF
+name
+----
+EOF
+RUN
+
+NAME=iij sig field
+FILE=bins/elf/analysis/mips-main
+CMDS=<<EOF
+iij~{2}
+iij~{3}
+EOF
+EXPECT=<<EOF
+{"ordinal":10,"bind":"GLOBAL","type":"FUNC","sig":true,"name":"__libc_start_main","plt":4196352}
+{"ordinal":11,"bind":"WEAK","type":"FUNC","sig":false,"name":"__gmon_start__"}
+EOF
+RUN
+
 NAME=ii dupped imports
 FILE=bins/elf/varsub
 CMDS=ii

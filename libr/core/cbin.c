@@ -2473,6 +2473,15 @@ R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name) {
 	return addr;
 }
 
+static bool import_has_signature(RCore *core, RBinImport *import, const char *name) {
+	if (import->type && strcmp (import->type, R_BIN_TYPE_FUNC_STR)) {
+		return false;
+	}
+	char *key = r_type_func_name (core->anal->sdb_types, name);
+	free (key);
+	return key != NULL;
+}
+
 static bool bin_imports(RCore *core, PJ *pj, int mode, int va, const char *name) {
 	RBinInfo *info = r_bin_get_info (core->bin);
 	bool bin_demangle = r_config_get_b (core->config, "bin.demangle");
@@ -2502,7 +2511,11 @@ static bool bin_imports(RCore *core, PJ *pj, int mode, int va, const char *name)
 	} else if (IS_MODE_RAD (mode)) {
 		r_cons_println (core->cons, "fs imports");
 	} else if (IS_MODE_NORMAL (mode)) {
-		r_table_set_columnsf (table, "nXssss", "nth", "vaddr", "bind", "type", "lib", "name");
+		if (core->table_query) {
+			r_table_set_columnsf (table, "nXssssb", "nth", "vaddr", "bind", "type", "lib", "name", "sig");
+		} else {
+			r_table_set_columnsf (table, "nXssss", "nth", "vaddr", "bind", "type", "lib", "name");
+		}
 	}
 	if (imports_vec) {
 		RBinImport *import;
@@ -2546,6 +2559,7 @@ static bool bin_imports(RCore *core, PJ *pj, int mode, int va, const char *name)
 				if (import->type) {
 					pj_ks (pj, "type", import->type);
 				}
+				pj_kb (pj, "sig", import_has_signature (core, import, iname));
 				if (import->classname && import->classname[0]) {
 					pj_ks (pj, "classname", import->classname);
 					pj_ks (pj, "descriptor", import->descriptor);
@@ -2563,12 +2577,15 @@ static bool bin_imports(RCore *core, PJ *pj, int mode, int va, const char *name)
 			} else {
 				const char *bind = r_str_get_fail (import->bind, "NONE");
 				const char *type = r_str_get_fail (import->type, "NONE");
-				if (import->classname && import->classname[0]) {
-					r_table_add_rowf (table, "nXssss", (ut64)import->ordinal, addr, bind, type, r_str_get (libname),
-						r_strf ("%s.%s", import->classname, symname));
+				const char *rowname = (import->classname && import->classname[0])
+					? r_strf ("%s.%s", import->classname, symname)
+					: symname;
+				if (core->table_query) {
+					r_table_add_rowf (table, "nXssssb", (ut64)import->ordinal, addr, bind, type, r_str_get (libname),
+						rowname, import_has_signature (core, import, iname));
 				} else {
 					r_table_add_rowf (table, "nXssss", (ut64)import->ordinal, addr, bind, type, r_str_get (libname),
-						symname);
+						rowname);
 				}
 
 				if (import->descriptor && import->descriptor[0]) {

@@ -24,6 +24,7 @@ nth paddr      vaddr      bind type size lib          name            demangled
     "ordinal": 1,
     "bind": "NONE",
     "type": "FUNC",
+    "sig": true,
     "name": "ExitProcess",
     "libname": "kernel32.dll",
     "plt": 4198592
@@ -32,6 +33,7 @@ nth paddr      vaddr      bind type size lib          name            demangled
     "ordinal": 1,
     "bind": "NONE",
     "type": "FUNC",
+    "sig": true,
     "name": "printf",
     "libname": "msvcrt.dll",
     "plt": 4198600
