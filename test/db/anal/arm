@@ -1386,11 +1386,17 @@ NAME=arm pop pc records return stack displacement
 FILE=malloc://16
 ARGS=-a arm -b 32
 CMDS=<<EOF
-wx 3080bde8
+wx 0080bde83080bde8
+s 0
+aoj~{0.type}
+aoj~{0.disp}
+s 4
 aoj~{0.type}
 aoj~{0.disp}
 EOF
 EXPECT=<<EOF
+ret
+0
 ret
 8
 EOF
