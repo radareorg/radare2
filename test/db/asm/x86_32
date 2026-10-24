@@ -1523,10 +1523,17 @@ aB "mulsd xmm7, xmm7" f20f59ff
 aB "mulss xmm0, dword [eax]" f30f5900
 aB "mulss xmm7, xmm7" f30f59ff
 ad "mwait" 0f01c9
-aB "neg byte [eax]" f618
+a "neg byte [eax]" f618
 ad "nop" 90
-aB "not byte [eax]" f610
-adB "not al" f6d0
+a "not byte [eax]" f610
+ad "not al" f6d0
+a "not ax" 66f7d0
+a "mul byte [esp]" f62424
+a "div dword [ebp]" f77500
+a "idiv dword [eax+ebx*4+8]" f77c9808
+a "neg word [0x1000]" 66f71d00100000
+a "mul byte [eax+0xffffffff]" f660ff
+a "neg dword [eax-0xffffffff]" f75801
 ad "or al, 0" 0c00
 a "or byte [eax], al" 0800
 a "or dword [eax], eax" 0900
@@ -1815,6 +1822,12 @@ a "rol byte [eax], cl" d200
 a "rol dword [eax], 0" c10000
 a "rol dword [eax], 1" d100
 a "rol dword [eax], cl" d300
+a "shl ax, 1" 66d1e0
+a "rol si, cl" 66d3c6
+a "sar byte [esp], 4" c03c2404
+a "shr dword [0x1000], 1" d12d00100000
+a "shl ecx" d1e1
+a "sal byte [ebx+8], cl" d26308
 aB "roundpd xmm0, xmm0, 0" 660f3a09c000
 aB "roundps xmm0, xmm0, 0" 660f3a08c000
 aB "roundsd xmm0, xmm0, 0" 660f3a0bc000
