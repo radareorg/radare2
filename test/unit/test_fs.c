@@ -40,8 +40,68 @@ static bool test_r_fs_ext2_read_bounds(void) {
 	mu_end;
 }
 
+static void bfs_put_run(ut8 *p, ut16 start, ut16 len) {
+	r_write_le32 (p, 0);
+	r_write_le16 (p + 4, start);
+	r_write_le16 (p + 6, len);
+}
+
+static void bfs_put_inode(ut8 *img, int block, ut32 mode, ut16 start, ut16 len, ut64 size) {
+	ut8 *inode = img + block * 1024;
+	r_write_le32 (inode, 0x3bbe0ad9);
+	r_write_le32 (inode + 20, mode);
+	bfs_put_run (inode + 72, start, len);
+	r_write_le64 (inode + 208, size);
+}
+
+static bool test_r_fs_bfs_read_whole_file(void) {
+	ut8 img[7 * 1024] = { 0 };
+	// superblock: 1024 byte blocks, root directory inode at block 2
+	r_write_le32 (img + 512 + 32, 0x42465331);
+	r_write_le32 (img + 512 + 40, 1024);
+	r_write_le32 (img + 512 + 44, 10);
+	r_write_le32 (img + 512 + 76, 10);
+	bfs_put_run (img + 512 + 116, 2, 1);
+	// root directory b+tree in blocks 3-4 with one entry "a" -> inode at block 5
+	bfs_put_inode (img, 2, 0x41ed, 3, 2, 2048);
+	r_write_le32 (img + 3 * 1024, 0x69f6c2e8);
+	r_write_le32 (img + 3 * 1024 + 4, 1024);
+	r_write_le32 (img + 3 * 1024 + 8, 1);
+	r_write_le64 (img + 3 * 1024 + 16, 1024);
+	ut8 *node = img + 4 * 1024;
+	r_write_le64 (node + 8, UT64_MAX);
+	r_write_le16 (node + 24, 1);
+	r_write_le16 (node + 26, 1);
+	node[28] = 'a';
+	r_write_le16 (node + 32, 1);
+	r_write_le64 (node + 34, 5);
+	// 64KB regular file whose first and only data block is at block 6
+	bfs_put_inode (img, 5, 0x81a4, 6, 1, 0x10000);
+	memset (img + 6 * 1024, 'A', 1024);
+
+	RIO *io = r_io_new ();
+	RFS *fs = r_fs_new ();
+	r_io_bind (io, &fs->iob);
+	mu_assert_notnull (r_io_open (io, "malloc://7168", R_PERM_RW, 0), "open bfs image");
+	r_io_write_at (io, 0, img, sizeof (img));
+	mu_assert_notnull (r_fs_mount (fs, "bfs", "/mnt", 0), "mount bfs image");
+	RFSFile *file = r_fs_open (fs, "/mnt/a", false);
+	mu_assert_notnull (file, "open bfs file");
+	mu_assert_eq (file->size, 0x10000, "bfs file size");
+	mu_assert_eq (r_fs_read (fs, file, 0, file->size), 1024, "read first block");
+	mu_assert_eq (file->data[1023], 'A', "first block contents");
+	// fs shell cat/get access file->size bytes of file->data after the read
+	mu_assert_eq (file->data[file->size - 1], 0, "buffer covers the whole file");
+	r_fs_close (fs, file);
+	r_fs_file_free (file);
+	r_fs_free (fs);
+	r_io_free (io);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_fs_ext2_read_bounds);
+	mu_run_test (test_r_fs_bfs_read_whole_file);
 	return tests_passed != tests_run;
 }
 
