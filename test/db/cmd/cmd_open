@@ -1,5 +1,5 @@
 NAME=m1slice
-ARGS=-a x86
+ARGS=-a x86 -b 64
 FILE=bins/mach0/ls-m1
 CMDS=<<EOF
 pd 2
@@ -34,6 +34,7 @@ ok
 EOF
 RUN
 
+# fat-pin: exempt -a arm.v35 names a plugin, not an arch: xtr_metadata_match never matches it, so the slice comes from the host; REQUIRE keeps it off hosts without v35
 NAME=m1slice.v35
 ARGS=-a arm.v35
 FILE=bins/mach0/ls-m1
@@ -55,7 +56,7 @@ EOF
 RUN
 
 NAME=m1slice arm
-ARGS=-a arm
+ARGS=-a arm -b 64
 FILE=bins/mach0/ls-m1
 CMDS=<<EOF
 pd 2
@@ -73,6 +74,7 @@ paddr      vaddr       phaddr     vhaddr      type
 EOF
 RUN
 
+# fat-pin: exempt tests the fallback itself: -a arm with the host's bits forced to 32 by asm.bits must still land on the arm64 slice
 NAME=m1slice arm with 32-bit host default
 ARGS=-e asm.bits=32 -a arm
 FILE=bins/mach0/ls-m1
