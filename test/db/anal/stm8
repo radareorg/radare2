@@ -75,3 +75,47 @@ EXPECT=<<EOF
 0x00000056
 EOF
 RUN
+
+NAME=stm8 memory read write directions
+FILE=malloc://32
+ARGS=-a stm8 -b 16
+CMDS=<<EOF
+wx c65102c75102725f510272105102725c51027200510200
+ao 6~direction
+s 3
+ao 1~jump
+s 18
+ao 1~ptr
+s 0
+wx c60000
+ao 1~ptr
+EOF
+EXPECT=<<EOF
+direction: read
+direction: write
+direction: write
+direction: read,write
+direction: read,write
+direction: read
+ptr: 0x00005102
+ptr: 0x00000000
+EOF
+RUN
+
+NAME=stm8 pseudo AND preserves logical operation
+FILE=malloc://16
+ARGS=-a stm8
+CMDS=<<EOF
+wx a403
+e asm.pseudo=true
+e asm.bytes=false
+e asm.lines=false
+e asm.comments=false
+e asm.addr=false
+e scr.color=0
+pd 1
+EOF
+EXPECT=<<EOF
+     a &= 0x03
+EOF
+RUN

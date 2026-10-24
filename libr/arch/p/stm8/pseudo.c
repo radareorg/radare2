@@ -30,7 +30,7 @@ static char *replace(int argc, const char *argv[]) {
 		{ 2, "or", "# |= #", { 1, 2 } },
 		{ 2, "bcp", "res = # & (1 << #)", { 1, 2 } },
 		{ 1, "cpl", "complement (#)", { 1, 1 } },
-		{ 2, "and", "# |= #", { 1, 2 } },
+		{ 2, "and", "# &= #", { 1, 2 } },
 		{ 1, "popw", "# = [sp] , sp += 2", { 1 } },
 		{ 1, "pop", "# = [sp] , sp += 1", { 1 } },
 		{ 1, "pushw", "sp -= 2, [sp] = #", { 1 } },
