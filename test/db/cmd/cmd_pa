@@ -69,6 +69,32 @@ ERROR: Cannot assemble 'mov eax, 0x3311223311222222' at line 1
 EOF
 RUN
 
+NAME=Invalid x86 64bit not with a displacement over 32 bits
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+pa not qword [rax+0x123456789]
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'not qword [rax+0x123456789]' at line 1
+EOF
+RUN
+
+NAME=Invalid x86 64bit not with a 64-bit address over a signed disp32
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+pa not dword [rax+0x80000000]
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'not dword [rax+0x80000000]' at line 1
+EOF
+RUN
+
 NAME=asm.spp with an unterminated tag
 FILE=malloc://64
 CMDS=<<EOF
