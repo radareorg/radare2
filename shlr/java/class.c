@@ -99,6 +99,8 @@ static void bimport_free(void *p) {
 // Maximum recursion depth when resolving constant pool references
 #define MAX_CPITEMS 16
 #define MAX_EV_DEPTH 64
+// Code and Record attributes nest attribute tables, valid class files use at most 2 levels
+#define MAX_ATTR_DEPTH 8
 
 static const ut16 R_BIN_JAVA_ELEMENT_VALUE_METAS_SZ = 14;
 static RBinJavaMetaInfo R_BIN_JAVA_NULL_TYPE_METAS = { 0 };
@@ -1724,7 +1726,15 @@ static RBinJavaAttrInfo *r_bin_java_read_next_attr_from_buffer(RBinJavaObj *bin,
 			free (name);
 			return NULL;
 		}
-		if ((attr = type_info->new_obj (bin, buffer, nsz + 6, buf_offset))) {
+		if (bin->attr_depth >= MAX_ATTR_DEPTH) {
+			R_LOG_WARN ("Attribute %s nested too deep", name);
+			free (name);
+			return NULL;
+		}
+		bin->attr_depth++;
+		attr = type_info->new_obj (bin, buffer, nsz + 6, buf_offset);
+		bin->attr_depth--;
+		if (attr) {
 			attr->metas->ord = (bin->attr_idx++);
 		}
 	} else {
