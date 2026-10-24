@@ -288,6 +288,8 @@ a "neg rsi" 48f7de
 a "neg byte[rax]" f618
 a "neg byte[rax-0x12134]" f698ccdefeff
 a "neg word[rdi-0x8765]" 66f79f9b78ffff
+a "not dword [eax+0x80000000]" 67f79000000080
+a "div byte [eax+0xfffffff0]" 67f670f0
 a "neg dword[rsi]" f71e
 a "neg dword[rsi+0x4567]" f79e67450000
 a "neg qword[rdi+0x4567]" 48f79f67450000
