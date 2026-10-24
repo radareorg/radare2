@@ -840,14 +840,13 @@ static int fs_bfs_read(RFSFile *file, ut64 addr, int len) {
 	if (to_read < 1) {
 		return -1;
 	}
-	if (!file->data) {
-		file->data = malloc (to_read);
-	} else {
-		file->data = realloc (file->data, to_read);
-	}
-	if (!file->data) {
+	// callers may access len bytes of file->data, never shrink it to one block
+	ut8 *data = realloc (file->data, (size_t)len + 1);
+	if (!data) {
 		return -1;
 	}
+	memset (data, 0, (size_t)len + 1);
+	file->data = data;
 
 	if (bfs_read_at (ctx, read_offset, file->data, to_read)) {
 		return to_read;
