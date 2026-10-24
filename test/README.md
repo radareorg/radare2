@@ -33,6 +33,10 @@ compiler and does not load a kernel module or access kernel memory.
    after building. This requires QuickJS, networking, Python 3 and localhost
    sockets; the curl transport is tested when curl is installed. Set `R2`
    to select another radare2 executable.
+ * To check QuickJS bytecode compilation and execution, run
+   `python3 test/scripts/test-quickjs-bytecode.py` after building. It checks
+   plain and LZ4 output, bundles, imports, plugins, script entry points and
+   invalid files. Set `R2` to select another radare2 executable.
  * To check the JSLinux guest HTTP transport, run
    `python3 test/scripts/test-jslinux-guest-http.py` after building. It uses
    QuickJS and a local filesystem mock of TinyEMU's XHR protocol; it needs
