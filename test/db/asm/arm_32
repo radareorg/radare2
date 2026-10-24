@@ -54,7 +54,7 @@ a "mvneq r0, 21" 1500e003
 a "mvneq r0, -2147483648" 0201e003
 a "orreq r5, r5, r3" 03508501
 aB "orreq r6, r6, r2, lsr #1" a2608601
-aB "orreq r3, r3, -2147483648" 02318303
+a "orreq r3, r3, -2147483648" 02318303
 aB "orrne r0, r0, r1, lsl ip" 110c8011
 a "orrne r1, r1, r3" 03108111
 a "orrs R2, r2" 022092e1
@@ -196,7 +196,7 @@ aB "addeq r1, r1, r2, lsl 2" 02118100
 a "addne r1, r1, ip" 0c108110
 aB "addne r1, r1, r0, lsl 2" 00118110
 a "andeq r0, r0, 1" 01000002
-aB "andeq r3, r5, 0x80000000" 02310502
+a "andeq r3, r5, 0x80000000" 02310502
 a "andne r3, r3, r2" 02300310
 a "andne ip, ip, r7" 07c00c10
 aB "asreq r0, ip, 0x1f" cc0fa001
@@ -232,7 +232,14 @@ a "mvneq r0, 0x15" 1500e003
 a "mvneq r0, 0x80000000" 0201e003
 a "orreq r5, r5, r3" 03508501
 aB "orreq r6, r6, r2, lsr 1" a2608601
-aB "orreq r3, r3, 0x80000000" 02318303
+a "orreq r3, r3, 0x80000000" 02318303
+a "adc r11, r0, 61341696" eab7a0e2
+a "adcmi r11, lr, 984" f6bfae42
+a "sub r0, r1, 0xff000000" ff0441e2
+a "add r0, r1, 256" 010c81e2
+a "orr r4, r7, 37120" 914c87e3
+a "rsb r8, pc, 1031798784" f6856fe2
+a "add r0, r1, 0x3fc" ff0f81e2
 aB "orrne r0, r0, r1, lsl ip" 110c8011
 a "orrne r1, r1, r3" 03108111
 aB "popeq {pc}" 04f09d04
