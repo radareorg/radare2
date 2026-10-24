@@ -889,6 +889,9 @@ typedef struct {
 #define DT_ANDROID_RELSZ	0x60000010
 #define DT_ANDROID_RELA		0x60000011
 #define DT_ANDROID_RELASZ	0x60000012
+#define DT_ANDROID_RELR		0x6fffe000
+#define DT_ANDROID_RELRSZ	0x6fffe001
+#define DT_ANDROID_RELRENT	0x6fffe003
 #define DT_LOOS		0x6000000d	/* Start of OS-specific */
 #define DT_HIOS		0x6ffff000	/* End of OS-specific */
 #define DT_LOPROC	0x70000000	/* Start of processor-specific */
