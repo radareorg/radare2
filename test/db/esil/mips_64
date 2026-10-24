@@ -741,3 +741,89 @@ EOF
 EXPECT_ERR=<<EOF
 EOF
 RUN
+
+NAME=mips64 dadd positive overflow traps
+FILE=malloc://16
+ARGS=-a mips -b 64
+CMDS=<<EOF
+wx 2c108500
+aei
+ar a0=0x7fffffffffffffff
+ar a1=1
+ar v0=0x77
+aes
+ar v0
+ar a0=0x7ffffffffffffffe
+ar pc=0
+aes
+ar v0
+EOF
+EXPECT=<<EOF
+0x00000077
+0x7fffffffffffffff
+EOF
+RUN
+
+NAME=mips64 dadd negative overflow traps
+FILE=malloc://16
+ARGS=-a mips -b 64
+CMDS=<<EOF
+wx 2c108500
+aei
+ar a0=0x8000000000000000
+ar a1=-1
+ar v0=0x77
+aes
+ar v0
+ar a0=0
+ar pc=0
+aes
+ar v0
+EOF
+EXPECT=<<EOF
+0x00000077
+0xffffffffffffffff
+EOF
+RUN
+
+NAME=mips64 daddi positive overflow traps
+FILE=malloc://16
+ARGS=-a mips -b 64
+CMDS=<<EOF
+wx 01008260
+aei
+ar a0=0x7fffffffffffffff
+ar v0=0x77
+aes
+ar v0
+ar a0=0x7ffffffffffffffe
+ar pc=0
+aes
+ar v0
+EOF
+EXPECT=<<EOF
+0x00000077
+0x7fffffffffffffff
+EOF
+RUN
+
+NAME=mips64 daddi negative overflow traps
+FILE=malloc://16
+ARGS=-a mips -b 64
+CMDS=<<EOF
+wx ffff8260
+aei
+ar a0=0x8000000000000000
+ar v0=0x77
+aes
+ar v0
+ar a0=0
+ar pc=0
+aes
+ar v0
+EOF
+EXPECT=<<EOF
+0x00000077
+0xffffffffffffffff
+EOF
+RUN
