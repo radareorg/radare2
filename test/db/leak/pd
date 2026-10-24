@@ -9,7 +9,7 @@ EXPECT=<<EOF
 ;-- section.0.__TEXT.__text:
 ;-- start:
 0x00001f14 [00] -r-x section size 100 named 0.__TEXT.__text
-0x00001f44 call sym._main
+0x00001f44 call main
 0x00001f4c call sym.imp.exit
 EOF
 RUN

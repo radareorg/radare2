@@ -846,11 +846,6 @@ static void dotnet_parse_tilde_field(
 					break;
 				}
 				ut16 flags = r_read_le16 (row_ptr);
-				ut32 signature_index = index_sizes.blob == 4
-					? r_read_le32 (row_ptr + 2 + index_sizes.string)
-					: r_read_le16 (row_ptr + 2 + index_sizes.string);
-				char *field_type = dotnet_parse_field_sig (pe, streams->blob,
-					metadata_root, signature_index);
 				// Get field name from string stream
 				if (index_sizes.string == 4) {
 					name = pe_get_dotnet_string (pe, string_offset, r_read_le32 (row_ptr + 2));
@@ -859,6 +854,11 @@ static void dotnet_parse_tilde_field(
 				}
 
 				if (R_STR_ISNOTEMPTY (name)) {
+					ut32 signature_index = index_sizes.blob == 4
+						? r_read_le32 (row_ptr + 2 + index_sizes.string)
+						: r_read_le16 (row_ptr + 2 + index_sizes.string);
+					char *field_type = dotnet_parse_field_sig (pe, streams->blob,
+						metadata_root, signature_index);
 					DotNetTypeDefInfo *owner = NULL;
 					RListIter *iter;
 					DotNetTypeDefInfo *td;
@@ -898,8 +898,8 @@ static void dotnet_parse_tilde_field(
 					field_symbol->signature = r_str_newf ("%s:%s", field_symbol->name,
 						r_str_get_fail (field_type, "unknown"));
 					dotnet_symbol_add (pe, symbols, field_symbol);
+					free (field_type);
 				}
-				free (field_type);
 
 				row_ptr += row_size;
 				field_idx++;

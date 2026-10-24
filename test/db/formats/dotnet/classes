@@ -10,7 +10,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=dotnet signature elements resolve tokens without walking the symbol list
+NAME=dotnet skips expensive signatures on unnamed fields
 FILE=bins/pe/dotnet-sig-missing-typedef.exe
 TIMEOUT=60
 CMDS=<<EOF

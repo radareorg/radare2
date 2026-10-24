@@ -278,12 +278,12 @@ CMDS=<<EOF
 e asm.dwarf=false
 e asm.var.summary=0
 aaa
-pd 75 @ dbg.main
+pd 75 @ dbg.rust::main::h523dcf5432fcfd88
 EOF
 EXPECT=<<EOF
             ;-- rust::main::h523dcf5432fcfd88:
             ; ICOD XREF from main @ 0x5b0d(r)
-/ 940: int dbg.main (int argc, char **argv, char **envp);
+/ 940: dbg.rust::main::h523dcf5432fcfd88 ();
 |           ; var int64_t var_8h @ rsp+0x8
 |           ; var int64_t var_10h @ rsp+0x10
 |           ; var int64_t var_18h @ rsp+0x18
@@ -330,7 +330,7 @@ EXPECT=<<EOF
 |           ; var i32[10] *arg0_1 @ rsp+0x220
 |           ; var &str[5] *arg0_2 @ rsp+0x228
 |           ; var &str[5] *arg0_3 @ rsp+0x230
-|           0x00005750      4881ec3802..   sub rsp, 0x238              ; void main();
+|           0x00005750      4881ec3802..   sub rsp, 0x238              ; void rust::main::h523dcf5432fcfd88();
 |           0x00005757      c784248000..   mov dword [numbers], 8
 |           0x00005762      c784248400..   mov dword [numbers[1]], 7
 |           0x0000576d      c784248800..   mov dword [numbers[2]], 1
@@ -347,9 +347,10 @@ EXPECT=<<EOF
 |           0x000057dc      488b8c24e8..   mov rcx, qword [var_e8h]
 |           0x000057e4      48898c2418..   mov qword [arg0], rcx
 |           0x000057ec      4889cf         mov rdi, rcx                ; int64_t arg1
-|           0x000057ef      488d35da0f..   lea rsi, [sym.core::array::__impl_core::fmt::Debug_for__T_____::fmt::h894a83bd2e78b654] ; 0x67d0 ; "H\x83\xecHH\x89|$8H\x89t$@\xb8\n" ; int64_t arg2
+|           0x000057ef      488d35da0f..   lea rsi, [dbg.core::array::_<impl core::fmt::Debug for [T; _]>::fmt::h894a83bd2e78b654] ; dbg.core::array::__impl_core::fmt::Debug_for__T_____::fmt::h894a83bd2e78b654
+|                                                                      ; 0x67d0 ; "H\x83\xecHH\x89|$8H\x89t$@\xb8\n" ; int64_t arg2
 |           0x000057f6      4889442478     mov qword [var_78h], rax
-|           0x000057fb      e8501b0000     call dbg.new<[i32; 10]>     ; core::fmt::ArgumentV1::new::h4b3dd9450748c5fc
+|           0x000057fb      e8501b0000     call dbg.core::fmt::ArgumentV1::new::h4b3dd9450748c5fc
 |           0x00005800      4889442470     mov qword [var_70h], rax
 |           0x00005805      4889542468     mov qword [var_68h], rdx
 |           0x0000580a      488b442470     mov rax, qword [var_70h]
@@ -364,22 +365,23 @@ EXPECT=<<EOF
 |           0x00005844      4c89c2         mov rdx, r8                 ; int64_t arg3
 |           0x00005847      488b4c2460     mov rcx, qword [var_60h]    ; int64_t arg4
 |           0x0000584c      41b801000000   mov r8d, 1                  ; int64_t arg5
-|           0x00005852      e8591b0000     call dbg.new_v1             ; core::fmt::Arguments::new_v1::h2673b5bf555c0288 ; Arguments new_v1(&[&str] pieces, &[core::fmt::ArgumentV1] args)
+|           0x00005852      e8591b0000     call dbg.core::fmt::Arguments::new_v1::h2673b5bf555c0288
 |           0x00005857      488dbc24a8..   lea rdi, [var_a8h]
-|           0x0000585f      ff15b3430300   call qword [dbg._print]     ; [0x39c18:8]=0xa2d0 dbg._print
+|           0x0000585f      ff15b3430300   call qword [dbg.std::io::stdio::_print::hc6586982be9eab35] ; [0x39c18:8]=0xa2d0 dbg.std::io::stdio::_print::hc6586982be9eab35
 |           0x00005865      488d842480..   lea rax, [numbers]
 |           0x0000586d      4889c7         mov rdi, rax                ; int64_t arg1
 |           0x00005870      be0a000000     mov esi, 0xa                ; int64_t arg2
-|           0x00005875      e8f6f9ffff     call dbg.bubble_sort<i32>   ; rust::bubble_sort::h0777bc845caabc60
+|           0x00005875      e8f6f9ffff     call dbg.rust::bubble_sort::h0777bc845caabc60
 |           0x0000587a      488b05f72a..   mov rax, qword [global.0x38378] ; [0x38378:8]=0x38358 reloc.fixup.After:_beachartcardealempty_usr
 |           0x00005881      488d8c2480..   lea rcx, [numbers]
 |           0x00005889      48898c2430..   mov qword [var_130h], rcx
 |           0x00005891      488b8c2430..   mov rcx, qword [var_130h]
 |           0x00005899      48898c2420..   mov qword [arg0[2]], rcx
 |           0x000058a1      4889cf         mov rdi, rcx                ; int64_t arg1
-|           0x000058a4      488d35250f..   lea rsi, [sym.core::array::__impl_core::fmt::Debug_for__T_____::fmt::h894a83bd2e78b654] ; 0x67d0 ; "H\x83\xecHH\x89|$8H\x89t$@\xb8\n" ; int64_t arg2
+|           0x000058a4      488d35250f..   lea rsi, [dbg.core::array::_<impl core::fmt::Debug for [T; _]>::fmt::h894a83bd2e78b654] ; dbg.core::array::__impl_core::fmt::Debug_for__T_____::fmt::h894a83bd2e78b654
+|                                                                      ; 0x67d0 ; "H\x83\xecHH\x89|$8H\x89t$@\xb8\n" ; int64_t arg2
 |           0x000058ab      4889442458     mov qword [var_58h], rax
-|           0x000058b0      e89b1a0000     call dbg.new<[i32; 10]>     ; core::fmt::ArgumentV1::new::h4b3dd9450748c5fc
+|           0x000058b0      e89b1a0000     call dbg.core::fmt::ArgumentV1::new::h4b3dd9450748c5fc
 |           0x000058b5      4889442450     mov qword [var_50h], rax
 |           0x000058ba      4889542448     mov qword [var_48h], rdx
 |           0x000058bf      488b442450     mov rax, qword [var_50h]
@@ -394,9 +396,9 @@ EXPECT=<<EOF
 |           0x000058f9      4c89c2         mov rdx, r8                 ; int64_t arg3
 |           0x000058fc      488b4c2440     mov rcx, qword [var_40h]    ; int64_t arg4
 |           0x00005901      41b801000000   mov r8d, 1                  ; int64_t arg5
-|           0x00005907      e8a41a0000     call dbg.new_v1             ; core::fmt::Arguments::new_v1::h2673b5bf555c0288 ; Arguments new_v1(&[&str] pieces, &[core::fmt::ArgumentV1] args)
+|           0x00005907      e8a41a0000     call dbg.core::fmt::Arguments::new_v1::h2673b5bf555c0288
 |           0x0000590c      488dbc24f0..   lea rdi, [var_f0h]
-|           0x00005914      ff15fe420300   call qword [dbg._print]     ; [0x39c18:8]=0xa2d0 dbg._print
+|           0x00005914      ff15fe420300   call qword [dbg.std::io::stdio::_print::hc6586982be9eab35] ; [0x39c18:8]=0xa2d0 dbg.std::io::stdio::_print::hc6586982be9eab35
 |           0x0000591a      488d052b47..   lea rax, [0x0002a04c]       ; "dealempty/usr/src/rustc-1.43.0/src/libcore/slice/mod.rscalled `Option::unwrap()` on a `None` valuesrc/libstd/env.rsfailed to ge"
 |           0x00005921      488d0d2147..   lea rcx, [0x0002a049]       ; "cardealempty/usr/src/rustc-1.43.0/src/libcore/slice/mod.rscalled `Option::unwrap()` on a `None` valuesrc/libstd/env.rsfailed to"
 |           0x00005928      488d151747..   lea rdx, [0x0002a046]       ; "artcardealempty/usr/src/rustc-1.43.0/src/libcore/slice/mod.rscalled `Option::unwrap()` on a `None` valuesrc/libstd/env.rsfailed"
@@ -415,13 +417,12 @@ CMDS=<<EOF
 e asm.dwarf=false
 e asm.var.summary=0
 aaa
-pd 40 @  dbg.bubble_sort_i32_
+pd 40 @ dbg.rust::bubble_sort::h0777bc845caabc60
 EOF
 EXPECT=<<EOF
             ;-- rust::bubble_sort::h0777bc845caabc60:
-            ;-- dbg.bubble_sort_i32_:
-            ; CALL XREF from rust::main::h523dcf5432fcfd88 @ 0x5875(x) ; dbg.main
-/ 614: dbg.bubble_sort<i32> (int64_t arg1, int64_t arg2, &mut [i32] values);
+            ; CALL XREF from rust::main::h523dcf5432fcfd88 @ 0x5875(x) ; dbg.rust::main::h523dcf5432fcfd88
+/ 614: dbg.rust::bubble_sort::h0777bc845caabc60 (int64_t arg1, int64_t arg2, &mut [i32] values);
 |           ; arg int64_t arg1 @ rdi
 |           ; arg int64_t arg2 @ rsi
 |           ; arg &mut [i32] values @ rsp+0x90
@@ -446,12 +447,12 @@ EXPECT=<<EOF
 |           ; var usize val @ rsp+0xa0
 |           ; var usize __next @ rsp+0xa8
 |           ; var usize i @ rsp+0xb0
-|           0x00005270      4881ecb800..   sub rsp, 0xb8               ; void bubble_sort<i32>(&mut [i32] values);
+|           0x00005270      4881ecb800..   sub rsp, 0xb8               ; void rust::bubble_sort::h0777bc845caabc60(&mut [i32] values);
 |           0x00005277      4889bc2490..   mov qword [values], rdi     ; arg1
 |           0x0000527f      4889b42498..   mov qword [var_98h], rsi    ; arg2
 |           0x00005287      48897c2448     mov qword [var_48h], rdi    ; arg1
 |           0x0000528c      4889742440     mov qword [var_40h], rsi    ; arg2
-|           0x00005291      e8ea090000     call dbg.len<i32>           ; core::slice::_<impl [T]>::len::hbaf7153778228b73
+|           0x00005291      e8ea090000     call dbg.core::slice::_<impl [T]>::len::hbaf7153778228b73
 |           0x00005296      4889442450     mov qword [n], rax
 |           0x0000529b      c644245f01     mov byte [swapped], 1
 |           ; CODE XREF from rust::bubble_sort::h0777bc845caabc60 @ 0x5441(x)
@@ -466,7 +467,7 @@ EXPECT=<<EOF
 |           0x000052c2      4889442468     mov qword [var_68h], rax
 |           0x000052c7      488b7c2460     mov rdi, qword [var_60h]    ; int64_t arg1
 |           0x000052cc      488b742468     mov rsi, qword [var_68h]    ; int64_t arg2
-|           0x000052d1      e83a140000     call dbg.into_iter<core::ops::range::Range<usize>> ; _<I as core::iter::traits::collect::IntoIterator>::into_iter::h12f1e7995fb38cf5
+|           0x000052d1      e83a140000     call dbg._<I as core::iter::traits::collect::IntoIterator>::into_iter::h12f1e7995fb38cf5
 |           0x000052d6      4889442438     mov qword [var_38h], rax
 |           0x000052db      4889542430     mov qword [var_30h], rdx
 |           0x000052e0      488b442438     mov rax, qword [var_38h]
@@ -475,7 +476,7 @@ EXPECT=<<EOF
 |           0x000052ef      48894c2478     mov qword [var_78h], rcx
 |           ; CODE XREF from rust::bubble_sort::h0777bc845caabc60 @ 0x5432(x)
 |           0x000052f4      488d7c2470     lea rdi, [iter]             ; int64_t arg1
-|           0x000052f9      e812130000     call dbg.next<usize>        ; core::iter::range::_<impl core::iter::traits::iterator::Iterator for core::ops::range::Range<A>>::next::h707e8283b20ce50a
+|           0x000052f9      e812130000     call dbg.core::iter::range::_<impl core::iter::traits::iterator::Iterator for core::ops::range::Range<A>>::next::h707e8283b20ce50a
 |           0x000052fe      4889942488..   mov qword [var_88h], rdx
 |           0x00005306      4889842480..   mov qword [var_80h], rax
 |           0x0000530e      488b842480..   mov rax, qword [var_80h]
