@@ -2819,6 +2819,27 @@ EXPECT_ERR=<<EOF
 EOF
 RUN
 
+NAME=mips32 addi positive overflow traps
+FILE=malloc://16
+ARGS=-a mips -b 32
+CMDS=<<EOF
+wx 01002821
+aei
+ar t1=0x7fffffff
+ar t0=0x77
+aes
+ar t0
+ar t1=0x7ffffffe
+ar pc=0
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0x00000077
+0x7fffffff
+EOF
+RUN
+
 NAME=clz and clo count leading bits in 32-bit little-endian mode
 FILE=malloc://16
 ARGS=-a mips -b 32
