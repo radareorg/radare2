@@ -1796,6 +1796,10 @@ a "jmp dword [esp]" ff2424
 a "jmp word [eax]" 66ff20
 a "push ax" 6650
 a "dec byte [0x1000]" fe0d00100000
+a "inc byte [eax-0xffffffff]" fe4001
+a "inc dword [eax+0xffffffff]" ff40ff
+a "jmp [0x1000]" ff2500100000
+a "call [0x1000]" ff1500100000
 a "push [esp+4]" ff742404
 a "push [esp]" ff3424
 a "push eax" 50

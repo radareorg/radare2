@@ -1451,7 +1451,7 @@ static int opcall(RArchSession *a, ut8 *data, const Opcode *op) {
 	int offset = 0;
 	int mod = 0;
 
-	if ((op->operands[0].type & OT_GPREG) && a->config->bits != 16) {
+	if ((op->operands[0].type & (OT_GPREG | OT_MEMORY)) && a->config->bits != 16) {
 		return op_rm_near (a->config->bits, data, &op->operands[0], 2, 0xff);
 	}
 	if ((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY)) {
@@ -2457,7 +2457,7 @@ static int opjc(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 	// before the rel32 range check: a memory operand's offset shares storage with the immediate
-	if (!strcmp (op->mnemonic, "jmp") && (op->operands[0].type & OT_GPREG) && a->config->bits != 16) {
+	if (!strcmp (op->mnemonic, "jmp") && (op->operands[0].type & (OT_GPREG | OT_MEMORY)) && a->config->bits != 16) {
 		return op_rm_near (a->config->bits, data, &op->operands[0], 4, 0xff);
 	}
 	bool is_short = op->is_short;

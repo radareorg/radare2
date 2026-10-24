@@ -110,6 +110,19 @@ ERROR: Cannot assemble 'lock mov dword [rax], ecx' at line 1
 EOF
 RUN
 
+NAME=Invalid x86 64bit inc with a 64-bit address over a signed disp32
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+pa inc byte [rax+0x80000000]
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'inc byte [rax+0x80000000]' at line 1
+EOF
+RUN
+
 NAME=asm.spp with an unterminated tag
 FILE=malloc://64
 CMDS=<<EOF
