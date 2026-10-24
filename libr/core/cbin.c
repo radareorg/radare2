@@ -5378,8 +5378,9 @@ static void bin_elf_versioninfo(RCore *core, PJ *pj, int mode) {
 	}
 
 	do {
-		r_strf_var (verneed_path, 128, format, "verneed", num_verneed++);
+		char *verneed_path = r_str_newf (format, "verneed", num_verneed++);
 		if (! (sdb = sdb_ns_path (core->sdb, verneed_path, 0))) {
+			free (verneed_path);
 			break;
 		}
 		const char *const section_name = sdb_const_get (sdb, "section_name", 0);
@@ -5467,6 +5468,7 @@ static void bin_elf_versioninfo(RCore *core, PJ *pj, int mode) {
 			pj_end (pj);
 			pj_end (pj);
 		}
+		free (verneed_path);
 	} while (sdb);
 	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
