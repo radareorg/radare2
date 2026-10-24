@@ -345,6 +345,13 @@ R_API bool r_anal_import_c_decls(RAnal *anal, const char *decls, char **errmsg) 
 	if (errmsg) {
 		*errmsg = NULL;
 	}
+	// the declarations come from debug info, they must not drive the preprocessor
+	if (strchr (decls, '#')) {
+		if (errmsg) {
+			*errmsg = strdup ("Preprocessor directives are not allowed");
+		}
+		return false;
+	}
 	char *error_msg = NULL;
 	char *out = r_anal_cparse (anal, decls, &error_msg);
 	if (out) {

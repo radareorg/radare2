@@ -114,6 +114,28 @@ bool test_r_anal_function_relocate(void) {
 	mu_end;
 }
 
+bool test_r_anal_function_filtered_name_collision(void) {
+	RAnal *anal = r_anal_new ();
+	RAnalFunction *original = r_anal_create_function (anal, "a_b", 0, 0, NULL);
+	RAnalFunction *filtered = r_anal_create_function (anal, "a;b", 0x10, 0, NULL);
+	mu_assert_notnull (filtered, "filtering preserves a distinct function");
+	mu_assert_streq (filtered->name, "a_b_10", "filtered name gains an address suffix");
+	mu_assert_ptreq (r_anal_get_function_byname (anal, "a_b"), original, "original name stays indexed");
+	mu_assert_ptreq (r_anal_get_function_byname (anal, "a_b_10"), filtered, "unique name is indexed");
+	mu_assert_ptreq (r_anal_get_function_at (anal, 0x10), filtered, "unique function is indexed by address");
+	mu_assert_null (r_anal_create_function (anal, "a_b", 0x20, 0, NULL), "explicit duplicate names still fail");
+	mu_assert_null (r_anal_create_function (anal, "a|b", 0x10, 0, NULL), "filtered names cannot duplicate an address");
+	assert_invariants (anal);
+
+	RAnalFunction *suffix = r_anal_create_function (anal, "a_b_20", 0x30, 0, NULL);
+	mu_assert_null (r_anal_create_function (anal, "a`b", 0x20, 0, NULL), "occupied suffix fails without replacing a function");
+	mu_assert_ptreq (r_anal_get_function_byname (anal, suffix->name), suffix, "occupied suffix stays indexed");
+	mu_assert_null (r_anal_get_function_at (anal, 0x20), "failed fallback leaves no address entry");
+	assert_invariants (anal);
+	r_anal_free (anal);
+	mu_end;
+}
+
 static int function_renamed_cb(RAnal *anal, void *user, RAnalFunction *fcn, const char *oldname) {
 	int *count = user;
 	mu_assert_streq (oldname, "original", "callback receives old name");
@@ -858,6 +880,7 @@ bool test_r_anal_function_switches_foreach(void) {
 
 int all_tests(void) {
 	mu_run_test (test_r_anal_function_relocate);
+	mu_run_test (test_r_anal_function_filtered_name_collision);
 	mu_run_test (test_r_anal_function_rename);
 	mu_run_test (test_r_core_function_rename);
 	mu_run_test (test_r_anal_function_labels);

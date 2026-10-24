@@ -186,21 +186,12 @@ static const ut8 *parse_attr_value(DwarfStrSections *sections, const ut8 *obuf, 
 		break;
 	case DW_FORM_string:
 		value->kind = DW_AT_KIND_STRING;
-		size_t available = buf_end - buf;
-		if (available < 1 || available > ST32_MAX) {
+		const ut8 *nul = dwarf_string_end (buf, buf_end);
+		if (!nul) {
 			return NULL;
 		}
-		size_t slen = r_str_nlen ((const char *)buf, (int)available);
-		if (slen >= available) {
-			return NULL;
-		}
-		if (slen > 0) {
-			// go programs contain multibyte chars in the symbol names and strings we dont want to strip them here
-			value->string.content = (const char *)buf;
-		} else {
-			value->string.content = NULL;
-		}
-		buf += slen + 1;
+		value->string.content = nul > buf? (const char *)buf: NULL;
+		buf = nul + 1;
 		break;
 	case DW_FORM_block1:
 		value->kind = DW_AT_KIND_BLOCK;

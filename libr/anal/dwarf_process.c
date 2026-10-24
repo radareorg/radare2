@@ -1865,6 +1865,11 @@ static bool import_dwarf_function_fallback(RAnal *anal, const char *typed_name, 
 	return true;
 }
 
+// names are pasted into C source for the type parser, only plain type spellings may get there
+static bool is_c_spelling(const char *s) {
+	return !s[strspn (s, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_ *&[]:<>.")];
+}
+
 static void import_dwarf_function_type(Context *ctx, const char *sname, const char *typed_name, Function *dwarf_fcn, const char *ret_type, RList/*<Variable*>*/ *variables, bool has_unspecified_parameters) {
 	R_RETURN_IF_FAIL (ctx && ctx->anal && sname && typed_name && dwarf_fcn && ret_type && variables);
 	RAnal *anal = (RAnal *)ctx->anal;
@@ -1874,11 +1879,13 @@ static void import_dwarf_function_type(Context *ctx, const char *sname, const ch
 	r_strbuf_init (&args_buf);
 	RListIter *iter;
 	Variable *var;
+	bool is_c_decl = is_c_spelling (ret_type);
 	r_list_foreach (variables, iter, var) {
 		if (var->kind != VARIABLE_KIND_FORMAL_PARAMETER || !var->type) {
 			continue;
 		}
 		const char *arg_name = var->name? var->name: "arg";
+		is_c_decl = is_c_decl && is_c_spelling (var->type) && is_c_spelling (arg_name);
 		r_strbuf_appendf (&args_buf, "%s %s,", var->type, arg_name);
 	}
 	if (has_unspecified_parameters) {
@@ -1898,7 +1905,7 @@ static void import_dwarf_function_type(Context *ctx, const char *sname, const ch
 		   sdb entries directly. */
 		const char *lang = ctx->lang;
 		bool is_c_like = !lang || !strcmp (lang, "cxx") || !strcmp (lang, "objc");
-		if (is_c_like) {
+		if (is_c_like && is_c_decl) {
 			char *errmsg = NULL;
 			if (!r_anal_import_c_decls (anal, csig, &errmsg) && errmsg) {
 				R_LOG_DEBUG ("DWARF type import fallback for %s: %s", typed_name, errmsg);
@@ -1958,11 +1965,9 @@ static char *dwarf_formal_convention_meta(Context *ctx, int argno, int argc, con
 
 static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const char *ret_type, RList/*<Variable*>*/ *variables, bool has_unspecified_parameters) {
 	Sdb *sdb = ctx->sdb;
-	char *real_name = strdup (dwarf_fcn->name);
-	r_str_ansi_strip (real_name);
+	const char *real_name = dwarf_fcn->name;
 	char *sname = r_str_sanitize_sdb_key (real_name);
 	if (!sname) {
-		free (real_name);
 		return;
 	}
 	char *typed_name = dwarf_function_type_name (ctx, sname, dwarf_fcn,
@@ -1977,10 +1982,7 @@ static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
 	/* so we can have name without sanitization */
 	sdb_setf (sdb, real_name, 0, "fcn.%s.name", sname);
 
-	char *signature = strdup (dwarf_fcn->signature);
-	r_str_ansi_strip (signature);
-	sdb_setf (sdb, signature, 0, "fcn.%s.sig", sname);
-	free (signature);
+	sdb_setf (sdb, dwarf_fcn->signature, 0, "fcn.%s.sig", sname);
 
 	RStrBuf vars_buf;
 	RStrBuf args_buf;
@@ -2065,7 +2067,6 @@ static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
 		import_dwarf_function_type (ctx, sname, typed_name, dwarf_fcn, ret_type, variables, has_unspecified_parameters);
 	}
 	free (typed_name);
-	free (real_name);
 	free (sname);
 }
 
@@ -2555,23 +2556,16 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwar
 		if (fcn) {
 			/* prepend dwarf debug info stuff with dbg. */
 			const char *value = sdb_const_getf (dwarf_sdb, NULL, "fcn.%s.name", func_sname);
-			char *real_name = value? strdup (value): NULL;
-			if (real_name) {
-				r_str_ansi_strip (real_name);
-				char *dwf_name = r_str_newf ("dbg.%s", real_name);
+			if (value) {
+				char *dwf_name = r_str_newf ("dbg.%s", value);
 				r_anal_function_rename (fcn, dwf_name);
 				free (dwf_name);
 			}
-			free (real_name);
-
 			value = sdb_const_getf (dwarf_sdb, NULL, "fcn.%s.sig", func_sname);
-			char *fcnstr = value? strdup (value): NULL;
-			if (fcnstr) {
-				r_str_ansi_strip (fcnstr);
+			if (value) {
 				/* Apply signature as a comment at a function address */
-				r_meta_set_string (anal, R_META_TYPE_COMMENT, faddr, fcnstr);
+				r_meta_set_string (anal, R_META_TYPE_COMMENT, faddr, value);
 			}
-			free (fcnstr);
 		}
 		int arg_index;
 		for (arg_index = 0; ; arg_index++) {
@@ -2589,9 +2583,6 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwar
 		}
 		const char *value = sdb_const_getf (dwarf_sdb, NULL, "fcn.%s.vars", func_sname);
 		char *vars = value? strdup (value): NULL;
-		if (vars) {
-			r_str_ansi_strip (vars);
-		}
 		char *var_name;
 		sdb_aforeach (var_name, vars) {
 			value = sdb_const_getf (dwarf_sdb, NULL, "fcn.%s.var.%s", func_sname, var_name);

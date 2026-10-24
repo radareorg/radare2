@@ -11421,9 +11421,11 @@ static void anal_axg(RCore *core, const char *input, int level, Sdb *db, int opt
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
 		if (fcn) {
 			if (is_r2) {
-				char *sn = r_str_sanitize_r2 (fcn->name);
-				r_cons_printf (core->cons, "'agn 0x%08"PFMT64x" %s\n", fcn->addr, sn);
-				free (sn);
+				char *name = r_str_arg_escape (fcn->name);
+				if (name) {
+					r_cons_printf (core->cons, "'agn 0x%08"PFMT64x" %s\n", fcn->addr, name);
+					free (name);
+				}
 			} else if (is_json) {
 				char taddr[64];
 				pj_o (pj);
@@ -11465,10 +11467,12 @@ static void anal_axg(RCore *core, const char *input, int level, Sdb *db, int opt
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ref->addr, -1);
 			if (fcn) {
 				if (is_r2) {
-					char *sn = r_str_sanitize_r2 (fcn->name);
-					r_cons_printf (core->cons, "'agn 0x%08"PFMT64x" %s\n'age 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
-						fcn->addr, sn, fcn->addr, addr);
-					free (sn);
+					char *name = r_str_arg_escape (fcn->name);
+					if (name) {
+						r_cons_printf (core->cons, "'agn 0x%08"PFMT64x" %s\n'age 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
+							fcn->addr, name, fcn->addr, addr);
+						free (name);
+					}
 				} else if (is_json) {
 					if (level == 0) {
 						char taddr[64];
@@ -12037,12 +12041,20 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						str = strdup ("?\n");
 					}
 					r_str_trim_tail (str);
-					r_cons_printf (core->cons, "agn 0x%" PFMT64x " \"%s\"\n", ref->addr, str);
+					char *name = r_str_arg_escape (str);
+					if (name) {
+						r_cons_printf (core->cons, "'agn 0x%" PFMT64x " \"%s\"\n", ref->addr, name);
+						free (name);
+					}
 					free (str);
 				}
 				if (input[2] != '*') {
 					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
-					r_cons_printf (core->cons, "agn 0x%" PFMT64x " \"%s\"\n", addr, fcn?fcn->name: "$$");
+					char *name = r_str_arg_escape (fcn? fcn->name: "$$");
+					if (name) {
+						r_cons_printf (core->cons, "'agn 0x%" PFMT64x " \"%s\"\n", addr, name);
+						free (name);
+					}
 				}
 				R_VEC_FOREACH (list, ref) {
 					r_cons_printf (core->cons, "age 0x%" PFMT64x " 0x%"PFMT64x"\n", ref->addr, addr);
@@ -12850,18 +12862,30 @@ static void agraph_print_node_dot(RANode *n, void *user) {
 	}
 }
 
+static void agraph_print_node_cmd(RCons *cons, const char *prefix, const char *name, const char *body) {
+	char *title = r_str_arg_escape (name);
+	if (!title) {
+		return;
+	}
+	char *encbody = NULL;
+	if (body) {
+		size_t len = strlen (body);
+		if (len > 0 && body[len - 1] == '\n') {
+			len--;
+		}
+		encbody = r_base64_encode_dyn ((const ut8*)body, len);
+	}
+	if (!body || encbody) {
+		r_cons_printf (cons, "%sagn \"%s\"%s%s\n", prefix, title,
+			body? " base64:": "", encbody? encbody: "");
+	}
+	free (title);
+	free (encbody);
+}
+
 static void agraph_print_node(RANode *n, void *user) {
 	RCore *core = (RCore *)user;
-	size_t len = strlen (n->body);
-
-	if (len > 0 && n->body[len - 1] == '\n') {
-		len--;
-	}
-	char *encbody = r_base64_encode_dyn ((const ut8*)n->body, len);
-	char *cmd = r_str_newf ("agn \"%s\" base64:%s\n", n->title, encbody);
-	r_cons_print (core->cons, cmd);
-	free (cmd);
-	free (encbody);
+	agraph_print_node_cmd (core->cons, "", n->title, n->body);
 }
 
 static char *getViewerPath(void) {
@@ -12961,7 +12985,25 @@ static void agraph_print_edge_dot(RANode *from, RANode *to, void *user) {
 
 static void agraph_print_edge(RANode *from, RANode *to, void *user) {
 	RCore *core = (RCore *)user;
-	r_cons_printf (core->cons, "age \"%s\" \"%s\"\n", from->title, to->title);
+	char *from_title = r_str_arg_escape (from->title);
+	char *to_title = r_str_arg_escape (to->title);
+	if (from_title && to_title) {
+		r_cons_printf (core->cons, "age \"%s\" \"%s\"\n", from_title, to_title);
+	}
+	free (from_title);
+	free (to_title);
+}
+
+static void agraph_arg_unescape(char *arg) {
+	char *src = arg, *dst = arg;
+	while (*src) {
+		// Preserve unknown escapes in legacy graph titles and bodies.
+		if (*src == '\\' && src[1] && strchr ("'\"\\ ", src[1])) {
+			src++;
+		}
+		*dst++ = *src++;
+	}
+	*dst = 0;
 }
 
 static void cmd_agraph_node(RCore *core, const char *input) {
@@ -12977,6 +13019,7 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 			r_str_argv_free (args);
 			break;
 		}
+		agraph_arg_unescape (args[0]);
 		// strdup cause there is double free in r_str_argv_free due to a realloc call
 		if (n_args > 1) {
 			body = strdup (args[1]);
@@ -12995,6 +13038,8 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 					free (body);
 					body = strdup ("");
 				}
+			} else {
+				agraph_arg_unescape (body);
 			}
 			body = r_str_append (body, "\n");
 			if (n_args > 2) {
@@ -13025,6 +13070,7 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 			r_str_argv_free (args);
 			break;
 		}
+		agraph_arg_unescape (args[0]);
 		r_agraph_del_node (core->graph, args[0]);
 		r_str_argv_free (args);
 		break;
@@ -13079,6 +13125,8 @@ static void cmd_agraph_edge(RCore *core, const char *input) {
 			r_str_argv_free (args);
 			break;
 		}
+		agraph_arg_unescape (args[0]);
+		agraph_arg_unescape (args[1]);
 
 		u = r_agraph_get_node (core->graph, args[0]);
 		v = r_agraph_get_node (core->graph, args[1]);
@@ -13565,27 +13613,29 @@ static void print_graph_agg(RCore *core, RGraph /*RGraphNodeInfo*/ *graph) {
 	RCons *cons = core->cons;
 	r_list_foreach (graph->nodes, it, node) {
 		print_node = node->data;
-		if (R_STR_ISNOTEMPTY (print_node->body)) {
-			int len = strlen (print_node->body);
-
-			if (len > 0 && print_node->body[len - 1] == '\n') {
-				len--;
-			}
-			char *encbody = r_base64_encode_dyn ((const ut8*)print_node->body, len);
-			r_cons_printf (cons, "'agn \"%s\" base64:%s\n", print_node->title, encbody);
-			free (encbody);
-		} else {
-			r_cons_printf (cons, "'agn \"%s\"\n", print_node->title);
-		}
+		agraph_print_node_cmd (cons, "'", print_node->title,
+			R_STR_ISNOTEMPTY (print_node->body)? print_node->body: NULL);
 	}
 	r_list_foreach (graph->nodes, it, node) {
 		print_node = node->data;
+		if (RVecGraphNodePtr_empty (&node->out_nodes)) {
+			continue;
+		}
+		char *from_title = r_str_arg_escape (print_node->title);
+		if (!from_title) {
+			continue;
+		}
 		RGraphNode **edge_it;
 		R_VEC_FOREACH (&node->out_nodes, edge_it) {
 			target = *edge_it;
 			RGraphNodeInfo *to = target->data;
-			r_cons_printf (cons, "'age \"%s\" \"%s\"\n", print_node->title, to->title);
+			char *to_title = r_str_arg_escape (to->title);
+			if (to_title) {
+				r_cons_printf (cons, "'age \"%s\" \"%s\"\n", from_title, to_title);
+			}
+			free (to_title);
 		}
+		free (from_title);
 	}
 }
 
