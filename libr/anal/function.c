@@ -263,7 +263,11 @@ R_API bool r_anal_function_relocate(RAnalFunction *fcn, ut64 addr) {
 R_API bool r_anal_function_rename(RAnalFunction *fcn, const char *name) {
 	R_RETURN_VAL_IF_FAIL (fcn && R_STR_ISNOTEMPTY (name), false);
 	RAnal *anal = fcn->anal;
-	char *newname = function_name_filter (strdup (name));
+	char *newname = strdup (name);
+	if (!newname) {
+		return false;
+	}
+	function_name_filter (newname);
 	RAnalFunction *existing = ht_pp_find (anal->ht_name_fun, newname, NULL);
 	if (existing || (fcn->name && !strcmp (fcn->name, newname))) {
 		free (newname);
