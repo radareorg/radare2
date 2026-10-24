@@ -119,3 +119,46 @@ EXPECT=<<EOF
      a &= 0x03
 EOF
 RUN
+
+NAME=stm8 distinguishes logical and arithmetic byte shifts
+FILE=malloc://16
+ARGS=-a stm8 -b 16
+CMDS=<<EOF
+pad 44
+pad 47
+pad 3412
+pad 3712
+pad 72541234
+pad 72571234
+pad 04aa
+pad 07aa
+pad 74
+pad 77
+pad 9064aa
+pad 9067aa
+pad 923412
+pad 923712
+wx 44
+ao 1~type
+wx 47
+ao 1~type
+EOF
+EXPECT=<<EOF
+srl a
+sra a
+srl [0x12]
+sra [0x12]
+srl [0x1234]
+sra [0x1234]
+srl [sp + 0xaa]
+sra [sp + 0xaa]
+srl [x]
+sra [x]
+srl [y + 0xaa]
+sra [y + 0xaa]
+srl [0x12]
+sra [0x12]
+type: shr
+type: sar
+EOF
+RUN
