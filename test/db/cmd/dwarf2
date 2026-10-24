@@ -102,3 +102,15 @@ EXPECT=<<EOF
 0x00000000    1      1 a_b_c_d_
 EOF
 RUN
+
+NAME=dwarf deep pointer type chain does not exhaust the stack
+FILE=bins/elf/dwarf_deep_type_chain
+ARGS=-N
+CMDS=<<EOF
+tk~^t=
+?e loaded
+EOF
+EXPECT=<<EOF
+loaded
+EOF
+RUN
