@@ -269,32 +269,20 @@ static int rafs2_extract(Rafs2State *s, const char *paths) {
 		return 1;
 	}
 
-	if (file->size > 0) {
-		int len = r_fs_read (fs, file, 0, file->size);
-		if (len > 0 && file->data) {
-			FILE *fp = fopen (dst, "wb");
-			if (!fp) {
-				R_LOG_ERROR ("Cannot create output file: %s", dst);
-				r_fs_close (fs, file);
-				free (src);
-				return 1;
-			}
-			fwrite (file->data, 1, len, fp);
-			fclose (fp);
-			printf ("Extracted %s -> %s (%d bytes)\n", src, dst, len);
-		} else {
-			R_LOG_ERROR ("Failed to read file: %s", src);
-			r_fs_close (fs, file);
-			free (src);
-			return 1;
-		}
-	} else {
-		printf ("Extracted %s -> %s (0 bytes)\n", src, dst);
-		FILE *fp = fopen (dst, "wb");
-		if (fp) {
-			fclose (fp);
-		}
+	int len = file->size > 0? r_fs_read (fs, file, 0, file->size): 0;
+	if (file->size > 0 && (len <= 0 || !file->data)) {
+		R_LOG_ERROR ("Failed to read file: %s", src);
+		r_fs_close (fs, file);
+		free (src);
+		return 1;
 	}
+	// r_file_dump honors the sandbox, this main also runs inside r2
+	if (!r_file_dump (dst, file->data, len, false)) {
+		r_fs_close (fs, file);
+		free (src);
+		return 1;
+	}
+	printf ("Extracted %s -> %s (%d bytes)\n", src, dst, len);
 
 	r_fs_close (fs, file);
 	free (src);

@@ -1551,37 +1551,18 @@ static void mmc_copy_file_confirmed(RCore *core, MMCState *state) {
 				r_cons_message (core->cons, msg);
 				free (msg);
 			} else {
-				if (file->size > 0) {
-					int len = r_fs_read (core->fs, file, 0, file->size);
-					if (len > 0 && file->data) {
-						FILE *fp = fopen (dst_path, "wb");
-						if (!fp) {
-							char *msg = r_str_newf ("Cannot create file: %s", dst_path);
-							r_cons_message (core->cons, msg);
-							free (msg);
-						} else {
-							fwrite (file->data, 1, len, fp);
-							fclose (fp);
-							char *msg = r_str_newf ("Copied %s -> %s (%d bytes)", selected_name, dst_path, len);
-							r_cons_message (core->cons, msg);
-							free (msg);
-							mmc_panel_load_local (core, dst, state->ordering_mode);
-						}
-					} else {
-						char *msg = r_str_newf ("Failed to read file: %s", src_path);
-						r_cons_message (core->cons, msg);
-						free (msg);
-					}
+				int len = file->size > 0? r_fs_read (core->fs, file, 0, file->size): 0;
+				char *msg;
+				if (file->size > 0 && (len <= 0 || !file->data)) {
+					msg = r_str_newf ("Failed to read file: %s", src_path);
+				} else if (!r_file_dump (dst_path, file->data, len, false)) {
+					msg = r_str_newf ("Cannot create file: %s", dst_path);
 				} else {
-					FILE *fp = fopen (dst_path, "wb");
-					if (fp) {
-						fclose (fp);
-						char *msg = r_str_newf ("Copied %s -> %s (0 bytes)", selected_name, dst_path);
-						r_cons_message (core->cons, msg);
-						free (msg);
-						mmc_panel_load_local (core, dst, state->ordering_mode);
-					}
+					msg = r_str_newf ("Copied %s -> %s (%d bytes)", selected_name, dst_path, len);
+					mmc_panel_load_local (core, dst, state->ordering_mode);
 				}
+				r_cons_message (core->cons, msg);
+				free (msg);
 				r_fs_close (core->fs, file);
 			}
 		} else {
@@ -1592,14 +1573,11 @@ static void mmc_copy_file_confirmed(RCore *core, MMCState *state) {
 				r_cons_message (core->cons, msg);
 				free (msg);
 			} else {
-				FILE *fp = fopen (dst_path, "wb");
-				if (!fp) {
+				if (!r_file_dump (dst_path, data, data_size, false)) {
 					char *msg = r_str_newf ("Cannot create file: %s", dst_path);
 					r_cons_message (core->cons, msg);
 					free (msg);
 				} else {
-					fwrite (data, 1, data_size, fp);
-					fclose (fp);
 					char *msg = r_str_newf ("Copied %s -> %s (%zu bytes)", selected_name, dst_path, data_size);
 					r_cons_message (core->cons, msg);
 					free (msg);
