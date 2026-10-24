@@ -383,7 +383,7 @@ nth vaddr       bind type lib name
 ----------------------------------
 0   0x100000f40 NONE FUNC     exit
 1   ----------  NONE FUNC     dyld_stub_binder
-[{"ordinal":0,"bind":"NONE","type":"FUNC","name":"exit","plt":4294971200},{"ordinal":1,"bind":"NONE","type":"FUNC","name":"dyld_stub_binder"}]
+[{"ordinal":0,"bind":"NONE","type":"FUNC","sig":true,"name":"exit","plt":4294971200},{"ordinal":1,"bind":"NONE","type":"FUNC","sig":false,"name":"dyld_stub_binder"}]
 EOF
 RUN
 

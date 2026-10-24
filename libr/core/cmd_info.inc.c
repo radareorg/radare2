@@ -170,7 +170,7 @@ static void icc_langs(RCore *core, bool json) {
 static RCoreHelpMessage help_msg_ii = {
 	"Usage: ii", "[+-?cj*,]", "List/edit imports (volatile, does not modify the binary)",
 	"ii", "", "list imports",
-	"ii,", "[table-query]", "query imports with table syntax",
+	"ii,", "[table-query]", "query imports with table syntax (sig: types db has its signature)",
 	"ii*", "", "list imports as radare2 commands",
 	"iij", "", "list imports as JSON",
 	"iiq", "", "list imports in quiet mode",
