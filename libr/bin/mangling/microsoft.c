@@ -9,6 +9,8 @@
 #define MICROSOFT_NAME_LEN (256)
 #define MICROSOFR_CLASS_NAMESPACE_LEN (256)
 #define IMPOSSIBLE_LEN (MICROSOFT_NAME_LEN + MICROSOFR_CLASS_NAMESPACE_LEN)
+// types, templates and nested names recurse into each other, bound it like the cxx2 demanglers
+#define MICROSOFT_MAX_DEPTH (256)
 
 // TODO: it will be good to change this to some kind of map data structure
 typedef enum EObjectType {
@@ -550,6 +552,10 @@ static size_t get_template(SDemangler *sd, const char *buf, SStrInfo *str_info, 
 	char *str_type_code = NULL;
 	STypeCodeStr type_code_str;
 	// RListIter *it = NULL;
+	if (sd->depth > MICROSOFT_MAX_DEPTH) {
+		return 0;
+	}
+	sd->depth++;
 	RList *saved_abbr_names = sd->abbr_names;
 	RList *new_abbr_names = r_list_newf (free);
 
@@ -562,6 +568,7 @@ static size_t get_template(SDemangler *sd, const char *buf, SStrInfo *str_info, 
 		if (!names_l) {
 			free_type_code_str_struct (&type_code_str);
 			r_list_free (new_abbr_names);
+			sd->depth--;
 			return 0;
 		}
 		size_t i = get_operator_code (sd, buf, names_l, memorize);
@@ -569,6 +576,7 @@ static size_t get_template(SDemangler *sd, const char *buf, SStrInfo *str_info, 
 			r_list_free (names_l);
 			free_type_code_str_struct (&type_code_str);
 			r_list_free (new_abbr_names);
+			sd->depth--;
 			return 0;
 		}
 		buf = str_skip_report (buf, &len, i);
@@ -633,6 +641,7 @@ get_template_err:
 	if (!len) {
 		free_type_code_str_struct (&type_code_str);
 	}
+	sd->depth--;
 	return len;
 }
 
@@ -648,12 +657,17 @@ static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeS
 	RListIter *it = NULL;
 	SStrInfo *str_info = NULL;
 	size_t read_len = 0, tmp_len = 0;
+	if (sd->depth > MICROSOFT_MAX_DEPTH) {
+		return 0;
+	}
+	sd->depth++;
 	RList *names_l = r_list_newf ((RListFree)sstrinfo_free);
 
 	if (*buf == '?') {
 		size_t res = get_operator_code (sd, buf, names_l, memorize);
 		if (!res) {
 			r_list_free (names_l);
+			sd->depth--;
 			return 0;
 		}
 		memorize = true;
@@ -812,6 +826,7 @@ get_namespace_and_name_err:
 		}
 	}
 	r_list_free (names_l);
+	sd->depth--;
 	return read_len;
 }
 
@@ -1525,16 +1540,21 @@ static void free_type_code_str_struct(STypeCodeStr *type_code_str) {
 
 static EDemanglerErr get_type_code_string(SDemangler *sd, const char *sym, size_t *amount_of_read_chars, char **str_type_code) {
 	EDemanglerErr err = eDemanglerErrOK;
-	char *tmp_sym = strdup (sym);
 	STypeCodeStr type_code_str;
 	SStateInfo state;
 
+	if (sd->depth > MICROSOFT_MAX_DEPTH) {
+		*str_type_code = NULL;
+		*amount_of_read_chars = 0;
+		return eDemanglerErrUncorrectMangledSymbol;
+	}
+	sd->depth++;
 	if (!init_type_code_str_struct (&type_code_str)) {
 		err = eDemanglerErrMemoryAllocation;
 		goto get_type_code_string_err;
 	}
 
-	init_state_struct (&state, tmp_sym);
+	init_state_struct (&state, sym);
 
 	while (state.state != eTCStateEnd) {
 		run_state (sd, &state, &type_code_str);
@@ -1563,7 +1583,7 @@ static EDemanglerErr get_type_code_string(SDemangler *sd, const char *sym, size_
 	}
 
 get_type_code_string_err:
-	free (tmp_sym);
+	sd->depth--;
 	free_type_code_str_struct (&type_code_str);
 	return err;
 }
