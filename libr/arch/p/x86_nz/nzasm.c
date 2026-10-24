@@ -2688,9 +2688,17 @@ static int op_rm_ext(int bits, ut8 *data, const Operand *rm, int ext, ut8 opcode
 		return -1;
 	}
 	if (rm->type & OT_MEMORY) {
-		const st64 disp = (st64)(rm->offset * rm->offset_sign);
-		if (disp < ST32_MIN || disp > ((bits == 64)? ST32_MAX: UT32_MAX)) {
+		// a 32-bit address wraps around, a 64-bit one takes a sign-extended disp32
+		const bool addr32 = bits == 32 || (rm->regs[0] != X86R_UNDEFINED && !(rm->reg_size & OT_QWORD));
+		st64 disp = (st64)(rm->offset * rm->offset_sign);
+		if (addr32? (disp < -(st64)UT32_MAX || disp > UT32_MAX): (disp < ST32_MIN || disp > ST32_MAX)) {
 			return -1;
+		}
+		Operand mem = *rm;
+		if (addr32) {
+			disp = (st32)(ut32)disp;
+			mem.offset = (disp < 0)? -disp: disp;
+			mem.offset_sign = (disp < 0)? -1: 1;
 		}
 		if (rm->dest_size) {
 			size = rm->dest_size & ALL_SIZE;
@@ -2698,10 +2706,10 @@ static int op_rm_ext(int bits, ut8 *data, const Operand *rm, int ext, ut8 opcode
 		if (bits == 32 && rm->regs[0] == X86R_UNDEFINED && rm->regs[1] == X86R_UNDEFINED) {
 			// [disp32] without a SIB byte, which 64-bit mode reads as rip-relative
 			modrm[0] = ext << 3 | 5;
-			r_write_le32 (modrm + 1, (ut32)(rm->offset * rm->offset_sign));
+			r_write_le32 (modrm + 1, (ut32)disp);
 			n = 5;
 		} else {
-			n = encode_mem (modrm, ext, rm, &rex);
+			n = encode_mem (modrm, ext, &mem, &rex);
 		}
 		if (n < 0) {
 			return -1;
