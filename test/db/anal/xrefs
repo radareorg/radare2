@@ -149,6 +149,59 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=x86 arithmetic immediates do not create data references
+FILE=malloc://0x4000
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 4869c050280000c3 @ 0x1000
+wx 4881c050280000c3 @ 0x1010
+wx 2550280000c3 @ 0x1020
+wx 4881f850280000c3 @ 0x1030
+wx a950280000c3 @ 0x1040
+wx 4881eb50280000c3 @ 0x1050
+wx 4881f050280000c3 @ 0x1060
+wx 4881c850280000c3 @ 0x1070
+wx 48c7c050280000c3 @ 0x1080
+wx 6850280000c3 @ 0x1090
+wx 48b85028000000000000c3 @ 0x10a0
+af @ 0x1000
+af @ 0x1010
+af @ 0x1020
+af @ 0x1030
+af @ 0x1040
+af @ 0x1050
+af @ 0x1060
+af @ 0x1070
+af @ 0x1080
+af @ 0x1090
+af @ 0x10a0
+?e imul=`axf @ 0x1000~0x2850~?`
+?e add=`axf @ 0x1010~0x2850~?`
+?e and=`axf @ 0x1020~0x2850~?`
+?e cmp=`axf @ 0x1030~0x2850~?`
+?e test=`axf @ 0x1040~0x2850~?`
+?e sub=`axf @ 0x1050~0x2850~?`
+?e xor=`axf @ 0x1060~0x2850~?`
+?e or=`axf @ 0x1070~0x2850~?`
+?e mov=`axf @ 0x1080~0x2850~?`
+?e push=`axf @ 0x1090~0x2850~?`
+?e movabs=`axf @ 0x10a0~0x2850~?`
+EOF
+EXPECT=<<EOF
+imul=0
+add=0
+and=0
+cmp=0
+test=0
+sub=0
+xor=0
+or=0
+mov=1
+push=1
+movabs=1
+EOF
+RUN
+
 NAME=arm64 adrp ldr refers to the slot
 FILE=bins/mach0/hello-aae
 CMDS=<<EOF
