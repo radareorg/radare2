@@ -141,19 +141,21 @@ R_API void r_anal_function_free(RAnalFunction *fcn) {
 }
 
 // names come from binaries and users and reach terminals and generated r2 scripts
-static char *function_name_filter(char *s) {
+static bool function_name_filter(char *s) {
+	bool changed = false;
 	char *p;
 	for (p = s; p && *p; p++) {
 		if ((ut8)*p < ' ' || *p == 0x7f || *p == ';' || *p == '`' || *p == '|') {
 			*p = '_';
+			changed = true;
 		}
 	}
-	return s;
+	return changed;
 }
 
 R_API bool r_anal_add_function(RAnal *anal, RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (anal && fcn, false);
-	function_name_filter (fcn->name);
+	bool filtered = function_name_filter (fcn->name);
 	if (R_STR_ISEMPTY (fcn->name)) {
 		R_LOG_WARN ("Unnamed function at 0x%08"PFMT64x, fcn->addr);
 		// r_sys_breakpoint ();
@@ -164,6 +166,9 @@ R_API bool r_anal_add_function(RAnal *anal, RAnalFunction *fcn) {
 		} else {
 			fcn->name = r_str_newf ("%s.%"PFMT64x, fcnprefix, fcn->addr);
 		}
+	}
+	if (filtered && !r_anal_function_rename_unique (fcn, fcn->name)) {
+		return false;
 	}
 	if (__fcn_exists (anal, fcn->name, fcn->addr)) {
 		return false;
