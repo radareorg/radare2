@@ -1,6 +1,6 @@
 NAME=fatmach0 string location dylib
 FILE=bins/mach0/libexpat.1.dylib
-ARGS=-b32
+ARGS=-a x86 -b 32
 CMDS=<<EOF
 s str.parsing_finished
 x 16
@@ -30,7 +30,7 @@ RUN
 
 NAME=fatmach0 file type dylib
 FILE=bins/mach0/libexpat.1.dylib
-ARGS=-b32
+ARGS=-a x86 -b 32
 CMDS=i~type
 EXPECT=<<EOF
 type     Dynamically bound shared library
