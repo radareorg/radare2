@@ -76,9 +76,9 @@ EXPECT=<<EOF
 'agn dbg.main
 'agn dbg.x__e_INJECTED_FN
 'age dbg.main dbg.x__e_INJECTED_FN
-'agn dbg.x_?e INJECTED_FN
-agn 0x401005 "entry0 + 5"
-'agn 0x40100b "dbg.x_?e INJECTED_FN"
+'agn dbg.x_?e\ INJECTED_FN
+'agn 0x401005 "entry0\ +\ 5"
+'agn 0x40100b "dbg.x_?e\ INJECTED_FN"
 age 0x401005 0x40100b
 func.x_e_INJECTED_FN=a;?e INJECTED_ARG;#_?e INJECTED_NL_[31m
 func.x_e_INJECTED_FN.arg.0=int,a;?e INJECTED_ARG;#_?e INJECTED_NL_[31m

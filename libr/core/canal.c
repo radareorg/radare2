@@ -2181,9 +2181,13 @@ R_API void r_core_anal_datarefs(RCore *core, ut64 addr) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
 	if (fcn) {
 		bool found = false;
-		const char *me = fcn->name;
 		RVecAnalRef *refs = r_anal_function_get_refs (fcn);
 		if (!refs) {
+			return;
+		}
+		char *me = r_str_arg_escape (fcn->name);
+		if (!me) {
+			RVecAnalRef_free (refs);
 			return;
 		}
 
@@ -2202,10 +2206,14 @@ R_API void r_core_anal_datarefs(RCore *core, ut64 addr) {
 				}
 				RFlagItem *item = r_flag_get_in (core->flags, ref->addr);
 				r_strf_buffer (32);
-				const char *dst = item? item->name: r_strf ("0x%08"PFMT64x, ref->addr);
-				r_cons_printf (core->cons, "'agn %s\n'age %s %s\n", dst, me, dst);
+				char *dst = r_str_arg_escape (item? item->name: r_strf ("0x%08"PFMT64x, ref->addr));
+				if (dst) {
+					r_cons_printf (core->cons, "'agn %s\n'age %s %s\n", dst, me, dst);
+					free (dst);
+				}
 			}
 		}
+		free (me);
 		RVecAnalRef_free (refs);
 	} else {
 		R_LOG_ERROR ("Not in a function. Use 'df' to define it");
@@ -2215,12 +2223,16 @@ R_API void r_core_anal_datarefs(RCore *core, ut64 addr) {
 R_API void r_core_anal_coderefs(RCore *core, ut64 addr) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
 	if (fcn) {
-		const char *me = fcn->name;
-		r_cons_printf (core->cons, "'agn %s\n", me);
 		RVecAnalRef *refs = r_anal_function_get_refs (fcn);
 		if (!refs) {
 			return;
 		}
+		char *me = r_str_arg_escape (fcn->name);
+		if (!me) {
+			RVecAnalRef_free (refs);
+			return;
+		}
+		r_cons_printf (core->cons, "'agn %s\n", me);
 
 		RAnalRef *ref;
 		R_VEC_FOREACH (refs, ref) {
@@ -2229,9 +2241,13 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr) {
 			}
 			r_strf_buffer (32);
 			RFlagItem *item = r_flag_get_in (core->flags, ref->addr);
-			const char *dst = item? item->name: r_strf ("0x%08"PFMT64x, ref->addr);
-			r_cons_printf (core->cons, "'agn %s\n'age %s %s\n", dst, me, dst);
+			char *dst = r_str_arg_escape (item? item->name: r_strf ("0x%08"PFMT64x, ref->addr));
+			if (dst) {
+				r_cons_printf (core->cons, "'agn %s\n'age %s %s\n", dst, me, dst);
+				free (dst);
+			}
 		}
+		free (me);
 		RVecAnalRef_free (refs);
 	} else {
 		R_LOG_ERROR ("Not in a function. Use 'df' to define it");
@@ -2495,7 +2511,13 @@ repeat:
 			default:
 				if (refgraph || R_ANAL_REF_TYPE_MASK (fcnr->type) == R_ANAL_REF_TYPE_CALL) {
 					// TODO: avoid recreating nodes unnecessarily
-					r_cons_printf (core->cons, "'agn %s\n'agn %s\n'age %s %s\n", fcni->name, fcnr_name, fcni->name, fcnr_name);
+					char *from = r_str_arg_escape (fcni->name);
+					char *to = r_str_arg_escape (fcnr_name);
+					if (from && to) {
+						r_cons_printf (core->cons, "'agn %s\n'agn %s\n'age %s %s\n", from, to, from, to);
+					}
+					free (from);
+					free (to);
 				} else {
 					r_cons_printf (core->cons, "# - 0x%08"PFMT64x" (%c)\n", fcnr->addr, fcnr->type);
 				}
