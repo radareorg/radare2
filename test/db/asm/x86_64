@@ -140,16 +140,16 @@ a "cmp rbx, rax" 4839c3
 a "cmp rdx, rsi" 4839f2
 a "imul dl" f6ea
 a "imul byte[rbx]" f62b
-aB "imul byte[rbx-0x1234]" f6abccedffff
+a "imul byte[rbx-0x1234]" f6abccedffff
 a "imul dx" 66f7ea
-aB "imul r15d" 41f7ef
+a "imul r15d" 41f7ef
 a "imul ecx" f7e9
 a "imul rax" 48f7e8
 a "imul word[rax]" 66f728
-aB "imul word[rax+0x345]" 66f7a845030000
-a "imul dword[rax+0x345]" f728
-a "imul dword[rax+0x1234]" f728
-aB "imul qword[rax+0x1234]" 48f7a834120000
+a "imul word[rax+0x345]" 66f7a845030000
+a "imul dword[rax+0x345]" f7a845030000
+a "imul dword[rax+0x1234]" f7a834120000
+a "imul qword[rax+0x1234]" 48f7a834120000
 ad "imul ax, bx" 660fafc3
 ad "imul ax, si" 660fafc6
 a "imul esi, edx" 0faff2
@@ -281,19 +281,52 @@ ad "mov dil, 0x42" 40b742
 aB "mov spl, bpl" 4088ec
 a "neg al" f6d8
 a "neg dh" f6de
-aB "neg r15d" 41f7df
+a "neg r15d" 41f7df
 a "neg cx" 66f7d9
 a "neg rax" 48f7d8
 a "neg rsi" 48f7de
-aB "neg byte[rax]" f6d8
-aB "neg byte[rax-0x12134]" f698ccdefeff
-aB "neg word[rdi-0x8765]" 66f79f9b78ffff
-aB "neg dword[rsi]" f71e
-aB "neg dword[rsi+0x4567]" f79e67450000
-aB "neg qword[rdi+0x4567]" 48f79f67450000
+a "neg byte[rax]" f618
+a "neg byte[rax-0x12134]" f698ccdefeff
+a "neg word[rdi-0x8765]" 66f79f9b78ffff
+a "not dword [eax+0x80000000]" 67f79000000080
+a "div byte [eax+0xfffffff0]" 67f670f0
+a "neg dword[rsi]" f71e
+a "neg dword[rsi+0x4567]" f79e67450000
+a "neg qword[rdi+0x4567]" 48f79f67450000
+a "not r8b" 41f6d0
+a "not sil" 40f6d6
+a "not r9w" 6641f7d1
+a "not byte [rsp]" f61424
+a "not qword [r13]" 49f75500
+a "mul dword [rbp-0x10]" f765f0
+a "div qword [rax+r9*8+0x10]" 4af774c810
+a "idiv byte [r12]" 41f63c24
+a "imul word [eax]" 6766f728
+a "neg dword [rip+0x100]" f71d00010000
 a "pop rax" 58
 a "pop qword[rax]" 8f00
 a "pop qword[rsi]" 8f06
+a "push qword [r12]" 41ff3424
+a "push qword [rax+rbx*4]" ff3498
+a "pop qword [r13+4]" 418f4504
+a "pop word [rax]" 668f00
+a "call qword [rbp]" ff5500
+a "call qword [rax+r9*8+0x10]" 42ff54c810
+a "call r9" 41ffd1
+a "jmp qword [rsp]" ff2424
+a "jmp qword [rip+0x100]" ff2500010000
+a "jmp r15" 41ffe7
+a "jmp rax" ffe0 0x7fff00000000
+a "jmp qword [rax]" ff20 0x7fff00000000
+a "jmp qword [eax]" 67ff20
+a "jmp [0x1000]" ff242500100000
+a "call [0x1000]" ff142500100000
+a "push ax" 6650
+a "pop r9w" 664159
+a "inc qword [rax+r9*8+0x10]" 4aff44c810
+a "dec dword [eax]" 67ff08
+a "inc byte [0x1000]" fe042500100000
+a "inc byte [eax+0x80000000]" 67fe8000000080
 a "pop qword[rdi]" 8f07
 a "pop qword[rsp]" 8f0424
 a "pop qword[rbp]" 8f4500
@@ -1395,12 +1428,21 @@ aB "fnsave dword [rdi + rdi*8]" dd34ff
 a "ror al, 1" d0c8
 a "ror ah, 1" d0cc
 a "ror ah, 0xd6" c0ccd6
-a "ror di, 0xd6" cfd6
+a "ror di, 0xd6" 66c1cfd6
 a "ror byte[rax], 1" d008
-aB "ror byte[rax-0x2a], 1" d048d6
-aB "ror byte[rax-0x2a], 0x2a" c048d62a
-aB "ror byte[rax], 0x2a" c048d62a
-aB "ror byte[r15-0x2a], 1" 41d04fd6
+a "ror byte[rax-0x2a], 1" d048d6
+a "ror byte[rax-0x2a], 0x2a" c048d62a
+a "ror byte[rax], 0x2a" c0082a
+a "ror byte[r15-0x2a], 1" 41d04fd6
+a "sal eax, 1" d1e0
+a "shl eax" d1e0
+a "shl r8b, 3" 41c0e003
+a "shr sil, cl" 40d2ee
+a "rol ax, 1" 66d1c0
+a "rcl qword [r13+rax*2], cl" 49d3544500
+a "shr word [rsp], 4" 66c12c2404
+a "sar dword [rbp], cl" d37d00
+a "rcr r11, 7" 49c1db07
 ad "call qword [rip + 8]" ff1508000000
 ad "call qword [rip - 8]" ff15f8ffffff
 ad "add r8, 3" 4983c003
