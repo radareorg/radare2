@@ -30,7 +30,7 @@ static bool stm8_op(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				} else if (op->type == R_ANAL_OP_TYPE_STORE || r_str_startswith (op->mnemonic, "clr ") || r_str_startswith (op->mnemonic, "mov ")) {
 					op->direction = R_ANAL_OP_DIR_WRITE;
 				} else {
-					op->direction = R_ANAL_OP_DIR_READ | R_ANAL_OP_DIR_WRITE;
+					op->direction = R_ANAL_OP_DIR_RW;
 				}
 			}
 		}

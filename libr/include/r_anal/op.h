@@ -35,6 +35,7 @@ typedef enum {
 	R_ANAL_OP_DIR_WRITE = 2,
 	R_ANAL_OP_DIR_EXEC = 4,
 	R_ANAL_OP_DIR_REF = 8, // uhm?
+	R_ANAL_OP_DIR_RW = R_ANAL_OP_DIR_READ | R_ANAL_OP_DIR_WRITE,
 } RAnalOpDirection;
 
 typedef enum {
