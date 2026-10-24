@@ -1319,6 +1319,22 @@ r4,r5,r6,r7,r8,r9,r10,r11,sp
 EOF
 RUN
 
+NAME=arm16 cc at 32 bits passes four register args
+FILE=malloc://16
+ARGS=-a arm -b 32 -e anal.arch=arm
+CMDS=<<EOF
+k anal/cc/cc.arm16.arg3
+k anal/cc/cc.arm16.arg4
+k anal/cc/cc.arm16.argn
+k anal/cc/cc.arm16.preserve
+EOF
+EXPECT=<<EOF
+r3
+stack
+r4,r5,r6,r7,r8,r9,r10,r11,sp
+EOF
+RUN
+
 NAME=arm.gnu svc imm24
 FILE=malloc://16
 ARGS=-a arm.gnu -b 32
