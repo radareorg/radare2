@@ -99,35 +99,35 @@ CL
 xc
 EOF
 EXPECT=<<EOF
-file: /_test.c
+file: /home/potato/projects/sec/subjects/r2/r2_esc_seq_inj/_[36m_test.c
 line: 4
 colu: 28
 addr: 0x00001149
-file: /_test.c
+file: /home/potato/projects/sec/subjects/r2/r2_esc_seq_inj/_[36m_test.c
 line: 5
 colu: 5
 addr: 0x00001159
-file: /_test.c
+file: /home/potato/projects/sec/subjects/r2/r2_esc_seq_inj/_[36m_test.c
 line: 6
 colu: 1
 addr: 0x00001165
-file: /_test.c
+file: /home/potato/projects/sec/subjects/r2/r2_esc_seq_inj/_[36m_test.c
 line: 8
 colu: 12
 addr: 0x00001168
-file: /_test.c
+file: /home/potato/projects/sec/subjects/r2/r2_esc_seq_inj/_[36m_test.c
 line: 9
 colu: 5
 addr: 0x00001170
-file: /_test.c
+file: /home/potato/projects/sec/subjects/r2/r2_esc_seq_inj/_[36m_test.c
 line: 10
 colu: 12
 addr: 0x0000117f
-file: /_test.c
+file: /home/potato/projects/sec/subjects/r2/r2_esc_seq_inj/_[36m_test.c
 line: 11
 colu: 1
 addr: 0x00001184
-file: /_test.c
+file: /home/potato/projects/sec/subjects/r2/r2_esc_seq_inj/_[36m_test.c
 line: 11
 colu: 1
 addr: 0x00001186
@@ -146,7 +146,7 @@ addr: 0x00001186
 0x00001110  3de2 2e00 0000 4889 e574 0c48 8b3d e62e  =.....H..t.H.=.. ; void *dso_handle
 0x00001120  0000 e819 ffff ffe8 64ff ffff c605 dd2e  ........d.......
 0x00001130  0000 015d c30f 1f00 c30f 1f80 0000 0000  ...]............
-0x00001140  f30f 1efa e977 ffff fff3 0f1e fa55 4889  .....w.......UH.  ; sym.frame_dummy  ; dbg._func ; void _func(char * msg);
+0x00001140  f30f 1efa e977 ffff fff3 0f1e fa55 4889  .....w.......UH.  ; sym.frame_dummy  ; dbg.__33m_func ; void _[33m_func(char * msg);
 0x00001150  e548 83ec 1048 897d f848 8b45 f848 89c7  .H...H.}.H.E.H.. ; arg1 ; const char *s
 EOF
 RUN
@@ -347,7 +347,7 @@ EXPECT=<<EOF
 |           0x000057dc      488b8c24e8..   mov rcx, qword [var_e8h]
 |           0x000057e4      48898c2418..   mov qword [arg0], rcx
 |           0x000057ec      4889cf         mov rdi, rcx                ; int64_t arg1
-|           0x000057ef      488d35da0f..   lea rsi, [dbg.core::array::_<impl core::fmt::Debug for [T; _]>::fmt::h894a83bd2e78b654] ; dbg.core::array::__impl_core::fmt::Debug_for__T_____::fmt::h894a83bd2e78b654
+|           0x000057ef      488d35da0f..   lea rsi, [dbg.core::array::_<impl core::fmt::Debug for [T_ _]>::fmt::h894a83bd2e78b654] ; dbg.core::array::__impl_core::fmt::Debug_for__T_____::fmt::h894a83bd2e78b654
 |                                                                      ; 0x67d0 ; "H\x83\xecHH\x89|$8H\x89t$@\xb8\n" ; int64_t arg2
 |           0x000057f6      4889442478     mov qword [var_78h], rax
 |           0x000057fb      e8501b0000     call dbg.core::fmt::ArgumentV1::new::h4b3dd9450748c5fc
@@ -378,7 +378,7 @@ EXPECT=<<EOF
 |           0x00005891      488b8c2430..   mov rcx, qword [var_130h]
 |           0x00005899      48898c2420..   mov qword [arg0[2]], rcx
 |           0x000058a1      4889cf         mov rdi, rcx                ; int64_t arg1
-|           0x000058a4      488d35250f..   lea rsi, [dbg.core::array::_<impl core::fmt::Debug for [T; _]>::fmt::h894a83bd2e78b654] ; dbg.core::array::__impl_core::fmt::Debug_for__T_____::fmt::h894a83bd2e78b654
+|           0x000058a4      488d35250f..   lea rsi, [dbg.core::array::_<impl core::fmt::Debug for [T_ _]>::fmt::h894a83bd2e78b654] ; dbg.core::array::__impl_core::fmt::Debug_for__T_____::fmt::h894a83bd2e78b654
 |                                                                      ; 0x67d0 ; "H\x83\xecHH\x89|$8H\x89t$@\xb8\n" ; int64_t arg2
 |           0x000058ab      4889442458     mov qword [var_58h], rax
 |           0x000058b0      e89b1a0000     call dbg.core::fmt::ArgumentV1::new::h4b3dd9450748c5fc

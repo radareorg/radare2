@@ -105,8 +105,10 @@ static void emit_arg(RAnal *a, int idx, const char *name, const char *type,
 	ut64 disp = normalize (raw);
 	char *typed = NULL;
 	if (!unknown && fmt && name) {
-		typed = a->coreb.cmdStrF (a->coreb.core, "pfq %s%s %s @ 0x%08"PFMT64x,
-			on_stack ? "*" : "", fmt, name, disp);
+		// quiet pf never prints the field name, keep it and fmt away from the command parser
+		char *cmd = r_str_newf ("pfq %s%s", on_stack ? "*" : "", fmt);
+		typed = a->coreb.callAt (a->coreb.core, disp, cmd);
+		free (cmd);
 		if (typed) {
 			r_str_trim (typed);
 			if (!*typed) {

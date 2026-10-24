@@ -169,11 +169,52 @@ R_IPI const ut8 *dwarf_get_section_bytes(RBinFile *bf, RBinSection *section) {
 	return buf;
 }
 
+// names reach terminals and generated r2 scripts, control characters never belong in them
+static inline bool dwarf_is_ctrl(ut8 ch) {
+	return ch < ' ' || ch == 0x7f;
+}
+
+R_IPI char *dwarf_string_filter(char *s) {
+	char *p;
+	for (p = s; p && *p; p++) {
+		if (dwarf_is_ctrl (*p)) {
+			*p = '_';
+		}
+	}
+	return s;
+}
+
+// filters the string in place and returns its terminator, NULL when unterminated
+R_IPI const ut8 *dwarf_string_end(const ut8 *s, const ut8 *end) {
+	ut8 *p = (ut8 *)s;
+	for (; p < end && *p; p++) {
+		if (dwarf_is_ctrl (*p)) {
+			*p = '_';
+		}
+	}
+	return p < end? p: NULL;
+}
+
+// string sections are filtered once when cached, 1:1 so merged string tails stay valid
+R_IPI const ut8 *dwarf_get_section_strings(RBinFile *bf, RBinSection *section) {
+	const bool cached = section->bytes.ptr;
+	ut8 *data = (ut8 *)dwarf_get_section_bytes (bf, section);
+	if (data && !cached) {
+		size_t i;
+		for (i = 0; i < section->bytes.len; i++) {
+			if (data[i] && dwarf_is_ctrl (data[i])) {
+				data[i] = '_';
+			}
+		}
+	}
+	return data;
+}
+
 R_IPI const char *dwarf_get_section_string(RBinFile *bf, RBinSection *section, size_t offset) {
 	if (!bf || !section) {
 		return NULL;
 	}
-	const ut8 *data = dwarf_get_section_bytes (bf, section);
+	const ut8 *data = dwarf_get_section_strings (bf, section);
 	size_t len = section->bytes.len;
 	if (!data || offset >= len) {
 		return NULL;
@@ -182,8 +223,7 @@ R_IPI const char *dwarf_get_section_string(RBinFile *bf, RBinSection *section, s
 	if (!memchr (data + offset, 0, R_MIN (len - offset, DWARF_STRING_MAX))) {
 		return NULL;
 	}
-
-	return (const char *) (data + offset);
+	return (const char *)(data + offset);
 }
 
 R_IPI const ut8 *dwarf_read_index(const ut8 *buf, const ut8 *buf_end, bool be, ut8 size, ut64 *value) {

@@ -140,8 +140,20 @@ R_API void r_anal_function_free(RAnalFunction *fcn) {
 	free (fcn);
 }
 
+// names come from binaries and users and reach terminals and generated r2 scripts
+static char *function_name_filter(char *s) {
+	char *p;
+	for (p = s; p && *p; p++) {
+		if ((ut8)*p < ' ' || *p == 0x7f || *p == ';' || *p == '`' || *p == '|') {
+			*p = '_';
+		}
+	}
+	return s;
+}
+
 R_API bool r_anal_add_function(RAnal *anal, RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (anal && fcn, false);
+	function_name_filter (fcn->name);
 	if (R_STR_ISEMPTY (fcn->name)) {
 		R_LOG_WARN ("Unnamed function at 0x%08"PFMT64x, fcn->addr);
 		// r_sys_breakpoint ();
@@ -251,16 +263,11 @@ R_API bool r_anal_function_relocate(RAnalFunction *fcn, ut64 addr) {
 R_API bool r_anal_function_rename(RAnalFunction *fcn, const char *name) {
 	R_RETURN_VAL_IF_FAIL (fcn && R_STR_ISNOTEMPTY (name), false);
 	RAnal *anal = fcn->anal;
-	RAnalFunction *existing = ht_pp_find (anal->ht_name_fun, name, NULL);
-	if (existing) {
-		return existing == fcn;
-	}
-	if (fcn->name && !strcmp (fcn->name, name)) {
-		return true;
-	}
-	char *newname = strdup (name);
-	if (!newname) {
-		return false;
+	char *newname = function_name_filter (strdup (name));
+	RAnalFunction *existing = ht_pp_find (anal->ht_name_fun, newname, NULL);
+	if (existing || (fcn->name && !strcmp (fcn->name, newname))) {
+		free (newname);
+		return !existing || existing == fcn;
 	}
 	char *oldname = fcn->name;
 	bool registered = oldname && ht_pp_find (anal->ht_name_fun, oldname, NULL) == fcn;

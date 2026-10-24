@@ -2870,7 +2870,7 @@ static int cmd_type(void *data, const char *input) {
 			{
 				r_list_foreach (core->anal->fcns, iter, fcn) {
 					RList *uniq = r_anal_types_from_fcn (core->anal, fcn);
-					char *fname = r_str_sanitize_r2 (fcn->name);
+					const char *fname = fcn->name;
 					if (r_list_length (uniq)) {
 						r_cons_printf (core->cons, "'agn %s\n", fname);
 					}
@@ -2880,7 +2880,6 @@ static int cmd_type(void *data, const char *input) {
 						r_cons_printf (core->cons, "'agn %s\n'age %s %s\n", myType, myType, fname);
 						free (myType);
 					}
-					free (fname);
 				}
 			}
 			break;

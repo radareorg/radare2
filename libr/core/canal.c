@@ -2197,14 +2197,13 @@ R_API void r_core_anal_datarefs(RCore *core, ut64 addr) {
 			RBinSection *binsec = r_bin_get_section_at (obj, ref->addr, true);
 			if (binsec && binsec->is_data) {
 				if (!found) {
-					r_cons_printf (core->cons, "agn %s\n", me);
+					r_cons_printf (core->cons, "'agn %s\n", me);
 					found = true;
 				}
 				RFlagItem *item = r_flag_get_in (core->flags, ref->addr);
 				r_strf_buffer (32);
 				const char *dst = item? item->name: r_strf ("0x%08"PFMT64x, ref->addr);
-				r_cons_printf (core->cons, "agn %s\n", dst);
-				r_cons_printf (core->cons, "age %s %s\n", me, dst);
+				r_cons_printf (core->cons, "'agn %s\n'age %s %s\n", dst, me, dst);
 			}
 		}
 		RVecAnalRef_free (refs);
@@ -2217,7 +2216,7 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
 	if (fcn) {
 		const char *me = fcn->name;
-		r_cons_printf (core->cons, "agn %s\n", me);
+		r_cons_printf (core->cons, "'agn %s\n", me);
 		RVecAnalRef *refs = r_anal_function_get_refs (fcn);
 		if (!refs) {
 			return;
@@ -2231,8 +2230,7 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr) {
 			r_strf_buffer (32);
 			RFlagItem *item = r_flag_get_in (core->flags, ref->addr);
 			const char *dst = item? item->name: r_strf ("0x%08"PFMT64x, ref->addr);
-			r_cons_printf (core->cons, "agn %s\n", dst);
-			r_cons_printf (core->cons, "age %s %s\n", me, dst);
+			r_cons_printf (core->cons, "'agn %s\n'age %s %s\n", dst, me, dst);
 		}
 		RVecAnalRef_free (refs);
 	} else {
@@ -2497,11 +2495,7 @@ repeat:
 			default:
 				if (refgraph || R_ANAL_REF_TYPE_MASK (fcnr->type) == R_ANAL_REF_TYPE_CALL) {
 					// TODO: avoid recreating nodes unnecessarily
-					char *sfi = r_str_sanitize_r2 (fcni->name);
-					char *sfr = r_str_sanitize_r2 (fcnr_name);
-					r_cons_printf (core->cons, "'agn %s\n'agn %s\n'age %s %s\n", sfi, sfr, sfi, sfr);
-					free (sfi);
-					free (sfr);
+					r_cons_printf (core->cons, "'agn %s\n'agn %s\n'age %s %s\n", fcni->name, fcnr_name, fcni->name, fcnr_name);
 				} else {
 					r_cons_printf (core->cons, "# - 0x%08"PFMT64x" (%c)\n", fcnr->addr, fcnr->type);
 				}
@@ -3494,11 +3488,7 @@ static int fcn_list_names(RCore *core, RList *fcns) {
 	RListIter *iter;
 	RAnalFunction *fcn;
 	r_list_foreach (fcns, iter, fcn) {
-		char *sname = r_str_sanitize_r2 (fcn->name);
-		if (sname) {
-			r_cons_printf (core->cons, "'@0x%08"PFMT64x"'afn %s\n", fcn->addr, sname);
-			free (sname);
-		}
+		r_cons_printf (core->cons, "'@0x%08"PFMT64x"'afn %s\n", fcn->addr, fcn->name);
 	}
 	r_cons_newline (core->cons);
 	return 0;

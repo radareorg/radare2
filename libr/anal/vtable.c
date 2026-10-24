@@ -356,11 +356,12 @@ R_API char *r_anal_vtables_list(RAnal *anal, int rad) {
 			R_VEC_FOREACH (&table->methods, curMethod) {
 				r_strbuf_appendf (sb, "Cd %d @ 0x%08"PFMT64x"\n", context.word_size, table->saddr + curMethod->vtable_offset);
 				RAnalFunction *fcn = r_anal_get_fcn_in (anal, curMethod->addr, 0);
-				const char *const name = fcn ? fcn->name : NULL;
+				char *name = fcn? r_name_filter_dup (fcn->name): NULL;
 				if (name) {
-					r_strbuf_appendf (sb, "f %s=0x%08"PFMT64x"\n", name, curMethod->addr);
+					r_strbuf_appendf (sb, "'f %s=0x%08"PFMT64x"\n", name, curMethod->addr);
+					free (name);
 				} else {
-					r_strbuf_appendf (sb, "f method.virtual.0x%08"PFMT64x"=0x%08"PFMT64x"\n", curMethod->addr, curMethod->addr);
+					r_strbuf_appendf (sb, "'f method.virtual.0x%08"PFMT64x"=0x%08"PFMT64x"\n", curMethod->addr, curMethod->addr);
 				}
 			}
 		}
