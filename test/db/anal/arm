@@ -1381,3 +1381,17 @@ size: 24
 var int64_t var_8h @ x29+0x8
 EOF
 RUN
+
+NAME=arm pop pc records return stack displacement
+FILE=malloc://16
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 3080bde8
+aoj~{0.type}
+aoj~{0.disp}
+EOF
+EXPECT=<<EOF
+ret
+8
+EOF
+RUN
