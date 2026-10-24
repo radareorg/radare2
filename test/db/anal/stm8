@@ -36,3 +36,42 @@ EXPECT=<<EOF
 done
 EOF
 RUN
+
+NAME=stm8 register widths and independent accumulator and condition code
+FILE=malloc://16
+ARGS=-a stm8 -b 16
+CMDS=<<EOF
+aeim
+aer a=0x56
+aer cc=0xa5
+aer x=0x1234
+aer y=0x789a
+aer sp=0x123456
+aer pc=0x12345678
+aer a
+aer cc
+aer xh
+aer xl
+aer yh
+aer yl
+aer sp
+aer pc
+aer xl=0xbc
+aer xh=0xde
+aer x
+aer cc=0
+aer a
+EOF
+EXPECT=<<EOF
+0x00000056
+0x000000a5
+0x00000012
+0x00000034
+0x00000078
+0x0000009a
+0x00003456
+0x00345678
+0x0000debc
+0x00000056
+EOF
+RUN

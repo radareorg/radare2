@@ -61,16 +61,16 @@ static char *regs(RArchSession *as) {
 	"=A1	y\n"
 	"=A2	a\n"
 	"=R0	a\n"
-	"gpr	pc	.64	0	0\n"
-	"gpr	sp	.64	8	0\n"
+	"gpr	pc	.24	0	0\n"
+	"gpr	sp	.16	8	0\n"
 	"gpr	x	.16	16	0\n"
 	"gpr	y	.16	18	0\n"
 	"gpr	a	.8	20	0\n"
-	"gpr	xh	.8	16	0\n"
-	"gpr	xl	.8	17	0\n"
-	"gpr	yh	.8	18	0\n"
-	"gpr	yl	.8	19	0\n"
-	"gpr	cc	.16	20	0\n"
+	"gpr	xh	.8	17	0\n"
+	"gpr	xl	.8	16	0\n"
+	"gpr	yh	.8	19	0\n"
+	"gpr	yl	.8	18	0\n"
+	"gpr	cc	.8	21	0\n"
 	;
 	return strdup (p);
 }
