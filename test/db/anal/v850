@@ -471,7 +471,7 @@ EOF
 EXPECT=<<EOF
 v850
             0x00000000      830c           sst.h r1, 6[ep]
-            0x00000000      e00f71f0       ld.hu mmio.ICC, r1          ; 0xfffff070
+            0x00000000      e00f71f0       ld.hu mmio.ICC, r1          ; [0xfffff070:2]=0xffff
 EOF
 RUN
 
@@ -588,5 +588,97 @@ ao~pseudo
 EOF
 EXPECT=<<EOF
 pseudo: r0[0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB] |= (1 << r0[0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB])
+EOF
+RUN
+
+NAME=v850 scalar register reads and clobbers recover ABI arguments
+FILE=malloc://64
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+wx 06507f00
+af direct
+afvr
+af-
+wx 003206507f00
+af clobbered
+afvr
+arp~^=A
+arp~^=LR
+EOF
+EXPECT=<<EOF
+arg int32_t arg1 @ r6
+=A0	r6
+=A1	r7
+=A2	r8
+=A3	r9
+=LR	lp
+EOF
+RUN
+
+NAME=v850 stack loads and argument spills preserve access widths
+FILE=malloc://64
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+wx 031ef0ff033704002337060023370900031e10007f00
+af loads
+afvs
+af-
+wx 031ef0ff43370400633f060063470900031e10007f00
+af stores
+afvr
+afvs
+EOF
+EXPECT=<<EOF
+var int8_t var_4h @ sp+0x4
+var int16_t var_6h @ sp+0x6
+var int32_t var_8h @ sp+0x8
+arg int32_t arg1 @ r6
+arg int32_t arg2 @ r7
+arg int32_t arg3 @ r8
+var int8_t var_4h @ sp+0x4
+var int16_t var_6h @ sp+0x6
+var int32_t var_8h @ sp+0x8
+EOF
+RUN
+
+NAME=v850 address taken locals and stack arguments use the ABI frame
+FILE=malloc://64
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+wx 031ef0ff23360400031e10007f00
+af address_taken
+afvs
+af-
+wx 233700007f00
+af probe
+afs int probe(int a, int b, int c, int d, int fifth)
+afva
+afvs
+EOF
+EXPECT=<<EOF
+var int32_t var_4h @ sp+0x4
+arg int fifth @ sp+0x0
+EOF
+RUN
+
+NAME=v850 signed loads and absolute references expose access widths
+FILE=malloc://64
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+wx 0337fcff23370600203709f0
+aoj @0~{[0].ptrsize}
+aoj @0~{[0].sign}
+aoj @0~{[0].direction}
+aoj @4~{[0].ptrsize}
+aoj @8~{[0].ptr}
+aoj @8~{[0].refptr}
+EOF
+EXPECT=<<EOF
+1
+true
+read
+2
+4294963208
+4
 EOF
 RUN
