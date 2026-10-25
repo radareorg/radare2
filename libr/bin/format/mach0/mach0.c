@@ -16,7 +16,6 @@
 #define IS_PTR_BIND(x) ((x & (1ULL << 62)) != 0)
 #define CHAIN_MASK(x) ((1ULL << (x)) - 1)
 #define CHAIN_BITS(x, start, len) (((x) >> (start)) & CHAIN_MASK (len))
-#define IS_FMT_32BIT(x) (x == DYLD_CHAINED_PTR_32 || x == DYLD_CHAINED_PTR_32_CACHE || x == DYLD_CHAINED_PTR_32_FIRMWARE)
 
 typedef struct {
 	struct symbol_t *symbols;
@@ -2063,7 +2062,7 @@ static bool parse_chain_starts_section(struct MACH0_(obj_t) * mo) {
 	}
 	ut32 pointer_format = r_buf_read_le32_at (mo->b, cs->offset);
 	ut32 starts_count = r_buf_read_le32_at (mo->b, cs->offset + 4);
-	if (!starts_count || starts_count > (cs->size - 8) / sizeof (ut32)) {
+	if (pointer_format != DYLD_CHAINED_PTR_ARM64E_KERNEL || !starts_count || starts_count > (cs->size - 8) / sizeof (ut32)) {
 		return false;
 	}
 	int first = 0;
@@ -2101,7 +2100,7 @@ static bool parse_chain_starts_section(struct MACH0_(obj_t) * mo) {
 				}
 			}
 		}
-		if (fits_in (mo->size, head, IS_FMT_32BIT (pointer_format)? 4: 8)) {
+		if (fits_in (mo->size, head, 8)) {
 			heads[count++] = head;
 		}
 	}
@@ -5671,8 +5670,16 @@ struct MACH0_(mach_header) * MACH0_(get_hdr)(RBuffer *buf) {
 }
 
 
-static bool walk_fixup_chain(struct MACH0_(obj_t) * mo, ut64 cursor, ut64 chain_end, ut16 pointer_format, ut64 limit_start, ut64 limit_end, ut32 event_mask, RFixupCallback callback, void *context) {
+#define IS_FMT_32BIT(x) (x == DYLD_CHAINED_PTR_32 || x == DYLD_CHAINED_PTR_32_CACHE || x == DYLD_CHAINED_PTR_32_FIRMWARE)
+
+static bool walk_fixup_chain(struct MACH0_(obj_t) * mo, ut64 cursor, ut64 chain_end, ut16 pointer_format, RBitmap *visited, ut64 limit_start, ut64 limit_end, ut32 event_mask, RFixupCallback callback, void *context) {
 	while (cursor < limit_end && cursor < chain_end) {
+		if (visited) {
+			if (r_bitmap_test (visited, cursor / 4)) {
+				break;
+			}
+			r_bitmap_set (visited, cursor / 4);
+		}
 		ut8 tmp[8];
 		bool previous_rebasing = mo->rebasing_buffer;
 		mo->rebasing_buffer = true;
@@ -5878,16 +5885,24 @@ void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) * mo, ut64 limit_start,
 				if (!starts->threaded) {
 					chain_end = R_MIN (end, start + (page_idx + 1) * page_size);
 				}
-				if (!walk_fixup_chain (mo, cursor, chain_end, starts->pointer_format, limit_start, limit_end, event_mask, callback, context)) {
+				if (!walk_fixup_chain (mo, cursor, chain_end, starts->pointer_format, NULL, limit_start, limit_end, event_mask, callback, context)) {
 					return;
 				}
 			}
 		}
 	}
+	if (!mo->fw_chain_count) {
+		return;
+	}
+	RBitmap *visited = r_bitmap_new ((size_t)(mo->size / 4 + 1));
+	if (!visited) {
+		return;
+	}
 	ut32 j;
 	for (j = 0; j < mo->fw_chain_count; j++) {
-		if (!walk_fixup_chain (mo, mo->fw_chain_starts[j], mo->size, mo->fw_pointer_format, limit_start, limit_end, event_mask, callback, context)) {
-			return;
+		if (!walk_fixup_chain (mo, mo->fw_chain_starts[j], mo->size, mo->fw_pointer_format, visited, limit_start, limit_end, event_mask, callback, context)) {
+			break;
 		}
 	}
+	r_bitmap_free (visited);
 }
