@@ -269,7 +269,7 @@ static void fill_operands(RAnalOp *op, const v850np_inst *inst, RArchDecodeMask 
 		}
 		return;
 	}
-	const bool mov = !strcmp (name, "mov");
+	const bool mov = !strcmp (name, "mov") || !strcmp (name, "movhi");
 	const bool lea = !strcmp (name, "movea");
 	const bool arithmetic = !strcmp (name, "add") || !strcmp (name, "addi") || !strcmp (name, "sub");
 	if (!mov && !lea && !arithmetic) {

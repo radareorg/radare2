@@ -752,3 +752,20 @@ EXPECT=<<EOF
 var int8_t var_0h @ sp+0x0
 EOF
 RUN
+
+NAME=v850 IAR ABI recovers seed buffer and length without a false movhi argument
+FILE=malloc://64
+ARGS=-a v850 -b 32 -e anal.cc=iar
+CMDS=<<EOF
+wx 0538444681fe2846e806e10be52906287f00
+af checksum
+afcrj
+afvr
+EOF
+EXPECT=<<EOF
+{"ret":"r1","args":["r1","tp","r6","r7","r8","r9","r10","r11","r12","r13","r14","r15","r16","r17","r18","r19"]}
+arg int32_t arg1 @ r1
+arg int32_t arg2 @ tp
+arg int32_t arg3 @ r6
+EOF
+RUN

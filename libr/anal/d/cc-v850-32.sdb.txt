@@ -9,3 +9,27 @@ cc.stdc.argn=stack
 cc.stdc.ret0=r10
 cc.stdc.clobber=r1,r6,r7,r8,r9,r10,r11,r12,r13,r14,r15,r16,r17,r18,r19,lp
 cc.stdc.preserve=r2,r20,r21,r22,r23,r24,r25,r26,r27,r28,r29,sp,gp,tp,ep
+
+# IAR V850 scalar ABI (EWV850 Compiler Reference, Calling convention).
+# Register locking can restrict the high argument registers in a program.
+iar=cc
+cc.iar.arg0=r1
+cc.iar.arg1=tp
+cc.iar.arg2=r6
+cc.iar.arg3=r7
+cc.iar.arg4=r8
+cc.iar.arg5=r9
+cc.iar.arg6=r10
+cc.iar.arg7=r11
+cc.iar.arg8=r12
+cc.iar.arg9=r13
+cc.iar.arg10=r14
+cc.iar.arg11=r15
+cc.iar.arg12=r16
+cc.iar.arg13=r17
+cc.iar.arg14=r18
+cc.iar.arg15=r19
+cc.iar.argn=stack
+cc.iar.ret0=r1
+cc.iar.clobber=r1,tp,r6,r7,r8,r9,r10,r11,r12,r13,r14,r15,r16,r17,r18,r19,lp
+cc.iar.preserve=r2,sp,gp,r20,r21,r22,r23,r24,r25,r26,r27,r28,r29,ep
