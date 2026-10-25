@@ -863,10 +863,18 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	case R_ANAL_OP_TYPE_JMP:
 		op->jump = addr + inst.value;
 		break;
-	case R_ANAL_OP_TYPE_CJMP:
+	case R_ANAL_OP_TYPE_CJMP: {
+		static const int conditions[] = {
+			R_ANAL_CONDTYPE_VS, R_ANAL_CONDTYPE_LO, R_ANAL_CONDTYPE_EQ, R_ANAL_CONDTYPE_LS,
+			R_ANAL_CONDTYPE_MI, R_ANAL_CONDTYPE_AL, R_ANAL_CONDTYPE_LT, R_ANAL_CONDTYPE_LE,
+			R_ANAL_CONDTYPE_VC, R_ANAL_CONDTYPE_HS, R_ANAL_CONDTYPE_NE, R_ANAL_CONDTYPE_HI,
+			R_ANAL_CONDTYPE_PL, R_ANAL_CONDTYPE_AL, R_ANAL_CONDTYPE_GE, R_ANAL_CONDTYPE_GT,
+		};
+		op->cond = conditions[inst.op->opcode & 15];
 		op->jump = addr + inst.value;
 		op->fail = addr + inst.size;
 		break;
+	}
 	case R_ANAL_OP_TYPE_PUSH:
 	case R_ANAL_OP_TYPE_POP:
 		if (inst.op && (!strcmp (inst.op->name, "prepare") || !strcmp (inst.op->name, "dispose"))) {

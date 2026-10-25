@@ -769,3 +769,24 @@ arg int32_t arg2 @ tp
 arg int32_t arg3 @ r6
 EOF
 RUN
+
+NAME=v850 branch conditions and address arithmetic remain distinct from x86 suffixes
+FILE=malloc://32
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+wx 92059a05
+aoj @0~{[0].cond}
+aoj @2~{[0].cond}
+wx 2846e80685008600
+ao 1~pseudo
+ao 1 @4~pseudo
+ao 1 @6~pseudo
+EOF
+EXPECT=<<EOF
+eq
+ne
+pseudo: r8 = r8 + 1768
+pseudo: tp &= 0xff
+pseudo: r6 &= 0xff
+EOF
+RUN
