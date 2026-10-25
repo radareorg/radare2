@@ -2959,7 +2959,7 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 				r_strbuf_appendf (&op->esil, "%s,", REG (0));
 			}
 			if (REGBASE (1) == ARM_REG_PC) {
-				r_strbuf_appendf (&op->esil, "0x%" PFMT64x, (addr & ~3ULL) + pcdelta + MEMDISP (1));
+				r_strbuf_appendf (&op->esil, "0x%" PFMT64x, (ut64)((addr & ~3ULL) + pcdelta + MEMDISP (1)));
 			} else {
 				r_strbuf_appendf (&op->esil, "%d,%s,+,0xffffffff,&", MEMDISP (1), MEMBASE (1));
 			}
