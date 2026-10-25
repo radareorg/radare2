@@ -25,10 +25,10 @@ a "eoreq r2, r2, 1" 01202202
 a "eorne r0, r0, r3" 03002010
 aB "eorne r0, r0, r3, lsr #24" 230c2010
 a "eors R2, r2" 022032e0
-aB "ldmdbeQ r2, {r0, r1}" 03001209
-aB "ldmeq r3, {r0, r1, r2, r3}" 0f009308
-aB "ldmeq r5, {r0, r1, r2}" 07009508
-aB "ldmeq r6, {r0, r1}" 03009608
+a "ldmdbeQ r2, {r0, r1}" 03001209
+a "ldmeq r3, {r0, r1, r2, r3}" 0f009308
+a "ldmeq r5, {r0, r1, r2}" 07009508
+a "ldmeq r6, {r0, r1}" 03009608
 aB "ldrbeq r5, [r7, -1]" 01505705
 aB "ldrne r2, [r3, ip]" dc208311
 a "ldreq r0, [fp, -180]" b4001b05
@@ -69,9 +69,9 @@ a "popeq {r3, r4, r5, r6, r7, r8, r9, sl, fp, pc}" f88fbd08
 a "reveq r3, r3" 333fbf06
 a "rsbeq ip, r1, r7" 07c06100
 a "rsbne r6, r0, r6" 06606010
-aB "stmeq r0, {r2, r3}" 0c008008
-aB "stmeq ip, {r0, r1, r2}" 07008c08
-aB "stmeq ip, {r0, r1, r2, r3}" 0f008c08
+a "stmeq r0, {r2, r3}" 0c008008
+a "stmeq ip, {r0, r1, r2}" 07008c08
+a "stmeq ip, {r0, r1, r2, r3}" 0f008c08
 a "strbeq ip, [r2, -1]" 01c04205
 a "strbeq r3, [r5]" 0030c505
 aB "strdeq r2, [r4]" f020c401
@@ -248,10 +248,10 @@ a "cmpne r7, r6" 06005711
 a "eoreq r2, r2, 1" 01202202
 a "eorne r0, r0, r3" 03002010
 aB "eorne r0, r0, r3, lsr 24" 230c2010
-aB "ldmdbeq r2, {r0, r1}" 03001209
-aB "ldmeq r3, {r0, r1, r2, r3}" 0f009308
-aB "ldmeq r5, {r0, r1, r2}" 07009508
-aB "ldmeq r6, {r0, r1}" 03009608
+a "ldmdbeq r2, {r0, r1}" 03001209
+a "ldmeq r3, {r0, r1, r2, r3}" 0f009308
+a "ldmeq r5, {r0, r1, r2}" 07009508
+a "ldmeq r6, {r0, r1}" 03009608
 aB "ldrbeq r5, [r7, -1]" 01505705
 aB "ldrdne r2, r3, [r3, ip]" dc208311
 a "ldreq r0, [fp, -0xb4]" b4001b05
@@ -281,9 +281,9 @@ aB "popeq {r3, r4, r5, r6, r7, r8, sb, sl, fp, pc}" f88fbd08
 a "reveq r3, r3" 333fbf06
 a "rsbeq ip, r1, r7" 07c06100
 a "rsbne r6, r0, r6" 06606010
-aB "stmeq r0, {r2, r3}" 0c008008
-aB "stmeq ip, {r0, r1, r2}" 07008c08
-aB "stmeq ip, {r0, r1, r2, r3}" 0f008c08
+a "stmeq r0, {r2, r3}" 0c008008
+a "stmeq ip, {r0, r1, r2}" 07008c08
+a "stmeq ip, {r0, r1, r2, r3}" 0f008c08
 a "strbeq ip, [r2, -1]" 01c04205
 a "strbeq r3, [r5]" 0030c505
 a "strdeq r2, r3, [r4]" f020c401
@@ -407,6 +407,19 @@ ad "stmib r4!, {r5, r6, r7}" e000a4e9
 ad "ldmda r8, {r0, r1, r2}" 070018e8
 ad "stmda r8, {r0, r1, r2}" 070008e8
 ad "ldm r0, {r1, r2, r3, r4, r5, r6, r7, r8, pc}" fe8190e8
+a "stmfd sp!, {r4, lr}" 10402de9
+a "stmed sp!, {r4, lr}" 10402de8
+a "stmfa sp!, {r4, lr}" 1040ade9
+a "stmea r0!, {r1, r2}" 0600a0e8
+a "ldmfd sp!, {r4, pc}" 1080bde8
+a "ldmed sp!, {r4, pc}" 1080bde9
+a "ldmfa sp!, {r4, pc}" 10803de8
+a "ldmea sp!, {r4, pc}" 10803de9
+a "ldmiaeq r0, {r1, r2}" 06009008
+a "ldmfdne sp!, {r4, pc}" 1080bd18
+a "stmdbgt r12!, {r0, r2}" 05002cc9
+a "ldmeqia r0, {r1, r2}" 06009008
+a "stmnefd sp!, {r4, lr}" 10402d19
 ad "mrs r0, apsr" 00000fe1
 ad "mrs r1, apsr" 00100fe1
 ad "mrs r1, spsr" 00104fe1
