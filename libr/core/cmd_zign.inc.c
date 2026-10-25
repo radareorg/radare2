@@ -139,6 +139,35 @@ static bool r_sign_add_next(RAnal *a, const char *name, const char *nextname) {
 	return retval;
 }
 
+static inline bool valid_collision(const char *col) {
+	return (col[0] == R_SIGN_BYTES || col[0] == R_SIGN_GRAPH) && col[1] == ':' && r_name_check (col + 2);
+}
+
+static bool add_collisions(RAnal *a, const char *name, char *sig) {
+	RList *cols = r_str_split_list (sig, " ", 0);
+	r_list_sort (cols, (RListComparator)strcmp);
+	RListIter *iter, *tmp;
+	char *col;
+	const char *prev = NULL;
+	bool ok = true;
+	r_list_foreach_safe (cols, iter, tmp, col) {
+		if (!*col || (prev && !strcmp (prev, col))) {
+			r_list_delete (cols, iter);
+		} else {
+			ok = ok && valid_collision (col);
+			prev = col;
+		}
+	}
+	RSignItem *it = (ok && !r_list_empty (cols))? item_new_named (a, name): NULL;
+	ok = it && (it->collisions = r_str_list_join (cols, ",")) && r_sign_add_item (a, it);
+	if (!ok) {
+		R_LOG_ERROR ("Invalid collisions for zignature %s", name);
+	}
+	r_sign_item_free (it);
+	r_list_free (cols);
+	return ok;
+}
+
 static inline bool za_add(RCore *core, const char *input) {
 	char *args = r_str_trim_dup (input + 1);
 	if (!args) {
@@ -221,6 +250,9 @@ static inline bool za_add(RCore *core, const char *input) {
 		// TODO
 		ret = r_sign_add_next (core->anal, name, sig);
 		break;
+	case R_SIGN_COLLISIONS:
+		ret = add_collisions (core->anal, name, sig);
+		break;
 	default:
 		R_LOG_ERROR ("Unknown zignature type: %s", stype);
 	}
@@ -242,6 +274,7 @@ static void cmd_za_detailed_help(RCore *core) {
 			"  x: cross references\n"
 			"  h: bbhash (hashing of fcn basic blocks)\n"
 			"  v: vars (and args)\n"
+			"  C: collisions, as listed by z* (zac recomputes them)\n"
 			"Bytes patterns:\n"
 			"  bytes can contain '..' (dots) to specify a binary mask\n\n"
 			"Graph metrics:\n"

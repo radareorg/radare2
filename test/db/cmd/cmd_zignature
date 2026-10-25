@@ -2228,3 +2228,21 @@ za m b 9090
 za m C b:a
 EOF
 RUN
+
+NAME=za C loads the collisions z* prints, sorted, rejecting malformed entries
+FILE=--
+CMDS=<<EOF
+za a b 9090
+za a C g:z  b:y g:a g:z
+za a C b:bad,name
+za a C q:x
+zk
+z*
+EOF
+EXPECT=<<EOF
+zign|*|a=|b:9090:ffff|C:b:y,g:a,g:z
+zs *
+za a b 9090
+za a C b:y g:a g:z
+EOF
+RUN
