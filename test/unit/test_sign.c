@@ -150,7 +150,7 @@ static bool test_anal_sign_collisions(void) {
 		mu_assert_true (r_sign_add_bytes (anal, names[i], "9090"), "add colliding bytes");
 		mu_assert_true (r_sign_add_graph (anal, names[i], graph), "add colliding graph");
 	}
-	const char *expected[] = { "b:a", "b:m", "b:z", "g:a", "g:m", "g:z" };
+	const char *expected = "b:a,b:m,b:z,g:a,g:m,g:z";
 	int pass;
 	for (pass = 0; pass < 2; pass++) {
 		r_spaces_set (&anal->zign_spaces, NULL);
@@ -158,13 +158,10 @@ static bool test_anal_sign_collisions(void) {
 		r_spaces_set (&anal->zign_spaces, "first");
 		RSignItem *item = r_sign_get_item (anal, "a");
 		mu_assert_notnull (item, "reload serialized collision names");
-		mu_assert_eq (r_list_length (item->collisions), R_ARRAY_SIZE (expected), "collision count");
-		for (i = 0; i < R_ARRAY_SIZE (expected); i++) {
-			mu_assert_streq (r_list_get_n (item->collisions, i), expected[i], "sorted byte and graph collisions");
-		}
+		mu_assert_streq (item->collisions, expected, "sorted byte and graph collisions");
 		r_sign_item_free (item);
 		item = r_sign_get_item (anal, "z");
-		mu_assert_eq (r_list_length (item->collisions), 4, "deduplicate names from different spaces");
+		mu_assert_streq (item->collisions, "b:a,b:m,g:a,g:m", "deduplicate names from different spaces");
 		r_sign_item_free (item);
 	}
 	r_anal_free (anal);

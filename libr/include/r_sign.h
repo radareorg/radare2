@@ -69,7 +69,7 @@ typedef struct r_sign_item_t {
 	ut64 addr;
 	RList /*<char>*/ *refs;
 	RList /*<char>*/ *xrefs;
-	RList /*<char>*/ *collisions;
+	char *collisions; // "b:name,g:name", sorted by type and then name
 	RList /*<RAnalVarProt>*/ *vars;
 	RSignHash *hash;
 } RSignItem;
