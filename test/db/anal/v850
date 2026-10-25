@@ -602,9 +602,14 @@ af-
 wx 003206507f00
 af clobbered
 afvr
+arp~^=A
 EOF
 EXPECT=<<EOF
 arg int32_t arg1 @ r6
+=A0	r6
+=A1	r7
+=A2	r8
+=A3	r9
 EOF
 RUN
 
