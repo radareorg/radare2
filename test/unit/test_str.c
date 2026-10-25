@@ -745,6 +745,16 @@ bool test_r_str_split_list(void) {
 		r_list_free (r);
 		free (hi);
 	}
+	{
+		char* hi = strdup ("a::b:c::d");
+		RList *r = r_str_split_list (hi, "::", 0);
+		mu_assert_eq (r_list_length (r), 3, "split on a two-char separator");
+		mu_assert_streq (r_list_get_n (r, 0), "a", "two-char separator first field");
+		mu_assert_streq (r_list_get_n (r, 1), "b:c", "keep a lone colon");
+		mu_assert_streq (r_list_get_n (r, 2), "d", "two-char separator last field");
+		r_list_free (r);
+		free (hi);
+	}
 	mu_end;
 }
 
