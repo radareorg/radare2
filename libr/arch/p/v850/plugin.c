@@ -223,6 +223,83 @@ static bool is_sp_adjust(const v850np_inst *inst) {
 	return !is_reg_operand (inst, 0) && is_sp_operand (inst, 1) && (!inst->op->operands[2] || is_sp_operand (inst, 2));
 }
 
+static RAnalValue operand_value(const v850np_inst *inst, int i) {
+	RAnalValue value = {0};
+	value.reg = inst->args[i].str;
+	value.type = value.reg? R_ANAL_VAL_REG: R_ANAL_VAL_IMM;
+	value.imm = value.reg? 0: inst->args[i].value;
+	value.access = R_PERM_R;
+	return value;
+}
+
+static void fill_operands(RAnalOp *op, const v850np_inst *inst, RArchDecodeMask mask) {
+	const char *name = inst->op->name;
+	const bool load = op->type == R_ANAL_OP_TYPE_LOAD;
+	const bool store = op->type == R_ANAL_OP_TYPE_STORE;
+	if (load || store) {
+		const char *suffix = strchr (name, '.');
+		const int width = suffix && suffix[1] == 'b'? 1: suffix && suffix[1] == 'h'? 2: suffix && suffix[1] == 'w'? 4: 0;
+		const int base = inst->op->memop - 1;
+		if (!width || (base != 1 && base != 2) || !inst->args[base].str
+				|| !(v850_operands[inst->op->operands[base - 1]].flags & V850_OPERAND_DISP)) {
+			return;
+		}
+		RAnalValue mem = operand_value (inst, base);
+		mem.type = R_ANAL_VAL_MEM;
+		mem.memref = width;
+		mem.delta = inst->args[base - 1].value;
+		mem.access = load? R_PERM_R: R_PERM_W;
+		RAnalValue reg = operand_value (inst, load? 2: 0);
+		if (!reg.reg) {
+			return;
+		}
+		reg.access = load? R_PERM_W: R_PERM_R;
+		if (mask & R_ARCH_OP_MASK_VAL) {
+			RVecRArchValue_push_back (&op->srcs, load? &mem: &reg);
+			RVecRArchValue_push_back (&op->dsts, load? &reg: &mem);
+		}
+		op->ptrsize = width;
+		op->sign = load && (suffix[1] == 'b' || suffix[1] == 'h') && suffix[2] != 'u';
+		op->direction = load? R_ANAL_OP_DIR_READ: R_ANAL_OP_DIR_WRITE;
+		if (!strcmp (mem.reg, "r0")) {
+			op->ptr = (ut32)mem.delta;
+			op->refptr = width;
+		} else {
+			op->ptr = UT64_MAX;
+		}
+		return;
+	}
+	const bool mov = !strcmp (name, "mov");
+	const bool lea = !strcmp (name, "movea");
+	const bool arithmetic = !strcmp (name, "add") || !strcmp (name, "addi") || !strcmp (name, "sub");
+	if (!mov && !lea && !arithmetic) {
+		return;
+	}
+	if (lea) {
+		op->type = R_ANAL_OP_TYPE_LEA;
+		op->direction = R_ANAL_OP_DIR_REF;
+	}
+	if (!(mask & R_ARCH_OP_MASK_VAL)) {
+		return;
+	}
+	const bool three = inst->op->operands[2] != 0;
+	RAnalValue dst = operand_value (inst, three? 2: 1);
+	if (!dst.reg) {
+		return;
+	}
+	dst.access = R_PERM_W;
+	RVecRArchValue_push_back (&op->dsts, &dst);
+	RAnalValue src = operand_value (inst, three? 1: 0);
+	RVecRArchValue_push_back (&op->srcs, &src);
+	if (three) {
+		src = operand_value (inst, 0);
+		RVecRArchValue_push_back (&op->srcs, &src);
+	} else if (arithmetic) {
+		dst.access = R_PERM_R;
+		RVecRArchValue_push_back (&op->srcs, &dst);
+	}
+}
+
 static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	ut8 opcode = 0;
 	const char *reg1 = NULL;
@@ -808,6 +885,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		}
 		break;
 	}
+	if (inst.op) {
+		fill_operands (op, &inst, mask);
+	}
 	op->size = inst.size;
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		if (as->config->syntax == R_ARCH_SYNTAX_ATT) {
@@ -828,13 +908,13 @@ static char *regs(RArchSession *s) {
 		"=PC	pc\n"
 		"=SP	sp\n"
 		"=BP	ep\n"
+		"=LR	lp\n"
 		"=SN	r1\n"
 		"=ZF	z\n"
-		"=A0	r1\n"
-		"=A1	r5\n"
-		"=A2	r6\n"
-		"=A3	r7\n"
-		"=A4	r8\n"
+		"=A0	r6\n"
+		"=A1	r7\n"
+		"=A2	r8\n"
+		"=A3	r9\n"
 		"=SF	s\n"
 		"=OF	ov\n"
 		"=CF	cy\n"
@@ -932,6 +1012,8 @@ static RList *preludes(RArchSession *as) {
 
 static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
+	case R_ARCH_INFO_WODST:
+		return 1;
 	case R_ARCH_INFO_CODE_ALIGN:
 	case R_ARCH_INFO_DATA_ALIGN:
 		return 2;
