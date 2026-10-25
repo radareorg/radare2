@@ -1706,6 +1706,101 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=collision with two bytes and one graph collider prevents renaming
+FILE=bins/elf/ls
+CMDS=<<EOF
+s main
+af
+afn bad1
+zaf
+afn bad2
+f-bad1
+zaf
+afn bad3
+f-bad2
+zaf
+za bad3 g cc=100 nbbs=2 edges=3 ebbs=8 bbsum=100
+afn main
+f-bad3
+af- $$
+zac
+z/
+afl~main?
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=collision with one bytes and two graph colliders prevents renaming
+FILE=bins/elf/ls
+CMDS=<<EOF
+s main
+af
+afn bad1
+zaf
+afn bad2
+f-bad1
+zaf
+afn bad3
+f-bad2
+zaf
+za bad3 b 91919191
+afn main
+f-bad3
+af- $$
+zac
+z/
+afl~main?
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=graph-only match checks the graph collisions, not the bytes ones
+FILE=bins/elf/ls
+CMDS=<<EOF
+s main
+af
+za ga b 90909090
+za ga g cc=429 nbbs=300 edges=437 ebbs=8 bbsum=6739
+za bb b 90909090
+za bb g cc=100 nbbs=2 edges=3 ebbs=8 bbsum=100
+za gc b 91919191
+za gc g cc=429 nbbs=300 edges=437 ebbs=8 bbsum=6739
+zac
+z/
+afl~main?
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=Rename when a matched type has no colliders
+FILE=bins/elf/ls
+CMDS=<<EOF
+s main
+af
+afn newname
+zaf
+afn badgraph
+f-newname
+zaf
+za badgraph g cc=100 nbbs=2 edges=3 ebbs=8 bbsum=100
+afn main
+f-badgraph
+af- $$
+zac
+z/
+afl~newname?
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
 NAME=Rename vars on sign match
 FILE=bins/elf/ls
 CMDS=<<EOF

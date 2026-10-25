@@ -2468,129 +2468,34 @@ static int str_list_cmp(RList *la, RList *lb) {
 	return 0;
 }
 
-static bool type_in_array(RSignType *arr, RSignType needle) {
-	while (*arr != R_SIGN_END) {
-		if (*arr == needle) {
-			return true;
-		}
-		arr++;
-	}
-	return false;
-}
-
-static RListIter *collision_skip_unused(RListIter *iter, RSignType *used) {
-	char *n = (char *)r_list_iter_get_data (iter);
-	if (!n) {
-		return r_list_iter_get_next (iter);
-	}
-	RSignType skip = n[0];
-	if (type_in_array (used, skip)) {
-		return iter;
-	}
-	RListIter *next;
-	while ((next = r_list_iter_get_next (iter))) {
-		n = r_list_iter_get_data (next);
-		if (n) {
-			RSignType t = n[0];
-			if (skip != t) {
-				if (type_in_array (used, t)) {
-					return iter;
-				}
-			}
-		}
-		iter = next;
-	}
-	return iter;
-}
-
-// return NULL one error, otherwise return a, possibly empty, list of
-// collisions. Relies on sets being ordered in groups of types. Returns NULL no
-// error, otherwise an RList of collisions. RList will be empty when there are
-// no collisions
+// colliders: names listed under every matched type that zac computes
 static RList *check_collisions(RList *collisions, RSignType *types) {
-	if (!collisions || types[0] == R_SIGN_END) {
+	if (!collisions) {
 		return r_list_new ();
 	}
-
-	RListIter *iter = r_list_iterator (collisions);
-	if (!iter) {
-		return NULL;
-	}
-
-	// skip over types that were not matched against
-	if (!(iter = collision_skip_unused (iter, types))) {
-		return r_list_new ();
-	}
-
-	char *col = (char *)r_list_iter_get_data (iter);
-	if (!col || col[1] != ':') {
-		return NULL;
-	}
-
-	RList *set = r_list_new ();
-	if (!set) {
-		return NULL;
-	}
-	RList *holder = NULL;
-
-	// add the names from first matched type to return set
-	RSignType thistype = col[0];
-	while (iter) {
-		r_list_append (set, col + 2);
-		if ((iter = r_list_iter_get_next (iter))) {
-			col = (char *)r_list_iter_get_data (iter);
-			if (!col || col[1] != ':') {
-				goto collerr;
-			}
-			RSignType t = col[1];
-			if (t != thistype) {
-				break;
-			}
+	RList *set = NULL;
+	for (; *types != R_SIGN_END; types++) {
+		if (*types != R_SIGN_BYTES && *types != R_SIGN_GRAPH) {
+			continue;
 		}
-	}
-
-	holder = r_list_new ();
-	if (!holder) {
-		goto collerr;
-	}
-
-	// now we interset return set with next relevent type and repeat
-	while (iter && (iter = collision_skip_unused (iter, types))) { // loop over new type group
-		col = (char *)r_list_iter_get_data (iter);
-		if (!col || col[1] != ':') {
-			goto collerr;
-		}
-
-		// interset current type
-		RSignType t = col[0];
-		RSignType nexttype = t;
-		while (t == nexttype) {
+		RList *next = r_list_new ();
+		RListIter *iter;
+		char *col;
+		r_list_foreach (collisions, iter, col) {
+			if (R_STR_ISEMPTY (col) || col[1] != R_SIGN_COL_DELEM) {
+				r_list_free (next);
+				r_list_free (set);
+				return NULL;
+			}
 			char *name = col + 2;
-			if (r_list_find (set, name, list_str_cmp)) {
-				r_list_append (holder, col + 2);
-			}
-			nexttype = R_SIGN_END;
-			if ((iter = r_list_iter_get_next (iter))) {
-				col = (char *)r_list_iter_get_data (iter);
-				if (!col || col[1] != ':') {
-					goto collerr;
-				}
-				nexttype = col[1];
+			if (col[0] == *types && (!set || r_list_find (set, name, list_str_cmp))) {
+				r_list_append (next, name);
 			}
 		}
-		r_list_purge (set);
-		RList *tmplist = set;
-		set = holder;
-		holder = tmplist;
+		r_list_free (set);
+		set = next;
 	}
-
-	r_list_free (holder);
-	return set;
-
-collerr:
-	r_list_free (set);
-	r_list_free (holder);
-	return NULL;
+	return set? set: r_list_new ();
 }
 
 struct metric_ctx {
