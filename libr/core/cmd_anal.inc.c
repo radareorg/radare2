@@ -3290,7 +3290,7 @@ static int bb_cmp(const void *a, const void *b) {
 
 static ut64 caseval(const void* _a) {
 	const RAnalCaseOp* a = _a;
-	return a->addr;
+	return a->jump;
 }
 
 // borrowed copy: afb/afbi only print the cases, the analysis keeps them
