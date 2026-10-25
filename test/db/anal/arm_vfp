@@ -140,3 +140,26 @@ EXPECT=<<EOF
 0xff800000
 EOF
 RUN
+
+NAME=ARM32 and Thumb VFP literal addresses wrap at 32 bits
+FILE=malloc://64
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 010a9fed
+omv 1 0xfffffff8
+aoj 1 @0xfffffff8~{[0].ptr}
+aoe 1 @0xfffffff8
+omv 1 0
+e asm.bits=16
+wx 9fed010a
+omv 1 0xfffffffa
+aoj 1 @0xfffffffa~{[0].ptr}
+aoe 1 @0xfffffffa
+EOF
+EXPECT=<<EOF
+4
+0xfffffff8 0x4,[4],s0,=
+0
+0xfffffffa 0x0,[4],s0,=
+EOF
+RUN

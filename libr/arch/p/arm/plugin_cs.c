@@ -2959,7 +2959,7 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 				r_strbuf_appendf (&op->esil, "%s,", REG (0));
 			}
 			if (REGBASE (1) == ARM_REG_PC) {
-				r_strbuf_appendf (&op->esil, "0x%" PFMT64x, (ut64)((addr & ~3ULL) + pcdelta + MEMDISP (1)));
+				r_strbuf_appendf (&op->esil, "0x%" PFMT64x, (ut64)(ut32)((addr & ~3ULL) + pcdelta + MEMDISP (1)));
 			} else {
 				r_strbuf_appendf (&op->esil, "%d,%s,+,0xffffffff,&", MEMDISP (1), MEMBASE (1));
 			}
@@ -4603,7 +4603,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->family = R_ANAL_OP_FAMILY_FPU;
 		op->ptrsize = REGSIZE32 (0);
 		if (ISMEM (1) && REGBASE (1) == ARM_REG_PC) {
-			op->ptr = (addr & ~3ULL) + (thumb? 4: 8) + MEMDISP (1);
+			op->ptr = (ut32)((addr & ~3ULL) + (thumb? 4: 8) + MEMDISP (1));
 			op->refptr = REGSIZE32 (0);
 		}
 		break;
