@@ -113,7 +113,9 @@ static ArmOp ops[] = {
 	//{ "mov", 0x0a3, TYPE_MOV },
 	{ "movw", 0x3, TYPE_MOVW },
 	{ "movt", 0x4003, TYPE_MOVT },
+	{ "movs", 0xb001, TYPE_MOV },
 	{ "mov", 0xa001, TYPE_MOV },
+	{ "mvns", 0xf001, TYPE_MVN },
 	{ "mvn", 0xe001, TYPE_MVN },
 	{ "svc", 0xf, TYPE_SWI }, // ???
 	{ "hlt", 0x70000001, TYPE_HLT }, // ???u
@@ -5969,7 +5971,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 }
 
 static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
-	int cond, ret, reg, a, b, i, j;
+	int cond, ret, reg, a, b, i;
 	int coproc, opc;
 	bool rex = false;
 	int shift, low, high;
@@ -6292,22 +6294,22 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 
 					break;
 				case TYPE_IMM:
-					if (*ao->a[0]++ == '{') {
-						for (j = 0; j < 16; j++) {
-							if (ao->a[j] && *ao->a[j]) {
-								getrange (ao->a[j]); // XXX filter regname string
-								reg = getreg (ao->a[j]);
-								if (reg != -1) {
-									if (reg < 8) {
-										ao->o |= 1 << (24 + reg);
-									} else {
-										ao->o |= 1 << (8 + reg);
-									}
-								}
-							}
+					if (*ao->a[0] == '{') {
+						collect_list (ao);
+						st32 list = getreglist (ao->a[0]);
+						if (list <= 0) {
+							return 0;
 						}
+						ao->o |= (list & 0xff) << 24 | ((list >> 8) & 0xff) << 16;
+					} else if (!strcmp (ops[i].name, "cps")) {
+						// cps #mode: imod 00, M 1
+						ut64 mode = getnum (ao->a[0]);
+						if (err || mode > 31) {
+							return 0;
+						}
+						ao->o |= 0x200 | mode << 24;
 					} else {
-						ao->o |= getnum (ao->a[0]) << 24; // ???
+						return 0;
 					}
 					break;
 				case TYPE_BRA:
@@ -6438,23 +6440,22 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				}
 				break;
 			case TYPE_MVN:
-				if (ao->a[2]) {
-					shift = arm_getshift (ao->a[2], true);
-					if (shift == -1) {
-						return 0;
-					}
-					ao->o |= shift;
-				}
-				/* Fallthrough */
 			case TYPE_MOV:
-				if (!strcmpnull (ao->op, "movs")) {
-					ao->o = 0xb0e1;
-				}
 				ao->o |= (ut64)getreg (ao->a[0]) << 20;
 				ret = getreg (ao->a[1]);
 				if (ret != -1) {
 					ao->o |= ret << 24;
+					if (ao->a[2]) {
+						shift = arm_getshift (ao->a[2], true);
+						if (shift == -1) {
+							return 0;
+						}
+						ao->o |= shift;
+					}
 				} else {
+					if (ao->a[2]) {
+						return 0;
+					}
 					int immed = getimmed8 (ao->a[1]);
 					if (err) {
 						return 0;
