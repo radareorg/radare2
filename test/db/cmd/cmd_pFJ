@@ -1,0 +1,26 @@
+NAME=pFJ decode JWT with explicit length
+FILE=-
+CMDS=<<EOF
+b 512
+w eyJhbGciOiJQUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.tgiEtrOy4Iq1Qss8mR0zI4_2uvbzjLXM0tzUvuGphUegWeFoyEyBZqt6tdnEt2tp2XSPULiuqH4DgoFPpUqzZokOKkf1AB9w_qknF-OugOGMcVy9nLb7l21kMIGHCHO9d7TsJKDqzihFsX8SWf50LP8fn9iz4b3mePNYoQfOzqBfYnu2cTFQZasvOEt38ggADa6EOOH-yuVpuaP3rArPZ8a-WMleIvMPsbozKSeN7NlehOowPYRN8xRfJoYRCAfpueebFrq9D5QmAn45mgwNfWbko-FWRSks1KeGy00U8xRGMO3L4KobiK5b8pXV7RZ0Hi7xFfhXMGX1SBF15sVlUQ
+pFJ 471
+EOF
+EXPECT=<<EOF
+{"alg":"PS256","typ":"JWT"}
+{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022}
+EOF
+RUN
+
+NAME=pFJz decode null-terminated JWT
+FILE=-
+CMDS=<<EOF
+b 512
+w eyJhbGciOiJQUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.tgiEtrOy4Iq1Qss8mR0zI4_2uvbzjLXM0tzUvuGphUegWeFoyEyBZqt6tdnEt2tp2XSPULiuqH4DgoFPpUqzZokOKkf1AB9w_qknF-OugOGMcVy9nLb7l21kMIGHCHO9d7TsJKDqzihFsX8SWf50LP8fn9iz4b3mePNYoQfOzqBfYnu2cTFQZasvOEt38ggADa6EOOH-yuVpuaP3rArPZ8a-WMleIvMPsbozKSeN7NlehOowPYRN8xRfJoYRCAfpueebFrq9D5QmAn45mgwNfWbko-FWRSks1KeGy00U8xRGMO3L4KobiK5b8pXV7RZ0Hi7xFfhXMGX1SBF15sVlUQ
+wx 006a756e6b @ 471
+pFJz
+EOF
+EXPECT=<<EOF
+{"alg":"PS256","typ":"JWT"}
+{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022}
+EOF
+RUN
