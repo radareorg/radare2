@@ -161,3 +161,46 @@ ERROR: nsym < 1
 ERROR: failed parsing imports in section
 EOF
 RUN
+
+NAME=ELF: section-less aarch64_be bti plt reads code little-endian
+FILE=bins/elf/aarch64_be-bti-noshdr.so
+CMDS=ii~bar,baz
+EXPECT=<<EOF
+2   0x00010408 GLOBAL NOTYPE     bar
+3   0x00010420 GLOBAL NOTYPE     baz
+EOF
+RUN
+
+NAME=ELF: aarch64_be bti plt entry crossing its segment end is not probed
+FILE=malloc://1320
+CMDS=<<EOF
+wff bins/elf/aarch64_be-bti-noshdr.so
+# RX LOAD p_filesz 0x88 -> 0x5a: the last entry crosses the segment end
+wx 5a @ 0xd7
+# RX LOAD p_memsz to match
+wx 5a @ 0xdf
+oba 0
+ii~bar,baz
+EOF
+EXPECT=<<EOF
+2   0x00010400 GLOBAL NOTYPE     bar
+3   0x00010410 GLOBAL NOTYPE     baz
+EOF
+RUN
+
+NAME=ELF: aarch64_be bti plt entry truncated by the file end is not probed
+FILE=malloc://1410
+CMDS=<<EOF
+wff bins/elf/aarch64_be-bti-noshdr.so
+# RX LOAD p_offset 0x3b0 -> 0x528, past the original end
+wx 0528 @ 0xbe
+# first 90 bytes of the PLT text: the file ends inside an entry
+wx 5f2403d50f0000941400009419000094c0035fd60000000000000000000000005f2403d5f07bbfa910010090118642f91022149120021fd61f2003d51f2003d510010090118a42f91042149120021fd61f2003d51f2003d51001 @ 0x528
+oba 0
+ii~bar,baz
+EOF
+EXPECT=<<EOF
+2   0x00010400 GLOBAL NOTYPE     bar
+3   0x00010410 GLOBAL NOTYPE     baz
+EOF
+RUN
