@@ -2952,6 +2952,69 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 	postfix = arm_prefix_cond (op, insn->detail->arm.cc);
 
 	switch (insn->id) {
+	case ARM_INS_VLDR:
+	case ARM_INS_VSTR:
+		if (OPCOUNT () == 2 && ISREG (0) && ISMEM (1) && REGSIZE32 (0) <= 8) {
+			if (insn->id == ARM_INS_VSTR) {
+				r_strbuf_appendf (&op->esil, "%s,", REG (0));
+			}
+			if (REGBASE (1) == ARM_REG_PC) {
+				r_strbuf_appendf (&op->esil, "0x%" PFMT64x, (addr & ~3ULL) + pcdelta + MEMDISP (1));
+			} else {
+				r_strbuf_appendf (&op->esil, "%d,%s,+,0xffffffff,&", MEMDISP (1), MEMBASE (1));
+			}
+			if (insn->id == ARM_INS_VLDR) {
+				r_strbuf_appendf (&op->esil, ",[%u],%s,=", REGSIZE32 (0), REG (0));
+			} else {
+				r_strbuf_appendf (&op->esil, ",=[%u]", REGSIZE32 (0));
+			}
+		}
+		break;
+	case ARM_INS_VADD:
+	case ARM_INS_VSUB:
+	case ARM_INS_VMUL:
+	case ARM_INS_VDIV:
+		if (OPCOUNT () == 3 && ISREG (0) && ISREG (1) && ISREG (2) &&
+				((REGID (0) >= ARM_REG_S0 && REGID (0) <= ARM_REG_S31) ||
+				(REGID (0) >= ARM_REG_D0 && REGID (0) <= ARM_REG_D31)) &&
+				REGSIZE32 (0) == REGSIZE32 (1) && REGSIZE32 (0) == REGSIZE32 (2) &&
+				(insn->detail->arm.vector_data == ARM_VECTORDATA_F32 ||
+				insn->detail->arm.vector_data == ARM_VECTORDATA_F64)) {
+			const char *math = insn->id == ARM_INS_VADD? "+": insn->id == ARM_INS_VSUB? "-": insn->id == ARM_INS_VMUL? "*": "/";
+			r_strbuf_appendf (&op->esil, "%u,DUP,%s,F2D,%u,%s,F2D,F%s,D2F,%s,=",
+				REGBITS32 (0), REG (2), REGBITS32 (0), REG (1), math, REG (0));
+		}
+		break;
+	case ARM_INS_VCMP:
+	case ARM_INS_VCMPE:
+		if (OPCOUNT () == 2 && ISREG (0) && REGSIZE32 (0) <= 8 &&
+				(ISREG (1) || (ISIMM (1) && !IMM (1)) ||
+				(INSOP (1).type == ARM_OP_FP && INSOP (1).fp == 0.0))) {
+			const unsigned int bits = REGBITS32 (0);
+			const char *right = ISREG (1)? REG (1): "0";
+			// Unordered is NZCV=0011; ordered results are less=1000, equal=0110, greater=0010.
+			r_strbuf_appendf (&op->esil,
+				"%u,%s,F2D,%u,%s,F2D,F==,%u,%s,F2D,%u,%s,F2D,F==,&,?{,"
+				"%u,%s,F2D,%u,%s,F2D,F==,?{,0x60000000,}{,"
+				"%u,%s,F2D,%u,%s,F2D,F<,?{,0x80000000,}{,0x20000000,},},"
+				"}{,0x30000000,},0x0fffffff,fpscr,&,|,fpscr,:=",
+				bits, REG (0), bits, REG (0), bits, right, bits, right,
+				bits, right, bits, REG (0), bits, right, bits, REG (0));
+		}
+		break;
+	case ARM_INS_FMSTAT:
+	case ARM_INS_VMRS:
+		if (!OPCOUNT () || REGID (0) == ARM_REG_APSR_NZCV) {
+			r_strbuf_append (&op->esil, "31,fpscr,>>,1,&,nf,:=,30,fpscr,>>,1,&,zf,:=,29,fpscr,>>,1,&,cf,:=,28,fpscr,>>,1,&,vf,:=");
+		} else {
+			r_strbuf_appendf (&op->esil, "fpscr,%s,=", REG (0));
+		}
+		break;
+	case ARM_INS_VMSR:
+		if (OPCOUNT () == 2 && REGID (0) == ARM_REG_FPSCR) {
+			r_strbuf_appendf (&op->esil, "%s,fpscr,=", REG (1));
+		}
+		break;
 	case ARM_INS_CLZ:
 		r_strbuf_appendf (&op->esil, "32,%s,CLZ,%s,=", REG (1), REG (0));
 		break;
@@ -3785,6 +3848,12 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 	// many errors
 	if (insn->detail->arm.update_flags) {
 		switch(insn->id) {
+		case ARM_INS_FMSTAT:
+		case ARM_INS_VMRS:
+		case ARM_INS_VMSR:
+		case ARM_INS_VCMP:
+		case ARM_INS_VCMPE:
+			break;
 		case ARM_INS_UADD8:
 			// the parallel add/sub family writes GE, never NZCV
 			break;
@@ -4524,6 +4593,35 @@ jmp $$ + 4 + ( [delta] * 2 )
 			}
 		}
 		break;
+	case ARM_INS_VLDR:
+	case ARM_INS_VSTR:
+		op->type = insn->id == ARM_INS_VLDR? R_ANAL_OP_TYPE_LOAD: R_ANAL_OP_TYPE_STORE;
+		op->family = R_ANAL_OP_FAMILY_FPU;
+		op->ptrsize = REGSIZE32 (0);
+		if (ISMEM (1) && REGBASE (1) == ARM_REG_PC) {
+			op->ptr = (addr & ~3ULL) + (thumb? 4: 8) + MEMDISP (1);
+			op->refptr = REGSIZE32 (0);
+		}
+		break;
+	case ARM_INS_VADD:
+	case ARM_INS_VSUB:
+		op->type = insn->id == ARM_INS_VADD? R_ANAL_OP_TYPE_ADD: R_ANAL_OP_TYPE_SUB;
+		op->family = R_ANAL_OP_FAMILY_FPU;
+		break;
+	case ARM_INS_VCMPE:
+		op->type = R_ANAL_OP_TYPE_CMP;
+		op->family = R_ANAL_OP_FAMILY_FPU;
+		break;
+	case ARM_INS_FMSTAT:
+	case ARM_INS_VMRS:
+	case ARM_INS_VMSR:
+		op->type = R_ANAL_OP_TYPE_MOV;
+		op->family = R_ANAL_OP_FAMILY_FPU;
+		break;
+	case ARM_INS_MLA:
+	case ARM_INS_MLS:
+		op->type = R_ANAL_OP_TYPE_MUL;
+		break;
 	case ARM_INS_IT:
 		anal_itblock (as, insn);
 		op->cycles = 2;
@@ -4628,6 +4726,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->cycles = 4;
 		/* fall-thru */
 	case ARM_INS_VDIV:
+		op->family = R_ANAL_OP_FAMILY_FPU;
 		op->type = R_ANAL_OP_TYPE_DIV;
 		break;
 	case ARM_INS_MUL:
@@ -4638,6 +4737,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->cycles = 4;
 		/* fall-thru */
 	case ARM_INS_VMUL:
+		if (insn->id == ARM_INS_VMUL) {
+			op->family = R_ANAL_OP_FAMILY_FPU;
+		}
 		op->type = R_ANAL_OP_TYPE_MUL;
 		break;
 	case ARM_INS_TRAP:
@@ -4714,6 +4816,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->reg = r_str_getf (cs_reg_name (handle, INSOP (0).reg));
 		/* fall-thru */
 	case ARM_INS_VCMP:
+		if (insn->id == ARM_INS_VCMP) {
+			op->family = R_ANAL_OP_FAMILY_FPU;
+		}
 		op->type = R_ANAL_OP_TYPE_CMP;
 		break;
 	case ARM_INS_LSL:

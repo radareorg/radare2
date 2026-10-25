@@ -645,6 +645,7 @@ static char *regs(RArchSession *as) {
 		"fpu	q13	.128	276	0\n"
 		"fpu	q14	.128	292	0\n"
 		"fpu	q15	.128	308	0\n"
+		"fpu	fpscr	.32	324	0\n"
 		;
 	}
 	if (as->config->bits != 64) {
