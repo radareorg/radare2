@@ -32,6 +32,7 @@ static bool is_kernelcache_buffer(RBuffer *b) {
 	bool has_unixthread = false;
 	bool has_negative_vaddr = false;
 	bool has_kext = false;
+	bool has_prelink = false;
 
 	ut64 cursor = header_size;
 	ut64 end = cursor + sizeofcmds;
@@ -59,11 +60,29 @@ static bool is_kernelcache_buffer(RBuffer *b) {
 			return false;
 		case LC_SEGMENT_64:
 			{
-				if (has_negative_vaddr) {
-					break;
-				}
 				if (cmdsize < sizeof (struct MACH0_(segment_command))) {
 					return false;
+				}
+				ut8 segname[16];
+				if (r_buf_read_at (b, cursor + 8, segname, sizeof (segname)) != sizeof (segname)) {
+					return false;
+				}
+				if (!memcmp (segname, "__PRELINK_INFO", 15)) {
+					has_prelink = true;
+				}
+				ut32 nsects = r_buf_read_le32_at (b, cursor + 64);
+				ut64 sect = cursor + sizeof (struct MACH0_(segment_command));
+				ut32 j;
+				for (j = 0; j < nsects && !has_prelink; j++, sect += sizeof (struct MACH0_(section))) {
+					if (sect + sizeof (struct MACH0_(section)) > cursor + cmdsize) {
+						break;
+					}
+					if (r_buf_read_at (b, sect + 16, segname, sizeof (segname)) != sizeof (segname)) {
+						return false;
+					}
+					if (!memcmp (segname, "__PRELINK_INFO", 15)) {
+						has_prelink = true;
+					}
 				}
 				st64 vmaddr = r_buf_read_le64_at (b, cursor + 24);
 				if (vmaddr < 0) {
@@ -75,5 +94,5 @@ static bool is_kernelcache_buffer(RBuffer *b) {
 		cursor += cmdsize;
 	}
 
-	return has_kext || (has_unixthread && has_negative_vaddr);
+	return has_kext || (has_unixthread && has_negative_vaddr && has_prelink);
 }
