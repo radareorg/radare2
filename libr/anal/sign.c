@@ -340,7 +340,7 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 			break;
 		case R_SIGN_COLLISIONS:
 			DBL_VAL_FAIL (it->collisions, R_SIGN_COLLISIONS);
-			if (!(it->collisions = r_str_split_duplist (token, ",", true))) {
+			if (!(it->collisions = strdup (token))) {
 				success = false;
 				goto out;
 			}
@@ -457,6 +457,9 @@ static inline size_t serial_val_reserv(RSignItem *it) {
 	if (it->vars) {
 		reserve += mul * r_list_length (it->vars);
 	}
+	if (it->collisions) {
+		reserve += strlen (it->collisions) + 3;
+	}
 	return reserve;
 }
 
@@ -509,7 +512,10 @@ static char *serialize_value(RSignItem *it) {
 
 	FreeRet_on_fail (serialize_str_list (it->refs, sb, R_SIGN_REFS), sb);
 	FreeRet_on_fail (serialize_str_list (it->xrefs, sb, R_SIGN_XREFS), sb);
-	FreeRet_on_fail (serialize_str_list (it->collisions, sb, R_SIGN_COLLISIONS), sb);
+	if (it->collisions) {
+		FreeRet_on_fail (r_strbuf_appendf (sb, "|%c:", R_SIGN_COLLISIONS), sb);
+		FreeRet_on_fail (r_strbuf_append (sb, it->collisions), sb);
+	}
 
 	if (it->vars && !r_list_empty (it->vars)) {
 		char *vrs = r_anal_var_prot_serialize (it->vars, false);
@@ -628,7 +634,7 @@ static inline void merge_item_clobber(RSignItem *dst, RSignItem *src) {
 	quick_merge (refs, r_list_free);
 	quick_merge (xrefs, r_list_free);
 	quick_merge (vars, r_list_free);
-	quick_merge (collisions, r_list_free);
+	quick_merge (collisions, free);
 }
 #undef quick_merge
 
@@ -1796,51 +1802,82 @@ static void inline list_vars(RStrBuf *sb, RSignItem *it, PJ *pj, int fmt) {
 	}
 }
 
-static void list_sign_list(RStrBuf *sb, RList *l, PJ *pj, int fmt, int type, const char *name) {
+static bool list_sign_begin(RStrBuf *sb, PJ *pj, int fmt, int type, const char *name, int count) {
 	const char *tname = r_sign_type_to_name (type);
 	switch (fmt) {
 	case '*':
 		r_strbuf_appendf (sb, "za %s %c ", name, type);
 		break;
 	case 'q':
-		r_strbuf_appendf (sb, " %s[%d]", tname, r_list_length (l));
-		return;
+		r_strbuf_appendf (sb, " %s[%d]", tname, count);
+		return false;
 	case 'j':
 		pj_ka (pj, tname);
 		break;
 	default:
-		if (l && !r_list_empty (l)) {
+		if (count > 0) {
 			r_strbuf_appendf (sb, "  %s: ", tname);
 		}
 	}
+	return true;
+}
 
-	int i = 0;
-	char *ref = NULL;
-	RListIter *iter = NULL;
-	r_list_foreach (l, iter, ref) {
-		if (fmt == '*') {
-			r_str_sanitize (ref);
-		}
-		if (i > 0) {
-			if (fmt == '*') {
-				r_strbuf_append (sb, " ");
-			} else if (fmt != 'j') {
-				r_strbuf_append (sb, ", ");
-			}
-		}
-		if (fmt == 'j') {
-			pj_s (pj, ref);
-		} else {
-			r_strbuf_append (sb, ref);
-		}
-		i++;
+static void list_sign_entry(RStrBuf *sb, PJ *pj, int fmt, char *ref, bool first) {
+	if (fmt == '*') {
+		r_str_sanitize (ref);
 	}
+	if (!first) {
+		if (fmt == '*') {
+			r_strbuf_append (sb, " ");
+		} else if (fmt != 'j') {
+			r_strbuf_append (sb, ", ");
+		}
+	}
+	if (fmt == 'j') {
+		pj_s (pj, ref);
+	} else {
+		r_strbuf_append (sb, ref);
+	}
+}
 
+static void list_sign_end(RStrBuf *sb, PJ *pj, int fmt) {
 	if (fmt == 'j') {
 		pj_end (pj);
 	} else {
 		r_strbuf_append (sb, "\n");
 	}
+}
+
+static void list_sign_list(RStrBuf *sb, RList *l, PJ *pj, int fmt, int type, const char *name) {
+	if (!list_sign_begin (sb, pj, fmt, type, name, r_list_length (l))) {
+		return;
+	}
+	char *ref;
+	RListIter *iter;
+	r_list_foreach (l, iter, ref) {
+		list_sign_entry (sb, pj, fmt, ref, iter == l->head);
+	}
+	list_sign_end (sb, pj, fmt);
+}
+
+static void list_sign_collisions(RStrBuf *sb, const char *cols, PJ *pj, int fmt, const char *name) {
+	int count = !cols? 0: fmt == 'q'? r_str_char_count (cols, ',') + 1: 1;
+	if (!list_sign_begin (sb, pj, fmt, R_SIGN_COLLISIONS, name, count)) {
+		return;
+	}
+	char *dup = cols? strdup (cols): NULL;
+	char *ref = dup;
+	while (ref) {
+		char *next = strchr (ref, ',');
+		if (next) {
+			*next++ = 0;
+		}
+		r_str_trim (ref);
+		list_sign_entry (sb, pj, fmt, ref, ref == dup);
+		ref = next;
+	}
+	free (dup);
+	list_sign_end (sb, pj, fmt);
 }
 
 static void listHash(RStrBuf *sb, RSignItem *it, PJ *pj, int format) {
@@ -1965,7 +2002,7 @@ static bool listCB(RSignItem *it, void *user) {
 	}
 	// Collisions
 	if (it->collisions || ctx->format == 'j') {
-		list_sign_list (ctx->sb, it->collisions, ctx->pj, ctx->format, R_SIGN_COLLISIONS, it->name);
+		list_sign_collisions (ctx->sb, it->collisions, ctx->pj, ctx->format, it->name);
 	}
 
 	// Vars
@@ -2565,6 +2602,8 @@ static bool match_metrics(RSignItem *it, struct metric_ctx *ctx) {
 	bool keep_searching = true;
 	if (count) {
 		RList *col = NULL;
+		char *coldup = NULL;
+		RList *cols = NULL;
 		if (ctx->suggest) {
 			// Collisions are not possible here, assuming collisions are being
 			// used. This is b/c we would not recieve a suggestion unless the
@@ -2576,7 +2615,11 @@ static bool match_metrics(RSignItem *it, struct metric_ctx *ctx) {
 			types[count] = R_SIGN_END;
 		} else {
 			types[count] = R_SIGN_END;
-			col = check_collisions (it->collisions, types);
+			if (it->collisions && (coldup = strdup (it->collisions))) {
+				cols = r_str_split_list (coldup, ",", 0);
+			}
+			// a NULL col counts as colliding, so a failed split cannot look unique
+			col = (it->collisions && !cols)? NULL: check_collisions (cols, types);
 		}
 
 		ctx->matched += count;
@@ -2591,6 +2634,8 @@ static bool match_metrics(RSignItem *it, struct metric_ctx *ctx) {
 			it->next = NULL;
 		}
 		r_list_free (col);
+		r_list_free (cols);
+		free (coldup);
 	} else {
 		free (ctx->suggest);
 		ctx->suggest = NULL;
@@ -2599,27 +2644,10 @@ static bool match_metrics(RSignItem *it, struct metric_ctx *ctx) {
 }
 
 static bool _sig_to_vec_cb(RSignItem *it, void *user) {
-	if (it->collisions) {
-		r_list_free (it->collisions);
-		it->collisions = NULL;
-	}
+	R_FREE (it->collisions);
 	RSignItem **slot = RVecRSignItemPtr_emplace_back ((RVecRSignItemPtr *)user);
 	*slot = it;
 	return true;
-}
-
-// sort the collision list and drop dups (same name in different zignspaces)
-static void item_sort_collisions(RSignItem *it) {
-	RListIter *iter, *next;
-	const char *col, *prev = NULL;
-	r_list_sort (it->collisions, list_str_cmp);
-	r_list_foreach_safe (it->collisions, iter, next, col) {
-		if (prev && !strcmp (prev, col)) {
-			r_list_delete (it->collisions, iter);
-		} else {
-			prev = col;
-		}
-	}
 }
 
 static int sign_name_cmp(const void *a, const void *b) {
@@ -2628,40 +2656,53 @@ static int sign_name_cmp(const void *a, const void *b) {
 	return strcmp (ia->name, ib->name);
 }
 
-static bool update_collide(RVecRSignItemPtr *sigs, int start, int end, int type, RList *names) {
-	qsort (RVecRSignItemPtr_at (sigs, start), end - start + 1, sizeof (RSignItem *), sign_name_cmp);
-	int i, ii;
-	for (i = start; i <= end; i++) {
-		RSignItem *it = *RVecRSignItemPtr_at (sigs, i);
-		if (!it) {
-			return false;
-		}
-		char *fmt = r_str_newf ("%c:%s", type, it->name);
-		if (!fmt) {
-			return false;
-		}
-		if (!r_list_append (names, fmt)) {
-			free (fmt);
-			return false;
-		}
-		for (ii = start; ii <= end; ii++) {
-			if (i != ii) {
-				RSignItem *itt = *RVecRSignItemPtr_at (sigs, ii);
-				if (!itt->collisions) {
-					// Names are shared until all signatures have been serialized.
-					itt->collisions = r_list_new ();
-				}
-				if (!r_list_append (itt->collisions, fmt)) {
-					return false;
-				}
-			}
-		}
+static bool append_collide(RSignItem *it, const char *names, size_t len, size_t skip, size_t skip_end) {
+	size_t old = it->collisions? strlen (it->collisions) + 1: 0;
+	size_t add = skip + len - skip_end - 1;
+	char *s = malloc (old + add + 1);
+	if (!s) {
+		return false;
 	}
-	// Types are processed in lexical order, and each group is sorted by name.
-	for (i = start; i <= end; i++) {
-		(*RVecRSignItemPtr_at (sigs, i))->collisions->sorted = true;
+	if (old) {
+		memcpy (s, it->collisions, old - 1);
+		s[old - 1] = ',';
 	}
+	memcpy (s + old, names, skip);
+	memcpy (s + old + skip, names + skip_end, len - skip_end);
+	s[old + add] = 0;
+	free (it->collisions);
+	it->collisions = s;
 	return true;
+}
+
+static bool update_collide(RVecRSignItemPtr *sigs, int start, int end, int type) {
+	RSignItem **group = RVecRSignItemPtr_at (sigs, start);
+	const int n = end - start + 1;
+	qsort (group, n, sizeof (RSignItem *), sign_name_cmp);
+	size_t *beg = R_NEWS (size_t, n);
+	RStrBuf *sb = r_strbuf_new (NULL);
+	bool ok = beg && sb;
+	int i;
+	// a name shared with another zignspace is listed once, and kept by both
+	for (i = 0; ok && i < n; i++) {
+		if (i && !strcmp (group[i]->name, group[i - 1]->name)) {
+			beg[i] = beg[i - 1];
+		} else {
+			beg[i] = r_strbuf_length (sb);
+			ok = r_strbuf_appendf (sb, "%c:%s,", type, group[i]->name);
+		}
+	}
+	const char *names = ok? r_strbuf_get (sb): NULL;
+	const size_t len = ok? r_strbuf_length (sb): 0;
+	for (i = 0; ok && i < n; i++) {
+		const bool shared = (i && beg[i - 1] == beg[i]) || (i + 1 < n && beg[i + 1] == beg[i]);
+		const size_t skip = shared? len: beg[i];
+		const size_t skip_end = shared? len: beg[i] + strlen (group[i]->name) + 3;
+		ok = append_collide (group[i], names, len, skip, skip_end);
+	}
+	free (beg);
+	r_strbuf_free (sb);
+	return ok;
 }
 
 static bool item_has_type(RSignItem *it, RSignType t) {
@@ -2721,7 +2762,7 @@ static RSignVecCmp type_to_cmp(int type, bool exact) {
 	}
 }
 
-static inline bool sign_collide_by(RVecRSignItemPtr *sigs, RSignType type, RList *names) {
+static inline bool sign_collide_by(RVecRSignItemPtr *sigs, RSignType type) {
 	RSignVecCmp cmp = type_to_cmp (type, false);
 	if (!cmp) {
 		return false;
@@ -2752,7 +2793,7 @@ static inline bool sign_collide_by(RVecRSignItemPtr *sigs, RSignType type, RList
 				}
 			} else if (start >= 0) {
 				// not a collision, but had a collision before
-				if (!update_collide (sigs, start, end, type, names)) {
+				if (!update_collide (sigs, start, end, type)) {
 					return false;
 				}
 				start = end = -1;
@@ -2761,7 +2802,7 @@ static inline bool sign_collide_by(RVecRSignItemPtr *sigs, RSignType type, RList
 		old = it;
 		i++;
 	}
-	if (start >= 0 && !update_collide (sigs, start, end, type, names)) {
+	if (start >= 0 && !update_collide (sigs, start, end, type)) {
 		return false;
 	}
 	return true;
@@ -2800,12 +2841,11 @@ R_API bool r_sign_resolve_collisions(RAnal *a) {
 		RVecRSignItemPtr_free (sigs);
 		return false;
 	}
-	RList *names = r_list_newf (free);
 	bool success = true;
 	int i = 0;
 	RSignType types[] = { R_SIGN_BYTES, R_SIGN_GRAPH, R_SIGN_END };
 	for (i = 0; types[i] != R_SIGN_END; i++) {
-		if (!sign_collide_by (sigs, types[i], names)) {
+		if (!sign_collide_by (sigs, types[i])) {
 			success = false;
 			break;
 		}
@@ -2816,13 +2856,11 @@ R_API bool r_sign_resolve_collisions(RAnal *a) {
 	R_VEC_FOREACH (sigs, p) {
 		RSignItem *it = *p;
 		if (success && it->collisions) {
-			item_sort_collisions (it);
 			success = r_sign_add_item (a, it);
 		}
 		r_sign_item_free (it);
 	}
 
-	r_list_free (names);
 	RVecRSignItemPtr_free (sigs);
 	return success;
 }
@@ -2897,7 +2935,7 @@ R_API void r_sign_item_free(RSignItem *item) {
 		r_list_free (item->refs);
 		r_list_free (item->vars);
 		r_list_free (item->xrefs);
-		r_list_free (item->collisions);
+		free (item->collisions);
 		free (item);
 	}
 }

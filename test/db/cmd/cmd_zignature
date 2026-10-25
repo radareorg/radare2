@@ -2171,3 +2171,60 @@ EXPECT=<<EOF
 1999
 EOF
 RUN
+
+NAME=zac collisions in every listing format, deduplicated across zignspaces
+FILE=--
+CMDS=<<EOF
+za m b 9090
+za a b 9090
+zs other
+za a b 9090
+za a g cc=1 nbbs=1 edges=0 ebbs=1 bbsum=2
+zs *
+za a g cc=1 nbbs=1 edges=0 ebbs=1 bbsum=2
+za x b 9191
+zac
+zs *
+z
+zq
+zj
+z*
+EOF
+EXPECT=<<EOF
+a:
+  bytes: 9090
+  mask: ffff
+  graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=2
+  collisions: b:a, b:m, g:a
+x:
+  bytes: 9191
+  mask: ffff
+(other) a:
+  bytes: 9090
+  mask: ffff
+  graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=2
+  collisions: b:a, b:m, g:a
+m:
+  bytes: 9090
+  mask: ffff
+  collisions: b:a
+0xffffffffffffffff a:                              b(2/2) g(cc=1,nb=1,e=0,eb=1,h=2) collisions[3]
+0xffffffffffffffff x:                              b(2/2)
+0xffffffffffffffff a:                              b(2/2) g(cc=1,nb=1,e=0,eb=1,h=2) collisions[3]
+0xffffffffffffffff m:                              b(2/2) collisions[1]
+[{"name":"a","bytes":"9090","mask":"ffff","graph":{"cc":1,"nbbs":1,"edges":0,"ebbs":1,"bbsum":2},"addr":-1,"refs":[],"xrefs":[],"collisions":["b:a","b:m","g:a"],"vars":[],"hash":{}},{"name":"x","bytes":"9191","mask":"ffff","graph":{},"addr":-1,"refs":[],"xrefs":[],"collisions":[],"vars":[],"hash":{}},{"zignspace":"other","name":"a","bytes":"9090","mask":"ffff","graph":{"cc":1,"nbbs":1,"edges":0,"ebbs":1,"bbsum":2},"addr":-1,"refs":[],"xrefs":[],"collisions":["b:a","b:m","g:a"],"vars":[],"hash":{}},{"name":"m","bytes":"9090","mask":"ffff","graph":{},"addr":-1,"refs":[],"xrefs":[],"collisions":["b:a"],"vars":[],"hash":{}}]
+zs *
+za a b 9090
+za a g cc=1 nbbs=1 edges=0 ebbs=1 bbsum=2
+za a C b:a b:m g:a
+zs *
+za x b 9191
+zs other
+za a b 9090
+za a g cc=1 nbbs=1 edges=0 ebbs=1 bbsum=2
+za a C b:a b:m g:a
+zs *
+za m b 9090
+za m C b:a
+EOF
+RUN
