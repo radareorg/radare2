@@ -1527,11 +1527,13 @@ static ut32 stp(ArmOp *op, bool load) {
 static ut32 exception(ArmOp *op, ut32 k) {
 	ut32 data = UT32_MAX;
 
-	if (op->operands[0].type == ARM_CONSTANT) {
+	if (op->operands[0].type == ARM_CONSTANT && op->operands[0].immediate <= 0xffff) {
 		ut32 n = op->operands[0].immediate;
+		// imm16 sits in bits 20:5 of the (byte swapped) instruction word
 		data = k;
-		data += (((n / 8) & 0xff) << 16);
-		data += (n << 29);
+		data += (n & 7) << 29;
+		data += ((n >> 3) & 0xff) << 16;
+		data += ((n >> 11) & 0x1f) << 8;
 	}
 	return data;
 }

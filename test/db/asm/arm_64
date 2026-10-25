@@ -365,6 +365,13 @@ a "stur w3, [x8, 113]" 031107b8
 a "stur w3, [x8, 236]" 03c10eb8
 a "sub x0, xzr, x2" e00302cb
 ad "svc 6" c10000d4
+ad "svc 0x800" 010001d4
+ad "svc 0x1234" 814602d4
+ad "svc 0xffff" e1ff1fd4
+ad "hvc 0x8000" 020010d4
+ad "smc 0xabcd" a37915d4
+ad "brk 0xf000" 00003ed4
+ad "hlt 0x1000" 000042d4
 a "mrs x3, SP_EL0" 034138d5
 a "msr 0xc208, x3" 034118d5
 a "msr SP_EL0, x3" 034118d5
