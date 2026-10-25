@@ -16,3 +16,24 @@ EXPECT=<<EOF
 mscoree.dll
 EOF
 RUN
+
+NAME=CIL: a method paddr is not looked up as a vaddr
+FILE=bins/cil/hello.exe
+CMDS=<<EOF
+on malloc://0x100 0x200
+e anal.in=io.maps
+af @ 0x251
+afc @ 0x251
+afv @ 0x251
+?e --
+af @ 0x402051
+afc @ 0x402051
+afv @ 0x402051
+EOF
+EXPECT=<<EOF
+reg
+--
+dyncc:a0+1:!T0
+arg int a0 @ a0
+EOF
+RUN
