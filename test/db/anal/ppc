@@ -1557,6 +1557,30 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ppc toc base with addis immediate -1
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e anal.arch=ppc -e cfg.bigendian=true -e anal.gp=0x10000000
+CMDS=<<EOF
+wx 3d42ffffe92a0008
+ao 2~ptr:
+EOF
+EXPECT=<<EOF
+ptr: 0x0fff0008
+EOF
+RUN
+
+NAME=ppc toc base with addis immediate -0x8000
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e anal.arch=ppc -e cfg.bigendian=true -e anal.gp=0x10000000
+CMDS=<<EOF
+wx 3d428000e92a0008
+ao 2~ptr:
+EOF
+EXPECT=<<EOF
+ptr: 0xffffffff90000008
+EOF
+RUN
+
 NAME=ppc generic mfspr mtspr and xer moves decode as mov with esil
 FILE=malloc://32
 ARGS=-a ppc -b 32 -e cfg.bigendian=true
@@ -1622,6 +1646,21 @@ maxopsz 4
 invopsz 2
 dtalign 2
 codealign 2
+EOF
+RUN
+
+NAME=ppc vle decodes a word with the high bit set
+FILE=malloc://16
+ARGS=-a ppc -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+e asm.cpu=vle
+wx 80640008
+pi 1
+aoj 1~{0.type}
+EOF
+EXPECT=<<EOF
+se_lbz r6 0x0(r4)
+load
 EOF
 RUN
 

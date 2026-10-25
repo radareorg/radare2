@@ -227,3 +227,19 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ppc ps decodes psq loads and stores with the high bit set
+FILE=malloc://16
+ARGS=-a ppc -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+e asm.cpu=ps
+wx e0230000e4223008f0623008f4627008
+pi 4~[0]
+EOF
+EXPECT=<<EOF
+psq_l
+psq_lu
+psq_st
+psq_stu
+EOF
+RUN
+
