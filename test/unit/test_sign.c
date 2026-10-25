@@ -161,6 +161,7 @@ static bool test_anal_sign_collisions(void) {
 		mu_assert_streq (item->collisions, expected, "sorted byte and graph collisions");
 		r_sign_item_free (item);
 		item = r_sign_get_item (anal, "z");
+		mu_assert_notnull (item, "reload the cross-space item");
 		mu_assert_streq (item->collisions, "b:a,b:m,g:a,g:m", "deduplicate names from different spaces");
 		r_sign_item_free (item);
 	}

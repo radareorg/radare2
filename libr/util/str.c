@@ -3586,6 +3586,11 @@ R_API RVecStringSlice *r_str_split_vec(const char *str, const char *c, int n) {
 	return vs;
 }
 
+// Avoid ASan's full suffix scan in strstr for single-character delimiters.
+static inline char *split_next(char *s, const char *c, size_t clen) {
+	return clen == 1? strchr (s, *c): strstr (s, c);
+}
+
 R_API RList *r_str_split_list_dup(char *str, const char *c, int n) {
 	R_RETURN_VAL_IF_FAIL (str && c, NULL);
 	RList *lst = r_list_newf (NULL);
@@ -3594,7 +3599,7 @@ R_API RList *r_str_split_list_dup(char *str, const char *c, int n) {
 	char *e = aux;
 	const size_t clen = strlen (c);
 	for (; e;) {
-		e = strstr (aux, c);
+		e = split_next (aux, c, clen);
 #if 0
 		if (e == aux) {
 			aux++;
@@ -3630,7 +3635,7 @@ R_API RList *r_str_split_list(char *str, const char *c, int n) {
 	char *e = aux;
 	const size_t clen = strlen (c);
 	for (; e;) {
-		e = strstr (aux, c);
+		e = split_next (aux, c, clen);
 #if 0
 		if (e == aux) {
 			aux++;
@@ -3661,9 +3666,8 @@ R_API RList *r_str_split_duplist(const char *_str, const char *c, bool trim) {
 	char *str = strdup (_str);
 	char *aux = str;
 	size_t clen = strlen (c);
-	// Avoid ASan's full suffix scan in strstr for single-character delimiters.
 	while (aux) {
-		char *next = clen == 1? strchr (aux, *c): strstr (aux, c);
+		char *next = split_next (aux, c, clen);
 		if (next) {
 			*next = '\0';
 			next += clen;
