@@ -2094,7 +2094,7 @@ static ut64 getoffset(RBinFile *bf, int type, int idx) {
 
 static const char *get_cc(RBinFile *bf, ut64 vaddr) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
-	RBinSymbol *m = r_bin_get_symbol_at (bf->rbin, vaddr);
+	RBinSymbol *m = r_bin_object_get_symbol_at (bf->bo, vaddr);
 	if (!m || !m->arg_prefix) {
 		return NULL;
 	}
