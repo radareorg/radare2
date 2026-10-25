@@ -634,6 +634,19 @@ var int32_t var_8h @ sp+0x8
 EOF
 RUN
 
+NAME=v850 address taken locals and stack arguments use the ABI frame
+FILE=malloc://64
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+wx 031ef0ff23360400031e10007f00
+af address_taken
+afvs
+EOF
+EXPECT=<<EOF
+var int32_t var_4h @ sp+0x4
+EOF
+RUN
+
 NAME=v850 signed loads and absolute references expose access widths
 FILE=malloc://64
 ARGS=-a v850 -b 32

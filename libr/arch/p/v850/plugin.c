@@ -270,9 +270,14 @@ static void fill_operands(RAnalOp *op, const v850np_inst *inst, RArchDecodeMask 
 		return;
 	}
 	const bool mov = !strcmp (name, "mov");
+	const bool lea = !strcmp (name, "movea");
 	const bool arithmetic = !strcmp (name, "add") || !strcmp (name, "addi") || !strcmp (name, "sub");
-	if (!mov && !arithmetic) {
+	if (!mov && !lea && !arithmetic) {
 		return;
+	}
+	if (lea) {
+		op->type = R_ANAL_OP_TYPE_LEA;
+		op->direction = R_ANAL_OP_DIR_REF;
 	}
 	if (!(mask & R_ARCH_OP_MASK_VAL)) {
 		return;
