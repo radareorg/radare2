@@ -1092,3 +1092,34 @@ EXPECT=<<EOF
 90cc
 EOF
 RUN
+
+NAME=rasm2 avr reject i/o addresses that do not fit
+FILE=-
+CMDS=<<EOF
+!rasm2 -a avr "out 64, r1"
+!rasm2 -a avr "in r1, 64"
+!rasm2 -a avr "sbi 32, 1"
+!rasm2 -a avr "out 0x100000001, r1"
+!rasm2 -a avr "sbi 0x10000000c, 5"
+!rasm2 -a avr "out 18446744073709551616, r1"
+!rasm2 -a avr "out 1junk, r1"
+!rasm2 -a avr "out 0x, r1"
+!rasm2 -a avr "sbi spl, 1"
+!rasm2 -a avr "cbi sph, 1"
+!rasm2 -a avr "sbic sreg, 1"
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'out 64, r1' at line 1
+ERROR: Cannot assemble 'in r1, 64' at line 1
+ERROR: Cannot assemble 'sbi 32, 1' at line 1
+ERROR: Cannot assemble 'out 0x100000001, r1' at line 1
+ERROR: Cannot assemble 'sbi 0x10000000c, 5' at line 1
+ERROR: Cannot assemble 'out 18446744073709551616, r1' at line 1
+ERROR: Cannot assemble 'out 1junk, r1' at line 1
+ERROR: Cannot assemble 'out 0x, r1' at line 1
+ERROR: Cannot assemble 'sbi spl, 1' at line 1
+ERROR: Cannot assemble 'cbi sph, 1' at line 1
+ERROR: Cannot assemble 'sbic sreg, 1' at line 1
+EOF
+RUN

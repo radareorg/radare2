@@ -232,8 +232,12 @@ int assemble_operand(ut64 pc, const char *operand, int type, uint32_t *res) {
 		if (assemble_general_io_operand (operand, res) == 0) {
 			ret = 0;
 		} else if (isdigit ((ut8)*operand)) {
-			*res = getnum (operand);
-			ret = 0;
+			char *end;
+			ut64 value = strtoull (operand, &end, 0);
+			if (!*end && value <= 0x3f) {
+				*res = value;
+				ret = 0;
+			}
 		}
 		break;
 	case OPERAND_BIT:
