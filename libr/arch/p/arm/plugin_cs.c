@@ -64,7 +64,7 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 #define MEMINDEX64(x) r_str_getf (cs_reg_name (*handle, insn->detail->arm64.operands[x].mem.index))
 #define HASMEMINDEX64(x) ((arm64_reg)insn->detail->arm64.operands[x].mem.index != ARM64_REG_INVALID)
 #define ISMEMINDEXSUB(x) insn->detail->arm.operands[x].subtracted
-#define MEMDISP(x) insn->detail->arm.operands[x].mem.disp
+#define MEMDISP(x) arm_mem_disp32 (&insn->detail->arm.operands[x])
 #define MEMDISP64(x) (ut64)insn->detail->arm64.operands[x].mem.disp
 #define ISIMM(x) (insn->detail->arm.operands[x].type == ARM_OP_IMM)
 #define ISIMM64(x) ((arm64_op_type)insn->detail->arm64.operands[x].type & (ARM64_OP_IMM | ARM64_OP_CIMM | ARM64_OP_FP))
@@ -970,6 +970,12 @@ static const char *decode_shift_64(arm64_shifter shift) {
 
 #define DECODE_SHIFT(x) decode_shift(insn->detail->arm.operands[x].shift.type)
 #define DECODE_SHIFT64(x) decode_shift_64(insn->detail->arm64.operands[x].shift.type)
+
+static int arm_mem_disp32(const cs_arm_op *operand) {
+	// Capstone 6 reports subtraction separately from the displacement.
+	const int disp = operand->mem.disp;
+	return operand->subtracted && disp > 0? -disp: disp;
+}
 
 static unsigned int regsize32(cs_insn *insn, int n) {
 	R_RETURN_VAL_IF_FAIL (n >= 0 && n < insn->detail->arm.op_count, 0);
@@ -5277,7 +5283,7 @@ static void set_src_dst(RAnalOp *op, RAnalValue *val, csh *handle, cs_insn *insn
 			val->type = R_ANAL_VAL_MEM;
 			val->memref = arm_memref_size (op, insn, x, bits);
 			val->mul = armop.mem.scale;
-			val->delta = armop.mem.disp;
+			val->delta = arm_mem_disp32 (&armop);
 			break;
 		case ARM_OP_IMM:
 			val->type = R_ANAL_VAL_IMM;

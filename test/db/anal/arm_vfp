@@ -206,6 +206,26 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ARM32 VFP stores preserve register width and signed displacement
+FILE=malloc://512
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 021a80ed020b00ed
+aei
+ar r0=0x100
+ar s2=0x3fc00000
+ar d0=0x4004000000000000
+ar pc=0
+2aes
+pxj 4 @0x108
+pxj 8 @0xf8
+EOF
+EXPECT=<<EOF
+[0,0,192,63]
+[0,0,0,0,0,0,4,64]
+EOF
+RUN
+
 NAME=ARM32 VMSR and VMRS transfer FPSCR controls
 FILE=malloc://64
 ARGS=-a arm -b 32
@@ -221,5 +241,44 @@ EOF
 EXPECT=<<EOF
 0x12345678
 0x12345678
+EOF
+RUN
+
+NAME=ARM32 and Thumb VFP literals subtract negative displacements
+FILE=malloc://64
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 010a1fed
+aoj~{[0].ptr}
+aoe
+e asm.bits=16
+wx 1fed010a @2
+aoj @2~{[0].ptr}
+aoe @2
+EOF
+EXPECT=<<EOF
+4
+0x00000000 0x4,[4],s0,=
+0
+0x00000002 0x0,[4],s0,=
+EOF
+RUN
+
+NAME=ARM32 scalar memory offsets use signed Capstone displacements
+FILE=malloc://512
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 041000e5042010e5
+aei
+ar r0=0x100
+ar r1=0x12345678
+ar pc=0
+2aes
+ar r2
+pxj 4 @0xfc
+EOF
+EXPECT=<<EOF
+0x12345678
+[120,86,52,18]
 EOF
 RUN
