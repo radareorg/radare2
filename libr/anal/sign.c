@@ -2644,7 +2644,6 @@ static bool match_metrics(RSignItem *it, struct metric_ctx *ctx) {
 }
 
 static bool _sig_to_vec_cb(RSignItem *it, void *user) {
-	R_FREE (it->collisions);
 	RSignItem **slot = RVecRSignItemPtr_emplace_back ((RVecRSignItemPtr *)user);
 	*slot = it;
 	return true;
@@ -2841,26 +2840,38 @@ R_API bool r_sign_resolve_collisions(RAnal *a) {
 		RVecRSignItemPtr_free (sigs);
 		return false;
 	}
-	bool success = true;
-	int i = 0;
+	// sign_collide_by sorts sigs, so keep each item next to its old list
+	const size_t n = RVecRSignItemPtr_length (sigs);
+	RSignItem **items = R_NEWS (RSignItem *, n);
+	char **old = R_NEWS0 (char *, n);
+	bool success = !n || (items && old);
+	size_t i;
+	for (i = 0; success && i < n; i++) {
+		items[i] = *RVecRSignItemPtr_at (sigs, i);
+		old[i] = items[i]->collisions;
+		items[i]->collisions = NULL;
+	}
 	RSignType types[] = { R_SIGN_BYTES, R_SIGN_GRAPH, R_SIGN_END };
-	for (i = 0; types[i] != R_SIGN_END; i++) {
-		if (!sign_collide_by (sigs, types[i])) {
-			success = false;
-			break;
+	int t;
+	for (t = 0; success && types[t] != R_SIGN_END; t++) {
+		success = sign_collide_by (sigs, types[t]);
+	}
+	// an item that stopped colliding is rewritten too, without its old list
+	for (i = 0; success && i < n; i++) {
+		const char *cur = items[i]->collisions;
+		if (old[i]? !cur || strcmp (old[i], cur): cur != NULL) {
+			success = r_sign_set_item (a->sdb_zigns, items[i], NULL);
 		}
 	}
-
-	// save updated signatures
+	for (i = 0; old && i < n; i++) {
+		free (old[i]);
+	}
 	RSignItem **p;
 	R_VEC_FOREACH (sigs, p) {
-		RSignItem *it = *p;
-		if (success && it->collisions) {
-			success = r_sign_add_item (a, it);
-		}
-		r_sign_item_free (it);
+		r_sign_item_free (*p);
 	}
-
+	free (items);
+	free (old);
 	RVecRSignItemPtr_free (sigs);
 	return success;
 }

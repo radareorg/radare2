@@ -2172,6 +2172,25 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=zac drops the collisions of an item whose collider was deleted
+FILE=--
+CMDS=<<EOF
+za foo b 9090
+za bar b 9090
+za baz b 9191
+za qux b 9191
+zac
+z-bar
+zac
+zk
+EOF
+EXPECT=<<EOF
+zign|*|baz=|b:9191:ffff|C:b:qux
+zign|*|foo=|b:9090:ffff
+zign|*|qux=|b:9191:ffff|C:b:baz
+EOF
+RUN
+
 NAME=zac collisions in every listing format, deduplicated across zignspaces
 FILE=--
 CMDS=<<EOF
