@@ -83,9 +83,29 @@ afva
 afv
 EOF
 EXPECT=<<EOF
-arg int16_t arg1 @ r0
-arg int16_t arg2 @ r1
-arg int16_t arg3 @ r2
-arg int16_t arg4 @ r3
+arg int32_t arg1 @ r0
+arg int32_t arg2 @ r1
+arg int32_t arg3 @ r2
+arg int32_t arg4 @ r3
+EOF
+RUN
+
+NAME=Thumb register arguments use the register width rather than instruction bits
+FILE=malloc://128
+ARGS=-a arm -b 16
+CMDS=<<EOF
+wx 00687047
+af direct
+afvr
+wx 00687047 @64
+af callee @64
+wx 00f01ef87047
+af-@0
+af forwarded @0
+afvr @0
+EOF
+EXPECT=<<EOF
+arg int32_t arg1 @ r0
+arg int32_t arg1 @ r0
 EOF
 RUN

@@ -2051,7 +2051,10 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				name = r_str_newf ("arg%u", (int)i + 1);
 				vname = name;
 			}
-			RAnalVar *var = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, type, size, true, vname);
+			RRegItem *reg = regname? r_reg_get (anal->reg, regname, -1): NULL;
+			const int regsize = reg && reg->size > 0? BITS2BYTES (reg->size): size;
+			r_unref (reg);
+			RAnalVar *var = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, type, regsize, true, vname);
 			if (var && var->argnum < 0) {
 				var->argnum = *count;
 				(*count)++;
@@ -2099,7 +2102,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			r_unref (reg);
 			continue;
 		}
-		const int regsize = partial? (reg->size + 7) / 8: size;
+		const int regsize = reg && reg->size > 0? BITS2BYTES (reg->size): size;
 		bool is_arg = partial? is_used_small_reg_arg (anal, op, reg, &reg_set[slot], op_dst_writeonly)
 			: is_used_like_arg (op, op_dst_writeonly, in_src, in_dst);
 		if (is_arg) {
