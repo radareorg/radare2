@@ -3008,7 +3008,7 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 				bits, right, bits, REG (0), bits, right, bits, REG (0));
 		}
 		break;
-#if CS_API_MAJOR < 6
+#if CS_API_MAJOR == 5
 	case ARM_INS_FMSTAT:
 #endif
 	case ARM_INS_VMRS:
@@ -3856,7 +3856,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 	// many errors
 	if (insn->detail->arm.update_flags) {
 		switch(insn->id) {
-#if CS_API_MAJOR < 6
+#if CS_API_MAJOR == 5
 		case ARM_INS_FMSTAT:
 #endif
 		case ARM_INS_VMRS:
@@ -4624,7 +4624,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->type = R_ANAL_OP_TYPE_CMP;
 		op->family = R_ANAL_OP_FAMILY_FPU;
 		break;
-#if CS_API_MAJOR < 6
+#if CS_API_MAJOR == 5
 	case ARM_INS_FMSTAT:
 #endif
 	case ARM_INS_VMRS:
