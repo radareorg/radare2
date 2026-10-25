@@ -395,7 +395,7 @@ afvx
 EOF
 EXPECT=<<EOF
 afvR
-   var_10h  0x8,0xc
+   var_10h  0xc
     var_8h  0xc
    var_20h  0x14
 afvW
