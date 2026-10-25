@@ -790,3 +790,79 @@ pseudo: tp &= 0xff
 pseudo: r6 &= 0xff
 EOF
 RUN
+
+NAME=v850 unsigned halfword division preserves quotient remainder and aliased operands
+FILE=malloc://32
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+wx e50f8232
+aei
+ar pc=0
+ar tp=0xabcd000a
+ar r1=96
+aes
+ar r1
+ar r6
+ar ov
+ar z
+wx e50f820a
+ar pc=0
+ar tp=10
+ar r1=96
+aes
+ar r1
+wx e50f822a
+ar pc=0
+ar tp=10
+ar r1=96
+aes
+ar r1
+ar tp
+ar pc=0
+ar tp=0
+ar r1=96
+aes
+ar ov
+EOF
+EXPECT=<<EOF
+0x00000009
+0x00000006
+0x00000000
+0x00000000
+0x00000006
+0x00000009
+0x00000006
+0x00000001
+EOF
+RUN
+
+NAME=v850 signed division handles overflow and signed remainders
+FILE=malloc://32
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+wx e50fc032
+aei
+ar pc=0
+ar tp=-1
+ar r1=0x80000000
+aes
+ar r1
+ar r6
+ar ov
+ar pc=0
+ar tp=10
+ar r1=-96
+aes
+ar r1
+ar r6
+ar ov
+EOF
+EXPECT=<<EOF
+0x80000000
+0x00000000
+0x00000001
+0xfffffff7
+0xfffffffa
+0x00000000
+EOF
+RUN
