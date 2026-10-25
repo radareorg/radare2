@@ -2024,6 +2024,80 @@ static bool parse_threaded_rebase(struct MACH0_(obj_t) * mo) {
 	return true;
 }
 
+static bool parse_chain_starts_section(struct MACH0_(obj_t) * mo) {
+	if (mo->nsegs < 1 || !mo->sects) {
+		return false;
+	}
+	struct MACH0_(section) *cs = NULL;
+	ut32 i;
+	for (i = 0; i < mo->nsects; i++) {
+		if (!strncmp (mo->sects[i].segname, "__TEXT", 16) &&
+			!strncmp (mo->sects[i].sectname, "__chain_starts", 16)) {
+			cs = &mo->sects[i];
+			break;
+		}
+	}
+	if (!cs || cs->size < 8) {
+		return false;
+	}
+	ut32 pointer_format = r_buf_read_le32_at (mo->b, cs->offset);
+	ut32 starts_count = r_buf_read_le32_at (mo->b, cs->offset + 4);
+	if (starts_count == UT32_MAX || !starts_count || starts_count > (cs->size - 8) / sizeof (ut32)) {
+		return false;
+	}
+	ut64 base = mo->segs[0].vmaddr;
+	for (i = 0; i < mo->nsegs; i++) {
+		if (!mo->segs[i].fileoff && mo->segs[i].filesize) {
+			base = mo->segs[i].vmaddr;
+			break;
+		}
+	}
+	free_chained_starts (mo);
+	mo->chained_starts = R_NEWS0 (struct r_dyld_chained_starts_in_segment *, mo->nsegs);
+	if (!mo->chained_starts) {
+		return false;
+	}
+	mo->segs_count = mo->nsegs;
+	const size_t ps = 0x1000;
+	for (i = 0; i < starts_count; i++) {
+		ut32 off = r_buf_read_le32_at (mo->b, cs->offset + 8 + i * sizeof (ut32));
+		ut64 vaddr = base + off;
+		int seg_idx;
+		for (seg_idx = 0; seg_idx < mo->nsegs; seg_idx++) {
+			struct MACH0_(segment_command) *seg = &mo->segs[seg_idx];
+			if (vaddr >= seg->vmaddr && vaddr - seg->vmaddr < seg->filesize) {
+				break;
+			}
+		}
+		if (seg_idx == mo->nsegs) {
+			continue;
+		}
+		struct MACH0_(segment_command) *seg = &mo->segs[seg_idx];
+		struct r_dyld_chained_starts_in_segment *cur_seg = mo->chained_starts[seg_idx];
+		if (!cur_seg) {
+			ut64 page_count = (seg->filesize + (ps - 1)) / ps;
+			if (page_count > UT16_MAX) {
+				continue;
+			}
+			cur_seg = R_NEW0 (struct r_dyld_chained_starts_in_segment);
+			cur_seg->pointer_format = pointer_format;
+			cur_seg->threaded = true;
+			cur_seg->page_size = ps;
+			cur_seg->page_count = page_count;
+			cur_seg->page_start = R_NEWS (ut16, page_count);
+			if (!cur_seg->page_start) {
+				free (cur_seg);
+				continue;
+			}
+			memset (cur_seg->page_start, 0xff, sizeof (ut16) * page_count);
+			mo->chained_starts[seg_idx] = cur_seg;
+		}
+		ut64 seg_off = vaddr - seg->vmaddr;
+		cur_seg->page_start[seg_off / ps] = seg_off % ps;
+	}
+	return true;
+}
+
 static int init_items(struct MACH0_(obj_t) * mo) {
 	bool skip_chained_fixups = r_sys_getenv_asbool ("RABIN2_MACHO_SKIPFIXUPS");
 	struct load_command lc = { 0, 0 };
@@ -2505,7 +2579,10 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 		bool isarm64e = mo->hdr.cputype == CPU_TYPE_ARM64 \
 			&& (mo->hdr.cpusubtype & ~CPU_SUBTYPE_MASK) == CPU_SUBTYPE_ARM64E;
 		if (isarm64e) {
-			parse_threaded_rebase (mo);
+			have_chained_starts = parse_threaded_rebase (mo);
+		}
+		if (!have_chained_starts) {
+			parse_chain_starts_section (mo);
 		}
 	}
 	return true;
@@ -5625,8 +5702,10 @@ void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) * mo, ut64 limit_start,
 					ut8 ptr_size = 8;
 					switch (pointer_format) {
 					case DYLD_CHAINED_PTR_ARM64E:
+					case DYLD_CHAINED_PTR_ARM64E_KERNEL:
 						{
-							stride = 8;
+							const bool kernel = pointer_format == DYLD_CHAINED_PTR_ARM64E_KERNEL;
+							stride = kernel? 4: 8;
 							bool is_auth = IS_PTR_AUTH (raw_ptr);
 							bool is_bind = IS_PTR_BIND (raw_ptr);
 							if (is_auth && is_bind) {
@@ -5651,8 +5730,11 @@ void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) * mo, ut64 limit_start,
 							} else {
 								event = R_FIXUP_EVENT_REBASE;
 								delta = CHAIN_BITS (raw_ptr, 51, 11);
-								ptr_value = (CHAIN_BITS (raw_ptr, 43, 8) << 56)
-									| CHAIN_BITS (raw_ptr, 0, 43);
+								ptr_value = CHAIN_BITS (raw_ptr, 0, 43);
+								if (kernel) {
+									ptr_value += mo->baddr;
+								}
+								ptr_value |= CHAIN_BITS (raw_ptr, 43, 8) << 56;
 							}
 						}
 						break;
