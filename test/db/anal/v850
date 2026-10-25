@@ -603,6 +603,7 @@ wx 003206507f00
 af clobbered
 afvr
 arp~^=A
+arp~^=LR
 EOF
 EXPECT=<<EOF
 arg int32_t arg1 @ r6
@@ -610,6 +611,7 @@ arg int32_t arg1 @ r6
 =A1	r7
 =A2	r8
 =A3	r9
+=LR	lp
 EOF
 RUN
 
@@ -646,9 +648,16 @@ CMDS=<<EOF
 wx 031ef0ff23360400031e10007f00
 af address_taken
 afvs
+af-
+wx 233700007f00
+af probe
+afs int probe(int a, int b, int c, int d, int fifth)
+afva
+afvs
 EOF
 EXPECT=<<EOF
 var int32_t var_4h @ sp+0x4
+arg int fifth @ sp+0x0
 EOF
 RUN
 

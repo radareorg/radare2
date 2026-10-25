@@ -908,6 +908,7 @@ static char *regs(RArchSession *s) {
 		"=PC	pc\n"
 		"=SP	sp\n"
 		"=BP	ep\n"
+		"=LR	lp\n"
 		"=SN	r1\n"
 		"=ZF	z\n"
 		"=A0	r6\n"
