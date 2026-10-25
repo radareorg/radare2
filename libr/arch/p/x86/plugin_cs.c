@@ -2360,8 +2360,14 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 					multiplier = arg2;
 				}
 				zext_opnd (&gop, 0);
-				esilprintf (op, "%d,%s,~,%d,%s,~,*,DUP,%s,=,%d,%s,~,-,!,!,DUP,cf,:=,of,:=",
-					width*8, multiplier, width*8, arg1, arg0, width*8, arg0);
+				if (width == 8) {
+					// L* is unsigned: subtract the high-half fixup; the source is read once
+					esilprintf (op, "%s,DUP,DUP,63,SWAP,>>,%s,*,SWAP,63,%s,>>,*,+,SWAP,%s,L*,%s,=,-,63,%s,>>,0,-,^,!,!,DUP,cf,:=,of,:=",
+						arg1, multiplier, multiplier, multiplier, arg0, arg0);
+				} else {
+					esilprintf (op, "%d,%s,~,%d,%s,~,*,DUP,%s,=,%d,%s,~,-,!,!,DUP,cf,:=,of,:=",
+						width*8, multiplier, width*8, arg1, arg0, width*8, arg0);
+				}
 			} else if (arg0) {
 				const char *r_quot, *r_rema;
 				muldiv_regs (width, &r_quot, &r_rema);

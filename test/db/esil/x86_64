@@ -133,7 +133,62 @@ e asm.bits=64
 EOF
 EXPECT=<<EOF
 imul rax, r11, 0x33666667
-0x00000000 64,862348903,~,64,r11,~,*,DUP,rax,=,64,rax,~,-,!,!,DUP,cf,:=,of,:=
+0x00000000 r11,DUP,DUP,63,SWAP,>>,862348903,*,SWAP,63,862348903,>>,*,+,SWAP,862348903,L*,rax,=,-,63,rax,>>,0,-,^,!,!,DUP,cf,:=,of,:=
+EOF
+RUN
+
+NAME=imul 3 arg r64 cf of on overflow and fit
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 486bcbfe
+aeim
+ar rbx=0xa5a5000380000005
+aei
+aes
+ar rcx
+ar cf
+ar of
+ar PC=0
+ar rbx=5
+aes
+ar rcx
+ar cf
+ar of
+EOF
+EXPECT=<<EOF
+0xb4b5fff8fffffff6
+0x00000001
+0x00000001
+0xfffffffffffffff6
+0x00000000
+0x00000000
+EOF
+RUN
+
+NAME=imul 2 arg r64 signed bounds
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 480fafcb
+aeim
+ar rbx=0x4000000000000000
+ar rcx=-2
+aes
+ar rcx
+ar of
+s 0
+ar PC=0
+ar rcx=2
+aes
+ar rcx
+ar of
+EOF
+EXPECT=<<EOF
+0x8000000000000000
+0x00000000
+0x8000000000000000
+0x00000001
 EOF
 RUN
 
