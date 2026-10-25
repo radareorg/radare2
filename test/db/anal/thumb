@@ -109,3 +109,26 @@ arg int32_t arg1 @ r0
 arg int32_t arg1 @ r0
 EOF
 RUN
+
+NAME=Thumb address-taken stack locals use ABI width and keep explicit access widths
+FILE=malloc://64
+ARGS=-a arm -b 16
+CMDS=<<EOF
+wx 82b001a802b07047
+af
+afvs
+af-
+wx 82b09df8040002b07047
+af
+afvs
+af-
+wx 82b0bdf8040002b07047
+af
+afvs
+EOF
+EXPECT=<<EOF
+var int32_t var_4h @ sp+0x4
+var int8_t var_4h @ sp+0x4
+var int16_t var_4h @ sp+0x4
+EOF
+RUN

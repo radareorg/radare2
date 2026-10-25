@@ -144,8 +144,8 @@ static const char * const int_type(int size) {
 	}
 }
 
-static int inferred_var_size(RAnal *anal, int access_size) {
-	return int_type (access_size) ? access_size : anal->config->bits / 8;
+static int inferred_var_size(int access_size, int default_size) {
+	return int_type (access_size) ? access_size : default_size;
 }
 
 R_API bool r_anal_function_rebase_vars(RAnal *a, RAnalFunction *fcn) {
@@ -1433,7 +1433,8 @@ static void extract_arg_at(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const c
 	if (frame_off > maxargoff || frame_off < -R_MAX (fcn->maxstack, maxargoff)) {
 		return;
 	}
-	const int var_size = anal->config->bits / 8;
+	const int var_size = !strcmp (anal->config->arch, "arm")
+		? r_anal_cc_wordsize (anal, fcn->callconv): anal->config->bits / 8;
 	const bool fuzzy = !exact && !strcmp (anal->config->arch, "arm");
 	RAnalVar *var = get_stack_var (anal, fcn, frame_off, access_size, var_size, fuzzy, addr_taken);
 	if (var) {
@@ -1443,7 +1444,7 @@ static void extract_arg_at(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const c
 		if (!isarg || !var->isarg || var->delta != frame_off) {
 			return;
 		}
-		const char *deftype = int_type (inferred_var_size (anal, access_size));
+		const char *deftype = int_type (inferred_var_size (access_size, var_size));
 		r_strf_var (autoname, 32, "arg_%" PFMT64x "h", R_ABS (anal->opt.varname_stack? frame_off: ptr));
 		if (!deftype || strcmp (var->type, deftype) || strcmp (var->name, autoname)) {
 			return;
@@ -1508,7 +1509,7 @@ static void extract_arg_at(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const c
 		}
 	}
 	if (varname) {
-		const int size = inferred_var_size (anal, access_size);
+		const int size = inferred_var_size (access_size, var_size);
 		RAnalVar *var = r_anal_function_set_var (fcn, frame_off, type, vartype, size, isarg, varname);
 		if (var) {
 			r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr);
