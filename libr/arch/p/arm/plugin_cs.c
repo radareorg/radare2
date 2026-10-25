@@ -2936,6 +2936,8 @@ static void arm32mathaddsub(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 
 		(!strcmp (opchar, "+")? "30,$c,31,$c,^,31,$c": "30,$c,31,$c,^,32,$b"));
 }
 
+static int arm_memref_size(RAnalOp *op, cs_insn *insn, int x, int bits);
+
 static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, bool thumb) {
 	int i;
 	const char *postfix = NULL;
@@ -3423,7 +3425,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		addr &= ~3LL;
 		if (MEMDISP (2) < 0) {
 			if (REGBASE (2) == ARM_REG_PC) {
-				op->refptr = 4;
+				op->refptr = 8;
 				op->ptr = addr + pcdelta + MEMDISP (2);
 				r_strbuf_appendf (&op->esil, "0x%"PFMT64x",2,2,0x%"PFMT64x
 					",>>,<<,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
@@ -3443,7 +3445,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			}
 		} else {
 			if (REGBASE (2) == ARM_REG_PC) {
-				op->refptr = 4;
+				op->refptr = 8;
 				op->ptr = addr + pcdelta + MEMDISP (2);
 				if (HASMEMINDEX (2) || ISREG (2)) {
 					const char op_index = ISMEMINDEXSUB (2)? '-': '+';
@@ -3561,7 +3563,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		addr &= ~3LL;
 		if (MEMDISP (1) < 0) {
 			if (REGBASE (1) == ARM_REG_PC) {
-				op->refptr = 4;
+				op->refptr = arm_memref_size (op, insn, 1, 32);
 				op->ptr = addr + pcdelta + MEMDISP(1);
 				r_strbuf_appendf (&op->esil, "0x%"PFMT64x",2,2,0x%"PFMT64x
 					",>>,<<,+,0xffffffff,&,[%d],%s,%s,=",
@@ -3579,7 +3581,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			}
 		} else {
 			if (REGBASE(1) == ARM_REG_PC) {
-				op->refptr = 4;
+				op->refptr = arm_memref_size (op, insn, 1, 32);
 				op->ptr = addr + pcdelta + MEMDISP(1);
 				if (ISMEM(1) && LSHIFT2(1)) {
 					r_strbuf_appendf (&op->esil, "2,2,0x%"PFMT64x
@@ -4814,9 +4816,12 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->stackop = R_ANAL_STACK_GET;
 			op->stackptr = 0;
 			op->ptr = -MEMDISP (1);
+		} else if (ISMEM (2) && REGBASE (2) == ARM_REG_PC) {
+			op->ptr = (addr & ~3LL) + (thumb? 4: 8) + MEMDISP (2);
+			op->refptr = arm_memref_size (op, insn, 2, 32);
 		} else if (ISMEM (1) && REGBASE (1) == ARM_REG_PC) {
 			op->ptr = (addr & ~3LL) + (thumb? 4: 8) + MEMDISP (1);
-			op->refptr = 4;
+			op->refptr = arm_memref_size (op, insn, 1, 32);
 			if (REGID(0) == ARM_REG_PC && (arm_cc)insn->detail->arm.cc != ARM_CC_AL) {
 				//op->type = R_ANAL_OP_TYPE_MCJMP;
 				op->type = R_ANAL_OP_TYPE_UCJMP;

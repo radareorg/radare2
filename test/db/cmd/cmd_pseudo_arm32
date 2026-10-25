@@ -55,3 +55,51 @@ v = r1 - (r2 << r2)
 v = r1 & (r2 << 2)
 EOF
 RUN
+
+NAME=arm32 pc-relative ldrb/ldrh read their access width
+FILE=malloc://64
+ARGS=-a arm -b 16
+CMDS=<<EOF
+wx 9ff80400bff80400000000001122334455667788
+pd 2
+EOF
+EXPECT=<<EOF
+            0x00000000      9ff80400       ldrb.w r0, [0x00000008]     ; [0x8:1]=0
+            0x00000004      bff80400       ldrh.w r0, [0x0000000c]     ; [0xc:2]=0x2211
+EOF
+RUN
+
+NAME=arm32 pc-relative ldr reads a word
+FILE=malloc://64
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 04009fe50000000000000000aabbccdd
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      04009fe5       ldr r0, [0x0000000c]        ; [0xc:4]=0xddccbbaa
+EOF
+RUN
+
+NAME=arm32 pc-relative ldrsb/ldrsh/ldrd refptr follows the access width
+FILE=malloc://64
+ARGS=-a arm -b 16
+CMDS=<<EOF
+wx 9ff90400bff90400dfe90201000000001122334455667788
+pd 3
+e asm.esil=true
+ao~refptr
+s 4
+ao~refptr
+s 8
+ao~refptr
+EOF
+EXPECT=<<EOF
+            0x00000000      9ff90400       ldrsb.w r0, [0x00000008]    ; [0x8:1]=223
+            0x00000004      bff90400       ldrsh.w r0, [0x0000000c]    ; [0xc:2]=0
+            0x00000008      dfe90201       ldrd r0, r1, [0x00000014]   ; [0x14:8]=0x88776655
+refptr: 1
+refptr: 2
+refptr: 8
+EOF
+RUN
