@@ -234,6 +234,41 @@ static RAnalValue operand_value(const v850np_inst *inst, int i) {
 
 static void fill_operands(RAnalOp *op, const v850np_inst *inst, RArchDecodeMask mask) {
 	const char *name = inst->op->name;
+	const bool load = op->type == R_ANAL_OP_TYPE_LOAD;
+	const bool store = op->type == R_ANAL_OP_TYPE_STORE;
+	if (load || store) {
+		const char *suffix = strchr (name, '.');
+		const int width = suffix && suffix[1] == 'b'? 1: suffix && suffix[1] == 'h'? 2: suffix && suffix[1] == 'w'? 4: 0;
+		const int base = inst->op->memop - 1;
+		if (!width || (base != 1 && base != 2) || !inst->args[base].str
+				|| !(v850_operands[inst->op->operands[base - 1]].flags & V850_OPERAND_DISP)) {
+			return;
+		}
+		RAnalValue mem = operand_value (inst, base);
+		mem.type = R_ANAL_VAL_MEM;
+		mem.memref = width;
+		mem.delta = inst->args[base - 1].value;
+		mem.access = load? R_PERM_R: R_PERM_W;
+		RAnalValue reg = operand_value (inst, load? 2: 0);
+		if (!reg.reg) {
+			return;
+		}
+		reg.access = load? R_PERM_W: R_PERM_R;
+		if (mask & R_ARCH_OP_MASK_VAL) {
+			RVecRArchValue_push_back (&op->srcs, load? &mem: &reg);
+			RVecRArchValue_push_back (&op->dsts, load? &reg: &mem);
+		}
+		op->ptrsize = width;
+		op->sign = load && (suffix[1] == 'b' || suffix[1] == 'h') && suffix[2] != 'u';
+		op->direction = load? R_ANAL_OP_DIR_READ: R_ANAL_OP_DIR_WRITE;
+		if (!strcmp (mem.reg, "r0")) {
+			op->ptr = (ut32)mem.delta;
+			op->refptr = width;
+		} else {
+			op->ptr = UT64_MAX;
+		}
+		return;
+	}
 	const bool mov = !strcmp (name, "mov");
 	const bool arithmetic = !strcmp (name, "add") || !strcmp (name, "addi") || !strcmp (name, "sub");
 	if (!mov && !arithmetic) {
