@@ -193,6 +193,6 @@ EOF
 EXPECT=<<EOF
 {"res":"","error":true,"value":0,"logs":[{"type":"ERROR","origin":"cmd_afsj","message":"Cannot find function in 0x00000000"}],"code":1}
 {"res":"","error":true,"value":0,"logs":[{"type":"ERROR","origin":"cmd_afsj","message":"Cannot find function in 0x00000000"}],"code":1}
-{"res":{"name":"fcn.00000004","noreturn":false,"ret":"void","callconv":"amd64","argc":0,"args":[]},"error":false,"value":4,"code":0}
+{"res":{"name":"fcn.00000004","noreturn":false,"ret":null,"callconv":"amd64","argc":0,"args":[]},"error":false,"value":4,"code":0}
 EOF
 RUN

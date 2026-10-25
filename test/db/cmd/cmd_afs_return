@@ -1,0 +1,17 @@
+NAME=afsj distinguishes an unknown return from a declared void return
+FILE=malloc://16
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 0100a0e31eff2fe1
+af probe
+afsj
+afs void probe(void)
+afsj
+afsj~{ret}
+EOF
+EXPECT=<<EOF
+{"name":"probe","noreturn":false,"ret":null,"callconv":"arm32","argc":0,"args":[]}
+{"name":"probe","noreturn":false,"ret":"void","callconv":"arm32","argc":0,"args":[]}
+void
+EOF
+RUN

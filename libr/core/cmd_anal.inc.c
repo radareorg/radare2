@@ -5133,7 +5133,11 @@ static void printfcnjson(RCore *core, RAnalFunction *fcn) {
 	pj_ks (pj, "name", fcn->name);
 	const bool no_return = r_anal_noreturn_at_addr (a, fcn->addr);
 	pj_kb (pj, "noreturn", no_return);
-	pj_ks (pj, "ret", r_str_get_fail (ret_type, "void"));
+	if (ret_type) {
+		pj_ks (pj, "ret", ret_type);
+	} else {
+		pj_knull (pj, "ret");
+	}
 	const char *fcncc = r_anal_function_cc (fcn);
 	if (fcncc) {
 		pj_ks (pj, "callconv", fcncc);
