@@ -2975,11 +2975,11 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 	case ARM_INS_VMUL:
 	case ARM_INS_VDIV:
 		if (OPCOUNT () == 3 && ISREG (0) && ISREG (1) && ISREG (2) &&
-				((REGID (0) >= ARM_REG_S0 && REGID (0) <= ARM_REG_S31) ||
-				(REGID (0) >= ARM_REG_D0 && REGID (0) <= ARM_REG_D31)) &&
-				REGSIZE32 (0) == REGSIZE32 (1) && REGSIZE32 (0) == REGSIZE32 (2) &&
-				(insn->detail->arm.vector_data == ARM_VECTORDATA_F32 ||
-				insn->detail->arm.vector_data == ARM_VECTORDATA_F64)) {
+				((REGID (0) >= ARM_REG_S0 && REGID (0) <= ARM_REG_S31 &&
+				insn->detail->arm.vector_data == ARM_VECTORDATA_F32) ||
+				(REGID (0) >= ARM_REG_D0 && REGID (0) <= ARM_REG_D31 &&
+				insn->detail->arm.vector_data == ARM_VECTORDATA_F64)) &&
+				REGSIZE32 (0) == REGSIZE32 (1) && REGSIZE32 (0) == REGSIZE32 (2)) {
 			const char *math = insn->id == ARM_INS_VADD? "+": insn->id == ARM_INS_VSUB? "-": insn->id == ARM_INS_VMUL? "*": "/";
 			r_strbuf_appendf (&op->esil, "%u,DUP,%s,F2D,%u,%s,F2D,F%s,D2F,%s,=",
 				REGBITS32 (0), REG (2), REGBITS32 (0), REG (1), math, REG (0));
@@ -4610,7 +4610,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_VADD:
 	case ARM_INS_VSUB:
 		op->type = insn->id == ARM_INS_VADD? R_ANAL_OP_TYPE_ADD: R_ANAL_OP_TYPE_SUB;
-		op->family = R_ANAL_OP_FAMILY_FPU;
+		if (op->family != R_ANAL_OP_FAMILY_VEC) {
+			op->family = R_ANAL_OP_FAMILY_FPU;
+		}
 		break;
 	case ARM_INS_VCMPE:
 		op->type = R_ANAL_OP_TYPE_CMP;
@@ -4743,7 +4745,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->cycles = 4;
 		/* fall-thru */
 	case ARM_INS_VMUL:
-		if (insn->id == ARM_INS_VMUL) {
+		if (insn->id == ARM_INS_VMUL && op->family != R_ANAL_OP_FAMILY_VEC) {
 			op->family = R_ANAL_OP_FAMILY_FPU;
 		}
 		op->type = R_ANAL_OP_TYPE_MUL;

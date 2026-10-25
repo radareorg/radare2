@@ -143,6 +143,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ARM32 NEON arithmetic does not use scalar VFP ESIL
+FILE=malloc://64
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 020d01f2020d21f2120d01f3
+aoj 3~F2D~?
+aoj~{[0].family}
+aoj @4~{[0].family}
+aoj @8~{[0].family}
+EOF
+EXPECT=<<EOF
+0
+vec
+vec
+vec
+EOF
+RUN
+
 NAME=ARM32 single precision VFP arithmetic preserves infinities
 FILE=malloc://64
 ARGS=-a arm -b 32
