@@ -2,6 +2,7 @@
 #include <r_userconf.h>
 #include "minunit.h"
 #include <r_bin.h>
+#include <r_muta.h>
 
 //TODO test r_str_chop_path
 
@@ -772,7 +773,41 @@ bool test_r_bin_elf_pn_xnum_phdr(void) {
 }
 
 
+bool test_r_bin_string_charset(void) {
+	const ut8 bytes[] = { 0xc8, 0xc5, 0xd3, 0xd3, 0xd6, 0 };
+	RBin *bin = r_bin_new ();
+	RIO *io = r_io_new ();
+	r_io_bind (io, &bin->iob);
+	RMuta *muta = r_muta_new ();
+	r_muta_bind (muta, &bin->mb);
+	RBuffer *buf = r_buf_new_with_bytes (bytes, sizeof (bytes));
+	RBinInfo info = { .charset = "ebcdic37" };
+	RBinObject object = { .info = &info };
+	RBinFile file = { .rbin = bin, .bo = &object, .buf = buf, .size = sizeof (bytes) };
+	char *old_charset = r_sys_getenv ("RABIN2_CHARSET");
+	r_sys_setenv ("RABIN2_CHARSET", NULL);
+	RVecRBinString *strings = r_bin_raw_strings (&file, 4);
+	r_sys_setenv ("RABIN2_CHARSET", old_charset);
+	free (old_charset);
+	mu_assert_notnull (strings, "plugin charset strings");
+	mu_assert_eq (RVecRBinString_length (strings), 1, "plugin charset string count");
+	mu_assert_streq (RVecRBinString_at (strings, 0)->string, "HELLO", "plugin charset used without core settings");
+	RVecRBinString_free (strings);
+	sdb_set (bin->sdb, "bin.charset", "ascii", 0);
+	strings = r_bin_raw_strings (&file, 4);
+	mu_assert_notnull (strings, "explicit charset strings");
+	mu_assert_eq (RVecRBinString_length (strings), 1, "explicit charset string count");
+	mu_assert ("explicit charset overrides plugin default", strcmp (RVecRBinString_at (strings, 0)->string, "HELLO"));
+	RVecRBinString_free (strings);
+	r_unref (buf);
+	r_bin_free (bin);
+	r_muta_free (muta);
+	r_io_free (io);
+	mu_end;
+}
+
 bool all_tests(void) {
+	mu_run_test (test_r_bin_string_charset);
 	mu_run_test(test_r_bin);
 	mu_run_test(test_r_bin_plan9_symbol_names);
 	mu_run_test(test_r_bin_plan9_history_lines);

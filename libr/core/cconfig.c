@@ -1151,6 +1151,24 @@ static void update_asmparser_options(RCore *core, RConfigNode *node) {
 	}
 }
 
+static bool cb_bincharset(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	if (*node->value == '?') {
+		update_cfgcharsets_options (core, node);
+		SETOPTIONS (node, "none", NULL);
+		print_node_options (user, node);
+		return false;
+	}
+	if (*node->value && strcmp (node->value, "none") && !r_muta_algo_supports (core->muta, node->value, R_MUTA_TYPE_CHARSET)) {
+		R_LOG_ERROR ("Unknown string charset '%s'", node->value);
+		return false;
+	}
+	sdb_set (core->bin->sdb, "bin.charset", node->value, 0);
+	r_bin_reset_strings (core->bin);
+	return true;
+}
+
 static bool cb_asmparser(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -4423,6 +4441,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("bin.limit", 0, &cb_binlimit, "stop parsing/listing after finding N entries/imports/symbols/libs/relocs/strings");
 	SETCB ("bin.flags", "true", &cb_binflags, "load symbols/imports/classes into flag storage at startup");
 	SETCB ("bin.unnamed", "true", &cb_binunnamed, "load unnamed/synthetic symbols/classes/methods");
+	SETCB ("bin.charset", "", &cb_bincharset, "charset for scanning strings (empty uses RABIN2_CHARSET or the bin plugin default)");
 	SETCB ("bin.str.purge", "", &cb_strpurge, "purge strings (e bin.str.purge=? provides more detail)");
 	SETS ("bin.str.real", "false", "set the realname in rbin.strings for better disasm (EXPERIMENTAL)");
 	SETCB ("bin.str.nofp", "false", &cb_nofp, "set to true to reduce the false positive strings (EXPERIMENTAL)");
