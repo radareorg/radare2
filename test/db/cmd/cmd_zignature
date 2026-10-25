@@ -1801,6 +1801,118 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=offset-only match with zac colliders does not rename
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e zign.bytes=false -e zign.graph=false -e zign.refs=false -e zign.hash=false -e zign.types=false -e zign.offset=true
+CMDS=<<EOF
+wx 5531c05dc3
+af main
+zaf main bad1
+zaf main bad2
+zac
+z/
+afl
+EOF
+EXPECT=<<EOF
+0x00000000    1      5 main
+EOF
+RUN
+
+NAME=graph-only match ignores colliders of the unmatched bytes
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e zign.minsz=1 -e zign.mincc=0
+CMDS=<<EOF
+wx 5531c05dc3
+af main
+zaf main s
+za s b 90909090
+za t b 90909090
+zac
+z/
+afl
+EOF
+EXPECT=<<EOF
+0x00000000    1      5 s
+EOF
+RUN
+
+NAME=disjoint bytes and graph colliders leave the match unique
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e zign.minsz=1 -e zign.mincc=0
+CMDS=<<EOF
+wx 5531c05dc3
+af main
+zaf main x
+zaf main b1
+za b1 g cc=100 nbbs=2 edges=3 ebbs=8 bbsum=100
+zaf main g1
+za g1 b 90909090
+zac
+z/
+afl
+EOF
+EXPECT=<<EOF
+0x00000000    1      5 x
+EOF
+RUN
+
+NAME=bytes and graph colliders intersect past a lower graph name
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e zign.minsz=1 -e zign.mincc=0
+CMDS=<<EOF
+wx 5531c05dc3
+af main
+zaf main x
+zaf main c
+zaf main a
+za a b 90909090
+zac
+z/
+afl
+EOF
+EXPECT=<<EOF
+0x00000000    1      5 main
+EOF
+RUN
+
+NAME=unsorted bytes and graph colliders still intersect
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e zign.minsz=1 -e zign.mincc=0
+CMDS=<<EOF
+wx 5531c05dc3
+af main
+"k anal/zigns/zign|*|x=|b:5531c05dc3:ffffffffff|g:0100000001000000000000000100000005000000|C:g:a,b:c,g:c|n:x"
+"k anal/zigns/zign|*|c=|b:5531c05dc3:ffffffffff|g:0100000001000000000000000100000005000000|C:g:a,b:x,g:x|n:c"
+"k anal/zigns/zign|*|a=|b:90909090:ffffffff|g:0100000001000000000000000100000005000000|C:g:c,g:x|n:a"
+z/
+afl
+EOF
+EXPECT=<<EOF
+0x00000000    1      5 main
+EOF
+RUN
+
+NAME=forty-one functions colliding on bytes and graph keep their names
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e zign.minsz=1 -e zign.mincc=0
+CMDS=<<EOF
+wx c3 @@s:0 40 1
+af @@s:0 40 1
+zg
+zac
+af-*
+e anal.prefix.default=g
+af @@s:0 40 1
+z/f
+afl~fcn.?
+afl~g.?
+EOF
+EXPECT=<<EOF
+0
+41
+EOF
+RUN
+
 NAME=Rename vars on sign match
 FILE=bins/elf/ls
 CMDS=<<EOF
