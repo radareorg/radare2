@@ -1227,9 +1227,9 @@ za sym._Unwind_VRS_Get b 10b5041c042913d8081c00f072fd05031103030001200ce00220002
 za sym._Unwind_VRS_Get g cc=2 nbbs=4 edges=4 ebbs=1 bbsum=28
 za sym._Unwind_VRS_Get o 0x000078ea
 za sym._Unwind_VRS_Get R X1Vud2luZF9WUlNfR2V0
-za sym._Unwind_VRS_Get t void sym._Unwind_VRS_Get (int16_t arg1, int16_t arg2)
+za sym._Unwind_VRS_Get t void sym._Unwind_VRS_Get (int32_t arg1, int32_t arg2)
 za sym._Unwind_VRS_Get r sym.__gnu_thumb1_case_uqi
-za sym._Unwind_VRS_Get v tr0:arg1:int16_t, tr1:arg2:int16_t
+za sym._Unwind_VRS_Get v tr0:arg1:int32_t, tr1:arg2:int32_t
 za sym._Unwind_VRS_Get h 3132d0ebfa3b792867a4ffc36455e088bf3fcffc7627bd48c64bf901308463db
 EOF
 RUN
