@@ -119,6 +119,30 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ARM32 VMRS only uses FPSCR for FPSCR sources
+FILE=malloc://64
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 100af0ee100af1ee100af8ee
+aei
+ar fpscr=0x123
+ar r0=0x456
+ar pc=0
+aes
+ar r0
+aes
+ar r0
+ar r0=0x456
+aes
+ar r0
+EOF
+EXPECT=<<EOF
+0x00000456
+0x00000123
+0x00000456
+EOF
+RUN
+
 NAME=ARM32 single precision VFP arithmetic preserves infinities
 FILE=malloc://64
 ARGS=-a arm -b 32
@@ -161,5 +185,23 @@ EXPECT=<<EOF
 0xfffffff8 0x4,[4],s0,=
 0
 0xfffffffa 0x0,[4],s0,=
+EOF
+RUN
+
+NAME=ARM32 VMSR and VMRS transfer FPSCR controls
+FILE=malloc://64
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 101ae1ee102af1ee
+aei
+ar r1=0x12345678
+ar pc=0
+2aes
+ar fpscr
+ar r2
+EOF
+EXPECT=<<EOF
+0x12345678
+0x12345678
 EOF
 RUN

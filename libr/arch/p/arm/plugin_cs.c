@@ -3008,7 +3008,7 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 	case ARM_INS_VMRS:
 		if (!OPCOUNT () || REGID (0) == ARM_REG_APSR_NZCV) {
 			r_strbuf_append (&op->esil, "31,fpscr,>>,1,&,nf,:=,30,fpscr,>>,1,&,zf,:=,29,fpscr,>>,1,&,cf,:=,28,fpscr,>>,1,&,vf,:=");
-		} else {
+		} else if (OPCOUNT () == 2 && REGID (1) == ARM_REG_FPSCR) {
 			r_strbuf_appendf (&op->esil, "fpscr,%s,=", REG (0));
 		}
 		break;
