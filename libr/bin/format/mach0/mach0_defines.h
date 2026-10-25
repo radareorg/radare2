@@ -1505,6 +1505,11 @@ enum {
 	DYLD_CHAINED_PTR_ARM64E_USERLAND24 = 12,
 };
 
+enum {
+	DYLD_CHAINED_STARTS_USE_FILE_OFFSET = 1,
+	DYLD_CHAINED_STARTS_USE_VM_OFFSET = 2,
+};
+
 struct dyld_chained_ptr_arm64e_rebase {
 	uint64_t target : 43,
 		high8 : 8,

@@ -91,7 +91,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 laddr) {
 	struct MACH0_(obj_t) *mo = MACH0_(new_buf) (bf, buf, &opts);
 	if (mo) {
 		bf->bo->bin_obj = mo;
-		if (mo->chained_starts) {
+		if (MACH0_(has_fixup_chains) (mo)) {
 			RBuffer *nb = rebase_buffer (mo);
 			if (nb != bf->buf) {
 				r_unref (bf->buf);

@@ -10,7 +10,7 @@ static bool addlib(RBinFile *bf, const char *lib) {
 	}
 	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
 	// Chained pointers in bf->buf may have been rebased for analysis.
-	RBuffer *src = mo->chained_starts? mo->b: bf->buf;
+	RBuffer *src = MACH0_(has_fixup_chains) (mo)? mo->b: bf->buf;
 	ut64 size = r_buf_size (src);
 	if (mo->header_at > size || sizeof (struct MACH0_(mach_header)) > size - mo->header_at) {
 		return false;
@@ -687,7 +687,7 @@ static bool symbol_weak(RBinFile *bf, const char *symbol, bool weak) {
 	}
 	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
 	RBuffer *swizzled = NULL;
-	if (mo->chained_starts && mo->b != bf->buf) {
+	if (MACH0_(has_fixup_chains) (mo) && mo->b != bf->buf) {
 		RBuffer *raw = r_buf_new_with_buf (mo->b);
 		if (!raw) {
 			return false;
