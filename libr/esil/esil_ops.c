@@ -1461,7 +1461,7 @@ static bool esil_float_to_double(REsil *esil) {
 			ret = esil_pushnum_float (esil, (double)f.f32);
 		} else if (s == 64) {
 			ret = esil_pushnum_float (esil, d.f64);
-		} else if (s == 80 || s == 96 || s == 128 || s == 256) {
+		} else if (s == 16 || s == 80 || s == 96 || s == 128 || s == 256) {
 			RCFloatProfile profile;
 			if (r_cfloat_profile_from_bits (s, &profile)) {
 				profile.big_endian = false;
