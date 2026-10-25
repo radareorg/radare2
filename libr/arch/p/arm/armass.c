@@ -1289,6 +1289,20 @@ static inline int arm_cond(char *cond_str) {
 	return -1;
 }
 
+/* ldm/stm addressing mode as P << 1 | U, accepting the stack aliases */
+static int arm_ldm_mode(const char *s, bool is_ldm) {
+	const char *modes[] = { "da", "ia", "db", "ib" };
+	const char *ldm_stack[] = { "fa", "fd", "ea", "ed" };
+	const char *stm_stack[] = { "ed", "ea", "fd", "fa" };
+	int i;
+	for (i = 0; i < 4; i++) {
+		if (r_str_startswith (s, modes[i]) || r_str_startswith (s, is_ldm? ldm_stack[i]: stm_stack[i])) {
+			return i;
+		}
+	}
+	return -1;
+}
+
 static st32 thumb_getoffset(char *label, ut64 cur) {
 	st32 res = r_num_math (NULL, label);
 	res -= 4;
@@ -6060,13 +6074,29 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	/* ARM-state LDM/STM (multiple load/store) with addressing suffixes */
 	if (r_str_startswith (ao->op, "ldm") || r_str_startswith (ao->op, "stm")) {
 		bool is_ldm = r_str_startswith (ao->op, "ldm");
-		const char *mop = ao->op + 3; // after ldm/stm
-		/* Default IA if unspecified */
-		int P = 0, U = 1;
-		if (r_str_startswith (mop, "ia")) { P = 0; U = 1; }
-		else if (r_str_startswith (mop, "ib")) { P = 1; U = 1; }
-		else if (r_str_startswith (mop, "da")) { P = 0; U = 0; }
-		else if (r_str_startswith (mop, "db")) { P = 1; U = 0; }
+		char cs[3] = {0};
+		const char *sfx = ao->op + 3; // after ldm/stm
+		int mode = arm_ldm_mode (sfx, is_ldm);
+		if (mode >= 0) {
+			sfx += 2;
+		} else if (strlen (sfx) == 4 && (mode = arm_ldm_mode (sfx + 2, is_ldm)) >= 0) {
+			/* pre-UAL order: ldm<cond><mode> */
+			r_str_ncpy (cs, sfx, sizeof (cs));
+			sfx = "";
+		} else {
+			mode = 1; /* IA if unspecified */
+		}
+		if (*sfx) {
+			if (strlen (sfx) != 2) {
+				return 0;
+			}
+			r_str_ncpy (cs, sfx, sizeof (cs));
+		}
+		cond = *cs? arm_cond (cs): 14;
+		if (cond < 0) {
+			return 0;
+		}
+		int P = mode >> 1, U = mode & 1;
 		/* Merge register list across commas if needed */
 		collect_list (ao);
 		/* parse writeback on Rn (rN!) */
@@ -6081,7 +6111,6 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		}
 		int W = (rn_wb >= 0) ? 1 : 0;
 		int L = is_ldm ? 1 : 0;
-		int cond = 14; /* default AL */
 		/* Build ARM word then swap to byte order expected by tests */
 		ut32 word = 0;
 		word |= ((ut32)cond & 0xF) << 28;
