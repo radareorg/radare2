@@ -113,6 +113,21 @@ a "strexh r2, r5, [r6]" 952fe6e1
 a "strexh r5, r2, [r4]" 925fe4e1
 a "strh r5, [r2, r4]" b45082e1
 aB "strxh r5, [r2, 4]" b450c2e1
+a "mov r0, r1, lsl 2" 0101a0e1
+a "mov r0, r1, lsr r2" 3102a0e1
+a "moveq r3, r4, asr 31" c43fa001
+a "mov r0, r1, ror 7" e103a0e1
+a "movs r0, r1" 0100b0e1
+a "movseq r0, r1, lsl 3" 8101b001
+a "movs r2, 0x3fc" ff2fb0e3
+a "mvns r0, r1" 0100f0e1
+a "mvns r0, 1" 0100f0e3
+a "push {r0-r12, lr}" ff5f2de9
+a "push {r4-r7}" f0002de9
+a "pop {r4-r6, pc}" 7080bde8
+a "popne {r0, r2-r3}" 0d00bd18
+a "cps 19" 130002f1
+a "cps 0x10" 100002f1
 d "addeq r1, r1, r0" 00108100
 d "addeq r1, r1, r2, lsl 2" 02118100
 d "addne r1, r1, ip" 0c108110
