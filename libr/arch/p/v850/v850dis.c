@@ -509,10 +509,15 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 					| V850_OPERAND_PREFOP
 					| V850_OPERAND_FLOAT_CC);
 
+			if (flag == V850_OPERAND_REG) {
+				inst->args[opnum - 1].str = get_v850_reg_name (value);
+			} else if (flag == V850_OPERAND_EP) {
+				inst->args[opnum - 1].str = "ep";
+			}
 			if (!done)
 			switch (flag) {
 			case V850_OPERAND_REG:
-				r_strbuf_append (sb, get_v850_reg_name (value));
+				r_strbuf_append (sb, inst->args[opnum - 1].str);
 				break;
 			case (V850_OPERAND_REG|V850_REG_EVEN):
 				r_strbuf_append (sb, get_v850_reg_name (value * 2));
