@@ -915,10 +915,39 @@ bool test_cons_string_palette_alias(void) {
 	mu_end;
 }
 
+bool test_cons_forward_output(void) {
+	RCons *parent = r_cons_new ();
+	RCons *child = r_cons_new_child (parent);
+	child->output_cons = parent;
+	child->context->noflush = false;
+	r_cons_print (child, "keep\nskip\n");
+	r_cons_grep_expression (child, "keep");
+	r_cons_flush (child);
+	r_cons_write (child, "A\0B", 3);
+	r_cons_flush (child);
+	r_cons_push (child);
+	r_cons_print (child, "private");
+	r_cons_flush (child);
+	size_t size;
+	char *output = r_cons_drain (child, &size);
+	mu_assert_streq (output, "private", "nested capture stays local");
+	free (output);
+	r_cons_pop (child);
+	r_cons_zero (child);
+	output = r_cons_drain (parent, &size);
+	mu_assert_eq (size, 9, "filtered output, raw bytes and NUL separator");
+	mu_assert_true (!memcmp (output, "keep\nA\0B\0", size), "flush preserves filtering and binary output");
+	free (output);
+	r_cons_free (child);
+	r_cons_free (parent);
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_cons);
 	mu_run_test (test_cons_to_html);
 	mu_run_test (test_cons_child_isolation);
+	mu_run_test (test_cons_forward_output);
 	mu_run_test (test_cons_child_concurrent_merge);
 	mu_run_test (test_cons_multiple_roots_same_thread);
 	mu_run_test (test_cons_empty_drain_reuses_buffer);

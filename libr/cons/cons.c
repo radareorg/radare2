@@ -888,7 +888,7 @@ R_API void r_cons_flush(RCons *cons) {
 		r_cons_reset (cons);
 		goto beach;
 	}
-	if (r_cons_is_interactive (cons) && cons->fdout == 1) {
+	if (!cons->output_cons && r_cons_is_interactive (cons) && cons->fdout == 1) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
 		if (ctx->pageable && R_STR_ISNOTEMPTY (cons->pager) && ctx->buffer_len > 0 && r_str_char_count (ctx->buffer, '\n') >= cons->rows) {
 			ctx->buffer[ctx->buffer_len - 1] = 0;
@@ -2188,7 +2188,11 @@ R_API void r_cons_zero(RCons *cons) {
 	if (cons->line) {
 		cons->line->zerosep = true;
 	}
-	if (write (1, "", 1) != 1) {
+	if (cons->context->noflush) {
+		r_cons_write (cons, "", 1);
+	} else if (cons->output_cons) {
+		__cons_write (cons, "", 1);
+	} else if (write (1, "", 1) != 1) {
 		cons->context->breaked = true;
 	}
 }

@@ -9,7 +9,7 @@
 #include <r_main.h>
 #include <r_lib.h>
 
-// R2R db/tools/r2
+// R2R db/tools/r2 db/cmd/cmd_r
 
 #define USE_THREADS 1
 #define ALLOW_THREADED 1
@@ -246,11 +246,11 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 		pj_end (pj);
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		printf ("%s\n", s);
+		r_cons_println (core->cons, s);
 		free (s);
 	} else {
 		if (show) {
-			printf ("%s  r2\n", base);
+			r_cons_printf (core->cons, "%s  r2\n", base);
 		}
 		for (i = ret = 0; vcs[i].name; i++) {
 			struct vcs_t *v = &vcs[i];
@@ -259,7 +259,7 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 				ret = 1;
 			}
 			if (show) {
-				printf ("%s  %s\n", name, v->name);
+				r_cons_printf (core->cons, "%s  %s\n", name, v->name);
 			}
 		}
 		if (ret) {
@@ -269,13 +269,13 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 	return ret;
 }
 
-static int main_help(int line) {
+static int main_help(RCons *cons, int line) {
 	if (line < 2) {
-		printf ("Usage: r2 [-ACdfjLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-c cmd]\n"
+		r_cons_printf (cons, "Usage: r2 [-ACdfjLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-c cmd]\n"
 		"          [-s addr] [-B baddr] [-m maddr] [-i script] [-e k=v] file|pid|-|--|=\n");
 	}
 	if (line != 1) {
-		printf (
+		r_cons_printf (cons,
 			" --           run radare2 without opening any file\n"
 			" -            same as 'r2 malloc://512'\n"
 			" =            read file from stdin (use -i and -c to run cmds)\n"
@@ -386,14 +386,14 @@ static int main_help(int line) {
 
 		char *helpmsg = r_strbuf_drain (sb);
 		if (helpmsg) {
-			printf ("%s", helpmsg);
+			r_cons_printf (cons, "%s", helpmsg);
 			free (helpmsg);
 		}
 	}
 	return 0;
 }
 
-static int main_print_var(const char *var_name) {
+static int main_print_var(RCons *cons, const char *var_name) {
 	int i = 0;
 #ifdef R2__WINDOWS__
 	char *incdir = r_str_r2_prefix (R2_INCDIR);
@@ -415,7 +415,6 @@ static int main_print_var(const char *var_name) {
 	char *homeplugins = r_xdg_datadir ("plugins");
 	char *homezigns = r_xdg_datadir ("zigns");
 	char *homedoc = r_xdg_datadir ("doc");
-	// printf ("homedoc = %s\n", homedoc);
 	char *plugins = r_str_r2_prefix (R2_PLUGINS);
 	char *magicpath = r_str_r2_prefix (R2_SDB_MAGIC);
 	char *historyhome = r_xdg_cachedir ("history");
@@ -489,12 +488,12 @@ static int main_print_var(const char *var_name) {
 		const char *value = R_STR_ISNOTEMPTY (env_value)? env_value: r_str_get (r2_vars[i].value);
 		if (var_name) {
 			if (!strcmp (r2_vars[i].name + delta, var_name)) {
-				printf ("%s\n", value);
+				r_cons_printf (cons, "%s\n", value);
 				free (env_value);
 				break;
 			}
 		} else {
-			printf ("%s=%s\n", r2_vars[i].name, value);
+			r_cons_printf (cons, "%s=%s\n", r2_vars[i].name, value);
 		}
 		free (env_value);
 		i++;
@@ -735,6 +734,12 @@ typedef enum {
 
 typedef struct {
 	RCore *r;
+	RCons *cons;
+	RCons *parent_cons;
+	char *cwd;
+	char *noplugins;
+	int saved_stderr;
+	int sandbox_grain;
 	bool forcequit;
 	bool haveRarunProfile;
 	int do_analysis;
@@ -790,6 +795,20 @@ typedef struct {
 
 static void mainr2_init(RMainRadare2 *mr) {
 	memset (mr, 0, sizeof (RMainRadare2));
+	bool own_cons;
+	mr->cons = r_main_cons_init (&own_cons);
+	mr->saved_stderr = -1;
+	if (!own_cons) {
+		mr->parent_cons = mr->cons;
+		mr->cons = r_cons_new ();
+		mr->cons->is_embedded = true;
+		mr->cons->output_cons = mr->parent_cons;
+		mr->cwd = r_sys_getdir ();
+		mr->noplugins = r_sys_getenv ("R2_NOPLUGINS");
+		mr->sandbox_grain = r_sandbox_grain (R_SANDBOX_GRAIN_ALL);
+		r_sandbox_grain (mr->sandbox_grain);
+		r_sys_setenv ("R2CONS", NULL);
+	}
 	mr->load_l = true;
 	mr->run_rc = true;
 	mr->debugbackend = strdup ("native");
@@ -803,7 +822,22 @@ static void mainr2_init(RMainRadare2 *mr) {
 	mr->prefiles = r_list_newf (free);
 }
 
-static void mainr2_fini(RMainRadare2 *mr) {
+static int mainr2_fini(RMainRadare2 *mr, int ret) {
+	if (mr->th_bin) {
+		r_th_wait (mr->th_bin);
+		r_th_free (mr->th_bin);
+	}
+	if (mr->th_ana) {
+		r_th_wait (mr->th_ana);
+		r_th_free (mr->th_ana);
+	}
+	if (mr->r) {
+		r_core_task_sync_end (&mr->r->tasks);
+	}
+	r_cons_flush (mr->cons);
+	if (mr->parent_cons) {
+		r_cons_merge_output (mr->parent_cons, mr->cons);
+	}
 	r_list_free (mr->cmds);
 	r_list_free (mr->evals);
 	r_list_free (mr->files);
@@ -821,7 +855,30 @@ static void mainr2_fini(RMainRadare2 *mr) {
 	free (mr->debugbackend);
 	free (mr->project_name);
 	free (mr->qjs_script);
-	r_core_free (mr->r);
+	if (mr->r) {
+		r_core_free (mr->r);
+	} else {
+		r_cons_free (mr->cons);
+	}
+	if (mr->parent_cons) {
+#if !__wasi__
+		if (mr->saved_stderr != -1) {
+			fflush (stderr);
+			dup2 (mr->saved_stderr, 2);
+			close (mr->saved_stderr);
+		}
+#endif
+		if (mr->cwd) {
+			r_sys_chdir (mr->cwd);
+		}
+		r_sys_setenv ("R2_NOPLUGINS", mr->noplugins);
+		r_sandbox_grain (mr->sandbox_grain);
+		r_sys_setenv_asut64 ("R2CONS", (ut64)(size_t)mr->parent_cons);
+		r_cons_global (mr->parent_cons);
+	}
+	free (mr->cwd);
+	free (mr->noplugins);
+	return ret;
 }
 
 static char *dp_read(RCore *core) {
@@ -857,16 +914,22 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	int c, ret;
 	RMainRadare2 mr;
 	mainr2_init (&mr);
+	if (mr.parent_cons && !mr.cwd) {
+		R_LOG_ERROR ("Cannot save current directory");
+		return mainr2_fini (&mr, 1);
+	}
 
 #ifdef __UNIX
 	sigset_t sigBlockMask;
 	sigemptyset (&sigBlockMask);
 	sigaddset (&sigBlockMask, SIGWINCH);
-	r_signal_sigmask (SIG_BLOCK, &sigBlockMask, NULL);
+	if (!mr.parent_cons) {
+		r_signal_sigmask (SIG_BLOCK, &sigBlockMask, NULL);
+	}
 #endif
 	r_sys_env_init ();
 	// Create rarun2 profile with startup environ
-	if (r_sys_getenv_asbool ("R2_DEBUG")) {
+	if (!mr.parent_cons && r_sys_getenv_asbool ("R2_DEBUG")) {
 		r_log_set_level (R_LOG_LEVEL_LAST - 1);
 		char *sysdbg = r_sys_getenv ("R2_DEBUG_TOOL");
 		char *fmt = R_STR_ISNOTEMPTY (sysdbg)
@@ -881,8 +944,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		free (sysdbg);
 	}
 	if (argc < 2) {
-		mainr2_fini (&mr);
-		return main_help (1);
+		return mainr2_fini (&mr, main_help (mr.cons, 1));
 	}
 	// Pre-RCore commandline flags
 	RGetopt opt = { 0 };
@@ -904,27 +966,25 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			break;
 		case 'H':
 			if (R_STR_ISNOTEMPTY (opt.place)) {
-				main_print_var (opt.place);
+				main_print_var (mr.cons, opt.place);
 				opt.place = "";
 				opt.ind++;
 			} else if (opt.ind < argc && argv[opt.ind][0] != '-') {
-				main_print_var (argv[opt.ind]);
+				main_print_var (mr.cons, argv[opt.ind]);
 				opt.ind++;
 			} else {
-				main_print_var (NULL);
+				main_print_var (mr.cons, NULL);
 			}
 			mr.leave = true;
 			break;
 		}
 	}
 	if (mr.leave) {
-		mainr2_fini (&mr);
-		return 0;
+		return mainr2_fini (&mr, 0);
 	}
 	if (mr.help > 0) {
-		int ret = main_help (mr.help > 1? 2: 0);
-		mainr2_fini (&mr);
-		return ret;
+		int ret = main_help (mr.cons, mr.help > 1? 2: 0);
+		return mainr2_fini (&mr, ret);
 	}
 	if (mr.show_version) {
 		int mode = 0;
@@ -933,21 +993,21 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		} else if (mr.quiet) {
 			mode = 'q';
 		}
-		int res = r_main_version_print (NULL, "radare2", mode);
-		mainr2_fini (&mr);
-		return res;
+		int res = r_main_version_print (mr.cons, "radare2", mode);
+		return mainr2_fini (&mr, res);
 	}
-	RCore *r = r_core_new ();
-	if (!r) {
+	RCore *r = R_NEW0 (RCore);
+	r->cons = mr.cons;
+	if (!r_core_init (r)) {
+		free (r);
 		R_LOG_ERROR ("Cannot initialize RCore");
-		mainr2_fini (&mr);
-		return 1;
+		return mainr2_fini (&mr, 1);
 	}
 	mr.r = r;
+	r_core_task_sync_begin (&r->tasks);
 	if (!r_core_signal_init (r)) {
 		R_LOG_ERROR ("Cannot initialize user signal handlers");
-		mainr2_fini (&mr);
-		return 1;
+		return mainr2_fini (&mr, 1);
 	}
 	r->r_main_radare2 = r_main_radare2;
 	r->r_main_radiff2 = r_main_radiff2;
@@ -964,12 +1024,10 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	r->io->envprofile = mr.envprofile;
 
-	r_core_task_sync_begin (&mr.r->tasks);
 	if (argc == 2 && !strcmp (argv[1], "-p")) {
 		r_core_project_list (r, 0);
 		r_cons_flush (r->cons);
-		mainr2_fini (&mr);
-		return 0;
+		return mainr2_fini (&mr, 0);
 	}
 	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
 	if (argc > 2 && !strcmp (argv[1], "-") && !strcmp (argv[2], "-i")) {
@@ -980,6 +1038,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	mr.quiet = false;
 	set_color_default (r);
+	if (mr.parent_cons) {
+		r_config_set_i (r->config, "scr.color", mr.parent_cons->context->color_mode);
+	}
 
 	r_getopt_init (&opt, argc, argv, OPTARGS);
 	while ((c = r_getopt_next (&opt)) != -1) {
@@ -1032,8 +1093,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			break;
 		case 'E':
 			ret = r_core_call (r, "ed!");
-			mainr2_fini (&mr);
-			return ret == R_CMD_RC_SUCCESS? 0: 1;
+			return mainr2_fini (&mr, ret == R_CMD_RC_SUCCESS? 0: 1);
 		case 'c':
 			r_list_append (mr.cmds, (void *)strdup (opt.arg));
 			break;
@@ -1045,8 +1105,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			mr.debug = 1;
 #else
 			R_LOG_ERROR ("Sorry. I'm built without debugger support");
-			mainr2_fini (&mr);
-			return 1;
+			return mainr2_fini (&mr, 1);
 #endif
 			break;
 		case 'D':
@@ -1058,8 +1117,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				r_cons_print (r->cons, r_str_get (s));
 				free (s);
 				r_cons_flush (r->cons);
-				mainr2_fini (&mr);
-				return 0;
+				return mainr2_fini (&mr, 0);
 			}
 			break;
 		case 'e':
@@ -1146,8 +1204,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			if (!strcmp (opt.arg, "?")) {
 				r_core_project_list (r, 0);
 				r_cons_flush (r->cons);
-				mainr2_fini (&mr);
-				return 0;
+				return mainr2_fini (&mr, 0);
 			}
 			free (mr.project_name);
 			mr.project_name = strdup (opt.arg);
@@ -1191,6 +1248,10 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			mr.s_seek = strdup (opt.arg);
 			break;
 		case 'S':
+			if (mr.parent_cons) {
+				R_LOG_ERROR ("Sandbox requires a standalone radare2 process");
+				return mainr2_fini (&mr, 1);
+			}
 			mr.sandbox = true;
 			break;
 #if USE_THREADS
@@ -1209,8 +1270,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		case 'V':
 			{
 				int rc = r_main_version_verify (r, 1, mr.json);
-				mainr2_fini (&mr);
-				return rc;
+				return mainr2_fini (&mr, rc);
 			}
 		case 'w':
 			mr.perms |= R_PERM_W;
@@ -1223,44 +1283,28 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			break;
 		}
 	}
-	if (mr.stderrToStdout) {
+	if (mr.stderrToStdout || mr.noStderr) {
 #if __wasi__
-		R_LOG_ERROR ("Redirect stderr to stdout is not supported for this platform");
+		R_LOG_ERROR ("Redirecting stderr is not supported for this platform");
+		return mainr2_fini (&mr, 1);
 #else
-		if (dup2 (1, 2) == -1) {
-			R_LOG_ERROR ("Cannot redirect stderr to stdout");
-			mainr2_fini (&mr);
-			return 1;
-		}
-#endif
-	}
-	if (mr.noStderr) {
-		if (close (2) == -1) {
-			R_LOG_ERROR ("Failed to close stderr");
-			mainr2_fini (&mr);
-			return 1;
-		}
-		const char nul[] = R_SYS_DEVNULL;
-		int new_stderr = open (nul, O_RDWR);
-		if (new_stderr == -1) {
-			R_LOG_ERROR ("Failed to open %s for stderr", nul);
-			mainr2_fini (&mr);
-			return 1;
-		}
-		if (new_stderr != 2) {
-#if !__wasi__
-			if (dup2 (new_stderr, 2) == -1) {
-				R_LOG_ERROR ("Failed to dup2 stderr");
-				mainr2_fini (&mr);
-				return 1;
-			}
-#endif
-			if (close (new_stderr) == -1) {
-				R_LOG_ERROR ("Failed to close %s", nul);
-				mainr2_fini (&mr);
-				return 1;
+		if (mr.parent_cons) {
+			mr.saved_stderr = dup (2);
+			if (mr.saved_stderr == -1) {
+				R_LOG_ERROR ("Cannot save stderr");
+				return mainr2_fini (&mr, 1);
 			}
 		}
+		int fd = mr.noStderr? open (R_SYS_DEVNULL, O_WRONLY): 1;
+		int res = fd == -1? -1: dup2 (fd, 2);
+		if (mr.noStderr && fd != -1 && fd != 2) {
+			close (fd);
+		}
+		if (res == -1) {
+			R_LOG_ERROR ("Cannot redirect stderr");
+			return mainr2_fini (&mr, 1);
+		}
+#endif
 	}
 	{
 		char *msg = dp_read (r);
@@ -1291,8 +1335,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	if (mr.do_list_core_plugins) { // "-LL"
 		r_core_cmd0 (r, mr.json? "Lcj": "Lc");
 		r_cons_flush (r->cons);
-		mainr2_fini (&mr);
-		return 0;
+		return mainr2_fini (&mr, 0);
 	}
 	if (mr.do_list_io_plugins) { // "-L"
 		if (r_config_get_b (r->config, "cfg.plugins")) {
@@ -1301,6 +1344,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		run_commands (r, NULL, mr.prefiles, false, mr.do_analysis);
 		run_commands (r, mr.cmds, mr.files, mr.quiet, mr.do_analysis);
 		if (mr.quiet_leak) {
+			if (mr.parent_cons) {
+				return mainr2_fini (&mr, r->rc);
+			}
 			exit (0);
 		}
 		const char *arg = argv[opt.ind];
@@ -1310,8 +1356,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_core_list_io (r, arg, 0);
 		}
 		r_cons_flush (r->cons);
-		mainr2_fini (&mr);
-		return 0;
+		return mainr2_fini (&mr, 0);
 	}
 	if (mr.json) {
 		if (mr.qjs_script) {
@@ -1321,8 +1366,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		} else {
 			r_core_call (r, "js:");
 		}
-		mainr2_fini (&mr);
-		return 0;
+		return mainr2_fini (&mr, 0);
 	}
 #if R2__WINDOWS__
 	{
@@ -1338,8 +1382,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	if (mr.debug == 1) {
 		if (opt.ind >= argc && !mr.haveRarunProfile) {
 			R_LOG_ERROR ("Missing argument for -d");
-			mainr2_fini (&mr);
-			return 1;
+			return mainr2_fini (&mr, 1);
 		}
 		const char *src = mr.haveRarunProfile? mr.pfile: argv[opt.ind];
 		if (R_STR_ISNOTEMPTY (src)) {
@@ -1377,8 +1420,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	if (mr.project_name) {
 		if (!r_core_project_open (r, mr.project_name)) {
 			R_LOG_ERROR ("Cannot find project");
-			mainr2_fini (&mr);
-			return 1;
+			return mainr2_fini (&mr, 1);
 		}
 	}
 
@@ -1386,8 +1428,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		const char *uri = argv[opt.ind];
 		if (opt.ind >= argc) {
 			R_LOG_ERROR ("Missing URI for -C");
-			mainr2_fini (&mr);
-			return 1;
+			return mainr2_fini (&mr, 1);
 		}
 		if (strstr (uri, "://")) {
 			r_core_cmdf (r, "=+ %s", uri);
@@ -1432,13 +1473,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	if (R_STR_ISNOTEMPTY (mr.pfile) && r_file_is_directory (mr.pfile)) {
 		if (mr.debug) {
 			R_LOG_ERROR ("Cannot debug directories, yet");
-			mainr2_fini (&mr);
-			return 1;
+			return mainr2_fini (&mr, 1);
 		}
 		if (!r_sys_chdir (argv[opt.ind])) {
 			R_LOG_ERROR ("Cannot open directory");
-			mainr2_fini (&mr);
-			return 1;
+			return mainr2_fini (&mr, 1);
 		}
 	} else if (argv[opt.ind] && !strcmp (argv[opt.ind], "=")) {
 		int sz;
@@ -1447,15 +1486,15 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		eprintf ("^D\n");
 		r_cons_set_raw (r->cons, false);
 #if R2__UNIX__
-		// TODO: keep flags :?
-		R_UNUSED_RESULT (freopen ("/dev/tty", "rb", stdin));
-		R_UNUSED_RESULT (freopen ("/dev/tty", "w", stdout));
-		R_UNUSED_RESULT (freopen ("/dev/tty", "w", stderr));
+		if (!mr.parent_cons) {
+			R_UNUSED_RESULT (freopen ("/dev/tty", "rb", stdin));
+			R_UNUSED_RESULT (freopen ("/dev/tty", "w", stdout));
+			R_UNUSED_RESULT (freopen ("/dev/tty", "w", stderr));
+		}
 #else
 		R_LOG_ERROR ("Cannot reopen stdin without UNIX");
 		free (buf);
-		mainr2_fini (&mr);
-		return 1;
+		return mainr2_fini (&mr, 1);
 #endif
 		if (buf && sz > 0) {
 			char *path = r_str_newf ("malloc://%d", sz);
@@ -1465,8 +1504,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				free (buf);
 				R_LOG_ERROR ("Cannot open '%s'", path);
 				free (path);
-				mainr2_fini (&mr);
-				return 1;
+				return mainr2_fini (&mr, 1);
 			}
 			size_t size = r_io_fd_size (r->io, mr.fh->fd);
 			r_io_map_add (r->io, mr.fh->fd, 7, 0LL, mr.mapaddr, size);
@@ -1478,8 +1516,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		} else {
 			R_LOG_ERROR ("Cannot slurp from stdin");
 			free (buf);
-			mainr2_fini (&mr);
-			return 1;
+			return mainr2_fini (&mr, 1);
 		}
 	} else if (strcmp (argv[opt.ind - 1], "--") && !mr.project_name) {
 		if (mr.asmarch) {
@@ -1503,8 +1540,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			mr.perms = R_PERM_RWX;
 			if (opt.ind >= argc) {
 				R_LOG_ERROR ("No program given to -d");
-				mainr2_fini (&mr);
-				return 1;
+				return mainr2_fini (&mr, 1);
 			}
 			if (mr.debug == 2) {
 				if (strstr (mr.pfile, "sysgdb://")) {
@@ -2065,6 +2101,10 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			}
 		}
 		r_core_project_undirty (r);
+		if (mr.parent_cons && !mr.quiet && r_cons_is_interactive (mr.parent_cons)) {
+			r_cons_flush (mr.parent_cons);
+			r->cons->output_cons = NULL;
+		}
 		for (;;) {
 			if (!r_core_prompt_loop (r)) {
 				mr.quiet_leak = true;
@@ -2153,20 +2193,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	ret = r->rc;
 beach:
-	if (mr.quiet_leak) {
+	if (mr.quiet_leak && !mr.parent_cons) {
 		exit (r->rc);
-		return ret;
 	}
-	if (mr.th_bin) {
-		r_th_wait (mr.th_bin);
-		r_th_free (mr.th_bin);
-		mr.th_bin = NULL;
-	}
-	if (mr.th_ana) {
-		r_th_wait (mr.th_ana);
-		r_th_free (mr.th_ana);
-	}
-	r_core_task_sync_end (&r->tasks);
-	mainr2_fini (&mr);
-	return (ret < 0? 0: ret);
+	return mainr2_fini (&mr, ret < 0? 0: ret);
 }

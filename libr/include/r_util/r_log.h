@@ -72,6 +72,7 @@ R_API void r_log_message(RLogLevel level, const char *origin, const char *func, 
 R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func, int line, const char *fmt, va_list ap) R_PRINTF_CHECK(5, 0);
 R_API void r_log_add_callback(RLogCallback cb, void *user);
 R_API void r_log_del_callback(RLogCallback cb);
+R_API void r_log_del_callback_user(RLogCallback cb, void *user);
 
 #if R_LOG_DISABLE
 #define R_LOG(f,...) do {} while(0)

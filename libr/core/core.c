@@ -2954,7 +2954,8 @@ R_API void r_core_fini(RCore *c) {
 		pending_usr1 = pending_usr2 = 0;
 	}
 #endif
-	r_log_add_callback (cbcore, NULL);
+	r_log_del_callback_user (cbcore, c);
+	r_config_set_b (c->config, "log.cons", false);
 	r_core_task_cancel_all (c, true);
 	r_core_task_join (&c->tasks, NULL, -1);
 	r_core_wait (c);

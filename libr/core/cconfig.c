@@ -1696,7 +1696,12 @@ static bool cb_cfgsanbox_grain(void *user, void *data) {
 }
 
 static bool cb_cfgsanbox(void *user, void *data) {
+	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
+	if (node->i_value && core->cons->is_embedded && !r_sandbox_enable (false)) {
+		R_LOG_ERROR ("Sandbox requires a standalone radare2 process");
+		return false;
+	}
 	int ret = r_sandbox_enable (node->i_value);
 	if (node->i_value != ret) {
 		R_LOG_ERROR ("Cannot disable sandbox");
@@ -3928,12 +3933,12 @@ static bool cb_log_cons(void *user, int level, const char *origin, const char *m
 static bool cb_config_log_cons(void *coreptr, void *nodeptr) {
 	RCore *core = (RCore *)coreptr;
 	RConfigNode *node = (RConfigNode *)nodeptr;
+	r_log_del_callback_user (cb_log_cons, core);
 	if (r_str_is_true (node->value)) {
 		r_config_set_b (core->config, "log.quiet", true);
 		r_log_add_callback (cb_log_cons, core);
 	} else {
 		r_config_set_b (core->config, "log.quiet", false);
-		r_log_del_callback (cb_log_cons);
 	}
 	return true;
 }
