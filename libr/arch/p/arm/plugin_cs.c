@@ -64,7 +64,7 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 #define MEMINDEX64(x) r_str_getf (cs_reg_name (*handle, insn->detail->arm64.operands[x].mem.index))
 #define HASMEMINDEX64(x) ((arm64_reg)insn->detail->arm64.operands[x].mem.index != ARM64_REG_INVALID)
 #define ISMEMINDEXSUB(x) insn->detail->arm.operands[x].subtracted
-#define MEMDISP(x) insn->detail->arm.operands[x].mem.disp
+#define MEMDISP(x) arm_mem_disp32 (&insn->detail->arm.operands[x])
 #define MEMDISP64(x) (ut64)insn->detail->arm64.operands[x].mem.disp
 #define ISIMM(x) (insn->detail->arm.operands[x].type == ARM_OP_IMM)
 #define ISIMM64(x) ((arm64_op_type)insn->detail->arm64.operands[x].type & (ARM64_OP_IMM | ARM64_OP_CIMM | ARM64_OP_FP))
@@ -970,6 +970,12 @@ static const char *decode_shift_64(arm64_shifter shift) {
 
 #define DECODE_SHIFT(x) decode_shift(insn->detail->arm.operands[x].shift.type)
 #define DECODE_SHIFT64(x) decode_shift_64(insn->detail->arm64.operands[x].shift.type)
+
+static int arm_mem_disp32(const cs_arm_op *operand) {
+	// Capstone 6 reports subtraction separately from the displacement.
+	const int disp = operand->mem.disp;
+	return operand->subtracted && disp > 0? -disp: disp;
+}
 
 static unsigned int regsize32(cs_insn *insn, int n) {
 	R_RETURN_VAL_IF_FAIL (n >= 0 && n < insn->detail->arm.op_count, 0);
@@ -2959,7 +2965,7 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 				r_strbuf_appendf (&op->esil, "%s,", REG (0));
 			}
 			if (REGBASE (1) == ARM_REG_PC) {
-				r_strbuf_appendf (&op->esil, "0x%" PFMT64x, (addr & ~3ULL) + pcdelta + MEMDISP (1));
+				r_strbuf_appendf (&op->esil, "0x%" PFMT64x, (ut64)(ut32)((addr & ~3ULL) + pcdelta + MEMDISP (1)));
 			} else {
 				r_strbuf_appendf (&op->esil, "%d,%s,+,0xffffffff,&", MEMDISP (1), MEMBASE (1));
 			}
@@ -2975,11 +2981,11 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 	case ARM_INS_VMUL:
 	case ARM_INS_VDIV:
 		if (OPCOUNT () == 3 && ISREG (0) && ISREG (1) && ISREG (2) &&
-				((REGID (0) >= ARM_REG_S0 && REGID (0) <= ARM_REG_S31) ||
-				(REGID (0) >= ARM_REG_D0 && REGID (0) <= ARM_REG_D31)) &&
-				REGSIZE32 (0) == REGSIZE32 (1) && REGSIZE32 (0) == REGSIZE32 (2) &&
-				(insn->detail->arm.vector_data == ARM_VECTORDATA_F32 ||
-				insn->detail->arm.vector_data == ARM_VECTORDATA_F64)) {
+				((REGID (0) >= ARM_REG_S0 && REGID (0) <= ARM_REG_S31 &&
+				insn->detail->arm.vector_data == ARM_VECTORDATA_F32) ||
+				(REGID (0) >= ARM_REG_D0 && REGID (0) <= ARM_REG_D31 &&
+				insn->detail->arm.vector_data == ARM_VECTORDATA_F64)) &&
+				REGSIZE32 (0) == REGSIZE32 (1) && REGSIZE32 (0) == REGSIZE32 (2)) {
 			const char *math = insn->id == ARM_INS_VADD? "+": insn->id == ARM_INS_VSUB? "-": insn->id == ARM_INS_VMUL? "*": "/";
 			r_strbuf_appendf (&op->esil, "%u,DUP,%s,F2D,%u,%s,F2D,F%s,D2F,%s,=",
 				REGBITS32 (0), REG (2), REGBITS32 (0), REG (1), math, REG (0));
@@ -3002,11 +3008,13 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 				bits, right, bits, REG (0), bits, right, bits, REG (0));
 		}
 		break;
+#if CS_API_MAJOR < 6
 	case ARM_INS_FMSTAT:
+#endif
 	case ARM_INS_VMRS:
 		if (!OPCOUNT () || REGID (0) == ARM_REG_APSR_NZCV) {
 			r_strbuf_append (&op->esil, "31,fpscr,>>,1,&,nf,:=,30,fpscr,>>,1,&,zf,:=,29,fpscr,>>,1,&,cf,:=,28,fpscr,>>,1,&,vf,:=");
-		} else {
+		} else if (OPCOUNT () == 2 && REGID (1) == ARM_REG_FPSCR) {
 			r_strbuf_appendf (&op->esil, "fpscr,%s,=", REG (0));
 		}
 		break;
@@ -3848,7 +3856,9 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 	// many errors
 	if (insn->detail->arm.update_flags) {
 		switch(insn->id) {
+#if CS_API_MAJOR < 6
 		case ARM_INS_FMSTAT:
+#endif
 		case ARM_INS_VMRS:
 		case ARM_INS_VMSR:
 		case ARM_INS_VCMP:
@@ -4599,20 +4609,24 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->family = R_ANAL_OP_FAMILY_FPU;
 		op->ptrsize = REGSIZE32 (0);
 		if (ISMEM (1) && REGBASE (1) == ARM_REG_PC) {
-			op->ptr = (addr & ~3ULL) + (thumb? 4: 8) + MEMDISP (1);
+			op->ptr = (ut32)((addr & ~3ULL) + (thumb? 4: 8) + MEMDISP (1));
 			op->refptr = REGSIZE32 (0);
 		}
 		break;
 	case ARM_INS_VADD:
 	case ARM_INS_VSUB:
 		op->type = insn->id == ARM_INS_VADD? R_ANAL_OP_TYPE_ADD: R_ANAL_OP_TYPE_SUB;
-		op->family = R_ANAL_OP_FAMILY_FPU;
+		if (op->family != R_ANAL_OP_FAMILY_VEC) {
+			op->family = R_ANAL_OP_FAMILY_FPU;
+		}
 		break;
 	case ARM_INS_VCMPE:
 		op->type = R_ANAL_OP_TYPE_CMP;
 		op->family = R_ANAL_OP_FAMILY_FPU;
 		break;
+#if CS_API_MAJOR < 6
 	case ARM_INS_FMSTAT:
+#endif
 	case ARM_INS_VMRS:
 	case ARM_INS_VMSR:
 		op->type = R_ANAL_OP_TYPE_MOV;
@@ -4737,7 +4751,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->cycles = 4;
 		/* fall-thru */
 	case ARM_INS_VMUL:
-		if (insn->id == ARM_INS_VMUL) {
+		if (insn->id == ARM_INS_VMUL && op->family != R_ANAL_OP_FAMILY_VEC) {
 			op->family = R_ANAL_OP_FAMILY_FPU;
 		}
 		op->type = R_ANAL_OP_TYPE_MUL;
@@ -5269,7 +5283,7 @@ static void set_src_dst(RAnalOp *op, RAnalValue *val, csh *handle, cs_insn *insn
 			val->type = R_ANAL_VAL_MEM;
 			val->memref = arm_memref_size (op, insn, x, bits);
 			val->mul = armop.mem.scale;
-			val->delta = armop.mem.disp;
+			val->delta = arm_mem_disp32 (&armop);
 			break;
 		case ARM_OP_IMM:
 			val->type = R_ANAL_VAL_IMM;

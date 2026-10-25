@@ -1267,7 +1267,7 @@ static bool op_dst_is_stack_reg(RAnal *anal, RAnalOp *op) {
 	}
 	const char *sp = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
 	const char *bp = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
-	return (bp && !strcmp (bp, val->reg)) || (sp && !strcmp (sp, val->reg));
+	return r_anal_reg_same (anal, bp, val->reg) || r_anal_reg_same (anal, sp, val->reg);
 }
 
 static bool extract_arg_from_immop(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, R_OUT st64 *ptr) {
@@ -1280,16 +1280,16 @@ static bool extract_arg_from_immop(RAnal *anal, RAnalFunction *fcn, RAnalOp *op,
 	}
 	// =BP is a guess on ABIs with no architectural frame pointer (ppc r31), so it only homes locals once proven
 	const char *sp = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
-	if ((!sp || strcmp (reg, sp)) && !fcn->bp_from_sp) {
+	if (!r_anal_reg_same (anal, reg, sp) && !fcn->bp_from_sp) {
 		return false;
 	}
 	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
 	RAnalValue *base = RVecRArchValue_at (&op->srcs, 0);
 	RAnalValue *imm = RVecRArchValue_at (&op->srcs, 1);
-	if (op_dst_is_stack_reg (anal, op) && dst && dst->reg && !strcmp (dst->reg, reg)) {
+	if (op_dst_is_stack_reg (anal, op) && dst && r_anal_reg_same (anal, dst->reg, reg)) {
 		return false;
 	}
-	if (!base || !imm || !base->reg || strcmp (reg, base->reg) || imm->reg) {
+	if (!base || !imm || !r_anal_reg_same (anal, reg, base->reg) || imm->reg) {
 		return false;
 	}
 	st64 delta = (ot == R_ANAL_OP_TYPE_SUB) ? -imm->imm : imm->imm;
@@ -1313,8 +1313,8 @@ static bool op_is_stack_frame_setup(RAnal *anal, RAnalOp *op, const char *reg) {
 	}
 	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
 	RAnalValue *base = RVecRArchValue_at (&op->srcs, 0);
-	return dst && dst->reg && strcmp (dst->reg, reg)
-		&& base && base->reg && !base->memref && !strcmp (base->reg, reg);
+	return dst && dst->reg && !r_anal_reg_same (anal, dst->reg, reg)
+		&& base && !base->memref && r_anal_reg_same (anal, base->reg, reg);
 }
 
 // the ppc PLT/call stubs save the TOC pointer (std/ld r2, N(r1)) into the caller linkage area, which is not an incoming stack arg
