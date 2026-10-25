@@ -2260,3 +2260,122 @@ EXPECT=<<EOF
 0x2000000000000000
 EOF
 RUN
+
+NAME=cmpxchg stores the source when the accumulator matches
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx 480fb1cb
+ar rax=0x1234
+ar rbx=0x1234
+ar rcx=0x5678
+aes
+ar rax
+ar rbx
+ar zf
+EOF
+EXPECT=<<EOF
+0x00001234
+0x00005678
+0x00000001
+EOF
+RUN
+
+NAME=cmpxchg loads the destination into the accumulator when they differ
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx 480fb1cb
+ar rax=0x1000
+ar rbx=0x2000
+ar rcx=0x5678
+aes
+ar rax
+ar rbx
+ar zf
+ar cf
+EOF
+EXPECT=<<EOF
+0x00002000
+0x00002000
+0x00000000
+0x00000001
+EOF
+RUN
+
+NAME=cmpxchg r32 zero-extends the register it stores or loads
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx 0fb1cb0fb1cb
+ar rax=0xffffffff00000005
+ar rbx=0xeeeeeeee00000005
+ar rcx=0xdddddddd00000007
+aes
+ar rax
+ar rbx
+ar rbx=0xeeeeeeee00000006
+aes
+ar rax
+EOF
+EXPECT=<<EOF
+0xffffffff00000005
+0x00000007
+0x00000006
+EOF
+RUN
+
+NAME=cmpxchg r16 sets the cmp flags and keeps the upper accumulator bits
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx 660fb1cb
+ar rax=0xffff8000
+ar rbx=0x1
+aes
+ar rax
+ar zf
+ar of
+ar af
+EOF
+EXPECT=<<EOF
+0xffff0001
+0x00000000
+0x00000001
+0x00000001
+EOF
+RUN
+
+NAME=lock cmpxchg on memory
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx 2211000000000000 @ 0x80
+wx f0480fb10ef0480fb10e
+ar rsi=0x80
+ar rax=0x1122
+ar rcx=0x99
+aes
+ar zf
+p8 8 @ 0x80
+aes
+ar zf
+ar rax
+EOF
+EXPECT=<<EOF
+0x00000001
+9900000000000000
+0x00000000
+0x00000099
+EOF
+RUN

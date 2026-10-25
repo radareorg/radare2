@@ -407,6 +407,13 @@ static char *add_flags(ut32 bitsize) {
 		bitsize - 1, bitsize - 1, bitsize - 1);
 }
 
+// the flags of dst - src, shared by cmp and cmpxchg
+static char *cmp_flags(const char *src, const char *dst, ut32 bitsize) {
+	return r_str_newf ("%s,%s,==,$z,zf,:=,%u,$b,cf,:=,$p,pf,:=,%u,$s,sf,:=,"
+		"%s,0x%"PFMT64x",-,!,%u,$o,^,of,:=,4,$b,af,:=",
+		src, dst, bitsize, bitsize - 1, src, (ut64)(1ULL << (bitsize - 1)), bitsize - 1);
+}
+
 static char *getarg(struct Getarg* gop, int n, int set, char *setop, ut32 *bitsize) {
 	const char *setarg = r_str_get (setop);
 	cs_insn *insn = gop->insn;
@@ -1504,10 +1511,9 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 				esilprintf (op, "0,%s,%s,&,==,$z,zf,:=,$p,pf,:=,%u,$s,sf,:=,0,cf,:=,0,of,:=",
 					src, dst, bitsize - 1);
 			} else if (insn->id == X86_INS_CMP) {
-				esilprintf (op,
-					"%s,%s,==,$z,zf,:=,%u,$b,cf,:=,$p,pf,:=,%u,$s,sf,:=,"\
-					"%s,0x%"PFMT64x",-,!,%u,$o,^,of,:=,4,$b,af,:=",
-					src, dst, bitsize, bitsize - 1, src, (ut64)(1ULL << (bitsize - 1)), bitsize - 1);
+				char *flags = cmp_flags (src, dst, bitsize);
+				esilprintf (op, "%s", flags);
+				free (flags);
 			} else {
 				char *rsrc = (char *)cs_reg_name (handle, INSOP(1).mem.base);
 				char *rdst = (char *)cs_reg_name (handle, INSOP(0).mem.base);
@@ -2519,6 +2525,36 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 				esilprintf (op, "%s,DUP,%s,+,SWAP,%s,=,%s,%s", dst, src, src, dst2, fl);
 			}
 			free (fl);
+			free (src);
+			free (dst);
+			free (dst2);
+		}
+		break;
+	case X86_INS_CMPXCHG:
+		{
+			ut32 bitsize;
+			dst = getarg (&gop, 0, 0, NULL, &bitsize);
+			src = getarg (&gop, 1, 0, NULL, NULL);
+			if (!bitsize || bitsize > 64) {
+				free (src);
+				free (dst);
+				break;
+			}
+			const char *acc = (bitsize == 8)? "al": (bitsize == 16)? "ax": (bitsize == 32)? "eax": "rax";
+			// the flags of acc - dst
+			char *flags = cmp_flags (dst, acc, bitsize);
+			// a 32-bit write zero-extends only the register it lands in
+			const char *load = (gop.bits == 64 && bitsize == 32)? "rax": acc;
+			char dst64[16];
+			if (INSOP (0).type == X86_OP_MEM) {
+				dst2 = getarg (&gop, 0, 1, NULL, NULL);
+			} else if (gop.bits == 64 && get64from32 (dst, dst64, sizeof (dst64))) {
+				dst2 = r_str_newf ("%s,=", dst64);
+			} else {
+				dst2 = r_str_newf ("%s,=", dst);
+			}
+			esilprintf (op, "%s,zf,?{,%s,%s,}{,%s,%s,=,}", flags, src, dst2, dst, load);
+			free (flags);
 			free (src);
 			free (dst);
 			free (dst2);

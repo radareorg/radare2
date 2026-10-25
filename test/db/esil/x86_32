@@ -2744,3 +2744,29 @@ EXPECT=<<EOF
 0x20000000
 EOF
 RUN
+
+NAME=cmpxchg on memory in 32-bit mode
+FILE=malloc://0x100
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+aei
+aeim
+wx 22110000 @ 0x80
+wx 0fb10e0fb10e
+ar esi=0x80
+ar eax=0x1122
+ar ecx=0x99
+aes
+ar zf
+p8 4 @ 0x80
+aes
+ar zf
+ar eax
+EOF
+EXPECT=<<EOF
+0x00000001
+99000000
+0x00000000
+0x00000099
+EOF
+RUN
