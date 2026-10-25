@@ -277,7 +277,7 @@ static int disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 	obj.symbol_at_address_func = &symbol_at_address;
 	obj.memory_error_func = &memory_error_func;
 	obj.print_address_func = &generic_print_address_func;
-	obj.endian = !r_arm_code_is_big_endian (as->config);
+	obj.endian = !arm_code_is_be (as->config);
 	obj.fprintf_func = &generic_fprintf_func;
 	obj.stream = insn_buffer;
 	obj.bytes_per_chunk = obj.bytes_per_line = (bits / 8);
@@ -330,7 +330,7 @@ static int arm_op32(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *data, i
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 
-	if (r_arm_code_is_big_endian (as->config)) {
+	if (arm_code_is_be (as->config)) {
 		int i;
 		const int oplen = R_MIN (len, 4);
 		for (i = 0; i < oplen; i++) {

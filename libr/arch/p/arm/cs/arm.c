@@ -15,7 +15,7 @@ static inline int cs_mode_for_session(RArchSession *as) {
 	if (as->config->bits == 64) {
 		mode = 0;
 	}
-	mode |= r_arm_code_is_big_endian (as->config)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	mode |= arm_code_is_be (as->config)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	if (R_STR_ISNOTEMPTY (as->config->cpu)) {
 		if (strstr (as->config->cpu, "cortex")) {
 			mode |= CS_MODE_MCLASS;
