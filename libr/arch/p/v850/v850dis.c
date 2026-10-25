@@ -308,36 +308,42 @@ static char *distillate(v850np_inst *inst, const char *esilfmt, ut64 memaddr) {
 			r_strbuf_append_n (sb, &ch, 1);
 			esilfmt++;
 		}
-		r_list_free (args);
 	}
 	char *res = r_strbuf_drain (sb);
-	if (r_str_startswith (res, "DISPOSE,")) {
-		RList *regs = r_str_split_list (res + 8, ",", 0);
+	const bool prepare = r_str_startswith (res, "PREPARE,");
+	if (prepare || r_str_startswith (res, "DISPOSE,")) {
+		const int list_index = prepare? 0: 1;
+		const int allocation = inst->args[prepare? 1: 0].value * 4;
+		RList *regs = r_str_split_list (r_list_get_n (args, list_index), ",", 0);
 		RListIter *iter;
 		char *reg;
-		RStrBuf *sb2 = r_strbuf_new ("");
-		int count = 0;
-		r_list_foreach (regs, iter, reg) {
-			r_strbuf_appendf (sb2, "%ssp,[4],%s,:=,4,sp,+=", count?",":"", reg);
-			count ++;
+		RStrBuf *stack = r_strbuf_new ("");
+		if (prepare) {
+			r_list_foreach (regs, iter, reg) {
+				if (*reg) {
+					r_strbuf_appendf (stack, "4,sp,-=,%s,sp,0xfffffffc,&,=[4],", reg);
+				}
+			}
+			r_strbuf_appendf (stack, "%d,sp,-=", allocation);
+			if (inst->op->operands[2]) {
+				r_strbuf_appendf (stack, ",%s,ep,:=", (char *)r_list_get_n (args, 2));
+			}
+		} else {
+			r_strbuf_appendf (stack, "%d,sp,+=", allocation);
+			r_list_foreach_prev (regs, iter, reg) {
+				if (*reg) {
+					r_strbuf_appendf (stack, ",sp,0xfffffffc,&,[4],%s,:=,4,sp,+=", reg);
+				}
+			}
+			if (inst->op->operands[2]) {
+				r_strbuf_appendf (stack, ",%s,PC,:=", (char *)r_list_get_n (args, 2));
+			}
 		}
 		free (res);
-		res = r_strbuf_drain (sb2);
-		r_list_free (regs);
-	} else if (r_str_startswith (res, "PREPARE,")) {
-		RList *regs = r_str_split_list (res + 8, ",", 0);
-		RListIter *iter;
-		char *reg;
-		RStrBuf *sb2 = r_strbuf_new ("");
-		int count = 0;
-		r_list_foreach (regs, iter, reg) {
-			r_strbuf_appendf (sb2, "%s4,sp,-=,%s,sp,=[4]", count?",":"", reg);
-			count ++;
-		}
-		free (res);
-		res = r_strbuf_drain (sb2);
+		res = r_strbuf_drain (stack);
 		r_list_free (regs);
 	}
+	r_list_free (args);
 	return res;
 }
 

@@ -867,9 +867,16 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->jump = addr + inst.value;
 		op->fail = addr + inst.size;
 		break;
+	case R_ANAL_OP_TYPE_PUSH:
 	case R_ANAL_OP_TYPE_POP:
-		if (inst.op && inst.op->esil && strstr (inst.op->esil, "#2")) {
-			op->type = R_ANAL_OP_TYPE_RET;
+		if (inst.op && (!strcmp (inst.op->name, "prepare") || !strcmp (inst.op->name, "dispose"))) {
+			const bool prepare = op->type == R_ANAL_OP_TYPE_PUSH;
+			const int saved = r_bits_popcount32 (inst.args[prepare? 0: 1].value);
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = 4 * (saved + inst.args[prepare? 1: 0].value) * (prepare? 1: -1);
+			if (!prepare && inst.op->operands[2]) {
+				op->type = inst.args[2].value == 31? R_ANAL_OP_TYPE_RET: R_ANAL_OP_TYPE_RJMP;
+			}
 		}
 		break;
 	case R_ANAL_OP_TYPE_CALL:
@@ -888,6 +895,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	if (inst.op) {
 		fill_operands (op, &inst, mask);
 	}
+	free (inst.esil);
 	op->size = inst.size;
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		if (as->config->syntax == R_ARCH_SYNTAX_ATT) {

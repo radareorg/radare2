@@ -702,3 +702,53 @@ ld.w 0xfffff008, r6
 0x0000000c -4088,r0,+,[4],r6,:=,0,r0,:=
 EOF
 RUN
+
+NAME=v850 prepare and dispose allocate the full frame and restore in reverse order
+FILE=malloc://1024
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+wx 8807610048067f00
+ao 1~^stack
+ao 1 @4~^stack
+aei
+ar sp=0x300
+ar r29=0x11223344
+ar lp=0x88
+ar pc=0
+aes
+ar sp
+pxw 8 @0x2f8
+ar r29=0
+ar lp=0
+aes
+ar sp
+ar r29
+ar lp
+ar pc
+EOF
+EXPECT=<<EOF
+stackop: inc
+stackptr: 24
+stackop: inc
+stackptr: 18446744073709551592
+0x000002e8
+0x000002f8  0x00000088 0x11223344                        ....D3".
+0x00000300
+0x11223344
+0x00000088
+0x00000088
+EOF
+RUN
+
+NAME=v850 prepare locals are not stack arguments
+FILE=malloc://64
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+wx 880761004307000048067f00
+af frame
+afvs
+EOF
+EXPECT=<<EOF
+var int8_t var_0h @ sp+0x0
+EOF
+RUN
