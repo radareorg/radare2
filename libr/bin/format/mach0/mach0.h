@@ -173,6 +173,9 @@ struct MACH0_(obj_t) {
 	int nsegs;
 	int segs_count;
 	struct r_dyld_chained_starts_in_segment **chained_starts;
+	ut64 *fw_chain_starts;
+	ut32 fw_chain_count;
+	ut16 fw_pointer_format;
 	struct dyld_chained_fixups_header fixups_header;
 	ut64 fixups_offset;
 	ut64 fixups_size;
@@ -317,5 +320,6 @@ int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header) *hdr);
 struct MACH0_(mach_header) *MACH0_(get_hdr)(RBuffer *buf);
 char *MACH0_(mach_headerfields)(RBinFile *bf, int mode);
 RList *MACH0_(mach_fields)(RBinFile *bf);
+bool MACH0_(has_fixup_chains)(struct MACH0_(obj_t) *mo);
 void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) *obj, ut64 limit_start, ut64 limit_end, ut32 event_mask, RFixupCallback callback, void *context);
 #endif
