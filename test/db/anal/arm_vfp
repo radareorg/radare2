@@ -118,3 +118,25 @@ EXPECT=<<EOF
 8
 EOF
 RUN
+
+NAME=ARM32 single precision VFP arithmetic preserves infinities
+FILE=malloc://64
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 601a30ee
+aei
+ar s1=0x3f800000
+ar s0=0x7f800000
+ar pc=0
+aes
+ar s2
+ar s0=0xff800000
+ar pc=0
+aes
+ar s2
+EOF
+EXPECT=<<EOF
+0x7f800000
+0xff800000
+EOF
+RUN

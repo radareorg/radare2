@@ -1418,11 +1418,11 @@ static bool esil_double_to_float(REsil *esil) {
 	const RStrs src = r_esil_pop (esil);
 
 	if (r_esil_get_parm (esil, src, &s) && esil_get_parm_float_strs (esil, dst, &d.f64)) {
-		if (isnan (d.f64) || isinf (d.f64)) {
-			ret = r_esil_pushnum (esil, d.u64);
-		} else if (s == 32) {
+		if (s == 32) {
 			f.f32 = (float)d.f64;
 			ret = r_esil_pushnum (esil, f.u32);
+		} else if (isnan (d.f64) || isinf (d.f64)) {
+			ret = r_esil_pushnum (esil, d.u64);
 		} else if (s == 64) {
 			ret = r_esil_pushnum (esil, d.u64);
 		} else if (s == 80 || s == 96 || s == 128 || s == 256) {
