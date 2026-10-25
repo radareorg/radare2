@@ -265,43 +265,33 @@ static bool print_reglist(RStrBuf *sb, v850np_inst *inst, const struct v850_oper
 	return true;
 }
 
-static char *distillate(v850np_inst *inst, const char *esilfmt) {
+static char *distillate(v850np_inst *inst, const char *esilfmt, ut64 memaddr) {
 	RStrBuf *sb = r_strbuf_new ("");
-	RList *args = NULL;
-	char *arg = strchr (inst->text, ' ');
-	char *p = inst->text;
-	bool in_list = false;
-	while (*p) {
-		if (*p == '{') {
-			in_list = true;
-		} else if (*p == '}') {
-			in_list = false;
-		} else if (in_list) {
-			if (*p == ',') {
-				*p = ';';
-			}
+	RList *args = r_list_newf (free);
+	int i;
+	// ESIL operands must not depend on absolute-address display formatting.
+	for (i = 0; i < R_ARRAY_SIZE (inst->args) && inst->op->operands[i]; i++) {
+		const struct v850_operand *operand = &v850_operands[inst->op->operands[i]];
+		const st64 value = inst->args[i].value;
+		RStrBuf *arg = r_strbuf_new ("");
+		if (operand->flags & V850_OPERAND_REG) {
+			r_strbuf_append (arg, get_v850_reg_name ((operand->flags & V850_REG_EVEN)? value * 2: value));
+		} else if (operand->flags & V850_OPERAND_EP) {
+			r_strbuf_append (arg, "ep");
+		} else if (operand->flags & V850_OPERAND_SRG) {
+			r_strbuf_append (arg, get_v850_sreg_name (value));
+		} else if (operand->flags & V850_OPERAND_CC) {
+			r_strbuf_append (arg, get_v850_cc_name (value));
+		} else if (operand->flags & V850E_OPERAND_REG_LIST) {
+			print_reglist (arg, inst, operand, value);
+		} else {
+			print_value (arg, operand->flags, memaddr, value);
 		}
-		p++;
-	}
-	if (arg) {
-		arg = strdup (arg + 1);
-		arg = r_str_replace (arg, "{", "", true);
-		arg = r_str_replace (arg, "}", "", true);
-		arg = r_str_replace (arg, "[", ",", true);
-		arg = r_str_replace (arg, "]", "", true);
-		args = r_str_split_list (arg, ",", 0);
-		RListIter *iter;
-		r_list_foreach (args, iter, arg) {
-			r_str_replace_ch (arg, ';', ',', true);
-			r_str_replace_ch (arg, ' ', 0, true);
-		}
-	}
-	p = inst->text;
-	while (*p) {
-		if (*p == ';') {
-			*p = ',';
-		}
-		p++;
+		char *text = r_strbuf_drain (arg);
+		text = r_str_replace (text, "{", "", true);
+		text = r_str_replace (text, "}", "", true);
+		r_str_replace_ch (text, ' ', 0, true);
+		r_list_append (args, text);
 	}
 	if (args) {
 		while (*esilfmt) {
@@ -554,7 +544,7 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 					const struct v850_operand *nextop = &v850_operands[opindex_ptr[1]];
 					st64 nextvalue = get_operand_value (nextop, insn, buffer + 2, buffer_size - 2, &invalid);
 					if (opnum > 0 && (v850_operands[*(opindex_ptr)].flags & V850_OPERAND_DISP)
-							&& opnum + 1 == memop && nextvalue == 0 && value < 1) {
+							&& opnum == 1 && opnum + 1 == memop && nextvalue == 0 && value < 1) {
 						// dont print coz we replace later
 						//r_strbuf_append (sb, "?");
 					} else {
@@ -584,7 +574,7 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 		inst->text = r_strbuf_drain (sb);
 		if (op->esil) {
 			// take advantage of the arguments parsed and honor the formats tring below
-			inst->esil = distillate (inst, op->esil);
+			inst->esil = distillate (inst, op->esil, memaddr);
 		}
 	} else {
 		r_strbuf_free (sb);
