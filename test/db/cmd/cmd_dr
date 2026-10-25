@@ -10,3 +10,18 @@ EXPECT=<<EOF
 {"role":"A1","reg":"ebx","value":"0x10","refstr":"16 ebx"}
 EOF
 RUN
+
+NAME=register profile JSON preserves hardwired-register offset sentinels
+FILE=-
+CMDS=<<EOF
+e asm.arch=v850
+arpj~{reg_info[0].offset}
+e asm.arch=arm
+e asm.bits=64
+arpj~{reg_info[0].offset}
+EOF
+EXPECT=<<EOF
+-1
+0
+EOF
+RUN

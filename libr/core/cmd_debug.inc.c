@@ -3041,7 +3041,7 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 					pj_ks (pj, "type_str", r_reg_type_tostring (ri->type));
 					pj_ks (pj, "name", ri->name);
 					pj_kn (pj, "size", ri->size);
-					pj_kn (pj, "offset", ri->offset);
+					pj_ki (pj, "offset", ri->offset);
 					pj_end (pj);
 				}
 			}
