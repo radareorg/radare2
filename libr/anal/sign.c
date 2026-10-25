@@ -2468,34 +2468,62 @@ static int str_list_cmp(RList *la, RList *lb) {
 	return 0;
 }
 
-// colliders: names listed under every matched type that zac computes
+static inline bool collision_is(RListIter *iter, RSignType type) {
+	return iter && *(const char *)iter->data == type;
+}
+
+static RListIter *collision_group(RList *collisions, RSignType type) {
+	RListIter *iter = r_list_head (collisions);
+	while (iter && !collision_is (iter, type)) {
+		iter = iter->n;
+	}
+	return iter;
+}
+
+// names colliding under every matched bytes/graph type; NULL means unknown
 static RList *check_collisions(RList *collisions, RSignType *types) {
-	if (!collisions) {
+	if (r_list_empty (collisions)) {
 		return r_list_new ();
 	}
-	RList *set = NULL;
+	bool bytes = false;
+	bool graph = false;
 	for (; *types != R_SIGN_END; types++) {
-		if (*types != R_SIGN_BYTES && *types != R_SIGN_GRAPH) {
-			continue;
-		}
-		RList *next = r_list_new ();
-		RListIter *iter;
-		char *col;
-		r_list_foreach (collisions, iter, col) {
-			if (R_STR_ISEMPTY (col) || col[1] != R_SIGN_COL_DELEM) {
-				r_list_free (next);
-				r_list_free (set);
-				return NULL;
-			}
-			char *name = col + 2;
-			if (col[0] == *types && (!set || r_list_find (set, name, list_str_cmp))) {
-				r_list_append (next, name);
-			}
-		}
-		r_list_free (set);
-		set = next;
+		bytes |= *types == R_SIGN_BYTES;
+		graph |= *types == R_SIGN_GRAPH;
 	}
-	return set? set: r_list_new ();
+	if (!bytes && !graph) {
+		return NULL;
+	}
+	RListIter *iter;
+	char *col;
+	r_list_foreach (collisions, iter, col) {
+		if (R_STR_ISEMPTY (col) || col[1] != R_SIGN_COL_DELEM) {
+			return NULL;
+		}
+	}
+	RList *set = r_list_new ();
+	if (!bytes || !graph) {
+		RSignType type = bytes? R_SIGN_BYTES: R_SIGN_GRAPH;
+		r_list_foreach (collisions, iter, col) {
+			if (*col == type) {
+				r_list_append (set, col + 2);
+			}
+		}
+		return set;
+	}
+	r_list_sort (collisions, list_str_cmp);
+	RListIter *g = collision_group (collisions, R_SIGN_GRAPH);
+	for (iter = collision_group (collisions, R_SIGN_BYTES); collision_is (iter, R_SIGN_BYTES); iter = iter->n) {
+		char *name = (char *)iter->data + 2;
+		int cmp = -1;
+		while (collision_is (g, R_SIGN_GRAPH) && (cmp = strcmp ((char *)g->data + 2, name)) < 0) {
+			g = g->n;
+		}
+		if (!cmp) {
+			r_list_append (set, name);
+		}
+	}
+	return set;
 }
 
 struct metric_ctx {
