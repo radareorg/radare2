@@ -31,7 +31,7 @@ aB "ldmeq r5, {r0, r1, r2}" 07009508
 aB "ldmeq r6, {r0, r1}" 03009608
 aB "ldrbeq r5, [r7, -1]" 01505705
 aB "ldrne r2, [r3, ip]" dc208311
-aB "ldreq r0, [fp, -180]" b4001b05
+a "ldreq r0, [fp, -180]" b4001b05
 aB "ldrheq r0, [r3, r0]" b0009301
 aB "ldrex r0, [r3]" 9f0f93e1
 aB "lslne r1, r1, 2" 0111a011
@@ -76,8 +76,8 @@ aB "strbeq ip, [r2, -1]" 01c04205
 aB "strbeq r3, [r5]" 0030c505
 aB "strdeq r2, [r4]" f020c401
 aB "strdeq r4, [r8, 80]" f045c801
-aB "streq r3, [r5, -4]" 04300505
-aB "streq r1, [fp, -304]" 30110b05
+a "streq r3, [r5, -4]" 04300505
+a "streq r1, [fp, -304]" 30110b05
 aB "strhne r3, [fp, -50]" b2334b11
 aB "strheq r3, [fp, -56]" b8334b01
 aB "strheq r1, [r0]" b010c001
@@ -219,7 +219,7 @@ aB "ldmeq r5, {r0, r1, r2}" 07009508
 aB "ldmeq r6, {r0, r1}" 03009608
 aB "ldrbeq r5, [r7, -1]" 01505705
 aB "ldrdne r2, r3, [r3, ip]" dc208311
-aB "ldreq r0, [fp, -0xb4]" b4001b05
+a "ldreq r0, [fp, -0xb4]" b4001b05
 aB "ldrheq r0, [r3, r0]" b0009301
 aB "lslne r1, r1, 2" 0111a011
 aB "lsreq r0, r0, 0x10" 2008a001
@@ -253,8 +253,8 @@ aB "strbeq ip, [r2, -1]" 01c04205
 aB "strbeq r3, [r5]" 0030c505
 aB "strdeq r2, r3, [r4]" f020c401
 aB "strdeq r4, r5, [r8, 0x50]" f045c801
-aB "streq r3, [r5, -4]" 04300505
-aB "streq r1, [fp, -0x130]" 30110b05
+a "streq r3, [r5, -4]" 04300505
+a "streq r1, [fp, -0x130]" 30110b05
 aB "strhne r3, [fp, -0x32]" b2334b11
 aB "strheq r3, [fp, -0x38]" b8334b01
 aB "strheq r1, [r0]" b010c001
@@ -283,6 +283,12 @@ a "ble 0xc" 010000da
 a "cmn r0, 8" 080070e3
 a "teq r6, 4" 040036e3
 a "tst r2, 1" 010012e3
+a "cmnhi r10, 417792" 660a7a83
+a "teqeq r11, 1856" 1d0d3b03
+a "tstmi r9, 108, 12" 6c061943
+a "cmple sp, 236, 30" ec0f5dd3
+a "cmp r1, 256" 010c51e3
+a "cmp r0, 0x80000000" 020150e3
 a "adc r0, r0, r0, lsl 2" 0001a0e0
 a "adc r0, r0, r0, lsl 0" 0000a0e0
 a "adc r0, r0, r0, lsr 2" 2001a0e0
@@ -370,3 +376,10 @@ ad "mrs r0, apsr" 00000fe1
 ad "mrs r1, apsr" 00100fe1
 ad "mrs r1, spsr" 00104fe1
 ad "mrsne r2, spsr" 00204f11
+ad "ldr r0, [r1, -4]" 040011e5
+ad "str r0, [r1], -8" 080001e4
+ad "str r0, [r1, -8]!" 080021e5
+ad "strb r3, [fp, -0xfff]" ff3f4be5
+ad "ldr r0, [fp, -0x10]" 10001be5
+ad "ldr r0, [r1, -r2]" 020011e7
+ad "str lr, [r0, -r6, lsl 31]" 86ef00e7

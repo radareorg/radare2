@@ -567,6 +567,73 @@ ERROR: No function to graph
 EOF
 RUN
 
+NAME=generated graphs preserve quoted function names and edges
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e anal.in=io.maps
+wx e80b000000c3
+wx c3 @ 16
+af
+af @ 16
+afn base64:YSJiJ2NcZCBl
+axC 16 0
+.agC*
+aggj
+agg* > $graph
+ag-
+. $graph
+aggj
+'age- a\"b\'c\\d\ e fcn.00000010
+aggj
+'agn- a\"b\'c\\d\ e
+aggj
+ag-
+.agr*
+aggj
+ag-
+.axg* @ 16
+aggj
+ag-
+afvr rdi x int
+.txg
+aggj
+ag-
+afn caller @ 0
+afn base64:YSJiJ2NcZCBl @ 16
+.axtg @ 16
+aggj
+EOF
+EXPECT=<<EOF
+{"nodes":[{"id":0,"title":"a\"b'c\\d e","body":"","out_nodes":[1]},{"id":1,"title":"fcn.00000010","body":"","out_nodes":[]}]}
+{"nodes":[{"id":0,"title":"a\"b'c\\d e","body":"\n","out_nodes":[1]},{"id":1,"title":"fcn.00000010","body":"\n","out_nodes":[]}]}
+{"nodes":[{"id":0,"title":"a\"b'c\\d e","body":"\n","out_nodes":[]},{"id":1,"title":"fcn.00000010","body":"\n","out_nodes":[]}]}
+{"nodes":[{"id":1,"title":"fcn.00000010","body":"\n","out_nodes":[]}]}
+{"nodes":[{"id":0,"title":"a\"b'c\\d e","body":"","out_nodes":[1]},{"id":1,"title":"fcn.00000010","body":"","out_nodes":[]}]}
+{"nodes":[{"id":0,"title":"0x00000010","body":"fcn.00000010\n","out_nodes":[]},{"id":1,"title":"0x00000000","body":"a\"b'c\\d e\n","out_nodes":[0]}]}
+{"nodes":[{"id":0,"title":"a\"b'c\\d e","body":"","out_nodes":[]},{"id":1,"title":"int","body":"","out_nodes":[0]}]}
+{"nodes":[{"id":0,"title":"0x0","body":"a_bcd_e\n","out_nodes":[1]},{"id":1,"title":"0x10","body":"a\"b'c\\d e\n","out_nodes":[]}]}
+EOF
+RUN
+
+NAME=graph escaping preserves paths and unknown backslash escapes
+FILE=-
+CMDS=<<EOF
+'agn C:\tmp\file "body\text\next"
+'agn C:\\tmp\\ "body\\text\\"
+'age C:\tmp\file C:\\tmp\\
+aggj
+agg* > $graph
+ag-
+. $graph
+aggj
+EOF
+EXPECT=<<EOF
+{"nodes":[{"id":0,"title":"C:\\tmp\\file","body":"body\\text\\next\n","out_nodes":[1]},{"id":1,"title":"C:\\tmp\\","body":"body\\text\\\n","out_nodes":[]}]}
+{"nodes":[{"id":0,"title":"C:\\tmp\\file","body":"body\\text\\next\n","out_nodes":[1]},{"id":1,"title":"C:\\tmp\\","body":"body\\text\\\n","out_nodes":[]}]}
+EOF
+RUN
+
 NAME=agg node body ending in an unterminated ANSI escape
 FILE=-
 CMDS=<<EOF

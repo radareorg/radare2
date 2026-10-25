@@ -1486,8 +1486,11 @@ static int analop_esil(RArchSession *a, RAnalOp *op, const ut8 *buf, int len, In
 	case ARM64_FCMPE:
 	case ARM64_FCCMP:
 	case ARM64_FCCMPE:
+		if (ISCOND64 (3)) {
+			postfix = v35arm_prefix_cond (op, insn->operands[3].cond);
+		}
 		if (ISREG64 (1)) {
-			r_strbuf_setf (&op->esil,
+			r_strbuf_appendf (&op->esil,
 				"%d,%s,F2D,NAN,%d,%s,F2D,NAN,|,vf,:="
 				",%d,%s,F2D,%d,%s,F2D,F==,vf,|,zf,:="
 				",%d,%s,F2D,%d,%s,F2D,F<,vf,|,nf,:=",
@@ -1496,7 +1499,7 @@ static int analop_esil(RArchSession *a, RAnalOp *op, const ut8 *buf, int len, In
 				REGBITS64 (1), REG64 (1), REGBITS64 (1), REG64 (0)
 			);
 		} else {
-			r_strbuf_setf (&op->esil,
+			r_strbuf_appendf (&op->esil,
 				"%d,%s,F2D,NAN,vf,:="
 				",0,I2D,%d,%s,F2D,F==,vf,|,zf,:="
 				",0,I2D,%d,%s,F2D,F<,vf,|,nf,:=",
@@ -1506,10 +1509,8 @@ static int analop_esil(RArchSession *a, RAnalOp *op, const ut8 *buf, int len, In
 			);
 		}
 
-		if (insn->operation == ARM64_FCCMP || insn->operation == ARM64_FCCMPE) {
-			r_strbuf_append (&op->esil, ",");
-			//arm_prefix_cond(op, insn->operands[1].cond);
-			r_strbuf_appendf (&op->esil, "}{,pstate,1,28,1,<<,-,&,0x%"PFMT64x",|,pstate,:=",
+		if (*postfix) {
+			r_strbuf_appendf (&op->esil, ",}{,pstate,1,28,1,<<,-,&,0x%"PFMT64x",|,pstate,:=",
 				GETIMM64 (2) << 28);
 		}
 		break;
@@ -1993,30 +1994,32 @@ static int analop_esil(RArchSession *a, RAnalOp *op, const ut8 *buf, int len, In
 	}
 	case ARM64_CCMP:
 	case ARM64_CMP: // cmp w8, 0xd
+		if (insn->operation == ARM64_CCMP && ISCOND64 (3)) {
+			postfix = v35arm_prefix_cond (op, insn->operands[3].cond);
+		}
 		ARG64_APPEND (&op->esil, 1);
 		COMMA (&op->esil);
 		ARG64_APPEND (&op->esil, 0);
 		r_strbuf_appendf (&op->esil, ",==,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=",
 			REGBITS64 (0) - 1, REGBITS64 (0), REGBITS64 (0) -1);
 
-		if (insn->operation == ARM64_CCMP || insn->operation == ARM64_CCMN) {
-			r_strbuf_append (&op->esil, ",");
-			v35arm_prefix_cond (op, insn->operands[3].cond);
-			r_strbuf_appendf (&op->esil, "}{,pstate,1,28,1,<<,-,&,28,%"PFMT64u",<<,|,pstate,:=", GETIMM64 (2));
+		if (*postfix) {
+			r_strbuf_appendf (&op->esil, ",}{,pstate,1,28,1,<<,-,&,28,%"PFMT64u",<<,|,pstate,:=", GETIMM64 (2));
 		}
 		break;
 	case ARM64_CCMN:
 	case ARM64_CMN:
+		if (insn->operation == ARM64_CCMN && ISCOND64 (3)) {
+			postfix = v35arm_prefix_cond (op, insn->operands[3].cond);
+		}
 		ARG64_APPEND (&op->esil, 1);
 		COMMA (&op->esil);
 		ARG64_APPEND (&op->esil, 0);
 		r_strbuf_appendf (&op->esil, ",-1,*,==,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=",
 			REGBITS64 (0) - 1, REGBITS64 (0), REGBITS64 (0) -1);
 
-		if (insn->operation == ARM64_CCMN) {
-			r_strbuf_append (&op->esil, ",");
-			v35arm_prefix_cond (op, insn->operands[3].cond);
-			r_strbuf_appendf (&op->esil, "}{,pstate,1,28,1,<<,-,&,28,%"PFMT64u",<<,|,pstate,:=", GETIMM64 (2));
+		if (*postfix) {
+			r_strbuf_appendf (&op->esil, ",}{,pstate,1,28,1,<<,-,&,28,%"PFMT64u",<<,|,pstate,:=", GETIMM64 (2));
 		}
 		break;
 	case ARM64_TST: // tst w8, 0xd

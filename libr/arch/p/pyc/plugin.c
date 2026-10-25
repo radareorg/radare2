@@ -26,8 +26,10 @@ static int pyversion_toi(const char *version) {
 
 static pyc_opcodes *get_pyc_opcodes(RArchSession *s) {
 	pyc_opcodes *ops = s->data;
-	if (!ops || !pyc_opcodes_equal (ops, s->config->cpu)) {
-		ops = get_opcode_by_version (s->config->cpu);
+	const char *cpu = s->config->cpu;
+	// without a cpu (rasm2 -a pyc) use the same table as an unknown version
+	if (!ops || (cpu && !pyc_opcodes_equal (ops, cpu))) {
+		ops = cpu? get_opcode_by_version (cpu): NULL;
 		ops = ops? ops: get_opcode_by_version ("v3.9.0");
 		if (ops) {
 			ops->bits = s->config->bits;
@@ -39,7 +41,7 @@ static pyc_opcodes *get_pyc_opcodes(RArchSession *s) {
 
 static RBinPycObj *get_pyc_obj(RArchSession *as) {
 	RBin *b = as->arch->binb.bin;
-	RBinPlugin *plugin = b->cur && b->cur->bo? b->cur->bo->plugin: NULL;
+	RBinPlugin *plugin = R_UNWRAP4 (b, cur, bo, plugin);
 	bool is_pyc = (plugin && strcmp (plugin->meta.name, "pyc") == 0);
 	return is_pyc? (RBinPycObj *)b->cur->bo->bin_obj: NULL;
 }

@@ -38,3 +38,49 @@ EXPECT=<<EOF
 2
 EOF
 RUN
+
+NAME=lua nested function prototypes
+FILE=malloc://0x200
+CMDS=<<EOF
+e scr.color=0
+wx 1b4c7561530019930d0a1a0a0202040808785600000000000000000000002877400100 @ 0
+b 0x40
+wX 00000000000000000000000000000100 @ 0x22
+oba 0
+is~func.
+ie
+EOF
+EXPECT=<<EOF
+0   0x0000006c 0x0000006c NONE FUNC   0        func.0x62
+0   0x0000005c 0x0000005c NONE FUNC   0        func.0x52
+0   0x0000004c 0x0000004c NONE FUNC   0        func.0x42
+0   0x0000003c 0x0000003c NONE FUNC   0        func.0x32
+0   0x0000002c 0x0000002c NONE FUNC   0        func.0x22
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x0000002c 0x0000002c ---------- ---------- program
+EOF
+RUN
+
+NAME=lua deeply nested function prototypes do not exhaust the stack
+FILE=malloc://0x200000
+CMDS=<<EOF
+e scr.color=0
+wx 1b4c7561530019930d0a1a0a0202040808785600000000000000000000002877400100 @ 0
+b 0x100000
+wX 00000000000000000000000000000100 @ 0x22
+oba 0
+is~?func.
+iIj~{bits}
+EOF
+EXPECT=<<EOF
+0
+32
+EOF
+EXPECT_ERR=<<EOF
+WARN: Function prototypes nested deeper than 200 levels
+WARN: Function prototypes nested deeper than 200 levels
+WARN: Function prototypes nested deeper than 200 levels
+WARN: Function prototypes nested deeper than 200 levels
+EOF
+RUN

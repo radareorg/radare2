@@ -193,11 +193,24 @@ struct r_magic {
 #define STRING_IGNORE_CASE              (STRING_IGNORE_LOWERCASE|STRING_IGNORE_UPPERCASE)
 #define STRING_DEFAULT_RANGE            100
 
+/* top-level test and the continuations that follow it */
+struct r_magic_root {
+	ut32 start;		/* index of the top-level entry */
+	ut32 end;		/* index after its last continuation */
+	ut32 offset;		/* offset of the literal prefix */
+	ut8 prefix[8];		/* leading bytes of a plain string or numeric test */
+	ut8 prefix_len;		/* 0 when the test cannot be prefiltered */
+	ut8 bintest;		/* BINTEST or TEXTTEST */
+};
+
 /* list of magic entries */
 struct mlist {
 	struct r_magic *magic;		/* array of magic entries */
-	ut32 *min_bytes;		/* min bytes needed per magic entry */
+	struct r_magic_root *roots;	/* top-level tests */
+	struct r_regex_t **rx;		/* compiled regex per entry, if any */
+	ut32 bucket[258];		/* roots[bucket[b]..bucket[b+1]] start with byte b at offset 0, bucket[256].. are unindexed */
 	ut32 nmagic;			/* number of entries in array */
+	ut32 nroots;			/* number of top-level tests */
 	ut32 bytes_max;		/* conservative max bytes needed */
 	ut8 mapped;  /* allocation type: 0 => apprentice_file
 		      *                  1 => apprentice_map + malloc */

@@ -4293,6 +4293,7 @@ onemoretime:
 	{
 		RAnalOp op;
 		char *q = NULL;
+		bool found = false;
 		ut64 tgt_addr = UT64_MAX;
 		if (!isVisualDisasm (core)) {
 			break;
@@ -4305,34 +4306,36 @@ onemoretime:
 		} else {
 			tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
 			RAnalVar *var = r_anal_get_used_function_var (core->anal, op.addr);
+			const bool lookup = !var && tgt_addr != UT64_MAX;
+			RAnalFunction *fcn = lookup? r_anal_get_function_at (core->anal, tgt_addr): NULL;
+			RFlagItem *f = (lookup && !fcn)? r_flag_get_in (core->flags, tgt_addr): NULL;
+			// names come from the binary, keep them and the answer out of the command parser
 			if (var) {
-	//			q = r_str_newf ("?i Rename variable %s to;afvn %s `yp`", op.var->name, op.var->name);
-				r_strf_var (prompt, 128, "New variable name for '%s': ", var->name);
-				char *newname = r_cons_input (core->cons, prompt);
-				if (newname && *newname) {
+				q = r_str_newf ("New variable name for '%s': ", var->name);
+			} else if (fcn) {
+				q = r_str_newf ("Rename function %s to: ", fcn->name);
+			} else if (f) {
+				q = r_str_newf ("Rename flag %s to: ", f->name);
+			} else if (lookup) {
+				q = r_str_newf ("Create flag at 0x%" PFMT64x " named: ", tgt_addr);
+			}
+			char *newname = q? r_cons_input (core->cons, q): NULL;
+			found = q != NULL;
+			if (R_STR_ISNOTEMPTY (newname)) {
+				if (var) {
 					r_anal_var_rename (core->anal, var, newname);
-					free (newname);
-				}
-			} else if (tgt_addr != UT64_MAX) {
-				RAnalFunction *fcn = r_anal_get_function_at (core->anal, tgt_addr);
-				RFlagItem *f = r_flag_get_in (core->flags, tgt_addr);
-				if (fcn) {
-					q = r_str_newf ("?i Rename function %s to;afn `yp` 0x%"PFMT64x,
-						fcn->name, tgt_addr);
+				} else if (fcn) {
+					r_core_callf_at (core, tgt_addr, "afn %s", newname);
 				} else if (f) {
-					q = r_str_newf ("?i Rename flag %s to;fr %s `yp`",
-						f->name, f->name);
+					r_flag_rename (core->flags, f, newname);
 				} else {
-					q = r_str_newf ("?i Create flag at 0x%"PFMT64x" named;f `yp` @ 0x%"PFMT64x,
-						tgt_addr, tgt_addr);
+					r_flag_set (core->flags, newname, tgt_addr, 1);
 				}
 			}
-		}
-
-		if (q) {
-			r_core_cmd0 (core, q);
+			free (newname);
 			free (q);
-		} else {
+		}
+		if (!found) {
 			R_LOG_INFO ("Sorry. No flags or variables referenced here");
 			r_cons_any_key (core->cons, NULL);
 		}

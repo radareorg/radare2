@@ -114,11 +114,11 @@
 >0        byte <0x5e
 >>5        belong 0xffffffff
 >>>1        belong    >0
->>>>1        belong    <0xfffff
+>>>>1        ubelong   <0xfffff
 >>>>>1        belong    x        LZMA BE compressed data dictionary size: %d bytes
 >>6      byte 0xff
 >>>1     lelong    0x800000
->>>>5    lelong    <0xfffffff
+>>>>5    ulelong   <0xfffffff
 >>>>>5   lelong    x        LZMA LE compressed data dictionary size: %d bytes
 #0	byte	&0
 #>0	byte	<0x5f

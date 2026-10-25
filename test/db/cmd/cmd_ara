@@ -100,7 +100,7 @@ p9
 reg
 swift
 r0 reg(r0, r1, r2, r3)
-rax reg(rdi, rsi, rdx, rcx)
+rax reg(rdi, rsi, rdx, rcx, r8, r9, r10, r11)
 amd64
 amd64syscall
 dlang

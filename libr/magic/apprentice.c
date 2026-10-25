@@ -45,10 +45,6 @@ static const char usg_hdr[] = "cont\toffset\ttype\topcode\tmask\tvalue\tdesc";
 static const char mime_marker[] = "!:mime";
 static const size_t mime_marker_len = sizeof(mime_marker) - 1;
 
-static size_t magic_cap_bytes(size_t bytes) {
-	return R_MIN (bytes, (size_t)HOWMANY);
-}
-
 static inline const char *eatab(const char *l) {
 	while (isascii ((ut8)*l) && isspace ((ut8)*l)) {
 		l++;
@@ -56,75 +52,144 @@ static inline const char *eatab(const char *l) {
 	return l;
 }
 
-static size_t magic_cap_sum(size_t base, size_t extra) {
-	if (base >= (size_t)HOWMANY || extra >= (size_t)HOWMANY) {
-		return HOWMANY;
-	}
-	return magic_cap_bytes (base + extra);
-}
-
-static size_t magic_min_bytes(const struct r_magic *m) {
-	size_t need = file_magic_type_bytes (m, m->type);
-	size_t offset = m->offset;
-
-	if (m->flag & INDIR) {
-		size_t indir_need = file_magic_type_bytes (m, m->in_type);
-		need = R_MAX (need, indir_need);
-		if ((m->in_op & FILE_OPINDIRECT) && m->in_offset > 0) {
-			need = R_MAX (need, (size_t)m->in_offset + indir_need);
-		}
-	}
-	return magic_cap_sum (offset, need);
-}
-
 static size_t magic_max_bytes(const struct r_magic *m) {
-	size_t need;
-
-	if (m->flag & (INDIR | OFFADD | INDIROFFADD)) {
+	if ((m->flag & (INDIR | OFFADD | INDIROFFADD)) || m->type == FILE_REGEX || (m->type == FILE_SEARCH && !m->str_range)) {
 		return HOWMANY;
 	}
-	switch (m->type) {
-	case FILE_SEARCH:
-		if (m->str_range == 0) {
-			return HOWMANY;
-		}
-		need = m->vallen;
-		if (need > 0) {
-			need += (size_t)m->str_range - 1;
-		}
-		break;
-	case FILE_REGEX:
-		return HOWMANY;
-	default:
-		need = file_magic_type_bytes (m, m->type);
-		break;
+	ut64 need = file_magic_type_bytes (m, m->type);
+	if (m->type == FILE_SEARCH && need) {
+		need += m->str_range - 1;
 	}
-	return magic_cap_sum (m->offset, need);
+	return (size_t)R_MIN ((ut64)m->offset + need, HOWMANY);
 }
 
-static bool magic_prepare_requirements(RMagic *ms, struct r_magic *magic, ut32 nmagic, size_t *bytes_max, ut32 **min_bytes) {
-	ut32 i;
-	size_t max_bytes = 0;
-	ut32 *req;
+static void magic_root_prefix(struct r_magic_root *root, const struct r_magic *m) {
+	if (m->reln != '=' || (m->flag & (INDIR | OFFADD))) {
+		return;
+	}
+	ut8 *p = root->prefix;
+	const ut64 v = m->value.q;
+	switch (m->type) {
+	case FILE_STRING:
+		if (m->str_flags) {
+			return;
+		}
+		root->prefix_len = R_MIN (m->vallen, sizeof (root->prefix));
+		memcpy (p, m->value.s, root->prefix_len);
+		break;
+	case FILE_BYTE:
+		*p = (ut8)v;
+		root->prefix_len = 1;
+		break;
+	case FILE_SHORT:
+	case FILE_LESHORT:
+	case FILE_BESHORT:
+		r_write_ble16 (p, (ut16)v, m->type == FILE_BESHORT || (m->type == FILE_SHORT && R_SYS_ENDIAN));
+		root->prefix_len = 2;
+		break;
+	case FILE_LONG:
+	case FILE_LELONG:
+	case FILE_BELONG:
+		r_write_ble32 (p, (ut32)v, m->type == FILE_BELONG || (m->type == FILE_LONG && R_SYS_ENDIAN));
+		root->prefix_len = 4;
+		break;
+	case FILE_QUAD:
+	case FILE_LEQUAD:
+	case FILE_BEQUAD:
+		r_write_ble64 (p, v, m->type == FILE_BEQUAD || (m->type == FILE_QUAD && R_SYS_ENDIAN));
+		root->prefix_len = 8;
+		break;
+	default:
+		return;
+	}
+	if (!MAGIC_IS_STRING (m->type) && (m->num_mask || m->mask_op)) {
+		root->prefix_len = 0;
+		return;
+	}
+	root->offset = m->offset;
+}
 
-	if (nmagic == 0) {
-		*bytes_max = 0;
-		*min_bytes = NULL;
+static ut32 magic_root_bucket(const struct r_magic_root *root) {
+	return (root->prefix_len && !root->offset)? root->prefix[0]: 256;
+}
+
+// Stable sort of the roots by bucket, so each bucket keeps the database order
+static bool magic_bucket_roots(RMagic *ms, struct mlist *ml) {
+	if (!ml->nroots) {
 		return true;
 	}
-	req = calloc (nmagic, sizeof (*req));
-	if (!req) {
-		__magic_file_oomem (ms, sizeof (*req) * nmagic);
+	struct r_magic_root *sorted = R_NEWS (struct r_magic_root, ml->nroots);
+	ut32 i, pos[257] = {0};
+	if (!sorted) {
+		__magic_file_oomem (ms, sizeof (struct r_magic_root) * ml->nroots);
 		return false;
 	}
-	for (i = 0; i < nmagic; i++) {
-		const size_t min_need = magic_min_bytes (&magic[i]);
-		const size_t max_need = magic_max_bytes (&magic[i]);
-		req[i] = (ut32)magic_cap_bytes (min_need);
-		max_bytes = R_MAX (max_bytes, max_need);
+	memset (ml->bucket, 0, sizeof (ml->bucket));
+	for (i = 0; i < ml->nroots; i++) {
+		ml->bucket[magic_root_bucket (&ml->roots[i]) + 1]++;
 	}
-	*bytes_max = max_bytes;
-	*min_bytes = req;
+	for (i = 0; i < 257; i++) {
+		ml->bucket[i + 1] += ml->bucket[i];
+		pos[i] = ml->bucket[i];
+	}
+	for (i = 0; i < ml->nroots; i++) {
+		sorted[pos[magic_root_bucket (&ml->roots[i])]++] = ml->roots[i];
+	}
+	free (ml->roots);
+	ml->roots = sorted;
+	return true;
+}
+
+static bool magic_index(RMagic *ms, struct mlist *ml) {
+	size_t max_bytes = 0;
+	ut32 i, nroots = 0;
+
+	for (i = 0; i < ml->nmagic; i++) {
+		nroots += !i || !ml->magic[i].cont_level;
+	}
+	if (nroots && !(ml->roots = R_NEWS0 (struct r_magic_root, nroots))) {
+		__magic_file_oomem (ms, sizeof (struct r_magic_root) * nroots);
+		return false;
+	}
+	for (i = 0; i < ml->nmagic; i++) {
+		const struct r_magic *m = &ml->magic[i];
+		if (!i || !m->cont_level) {
+			struct r_magic_root *root = &ml->roots[ml->nroots++];
+			root->start = i;
+			root->bintest = m->flag & BINTEST;
+			magic_root_prefix (root, m);
+		}
+		ml->roots[ml->nroots - 1].end = i + 1;
+		max_bytes = R_MAX (max_bytes, magic_max_bytes (m));
+		if (m->type != FILE_REGEX) {
+			continue;
+		}
+		if (!ml->rx && !(ml->rx = R_NEWS0 (RRegex *, ml->nmagic))) {
+			__magic_file_oomem (ms, sizeof (RRegex *) * ml->nmagic);
+			return false;
+		}
+		const int flags = R_REGEX_EXTENDED | R_REGEX_NEWLINE | ((m->str_flags & STRING_IGNORE_CASE)? R_REGEX_ICASE: 0);
+		RRegex *rx = R_NEW0 (RRegex);
+		if (r_regex_init (rx, m->value.s, flags)) {
+			ms->line = m->lineno;
+			__magic_file_magwarn (ms, "invalid regex `%s'", m->value.s);
+			free (rx);
+		} else {
+			ml->rx[i] = rx;
+		}
+	}
+	ml->bytes_max = (ut32)max_bytes;
+	return magic_bucket_roots (ms, ml);
+}
+
+static bool magic_mlist_add(RMagic *ms, RVecMagicMList *mlist, struct r_magic *magic, ut32 nmagic, int mapped) {
+	struct mlist ml = { .magic = magic, .nmagic = nmagic, .mapped = (ut8)mapped };
+	struct mlist *slot = magic_index (ms, &ml)? RVecMagicMList_emplace_back (mlist): NULL;
+	if (!slot) {
+		file_magic_mlist_fini (&ml);
+		return false;
+	}
+	*slot = ml;
 	return true;
 }
 
@@ -317,12 +382,10 @@ static int apprentice_sort(const void *a, const void *b) {
 	size_t sa = apprentice_r_magic_strength (ma->mp);
 	size_t sb = apprentice_r_magic_strength (mb->mp);
 	if (sa == sb) {
-		return 0;
+		// Keep equal strength entries in file order on every libc
+		return (ma->mp->lineno > mb->mp->lineno) - (ma->mp->lineno < mb->mp->lineno);
 	}
-	if (sa > sb) {
-		return -1;
-	}
-	return 1;
+	return (sa > sb)? -1: 1;
 }
 
 static void set_test_type(struct r_magic *mstart, struct r_magic *m) {
@@ -1798,10 +1861,8 @@ static int apprentice_compile(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp
  */
 static int apprentice_1(RMagic *ms, const char *fn, int action, RVecMagicMList *mlist) {
 	struct r_magic *magic = NULL;
-	ut32 *min_bytes = NULL;
 	ut32 nmagic = 0;
 	int rv = -1;
-	size_t bytes_max = 0;
 
 	if (!ms) {
 		return -1;
@@ -1836,18 +1897,7 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, RVecMagicMList *
 		__magic_file_delmagic (magic, rv);
 		return -1;
 	}
-	if (!magic_prepare_requirements (ms, magic, nmagic, &bytes_max, &min_bytes)) {
-		__magic_file_delmagic (magic, rv);
-		return -1;
-	}
-
-	struct mlist *const ml = RVecMagicMList_emplace_back (mlist);
-	ml->magic = magic;
-	ml->min_bytes = min_bytes;
-	ml->nmagic = nmagic;
-	ml->bytes_max = (ut32)bytes_max;
-	ml->mapped = (ut8)rv;
-	return 0;
+	return magic_mlist_add (ms, mlist, magic, nmagic, rv)? 0: -1;
 }
 
 /* const char *fn: list of magic files and directories */
@@ -1906,10 +1956,8 @@ static bool is_compiled_magic_buffer(const ut8 *buf, size_t buf_size) {
 
 bool __magic_file_apprentice_buffer(RMagic *ms, const ut8 *buf, size_t buf_size, int action, RVecMagicMList *mlist) {
 	struct r_magic *magic = NULL;
-	ut32 *min_bytes = NULL;
 	ut32 nmagic = 0;
 	int mapped = 0;
-	size_t bytes_max = 0;
 
 	if (!buf || !mlist) {
 		return false;
@@ -1928,22 +1976,11 @@ bool __magic_file_apprentice_buffer(RMagic *ms, const ut8 *buf, size_t buf_size,
 			return false;
 		}
 	}
-	if (!magic_prepare_requirements (ms, magic, nmagic, &bytes_max, &min_bytes)) {
-		__magic_file_delmagic (magic, mapped);
-		return false;
-	}
 	if (!RVecMagicMList_reserve (mlist, RVecMagicMList_length (mlist) + 1)) {
-		free (min_bytes);
 		__magic_file_delmagic (magic, mapped);
 		__magic_file_oomem (ms, sizeof (struct mlist));
 		return false;
 	}
-	struct mlist *const ml = RVecMagicMList_emplace_back (mlist);
-	ml->magic = magic;
-	ml->min_bytes = min_bytes;
-	ml->nmagic = nmagic;
-	ml->bytes_max = (ut32)bytes_max;
-	ml->mapped = (ut8)mapped;
-	return true;
+	return magic_mlist_add (ms, mlist, magic, nmagic, mapped);
 }
 #endif

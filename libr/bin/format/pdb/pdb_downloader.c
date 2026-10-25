@@ -45,15 +45,11 @@ static bool download_and_write(SPDBDownloaderOpt *opt, const char *file) {
 		free (path);
 		return false;
 	}
-	FILE *f = fopen (path, "wb");
-	if (f) {
-		fwrite (file_buf, sizeof (char), (size_t)len, f);
-		fclose (f);
-	}
+	bool ok = r_file_dump (path, (const ut8 *)file_buf, len, false);
 	free (dir);
 	free (path);
 	free (file_buf);
-	return true;
+	return ok;
 }
 
 static int download(struct SPDBDownloader *pd) {

@@ -306,7 +306,7 @@ S_API void spp_io(FILE *in, Output *out) {
 }
 
 S_API int spp_file(const char *file, Output *out) {
-	FILE *in = fopen (file, "r");
+	FILE *in = r_sandbox_fopen (file, "r");
 	D fprintf (stderr, "SPP-FILE(%s)\n", file);
 	if (in) {
 		spp_io (in, out);

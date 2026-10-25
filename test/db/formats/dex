@@ -2076,3 +2076,40 @@ EXPECT=<<EOF
 550
 EOF
 RUN
+
+NAME=dex: afc uses the dex symbols after opening another file
+FILE=bins/dex/Hello.dex
+CMDS=<<EOF
+s 0x1c0
+af
+afc
+o bins/elf/analysis/ls-linux64 0x10000000
+e asm.arch=dalvik
+e asm.bits=32
+s 0x1c0
+af-
+af
+afc
+afv
+EOF
+EXPECT=<<EOF
+dyncc:v2+1:
+dyncc:v2+1:
+arg int v2 @ v2
+EOF
+RUN
+
+NAME=dex: afc uses the mapped dex over an elf opened first at base zero
+FILE=bins/elf/analysis/ls-linux64
+CMDS=<<EOF
+o bins/dex/Hello.dex
+e asm.arch=dalvik
+e asm.bits=32
+s 0x1c0
+af
+afc
+EOF
+EXPECT=<<EOF
+dyncc:v2+1:
+EOF
+RUN

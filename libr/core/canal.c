@@ -2177,67 +2177,59 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 	return true;
 }
 
-R_API void r_core_anal_datarefs(RCore *core, ut64 addr) {
+static void anal_graph_refs(RCore *core, ut64 addr, bool datarefs) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
-	if (fcn) {
-		bool found = false;
-		const char *me = fcn->name;
-		RVecAnalRef *refs = r_anal_function_get_refs (fcn);
-		if (!refs) {
-			return;
+	if (!fcn) {
+		R_LOG_ERROR ("Not in a function. Use 'df' to define it");
+		return;
+	}
+	RVecAnalRef *refs = r_anal_function_get_refs (fcn);
+	if (!refs) {
+		return;
+	}
+	char *me = r_str_arg_escape (fcn->name);
+	if (!me) {
+		RVecAnalRef_free (refs);
+		return;
+	}
+	bool found = !datarefs;
+	if (found) {
+		r_cons_printf (core->cons, "'agn %s\n", me);
+	}
+	RAnalRef *ref;
+	R_VEC_FOREACH (refs, ref) {
+		if (ref->addr == UT64_MAX) {
+			continue;
 		}
-
-		RAnalRef *ref;
-		R_VEC_FOREACH (refs, ref) {
-			if (ref->addr == UT64_MAX) {
-				continue;
-			}
-
+		if (datarefs) {
 			RBinObject *obj = r_bin_cur_object (core->bin);
 			RBinSection *binsec = r_bin_get_section_at (obj, ref->addr, true);
-			if (binsec && binsec->is_data) {
-				if (!found) {
-					r_cons_printf (core->cons, "agn %s\n", me);
-					found = true;
-				}
-				RFlagItem *item = r_flag_get_in (core->flags, ref->addr);
-				r_strf_buffer (32);
-				const char *dst = item? item->name: r_strf ("0x%08"PFMT64x, ref->addr);
-				r_cons_printf (core->cons, "agn %s\n", dst);
-				r_cons_printf (core->cons, "age %s %s\n", me, dst);
+			if (!binsec || !binsec->is_data) {
+				continue;
 			}
 		}
-		RVecAnalRef_free (refs);
-	} else {
-		R_LOG_ERROR ("Not in a function. Use 'df' to define it");
+		if (!found) {
+			r_cons_printf (core->cons, "'agn %s\n", me);
+			found = true;
+		}
+		RFlagItem *item = r_flag_get_in (core->flags, ref->addr);
+		r_strf_buffer (32);
+		char *dst = r_str_arg_escape (item? item->name: r_strf ("0x%08"PFMT64x, ref->addr));
+		if (dst) {
+			r_cons_printf (core->cons, "'agn %s\n'age %s %s\n", dst, me, dst);
+			free (dst);
+		}
 	}
+	free (me);
+	RVecAnalRef_free (refs);
+}
+
+R_API void r_core_anal_datarefs(RCore *core, ut64 addr) {
+	anal_graph_refs (core, addr, true);
 }
 
 R_API void r_core_anal_coderefs(RCore *core, ut64 addr) {
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
-	if (fcn) {
-		const char *me = fcn->name;
-		r_cons_printf (core->cons, "agn %s\n", me);
-		RVecAnalRef *refs = r_anal_function_get_refs (fcn);
-		if (!refs) {
-			return;
-		}
-
-		RAnalRef *ref;
-		R_VEC_FOREACH (refs, ref) {
-			if (ref->addr == UT64_MAX) {
-				continue;
-			}
-			r_strf_buffer (32);
-			RFlagItem *item = r_flag_get_in (core->flags, ref->addr);
-			const char *dst = item? item->name: r_strf ("0x%08"PFMT64x, ref->addr);
-			r_cons_printf (core->cons, "agn %s\n", dst);
-			r_cons_printf (core->cons, "age %s %s\n", me, dst);
-		}
-		RVecAnalRef_free (refs);
-	} else {
-		R_LOG_ERROR ("Not in a function. Use 'df' to define it");
-	}
+	anal_graph_refs (core, addr, false);
 }
 
 static void add_single_addr_xrefs(RCore *core, ut64 addr, RGraph *graph) {
@@ -2497,11 +2489,13 @@ repeat:
 			default:
 				if (refgraph || R_ANAL_REF_TYPE_MASK (fcnr->type) == R_ANAL_REF_TYPE_CALL) {
 					// TODO: avoid recreating nodes unnecessarily
-					char *sfi = r_str_sanitize_r2 (fcni->name);
-					char *sfr = r_str_sanitize_r2 (fcnr_name);
-					r_cons_printf (core->cons, "'agn %s\n'agn %s\n'age %s %s\n", sfi, sfr, sfi, sfr);
-					free (sfi);
-					free (sfr);
+					char *from = r_str_arg_escape (fcni->name);
+					char *to = r_str_arg_escape (fcnr_name);
+					if (from && to) {
+						r_cons_printf (core->cons, "'agn %s\n'agn %s\n'age %s %s\n", from, to, from, to);
+					}
+					free (from);
+					free (to);
 				} else {
 					r_cons_printf (core->cons, "# - 0x%08"PFMT64x" (%c)\n", fcnr->addr, fcnr->type);
 				}
@@ -3494,11 +3488,7 @@ static int fcn_list_names(RCore *core, RList *fcns) {
 	RListIter *iter;
 	RAnalFunction *fcn;
 	r_list_foreach (fcns, iter, fcn) {
-		char *sname = r_str_sanitize_r2 (fcn->name);
-		if (sname) {
-			r_cons_printf (core->cons, "'@0x%08"PFMT64x"'afn %s\n", fcn->addr, sname);
-			free (sname);
-		}
+		r_cons_printf (core->cons, "'@0x%08"PFMT64x"'afn %s\n", fcn->addr, fcn->name);
 	}
 	r_cons_newline (core->cons);
 	return 0;
@@ -4086,12 +4076,12 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 	return false;
 }
 
-static RList *anal_graph_to(RCore *core, ut64 addr, int depth, HtUP *avoid) {
+static RList *anal_graph_to(RCore *core, ut64 addr, int depth, HtUP *avoid, HtUP *tried) {
 	RAnalFunction *cur_fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
 	RList *list = r_list_new ();
 	HtUP *state = ht_up_new0 ();
 
-	if (!list || !state || !cur_fcn) {
+	if (!list || !state || !cur_fcn || depth < 0) {
 		r_list_free (list);
 		ht_up_free (state);
 		return NULL;
@@ -4110,11 +4100,12 @@ static RList *anal_graph_to(RCore *core, ut64 addr, int depth, HtUP *avoid) {
 		RAnalRef *xref;
 		R_VEC_FOREACH (xrefs, xref) {
 			int rt = R_ANAL_REF_TYPE_MASK (xref->type);
-			if (rt == R_ANAL_REF_TYPE_CALL) {
+			// walk every call site only once, the callgraph may contain cycles
+			if (rt == R_ANAL_REF_TYPE_CALL && ht_up_insert (tried, xref->addr, NULL)) {
 				ut64 offset = core->addr;
 				core->addr = xref->addr;
 				r_list_free (list);
-				list = anal_graph_to (core, addr, depth - 1, avoid);
+				list = anal_graph_to (core, addr, depth - 1, avoid, tried);
 				core->addr = offset;
 				if (list && r_list_length (list)) {
 					RVecAnalRef_free (xrefs);
@@ -4136,7 +4127,9 @@ R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
 	RList *path, *paths = r_list_new ();
 	HtUP *avoid = ht_up_new0 ();
 	while (n) {
-		path = anal_graph_to (core, addr, depth, avoid);
+		HtUP *tried = ht_up_new0 ();
+		path = anal_graph_to (core, addr, depth, avoid, tried);
+		ht_up_free (tried);
 		if (path) {
 			r_list_append (paths, path);
 			if (r_list_length (path) >= 2) {

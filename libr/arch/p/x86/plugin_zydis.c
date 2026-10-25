@@ -1464,8 +1464,11 @@ static void set_shift_esil(RAnalOp *op, const ZydisDecodedInstruction *insn, con
 	char *dst_r = operand_esil (insn, op0, op->addr, 0, NULL, NULL);
 	if (src && dst && dst_r && bitsize) {
 		if (!strcmp (shiftop, ">>") || !strcmp (shiftop, "ASR")) {
+			// sign-extend at the operand width so a narrow memory load keeps its sign
+			r_strf_var (sar, 32, "%u,SWAP,~,ASR", bitsize);
+			const char *shop = !strcmp (shiftop, "ASR")? sar: shiftop;
 			esilprintf (op, "0,cf,:=,1,%s,-,1,<<,%s,&,?{,1,cf,:=,},%s,%s,%s,%s,$z,zf,:=,$p,pf,:=,%u,$s,sf,:=",
-				src, dst_r, src, dst_r, shiftop, dst, bitsize - 1);
+				src, dst_r, src, dst_r, shop, dst, bitsize - 1);
 		} else if (!strcmp (shiftop, "<<")) {
 			char *dst_s = operand_esil (insn, op0, op->addr, 1, "<<", NULL);
 			ut64 sign = bitsize == 64? UT64_MAX ^ (UT64_MAX >> 1): 1ULL << (bitsize - 1);

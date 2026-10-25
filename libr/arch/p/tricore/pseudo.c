@@ -4,14 +4,13 @@
 
 // XXX seems like '(#)' doesnt works.. so it needs to be '( # )'
 // this is a bug somewhere else
-static bool replace(int argc, char *argv[], char *newstr) {
+static char *replace(int argc, char *argv[]) {
 #define MAXPSEUDOOPS 10
-	int i, j, k, d;
+	int i, j, d;
 	char ch;
 	const char *op0 = argv[0];
 	if (!strcmp (op0, "ret") || !strcmp (op0, "rfe")) {
-		strcpy (newstr, "return");
-		return false;
+		return strdup ("return");
 	}
 	struct {
 		const char *op;
@@ -77,15 +76,13 @@ static bool replace(int argc, char *argv[], char *newstr) {
 		{ "sh", "# = # >> #", {1, 2, 3}},
 		{ NULL }
 	};
+	RStrBuf *sb = r_strbuf_new ("");
 	for (i = 0; ops[i].op; i++) {
 		if (strcmp (ops[i].op, argv[0])) {
 			continue;
 		}
 		d = 0;
-		j = 0;
-		ch = ops[i].str[j];
-		for (j = 0, k = 0; ch != '\0'; j++, k++) {
-			ch = ops[i].str[j];
+		for (j = 0; (ch = ops[i].str[j]) != '\0'; j++) {
 			if (ch == '#') {
 				if (d >= MAXPSEUDOOPS) {
 					// XXX Shouldn't ever happen...
@@ -98,26 +95,19 @@ static bool replace(int argc, char *argv[], char *newstr) {
 				}
 				const char *w = argv[idx];
 				if (w) {
-					strcpy (newstr + k, w);
-					k += strlen (w) - 1;
+					r_strbuf_append (sb, w);
 				}
 			} else {
-				newstr[k] = ch;
+				r_strbuf_append_n (sb, &ch, 1);
 			}
 		}
-		newstr[k] = '\0';
-		return true;
+		return r_strbuf_drain (sb);
 	}
-
-	RStrBuf *sb = r_strbuf_new ("");
 	for (i = 0; i < argc; i++) {
 		r_strbuf_append (sb, argv[i]);
 		r_strbuf_append (sb, (i == argc - 1)?"":" ");
 	}
-	char *sbs = r_strbuf_drain (sb);
-	strcpy (newstr, sbs);
-	free (sbs);
-	return false;
+	return r_strbuf_drain (sb);
 }
 
 static char *parse(RAsmPluginSession *aps, const char *data) {
@@ -194,9 +184,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 #if 0
 	str = r_str_fixspaces (str);
 #endif
-	char *str = malloc (strlen (data) + 128);
-	strcpy (str, data);
-	replace (nw, wa, str);
+	char *str = replace (nw, wa);
 	free (buf);
 	return str;
 }

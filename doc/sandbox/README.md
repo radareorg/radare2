@@ -77,7 +77,7 @@ names and empty options are rejected without changing the current permissions.
 and output-free `/cmd/:` commands use the configured HTTP permissions,
 intersected with any enabled local sandbox permissions. The default blocks
 process execution, new sockets, network requests, filesystem access through
-the sandbox wrappers, environment access and hidden paths. Commands can still
+the sandbox wrappers, environment access, hidden paths and scripts. Commands can still
 inspect and modify the loaded
 analysis state. For example, set `http.sandbox.grain=environ` before starting
 the server to permit environment access while keeping the other restrictions.
@@ -107,6 +107,10 @@ command, without changing the local sandbox state, permissions, or
 operating-system sandbox. Command output is captured in memory without
 temporary files or redirecting process-wide stdout. Platforms
 without compiler thread-local storage use operating-system thread storage.
+
+The `script` permission covers the rlang plugins (`js`, `#!`, `.r2.js`
+files). Scripts keep state in their runtime after the command returns, so
+grant it only to trusted clients, like `exec`.
 
 These are permissions enforced by radare2 wrappers, not operating-system
 confinement. Granting filesystem permissions retains the existing path and

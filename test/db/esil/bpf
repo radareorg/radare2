@@ -33,3 +33,171 @@ EXPECT=<<EOF
 0xc0000000
 EOF
 RUN
+
+NAME=bpf unsigned branches compare rather than testing subtraction carry
+FILE=malloc://32
+ARGS=-a bpf -b 64
+CMDS=<<EOF
+wx ad21010000000000bd210100000000002d210100000000003d21010000000000
+aei
+ar r1=1
+ar r2=3
+ar pc=0
+aes
+ar pc
+ar pc=8
+aes
+ar pc
+ar r1=0xffffffffffffffff
+ar pc=0
+aes
+ar pc
+ar pc=8
+aes
+ar pc
+ar pc=16
+aes
+ar pc
+ar pc=24
+aes
+ar pc
+ar r1=3
+ar pc=0
+aes
+ar pc
+ar pc=8
+aes
+ar pc
+EOF
+EXPECT=<<EOF
+0x00000010
+0x00000018
+0x00000008
+0x00000010
+0x00000020
+0x00000028
+0x00000008
+0x00000018
+EOF
+RUN
+
+NAME=sbpf unsigned branches compare rather than testing subtraction carry
+FILE=malloc://32
+ARGS=-a sbpf -b 64
+CMDS=<<EOF
+wx ad21010000000000bd210100000000002d210100000000003d21010000000000
+aei
+ar r1=1
+ar r2=3
+ar pc=0
+aes
+ar pc
+ar pc=8
+aes
+ar pc
+ar r1=0xffffffffffffffff
+ar pc=0
+aes
+ar pc
+ar pc=8
+aes
+ar pc
+ar pc=16
+aes
+ar pc
+ar pc=24
+aes
+ar pc
+ar r1=3
+ar pc=0
+aes
+ar pc
+ar pc=8
+aes
+ar pc
+EOF
+EXPECT=<<EOF
+0x00000010
+0x00000018
+0x00000008
+0x00000010
+0x00000020
+0x00000028
+0x00000008
+0x00000018
+EOF
+RUN
+
+NAME=BPF ALU64 immediates sign extend while ALU32 zero extends
+FILE=malloc://24
+ARGS=-a bpf -b 64
+CMDS=<<EOF
+wx b7010000ffffffff07010000f7ffffffb4010000ffffffff
+aei
+aeip
+aes
+ar r1
+aes
+ar r1
+aes
+ar r1
+EOF
+EXPECT=<<EOF
+0xffffffffffffffff
+0xfffffffffffffff6
+0xffffffff
+EOF
+RUN
+
+NAME=BPF branches sign extend immediates and truncate JMP32 operands
+REQUIRE=cs6
+FILE=malloc://32
+ARGS=-a bpf -b 64
+CMDS=<<EOF
+wx 15010100ffffffffc5010100ffffffffae21010000000000ce21010000000000
+aei
+ar r1=0xffffffffffffffff
+ar pc=0
+aes
+ar pc
+ar pc=8
+aes
+ar pc
+ar r1=0x100000001
+ar r2=2
+ar pc=16
+aes
+ar pc
+ar r1=0xffffffff
+ar r2=0
+ar pc=24
+aes
+ar pc
+EOF
+EXPECT=<<EOF
+0x00000010
+0x00000010
+0x00000020
+0x00000028
+EOF
+RUN
+
+NAME=BPF comparison immediates sign extend to the full register width
+FILE=malloc://16
+ARGS=-a bpf -b 64
+CMDS=<<CMDS
+wx 15010100ffffffffc5010100ffffffff
+aei
+ar r1=0xffffffffffffffff
+ar pc=0
+aes
+ar pc
+ar pc=8
+aes
+ar pc
+CMDS
+EXPECT=<<EXPECT
+0x00000010
+0x00000010
+EXPECT
+RUN

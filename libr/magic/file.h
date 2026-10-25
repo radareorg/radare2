@@ -77,23 +77,22 @@ R_IPI int __magic_file_check_mem(RMagic *, unsigned int);
 R_IPI int __magic_file_looks_utf8(const unsigned char *, size_t, unichar *, size_t *);
 
 static inline void file_magic_mlist_fini(struct mlist *ml) {
-	if (!ml) {
-		return;
+	if (ml->rx) {
+		ut32 i;
+		for (i = 0; i < ml->nmagic; i++) {
+			r_regex_free (ml->rx[i]);
+		}
+		free (ml->rx);
 	}
-	free (ml->min_bytes);
+	free (ml->roots);
 	__magic_file_delmagic (ml->magic, ml->mapped);
 }
 
-static inline void file_magic_mlist_vec_clear(RVecMagicMList *vec) {
+static inline void file_magic_mlist_vec_fini(RVecMagicMList *vec) {
 	struct mlist *iter;
 	R_VEC_FOREACH (vec, iter) {
 		file_magic_mlist_fini (iter);
 	}
-	RVecMagicMList_clear (vec);
-}
-
-static inline void file_magic_mlist_vec_fini(RVecMagicMList *vec) {
-	file_magic_mlist_vec_clear (vec);
 	RVecMagicMList_fini (vec);
 }
 

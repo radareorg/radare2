@@ -497,3 +497,27 @@ EXPECT=<<EOF
 0x00000002
 EOF
 RUN
+
+NAME=loongarch64 rotr.w rotates within the low word
+FILE=malloc://0x100
+ARGS=-a loongarch -b 64
+CMDS=<<EOF
+wx a4181b00a4844c00
+aei
+ar a1=1
+ar a2=0x21
+aes
+ar a0
+ar a2=0x20
+ar pc=0
+aes
+ar a0
+aes
+ar a0
+EOF
+EXPECT=<<EOF
+0xffffffff80000000
+0x00000001
+0xffffffff80000000
+EOF
+RUN

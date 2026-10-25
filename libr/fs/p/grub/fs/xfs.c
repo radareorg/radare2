@@ -211,9 +211,14 @@ grub_xfs_read_inode(struct grub_xfs_data *data, grub_uint64_t ino, struct grub_x
 	return 0;
 }
 
+static inline bool records_fit(const void *recs, const char *end, int nrec, size_t recsize) {
+	return nrec >= 0 && nrec <= (end - (const char *)recs) / (ptrdiff_t)recsize;
+}
+
 static grub_disk_addr_t
 grub_xfs_read_block(grub_fshelp_node_t node, grub_disk_addr_t fileblock) {
 	struct grub_xfs_btree_node *leaf = 0;
+	const char *end = (const char *)&node->inode + (1 << node->data->sblock.log2_inode);
 	int ex, nrec;
 	grub_xfs_extent *exts;
 	grub_uint64_t ret = 0;
@@ -222,7 +227,7 @@ grub_xfs_read_block(grub_fshelp_node_t node, grub_disk_addr_t fileblock) {
 		grub_unaligned_uint64_t *keys;
 		int level = grub_be_to_cpu16 (node->inode.data.btree.level);
 
-		leaf = grub_malloc (node->data->sblock.bsize);
+		leaf = grub_malloc (node->data->bsize);
 		if (leaf == 0) {
 			return 0;
 		}
@@ -232,6 +237,12 @@ grub_xfs_read_block(grub_fshelp_node_t node, grub_disk_addr_t fileblock) {
 		do {
 			int i;
 
+			// nrec keys are followed by nrec block numbers
+			if (!records_fit (keys, end, nrec, 2 * sizeof (*keys))) {
+				grub_free (leaf);
+				grub_error (GRUB_ERR_BAD_FS, "invalid number of XFS BMAP keys");
+				return 0;
+			}
 			for (i = 0; i < nrec; i++) {
 				if (fileblock < grub_be_to_cpu64 (keys[i])) {
 					break;
@@ -248,7 +259,7 @@ grub_xfs_read_block(grub_fshelp_node_t node, grub_disk_addr_t fileblock) {
 				grub_be_to_cpu64 (keys[i - 1 + nrec])
 					<< (node->data->sblock.log2_bsize - GRUB_DISK_SECTOR_BITS),
 				0,
-				node->data->sblock.bsize,
+				node->data->bsize,
 				leaf)) {
 				grub_free (leaf);
 				return 0;
@@ -263,6 +274,7 @@ grub_xfs_read_block(grub_fshelp_node_t node, grub_disk_addr_t fileblock) {
 
 			nrec = grub_be_to_cpu16 (leaf->numrecs);
 			keys = &leaf->keys[0];
+			end = (const char *)leaf + node->data->bsize;
 		} while (leaf->level);
 		exts = (grub_xfs_extent *)keys;
 	} else if (node->inode.format == XFS_INODE_FORMAT_EXT) {
@@ -272,6 +284,11 @@ grub_xfs_read_block(grub_fshelp_node_t node, grub_disk_addr_t fileblock) {
 		grub_error (GRUB_ERR_NOT_IMPLEMENTED_YET,
 			"XFS does not support inode format %d yet",
 			node->inode.format);
+		return 0;
+	}
+	if (!records_fit (exts, end, nrec, sizeof (grub_xfs_extent))) {
+		grub_free (leaf);
+		grub_error (GRUB_ERR_BAD_FS, "invalid number of XFS extents");
 		return 0;
 	}
 
@@ -291,10 +308,7 @@ grub_xfs_read_block(grub_fshelp_node_t node, grub_disk_addr_t fileblock) {
 		}
 	}
 
-	if (leaf) {
-		grub_free (leaf);
-	}
-
+	grub_free (leaf);
 	return GRUB_XFS_FSB_TO_BLOCK (node->data, ret);
 }
 
@@ -586,6 +600,13 @@ grub_xfs_mount(grub_disk_t disk) {
 
 	if (strncmp ((char *) (data->sblock.magic), "XFSB", 4)) {
 		grub_error (GRUB_ERR_BAD_FS, "not a XFS filesystem");
+		goto fail;
+	}
+	// 512 byte to 64 KiB blocks, 256 byte to 2 KiB inodes as the on-disk format allows
+	const grub_uint8_t log2_bsize = data->sblock.log2_bsize;
+	const grub_uint8_t log2_inode = data->sblock.log2_inode;
+	if (log2_bsize < GRUB_DISK_SECTOR_BITS || log2_bsize > 16 || grub_be_to_cpu32 (data->sblock.bsize) != 1U << log2_bsize || log2_inode < 8 || log2_inode > 11) {
+		grub_error (GRUB_ERR_BAD_FS, "invalid XFS block or inode size");
 		goto fail;
 	}
 

@@ -356,3 +356,24 @@ ERROR: Cannot save zignatures to zigns.sdb in sandbox mode
 ERROR: Cannot write zigns.sdb in sandbox mode
 EOF
 RUN
+
+NAME=sandbox blocks the spp system, pipe, include and grepline tags
+FILE=malloc://64
+CMDS=<<EOF2
+e asm.arch=x86
+e asm.bits=32
+e asm.spp=true
+e cfg.sandbox.grain=none
+e cfg.sandbox=true
+'pa <{system echo int3}>nop
+'pa <{pipe cat}>nop<{endpipe}>
+'pa <{include /etc/hosts}>nop
+'pa <{grepline /etc/hosts 1}>nop
+EOF2
+EXPECT=<<EOF2
+90
+90
+90
+90
+EOF2
+RUN

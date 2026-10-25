@@ -71,85 +71,41 @@ static bool magic_hasbytes(size_t nbytes, st64 offset, size_t need) {
  */
 #define R_MAGIC_DESC ((ms->flags & R_MAGIC_MIME)? m->mimetype: m->desc)
 
-static int check_fmt(RMagic *ms, struct r_magic *m) {
-	RRegex rx = { 0 };
-	int rc;
-
-	if (!strchr (R_MAGIC_DESC, '%')) {
-		return 0;
+static bool desc_wants_string(const char *desc) {
+	const char *p = desc;
+	while ((p = strchr (p, '%'))) {
+		p++;
+		p += strspn (p, "-0123456789.");
+		if (*p == 's') {
+			return true;
+		}
 	}
-
-	rc = r_regex_init (&rx, "%[-0-9\\.]*s", R_REGEX_EXTENDED | R_REGEX_NOSUB);
-	if (rc) {
-		char *errmsg = r_regex_error (&rx, rc);
-		__magic_file_magerror (ms, "regex error %d, (%s)", rc, errmsg);
-		free (errmsg);
-		return -1;
-	} else {
-		rc = r_regex_exec (&rx, R_MAGIC_DESC, 0, 0, 0);
-		r_regex_fini (&rx);
-		return !rc;
-	}
+	return false;
 }
 
 static st32 mprint(RMagic *ms, struct r_magic *m) {
-	ut64 v;
-	float vf;
-	double vd;
-	ut64 t = 0;
-	char *buf = NULL;
 	union VALUETYPE *const p = &ms->ms_value;
+	const char *desc = R_MAGIC_DESC;
+	const bool as_str = desc_wants_string (desc);
 	char pp[ASCTIME_BUF_MAXLEN];
+	char num[32];
+	ut64 v;
+	ut64 t;
+	int rc;
 
 	switch (m->type) {
 	case FILE_BYTE:
 		v = __magic_file_signextend (ms, m, (ut64)p->b);
-		switch (check_fmt (ms, m)) {
-		case -1:
-			return -1;
-		case 1:
-			buf = malloc (2);
-			if (snprintf (buf, 2, "%c", (ut8)v) < 0) {
-				free (buf);
-				return -1;
-			}
-			if (__magic_file_printf (ms, R_MAGIC_DESC, buf) == -1) {
-				free (buf);
-				return -1;
-			}
-			break;
-		default:
-			if (__magic_file_printf (ms, R_MAGIC_DESC, (ut8)v) == -1) {
-				return -1;
-			}
-			break;
-		}
+		snprintf (num, sizeof (num), "%c", (ut8)v);
+		rc = as_str? __magic_file_printf (ms, desc, num): __magic_file_printf (ms, desc, (ut8)v);
 		t = ms->offset + sizeof (char);
 		break;
 	case FILE_SHORT:
 	case FILE_BESHORT:
 	case FILE_LESHORT:
 		v = __magic_file_signextend (ms, m, (ut64)p->h);
-		switch (check_fmt (ms, m)) {
-		case -1:
-			return -1;
-		case 1:
-			buf = malloc (32);
-			if (snprintf (buf, 32, "%hu", (unsigned short)v) < 0) {
-				free (buf);
-				return -1;
-			}
-			if (__magic_file_printf (ms, R_MAGIC_DESC, buf) == -1) {
-				free (buf);
-				return -1;
-			}
-			break;
-		default:
-			if (__magic_file_printf (ms, R_MAGIC_DESC, (unsigned short)v) == -1) {
-				return -1;
-			}
-			break;
-		}
+		snprintf (num, sizeof (num), "%hu", (unsigned short)v);
+		rc = as_str? __magic_file_printf (ms, desc, num): __magic_file_printf (ms, desc, (unsigned short)v);
 		t = ms->offset + sizeof (short);
 		break;
 	case FILE_LONG:
@@ -157,188 +113,93 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 	case FILE_LELONG:
 	case FILE_MELONG:
 		v = __magic_file_signextend (ms, m, (ut64)p->l);
-		switch (check_fmt (ms, m)) {
-		case -1:
-			return -1;
-		case 1:
-			buf = malloc (32);
-			if (snprintf (buf, 32, "%u", (ut32)v) < 0) {
-				free (buf);
-				return -1;
-			}
-			if (__magic_file_printf (ms, R_MAGIC_DESC, buf) == -1) {
-				free (buf);
-				return -1;
-			}
-			break;
-		default:
-			if (__magic_file_printf (ms, R_MAGIC_DESC, (ut32)v) == -1) {
-				return -1;
-			}
-			break;
-		}
+		snprintf (num, sizeof (num), "%u", (ut32)v);
+		rc = as_str? __magic_file_printf (ms, desc, num): __magic_file_printf (ms, desc, (ut32)v);
 		t = ms->offset + sizeof (st32);
 		break;
 	case FILE_QUAD:
 	case FILE_BEQUAD:
 	case FILE_LEQUAD:
 		v = __magic_file_signextend (ms, m, p->q);
-		if (__magic_file_printf (ms, R_MAGIC_DESC, (ut64)v) == -1) {
-			return -1;
-		}
+		rc = __magic_file_printf (ms, desc, (ut64)v);
 		t = ms->offset + sizeof (ut64);
 		break;
-
 	case FILE_STRING:
 	case FILE_PSTRING:
 	case FILE_BESTRING16:
 	case FILE_LESTRING16:
 		if (m->reln == '=' || m->reln == '!') {
-			if (__magic_file_printf (ms, R_MAGIC_DESC, m->value.s) == -1) {
-				return -1;
-			}
+			rc = __magic_file_printf (ms, desc, m->value.s);
 			t = ms->offset + m->vallen;
 		} else {
 			if (*m->value.s == '\0') {
 				p->s[strcspn (p->s, "\n")] = '\0';
 			}
-			if (__magic_file_printf (ms, R_MAGIC_DESC, p->s) == -1) {
-				return -1;
-			}
-			t = ms->offset + strlen (p->s);
-			if (m->type == FILE_PSTRING) {
-				t++;
-			}
+			rc = __magic_file_printf (ms, desc, p->s);
+			t = ms->offset + strlen (p->s) + (m->type == FILE_PSTRING);
 		}
 		break;
 	case FILE_DATE:
 	case FILE_BEDATE:
 	case FILE_LEDATE:
 	case FILE_MEDATE:
-		if (__magic_file_printf (ms, R_MAGIC_DESC, __magic_file_fmttime (p->l, 1, pp)) == -1) {
-			return -1;
-		}
+		rc = __magic_file_printf (ms, desc, __magic_file_fmttime (p->l, 1, pp));
 		t = ms->offset + sizeof (time_t);
 		break;
 	case FILE_LDATE:
 	case FILE_BELDATE:
 	case FILE_LELDATE:
 	case FILE_MELDATE:
-		if (__magic_file_printf (ms, R_MAGIC_DESC, __magic_file_fmttime (p->l, 0, pp)) == -1) {
-			return -1;
-		}
+		rc = __magic_file_printf (ms, desc, __magic_file_fmttime (p->l, 0, pp));
 		t = ms->offset + sizeof (time_t);
 		break;
 	case FILE_QDATE:
 	case FILE_BEQDATE:
 	case FILE_LEQDATE:
-		if (__magic_file_printf (ms, R_MAGIC_DESC, __magic_file_fmttime ((ut32)p->q, 1, pp)) == -1) {
-			return -1;
-		}
+		rc = __magic_file_printf (ms, desc, __magic_file_fmttime ((ut32)p->q, 1, pp));
 		t = ms->offset + sizeof (ut64);
 		break;
 	case FILE_QLDATE:
 	case FILE_BEQLDATE:
 	case FILE_LEQLDATE:
-		if (__magic_file_printf (ms, R_MAGIC_DESC, __magic_file_fmttime ((ut32)p->q, 0, pp)) == -1) {
-			return -1;
-		}
+		rc = __magic_file_printf (ms, desc, __magic_file_fmttime ((ut32)p->q, 0, pp));
 		t = ms->offset + sizeof (ut64);
 		break;
 	case FILE_FLOAT:
 	case FILE_BEFLOAT:
 	case FILE_LEFLOAT:
-		vf = p->f;
-		switch (check_fmt (ms, m)) {
-		case -1:
-			return -1;
-		case 1:
-			buf = malloc (32);
-			if (snprintf (buf, 32, "%g", vf) < 0) {
-				free (buf);
-				return -1;
-			}
-			if (__magic_file_printf (ms, R_MAGIC_DESC, buf) == -1) {
-				free (buf);
-				return -1;
-			}
-			break;
-		default:
-			if (__magic_file_printf (ms, R_MAGIC_DESC, vf) == -1) {
-				return -1;
-			}
-			break;
-		}
+		snprintf (num, sizeof (num), "%g", p->f);
+		rc = as_str? __magic_file_printf (ms, desc, num): __magic_file_printf (ms, desc, p->f);
 		t = ms->offset + sizeof (float);
 		break;
 	case FILE_DOUBLE:
 	case FILE_BEDOUBLE:
 	case FILE_LEDOUBLE:
-		vd = p->d;
-		switch (check_fmt (ms, m)) {
-		case -1:
-			return -1;
-		case 1:
-			buf = malloc (32);
-			if (snprintf (buf, 32, "%g", vd) < 0) {
-				free (buf);
-				return -1;
-			}
-			if (__magic_file_printf (ms, R_MAGIC_DESC, buf) == -1) {
-				free (buf);
-				return -1;
-			}
-			break;
-		default:
-			if (__magic_file_printf (ms, R_MAGIC_DESC, vd) == -1) {
-				return -1;
-			}
-			break;
-		}
+		snprintf (num, sizeof (num), "%g", p->d);
+		rc = as_str? __magic_file_printf (ms, desc, num): __magic_file_printf (ms, desc, p->d);
 		t = ms->offset + sizeof (double);
 		break;
 	case FILE_REGEX:
 		{
-			char *const cp = r_str_ndup ((const char *)ms->search.s, ms->search.rm_len);
-			if (!cp) {
-				__magic_file_oomem (ms, ms->search.rm_len);
-				return -1;
-			}
-			const int rval = __magic_file_printf (ms, R_MAGIC_DESC, cp);
+			char *cp = r_str_ndup (ms->search.s, ms->search.rm_len);
+			rc = __magic_file_printf (ms, desc, r_str_get (cp));
 			free (cp);
-			if (rval == -1) {
-				return -1;
-			}
-			if ((m->str_flags & REGEX_OFFSET_START)) {
-				t = ms->search.offset;
-			} else {
-				t = ms->search.offset + ms->search.rm_len;
-			}
-			break;
-		}
-
-	case FILE_SEARCH:
-		if (__magic_file_printf (ms, R_MAGIC_DESC, m->value.s) == -1) {
-			return -1;
-		}
-		if ((m->str_flags & REGEX_OFFSET_START)) {
-			t = ms->search.offset;
-		} else {
-			t = ms->search.offset + m->vallen;
+			t = ms->search.offset + ((m->str_flags & REGEX_OFFSET_START)? 0: ms->search.rm_len);
 		}
 		break;
+	case FILE_SEARCH:
+		rc = __magic_file_printf (ms, desc, m->value.s);
+		t = ms->search.offset + ((m->str_flags & REGEX_OFFSET_START)? 0: m->vallen);
+		break;
 	case FILE_DEFAULT:
-		if (__magic_file_printf (ms, R_MAGIC_DESC, m->value.s) == -1) {
-			return -1;
-		}
+		rc = __magic_file_printf (ms, desc, m->value.s);
 		t = ms->offset;
 		break;
 	default:
 		__magic_file_magerror (ms, "invalid m->type (%d) in mprint()", m->type);
 		return -1;
 	}
-	free (buf);
-	return t;
+	return rc == -1? -1: (st32)t;
 }
 
 #define DO_CVT(fld, cast) \
@@ -605,44 +466,32 @@ static int mcopy(RMagic *ms, union VALUETYPE *p, int type, int indir, const ut8 
 	if (indir == 0) {
 		switch (type) {
 		case FILE_SEARCH:
-			ms->search.s = (const char *)s + offset;
-			ms->search.s_len = nbytes - offset;
-			ms->search.offset = offset;
-			return 0;
 		case FILE_REGEX:
-			{
-				const char *b;
-				const char *c;
-				const char *last; /* end of search region */
-				const char *buf; /* start of search region */
-				size_t lines;
-
-				if (!s) {
-					ms->search.s_len = 0;
-					ms->search.s = NULL;
-					return 0;
-				}
-				buf = (const char *)s + offset;
-				last = (const char *)s + nbytes;
-				/* mget () guarantees buf <= last */
-				for (lines = linecnt, b = buf;
-					lines && ((b = strchr (c = b, '\n')) || (b = strchr (c, '\r')));
-					lines--, b++) {
-					last = b;
-					if (b[0] == '\r' && b[1] == '\n') {
-						b++;
-					}
-				}
-				if (lines) {
-					last = (const char *)s + nbytes;
-				}
-
-				ms->search.s = buf;
-				ms->search.s_len = last - buf;
-				ms->search.offset = offset;
-				ms->search.rm_len = 0;
+			if (!s || offset > nbytes) {
+				ms->search.s = NULL;
+				ms->search.s_len = 0;
 				return 0;
 			}
+			{
+				const char *buf = (const char *)s + offset;
+				const char *end = (const char *)s + nbytes;
+				const char *last = end;
+				size_t lines = (type == FILE_REGEX)? linecnt: 0;
+				// Regex tests only see the first linecnt lines
+				for (; lines && buf < end; lines--) {
+					const char *nl = memchr (buf, '\n', end - buf);
+					if (!nl && !(nl = memchr (buf, '\r', end - buf))) {
+						break;
+					}
+					last = nl;
+					buf = nl + ((nl[0] == '\r' && nl + 1 < end && nl[1] == '\n')? 2: 1);
+				}
+				ms->search.s = (const char *)s + offset;
+				ms->search.s_len = (lines? end: last) - ms->search.s;
+				ms->search.offset = offset;
+				ms->search.rm_len = 0;
+			}
+			return 0;
 		case FILE_BESTRING16:
 		case FILE_LESTRING16:
 			{
@@ -805,7 +654,7 @@ static ut64 file_strncmp(const char *s1, const char *s2, size_t len, ut32 flags)
 	return v;
 }
 
-static int magiccheck(RMagic *ms, struct r_magic *m) {
+static int magiccheck(RMagic *ms, struct r_magic *m, const RRegex *rx) {
 	ut64 l = m->value.q;
 	ut64 v;
 	float fl, fv;
@@ -915,57 +764,21 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 	}
 	case FILE_REGEX:
 		{
-			int rc;
-			RRegex rx = { 0 };
-			char *errmsg;
-
-			if (!ms->search.s) {
+			RRegexMatch pmatch[1] = {{ .rm_so = 0, .rm_eo = ms->search.s_len }};
+			if (!ms->search.s || !rx) {
 				return 0;
 			}
-
-			l = 0;
-			rc = r_regex_init (&rx, m->value.s, R_REGEX_EXTENDED | R_REGEX_NEWLINE | ((m->str_flags & STRING_IGNORE_CASE)? R_REGEX_ICASE: 0));
-			if (rc) {
-				errmsg = r_regex_error (&rx, rc);
-				__magic_file_magerror (ms, "regex error %d, (%s)", rc, errmsg);
-				free (errmsg);
-				v = (ut64)-1;
-			} else {
-				RRegexMatch pmatch[1];
-#ifndef R_REGEX_STARTEND
-#define R_REGEX_STARTEND 0
-				size_t l = ms->search.s_len - 1;
-				char c = ms->search.s[l];
-				((char *) (intptr_t)ms->search.s)[l] = '\0';
-#else
-				pmatch[0].rm_so = 0;
-				pmatch[0].rm_eo = ms->search.s_len;
-#endif
-				rc = r_regex_exec (&rx, (const char *)ms->search.s, 1, pmatch, R_REGEX_STARTEND);
-#if R_REGEX_STARTEND == 0
-				((char *) (intptr_t)ms->search.s)[l] = c;
-#endif
-				switch (rc) {
-				case 0:
-					ms->search.s += (int)pmatch[0].rm_so;
-					ms->search.offset += (size_t)pmatch[0].rm_so;
-					ms->search.rm_len = (size_t) (pmatch[0].rm_eo - pmatch[0].rm_so);
-					v = 0;
-					break;
-				case R_REGEX_NOMATCH:
-					v = 1;
-					break;
-				default:
-					errmsg = r_regex_error (&rx, rc);
-					__magic_file_magerror (ms, "regexec error %d, (%s)", rc, errmsg);
-					free (errmsg);
-					v = UT64_MAX;
-					break;
-				}
-				r_regex_fini (&rx);
-			}
-			if (v == (ut64)-1) {
+			const int rc = r_regex_exec (rx, ms->search.s, 1, pmatch, R_REGEX_STARTEND);
+			if (rc && rc != R_REGEX_NOMATCH) {
+				__magic_file_magerror (ms, "regexec error %d", rc);
 				return -1;
+			}
+			l = 0;
+			v = rc == R_REGEX_NOMATCH;
+			if (!v) {
+				ms->search.s += pmatch[0].rm_so;
+				ms->search.offset += pmatch[0].rm_so;
+				ms->search.rm_len = pmatch[0].rm_eo - pmatch[0].rm_so;
 			}
 			break;
 		}
@@ -975,49 +788,34 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 	}
 
 	v = __magic_file_signextend (ms, m, v);
+	const bool is_unsigned = m->flag & UNSIGNED;
 	switch (m->reln) {
 	case 'x':
-		magic_debug (ms, "%" PFMT64u " == *any* = 1", (ut64)v);
 		matched = 1;
 		break;
 	case '!':
 		matched = v != l;
-		magic_debug (ms, "%" PFMT64u " != %" PFMT64u " = %d", (ut64)v, (ut64)l, matched);
 		break;
 	case '=':
 		matched = v == l;
-		magic_debug (ms, "%" PFMT64u " == %" PFMT64u " = %d", (ut64)v, (ut64)l, matched);
 		break;
 	case '>':
-		if (m->flag & UNSIGNED) {
-			matched = v > l;
-			magic_debug (ms, "%" PFMT64u " > %" PFMT64u " = %d", (ut64)v, (ut64)l, matched);
-		} else {
-			matched = (ut64)v > (ut64)l;
-			magic_debug (ms, "%" PFMT64u " > %" PFMT64u " = %d", (st64)v, (st64)l, matched);
-		}
+		matched = is_unsigned? v > l: (st64)v > (st64)l;
 		break;
 	case '<':
-		if (m->flag & UNSIGNED) {
-			matched = v < l;
-			magic_debug (ms, "%" PFMT64u " < %" PFMT64u " = %d", (ut64)v, (ut64)l, matched);
-		} else {
-			matched = (ut64)v < (ut64)l;
-			magic_debug (ms, "%" PFMT64d " < %" PFMT64d " = %d", (st64)v, (st64)l, matched);
-		}
+		matched = is_unsigned? v < l: (st64)v < (st64)l;
 		break;
 	case '&':
 		matched = (v & l) == l;
-		magic_debug (ms, "((%" PFMT64x " & %" PFMT64x ") == %" PFMT64x ") = %d", (ut64)v, (ut64)l, (ut64)l, matched);
 		break;
 	case '^':
 		matched = (v & l) != l;
-		magic_debug (ms, "((%" PFMT64x " & %" PFMT64x ") != %" PFMT64x ") = %d", (ut64)v, (ut64)l, (ut64)l, matched);
 		break;
 	default:
 		__magic_file_magerror (ms, "cannot happen: invalid relation `%c'", m->reln);
 		return -1;
 	}
+	magic_debug (ms, "0x%" PFMT64x " %c 0x%" PFMT64x " = %d", v, m->reln, l, matched);
 	return matched;
 }
 
@@ -1052,174 +850,142 @@ static int print_sep(RMagic *ms, int firstline) {
  *	If a continuation matches, we bump the current continuation level
  *	so that higher-level continuations are processed.
  */
-static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut32 *min_bytes, const ut8 *s, size_t nbytes, int mode) {
-	ut32 magindex = 0;
-	unsigned int cont_level = 0;
-	int need_separator = 0;
-	int returnval = 0; /* if a match is found it is set to 1*/
-	int firstline = 1; /* a flag to print X\n  X\n- X */
-	int printed_something = 0;
+static bool root_prefix_matches(const struct r_magic_root *root, const ut8 *s, size_t nbytes) {
+	return !root->prefix_len || (magic_hasbytes (nbytes, root->offset, root->prefix_len) && !memcmp (s + root->offset, root->prefix, root->prefix_len));
+}
 
-	if (__magic_file_check_mem (ms, cont_level) == -1) {
+// Returns -1 on error, 0 on mismatch, 1 on match and 2 when the data is too short
+static int mtest(RMagic *ms, const struct mlist *ml, ut32 idx, const ut8 *s, size_t nbytes, unsigned int cont_level) {
+	struct r_magic *m = &ml->magic[idx];
+	const int got = mget (ms, s, m, nbytes, cont_level);
+	if (got <= 0) {
+		return got? -1: (m->reln == '!')? 1: 2;
+	}
+	return magiccheck (ms, m, ml->rx? ml->rx[idx]: NULL);
+}
+
+static int match(RMagic *ms, const struct mlist *ml, const ut8 *s, size_t nbytes, int mode) {
+	int returnval = 0;
+	ut32 i;
+
+	if (__magic_file_check_mem (ms, 0) == -1) {
 		return -1;
 	}
-	for (magindex = 0; magindex < nmagic; magindex++) {
-		int flush;
-		struct r_magic *m = &magic[magindex];
-
-		if ((m->flag & BINTEST) != mode) {
-			/* Skip sub-tests */
-			while (magindex < nmagic - 1 && magic[magindex + 1].cont_level != 0) {
-				magindex++;
-			}
-			continue; /* Skip to next top-level test*/
-		}
-		if (min_bytes && min_bytes[magindex] > nbytes) {
-			while (magindex < nmagic - 1 && magic[magindex + 1].cont_level) {
-				magindex++;
-			}
+	// Merge the roots indexed by the first byte with the unindexed ones in database order
+	const struct r_magic_root *a = ml->roots + ml->bucket[nbytes? s[0]: 256];
+	const struct r_magic_root *a_end = ml->roots + (nbytes? ml->bucket[s[0] + 1]: ml->bucket[256]);
+	const struct r_magic_root *b = ml->roots + ml->bucket[256];
+	const struct r_magic_root *b_end = ml->roots + ml->bucket[257];
+	while (a < a_end || b < b_end) {
+		const struct r_magic_root *root = (b == b_end || (a < a_end && a->start < b->start))? a++: b++;
+		if (root->bintest != mode || !root_prefix_matches (root, s, nbytes)) {
 			continue;
 		}
-
+		struct r_magic *m = &ml->magic[root->start];
 		ms->offset = m->offset;
 		ms->line = m->lineno;
-
-		/* if main entry matches, print it... */
-		flush = !mget (ms, s, m, nbytes, cont_level);
-		if (flush) {
-			if (m->reln == '!') {
-				flush = 0;
-			}
-		} else {
-			int ret = magiccheck (ms, m);
-			if (ret == -1) {
-				return -1;
-			}
-			if (!ret) {
-				flush++;
-			}
+		int ret = mtest (ms, ml, root->start, s, nbytes, 0);
+		if (ret == -1) {
+			return -1;
 		}
-		if (flush) {
-			// Main test failed, so skip its continuations.
-			while (magindex < nmagic - 1 && magic[magindex + 1].cont_level) {
-				magindex++;
-			}
+		if (ret != 1) {
 			continue;
 		}
-
-		// Track whether later output needs a separator.
+		const bool firstline = r_strbuf_is_empty (&ms->o.sb);
+		bool printed_something = false;
+		bool need_separator = false;
 		if (*R_MAGIC_DESC) {
-			need_separator = 1;
-			printed_something = 1;
+			need_separator = true;
+			printed_something = true;
 			if (print_sep (ms, firstline) == -1) {
 				return -1;
 			}
 		}
-
-		if ((ms->c.li[cont_level].off = mprint (ms, m)) == -1) {
+		if ((ms->c.li[0].off = mprint (ms, m)) == -1) {
 			return -1;
 		}
-
-		/* and any continuations that match */
-		if (__magic_file_check_mem (ms, ++cont_level) == -1) {
+		unsigned int cont_level = 1;
+		if (__magic_file_check_mem (ms, cont_level) == -1) {
 			return -1;
 		}
-
-		while (++magindex < nmagic - 1 && magic[magindex].cont_level != 0) {
-			m = &magic[magindex];
-			ms->line = m->lineno; /* for messages */
-
+		for (i = root->start + 1; i < root->end; i++) {
+			m = &ml->magic[i];
+			ms->line = m->lineno;
 			if (cont_level < m->cont_level) {
 				continue;
 			}
-			if (cont_level > m->cont_level) {
-				// Drop back to the current continuation level.
-				cont_level = m->cont_level;
-			}
+			// Drop back to the level of this continuation
+			cont_level = m->cont_level;
+			struct level_info *li = &ms->c.li[cont_level];
 			ms->offset = m->offset;
 			if (m->flag & OFFADD) {
 				ms->offset += ms->c.li[cont_level - 1].off;
 			}
-
-			if (m->cond == COND_ELSE || m->cond == COND_ELIF) {
-				if (ms->c.li[cont_level].last_match == 1) {
-					continue;
-				}
-			}
-			if (min_bytes && min_bytes[magindex] > nbytes) {
+			if ((m->cond == COND_ELSE || m->cond == COND_ELIF) && li->last_match == 1) {
 				continue;
 			}
-			flush = !mget (ms, s, m, nbytes, cont_level);
-			if (flush && m->reln != '!') {
-				continue;
-			}
-
-			switch (flush? 1: magiccheck (ms, m)) {
-			case -1:
+			ret = mtest (ms, ml, i, s, nbytes, cont_level);
+			if (ret == -1) {
 				return -1;
-			case 0:
-				ms->c.li[cont_level].last_match = 0;
-				break;
-			default:
-				ms->c.li[cont_level].last_match = 1;
-				if (m->type != FILE_DEFAULT) {
-					ms->c.li[cont_level].got_match = 1;
-				} else if (ms->c.li[cont_level].got_match) {
-					ms->c.li[cont_level].got_match = 0;
-					break;
-				}
-				// Print any required separator before this message.
-				if (*R_MAGIC_DESC) {
-					printed_something = 1;
+			}
+			if (ret == 2) {
+				continue;
+			}
+			li->last_match = ret;
+			if (!ret) {
+				continue;
+			}
+			if (m->type != FILE_DEFAULT) {
+				li->got_match = 1;
+			} else if (li->got_match) {
+				li->got_match = 0;
+				continue;
+			}
+			if (*R_MAGIC_DESC) {
+				if (!printed_something) {
+					printed_something = true;
 					if (print_sep (ms, firstline) == -1) {
 						return -1;
 					}
 				}
-				/* space if previous printed */
-				if (need_separator && ((m->flag & NOSPACE) == 0) && *R_MAGIC_DESC) {
-					if (__magic_file_printf (ms, " ") == -1) {
-						return -1;
-					}
-					need_separator = 0;
-				}
-				if ((ms->c.li[cont_level].off = mprint (ms, m)) == -1) {
+				if (need_separator && !(m->flag & NOSPACE) && __magic_file_printf (ms, " ") == -1) {
 					return -1;
 				}
-				if (*R_MAGIC_DESC) {
-					need_separator = 1;
-				}
-
-				// Process any deeper continuations.
-				if (__magic_file_check_mem (ms, ++cont_level) == -1) {
-					return -1;
-				}
-				break;
+				need_separator = true;
+			}
+			if ((li->off = mprint (ms, m)) == -1) {
+				return -1;
+			}
+			// Process any deeper continuations
+			if (__magic_file_check_mem (ms, ++cont_level) == -1) {
+				return -1;
 			}
 		}
 		if (printed_something) {
-			firstline = 0;
 			returnval = 1;
-		}
-		if ((ms->flags & R_MAGIC_CONTINUE) == 0 && printed_something) {
-			return 1; /* don't keep searching */
+			if (!(ms->flags & R_MAGIC_CONTINUE)) {
+				break;
+			}
 		}
 	}
-	return returnval; /* This is hit if -k is set or there is no match */
+	return returnval;
 }
 
-/*
- * softmagic - lookup one file in parsed, in-memory copy of database
- * Passed the name and FILE * of one file to be typed.
- */
-/*ARGSUSED1*/ /* nbytes passed for regularity, maybe need later */
 int __magic_file_softmagic(RMagic *ms, const ut8 *buf, size_t nbytes, int mode) {
 	struct mlist *ml;
-	int rv;
+	int rv = 0;
 	R_VEC_FOREACH (&ms->mlist, ml) {
-		if ((rv = match (ms, ml->magic, ml->nmagic, ml->min_bytes, buf, nbytes, mode)) != 0) {
-			return rv;
+		const int ret = match (ms, ml, buf, nbytes, mode);
+		if (ret == -1) {
+			return -1;
+		}
+		if (ret) {
+			rv = 1;
+			if (!(ms->flags & R_MAGIC_CONTINUE)) {
+				break;
+			}
 		}
 	}
-	return 0;
+	return rv;
 }
 #endif

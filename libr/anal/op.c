@@ -702,7 +702,9 @@ R_API const char *r_anal_op_direction_tostring(RAnalOp *op) {
 	if (!op) {
 		return "none";
 	}
-	switch (op->direction) {
+	switch ((int)op->direction) {
+	case R_ANAL_OP_DIR_READ | R_ANAL_OP_DIR_WRITE:
+		return "read,write";
 	case R_ANAL_OP_DIR_READ:
 		return "read";
 	case R_ANAL_OP_DIR_WRITE:

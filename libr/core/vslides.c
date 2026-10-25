@@ -1,10 +1,25 @@
-/* radare - LGPL - Copyright 2021-2025 - pancake */
+/* radare - LGPL - Copyright 2021-2026 - pancake */
 
 #include <r_core.h>
 
 typedef struct slides_state_t {
 	char *keys[256];
 } SlidesState;
+
+typedef struct slides_match_t {
+	int page;
+	int x;
+	int y;
+	int ordinal;
+} SlidesMatch;
+
+typedef struct slides_search_t {
+	char *word;
+	RList *hits;
+	int current;
+	int width;
+	bool focus;
+} SlidesSearch;
 
 typedef struct slides_view_t {
 	SlidesState *state;
@@ -15,6 +30,8 @@ typedef struct slides_view_t {
 	int sx;
 	int sy;
 	int total_pages;
+	SlidesSearch *search;
+	int transition;
 } SlidesView;
 
 static void clearkeys(SlidesState *state) {
@@ -373,14 +390,45 @@ static void slide_flush(RCore *core, RStrBuf *out, RStrBuf *body, int width) {
 	}
 }
 
-static void render(SlidesState *state, RCore *core, RList *list, int mode, int page, int sx, int sy) {
+static void slide_collect(RStrBuf *out, size_t *scanned, int *x, int *y, const char *word, RList *hits, int page) {
+	if (!hits) {
+		return;
+	}
+	size_t end = r_strbuf_length (out);
+	if (end == *scanned) {
+		return;
+	}
+	char *text = strdup (r_strbuf_get (out) + *scanned);
+	*scanned = end;
+	if (!text) {
+		return;
+	}
+	r_str_ansi_strip (text);
+	const char *p = text;
+	size_t length = word? strlen (word): 0;
+	const char *next = length? strstr (p, word): NULL;
+	for (; *p; p++) {
+		if (p == next) {
+			SlidesMatch *hit = R_NEW (SlidesMatch);
+			SlidesMatch *previous = r_list_last (hits);
+			*hit = (SlidesMatch) { page, *x, *y, previous && previous->page == page? previous->ordinal + 1: 0 };
+			r_list_append (hits, hit);
+			next = strstr (p + length, word);
+		}
+		if (*p == '\n') {
+			*x = 0;
+			(*y)++;
+		} else if (((ut8)*p & 0xc0) != 0x80) {
+			(*x)++;
+		}
+	}
+	free (text);
+}
+
+static char *slide_text(SlidesState *state, RCore *core, RList *list, int page, int width, const char *word, RList *hits) {
 	RCons *cons = core->cons;
-	int h, columns = r_cons_get_size (cons, &h);
-	int offset = mode == 2? columns / 2: 0;
-	int width = mode == 1? columns: mode == 2? columns - offset: columns / 2;
-	width = R_MAX (1, width);
-	sx = R_MAX (0, sx);
-	sy = R_MAX (0, sy);
+	size_t scanned = 0;
+	int x = 0, y = 0;
 	int count = 0;
 	int notch = R_MAX (1, r_config_get_i (core->config, "scr.notch"));
 	bool markdown = false;
@@ -408,6 +456,7 @@ static void render(SlidesState *state, RCore *core, RList *list, int mode, int p
 			} else if (!delimiter) {
 				r_strbuf_appendf (sb, "     %s\n", line);
 			}
+			slide_collect (sb, &scanned, &x, &y, word, hits, page);
 			continue;
 		}
 		size_t length = strlen (s);
@@ -420,11 +469,16 @@ static void render(SlidesState *state, RCore *core, RList *list, int mode, int p
 			slide_flush (core, sb, body, width);
 		}
 		if (command) {
+			slide_collect (sb, &scanned, &x, &y, word, hits, page);
+			if (!state) {
+				continue;
+			}
 			char *cmd = r_str_ndup (s + 1, length - 2);
 			char *res = r_core_cmd_str (core, cmd);
 			r_strbuf_append (sb, res);
 			free (res);
 			free (cmd);
+			slide_collect (sb, &scanned, &x, &y, NULL, hits, page);
 		} else if (!strcmp (s, "--markdown")) {
 			markdown = true;
 		} else if (!strcmp (s, "--markdown=false")) {
@@ -447,7 +501,7 @@ static void render(SlidesState *state, RCore *core, RList *list, int mode, int p
 			}
 		} else if (r_str_startswith (s, "--gotokey:")) {
 			const char *binding = s + strlen ("--gotokey:");
-			if (binding[0] && binding[1] == ':') {
+			if (state && binding[0] && binding[1] == ':') {
 				ut8 key = (ut8)binding[0];
 				free (state->keys[key]);
 				state->keys[key] = binding[2]? strdup (binding + 2): NULL;
@@ -455,7 +509,14 @@ static void render(SlidesState *state, RCore *core, RList *list, int mode, int p
 		} else if (directive) {
 			// Directives are hidden from the audience.
 		} else if (*s == '#') {
-			slide_heading (core, sb, s, iter->n, width);
+			if (word) {
+				while (*s == '#') {
+					s++;
+				}
+				r_strbuf_appendf (sb, "  %s\n", r_str_trim_head_ro (s));
+			} else {
+				slide_heading (core, sb, s, iter->n, width);
+			}
 		} else if (markdown) {
 			r_strbuf_appendf (body, "%s\n", line);
 		} else {
@@ -463,34 +524,81 @@ static void render(SlidesState *state, RCore *core, RList *list, int mode, int p
 			r_strbuf_appendf (sb, "     %s\n", trimmed);
 			free (trimmed);
 		}
+		slide_collect (sb, &scanned, &x, &y, word, hits, page);
 	}
 	slide_flush (core, sb, body, width);
+	slide_collect (sb, &scanned, &x, &y, word, hits, page);
 	r_strbuf_free (body);
 	if (r_config_get_i (core->config, "scr.color") > 0) {
 		r_strbuf_append (sb, Color_RESET);
 	}
-	char *output = r_strbuf_drain (sb);
-	char *cropped = r_str_ansi_crop (output, sx, sy, (ut32)sx + width, (ut32)sy + R_MAX (0, h - 1));
-	free (output);
-	if (cropped) {
-		if (offset) {
-			char *prefix = r_str_pad (NULL, 0, ' ', offset);
-			char *positioned = r_str_prefix_all (cropped, prefix);
-			r_cons_print (cons, positioned);
-			free (positioned);
-			free (prefix);
-		} else {
-			r_cons_print (cons, cropped);
+	return r_strbuf_drain (sb);
+}
+
+static void slide_search_index(SlidesSearch *search, RCore *core, RList *list, int total, int mode) {
+	r_list_free (search->hits);
+	search->hits = search->word? r_list_newf (free): NULL;
+	search->current = 0;
+	search->focus = false;
+	if (search->word) {
+		search->width = R_MAX (1, r_cons_get_size (core->cons, NULL) / mode);
+		int page;
+		for (page = 1; page <= total; page++) {
+			free (slide_text (NULL, core, list, page, search->width, search->word, search->hits));
 		}
-		free (cropped);
 	}
 }
 
-static void render_page_index(RCore *core, int page, int total) {
+static void slide_search_next(SlidesSearch *search, int *page, int step) {
+	int count = search->hits? r_list_length (search->hits): 0;
+	if (count) {
+		search->current = (search->current + count + step) % count;
+		SlidesMatch *hit = r_list_get_n (search->hits, search->current);
+		*page = hit->page;
+		search->focus = true;
+	}
+}
+
+static char *render(SlidesState *state, RCore *core, RList *list, int mode, int page, int *scroll_x, int *scroll_y, SlidesSearch *search) {
+	RCons *cons = core->cons;
+	int h, columns = r_cons_get_size (cons, &h);
+	int offset = mode == 2? columns / 2: 0;
+	int width = R_MAX (1, mode == 1? columns: mode == 2? columns - offset: columns / 2);
+	int sx = *scroll_x, sy = *scroll_y;
+	RList *hits = search->focus? r_list_newf (free): NULL;
+	char *output = slide_text (state, core, list, page, width, search->word, hits);
+	SlidesMatch *selected = search->focus && search->hits? r_list_get_n (search->hits, search->current): NULL;
+	if (selected && selected->page == page) {
+		SlidesMatch *hit = r_list_get_n (hits, selected->ordinal);
+		if (hit) {
+			sx = hit->x >= sx && hit->x + (int)r_str_len_utf8 (search->word) <= sx + width? sx: hit->x;
+			sy = hit->y >= sy && hit->y < sy + h - 1? sy: hit->y;
+			*scroll_x = sx;
+			*scroll_y = sy;
+		}
+	}
+	r_list_free (hits);
+	sx = R_MAX (0, sx);
+	sy = R_MAX (0, sy);
+	char *cropped = r_str_ansi_crop (output, sx, sy, (ut32)sx + width, (ut32)sy + R_MAX (0, h - 1));
+	free (output);
+	if (cropped && offset) {
+		char *prefix = r_str_pad (NULL, 0, ' ', offset);
+		char *positioned = r_str_prefix_all (cropped, prefix);
+		free (cropped);
+		cropped = positioned;
+		free (prefix);
+	}
+	return cropped;
+}
+
+static void render_page_index(RCore *core, int page, int total, SlidesSearch *search) {
 	R_RETURN_IF_FAIL (page >= 0 && total >= 0);
 	int height;
 	int width = R_MAX (1, r_cons_get_size (core->cons, &height));
-	char *index = r_str_newf ("%d/%d", page, total);
+	char *index = search->word? r_str_newf ("[%d/%d] %d/%d",
+		r_list_empty (search->hits)? 0: search->current + 1, r_list_length (search->hits), page, total):
+		r_str_newf ("%d/%d", page, total);
 	if (!index) {
 		return;
 	}
@@ -499,10 +607,79 @@ static void render_page_index(RCore *core, int page, int total) {
 	length = R_MIN (length, width);
 	bool color = r_config_get_i (core->config, "scr.color") > 0;
 	RConsPrintablePalette *pal = &core->cons->context->pal;
+	r_cons_gotoxy (core->cons, 1, R_MAX (1, height));
+	r_cons_print (core->cons, Color_RESET R_CONS_CLEAR_LINE);
+	int bar_width = width - length - 1;
+	if (bar_width >= 3) {
+		int flags = core->print->flags;
+		core->print->flags &= ~R_PRINT_FLAGS_HEADER;
+		r_cons_print (core->cons, color? pal->prompt: "");
+		// The progress bar reserves 15 columns internally and adds two brackets.
+		r_print_progressbar (core->print, total? (ut64)page * 100 / total: 0, bar_width + 13, NULL);
+		core->print->flags = flags;
+		r_cons_print (core->cons, color? Color_RESET: "");
+	}
 	r_cons_gotoxy (core->cons, width - length + 1, R_MAX (1, height));
 	r_cons_printf (core->cons, "%s%s%s%s", color? pal->prompt: "",
 		color? pal->widget_bg: "", visible, color? Color_RESET: "");
 	free (index);
+}
+
+static void slides_print_rows(RCons *cons, RList *lines, int first, int count, int y) {
+	RListIter *iter = r_list_get_nth (lines, first);
+	while (iter && count-- > 0) {
+		r_cons_gotoxy (cons, 1, y++);
+		r_cons_printf (cons, "%s" Color_RESET, (const char *)iter->data);
+		iter = iter->n;
+	}
+}
+
+static bool slides_animate(SlidesView *view, const char *left, const char *right) {
+	RCons *cons = view->core->cons;
+	int height, width = r_cons_get_size (cons, &height);
+	if (!view->transition || height < 4 || !cons->vtmode || cons->context->noflush
+			|| !r_config_get_b (view->core->config, "scr.demo")) {
+		return false;
+	}
+	RList *left_lines = r_str_split_duplist (left, "\n", false);
+	RList *right_lines = right? r_str_split_duplist (right, "\n", false): NULL;
+	if (!left_lines || (right && !right_lines)) {
+		r_list_free (left_lines);
+		r_list_free (right_lines);
+		return false;
+	}
+	int rows = height - 1;
+	int frame, previous = 0;
+	bool complete = false;
+	// Keep the footer stationary while the slide scrolls through the content area.
+	r_cons_printf (cons, Color_RESET "\x1b[1;%dr", rows);
+	for (frame = 1; frame <= 12; frame++) {
+		int current_height;
+		if (r_cons_get_size (cons, &current_height) != width || current_height != height || r_cons_is_breaked (cons)) {
+			break;
+		}
+		int position = (ut64)rows * frame * frame * (36 - 2 * frame) / (12 * 12 * 12);
+		int count = position - previous;
+		if (count > 0) {
+			r_cons_printf (cons, "\x1b[%d%c", count, view->transition > 0? 'S': 'T');
+			int first = view->transition > 0? previous: rows - position;
+			int y = view->transition > 0? rows - count + 1: 1;
+			if (right_lines) {
+				slides_print_rows (cons, right_lines, first, count, y);
+			}
+			slides_print_rows (cons, left_lines, first, count, y);
+			r_cons_flush (cons);
+		}
+		previous = position;
+		if (frame < 12) {
+			r_sys_usleep (14000);
+		}
+		complete = frame == 12;
+	}
+	r_cons_print (cons, "\x1b[r");
+	r_list_free (left_lines);
+	r_list_free (right_lines);
+	return complete;
 }
 
 static void slides_refresh(void *user) {
@@ -510,15 +687,34 @@ static void slides_refresh(void *user) {
 	RCons *cons = view->core->cons;
 	RConsEvent resize = cons->event_resize;
 	cons->event_resize = NULL;
-	clearkeys (view->state);
-	r_cons_clear00 (cons);
-	if (view->mode == 2) {
-		render (view->state, view->core, view->list, 2, view->page + 1, view->sx, view->sy);
+	if (view->search->word && view->search->width != R_MAX (1, r_cons_get_size (cons, NULL) / view->mode)) {
+		int current = view->search->current;
+		slide_search_index (view->search, view->core, view->list, view->total_pages, view->mode);
+		view->search->current = R_MIN (current, R_MAX (0, (int)r_list_length (view->search->hits) - 1));
+		slide_search_next (view->search, &view->page, 0);
 	}
-	r_cons_gotoxy (cons, 0, 0);
-	render (view->state, view->core, view->list, view->mode == 2? 0: 1, view->page, view->sx, view->sy);
-	render_page_index (view->core, view->page, view->total_pages);
+	clearkeys (view->state);
+	char *right = NULL;
+	if (view->mode == 2) {
+		right = render (view->state, view->core, view->list, 2, view->page + 1, &view->sx, &view->sy, view->search);
+	}
+	char *left = render (view->state, view->core, view->list, view->mode == 2? 0: 1, view->page, &view->sx, &view->sy, view->search);
+	if (!left || !slides_animate (view, left, right)) {
+		r_cons_clear00 (cons);
+		if (right) {
+			r_cons_print (cons, right);
+		}
+		r_cons_gotoxy (cons, 0, 0);
+		if (left) {
+			r_cons_print (cons, left);
+		}
+	}
+	free (left);
+	free (right);
+	view->transition = 0;
+	render_page_index (view->core, view->page, view->total_pages, view->search);
 	r_cons_flush (cons);
+	view->search->focus = false;
 	cons->event_resize = resize;
 }
 
@@ -547,16 +743,19 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 	int mode = 1;
 	int sx = 0;
 	int sy = 0;
+	int transition = 0;
 	r_cons_set_raw (core->cons, 1);
 	r_cons_show_cursor (core->cons, false);
 	int total_pages = count_pages (list);
 	SlidesState state = {0};
+	SlidesSearch search = {0};
 	while (having_fun) {
 		if (page > total_pages) {
 			page = total_pages;
 		}
-		SlidesView view = { &state, core, list, mode, page, sx, sy, total_pages };
+		SlidesView view = { &state, core, list, mode, page, sx, sy, total_pages, &search, transition };
 		slides_refresh (&view);
+		transition = 0;
 		r_cons_set_raw (core->cons, true);
 		r_cons_enable_mouse (core->cons, r_config_get_b (core->config, "scr.wheel"));
 		RConsEvent resize = core->cons->event_resize;
@@ -569,6 +768,9 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 		core->cons->event_resize = NULL;
 		core->cons->event_data = event_data;
 		core->cons->event_resize = resize;
+		page = view.page;
+		sx = view.sx;
+		sy = view.sy;
 		if (ch < 0) {
 			break;
 		}
@@ -607,16 +809,34 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 			mode = 2;
 			break;
 		case 'q':
+			if (search.word) {
+				R_FREE (search.word);
+				r_list_free (search.hits);
+				search.hits = NULL;
+				search.focus = false;
+				r_config_set (core->config, "scr.highlight", "");
+				break;
+			}
 			having_fun = false;
 			break;
 		case ' ':
 		case 'n':
 		case 'P':
+			if (search.word) {
+				slide_search_next (&search, &page, 1);
+				break;
+			}
+			transition = page < total_pages? 1: 0;
 			page += mode;
 			sx = sy = 0;
 			break;
 		case 'p':
 		case 'N':
+			if (search.word) {
+				slide_search_next (&search, &page, -1);
+				break;
+			}
+			transition = page > 1? -1: 0;
 			sx = sy = 0;
 			page -= mode;
 			if (page < 1) {
@@ -629,7 +849,8 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 			eprintf (" np   = next/prev slide\n");
 			eprintf (" hjkl = scroll current slide left/down/up/right\n");
 			eprintf (" JK   = scroll current slide one screen down/up (PgDn/PgUp)\n");
-			eprintf (" q    = quit the slides\n");
+			eprintf (" /    = search slide text (np navigate matches)\n");
+			eprintf (" q    = cancel search or quit the slides\n");
 			eprintf (" e    = edit the current slide with cfg.editor\n");
 			eprintf (" 12   = show 1 or two pages\n");
 			eprintf (" R/r  = next/previous color theme (ecn/ecp)\n");
@@ -654,6 +875,8 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 					data = ndata;
 					list = slides_load (data);
 					total_pages = count_pages (list);
+					slide_search_index (&search, core, list, total_pages, mode);
+					slide_search_next (&search, &page, 0);
 				}
 				r_config_set_b (core->config, "scr.interactive", false);
 				r_cons_show_cursor (core->cons, false);
@@ -674,6 +897,36 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 					data = ndata;
 					list = slides_load (data);
 					total_pages = count_pages (list);
+					slide_search_index (&search, core, list, total_pages, mode);
+					slide_search_next (&search, &page, 0);
+				}
+			}
+			break;
+		case '/':
+			{
+				char buf[1024] = {0};
+				char *prompt = r_line_get_prompt (core->cons->line);
+				r_cons_enable_mouse (core->cons, false);
+				r_cons_show_cursor (core->cons, true);
+				r_cons_set_raw (core->cons, false);
+				int height;
+				r_cons_get_size (core->cons, &height);
+				r_cons_gotoxy (core->cons, 1, R_MAX (1, height));
+				r_cons_clear_line (core->cons, false, true);
+				r_line_set_prompt (core->cons->line, "/");
+				int result = r_cons_fgets (core->cons, buf, sizeof (buf), 0, NULL);
+				r_line_set_prompt (core->cons->line, prompt);
+				free (prompt);
+				r_cons_show_cursor (core->cons, false);
+				if (result < 0) {
+					having_fun = false;
+				} else {
+					free (search.word);
+					search.word = *buf? strdup (buf): NULL;
+					r_config_set (core->config, "scr.highlight", buf);
+					slide_search_index (&search, core, list, total_pages, mode);
+					slide_search_next (&search, &page, 0);
+					sx = sy = 0;
 				}
 			}
 			break;
@@ -717,6 +970,11 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 	r_cons_show_cursor (core->cons, true);
 	r_cons_enable_mouse (core->cons, mouse);
 	clearkeys (&state);
+	if (search.word) {
+		r_config_set (core->config, "scr.highlight", "");
+	}
+	free (search.word);
+	r_list_free (search.hits);
 	r_list_free (list);
 	free (data);
 	r_config_set_b (core->config, "scr.interactive", interactive);

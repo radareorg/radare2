@@ -311,7 +311,8 @@ R_API bool r_sandbox_grain_parse(const char *R_NONNULL expr, int *R_NONNULL mask
 		{ "disk", R_SANDBOX_GRAIN_DISK },
 		{ "network", R_SANDBOX_GRAIN_NETWORK },
 		{ "environ", R_SANDBOX_GRAIN_ENVIRON },
-		{ "hidden", R_SANDBOX_GRAIN_HIDDEN }
+		{ "hidden", R_SANDBOX_GRAIN_HIDDEN },
+		{ "script", R_SANDBOX_GRAIN_SCRIPT }
 	};
 	expr = r_str_trim_head_ro (expr);
 	int result = *expr == '!'? R_SANDBOX_GRAIN_ALL: R_SANDBOX_GRAIN_NONE;
@@ -496,6 +497,18 @@ static inline int bytify(int v) {
 	}
 #endif
 	return 1;
+}
+
+R_API FILE *r_sandbox_popen(const char *cmd, const char *mode) {
+	R_RETURN_VAL_IF_FAIL (cmd && mode, NULL);
+	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_EXEC, NULL);
+#if R2__WINDOWS__
+	return _popen (cmd, mode);
+#elif LIBC_HAVE_SYSTEM
+	return popen (cmd, mode);
+#else
+	return NULL;
+#endif
 }
 
 R_API int r_sandbox_system(const char *x, int n) {

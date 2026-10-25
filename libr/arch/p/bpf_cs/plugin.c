@@ -430,6 +430,9 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 				break;
 			case BPF_INS_CALL: ///< eBPF only
 				op->type = R_ANAL_OP_TYPE_CALL;
+				if ((op->bytes[1] >> 4) == 1) {
+					op->jump = op->addr + insn->size + (st64)(st32)IMM (0) * 8;
+				}
 				break;
 			case BPF_INS_EXIT: ///< eBPF only
 				//op->type = R_ANAL_OP_TYPE_TRAP;
@@ -584,8 +587,8 @@ void bpf_alu(RArchSession *a, RAnalOp *op, cs_insn *insn, const char* operation,
 	if (OPCOUNT == 2 && a->config->bits == 64) { // eBPF
 		if (bits == 64) {
 			if (OP (1).type == BPF_OP_IMM) {
-				op->val = IMM (1);
-				esilprintf (op, "%" PFMT64d ",%s,%s=", IMM (1), REG (0), operation);
+				op->val = (ut64)(st64)(st32)IMM (1);
+				esilprintf (op, "%" PFMT64u ",%s,%s=", op->val, REG (0), operation);
 			} else {
 				esilprintf (op, "%s,%s,%s=", REG (1), REG (0), operation);
 			}
@@ -665,12 +668,17 @@ void bpf_jump(RArchSession *a, RAnalOp *op, cs_insn *insn, char *condition) {
 				condition, op->jump, op->fail);
 		}
 	} else if (OPCOUNT > 1) { // eBPF
+		const bool word = (op->bytes[0] & 7) == 6;
+		const bool sign = insn->id == BPF_INS_JSGT || insn->id == BPF_INS_JSGE
+			|| insn->id == BPF_INS_JSLT || insn->id == BPF_INS_JSLE;
+		const char *extend = !word? "": sign? ",32,SWAP,~": ",0xffffffff,&";
 		if (OP (1).type == BPF_OP_IMM) {
-			esilprintf (op, "%" PFMT64d ",%s,%s,?{,0x%" PFMT64x ",pc,=,}",
-				IMM (1), REG (0), condition, op->jump);
+			ut64 value = word && !sign? IMM (1): (ut64)(st64)(st32)IMM (1);
+			esilprintf (op, "%" PFMT64u ",%s%s,%s,?{,0x%" PFMT64x ",pc,=,}",
+				value, REG (0), extend, condition, op->jump);
 		} else {
-			esilprintf (op, "%s,%s,%s,?{,0x%" PFMT64x ",pc,=,}",
-				REG (1), REG (0), condition, op->jump);
+			esilprintf (op, "%s%s,%s%s,%s,?{,0x%" PFMT64x ",pc,=,}",
+				REG (1), extend, REG (0), extend, condition, op->jump);
 		}
 	}
 }
@@ -694,10 +702,10 @@ static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr) 
 		CJMP ("==,$z");
 		break;
 	case BPF_INS_JGT:
-		CJMP ("==,63,$c,$z,|,!");
+		CJMP ("==,64,$b,$z,|,!");
 		break;
 	case BPF_INS_JGE:
-		CJMP ("==,63,$c,!");
+		CJMP ("==,64,$b,!");
 		break;
 	case BPF_INS_JSET:
 		CJMP ("&");
@@ -712,21 +720,23 @@ static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr) 
 		CJMP (">=");
 		break;
 	case BPF_INS_JLT:	///< eBPF only
-		CJMP ("==,63,$c");
+		CJMP ("==,64,$b");
 		break;
 	case BPF_INS_JSLT:	///< eBPF only
 		CJMP ("<");
 		break;
 	case BPF_INS_JLE:	///< eBPF only
-		CJMP ("==,63,$c,$z,|");
+		CJMP ("==,64,$b,$z,|");
 		break;
 	case BPF_INS_JSLE:	///< eBPF only
 		CJMP ("<=");
 		break;
 	case BPF_INS_CALL:	///< eBPF only
-		// the call immediate is almost never used as an addr so its an INT
-		// maybe this will change in the future once the relocs are added?
-		esilprintf (op, "pc,sp,=[8],8,sp,-=,0x%" PFMT64x ",$", IMM (0));
+		if (op->jump != UT64_MAX) {
+			esilprintf (op, "0x%" PFMT64x ",pc,=", op->jump);
+		} else {
+			esilprintf (op, "0x%" PFMT64x ",$", IMM (0));
+		}
 		break;
 	case BPF_INS_EXIT:	///< eBPF only
 		esilprintf (op, "8,sp,+=,sp,[8],pc,=");
@@ -826,16 +836,18 @@ static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr) 
 			esilprintf (op, "%s,0xffffffff,&,%s,=", REG (1), REG (0));
 		}
 		break;
-	case BPF_INS_LDDW:	///< eBPF only: load 64-bit imm
-	{
-		char *reg = regname(insn->bytes[1]+3);
-		ut64 val = r_read_ble64((insn->bytes)+8, 0) + IMM (0); // wtf
-		esilprintf (op, "%" PFMT64d ",%s,=", val, reg);
+	case BPF_INS_LDDW: {
+		const bool big_endian = R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
+		ut64 val = r_read_ble32 (insn->bytes + 4, big_endian);
+		val |= (ut64)r_read_ble32 (insn->bytes + 12, big_endian) << 32;
+		op->val = val;
+		esilprintf (op, "%" PFMT64u ",%s,=", val, REG (0));
 		break;
 	}
 	case BPF_INS_MOV64:
 		if (OP (1).type == BPF_OP_IMM) {
-			esilprintf (op, "%" PFMT64d ",%s,=", IMM (1), REG (0));
+			op->val = (ut64)(st64)(st32)IMM (1);
+			esilprintf (op, "%" PFMT64u ",%s,=", op->val, REG (0));
 		} else {
 			esilprintf (op, "%s,%s,=", REG (1), REG (0));
 		}
@@ -944,6 +956,7 @@ static char *regs(RArchSession *as) {
 		"=A1    r2\n"
 		"=A2    r3\n"
 		"=A3    r4\n"
+		"=A4    r5\n"
 		"=R0    r0\n"
 		"=SP    r10\n"
 		"=BP    r10\n"

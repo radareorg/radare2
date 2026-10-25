@@ -10,3 +10,155 @@ a,x,y,cc
 sp
 EOF
 RUN
+
+NAME=stm8 pseudo repeats an operand longer than the scratch slack
+FILE=malloc://16
+ARGS=-a stm8
+CMDS=<<EOF
+wx 3610
+e asm.pseudo=true
+e asm.bytes=false
+e asm.lines=false
+e asm.comments=false
+e asm.addr=false
+e scr.color=0
+pd 1
+ahd rrc sym.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+pd 1
+ahd neg sym.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+pd 1
+?e done
+EOF
+EXPECT=<<EOF
+     [0x10] = rotate_right([0x10], 1)
+     rrc sym.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+     neg sym.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+done
+EOF
+RUN
+
+NAME=stm8 register widths and independent accumulator and condition code
+FILE=malloc://16
+ARGS=-a stm8 -b 16
+CMDS=<<EOF
+aeim
+aer a=0x56
+aer cc=0xa5
+aer x=0x1234
+aer y=0x789a
+aer sp=0x123456
+aer pc=0x12345678
+aer a
+aer cc
+aer xh
+aer xl
+aer yh
+aer yl
+aer sp
+aer pc
+aer xl=0xbc
+aer xh=0xde
+aer x
+aer cc=0
+aer a
+EOF
+EXPECT=<<EOF
+0x00000056
+0x000000a5
+0x00000012
+0x00000034
+0x00000078
+0x0000009a
+0x00003456
+0x00345678
+0x0000debc
+0x00000056
+EOF
+RUN
+
+NAME=stm8 memory read write directions
+FILE=malloc://32
+ARGS=-a stm8 -b 16
+CMDS=<<EOF
+wx c65102c75102725f510272105102725c51027200510200
+ao 6~direction
+s 3
+ao 1~jump
+s 18
+ao 1~ptr
+s 0
+wx c60000
+ao 1~ptr
+EOF
+EXPECT=<<EOF
+direction: read
+direction: write
+direction: write
+direction: read,write
+direction: read,write
+direction: read
+ptr: 0x00005102
+ptr: 0x00000000
+EOF
+RUN
+
+NAME=stm8 pseudo AND preserves logical operation
+FILE=malloc://16
+ARGS=-a stm8
+CMDS=<<EOF
+wx a403
+e asm.pseudo=true
+e asm.bytes=false
+e asm.lines=false
+e asm.comments=false
+e asm.addr=false
+e scr.color=0
+pd 1
+EOF
+EXPECT=<<EOF
+     a &= 0x03
+EOF
+RUN
+
+NAME=stm8 distinguishes logical and arithmetic byte shifts
+FILE=malloc://16
+ARGS=-a stm8 -b 16
+CMDS=<<EOF
+pad 44
+pad 47
+pad 3412
+pad 3712
+pad 72541234
+pad 72571234
+pad 04aa
+pad 07aa
+pad 74
+pad 77
+pad 9064aa
+pad 9067aa
+pad 923412
+pad 923712
+wx 44
+ao 1~type
+wx 47
+ao 1~type
+EOF
+EXPECT=<<EOF
+srl a
+sra a
+srl [0x12]
+sra [0x12]
+srl [0x1234]
+sra [0x1234]
+srl [sp + 0xaa]
+sra [sp + 0xaa]
+srl [x]
+sra [x]
+srl [y + 0xaa]
+sra [y + 0xaa]
+srl [0x12]
+sra [0x12]
+type: shr
+type: sar
+EOF
+RUN

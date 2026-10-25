@@ -21,6 +21,7 @@ typedef struct SDemangler {
 	demangle_func demangle; ///< function that will use for demangling
 	RList *abbr_types;
 	RList *abbr_names;
+	int depth; ///< nesting of the type or name being parsed
 } SDemangler;
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -39,7 +39,7 @@ static char *cmd_to_str(const char *cmd) {
 	char *out = (char *)calloc (4096, 1);
 	char *tout;
 	int ret = 0, len = 0, outlen = 4096;
-	FILE *fd = popen (cmd, "r");
+	FILE *fd = r_sandbox_popen (cmd, "r");
 	while (fd) {
 		len += ret;
 		ret = fread (out + len, 1, 1023, fd);
@@ -287,7 +287,7 @@ static TAG_CALLBACK(spp_grepline) {
 	ptr = strchr(buf, ' ');
 	if (ptr) {
 		*ptr= '\0';
-		fd = fopen (buf, "r");
+		fd = r_sandbox_fopen (buf, "r");
 		line = atoi (ptr+1);
 		if (fd) {
 			while (!feof (fd) && line--) {
@@ -348,7 +348,7 @@ static TAG_CALLBACK(spp_default) {
 
 static TAG_CALLBACK(spp_pipe) {
 #if SPP_HAVE_SYSTEM
-	state->pipe_fd = popen (buf, "w");
+	state->pipe_fd = r_sandbox_popen (buf, "w");
 #endif
 	return 0;
 }
@@ -377,7 +377,9 @@ static TAG_CALLBACK(spp_endswitch) {
 
 static TAG_CALLBACK(spp_endpipe) {
 #if SPP_HAVE_SYSTEM
-	/* TODO: Get output here */
+	if (!state->pipe_fd) {
+		return 0;
+	}
 	int ret = 0, len = 0;
 	int outlen = 4096;
 	char *str = (char *)malloc (4096);
@@ -397,9 +399,7 @@ static TAG_CALLBACK(spp_endpipe) {
 	} while (ret > 0);
 	str[len] = '\0';
 	out_printf (out, "%s", str);
-	if (state->pipe_fd) {
-		pclose (state->pipe_fd);
-	}
+	pclose (state->pipe_fd);
 	state->pipe_fd = NULL;
 	free (str);
 #endif

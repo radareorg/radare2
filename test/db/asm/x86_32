@@ -1508,6 +1508,10 @@ a "movzx eax, byte [eax]" 0fb600
 a "movzx ecx, byte [esp]" 0fb60c24
 a "movzx eax, word [eax]" 0fb700
 a "movzx edx, word [esp]" 0fb71424
+a "movzx eax, byte [eax + ecx*4 + 8]" 0fb6448808
+a "movzx eax, byte [esp + eax]" 0fb60404
+a "movsx di, byte [ebx + 8]" 660fbe7b08
+a "movsx ax, bl" 660fbec3
 aB "mpsadbw xmm0, xmm0, 0" 660f3a42c000
 ad "mul byte [eax]" f620
 aB "mulpd xmm0, xmmword [eax]" 660f5900

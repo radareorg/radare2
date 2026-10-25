@@ -27,8 +27,22 @@ struct grub_fb_data {
 	grub_uint32_t ofs;
 	grub_uint32_t pri_size;
 	struct fbm_file *ptr;
+	grub_size_t list_len;
 	char fb_list[0];
 };
+
+// the record at off, if it and its NUL terminated name lie inside the list
+static struct fbm_file *grub_fbfs_record(struct grub_fb_data *data, grub_size_t off) {
+	if (off + sizeof (struct fbm_file) >= data->list_len) {
+		return 0;
+	}
+	struct fbm_file *file = (struct fbm_file *) (data->fb_list + off);
+	const grub_size_t size = file->size + 2;
+	if (size <= sizeof (*file) || off + size > data->list_len || !memchr (file->name, 0, size - sizeof (*file))) {
+		return 0;
+	}
+	return file;
+}
 
 static struct grub_fb_data *
 grub_fbfs_mount(grub_disk_t disk) {
@@ -93,6 +107,7 @@ grub_fbfs_mount(grub_disk_t disk) {
 
 	data->ofs = ofs;
 	data->pri_size = pri_size;
+	data->list_len = list_used * 510;
 	return data;
 
 fail:
@@ -104,6 +119,7 @@ static grub_err_t
 grub_fbfs_dir(grub_device_t device, const char *path, int(*hook)(const char *filename, const struct grub_dirhook_info *info, void *closure), void *closure) {
 	struct grub_dirhook_info info;
 	struct fbm_file *p;
+	grub_size_t off;
 	char *fn;
 	int len, ofs;
 	struct grub_fb_data *data;
@@ -113,6 +129,7 @@ grub_fbfs_dir(grub_device_t device, const char *path, int(*hook)(const char *fil
 		return grub_errno;
 	}
 	if (!hook) {
+		grub_free (data);
 		return GRUB_ERR_NONE;
 	}
 
@@ -125,15 +142,12 @@ grub_fbfs_dir(grub_device_t device, const char *path, int(*hook)(const char *fil
 
 	grub_memset (&info, 0, sizeof (info));
 	info.mtimeset = 1;
-	p = (struct fbm_file *)data->fb_list;
-	while (p->size) {
+	for (off = 0; (p = grub_fbfs_record (data, off)); off += p->size + 2) {
 		info.mtime = grub_le_to_cpu32 (p->data_time);
 		if ((!memcmp (path, p->name, len)) &&
 			(hook (p->name + ofs, &info, closure))) {
 			break;
 		}
-
-		p = (struct fbm_file *) ((char *)p + p->size + 2);
 	}
 
 	grub_free (data);
@@ -144,6 +158,7 @@ static grub_err_t
 grub_fbfs_open(struct grub_file *file, const char *name) {
 	struct fbm_file *p;
 	struct grub_fb_data *data;
+	grub_size_t off;
 
 	data = grub_fbfs_mount (file->device->disk);
 	if (!data) {
@@ -154,18 +169,15 @@ grub_fbfs_open(struct grub_file *file, const char *name) {
 		name++;
 	}
 
-	p = (struct fbm_file *)data->fb_list;
-	while (p->size) {
+	for (off = 0; (p = grub_fbfs_record (data, off)); off += p->size + 2) {
 		if (!grub_strcasecmp (name, p->name)) {
 			file->data = data;
 			data->ptr = p;
 			file->size = p->data_size;
 			return GRUB_ERR_NONE;
 		}
-
-		p = (struct fbm_file *) ((char *)p + p->size + 2);
 	}
-
+	grub_free (data);
 	return grub_error (GRUB_ERR_FILE_NOT_FOUND, "file not found");
 }
 

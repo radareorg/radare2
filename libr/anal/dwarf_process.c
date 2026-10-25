@@ -19,7 +19,17 @@ typedef struct dwarf_parse_context_t {
 	ut64 scope_hi;
 	const char *lang; // for demangling
 	RArena *arena;
+	HtUP/*<offset, DwarfType*>*/ *types; // rendered once per load
 } Context;
+
+typedef struct {
+	ut64 size;
+	st32 tag;
+	char str[];
+} DwarfType;
+
+// compilers never nest a declarator this deep, a longer DW_AT_type chain is crafted
+#define DWARF_TYPE_MAX_DEPTH 64
 
 typedef struct dwarf_function_t {
 	ut64 addr;
@@ -185,30 +195,19 @@ static ut64 get_die_size(const RBinDwarfCompUnit *cu, const RBinDwarfDie *die) {
 	return size;
 }
 
-/**
- * @brief Parses array type entry signature into strbuf
- *
- * @param ctx
- * @param idx index of the current entry
- * @param strbuf strbuf to store the type into
- * @return st32 -1 if error else 0
- */
-static void parse_array_type(Context *ctx, int idx, RStrBuf *strbuf) {
-	if (idx < 0 || idx >= ctx->count) {
-		return;
-	}
-	const RBinDwarfDie *die = &ctx->all_dies[idx++];
-
+// appends the subrange extents of an array DIE, its children live in its own unit
+static void parse_array_type(const RBinDwarfCompUnit *unit, const RBinDwarfDie *die, RStrBuf *strbuf) {
 	if (die->has_children) {
+		const size_t count = RVecDwarfDie_length (unit->dies);
 		int child_depth = 1;
 		size_t j;
-		for (j = idx; child_depth > 0 && j < ctx->count; j++) {
-			const RBinDwarfDie *child_die = &ctx->all_dies[j];
+		for (j = (size_t)(die - unit->dies->_start) + 1; child_depth > 0 && j < count; j++) {
+			const RBinDwarfDie *child_die = RVecDwarfDie_at (unit->dies, j);
 			// right now we skip non direct descendats of the structure
 			// can be also DW_TAG_suprogram for class methods or tag for templates
 			if (child_depth == 1 && child_die->tag == DW_TAG_subrange_type) {
 				RBinDwarfAttrValue *value;
-				R_BIN_DWARF_DIE_FOREACH_ATTR (ctx->unit, child_die, value) {
+				R_BIN_DWARF_DIE_FOREACH_ATTR (unit, child_die, value) {
 					switch (value->attr_name) {
 					case DW_AT_upper_bound:
 						// The last index, so the extent is one more than it.
@@ -264,8 +263,11 @@ static const char *type_qualifier(ut16 tag) {
  * TODO make cache for type entries, one type is usually referenced
  * multiple times which means it's parsed multiple times instead of once
  */
-static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *size, HtUP **visited) {
-	R_RETURN_VAL_IF_FAIL (strbuf, -1);
+static st32 parse_type_at(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *size, int depth) {
+	if (depth > DWARF_TYPE_MAX_DEPTH) {
+		R_LOG_DEBUG ("anal.dwarf.parse_type: type chain too deep at 0x%" PFMT64x, offset);
+		return -1;
+	}
 	RBinDwarfCompUnit *unit;
 	RBinDwarfDie *die = r_bin_dwarf_find_die (ctx->info, offset, &unit);
 	if (!die) {
@@ -289,24 +291,6 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 			return -1;
 		}
 	}
-	bool root = false;
-
-	if (!visited) {
-		root = true;
-		SetU *su = set_u_new ();
-		visited = malloc (sizeof (void*));
-		*visited = su;
-	}
-	if (visited && set_u_contains (*visited, offset)) {
-		R_LOG_WARN ("anal.dwarf.parse_type: infinite recursion detected");
-		if (root) {
-			set_u_free (*visited);
-			free (visited);
-		}
-		return -1;
-	}
-	set_u_add (*visited, offset);
-
 	st32 tag;
 	st32 result = (st32)die->tag;
 	const char *name = NULL;
@@ -323,10 +307,9 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 			r_strbuf_append (strbuf, "void");
 			r_strbuf_append (strbuf, " *");
 		} else {
-			tag = parse_type (ctx, type_attr->reference, strbuf, size, visited);
+			tag = parse_type_at (ctx, type_attr->reference, strbuf, size, depth + 1);
 			if (tag < 0) {
-				result = -1;
-				goto cleanup;
+				return -1;
 			}
 			if (tag == DW_TAG_subroutine_type) {
 				strbuf_rev_append_char (strbuf, "*)(", "(");
@@ -357,11 +340,10 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 		if (!type_attr) {
 			r_strbuf_append (strbuf, "void");
 		} else {
-			tag = parse_type (ctx, type_attr->reference, strbuf, size, visited);
+			tag = parse_type_at (ctx, type_attr->reference, strbuf, size, depth + 1);
 			// Returning another callable needs a nested C declarator, not concatenation.
 			if (tag < 0 || strchr (r_strbuf_get (strbuf), '(')) {
-				result = -1;
-				goto cleanup;
+				return -1;
 			}
 		}
 		r_strbuf_append (strbuf, " (");
@@ -396,8 +378,7 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 					// A lone unspecified child also represents an old C declaration with unknown arity.
 					if (child->tag == DW_TAG_unspecified_parameters && first_parameter && !prototype_known) {
 						if (child->has_children) {
-							result = -1;
-							goto cleanup;
+							return -1;
 						}
 						continue;
 					}
@@ -411,7 +392,7 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 						RBinDwarfAttrValue *parameter_type = r_bin_dwarf_die_find_attr (unit, child, DW_AT_type);
 						RStrBuf parameter;
 						r_strbuf_init (&parameter);
-						if (!parameter_type || parse_type (ctx, parameter_type->reference, &parameter, NULL, visited) < 0 || !parameter.len) {
+						if (!parameter_type || parse_type_at (ctx, parameter_type->reference, &parameter, NULL, depth + 1) < 0 || !parameter.len) {
 							r_strbuf_append (strbuf, "?");
 						} else {
 							r_strbuf_append (strbuf, r_strbuf_get (&parameter));
@@ -427,8 +408,7 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 				}
 			}
 			if (depth > 0) {
-				result = -1;
-				goto cleanup;
+				return -1;
 			}
 		}
 		if (first_parameter && prototype_known) {
@@ -444,13 +424,12 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 	case DW_TAG_reference_type:
 		type_attr = r_bin_dwarf_die_find_attr (unit, die, DW_AT_type);
 		if (type_attr) {
-			if (parse_type (ctx, type_attr->reference, strbuf, size, visited) < 0) {
-				result = -1;
-				goto cleanup;
+			if (parse_type_at (ctx, type_attr->reference, strbuf, size, depth + 1) < 0) {
+				return -1;
 			}
 		}
 		if (die->tag == DW_TAG_array_type) {
-			parse_array_type (ctx, die - ctx->all_dies, strbuf);
+			parse_array_type (unit, die, strbuf);
 		} else {
 			r_strbuf_append (strbuf, type_qualifier (die->tag));
 		}
@@ -458,13 +437,34 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 	default:
 		break;
 	}
-cleanup:
-	set_u_delete (*visited, offset);
-	if (root) {
-		set_u_free (*visited);
-		free (visited);
-	}
 	return result;
+}
+
+// a type is rendered once per load, every DIE referring to it reuses the text
+static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *size) {
+	R_RETURN_VAL_IF_FAIL (strbuf, -1);
+	if (strbuf->len) {
+		return parse_type_at (ctx, offset, strbuf, size, 0);
+	}
+	DwarfType *t = ht_up_find (ctx->types, offset, NULL);
+	if (t) {
+		r_strbuf_append (strbuf, t->str);
+	} else {
+		ut64 tsize = 0;
+		const st32 tag = parse_type_at (ctx, offset, strbuf, &tsize, 0);
+		t = r_arena_alloc (ctx->arena, sizeof (DwarfType) + strbuf->len + 1);
+		if (!t) {
+			return tag;
+		}
+		t->size = tsize;
+		t->tag = tag;
+		memcpy (t->str, r_strbuf_get (strbuf), strbuf->len + 1);
+		ht_up_insert (ctx->types, offset, t);
+	}
+	if (size && !*size) {
+		*size = t->size;
+	}
+	return t->tag;
 }
 
 /**
@@ -500,7 +500,7 @@ static RAnalStructMember *parse_struct_member(Context *ctx, ut64 idx, RAnalStruc
 			}
 			break;
 		case DW_AT_type:
-			parse_type (ctx, value->reference, &strbuf, &size, NULL);
+			parse_type (ctx, value->reference, &strbuf, &size);
 			free (type);
 			type = r_strbuf_drain_nofree (&strbuf);
 			if (!type || !*type) {
@@ -716,7 +716,7 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 	if (attr) {
 		RStrBuf strbuf;
 		r_strbuf_init (&strbuf);
-		parse_type (ctx, attr->reference, &strbuf, &base_type->size, NULL);
+		parse_type (ctx, attr->reference, &strbuf, &base_type->size);
 		base_type->type = r_strbuf_drain_nofree (&strbuf);
 	}
 
@@ -782,7 +782,7 @@ static void parse_typedef(Context *ctx, ut64 idx) {
 			}
 			break;
 		case DW_AT_type:
-			if (parse_type (ctx, value->reference, &strbuf, &size, NULL) < 0) {
+			if (parse_type (ctx, value->reference, &strbuf, &size) < 0) {
 				goto cleanup;
 			}
 			type = r_strbuf_drain_nofree (&strbuf);
@@ -908,14 +908,13 @@ static void get_spec_die_type(Context *ctx, const RBinDwarfCompUnit *cu, const R
 	RBinDwarfAttrValue *attr = r_bin_dwarf_die_find_attr (cu, die, DW_AT_type);
 	if (attr) {
 		ut64 size = 0;
-		parse_type (ctx, attr->reference, ret_type, &size, NULL);
+		parse_type (ctx, attr->reference, ret_type, &size);
 	}
 }
 
-/* For some languages linkage name is more informative like C++,
- * but for Rust it's rubbish and the normal name is fine */
+// Linkage names retain namespaces, including Rust's distinction from C main.
 static bool prefer_linkage_name(const char *lang) {
-	if (!lang || !strcmp (lang, "rust") || !strcmp (lang, "ada")) {
+	if (!lang || !strcmp (lang, "ada")) {
 		return false;
 	}
 	return true;
@@ -946,7 +945,7 @@ static void parse_abstract_origin(Context *ctx, ut64 offset, RStrBuf *type, cons
 			}
 			break;
 		case DW_AT_type:
-			parse_type (ctx, val->reference, type, &size, NULL);
+			parse_type (ctx, val->reference, type, &size);
 			break;
 		default:
 			break;
@@ -1644,7 +1643,7 @@ static bool parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 						}
 						break;
 					case DW_AT_type:
-						parse_type (ctx, val->reference, &type, NULL, NULL);
+						parse_type (ctx, val->reference, &type, NULL);
 						break;
 					// abstract origin is supposed to have omitted information
 					case DW_AT_abstract_origin:
@@ -1866,6 +1865,11 @@ static bool import_dwarf_function_fallback(RAnal *anal, const char *typed_name, 
 	return true;
 }
 
+// names are pasted into C source for the type parser, only plain type spellings may get there
+static bool is_c_spelling(const char *s) {
+	return !s[strspn (s, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_ *&[]:<>.")];
+}
+
 static void import_dwarf_function_type(Context *ctx, const char *sname, const char *typed_name, Function *dwarf_fcn, const char *ret_type, RList/*<Variable*>*/ *variables, bool has_unspecified_parameters) {
 	R_RETURN_IF_FAIL (ctx && ctx->anal && sname && typed_name && dwarf_fcn && ret_type && variables);
 	RAnal *anal = (RAnal *)ctx->anal;
@@ -1875,11 +1879,13 @@ static void import_dwarf_function_type(Context *ctx, const char *sname, const ch
 	r_strbuf_init (&args_buf);
 	RListIter *iter;
 	Variable *var;
+	bool is_c_decl = is_c_spelling (ret_type);
 	r_list_foreach (variables, iter, var) {
 		if (var->kind != VARIABLE_KIND_FORMAL_PARAMETER || !var->type) {
 			continue;
 		}
 		const char *arg_name = var->name? var->name: "arg";
+		is_c_decl = is_c_decl && is_c_spelling (var->type) && is_c_spelling (arg_name);
 		r_strbuf_appendf (&args_buf, "%s %s,", var->type, arg_name);
 	}
 	if (has_unspecified_parameters) {
@@ -1899,7 +1905,7 @@ static void import_dwarf_function_type(Context *ctx, const char *sname, const ch
 		   sdb entries directly. */
 		const char *lang = ctx->lang;
 		bool is_c_like = !lang || !strcmp (lang, "cxx") || !strcmp (lang, "objc");
-		if (is_c_like) {
+		if (is_c_like && is_c_decl) {
 			char *errmsg = NULL;
 			if (!r_anal_import_c_decls (anal, csig, &errmsg) && errmsg) {
 				R_LOG_DEBUG ("DWARF type import fallback for %s: %s", typed_name, errmsg);
@@ -1959,11 +1965,9 @@ static char *dwarf_formal_convention_meta(Context *ctx, int argno, int argc, con
 
 static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const char *ret_type, RList/*<Variable*>*/ *variables, bool has_unspecified_parameters) {
 	Sdb *sdb = ctx->sdb;
-	char *real_name = strdup (dwarf_fcn->name);
-	r_str_ansi_strip (real_name);
+	const char *real_name = dwarf_fcn->name;
 	char *sname = r_str_sanitize_sdb_key (real_name);
 	if (!sname) {
-		free (real_name);
 		return;
 	}
 	char *typed_name = dwarf_function_type_name (ctx, sname, dwarf_fcn,
@@ -1978,10 +1982,7 @@ static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
 	/* so we can have name without sanitization */
 	sdb_setf (sdb, real_name, 0, "fcn.%s.name", sname);
 
-	char *signature = strdup (dwarf_fcn->signature);
-	r_str_ansi_strip (signature);
-	sdb_setf (sdb, signature, 0, "fcn.%s.sig", sname);
-	free (signature);
+	sdb_setf (sdb, dwarf_fcn->signature, 0, "fcn.%s.sig", sname);
 
 	RStrBuf vars_buf;
 	RStrBuf args_buf;
@@ -2066,7 +2067,6 @@ static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
 		import_dwarf_function_type (ctx, sname, typed_name, dwarf_fcn, ret_type, variables, has_unspecified_parameters);
 	}
 	free (typed_name);
-	free (real_name);
 	free (sname);
 }
 
@@ -2097,7 +2097,6 @@ static void parse_function(Context *ctx, ut64 idx) {
 	if (r_bin_dwarf_die_find_attr (ctx->unit, die, DW_AT_declaration)) {
 		return; /* just declaration skip */
 	}
-	/* For rust binaries prefer regular name not linkage TODO */
 	RBinDwarfAttrValue *val;
 	R_BIN_DWARF_DIE_FOREACH_ATTR (ctx->unit, die, val) {
 		switch (val->attr_name) {
@@ -2152,7 +2151,7 @@ static void parse_function(Context *ctx, ut64 idx) {
 		}
 		case DW_AT_type:
 			has_ret_type = true;
-			parse_type (ctx, val->reference, &ret_type, NULL, NULL);
+			parse_type (ctx, val->reference, &ret_type, NULL);
 			break;
 		case DW_AT_virtuality:
 			fcn.is_method = true; /* method specific attr */
@@ -2327,7 +2326,7 @@ static void parse_global_variable(Context *ctx, const RBinDwarfDie *die) {
 			}
 			break;
 		case DW_AT_type:
-			parse_type (ctx, value->reference, &type, NULL, NULL);
+			parse_type (ctx, value->reference, &type, NULL);
 			break;
 		case DW_AT_specification:
 		case DW_AT_abstract_origin:
@@ -2403,6 +2402,7 @@ R_API void r_anal_dwarf_process_info(const RAnal *anal, RAnalDwarfContext *ctx) 
 	const RBinDwarfDebugInfo *info = ctx->info;
 	const RBinDwarfCompUnit *unit;
 	RArena *arena = r_arena_new ();
+	HtUP *types = ht_up_new0 ();
 	R_VEC_FOREACH (info->comp_units, unit) {
 		Context dw_context = { // context per unit?
 			.anal = anal,
@@ -2416,12 +2416,14 @@ R_API void r_anal_dwarf_process_info(const RAnal *anal, RAnalDwarfContext *ctx) 
 			.unit = unit,
 			.scope_hi = UT64_MAX,
 			.lang = NULL,
-			.arena = arena
+			.arena = arena,
+			.types = types
 		};
 		R_VEC_FOREACH_I (unit->dies, j) {
 			parse_type_entry (&dw_context, j);
 		}
 	}
+	ht_up_free (types);
 	r_arena_free (arena);
 }
 
@@ -2557,23 +2559,16 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwar
 		if (fcn) {
 			/* prepend dwarf debug info stuff with dbg. */
 			const char *value = sdb_const_getf (dwarf_sdb, NULL, "fcn.%s.name", func_sname);
-			char *real_name = value? strdup (value): NULL;
-			if (real_name) {
-				r_str_ansi_strip (real_name);
-				char *dwf_name = r_str_newf ("dbg.%s", real_name);
+			if (value) {
+				char *dwf_name = r_str_newf ("dbg.%s", value);
 				r_anal_function_rename (fcn, dwf_name);
 				free (dwf_name);
 			}
-			free (real_name);
-
 			value = sdb_const_getf (dwarf_sdb, NULL, "fcn.%s.sig", func_sname);
-			char *fcnstr = value? strdup (value): NULL;
-			if (fcnstr) {
-				r_str_ansi_strip (fcnstr);
+			if (value) {
 				/* Apply signature as a comment at a function address */
-				r_meta_set_string (anal, R_META_TYPE_COMMENT, faddr, fcnstr);
+				r_meta_set_string (anal, R_META_TYPE_COMMENT, faddr, value);
 			}
-			free (fcnstr);
 		}
 		int arg_index;
 		for (arg_index = 0; ; arg_index++) {
@@ -2591,9 +2586,6 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwar
 		}
 		const char *value = sdb_const_getf (dwarf_sdb, NULL, "fcn.%s.vars", func_sname);
 		char *vars = value? strdup (value): NULL;
-		if (vars) {
-			r_str_ansi_strip (vars);
-		}
 		char *var_name;
 		sdb_aforeach (var_name, vars) {
 			value = sdb_const_getf (dwarf_sdb, NULL, "fcn.%s.var.%s", func_sname, var_name);

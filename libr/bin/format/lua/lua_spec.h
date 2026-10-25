@@ -17,6 +17,7 @@ typedef struct lua_data_struct {
 	int luaNumberSize;
 	int upValues;
 	ut64 headerSize;
+	int depth; // prototype nesting level while parsing
 	RList *functionList;
 	RVecRBinSymbol symbols;
 } RLuaHeader;

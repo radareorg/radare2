@@ -206,6 +206,63 @@ static bool test_r_magic_api_version_matches_header_constant(void) {
 	mu_end;
 }
 
+static bool test_r_magic_continuations_and_roots(void) {
+	const ut8 abcde[] = "ABCDE";
+	const ut8 abcdef[] = "ABCDEF";
+	const ut8 neg[] = { 0xff, 0x00 };
+	const ut8 indir[] = { 'A', 'B', 'C', 'D', 0, 0, 0, 0 };
+	const bool ok = check_magic_output ("0 string ABCD root\n>4 byte 0x45 child\n", abcde, 5, "root child")
+		&& check_magic_output ("0 string ABCDEF\n0 string ABCD second\n", abcdef, 6, "second")
+		&& check_magic_output ("0 byte <0 negative\n", neg, sizeof (neg), "negative")
+		&& check_magic_output ("(4.l) string ABCD\\0\\0\\0\\0 hit\n", indir, sizeof (indir), "hit")
+		&& check_magic_output ("0 string ABCD root\n>&-4 string ABCD child\n>0 byte 0xff dummy\n", abcde, 4, "root child");
+	mu_assert_true (ok, "magic probes");
+	mu_end;
+}
+
+static bool test_r_magic_prefilter_keeps_database_order(void) {
+	const ut8 probe[] = "ABCD";
+	const bool ok = check_magic_output ("2 string CD second\n0 string AB first\n", probe, 4, "second")
+		&& check_magic_output ("0 string AB first\n2 string CD second\n", probe, 4, "first")
+		&& check_magic_output ("0 string AB first\n0 byte x any\n", probe, 4, "first")
+		&& check_magic_output ("0 lelong 0x41424344 le\n0 belong 0x41424344 be\n", probe, 4, "be")
+		&& check_magic_output ("0 beshort&0xff00 0x4100 masked\n", probe, 4, "masked");
+	mu_assert_true (ok, "magic probes");
+	mu_end;
+}
+
+static bool test_r_magic_escapes_unprintable_description(void) {
+	const ut8 probe[] = "ABCD";
+	const bool ok = check_magic_output ("0 string ABCD A\001B\002C\n", probe, 4, "A\\001B\\002C");
+	mu_assert_true (ok, "magic probes");
+	mu_end;
+}
+
+static bool test_r_magic_regex_stays_in_buffer(void) {
+	const char magic_source[] = "0 regex/1 !ABC miss\n0 regex/1 B[C]$ tail\n";
+	RMagic *ms = r_magic_new (R_MAGIC_CHECK_TEXT);
+	ut8 *probe = malloc (3);
+	mu_assert_notnull (probe, "malloc failed");
+	memcpy (probe, "ABC", 3);
+	mu_assert_true (r_magic_load_buffer (ms, (const ut8 *)magic_source, sizeof (magic_source) - 1), "load failed");
+	mu_assert_streq (r_magic_buffer (ms, probe, 3), "tail", "regex bounded by the probe size");
+	free (probe);
+	r_magic_free (ms);
+	mu_end;
+}
+
+static bool test_r_magic_continue_across_databases(void) {
+	const char one[] = "0 string ABCD one\n";
+	const char two[] = "0 string ABCD two\n";
+	const void *buffers[] = { one, two };
+	const size_t sizes[] = { sizeof (one) - 1, sizeof (two) - 1 };
+	RMagic *ms = r_magic_new (R_MAGIC_CONTINUE);
+	mu_assert_true (r_magic_load_buffers (ms, buffers, sizes, 2), "load buffers failed");
+	mu_assert_streq (r_magic_buffer (ms, "ABCD", 4), "one\\012- two", "both databases reported");
+	r_magic_free (ms);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_magic_load_text_buffer);
 	mu_run_test (test_r_magic_load_compiled_buffer);
@@ -218,6 +275,11 @@ int all_tests(void) {
 	mu_run_test (test_r_magic_getflags_returns_current_flags);
 	mu_run_test (test_r_magic_load_accepts_null_magic_path);
 	mu_run_test (test_r_magic_api_version_matches_header_constant);
+	mu_run_test (test_r_magic_continuations_and_roots);
+	mu_run_test (test_r_magic_prefilter_keeps_database_order);
+	mu_run_test (test_r_magic_escapes_unprintable_description);
+	mu_run_test (test_r_magic_regex_stays_in_buffer);
+	mu_run_test (test_r_magic_continue_across_databases);
 	return tests_passed != tests_run;
 }
 

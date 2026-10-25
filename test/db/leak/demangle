@@ -1,0 +1,20 @@
+NAME=leak msvc demangling of an operator name that cannot be parsed
+FILE=-
+CMDS=<<EOF
+"iD msvc ??_R@@YAXXZ"
+?e ok
+EOF
+EXPECT=<<EOF
+ok
+EOF
+RUN
+
+NAME=leak demangling result of iD
+FILE=-
+CMDS=<<EOF
+"iD msvc ??0A@@QAE@XZ"
+EOF
+EXPECT=<<EOF
+public: void __thiscall A::constructor(void)
+EOF
+RUN

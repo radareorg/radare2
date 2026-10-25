@@ -366,3 +366,14 @@ nth vaddr      bind   type   lib name
 0   0x00000000 GLOBAL NOTYPE     __argmatch_die
 EOF
 RUN
+
+NAME=som msvc symbol nesting 20000 types loads
+FILE=bins/som/msvc_deep_symbol
+ARGS=-N
+CMDS=<<EOF
+is~?
+EOF
+EXPECT=<<EOF
+3
+EOF
+RUN

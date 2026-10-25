@@ -762,6 +762,7 @@ typedef struct r_bin_java_obj_t {
 	ut8 offset_sz;
 	ut32 cur_method_code_length;
 	RBinJavaAttrInfo *current_code_attr;
+	int attr_depth; // nesting level of the attribute being parsed
 
 	ut32 attr_idx;
 	ut32 method_idx;

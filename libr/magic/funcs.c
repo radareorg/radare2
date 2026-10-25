@@ -172,48 +172,28 @@ int __magic_file_reset(RMagic *ms) {
 	return 0;
 }
 
-#define OCTALIFY(n, o) \
-	/*LINTED*/ \
-	(void) (*(n)++ = '\\', \
-		*(n)++ = (((ut32) *(o) >> 6) & 3) + '0', \
-		*(n)++ = (((ut32) *(o) >> 3) & 7) + '0', \
-		*(n)++ = (((ut32) *(o) >> 0) & 7) + '0', \
-		(o)++)
-
 const char *__magic_file_getbuffer(RMagic *ms) {
-	char *pbuf, *op, *np;
-
-	if (ms->haderr) {
+	if (ms->haderr || r_strbuf_is_empty (&ms->o.sb)) {
 		return NULL;
 	}
-
-	char *const obuf = r_strbuf_get (&ms->o.sb);
+	const char *obuf = r_strbuf_get (&ms->o.sb);
 	if (ms->flags & R_MAGIC_RAW) {
 		return obuf;
 	}
-
-	if (r_strbuf_is_empty (&ms->o.sb)) {
-		eprintf ("ms->o.sb is empty\n");
+	const size_t len = r_strbuf_length (&ms->o.sb);
+	// Each byte expands to at most 4 characters: \ooo
+	char *np = realloc (ms->o.pbuf, len * 4 + 1);
+	if (!np) {
+		__magic_file_oomem (ms, len * 4 + 1);
 		return NULL;
 	}
-
-	/* * 4 is for octal representation, + 1 is for NUL */
-	const size_t len = strlen (obuf);
-	if (len > (SIZE_MAX - 1) / 4) {
-		__magic_file_oomem (ms, len);
-		return NULL;
-	}
-	const size_t psize = len * 4 + 1;
-	if (! (pbuf = realloc (ms->o.pbuf, psize))) {
-		__magic_file_oomem (ms, psize);
-		return NULL;
-	}
-	ms->o.pbuf = pbuf;
-	for (np = ms->o.pbuf, op = obuf; *op; op++) {
-		if (isprint ((ut8)*op)) {
-			*np++ = *op;
+	ms->o.pbuf = np;
+	for (; *obuf; obuf++) {
+		const ut8 ch = *obuf;
+		if (isprint (ch)) {
+			*np++ = ch;
 		} else {
-			OCTALIFY (np, op);
+			np += snprintf (np, 5, "\\%03o", ch);
 		}
 	}
 	*np = '\0';

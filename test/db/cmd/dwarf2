@@ -52,3 +52,65 @@ twocall.c
 EOF
 RUN
 
+
+NAME=dwarf names with command syntax stay data in generated scripts
+FILE=bins/elf/dwarf_injection
+ARGS=-N -e scr.color=0
+CMDS=<<EOF
+aaa
+afl
+s 0x40100b
+afn*
+agR*
+.agR*
+axtg
+tk~func.x_e
+tk~^leak
+EOF
+EXPECT=<<EOF
+0x00401000    1     11 dbg.main
+0x0040100b    1     22 dbg.x_?e INJECTED_FN
+'f dbg.x_?e INJECTED_FN=0x0040100b
+'@0x0040100b'afnq dbg.x_?e INJECTED_FN
+'@0x0040100b'afs void leak(_#include "dwarf_injection.h"_);_int dbg.x__e_INJECTED_FN (int a;?e INJECTED_ARG;#_?e INJECTED_NL_[31m);
+'agn dbg.main
+'agn dbg.x__e_INJECTED_FN
+'age dbg.main dbg.x__e_INJECTED_FN
+'agn dbg.x_?e\ INJECTED_FN
+'agn 0x401005 "entry0\ +\ 5"
+'agn 0x40100b "dbg.x_?e\ INJECTED_FN"
+age 0x401005 0x40100b
+func.x_e_INJECTED_FN=a;?e INJECTED_ARG;#_?e INJECTED_NL_[31m
+func.x_e_INJECTED_FN.arg.0=int,a;?e INJECTED_ARG;#_?e INJECTED_NL_[31m
+func.x_e_INJECTED_FN.args=1
+func.x_e_INJECTED_FN.cc=amd64
+func.x_e_INJECTED_FN.ret=void leak(_#include "dwarf_injection.h"_);_int
+EOF
+RUN
+
+NAME=function names drop control characters and command separators
+FILE=malloc://32
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e anal.in=io.maps
+wx c3
+af
+'afn a;b|c`d`
+afl
+EOF
+EXPECT=<<EOF
+0x00000000    1      1 a_b_c_d_
+EOF
+RUN
+
+NAME=dwarf deep pointer type chain does not exhaust the stack
+FILE=bins/elf/dwarf_deep_type_chain
+ARGS=-N
+CMDS=<<EOF
+tk~^t=
+?e loaded
+EOF
+EXPECT=<<EOF
+loaded
+EOF
+RUN

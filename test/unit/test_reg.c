@@ -1,4 +1,5 @@
 #include <r_reg.h>
+#include <r_util/r_str.h>
 #include <r_util/r_cfloat.h>
 #include <r_endian.h>
 #include <math.h>
@@ -772,7 +773,33 @@ bool test_r_reg_clone(void) {
 	mu_end;
 }
 
+bool test_r_reg_profile_to_cc(void) {
+	RReg *reg = r_reg_new ();
+	mu_assert_null (r_reg_profile_to_cc (reg), "missing result register");
+	r_reg_alias_setname (reg, R_REG_ALIAS_R0, "r0");
+	char *cc = r_reg_profile_to_cc (reg);
+	mu_assert_streq (cc, "r0 reg()", "no argument registers");
+	free (cc);
+	int i;
+	for (i = 0; i < 10; i++) {
+		char *name = r_str_newf ("r%d", i + 1);
+		r_reg_alias_setname (reg, R_REG_ALIAS_A0 + i, name);
+		free (name);
+		if (i == 4) {
+			cc = r_reg_profile_to_cc (reg);
+			mu_assert_streq (cc, "r0 reg(r1, r2, r3, r4, r5)", "BPF fifth argument");
+			free (cc);
+		}
+	}
+	cc = r_reg_profile_to_cc (reg);
+	mu_assert_streq (cc, "r0 reg(r1, r2, r3, r4, r5, r6, r7, r8, r9, r10)", "all argument roles");
+	free (cc);
+	r_reg_free (reg);
+	mu_end;
+}
+
 int all_tests(void) {
+	mu_run_test (test_r_reg_profile_to_cc);
 	mu_run_test (test_r_reg_x87_multi_offset);
 	mu_run_test (test_r_reg_vbank);
 	mu_run_test (test_r_reg_clone);

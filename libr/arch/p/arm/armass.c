@@ -5968,24 +5968,6 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	return 0;
 }
 
-static int findyz(int x, int *y, int *z) {
-	int i, j;
-	for (i = 0;i < 0xff; i++) {
-		for (j = 0;j < 0xf;j++) {
-			int v = i << j;
-			if (v > x) {
-				continue;
-			}
-			if (v == x) {
-				*y = i;
-				*z = 16 - (j / 2);
-				return 1;
-			}
-		}
-	}
-	return 0;
-}
-
 static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	int cond, ret, reg, a, b, i, j;
 	int coproc, opc;
@@ -6251,7 +6233,20 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 						return 0;
 					}
 
-					ret = getreg (ao->a[2]);
+					// [rn, #-imm] and [rn, -rm] subtract the offset: clear the U bit and encode its magnitude
+					const char *offset = ao->a[2];
+					if (!rex && offset) {
+						while (*offset == '#' || *offset == '$') {
+							offset++;
+						}
+						if (*offset == '-') {
+							offset++;
+							ao->o &= ~0x8000;
+						} else {
+							offset = ao->a[2];
+						}
+					}
+					ret = getreg (offset);
 					if (ret != -1) {
 						if (rex) {
 							ao->o |= 1;
@@ -6274,10 +6269,14 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 							ao->o |= shift;
 						}
 					} else {
-						int num = getnum (ao->a[2]) & 0xfff;
+						ut64 value = getnum (offset);
 						if (err) {
 							break;
 						}
+						if (!rex && value > 0xfff) {
+							return 0;
+						}
+						int num = value & 0xfff;
 						if (rex) {
 							ao->o |= 1;
 						} else if (strstr (str, "],")) {
@@ -6530,22 +6529,25 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				break;
 			case TYPE_TST:
 				a = getreg (ao->a[0]);
+				if (a == -1) {
+					return 0;
+				}
 				b = getreg (ao->a[1]);
 				if (b == -1) {
-					int y, z;
-					b = getnum (ao->a[1]);
-					if (b >= 0 && b <= 0xff) {
-						ao->o |= 0xe2;
-						// TODO: if (b>255) -> automatic multiplier
-						ao->o |= (a << 8);
-						ao->o |= ((b & 0xff) << 24);
-					} else if (findyz (b, &y, &z)) {
-						ao->o |= 0xe2;
-						ao->o |= (y << 24);
-						ao->o |= (z << 16);
+					if (ao->a[2]) {
+						// tst r0, #imm8, #rot: the rotation is given
+						b = getnum (ao->a[1]);
+						if (err || b < 0 || b > 0xff) {
+							return 0;
+						}
+						ao->o |= 2 | (a << 8) | ((b & 0xff) << 24);
 					} else {
-						R_LOG_ERROR ("Parameter %d out of range (0-255)", (int)b);
-						return 0;
+						// an 8 bit value rotated right by an even amount, like mov
+						int immed = getimmed8 (ao->a[1]);
+						if (err) {
+							return 0;
+						}
+						ao->o |= 2 | (a << 8) | (immed & 0xff) << 24 | (immed >> 8) << 16;
 					}
 				} else {
 					ao->o |= (a << 8);

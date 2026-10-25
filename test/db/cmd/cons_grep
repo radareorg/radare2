@@ -974,3 +974,26 @@ EXPECT=<<EOF
 ok
 EOF
 RUN
+
+NAME=syntax highlight replaces existing ANSI colors
+FILE=-
+CMDS=<<EOF
+ecd
+e scr.color=1
+?e return 42\x3b~:))
+?e \x1b[31mreturn\x1b[0m 42\x3b~!po~:))
+?e \x1b[38\x3b5\x3b123mreturn\x1b[0m 42\x3b~!po~:))
+?e re\x1b[38\x3b2\x3b12\x3b34\x3b56mturn\x1b[0m 42\x3b~!po~:))
+?e return 42\x3b~:))~:))
+?e \x1b[31m\x1b[0m~:))
+s 0~:))
+EOF
+EXPECT=<<EOF
+[35mreturn[0m [32m42[0m;
+[35mreturn[0m [32m42[0m;
+[35mreturn[0m [32m42[0m;
+[35mreturn[0m [32m42[0m;
+[35mreturn[0m [32m42[0m;
+
+EOF
+RUN

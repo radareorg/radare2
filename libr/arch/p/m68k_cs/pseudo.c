@@ -19,8 +19,8 @@ static bool can_replace(const char *str, int idx, int max_operands) {
 	return true;
 }
 
-static int replace(int argc, const char *argv[], char *newstr) {
-	int i,j,k;
+static char *replace(int argc, const char *argv[]) {
+	int i, j;
 	struct {
 		const char *op;
 		const char *str;
@@ -62,36 +62,28 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ NULL }
 	};
 
+	RStrBuf *sb = r_strbuf_new ("");
 	for (i = 0; ops[i].op; i++) {
 		if (!strcmp (ops[i].op, argv[0])) {
-			if (newstr) {
-				for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
-					if (can_replace(ops[i].str, j, ops[i].max_operands)) {
-						const char *w = argv[ ops[i].str[j]-'0' ];
-						if (w) {
-							strcpy (newstr+k, w);
-							k += strlen(w)-1;
-						}
-					} else {
-						newstr[k] = ops[i].str[j];
+			const char *str = ops[i].str;
+			for (j = 0; str[j]; j++) {
+				if (can_replace (str, j, ops[i].max_operands)) {
+					const char *w = argv[str[j] - '0'];
+					if (w) {
+						r_strbuf_append (sb, w);
 					}
+				} else {
+					r_strbuf_append_n (sb, str + j, 1);
 				}
-				newstr[k] = '\0';
 			}
-			return true;
+			return r_strbuf_drain (sb);
 		}
 	}
-
-	/* TODO: this is slow */
-	if (newstr) {
-		newstr[0] = '\0';
-		for (i = 0; i < argc; i++) {
-			strcat (newstr, argv[i]);
-			strcat (newstr, (i == 0 || i== argc - 1)?" ":", ");
-		}
+	for (i = 0; i < argc; i++) {
+		r_strbuf_append (sb, argv[i]);
+		r_strbuf_append (sb, (i == 0 || i == argc - 1)? " ": ", ");
 	}
-
-	return false;
+	return r_strbuf_drain (sb);
 }
 
 #define WSZ 64
@@ -119,8 +111,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 	r_str_replace_in (buf, len + 1, ".d", "", 1);
 	r_str_replace_in (buf, len + 1, ".b", "", 1);
 	r_str_trim (buf);
-	char *str = malloc (len + 128);
-	strcpy (str, data);
+	char *str = NULL;
 	if (*buf) {
 		w0[0]='\0';
 		w1[0]='\0';
@@ -175,7 +166,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 					nw++;
 				}
 			}
-			replace (nw, wa, str);
+			str = replace (nw, wa);
 			{
 				char *pluseq = strstr (str, "+ =");
 				if (pluseq) {
@@ -183,6 +174,8 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 				}
 			}
 		}
+	} else {
+		str = strdup (data);
 	}
 	free (buf);
 	return str;

@@ -1,6 +1,7 @@
 /* radare - LGPL3 - Copyright 2016-2025 - c0riolis, x0urc3 */
 
 #include <r_bin.h>
+#include "../i/private.h"
 #include "../format/pyc/pyc.h"
 
 static bool check(RBinFile *bf, RBuffer *b) {
@@ -125,7 +126,7 @@ static void destroy(RBinFile *bf) {
 
 static const char *get_cc(RBinFile *bf, ut64 vaddr) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
-	RBinSymbol *m = r_bin_get_symbol_at (bf->rbin, vaddr);
+	RBinSymbol *m = r_bin_object_get_symbol_at (bf->bo, vaddr);
 	if (!m || !m->arg_prefix) {
 		return NULL;
 	}

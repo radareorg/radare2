@@ -11,18 +11,24 @@
 #define ARM64_BTI_C 0xd503245f
 
 // 0 for an unmapped, short or all-ones read: none of those is an opcode here
-static ut32 read32_at(ELFOBJ *eo, ut64 vaddr) {
+static ut32 read32_ble_at(ELFOBJ *eo, ut64 vaddr, bool big_endian) {
 	const ut64 off = Elf_(v2p) (eo, vaddr);
-	if (off == UT64_MAX) {
+	// the whole word must sit in the mapping that holds its first byte
+	if (off == UT64_MAX || Elf_(v2p) (eo, vaddr + 3) != off + 3) {
 		return 0;
 	}
-	const ut32 w = r_buf_read_ble32_at (eo->b, off, eo->endian);
+	const ut32 w = r_buf_read_ble32_at (eo->b, off, big_endian);
 	return (w == UT32_MAX)? 0: w;
+}
+
+static ut32 read32_at(ELFOBJ *eo, ut64 vaddr) {
+	return read32_ble_at (eo, vaddr, eo->endian);
 }
 
 // every entry opens with adrp x16 or the bti c that guards it
 static bool arm64_plt_entry_starts_at(ELFOBJ *eo, ut64 vaddr) {
-	const ut32 op = read32_at (eo, vaddr);
+	// aarch64 instruction fetches are little-endian whatever the data endianness
+	const ut32 op = read32_ble_at (eo, vaddr, false);
 	return op == ARM64_BTI_C || (op & 0x9f00001f) == 0x90000010;
 }
 

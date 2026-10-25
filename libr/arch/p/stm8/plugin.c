@@ -18,27 +18,24 @@ static bool stm8_op(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			if (v && v != UT64_MAX && v != op->jump) {
 				op->val = v;
 			}
-		} else {
-			ox = strstr (op->mnemonic, "[0x");
-			if (ox) {
-				ut64 v = r_num_get (NULL, ox + 1);
-				if (v && v != UT64_MAX && v != op->jump) {
-					// we need to use op->ptr.. but disable icod refs for stm8 only
-					op->ptr = v;
-					if (strstr (op->mnemonic, "],")) {
-						// ld [0x8], a
-						op->direction = R_ANAL_OP_DIR_WRITE;
-					} else if (strchr (op->mnemonic, ',')) {
-						// inc, dec, clr
-						op->direction = R_ANAL_OP_DIR_WRITE;
-					} else {
-						op->direction = R_ANAL_OP_DIR_READ;
-					}
+		}
+		ox = strstr (op->mnemonic, "[0x");
+		if (ox) {
+			ut64 v = r_num_get (NULL, ox + 1);
+			if (v != UT64_MAX) {
+				// we need to use op->ptr.. but disable icod refs for stm8 only
+				op->ptr = v;
+				if (op->type == R_ANAL_OP_TYPE_LOAD || op->type == R_ANAL_OP_TYPE_CJMP || r_str_startswith (op->mnemonic, "cp ") || r_str_startswith (op->mnemonic, "cpw ") || r_str_startswith (op->mnemonic, "tnz ") || r_str_startswith (op->mnemonic, "tnzw ") || r_str_startswith (op->mnemonic, "bcp ")) {
+					op->direction = R_ANAL_OP_DIR_READ;
+				} else if (op->type == R_ANAL_OP_TYPE_STORE || r_str_startswith (op->mnemonic, "clr ") || r_str_startswith (op->mnemonic, "mov ")) {
+					op->direction = R_ANAL_OP_DIR_WRITE;
+				} else {
+					op->direction = R_ANAL_OP_DIR_READ | R_ANAL_OP_DIR_WRITE;
 				}
 			}
 		}
 	}
-	if (jump != UT64_MAX) {
+	if (jump != UT64_MAX && (op->type == R_ANAL_OP_TYPE_JMP || op->type == R_ANAL_OP_TYPE_CJMP || op->type == R_ANAL_OP_TYPE_CALL || op->type == R_ANAL_OP_TYPE_SWI)) {
 		op->jump = jump;
 		op->fail = UT64_MAX;
 		switch (op->type) {
@@ -61,16 +58,16 @@ static char *regs(RArchSession *as) {
 	"=A1	y\n"
 	"=A2	a\n"
 	"=R0	a\n"
-	"gpr	pc	.64	0	0\n"
-	"gpr	sp	.64	8	0\n"
+	"gpr	pc	.24	0	0\n"
+	"gpr	sp	.16	8	0\n"
 	"gpr	x	.16	16	0\n"
 	"gpr	y	.16	18	0\n"
 	"gpr	a	.8	20	0\n"
-	"gpr	xh	.8	16	0\n"
-	"gpr	xl	.8	17	0\n"
-	"gpr	yh	.8	18	0\n"
-	"gpr	yl	.8	19	0\n"
-	"gpr	cc	.16	20	0\n"
+	"gpr	xh	.8	17	0\n"
+	"gpr	xl	.8	16	0\n"
+	"gpr	yh	.8	19	0\n"
+	"gpr	yl	.8	18	0\n"
+	"gpr	cc	.8	21	0\n"
 	;
 	return strdup (p);
 }

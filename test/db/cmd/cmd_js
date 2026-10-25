@@ -91,6 +91,38 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=sandbox needs the script grain to run scripts
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain=all,!script
+e cfg.sandbox=true
+js console.log("js")
+#!qjs -e console.log("hashbang")
+#!pipe echo pipe
+?e done
+EOF
+EXPECT=<<EOF
+done
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Scripting is disabled in sandbox mode
+ERROR: Scripting is disabled in sandbox mode
+ERROR: Scripting is disabled in sandbox mode
+EOF
+RUN
+
+NAME=sandbox with the script grain runs scripts
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain=script
+e cfg.sandbox=true
+js console.log("js")
+EOF
+EXPECT=<<EOF
+js
+EOF
+RUN
+
 NAME=qjs loading, running and unloading of core plugins
 FILE=-
 CMDS=<<EOF

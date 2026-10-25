@@ -4617,3 +4617,15 @@ EXPECT=<<EOF
 34
 EOF
 RUN
+
+NAME=x86_64 getenv call args (arg name is not r2 syntax)
+FILE=bins/mach0/ls-osx-x86_64
+CMDS=<<EOF
+af
+'tk func.getenv.arg.0=const char *,name @ 0x100004b34 #
+a:callargs 0x10000143e
+EOF
+EXPECT=<<EOF
+char *sym.imp.getenv(name @ 0x100004b34 #="COLUMNS" /*0x100004b31*/)
+EOF
+RUN

@@ -15,11 +15,10 @@ cc.arm16.arg0=r0
 cc.arm16.arg1=r1
 cc.arm16.arg2=r2
 cc.arm16.arg3=r3
-cc.arm16.arg4=r4
 cc.arm16.argn=stack
 cc.arm16.ret0=r0
 cc.arm16.clobber=r0,r1,r2,r3,r12,lr
-cc.arm16.preserve=r5,r6,r7,r8,r9,r10,r11,sp
+cc.arm16.preserve=r4,r5,r6,r7,r8,r9,r10,r11,sp
 
 swift=cc
 cc.swift.arg0=r0

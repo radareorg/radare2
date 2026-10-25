@@ -47,17 +47,32 @@ EOF
 RUN
 
 NAME=ELF s390x: an unsupported s390 reloc type says so instead of vanishing
-FILE=bins/elf/s390x-relr.so
+FILE=malloc://2176
 ARGS=-e bin.relocs.apply=true
 CMDS=<<EOF
+wff bins/elf/s390x-relr.so
+wx 00000009 @ 0x27c
+oba 0
 ir~?
 EOF
 EXPECT=<<EOF
 5
 EOF
 EXPECT_ERR=<<EOF
-WARN: Unsupported reloc type 22 for s390
-WARN: Unsupported reloc type 22 for s390
+WARN: Unsupported reloc type 9 for s390
+EOF
+RUN
+
+NAME=ELF s390x: the R_390_64 row is listed with its symbol and addend
+FILE=bins/elf/s390x-relr.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+ir~?
+ir~ADD_64
+EOF
+EXPECT=<<EOF
+6
+0x00003388 0x00000388 ADD_64 22    g + 0x00000004
 EOF
 RUN
 
@@ -69,5 +84,18 @@ f~reloc.__gmon_start__
 EOF
 EXPECT=<<EOF
 0x0804a014 4 reloc.__gmon_start__
+EOF
+RUN
+
+NAME=ELF s390x: an R_390_64 addend above 32 bits is kept whole
+FILE=malloc://2176
+CMDS=<<EOF
+wff bins/elf/s390x-relr.so
+wx 0000000100000004 @ 0x280
+oba 0
+ir~ADD_64
+EOF
+EXPECT=<<EOF
+0x00003388 0x00000388 ADD_64 22    g + 0x100000004
 EOF
 RUN

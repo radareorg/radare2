@@ -1004,10 +1004,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		if (!file) {
 			return false;
 		}
-		const bool interactive = r_config_get_b (r->config, "scr.interactive");
-		r_config_set_b (r->config, "scr.interactive", false);
 		bool loaded = r_core_callf (r, "prj open \"%s\"", file) == 0;
-		r_config_set_b (r->config, "scr.interactive", interactive);
 		free (file);
 		if (loaded && !r->io->desc) {
 			r_core_file_open (r, "-", R_PERM_RW, 0);

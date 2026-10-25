@@ -80,6 +80,9 @@ typedef struct {
 R_IPI RBinSection *dwarf_get_section(RBinFile *bf, int sn);
 R_IPI const ut8 *dwarf_get_section_bytes(RBinFile *bf, RBinSection *section);
 R_IPI const char *dwarf_get_section_string(RBinFile *bf, RBinSection *section, size_t offset);
+R_IPI const ut8 *dwarf_get_section_strings(RBinFile *bf, RBinSection *section);
+R_IPI const ut8 *dwarf_string_end(const ut8 *s, const ut8 *end);
+R_IPI char *dwarf_string_filter(char *s);
 R_IPI const ut8 *dwarf_read_index(const ut8 *buf, const ut8 *buf_end, bool be, ut8 size, ut64 *value);
 R_IPI const ut8 *dwarf_read_uleb_index(const ut8 *buf, const ut8 *buf_end, ut64 *value);
 R_IPI bool dwarf_relocate_address(RBinFile *bf, ut64 address, ut64 *relocated);

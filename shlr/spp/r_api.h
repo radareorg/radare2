@@ -22,6 +22,9 @@ void r_strbuf_init(SStrBuf *sb);
 int r_sys_setenv(const char *key, const char *value);
 char *r_sys_getenv(const char *key);
 int r_sys_getpid(void);
+#define r_sandbox_fopen fopen
+#define r_sandbox_popen popen
+#define r_sandbox_system(x, n) system (x)
 #endif
 
 #ifdef _MSC_VER

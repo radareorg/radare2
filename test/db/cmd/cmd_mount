@@ -1157,3 +1157,127 @@ EXPECT=<<EOF2
 done
 EOF2
 RUN
+
+NAME=xfs extent count bounded by the inode
+FILE=malloc://135168
+CMDS=<<EOF2
+wx 58465342000010 @ 0x0
+wx 10 @ 0x3f
+wx 21 @ 0x57
+wx 0c09080406 @ 0x78
+wx 494e41ed0202 @ 0x1000
+wx 10 @ 0x103e
+wx 01 @ 0x104f
+wx 400001 @ 0x1071
+wx 494e81a40202 @ 0x1100
+wx 06 @ 0x113f
+wx 01 @ 0x114f
+wx 600001 @ 0x1171
+wx 110466696c65 @ 0x2017
+wx 01 @ 0x2ffb
+wx 68656c6c6f0a @ 0x3000
+m /root xfs 0
+md /root
+mc /root/file
+wx 7fffffff @ 0x104c
+m /bad xfs 0
+?v $?
+EOF2
+EXPECT=<<EOF2
+f file
+hello
+
+0x1
+EOF2
+RUN
+
+NAME=xfs btree record count bounded by the inode and the block
+FILE=malloc://135168
+CMDS=<<EOF2
+wx 58465342000010 @ 0x0
+wx 10 @ 0x3f
+wx 21 @ 0x57
+wx 0c09080406 @ 0x78
+wx 494e41ed0203 @ 0x1000
+wx 10 @ 0x103e
+wx 01 @ 0x104f
+wx 010001 @ 0x1065
+wx 04 @ 0x1077
+wx 494e81a40202 @ 0x1100
+wx 06 @ 0x113f
+wx 01 @ 0x114f
+wx 600001 @ 0x1171
+wx 110466696c65 @ 0x2017
+wx 01 @ 0x2ffb
+wx 68656c6c6f0a @ 0x3000
+wx 424d4150 @ 0x4000
+wx 01 @ 0x4007
+wx 400001 @ 0x4025
+m /root xfs 0
+md /root
+mc /root/file
+wx ffff @ 0x4006
+m /leaf xfs 0
+?v $?
+wx 0001 @ 0x4006
+wx ffff @ 0x1066
+m /bad xfs 0
+?v $?
+EOF2
+EXPECT=<<EOF2
+f file
+hello
+
+0x1
+0x1
+EOF2
+RUN
+
+NAME=fb file list record past the end of the list
+FILE=malloc://2048
+CMDS=<<EOF2
+wx 46424152010601000100000000000000
+wx fe00020000000500000000000000612e74787400 @ 0x200
+wx fe00020000000500000000000000622e74787400 @ 0x300
+w hello @ 0x400
+m /mnt fb 0
+md /mnt
+mc /mnt/a.txt
+mc /mnt/b.txt
+EOF2
+EXPECT=<<EOF2
+f a.txt
+hello
+EOF2
+RUN
+
+NAME=mount udf embedded file data is bounded by its entry
+FILE=bins/fs/udf.img
+TIMEOUT=10
+CMDS=<<EOF2
+e log.level=0
+e io.cache=true
+m /mnt udf 0
+mc /mnt/README.md
+# Store README.md's 30 bytes inside its file entry (AD_IN_ICB, alloc_descs_length=30).
+wx 3302 @ 0x84822
+wx 1e000000 @ 0x848ac
+wx 5468697320697320616e2049534f393636302066696c6573797374656d0a @ 0x849ac
+mc /mnt/README.md
+# A file_size larger than the embedded data must not read past it.
+wx 0008000000000000 @ 0x84838
+mc /mnt/README.md || echo read-failed
+# An ext_attr_length that does not fit in the entry must be rejected.
+wx 00100000 @ 0x848a8
+mc /mnt/README.md || echo open-failed
+EOF2
+EXPECT=<<EOF2
+This is an ISO9660 filesystem
+
+This is an ISO9660 filesystem
+
+read-failed
+open-failed
+EOF2
+EXPECT_ERR=
+RUN

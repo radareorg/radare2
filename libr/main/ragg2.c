@@ -158,10 +158,11 @@ static bool create(RCons *cons, const char *format, const char *arch, int bits, 
 	return ret;
 }
 
+// ragg2 also runs inside r2, so the output goes through the sandbox
 static int openfile(const char *f, int x) {
-	int fd = open (f, O_RDWR | O_CREAT, 0644);
+	int fd = r_sandbox_open (f, O_RDWR | O_CREAT, 0644);
 	if (fd == -1) {
-		fd = open (f, O_RDWR);
+		fd = r_sandbox_open (f, O_RDWR, 0);
 		if (fd == -1) {
 			return -1;
 		}

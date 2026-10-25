@@ -285,8 +285,19 @@ R_API bool r_lang_set_argv(RLang *lang, int argc, char **argv) {
 	return false;
 }
 
+static bool lang_sandboxed(void) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_SCRIPT)) {
+		R_LOG_ERROR ("Scripting is disabled in sandbox mode");
+		return true;
+	}
+	return false;
+}
+
 R_API bool r_lang_run(RLang *lang, const char *code, int len) {
 	R_RETURN_VAL_IF_FAIL (lang && code, false);
+	if (lang_sandboxed ()) {
+		return false;
+	}
 	RLangPlugin *p = R_UNWRAP3 (lang, session, plugin);
 	if (p && p->run) {
 		return p->run (lang->session, code, len);
@@ -301,6 +312,9 @@ R_API bool r_lang_run_string(RLang *lang, const char *code) {
 
 R_API bool r_lang_run_file(RLang *lang, const char *file) {
 	R_RETURN_VAL_IF_FAIL (lang && file, false);
+	if (lang_sandboxed ()) {
+		return false;
+	}
 	bool ret = false;
 	RLangPlugin *p = R_UNWRAP3 (lang, session, plugin);
 	if (p) {
@@ -325,10 +339,7 @@ R_API bool r_lang_run_file(RLang *lang, const char *file) {
 /* TODO: deprecate or make it more modular .. reading from stdin in a lib?!? wtf */
 R_API bool r_lang_prompt(RLang *lang) {
 	R_RETURN_VAL_IF_FAIL (lang, false);
-	char buf[1024];
-	const char *p;
-
-	if (!lang->session) {
+	if (!lang->session || lang_sandboxed ()) {
 		return false;
 	}
 
@@ -348,24 +359,17 @@ R_API bool r_lang_prompt(RLang *lang) {
 	line->completion = ocnull;
 	line->history = histnull;
 
-	/* foo */
+	char *prompt = r_str_newf ("%s> ", plugin->meta.name);
 	for (;;) {
 		r_cons_flush (lang->cons);
-		snprintf (buf, sizeof (buf) - 1, "%s> ", plugin->meta.name);
-		r_line_set_prompt (lang->cons->line, buf);
-#if 0
-		printf ("%s> ", lang->cur->name);
-		fflush (stdout);
-		fgets (buf, sizeof (buf), stdin);
-		if (feof (stdin)) break;
-		r_str_trim_tail (buf);
-#endif
-		p = r_line_readline (lang->cons);
-		if (!p) {
+		r_line_set_prompt (lang->cons->line, prompt);
+		const char *p = r_line_readline (lang->cons);
+		if (!p || !strcmp (p, "q")) {
 			break;
 		}
 		r_line_hist_add (lang->cons->line, p);
-		strncpy (buf, p, sizeof (buf) - 1);
+		// running code may reenter readline and reuse its buffer
+		char *buf = strdup (p);
 		if (*buf == '!') {
 			if (buf[1]) {
 				r_sandbox_system (buf + 1, 1);
@@ -374,32 +378,24 @@ R_API bool r_lang_prompt(RLang *lang) {
 				do {
 					foo = r_cons_editor (lang->cons, NULL, code, 0, NULL);
 					if (!foo) {
-						free (code);
 						break;
 					}
 					r_lang_run (lang, foo, 0);
 					free (code);
 					code = foo;
 				} while (r_cons_yesno (lang->cons, 'y', "Edit again? (Y/n)"));
-				free (foo);
+				free (code);
 			}
-			continue;
-		}
-		if (!memcmp (buf, ". ", 2)) {
-			char *file = r_file_abspath (buf+2);
+		} else if (r_str_startswith (buf, ". ")) {
+			char *file = r_file_abspath (buf + 2);
 			if (file) {
 				r_lang_run_file (lang, file);
 				free (file);
 			}
-			continue;
-		}
-		if (!strcmp (buf, "q")) {
-			break;
-		}
-		if (!strcmp (buf, "?")) {
+		} else if (!strcmp (buf, "?")) {
 			RLangDef *def;
 			RListIter *iter;
-			eprintf("  ?	- show this help message\n"
+			eprintf ("  ?	- show this help message\n"
 					"  !	- run $EDITOR\n"
 					"  !command - run system command\n"
 					"  . file   - interpret file\n"
@@ -417,7 +413,9 @@ R_API bool r_lang_prompt(RLang *lang) {
 		} else {
 			r_lang_run (lang, buf, strlen (buf));
 		}
+		free (buf);
 	}
+	free (prompt);
 	// XXX: leaking history
 	free (line->state.prompt);
 	line->state = state;

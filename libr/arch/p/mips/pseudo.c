@@ -18,8 +18,8 @@ static int can_replace(const char *str, int idx, int max_operands) {
 	return true;
 }
 
-static int replace(int argc, const char *argv[], char *newstr) {
-	int i,j,k;
+static char *replace(int argc, const char *argv[]) {
+	int i, j;
 	struct {
 		const char *op;
 		const char *str;
@@ -88,37 +88,29 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "xori",  "1 = 2 ^ 3", 3},
 		{ NULL }
 	};
-
+	RStrBuf *sb = r_strbuf_new ("");
 	for (i = 0; ops[i].op; i++) {
 		if (!strcmp (ops[i].op, argv[0])) {
-			if (newstr) {
-				for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
-					if (can_replace (ops[i].str, j, ops[i].max_operands)) {
-						const char *w = argv[ ops[i].str[j]-'0' ];
-						if (w) {
-							strcpy (newstr + k, w);
-							k += strlen (w) - 1;
-						}
-					} else {
-						newstr[k] = ops[i].str[j];
+			const char *str = ops[i].str;
+			for (j = 0; str[j]; j++) {
+				if (can_replace (str, j, ops[i].max_operands)) {
+					const char *w = argv[str[j] - '0'];
+					if (w) {
+						r_strbuf_append (sb, w);
 					}
+				} else {
+					r_strbuf_append_n (sb, str + j, 1);
 				}
-				newstr[k] = '\0';
 			}
-			return true;
+			return r_strbuf_drain (sb);
 		}
 	}
 
-	/* TODO: this is slow */
-	if (newstr) {
-		newstr[0] = '\0';
-		for (i = 0; i < argc; i++) {
-			strcat (newstr, argv[i]);
-			strcat (newstr, (i == 0 || i== argc - 1)?" ":", ");
-		}
+	for (i = 0; i < argc; i++) {
+		r_strbuf_append (sb, argv[i]);
+		r_strbuf_append (sb, (i == 0 || i == argc - 1)? " ": ", ");
 	}
-
-	return false;
+	return r_strbuf_drain (sb);
 }
 
 #define REPLACE(x,y) do { \
@@ -213,11 +205,8 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 					nw++;
 				}
 			}
-			str = malloc (strlen (data) + 128);
-			strcpy (str, data);
-			replace (nw, wa, str);
 			{
-				char *p = strdup (str);
+				char *p = replace (nw, wa);
 				p = r_str_replace (p, "+ -", "- ", 0);
 				p = r_str_replace (p, " + ]", " + 0]", 0);
 
@@ -237,8 +226,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 					REPLACE ("%s = %s >>", "%s >>=");
 					REPLACE ("%s = %s <<", "%s <<=");
 				}
-				strcpy (str, p);
-				free (p);
+				str = p;
 			}
 		}
 	}
