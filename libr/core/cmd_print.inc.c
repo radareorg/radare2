@@ -2357,10 +2357,9 @@ static void pfb(RCore *core, const char *arg, int mode) {
 			bool v = read_val (bm, i, 1, false);
 			r_cons_printf (core->cons, "%d", v? 1: 0);
 			if (v) {
-				if (be) {
-					bv |= (1 << i);
-				} else {
-					bv |= (1 << (bpos - i - 1));
+				int bit = be? i: bpos - i - 1;
+				if (bit < 64) {
+					bv |= 1ULL << bit;
 				}
 			}
 		}
