@@ -93,12 +93,14 @@ typedef struct TokenSym {
 
 typedef int nwchar_t;
 
+// Token streams store string headers at four-byte boundaries.
+R_PACKED(
 typedef struct CString {
 	int size; /* size in bytes */
 	char *data; /* either 'char *' or 'nwchar_t *' */
 	int size_allocated;
 	char *data_allocated; /* if non NULL, data has been malloced */
-} CString;
+}) CString;
 
 R_VEC_FORWARD_DECLARE (RVecCharPtr);
 
