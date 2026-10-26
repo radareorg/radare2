@@ -162,3 +162,58 @@ type: shr
 type: sar
 EOF
 RUN
+
+NAME=stm8 multiply uses the low index byte and preserves accumulator and other flags
+FILE=malloc://16
+ARGS=-a stm8 -b 16
+CMDS=<<EOF
+wx 4290429b9a
+aei
+ar x=0xabff
+ar y=0xcdfe
+ar a=0xff
+ar cc=0xff
+ar pc=0
+aes
+ar x
+ar y
+ar a
+ar cc
+aes
+ar x
+ar y
+ar a
+ar cc
+ar x=0xffff
+ar a=0
+ar cc=0x6a
+ar pc=0
+aes
+ar x
+ar cc
+ar cc=0x87
+ar pc=3
+aes
+ar cc
+aes
+ar cc
+ao 1 @0~pseudo
+ao 1 @1~pseudo
+EOF
+EXPECT=<<EOF
+0x0000fe01
+0x0000cdfe
+0x000000ff
+0x000000ee
+0x0000fe01
+0x0000fd02
+0x000000ff
+0x000000ee
+0x00000000
+0x0000006a
+0x000000af
+0x000000a7
+pseudo: x = (x & 0xff) * a
+pseudo: y = (y & 0xff) * a
+EOF
+RUN

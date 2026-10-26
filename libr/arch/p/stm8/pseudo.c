@@ -23,7 +23,7 @@ static char *replace(int argc, const char *argv[]) {
 		{ 0, "ret", "return a;", {}},
 		{ 0, "iret", "return;", {}},
 		{ 2, "mov", "# = #", { 1, 2 } }, // MOVS are stores
-		{ 2, "mul", "# *= #", { 1, 2 } },
+		{ 2, "mul", "# = (# & 0xff) * #", { 1, 1, 2 } },
 		{ 1, "neg", "# = !#", { 1, 1 } }, // TODO carry = (res != 0)
 		{ 2, "divw", "# /= #", { 1, 2 } },
 		{ 2, "div", "# /= #", { 1, 2 } },
