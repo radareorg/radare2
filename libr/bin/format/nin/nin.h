@@ -43,6 +43,8 @@ enum{
 	,GB_ROM_BANKS_32
 	,GB_ROM_BANKS_64
 	,GB_ROM_BANKS_128
+	,GB_ROM_BANKS_256
+	,GB_ROM_BANKS_512
 	,GB_ROM_BANKS_72	= 0x52
 	,GB_ROM_BANKS_80
 	,GB_ROM_BANKS_96
@@ -138,6 +140,10 @@ int gb_get_rombanks(ut8 id) {
 			return 64;
 		case GB_ROM_BANKS_128:
 			return 128;
+		case GB_ROM_BANKS_256:
+			return 256;
+		case GB_ROM_BANKS_512:
+			return 512;
 		case GB_ROM_BANKS_72:
 			return 72;
 		case GB_ROM_BANKS_80:

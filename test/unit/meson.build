@@ -23,6 +23,7 @@ if get_option('enable_tests')
     'bin',
     'bin_create',
     'bin_demangle',
+    'bin_ningb',
     'bin_trycatch',
     'bitmap',
     'bitset',

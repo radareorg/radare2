@@ -16,7 +16,7 @@ static bool check(RBinFile *bf, RBuffer *b) {
 }
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
-	return check (bf, buf);
+	return r_buf_size (buf) >= 0x150 && check (bf, buf);
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -49,7 +49,7 @@ static RList* entries(RBinFile *bf) {
 }
 
 static bool sections_vec(RBinFile *bf) {
-	ut8 bank;
+	ut8 bank_id;
 	int i;
 
 	if (!bf || !bf->buf) {
@@ -57,24 +57,32 @@ static bool sections_vec(RBinFile *bf) {
 	}
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 
-	r_buf_read_at (bf->buf, 0x148, &bank, 1);
-	bank = gb_get_rombanks (bank);
+	if (r_buf_read_at (bf->buf, 0x148, &bank_id, 1) != 1) {
+		return false;
+	}
+	int bank = gb_get_rombanks (bank_id);
+	ut64 size = r_buf_size (bf->buf);
 
 	RBinSection *section = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	section->name = strdup ("rombank00");
 	section->paddr = 0;
-	section->size = 0x4000;
+	section->size = R_MIN (size, 0x4000);
 	section->vsize = 0x4000;
 	section->vaddr = 0;
 	section->perm = r_str_rwx ("rx");
 	section->add = true;
 
 	for (i = 1; i < bank; i++) {
+		ut64 offset = (ut64)i * 0x4000;
+		if (offset >= size) {
+			break;
+		}
 		section = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 		section->name = r_str_newf ("rombank%02x", i);
-		section->paddr = i * 0x4000;
+		section->paddr = offset;
 		section->vaddr = i * 0x10000 - 0xc000;
-		section->size = section->vsize = 0x4000;
+		section->size = R_MIN (size - offset, 0x4000);
+		section->vsize = 0x4000;
 		section->perm = r_str_rwx ("rx");
 		section->add = true;
 	}
@@ -107,12 +115,14 @@ static bool symbols_vec(RBinFile *bf) {
 
 static RBinInfo* info(RBinFile *bf) {
 	ut8 rom_header[76];
+	if (r_buf_read_at (bf->buf, 0x104, rom_header, sizeof (rom_header)) != sizeof (rom_header)) {
+		return NULL;
+	}
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	r_buf_read_at (bf->buf, 0x104, rom_header, 76);
 	ret->file = r_str_ndup ((const char*)&rom_header[48], 16);
 	ret->type = malloc (128);
 	ret->type[0] = 0;
-	gb_get_gbtype (ret->type, rom_header[66], rom_header[63]);
+	gb_get_gbtype (ret->type, rom_header[66], rom_header[63] & 0x80);
 	gb_add_cardtype (ret->type, rom_header[67]); // XXX
 	ret->machine = strdup ("Gameboy");
 	ret->os = strdup ("any");
@@ -124,8 +134,8 @@ static RBinInfo* info(RBinFile *bf) {
 	return ret;
 }
 
-RList *mem (RBinFile *bf) {
-	RList *ret = r_list_newf (free);
+static RList *mem(RBinFile *bf) {
+	RList *ret = r_list_newf (r_bin_mem_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -140,7 +150,7 @@ RList *mem (RBinFile *bf) {
 	m = R_NEW0 (RBinMem);
 	m->name = strdup ("ioports");
 	m->addr = 0xff00LL;
-	m->size = 0x4c;
+	m->size = 0x80;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
 
@@ -170,7 +180,7 @@ RList *mem (RBinFile *bf) {
 	n->name = strdup ("iram_echo");
 	n->addr = 0xe000LL;
 	n->size = 0x1e00;
-	n->perms = r_str_rwx ("rx");
+	n->perms = r_str_rwx ("rwx");
 	r_list_append (m->mirrors, n);
 
 	return ret;
