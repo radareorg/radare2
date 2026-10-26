@@ -1073,6 +1073,7 @@ typedef struct {
 typedef struct {
 	unsigned int base_idx;
 	RList *types_list;
+	int print_depth; // nested get_print_type calls
 } STpiContext;
 
 typedef struct stpi_stream_t {

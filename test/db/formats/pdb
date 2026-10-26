@@ -336,3 +336,27 @@ EXPECT=<<EOF
 400
 EOF
 RUN
+
+NAME=pdb type printer stops on a self-referencing pointer
+FILE=--
+ARGS=-e log.level=0
+CMDS=<<EOF2
+idpi bins/pdb/tpi-self-ref.pdb
+EOF2
+EXPECT=<<EOF2
+struct node { // size 0x8
+  **************************************************************** next; // offset +0x0
+};
+EOF2
+RUN
+
+NAME=pdb arrays of structs print their size
+FILE=bins/pdb/SimplePDB.pdb
+ARGS=-e log.level=0
+CMDS=<<EOF2
+idpi bins/pdb/SimplePDB.pdb~DataDirectory
+EOF2
+EXPECT=<<EOF2
+  struct _IMAGE_DATA_DIRECTORY[128] DataDirectory; // offset +0x60
+EOF2
+RUN
