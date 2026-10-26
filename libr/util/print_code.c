@@ -625,6 +625,20 @@ R_API char *r_print_code_tocolor(const char *o, RConsCodeColors *cc) {
 			continue;
 		}
 
+		if (p == o || p[-1] == '\n') {
+			const char *label_end = p;
+			while (*label_end && !IS_WHITECHAR (*label_end)) {
+				label_end++;
+			}
+			if (label_end - p > 1 && label_end[-1] == ':') {
+				r_strbuf_append (out, color_cpp);
+				r_strbuf_append_n (out, p, label_end - p);
+				r_strbuf_append (out, Color_RESET);
+				p = label_end;
+				continue;
+			}
+		}
+
 		// Highlight numbers
 		if (isdigit ((ut8)*p)) {
 			r_strbuf_append (out, color_number);

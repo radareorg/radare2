@@ -1029,3 +1029,43 @@ int32_t_value my_uint64_t _intptr_t intmax_t_suffix
 [31m// intptr_t[0m
 EOF
 RUN
+
+NAME=syntax highlight recognizes labels at column zero
+FILE=-
+CMDS=<<EOF
+ecd
+e scr.color=1
+ec label blue
+?e entry:\nloc.00401000:\n0:\n$done: return 42\x3b~:))
+?en eof_label:~:))
+?e
+?e \x20leading:\n\tindented:\nword label:\nlabel :\n:\nplain~:))
+?e "\"string:\""~:))
+?e /*\ncomment:\n*/\nnext_label:~:))
+?e // comment:\nafter_comment:~:))
+?e "\"start\nstring:\nend\""~:))
+EOF
+EXPECT=<<EOF
+[34mentry:[0m
+[34mloc.00401000:[0m
+[34m0:[0m
+[34m$done:[0m [35mreturn[0m [32m42[0m;
+[34meof_label:[0m
+ leading:
+	indented:
+word label:
+label :
+:
+plain
+[33m"string:[33m"[0m
+[31m/*
+comment:
+*/[0m
+[34mnext_label:[0m
+[31m// comment:[0m
+[34mafter_comment:[0m
+[33m"start
+string:
+end[33m"[0m
+EOF
+RUN
