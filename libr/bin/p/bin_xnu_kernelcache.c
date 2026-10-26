@@ -436,33 +436,37 @@ static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) * m
 
 	RPrelinkRange *prelink_range = R_NEW0 (RPrelinkRange);
 
-	int incomplete = 3;
+	enum { PRELINK_INFO = 1, PRELINK_TEXT = 2, PRELINK_DATA = 4 };
+	ut32 missing = PRELINK_INFO | PRELINK_TEXT | PRELINK_DATA;
 	struct section_t *section;
 	R_VEC_FOREACH (sections, section) {
 		if (strstr (section->name, "__PRELINK_INFO.__info")) {
 			prelink_range->range.offset = section->paddr;
 			prelink_range->range.size = section->size;
-			if (!--incomplete) {
+			missing &= ~PRELINK_INFO;
+			if (!missing) {
 				break;
 			}
 		}
 
 		if (strstr (section->name, "__PRELINK_TEXT.__text")) {
 			prelink_range->pa2va_exec = section->vaddr - section->paddr;
-			if (!--incomplete) {
+			missing &= ~PRELINK_TEXT;
+			if (!missing) {
 				break;
 			}
 		}
 
 		if (strstr (section->name, "__PRELINK_DATA.__data")) {
 			prelink_range->pa2va_data = section->vaddr - section->paddr;
-			if (!--incomplete) {
+			missing &= ~PRELINK_DATA;
+			if (!missing) {
 				break;
 			}
 		}
 	}
 
-	if (incomplete == 1 && !prelink_range->pa2va_data) {
+	if (missing == PRELINK_DATA) {
 		struct MACH0_(segment_command) * seg;
 		int nsegs = R_MIN (mach0->nsegs, 128);
 		size_t i;
@@ -470,13 +474,13 @@ static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) * m
 			seg = &mach0->segs[i];
 			if (!strcmp (seg->segname, "__DATA")) {
 				prelink_range->pa2va_data = seg->vmaddr - seg->fileoff;
-				incomplete--;
+				missing &= ~PRELINK_DATA;
 				break;
 			}
 		}
 	}
 
-	if (incomplete) {
+	if (missing) {
 		R_FREE (prelink_range);
 	}
 
