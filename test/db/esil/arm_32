@@ -3778,3 +3778,32 @@ EXPECT=<<EOF
 0x00000008 zf,?{,18446744073709551360,r0,&,0,255,r1,&,<<,|,0xffffffff,&,r0,=,}
 EOF
 RUN
+
+NAME=arm32 conditional vldm/vstm/nop keep the condition prefix
+FILE=malloc://32
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 020b901c041b801c041b201d080b301d00f02013
+aoe 5
+EOF
+EXPECT=<<EOF
+0x00000000 zf,!,?{,0,r0,+,[8],d0,=,,}
+0x00000004 zf,!,?{,d1,0,r0,+,=[8],d2,8,r0,+,=[8],,}
+0x00000008 zf,!,?{,d2,8,r0,-,=[8],d1,16,r0,-,=[8],16,r0,-=,,}
+0x0000000c zf,!,?{,8,r0,-,[8],d3,=,16,r0,-,[8],d2,=,24,r0,-,[8],d1,=,32,r0,-,[8],d0,=,32,r0,-=,,}
+0x00000010 zf,!,?{,,}
+EOF
+RUN
+
+NAME=arm32 unconditional vldmia and bkpt stay unguarded
+FILE=malloc://16
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 020b90ec700020e1
+aoe 2
+EOF
+EXPECT=<<EOF
+0x00000000 0,r0,+,[8],d0,=,
+0x00000004 0,0,TRAP
+EOF
+RUN

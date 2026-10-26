@@ -3032,10 +3032,12 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 		r_strbuf_appendf (&op->esil, "0x%"PFMT64x",pc,:=", addr + 2);
 		break;
 	case ARM_INS_BKPT:
-		r_strbuf_setf (&op->esil, "%d,%d,TRAP", IMM (0), IMM (0));
+		r_strbuf_appendf (&op->esil, "%d,%d,TRAP", IMM (0), IMM (0));
 		break;
 	case ARM_INS_NOP:
-		r_strbuf_set (&op->esil, ",");
+		if (r_strbuf_is_empty (&op->esil)) {
+			r_strbuf_set (&op->esil, ",");
+		}
 		break;
 	case ARM_INS_BL:
 	case ARM_INS_BLX:
@@ -3186,7 +3188,6 @@ PUSH { r4, r5, r6, r7, lr }
 		break;
 	}
 	case ARM_INS_VSTMIA:
-		r_strbuf_set (&op->esil, "");
 		width = 0;
 		for (i = 1; i < insn->detail->arm.op_count; i++) {
 			r_strbuf_appendf (&op->esil, "%s,%d,%s,+,=[%d],",
@@ -3199,7 +3200,6 @@ PUSH { r4, r5, r6, r7, lr }
 		}
 		break;
 	case ARM_INS_VSTMDB:
-		r_strbuf_set (&op->esil, "");
 		width = 0;
 		for (i = insn->detail->arm.op_count - 1; i > 0; i--) {
 			width += REGSIZE32 (i);
@@ -3210,7 +3210,6 @@ PUSH { r4, r5, r6, r7, lr }
 		r_strbuf_appendf (&op->esil, "%d,%s,-=,", width, ARG (0));
 		break;
 	case ARM_INS_VLDMIA:
-		r_strbuf_set (&op->esil, "");
 		width = 0;
 		for (i = 1; i < insn->detail->arm.op_count; i++) {
 			r_strbuf_appendf (&op->esil, "%d,%s,+,[%d],%s,=,",
@@ -3223,7 +3222,6 @@ PUSH { r4, r5, r6, r7, lr }
 		}
 		break;
 	case ARM_INS_VLDMDB:
-		r_strbuf_set (&op->esil, "");
 		width = 0;
 		for (i = insn->detail->arm.op_count - 1; i > 0; i--) {
 			width += REGSIZE32 (i);
