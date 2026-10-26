@@ -405,6 +405,13 @@ d "wrmsr" 0f30
 d "xadd byte [eax], al" 0fc000
 d "xadd dword [eax], eax" 0fc100
 d "xchg byte [eax], al" 8600
+a "test dword [0x1000], eax" 850500100000
+a "test esi, dword [ebx+8]" 857308
+a "test byte [esp], bh" 843c24
+a "test word [ebp-4], cx" 66854dfc
+a "xchg [0x1000], bh" 863d00100000
+a "xchg cx, word [esp]" 66870c24
+a "xchg dword [esi+edi*8+0x20], edx" 8754fe20
 d "xchg dword [eax], eax" 8700
 d "xchg ebp, eax" 95
 d "xchg ebx, eax" 93
