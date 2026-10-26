@@ -337,6 +337,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=idpi handles a missing file without a loaded binary
+FILE=--
+CMDS=<<EOF
+idpi bins/pdb/does-not-exist.pdb
+?e done
+EOF
+EXPECT=<<EOF
+done
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot open file
+EOF
+RUN
+
 NAME=pdb type printer stops on a self-referencing pointer
 FILE=--
 ARGS=-e log.level=0

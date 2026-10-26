@@ -2739,7 +2739,7 @@ static void cmd_idp(RCore *core, PJ *pj, const char *input, bool is_array, int m
 			}
 		}
 		if (!file_found) {
-			if (info->debug_file_name) {
+			if (info && info->debug_file_name) {
 				const char *fn = r_file_basename (info->debug_file_name);
 				R_LOG_ERROR ("File '%s' not found in file directory or symbol store", fn);
 			} else {
