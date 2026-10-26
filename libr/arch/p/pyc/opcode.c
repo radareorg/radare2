@@ -126,21 +126,6 @@ static version_opcode version_op[] = {
 	{ NULL, NULL },
 };
 
-bool pyc_opcodes_equal(pyc_opcodes *op, const char *version) {
-	version_opcode *vop = version_op;
-
-	while (vop->version) {
-		if (!strcmp (vop->version, version)) {
-			if (vop->opcode_func == (pyc_opcodes * (*)()) (op->version_sig)) {
-				return true;
-			}
-		}
-		vop++;
-	}
-
-	return false;
-}
-
 pyc_opcodes *get_opcode_by_version(const char *version) {
 	version_opcode *vop = version_op;
 	while (vop->version) {
@@ -185,12 +170,16 @@ pyc_opcodes *new_pyc_opcodes() {
 }
 
 void free_opcode(pyc_opcodes *opcodes) {
+	if (!opcodes) {
+		return;
+	}
 	size_t i;
 	for (i = 0; i < 256; i++) {
 		free (opcodes->opcodes[i].op_name);
 	}
 	free (opcodes->opcodes);
 	r_list_free (opcodes->opcode_arg_fmt);
+	free (opcodes->cpu);
 	free (opcodes);
 }
 

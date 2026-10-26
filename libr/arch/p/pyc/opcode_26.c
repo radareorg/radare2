@@ -6,8 +6,6 @@ pyc_opcodes *opcode_26(void) {
 		return NULL;
 	}
 
-	ret->version_sig = (void *(*)())opcode_26;
-
 	// Below are opcode changes since Python 2.5
 	store_op (.op_obj = ret->opcodes, .op_name = "STORE_MAP", .op_code = 54, .pop = 3, .push = 1);
 

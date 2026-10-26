@@ -6,8 +6,6 @@ pyc_opcodes *opcode_33(void) {
 		return NULL;
 	}
 
-	ret->version_sig = (void *(*)())opcode_33;
-
 	// Below are opcode changes since Python 3.2
 
 	rm_op (.op_obj = ret->opcodes, .op_name = "STOP_CODE", .op_code = 0);

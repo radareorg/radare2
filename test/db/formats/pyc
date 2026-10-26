@@ -291,3 +291,19 @@ EXPECT=<<EOF
 [35m[35m[35mload_name[37m a[32m[32m$[0m[0m
 EOF
 RUN
+
+NAME=pyc opcode table follows asm.cpu changes
+FILE=bins/pyc/py39.pyc
+CMDS=<<EOF2
+pi 1 @ entry0+2
+e asm.cpu=v2.7.0
+pi 1 @ entry0+2
+e asm.cpu=3.9a2
+pi 1 @ entry0+2
+EOF2
+EXPECT=<<EOF2
+store_name __doc__
+store_name
+store_name __doc__
+EOF2
+RUN

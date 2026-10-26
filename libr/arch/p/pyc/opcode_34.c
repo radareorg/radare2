@@ -6,8 +6,6 @@ pyc_opcodes *opcode_34(void) {
 		return NULL;
 	}
 
-	ret->version_sig = (void *(*)())opcode_34;
-
 	// These are removed since Python 3.3
 	rm_op (.op_obj = ret->opcodes, .op_name = "STORE_LOCALS", .op_code = 69);
 

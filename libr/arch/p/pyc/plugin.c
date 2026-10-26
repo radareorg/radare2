@@ -27,15 +27,18 @@ static int pyversion_toi(const char *version) {
 static pyc_opcodes *get_pyc_opcodes(RArchSession *s) {
 	pyc_opcodes *ops = s->data;
 	const char *cpu = s->config->cpu;
-	// without a cpu (rasm2 -a pyc) use the same table as an unknown version
-	if (!ops || (cpu && !pyc_opcodes_equal (ops, cpu))) {
-		ops = cpu? get_opcode_by_version (cpu): NULL;
-		ops = ops? ops: get_opcode_by_version ("v3.9.0");
-		if (ops) {
-			ops->bits = s->config->bits;
-		}
-		s->data = ops;
+	if (ops && (!cpu || (ops->cpu && !strcmp (ops->cpu, cpu)))) {
+		return ops;
 	}
+	free_opcode (ops);
+	// without a cpu (rasm2 -a pyc) or an unknown version use the 3.9 table
+	ops = cpu? get_opcode_by_version (cpu): NULL;
+	ops = ops? ops: get_opcode_by_version ("v3.9.0");
+	if (ops) {
+		ops->bits = s->config->bits;
+		ops->cpu = cpu? strdup (cpu): NULL;
+	}
+	s->data = ops;
 	return ops;
 }
 
@@ -221,11 +224,8 @@ static bool pyc_decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 }
 
 static bool finish(RArchSession *s) {
-	pyc_opcodes *ops = s->data;
-	if (ops) {
-		free_opcode (ops);
-		s->data = NULL;
-	}
+	free_opcode (s->data);
+	s->data = NULL;
 	return true;
 }
 

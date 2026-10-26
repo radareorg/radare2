@@ -6,8 +6,6 @@ pyc_opcodes *opcode_39(void) {
 		return NULL;
 	}
 
-	ret->version_sig = (void *(*)())opcode_39;
-
 	// These are removed since 3.8...
 	rm_op (.op_obj = ret->opcodes, .op_name = "BEGIN_FINALLY", .op_code = 53);
 	rm_op (.op_obj = ret->opcodes, .op_name = "WITH_CLEANUP_START", .op_code = 81);

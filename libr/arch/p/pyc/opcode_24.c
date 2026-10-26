@@ -6,8 +6,6 @@ pyc_opcodes *opcode_24(void) {
 		return NULL;
 	}
 
-	ret->version_sig = (void *(*)())opcode_24;
-
 	// Bytecodes added since 2.3
 	def_op (.op_obj = ret->opcodes, .op_name = "NOP", .op_code = 9, .pop = 0, .push = 0);
 	def_op (.op_obj = ret->opcodes, .op_name = "LIST_APPEND", .op_code = 18, .pop = 2, .push = 1); // Calls list.append(TOS[-i], TOS).

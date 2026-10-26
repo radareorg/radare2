@@ -6,8 +6,6 @@ pyc_opcodes *opcode_36(void) {
 		return NULL;
 	}
 
-	ret->version_sig = (void *(*)())opcode_36;
-
 	// These are removed since Python 3.6
 	rm_op (.op_obj = ret->opcodes, .op_name = "MAKE_CLOSURE", .op_code = 134);
 	rm_op (.op_obj = ret->opcodes, .op_name = "CALL_FUNCTION_VAR", .op_code = 140);

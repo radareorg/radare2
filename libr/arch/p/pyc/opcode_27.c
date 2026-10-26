@@ -6,8 +6,6 @@ pyc_opcodes *opcode_27(void) {
 		return NULL;
 	}
 
-	ret->version_sig = (void *(*)())opcode_27;
-
 	// Below are opcode changes since Python 2.6
 	rm_op (.op_obj = ret->opcodes, .op_name = "BUILD_MAP", .op_code = 104);
 	rm_op (.op_obj = ret->opcodes, .op_name = "LOAD_ATTR", .op_code = 105);

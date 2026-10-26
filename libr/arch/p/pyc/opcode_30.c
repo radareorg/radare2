@@ -6,8 +6,6 @@ pyc_opcodes *opcode_30(void) {
 		return NULL;
 	}
 
-	ret->version_sig = (void *(*)())opcode_30;
-
 	// These are in Python 3.x but not in Python 3.0
 
 	rm_op (.op_obj = ret->opcodes, .op_name = "JUMP_IF_FALSE_OR_POP", .op_code = 111);

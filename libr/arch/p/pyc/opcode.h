@@ -44,7 +44,7 @@ typedef struct {
 	ut8 extended_arg;
 	ut8 have_argument;
 	ut8 bits;
-	void *(*version_sig)();
+	char *cpu; // version string this table was built for
 	RList *opcode_arg_fmt;
 	pyc_opcode_object *opcodes;
 } pyc_opcodes;
@@ -98,7 +98,6 @@ pyc_opcodes *get_opcode_by_version(const char *version);
 
 pyc_opcodes *new_pyc_opcodes();
 void free_opcode(pyc_opcodes *opcodes);
-bool pyc_opcodes_equal(pyc_opcodes *op, const char *version);
 
 void add_arg_fmt(pyc_opcodes *ret, char *op_name, char *(*formatter) (ut32 oparg));
 

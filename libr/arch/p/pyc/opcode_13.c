@@ -6,8 +6,6 @@ pyc_opcodes *opcode_13(void) {
 		return NULL;
 	}
 
-	ret->version_sig = (void *(*)())opcode_13;
-
 	// 1.3 - 1.4 bytecodes differences
 	rm_op (.op_obj = ret->opcodes, .op_name = "BINARY_POWER", .op_code = 19);
 	def_op (.op_obj = ret->opcodes, .op_name = "LOAD_GLOBALS", .op_code = 84);
