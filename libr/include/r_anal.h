@@ -348,6 +348,7 @@ typedef struct r_anal_function_t {
 	bool bp_frame;
 	bool bp_from_sp; // a prologue copied SP into BP, so BP really is the frame base
 	bool is_noreturn; // true if function does not return
+	bool is_inline; // true if function is inlined at its call sites
 	ut8 swift_roles; // R_BIN_SWIFT_ROLE_* bits the linkage name gives, UT8_MAX until asked
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	size_t fingerprint_size;
@@ -1277,6 +1278,8 @@ R_API RAnalBlock *r_anal_function_bbget_at(RAnal *anal, RAnalFunction *fcn, ut64
 R_API bool r_anal_function_bbadd(RAnalFunction *fcn, RAnalBlock *bb);
 R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize);
 R_API bool r_anal_function_purity(RAnalFunction *fcn);
+R_API bool r_anal_function_is_inline(RAnalFunction *fcn);
+R_API bool r_anal_function_set_inline(RAnalFunction *fcn, bool is_inline);
 R_API int r_anal_function_instrcount(RAnalFunction *fcn);
 R_API bool r_anal_function_islineal(RAnalFunction *fcn);
 R_API const char *r_anal_pin_get(RAnal *a, const char *name);
