@@ -644,3 +644,22 @@ EXPECT=<<EOF
 | QQQQ                                     |
 EOF
 RUN
+
+NAME=Function graphs retain interrupt handlers
+FILE=malloc://16
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx cf
+af
+aflj~{[0].type}
+agfj~{[0].type}
+agfj~{[0].blocks[0].ops[0].type}
+agfj~{[0].blocks[0].ops[0].opcode}
+EOF
+EXPECT=<<EOF
+int
+int
+ret
+iretd
+EOF
+RUN
