@@ -2667,3 +2667,16 @@ EXPECT=<<EOF
 4: fcn.attr ();
 EOF
 RUN
+
+NAME=pd strips control codes from flag real names
+FILE=malloc://16
+CMDS=<<EOF
+f foo=0
+fN foo `?e a\xc2\x9b2Jb\x07c\x1b`
+e asm.flags.real=true
+pd 1~foo,a2
+EOF
+EXPECT=<<EOF
+            ;-- a2Jbc:
+EOF
+RUN

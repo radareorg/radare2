@@ -3137,7 +3137,7 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 					}
 				}
 				if (name) {
-					r_str_ansi_filter (name, NULL, NULL, -1);
+					r_str_ansi_strip (name);
 					if (!ds->flags_inline || nth == 0) {
 						if (ds->flags_prefix) {
 							r_cons_printf (cons, FLAG_PREFIX);
