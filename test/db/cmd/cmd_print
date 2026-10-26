@@ -1259,6 +1259,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=print rejects a length whose magnitude exceeds signed int
+FILE=-
+CMDS=<<EOF
+pd -2147483648
+?e done
+EOF
+EXPECT=<<EOF
+done
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid print length
+EOF
+RUN
+
 NAME=pFBj stops expanding shared arrays past the output limit
 FILE=malloc://256
 TIMEOUT=30

@@ -974,11 +974,11 @@ static bool read_node_bytes(RFlirt *f, RFlirtNode *node) {
 		R_LOG_ERROR ("Invalid flirt node size %d", node->length);
 		return false;
 	}
-	ut64 current_mask_bit = 1ULL << (node->length - 1);
-	if (! (node->pattern_bytes = malloc (node->length))) {
+	ut64 current_mask_bit = node->length? 1ULL << (node->length - 1): 0;
+	if (! (node->pattern_bytes = malloc (R_MAX (node->length, 1)))) {
 		return false;
 	}
-	if (! (node->variant_bool_array = malloc (node->length))) {
+	if (! (node->variant_bool_array = malloc (R_MAX (node->length, 1)))) {
 		return false;
 	}
 	for (i = 0; i < node->length; i++, current_mask_bit >>= 1) {

@@ -12,14 +12,18 @@ static bool test_r_fs_ext2_read_bounds(void) {
 	mu_assert_notnull (r_fs_mount (fs, "ext2", "/mnt", 0), "mount ext2 image");
 	RFSFile *file = r_fs_open (fs, "/mnt/README.md", false);
 	mu_assert_notnull (file, "open ext2 file");
+	mu_assert_eq (r_fs_read (fs, file, 0, 1), 1, "read a single byte");
 	mu_assert_eq (r_fs_read (fs, file, 0, 16), 16, "read within file");
 	mu_assert_memeq (file->data, (const ut8 *)"This", 4, "read file contents");
+	mu_assert_eq (r_fs_read (fs, file, 0, 32), R_MIN (file->size, 32), "grow read buffer again");
+	mu_assert_memeq (file->data, (const ut8 *)"This", 4, "read contents after growing buffer");
+	mu_assert_eq (file->data[32], 0, "read buffer terminator");
 	memset (file->data, 0xa5, 16);
 	mu_assert_eq (r_fs_read (fs, file, file->size - 2, 4), 2, "clamp read at EOF");
-	mu_assert_eq (file->data[2], 0xa5, "short read preserves following bytes");
+	mu_assert_eq (file->data[2], 0, "short read leaves zero padding");
+	mu_assert_eq (file->data[4], 0, "short read buffer terminator");
 
-	ut8 untouched[16];
-	memset (untouched, 0xa5, sizeof (untouched));
+	const ut8 empty[3] = { 0 };
 	const ut64 offsets[] = { file->size, file->size + 1, file->size + 2, UT32_MAX + 1ULL, UT64_MAX };
 	r_fs_close (fs, file);
 	r_fs_file_free (file);
@@ -28,9 +32,9 @@ static bool test_r_fs_ext2_read_bounds(void) {
 		file = r_fs_open (fs, "/mnt/README.md", false);
 		mu_assert_notnull (file, "reopen file after read error");
 		mu_assert_eq (r_fs_read (fs, file, 0, 16), 16, "read before boundary check");
-		memcpy (file->data, untouched, sizeof (untouched));
+		memset (file->data, 0xa5, 16);
 		mu_assert_eq (r_fs_read (fs, file, offsets[i], 2), -1, "reject read at or beyond EOF");
-		mu_assert_memeq (file->data, untouched, sizeof (untouched), "rejected read preserves buffer");
+		mu_assert_memeq (file->data, empty, sizeof (empty), "rejected read leaves a zeroed buffer");
 		r_fs_close (fs, file);
 		r_fs_file_free (file);
 	}
