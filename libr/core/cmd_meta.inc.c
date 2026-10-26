@@ -1383,8 +1383,11 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				}
 			} else if (type == 's') { // "Cs"
 				// the string contents come from memory, so anything after the size is a mistake
-				const char *extra = strchr (args, ' ');
-				if (extra && *(extra = r_str_trim_head_ro (extra))) {
+				const char *extra = strpbrk (args, " \t");
+				if (extra) {
+					extra = r_str_trim_head_ro (extra);
+				}
+				if (extra && *extra) {
 					R_LOG_ERROR ("Unexpected argument '%s'. Usage: Cs [size] @addr", extra);
 					free (t);
 					return false;
@@ -1398,14 +1401,15 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				free (t);
 				return false;
 			}
-			if (!*args || n > 0) {
+			// string contents are read from memory, never taken from the arguments
+			if (type != 's' && (!*args || n > 0)) {
 				p = strchr (args, ' ');
 				if (p) {
 					*p++ = '\0';
 					p = (char *)r_str_trim_head_ro (p);
 					r_str_ncpy (name, p, sizeof (name));
 				} else {
-					use_flag_name = type != 'b' && type != 's';
+					use_flag_name = type != 'b';
 				}
 			}
 		}

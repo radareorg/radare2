@@ -363,6 +363,8 @@ FILE=malloc://1024
 CMDS=<<EOF
 w hello world
 Cs 5 0x6
+Cs 5	0x6
+Csa 5 0x6
 Cs
 Cs 5 @ 6
 Cs
@@ -372,6 +374,28 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Unexpected argument '0x6'. Usage: Cs [size] @addr
+ERROR: Unexpected argument '0x6'. Usage: Cs [size] @addr
+ERROR: Unexpected argument '0x6'. Usage: Cs [size] @addr
+EOF
+RUN
+
+NAME=Cs rejected argument keeps existing string
+FILE=malloc://1024
+CMDS=<<EOF
+w hello world
+Cs 5 @ 6
+Cs 3 0x6 @ 6
+Cs 4	junk @ 6
+Cs
+Cs.. @ 6
+EOF
+EXPECT=<<EOF
+0x00000006 ascii[5] "world"
+ascii[5] "world"
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Unexpected argument '0x6'. Usage: Cs [size] @addr
+ERROR: Unexpected argument 'junk'. Usage: Cs [size] @addr
 EOF
 RUN
 
