@@ -2494,3 +2494,117 @@ EXPECT=<<EOF
 0xdeadbeef00001122
 EOF
 RUN
+
+NAME=cmpxchg8b equal stores low halves of rcx:rbx into m64
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 0fc70f @ 0
+aei
+ar rdi=0x100
+ar rax=0xdeadbeef00001122
+ar rdx=0x1234567800003344
+ar rbx=0xcafebabedead00aa
+ar rcx=0x11112222333300bb
+wx 2211000044330000 @ 0x100
+wx aaaaaaaaaaaaaaaa @ 0x108
+s 0
+aeip
+aes
+ar zf
+p8 24 @ 0x100
+EOF
+EXPECT=<<EOF
+0x00000001
+aa00addebb003333aaaaaaaaaaaaaaaa0000000000000000
+EOF
+RUN
+
+NAME=cmpxchg8b unequal loads m64 and clears accumulator tops
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 0fc70f @ 0
+aei
+ar rdi=0x100
+ar rax=0xcafebabedeadbeef
+ar rdx=0x1111222233334444
+wx 9999999922110000 @ 0x100
+wx deadbeef44330000 @ 0x108
+s 0
+aeip
+aes
+ar zf
+ar rax
+ar rdx
+p8 16 @ 0x100
+EOF
+EXPECT=<<EOF
+0x00000000
+0x99999999
+0x00001122
+9999999922110000deadbeef44330000
+EOF
+RUN
+
+NAME=cmpxchg8b ignores accumulator bits above 32
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 0fc70f @ 0
+aei
+ar rdi=0x100
+ar rax=0xffffffff00001122
+ar rdx=0xdeadbeef00003344
+ar rbx=0x55
+ar rcx=0x66
+wx 2211000044330000 @ 0x100
+s 0
+aeip
+aes
+ar zf
+p8 8 @ 0x100
+EOF
+EXPECT=<<EOF
+0x00000001
+5500000066000000
+EOF
+RUN
+
+NAME=lock cmpxchg8b equal form
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx f00fc70f @ 0
+aei
+ar rdi=0x100
+ar rax=0x1122
+ar rdx=0x3344
+ar rbx=0xcafe
+ar rcx=0xf00d
+wx 2211000044330000 @ 0x100
+s 0
+aeip
+aes
+ar zf
+p8 8 @ 0x100
+EOF
+EXPECT=<<EOF
+0x00000001
+feca00000df00000
+EOF
+RUN
+
+NAME=cmpxchg8b generated esil text
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 0fc70f
+ao~opcode,esil
+EOF
+EXPECT=<<EOF
+opcode: cmpxchg8b qword [rdi]
+esilcost: 16
+esil: rdi,[4],rdi,4,+,[4],rdi,[4],0xffffffff,eax,&,^,rdi,4,+,[4],0xffffffff,edx,&,^,|,0,==,$z,zf,:=,zf,?{,ebx,rdi,=[4],ecx,rdi,4,+,=[4],},zf,!,?{,rdx,=,rax,=,}
+EOF
+RUN

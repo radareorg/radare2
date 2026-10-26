@@ -2503,6 +2503,55 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			R_FREE (src);
 		}
 		break;
+	case X86_INS_CMPXCHG8B:
+		// Compare-exchange an implicit register pair against memory:
+		//   if (mem == acc_hi:acc_lo) { zf = 1; mem = store_hi:store_lo; }
+		//   else                      { zf = 0; acc_hi:acc_lo = mem; }
+		// The opcode decides the size. 8B always exchanges 8 bytes as
+		// two 4-byte halves in EDX:EAX and ECX:EBX; 16B (64-bit only)
+		// exchanges 16 bytes as 8-byte halves in RDX:RAX and RCX:RBX.
+		// Intel leaves OF/SF/AF/CF/PF undefined, so only zf modelled.
+		{
+			const bool is16 = insn->id == X86_INS_CMPXCHG16B;
+			const bool pack = !is16 && bits == 64; // packed-parent reads
+			const int hw = is16 ? 8 : 4; // half width in bytes, high offset too
+			// the compared pair: rdx:rax or its low halves edx:eax
+			const char *acc_lo = is16 ? "rax" : "eax";
+			const char *acc_hi = is16 ? "rdx" : "edx";
+			// the exchange source: rcx:rbx or its low halves ecx:ebx
+			const char *store_lo = is16 ? "rbx" : "ebx";
+			const char *store_hi = is16 ? "rcx" : "ecx";
+			// where a failed compare loads the pair: 8B goes through
+			// the 64-bit names, clearing their upper halves
+			const char *load_lo = pack ? "rax" : acc_lo;
+			const char *load_hi = pack ? "rdx" : acc_hi;
+			// esil expression per accumulator half, masked when packed
+			char cmp_lo[32], cmp_hi[32];
+			if (pack) {
+				snprintf (cmp_lo, sizeof (cmp_lo), "0xffffffff,%s,&", acc_lo);
+				snprintf (cmp_hi, sizeof (cmp_hi), "0xffffffff,%s,&", acc_hi);
+			} else {
+				snprintf (cmp_lo, sizeof (cmp_lo), "%s", acc_lo);
+				snprintf (cmp_hi, sizeof (cmp_hi), "%s", acc_hi);
+			}
+			dst = getarg (&gop, 0, 2, NULL, NULL); // address expr
+			if (dst) {
+				esilprintf (op,
+					"%s,[%d],%s,%d,+,[%d]," // push mem lo, then hi
+					"%s,[%d],%s,^,%s,%d,+,[%d],%s,^,|," // xor halves, or
+					"0,==,$z,zf,:=," // zf = differences == 0
+					"zf,?{,%s,%s,=[%d],%s,%s,%d,+,=[%d],}," // store pair
+					"zf,!,?{,%s,=,%s,=,}", // pop into the accumulator
+					dst, hw, dst, hw, hw,
+					dst, hw, cmp_lo, dst, hw, hw, cmp_hi,
+					store_lo, dst, hw, store_hi, dst, hw, hw,
+					load_hi, load_lo);
+				free (dst);
+				// extensions are explicit above; no zext tail
+				gop.zext[0] = 0;
+			}
+		}
+		break;
 	case X86_INS_CMPXCHG: /* compare acc with dst; equal: dst = src, else: acc = dst */
 		{
 			ut32 bitsize = 0;
@@ -4295,6 +4344,7 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		op->family = R_ANAL_OP_FAMILY_CPU;
 		break;
 	case X86_INS_CMPXCHG: /* compare-exchange acc/dst */
+	case X86_INS_CMPXCHG8B: /* compare-exchange rdx:rax / m64 */
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->family = R_ANAL_OP_FAMILY_CPU;
 		break;
