@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2024 - pancake */
+/* radare - LGPL - Copyright 2024-2026 - pancake */
 
 #include <r_asm.h>
 
@@ -122,91 +122,38 @@ static char *replace(int argc, const char *argv[]) {
 }
 
 static char *parse(RAsmPluginSession *aps, const char *data) {
-	char w0[256], w1[256], w2[256], w3[256], w4[256];
-	int i, len = strlen (data);
-	char *buf, *ptr, *optr;
-
-	if (len >= sizeof (w0)) {
-		return false;
+	if (!strcmp (data, "iret")) {
+		return strdup ("ireturn");
 	}
-	// malloc can be slow here :?
-	if (!(buf = malloc (len + 1))) {
-		return false;
-	}
-	memcpy (buf, data, len + 1);
-#if 0
-	buf = r_str_replace (buf, "(0", "0", true);
-	buf = r_str_replace (buf, "p)", "p", true);
-	buf = r_str_replace (buf, "x)", "x", true);
-#endif
-#if 0
-	r_str_replace_char (buf, '(', '{');
-	r_str_replace_char (buf, ')', '}');
-#endif
-	const char *op0 = buf;
-	if (!strcmp (op0, "iret")) {
-		free (buf);
-		return strdup ("return from_interrupt");
-	}
-	if (!strcmp (op0, "ret")) {
-		free (buf);
+	if (!strcmp (data, "ret")) {
 		return strdup ("return a");
 	}
-	char *str = NULL;
-	if (*buf) {
-		*w0 = *w1 = *w2 = *w3 = *w4 = '\0';
-		ptr = strchr (buf, ' ');
-		if (ptr) {
-			*ptr = '\0';
-			ptr = (char *)r_str_trim_head_ro (ptr + 1);
-			r_str_ncpy (w0, buf, sizeof (w0));
-			r_str_ncpy (w1, ptr, sizeof (w1));
-			optr = ptr;
-			if (ptr && *ptr == '[') {
-				ptr = strchr (ptr + 1, ']');
-			}
+	if (!*data) {
+		return strdup (data);
+	}
+	char *buf = strdup (data);
+	const char *wa[5] = { buf };
+	int nw = 1;
+	char *ptr = strchr (buf, ' ');
+	if (ptr) {
+		*ptr = '\0';
+		ptr = (char *)r_str_trim_head_ro (ptr + 1);
+		wa[nw++] = ptr;
+		if (*ptr == '[') {
+			ptr = strchr (ptr + 1, ']');
 			if (!ptr) {
 				R_LOG_ERROR ("Unbalanced bracket");
 				free (buf);
-				return false;
-			}
-			ptr = strchr (ptr, ',');
-			if (ptr) {
-				*ptr = '\0';
-				ptr = (char *)r_str_trim_head_ro (ptr + 1);
-				r_str_ncpy (w1, optr, sizeof (w1));
-				r_str_ncpy (w2, ptr, sizeof (w2));
-				optr = ptr;
-				ptr = strchr (ptr, ',');
-				if (ptr) {
-					*ptr = '\0';
-					ptr = (char *)r_str_trim_head_ro (ptr + 1);
-					r_str_ncpy (w2, optr, sizeof (w2));
-					r_str_ncpy (w3, ptr, sizeof (w3));
-					optr = ptr;
-					ptr = strchr (ptr, ',');
-					if (ptr) {
-						*ptr = '\0';
-						ptr = (char *)r_str_trim_head_ro (ptr + 1);
-						r_str_ncpy (w3, optr, sizeof (w3));
-						r_str_ncpy (w4, ptr, sizeof (w4));
-					}
-				}
+				return NULL;
 			}
 		}
-		{
-			const char *wa[] = { w0, w1, w2, w3, w4 };
-			int nw = 0;
-			for (i = 0; i < 5; i++) {
-				if (wa[i][0]) {
-					nw++;
-				}
-			}
-			str = replace (nw, wa);
+		while (nw < 5 && (ptr = strchr (ptr, ','))) {
+			*ptr = '\0';
+			ptr = (char *)r_str_trim_head_ro (ptr + 1);
+			wa[nw++] = ptr;
 		}
-	} else {
-		str = strdup (data);
 	}
+	char *str = replace (nw, wa);
 	free (buf);
 	return r_str_fixspaces (str);
 }
