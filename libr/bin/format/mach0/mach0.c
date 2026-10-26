@@ -240,6 +240,10 @@ static ut64 offset_to_vaddr(struct MACH0_(obj_t) * mo, ut64 offset) {
 	return 0; // UT64_MAX?
 }
 
+ut64 MACH0_(paddr_to_vaddr)(struct MACH0_(obj_t) * mo, ut64 offset) {
+	return offset_to_vaddr (mo, offset);
+}
+
 static ut64 pa2va(RBinFile *bf, ut64 offset) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, offset);
 	RIO *io = bf->rbin->iob.io;

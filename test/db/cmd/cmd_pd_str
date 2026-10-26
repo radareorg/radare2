@@ -76,7 +76,7 @@ EXPECT=<<EOF
             0x100016c60      81000090       adrp x1, reloc.fixup.dequeueReusableCellWithIdentifi ; 0x100026000
             0x100016c64      218040f9       ldr x1, [x1, 0x100]        ; (pstr 0x10001bc6c) "generalPasteboard" reloc.fixup.generalPasteboard ; str.generalPasteboard
 0x000000010001c6e8
-0x1000261e8 0x10001c6e8 SET_64 0      0x10001c6e8
+0x1000261e8 0x000261e8 SET_64 0      0x10001c6e8
 EOF
 RUN
 
@@ -101,6 +101,6 @@ EXPECT=<<EOF
             0x100016c60      81000090       adrp x1, reloc.fixup.dequeueReusableCellWithIdentifi ; 0x100026000
             0x100016c64      218040f9       ldr x1, [x1, 0x100]        ; reloc.fixup.generalPasteboard
 0x000800010001c6e8
-0x1000261e8 0x10001c6e8 SET_64 0      0x10001c6e8
+0x1000261e8 0x000261e8 SET_64 0      0x10001c6e8
 EOF
 RUN
