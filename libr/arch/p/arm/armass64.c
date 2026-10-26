@@ -1563,7 +1563,7 @@ static ut32 arithmetic(ArmOp *op, int k) {
 	}
 	data = k;
 	data += encode1reg (op);
-	data += (op->operands[1].reg & 7) << (24 + 5);
+	data += ((ut32)op->operands[1].reg & 7) << (24 + 5);
 	data += (op->operands[1].reg >> 3) << 16;
 	if (op->operands[2].type & ARM_GPR) {
 		data += op->operands[2].reg << 8;
