@@ -676,6 +676,11 @@ ad "sxth w9, w8" 093D0013
 ad "sxtw x30, w30" DE7F4093
 ad "sxtw x25, w15" F97D4093
 ad "sxtw x5, w11" 657D4093
+ad "uxtb w0, w1" 201C0053
+ad "uxtb w9, w8" 091D0053
+ad "uxtb w30, w30" DE1F0053
+ad "uxth w5, w7" E53C0053
+ad "uxth w30, w30" DE3F0053
 ad "rev16 x30, x30" DE07C0DA
 ad "rev16 x15, x25" 2F07C0DA
 ad "rev16 x5, x11" 6505C0DA
