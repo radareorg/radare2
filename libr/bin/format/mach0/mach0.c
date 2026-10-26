@@ -8,7 +8,6 @@
 // R2R db/formats/mach0/strip
 // R2R db/formats/zip
 
-#define MACHO_MAX_SECTIONS 4096
 // Microsoft C++: 2048 characters; Intel C++: 2048 characters; g++: No limit
 // see -e bin.maxsymlen (honor bin.limit too?)
 
