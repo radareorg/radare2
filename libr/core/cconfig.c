@@ -4209,6 +4209,7 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	SETB ("dbg.glibc.demangle", "false", "demangle linked-lists pointers introduced in glibc 2.32");
 	SETB ("esil.prestep", "true", "step before esil evaluation in `de` commands");
+	SETB ("esil.skipself", "true", "skip instructions that return to their own address during ESIL stepping");
 	SETI ("esil.maxsteps", 0, "If !=0 defines the maximum amount of steps to perform on aesu/aec/..");
 	SETICB ("esil.maxbacksteps", 256, &cb_esilmaxbacksteps, "esil back step capacity");
 	SETB ("esil.stepover.force", "false", "force PC to the return address when ESIL step-over stops before returning");

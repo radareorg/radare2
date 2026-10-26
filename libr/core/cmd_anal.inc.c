@@ -8263,6 +8263,7 @@ static void core_esil_log_stop_reason(RCore *core, RCoreEsilStepStatus status, u
 static RCoreEsilStepStatus core_esil_step_until_internal(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver, bool stop_on_fault, ut64 *stop_addr) {
 	const int esiltimeout = r_config_get_i (core->config, "esil.timeout");
 	const bool breakoninvalid = r_config_get_b (core->config, "esil.breakoninvalid");
+	const bool skipself = r_config_get_b (core->config, "esil.skipself");
 	const st64 maxsteps = r_config_get_i (core->config, "esil.maxsteps");
 	const st64 follow = (st64)r_config_get_i (core->config, "dbg.follow");
 	const char *arch = r_config_get (core->config, "asm.arch");
@@ -8313,7 +8314,7 @@ static RCoreEsilStepStatus core_esil_step_until_internal(RCore *core, ut64 until
 		steps++;
 		core_esil_sync_legacy_trap (core);
 		addr = r_reg_getv (core->anal->reg, "PC");
-		if (stepped && addr == prev_pc) {
+		if (skipself && stepped && addr == prev_pc) {
 			// escape self-loops like the legacy stepper: when the executed
 			// instruction does not advance PC, move to the next one
 			RAnalOp op;

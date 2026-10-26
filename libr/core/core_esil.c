@@ -36,6 +36,10 @@ static bool core_esil_cmd(RCore *core, const char *cmd, ut64 addr, ut64 a2) {
 	if (R_STR_ISEMPTY (cmd)) {
 		return false;
 	}
+	REsil *esil = &core->esil.esil;
+	if (esil->cmd) {
+		return esil->cmd (esil, cmd, addr, a2);
+	}
 	r_core_cmdf (core, "%s 0x%" PFMT64x " 0x%" PFMT64x, cmd, addr, a2);
 	return core->num->value;
 }
