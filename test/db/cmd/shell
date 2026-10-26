@@ -126,9 +126,9 @@ NAME=touch
 FILE=malloc://32-
 CMDS=<<EOF
 rm .foo.touch
-ls -q .foo.touch
+ls .foo.touch~[0]
 touch .foo.touch
-ls -q .foo.touch
+ls .foo.touch~[0]
 rm .foo.touch
 EOF
 EXPECT=<<EOF
