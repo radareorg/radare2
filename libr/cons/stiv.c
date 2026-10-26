@@ -6,7 +6,7 @@
 #define ABS(x) (((x)<0)?-(x):(x))
 #define POND(x,y) (ABS((x)) * (y))
 
-typedef void (*Renderer)(RStrBuf *sb, const ut8*, const ut8 *);
+typedef void (*Renderer)(RStrBuf *sb, const ut8*, const ut8 *, bool, bool);
 
 static int reduce8(int r, int g, int b) {
 	int colors_len = 8;
@@ -48,8 +48,13 @@ static int reduce8(int r, int g, int b) {
 	return select;
 }
 
-static void render_ansi(RStrBuf *sb, const ut8 *c, const ut8 *d) {
-	r_strbuf_appendf (sb, "\x1b[%dm\x1b[%dm", 30 + reduce8 (c[0], c[1], c[2]), 40 + reduce8 (d[0], d[1], d[2]));
+static void render_ansi(RStrBuf *sb, const ut8 *c, const ut8 *d, bool foreground, bool background) {
+	if (foreground) {
+		r_strbuf_appendf (sb, "\x1b[%dm", 30 + reduce8 (c[0], c[1], c[2]));
+	}
+	if (background) {
+		r_strbuf_appendf (sb, "\x1b[%dm", 40 + reduce8 (d[0], d[1], d[2]));
+	}
 }
 
 static int rgb(int r, int g, int b) {
@@ -62,7 +67,7 @@ static int rgb(int r, int g, int b) {
 	return 16 + (r * 36) + (g * 6) + b;
 }
 
-static void render_sixel(RStrBuf *sb, const ut8 *c, const ut8 *d) {
+static void render_sixel(RStrBuf *sb, const ut8 *c, const ut8 *d, bool foreground, bool background) {
 	int r = (c[0] * 100 / 255);
 	int g = (c[1] * 100 / 255);
 	int b = (c[2] * 100 / 255);
@@ -75,32 +80,38 @@ static void render_sixel(RStrBuf *sb, const ut8 *c, const ut8 *d) {
 	r_strbuf_appendf (sb, "#%d~~~~~~", 1); // 6x6 pixel block
 }
 
-static void render_256(RStrBuf *sb, const ut8 *c, const ut8 *d) {
-	r_strbuf_appendf (sb, "\x1b[%d;5;%dm", 38, rgb (c[0], c[1], c[2]));
-	r_strbuf_appendf (sb, "\x1b[%d;5;%dm", 48, rgb (d[0], d[1], d[2]));
-}
-
-static void render_rgb(RStrBuf *sb, const ut8 *c, const ut8 *d) {
-	r_strbuf_appendf (sb, "\x1b[38;2;%d;%d;%dm", c[0], c[1], c[2]);
-	r_strbuf_appendf (sb, "\x1b[48;2;%d;%d;%dm", d[0], d[1], d[2]);
-}
-
-static void render_greyscale(RStrBuf *sb, const ut8 *c, const ut8 *d) {
-	int color1 = (c[0] + c[1] + c[2]) / 3;
-	int color2 = (d[0] + d[1] + d[2]) / 3;
-	int k = 231 + ((int)((float)color1 / 10.3));
-	if (k < 232) {
-		k = 232;
+static void render_256(RStrBuf *sb, const ut8 *c, const ut8 *d, bool foreground, bool background) {
+	if (foreground) {
+		r_strbuf_appendf (sb, "\x1b[%d;5;%dm", 38, rgb (c[0], c[1], c[2]));
 	}
-	r_strbuf_appendf (sb, "\x1b[%d;5;%dm", 38, k);
-	k = 231 + ((int)((float)color2 / 10.3));
-	if (k < 232) {
-		k = 232;
+	if (background) {
+		r_strbuf_appendf (sb, "\x1b[%d;5;%dm", 48, rgb (d[0], d[1], d[2]));
 	}
-	r_strbuf_appendf (sb, "\x1b[%d;5;%dm", 48, k);
 }
 
-static void render_ascii(RStrBuf *sb, const ut8 *c, const ut8 *d) {
+static void render_rgb(RStrBuf *sb, const ut8 *c, const ut8 *d, bool foreground, bool background) {
+	if (foreground) {
+		r_strbuf_appendf (sb, "\x1b[38;2;%d;%d;%dm", c[0], c[1], c[2]);
+	}
+	if (background) {
+		r_strbuf_appendf (sb, "\x1b[48;2;%d;%d;%dm", d[0], d[1], d[2]);
+	}
+}
+
+static void render_greyscale(RStrBuf *sb, const ut8 *c, const ut8 *d, bool foreground, bool background) {
+	if (foreground) {
+		int color = (c[0] + c[1] + c[2]) / 3;
+		int palette = R_MAX (232, 231 + (int)((float)color / 10.3));
+		r_strbuf_appendf (sb, "\x1b[38;5;%dm", palette);
+	}
+	if (background) {
+		int color = (d[0] + d[1] + d[2]) / 3;
+		int palette = R_MAX (232, 231 + (int)((float)color / 10.3));
+		r_strbuf_appendf (sb, "\x1b[48;5;%dm", palette);
+	}
+}
+
+static void render_ascii(RStrBuf *sb, const ut8 *c, const ut8 *d, bool foreground, bool background) {
 	const char * const pal = " `.,-:+*%$#";
 	int idx, pal_len = strlen (pal);
 	float p = ((double)(c[0] + c[1] + c[2]) / 3);
@@ -109,7 +120,7 @@ static void render_ascii(RStrBuf *sb, const ut8 *c, const ut8 *d) {
 	if (idx >= pal_len) {
 		idx = pal_len - 1;
 	}
-	r_strbuf_appendf (sb, "%c", pal[idx]);
+	r_strbuf_append_n (sb, pal + idx, 1);
 }
 
 static void do_render(Renderer renderer, RStrBuf *sb, const ut8 *buf, int len, int w, int h, int components) {
@@ -124,7 +135,7 @@ static void do_render(Renderer renderer, RStrBuf *sb, const ut8 *buf, int len, i
 				if (d + 3 > (buf + len)) {
 					break;
 				}
-				render_sixel (sb, c, d);
+				render_sixel (sb, c, d, true, true);
 			}
 			r_strbuf_append (sb, "$-");
 		}
@@ -132,16 +143,23 @@ static void do_render(Renderer renderer, RStrBuf *sb, const ut8 *buf, int len, i
 		return;
 	}
 	for (y = 0; y < h; y += 2) {
+		const ut8 *previous_top = NULL, *previous_bottom = NULL;
 		for (x = 0; x < w; x++) {
 			c = XY (buf, x, y);
 			d = XY (buf, x, y + 1);
 			if (d + 3 > (buf + len)) {
 				break;
 			}
-			renderer (sb, c, d);
-			if (renderer != render_ascii) {
-				r_strbuf_append (sb, "▀");
+			bool foreground = !previous_top || memcmp (previous_top, c, 3);
+			bool background = !previous_bottom || memcmp (previous_bottom, d, 3);
+			if (foreground || background || renderer == render_ascii) {
+				renderer (sb, c, d, foreground, background);
 			}
+			if (renderer != render_ascii) {
+				r_strbuf_append_n (sb, "▀", 3);
+			}
+			previous_top = c;
+			previous_bottom = d;
 		}
 		r_strbuf_append (sb, (renderer == render_ascii)? "\n": "\x1b[0m\n");
 	}
