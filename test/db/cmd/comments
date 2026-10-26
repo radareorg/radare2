@@ -147,3 +147,17 @@ EXPECT=<<EOF
             0x00000000      90             nop
 EOF
 RUN
+
+NAME=comments strip C1 control codes rebuilt by nested stray bytes
+FILE=malloc://16
+CMDS=<<EOF
+CC+ a\xc2\xc2\x9b\x9b2Jb
+CC+ c\xc2\xc2\xc2\x9b\x9b\x9bd
+CC+ e\xc2\x1b[m\x9b2Jf
+CC+ g\xc2\x1b[m\xa9h
+CC.
+EOF
+EXPECT=<<EOF
+a2Jb cd e2Jf g©h
+EOF
+RUN

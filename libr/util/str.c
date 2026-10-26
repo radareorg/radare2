@@ -2086,6 +2086,10 @@ R_API size_t r_str_ansi_strip(char *str) {
 			r += chlen;
 		} else if (sanitize_len > 0) {
 			r += sanitize_len;
+		} else if (w > 0 && (ut8)str[w - 1] == 0xc2 && (ut8)str[r] >= 0x80 && (ut8)str[r] <= 0x9f) {
+			// a cut joined a stray 0xc2 with the second byte of a C1 control code
+			w--;
+			r++;
 		} else {
 			memmove (str + w, str + r, chlen);
 			w += chlen;
