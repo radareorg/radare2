@@ -79,6 +79,12 @@ R_API char *r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
 	const char *line = p->histblock ? block : vline;
 	const char *hit_suffix = (colors || p->histblock) ? Color_RESET : "";
 	bool has_color = colors || p->histblock;
+	// reserve room on the right for the value ruler: " | ff"
+	const int ruler_width = 5;
+	const bool ruler = cols > ruler_width * 2;
+	if (ruler) {
+		cols -= ruler_width;
+	}
 	for (i = 0; i < rows; i++) {
 		size_t threshold = i * (0xff / rows);
 		const char *hit_prefix = colors ? kol[i * 5 / rows] : (p->histblock ? Color_BGGRAY : "");
@@ -96,6 +102,9 @@ R_API char *r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
 			} else {
 				r_strbuf_append (sb, " ");
 			}
+		}
+		if (ruler) {
+			r_strbuf_appendf (sb, " %s %02x", vline, (ut8) (255 - threshold));
 		}
 		r_strbuf_append (sb, "\n");
 	}

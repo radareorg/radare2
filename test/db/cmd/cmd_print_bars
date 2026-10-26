@@ -9,6 +9,32 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=p== value ruler
+FILE=-
+CMDS=<<EOF
+e scr.utf8=false
+e scr.color=0
+wx 00112233445566778899aabbccddeeff
+p== 16~[-1]
+EOF
+EXPECT=<<EOF
+ff
+ed
+db
+c9
+b7
+a5
+93
+81
+6f
+5d
+4b
+39
+27
+15
+EOF
+RUN
+
 NAME=p==b output lines
 FILE=-
 CMDS=<<EOF
