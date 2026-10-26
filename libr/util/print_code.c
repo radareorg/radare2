@@ -513,7 +513,14 @@ R_API char *r_print_code_tocolor(const char *o, RConsCodeColors *cc) {
 	static const char *types[] = {
 		"const", "int", "char", "short", "long", "void", "float", "double",
 		"bool", "boolean", "string", "signed", "unsigned",
-		"ut8", "uint8_t", "ut64", "uint64_t", NULL
+		"ut8", "ut64",
+		"int8_t", "int16_t", "int32_t", "int64_t",
+		"uint8_t", "uint16_t", "uint32_t", "uint64_t",
+		"int_least8_t", "int_least16_t", "int_least32_t", "int_least64_t",
+		"uint_least8_t", "uint_least16_t", "uint_least32_t", "uint_least64_t",
+		"int_fast8_t", "int_fast16_t", "int_fast32_t", "int_fast64_t",
+		"uint_fast8_t", "uint_fast16_t", "uint_fast32_t", "uint_fast64_t",
+		"intptr_t", "uintptr_t", "intmax_t", "uintmax_t", NULL
 	};
 
 	static const char *preprocessor[] = {
