@@ -769,13 +769,14 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 			clear_flags (op, V850_FLAG_OV);
 			break;
 		case V850_EXT_RETI:
-			op->type = R_ANAL_OP_TYPE_RCJMP;
-			r_strbuf_append (&op->esil, "epi,!,npi,&,?{,fepc,pc,:=,fepsw,psw,:=,BREAK,},eipc,pc,:=,eipsw,psw,:=");
+			op->type = R_ANAL_OP_TYPE_RET;
+			op->family = R_ANAL_OP_FAMILY_PRIV;
+			r_strbuf_append (&op->esil, "epi,!,npi,&,?{,fepc,pc,:=,fepsw,psw,:=,}{,eipc,pc,:=,eipsw,psw,:=,}");
 			break;
 		case V850_EXT_EXT2:
 			//ei and di
 			op->type = R_ANAL_OP_TYPE_MOV;
-			r_strbuf_appendf (&op->esil, "%d,id,:=", (word2 >> 13) & 1);
+			r_strbuf_appendf (&op->esil, "%d,id,:=", !(word1 & 0x8000));
 			break;
 		}
 		break;
@@ -976,14 +977,14 @@ static char *regs(RArchSession *s) {
 
 		// 32bit [   RFU   ][NP EP ID SAT CY OV S Z]
 		"gpr	psw .32 132 0\n" // program status word
-		"gpr	npi  .1 132.16 0\n" // non maskerable interrupt (NMI)
-		"gpr	epi  .1 132.17 0\n" // exception processing interrupt
-		"gpr	id   .1 132.18 0\n" // :? should be id
-		"gpr	sat  .1 132.19 0\n" // saturation detection
-		"flg	cy  .1 132.28 0 carry\n" // carry or borrow
-		"flg	ov  .1 132.29 0 overflow\n" // overflow
-		"flg	s   .1 132.30 0 sign\n" // signed result
-		"flg	z   .1 132.31 0 zero\n" // zero result
+		"gpr	npi  .1 132.7 0\n" // non maskerable interrupt (NMI)
+		"gpr	epi  .1 132.6 0\n" // exception processing interrupt
+		"gpr	id   .1 132.5 0\n" // :? should be id
+		"gpr	sat  .1 132.4 0\n" // saturation detection
+		"flg	cy  .1 132.3 0 carry\n" // carry or borrow
+		"flg	ov  .1 132.2 0 overflow\n" // overflow
+		"flg	s   .1 132.1 0 sign\n" // signed result
+		"flg	z   .1 132.0 0 zero\n" // zero result
 
 		"gpr	eipc	.32	$	0\n"
 		"gpr	eipsw	.32	$	0\n"

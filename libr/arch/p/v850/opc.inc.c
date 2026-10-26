@@ -825,7 +825,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "dbret", two (0x07e0, 0x0146), two (0xffff, 0xffff), {0}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_RET },
 	{ "dbtag", two (0xcfe0, 0x0160), two (0xffe0, 0x07ff), {IMM10U}, 0, V850_CPU_E3V5_UP },
 	{ "dbtrap", one (0xf840), one (0xffff), {0}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_TRAP },
-	{ "di", two (0x07e0, 0x0160), two (0xffff, 0xffff), {0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SWI, "1,id,:=", R_ANAL_OP_FAMILY_PRIV },
+	{ "di", two (0x07e0, 0x0160), two (0xffff, 0xffff), {0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_MOV, "1,id,:=", R_ANAL_OP_FAMILY_PRIV },
 	{ "dispose", two (0x0640, 0x0000), two (0xffc0, 0x0000), {IMM5, LIST12, R2_DISPOSE}, 3, V850_CPU_NON0, R_ANAL_OP_TYPE_POP, "DISPOSE,#1,#2" },
 	{ "dispose", two (0x0640, 0x0000), two (0xffc0, 0x001f), {IMM5, LIST12}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_POP, "DISPOSE,#1" },
 
@@ -843,7 +843,7 @@ const struct v850_opcode v850_opcodes[] = {
 
 	{ "dst", two (0x07e0, 0x0134), two (0xfffff, 0xffff), {0}, 0, V850_CPU_E3V5_UP },
 
-	{ "ei", two (0x87e0, 0x0160), two (0xffff, 0xffff), {0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SWI, "0,id,:=", R_ANAL_OP_FAMILY_PRIV },
+	{ "ei", two (0x87e0, 0x0160), two (0xffff, 0xffff), {0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_MOV, "0,id,:=", R_ANAL_OP_FAMILY_PRIV },
 	{ "eiret", two (0x07e0, 0x0148), two (0xffff, 0xffff), {0}, 0, V850_CPU_E2_UP },
 
 	{ "est", two (0x07e0, 0x0132), two (0xfffff, 0xffff), {0}, 0, V850_CPU_E3V5_UP },
@@ -970,7 +970,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "pushsp", two (0x47e0, 0x0160), two (0xffe0, 0x07ff), {R1, R3}, 0, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_PUSH },
 	{ "rotl", two (0x07e0, 0x00c6), two (0x07e0, 0x07ff), {R1, R2, R3}, 0, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_ROL },
 	{ "rotl", two (0x07e0, 0x00c4), two (0x07e0, 0x07ff), {I5U, R2, R3}, 0, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_ROL },
-	{ "reti", two (0x07e0, 0x0140), two (0xffff, 0xffff), {0}, 0, V850_CPU_ALL , R_ANAL_OP_TYPE_RET},
+	{ "reti", two (0x07e0, 0x0140), two (0xffff, 0xffff), {0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_RET, "epi,!,npi,&,?{,fepc,pc,:=,fepsw,psw,:=,}{,eipc,pc,:=,eipsw,psw,:=,}", R_ANAL_OP_FAMILY_PRIV },
 	{ "sar", two (0x07e0, 0x00a2), two (0x07e0, 0x07ff), {R1, R2, R3}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_SAR, "#0,--,#1,>>,1,&,cy,:=,#0,#1,ASR,#2,=,31,$s,s,:=,$z,z,:=,0,ov,:=" },
 	{ "sar", OP (0x15), OP_MASK, {I5U, R2}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SAR, "#0,--,#1,>>,1,&,cy,:=,#0,#1,ASR,#1,=,31,$s,s,:=,$z,z,:=,0,ov,:=" },
 	{ "sar", two (0x07e0, 0x00a0), two (0x07e0, 0xffff), {R1, R2}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SAR, "#0,--,#1,>>,1,&,cy,:=,#0,#1,ASR,#1,=,31,$s,s,:=,$z,z,:=,0,ov,:=" },

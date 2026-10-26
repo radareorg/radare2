@@ -866,3 +866,163 @@ EXPECT=<<EOF
 0x00000000
 EOF
 RUN
+
+NAME=v850 PSW bitfields alias the architectural status word
+FILE=malloc://32
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+ar psw=0xff
+ar npi
+ar epi
+ar id
+ar sat
+ar cy
+ar ov
+ar s
+ar z
+ar psw=0
+ar npi=1
+ar epi=1
+ar id=1
+ar sat=1
+ar cy=1
+ar ov=1
+ar s=1
+ar z=1
+ar psw
+ar psw=0x85
+ar npi
+ar epi
+ar id
+ar cy
+ar ov
+ar s
+ar z
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000001
+0x00000001
+0x00000001
+0x00000001
+0x00000001
+0x00000001
+0x00000001
+0x000000ff
+0x00000001
+0x00000000
+0x00000000
+0x00000000
+0x00000001
+0x00000000
+0x00000001
+EOF
+RUN
+
+NAME=v850 DI and EI change only PSW ID and are privileged moves
+FILE=malloc://32
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+wx e0076001e0876001
+aoj @0~{[0].type}
+aoj @4~{[0].type}
+aoj @0~{[0].family}
+aei
+ar pc=0
+ar psw=0x85
+aes
+ar psw
+aes
+ar psw
+e asm.cpu=v850
+ar pc=0
+ar psw=0x85
+aes
+ar psw
+aes
+ar psw
+EOF
+EXPECT=<<EOF
+mov
+mov
+priv
+0x000000a5
+0x00000085
+0x000000a5
+0x00000085
+EOF
+RUN
+
+NAME=v850 RETI selects the saved context from the original EP and NP
+FILE=malloc://32
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+wx e0074001
+aoj~{[0].type}
+aei
+ar eipc=0x120
+ar eipsw=0x85
+ar fepc=0x240
+ar fepsw=0x4a
+ar psw=0
+ar pc=0
+aes
+ar pc
+ar psw
+ar psw=64
+ar pc=0
+aes
+ar pc
+ar psw
+ar psw=128
+ar pc=0
+aes
+ar pc
+ar psw
+ar psw=192
+ar pc=0
+aes
+ar pc
+ar psw
+e asm.cpu=v850
+ar psw=0
+ar pc=0
+aes
+ar pc
+ar psw
+ar psw=64
+ar pc=0
+aes
+ar pc
+ar psw
+ar psw=128
+ar pc=0
+aes
+ar pc
+ar psw
+ar psw=192
+ar pc=0
+aes
+ar pc
+ar psw
+EOF
+EXPECT=<<EOF
+ret
+0x00000120
+0x00000085
+0x00000120
+0x00000085
+0x00000240
+0x0000004a
+0x00000120
+0x00000085
+0x00000120
+0x00000085
+0x00000120
+0x00000085
+0x00000240
+0x0000004a
+0x00000120
+0x00000085
+EOF
+RUN
