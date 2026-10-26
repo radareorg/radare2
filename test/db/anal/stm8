@@ -269,7 +269,7 @@ EXPECT=<<EOF
 0x0000abcd
 0x00000109
 0x00123456
-pseudo: interrupt_return();
+pseudo: ireturn
 0x00000012
 0x00000034
 0x00005678
@@ -282,5 +282,24 @@ pseudo: interrupt_return();
 0x00005678
 0x00000004
 0x009abcde
+EOF
+RUN
+
+NAME=stm8 pseudo instructions without operands
+FILE=malloc://32
+ARGS=-a stm8
+CMDS=<<EOF
+wx 9a9b81808e9d5f
+e asm.pseudo=true
+pi 7
+EOF
+EXPECT=<<EOF
+rim
+sim
+return a
+ireturn
+halt
+nop
+x = 0
 EOF
 RUN
