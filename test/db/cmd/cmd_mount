@@ -1281,3 +1281,36 @@ open-failed
 EOF2
 EXPECT_ERR=
 RUN
+
+NAME=jfs cyclic dtree leaf chain ends the directory
+FILE=malloc://65536
+CMDS=<<EOF2
+wx 4a46533101 @ 0x8000
+wx 1000000c @ 0x8011
+wx 010000000c @ 0xbc00
+wx 40 @ 0xc435
+wx 0100000000000000010000000e @ 0xc4f8
+wx 80 @ 0xc835
+wx 80 @ 0xd035
+wx 0200030012 @ 0xd0f0
+wx 01000000010000000b @ 0xd104
+wx 0e @ 0xe000
+wx 020200000001 @ 0xe010
+wx 0203 @ 0xe020
+wx 04000000ff0568006500 @ 0xe040
+wx 04000000ff0577006f00 @ 0xe060
+m /a jfs 0
+md /a
+# zero length entries in the cycle must not recurse
+wx 00 @ 0xe045
+wx 00 @ 0xe065
+m /b jfs 0
+md /b
+?e done
+EOF2
+EXPECT=<<EOF2
+f he
+f wo
+done
+EOF2
+RUN
