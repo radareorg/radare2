@@ -25,6 +25,28 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=DT_ANDROID_RELR slots get the load bias
+FILE=bins/elf/arm-relr-android-rn.so
+ARGS=-B 0x100000 -e bin.relocs.apply=true
+CMDS=pxw 36 @ 0x130324
+EXPECT=<<EOF
+0x00130324  0x00130304 0x00130308 0x0013030c 0x00130310  ................
+0x00130334  0x00130314 0x00130318 0x0013031c 0x00130320  ............ ...
+0x00130344  0x00110220                                    ...
+EOF
+RUN
+
+NAME=DT_ANDROID_RELR slots stay unbiased without bin.relocs.apply
+FILE=bins/elf/arm-relr-android-rn.so
+ARGS=-B 0x100000 -e bin.relocs.apply=false
+CMDS=pxw 36 @ 0x130324
+EXPECT=<<EOF
+0x00130324  0x00030304 0x00030308 0x0003030c 0x00030310  ................
+0x00130334  0x00030314 0x00030318 0x0003031c 0x00030320  ............ ...
+0x00130344  0x00010220                                    ...
+EOF
+RUN
+
 NAME=DT_RELR twin lists the same slots
 FILE=bins/elf/arm-relr-addend.so
 CMDS=ir~SET_32 23
