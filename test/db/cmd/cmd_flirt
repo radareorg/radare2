@@ -359,3 +359,21 @@ EXPECT=<<EOF
 2
 EOF
 RUN
+
+NAME=zfd rejects signature trees deeper than the pattern
+FILE=--
+CMDS=<<EOF2
+zfd bins/other/sigs/deep-tree-64.sig~?:
+zfd bins/other/sigs/deep-tree.sig
+?e done
+EOF2
+EXPECT=<<EOF2
+65
+done
+EOF2
+EXPECT_ERR=<<EOF2
+ERROR: flirt pattern longer than 64 bytes
+ERROR: flirt parse tree error
+ERROR: We encountered a problem while parsing the file
+EOF2
+RUN

@@ -995,8 +995,11 @@ static bool read_node_bytes(RFlirt *f, RFlirtNode *node) {
 	return true;
 }
 
+// The leading pattern of a module, split along the nodes from the root to its leaf
+#define FLIRT_MAX_PATTERN 64
+
 // parse a signature pattern tree or sub-tree, returns false on parsing error
-static bool parse_tree(RFlirt *f, RFlirtNode *root_node) {
+static bool parse_tree(RFlirt *f, RFlirtNode *root_node, int pattern_len) {
 	RFlirtNode *node = NULL;
 	int i, tree_nodes = read_multiple_bytes (f);
 	if (f->buf_eof || f->buf_err) {
@@ -1019,8 +1022,14 @@ static bool parse_tree(RFlirt *f, RFlirtNode *root_node) {
 		if (!read_node_bytes (f, node)) {
 			goto beach;
 		}
+		// every level holds pattern bytes, so this also bounds the tree depth
+		const int child_len = pattern_len + R_MAX (node->length, 1);
+		if (child_len > FLIRT_MAX_PATTERN) {
+			R_LOG_ERROR ("flirt pattern longer than %d bytes", FLIRT_MAX_PATTERN);
+			goto beach;
+		}
 		r_list_append (root_node->child_list, node);
-		if (!parse_tree (f, node)) {
+		if (!parse_tree (f, node, child_len)) {
 			R_LOG_DEBUG ("flirst child node parsing fails");
 			goto beach;
 		}
@@ -1330,7 +1339,7 @@ static RFlirtNode *flirt_parse(RFlirt *f) {
 	r_unref (f->b);
 	f->b = r_buf_new_with_pointers (buf, size, false);
 	// DEBUG r_file_dump ("sig_dump", f->b, size, false);
-	if (parse_tree (f, node)) {
+	if (parse_tree (f, node, 0)) {
 		ret = node;
 	} else {
 		R_LOG_ERROR ("flirt parse tree error");
