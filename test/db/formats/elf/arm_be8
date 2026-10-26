@@ -1,0 +1,22 @@
+NAME=ELF: ARM BE8 instructions use code endian while data remains big-endian
+FILE=bins/elf/armeb_hello_static
+CMDS=<<EOF
+e asm.comments=false
+iI~^endian
+?e --
+pd 4 @ entry0
+?e --
+pxw 4 @ 0x10be8
+EOF
+EXPECT=<<EOF
+endian   big
+--
+            ;-- entry0:
+            0x00010824      4ff0000b       mov.w fp, 0
+            0x00010828      4ff0000e       mov.w lr, 0
+            0x0001082c      02bc           pop {r1}
+            0x0001082e      6a46           mov r2, sp
+--
+0x00010be8  0xd358092b                                   .X.+
+EOF
+RUN
