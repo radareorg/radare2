@@ -3903,12 +3903,49 @@ static int opset(RArchSession *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+// test and xchg with a register and a memory operand, in either order: op8 for bytes, op8 + 1 otherwise
+static int op_reg_mem_either(int bits, ut8 *data, const Opcode *op, ut8 op8) {
+	int i;
+	for (i = 0; i < 2; i++) {
+		const Operand *mem = &op->operands[i];
+		const Operand *reg = &op->operands[1 - i];
+		if (!(mem->type & OT_MEMORY) || (mem->type & OT_REGTYPE & OT_SEGMENTREG)
+				|| !(reg->type & OT_REGTYPE & OT_GPREG) || (reg->type & OT_MEMORY)) {
+			continue;
+		}
+		const ut8 opcode = op8 + ((reg->type & OT_BYTE)? 0: 1);
+		if (mem->regs[0] == X86R_UNDEFINED && mem->regs[1] == X86R_UNDEFINED) {
+			if (bits != 32) {
+				// 64-bit mode needs the SIB form of a bare [disp32], which op_reg_mem writes
+				return (bits == 64)? op_reg_mem (bits, data, reg, mem, opcode): 0;
+			}
+			if (mem->explicit_size && !(mem->dest_size & reg->type & ALL_SIZE)) {
+				return -1;
+			}
+			int l = 0;
+			if (reg->type & OT_WORD) {
+				data[l++] = 0x66;
+			}
+			data[l++] = opcode;
+			data[l++] = (reg->reg & 7) << 3 | 5;
+			r_write_le32 (data + l, (ut32)(mem->offset * mem->offset_sign));
+			return l + 4;
+		}
+		return use_op_reg_mem (bits, mem)? op_reg_mem (bits, data, reg, mem, opcode): 0;
+	}
+	return 0;
+}
+
 static int optest(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 	if (!op->operands[0].type || !op->operands[1].type) {
 		R_LOG_ERROR ("Invalid operands");
 		return -1;
+	}
+	l = op_reg_mem_either (a->config->bits, data, op, 0x84);
+	if (l) {
+		return l;
 	}
 	if (a->config->bits == 64) {
 		if (op->operands[0].type & OT_MEMORY &&
@@ -3977,6 +4014,10 @@ static int opxchg(RArchSession *a, ut8 *data, const Opcode *op) {
 	int rm = 0;
 	st32 offset = 0;
 
+	l = op_reg_mem_either (a->config->bits, data, op, 0x86);
+	if (l) {
+		return l;
+	}
 	if (op->operands[0].type & OT_MEMORY || op->operands[1].type & OT_MEMORY) {
 		data[l++] = 0x87;
 		if (op->operands[0].type & OT_MEMORY) {
