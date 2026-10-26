@@ -59,7 +59,7 @@ static void bfs_put_inode(ut8 *img, int block, ut32 mode, ut16 start, ut16 len, 
 }
 
 static bool test_r_fs_bfs_read_whole_file(void) {
-	ut8 img[7 * 1024] = { 0 };
+	ut8 img[12 * 1024] = { 0 };
 	// superblock: 1024 byte blocks, root directory inode at block 2
 	r_write_le32 (img + 512 + 32, 0x42465331);
 	r_write_le32 (img + 512 + 40, 1024);
@@ -74,28 +74,53 @@ static bool test_r_fs_bfs_read_whole_file(void) {
 	r_write_le64 (img + 3 * 1024 + 16, 1024);
 	ut8 *node = img + 4 * 1024;
 	r_write_le64 (node + 8, UT64_MAX);
-	r_write_le16 (node + 24, 1);
-	r_write_le16 (node + 26, 1);
+	r_write_le16 (node + 24, 2);
+	r_write_le16 (node + 26, 2);
 	node[28] = 'a';
+	node[29] = 'b';
 	r_write_le16 (node + 32, 1);
-	r_write_le64 (node + 34, 5);
-	// 64KB regular file whose first and only data block is at block 6
-	bfs_put_inode (img, 5, 0x81a4, 6, 1, 0x10000);
+	r_write_le16 (node + 34, 2);
+	r_write_le64 (node + 36, 5);
+	r_write_le64 (node + 44, 11);
+	// Two multi-block runs separated by a block that is not part of the file.
+	bfs_put_inode (img, 5, 0x81a4, 6, 2, 3500);
+	bfs_put_run (img + 5 * 1024 + 80, 9, 2);
 	memset (img + 6 * 1024, 'A', 1024);
+	memset (img + 7 * 1024, 'B', 1024);
+	memset (img + 8 * 1024, 'X', 1024);
+	memset (img + 9 * 1024, 'C', 1024);
+	memset (img + 10 * 1024, 'D', 1024);
+	bfs_put_inode (img, 11, 0x81a4, 6, 1, 0x10000);
+	ut8 expected[3500];
+	memset (expected, 'A', 1024);
+	memset (expected + 1024, 'B', 1024);
+	memset (expected + 2048, 'C', 1024);
+	memset (expected + 3072, 'D', sizeof (expected) - 3072);
 
 	RIO *io = r_io_new ();
 	RFS *fs = r_fs_new ();
 	r_io_bind (io, &fs->iob);
-	mu_assert_notnull (r_io_open (io, "malloc://7168", R_PERM_RW, 0), "open bfs image");
+	mu_assert_notnull (r_io_open (io, "malloc://12288", R_PERM_RW, 0), "open bfs image");
 	r_io_write_at (io, 0, img, sizeof (img));
 	mu_assert_notnull (r_fs_mount (fs, "bfs", "/mnt", 0), "mount bfs image");
 	RFSFile *file = r_fs_open (fs, "/mnt/a", false);
 	mu_assert_notnull (file, "open bfs file");
-	mu_assert_eq (file->size, 0x10000, "bfs file size");
-	mu_assert_eq (r_fs_read (fs, file, 0, file->size), 1024, "read first block");
+	mu_assert_eq (file->size, sizeof (expected), "bfs file size");
+	mu_assert_eq (r_fs_read (fs, file, 0, file->size), sizeof (expected), "read all runs");
+	mu_assert_memeq (file->data, expected, sizeof (expected), "whole file contents");
+	mu_assert_eq (file->data[file->size], 0, "whole file terminator");
+	mu_assert_eq (r_fs_read (fs, file, 1000, 1100), 1100, "unaligned read across both runs");
+	mu_assert_memeq (file->data, expected + 1000, 1100, "unaligned contents");
+	mu_assert_eq (r_fs_read (fs, file, 3490, 100), 10, "clamp to file tail");
+	mu_assert_memeq (file->data, expected + 3490, 10, "tail contents");
+	r_fs_close (fs, file);
+	r_fs_file_free (file);
+	file = r_fs_open (fs, "/mnt/b", false);
+	mu_assert_notnull (file, "open file with missing runs");
+	mu_assert_eq (r_fs_read (fs, file, 0, 1024), 1024, "read backed part of truncated file");
 	mu_assert_eq (file->data[1023], 'A', "first block contents");
-	// fs shell cat/get access file->size bytes of file->data after the read
-	mu_assert_eq (file->data[file->size - 1], 0, "buffer covers the whole file");
+	mu_assert_eq (r_fs_read (fs, file, 0, file->size), -1, "reject read beyond available runs");
+	mu_assert_eq (file->data[file->size - 1], 0, "failed read buffer covers the whole file");
 	r_fs_close (fs, file);
 	r_fs_file_free (file);
 	r_fs_free (fs);

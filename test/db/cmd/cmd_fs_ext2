@@ -342,3 +342,87 @@ Last Mounted: /mnt\nForged: yes\r
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=ext4 reads 64-bit group descriptors and checksum-seeded images
+FILE=malloc://0x3000
+CMDS=<<EOF
+e log.level=0
+wv4 32 @ 0x400
+wv4 32 @ 0x404
+wv4 1 @ 0x414
+wv4 8192 @ 0x420
+wv4 16 @ 0x428
+wv2 0xef53 @ 0x438
+wv4 1 @ 0x44c
+wv2 128 @ 0x458
+wv4 0x2082 @ 0x460
+wv2 64 @ 0x4fe
+wv4 3 @ 0x808
+wv4 8 @ 0x848
+wv2 0x41ed @ 0xc80
+wv4 1024 @ 0xc84
+wv4 5 @ 0xca8
+wx 020000000c0001022e @ 0x1400
+wx 020000000c0002022e2e @ 0x140c
+wx 11000000e803050168656c6c6f @ 0x1418
+wv2 0x81a4 @ 0x2000
+wv4 5 @ 0x2004
+wv4 9 @ 0x2028
+wx 68656c6c6f @ 0x2400
+m /mnt ext2 0
+md /mnt
+mc /mnt/hello
+m-/mnt
+wv2 0 @ 0x4fe
+m /mnt ext2 0
+m~?
+wv2 32 @ 0x4fe
+m /mnt ext2 0
+m~?
+wv2 65 @ 0x4fe
+m /mnt ext2 0
+m~?
+wv2 2048 @ 0x4fe
+m /mnt ext2 0
+m~?
+wv2 128 @ 0x4fe
+wv4 8 @ 0x888
+m /mnt ext2 0
+mc /mnt/hello
+m-/mnt
+wv4 1 @ 0x828
+m /mnt ext2 0
+m~?
+EOF
+EXPECT=<<EOF
+d .
+d ..
+f hello
+hello
+0
+0
+0
+0
+hello
+0
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=ext4 advanced image with 64-bit and checksum seed features
+FILE=bins/fs/ext4_advanced.img
+CMDS=<<EOF
+m /mnt ext2 0
+md /mnt
+EOF
+EXPECT=<<EOF
+d .
+d ..
+d lost+found
+d folder1
+d folder2
+d folder3
+f root.txt
+EOF
+EXPECT_ERR=
+RUN

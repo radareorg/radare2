@@ -614,8 +614,14 @@ list_file(struct grub_ntfs_file *diro, char *pos, int(*hook)(const char *filenam
 					return 0;
 				}
 
-				type =
-					(u32at (pos, 0x48) & ATTR_DIRECTORY)? GRUB_FSHELP_DIR: GRUB_FSHELP_REG;
+				grub_uint32_t attributes = u32at (pos, 0x48);
+				if (attributes & ATTR_DIRECTORY) {
+					type = GRUB_FSHELP_DIR;
+				} else if (attributes & ATTR_INDEX_VIEW) {
+					type = GRUB_FSHELP_SPECIAL;
+				} else {
+					type = GRUB_FSHELP_REG;
+				}
 
 				fdiro = grub_zalloc (sizeof (struct grub_ntfs_file));
 				if (!fdiro) {
@@ -892,6 +898,7 @@ iterate(const char *filename,
 	struct grub_dirhook_info info;
 	grub_memset (&info, 0, sizeof (info));
 	info.dir = ((filetype & GRUB_FSHELP_TYPE_MASK) == GRUB_FSHELP_DIR);
+	info.special = ((filetype & GRUB_FSHELP_TYPE_MASK) == GRUB_FSHELP_SPECIAL);
 	grub_free (node);
 	return c->hook (filename, &info, c->closure);
 }

@@ -1219,6 +1219,7 @@ iterate(const char *filename,
 	struct grub_dirhook_info info;
 	grub_memset (&info, 0, sizeof (info));
 	info.dir = ((filetype & GRUB_FSHELP_TYPE_MASK) == GRUB_FSHELP_DIR);
+	info.symlink = ((filetype & GRUB_FSHELP_TYPE_MASK) == GRUB_FSHELP_SYMLINK);
 	grub_free (node);
 	return c->hook (filename, &info, c->closure);
 }

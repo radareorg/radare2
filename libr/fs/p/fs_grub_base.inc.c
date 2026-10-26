@@ -62,7 +62,7 @@ static int dirhook(const char *filename, const struct grub_dirhook_info *info, v
 	if (!fsf) {
 		return 0;
 	}
-	fsf->type = info->dir? 'd':'f';
+	fsf->type = info->dir? 'd': info->symlink? 'l': info->special? 's': 'f';
 	fsf->time = info->mtime;
 	r_list_append (list, fsf);
 	//info->mtimeset

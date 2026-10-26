@@ -1539,3 +1539,55 @@ EXPECT_ERR=<<EOF
 ERROR: Cannot open /root/file
 EOF
 RUN
+
+NAME=ntfs index views are special entries rather than regular files
+FILE=bins/fs/ntfs.img
+CMDS=<<EOF
+m /mnt ntfs 0
+md /mnt/$Extend
+EOF
+EXPECT=<<EOF
+s $ObjId
+s $Quota
+s $Reparse
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=reiserfs preserves symlink types in directory listings
+FILE=bins/fs/reiserfs-link-root.img
+CMDS=<<EOF
+m /mnt reiserfs 0
+md /mnt
+EOF
+EXPECT=<<EOF
+d .
+f hello.txt
+l link
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=reiserfs corrupt symlink remains identifiable without opening it
+FILE=bins/fs/reiserfs-corrupt.img
+CMDS=<<EOF
+m /mnt reiserfs 0
+md /mnt
+EOF
+EXPECT=<<EOF
+d .
+l link
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=ubifs reads file data when the volume size is unknown
+FILE=bins/fs/ubifs-oversize.img
+CMDS=<<EOF
+mc /root/file
+EOF
+EXPECT=<<EOF
+hello world
+EOF
+EXPECT_ERR=
+RUN

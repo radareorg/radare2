@@ -253,7 +253,7 @@ static bool bfs_read_stream(BeosFS *ctx, BeosInode *inode, ut64 offset, ut8 *buf
 		}
 		total += ((ut64)run_len) << ctx->block_shift;
 	}
-	if (offset + len > total) {
+	if (offset > total || len > total - offset) {
 		return false;
 	}
 
@@ -765,37 +765,8 @@ static RFSFile *fs_bfs_open(RFSRoot *root, const char *path, bool create) {
 	return file;
 }
 
-static bool bfs_get_block_run(BeosFS *ctx, BeosDataStream *ds, ut64 block_index, BeosBlockRun *run) {
-	if (block_index < BFS_NUM_DIRECT_BLOCKS) {
-		*run = ds->direct[block_index];
-		return true;
-	}
-	ut64 indirect_index = block_index - BFS_NUM_DIRECT_BLOCKS;
-	ut64 num_per_block = ctx->block_size / sizeof (BeosBlockRun);
-	if (indirect_index < num_per_block) {
-		ut64 indirect_offset = bfs_block_to_offset (ctx, &ds->indirect);
-		ut64 entry_offset = indirect_offset + indirect_index * sizeof (BeosBlockRun);
-		return bfs_read_at (ctx, entry_offset, (ut8 *)run, sizeof (*run));
-	}
-	if (num_per_block == 0) {
-		return false;
-	}
-	indirect_index -= num_per_block;
-	ut64 double_indirect_index = indirect_index / num_per_block;
-	ut64 sub_index = indirect_index % num_per_block;
-	ut64 double_offset = bfs_block_to_offset (ctx, &ds->double_indirect);
-	ut64 double_entry_offset = double_offset + double_indirect_index * sizeof (BeosBlockRun);
-	BeosBlockRun indirect_run;
-	if (!bfs_read_at (ctx, double_entry_offset, (ut8 *)&indirect_run, sizeof (indirect_run))) {
-		return false;
-	}
-	ut64 indirect_offset = bfs_block_to_offset (ctx, &indirect_run);
-	ut64 entry_offset = indirect_offset + sub_index * sizeof (BeosBlockRun);
-	return bfs_read_at (ctx, entry_offset, (ut8 *)run, sizeof (*run));
-}
-
 static int fs_bfs_read(RFSFile *file, ut64 addr, int len) {
-	R_RETURN_VAL_IF_FAIL (file, -1);
+	R_RETURN_VAL_IF_FAIL (file && len >= 0, -1);
 
 	BeosFS *ctx = file->root->ptr;
 	if (!ctx || !ctx->mounted) {
@@ -808,50 +779,22 @@ static int fs_bfs_read(RFSFile *file, ut64 addr, int len) {
 		return -1;
 	}
 
-	// For simplicity, read from direct blocks only
 	BeosDataStream *ds = &cache->inode->data.datastream;
 	ut64 file_size = bfs_read64 (ctx, (ut8 *)&ds->size);
-	if (addr >= file_size) {
+	if (!len || addr >= file_size) {
 		return 0;
 	}
-	if (addr + len > file_size) {
+	if (len > file_size - addr) {
 		len = file_size - addr;
 	}
 
-	// Find which block contains addr
-	ut64 block_size = ctx->block_size;
-	if (!block_size) {
-		return -1;
-	}
-	ut64 block_index = addr / block_size;
-	ut64 offset_in_block = addr % block_size;
-
-	BeosBlockRun run;
-	if (!bfs_get_block_run (ctx, ds, block_index, &run)) {
-		return 0;
-	}
-	if (run.len == 0) {
-		return 0;
-	}
-
-	ut64 block_offset = bfs_block_to_offset (ctx, &run);
-	ut64 read_offset = block_offset + offset_in_block;
-	int to_read = R_MIN (len, block_size - offset_in_block);
-	if (to_read < 1) {
-		return -1;
-	}
-	// callers may access len bytes of file->data, never shrink it to one block
 	ut8 *data = realloc (file->data, (size_t)len + 1);
 	if (!data) {
 		return -1;
 	}
-	memset (data, 0, (size_t)len + 1);
+	data[len] = 0;
 	file->data = data;
-
-	if (bfs_read_at (ctx, read_offset, file->data, to_read)) {
-		return to_read;
-	}
-	return -1;
+	return bfs_read_stream (ctx, cache->inode, addr, data, len)? len: -1;
 }
 
 static void fs_bfs_close(RFSFile *file) {

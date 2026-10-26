@@ -3,6 +3,21 @@
 # btree root points at block 4. Block 4 is a BMAP leaf holding the extent of
 # the directory block (block 2); /file is inode 17 with one extent (block 3).
 
+NAME=xfs preserves symlink types in directory listings
+FILE=bins/fs/xfs-symlink-size.img
+CMDS=<<EOF
+m /mnt xfs 0
+md /mnt
+EOF
+EXPECT=<<EOF
+d .
+d ..
+f file
+l link
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=xfs btree format directory inode
 FILE=malloc://20480
 CMDS=<<EOF
