@@ -15726,7 +15726,8 @@ static void cmd_aaa(RCore *core, const char *input) {
 	}
 	const bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
 	if (*input == 'a') { // "aaa" .. which is checked just in the case above
-		if (r_str_startswith (r_config_get (core->config, "bin.lang"), "go")) {
+		const bool is_go = r_str_startswith (r_config_get (core->config, "bin.lang"), "go");
+		if (is_go) {
 			logline (core, 20, "Find function and symbol names from golang binaries (aang)");
 			free (r_anal_cmd (core->anal, "autoname golang"));
 			logline (core, 25, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
@@ -15782,8 +15783,10 @@ static void cmd_aaa(RCore *core, const char *input) {
 			cmd_anal_objc (core, input + 1, true);
 		}
 		r_core_task_yield (&core->tasks);
-		logline (core, 50, "Finding and parsing C++ vtables (avrr)");
-		r_core_call (core, "avrr");
+		if (!is_go) {
+			logline (core, 50, "Finding and parsing C++ vtables (avrr)");
+			r_core_call (core, "avrr");
+		}
 		logline (core, 65, "Analyzing methods (af @@ method.*)");
 		r_core_cmd0 (core, "af @@ method.*");
 		r_core_task_yield (&core->tasks);
