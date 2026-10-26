@@ -946,3 +946,50 @@ EXPECT=<<EOF
 0x00000003 0x00000008 00:0000 5 j 0x00000020
 EOF
 RUN
+
+NAME=afia set, unset and query function attributes
+FILE=malloc://256
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+af+ 0x10 fcn.attr
+afb+ 0x10 0x10 8
+s 0x10
+afia~inline,noreturn
+afia+ inline,noreturn
+afia~inline,noreturn
+afiaj
+afia- inline
+afia~inline
+afia- noreturn
+afia~noreturn
+EOF
+EXPECT=<<EOF
+  noreturn  false
+  inline    false
+  noreturn  true
+  inline    true
+{"noreturn":true,"inline":true,"pure":true,"variadic":false}
+  inline    false
+  noreturn  false
+EOF
+RUN
+
+NAME=afia rejects unknown and read-only attributes
+FILE=malloc://256
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+af+ 0x10 fcn.attr
+afb+ 0x10 0x10 8
+s 0x10
+"afia+ pure"
+"afia+ bogus"
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Attribute 'pure' is read-only: the function does not read or write outside state (computed)
+ERROR: Unknown function attribute 'bogus'
+EOF
+RUN

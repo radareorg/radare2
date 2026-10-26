@@ -754,15 +754,26 @@ static RCoreHelpMessage help_msg_afi_fields = {
 };
 
 static RCoreHelpMessage help_msg_afi = {
-	"Usage:", "afi[jlp*]", " <addr>",
+	"Usage:", "afi[jlpa*]", " <addr>",
 	"afi", "", "show information of the function",
 	"afi", "[.j*]", "function, variables and arguments",
+	"afia", "[?j+-] [attr]", "show/set function attributes (noreturn, inline, pure, variadic)",
 	"afii", "[?][-][import]", "show/add/delete imports used in function (see aii)",
 	"afil", "", "verbose function info",
 	"afip", "", "show whether the function is pure or not",
 	"afiq", "", "show quite few info about the function",
 	"afis", "", "show function stats (opcode, meta)",
 	"afix", "[.j]", "function xrefs information",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_afia = {
+	"Usage:", "afia[?][j+-]", "show or modify attributes of the current function",
+	"afia", "", "list the function attributes and their values",
+	"afiaj", "", "list the function attributes in JSON",
+	"afia+", " [attr ...]", "enable attributes (noreturn, inline)",
+	"afia-", " [attr ...]", "disable attributes (noreturn, inline)",
+	"afia?", "", "this help",
 	NULL
 };
 
@@ -5679,6 +5690,156 @@ static void cmd_afch(RCore *core, RAnalFunction *fcn, bool json) {
 	free (s);
 }
 
+typedef struct {
+	const char *name;
+	const char *desc;
+	bool settable;
+} FcnAttrInfo;
+
+static const FcnAttrInfo fcn_attrs[] = {
+	{ "noreturn", "the function never returns to its caller", true },
+	{ "inline", "the function is inlined at its call sites", true },
+	{ "pure", "the function does not read or write outside state (computed)", false },
+	{ "variadic", "the function takes a variable number of arguments (see afs)", false },
+};
+
+#define FCN_ATTRS_COUNT (sizeof (fcn_attrs) / sizeof (fcn_attrs[0]))
+
+static const FcnAttrInfo *fcn_attr_find(const char *name) {
+	size_t i;
+	for (i = 0; i < FCN_ATTRS_COUNT; i++) {
+		if (!strcmp (fcn_attrs[i].name, name)) {
+			return &fcn_attrs[i];
+		}
+	}
+	return NULL;
+}
+
+static bool fcn_attr_get(RAnalFunction *fcn, const char *name, bool *value) {
+	if (!strcmp (name, "noreturn")) {
+		*value = fcn->is_noreturn;
+		return true;
+	}
+	if (!strcmp (name, "inline")) {
+		*value = r_anal_function_is_inline (fcn);
+		return true;
+	}
+	if (!strcmp (name, "pure")) {
+		*value = r_anal_function_purity (fcn);
+		return true;
+	}
+	if (!strcmp (name, "variadic")) {
+		*value = fcn->is_variadic;
+		return true;
+	}
+	return false;
+}
+
+static bool fcn_attr_set(RCore *core, RAnalFunction *fcn, const char *name, bool value) {
+	if (!strcmp (name, "noreturn")) {
+		if (value) {
+			return r_anal_noreturn_add (core->anal, NULL, fcn->addr);
+		}
+		r_strf_var (addrstr, 32, "0x%08"PFMT64x, fcn->addr);
+		r_anal_noreturn_drop (core->anal, addrstr);
+		if (fcn->is_noreturn) {
+			fcn->is_noreturn = false;
+			R_DIRTY_SET (core->anal);
+		}
+		return true;
+	}
+	if (!strcmp (name, "inline")) {
+		return r_anal_function_set_inline (fcn, value);
+	}
+	return false;
+}
+
+static void cmd_afia(RCore *core, const char *input) {
+	const char *arg = r_str_trim_head_ro (input + (input[3]? 4: 3));
+	const char on = input[3];
+	switch (on) {
+	case '?':
+		r_cons_cmd_help (core->cons, help_msg_afia);
+		return;
+	case 'j':
+		{
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);
+			if (!fcn) {
+				R_LOG_ERROR ("No function at 0x%08"PFMT64x, core->addr);
+				return;
+			}
+			PJ *pj = pj_new ();
+			pj_o (pj);
+			size_t i;
+			for (i = 0; i < FCN_ATTRS_COUNT; i++) {
+				bool value = false;
+				if (fcn_attr_get (fcn, fcn_attrs[i].name, &value)) {
+					pj_kb (pj, fcn_attrs[i].name, value);
+				}
+			}
+			pj_end (pj);
+			char *s = pj_drain (pj);
+			r_cons_println (core->cons, s);
+			free (s);
+		}
+		return;
+	case '+':
+	case '-':
+		break;
+	case 0:
+		{
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);
+			if (!fcn) {
+				R_LOG_ERROR ("No function at 0x%08"PFMT64x, core->addr);
+				return;
+			}
+			size_t i;
+			for (i = 0; i < FCN_ATTRS_COUNT; i++) {
+				bool value = false;
+				if (fcn_attr_get (fcn, fcn_attrs[i].name, &value)) {
+					r_cons_printf (core->cons, "  %-9s %s\n", fcn_attrs[i].name,
+						r_str_bool (value));
+				}
+			}
+		}
+		return;
+	default:
+		r_core_return_invalid_command (core, "afia", on);
+		return;
+	}
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);
+	if (!fcn) {
+		R_LOG_ERROR ("No function at 0x%08"PFMT64x, core->addr);
+		return;
+	}
+	if (R_STR_ISEMPTY (arg)) {
+		r_cons_cmd_help (core->cons, help_msg_afia);
+		return;
+	}
+	const bool value = on == '+';
+	char *words = strdup (arg);
+	r_str_replace_char (words, ',', ' ');
+	RList *list = r_str_split_list (words, " ", 0);
+	RListIter *iter;
+	const char *word;
+	r_list_foreach (list, iter, word) {
+		const FcnAttrInfo *ai = fcn_attr_find (word);
+		if (!ai) {
+			R_LOG_ERROR ("Unknown function attribute '%s'", word);
+			continue;
+		}
+		if (!ai->settable) {
+			R_LOG_ERROR ("Attribute '%s' is read-only: %s", ai->name, ai->desc);
+			continue;
+		}
+		if (!fcn_attr_set (core, fcn, ai->name, value)) {
+			R_LOG_ERROR ("Cannot %s attribute '%s'", value? "set": "unset", ai->name);
+		}
+	}
+	r_list_free (list);
+	free (words);
+}
+
 static void cmd_afix(RCore *core, const char *input) {
 	switch (input[3]) {
 	case '?': // "afix?"
@@ -6472,6 +6633,9 @@ static int cmd_af(RCore *core, const char *input) {
 			} else {
 				r_cons_cmd_help (core->cons, help_msg_afi);
 			}
+			break;
+		case 'a': // "afia"
+			cmd_afia (core, input);
 			break;
 		case 'x': // "afix"
 			cmd_afix (core, input);
