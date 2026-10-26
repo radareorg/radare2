@@ -644,7 +644,7 @@ R_API int r_num_conditional(RNum * R_NULLABLE num, const char *str) {
 				}
 			}
 		}
-		p = t + 1;
+		p = t? t + 1: NULL;
 	} while (t);
 	res = 1;
 fail:
