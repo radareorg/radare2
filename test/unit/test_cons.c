@@ -915,7 +915,41 @@ bool test_cons_string_palette_alias(void) {
 	mu_end;
 }
 
+bool test_cons_image_pixel_rows(void) {
+	const ut8 pixels[] = {
+		255, 0, 0, 0, 255, 0,
+		0, 0, 255, 255, 255, 255
+	};
+	char *output = r_cons_image (pixels, sizeof (pixels), 2, 'r', 3);
+	mu_assert_streq_free (output,
+		"\x1b[38;2;255;0;0m\x1b[48;2;0;0;255m▀"
+		"\x1b[38;2;0;255;0m\x1b[48;2;255;255;255m▀\x1b[0m\n",
+		"RGB pixels use foreground for the upper half and background for the lower half");
+	const ut8 grayscale[] = { 0, 0, 0, 255, 255, 255, 255, 255, 255, 0, 0, 0 };
+	output = r_cons_image (grayscale, sizeof (grayscale), 2, 'g', 3);
+	mu_assert_streq_free (output,
+		"\x1b[38;5;232m\x1b[48;5;255m▀"
+		"\x1b[38;5;255m\x1b[48;5;232m▀\x1b[0m\n",
+		"grayscale preserves pixel row order");
+	output = r_cons_image (grayscale, sizeof (grayscale), 2, 'A', 3);
+	mu_assert_streq_free (output, "\x1b[30m\x1b[47m▀\x1b[37m\x1b[40m▀\x1b[0m\n", "ANSI pixels set both half colors");
+	mu_end;
+}
+
+bool test_cons_image_width(void) {
+	const ut8 pixels[24] = {0};
+	char *output = r_cons_image (pixels, sizeof (pixels), 4, 'r', 3);
+	r_str_ansi_strip (output);
+	mu_assert_streq_free (output, "▀▀▀▀\n", "four source pixels per row");
+	output = r_cons_image (pixels, sizeof (pixels), 2, 'r', 3);
+	r_str_ansi_strip (output);
+	mu_assert_streq_free (output, "▀▀\n▀▀\n", "two source pixels per row");
+	mu_end;
+}
+
 bool all_tests(void) {
+	mu_run_test (test_cons_image_pixel_rows);
+	mu_run_test (test_cons_image_width);
 	mu_run_test (test_r_cons);
 	mu_run_test (test_cons_to_html);
 	mu_run_test (test_cons_child_isolation);

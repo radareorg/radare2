@@ -49,13 +49,7 @@ static int reduce8(int r, int g, int b) {
 }
 
 static void render_ansi(RStrBuf *sb, const ut8 *c, const ut8 *d) {
-	int fg = 0;
-	int color = reduce8 (c[0], c[1], c[2]);
-	if (color == -1) {
-		return;
-	}
-	//if (c[0]<30 && c[1]<30 && c[2]<30) fg = 1;
-	r_strbuf_appendf (sb, "\x1b[%dm", color+(fg?30:40));
+	r_strbuf_appendf (sb, "\x1b[%dm\x1b[%dm", 30 + reduce8 (c[0], c[1], c[2]), 40 + reduce8 (d[0], d[1], d[2]));
 }
 
 static int rgb(int r, int g, int b) {
@@ -98,12 +92,12 @@ static void render_greyscale(RStrBuf *sb, const ut8 *c, const ut8 *d) {
 	if (k < 232) {
 		k = 232;
 	}
-	r_strbuf_appendf (sb, "\x1b[%d;5;%dm", 48, k); // bg
+	r_strbuf_appendf (sb, "\x1b[%d;5;%dm", 38, k);
 	k = 231 + ((int)((float)color2 / 10.3));
 	if (k < 232) {
 		k = 232;
 	}
-	r_strbuf_appendf (sb, "\x1b[%d;5;%dm", 38, k); // fg
+	r_strbuf_appendf (sb, "\x1b[%d;5;%dm", 48, k);
 }
 
 static void render_ascii(RStrBuf *sb, const ut8 *c, const ut8 *d) {
@@ -146,7 +140,7 @@ static void do_render(Renderer renderer, RStrBuf *sb, const ut8 *buf, int len, i
 			}
 			renderer (sb, c, d);
 			if (renderer != render_ascii) {
-				render_ascii (sb, c, d);
+				r_strbuf_append (sb, "▀");
 			}
 		}
 		r_strbuf_append (sb, (renderer == render_ascii)? "\n": "\x1b[0m\n");
