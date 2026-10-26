@@ -358,6 +358,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=Cs rejects extra argument
+FILE=malloc://1024
+CMDS=<<EOF
+w hello world
+Cs 5 0x6
+Cs
+Cs 5 @ 6
+Cs
+EOF
+EXPECT=<<EOF
+0x00000006 ascii[5] "world"
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Unexpected argument '0x6'. Usage: Cs [size] @addr
+EOF
+RUN
+
 NAME=Cs 5
 FILE=malloc://1024
 CMDS=<<EOF
