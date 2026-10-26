@@ -1,3 +1,17 @@
+NAME=ESIL single stepping can retain self loops
+FILE=malloc://16
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx ebfe
+e esil.skipself=false
+3aes
+ar rip
+EOF
+EXPECT=<<EOF
+0x00000000
+EOF
+RUN
+
 NAME=aes help changing seek
 FILE=-
 CMDS=<<EOF
