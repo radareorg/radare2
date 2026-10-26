@@ -217,3 +217,52 @@ pseudo: x = (x & 0xff) * a
 pseudo: y = (y & 0xff) * a
 EOF
 RUN
+
+NAME=stm8 interrupt return restores the full big endian stack frame
+FILE=malloc://1024
+ARGS=-a stm8 -b 16
+CMDS=<<EOF
+wx 80
+wx c9561234abcd123456 @0x101
+aei
+ar sp=0x100
+ar pc=0
+ar a=0
+ar x=0
+ar y=0
+ar cc=0
+aes
+ar cc
+ar a
+ar x
+ar y
+ar sp
+ar pc
+ao 1 @0~pseudo
+wx 123456789abcdef0ab @0x201
+ar sp=0x200
+ar pc=0
+aes
+ar cc
+ar a
+ar x
+ar y
+ar sp
+ar pc
+EOF
+EXPECT=<<EOF
+0x000000c9
+0x00000056
+0x00001234
+0x0000abcd
+0x00000109
+0x00123456
+pseudo: interrupt_return();
+0x00000012
+0x00000034
+0x00005678
+0x00009abc
+0x00000209
+0x00def0ab
+EOF
+RUN

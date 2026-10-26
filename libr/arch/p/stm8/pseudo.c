@@ -21,7 +21,6 @@ static char *replace(int argc, const char *argv[]) {
 		{ 1, "clr", "# = 0", { 1 } },
 		{ 0, "dec", "# --", { 1 } },
 		{ 0, "ret", "return a;", {}},
-		{ 0, "iret", "return;", {}},
 		{ 2, "mov", "# = #", { 1, 2 } }, // MOVS are stores
 		{ 2, "mul", "# = (# & 0xff) * #", { 1, 1, 2 } },
 		{ 1, "neg", "# = !#", { 1, 1 } }, // TODO carry = (res != 0)
@@ -145,7 +144,11 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 	r_str_replace_char (buf, ')', '}');
 #endif
 	const char *op0 = buf;
-	if (!strcmp (op0, "ret") || !strcmp (op0, "iret")) {
+	if (!strcmp (op0, "iret")) {
+		free (buf);
+		return strdup ("interrupt_return();");
+	}
+	if (!strcmp (op0, "ret")) {
 		free (buf);
 		return strdup ("return a");
 	}

@@ -159,7 +159,7 @@ static const instruction ins_table[] = {
 	{ "iret", 0, 0, 1, R_ANAL_OP_TYPE_RET },
 	{ "ret", 0, 0, 1, R_ANAL_OP_TYPE_RET },
 	{ "int", EXTMEM_234, 0, 4, R_ANAL_OP_TYPE_SWI },
-	{ "trap", 0, 0, 1, R_ANAL_OP_TYPE_TRAP },
+	{ "trap", 0, 0, 1, R_ANAL_OP_TYPE_SWI },
 	{ "pop", STM8_REG_A, 0, 1, R_ANAL_OP_TYPE_POP },
 	{ "popw", STM8_REG_X, 0, 1, R_ANAL_OP_TYPE_POP },
 	{ "pop", STM8_REG_CC, 0, 1, R_ANAL_OP_TYPE_POP },

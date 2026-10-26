@@ -844,10 +844,10 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "dst", two (0x07e0, 0x0134), two (0xfffff, 0xffff), {0}, 0, V850_CPU_E3V5_UP },
 
 	{ "ei", two (0x87e0, 0x0160), two (0xffff, 0xffff), {0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_MOV, "0,id,:=", R_ANAL_OP_FAMILY_PRIV },
-	{ "eiret", two (0x07e0, 0x0148), two (0xffff, 0xffff), {0}, 0, V850_CPU_E2_UP },
+	{ "eiret", two (0x07e0, 0x0148), two (0xffff, 0xffff), {0}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_RET, "eipc,pc,:=,eipsw,psw,:=", R_ANAL_OP_FAMILY_PRIV },
 
 	{ "est", two (0x07e0, 0x0132), two (0xfffff, 0xffff), {0}, 0, V850_CPU_E3V5_UP },
-	{ "feret", two (0x07e0, 0x014a), two (0xffff, 0xffff), {0}, 0, V850_CPU_E2_UP },
+	{ "feret", two (0x07e0, 0x014a), two (0xffff, 0xffff), {0}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_RET, "fepc,pc,:=,fepsw,psw,:=", R_ANAL_OP_FAMILY_PRIV },
 	{ "fetrap", one (0x0040), one (0x87ff), {I4U_NOTIMM0}, 0, V850_CPU_E2_UP },
 	{ "halt", two (0x07e0, 0x0120), two (0xffff, 0xffff), {0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_TRAP },
 	{ "hsh", two (0x07e0, 0x0346), two (0x07ff, 0x07ff), {R2, R3}, 0, V850_CPU_E2_UP },
@@ -1056,7 +1056,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "tlbs", two (0x87e0, 0xc160), two (0xffff, 0xffff), {0}, 0, V850_CPU_E3V5_UP },
 	{ "tlbvi", two (0x87e0, 0x8160), two (0xffff, 0xffff), {0}, 0, V850_CPU_E3V5_UP },
 	{ "tlbw", two (0x87e0, 0xe160), two (0xffff, 0xffff), {0}, 0, V850_CPU_E3V5_UP },
-	{ "trap", two (0x07e0, 0x0100), two (0xffe0, 0xffff), {I5U}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_TRAP },
+	{ "trap", two (0x07e0, 0x0100), two (0xffe0, 0xffff), {I5U}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SWI, "", R_ANAL_OP_FAMILY_PRIV },
 	{ "tst", OP (0x0b), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CMP, "0,#1,#0,&,==,$z,z,:=,31,$s,s,:=,0,ov,:=" },
 	{ "tst1", two (0xc7c0, 0x0000), two (0xc7e0, 0x0000), {B3, D16, R1}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_CMP, "0,#2,#1,+,[1],1,#0,<<,&,==,$z,z,:=,0,ov,:=" },
 	{ "tst1", two (0x07e0, 0x00e6), two (0x07e0, 0xffff), {R2, R1}, 3, V850_CPU_NON0, R_ANAL_OP_TYPE_CMP, "0,#1,1,#0,<<,&,==,$z,z,:=,0,ov,:=" },
@@ -1171,7 +1171,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "synce", one (0x001d), one (0xffff), {0}, 0, V850_CPU_E2V3_UP, R_ANAL_OP_TYPE_SYNC },
 	{ "syncm", one (0x001e), one (0xffff), {0}, 0, V850_CPU_E2V3_UP, R_ANAL_OP_TYPE_SYNC },
 	{ "syncp", one (0x001f), one (0xffff), {0}, 0, V850_CPU_E2V3_UP, R_ANAL_OP_TYPE_SYNC },
-	{ "syscall", two (0xd7e0, 0x0160), two (0xffe0, 0xc7ff), {V8}, 0, V850_CPU_E2V3_UP , R_ANAL_OP_TYPE_SWI },
+	{ "syscall", two (0xd7e0, 0x0160), two (0xffe0, 0xc7ff), {V8}, 0, V850_CPU_E2V3_UP, R_ANAL_OP_TYPE_SWI, "", R_ANAL_OP_FAMILY_PRIV },
 	/* Alias of syncp. */
 	{ "sync", one (0x001f), one (0xffff), {0}, 0, V850_CPU_E2V3_UP | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_SYNC, "", R_ANAL_OP_FAMILY_THREAD },
 	{ "rmtrap", one (0xf040), one (0xffff), {0}, 0, V850_CPU_E2V3_UP },
