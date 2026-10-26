@@ -3615,6 +3615,24 @@ R_API bool r_anal_function_purity(RAnalFunction *fcn) {
 	return fcn->is_pure;
 }
 
+// User-set attribute, unlike purity it is never recomputed by the analysis.
+R_API bool r_anal_function_is_inline(RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (fcn, false);
+	return fcn->is_inline;
+}
+
+R_API bool r_anal_function_set_inline(RAnalFunction *fcn, bool is_inline) {
+	R_RETURN_VAL_IF_FAIL (fcn, false);
+	if (fcn->is_inline != is_inline) {
+		fcn->is_inline = is_inline;
+		r_anal_function_bump_dirty_epoch (fcn);
+		if (fcn->anal) {
+			R_DIRTY_SET (fcn->anal);
+		}
+	}
+	return true;
+}
+
 static bool can_affect_bp(RAnal *anal, RAnalOp *op) {
 	const char *bpreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
 	if (!bpreg) {
