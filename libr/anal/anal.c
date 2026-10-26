@@ -479,15 +479,35 @@ R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 	}
 
 	// TODO: use the bitfliping thing to guess the mask in here
+	const bool x86 = !strcmp (anal->config->arch, "x86");
 	int idx = 0;
 	while (idx < size) {
-		int oplen = r_anal_op (anal, op, at, data + idx, size - idx, R_ARCH_OP_MASK_BASIC);
+		int oplen = r_anal_op (anal, op, at, data + idx, size - idx,
+			R_ARCH_OP_MASK_BASIC | (x86? R_ARCH_OP_MASK_VAL: 0));
 		if (oplen < 1) {
 			break;
 		}
 		// plugins can report the full length of an instruction that does not fit
 		const int len = R_MIN (oplen, size - idx);
-		if ((op->ptr != UT64_MAX || op->jump != UT64_MAX) && op->nopcode > 0 && op->nopcode < len) {
+		bool arithmetic_immediate = false;
+		const RArchValue *dst = RVecRArchValue_at (&op->dsts, 0);
+		const char *reg = dst? dst->reg: NULL;
+		const bool stack_reg = reg && (!strcmp (reg, "rsp")
+			|| !strcmp (reg, "esp") || !strcmp (reg, "sp"));
+		if (x86 && !stack_reg && (st64)op->val > 10) {
+			switch (op->type & R_ANAL_OP_TYPE_MASK) {
+			case R_ANAL_OP_TYPE_ADD:
+			case R_ANAL_OP_TYPE_SUB:
+			case R_ANAL_OP_TYPE_MUL:
+			case R_ANAL_OP_TYPE_AND:
+			case R_ANAL_OP_TYPE_OR:
+			case R_ANAL_OP_TYPE_XOR:
+				arithmetic_immediate = true;
+				break;
+			}
+		}
+		if ((op->ptr != UT64_MAX || op->jump != UT64_MAX || arithmetic_immediate)
+				&& op->nopcode > 0 && op->nopcode < len) {
 			memset (ret + idx + op->nopcode, 0, len - op->nopcode);
 		}
 		idx += oplen;
