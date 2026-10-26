@@ -29,3 +29,53 @@ EXPECT=<<EOF
 0x0000001e 0x0000001f 00:0000 1
 EOF
 RUN
+
+NAME=afbi java tableswitch keeps every case of a shared target
+FILE=malloc://64
+ARGS=-a java
+CMDS=<<EOF
+wx aa0000000000001c00000000000000020000001c0000001c0000001cb1
+af
+afbi
+EOF
+EXPECT=<<EOF
+fail: 0x00000001
+opaddr: 0x00000000
+addr: 0x00000000
+size: 28
+inputs: 0
+outputs: 2
+ninstr: 1
+traced: 0x0
+cases: 3
+switch_at: 0x00000000
+case.0: 0x0000001c
+case.1: 0x0000001c
+case.2: 0x0000001c
+EOF
+RUN
+
+NAME=afbi java tableswitch counts distinct targets
+FILE=malloc://64
+ARGS=-a java
+CMDS=<<EOF
+wx aa0000000000001c00000000000000020000001c0000001d0000001eb1b1b1
+af
+afbi
+EOF
+EXPECT=<<EOF
+fail: 0x00000001
+opaddr: 0x00000000
+addr: 0x00000000
+size: 28
+inputs: 0
+outputs: 4
+ninstr: 1
+traced: 0x0
+cases: 3
+switch_at: 0x00000000
+case.0: 0x0000001c
+case.1: 0x0000001d
+case.2: 0x0000001e
+EOF
+RUN
