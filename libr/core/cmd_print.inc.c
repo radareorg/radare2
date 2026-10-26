@@ -150,7 +150,7 @@ static RCoreHelpMessage help_msg_pF = {
 };
 
 static RCoreHelpMessage help_msg_pri = {
-	"Usage: pri", "[n1sg]", "print raw images",
+	"Usage: pri", "[n1234rsg]", "print raw images (source row width in pixels: hex.cols)",
 	"prin", "t [msg]", "print a message",
 	"pri1", "", "1 bitmap image",
 	"pri2", " [len]", "8x8 2bpp-tiles",
