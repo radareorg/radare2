@@ -821,17 +821,15 @@ static ut32 sxt(ArmOp *op) {
 		}
 	} else if (r_str_startswith (op->mnemonic, "uxtb")) {
 		// ubfm wd, wn, 0, 7; uxtb and uxth only have the 32-bit form
-		if (reg_32) {
-			k = 0x001c0053;
-		} else {
+		if (!reg_32) {
 			return UT32_MAX;
 		}
+		k = 0x001c0053;
 	} else if (r_str_startswith (op->mnemonic, "uxth")) {
-		if (reg_32) {
-			k = 0x003c0053;
-		} else {
+		if (!reg_32) {
 			return UT32_MAX;
 		}
+		k = 0x003c0053;
 	} else {
 		return data;
 	}
@@ -2248,7 +2246,7 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 		*op = csel (&ops, str);
 	} else if (r_str_startswith (str, "cset")) {
 		*op = cset (&ops, str);
-	} else if (r_str_startswith (str, "sxt") || r_str_startswith (str, "uxtb") || r_str_startswith (str, "uxth")) {
+	} else if (R_STR_STARTSWITH_ANY (str, "sxt", "uxtb", "uxth")) {
 		*op = sxt (&ops);
 	} else if (r_str_startswith (str, "tb")) {
 		*op = tb (&ops);
