@@ -2260,3 +2260,237 @@ EXPECT=<<EOF
 0x2000000000000000
 EOF
 RUN
+
+NAME=cmpxchg equal sets zf and stores src into dst
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 480fb10f @ 0
+aei
+ar rdi=0x100
+ar rax=0x1122
+ar rcx=0x3344
+wx 2211000000000000 @ 0x100
+s 0
+aeip
+aes
+ar zf
+ar rax
+p8 8 @ 0x100
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00001122
+4433000000000000
+EOF
+RUN
+
+NAME=cmpxchg unequal loads dst into acc and clears zf
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 480fb10f @ 0
+aei
+ar rdi=0x100
+ar rax=0x1122
+ar rcx=0x3344
+wx 9999000000000000 @ 0x100
+s 0
+aeip
+aes
+ar zf
+ar rax
+p8 8 @ 0x100
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00009999
+9999000000000000
+EOF
+RUN
+
+NAME=cmpxchg flags come from acc minus dst
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 480fb10f @ 0
+aei
+ar rdi=0x100
+ar rax=1
+ar rcx=9
+wx 0200000000000000 @ 0x100
+s 0
+aeip
+aes
+ar zf
+ar cf
+ar sf
+ar pf
+ar af
+ar of
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000001
+0x00000001
+0x00000001
+0x00000001
+0x00000000
+EOF
+RUN
+
+NAME=cmpxchg signed overflow at 16-bit boundary
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 660fb10f @ 0
+aei
+ar rdi=0x100
+ar ax=0x7fff
+ar cx=9
+wx ffff @ 0x100
+s 0
+aeip
+aes
+ar zf
+ar cf
+ar sf
+ar of
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000001
+0x00000001
+0x00000001
+EOF
+RUN
+
+NAME=lock cmpxchg dword form sets zf and stores ecx
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx f00fb10f @ 0
+aei
+ar rdi=0x100
+ar rax=0x1122
+ar rcx=0x3344
+wx 22110000 @ 0x100
+s 0
+aeip
+aes
+ar zf
+p8 4 @ 0x100
+EOF
+EXPECT=<<EOF
+0x00000001
+44330000
+EOF
+RUN
+
+NAME=cmpxchg generated esil text
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 480fb10f
+ao~opcode,esil
+EOF
+EXPECT=<<EOF
+opcode: cmpxchg qword [rdi], rcx
+esilcost: 24
+esil: rdi,[8],rax,==,$z,zf,:=,64,$b,cf,:=,$p,pf,:=,63,$s,sf,:=,rdi,[8],0x8000000000000000,-,!,63,$o,^,of,:=,4,$b,af,:=,zf,?{,rcx,rdi,=[8],},zf,!,?{,rdi,[8],rax,=,}
+EOF
+RUN
+
+NAME=cmpxchg dword mem failure zero-extends accumulator
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 0fb10f @ 0
+aei
+ar rdi=0x100
+ar rax=0xaaaaaaaa00008888
+ar rcx=0x3344
+wx 99990000 @ 0x100
+s 0
+aeip
+aes
+ar zf
+ar rax
+p8 4 @ 0x100
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00009999
+99990000
+EOF
+RUN
+
+NAME=cmpxchg dword mem success compares masked and leaves acc intact
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 0fb10f @ 0
+aei
+ar rdi=0x100
+ar rax=0xaaaaaaaa00009999
+ar rcx=0x3344
+wx 99990000 @ 0x100
+s 0
+aeip
+aes
+ar zf
+ar rax
+p8 4 @ 0x100
+EOF
+EXPECT=<<EOF
+0x00000001
+0xaaaaaaaa00009999
+44330000
+EOF
+RUN
+
+NAME=cmpxchg dword reg failure loads acc and keeps dst intact
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 0fb1ca @ 0
+aei
+ar rax=0xdeadbeef00000005
+ar rdx=0xcccccccc00001122
+ar rcx=0xbbbbbbbb00009999
+s 0
+aeip
+aes
+ar zf
+ar rax
+ar rdx
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00001122
+0xcccccccc00001122
+EOF
+RUN
+
+NAME=cmpxchg dword reg success stores masked src and keeps acc intact
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 0fb1ca @ 0
+aei
+ar rax=0xdeadbeef00001122
+ar rdx=0xcccccccc00001122
+ar rcx=0xcafe00009999
+s 0
+aeip
+aes
+ar zf
+ar rdx
+ar rax
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00009999
+0xdeadbeef00001122
+EOF
+RUN

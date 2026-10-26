@@ -2503,6 +2503,65 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			R_FREE (src);
 		}
 		break;
+	case X86_INS_CMPXCHG: /* compare acc with dst; equal: dst = src, else: acc = dst */
+		{
+			ut32 bitsize = 0;
+			src = getarg (&gop, 1, 0, NULL, NULL);
+			dst_r = getarg (&gop, 0, 0, NULL, &bitsize);
+			dst_w = getarg (&gop, 0, 1, NULL, NULL);
+			if (src && dst_r && dst_w && bitsize && bitsize <= 64) {
+				const char *acc, *dummy;
+				muldiv_regs (bitsize / 8, &acc, &dummy);
+				// esil sub-register reads pack the parent and writes
+				// leave its top stale: mask the reads, write through
+				// the 64-bit name, and only touch the changed register
+				const bool pack = bits == 64 && bitsize == 32;
+				char *acc_cmp = pack
+					? r_str_newf ("0xffffffff,%s,&", acc)
+					: r_str_newf ("%s", acc);
+				char *dst_cmp = pack
+					? r_str_newf ("0xffffffff,%s,&", dst_r)
+					: r_str_newf ("%s", dst_r);
+				char *store = NULL; // success: dst = src
+				char *reload = NULL; // failure: acc = dst
+				if (pack && INSOP (0).type == X86_OP_REG) {
+					char r64[16];
+					const char *regname = cs_reg_name (handle, INSOP (0).reg);
+					if (regname && get64from32 (regname, r64, sizeof (r64))) {
+						store = r_str_newf ("0xffffffff,%s,&,%s,=", src, r64);
+					}
+				}
+				if (!store) {
+					store = r_str_newf ("%s,%s", src, dst_w);
+				}
+				if (pack) {
+					reload = r_str_newf ("0xffffffff,%s,&,rax,=", dst_r);
+				} else {
+					reload = r_str_newf ("%s,%s,=", dst_r, acc);
+				}
+				// flags as if acc - dst was subtracted; the cmp tail
+				// computes second minus first, so dst goes first
+				if (acc_cmp && dst_cmp && store && reload) {
+					esilprintf (op,
+						"%s,%s,==,$z,zf,:=,%u,$b,cf,:=,$p,pf,:=,%u,$s,sf,:=,"
+						"%s,0x%"PFMT64x",-,!,%u,$o,^,of,:=,4,$b,af,:=,"
+						"zf,?{,%s,},zf,!,?{,%s,}",
+						dst_cmp, acc_cmp, bitsize, bitsize - 1, dst_cmp,
+						(ut64)(1ULL << (bitsize - 1)), bitsize - 1,
+						store, reload);
+				}
+				free (acc_cmp);
+				free (dst_cmp);
+				free (store);
+				free (reload);
+				free (src);
+				R_FREE (dst_r);
+				R_FREE (dst_w);
+				// no zext tail: it would clobber the branch not taken
+				gop.zext[0] = 0;
+			}
+		}
+		break;
 	case X86_INS_XADD: /* xchg + add */
 		{
 			ut32 bitsize;
@@ -4233,6 +4292,10 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		break;
 	case X86_INS_XADD: /* xchg + add */
 		op->type = R_ANAL_OP_TYPE_ADD;
+		op->family = R_ANAL_OP_FAMILY_CPU;
+		break;
+	case X86_INS_CMPXCHG: /* compare-exchange acc/dst */
+		op->type = R_ANAL_OP_TYPE_MOV;
 		op->family = R_ANAL_OP_FAMILY_CPU;
 		break;
 	case X86_INS_FADD:
