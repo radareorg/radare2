@@ -768,6 +768,14 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 			update_flags (op, V850_FLAG_S | V850_FLAG_Z);
 			clear_flags (op, V850_FLAG_OV);
 			break;
+		case V850_EXT_TRAP:
+			op->type = R_ANAL_OP_TYPE_SWI;
+			op->family = R_ANAL_OP_FAMILY_PRIV;
+			op->val = F1_REG1 (word1);
+			break;
+		case V850_EXT_HALT:
+			op->type = R_ANAL_OP_TYPE_TRAP;
+			break;
 		case V850_EXT_RETI:
 			op->type = R_ANAL_OP_TYPE_RET;
 			op->family = R_ANAL_OP_FAMILY_PRIV;
@@ -776,6 +784,7 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 		case V850_EXT_EXT2:
 			//ei and di
 			op->type = R_ANAL_OP_TYPE_MOV;
+			op->family = R_ANAL_OP_FAMILY_PRIV;
 			r_strbuf_appendf (&op->esil, "%d,id,:=", !(word1 & 0x8000));
 			break;
 		}

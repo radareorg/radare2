@@ -449,7 +449,6 @@ r24 += r7
 r6 *= r31
 r0 -= r30
 r0 = r0
-r0 = r1
 EOF
 RUN
 
@@ -932,7 +931,9 @@ aes
 ar psw
 aes
 ar psw
-e asm.cpu=v850
+e asm.cpu=e0
+aoj @0~{[0].mnemonic}
+aoj @4~{[0].mnemonic}
 ar pc=0
 ar psw=0x85
 aes
@@ -946,6 +947,8 @@ mov
 priv
 0x000000a5
 0x00000085
+di
+ei
 0x000000a5
 0x00000085
 EOF
@@ -982,7 +985,7 @@ ar pc=0
 aes
 ar pc
 ar psw
-e asm.cpu=v850
+e asm.cpu=e0
 ar psw=0
 ar pc=0
 aes

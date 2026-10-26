@@ -252,13 +252,13 @@ static int decode_extended(const ut8 *instr, int len, struct v850_cmd *cmd) {
 	ut16 word1 = r_read_le16 (instr);
 	ut16 word2 = r_read_at_le16 (instr, 2);
 
-	int index = get_subopcode (word1);
+	int index = get_subopcode (word1 | (ut32)word2 << 16);
 	if (index < 0 || index >= R_ARRAY_SIZE (ext_instrs1)) {
 		return -1;
 	}
 	snprintf (cmd->instr, sizeof (cmd->instr) - 1, "%s", ext_instrs1[index]);
 
-	switch (get_subopcode (word1)) {
+	switch (get_subopcode (word1 | (ut32)word2 << 16)) {
 	case V850_EXT_SETF:
 		snprintf (cmd->operands, V850_INSTR_MAXLEN - 1, "%s, r%d",
 				conds[word1 & 0xF], get_reg2 (word1));
@@ -286,7 +286,7 @@ static int decode_extended(const ut8 *instr, int len, struct v850_cmd *cmd) {
 		break;
 	case V850_EXT_EXT2:
 		// can be only 0 or 1
-		snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "%s", ext_instrs2[(word2 >> 13) & 1]);
+		snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "%s", ext_instrs2[(word1 & 0x8000)? V850_EXT_EI: V850_EXT_DI]);
 		break;
 	default:
 		return -1;
