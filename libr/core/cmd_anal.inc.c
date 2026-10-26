@@ -347,6 +347,7 @@ static RCoreHelpMessage help_msg_ad = {
 
 static RCoreHelpMessage help_msg_aes = {
 	"Usage:", "aes[pbosu]", "esil stepping utilities",
+	"aes", " [N]", "execute N ESIL steps following control flow (default 1)",
 	"aesp", " [X] [N]", "evaluate N instr from offset X",
 	"aesb", "", "step back",
 	"aeso", " ", "step over",
@@ -9994,16 +9995,29 @@ static void cmd_aes(RCore *core, const char *input) {
 		off = R_STR_ISNOTEMPTY (n1)? r_num_math (core->num, n1 + 1): 0;
 		cmd_aespc (core, adr, -1, off);
 		break;
-	case ' ':
+	case ' ': {
 		n = strchr (input, ' ');
 		n1 = n ? n + 1: NULL;
 		if (R_STR_ISEMPTY (n1)) {
 			r_core_esil_step (core, until_addr, until_expr, NULL, false);
 			break;
 		}
-		off = r_num_math (core->num, n1);
-		cmd_aespc (core, -1, -1, off);
+		st64 count = r_num_math (core->num, n1);
+		if (count < 0) {
+			R_LOG_ERROR ("Invalid ESIL step count");
+			break;
+		}
+		st64 i;
+		r_cons_break_push (core->cons, NULL, NULL);
+		for (i = 0; i < count && !r_cons_is_breaked (core->cons); i++) {
+			if (!r_core_esil_step (core, UT64_MAX, NULL, NULL, false)) {
+				break;
+			}
+		}
+		r_cons_break_pop (core->cons);
+		r_core_cmd0 (core, ".ar*");
 		break;
+	}
 	default:
 		r_core_esil_step (core, until_addr, until_expr, NULL, false);
 		r_core_cmd0 (core, ".ar*");

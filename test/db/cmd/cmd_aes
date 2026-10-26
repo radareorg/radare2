@@ -1,3 +1,23 @@
+NAME=ESIL counted stepping follows calls and returns
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx e805000000b82a000000ffc3c3 @0x100
+ar rip=0x100
+ar rsp=0x1e0
+ar rbx=0
+aes 3
+ar rip
+ar rsp
+ar rbx
+EOF
+EXPECT=<<EOF
+0x00000105
+0x000001e0
+0x00000001
+EOF
+RUN
+
 NAME=ESIL single stepping can retain self loops
 FILE=malloc://16
 ARGS=-a x86 -b 64
