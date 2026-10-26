@@ -235,10 +235,6 @@ int assemble_operand(ut64 pc, const char *operand, int type, uint32_t *res) {
 			char *end;
 			ut64 value = strtoull (operand, &end, 0);
 			if (!*end && value <= 0x3f) {
-		} else if (isdigit ((ut8)*operand)) {
-			char *end;
-			ut64 value = strtoull (operand, &end, 0);
-			if (!*end && value <= 0x3f) {
 				*res = value;
 				ret = 0;
 			}
