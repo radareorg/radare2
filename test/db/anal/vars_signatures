@@ -409,3 +409,19 @@ arg int64_t arg1 @ rdi
 arg int64_t arg1 @ rdi
 EOF
 RUN
+
+NAME=tcc redefinition drops stale clobber and preserve sets
+FILE=malloc://16
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+k anal/cc/cc.amd64.preserve
+tcc rax amd64 (rdi, rsi)
+k anal/cc/cc.amd64.clobber
+k anal/cc/cc.amd64.preserve
+k anal/cc/cc.amd64.arg1
+EOF
+EXPECT=<<EOF
+rbx,rbp,rsp,r12,r13,r14,r15
+rsi
+EOF
+RUN
