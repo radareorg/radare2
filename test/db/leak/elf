@@ -1,0 +1,10 @@
+NAME=leak ELF without version need info
+FILE=bins/elf/base64_string.elf
+CMDS=<<EOF
+iV
+?e ok
+EOF
+EXPECT=<<EOF
+ok
+EOF
+RUN
