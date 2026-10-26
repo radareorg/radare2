@@ -4,10 +4,9 @@
 #include <r_util/r_alloc.h>
 #include <r_util/r_arena.h>
 
-#if 1
-_Static_assert (sizeof (size_t) >= sizeof (void *), "size_t must fit pointer");
-_Static_assert (sizeof (uintptr_t) >= sizeof (void *), "uintptr_t must fit pointer");
-#endif
+// file-scope compile time checks without C11 _Static_assert (not supported by msvc without /std:c11)
+typedef char r_arena_size_t_must_fit_pointer[(sizeof (size_t) >= sizeof (void *))? 1: -1];
+typedef char r_arena_uintptr_t_must_fit_pointer[(sizeof (uintptr_t) >= sizeof (void *))? 1: -1];
 
 static inline uintptr_t align_address(uintptr_t address, size_t alignment) {
 	R_RETURN_VAL_IF_FAIL (alignment > 0 && (alignment &(alignment - 1)) == 0, 0);

@@ -15,7 +15,7 @@ bin_demangle_plugins = get_option('demanglers')
 bin_ldr_plugins = [ 'ldr_linux' ]
 bin_xtr_plugins = []
 io_plugins = [ 'malloc', 'cyclic', 'xattr', 'fd', 'tap', 'default', 'null', 'rbuf', 'r2pipe' ]
-fs_plugins = [ 'r2', 'posix', 'io', 'ubifs', 'bfs', 'fatmacho', 'sep64' ]
+fs_plugins = [ 'r2', 'posix', 'io', 'ubifs', 'bfs', 'fatmacho', 'sep64', 'fossil', 'p9', 'tmp', 'apfs' ]
 
 if get_option('use_zip')
   io_plugins += [ 'zip' ]
