@@ -325,7 +325,7 @@ R_API RFSFile *r_fs_open(RFS *fs, const char *p, bool create) {
 			}
 		}
 	}
-	free (roots);
+	r_list_free (roots);
 	free (path);
 	return f;
 }
@@ -584,32 +584,56 @@ R_API RList *r_fs_find_name(RFS *fs, const char *name, const char *glob) {
 	return fs_find_paths (fs, name, glob, 0);
 }
 
-R_API RFSFile *r_fs_slurp(RFS *fs, const char *path) {
-	R_RETURN_VAL_IF_FAIL (fs && path, NULL);
+// returns the file with its whole contents in file->data and the plugin handle
+// already closed, release it with r_fs_file_free
+R_API RFSFile *r_fs_slurp(RFS *fs, const char *p) {
+	R_RETURN_VAL_IF_FAIL (fs && p, NULL);
 	RFSFile *file = NULL;
 	RFSRoot *root;
-	RList *roots = r_fs_root (fs, path);
 	RListIter *iter;
+	char *path = r_str_trim_dup (p);
+	r_str_trim_path (path);
+	RList *roots = r_fs_root (fs, path);
 	r_list_foreach (roots, iter, root) {
 		if (!root || !root->p) {
 			continue;
 		}
-		if (root->p->open && root->p->read && root->p->close) {
-			file = root->p->open (root, path, false);
+		const char *dir = strlen (root->path) == 1? path: path + strlen (root->path);
+		if (!*dir) {
+			dir = "/";
+		}
+		if (root->p->open && root->p->read) {
+			file = root->p->open (root, dir, false);
+			if (!file) {
+				continue;
+			}
+			int len = file->size > 0? r_fs_read (fs, file, 0, file->size): 0;
+			ut8 *data = file->data;
+			file->data = NULL;
+			if (root->p->close) {
+				root->p->close (file);
+			}
+			if (len < 0 || (!data && !(data = calloc (1, 1)))) {
+				free (data);
+				r_fs_file_free (file);
+				file = NULL;
+				continue;
+			}
+			file->data = data;
+			break;
+		}
+		if (root->p->slurp) {
+			file = root->p->slurp (root, dir);
 			if (file) {
-				root->p->read (file, 0, file->size); // file->data
-			} else {
-				R_LOG_ERROR ("cannot open file");
+				break;
 			}
-		} else {
-			if (root->p->slurp) {
-				free (roots);
-				return root->p->slurp (root, path);
-			}
-			R_LOG_ERROR ("null root->p->slurp");
 		}
 	}
-	free (roots);
+	if (!file) {
+		R_LOG_ERROR ("cannot slurp %s", path);
+	}
+	r_list_free (roots);
+	free (path);
 	return file;
 }
 
