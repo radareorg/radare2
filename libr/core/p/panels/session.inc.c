@@ -236,7 +236,7 @@ virtualmouse:
 		}
 		break;
 	case 'd':
-		r_core_visual_define (core, "", 0);
+		r_core_visual_define_input (core, "", 0, r_panels_define_readchar);
 		break;
 	case 'D':
 		replace_cmd (core, "Disassembly", "pd");

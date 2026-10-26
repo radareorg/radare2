@@ -191,7 +191,7 @@ static void r_panels_panel_write_content(RCore *core, RPanel *panel, const char 
 		for (i = 0; i < bar->length; i++) {
 			const bool thumb = i >= bar->thumb && i < bar->thumb + bar->thumb_size;
 			(void)r_cons_canvas_gotoxy (can, bar->x + (axis? i: 0), bar->y + (axis? 0: i));
-			r_cons_canvas_write (can, thumb? (utf8? "█": "#"): (axis? (utf8? "─": "-"): (utf8? "│": "|")));
+			r_cons_canvas_write (can, thumb? (utf8? "█": "#"): (axis? (utf8? "─": "-"): (utf8? "│": ":")));
 		}
 	}
 }

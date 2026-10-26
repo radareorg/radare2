@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2026 - pancake */
 
-#include <r_core.h>
+#include <r_core_priv.h>
 
 #define MAX_FORMAT 3
 
@@ -4089,6 +4089,10 @@ static void handleHints(RCore *core) {
 }
 
 R_API void r_core_visual_define(RCore *core, const char *args, int distance) {
+	r_core_visual_define_input (core, args, distance, NULL);
+}
+
+R_IPI void r_core_visual_define_input(RCore *core, const char *args, int distance, RCoreVisualDefineReadCallback readchar) {
 	int plen = core->blocksize;
 	ut64 off = core->addr;
 	int i, h = 0, n, ch, ntotal = 0;
@@ -4118,13 +4122,15 @@ R_API void r_core_visual_define(RCore *core, const char *args, int distance) {
 		off += cur;
 		p += cur;
 	}
-	(void) r_cons_get_size (core->cons, &h);
-	h -= 19;
-	if (h < 0) {
-		h = 0;
-		r_cons_clear00 (core->cons);
-	} else {
-		r_cons_gotoxy (core->cons, 0, 3);
+	if (!readchar) {
+		(void) r_cons_get_size (core->cons, &h);
+		h -= 19;
+		if (h < 0) {
+			h = 0;
+			r_cons_clear00 (core->cons);
+		} else {
+			r_cons_gotoxy (core->cons, 0, 3);
+		}
 	}
 	const char *lines[] = { ""
 		,"[Vd]- Define current block as:"
@@ -4164,17 +4170,21 @@ R_API void r_core_visual_define(RCore *core, const char *args, int distance) {
 		," q    quit menu"
 		," z    zone flag"
 		, NULL};
-	for (i = 0; lines[i]; i++) {
-		r_cons_fill_line (core->cons);
-		r_cons_printf (core->cons, "\r%s\n", lines[i]);
+	if (!readchar) {
+		for (i = 0; lines[i]; i++) {
+			r_cons_fill_line (core->cons);
+			r_cons_printf (core->cons, "\r%s\n", lines[i]);
+		}
+		r_cons_flush (core->cons);
 	}
-	r_cons_flush (core->cons);
 	int wordsize = 0;
 	// get ESC+char, return 'hjkl' char
 repeat:
 	if (*args) {
 		ch = *args;
 		args++;
+	} else if (readchar) {
+		ch = readchar (core, lines + 2);
 	} else {
 		ch = r_cons_arrow_to_hjkl (core->cons, r_cons_readchar (core->cons));
 	}

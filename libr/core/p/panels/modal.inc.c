@@ -24,6 +24,170 @@ static void r_panels_mark_write(RConsCanvas *can, int x, int y, int width, const
 	}
 }
 
+static bool r_panels_modal_print(RCore *core, RConsCanvas *can, const RPanelPos *pos) {
+	char *text = r_cons_canvas_tostring (can);
+	if (!text) {
+		return false;
+	}
+	char *line = text;
+	int i, notch = r_config_get_i (core->config, "scr.notch");
+	for (i = 0; line && i < pos->h; i++) {
+		char *next = strchr (line, '\n');
+		if (next) {
+			*next++ = 0;
+		}
+		r_cons_gotoxy (core->cons, pos->x + 1, pos->y + notch + i + 1);
+		r_cons_print (core->cons, line);
+		line = next;
+	}
+	free (text);
+	r_cons_flush (core->cons);
+	return true;
+}
+
+typedef struct {
+	RCore *core;
+	RConsCanvas *can;
+	RPanelPos pos;
+	RPanelsModel model;
+	RPanelView view;
+	bool failed;
+} RPanelsDefineModal;
+
+static bool r_panels_define_draw(RPanelsDefineModal *modal) {
+	RCore *core = modal->core;
+	int height, width = r_panels_get_size (core, &height);
+	RPanelPos *pos = &modal->pos;
+	pos->w = R_MIN (modal->model.width + 4, width > 8? width - 4: width);
+	pos->h = R_MIN (modal->model.height + 3, height > 8? height - 4: height);
+	pos->x = (width - pos->w) / 2;
+	pos->y = (height - pos->h) / 2;
+	if (!modal->can) {
+		modal->can = r_cons_canvas_new (core->cons, pos->w, pos->h, R_CONS_CANVAS_FLAG_INHERIT);
+		if (!modal->can) {
+			return false;
+		}
+	} else if (!r_cons_canvas_resize (modal->can, pos->w, pos->h)) {
+		return false;
+	}
+	RConsCanvas *can = modal->can;
+	can->color = core->panels->can->color;
+	can->attr = Color_RESET;
+	r_cons_canvas_background (can, Color_RESET);
+	r_cons_canvas_fill (can, 0, 0, pos->w, pos->h, ' ');
+	r_cons_canvas_box (can, 0, 0, pos->w, pos->h, PANEL_HL_COLOR);
+	modal->view.pos = (RPanelPos) { .w = pos->w, .h = pos->h };
+	if (pos->w >= 5 && pos->h >= 4) {
+		RPanel panel = { .model = &modal->model.model, .view = &modal->view };
+		RConsCanvas *previous = core->panels->can;
+		core->panels->can = can;
+		r_panels_panel_write_content (core, &panel, panel.model->readOnly, R_MAX (modal->view.sx, 0), false);
+		core->panels->can = previous;
+	}
+	r_panels_mark_write (can, 2, 1, pos->w - 4, "Define [Arrows: pan, PgUp/PgDn, Esc/q: close]");
+	return r_panels_modal_print (core, can, pos);
+}
+
+static void r_panels_define_resize(void *user) {
+	RPanelsDefineModal *modal = user;
+	r_panels_do_panels_resize (modal->core);
+	modal->failed = !r_panels_define_draw (modal);
+}
+
+static int r_panels_define_readchar(RCore *core, const char **lines) {
+	RPanelsDefineModal modal = { .core = core };
+	RCons *cons = core->cons;
+	RConsEvent resize = cons->event_resize;
+	void *event_data = cons->event_data;
+	bool mouse = cons->mouse;
+	int ret = 'q', i;
+	RStrBuf text;
+	r_strbuf_init (&text);
+	for (i = 0; lines[i]; i++) {
+		if (!r_strbuf_appendf (&text, "%s\n", lines[i])) {
+			r_strbuf_fini (&text);
+			goto beach;
+		}
+	}
+	modal.model.model.readOnly = r_strbuf_drain_nofree (&text);
+	RPanel panel = { .model = &modal.model.model, .view = &modal.view };
+	if (!r_panels_content_index (&panel, panel.model->readOnly)) {
+		goto beach;
+	}
+	cons->event_resize = NULL;
+	cons->event_data = &modal;
+	cons->event_resize = r_panels_define_resize;
+	r_cons_enable_mouse (cons, true);
+	while (!modal.failed && r_panels_define_draw (&modal)) {
+		int raw = r_cons_readchar (cons);
+		if (raw == -1 || raw == 3) {
+			break;
+		}
+		if (raw == 0x1b && !cons->input_state.readbuffer_length) {
+			int next = r_cons_readchar_timeout (cons, 100);
+			if (next == -1) {
+				break;
+			}
+			char byte = next;
+			if (!r_cons_readpush (cons, &byte, 1)) {
+				break;
+			}
+		}
+		bool navigation = raw == 0x1b || (ut8)raw == 0x9b;
+#if R2__WINDOWS__
+		navigation |= cons->is_arrow || cons->mouse_event;
+#endif
+		int key = navigation? r_cons_arrow_to_hjkl (cons, raw): raw;
+		if (!navigation) {
+			ret = key;
+			break;
+		}
+		int step = cons->mouse_event? R_CLAMP (r_config_get_i (core->config, "scr.wheel.speed"), 1, UT8_MAX): 1;
+		if (cons->mouse_event && (cons->drag_event || (key != 'j' && key != 'k' && key != 'h' && key != 'l'))) {
+			int x, y;
+			if (!r_cons_get_click (cons, &x, &y)) {
+				continue;
+			}
+			x -= modal.pos.x + 1;
+			y -= modal.pos.y + 1 + r_config_get_i (core->config, "scr.notch");
+			if (x < 0 || x >= modal.pos.w || y < 0 || y >= modal.pos.h) {
+				break;
+			}
+			int axis;
+			for (axis = 0; axis < 2; axis++) {
+				RPanelsScrollbar bar;
+				if (r_panels_scrollbar_layout (&panel, &bar, axis)
+						&& (axis? y == bar.y && x >= bar.x && x < bar.x + bar.length
+						: x == bar.x && y >= bar.y && y < bar.y + bar.length)) {
+					r_panels_scrollbar_seek (&panel, &bar, (axis? x - bar.x: y - bar.y) - bar.thumb_size / 2);
+				}
+			}
+			continue;
+		}
+		switch (key) {
+		case 'j': modal.view.sy += step; break;
+		case 'k': modal.view.sy -= step; break;
+		case 'h': modal.view.sx -= step; break;
+		case 'l': modal.view.sx += step; break;
+		case 'J': modal.view.sy += R_MAX (1, modal.pos.h - 4); break;
+		case 'K': modal.view.sy -= R_MAX (1, modal.pos.h - 4); break;
+		default: goto beach;
+		}
+	}
+beach:
+	cons->event_resize = NULL;
+	cons->event_data = event_data;
+	cons->event_resize = resize;
+	if (cons->mouse != mouse) {
+		r_cons_enable_mouse (cons, mouse);
+	}
+	r_cons_canvas_free (modal.can);
+	RPanelsLines_fini (&modal.model.lines);
+	free (modal.model.model.readOnly);
+	r_panels_do_panels_refresh (core);
+	return ret;
+}
+
 static bool r_panels_mark_draw(RPanelsMarkModal *modal) {
 	RCore *core = modal->core;
 	RCons *cons = core->cons;
@@ -83,28 +247,11 @@ static bool r_panels_mark_draw(RPanelsMarkModal *modal) {
 		for (i = 0; i < modal->rows; i++) {
 			bool active = i >= thumb && i < thumb + thumb_size;
 			r_panels_mark_write (can, pos->w - 2, i + 2, 1,
-				active? (utf8? "█": "#"): (utf8? "│": "|"));
+				active? (utf8? "█": "#"): (utf8? "│": ":"));
 		}
 	}
 	r_panels_mark_write (can, 2, pos->h - 2, pos->w - 4, "Enter: seek  BS/[x]: unset  Arrows/PgUp/PgDn/Wheel");
-	char *text = r_cons_canvas_tostring (can);
-	if (!text) {
-		return false;
-	}
-	char *line = text;
-	int notch = r_config_get_i (core->config, "scr.notch");
-	for (i = 0; line && i < pos->h; i++) {
-		char *next = strchr (line, '\n');
-		if (next) {
-			*next++ = 0;
-		}
-		r_cons_gotoxy (cons, pos->x + 1, pos->y + notch + i + 1);
-		r_cons_print (cons, line);
-		line = next;
-	}
-	free (text);
-	r_cons_flush (cons);
-	return true;
+	return r_panels_modal_print (core, can, pos);
 }
 
 static void r_panels_mark_resize(void *user) {
