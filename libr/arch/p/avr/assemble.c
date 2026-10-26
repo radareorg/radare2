@@ -35,11 +35,24 @@ static int getnum(const char *s) {
 
 // radare tolower instruction in rasm, so we use 'x' instead of 'X' etc.
 specialregs RegsTable[REGS_TABLE] = {
-	{ "-x", OPERAND_XP}, { "x", OPERAND_X}, { "x+", OPERAND_XP},
-	{ "-y", OPERAND_YP}, { "y", OPERAND_Y}, { "y+", OPERAND_YP},
-	{ "-z", OPERAND_ZP}, { "z", OPERAND_Z}, { "z+", OPERAND_ZP},
+	{ "-x", OPERAND_MX}, { "x", OPERAND_X}, { "x+", OPERAND_XP},
+	{ "-y", OPERAND_MY}, { "y", OPERAND_Y}, { "y+", OPERAND_YP},
+	{ "-z", OPERAND_MZ}, { "z", OPERAND_Z}, { "z+", OPERAND_ZP},
 };
 
+
+// an i/o address must fit the bits of its field, 6 for in and out, 5 for sbi, cbi, sbic and sbis
+static bool io_fits(uint32_t value, int type, uint16_t mask) {
+	if (type != OPERAND_IO_REGISTER) {
+		return true;
+	}
+	int bits = 0;
+	while (mask) {
+		bits += mask & 1;
+		mask >>= 1;
+	}
+	return value < (1u << bits);
+}
 
 int avr_encode(RArchSession *as, ut64 pc, const char *str, ut8 *outbuf) {
 	AvrToken tok;
@@ -106,7 +119,9 @@ int avr_encode(RArchSession *as, ut64 pc, const char *str, ut8 *outbuf) {
 
 			} else if (instructionSet[instr_idx].numOperands == 2 && tokens_cnt == 3) {
 				if (assemble_operand(pc, tok.ens[1], instructionSet[instr_idx].operandTypes[0], &op1) >= 0 &&
-				   assemble_operand(pc, tok.ens[2], instructionSet[instr_idx].operandTypes[1], &op2) >= 0) {
+				   assemble_operand(pc, tok.ens[2], instructionSet[instr_idx].operandTypes[1], &op2) >= 0 &&
+				   io_fits (op1, instructionSet[instr_idx].operandTypes[0], instructionSet[instr_idx].operandMasks[0]) &&
+				   io_fits (op2, instructionSet[instr_idx].operandTypes[1], instructionSet[instr_idx].operandMasks[1])) {
 
 					coded = instructionSet[instr_idx].opcodeMask
 						| packDataByMask(op1, instructionSet[instr_idx].operandMasks[0])
@@ -214,8 +229,20 @@ int assemble_operand(ut64 pc, const char *operand, int type, uint32_t *res) {
 		*res = temp;
 		break;
 	case OPERAND_IO_REGISTER:
-		assemble_general_io_operand (operand, res);
-		ret = 0;
+		if (assemble_general_io_operand (operand, res) == 0) {
+			ret = 0;
+		} else if (isdigit ((ut8)*operand)) {
+			char *end;
+			ut64 value = strtoull (operand, &end, 0);
+			if (!*end && value <= 0x3f) {
+		} else if (isdigit ((ut8)*operand)) {
+			char *end;
+			ut64 value = strtoull (operand, &end, 0);
+			if (!*end && value <= 0x3f) {
+				*res = value;
+				ret = 0;
+			}
+		}
 		break;
 	case OPERAND_BIT:
 	case OPERAND_DES_ROUND:
