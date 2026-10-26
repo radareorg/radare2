@@ -993,3 +993,27 @@ ERROR: Attribute 'pure' is read-only: the function does not read or write outsid
 ERROR: Unknown function attribute 'bogus'
 EOF
 RUN
+
+NAME=afl script preserves inline at its function address
+FILE=malloc://256
+ARGS=-a arm -b 64
+CMDS=<<EOF
+mkdir .tmp
+af+ 0x10 fcn.one
+afb+ 0x10 0x10 4
+af+ 0x20 fcn.two
+afb+ 0x20 0x20 4
+afia+ inline @ 0x10
+afl*~afia > .tmp/afia-legacy.r2
+afia- inline @ 0x10
+s 0x20
+. .tmp/afia-legacy.r2
+afia @ 0x10~inline
+afia @ 0x20~inline
+rm .tmp/afia-legacy.r2
+EOF
+EXPECT=<<EOF
+  inline    true
+  inline    false
+EOF
+RUN

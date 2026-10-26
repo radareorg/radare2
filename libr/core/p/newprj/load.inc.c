@@ -427,7 +427,7 @@ static void rprj_function_attr_load(RPrjCursor *cur, RAnalFunction *fcn, R2Proje
 			r_strbuf_appendf (cur->out, "'tn 0x%08"PFMT64x"\n", va);
 		}
 		if (attr->flags & RPRJ_FUNC_ATTR_INLINE) {
-			r_strbuf_appendf (cur->out, "'afia+ inline @ 0x%08"PFMT64x"\n", va);
+			r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'afia+ inline\n", va);
 		}
 	}
 	if ((mode & R_CORE_NEWPRJ_MODE_LOAD) && fcn) {
@@ -718,6 +718,9 @@ static void rprj_print_function_attrs(RPrjCursor *cur, RAnalFunction *fcn) {
 	if (fcn->is_noreturn) {
 		r_strbuf_appendf (cur->out, "'tn 0x%08"PFMT64x"\n", fcn->addr);
 	}
+	if (fcn->is_inline) {
+		r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'afia+ inline\n", fcn->addr);
+	}
 }
 
 static void rprj_print_function_script(RPrjCursor *cur, RAnalFunction *fcn) {
@@ -794,8 +797,8 @@ static void rprj_diff_function_attrs(RPrjCursor *cur, RAnalFunction *fcn, R2Proj
 	const bool inl = attr && (attr->flags & RPRJ_FUNC_ATTR_INLINE);
 	if (inl != fcn->is_inline) {
 		r_strbuf_appendf (cur->out, fcn->is_inline
-			? "'afia+ inline @ 0x%08"PFMT64x"\n"
-			: "'afia- inline @ 0x%08"PFMT64x"\n", fcn->addr);
+			? "'0x%08"PFMT64x"'afia+ inline\n"
+			: "'0x%08"PFMT64x"'afia- inline\n", fcn->addr);
 	}
 }
 
