@@ -54,10 +54,10 @@ static bool stm8_op(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			const char *index = len == 1? "x": "y";
 			r_strbuf_setf (&op->esil, "a,0xff,%s,&,*,%s,=,0xee,cc,&,cc,:=", index, index);
 		} else if (len == 1 && op->bytes[0] == 0x80) {
-			r_strbuf_set (&op->esil, "1,sp,+,[1],cc,:=,2,sp,+,[1],a,="
-				",8,3,sp,+,[1],<<,4,sp,+,[1],|,x,="
-				",8,5,sp,+,[1],<<,6,sp,+,[1],|,y,="
-				",16,7,sp,+,[1],<<,8,8,sp,+,[1],<<,|,9,sp,+,[1],|,pc,:=,9,sp,+,sp,=");
+			r_strbuf_set (&op->esil, "1,sp,+,0xffff,&,[1],cc,:=,2,sp,+,0xffff,&,[1],a,="
+				",8,3,sp,+,0xffff,&,[1],<<,4,sp,+,0xffff,&,[1],|,x,="
+				",8,5,sp,+,0xffff,&,[1],<<,6,sp,+,0xffff,&,[1],|,y,="
+				",16,7,sp,+,0xffff,&,[1],<<,8,8,sp,+,0xffff,&,[1],<<,|,9,sp,+,0xffff,&,[1],|,pc,:=,9,sp,+,sp,=");
 		} else if (len == 1 && op->bytes[0] == 0x9b) {
 			r_strbuf_set (&op->esil, "0x28,cc,|,cc,:=");
 		} else if (len == 1 && op->bytes[0] == 0x9a) {

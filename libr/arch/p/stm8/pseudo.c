@@ -146,7 +146,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 	const char *op0 = buf;
 	if (!strcmp (op0, "iret")) {
 		free (buf);
-		return strdup ("interrupt_return();");
+		return strdup ("return from_interrupt");
 	}
 	if (!strcmp (op0, "ret")) {
 		free (buf);

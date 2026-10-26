@@ -219,7 +219,7 @@ EOF
 RUN
 
 NAME=stm8 interrupt return restores the full big endian stack frame
-FILE=malloc://1024
+FILE=malloc://65536
 ARGS=-a stm8 -b 16
 CMDS=<<EOF
 wx 80
@@ -249,6 +249,18 @@ ar x
 ar y
 ar sp
 ar pc
+wx 80 @0x100
+wx ccaa1234 @0xfffc
+wx 56789abcde @0
+ar sp=0xfffb
+ar pc=0x100
+aes
+ar cc
+ar a
+ar x
+ar y
+ar sp
+ar pc
 EOF
 EXPECT=<<EOF
 0x000000c9
@@ -264,5 +276,11 @@ pseudo: interrupt_return();
 0x00009abc
 0x00000209
 0x00def0ab
+0x000000cc
+0x000000aa
+0x00001234
+0x00005678
+0x00000004
+0x009abcde
 EOF
 RUN
