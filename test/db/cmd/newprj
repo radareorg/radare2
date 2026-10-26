@@ -1389,3 +1389,82 @@ EXPECT_ERR=<<END
 WARN: Skipping 1 commands embedded in the project, load it with scr.interactive=true to review them
 END
 RUN
+
+NAME=newprj binary flags and script preserve inline independently of seek
+FILE=malloc://256
+ARGS=-a arm -b 64
+CMDS=<<EOF
+mkdir .tmp
+af+ 0x10 fcn.one
+afb+ 0x10 0x10 4
+af+ 0x20 fcn.two
+afb+ 0x20 0x20 4
+afia+ inline @ 0x10
+prj save .tmp/newprj-inline.prj > /dev/null
+afia- inline @ 0x10
+afia+ inline @ 0x20
+prj load .tmp/newprj-inline.prj > /dev/null
+afia @ 0x10~inline
+afia @ 0x20~inline
+prj diff .tmp/newprj-inline.prj~afia
+prj r2 .tmp/newprj-inline.prj~afia > .tmp/newprj-inline.r2
+afia- inline @ 0x10
+s 0x20
+. .tmp/newprj-inline.r2
+afia @ 0x10~inline
+afia @ 0x20~inline
+rm .tmp/newprj-inline.prj
+rm .tmp/newprj-inline.r2
+EOF
+EXPECT=<<EOF
+  inline    true
+  inline    false
+  inline    true
+  inline    false
+EOF
+RUN
+
+NAME=newprj inline diff replays both signs and newly added functions
+FILE=malloc://256
+ARGS=-a arm -b 64
+CMDS=<<EOF
+mkdir .tmp
+af+ 0x10 fcn.one
+afb+ 0x10 0x10 4
+af+ 0x20 fcn.two
+afb+ 0x20 0x20 4
+prj save .tmp/newprj-inline-diff.prj > /dev/null
+afia+ inline @ 0x10
+prj diff .tmp/newprj-inline-diff.prj > .tmp/newprj-inline-diff.r2
+afia- inline @ 0x10
+s 0x20
+. .tmp/newprj-inline-diff.r2
+afia @ 0x10~inline
+afia @ 0x20~inline
+prj save .tmp/newprj-inline-diff.prj > /dev/null
+afia- inline @ 0x10
+prj diff .tmp/newprj-inline-diff.prj > .tmp/newprj-inline-diff.r2
+afia+ inline @ 0x10
+. .tmp/newprj-inline-diff.r2
+afia @ 0x10~inline
+afia @ 0x20~inline
+af+ 0x30 fcn.new
+afb+ 0x30 0x30 4
+afia+ inline @ 0x30
+prj diff .tmp/newprj-inline-diff.prj > .tmp/newprj-inline-diff.r2
+af- 0x30
+. .tmp/newprj-inline-diff.r2
+afia @ 0x30~inline
+afia @ 0x20~inline
+rm .tmp/newprj-inline-diff.prj
+rm .tmp/newprj-inline-diff.r2
+EOF
+EXPECT=<<EOF
+  inline    true
+  inline    false
+  inline    false
+  inline    false
+  inline    true
+  inline    false
+EOF
+RUN
