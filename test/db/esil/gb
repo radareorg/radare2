@@ -1,0 +1,305 @@
+NAME=Game Boy SET uses a bit mask
+FILE=malloc://0x10000
+CMDS=<<EOF
+e asm.arch=gb
+e asm.bits=16
+aei
+wx cbf8
+ar b=1
+ar f=240
+aes
+ar b
+ar f
+EOF
+EXPECT=<<EOF
+0x00000081
+0x000000f0
+EOF
+RUN
+
+NAME=Game Boy LDD loads A and decrements HL
+FILE=malloc://0x10000
+CMDS=<<EOF
+e asm.arch=gb
+e asm.bits=16
+aei
+wx 3a
+ar hl=0xc000
+ar d=99
+wx 5a @0xc000
+aes
+ar a
+ar d
+ar hl
+EOF
+EXPECT=<<EOF
+0x0000005a
+0x00000063
+0x0000bfff
+EOF
+RUN
+
+NAME=Game Boy ADC preserves both carries
+FILE=malloc://0x10000
+CMDS=<<EOF
+e asm.arch=gb
+e asm.bits=16
+aei
+wx 88
+ar a=0
+ar b=255
+ar C=1
+aes
+ar a
+ar f
+EOF
+EXPECT=<<EOF
+0x00000000
+0x000000b0
+EOF
+RUN
+
+NAME=Game Boy SBC preserves both borrows
+FILE=malloc://0x10000
+CMDS=<<EOF
+e asm.arch=gb
+e asm.bits=16
+aei
+wx 9e
+ar a=0
+ar C=1
+ar hl=0xc000
+wx ff @0xc000
+aes
+ar a
+ar f
+EOF
+EXPECT=<<EOF
+0x00000000
+0x000000f0
+EOF
+RUN
+
+NAME=Game Boy ADD HL sets H and preserves Z
+FILE=malloc://0x10000
+CMDS=<<EOF
+e asm.arch=gb
+e asm.bits=16
+aei
+wx 09
+ar hl=4095
+ar bc=1
+ar f=192
+aes
+ar hl
+ar f
+EOF
+EXPECT=<<EOF
+0x00001000
+0x000000a0
+EOF
+RUN
+
+NAME=Game Boy ADD SP uses unsigned low byte carries
+FILE=malloc://0x10000
+CMDS=<<EOF
+e asm.arch=gb
+e asm.bits=16
+aei
+wx e808
+ar sp=0xfff8
+ar f=240
+aes
+ar sp
+ar f
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000030
+EOF
+RUN
+
+NAME=Game Boy LD HL SP negative offset flags
+FILE=malloc://0x10000
+CMDS=<<EOF
+e asm.arch=gb
+e asm.bits=16
+aei
+wx f8ff
+ar sp=1
+ar f=240
+aes
+ar hl
+ar sp
+ar f
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000001
+0x00000030
+EOF
+RUN
+
+NAME=Game Boy DAA sets decimal carry
+FILE=malloc://0x10000
+CMDS=<<EOF
+e asm.arch=gb
+e asm.bits=16
+aei
+wx 27
+ar a=154
+ar f=0
+aes
+ar a
+ar f
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000090
+EOF
+RUN
+
+NAME=Game Boy CCF clears N H and toggles C
+FILE=malloc://0x10000
+CMDS=<<EOF
+e asm.arch=gb
+e asm.bits=16
+aei
+wx 3f
+ar f=224
+aes
+ar f
+EOF
+EXPECT=<<EOF
+0x00000090
+EOF
+RUN
+
+NAME=Game Boy SCF clears N H
+FILE=malloc://0x10000
+CMDS=<<EOF
+e asm.arch=gb
+e asm.bits=16
+aei
+wx 37
+ar f=224
+aes
+ar f
+EOF
+EXPECT=<<EOF
+0x00000090
+EOF
+RUN
+
+NAME=Game Boy POP AF masks unused flag bits
+FILE=malloc://0x10000
+CMDS=<<EOF
+e asm.arch=gb
+e asm.bits=16
+aei
+wx f1
+ar sp=0xc000
+wx ff12 @0xc000
+aes
+ar af
+ar sp
+EOF
+EXPECT=<<EOF
+0x000012f0
+0x0000c002
+EOF
+RUN
+
+NAME=Game Boy JP into RAM has ESIL
+FILE=malloc://0x10000
+CMDS=<<EOF
+e asm.arch=gb
+e asm.bits=16
+aei
+wx c300c0
+
+aes
+ar pc
+EOF
+EXPECT=<<EOF
+0x0000c000
+EOF
+RUN
+
+NAME=Game Boy RLCA clears Z
+FILE=malloc://0x10000
+CMDS=<<EOF
+e asm.arch=gb
+e asm.bits=16
+aei
+wx 07
+ar a=0
+ar f=240
+aes
+ar a
+ar f
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000000
+EOF
+RUN
+
+NAME=Game Boy RR sets Z
+FILE=malloc://0x10000
+CMDS=<<EOF
+e asm.arch=gb
+e asm.bits=16
+aei
+wx cb1f
+ar a=1
+ar f=0
+aes
+ar a
+ar f
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000090
+EOF
+RUN
+
+NAME=Game Boy SLA parses and truncates its result
+FILE=malloc://0x10000
+CMDS=<<EOF
+e asm.arch=gb
+e asm.bits=16
+aei
+wx cb20
+ar b=128
+ar f=240
+aes
+ar b
+ar f
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000090
+EOF
+RUN
+
+NAME=Game Boy SWAP resets N H C
+FILE=malloc://0x10000
+CMDS=<<EOF
+e asm.arch=gb
+e asm.bits=16
+aei
+wx cb36
+ar hl=0xc000
+ar f=240
+wx f0 @0xc000
+aes
+ar f
+ar hl
+EOF
+EXPECT=<<EOF
+0x00000000
+0x0000c000
+EOF
+RUN
+

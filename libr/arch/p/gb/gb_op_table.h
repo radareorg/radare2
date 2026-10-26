@@ -37,7 +37,7 @@ static gb_opcode gb_op[] = {
 	{ "dec c", GB_8BIT },
 	{ "ld c, 0x%02x", GB_8BIT + ARG_8 },
 	{ "rrca", GB_8BIT },
-	{ "stop", GB_8BIT },			//0x10
+	{ "stop", GB_8BIT + ARG_8 },		//0x10
 	{ "ld de, 0x%04x"	,GB_8BIT+ARG_16},
 	{ "ld [de], a"		,GB_8BIT },
 	{ "inc de", GB_8BIT },
