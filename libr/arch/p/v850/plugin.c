@@ -854,6 +854,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		}
 	}
 	switch (op->type) {
+	case R_ANAL_OP_TYPE_SWI:
+	case R_ANAL_OP_TYPE_TRAP:
 	case R_ANAL_OP_TYPE_MOV:
 		op->val = inst.value;
 		break;

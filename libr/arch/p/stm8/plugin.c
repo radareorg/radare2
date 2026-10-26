@@ -45,11 +45,19 @@ static bool stm8_op(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			break;
 		}
 	}
+	if (len == 1 && op->bytes[0] == 0x80) {
+		op->family = R_ANAL_OP_FAMILY_PRIV;
+	}
 	if (mask & R_ARCH_OP_MASK_ESIL) {
 		if ((len == 1 && op->bytes[0] == 0x42)
 				|| (len == 2 && op->bytes[0] == 0x90 && op->bytes[1] == 0x42)) {
 			const char *index = len == 1? "x": "y";
 			r_strbuf_setf (&op->esil, "a,0xff,%s,&,*,%s,=,0xee,cc,&,cc,:=", index, index);
+		} else if (len == 1 && op->bytes[0] == 0x80) {
+			r_strbuf_set (&op->esil, "1,sp,+,[1],cc,:=,2,sp,+,[1],a,="
+				",8,3,sp,+,[1],<<,4,sp,+,[1],|,x,="
+				",8,5,sp,+,[1],<<,6,sp,+,[1],|,y,="
+				",16,7,sp,+,[1],<<,8,8,sp,+,[1],<<,|,9,sp,+,[1],|,pc,:=,9,sp,+,sp,=");
 		} else if (len == 1 && op->bytes[0] == 0x9b) {
 			r_strbuf_set (&op->esil, "0x28,cc,|,cc,:=");
 		} else if (len == 1 && op->bytes[0] == 0x9a) {
