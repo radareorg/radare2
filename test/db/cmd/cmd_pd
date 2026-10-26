@@ -2641,3 +2641,29 @@ full32
 [0x00000000] 0x00000020
 EOF
 RUN
+
+NAME=disassembly signature shows inline and noreturn attributes
+FILE=malloc://256
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e asm.lines.fcn=false
+wx c0035fd6 @ 0x10
+af+ 0x10 fcn.attr
+afb+ 0x10 0x10 4
+s 0x10
+afia+ inline
+pdf~fcn.attr
+afia+ noreturn
+pdf~fcn.attr
+afia- inline
+pdf~fcn.attr
+afia- noreturn
+pdf~fcn.attr
+EOF
+EXPECT=<<EOF
+4: fcn.attr (); // inline
+4: fcn.attr (); // noreturn inline
+4: fcn.attr (); // noreturn
+4: fcn.attr ();
+EOF
+RUN
