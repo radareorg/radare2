@@ -489,6 +489,8 @@ typedef struct {
 
 typedef struct r_ref_manager_t RefManager;
 
+R_VEC_TYPE (RVecAnalAddr, ut64);
+
 typedef struct r_anal_t {
 	RArchConfig *config;
 	int lineswidth; // asm.lines.width
@@ -553,6 +555,8 @@ typedef struct r_anal_t {
 	REvent *ev;
 	RList/*<char *>*/ *imports; // global imports
 	RBitset *visited;
+	RVecAnalAddr tailcalls; // tail called functions deferred by fcn_depth
+	int fcn_depth; // nested r_anal_function walks
 	RStrConstPool constpool;
 	RList *leaddrs;
 	char *pincmd;

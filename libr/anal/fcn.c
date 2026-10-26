@@ -24,6 +24,9 @@
 // 256KB max function size
 #define MAX_FCN_SIZE (1024 * 256)
 
+// Tail called functions walked nested on the stack, about 4KB each
+#define MAX_TAILCALL_DEPTH 32
+
 // Max NOP count to stop analysis
 #define MAX_NOP_PREFIX_CNT 1024
 
@@ -1888,7 +1891,12 @@ noskip:
 					// using type-jump wont analyze the destination as a function
 					/// XXX RAnalFunction *fcn = r_anal_function_new (anal, op->jump);
 					RAnalFunction *nfcn = r_anal_create_function (anal, NULL, op->jump, 0, NULL);
-					r_anal_function (anal, nfcn? nfcn: fcn, op->jump, R_ANAL_REF_TYPE_CALL);
+					if (anal->fcn_depth < MAX_TAILCALL_DEPTH) {
+						r_anal_function (anal, nfcn? nfcn: fcn, op->jump, R_ANAL_REF_TYPE_CALL);
+					} else if (nfcn) {
+						// deeper chains are walked by the outermost call instead of nesting on the stack
+						RVecAnalAddr_push_back (&anal->tailcalls, &op->jump);
+					}
 					// cmd.fcn.new may have written io, so the next block reads it again
 					w->ra.cache_addr = UT64_MAX;
 #endif
@@ -2715,13 +2723,27 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, int reftyp
 		const int frame = (shadow > 0)? shadow + r_anal_cc_raslot (anal, r_anal_cc_wordsize (anal, fcn->callconv)): 0;
 		fcn->stack = fcn->maxstack = fcn->reg_save_area = frame;
 	}
+	anal->fcn_depth++;
 	int ret = r_anal_function_bb (anal, fcn, addr);
+	anal->fcn_depth--;
 	if (ret < 0) {
 		R_LOG_DEBUG ("Failed to analyze basic block at 0x%"PFMT64x, addr);
 	}
 	// Notify plugins after all basic blocks are analyzed
 	if (ret >= 0 || ret == R_ANAL_RET_END) {
 		r_anal_plugin_action (anal, R_ANAL_PLUGIN_ACTION_ANALYZE_FCN, fcn);
+	}
+	if (!anal->fcn_depth) {
+		anal->fcn_depth++;
+		while (!RVecAnalAddr_empty (&anal->tailcalls)) {
+			const ut64 at = *RVecAnalAddr_last (&anal->tailcalls);
+			RVecAnalAddr_pop_back (&anal->tailcalls);
+			RAnalFunction *tfcn = r_anal_get_function_at (anal, at);
+			if (tfcn && r_list_empty (tfcn->bbs)) {
+				r_anal_function (anal, tfcn, at, R_ANAL_REF_TYPE_CALL);
+			}
+		}
+		anal->fcn_depth--;
 	}
 	return ret;
 }

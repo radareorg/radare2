@@ -14,3 +14,19 @@ fcn.00401795 0x40182e [CODE:--x] jmp fcn.00401742
 |           0x00401743      53             push rbx
 EOF
 RUN
+
+NAME=af walks long chains of tail calls without nesting them on the stack
+FILE=malloc://24576
+ARGS=-a x86 -b 64
+CMDS=<<EOF2
+b 24000
+wX 554889e5eb00
+af
+afl~?
+afi @ 0x5dba~^size
+EOF2
+EXPECT=<<EOF2
+4000
+size: 6
+EOF2
+RUN

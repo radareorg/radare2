@@ -313,6 +313,7 @@ R_API void r_anal_free(RAnal *a) {
 	if (a->visited) {
 		r_bitset_free (a->visited);
 	}
+	RVecAnalAddr_fini (&a->tailcalls);
 	r_anal_hint_storage_fini (a);
 	r_anal_xrefs_free (a);
 	r_th_lock_free (a->lock);
