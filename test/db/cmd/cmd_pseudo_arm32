@@ -103,3 +103,27 @@ refptr: 2
 refptr: 8
 EOF
 RUN
+
+NAME=arm32 pc-relative ldrb/ldrh/ldrd with negative offset refptr follows the access width
+FILE=malloc://64
+ARGS=-a arm -b 16
+CMDS=<<EOF
+wx 11223344556677881ff808003ff80c005fe90401
+s 8
+pd 3
+e asm.esil=true
+ao~refptr
+s 0xc
+ao~refptr
+s 0x10
+ao~refptr
+EOF
+EXPECT=<<EOF
+            0x00000008      1ff80800       ldrb.w r0, [0x00000004]     ; [0x4:1]=85
+            0x0000000c      3ff80c00       ldrh.w r0, [0x00000004]     ; [0x4:2]=0x6655
+            0x00000010      5fe90401       ldrd r0, r1, [0x00000004]   ; [0x4:8]=0x8f81f88776655
+refptr: 1
+refptr: 2
+refptr: 8
+EOF
+RUN
