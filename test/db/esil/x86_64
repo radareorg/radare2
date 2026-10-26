@@ -2608,3 +2608,116 @@ esilcost: 16
 esil: rdi,[4],rdi,4,+,[4],rdi,[4],0xffffffff,eax,&,^,rdi,4,+,[4],0xffffffff,edx,&,^,|,0,==,$z,zf,:=,zf,?{,ebx,rdi,=[4],ecx,rdi,4,+,=[4],},zf,!,?{,rdx,=,rax,=,}
 EOF
 RUN
+
+NAME=lock cmpxchg16b equal sets zf and stores rbx:rcx into m128
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx f0480fc70f @ 0
+aei
+ar rdi=0x100
+ar rax=0x1122
+ar rdx=0x3344
+ar rbx=0xdead
+ar rcx=0xbeef
+wx 2211000000000000 @ 0x100
+wx 4433000000000000 @ 0x108
+s 0
+aeip
+aes
+ar zf
+p8 16 @ 0x100
+EOF
+EXPECT=<<EOF
+0x00000001
+adde000000000000efbe000000000000
+EOF
+RUN
+
+NAME=lock cmpxchg16b unequal loads m128 into rdx:rax and clears zf
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx f0480fc70f @ 0
+aei
+ar rdi=0x100
+ar rax=0x1122
+ar rdx=0x3344
+wx 9999000000000000 @ 0x100
+wx 7777000000000000 @ 0x108
+s 0
+aeip
+aes
+ar zf
+ar rax
+ar rdx
+p8 16 @ 0x100
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00009999
+0x00007777
+99990000000000007777000000000000
+EOF
+RUN
+
+NAME=lock cmpxchg16b rax-relative addressing uses staged halves
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 480fc708 @ 0
+aei
+ar rax=0x100
+wx 2001000000000000 @ 0x100
+wx 7777000000000000 @ 0x108
+s 0
+aeip
+aes
+ar zf
+ar rax
+ar rdx
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000120
+0x00007777
+EOF
+RUN
+
+NAME=lock cmpxchg16b rdx+rax addressing uses staged halves
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 480fc70c02 @ 0
+aei
+ar rax=0xf8
+ar rdx=0x8
+wx 2001000000000000 @ 0x100
+wx 7777000000000000 @ 0x108
+s 0
+aeip
+aes
+ar zf
+ar rax
+ar rdx
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000120
+0x00007777
+EOF
+RUN
+
+NAME=lock cmpxchg16b generated esil text
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx f0480fc70f
+ao~opcode,esil
+EOF
+EXPECT=<<EOF
+opcode: lock cmpxchg16b xmmword [rdi]
+esilcost: 32
+esil: rdi,[8],rdi,8,+,[8],rdi,[8],rax,^,rdi,8,+,[8],rdx,^,|,0,==,$z,zf,:=,zf,?{,rbx,rdi,=[8],rcx,rdi,8,+,=[8],},zf,!,?{,rdx,=,rax,=,}
+EOF
+RUN

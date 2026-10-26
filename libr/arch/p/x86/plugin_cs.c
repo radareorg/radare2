@@ -2503,6 +2503,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			R_FREE (src);
 		}
 		break;
+	case X86_INS_CMPXCHG16B:
 	case X86_INS_CMPXCHG8B:
 		// Compare-exchange an implicit register pair against memory:
 		//   if (mem == acc_hi:acc_lo) { zf = 1; mem = store_hi:store_lo; }
@@ -4345,6 +4346,7 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		break;
 	case X86_INS_CMPXCHG: /* compare-exchange acc/dst */
 	case X86_INS_CMPXCHG8B: /* compare-exchange rdx:rax / m64 */
+	case X86_INS_CMPXCHG16B: /* compare-exchange rdx:rax / m128 */
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->family = R_ANAL_OP_FAMILY_CPU;
 		break;
