@@ -83,7 +83,7 @@ static bool parse_disp(const char **sp, st64 *disp_out, int *ra_out) {
 /* D-form: |opcd 6|RT 5|RA 5|D 16|
  * SIMM/UIMM is the low 16 bits. Caller masks if needed. */
 static ut32 enc_d(int op, int rt, int ra, int simm) {
-	return ((op & 0x3f) << 26) |
+	return (((ut32)op & 0x3f) << 26) |
 		((rt & 0x1f) << 21) |
 		((ra & 0x1f) << 16) |
 		(simm & 0xffff);
@@ -93,7 +93,7 @@ static ut32 enc_d(int op, int rt, int ra, int simm) {
  * DS field is the upper 14 bits of a 16-bit displacement; low 2 bits must
  * be zero. xo selects the variant (0=ld/std, 1=ldu/stdu, 2=lwa). */
 static ut32 enc_ds(int op, int rt, int ra, int ds, int xo) {
-	return ((op & 0x3f) << 26) |
+	return (((ut32)op & 0x3f) << 26) |
 		((rt & 0x1f) << 21) |
 		((ra & 0x1f) << 16) |
 		((ds & 0xfffc)) |
@@ -102,7 +102,7 @@ static ut32 enc_ds(int op, int rt, int ra, int ds, int xo) {
 
 /* X-form: |opcd 6|RT 5|RA 5|RB 5|XO 10|Rc 1| */
 static ut32 enc_x(int op, int rt, int ra, int rb, int xo, int rc) {
-	return ((op & 0x3f) << 26) |
+	return (((ut32)op & 0x3f) << 26) |
 		((rt & 0x1f) << 21) |
 		((ra & 0x1f) << 16) |
 		((rb & 0x1f) << 11) |
@@ -112,7 +112,7 @@ static ut32 enc_x(int op, int rt, int ra, int rb, int xo, int rc) {
 
 /* XO-form: |opcd 6|RT 5|RA 5|RB 5|OE 1|XO 9|Rc 1| */
 static ut32 enc_xo(int op, int rt, int ra, int rb, int oe, int xo, int rc) {
-	return ((op & 0x3f) << 26) |
+	return (((ut32)op & 0x3f) << 26) |
 		((rt & 0x1f) << 21) |
 		((ra & 0x1f) << 16) |
 		((rb & 0x1f) << 11) |
@@ -124,7 +124,7 @@ static ut32 enc_xo(int op, int rt, int ra, int rb, int oe, int xo, int rc) {
 /* B-form: |opcd 6|BO 5|BI 5|BD 14|AA 1|LK 1|
  * BD is signed 14-bit byte displacement (low 2 bits zero, range +/- 32 KiB). */
 static ut32 enc_b(int op, int bo, int bi, int bd, int aa, int lk) {
-	return ((op & 0x3f) << 26) |
+	return (((ut32)op & 0x3f) << 26) |
 		((bo & 0x1f) << 21) |
 		((bi & 0x1f) << 16) |
 		(bd & 0xfffc) |
@@ -135,7 +135,7 @@ static ut32 enc_b(int op, int bo, int bi, int bd, int aa, int lk) {
 /* I-form: |opcd 6|LI 24|AA 1|LK 1|
  * LI is signed 24-bit byte displacement (low 2 bits zero, range +/- 32 MiB). */
 static ut32 enc_i(int op, int li, int aa, int lk) {
-	return ((op & 0x3f) << 26) |
+	return (((ut32)op & 0x3f) << 26) |
 		(li & 0x3fffffc) |
 		((aa & 1) << 1) |
 		(lk & 1);
@@ -144,7 +144,7 @@ static ut32 enc_i(int op, int li, int aa, int lk) {
 /* XL-form: |opcd 6|BO 5|BI 5|---5|XO 10|LK 1|
  * Used for blr, bctr, bctrl. */
 static ut32 enc_xl(int op, int bo, int bi, int xo, int lk) {
-	return ((op & 0x3f) << 26) |
+	return (((ut32)op & 0x3f) << 26) |
 		((bo & 0x1f) << 21) |
 		((bi & 0x1f) << 16) |
 		((xo & 0x3ff) << 1) |
@@ -158,7 +158,7 @@ static ut32 enc_xfx(int op, int rt, int spr, int xo) {
 	int spr_lo = spr & 0x1f;
 	int spr_hi = (spr >> 5) & 0x1f;
 	int spr_field = (spr_lo << 5) | spr_hi;
-	return ((op & 0x3f) << 26) |
+	return (((ut32)op & 0x3f) << 26) |
 		((rt & 0x1f) << 21) |
 		((spr_field & 0x3ff) << 11) |
 		((xo & 0x3ff) << 1);
