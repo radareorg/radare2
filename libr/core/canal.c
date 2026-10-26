@@ -4223,7 +4223,7 @@ R_API bool r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	}
 	r_list_foreach (core->anal->fcns, iter, fcni) {
 		if (fcni->type & (R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_FCN |
-						  R_ANAL_FCN_TYPE_LOC) &&
+						  R_ANAL_FCN_TYPE_LOC | R_ANAL_FCN_TYPE_INT) &&
 			(addr == UT64_MAX || r_anal_get_fcn_in (core->anal, addr, 0) == fcni)) {
 			if (addr == UT64_MAX && (from != UT64_MAX && to != UT64_MAX)) {
 				if (fcni->addr < from || fcni->addr > to) {
