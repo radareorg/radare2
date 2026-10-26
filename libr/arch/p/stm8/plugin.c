@@ -45,6 +45,17 @@ static bool stm8_op(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			break;
 		}
 	}
+	if (mask & R_ARCH_OP_MASK_ESIL) {
+		if ((len == 1 && op->bytes[0] == 0x42)
+				|| (len == 2 && op->bytes[0] == 0x90 && op->bytes[1] == 0x42)) {
+			const char *index = len == 1? "x": "y";
+			r_strbuf_setf (&op->esil, "a,0xff,%s,&,*,%s,=,0xee,cc,&,cc,:=", index, index);
+		} else if (len == 1 && op->bytes[0] == 0x9b) {
+			r_strbuf_set (&op->esil, "0x28,cc,|,cc,:=");
+		} else if (len == 1 && op->bytes[0] == 0x9a) {
+			r_strbuf_set (&op->esil, "0xf7,cc,&,0x20,|,cc,:=");
+		}
+	}
 	op->size = len;
 	return op->size;
 }
