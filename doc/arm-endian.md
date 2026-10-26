@@ -25,4 +25,6 @@ AArch32 is different: BE32 (legacy, ARMv5-) has big-endian instruction
 words and follows `cfg.bigendian`; BE8 AArch32 (ARMv6+) has LE instructions
 and BE data. For ELF, `EF_ARM_BE8` in `e_flags` is exposed through `asm.abi`,
 and the ARM decoders use it to decode instructions as little-endian while
-leaving `cfg.bigendian` unchanged for data reads.
+leaving `cfg.bigendian` unchanged for data reads. The GNU backend sets
+`info->endian_code` for the instruction stream and keeps `info->endian` on the
+data byte order, which is the same split binutils uses for BE8 in `arm-dis.c`.

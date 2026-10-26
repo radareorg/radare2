@@ -277,7 +277,13 @@ static int disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 	obj.symbol_at_address_func = &symbol_at_address;
 	obj.memory_error_func = &memory_error_func;
 	obj.print_address_func = &generic_print_address_func;
-	obj.endian = !arm_code_is_be (as->config);
+	// BE8 keeps the instruction stream little-endian inside a big-endian
+	// object, so code and data endianness are tracked separately. binutils
+	// consults info->endian_code for instructions and info->endian for data.
+	obj.endian = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config)
+		? BFD_ENDIAN_BIG: BFD_ENDIAN_LITTLE;
+	obj.endian_code = arm_code_is_be (as->config)
+		? BFD_ENDIAN_BIG: BFD_ENDIAN_LITTLE;
 	obj.fprintf_func = &generic_fprintf_func;
 	obj.stream = insn_buffer;
 	obj.bytes_per_chunk = obj.bytes_per_line = (bits / 8);

@@ -20,3 +20,106 @@ endian   big
 0x00010be8  0xd358092b                                   .X.+
 EOF
 RUN
+
+NAME=ELF: ARM BE8 abi makes the GNU backend decode code as little-endian, data stays big
+FILE=bins/elf/armeb_hello_static
+CMDS=<<EOF
+e asm.comments=false
+e asm.arch=arm.gnu
+iI~^endian
+iI~^abi
+?e --
+pd 4 @ entry0
+?e --
+pxw 4 @ 0x10be8
+EOF
+EXPECT=<<EOF
+endian   big
+abi      eabi5 be8
+--
+            ;-- entry0:
+            0x00010824      4ff0000b       mov.w fp, 0
+            0x00010828      4ff0000e       mov.w lr, 0
+            0x0001082c      02bc           pop {r1}
+            0x0001082e      6a46           mov r2, sp
+--
+0x00010be8  0xd358092b                                   .X.+
+EOF
+RUN
+
+NAME=arm raw: be8 in asm.abi flips only the code endian (capstone)
+FILE=malloc://64
+CMDS=<<EOF
+e asm.comments=false
+e asm.arch=arm
+e asm.bits=16
+e cfg.bigendian=true
+wx 4ff0000b4ff0000e @ 0
+pd 2 @ 0
+?e --
+e asm.abi=eabi5 be8
+pd 2 @ 0
+?e --
+e asm.abi=
+pd 2 @ 0
+EOF
+EXPECT=<<EOF
+            0x00000000      4ff0           ldr r7, [0x000003c4]
+            0x00000002      000b           movs r3, r1
+--
+            0x00000000      4ff0000b       mov.w fp, 0
+            0x00000004      4ff0000e       mov.w lr, 0
+--
+            0x00000000      4ff0           ldr r7, [0x000003c4]
+            0x00000002      000b           movs r3, r1
+EOF
+RUN
+
+NAME=arm raw: be8 in asm.abi reaches the GNU backend through endian_code
+FILE=malloc://64
+CMDS=<<EOF
+e asm.comments=false
+e asm.arch=arm.gnu
+e asm.bits=16
+e cfg.bigendian=true
+wx 4ff0000b4ff0000e @ 0
+pd 2 @ 0
+?e --
+e asm.abi=eabi5 be8
+pd 2 @ 0
+?e --
+e asm.abi=
+pd 2 @ 0
+EOF
+EXPECT=<<EOF
+            0x00000000      4ff0           ldr r7, [0x000003c4] ; (0x000003c4)
+            0x00000002      000b           movs r3, r1
+--
+            0x00000000      4ff0000b       mov.w fp, 0
+            0x00000004      4ff0000e       mov.w lr, 0
+--
+            0x00000000      4ff0           ldr r7, [0x000003c4] ; (0x000003c4)
+            0x00000002      000b           movs r3, r1
+EOF
+RUN
+
+NAME=aarch64 BE8: GNU backend decodes instructions as little-endian
+FILE=bins/elf/aarch64be_min
+CMDS=<<EOF
+e asm.comments=false
+e asm.arch=arm.gnu
+iI~^endian
+?e --
+pd 4 @ entry0
+EOF
+EXPECT=<<EOF
+endian   big
+--
+            ;-- entry0:
+            ;-- _start:
+            0x004000f0      fd7bbfa9       stp x29, x30, [sp, #-16]!
+            0x004000f4      a80b80d2       mov x8, 0x5d
+            0x004000f8      fd030091       mov x29, sp
+            0x004000fc      f5ffff97       bl sym.sub3.constprop.0
+EOF
+RUN
