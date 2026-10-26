@@ -357,8 +357,8 @@ static void append_load_relocs(RBinFile *bf, RBinObject *bo, const RSkipList *re
 		RBinReloc *ptr = RVecRBinReloc_emplace_back (ret);
 		ptr->type = R_BIN_RELOC_64;
 		ptr->ntype = r->ntype;
-		ptr->vaddr = r->paddr + mo->baddr;
-		ptr->paddr = r->vaddr;
+		ptr->vaddr = MACH0_(paddr_to_vaddr) (mo, r->paddr);
+		ptr->paddr = r->paddr;
 		ptr->addend = r->vaddr;
 	}
 }
@@ -552,14 +552,17 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 			if (count-- == 0) {
 				break;
 			}
-			ut64 paddr = r->paddr + mo->baddr;
+			ut64 vaddr = MACH0_(paddr_to_vaddr) (mo, r->paddr);
+			if (!vaddr) {
+				continue;
+			}
 			r_write_ble64 (buf, r->vaddr, false);
-			if (iob->read_at (io, paddr, obuf, 8) != 8) {
+			if (iob->read_at (io, vaddr, obuf, 8) != 8) {
 				continue;
 			}
 			if (memcmp (buf, obuf, 8)) {
-				if (!iob->overlay_write_at (io, paddr, buf, 8)) {
-					R_LOG_ERROR ("write error at 0x%"PFMT64x, paddr);
+				if (!iob->overlay_write_at (io, vaddr, buf, 8)) {
+					R_LOG_ERROR ("write error at 0x%"PFMT64x, vaddr);
 				}
 			}
 		}
