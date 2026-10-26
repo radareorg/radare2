@@ -63,6 +63,7 @@ static int fs_io_read(RFSFile *file, ut64 addr, int len) {
 			R_FREE (res);
 			return -1;
 		}
+		free (file->data);
 		file->data = (ut8 *) calloc (1, len);
 		if (!file->data) {
 			R_FREE (res);

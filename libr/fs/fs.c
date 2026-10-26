@@ -354,11 +354,12 @@ R_API int r_fs_write(RFS *fs, RFSFile *file, ut64 addr, const ut8 *data, int len
 R_API int r_fs_read(RFS *fs, RFSFile *file, ut64 addr, int len) {
 	R_RETURN_VAL_IF_FAIL (fs && file && len > 0, -1);
 	if (file->p && file->p->read) {
+		// some plugins write len bytes into the existing buffer, so it must be
+		// sized for every request, not only for the first one
+		free (file->data);
+		file->data = calloc (1, (size_t)len + 1);
 		if (!file->data) {
-			file->data = calloc (1, (size_t)len + 1);
-			if (!file->data) {
-				return -1;
-			}
+			return -1;
 		}
 		return file->p->read (file, addr, len);
 	}
