@@ -858,7 +858,7 @@ static void set_ppc_fields(vle_t *v, const ppc_t* p, ut32 data) {
 
 static vle_t *find_ppc(const ut8* buffer) {
 	ut32 i;
-	ut32 data = (buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3];
+	ut32 data = r_read_be32 (buffer);
 	const ppc_t* p = NULL;
 	const ut32 size = sizeof (ppc_ops) / sizeof (ppc_t);
 	for (i = 0; i < size; i++) {
@@ -878,7 +878,7 @@ static vle_t *find_ppc(const ut8* buffer) {
 
 static vle_t *find_e(const ut8* buffer) {
 	ut32 i;
-	ut32 data = (buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3];
+	ut32 data = r_read_be32 (buffer);
 	const e_vle_t* p = NULL;
 	const ut32 size = sizeof (e_ops) / sizeof (e_vle_t);
 	for (i = 0; i < size; i++) {
