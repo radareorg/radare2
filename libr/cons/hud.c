@@ -5,7 +5,6 @@
 
 typedef struct {
 	RCons *cons;
-	HtPP *ht;
 	RLineHud *hud;
 	char user_input[HUD_BUF_SIZE + 1];
 	RList *list;
@@ -48,6 +47,38 @@ R_API char *r_cons_hud_file(RCons *cons, const char *f) {
 	return NULL;
 }
 
+static char *hud_string(RCons *cons, const char *s, bool line_mode) {
+	char *text = strdup (s);
+	if (!text) {
+		return NULL;
+	}
+	if (line_mode) {
+		r_str_replace_ch (text, '\r', ' ', true);
+		r_str_replace_ch (text, '\t', ' ', true);
+	}
+	r_str_ansi_strip (text);
+	if (!line_mode) {
+		trim_repeated_spaces (text);
+	}
+	RList *lines = r_list_new ();
+	if (!lines) {
+		free (text);
+		return NULL;
+	}
+	char *line = text, *end;
+	while ((end = strchr (line, '\n'))) {
+		*end = 0;
+		if (*line && *line != '#') {
+			r_list_append (lines, line);
+		}
+		line = end + 1;
+	}
+	char *ret = r_cons_hud (cons, lines, NULL);
+	r_list_free (lines);
+	free (text);
+	return ret;
+}
+
 // Display a buffer in the hud (splitting it line-by-line and ignoring
 // the lines starting with # ) returns the selected line
 R_API char *r_cons_hud_line_string(RCons *cons, const char *s) {
@@ -56,37 +87,7 @@ R_API char *r_cons_hud_line_string(RCons *cons, const char *s) {
 		R_LOG_ERROR ("Hud mode requires scr.interactive=true");
 		return NULL;
 	}
-	char *os, *track, *ret, *o = strdup (s);
-	if (!o) {
-		return NULL;
-	}
-	r_str_replace_ch (o, '\r', ' ', true);
-	r_str_replace_ch (o, '\t', ' ', true);
-	r_str_ansi_strip (o);
-	RList *fl = r_list_new ();
-	int i;
-	if (!fl) {
-		free (o);
-		return NULL;
-	}
-	fl->free = free;
-	for (os = o, i = 0; o[i]; i++) {
-		if (o[i] == '\n') {
-			o[i] = 0;
-			if (*os && *os != '#') {
-				track = strdup (os);
-				if (!r_list_append (fl, track)) {
-					free (track);
-					break;
-				}
-			}
-			os = o + i + 1;
-		}
-	}
-	ret = r_cons_hud (cons, fl, NULL);
-	free (o);
-	r_list_free (fl);
-	return ret;
+	return hud_string (cons, s, true);
 }
 
 // Display a buffer in the hud (splitting it line-by-line and ignoring
@@ -97,36 +98,7 @@ R_API char *r_cons_hud_string(RCons *cons, const char *s) {
 		R_LOG_ERROR ("Hud mode requires scr.interactive=true");
 		return NULL;
 	}
-	char *os, *track, *ret, *o = strdup (s);
-	if (!o) {
-		return NULL;
-	}
-	r_str_ansi_strip (o);
-	trim_repeated_spaces (o);
-	RList *fl = r_list_new ();
-	int i;
-	if (!fl) {
-		free (o);
-		return NULL;
-	}
-	fl->free = free;
-	for (os = o, i = 0; o[i]; i++) {
-		if (o[i] == '\n') {
-			o[i] = 0;
-			if (*os && *os != '#') {
-				track = strdup (os);
-				if (!r_list_append (fl, track)) {
-					free (track);
-					break;
-				}
-			}
-			os = o + i + 1;
-		}
-	}
-	ret = r_cons_hud (cons, fl, NULL);
-	free (o);
-	r_list_free (fl);
-	return ret;
+	return hud_string (cons, s, false);
 }
 
 #if 0
@@ -290,11 +262,6 @@ static RList *hud_filter(RHudData *data, bool simple, int selected_index) {
 	return res;
 }
 
-static void mht_free_kv(HtPPKv *kv) {
-	free (kv->key);
-	r_list_free (kv->value);
-}
-
 static void hud_render_prompt(RCons *cons, const char *user_input, RList *filtered_list) {
 	int w = r_cons_get_size (cons, NULL);
 	size_t ss = strlen (user_input);
@@ -335,14 +302,10 @@ static void hud_render(RHudData *data) {
 	r_list_foreach (filtered_list, iter, row) {
 		int len = r_str_ansi_len (row);
 		if (len > w) {
-			char *trimmed = strdup (row);
-			char *p = (char *)r_str_ansi_chrn (trimmed, w);
+			char *p = (char *)r_str_ansi_chrn (row, w);
 			*p = 0;
-			r_cons_printf (cons, "%s\n", trimmed);
-			free (trimmed);
-		} else {
-			r_cons_printf (cons, "%s\n", row);
 		}
+		r_cons_printf (cons, "%s\n", row);
 	}
 	r_list_free (filtered_list);
 	r_cons_flush (cons);
@@ -361,7 +324,6 @@ R_API char *r_cons_hud(RCons *cons, RList *list, const char *prompt) {
 	RConsEvent old_event_interrupt = cons->context->event_interrupt;
 	void *old_event_data = cons->event_data;
 
-	HtPP *ht = ht_pp_new (NULL, (HtPPKvFreeFunc)mht_free_kv, (HtPPCalcSizeV)strlen);
 	RLineHud *hud = (RLineHud *)R_NEW0 (RLineHud);
 	hud->activate = 0;
 	hud->vi = 0;
@@ -378,7 +340,6 @@ R_API char *r_cons_hud(RCons *cons, RList *list, const char *prompt) {
 
 	RHudData *data = R_NEW (RHudData);
 	data->cons = cons;
-	data->ht = ht;
 	data->hud = hud;
 	data->list = list;
 	data->selected_entry = NULL;
@@ -414,7 +375,6 @@ R_API char *r_cons_hud(RCons *cons, RList *list, const char *prompt) {
 	r_cons_show_cursor (cons, true);
 	r_cons_enable_mouse (cons, false);
 	r_cons_set_raw (cons, false);
-	ht_pp_free (ht);
 	free (data->selected_entry);
 	free (data);
 	return se;
