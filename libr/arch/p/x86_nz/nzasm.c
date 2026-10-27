@@ -1734,6 +1734,46 @@ static int opcmov(RArchSession *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+// movsxd r64, r/m32 (REX.W 63 /r)
+static int opmovsxd(RArchSession *a, ut8 *data, const Opcode *op) {
+	is_valid_registers (op);
+	const Operand *dst = &op->operands[0];
+	const Operand *src = &op->operands[1];
+	if (a->config->bits != 64 || op->operands_count != 2 || (dst->type & OT_MEMORY)
+			|| !(dst->type & OT_GPREG & OT_REGTYPE) || !(dst->type & OT_QWORD)) {
+		return -1;
+	}
+	ut8 modrm[16];
+	ut8 rex = dst->extended? 0xc: 8;
+	int n;
+	int l = 0;
+	if (src->type & OT_MEMORY) {
+		if (src->explicit_size && !(src->dest_size & OT_DWORD)) {
+			return -1;
+		}
+		n = encode_mem (modrm, dst->reg, src, &rex);
+		if (n < 0) {
+			return -1;
+		}
+		if (src->regs[0] != X86R_UNDEFINED && !(src->reg_size & OT_QWORD)) {
+			data[l++] = 0x67; // 32-bit address registers
+		}
+	} else {
+		if (!(src->type & OT_GPREG & OT_REGTYPE) || !(src->type & OT_DWORD)) {
+			return -1;
+		}
+		if (src->extended) {
+			rex |= 1;
+		}
+		modrm[0] = 0xc0 | (dst->reg & 7) << 3 | (src->reg & 7);
+		n = 1;
+	}
+	data[l++] = 0x40 | rex;
+	data[l++] = 0x63;
+	memcpy (data + l, modrm, n);
+	return l + n;
+}
+
 static int opmovx(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
@@ -1765,6 +1805,10 @@ static int opmovx(RArchSession *a, ut8 *data, const Opcode *op) {
 	// r16/r32/r64 from an 8 or 16-bit register or memory operand
 	if (op->operands_count != 2 || (dst->type & (OT_MEMORY | OT_BYTE)) || !(dst->type & OT_GPREG & OT_REGTYPE)) {
 		return -1;
+	}
+	if (opc == 0xbe && (dst->type & OT_QWORD)
+			&& ((src->type & OT_MEMORY)? (src->explicit_size && (src->dest_size & OT_DWORD)): (src->type & OT_DWORD))) {
+		return opmovsxd (a, data, op); // movsx r64, r/m32 is movsxd
 	}
 	if (src->type & OT_MEMORY) {
 		if (src->explicit_size && !(src->dest_size & (OT_BYTE | OT_WORD))) {
@@ -5818,6 +5862,7 @@ static const LookupTable oplookup[] = {
 	{ "movsw", 0, NULL, 0x66a5, 2},
 	{ "movzx", 0, &opmovx, 0},
 	{ "movsx", 0, &opmovx, 0},
+	{ "movsxd", 0, &opmovsxd, 0},
 	{ "movabs", 0, &opmovabs, 0},
 	{ "mul", 0, &opmul, 0},
 	{ "mwait", 0, NULL, 0x0f01c9, 3},

@@ -20,6 +20,11 @@ a "movzx eax, byte [eax]" 670fb600
 a "movsx ax, byte [rbx + 8]" 660fbe4308
 a "movsx ax, bl" 660fbec3
 a "movzx eax, sil" 400fb6c6
+ad "movsxd rax, ecx" 4863c1
+a "movsxd r8, r9d" 4d63c1
+a "movsxd r12, dword [r13 + rax*4 + 8]" 4d63648508
+a "movsxd rax, dword [eax]" 67486300
+a "movsx rax, ecx" 4863c1
 d "lea rax, [rip + 0xff9]" 488d05f90f0000
 ad "nop" 90
 ad "mov r11, qword [rbp + 8]" 4c8b5d08
