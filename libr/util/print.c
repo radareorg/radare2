@@ -60,9 +60,41 @@ R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions) {
 R_API char *r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
 	R_RETURN_VAL_IF_FAIL (p, NULL);
 	RStrBuf *sb = r_strbuf_new ("");
-	size_t i, j;
-	int cols = (p->consb.get_size && p->consb.cons) ? p->consb.get_size (p->consb.cons, NULL) : 78;
-	int rows = height > 0 ? height : 10;
+	if (!sb) {
+		return NULL;
+	}
+	const int cols = (p->consb.get_size && p->consb.cons) ? p->consb.get_size (p->consb.cons, NULL) : 78;
+	// row levels are 255 - i * (255 / rows), which needs at least one step per row
+	const int rows = height > 0 ? R_MIN (height, 255) : 10;
+	if (!buf || len < 1 || cols < 1) {
+		return r_strbuf_drain (sb);
+	}
+	// reserve room on the right for the value ruler: " | ff"
+	const int ruler_width = 5;
+	// one plot column next to the ruler is still useful
+	const bool ruler = cols > ruler_width;
+	const int plot_cols = ruler ? cols - ruler_width : cols;
+	// fold every sample into its plot column, keeping the peak, so squeezing never drops one
+	ut8 *peaks = malloc (plot_cols);
+	if (!peaks) {
+		r_strbuf_free (sb);
+		return NULL;
+	}
+	int i, j;
+	for (j = 0; j < plot_cols; j++) {
+		const ut64 from = (ut64)j * len / plot_cols;
+		ut64 to = (ut64)(j + 1) * len / plot_cols;
+		if (to <= from) {
+			// fewer samples than columns: stretch the sample over several columns
+			to = from + 1;
+		}
+		ut8 peak = 0;
+		ut64 k;
+		for (k = from; k < to; k++) {
+			peak = R_MAX (peak, buf[k]);
+		}
+		peaks[j] = peak;
+	}
 	bool colors = (p->flags & R_PRINT_FLAGS_COLOR) && p->consb.cons;
 	const bool useutf8 = p->flags & R_PRINT_FLAGS_USEUTF8;
 	const char *vline = useutf8 ? RUNE_LINE_VERT : "|";
@@ -79,19 +111,13 @@ R_API char *r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
 	const char *line = p->histblock ? block : vline;
 	const char *hit_suffix = (colors || p->histblock) ? Color_RESET : "";
 	bool has_color = colors || p->histblock;
-	// reserve room on the right for the value ruler: " | ff"
-	const int ruler_width = 5;
-	const bool ruler = cols > ruler_width * 2;
-	if (ruler) {
-		cols -= ruler_width;
-	}
 	for (i = 0; i < rows; i++) {
-		size_t threshold = i * (0xff / rows);
+		// a bar reaches a row when its value is at least the level the ruler shows for it
+		const ut8 level = 255 - i * (255 / rows);
 		const char *hit_prefix = colors ? kol[i * 5 / rows] : (p->histblock ? Color_BGGRAY : "");
 		bool is_bottom = (i + 1 == rows);
-		for (j = 0; j < cols; j++) {
-			size_t realJ = j * len / cols;
-			if (255 - buf[realJ] < threshold || (colors && is_bottom)) {
+		for (j = 0; j < plot_cols; j++) {
+			if (peaks[j] >= level || (colors && is_bottom)) {
 				if (has_color) {
 					r_strbuf_appendf (sb, "%s%s%s", hit_prefix, line, hit_suffix);
 				} else {
@@ -104,10 +130,11 @@ R_API char *r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
 			}
 		}
 		if (ruler) {
-			r_strbuf_appendf (sb, " %s %02x", vline, (ut8) (255 - threshold));
+			r_strbuf_appendf (sb, " %s %02x", vline, level);
 		}
 		r_strbuf_append (sb, "\n");
 	}
+	free (peaks);
 	return r_strbuf_drain (sb);
 }
 

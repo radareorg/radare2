@@ -35,6 +35,91 @@ a5
 EOF
 RUN
 
+NAME=p== keeps an isolated peak when squeezing
+FILE=-
+CMDS=<<EOF
+e scr.color=0
+e scr.hist.block=false
+e scr.utf8=false
+e scr.cols=80
+wx ff @ 79
+p== 80~:0
+EOF
+EXPECT=<<EOF
+                                                                          | | ff
+EOF
+RUN
+
+NAME=p== bar reaches the row matching its value
+FILE=-
+CMDS=<<EOF
+e scr.color=0
+e scr.hist.block=false
+e scr.utf8=false
+e scr.cols=20
+wx edededededededededededededededed
+p== 16~:0
+p== 16~:1
+EOF
+EXPECT=<<EOF
+                | ff
+||||||||||||||| | ed
+EOF
+RUN
+
+NAME=p== zero input draws only the baseline
+FILE=-
+CMDS=<<EOF
+e scr.color=0
+e scr.hist.block=false
+e scr.utf8=false
+e scr.cols=20
+wx 00000000000000000000000000000000
+p== 16~:0
+p== 16~:13
+EOF
+EXPECT=<<EOF
+                | ff
+_______________ | 15
+EOF
+RUN
+
+NAME=p== ruler needs one plot column
+FILE=-
+CMDS=<<EOF
+e scr.color=0
+e scr.hist.block=false
+e scr.utf8=false
+wx 00112233445566778899aabbccddeeff
+e scr.cols=5
+p== 16~:0
+e scr.cols=6
+p== 16~:0
+EOF
+EXPECT=<<EOF
+    |
+| | ff
+EOF
+RUN
+
+NAME=p== ruler needs one plot column with utf8
+FILE=-
+CMDS=<<EOF
+e scr.color=0
+e scr.hist.block=false
+e scr.utf8=true
+wx 00112233445566778899aabbccddeeff
+e scr.cols=5
+p== 16~:0
+e scr.cols=6
+p== 16~:0
+EOF
+EXPECT=<<EOF
+    │
+│ │ ff
+EOF
+RUN
+
 NAME=p==b output lines
 FILE=-
 CMDS=<<EOF
