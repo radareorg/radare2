@@ -3,6 +3,24 @@
 #include <r_core_priv.h>
 #include "visual_modes.h"
 
+enum {
+	// Printable palette fields before rainbow are all color strings.
+	GRAPH_PALETTE_COLORS = r_offsetof (RConsPrintablePalette, rainbow) / sizeof (char *)
+};
+
+#define GRAPH_COLOR_TAG "\x1b[777;"
+
+typedef struct {
+	RANode node;
+	char *color_body;
+} RANodePrivate;
+
+typedef struct {
+	RConsContext *context;
+	RConsPrintablePalette saved;
+	char tags[GRAPH_PALETTE_COLORS][24];
+} RAGraphPalette;
+
 R_IPI void visual_refresh(RCore *core);
 
 static RCoreHelpMessage help_msg_visual_graph = {
@@ -49,7 +67,7 @@ static RCoreHelpMessage help_msg_visual_graph = {
 	"p/P", "rotate graph modes (normal, display offsets, minigraph, summary)",
 	"q", "back to Visual mode",
 	"r", "toggle jmphints/leahints",
-	"R", "randomize colors",
+	"R", "change color theme or randomize colors (scr.randpal)",
 	"s/S", "step / step over",
 	"tab", "select next node",
 	"TAB", "select previous node",
@@ -1625,6 +1643,7 @@ static void aedge_free(AEdge *e) {
 
 static void ranode_free(RANode *n) {
 	if (n) {
+		free (((RANodePrivate *)n)->color_body);
 		free (n->title);
 		free (n->body);
 		free (n->color);
@@ -2155,6 +2174,107 @@ static void set_layout(RAGraph *g) {
 	r_cons_break_pop (cons);
 }
 
+static void graph_palette_begin(RCore *core, RAGraph *g, RAGraphPalette *palette) {
+	palette->context = NULL;
+	if (!g->is_interactive || !r_config_get_i (core->config, "scr.color")
+			|| R_STR_ISNOTEMPTY (r_config_get (core->config, "cmd.bbgraph"))
+			|| r_config_get_b (core->config, "graph.aeab")) {
+		return;
+	}
+	RConsContext *context = core->cons->context;
+	palette->saved = context->pal;
+	palette->context = context;
+	// Distinct tags retain separate roles even when theme colors are identical.
+	size_t i;
+	for (i = 0; i < GRAPH_PALETTE_COLORS; i++) {
+		char **color = (char **)((ut8 *)&context->pal + i * sizeof (char *));
+		if (*color && i != r_offsetof (RConsPrintablePalette, reset) / sizeof (char *)) {
+			snprintf (palette->tags[i], sizeof (palette->tags[i]), GRAPH_COLOR_TAG "%um", (unsigned int)i);
+			*color = palette->tags[i];
+		}
+	}
+}
+
+static void graph_palette_end(RAGraphPalette *palette) {
+	if (palette->context) {
+		palette->context->pal = palette->saved;
+	}
+}
+
+static char *graph_color_body(const char *body, const RConsPrintablePalette *palette) {
+	if (!body) {
+		return NULL;
+	}
+	RStrBuf *result = r_strbuf_new (NULL);
+	const char *start = body;
+	const char *tag = body;
+	while ((tag = strstr (tag, GRAPH_COLOR_TAG))) {
+		char *end;
+		unsigned long index = strtoul (tag + sizeof (GRAPH_COLOR_TAG) - 1, &end, 10);
+		if (end == tag + sizeof (GRAPH_COLOR_TAG) - 1 || *end != 'm' || index >= GRAPH_PALETTE_COLORS) {
+			tag++;
+			continue;
+		}
+		const char *color = *(char *const *)((const ut8 *)palette + index * sizeof (char *));
+		if (!r_strbuf_append_n (result, start, tag - start) || !r_strbuf_append (result, r_str_get (color))) {
+			r_strbuf_free (result);
+			return NULL;
+		}
+		start = tag = end + 1;
+	}
+	if (!r_strbuf_append (result, start)) {
+		r_strbuf_free (result);
+		return NULL;
+	}
+	return r_strbuf_drain (result);
+}
+
+static void ranode_cache_colors(RANode *node, const char *body) {
+	RANodePrivate *priv = (RANodePrivate *)node;
+	free (priv->color_body);
+	priv->color_body = body
+		? r_str_endswith (node->body, "\n") && !r_str_endswith (body, "\n")
+			? r_str_newf ("%s\n", body): strdup (body)
+		: NULL;
+}
+
+static RANode *agraph_add_colored_node(RAGraph *g, const char *title, const char *body, const char *color, RAGraphPalette *palette) {
+	char *colored = palette->context? graph_color_body (body, &palette->saved): NULL;
+	RANode *node = body && palette->context && !colored
+		? NULL: r_agraph_add_node (g, title, colored? colored: body, color);
+	if (node) {
+		ranode_cache_colors (node, palette->context? body: NULL);
+	}
+	free (colored);
+	return node;
+}
+
+static bool agraph_recolor_nodes(RAGraph *g, RCore *core) {
+	if (!r_config_get_i (core->config, "scr.color")) {
+		return true;
+	}
+	RGraphNode *gn;
+	RANode *node;
+	RListIter *iter;
+	graph_foreach_anode (r_graph_get_nodes (g->graph), iter, gn, node) {
+		if (!node->is_dummy && R_STR_ISNOTEMPTY (node->body) && !((RANodePrivate *)node)->color_body) {
+			return false;
+		}
+	}
+	graph_foreach_anode (r_graph_get_nodes (g->graph), iter, gn, node) {
+		const char *cached = ((RANodePrivate *)node)->color_body;
+		if (cached) {
+			char *body = graph_color_body (cached, &core->cons->context->pal);
+			if (!body) {
+				return false;
+			}
+			free (node->body);
+			node->body = body;
+		}
+	}
+	return true;
+}
+
 static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	char *body;
 	int disas_size = size;
@@ -2328,6 +2448,8 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	}
 
 	int shortcuts = r_config_get_b (core->config, "graph.nodejmps");
+	RAGraphPalette palette;
+	graph_palette_begin (core, g, &palette);
 	r_list_foreach (fcn->bbs, iter, bb) {
 		if (bb->addr == UT64_MAX) {
 			continue;
@@ -2339,10 +2461,21 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		char *shortcut = shortcuts? r_core_add_asmqjmp (core, bb->addr): NULL;
 		RANode *node = r_agraph_get_node (g, title);
 		if (node) {
+			char *colored = palette.context? graph_color_body (body, &palette.saved): body;
+			if (!colored) {
+				free (body);
+				free (shortcut);
+				free (title);
+				continue;
+			}
 			ranode_set_shortcut (node, shortcut);
 			shortcut = NULL;
 			free (node->body);
-			node->body = body;
+			node->body = colored;
+			ranode_cache_colors (node, palette.context? body: NULL);
+			if (palette.context) {
+				free (body);
+			}
 			R_FREE (node->color);
 			if (bb->color.r || bb->color.g || bb->color.b) {
 				node->color = r_cons_rgb_str (core->cons, NULL, -1, &bb->color);
@@ -2354,6 +2487,7 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		free (title);
 		core->keep_asmqjmps = true;
 	}
+	graph_palette_end (&palette);
 
 	if (emu) {
 		core->anal->gp = saved_gp;
@@ -2496,6 +2630,8 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		r_cons_set_raw (core->cons, false);
 		r_cons_break_push (core->cons, NULL, NULL);
 	}
+	RAGraphPalette palette;
+	graph_palette_begin (core, g, &palette);
 	r_list_foreach (fcn->bbs, iter, bb) {
 		if (breakable && r_cons_is_breaked (core->cons)) {
 			goto interrupted;
@@ -2512,7 +2648,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 			? r_cons_rgb_str (core->cons, NULL, -1, &bb->color)
 			: NULL;
 
-		RANode *node = r_agraph_add_node (g, title, body, color);
+		RANode *node = agraph_add_colored_node (g, title, body, color, &palette);
 		free (color);
 		free (body);
 		free (title);
@@ -2557,6 +2693,7 @@ interrupted:
 	ret = true;
 
 cleanup:
+	graph_palette_end (&palette);
 	if (emu) {
 		core->anal->gp = saved_gp;
 		if (saved_arena) {
@@ -2593,6 +2730,8 @@ static bool get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	fcn_anode->y = 3;
 
 	RVecAnalRef *refs = r_anal_function_get_refs (fcn);
+	RAGraphPalette palette;
+	graph_palette_begin (core, g, &palette);
 	if (refs) {
 		RAnalRef *ref;
 		R_VEC_FOREACH (refs, ref) {
@@ -2611,14 +2750,14 @@ static bool get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 			char *body = get_body (core, ref->addr, size, mode2opts (g));
 			title = get_title (ref->addr);
 
-			RANode *node = r_agraph_add_node (g, title, body, NULL);
+			RANode *node = agraph_add_colored_node (g, title, body, NULL, &palette);
+			free (title);
+			free (body);
 			if (!node) {
+				graph_palette_end (&palette);
 				RVecAnalRef_free (refs);
 				return false;
 			}
-
-			free (title);
-			free (body);
 
 			node->x = 10;
 			node->y = 10;
@@ -2627,6 +2766,7 @@ static bool get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		}
 	}
 
+	graph_palette_end (&palette);
 	RVecAnalRef_free (refs);
 	return true;
 }
@@ -4142,7 +4282,8 @@ R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char 
 	if (res) {
 		return res;
 	}
-	res = R_NEW0 (RANode);
+	RANodePrivate *priv = R_NEW0 (RANodePrivate);
+	res = &priv->node;
 
 	res->title = title? r_str_trunc_ellipsis (title, 255): strdup ("");
 	res->body = (body && strlen (body))? r_str_endswith (body, "\n")? strdup (body): r_str_newf ("%s\n", body): strdup (""); // XXX
@@ -4930,10 +5071,6 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 				r_config_set_i (core->config, "graph.edges", e);
 				g->edgemode = e;
 				g->need_update_dim = true;
-				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
-				if (fcn) {
-					get_bbupdate (g, core, fcn);
-				}
 			}
 			break;
 		case '\\':
@@ -4951,10 +5088,6 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 				}
 				r_config_set_i (core->config, "graph.linemode", e);
 				g->can->linemode = e;
-				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
-				if (fcn) {
-					get_bbupdate (g, core, fcn);
-				}
 			}
 			break;
 		case 13:
@@ -5092,10 +5225,6 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			core->visual.disMode = (core->visual.disMode + 1) % 3;
 			applyDisMode (core);
 			g->need_reload_nodes = true;
-			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
-			if (fcn) {
-				get_bbupdate (g, core, fcn);
-			}
 			break;
 		case 'u':
 			{
@@ -5148,9 +5277,11 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 				r_core_call (core, "ecn");
 			}
 			g->edgemode = r_config_get_i (core->config, "graph.edges");
-			fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
-			if (fcn) {
-				get_bbupdate (g, core, fcn);
+			if (!agraph_recolor_nodes (g, core)) {
+				fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
+				if (fcn) {
+					get_bbupdate (g, core, fcn);
+				}
 			}
 			break;
 		case '$':
@@ -5426,10 +5557,6 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			g->can->flags = r_cons_canvas_flags (core->cons);
 			r_cons_set_raw (core->cons, true);
 			core->cons->event_resize = (RConsEvent)agraph_refresh_queued;
-			if (!g) {
-				g->need_reload_nodes = true; // maybe too slow and unnecessary sometimes? better be safe and reload
-				get_bbupdate (g, core, fcn);
-			}
 			break;
 		case '&':
 			{
