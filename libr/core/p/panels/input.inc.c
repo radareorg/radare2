@@ -751,6 +751,7 @@ static void handlePrompt(RCore *core, RPanels *panels) {
 	int h, w = r_panels_get_size (core, &h);
 	r_panels_resize_layout (panels, w, h);
 	r_panels_seek_all (core, core->addr);
+	r_panels_set_refresh_all (core, false, false);
 }
 
 static int add_cmd_panel(void *user) {
@@ -1314,6 +1315,7 @@ static void panel_breakpoint(RCore *core) {
 
 static void panel_continue(RCore *core) {
 	r_core_cmd (core, "dc", 0);
+	r_panels_set_refresh_all (core, false, false);
 }
 
 static bool handle_console(RCore *core, RPanel *panel, const int key) {

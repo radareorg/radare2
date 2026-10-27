@@ -12,6 +12,7 @@ static int help_manpage_cb(void *user) {
 static int continue_cb(void *user) {
 	RCore *core = (RCore *)user;
 	r_core_cmd (core, "dc", 0);
+	r_panels_set_refresh_all (core, false, false);
 	r_cons_flush (core->cons);
 	return 0;
 }
@@ -24,6 +25,7 @@ static void panel_single_step_in(RCore *core) {
 		r_core_cmd (core, "aes", 0);
 		r_core_cmd (core, ".ar*", 0);
 	}
+	r_panels_set_refresh_all (core, false, false);
 }
 
 static int step_cb(void *user) {
@@ -44,6 +46,7 @@ static void panel_single_step_over(RCore *core) {
 		r_core_cmd (core, ".ar*", 0);
 	}
 	r_config_set_b (core->config, "io.cache", io_cache);
+	r_panels_set_refresh_all (core, false, false);
 }
 
 static int step_over_cb(void *user) {

@@ -164,6 +164,7 @@ virtualmouse:
 		} else {
 			r_core_call (core, "dr PC=$$");
 		}
+		r_panels_set_refresh_all (core, false, false);
 		break;
 	case 's':
 		panel_single_step_in (core);
@@ -216,6 +217,7 @@ virtualmouse:
 		} else {
 			r_config_set_b (core->config, "asm.hint.call", true);
 		}
+		r_panels_set_refresh_all (core, false, false);
 		break;
 	case 'R':
 		if (r_config_get_b (core->config, "scr.randpal")) {
@@ -234,9 +236,11 @@ virtualmouse:
 			r_core_visual_asm (core, core->addr);
 			core->print->cur_enabled = ocur;
 		}
+		r_panels_set_refresh_all (core, false, false);
 		break;
 	case 'd':
 		r_core_visual_define_input (core, "", 0, r_panels_define_readchar);
+		r_panels_set_refresh_all (core, false, false);
 		break;
 	case 'D':
 		replace_cmd (core, "Disassembly", "pd");
@@ -373,6 +377,7 @@ virtualmouse:
 		break;
 	case 'O':
 		handle_print_rotate (core);
+		r_panels_set_refresh_all (core, false, false);
 		break;
 	case 'n':
 		if (r_panels_check_panel_type (cur, "pd")) {
@@ -404,6 +409,7 @@ virtualmouse:
 		break;
 	case 'E':
 		r_core_visual_colors (core);
+		r_panels_set_refresh_all (core, false, false);
 		break;
 	case 'e':
 	{
@@ -466,6 +472,7 @@ virtualmouse:
 		break;
 	case 'v':
 		r_core_visual_anal (core, NULL);
+		r_panels_set_refresh_all (core, false, false);
 		break;
 	case 'V':
 		r_panels_call_visual_graph (core);
@@ -492,6 +499,7 @@ virtualmouse:
 		break;
 	case '/':
 		r_core_cmd0 (core, "?i highlight;e scr.highlight=`yp`");
+		r_panels_set_refresh_all (core, false, false);
 		break;
 	case 'z':
 		if (panels->curnode > 0) {
@@ -717,6 +725,9 @@ virtualmouse:
 		goto exit;
 	default:
 		break;
+	}
+	if (key >= R_CONS_KEY_F1 && key <= R_CONS_KEY_F12) {
+		r_panels_set_refresh_all (core, false, false);
 	}
 	goto repeat;
 exit:

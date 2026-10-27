@@ -529,7 +529,12 @@ static void r_panels_default_panel_print(RCore *core, RPanel *panel) {
 	core->print->cur_enabled = o_cur & (r_panels_get_cur_panel (core->panels) == panel);
 	if (panel->model->readOnly) {
 		r_panels_update_help_contents (core, panel);
-		r_panels_update_title (core, panel);
+	} else if (!panel->view->refresh && panel->model->cmdStrCache) {
+		if (r_panels_check_panel_type (panel, "pdc")) {
+			r_panels_update_pdc_contents (core, panel, panel->model->cmdStrCache);
+		} else {
+			r_panels_update_panel_contents (core, panel, panel->model->cmdStrCache);
+		}
 	} else if (panel->model->cmd) {
 		ut64 addr = core->addr;
 		if (!r_panels_sync_seek (panel)) {
@@ -538,23 +543,27 @@ static void r_panels_default_panel_print(RCore *core, RPanel *panel) {
 			panel->model->addr = addr;
 		}
 		panel->model->print_cb (core, panel);
-		r_panels_update_title (core, panel);
 		if (!r_panels_sync_seek (panel)) {
 			r_core_seek (core, addr, true);
 		}
 	}
+	r_panels_update_title (core, panel);
 	core->print->cur_enabled = o_cur;
 }
 
 static void r_panels_panel_print(RCore *core, RConsCanvas *can, RPanel *panel, bool color) {
-	if (!can || !panel || !panel->view->refresh) {
+	if (!can || !panel) {
 		return;
 	}
 	RPanelPos *pos = &panel->view->pos;
 	if (can->w <= pos->x || can->h <= pos->y) {
 		return;
 	}
-	panel->view->refresh = panel->model->type == PANEL_TYPE_MENU;
+	RPanelsModel *model = (RPanelsModel *)panel->model;
+	if (r_panels_sync_seek (panel) && model->refresh_addr != core->addr) {
+		panel->view->refresh = true;
+	}
+	model->refresh_addr = core->addr;
 	r_cons_canvas_background (can, panel->model->bgcolor);
 	r_cons_canvas_fill (can, pos->x, pos->y, pos->w, pos->h, ' ');
 	if (panel->model->type == PANEL_TYPE_MENU) {
@@ -562,6 +571,7 @@ static void r_panels_panel_print(RCore *core, RConsCanvas *can, RPanel *panel, b
 	} else {
 		r_panels_default_panel_print (core, panel);
 	}
+	panel->view->refresh = panel->model->type == PANEL_TYPE_MENU;
 	int w = R_MIN (pos->w, can->w - pos->x);
 	int h = R_MIN (pos->h, can->h - pos->y);
 	r_cons_canvas_box (can, pos->x, pos->y, w, h,
@@ -627,6 +637,9 @@ static void r_panels_refresh(RCore *core) {
 	RConsCanvas *can = panels->can;
 	r_cons_gotoxy (core->cons, 0, 0);
 	int i, h, w = r_panels_get_size (core, &h);
+	if (can->w != w || can->h != h) {
+		r_panels_set_refresh_all (core, false, true);
+	}
 	if (!r_cons_canvas_resize (can, w, h)) {
 		return;
 	}
@@ -637,7 +650,6 @@ static void r_panels_refresh(RCore *core) {
 	}
 
 	refresh_core_offset (core);
-	r_panels_set_refresh_all (core, false, false);
 
 	const bool frame_menu = r_panels_frame_menu_is_open (panels);
 	const bool menubar_open = panels->mode == PANEL_MODE_MENU && !frame_menu;
@@ -699,8 +711,7 @@ static void r_panels_refresh(RCore *core) {
 		}
 		core->visual.firstRun = false;
 		r_config_set_b (core->config, "scr.utf8", utf8);
-		RPanel *cur = r_panels_get_cur_panel (core->panels);
-		cur->view->refresh = true;
+		r_panels_set_refresh_all (core, false, true);
 		r_panels_refresh (core);
 	} else {
 		print_notch (core);

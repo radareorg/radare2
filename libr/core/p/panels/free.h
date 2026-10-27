@@ -22,6 +22,7 @@ typedef struct {
 	int width, height;
 	RPanelsGraphNodes graph_nodes;
 	ut64 graph_addr;
+	ut64 refresh_addr;
 	bool graph_focused;
 	bool sync_seek;
 } RPanelsModel;

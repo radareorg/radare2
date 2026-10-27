@@ -208,6 +208,9 @@ static bool r_panels_sync_seek(RPanel *panel) {
 
 static void r_panels_set_panel_addr(RCore *core, RPanel *panel, ut64 addr) {
 	if (r_panels_sync_seek (panel) || panel == r_panels_get_cur_panel (core->panels)) {
+		if (panel->model->addr != addr) {
+			panel->view->refresh = true;
+		}
 		panel->model->addr = addr;
 	}
 }
@@ -218,7 +221,7 @@ static void r_panels_seek_all(RCore *core, ut64 addr) {
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *panel = r_panels_get_panel (panels, i);
 		if (r_panels_sync_seek (panel)) {
-			panel->model->addr = addr;
+			r_panels_set_panel_addr (core, panel, addr);
 		}
 	}
 }
