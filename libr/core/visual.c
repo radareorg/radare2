@@ -4876,18 +4876,7 @@ R_API void r_core_visual_disasm_down(RCore *core, RAnalOp *op, int *cols) {
 			R_LOG_ERROR ("Cannot allocate %d byte(s)", (int)bufsize);
 			return;
 		};
-		size_t bufpos = 0;
-		size_t cpysize = 0;
-		while (bufpos < bufsize) {
-			cpysize = bufsize - bufpos;
-			if (cpysize > core->blocksize) {
-				cpysize = core->blocksize;
-			}
-			memcpy (buf + bufpos, core->block, cpysize);
-			bufpos += cpysize;
-			r_core_seek (core, orig + bufpos, true);
-		}
-		r_core_seek (core, orig, true);
+		r_io_read_at (core->io, orig, buf, bufsize);
 		*cols = r_asm_disassemble (core->rasm, op, buf, bufsize);
 		free (buf);
 
