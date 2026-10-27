@@ -314,6 +314,11 @@ static char *distillate(v850np_inst *inst, const char *esilfmt, ut64 memaddr, ut
 		while (*esilfmt) {
 			char ch = *esilfmt;
 			if (ch == '#') {
+				if (esilfmt[1] == 'P') {
+					r_strbuf_appendf (sb, "0x%x", pc_mask & ~1U);
+					esilfmt += 2;
+					continue;
+				}
 				const int n = esilfmt[1] - '0';
 				if (n >= 0 && n < 10) {
 					const char *argn = (const char *)r_list_get_n (args, n);
@@ -361,7 +366,7 @@ static char *distillate(v850np_inst *inst, const char *esilfmt, ut64 memaddr, ut
 				}
 			}
 			if (inst->op->operands[2]) {
-				r_strbuf_appendf (stack, ",%s,PC,:=", (char *)r_list_get_n (args, 2));
+				r_strbuf_appendf (stack, ",0x%x,%s,&,PC,:=", pc_mask & ~1U, (char *)r_list_get_n (args, 2));
 			}
 		}
 		free (res);

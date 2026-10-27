@@ -810,7 +810,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "binsm",two (0x07e0, 0x00b0), two (0x07e0, 0x07f1), {R1, POS_M, WIDTH_M, R2}, 0, V850_CPU_E3V5_UP | V850_CPU_OPTION_ALIAS },
 	{ "binsl",two (0x07e0, 0x00d0), two (0x07e0, 0x07f1), {R1, POS_L, WIDTH_L, R2}, 0, V850_CPU_E3V5_UP | V850_CPU_OPTION_ALIAS },
 	{ "cache", two (0xe7e0, 0x0160), two (0xe7e0, 0x07ff), {CACHEOP, R1}, 2, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_NOP },
-	{ "callt", one (0x0200), one (0xffc0), {IMM6}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_UCALL, "pc,ctpc,:=,psw,ctpsw,:=,1,#0,<<,ctbp,+,[2],ctbp,+,pc,:=" },
+	{ "callt", one (0x0200), one (0xffc0), {IMM6}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_UCALL, "pc,ctpc,:=,psw,ctpsw,:=,1,#0,<<,ctbp,+,[2],ctbp,+,#P,&,pc,:=" },
 	{ "caxi", two (0x07e0, 0x00ee), two (0x07e0, 0x07ff), {R1, R2, R3}, 1, V850_CPU_E2_UP, R_ANAL_OP_TYPE_MOV },
 	{ "clr1", two (0x87c0, 0x0000), two (0xc7e0, 0x0000), {B3, D16, R1}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_AND, "#2,#1,+,[1],DUP,#0,1,<<,&,!,z,:=,#0,1,<<,0xff,^,&,#2,#1,+,=[1]" },
 	{ "clr1", two (0x07e0, 0x00e4), two (0x07e0, 0xffff), {R2, R1}, 3, V850_CPU_NON0, R_ANAL_OP_TYPE_AND, "#1,[1],DUP,7,#0,&,1,<<,&,!,z,:=,7,#0,&,1,<<,0xff,^,&,#1,=[1]" },
@@ -818,7 +818,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "cmov", two (0x07e0, 0x0300), two (0x07e0, 0x07e1), {MOVCC, I5, R2, R3}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV, "#0,?{,#1,}{,#2,},#3,:=" },
 	{ "cmp", OP (0x0f), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CMP, "#0,#1,==,$z,z,:=,31,$s,s,:=,32,$b,cy,:=,31,$o,ov,:=" },
 	{ "cmp", OP (0x13), OP_MASK, IF2, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CMP, "#0,#1,==,$z,z,:=,31,$s,s,:=,32,$b,cy,:=,31,$o,ov,:=" },
-	{ "ctret", two (0x07e0, 0x0144), two (0xffff, 0xffff), {0}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_RET, "ctpc,pc,:=,ctpsw,psw,:=" },
+	{ "ctret", two (0x07e0, 0x0144), two (0xffff, 0xffff), {0}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_RET, "ctpc,#P,&,pc,:=,ctpsw,psw,:=" },
 	{ "dbcp", one (0xe840), one (0xffff), {0}, 0, V850_CPU_E3V5_UP },
 	{ "dbhvtrap", one (0xe040), one (0xffff), {0}, 0, V850_CPU_E3V5_UP },
 	{ "dbpush", two (0x5fe0, 0x0160), two (0xffe0, 0x07ff), {R1, R3}, 0, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_PUSH },
@@ -844,10 +844,10 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "dst", two (0x07e0, 0x0134), two (0xfffff, 0xffff), {0}, 0, V850_CPU_E3V5_UP },
 
 	{ "ei", two (0x87e0, 0x0160), two (0xffff, 0xffff), {0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_MOV, "0,id,:=", R_ANAL_OP_FAMILY_PRIV },
-	{ "eiret", two (0x07e0, 0x0148), two (0xffff, 0xffff), {0}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_RET, "eipc,pc,:=,eipsw,psw,:=", R_ANAL_OP_FAMILY_PRIV },
+	{ "eiret", two (0x07e0, 0x0148), two (0xffff, 0xffff), {0}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_RET, "eipc,#P,&,pc,:=,eipsw,psw,:=", R_ANAL_OP_FAMILY_PRIV },
 
 	{ "est", two (0x07e0, 0x0132), two (0xfffff, 0xffff), {0}, 0, V850_CPU_E3V5_UP },
-	{ "feret", two (0x07e0, 0x014a), two (0xffff, 0xffff), {0}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_RET, "fepc,pc,:=,fepsw,psw,:=", R_ANAL_OP_FAMILY_PRIV },
+	{ "feret", two (0x07e0, 0x014a), two (0xffff, 0xffff), {0}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_RET, "fepc,#P,&,pc,:=,fepsw,psw,:=", R_ANAL_OP_FAMILY_PRIV },
 	{ "fetrap", one (0x0040), one (0x87ff), {I4U_NOTIMM0}, 0, V850_CPU_E2_UP },
 	{ "halt", two (0x07e0, 0x0120), two (0xffff, 0xffff), {0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_TRAP },
 	{ "hsh", two (0x07e0, 0x0346), two (0x07ff, 0x07ff), {R2, R3}, 0, V850_CPU_E2_UP },
@@ -868,7 +868,7 @@ const struct v850_opcode v850_opcodes[] = {
 
 	{ "jmp", two (0x06e0, 0x0000), two (0xffe0, 0x0001), {D32_31, R1}, 2, V850_CPU_E3V5_UP , R_ANAL_OP_TYPE_MJMP, "#1,PC,:=" },
 	{ "jmp", one (0x06e0), one (0xffe0), {D32_31, R1}, 2, V850_CPU_E2 | V850_CPU_E2V3, R_ANAL_OP_TYPE_MJMP, "#1,PC,:=" },
-	{ "jmp", one (0x0060), one (0xffe0), {R1}, 1, V850_CPU_ALL, R_ANAL_OP_TYPE_RJMP, "#0,PC,:=" },
+	{ "jmp", one (0x0060), one (0xffe0), {R1}, 1, V850_CPU_ALL, R_ANAL_OP_TYPE_RJMP, "#P,#0,&,PC,:=" },
 	/* Gas local alias of jmp disp22(not defined in spec). */
 	{ "jmp22", one (0x0060), one (0xffe0), {R1}, 1, V850_CPU_ALL | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_JMP },
 	/* Gas local alias of jmp disp32(not defined in spec). */
@@ -970,7 +970,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "pushsp", two (0x47e0, 0x0160), two (0xffe0, 0x07ff), {R1, R3}, 0, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_PUSH },
 	{ "rotl", two (0x07e0, 0x00c6), two (0x07e0, 0x07ff), {R1, R2, R3}, 0, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_ROL },
 	{ "rotl", two (0x07e0, 0x00c4), two (0x07e0, 0x07ff), {I5U, R2, R3}, 0, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_ROL },
-	{ "reti", two (0x07e0, 0x0140), two (0xffff, 0xffff), {0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_RET, "epi,!,npi,&,?{,fepc,pc,:=,fepsw,psw,:=,}{,eipc,pc,:=,eipsw,psw,:=,}", R_ANAL_OP_FAMILY_PRIV },
+	{ "reti", two (0x07e0, 0x0140), two (0xffff, 0xffff), {0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_RET, "epi,!,npi,&,?{,fepc,#P,&,pc,:=,fepsw,psw,:=,}{,eipc,#P,&,pc,:=,eipsw,psw,:=,}", R_ANAL_OP_FAMILY_PRIV },
 	{ "sar", two (0x07e0, 0x00a2), two (0x07e0, 0x07ff), {R1, R2, R3}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_SAR, "31,#0,&,DUP,?{,POP,31,#0,&,1,SWAP,-,#1,>>,1,&,cy,:=,}{,POP,0,cy,:=,},31,#0,&,#1,ASR,#2,=,31,$s,s,:=,$z,z,:=,0,ov,:=" },
 	{ "sar", OP (0x15), OP_MASK, {I5U, R2}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SAR, "#0,DUP,?{,POP,#0,1,SWAP,-,#1,>>,1,&,cy,:=,}{,POP,0,cy,:=,},#0,#1,ASR,#1,=,31,$s,s,:=,$z,z,:=,0,ov,:=" },
 	{ "sar", two (0x07e0, 0x00a0), two (0x07e0, 0xffff), {R1, R2}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SAR, "31,#0,&,DUP,?{,POP,31,#0,&,1,SWAP,-,#1,>>,1,&,cy,:=,}{,POP,0,cy,:=,},31,#0,&,#1,ASR,#1,=,31,$s,s,:=,$z,z,:=,0,ov,:=" },
@@ -1048,7 +1048,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "stvc.sr", two (0x07e0, 0x0054), two (0x07e0, 0x07ff), {SR1, R2}, 0, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_STORE },
 	{ "sub", OP (0x0d), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SUB, "#0,#1,-=,32,$b,cy,:=,31,$o,ov,:=,31,$s,s,:=,$z,z,:=" },
 	{ "subr", OP (0x0c), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SUB, "#1,#0,-,DUP,#0,^,#0,#1,^,&,0x80000000,&,!,!,ov,:=,#1,#0,==,32,$b,cy,:=,DUP,31,SWAP,>>,1,&,s,:=,DUP,0xffffffff,&,!,z,:=,#1,:=" },
-	{ "switch", one (0x0040), one (0xffe0), {R1_NOTR0}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_RJMP, "1,#0,<<,pc,+,[2],16,SWAP,~,1,SWAP,<<,pc,+,pc,:=" },
+	{ "switch", one (0x0040), one (0xffe0), {R1_NOTR0}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_RJMP, "1,#0,<<,pc,+,[2],16,SWAP,~,1,SWAP,<<,pc,+,#P,&,pc,:=" },
 	{ "sxb", one (0x00a0), one (0xffe0), {R1}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV, "0x80,#0,&,?{,0xffffff00,#0,|,#0,:=,}{,0xff,#0,&,#0,:=,}" },
 	{ "sxh", one (0x00e0), one (0xffe0), {R1}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV, "0x8000,#0,&,?{,0xffff0000,#0,|,#0,:=,}{,0xffff,#0,&,#0,:=,}" },
 	{ "tlbai", two (0x87e0, 0x8960), two (0xffff, 0xffff), {0}, 0, V850_CPU_E3V5_UP },

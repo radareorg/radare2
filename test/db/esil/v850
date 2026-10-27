@@ -284,3 +284,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=V850 indirect jumps obey the selected CPU PC width
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx 6100
+aei
+aer r1=0xffffa011
+aes
+aer pc
+e asm.cpu=e2
+aer pc=0
+aes
+aer pc
+EOF
+EXPECT=<<EOF
+0x03ffa010
+0xffffa010
+EOF
+RUN
+
