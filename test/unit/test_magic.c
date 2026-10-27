@@ -263,6 +263,22 @@ static bool test_r_magic_continue_across_databases(void) {
 	mu_end;
 }
 
+static bool test_r_magic_relative_offset_at_level0(void) {
+	// a top-level rule with a relative indirect offset ("&(") has no
+	// previous match to add to, so softmagic used to read ms->c.li[-1]
+	const char magic_source[] = "&(0.b) byte x hit\n";
+	const ut8 probe[] = "ABCDEFGH";
+	RMagic *ms = r_magic_new (0);
+
+	mu_assert_notnull (ms, "r_magic_new () failed");
+	mu_assert_true (r_magic_load_buffer (ms, (const ut8 *)magic_source, sizeof (magic_source) - 1), "level-0 relative offset rule should load");
+	// must stay in bounds, the invalid rule simply does not match
+	mu_assert_null (r_magic_buffer (ms, probe, sizeof (probe) - 1), "level-0 relative offset must not match");
+
+	r_magic_free (ms);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_magic_load_text_buffer);
 	mu_run_test (test_r_magic_load_compiled_buffer);
@@ -280,6 +296,7 @@ int all_tests(void) {
 	mu_run_test (test_r_magic_escapes_unprintable_description);
 	mu_run_test (test_r_magic_regex_stays_in_buffer);
 	mu_run_test (test_r_magic_continue_across_databases);
+	mu_run_test (test_r_magic_relative_offset_at_level0);
 	return tests_passed != tests_run;
 }
 
