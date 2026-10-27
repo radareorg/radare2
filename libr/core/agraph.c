@@ -1688,25 +1688,25 @@ static void set_layer_gap(RAGraph *g) {
 			if (!outnodes || !a) {
 				continue;
 			}
+			int edge_count = RVecGraphNodePtr_length (outnodes);
+			bool fanout = !g->layout && !g->is_callgraph && edge_count > 2;
+			if (fanout) {
+				gap += edge_count + 1;
+			}
 			graph_foreach_anode_vec (outnodes, itn, gb, b) {
-				if (g->layout == 0) { // vertical layout
-					if ((b->x != a->x) || b->layer <= a->layer) {
-						gap += 1;
-						if (b->layer <= a->layer) {
-							g->layers[b->layer].gap += 1;
-						}
-					} else if ((!a->is_dummy && b->is_dummy) || (a->is_dummy && !b->is_dummy)) {
-						gap += 1;
-					}
+				bool backedge = b->layer <= a->layer;
+				bool needs_gap = backedge || a->is_dummy != b->is_dummy || edge_count > 1
+					|| RVecGraphNodePtr_length (&gb->in_nodes) > 1;
+				if (g->layout == 0) {
+					needs_gap |= b->x != a->x;
 				} else {
-					if ((b->y == a->y && b->h != a->h) || b->y != a->y || b->layer <= a->layer) {
-						gap += 1;
-						if (b->layer <= a->layer) {
-							g->layers[b->layer].gap += 1;
-						}
-					} else if ((!a->is_dummy && b->is_dummy) || (a->is_dummy && !b->is_dummy)) {
-						gap += 1;
-					}
+					needs_gap |= b->y != a->y || b->h != a->h;
+				}
+				if (needs_gap && !fanout) {
+					gap++;
+				}
+				if (backedge) {
+					g->layers[b->layer].gap++;
 				}
 			}
 		}
@@ -2028,9 +2028,22 @@ static void remove_dummy_nodes(RAGraph *g) {
 	RVecGraphNodePtr_fini (&dummies);
 }
 
+static void separate_layer_nodes(const RAGraph *g) {
+	int i, j;
+	for (i = 0; i < g->n_layers; i++) {
+		for (j = 1; j < g->layers[i].n_nodes; j++) {
+			const RANode *previous = get_anode (g->layers[i].nodes[j - 1]);
+			RANode *node = get_anode (g->layers[i].nodes[j]);
+			// Keep dummy edge corridors clear as well as visible node rectangles.
+			int distance = previous->w - previous->w / 2 + node->w / 2 + HORIZONTAL_NODE_SPACING;
+			node->x = R_MAX (node->x, previous->x + distance);
+		}
+	}
+}
+
 static void set_layout(RAGraph *g) {
 	RCons *cons = g->can->cons;
-	int i, j, k;
+	int i, j;
 
 	r_list_free (g->edges);
 	g->edges = r_list_newf ((RListFree)aedge_free);
@@ -2104,6 +2117,9 @@ static void set_layout(RAGraph *g) {
 	switch (g->layout) {
 	default:
 	case 0: // vertical layout
+		if (!g->is_tiny) {
+			separate_layer_nodes (g);
+		}
 		/* horizontal finalize x coordinate */
 		for (i = 0; i < g->n_layers; i++) {
 			for (j = 0; j < g->layers[i].n_nodes; j++) {
@@ -2120,20 +2136,17 @@ static void set_layout(RAGraph *g) {
 		set_layer_gap (g);
 
 		/* vertical align */
+		int layer_y = g->layers[0].gap;
 		for (i = 0; i < g->n_layers; i++) {
-			int tmp_y = 0;
-			tmp_y = g->layers[0].gap; // TODO: XXX: set properly
-			for (k = 1; k <= i; k++) {
-				tmp_y += g->layers[k - 1].height + g->layers[k].gap + 3; // XXX: should be 4?
-			}
-			if (g->is_tiny) {
-				tmp_y = i;
-			}
+			int tmp_y = g->is_tiny? i: layer_y;
 			for (j = 0; j < g->layers[i].n_nodes; j++) {
 				RANode *n = get_anode (g->layers[i].nodes[j]);
 				if (n) {
 					n->y = tmp_y;
 				}
+			}
+			if (i + 1 < g->n_layers) {
+				layer_y += g->layers[i].height + g->layers[i + 1].gap + 3;
 			}
 		}
 		break;
@@ -2141,27 +2154,27 @@ static void set_layout(RAGraph *g) {
 	case 1: // horizontal layout
 		/* vertical y coordinate */
 		for (i = 0; i < g->n_layers; i++) {
+			int next_y = 1;
 			for (j = 0; j < g->layers[i].n_nodes; j++) {
 				RANode *n = get_anode (g->layers[i].nodes[j]);
-				n->y = 1;
-				for (k = 0; k < j; k++) {
-					RANode *m = get_anode (g->layers[i].nodes[k]);
-					n->y -= (m->h + VERTICAL_NODE_SPACING);
+				if (j) {
+					next_y -= n->h + VERTICAL_NODE_SPACING;
 				}
+				n->y = next_y;
 			}
 		}
 
 		set_layer_gap (g);
 
 		/* horizontal align */
+		int xval = g->layers[0].gap + 2;
 		for (i = 0; i < g->n_layers; i++) {
-			int xval = 1 + g->layers[0].gap + 1;
-			for (k = 1; k <= i; k++) {
-				xval += g->layers[k - 1].width + g->layers[k].gap + 3;
-			}
 			for (j = 0; j < g->layers[i].n_nodes; j++) {
 				RANode *n = get_anode (g->layers[i].nodes[j]);
 				n->x = xval;
+			}
+			if (i + 1 < g->n_layers) {
+				xval += g->layers[i].width + g->layers[i + 1].gap + 3;
 			}
 		}
 		break;
@@ -3367,6 +3380,7 @@ static bool edge_routes_build(RAGraph *g, EdgeRoutes *routes) {
 		}
 
 		bool many = RVecGraphNodePtr_length (neighbours) > 2;
+		int bendpoint_base = tm->edgectr;
 
 		if (many && !g->is_callgraph) {
 			RVecGraphNodePtr_sort (neighbours, first_x_cmp);
@@ -3441,7 +3455,7 @@ static bool edge_routes_build(RAGraph *g, EdgeRoutes *routes) {
 				if (many && !g->is_callgraph) {
 					int t = R_EDGES_X_INC + 2 *(RVecGraphNodePtr_length (neighbours) + 1);
 					ax = a->is_dummy? a->x: (a->x + a->w / 2 + (t / 2 - a_x_inc));
-					bendpoint = bx < ax? RVecGraphNodePtr_length (neighbours) - out_nth: out_nth;
+					bendpoint = bendpoint_base + (bx < ax? RVecGraphNodePtr_length (neighbours) - out_nth: out_nth);
 				} else {
 					ax = a->is_dummy? a->x: (a->x + a_x_inc);
 					bendpoint = tm->edgectr;
@@ -3480,7 +3494,7 @@ static bool edge_routes_build(RAGraph *g, EdgeRoutes *routes) {
 						goto cleanup;
 					}
 				}
-				if (b->x != a->x || b->layer <= a->layer || (!a->is_dummy && b->is_dummy) || (a->is_dummy && !b->is_dummy)) {
+				if (ax != bx || b->layer <= a->layer || (!a->is_dummy && b->is_dummy) || (a->is_dummy && !b->is_dummy)) {
 					if (tm) {
 						tm->edgectr++;
 					}
@@ -3505,7 +3519,7 @@ static bool edge_routes_build(RAGraph *g, EdgeRoutes *routes) {
 				bx = b->x - 1;
 				by = b->y;
 				if (!b->is_dummy && g->zoom > 0) {
-					by += R_EDGES_X_INC + out_nth;
+					by += R_EDGES_X_INC + in_nth;
 				}
 
 				if (a->w < a->layer_width) {
@@ -3545,11 +3559,15 @@ static bool edge_routes_build(RAGraph *g, EdgeRoutes *routes) {
 						goto cleanup;
 					}
 				}
-				if ((b->y == a->y && b->h != a->h) || b->y != a->y || b->layer <= a->layer || (!a->is_dummy && b->is_dummy) || (a->is_dummy && !b->is_dummy)) {
+				if (ay != by || b->layer <= a->layer || (!a->is_dummy && b->is_dummy) || (a->is_dummy && !b->is_dummy)) {
 					tm->edgectr += 1;
 				}
 				break;
 			}
+		}
+		if (!g->layout && many && !g->is_callgraph) {
+			// Reserve the whole fanout band before routing another node in this layer.
+			tm->edgectr = bendpoint_base + RVecGraphNodePtr_length (neighbours) + 1;
 		}
 	}
 
