@@ -462,7 +462,7 @@ agraph.nodes.p6.x=0xb6
 agraph.nodes.p7.x=0x82
 agraph.nodes.u.x=0x11
 agraph.nodes.v.x=0x6c
-agraph.nodes.w.x=0x47
+agraph.nodes.w.x=0x48
 EOF
 RUN
 
@@ -661,5 +661,45 @@ int
 int
 ret
 iretd
+EOF
+RUN
+
+NAME=fanout nodes in the same layer use separate bend lanes
+FILE=-
+CMDS=<<EOF
+e scr.utf8=false
+e scr.color=0
+agn a
+agn b
+agn c
+agn d
+agn e
+agn f
+age a d
+age a e
+age a f
+age b c
+age b d
+age b e
+agg
+EOF
+EXPECT=<<EOF
+                          .--------------------.    .--------------------.
+                          |  a                 |    |  b                 |
+                          `--------------------'    `--------------------'
+                                 v v v                     v v v
+                                 | | |                     | | |
+                                 | | '--------------------.| | |
+    .----------------------------' |                      || | |
+    |                           .--'                      || | |
+    |                           |                         || | |
+    |                           |                         || | '------------------.
+    |                           | .------------------------' |                    |
+    |                           | |                       | .'                    |
+    |                           | |                       | |                     |
+    |                           | |                       | |                     |
+.--------------------.    .--------------------.    .--------------------.    .--------------------.
+|  f                 |    |  d                 |    |  e                 |    |  c                 |
+`--------------------'    `--------------------'    `--------------------'    `--------------------'
 EOF
 RUN
