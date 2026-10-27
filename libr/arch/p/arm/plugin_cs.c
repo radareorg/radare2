@@ -3393,6 +3393,15 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 	case ARM_INS_MUL:
 		MATH32 ("*");
 		break;
+	case ARM_INS_SDIV:
+		// a zero divisor yields zero when divide traps are disabled
+		r_strbuf_appendf (&op->esil, "%s,!,?{,0,%s,=,}{,32,%s,~,32,%s,~,~/,0xffffffff,&,%s,=,}",
+			ARG (2), REG (0), ARG (2), ARG (1), REG (0));
+		break;
+	case ARM_INS_UDIV:
+		r_strbuf_appendf (&op->esil, "%s,!,?{,0,%s,=,}{,%s,%s,/,%s,=,}",
+			ARG (2), REG (0), ARG (2), ARG (1), REG (0));
+		break;
 	case ARM_INS_AND:
 		MATH32 ("&");
 		break;
