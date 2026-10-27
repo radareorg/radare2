@@ -56,3 +56,160 @@ EXPECT=<<EOF
 ABC<hr />DE[3F[4GH.
 EOF
 RUN
+
+NAME=html analysis keeps function iterator addresses plain
+FILE=bins/elf/crackme
+ARGS=-e log.level=1 -e bin.relocs.apply=true
+CMDS=<<EOF
+e scr.html=true
+aaaa
+e scr.html
+EOF
+EXPECT=<<EOF
+true
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=html command iterators preserve addresses and block sizes
+FILE=malloc://64
+CMDS=<<EOF
+af+ 0x10 one
+af+ 0x20 two
+s 3
+b 8
+e scr.html=true
+s @@F
+s @@c:afla
+s
+?v $$ @@@c:?e 0x10 2 0x20 4
+?v $b @@@c:?e 0x10 2 0x20 4
+s
+b
+e scr.html
+EOF
+EXPECT=<<EOF
+0x10
+0x20
+0x10
+0x20
+0x3
+0x10<br />0x20
+0x2<br />0x4
+0x3
+0x8
+true
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=html substitutions preserve spaces and newlines
+FILE=-
+CMDS=<<EOF
+e scr.html=true
+?e `?e a b`
+?e $(?e a b)
+?e `?e a\nb`
+?e $(?e a\nb)
+?e $(?e $(?e nested words))
+e scr.html
+?e restored output
+EOF
+EXPECT=<<EOF
+a&nbsp;b
+a&nbsp;b
+a&nbsp;b
+a&nbsp;b
+nested&nbsp;words
+true
+restored&nbsp;output
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=html command derived seeks and hexpairs
+FILE=malloc://64
+CMDS=<<EOF
+e scr.html=true
+s 3
+s @c:?v 16
+p8 2 @xc:?e 41 42
+s
+e scr.html
+?e restored output
+EOF
+EXPECT=<<EOF
+0x10
+4142
+0x10
+true
+restored&nbsp;output
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=html capture restores presentation after invalid commands
+FILE=malloc://64
+CMDS=<<EOF
+e scr.html=true
+s @c:ZZZ
+p8 2 @xc:ZZZ
+e scr.html
+?e restored output
+EOF
+EXPECT=<<EOF
+0x0
+0000
+true
+restored&nbsp;output
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid command 'ZZZ' (0x5a)
+ERROR: Invalid command 'ZZZ' (0x5a)
+EOF
+RUN
+
+NAME=html base64 transforms use plain input
+FILE=-
+CMDS=<<EOF
+e scr.html=true
+?e a b |E
+?e YSBi |D
+e scr.html
+EOF
+EXPECT=<<EOF
+YSBiCg==
+a&nbsp;b
+true
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=html captures displayed again are formatted once
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+af+ 0x10 one
+af+ 0x20 two
+e scr.html=true
+?e first\nsecond @@f
+wx 9090
+"pi 2"~nop
+.?e ?e hello world
+e scr.html
+EOF
+EXPECT=<<EOF
+first<br />second<br />first<br />second
+nop<br />nop
+hello&nbsp;world
+true
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
