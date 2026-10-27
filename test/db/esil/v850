@@ -222,3 +222,32 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=V850 swap flags inspect bytes and halfwords at their defined widths
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx e017421be017401be017441b
+aei
+aer r2=0x12340000
+aer psw=0x3f
+aes
+aer sp
+aer psw
+aes
+aer sp
+aer psw
+aes
+aer sp
+aer psw
+EOF
+EXPECT=<<EOF
+0x34120000
+0x00000039
+0x00003412
+0x00000038
+0x00001234
+0x00000038
+EOF
+RUN
+

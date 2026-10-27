@@ -798,8 +798,8 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "bt17", two (0x07e2, 0x0001), two (0xffef, 0x0001), IF7, 0, V850_CPU_E3V5_UP | V850_CPU_OPTION_ALIAS },
 	{ "bv17", two (0x07e0, 0x0001), two (0xffef, 0x0001), IF7, 0, V850_CPU_E3V5_UP | V850_CPU_OPTION_ALIAS },
 	{ "bz17", two (0x07e2, 0x0001), two (0xffef, 0x0001), IF7, 0, V850_CPU_E3V5_UP | V850_CPU_OPTION_ALIAS },
-	{ "bsh", two (0x07e0, 0x0342), two (0x07ff, 0x07ff), {R2, R3}, 0, V850_CPU_NON0 },
-	{ "bsw", two (0x07e0, 0x0340), two (0x07ff, 0x07ff), {R2, R3}, 0, V850_CPU_NON0 },
+	{ "bsh", two (0x07e0, 0x0342), two (0x07ff, 0x07ff), {R2, R3}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV, "8,#0,<<,0xff00ff00,&,8,#0,>>,0x00ff00ff,&,|,#0,0xff,&,!,#0,0xff00,&,!,|,cy,:=,DUP,0xffff,&,!,z,:=,DUP,31,SWAP,>>,1,&,s,:=,0,ov,:=,#1,:=" },
+	{ "bsw", two (0x07e0, 0x0340), two (0x07ff, 0x07ff), {R2, R3}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV, "24,#0,<<,0xff000000,&,8,#0,<<,0xff0000,&,|,8,#0,>>,0xff00,&,|,24,#0,>>,0xff,&,|,#0,0xff,&,!,#0,0xff00,&,!,|,#0,0xff0000,&,!,|,#0,0xff000000,&,!,|,cy,:=,DUP,!,z,:=,DUP,31,SWAP,>>,1,&,s,:=,0,ov,:=,#1,:=" },
 
 	/* v850e3v5 bitfield instructions. */
 	{ "bins", two (0x07e0, 0x0090), two (0x07e0, 0x07f1), {R1, POS_U, WIDTH_U, R2}, 0, V850_CPU_E3V5_UP },
@@ -851,7 +851,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "fetrap", one (0x0040), one (0x87ff), {I4U_NOTIMM0}, 0, V850_CPU_E2_UP },
 	{ "halt", two (0x07e0, 0x0120), two (0xffff, 0xffff), {0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_TRAP },
 	{ "hsh", two (0x07e0, 0x0346), two (0x07ff, 0x07ff), {R2, R3}, 0, V850_CPU_E2_UP },
-	{ "hsw", two (0x07e0, 0x0344), two (0x07ff, 0x07ff), {R2, R3}, 0, V850_CPU_NON0 },
+	{ "hsw", two (0x07e0, 0x0344), two (0x07ff, 0x07ff), {R2, R3}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV, "16,#0,<<,0xffff0000,&,16,#0,>>,0xffff,&,|,#0,0xffff,&,!,#0,0xffff0000,&,!,|,cy,:=,DUP,!,z,:=,DUP,31,SWAP,>>,1,&,s,:=,0,ov,:=,#1,:=" },
 	{ "hvcall", two (0xd7e0, 0x4160), two (0xffe0, 0x41ff), {VECTOR8}, 0, V850_CPU_E3V5_UP },
 	{ "hvtrap", two (0x07e0, 0x0110), two (0xffe0, 0xffff), {VECTOR5}, 0, V850_CPU_E3V5_UP },
 
