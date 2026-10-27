@@ -5343,7 +5343,7 @@ static ut8 *compute_bar_blocks(RCore *core, int mode, RList *ranges, ut64 from, 
 					k++;
 				}
 			}
-			ptr[i] = (blocksize > 0) ? 256 * k / blocksize : 0;
+			ptr[i] = (blocksize > 0) ? R_MIN (255, 256 * (ut64)k / blocksize) : 0;
 			break;
 		case 'f':
 		case 'F':
@@ -5352,7 +5352,7 @@ static ut8 *compute_bar_blocks(RCore *core, int mode, RList *ranges, ut64 from, 
 					k++;
 				}
 			}
-			ptr[i] = (blocksize > 0) ? 256 * k / blocksize : 0;
+			ptr[i] = (blocksize > 0) ? R_MIN (255, 256 * (ut64)k / blocksize) : 0;
 			break;
 		case 'p':
 			for (j = 0; j < blocksize; j++) {
@@ -5360,7 +5360,7 @@ static ut8 *compute_bar_blocks(RCore *core, int mode, RList *ranges, ut64 from, 
 					k++;
 				}
 			}
-			ptr[i] = (blocksize > 0) ? 256 * k / blocksize : 0;
+			ptr[i] = (blocksize > 0) ? R_MIN (255, 256 * (ut64)k / blocksize) : 0;
 			break;
 		case 'd':
 			{
@@ -5388,7 +5388,7 @@ static ut8 *compute_bar_blocks(RCore *core, int mode, RList *ranges, ut64 from, 
 					slen = 0;
 				}
 			}
-			ptr[i] = (blocksize > 0) ? 256 * k / blocksize : 0;
+			ptr[i] = (blocksize > 0) ? R_MIN (255, 256 * (ut64)k / blocksize) : 0;
 			break;
 		case 'e':
 			ptr[i] = (ut8) (255 * cmd_print_entropy (core, buf, blocksize));
