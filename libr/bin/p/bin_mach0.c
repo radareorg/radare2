@@ -354,10 +354,14 @@ static void append_load_relocs(RBinFile *bf, RBinObject *bo, const RSkipList *re
 	}
 	RBinReloc *r;
 	R_VEC_FOREACH (&mo->reloc_fixups, r) {
+		ut64 vaddr;
+		if (!MACH0_(paddr_to_vaddr) (mo, r->paddr, &vaddr)) {
+			continue;
+		}
 		RBinReloc *ptr = RVecRBinReloc_emplace_back (ret);
-		ptr->type = R_BIN_RELOC_64;
+		ptr->type = r->type;
 		ptr->ntype = r->ntype;
-		ptr->vaddr = MACH0_(paddr_to_vaddr) (mo, r->paddr);
+		ptr->vaddr = vaddr;
 		ptr->paddr = r->paddr;
 		ptr->addend = r->vaddr;
 	}
@@ -552,16 +556,17 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 			if (count-- == 0) {
 				break;
 			}
-			ut64 vaddr = MACH0_(paddr_to_vaddr) (mo, r->paddr);
-			if (!vaddr) {
+			ut64 vaddr;
+			if (!MACH0_(paddr_to_vaddr) (mo, r->paddr, &vaddr)) {
 				continue;
 			}
-			r_write_ble64 (buf, r->vaddr, false);
-			if (iob->read_at (io, vaddr, obuf, 8) != 8) {
+			const int width = r->type / 8;
+			r_write_ble (buf, r->vaddr, false, r->type);
+			if (iob->read_at (io, vaddr, obuf, width) != width) {
 				continue;
 			}
-			if (memcmp (buf, obuf, 8)) {
-				if (!iob->overlay_write_at (io, vaddr, buf, 8)) {
+			if (memcmp (buf, obuf, width)) {
+				if (!iob->overlay_write_at (io, vaddr, buf, width)) {
 					R_LOG_ERROR ("write error at 0x%"PFMT64x, vaddr);
 				}
 			}
@@ -757,12 +762,12 @@ static RBuffer *rebase_buffer(struct MACH0_(obj_t) *obj) {
 	return nb;
 }
 
-static void add_fixup(RVecRBinReloc *fixups, ut64 addr, ut64 value) {
+static void add_fixup(RVecRBinReloc *fixups, ut64 addr, ut64 value, ut32 psz) {
 	if (!fixups) {
 		return;
 	}
 	RBinReloc *r = RVecRBinReloc_emplace_back (fixups);
-	r->type = R_BIN_RELOC_64;
+	r->type = psz == 4? R_BIN_RELOC_32: R_BIN_RELOC_64;
 	r->vaddr = value;
 	r->paddr = addr;
 }
@@ -787,7 +792,7 @@ static bool rebase_buffer_callback2(void *context, RFixupEventDetails * event_de
 			}
 			memset (data, 0, psz);
 			ctx->chunk_dirty = true;
-			add_fixup (rflist, in_buf, 0);
+			add_fixup (rflist, in_buf, 0, psz);
 		}
 		break;
 	case R_FIXUP_EVENT_REBASE:
@@ -798,7 +803,7 @@ static bool rebase_buffer_callback2(void *context, RFixupEventDetails * event_de
 				return false;
 			}
 			ut64 v = event_details->ptr_value;
-			add_fixup (rflist, in_buf, v);
+			add_fixup (rflist, in_buf, v, psz);
 			r_write_ble (data, v, false, psz * 8);
 			ctx->chunk_dirty = true;
 		}
