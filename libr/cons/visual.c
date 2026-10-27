@@ -37,8 +37,6 @@ R_API void r_cons_visual_write(RCons *cons, char *buffer) {
 	bool break_lines = cons->break_lines;
 	const char *endptr;
 	char *nl, *ptr = buffer, *pptr;
-	char *white = NULL;
-	int white_len = 0;
 
 	if (cons->null) {
 		return;
@@ -46,12 +44,8 @@ R_API void r_cons_visual_write(RCons *cons, char *buffer) {
 	if (cols < 1 || lines < 1) {
 		return;
 	}
-	if (cols > 0) {
-		white = r_str_pad (NULL, 0, ' ', cols);
-		if (white) {
-			white_len = cols;
-		}
-	}
+	RStrBuf output;
+	r_strbuf_init (&output);
 	while ((nl = strchr (ptr, '\n'))) {
 		if (lines <= 0) {
 			break;
@@ -80,24 +74,31 @@ R_API void r_cons_visual_write(RCons *cons, char *buffer) {
 			len = endptr - ptr;
 			plen = ptr > buffer ? len : len - 1;
 			if (lines > 0) {
-				__cons_write (cons, pptr, plen);
+				if (!r_strbuf_append_n (&output, pptr, plen)) {
+					goto beach;
+				}
 				if (len != olen) {
-					__cons_write (cons, R_CONS_CLEAR_FROM_CURSOR_TO_END Color_RESET,
-						sizeof (R_CONS_CLEAR_FROM_CURSOR_TO_END Color_RESET) - 1);
+					if (!r_strbuf_append (&output, R_CONS_CLEAR_FROM_CURSOR_TO_END Color_RESET)) {
+						goto beach;
+					}
 				}
 			}
 		} else {
 			if (lines > 0 && cols > 0) {
 				int w = cols - (alen % cols == 0 ? cols : alen % cols);
-				__cons_write (cons, pptr, plen);
-				if (!line_wraps && cons->blankline && w > 0 && white) {
-					__cons_write (cons, white, R_MIN (w, white_len));
+				if (!r_strbuf_append_n (&output, pptr, plen)) {
+					goto beach;
+				}
+				if (!line_wraps && cons->blankline && w > 0 && !r_strbuf_pad (&output, ' ', w)) {
+					goto beach;
 				}
 			}
 			// TRICK to empty columns.. maybe buggy in w32
 			if (r_mem_mem ((const ut8*)ptr, len, (const ut8*)"\x1b[0;0H", 6)) {
 				lines = cons->rows;
-				__cons_write (cons, pptr, plen);
+				if (!r_strbuf_append_n (&output, pptr, plen)) {
+					goto beach;
+				}
 			}
 		}
 		if (break_lines) {
@@ -108,12 +109,16 @@ R_API void r_cons_visual_write(RCons *cons, char *buffer) {
 		ptr = nl + 1;
 	}
 	/* fill the rest of screen */
-	if (white && lines > 0) {
+	if (lines > 0) {
 		while (--lines >= 0) {
-			__cons_write (cons, white, R_MIN (cols, white_len));
+			if (!r_strbuf_pad (&output, ' ', cols)) {
+				goto beach;
+			}
 		}
 	}
-	free (white);
+	__cons_write (cons, r_strbuf_get (&output), r_strbuf_length (&output));
+beach:
+	r_strbuf_fini (&output);
 }
 
 R_API void r_cons_visual_flush(RCons *cons) {

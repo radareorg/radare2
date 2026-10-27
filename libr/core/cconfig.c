@@ -4940,7 +4940,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("scr.maxpage", 102400, &cb_scr_maxpage, "change max chars to print before prompting the user");
 	SETICB ("scr.pagesize", 1, &cb_scrpagesize, "flush in pages when scr.linesleep is != 0");
 	SETCB ("scr.flush", "false", &cb_scrflush, "force flush to console in realtime (breaks scripting)");
-	SETB ("scr.slow", "true", "do slow stuff on visual mode like RFlag.get_at(true)");
 #if R2__WINDOWS__
 	SETICB ("scr.vtmode", core->cons->vtmode? 1: 0, &scr_vtmode, "use VT sequences on Windows (0: Disable, 1: Shell, 2: Visual)");
 #else
