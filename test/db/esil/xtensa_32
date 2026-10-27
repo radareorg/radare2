@@ -595,3 +595,24 @@ lend = 0x00000077
 lcount = 0x000000aa
 EOF2
 RUN
+
+NAME=bit branches expose absolute destinations and separate predicate tokens
+FILE=malloc://64
+ARGS=-a xtensa -b 32
+CMDS=<<EOF2
+wx 07e20507620537520537d205
+aoe
+s 3
+aoe
+s 6
+aoe
+s 9
+aoe
+EOF2
+EXPECT=<<EOF2
+0x00000000 a2,0x1,&,0,==,$z,!,?{,0x9,pc,=,}
+0x00000003 a2,0x1,&,0,==,$z,?{,0xc,pc,=,}
+0x00000006 31,a3,&,1,<<,a2,&,0,==,$z,?{,0xf,pc,=,}
+0x00000009 31,a3,&,1,<<,a2,&,0,==,$z,!,?{,0x12,pc,=,}
+EOF2
+RUN
