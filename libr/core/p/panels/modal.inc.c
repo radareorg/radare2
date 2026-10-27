@@ -439,7 +439,7 @@ static void r_panels_update_modal(RCore *core, RModal *modal, int delta) {
 		modal->offset = R_MAX (count - list_h, 0);
 		modal->idx = count - 1;
 	} else if (modal->idx < modal->offset) {
-		modal->offset -= delta;
+		modal->offset = R_MAX (modal->offset - delta, 0);
 	}
 	int i;
 	int max_h = R_MIN (modal->offset + list_h, count);
@@ -505,14 +505,12 @@ static void r_panels_create_modal(RCore *core, RPanel *panel) {
 	RModal *modal = r_panels_init_modal ();
 	r_panels_set_geometry (&modal->pos, x, y, w, h);
 	int okey, key, cx, cy;
-	char *word = NULL;
 	RCons *cons = core->cons;
 	r_panels_update_modal (core, modal, 1);
 	while (modal) {
 		r_cons_set_raw (cons, true);
 		okey = r_cons_readchar (cons);
 		key = r_cons_arrow_to_hjkl (cons, okey);
-		word = NULL;
 		if (cons->mouse_event && !cons->drag_event &&
 				(key == 'h' || key == 'l')) {
 			continue;
@@ -520,30 +518,24 @@ static void r_panels_create_modal(RCore *core, RPanel *panel) {
 		if (key == INT8_MAX - 1 ||
 				(cons->mouse_event && !cons->drag_event && !key)) {
 			if (r_cons_get_click (cons, &cx, &cy)) {
-				cy -= r_config_get_i (core->config, "scr.notch");
-				if ((cx < x || x + w < cx) || ((cy < y || y + h < cy))) {
+				cx--;
+				cy -= r_config_get_i (core->config, "scr.notch") + 1;
+				const int title_x = R_MAX (x + 2, 0);
+				const int title_y = R_MAX (y + 1, 0);
+				const int list_y = R_MAX (y + 2, 0);
+				if (cx < x || cx >= x + w + 2 || cy < y || cy >= y + h + 2) {
 					key = 'q';
-				} else if (cy >= y + 1 && cy <= y + 2 &&
-						cx >= x + 1 && cx <= x + 6) {
-					key = 'q';
-				} else {
-					word = r_panels_get_word_from_canvas_for_menu (core, core->panels, cx, cy);
-					if (word) {
-						RPanelAlmightyCallback cb = NULL;
-						int mi;
-						for (mi = 0; mi < n_modal_entries; mi++) {
-							if (!strcmp (modal_entries[mi].name, word)) {
-								cb = modal_entries[mi].cb;
-								break;
-							}
-						}
-						if (cb) {
-							cb (core, panel, PANEL_LAYOUT_NONE, word);
-							r_panels_free_modal (&modal);
-							free (word);
-							break;
-						}
-						free (word);
+				} else if (cy == title_y) {
+					if (cx >= title_x && cx < title_x + 3) {
+						key = 'q';
+					}
+				} else if (cx > x && cx < x + w + 1 && cy >= list_y && cy < y + h + 1) {
+					int index = modal->offset + cy - list_y;
+					if (index >= 0 && index < n_modal_entries) {
+						modal->idx = index;
+						r_panels_exec_modal (core, panel, modal, PANEL_LAYOUT_NONE);
+						r_panels_free_modal (&modal);
+						break;
 					}
 				}
 			}
