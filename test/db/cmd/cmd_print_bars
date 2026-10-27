@@ -120,6 +120,26 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=p== density modes draw full bars for fully matching blocks
+FILE=malloc://256
+CMDS=<<EOF
+e scr.color=0
+e scr.hist.block=false
+e scr.utf8=false
+e scr.cols=20
+p==0 16~:0
+wow ff
+p==f 16~:0
+wow 41
+p==p 16~:0
+EOF
+EXPECT=<<EOF
+||||||||||||||| | ff
+||||||||||||||| | ff
+||||||||||||||| | ff
+EOF
+RUN
+
 NAME=p==b output lines
 FILE=-
 CMDS=<<EOF
