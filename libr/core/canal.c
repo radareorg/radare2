@@ -2992,6 +2992,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 	pj_ks (pj, "is-pure", r_str_bool (r_anal_function_purity (fcn)));
 	pj_kn (pj, "realsz", r_anal_function_realsize (fcn));
 	pj_kb (pj, "noreturn", fcn->is_noreturn);
+	pj_kb (pj, "inline", r_anal_function_is_inline (fcn));
 	pj_kb (pj, "recursive", is_recursive (core, fcn));
 	pj_ki (pj, "stackframe", fcn->maxstack);
 	{

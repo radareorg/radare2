@@ -975,6 +975,32 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=aflj reports inline per function after setting and clearing
+FILE=malloc://256
+ARGS=-a arm -b 64
+CMDS=<<EOF
+af+ 0x10 fcn.one
+afb+ 0x10 0x10 8
+af+ 0x20 fcn.two
+afb+ 0x20 0x20 8
+s 0x20
+aflj~{[0].inline}
+aflj~{[1].inline}
+afia+ inline @ 0x10
+aflj~{[0].inline}
+aflj~{[1].inline}
+afia- inline @ 0x10
+aflj~{[0].inline}
+EOF
+EXPECT=<<EOF
+false
+false
+true
+false
+false
+EOF
+RUN
+
 NAME=afia rejects unknown and read-only attributes
 FILE=malloc://256
 CMDS=<<EOF
