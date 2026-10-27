@@ -1995,7 +1995,7 @@ static bool offset_addend(RBinFile *bf, ELFOBJ *eo, RIOBind *iob, const RBinElfR
 	return true;
 }
 
-enum { SLOT_CRAMPED = 1, SLOT_WARNED = 2 };
+enum { SLOT_CRAMPED = 1, SLOT_WARNED = 2, SLOT_LISTED = 4 };
 
 static inline bool offset_fits(st64 a) {
 	return a > -GOTR2_ADDEND_MAX && a < GOTR2_ADDEND_MAX;
@@ -2190,18 +2190,15 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		if (!ptr) {
 			continue;
 		}
-		// a patched code site branches to the slot, so the slot is what the
-		// reloc describes; a data site holds the value and keeps its own vaddr
-		const bool site_moves = has_slot && !skip
+		// pd looks a reloc up at the printed address, so the site keeps its row
+		const bool redirects = has_slot && !skip && (resolved || takes_slot)
 			&& (patch_redirects_code (eo->ehdr.e_machine) || reloc_is_import (eo, reloc));
-		if (site_moves) {
-			RBinSection *s = r_bin_get_section_at (bf->bo, ptr->vaddr + shift, true);
-			if (s && (s->perm & R_PERM_X)) {
-				if (resolved) {
-					ptr->vaddr = sym_addr - shift;
-				} else if (takes_slot) {
-					ptr->vaddr = slot - shift;
-				}
+		RBinSection *s = redirects? r_bin_get_section_at (bf->bo, ptr->vaddr + shift, true): NULL;
+		if (s && (s->perm & R_PERM_X)) {
+			ptr->to_slot = true;
+			if (!(flags & SLOT_LISTED)) {
+				ht_uu_update (slot_flags, reloc->sym, flags | SLOT_LISTED);
+				r_bin_reloc_slot_row (ret, ptr, (resolved? sym_addr: slot) - shift);
 			}
 		}
 		if (takes_slot) {

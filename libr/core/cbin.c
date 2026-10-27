@@ -2245,6 +2245,8 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 			 * Skip section reloc because they will have their own flag.
 			 * Skip also file reloc because not useful for now.
 			 */
+		} else if (reloc->to_slot && (IS_MODE_SET (mode) || IS_MODE_RAD (mode))) {
+			// the slot's own row names the import and types the slot
 		} else if (IS_MODE_SET (mode)) {
 			set_bin_relocs (&ri, reloc, addr, &db, &sdb_module);
 			add_metadata (&ri, reloc, addr, mode);
