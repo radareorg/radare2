@@ -3807,3 +3807,76 @@ EXPECT=<<EOF
 0x00000004 0,0,TRAP
 EOF
 RUN
+
+NAME=arm32 sdiv and udiv esil
+FILE=malloc://16
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 11f210e711f230e7
+aei
+ar r1=-100
+ar r2=7
+aes
+ar r0
+ar r1=-100
+aes
+ar r0
+ar pc=0
+ar r0=9
+ar r2=0
+aes
+ar r0
+ar r0=9
+ar r1=100
+aes
+ar r0
+ar pc=0
+ar r2=-7
+aes
+ar r0
+ar pc=0
+ar r1=0x80000000
+ar r2=-1
+aes
+ar r0
+EOF
+EXPECT=<<EOF
+0xfffffff2
+0x24924916
+0x00000000
+0x00000000
+0xfffffff2
+0x80000000
+EOF
+RUN
+
+NAME=arm32 sdiveq and udiveq honour the condition
+FILE=malloc://16
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 11f2100711f23007
+aei
+ar zf=0
+ar r0=9
+ar r1=100
+ar r2=7
+aes
+ar r0
+aes
+ar r0
+s 0
+ar pc=0
+ar zf=1
+aes
+ar r0
+ar r0=9
+aes
+ar r0
+EOF
+EXPECT=<<EOF
+0x00000009
+0x00000009
+0x0000000e
+0x0000000e
+EOF
+RUN
