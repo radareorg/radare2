@@ -251,3 +251,36 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=V850 debug trap and return use the debug context and DIR mode
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx 40f8
+wx e0074601 @0x60
+aei
+aer psw=0x35
+aer dir=0x40
+aes
+aer pc
+aer dbpc
+aer dbpsw
+aer psw
+aer dir
+aes
+aer pc
+aer psw
+aer dir
+EOF
+EXPECT=<<EOF
+0x00000060
+0x00000002
+0x00000035
+0x000000f5
+0x00000041
+0x00000002
+0x00000035
+0x00000040
+EOF
+RUN
+
