@@ -101,6 +101,11 @@ static inline int getshmfd(RIOShm *shm) {
 
 static RIODesc *shm__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (r_str_startswith (pathname, "shm://")) {
+		// shared memory is a host-wide IPC resource
+		if (r_sandbox_enable (false)) {
+			R_LOG_ERROR ("Sandbox prevents opening shared memory");
+			return NULL;
+		}
 		RIOShm *shm = R_NEW0 (RIOShm);
 		if (!shm) {
 			return NULL;

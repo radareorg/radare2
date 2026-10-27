@@ -615,6 +615,11 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (!__plugin_open (io, file, false)) {
 		return NULL;
 	}
+	// process memory and the optional fork/exec spawn are host-level access
+	if (r_sandbox_enable (false)) {
+		R_LOG_ERROR ("Sandbox prevents opening eBPF process memory");
+		return NULL;
+	}
 	const char *arg = file + strlen ("ebpf://");
 	char *spawn_path = NULL;
 	bool spawned = strchr (arg, '/') != NULL;
