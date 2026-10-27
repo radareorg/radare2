@@ -1421,6 +1421,10 @@ static bool esil_double_to_float(REsil *esil) {
 		if (s == 32) {
 			f.f32 = (float)d.f64;
 			ret = r_esil_pushnum (esil, f.u32);
+		} else if (s == 16) {
+			RCFloatValue fval;
+			r_cfloat_value_from_double (&fval, d.f64, &R_CFLOAT_PROFILE_BINARY16);
+			ret = r_esil_pushnum (esil, fval.words[0]);
 		} else if (isnan (d.f64) || isinf (d.f64)) {
 			ret = r_esil_pushnum (esil, d.u64);
 		} else if (s == 64) {
