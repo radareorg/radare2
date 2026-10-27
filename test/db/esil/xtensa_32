@@ -481,3 +481,117 @@ a2 = 0xaabbccdd
 0x00000080  0xaabbccdd                                   ....
 EOF
 RUN
+
+NAME=loop setup always enters even with zero count
+FILE=malloc://64
+ARGS=-a xtensa -b 32
+CMDS=<<EOF2
+wx 768204
+aei
+aeip
+ar a2=0
+aes
+ar~pc,lbeg,lend,lcount
+EOF2
+EXPECT=<<EOF2
+pc = 0x00000003
+lbeg = 0x00000003
+lend = 0x00000008
+lcount = 0xffffffff
+EOF2
+RUN
+
+NAME=loopnez zero skips but still initializes loop registers
+FILE=malloc://64
+ARGS=-a xtensa -b 32
+CMDS=<<EOF2
+wx 769204
+aei
+aeip
+ar a2=0
+aes
+ar~pc,lbeg,lend,lcount
+ar pc=0
+ar a2=1
+aes
+ar~pc,lcount
+ar pc=0
+ar a2=0xffffffff
+aes
+ar~pc,lcount
+EOF2
+EXPECT=<<EOF2
+pc = 0x00000008
+lbeg = 0x00000003
+lend = 0x00000008
+lcount = 0xffffffff
+pc = 0x00000003
+lcount = 0x00000000
+pc = 0x00000003
+lcount = 0xfffffffe
+EOF2
+RUN
+
+NAME=loopgtz uses signed positive count
+FILE=malloc://64
+ARGS=-a xtensa -b 32
+CMDS=<<EOF2
+wx 76a204
+aei
+aeip
+ar a2=0
+aes
+ar~pc,lcount
+ar pc=0
+ar a2=0xffffffff
+aes
+ar~pc,lcount
+ar pc=0
+ar a2=0x80000000
+aes
+ar~pc,lcount
+ar pc=0
+ar a2=0x7fffffff
+aes
+ar~pc,lcount
+EOF2
+EXPECT=<<EOF2
+pc = 0x00000008
+lcount = 0xffffffff
+pc = 0x00000008
+lcount = 0xfffffffe
+pc = 0x00000008
+lcount = 0x7fffffff
+pc = 0x00000003
+lcount = 0x7ffffffe
+EOF2
+RUN
+
+NAME=loop special register reads writes and exchanges
+FILE=malloc://128
+ARGS=-a xtensa -b 32
+CMDS=<<EOF2
+wx 200013300003400061500113600103700161800213900203a00261
+aei
+aeip
+ar a2=0x11
+ar a4=0x44
+ar a5=0x55
+ar a7=0x77
+ar a8=0x88
+ar a10=0xaa
+9aes
+ar~a3,a4,a6,a7,a9,a10,lbeg,lend,lcount
+EOF2
+EXPECT=<<EOF2
+a3 = 0x00000011
+a4 = 0x00000011
+a6 = 0x00000055
+a7 = 0x00000055
+a9 = 0x00000088
+a10 = 0x00000088
+lbeg = 0x00000044
+lend = 0x00000077
+lcount = 0x000000aa
+EOF2
+RUN

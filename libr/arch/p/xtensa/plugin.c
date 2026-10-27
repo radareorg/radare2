@@ -603,6 +603,8 @@ static void xtensa_si_op(RArchSession *anal, RAnalOp *op, ut64 addr, const ut8 *
 				break;
 			case 0x9: case 0xa:
 				op->type = R_ANAL_OP_TYPE_CJMP;
+				op->cond = (buf[1] >> 4) == 0x9? R_ANAL_CONDTYPE_EQ: R_ANAL_CONDTYPE_LE;
+				op->sign = (buf[1] >> 4) == 0xa;
 				op->fail = addr + op->size;
 				op->jump = addr + 4 + buf[2];
 				break;
