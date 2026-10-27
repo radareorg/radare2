@@ -1013,7 +1013,7 @@ static char *regs(RArchSession *s) {
 		"gpr	feic	.32	$	0\n"
 		"gpr	dbic	.32	$	0\n"
 		"gpr	ctpc	.32	$	0\n"
-		"gpr	ctpcw	.32	$	0\n"
+		"gpr	ctpsw	.32	$	0\n"
 		"gpr	dbpc	.32	$	0\n"
 		"gpr	dbpsw	.32	$	0\n"
 		"gpr	ctbp	.32	$	0\n"

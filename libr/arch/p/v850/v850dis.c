@@ -281,7 +281,11 @@ static char *distillate(v850np_inst *inst, const char *esilfmt, ut64 memaddr) {
 		} else if (operand->flags & V850_OPERAND_SRG) {
 			r_strbuf_append (arg, get_v850_sreg_name (value));
 		} else if (operand->flags & V850_OPERAND_CC) {
-			r_strbuf_append (arg, get_v850_cc_name (value));
+			static const char *conditions[] = {
+				"ov", "cy", "z", "cy,z,|", "s", "1", "s,ov,^", "s,ov,^,z,|",
+				"ov,!", "cy,!", "z,!", "cy,z,|,!", "s,!", "sat", "s,ov,^,!", "s,ov,^,z,|,!"
+			};
+			r_strbuf_append (arg, conditions[value & 15]);
 		} else if (operand->flags & V850E_OPERAND_REG_LIST) {
 			print_reglist (arg, inst, operand, value);
 		} else {
