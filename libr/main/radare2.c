@@ -119,6 +119,8 @@ static void json_plugins(RCore *core, PJ *pj, const char *name, const char *cmd)
 }
 
 static int r_main_version_verify(RCore *core, bool show, bool json) {
+	bool own_cons;
+	RCons *cons = r_main_cons_init (&own_cons);
 	int i, ret;
 	typedef const char *(*vc) ();
 	const char *base = R2_GITTAP "-" R2_ABIVERSION_STRING;
@@ -246,11 +248,11 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 		pj_end (pj);
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		printf ("%s\n", s);
+		r_cons_println (cons, s);
 		free (s);
 	} else {
 		if (show) {
-			printf ("%s  r2\n", base);
+			r_cons_printf (cons, "%s  r2\n", base);
 		}
 		for (i = ret = 0; vcs[i].name; i++) {
 			struct vcs_t *v = &vcs[i];
@@ -259,14 +261,14 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 				ret = 1;
 			}
 			if (show) {
-				printf ("%s  %s\n", name, v->name);
+				r_cons_printf (cons, "%s  %s\n", name, v->name);
 			}
 		}
 		if (ret) {
 			R_LOG_WARN ("r2 library versions mismatch! Check r2 -V");
 		}
 	}
-	return ret;
+	return r_main_cons_fini (cons, own_cons, ret);
 }
 
 static int main_help(int line) {

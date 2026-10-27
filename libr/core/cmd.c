@@ -216,8 +216,8 @@ static RCoreHelpMessage help_msg_dash = {
 	"-L", "", "same as Lo (or r2 -L)",
 	"-p", " project", "same as 'P [prjname]' to load a project",
 	"-P", " patchfile", "apply given patch file (see doc/rapatch2.md)",
-	"-v", "", "same as -V",
-	"-V", "", "show r2 version, same as ?V",
+	"-v", "[j]", "show r2 version, same as ?V",
+	"-V", "[j]", "show library versions, same as r2 -V",
 	"--", "", "seek one block backward. Same as s-- (see `b` command)",
 	NULL
 };
@@ -1863,12 +1863,14 @@ static int cmd_stdin(void *data, const char *input) {
 			r_cons_cmd_help (core->cons, help_msg_dash);
 			break;
 		case 'v': // "-v"
-		case 'V': // "-V"
 			if (input[1] == 'j') {
 				r_core_call (core, "?Vj");
 			} else {
 				r_core_call (core, "?V");
 			}
+			break;
+		case 'V': // "-V"
+			r_core_call (core, input[1] == 'j'? "r2 -jV": "r2 -V");
 			break;
 		case 'L': // "-L"
 			if (input[1]) {
