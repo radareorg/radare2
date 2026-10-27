@@ -54,3 +54,28 @@ a0,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11
 a1,a12,a13,a14,a15
 EOF
 RUN
+
+NAME=xtensa pseudo parser
+FILE=-
+CMDS=<<EOF
+e asm.arch=xtensa
+e asm.pseudo=true
+wx 322200 32610b 403fb4 80eb03 90e613 a08983 403fa0 001440 306321 121212 9c15 87fbe5 36a100
+pi 13
+EOF
+EXPECT=<<EOF
+a3 = [a2]
+[a1 + 44] = a3
+a3 = (a4 >> 15) & 0xfff
+a8 = prid
+ps = a9
+if (a10 == 0) a8 = a9
+a3 = (a15 << 2) + a4
+sar = 32 - a4
+a6 = (st32)a3 >> 3
+a1 = (ut16)[a2 + 36]
+if (a5 == 0) goto 0x00000033
+if (a11 & (1 << 24)) goto 0x00000009
+entry a1, 80
+EOF
+RUN

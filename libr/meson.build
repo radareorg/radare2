@@ -479,6 +479,7 @@ io_plugins += [
     'v850',
     'vax',
     'x86',
+    'xtensa',
     'z80',
     'wasm',
     'msp430',
