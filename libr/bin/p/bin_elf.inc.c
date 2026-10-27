@@ -30,7 +30,9 @@ static char* regstate(RBinFile *bf) {
 			return hexregs;
 		}
 	}
-	R_LOG_ERROR ("Cannot retrieve regstate on unsupported arch %s", Elf_(get_machine_name)(eo));
+	char *machine = Elf_(get_machine_name) (eo);
+	R_LOG_ERROR ("Cannot retrieve regstate on unsupported arch %s", machine);
+	free (machine);
 	return NULL;
 }
 
