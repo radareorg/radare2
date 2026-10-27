@@ -24,13 +24,13 @@ static void print_value_dec(RStrBuf *sb, int flags, st64 value) {
 	}
 }
 
-static void print_value(RStrBuf *sb, int flags, ut64 memaddr, st64 value) {
+static void print_value(RStrBuf *sb, int flags, ut64 memaddr, st64 value, ut32 pc_mask) {
 	if (flags & V850_PCREL) {
 		ut64 addr = value + memaddr;
 		if (flags & V850_INVERSE_PCREL) {
 			addr = memaddr - value;
 		}
-		r_strbuf_appendf (sb, "0x%"PFMT64x, (ut64)addr); // memaddr);
+		r_strbuf_appendf (sb, "0x%"PFMT64x, (ut64)addr & pc_mask);
 	} else if (flags & V850_OPERAND_DISP) {
 		print_value_dec (sb, flags, value);
 	} else if ((flags & V850E_IMMEDIATE32) || (flags & V850E_IMMEDIATE16HI)) {
@@ -265,7 +265,7 @@ static bool print_reglist(RStrBuf *sb, v850np_inst *inst, const struct v850_oper
 	return true;
 }
 
-static char *distillate(v850np_inst *inst, const char *esilfmt, ut64 memaddr) {
+static char *distillate(v850np_inst *inst, const char *esilfmt, ut64 memaddr, ut32 pc_mask) {
 	RStrBuf *sb = r_strbuf_new ("");
 	RList *args = r_list_newf (free);
 	int i;
@@ -289,7 +289,7 @@ static char *distillate(v850np_inst *inst, const char *esilfmt, ut64 memaddr) {
 		} else if (operand->flags & V850E_OPERAND_REG_LIST) {
 			print_reglist (arg, inst, operand, value);
 		} else {
-			print_value (arg, operand->flags, memaddr, value);
+			print_value (arg, operand->flags, memaddr, value, pc_mask);
 		}
 		char *text = r_strbuf_drain (arg);
 		text = r_str_replace (text, "{", "", true);
@@ -558,11 +558,11 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 						// dont print coz we replace later
 						//r_strbuf_append (sb, "?");
 					} else {
-						print_value (sb, operand->flags, memaddr, value);
+						print_value (sb, operand->flags, memaddr, value, (cpumodel & V850_CPU_E2_UP)? UT32_MAX: 0x03ffffff);
 						inst->value = value;
 					}
 #else
-					print_value (sb, operand->flags, memaddr, value);
+					print_value (sb, operand->flags, memaddr, value, (cpumodel & V850_CPU_E2_UP)? UT32_MAX: 0x03ffffff);
 					inst->value = value;
 #endif
 				}
@@ -584,10 +584,11 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 		inst->text = r_strbuf_drain (sb);
 		if (op->esil) {
 			// take advantage of the arguments parsed and honor the formats tring below
-			inst->esil = distillate (inst, op->esil, memaddr);
+			inst->esil = distillate (inst, op->esil, memaddr, (cpumodel & V850_CPU_E2_UP)? UT32_MAX: 0x03ffffff);
 		}
 	} else {
 		r_strbuf_free (sb);
+		return false;
 	}
 	return true;
 fail:
@@ -669,6 +670,7 @@ int v850np_disasm(v850np_inst *inst, int cpumodel, ut64 addr, const ut8* buffer,
 
 	if (length == 4 || (length == 0 && (insn & 0x0600) == 0x0600)) {
 		if (len < 4) {
+			code_length = 4;
 			inst->text = r_str_newf ("truncated from %d to %d", code_length, length);
 			return -1;
 		}

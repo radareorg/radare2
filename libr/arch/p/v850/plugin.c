@@ -850,6 +850,14 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	op->size = v850np_disasm (&inst, cpumodel, addr, buf, len);
 	if (op->size < 2) {
 		op->size = 2;
+		op->type = R_ANAL_OP_TYPE_ILL;
+		if (mask & R_ARCH_OP_MASK_DISASM) {
+			op->mnemonic = inst.text? inst.text: strdup ("invalid");
+		} else {
+			free (inst.text);
+		}
+		free (inst.esil);
+		return false;
 	}
 	if (mask & R_ARCH_OP_MASK_ESIL) {
 		r_strbuf_set (&op->esil, inst.esil);
@@ -873,7 +881,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->ptr = inst.value;
 		break;
 	case R_ANAL_OP_TYPE_JMP:
-		op->jump = addr + inst.value;
+		op->jump = (addr + inst.value) & ((cpumodel & V850_CPU_E2_UP)? UT32_MAX: 0x03ffffff);
 		break;
 	case R_ANAL_OP_TYPE_CJMP: {
 		static const int conditions[] = {
@@ -883,8 +891,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			R_ANAL_CONDTYPE_PL, R_ANAL_CONDTYPE_AL, R_ANAL_CONDTYPE_GE, R_ANAL_CONDTYPE_GT,
 		};
 		op->cond = conditions[inst.op->opcode & 15];
-		op->jump = addr + inst.value;
-		op->fail = addr + inst.size;
+		op->jump = (addr + inst.value) & ((cpumodel & V850_CPU_E2_UP)? UT32_MAX: 0x03ffffff);
+		op->fail = (addr + inst.size) & ((cpumodel & V850_CPU_E2_UP)? UT32_MAX: 0x03ffffff);
 		break;
 	}
 	case R_ANAL_OP_TYPE_PUSH:
@@ -900,8 +908,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		}
 		break;
 	case R_ANAL_OP_TYPE_CALL:
-		op->jump = addr + inst.value;
-		op->fail = addr + inst.size;
+		op->jump = (addr + inst.value) & ((cpumodel & V850_CPU_E2_UP)? UT32_MAX: 0x03ffffff);
+		op->fail = (addr + inst.size) & ((cpumodel & V850_CPU_E2_UP)? UT32_MAX: 0x03ffffff);
 		break;
 	case R_ANAL_OP_TYPE_ADD:
 	case R_ANAL_OP_TYPE_SUB:
@@ -1033,7 +1041,7 @@ static char *regs(RArchSession *s) {
 
 static RList *preludes(RArchSession *as) {
 	RList *l = r_list_newf (free);
-	r_list_append (l, r_str_newf ("8007 f0ff"));
+	r_list_append (l, strdup ("80070100 c0ff0100"));
 	r_list_append (l, r_str_newf ("501a630f f0ffff0f"));
 	return l;
 }
