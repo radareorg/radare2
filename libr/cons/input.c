@@ -2,6 +2,37 @@
 
 #include <r_cons.h>
 
+// Keep the read head private without changing InputState's layout.
+typedef struct {
+	int head;
+} RConsReadBuffer;
+
+static RConsReadBuffer *readbuffer_get(InputState *is) {
+	return is->readbuffer? (RConsReadBuffer *)is->readbuffer - 1: NULL;
+}
+
+static bool readbuffer_grow(InputState *is, int len) {
+	if (len < 1 || len > ST32_MAX - is->readbuffer_length) {
+		return false;
+	}
+	size_t size;
+	if (r_add_overflow_size_t (sizeof (RConsReadBuffer), (size_t)is->readbuffer_length + len, &size)) {
+		return false;
+	}
+	RConsReadBuffer *buffer = readbuffer_get (is);
+	if (buffer && buffer->head) {
+		memmove (is->readbuffer, is->readbuffer + buffer->head, is->readbuffer_length);
+		buffer->head = 0;
+	}
+	buffer = realloc (buffer, size);
+	if (!buffer) {
+		return false;
+	}
+	buffer->head = 0;
+	is->readbuffer = (char *)(buffer + 1);
+	return true;
+}
+
 R_API int r_cons_controlz(RCons *cons, int ch) {
 #if R2__UNIX__
 	if (ch == 0x1a) {
@@ -55,11 +86,15 @@ static bool readpush_front(RCons *cons, int ch) {
 		return true;
 	}
 	InputState *is = &cons->input_state;
-	char *res = realloc (is->readbuffer, is->readbuffer_length + 1);
-	if (!res) {
+	RConsReadBuffer *buffer = readbuffer_get (is);
+	if (buffer && buffer->head) {
+		is->readbuffer[--buffer->head] = ch;
+		is->readbuffer_length++;
+		return true;
+	}
+	if (!readbuffer_grow (is, 1)) {
 		return false;
 	}
-	is->readbuffer = res;
 	memmove (is->readbuffer + 1, is->readbuffer, is->readbuffer_length);
 	is->readbuffer[0] = ch;
 	is->readbuffer_length++;
@@ -705,21 +740,21 @@ R_API int r_cons_readchar_timeout(RCons *cons, ut32 msec) {
 
 R_API bool r_cons_readpush(RCons *cons, const char *str, int len) {
 	InputState *is = &cons->input_state;
-	char *res = (len + is->readbuffer_length > 0)
-		? realloc (is->readbuffer, len + is->readbuffer_length)
-		: NULL;
-	if (res) {
-		is->readbuffer = res;
-		memmove (is->readbuffer + is->readbuffer_length, str, len);
-		is->readbuffer_length += len;
-		return true;
+	if (!len) {
+		return is->readbuffer_length > 0;
 	}
-	return false;
+	if (!str || !readbuffer_grow (is, len)) {
+		return false;
+	}
+	memmove (is->readbuffer + is->readbuffer_length, str, len);
+	is->readbuffer_length += len;
+	return true;
 }
 
 R_API void r_cons_readflush(RCons *cons) {
 	InputState *is = &cons->input_state;
-	R_FREE (is->readbuffer);
+	free (readbuffer_get (is));
+	is->readbuffer = NULL;
 	is->readbuffer_length = 0;
 }
 
@@ -737,9 +772,12 @@ R_API int r_cons_readchar(RCons *cons) {
 	buf[0] = -1;
 	InputState *input_state = &cons->input_state;
 	if (input_state->readbuffer_length > 0) {
-		int ch = *input_state->readbuffer;
+		RConsReadBuffer *buffer = readbuffer_get (input_state);
+		int ch = input_state->readbuffer[buffer->head++];
 		input_state->readbuffer_length--;
-		memmove (input_state->readbuffer, input_state->readbuffer + 1, input_state->readbuffer_length);
+		if (!input_state->readbuffer_length) {
+			buffer->head = 0;
+		}
 		return ch;
 	}
 	r_cons_set_raw (cons, true);

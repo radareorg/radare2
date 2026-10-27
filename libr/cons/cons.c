@@ -10,12 +10,15 @@ static void r_cons_context_free_internal(RConsContext *ctx);
 struct r_cons_terminal_t {
 	RList *consoles;
 	RCons *foreground;
+	RCons *raw_owner;
 	RThreadLock lock;
 #if R2__UNIX__ && !defined(__wasi__) && !EMSCRIPTEN
 	struct termios mode;
 #elif R2__WINDOWS__
 	HANDLE input;
 	DWORD mode;
+	DWORD raw_mode;
+	DWORD raw_xterm;
 	UINT old_cp;
 #endif
 };
@@ -326,6 +329,9 @@ static void cons_terminal_detach(RCons *cons) {
 		return;
 	}
 	r_th_lock_enter (&terminal->lock);
+	if (terminal->raw_owner == cons) {
+		terminal->raw_owner = NULL;
+	}
 	r_list_delete_data (terminal->consoles, cons);
 #if CONS_NATIVE_CURRENT
 	if (current) {
@@ -416,6 +422,7 @@ R_API RCons *r_cons_thready(RCons *cons) {
 R_API void r_cons_free(RCons *cons) {
 	R_RETURN_IF_FAIL (cons);
 	cons_terminal_detach (cons);
+	r_cons_readflush (cons);
 	r_line_free (cons->line);
 	while (!r_list_empty (cons->ctx_stack)) {
 		r_cons_pop (cons);
@@ -1465,6 +1472,16 @@ R_API void r_cons_set_raw(RCons *cons, bool is_raw) {
 		return;
 	}
 	r_th_lock_enter (&terminal->lock);
+	bool unchanged = is_raw && terminal->raw_owner == cons;
+#if R2__WINDOWS__
+	unchanged &= terminal->raw_mode == cons->term_raw && terminal->raw_xterm == cons->term_xterm;
+#endif
+	if (unchanged) {
+		terminal->foreground = cons;
+		r_th_lock_leave (&terminal->lock);
+		return;
+	}
+	terminal->raw_owner = NULL;
 #if R2_WASM_BROWSER
 	/* Notify JS side about terminal mode change */
 	extern void r2_js_set_raw_mode (int raw) __attribute__((import_module ("r2"), import_name ("set_raw_mode")));
@@ -1495,17 +1512,23 @@ R_API void r_cons_set_raw(RCons *cons, bool is_raw) {
 		const char *cmd = is_raw
 			? "stty raw -echo"
 			: "stty raw echo";
-		r_sandbox_system (cmd, 1);
+		if (r_sandbox_system (cmd, 1)) {
+			r_th_lock_leave (&terminal->lock);
+			return;
+		}
 	} else {
 		if (!SetConsoleMode (terminal->input, is_raw? cons->term_raw: cons->term_buf)) {
 			r_th_lock_leave (&terminal->lock);
 			return;
 		}
 	}
+	terminal->raw_mode = cons->term_raw;
+	terminal->raw_xterm = cons->term_xterm;
 #elif !__wasi__
 #warning No raw console supported for this platform
 #endif
 	terminal->foreground = cons;
+	terminal->raw_owner = is_raw? cons: NULL;
 	r_th_lock_leave (&terminal->lock);
 }
 
