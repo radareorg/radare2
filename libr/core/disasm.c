@@ -1749,7 +1749,7 @@ static void ds_show_refs(RDisasmState *ds) {
 }
 
 static void ds_show_anos(RDisasmState *ds) {
-	if (ds->show_anos) {
+	if (ds->show_anos && r_anal_get_function_at (ds->core->anal, ds->at)) {
 		r_core_call_at (ds->core, ds->at, "anol");
 	}
 }
