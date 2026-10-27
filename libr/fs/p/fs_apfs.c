@@ -306,7 +306,7 @@ static ut64 apfs_resolve_path(ApfsFS *ctx, const char *path) {
 	}
 
 	char *saveptr;
-	char *component = strtok_r (path_copy, "/", &saveptr);
+	char *component = r_str_tok_r (path_copy, "/", &saveptr);
 
 	while (component != NULL) {
 		// Find child inode with this name under current_inode
@@ -320,7 +320,7 @@ static ut64 apfs_resolve_path(ApfsFS *ctx, const char *path) {
 		}
 
 		current_inode = fc.found;
-		component = strtok_r (NULL, "/", &saveptr);
+		component = r_str_tok_r (NULL, "/", &saveptr);
 	}
 
 	free (path_copy);

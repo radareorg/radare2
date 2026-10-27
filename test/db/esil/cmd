@@ -18,7 +18,7 @@ dr PC=0xdeadbeef
 aes
 EOF
 EXPECT=<<EOF
-its a trap 0xdeadbeef 0x6
+its a trap 3735928559 6
 EOF
 EXPECT_ERR=<<EOF
 ERROR: ESIL stopped at 0xdeadbeef: execute error (execute-err)
@@ -37,7 +37,7 @@ aes
 EOF
 EXPECT=<<EOF
 type: ill
-its a trap 0x0 0x7
+its a trap 0 7
 EOF
 EXPECT_ERR=
 RUN
@@ -131,9 +131,9 @@ aer rax=0xdeadbeef
 aes
 EOF
 EXPECT=<<EOF
-its an ioer 0x0 0x0
-its an ioer 0x0 0x0
-its an ioer 0x0 0x1
+its an ioer 0 0
+its an ioer 0 0
+its an ioer 0 1
 EOF
 EXPECT_ERR=<<EOF
 ERROR: ESIL stopped at 0x00000000: write error (write-err at 0xdeadbeef)
@@ -150,7 +150,7 @@ aer rax=0xdeadbeef
 aes
 EOF
 EXPECT=<<EOF
-trapped 0x0 0xdeadbeef
+trapped 0 3735928559
 EOF
 EXPECT_ERR=<<EOF
 ERROR: ESIL stopped at 0x00000000: write error (write-err at 0xdeadbeef)
@@ -194,7 +194,7 @@ e cmd.esil.step=?e step triggered
 aes
 EOF
 EXPECT=<<EOF
-step triggered 0x0 0x0
+step triggered 0 0
 EOF
 RUN
 
