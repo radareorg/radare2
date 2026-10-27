@@ -1938,21 +1938,6 @@ enum {
 
 #define RUNE_PROPS(c) (utf8_width_pages[(utf8_width_index[(c) >> 7] << 7) | ((c) & 0x7f)])
 
-/* Skip past a CSI sequence (escape [ ... terminator) and return new position */
-static const char *__ansi_skip_csi(const char *str) {
-	if (str[0] == 0x1b && str[1] == '[') {
-		const char *ptr = str + 2;
-		while (*ptr && *ptr != 'J' && *ptr != 'm' && *ptr != 'H' && *ptr != 'K') {
-			ptr++;
-		}
-		if (*ptr) {
-			ptr++;
-		}
-		return ptr;
-	}
-	return str;
-}
-
 static size_t str_ansi_length(const char *s, size_t left) {
 	size_t i = 1;
 	if (*s == 0x1b) {
@@ -2367,8 +2352,8 @@ R_API int r_str_ansi_filter(char *str, char **R_NULLABLE out, int **R_NULLABLE c
 	return j;
 }
 
-R_API char *r_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
-	if (x2 <= x || y2 <= y || !str) {
+static char *str_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2, bool ansi) {
+	if (!str || !x2 || y2 <= y || (ansi && x2 <= x)) {
 		return strdup ("");
 	}
 	ut32 ch = 0, cw = 0;
@@ -2382,11 +2367,11 @@ R_API char *r_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
 	}
 	size_t str_len = strlen (str), nr_of_lines = 0, r_len;
 	const char *s = str, *str_end = str + str_len;
-	while (nr_of_lines < y2 - y && (s = strchr (s, '\n'))) {
+	while (ansi && nr_of_lines < y2 - y && (s = strchr (s, '\n'))) {
 		nr_of_lines++;
 		s++;
 	}
-	if (r_mul_overflow_size_t (nr_of_lines, sizeof (Color_RESET) - 1, &r_len)
+	if (r_mul_overflow_size_t (nr_of_lines, ansi? sizeof (Color_RESET) - 1: 0, &r_len)
 		|| r_add_overflow_size_t (r_len, str_len, &r_len)
 		|| r_add_overflow_size_t (r_len, 1, &r_len)) {
 		return NULL;
@@ -2398,8 +2383,11 @@ R_API char *r_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
 	char *r = ret;
 	while (*str) {
 		if (*str == '\n') {
-			memcpy (r, Color_RESET "\n", sizeof (Color_RESET));
-			r += sizeof (Color_RESET);
+			if (ansi) {
+				memcpy (r, Color_RESET, sizeof (Color_RESET) - 1);
+				r += sizeof (Color_RESET) - 1;
+			}
+			*r++ = '\n';
 			str++;
 			ch++;
 			if (ch == y2 && *str) {
@@ -2408,14 +2396,14 @@ R_API char *r_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
 			}
 			cw = 0;
 		} else {
-			if ((*str & 0xc0) == 0x80) {
+			if (ansi && (*str & 0xc0) == 0x80) {
 				if (cw > x) {
 					*r++ = *str;
 				}
 				str++;
 				continue;
 			}
-			if ((*str & 0x80) && r_str_char_fullwidth (str, str_end - str)) {
+			if (ansi && (*str & 0x80) && r_str_char_fullwidth (str, str_end - str)) {
 				cw++;
 				if (cw == x) {
 					*r++ = ' ';
@@ -2423,11 +2411,11 @@ R_API char *r_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
 					continue;
 				}
 			}
-			if (*str == 0x1b && str[1] == '[') {
-				const char *end = __ansi_skip_csi (str);
-				memcpy (r, str, end - str);
-				r += end - str;
-				str = end;
+			if (ansi && *str == 0x1b && str[1] == '[') {
+				const size_t len = str_ansi_length (str, str_end - str);
+				memcpy (r, str, len);
+				r += len;
+				str += len;
 				continue;
 			}
 			if (cw >= x && cw < x2) {
@@ -2446,6 +2434,10 @@ R_API char *r_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
 	}
 	*r = 0;
 	return ret;
+}
+
+R_API char *r_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
+	return str_crop (str, x, y, x2, y2, true);
 }
 
 R_API size_t r_str_utf8_codepoint(const char *s, size_t left) {
@@ -2492,8 +2484,7 @@ R_API bool r_str_char_fullwidth(const char *s, size_t left) {
 R_API size_t r_str_utf8_charsize(const char *str) {
 	R_RETURN_VAL_IF_FAIL (str, 0);
 	size_t size = 0;
-	size_t length = strlen (str);
-	while (size < length && size < 5) {
+	while (size < 5 && str[size]) {
 		size++;
 		if ((str[size] & 0xc0) != 0x80) {
 			break;
@@ -3348,53 +3339,9 @@ R_API int r_str_bounds(const char *_str, int *h) {
 /* crop a string like it is in a rectangle with the upper-left corner at (x, y)
  * coordinates and the bottom-right corner at (x2, y2) coordinates. The result
  * is a newly allocated string, that should be deallocated by the user */
-R_API char *r_str_crop(const char *str, unsigned int x, unsigned int y,
-	unsigned int x2, unsigned int y2) {
+R_API char *r_str_crop(const char *str, unsigned int x, unsigned int y, unsigned int x2, unsigned int y2) {
 	R_RETURN_VAL_IF_FAIL (str, NULL);
-	char *r, *ret;
-	unsigned int ch = 0, cw = 0;
-	if (x2 < 1 || y2 < 1 || !str) {
-		return strdup ("");
-	}
-	size_t str_len = strlen (str);
-	r = ret = malloc (str_len + 1);
-	if (!r) {
-		return NULL;
-	}
-	while (*str) {
-		/* crop height */
-		if (ch >= y2) {
-			if (r > ret) {
-				r--;
-			}
-			break;
-		}
-
-		if (*str == '\n') {
-			if (ch >= y && ch < y2) {
-				*r++ = *str;
-			}
-			str++;
-			ch++;
-			cw = 0;
-		} else {
-			if (ch >= y && ch < y2 && cw >= x && cw < x2) {
-				*r++ = *str;
-			}
-			/* crop width */
-			/* skip until newline */
-			if (cw >= x2) {
-				while (*str && *str != '\n') {
-					str++;
-				}
-			} else {
-				str++;
-			}
-			cw++;
-		}
-	}
-	*r = 0;
-	return ret;
+	return str_crop (str, x, y, x2, y2, false);
 }
 
 R_API char *r_str_wrap(const char *str, int w) {
