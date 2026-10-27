@@ -6294,20 +6294,20 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 
 					break;
 				case TYPE_IMM:
-					if (*ao->a[0] == '{') {
-						collect_list (ao);
-						st32 list = getreglist (ao->a[0]);
-						if (list <= 0) {
-							return 0;
-						}
-						ao->o |= (list & 0xff) << 24 | ((list >> 8) & 0xff) << 16;
-					} else if (!strcmp (ops[i].name, "cps")) {
-						// cps #mode: imod 00, M 1
+					if (!strcmp (ops[i].name, "cps")) {
+						// cps #mode: imod 00, M 1, unconditional
 						ut64 mode = getnum (ao->a[0]);
-						if (err || mode > 31) {
+						if (cond != 14 || err || mode > 31) {
 							return 0;
 						}
 						ao->o |= 0x200 | mode << 24;
+					} else if (*ao->a[0] == '{') {
+						collect_list (ao);
+						st32 list = getreglist (ao->a[0]);
+						if (list <= 0 || ao->a[1]) {
+							return 0;
+						}
+						ao->o |= (ut32)(list & 0xff) << 24 | (ut32)((list >> 8) & 0xff) << 16;
 					} else {
 						return 0;
 					}
@@ -6441,7 +6441,11 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				break;
 			case TYPE_MVN:
 			case TYPE_MOV:
-				ao->o |= (ut64)getreg (ao->a[0]) << 20;
+				reg = getreg (ao->a[0]);
+				if (reg == -1) {
+					return 0;
+				}
+				ao->o |= (ut64)reg << 20;
 				ret = getreg (ao->a[1]);
 				if (ret != -1) {
 					ao->o |= ret << 24;
