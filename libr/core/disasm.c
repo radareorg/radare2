@@ -91,6 +91,10 @@ typedef struct r_disasm_state_t {
 	bool show_flgoff;
 	bool hasMidflag;
 	bool hasMidbb;
+	ut64 mid_at;
+	int mid_oplen;
+	int midflag_skip;
+	int midbb_skip;
 	int atabs;
 	bool atabsonce;
 	int atabsoff;
@@ -775,6 +779,7 @@ static void ds_refresh_refs(RDisasmState *ds) {
 
 static RDisasmState *ds_init(RCore *core, bool for_json) {
 	RDisasmState *ds = R_NEW0 (RDisasmState);
+	ds->mid_oplen = -1;
 	ds->ssa = sdb_new0 ();
 	ds->core = core;
 	ds->addrbytes = core->io->addrbytes;
@@ -1678,6 +1683,7 @@ static char *ds_run_command(RDisasmState *ds, const char *str, bool capture) {
 	ds->sfi.name = NULL;
 	ds->ocomment = NULL;
 	ds->cursor_switch_op = NULL;
+	ds->mid_oplen = -1;
 	ds_refresh_refs (ds);
 	return output;
 }
@@ -2077,16 +2083,23 @@ static int handleMidBB(RCore *core, RDisasmState *ds) {
 	// a bb (and fcn) can be as small as 1 byte, and advancing i based on
 	// bb->size is unsound if basic blocks can nest or overlap
 	for (i = 1; i < ds->oplen; i++) {
-		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ds->at + i, 0);
-		if (fcn) {
-			RAnalBlock *bb = ds_bbat (ds, fcn, ds->at + i);
-			if (bb && bb->addr > ds->at) {
-				ds->hasMidbb = true;
-				return bb->addr - ds->at;
-			}
+		if (r_anal_get_block_at (core->anal, ds->at + i)) {
+			ds->hasMidbb = true;
+			return i;
 		}
 	}
 	return 0;
+}
+
+static void ds_update_mid_marks(RDisasmState *ds) {
+	if (ds->mid_at == ds->at && ds->mid_oplen == ds->oplen) {
+		return;
+	}
+	ds->midflag_skip = handleMidFlags (ds->core, ds, true);
+	ds->hasMidbb = false;
+	ds->midbb_skip = ds->midbb? handleMidBB (ds->core, ds): 0;
+	ds->mid_at = ds->at;
+	ds->mid_oplen = ds->oplen;
 }
 
 R_API int r_core_flag_in_middle(RCore *core, ut64 at, int oplen, int *midflags) {
@@ -2122,10 +2135,7 @@ static void ds_print_show_cursor(RDisasmState *ds) {
 		cursor_addr < (ds->at + ds->asmop.size);
 
 	bool has_bp = r_bp_get_at (core->dbg->bp, ds->at);
-	(void)handleMidFlags (core, ds, false);
-	if (ds->midbb) {
-		(void)handleMidBB (core, ds);
-	}
+	ds_update_mid_marks (ds);
 
 	const bool use_utf = cons->use_utf8;
 	const bool has_mid = ds->hasMidflag || ds->hasMidbb;
@@ -7412,10 +7422,9 @@ toro:
 		if (ds->at >= addr) {
 			r_print_set_rowoff (core->print, ds->lines, ds->at - addr, calc_row_offsets);
 		}
-		skip_bytes_flag = handleMidFlags (core, ds, true);
-		if (ds->midbb) {
-			skip_bytes_bb = handleMidBB (core, ds);
-		}
+		ds_update_mid_marks (ds);
+		skip_bytes_flag = ds->midflag_skip;
+		skip_bytes_bb = ds->midbb_skip;
 		ds_show_anos (ds);
 		if (!ds->show_flag_in_offset) {
 			ds_show_flags (ds, false);
