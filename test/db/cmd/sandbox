@@ -377,3 +377,17 @@ EXPECT=<<EOF2
 90
 EOF2
 RUN
+
+NAME=sandbox blocks r2k:// regardless of grain
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain=all
+e cfg.sandbox=true
+o r2k://
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Sandbox prevents opening the r2k driver
+ERROR: Cannot open file r2k://
+EOF
+RUN

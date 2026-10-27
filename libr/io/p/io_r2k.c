@@ -104,6 +104,11 @@ static char *r2k__system(RIO *io, RIODesc *fd, const char *cmd) {
 
 static RIODesc *r2k__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (r_str_startswith (pathname, "r2k://")) {
+		// the ioctl driver reads and writes kernel memory
+		if (r_sandbox_enable (false)) {
+			R_LOG_ERROR ("Sandbox prevents opening the r2k driver");
+			return NULL;
+		}
 		rw |= R_PERM_WX;
 #if R2__WINDOWS__
 		RIOW32 *w32 = R_NEW0 (RIOW32);

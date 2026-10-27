@@ -1,0 +1,13 @@
+NAME=sandbox blocks ebpf:// regardless of grain
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain=all
+e cfg.sandbox=true
+o ebpf://1
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Sandbox prevents opening eBPF process memory
+ERROR: Cannot open file ebpf://1
+EOF
+RUN
