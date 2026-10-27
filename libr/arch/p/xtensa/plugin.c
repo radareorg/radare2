@@ -1370,132 +1370,26 @@ static void esil_bitwise_op(xtensa_isa isa, xtensa_opcode opcode, xtensa_format 
 	);
 }
 
-static void esil_branch_check_bit_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
-	ut32 src_reg;
-	ut32 imm_bit;
-	st32 imm_offset;
-	ut8 bit_clear;
-	ut32 mask;
-	const char *cmp_op;
-
-	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &src_reg);
-	xtensa_operand_get_field (isa, opcode, 1, format, i, slot_buffer, &imm_bit);
-	xtensa_operand_decode (isa, opcode, 1, &imm_bit);
-	xtensa_operand_get_field (isa, opcode, 2, format, i, slot_buffer, (ut32 *) &imm_offset);
-
-	xtensa_regfile src_rf = xtensa_operand_regfile (isa, opcode, 0);
-
-	bit_clear = opcode == 56;
-	cmp_op = bit_clear ? "==,$z" : "==,$z,!";
-	if (imm_bit > 31) {
-		mask = 0;
-	} else {
-		mask = (ut32)1 << imm_bit;
-	}
-	sign_extend (&imm_offset, 7);
-	imm_offset += 4 - 3;
-
-	// example: bbsi a4, 2, offset
-	//          a4,
-	//          mask,
-	//          &,
-	//          0,
-	//          ==,
-	//          ?{,
-	//            offset,
-	//            pc,
-	//            +=,
-	//          }
-
-	r_strbuf_appendf (
-		&op->esil,
-			"%s%d"	CM
-			"0x%x"	CM
-			"&"	CM
-			"0"	CM
-			"%s"	CM
-			"?{"	CM,
-		xtensa_regfile_shortname (isa, src_rf),
-		src_reg,
-		mask,
-		cmp_op
-	);
-
-	esil_push_signed_imm (&op->esil, imm_offset);
-
-	r_strbuf_appendf (
-		&op->esil,
-			"pc"	CM
-			"+="	CM
-			"}"
-	);
+static void esil_branch_check_bit_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+	ut32 src, bit;
+	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &src);
+	xtensa_operand_get_field (isa, opcode, 1, format, i, slot_buffer, &bit);
+	xtensa_operand_decode (isa, opcode, 1, &bit);
+	xtensa_regfile rf = xtensa_operand_regfile (isa, opcode, 0);
+	ut32 mask = bit < 32? (ut32)1 << bit: 0;
+	r_strbuf_appendf (&op->esil, "%s%u,0x%x,&,0,==,$z,%s?{,0x%"PFMT64x",pc,=,}",
+		xtensa_regfile_shortname (isa, rf), src, mask, opcode == 56? "": "!,", op->jump);
 }
 
-static void esil_branch_check_bit(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
-	ut32 src_reg;
-	ut32 bit_reg;
-	st32 imm_offset;
-
-	ut8 bit_clear;
-	const char *cmp_op;
-
-	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &src_reg);
-	xtensa_operand_get_field (isa, opcode, 1, format, i, slot_buffer, &bit_reg);
-	xtensa_operand_get_field (isa, opcode, 2, format, i, slot_buffer, (ut32 *) &imm_offset);
-
+static void esil_branch_check_bit(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+	ut32 src, bit;
+	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &src);
+	xtensa_operand_get_field (isa, opcode, 1, format, i, slot_buffer, &bit);
 	xtensa_regfile src_rf = xtensa_operand_regfile (isa, opcode, 0);
 	xtensa_regfile bit_rf = xtensa_operand_regfile (isa, opcode, 1);
-
-	// bbc
-	bit_clear = opcode == 70;
-	cmp_op = bit_clear ? "==,$z" : "==,$z,!";
-
-	sign_extend (&imm_offset, 7);
-	imm_offset += 4 - 3;
-
-	// example: bbc a4, a2, offset
-	//          a2,
-	//          1,
-	//          <<,
-	//          a4,
-	//          &
-	//          0
-	//          ==,
-	//          ?{,
-	//            offset,
-	//            pc,
-	//            +=,
-	//          }
-
-	r_strbuf_appendf (
-		&op->esil,
-			"31"	CM
-			"%s%d"	CM
-			"&"	CM
-			"1"	CM
-			"<<"	CM
-			"%s%d"	CM
-			"&"	CM
-			"0"	CM
-			"%s"	CM
-			"?{"	CM,
-		xtensa_regfile_shortname (isa, bit_rf),
-		bit_reg,
-		xtensa_regfile_shortname (isa, src_rf),
-		src_reg,
-		cmp_op
-	);
-
-	esil_push_signed_imm (&op->esil, imm_offset);
-
-	r_strbuf_appendf (
-		&op->esil,
-			"pc"	CM
-			"+="	CM
-			"}"
-	);
+	r_strbuf_appendf (&op->esil, "31,%s%u,&,1,<<,%s%u,&,0,==,$z,%s?{,0x%"PFMT64x",pc,=,}",
+		xtensa_regfile_shortname (isa, bit_rf), bit,
+		xtensa_regfile_shortname (isa, src_rf), src, opcode == 70? "": "!,", op->jump);
 }
 
 static void esil_abs_neg(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
