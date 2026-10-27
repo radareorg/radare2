@@ -249,9 +249,9 @@ bool test_agraph_horizontal_incoming_ports(void) {
 		RANode *target = targets[i];
 		int row = target->y + graph->can->sy + R_EDGES_X_INC - 1;
 		int column = target->x + graph->can->sx - 1;
-		mu_assert (row >= 0 && row < count, "Incoming port outside canvas");
+		mu_assert_true (row >= 0 && row < count, "Incoming port outside canvas");
 		const char *line = rendered + lines[row];
-		mu_assert (column >= 0 && column < strlen (line), "Missing incoming edge");
+		mu_assert_true (column >= 0 && column < strlen (line), "Missing incoming edge");
 		mu_assert_eq (line[column], '-', "Edge misses the target's sole incoming port");
 	}
 	free (lines);
