@@ -152,7 +152,8 @@ static RCoreHelpMessage help_msg_pF = {
 static RCoreHelpMessage help_msg_pri = {
 	"Usage: pri", "[n1234rsg]", "print raw images (source row width in pixels: hex.cols)",
 	"prin", "t [msg]", "print a message",
-	"pri1", "", "1 bitmap image",
+	"pri1", " [len]", "packed 1bpp bitmap as ASCII (hex.cols pixels, hex.stride bytes; 0=tight)",
+	"pri1u", " [len]", "packed 1bpp bitmap as Unicode half blocks",
 	"pri2", " [len]", "8x8 2bpp-tiles",
 	"pri3", " [file]", "print 3D stereogram image of current block",
 	"pris", "", "sixel image",
@@ -6913,25 +6914,41 @@ static void cmd_print_pxb(RCore *core, const ut8 *data, int len, const char *inp
 }
 #undef P
 
-static void bitimage(RCore *core, const ut8 *data, const int data_size) {
+static void bitimage(RCore *core, const ut8 *data, size_t data_size, bool unicode) {
 	if (!data || data_size < 1) {
 		return;
 	}
-	int stride = r_config_get_i (core->config, "hex.stride");
-	if (stride < 1) {
-		stride = 16;
+	const int cols = r_config_get_i (core->config, "hex.cols");
+	if (cols < 1) {
+		return;
+	}
+	const size_t row_bytes = ((size_t)cols + 7) / 8;
+	if (data_size < row_bytes) {
+		return;
+	}
+	size_t stride = r_config_get_i (core->config, "hex.stride");
+	if (!stride) {
+		stride = row_bytes;
+	} else if (stride < row_bytes) {
+		R_LOG_ERROR ("hex.stride must fit hex.cols pixels");
+		return;
 	}
 	RStrBuf *sb = r_strbuf_new ("");
-	int y;
-	for (y = 0; y < 8; y++) {
-		const size_t pos = y * stride;
-		if (pos >= (size_t)data_size) {
-			break;
-		}
-		const ut8 byte = data[pos];
+	const size_t rows = 1 + (data_size - row_bytes) / stride;
+	size_t y;
+	for (y = 0; y < rows; y += unicode? 2: 1) {
 		int x;
-		for (x = 7; x >= 0; x--) {
-			r_strbuf_append (sb, (byte & (1 << x))? "##": "--");
+		for (x = 0; x < cols; x++) {
+			const ut8 mask = 0x80 >> (x & 7);
+			unsigned pixel = !!(data[y * stride + x / 8] & mask);
+			if (unicode) {
+				if (y + 1 < rows && (data[(y + 1) * stride + x / 8] & mask)) {
+					pixel |= 2;
+				}
+				r_strbuf_append (sb, (const char *[]) {" ", "▀", "▄", "█"}[pixel]);
+			} else {
+				r_strbuf_append (sb, pixel? "##": "  ");
+			}
 		}
 		r_strbuf_append (sb, "\n");
 	}
@@ -6963,7 +6980,11 @@ static void cmd_pri(RCore *core, const char *input, int l) {
 		cmd_printmsg (core, input + 4);
 		break;
 	case '1':
-		bitimage (core, buf, bsz);
+		if (input[3] == '?' || (input[3] == 'u' && input[4] == '?')) {
+			r_cons_cmd_help_match (core->cons, help_msg_pri, "pri1", 0, true);
+		} else {
+			bitimage (core, buf, R_MIN (bsz, (size_t)l), input[3] == 'u');
+		}
 		break;
 	case '2': // "pri2"
 		if (l) {

@@ -1,0 +1,173 @@
+NAME=V850 ADDI into r0 updates flags without using r0 as a temporary
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx 010620ff
+aei
+aer r1=224
+aes
+aer r1
+aer psw
+EOF
+EXPECT=<<EOF
+0x000000e0
+0x00000009
+EOF
+RUN
+
+NAME=V850 MUL with aliased result registers retains the high word
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx e1172012
+aei
+aer r1=0x80000000
+aer r2=4
+aes
+aer r2
+EOF
+EXPECT=<<EOF
+0xfffffffe
+EOF
+RUN
+
+NAME=V850 signed division sets S from the quotient
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx e117c01a
+aei
+aer r1=3
+aer r2=100
+aes
+aer r2
+aer sp
+aer psw
+EOF
+EXPECT=<<EOF
+0x00000021
+0x00000001
+0x00000000
+EOF
+RUN
+
+NAME=V850 CTRET restores saved interrupt state
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx e0074401
+aei
+aer ctpc=0x100
+aer ctpsw=0x35
+aer psw=0xc0
+aes
+aer pc
+aer psw
+EOF
+EXPECT=<<EOF
+0x00000100
+0x00000035
+EOF
+RUN
+
+NAME=V850 CMP uses unsigned borrow
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx e20f
+aei
+aer r1=1
+aer r2=8
+aes
+aer psw
+EOF
+EXPECT=<<EOF
+0x0000000a
+EOF
+RUN
+
+NAME=V850 DISPOSE without a jump register falls through
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx 8007210040062000
+aei
+aer sp=0x100
+aer lp=0x12345678
+2aes
+aer sp
+aer lp
+aer pc
+EOF
+EXPECT=<<EOF
+0x00000100
+0x12345678
+0x00000008
+EOF
+RUN
+
+NAME=V850 MUL signed low and high words
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx e117201a
+aei
+aer r1=0xfffffffe
+aer r2=3
+aes
+aer r2
+aer sp
+EOF
+EXPECT=<<EOF
+0xfffffffa
+0xffffffff
+EOF
+RUN
+
+NAME=V850 SET1 writes memory and preserves flags except old-bit Z
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx c13f0000
+aei
+aer r1=0x100
+aer psw=0xe
+aes
+p8 1 @0x100
+aer psw
+EOF
+EXPECT=<<EOF
+80
+0x0000000f
+EOF
+RUN
+
+NAME=V850 CALLT saves return PC and condition flags
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx 0302
+wx 2000 @0x106
+aei
+aer ctbp=0x100
+aer psw=0x15
+aes
+aer pc
+aer ctpc
+aer ctpsw
+EOF
+EXPECT=<<EOF
+0x00000120
+0x00000002
+0x00000015
+EOF
+RUN
