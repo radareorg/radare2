@@ -830,6 +830,8 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_PPC_ADDR16_HI: ADD(16, 0); break;  // XXX extract upper 16 bits of (target - vaddr - addend)
 		case R_PPC_ADDR16_HA: ADD(16, 0); break;  // XXX extract high adjusted 16 bits of (target - vaddr - addend)
 		case R_PPC_DTPMOD32: ADD(32, 0); break;
+		case R_PPC_DTPREL32: ADD(32, 0); break;
+		case R_PPC_TPREL32: ADD(32, 0); break;
 		default:
 			R_LOG_DEBUG ("unimplemented ELF/PPC reloc type %d", rel->type);
 		}

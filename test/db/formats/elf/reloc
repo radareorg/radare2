@@ -1724,6 +1724,7 @@ EXPECT=<<EOF
 0x00000170 0x00000170 ADD_24 10    __tls_get_addr - 0x00000170
 0x00000174 0x00000174 ADD_24 10    puts - 0x00000174
 0x000011fc 0x000001fc ADD_32 68    tv
+0x00001200 0x00000200 ADD_32 78    tv
 0x00001214 0x00000170 ADD_24 10    __tls_get_addr - 0x00000170
 0x00001218 0x00000174 ADD_24 10    puts - 0x00000174
 EOF
@@ -2612,5 +2613,19 @@ EOF
 EXPECT=<<EOF
 movw r0, 0x35
 movt r0, 0x800
+EOF
+RUN
+
+NAME=ELF: ppc32 DTPREL32 and TPREL32 dynamic relocs are listed
+FILE=bins/elf/ppc32-tls-lld.so
+CMDS=ir
+EXPECT=<<EOF
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x00020348 0x00000348 ADD_32 68
+0x00020350 0x00000350 ADD_32 68    tv
+0x00020354 0x00000354 ADD_32 78    tv
+0x00020358 0x00000358 ADD_32 73    iv
+0x0003035c 0x0000035c ADD_32 21    __tls_get_addr
 EOF
 RUN
