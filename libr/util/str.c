@@ -2330,42 +2330,35 @@ R_API int r_str_ansi_filter(char *str, char **R_NULLABLE out, int **R_NULLABLE c
 		}
 		len = slen;
 	}
-	char *tmp = malloc (len + 1);
-	if (!tmp) {
-		return -1;
-	}
-	memcpy (tmp, str, len + 1);
-	int *cps = calloc (len + 1, sizeof (int));
-	if (!cps) {
-		free (tmp);
-		return -1;
-	}
-
-	for (i = j = 0; i < len; i++) {
-		if (tmp[i] == 0x1b) {
-			size_t chlen = str_ansi_length (str + i, SIZE_MAX);
-			if (chlen > 1) {
-				i += chlen;
-				i--;
-			}
-		} else {
-			str[j] = tmp[i];
-			cps[j] = i;
-			j++;
+	int *cps = NULL;
+	if (cposs) {
+		cps = calloc (len + 1, sizeof (int));
+		if (!cps) {
+			return -1;
 		}
 	}
-	cps[j] = i;
-	str[j] = tmp[i];
 	if (out) {
-		*out = tmp;
-	} else {
-		free (tmp);
+		*out = r_str_ndup (str, len);
 	}
-	if (cposs) {
+	// compact in place, the write cursor never passes the read cursor
+	for (i = j = 0; i < len; i++) {
+		if (str[i] == 0x1b) {
+			const size_t chlen = str_ansi_length (str + i, len - i);
+			if (chlen > 1) {
+				i += chlen - 1;
+			}
+			continue;
+		}
+		if (cps) {
+			cps[j] = i;
+		}
+		str[j++] = str[i];
+	}
+	if (cps) {
+		cps[j] = i;
 		*cposs = cps;
-	} else {
-		free (cps);
 	}
+	str[j] = str[i];
 	return j;
 }
 
