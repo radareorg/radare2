@@ -1892,6 +1892,72 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	case ARM64_INS_BRK:
 		r_strbuf_setf (&op->esil, "0,%d,TRAP", (int) (IMM64 (0) & 0xffff));
 		break;
+	case ARM64_INS_MOVI: {
+		cs_arm64_op dst = INSOP64 (0);
+		const int bits = dst.vas? vector_size (&dst): REGBITS64 (0);
+		const int lanes = dst.vas? vas_count (dst.vas): 1;
+		if ((bits != 8 && bits != 16 && bits != 32 && bits != 64) || bits * lanes > 128) {
+			break;
+		}
+		const ut64 value = SHIFTED_IMM64 (1, bits) & bitmask_by_width[bits - 1];
+		ut64 half = 0;
+		int shift;
+		for (shift = 0; shift < 64; shift += bits) {
+			half |= value << shift;
+		}
+		if (dst.vas) {
+			r_strbuf_setf (&op->esil, "0x%"PFMT64x",%sl,=,0x%"PFMT64x",%sh,=", half, REG64 (0), bits * lanes == 128? half: 0, REG64 (0));
+		} else {
+			r_strbuf_setf (&op->esil, "0x%"PFMT64x",%s,=", half, REG64 (0));
+		}
+		break;
+	}
+	case ARM64_INS_CMHI: {
+		const int bits = vector_size (&INSOP64 (1));
+		const int lanes = vas_count (INSOP64 (1).vas);
+		if ((bits != 8 && bits != 16 && bits != 32 && bits != 64) || bits * lanes < 64 || bits * lanes > 128) {
+			break;
+		}
+		op->type = R_ANAL_OP_TYPE_CMP;
+		int half, i;
+		const int halves = bits * lanes / 64;
+		for (half = 0; half < halves; half++) {
+			r_strbuf_append (&op->esil, half? ",0": "0");
+			for (i = 0; i < 64 / bits; i++) {
+				r_strbuf_append (&op->esil, ",");
+				VEC64_APPEND (&op->esil, 1, half * (64 / bits) + i);
+				r_strbuf_append (&op->esil, ",");
+				VEC64_APPEND (&op->esil, 2, half * (64 / bits) + i);
+				r_strbuf_appendf (&op->esil, ",==,%d,$b,0x%"PFMT64x",*,%d,SWAP,<<,|", bits, bitmask_by_width[bits - 1], i * bits);
+			}
+		}
+		if (halves == 2) {
+			r_strbuf_appendf (&op->esil, ",%sh,=", REG64 (0));
+		} else {
+			r_strbuf_appendf (&op->esil, ",0,%sh,=", REG64 (0));
+		}
+		r_strbuf_appendf (&op->esil, ",%sl,=", REG64 (0));
+		break;
+	}
+	case ARM64_INS_UMINV: {
+		const int bits = vector_size (&INSOP64 (1));
+		const int lanes = vas_count (INSOP64 (1).vas);
+		if ((bits != 8 && bits != 16 && bits != 32) || lanes < 4 || bits * lanes > 128) {
+			break;
+		}
+		op->type = R_ANAL_OP_TYPE_MOV;
+		r_strbuf_setf (&op->esil, "0x%"PFMT64x",tmp,=", bitmask_by_width[bits - 1]);
+		int i;
+		for (i = 0; i < lanes; i++) {
+			r_strbuf_append (&op->esil, ",tmp,");
+			VEC64_APPEND (&op->esil, 1, i);
+			r_strbuf_appendf (&op->esil, ",==,%d,$b,?{,", bits);
+			VEC64_APPEND (&op->esil, 1, i);
+			r_strbuf_append (&op->esil, ",tmp,=,}");
+		}
+		r_strbuf_appendf (&op->esil, ",tmp,%s,=", REG64 (0));
+		break;
+	}
 	case ARM64_INS_REV:
 	case ARM64_INS_REV64:
 	// these REV* instructions were almost right, except in the cases like rev x0, x0
