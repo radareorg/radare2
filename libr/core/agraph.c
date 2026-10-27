@@ -13,6 +13,7 @@ enum {
 typedef struct {
 	RANode node;
 	char *color_body;
+	bool body_needs_crop;
 } RANodePrivate;
 
 typedef struct {
@@ -289,6 +290,25 @@ static char *agraph_font_render_cfg(RCore *core, const char *key, const char *s)
 
 static int agraph_refresh(struct agraph_refresh_data *grd);
 
+static bool node_body_needs_crop(const char *body) {
+	if (!r_str_is_ascii (body) || !r_str_endswith (body, "\n")) {
+		return true;
+	}
+	if (!strchr (body, 0x1b)) {
+		return false;
+	}
+	const size_t reset_len = sizeof (Color_RESET) - 1;
+	const char *line = body, *end;
+	while ((end = strchr (line, '\n'))) {
+		// Canvas newlines otherwise overwrite the first color attribute of the row.
+		if (end - line < reset_len || memcmp (end - reset_len, Color_RESET, reset_len)) {
+			return true;
+		}
+		line = end + 1;
+	}
+	return false;
+}
+
 static void update_node_dimension(const RGraph *g, int is_mini, int zoom, int edgemode, bool callgraph, int layout) {
 	const RList *nodes = r_graph_get_nodes (g);
 	RGraphNode *gn;
@@ -303,6 +323,7 @@ static void update_node_dimension(const RGraph *g, int is_mini, int zoom, int ed
 			n->w = MININODE_MIN_WIDTH;
 		} else {
 			n->w = r_str_bounds (n->body, (int *)&n->h);
+			((RANodePrivate *)n)->body_needs_crop = node_body_needs_crop (n->body);
 			ut32 len = strlen (n->title) + MARGIN_TEXT_X;
 			if (len > INT_MAX) {
 				len = INT_MAX;
@@ -442,7 +463,6 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	ut32 delta_x = 0, delta_txt_x = 0;
 	ut32 delta_y = 0, delta_txt_y = 0;
 	char title[TITLE_LEN];
-	char *body;
 	int color = n->difftype;
 	const bool showTitle = g->show_node_titles;
 	const bool showBody = g->show_node_body;
@@ -450,11 +470,6 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	RPrint p = { .flags = R_PRINT_FLAGS_USEUTF8 };
 	int dots_width = 0, dots_bytes = 0;
 	const char *dots = r_print_ellipsis (&p, &dots_width, &dots_bytes);
-	if (n->color) {
-		// r_cons_canvas_bgfill (g->can, n->x-1, n->y-1, n->w+2, n->h+2, n->color);
-		r_cons_canvas_box (g->can, n->x - 1, n->y, n->w + 2, n->h, n->color);
-	}
-
 	int x = n->x + g->can->sx;
 	int y = n->y + g->can->sy;
 	if (x + MARGIN_TEXT_X < 0) {
@@ -465,9 +480,6 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	}
 	if (y < -1) {
 		delta_y = R_MIN (n->h - BORDER_HEIGHT - 1, -y - MARGIN_TEXT_Y);
-	}
-	if (g->show_node_bubble) {
-		r_cons_canvas_bgfill (g->can, n->x, n->y, n->w, n->h, get_node_bgcolor (cons, color, cur));
 	}
 	/* print the title */
 	if (showTitle) {
@@ -510,19 +522,14 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 				body_h--;
 			}
 			if (body_y + 1 <= body_h) {
-				body = r_str_ansi_crop (n->body,
-					body_x, body_y,
-					n->w - BORDER_WIDTH,
-					body_h);
-				if (body) {
-					W (body);
-					if (g->zoom < ZOOM_DEFAULT) {
-						W ("\n");
-					}
-					free (body);
-				} else {
-					W (n->body);
+				char *body = body_x || body_y || g->zoom < ZOOM_DEFAULT || ((RANodePrivate *)n)->body_needs_crop
+					? r_str_ansi_crop (n->body, body_x, body_y, n->w - BORDER_WIDTH, body_h)
+					: NULL;
+				W (body? body: n->body);
+				if (body && g->zoom < ZOOM_DEFAULT) {
+					W ("\n");
 				}
+				free (body);
 			}
 			/* print some dots when the body is cropped because of zoom */
 			if (R_STR_ISNOTEMPTY (n->body)) {
@@ -545,7 +552,6 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	const char *nc = get_node_color (cons, color, cur);
 	if (g->show_node_bubble) {
 		r_cons_canvas_bgfill (g->can, n->x, n->y, n->w, n->h, get_node_bgcolor (cons, color, cur));
-		// r_cons_canvas_circle (g->can, n->x, n->y, n->w, n->h, get_node_color (color, cur));
 	} else {
 		r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, nc);
 	}
