@@ -1325,7 +1325,7 @@ static ut64 visual_align_code(RCore *core, ut64 addr) {
 }
 
 #define OPDELTA 32
-static ut64 prevop_addr(RCore *core, ut64 addr) {
+static ut64 prevop_addr(RCore *core, ut64 addr, bool align) {
 	ut8 buf[OPDELTA * 2];
 	ut64 target, base;
 	RAnalOp op;
@@ -1347,7 +1347,7 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 			}
 		}
 	}
-	ut64 aligned = visual_align_code (core, addr);
+	ut64 aligned = align? visual_align_code (core, addr): addr;
 	if (aligned != addr) {
 		return aligned;
 	}
@@ -1424,7 +1424,7 @@ R_API bool r_core_prevop_addr(RCore *core, ut64 start_addr, int numinstrs, ut64 
 		if (r_anal_bb_opaddr_at (bb, start_addr) != UT64_MAX) {
 			int i;
 			for (i = 0; i < numinstrs; i++) {
-				*prev_addr = prevop_addr (core, start_addr);
+				*prev_addr = prevop_addr (core, start_addr, true);
 				start_addr = *prev_addr;
 			}
 			return true;
@@ -1440,7 +1440,7 @@ R_API bool r_core_prevop_addr(RCore *core, ut64 start_addr, int numinstrs, ut64 
 R_API ut64 r_core_prevop_addr_force(RCore *core, ut64 start_addr, int numinstrs) {
 	int i;
 	for (i = 0; i < numinstrs; i++) {
-		start_addr = prevop_addr (core, start_addr);
+		start_addr = prevop_addr (core, start_addr, true);
 	}
 	return start_addr;
 }
@@ -1513,7 +1513,7 @@ R_API void r_core_visual_offset(RCore *core) {
 }
 
 R_API int r_core_visual_prevopsz(RCore *core, ut64 addr) {
-	ut64 prev_addr = prevop_addr (core, addr);
+	ut64 prev_addr = prevop_addr (core, addr, true);
 	return addr - prev_addr;
 }
 
@@ -2395,7 +2395,7 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 		prev_roff = row > 0? r_print_rowoff (p, row - 1): UT32_MAX;
 		delta = p->cur - roff;
 		if (prev_roff == UT32_MAX) {
-			ut64 prev_addr = prevop_addr (core, core->addr + roff);
+			ut64 prev_addr = prevop_addr (core, core->addr + roff, true);
 			if (prev_addr > core->addr) {
 				prev_roff = 0;
 				prev_sz = 1;
@@ -4835,7 +4835,7 @@ R_API void r_core_visual_disasm_up(RCore *core, int *cols) {
 			*cols = 4;
 		}
 	} else {
-		int delta = r_core_visual_prevopsz (core, core->addr);
+		int delta = core->addr - prevop_addr (core, core->addr, false);
 		if (f && core->addr == f->addr) {
 			if (core->skiplines > 0) {
 				core->skiplines--;
