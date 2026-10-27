@@ -638,10 +638,10 @@ static void r_panels_refresh(RCore *core) {
 	r_cons_gotoxy (core->cons, 0, 0);
 	int i, h, w = r_panels_get_size (core, &h);
 	if (can->w != w || can->h != h) {
+		if (!r_cons_canvas_resize (can, w, h)) {
+			return;
+		}
 		r_panels_set_refresh_all (core, false, true);
-	}
-	if (!r_cons_canvas_resize (can, w, h)) {
-		return;
 	}
 	RStrBuf *title = r_strbuf_new (" ");
 	bool utf8 = r_config_get_b (core->config, "scr.utf8");
