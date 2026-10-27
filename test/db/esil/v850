@@ -197,3 +197,28 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=V850 saturation clamps the result and retains sticky SAT
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx c110a110
+aei
+aer r1=1
+aer r2=0x7fffffff
+aer psw=0x20
+aes
+aer r2
+aer psw
+aes
+aer r2
+aer psw
+EOF
+EXPECT=<<EOF
+0x7fffffff
+0x00000034
+0x7ffffffe
+0x00000030
+EOF
+RUN
+

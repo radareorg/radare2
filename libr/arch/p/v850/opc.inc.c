@@ -977,16 +977,16 @@ const struct v850_opcode v850_opcodes[] = {
 
 	{ "sasf", two (0x07e0, 0x0200), two (0x07f0, 0xffff), {CCCC, R2}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV, "#0,!,!,1,#1,<<,|,#1,:=" },
 
-	{ "satadd", two (0x07e0, 0x03ba), two (0x07e0, 0x07ff), {R1, R2, R3}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_ADD },
-	{ "satadd", OP (0x11), OP_MASK, {I5, R2_NOTR0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_ADD },
-	{ "satadd", OP (0x06), OP_MASK, {R1, R2_NOTR0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_ADD },
+	{ "satadd", two (0x07e0, 0x03ba), two (0x07e0, 0x07ff), {R1, R2, R3}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_ADD, "SATURATE" },
+	{ "satadd", OP (0x11), OP_MASK, {I5, R2_NOTR0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_ADD, "SATURATE" },
+	{ "satadd", OP (0x06), OP_MASK, {R1, R2_NOTR0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_ADD, "SATURATE" },
 
-	{ "satsub", two (0x07e0, 0x039a), two (0x07e0, 0x07ff), {R1, R2, R3}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_SUB },
-	{ "satsub", OP (0x05), OP_MASK, {R1, R2_NOTR0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SUB },
+	{ "satsub", two (0x07e0, 0x039a), two (0x07e0, 0x07ff), {R1, R2, R3}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_SUB, "SATURATE" },
+	{ "satsub", OP (0x05), OP_MASK, {R1, R2_NOTR0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SUB, "SATURATE" },
 
-	{ "satsubi", OP (0x33), OP_MASK, {I16, R1, R2_NOTR0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SUB },
+	{ "satsubi", OP (0x33), OP_MASK, {I16, R1, R2_NOTR0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SUB, "SATURATE" },
 
-	{ "satsubr", OP (0x04), OP_MASK, {R1, R2_NOTR0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SUB },
+	{ "satsubr", OP (0x04), OP_MASK, {R1, R2_NOTR0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SUB, "SATURATE" },
 
 	{ "sbf", two (0x07e0, 0x0380), two (0x07e0, 0x07e1), {CCCC_NOTSA, R1, R2, R3}, 0, V850_CPU_E2_UP },
 

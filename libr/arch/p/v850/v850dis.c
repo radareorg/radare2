@@ -265,6 +265,19 @@ static bool print_reglist(RStrBuf *sb, v850np_inst *inst, const struct v850_oper
 	return true;
 }
 
+static char *saturated_expression(const char *lhs, const char *rhs, const char *dst, bool subtract) {
+	RStrBuf *sb = r_strbuf_newf ("%s,0xffffffff,&,%s,0xffffffff,&,%c", rhs, lhs, subtract? '-': '+');
+	if (subtract) {
+		r_strbuf_appendf (sb, ",%s,0xffffffff,&,%s,0xffffffff,&,<,cy,:=", rhs, lhs);
+	} else {
+		r_strbuf_append (sb, ",DUP,32,SWAP,>>,1,&,cy,:=");
+	}
+	r_strbuf_appendf (sb, ",DUP,%s,^,%s,%s,^%s,&,0x80000000,&,!,!,ov,:=", lhs, rhs, lhs, subtract? "": ",0xffffffff,^");
+	r_strbuf_appendf (sb, ",ov,?{,POP,1,sat,:=,0x80000000,%s,&,?{,0x80000000,}{,0x7fffffff,},}", lhs);
+	r_strbuf_appendf (sb, ",DUP,31,SWAP,>>,1,&,s,:=,DUP,0xffffffff,&,!,z,:=,%s,:=", dst);
+	return r_strbuf_drain (sb);
+}
+
 static char *distillate(v850np_inst *inst, const char *esilfmt, ut64 memaddr, ut32 pc_mask) {
 	RStrBuf *sb = r_strbuf_new ("");
 	RList *args = r_list_newf (free);
@@ -314,6 +327,14 @@ static char *distillate(v850np_inst *inst, const char *esilfmt, ut64 memaddr, ut
 		}
 	}
 	char *res = r_strbuf_drain (sb);
+	if (!strcmp (res, "SATURATE")) {
+		bool reverse = !strcmp (inst->op->name, "satsubr");
+		const char *lhs = r_list_get_n (args, reverse? 0: 1);
+		const char *rhs = r_list_get_n (args, reverse? 1: 0);
+		const char *dst = r_list_get_n (args, inst->op->operands[2]? 2: 1);
+		free (res);
+		res = saturated_expression (lhs, rhs, dst, strcmp (inst->op->name, "satadd"));
+	}
 	const bool prepare = r_str_startswith (res, "PREPARE,");
 	if (prepare || r_str_startswith (res, "DISPOSE,")) {
 		const int list_index = prepare? 0: 1;
