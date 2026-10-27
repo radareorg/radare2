@@ -1,32 +1,32 @@
 /* radare2 - LGPL - Copyright 2014-2026 - pancake, vane11ope */
 
 static ut64 r_panels_parse_string_on_cursor(RCore *core, RPanel *panel, int idx) {
-	if (!panel->model->cmdStrCache) {
+	const char *content = r_panels_rendered_content (panel);
+	RPanelsModel *model = r_panels_content_index (panel, content);
+	if (!model || idx < 0 || idx >= model->height) {
 		return UT64_MAX;
 	}
-	RStrBuf *buf = r_strbuf_new (NULL);
-	char *s = panel->model->cmdStrCache;
-	int l = 0;
-	while (R_STR_ISNOTEMPTY (s) && l != idx) {
-		if (*s == '\n') {
-			l++;
-		}
-		s++;
-	}
-	while (R_STR_ISNOTEMPTY (s) && R_STR_ISNOTEMPTY (s + 1)) {
-		if (*s == '0' && *(s + 1) == 'x') {
-			r_strbuf_append_n (buf, s, 2);
-			while (*s != ' ') {
-				r_strbuf_append_n (buf, s, 1);
-				s++;
+	const char *s = content + *RPanelsLines_at (&model->lines, idx);
+	const char *end = content + *RPanelsLines_at (&model->lines, idx + 1);
+	for (; end - s > 2; s++) {
+		if (*s == '0' && (s[1] == 'x' || s[1] == 'X') && IS_HEXCHAR (s[2])) {
+			const char *address_end = s + 2;
+			while (address_end < end && IS_HEXCHAR (*address_end)) {
+				address_end++;
 			}
-			ut64 ret = r_num_math (core->num, r_strbuf_get (buf));
-			r_strbuf_free (buf);
-			return ret;
+			if (address_end - s > INT_MAX) {
+				return UT64_MAX;
+			}
+			char *address = r_str_ndup (s, address_end - s);
+			if (!address) {
+				return UT64_MAX;
+			}
+			const char *error = NULL;
+			ut64 value = r_num_get_err (core->num, address, &error);
+			free (address);
+			return error? UT64_MAX: value;
 		}
-		s++;
 	}
-	r_strbuf_free (buf);
 	return UT64_MAX;
 }
 
