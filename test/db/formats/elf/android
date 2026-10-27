@@ -75,3 +75,82 @@ EXPECT=<<EOF
 9
 EOF
 RUN
+
+# arm-relr-android-rn.so with DT_ANDROID_RELRSZ (0x2b8) 8 -> 6
+NAME=DT_ANDROID_RELR drops a truncated trailing word
+FILE=malloc://0x800
+CMDS=<<EOF
+wff bins/elf/arm-relr-android-rn.so
+wx 06000000 @ 0x2b8
+oba 0
+ir~SET_32 23
+EOF
+EXPECT=<<EOF
+0x00030324 0x00000324 SET_32 23     0x00030304
+EOF
+RUN
+
+# arm-relr-android-rn.so with DT_ANDROID_RELRSZ (0x2b8) 8 -> 2
+NAME=DT_ANDROID_RELR shorter than one word lists nothing
+FILE=malloc://0x800
+CMDS=<<EOF
+wff bins/elf/arm-relr-android-rn.so
+wx 02000000 @ 0x2b8
+oba 0
+ir~SET_32 23?
+EOF
+EXPECT=<<EOF
+0
+EOF
+RUN
+
+# arm-relr-android-rn.so with .ARM.exidx words (0x208, 0x20c) set to a bitmap
+NAME=DT_ANDROID_RELR ignores the section right after it
+FILE=malloc://0x800
+CMDS=<<EOF
+wff bins/elf/arm-relr-android-rn.so
+wx ffffffff @ 0x208
+wx ffffffff @ 0x20c
+oba 0
+ir~SET_32 23?
+EOF
+EXPECT=<<EOF
+9
+EOF
+RUN
+
+# arm-relr-android-rn.so with LOAD0 sizes (0x64, 0x68) 0x220 -> 0x208,
+# LOAD1 vaddr/paddr (0x7c, 0x80) 0x10220 -> 0x208, bitmaps at 0x208 and 0x220
+NAME=DT_ANDROID_RELR ignores a segment that remaps the next address
+FILE=malloc://0x800
+CMDS=<<EOF
+wff bins/elf/arm-relr-android-rn.so
+wx 08020000 @ 0x64
+wx 08020000 @ 0x68
+wx 08020000 @ 0x7c
+wx 08020000 @ 0x80
+wx ffffffff @ 0x208
+wx ffffffff @ 0x220
+oba 0
+ir~SET_32 23?
+EOF
+EXPECT=<<EOF
+9
+EOF
+RUN
+
+# arm-relr-android-rn.so with DT_ANDROID_RELRSZ (0x2b8) 8 -> 0x10, address 0xc at 0x208, bitmap 3 at 0x20c
+NAME=DT_ANDROID_RELR reads its whole declared size
+FILE=malloc://0x800
+CMDS=<<EOF
+wff bins/elf/arm-relr-android-rn.so
+wx 10000000 @ 0x2b8
+wx 0c000000 @ 0x208
+wx 03000000 @ 0x20c
+oba 0
+ir~SET_32 23?
+EOF
+EXPECT=<<EOF
+11
+EOF
+RUN
