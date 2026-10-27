@@ -2520,6 +2520,9 @@ R_API RFlagItem *r_core_flag_get_by_spaces(RFlag *f, bool prionospace, ut64 off)
 		// nothing in the well known spaces, take whatever else is flagged here
 		fi = r_flag_get_by_spaces (f, prionospace, off, NULL);
 	}
+	if (fi && fi->space && !strcmp (fi->space->name, R_FLAGS_FS_REGISTERS)) {
+		return NULL;
+	}
 	return fi;
 }
 

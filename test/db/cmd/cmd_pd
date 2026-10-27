@@ -2680,3 +2680,160 @@ EXPECT=<<EOF
             ;-- a2Jbc:
 EOF
 RUN
+
+NAME=pd V850 excludes register flags from jump targets
+FILE=malloc://8192
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+e asm.addr=false
+e asm.bytes=false
+e asm.lines=false
+e asm.comments=false
+e asm.flags=false
+e asm.marks=false
+wx b2fd @ 0x100a
+ar pc=0x1000
+.ar*
+pd 1 @ 0x100a
+fs+symbols
+f sym.target 1 0x1000
+fs-
+pd 1 @ 0x100a
+EOF
+EXPECT=<<EOF
+be 0x1000
+be sym.target
+EOF
+RUN
+
+NAME=pd x86-64 excludes register flags from jump targets
+FILE=malloc://8192
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e asm.addr=false
+e asm.bytes=false
+e asm.lines=false
+e asm.comments=false
+e asm.flags=false
+e asm.marks=false
+wx ebf4 @ 0x100a
+ar rip=0x1000
+.ar*
+pd 1 @ 0x100a
+fs+symbols
+f sym.target 1 0x1000
+fs-
+pd 1 @ 0x100a
+EOF
+EXPECT=<<EOF
+jmp 0x1000
+jmp sym.target
+EOF
+RUN
+
+NAME=pd ARM32 excludes register flags from jump targets
+FILE=malloc://8192
+ARGS=-a arm -b 32
+CMDS=<<EOF
+e asm.addr=false
+e asm.bytes=false
+e asm.lines=false
+e asm.comments=false
+e asm.flags=false
+e asm.marks=false
+wx fcffffea @ 0x1008
+ar pc=0x1000
+.ar*
+pd 1 @ 0x1008
+fs+symbols
+f sym.target 1 0x1000
+fs-
+pd 1 @ 0x1008
+EOF
+EXPECT=<<EOF
+b 0x1000
+b sym.target
+EOF
+RUN
+
+NAME=pd ARM64 excludes register flags from jump targets
+FILE=malloc://8192
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e asm.addr=false
+e asm.bytes=false
+e asm.lines=false
+e asm.comments=false
+e asm.flags=false
+e asm.marks=false
+wx feffff17 @ 0x1008
+ar pc=0x1000
+.ar*
+pd 1 @ 0x1008
+fs+symbols
+f sym.target 1 0x1000
+fs-
+pd 1 @ 0x1008
+EOF
+EXPECT=<<EOF
+b 0x1000
+b sym.target
+EOF
+RUN
+
+NAME=pd RISC-V excludes register flags from jump targets
+FILE=malloc://8192
+ARGS=-a riscv -b 64
+CMDS=<<EOF
+e asm.addr=false
+e asm.bytes=false
+e asm.lines=false
+e asm.comments=false
+e asm.flags=false
+e asm.marks=false
+wx 6ff09fff @ 0x1008
+ar pc=0x1000
+.ar*
+pd 1 @ 0x1008
+fs+symbols
+f sym.target 1 0x1000
+fs-
+pd 1 @ 0x1008
+EOF
+EXPECT=<<EOF
+j 0x1000
+j sym.target
+EOF
+RUN
+
+NAME=pd excludes dotted register flags from immediates
+FILE=malloc://8192
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e asm.addr=false
+e asm.bytes=false
+e asm.lines=false
+e asm.comments=false
+e asm.flags=false
+e asm.marks=false
+wx b800100000
+fs+sections
+f section.test 1 0x1000
+fs-
+fs+registers
+f reg.pc 8 0x1000
+fs-
+pd 1
+f-section.test
+pd 1
+fs+custom
+f data.target 1 0x1000
+fs-
+pd 1
+EOF
+EXPECT=<<EOF
+mov eax, 0x1000
+mov eax, 0x1000
+mov eax, data.target
+EOF
+RUN

@@ -11,7 +11,7 @@
 static bool isvalidflag(RFlagItem *flag) {
 	if (flag) {
 		if (flag->space) {
-			if (!strcmp (flag->space->name, "format")) {
+			if (R_STR_CMP_ANY (flag->space->name, "format", "registers")) {
 				return false;
 			}
 		}
