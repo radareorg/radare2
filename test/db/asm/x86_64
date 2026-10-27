@@ -35,8 +35,16 @@ a "add rax, 0x12345678" 480578563412
 a "add rdx, 0x98765" 4881c265870900
 a "add byte[rax], 0xf0" 8000f0
 a "add byte[rax-0x9876], 0xf0" 80808a67fffff0
-aB "add word[rax], 0xf0" 668100f000
-aB "add word[rax+0x12345], 0xf0" 66818045230100f000
+a "add word[rax], 0xf0" 668100f000
+a "add word[rax+0x12345], 0xf0" 66818045230100f000
+a "add r9d, 1" 4183c101
+a "adc r8, 0x80" 4981d080000000
+a "add rax, 0x80" 480580000000
+a "add qword [r13 + rax*4 + 0x10], 0x80" 498144851080000000
+a "cmp dword [rip + 0x20], -1" 833d20000000ff
+a "sub ax, -128" 6683e880
+a "sbb word [r12], 0x1234" 6641811c243412
+a "or al, 0x80" 0c80
 a "add dword[rax], 123" 83007b
 a "add qword[rax], 123" 4883007b
 a "add qword[rax], rsi" 480130
@@ -65,7 +73,7 @@ a "and eax, 123" 83e07b
 a "and rax, 123" 4883e07b
 a "and rsi, 123" 4883e67b
 a "and rsi, 0x12345678" 4881e678563412
-a "and rsi, 0x87654321" 4881e621436587
+a "and rsi, 0xffffffff87654321" 4881e621436587
 a "and si, 0x1234" 6681e63412
 a "and esi, 0x12345678" 81e678563412
 ad "and sil, 0x42" 4080e642
@@ -74,7 +82,7 @@ ad "and sil, al" 4020c6
 ad "and dil, al" 4020c7
 a "and byte[rax], 0x2a" 80202a
 a "and byte[rsi], 0x2a" 80262a
-aB "and word[rax], 0x1234" 6681203412
+a "and word[rax], 0x1234" 6681203412
 a "and dword[rax], 0x1234" 812034120000
 a "and dword[rax], 0x123490" 812090341200
 a "and dword[rax], 0x12349012" 812012903412
@@ -120,13 +128,13 @@ a "cdqe" 4898
 a "cmp al, 1" 3c01
 a "cmp al, 0xff" 3cff
 a "cmp ax, 0x5768" 663d6857
-aB "cmp si, 0xfff3" 6683fef3
-aB "cmp r15d, 0xfff3" 4181fff3ff0000
+a "cmp si, 0xfff3" 6683fef3
+a "cmp r15d, 0xfff3" 4181fff3ff0000
 a "cmp rdx, 0xfff3" 4881faf3ff0000
 a "cmp rsi, 0x7fadbeef" 4881feefbead7f
 a "cmp byte[rax-0x1234], 0x3d" 80b8ccedffff3d
 a "cmp byte[rax], 0x3d" 80383d
-aB "cmp word[rax-0x1234], 0x8765" 6681b8ccedffff6587
+a "cmp word[rax-0x1234], 0x8765" 6681b8ccedffff6587
 a "cmp dword[rax-0x1234], 0x8765" 81b8ccedffff65870000
 a "cmp qword[rax-0x1234], 0x8765" 4881b8ccedffff65870000
 a "cmp qword[rsp-0x1111], rsi" 4839b424efeeffff
@@ -376,8 +384,8 @@ a "sub rax, 0x12345678" 482d78563412
 a "sub rdx, 0x98765" 4881ea65870900
 a "sub byte[rax], 0xf0" 8028f0
 a "sub byte[rax-0x9876], 0xf0" 80a88a67fffff0
-aB "sub word[rax], 0xf0" 668128f000
-aB "sub word[rax+0x12345], 0xf0" 6681a845230100f000
+a "sub word[rax], 0xf0" 668128f000
+a "sub word[rax+0x12345], 0xf0" 6681a845230100f000
 a "sub dword[rax], 123" 83287b
 a "sub qword[rax], 123" 4883287b
 a "sub qword[rax], rsi" 482930
@@ -423,8 +431,8 @@ a "xor edx, 0x98765421" 81f221547698
 a "xor rdx, 0x09876543" 4881f243658709
 a "xor byte[rax], 123" 80307b
 a "xor byte[rax+123], 123" 80707b7b
-aB "xor word[rsi], 1234" 668136d204
-aB "xor word[rsi+0x987], 0x1234" 6681b6870900003412
+a "xor word[rsi], 1234" 668136d204
+a "xor word[rsi+0x987], 0x1234" 6681b6870900003412
 a "xor qword[rsi+0x987234], 0x12344553" 4881b63472980053453412
 a "xor qword[rcx+0x987234], 0x12344553" 4881b13472980053453412
 a "xor qword[rcx], rbx" 483119
@@ -455,8 +463,8 @@ a "or byte[rax-0x56], 0x57" 8048aa57
 a "or byte[rax-0x90000], 0x57" 80880000f7ff57
 a "or byte[rdi-0x90000], 0x57" 808f0000f7ff57
 a "or byte[rsp-0x90000], 0x98" 808c240000f7ff98
-aB "or word[rsp-0x90000], 0x9890" 66818c240000f7ff9098
-aB "or word[rax-0x902320], 0x9343" 668188e0dc6fff4393
+a "or word[rsp-0x90000], 0x9890" 66818c240000f7ff9098
+a "or word[rax-0x902320], 0x9343" 668188e0dc6fff4393
 a "or dword[rax-0x902320], 0x9343234" 8188e0dc6fff34323409
 a "or dword[rdx-0x902320], 0x9343234" 818ae0dc6fff34323409
 a "or qword[rdx-0x902320], 1" 48838ae0dc6fff01
