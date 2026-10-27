@@ -583,6 +583,11 @@ static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsi
 		offset = (ut32)off;
 
 		if (m->flag & INDIROFFADD) {
+			// relative offsets are invalid at level 0, there is no
+			// previous match to add to (the parser only warns)
+			if (cont_level == 0) {
+				return 0;
+			}
 			st64 noff = (st64)offset + ms->c.li[cont_level - 1].off;
 			if (noff < 0) {
 				return 0;
