@@ -654,7 +654,7 @@ EXPECT=<<EOF
     ],
     "mnemonic": "adc",
     "mask": "ffff",
-    "esil": "0xed,a,+=,C,NUM,7,$c,C,:=,3,$c,H,:=,a,+=,7,$c,C,|,C,:=,3,$c,H,|=,a,a,=,$z,Z,:=,0,N,:=",
+    "esil": "237,a,+=,C,NUM,3,$c,H,:=,7,$c,C,:=,a,+=,3,$c,H,|,H,:=,7,$c,C,|,C,:=,a,!,Z,:=,0,N,:=",
     "sign": false,
     "id": 0,
     "addr": 0,
