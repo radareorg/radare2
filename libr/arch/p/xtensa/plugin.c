@@ -597,7 +597,11 @@ static void xtensa_si_op(RArchSession *anal, RAnalOp *op, ut64 addr, const ut8 *
 			case 0: case 1:
 				xtensa_b_op (anal, op, addr, buf);
 				break;
-			case 0x8: case 0x9: case 0xa:
+			case 0x8:
+				op->type = R_ANAL_OP_TYPE_MOV;
+				op->ptr = addr + 4 + buf[2];
+				break;
+			case 0x9: case 0xa:
 				op->type = R_ANAL_OP_TYPE_CJMP;
 				op->fail = addr + op->size;
 				op->jump = addr + 4 + buf[2];
@@ -1722,6 +1726,43 @@ static void esil_integer_op(xtensa_isa isa, xtensa_opcode opcode, xtensa_format 
 static void analop_esil(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
 						 size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	switch (opcode) {
+	case 87: /* loop */
+	case 88: /* loopnez */
+	case 89: /* loopgtz */
+		{
+			ut32 reg;
+			ut32 end = op->addr + 4 + op->bytes[2];
+			xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &reg);
+			r_strbuf_appendf (&op->esil, "1,a%u,-,lcount,=,0x%x,lbeg,=,0x%x,lend,=",
+				reg, (ut32)(op->addr + op->size), end);
+			if (opcode == 88) {
+				r_strbuf_appendf (&op->esil, ",a%u,!,?{,0x%x,pc,=,}", reg, end);
+			} else if (opcode == 89) {
+				r_strbuf_appendf (&op->esil, ",0,32,a%u,~,<=,?{,0x%x,pc,=,}", reg, end);
+			}
+		}
+		break;
+	case 121: case 122: case 123: /* rsr/wsr/xsr.lend */
+	case 124: case 125: case 126: /* rsr/wsr/xsr.lcount */
+	case 127: case 128: case 129: /* rsr/wsr/xsr.lbeg */
+		{
+			static const char *names[] = { "lend", "lcount", "lbeg" };
+			const char *name = names[(opcode - 121) / 3];
+			ut32 reg;
+			xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &reg);
+			switch ((opcode - 121) % 3) {
+			case 0:
+				r_strbuf_appendf (&op->esil, "%s,a%u,=", name, reg);
+				break;
+			case 1:
+				r_strbuf_appendf (&op->esil, "a%u,%s,=", reg, name);
+				break;
+			case 2:
+				r_strbuf_appendf (&op->esil, "a%u,0,+,%s,a%u,=,%s,=", reg, name, reg, name);
+				break;
+			}
+		}
+		break;
 	case 108: /* src */
 	case 296: /* mul16u */
 	case 297: /* mul16s */
@@ -2015,6 +2056,9 @@ static char *regs(RArchSession *as) {
 		// sr
 		"gpr	sar	.32	72	0\n"
 		"gpr	scompare1	.32	76	0\n"
+		"gpr	lbeg	.32	80	0\n"
+		"gpr	lend	.32	84	0\n"
+		"gpr	lcount	.32	88	0\n"
 	);
 }
 

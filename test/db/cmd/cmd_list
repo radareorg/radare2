@@ -41,6 +41,7 @@ v850
 vax
 wasm
 x86
+xtensa
 z80
 EOF
 RUN
