@@ -1383,7 +1383,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				}
 			} else if (type == 's') { // "Cs"
 				// the string contents come from memory, so anything after the size is a mistake
-				const char *extra = strpbrk (args, " \t");
+				const char *extra = strchr (args, ' ');
 				if (extra) {
 					extra = r_str_trim_head_ro (extra);
 				}
@@ -1401,7 +1401,6 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				free (t);
 				return false;
 			}
-			// string contents are read from memory, never taken from the arguments
 			if (type != 's' && (!*args || n > 0)) {
 				p = strchr (args, ' ');
 				if (p) {

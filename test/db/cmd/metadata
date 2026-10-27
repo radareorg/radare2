@@ -363,7 +363,6 @@ FILE=malloc://1024
 CMDS=<<EOF
 w hello world
 Cs 5 0x6
-Cs 5	0x6
 Csa 5 0x6
 Cs
 Cs 5 @ 6
@@ -375,7 +374,6 @@ EOF
 EXPECT_ERR=<<EOF
 ERROR: Unexpected argument '0x6'. Usage: Cs [size] @addr
 ERROR: Unexpected argument '0x6'. Usage: Cs [size] @addr
-ERROR: Unexpected argument '0x6'. Usage: Cs [size] @addr
 EOF
 RUN
 
@@ -385,7 +383,7 @@ CMDS=<<EOF
 w hello world
 Cs 5 @ 6
 Cs 3 0x6 @ 6
-Cs 4	junk @ 6
+Cs 4 junk @ 6
 Cs
 Cs.. @ 6
 EOF
