@@ -170,9 +170,15 @@ a "imul eax, esi" 0fafc6
 aB "imul ax, word[rsi]" 660faf06
 a "imul ebx, dword[rdi]" 0faf1f
 a "imul rbx, qword[rdi]" 480faf1f
-aB "imul ax, word[rsi], 12345" 6669063930
-aB "imul ebx, dword[rdi], 0x987655" 691f55769800
-aB "imul rbx, qword[rdi], 0x5678" 48691f78560000
+a "imul ax, word[rsi], 12345" 6669063930
+a "imul ebx, dword[rdi], 0x987655" 691f55769800
+a "imul rbx, qword[rdi], 0x5678" 48691f78560000
+a "imul r8, r9" 4d0fafc1
+a "imul r10, qword [r11+8]" 4d0faf5308
+a "imul rax, rcx, 0x1000" 4869c100100000
+a "imul r10, [r11], 7" 4d6b1307
+a "imul ax, cx, 300" 6669c12c01
+a "imul eax, ecx, -128" 6bc180
 a "inc rdx" 48ffc2
 a "jmp 0x2a" eb28
 a "jmp 0x1234" e92f120000

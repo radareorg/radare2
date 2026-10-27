@@ -1135,6 +1135,7 @@ a "imul ebx, dword [edx], 0" 6b1a00
 a "imul ebx, edx, 4" 6bda04
 a "imul eax, dword [eax]" 0faf00
 a "imul eax, [eax], 0" 6b0000
+a "imul eax, ecx, 200" 69c1c8000000
 a "in al,0" e400
 a "in al,dx" ec
 ad "inc byte [eax]" fe00

@@ -2161,10 +2161,100 @@ static int opdiv(RArchSession *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+// imul reg, r/m (0f af /r), imul reg, r/m, imm and imul reg, imm (6b /r ib or 69 /r iw/id)
+static int op_imul_reg(int bits, ut8 *data, const Opcode *op) {
+	const Operand *dst = &op->operands[0];
+	const Operand *src = &op->operands[1];
+	const Operand *imm = NULL;
+	if (op->operands_count == 3) {
+		imm = &op->operands[2];
+	} else if (src->type & OT_CONSTANT) {
+		imm = src;
+		src = dst;
+	}
+	const ut32 size = dst->type & ALL_SIZE;
+	if (!(dst->type & OT_REGTYPE & OT_GPREG) || (dst->type & OT_MEMORY) || dst->reg == X86R_RIP
+			|| (size != OT_WORD && size != OT_DWORD && size != OT_QWORD)
+			|| (imm && !(imm->type & OT_CONSTANT))) {
+		return -1;
+	}
+	ut8 modrm[16];
+	ut8 rex = 0;
+	int n;
+	int l = 0;
+	if (src->type & OT_MEMORY) {
+		if (src->explicit_size && !(src->dest_size & size)) {
+			return -1;
+		}
+		n = encode_mem (modrm, dst->reg, src, &rex);
+		if (n < 0) {
+			return -1;
+		}
+		if (bits == 64 && src->regs[0] != X86R_UNDEFINED && !(src->reg_size & OT_QWORD)) {
+			data[l++] = 0x67; // 32-bit address registers
+		}
+	} else {
+		if (!(src->type & OT_REGTYPE & OT_GPREG) || (src->type & ALL_SIZE) != size || src->reg == X86R_RIP) {
+			return -1;
+		}
+		if (src->extended) {
+			rex |= 1;
+		}
+		modrm[0] = 0xc0 | (dst->reg & 7) << 3 | (src->reg & 7);
+		n = 1;
+	}
+	if (dst->extended) {
+		rex |= 4;
+	}
+	if (size == OT_QWORD) {
+		rex |= 8;
+	}
+	if (size == OT_WORD) {
+		data[l++] = 0x66;
+	}
+	if (rex || dst->rex_prefixed || src->rex_prefixed) {
+		if (bits != 64) {
+			return -1;
+		}
+		data[l++] = 0x40 | rex;
+	}
+	if (!imm) {
+		data[l++] = 0x0f;
+		data[l++] = 0xaf;
+		memcpy (data + l, modrm, n);
+		return l + n;
+	}
+	st64 v = (st64)imm->immediate * imm->sign;
+	const st64 min = (size == OT_WORD)? ST16_MIN: ST32_MIN;
+	const st64 max = (size == OT_WORD)? UT16_MAX: (size == OT_DWORD)? UT32_MAX: ST32_MAX;
+	if (v < min || v > max) {
+		return -1;
+	}
+	v = (size == OT_WORD)? (st16)v: (st32)v;
+	const bool imm8 = v >= ST8_MIN && v <= ST8_MAX;
+	data[l++] = imm8? 0x6b: 0x69;
+	memcpy (data + l, modrm, n);
+	l += n;
+	if (imm8) {
+		data[l++] = (ut8)v;
+	} else if (size == OT_WORD) {
+		r_write_le16 (data + l, (ut16)v);
+		l += 2;
+	} else {
+		r_write_le32 (data + l, (ut32)v);
+		l += 4;
+	}
+	return l;
+}
+
 static int opimul(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	if (op->operands_count == 1 && a->config->bits != 16) {
 		return op_rm_ext (a->config->bits, data, &op->operands[0], 5, 0xf6, 0xf7);
+	}
+	if ((op->operands_count == 2 || op->operands_count == 3)
+			&& (a->config->bits == 64 || (a->config->bits == 32 && (!(op->operands[1].type & OT_MEMORY) || use_op_reg_mem (32, &op->operands[1]))))) {
+		return op_imul_reg (a->config->bits, data, op);
 	}
 	int l = 0;
 	int offset = 0;
