@@ -122,7 +122,98 @@ static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end
 	free (newc);
 }
 
+static bool interact_can_fix(R2RTestResultInfo *result) {
+	if (result->run_failed || result->timeout) {
+		return false;
+	}
+	if (result->test->type != R2R_TEST_TYPE_ASM) {
+		return result->proc_out && !result->proc_out->ret;
+	}
+	R2RAsmTest *test = result->test->asm_test;
+	R2RAsmTestOutput *out = result->asm_out;
+	if (!out) {
+		return false;
+	}
+	if ((test->mode & R2R_ASM_TEST_MODE_ASSEMBLE)
+			&& (!out->as || out->as->ret || out->as->timeout || !out->bytes || !out->bytes_size)) {
+		return false;
+	}
+	if ((test->mode & R2R_ASM_TEST_MODE_DISASSEMBLE)
+			&& (!out->disas || out->disas->ret || out->disas->timeout || R_STR_ISEMPTY (out->disasm)
+				|| strpbrk (out->disasm, "\"\r\n"))) {
+		return false;
+	}
+	return true;
+}
+
+static char *replace_asm_test(const char *content, R2RTestResultInfo *result, bool broken) {
+	R2RAsmTest *test = result->test->asm_test;
+	if (!broken && !interact_can_fix (result)) {
+		return NULL;
+	}
+	const char *start = content;
+	ut64 line;
+	for (line = 1; line < test->line; line++) {
+		start = strchr (start, '\n');
+		if (!start) {
+			return NULL;
+		}
+		start++;
+	}
+	const char *end = strchr (start, '\n');
+	char *text = end? r_str_ndup (start, end - start): strdup (start);
+	if (!text) {
+		return NULL;
+	}
+	char *replacement = NULL;
+	if (broken) {
+		replacement = r_str_newf ("B%s", text);
+	} else {
+		char *quote = strchr (text, '"');
+		char *close = quote? strchr (quote + 1, '"'): NULL;
+		if (close) {
+			const char *hex = r_str_trim_head_ro (close + 1);
+			const char *suffix = hex;
+			while (*suffix && *suffix != ' ') {
+				suffix++;
+			}
+			R2RAsmTestOutput *out = result->asm_out;
+			bool assemble = test->mode & R2R_ASM_TEST_MODE_ASSEMBLE;
+			char *bytes = assemble? r_hex_bin2strdup (out->bytes, out->bytes_size): r_str_ndup (hex, suffix - hex);
+			const char *disasm = (test->mode & R2R_ASM_TEST_MODE_DISASSEMBLE)? out->disasm: test->disasm;
+			if (bytes) {
+				replacement = r_str_newf ("%.*s\"%s\"%.*s%s%s", (int)(quote - text), text,
+					disasm, (int)(hex - close - 1), close + 1, bytes, suffix);
+				free (bytes);
+			}
+		}
+	}
+	free (text);
+	char *newc = replacement? replace_lines (content, test->line, test->line + 1, replacement): NULL;
+	free (replacement);
+	return newc;
+}
+
+static void interact_asm(R2RTestResultInfo *result, bool broken) {
+	const char *path = result->test->path;
+	char *content = r_file_slurp (path, NULL);
+	if (!content) {
+		R_LOG_ERROR ("Failed to read file \"%s\"", path);
+		return;
+	}
+	char *newc = replace_asm_test (content, result, broken);
+	free (content);
+	if (!newc || !r_file_dump (path, (const ut8 *)newc, -1, false)) {
+		R_LOG_ERROR ("Failed to update assembly test in \"%s\"", path);
+	}
+	free (newc);
+}
+
 static void interact_break(R2RTestResultInfo *result, RVecR2RTestResultInfoPtr *fixup_results) {
+	if (result->test->type == R2R_TEST_TYPE_ASM) {
+		interact_asm (result, true);
+		return;
+	}
 	R_RETURN_IF_FAIL (result->test->type == R2R_TEST_TYPE_CMD || result->test->type == R2R_TEST_TYPE_LEAK);
 	R2RCmdTest *test = result->test->cmd_test;
 	ut64 line_begin, line_end;
@@ -194,6 +285,10 @@ static void interact_commands(R2RTestResultInfo *result, RVecR2RTestResultInfoPt
 }
 
 static void interact_fix(R2RTestResultInfo *result, RVecR2RTestResultInfoPtr *fixup_results) {
+	if (result->test->type == R2R_TEST_TYPE_ASM) {
+		interact_asm (result, false);
+		return;
+	}
 	R_RETURN_IF_FAIL (result->test->type == R2R_TEST_TYPE_CMD || result->test->type == R2R_TEST_TYPE_LEAK);
 	R2RCmdTest *test = result->test->cmd_test;
 	R2RProcessOutput *out = result->proc_out;
@@ -251,14 +346,17 @@ static void interact(R2RState *state) {
 
 	R_VEC_FOREACH (&failed_results, it) {
 		R2RTestResultInfo *result = *it;
-		if (result->test->type != R2R_TEST_TYPE_CMD && result->test->type != R2R_TEST_TYPE_LEAK) {
-			// TODO: other types of tests (asm, json, fuzz)
+		if (result->test->type != R2R_TEST_TYPE_CMD && result->test->type != R2R_TEST_TYPE_LEAK
+				&& result->test->type != R2R_TEST_TYPE_ASM) {
+			// TODO: other types of tests (json, fuzz)
 			continue;
 		}
 		printf ("#####################\n\n");
 		print_result_diff (&state->run_config, result);
 	menu:
-		if (use_fancy_stuff) {
+		if (result->test->type == R2R_TEST_TYPE_ASM) {
+			printf ("Wat do?  (f)ix  (F)ixAll  (i)gnore  (b)roken  (q)uit\n");
+		} else if (use_fancy_stuff) {
 			printf ("Wat do?    "
 			"(f)ix " R_UTF8_WHITE_HEAVY_CHECK_MARK R_UTF8_VS16 R_UTF8_VS16 R_UTF8_VS16 "  "
 			"(F)ixAll " R_UTF8_WHITE_HEAVY_CHECK_MARK R_UTF8_VS16 R_UTF8_VS16 R_UTF8_VS16 "  "
@@ -293,7 +391,8 @@ static void interact(R2RState *state) {
 		}
 		switch (buf[0]) {
 		case 'f':
-			if (result->run_failed || result->proc_out->ret != 0) {
+			if (!interact_can_fix (result)) {
+				always_fix = false;
 				printf ("This test has failed too hard to be fixed.\n");
 				goto menu;
 			}
@@ -306,6 +405,9 @@ static void interact(R2RState *state) {
 			interact_break (result, &failed_results);
 			break;
 		case 'c':
+			if (result->test->type == R2R_TEST_TYPE_ASM) {
+				goto menu;
+			}
 			interact_commands (result, &failed_results);
 			break;
 		case 'd':
