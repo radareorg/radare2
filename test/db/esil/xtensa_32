@@ -106,9 +106,9 @@ aes
 ar~pc
 EOF
 EXPECT=<<EOF
-pc = 0x0000000c
 pc = 0x00000006
 pc = 0x00000009
+pc = 0x0000000c
 EOF
 RUN
 
@@ -247,5 +247,237 @@ ar~a11
 EOF
 EXPECT=<<EOF
 a11 = 0xfffffffd
+EOF
+RUN
+
+NAME=neg and abs keep source and write destination
+FILE=malloc://256
+ARGS=-a xtensa -b 32
+CMDS=<<EOF
+wx 203060204160
+aei
+aeip
+ar a2=0xfffffffb
+2aes
+ar~a2,a3,a4
+s 0
+aeip
+ar a2=5
+2aes
+ar~a2,a3,a4
+EOF
+EXPECT=<<EOF
+a2 = 0xfffffffb
+a3 = 0x00000005
+a4 = 0x00000005
+a2 = 0x00000005
+a3 = 0xfffffffb
+a4 = 0x00000005
+EOF
+RUN
+
+NAME=narrow branches use two byte next PC
+FILE=malloc://256
+ARGS=-a xtensa -b 32
+CMDS=<<EOF
+wx 8c4a
+aei
+aeip
+ar a10=0
+aes
+ar~pc
+EOF
+EXPECT=<<EOF
+pc = 0x00000008
+EOF
+RUN
+
+NAME=signed and unsigned register comparisons
+FILE=malloc://256
+ARGS=-a xtensa -b 32
+CMDS=<<EOF
+wx 37b20537a205
+aei
+aeip
+ar a2=0xffffffff
+ar a3=1
+aes
+ar~pc
+s 3
+aeip
+aes
+ar~pc
+EOF
+EXPECT=<<EOF
+pc = 0x00000009
+pc = 0x00000006
+EOF
+RUN
+
+NAME=immediate compare decodes the constant table
+FILE=malloc://256
+ARGS=-a xtensa -b 32
+CMDS=<<EOF
+wx 262205
+aei
+aeip
+ar a2=2
+aes
+ar~pc
+EOF
+EXPECT=<<EOF
+pc = 0x00000009
+EOF
+RUN
+
+NAME=addi.n minus one and addmi sign and scale
+FILE=malloc://256
+ARGS=-a xtensa -b 32
+CMDS=<<EOF
+wx 0b2232d2ff
+aei
+aeip
+ar a2=5
+2aes
+ar~a2,a3
+EOF
+EXPECT=<<EOF
+a2 = 0x00000004
+a3 = 0xffffff04
+EOF
+RUN
+
+NAME=SSL and SLL use complementary masked shift counts
+FILE=malloc://256
+ARGS=-a xtensa -b 32
+CMDS=<<EOF
+wx 0012400034a1
+aei
+aeip
+ar a2=35
+ar a4=3
+2aes
+ar~a3,sar
+EOF
+EXPECT=<<EOF
+a3 = 0x00000018
+sar = 0x0000001d
+EOF
+RUN
+
+NAME=signed right shifts and funnel shift
+FILE=malloc://256
+ARGS=-a xtensa -b 32
+CMDS=<<EOF
+wx 2030b1203321405381
+aei
+aeip
+ar sar=4
+ar a2=0x80000000
+aes
+ar~a3
+ar a3=0x11223344
+ar a4=0x55667788
+s 6
+aeip
+aes
+ar~a5
+s 3
+aeip
+aes
+ar~a3
+EOF
+EXPECT=<<EOF
+a3 = 0xf8000000
+a5 = 0x45566778
+a3 = 0xf0000000
+EOF
+RUN
+
+NAME=BANY compares intersection with zero
+FILE=malloc://256
+ARGS=-a xtensa -b 32
+CMDS=<<EOF
+wx 378205
+aei
+aeip
+ar a2=3
+ar a3=6
+aes
+ar~pc
+EOF
+EXPECT=<<EOF
+pc = 0x00000009
+EOF
+RUN
+
+NAME=BBC masks the bit index to five bits
+FILE=malloc://256
+ARGS=-a xtensa -b 32
+CMDS=<<EOF
+wx 375205
+aei
+aeip
+ar a2=8
+ar a3=35
+aes
+ar~pc
+EOF
+EXPECT=<<EOF
+pc = 0x00000003
+EOF
+RUN
+
+NAME=min and minu interpret the sign bit independently
+FILE=malloc://256
+ARGS=-a xtensa -b 32
+CMDS=<<EOF
+wx 306243306263
+aei
+aeip
+ar a2=0xffffffff
+ar a3=1
+aes
+ar~a6
+aes
+ar~a6
+EOF
+EXPECT=<<EOF
+a6 = 0xffffffff
+a6 = 0x00000001
+EOF
+RUN
+
+NAME=multiply and conditional compare store
+FILE=malloc://256
+ARGS=-a xtensa -b 32
+CMDS=<<EOF
+wx 30628222e300
+aei
+aeip
+ar a2=7
+ar a3=0x80
+ar scompare1=0x11223344
+wx 44332211 @ 0x80
+aes
+ar~a6
+ar a2=0xaabbccdd
+aes
+ar~a2
+pxw 4 @ 0x80
+s 3
+aeip
+ar a2=0x12345678
+ar scompare1=0
+aes
+ar~a2
+pxw 4 @ 0x80
+EOF
+EXPECT=<<EOF
+a6 = 0x00000380
+a2 = 0x11223344
+0x00000080  0xaabbccdd                                   ....
+a2 = 0xaabbccdd
+0x00000080  0xaabbccdd                                   ....
 EOF
 RUN
