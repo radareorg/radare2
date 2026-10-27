@@ -206,6 +206,18 @@ R_API RBinImport *r_bin_import_clone(RBinImport *o) {
 	return res;
 }
 
+// site may point into relocs, which the append can move
+R_IPI void r_bin_reloc_slot_row(RVecRBinReloc *relocs, const RBinReloc *site, ut64 vaddr) {
+	const RBinReloc copy = *site;
+	RBinReloc *row = RVecRBinReloc_emplace_back (relocs);
+	if (row) {
+		*row = copy;
+		row->to_slot = false;
+		row->vaddr = vaddr;
+		row->import = copy.import? r_bin_import_clone (copy.import): NULL;
+	}
+}
+
 R_API void r_bin_import_free(RBinImport *imp) {
 	if (imp) {
 		r_bin_name_free (imp->name);

@@ -5,6 +5,7 @@
 #include <r_util.h>
 #include <r_types.h>
 
+R_IPI void r_bin_reloc_slot_row(RVecRBinReloc *relocs, const RBinReloc *site, ut64 vaddr);
 R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, RBinFileOptions *opt, Sdb *sdb, bool steal_ptr);
 R_IPI RBinObject *r_bin_file_object_find_by_id(RBinFile *binfile, ut32 binobj_id);
 R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *a, int min, int raw, RStrBuf *output);

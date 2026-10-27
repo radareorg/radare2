@@ -458,6 +458,7 @@ typedef struct r_bin_reloc_t {
 	ut8 type; // type have implicit size.. but its anoying
 	ut8 additive;
 	bool is_ifunc;
+	bool to_slot; // a patched site whose name belongs to the slot's own row
 	ut32 visibility;
 	ut64 ntype; // type number coming from the bin file
 	RBinSymbol *symbol;

@@ -27,10 +27,10 @@ s 0x0800004c
 pd 4
 EOF
 EXPECT=<<EOF
-            0x0800004c      c10000eb       bl reloc.r0
-            0x08000050      c10000eb       bl reloc.r1
-            0x08000054      c10000eb       bl reloc.r2
-            0x08000058      c10000eb       bl reloc.r3
+            0x0800004c      c10000eb       bl reloc.r0                 ; RELOC 24 r0
+            0x08000050      c10000eb       bl reloc.r1                 ; RELOC 24 r1
+            0x08000054      c10000eb       bl reloc.r2                 ; RELOC 24 r2
+            0x08000058      c10000eb       bl reloc.r3                 ; RELOC 24 r3
 EOF
 RUN
 
@@ -58,7 +58,7 @@ fs relocs
 '@0x08000364'Cd 4
 'f reloc.r4 4 0x08000368
 '@0x08000368'Cd 4
-2
+3
 0x08000358 4 reloc.r0
 0x0800035c 4 reloc.r1
 0x08000360 4 reloc.r2

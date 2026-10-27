@@ -145,7 +145,7 @@ EOF
 EXPECT=<<EOF
 |           0x00008dbd      e80e000000     call sym._TIFFVGetField     ; RELOC 32 _TIFFVGetField @ 0x00008dd0
 sym._TIFFGetField 0x8dbd [CALL:--x] call sym._TIFFVGetField
-|           0x00008dde      e8ad280000     call sym.imp._TIFFFindField
+|           0x00008dde      e8ad280000     call sym.imp._TIFFFindField ; RELOC 32 _TIFFFindField
             ;-- reloc._TIFFFindField:
             ;-- _TIFFFindField:
             ; CALL XREF from sym._TIFFVGetField @ 0x8dde(x)
@@ -167,8 +167,8 @@ EXPECT=<<EOF
 1186
 973
 1
-25
-1269
+26
+1294
 EOF
 RUN
 
@@ -297,5 +297,17 @@ nth paddr      vaddr      bind   type size lib name                             
 nth paddr      vaddr      bind   type size lib name                                                                                                                                  demangled
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 0   0x00000000 0x00075740 GLOBAL UNK  4        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa30065
+EOF
+RUN
+
+NAME=COFF: patched data relocs keep their flag and data type at the site
+FILE=bins/coff/coff2.obj
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+ir*~0x00000e40
+EOF
+EXPECT=<<EOF
+'f reloc.__RTC_InitBase 4 0x00000e40
+'@0x00000e40'Cd 4
 EOF
 RUN

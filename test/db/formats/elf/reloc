@@ -763,6 +763,7 @@ ir~strcmp[0]
 EOF
 EXPECT=<<EOF
 bl reloc.strcmp
+0x0800007c
 0x08012678
 EOF
 RUN
@@ -1013,10 +1014,12 @@ mov rax, qword [rip + 0x17d]
 call 0x80001c4
 mov rax, qword [rip + 0x179]
 call 0x80001cc
+0x08000043 0x00000043 ADD_32 2     cbuf - 0x08000047
+0x08000048 0x00000048 ADD_32 4     cbuf - 0x0800004c
+0x0800004f 0x0000004f ADD_32 2     ext - 0x08000053
+0x08000054 0x00000054 ADD_32 4     ext - 0x08000058
 0x080001c4 0x00000043 ADD_32 2     cbuf - 0x08000047
-0x080001c4 0x00000048 ADD_32 4     cbuf - 0x0800004c
 0x080001cc 0x0000004f ADD_32 2     ext - 0x08000053
-0x080001cc 0x00000054 ADD_32 4     ext - 0x08000058
 0x00000000080001d4
 EOF
 RUN
@@ -1033,6 +1036,7 @@ adrp x0, 0x8000000
 ldr x0, [x0, 0x158]
 adrp x1, 0x8000000
 ldr x1, [x1, 0x160]
+    "sym_va": 134218072,
     "sym_va": 134218072,
     "sym_va": 134218072,
 EOF
@@ -1328,6 +1332,7 @@ om~.got.r2[4,6]
 f~section..bss
 EOF
 EXPECT=<<EOF
+0x10000007d 0x0000007d ADD_32 4     __fentry__ - 0x08000081
 0x100000b0f 0x0000007d ADD_32 4     __fentry__ - 0x08000081
 --
 0x100000b0f 0x100000f86
@@ -1471,7 +1476,7 @@ EOF
 EXPECT=<<EOF
 3905
 1
-78
+79
 EOF
 RUN
 
@@ -1716,6 +1721,8 @@ FILE=bins/elf/tls/ppc32-bssplt-tls.so
 ARGS=-e bin.relocs.apply=true
 CMDS=ir~ADD_
 EXPECT=<<EOF
+0x00000170 0x00000170 ADD_24 10    __tls_get_addr - 0x00000170
+0x00000174 0x00000174 ADD_24 10    puts - 0x00000174
 0x000011fc 0x000001fc ADD_32 68    tv
 0x00001214 0x00000170 ADD_24 10    __tls_get_addr - 0x00000170
 0x00001218 0x00000174 ADD_24 10    puts - 0x00000174
