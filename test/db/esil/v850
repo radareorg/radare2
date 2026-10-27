@@ -79,7 +79,7 @@ FILE=malloc://0x1000
 CMDS=<<EOF
 e asm.arch=v850
 e asm.cpu=e1
-wx e20f
+wx e209
 aei
 aer r1=1
 aer r2=8

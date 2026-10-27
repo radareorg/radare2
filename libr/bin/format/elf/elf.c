@@ -2794,7 +2794,7 @@ static const char *v850_flags_to_cpu(ut32 type) {
 	case E_V850E2_ARCH: return "e2";
 	case E_V850E2V3_ARCH: return "e2v3";
 	case E_V850E3V5_ARCH: return "e3v5";
-	case EF_V850_ARCH: return "e1"; // type = 0xf0
+	case EF_V850_ARCH: return "e3v5"; // RH850 ABI
 	}
 	return NULL;
 }
