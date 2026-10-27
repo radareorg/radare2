@@ -171,6 +171,7 @@ static bool use_op_reg_mem(int bits, const Operand *mem);
 static int encode_mem(ut8 *data, int reg, const Operand *mem, ut8 *rex);
 static int op_rm_ext(int bits, ut8 *data, const Operand *rm, int ext, ut8 opcode8, ut8 opcode);
 static int op_rm_near(int bits, ut8 *data, const Operand *rm, int ext, ut8 opcode);
+static int op_alu_imm(int bits, ut8 *data, const Opcode *op, int ext);
 
 // Minimal VEX.3 prefix emission for selected BMI2 GPR ops (SHLX/SHRX/SARX)
 // Encodes: VEX.NDS.LZ.0F38.Wx with computed R', X', B', vvvv'
@@ -705,6 +706,9 @@ static int opcntz(RArchSession *a, ut8 *data, const Opcode *op) {
 
 static int process_16bit_group_1(RArchSession *a, ut8 *data, const Opcode *op, int op1) {
 	is_valid_registers (op);
+	if (a->config->bits != 16) {
+		return op_alu_imm (a->config->bits, data, op, op1 >> 3);
+	}
 	int l = 0;
 	int immediate = op->operands[1].immediate * op->operands[1].sign;
 
@@ -731,6 +735,57 @@ static int process_16bit_group_1(RArchSession *a, ut8 *data, const Opcode *op, i
 	return l;
 }
 
+// add, or, adc, sbb, and, sub, xor and cmp with a register or memory operand and an immediate
+// in 32 or 64-bit mode: 80 /ext ib, 83 /ext ib, 81 /ext iw/id, or 04/05 + (ext << 3) for al and eAX
+static int op_alu_imm(int bits, ut8 *data, const Opcode *op, int ext) {
+	const Operand *rm = &op->operands[0];
+	ut32 size = rm->type & ALL_SIZE;
+	if ((rm->type & OT_MEMORY) && rm->dest_size) {
+		size = rm->dest_size & ALL_SIZE;
+	}
+	st64 imm = (st64)op->operands[1].immediate * op->operands[1].sign;
+	const st64 min = (size == OT_BYTE)? ST8_MIN: (size == OT_WORD)? ST16_MIN: ST32_MIN;
+	const st64 max = (size == OT_BYTE)? UT8_MAX: (size == OT_WORD)? UT16_MAX: (size == OT_DWORD)? UT32_MAX: ST32_MAX;
+	if (op->operands_count != 2 || imm < min || imm > max) {
+		return -1;
+	}
+	imm = (size == OT_BYTE)? (st8)imm: (size == OT_WORD)? (st16)imm: (size == OT_DWORD)? (st32)imm: imm;
+	const bool imm8 = size == OT_BYTE || (imm >= ST8_MIN && imm <= ST8_MAX);
+	int l = 0;
+	if ((size == OT_BYTE || !imm8) && !(rm->type & OT_MEMORY) && rm->reg == X86R_EAX && !rm->extended
+			&& (rm->type & OT_REGTYPE) == (OT_GPREG & OT_REGTYPE)) {
+		if (size == OT_BYTE) {
+			data[l++] = 0x04 | ext << 3;
+			data[l++] = (ut8)imm;
+			return l;
+		}
+		if (size == OT_WORD) {
+			data[l++] = 0x66;
+		} else if (size == OT_QWORD) {
+			if (bits != 64) {
+				return -1;
+			}
+			data[l++] = 0x48;
+		}
+		data[l++] = 0x05 | ext << 3;
+	} else {
+		l = op_rm_ext (bits, data, rm, ext, 0x80, imm8? 0x83: 0x81);
+		if (l < 0) {
+			return -1;
+		}
+	}
+	if (imm8) {
+		data[l++] = (ut8)imm;
+	} else if (size == OT_WORD) {
+		r_write_le16 (data + l, (ut16)imm);
+		l += 2;
+	} else {
+		r_write_le32 (data + l, (ut32)imm);
+		l += 4;
+	}
+	return l;
+}
+
 static int process_group_1(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
@@ -742,9 +797,6 @@ static int process_group_1(RArchSession *a, ut8 *data, const Opcode *op) {
 
 	if (!op->operands[1].is_good_flag) {
 		return -1;
-	}
-	if (a->config->bits == 64 && op->operands[0].type & OT_QWORD) {
-		data[l++] = (op->operands[0].extended)? 0x49: 0x48;
 	}
 	if (!strcmp (op->mnemonic, "adc")) {
 		modrm = 2;
@@ -762,6 +814,9 @@ static int process_group_1(RArchSession *a, ut8 *data, const Opcode *op) {
 		modrm = 5;
 	} else if (!strcmp (op->mnemonic, "cmp")) {
 		modrm = 7;
+	}
+	if (a->config->bits != 16) {
+		return op_alu_imm (a->config->bits, data, op, modrm);
 	}
 	immediate = op->operands[1].immediate * op->operands[1].sign;
 
@@ -956,6 +1011,9 @@ static int process_1byte_op(RArchSession *a, ut8 *data, const Opcode *op, int op
 		data[l++] = 0x40;
 	}
 	if (op->operands[0].reg == X86R_AL && op->operands[1].type & OT_CONSTANT) {
+		if (bits != 16) {
+			return op_alu_imm (bits, data, op, op1 >> 3);
+		}
 		data[l++] = op1 + 4;
 		data[l++] = op->operands[1].immediate * op->operands[1].sign;
 		return l;

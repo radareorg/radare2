@@ -872,6 +872,9 @@ ad "adc dword [eax], eax" 1100
 ad "adc eax, dword [eax]" 1300
 ad "add al, 0" 0400
 a "add ax, 0x4" 6683c004
+a "and cx, 0xffff" 6683e1ff
+a "xor eax, 0x80" 3580000000
+a "add byte [esi + edi*4 + 0x10], 0xff" 8044be10ff
 a "add ax, 0x96" 66059600
 a "add cx, 0x4" 6683c104
 ad "add al, byte [eax]" 0200
