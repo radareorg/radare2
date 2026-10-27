@@ -225,7 +225,7 @@ static ut64 addr_to_offset(struct MACH0_(obj_t) * mo, ut64 addr) {
 	return 0; // UT64_MAX?
 }
 
-static ut64 offset_to_vaddr(struct MACH0_(obj_t) * mo, ut64 offset) {
+static bool offset_in_segment(struct MACH0_(obj_t) * mo, ut64 offset, ut64 *vaddr) {
 	if (mo->segs) {
 		size_t i;
 		for (i = 0; i < mo->nsegs; i++) {
@@ -233,15 +233,21 @@ static ut64 offset_to_vaddr(struct MACH0_(obj_t) * mo, ut64 offset) {
 			ut64 segment_base = (ut64)seg->fileoff;
 			ut64 segment_size = (ut64)seg->filesize;
 			if (offset >= segment_base && offset < segment_base + segment_size) {
-				return seg->vmaddr + (offset - segment_base);
+				*vaddr = seg->vmaddr + (offset - segment_base);
+				return true;
 			}
 		}
 	}
-	return 0; // UT64_MAX?
+	return false;
 }
 
-ut64 MACH0_(paddr_to_vaddr)(struct MACH0_(obj_t) * mo, ut64 offset) {
-	return offset_to_vaddr (mo, offset);
+static ut64 offset_to_vaddr(struct MACH0_(obj_t) * mo, ut64 offset) {
+	ut64 vaddr;
+	return offset_in_segment (mo, offset, &vaddr)? vaddr: 0; // UT64_MAX?
+}
+
+bool MACH0_(paddr_to_vaddr)(struct MACH0_(obj_t) * mo, ut64 offset, ut64 *vaddr) {
+	return offset_in_segment (mo, offset, vaddr);
 }
 
 static ut64 pa2va(RBinFile *bf, ut64 offset) {
@@ -5685,9 +5691,10 @@ static bool walk_fixup_chain(struct MACH0_(obj_t) * mo, ut64 cursor, ut64 chain_
 			r_bitmap_set (visited, cursor / 4);
 		}
 		ut8 tmp[8];
+		const int width = IS_FMT_32BIT (pointer_format)? 4: 8;
 		bool previous_rebasing = mo->rebasing_buffer;
 		mo->rebasing_buffer = true;
-		if (r_buf_read_at (mo->b, cursor, tmp, 8) != 8) {
+		if (r_buf_read_at (mo->b, cursor, tmp, width) != width) {
 			mo->rebasing_buffer = previous_rebasing;
 			break;
 		}
@@ -5830,7 +5837,7 @@ static bool walk_fixup_chain(struct MACH0_(obj_t) * mo, ut64 cursor, ut64 chain_
 			R_LOG_WARN ("Unsupported chained pointer format %d", pointer_format);
 			return false;
 		}
-		if (cursor >= limit_start && cursor <= limit_end - 8 && (event & event_mask) != 0) {
+		if (cursor >= limit_start && cursor <= limit_end - width && (event & event_mask) != 0) {
 			RFixupEventDetails ed = {
 				.type = event,
 				.bin = mo,
