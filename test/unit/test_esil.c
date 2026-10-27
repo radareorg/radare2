@@ -222,6 +222,34 @@ bool test_op_lookup_growth(void) {
 	mu_end;
 }
 
+static bool write_only_read(void *mem, ut64 addr, ut8 *buf, int len) {
+	return false;
+}
+
+static bool write_only_write(void *mem, ut64 addr, const ut8 *buf, int len) {
+	return false;
+}
+
+static bool write_only_hook(REsil *esil, ut64 addr, const ut8 *buf, int len) {
+	return addr == 0x1000 && len == 1 && buf[0] == 0x41;
+}
+
+bool test_poke_write_only_hook(void) {
+	REsil *esil = r_esil_new (NULL);
+	mu_assert_notnull (esil, "new esil");
+	esil->mem_if.mem_read = write_only_read;
+	esil->mem_if.mem_write = write_only_write;
+	esil->cb.hook_mem_write = write_only_hook;
+	esil->iotrap = true;
+	mu_assert_true (r_esil_parse (esil, "0x41,0x1000,=[1]"), "write-only hook store");
+	mu_assert_eq (esil->trap, R_ANAL_TRAP_NONE, "internal pre-read must not trap a handled store");
+	esil->cb.hook_mem_write = NULL;
+	mu_assert_false (r_esil_parse (esil, "0x41,0x1000,=[1]"), "unhandled failed store");
+	mu_assert_eq (esil->trap, R_ANAL_TRAP_WRITE_ERR, "actual store failure must trap");
+	r_esil_free (esil);
+	mu_end;
+}
+
 int main(int argc, char **argv) {
 	mu_run_test (test_setup_keeps_custom_interfaces);
 	mu_run_test (test_setup_installs_default_interfaces);
@@ -229,5 +257,6 @@ int main(int argc, char **argv) {
 	mu_run_test (test_define_op);
 	mu_run_test (test_define_recursion);
 	mu_run_test (test_op_lookup_growth);
+	mu_run_test (test_poke_write_only_hook);
 	return tests_passed != tests_run;
 }

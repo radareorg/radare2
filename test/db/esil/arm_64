@@ -4152,3 +4152,28 @@ EXPECT=<<EOF
 0x00000110
 EOF
 RUN
+
+NAME=ARM64 literal load from a signed high virtual address
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e io.va=true
+on malloc://0x200 0xfffffffe00011200 rwx
+wx 20090058 @ 0xfffffffe0001126c
+wv8 0x240200000 @ 0xfffffffe00011390
+aei
+aer pc=0xfffffffe0001126c
+aes
+aer x0
+ae 0x12345678,-8589864048,=[8]
+ae -8589864048,[8],x0,=
+aer x0
+ae -0x1fffeec70,[8],x0,=
+aer x0
+EOF
+EXPECT=<<EOF
+0x240200000
+0x12345678
+0x12345678
+EOF
+RUN

@@ -51,6 +51,12 @@ R_IPI bool isregornum(REsil *esil, RStrs str, ut64 *num) {
 		*num = r_strs_tonum (str, 0, NULL);
 		return true;
 	}
+	if (c0 == '-' && r_strs_len (str) > 1 && isdigit ((unsigned char)str.a[1])) {
+		bool error;
+		const RStrs magnitude = { str.a + 1, str.b };
+		*num = 0 - r_strs_tonum (magnitude, 0, &error);
+		return !error;
+	}
 	return r_esil_reg_read (esil, str.a, num, NULL);
 }
 
@@ -992,7 +998,11 @@ static bool esil_poke_n(REsil *esil, int bits) {
 				// we disable hooks to avoid run hooks on internal peeks
 				void * oldhook = (void*)esil->cb.hook_mem_read;
 				esil->cb.hook_mem_read = NULL;
+				const int oldtrap = esil->trap;
+				const ut32 oldtrap_code = esil->trap_code;
 				r_esil_mem_read (esil, addr, b, bytes);
+				esil->trap = oldtrap;
+				esil->trap_code = oldtrap_code;
 				esil->cb.hook_mem_read = oldhook;
 				const bool be = esil_is_big_endian (esil);
 				n = esil_read_ble (b, bits, be);
