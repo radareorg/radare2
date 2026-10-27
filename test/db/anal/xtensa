@@ -79,3 +79,28 @@ if (a11 & (1 << 24)) goto 0x00000009
 entry a1, 80
 EOF
 RUN
+
+NAME=xtensa entry allocates its complete windowed stack frame
+FILE=malloc://128
+ARGS=-a xtensa -b 32
+CMDS=<<EOF
+wx 368100
+ao~stackptr
+EOF
+EXPECT=<<EOF
+stackptr: 64
+EOF
+RUN
+
+NAME=xtensa scalar result and link register roles
+FILE=malloc://16
+ARGS=-a xtensa -b 32
+CMDS=<<EOF
+arn R0
+arn LR
+EOF
+EXPECT=<<EOF
+a2
+a0
+EOF
+RUN

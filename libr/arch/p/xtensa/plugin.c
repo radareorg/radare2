@@ -267,8 +267,7 @@ static void xtensa_st1_op(RArchSession *anal, RAnalOp *op, ut64 addr, const ut8 
 	case 0x0: case 0x1: case 0x2: case 0x3:
 	case 0x4:
 		/* Set shift-amount-register */
-		op->type = R_ANAL_OP_TYPE_NULL;
-		/*op->type = R_ANAL_OP_TYPE_MOV;*/
+		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
 	case 0x6: case 0x7:
 		op->type = R_ANAL_OP_TYPE_IO;
@@ -505,8 +504,8 @@ static XtensaOpFn xtensa_qrst_fns[] = {
 	xtensa_rst1_op,
 	xtensa_rst2_op,
 	xtensa_mov_op, /*xtensa_rst3_op,*/
-	xtensa_null_op, /*xtensa_extui_op,*/
-	xtensa_null_op, /*xtensa_extui_op,*/
+	xtensa_and_op, /*xtensa_extui_op,*/
+	xtensa_and_op, /*xtensa_extui_op,*/
 	xtensa_unk_op, /*xtensa_cust0_op,*/
 	xtensa_unk_op, /*xtensa_cust1_op,*/
 	xtensa_lscx_op,
@@ -704,10 +703,8 @@ static void xtensa_check_stack_op(xtensa_isa isa, xtensa_opcode opcode, xtensa_f
 	xtensa_operand_get_field (isa, opcode, 1, format, i, slot_buffer, &src);
 	xtensa_operand_get_field (isa, opcode, 2, format, i, slot_buffer, (ut32 *) &imm);
 
-	// wide form of addi requires sign extension
-	if (opcode == 39) {
-		sign_extend (&imm, 7);
-	}
+	// Decode sign, scale and the special ADDI.N -1 encoding.
+	xtensa_operand_decode (isa, opcode, 2, (ut32 *) &imm);
 
 	// a1 = stack
 	if (dst == 1 && src == 1) {
@@ -817,9 +814,7 @@ static void xtensa_fillval_add_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_
 	xtensa_operand_get_field (isa, opcode, 1, format, i, slot_buffer, &src);
 	xtensa_operand_get_field (isa, opcode, 2, format, i, slot_buffer, (ut32 *) &imm);
 
-	if (opcode == 39) {
-		sign_extend (&imm, 7);
-	}
+	xtensa_operand_decode (isa, opcode, 2, (ut32 *) &imm);
 
 	xtensa_regfile dst_rf = xtensa_operand_regfile (isa, opcode, 0);
 	xtensa_regfile src_rf = xtensa_operand_regfile (isa, opcode, 1);
@@ -844,6 +839,7 @@ static void analop_val(xtensa_isa isa, xtensa_opcode opcode, xtensa_format forma
 		break;
 	case 27: /* addi.n */
 	case 39: /* addi */
+	case 40: /* addmi */
 		xtensa_fillval_add_imm (isa, opcode, format, i, slot_buffer, op);
 		break;
 	case 82: /* l16ui */
@@ -1898,20 +1894,19 @@ static void analop_esil(xtensa_isa isa, xtensa_opcode opcode, xtensa_format form
 }
 
 static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
+	R_RETURN_VAL_IF_FAIL (op && op->bytes && op->size > 0, false);
 	const size_t len_original = op->size;
 	const ut8 *buf_original = op->bytes;
 	const ut64 addr = op->addr;
-
-	if (!op) {
-		return 1;
+	const int instruction_size = xtensa_length (buf_original);
+	op->size = instruction_size;
+	if (op->size > len_original) {
+		op->type = R_ANAL_OP_TYPE_ILL;
+		return false;
 	}
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		disassemble (a, op, addr, buf_original, len_original);
-	}
-
-	op->size = xtensa_length (buf_original);
-	if (op->size > len_original) {
-		return 1;
+		op->size = instruction_size;
 	}
 
 	xtensa_op0_fns[(buf_original[0] & 0xf)] (a, op, addr, buf_original);
@@ -1954,8 +1949,16 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 		xtensa_format_get_slot (isa, format, i, pd->insn_buffer, pd->slot_buffer);
 		opcode = xtensa_opcode_decode (isa, format, i, pd->slot_buffer);
 
-		if (opcode == 39) { /* addi */
+		if (opcode == 39 || opcode == 40 || opcode == 27) { /* addi/addmi/addi.n */
 			xtensa_check_stack_op (isa, opcode, format, i, pd->slot_buffer, op);
+		}
+
+		if (opcode == 11) { /* entry */
+			ut32 amount;
+			xtensa_operand_get_field (isa, opcode, 2, format, i, pd->slot_buffer, &amount);
+			xtensa_operand_decode (isa, opcode, 2, &amount);
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = amount;
 		}
 
 		if (mask & R_ARCH_OP_MASK_VAL) {
@@ -1978,8 +1981,10 @@ static char *regs(RArchSession *as) {
 		"# a2-a5	return value (call0 ABI)\n"
 		"# a12-a15	callee-saved (call0 ABI)\n"
 		"=PC	pc\n"
-		"=BP	a14\n"
 		"=SP	a1\n"
+		"=LR	a0\n"
+		"=R0	a2\n"
+		"=R1	a3\n"
 		"=SN	a1\n"
 		"=A0	a2\n"
 		"=A1	a3\n"
@@ -2043,6 +2048,11 @@ static bool init(RArchSession *as) {
 
 static bool fini(RArchSession *as) {
 	R_RETURN_VAL_IF_FAIL (as, false);
+	PluginData *pd = as->data;
+	if (pd) {
+		xtensa_insnbuf_free (xtensa_default_isa, pd->insn_buffer);
+		xtensa_insnbuf_free (xtensa_default_isa, pd->slot_buffer);
+	}
 	R_FREE (as->data);
 	return true;
 }
