@@ -2298,10 +2298,15 @@ R_API void r_str_ansi_filterbg(char *str) {
 
 // replace \x1b[0m with \x[0m + bgcolor
 R_API char *r_str_ansi_resetbg(const char *str, const char *bgcolor) {
+	R_RETURN_VAL_IF_FAIL (str && bgcolor, NULL);
+	char *resetbg = r_str_newf (Color_RESET "%s", bgcolor);
+	if (!resetbg) {
+		return NULL;
+	}
 	char *res = strdup (str);
-	char *resetbg = r_str_newf ("\x1b[0m%s", bgcolor);
-	res = r_str_replace_all (res, "\x1b[0m", "(ºvº)");
-	res = r_str_replace_all (res, "(ºvº)", resetbg);
+	if (res) {
+		res = r_str_replace (res, Color_RESET, resetbg, true);
+	}
 	free (resetbg);
 	return res;
 }

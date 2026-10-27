@@ -533,7 +533,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 		return;
 	}
 	RCons *cons = c->cons;
-	char *os = strstr (_s, Color_RESET)? r_str_ansi_resetbg (_s, c->bgcolor): NULL;
+	char *os = strcmp (c->bgcolor, Color_RESET) && strstr (_s, Color_RESET)? r_str_ansi_resetbg (_s, c->bgcolor): NULL;
 	const char *s = os? os: _s;
 	char ch;
 	int left, slen, attr_len, piece_len;
