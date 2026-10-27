@@ -305,3 +305,94 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=V850 PREPARE signed16 consumes its complete immediate
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx 80072b000180
+aei
+aer sp=0x100
+aes
+aer ep
+aer sp
+aer pc
+EOF
+EXPECT=<<EOF
+0xffff8001
+0x000000fc
+0x00000006
+EOF
+RUN
+
+NAME=V850 PREPARE high16 consumes its complete immediate
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx 800733000180
+aei
+aer sp=0x100
+aes
+aer ep
+aer sp
+aer pc
+EOF
+EXPECT=<<EOF
+0x80010000
+0x000000fc
+0x00000006
+EOF
+RUN
+
+NAME=V850 PREPARE immediate32 consumes its complete immediate
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx 80073b0078563412
+aei
+aer sp=0x100
+aes
+aer ep
+aer sp
+aer pc
+EOF
+EXPECT=<<EOF
+0x12345678
+0x000000fc
+0x00000008
+EOF
+RUN
+
+NAME=V850 PREPARE rejects a truncated immediate
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+pad 80073b00~^truncated
+EOF
+EXPECT=<<EOF
+truncated from 8 to 4
+EOF
+RUN
+
+NAME=V850 E2 extended loads use both displacement words and six bytes
+FILE=malloc://0x20000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+e asm.cpu=e2v3
+wx 810769144602
+wx 78563412 @0x13346
+aei
+aer r1=0x1000
+aes
+aer r2
+aer pc
+EOF
+EXPECT=<<EOF
+0x12345678
+0x00000006
+EOF
+RUN

@@ -60,7 +60,7 @@ static st64 get_operand_value(const struct v850_operand *operand, unsigned long 
 			// truncated
 			return 0;
 		}
-		ut32 value = r_read_le16 (buffer);
+		ut32 value = (insn >> 16) | ((ut32)r_read_le16 (buffer) << 16);
 		return operand->extract (value, invalid);
 	}
 	if (operand->flags & V850E_IMMEDIATE32) {
@@ -404,13 +404,14 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 		unsigned int opnum;
 		unsigned int memop;
 
+		const unsigned extra = op->mask > 0xffff? 4: 2;
 		bool operand_fail = false;
 		for (opindex_ptr = op->operands, opnum = 1; !operand_fail && *opindex_ptr != 0; opindex_ptr++, opnum++) {
 			bool invalid = false;
 
 			operand = &v850_operands[*opindex_ptr];
 
-			st64 value = get_operand_value (operand, insn, buffer, buffer_size, &invalid);
+			st64 value = get_operand_value (operand, insn, buffer + extra, buffer_size - extra, &invalid);
 			if (value) {
 				inst->value = value;
 			}
@@ -462,7 +463,7 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 			prevalue = value;
 
 			bool invalid = false;
-			value = get_operand_value (operand, insn, buffer + 2, buffer_size - 2, &invalid);
+			value = get_operand_value (operand, insn, buffer + extra, buffer_size - extra, &invalid);
 			if (invalid) {
 				// R_LOG_WARN ("Cannot get operand value");
 				break;
@@ -578,7 +579,7 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 				{
 #if ABS_R0REF
 					const struct v850_operand *nextop = &v850_operands[opindex_ptr[1]];
-					st64 nextvalue = get_operand_value (nextop, insn, buffer + 2, buffer_size - 2, &invalid);
+					st64 nextvalue = get_operand_value (nextop, insn, buffer + extra, buffer_size - extra, &invalid);
 					if (opnum > 0 && (v850_operands[*(opindex_ptr)].flags & V850_OPERAND_DISP)
 							&& opnum == 1 && opnum + 1 == memop && nextvalue == 0 && value < 1) {
 						// dont print coz we replace later
@@ -696,18 +697,19 @@ int v850np_disasm(v850np_inst *inst, int cpumodel, ut64 addr, const ut8* buffer,
 
 	if (length == 4 || (length == 0 && (insn & 0x0600) == 0x0600)) {
 		if (len < 4) {
-			code_length = 4;
-			inst->text = r_str_newf ("truncated from %d to %d", code_length, length);
+			code_length = R_MAX (code_length, 4);
+			inst->text = r_str_newf ("truncated from %d to %d", code_length, (int)len);
 			return -1;
 		}
 		/* This is a 4 byte insn.  */
 		insn = r_read_le32 (buffer);
-		length = code_length = 4;
+		length = 4;
+		code_length = R_MAX (code_length, 4);
 	}
 
 	if (code_length > len) {
 		// truncated instruction
-		inst->text = r_str_newf ("truncated from %d to %d", code_length, length);
+		inst->text = r_str_newf ("truncated from %d to %d", code_length, (int)len);
 		return -1;
 	}
 
