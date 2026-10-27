@@ -252,6 +252,25 @@ ERROR: Cannot assemble 'mov eax, hello' at line 1
 EOF
 RUN
 
+NAME=rasm2 arm32 rejects invalid push/pop, cps and mov operands
+FILE=-
+CMDS=<<EOF
+!rasm2 -a arm -b 32 "push {r0, r1}, r2"
+!rasm2 -a arm -b 32 "pop {r0}, lsl"
+!rasm2 -a arm -b 32 "cps {r0}"
+!rasm2 -a arm -b 32 "cpseq 19"
+!rasm2 -a arm -b 32 "mov foo, r1"
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'push {r0, r1}, r2' at line 1
+ERROR: Cannot assemble 'pop {r0}, lsl' at line 1
+ERROR: Cannot assemble 'cps {r0}' at line 1
+ERROR: Cannot assemble 'cpseq 19' at line 1
+ERROR: Cannot assemble 'mov foo, r1' at line 1
+EOF
+RUN
+
 NAME=rasm2 x86_32 overlarge operand
 FILE=-
 CMDS=!rasm2 -a x86 -b 32 "mov eax, 0x1122334455"
