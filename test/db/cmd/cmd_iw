@@ -368,7 +368,7 @@ afij
 EOF
 EXPECT=<<EOF
 [{"index":0,"source":4480,"from":4496,"to":4512,"handler":4528,"filter":0,"kind":"catch","typeFilter":0,"type":"First"},{"index":1,"source":4480,"from":4496,"to":4512,"handler":4528,"filter":0,"kind":"cleanup"}]
-[{"addr":4480,"name":"entry0","size":46,"is-pure":"false","realsz":46,"noreturn":false,"recursive":false,"stackframe":8,"calltype":"amd64","cost":15,"cc":1,"bits":64,"type":"fcn","nbbs":1,"tracecov":0,"is-lineal":true,"ninstrs":12,"edges":0,"ebbs":1,"signature":"entry0 (int64_t arg1);","minaddr":4480,"maxaddr":4526,"maxbbins":12,"midbbins":12.000,"ratbbins":1.000,"indegree":0,"outdegree":1,"nlocals":0,"nargs":1,"difftype":"new","trycatch":[{"index":0,"source":4480,"from":4496,"to":4512,"handler":4528,"filter":0,"kind":"catch","typeFilter":0,"type":"First"},{"index":1,"source":4480,"from":4496,"to":4512,"handler":4528,"filter":0,"kind":"cleanup"}]}]
+[{"addr":4480,"name":"entry0","size":46,"is-pure":"false","realsz":46,"noreturn":false,"inline":false,"recursive":false,"stackframe":8,"calltype":"amd64","cost":15,"cc":1,"bits":64,"type":"fcn","nbbs":1,"tracecov":0,"is-lineal":true,"ninstrs":12,"edges":0,"ebbs":1,"signature":"entry0 (int64_t arg1);","minaddr":4480,"maxaddr":4526,"maxbbins":12,"midbbins":12.000,"ratbbins":1.000,"indegree":0,"outdegree":1,"nlocals":0,"nargs":1,"difftype":"new","trycatch":[{"index":0,"source":4480,"from":4496,"to":4512,"handler":4528,"filter":0,"kind":"catch","typeFilter":0,"type":"First"},{"index":1,"source":4480,"from":4496,"to":4512,"handler":4528,"filter":0,"kind":"cleanup"}]}]
 EOF
 RUN
 

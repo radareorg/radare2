@@ -15,7 +15,12 @@ typedef struct {
 } PdcEmuStep;
 R_VEC_TYPE (RVecPdcEmuStep, PdcEmuStep);
 
-typedef struct {
+enum {
+	PDC_INLINE_MAX_DEPTH = 16,
+	PDC_INLINE_MAX_CALLS = 128
+};
+
+typedef struct pdc_state_t {
 	RCore *core;
 	RStrBuf *out;
 	RStrBuf *codestr;
@@ -39,7 +44,13 @@ typedef struct {
 	RVecPdcTrycatch trys; // entries touching the function, borrowed from the binary
 	int open_trys; // try braces printed and not yet closed
 	ut64 attached; // handler being rendered attached to its try close
+	struct pdc_state_t *parent;
+	const char *inline_prefix;
+	bool inline_calls;
+	ut32 inline_count;
 } PDCState;
+
+static bool emit_inline_call(PDCState *state, ut64 addr, int indent, const char *line);
 
 static const char *pseudo_arg_name(RAnal *anal, const char *arg) {
 	const char *first = r_anal_cc_location_first (anal, arg);
@@ -1316,7 +1327,9 @@ static void emit_code_lines(PDCState *state, char *code, ut64 start_addr, int in
 				|| line_is_known_loop_goto (state, t))) {
 			continue;
 		}
-		print_insn_line (state, addr, indent, "%s", line);
+		if (!emit_inline_call (state, addr, indent, line)) {
+			print_insn_line (state, addr, indent, "%s", line);
+		}
 	}
 	r_list_free (lines);
 	if (jump_at != UT64_MAX) {
@@ -1706,8 +1719,10 @@ static void emit_bb_body_no_back_jump(PDCState *state, RAnalBlock *bb, ut64 back
 		if (line_is_known_loop_goto (state, r_str_trim_head_ro (rendered))) {
 			continue;
 		}
-		print_newline (state, addr, indent, false);
-		print_str (state, "%s", rendered);
+		if (!emit_inline_call (state, addr, indent, rendered)) {
+			print_newline (state, addr, indent, false);
+			print_str (state, "%s", rendered);
+		}
 	}
 	r_list_free (lines);
 	free (code);
@@ -2358,7 +2373,7 @@ static bool pdc_structured_body(PDCState *state, int indent) {
 	return reducible;
 }
 
-R_IPI bool pdc_decompile(RCore *core, const char *input) {
+static bool pdc_decompile_function(RCore *core, const char *input, PDCState *parent, const char *inline_prefix, char **inline_output) {
 	RCons *cons = r_core_get_cons (core);
 	bool show_c_headers = *input == 'c';
 	if (*input == 't') {
@@ -2397,6 +2412,9 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 	}
 
 	PDCState state = { 0 };
+	state.parent = parent;
+	state.inline_prefix = inline_prefix;
+	state.inline_calls = r_config_get_b (core->config, "pdc.inline");
 	RVecPdcTrycatch_init (&state.trys);
 	state.core = core;
 	state.out = r_strbuf_new ("");
@@ -2485,48 +2503,50 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 	const char *a1 = cc_a1? pseudo_arg_name (state.core->anal, cc_a1): r_reg_alias_getname (state.core->anal->reg, R_REG_ALIAS_A1);
 	state.r0 = r_reg_alias_getname (state.core->anal->reg, R_REG_ALIAS_R0);
 	const char *r0 = state.r0;
-	if (show_c_headers) {
-		PRINTF ("// global registers\n");
-		PRINTF ("int stack[1024];\n");
-		PRINTF ("unsigned long long *qword = &stack;\n");
-		PRINTF ("unsigned int *dword = &stack;\n");
-		PRINTF ("unsigned short *word = &stack;\n");
-		PRINTF ("unsigned char *byte = &stack;\n");
-		PRINTF ("int %s, %s;\n", a0, a1);
-		PRINTF ("// This function contains %d basic blocks and its %d long.",
-			n_bb,
-			(int)r_anal_function_realsize (state.fcn));
-		NEWLINE (state.fcn->addr, indent);
-		const char *S0 = "esp";
-		PRINTF ("static inline void push(int reg) {%s -= %d; stack[%s] = reg; }\n", S0, (int)sizeof (int), S0);
-		PRINTF ("static inline int pop() {int r = stack[%s]; %s += %d; return r; }\n", S0, S0, (int)sizeof (int));
-		PRINTF ("\n");
-	}
-
-	char *fs = r_anal_function_get_signature_string (state.fcn);
-	{
-		char *cc = fcncc? r_anal_cc_get (core->anal, fcncc): NULL;
-		r_str_trim (cc);
-		if (R_STR_ISNOTEMPTY (cc)) {
-			if (state.show_addr || state.show_asm) {
-				print_pipe_header (&state, state.fcn->addr);
-			}
-			PRINTF ("// callconv: %s\n", cc);
+	if (!inline_output) {
+		if (show_c_headers) {
+			PRINTF ("// global registers\n");
+			PRINTF ("int stack[1024];\n");
+			PRINTF ("unsigned long long *qword = &stack;\n");
+			PRINTF ("unsigned int *dword = &stack;\n");
+			PRINTF ("unsigned short *word = &stack;\n");
+			PRINTF ("unsigned char *byte = &stack;\n");
+			PRINTF ("int %s, %s;\n", a0, a1);
+			PRINTF ("// This function contains %d basic blocks and its %d long.",
+				n_bb,
+				(int)r_anal_function_realsize (state.fcn));
+			NEWLINE (state.fcn->addr, indent);
+			const char *S0 = "esp";
+			PRINTF ("static inline void push(int reg) {%s -= %d; stack[%s] = reg; }\n", S0, (int)sizeof (int), S0);
+			PRINTF ("static inline int pop() {int r = stack[%s]; %s += %d; return r; }\n", S0, S0, (int)sizeof (int));
+			PRINTF ("\n");
 		}
-		free (cc);
+
+		char *fs = r_anal_function_get_signature_string (state.fcn);
+		{
+			char *cc = fcncc? r_anal_cc_get (core->anal, fcncc): NULL;
+			r_str_trim (cc);
+			if (R_STR_ISNOTEMPTY (cc)) {
+				if (state.show_addr || state.show_asm) {
+					print_pipe_header (&state, state.fcn->addr);
+				}
+				PRINTF ("// callconv: %s\n", cc);
+			}
+			free (cc);
+		}
+		if (state.show_addr || state.show_asm) {
+			print_pipe_header (&state, state.fcn->addr);
+		}
+		if (R_STR_ISNOTEMPTY (fs)) {
+			fs = r_str_replace (fs, " ()", " (void)", false);
+			r_str_replace_char (fs, ';', ' ');
+			r_str_trim (fs);
+			PRINTF ("%s {", fs);
+		} else {
+			PRINTF ("int %s (void) {", state.fcn->name);
+		}
+		free (fs);
 	}
-	if (state.show_addr || state.show_asm) {
-		print_pipe_header (&state, state.fcn->addr);
-	}
-	if (R_STR_ISNOTEMPTY (fs)) {
-		fs = r_str_replace (fs, " ()", " (void)", false);
-		r_str_replace_char (fs, ';', ' ');
-		r_str_trim (fs);
-		PRINTF ("%s {", fs);
-	} else {
-		PRINTF ("int %s (void) {", state.fcn->name);
-	}
-	free (fs);
 	indent++;
 	RList *visited = r_list_newf (NULL);
 	state.last_addr = state.fcn->addr;
@@ -2793,47 +2813,49 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 			RAnalBlock *nbb = (RAnalBlock *) (nit->data);
 			nextbbaddr = nbb->addr;
 		}
-		char *s = orphan_text (&state, bb);
-		s = comments_to_c (s);
-		s = r_str_replace (s, "goto ", "// goto loc_", true);
-		s = cleancomments (s);
-		s = promote_calls (&state, s);
-		s = pdc_optimize (core, s);
-		if (state.show_asm) {
-			RList *rows = r_str_split_list (s, "\n", 0);
-			char *row;
-			RStrBuf *sb = r_strbuf_new ("");
-			RListIter *iter;
-			ut64 oldat = 0;
-			r_list_foreach (rows, iter, row) {
-				if (R_STR_ISEMPTY (row)) {
-					continue;
+		char *s = state.inline_calls? fetch_bb_pseudo (&state, bb): orphan_text (&state, bb);
+		if (!state.inline_calls) {
+			s = comments_to_c (s);
+			s = r_str_replace (s, "goto ", "// goto loc_", true);
+			s = cleancomments (s);
+			s = promote_calls (&state, s);
+			s = pdc_optimize (core, s);
+			if (state.show_asm) {
+				RList *rows = r_str_split_list (s, "\n", 0);
+				char *row;
+				RStrBuf *sb = r_strbuf_new ("");
+				RListIter *iter;
+				ut64 oldat = 0;
+				r_list_foreach (rows, iter, row) {
+					if (R_STR_ISEMPTY (row)) {
+						continue;
+					}
+					ut64 at = r_num_math (NULL, row);
+					if (!at) {
+						at = oldat;
+					}
+					oldat = at;
+					char *space = strchr (row, ' ');
+					if (space) {
+						row = (char *)r_str_trim_head_ro (space + 1);
+					}
+					asm_append (sb, state.core, at, " ");
+					r_strbuf_appendf (sb, " | %s\n", row);
 				}
-				ut64 at = r_num_math (NULL, row);
-				if (!at) {
-					at = oldat;
-				}
-				oldat = at;
-				char *space = strchr (row, ' ');
-				if (space) {
-					row = (char *)r_str_trim_head_ro (space + 1);
-				}
-				asm_append (sb, state.core, at, " ");
-				r_strbuf_appendf (sb, " | %s\n", row);
+				free (s);
+				r_list_free (rows);
+				s = r_strbuf_drain (sb);
+			} else if (state.show_addr) {
+				char *os = pdc_prefix_lines (s, " ", true);
+				free (s);
+				s = os;
+			} else {
+				char *ind = r_str_pad (NULL, 0, ' ', indent * 4);
+				char *os = pdc_prefix_lines (s, r_str_get (ind), false);
+				free (ind);
+				free (s);
+				s = os;
 			}
-			free (s);
-			r_list_free (rows);
-			s = r_strbuf_drain (sb);
-		} else if (state.show_addr) {
-			char *os = pdc_prefix_lines (s, " ", true);
-			free (s);
-			s = os;
-		} else {
-			char *ind = r_str_pad (NULL, 0, ' ', indent * 4);
-			char *os = pdc_prefix_lines (s, r_str_get (ind), false);
-			free (ind);
-			free (s);
-			s = os;
 		}
 		if (R_STR_ISNOTEMPTY (r_str_trim_head_ro (s))) {
 			const size_t start = r_strbuf_length (state.codestr);
@@ -2856,7 +2878,14 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 			} else {
 				NEWLINE (bb->addr, labeled? 1: 0);
 			}
-			if (labeled) {
+			if (state.inline_calls) {
+				if (labeled) {
+					char *tag = orphan_tag (core, bb->addr);
+					PRINTF ("loc_0x%08" PFMT64x ": // %s", bb->addr, tag);
+					free (tag);
+				}
+				emit_code_lines (&state, s, bb->addr, indent);
+			} else if (labeled) {
 				char *tag = orphan_tag (core, bb->addr);
 				PRINTF ("loc_0x%08" PFMT64x ": // %s\n%s", bb->addr, tag, s);
 				free (tag);
@@ -2889,7 +2918,9 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 		print_line (&state, state.last_addr, 1 + state.open_trys, "} // end try");
 	}
 	indent = 0;
-	print_line (&state, state.last_addr, indent, "}");
+	if (!inline_output) {
+		print_line (&state, state.last_addr, indent, "}");
+	}
 	PRINTF ("\n");
 	r_io_cache_pop (core->io);
 	ht_up_free (state.bbtext);
@@ -2907,7 +2938,9 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 		r_strbuf_free (state.out);
 	} else {
 		char *s = r_strbuf_drain (state.out);
-		if (comment_cmds) {
+		if (inline_output) {
+			*inline_output = s;
+		} else if (comment_cmds) {
 			pdc_print_comment_cmds (core, s, structured);
 		} else if (r_config_get_i (state.core->config, "scr.color") > 0) {
 			RConsCodeColors codecolors = r_cons_codecolors (cons);
@@ -2915,10 +2948,12 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 			free (s);
 			s = ss;
 		}
-		if (!comment_cmds) {
+		if (!inline_output && !comment_cmds) {
 			r_cons_println (cons, s);
 		}
-		free (s);
+		if (!inline_output) {
+			free (s);
+		}
 		r_strbuf_free (state.codestr);
 	}
 	free (state.transfer);
@@ -2929,4 +2964,207 @@ R_IPI bool pdc_decompile(RCore *core, const char *input) {
 		r_bitset_free (state.switch_addrs);
 	}
 	return true;
+}
+
+static char *inline_line(const char *line, const char *prefix, const char *retreg) {
+	RStrBuf *out = r_strbuf_new ("");
+	const char *p = line;
+	while (*p) {
+		if (starts_quoted (line, p)) {
+			const char *end = pdc_skip_quoted (p);
+			r_strbuf_append_n (out, p, end - p);
+			p = end;
+			continue;
+		}
+		if (r_str_startswith (p, "//")) {
+			r_strbuf_append (out, p);
+			break;
+		}
+		const bool word = p == line || (!isalnum ((ut8)p[-1]) && p[-1] != '_' && p[-1] != '.');
+		if (word && r_str_startswith (p, "loc_0x")) {
+			char *end;
+			ut64 target = strtoull (p + 6, &end, 16);
+			if (end > p + 6) {
+				r_strbuf_appendf (out, "%s_loc_0x%08" PFMT64x, prefix, target);
+				p = end;
+				continue;
+			}
+		} else if (word && r_str_startswith (p, "return")
+				&& (!p[6] || IS_WHITECHAR (p[6]) || p[6] == ';')) {
+			const char *value = r_str_trim_head_ro (p + 6);
+			const char *end = value;
+			while (*end && *end != ';' && !r_str_startswith (end, "//")) {
+				if (starts_quoted (value, end)) {
+					end = pdc_skip_quoted (end);
+				} else {
+					end++;
+				}
+			}
+			const char *last = end;
+			while (last > value && IS_WHITECHAR (last[-1])) {
+				last--;
+			}
+			const size_t len = last - value;
+			r_strbuf_append (out, "{ ");
+			if (len && retreg && (strlen (retreg) != len || strncmp (value, retreg, len))) {
+				r_strbuf_appendf (out, "%s = ", retreg);
+				r_strbuf_append_n (out, value, len);
+				r_strbuf_append (out, "; ");
+			}
+			r_strbuf_appendf (out, "goto %s_end; }", prefix);
+			if (r_str_startswith (end, "//")) {
+				r_strbuf_append (out, " ");
+			}
+			p = *end == ';'? end + 1: end;
+			continue;
+		}
+		r_strbuf_append_n (out, p++, 1);
+	}
+	return r_strbuf_drain (out);
+}
+
+static RList *inline_call_args(const char *line) {
+	const char *begin = strchr (line, '(') + 1;
+	const char *end = call_args_end (begin);
+	if (!end) {
+		return NULL;
+	}
+	RList *args = r_list_newf (free);
+	const char *p;
+	int depth = 0;
+	for (p = begin; p <= end; p++) {
+		if (p < end && starts_quoted (begin, p)) {
+			p = pdc_skip_quoted (p) - 1;
+			continue;
+		}
+		if (p < end && strchr ("([{", *p)) {
+			depth++;
+		} else if (p < end && strchr (")]}", *p)) {
+			depth--;
+		}
+		if (p == end || (*p == ',' && !depth)) {
+			char *arg = r_str_ndup (begin, p - begin);
+			if (!arg) {
+				r_list_free (args);
+				return NULL;
+			}
+			r_str_trim (arg);
+			if (*arg) {
+				r_list_append (args, arg);
+			} else {
+				free (arg);
+			}
+			begin = p + 1;
+		}
+	}
+	return args;
+}
+
+static bool emit_inline_call(PDCState *state, ut64 addr, int indent, const char *line) {
+	if (!state->inline_calls || !strchr (line, '(') || r_str_startswith (r_str_trim_head_ro (line), "//")) {
+		return false;
+	}
+	RCore *core = state->core;
+	RAnalOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_BASIC);
+	RAnalFunction *callee = op && (op->type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_CALL
+		&& !op->delay && op->jump != UT64_MAX
+		? r_anal_get_function_at (core->anal, op->jump): NULL;
+	r_anal_op_free (op);
+	if (!callee || !r_anal_function_is_inline (callee) || r_list_empty (callee->bbs)) {
+		return false;
+	}
+	PDCState *ancestor, *root = state;
+	int depth = 0;
+	for (ancestor = state; ancestor; ancestor = ancestor->parent) {
+		if (ancestor->fcn == callee || ++depth >= PDC_INLINE_MAX_DEPTH) {
+			return false;
+		}
+		root = ancestor;
+	}
+	if (root->inline_count >= PDC_INLINE_MAX_CALLS) {
+		return false;
+	}
+	RList *args = inline_call_args (line);
+	if (!args) {
+		return false;
+	}
+	const char *cc = r_anal_function_cc (callee);
+	RListIter *iter;
+	const char *arg;
+	const int argc = r_list_length (args);
+	int index = 0;
+	r_list_foreach (args, iter, arg) {
+		RAnalCCArgSlot slot;
+		if (!cc || !r_anal_cc_argslot (core->anal, cc, index++, argc, false, &slot) || !slot.reg) {
+			r_list_free (args);
+			return false;
+		}
+	}
+	char *prefix = r_str_newf ("%s_0x%08" PFMT64x,
+		state->inline_prefix? state->inline_prefix: "inline", addr);
+	if (!prefix) {
+		r_list_free (args);
+		return false;
+	}
+	root->inline_count++;
+	const ut64 saved_addr = core->addr;
+	r_core_seek (core, callee->addr, true);
+	char *code = NULL;
+	bool ok = pdc_decompile_function (core, "o", state, prefix, &code);
+	r_core_seek (core, saved_addr, true);
+	if (!ok || R_STR_ISEMPTY (code)) {
+		r_list_free (args);
+		free (prefix);
+		free (code);
+		return false;
+	}
+	RList *lines = r_str_split_list (code, "\n", 0);
+	if (!lines) {
+		r_list_free (args);
+		free (prefix);
+		free (code);
+		return false;
+	}
+	print_insn_line (state, addr, indent, "{ // inline %s", callee->name);
+	// Capture arguments before register assignments can overwrite another argument.
+	index = 0;
+	r_list_foreach (args, iter, arg) {
+		print_line (state, addr, indent + 1, "auto %s_arg%d = %s;", prefix, index++, arg);
+	}
+	index = 0;
+	r_list_foreach (args, iter, arg) {
+		RAnalCCArgSlot slot;
+		r_anal_cc_argslot (core->anal, cc, index, argc, false, &slot);
+		print_line (state, addr, indent + 1, "%s = %s_arg%d;", slot.reg, prefix, index++);
+	}
+	const char *retreg = cc? r_anal_cc_ret (core->anal, cc, 0): NULL;
+	retreg = retreg? pseudo_arg_name (core->anal, retreg): state->r0;
+	const int call_indent = indent + tc_depth (state, addr);
+	const char *row;
+	r_list_foreach (lines, iter, row) {
+		row = r_str_trim_head_ro (row);
+		ut64 at;
+		if (!pdc_line_body (core, row, &at)) {
+			continue;
+		}
+		const char *body = strchr (row, '|') + 1;
+		if (*body == ' ') {
+			body++;
+		}
+		char *rendered = inline_line (body, prefix, retreg);
+		print_insn_line (state, at, call_indent - tc_depth (state, at), "%s", rendered);
+		free (rendered);
+	}
+	print_line (state, addr, indent + 1, "%s_end:;", prefix);
+	print_line (state, addr, indent, "}");
+	state->last_addr = addr;
+	r_list_free (args);
+	r_list_free (lines);
+	free (prefix);
+	free (code);
+	return true;
+}
+
+R_IPI bool pdc_decompile(RCore *core, const char *input) {
+	return pdc_decompile_function (core, input, NULL, NULL, NULL);
 }

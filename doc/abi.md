@@ -3,6 +3,11 @@
 Since r2-6.0.0 the `ABI_VERSION` define avoid plugins built with different ABI
 to be loaded to avoid segfaults.
 
+ABI 163 guarantees `RAnalFunction.is_inline` and the
+`r_anal_function_is_inline`/`r_anal_function_set_inline` accessors. External
+decompilers such as r2ghidra can guard their future inline support with
+`#if R2_ABIVERSION >= 163`.
+
 ## Introduction
 
 Since r2-5.6.0 the development model has changed in order to provide a reliable
