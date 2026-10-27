@@ -338,3 +338,23 @@ EXPECT=<<EOF
 file     bins/elf/ls
 EOF
 RUN
+
+NAME=e bool node keeps true after int restore
+FILE=malloc://16
+ARGS=-a x86
+CMDS=<<EOF
+e io.pcache.write=true
+aaft
+e~pcache.write
+e io.pcache.write=false
+aaft
+e~pcache.write
+-b 16
+e asm.bits
+EOF
+EXPECT=<<EOF
+io.pcache.write = true
+io.pcache.write = false
+16
+EOF
+RUN
