@@ -595,7 +595,7 @@ R_API RConfigNode* r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 			goto beach;
 		}
 		ov = node->value;
-		r_config_node_value_format_i (buf, sizeof (buf), i, NULL);
+		r_config_node_value_format_i (buf, sizeof (buf), i, node);
 		node->value = strdup (buf);
 		if (!node->value) {
 			node = NULL;
