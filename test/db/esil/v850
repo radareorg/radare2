@@ -171,3 +171,29 @@ EXPECT=<<EOF
 0x00000015
 EOF
 RUN
+
+NAME=V850 CMOV and SASF preserve condition flags
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx e117241be2170002
+aei
+aer r1=7
+aer r2=10
+aer psw=0x21
+aes
+aer sp
+aer psw
+aes
+aer r2
+aer psw
+EOF
+EXPECT=<<EOF
+0x00000007
+0x00000021
+0x00000015
+0x00000021
+EOF
+RUN
+

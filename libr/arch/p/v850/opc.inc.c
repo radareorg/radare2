@@ -814,8 +814,8 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "caxi", two (0x07e0, 0x00ee), two (0x07e0, 0x07ff), {R1, R2, R3}, 1, V850_CPU_E2_UP, R_ANAL_OP_TYPE_MOV },
 	{ "clr1", two (0x87c0, 0x0000), two (0xc7e0, 0x0000), {B3, D16, R1}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_AND, "#2,#1,+,[1],DUP,#0,1,<<,&,!,z,:=,#0,1,<<,0xff,^,&,#2,#1,+,=[1]" },
 	{ "clr1", two (0x07e0, 0x00e4), two (0x07e0, 0xffff), {R2, R1}, 3, V850_CPU_NON0, R_ANAL_OP_TYPE_AND, "#1,[1],DUP,7,#0,&,1,<<,&,!,z,:=,7,#0,&,1,<<,0xff,^,&,#1,=[1]" },
-	{ "cmov", two (0x07e0, 0x0320), two (0x07e0, 0x07e1), {MOVCC, R1, R2, R3}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV },
-	{ "cmov", two (0x07e0, 0x0300), two (0x07e0, 0x07e1), {MOVCC, I5, R2, R3}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV },
+	{ "cmov", two (0x07e0, 0x0320), two (0x07e0, 0x07e1), {MOVCC, R1, R2, R3}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV, "#0,?{,#1,}{,#2,},#3,:=" },
+	{ "cmov", two (0x07e0, 0x0300), two (0x07e0, 0x07e1), {MOVCC, I5, R2, R3}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV, "#0,?{,#1,}{,#2,},#3,:=" },
 	{ "cmp", OP (0x0f), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CMP, "#0,#1,==,$z,z,:=,31,$s,s,:=,32,$b,cy,:=,31,$o,ov,:=" },
 	{ "cmp", OP (0x13), OP_MASK, IF2, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CMP, "#0,#1,==,$z,z,:=,31,$s,s,:=,32,$b,cy,:=,31,$o,ov,:=" },
 	{ "ctret", two (0x07e0, 0x0144), two (0xffff, 0xffff), {0}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_RET, "ctpc,pc,:=,ctpsw,psw,:=" },
@@ -975,7 +975,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "sar", OP (0x15), OP_MASK, {I5U, R2}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SAR, "#0,DUP,?{,POP,#0,1,SWAP,-,#1,>>,1,&,cy,:=,}{,POP,0,cy,:=,},#0,#1,ASR,#1,=,31,$s,s,:=,$z,z,:=,0,ov,:=" },
 	{ "sar", two (0x07e0, 0x00a0), two (0x07e0, 0xffff), {R1, R2}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SAR, "31,#0,&,DUP,?{,POP,31,#0,&,1,SWAP,-,#1,>>,1,&,cy,:=,}{,POP,0,cy,:=,},31,#0,&,#1,ASR,#1,=,31,$s,s,:=,$z,z,:=,0,ov,:=" },
 
-	{ "sasf", two (0x07e0, 0x0200), two (0x07f0, 0xffff), {CCCC, R2}, 0, V850_CPU_NON0 },
+	{ "sasf", two (0x07e0, 0x0200), two (0x07f0, 0xffff), {CCCC, R2}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV, "#0,!,!,1,#1,<<,|,#1,:=" },
 
 	{ "satadd", two (0x07e0, 0x03ba), two (0x07e0, 0x07ff), {R1, R2, R3}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_ADD },
 	{ "satadd", OP (0x11), OP_MASK, {I5, R2_NOTR0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_ADD },
