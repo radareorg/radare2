@@ -2414,6 +2414,44 @@ EXPECT=<<EOF2
 EOF2
 RUN
 
+NAME=pd emu does not read a null string pointer
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e asm.emu=true
+wx 7f454c46 @ 0
+wx b880010000 @ 0x100
+wx b9e0010000 @ 0x105
+wx ba40010000 @ 0x10a
+wx be60010000 @ 0x10f
+wx 00000000000000000020000000000000 @ 0x140
+wx 000000000000000000000000000000000000000000000001 @ 0x160
+w hello world @ 0x1c0
+wx c001000000000000 @ 0x1e0
+pd 4 @ 0x100
+EOF
+EXPECT=<<EOF
+            0x00000100      b880010000     mov eax, 0x180              ; rax=0x180
+            0x00000105      b9e0010000     mov ecx, 0x1e0              ; rcx=0x1e0 (pstr 0x000001c0) "hello world"
+            0x0000010a      ba40010000     mov edx, 0x140              ; rdx=0x140
+            0x0000010f      be60010000     mov esi, 0x160              ; rsi=0x160
+EOF
+RUN
+
+NAME=pd emu reads an applied .got.r2 slot as the slot
+FILE=bins/elf/ls
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+e asm.emu=true
+aeim
+pd 1 @ 0x5b08
+EOF
+EXPECT=<<EOF
+            0x00005b08      ff150ac30100   call qword [reloc.__libc_start_main] ; [0x21e18:8]=0x23700 ; rsp=0x177ff8 ; [0x00177ff8:8] = 0x5b0e ; rip=0x23700
+                                                                       ; int __libc_start_main(0, 0, 0, 0, 0, 0, 0)
+EOF
+RUN
+
 NAME=pd emu right-justifies sub-word stack varargs on big-endian
 FILE=malloc://0x1000
 ARGS=-a ppc -b 64 -e cfg.bigendian=true
