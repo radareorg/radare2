@@ -2425,8 +2425,6 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	case ARM64_INS_BRAAZ:
 	case ARM64_INS_BRAB:
 	case ARM64_INS_BRABZ:
-		r_strbuf_setf (&op->esil, "%s,pc,+,%s,+,pc,:=", REG64 (0), REG64(1));
-		break;
 #endif
 	case ARM64_INS_BR:
 		r_strbuf_setf (&op->esil, "%s,pc,:=", REG64 (0));
