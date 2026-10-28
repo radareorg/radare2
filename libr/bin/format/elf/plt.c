@@ -359,8 +359,7 @@ static ut64 get_import_addr_arm64(ELFOBJ *eo, RBinElfReloc *rel) {
 
 	switch (rel->type) {
 	case R_AARCH64_RELATIVE:
-		// Direct binding: adjust by program base for relative relocations.
-		return eo->baddr + rel->addend;
+		return rel->addend;
 	case R_AARCH64_IRELATIVE:
 		if (rel->addend > plt_addr) { // start
 			return Elf_(plt_arm64_entry) (eo, plt_addr, pos) + rel->addend;
