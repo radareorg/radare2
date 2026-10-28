@@ -3887,6 +3887,22 @@ static void apply_call_regsets(BlockRecurseCtx *ctx, RAnalOp *op, int *reg_set) 
 	}
 }
 
+static void walk_rarg_op(BlockRecurseCtx *ctx, RAnalOp *op, int *reg_set) {
+	r_anal_extract_rarg (ctx->core->anal, op, ctx->fcn, reg_set, &ctx->count);
+	int optype = op->type & R_ANAL_OP_TYPE_MASK;
+	if (optype == R_ANAL_OP_TYPE_CALL || optype == R_ANAL_OP_TYPE_CCALL
+			|| optype == R_ANAL_OP_TYPE_UCALL || optype == R_ANAL_OP_TYPE_UCCALL) {
+		int pop = r_anal_call_stack_pop (ctx->core->anal, op);
+		if (pop > 0) {
+			ctx->fcn->stack -= pop;
+			if (op->stackop == R_ANAL_STACK_INC && op->stackptr > 0) {
+				ctx->fcn->stack -= op->stackptr;
+			}
+		}
+		apply_call_regsets (ctx, op, reg_set);
+	}
+}
+
 static bool anal_block_on_exit(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 	size_t length = RVecRegState_length (&ctx->reg_set);
 	if (length < 2) {
@@ -3948,6 +3964,8 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 	fcn->stack = bb->parent_stackptr;
 	const int mask = R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_HINT;
 	ut64 pos = 0;
+	RAnalOp delayed;
+	int delayed_slots = 0;
 	int i;
 	for (i = 0; i < bb->ninstr && pos < bb->size && !r_cons_is_breaked (core->cons); i++) {
 		RAnalOp op;
@@ -3959,25 +3977,44 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 		if (record_usage) {
 			usage = r_anal_block_reg_usage (bb, &op);
 		}
-		r_anal_extract_rarg (core->anal, &op, fcn, reg_set, &ctx->count);
 		if (!ctx->argonly) {
 			stack_adjust (fcn, &op);
 			r_anal_extract_vars (core->anal, fcn, &op);
 		}
-		int optype = op.type & R_ANAL_OP_TYPE_MASK;
-		if (optype == R_ANAL_OP_TYPE_CALL || optype == R_ANAL_OP_TYPE_CCALL
-				|| optype == R_ANAL_OP_TYPE_UCALL || optype == R_ANAL_OP_TYPE_UCCALL) {
-			int pop = r_anal_call_stack_pop (core->anal, &op);
-			if (pop > 0) {
-				fcn->stack -= pop;
-				if (op.stackop == R_ANAL_STACK_INC && op.stackptr > 0) {
-					fcn->stack -= op.stackptr;
-				}
+		if (delayed_slots > 0) {
+			walk_rarg_op (ctx, &op, reg_set);
+			r_anal_op_fini (&op);
+			if (--delayed_slots == 0) {
+				walk_rarg_op (ctx, &delayed, reg_set);
+				r_anal_op_fini (&delayed);
 			}
-			apply_call_regsets (ctx, &op, reg_set);
+		} else if (op.delay > 0) {
+			delayed = op;
+			delayed_slots = op.delay;
+		} else {
+			walk_rarg_op (ctx, &op, reg_set);
+			r_anal_op_fini (&op);
 		}
-		r_anal_op_fini (&op);
 		pos += size;
+	}
+	const bool delay_pending = delayed_slots > 0;
+	ut64 slot_pos = pos;
+	while (delayed_slots > 0 && slot_pos < bb->size) {
+		// delay slot bytes the block holds but does not count as its own instructions
+		RAnalOp op;
+		int size = r_anal_op (core->anal, &op, bb->addr + slot_pos, buf + slot_pos, bb->size - slot_pos, mask);
+		if (size < 1 || size > bb->size - slot_pos) {
+			r_anal_op_fini (&op);
+			break;
+		}
+		walk_rarg_op (ctx, &op, reg_set);
+		r_anal_op_fini (&op);
+		slot_pos += size;
+		delayed_slots--;
+	}
+	if (delay_pending) {
+		walk_rarg_op (ctx, &delayed, reg_set);
+		r_anal_op_fini (&delayed);
 	}
 	usage = r_anal_block_reg_usage (bb, NULL);
 	if (usage && record_usage && pos == bb->size) {
