@@ -4359,3 +4359,100 @@ EXPECT=<<EOF
 0x00000038
 EOF
 RUN
+
+NAME=arm64 cls x and w
+FILE=malloc://32
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2014c0da
+ar x1=0
+aes
+ar x0
+ar pc=0
+ar x1=0xffffffffffffffff
+aes
+ar x0
+ar pc=0
+ar x1=1
+aes
+ar x0
+ar pc=0
+ar x1=0xc000000000000000
+aes
+ar x0
+wx 2014c05a
+ar pc=0
+ar x1=0xffff0000ffffffff
+aes
+ar x0
+ar pc=0
+ar x1=0x0000ffff
+aes
+ar x0
+EOF
+EXPECT=<<EOF
+0x0000003f
+0x0000003f
+0x0000003e
+0x00000001
+0x0000001f
+0x0000000f
+EOF
+RUN
+
+NAME=arm64 smnegl and umnegl
+FILE=malloc://32
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 20fc229b
+ar x1=0xfffffffb
+ar x2=3
+aes
+ar x0
+wx 20fca29b
+ar pc=0
+aes
+ar x0
+EOF
+EXPECT=<<EOF
+0x0000000f
+0xfffffffd0000000f
+EOF
+RUN
+
+NAME=arm64 subs and cmp w with shifted or extended operand set vf from 32 bits
+FILE=malloc://32
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2004026b
+ar x1=0
+ar x2=0x80000000
+aes
+ar vf
+ar x0
+wx 2080226b
+ar pc=0
+ar x1=0xffffffff
+ar x2=0xff
+aes
+ar vf
+wx 3f04026b
+ar pc=0
+ar x1=0
+ar x2=0x80000000
+aes
+ar vf
+ar pc=0
+ar x1=0x7fffffff
+ar x2=0x7fffffff
+aes
+ar vf
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000000
+0x00000000
+0x00000000
+0x00000001
+EOF
+RUN

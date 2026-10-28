@@ -1393,7 +1393,7 @@ static void arm64math(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 				VECARG64_APPEND (&op->esil, c, -1, sign);
 				r_strbuf_append (&op->esil, ",-,");
 				VECARG64_APPEND (&op->esil, c, -1, sign);
-				r_strbuf_append (&op->esil, ",^,&,>>,vf,:=,");
+				r_strbuf_append (&op->esil, ",^,&,>>,1,&,vf,:=,");
 				break;
 			case 'l':
 				// A64 flag-setting logical ops set NZ from the result and clear CV
@@ -2031,9 +2031,14 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		r_strbuf_setf (&op->esil, "%s,%s,*,%s,-,%s,=",
 			REG64 (2), REG64 (1), REG64 (3), REG64 (0));
 		break;
+	case ARM64_INS_UMNEGL:
 	case ARM64_INS_MNEG:
 		r_strbuf_setf (&op->esil, "%s,%s,*,0,-,%s,=",
 			REG64 (2), REG64 (1), REG64 (0));
+		break;
+	case ARM64_INS_SMNEGL:
+		r_strbuf_setf (&op->esil, "%d,%s,~,%d,%s,~,*,0,-,%s,=",
+			REGBITS64 (1), REG64 (2), REGBITS64 (1), REG64 (1), REG64 (0));
 		break;
 #if CS_API_MAJOR >= 6
 	case ARM64_INS_ADDPT:
@@ -2452,6 +2457,11 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		r_strbuf_setf (&op->esil, "%d,%s,CLZ,%s,=",
 			8 * REGSIZE64 (0), REG64 (1), REG64 (0));
 		break;
+	case ARM64_INS_CLS:
+		// leading sign bits: CLZ of x ^ (x << 1), with bit 0 set to stop the count at size - 1
+		r_strbuf_setf (&op->esil, "%d,1,%s,<<,%s,^,1,|,CLZ,%s,=",
+			8 * REGSIZE64 (0), REG64 (1), REG64 (1), REG64 (0));
+		break;
 	case ARM64_INS_LDRH:
 	case ARM64_INS_LDUR:
 	case ARM64_INS_LDURB:
@@ -2669,7 +2679,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		ARG64_APPEND (&op->esil, 0);
 		r_strbuf_append (&op->esil, ",-,");
 		ARG64_APPEND (&op->esil, 0);
-		r_strbuf_append (&op->esil, ",^,&,>>,vf,:=");
+		r_strbuf_append (&op->esil, ",^,&,>>,1,&,vf,:=");
 
 		// an AL cond opens no ?{, so there is no else arm
 		if (*postfix && insn->id == ARM64_INS_CCMP) {
