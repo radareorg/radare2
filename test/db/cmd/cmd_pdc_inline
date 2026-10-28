@@ -1,0 +1,307 @@
+NAME=pdc inline is opt-in and follows the function mark
+FILE=malloc://256
+ARGS=-a x86 -b64
+CMDS=<<EOF
+wx e83b00000083c002c3
+wx 83c001c3 @ 0x40
+af child @ 0x40
+af caller @ 0
+e pdc.inline
+e pdc.inline=true
+pdc @ 0~inline child~?
+afia+ inline @ 0x40
+pdc @ 0
+afia- inline @ 0x40
+pdc @ 0~inline child~?
+EOF
+EXPECT=<<EOF
+false
+0
+// callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
+void caller (void) {
+    { // inline child
+        // CALL XREF from caller @ 0x0(x)
+        eax += 1
+        { rax = eax; goto inline_0x00000000_end; }
+        inline_0x00000000_end:;
+    }
+    eax += 2
+    return eax    // rsp
+}
+
+0
+EOF
+RUN
+
+NAME=pdc inline nested and repeated calls have distinct labels
+FILE=malloc://256
+ARGS=-a x86 -b64 -e pdc.inline=true
+CMDS=<<EOF
+wx e83b000000e836000000c3
+wx e83b000000c3 @ 0x40
+wx 83c001c3 @ 0x80
+af leaf @ 0x80
+af child @ 0x40
+af caller @ 0
+afia+ inline @ 0x40
+afia+ inline @ 0x80
+pdc @ 0~inline child,inline leaf,_end:
+EOF
+EXPECT=<<EOF
+    { // inline child
+        { // inline leaf
+            inline_0x00000000_0x00000040_end:;
+        inline_0x00000000_end:;
+    { // inline child
+        { // inline leaf
+            inline_0x00000005_0x00000040_end:;
+        inline_0x00000005_end:;
+EOF
+RUN
+
+NAME=pdc inline redirects both early returns to the call continuation
+FILE=malloc://256
+ARGS=-a x86 -b64 -e pdc.inline=true
+CMDS=<<EOF
+wx e83b00000083c002c3
+wx 85ff740483c001c383c003c3 @ 0x40
+af child @ 0x40
+af caller @ 0
+afia+ inline @ 0x40
+pdc @ 0~if (,else,goto inline_,eax +=
+e pdc.structured=false
+pdc @ 0~if (!v),_loc_0x00000048:
+EOF
+EXPECT=<<EOF
+        if (edi & edi) {
+            eax += 1
+            { rax = eax; goto inline_0x00000000_end; }
+        } else {
+            eax += 3
+            { rax = eax; goto inline_0x00000000_end; }
+    eax += 2
+                if (!v) goto inline_0x00000000_loc_0x00000048 // likely
+            inline_0x00000000_loc_0x00000048:
+EOF
+RUN
+
+NAME=pdc inline stops self recursion and mutual recursion
+FILE=malloc://256
+ARGS=-a x86 -b64 -e pdc.inline=true
+CMDS=<<EOF
+wx e83b00000083c002c3
+wx e8fbffffff83c001c3 @ 0x40
+af child @ 0x40
+af caller @ 0
+afia+ inline @ 0x40
+pdc @ 0~inline child~?
+pdc @ 0~0x40 ()~?
+pdc @ 0x40~inline child~?
+wx e83b000000c3 @ 0x40
+wx e8bbffffff83c001c3 @ 0x80
+af- 0x40
+af leaf @ 0x80
+af child @ 0x40
+afia+ inline @ 0x40
+afia+ inline @ 0x80
+pdc @ 0~inline child~?
+pdc @ 0~inline leaf~?
+pdc @ 0~0x40 ()~?
+EOF
+EXPECT=<<EOF
+1
+1
+0
+1
+1
+1
+EOF
+RUN
+
+NAME=pdc inline binds arguments with optimization enabled
+FILE=malloc://256
+ARGS=-a x86 -b64 -e pdc.inline=true -e pdc.optimize=true
+CMDS=<<EOF
+wx bf07000000e83600000083c002c3
+wx 8d4703c3 @ 0x40
+af child @ 0x40
+af caller @ 0
+td int child(int x);
+afia+ inline @ 0x40
+pdc @ 0
+EOF
+EXPECT=<<EOF
+// callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
+void caller (void) {
+    edi = 7
+    { // inline child
+        auto inline_0x00000005_arg0 = 7;
+        rdi = inline_0x00000005_arg0;
+        // CALL XREF from caller @ 0x5(x)
+        eax = rdi + 3 // arg1
+        { goto inline_0x00000005_end; }
+        inline_0x00000005_end:;
+    }
+    eax += 2
+    return eax    // rsp
+}
+
+EOF
+RUN
+
+NAME=pdc inline leaves marked functions without bodies as calls
+FILE=malloc://256
+ARGS=-a x86 -b64 -e pdc.inline=true
+CMDS=<<EOF
+wx e83b000000c3
+af+ 0x40 child
+af caller @ 0
+afia+ inline @ 0x40
+pdc @ 0~inline child~?
+pdc @ 0~0x40 ()~?
+EOF
+EXPECT=<<EOF
+0
+1
+EOF
+RUN
+
+NAME=pdc inline modes retain callee instruction addresses and restore configuration
+FILE=malloc://256
+ARGS=-a x86 -b64 -e pdc.inline=true
+CMDS=<<EOF
+wx e83b00000083c002c3
+wx 83c001c3 @ 0x40
+af child @ 0x40
+af caller @ 0
+afia+ inline @ 0x40
+pdco @ 0~eax += 1
+pdca @ 0~eax += 1
+pdcj @ 0~{annotations[2].offset}
+pdcj @ 0~{annotations[3].offset}
+pdc* @ 0~0x00000040
+s 0x90
+pdc @ 0~NONEXISTENT
+?v $$
+e pdc.inline
+e pdc.optimize
+e asm.pseudo
+e io.cache
+EOF
+EXPECT=<<EOF
+ 0x00000040 |         eax += 1
+ 0x00000040 | add eax, 1                     |         eax += 1
+64
+67
+CCu base64:Ly8gQ0FMTCBYUkVGIGZyb20gY2FsbGVyIEAgMHgwKHgpCmVheCArPSAx @ 0x00000040
+0x90
+true
+false
+false
+false
+EOF
+RUN
+
+NAME=pdc inline expands an arm64 callee
+FILE=malloc://256
+ARGS=-a arm -b64 -e pdc.inline=true
+CMDS=<<EOF
+wx 1000009400080011c0035fd6
+wx 00040011c0035fd6 @ 0x40
+af child @ 0x40
+af caller @ 0
+afia+ inline @ 0x40
+pdc @ 0~inline child,w0 +=
+EOF
+EXPECT=<<EOF
+    { // inline child
+        w0 += 1       // arg1
+    w0 += 2
+EOF
+RUN
+
+NAME=pdc inline expands a callee at address zero
+FILE=malloc://256
+ARGS=-a x86 -b64 -e pdc.inline=true
+CMDS=<<EOF
+wx 83c001c3
+wx e8bbffffff83c002c3 @ 0x40
+af child @ 0
+af caller @ 0x40
+afia+ inline @ 0
+pdc @ 0x40~inline child~?
+pdc @ 0x40~eax += 1
+EOF
+EXPECT=<<EOF
+1
+        eax += 1
+EOF
+RUN
+
+NAME=pdc inline preserves calls with stack argument locations
+FILE=malloc://256
+ARGS=-a x86 -b32 -e pdc.inline=true
+CMDS=<<EOF
+wx 6a07e83900000083c404c3
+wx 8b442404c3 @ 0x40
+af child @ 0x40
+af caller @ 0
+td int child(int x);
+afia+ inline @ 0x40
+pdc @ 0~inline child~?
+pdc @ 0~child (~?
+EOF
+EXPECT=<<EOF
+0
+1
+EOF
+RUN
+
+NAME=pdc inline preserves delayed calls
+FILE=malloc://256
+ARGS=-a mips -b32 -e cfg.bigendian=false -e pdc.inline=true
+CMDS=<<EOF
+wx 1000000c010002240800e00300000000
+wx 010042240800e00300000000 @ 0x40
+af child @ 0x40
+af caller @ 0
+afia+ inline @ 0x40
+pdc @ 0~inline child~?
+pdc @ 0~call child,v0 =
+EOF
+EXPECT=<<EOF
+0
+    call child
+    v0 = 0 + 1
+EOF
+RUN
+
+NAME=pdc inline bounds the depth of an acyclic call chain
+FILE=malloc://512
+ARGS=-a x86 -b64 -e pdc.inline=true
+CMDS=<<EOF
+wx e80b000000c3 @ 0x0
+wx e80b000000c3 @ 0x10
+wx e80b000000c3 @ 0x20
+wx e80b000000c3 @ 0x30
+wx e80b000000c3 @ 0x40
+wx e80b000000c3 @ 0x50
+wx e80b000000c3 @ 0x60
+wx e80b000000c3 @ 0x70
+wx e80b000000c3 @ 0x80
+wx e80b000000c3 @ 0x90
+wx e80b000000c3 @ 0xa0
+wx e80b000000c3 @ 0xb0
+wx e80b000000c3 @ 0xc0
+wx e80b000000c3 @ 0xd0
+wx e80b000000c3 @ 0xe0
+wx e80b000000c3 @ 0xf0
+wx 83c001c3 @ 0x100
+af entry @ 0
+afia+ inline @@f
+pdc @ 0~inline fcn.~?
+EOF
+EXPECT=<<EOF
+15
+EOF
+RUN
