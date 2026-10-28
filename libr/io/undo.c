@@ -43,12 +43,7 @@ R_API RIOUndos *r_io_sundo(RIO *io, ut64 offset) {
 	io->undo.redos++;
 
 	undo = &io->undo.seek[io->undo.idx];
-	RIOMap *map = r_io_map_get_at (io, undo->off);
-	if (!map || (map->delta == r_io_map_begin (map))) {
-		io->off = undo->off;
-	} else {
-		io->off = undo->off - (r_io_map_begin (map) + map->delta);
-	}
+	r_io_seek (io, undo->off, R_IO_SEEK_SET);
 	return undo;
 }
 
@@ -62,12 +57,7 @@ R_API RIOUndos *r_io_sundo_redo(RIO *io) {
 	io->undo.redos--;
 
 	RIOUndos *undo = &io->undo.seek[io->undo.idx];
-	RIOMap *map = r_io_map_get_at (io, undo->off);
-	if (!map || (map->delta == r_io_map_begin (map))) {
-		io->off = undo->off;
-	} else {
-		io->off = undo->off - r_io_map_begin (map) + map->delta;
-	}
+	r_io_seek (io, undo->off, R_IO_SEEK_SET);
 	return undo;
 }
 
