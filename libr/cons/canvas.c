@@ -1004,26 +1004,25 @@ R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char c
 }
 
 R_API void r_cons_canvas_bgfill(RConsCanvas *c, int x, int y, int w, int h, const char *color) {
-	// TODO: this is quite innefficient
-	int i;
-	char *bgcolor = strdup (color);
-	char *col = strstr (bgcolor, "\x1b[3");
-	if (col) {
-		col[2] = '4';
-	} else {
-		free (bgcolor);
-		bgcolor = strdup (Color_BGBLUE);
+	st32 row_width;
+	if (r_add_overflow_st32 (w, 2, &row_width)) {
+		return;
 	}
-	char *pad = r_str_pad (NULL, 0, ' ', w + 2);
-	char *row = r_str_newf ("%s%s" Color_RESET, bgcolor, pad);
-	free (pad);
+	const char *col = strstr (color, "\x1b[3");
+	char *row = r_str_newf ("%s%*s" Color_RESET, col? color: Color_BGBLUE, R_MAX (row_width, 0), "");
+	if (!row) {
+		return;
+	}
+	if (col) {
+		row[col - color + 2] = '4';
+	}
+	int i;
 	for (i = 0; i < h; i++) {
 		if (G (x, y + i)) {
 			W (row);
 		}
 	}
 	free (row);
-	free (bgcolor);
 }
 
 R_API void r_cons_canvas_line(RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style) {
