@@ -8356,7 +8356,7 @@ static RCoreEsilStepStatus core_esil_step_until_internal(RCore *core, ut64 until
 				continue;
 			}
 			// runtime trap (bad memory access, ...)
-			if (single_step || until_expr) {
+			if (single_step || until_expr || core_esil_stop_trap_type (core) == R_ANAL_TRAP_HALT) {
 				break;
 			}
 			if (addr == prev_pc) {
