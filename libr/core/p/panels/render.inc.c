@@ -1,11 +1,12 @@
 /* radare2 - LGPL - Copyright 2014-2026 - pancake, vane11ope */
 
-static void print_notch(RCore *core) {
+static int print_notch(RCore *core) {
 	const int notch = r_config_get_i (core->config, "scr.notch");
 	int i;
 	for (i = 0; i < notch; i++) {
 		r_cons_printf (core->cons, R_CONS_CLEAR_LINE"\n");
 	}
+	return notch;
 }
 
 static void r_panels_bottom_panel_line(RCore *core) {
@@ -15,12 +16,14 @@ static void r_panels_bottom_panel_line(RCore *core) {
 	const char *hline = useUtf8? RUNE_LINE_HORIZ : "-";
 	const char *bl_corner = useUtf8 ? (useUtf8Curvy ? RUNE_CURVE_CORNER_BL : RUNE_CORNER_BL) : "`";
 	const char *br_corner = useUtf8 ? (useUtf8Curvy ? RUNE_CURVE_CORNER_BR : RUNE_CORNER_BR) : "'";
-	int i, h, w = r_cons_get_size (cons, &h);
+	int h, w = r_cons_get_size (cons, &h);
 	r_cons_gotoxy (cons, 0, h - 1);
 	r_cons_write (cons, bl_corner, strlen (bl_corner));
-	for (i = 0; i < w - 2; i++) {
-		r_cons_printf (cons, "%s", hline);
+	char *line = r_str_repeat (hline, R_MAX (w - 2, 0));
+	if (line) {
+		r_cons_print (cons, line);
 	}
+	free (line);
 	r_cons_write (cons, br_corner, strlen (br_corner));
 	r_cons_gotoxy (cons, 0, h);
 	r_cons_print (cons, Color_RESET R_CONS_CLEAR_LINE);
@@ -139,6 +142,33 @@ static bool r_panels_scrollbar_layout(RPanel *panel, RPanelsScrollbar *bar, bool
 	return bar->length > 0;
 }
 
+static void r_panels_scrollbar_print(RConsCanvas *can, const RPanelsScrollbar *bar, bool utf8) {
+	const char *track = bar->horizontal? (utf8? "─": "-"): (utf8? "│": ":");
+	const char *thumb = utf8? "█": "#";
+	// Canvas newlines reset attributes, so retain cell writes for colored vertical bars.
+	const bool batch = (bar->horizontal || !strcmp (can->attr, can->bgcolor))
+		&& r_cons_canvas_gotoxy (can, bar->x, bar->y);
+	RStrBuf text;
+	r_strbuf_init (&text);
+	int i;
+	for (i = 0; i < bar->length; i++) {
+		const char *glyph = i >= bar->thumb && i < bar->thumb + bar->thumb_size? thumb: track;
+		if (batch) {
+			if ((i && !bar->horizontal && !r_strbuf_append (&text, "\n")) || !r_strbuf_append (&text, glyph)) {
+				goto beach;
+			}
+		} else {
+			(void)r_cons_canvas_gotoxy (can, bar->x + (bar->horizontal? i: 0), bar->y + (bar->horizontal? 0: i));
+			r_cons_canvas_write (can, glyph);
+		}
+	}
+	if (batch) {
+		r_cons_canvas_write (can, r_strbuf_get (&text));
+	}
+beach:
+	r_strbuf_fini (&text);
+}
+
 static void r_panels_panel_write_content(RCore *core, RPanel *panel, const char *content, int sx, bool r_panels_show_cursor) {
 	RPanelsScrollbar bars[2];
 	bool visible[2];
@@ -181,18 +211,11 @@ static void r_panels_panel_write_content(RCore *core, RPanel *panel, const char 
 		(void) r_cons_canvas_gotoxy (can, x + 2, y + 2 + sub);
 		r_cons_canvas_write (can, "*");
 	}
-	const bool utf8 = r_config_get_b (core->config, "scr.utf8");
 	for (axis = 0; axis < 2; axis++) {
 		if (!visible[axis]) {
 			continue;
 		}
-		RPanelsScrollbar *bar = &bars[axis];
-		int i;
-		for (i = 0; i < bar->length; i++) {
-			const bool thumb = i >= bar->thumb && i < bar->thumb + bar->thumb_size;
-			(void)r_cons_canvas_gotoxy (can, bar->x + (axis? i: 0), bar->y + (axis? 0: i));
-			r_cons_canvas_write (can, thumb? (utf8? "█": "#"): (axis? (utf8? "─": "-"): (utf8? "│": ":")));
-		}
+		r_panels_scrollbar_print (can, &bars[axis], core->cons->use_utf8);
 	}
 }
 
@@ -618,8 +641,7 @@ static void r_panels_print_footer(RCore *core, int w, int footer_y, bool in_menu
 		text = r_strbuf_drain (r_panels_navbar (core, w, &nav_layout));
 	}
 	char *cropped = r_str_ansi_crop (r_str_get (text), 0, 0, R_MAX (w - 1, 1), 1);
-	const int notch = r_config_get_i (core->config, "scr.notch");
-	r_cons_gotoxy (cons, 0, notch + footer_y + 1);
+	r_cons_gotoxy (cons, 0, footer_y + 1);
 	if (in_menu && core->panels->can->color) {
 		r_cons_printf (cons, Color_RESET"%s%s%s\x1b[0K"Color_RESET, cons->context->pal.widget_bg,
 			r_panels_title_foreground (core), r_str_get (cropped));
@@ -643,7 +665,7 @@ static void r_panels_refresh(RCore *core) {
 		}
 		r_panels_set_refresh_all (core, false, true);
 	}
-	RStrBuf *title = r_strbuf_new (" ");
+	RStrBuf *title = r_strbuf_new (Color_RESET" ");
 	bool utf8 = r_config_get_b (core->config, "scr.utf8");
 	if (core->visual.firstRun) {
 		r_config_set_b (core->config, "scr.utf8", false);
@@ -692,9 +714,7 @@ static void r_panels_refresh(RCore *core) {
 		}
 	}
 	const bool in_menu = panels->mode == PANEL_MODE_MENU;
-	char *menubar = r_str_newf (Color_RESET"%s", r_strbuf_get (title));
-	r_panels_canvas_write_bar (can, 0, w, menubar, ' ');
-	free (menubar);
+	r_panels_canvas_write_bar (can, 0, w, r_strbuf_get (title), ' ');
 	for (i = 0; i < panels->panels_menu->n_refresh; i++) {
 		r_panels_panel_print (core, can, panels->panels_menu->refreshPanels[i], 0);
 	}
@@ -714,10 +734,10 @@ static void r_panels_refresh(RCore *core) {
 		r_panels_set_refresh_all (core, false, true);
 		r_panels_refresh (core);
 	} else {
-		print_notch (core);
+		const int notch = print_notch (core);
 		r_cons_printf (core->cons, Color_RESET R_CONS_CLEAR_LINE);
 		r_cons_canvas_print (can);
-		r_panels_print_footer (core, w, h - PANEL_FOOTER_H, in_menu && !r_panels_tab_menu_is_open (panels));
+		r_panels_print_footer (core, w, notch + h - PANEL_FOOTER_H, in_menu && !r_panels_tab_menu_is_open (panels));
 		if (core->scr_gadgets) {
 			r_core_call (core, "pg");
 		}

@@ -102,7 +102,7 @@ static void r_panels_restore_panel_pos(RPanel* panel);
 static void r_panels_maximize_panel_size(RPanels *panels);
 static void r_panels_dismantle_del_panel(RCore *core, RPanel *p, int pi);
 static void r_panels_prepare_layout(RCore *core);
-static void print_notch(RCore *core);
+static int print_notch(RCore *core);
 static void r_panels_update_help(RCore *core, RPanels *ps);
 static void r_panels_do_panels_refresh(RCore *core);
 static void r_panels_refresh(RCore *core);
