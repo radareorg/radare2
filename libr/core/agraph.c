@@ -4722,7 +4722,8 @@ static void seek_to_node(RANode *n, RCore *core) {
 	if (title && strcmp (title, n->title)) {
 		const char *err = NULL;
 		ut64 addr = r_num_get_err (core->num, n->title, &err);
-		if (!err) {
+		if (!err && addr != core->addr) {
+			r_io_sundo_push (core->io, core->addr, 0);
 			r_core_seek (core, addr, true);
 		}
 	}
