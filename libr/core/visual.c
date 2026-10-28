@@ -1452,7 +1452,7 @@ R_API int r_line_hist_offset_up(RLine *line) {
 		return false;
 	}
 	line->offset_hist_index--;
-	ut64 off = undo->seek[undo->idx + line->offset_hist_index].off;
+	ut64 off = undo->seek[(undo->idx + line->offset_hist_index + R_IO_UNDOS) % R_IO_UNDOS].off;
 	RFlagItem *f = r_flag_get_at (core->flags, off, false);
 	char *command = (f && f->addr == off && f->addr > 0)
 		? r_str_newf ("%s", f->name)
@@ -1475,7 +1475,7 @@ R_API int r_line_hist_offset_down(RLine *line) {
 		line->state.buffer.index = line->state.buffer.length = 0;
 		return false;
 	}
-	ut64 off = undo->seek[undo->idx + line->offset_hist_index].off;
+	ut64 off = undo->seek[(undo->idx + line->offset_hist_index + R_IO_UNDOS) % R_IO_UNDOS].off;
 	RFlagItem *f = r_flag_get_at (core->flags, off, false);
 	char *command = (f && f->addr == off && f->addr > 0)
 		? r_str_newf ("%s", f->name)
