@@ -206,8 +206,7 @@ static REsil *visual_esil_new(RCore *core, unsigned int addrsize) {
 
 static void visual_esil_seek(RCore *core, REsil *esil, const char *cmd) {
 	r_core_cmd0 (core, cmd);
-	esil->trap = 0;
-	esil->trap_code = 0;
+	r_esil_set_trap (esil, R_ANAL_TRAP_NONE, 0);
 	r_esil_stack_free (esil);
 	r_esil_set_pc (esil, core->addr);
 }

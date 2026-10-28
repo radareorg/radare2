@@ -9,6 +9,40 @@
 
 R_IPI bool isregornum(REsil *esil, RStrs str, ut64 *num);
 
+R_API void r_esil_set_trap(REsil *esil, int type, ut32 code) {
+	R_RETURN_IF_FAIL (esil);
+	esil->trap = type;
+	esil->trap_code = code;
+	esil->trap_addr = 0;
+	esil->trap_addr_valid = false;
+}
+
+R_API void r_esil_set_fault(REsil *esil, int type, ut64 addr) {
+	R_RETURN_IF_FAIL (esil);
+	r_esil_set_trap (esil, type, 0);
+	esil->trap_addr = addr;
+	esil->trap_addr_valid = type != R_ANAL_TRAP_NONE;
+}
+
+R_API REsilTrap r_esil_get_trap(const REsil *esil) {
+	REsilTrap trap = { 0 };
+	R_RETURN_VAL_IF_FAIL (esil, trap);
+	trap.type = esil->trap;
+	trap.code = esil->trap_code;
+	trap.addr = esil->trap_addr;
+	trap.addr_valid = esil->trap_addr_valid && esil->trap != R_ANAL_TRAP_NONE;
+	return trap;
+}
+
+R_API void r_esil_restore_trap(REsil *esil, const REsilTrap *trap) {
+	R_RETURN_IF_FAIL (esil && trap);
+	r_esil_set_trap (esil, trap->type, trap->code);
+	if (trap->type != R_ANAL_TRAP_NONE && trap->addr_valid) {
+		esil->trap_addr = trap->addr;
+		esil->trap_addr_valid = true;
+	}
+}
+
 R_IPI bool alignCheck(REsil *esil, ut64 addr) {
 	// r_arch_info (esil->anal->arch, R_ARCH_INFO_DATA_ALIGN);
 	const ut32 da = esil->data_align;
@@ -1133,8 +1167,7 @@ static bool runword_push(REsil *esil, RStrs w) {
 		return true;
 	}
 	R_LOG_ERROR ("ESIL stack is full");
-	esil->trap = 1;
-	esil->trap_code = 1;
+	r_esil_set_trap (esil, 1, 1);
 	return false;
 }
 
@@ -1165,8 +1198,7 @@ static bool runword(REsil *esil, RStrs w) {
 	if (R_LIKELY (c0 >= '0' && c0 <= '9')) {
 		if (R_UNLIKELY (esil->stackptr > esil->stacksize - 1)) {
 			R_LOG_DEBUG ("ESIL stack is full");
-			esil->trap = 1;
-			esil->trap_code = 1;
+			r_esil_set_trap (esil, 1, 1);
 			return true;
 		}
 		return runword_push (esil, w);
@@ -1189,7 +1221,7 @@ static bool runword(REsil *esil, RStrs w) {
 		} else if (esil->parse_goto_count < 1) {
 			// definition nesting shares the goto budget to bound recursion
 			R_LOG_DEBUG ("ESIL definition nesting too deep");
-			esil->trap = 1;
+			r_esil_set_trap (esil, R_ANAL_TRAP_UNHANDLED, 0);
 			esil->parse_stop = 1;
 			ret = false;
 		} else {
@@ -1217,8 +1249,7 @@ static bool runword(REsil *esil, RStrs w) {
 	// Not an op: push its slice into the string ring.
 	if (esil->stackptr > esil->stacksize - 1) {
 		R_LOG_DEBUG ("ESIL stack is full");
-		esil->trap = 1;
-		esil->trap_code = 1;
+		r_esil_set_trap (esil, 1, 1);
 		return true;
 	}
 	return runword_push (esil, w);
@@ -1246,7 +1277,7 @@ static int eval_word(REsil *esil, const char *ostr, const char **str) {
 	if (esil->parse_goto != -1) {
 		if (esil->parse_goto_count < 1) {
 			R_LOG_DEBUG ("ESIL goto limit reached");
-			esil->trap = 1;
+			r_esil_set_trap (esil, R_ANAL_TRAP_UNHANDLED, 0);
 			esil->parse_stop = 1;
 			return 1;
 		}
@@ -1290,7 +1321,7 @@ R_API bool r_esil_parse(REsil *esil, const char *str) {
 		(void)step_out (esil, esil->cmd_step_out);
 		return true;
 	}
-	esil->trap = 0;
+	r_esil_set_trap (esil, R_ANAL_TRAP_NONE, 0);
 	if (esil->cmd && esil->cmd_todo && r_str_startswith (str, "TODO")) {
 		esil->cmd (esil, esil->cmd_todo, esil->addr, 0);
 	}
@@ -1448,8 +1479,7 @@ R_API bool r_esil_setup(REsil *esil, RAnal *anal, bool romem, bool stats, bool n
 	R_RETURN_VAL_IF_FAIL (esil && anal, false);
 	esil->anal = anal;
 	esil->parse_goto_count = anal->esil_goto_limit;
-	esil->trap = 0;
-	esil->trap_code = 0;
+	r_esil_set_trap (esil, 0, 0);
 	// esil->user = NULL;
 	// esil->debug = 0;
 	esil->cb.reg_read = internal_esil_reg_read;
@@ -1502,7 +1532,7 @@ R_API bool r_esil_setup(REsil *esil, RAnal *anal, bool romem, bool stats, bool n
 
 R_API void r_esil_reset(REsil *esil) {
 	R_RETURN_IF_FAIL (esil);
-	esil->trap = 0;
+	r_esil_set_trap (esil, R_ANAL_TRAP_NONE, 0);
 	sdb_reset (esil->stats);
 }
 

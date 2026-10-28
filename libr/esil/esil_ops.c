@@ -384,15 +384,13 @@ static int esil_interrupt_linux_i386(REsil *esil) { 		//move this into a plugin
 
 	if (sn == 3) {
 		// trap
-		esil->trap = R_ANAL_TRAP_BREAKPOINT;
-		esil->trap_code = 3;
+		r_esil_set_trap (esil, R_ANAL_TRAP_BREAKPOINT, 3);
 		return -1;
 	}
 
 	if (sn != 0x80) {
 		R_LOG_WARN ("Unhandled interrupt 0x%x at 0x%08"PFMT64x, sn, esil->pc);
-		esil->trap = R_ANAL_TRAP_UNHANDLED;
-		esil->trap_code = sn;
+		r_esil_set_trap (esil, R_ANAL_TRAP_UNHANDLED, sn);
 		return -1;
 	}
 #undef r
@@ -433,8 +431,7 @@ static int esil_interrupt_linux_i386(REsil *esil) { 		//move this into a plugin
 static bool esil_trap(REsil *esil) {
 	ut64 s, d;
 	if (popRN (esil, &s) && popRN (esil, &d)) {
-		esil->trap = s;
-		esil->trap_code = d;
+		r_esil_set_trap (esil, s, d);
 		return r_esil_fire_trap (esil, (int)s, (int)d);
 	}
 	R_LOG_DEBUG ("esil_trap: missing parameters in stack");
@@ -793,8 +790,7 @@ static bool esil_mod(REsil *esil) {
 		if (!r_strs_empty (dst) && r_esil_get_parm (esil, dst, &d)) {
 			if (s == 0) {
 				R_LOG_DEBUG ("0x%08"PFMT64x" esil_mod: Division by zero!", esil->addr);
-				esil->trap = R_ANAL_TRAP_DIVBYZERO;
-				esil->trap_code = 0;
+				r_esil_set_trap (esil, R_ANAL_TRAP_DIVBYZERO, 0);
 				r_esil_pushnum (esil, 0);
 			} else {
 				r_esil_pushnum (esil, d % s);
@@ -816,8 +812,7 @@ static bool esil_signed_mod(REsil *esil) {
 		if (!r_strs_empty (dst) && r_esil_get_parm (esil, dst, (ut64 *)&d)) {
 			if (s == 0) {
 				R_LOG_DEBUG ("0x%08"PFMT64x" esil_mod: Division by zero!", esil->addr);
-				esil->trap = R_ANAL_TRAP_DIVBYZERO;
-				esil->trap_code = 0;
+				r_esil_set_trap (esil, R_ANAL_TRAP_DIVBYZERO, 0);
 				r_esil_pushnum (esil, 0);
 			} else if (d == ST64_MIN && s == -1) {
 				// the remainder of the wrapped division is 0; C overflows
@@ -842,8 +837,7 @@ static bool esil_div(REsil *esil) {
 		if (!r_strs_empty (dst) && r_esil_get_parm (esil, dst, &d)) {
 			if (s == 0) {
 				R_LOG_DEBUG ("esil_div: Division by zero!");
-				esil->trap = R_ANAL_TRAP_DIVBYZERO;
-				esil->trap_code = 0;
+				r_esil_set_trap (esil, R_ANAL_TRAP_DIVBYZERO, 0);
 				r_esil_pushnum (esil, 0);
 			} else {
 				r_esil_pushnum (esil, d / s);
@@ -865,8 +859,7 @@ static bool esil_signed_div(REsil *esil) {
 		if (!r_strs_empty (dst) && r_esil_get_parm (esil, dst, (ut64 *)&d)) {
 			if (s == 0) {
 				R_LOG_DEBUG ("esil_div: Division by zero!");
-				esil->trap = R_ANAL_TRAP_DIVBYZERO;
-				esil->trap_code = 0;
+				r_esil_set_trap (esil, R_ANAL_TRAP_DIVBYZERO, 0);
 				r_esil_pushnum (esil, 0);
 			} else if (d == ST64_MIN && s == -1) {
 				// wraps to ST64_MIN, as arm64 sdiv does; C overflows
@@ -993,11 +986,9 @@ static bool esil_poke_n(REsil *esil, int bits) {
 				// we disable hooks to avoid run hooks on internal peeks
 				void * oldhook = (void*)esil->cb.hook_mem_read;
 				esil->cb.hook_mem_read = NULL;
-				const int oldtrap = esil->trap;
-				const ut32 oldtrap_code = esil->trap_code;
+				const REsilTrap oldtrap = r_esil_get_trap (esil);
 				r_esil_mem_read (esil, addr, b, bytes);
-				esil->trap = oldtrap;
-				esil->trap_code = oldtrap_code;
+				r_esil_restore_trap (esil, &oldtrap);
 				esil->cb.hook_mem_read = oldhook;
 				const bool be = esil_is_big_endian (esil);
 				n = esil_read_ble (b, bits, be);

@@ -3,6 +3,13 @@
 Since r2-6.0.0 the `ABI_VERSION` define avoid plugins built with different ABI
 to be loaded to avoid segfaults.
 
+ABI 164 adds ESIL's full-width fault address and validity fields, the `REsilTrap`
+snapshot type, and `r_esil_set_trap`/`r_esil_set_fault`/`r_esil_get_trap`/
+`r_esil_restore_trap`. This explicitly versioned ABI extension changes `REsil`
+and its embedding structures' sizes; rebuild external plugins against these
+headers. Existing field offsets within `REsil` remain unchanged. See
+[ESIL trap records](esil.md#trap-records-and-fault-addresses-abi-164).
+
 ABI 163 guarantees `RAnalFunction.is_inline` and the
 `r_anal_function_is_inline`/`r_anal_function_set_inline` accessors. External
 decompilers such as r2ghidra can guard their future inline support with
