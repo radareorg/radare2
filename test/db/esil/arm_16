@@ -1405,3 +1405,56 @@ EXPECT=<<EOF
 EOF
 RUN
 
+
+NAME=thumb adds and subs set nzcv from the operands
+FILE=malloc://0x100
+ARGS=-a arm -b 16
+CMDS=<<EOF
+aei
+aeim
+s 0
+wx 8818
+ar pc=0
+ar r0=0xdeadbeef
+ar r1=0
+ar r2=0
+ar cpsr=0
+aes
+ar r0
+ar cpsr
+s 0
+wx 881a
+ar pc=0
+ar r0=0xdeadbeef
+ar r1=0
+ar r2=0x80000000
+ar cpsr=0
+aes
+ar r0
+ar cpsr
+EOF
+EXPECT=<<EOF
+0x00000000
+0x40000000
+0x80000000
+0x90000000
+EOF
+RUN
+
+NAME=thumb cmp sets v on a signed overflow
+FILE=malloc://0x100
+ARGS=-a arm -b 16
+CMDS=<<EOF
+aei
+aeim
+wx 9142
+ar r1=0
+ar r2=0x80000000
+ar cpsr=0
+aes
+ar cpsr
+EOF
+EXPECT=<<EOF
+0x90000000
+EOF
+RUN
