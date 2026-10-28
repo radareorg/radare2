@@ -48,7 +48,7 @@ static char *header(RBinFile *bf, int mode) {
 	}
 	RStrBuf *sb = r_strbuf_new ("");
 #define p(f,...) r_strbuf_appendf (sb, f, ##__VA_ARGS__)
-	p ("Signature: %2s\n", h->magic);
+	p ("Signature: %.2s\n", h->magic);
 	p ("Byte Order: %s\n", h->border ? "Big" : "Little");
 	p ("Word Order: %s\n", h->worder ? "Big" : "Little");
 	p ("Format Level: %u\n", h->level);
