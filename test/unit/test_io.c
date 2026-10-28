@@ -364,7 +364,33 @@ bool test_r_io_overlay_write_through(void) {
 	mu_end;
 }
 
+bool test_seek_history_mapped(void) {
+	RIO *io = r_io_new ();
+	r_io_undo_enable (io, true, false);
+	RIODesc *desc = r_io_open_at (io, "malloc://256", R_PERM_RW, 0, 0x1000);
+	mu_assert_notnull (desc, "open mapped IO");
+	RIOMap *map = r_io_map_get_at (io, 0x1000);
+	mu_assert_notnull (map, "find map");
+	map->delta = 0x20;
+	int va;
+	for (va = 0; va <= 1; va++) {
+		io->va = va;
+		r_io_sundo_reset (io);
+		r_io_sundo_push (io, 0x1010, 0);
+		r_io_seek (io, 0x1020, R_IO_SEEK_SET);
+		RIOUndos *undo = r_io_sundo (io, io->off);
+		mu_assert_notnull (undo, "undo mapped seek");
+		mu_assert_eq (io->off, 0x1010, "undo preserves seek address space");
+		undo = r_io_sundo_redo (io);
+		mu_assert_notnull (undo, "redo mapped seek");
+		mu_assert_eq (io->off, 0x1020, "redo preserves seek address space");
+	}
+	r_io_free (io);
+	mu_end;
+}
+
 int all_tests(void) {
+	mu_run_test (test_seek_history_mapped);
 	mu_run_test(test_r_io_cache);
 	mu_run_test(test_r_io_nread_at);
 	mu_run_test(test_r_io_mapsplit);
