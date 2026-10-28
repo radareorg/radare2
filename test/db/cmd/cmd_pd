@@ -2447,7 +2447,7 @@ aeim
 pd 1 @ 0x5b08
 EOF
 EXPECT=<<EOF
-            0x00005b08      ff150ac30100   call qword [reloc.__libc_start_main] ; [0x21e18:8]=0x23700 ; rsp=0x177ff8 ; [0x00177ff8:8] = 0x5b0e ; rip=0x23700
+            0x00005b08      ff150ac30100   call qword [reloc.__libc_start_main] ; [0x21e18:8]=0x23700 rsym.__libc_start_main ; rsp=0x177ff8 ; [0x00177ff8:8] = 0x5b0e ; rip=0x23700 rsym.__libc_start_main
                                                                        ; int __libc_start_main(0, 0, 0, 0, 0, 0, 0)
 EOF
 RUN

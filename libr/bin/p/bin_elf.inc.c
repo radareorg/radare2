@@ -1997,7 +1997,7 @@ static bool offset_addend(RBinFile *bf, ELFOBJ *eo, RIOBind *iob, const RBinElfR
 	return true;
 }
 
-enum { SLOT_CRAMPED = 1, SLOT_WARNED = 2, SLOT_LISTED = 4 };
+enum { SLOT_CRAMPED = 1, SLOT_WARNED = 2, SLOT_LISTED = 4, SLOT_NAMED = 8 };
 
 static inline bool offset_fits(st64 a) {
 	return a > -GOTR2_ADDEND_MAX && a < GOTR2_ADDEND_MAX;
@@ -2089,16 +2089,21 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	HtUU *lead_by_sym = ht_uu_new0 ();
 	HtUU *tail_by_sym = ht_uu_new0 ();
 	HtUU *slot_flags = ht_uu_new0 ();
-	if (!relocs_by_sym || !lead_by_sym || !tail_by_sym || !slot_flags) {
+	HtUU *listed_slots = ht_uu_new0 ();
+	if (!relocs_by_sym || !lead_by_sym || !tail_by_sym || !slot_flags || !listed_slots) {
 		ht_uu_free (relocs_by_sym);
 		ht_uu_free (lead_by_sym);
 		ht_uu_free (tail_by_sym);
 		ht_uu_free (slot_flags);
+		ht_uu_free (listed_slots);
 		RVecRBinReloc_free (ret);
 		return NULL;
 	}
 	RBinElfReloc *reloc;
 	R_VEC_FOREACH (relocs, reloc) {
+		if (reloc->laddr) {
+			ht_uu_update (slot_flags, reloc->sym, ht_uu_find (slot_flags, reloc->sym, NULL) | SLOT_NAMED);
+		}
 		st64 a;
 		if (!reloc_has_slot (eo, reloc) || !offset_addend (bf, eo, &b->iob, reloc, &a) || !offset_fits (a)) {
 			continue;
@@ -2196,18 +2201,32 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		const bool redirects = has_slot && !skip && (resolved || takes_slot)
 			&& (patch_redirects_code (eo->ehdr.e_machine) || reloc_is_import (eo, reloc));
 		RBinSection *s = redirects? r_bin_get_section_at (bf->bo, ptr->vaddr + shift, true): NULL;
+		const ut64 slot_addr = resolved? sym_addr: slot;
 		if (s && (s->perm & R_PERM_X)) {
 			ptr->to_slot = true;
 			if (!(flags & SLOT_LISTED)) {
 				ht_uu_update (slot_flags, reloc->sym, flags | SLOT_LISTED);
-				r_bin_reloc_slot_row (ret, ptr, (resolved? sym_addr: slot) - shift);
+				r_bin_reloc_slot_row (ret, ptr, slot_addr - shift);
+				ht_uu_insert (listed_slots, slot_addr, 1);
 			}
+		} else if (redirects && reloc_is_import (eo, reloc) && !(flags & SLOT_NAMED)) {
+			// the core names laddr rsym.<import>, as for arm32 plt
+			ptr->laddr = slot_addr;
+			ht_uu_update (slot_flags, reloc->sym, flags | SLOT_NAMED);
 		}
 		if (takes_slot) {
 			ht_uu_insert (relocs_by_sym, reloc->sym, slot);
 			vaddr += lead + cdsz + tail;
 		}
 	}
+	// a slot row already names its slot, even one listed after a data site
+	RBinReloc *row;
+	R_VEC_FOREACH (ret, row) {
+		if (row->laddr && ht_uu_find (listed_slots, row->laddr, NULL)) {
+			row->laddr = 0;
+		}
+	}
+	ht_uu_free (listed_slots);
 	ht_uu_free (relocs_by_sym);
 	ht_uu_free (lead_by_sym);
 	ht_uu_free (tail_by_sym);

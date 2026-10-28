@@ -1293,9 +1293,41 @@ FILE=bins/elf/ls
 ARGS=-e bin.relocs.apply=true
 CMDS=<<EOF
 p8 8 @ 0x21c78
+fd 0x23700
+pi 1 @ 0x5b08
 EOF
 EXPECT=<<EOF
 6035020000000000
+rsym.__libc_start_main
+call qword [reloc.__libc_start_main]
+EOF
+RUN
+
+NAME=ELF: an import slot is named unless its plt entry already has the name
+FILE=bins/elf/libverifyPass.so
+ARGS=-B 0x40000000 -e bin.relocs.apply=true
+CMDS=<<EOF
+fd 0x40003b68
+f~rsym.__gnu_Unwind_Find_exidx
+f~rsym.memcpy
+EOF
+EXPECT=<<EOF
+rsym.__stack_chk_guard
+0x40000f38 4 rsym.__gnu_Unwind_Find_exidx
+0x40000ee4 4 rsym.memcpy
+EOF
+RUN
+
+NAME=ELF: an ET_REL import called from code keeps its slot row name only
+FILE=bins/elf/analysis/test.obj
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+fd 0x080002e8
+f~rsym.~?
+EOF
+EXPECT=<<EOF
+reloc.puts
+0
 EOF
 RUN
 
