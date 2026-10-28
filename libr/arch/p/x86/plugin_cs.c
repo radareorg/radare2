@@ -2274,10 +2274,85 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			char *src1 = getarg (&gop, 1, 0, NULL, NULL);
 			char *src2 = getarg (&gop, 2, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 1, NULL, &bitsize);
-			esilprintf (op, "%s,%s,~,&,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,0,cf,:=,0,of,:=", src2, src1, dst, bitsize - 1);
+			if (src1 && src2 && dst && bitsize) {
+				esilprintf (op, "%s,0x%"PFMT64x",%s,^,&,%s,$z,zf,:=,%u,$s,sf,:=,0,cf,:=,0,of,:=",
+					src2, r_num_bitmask (bitsize), src1, dst, bitsize - 1);
+			}
 			free (src1);
 			free (src2);
 			free (dst);
+		}
+		break;
+	case X86_INS_BLSI:
+	case X86_INS_BLSMSK:
+	case X86_INS_BLSR:
+		{
+			ut32 bitsize;
+			src = getarg (&gop, 1, 0, NULL, NULL);
+			dst = getarg (&gop, 0, 1, NULL, &bitsize);
+			if (src && dst && bitsize) {
+				const bool isolate = insn->id == X86_INS_BLSI;
+				const bool mask = insn->id == X86_INS_BLSMSK;
+				esilprintf (op, "%s,!,%scf,:=,%s,%s,-,%s,%c,%s,%s,zf,:=,%u,$s,sf,:=,0,of,:=",
+					src, isolate? "!,": "", isolate? src: "1", isolate? "0": src,
+					src, mask? '^': '&', dst, mask? "0": "$z", bitsize - 1);
+			}
+			free (src);
+			free (dst);
+		}
+		break;
+	case X86_INS_BZHI:
+		{
+			ut32 bitsize;
+			src = getarg (&gop, 1, 0, NULL, NULL);
+			char *index = getarg (&gop, 2, 0, NULL, NULL);
+			dst = getarg (&gop, 0, 1, NULL, &bitsize);
+			if (src && index && dst && (bitsize == 32 || bitsize == 64)) {
+				const int sizebits = (bitsize == 64)? 6: 5;
+				esilprintf (op, "%d,0xff,%s,&,>>,DUP,!,!,cf,:=,?{,%s,}{,1,0xff,%s,&,1,<<,-,%s,&,},%s,"
+					"$z,zf,:=,%u,$s,sf,:=,0,of,:=",
+					sizebits, index, src, index, src, dst, bitsize - 1);
+			}
+			free (src);
+			free (index);
+			free (dst);
+		}
+		break;
+	case X86_INS_RORX:
+		{
+			ut32 bitsize;
+			src = getarg (&gop, 1, 0, NULL, NULL);
+			dst = getarg (&gop, 0, 1, NULL, &bitsize);
+			if (src && dst && (bitsize == 32 || bitsize == 64) && INSOPS > 2) {
+				const ut64 count = INSOP (2).imm & (bitsize - 1);
+				if (count) {
+					esilprintf (op, "%"PFMT64u",%s,>>,%"PFMT64u",%s,<<,|,0x%"PFMT64x",&,%s",
+						count, src, bitsize - count, src, r_num_bitmask (bitsize), dst);
+				} else {
+					esilprintf (op, "%s,%s", src, dst);
+				}
+			}
+			free (src);
+			free (dst);
+		}
+		break;
+	case X86_INS_ADCX:
+	case X86_INS_ADOX:
+		{
+			ut32 bitsize;
+			src = getarg (&gop, 1, 0, NULL, NULL);
+			dst_r = getarg (&gop, 0, 0, NULL, &bitsize);
+			dst_w = getarg (&gop, 0, 1, "+", NULL);
+			if (src && dst_r && dst_w && bitsize && bitsize <= 64) {
+				const char *flag = (insn->id == X86_INS_ADCX)? "cf": "of";
+				const ut64 mask = r_num_bitmask (bitsize);
+				esilprintf (op, "0x%"PFMT64x",%s,&,%s,0x%"PFMT64x",^,==,%u,$b,%s,$z,&,|,"
+					"%s,%s,+,%s,%s,:=",
+					mask, src, dst_r, mask, bitsize, flag, flag, src, dst_w, flag);
+			}
+			free (src);
+			free (dst_r);
+			free (dst_w);
 		}
 		break;
 	case X86_INS_PANDN:
@@ -2417,28 +2492,21 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		break;
 	case X86_INS_MULX:
 		{
-			bool free_src = true;
-			src = getarg (&gop, 1, 0, NULL, NULL);
-			dst = getarg (&gop, 0, 1, "*", NULL);
-			if (!src && dst) {
-				switch (dst[0]) {
-				case 'r':
-					src = "rax";
-					break;
-				case 'e':
-					src = "eax";
-					break;
-				default:
-					src = "al";
-					break;
+			// Write the high half last when both destinations alias.
+			ut32 bitsize;
+			char *hi = getarg (&gop, 0, 1, NULL, &bitsize);
+			char *lo = getarg (&gop, 1, 1, NULL, NULL);
+			src = getarg (&gop, 2, 0, NULL, NULL);
+			if (hi && lo && src) {
+				if (bitsize == 64) {
+					esilprintf (op, "%s,rdx,L*,%s,%s", src, lo, hi);
+				} else if (bitsize == 32) {
+					esilprintf (op, "%s,edx,*,DUP,0xffffffff,&,%s,32,SWAP,>>,%s", src, lo, hi);
 				}
-				free_src = false;
 			}
-			esilprintf (op, "%s,%s", src, dst);
-			if (free_src) {
-				free (src);
-			}
-			free (dst);
+			free (hi);
+			free (lo);
+			free (src);
 		}
 		break;
 
