@@ -1126,6 +1126,10 @@ a "mov word [rdi], ax" 668907
 a "mov dword [r12 + 4], eax" 4189442404
 a "mov qword [rsp + 8], r9" 4c894c2408
 a "mov dword [rax + rcx*4], edx" 891488
+a "mov byte [0x1000], 0x7f" c60425001000007f
+a "mov dword [0x1000], 0x1234" c704250010000034120000
+a "mov dword [rip+0x20], 0x7f" c705200000007f000000
+a "mov qword [r9+r10*8], 0x12345678" 4bc704d178563412
 a "mov rax, [eip + 8]" 67488b0508000000
 a "mov eax,r12d" 4489e0
 ad "movabs r12, 1" 49bc0100000000000000
