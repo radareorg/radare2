@@ -243,6 +243,22 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=a write over an applied reloc reaches the fd
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+wx 9090909090 @ sym.main+4
+e io.overlay=false
+p8 5 @ sym.main+4
+e io.overlay=true
+p8 5 @ sym.main+4
+EOF
+EXPECT=<<EOF
+9090909090
+9090909090
+EOF
+RUN
+
 NAME=map names cannot carry commands into om* and om**
 FILE=-
 CMDS=<<EOF

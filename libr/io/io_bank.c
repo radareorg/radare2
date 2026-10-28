@@ -896,34 +896,19 @@ R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *
 		const ut64 buf_off = R_MAX (addr, r_io_submap_from (sm)) - addr;
 		const int write_len = R_MIN (r_io_submap_to ((&fake_sm)),
 					     r_io_submap_to (sm)) - (addr + buf_off) + 1;
-		if (io->overlay && io_map_get_overlay_intersects (map, bank->todo, addr + buf_off, write_len) &&
-			!r_queue_is_empty (bank->todo)) {
-			ut64 _buf_off = buf_off;
-			int _write_len = write_len;
-			do {
-				RInterval *itv = (RInterval *)r_queue_dequeue (bank->todo);
-				RInterval vitv = *itv;
+		const ut64 paddr = addr + buf_off - r_io_map_from (map) + map->delta;
+		const int written = r_io_fd_write_at (io, map->fd, paddr, &buf[buf_off], write_len);
+		ret &= written == write_len;
+		// overlay mirrors the fd, even while io.overlay is off
+		if (written > 0) {
+			ret &= io_map_get_overlay_intersects (map, bank->todo, addr + buf_off, written);
+			const RInterval witv = {addr + buf_off, written};
+			while (!r_queue_is_empty (bank->todo)) {
+				RInterval vitv = *(RInterval *)r_queue_dequeue (bank->todo);
 				vitv.addr += r_io_map_from (map);
-				if ((addr + _buf_off) < r_itv_begin (vitv)) {
-					const int w = r_itv_begin (vitv) - (addr + _buf_off);
-					const ut64 paddr = addr + _buf_off - r_io_map_from (map) + map->delta;
-					ret &= (r_io_fd_write_at (io, map->fd, paddr, &buf[_buf_off], w) == w);
-					_buf_off += w;
-					_write_len -= w;
-				}
-				// itv uses half-open intervals :(
-				const int w = R_MIN (_write_len, r_itv_end (vitv) - (addr + _buf_off));
-				ret &= r_io_map_write_to_overlay (map, addr + _buf_off, &buf[_buf_off], w);
-				_buf_off += w;
-				_write_len -= w;
-			} while (!r_queue_is_empty (bank->todo));
-			if (_write_len) {
-				const ut64 paddr = addr + _buf_off - r_io_map_from (map) + map->delta;
-				ret &= (r_io_fd_write_at (io, map->fd, paddr, &buf[_buf_off], _write_len) == _write_len);
+				const RInterval overlap = r_itv_intersect (vitv, witv);
+				ret &= r_io_map_write_to_overlay (map, overlap.addr, &buf[overlap.addr - addr], overlap.size);
 			}
-		} else {
-			const ut64 paddr = addr + buf_off - r_io_map_from (map) + map->delta;
-			ret &= (r_io_fd_write_at (io, map->fd, paddr, &buf[buf_off], write_len) == write_len);
 		}
 		// check return value here?
 		node = r_rbnode_next (node);
