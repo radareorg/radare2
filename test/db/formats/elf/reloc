@@ -1762,21 +1762,65 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ELF: applied relocs match the unapplied ones
+NAME=ELF: riscv64 applied relocs keep their count and patch their words
 FILE=bins/elf/rv64/ls
 ARGS=-e bin.relocs.apply=true
-CMDS=ir~ADD_64?
+CMDS=<<EOF
+ir~ADD_64?
+pv8 @ 0x1b2b8
+fd 0x1c9c8
+pv8 @ 0x1a3e0
+pv8 @ 0x1b618
+ir~0x0001b618
+EOF
 EXPECT=<<EOF
 349
+0x000000000001c9c8
+rsym.fgetfilecon
+0x000000000000540e
+0x000000000001cd20
+0x0001b618 0x0001a618 ADD_64 2     _ITM_deregisterTMCloneTable
 EOF
 RUN
 
-NAME=ELF: unapplied relocs match the applied ones
+NAME=ELF: a riscv64 import addend stays inside its own .got.r2 slot
+FILE=bins/elf/rv64/ls-import-addend16
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+om~.got.r2[5,7]
+pv8 @ 0x1b618
+pv8 @ 0x1b660
+EOF
+EXPECT=<<EOF
+0x0001c9c8 0x0001cd7f
+0x000000000001cd30
+0x000000000001cd40
+EOF
+RUN
+
+NAME=ELF: riscv64 relative and jump slot relocs follow a load base above 4G
+FILE=bins/elf/rv64/ls
+ARGS=-B 0x4000000000 -e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x400001a3e0
+pv8 @ 0x400001b2b8
+EOF
+EXPECT=<<EOF
+0x000000400000540e
+0x000000400001c9c8
+EOF
+RUN
+
+NAME=ELF: riscv64 unapplied relocs keep their count and leave their words
 FILE=bins/elf/rv64/ls
 ARGS=-e bin.relocs.apply=false
-CMDS=ir~ADD_64?
+CMDS=<<EOF
+ir~ADD_64?
+pv8 @ 0x1b2b8
+EOF
 EXPECT=<<EOF
 349
+0x0000000000003920
 EOF
 RUN
 

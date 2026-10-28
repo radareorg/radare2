@@ -716,6 +716,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 	case EM_RISCV:
 		switch (rel->type) {
 		case R_RISCV_NONE: break;
+		case R_RISCV_64: ADD(64, 0); break;
 		case R_RISCV_JUMP_SLOT: ADD(64, 0); break;
 		case R_RISCV_RELATIVE: SETA(64); break;
 		default: ADD(64, got_addr); break; // reg relocations
@@ -1787,6 +1788,24 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		}
 		break;
 	}
+	case EM_RISCV: {
+		// data words only; code relocs would need instruction encoding
+		switch (rel->type) {
+		case R_RISCV_64:
+		case R_RISCV_JUMP_SLOT:
+			V = S + A;
+			break;
+		case R_RISCV_RELATIVE:
+			V = A + bias;
+			break;
+		default:
+			return;
+		}
+		const int word = sizeof (Elf_(Addr));
+		r_write_ble (buf, V, bo->endian, word * 8);
+		iob->overlay_write_at (iob->io, P, buf, word);
+		break;
+	}
 	case EM_BPF: // CHECK: some older solana programs have set an ehdr.e_machine of EM_BPF
 	case EM_SBPF: {
 		const ut64 B = (bo->user_baddr != UT64_MAX)? bo->user_baddr: bo->baddr;
@@ -1954,6 +1973,8 @@ static bool addend_is_offset(ut16 machine, int type) {
 		return type == R_PPC_ADDR32;
 	case EM_PPC64:
 		return type == R_PPC64_ADDR64;
+	case EM_RISCV:
+		return type == R_RISCV_64;
 	case EM_ARM:
 		switch (type) {
 		case R_ARM_ABS32:
