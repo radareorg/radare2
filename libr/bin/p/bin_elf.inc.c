@@ -615,6 +615,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_390_JMP_SLOT:
 			r->additive = 0;
 			return r;
+		case R_390_32: SETA (32);
 		case R_390_64: SETA (64);
 		case R_390_RELATIVE:
 			r->additive = !rel->implicit_addend;

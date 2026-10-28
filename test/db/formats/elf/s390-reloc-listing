@@ -99,3 +99,17 @@ EXPECT=<<EOF
 0x00003388 0x00000388 ADD_64 22    g + 0x100000004
 EOF
 RUN
+
+# s390x-relr.so with the R_390_64 RELA entry type (0x27f) 0x16 -> 0x04 (R_390_32)
+NAME=ELF s390x: an R_390_32 row is listed with its symbol and addend
+FILE=malloc://2176
+CMDS=<<EOF
+wff bins/elf/s390x-relr.so
+wx 04 @ 0x27f
+oba 0
+ir~388
+EOF
+EXPECT=<<EOF
+0x00003388 0x00000388 ADD_32 4     g + 0x00000004
+EOF
+RUN
