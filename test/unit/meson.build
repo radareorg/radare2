@@ -77,6 +77,7 @@ if get_option('enable_tests')
     'r2r',
     'rbtree',
     'reg',
+    'seek_history',
     'sign',
     'skiplist',
     'socket',

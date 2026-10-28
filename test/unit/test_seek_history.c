@@ -21,6 +21,18 @@ bool test_seek_history_prompt_wrap(void) {
 	}
 	mu_assert_false (r_line_hist_offset_down (line), "end of prompt history");
 	mu_assert_streq (line->state.buffer.data, "", "clear prompt at end");
+	r_core_seek (core, R_IO_UNDOS + 2, false);
+	for (i = 0; i < 3; i++) {
+		r_core_cmd0 (core, "s-");
+	}
+	line->offset_hist_index = 0;
+	for (i = R_IO_UNDOS; i <= R_IO_UNDOS + 2; i++) {
+		mu_assert_true (r_line_hist_offset_down (line), "redo address exists");
+		mu_assert_eq (r_num_get (NULL, line->state.buffer.data), i, "wrapped redo address");
+	}
+	mu_assert_false (r_line_hist_offset_down (line), "last redo reached");
+	mu_assert_true (r_line_hist_offset_up (line), "return from empty prompt to last redo");
+	mu_assert_eq (r_num_get (NULL, line->state.buffer.data), R_IO_UNDOS + 2, "last redo restored");
 	r_core_free (core);
 	mu_end;
 }

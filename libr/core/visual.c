@@ -1466,11 +1466,12 @@ R_API int r_line_hist_offset_up(RLine *line) {
 R_API int r_line_hist_offset_down(RLine *line) {
 	RCore *core = line->user;
 	RIOUndo *undo = &core->io->undo;
-	if (line->offset_hist_index >= undo->redos) {
+	int end = undo->redos? undo->redos + 1: 0;
+	if (line->offset_hist_index >= end) {
 		return false;
 	}
 	line->offset_hist_index++;
-	if (line->offset_hist_index == undo->redos) {
+	if (line->offset_hist_index == end) {
 		line->state.buffer.data[0] = '\0';
 		line->state.buffer.index = line->state.buffer.length = 0;
 		return false;
