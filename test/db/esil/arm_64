@@ -4359,3 +4359,23 @@ EXPECT=<<EOF
 0x00000038
 EOF
 RUN
+
+NAME=arm64 fabs clears the sign of negative and positive doubles
+FILE=malloc://16
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 20c0601e20c0601e
+aei
+aeim
+ar d1=0xc000000000000000
+aes
+ar d0
+ar d1=0x4000000000000000
+aes
+ar d0
+EOF
+EXPECT=<<EOF
+0x4000000000000000
+0x4000000000000000
+EOF
+RUN

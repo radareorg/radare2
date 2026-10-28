@@ -2352,7 +2352,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		break;
 	}
 	case ARM64_INS_FABS:
-		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,DUP,0,I2D,F<,?{,-F,},D2F,%s,=",
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,DUP,0,I2D,SWAP,F<,?{,-F,},D2F,%s,=",
 			REGBITS64 (1), REG64 (1), REG64 (0));
 		break;
 	case ARM64_INS_FNEG:
