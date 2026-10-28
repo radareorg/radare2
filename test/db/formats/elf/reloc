@@ -912,6 +912,42 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ELF: phdr symbols name and patch relocs when e_shoff is past EOF
+FILE=bins/elf/x86_64-abs-sym-shoff-eof.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x4033f0
+pv8 @ 0x4033f8
+ir~ADD_64
+EOF
+EXPECT=<<EOF
+0x0000000000001234
+0x0000000000400100
+0x004033f0 0x000003f0 ADD_64 1     absval
+0x004033f8 0x000003f8 ADD_64 1     abshit
+0x00403400 0x00000400 ADD_64 1     abszero
+0x00403408 0x00000408 ADD_64 1     here
+EOF
+RUN
+
+NAME=ELF: phdr symbols name and patch relocs when no symtab section remains
+FILE=bins/elf/x86_64-abs-sym-notabs.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x4033f0
+pv8 @ 0x4033f8
+ir~ADD_64
+EOF
+EXPECT=<<EOF
+0x0000000000001234
+0x0000000000400100
+0x004033f0 0x000003f0 ADD_64 1     absval
+0x004033f8 0x000003f8 ADD_64 1     abshit
+0x00403400 0x00000400 ADD_64 1     abszero
+0x00403408 0x00000408 ADD_64 1     here
+EOF
+RUN
+
 NAME=ELF: ET_REL absolute symbols are not placed at the base
 FILE=bins/elf/x86_64-abs-sym.o
 ARGS=-e bin.relocs.apply=true

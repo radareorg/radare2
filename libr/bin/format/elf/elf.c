@@ -5724,6 +5724,7 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 	free (eo->symbols_by_ord);
 	eo->symbols_by_ord = symbols_by_ord;
 	eo->symbols_by_ord_size = symbols_by_ord? ord_size: 0;
+	eo->symbols_by_ord_from_phdr = false;
 	ht_up_free (eo->special_by_ord);
 	eo->special_by_ord = NULL;
 	if (ret_ctr > ii->import_ret_ctr + max_ord) {
@@ -5990,13 +5991,21 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 	return true;
 }
 
+static RVecRBinElfSymbol *load_primary_symbols_from_phdr(ELFOBJ *eo, int type) {
+	RVecRBinElfSymbol *ret = load_symbols_from_phdr (eo, type);
+	if (ret && type == R_BIN_ELF_ALL_SYMBOLS) {
+		eo->symbols_by_ord_from_phdr = true;
+	}
+	return ret;
+}
+
 // TODO: return RList<RBinSymbol*> .. or run a callback with that symbol constructed, so we don't have to do it twice
 static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 	R_RETURN_VAL_IF_FAIL (eo, NULL);
 
 	if (!eo->shdr || !eo->ehdr.e_shnum || eo->ehdr.e_shnum == 0xffff) {
 		R_LOG_DEBUG ("invalid section header value");
-		return load_symbols_from_phdr (eo, type);
+		return load_primary_symbols_from_phdr (eo, type);
 	}
 
 	ut32 shdr_size = 0;
@@ -6046,7 +6055,7 @@ static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 	}
 
 	if (!ret) {
-		return load_symbols_from_phdr (eo, type);
+		return load_primary_symbols_from_phdr (eo, type);
 	}
 
 	int nsym = Elf_(fix_symbols) (eo, ret_ctr, type, ret);
@@ -6101,8 +6110,8 @@ RVecRBinSymbol *Elf_(load_symbols_vec)(RBinFile *bf, ELFOBJ *eo) {
 		return NULL;
 	}
 	RBinElfSymbol *symbol;
-	// section-less ELFs skip the section path that fills symbols_by_ord; their dynsym ordinals equal reloc->sym, so name defined slots here
-	RBinSymbol **sbo = eo->ehdr.e_shnum? NULL: eo->symbols_by_ord;
+	// the phdr symbol path does not fill symbols_by_ord; its dynsym ordinals equal reloc->sym, so name defined slots here
+	RBinSymbol **sbo = eo->symbols_by_ord_from_phdr? eo->symbols_by_ord: NULL;
 	const size_t sbo_size = eo->symbols_by_ord_size;
 	R_VEC_FOREACH (elf_symbols, symbol) {
 		if (symbol->st_shndx == SHN_UNDEF) {
