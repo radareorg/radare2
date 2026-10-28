@@ -5837,6 +5837,10 @@ static char *ds_getstring(RDisasmState *ds, const char *str, int len, const char
 	return escstr;
 }
 
+static bool unresolved_addr(ut64 addr) {
+	return !addr || addr == UT32_MAX || addr == UT64_MAX;
+}
+
 static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 	char str[64], *msg = NULL;
 	RDisasmState *ds = esil->user;
@@ -5873,24 +5877,19 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 		ds->emuptr = *val;
 		// support cstring here
 		{
-			ut64 cstr0 = r_read_ble64 (str, be);
-			ut64 cstr1 = r_read_ble64 (str + 8, be);
-			ut64 cstr2 = r_read_ble64 (str + 16, be);
-			ut64 addr = cstr0;
-			if (!(*val >> 32)) {
-				addr = addr & UT32_MAX;
-			}
-			if (cstr0 == 0 && cstr1 < 0x1000) {
-				ut64 addr = cstr2;
-				if (!(*val >> 32)) {
-					addr = addr & UT32_MAX;
-				}
-				(void)r_io_read_at (esil->anal->iob.io, addr,
+			const ut64 mask = (*val >> 32)? UT64_MAX: UT32_MAX;
+			const ut64 cstr0 = r_read_ble64 (str, be);
+			const ut64 cstr1 = r_read_ble64 (str + 8, be);
+			const ut64 cstr2 = r_read_ble64 (str + 16, be);
+			const ut64 addr = cstr0 & mask;
+			const ut64 cstr_addr = cstr2 & mask;
+			if (cstr0 == 0 && cstr1 < 0x1000 && !unresolved_addr (cstr_addr)) {
+				(void)r_io_read_at (esil->anal->iob.io, cstr_addr,
 					(ut8*)str, sizeof (str)-1);
 			//	eprintf ("IS CSTRING 0x%llx %s\n", addr, str);
-				type = r_str_newf ("(cstr 0x%08"PFMT64x") ", addr);
+				type = r_str_newf ("(cstr 0x%08"PFMT64x") ", cstr_addr);
 				ds->printed_str_addr = cstr2;
-			} else if (r_io_is_valid_offset (esil->anal->iob.io, addr, 0)) {
+			} else if (!unresolved_addr (addr) && r_io_is_valid_offset (esil->anal->iob.io, addr, 0)) {
 				ds->printed_str_addr = cstr0;
 				type = r_str_newf ("(pstr 0x%08"PFMT64x") ", addr);
 				(void)r_io_read_at (esil->anal->iob.io, addr,
@@ -6139,10 +6138,6 @@ static const char *getarg(RCore *core, const char *cc, int nth) {
 	return NULL;
 }
 
-static bool unresolved_arg_addr(ut64 addr) {
-	return !addr || addr == UT32_MAX || addr == UT64_MAX;
-}
-
 // print function arguments when emu.str=true; -1 is the unresolved marker, so a real value never prints as one
 static void print_arg_val(RCore *core, ut64 rv, bool resolved, bool is_signed) {
 	if (!resolved) {
@@ -6160,7 +6155,7 @@ static void print_fcn_arg(RCore *core, int nth, const RAnalFuncArg *arg, int asm
 	if (arg->on_stack && asm_types > 1) {
 		r_cons_printf (core->cons, "%s", r_str_get (arg->orig_c_type));
 	}
-	if (unresolved_arg_addr (addr)) {
+	if (unresolved_addr (addr)) {
 		// if argument address cannot be resolved, fallback to use the calling convention
 		const char *reg = getarg (core, r_config_get (core->config, "anal.cc"), nth); // XXX
 		const ut64 rv = reg? r_reg_getv (core->anal->reg, reg): UT64_MAX;
