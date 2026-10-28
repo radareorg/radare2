@@ -71,6 +71,7 @@ R_API void r_io_sundo_push(RIO *io, ut64 off, int cursor) {
 	if (io->undo.undos > 0) {
 		undo = &io->undo.seek[(io->undo.idx - 1 + R_IO_UNDOS) % R_IO_UNDOS];
 		if (undo->off == off && undo->cursor == cursor) {
+			io->undo.redos = 0;
 			return;
 		}
 	}

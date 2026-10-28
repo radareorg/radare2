@@ -415,7 +415,8 @@ pc=0x00000005
 EOF
 EXPECT_ERR=<<EOF
 WARN: ESIL step-over stopped at 0x00000008 before return to 0x00000005: I/O trap
-WARN: ESIL trap 'read-err' (3735928559) at 0x00000008
+WARN: ESIL trap 'read-err' (0) at 0x00000008
+WARN: ESIL fault address 0xdeadbeef
 WARN: ESIL step-over forced PC to 0x00000005 (see e??esil.stepover.force)
 EOF
 RUN
