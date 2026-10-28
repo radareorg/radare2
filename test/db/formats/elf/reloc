@@ -2671,6 +2671,18 @@ movt r0, 0x800
 EOF
 RUN
 
+NAME=ELF: ARM R_ARM_THM_MOVW_ABS_NC against an ARM function leaves the Thumb bit clear
+FILE=bins/elf/arm-thumb-movw-arm-target.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pi 2 @ sym.thf
+EOF
+EXPECT=<<EOF
+movw r0, 0x34
+movt r0, 0x800
+EOF
+RUN
+
 NAME=ELF: ppc32 DTPREL32 and TPREL32 dynamic relocs are listed
 FILE=bins/elf/ppc32-tls-lld.so
 CMDS=ir
