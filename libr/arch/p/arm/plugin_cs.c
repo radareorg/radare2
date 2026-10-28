@@ -3248,6 +3248,87 @@ static void arm32carry(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 		rev? rn: op2, comp, rev? op2: rn, ARG (0));
 }
 
+// capstone v5 lists cpsr as written by adc, sbc and rsc even without the s suffix
+static bool arm32addsub_sets_flags(cs_insn *insn) {
+	switch (insn->id) {
+	case ARM_INS_ADC:
+	case ARM_INS_SBC:
+	case ARM_INS_RSC:
+		return insn->mnemonic[3] == 's';
+	case ARM_INS_ADD:
+	case ARM_INS_SUB:
+	case ARM_INS_RSB:
+		return insn->detail->arm.update_flags;
+	case ARM_INS_CMP:
+	case ARM_INS_CMN:
+		return true;
+	default:
+		return false;
+	}
+}
+
+// NZCV of AddWithCarry (x, y, carry_in), computed before the destination is written because it can be
+// one of the operands. The carry is left on the stack and popped into cf once the result is stored, as
+// adc, sbc and rsc read the old cf.
+static void arm32addsub_flags(RArchSession *as, RAnalOp *op, ut64 addr, csh *handle, cs_insn *insn,
+	int pcdelta, RStringShort str[32]) {
+	if (!arm32addsub_sets_flags (insn) || (ISREG (0) && REGID (0) == ARM_REG_PC)) {
+		return;
+	}
+	const bool three = OPCOUNT () > 2;
+	char rn[64], op2[64];
+	if (ISREG (three? 1: 0) && REGID (three? 1: 0) == ARM_REG_PC) {
+		snprintf (rn, sizeof (rn), "0x%"PFMT64x, addr + pcdelta);
+	} else {
+		r_str_ncpy (rn, three? ARG (1): ARG (0), sizeof (rn));
+	}
+	if (OPCOUNT () > 3) {
+		snprintf (op2, sizeof (op2), "%s,%s,ROR", ARG (3), ARG (2));
+	} else if (ISREG (three? 2: 1) && REGID (three? 2: 1) == ARM_REG_PC) {
+		snprintf (op2, sizeof (op2), "0x%"PFMT64x, addr + pcdelta);
+	} else {
+		r_str_ncpy (op2, three? ARG (2): ARG (1), sizeof (op2));
+	}
+	const char *x = rn;
+	const char *y = op2;
+	const char *ny = "";
+	const char *cin = "cf";
+	switch (insn->id) {
+	case ARM_INS_ADD:
+	case ARM_INS_CMN:
+		cin = "0";
+		break;
+	case ARM_INS_SUB:
+	case ARM_INS_CMP:
+		cin = "1";
+		/* fallthrough */
+	case ARM_INS_SBC:
+		ny = ",0xffffffff,^";
+		break;
+	case ARM_INS_RSB:
+		cin = "1";
+		/* fallthrough */
+	case ARM_INS_RSC:
+		x = op2;
+		y = rn;
+		ny = ",0xffffffff,^";
+		break;
+	}
+	// a register-specified shift can leave bits above bit 31
+	char *ex = r_str_newf ("%s,0xffffffff,&", x);
+	char *ey = r_str_newf ("%s,0xffffffff,&%s", y, ny);
+	char *sum = r_str_newf ("%s,%s,+,%s,+", cin, ey, ex);
+	r_strbuf_appendf (&op->esil,
+		"31,%s,0xffffffff,&,>>,nf,:=,"
+		"%s,0xffffffff,&,!,zf,:=,"
+		"31,%s,%s,0xffffffff,&,^,%s,%s,0xffffffff,&,^,&,>>,vf,:=,"
+		"32,%s,>>,",
+		sum, sum, ex, sum, ey, sum, sum);
+	free (ex);
+	free (ey);
+	free (sum);
+}
+
 static void arm32math(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	csh *handle, cs_insn *insn, int pcdelta, RStringShort str[32], const char *opchar, int negate) {
 	const char *dest = ARG(0);
@@ -3472,11 +3553,13 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 		break;
 	case ARM_INS_ADDW:
 	case ARM_INS_ADD:
+		arm32addsub_flags (as, op, addr, handle, insn, pcdelta, str);
 		MATH32 ("+");
 		break;
 	case ARM_INS_ADC:
 	case ARM_INS_SBC:
 	case ARM_INS_RSC:
+		arm32addsub_flags (as, op, addr, handle, insn, pcdelta, str);
 		arm32carry (as, op, handle, insn, str);
 		break;
 	case ARM_INS_SSUB16:
@@ -3485,6 +3568,7 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 		break;
 	case ARM_INS_SUBW:
 	case ARM_INS_SUB:
+		arm32addsub_flags (as, op, addr, handle, insn, pcdelta, str);
 		MATH32 ("-");
 		break;
 	case ARM_INS_MUL:
@@ -3702,11 +3786,9 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		break;
 	}
 	case ARM_INS_CMP:
-		r_strbuf_appendf (&op->esil, "%s,%s,==", ARG (1), ARG (0));
-		break;
 	case ARM_INS_CMN:
-		// rn + op2 as rn - (-op2) so == commits old/cur for the shared $z/$c/$o block
-		r_strbuf_appendf (&op->esil, "%s,-1,*,%s,==", ARG (1), ARG (0));
+		arm32addsub_flags (as, op, addr, handle, insn, pcdelta, str);
+		r_strbuf_append (&op->esil, "cf,:=");
 		break;
 	case ARM_INS_MOVT:
 		// replace rd[31:16] with imm16, preserving rd[15:0]
@@ -4205,6 +4287,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			ARG (2), ARG (1), ARG (2), ARG (1), REG (0));
 		break;
 	case ARM_INS_RSB:
+		arm32addsub_flags (as, op, addr, handle, insn, pcdelta, str);
 		if (OPCOUNT () == 2) {
 			r_strbuf_appendf (&op->esil, "%s,%s,-=", ARG(0), ARG(1));
 		} else if (OPCOUNT () == 3) {
@@ -4358,7 +4441,8 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			// the parallel add/sub family writes GE, never NZCV
 			break;
 		case ARM_INS_CMP:
-			r_strbuf_append (&op->esil, ",$z,zf,:=,31,$s,nf,:=,32,$b,!,cf,:=,31,$o,vf,:=");
+		case ARM_INS_CMN:
+			// set by arm32addsub_flags
 			break;
 		case ARM_INS_ADD:
 		case ARM_INS_RSB:
@@ -4366,8 +4450,10 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		case ARM_INS_SUB:
 		case ARM_INS_SBC:
 		case ARM_INS_ADC:
-		case ARM_INS_CMN:
-			r_strbuf_append (&op->esil, ",$z,zf,:=,31,$s,nf,:=,31,$c,cf,:=,31,$o,vf,:=");
+			// nzv were set by arm32addsub_flags, which left the carry on the stack
+			if (arm32addsub_sets_flags (insn) && !(ISREG (0) && REGID (0) == ARM_REG_PC)) {
+				r_strbuf_append (&op->esil, ",cf,:=");
+			}
 			break;
 		default:
 			r_strbuf_append (&op->esil, ",$z,zf,:=,31,$s,nf,:=");

@@ -4313,3 +4313,150 @@ EXPECT=<<EOF
 type: cmp
 EOF
 RUN
+
+NAME=arm32 adds, subs, rsbs, adcs and sbcs set nzcv from the operands, adc keeps them
+FILE=malloc://0x100
+ARGS=-a arm -b 32
+CMDS=<<EOF
+aei
+aeim
+s 0
+wx 020091e0
+ar pc=0
+ar r0=0xdeadbeef
+ar r1=0
+ar r2=0
+ar cpsr=0
+aes
+ar r0
+ar cpsr
+s 0
+wx 020091e0
+ar pc=0
+ar r1=0xffffffff
+ar r2=1
+ar cpsr=0
+aes
+ar r0
+ar cpsr
+s 0
+wx 020091e0
+ar pc=0
+ar r1=0x7fffffff
+ar r2=1
+ar cpsr=0
+aes
+ar r0
+ar cpsr
+s 0
+wx 020051e0
+ar pc=0
+ar r0=0xdeadbeef
+ar r1=0
+ar r2=0x80000000
+ar cpsr=0
+aes
+ar r0
+ar cpsr
+s 0
+wx 010050e2
+ar pc=0
+ar r0=0
+ar cpsr=0
+aes
+ar r0
+ar cpsr
+s 0
+wx 000071e2
+ar pc=0
+ar r1=1
+ar cpsr=0
+aes
+ar r0
+ar cpsr
+s 0
+wx 000071e2
+ar pc=0
+ar r0=0xdeadbeef
+ar r1=0
+ar cpsr=0
+aes
+ar r0
+ar cpsr
+s 0
+wx 0200b1e0
+ar pc=0
+ar r1=0xffffffff
+ar r2=0
+ar cpsr=0x20000000
+aes
+ar r0
+ar cpsr
+s 0
+wx 0200d1e0
+ar pc=0
+ar r1=0
+ar r2=0
+ar cpsr=0
+aes
+ar r0
+ar cpsr
+s 0
+wx 0100a1e2
+ar pc=0
+ar r1=5
+ar cpsr=0x20000000
+aes
+ar r0
+ar cpsr
+EOF
+EXPECT=<<EOF
+0x00000000
+0x40000000
+0x00000000
+0x60000000
+0x80000000
+0x90000000
+0x80000000
+0x90000000
+0xffffffff
+0x80000000
+0xffffffff
+0x80000000
+0x00000000
+0x60000000
+0x00000000
+0x60000000
+0xffffffff
+0x80000000
+0x00000007
+0x20000000
+EOF
+RUN
+
+NAME=arm32 cmp sets v on a signed overflow, cmn sets c
+FILE=malloc://0x100
+ARGS=-a arm -b 32
+CMDS=<<EOF
+aei
+aeim
+wx 020051e1
+ar r1=0
+ar r2=0x80000000
+ar cpsr=0
+aes
+ar cpsr
+s 0
+wx 020071e1
+ar pc=0
+ar r1=0xffffffff
+ar r2=1
+ar cpsr=0
+aes
+ar cpsr
+EOF
+EXPECT=<<EOF
+0x90000000
+0x60000000
+EOF
+RUN
