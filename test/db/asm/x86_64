@@ -40,6 +40,9 @@ a "add rax, 0x12345678" 480578563412
 a "add rdx, 0x98765" 4881c265870900
 a "add byte[rax], 0xf0" 8000f0
 a "add byte[rax-0x9876], 0xf0" 80808a67fffff0
+a "add dword [0x1000], -1" 83042500100000ff
+a "cmp qword [0x80], -0x1000" 48813c258000000000f0ffff
+a "sub dword [rax-8], -1" 8368f8ff
 a "add word[rax], 0xf0" 668100f000
 a "add word[rax+0x12345], 0xf0" 66818045230100f000
 a "add r9d, 1" 4183c101
@@ -179,6 +182,7 @@ a "imul rax, rcx, 0x1000" 4869c100100000
 a "imul r10, [r11], 7" 4d6b1307
 a "imul ax, cx, 300" 6669c12c01
 a "imul eax, ecx, -128" 6bc180
+a "imul eax, dword [0x1000], -1" 6b042500100000ff
 a "inc rdx" 48ffc2
 a "jmp 0x2a" eb28
 a "jmp 0x1234" e92f120000
