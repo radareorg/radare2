@@ -2721,3 +2721,429 @@ esilcost: 32
 esil: rdi,[8],rdi,8,+,[8],rdi,[8],rax,^,rdi,8,+,[8],rdx,^,|,0,==,$z,zf,:=,zf,?{,rbx,rdi,=[8],rcx,rdi,8,+,=[8],},zf,!,?{,rdx,=,rax,=,}
 EOF
 RUN
+
+NAME=andn rax writes the complement of rbx and rcx and clears cf of
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx c4e2e0f2c1
+ar rbx=0xff00ff00ff00ff00
+ar rcx=0xf0f0f0f0f0f0f0f
+ar cf=0x1
+ar of=0x1
+aes
+ar rax
+ar zf
+ar sf
+ar cf
+ar of
+EOF
+EXPECT=<<EOF
+0xf000f000f000f
+0x00000000
+0x00000000
+0x00000000
+0x00000000
+EOF
+RUN
+
+NAME=andn eax zero-extends and sets sf from bit 31
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx c4e260f2c1
+ar rax=0x1111111111111111
+ar rbx=0xffffffff00000000
+ar rcx=0x80000001
+aes
+ar rax
+ar sf
+ar zf
+EOF
+EXPECT=<<EOF
+0x80000001
+0x00000001
+0x00000000
+EOF
+RUN
+
+NAME=blsi eax, ebx with ebx=0x18
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx c4e278f3db
+ar rax=0x1111111111111111
+ar rbx=0x18
+ar zf=0x1
+aes
+ar rax
+ar zf
+ar sf
+ar cf
+ar of
+EOF
+EXPECT=<<EOF
+0x00000008
+0x00000000
+0x00000000
+0x00000001
+0x00000000
+EOF
+RUN
+
+NAME=blsi eax, ebx with ebx=0x0
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx c4e278f3db
+ar rax=0x1111111111111111
+ar rbx=0x0
+ar zf=0x1
+aes
+ar rax
+ar zf
+ar sf
+ar cf
+ar of
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000001
+0x00000000
+0x00000000
+0x00000000
+EOF
+RUN
+
+NAME=blsmsk eax, ebx with ebx=0x18
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx c4e278f3d3
+ar rax=0x1111111111111111
+ar rbx=0x18
+ar zf=0x1
+aes
+ar rax
+ar zf
+ar sf
+ar cf
+ar of
+EOF
+EXPECT=<<EOF
+0x0000000f
+0x00000000
+0x00000000
+0x00000000
+0x00000000
+EOF
+RUN
+
+NAME=blsmsk eax, ebx with ebx=0x0
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx c4e278f3d3
+ar rax=0x1111111111111111
+ar rbx=0x0
+ar zf=0x1
+aes
+ar rax
+ar zf
+ar sf
+ar cf
+ar of
+EOF
+EXPECT=<<EOF
+0xffffffff
+0x00000000
+0x00000001
+0x00000001
+0x00000000
+EOF
+RUN
+
+NAME=blsr eax, ebx with ebx=0x18
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx c4e278f3cb
+ar rax=0x1111111111111111
+ar rbx=0x18
+ar zf=0x1
+aes
+ar rax
+ar zf
+ar sf
+ar cf
+ar of
+EOF
+EXPECT=<<EOF
+0x00000010
+0x00000000
+0x00000000
+0x00000000
+0x00000000
+EOF
+RUN
+
+NAME=blsr eax, ebx with ebx=0x0
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx c4e278f3cb
+ar rax=0x1111111111111111
+ar rbx=0x0
+ar zf=0x1
+aes
+ar rax
+ar zf
+ar sf
+ar cf
+ar of
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000001
+0x00000000
+0x00000001
+0x00000000
+EOF
+RUN
+
+NAME=bzhi rax, rbx, rcx with an index of 63
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx c4e2f0f5c3
+ar rbx=0xffffffffffffffff
+ar rcx=0x3f
+aes
+ar rax
+ar cf
+ar zf
+ar sf
+EOF
+EXPECT=<<EOF
+0x7fffffffffffffff
+0x00000000
+0x00000000
+0x00000000
+EOF
+RUN
+
+NAME=bzhi rax, rbx, rcx with an index of 64
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx c4e2f0f5c3
+ar rbx=0xffffffffffffffff
+ar rcx=0x140
+aes
+ar rax
+ar cf
+ar zf
+ar sf
+EOF
+EXPECT=<<EOF
+0xffffffffffffffff
+0x00000001
+0x00000000
+0x00000001
+EOF
+RUN
+
+NAME=bzhi rax, rbx, rcx with an index of 1
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx c4e2f0f5c3
+ar rbx=0xffffffffffffffff
+ar rcx=0x1f01
+aes
+ar rax
+ar cf
+ar zf
+ar sf
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000000
+0x00000000
+0x00000000
+EOF
+RUN
+
+NAME=rorx eax, ebx, 1 rotates within 32 bits and keeps the flags
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx c4e37bf0c301
+ar rax=0xffffffffffffffff
+ar rbx=0x1
+ar cf=0x1
+ar zf=0x1
+aes
+ar rax
+ar cf
+ar zf
+EOF
+EXPECT=<<EOF
+0x80000000
+0x00000001
+0x00000001
+EOF
+RUN
+
+NAME=rorx rax, rbx, 5
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx c4e3fbf0c305
+ar rbx=0x1
+aes
+ar rax
+EOF
+EXPECT=<<EOF
+0x800000000000000
+EOF
+RUN
+
+NAME=mulx rax, rbx, rcx stores the high half in rax and the low half in rbx
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx c4e2e3f6c1
+ar rdx=0xffffffffffffffff
+ar rcx=0x2
+ar cf=0x1
+aes
+ar rax
+ar rbx
+ar cf
+EOF
+EXPECT=<<EOF
+0x00000001
+0xfffffffffffffffe
+0x00000001
+EOF
+RUN
+
+NAME=mulx eax, ebx, ecx multiplies by edx
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx c4e263f6c1
+ar rdx=0x11111111ffffffff
+ar rcx=0x10
+aes
+ar rax
+ar rbx
+EOF
+EXPECT=<<EOF
+0x0000000f
+0xfffffff0
+EOF
+RUN
+
+NAME=adcx eax, ebx adds cf and only updates cf
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx 660f38f6c3
+ar rax=0xffffffff
+ar rbx=0x0
+ar cf=0x1
+ar of=0x1
+ar zf=0x0
+aes
+ar rax
+ar cf
+ar of
+ar zf
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000001
+0x00000001
+0x00000000
+EOF
+RUN
+
+NAME=adox rax, rbx takes the carry from of and leaves cf
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx f3480f38f6c3
+ar rax=0x7fffffffffffffff
+ar rbx=0x1
+ar of=0x0
+ar cf=0x1
+aes
+ar rax
+ar of
+ar cf
+EOF
+EXPECT=<<EOF
+0x8000000000000000
+0x00000000
+0x00000001
+EOF
+RUN
+
+NAME=adox rax, rbx carries out of 64 bits into of
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx f3480f38f6c3
+ar rax=0xffffffffffffffff
+ar rbx=0xffffffffffffffff
+ar of=0x1
+ar cf=0x0
+aes
+ar rax
+ar of
+ar cf
+EOF
+EXPECT=<<EOF
+0xffffffffffffffff
+0x00000001
+0x00000000
+EOF
+RUN
