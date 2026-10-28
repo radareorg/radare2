@@ -4683,8 +4683,7 @@ R_IPI void visual_refresh(RCore *core) {
 	r_cons_print (cons, cons->context->pal.bgprompt);
 	cons->context->noflush = true;
 
-	int hex_cols = r_config_get_i (core->config, "hex.cols");
-	int split_w = 12 + 4 + hex_cols + (hex_cols * 3);
+	int split_w = 0;
 	bool ce = core->print->cur_enabled;
 
 	const char *vi = r_config_get (core->config, "cmd.cprompt");
@@ -4693,8 +4692,8 @@ R_IPI void visual_refresh(RCore *core) {
 	if (vsplit) {
 		// XXX: slow
 		cons->blankline = false;
-		int hex_cols = r_config_get_i (core->config, "hex.cols");
-		int split_w = 12 + 4 + hex_cols + (hex_cols * 3);
+		const int hex_cols = r_config_get_i (core->config, "hex.cols");
+		split_w = 12 + 4 + hex_cols + (hex_cols * 3);
 		if (split_w <= w) {
 			r_cons_printf (cons, "[cmd.cprompt=%s]\n", vi);
 			if (core->visual.oseek != UT64_MAX) {
@@ -4757,12 +4756,19 @@ R_IPI void visual_refresh(RCore *core) {
 		}
 	}
 	if (R_STR_ISNOTEMPTY (cmd_str)) {
-		char *res = r_core_cmd_str (core, cmd_str);
-		if (vsplit) {
-			res = r_str_ansi_crop (res, 0, 0, split_w, -1);
+		// Keep cursor marks and custom filters isolated from the surrounding frame.
+		if (vsplit || ce || core->visual.tabs || R_STR_ISNOTEMPTY (vcmd) || cons->context->is_html) {
+			char *res = r_core_cmd_str (core, cmd_str);
+			if (vsplit) {
+				char *cropped = r_str_ansi_crop (res, 0, 0, split_w, -1);
+				free (res);
+				res = cropped;
+			}
+			r_cons_print (cons, res);
+			free (res);
+		} else {
+			r_core_cmd0 (core, cmd_str);
 		}
-		r_cons_print (cons, res);
-		free (res);
 	}
 	free (cmd_str);
 	core->print->cur_enabled = ce;
@@ -4885,7 +4891,7 @@ R_API void r_core_visual_disasm_down(RCore *core, RAnalOp *op, int *cols) {
 			*cols = middle_delta;
 		}
 	}
-	int nvars = varcount (core, f);
+	int nvars = f && f->addr == orig? varcount (core, f): 0;
 	int delta = visual_meta_delta (core, orig, *cols);
 	if (delta > 0) {
 		*cols = delta;
