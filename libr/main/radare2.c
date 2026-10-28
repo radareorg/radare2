@@ -32,6 +32,7 @@ static char *get_file_in_cur_dir(const char *filepath) {
 static void prompt_rebuild_outdated_plugins(RCore *core) {
 	RList *mismatches = core->lib->plugin_mismatches;
 	if (!r_config_get_b (core->config, "scr.prompt.r2pm")
+			|| !r_config_get_b (core->config, "scr.prompt")
 			|| !r_cons_is_interactive (core->cons)
 			|| r_list_empty (mismatches)) {
 		return;
@@ -562,6 +563,14 @@ beach:
 		}
 	}
 	return has_failed;
+}
+
+static bool is_terminal(void) {
+#if R2__UNIX__
+	return isatty (0) && r_cons_is_tty ();
+#else
+	return r_cons_is_tty ();
+#endif
 }
 
 static bool mustSaveHistory(RCore *core) {
@@ -1168,7 +1177,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			mr.quiet_leak = true;
 			break;
 		case 'q':
-			r_config_set_b (r->config, "scr.interactive", false);
+			// keep -c commands like v or ~.. usable from a terminal
+			r_config_set_b (r->config, "scr.interactive", is_terminal ());
 			r_config_set_b (r->config, "scr.prompt", false);
 			r_config_set_b (r->config, "cfg.fortunes", false);
 			if (mr.quiet) {
@@ -1934,8 +1944,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			const char *uri_splitter = strstr (f, "://");
 			const char *path = uri_splitter? uri_splitter + 3: f;
 			if (r_file_exists (path)) {
-				// TODO: should 'q' unset the interactive bit?
-				const bool isint = r_cons_is_interactive (r->cons);
+				const bool isint = !mr.quiet && r_cons_is_interactive (r->cons);
 				if (isint && r_cons_yesno (r->cons, 'n', "Do you want to run the '%s' script? (y/N) ", path)) {
 					r_core_cmd_file (r, path);
 				}
