@@ -1050,9 +1050,8 @@ static bool esil_poke_some(REsil *esil) {
 					isregornum (esil, foo, &num64);
 					r_write_ble (b, num64, esil_is_big_endian (esil), regsize);
 					const int size_bytes = regsize / 8;
-					const ut32 written = r_esil_mem_write (esil, ptr, b, size_bytes);
-					if (written != size_bytes) {
-						esil->trap = 1;
+					if (!r_esil_mem_write (esil, ptr, b, size_bytes)) {
+						return false;
 					}
 					ptr += size_bytes;
 				}

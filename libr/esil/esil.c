@@ -529,11 +529,11 @@ static void esil_cmd_ioer(REsil *esil, bool write) {
 
 R_API bool r_esil_mem_read_silent(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (buf && esil && esil->mem_if.mem_read, false);
-	if (R_LIKELY (esil->mem_if.mem_read (esil->mem_if.mem, addr & esil->addrmask, buf, len))) {
+	addr &= esil->addrmask;
+	if (R_LIKELY (esil->mem_if.mem_read (esil->mem_if.mem, addr, buf, len))) {
 		return true;
 	}
-	esil->trap = R_ANAL_TRAP_READ_ERR;
-	esil->trap_code = addr;
+	r_esil_set_fault (esil, R_ANAL_TRAP_READ_ERR, addr);
 	return false;
 }
 
@@ -541,8 +541,7 @@ R_API bool r_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (buf && esil && esil->mem_if.mem_read, false);
 	addr &= esil->addrmask;
 	if (!alignCheck (esil, addr)) {
-		esil->trap = R_ANAL_TRAP_READ_ERR;
-		esil->trap_code = addr;
+		r_esil_set_fault (esil, R_ANAL_TRAP_READ_ERR, addr);
 		return false;
 	}
 	if (esil->cb.hook_mem_read && esil->cb.hook_mem_read (esil, addr, buf, len)) {
@@ -554,8 +553,7 @@ R_API bool r_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	}
 	if (!esil_legacy_mem_cb (esil, false) && esil_invalid_mem_access (esil, addr)) {
 		if (esil->iotrap) {
-			esil->trap = R_ANAL_TRAP_READ_ERR;
-			esil->trap_code = addr;
+			r_esil_set_fault (esil, R_ANAL_TRAP_READ_ERR, addr);
 		}
 		esil_cmd_ioer (esil, false);
 	}
@@ -583,8 +581,7 @@ static bool internal_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int 
 	}
 	addr &= esil->addrmask;
 	if (!alignCheck (esil, addr)) {
-		esil->trap = R_ANAL_TRAP_READ_ERR;
-		esil->trap_code = addr;
+		r_esil_set_fault (esil, R_ANAL_TRAP_READ_ERR, addr);
 		return false;
 	}
 	if (esil->cmd_mdev && esil->mdev_range) {
@@ -601,8 +598,7 @@ static bool internal_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int 
 	// now with siol, write_at return true/false can't be used to check error vs len
 	if (!iob->is_valid_offset (io, addr, false)) {
 		if (esil->iotrap) {
-			esil->trap = R_ANAL_TRAP_WRITE_ERR;
-			esil->trap_code = addr;
+			r_esil_set_fault (esil, R_ANAL_TRAP_WRITE_ERR, addr);
 		}
 		if (esil->cmd && esil->cmd_ioer && *esil->cmd_ioer) {
 			esil->cmd (esil, esil->cmd_ioer, esil->addr, 1);
@@ -630,8 +626,7 @@ static bool internal_esil_mem_write_no_null(REsil *esil, ut64 addr, const ut8 *b
 	// now with siol, write_at return true/false can't be used to check error vs len
 	if (!iob->is_valid_offset (io, addr, false)) {
 		if (esil->iotrap) {
-			esil->trap = R_ANAL_TRAP_WRITE_ERR;
-			esil->trap_code = addr;
+			r_esil_set_fault (esil, R_ANAL_TRAP_WRITE_ERR, addr);
 		}
 	}
 	return ret;
@@ -655,12 +650,13 @@ R_API bool r_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 		ut8 buf[16];
 		ut8 *ptr;
 	} o;
+	const REsilTrap oldtrap = r_esil_get_trap (esil);
 	if (R_LIKELY (len < 17)) {
 		memset (o.buf, 0xff, len);
 		if (R_UNLIKELY (!r_esil_mem_read_silent (esil, addr, o.buf, len))) {
 			esil_cmd_ioer (esil, false);
-			esil->trap = R_ANAL_TRAP_NONE;
 		}
+		r_esil_restore_trap (esil, &oldtrap);
 		if (R_UNLIKELY (!r_esil_mem_write_silent (esil, addr, buf, len))) {
 			esil_cmd_ioer (esil, true);
 			return false;
@@ -685,8 +681,8 @@ R_API bool r_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	memset (o.ptr, 0xff, len);
 	if (R_UNLIKELY (!r_esil_mem_read_silent (esil, addr, o.ptr, len))) {
 		esil_cmd_ioer (esil, false);
-		esil->trap = R_ANAL_TRAP_NONE;
 	}
+	r_esil_restore_trap (esil, &oldtrap);
 	if (R_UNLIKELY (!r_esil_mem_write_silent (esil, addr, buf, len))) {
 		esil_cmd_ioer (esil, true);
 		free (o.ptr);
@@ -704,12 +700,12 @@ R_API bool r_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 
 R_API bool r_esil_mem_write_silent(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (esil && buf && esil->mem_if.mem_write, false);
-	if (R_LIKELY (esil->mem_if.mem_write (esil->mem_if.mem, addr & esil->addrmask, buf, len))) {
+	addr &= esil->addrmask;
+	if (R_LIKELY (esil->mem_if.mem_write (esil->mem_if.mem, addr, buf, len))) {
 		return true;
 	}
 	if (esil->iotrap) {
-		esil->trap = R_ANAL_TRAP_WRITE_ERR;
-		esil->trap_code = addr;
+		r_esil_set_fault (esil, R_ANAL_TRAP_WRITE_ERR, addr);
 	}
 	return false;
 }
@@ -1143,6 +1139,9 @@ R_API bool r_esil_dumpstack(REsil *esil) {
 		R_LOG_INFO ("ESIL TRAP type %d code 0x%08x %s",
 			esil->trap, esil->trap_code,
 			r_esil_trapstr (esil->trap));
+		if (esil->trap_addr_valid) {
+			R_LOG_INFO ("ESIL fault address 0x%"PFMT64x, esil->trap_addr);
+		}
 	}
 	bool ret = false;
 	RStrBuf *sb = r_strbuf_new ("");
@@ -1416,23 +1415,20 @@ static bool internal_esil_mem_read_no_null(REsil *esil, ut64 addr, ut8 *buf, int
 
 	addr &= esil->addrmask;
 	if (!alignCheck (esil, addr)) {
-		esil->trap = R_ANAL_TRAP_READ_ERR;
-		esil->trap_code = addr;
+		r_esil_set_fault (esil, R_ANAL_TRAP_READ_ERR, addr);
 		return false;
 	}
 	if (iob->is_valid_offset (io, addr, false)) {
 		if (iob->read_at (io, addr, buf, len) != len) {
 			if (esil->iotrap) {
-				esil->trap = R_ANAL_TRAP_READ_ERR;
-				esil->trap_code = addr;
+				r_esil_set_fault (esil, R_ANAL_TRAP_READ_ERR, addr);
 			}
 			return false;
 		}
 	} else {
 		memset (buf, io->Oxff, len);
 		if (esil->iotrap) {
-			esil->trap = R_ANAL_TRAP_READ_ERR;
-			esil->trap_code = addr;
+			r_esil_set_fault (esil, R_ANAL_TRAP_READ_ERR, addr);
 		}
 	}
 	return true;
@@ -1449,8 +1445,7 @@ static bool internal_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 
 	addr &= esil->addrmask;
 	if (!alignCheck (esil, addr)) {
-		esil->trap = R_ANAL_TRAP_READ_ERR;
-		esil->trap_code = addr;
+		r_esil_set_fault (esil, R_ANAL_TRAP_READ_ERR, addr);
 		return false;
 	}
 	if (esil->cmd_mdev && esil->mdev_range) {
@@ -1464,8 +1459,7 @@ static bool internal_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	// check if request address is mapped , if don't fire trap and esil ioer callback
 	if (nread != len || !esil->anal->iob.is_valid_offset (io, addr, false)) {
 		if (esil->iotrap) {
-			esil->trap = R_ANAL_TRAP_READ_ERR;
-			esil->trap_code = addr;
+			r_esil_set_fault (esil, R_ANAL_TRAP_READ_ERR, addr);
 		}
 		if (esil->cmd && esil->cmd_ioer && *esil->cmd_ioer) {
 			esil->cmd (esil, esil->cmd_ioer, esil->addr, 0);
