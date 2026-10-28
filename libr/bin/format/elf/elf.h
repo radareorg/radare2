@@ -188,6 +188,7 @@ struct Elf_(obj_t) {
 	bool load_unnamed;
 	bool has_nobtcfi;
 	bool has_nx;
+	bool symbols_by_ord_from_phdr;
 	int bits_cache;
 	const char* file;
 	RBuffer *b;
