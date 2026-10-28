@@ -336,7 +336,7 @@ agg~?
 agg*~?
 EOF
 EXPECT=<<EOF
-33
+32
 33
 3
 9
