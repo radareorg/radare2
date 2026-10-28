@@ -128,9 +128,52 @@ static bool test_r_fs_bfs_read_whole_file(void) {
 	mu_end;
 }
 
+static bool test_r_fs_ntfs_fixup_bounds(void) {
+#if WITH_GPL
+	size_t size = 0;
+	ut8 *img = (ut8 *)r_file_slurp ("bins/fs/ntfs.img", &size);
+	mu_assert_notnull (img, "load ntfs image");
+	char *uri = r_str_newf ("malloc://%" PFMTSZu, size);
+	// root.txt is MFT record 76, end its update sequence array 2 bytes past the record
+	ut8 *rec = img + 0x4000 + 76 * 1024;
+	mu_assert_memeq (rec, (const ut8 *)"FILE", 4, "root.txt MFT record");
+	r_write_le16 (rec + 4, 1020);
+	r_write_le16 (rec + 1020, r_read_le16 (rec + 1022));
+	RIO *io = r_io_new ();
+	RFS *fs = r_fs_new ();
+	r_io_bind (io, &fs->iob);
+	mu_assert_notnull (r_io_open (io, uri, R_PERM_RW, 0), "open ntfs image");
+	r_io_write_at (io, 0, img, size);
+	mu_assert_notnull (r_fs_mount (fs, "ntfs", "/mnt", 0), "mount ntfs image");
+	RFSFile *file = r_fs_open (fs, "/mnt/folder1/file1.txt", false);
+	mu_assert_notnull (file, "open file with a valid MFT record");
+	r_fs_close (fs, file);
+	r_fs_file_free (file);
+	mu_assert_null (r_fs_open (fs, "/mnt/root.txt", false), "reject update sequence array past the MFT record");
+	r_fs_free (fs);
+	r_io_free (io);
+
+	// zero sectors per cluster makes the MFT records 0 bytes long
+	img[13] = 0;
+	img[0x40] = 1;
+	io = r_io_new ();
+	fs = r_fs_new ();
+	r_io_bind (io, &fs->iob);
+	mu_assert_notnull (r_io_open (io, uri, R_PERM_RW, 0), "open ntfs image with empty records");
+	r_io_write_at (io, 0, img, size);
+	mu_assert_null (r_fs_mount (fs, "ntfs", "/mnt", 0), "reject empty MFT records");
+	r_fs_free (fs);
+	r_io_free (io);
+	free (uri);
+	free (img);
+#endif
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_fs_ext2_read_bounds);
 	mu_run_test (test_r_fs_bfs_read_whole_file);
+	mu_run_test (test_r_fs_ntfs_fixup_bounds);
 	return tests_passed != tests_run;
 }
 

@@ -37,7 +37,7 @@ fixup(struct grub_ntfs_data *data, char *buf, int len, char *magic) {
 	char *pu;
 	grub_uint16_t us;
 
-	if (memcmp (buf, magic, 4)) {
+	if (len < 1 || memcmp (buf, magic, 4)) {
 		return grub_error (GRUB_ERR_BAD_FS, "%s label not found", magic);
 	}
 
@@ -45,7 +45,12 @@ fixup(struct grub_ntfs_data *data, char *buf, int len, char *magic) {
 	if (ss *(int)data->blocksize != len * GRUB_DISK_SECTOR_SIZE) {
 		return grub_error (GRUB_ERR_BAD_FS, "size not match", ss *(int)data->blocksize, len * GRUB_DISK_SECTOR_SIZE);
 	}
-	pu = buf + u16at (buf, 4);
+	// the update sequence number and its ss fixup values must be inside the record
+	const int usa = u16at (buf, 4);
+	if (usa + 2 * (ss + 1) > len * GRUB_DISK_SECTOR_SIZE) {
+		return grub_error (GRUB_ERR_BAD_FS, "fixup array outside of the record");
+	}
+	pu = buf + usa;
 	us = u16at (pu, 0);
 	buf -= 2;
 	while (ss > 0) {
