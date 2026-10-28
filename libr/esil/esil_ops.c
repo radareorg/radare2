@@ -4,12 +4,7 @@
 #include <r_anal.h>
 #include <r_util/r_bits.h>
 
-#if __wasi__ || EMSCRIPTEN
-#define FE_OVERFLOW 0
-#define feclearexcept(x)
-#endif
 #include <math.h>
-#include <fenv.h>
 
 #define OP(v, w, x, y, z) r_esil_set_op (esil, v, w, x, y, z, NULL)
 #define OP2(v, w, x, y, z, i) r_esil_set_op (esil, v, w, x, y, z, i)
@@ -1572,15 +1567,7 @@ static bool esil_float_add(REsil *esil) {
 		} else if (isnan (d)) {
 			ret = esil_pushnum_float (esil, d);
 		} else {
-			feclearexcept (FE_OVERFLOW);
-			double tmp = s + d;
-			(void)(tmp); // suppress unused warning
-			int raised = fetestexcept (FE_OVERFLOW);
-			if (raised & FE_OVERFLOW) {
-				ret = esil_pushnum_float (esil, NAN);
-			} else {
-				ret = esil_pushnum_float (esil, s + d);
-			}
+			ret = esil_pushnum_float (esil, s + d);
 		}
 	} else {
 		R_LOG_DEBUG ("esil_float_add: invalid parameters");
@@ -1600,15 +1587,7 @@ static bool esil_float_sub(REsil *esil) {
 		} else if (isnan (d)) {
 			ret = esil_pushnum_float (esil, d);
 		} else {
-			feclearexcept (FE_OVERFLOW);
-			double tmp = d - s;
-			(void)(tmp);
-			int raised = fetestexcept (FE_OVERFLOW);
-			if (raised & FE_OVERFLOW) {
-				ret = esil_pushnum_float (esil, NAN);
-			} else {
-				ret = esil_pushnum_float (esil, d - s);
-			}
+			ret = esil_pushnum_float (esil, d - s);
 		}
 	} else {
 		R_LOG_DEBUG ("esil_float_sub: invalid parameters");
@@ -1628,15 +1607,7 @@ static bool esil_float_mul(REsil *esil) {
 		} else if (isnan (d)) {
 			ret = esil_pushnum_float (esil, d);
 		} else {
-			feclearexcept (FE_OVERFLOW);
-			double tmp = s * d;
-			(void)(tmp);
-			int raised = fetestexcept (FE_OVERFLOW);
-			if (raised & FE_OVERFLOW) {
-				ret = esil_pushnum_float (esil, NAN);
-			} else {
-				ret = esil_pushnum_float (esil, s * d);
-			}
+			ret = esil_pushnum_float (esil, s * d);
 		}
 	} else {
 		R_LOG_DEBUG ("esil_float_mul: invalid parameters");
@@ -1656,15 +1627,7 @@ static bool esil_float_div(REsil *esil) {
 		} else if (isnan (d)) {
 			ret = esil_pushnum_float (esil, d);
 		} else {
-			feclearexcept (FE_OVERFLOW);
-			double tmp = d / s;
-			(void)(tmp);
-			int raised = fetestexcept (FE_OVERFLOW);
-			if (raised & FE_OVERFLOW) {
-				ret = esil_pushnum_float (esil, NAN);
-			} else {
-				ret = esil_pushnum_float (esil, d / s);
-			}
+			ret = esil_pushnum_float (esil, d / s);
 		}
 	} else {
 		R_LOG_DEBUG ("esil_float_div: invalid parameters");
