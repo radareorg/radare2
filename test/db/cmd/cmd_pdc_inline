@@ -20,10 +20,7 @@ false
 // callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
 void caller (void) {
     { // inline child
-        // CALL XREF from caller @ 0x0(x)
         eax += 1
-        { rax = eax; goto inline_0x00000000_end; }
-        inline_0x00000000_end:;
     }
     eax += 2
     return eax    // rsp
@@ -39,23 +36,25 @@ ARGS=-a x86 -b64 -e pdc.inline=true
 CMDS=<<EOF
 wx e83b000000e836000000c3
 wx e83b000000c3 @ 0x40
-wx 83c001c3 @ 0x80
+wx 85ff7401c383c001c3 @ 0x80
 af leaf @ 0x80
 af child @ 0x40
 af caller @ 0
 afia+ inline @ 0x40
 afia+ inline @ 0x80
-pdc @ 0~inline child,inline leaf,_end:
+pdc @ 0~inline child,inline leaf,_end
 EOF
 EXPECT=<<EOF
     { // inline child
         { // inline leaf
+                { goto inline_0x00000000_0x00000040_end; }
+                { goto inline_0x00000000_0x00000040_end; }
             inline_0x00000000_0x00000040_end:;
-        inline_0x00000000_end:;
     { // inline child
         { // inline leaf
+                { goto inline_0x00000005_0x00000040_end; }
+                { goto inline_0x00000005_0x00000040_end; }
             inline_0x00000005_0x00000040_end:;
-        inline_0x00000005_end:;
 EOF
 RUN
 
@@ -75,10 +74,10 @@ EOF
 EXPECT=<<EOF
         if (edi & edi) {
             eax += 1
-            { rax = eax; goto inline_0x00000000_end; }
+            { goto inline_0x00000000_end; }
         } else {
             eax += 3
-            { rax = eax; goto inline_0x00000000_end; }
+            { goto inline_0x00000000_end; }
     eax += 2
                 if (!v) goto inline_0x00000000_loc_0x00000048 // likely
             inline_0x00000000_loc_0x00000048:
@@ -118,7 +117,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pdc inline binds arguments with optimization enabled
+NAME=pdc inline keeps the argument registers loaded by the caller
 FILE=malloc://256
 ARGS=-a x86 -b64 -e pdc.inline=true -e pdc.optimize=true
 CMDS=<<EOF
@@ -135,17 +134,63 @@ EXPECT=<<EOF
 void caller (void) {
     edi = 7
     { // inline child
-        auto inline_0x00000005_arg0 = 7;
-        rdi = inline_0x00000005_arg0;
-        // CALL XREF from caller @ 0x5(x)
         eax = rdi + 3 // arg1
-        { goto inline_0x00000005_end; }
-        inline_0x00000005_end:;
     }
     eax += 2
     return eax    // rsp
 }
 
+EOF
+RUN
+
+NAME=pdc inline does not rebind arguments from emulated call values
+FILE=malloc://256
+ARGS=-a x86 -b64 -e pdc.inline=true -e pdc.optimize=true
+CMDS=<<EOF
+wx 8d7801e83800000083c002c3
+wx 8d4703c3 @ 0x40
+af child @ 0x40
+af caller @ 0
+td int child(int x);
+afia+ inline @ 0x40
+pdc @ 0
+EOF
+EXPECT=<<EOF
+// callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
+void caller (void) {
+    edi = rax + 1
+    { // inline child
+        eax = rdi + 3 // arg1
+    }
+    eax += 2
+    return eax    // rsp
+}
+
+EOF
+RUN
+
+NAME=pdc inline assigns a return value held in another register
+FILE=malloc://256
+ARGS=-a x86 -b64 -e pdc.inline=true
+CMDS=<<EOF
+wx e83b00000083c002c3
+wx 85ff740389c8c389d0c3 @ 0x40
+af child @ 0x40
+af caller @ 0
+afia+ inline @ 0x40
+pdc @ 0~inline_,rax =
+wx 89c8c3 @ 0x40
+af- 0x40
+af child @ 0x40
+afia+ inline @ 0x40
+pdc @ 0~inline,rax =
+EOF
+EXPECT=<<EOF
+            { rax = ecx; goto inline_0x00000000_end; }
+            { rax = edx; goto inline_0x00000000_end; }
+        inline_0x00000000_end:;
+    { // inline child
+        rax = ecx;
 EOF
 RUN
 
@@ -191,9 +236,9 @@ EOF
 EXPECT=<<EOF
  0x00000040 |         eax += 1
  0x00000040 | add eax, 1                     |         eax += 1
-64
-67
-CCu base64:Ly8gQ0FMTCBYUkVGIGZyb20gY2FsbGVyIEAgMHgwKHgpCmVheCArPSAx @ 0x00000040
+0
+5
+CCu base64:ZWF4ICs9IDE= @ 0x00000040
 0x90
 true
 false

@@ -2966,7 +2966,18 @@ static bool pdc_decompile_function(RCore *core, const char *input, PDCState *par
 	return true;
 }
 
-static char *inline_line(const char *line, const char *prefix, const char *retreg) {
+static bool same_reg_storage(RReg *reg, const char *a, size_t alen, const char *b) {
+	char *name = r_str_ndup (a, alen);
+	RRegItem *ra = name? r_reg_get (reg, name, -1): NULL;
+	RRegItem *rb = r_reg_get (reg, b, -1);
+	const bool same = ra && rb && ra->arena == rb->arena && ra->offset == rb->offset;
+	r_unref (ra);
+	r_unref (rb);
+	free (name);
+	return same;
+}
+
+static char *inline_line(RReg *reg, const char *line, const char *prefix, const char *retreg, bool tail, bool *jumps) {
 	RStrBuf *out = r_strbuf_new ("");
 	const char *p = line;
 	while (*p) {
@@ -3005,13 +3016,24 @@ static char *inline_line(const char *line, const char *prefix, const char *retre
 				last--;
 			}
 			const size_t len = last - value;
+			const bool assign = len && retreg && !same_reg_storage (reg, value, len, retreg);
+			// an unconditional return on the last line falls through to the continuation
+			if (tail && p == r_str_trim_head_ro (line)) {
+				if (assign) {
+					r_strbuf_appendf (out, "%s = ", retreg);
+					r_strbuf_append_n (out, value, len);
+					r_strbuf_append (out, ";");
+				}
+				break;
+			}
 			r_strbuf_append (out, "{ ");
-			if (len && retreg && (strlen (retreg) != len || strncmp (value, retreg, len))) {
+			if (assign) {
 				r_strbuf_appendf (out, "%s = ", retreg);
 				r_strbuf_append_n (out, value, len);
 				r_strbuf_append (out, "; ");
 			}
 			r_strbuf_appendf (out, "goto %s_end; }", prefix);
+			*jumps = true;
 			if (r_str_startswith (end, "//")) {
 				r_strbuf_append (out, " ");
 			}
@@ -3023,41 +3045,55 @@ static char *inline_line(const char *line, const char *prefix, const char *retre
 	return r_strbuf_drain (out);
 }
 
-static RList *inline_call_args(const char *line) {
+// number of non-empty top level arguments of the rendered call, -1 if unparseable
+static int inline_call_argc(const char *line) {
 	const char *begin = strchr (line, '(') + 1;
 	const char *end = call_args_end (begin);
 	if (!end) {
-		return NULL;
+		return -1;
 	}
-	RList *args = r_list_newf (free);
-	const char *p;
+	int argc = 0;
 	int depth = 0;
+	bool empty = true;
+	const char *p;
 	for (p = begin; p <= end; p++) {
 		if (p < end && starts_quoted (begin, p)) {
 			p = pdc_skip_quoted (p) - 1;
+			empty = false;
 			continue;
 		}
-		if (p < end && strchr ("([{", *p)) {
+		if (p == end || (*p == ',' && !depth)) {
+			argc += !empty;
+			empty = true;
+			continue;
+		}
+		if (strchr ("([{", *p)) {
 			depth++;
-		} else if (p < end && strchr (")]}", *p)) {
+		} else if (strchr (")]}", *p)) {
 			depth--;
 		}
-		if (p == end || (*p == ',' && !depth)) {
-			char *arg = r_str_ndup (begin, p - begin);
-			if (!arg) {
-				r_list_free (args);
-				return NULL;
-			}
-			r_str_trim (arg);
-			if (*arg) {
-				r_list_append (args, arg);
-			} else {
-				free (arg);
-			}
-			begin = p + 1;
+		if (!IS_WHITECHAR (*p)) {
+			empty = false;
 		}
 	}
-	return args;
+	return argc;
+}
+
+// the body of a callee output line, skipping the xref comments of the callee
+static const char *inline_body(RCore *core, const char *row, ut64 *at) {
+	row = r_str_trim_head_ro (row);
+	if (!pdc_line_body (core, row, at)) {
+		return NULL;
+	}
+	const char *body = strchr (row, '|') + 1;
+	if (*body == ' ') {
+		body++;
+	}
+	const char *text = r_str_trim_head_ro (body);
+	if (r_str_startswith (text, "//") && strstr (text, "XREF")) {
+		return NULL;
+	}
+	return body;
 }
 
 static bool emit_inline_call(PDCState *state, ut64 addr, int indent, const char *line) {
@@ -3084,28 +3120,21 @@ static bool emit_inline_call(PDCState *state, ut64 addr, int indent, const char 
 	if (root->inline_count >= PDC_INLINE_MAX_CALLS) {
 		return false;
 	}
-	RList *args = inline_call_args (line);
-	if (!args) {
+	const int argc = inline_call_argc (line);
+	if (argc < 0) {
 		return false;
 	}
 	const char *cc = r_anal_function_cc (callee);
-	RListIter *iter;
-	const char *arg;
-	const int argc = r_list_length (args);
-	int index = 0;
-	r_list_foreach (args, iter, arg) {
+	int index;
+	// stack arguments would be off by the return address once the call is gone
+	for (index = 0; index < argc; index++) {
 		RAnalCCArgSlot slot;
-		if (!cc || !r_anal_cc_argslot (core->anal, cc, index++, argc, false, &slot) || !slot.reg) {
-			r_list_free (args);
+		if (!cc || !r_anal_cc_argslot (core->anal, cc, index, argc, false, &slot) || !slot.reg) {
 			return false;
 		}
 	}
 	char *prefix = r_str_newf ("%s_0x%08" PFMT64x,
 		state->inline_prefix? state->inline_prefix: "inline", addr);
-	if (!prefix) {
-		r_list_free (args);
-		return false;
-	}
 	root->inline_count++;
 	const ut64 saved_addr = core->addr;
 	r_core_seek (core, callee->addr, true);
@@ -3113,52 +3142,46 @@ static bool emit_inline_call(PDCState *state, ut64 addr, int indent, const char 
 	bool ok = pdc_decompile_function (core, "o", state, prefix, &code);
 	r_core_seek (core, saved_addr, true);
 	if (!ok || R_STR_ISEMPTY (code)) {
-		r_list_free (args);
 		free (prefix);
 		free (code);
 		return false;
 	}
 	RList *lines = r_str_split_list (code, "\n", 0);
 	if (!lines) {
-		r_list_free (args);
 		free (prefix);
 		free (code);
 		return false;
 	}
 	print_insn_line (state, addr, indent, "{ // inline %s", callee->name);
-	// Capture arguments before register assignments can overwrite another argument.
-	index = 0;
-	r_list_foreach (args, iter, arg) {
-		print_line (state, addr, indent + 1, "auto %s_arg%d = %s;", prefix, index++, arg);
-	}
-	index = 0;
-	r_list_foreach (args, iter, arg) {
-		RAnalCCArgSlot slot;
-		r_anal_cc_argslot (core->anal, cc, index, argc, false, &slot);
-		print_line (state, addr, indent + 1, "%s = %s_arg%d;", slot.reg, prefix, index++);
-	}
+	// the caller already loaded the argument registers before the call
 	const char *retreg = cc? r_anal_cc_ret (core->anal, cc, 0): NULL;
 	retreg = retreg? pseudo_arg_name (core->anal, retreg): state->r0;
 	const int call_indent = indent + tc_depth (state, addr);
+	RListIter *iter, *last = NULL;
 	const char *row;
+	ut64 at;
 	r_list_foreach (lines, iter, row) {
-		row = r_str_trim_head_ro (row);
-		ut64 at;
-		if (!pdc_line_body (core, row, &at)) {
+		if (inline_body (core, row, &at)) {
+			last = iter;
+		}
+	}
+	bool jumps = false;
+	r_list_foreach (lines, iter, row) {
+		const char *body = inline_body (core, row, &at);
+		if (!body) {
 			continue;
 		}
-		const char *body = strchr (row, '|') + 1;
-		if (*body == ' ') {
-			body++;
+		char *rendered = inline_line (core->anal->reg, body, prefix, retreg, iter == last, &jumps);
+		if (R_STR_ISNOTEMPTY (r_str_trim_head_ro (rendered))) {
+			print_insn_line (state, at, call_indent - tc_depth (state, at), "%s", rendered);
 		}
-		char *rendered = inline_line (body, prefix, retreg);
-		print_insn_line (state, at, call_indent - tc_depth (state, at), "%s", rendered);
 		free (rendered);
 	}
-	print_line (state, addr, indent + 1, "%s_end:;", prefix);
+	if (jumps) {
+		print_line (state, addr, indent + 1, "%s_end:;", prefix);
+	}
 	print_line (state, addr, indent, "}");
 	state->last_addr = addr;
-	r_list_free (args);
 	r_list_free (lines);
 	free (prefix);
 	free (code);
