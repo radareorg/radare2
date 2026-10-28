@@ -4161,6 +4161,35 @@ static int op_reg_mem_either(int bits, ut8 *data, const Opcode *op, ut8 op8) {
 	return 0;
 }
 
+// test r/m, imm in 32 or 64-bit mode: f6 /0 ib, f7 /0 iw/id
+static int optest_imm(int bits, ut8 *data, const Opcode *op) {
+	const Operand *rm = &op->operands[0];
+	ut32 size = rm->type & ALL_SIZE;
+	if ((rm->type & OT_MEMORY) && rm->dest_size) {
+		size = rm->dest_size & ALL_SIZE;
+	}
+	// byte, word and dword immediates are truncated, like mov
+	const st64 imm = (st64)op->operands[1].immediate * op->operands[1].sign;
+	if (op->operands_count != 2 || (size == OT_DWORD && (imm < -(st64)UT32_MAX || imm > UT32_MAX))
+			|| (size == OT_QWORD && (imm < ST32_MIN || imm > ST32_MAX))) {
+		return -1;
+	}
+	int l = op_rm_ext (bits, data, rm, 0, 0xf6, 0xf7);
+	if (l < 0) {
+		return -1;
+	}
+	if (size == OT_BYTE) {
+		data[l++] = (ut8)imm;
+	} else if (size == OT_WORD) {
+		r_write_le16 (data + l, (ut16)imm);
+		l += 2;
+	} else {
+		r_write_le32 (data + l, (ut32)imm);
+		l += 4;
+	}
+	return l;
+}
+
 static int optest(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
@@ -4171,6 +4200,12 @@ static int optest(RArchSession *a, ut8 *data, const Opcode *op) {
 	l = op_reg_mem_either (a->config->bits, data, op, 0x84);
 	if (l) {
 		return l;
+	}
+	const int bits = a->config->bits;
+	const Operand *dst = &op->operands[0];
+	if ((op->operands[1].type & OT_CONSTANT) && (bits == 64 || (bits == 32 && (!(dst->type & OT_MEMORY)
+			|| use_op_reg_mem (bits, dst) || dst->regs[0] == X86R_UNDEFINED)))) {
+		return optest_imm (bits, data, op);
 	}
 	if (a->config->bits == 64) {
 		if (op->operands[0].type & OT_MEMORY &&

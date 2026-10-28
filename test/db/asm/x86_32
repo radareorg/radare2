@@ -378,6 +378,7 @@ d "test byte [eax], 0" f60000
 d "test byte [eax], 0" f60800
 d "test byte [eax], al" 8400
 d "test dword [eax], 0" f70000000000
+a "test dword [eax+8], 1" f7400801000000
 d "test dword [eax], 0" f70000000000
 d "test dword [eax], 0" f70800000000
 d "test dword [eax], eax" 8500
