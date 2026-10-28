@@ -687,7 +687,8 @@ const struct v850_operand v850_operands[] = {
 	/* IMM10U */ { 0, 0, insert_IMM10U, extract_IMM10U, 0, BFD_RELOC_NONE },
 };
 
-
+
+
 /* Reg - Reg instruction format (Format I).  */
 #define IF1	{R1, R2}
 
@@ -706,7 +707,8 @@ const struct v850_operand v850_operands[] = {
 /* Conditional branch instruction format (Format VII).  */
 #define IF7	{D17_16}
 
-
+
+
 // this array can be used for the assembler, not just the disassembler
 // flag registers are: s, z, ov and cy (for sign, zero, overflow and carry
 
@@ -715,7 +717,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "add", OP (0x0e), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_ADD, "#0,#1,+=,31,$c,cy,:=,31,$o,ov,:=,31,$s,s,:=,$z,z,:=" },
 	{ "add", OP (0x12), OP_MASK, IF2, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_ADD, "#0,#1,+=,31,$c,cy,:=,31,$o,ov,:=,31,$s,s,:=,$z,z,:=" },
 	{ "addi", OP (0x30), OP_MASK, IF6, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_ADD, "#0,0xffffffff,&,#1,+,DUP,32,SWAP,>>,1,&,cy,:=,DUP,#1,^,#0,#1,^,0xffffffff,^,&,0x80000000,&,!,!,ov,:=,DUP,31,SWAP,>>,1,&,s,:=,DUP,0xffffffff,&,!,z,:=,#2,:=" },
-	{ "adf", two (0x07e0, 0x03a0), two (0x07e0, 0x07e1), {CCCC_NOTSA, R1, R2, R3}, 0, V850_CPU_E2_UP },
+	{ "adf", two (0x07e0, 0x03a0), two (0x07e0, 0x07e1), {CCCC_NOTSA, R1, R2, R3}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_ADD, "CONDITIONAL" },
 	{ "and", OP (0x0a), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_AND, "#0,#1,&=,0,ov,:=,$z,z,:=,31,$s,s,:=" },
 	{ "andi", OP (0x36), OP_MASK, IF6U, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_AND, "#0,#1,&,#2,=,$z,z,:=,0,s,:=,0,ov,:=" },
 	/* Signed integer. */
@@ -810,9 +812,9 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "binsm",two (0x07e0, 0x00b0), two (0x07e0, 0x07f1), {R1, POS_M, WIDTH_M, R2}, 0, V850_CPU_E3V5_UP | V850_CPU_OPTION_ALIAS },
 	{ "binsl",two (0x07e0, 0x00d0), two (0x07e0, 0x07f1), {R1, POS_L, WIDTH_L, R2}, 0, V850_CPU_E3V5_UP | V850_CPU_OPTION_ALIAS },
 	{ "cache", two (0xe7e0, 0x0160), two (0xe7e0, 0x07ff), {CACHEOP, R1}, 2, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_NOP },
-	{ "callt", one (0x0200), one (0xffc0), {IMM6}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_UCALL, "pc,ctpc,:=,psw,ctpsw,:=,1,#0,<<,ctbp,+,[2],ctbp,+,#P,&,pc,:=" },
-	{ "caxi", two (0x07e0, 0x00ee), two (0x07e0, 0x07ff), {R1, R2, R3}, 1, V850_CPU_E2_UP, R_ANAL_OP_TYPE_MOV },
-	{ "clr1", two (0x87c0, 0x0000), two (0xc7e0, 0x0000), {B3, D16, R1}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_AND, "#2,#1,+,[1],DUP,#0,1,<<,&,!,z,:=,#0,1,<<,0xff,^,&,#2,#1,+,=[1]" },
+	{ "callt", one (0x0200), one (0xffc0), {IMM6}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_UCALL, "pc,#P,&,ctpc,:=,psw,ctpsw,:=,1,#0,<<,ctbp,+,0xffffffff,&,[2],ctbp,+,#P,&,pc,:=" },
+	{ "caxi", two (0x07e0, 0x00ee), two (0x07e0, 0x07ff), {R1, R2, R3}, 1, V850_CPU_E2_UP, R_ANAL_OP_TYPE_MOV, "#0,0xfffffffc,&,[4],DUP,#1,==,$z,z,:=,31,$s,s,:=,32,$b,cy,:=,31,$o,ov,:=,z,?{,#2,}{,DUP,},#0,0xfffffffc,&,=[4],#2,:=" },
+	{ "clr1", two (0x87c0, 0x0000), two (0xc7e0, 0x0000), {B3, D16, R1}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_AND, "#2,#1,+,0xffffffff,&,[1],DUP,#0,1,<<,&,!,z,:=,#0,1,<<,0xff,^,&,#2,#1,+,0xffffffff,&,=[1]" },
 	{ "clr1", two (0x07e0, 0x00e4), two (0x07e0, 0xffff), {R2, R1}, 3, V850_CPU_NON0, R_ANAL_OP_TYPE_AND, "#1,[1],DUP,7,#0,&,1,<<,&,!,z,:=,7,#0,&,1,<<,0xff,^,&,#1,=[1]" },
 	{ "cmov", two (0x07e0, 0x0320), two (0x07e0, 0x07e1), {MOVCC, R1, R2, R3}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV, "#0,?{,#1,}{,#2,},#3,:=" },
 	{ "cmov", two (0x07e0, 0x0300), two (0x07e0, 0x07e1), {MOVCC, I5, R2, R3}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV, "#0,?{,#1,}{,#2,},#3,:=" },
@@ -824,7 +826,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "dbpush", two (0x5fe0, 0x0160), two (0xffe0, 0x07ff), {R1, R3}, 0, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_PUSH },
 	{ "dbret", two (0x07e0, 0x0146), two (0xffff, 0xffff), {0}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_RET, "dbpc,#P,&,pc,:=,dbpsw,psw,:=,0xfffffffe,dir,&=", R_ANAL_OP_FAMILY_PRIV },
 	{ "dbtag", two (0xcfe0, 0x0160), two (0xffe0, 0x07ff), {IMM10U}, 0, V850_CPU_E3V5_UP },
-	{ "dbtrap", one (0xf840), one (0xffff), {0}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_SWI, "pc,dbpc,:=,psw,dbpsw,:=,0xe0,psw,|=,1,dir,|=,0x60,pc,:=", R_ANAL_OP_FAMILY_PRIV },
+	{ "dbtrap", one (0xf840), one (0xffff), {0}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_SWI, "pc,#P,&,dbpc,:=,psw,dbpsw,:=,0xe0,psw,|=,1,dir,|=,0x60,pc,:=", R_ANAL_OP_FAMILY_PRIV },
 	{ "di", two (0x07e0, 0x0160), two (0xffff, 0xffff), {0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_MOV, "1,id,:=", R_ANAL_OP_FAMILY_PRIV },
 	{ "dispose", two (0x0640, 0x0000), two (0xffc0, 0x001f), {IMM5, LIST12}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_POP, "DISPOSE,#1" },
 	{ "dispose", two (0x0640, 0x0000), two (0xffc0, 0x0000), {IMM5, LIST12, R2_DISPOSE}, 3, V850_CPU_NON0, R_ANAL_OP_TYPE_POP, "DISPOSE,#1,#2" },
@@ -848,16 +850,16 @@ const struct v850_opcode v850_opcodes[] = {
 
 	{ "est", two (0x07e0, 0x0132), two (0xfffff, 0xffff), {0}, 0, V850_CPU_E3V5_UP },
 	{ "feret", two (0x07e0, 0x014a), two (0xffff, 0xffff), {0}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_RET, "fepc,#P,&,pc,:=,fepsw,psw,:=", R_ANAL_OP_FAMILY_PRIV },
-	{ "fetrap", one (0x0040), one (0x87ff), {I4U_NOTIMM0}, 0, V850_CPU_E2_UP },
+	{ "fetrap", one (0x0040), one (0x87ff), {I4U_NOTIMM0}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_SWI, "pc,#P,&,fepc,:=,psw,fepsw,:=,0x30,#0,+,DUP,feic,:=,16,SWAP,<<,0xffff,ecr,&,|,ecr,:=,0xe0,psw,|=,0x30,pc,:=", R_ANAL_OP_FAMILY_PRIV },
 	{ "halt", two (0x07e0, 0x0120), two (0xffff, 0xffff), {0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_TRAP },
-	{ "hsh", two (0x07e0, 0x0346), two (0x07ff, 0x07ff), {R2, R3}, 0, V850_CPU_E2_UP },
+	{ "hsh", two (0x07e0, 0x0346), two (0x07ff, 0x07ff), {R2, R3}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_MOV, "#0,DUP,0xffff,&,!,DUP,cy,:=,z,:=,DUP,31,SWAP,>>,1,&,s,:=,0,ov,:=,#1,:=" },
 	{ "hsw", two (0x07e0, 0x0344), two (0x07ff, 0x07ff), {R2, R3}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV, "16,#0,<<,0xffff0000,&,16,#0,>>,0xffff,&,|,#0,0xffff,&,!,#0,0xffff0000,&,!,|,cy,:=,DUP,!,z,:=,DUP,31,SWAP,>>,1,&,s,:=,0,ov,:=,#1,:=" },
 	{ "hvcall", two (0xd7e0, 0x4160), two (0xffe0, 0x41ff), {VECTOR8}, 0, V850_CPU_E3V5_UP },
 	{ "hvtrap", two (0x07e0, 0x0110), two (0xffe0, 0xffff), {VECTOR5}, 0, V850_CPU_E3V5_UP },
 
-	{ "jarl", two (0xc7e0, 0x0160), two (0xffe0, 0x07ff), {R1, R3_NOTR0}, 1, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_RCALL, "PC,#1,=,#0,PC,=" },
-	{ "jarl", two (0x0780, 0x0000), two (0x07c0, 0x0001), {D22, R2_NOTR0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CALL, "PC,#1,=,#0,PC,=" },
-	{ "jarl", one (0x02e0), one (0xffe0), {D32_31_PCREL, R1_NOTR0}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_CALL, "PC,lp,=,#0,PC,=" },
+	{ "jarl", two (0xc7e0, 0x0160), two (0xffe0, 0x07ff), {R1, R3_NOTR0}, 1, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_RCALL, "#0,#P,&,PC,#1,:=,PC,:=" },
+	{ "jarl", two (0x0780, 0x0000), two (0x07c0, 0x0001), {D22, R2_NOTR0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CALL, "PC,#P,&,#1,:=,#0,PC,:=" },
+	{ "jarl", one (0x02e0), one (0xffe0), {D32_31_PCREL, R1_NOTR0}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_CALL, "PC,#P,&,#1,:=,#0,PC,:=" },
 	/* Gas local alias (not defined in spec). */
 	{ "jarlr", two (0xc7e0, 0x0160), two (0xffe0, 0x07ff), {R1, R3_NOTR0}, 1, V850_CPU_E3V5_UP | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_RCALL},
 	/* Gas local alias of jarl imm22 (not defined in spec). */
@@ -866,8 +868,8 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "jarl32", one (0x02e0), one (0xffe0), {D32_31_PCREL, R1_NOTR0}, 0, V850_CPU_E2_UP | V850_CPU_OPTION_ALIAS },
 	{ "jarlw", one (0x02e0), one (0xffe0), {D32_31_PCREL, R1_NOTR0}, 0, V850_CPU_E2_UP | V850_CPU_OPTION_ALIAS },
 
-	{ "jmp", two (0x06e0, 0x0000), two (0xffe0, 0x0001), {D32_31, R1}, 2, V850_CPU_E3V5_UP , R_ANAL_OP_TYPE_MJMP, "#1,PC,:=" },
-	{ "jmp", one (0x06e0), one (0xffe0), {D32_31, R1}, 2, V850_CPU_E2 | V850_CPU_E2V3, R_ANAL_OP_TYPE_MJMP, "#1,PC,:=" },
+	{ "jmp", two (0x06e0, 0x0000), two (0xffe0, 0x0001), {D32_31, R1}, 2, V850_CPU_E3V5_UP , R_ANAL_OP_TYPE_MJMP, "#0,#1,+,#P,&,PC,:=" },
+	{ "jmp", one (0x06e0), one (0xffe0), {D32_31, R1}, 2, V850_CPU_E2 | V850_CPU_E2V3, R_ANAL_OP_TYPE_MJMP, "#0,#1,+,#P,&,PC,:=" },
 	{ "jmp", one (0x0060), one (0xffe0), {R1}, 1, V850_CPU_ALL, R_ANAL_OP_TYPE_RJMP, "#P,#0,&,PC,:=" },
 	/* Gas local alias of jmp disp22(not defined in spec). */
 	{ "jmp22", one (0x0060), one (0xffe0), {R1}, 1, V850_CPU_ALL | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_JMP },
@@ -906,22 +908,22 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "jnz", BOP (0xa), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP, "z,!,?{,#0,PC,:=,}" },
 	{ "jbr", BOP (0x5), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_JMP, "#0,PC,:=" },
 	{ "ldacc", two (0x07e0, 0x0bc4), two (0x07e0, 0xffff), {R1, R2}, 0, V850_CPU_E2_UP | V850_CPU_OPTION_EXTENSION, R_ANAL_OP_TYPE_LOAD },
-	{ "ld.b", two (0x0700, 0x0000), two (0x07e0, 0x0000), {D16, R1, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,[1],DUP,0x80,&,!,!,0xffffff00,*,|,#2,:=" },
-	{ "ld.b", two (0x0780, 0x0005), two (0xffe0, 0x000f), {D23, R1, R3}, 2, V850_CPU_E2_UP, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,[1],DUP,0x80,&,!,!,0xffffff00,*,|,#2,:=" },
+	{ "ld.b", two (0x0700, 0x0000), two (0x07e0, 0x0000), {D16, R1, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,0xffffffff,&,[1],DUP,0x80,&,!,!,0xffffff00,*,|,#2,:=" },
+	{ "ld.b", two (0x0780, 0x0005), two (0xffe0, 0x000f), {D23, R1, R3}, 2, V850_CPU_E2_UP, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,0xffffffff,&,[1],DUP,0x80,&,!,!,0xffffff00,*,|,#2,:=" },
 	{ "ld.b23", two (0x0780, 0x0005), two (0x07e0, 0x000f), {D23, R1, R3}, 2, V850_CPU_E2_UP | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_LOAD },
-	{ "ld.bu", two (0x0780, 0x0001), two (0x07c0, 0x0001), {D16_16, R1, R2_NOTR0}, 2, V850_CPU_NON0, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,[1],#2,:=" },
-	{ "ld.bu", two (0x07a0, 0x0005), two (0xffe0, 0x000f), {D23, R1, R3}, 2, V850_CPU_E2_UP, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,[1],#2,:=" },
+	{ "ld.bu", two (0x0780, 0x0001), two (0x07c0, 0x0001), {D16_16, R1, R2_NOTR0}, 2, V850_CPU_NON0, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,0xffffffff,&,[1],#2,:=" },
+	{ "ld.bu", two (0x07a0, 0x0005), two (0xffe0, 0x000f), {D23, R1, R3}, 2, V850_CPU_E2_UP, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,0xffffffff,&,[1],#2,:=" },
 	{ "ld.bu23", two (0x07a0, 0x0005), two (0x07e0, 0x000f), {D23, R1, R3}, 2, V850_CPU_E2_UP | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_LOAD },
 	{ "ld.dw", two (0x07a0, 0x0009), two (0xffe0, 0x001f), {D23_ALIGN1, R1, R3_EVEN}, 2, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_LOAD },
 	{ "ld.dw23", two (0x07a0, 0x0009), two (0xffe0, 0x001f), {D23_ALIGN1, R1, R3_EVEN}, 2, V850_CPU_E3V5_UP | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_LOAD },
-	{ "ld.h", two (0x0720, 0x0000), two (0x07e0, 0x0001), {D16_15, R1, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,[2],DUP,0x8000,&,!,!,0xffff0000,*,|,#2,:=" },
-	{ "ld.h", two (0x0780, 0x0007), two (0x07e0, 0x000f), {D23_ALIGN1, R1, R3}, 2, V850_CPU_E2_UP, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,[2],DUP,0x8000,&,!,!,0xffff0000,*,|,#2,:=" },
+	{ "ld.h", two (0x0720, 0x0000), two (0x07e0, 0x0001), {D16_15, R1, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,0xffffffff,&,[2],DUP,0x8000,&,!,!,0xffff0000,*,|,#2,:=" },
+	{ "ld.h", two (0x0780, 0x0007), two (0x07e0, 0x000f), {D23_ALIGN1, R1, R3}, 2, V850_CPU_E2_UP, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,0xffffffff,&,[2],DUP,0x8000,&,!,!,0xffff0000,*,|,#2,:=" },
 	{ "ld.h23", two (0x0780, 0x0007), two (0x07e0, 0x000f), {D23_ALIGN1, R1, R3}, 2, V850_CPU_E2_UP | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_LOAD },
-	{ "ld.hu", two (0x07e0, 0x0001), two (0x07e0, 0x0001), {D16_15, R1, R2_NOTR0}, 2, V850_CPU_NON0, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,[2],#2,:=" },
-	{ "ld.hu", two (0x07a0, 0x0007), two (0x07e0, 0x000f), {D23_ALIGN1, R1, R3}, 2, V850_CPU_E2_UP, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,[2],#2,:=" },
+	{ "ld.hu", two (0x07e0, 0x0001), two (0x07e0, 0x0001), {D16_15, R1, R2_NOTR0}, 2, V850_CPU_NON0, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,0xffffffff,&,[2],#2,:=" },
+	{ "ld.hu", two (0x07a0, 0x0007), two (0x07e0, 0x000f), {D23_ALIGN1, R1, R3}, 2, V850_CPU_E2_UP, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,0xffffffff,&,[2],#2,:=" },
 	{ "ld.hu23", two (0x07a0, 0x0007), two (0x07e0, 0x000f), {D23_ALIGN1, R1, R3}, 2, V850_CPU_E2_UP | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_LOAD },
-	{ "ld.w", two (0x0720, 0x0001), two (0x07e0, 0x0001), {D16_15, R1, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,[4],#2,:=" },
-	{ "ld.w", two (0x0780, 0x0009), two (0xffe0, 0x001f), {D23_ALIGN1, R1, R3}, 2, V850_CPU_E2_UP, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,[4],#2,:=" },
+	{ "ld.w", two (0x0720, 0x0001), two (0x07e0, 0x0001), {D16_15, R1, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,0xffffffff,&,[4],#2,:=" },
+	{ "ld.w", two (0x0780, 0x0009), two (0xffe0, 0x001f), {D23_ALIGN1, R1, R3}, 2, V850_CPU_E2_UP, R_ANAL_OP_TYPE_LOAD, "#0,#1,+,0xffffffff,&,[4],#2,:=" },
 	{ "ld.w23", two (0x0780, 0x0009), two (0x07e0, 0x001f), {D23_ALIGN1, R1, R3}, 2, V850_CPU_E2_UP | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_LOAD },
 	{ "ldl.w", two (0x07e0, 0x0378), two (0xffe0, 0x07ff), {R1, R3}, 1, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_LOAD },
 	/// XXX load status word is always zero
@@ -937,8 +939,8 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "ldvc.sr", two (0x07e0, 0x0034), two (0x07e0, 0x07ff), {R1, SR2}, 0, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_LOAD },
 	{ "loop", two (0x06e0, 0x0001), two (0xffe0, 0x0001), {R1, D16_LOOP}, 0, V850_CPU_E3V5_UP },
 	{ "macacc", two (0x07e0, 0x0bc0), two (0x07e0, 0xffff), {R1, R2}, 0, V850_CPU_E2_UP | V850_CPU_OPTION_EXTENSION },
-	{ "mac", two (0x07e0, 0x03c0), two (0x07e0, 0x0fe1), {R1, R2, R3_EVEN, R4_EVEN}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_MUL },
-	{ "macu", two (0x07e0, 0x03e0), two (0x07e0, 0x0fe1), {R1, R2, R3_EVEN, R4_EVEN}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_MUL },
+	{ "mac", two (0x07e0, 0x03c0), two (0x07e0, 0x0fe1), {R1, R2, R3_EVEN, R4_EVEN}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_MUL, "MAC" },
+	{ "macu", two (0x07e0, 0x03e0), two (0x07e0, 0x0fe1), {R1, R2, R3_EVEN, R4_EVEN}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_MUL, "MAC" },
 	{ "macuacc", two (0x07e0, 0x0bc2), two (0x07e0, 0xffff), {R1, R2}, 0, V850_CPU_E2_UP | V850_CPU_OPTION_EXTENSION, R_ANAL_OP_TYPE_MUL },
 	{ "mov", OP (0x00), OP_MASK, {R1, R2_NOTR0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_MOV, "#0,#1,=" }, // TODO: mov 0xff, r2, r1
 	{ "mov", OP (0x10), OP_MASK, {I5, R2_NOTR0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_MOV, "#0,#1,=" },
@@ -956,10 +958,10 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "mulu", two (0x07e0, 0x0242), two (0x07e0, 0x07c3), {U9, R2, R3}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MUL, "#0,#1,*,DUP,#1,:=,32,SWAP,>>,#2,:=" },
 	{ "nop", one (0x00), one (0xffff), {0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_NOP, "," },
 	{ "not", OP (0x01), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_NOT, "#0,0xffffffff,^,#1,=,31,$s,s,:=,$z,z,:=,0,ov,:=" },
-	{ "not1", two (0x47c0, 0x0000), two (0xc7e0, 0x0000), {B3, D16, R1}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_XOR, "#2,#1,+,[1],DUP,#0,1,<<,&,!,z,:=,#0,1,<<,^,#2,#1,+,=[1]" },
+	{ "not1", two (0x47c0, 0x0000), two (0xc7e0, 0x0000), {B3, D16, R1}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_XOR, "#2,#1,+,0xffffffff,&,[1],DUP,#0,1,<<,&,!,z,:=,#0,1,<<,^,#2,#1,+,0xffffffff,&,=[1]" },
 	{ "not1", two (0x07e0, 0x00e2), two (0x07e0, 0xffff), {R2, R1}, 3, V850_CPU_NON0, R_ANAL_OP_TYPE_XOR, "#1,[1],DUP,7,#0,&,1,<<,&,!,z,:=,7,#0,&,1,<<,^,#1,=[1]" },
 	{ "or", OP (0x08), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_OR, "#0,#1,|=,0,ov,:=,31,$s,s,:=,$z,z,:=" },
-	{ "ori", OP (0x34), OP_MASK, IF6U, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_OR, "#1,#2,:=,#0,#2,|=,0,ov,:=,31,$s,s,:=,$z,z,:=" },
+	{ "ori", OP (0x34), OP_MASK, IF6U, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_OR, "#0,#1,|,DUP,!,z,:=,DUP,31,SWAP,>>,1,&,s,:=,0,ov,:=,#2,:=" },
 	{ "popsp", two (0x67e0, 0x0160), two (0xffe0, 0x07ff), {R1, R3}, 0, V850_CPU_E3V5_UP , R_ANAL_OP_TYPE_POP },
 	{ "pref", two (0xdfe0, 0x0160), two (0xffe0, 0x07ff), {PREFOP, R1}, 2, V850_CPU_E3V5_UP },
 	{ "prepare", two (0x0780, 0x0003), two (0xffc0, 0x001f), {LIST12, IMM5, SP}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_PUSH, "PREPARE,#0" }, // #0 contains the comma separated list of registers, #1 the im5 and #2 the sp
@@ -988,21 +990,21 @@ const struct v850_opcode v850_opcodes[] = {
 
 	{ "satsubr", OP (0x04), OP_MASK, {R1, R2_NOTR0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SUB, "SATURATE" },
 
-	{ "sbf", two (0x07e0, 0x0380), two (0x07e0, 0x07e1), {CCCC_NOTSA, R1, R2, R3}, 0, V850_CPU_E2_UP },
+	{ "sbf", two (0x07e0, 0x0380), two (0x07e0, 0x07e1), {CCCC_NOTSA, R1, R2, R3}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_SUB, "CONDITIONAL" },
 
-	{ "sch0l", two (0x07e0, 0x0364), two (0x07ff, 0x07ff), {R2, R3}, 0, V850_CPU_E2_UP },
+	{ "sch0l", two (0x07e0, 0x0364), two (0x07ff, 0x07ff), {R2, R3}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_MOV, "0xffffffff,#0,^,DUP,?{,32,SWAP,CLZ,1,+,}{,POP,0,},DUP,!,z,:=,DUP,!,!,cy,:=,0,s,:=,0,ov,:=,#1,:=" },
 
-	{ "sch0r", two (0x07e0, 0x0360), two (0x07ff, 0x07ff), {R2, R3}, 0, V850_CPU_E2_UP },
+	{ "sch0r", two (0x07e0, 0x0360), two (0x07ff, 0x07ff), {R2, R3}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_MOV, "0xffffffff,#0,^,DUP,?{,DUP,0,SWAP,-,&,32,SWAP,CLZ,32,-,}{,POP,0,},DUP,!,z,:=,DUP,!,!,cy,:=,0,s,:=,0,ov,:=,#1,:=" },
 
-	{ "sch1l", two (0x07e0, 0x0366), two (0x07ff, 0x07ff), {R2, R3}, 0, V850_CPU_E2_UP },
+	{ "sch1l", two (0x07e0, 0x0366), two (0x07ff, 0x07ff), {R2, R3}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_MOV, "#0,DUP,?{,32,SWAP,CLZ,1,+,}{,POP,0,},DUP,!,z,:=,DUP,!,!,cy,:=,0,s,:=,0,ov,:=,#1,:=" },
 
-	{ "sch1r", two (0x07e0, 0x0362), two (0x07ff, 0x07ff), {R2, R3}, 0, V850_CPU_E2_UP },
+	{ "sch1r", two (0x07e0, 0x0362), two (0x07ff, 0x07ff), {R2, R3}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_MOV, "#0,DUP,?{,DUP,0,SWAP,-,&,32,SWAP,CLZ,32,-,}{,POP,0,},DUP,!,z,:=,DUP,!,!,cy,:=,0,s,:=,0,ov,:=,#1,:=" },
 
 	{ "sdivhn", two (0x07e0, 0x0180), two (0x07e0, 0x07c3), {I5DIV3, R1, R2, R3}, 0, V850_CPU_NON0 | V850_CPU_OPTION_EXTENSION },
 	{ "sdivhun", two (0x07e0, 0x0182), two (0x07e0, 0x07c3), {I5DIV3, R1, R2, R3}, 0, V850_CPU_NON0 | V850_CPU_OPTION_EXTENSION },
 	{ "sdivn", two (0x07e0, 0x01c0), two (0x07e0, 0x07c3), {I5DIV3, R1, R2, R3}, 0, V850_CPU_NON0 | V850_CPU_OPTION_EXTENSION },
 	{ "sdivun", two (0x07e0, 0x01c2), two (0x07e0, 0x07c3), {I5DIV3, R1, R2, R3}, 0, V850_CPU_NON0 | V850_CPU_OPTION_EXTENSION },
-	{ "set1", two (0x07c0, 0x0000), two (0xc7e0, 0x0000), {B3, D16, R1}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_OR, "#2,#1,+,[1],DUP,#0,1,<<,&,!,z,:=,#0,1,<<,|,#2,#1,+,=[1]" },
+	{ "set1", two (0x07c0, 0x0000), two (0xc7e0, 0x0000), {B3, D16, R1}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_OR, "#2,#1,+,0xffffffff,&,[1],DUP,#0,1,<<,&,!,z,:=,#0,1,<<,|,#2,#1,+,0xffffffff,&,=[1]" },
 	{ "set1", two (0x07e0, 0x00e0), two (0x07e0, 0xffff), {R2, R1}, 3, V850_CPU_NON0, R_ANAL_OP_TYPE_OR, "#1,[1],DUP,7,#0,&,1,<<,&,!,z,:=,7,#0,&,1,<<,|,#1,=[1]" },
 	{ "setf", two (0x07e0, 0x0000), two (0x07f0, 0xffff), {CCCC, R2}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_MOV, "#0,#1,:=" },
 	{ "shl", two (0x07e0, 0x00c2), two (0x07e0, 0x07ff), {R1, R2, R3}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_SHL, "31,#0,&,DUP,?{,POP,31,#0,&,32,-,#1,>>,1,&,cy,:=,}{,POP,0,cy,:=,},31,#0,&,#1,<<,#2,=,31,$s,s,:=,$z,z,:=,0,ov,:=" },
@@ -1012,28 +1014,28 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "shr", OP (0x14), OP_MASK, {I5U, R2}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SHR, "#0,DUP,?{,POP,#0,1,SWAP,-,#1,>>,1,&,cy,:=,}{,POP,0,cy,:=,},#0,#1,>>,#1,=,31,$s,s,:=,$z,z,:=,0,ov,:=" },
 	{ "shr", two (0x07e0, 0x0080), two (0x07e0, 0xffff), {R1, R2}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SHR, "31,#0,&,DUP,?{,POP,31,#0,&,1,SWAP,-,#1,>>,1,&,cy,:=,}{,POP,0,cy,:=,},31,#0,&,#1,>>,#1,=,31,$s,s,:=,$z,z,:=,0,ov,:=" },
 
-	{ "sld.b", one (0x0300), one (0x0780), {D7U, EP, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD, "#0,ep,+,[1],DUP,0x80,&,!,!,0xffffff00,*,|,#2,:=" },
-	{ "sld.bu", one (0x0060), one (0x07f0), {D4U, EP, R2_NOTR0}, 2, V850_CPU_NON0, R_ANAL_OP_TYPE_LOAD, "#0,ep,+,[1],#2,:=" },
-	{ "sld.h", one (0x0400), one (0x0780), {D8_7U, EP, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD, "#0,ep,+,[2],DUP,0x8000,&,!,!,0xffff0000,*,|,#2,:=" },
-	{ "sld.hu", one (0x0070), one (0x07f0), {D5_4U, EP, R2_NOTR0}, 2, V850_CPU_NON0, R_ANAL_OP_TYPE_LOAD, "#0,ep,+,[2],#2,:=" },
-	{ "sld.w", one (0x0500), one (0x0781), {D8_6U, EP, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD, "#0,ep,+,[4],#2,:=" },
+	{ "sld.b", one (0x0300), one (0x0780), {D7U, EP, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD, "#0,ep,+,0xffffffff,&,[1],DUP,0x80,&,!,!,0xffffff00,*,|,#2,:=" },
+	{ "sld.bu", one (0x0060), one (0x07f0), {D4U, EP, R2_NOTR0}, 2, V850_CPU_NON0, R_ANAL_OP_TYPE_LOAD, "#0,ep,+,0xffffffff,&,[1],#2,:=" },
+	{ "sld.h", one (0x0400), one (0x0780), {D8_7U, EP, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD, "#0,ep,+,0xffffffff,&,[2],DUP,0x8000,&,!,!,0xffff0000,*,|,#2,:=" },
+	{ "sld.hu", one (0x0070), one (0x07f0), {D5_4U, EP, R2_NOTR0}, 2, V850_CPU_NON0, R_ANAL_OP_TYPE_LOAD, "#0,ep,+,0xffffffff,&,[2],#2,:=" },
+	{ "sld.w", one (0x0500), one (0x0781), {D8_6U, EP, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD, "#0,ep,+,0xffffffff,&,[4],#2,:=" },
 
 	{ "snooze", two (0x0fe0, 0x0120), two (0xffff, 0xffff), {0}, 0, V850_CPU_E3V5_UP },
-	{ "sst.b", one (0x0380), one (0x0780), {R2, D7U, EP}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_STORE, "#0,#1,ep,+,=[1]" },
-	{ "sst.h", one (0x0480), one (0x0780), {R2, D8_7U, EP}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_STORE, "#0,#1,ep,+,=[2]" },
-	{ "sst.w", one (0x0501), one (0x0781), {R2, D8_6U, EP}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_STORE, "#0,#1,ep,+,=[4]" },
+	{ "sst.b", one (0x0380), one (0x0780), {R2, D7U, EP}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_STORE, "#0,#1,ep,+,0xffffffff,&,=[1]" },
+	{ "sst.h", one (0x0480), one (0x0780), {R2, D8_7U, EP}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_STORE, "#0,#1,ep,+,0xffffffff,&,=[2]" },
+	{ "sst.w", one (0x0501), one (0x0781), {R2, D8_6U, EP}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_STORE, "#0,#1,ep,+,0xffffffff,&,=[4]" },
 	{ "stacch", two (0x07e0, 0x0bca), two (0x07ff, 0xffff), {R2}, 0, V850_CPU_E2_UP | V850_CPU_OPTION_EXTENSION },
 	{ "staccl", two (0x07e0, 0x0bc8), two (0x07ff, 0xffff), {R2}, 0, V850_CPU_E2_UP | V850_CPU_OPTION_EXTENSION },
-	{ "st.b", two (0x0740, 0x0000), two (0x07e0, 0x0000), {R2, D16, R1}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_STORE, "#0,#1,#2,+,=[1]" },
-	{ "st.b", two (0x0780, 0x000d), two (0x07e0, 0x000f), {R3, D23, R1}, 3, V850_CPU_E2_UP, R_ANAL_OP_TYPE_STORE, "#0,#1,#2,+,=[1]" },
+	{ "st.b", two (0x0740, 0x0000), two (0x07e0, 0x0000), {R2, D16, R1}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_STORE, "#0,#1,#2,+,0xffffffff,&,=[1]" },
+	{ "st.b", two (0x0780, 0x000d), two (0x07e0, 0x000f), {R3, D23, R1}, 3, V850_CPU_E2_UP, R_ANAL_OP_TYPE_STORE, "#0,#1,#2,+,0xffffffff,&,=[1]" },
 	{ "st.b23", two (0x0780, 0x000d), two (0x07e0, 0x000f), {R3, D23, R1}, 3, V850_CPU_E2_UP | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_STORE },
 	{ "st.dw", two (0x07a0, 0x000f), two (0xffe0, 0x001f), {R3_EVEN, D23_ALIGN1, R1}, 3, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_STORE },
 	{ "st.dw23", two (0x07a0, 0x000f), two (0xffe0, 0x001f), {R3_EVEN, D23_ALIGN1, R1}, 3, V850_CPU_E3V5_UP | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_STORE },
-	{ "st.h", two (0x0760, 0x0000), two (0x07e0, 0x0001), {R2, D16_15, R1}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_STORE, "#0,#1,#2,+,=[2]" },
-	{ "st.h", two (0x07a0, 0x000d), two (0x07e0, 0x000f), {R3, D23_ALIGN1, R1}, 3, V850_CPU_E2_UP, R_ANAL_OP_TYPE_STORE, "#0,#1,#2,+,=[2]" },
+	{ "st.h", two (0x0760, 0x0000), two (0x07e0, 0x0001), {R2, D16_15, R1}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_STORE, "#0,#1,#2,+,0xffffffff,&,=[2]" },
+	{ "st.h", two (0x07a0, 0x000d), two (0x07e0, 0x000f), {R3, D23_ALIGN1, R1}, 3, V850_CPU_E2_UP, R_ANAL_OP_TYPE_STORE, "#0,#1,#2,+,0xffffffff,&,=[2]" },
 	{ "st.h23", two (0x07a0, 0x000d), two (0x07e0, 0x000f), {R3, D23_ALIGN1, R1}, 3, V850_CPU_E2_UP | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_STORE },
-	{ "st.w", two (0x0760, 0x0001), two (0x07e0, 0x0001), {R2, D16_15, R1}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_STORE, "#0,#1,#2,+,=[4]" },
-	{ "st.w", two (0x0780, 0x000f), two (0x07e0, 0x000f), {R3, D23_ALIGN1, R1}, 3, V850_CPU_E2_UP, R_ANAL_OP_TYPE_STORE, "#0,#1,#2,+,=[4]" },
+	{ "st.w", two (0x0760, 0x0001), two (0x07e0, 0x0001), {R2, D16_15, R1}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_STORE, "#0,#1,#2,+,0xffffffff,&,=[4]" },
+	{ "st.w", two (0x0780, 0x000f), two (0x07e0, 0x000f), {R3, D23_ALIGN1, R1}, 3, V850_CPU_E2_UP, R_ANAL_OP_TYPE_STORE, "#0,#1,#2,+,0xffffffff,&,=[4]" },
 	{ "st.w23", two (0x0780, 0x000f), two (0x07e0, 0x000f), {R3, D23_ALIGN1, R1}, 3, V850_CPU_E2_UP | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_STORE },
 	{ "stc.w", two (0x07e0, 0x037a), two (0xffe0, 0x07ff), {R3, R1}, 2, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_STORE, "#0,#1,=[4]" },
 	{ "stsr", two (0x07e0, 0x0040), two (0x07e0, 0x07ff), {SR1, R2, SELID}, 0, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_MOV, "#0,#1,:=" },
@@ -1048,7 +1050,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "stvc.sr", two (0x07e0, 0x0054), two (0x07e0, 0x07ff), {SR1, R2}, 0, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_STORE },
 	{ "sub", OP (0x0d), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SUB, "#0,#1,-=,32,$b,cy,:=,31,$o,ov,:=,31,$s,s,:=,$z,z,:=" },
 	{ "subr", OP (0x0c), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SUB, "#1,#0,-,DUP,#0,^,#0,#1,^,&,0x80000000,&,!,!,ov,:=,#1,#0,==,32,$b,cy,:=,DUP,31,SWAP,>>,1,&,s,:=,DUP,0xffffffff,&,!,z,:=,#1,:=" },
-	{ "switch", one (0x0040), one (0xffe0), {R1_NOTR0}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_RJMP, "1,#0,<<,pc,+,[2],16,SWAP,~,1,SWAP,<<,pc,+,#P,&,pc,:=" },
+	{ "switch", one (0x0040), one (0xffe0), {R1_NOTR0}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_RJMP, "1,#0,<<,pc,+,0xffffffff,&,[2],16,SWAP,~,1,SWAP,<<,pc,+,#P,&,pc,:=" },
 	{ "sxb", one (0x00a0), one (0xffe0), {R1}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV, "0x80,#0,&,?{,0xffffff00,#0,|,#0,:=,}{,0xff,#0,&,#0,:=,}" },
 	{ "sxh", one (0x00e0), one (0xffe0), {R1}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV, "0x8000,#0,&,?{,0xffff0000,#0,|,#0,:=,}{,0xffff,#0,&,#0,:=,}" },
 	{ "tlbai", two (0x87e0, 0x8960), two (0xffff, 0xffff), {0}, 0, V850_CPU_E3V5_UP },
@@ -1056,12 +1058,12 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "tlbs", two (0x87e0, 0xc160), two (0xffff, 0xffff), {0}, 0, V850_CPU_E3V5_UP },
 	{ "tlbvi", two (0x87e0, 0x8160), two (0xffff, 0xffff), {0}, 0, V850_CPU_E3V5_UP },
 	{ "tlbw", two (0x87e0, 0xe160), two (0xffff, 0xffff), {0}, 0, V850_CPU_E3V5_UP },
-	{ "trap", two (0x07e0, 0x0100), two (0xffe0, 0xffff), {I5U}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SWI, "pc,eipc,:=,psw,eipsw,:=,0xffff0000,ecr,&,0x40,#0,+,|,ecr,:=,0x60,psw,|=,16,#0,<,?{,0x40,pc,:=,}{,0x50,pc,:=,}", R_ANAL_OP_FAMILY_PRIV },
+	{ "trap", two (0x07e0, 0x0100), two (0xffe0, 0xffff), {I5U}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SWI, "pc,#P,&,eipc,:=,psw,eipsw,:=,0xffff0000,ecr,&,0x40,#0,+,|,ecr,:=,0x60,psw,|=,16,#0,<,?{,0x40,pc,:=,}{,0x50,pc,:=,}", R_ANAL_OP_FAMILY_PRIV },
 	{ "tst", OP (0x0b), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CMP, "0,#1,#0,&,==,$z,z,:=,31,$s,s,:=,0,ov,:=" },
-	{ "tst1", two (0xc7c0, 0x0000), two (0xc7e0, 0x0000), {B3, D16, R1}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_CMP, "#2,#1,+,[1],#0,1,<<,&,!,z,:=" },
+	{ "tst1", two (0xc7c0, 0x0000), two (0xc7e0, 0x0000), {B3, D16, R1}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_CMP, "#2,#1,+,0xffffffff,&,[1],#0,1,<<,&,!,z,:=" },
 	{ "tst1", two (0x07e0, 0x00e6), two (0x07e0, 0xffff), {R2, R1}, 3, V850_CPU_NON0, R_ANAL_OP_TYPE_CMP, "#1,[1],7,#0,&,1,<<,&,!,z,:=" },
 	{ "xor", OP (0x09), OP_MASK, IF1, 0, V850_CPU_ALL , R_ANAL_OP_TYPE_XOR, "#0,#1,^=,0,ov,:=,31,$s,s,:=,$z,z,:=" },
-	{ "xori", OP (0x35), OP_MASK, IF6U, 0, V850_CPU_ALL , R_ANAL_OP_TYPE_XOR, "#1,#2,:=,#0,#2,^=,0,ov,:=,31,$s,s,:=,$z,z,:=" },
+	{ "xori", OP (0x35), OP_MASK, IF6U, 0, V850_CPU_ALL , R_ANAL_OP_TYPE_XOR, "#0,#1,^,DUP,!,z,:=,DUP,31,SWAP,>>,1,&,s,:=,0,ov,:=,#2,:=" },
 	{ "zxb", one (0x0080), one (0xffe0), {R1}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV, "0xff,#0,&,#0,:=" },
 	{ "zxh", one (0x00c0), one (0xffe0), {R1}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV, "0xffff,#0,&,#0,:=" },
 
@@ -1175,8 +1177,8 @@ const struct v850_opcode v850_opcodes[] = {
 	/* Alias of syncp. */
 	{ "sync", one (0x001f), one (0xffff), {0}, 0, V850_CPU_E2V3_UP | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_SYNC, "", R_ANAL_OP_FAMILY_THREAD },
 	{ "rmtrap", one (0xf040), one (0xffff), {0}, 0, V850_CPU_E2V3_UP },
-	{ "rie", one (0x0040), one (0xffff), {0}, 0, V850_CPU_E2V3_UP },
-	{ "rie", two (0x07f0, 0x0000), two (0x07f0, 0xffff), {RIE_IMM5,RIE_IMM4}, 0, V850_CPU_E2V3_UP },
+	{ "rie", one (0x0040), one (0xffff), {0}, 0, V850_CPU_E2V3_UP, R_ANAL_OP_TYPE_SWI, "2,pc,-,#P,&,fepc,:=,psw,fepsw,:=,0x130,feic,:=,0xffff,ecr,&,0x01300000,|,ecr,:=,0xe0,psw,|=,0x30,pc,:=", R_ANAL_OP_FAMILY_PRIV },
+	{ "rie", two (0x07f0, 0x0000), two (0x07f0, 0xffff), {RIE_IMM5,RIE_IMM4}, 0, V850_CPU_E2V3_UP, R_ANAL_OP_TYPE_SWI, "4,pc,-,#P,&,fepc,:=,psw,fepsw,:=,0x130,feic,:=,0xffff,ecr,&,0x01300000,|,ecr,:=,0xe0,psw,|=,0x30,pc,:=", R_ANAL_OP_FAMILY_PRIV },
 	{ 0, 0, 0, {0}, 0, 0 },
 };
 

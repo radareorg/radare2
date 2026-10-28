@@ -848,6 +848,23 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 #endif
 	v850np_inst inst = {0};
 	op->size = v850np_disasm (&inst, cpumodel, addr, buf, len);
+	if (op->size < 2 && cpumodel == V850_CPU_E1 && len >= 4
+			&& (r_read_le16 (buf) & 0x07e0) == 0x07e0
+			&& !(r_read_le16 (buf + 2) & 1) && (r_read_le16 (buf + 2) & 0x0780) >= 0x0380) {
+		free (inst.text);
+		free (inst.esil);
+		op->size = 4;
+		op->type = R_ANAL_OP_TYPE_SWI;
+		op->family = R_ANAL_OP_FAMILY_PRIV;
+		op->jump = 0x60;
+		if (mask & R_ARCH_OP_MASK_DISASM) {
+			op->mnemonic = strdup ("ilgop");
+		}
+		if (mask & R_ARCH_OP_MASK_ESIL) {
+			r_strbuf_set (&op->esil, "pc,0x03fffffe,&,dbpc,:=,psw,dbpsw,:=,0xe0,psw,|=,1,dir,|=,0x60,pc,:=,0,r0,:=");
+		}
+		return true;
+	}
 	if (op->size < 2) {
 		op->size = 2;
 		op->type = R_ANAL_OP_TYPE_ILL;
@@ -881,7 +898,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->ptr = inst.value;
 		break;
 	case R_ANAL_OP_TYPE_JMP:
-		op->jump = (addr + inst.value) & ((cpumodel & V850_CPU_E2_UP)? UT32_MAX: 0x03ffffff);
+		op->jump = (addr + inst.value) & (v850_pc_mask (cpumodel));
 		break;
 	case R_ANAL_OP_TYPE_CJMP: {
 		static const int conditions[] = {
@@ -891,8 +908,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			R_ANAL_CONDTYPE_PL, R_ANAL_CONDTYPE_AL, R_ANAL_CONDTYPE_GE, R_ANAL_CONDTYPE_GT,
 		};
 		op->cond = conditions[inst.op->opcode & 15];
-		op->jump = (addr + inst.value) & ((cpumodel & V850_CPU_E2_UP)? UT32_MAX: 0x03ffffff);
-		op->fail = (addr + inst.size) & ((cpumodel & V850_CPU_E2_UP)? UT32_MAX: 0x03ffffff);
+		op->jump = (addr + inst.value) & (v850_pc_mask (cpumodel));
+		op->fail = (addr + inst.size) & (v850_pc_mask (cpumodel));
 		break;
 	}
 	case R_ANAL_OP_TYPE_PUSH:
@@ -908,8 +925,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		}
 		break;
 	case R_ANAL_OP_TYPE_CALL:
-		op->jump = (addr + inst.value) & ((cpumodel & V850_CPU_E2_UP)? UT32_MAX: 0x03ffffff);
-		op->fail = (addr + inst.size) & ((cpumodel & V850_CPU_E2_UP)? UT32_MAX: 0x03ffffff);
+		op->jump = (addr + inst.value) & (v850_pc_mask (cpumodel));
+		op->fail = (addr + inst.size) & (v850_pc_mask (cpumodel));
 		break;
 	case R_ANAL_OP_TYPE_ADD:
 	case R_ANAL_OP_TYPE_SUB:

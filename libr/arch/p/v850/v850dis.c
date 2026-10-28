@@ -278,7 +278,20 @@ static char *saturated_expression(const char *lhs, const char *rhs, const char *
 	return r_strbuf_drain (sb);
 }
 
-static char *distillate(v850np_inst *inst, const char *esilfmt, ut64 memaddr, ut32 pc_mask) {
+static char *conditional_arithmetic_expression(const char *condition, const char *lhs, const char *rhs, const char *dst, bool subtract) {
+	RStrBuf *sb = r_strbuf_newf ("%s,!,!,%s,+,%s,%c", condition, rhs, lhs, subtract? '-': '+');
+	if (subtract) {
+		r_strbuf_appendf (sb, ",%s,!,!,%s,+,%s,0xffffffff,&,<,cy,:=", condition, rhs, lhs);
+	} else {
+		r_strbuf_append (sb, ",DUP,32,SWAP,>>,1,&,cy,:=");
+	}
+	r_strbuf_appendf (sb, ",DUP,%s,^,%s,%s,^%s,&,0x80000000,&,!,!,ov,:=", lhs, rhs, lhs, subtract? "": ",0xffffffff,^");
+	r_strbuf_appendf (sb, ",DUP,31,SWAP,>>,1,&,s,:=,DUP,0xffffffff,&,!,z,:=,%s,:=", dst);
+	return r_strbuf_drain (sb);
+}
+
+static char *distillate(v850np_inst *inst, const char *esilfmt, ut64 memaddr, int cpumodel) {
+	const ut32 pc_mask = v850_pc_mask (cpumodel);
 	RStrBuf *sb = r_strbuf_new ("");
 	RList *args = r_list_newf (free);
 	int i;
@@ -332,6 +345,29 @@ static char *distillate(v850np_inst *inst, const char *esilfmt, ut64 memaddr, ut
 		}
 	}
 	char *res = r_strbuf_drain (sb);
+	if (!strcmp (res, "CONDITIONAL")) {
+		free (res);
+		res = conditional_arithmetic_expression (r_list_get_n (args, 0), r_list_get_n (args, 2),
+			r_list_get_n (args, 1), r_list_get_n (args, 3), !strcmp (inst->op->name, "sbf"));
+	} else if (!strcmp (res, "MAC")) {
+		const unsigned accumulator = inst->args[2].value * 2;
+		const unsigned destination = inst->args[3].value * 2;
+		const char *extend = !strcmp (inst->op->name, "mac")? ",32,SWAP,~": "";
+		free (res);
+		res = r_str_newf ("%s%s,%s%s,*,32,%s,<<,%s,|,+,DUP,%s,:=,32,SWAP,>>,%s,:=",
+			(char *)r_list_get_n (args, 0), extend, (char *)r_list_get_n (args, 1), extend,
+			get_v850_reg_name (accumulator + 1), get_v850_reg_name (accumulator),
+			get_v850_reg_name (destination), get_v850_reg_name (destination + 1));
+	}
+	if (!strcmp (inst->op->name, "trap") && (cpumodel & V850_CPU_E2_UP)) {
+		char *with_cause = r_str_newf ("%s,0x%x,eiic,:=", res, 0x40 + (unsigned)inst->args[0].value);
+		free (res);
+		res = with_cause;
+	}
+	if (!strcmp (inst->op->name, "ldsr") && inst->op->operands[1] == OLDSR2 && inst->args[1].value == 4) {
+		free (res);
+		res = strdup (",");
+	}
 	if (!strcmp (res, "SATURATE")) {
 		bool reverse = !strcmp (inst->op->name, "satsubr");
 		const char *lhs = r_list_get_n (args, reverse? 0: 1);
@@ -585,11 +621,11 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 						// dont print coz we replace later
 						//r_strbuf_append (sb, "?");
 					} else {
-						print_value (sb, operand->flags, memaddr, value, (cpumodel & V850_CPU_E2_UP)? UT32_MAX: 0x03ffffff);
+						print_value (sb, operand->flags, memaddr, value, v850_pc_mask (cpumodel));
 						inst->value = value;
 					}
 #else
-					print_value (sb, operand->flags, memaddr, value, (cpumodel & V850_CPU_E2_UP)? UT32_MAX: 0x03ffffff);
+					print_value (sb, operand->flags, memaddr, value, v850_pc_mask (cpumodel));
 					inst->value = value;
 #endif
 				}
@@ -611,7 +647,7 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 		inst->text = r_strbuf_drain (sb);
 		if (op->esil) {
 			// take advantage of the arguments parsed and honor the formats tring below
-			inst->esil = distillate (inst, op->esil, memaddr, (cpumodel & V850_CPU_E2_UP)? UT32_MAX: 0x03ffffff);
+			inst->esil = distillate (inst, op->esil, memaddr, cpumodel);
 		}
 	} else {
 		r_strbuf_free (sb);

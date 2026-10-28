@@ -77,6 +77,10 @@ enum {
 #define V850_CPU_NON0    (V850_CPU_ALL & (~ V850_CPU_0))         /* Any processor except the V850.  */
 #define V850_CPU_UNKNOWN ~(V850_CPU_MASK)
 
+static inline ut32 v850_pc_mask(int cpumodel) {
+	return (cpumodel & V850_CPU_E2V3_UP)? UT32_MAX: (cpumodel & V850_CPU_E2)? 0x1fffffff: 0x03ffffff;
+}
+
 /* OPTIONS */
 #define V850_CPU_OPTION_EXTENSION (1 << (opt_EXTENSION))         /* Enable extension opcodes.  */
 #define V850_CPU_OPTION_ALIAS     (1 << (opt_ALIAS))             /* Enable alias opcodes.  */
