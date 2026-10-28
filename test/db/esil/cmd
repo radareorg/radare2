@@ -18,10 +18,10 @@ dr PC=0xdeadbeef
 aes
 EOF
 EXPECT=<<EOF
-its a trap 3735928559 6
+its a trap 3735928559 3735928559
 EOF
 EXPECT_ERR=<<EOF
-ERROR: ESIL stopped at 0xdeadbeef: execute error (execute-err)
+ERROR: ESIL stopped at 0xdeadbeef: execute error (execute-err at 0xdeadbeef)
 EOF
 RUN
 
@@ -91,7 +91,7 @@ EXPECT=<<EOF
 segfault at 0x00000000
 EOF
 EXPECT_ERR=<<EOF
-ERROR: ESIL stopped at 0x00000000: execute error (execute-err)
+ERROR: ESIL stopped at 0x00000000: execute error (execute-err at 0x00000000)
 EOF
 RUN
 

@@ -339,8 +339,11 @@ static bool core_esil_step_delay_slot(RCore *core, RArchSession *as, ut64 ds_add
 	esil->addr = ds_addr;
 	// "," for ESIL-less slot ops (e.g. mips.gnu movn) so r_esil_parse still consumes the pending branch
 	(void)r_esil_parse (esil, R_STR_ISNOTEMPTY (expr)? expr: ",");
-	esil->trap = false;
 	free (expr);
+	if (esil->trap) {
+		r_anal_op_fini (&op);
+		return false;
+	}
 	ut64 pc_ds = 0;
 	(void)r_esil_reg_read_silent (esil, "PC", &pc_ds, NULL);
 	if (pc_ds == ds_addr) {
@@ -484,13 +487,15 @@ R_API bool r_core_esil_run_expr_at(RCore *core, const char *expr, ut64 addr) {
 	}
 	const bool trap_revert = core_esil_trap_revert_start (core, "PC", pc);
 	r_esil_reg_write_silent (&core->esil.esil, "PC", addr);
-	if (r_esil_parse (&core->esil.esil, expr) || !core->esil.esil.trap) {
+	r_esil_parse (&core->esil.esil, expr);
+	if (!core->esil.esil.trap) {
 		if (trap_revert) {
 			core_esil_record_stepback (core);
 			core->esil.cfg &= ~R_CORE_ESIL_TRAP_REVERT;
 		}
 		return true;
 	}
+	const REsilTrap fault = r_esil_get_trap (&core->esil.esil);
 	if (trap_revert) {
 		// disable trap_revert voyeurs
 		core->esil.cfg &= ~R_CORE_ESIL_TRAP_REVERT;
@@ -501,8 +506,9 @@ R_API bool r_core_esil_run_expr_at(RCore *core, const char *expr, ut64 addr) {
 	} else {
 		r_esil_reg_write_silent (&core->esil.esil, "PC", pc);
 	}
+	r_esil_restore_trap (&core->esil.esil, &fault);
 	if (R_STR_ISNOTEMPTY (core->esil.cmds.trap)) {
-		core_esil_cmd (core, core->esil.cmds.trap, pc, core->esil.esil.trap_code);
+		core_esil_cmd (core, core->esil.cmds.trap, pc, fault.addr_valid? fault.addr: fault.code);
 	}
 	return false;
 }
@@ -517,11 +523,11 @@ R_API bool r_core_esil_single_step(RCore *core) {
 	}
 	const ut64 old_pc = pc;
 	bool trap_revert = false;
-	core->esil.esil.trap = R_ANAL_TRAP_NONE;
-	core->esil.esil.trap_code = 0;
+	r_esil_set_trap (&core->esil.esil, R_ANAL_TRAP_NONE, 0);
 	ut32 trap_code = R_ANAL_TRAP_UNALIGNED;
 	const int align = R_MAX (1, r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN));
 	if (pc % align) {
+		r_esil_set_fault (&core->esil.esil, R_ANAL_TRAP_UNALIGNED, pc);
 		goto trap;
 	}
 	trap_code = R_ANAL_TRAP_INVALID;
@@ -531,11 +537,13 @@ R_API bool r_core_esil_single_step(RCore *core) {
 	if (has_region) {
 		if (eperm && ! (region.perm & eperm)) {
 			trap_code = R_ANAL_TRAP_EXEC_ERR;
+			r_esil_set_fault (&core->esil.esil, trap_code, pc);
 			goto trap;
 		}
 	} else if (!r_io_is_valid_offset (core->io, pc, eperm)) {
 		// unmapped offsets can still hold code when io.cache is enabled
 		trap_code = R_ANAL_TRAP_EXEC_ERR;
+		r_esil_set_fault (&core->esil.esil, trap_code, pc);
 		goto trap;
 	}
 	trap_code = R_ANAL_TRAP_NONE;
@@ -548,7 +556,8 @@ R_API bool r_core_esil_single_step(RCore *core) {
 	ut8 buf[64];
 	if (R_UNLIKELY (!r_io_read_at (core->io, pc, buf, max_opsize))) {
 		R_LOG_ERROR ("Couldn't read data to decode from 0x%" PFMT64x, pc);
-		return false;
+		r_esil_set_fault (&core->esil.esil, R_ANAL_TRAP_EXEC_ERR, pc);
+		goto trap;
 	}
 	// intentionally not using r_anal_op here, because this function is a fucking fever dream
 	if (!core->anal->arch->session) {
@@ -623,15 +632,15 @@ R_API bool r_core_esil_single_step(RCore *core) {
 			goto skip;
 		}
 	}
-	const bool suc = r_esil_parse (&core->esil.esil, expr) || !core->esil.esil.trap;
+	r_esil_parse (&core->esil.esil, expr);
 	free (expr);
-	if (suc) {
-		if (has_delay && core->esil.esil.delay &&
-			!core_esil_step_delay_slot (core, as, ds_addr, max_opsize)) {
-			trap_code = R_ANAL_TRAP_INVALID;
-			r_unref (as);
-			goto trap;
-		}
+	bool success = !core->esil.esil.trap;
+	if (success && has_delay && core->esil.esil.delay &&
+		!core_esil_step_delay_slot (core, as, ds_addr, max_opsize)) {
+		trap_code = R_ANAL_TRAP_INVALID;
+		success = false;
+	}
+	if (success) {
 		core_esil_align_pc (core);
 skip:
 		if (trap_revert) {
@@ -644,11 +653,7 @@ skip:
 		}
 		return true;
 	}
-	const int trap_type = core->esil.esil.trap? core->esil.esil.trap: R_ANAL_TRAP_INVALID;
-	trap_code = core->esil.esil.trap_code;
-	if (!trap_code) {
-		trap_code = trap_type;
-	}
+	const REsilTrap fault = r_esil_get_trap (&core->esil.esil);
 	if (trap_revert) {
 		const bool trap_revert_config = core->esil.cfg & R_CORE_ESIL_TRAP_REVERT_CONFIG;
 		// disable trap_revert voyeurs
@@ -660,8 +665,7 @@ skip:
 		if (!trap_revert_config) {
 			r_esil_reg_write_silent (&core->esil.esil, "PC", pc);
 		}
-		core->esil.esil.trap = trap_type;
-		core->esil.esil.trap_code = trap_code;
+		r_esil_restore_trap (&core->esil.esil, &fault);
 		r_unref (as);
 		goto trap;
 	}
@@ -672,13 +676,11 @@ op_trap:
 	r_anal_op_fini (&op);
 trap:
 	if (!core->esil.esil.trap) {
-		core->esil.esil.trap = trap_code;
-	}
-	if (!core->esil.esil.trap_code) {
-		core->esil.esil.trap_code = trap_code;
+		r_esil_set_trap (&core->esil.esil, trap_code, trap_code);
 	}
 	if (R_STR_ISNOTEMPTY (core->esil.cmds.trap)) {
-		core_esil_cmd (core, core->esil.cmds.trap, old_pc, trap_code);
+		const REsilTrap trap = r_esil_get_trap (&core->esil.esil);
+		core_esil_cmd (core, core->esil.cmds.trap, old_pc, trap.addr_valid? trap.addr: trap.code);
 	}
 	return false;
 }

@@ -1,0 +1,97 @@
+NAME=x86 read fault above 4 GB
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b00
+aer rax=0x100000005
+aes
+ae*
+EOF
+EXPECT=<<EOF
+trap: 5
+trap-code: 0
+trap-addr: 0x100000005
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000000: read error (read-err at 0x100000005)
+EOF
+RUN
+
+NAME=x86 write fault survives rollback
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8900
+aer rax=0x100000007
+e esil.traprevert=true
+aes
+ae*
+EOF
+EXPECT=<<EOF
+trap: 4
+trap-code: 0
+trap-addr: 0x100000007
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000000: write error (write-err at 0x100000007)
+EOF
+RUN
+
+NAME=ARM64 high virtual fault address
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 200040f9
+aer x1=0xfffffffd00290000
+aes
+ae*
+EOF
+EXPECT=<<EOF
+trap: 5
+trap-code: 0
+trap-addr: 0xfffffffd00290000
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000000: read error (read-err at 0xfffffffd00290000)
+EOF
+RUN
+
+NAME=RISC-V full-width fault address
+FILE=malloc://64
+ARGS=-a riscv -b 64
+CMDS=<<EOF
+wx 03b50500
+aer a1=0x100000005
+aes
+ae*
+EOF
+EXPECT=<<EOF
+trap: 5
+trap-code: 0
+trap-addr: 0x100000005
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000000: read error (read-err at 0x100000005)
+EOF
+RUN
+
+NAME=MIPS64 delay-slot read fault retains address
+FILE=malloc://64
+ARGS=-a mips -b 64
+CMDS=<<EOF
+e cfg.bigendian=false
+wx 04000008000082dc
+aer a0=0x100000005
+e esil.traprevert=true
+aes
+ae*
+EOF
+EXPECT=<<EOF
+trap: 5
+trap-code: 0
+trap-addr: 0x100000005
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000000: read error (read-err at 0x100000005)
+EOF
+RUN

@@ -91,6 +91,49 @@ s:0 z:0 c:0 o:0 p:0
 
 There's also an ESIL expression debugger which can be accessed via the `aev` command
 
+### Trap records and fault addresses (ABI 164)
+
+ESIL keeps the trap type, an optional trap code, and an optional memory address
+separate. `trap_code` is a 32-bit code, not an address. `trap_addr` is a `ut64`
+with an explicit `trap_addr_valid` flag: both zero and `UT64_MAX` are valid fault
+addresses. This representation does not depend on the host pointer width, guest
+register names, endianness, or an architecture's exception registers.
+
+Memory interfaces report the effective address after ESIL's configured address
+mask. A hook that handles an access but cannot complete it can call
+`r_esil_set_fault` and return true to prevent fallback to another memory provider.
+The core stepper still stops when the hook leaves a trap, even if parsing succeeds.
+
+```c
+r_esil_set_fault (esil, R_ANAL_TRAP_READ_ERR, address);
+REsilTrap stopped = r_esil_get_trap (esil);
+// Inspection may use memory hooks and change the VM's trap state.
+r_esil_restore_trap (esil, &stopped);
+```
+
+`r_esil_set_trap (esil, type, code)` clears the optional address. Use it with
+`R_ANAL_TRAP_NONE, 0` to clear the entire record. Starting a nonempty expression,
+setup and reset also clear the record; successful reads or writes do not clear
+an earlier fault in the same expression. Consumers must check `addr_valid`
+before interpreting a snapshot's `addr`. Writers should use these helpers rather
+than assigning the public fields individually. `r_esil_get_trap` returns a value
+snapshot with no allocation or ownership transfer, usable across inspection or
+rollback without a plugin-private copy of the address.
+
+The core preserves this record across expression rollback and synchronizes it to
+the legacy analysis VM after stepping. `ae*` displays `trap-addr` when present;
+step diagnostics and the debugger's reason address/pointer retain all 64 bits.
+`cmd.esil.trap` receives the stopped instruction PC and the fault address when
+valid, otherwise the trap code. Memory faults no longer truncate their address
+into `trap_code`; clients that relied on that behavior must use the new fields.
+Instruction-fetch and instruction-alignment faults also carry their address.
+
+This records a stop. It does not select a guest exception vector, populate an
+architecture's fault registers, deliver an interrupt, or make a multi-access
+instruction's device side effects transactional. Architecture/platform emulators
+remain responsible for those policies. See `test/unit/test_esil.c`,
+`test/unit/test_core_esil.c` and `test/db/esil/faults` for regressions.
+
 ## Syntax
 
 An opcode is translated into a comma separated list of ESIL expressions.
