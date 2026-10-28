@@ -1198,14 +1198,20 @@ static inline bool arm_reloc_thumb_bit(ELFOBJ *eo, const RBinElfReloc *rel, ut64
 	return !strcmp (sym->type, R_BIN_TYPE_FUNC_STR) || !strcmp (sym->type, R_BIN_TYPE_LOPROC_STR);
 }
 
+// BE8 keeps data big-endian but stores instructions little-endian
+static inline bool arm_insn_endian(ELFOBJ *bo) {
+	return bo->endian && !(bo->ehdr.e_flags & EF_ARM_BE8);
+}
+
 // a rel site keeps its addend in place: the word, or the encoded immediate
 static st64 arm_rel_addend(ELFOBJ *bo, const RBinElfReloc *rel, const ut8 *buf) {
 	if (rel->mode != DT_REL) {
 		return rel->addend;
 	}
-	const ut32 insn = r_read_ble32 (buf, bo->endian);
-	const ut32 hi = r_read_ble16 (buf, bo->endian);
-	const ut32 lo = r_read_ble16 (buf + 2, bo->endian);
+	const bool ie = arm_insn_endian (bo);
+	const ut32 insn = r_read_ble32 (buf, ie);
+	const ut32 hi = r_read_ble16 (buf, ie);
+	const ut32 lo = r_read_ble16 (buf + 2, ie);
 	switch (rel->type) {
 	case R_ARM_CALL:
 	case R_ARM_JUMP24:
@@ -1247,7 +1253,7 @@ static st64 arm_rel_addend(ELFOBJ *bo, const RBinElfReloc *rel, const ut8 *buf) 
 	case R_ARM_MOVT_PREL:
 		return (st16)(((insn >> 4) & 0xf000) | (insn & 0x0fff));
 	}
-	return (st32)insn;
+	return (st32)r_read_ble32 (buf, bo->endian);
 }
 
 static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 P, ut64 S, ut64 bias, ut64 L, ut64 toc) {
@@ -1277,9 +1283,11 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			return;
 		}
 		const st64 addend = arm_rel_addend (bo, rel, buf);
-		ut32 insn = r_read_ble32 (buf, bo->endian);
-		ut32 hi = r_read_ble16 (buf, bo->endian);
-		ut32 lo = r_read_ble16 (buf + 2, bo->endian);
+		const bool ie = arm_insn_endian (bo);
+		const ut32 word = r_read_ble32 (buf, bo->endian);
+		ut32 insn = r_read_ble32 (buf, ie);
+		ut32 hi = r_read_ble16 (buf, ie);
+		ut32 lo = r_read_ble16 (buf + 2, ie);
 		const ut32 T = arm_reloc_thumb_bit (bo, rel, L);
 		switch (rel->type) {
 		case R_ARM_RELATIVE:
@@ -1291,7 +1299,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		case R_ARM_GLOB_DAT:
 			// symbol-less rel word: S is 0, the word is the value
 			if (!rel->sym && rel->mode == DT_REL) {
-				r_write_ble32 (buf, insn, bo->endian);
+				r_write_ble32 (buf, word, bo->endian);
 				break;
 			}
 			V = (S + addend) | T;
@@ -1312,7 +1320,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			ut32 imm24 = (ut32)((st64)target >> 2);
 			insn &= 0xff000000;
 			insn |= imm24 & 0x00ffffff;
-			r_write_ble32 (buf, insn, bo->endian);
+			r_write_ble32 (buf, insn, ie);
 			break;
 		}
 		case R_ARM_THM_PC22:
@@ -1332,8 +1340,8 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			hi = (hi & 0xf800) | (sb << 10) | ((target >> 12) & 0x3ff);
 			lo = (lo & 0xd000) | ((((target >> 23) & 1) ^ sb ^ 1) << 13)
 				| ((((target >> 22) & 1) ^ sb ^ 1) << 11) | ((target >> 1) & 0x7ff);
-			r_write_ble16 (buf, hi, bo->endian);
-			r_write_ble16 (buf + 2, lo, bo->endian);
+			r_write_ble16 (buf, hi, ie);
+			r_write_ble16 (buf + 2, lo, ie);
 			break;
 		}
 		case R_ARM_THM_JUMP19: {
@@ -1345,16 +1353,16 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			hi = (hi & 0xfbc0) | (((target >> 20) & 1) << 10) | ((target >> 12) & 0x3f);
 			lo = (lo & 0xd000) | (((target >> 18) & 1) << 13)
 				| (((target >> 19) & 1) << 11) | ((target >> 1) & 0x7ff);
-			r_write_ble16 (buf, hi, bo->endian);
-			r_write_ble16 (buf + 2, lo, bo->endian);
+			r_write_ble16 (buf, hi, ie);
+			r_write_ble16 (buf + 2, lo, ie);
 			break;
 		}
 		case R_ARM_THM_MOVW_ABS_NC:
 		case R_ARM_THM_MOVT_ABS: {
 			const ut64 val = (S + addend) | T;
 			thumb_mov_set_imm (&hi, &lo, (rel->type == R_ARM_THM_MOVT_ABS)? val >> 16: val);
-			r_write_ble16 (buf, hi, bo->endian);
-			r_write_ble16 (buf + 2, lo, bo->endian);
+			r_write_ble16 (buf, hi, ie);
+			r_write_ble16 (buf + 2, lo, ie);
 			break;
 		}
 		case R_ARM_MOVW_ABS_NC:
@@ -1366,7 +1374,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			ut32 imm16 = val & 0xffff;
 			insn &= 0xfff0f000;
 			insn |= ((imm16 & 0xf000) << 4) | (imm16 & 0x0fff);
-			r_write_ble32 (buf, insn, bo->endian);
+			r_write_ble32 (buf, insn, ie);
 			break;
 		}
 		case R_ARM_MOVT_ABS:
@@ -1378,12 +1386,12 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			ut32 imm16 = (val >> 16) & 0xffff;
 			insn &= 0xfff0f000;
 			insn |= ((imm16 & 0xf000) << 4) | (imm16 & 0x0fff);
-			r_write_ble32 (buf, insn, bo->endian);
+			r_write_ble32 (buf, insn, ie);
 			break;
 		}
 		default:
 			if (!rel->sym && rel->mode == DT_REL) {
-				r_write_ble32 (buf, insn, bo->endian);
+				r_write_ble32 (buf, word, bo->endian);
 			} else {
 				V = S + addend;
 				r_write_ble32 (buf, V, bo->endian);
