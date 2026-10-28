@@ -2721,3 +2721,28 @@ esilcost: 32
 esil: rdi,[8],rdi,8,+,[8],rdi,[8],rax,^,rdi,8,+,[8],rdx,^,|,0,==,$z,zf,:=,zf,?{,rbx,rdi,=[8],rcx,rdi,8,+,=[8],},zf,!,?{,rdx,=,rax,=,}
 EOF
 RUN
+
+NAME=lea with a 32-bit address size wraps the address at 32 bits
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+aeim
+wx 67488d84cbffffff7f
+ar rax=0x1111111111111111
+ar rbx=0x0
+ar rcx=0x7fffffff
+aes
+ar rax
+wx 678d040b
+ar rip=0
+ar rbx=0xffffffff00000010
+ar rcx=0xfffffff0
+aes
+ar rax
+EOF
+EXPECT=<<EOF
+0x7ffffff7
+0x00000000
+EOF
+RUN

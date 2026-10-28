@@ -1526,7 +1526,13 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		{
 			src = getarg (&gop, 1, 2, NULL, NULL);
 			dst = getarg (&gop, 0, 1, NULL, NULL);
-			esilprintf (op, "%s,%s", src, dst);
+			// with an address-size prefix the effective address wraps at the smaller size
+			const int addr_bits = insn->detail->x86.addr_size * 8;
+			if (addr_bits > 0 && addr_bits < bits) {
+				esilprintf (op, "%s,0x%"PFMT64x",&,%s", src, r_num_bitmask (addr_bits), dst);
+			} else {
+				esilprintf (op, "%s,%s", src, dst);
+			}
 			free (src);
 			free (dst);
 		}
