@@ -301,7 +301,7 @@ aer pc
 EOF
 EXPECT=<<EOF
 0x03ffa010
-0xffffa010
+0x1fffa010
 EOF
 RUN
 
@@ -394,5 +394,299 @@ EOF
 EXPECT=<<EOF
 0x12345678
 0x00000006
+EOF
+RUN
+
+NAME=V850 logical immediates into r0 compute flags from the source
+FILE=malloc://0x10000
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+e asm.cpu=e1
+e esil.skipself=false
+wx 81060100a1060100
+aei
+aer r1=0x80000000
+aer psw=0x3f
+aes
+aer psw
+aes
+aer psw
+aer r1
+EOF
+EXPECT=<<EOF
+0x0000003a
+0x0000003a
+0x80000000
+EOF
+RUN
+
+NAME=V850 ECR is read only through LDSR
+FILE=malloc://0x10000
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+e asm.cpu=e1
+e esil.skipself=false
+wx e1272000
+aei
+aer r1=0x12345678
+aer ecr=0xabcd1234
+aes
+aer ecr
+EOF
+EXPECT=<<EOF
+0xabcd1234
+EOF
+RUN
+
+NAME=V850 memory addition wraps before byte reads and writes
+FILE=malloc://0x10000
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+e asm.cpu=e1
+e esil.skipself=false
+wx 0117020041170200 @0x100
+wx 81 @0
+aei
+aer pc=0x100
+aer r1=0xfffffffe
+aes
+aer r2
+aer r2=0x42
+aes
+p8 1 @0
+EOF
+EXPECT=<<EOF
+0xffffff81
+42
+EOF
+RUN
+
+NAME=V850E1 defined illegal opcodes enter the debug context and DBRET restores it
+FILE=malloc://0x10000
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+e asm.cpu=e1
+e esil.skipself=false
+wx e0078003 @0x100
+wx e0074601 @0x60
+aei
+aer pc=0x100
+aer psw=0x95
+aer dir=0x40
+aer fepc=0x2000
+aes
+aer pc
+aer dbpc
+aer dbpsw
+aer psw
+aer dir
+aes
+aer pc
+aer psw
+aer dir
+aer fepc
+EOF
+EXPECT=<<EOF
+0x00000060
+0x00000104
+0x00000095
+0x000000f5
+0x00000041
+0x00000104
+0x00000095
+0x00000040
+0x00002000
+EOF
+RUN
+
+NAME=V850E2 long branches use the encoded link and base displacement
+FILE=malloc://0x10000
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+e asm.cpu=e1
+e esil.skipself=false
+e asm.cpu=e2
+wx e10220000000 @0x100
+wx e106f0ffffff @0x120
+aei
+aer pc=0x100
+aer lp=0x12345678
+aes
+aer pc
+aer r1
+aer lp
+aer r1=0x201
+aes
+aer pc
+EOF
+EXPECT=<<EOF
+0x00000120
+0x00000106
+0x12345678
+0x000001f0
+EOF
+RUN
+
+NAME=V850E2 conditional subtraction includes borrow without clobbering sources
+FILE=malloc://0x10000
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+e asm.cpu=e1
+e esil.skipself=false
+e asm.cpu=e2
+wx e1178a1b
+aei
+aer r1=0
+aer r2=0x80000000
+aer psw=0x30
+aes
+aer sp
+aer psw
+aer r1
+aer r2
+EOF
+EXPECT=<<EOF
+0x7fffffff
+0x00000034
+0x00000000
+0x80000000
+EOF
+RUN
+
+NAME=V850E2 compare exchange aligns the address and returns the old word
+FILE=malloc://0x10000
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+e asm.cpu=e1
+e esil.skipself=false
+e asm.cpu=e2
+wx e117ee18
+wx 07000000 @0x2000
+aei
+aer r1=0x2003
+aer r2=7
+aer sp=0x12345678
+aer psw=0x30
+aes
+aer sp
+aer psw
+p8 4 @0x2000
+EOF
+EXPECT=<<EOF
+0x00000007
+0x00000031
+78563412
+EOF
+RUN
+
+NAME=V850E2 bit search handles both directions and no match
+FILE=malloc://0x10000
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+e asm.cpu=e1
+e esil.skipself=false
+e asm.cpu=e2
+wx e017621be017641b
+aei
+aer r2=0x100
+aer psw=0x30
+aes
+aer sp
+aer psw
+aer r2=0xffffffff
+aes
+aer sp
+aer psw
+EOF
+EXPECT=<<EOF
+0x00000009
+0x00000038
+0x00000000
+0x00000031
+EOF
+RUN
+
+NAME=V850E2 multiply accumulate preserves flags and handles overlapping pairs
+FILE=malloc://0x10000
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+e asm.cpu=e1
+e esil.skipself=false
+e asm.cpu=e2
+wx e117c423
+aei
+aer r1=-1
+aer r2=3
+aer gp=5
+aer tp=0
+aer psw=0x3f
+aes
+aer gp
+aer tp
+aer psw
+EOF
+EXPECT=<<EOF
+0x00000002
+0x00000000
+0x0000003f
+EOF
+RUN
+
+NAME=V850E2 FE software trap saves the next PC and FERET restores it
+FILE=malloc://0x10000
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+e asm.cpu=e1
+e esil.skipself=false
+e asm.cpu=e2
+wx 4008
+wx e0074a01 @0x30
+aei
+aer psw=0x95
+aer ecr=0xabcd1234
+aes
+aer pc
+aer fepc
+aer fepsw
+aer feic
+aer ecr
+aes
+aer pc
+aer psw
+EOF
+EXPECT=<<EOF
+0x00000030
+0x00000002
+0x00000095
+0x00000031
+0x00311234
+0x00000002
+0x00000095
+EOF
+RUN
+
+NAME=V850E2 reserved instruction saves the faulting PC
+FILE=malloc://0x10000
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+e asm.cpu=e1
+e esil.skipself=false
+e asm.cpu=e2v3
+wx 4000 @0x100
+aei
+aer pc=0x100
+aer psw=0x15
+aer ecr=0xabcd1234
+aes
+aer pc
+aer fepc
+aer feic
+aer ecr
+EOF
+EXPECT=<<EOF
+0x00000030
+0x00000100
+0x00000130
+0x01301234
 EOF
 RUN
