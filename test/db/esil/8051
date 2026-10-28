@@ -1093,6 +1093,7 @@ aes
 ar pc; ar psw; ar a; ar b
 aes
 ar pc; ar ov;
+ae*
 EOF
 EXPECT=<<EOF
 0x00000001
@@ -1105,6 +1106,8 @@ EXPECT=<<EOF
 0x00000000
 0x00000003
 0x00000001
+trap: 0
+trap-code: 0
 EOF
 RUN
 
