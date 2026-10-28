@@ -328,3 +328,25 @@ EXPECT=<<EOF
 0x4
 EOF
 RUN
+
+NAME=new seek discards redo after a duplicate history push
+FILE=malloc://256
+CMDS=<<EOF
+s 0x10
+s 0x20
+s-
+ss 0
+s 0x30
+s+
+s
+s-
+s
+s+
+s
+EOF
+EXPECT=<<EOF
+0x30
+0x0
+0x30
+EOF
+RUN
