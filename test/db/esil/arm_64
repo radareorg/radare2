@@ -4328,3 +4328,34 @@ EXPECT=<<EOF
 0xf0000000
 EOF
 RUN
+
+NAME=arm64 braa/brab/braaz/brabz branch to Xn, Xm is only the PAC modifier
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 22081fd7
+aei
+ar x1=0x20
+ar x2=5
+aes
+ar pc
+wx 220c1fd7 @ 0x20
+ar x1=0x30
+aes
+ar pc
+wx 3f081fd6 @ 0x30
+ar x1=0x10
+aes
+ar pc
+wx 3f0c1fd6 @ 0x10
+ar x1=0x38
+aes
+ar pc
+EOF
+EXPECT=<<EOF
+0x00000020
+0x00000030
+0x00000010
+0x00000038
+EOF
+RUN
