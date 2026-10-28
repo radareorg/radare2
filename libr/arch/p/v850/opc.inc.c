@@ -851,7 +851,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "est", two (0x07e0, 0x0132), two (0xfffff, 0xffff), {0}, 0, V850_CPU_E3V5_UP },
 	{ "feret", two (0x07e0, 0x014a), two (0xffff, 0xffff), {0}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_RET, "fepc,#P,&,pc,:=,fepsw,psw,:=", R_ANAL_OP_FAMILY_PRIV },
 	{ "fetrap", one (0x0040), one (0x87ff), {I4U_NOTIMM0}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_SWI, "pc,#P,&,fepc,:=,psw,fepsw,:=,0x30,#0,+,DUP,feic,:=,16,SWAP,<<,0xffff,ecr,&,|,ecr,:=,0xe0,psw,|=,0x30,pc,:=", R_ANAL_OP_FAMILY_PRIV },
-	{ "halt", two (0x07e0, 0x0120), two (0xffff, 0xffff), {0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_TRAP },
+	{ "halt", two (0x07e0, 0x0120), two (0xffff, 0xffff), {0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_TRAP, "0,10,TRAP", R_ANAL_OP_FAMILY_PRIV },
 	{ "hsh", two (0x07e0, 0x0346), two (0x07ff, 0x07ff), {R2, R3}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_MOV, "#0,DUP,0xffff,&,!,DUP,cy,:=,z,:=,DUP,31,SWAP,>>,1,&,s,:=,0,ov,:=,#1,:=" },
 	{ "hsw", two (0x07e0, 0x0344), two (0x07ff, 0x07ff), {R2, R3}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV, "16,#0,<<,0xffff0000,&,16,#0,>>,0xffff,&,|,#0,0xffff,&,!,#0,0xffff0000,&,!,|,cy,:=,DUP,!,z,:=,DUP,31,SWAP,>>,1,&,s,:=,0,ov,:=,#1,:=" },
 	{ "hvcall", two (0xd7e0, 0x4160), two (0xffe0, 0x41ff), {VECTOR8}, 0, V850_CPU_E3V5_UP },

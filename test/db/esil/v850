@@ -690,3 +690,24 @@ EXPECT=<<EOF
 0x01301234
 EOF
 RUN
+
+NAME=V850 HALT stops execution until before the following instruction
+FILE=malloc://32
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+e asm.cpu=e1
+e log.level=0
+wx e0072001010a0000
+aei
+ar psw=0x35
+aesu 6
+ar pc
+ar r1
+ar psw
+EOF
+EXPECT=<<EOF
+0x00000004
+0x00000000
+0x00000035
+EOF
+RUN

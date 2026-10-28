@@ -350,6 +350,11 @@ class Instructions(unittest.TestCase):
         self.assertEqual((snapshots[-1]['feic'],snapshots[-1]['eiic'],snapshots[-1]['ecr']),
                          (0x31,0x51,0x00310051))
 
+    def test_halt_stops_until_without_executing_following_instruction(self):
+        snapshots=run(['e log.level=0','wx e0072001010a0000','aer psw=0x35',
+                       'aesu 6','aerj'])
+        self.assertEqual((snapshots[0]['pc'],snapshots[0]['r1'],snapshots[0]['psw']),(4,0,0x35))
+
     def test_nine_bit_multiply_immediates_and_result_aliases(self):
         cases=[]
         for unsigned in (False,True):
