@@ -360,6 +360,32 @@ static int init_phdr(ELFOBJ *eo) {
 static int init_shdr(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo && !eo->shdr, false);
 
+	// ELF extended section numbering (gABI): when the real section count does
+	// not fit in the 16-bit e_shnum, e_shnum is 0 and the true count is stored
+	// in section[0].sh_size. This mirrors get_phnum()'s existing PN_XNUM path.
+	// Guarded by !eo->inmem because init_memory_base() intentionally sets
+	// e_shnum = 0 for in-memory images (a loader never maps the section table).
+	// NOTE: e_shnum is 16-bit, so this write-back resolves counts up to 0xffff;
+	// a count that genuinely exceeds 0xffff needs a cached ut64 field, the same
+	// way eo->phnum caches the resolved program-header count (see issue).
+	if (eo->ehdr.e_shnum == 0 && !eo->inmem && eo->ehdr.e_shoff != 0
+			&& eo->ehdr.e_shoff <= eo->size
+			&& sizeof (Elf_(Shdr)) <= eo->size - eo->ehdr.e_shoff) {
+		ut8 shdr0[sizeof (Elf_(Shdr))] = {0};
+		if (r_buf_read_at (eo->b, eo->ehdr.e_shoff, shdr0, sizeof (shdr0)) == sizeof (shdr0)) {
+			int k = 0;
+			(void)READ32 (shdr0, k);              // sh_name
+			(void)READ32 (shdr0, k);              // sh_type
+			(void)R_BIN_ELF_READWORD (shdr0, k);  // sh_flags
+			(void)R_BIN_ELF_READWORD (shdr0, k);  // sh_addr
+			(void)R_BIN_ELF_READWORD (shdr0, k);  // sh_offset
+			ut64 real_shnum = R_BIN_ELF_READWORD (shdr0, k); // sh_size
+			if (real_shnum > 0 && real_shnum <= UT16_MAX) {
+				eo->ehdr.e_shnum = (Elf_(Half))real_shnum;
+			}
+		}
+	}
+
 	ut32 shdr_size;
 	if (!UT32_MUL (&shdr_size, eo->ehdr.e_shnum, sizeof (Elf_(Shdr)))) {
 		return false;
@@ -437,8 +463,25 @@ static bool init_strtab(ELFOBJ *eo) {
 		return false;
 	}
 
-	Elf_(Half) shstrndx = eo->ehdr.e_shstrndx;
-	if (shstrndx != SHN_UNDEF && !is_shidx_valid (eo, shstrndx)) {
+	// ELF extended section numbering (gABI): when the section-name string
+	// table index does not fit in the 16-bit e_shstrndx, it is set to
+	// SHN_XINDEX (0xffff) and the true index lives in section[0].sh_link.
+	// Resolve it here before the is_shidx_valid() check, which would otherwise
+	// reject 0xffff as a reserved index. Counterpart to the e_shnum fix in
+	// init_shdr(); same 16-bit write-back caveat applies.
+	ut32 shstrndx = eo->ehdr.e_shstrndx;
+	if (shstrndx == 0xffff /* SHN_XINDEX */ && eo->shdr && eo->ehdr.e_shnum > 0) {
+		// sh_link is a full 32-bit, attacker-controlled field: bounds-check the
+		// full-width value here before use. Do NOT defer to is_shidx_valid(),
+		// whose Elf_(Half) parameter would truncate shstrndx to 16 bits and let
+		// a value like 0x00010001 pass as 1 while indexing at 0x10001 (OOB read).
+		ut32 real_idx = eo->shdr[0].sh_link;
+		if (real_idx == 0 || real_idx >= eo->ehdr.e_shnum) {
+			R_LOG_DEBUG ("invalid extended shstrndx");
+			return false;
+		}
+		shstrndx = real_idx;
+	} else if (shstrndx != SHN_UNDEF && !is_shidx_valid (eo, (Elf_(Half))shstrndx)) {
 		R_LOG_DEBUG ("invalid section header index");
 		return false;
 	}
