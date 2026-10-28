@@ -1183,7 +1183,21 @@ static int showreg(RCore *core, const char *str) {
 	if (r) {
 		ut64 off;
 		utX value;
-		if (r->size > 64) {
+		if (r->size == 512) {
+			RRegArena *arena = core->dbg->reg->regset[r->arena].arena;
+			const int byte_off = BITS2BYTES (r->offset);
+			if (!arena || !arena->bytes || byte_off < 0 || byte_off + 64 > arena->size) {
+				R_LOG_ERROR ("Cannot retrieve reg '%s' of %i bits", r->name, r->size);
+				return r->size;
+			}
+			const ut8 *bytes = arena->bytes + byte_off;
+			int i;
+			r_cons_print (core->cons, "0x");
+			for (i = 7; i >= 0; i--) {
+				r_cons_printf (core->cons, "%016"PFMT64x, r_read_le64 (bytes + i * 8));
+			}
+			r_cons_newline (core->cons);
+		} else if (r->size > 64) {
 			off = r_reg_get_value_big (core->dbg->reg, r, &value);
 			switch (r->size) {
 			case 80:
@@ -1200,7 +1214,7 @@ static int showreg(RCore *core, const char *str) {
 					   value.v256.High.High, value.v256.High.Low, value.v256.Low.High, value.v256.Low.Low);
 				break;
 			default:
-				R_LOG_ERROR ("Cannot retrieve reg '%s' of %i bits", str +1, r->size);
+				R_LOG_ERROR ("Cannot retrieve reg '%s' of %i bits", r->name, r->size);
 			}
 		} else {
 			off = r_reg_get_value (core->dbg->reg, r);
