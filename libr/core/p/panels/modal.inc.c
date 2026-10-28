@@ -403,20 +403,13 @@ beach:
 	return ret;
 }
 
-static bool r_panels_draw_modal(RCore *core, RModal *modal, int range_end, int start, const char *name) {
-	if (start < modal->offset) {
-		return true;
-	}
-	if (start >= range_end) {
-		return false;
-	}
-	if (start == modal->idx) {
+static void r_panels_draw_modal(RCore *core, RModal *modal, int i, const char *name) {
+	if (i == modal->idx) {
 		r_strbuf_appendf (modal->data, ">  %s%s"Color_RESET, PANEL_HL_COLOR, name);
 	} else {
 		r_strbuf_appendf (modal->data, "   %s", name);
 	}
 	r_strbuf_append (modal->data, "          \n");
-	return true;
 }
 
 static void r_panels_update_modal(RCore *core, RModal *modal, int delta) {
@@ -443,10 +436,8 @@ static void r_panels_update_modal(RCore *core, RModal *modal, int delta) {
 	}
 	int i;
 	int max_h = R_MIN (modal->offset + list_h, count);
-	for (i = 0; i < n_modal_entries; i++) {
-		if (!r_panels_draw_modal (core, modal, max_h, i, modal_entries[i].name)) {
-			break;
-		}
+	for (i = modal->offset; i < max_h; i++) {
+		r_panels_draw_modal (core, modal, i, modal_entries[i].name);
 	}
 	r_cons_gotoxy (core->cons, 0, 0);
 	r_cons_canvas_fill (can, modal->pos.x, modal->pos.y, modal->pos.w + 2, modal->pos.h + 2, ' ');
