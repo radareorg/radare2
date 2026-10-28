@@ -285,3 +285,46 @@ f undo_1 = 0x0
 f undo_0 = 0x1
 EOF
 RUN
+
+NAME=graph edge navigation undo and redo
+FILE=malloc://256
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e scr.cols=80
+e scr.rows=25
+e cmd.gprompt=f graph_seek=$$
+e scr.wheel=false
+e scr.color=0
+e scr.utf8=false
+wx 7402c390c3
+af+ 0 graph
+afb+ 0 0 2 4 2
+afb+ 0 2 1
+afb+ 0 4 1
+s-*
+<tuq
+agfv @e:scr.interactive=true > /dev/null
+?v graph_seek
+s+
+s
+s-
+<fuq
+agfv @e:scr.interactive=true > /dev/null
+?v graph_seek
+s+
+s
+s-
+s-*
+<tuUq
+agfv @e:scr.interactive=true > /dev/null
+?v graph_seek
+EOF
+EXPECT=<<EOF
+0x0
+0x4
+0x0
+0x2
+0x4
+EOF
+RUN
