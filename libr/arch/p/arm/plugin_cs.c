@@ -4169,6 +4169,38 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 	case ARM_INS_UXTB:
 		r_strbuf_appendf (&op->esil, "%s,0xff,&,%s,=", ARG(1), REG(0));
 		break;
+	case ARM_INS_UXTH:
+		r_strbuf_appendf (&op->esil, "%s,0xffff,&,%s,=", ARG (1), REG (0));
+		break;
+	case ARM_INS_UXTB16:
+		r_strbuf_appendf (&op->esil, "%s,0x00ff00ff,&,%s,=", ARG (1), REG (0));
+		break;
+	case ARM_INS_SXTB16:
+		// bytes 0 and 2 sign-extended into the two halfwords
+		r_strbuf_appendf (&op->esil, "0xffff0000,16,8,0xff,16,%s,>>,&,~,<<,&,0xffff,8,0xff,%s,&,~,&,|,%s,=",
+			ARG (1), ARG (1), REG (0));
+		break;
+	case ARM_INS_UXTAB:
+	case ARM_INS_UXTAH:
+		r_strbuf_appendf (&op->esil, "%s,%s,&,%s,+,%s,=",
+			ARG (2), (insn->id == ARM_INS_UXTAB)? "0xff": "0xffff", ARG (1), REG (0));
+		break;
+	case ARM_INS_SXTAB:
+	case ARM_INS_SXTAH:
+		r_strbuf_appendf (&op->esil, "%s,%s,%s,&,~,%s,+,%s,=",
+			(insn->id == ARM_INS_SXTAB)? "8": "16", (insn->id == ARM_INS_SXTAB)? "0xff": "0xffff",
+			ARG (2), ARG (1), REG (0));
+		break;
+	case ARM_INS_UXTAB16:
+		// each halfword of rn plus the byte below it in rm, without a carry between the halves
+		r_strbuf_appendf (&op->esil, "0xffff0000,0xff0000,%s,&,0xffff0000,%s,&,+,&,0xffff,0xff,%s,&,%s,+,&,|,%s,=",
+			ARG (2), ARG (1), ARG (2), ARG (1), REG (0));
+		break;
+	case ARM_INS_SXTAB16:
+		r_strbuf_appendf (&op->esil, "0xffff0000,16,8,0xff,16,%s,>>,&,~,<<,0xffff0000,%s,&,+,&,"
+			"0xffff,8,0xff,%s,&,~,%s,+,&,|,%s,=",
+			ARG (2), ARG (1), ARG (2), ARG (1), REG (0));
+		break;
 	case ARM_INS_RSB:
 		if (OPCOUNT () == 2) {
 			r_strbuf_appendf (&op->esil, "%s,%s,-=", ARG(0), ARG(1));
