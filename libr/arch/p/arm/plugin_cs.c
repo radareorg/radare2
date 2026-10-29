@@ -13,6 +13,7 @@
 #include "arm_code_endian.h"
 #include "asm_arm_hacks.inc.c"
 #include "arm_regprofile.inc.c"
+#include "arm64_crypto.inc.c"
 
 typedef char RStringShort[32];
 
@@ -1895,6 +1896,15 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	case ARM64_INS_BRK:
 		r_strbuf_setf (&op->esil, "0,%d,TRAP", (int) (IMM64 (0) & 0xffff));
 		break;
+	case ARM64_INS_SHA256SU0:
+		r_strbuf_setf (&op->esil, "%d,%d,ARM64_SHA256SU0", atoi (REG64 (1) + 1), atoi (REG64 (0) + 1));
+		break;
+	case ARM64_INS_SHA256SU1:
+	case ARM64_INS_SHA256H:
+	case ARM64_INS_SHA256H2:
+		r_strbuf_setf (&op->esil, "%d,%d,%d,%s", atoi (REG64 (2) + 1), atoi (REG64 (1) + 1), atoi (REG64 (0) + 1),
+			insn->id == ARM64_INS_SHA256SU1? "ARM64_SHA256SU1": insn->id == ARM64_INS_SHA256H? "ARM64_SHA256H": "ARM64_SHA256H2");
+		break;
 	case ARM64_INS_MOVI: {
 		cs_arm64_op dst = INSOP64 (0);
 		const int bits = dst.vas? vector_size (&dst): REGBITS64 (0);
@@ -1992,6 +2002,26 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		break;
 	}
 	case ARM64_INS_REV32:
+		if (INSOP64 (1).vas) {
+			const int bits = vector_size (&INSOP64 (1));
+			const int halves = bits * vas_count (INSOP64 (1).vas) / 64;
+			if ((bits != 8 && bits != 16) || halves < 1 || halves > 2) {
+				break;
+			}
+			int half, lane;
+			for (half = 0; half < halves; half++) {
+				r_strbuf_append (&op->esil, half? ",0": "0");
+				for (lane = 0; lane < 64 / bits; lane++) {
+					int source = half * (64 / bits) + (lane ^ (32 / bits - 1));
+					r_strbuf_append (&op->esil, ",");
+					VEC64_APPEND (&op->esil, 1, source);
+					r_strbuf_appendf (&op->esil, ",%d,SWAP,<<,|", lane * bits);
+				}
+			}
+			r_strbuf_appendf (&op->esil, halves == 2? ",%sh,=": ",0,%sh,=", REG64 (0));
+			r_strbuf_appendf (&op->esil, ",%sl,=", REG64 (0));
+			break;
+		}
 		r_strbuf_setf (&op->esil,
 			"24,0x000000ff000000ff,%s,&,<<,tmp,=,"
 			"16,0x000000ff000000ff,8,%s,>>,&,<<,tmp,|=,"
@@ -6063,6 +6093,7 @@ const RArchPlugin r_arch_plugin_arm_cs = {
 	.fini = fini,
 	.info = archinfo,
 	.regs = regs,
+	.esilcb = esilcb,
 	.mnemonics = arm_mnemonics,
 };
 

@@ -4379,3 +4379,308 @@ EXPECT=<<EOF
 0x4000000000000000
 EOF
 RUN
+
+NAME=ARM64 SHA256SU0 custom operation snapshots overlapping vector sources
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx ff2b285e
+aei
+aer pstate=0xb0000000
+aer v31l=0x1234569701234586
+aer v31h=0x345678b9234567a8
+aeip
+aes
+aer v31l
+aer v31h
+aer pstate
+EOF
+EXPECT=<<EOF
+0x1ff885823aea6c78
+0x119e272c0e11969b
+0xb0000000
+EOF
+RUN
+
+NAME=ARM64 SHA256SU1 custom operation snapshots overlapping vector sources
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx ff631e5e
+aei
+aer pstate=0xb0000000
+aer v30l=0x1234569601234585
+aer v30h=0x345678b8234567a7
+aer v31l=0x1234569701234586
+aer v31h=0x345678b9234567a8
+aeip
+aes
+aer v31l
+aer v31h
+aer pstate
+EOF
+EXPECT=<<EOF
+0x28bfc77e328740b0
+0x50d4bcf79fde9f24
+0xb0000000
+EOF
+RUN
+
+NAME=ARM64 SHA256H custom operation snapshots overlapping vector sources
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx ff431e5e
+aei
+aer pstate=0xb0000000
+aer v30l=0x1234569601234585
+aer v30h=0x345678b8234567a7
+aer v31l=0x1234569701234586
+aer v31h=0x345678b9234567a8
+aeip
+aes
+aer v31l
+aer v31h
+aer pstate
+EOF
+EXPECT=<<EOF
+0x3c88e1592ff99668
+0xb5d8976fd51270c6
+0xb0000000
+EOF
+RUN
+
+NAME=ARM64 SHA256H2 custom operation snapshots overlapping vector sources
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx ff531e5e
+aei
+aer pstate=0xb0000000
+aer v30l=0x1234569601234585
+aer v30h=0x345678b8234567a7
+aer v31l=0x1234569701234586
+aer v31h=0x345678b9234567a8
+aeip
+aes
+aer v31l
+aer v31h
+aer pstate
+EOF
+EXPECT=<<EOF
+0x3ef9b234151531bc
+0xc59b0823b2d14b1f
+0xb0000000
+EOF
+RUN
+
+NAME=ARM64 REV32 8b distinct registers
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 3f0a202e
+aei
+aer pstate=0xb0000000
+aer v31h=0xffffffffffffffff
+aer v17l=0x0706050403020100
+aer v17h=0x0f0e0d0c0b0a0908
+aeip
+aes
+aer v31l
+aer v31h
+aer pstate
+EOF
+EXPECT=<<EOF
+0x405060700010203
+0x00000000
+0xb0000000
+EOF
+RUN
+
+NAME=ARM64 REV32 8b in place
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx ff0b202e
+aei
+aer pstate=0xb0000000
+aer v31h=0xffffffffffffffff
+aer v31l=0x0706050403020100
+aer v31h=0x0f0e0d0c0b0a0908
+aeip
+aes
+aer v31l
+aer v31h
+aer pstate
+EOF
+EXPECT=<<EOF
+0x405060700010203
+0x00000000
+0xb0000000
+EOF
+RUN
+
+NAME=ARM64 REV32 16b distinct registers
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 3f0a206e
+aei
+aer pstate=0xb0000000
+aer v31h=0xffffffffffffffff
+aer v17l=0x0706050403020100
+aer v17h=0x0f0e0d0c0b0a0908
+aeip
+aes
+aer v31l
+aer v31h
+aer pstate
+EOF
+EXPECT=<<EOF
+0x405060700010203
+0xc0d0e0f08090a0b
+0xb0000000
+EOF
+RUN
+
+NAME=ARM64 REV32 16b in place
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx ff0b206e
+aei
+aer pstate=0xb0000000
+aer v31h=0xffffffffffffffff
+aer v31l=0x0706050403020100
+aer v31h=0x0f0e0d0c0b0a0908
+aeip
+aes
+aer v31l
+aer v31h
+aer pstate
+EOF
+EXPECT=<<EOF
+0x405060700010203
+0xc0d0e0f08090a0b
+0xb0000000
+EOF
+RUN
+
+NAME=ARM64 REV32 4h distinct registers
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 3f0a602e
+aei
+aer pstate=0xb0000000
+aer v31h=0xffffffffffffffff
+aer v17l=0x0706050403020100
+aer v17h=0x0f0e0d0c0b0a0908
+aeip
+aes
+aer v31l
+aer v31h
+aer pstate
+EOF
+EXPECT=<<EOF
+0x504070601000302
+0x00000000
+0xb0000000
+EOF
+RUN
+
+NAME=ARM64 REV32 4h in place
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx ff0b602e
+aei
+aer pstate=0xb0000000
+aer v31h=0xffffffffffffffff
+aer v31l=0x0706050403020100
+aer v31h=0x0f0e0d0c0b0a0908
+aeip
+aes
+aer v31l
+aer v31h
+aer pstate
+EOF
+EXPECT=<<EOF
+0x504070601000302
+0x00000000
+0xb0000000
+EOF
+RUN
+
+NAME=ARM64 REV32 8h distinct registers
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 3f0a606e
+aei
+aer pstate=0xb0000000
+aer v31h=0xffffffffffffffff
+aer v17l=0x0706050403020100
+aer v17h=0x0f0e0d0c0b0a0908
+aeip
+aes
+aer v31l
+aer v31h
+aer pstate
+EOF
+EXPECT=<<EOF
+0x504070601000302
+0xd0c0f0e09080b0a
+0xb0000000
+EOF
+RUN
+
+NAME=ARM64 REV32 8h in place
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx ff0b606e
+aei
+aer pstate=0xb0000000
+aer v31h=0xffffffffffffffff
+aer v31l=0x0706050403020100
+aer v31h=0x0f0e0d0c0b0a0908
+aeip
+aes
+aer v31l
+aer v31h
+aer pstate
+EOF
+EXPECT=<<EOF
+0x504070601000302
+0xd0c0f0e09080b0a
+0xb0000000
+EOF
+RUN
+
+NAME=ARM64 SHA custom operations follow ESIL init and fini
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aei
+ae???~ARM64_SHA256~?
+aei-
+aei
+ae???~ARM64_SHA256~?
+e asm.bits=32
+aei-
+aei
+ae???~ARM64_SHA256~?
+e asm.arch=x86
+e asm.bits=64
+aei-
+aei
+ae???~ARM64_SHA256~?
+EOF
+EXPECT=<<EOF
+4
+4
+0
+0
+EOF
+RUN
