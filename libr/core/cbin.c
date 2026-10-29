@@ -2330,7 +2330,8 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 			pj_kn (pj, "ntype", reloc->ntype);
 			pj_kn (pj, "vaddr", reloc->vaddr);
 			pj_kn (pj, "paddr", reloc->paddr);
-			if (reloc->symbol) {
+			// an unplaced symbol (a common one before the link) has no address to state
+			if (reloc->symbol && reloc->symbol->vaddr != UT64_MAX) {
 				pj_kn (pj, "sym_va", reloc->symbol->vaddr);
 			}
 			pj_kb (pj, "is_ifunc", reloc->is_ifunc);
