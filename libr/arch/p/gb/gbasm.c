@@ -11,7 +11,7 @@ static inline void str_op(char *c) {
 static int gb_reg_idx(char r) {
 	const char rstr[] = "bcdehl a";
 	const char *ptr = strchr (rstr, r);
-	return ptr ? (int)(size_t)(ptr - rstr) : -1;
+	return ptr && r && r != ' '? (int)(size_t)(ptr - rstr): -1;
 }
 
 static bool gb_parse_cb1(ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
@@ -62,7 +62,7 @@ static bool gb_parse_cb2(ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
 		q[0] = ',';
 		return false;
 	}
-	num = r_num_get (NULL, &p[1]);
+	num = r_num_math (NULL, &p[1]);
 	q[0] = ',';
 	if (num > 7) {
 		return false;
@@ -84,29 +84,77 @@ static bool gb_parse_cb2(ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
 }
 
 static int gb_parse_arith1(ut8 *buf, const int minlen, char *buf_asm, ut8 base, ut8 alt) {
-	int i;
-	ut64 num;
 	if (strlen (buf_asm) < minlen) {
 		return 0;
 	}
-	buf[0] = base;
-	char *ptr_asm = buf_asm + minlen - 1;
-	i = strlen (ptr_asm);
-	r_str_replace_in (ptr_asm, (ut32)i + 1, "[ ", "[", true);
-	r_str_replace_in (ptr_asm, (ut32)i + 1, " ]", "]", true);
-	r_str_do_until_token (str_op, buf_asm, ' ');
-	i = gb_reg_idx (buf_asm[minlen - 1]);
-	if (i != -1) {
-		buf[0] |= (ut8)i;
-	} else if (!strncmp (buf_asm + minlen - 1, "[hl]", 4)) {
-		buf[0] |= 6;
+	char *operand = buf_asm + minlen - 1;
+	r_str_trim (operand);
+	if (r_str_startswith (operand, "a,")) {
+		operand += 2;
+		r_str_trim (operand);
+	}
+	if (!*operand) {
+		return 0;
+	}
+	int reg = gb_reg_idx (*operand);
+	if (reg >= 0 && !operand[1]) {
+		buf[0] = base | reg;
+	} else if (!strcmp (operand, "[hl]")) {
+		buf[0] = base | 6;
 	} else {
 		buf[0] = alt;
-		num = r_num_get (NULL, buf_asm + minlen - 1);
-		buf[1] = (ut8)(num & 0xff);
+		buf[1] = (ut8)r_num_math (NULL, operand);
 		return 2;
 	}
 	return 1;
+}
+
+static int gb_parse_ldmem(ut8 *buf, const char *buf_asm) {
+	char *operands = strdup (buf_asm + 3);
+	if (!operands) {
+		return 0;
+	}
+	r_str_replace_in (operands, strlen (operands) + 1, " ", "", true);
+	char *src = strchr (operands, ',');
+	int len = 0;
+	if (!src) {
+		free (operands);
+		return 0;
+	}
+	*src++ = 0;
+	char *dst = operands;
+	bool load = !strcmp (dst, "a");
+	char *mem = load? src: dst;
+	if (!strcmp (dst, "sp") && !strcmp (src, "hl")) {
+		buf[0] = 0xf9;
+		len = 1;
+	} else if (!strcmp (dst, "hl") && r_str_startswith (src, "sp+")) {
+		buf[0] = 0xf8;
+		buf[1] = (ut8)r_num_math (NULL, src + 3);
+		len = 2;
+	} else if ((load || !strcmp (src, "a") || !strcmp (src, "sp"))
+			&& *mem == '[' && r_str_endswith (mem, "]")) {
+		mem[strlen (mem) - 1] = 0;
+		mem++;
+		if (!strcmp (mem, "bc") || !strcmp (mem, "de")) {
+			if (load || !strcmp (src, "a")) {
+				buf[0] = (!strcmp (mem, "bc")? 0x02: 0x12) | (load? 8: 0);
+				len = 1;
+			}
+		} else if (!strcmp (mem, "hl+") || !strcmp (mem, "hl-")) {
+			if (load || !strcmp (src, "a")) {
+				buf[0] = (!strcmp (mem, "hl+")? 0x22: 0x32) | (load? 8: 0);
+				len = 1;
+			}
+		} else if (strcmp (mem, "hl")) {
+			ut64 address = r_num_math (NULL, mem);
+			buf[0] = load? 0xfa: !strcmp (src, "sp")? 0x08: 0xea;
+			r_write_le16 (buf + 1, address);
+			len = 3;
+		}
+	}
+	free (operands);
+	return len;
 }
 
 static int gb_parse_ld1(ut8 *buf, const int minlen, char *buf_asm) {
@@ -154,12 +202,12 @@ static bool gb_parse_ld2(ut8 *buf, char *buf_asm) {
 			return false;
 		}
 		buf[0] = 0x6 + (ut8)(i * 8);
-		num = r_num_get (NULL, buf_asm + 5);
+		num = r_num_math (NULL, buf_asm + 5);
 		buf[1] = (ut8)(num & 0xff);
 		return true;
 	} else if (!strncmp (buf_asm + 3, "[hl],", 5)) {
 		buf[0] = 0x36;
-		num = r_num_get (NULL, buf_asm + 8);
+		num = r_num_math (NULL, buf_asm + 8);
 		buf[1] = (ut8)(num & 0xff);
 		return true;
 	}
@@ -192,7 +240,7 @@ static bool gb_parse_ld3(ut8 *buf, char *buf_asm) {
 		return false;
 	}
 
-	const ut64 num = r_num_get (NULL, buf_asm + 6);
+	const ut64 num = r_num_math (NULL, buf_asm + 6);
 	buf[1] = num & 0xff;
 	buf[2] = (num & 0xff00) >> 8;
 	return true;
@@ -305,11 +353,6 @@ static int gbAsm(const char *buf, ut8 **outbuf) {
 	case 0x72726361: // rrca
 		opbuf[0] = 0x0f;
 		break;
-	case 0x73746f70: // stop
-		opbuf[0] = 0x10;
-		opbuf[1] = 0;
-		len = 2;
-		break;
 	case 0x726c61: // rla
 		opbuf[0] = 0x17;
 		break;
@@ -333,7 +376,7 @@ static int gbAsm(const char *buf, ut8 **outbuf) {
 			&& buf_asm[6] == ','
 			&& buf_asm[7] != '\0') {
 			opbuf[0] = 0xe8;
-			num = r_num_get (NULL, buf_asm + 7);
+			num = r_num_math (NULL, buf_asm + 7);
 			opbuf[1] = (ut8)(num & 0xff);
 			len = 2;
 		} else if (!strcmp (buf_asm + 4, "hl,bc")) {
@@ -374,6 +417,11 @@ static int gbAsm(const char *buf, ut8 **outbuf) {
 		break;
 	case 0x636366: // ccf
 		opbuf[0] = 0x3f;
+		break;
+	case 0x73746f70: // stop
+		opbuf[0] = 0x10;
+		opbuf[1] = 0;
+		len = 2;
 		break;
 	case 0x68616c74: // halt
 		opbuf[0] = 0x76;
@@ -422,7 +470,10 @@ static int gbAsm(const char *buf, ut8 **outbuf) {
 		i = strlen (buf_asm);
 		r_str_replace_in (buf_asm, (ut32)i + 1, "[ ", "[", true);
 		r_str_replace_in (buf_asm, (ut32)i + 1, " ]", "]", true);
-		len = gb_parse_ld1 (opbuf, 6, buf_asm);
+		len = gb_parse_ldmem (opbuf, buf_asm);
+		if (len < 1) {
+			len = gb_parse_ld1 (opbuf, 6, buf_asm);
+		}
 		if (len < 1) {
 			if (gb_parse_ld2 (opbuf, buf_asm)) {
 				len = 2;
@@ -436,7 +487,7 @@ static int gbAsm(const char *buf, ut8 **outbuf) {
 			free (buf_asm);
 			return 0;
 		}
-		num = r_num_get (NULL, &buf_asm[4]);
+		num = r_num_math (NULL, &buf_asm[4]);
 		if ((num & 7) || ((num/8) > 7)) {
 			free (buf_asm);
 			return 0;
@@ -494,7 +545,7 @@ static int gbAsm(const char *buf, ut8 **outbuf) {
 				if (buf_asm[3] == 'h' && buf_asm[4] == 'l')
 					opbuf[0] = 0xe9;
 				else {
-					num = r_num_get (NULL, &buf_asm[3]);
+					num = r_num_math (NULL, &buf_asm[3]);
 					len = 3;
 					opbuf[0] = 0xc3;
 					opbuf[1] = (ut8)(num & 0xff);
@@ -529,7 +580,7 @@ static int gbAsm(const char *buf, ut8 **outbuf) {
 					free (buf_asm);
 					return 0;
 				}
-				num = r_num_get (NULL, p + 1);
+				num = r_num_math (NULL, p + 1);
 				opbuf[1] = (ut8)(num & 0xff);
 				opbuf[2] = (ut8)((num & 0xff00) >> 8);
 				len = 3;
@@ -544,7 +595,7 @@ static int gbAsm(const char *buf, ut8 **outbuf) {
 		{
 			char *p = strchr (buf_asm, (int)',');
 			if (!p) {
-				num = r_num_get (NULL, &buf_asm[3]);
+				num = r_num_math (NULL, &buf_asm[3]);
 				len = 2;
 				opbuf[0] = 0x18;
 				opbuf[1] = (ut8)(num & 0xff);
@@ -578,7 +629,7 @@ static int gbAsm(const char *buf, ut8 **outbuf) {
 					free (buf_asm);
 					return 0;
 				}
-				num = r_num_get (NULL, p + 1);
+				num = r_num_math (NULL, p + 1);
 				opbuf[1] = (ut8)(num & 0xff);
 				len = 2;
 			}
@@ -592,7 +643,7 @@ static int gbAsm(const char *buf, ut8 **outbuf) {
 		{
 			char *p = strchr (buf_asm, (int)',');
 			if (!p) {
-				num = r_num_get (NULL, buf_asm + 4);
+				num = r_num_math (NULL, buf_asm + 4);
 				len = 3;
 				opbuf[0] = 0xcd;
 				opbuf[1] = (ut8)(num & 0xff);
@@ -626,7 +677,7 @@ static int gbAsm(const char *buf, ut8 **outbuf) {
 					free (buf_asm);
 					return 0;
 				}
-				num = r_num_get (NULL, p + 1);
+				num = r_num_math (NULL, p + 1);
 				opbuf[1] = (ut8)(num & 0xff);
 				opbuf[2] = (ut8)((num & 0xff00) >> 8);
 				len = 3;

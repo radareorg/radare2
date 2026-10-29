@@ -620,3 +620,28 @@ a "ld b, [hl]" 46
 a "ld [hl], a" 77
 a "ld a, 0x63" 3e63
 a "rlc [hl]" cb06
+
+a "add a, 0x18" c618
+a "adc a, 0x01" ce01
+a "sbc a, c" 99
+a "add a, b" 80
+a "add 0x18" c618
+a "ld a, [0xc000]" fa00c0
+a "ld [0xc000], a" ea00c0
+a "ld [0xc000], sp" 0800c0
+a "ld a, [bc]" 0a
+a "ld [bc], a" 02
+a "ld a, [de]" 1a
+a "ld [de], a" 12
+a "ld a, [hl+]" 2a
+a "ld [hl+], a" 22
+a "ld a, [hl-]" 3a
+a "ld [hl-], a" 32
+a "ld hl, sp+8" f808
+a "ld sp, hl" f9
+a "stop" 1000
+
+a "ld [0xc700+1], a" ea01c7
+a "ld a, [0xc700+1]" fa01c7
+a "ld hl, 0xc700+1" 2101c7
+a "add a, 16+8" c618
