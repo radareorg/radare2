@@ -1405,6 +1405,8 @@ a "mov [eax+4], ecx" 894804
 a "mov eax, cr0" 0f20c0
 a "mov eax, dr0" 0f21c0
 a "mov eax, dword [0]" a100000000
+a "mov eax, dword [-8]" a1f8ffffff
+a "mov eax, dword [ebp+-8]" 8b45f8
 a "mov ecx, dword [0]" 8b0d00000000
 a "mov ecx, dword [1]" 8b0d01000000
 a "mov eax, dword [eax]" 8b00

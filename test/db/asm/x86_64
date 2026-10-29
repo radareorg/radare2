@@ -1119,6 +1119,7 @@ a "mov eax, dword [rax + rcx*4]" 8b0488
 a "mov eax, dword [rax + r9*4]" 428b0488
 a "mov r10d, dword [rbx + rcx*8 + 0x10]" 448b54cb10
 a "mov rax, qword [r9 + 8]" 498b4108
+a "mov rax, qword [rbp+-8]" 488b45f8
 a "mov eax, dword [eax]" 678b00
 a "mov [rdi], al" 8807
 a "mov byte [rdi], al" 8807
