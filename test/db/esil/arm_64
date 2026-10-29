@@ -4684,3 +4684,28 @@ EXPECT=<<EOF
 0
 EOF
 RUN
+
+NAME=arm64 fmadd fnmadd fmsub fnmsub round once
+FILE=malloc://16
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 200c421f208c421f200c621f208c621f
+aei
+aeim
+ar d1=0x3fe44cb63e46dd61;ar d2=0x3ff58f16ad9ac27c;ar d3=0xbfeb5a39943335d4
+aes
+ar d0
+aes
+ar d0
+aes
+ar d0
+aes
+ar d0
+EOF
+EXPECT=<<EOF
+0x3de2c7523d309977
+0xbffb5a39943c997d
+0xbde2c7523d309977
+0x3ffb5a39943c997d
+EOF
+RUN

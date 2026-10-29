@@ -1604,6 +1604,29 @@ static bool esil_float_mul(REsil *esil) {
 	return ret;
 }
 
+static bool esil_float_muladd(REsil *esil) {
+	bool ret = false;
+	double m, n, a;
+	const RStrs ms = r_esil_pop (esil);
+	const RStrs ns = r_esil_pop (esil);
+	const RStrs as = r_esil_pop (esil);
+
+	if (esil_get_parm_float_strs (esil, ms, &m) && esil_get_parm_float_strs (esil, ns, &n) && esil_get_parm_float_strs (esil, as, &a)) {
+		if (isnan (a)) {
+			ret = esil_pushnum_float (esil, a);
+		} else if (isnan (m)) {
+			ret = esil_pushnum_float (esil, m);
+		} else if (isnan (n)) {
+			ret = esil_pushnum_float (esil, n);
+		} else {
+			ret = esil_pushnum_float (esil, fma (m, n, a));
+		}
+	} else {
+		R_LOG_DEBUG ("esil_float_muladd: invalid parameters");
+	}
+	return ret;
+}
+
 static bool esil_float_div(REsil *esil) {
 	bool ret = false;
 	double s, d;
@@ -1888,6 +1911,7 @@ R_API bool r_esil_setup_ops(REsil *esil) {
 	ret &= OP ("F+", esil_float_add, 1, 2, OT_MATH);
 	ret &= OP ("F-", esil_float_sub, 1, 2, OT_MATH);
 	ret &= OP ("F*", esil_float_mul, 1, 2, OT_MATH);
+	ret &= OP ("F*+", esil_float_muladd, 1, 3, OT_MATH);
 	ret &= OP ("F/", esil_float_div, 1, 2, OT_MATH);
 	ret &= OP ("-F", esil_float_neg, 1, 1, OT_MATH);
 	ret &= OP ("CEIL", esil_float_ceil, 1, 1, OT_MATH);
