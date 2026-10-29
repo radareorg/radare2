@@ -1423,3 +1423,62 @@ EXPECT=<<EOF
 0x80000001
 EOF
 RUN
+
+NAME=thumb smull, umlal, smlal and umaal use the 64-bit result
+FILE=malloc://0x100
+ARGS=-a arm -b 16
+CMDS=<<EOF
+aei
+aeim
+s 0
+wx 82fb0301
+ar pc=0
+ar r0=0x0
+ar r1=0x0
+ar r2=0xffffffff
+ar r3=0x2
+aes
+ar r0
+ar r1
+s 0
+wx e2fb0301
+ar pc=0
+ar r0=0xffffffff
+ar r1=0x0
+ar r2=0x1
+ar r3=0x1
+aes
+ar r0
+ar r1
+s 0
+wx c2fb0301
+ar pc=0
+ar r0=0x0
+ar r1=0x0
+ar r2=0xffffffff
+ar r3=0x1
+aes
+ar r0
+ar r1
+s 0
+wx e2fb6301
+ar pc=0
+ar r0=0xffffffff
+ar r1=0xffffffff
+ar r2=0xffffffff
+ar r3=0xffffffff
+aes
+ar r0
+ar r1
+EOF
+EXPECT=<<EOF
+0xfffffffe
+0xffffffff
+0x00000000
+0x00000001
+0xffffffff
+0xffffffff
+0xffffffff
+0xffffffff
+EOF
+RUN
