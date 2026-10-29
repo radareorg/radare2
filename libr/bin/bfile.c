@@ -1534,6 +1534,15 @@ R_API ut64 r_bin_file_get_vaddr(RBinFile *bf, ut64 paddr, ut64 vaddr) {
 	return paddr;
 }
 
+// an absolute or tls value is not an address, so the load bias never moves it
+R_API ut64 r_bin_file_get_symbol_vaddr(RBinFile *bf, const RBinSymbol *sym) {
+	R_RETURN_VAL_IF_FAIL (bf && sym, UT64_MAX);
+	if (sym->attr.flags & (R_BIN_ATTR_ABSOLUTE | R_BIN_ATTR_TLS)) {
+		return sym->vaddr;
+	}
+	return r_bin_file_get_vaddr (bf, sym->paddr, sym->vaddr);
+}
+
 R_API RVecRBinSymbol *r_bin_file_get_symbols_vec(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf, NULL);
 	return bf->bo? &bf->bo->symbols_vec: NULL;
