@@ -1000,7 +1000,7 @@ R_API int r_cons_pal_len(void);
 R_API char *r_cons_rgb_tostring(ut8 r, ut8 g, ut8 b);
 R_API void r_cons_pal_list(RCons *cons, int rad, const char *arg);
 R_API void r_cons_pal_show(RCons *cons);
-R_API bool r_cons_is_tty(void);
+R_API bool r_cons_istty(int fd);
 R_API int r_cons_arrow_to_hjkl(RCons *cons, int ch);
 R_API char *r_cons_html_filter(const char *ptr, int *newlen);
 R_API char *r_cons_rainbow_get(RCons *cons, int idx, int last, bool bg);

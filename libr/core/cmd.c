@@ -6922,7 +6922,7 @@ R_API bool r_core_cmd_lines(RCore *core, const char *lines) {
 	}
 	bool ret = true;
 	size_t line_count = r_str_char_count (lines, '\n');
-	const bool istty = r_cons_is_tty ();
+	const bool istty = r_cons_istty (1);
 	const bool show_progress_bar = core->print->enable_progressbar \
 		&& r_config_get_b (core->config, "scr.interactive") \
 		&& r_config_get_b (core->config, "scr.progressbar") && istty;
