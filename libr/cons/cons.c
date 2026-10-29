@@ -1000,7 +1000,7 @@ R_API bool r_cons_is_windows(void) {
 
 // check if the given file descriptor is attached to a terminal
 // use 0 for stdin (interactivity, keys, prompts) and 1 for stdout (colors, ansi)
-R_API bool r_cons_istty(int fd) {
+R_API bool r_cons_isatty(int fd) {
 #if R2_WASM_BROWSER
 	/* browsers expose a single terminal stream */
 	(void)fd;

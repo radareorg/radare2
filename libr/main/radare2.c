@@ -1170,7 +1170,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			break;
 		case 'q':
 			// keep -c commands like v or ~.. usable from a terminal
-			r_config_set_b (r->config, "scr.interactive", r_cons_istty (0));
+			r_config_set_b (r->config, "scr.interactive", r_cons_isatty (0));
 			r_config_set_b (r->config, "scr.prompt", false);
 			r_config_set_b (r->config, "cfg.fortunes", false);
 			if (mr.quiet) {
