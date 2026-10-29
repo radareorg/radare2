@@ -219,12 +219,11 @@ static bool test_r_fs_ntfs_attribute_list_real_size_overflow(void) {
 	r_write_le16 (attack + 0x20, 0x40); // data-runs offset (never read: len==0 short-circuits)
 	r_write_le32 (attack + 0x30, 0xFFFFFFFF); // "real size" -- the attack value
 
-	memcpy (rec + term_off, attack, sizeof (attack));
-	ut16 new_term_off = term_off + sizeof (attack);
-	r_write_le32 (rec + new_term_off, 0xFFFFFFFF);
-
-	ut32 new_used = new_term_off + 4;
+	const ut16 new_term_off = term_off + sizeof (attack);
+	const ut32 new_used = new_term_off + 4;
 	mu_assert_true (new_used <= 1024 - 8, "crafted record stays inside the MFT record");
+	memcpy (rec + term_off, attack, sizeof (attack));
+	r_write_le32 (rec + new_term_off, 0xFFFFFFFF);
 	r_write_le32 (rec + 0x18, new_used);
 
 	RIO *io = r_io_new ();
