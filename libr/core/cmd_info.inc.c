@@ -3188,7 +3188,7 @@ static bool idd_sdb_function(void *user, const char *k, const char *v) {
 	return !strcmp (v, "fcn");
 }
 
-static int idd_symbol_size(RCore *core, const char *name) {
+static ut32 idd_symbol_size(RCore *core, const char *name) {
 	RVecRBinSymbol *symbols = r_bin_get_symbols_vec (core->bin);
 	if (symbols) {
 		RBinSymbol *sym;
@@ -3200,6 +3200,18 @@ static int idd_symbol_size(RCore *core, const char *name) {
 		}
 	}
 	return 0;
+}
+
+static void idd_print_flag(RCore *core, const char *name, ut32 size, ut64 addr) {
+	bool valid_name = r_name_check_utf8 (name, core->flags->utf8);
+	char *flagname = valid_name? NULL: strdup (name);
+	if (flagname) {
+		r_flag_name_filter (core->flags, flagname);
+	}
+	if (valid_name || flagname) {
+		r_cons_printf (core->cons, "'@0x%08" PFMT64x "'f sym.%s %u\n", addr, flagname? flagname: name, size);
+	}
+	free (flagname);
 }
 
 static void cmd_iddlf(RCore *core) {
@@ -3217,16 +3229,7 @@ static void cmd_iddlf(RCore *core) {
 			name = key;
 		}
 		ut64 addr = sdb_num_getf (dwarf_sdb, NULL, "fcn.%s.addr", key);
-		int size = idd_symbol_size (core, name);
-		bool valid_name = r_name_check_utf8 (name, core->flags->utf8);
-		char *flagname = valid_name? NULL: strdup (name);
-		if (flagname) {
-			r_flag_name_filter (core->flags, flagname);
-		}
-		if (valid_name || flagname) {
-			r_cons_printf (core->cons, "f sym.%s %d @ 0x%" PFMT64x "\n", flagname? flagname: name, size, addr);
-		}
-		free (flagname);
+		idd_print_flag (core, name, idd_symbol_size (core, name), addr);
 	}
 	ls_free (l);
 }
@@ -3253,7 +3256,7 @@ static void cmd_iddlg(RCore *core) {
 			continue;
 		}
 		sdb_set (seen, name, "1", 0);
-		r_cons_printf (core->cons, "f sym.%s %u @ 0x%" PFMT64x "\n", name, sym->attr.size, sym->vaddr);
+		idd_print_flag (core, name, sym->attr.size, sym->vaddr);
 	}
 	sdb_free (seen);
 }

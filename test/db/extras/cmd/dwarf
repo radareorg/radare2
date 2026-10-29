@@ -36,7 +36,7 @@ iddi bins/elf/bomb
 iddlf
 EOF
 EXPECT=<<EOF
-f sym.main 311 @ 0x400da0
+'@0x00400da0'f sym.main 311
 EOF
 RUN
 
@@ -46,7 +46,7 @@ iddi bins/elf/analysis/pie
 iddlg
 EOF
 EXPECT=<<EOF
-f sym._IO_stdin_used 4 @ 0x65c
+'@0x0000065c'f sym._IO_stdin_used 4
 EOF
 RUN
 
