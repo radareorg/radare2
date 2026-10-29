@@ -1124,17 +1124,6 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 	return ret;
 }
 
-static inline char *next_token(char *tok) {
-	const char *const delimiters = ";\n\r";
-	const char *d = delimiters;
-	for (; *d; d++) {
-		char *ptr = strchr (tok, *d);
-		if (ptr) {
-			return ptr;
-		}
-	}
-	return NULL;
-}
 
 R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 	int num, stage, ret, idx, ctr, i, linenum = 0;
@@ -1219,7 +1208,7 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 	bool labels = !!strchr (lbuf, ':');
 
 	/* Tokenize */
-	for (tokens[0] = lbuf, ctr = 0; (ptr = next_token (tokens[ctr]));) {
+	for (tokens[0] = lbuf, ctr = 0; (ptr = strpbrk (tokens[ctr], ";\n\r"));) {
 		if (ctr + 1 >= tokens_size) {
 			const size_t new_tokens_size = tokens_size * 2;
 			if (sizeof (char *) * new_tokens_size <= sizeof (char *) * tokens_size) {
@@ -1357,6 +1346,9 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 					|| r_str_startswith (ptr_start, ".string ")
 					|| r_str_startswith (ptr_start, ".incbin ");
 				char *str = literal? strdup (ptr_start): r_asm_code_equ_replace (acode, ptr_start);
+				if (!str) {
+					goto fail;
+				}
 				ret = parse_asm_directive (a, &op, acode, str, &off, stage == STAGES - 1);
 				if (ret < 0) {
 					R_LOG_ERROR ("Cannot assemble '%s' at line %d", str, linenum);
@@ -1374,6 +1366,9 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 					continue;
 				}
 				str = r_asm_code_equ_replace (acode, ptr_start);
+				if (!str) {
+					goto fail;
+				}
 				ret = r_asm_assemble_single (a, &op, str, stage != STAGES - 1);
 				free (str);
 			}

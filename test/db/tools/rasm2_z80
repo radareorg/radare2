@@ -59,3 +59,13 @@ EXPECT=<<EOF
 6d657373616765c9
 EOF
 RUN
+
+NAME=Assembler nested equates and token boundaries
+FILE=-
+CMDS=<<EOF
+!rasm2 -a z80 ".equ name=0x12; .equ name_more=0x34; .equ alias=name+1; ld a, alias; ld b, name_more; ld hl, forward; forward:; ret"
+EOF
+EXPECT=<<EOF
+3e130634210700c9
+EOF
+RUN

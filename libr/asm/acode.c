@@ -35,39 +35,72 @@ R_API void r_asm_code_set_equ(RAsmCode *code, const char *key, const char *value
 	ht_pp_insert (code->equs, key, (void *)value);
 }
 
-static bool replace_cb(void *user, const void *key, const void *value) {
-	char **str = user;
-	char *p = *str;
-	const size_t keylen = strlen (key);
-	RStrBuf *sb = r_strbuf_new (NULL);
+static bool equ_replace(RAsmCode *code, RStrBuf *sb, const char *str, const char **chain, size_t depth) {
+	const char *p = str;
 	while (*p) {
-		char *start = p;
-		if (*p != ':' && r_name_validate_char (*p)) {
-			while (*p != ':' && r_name_validate_char (*p)) {
+		const char *start = p;
+		if (*p == ':' || !r_name_validate_char (*p)) {
+			do {
 				p++;
+			} while (*p && (*p == ':' || !r_name_validate_char (*p)));
+			if (!r_strbuf_append_n (sb, start, p - start)) {
+				return false;
+			}
+			continue;
+		}
+		do {
+			p++;
+		} while (*p != ':' && r_name_validate_char (*p));
+		const size_t len = p - start;
+		if (len > INT_MAX) {
+			return false;
+		}
+		char token[128];
+		char *key = len < sizeof (token)? token: r_str_ndup (start, len);
+		if (!key) {
+			return false;
+		}
+		if (key == token) {
+			memcpy (token, start, len);
+			token[len] = 0;
+		}
+		const char *value = ht_pp_find (code->equs, key, NULL);
+		if (key != token) {
+			free (key);
+		}
+		size_t i;
+		for (i = 0; i < depth && chain[i] != value; i++) {
+		}
+		if (!value || i < depth) {
+			if (!r_strbuf_append_n (sb, start, len)) {
+				return false;
 			}
 		} else {
-			p++;
-		}
-		size_t len = p - start;
-		if (len == keylen && !strncmp (start, key, len)) {
-			r_strbuf_append (sb, value);
-		} else {
-			r_strbuf_append_n (sb, start, len);
+			if (depth == 64) {
+				R_LOG_ERROR ("Too many nested .equ substitutions");
+				return false;
+			}
+			chain[depth] = value;
+			if (!equ_replace (code, sb, value, chain, depth + 1)) {
+				return false;
+			}
 		}
 	}
-	free (*str);
-	*str = r_strbuf_drain (sb);
 	return true;
 }
 
-R_API char *r_asm_code_equ_replace(RAsmCode *code, const char *_str) {
-	R_RETURN_VAL_IF_FAIL (code && _str, NULL);
-	char *str = strdup (_str);
-	if (str) {
-		ht_pp_foreach (code->equs, replace_cb, &str);
+R_API char *r_asm_code_equ_replace(RAsmCode *code, const char *str) {
+	R_RETURN_VAL_IF_FAIL (code && str, NULL);
+	if (!code->equs->count) {
+		return strdup (str);
 	}
-	return str;
+	const char *chain[64];
+	RStrBuf sb = {0};
+	if (!equ_replace (code, &sb, str, chain, 0)) {
+		r_strbuf_fini (&sb);
+		return NULL;
+	}
+	return r_strbuf_drain_nofree (&sb);
 }
 
 R_API char *r_asm_code_get_hex(RAsmCode *acode) {

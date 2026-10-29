@@ -15,6 +15,7 @@ if get_option('enable_tests')
     'anal_x86',
     'arena',
     'asn1',
+    'asm_code',
     'axml',
     'codemeta',
     'base36',
