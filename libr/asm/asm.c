@@ -603,6 +603,7 @@ static int r_asm_disassemble_do(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 	if (len < 1 || !a->dcur) {
 		// callers expect a mnemonic even when no arch plugin is loaded
 		r_anal_op_set_mnemonic (op, a->pc, "invalid");
+		op->size = 1;
 		return 0;
 	}
 	int ret = 0;
@@ -658,7 +659,8 @@ static int r_asm_disassemble_do(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 			free (newtext);
 		}
 	}
-	int opsz = (op->size > 0)? R_MAX (0, R_MIN (len, op->size)): 1;
+	op->size = R_MAX (1, op->size);
+	int opsz = R_MIN (len, op->size);
 	r_anal_op_set_bytes (op, op->addr, buf, opsz);
 	return ret;
 }

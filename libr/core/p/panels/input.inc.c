@@ -97,10 +97,9 @@ static void r_panels_fix_cursor_down(RCore *core) {
 		// XXX: ugly hack
 		for (i = 0; i < 2; i++) {
 			RAnalOp op;
-			int sz = r_asm_disassemble (core->rasm, &op, core->block, 32);
-			if (sz < 1) {
-				sz = 1;
-			}
+			r_asm_set_pc (core->rasm, core->addr);
+			int sz = r_asm_disassemble (core->rasm, &op, core->block, R_MIN (core->blocksize, 32));
+			sz = visual_op_size (core, core->addr, sz);
 			r_anal_op_fini (&op);
 			r_core_seek_delta (core, sz);
 			print->cur = R_MAX (print->cur - sz, 0);
@@ -1367,10 +1366,6 @@ static void prevOpcode(RCore *core) {
 static void nextOpcode(RCore *core) {
 	RAnalOp *aop = r_core_anal_op (core, core->addr + core->print->cur, R_ARCH_OP_MASK_BASIC);
 	RPrint *p = core->print;
-	if (aop) {
-		p->cur += aop->size;
-		r_anal_op_free (aop);
-	} else {
-		p->cur += 4;
-	}
+	p->cur += visual_op_size (core, core->addr + p->cur, aop? aop->size: 0);
+	r_anal_op_free (aop);
 }

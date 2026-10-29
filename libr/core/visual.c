@@ -2219,12 +2219,8 @@ static void nextOpcode(RCore *core) {
 	ut64 opaddr = insoff (core, core->print->cur);
 	RAnalOp *aop = r_core_anal_op (core, opaddr, R_ARCH_OP_MASK_BASIC);
 	RPrint *p = core->print;
-	if (aop) {
-		p->cur += aop->size;
-		r_anal_op_free (aop);
-	} else {
-		p->cur += 4;
-	}
+	p->cur += visual_op_size (core, core->addr + p->cur, aop? aop->size: 0);
+	r_anal_op_free (aop);
 }
 
 static void prevOpcode(RCore *core) {
@@ -2472,11 +2468,10 @@ static bool fix_cursor(RCore *core) {
 			reset_print_cur (p);
 		} else if ((!cur_is_visible && is_close) || !off_is_visible) {
 			RAnalOp op;
+			r_asm_set_pc (core->rasm, core->addr);
 			int sz = r_asm_disassemble (core->rasm,
-				&op, core->block, 32);
-			if (sz < 1) {
-				sz = 1;
-			}
+				&op, core->block, R_MIN (core->blocksize, 32));
+			sz = visual_op_size (core, core->addr, sz);
 			r_core_seek_delta (core, sz);
 			p->cur = R_MAX (p->cur - sz, 0);
 			if (p->ocur != -1) {
@@ -4864,27 +4859,33 @@ R_API void r_core_visual_disasm_up(RCore *core, int *cols) {
 }
 
 R_API void r_core_visual_disasm_down(RCore *core, RAnalOp *op, int *cols) {
+	R_RETURN_IF_FAIL (core && op && cols);
+	r_anal_op_init (op);
 	ut64 aligned = visual_align_code (core, core->addr);
 	if (aligned != core->addr) {
 		r_core_seek (core, aligned, true);
 	}
 	RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->addr, 0);
 	ut64 orig = core->addr;
-	op->size = 1;
+	op->size = *cols = visual_op_size (core, orig, 0);
 	if (f && f->folded) {
-		*cols = core->addr - r_anal_function_max_addr (f);
+		ut64 end = r_anal_function_max_addr (f);
+		if (end > orig) {
+			*cols = visual_op_size (core, orig, R_MIN (end - orig, INT_MAX));
+		}
+		return;
 	} else {
 		r_asm_set_pc (core->rasm, core->addr);
 		int maxopsize = r_arch_info (core->anal->arch,
 			R_ARCH_INFO_MAXOP_SIZE);
-		size_t bufsize = maxopsize > -1? R_MAX (maxopsize, 32): 32;
+		size_t bufsize = R_MIN (R_MAX (maxopsize, 32), R_MAX (core->blocksize, 32));
 		ut8 *buf = calloc (bufsize, sizeof (ut8));
 		if (!buf) {
 			R_LOG_ERROR ("Cannot allocate %d byte(s)", (int)bufsize);
-			return;
-		};
-		r_io_read_at (core->io, orig, buf, bufsize);
-		*cols = r_asm_disassemble (core->rasm, op, buf, bufsize);
+		} else if (r_io_read_at (core->io, orig, buf, bufsize)) {
+			int size = r_asm_disassemble (core->rasm, op, buf, bufsize);
+			*cols = visual_op_size (core, orig, size > (int)bufsize? 0: size);
+		}
 		free (buf);
 
 		int middle_delta = visual_middle_delta (core, core->addr, *cols);
@@ -4900,14 +4901,11 @@ R_API void r_core_visual_disasm_down(RCore *core, RAnalOp *op, int *cols) {
 	if (f && f->addr == orig && nvars < 20) {
 		// skip line by line here
 		if (nvars <= core->skiplines) {
-			*cols = op->size > 1 ? op->size : 1;
 			core->skiplines = 0;
 		} else {
 			core->skiplines ++;
 			*cols = 0;
 		}
-	} else if (*cols < 1) {
-		*cols = op->size > 1 ? op->size : 1;
 	}
 }
 

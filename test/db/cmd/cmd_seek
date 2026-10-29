@@ -163,6 +163,25 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=seek opcodes advances over invalid instructions
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 0f040f040f040f040f040f040f040f04
+so
+s
+so 5
+s
+so -6
+s
+EOF
+EXPECT=<<EOF
+0x1
+0xb
+0x0
+EOF
+RUN
+
 NAME=seek line
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
