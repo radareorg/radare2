@@ -850,7 +850,7 @@ static int io_perms_to_prot(int io_perms) {
 	return prot_perms;
 }
 
-#if __linux__
+#if __linux__ && !defined(__ANDROID__) && defined(MADV_HUGEPAGE)
 static int thp_mode(void) {
 	const char *thp = "/sys/kernel/mm/transparent_hugepage/enabled";
 	int ret = 0;
