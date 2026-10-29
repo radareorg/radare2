@@ -1023,6 +1023,44 @@ ERROR: Cannot assemble '.cfloat -1 8 23 127 0 0' at line 1
 EOF
 RUN
 
+NAME=rasm2 .cfloat valid profiles
+FILE=-
+CMDS=<<EOF
+!rasm2 -a x86 -b 64 ".cfloat 1 8 23 127 0 0;.float 3.14"
+!rasm2 -a x86 -b 64 ".cfloat 1 11 52 1023 0 0;.float 3.14"
+!rasm2 -a x86 -b 64 ".cfloat 1 15 64 16383 0 1;.float 3.14"
+!rasm2 -a x86 -b 64 ".cfloat 1 10 5 15 0 0;.float 3.14"
+!rasm2 -a x86 -b 64 ".cfloat 1 8 7 127 0 0;.float 3.14"
+!rasm2 -a x86 -b 64 -e ".cfloat 1 8 23 127 0 0;.float 3.14"
+!rasm2 -a x86 -b 64 -e ".cfloat 1 11 52 1023 0 0;.float 3.14"
+!rasm2 -a x86 -b 64 -e ".cfloat 1 8 7 127 0 0;.float 3.14"
+EOF
+EXPECT=<<EOF
+c3f54840
+1f85eb51b81e0940
+00f8285c8fc2f5c80040
+1202
+4940
+4048f5c3
+40091eb851eb851f
+4049
+EOF
+RUN
+
+NAME=rasm2 .cfloat rejects truncated argument list
+FILE=-
+CMDS=!rasm2 -a x86 -b 64 ".cfloat 1 8 23 127 0;.float 3.14"
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: The .cfloat directive expects 6 arguments: (sign_bits, exp_bits, mant_bits, bias, big_endian, explicit_leading_bit)
+INFO: Example (float): .cfloat 1 8 23 127 0 0
+INFO: Example (double): .cfloat 1 11 52 1023 0 0
+INFO: Example (bf16): .cfloat 1 8 7 127 0 0
+INFO: Example (x86-80): .cfloat 1 15 64 16383 0 1
+ERROR: Cannot assemble '.cfloat 1 8 23 127 0' at line 1
+EOF
+RUN
+
 NAME=rasm2 #25036 (reject invalid x86-64 register r1)
 FILE=-
 CMDS=!rasm2 -a x86 -b 64 "add rax, r1"
