@@ -1145,7 +1145,10 @@ static const char *arg(RArchSession *as, csh *handle, cs_insn *insn, char *buf, 
 	buf[0] = 0;
 	switch (insn->detail->arm.operands[n].type) {
 	case ARM_OP_REG:
-		if (ISSHIFTED (n)) {
+		if (SHIFTTYPE (n) == ARM_SFT_RRX) {
+			// capstone gives rrx a shift value of 0; it shifts the carry flag into bit 31
+			snprintf (buf, buf_sz, "31,cf,<<,1,%s,>>,|", REG (n));
+		} else if (ISSHIFTED (n)) {
 			if (SHIFTTYPEREG (n)) {
 				// the shift count is Rs[7:0]
 				snprintf (buf, buf_sz, "0xff,%s,&,%s,%s",
@@ -2352,7 +2355,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		break;
 	}
 	case ARM64_INS_FABS:
-		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,DUP,0,I2D,F<,?{,-F,},D2F,%s,=",
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,DUP,0,I2D,SWAP,F<,?{,-F,},D2F,%s,=",
 			REGBITS64 (1), REG64 (1), REG64 (0));
 		break;
 	case ARM64_INS_FNEG:

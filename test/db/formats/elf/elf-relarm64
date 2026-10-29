@@ -144,3 +144,24 @@ EXPECT=<<EOF
 0x0800004c 0x0000004c ADD_32 261   ext32 + 0x00000008
 EOF
 RUN
+
+NAME=ELF: aarch64 RELATIVE import in .rela.plt resolves to its addend
+FILE=bins/elf/arm64-relative-plt.elf
+CMDS=ii
+EXPECT=<<EOF
+nth vaddr      bind   type lib name
+-----------------------------------
+1   0x00400300 GLOBAL FUNC     foo
+EOF
+RUN
+
+NAME=ELF: aarch64 RELATIVE import in .rela.plt follows -B
+FILE=bins/elf/arm64-relative-plt.elf
+ARGS=-B 0x100000
+CMDS=ii
+EXPECT=<<EOF
+nth vaddr      bind   type lib name
+-----------------------------------
+1   0x00100300 GLOBAL FUNC     foo
+EOF
+RUN

@@ -3881,6 +3881,33 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=arm32 rrx shifted register operand
+FILE=malloc://0x100
+ARGS=-a arm -b 32
+CMDS=<<EOF
+aei
+aeim
+wx 620081e0
+ar r1=0
+ar r2=3
+ar cpsr=0x20000000
+aes
+ar r0
+s 0
+wx 620021e0
+ar pc=0
+ar r1=0
+ar r2=0
+ar cpsr=0x20000000
+aes
+ar r0
+EOF
+EXPECT=<<EOF
+0x80000001
+0x80000000
+EOF
+RUN
+
 NAME=arm32 adds, subs, rsbs, adcs and sbcs set nzcv from the operands, adc keeps them
 FILE=malloc://0x100
 ARGS=-a arm -b 32
