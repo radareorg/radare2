@@ -66,6 +66,10 @@ a "add qword [r8 + 8], r9" 4d014808
 a "xor r8d, dword [rax]" 443300
 a "xor edx, dword [0x2000]" 33142500200000
 a "sub qword [0x10], rax" 4829042510000000
+a "mov dword [0x10], ecx" 890c2510000000
+a "mov ecx, dword [0x10]" 8b0c2510000000
+a "mov r8d, dword [0x10]" 448b042510000000
+a "mov dword [0x10], eax" a31000000000000000
 a "add sil, byte [rbx]" 400233
 a "add rax, 44" 4883c02c
 a "add rax, r8" 4c01c0
