@@ -4110,6 +4110,22 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		}
 		r_strbuf_appendf (&op->esil, "DUP,!,SWAP,&,%s,SWAP,cpsr,&,|,cpsr,=", REG(1));
 		break;
+	case ARM_INS_RBIT:
+		// swap adjacent bits, then pairs, nibbles, bytes and halfwords
+		r_strbuf_appendf (&op->esil, "%s,DUP,1,SWAP,>>,0x55555555,&,SWAP,0x55555555,&,1,SWAP,<<,|,DUP,2,SWAP,>>,0x33333333,&,SWAP,0x33333333,&,2,SWAP,<<,|,DUP,4,SWAP,>>,0x0f0f0f0f,&,SWAP,0x0f0f0f0f,&,4,SWAP,<<,|,DUP,8,SWAP,>>,0x00ff00ff,&,SWAP,0x00ff00ff,&,8,SWAP,<<,|,DUP,16,SWAP,>>,SWAP,16,SWAP,<<,0xffffffff,&,|,%s,=", REG (1), REG (0));
+		break;
+	case ARM_INS_SBFX:
+		if (IMM (3) > 0 && IMM (3) <= 32 - IMM (2)) {
+			r_strbuf_appendf (&op->esil, "%d,%d,%s,%d,%"PFMT64u",<<,&,>>,~,%s,=",
+				IMM (3), IMM (2), REG (1), IMM (2), bitmask_by_width[IMM (3) - 1], REG (0));
+		}
+		break;
+	case ARM_INS_PKHBT:
+		r_strbuf_appendf (&op->esil, "0xffff0000,%s,&,0xffff,%s,&,|,%s,=", ARG (2), ARG (1), REG (0));
+		break;
+	case ARM_INS_PKHTB:
+		r_strbuf_appendf (&op->esil, "0xffff,%s,&,0xffff0000,%s,&,|,%s,=", ARG (2), ARG (1), REG (0));
+		break;
 	case ARM_INS_UBFX:
 		if (IMM (3) > 0 && IMM (3) <= 32 - IMM (2)) {
 			size_t index = IMM (3) - 1;

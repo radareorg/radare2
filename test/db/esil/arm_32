@@ -3907,3 +3907,126 @@ EXPECT=<<EOF
 0x80000000
 EOF
 RUN
+
+NAME=arm32 rbit, sbfx, pkhbt and pkhtb
+FILE=malloc://0x100
+ARGS=-a arm -b 32
+CMDS=<<EOF
+aei
+aeim
+wx 310fffe6
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 310fffe6
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx d101a4e7
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx d101a4e7
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx 5100bfe7
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 5100bfe7
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx d10fa0e7
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx d10fa0e7
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx 120081e6
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 120081e6
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx 120481e6
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 120481e6
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx 520481e6
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 520481e6
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx d20f81e6
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx d20f81e6
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+EOF
+EXPECT=<<EOF
+0x80feff01
+0x1e6a2c48
+0x00000000
+0x0000000f
+0x80ff7f01
+0x12345678
+0xffffffff
+0x00000000
+0x7ffe7f01
+0xfedc5678
+0xfe807f01
+0xdcba5678
+0x80fffe80
+0x1234dcba
+0x80ff0000
+0x1234ffff
+EOF
+RUN

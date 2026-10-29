@@ -1423,3 +1423,70 @@ EXPECT=<<EOF
 0x80000001
 EOF
 RUN
+
+NAME=thumb rbit, sbfx, pkhbt and pkhtb
+FILE=malloc://0x100
+ARGS=-a arm -b 16
+CMDS=<<EOF
+aei
+aeim
+wx 91faa1f0
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 91faa1f0
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx 41f3c400
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 41f3c400
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx c1ea0220
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx c1ea0220
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx c1ea2240
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx c1ea2240
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+EOF
+EXPECT=<<EOF
+0x80feff01
+0x1e6a2c48
+0x00000000
+0x0000000f
+0xfe807f01
+0xdcba5678
+0x80ff7ffe
+0x1234fedc
+EOF
+RUN
