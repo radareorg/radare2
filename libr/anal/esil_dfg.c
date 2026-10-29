@@ -203,24 +203,25 @@ static int _rv_ins_cmp(void *incoming, void *in, void *user) {
 	return rv_incoming->from - rv_in->from;
 }
 
+static const char *edf_reg_resolve(RAnalEsilDFG *dfg, const char *reg, EsilDFGVar *rv) {
+	RRegItem *ri = r_reg_get (dfg->reg, reg, -1);
+	if (!ri) {
+		return NULL;
+	}
+	rv->from = ri->offset;
+	rv->to = ri->offset + ri->size - 1;
+	const char *name = ri->name;
+	r_unref (ri);
+	return name;
+}
+
 static bool _edf_reg_set(RAnalEsilDFG *dfg, const char *reg, RGraphNode *node) {
 	R_RETURN_VAL_IF_FAIL (dfg && !dfg->malloc_failed && reg, false);
-	char *_reg = r_str_newf ("reg.%s", reg);
-	if (!sdb_num_exists (dfg->regs, _reg)) {
-		// no assert to prevent memleaks
-		free (_reg);
+	EsilDFGVar range = {0};
+	if (!edf_reg_resolve (dfg, reg, &range)) {
 		return false;
 	}
-	EsilDFGVar *rv = R_NEW0 (EsilDFGVar);
-	if (!rv) {
-		free (_reg);
-		return false;
-	}
-
-	const ut64 v = sdb_num_get (dfg->regs, _reg, NULL);
-	free (_reg);
-	rv->from = (v &(UT64_MAX ^ UT32_MAX)) >> 32;
-	rv->to = v & UT32_MAX;
+	EsilDFGVar *rv = R_NEWCOPY (EsilDFGVar, &range);
 	r_queue_enqueue (dfg->todo, rv);
 	while (!r_queue_is_empty (dfg->todo) && !dfg->malloc_failed) {
 		// rbtree api does sadly not allow deleting multiple items at once : (
@@ -238,9 +239,7 @@ static bool _edf_reg_set(RAnalEsilDFG *dfg, const char *reg, RGraphNode *node) {
 		}
 		return false;
 	}
-	rv = R_NEW0 (EsilDFGVar);
-	rv->from = (v &(UT64_MAX ^ UT32_MAX)) >> 32;
-	rv->to = v & UT32_MAX;
+	rv = R_NEWCOPY (EsilDFGVar, &range);
 	rv->node = node;
 	r_crbtree_insert (dfg->vars, rv, _rv_ins_cmp, NULL);
 	return true;
@@ -377,12 +376,11 @@ static int _rv_find_cmp(void *incoming, void *in, void *user) {
 
 static RGraphNode *_edf_origin_reg_get(RAnalEsilDFG *dfg, const char *reg) {
 	R_RETURN_VAL_IF_FAIL (dfg && reg, NULL);
-	char *_reg = r_str_newf ("reg.%s", reg);
-	if (!sdb_num_exists (dfg->regs, _reg)) {
-		free (_reg);
+	EsilDFGVar rv;
+	reg = edf_reg_resolve (dfg, reg, &rv);
+	if (!reg) {
 		return NULL;
 	}
-	free (_reg);
 	char *origin_reg = r_str_newf ("ori.%s", reg);
 	RGraphNode *origin_reg_node = sdb_ptr_get (dfg->regs, origin_reg, 0);
 	if (origin_reg_node) {
@@ -402,20 +400,12 @@ static RGraphNode *_edf_origin_reg_get(RAnalEsilDFG *dfg, const char *reg) {
 
 static RGraphNode *_edf_reg_get(RAnalEsilDFG *dfg, const char *reg) {
 	R_RETURN_VAL_IF_FAIL (dfg && reg, NULL);
-	char *_reg = r_str_newf ("reg.%s", reg);
-	if (!sdb_num_exists (dfg->regs, _reg)) {
-		free (_reg);
+	EsilDFGVar range = {0};
+	reg = edf_reg_resolve (dfg, reg, &range);
+	if (!reg) {
 		return NULL;
 	}
-	EsilDFGVar *rv = R_NEW0 (EsilDFGVar);
-	if (!rv) {
-		free (_reg);
-		return NULL;
-	}
-	const ut64 v = sdb_num_get (dfg->regs, _reg, NULL);
-	free (_reg);
-	rv->from = (v &(UT64_MAX ^ UT32_MAX)) >> 32;
-	rv->to = v & UT32_MAX;
+	EsilDFGVar *rv = R_NEWCOPY (EsilDFGVar, &range);
 	RQueue *parts = r_queue_new (8);
 	if (!parts) {
 		free (rv);
@@ -1633,17 +1623,6 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_new(RAnal *anal, bool use_map_info, bool use
 		return NULL;
 	}
 
-	// this is not exactly necessary
-	// could use RReg-API directly in the dfg gen,
-	// but sdb as transition table is probably faster
-	RRegItem *ri;
-	RListIter *ator;
-	r_list_foreach (anal->reg->allregs, ator, ri) {
-		const ut32 from = ri->offset;
-		const ut32 to = from + ri->size - 1; // closed intervals because of FUCK YOU
-		const ut64 v = to | (((ut64)from) << 32);
-		sdb_num_setf (dfg->regs, v, 0, "reg.%s", ri->name);
-	}
 	r_reg_set_profile_string (dfg->reg, anal->reg->reg_profile_str);
 	r_esil_setup (dfg->esil, anal, 0, 0, 0);
 	if (dfg->iob.io && dfg->fd >= 0) {
@@ -2192,22 +2171,11 @@ R_API RStrBuf *r_anal_esil_dfg_filter_expr(RAnal *anal, const char *expr, const 
 
 R_API bool r_anal_esil_dfg_reg_is_const(RAnalEsilDFG *dfg, const char *reg) {
 	R_RETURN_VAL_IF_FAIL (dfg && reg, false);
-	char *_reg = r_str_newf ("reg.%s", reg);
-	if (!sdb_num_exists (dfg->regs, _reg)) {
-		// reg is actually not part of the current reg-profile
-		free (_reg);
+	EsilDFGVar range = {0};
+	if (!edf_reg_resolve (dfg, reg, &range)) {
 		return false;
 	}
-	EsilDFGVar *rv = R_NEW0 (EsilDFGVar);
-	if (!rv) {
-		free (_reg);
-		eprintf ("Allocation failed\n");
-		return false;
-	}
-	const ut64 v = sdb_num_get (dfg->regs, _reg, NULL);
-	free (_reg);
-	rv->from = (v &(UT64_MAX ^ UT32_MAX)) >> 32;
-	rv->to = v & UT32_MAX;
+	EsilDFGVar *rv = R_NEWCOPY (EsilDFGVar, &range);
 	r_queue_enqueue (dfg->todo, rv);
 
 	while (!r_queue_is_empty (dfg->todo)) {
