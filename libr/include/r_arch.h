@@ -139,7 +139,10 @@ typedef enum {
 } RArchEsilAction;
 
 typedef ut32 RArchDecodeMask;
-typedef ut32 RArchEncodeMask; // syntax ?
+typedef ut32 RArchEncodeMask;
+enum {
+	R_ARCH_ENCODE_MASK_SIZING = 1, // permit unresolved operands while computing labels
+};
 typedef ut32 RArchModifyMask; // syntax ?
 
 typedef int (*RArchPluginInfoCallback)(RArchSession *cfg, ut32 query);
