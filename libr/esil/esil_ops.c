@@ -313,9 +313,8 @@ static bool esil_eq(REsil *esil) {
 		R_LOG_DEBUG ("esil_eq cant pop two values from stack at 0x%08"PFMT64x, esil->addr);
 		return false;
 	}
-	const bool is128reg = esil_internal_sizeof_reg (esil, dst.a) == 128;
-	const bool ispacked = esil_internal_packed_size_reg (esil, dst.a) > 0;
-	if (is128reg && esil->stackptr > 0) {
+	const ut32 regsize = esil_internal_sizeof_reg (esil, dst.a);
+	if (regsize == 128 && esil->stackptr > 0) {
 		const RStrs src2 = r_esil_pop (esil);
 		const ut64 n0 = r_strs_tonum (src, 0, NULL);
 		const ut64 n1 = r_strs_tonum (src2, 0, NULL);
@@ -323,7 +322,7 @@ static bool esil_eq(REsil *esil) {
 		char *dst2 = r_str_newf ("%sh", dst.a);
 		ret = r_esil_reg_write (esil, dst2, n0);
 		free (dst2);
-	} else if (ispacked) {
+	} else if (esil_internal_packed_size_reg (esil, dst.a) > 0) {
 		const RStrs src2 = r_esil_pop (esil);
 		char *newreg = r_str_newf ("%sl", dst.a);
 		if (r_esil_get_parm (esil, src2, &num2)) {
@@ -335,10 +334,10 @@ static bool esil_eq(REsil *esil) {
 		free (newreg);
 	} else if (r_esil_reg_read_silent (esil, dst.a, &num, NULL)) {
 		if (r_esil_get_parm (esil, src, &num2)) {
-			ret = r_esil_reg_write (esil, dst.a, num2);
+			ret = r_esil_reg_update (esil, dst.a, num, num2);
 			esil->cur = num2;
 			esil->old = num;
-			esil->lastsz = esil_internal_sizeof_reg (esil, dst.a);
+			esil->lastsz = regsize;
 		} else {
 			R_LOG_DEBUG ("esil_eq: invalid src");
 		}

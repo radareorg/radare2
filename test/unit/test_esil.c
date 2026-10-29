@@ -327,7 +327,81 @@ bool test_memory_fault_addresses(void) {
 	mu_end;
 }
 
+typedef struct {
+	ut64 value, observed_old, observed_new;
+	int reads, writes, notifications, sizes;
+	bool fail;
+} TestRegWrite;
+
+static bool counted_reg_read(void *user, const char *name, ut64 *value) {
+	TestRegWrite *test = user;
+	test->reads++;
+	*value = test->value;
+	return true;
+}
+
+static bool counted_reg_write(void *user, const char *name, ut64 value) {
+	TestRegWrite *test = user;
+	test->writes++;
+	if (test->fail) {
+		return false;
+	}
+	test->value = value;
+	return true;
+}
+
+static ut32 counted_reg_size(void *user, const char *name) {
+	TestRegWrite *test = user;
+	test->sizes++;
+	return 32;
+}
+
+static void counted_reg_voyeur(void *user, const char *name, ut64 old, ut64 value) {
+	TestRegWrite *test = user;
+	test->notifications++;
+	test->observed_old = old;
+	test->observed_new = value;
+}
+
+bool test_reg_write_observation(void) {
+	TestRegWrite test = { .value = 7 };
+	REsilOptions opt = r_esil_options (NULL, NULL);
+	opt.ifaces.reg.user = &test;
+	opt.ifaces.reg.reg_read = counted_reg_read;
+	opt.ifaces.reg.reg_write = counted_reg_write;
+	opt.ifaces.reg.reg_size = counted_reg_size;
+	REsil *esil = r_esil_new (&opt);
+	mu_assert_notnull (esil, "create ESIL");
+	mu_assert_true (r_esil_reg_write (esil, "pc", 9), "unobserved write");
+	mu_assert_eq (test.reads, 0, "unobserved write does not fetch discarded old value");
+	mu_assert_eq (test.value, 9, "register updated");
+	ut32 id = r_esil_add_voyeur (esil, &test, counted_reg_voyeur, R_ESIL_VOYEUR_REG_WRITE);
+	mu_assert_neq (id, R_ESIL_VOYEUR_ERR, "add write observer");
+	mu_assert_true (r_esil_reg_write (esil, "pc", 11), "observed write");
+	mu_assert_eq (test.reads, 1, "observer requires old value");
+	mu_assert_eq (test.notifications, 1, "observer notified");
+	mu_assert_eq (test.observed_old, 9, "previous value retained");
+	mu_assert_eq (test.observed_new, 11, "new value retained");
+	test.fail = true;
+	mu_assert_false (r_esil_reg_write (esil, "pc", 12), "failed write propagates");
+	mu_assert_eq (test.notifications, 1, "failed write does not notify");
+	test.fail = false;
+	mu_assert_true (r_esil_parse (esil, "13,pc,="), "ESIL assignment");
+	mu_assert_eq (test.value, 13, "assignment result");
+	mu_assert_eq (test.sizes, 1, "assignment resolves register size once");
+	mu_assert_eq (test.reads, 3, "observed assignment reads old value once");
+	mu_assert_eq (test.notifications, 2, "observed assignment notifies");
+	mu_assert_eq (test.observed_old, 11, "assignment observer gets previous value");
+	mu_assert_eq (test.observed_new, 13, "assignment observer gets new value");
+	mu_assert_eq (esil->old, 11, "assignment retains previous flag input");
+	mu_assert_eq (esil->cur, 13, "assignment retains current flag input");
+	mu_assert_eq (esil->lastsz, 32, "assignment retains register width");
+	r_esil_free (esil);
+	mu_end;
+}
+
 int main(int argc, char **argv) {
+	mu_run_test (test_reg_write_observation);
 	mu_run_test (test_fault_record);
 	mu_run_test (test_memory_fault_addresses);
 	mu_run_test (test_setup_keeps_custom_interfaces);

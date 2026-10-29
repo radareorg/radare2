@@ -997,26 +997,43 @@ R_API bool r_esil_get_parm(REsil *esil, RStrs s, ut64 *num) {
 	return r_esil_get_parm_size (esil, s, num, NULL);
 }
 
+static void esil_notify_reg_write(RIDStorage *voyeurs, ut32 i, const char *dst, ut64 old, ut64 val) {
+	do {
+		REsilVoyeur *voy = r_id_storage_get (voyeurs, i);
+		voy->reg_write (voy->user, dst, old, val);
+	} while (r_id_storage_get_next (voyeurs, &i));
+}
+
 R_API bool r_esil_reg_write(REsil *esil, const char *dst, ut64 val) {
 	R_RETURN_VAL_IF_FAIL (esil && dst, false);
 	if (esil->cb.hook_reg_write && esil->cb.hook_reg_write (esil, dst, &val)) {
 		return true;
 	}
+	RIDStorage *voyeurs = &esil->voyeur[R_ESIL_VOYEUR_REG_WRITE];
+	ut32 i;
 	ut64 old;
-	if (R_UNLIKELY (!r_esil_reg_read_silent (esil, dst, &old, NULL))) {
+	if (!r_id_storage_get_lowest (voyeurs, &i) || R_UNLIKELY (!r_esil_reg_read_silent (esil, dst, &old, NULL))) {
 		return r_esil_reg_write_silent (esil, dst, val);
 	}
 	if (R_UNLIKELY (!r_esil_reg_write_silent (esil, dst, val))) {
 		return false;
 	}
-	ut32 i;
-	if (!r_id_storage_get_lowest (&esil->voyeur[R_ESIL_VOYEUR_REG_WRITE], &i)) {
+	esil_notify_reg_write (voyeurs, i, dst, old, val);
+	return true;
+}
+
+R_IPI bool r_esil_reg_update(REsil *esil, const char *dst, ut64 old, ut64 val) {
+	if (esil->cb.hook_reg_write && esil->cb.hook_reg_write (esil, dst, &val)) {
 		return true;
 	}
-	do {
-		REsilVoyeur *voy = r_id_storage_get (&esil->voyeur[R_ESIL_VOYEUR_REG_WRITE], i);
-		voy->reg_write (voy->user, dst, old, val);
-	} while (r_id_storage_get_next (&esil->voyeur[R_ESIL_VOYEUR_REG_WRITE], &i));
+	if (R_UNLIKELY (!r_esil_reg_write_silent (esil, dst, val))) {
+		return false;
+	}
+	RIDStorage *voyeurs = &esil->voyeur[R_ESIL_VOYEUR_REG_WRITE];
+	ut32 i;
+	if (r_id_storage_get_lowest (voyeurs, &i)) {
+		esil_notify_reg_write (voyeurs, i, dst, old, val);
+	}
 	return true;
 }
 
