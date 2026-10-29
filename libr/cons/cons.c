@@ -1024,9 +1024,11 @@ R_API bool r_cons_istty(int fd) {
 	case 1:
 		h = GetStdHandle (STD_OUTPUT_HANDLE);
 		break;
+	default:
+		return false;
 	}
 	DWORD mode;
-	return h != INVALID_HANDLE_VALUE && GetConsoleMode (h, &mode);
+	return h && h != INVALID_HANDLE_VALUE && GetConsoleMode (h, &mode);
 #else
 	/* non-UNIX do not have ttys */
 	(void)fd;
