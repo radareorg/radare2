@@ -64,6 +64,8 @@ a "cmp rax, qword [rbp - 8]" 483b45f8
 a "sub r15, qword [r12 + r13*8 + 0x40]" 4f2b7cec40
 a "add qword [r8 + 8], r9" 4d014808
 a "xor r8d, dword [rax]" 443300
+a "xor edx, dword [0x2000]" 33142500200000
+a "sub qword [0x10], rax" 4829042510000000
 a "add sil, byte [rbx]" 400233
 a "add rax, 44" 4883c02c
 a "add rax, r8" 4c01c0
