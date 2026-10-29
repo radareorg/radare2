@@ -6517,6 +6517,7 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 		op->regs_ext[0] = op->regs_ext[1] = false;
 
 		ut64 temp = 1;
+		bool have_num = false;
 		Register reg = X86R_UNDEFINED;
 		bool reg_ext = false;
 		bool first_reg = true;
@@ -6540,13 +6541,14 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 							op->regs_ext[reg_index] = reg_ext;
 						}
 						reg_index++;
-					} else {
+					} else if (have_num) {
 						op->offset += temp;
 						if (reg_index < 2) {
 							op->regs[reg_index] = X86R_UNDEFINED;
 						}
 					}
 					temp = 1;
+					have_num = false;
 					reg = X86R_UNDEFINED;
 				} else if (str[pos] == '*') {
 					// go to ], + or - to get scale
@@ -6635,6 +6637,7 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 				}
 				free (tmp);
 				temp *= read;
+				have_num = true;
 			}
 		}
 	} else if (last_type == TT_WORD) { // register
