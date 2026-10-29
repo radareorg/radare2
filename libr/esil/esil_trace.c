@@ -166,75 +166,54 @@ static void update_last_trace_op(REsil *esil) {
 	}
 }
 
-static bool trace_hook_reg_read(REsil *esil, const char *name, ut64 *res, int *size) {
-	R_RETURN_VAL_IF_FAIL (esil && name && res, -1);
+// voyeurs observing every reg and memory access performed while tracing
+static void trace_voyeur_reg_read (void *user, const char *name, ut64 val) {
+	REsil *esil = user;
+	R_RETURN_IF_FAIL (esil && name && esil->trace);
 	// D eprintf ("%d RR %s\n", esil->trace->cur_idx, name);
-	bool ret = false;
 	if (*name == '0') {
-		// eprintf ("Register not found in profile\n");
-		return false;
+		// Register not found in profile
+		return;
 	}
-	if (esil->ocb.hook_reg_read) {
-		REsilCallbacks cbs = esil->cb;
-		esil->cb = esil->ocb;
-		ret = esil->ocb.hook_reg_read (esil, name, res, size);
-		esil->cb = cbs;
-	}
-	if (!ret && esil->cb.reg_read) {
-		ret = esil->cb.reg_read (esil, name, res, size);
-	}
-	if (true) {
-		REsilTraceAccess *access = RVecAccess_emplace_back (&esil->trace->db.accesses);
-		access->is_reg = true;
-		// eprintf ("[ESIL] REG READ %s 0x%08"PFMT64x"\n", name, val);
-		access->reg.name = strdup (name); // XXX leaks. and regnames should be constant not heap allocated
-		access->reg.value = *res;
-		// TODO size
-		access->is_write = false;
-		// eprintf ("select it %p%c", DB, 10);
-	} else {
-		R_LOG_ERROR ("cannot read");
-	}
+	REsilTraceAccess *access = RVecAccess_emplace_back (&esil->trace->db.accesses);
+	access->is_reg = true;
+	// eprintf ("[ESIL] REG READ %s 0x%08"PFMT64x"\n", name, val);
+	access->reg.name = strdup (name); // XXX leaks. and regnames should be constant not heap allocated
+	access->reg.value = val;
+	// TODO size
+	access->is_write = false;
+	// eprintf ("select it %p%c", DB, 10);
 	update_last_trace_op (esil);
-	return ret;
 }
 
-static bool trace_hook_reg_write(REsil *esil, const char *name, ut64 *val) {
-	bool ret = false;
-	// eprintf ("[ESIL] REG WRITE %s 0x%08"PFMT64x"\n", name, *val);
+static void trace_voyeur_reg_write (void *user, const char *name, ut64 old, ut64 val) {
+	REsil *esil = user;
+	(void)old;
+	R_RETURN_IF_FAIL (esil && name && esil->trace);
+	// eprintf ("[ESIL] REG WRITE %s 0x%08"PFMT64x"\n", name, val);
 	// D eprintf ("%d RW %s\n", esil->trace->cur_idx, name);
 	RRegItem *ri = r_reg_get (esil->anal->reg, name, -1);
 	if (ri) {
 		REsilTraceAccess *access = RVecAccess_emplace_back (&esil->trace->db.accesses);
 		access->is_reg = true;
 		access->reg.name = strdup (name); // TODO: LEAK reg.name instead of .reg!
-		access->reg.value = *val;
+		access->reg.value = val;
 		access->is_write = true;
 		// TODO size
 
-		add_reg_change (esil->trace, ri, *val);
-		if (esil->ocb.hook_reg_write) {
-			REsilCallbacks cbs = esil->cb;
-			esil->cb = esil->ocb;
-			ret = esil->ocb.hook_reg_write (esil, name, val);
-			esil->cb = cbs;
-		}
+		add_reg_change (esil->trace, ri, val);
 		r_unref (ri);
 	}
 	update_last_trace_op (esil);
-	return ret;
 }
 
-static bool trace_hook_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
-	int ret = 0;
+static void trace_voyeur_mem_read (void *user, ut64 addr, const ut8 *buf, int len) {
+	REsil *esil = user;
+	R_RETURN_IF_FAIL (esil && esil->trace);
 	// D eprintf ("%d MR 0x%" PFMT64x " %d\n", esil->trace->cur_idx, addr, len);
-	if (esil->cb.mem_read) {
-		ret = esil->cb.mem_read (esil, addr, buf, len);
-	}
-
 	char *hexbuf = calloc ((1 + len), 4);
 	if (!hexbuf) {
-		return false;
+		return;
 	}
 
 	r_hex_bin2str (buf, len, hexbuf);
@@ -247,23 +226,18 @@ static bool trace_hook_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	access->mem.addr = addr;
 	access->is_write = false;
 
-	if (esil->ocb.hook_mem_read) {
-		REsilCallbacks cbs = esil->cb;
-		esil->cb = esil->ocb;
-		ret = esil->ocb.hook_mem_read (esil, addr, buf, len);
-		esil->cb = cbs;
-	}
 	update_last_trace_op (esil);
-	return ret;
 }
 
-static bool trace_hook_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
+static void trace_voyeur_mem_write (void *user, ut64 addr, const ut8 *old, const ut8 *buf, int len) {
 	size_t i;
-	int ret = 0;
+	REsil *esil = user;
+	(void)old;
+	R_RETURN_IF_FAIL (esil && esil->trace);
 	// D eprintf ("%d MW 0x%" PFMT64x " %d\n", esil->trace->cur_idx, addr, len);
 	char *hexbuf = r_hex_bin2strdup (buf, len);
 	if (!hexbuf) {
-		return false;
+		return;
 	}
 
 	// eprintf ("[ESIL] MEM WRITE 0x%08"PFMT64x" %s\n", addr, hexbuf);
@@ -277,14 +251,7 @@ static bool trace_hook_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len
 		add_mem_change (esil->trace, addr + i, buf[i]);
 	}
 
-	if (esil->ocb.hook_mem_write) {
-		REsilCallbacks cbs = esil->cb;
-		esil->cb = esil->ocb;
-		ret = esil->ocb.hook_mem_write (esil, addr, buf, len);
-		esil->cb = cbs;
-	}
 	update_last_trace_op (esil);
-	return ret != 0;
 }
 
 R_API void r_esil_trace_op(REsil *esil, struct r_anal_op_t *op) {
@@ -310,12 +277,11 @@ R_API void r_esil_trace_op(REsil *esil, struct r_anal_op_t *op) {
 		return;
 	}
 #endif
-	/* save old callbacks */
-	if (esil->ocb_set) {
+	/* observe accesses with voyeurs until this step is traced */
+	if (esil->trace_vid[0] != R_ESIL_VOYEUR_ERR) {
 		R_LOG_WARN ("r_esil_trace_op: prevented recursive call");
+		return;
 	}
-	esil->ocb = esil->cb;
-	esil->ocb_set = true;
 
 	REsilTraceOp *to = RVecTraceOp_emplace_back (&esil->trace->db.ops);
 	ut32 vec_idx = RVecAccess_length (&esil->trace->db.accesses);
@@ -329,16 +295,19 @@ R_API void r_esil_trace_op(REsil *esil, struct r_anal_op_t *op) {
 	RRegItem *pc_ri = r_reg_get (esil->anal->reg, "PC", -1);
 	const ut64 pc_before = pc_ri? r_reg_get_value (esil->anal->reg, pc_ri): 0;
 	/* set hooks */
-	esil->cb.hook_reg_read = trace_hook_reg_read;
-	esil->cb.hook_reg_write = trace_hook_reg_write;
-	esil->cb.hook_mem_read = trace_hook_mem_read;
-	esil->cb.hook_mem_write = trace_hook_mem_write;
+	esil->trace_vid[0] = r_esil_add_voyeur (esil, esil, trace_voyeur_reg_read, R_ESIL_VOYEUR_REG_READ);
+	esil->trace_vid[1] = r_esil_add_voyeur (esil, esil, trace_voyeur_reg_write, R_ESIL_VOYEUR_REG_WRITE);
+	esil->trace_vid[2] = r_esil_add_voyeur (esil, esil, trace_voyeur_mem_read, R_ESIL_VOYEUR_MEM_READ);
+	esil->trace_vid[3] = r_esil_add_voyeur (esil, esil, trace_voyeur_mem_write, R_ESIL_VOYEUR_MEM_WRITE);
 	/* evaluate esil expression */
 	r_esil_parse (esil, expr);
 	r_esil_stack_free (esil);
 	/* restore hooks */
-	esil->cb = esil->ocb;
-	esil->ocb_set = false;
+	size_t vi;
+	for (vi = 0; vi < R_ARRAY_SIZE (esil->trace_vid); vi++) {
+		r_esil_del_voyeur (esil, esil->trace_vid[vi]);
+		esil->trace_vid[vi] = R_ESIL_VOYEUR_ERR;
+	}
 	// update_last_trace_op (esil);
 	// Record the post-state PC so a later step-back finds the right value.
 	// If the ESIL expression did not modify PC, the caller will advance it

@@ -100,9 +100,9 @@ addresses. This representation does not depend on the host pointer width, guest
 register names, endianness, or an architecture's exception registers.
 
 Memory interfaces report the effective address after ESIL's configured address
-mask. A hook that handles an access but cannot complete it can call
+mask. An interface that handles an access but cannot complete it can call
 `r_esil_set_fault` and return true to prevent fallback to another memory provider.
-The core stepper still stops when the hook leaves a trap, even if parsing succeeds.
+The core stepper still stops when the interface leaves a trap, even if parsing succeeds.
 
 ```c
 r_esil_set_fault (esil, R_ANAL_TRAP_READ_ERR, address);
@@ -409,26 +409,27 @@ expressions to get:
 - all regs modified (write)
 - all regs accessed (read)
 
-# API HOOKS
+# API INTERFACES AND VOYEURS
 
-It is important for emulation to be able to setup hooks in the parser, so we
-can extend the parser to implement the analysis without having to write the
-parser again and again. This is, every time an operation is going to be
-executed we call a user hook which can be used to determine if rip is changing
-or if the instruction updates the stack.
+It is important for emulation to be able to intercept accesses from the parser
+so we can extend it to implement the analysis without writing the parser again
+and again. Consumers replace `REsilMemInterface` and `REsilRegInterface` in the
+REsil to change or observe how registers and memory are handled, and they can
+chain to the previously installed interface before restoring it.
 
-Later, at this level we can split that callback into several ones to have an
+Accesses that do not change state can simply be observed with voyeurs, an
 event based analysis api that may be extended in js like this:
 
 	esil.on('regset', function(){..
 	esil.on('syscall', function(){esil.regset('rip'
 
-we have already them. see `hook_flag_read()` `hook_execute()` `hook_mem_read()` ...
+see `r_esil_add_voyeur()` with its `R_ESIL_VOYEUR_*` types for reads, writes,
+aliases and executed ops, and the `REsilIfaces` bundle passed to
+`r_esil_init()`/`r_esil_setup()` to control the backing implementation.
 
-* return true if you want to override the action taken for a callback. for
-  example. avoid mem reads in a region or mem writes to make all memory read
-  only.
-* return false or 0 if you want to trace esil expression parsing. aka emulation ..
+* replace `mem_if.mem_write` to make all memory read only. see also
+  `r_esil_mem_ro()` which silently ignores stores for the whole vm.
+* fire voyeurs to trace esil expression parsing aka emulation ..
 
 Other operations that require bindings to external functionalities to work. In
 this case `r_ref` and `r_io`. This must be defined when initializing the esil vm.

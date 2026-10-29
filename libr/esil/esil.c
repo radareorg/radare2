@@ -9,6 +9,9 @@
 
 R_IPI bool isregornum(REsil *esil, RStrs str, ut64 *num);
 
+static bool internal_esil_mem_read (REsil *esil, ut64 addr, ut8 *buf, int len);
+static bool internal_esil_mem_read_no_null (REsil *esil, ut64 addr, ut8 *buf, int len);
+
 R_API void r_esil_set_trap(REsil *esil, int type, ut32 code) {
 	R_RETURN_IF_FAIL (esil);
 	esil->trap = type;
@@ -294,6 +297,7 @@ R_API bool r_esil_init(REsil *esil, REsilOptions *R_NULLABLE opt) {
 	esil->parse_goto_count = R_ESIL_GOTO_LIMIT;
 	esil->iotrap = opt->iotrap;
 	esil->addrmask = r_num_genmask (opt->addrsize - 1);
+	memset (esil->trace_vid, 0xff, sizeof (esil->trace_vid)); // R_ESIL_VOYEUR_ERR
 	esil->reg_if = opt->ifaces.reg;
 	esil->mem_if = opt->ifaces.mem;
 	esil->util_if = opt->ifaces.util;
@@ -505,14 +509,12 @@ R_API void r_esil_free(REsil *esil) {
 	free (esil);
 }
 
-static bool setup_esil_mem_read(void *user, ut64 addr, ut8 *buf, int len);
-static bool setup_esil_mem_write(void *user, ut64 addr, const ut8 *buf, int len);
-
-static bool esil_legacy_mem_cb(REsil *esil, bool write) {
-	if (write) {
-		return esil->mem_if.mem == esil && esil->mem_if.mem_write == setup_esil_mem_write;
-	}
-	return esil->mem_if.mem == esil && esil->mem_if.mem_read == setup_esil_mem_read;
+// The esil-backed interfaces (the ones wired by r_esil_setup and the wrappers
+// layered on top of them by consumers) fire cmd_ioer themselves, so the
+// wrapper must not fire it again. Any interface not owned by the esil (io
+// bindings, dfg, cost, ...) reports failures through here instead.
+static bool esil_legacy_mem_cb(REsil *esil) {
+	return esil->mem_if.mem == esil;
 }
 
 static bool esil_invalid_mem_access(REsil *esil, ut64 addr) {
@@ -522,7 +524,7 @@ static bool esil_invalid_mem_access(REsil *esil, ut64 addr) {
 }
 
 static void esil_cmd_ioer(REsil *esil, bool write) {
-	if (!esil_legacy_mem_cb (esil, write) && esil->cmd && esil->cmd_ioer && *esil->cmd_ioer) {
+	if (!esil_legacy_mem_cb (esil) && esil->cmd && esil->cmd_ioer && *esil->cmd_ioer) {
 		esil->cmd (esil, esil->cmd_ioer, esil->addr, write? 1: 0);
 	}
 }
@@ -544,14 +546,11 @@ R_API bool r_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 		r_esil_set_fault (esil, R_ANAL_TRAP_READ_ERR, addr);
 		return false;
 	}
-	if (esil->cb.hook_mem_read && esil->cb.hook_mem_read (esil, addr, buf, len)) {
-		return true;
-	}
 	if (R_UNLIKELY (!r_esil_mem_read_silent (esil, addr, buf, len))) {
 		esil_cmd_ioer (esil, false);
 		return false;
 	}
-	if (!esil_legacy_mem_cb (esil, false) && esil_invalid_mem_access (esil, addr)) {
+	if (!esil_legacy_mem_cb (esil) && esil_invalid_mem_access (esil, addr)) {
 		if (esil->iotrap) {
 			r_esil_set_fault (esil, R_ANAL_TRAP_READ_ERR, addr);
 		}
@@ -635,7 +634,8 @@ static bool internal_esil_mem_write_no_null(REsil *esil, ut64 addr, const ut8 *b
 R_API bool r_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (esil && buf && esil->mem_if.mem_write, false);
 	addr &= esil->addrmask;
-	if (esil->cb.hook_mem_write && esil->cb.hook_mem_write (esil, addr, buf, len)) {
+	if (esil->mem_ro) {
+		// readonly memory: stores are ignored, reads keep working
 		return true;
 	}
 	ut32 i;
@@ -778,8 +778,12 @@ static bool setup_esil_reg_read(void *user, const char *name, ut64 *val) {
 }
 
 static bool setup_esil_reg_write(void *user, const char *name, ut64 val) {
-	REsil *esil = user;
-	return esil && esil->cb.reg_write? esil->cb.reg_write (esil, name, val): false;
+	return internal_esil_reg_write (user, name, val);
+}
+
+// Disallow writing 0 to PC/SP/BP — treats it as NULL deref.
+static bool setup_esil_reg_write_no_null(void *user, const char *name, ut64 val) {
+	return internal_esil_reg_write_no_null (user, name, val);
 }
 
 static ut32 setup_esil_reg_size(void *user, const char *name) {
@@ -813,13 +817,20 @@ static bool setup_esil_reg_alias(void *user, int alias, const char *name) {
 }
 
 static bool setup_esil_mem_read(void *user, ut64 addr, ut8 *buf, int len) {
-	REsil *esil = user;
-	return esil && esil->cb.mem_read? esil->cb.mem_read (esil, addr, buf, len): false;
+	return internal_esil_mem_read (user, addr, buf, len);
+}
+
+// no_null reads skip mdev and cmd_ioer handling, just like the writes below
+static bool setup_esil_mem_read_no_null(void *user, ut64 addr, ut8 *buf, int len) {
+	return internal_esil_mem_read_no_null (user, addr, buf, len);
 }
 
 static bool setup_esil_mem_write(void *user, ut64 addr, const ut8 *buf, int len) {
-	REsil *esil = user;
-	return esil && esil->cb.mem_write? esil->cb.mem_write (esil, addr, buf, len): false;
+	return internal_esil_mem_write (user, addr, buf, len);
+}
+
+static bool setup_esil_mem_write_no_null(void *user, ut64 addr, const ut8 *buf, int len) {
+	return internal_esil_mem_write_no_null (user, addr, buf, len);
 }
 
 static bool setup_esil_set_bits(void *user, int bits) {
@@ -999,9 +1010,6 @@ R_API bool r_esil_get_parm(REsil *esil, RStrs s, ut64 *num) {
 
 R_API bool r_esil_reg_write(REsil *esil, const char *dst, ut64 val) {
 	R_RETURN_VAL_IF_FAIL (esil && dst, false);
-	if (esil->cb.hook_reg_write && esil->cb.hook_reg_write (esil, dst, &val)) {
-		return true;
-	}
 	ut64 old;
 	if (R_UNLIKELY (!r_esil_reg_read_silent (esil, dst, &old, NULL))) {
 		return r_esil_reg_write_silent (esil, dst, val);
@@ -1043,14 +1051,6 @@ R_API bool r_esil_reg_alias(REsil *esil, int alias, const char *name) {
 	return esil->reg_if.reg_alias (esil->reg_if.reg, alias, name);
 }
 
-R_API bool r_esil_reg_read_nocallback(REsil *esil, const char *regname, ut64 *num, int *size) {
-	void *old_hook_reg_read = (void *) esil->cb.hook_reg_read;
-	esil->cb.hook_reg_read = NULL;
-	bool ret = r_esil_reg_read (esil, regname, num, (ut32 *)size);
-	esil->cb.hook_reg_read = old_hook_reg_read;
-	return ret;
-}
-
 R_API bool r_esil_reg_read(REsil *esil, const char *regname, ut64 *val, ut32 *size) {
 	R_RETURN_VAL_IF_FAIL (esil && regname, false);
 	ut64 localnum = 0;
@@ -1060,9 +1060,6 @@ R_API bool r_esil_reg_read(REsil *esil, const char *regname, ut64 *val, ut32 *si
 	*val = 0;
 	if (size) {
 		*size = esil_config_bits (esil);
-	}
-	if (esil->cb.hook_reg_read && esil->cb.hook_reg_read (esil, regname, val, (st32 *)size)) {
-		return true;
 	}
 	if (R_UNLIKELY (!r_esil_reg_read_silent (esil, regname, val, size))) {
 		return false;
@@ -1474,25 +1471,13 @@ R_API bool r_esil_setup(REsil *esil, RAnal *anal, bool romem, bool stats, bool n
 	esil->anal = anal;
 	esil->parse_goto_count = anal->esil_goto_limit;
 	r_esil_set_trap (esil, 0, 0);
-	// esil->user = NULL;
-	// esil->debug = 0;
-	esil->cb.reg_read = internal_esil_reg_read;
-	if (nonull) {
-		// Disallow writing 0 to PC/SP/BP — treats it as NULL deref.
-		esil->cb.reg_write = internal_esil_reg_write_no_null;
-		esil->cb.mem_read = internal_esil_mem_read_no_null;
-		esil->cb.mem_write = internal_esil_mem_write_no_null;
-	} else {
-		esil->cb.reg_write = internal_esil_reg_write;
-		esil->cb.mem_read = internal_esil_mem_read;
-		esil->cb.mem_write = internal_esil_mem_write;
-	}
 	if (!esil->reg_if.reg_read) {
 		esil->reg_if = (REsilRegInterface) {
 			.user = esil,
 			.is_reg = setup_esil_is_reg,
 			.reg_read = setup_esil_reg_read,
-			.reg_write = setup_esil_reg_write,
+			// nonull refuses to write 0 to PC/SP/BP - treats it as NULL deref
+			.reg_write = nonull? setup_esil_reg_write_no_null: setup_esil_reg_write,
 			.reg_alias = setup_esil_reg_alias,
 			.reg_size = setup_esil_reg_size,
 			.reg_packed_size = setup_esil_reg_packed_size,
@@ -1500,9 +1485,9 @@ R_API bool r_esil_setup(REsil *esil, RAnal *anal, bool romem, bool stats, bool n
 	}
 	if (!esil->mem_if.mem_read) {
 		esil->mem_if = (REsilMemInterface) {
-			.user = esil,
-			.mem_read = setup_esil_mem_read,
-			.mem_write = setup_esil_mem_write,
+			.mem = esil,
+			.mem_read = nonull? setup_esil_mem_read_no_null: setup_esil_mem_read,
+			.mem_write = nonull? setup_esil_mem_write_no_null: setup_esil_mem_write,
 		};
 	}
 	if (!esil->util_if.set_bits && anal->coreb.core && anal->coreb.setArchBits) {

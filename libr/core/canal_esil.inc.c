@@ -66,6 +66,12 @@ typedef struct {
 	bool strings_only;
 	EsilClobCtx clob;
 	EsilCallClobbers *call_clobbers; // Shared by CFG snapshots.
+	// interface state replaced while the esil break pass is running
+	REsilRegInterface orig_reg;
+	REsilMemInterface orig_mem;
+	ut32 vid_reg_read;
+	ut32 vid_reg_write;
+	ut32 vid_mem_read;
 } EsilBreakCtx;
 
 typedef int RPerm;
@@ -185,10 +191,12 @@ static void clob_reset(EsilBreakCtx *ctx) {
 }
 
 static void esilbreak_ctx_fini(REsil *esil, EsilBreakCtx *ctx) {
-	esil->cb.hook_mem_read = NULL;
-	esil->cb.hook_mem_write = NULL;
-	esil->cb.hook_reg_read = NULL;
-	esil->cb.hook_reg_write = NULL;
+	r_esil_del_voyeur (esil, ctx->vid_reg_read);
+	r_esil_del_voyeur (esil, ctx->vid_reg_write);
+	r_esil_del_voyeur (esil, ctx->vid_mem_read);
+	ctx->vid_reg_read = ctx->vid_reg_write = ctx->vid_mem_read = R_ESIL_VOYEUR_ERR;
+	esil->reg_if = ctx->orig_reg;
+	esil->mem_if = ctx->orig_mem;
 	esil->user = NULL;
 	RVecEsilRegTaint_fini (&ctx->clob.reg_taints);
 	free (ctx->clob.delayed_call_cc);
@@ -470,7 +478,9 @@ static void esil_string_ref(REsil *esil, ut64 addr) {
 	}
 }
 
-static bool esilbreak_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
+// esil break never lets the vm store anything, it just analyzes the accesses
+static bool esilbreak_mem_write_if (void *mem, ut64 addr, const ut8 *buf, int len) {
+	REsil *esil = mem;
 	R_RETURN_VAL_IF_FAIL (esil && esil->anal && esil->user, false);
 	EsilBreakCtx *ctx = esil->user;
 	RCore *core = esil->anal->coreb.core;
@@ -493,15 +503,34 @@ static bool esilbreak_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len)
 	return true;
 }
 
-// TODO differentiate endian-aware mem_read with other reads; move ntarget handling to another function
-static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
-	R_RETURN_VAL_IF_FAIL (esil && esil->anal && esil->user, false);
+static bool esilbreak_mem_switch_if (void *mem, ut32 idx) {
+	REsil *esil = mem;
+	EsilBreakCtx *ctx = esil->user;
+	return ctx->orig_mem.mem_switch? ctx->orig_mem.mem_switch (ctx->orig_mem.mem, idx): false;
+}
+
+// reads of memory poisoned by call clobbers are handled here, returning 0
+static bool esilbreak_mem_read_if (void *mem, ut64 addr, ut8 *buf, int len) {
+	REsil *esil = mem;
+	R_RETURN_VAL_IF_FAIL (esil && esil->user, false);
 	EsilBreakCtx *ctx = esil->user;
 	if (ctx->clob.enabled && ctx->clob.read_clobbered) {
 		if (buf && len > 0) {
 			memset (buf, 0, len);
 		}
 		return true;
+	}
+	return ctx->orig_mem.mem_read (ctx->orig_mem.mem, addr, buf, len);
+}
+
+// TODO differentiate endian-aware mem_read with other reads; move ntarget handling to another function
+static void esilbreak_mem_read_voy (void *user, ut64 addr, const ut8 *buf, int len) {
+	REsil *esil = user;
+	R_RETURN_IF_FAIL (esil && esil->anal && esil->user);
+	EsilBreakCtx *ctx = esil->user;
+	// reads whose data the mem_read_if shim zeroed are not analyzed
+	if (ctx->clob.enabled && ctx->clob.read_clobbered) {
+		return;
 	}
 	RCore *core = esil->anal->coreb.core;
 	if (addr != UT64_MAX) {
@@ -529,7 +558,6 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 			break;
 		default:
 			trace = false;
-			r_io_read_at (core->io, addr, (ut8*)buf, len);
 			break;
 		}
 		if (trace && myvalid (core, refptr) && (ctx->ntarget == UT64_MAX || ctx->ntarget == refptr)) {
@@ -550,32 +578,47 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 			}
 		}
 	}
-	return false; // fallback
 }
 
-static bool esilbreak_reg_read(REsil *esil, const char *name, ut64 *res, int *size) {
-	R_RETURN_VAL_IF_FAIL (esil && esil->anal && esil->user && name, false);
+// reads of call clobbered registers are poisoned, the vm gets 0 back
+static bool esilbreak_reg_read_if (void *reg, const char *name, ut64 *res) {
+	REsil *esil = reg;
+	R_RETURN_VAL_IF_FAIL (esil && esil->anal && esil->user, false);
+	EsilBreakCtx *ctx = esil->user;
+	if (ctx->clob.enabled && RVecEsilRegTaint_length (&ctx->clob.reg_taints) > 0 && name) {
+		RRegItem *item = r_reg_get (esil->anal->reg, name, -1);
+		if (item) {
+			const bool tainted = esil_reg_taint_has_item (ctx, item);
+			r_unref (item);
+			if (tainted) {
+				// the note about the poisoned read is raised by the voyeur
+				if (res) {
+					*res = 0;
+				}
+				return true;
+			}
+		}
+	}
+	return ctx->orig_reg.reg_read (ctx->orig_reg.reg, name, res);
+}
+
+static void esilbreak_reg_read_voy (void *user, const char *name, ut64 val) {
+	REsil *esil = user;
+	(void)val;
+	R_RETURN_IF_FAIL (esil && esil->anal && esil->user && name);
 	EsilBreakCtx *ctx = esil->user;
 	if (!ctx->clob.enabled || RVecEsilRegTaint_length (&ctx->clob.reg_taints) < 1) {
-		return false;
+		return;
 	}
 	RRegItem *item = r_reg_get (esil->anal->reg, name, -1);
 	if (!item) {
-		return false;
+		return;
 	}
-	const bool tainted = esil_reg_taint_has_item (ctx, item);
-	if (tainted) {
+	if (esil_reg_taint_has_item (ctx, item)) {
 		ctx->clob.read_clobbered = true;
 		esilbreak_note_tainted_read (ctx, name, item);
-		if (res) {
-			*res = 0;
-		}
-		if (size) {
-			*size = item->size;
-		}
 	}
 	r_unref (item);
-	return tainted;
 }
 
 // compare register storage instead of names: esil expressions use "pc"
@@ -597,8 +640,10 @@ static void esil_reg_pc_span(RAnal *anal, EsilRegTaint *span) {
 	r_unref (pc);
 }
 
-static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
-	R_RETURN_VAL_IF_FAIL (esil && esil->anal && esil->user, false);
+static void esilbreak_reg_write_voy (void *user, const char *name, ut64 old, ut64 val) {
+	REsil *esil = user;
+	(void)old;
+	R_RETURN_IF_FAIL (esil && esil->anal && esil->user);
 	RAnal *anal = esil->anal;
 	EsilBreakCtx *ctx = esil->user;
 	RAnalOp *op = ctx->op;
@@ -630,7 +675,7 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 				}
 				r_unref (xitem);
 				r_unref (item);
-				return false;
+				return;
 			}
 			esil_reg_taint_clear_item (ctx, clear_item);
 			r_unref (xitem);
@@ -641,29 +686,29 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 		RRegItem *item = r_reg_get (anal->reg, name, -1);
 		if (item && item->type == R_REG_TYPE_GPR && item->size > 1
 				&& !esil_reg_taint_overlap_item (&ctx->clob.pc_span, item) && strcmp (name, ctx->spname)) {
-			esil_string_ref (esil, *val);
+			esil_string_ref (esil, val);
 		}
 		r_unref (item);
-		return false;
+		return;
 	}
-	handle_var_stack_access (esil, *val, R_PERM_NONE, bits / 8, false);
+	handle_var_stack_access (esil, val, R_PERM_NONE, bits / 8, false);
 	//specific case to handle blx/bx cases in arm through emulation
 	// XXX this thing creates a lot of false positives
-	ut64 at = *val;
+	ut64 at = val;
 	if (is_arm) {
 		if (anal->opt.armthumb) {
 			if (bits != 64 && !strcmp (name, "pc") && op) {
 				const bool is_ubranch = (op->type == R_ANAL_OP_TYPE_UCALL || op->type == R_ANAL_OP_TYPE_UJMP);
 				if (is_ubranch) {
-					if ((*val & 1)) {
+					if ((val & 1)) {
 						ut64 snv = r_reg_getv (anal->reg, "pc");
 						if (snv != UT32_MAX && snv != UT64_MAX) {
-							if (r_io_is_valid_offset (anal->iob.io, *val, 1)) {
-								r_anal_hint_set_bits (anal, *val - 1, 16);
+							if (r_io_is_valid_offset (anal->iob.io, val, 1)) {
+								r_anal_hint_set_bits (anal, val - 1, 16);
 							}
 						}
 					} else {
-						r_anal_hint_set_bits (anal, *val, 32);
+						r_anal_hint_set_bits (anal, val, 32);
 					}
 				}
 			}
@@ -681,7 +726,7 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 			}
 		}
 	}
-	return 0;
+	return;
 }
 
 static void getpcfromstack(RCore *core, REsil *esil) {
@@ -1000,14 +1045,24 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	};
 	RVecEsilRegTaint_init (&ctx.clob.reg_taints);
 	esil_reg_pc_span (core->anal, &ctx.clob.pc_span);
-	if (ctx.clob.enabled) {
-		ESIL->cb.hook_reg_read = &esilbreak_reg_read;
-	}
-	ESIL->cb.hook_reg_write = &esilbreak_reg_write;
-	//this is necessary for the hook to read the id of analop
+	//this is necessary for the voyeurs to read the id of analop
 	ESIL->user = &ctx;
-	ESIL->cb.hook_mem_read = &esilbreak_mem_read;
-	ESIL->cb.hook_mem_write = &esilbreak_mem_write;
+	// save the interfaces in use, the ctx restores them at fini
+	ctx.orig_reg = ESIL->reg_if;
+	ctx.orig_mem = ESIL->mem_if;
+	ctx.vid_reg_read = r_esil_add_voyeur (ESIL, ESIL, esilbreak_reg_read_voy, R_ESIL_VOYEUR_REG_READ);
+	ctx.vid_reg_write = r_esil_add_voyeur (ESIL, ESIL, esilbreak_reg_write_voy, R_ESIL_VOYEUR_REG_WRITE);
+	ctx.vid_mem_read = r_esil_add_voyeur (ESIL, ESIL, esilbreak_mem_read_voy, R_ESIL_VOYEUR_MEM_READ);
+	// poison reads of call clobbered registers and mem, analyze all accesses,
+	// but do not let the esil vm store anything
+	ESIL->reg_if = ctx.orig_reg;
+	ESIL->reg_if.user = ESIL;
+	ESIL->reg_if.reg_read = esilbreak_reg_read_if;
+	ESIL->mem_if = ctx.orig_mem;
+	ESIL->mem_if.mem = ESIL;
+	ESIL->mem_if.mem_switch = esilbreak_mem_switch_if;
+	ESIL->mem_if.mem_read = esilbreak_mem_read_if;
+	ESIL->mem_if.mem_write = esilbreak_mem_write_if;
 	// r_core_cmd0 (core, "e io.cache=true;wc++");
 
 	if (fcn && fcn->reg_save_area) {

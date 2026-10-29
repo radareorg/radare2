@@ -195,76 +195,6 @@ static bool tt_mem_write(void *mem, ut64 addr, const ut8 *buf, int len) {
 	return false;
 }
 
-static bool tt_esil_reg_write(REsil *esil, const char *name, ut64 val) {
-	TPState *tps = esil->user;
-	if (!tps || !tps->reg_if.reg_read || !tps->reg_if.reg_write) {
-		return false;
-	}
-	ut64 old = 0;
-	if (!tps->reg_if.reg_read (tps->reg_if.reg, name, &old)) {
-		return false;
-	}
-	if (!tps->reg_if.reg_write (tps->reg_if.reg, name, val)) {
-		return false;
-	}
-	type_trace_voyeur_reg_write (&tps->tt, name, old, val);
-	return true;
-}
-
-static bool tt_esil_reg_read(REsil *esil, const char *name, ut64 *val, int *size) {
-	TPState *tps = esil->user;
-	if (!tps || !tps->reg_if.reg_read) {
-		return false;
-	}
-	ut64 tmp = 0;
-	ut64 *out = val? val: &tmp;
-	if (!tps->reg_if.reg_read (tps->reg_if.reg, name, out)) {
-		return false;
-	}
-	if (size) {
-		ut32 rsz = tps->reg_if.reg_size
-			? tps->reg_if.reg_size (tps->reg_if.reg, name)
-			: 0;
-		*size = rsz? (int)rsz: 64;
-	}
-	type_trace_voyeur_reg_read (&tps->tt, name, *out);
-	return true;
-}
-
-static bool tt_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
-	TPState *tps = esil->user;
-	if (!tps || !tps->mem_if.mem_read) {
-		return false;
-	}
-	if (!tps->mem_if.mem_read (tps->mem_if.mem, addr, buf, len)) {
-		return false;
-	}
-	type_trace_voyeur_mem_read (&tps->tt, addr, buf, len);
-	return true;
-}
-
-static bool tt_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
-	TPState *tps = esil->user;
-	if (!tps || !tps->mem_if.mem_read || !tps->mem_if.mem_write) {
-		return false;
-	}
-	ut8 *old = NULL;
-	if (tps->tt.enable_rollback) {
-		old = malloc (len);
-		if (!old) {
-			return false;
-		}
-		if (!tps->mem_if.mem_read (tps->mem_if.mem, addr, old, len)) {
-			memset (old, 0xff, len);
-		}
-	}
-	bool ret = tps->mem_if.mem_write (tps->mem_if.mem, addr, buf, len);
-	if (ret) {
-		type_trace_voyeur_mem_write (&tps->tt, addr, old, buf, len);
-	}
-	free (old);
-	return ret;
-}
 
 // back a located address range with an anonymous malloc:// map; returns the fd or -1
 int tp_map_anon(RAnal *anal, ut64 size, int align, ut64 *base, ut32 *map_id) {
@@ -361,10 +291,6 @@ TPState *tps_init(RAnal *anal) {
 		return NULL;
 	}
 	tps->esil.user = tps;
-	tps->esil.cb.reg_read = tt_esil_reg_read;
-	tps->esil.cb.reg_write = tt_esil_reg_write;
-	tps->esil.cb.mem_read = tt_esil_mem_read;
-	tps->esil.cb.mem_write = tt_esil_mem_write;
 
 	if (!type_trace_init (&tps->tt, &tps->esil, reg)) {
 		r_esil_fini (&tps->esil);

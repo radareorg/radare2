@@ -83,7 +83,13 @@ static bool esilbreak_check_pc(RDebug *dbg, ut64 pc) {
 	return false;
 }
 
-static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
+static bool esilbreak_mem_switch_if (void *mem, ut32 idx) {
+	REsil *esil = mem;
+	return esil->dbg_mem_if.mem_switch? esil->dbg_mem_if.mem_switch (esil->dbg_mem_if.mem, idx): false;
+}
+
+static bool esilbreak_mem_read_if (void *mem, ut64 addr, ut8 *buf, int len) {
+	REsil *esil = mem;
 	EsilBreak *ew;
 	RListIter *iter;
 	eprintf (Color_GREEN"MEM READ 0x%"PFMT64x"\n"Color_RESET, addr);
@@ -95,10 +101,11 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 			}
 		}
 	}
-	return false;
+	return esil->dbg_mem_if.mem_read? esil->dbg_mem_if.mem_read (esil->dbg_mem_if.mem, addr, buf, len): false;
 }
 
-static bool esilbreak_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
+static bool esilbreak_mem_write_if (void *mem, ut64 addr, const ut8 *buf, int len) {
+	REsil *esil = mem;
 	EsilBreak *ew;
 	RListIter *iter;
 	eprintf (Color_RED"MEM WRTE 0x%"PFMT64x"\n"Color_RESET, addr);
@@ -110,15 +117,18 @@ static bool esilbreak_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len)
 			}
 		}
 	}
-	return false; // fallback
+	return esil->dbg_mem_if.mem_write
+		? esil->dbg_mem_if.mem_write (esil->dbg_mem_if.mem, addr, buf, len): false;
 }
 
-static bool esilbreak_reg_read(REsil *esil, const char *regname, ut64 *num, int *size) {
+static bool esilbreak_reg_read_if (void *reg, const char *regname, ut64 *num) {
+	REsil *esil = reg;
 	EsilBreak *ew;
 	RListIter *iter;
+	bool ret;
 	if (regname[0]>='0' && regname[0]<='9') {
 		//eprintf (Color_CYAN"IMM READ %s\n"Color_RESET, regname);
-		return false;
+		goto fallback;
 	}
 	eprintf (Color_YELLOW"REG READ %s\n"Color_RESET, regname);
 	r_list_foreach (EWPS, iter, ew) {
@@ -130,7 +140,9 @@ static bool esilbreak_reg_read(REsil *esil, const char *regname, ut64 *num, int 
 			}
 		}
 	}
-	return false;
+fallback:
+	ret = esil->dbg_reg_if.reg_read? esil->dbg_reg_if.reg_read (esil->dbg_reg_if.reg, regname, num): false;
+	return ret;
 }
 
 static int exprtoken(RDebug *dbg, char *s, const char *sep, char **o) {
@@ -188,15 +200,17 @@ static int exprmatchreg(RDebug *dbg, const char *regname, const char *expr) {
 	return ret;
 }
 
-static bool esilbreak_reg_write(REsil *esil, const char *regname, ut64 *num) {
+// the debug esil emulates register writes without touching the real ones
+static bool esilbreak_reg_write_if (void *reg, const char *regname, ut64 val) {
 	EsilBreak *ew;
 	RListIter *iter;
+	(void)reg;
 	if (regname[0] >= '0' && regname[0] <= '9') {
 		// wtf this should never happen
 		//eprintf (Color_BLUE"IMM WRTE %s\n"Color_RESET, regname);
-		return false;
+		return true;
 	}
-	eprintf (Color_MAGENTA"REG WRTE %s 0x%"PFMT64x"\n"Color_RESET, regname, *num);
+	eprintf (Color_MAGENTA"REG WRTE %s 0x%"PFMT64x"\n"Color_RESET, regname, val);
 	r_list_foreach (EWPS, iter, ew) {
 		if ((ew->rwx & R_PERM_W) && (ew->dev == 'r')) {
 			// XXX: support array of regs in expr
@@ -241,10 +255,19 @@ R_API bool r_debug_esil_stepi(RDebug *d) {
 	//dbg->iob.read_at (dbg->iob.io, npc, buf, sizeof (buf));
 
 	//dbg->anal->reg = dbg->reg; // hack
-	ESIL->cb.hook_mem_read = &esilbreak_mem_read;
-	ESIL->cb.hook_mem_write = &esilbreak_mem_write;
-	ESIL->cb.hook_reg_read = &esilbreak_reg_read;
-	ESIL->cb.hook_reg_write = &esilbreak_reg_write;
+	if (ESIL->reg_if.reg_read != esilbreak_reg_read_if) {
+		ESIL->dbg_reg_if = ESIL->reg_if;
+		ESIL->dbg_mem_if = ESIL->mem_if;
+	}
+	ESIL->reg_if = ESIL->dbg_reg_if;
+	ESIL->reg_if.user = ESIL;
+	ESIL->reg_if.reg_read = esilbreak_reg_read_if;
+	ESIL->reg_if.reg_write = esilbreak_reg_write_if;
+	ESIL->mem_if = ESIL->dbg_mem_if;
+	ESIL->mem_if.mem = ESIL;
+	ESIL->mem_if.mem_switch = esilbreak_mem_switch_if;
+	ESIL->mem_if.mem_read = esilbreak_mem_read_if;
+	ESIL->mem_if.mem_write = esilbreak_mem_write_if;
 
 	if (prestep) {
 		// required when a exxpression is like <= == ..

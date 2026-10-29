@@ -1960,12 +1960,6 @@ bad:
 	return result;
 }
 
-static bool search_esil_mem_write_ro (REsil *esil, ut64 addr, const ut8 *buf, int len) {
-	// readonly mode: silently ignore writes and report success, never trap.
-	// returning false here would set R_ANAL_TRAP_WRITE_ERR and change which addresses match.
-	return true;
-}
-
 static bool esil_addrinfo(REsil *esil) {
 	RCore *core = esil->user;
 	ut64 num = 0;
@@ -2022,7 +2016,8 @@ static void do_esil_search(RCore *core, RSearchParameters *param, const char *in
 	r_esil_setup (&esil, core->anal, false,
 		r_config_get_b (core->config, "esil.stats"),
 		nonull);
-	esil.cb.hook_mem_write = search_esil_mem_write_ro;
+	// searches must not modify memory, stores are silently ignored
+	esil.mem_ro = true;
 	esil.user = core;
 	r_esil_set_op (&esil, "$$", esil_address, 0, 1, R_ESIL_OP_TYPE_UNKNOWN, "current address");
 	/* hook addrinfo */

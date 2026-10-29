@@ -3,6 +3,13 @@
 Since r2-6.0.0 the `ABI_VERSION` define avoid plugins built with different ABI
 to be loaded to avoid segfaults.
 
+ABI 165 removes `REsilCallbacks` and the `cb`/`ocb`/`ocb_set` fields of `REsil`
+in favor of the explicit `REsilRegInterface`, `REsilMemInterface` and
+`REsilUtilInterface` plus voyeurs for read-only observation. The trap-record
+fields of `REsil` keep their offsets. Consumers of the old `cb` hooks must
+layer their own interfaces or register voyeurs; rebuild external plugins
+against these headers.
+
 ABI 164 adds ESIL's full-width fault address and validity fields, the `REsilTrap`
 snapshot type, and `r_esil_set_trap`/`r_esil_set_fault`/`r_esil_get_trap`/
 `r_esil_restore_trap`. This explicitly versioned ABI extension changes `REsil`

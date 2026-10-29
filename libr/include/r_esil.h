@@ -115,23 +115,6 @@ typedef struct r_esil_trace_t {
 	ut8 *stack_data;
 } REsilTrace;
 
-typedef bool (*REsilHookRegWriteCB)(ESIL *esil, const char *name, ut64 *val);
-
-typedef struct r_esil_callbacks_t {
-	void *user;
-	/* callbacks */
-//	bool (*hook_flag_read)(ESIL *esil, const char *flag, ut64 *num);
-	bool (*hook_command)(ESIL *esil, const char *op);
-	bool (*hook_mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);
-	bool (*mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);
-	bool (*hook_mem_write)(ESIL *esil, ut64 addr, const ut8 *buf, int len);
-	bool (*mem_write)(ESIL *esil, ut64 addr, const ut8 *buf, int len);
-	bool (*hook_reg_read)(ESIL *esil, const char *name, ut64 *res, int *size);
-	bool (*reg_read)(ESIL *esil, const char *name, ut64 *res, int *size);
-	REsilHookRegWriteCB hook_reg_write;
-	bool (*reg_write)(ESIL *esil, const char *name, ut64 val);
-} REsilCallbacks;
-
 typedef bool (*REsilMemSwitch)(void *mem, ut32 idx);
 typedef bool (*REsilMemRead)(void *mem, ut64 addr, ut8 *buf, int len);
 typedef bool (*REsilMemWrite)(void *mem, ut64 addr, const ut8 *buf, int len);
@@ -284,13 +267,21 @@ typedef struct r_esil_t {
 	/* deep esil parsing fills this */
 	Sdb *stats;
 	REsilTrace *trace;
+	// active interfaces, replaceable by consumers that need to intercept
+	// accesses (canal esil break, debugger watchpoints, ...)
 	REsilRegInterface reg_if;
 	REsilMemInterface mem_if;
 	REsilUtilInterface util_if;
+	// interface state saved by the debugger watchpoints, so their wrapper can
+	// be installed and restored on the shared anal esil (see debug/desil.c)
+	REsilRegInterface dbg_reg_if;
+	REsilMemInterface dbg_mem_if;
 	RIDStorage voyeur[R_ESIL_VOYEUR_LAST];
-	REsilCallbacks cb;
-	REsilCallbacks ocb;
-	bool ocb_set;
+	// readonly memory: stores are silently ignored (was a hook before)
+	bool mem_ro;
+	// Voyeur ids of the hooks installed by r_esil_trace_op, cleared after
+	// each traced step. R_ESIL_VOYEUR_ERR while tracing is not active.
+	ut32 trace_vid[4];
 	// this is so cursed, can we please remove external commands from esil internals.
 	// Function pointers are fine, but not commands
 	char *cmd_step; // r2 (external) command to run before a step is performed
@@ -473,7 +464,6 @@ R_API ut64 r_esil_trace_loopcount(REsilTrace *etrace, ut64 addr);
 R_API void r_esil_trace_loopcount_increment(REsilTrace *etrace, ut64 addr);
 
 R_API bool r_esil_reg_write_silent(REsil *esil, const char *name, ut64 num);
-R_API bool r_esil_reg_read_nocallback(REsil *esil, const char *regname, ut64 *num, int *size);
 
 extern REsilPlugin r_esil_plugin_null;
 extern REsilPlugin r_esil_plugin_dummy;
