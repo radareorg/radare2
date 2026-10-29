@@ -983,8 +983,24 @@ EOF
 EXPECT=<<EOF
 cbuf @ 0x100000f4
 cbuf @ 0x100000f4
-    "sym_va": 134217972,
-    "sym_va": 134217972,
+    "sym_va": 268435700,
+    "sym_va": 268435700,
+EOF
+RUN
+
+NAME=ELF: irj keeps absolute sym_va under -B
+FILE=bins/elf/x86_64-abs-sym.o
+ARGS=-B 0x10000000 -e bin.relocs.apply=true
+CMDS=<<EOF
+pv8 @ 0x10000058
+irj~{}~sym_va
+EOF
+EXPECT=<<EOF
+0x0000000010000040
+    "sym_va": 4660,
+    "sym_va": 4194560,
+    "sym_va": 0,
+    "sym_va": 268435520,
 EOF
 RUN
 

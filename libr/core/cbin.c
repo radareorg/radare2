@@ -2158,6 +2158,14 @@ static bool warn_if_dbg(RCore *core) {
 	return true;
 }
 
+// an absolute value is never rebased; in physical mode its mapped offset still applies
+static ut64 symbol_addr(RBin *bin, RBinSymbol *symbol, int va) {
+	if ((symbol->attr.flags & R_BIN_ATTR_ABSOLUTE) && va != VA_FALSE) {
+		return symbol->vaddr;
+	}
+	return compute_addr (bin, symbol->paddr, symbol->vaddr, va);
+}
+
 static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 	bool bin_demangle = r_config_get_b (core->config, "bin.demangle");
 	bool keep_lib = r_config_get_i (core->config, "bin.demangle.pfxlib");
@@ -2300,7 +2308,7 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 				}
 #endif
 			} else {
-				ut64 v = reloc->symbol? reloc->symbol->vaddr: reloc->addend;
+				ut64 v = reloc->symbol? symbol_addr (core->bin, reloc->symbol, va): reloc->addend;
 				ut64 a = addr;
 				r_cons_printf (core->cons, "'@0x%" PFMT64x "'wv8 0x%" PFMT64x "\n", a, v);
 			}
@@ -2328,10 +2336,10 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 			}
 			pj_ks (pj, "type", bin_reloc_type_name (reloc));
 			pj_kn (pj, "ntype", reloc->ntype);
-			pj_kn (pj, "vaddr", reloc->vaddr);
+			pj_kn (pj, "vaddr", addr);
 			pj_kn (pj, "paddr", reloc->paddr);
 			if (reloc->symbol) {
-				pj_kn (pj, "sym_va", reloc->symbol->vaddr);
+				pj_kn (pj, "sym_va", symbol_addr (core->bin, reloc->symbol, va));
 			}
 			pj_kb (pj, "is_ifunc", reloc->is_ifunc);
 			// end reloc item
@@ -2895,14 +2903,6 @@ static bool its_an_export(RBinSymbol *s) {
 		return false;
 	}
 	return (s->bind && !strcmp (s->bind, R_BIN_BIND_GLOBAL_STR));
-}
-
-// an absolute value is never rebased; in physical mode its mapped offset still applies
-static ut64 symbol_addr(RBin *bin, RBinSymbol *symbol, int va) {
-	if ((symbol->attr.flags & R_BIN_ATTR_ABSOLUTE) && va != VA_FALSE) {
-		return symbol->vaddr;
-	}
-	return compute_addr (bin, symbol->paddr, symbol->vaddr, va);
 }
 
 static void handle_arm_special_symbol(RCore *core, RBinSymbol *symbol, int va) {
