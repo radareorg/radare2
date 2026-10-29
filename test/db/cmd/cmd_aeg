@@ -10,6 +10,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=aeg fused multiply add keeps all three sources
+FILE=--
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aeg d3,d2,d1,F*+,d0,=~generative
+EOF
+EXPECT=<<EOF
+                                 | generative:d3,d2,d1,F*+ |       |
+                                          | generative:result_11,d0,= |
+EOF
+RUN
+
 NAME=aeg float op keeps both sources
 FILE=malloc://64
 ARGS=-w -a arm -b 64
@@ -81,6 +93,7 @@ aeg PC,!,eax,=~eip
 aeg PC,[4],eax,=~eip
 aeg eax,PC,=[4]~eip
 aeg 1,PC,=~eip
+aeg 1.5,1,+,eax,=~eax
 aegf 1,PC,= eip
 aegf PC,1,+,ebx,= ebx
 aegf 1,eip,= eip
@@ -98,6 +111,10 @@ ok
           | [4]@<eip:var_5>:mem_var_8 |
 | 1                  |    | eip                |
 | 1:const_2          |    | eip:var_5          |
+    | 1                  |    | eax                |
+    | 1:const_3          |    | eax:var_8          |
+       | generative:result_5,eax,= |
+          | eax:var_11         |
 1,PC,=
 PC,1,+,ebx,=
 1,eip,=
