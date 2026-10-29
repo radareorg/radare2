@@ -996,9 +996,9 @@ static int process_1byte_op(RArchSession *a, ut8 *data, const Opcode *op, int op
 	for (i = 0; i < 2; i++) {
 		const Operand *mem = &op->operands[i];
 		const Operand *reg = &op->operands[1 - i];
+		const bool absolute = mem->regs[0] == X86R_UNDEFINED && mem->regs[1] == X86R_UNDEFINED;
 		if (mem->type & OT_MEMORY && !(mem->type & OT_REGTYPE & OT_SEGMENTREG)
-				&& (mem->regs[0] != X86R_UNDEFINED || mem->regs[1] != X86R_UNDEFINED)
-				&& use_op_reg_mem (bits, mem)
+				&& (absolute? bits != 16: use_op_reg_mem (bits, mem))
 				&& reg->type & OT_REGTYPE & OT_GPREG && !(reg->type & OT_MEMORY)) {
 			// op1 is r/m8, r8; +1 r/m, r; +2 r8, r/m8; +3 r, r/m
 			return op_reg_mem (bits, data, reg, mem, op1 + i * 2 + ((reg->type & OT_BYTE)? 0: 1));
@@ -2866,7 +2866,10 @@ static int op_reg_mem(int bits, ut8 *data, const Operand *reg, const Operand *me
 	ut8 modrm[16];
 	ut8 rex = 0;
 	int l = 0;
-	if (opcode != 0x8d && mem->explicit_size && !(mem->dest_size & reg->type & ALL_SIZE)) {
+	// the parser leaves explicit_size unset when the address has no register
+	const bool absolute = mem->regs[0] == X86R_UNDEFINED && mem->regs[1] == X86R_UNDEFINED;
+	const bool sized = mem->explicit_size || (absolute && mem->dest_size);
+	if (opcode != 0x8d && sized && !(mem->dest_size & reg->type & ALL_SIZE)) {
 		return -1;
 	}
 	if (reg->type & OT_QWORD) {
@@ -2875,7 +2878,23 @@ static int op_reg_mem(int bits, ut8 *data, const Operand *reg, const Operand *me
 	if (reg->extended) {
 		rex |= 4;
 	}
-	int n = encode_mem (modrm, reg->reg, mem, &rex);
+	int n;
+	if (absolute) {
+		// [disp32]: no SIB byte in 32-bit mode, 64-bit mode needs one (without it the address is rip-relative)
+		st64 disp = (st64)(mem->offset * mem->offset_sign);
+		if (bits == 32? (disp < -(st64)UT32_MAX || disp > UT32_MAX): (disp < ST32_MIN || disp > ST32_MAX)) {
+			return -1;
+		}
+		if (bits == 32) {
+			modrm[0] = (reg->reg & 7) << 3 | 5;
+			r_write_le32 (modrm + 1, (ut32)disp);
+			n = 5;
+		} else {
+			n = encode_mem (modrm, reg->reg, mem, &rex);
+		}
+	} else {
+		n = encode_mem (modrm, reg->reg, mem, &rex);
+	}
 	if (n < 0) {
 		return -1;
 	}

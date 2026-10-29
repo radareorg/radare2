@@ -892,6 +892,7 @@ a "add dword [esp+8], 1" 8344240801
 a "add eax, 1" 83c001
 a "add eax, 3" 83c003
 a "add eax, dword [eax]" 0300
+a "add eax, dword [0x10]" 030510000000
 a "cmp eax, dword [ebp - 8]" 3b45f8
 a "add eax, [ebx+ecx*2+0x10]" 03444b10
 a "or ecx, dword [eax + ebx*8]" 0b0cd8
