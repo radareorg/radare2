@@ -2212,6 +2212,11 @@ double fmod(double x, double y) {
 	return x - trunc (x / y) * y;
 }
 
+/* may round twice: the UEFI build has no libm and cannot assume fma3 */
+double fma(double x, double y, double z) {
+	return x * y + z;
+}
+
 double ldexp(double x, int exp_) {
 	while (exp_ > 0) {
 		x *= 2;
