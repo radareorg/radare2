@@ -3905,6 +3905,9 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 	case ARM_INS_TST:
 		r_strbuf_appendf (&op->esil, "0,%s,%s,&,==", ARG(1), ARG(0));
 		break;
+	case ARM_INS_TEQ:
+		r_strbuf_appendf (&op->esil, "0,%s,%s,^,==", ARG (1), ARG (0));
+		break;
 	case ARM_INS_LDRD:
 		addr &= ~3LL;
 		if (MEMDISP (2) < 0) {
@@ -5331,6 +5334,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_CMP:
 	case ARM_INS_CMN:
 	case ARM_INS_TST:
+	case ARM_INS_TEQ:
 		if (ISIMM(1)) {
 			op->val = IMM(1);
 		}
