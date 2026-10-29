@@ -58,7 +58,7 @@ static RCoreHelpMessage help_msg_visual_graph = {
 	"F", "enter flag selector",
 	"g", "go/seek to given offset",
 	"G", "debug trace callgraph (generated with dtc)",
-	"hjkl/HJKL", "scroll canvas or node depending on graph cursor (uppercase for faster)",
+	"hjkl/HJKL", "scroll canvas or node depending on graph cursor (uppercase scales with screen size)",
 	"i/I", "select input / output nodes by index",
 	"mK/'K", "mark/go to given key (same as in vim or r2 visual)",
 	"M", "change mouse mode (scroll vertical/horizontal)",
@@ -4161,6 +4161,14 @@ static void agraph_toggle_speed(RAGraph *g, RCore *core) {
 	g->movspeed = g->movspeed == DEFAULT_SPEED? alt: DEFAULT_SPEED;
 }
 
+static int agraph_scroll_step(int size, int speed) {
+	double scale = 2.0 + log2 (R_MAX (size, 20) / 20.0);
+	if (size > 80) {
+		scale += (size - 80) / 40.0;
+	}
+	return speed * scale;
+}
+
 static void agraph_init(RAGraph *g) {
 	g->is_callgraph = false;
 	g->is_instep = false;
@@ -5450,7 +5458,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 				int speed = (okey == 27)? PAGEKEY_SPEED: movspeed;
 				graphNodeMove (g, 'j', speed * 2);
 			} else {
-				can->sy -= (5 * movspeed) *(invscroll? -1: 1);
+				can->sy -= agraph_scroll_step (h, movspeed) *(invscroll? -1: 1);
 			}
 			break;
 		case 'K':
@@ -5458,7 +5466,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 				int speed = (okey == 27)? PAGEKEY_SPEED: movspeed;
 				graphNodeMove (g, 'k', speed * 2);
 			} else {
-				can->sy += (5 * movspeed) *(invscroll? -1: 1);
+				can->sy += agraph_scroll_step (h, movspeed) *(invscroll? -1: 1);
 			}
 			break;
 		case 'H':
@@ -5472,7 +5480,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 					const RGraphNode *gn = find_near_of (g, NULL, true);
 					g->update_seek_on = get_anode (gn);
 				} else {
-					can->sx += (5 * movspeed) *(invscroll? -1: 1);
+					can->sx += agraph_scroll_step (w, movspeed) *(invscroll? -1: 1);
 				}
 			}
 			break;
@@ -5480,7 +5488,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			if (core->visual.graphCursor) {
 				graphNodeMove (g, 'l', movspeed * 2);
 			} else {
-				can->sx -= (5 * movspeed) *(invscroll? -1: 1);
+				can->sx -= agraph_scroll_step (w, movspeed) *(invscroll? -1: 1);
 			}
 			break;
 		case 'c':
