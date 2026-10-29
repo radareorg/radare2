@@ -515,3 +515,15 @@ paddr,vaddr,type,name
 0x00000010,0x00000010,NOTYPE,aaaaaaaa
 EOF
 RUN
+
+NAME=mach0 tls symbol is an address and follows the load bias under -B
+FILE=bins/mach0/macho-trie-bad-export-info-malformed-uleb128
+ARGS=-B 0x10000000
+CMDS=<<EOF
+is~TLS
+EOF
+EXPECT=<<EOF
+4   0x00001020 0x10001020 GLOBAL TLS  0        _t
+6   0x00001038 0x10001038 LOCAL  TLS  0        _t$tlv$init
+EOF
+RUN

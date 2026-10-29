@@ -972,7 +972,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-# pd shows the loaded slot; irj sym_va stays unbiased like the reloc vaddr
+# pd shows the loaded slot; irj sym_va follows the load bias like the reloc vaddr
 NAME=ELF: common symbol slot follows the load bias under -B
 FILE=bins/elf/x86_64-common-sym.o
 ARGS=-B 0x10000000 -e bin.relocs.apply=true
@@ -1416,9 +1416,16 @@ FILE=bins/elf/glibc-2.34-39.el9.x86_64_libc.so.6
 ARGS=-B 0x10000000 -e bin.relocs.apply=true
 CMDS=<<EOF
 ?v [0x101f9f40]
+irj~{[1156].name}
+irj~{[1156].sym_va}
+is~__libc_dlerror_result$
 EOF
 EXPECT=<<EOF
 0x40
+__libc_dlerror_result
+64
+1330 0x00000040 0x00000040 GLOBAL TLS    8         __libc_dlerror_result
+7046 0x00000040 0x00000040 GLOBAL TLS    8         __libc_dlerror_result
 EOF
 RUN
 

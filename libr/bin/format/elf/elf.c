@@ -5566,6 +5566,8 @@ static void fill_symbol(ELFOBJ *eo, RBinElfSymbol *symbol, RBinSymbol *sym) {
 	sym->attr.size = symbol->size;
 	if (symbol->st_shndx == SHN_ABS) {
 		sym->attr.flags |= R_BIN_ATTR_ABSOLUTE;
+	} else if (symbol->type && !strcmp (symbol->type, R_BIN_TYPE_TLS_STR)) {
+		sym->attr.flags |= R_BIN_ATTR_TLS;
 	}
 	sym->ordinal = symbol->ordinal;
 	if (eo->ehdr.e_machine == EM_ARM) {

@@ -2158,10 +2158,9 @@ static bool warn_if_dbg(RCore *core) {
 	return true;
 }
 
-// an absolute value is never rebased; in physical mode its mapped offset still applies
 static ut64 symbol_addr(RBin *bin, RBinSymbol *symbol, int va) {
-	if ((symbol->attr.flags & R_BIN_ATTR_ABSOLUTE) && va != VA_FALSE) {
-		return symbol->vaddr;
+	if (va == VA_TRUE && bin->cur) {
+		return r_bin_file_get_symbol_vaddr (bin->cur, symbol);
 	}
 	return compute_addr (bin, symbol->paddr, symbol->vaddr, va);
 }
