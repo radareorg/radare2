@@ -1018,7 +1018,7 @@ static int rd_r_add(PluginData *pd, const char **p) {
 	}
 	if (i <= 4) { /* i[xy][hl]  */
 		pd->indexed = 0xdd + 0x20 *(i > 2);
-		return 6 - (i & 1);
+		return 5 + (i & 1);
 	}
 	i -= 4;
 	if (i < 9) {
@@ -1074,7 +1074,7 @@ static int rd_r(PluginData *pd, const char **p) {
 	}
 	if (i <= 4) {
 		pd->indexed = 0xdd + 0x20 *(i > 2);
-		return 6 - (i & 1);
+		return 5 + (i & 1);
 	}
 	i -= 4;
 	if (i < 9) {
@@ -1221,7 +1221,8 @@ static int rd_lda(PluginData *pd, const char **p) {
 	int i;
 	const char *list[] = {
 		"( sp )", "( iy +)", "( de )", "( bc )", "( ix +)", "b", "c", "d", "e", "h",
-		"l", "( hl )", "a", "i", "r", "(*)", "[iy*]", "[ix*]", "*", NULL
+		"l", "( hl )", "a", "i", "r", "(*)", "[iy*]", "[ix*]",
+		"ixh", "ixl", "iyh", "iyl", "*", NULL
 	};
 	const char *nn;
 	i = indx (pd, p, list, 0, &nn);
@@ -1240,7 +1241,11 @@ static int rd_lda(PluginData *pd, const char **p) {
 		pd->indexjmp = nn;
 		return 7;
 	}
-	if (i == 19) {
+	if (i >= 19 && i <= 22) {
+		pd->indexed = i <= 20? 0xdd: 0xfd;
+		return 5 + ((i - 19) & 1);
+	}
+	if (i == 23) {
 		/* wildcard: numeric constant */
 		pd->readbyte = nn;
 		return A_N;
@@ -1324,11 +1329,23 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf, int _
 	pd->obuflen = 0;
 	pd->obuf = _obuf;
 	pd->obufsz = _obufsz;
-	int cmd, cont = 1;
+	int cmd;
 	pd->z80buffer = strdup (str);
-	if (!cont) {
-		free (pd->z80buffer);
-		return pd->obuflen;
+	char quote = 0;
+	for (bufptr = pd->z80buffer; *bufptr; bufptr++) {
+		if (quote) {
+			if (*bufptr == '\\' && bufptr[1]) {
+				bufptr++;
+			} else if (*bufptr == quote) {
+				quote = 0;
+			}
+		} else if (*bufptr == '"' || (*bufptr == '\'' && (bufptr == pd->z80buffer || !isalnum ((ut8)bufptr[-1])))) {
+			quote = *bufptr;
+		} else if (*bufptr == '[') {
+			*bufptr = '(';
+		} else if (*bufptr == ']') {
+			*bufptr = ')';
+		}
 	}
 	for (bufptr = pd->z80buffer; (bufptr = strchr (bufptr, '\n'));) {
 		*bufptr = ' ';
@@ -1379,7 +1396,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf, int _
 			break;
 		}
 		r--;
-		wrtb (0x88 + r);
+		wrtb (0x88 + r + (pd->writebyte? 0x40: 0));
 		break;
 	case Z80_ADD:
 		if (! (r = rd_r_add (pd, &ptr))) {
@@ -1402,18 +1419,18 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf, int _
 				break;
 			}
 			r--;
-			wrtb (0x80 + r);
+			wrtb (0x80 + r + (pd->writebyte? 0x40: 0));
 			break;
 		}
 		r--;
-		wrtb (0x80 + r);
+		wrtb (0x80 + r + (pd->writebyte? 0x40: 0));
 		break;
 	case Z80_AND:
 		if (! (r = rd_r (pd, &ptr))) {
 			break;
 		}
 		r--;
-		wrtb (0xA0 + r);
+		wrtb (0xA0 + r + (pd->writebyte? 0x40: 0));
 		break;
 	case Z80_BIT:
 		if (! (r = rd_0_7 (pd, &ptr))) {
@@ -1440,6 +1457,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf, int _
 		} else {
 			wrtb (0xCD);
 		}
+		rd_word (pd, &ptr, '\0');
 		break;
 	case Z80_CCF:
 		wrtb (0x3F);
@@ -1449,7 +1467,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf, int _
 			break;
 		}
 		r--;
-		wrtb (0xB8 + r);
+		wrtb (0xB8 + r + (pd->writebyte? 0x40: 0));
 		break;
 	case Z80_CPD:
 		emit_ed_opcode (pd, 0xA9);
@@ -1474,7 +1492,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf, int _
 			break;
 		}
 		if (r < 0) {
-			r--;
+			r++;
 			wrtb (0x05 - 8 * r);
 			break;
 		}
@@ -1485,6 +1503,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf, int _
 		wrtb (0xF3);
 		break;
 	case Z80_DJNZ:
+		rd_byte (pd, &ptr, '\0');
 		wrtb (0x10);
 		break;
 	case Z80_EI:
@@ -1585,12 +1604,14 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf, int _
 		} else {
 			wrtb (0xC3);
 		}
+		rd_word (pd, &ptr, '\0');
 		break;
 	case Z80_JR:
 		r = rd_jr (pd, &ptr);
 		if (r) {
 			rd_comma (&ptr);
 		}
+		rd_byte (pd, &ptr, '\0');
 		wrtb (0x18 + 8 * r);
 		break;
 	case Z80_LD:
@@ -1607,7 +1628,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf, int _
 			break;
 		case ld_HL:
 			r = rd_ld_hl (pd, &ptr) - 1;
-			wrtb (0x70 + r);
+			wrtb (pd->writebyte? 0x36: 0x70 + r);
 			break;
 		case ld_NN:
 			if (! (r = rd_ld_nn (pd, &ptr))) {
@@ -1631,19 +1652,8 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf, int _
 				emit_ed_opcode (pd, 0x57 + 8 *(r == A_R? 1: 0));
 				break;
 			}
-			if (r == A_N) {
-				const char n = r_num_math (NULL, pd->readbyte);
+			if (r == A_N && pd->readbyte) {
 				wrtb (0x3E);
-				wrtb (n);
-				break;
-			}
-			if (r == 7 && pd->indexed) {
-				/* indexed addressing: ld a, [ix+n] or ld a, [iy+n] */
-				const char n = r_num_math (NULL, pd->indexjmp);
-				wrtb (pd->indexed);
-				wrtb (0x7E);
-				wrtb (n);
-				pd->indexed = 0;
 				break;
 			}
 			if (r < 0) {
@@ -1662,10 +1672,8 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf, int _
 			if (! (s = rd_ldbcdehla (pd, &ptr))) {
 				break;
 			}
-			if (s == 7) {
-				const char n = r_num_math (NULL, pd->readbyte);
+			if (pd->writebyte) {
 				wrtb (0x08 *(r - 7) + 0x6);
-				wrtb (n);
 			} else {
 				wrtb (0x40 + 0x08 *(r - 7) + (s - 1));
 			}
@@ -1727,7 +1735,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf, int _
 			break;
 		}
 		r--;
-		wrtb (0xB0 + r);
+		wrtb (0xB0 + r + (pd->writebyte? 0x40: 0));
 		break;
 	case Z80_OTDR:
 		emit_ed_opcode (pd, 0xBB);
@@ -1851,9 +1859,15 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf, int _
 	case Z80_RRD:
 		emit_ed_opcode (pd, 0x67);
 		break;
-	case Z80_RST:
-		ptr = "";
+	case Z80_RST: {
+		int valid;
+		const int value = rd_expr (pd, &ptr, '\0', &valid, pd->sp);
+		if (!pd->sizing && (!valid || value < 0 || value > 0x38 || (value & 7))) {
+			break;
+		}
+		wrtb (0xC7 + value);
 		break;
+	}
 	case Z80_SBC:
 		if (! (r = rd_a_hl (pd, &ptr))) {
 			break;
@@ -1870,7 +1884,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf, int _
 			break;
 		}
 		r--;
-		wrtb (0x98 + r);
+		wrtb (0x98 + r + (pd->writebyte? 0x40: 0));
 		break;
 	case Z80_SCF:
 		wrtb (0x37);
@@ -1942,14 +1956,14 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf, int _
 			}
 		}
 		r--;
-		wrtb (0x90 + r);
+		wrtb (0x90 + r + (pd->writebyte? 0x40: 0));
 		break;
 	case Z80_XOR:
 		if (! (r = rd_r (pd, &ptr))) {
 			break;
 		}
 		r--;
-		wrtb (0xA8 + r);
+		wrtb (0xA8 + r + (pd->writebyte? 0x40: 0));
 		break;
 	case Z80_DEFB:
 	case Z80_DB:
@@ -2050,6 +2064,54 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf, int _
 		return 0;
 	}
 
+	if (pd->obuflen > 0 && pd->indexed) {
+		if (pd->obuflen >= pd->obufsz) {
+			free (pd->z80buffer);
+			return -1;
+		}
+		memmove (pd->obuf + 1, pd->obuf, pd->obuflen);
+		pd->obuf[0] = pd->indexed;
+		pd->obuflen++;
+		if (pd->indexjmp) {
+			const char *expr = pd->indexjmp;
+			int valid;
+			const int value = rd_expr (pd, &expr, ')', &valid, pd->sp);
+			if (!valid && !pd->sizing) {
+				free (pd->z80buffer);
+				return -1;
+			}
+			wrtb (value);
+		}
+	}
+	if (pd->obuflen > 0 && pd->readword) {
+		const char *expr = pd->readword;
+		int valid;
+		const int value = rd_expr (pd, &expr, pd->mem_delimiter, &valid, pd->sp);
+		if (!valid && !pd->sizing) {
+			free (pd->z80buffer);
+			return -1;
+		}
+		wrtb (value);
+		wrtb (value >> 8);
+	}
+	if (pd->obuflen > 0 && pd->readbyte) {
+		const char *expr = pd->readbyte;
+		int valid;
+		int value = rd_expr (pd, &expr, pd->mem_delimiter, &valid, pd->sp);
+		if (!valid && !pd->sizing) {
+			free (pd->z80buffer);
+			return -1;
+		}
+		if (cmd == Z80_JR || cmd == Z80_DJNZ) {
+			value = (ut16)(value - pd->addr - 2);
+			if (!pd->sizing && value > 127 && value < 0xff80) {
+				R_LOG_DEBUG ("Relative branch target out of range at 0x%x: %s", pd->addr, str);
+				free (pd->z80buffer);
+				return -1;
+			}
+		}
+		wrtb (value);
+	}
 	free (pd->z80buffer);
 	return pd->obuflen > pd->obufsz? -1: pd->obuflen;
 }

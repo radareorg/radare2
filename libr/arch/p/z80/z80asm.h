@@ -179,6 +179,7 @@ typedef struct plugin_data_t {
 	int file;
 	/* use readbyte instead of (hl) if writebyte is true */
 	int writebyte;
+	bool sizing;
 	const char *readbyte;
 	/* variables which are filled by rd_* functions and used later,
 	 * like readbyte */

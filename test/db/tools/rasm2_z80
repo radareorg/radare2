@@ -1,0 +1,61 @@
+NAME=Z80 forward labels and data directives
+FILE=-
+CMDS=<<EOF
+!rasm2 -a z80 ".ascii \"TMR SEGA\"; .uint16 done; jp done; done:; ret"
+!rasm2 -a z80 ".equ VALUE=0x1234; .uint16 VALUE; .byte 1,2,3"
+!rasm2 -a z80 ".byte data; .uint16 data; data:; ret"
+EOF
+EXPECT=<<EOF
+544d5220534547410d00c30d00c9
+3412010203
+030300c9
+EOF
+RUN
+
+NAME=Z80 labels keep relative branches at their real PC
+FILE=-
+CMDS=<<EOF
+!rasm2 -a z80 -s 0x100 "jp next; next:; jr next"
+!rasm2 -a z80 "jr forward; .fill 1000,1,0; forward:; jr backward; backward:; ret"
+EOF
+EXPECT=<<EOF
+c3030118fe
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'jr forward' at line 1
+EOF
+RUN
+
+NAME=Assembler endian directives return success
+FILE=-
+CMDS=<<EOF
+!rasm2 -a z80 ".endian 0; .uint16 0x1234; .big_endian; .uint16 0x1234; .lil_endian; .uint16 0x5678"
+EOF
+EXPECT=<<EOF
+341212347856
+EOF
+RUN
+
+NAME=Z80 rejects undefined and malformed immediate operands
+FILE=-
+CMDS=<<EOF
+!rasm2 -a z80 "ld hl, missing"
+!rasm2 -a z80 "jr missing"
+!rasm2 -a z80 "ld a, (1"
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'ld hl, missing' at line 1
+ERROR: Cannot assemble 'jr missing' at line 1
+ERROR: Cannot assemble 'ld a, (1' at line 1
+EOF
+RUN
+
+NAME=Assembler strings are literal even when matching a label
+FILE=-
+CMDS=<<EOF
+!rasm2 -a z80 ".ascii \"message\"; message:; ret"
+EOF
+EXPECT=<<EOF
+6d657373616765c9
+EOF
+RUN

@@ -1,4 +1,4 @@
-d "adc a, 0x00" ce00
+ad "adc a, 0x00" ce00
 d "adc a, [hl]" 8e
 d "adc a, [ix+0x00]" dd8e00
 d "adc a, [iy+0x00]" fd8e00
@@ -8,16 +8,16 @@ d "adc a, c" 89
 d "adc a, d" 8a
 d "adc a, e" 8b
 d "adc a, h" 8c
-d "adc a, ixh" dd8c
-d "adc a, ixl" dd8d
-d "adc a, iyh" fd8c
-d "adc a, iyl" fd8d
+ad "adc a, ixh" dd8c
+ad "adc a, ixl" dd8d
+ad "adc a, iyh" fd8c
+ad "adc a, iyl" fd8d
 d "adc a, l" 8d
 d "adc hl, bc" ed4a
 d "adc hl, de" ed5a
 d "adc hl, hl" ed6a
 d "adc hl, sp" ed7a
-d "add a, 0x00" c600
+ad "add a, 0x00" c600
 d "add a, [hl]" 86
 d "add a, [ix+0x00]" dd8600
 d "add a, [iy+0x00]" fd8600
@@ -27,10 +27,10 @@ d "add a, c" 81
 d "add a, d" 82
 d "add a, e" 83
 d "add a, h" 84
-d "add a, ixh" dd84
-d "add a, ixl" dd85
-d "add a, iyh" fd84
-d "add a, iyl" fd85
+ad "add a, ixh" dd84
+ad "add a, ixl" dd85
+ad "add a, iyh" fd84
+ad "add a, iyl" fd85
 d "add a, l" 85
 d "add hl, bc" 09
 d "add hl, de" 19
@@ -44,7 +44,7 @@ d "add iy, bc" fd09
 d "add iy, de" fd19
 d "add iy, iy" fd29
 d "add iy, sp" fd39
-d "and 0x00" e600
+ad "and 0x00" e600
 d "and [hl]" a6
 d "and [ix+0x00]" dda600
 d "and [iy+0x00]" fda600
@@ -54,10 +54,10 @@ d "and c" a1
 d "and d" a2
 d "and e" a3
 d "and h" a4
-d "and ixh" dda4
-d "and ixl" dda5
-d "and iyh" fda4
-d "and iyl" fda5
+ad "and ixh" dda4
+ad "and ixl" dda5
+ad "and iyh" fda4
+ad "and iyl" fda5
 d "and l" a5
 d "bit 0, [hl]" cb46
 d "bit 0, [ix+0x00]" ddcb0046
@@ -139,17 +139,17 @@ d "bit 7, d" cb7a
 d "bit 7, e" cb7b
 d "bit 7, h" cb7c
 d "bit 7, l" cb7d
-d "call 0x0000" cd0000
-d "call c, 0x0000" dc0000
-d "call m, 0x0000" fc0000
-d "call nc, 0x0000" d40000
-d "call nz, 0x0000" c40000
-d "call p, 0x0000" f40000
-d "call pe, 0x0000" ec0000
-d "call po, 0x0000" e40000
-d "call z, 0x0000" cc0000
+ad "call 0x0000" cd0000
+ad "call c, 0x0000" dc0000
+ad "call m, 0x0000" fc0000
+ad "call nc, 0x0000" d40000
+ad "call nz, 0x0000" c40000
+ad "call p, 0x0000" f40000
+ad "call pe, 0x0000" ec0000
+ad "call po, 0x0000" e40000
+ad "call z, 0x0000" cc0000
 d "ccf" 3f
-d "cp 0x00" fe00
+ad "cp 0x00" fe00
 d "cp [hl]" be
 d "cp [ix+0x00]" ddbe00
 d "cp [iy+0x00]" fdbe00
@@ -159,10 +159,10 @@ d "cp c" b9
 d "cp d" ba
 d "cp e" bb
 d "cp h" bc
-d "cp ixh" ddbc
-d "cp ixl" ddbd
-d "cp iyh" fdbc
-d "cp iyl" fdbd
+ad "cp ixh" ddbc
+ad "cp ixl" ddbd
+ad "cp iyh" fdbc
+ad "cp iyl" fdbd
 d "cp l" bd
 d "cpd" eda9
 d "cpdr" edb9
@@ -170,28 +170,28 @@ d "cpi" eda1
 d "cpir" edb1
 d "cpl" 2f
 d "daa" 27
-d "dec [hl]" 35
-d "dec [ix+0x00]" dd3500
-d "dec [iy+0x00]" fd3500
-d "dec a" 3d
-d "dec b" 05
-d "dec bc" 0b
-d "dec c" 0d
-d "dec d" 15
-d "dec de" 1b
-d "dec e" 1d
-d "dec h" 25
-d "dec hl" 2b
-d "dec ix" dd2b
+ad "dec [hl]" 35
+ad "dec [ix+0x00]" dd3500
+ad "dec [iy+0x00]" fd3500
+ad "dec a" 3d
+ad "dec b" 05
+ad "dec bc" 0b
+ad "dec c" 0d
+ad "dec d" 15
+ad "dec de" 1b
+ad "dec e" 1d
+ad "dec h" 25
+ad "dec hl" 2b
+ad "dec ix" dd2b
 d "dec ixh" dd25
 d "dec ixl" dd2d
-d "dec iy" fd2b
+ad "dec iy" fd2b
 d "dec iyh" fd25
 d "dec iyl" fd2d
-d "dec l" 2d
-d "dec sp" 3b
+ad "dec l" 2d
+ad "dec sp" 3b
 d "di" f3
-d "djnz 0xfe" 10fe
+ad "djnz 0x00" 10fe
 d "ei" fb
 d "ex [sp], hl" e3
 d "ex [sp], ix" dde3
@@ -204,14 +204,14 @@ d "im 0" ed46
 d "im 1" ed56
 d "im 2" ed5e
 d "in [c]" ed70
-d "in a, [0x00]" db00
-d "in a, [c]" ed78
-d "in b, [c]" ed40
-d "in c, [c]" ed48
-d "in d, [c]" ed50
-d "in e, [c]" ed58
-d "in h, [c]" ed60
-d "in l, [c]" ed68
+ad "in a, [0x00]" db00
+ad "in a, [c]" ed78
+ad "in b, [c]" ed40
+ad "in c, [c]" ed48
+ad "in d, [c]" ed50
+ad "in e, [c]" ed58
+ad "in h, [c]" ed60
+ad "in l, [c]" ed68
 d "inc [hl]" 34
 d "inc [ix+0x00]" dd3400
 d "inc [iy+0x00]" fd3400
@@ -236,63 +236,63 @@ d "ind" edaa
 d "indr" edba
 d "ini" eda2
 d "inir" edb2
-d "jp 0x0000" c30000
-d "jp [hl]" e9
-d "jp [ix]" dde9
-d "jp [iy]" fde9
-d "jp c, 0x0000" da0000
-d "jp m, 0x0000" fa0000
-d "jp nc, 0x0000" d20000
-d "jp nz, 0x0000" c20000
-d "jp p, 0x0000" f20000
-d "jp pe, 0x0000" ea0000
-d "jp po, 0x0000" e20000
-d "jp z, 0x0000" ca0000
-d "jr 0xfe" 18fe
-d "jr c, 0xfe" 38fe
-d "jr nc, 0xfe" 30fe
-d "jr nz, 0xfe" 20fe
-d "jr z, 0xfe" 28fe
-d "ld [0x0000], a" 320000
-d "ld [0x0000], bc" ed430000
-d "ld [0x0000], de" ed530000
-d "ld [0x0000], hl" 220000
-d "ld [0x0000], ix" dd220000
-d "ld [0x0000], iy" fd220000
-d "ld [0x0000], sp" ed730000
-d "ld [bc], a" 02
-d "ld [de], a" 12
-d "ld [hl], 0x00" 3600
-d "ld [hl], a" 77
-d "ld [hl], b" 70
-d "ld [hl], c" 71
-d "ld [hl], d" 72
-d "ld [hl], e" 73
-d "ld [hl], h" 74
-d "ld [hl], l" 75
-d "ld [ix+0x00], 0x00" dd360000
-d "ld [ix+0x00], a" dd7700
-d "ld [ix+0x00], b" dd7000
-d "ld [ix+0x00], c" dd7100
-d "ld [ix+0x00], d" dd7200
-d "ld [ix+0x00], e" dd7300
-d "ld [ix+0x00], h" dd7400
-d "ld [ix+0x00], l" dd7500
-d "ld [iy+0x00], 0x00" fd360000
-d "ld [iy+0x00], a" fd7700
-d "ld [iy+0x00], b" fd7000
-d "ld [iy+0x00], c" fd7100
-d "ld [iy+0x00], d" fd7200
-d "ld [iy+0x00], e" fd7300
-d "ld [iy+0x00], h" fd7400
-d "ld [iy+0x00], l" fd7500
+ad "jp 0x0000" c30000
+ad "jp [hl]" e9
+ad "jp [ix]" dde9
+ad "jp [iy]" fde9
+ad "jp c, 0x0000" da0000
+ad "jp m, 0x0000" fa0000
+ad "jp nc, 0x0000" d20000
+ad "jp nz, 0x0000" c20000
+ad "jp p, 0x0000" f20000
+ad "jp pe, 0x0000" ea0000
+ad "jp po, 0x0000" e20000
+ad "jp z, 0x0000" ca0000
+ad "jr 0x00" 18fe
+ad "jr c, 0x00" 38fe
+ad "jr nc, 0x00" 30fe
+ad "jr nz, 0x00" 20fe
+ad "jr z, 0x00" 28fe
+ad "ld [0x0000], a" 320000
+ad "ld [0x0000], bc" ed430000
+ad "ld [0x0000], de" ed530000
+ad "ld [0x0000], hl" 220000
+ad "ld [0x0000], ix" dd220000
+ad "ld [0x0000], iy" fd220000
+ad "ld [0x0000], sp" ed730000
+ad "ld [bc], a" 02
+ad "ld [de], a" 12
+ad "ld [hl], 0x00" 3600
+ad "ld [hl], a" 77
+ad "ld [hl], b" 70
+ad "ld [hl], c" 71
+ad "ld [hl], d" 72
+ad "ld [hl], e" 73
+ad "ld [hl], h" 74
+ad "ld [hl], l" 75
+ad "ld [ix+0x00], 0x00" dd360000
+ad "ld [ix+0x00], a" dd7700
+ad "ld [ix+0x00], b" dd7000
+ad "ld [ix+0x00], c" dd7100
+ad "ld [ix+0x00], d" dd7200
+ad "ld [ix+0x00], e" dd7300
+ad "ld [ix+0x00], h" dd7400
+ad "ld [ix+0x00], l" dd7500
+ad "ld [iy+0x00], 0x00" fd360000
+ad "ld [iy+0x00], a" fd7700
+ad "ld [iy+0x00], b" fd7000
+ad "ld [iy+0x00], c" fd7100
+ad "ld [iy+0x00], d" fd7200
+ad "ld [iy+0x00], e" fd7300
+ad "ld [iy+0x00], h" fd7400
+ad "ld [iy+0x00], l" fd7500
 ad "ld a, 0x00" 3e00
-d "ld a, [0x0000]" 3a0000
-d "ld a, [bc]" 0a
-d "ld a, [de]" 1a
-d "ld a, [hl]" 7e
-d "ld a, [ix+0x00]" dd7e00
-d "ld a, [iy+0x00]" fd7e00
+ad "ld a, [0x0000]" 3a0000
+ad "ld a, [bc]" 0a
+ad "ld a, [de]" 1a
+ad "ld a, [hl]" 7e
+ad "ld a, [ix+0x00]" dd7e00
+ad "ld a, [iy+0x00]" fd7e00
 ad "ld a, a" 7f
 ad "ld a, b" 78
 ad "ld a, c" 79
@@ -300,80 +300,80 @@ ad "ld a, d" 7a
 ad "ld a, e" 7b
 ad "ld a, h" 7c
 ad "ld a, i" ed57
-d "ld a, ixh" dd7c
-d "ld a, ixl" dd7d
-d "ld a, iyh" fd7c
-d "ld a, iyl" fd7d
+ad "ld a, ixh" dd7c
+ad "ld a, ixl" dd7d
+ad "ld a, iyh" fd7c
+ad "ld a, iyl" fd7d
 ad "ld a, l" 7d
 ad "ld a, r" ed5f
 ad "ld b, 0x00" 0600
-d "ld b, [hl]" 46
-d "ld b, [ix+0x00]" dd4600
-d "ld b, [iy+0x00]" fd4600
+ad "ld b, [hl]" 46
+ad "ld b, [ix+0x00]" dd4600
+ad "ld b, [iy+0x00]" fd4600
 ad "ld b, a" 47
 ad "ld b, b" 40
 ad "ld b, c" 41
 ad "ld b, d" 42
 ad "ld b, e" 43
 ad "ld b, h" 44
-d "ld b, ixh" dd44
-d "ld b, ixl" dd45
-d "ld b, iyh" fd44
-d "ld b, iyl" fd45
+ad "ld b, ixh" dd44
+ad "ld b, ixl" dd45
+ad "ld b, iyh" fd44
+ad "ld b, iyl" fd45
 ad "ld b, l" 45
-d "ld bc, 0x0000" 010000
-d "ld bc, [0x0000]" ed4b0000
+ad "ld bc, 0x0000" 010000
+ad "ld bc, [0x0000]" ed4b0000
 ad "ld c, 0x00" 0e00
-d "ld c, [hl]" 4e
-d "ld c, [ix+0x00]" dd4e00
-d "ld c, [iy+0x00]" fd4e00
+ad "ld c, [hl]" 4e
+ad "ld c, [ix+0x00]" dd4e00
+ad "ld c, [iy+0x00]" fd4e00
 ad "ld c, a" 4f
 ad "ld c, b" 48
 ad "ld c, c" 49
 ad "ld c, d" 4a
 ad "ld c, e" 4b
 ad "ld c, h" 4c
-d "ld c, ixh" dd4c
-d "ld c, ixl" dd4d
-d "ld c, iyh" fd4c
-d "ld c, iyl" fd4d
+ad "ld c, ixh" dd4c
+ad "ld c, ixl" dd4d
+ad "ld c, iyh" fd4c
+ad "ld c, iyl" fd4d
 ad "ld c, l" 4d
-d "ld d, 0x00" 1600
-d "ld d, [hl]" 56
-d "ld d, [ix+0x00]" dd5600
-d "ld d, [iy+0x00]" fd5600
+ad "ld d, 0x00" 1600
+ad "ld d, [hl]" 56
+ad "ld d, [ix+0x00]" dd5600
+ad "ld d, [iy+0x00]" fd5600
 ad "ld d, a" 57
 ad "ld d, b" 50
 ad "ld d, c" 51
 ad "ld d, d" 52
 ad "ld d, e" 53
 ad "ld d, h" 54
-d "ld d, ixh" dd54
-d "ld d, ixl" dd55
-d "ld d, iyh" fd54
-d "ld d, iyl" fd55
+ad "ld d, ixh" dd54
+ad "ld d, ixl" dd55
+ad "ld d, iyh" fd54
+ad "ld d, iyl" fd55
 ad "ld d, l" 55
-d "ld de, 0x0000" 110000
-d "ld de, [0x0000]" ed5b0000
+ad "ld de, 0x0000" 110000
+ad "ld de, [0x0000]" ed5b0000
 ad "ld e, 0x00" 1e00
-d "ld e, [hl]" 5e
-d "ld e, [ix+0x00]" dd5e00
-d "ld e, [iy+0x00]" fd5e00
+ad "ld e, [hl]" 5e
+ad "ld e, [ix+0x00]" dd5e00
+ad "ld e, [iy+0x00]" fd5e00
 ad "ld e, a" 5f
 ad "ld e, b" 58
 ad "ld e, c" 59
 ad "ld e, d" 5a
 ad "ld e, e" 5b
 ad "ld e, h" 5c
-d "ld e, ixh" dd5c
-d "ld e, ixl" dd5d
-d "ld e, iyh" fd5c
-d "ld e, iyl" fd5d
+ad "ld e, ixh" dd5c
+ad "ld e, ixl" dd5d
+ad "ld e, iyh" fd5c
+ad "ld e, iyl" fd5d
 ad "ld e, l" 5d
-d "ld h, 0x00" 2600
-d "ld h, [hl]" 66
-d "ld h, [ix+0x00]" dd6600
-d "ld h, [iy+0x00]" fd6600
+ad "ld h, 0x00" 2600
+ad "ld h, [hl]" 66
+ad "ld h, [ix+0x00]" dd6600
+ad "ld h, [iy+0x00]" fd6600
 ad "ld h, a" 67
 ad "ld h, b" 60
 ad "ld h, c" 61
@@ -381,49 +381,49 @@ ad "ld h, d" 62
 ad "ld h, e" 63
 ad "ld h, h" 64
 ad "ld h, l" 65
-d "ld hl, 0x0000" 210000
-d "ld hl, [0x0000]" 2a0000
+ad "ld hl, 0x0000" 210000
+ad "ld hl, [0x0000]" 2a0000
 ad "ld i, a" ed47
-d "ld ix, 0x0000" dd210000
-d "ld ix, [0x0000]" dd2a0000
-d "ld ixh, 0x00" dd2600
-d "ld ixh, a" dd67
-d "ld ixh, b" dd60
-d "ld ixh, c" dd61
-d "ld ixh, d" dd62
-d "ld ixh, e" dd63
-d "ld ixh, ixh" dd64
-d "ld ixh, ixl" dd65
-d "ld ixl, 0x00" dd2e00
-d "ld ixl, a" dd6f
-d "ld ixl, b" dd68
-d "ld ixl, c" dd69
-d "ld ixl, d" dd6a
-d "ld ixl, e" dd6b
-d "ld ixl, ixh" dd6c
-d "ld ixl, ixl" dd6d
-d "ld iy, 0x0000" fd210000
-d "ld iy, [0x0000]" fd2a0000
-d "ld iyh, 0x00" fd2600
-d "ld iyh, a" fd67
-d "ld iyh, b" fd60
-d "ld iyh, c" fd61
-d "ld iyh, d" fd62
-d "ld iyh, e" fd63
-d "ld iyh, iyh" fd64
-d "ld iyh, iyl" fd65
-d "ld iyl, 0x00" fd2e00
-d "ld iyl, a" fd6f
-d "ld iyl, b" fd68
-d "ld iyl, c" fd69
-d "ld iyl, d" fd6a
-d "ld iyl, e" fd6b
-d "ld iyl, iyh" fd6c
-d "ld iyl, iyl" fd6d
+ad "ld ix, 0x0000" dd210000
+ad "ld ix, [0x0000]" dd2a0000
+ad "ld ixh, 0x00" dd2600
+ad "ld ixh, a" dd67
+ad "ld ixh, b" dd60
+ad "ld ixh, c" dd61
+ad "ld ixh, d" dd62
+ad "ld ixh, e" dd63
+ad "ld ixh, ixh" dd64
+ad "ld ixh, ixl" dd65
+ad "ld ixl, 0x00" dd2e00
+ad "ld ixl, a" dd6f
+ad "ld ixl, b" dd68
+ad "ld ixl, c" dd69
+ad "ld ixl, d" dd6a
+ad "ld ixl, e" dd6b
+ad "ld ixl, ixh" dd6c
+ad "ld ixl, ixl" dd6d
+ad "ld iy, 0x0000" fd210000
+ad "ld iy, [0x0000]" fd2a0000
+ad "ld iyh, 0x00" fd2600
+ad "ld iyh, a" fd67
+ad "ld iyh, b" fd60
+ad "ld iyh, c" fd61
+ad "ld iyh, d" fd62
+ad "ld iyh, e" fd63
+ad "ld iyh, iyh" fd64
+ad "ld iyh, iyl" fd65
+ad "ld iyl, 0x00" fd2e00
+ad "ld iyl, a" fd6f
+ad "ld iyl, b" fd68
+ad "ld iyl, c" fd69
+ad "ld iyl, d" fd6a
+ad "ld iyl, e" fd6b
+ad "ld iyl, iyh" fd6c
+ad "ld iyl, iyl" fd6d
 ad "ld l, 0x00" 2e00
-d "ld l, [hl]" 6e
-d "ld l, [ix+0x00]" dd6e00
-d "ld l, [iy+0x00]" fd6e00
+ad "ld l, [hl]" 6e
+ad "ld l, [ix+0x00]" dd6e00
+ad "ld l, [iy+0x00]" fd6e00
 ad "ld l, a" 6f
 ad "ld l, b" 68
 ad "ld l, c" 69
@@ -432,18 +432,18 @@ ad "ld l, e" 6b
 ad "ld l, h" 6c
 ad "ld l, l" 6d
 ad "ld r, a" ed4f
-d "ld sp, 0x0000" 310000
-d "ld sp, [0x0000]" ed7b0000
-d "ld sp, hl" f9
-d "ld sp, ix" ddf9
-d "ld sp, iy" fdf9
+ad "ld sp, 0x0000" 310000
+ad "ld sp, [0x0000]" ed7b0000
+ad "ld sp, hl" f9
+ad "ld sp, ix" ddf9
+ad "ld sp, iy" fdf9
 d "ldd" eda8
 d "lddr" edb8
 d "ldi" eda0
 d "ldir" edb0
 d "neg" ed44
 d "nop" 00
-d "or 0x00" f600
+ad "or 0x00" f600
 d "or [hl]" b6
 d "or [ix+0x00]" ddb600
 d "or [iy+0x00]" fdb600
@@ -453,22 +453,22 @@ d "or c" b1
 d "or d" b2
 d "or e" b3
 d "or h" b4
-d "or ixh" ddb4
-d "or ixl" ddb5
-d "or iyh" fdb4
-d "or iyl" fdb5
+ad "or ixh" ddb4
+ad "or ixl" ddb5
+ad "or iyh" fdb4
+ad "or iyl" fdb5
 d "or l" b5
 d "otdr" edbb
 d "otir" edb3
-d "out [0x00], a" d300
-d "out [c], 0" ed71
-d "out [c], a" ed79
-d "out [c], b" ed41
-d "out [c], c" ed49
-d "out [c], d" ed51
-d "out [c], e" ed59
-d "out [c], h" ed61
-d "out [c], l" ed69
+ad "out [0x00], a" d300
+ad "out [c], 0" ed71
+ad "out [c], a" ed79
+ad "out [c], b" ed41
+ad "out [c], c" ed49
+ad "out [c], d" ed51
+ad "out [c], e" ed59
+ad "out [c], h" ed61
+ad "out [c], l" ed69
 d "outd" edab
 d "outi" eda3
 d "pop af" f1
@@ -788,15 +788,15 @@ d "rrc l" cb0d
 d "rrc l, [iy+0x00]" fdcb000d
 d "rrca" 0f
 d "rrd" ed67
-d "rst 0x00" c7
-d "rst 0x08" cf
-d "rst 0x10" d7
-d "rst 0x18" df
-d "rst 0x20" e7
-d "rst 0x28" ef
-d "rst 0x30" f7
-d "rst 0x38" ff
-d "sbc a, 0x00" de00
+ad "rst 0x00" c7
+ad "rst 0x08" cf
+ad "rst 0x10" d7
+ad "rst 0x18" df
+ad "rst 0x20" e7
+ad "rst 0x28" ef
+ad "rst 0x30" f7
+ad "rst 0x38" ff
+ad "sbc a, 0x00" de00
 d "sbc a, [hl]" 9e
 d "sbc a, [ix+0x00]" dd9e00
 d "sbc a, [iy+0x00]" fd9e00
@@ -806,10 +806,10 @@ d "sbc a, c" 99
 d "sbc a, d" 9a
 d "sbc a, e" 9b
 d "sbc a, h" 9c
-d "sbc a, ixh" dd9c
-d "sbc a, ixl" dd9d
-d "sbc a, iyh" fd9c
-d "sbc a, iyl" fd9d
+ad "sbc a, ixh" dd9c
+ad "sbc a, ixl" dd9d
+ad "sbc a, iyh" fd9c
+ad "sbc a, iyl" fd9d
 d "sbc a, l" 9d
 d "sbc hl, bc" ed42
 d "sbc hl, de" ed52
@@ -1104,7 +1104,7 @@ d "srl h" cb3c
 d "srl h, [iy+0x00]" fdcb003c
 d "srl l" cb3d
 d "srl l, [iy+0x00]" fdcb003d
-d "sub 0x00" d600
+ad "sub 0x00" d600
 d "sub [hl]" 96
 d "sub [ix+0x00]" dd9600
 d "sub [iy+0x00]" fd9600
@@ -1116,10 +1116,10 @@ d "sub c" 91
 d "sub d" 92
 d "sub e" 93
 d "sub h" 94
-d "sub iyh" fd94
-d "sub iyl" fd95
+ad "sub iyh" fd94
+ad "sub iyl" fd95
 d "sub l" 95
-d "xor 0x00" ee00
+ad "xor 0x00" ee00
 d "xor [hl]" ae
 d "xor [ix+0x00]" ddae00
 d "xor [iy+0x00]" fdae00
@@ -1130,10 +1130,10 @@ d "xor c" a9
 d "xor d" aa
 d "xor e" ab
 d "xor h" ac
-d "xor ixh" ddac
-d "xor ixl" ddad
-d "xor iyh" fdac
-d "xor iyl" fdad
+ad "xor ixh" ddac
+ad "xor ixl" ddad
+ad "xor iyh" fdac
+ad "xor iyl" fdad
 d "xor l" ad
 d "bit 0, [ix+0x01]" ddcb0146
 d "bit 3, [ix+0x7f]" ddcb7f5e
@@ -1151,7 +1151,26 @@ d "sll [iy+0x2a]" fdcb2a36
 d "sra [ix+0x40]" ddcb402e
 d "srl [iy+0x50]" fdcb503e
 a "ld a, (1+2)*3" 3e09
-a "ld a, (1" 3e01
-a "ld a, @911" 3e00
+a "ld a, @911" 3e0b
 a "ld a, @z0" 3e00
-a "ld a, @h17" 3e00
+a "ld a, @h17" 3e0f
+
+ad "jr c, 0x77" 3803 0x72
+ad "jr nz, 0xe3" 20fa 0xe7
+ad "djnz 0xf5" 10fb 0xf8
+ad "jr 0x00" 1800 0xfffe
+ad "jr 0x02" 1808 0xfff8
+ad "ld hl, 0xc0f0" 21f0c0
+ad "ld hl, [0xc0f0]" 2af0c0
+ad "ld [0xc0f0], hl" 22f0c0
+ad "out [0xbf], a" d3bf
+ad "in a, [0x04]" db04
+ad "ld [ix+0x02], 0x01" dd360201
+ad "ld b, [ix+0x03]" dd4603
+a "ld a, [iy-1]" fd7eff
+ad "dec [ix+0x02]" dd3502
+ad "add a, 0x7f" c67f
+ad "and 0xf0" e6f0
+ad "cp 0x60" fe60
+a "ld a, '['" 3e5b
+a "ld a, ']'" 3e5d

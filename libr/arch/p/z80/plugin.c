@@ -29,7 +29,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	op->type = R_ANAL_OP_TYPE_UNK;
 
 	if (mask & R_ARCH_OP_MASK_DISASM) {
-		op->mnemonic = z80dis (data, len);
+		op->mnemonic = z80dis (data, len, addr);
 	}
 	// Decode operation type and operands based on opcode
 	switch (data[0]) {
@@ -429,6 +429,8 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 	R_RETURN_VAL_IF_FAIL (s->data, false);
 
 	PluginData *pd = s->data;
+	pd->addr = op->addr;
+	pd->sizing = mask & R_ARCH_ENCODE_MASK_SIZING;
 	ut8 data[64] = { 0 }; // r_anal_op_set_bytes keeps 64 bytes
 	const int len = z80asm (pd, data, sizeof (data), op->mnemonic);
 	if (len > 0) {
