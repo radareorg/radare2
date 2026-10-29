@@ -4030,3 +4030,107 @@ EXPECT=<<EOF
 0x1234ffff
 EOF
 RUN
+
+NAME=arm32 smull, umlal, smlal and umaal use the 64-bit result, umulls sets z from all of it
+FILE=malloc://0x100
+ARGS=-a arm -b 32
+CMDS=<<EOF
+aei
+aeim
+s 0
+wx 9203c1e0
+ar pc=0
+ar r0=0x0
+ar r1=0x0
+ar r2=0xffffffff
+ar r3=0x2
+aes
+ar r0
+ar r1
+s 0
+wx 920391e0
+ar pc=0
+ar r0=0x0
+ar r1=0x0
+ar r2=0x2
+ar r3=0x3
+ar cpsr=0x0
+aes
+ar r0
+ar r1
+ar cpsr
+s 0
+wx 9203a1e0
+ar pc=0
+ar r0=0xffffffff
+ar r1=0x0
+ar r2=0x1
+ar r3=0x1
+aes
+ar r0
+ar r1
+s 0
+wx 9203e1e0
+ar pc=0
+ar r0=0x0
+ar r1=0x0
+ar r2=0xffffffff
+ar r3=0x1
+aes
+ar r0
+ar r1
+s 0
+wx 920341e0
+ar pc=0
+ar r0=0xffffffff
+ar r1=0xffffffff
+ar r2=0xffffffff
+ar r3=0xffffffff
+aes
+ar r0
+ar r1
+s 0
+wx 9203f1e0
+ar pc=0
+ar r0=0x0
+ar r1=0x0
+ar r2=0xffffffff
+ar r3=0x1
+ar cpsr=0x0
+aes
+ar r0
+ar r1
+ar cpsr
+s 0
+wx 9203b1e0
+ar pc=0
+ar r0=0x0
+ar r1=0x0
+ar r2=0x0
+ar r3=0x5
+ar cpsr=0x0
+aes
+ar r0
+ar r1
+ar cpsr
+EOF
+EXPECT=<<EOF
+0xfffffffe
+0xffffffff
+0x00000006
+0x00000000
+0x00000000
+0x00000000
+0x00000001
+0xffffffff
+0xffffffff
+0xffffffff
+0xffffffff
+0xffffffff
+0xffffffff
+0x80000000
+0x00000000
+0x00000000
+0x40000000
+EOF
+RUN

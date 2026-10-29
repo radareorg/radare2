@@ -4192,8 +4192,32 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			REG(1), REG(2), REG(3), REG(0));
 		break;
 	case ARM_INS_UMULL:
-		r_strbuf_appendf (&op->esil, "32,%s,%s,*,DUP,0xffffffff,&,%s,=,>>,%s,=",
-			REG(2), REG(3), REG(0), REG(1));
+	case ARM_INS_SMULL:
+	case ARM_INS_UMLAL:
+	case ARM_INS_SMLAL:
+	case ARM_INS_UMAAL:
+		{
+			// rdhi:rdlo = rn * rm, plus rdhi:rdlo (umlal, smlal) or plus rdhi and rdlo (umaal), as one 64-bit sum
+			const bool sign = insn->id == ARM_INS_SMULL || insn->id == ARM_INS_SMLAL;
+			const char *lo = REG (0);
+			const char *hi = REG (1);
+			if (sign) {
+				r_strbuf_appendf (&op->esil, "32,32,%s,~,32,%s,~,*", REG (2), REG (3));
+			} else {
+				r_strbuf_appendf (&op->esil, "32,%s,%s,*", REG (2), REG (3));
+			}
+			if (insn->id == ARM_INS_UMLAL || insn->id == ARM_INS_SMLAL) {
+				r_strbuf_appendf (&op->esil, ",32,%s,<<,%s,|,+", hi, lo);
+			} else if (insn->id == ARM_INS_UMAAL) {
+				r_strbuf_appendf (&op->esil, ",%s,+,%s,+", hi, lo);
+			}
+			r_strbuf_appendf (&op->esil, ",DUP,0xffffffff,&,%s,=,>>,%s,=", lo, hi);
+			if (insn->detail->arm.update_flags && insn->id != ARM_INS_UMAAL) {
+				// the shared nz update reads the last compared value: give it the sign of rdhi,
+				// and make it zero only when all 64 bits are
+				r_strbuf_appendf (&op->esil, ",0,%s,%s,!,!,|,==", hi, lo);
+			}
+		}
 		break;
 	case ARM_INS_MLS:
 		r_strbuf_appendf (&op->esil, "%s,%s,*,%s,-,0xffffffff,&,%s,=",
