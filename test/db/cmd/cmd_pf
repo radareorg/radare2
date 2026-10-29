@@ -1197,9 +1197,9 @@ e scr.color=0
 pf qq code rw @ section..data
 EOF
 EXPECT=<<EOF
- code : 0x00600900 = (qword)[31m0x0000000000400410[0m
-   rw : 0x00600908 = (qword)[34m0x0000000000600900[0m
- arr : 0x00600900 = [ [31m0x00400410[0m, 0x00000000 ]
+[36m code[0m : [32m0x00600900[0m = (qword)[31m0x0000000000400410[0m
+[36m   rw[0m : [32m0x00600908[0m = (qword)[34m0x0000000000600900[0m
+[36m arr[0m : [32m0x00600900[0m = [ [31m0x00400410[0m, 0x00000000 ]
  code : 0x00600900 = (qword)0x0000000000400410
    rw : 0x00600908 = (qword)0x0000000000600900
 EOF
@@ -1262,4 +1262,42 @@ ERROR: Field 'a' has no element 4
 ERROR: Field 'a' has no element -1
 ERROR: Field 'a' has no element -2
 EOF2
+RUN
+
+NAME=pf address and label colors respect scr.color and output modes
+FILE=malloc://64
+CMDS=<<EOF
+e scr.color=1
+ec addr red
+ec label yellow
+pf b
+pf b field
+pf q field
+pf Q field
+pf z field
+pfj b field
+pfq b field
+pfv b field
+e scr.color=0
+pf b
+pf b field
+pf q field
+pf Q field
+pf z field
+EOF
+EXPECT=<<EOF
+[31m0x00000000[0m = 0x00
+[33m field[0m : [31m0x00000000[0m = 0x00
+[33m field[0m : [31m0x00000000[0m = (qword)[31m0x0000000000000000[0m
+[33m field[0m : [31m0x00000000[0m = (uint128_t)0x00000000000000000000000000000000
+[33m field[0m : [31m0x00000000[0m = ""
+[{"name":"field","type":"b","offset":0,"value":0}]
+0x00
+0x00
+0x00000000 = 0x00
+ field : 0x00000000 = 0x00
+ field : 0x00000000 = (qword)0x0000000000000000
+ field : 0x00000000 = (uint128_t)0x00000000000000000000000000000000
+ field : 0x00000000 = ""
+EOF
 RUN
