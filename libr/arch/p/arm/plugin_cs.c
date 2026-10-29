@@ -2415,28 +2415,28 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		FPOPCALL_NEGATE ("*");
 		break;
 	case ARM64_INS_FMADD:
-		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,%d,%s,F2D,F+,D2F,%s,=",
-			REGBITS64 (1), REG64 (1),
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,%d,%s,F2D,F*+,D2F,%s,=",
+			REGBITS64 (3), REG64 (3),
 			REGBITS64 (2), REG64 (2),
-			REGBITS64 (3), REG64 (3), REG64 (0));
+			REGBITS64 (1), REG64 (1), REG64 (0));
 		break;
 	case ARM64_INS_FNMADD:
-		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,-F,%d,%s,F2D,F+,-F,D2F,%s,=",
-			REGBITS64 (1), REG64 (1),
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,-F,%d,%s,F2D,%d,%s,F2D,-F,F*+,D2F,%s,=",
+			REGBITS64 (3), REG64 (3),
 			REGBITS64 (2), REG64 (2),
-			REGBITS64 (3), REG64 (3), REG64 (0));
+			REGBITS64 (1), REG64 (1), REG64 (0));
 		break;
 	case ARM64_INS_FMSUB:
-		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,%d,%s,F2D,F-,D2F,%s,=",
-			REGBITS64 (1), REG64 (1),
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,%d,%s,F2D,-F,F*+,D2F,%s,=",
+			REGBITS64 (3), REG64 (3),
 			REGBITS64 (2), REG64 (2),
-			REGBITS64 (3), REG64 (3), REG64 (0));
+			REGBITS64 (1), REG64 (1), REG64 (0));
 		break;
 	case ARM64_INS_FNMSUB:
-		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,-F,%d,%s,F2D,F-,-F,D2F,%s,=",
-			REGBITS64 (1), REG64 (1),
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,-F,%d,%s,F2D,%d,%s,F2D,F*+,D2F,%s,=",
+			REGBITS64 (3), REG64 (3),
 			REGBITS64 (2), REG64 (2),
-			REGBITS64 (3), REG64 (3), REG64 (0));
+			REGBITS64 (1), REG64 (1), REG64 (0));
 		break;
 	case ARM64_INS_FDIV:
 		FPOPCALL ("/");
