@@ -10,7 +10,12 @@ void stream_file_read(R_STREAM_FILE *stream_file, int size, char *res);
 void stream_file_seek(R_STREAM_FILE *stream_file, int offset, int whence);
 int stream_file_tell(R_STREAM_FILE *stream_file);
 bool stream_file_get_data(R_STREAM_FILE *stream_file, char *data);
-int stream_file_get_size(R_STREAM_FILE *stream_file);
+static inline int stream_file_get_size(R_STREAM_FILE *stream_file) {
+	if (!stream_file || stream_file->error || stream_file->pos < 0 || stream_file->pos >= stream_file->end) {
+		return 0;
+	}
+	return stream_file->end - stream_file->pos;
+}
 
 static inline ut16 stream_file_read_le16(R_STREAM_FILE *stream_file) {
 	ut8 data[2] = {0};
