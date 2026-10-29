@@ -170,10 +170,88 @@ static bool test_r_fs_ntfs_fixup_bounds(void) {
 	mu_end;
 }
 
+static bool test_r_fs_ntfs_attribute_list_real_size_overflow(void) {
+#if WITH_GPL
+	size_t size = 0;
+	ut8 *img = (ut8 *)r_file_slurp ("bins/fs/ntfs.img", &size);
+	mu_assert_notnull (img, "load ntfs image");
+	char *uri = r_str_newf ("malloc://%" PFMTSZu, size);
+
+	// root.txt is MFT record 76, same record the fixup-bounds test uses.
+	ut8 *rec = img + 0x4000 + 76 * 1024;
+	mu_assert_memeq (rec, (const ut8 *)"FILE", 4, "root.txt MFT record");
+
+	// Walk the existing attributes to find $DATA (0x80) and the terminator.
+	ut16 attr_off = r_read_le16 (rec + 0x14);
+	ut16 off = attr_off, data_off = 0, term_off = 0;
+	bool found_data = false, found_term = false;
+	while (off < 1024) {
+		ut32 atype = r_read_le32 (rec + off);
+		if (atype == 0xFFFFFFFF) {
+			term_off = off;
+			found_term = true;
+			break;
+		}
+		ut32 alen = r_read_le32 (rec + off + 4);
+		if (atype == 0x80) {
+			data_off = off;
+			found_data = true;
+		}
+		off += alen;
+	}
+	mu_assert_true (found_data, "found $DATA attribute");
+	mu_assert_true (found_term, "found attribute list terminator");
+
+	// Neutralize the real resident $DATA attribute's type (the parser only
+	// checks this single byte) so it is never matched directly.
+	rec[data_off] = 0x00;
+
+	// Replace the terminator with a crafted non-resident ATTRIBUTE_LIST
+	// (type 0x20) attribute whose "real size" field (offset 0x30) is
+	// 0xFFFFFFFF: the value that overflows the sector-rounding in
+	// find_attr() before the fix in this commit, turning the backing
+	// allocation into 1 byte while attr_end still points ~4GB past it.
+	ut8 attack[64] = { 0 };
+	r_write_le32 (attack + 0x00, 0x20); // type = ATTRIBUTE_LIST
+	r_write_le32 (attack + 0x04, 0x40); // length = 64
+	attack[0x08] = 1;                   // non-resident = true
+	r_write_le16 (attack + 0x0E, 5);    // attribute id
+	r_write_le16 (attack + 0x20, 0x40); // data-runs offset (never read: len==0 short-circuits)
+	r_write_le32 (attack + 0x30, 0xFFFFFFFF); // "real size" -- the attack value
+
+	memcpy (rec + term_off, attack, sizeof (attack));
+	ut16 new_term_off = term_off + sizeof (attack);
+	r_write_le32 (rec + new_term_off, 0xFFFFFFFF);
+
+	ut32 new_used = new_term_off + 4;
+	mu_assert_true (new_used <= 1024 - 8, "crafted record stays inside the MFT record");
+	r_write_le32 (rec + 0x18, new_used);
+
+	RIO *io = r_io_new ();
+	RFS *fs = r_fs_new ();
+	r_io_bind (io, &fs->iob);
+	mu_assert_notnull (r_io_open (io, uri, R_PERM_RW, 0), "open ntfs image");
+	r_io_write_at (io, 0, img, size);
+	mu_assert_notnull (r_fs_mount (fs, "ntfs", "/mnt", 0), "mount ntfs image");
+	mu_assert_null (r_fs_open (fs, "/mnt/root.txt", false),
+		"reject a non-resident attribute list whose real size overflows the sector rounding");
+	RFSFile *file = r_fs_open (fs, "/mnt/folder1/file1.txt", false);
+	mu_assert_notnull (file, "other files remain readable");
+	r_fs_close (fs, file);
+	r_fs_file_free (file);
+	r_fs_free (fs);
+	r_io_free (io);
+	free (uri);
+	free (img);
+#endif
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_fs_ext2_read_bounds);
 	mu_run_test (test_r_fs_bfs_read_whole_file);
 	mu_run_test (test_r_fs_ntfs_fixup_bounds);
+	mu_run_test (test_r_fs_ntfs_attribute_list_real_size_overflow);
 	return tests_passed != tests_run;
 }
 

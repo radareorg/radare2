@@ -170,8 +170,23 @@ retry:
 		pa = at->attr_end;
 		if (pa[8]) {
 			int n;
-
-			n = ((u32at (pa, 0x30) + GRUB_DISK_SECTOR_SIZE - 1) &(~ (GRUB_DISK_SECTOR_SIZE - 1)));
+			// "real size" is attacker-controlled and used below, unmasked,
+			// as the attr_end pointer offset into edat_buf. u32at (pa, 0x30)
+			// is a 32-bit value, so a size near UINT32_MAX overflows this
+			// rounding in 32-bit arithmetic to a tiny (or zero) n: edat_buf
+			// is then under-allocated while attr_end still points far past
+			// it, and the attribute-list walk below reads out of bounds.
+			// Do the rounding in 64 bits and reject a value that would
+			// need an unreasonably large allocation.
+			grub_uint64_t real_size = u32at (pa, 0x30);
+			grub_uint64_t n64 = (real_size + GRUB_DISK_SECTOR_SIZE - 1) &
+				~(grub_uint64_t) (GRUB_DISK_SECTOR_SIZE - 1);
+			if (n64 > 16 * 1024 * 1024) {
+				grub_error (GRUB_ERR_BAD_FS,
+					"non-resident attribute list too large");
+				return NULL;
+			}
+			n = (int) n64;
 			at->attr_cur = at->attr_end;
 			at->edat_buf = grub_malloc (n);
 			if (!at->edat_buf) {
@@ -183,7 +198,7 @@ retry:
 				return NULL;
 			}
 			at->attr_nxt = at->edat_buf;
-			at->attr_end = at->edat_buf + u32at (pa, 0x30);
+			at->attr_end = at->edat_buf + real_size;
 		} else {
 			at->attr_nxt = at->attr_end + u16at (pa, 0x14);
 			at->attr_end = at->attr_end + u32at (pa, 4);
