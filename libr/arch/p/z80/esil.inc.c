@@ -5,7 +5,11 @@ static void z80_szp(RStrBuf *e) {
 	r_strbuf_append (e, "0xff,t2,&,t2,=,t2,!,Z,=,7,t2,>>,S,=,4,t2,>>,t2,^,t3,=,2,t3,>>,t3,^,t3,=,1,t3,>>,t3,^,1,&,!,P,=,0x28,t2,&,f,|=,");
 }
 
-static void z80_alu(RStrBuf *e, int kind, const char *src, bool wide) {
+static void z80_alu(RAnalOp *op, int kind, const char *src, bool wide) {
+	static const ut32 types[] = { R_ANAL_OP_TYPE_ADD, R_ANAL_OP_TYPE_ADD, R_ANAL_OP_TYPE_SUB, R_ANAL_OP_TYPE_SUB,
+		R_ANAL_OP_TYPE_AND, R_ANAL_OP_TYPE_XOR, R_ANAL_OP_TYPE_OR, R_ANAL_OP_TYPE_CMP };
+	RStrBuf *e = &op->esil;
+	op->type = types[kind];
 	int bits = wide? 16: 8;
 	const char *dst = wide? "hl": "a";
 	bool sub = kind == 2 || kind == 3 || kind == 7;
@@ -89,7 +93,7 @@ static bool z80_esil(RAnalOp *op, const ut8 *data, int len) {
 	}
 	ut8 code = data[at++];
 	int x = code >> 6, y = (code >> 3) & 7, z = code & 7, p = y >> 1, q = y & 1;
-	char mem[64], store[64], hi[16], lo[16];
+	char mem[64], hi[16], lo[16];
 	bool displacement = index && (code == 0xcb || (x == 1 && code != 0x76 && (y == 6 || z == 6)) || (x == 2 && z == 6) || (x == 0 && y == 6 && z >= 4 && z <= 6));
 	if (index) {
 		snprintf (hi, sizeof (hi), "%sh", index);
@@ -106,10 +110,9 @@ static bool z80_esil(RAnalOp *op, const ut8 *data, int len) {
 		} else {
 			snprintf (mem, sizeof (mem), "%s", index);
 		}
-		snprintf (store, sizeof (store), "%s,=[1]", mem);
-		ww[6] = store;
 		r_strbuf_appendf (e, "%s,t5,=,", mem);
 		rr[6] = "t5,[1]";
+		ww[6] = "t5,=[1]";
 		ww[4] = !strcmp (rr[4], "h")? "h,=": data[0] == 0xdd? "ixh,=": "iyh,=";
 		ww[5] = !strcmp (rr[5], "l")? "l,=": data[0] == 0xdd? "ixl,=": "iyl,=";
 	}
@@ -151,7 +154,7 @@ static bool z80_esil(RAnalOp *op, const ut8 *data, int len) {
 				op->cycles = 12;
 				break;
 			case 2:
-				z80_alu (e, q? 1: 3, rp[p], true);
+				z80_alu (op, q? 1: 3, rp[p], true);
 				op->cycles = 15;
 				break;
 			case 3:
@@ -166,7 +169,7 @@ static bool z80_esil(RAnalOp *op, const ut8 *data, int len) {
 				break;
 			case 4:
 				r_strbuf_append (e, "a,t6,=,0,a,=,");
-				z80_alu (e, 2, "t6", false);
+				z80_alu (op, 2, "t6", false);
 				break;
 			case 5:
 				z80_pop (e, "pc");
@@ -200,7 +203,7 @@ static bool z80_esil(RAnalOp *op, const ut8 *data, int len) {
 				r_strbuf_append (e, "hl,[1],de,=[1],1,bc,-=,0xc1,f,&,f,=,bc,!,!,P,=,");
 			} else if (z == 1) {
 				r_strbuf_append (e, "C,t6,=,");
-				z80_alu (e, 7, "hl,[1]", false);
+				z80_alu (op, 7, "hl,[1]", false);
 				r_strbuf_append (e, "t6,C,=,1,bc,-=,bc,!,!,P,=,");
 			} else {
 				r_strbuf_append (e, z == 2? "0x1000000,bc,+,[1],hl,=[1],": "hl,[1],0x1000000,bc,+,=[1],");
@@ -227,7 +230,7 @@ static bool z80_esil(RAnalOp *op, const ut8 *data, int len) {
 			op->cycles = prefix + (y == 6 || z == 6? (index? 15: 7): 4);
 		}
 	} else if (x == 2) {
-		z80_alu (e, y, rr[z], false);
+		z80_alu (op, y, rr[z], false);
 		op->cycles = prefix + (z == 6? (index? 15: 7): 4);
 	} else if (x == 0) {
 		switch (z) {
@@ -382,7 +385,7 @@ static bool z80_esil(RAnalOp *op, const ut8 *data, int len) {
 			}
 			break;
 		case 6:
-			z80_alu (e, y, immediate, false);
+			z80_alu (op, y, immediate, false);
 			op->size++;
 			op->cycles = 7;
 			break;

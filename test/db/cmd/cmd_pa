@@ -213,8 +213,11 @@ EXPECT_ERR=<<EOF2
 WARN: .fill with a negative repeat is ignored
 WARN: .fill with a negative size is ignored
 ERROR: Too large .fill
+ERROR: Cannot assemble '.fill 0x80000000,1,0x41' at line 2
 ERROR: Too large .fill
+ERROR: Cannot assemble '.fill 0x10000,0x10000' at line 2
 ERROR: Too large .fill
+ERROR: Cannot assemble '.fill 0x100000004,1,0x41' at line 2
 EOF2
 RUN
 
@@ -332,6 +335,7 @@ INFO: Example (float): .cfloat 1 8 23 127 0 0
 INFO: Example (double): .cfloat 1 11 52 1023 0 0
 INFO: Example (bf16): .cfloat 1 8 7 127 0 0
 INFO: Example (x86-80): .cfloat 1 15 64 16383 0 1
+ERROR: Cannot assemble '.cfloat 1:8:23:127:0:0' at line 1
 EOF
 RUN
 

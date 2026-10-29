@@ -48,5 +48,6 @@ ieee754
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Invalid .cfloat field sizes
+ERROR: Cannot assemble '.cfloat 10 2147483647 2147483647 0 0 0' at line 1
 EOF
 RUN
