@@ -998,9 +998,12 @@ R_API bool r_cons_is_windows(void) {
 #endif
 }
 
-R_API bool r_cons_is_tty(void) {
+// check if the given file descriptor is attached to a terminal
+// use 0 for stdin (interactivity, keys, prompts) and 1 for stdout (colors, ansi)
+R_API bool r_cons_isatty(int fd) {
 #if R2_WASM_BROWSER
-	/* Check if WASM import is available */
+	/* browsers expose a single terminal stream */
+	(void)fd;
 	extern int r2_js_is_tty (void) __attribute__((import_module ("r2"), import_name ("is_tty")));
 	if ((void *)r2_js_is_tty != NULL) {
 		return r2_js_is_tty () != 0;
@@ -1008,36 +1011,27 @@ R_API bool r_cons_is_tty(void) {
 	/* Fallback to false if import not available */
 	return false;
 #elif R2__UNIX__ && !defined(__wasi__)
-	struct winsize win = { 0 };
-	struct stat sb = { 0 };
-
-	if (!isatty (1)) {
-		return false;
-	}
-	if (ioctl (1, TIOCGWINSZ, &win)) {
-		return false;
-	}
-	if (!win.ws_col || !win.ws_row) {
-		return false;
-	}
-	char ttybuf[64];
-	if (ttyname_r (1, ttybuf, sizeof (ttybuf))) {
-		return false;
-	}
-	const char *tty = ttybuf;
-	if (stat (tty, &sb) || !S_ISCHR (sb.st_mode)) {
-		return false;
-	}
-	return true;
+	return isatty (fd);
 #elif R2__WINDOWS__
-	HANDLE hOut = GetStdHandle (STD_OUTPUT_HANDLE);
-	if (GetFileType (hOut) == FILE_TYPE_CHAR) {
-		DWORD unused;
-		return GetConsoleMode (hOut, &unused);
+	HANDLE h = INVALID_HANDLE_VALUE;
+	switch (fd) {
+	case 0:
+		h = GetStdHandle (STD_INPUT_HANDLE);
+		break;
+	case 2:
+		h = GetStdHandle (STD_ERROR_HANDLE);
+		break;
+	case 1:
+		h = GetStdHandle (STD_OUTPUT_HANDLE);
+		break;
+	default:
+		return false;
 	}
-	return false;
+	DWORD mode;
+	return h && h != INVALID_HANDLE_VALUE && GetConsoleMode (h, &mode);
 #else
 	/* non-UNIX do not have ttys */
+	(void)fd;
 	return false;
 #endif
 }

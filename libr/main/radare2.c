@@ -565,14 +565,6 @@ beach:
 	return has_failed;
 }
 
-static bool is_terminal(void) {
-#if R2__UNIX__
-	return isatty (0) && r_cons_is_tty ();
-#else
-	return r_cons_is_tty ();
-#endif
-}
-
 static bool mustSaveHistory(RCore *core) {
 	if (!r_config_get_b (core->config, "scr.hist.save")) {
 		return false;
@@ -1178,7 +1170,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			break;
 		case 'q':
 			// keep -c commands like v or ~.. usable from a terminal
-			r_config_set_b (r->config, "scr.interactive", is_terminal ());
+			r_config_set_b (r->config, "scr.interactive", r_cons_isatty (0));
 			r_config_set_b (r->config, "scr.prompt", false);
 			r_config_set_b (r->config, "cfg.fortunes", false);
 			if (mr.quiet) {
