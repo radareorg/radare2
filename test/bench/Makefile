@@ -30,3 +30,11 @@ strpool: strpool.c
 .PHONY: clean-strpool
 clean-strpool:
 	rm -f strpool
+
+asm_code: asm_code.c
+	$(CC) $(CPPFLAGS) -O2 -I../../libr/include -I../../subprojects/sdb/include $< \
+		-o $@ $(LDFLAGS) -L../../libr/asm -lr_asm -L../../libr/util -lr_util
+
+.PHONY: clean-asm-code
+clean-asm-code:
+	rm -f asm_code

@@ -153,3 +153,26 @@ Fixtures come from radare2-testbins commit
 | `elf/dwarf_rust_bubble` | 7,330,184 | `5916bc0cb2d4bced3169a2601804e86d19b8dc4f12178192c5937822dc25697b` |
 | `elf/pumasim` | 9,508,376 | `446d5a77b7aa3cd2139b22492919ebfa2fbcb3205208e12c5a5ed2a3454b13c2` |
 | `mach0/rust/rust_nonnull_arm64` | 444,408 | `a85c13d4340d144aeef114778dc520227bb16793ab46022cb349098ed049f320` |
+
+## Assembler symbols and source splitting
+
+Build radare2 from the root, then run:
+
+```sh
+make -C test/bench asm_code
+test/bench/asm_code
+```
+
+The CSV reports microseconds. `equ` performs 4,096 substitutions with a fixed
+referenced symbol and 0–8,192 unrelated symbols. Table construction and a
+correctness check precede timing; the timed loop includes substitution and
+freeing the result. Increasing unrelated symbols should not multiply lookup
+cost. `lines` assembles 4,096–65,536 `.byte` directives and validates the emitted
+bytes. Source generation is outside timing; assembly includes the normal
+passes, tokenization, directives and output allocation, without a CPU backend.
+These workloads isolate two generic libr/asm costs and need no ROM fixture.
+
+Use identical compiler flags and repeat measurements when comparing versions.
+For a real cartridge, separately time rasm2 with preprocessing, architecture
+encoding and binary output enabled, and compare every result to the reference.
+Remove the benchmark executable with `make -C test/bench clean-asm-code`.
