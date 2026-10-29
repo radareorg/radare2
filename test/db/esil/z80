@@ -1,0 +1,278 @@
+NAME=Z80 arithmetic sets hardware flag bits and signed overflow
+FILE=malloc://0x10000
+CMDS=<<EOF2
+e asm.arch=z80
+e asm.bits=16
+aei
+wx 3e7fc601
+aes 2
+ar a
+ar f
+EOF2
+EXPECT=<<EOF2
+0x00000080
+0x00000094
+EOF2
+RUN
+
+NAME=Z80 ADC includes carry in the full result
+FILE=malloc://0x10000
+CMDS=<<EOF2
+e asm.arch=z80
+aei
+wx ceff
+ar a=0
+ar C=1
+aes
+ar a
+ar f
+EOF2
+EXPECT=<<EOF2
+0x00000000
+0x00000051
+EOF2
+RUN
+
+NAME=Z80 SBC includes carry and borrow
+FILE=malloc://0x10000
+CMDS=<<EOF2
+e asm.arch=z80
+aei
+wx deff
+ar a=0
+ar C=1
+aes
+ar a
+ar f
+EOF2
+EXPECT=<<EOF2
+0x00000000
+0x00000053
+EOF2
+RUN
+
+NAME=Z80 INC preserves carry and uses overflow instead of parity
+FILE=malloc://0x10000
+CMDS=<<EOF2
+e asm.arch=z80
+aei
+wx 04
+ar b=127
+ar C=1
+aes
+ar b
+ar f
+EOF2
+EXPECT=<<EOF2
+0x00000080
+0x00000095
+EOF2
+RUN
+
+NAME=Z80 relative branch uses signed displacement
+FILE=malloc://0x10000
+CMDS=<<EOF2
+e asm.arch=z80
+aei
+wx 18fe @0x100
+ar pc=0x100
+e esil.skipself=false
+aes
+ar pc
+EOF2
+EXPECT=<<EOF2
+0x00000100
+EOF2
+RUN
+
+NAME=Z80 CALL and RET preserve the return address
+FILE=malloc://0x10000
+CMDS=<<EOF2
+e asm.arch=z80
+aei
+wx cd0001
+wx c9 @0x100
+ar sp=0xc100
+aes 2
+ar pc
+ar sp
+EOF2
+EXPECT=<<EOF2
+0x00000003
+0x0000c100
+EOF2
+RUN
+
+NAME=Z80 indexed memory and indexed CB rotate use signed displacement
+FILE=malloc://0x10000
+CMDS=<<EOF2
+e asm.arch=z80
+aei
+wx dd2100c1dd36ff81ddcbff06
+aes 3
+pxj 1 @0xc0ff
+ar C
+ar ix
+EOF2
+EXPECT=<<EOF2
+[3]
+0x00000001
+0x0000c100
+EOF2
+RUN
+
+NAME=Z80 alternate registers exchange independently
+FILE=malloc://0x10000
+CMDS=<<EOF2
+e asm.arch=z80
+aei
+wx 08d9
+ar af=0x1234
+ar af2=0xabcd
+ar bc=0x5678
+ar bc2=0x9abc
+aes 2
+ar af
+ar af2
+ar bc
+ar bc2
+EOF2
+EXPECT=<<EOF2
+0x0000abcd
+0x00001234
+0x00009abc
+0x00005678
+EOF2
+RUN
+
+NAME=Z80 LDIR repeats one transfer per ESIL step
+FILE=malloc://0x10000
+CMDS=<<EOF2
+e asm.arch=z80
+aei
+wx edb0
+e esil.skipself=false
+wx 123456 @0xc000
+ar hl=0xc000
+ar de=0xc100
+ar bc=3
+aes 3
+ar pc
+ar bc
+ar hl
+ar de
+pxj 3 @0xc100
+EOF2
+EXPECT=<<EOF2
+0x00000002
+0x00000000
+0x0000c003
+0x0000c103
+[18,52,86]
+EOF2
+RUN
+
+NAME=Z80 ports have a separate ESIL address space
+FILE=malloc://0x1010000
+CMDS=<<EOF2
+e asm.arch=z80
+aei
+wx 3e5ad3bedbbe
+aes 3
+ar a
+pxj 1 @0x1005abe
+EOF2
+EXPECT=<<EOF2
+0x0000005a
+[90]
+EOF2
+RUN
+
+NAME=Z80 DAA adjusts packed BCD addition
+FILE=malloc://0x10000
+CMDS=<<EOF2
+e asm.arch=z80
+aei
+wx 3e99c60127
+aes 3
+ar a
+ar f
+EOF2
+EXPECT=<<EOF2
+0x00000000
+0x00000055
+EOF2
+RUN
+
+NAME=Z80 IY half registers and indexed loads
+FILE=malloc://0x10000
+CMDS=<<EOF2
+e asm.arch=z80
+aei
+wx fd2100c1fd2602fd2e03
+aes 3
+ar iy
+EOF2
+EXPECT=<<EOF2
+0x00000203
+EOF2
+RUN
+
+NAME=Z80 ADC HL uses 16-bit overflow and carry
+FILE=malloc://0x10000
+CMDS=<<EOF2
+e asm.arch=z80
+aei
+wx ed4a
+ar hl=0x7fff
+ar bc=0
+ar C=1
+aes
+ar hl
+ar f
+EOF2
+EXPECT=<<EOF2
+0x00008000
+0x00000094
+EOF2
+RUN
+
+NAME=Z80 RLD rotates memory and accumulator nibbles
+FILE=malloc://0x10000
+CMDS=<<EOF2
+e asm.arch=z80
+aei
+wx ed6f
+wx 34 @0xc000
+ar hl=0xc000
+ar a=0x12
+aes
+ar a
+pxj 1 @0xc000
+EOF2
+EXPECT=<<EOF2
+0x00000013
+[66]
+EOF2
+RUN
+
+NAME=Z80 EI makes IFF2 visible to LD A,I
+FILE=malloc://0x10000
+CMDS=<<EOF2
+e asm.arch=z80
+aei
+wx fbed57
+ar i=0x80
+aes 2
+ar a
+ar P
+ar iff1
+ar iff2
+EOF2
+EXPECT=<<EOF2
+0x00000080
+0x00000001
+0x00000001
+0x00000001
+EOF2
+RUN

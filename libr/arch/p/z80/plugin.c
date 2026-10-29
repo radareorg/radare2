@@ -7,6 +7,9 @@
 #include <r_arch.h>
 #include "z80asm.h"
 #include "z80dis.h"
+#include "esil.inc.c"
+
+// R2R test/db/esil/z80
 
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut64 addr = op->addr;
@@ -330,7 +333,12 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		}
 		break;
 	}
-	return ilen;
+	if (mask & R_ARCH_OP_MASK_ESIL) {
+		if (!z80_esil (op, data, R_MIN (len, 4))) {
+			return false;
+		}
+	}
+	return op->size <= len;
 }
 
 static char *regs(RArchSession *as) {
@@ -352,10 +360,10 @@ static char *regs(RArchSession *as) {
 		"gpr	af	.16	6	0\n"
 		"gpr	f	.8	6	0\n"
 		"gpr	a	.8	7	0\n"
-		"gpr	Z	.1	.55	0\n"
-		"gpr	N	.1	.54	0\n"
-		"gpr	H	.1	.53	0\n"
-		"gpr	C	.1	.52	0\n"
+		"gpr	Z	.1	.54	0\n"
+		"gpr	N	.1	.49	0\n"
+		"gpr	H	.1	.52	0\n"
+		"gpr	C	.1	.48	0\n"
 
 		"gpr	bc	.16	8	0\n"
 		"gpr	c	.8	8	0\n"
@@ -372,7 +380,32 @@ static char *regs(RArchSession *as) {
 		"gpr	mbcrom	.16	14	0\n"
 		"gpr	mbcram	.16	16	0\n"
 
-		"gpr	ime	.1	18	0\n";
+		"gpr	iff1	.8	18	0\n"
+		"gpr	iff2	.8	19	0\n"
+		"gpr	S	.1	.55	0\n"
+		"gpr	P	.1	.50	0\n"
+		"gpr	ix	.16	20	0\n"
+		"gpr	ixl	.8	20	0\n"
+		"gpr	ixh	.8	21	0\n"
+		"gpr	iy	.16	22	0\n"
+		"gpr	iyl	.8	22	0\n"
+		"gpr	iyh	.8	23	0\n"
+		"gpr	af2	.16	24	0\n"
+		"gpr	bc2	.16	26	0\n"
+		"gpr	de2	.16	28	0\n"
+		"gpr	hl2	.16	30	0\n"
+		"gpr	i	.8	32	0\n"
+		"gpr	r	.8	33	0\n"
+		"gpr	im	.8	34	0\n"
+		"gpr	ei	.8	35	0\n"
+		"gpr	halted	.8	36	0\n"
+		"gpr	t0	.64	40	0\n"
+		"gpr	t1	.64	48	0\n"
+		"gpr	t2	.64	56	0\n"
+		"gpr	t3	.64	64	0\n"
+		"gpr	t4	.64	72	0\n"
+		"gpr	t5	.64	80	0\n"
+		"gpr	t6	.64	88	0\n";
 	return strdup (p);
 }
 
@@ -383,7 +416,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 	case R_ARCH_INFO_CODE_ALIGN:
 		return 0;
 	case R_ARCH_INFO_MAXOP_SIZE:
-		return 3;
+		return 4;
 	case R_ARCH_INFO_INVOP_SIZE:
 		return 1;
 	case R_ARCH_INFO_MINOP_SIZE:
