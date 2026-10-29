@@ -542,9 +542,9 @@ static int gbAsm(const char *buf, ut8 **outbuf) {
 			if (!p) {
 				str_op (&buf_asm[3]);
 				str_op (&buf_asm[4]);
-				if (buf_asm[3] == 'h' && buf_asm[4] == 'l')
+				if (!r_str_casecmp (buf_asm + 3, "hl") || !r_str_casecmp (buf_asm + 3, "[hl]")) {
 					opbuf[0] = 0xe9;
-				else {
+				} else {
 					num = r_num_math (NULL, &buf_asm[3]);
 					len = 3;
 					opbuf[0] = 0xc3;
