@@ -2610,27 +2610,6 @@ typedef struct {
 	int bits;
 } EsilCost;
 
-static bool ec_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
-	EsilCost *ec = esil->cb.user;
-	ec->cost += (len * 2);
-	return true;
-}
-
-static bool ec_hook_reg_write(REsil *esil, const char *regname, ut64 *num) {
-	return true;
-}
-
-static bool ec_hook_reg_read(REsil *esil, const char *regname, ut64 *num, int *size) {
-	if (num) {
-		*num = 0;
-	}
-	if (size) {
-		EsilCost *ec = esil->cb.user;
-		*size = ec->bits;
-	}
-	return true;
-}
-
 static bool ec_mem_read(void *user, ut64 addr, ut8 *buf, int len) {
 	EsilCost *ec = user;
 	ec->cost += len;
@@ -2695,11 +2674,6 @@ static int esil_cost(RCore *core, ut64 addr, const char *expr) {
 	}
 	e->anal = core->anal;
 	e->addr = addr;
-	e->cb.user = &ec;
-	e->cb.hook_mem_read = NULL;
-	e->cb.hook_mem_write = ec_mem_write;
-	e->cb.hook_reg_read = ec_hook_reg_read;
-	e->cb.hook_reg_write = ec_hook_reg_write;
 	e->parse_goto_count = core->anal->esil_goto_limit;
 	r_esil_parse (e, expr);
 	r_esil_free (e);
@@ -8815,7 +8789,6 @@ static bool contains(RList *list, const char *name) {
 	return false;
 }
 
-static R_TH_LOCAL char *oldregread = NULL;
 static R_TH_LOCAL RList *mymemxsr = NULL;
 static R_TH_LOCAL RList *mymemxsw = NULL;
 
@@ -8824,7 +8797,10 @@ typedef struct {
 	int size;
 } AeaMemItem;
 
-static bool mymemwrite(REsil *esil, ut64 addr, const ut8 *buf, int len) {
+// aea never stores anything, it only tracks the accesses
+static bool mymemwrite_if (void *mem, ut64 addr, const ut8 *buf, int len) {
+	REsil *esil = mem;
+	(void)buf;
 	AeaMemItem *n;
 	RListIter *iter;
 	r_list_foreach (mymemxsw, iter, n) {
@@ -8845,18 +8821,15 @@ static bool mymemwrite(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	return true;
 }
 
-static bool mymemread(REsil *esil, ut64 addr, ut8 *buf, int len) {
+static void mymemread_voy (void *user, ut64 addr, const ut8 *buf, int len) {
+	REsil *esil = user;
+	(void)buf;
 	RListIter *iter;
 	AeaMemItem *n;
 	r_list_foreach (mymemxsr, iter, n) {
 		if (addr == n->addr) {
-			return true;
+			return;
 		}
-	}
-	if (!r_io_is_valid_offset (esil->anal->iob.io, addr, 0)) {
-		// unlisted, but read as io fills unmapped bytes: a false return aborts the expression
-		memset (buf, esil->anal->iob.io->Oxff, len);
-		return true;
 	}
 	n = R_NEW (AeaMemItem);
 	if (n) {
@@ -8864,15 +8837,12 @@ static bool mymemread(REsil *esil, ut64 addr, ut8 *buf, int len) {
 		n->size = len;
 		r_list_push (mymemxsr, n);
 	}
-	return true;
 }
 
-static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
+static void myregwrite_voy (void *user, const char *name, ut64 old, ut64 val) {
+	REsil *esil = user;
 	AeaStats *stats = esil->user;
-	if (oldregread && !strcmp (name, oldregread)) {
-		r_list_pop (stats->regread);
-		R_FREE (oldregread)
-	}
+	(void)old;
 	if (!isdigit (*name & 0xff)) {
 		if (!contains (stats->regs, name)) {
 			r_list_push (stats->regs, strdup (name));
@@ -8880,17 +8850,18 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 		if (!contains (stats->regwrite, name)) {
 			r_list_push (stats->regwrite, strdup (name));
 		}
-		char *v = r_str_newf ("%"PFMT64d, *val);
+		char *v = r_str_newf ("%"PFMT64d, val);
 		if (!contains (stats->regvalues, v)) {
 			r_list_push (stats->regvalues, strdup (v));
 		}
 		free (v);
 	}
-	return false;
 }
 
-static bool myregread(REsil *esil, const char *name, ut64 *val, int *len) {
+static void myregread_voy (void *user, const char *name, ut64 val) {
+	REsil *esil = user;
 	AeaStats *stats = esil->user;
+	(void)val;
 	if (!isdigit (*name & 0xff)) {
 		if (!contains (stats->inputregs, name)) {
 			if (!contains (stats->regwrite, name)) {
@@ -8904,7 +8875,6 @@ static bool myregread(REsil *esil, const char *name, ut64 *val, int *len) {
 			r_list_push (stats->regread, strdup (name));
 		}
 	}
-	return false;
 }
 
 static void showregs(RCore *core, RList *list) {
@@ -9007,11 +8977,12 @@ static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const ch
 	mymemxsr = r_list_new ();
 	mymemxsw = r_list_new ();
 	esil->user = &stats;
-	esil->cb.hook_reg_write = myregwrite;
-	esil->cb.hook_reg_read = myregread;
-	esil->cb.hook_mem_write = mymemwrite;
-	esil->cb.hook_mem_read = mymemread;
 	esil->nowrite = true;
+	const REsilMemInterface omem_if = esil->mem_if;
+	esil->mem_if.mem_write = mymemwrite_if;
+	const ut32 vid_reg_read = r_esil_add_voyeur (esil, esil, myregread_voy, R_ESIL_VOYEUR_REG_READ);
+	const ut32 vid_reg_write = r_esil_add_voyeur (esil, esil, myregwrite_voy, R_ESIL_VOYEUR_REG_WRITE);
+	const ut32 vid_mem_read = r_esil_add_voyeur (esil, esil, mymemread_voy, R_ESIL_VOYEUR_MEM_READ);
 	const bool stateful = core->anal->opt.stateful;
 	const ut32 opmask = R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT
 		| (stateful? R_ARCH_OP_MASK_STATEFUL: 0);
@@ -9061,8 +9032,10 @@ static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const ch
 	}
 	r_cons_break_pop (core->cons);
 	esil->nowrite = false;
-	esil->cb.hook_reg_write = NULL;
-	esil->cb.hook_reg_read = NULL;
+	r_esil_del_voyeur (esil, vid_reg_read);
+	r_esil_del_voyeur (esil, vid_reg_write);
+	r_esil_del_voyeur (esil, vid_mem_read);
+	esil->mem_if = omem_if;
 	r_esil_free (esil);
 	r_reg_arena_pop (core->anal->reg);
 	regnow = r_list_newf (free);

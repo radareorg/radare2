@@ -293,6 +293,11 @@ typedef struct r_disasm_state_t {
 	int esil_regstate_size;
 	bool esil_likely;
 	bool offset_focus;
+	// voyeur ids of the reg access watchers installed for asm.emu
+	ut32 emu_wvid;
+	ut32 emu_rvid;
+	// mem interface state replaced while emulating with emu stack/write hooks
+	REsilMemInterface emu_mem_if;
 
 	int count;
 	int middle;
@@ -735,9 +740,12 @@ static void ds_print_esil_anal_fini(RDisasmState *ds) {
 		R_FREE (ds->esil_regstate);
 	}
 	if (core && core->anal && core->anal->esil) {
+		REsil *esil = core->anal->esil;
 		// make sure to remove reference to ds to avoid UAF
-		core->anal->esil->user = NULL;
-		ds->core->anal->esil->cb.user = NULL;
+		r_esil_del_voyeur (esil, ds->emu_wvid);
+		r_esil_del_voyeur (esil, ds->emu_rvid);
+		ds->emu_wvid = ds->emu_rvid = 0;
+		esil->user = NULL;
 	}
 }
 static RStrEnc encstrtype(const char *es) {
@@ -5742,8 +5750,7 @@ static void ds_print_relocs(RDisasmState *ds) {
 	}
 }
 
-static bool mymemwrite1(REsil *esil, ut64 addr, const ut8 *buf, int len) {
-	RDisasmState *ds = esil->cb.user;
+static void ds_emu_mem_comment(RDisasmState *ds, ut64 addr, const ut8 *buf, int len) {
 	const bool be = false;
 	ut64 v = 0;
 	switch (len) {
@@ -5763,24 +5770,53 @@ static bool mymemwrite1(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	if (!ds->show_emu_str) {
 		ds_comment_esil (ds, true, true, "; [0x%08"PFMT64x":%d] = 0x%"PFMT64x, addr, len, v);
 	}
-	return true;
 }
 
-static bool mymemwrite0(REsil *esil, ut64 addr, const ut8 *buf, int len) {
-	(void)mymemwrite1 (esil, addr, buf, len);
-	return false;
+// emulated stores only reach memory in emu.write mode and outside the
+// emulated stack; comments reflect what was stored
+// passthrough shims keep the original user pointer and callbacks for
+// everything the emu hooks do not intercept
+static bool ds_emu_mem_read_if (void *mem, ut64 addr, ut8 *buf, int len) {
+	REsil *esil = mem;
+	RDisasmState *ds = esil? esil->user: NULL;
+	if (R_UNLIKELY (!ds)) {
+		return false;
+	}
+	return ds->emu_mem_if.mem_read? ds->emu_mem_if.mem_read (ds->emu_mem_if.mem, addr, buf, len): false;
 }
 
-static bool mymemwrite2(REsil *esil, ut64 addr, const ut8 *buf, int len) {
-	RDisasmState *ds = esil->cb.user;
-	const ut64 min = ds->emustack_min;
-	const ut64 max = ds->emustack_max;
-	return (addr >= min && addr < max);
+static bool ds_emu_mem_switch_if (void *mem, ut32 idx) {
+	REsil *esil = mem;
+	RDisasmState *ds = esil? esil->user: NULL;
+	if (R_UNLIKELY (!ds)) {
+		return false;
+	}
+	return ds->emu_mem_if.mem_switch? ds->emu_mem_if.mem_switch (ds->emu_mem_if.mem, idx): false;
+}
+
+static bool ds_emu_mem_write_if (void *mem, ut64 addr, const ut8 *buf, int len) {
+	REsil *esil = mem;
+	RDisasmState *ds = esil? esil->user: NULL;
+	if (R_UNLIKELY (!ds)) {
+		return false;
+	}
+	if (ds->show_emu_stack) {
+		if (addr >= ds->emustack_min && addr < ds->emustack_max) {
+			return true;
+		}
+	} else if (!ds->show_emu_write) {
+		ds_emu_mem_comment (ds, addr, buf, len);
+		return true;
+	} else {
+		ds_emu_mem_comment (ds, addr, buf, len);
+	}
+	return ds->emu_mem_if.mem_write
+		? ds->emu_mem_if.mem_write (ds->emu_mem_if.mem, addr, buf, len): false;
 }
 
 static char *ssa_get(REsil *esil, const char *reg) {
 	//RCore *core = esil->user;
-	RDisasmState *ds = esil->cb.user;
+	RDisasmState *ds = esil->user;
 	if (isdigit ((ut8)*reg)) {
 		return strdup (reg);
 	}
@@ -5789,12 +5825,14 @@ static char *ssa_get(REsil *esil, const char *reg) {
 }
 
 static void ssa_set(REsil *esil, const char *reg) {
-	RDisasmState *ds = esil->cb.user;
+	RDisasmState *ds = esil->user;
 	(void)sdb_num_inc (ds->ssa, reg, 1, 0);
 }
 
-static bool myregread(REsil *esil, const char *name, ut64 *res, int *size) {
-	RDisasmState *ds = esil->cb.user;
+static void myregread_voy (void *user, const char *name, ut64 val) {
+	REsil *esil = user;
+	RDisasmState *ds = esil->user;
+	(void)val;
 	if (ds && ds->show_emu_ssa && name) {
 		if (!isdigit ((ut8)*name)) {
 			char *r = ssa_get (esil, name);
@@ -5802,7 +5840,6 @@ static bool myregread(REsil *esil, const char *name, ut64 *res, int *size) {
 			free (r);
 		}
 	}
-	return false;
 }
 
 static char *ds_getstring(RDisasmState *ds, const char *str, int len, const char **prefix) {
@@ -5841,21 +5878,22 @@ static bool unresolved_addr(ut64 addr) {
 	return !addr || addr == UT32_MAX || addr == UT64_MAX;
 }
 
-static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
+static void myregwrite_voy (void *user, const char *name, ut64 old, ut64 val) {
 	char str[64], *msg = NULL;
+	REsil *esil = user;
 	RDisasmState *ds = esil->user;
 	if (!ds) {
-		return false;
+		return;
 	}
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (ds->core->rasm->config);
 	if (!ds->show_emu_strlea && ds->analop.type == R_ANAL_OP_TYPE_LEA) {
 		// useful for ARM64
 		// reduce false positives in emu.str=true when loading strings via adrp+add
-		return false;
+		return;
 	}
 	if (ds->pj) {
 		// "pdJ" -> reg: value
-		pj_kn (ds->pj, name, *val);
+		pj_kn (ds->pj, name, val);
 	}
 	ds->esil_likely = true;
 	if (ds->show_emu_ssa) {
@@ -5863,21 +5901,21 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 		char *r = ssa_get (esil, name);
 		ds_comment_esil (ds, true, false, ">%s", r);
 		free (r);
-		return false;
+		return;
 	}
 	if (!ds->show_slow) {
-		return false;
+		return;
 	}
 	memset (str, 0, sizeof (str));
-	if (*val) {
+	if (val) {
 		bool emu_str_printed = false;
 		char *type = NULL;
-		(void)r_io_read_at (esil->anal->iob.io, *val, (ut8*)str, sizeof (str)-1);
+		(void)r_io_read_at (esil->anal->iob.io, val, (ut8*)str, sizeof (str)-1);
 		str[sizeof (str) - 1] = 0;
-		ds->emuptr = *val;
+		ds->emuptr = val;
 		// support cstring here
 		{
-			const ut64 mask = (*val >> 32)? UT64_MAX: UT32_MAX;
+			const ut64 mask = (val >> 32)? UT64_MAX: UT32_MAX;
 			const ut64 cstr0 = r_read_ble64 (str, be);
 			const ut64 cstr1 = r_read_ble64 (str + 8, be);
 			const ut64 cstr2 = r_read_ble64 (str + 16, be);
@@ -5898,8 +5936,8 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 			}
 		}
 
-		if (*str && !r_bin_strpurge (ds->core->bin, str, *val) && r_str_is_printable_incl_newlines (str)
-		    && (ds->printed_str_addr == UT64_MAX || *val != ds->printed_str_addr)) {
+		if (*str && !r_bin_strpurge (ds->core->bin, str, val) && r_str_is_printable_incl_newlines (str)
+		    && (ds->printed_str_addr == UT64_MAX || val != ds->printed_str_addr)) {
 			bool jump_op = false;
 			bool ignored = false;
 			switch (ds->analop.type) {
@@ -5932,7 +5970,7 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 			}
 			if (!jump_op && !ignored) {
 				ut32 len = sizeof (str) -1;
-				ds->emuptr = *val;
+				ds->emuptr = val;
 				if (ds->pj) {
 					// "pdJ"
 					pj_ks (ds->pj, "str", str);
@@ -5967,9 +6005,9 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 			}
 		}
 		R_FREE (type);
-		if ((ds->printed_flag_addr == UT64_MAX || *val != ds->printed_flag_addr)
+		if ((ds->printed_flag_addr == UT64_MAX || val != ds->printed_flag_addr)
 		    && (ds->show_emu_strflag || !emu_str_printed)) {
-			RFlagItem *fi = r_flag_get_in (esil->anal->flb.f, *val);
+			RFlagItem *fi = r_flag_get_in (esil->anal->flb.f, val);
 			if (fi && (!ds->opstr || !strstr (ds->opstr, fi->name))) {
 				msg = r_str_appendf (msg, "%s%s", R_STR_ISNOTEMPTY (msg)? " " : "", fi->name);
 				if (ds->pj) {
@@ -5980,9 +6018,9 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 	}
 	if (ds->show_emu_str) {
 		if (R_STR_ISNOTEMPTY (msg)) {
-			ds->emuptr = *val;
+			ds->emuptr = val;
 			if (ds->show_emu_stroff && *msg == '"') {
-				ds_comment_esil (ds, true, false, "%s 0x%"PFMT64x" %s", ds->cmtoken, *val, msg);
+				ds_comment_esil (ds, true, false, "%s 0x%"PFMT64x" %s", ds->cmtoken, val, msg);
 			} else {
 				ds_comment_esil (ds, true, false, "%s %s", ds->cmtoken, msg);
 			}
@@ -5992,16 +6030,16 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 		}
 	} else {
 		if (R_STR_ISEMPTY (msg)) {
-			ds_comment_esil (ds, true, false, "%s %s=0x%"PFMT64x, ds->cmtoken, name, *val);
+			ds_comment_esil (ds, true, false, "%s %s=0x%"PFMT64x, ds->cmtoken, name, val);
 		} else {
-			ds_comment_esil (ds, true, false, "%s %s=0x%"PFMT64x" %s", ds->cmtoken, name, *val, msg);
+			ds_comment_esil (ds, true, false, "%s %s=0x%"PFMT64x" %s", ds->cmtoken, name, val, msg);
 		}
 		if (ds->show_comments && !ds->show_cmt_right) {
 			ds_newline (ds);
 		}
 	}
 	free (msg);
-	return false;
+	return;
 }
 
 static void ds_pre_emulation(RDisasmState *ds) {
@@ -6017,12 +6055,16 @@ static void ds_pre_emulation(RDisasmState *ds) {
 	REsil *esil = ds->core->anal->esil;
 	int i, end = ds->core->addr - base;
 	int maxemu = 1024 * 1024;
-	REsilHookRegWriteCB orig_cb = esil->cb.hook_reg_write;
 	if (end < 0 || end > maxemu) {
 		return;
 	}
 	ds->stackptr = ds->core->anal->stackptr;
-	esil->cb.hook_reg_write = NULL;
+	ut32 wvid = ds->emu_wvid;
+	if (wvid) {
+		// silent pre-parses do not comment the emulated register writes
+		r_esil_del_voyeur (esil, wvid);
+		ds->emu_wvid = 0;
+	}
 	const ut64 pc = r_reg_getv (ds->core->anal->reg, "PC");
 	for (i = 0; i < end; i++) {
 		ut64 addr = base + i;
@@ -6042,7 +6084,9 @@ static void ds_pre_emulation(RDisasmState *ds) {
 		}
 	}
 	r_reg_setv (ds->core->anal->reg, "PC", pc);
-	esil->cb.hook_reg_write = orig_cb;
+	if (wvid) {
+		ds->emu_wvid = r_esil_add_voyeur (esil, esil, myregwrite_voy, R_ESIL_VOYEUR_REG_WRITE);
+	}
 }
 
 static void ds_print_esil_anal_init(RDisasmState *ds) {
@@ -6390,7 +6434,7 @@ static void ds_comment_call(RDisasmState *ds) {
 static void ds_print_esil_anal(RDisasmState *ds) {
 	RCore *core = ds->core;
 	REsil *esil = core->anal->esil;
-	bool (*hook_mem_write)(REsil *esil, ut64 addr, const ut8 *buf, int len) = NULL;
+	bool mem_wrapped = false;
 	ut64 at = r_core_pava (core, ds->at);
 	if (!ds->show_comments) {
 		return;
@@ -6414,19 +6458,19 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	}
 	esil = core->anal->esil;
 	r_reg_setv (core->anal->reg, "PC", at + ds->analop.size);
-	esil->cb.user = ds;
-	esil->cb.hook_reg_write = myregwrite;
-	esil->cb.hook_reg_read = myregread;
-	hook_mem_write = esil->cb.hook_mem_write;
-	if (ds->show_emu_stack) {
-		esil->cb.hook_mem_write = mymemwrite2;
-	} else {
-		if (ds->show_emu_write) {
-			esil->cb.hook_mem_write = mymemwrite0;
-		} else {
-			esil->cb.hook_mem_write = mymemwrite1;
-		}
+	esil->user = ds;
+	if (!ds->emu_wvid) {
+		ds->emu_wvid = r_esil_add_voyeur (esil, esil, myregwrite_voy, R_ESIL_VOYEUR_REG_WRITE);
 	}
+	if (!ds->emu_rvid) {
+		ds->emu_rvid = r_esil_add_voyeur (esil, esil, myregread_voy, R_ESIL_VOYEUR_REG_READ);
+	}
+	ds->emu_mem_if = esil->mem_if;
+	esil->mem_if.mem = esil;
+	esil->mem_if.mem_read = ds_emu_mem_read_if;
+	esil->mem_if.mem_switch = ds_emu_mem_switch_if;
+	esil->mem_if.mem_write = ds_emu_mem_write_if;
+	mem_wrapped = true;
 	ds->esil_likely = 0;
 	const char *esilstr = R_STRBUF_SAFEGET (&ds->analop.esil);
 	if (R_STR_ISNOTEMPTY (esilstr)) {
@@ -6477,8 +6521,8 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	}
 	ds_print_color_reset (ds);
 beach:
-	if (esil) {
-		esil->cb.hook_mem_write = hook_mem_write;
+	if (esil && mem_wrapped) {
+		esil->mem_if = ds->emu_mem_if;
 	}
 	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
@@ -7195,7 +7239,12 @@ toro:
 			RAnalBlock *bb = r_list_first (list);
 			if (bb) {
 				REsil *esil = core->anal->esil;
-				esil->cb.hook_reg_write = NULL;
+				ut32 wvid = ds->emu_wvid;
+				if (wvid) {
+					// silent bb pre-parses do not comment the emulated register writes
+					r_esil_del_voyeur (esil, wvid);
+					ds->emu_wvid = 0;
+				}
 				if (bb->esil) {
 					r_esil_parse (core->anal->esil, bb->esil);
 				}
@@ -7221,7 +7270,9 @@ toro:
 						r_anal_op_free (op);
 					}
 				}
-				esil->cb.hook_reg_write = myregwrite;
+				if (wvid) {
+					ds->emu_wvid = r_esil_add_voyeur (esil, esil, myregwrite_voy, R_ESIL_VOYEUR_REG_WRITE);
+				}
 			}
 		}
 		r_list_free (list);
@@ -7249,10 +7300,16 @@ toro:
 			if (bb && ds->at == bb->addr) {
 				if (bb->esil) {
 					REsil *esil = core->anal->esil;
-					// disable emulation callbacks
-					esil->cb.hook_reg_write = NULL;
+					// disable the emulated register write voyeurs
+					ut32 wvid = ds->emu_wvid;
+					if (wvid) {
+						r_esil_del_voyeur (esil, wvid);
+						ds->emu_wvid = 0;
+					}
 					r_esil_parse (core->anal->esil, bb->esil);
-					esil->cb.hook_reg_write = myregwrite;
+					if (wvid) {
+						ds->emu_wvid = r_esil_add_voyeur (esil, esil, myregwrite_voy, R_ESIL_VOYEUR_REG_WRITE);
+					}
 				}
 			}
 		}

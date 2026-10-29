@@ -983,13 +983,10 @@ static bool esil_poke_n(REsil *esil, int bits) {
 				ret = r_esil_mem_write (esil, addr, buf, sizeof (buf));
 			} else {
 				// this is a internal peek performed before a poke
-				// we disable hooks to avoid run hooks on internal peeks
-				void * oldhook = (void*)esil->cb.hook_mem_read;
-				esil->cb.hook_mem_read = NULL;
+				// silent read does not fire voyeurs or interface wrappers
 				const REsilTrap oldtrap = r_esil_get_trap (esil);
-				r_esil_mem_read (esil, addr, b, bytes);
+				r_esil_mem_read_silent (esil, addr, b, bytes);
 				r_esil_restore_trap (esil, &oldtrap);
-				esil->cb.hook_mem_read = oldhook;
 				const bool be = esil_is_big_endian (esil);
 				n = esil_read_ble (b, bits, be);
 				esil->old = n;

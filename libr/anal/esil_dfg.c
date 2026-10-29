@@ -1543,7 +1543,8 @@ static bool edf_consume_1_use_old_new_push_1(REsil *esil, const char *op_string,
 	return r_esil_push (esil, r_strs_from (r_strbuf_get (result->content)));
 }
 
-static bool _dfg_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
+static bool _dfg_mem_read(void *mem, ut64 addr, ut8 *buf, int len) {
+	REsil *esil = mem;
 	RAnalEsilDFG *dfg = (RAnalEsilDFG *)esil->user;
 	addr &= esil->addrmask;
 	if (dfg->use_maps) {
@@ -1555,7 +1556,8 @@ static bool _dfg_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	return dfg->iob.fd_read_at (dfg->iob.io, dfg->fd, addr, buf, len) == len;
 }
 
-static bool _dfg_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
+static bool _dfg_mem_write(void *mem, ut64 addr, const ut8 *buf, int len) {
+	REsil *esil = mem;
 	RAnalEsilDFG *dfg = (RAnalEsilDFG *)esil->user;
 	addr &= esil->addrmask;
 	if (dfg->use_maps) {
@@ -1648,8 +1650,9 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_new(RAnal *anal, bool use_map_info, bool use
 	r_esil_setup (dfg->esil, anal, 0, 0, 0);
 	if (dfg->iob.io && dfg->fd >= 0) {
 		dfg->esil->user = dfg;
-		dfg->esil->cb.mem_read = _dfg_mem_read;
-		dfg->esil->cb.mem_write = _dfg_mem_write;
+		dfg->esil->mem_if.mem = dfg->esil;
+		dfg->esil->mem_if.mem_read = _dfg_mem_read;
+		dfg->esil->mem_if.mem_write = _dfg_mem_write;
 	}
 	return dfg;
 }

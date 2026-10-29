@@ -40,8 +40,6 @@ static const i8051_cpu_model cpu_models[] = {
 
 typedef struct plugin_data_t {
 	const i8051_cpu_model *cpu_curr_model;
-	REsilCallbacks ocbs;
-	bool i8051_is_init;
 } PluginData;
 
 static bool i8051_reg_write(RArchSession *as, const char *regname, ut32 num) {
@@ -789,106 +787,6 @@ static void analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf
 	}
 }
 
-#if 0
-// custom reg read/write temporarily disabled - see r2 issue #9242
-static int i8051_hook_reg_read(REsil *, const char *, ut64 *, int *);
-
-static int i8051_reg_compare(const void *name, const void *reg) {
-	return strcmp ((const char*)name, ((RI8051Reg*)reg)->name);
-}
-
-static RI8051Reg *i8051_reg_find(const char *name) {
-	return (RI8051Reg *) bsearch (
-		name, registers,
-		sizeof (registers) / sizeof (registers[0]),
-		sizeof (registers[0]),
-		i8051_reg_compare);
-}
-
-static int i8051_reg_get_offset(REsil *esil, RI8051Reg *ri) {
-	ut8 offset = ri->offset;
-	if (ri->banked) {
-		ut64 psw = 0LL;
-		i8051_hook_reg_read (esil, "psw", &psw, NULL);
-		offset += psw & 0x18;
-	}
-	return offset;
-}
-
-// dkreuter: It would be nice if we could attach hooks to RRegItems directly.
-//           That way we could avoid doing a string lookup on register names
-//           as r_reg_get already does this. Also, the anal esil callbacks
-//           approach interferes with r_reg_arena_swap.
-
-static int i8051_hook_reg_read(REsil *esil, const char *name, ut64 *res, int *size) {
-	int ret = 0;
-	ut64 val = 0LL;
-	RI8051Reg *ri;
-	REsilCallbacks cbs = esil->cb;
-
-	if ((ri = i8051_reg_find (name))) {
-		ut8 offset = i8051_reg_get_offset(esil, ri);
-		ret = r_esil_mem_read (esil, IRAM_BASE + offset, (ut8*)res, ri->num_bytes);
-	}
-	esil->cb = ocbs;
-	if (!ret && ocbs.hook_reg_read) {
-		ret = ocbs.hook_reg_read (esil, name, res, NULL);
-	}
-	if (!ret && ocbs.reg_read) {
-		ret = ocbs.reg_read (esil, name, &val, NULL);
-	}
-	esil->cb = cbs;
-
-	return ret;
-}
-
-static int i8051_hook_reg_write(REsil *esil, const char *name, ut64 *val) {
-	int ret = 0;
-	RI8051Reg *ri;
-	REsilCallbacks cbs = esil->cb;
-	if ((ri = i8051_reg_find (name))) {
-		ut8 offset = i8051_reg_get_offset(esil, ri);
-		ret = r_esil_mem_write (esil, IRAM_BASE + offset, (ut8*)val, ri->num_bytes);
-	}
-	esil->cb = ocbs;
-	if (!ret && ocbs.hook_reg_write) {
-		ret = ocbs.hook_reg_write (esil, name, val);
-	}
-	esil->cb = cbs;
-	return ret;
-}
-#endif
-
-#if 0
-static int esil_i8051_init(RArchSession *as, REsil *esil) {
-	PluginData *pd = as->data;
-	if (esil->cb.user) {
-		return true;
-	}
-	pd->ocbs = esil->cb;
-	/* these hooks break esil emulation */
-	/* pc is not read properly, mem mapped registers are not shown in ar, ... */
-	/* all 8051 regs are mem mapped, and reg access via mem is very common */
-//  disabled to make esil work, before digging deeper
-//	esil->cb.hook_reg_read = i8051_hook_reg_read;
-//	esil->cb.hook_reg_write = i8051_hook_reg_write;
-	pd->i8051_is_init = true;
-	return true;
-}
-
-static int esil_i8051_fini(RArchSession *as, REsil *esil) {
-	PluginData *pd = as->data;
-
-	if (!pd || !pd->i8051_is_init) {
-		return false;
-	}
-
-	R_FREE (pd->ocbs.user);
-	pd->i8051_is_init = false;
-	return true;
-}
-#endif
-
 static char *regs(RArchSession *as) {
 	const char *p =
 		"=PC	pc\n"
@@ -1158,26 +1056,6 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 	return false;
 }
 
-#if 0
-static bool esil_cb(RArchSession *as, REsil *esil, RArchEsilAction action) {
-	if (!esil) {
-		return false;
-	}
-
-	switch (action) {
-	case R_ARCH_ESIL_ACTION_INIT:
-		esil_i8051_init (as, esil);
-		break;
-	case R_ARCH_ESIL_ACTION_FINI:
-		esil_i8051_fini (as, esil);
-		break;
-	default:
-		return false;
-	}
-	return true;
-}
-#endif
-
 static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
 	case R_ARCH_INFO_MINOP_SIZE:
@@ -1226,7 +1104,6 @@ const RArchPlugin r_arch_plugin_8051 = {
 	.decode = decode,
 	.encode = encode,
 	.regs = regs,
-//	.esilcb = esil_cb,
 	.info = archinfo,
 	.init = init,
 	.fini = fini,

@@ -1,7 +1,8 @@
 #include <r_core.h>
 #include "minunit.h"
 
-static bool handled_fault(REsil *esil, ut64 addr, ut8 *buf, int len) {
+static bool handled_fault (void *mem, ut64 addr, ut8 *buf, int len) {
+	REsil *esil = mem;
 	memset (buf, 0, len);
 	r_esil_set_fault (esil, R_ANAL_TRAP_READ_ERR, addr);
 	return true;
@@ -41,10 +42,12 @@ bool test_core_fault_state(void) {
 			mu_assert_true (core->esil.esil.trap_addr_valid, "expression fault has an address");
 			mu_assert_true (r_core_esil_run_expr_at (core, "1,1,+", 0), "successful expression after fault");
 			mu_assert_false (core->esil.esil.trap_addr_valid, "successful expression clears old address");
-			core->esil.esil.cb.hook_mem_read = handled_fault;
+			const REsilMemInterface omem_if = core->esil.esil.mem_if;
+			core->esil.esil.mem_if.mem = &core->esil.esil;
+			core->esil.esil.mem_if.mem_read = handled_fault;
 			mu_assert_false (r_core_esil_run_expr_at (core, "0x100000002,[1]", 0), "handled hook fault stops successful parse");
 			mu_assert_eq (core->esil.esil.trap_addr, 0x100000002ULL, "hook address survives rollback");
-			core->esil.esil.cb.hook_mem_read = NULL;
+			core->esil.esil.mem_if = omem_if;
 			r_anal_hint_set_esil (core->anal, 0, "2,3,TRAP");
 			r_reg_setv (core->anal->reg, "PC", 0);
 			status = r_core_esil_step_until (core, UT64_MAX, NULL, NULL, false, &stop_addr);

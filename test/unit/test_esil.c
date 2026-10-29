@@ -230,7 +230,8 @@ static bool write_only_write(void *mem, ut64 addr, const ut8 *buf, int len) {
 	return false;
 }
 
-static bool write_only_hook(REsil *esil, ut64 addr, const ut8 *buf, int len) {
+// handles the store from the write-only hook test, everything else fails
+static bool write_only_store(void *mem, ut64 addr, const ut8 *buf, int len) {
 	return addr == 0x1000 && len == 1 && buf[0] == 0x41;
 }
 
@@ -238,13 +239,12 @@ bool test_poke_write_only_hook(void) {
 	REsil *esil = r_esil_new (NULL);
 	mu_assert_notnull (esil, "new esil");
 	esil->mem_if.mem_read = write_only_read;
-	esil->mem_if.mem_write = write_only_write;
-	esil->cb.hook_mem_write = write_only_hook;
+	esil->mem_if.mem_write = write_only_store;
 	esil->iotrap = true;
 	mu_assert_true (r_esil_parse (esil, "0x41,0x1000,=[1]"), "write-only hook store");
 	mu_assert_eq (esil->trap, R_ANAL_TRAP_NONE, "internal pre-read must not trap a handled store");
 	mu_assert_false (esil->trap_addr_valid, "internal pre-read does not leak an address");
-	esil->cb.hook_mem_write = NULL;
+	esil->mem_if.mem_write = write_only_write;
 	mu_assert_false (r_esil_parse (esil, "0x41,0x1000,=[1]"), "unhandled failed store");
 	mu_assert_eq (esil->trap, R_ANAL_TRAP_WRITE_ERR, "actual store failure must trap");
 	mu_assert_true (esil->trap_addr_valid, "failed store address is valid");
@@ -253,7 +253,8 @@ bool test_poke_write_only_hook(void) {
 	mu_end;
 }
 
-static bool fault_read_hook(REsil *esil, ut64 addr, ut8 *buf, int len) {
+static bool fault_read_if (void *mem, ut64 addr, ut8 *buf, int len) {
+	REsil *esil = mem;
 	r_esil_set_fault (esil, R_ANAL_TRAP_READ_ERR, addr);
 	memset (buf, 0, len);
 	return true;
@@ -318,10 +319,11 @@ bool test_memory_fault_addresses(void) {
 				mu_assert_eq (esil->trap_addr, addr, "write fault uses effective address width");
 			}
 		}
-		esil->cb.hook_mem_read = fault_read_hook;
-		mu_assert_true (r_esil_parse (esil, "0x100000005,[1]"), "hook handles read and reports fault separately");
-		mu_assert_eq (esil->trap, R_ANAL_TRAP_READ_ERR, "hook fault retained even when handled");
-		mu_assert_eq (esil->trap_addr, 0x100000005ULL & esil->addrmask, "hook full fault address");
+		esil->mem_if.mem = esil;
+		esil->mem_if.mem_read = fault_read_if;
+		mu_assert_true (r_esil_parse (esil, "0x100000005,[1]"), "handled read reports fault separately");
+		mu_assert_eq (esil->trap, R_ANAL_TRAP_READ_ERR, "fault retained even when handled");
+		mu_assert_eq (esil->trap_addr, 0x100000005ULL & esil->addrmask, "full fault address");
 		r_esil_free (esil);
 	}
 	mu_end;

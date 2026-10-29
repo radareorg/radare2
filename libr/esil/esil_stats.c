@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2024 - pancake, condret */
+/* radare - LGPL - Copyright 2014-2026 - pancake, condret */
 
 #include <r_esil.h>
 
@@ -28,15 +28,8 @@ R_API void r_esil_stats(REsil *esil, REsilStats *stats, bool enable) {
 		stats_voyeur_op, R_ESIL_VOYEUR_OP);
 }
 
-static bool hook_NOP_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
-	eprintf ("NOP WRITE AT 0x%08"PFMT64x"\n", addr);
-	return true;
-}
-
+// readonly memory: stores are silently ignored, but reads keep working
 R_API void r_esil_mem_ro(REsil *esil, bool mem_readonly) {
-	if (mem_readonly) {
-		esil->cb.hook_mem_write = hook_NOP_mem_write;
-	} else {
-		esil->cb.hook_mem_write = NULL;
-	}
+	R_RETURN_IF_FAIL (esil);
+	esil->mem_ro = mem_readonly;
 }
