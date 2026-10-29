@@ -300,13 +300,13 @@ static bool z80_esil(RAnalOp *op, const ut8 *data, int len) {
 				z80_cb (op, y * 8 + 7, "a", "a,=", NULL);
 				r_strbuf_append (e, "0xc4,t6,&,0x29,f,&,|,f,=,");
 			} else if (y == 4) {
-				r_strbuf_append (e, "a,t0,=,C,t1,=,0,t3,=,H,9,0xf,a,&,>,N,!,&,|,?{,6,t3,=,},C,0x99,a,>,N,!,&,|,?{,0x60,t3,|=,1,t1,=,},N,?{,t3,a,-=,}{,t3,a,+=,},a,t2,=,2,f,&,f,=,t1,C,=,4,t0,a,^,>>,1,&,H,=,");
+				r_strbuf_append (e, "a,t0,=,C,t1,=,0,t3,=,H,9,0xf,a,&,>,N,!,&,|,?{,6,t3,=,},C,0x99,t0,>,N,!,&,|,?{,0x60,t3,|=,1,t1,=,},N,?{,t3,a,-=,}{,t3,a,+=,},a,t2,=,2,f,&,f,=,t1,C,=,4,t0,a,^,>>,1,&,H,=,");
 				z80_szp (e);
 			} else if (y == 5) {
-				r_strbuf_append (e, "0xff,a,^=,1,H,=,1,N,=,0xc7,f,&,0x28,a,&,|,f,=,");
+				r_strbuf_append (e, "0xff,a,^=,0xc5,f,&,0x12,|,0x28,a,&,|,f,=,");
 			} else {
 				r_strbuf_append (e, y == 6? "0,C,=,0,H,=,1,C,=,": "C,t0,=,C,!,C,=,t0,H,=,");
-				r_strbuf_append (e, "0,N,=,0xc5,f,&,0x28,a,&,|,f,=,");
+				r_strbuf_append (e, "0,N,=,0xd5,f,&,0x28,a,&,|,f,=,");
 			}
 			break;
 		}

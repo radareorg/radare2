@@ -276,3 +276,91 @@ EXPECT=<<EOF2
 0x00000001
 EOF2
 RUN
+
+NAME=Z80 DAA leaves valid low BCD values unchanged
+FILE=malloc://0x10000
+CMDS=<<EOF2
+e asm.arch=z80
+aei
+wx 27
+ar a=1
+ar f=0
+aes
+ar a
+ar f
+EOF2
+EXPECT=<<EOF2
+0x00000001
+0x00000000
+EOF2
+RUN
+
+NAME=Z80 DAA compares high BCD digits unsigned
+FILE=malloc://0x10000
+CMDS=<<EOF2
+e asm.arch=z80
+aei
+wx 27
+ar a=0x80
+ar f=0
+aes
+ar a
+ar f
+EOF2
+EXPECT=<<EOF2
+0x00000080
+0x00000080
+EOF2
+RUN
+
+NAME=Z80 DAA advances the Columns BCD timer without carrying through RAM
+FILE=malloc://0x10000
+CMDS=<<EOF2
+e asm.arch=z80
+aei
+wx 3c27fe60
+ar a=0
+ar f=0
+aes 3
+ar a
+ar C
+EOF2
+EXPECT=<<EOF2
+0x00000001
+0x00000001
+EOF2
+RUN
+
+NAME=Z80 CPL sets both half-carry and subtract flags
+FILE=malloc://0x10000
+CMDS=<<EOF2
+e asm.arch=z80
+aei
+wx 2f
+ar a=1
+ar f=0x40
+aes
+ar a
+ar f
+EOF2
+EXPECT=<<EOF2
+0x000000fe
+0x0000007a
+EOF2
+RUN
+
+NAME=Z80 CCF copies the previous carry into half-carry
+FILE=malloc://0x10000
+CMDS=<<EOF2
+e asm.arch=z80
+aei
+wx 3f
+ar a=0
+ar f=0x81
+aes
+ar f
+EOF2
+EXPECT=<<EOF2
+0x00000090
+EOF2
+RUN
