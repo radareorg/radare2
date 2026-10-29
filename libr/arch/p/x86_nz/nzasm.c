@@ -3475,8 +3475,22 @@ static int opmov(RArchSession *a, ut8 *data, const Opcode *op) {
 				&& !(op->operands[0].type & OT_REGTYPE & OT_GPREG)) {
 			return -1;
 		}
+		const bool absolute = op->operands[0].regs[0] == X86R_UNDEFINED && op->operands[0].regs[1] == X86R_UNDEFINED;
+		if (bits == 64 && absolute && op->operands[0].type & OT_MEMORY && !(op->operands[0].type & OT_REGTYPE & OT_SEGMENTREG)
+				&& op->operands[1].reg == X86R_EAX && !op->operands[1].extended && (op->operands[1].type & OT_REGTYPE & OT_GPREG)) {
+			// the accumulator takes a 64-bit address, as the load does
+			const ut64 addr = (ut64)(op->operands[0].offset * op->operands[0].offset_sign);
+			if (op->operands[1].type & OT_QWORD) {
+				data[l++] = 0x48;
+			} else if (op->operands[1].type & OT_WORD) {
+				data[l++] = 0x66;
+			}
+			data[l++] = (op->operands[1].type & OT_BYTE)? 0xa2: 0xa3;
+			r_write_le64 (data + l, addr);
+			return l + 8;
+		}
 		if (use_op_reg_mem (bits, &op->operands[0]) && op->operands[0].type & OT_MEMORY && !(op->operands[0].type & OT_REGTYPE & OT_SEGMENTREG)
-				&& (op->operands[0].regs[0] != X86R_UNDEFINED || op->operands[0].regs[1] != X86R_UNDEFINED)
+				&& (bits == 64 || !absolute)
 				&& (op->operands[1].type & OT_REGTYPE & OT_GPREG)) {
 			return op_reg_mem (bits, data, &op->operands[1], &op->operands[0],
 				(op->operands[1].type & OT_BYTE)? 0x88: 0x89);
@@ -3598,7 +3612,7 @@ static int opmov(RArchSession *a, ut8 *data, const Opcode *op) {
 			return -1;
 		}
 		offset = op->operands[1].offset * op->operands[1].offset_sign;
-		if (op->operands[0].reg == X86R_EAX && op->operands[1].regs[0] == X86R_UNDEFINED) {
+		if (op->operands[0].reg == X86R_EAX && !op->operands[0].extended && op->operands[1].regs[0] == X86R_UNDEFINED) {
 			if (op->operands[0].type & OT_QWORD) {
 				data[l++] = 0x48;
 			} else if (op->operands[0].type & OT_WORD && bits != 16) {
@@ -3638,7 +3652,7 @@ static int opmov(RArchSession *a, ut8 *data, const Opcode *op) {
 			return l;
 		}
 
-		if (use_op_reg_mem (bits, &op->operands[1]) && (op->operands[1].regs[0] != X86R_UNDEFINED || op->operands[1].regs[1] != X86R_UNDEFINED)
+		if (use_op_reg_mem (bits, &op->operands[1]) && (bits == 64 || op->operands[1].regs[0] != X86R_UNDEFINED || op->operands[1].regs[1] != X86R_UNDEFINED)
 				&& (op->operands[0].type & OT_REGTYPE & OT_GPREG)) {
 			return op_reg_mem (bits, data, &op->operands[0], &op->operands[1],
 				(op->operands[0].type & OT_BYTE)? 0x8a: 0x8b);
