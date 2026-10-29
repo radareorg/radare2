@@ -1423,3 +1423,31 @@ EXPECT=<<EOF
 0x80000001
 EOF
 RUN
+
+NAME=thumb teq.w sets n and z from the exclusive or and keeps c and v
+FILE=malloc://0x100
+ARGS=-a arm -b 16
+CMDS=<<EOF
+aei
+aeim
+wx 91ea020f
+ar r1=0x80000000
+ar r2=0
+ar cpsr=0x30000000
+aes
+ar cpsr
+s 0
+ar pc=0
+ar r1=5
+ar r2=5
+ar cpsr=0x30000000
+aes
+ar cpsr
+ao~^type:
+EOF
+EXPECT=<<EOF
+0xb0000000
+0x70000000
+type: cmp
+EOF
+RUN
