@@ -33,10 +33,10 @@ jobs:
         $asan | Format-Table FullName
         "$env:VCToolsInstallDir/bin/Hostx64/x64" >> $env:GITHUB_PATH
         "$PWD/build/subprojects/sdb" >> $env:GITHUB_PATH
-    - name: Reproduce full build
+    - name: Build focused SDB reproducer
       shell: pwsh
       run: |
-        ninja -C build -j4 2>&1 | Tee-Object diagnostics/build.log
+        ninja -C build -j4 subprojects/sdb/sdb.exe 2>&1 | Tee-Object diagnostics/build.log
         exit $LASTEXITCODE
     - name: Repeat database generation
       if: always()
