@@ -343,6 +343,27 @@ INFO: hits: 1
 EOF
 RUN
 
+NAME=from/to /V across a huge unmapped gap
+FILE=-
+CMDS=<<EOF
+on malloc://0x1000 0x1000
+on malloc://0x1000 0xf0000000
+wv8 0x1235 @ 0x1010
+wv8 0x1234 @ 0xf0000010
+e search.in = range
+e search.from = 0x00001000
+e search.to = 0xf0001000
+/V8 0x1230 0x1240
+EOF
+EXPECT=<<EOF
+0x1010: 0x1235
+0xf0000010: 0x1234
+EOF
+EXPECT_ERR=<<EOF
+INFO: hits: 2
+EOF
+RUN
+
 NAME=from/to /V not in range
 FILE=-
 CMDS=<<EOF

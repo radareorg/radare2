@@ -5540,11 +5540,12 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 		R_LOG_ERROR ("Invalid destination boundary");
 		return -1;
 	}
-	r_cons_break_push (core->cons, NULL, NULL);
-
 	if (!r_io_is_valid_offset (core->io, from, 0)) {
 		return -1;
 	}
+	r_cons_break_push (core->cons, NULL, NULL);
+	RVecRIORegion *regions = NULL;
+	size_t region_idx = 0;
 	while (from < to) {
 		size = R_MIN (to - from, sizeof (buf));
 		memset (buf, 0xff, sizeof (buf)); // probably unnecessary
@@ -5559,9 +5560,21 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 					from += sizeof (buf);
 				} else {
 					if (next > from) {
-						from += (next - from);
+						from = next;
 					} else {
-						from ++;
+						// nothing mapped at from, jump to the next mapped region
+						if (!regions && core->io->va) {
+							regions = r_io_bank_get_regions (core->io, core->io->bank, search_itv);
+						}
+						if (regions) {
+							RIORegion *region = RVecRIORegion_at (regions, region_idx);
+							while (region && region->itv.addr <= from) {
+								region = RVecRIORegion_at (regions, ++region_idx);
+							}
+							from = region? region->itv.addr: to;
+						} else {
+							from ++;
+						}
 					}
 				}
 				continue;
@@ -5601,7 +5614,7 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 				case 2: v16 = r_read_ble16 (v, be); match = (v16 >= vmin && v16 <= vmax); value = v16; break;
 				case 4: v32 = r_read_ble32 (v, be); match = (v32 >= vmin && v32 <= vmax); value = v32; break;
 				case 8: v64 = r_read_ble64 (v, be); match = (v64 >= vmin && v64 <= vmax); value = v64; break;
-				default: R_LOG_ERROR ("Unknown vsize %d", vsize); return -1;
+				default: R_LOG_ERROR ("Unknown vsize %d", vsize); hitctr = -1; goto beach;
 				}
 			}
 			if (match && !vinfun) {
@@ -5645,6 +5658,7 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 		}
 	}
 beach:
+	RVecRIORegion_free (regions);
 	r_cons_break_pop (core->cons);
 	return hitctr;
 }
