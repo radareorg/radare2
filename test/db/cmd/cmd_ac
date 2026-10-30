@@ -482,6 +482,35 @@ attrtypes.Masterpiece=base,vtable,method
 EOF
 RUN
 
+NAME=acn with sanitized names
+FILE=-
+CMDS=<<EOF
+ac Album.int.
+ac Deadwing
+acb Deadwing Album.int. 0x8
+acv Album.int. 0x1337 0x42
+acn Album.int. Masterpiece.int.
+acll
+k anal/classes/*
+?e -
+k anal/classes/attrs/*
+EOF
+EXPECT=<<EOF
+Deadwing: Masterpiece_int_
+Masterpiece_int_
+  (vtable at 0x1337 in class at +0x42)
+Deadwing=c
+Masterpiece_int_=c
+-
+attr.Deadwing.base=0
+attr.Deadwing.base.0=Masterpiece_int_,8
+attr.Masterpiece_int_.vtable=0
+attr.Masterpiece_int_.vtable.0=0x1337,66,0
+attrtypes.Deadwing=base
+attrtypes.Masterpiece_int_=vtable
+EOF
+RUN
+
 NAME=acl*
 FILE=-
 CMDS=<<EOF
