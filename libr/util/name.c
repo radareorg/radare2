@@ -141,6 +141,9 @@ R_API bool r_name_filter(char *s, int maxlen) {
 R_API char *r_name_filter_dup(const char *name) {
 	R_RETURN_VAL_IF_FAIL (name, NULL);
 	char *s = strdup (name);
+	if (!s) {
+		return NULL;
+	}
 	r_name_filter (s, -1);
 	if (*s) {
 		return s;
