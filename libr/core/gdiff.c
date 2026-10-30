@@ -10,11 +10,13 @@ R_API bool r_core_gdiff_fcn(RCore *c, ut64 addr, ut64 addr2) {
 		return false;
 	}
 	RAnalBlock *bb;
-	RListIter *iter;
-	r_list_foreach (fa->bbs, iter, bb) {
+	RAnalBlock **iter;
+	R_VEC_FOREACH (&fa->bbs, iter) {
+		bb = *iter;
 		r_anal_diff_fingerprint_bb (c->anal, bb);
 	}
-	r_list_foreach (fb->bbs, iter, bb) {
+	R_VEC_FOREACH (&fb->bbs, iter) {
+		bb = *iter;
 		r_anal_diff_fingerprint_bb (c->anal, bb);
 	}
 #if 0
@@ -41,6 +43,7 @@ R_API bool r_core_gdiff(RCore *c, RCore *c2) {
 	RAnalFunction *fcn;
 	RAnalBlock *bb;
 	RListIter *iter, *iter2;
+	RAnalBlock **bb_iter2;
 	int i;
 
 	if (!c || !c2) {
@@ -59,7 +62,8 @@ R_API bool r_core_gdiff(RCore *c, RCore *c2) {
 		}
 		/* Fingerprint fcn bbs (functions basic-blocks) */
 		r_list_foreach (cores[i]->anal->fcns, iter, fcn) {
-			r_list_foreach (fcn->bbs, iter2, bb) {
+			R_VEC_FOREACH (&fcn->bbs, bb_iter2) {
+				bb = *bb_iter2;
 				r_anal_diff_fingerprint_bb (cores[i]->anal, bb);
 			}
 		}

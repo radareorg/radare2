@@ -590,9 +590,10 @@ static void cmd_meta_comment_del_in_scope(RCore *core, bool basic_block) {
 	}
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
 	if (fcn) {
-		RListIter *iter;
+		RAnalBlock **iter;
 		RAnalBlock *bb;
-		r_list_foreach (fcn->bbs, iter, bb) {
+		R_VEC_FOREACH (&fcn->bbs, iter) {
+			bb = *iter;
 			cmd_meta_comment_del_in_block (core, bb);
 		}
 	}

@@ -3387,7 +3387,7 @@ static int printzoomcallback(void *cbarg, int mode, ut64 addr, ut8 *bufz, ut64 s
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 			int value = 0;
 			if (fcn) {
-				value = r_list_length (fcn->bbs);
+				value = (int)RVecAnalBlockPtr_length (&fcn->bbs);
 			}
 			return value;
 		}
@@ -4294,8 +4294,9 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 				bool label = false;
 				/* show labels, basic blocks and (conditional) branches */
 				RAnalBlock *bb;
-				RListIter *iter;
-				r_list_foreach (fcn->bbs, iter, bb) {
+				RAnalBlock **iter;
+				R_VEC_FOREACH (&fcn->bbs, iter) {
+					bb = *iter;
 					if (addr == bb->jump) {
 						if (show_offset) {
 							r_cons_printf (core->cons, "%s0x%08" PFMT64x ":\n", use_color? Color_YELLOW: "", addr);
@@ -4308,7 +4309,8 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 					r_cons_printf (core->cons, "%s0x%08" PFMT64x ":\n", use_color? Color_YELLOW: "", addr);
 				}
 				if (strstr (line, "=<")) {
-					r_list_foreach (fcn->bbs, iter, bb) {
+					R_VEC_FOREACH (&fcn->bbs, iter) {
+						bb = *iter;
 						if (addr >= bb->addr && addr < bb->addr + bb->size) {
 							const char *op;
 							if (use_color) {
@@ -5296,7 +5298,7 @@ static ut8 *compute_bar_blocks(RCore *core, int mode, RList *ranges, ut64 from, 
 				if (mode == 'a') {
 					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off + j, 0);
 					if (fcn) {
-						ptr[i] = r_list_length (fcn->bbs);
+						ptr[i] = (int)RVecAnalBlockPtr_length (&fcn->bbs);
 					}
 					continue;
 				}
@@ -5707,7 +5709,8 @@ beach:
 	free (ptr);
 }
 
-static int bbcmp(RAnalBlock *a, RAnalBlock *b) {
+static int bbcmp(RAnalBlock *const *pa, RAnalBlock *const *pb) {
+	RAnalBlock *a = *pa, *b = *pb;
 	if (a->addr < b->addr) {
 		return -1;
 	}
@@ -6114,7 +6117,7 @@ static void disasm_recursive(RCore *core, ut64 addr, int count, char type_print)
 }
 
 static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char type_print, bool fromHere) {
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *b = NULL;
 	const char *orig_bb_middle = r_config_get (core->config, "asm.bbmiddle");
 	r_config_set_i (core->config, "asm.bbmiddle", false);
@@ -6123,15 +6126,15 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 
 	// XXX: hack must be reviewed/fixed in code analysis
 	if (!b) {
-		if (r_list_length (f->bbs) >= 1) {
+		if ((int)RVecAnalBlockPtr_length (&f->bbs) >= 1) {
 			ut32 fcn_size = r_anal_function_realsize (f);
-			b = r_list_last (f->bbs);
+			b = *RVecAnalBlockPtr_last (&f->bbs);
 			if (b->size > fcn_size) {
 				b->size = fcn_size;
 			}
 		}
 	}
-	r_list_sort (f->bbs, (RListComparator)bbcmp);
+	RVecAnalBlockPtr_sort (&f->bbs, bbcmp);
 	if (input == 'j' && b) { // "pdrj"
 		pj = r_core_pj_new (core);
 		if (!pj) {
@@ -6140,7 +6143,8 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 		pj_o (pj);
 		pj_ks (pj, "name", f->name);
 		pj_ka (pj, "bbs");
-		r_list_foreach (f->bbs, iter, b) {
+		R_VEC_FOREACH (&f->bbs, iter) {
+			b = *iter;
 			pj_o (pj);
 			pj_kn (pj, "addr", b->addr);
 			pj_ka (pj, "ops");
@@ -6174,7 +6178,8 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 			saved_arena = r_reg_arena_peek (core->anal->reg, &saved_arena_size);
 		}
 		r_config_set_i (core->config, "asm.lines.jmp", 0);
-		r_list_foreach (f->bbs, iter, b) {
+		R_VEC_FOREACH (&f->bbs, iter) {
+			b = *iter;
 			pr_bb (core, f, b, emu, saved_gp, saved_arena, saved_arena_size, type_print, fromHere);
 		}
 		if (emu) {
@@ -6623,10 +6628,11 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 			}
 			ut64 orig = core->addr;
 			RAnalBlock *bb;
-			RListIter *iter;
+			RAnalBlock **iter;
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, orig, 0);
 			if (fcn) {
-				r_list_foreach (fcn->bbs, iter, bb) {
+				R_VEC_FOREACH (&fcn->bbs, iter) {
+					bb = *iter;
 					r_core_seek (core, orig, true);
 					r_core_disasm_pdi (core, bb->ninstr, 0, 'e');
 				}
@@ -7658,7 +7664,7 @@ static int cmd_pd(RCore *core, const char *input, int len, int l, ut8 *block) {
 			if (!f) {
 				f = r_anal_get_fcn_in (core->anal, core->addr, 0);
 			}
-			RListIter *locs_it = NULL;
+			RAnalBlock **locs_it;
 			if (f) {
 				if (input[2] == 'r') { // "pdfr"
 					r_core_cmd0 (core, "pdr");
@@ -7677,8 +7683,9 @@ static int cmd_pd(RCore *core, const char *input, int len, int l, ut8 *block) {
 					pj_kn (pj, "addr", f->addr);
 					pj_k (pj, "ops");
 					pj_a (pj);
-					r_list_sort (f->bbs, bb_cmpaddr);
-					r_list_foreach (f->bbs, locs_it, b) {
+					RVecAnalBlockPtr_sort (&f->bbs, bb_cmpaddr);
+					R_VEC_FOREACH (&f->bbs, locs_it) {
+						b = *locs_it;
 						ut8 *buf = malloc (b->size);
 						if (buf) {
 							r_io_read_at (core->io, b->addr, buf, b->size);

@@ -4,8 +4,6 @@
 #include <r_hash.h>
 #include <r_core.h>
 
-R_VEC_TYPE(RVecAnalBlockPtr, RAnalBlock *);
-
 typedef struct recurse_depth_first_ctx_t {
 	RAnalBlock *bb;
 	RListIter *switch_it;
@@ -125,7 +123,7 @@ static void block_reset_rb(RBNode *node, void *user) {
 	RAnalFunction *fcn;
 	// Clear owner lists in bulk; release their block references in tree order.
 	r_list_foreach (block->fcns, iter, fcn) {
-		r_list_purge (fcn->bbs);
+		RVecAnalBlockPtr_clear (&fcn->bbs);
 		fcn->meta._min = UT64_MAX;
 		fcn->meta.numcallrefs = -1;
 	}
@@ -982,9 +980,10 @@ static void noreturn_mark_roots(NoreturnReachability *ctx, RAnalFunction *fcn, R
 	if (succs->count == 1) {
 		return;
 	}
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		NoreturnSuccessor *succ = ht_up_find (succs, bb->addr, NULL);
 		if (!succ) {
 			r_anal_block_successor_addrs_foreach (bb, noreturn_mark_succ_cb, ctx);
@@ -1040,7 +1039,7 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 	RListIter *fit;
 	RAnalFunction *owner;
 	r_list_foreach (block->fcns, fit, owner) {
-		nsuccs += r_list_length (owner->bbs);
+		nsuccs += (int)RVecAnalBlockPtr_length (&owner->bbs);
 	}
 	HtUP *succs = ht_up_new_size (nsuccs, NULL, noreturn_successor_free, NULL); // maps block addr (ut64) => NoreturnSuccessor *
 	if (!succs) {
@@ -1174,9 +1173,10 @@ static bool automerge_get_predecessors_cb(void *user, ut64 k) {
 	}
 	AutomergeCtx *ctx = user;
 	const RAnalFunction *fcn = (const RAnalFunction *) (size_t)k;
-	RListIter *it;
+	RAnalBlock **it;
 	RAnalBlock *block;
-	r_list_foreach (fcn->bbs, it, block) {
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		block = *it;
 		bool already_visited;
 		ht_up_find (ctx->visited_blocks, (ut64) (size_t)block, &already_visited);
 		if (already_visited) {

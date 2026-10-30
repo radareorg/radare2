@@ -941,9 +941,9 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				// (not r_core_anal_esil_function which uses simpler hooks and misses some xrefs)
 				bool (*old_write_at)(RIO *io, ut64 addr, const ut8 *buf, int len) = core->anal->iob.write_at;
 				core->anal->iob.write_at = r_io_vwrite_to_overlay_at;
-				RListIter *iter;
-				RAnalBlock *bb;
-				r_list_foreach (fcn->bbs, iter, bb) {
+				size_t i;
+				for (i = 0; i < RVecAnalBlockPtr_length (&fcn->bbs); i++) {
+					RAnalBlock *bb = *RVecAnalBlockPtr_at (&fcn->bbs, i);
 					char szbuf[32];
 					snprintf (szbuf, sizeof (szbuf), "%"PFMT64u, (ut64)bb->size);
 					r_core_seek (core, bb->addr, true);

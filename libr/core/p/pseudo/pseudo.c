@@ -495,10 +495,12 @@ static void print_line_at(PDCState *state, ut64 addr, int indent, bool synthetic
 #define print_insn_line(s, a, i, ...) print_line_at (s, a, i, false, __VA_ARGS__)
 
 static bool bb_addr_is_goto_target(RAnalFunction *fcn, ut64 addr) {
-	RListIter *iter, *cit;
+	RListIter *cit;
+	RAnalBlock **iter;
 	RAnalBlock *b;
 	RAnalCaseOp *co;
-	r_list_foreach (fcn->bbs, iter, b) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		b = *iter;
 		if (b->jump == addr || b->fail == addr) {
 			return true;
 		}
@@ -1146,9 +1148,10 @@ static void pdc_emulate_blocks(PDCState *state) {
 	ut8 *saved = r_reg_arena_peek (reg, &len);
 	RBitset *vis = r_bitset_new ();
 	HtUP *bytes = ht_up_new (NULL, kvfree, NULL);
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *bb;
-	r_list_foreach (state->fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&state->fcn->bbs, iter) {
+		bb = *iter;
 		// a seed left behind by another command would outrank the walk
 		R_FREE (bb->parent_reg_arena);
 		// stores may hit code; disassemble the bytes as they were
@@ -1159,7 +1162,8 @@ static void pdc_emulate_blocks(PDCState *state) {
 		}
 	}
 	emulate_dfs (state, vis, bytes, saved, len);
-	r_list_foreach (state->fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&state->fcn->bbs, iter) {
+		bb = *iter;
 		if (!r_bitset_test (vis, bb->addr)) {
 			r_bitset_set (vis, bb->addr);
 			emulate_block (state, bb, bytes, saved, len);
@@ -1262,12 +1266,13 @@ static bool part_of_a_switch(PDCState *state, ut64 addr) {
 
 static void collect_switch_addrs(PDCState *state) {
 	state->switch_addrs = r_bitset_new ();
-	if (!state->fcn || !state->fcn->bbs) {
+	if (!state->fcn) {
 		return;
 	}
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *bb;
-	r_list_foreach (state->fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&state->fcn->bbs, iter) {
+		bb = *iter;
 		RAnalSwitchOp *sop = bb->switch_op;
 		if (!sop) {
 			continue;
@@ -1408,10 +1413,11 @@ static int pdc_case_cmp(const void *a, const void *b) {
 }
 
 static char *find_switch_expr(RCore *core, RAnalFunction *fcn, RAnalBlock *sw_bb) {
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *pred;
 	char *result = NULL;
-	r_list_foreach (fcn->bbs, iter, pred) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		pred = *iter;
 		if (pred == sw_bb) {
 			continue;
 		}
@@ -1760,9 +1766,11 @@ static RAnalBlock *render_loop_while(PDCState *state, RAnalBlock *test_bb, RList
 		ut64 body_end = test_bb->addr;
 		RList *sorted = r_list_new ();
 		RListIter *iter;
+		RAnalBlock **bb_iter;
 		RAnalBlock *b;
 		if (sorted) {
-			r_list_foreach (state->fcn->bbs, iter, b) {
+			R_VEC_FOREACH (&state->fcn->bbs, bb_iter) {
+				b = *bb_iter;
 				if (b->addr >= body_start && b->addr < body_end) {
 					r_list_append (sorted, b);
 				}
@@ -2486,10 +2494,10 @@ static bool pdc_decompile_function(RCore *core, const char *input, PDCState *par
 	pdc_emulate_blocks (&state);
 
 	r_strf_buffer (64);
-	RAnalBlock *bb = r_list_first (state.fcn->bbs);
+	RAnalBlock *bb = (RVecAnalBlockPtr_empty (&state.fcn->bbs)? NULL: *RVecAnalBlockPtr_at (&state.fcn->bbs, 0));
 	int indent = 0;
 	int nindent = 1;
-	int n_bb = r_list_length (state.fcn->bbs);
+	int n_bb = (int)RVecAnalBlockPtr_length (&state.fcn->bbs);
 
 	if (state.pj) {
 		pj_o (state.pj);
@@ -2557,9 +2565,10 @@ static bool pdc_decompile_function(RCore *core, const char *input, PDCState *par
 	}
 	// pre-pass: mark loop header bbs so emit_code_lines can strip stale gotos to them
 	{
-		RListIter *piter;
+		RAnalBlock **piter;
 		RAnalBlock *pbb;
-		r_list_foreach (state.fcn->bbs, piter, pbb) {
+		R_VEC_FOREACH (&state.fcn->bbs, piter) {
+			pbb = *piter;
 			if (pbb->jump != UT64_MAX && pbb->fail != UT64_MAX
 					&& pbb->jump <= pbb->addr
 					&& r_anal_function_contains (state.fcn, pbb->jump)
@@ -2782,9 +2791,10 @@ static bool pdc_decompile_function(RCore *core, const char *input, PDCState *par
 			PRINTGOTO (bb? bb->addr: UT64_MAX, gotoaddr);
 		}
 	}
-	RListIter *iter;
+	RAnalBlock **iter;
 	// hoist unconsumed switch dispatchers before orphan labels
-	r_list_foreach (state.fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&state.fcn->bbs, iter) {
+		bb = *iter;
 		if (!bb->switch_op) {
 			continue;
 		}
@@ -2800,7 +2810,8 @@ static bool pdc_decompile_function(RCore *core, const char *input, PDCState *par
 	}
 	// orphans render at the walk depth: labels one level in, statements two
 	indent = 2;
-	r_list_foreach (state.fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&state.fcn->bbs, iter) {
+		bb = *iter;
 		if (r_list_contains (visited, bb)) {
 			continue;
 		}
@@ -2808,10 +2819,8 @@ static bool pdc_decompile_function(RCore *core, const char *input, PDCState *par
 			continue;
 		}
 		ut64 nextbbaddr = UT64_MAX;
-		if (iter->n) {
-			RListIter *nit = (RListIter *) (iter->n);
-			RAnalBlock *nbb = (RAnalBlock *) (nit->data);
-			nextbbaddr = nbb->addr;
+		if (iter + 1 != R_VEC_END_ITER (&state.fcn->bbs)) {
+			nextbbaddr = iter[1]->addr;
 		}
 		char *s = state.inline_calls? fetch_bb_pseudo (&state, bb): orphan_text (&state, bb);
 		if (!state.inline_calls) {
@@ -3106,7 +3115,7 @@ static bool emit_inline_call(PDCState *state, ut64 addr, int indent, const char 
 		&& !op->delay && op->jump != UT64_MAX
 		? r_anal_get_function_at (core->anal, op->jump): NULL;
 	r_anal_op_free (op);
-	if (!callee || !r_anal_function_is_inline (callee) || r_list_empty (callee->bbs)) {
+	if (!callee || !r_anal_function_is_inline (callee) || RVecAnalBlockPtr_empty (&callee->bbs)) {
 		return false;
 	}
 	PDCState *ancestor, *root = state;

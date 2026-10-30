@@ -4469,10 +4469,8 @@ static void ds_print_bytes(RDisasmState *ds) {
 
 R_VEC_TYPE(RVecUT64, ut64);
 
-static int bb_cmp(const void *a, const void *b) {
-	const RAnalBlock *ba = a;
-	const RAnalBlock *bb = b;
-	return ba->addr - bb->addr;
+static int bb_cmp(RAnalBlock *const *a, RAnalBlock *const *b) {
+	return ((*a)->addr > (*b)->addr)? 1: ((*a)->addr < (*b)->addr)? -1: 0;
 }
 
 static int cmp_ut64(const ut64 *a, const ut64 *b) {
@@ -4493,13 +4491,14 @@ static bool vec_ut64_insert_sorted(RVecUT64 *vec, ut64 addr) {
 	return true;
 }
 
-static int inbounds(RList *bbs, ut64 addr) {
+static int inbounds(RVecAnalBlockPtr *bbs, ut64 addr) {
 	int count = 0;
 	RAnalBlock *bb;
-	RListIter *iter;
+	RAnalBlock **iter;
 	RVecUT64 vec;
 	RVecUT64_init (&vec);
-	r_list_foreach (bbs, iter, bb) {
+	R_VEC_FOREACH (bbs, iter) {
+		bb = *iter;
 		if (bb->jump == UT64_MAX) {
 			continue;
 		}
@@ -4526,14 +4525,15 @@ static int inbounds(RList *bbs, ut64 addr) {
 static int instruction_depth(RCore *core, RAnalFunction *f, RAnalBlock *obb) {
 	if (!obb->depth && f) {
 		RAnalBlock *bb;
-		RListIter *iter;
-		r_list_sort (f->bbs, bb_cmp);
-		r_list_foreach (f->bbs, iter, bb) {
+		RAnalBlock **iter;
+		RVecAnalBlockPtr_sort (&f->bbs, bb_cmp);
+		R_VEC_FOREACH (&f->bbs, iter) {
+			bb = *iter;
 			if (bb->depth) {
 				// dont compute twice
 				break;
 			}
-			bb->depth = inbounds (f->bbs, bb->addr);
+			bb->depth = inbounds (&f->bbs, bb->addr);
 		}
 	}
 	return obb->depth;
@@ -7041,8 +7041,9 @@ static RAnalSwitchOp *switch_op_for_cursor(RCore *core, ut64 cursor_addr, RAnalO
 	if (!fcn) {
 		return NULL;
 	}
-	RListIter *iter;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	RAnalBlock **iter;
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		RAnalSwitchOp *sop = bb->switch_op;
 		if (sop && sop->jump_addr == cursor_addr) {
 			return sop;

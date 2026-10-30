@@ -81,7 +81,7 @@ R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 	fcn->addr = UT64_MAX;
 	fcn->callconv = r_str_constpool_get (&anal->constpool, r_anal_cc_default (anal));
 	fcn->bits = anal->config->bits;
-	fcn->bbs = r_list_new ();
+	RVecAnalBlockPtr_init (&fcn->bbs);
 	fcn->diff = r_anal_diff_new ();
 	fcn->has_changed = true;
 	fcn->bp_frame = true;
@@ -104,15 +104,12 @@ R_API void r_anal_function_free(RAnalFunction *fcn) {
 		return;
 	}
 
-	RAnalBlock *block;
-	RListIter *iter, *iter2;
-	r_list_foreach_safe (fcn->bbs, iter, iter2, block) {
-		r_anal_function_remove_block (fcn, block);
-		// r_list_delete_data (block->fcns, fcn);
-		// r_anal_block_unref (block);
+	RAnalBlock **it;
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		r_list_delete_data ((*it)->fcns, fcn);
+		r_unref (*it);
 	}
-	// fcn->bbs->free = r_anal_block_unref;
-	r_list_free (fcn->bbs);
+	RVecAnalBlockPtr_fini (&fcn->bbs);
 
 	RAnal *anal = fcn->anal;
 	if (ht_up_find (anal->ht_addr_fun, fcn->addr, NULL) == fcn) {
@@ -133,7 +130,6 @@ R_API void r_anal_function_free(RAnalFunction *fcn) {
 	free (fcn->name);
 	free (fcn->realname);
 	free (fcn->pin);
-	fcn->bbs = NULL;
 	free (fcn->fingerprint);
 	r_anal_diff_free (fcn->diff);
 	r_list_free (fcn->imports);
@@ -301,7 +297,8 @@ R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb) {
 		return;
 	}
 	r_list_append (bb->fcns, fcn);
-	r_list_append (fcn->bbs, r_ref (bb));
+	(void)r_ref (bb);
+	RVecAnalBlockPtr_push_back (&fcn->bbs, &bb);
 	fcn->meta.numcallrefs = -1;
 
 	if (fcn->meta._min != UT64_MAX) {
@@ -318,6 +315,10 @@ R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb) {
 	}
 }
 
+static int find_bb_cmp(RAnalBlock *const *a, const void *b) {
+	return *a != b;
+}
+
 R_API void r_anal_function_remove_block(RAnalFunction *fcn, RAnalBlock *bb) {
 	R_RETURN_IF_FAIL (fcn && bb);
 	r_list_delete_data (bb->fcns, fcn);
@@ -328,7 +329,10 @@ R_API void r_anal_function_remove_block(RAnalFunction *fcn, RAnalBlock *bb) {
 		fcn->meta._min = UT64_MAX;
 	}
 
-	r_list_delete_data (fcn->bbs, bb);
+	size_t idx = RVecAnalBlockPtr_find_index (&fcn->bbs, bb, find_bb_cmp);
+	if (idx != SZT_MAX) {
+		RVecAnalBlockPtr_remove (&fcn->bbs, idx);
+	}
 	fcn->meta.numcallrefs = -1;
 	r_unref (bb);
 }
@@ -340,8 +344,9 @@ static void ensure_fcn_range(RAnalFunction *fcn) {
 	ut64 minval = UT64_MAX;
 	ut64 maxval = UT64_MIN;
 	RAnalBlock *block;
-	RListIter *iter;
-	r_list_foreach (fcn->bbs, iter, block) {
+	RAnalBlock **iter;
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		block = *iter;
 		if (block->addr < minval) {
 			minval = block->addr;
 		}
@@ -381,10 +386,11 @@ R_API ut64 r_anal_function_size_from_entry(RAnalFunction *fcn) {
 
 R_API ut64 r_anal_function_realsize(const RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (fcn, UT64_MAX);
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *bb;
 	ut64 sz = 0;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		sz += bb->size;
 	}
 	return sz;
@@ -412,9 +418,10 @@ R_API bool r_anal_function_contains(RAnalFunction *fcn, ut64 addr) {
 
 R_API bool r_anal_function_was_modified(RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (fcn, false);
-	RListIter *it;
+	RAnalBlock **it;
 	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, it, bb) {
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		bb = *it;
 		if (r_anal_block_was_modified (bb)) {
 			return true;
 		}
@@ -424,14 +431,15 @@ R_API bool r_anal_function_was_modified(RAnalFunction *fcn) {
 
 R_API int r_anal_function_coverage(RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (fcn, 0);
-	int total = r_list_length (fcn->bbs);
+	int total = (int)RVecAnalBlockPtr_length (&fcn->bbs);
 	if (total == 0) {
 		return 0;
 	}
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *bb;
 	int traced = 0;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		if (bb->traced != 0) {
 			traced++;
 		}
@@ -510,15 +518,16 @@ static bool add_edge_cb(ut64 addr, void *user) {
 }
 
 R_API RGraph *r_anal_function_get_graph(RAnalFunction *fcn, RGraphNode **node_ptr, ut64 addr) {
-	R_RETURN_VAL_IF_FAIL (fcn && fcn->bbs && r_list_length (fcn->bbs), NULL);
+	R_RETURN_VAL_IF_FAIL (fcn && !RVecAnalBlockPtr_empty (&fcn->bbs), NULL);
 	HtUP *nodes = ht_up_new0 ();
 	RGraph *g = r_graph_new ();
 	if (node_ptr) {
 		*node_ptr = NULL;
 	}
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		RGraphNode *node = r_graph_add_node (g, bb);
 		if (node_ptr && !node_ptr[0] && bb->addr <= addr && addr < (bb->addr + bb->size)) {
 			*node_ptr = node;
@@ -526,7 +535,8 @@ R_API RGraph *r_anal_function_get_graph(RAnalFunction *fcn, RGraphNode **node_pt
 		ht_up_insert (nodes, bb->addr, node);
 	}
 	EdgeCtx ctx = { g, nodes, NULL };
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		if (bb->jump == UT64_MAX && bb->fail == UT64_MAX && (!bb->switch_op || r_list_empty (bb->switch_op->cases))) {
 			continue;
 		}
@@ -539,9 +549,10 @@ R_API RGraph *r_anal_function_get_graph(RAnalFunction *fcn, RGraphNode **node_pt
 
 R_API bool r_anal_function_switches_foreach(RAnalFunction *fcn, RAnalFunctionSwitchCb cb, void *user) {
 	R_RETURN_VAL_IF_FAIL (fcn && cb, false);
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		if (!bb || !bb->switch_op) {
 			continue;
 		}

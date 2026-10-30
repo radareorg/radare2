@@ -249,9 +249,10 @@ static ut32 rprj_fcn_attr_intern(RPrjCursor *cur, RVecPrjFunctionAttr *attrs, RA
 }
 
 static void rprj_function_collect_colors(RVecPrjColor *colors, RAnalFunction *fcn) {
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		rprj_color_index (colors, &bb->color);
 	}
 }
@@ -267,10 +268,11 @@ static void rprj_var_write_one(RPrjCursor *cur, RAnalVar *var) {
 }
 
 static void rprj_function_write_one(RPrjCursor *cur, RAnalFunction *fcn, ut32 attr_idx, RVecPrjColor *colors) {
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *bb;
 	ut32 nbbs = 0;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		nbbs++;
 	}
 	const ut32 nvars = (ut32)RVecAnalVarPtr_length (&fcn->vars);
@@ -279,7 +281,8 @@ static void rprj_function_write_one(RPrjCursor *cur, RAnalFunction *fcn, ut32 at
 	rprj_write_le32 (cur->b, attr_idx);
 	rprj_write_le32 (cur->b, nbbs);
 	rprj_write_le32 (cur->b, nvars);
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		rprj_write_project_addr (cur->b, rprj_mod_addr (cur, bb->addr));
 		rprj_write_le64 (cur->b, bb->size);
 		rprj_write_project_addr (cur->b, rprj_mod_addr (cur, bb->jump));

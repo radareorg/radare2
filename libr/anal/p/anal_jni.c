@@ -183,7 +183,7 @@ static RAnalFunction *jni_materialize_method(JniScanContext *ctx,
 	if (!has_prototype) {
 		jni_function_set_signature (ctx, fcn, method);
 	}
-	if (r_list_empty (fcn->bbs)) {
+	if (RVecAnalBlockPtr_empty (&fcn->bbs)) {
 		r_anal_function (ctx->anal, fcn, fcn->addr, R_ANAL_REF_TYPE_CALL);
 	}
 	const ut64 pointer_addr = method->record_addr + ctx->pointer_size * 2;

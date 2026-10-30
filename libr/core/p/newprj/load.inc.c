@@ -728,9 +728,10 @@ static void rprj_print_function_script(RPrjCursor *cur, RAnalFunction *fcn) {
 		return;
 	}
 	r_strbuf_appendf (cur->out, "'af+ 0x%08"PFMT64x" %s\n", fcn->addr, fcn->name);
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		r_strbuf_appendf (cur->out, "'afb+ 0x%08"PFMT64x" 0x%08"PFMT64x" %"PFMT64u" 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
 			fcn->addr, bb->addr, bb->size, bb->jump, bb->fail);
 		if (rprj_color_is_set (&bb->color)) {
@@ -748,8 +749,10 @@ static void rprj_print_function_script(RPrjCursor *cur, RAnalFunction *fcn) {
 
 static void rprj_diff_function_blocks(RPrjCursor *cur, RAnalFunction *fcn, RList *pbbs) {
 	RListIter *iter;
+	RAnalBlock **bb_iter;
 	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, bb_iter) {
+		bb = *bb_iter;
 		R2ProjectDiffBlock *pbb = rprj_diff_block_find (pbbs, bb->addr);
 		if (pbb) {
 			pbb->seen = true;

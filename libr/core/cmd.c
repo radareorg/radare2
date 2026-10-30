@@ -63,9 +63,9 @@ static char *core_cmd_str_nohtml(RCore *core, RCmdContext *parent, const char *c
 static RCons *core_cmd_cons(void *data);
 static bool core_fs_tree(RCore *core, RFSRoot *root, const char *path, int depth);
 
-static int bb_cmpaddr(const void *_a, const void *_b) {
-	const RAnalBlock *a = _a;
-	const RAnalBlock *b = _b;
+static int bb_cmpaddr(RAnalBlock *const *_a, RAnalBlock *const *_b) {
+	const RAnalBlock *a = *_a;
+	const RAnalBlock *b = *_b;
 	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
 }
 
@@ -6023,9 +6023,10 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 		{
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
 			if (fcn) {
-				RListIter *iter;
+				RAnalBlock **iter;
 				RAnalBlock *bb;
-				r_list_foreach (fcn->bbs, iter, bb) {
+				R_VEC_FOREACH (&fcn->bbs, iter) {
+					bb = *iter;
 					append_item (list, NULL, bb->addr, bb->size);
 				}
 			}
@@ -6231,14 +6232,15 @@ static void cmd_foreach_word(RCore *core, const char *cmd, const char *each, boo
 }
 
 static void atat_i(RCore *core, const char *cmd) {
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *bb;
 	int i;
 	RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->addr);
 	RBitset *seen = r_bitset_new ();
 	if (fcn) {
-		r_list_sort (fcn->bbs, bb_cmp);
-		r_list_foreach (fcn->bbs, iter, bb) {
+		RVecAnalBlockPtr_sort (&fcn->bbs, bb_cmp);
+		R_VEC_FOREACH (&fcn->bbs, iter) {
+			bb = *iter;
 			for (i = 0; i < bb->ninstr; i++) {
 				ut64 addr = r_anal_block_ninstr (bb, i);
 				if (!r_bitset_set (seen, addr)) {
@@ -6288,13 +6290,14 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		break;
 	case 'b': // "@@b" - function basic blocks
 		{
-			RListIter *iter;
+			RAnalBlock **iter;
 			RAnalBlock *bb;
 			RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->addr);
 			int bs = core->blocksize;
 			if (fcn) {
-				r_list_sort (fcn->bbs, bb_cmp);
-				r_list_foreach (fcn->bbs, iter, bb) {
+				RVecAnalBlockPtr_sort (&fcn->bbs, bb_cmp);
+				R_VEC_FOREACH (&fcn->bbs, iter) {
+					bb = *iter;
 					r_core_block_size (core, bb->size);
 					r_core_seek (core, bb->addr, true);
 					r_core_cmd (core, cmd, 0);

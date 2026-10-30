@@ -19,8 +19,8 @@ static void tp_mem_type_kv_free(HtUPKv *kv) {
 	free (kv->value);
 }
 
-static int bb_cmpaddr(const void *_a, const void *_b) {
-	const RAnalBlock *a = _a, *b = _b;
+static int bb_cmpaddr(RAnalBlock *const *_a, RAnalBlock *const *_b) {
+	const RAnalBlock *a = *_a, *b = *_b;
 	return a->addr > b->addr? 1: (a->addr < b->addr? -1: 0);
 }
 
@@ -47,7 +47,7 @@ static bool rpo_collect(RAnalBlock *bb, void *user) {
 static size_t bblist_from_cfg(RAnalFunction *fcn, RVecUT64 *bblist) {
 	RAnalBlock *bb;
 	RAnalBlock *entry = NULL;
-	RListIter *it;
+	RAnalBlock **it;
 	RpoCtx ctx = { ht_up_new0 (), ht_uu_new0 () };
 	RVecUT64_init (&ctx.postorder);
 	if (!ctx.blocks || !ctx.seen) {
@@ -55,7 +55,8 @@ static size_t bblist_from_cfg(RAnalFunction *fcn, RVecUT64 *bblist) {
 		ht_uu_free (ctx.seen);
 		return 0;
 	}
-	r_list_foreach (fcn->bbs, it, bb) {
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		bb = *it;
 		ht_up_insert (ctx.blocks, bb->addr, bb);
 		if (!entry && r_anal_block_contains (bb, fcn->addr)) {
 			entry = bb;
@@ -75,7 +76,8 @@ static size_t bblist_from_cfg(RAnalFunction *fcn, RVecUT64 *bblist) {
 	}
 	RVecUT64_fini (&ctx.postorder);
 	// blocks unreachable from the entry still get emulated, in address order
-	r_list_foreach (fcn->bbs, it, bb) {
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		bb = *it;
 		bool found = false;
 		ht_uu_find (ctx.seen, bb->addr, &found);
 		if (!found) {
@@ -83,7 +85,7 @@ static size_t bblist_from_cfg(RAnalFunction *fcn, RVecUT64 *bblist) {
 		}
 	}
 	ht_uu_free (ctx.seen);
-	if (!reachable || RVecUT64_length (bblist) != r_list_length (fcn->bbs)) {
+	if (!reachable || RVecUT64_length (bblist) != (int)RVecAnalBlockPtr_length (&fcn->bbs)) {
 		RVecUT64_clear (bblist);
 		return 0;
 	}
@@ -843,15 +845,16 @@ TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_ops, TPE
 	RVecBuf_init (&buf);
 	RVecUT64 bblist;
 	RVecUT64_init (&bblist);
-	r_list_sort (fcn->bbs, bb_cmpaddr);
-	size_t bblist_size = r_list_length (fcn->bbs); // TODO: Use ut64
+	RVecAnalBlockPtr_sort (&fcn->bbs, bb_cmpaddr);
+	size_t bblist_size = (int)RVecAnalBlockPtr_length (&fcn->bbs); // TODO: Use ut64
 	RVecUT64_reserve (&bblist, bblist_size);
 	RAnalBlock *bb;
-	RListIter *it;
+	RAnalBlock **it;
 	const size_t reachable = bblist_from_cfg (fcn, &bblist);
 	if (!reachable) {
 		R_LOG_DEBUG ("cannot compute cfg order at 0x%08" PFMT64x ", using address order", fcn->addr);
-		r_list_foreach (fcn->bbs, it, bb) {
+		R_VEC_FOREACH (&fcn->bbs, it) {
+			bb = *it;
 			RVecUT64_push_back (&bblist, &bb->addr);
 		}
 	}
