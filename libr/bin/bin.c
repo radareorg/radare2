@@ -131,7 +131,7 @@ R_API void r_bin_xtrdata_free(void /*RBinXtrData*/ *data_) {
 	}
 }
 
-R_API RVecRBinString *r_bin_raw_strings(RBinFile *bf, int min) {
+R_API RBinStrings *r_bin_raw_strings(RBinFile *bf, int min) {
 	R_RETURN_VAL_IF_FAIL (bf, NULL);
 	return r_bin_file_get_strings (bf, min, 2, NULL);
 }
@@ -300,18 +300,42 @@ R_API void r_bin_symbol_free(void *_sym) {
 	}
 }
 
-R_API void r_bin_string_fini(RBinString *str) {
-	if (str) {
-		free (str->string);
+R_API void r_bin_strings_fini(RBinStrings *strings) {
+	if (strings) {
+		RVecRBinString_fini (&strings->vec);
+		r_strbuf_fini (&strings->pool);
 	}
 }
 
-R_API void r_bin_string_free(void *_str) {
-	RBinString *str = (RBinString *)_str;
-	if (str) {
-		r_bin_string_fini (str);
-		free (str);
+R_API void r_bin_strings_free(RBinStrings *strings) {
+	r_bin_strings_fini (strings);
+	free (strings);
+}
+
+R_API void r_bin_strings_shrink(RBinStrings *strings) {
+	R_RETURN_IF_FAIL (strings);
+	RVecRBinString_shrink_to_fit (&strings->vec);
+	RStrBuf *pool = &strings->pool;
+	size_t used = 0;
+	RBinString *str;
+	R_VEC_FOREACH (&strings->vec, str) {
+		if (str->pooled) {
+			used = R_MAX (used, (size_t)str->text.entry.off + str->text.entry.len + 1);
+		}
 	}
+	pool->len = used;
+	r_strbuf_get (pool)[used] = 0;
+	if (pool->ptr && pool->ptrlen > pool->len + 1) {
+		char *text = realloc (pool->ptr, pool->len + 1);
+		if (text) {
+			pool->ptr = text;
+			pool->ptrlen = pool->len + 1;
+		}
+	}
+}
+
+R_API void r_bin_string_free(void *str) {
+	free (str);
 }
 
 R_API bool r_bin_open(RBin *bin, const char *file, RBinFileOptions *opt) {
@@ -1224,32 +1248,32 @@ R_API RBinSection *r_bin_get_section_at(RBinObject *o, ut64 off, int va) {
 	return NULL;
 }
 
-R_API RVecRBinString *r_bin_reset_strings(RBin *bin) {
+R_API RBinStrings *r_bin_reset_strings(RBin *bin) {
 	RBinFile *bf = r_bin_cur (bin);
 
 	if (!bf || !bf->bo) {
 		return NULL;
 	}
-	RVecRBinString_clear (&bf->bo->strings);
+	r_bin_strings_fini (&bf->bo->strings);
 
 	r_bin_object_drop_strings_db (bf->bo);
 
 	bf->rawstr = bin->options.rawstr;
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 
-	RVecRBinString *strings = plugin && plugin->strings
+	RBinStrings *strings = plugin && plugin->strings
 		? plugin->strings (bf)
 		: r_bin_file_get_strings (bf, bin->options.minstrlen, bf->rawstr, NULL);
 	r_bin_take_strings (&bf->bo->strings, strings);
 	if (bin->options.debase64) {
 		r_bin_object_filter_strings (bf->bo);
 	}
-	RVecRBinString_shrink_to_fit (&bf->bo->strings);
+	r_bin_strings_shrink (&bf->bo->strings);
 	r_bin_object_drop_strings_db (bf->bo);
 	return &bf->bo->strings;
 }
 
-R_API RVecRBinString *r_bin_get_strings(RBin *bin) {
+R_API RBinStrings *r_bin_get_strings(RBin *bin) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
 	return o? &o->strings: NULL;

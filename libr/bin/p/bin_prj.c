@@ -22,7 +22,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static RVecRBinString *strings(RBinFile *bf) {
+static RBinStrings *strings(RBinFile *bf) {
 	return NULL;
 }
 

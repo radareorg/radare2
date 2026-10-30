@@ -413,13 +413,17 @@ typedef struct r_bin_import_t {
 } RBinImport;
 
 typedef struct r_bin_string_t {
-	char *string; // TODO: rename to text or so
+	union {
+		const char *ptr;
+		RStrsEntry entry;
+	} text;
 	ut64 vaddr;
 	ut64 paddr;
 	ut32 ordinal;
 	ut32 size; // size of buffer containing the string in bytes
 	ut32 length; // length of string in chars
 	char type; // Ascii Wide cp850 utf8 base64 ...
+	bool pooled;
 } RBinString;
 
 #include <r_vec.h>
@@ -428,7 +432,50 @@ typedef struct r_bin_string_t {
 R_API void r_bin_section_fini(RBinSection *sec);
 R_API void r_bin_symbol_fini(RBinSymbol *sym);
 R_API void r_bin_import_fini(RBinImport *sym);
-R_API void r_bin_string_fini(RBinString *str);
+R_VEC_TYPE (RVecRBinString, RBinString);
+
+typedef struct r_bin_strings_t {
+	RVecRBinString vec;
+	RStrBuf pool;
+} RBinStrings;
+
+static inline RBinStrings *r_bin_strings_new(void) {
+	return R_NEW0 (RBinStrings);
+}
+
+R_API void r_bin_strings_fini(RBinStrings *strings);
+R_API void r_bin_strings_free(RBinStrings *strings);
+R_API void r_bin_strings_shrink(RBinStrings *strings);
+static inline bool r_bin_string_set(RBinStrings *strings, RBinString *str, R_NOALIAS RStrs text) {
+	R_RETURN_VAL_IF_FAIL (strings && str, false);
+	size_t offset = r_strbuf_length (&strings->pool);
+	size_t len = r_strs_len (text);
+	if (len >= UT32_MAX || offset > UT32_MAX - len - 1
+			|| (len && !r_strbuf_append_n (&strings->pool, text.a, len))
+			|| !r_strbuf_append_n (&strings->pool, "", 1)) {
+		return false;
+	}
+	str->text.entry = (RStrsEntry) { offset, len };
+	str->pooled = true;
+	return true;
+}
+
+// Returned text remains valid until the next mutation of strings.
+static inline R_UNOWNED R_TRANSIENT const char *r_bin_string_get(const RBinStrings *strings, const RBinString *str) {
+	R_RETURN_VAL_IF_FAIL (str && (!str->pooled || strings), "");
+	if (!str->pooled) {
+		return str->text.ptr? str->text.ptr: "";
+	}
+	const RStrBuf *pool = &strings->pool;
+	return (pool->ptr? pool->ptr: pool->buf) + str->text.entry.off;
+}
+
+static inline RStrs r_bin_string_view(const RBinStrings *strings, const RBinString *str) {
+	R_RETURN_VAL_IF_FAIL (str && (!str->pooled || strings), r_strs_from_len (NULL, 0));
+	const char *text = r_bin_string_get (strings, str);
+	return str->pooled? r_strs_from_len (text, str->text.entry.len): r_strs_from (text);
+}
+
 typedef struct r_bin_resource_t {
 	char *name;
 	char *type;
@@ -450,7 +497,6 @@ R_API void r_bin_resource_fini(RBinResource *resource);
 R_VEC_TYPE_WITH_FINI (RVecRBinImport, RBinImport, r_bin_import_fini);
 R_VEC_TYPE_WITH_FINI (RVecRBinSymbol, RBinSymbol, r_bin_symbol_fini);
 R_VEC_TYPE_WITH_FINI (RVecRBinSection, RBinSection, r_bin_section_fini);
-R_VEC_TYPE_WITH_FINI (RVecRBinString, RBinString, r_bin_string_fini);
 R_VEC_TYPE_WITH_FINI (RVecRBinResource, RBinResource, r_bin_resource_fini);
 R_VEC_TYPE(RVecRBinEntry, RBinSymbol);
 R_VEC_TYPE(RVecBinSymclassGlob, char *);
@@ -502,7 +548,7 @@ typedef struct r_bin_object_t {
 	RList/*<??>*/ *fields;
 	RList/*<??>*/ *libs;
 	RVecRBinReloc *relocs;
-	RVecRBinString strings;
+	RBinStrings strings;
 	RList/*<RBinClass>*/ *classes;
 	HtPP *classes_ht;
 	RList/*<RBinDwarfRow>*/ *lines;
@@ -809,7 +855,7 @@ typedef struct r_bin_plugin_t {
 	bool (*symbols_vec)(RBinFile *bf);
 	bool (*imports_vec)(RBinFile *bf);
 	R_UNOWNED RList/*<RBinDwarfRow>*/* (*lines)(RBinFile *bf);
-	RVecRBinString *(*strings)(RBinFile *bf);
+	RBinStrings *(*strings)(RBinFile *bf);
 	RBinInfo/*<RBinInfo>*/* (*info)(RBinFile *bf);
 	RList/*<RBinField>*/* (*fields)(RBinFile *bf);
 	RList/*<char *>*/* (*libs)(RBinFile *bf);
@@ -1029,7 +1075,7 @@ R_API void r_bin_set_baddr(RBin *bin, ut64 baddr);
 R_API ut64 r_bin_get_laddr(RBin *bin);
 R_API ut64 r_bin_get_size(RBin *bin);
 R_API RBinAddr *r_bin_get_sym(RBin *bin, int sym);
-R_API RVecRBinString *r_bin_raw_strings(RBinFile *a, int min);
+R_API RBinStrings *r_bin_raw_strings(RBinFile *a, int min);
 R_API void r_bin_dump_strings(RBinFile *a, int min, int raw, RStrBuf *output);
 
 // use RBinFile instead
@@ -1041,7 +1087,7 @@ R_API RBinReloc *r_bin_reloc_at(RVecRBinReloc *relocs, ut64 vaddr, int size);
 R_API RVecRBinSection *r_bin_get_sections_vec(RBin *bin);
 R_API RList *r_bin_get_classes(RBin *bin);
 R_API char* r_bin_get_types(RBin *bin);
-R_API RVecRBinString *r_bin_get_strings(RBin *bin);
+R_API RBinStrings *r_bin_get_strings(RBin *bin);
 // Borrowed records are read-only and remain valid until the next mutation.
 R_API R_UNOWNED const RVecRBinTrycatch *r_bin_file_get_trycatch(RBinFile * R_NONNULL bf);
 R_API bool r_bin_trycatch_insert(RBinFile *bf, const RBinTrycatch *tc);
@@ -1055,7 +1101,7 @@ R_API RVecRBinSymbol *r_bin_get_symbols_vec(RBin *bin);
 // current RBinObject on first call; returns NULL if no symbol matches.
 R_API RBinSymbol *r_bin_get_symbol_at(RBin *bin, ut64 addr);
 R_API RVecRBinImport *r_bin_get_imports_vec(RBin *bin);
-R_API RVecRBinString *r_bin_reset_strings(RBin *bin);
+R_API RBinStrings *r_bin_reset_strings(RBin *bin);
 R_API int r_bin_is_big_endian(RBin *bin); // R2_590: deprecate. also it returns -1, false and true
 R_API ut64 r_bin_get_vaddr(RBin *bin, ut64 paddr, ut64 vaddr);
 R_API ut64 r_bin_file_get_vaddr(RBinFile *bf, ut64 paddr, ut64 vaddr);

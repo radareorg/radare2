@@ -1505,11 +1505,11 @@ static const char *dotnet_user_string(RBinFile *bf, RBinPEObj *pe, ut32 index) {
 	return result;
 }
 
-static RVecRBinString *strings(RBinFile *bf) {
-	RVecRBinString *ret = r_bin_file_get_strings (bf,
+static RBinStrings *strings(RBinFile *bf) {
+	RBinStrings *ret = r_bin_file_get_strings (bf,
 		bf->rbin->options.minstrlen, bf->rawstr, NULL);
 	if (!ret) {
-		ret = RVecRBinString_new ();
+		ret = r_bin_strings_new ();
 	}
 	RBinPEObj *pe = PE_(get) (bf);
 	if (!ret || !pe || !pe->clr_hdr || !pe->streams) {
@@ -1527,13 +1527,12 @@ static RVecRBinString *strings(RBinFile *bf) {
 			if (!dotnet_user_string_at (bf, pe, index, &us)) {
 				break;
 			}
-			RBinString *bs = RVecRBinString_emplace_back (ret);
+			RBinString *bs = RVecRBinString_emplace_back (&ret->vec);
 			if (!bs) {
 				free (us.string);
 				break;
 			}
 			*bs = (RBinString){
-				.string = us.string,
 				.vaddr = us.vaddr,
 				.paddr = us.paddr,
 				.ordinal = index,
@@ -1541,6 +1540,12 @@ static RVecRBinString *strings(RBinFile *bf) {
 				.length = us.length,
 				.type = R_STRING_TYPE_WIDE,
 			};
+			bool ok = r_bin_string_set (ret, bs, r_strs_from (us.string));
+			free (us.string);
+			if (!ok) {
+				RVecRBinString_pop_back (&ret->vec);
+				break;
+			}
 			index += us.encoded_size;
 		}
 		break;

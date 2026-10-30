@@ -8,7 +8,7 @@
 R_IPI void r_bin_reloc_slot_row(RVecRBinReloc *relocs, const RBinReloc *site, ut64 vaddr);
 R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, RBinFileOptions *opt, Sdb *sdb, bool steal_ptr);
 R_IPI RBinObject *r_bin_file_object_find_by_id(RBinFile *binfile, ut32 binobj_id);
-R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *a, int min, int raw, RStrBuf *output);
+R_IPI RBinStrings *r_bin_file_get_strings(RBinFile *a, int min, int raw, RStrBuf *output);
 R_IPI RBinFile *r_bin_file_find_by_object_id(RBin *bin, ut32 binobj_id);
 R_IPI RBinFile *r_bin_file_find_by_id(RBin *bin, ut32 binfile_id);
 R_IPI bool r_bin_file_set_obj(RBin *bin, RBinFile *bf, RBinObject *obj);
@@ -80,7 +80,7 @@ static inline HtUP *r_bin_object_ensure_strings_db(RBinObject *bo) {
 		return NULL;
 	}
 	if (!bo->strings_db) {
-		bo->strings_db = r_bin_strings_build_index (&bo->strings);
+		bo->strings_db = r_bin_strings_build_index (&bo->strings.vec);
 	}
 	return bo->strings_db;
 }
@@ -124,10 +124,12 @@ static inline void r_bin_strings_index_update_after_remove(RVecRBinString *strin
 	}
 }
 
-static inline void r_bin_take_strings(RVecRBinString *dst, RVecRBinString *src) {
+static inline void r_bin_take_strings(RBinStrings *dst, RBinStrings *src) {
 	if (src) {
-		RVecRBinString_swap (dst, src);
-		RVecRBinString_free (src);
+		RBinStrings tmp = *dst;
+		*dst = *src;
+		*src = tmp;
+		r_bin_strings_free (src);
 	}
 }
 

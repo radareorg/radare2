@@ -114,17 +114,52 @@ static ut64 dex_field_offset(RBinDexObj *bin, int fid) {
 	return bin->header.fields_offset + (fid * 8); // (sizeof (DexField) * fid);
 }
 
+static int string_length(RBinDexObj *dex, ut32 offset, ut64 *length) {
+	if (offset >= dex->size) {
+		return 0;
+	}
+	ut8 buf[5];
+	st64 nread = r_buf_read_at (dex->b, offset, buf, R_MIN (sizeof (buf), dex->size - offset));
+	if (nread < 1) {
+		return 0;
+	}
+	const char *error = NULL;
+	const ut8 *end = r_uleb128 (buf, nread, length, &error);
+	return error || *length >= dex->size? 0: end - buf;
+}
+
+static char *readstr(RBinDexObj *dex, ut64 offset, ut64 len) {
+	ut64 size;
+	if (offset >= dex->size || r_mul_overflow (len, 3, &size)
+			|| r_add_overflow (size, 1, &size)) {
+		return NULL;
+	}
+	size = R_MIN (size, dex->size - offset);
+	if (size > SIZE_MAX) {
+		return NULL;
+	}
+	char *ptr = malloc (size);
+	if (!ptr) {
+		return NULL;
+	}
+	st64 nread = r_buf_read_at (dex->b, offset, (ut8 *)ptr, size);
+	char *end = nread > 0? memchr (ptr, 0, nread): NULL;
+	if (!end || len != r_utf8_strlen ((const ut8 *)ptr)) {
+		free (ptr);
+		return NULL;
+	}
+	return ptr;
+}
+
 static const char *getstr(RBinDexObj *dex, int idx) {
-	ut8 buf[LEB_MAX_SIZE];
 	const ut32 strings_size = dex->header.strings_size;
 	if (idx < 0 || idx >= strings_size || !dex->strings) {
 		return NULL;
 	}
 	char **cs = dex->cal_strings;
 	if (cs) {
-		const char *p = cs[idx];
-		if (p) {
-			return p;
+		if (cs[idx]) {
+			return cs[idx];
 		}
 	} else {
 		cs = R_NEWS0 (char *, strings_size);
@@ -134,29 +169,15 @@ static const char *getstr(RBinDexObj *dex, int idx) {
 		dex->cal_strings = cs;
 		dex->cal_strings_size = strings_size;
 	}
-	const ut32 string_index = dex->strings[idx];
-	if (string_index >= dex->size) {
-		return NULL;
-	}
-	RBuffer *b = dex->b;
-	if (r_buf_read_at (b, string_index, buf, sizeof (buf)) != sizeof (buf)) {
-		return NULL;
-	}
 	ut64 len;
-	int uleblen = r_uleb128 (buf, sizeof (buf), &len, NULL) - buf;
-	if (!uleblen || len >= dex->size) {
-		return NULL;
-	}
-	char *ptr = r_buf_get_string (b, (ut64)string_index + uleblen);
+	ut32 index = dex->strings[idx];
+	int uleblen = string_length (dex, index, &len);
+	char *ptr = uleblen? readstr (dex, (ut64)index + uleblen, len): NULL;
 	if (ptr) {
-		if (len != r_utf8_strlen ((const ut8 *)ptr)) {
-			free (ptr);
-			return NULL;
-		}
-		cs[idx] = ptr;
-		return ptr;
+		char *text = realloc (ptr, strlen (ptr) + 1);
+		cs[idx] = text? text: ptr;
 	}
-	return NULL;
+	return cs[idx];
 }
 
 typedef enum {
@@ -862,60 +883,62 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static RVecRBinString *strings(RBinFile *bf) {
+static RBinStrings *strings(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
-	RVecRBinString *ret = NULL;
-	int i;
-	ut64 len;
-	ut8 buf[LEB_MAX_SIZE];
-	ut64 off;
-	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *)bf->bo->bin_obj;
+	RBinDexObj *bin = bf->bo->bin_obj;
 	if (!bin || !bin->strings) {
 		return NULL;
 	}
-	if (!(ret = RVecRBinString_new ())) {
-		return NULL;
-	}
+	RBinStrings *ret = r_bin_strings_new ();
+	ut32 i;
 	for (i = 0; i < bin->header.strings_size; i++) {
-		if (bin->strings[i] > bin->size || bin->strings[i] + 6 > bin->size) {
-			goto out_error;
+		ut64 length;
+		int uleblen = string_length (bin, bin->strings[i], &length);
+		if (!uleblen) {
+			goto error;
 		}
-		r_buf_read_at (bin->b, bin->strings[i], buf, sizeof (buf));
-		r_uleb128 (buf, sizeof (buf), &len, NULL);
-
-		if (len > 5 && len < R_BIN_SIZEOF_STRINGS) {
-			RBinString bs = { 0 };
-			bs.string = malloc (len + 1);
-			if (!bs.string) {
-				goto out_error;
-			}
-			off = bin->strings[i] + r_uleb128_len (buf, sizeof (buf));
-			if (off + len >= bin->size || off + len < len) {
-				free (bs.string);
-				goto out_error;
-			}
-			r_buf_read_at (bin->b, off, (ut8*)bs.string, len);
-			bs.string[len] = 0;
-			if ((bs.string[0] == 'L' && strchr (bs.string, '/')) || !strncmp (bs.string, "[L", 2)) {
-				free (bs.string);
-				continue;
-			}
-			bs.paddr = bin->strings[i];
-			bs.vaddr = bs.paddr;
-			bs.size = len;
-			bs.length = len;
-			bs.ordinal = i + 1;
-			RBinString *dst = RVecRBinString_emplace_back (ret);
-			if (!dst) {
-				r_bin_string_fini (&bs);
-				goto out_error;
-			}
-			*dst = bs;
+		if (length <= 5 || length >= R_BIN_SIZEOF_STRINGS) {
+			continue;
 		}
+		const char *str = bin->cal_strings? bin->cal_strings[i]: NULL;
+		char *owned = NULL;
+		if (!str) {
+			str = owned = readstr (bin, (ut64)bin->strings[i] + uleblen, length);
+		}
+		if (!str) {
+			goto error;
+		}
+		RStrs text = r_strs_from (str);
+		if ((*str == 'L' && r_strs_findc (text, '/'))
+				|| r_strs_startswith (text, "[L")) {
+			free (owned);
+			continue;
+		}
+		RBinString *bs = RVecRBinString_emplace_back (&ret->vec);
+		if (!bs) {
+			free (owned);
+			goto error;
+		}
+		size_t size = r_strs_len (text);
+		bool ok = true;
+		if (owned) {
+			ok = r_bin_string_set (ret, bs, text);
+			free (owned);
+		} else {
+			bs->text.ptr = str;
+		}
+		if (!ok) {
+			goto error;
+		}
+		bs->paddr = bs->vaddr = bin->strings[i];
+		bs->size = size;
+		bs->length = length;
+		bs->ordinal = i + 1;
+		bs->type = R_STRING_TYPE_UTF8;
 	}
 	return ret;
-out_error:
-	RVecRBinString_free (ret);
+error:
+	r_bin_strings_free (ret);
 	return NULL;
 }
 

@@ -92,7 +92,7 @@ static void clamp_list(RList *list, int limit) {
 
 static void rebase_strings_vec(RBinObject *bo) {
 	RBinString *string;
-	R_VEC_FOREACH (&bo->strings, string) {
+	R_VEC_FOREACH (&bo->strings.vec, string) {
 		string->paddr += bo->loadaddr;
 	}
 }
@@ -263,7 +263,7 @@ static void object_delete_items(RBinObject *o) {
 	r_list_free (o->fields);
 	r_list_free (o->libs);
 	RVecRBinReloc_free (o->relocs);
-	RVecRBinString_fini (&o->strings);
+	r_bin_strings_fini (&o->strings);
 	ht_up_free (o->strings_db);
 	r_bin_trycatch_free (o->trycatch);
 
@@ -735,7 +735,6 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	RVecRBinImport_init (&bo->imports_vec);
 	RVecRBinSection_init (&bo->sections_vec);
 	RVecRBinResource_init (&bo->resources_vec);
-	RVecRBinString_init (&bo->strings);
 	bo->pool = r_strpool_new ();
 	bf->bo = bo;
 
@@ -776,7 +775,7 @@ fail:
 	r_strpool_free (bo->pool);
 	RVecRBinSymbol_fini (&bo->symbols_vec);
 	RVecRBinResource_fini (&bo->resources_vec);
-	RVecRBinString_fini (&bo->strings);
+	r_bin_strings_fini (&bo->strings);
 	if (bo->import_name_ht || bo->import_addr_ht) {
 		import_cache_cleanup (bo);
 	}
@@ -1013,15 +1012,15 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		}
 	}
 	if (bin->filter_rules & R_BIN_REQ_STRINGS) {
-		RVecRBinString *strings = p->strings
+		RBinStrings *strings = p->strings
 			? p->strings (bf)
 			: r_bin_file_get_strings (bf, minlen, bf->rawstr, NULL);
 		r_bin_take_strings (&bo->strings, strings);
 		if (bin->options.debase64) {
 			r_bin_object_filter_strings (bo);
 		}
-		clamp_strings_vec (&bo->strings, limit);
-		RVecRBinString_shrink_to_fit (&bo->strings);
+		clamp_strings_vec (&bo->strings.vec, limit);
+		r_bin_strings_shrink (&bo->strings);
 		rebase_strings_vec (bo);
 		r_bin_object_drop_strings_db (bo);
 	}
@@ -1121,16 +1120,17 @@ R_IPI void r_bin_object_filter_strings(RBinObject *bo) {
 	R_RETURN_IF_FAIL (bo);
 
 	RBinString *ptr;
-	R_VEC_FOREACH (&bo->strings, ptr) {
+	R_VEC_FOREACH (&bo->strings.vec, ptr) {
 		// strict decoding: a string is only treated as base64 if it fully is,
 		// and every nested decode must shrink, otherwise this loops forever
-		char *dec = (char *)r_base64_decode_dyn ((const char *)ptr->string, -1, NULL, true);
+		RStrs text = r_bin_string_view (&bo->strings, ptr);
+		char *dec = (char *)r_base64_decode_dyn (text.a, r_strs_len (text), NULL, true);
 		if (R_STR_ISEMPTY (dec)) {
 			free (dec);
 			dec = NULL;
 		}
 		if (dec) {
-			char *s = ptr->string;
+			const char *s = dec;
 			for (;;) {
 				char *dec2 = (char *)r_base64_decode_dyn ((const char *)s, -1, NULL, true);
 				if (R_STR_ISEMPTY (dec2)) {
@@ -1144,13 +1144,11 @@ R_IPI void r_bin_object_filter_strings(RBinObject *bo) {
 				free (dec);
 				s = dec = dec2;
 			}
-			if (r_str_is_printable (dec) && strlen (dec) > 3) {
-				free (ptr->string);
-				ptr->string = dec;
+			if (r_str_is_printable (dec) && strlen (dec) > 3
+					&& r_bin_string_set (&bo->strings, ptr, r_strs_from (dec))) {
 				ptr->type = R_STRING_TYPE_BASE64;
-			} else {
-				free (dec);
 			}
+			free (dec);
 		}
 	}
 }

@@ -2640,13 +2640,13 @@ R_API void r_bin_java_load_symbols(RBinJavaObj *bin, RVecRBinSymbol *symbols) {
 	}
 }
 
-R_API RVecRBinString *r_bin_java_get_strings(RBinJavaObj *bin) {
-	RVecRBinString *strings = RVecRBinString_new ();
+R_API RBinStrings *r_bin_java_get_strings(RBinJavaObj *bin) {
+	RBinStrings *strings = r_bin_strings_new ();
 	RListIter *iter = NULL, *iter_tmp = NULL;
 	RBinJavaCPTypeObj *cp_obj = NULL;
 	r_list_foreach_safe (bin->cp_list, iter, iter_tmp, cp_obj) {
 		if (cp_obj && cp_obj->tag == R_BIN_JAVA_CP_UTF8) {
-			RBinString *str = RVecRBinString_emplace_back (strings);
+			RBinString *str = RVecRBinString_emplace_back (&strings->vec);
 			if (!str) {
 				break;
 			}
@@ -2654,11 +2654,17 @@ R_API RVecRBinString *r_bin_java_get_strings(RBinJavaObj *bin) {
 			str->ordinal = cp_obj->metas->ord;
 			str->size = cp_obj->info.cp_utf8.length + 3;
 			str->length = cp_obj->info.cp_utf8.length;
-			if (str->size > 0) {
-				str->string = r_str_ndup ((const char *)
-								cp_obj->info.cp_utf8.bytes,
-					R_BIN_JAVA_MAXSTR);
+			const char *text = (const char *)cp_obj->info.cp_utf8.bytes;
+			size_t len = r_str_nlen (text, R_BIN_JAVA_MAXSTR);
+			if (text[len]) {
+				if (!r_bin_string_set (strings, str, r_strs_from_len (text, len))) {
+					RVecRBinString_pop_back (&strings->vec);
+					break;
+				}
+			} else {
+				str->text.ptr = text;
 			}
+			str->type = R_STRING_TYPE_UTF8;
 		}
 	}
 	return strings;

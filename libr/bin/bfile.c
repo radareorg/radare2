@@ -13,7 +13,7 @@
 
 typedef struct {
 	RBinFile *bf;
-	RVecRBinString *strings;
+	RBinStrings *strings;
 	HtUP *strings_index;
 	RStrBuf *output;
 	int min, raw;
@@ -36,7 +36,7 @@ static RBinSymbol *__getMethod(RBinClass *c, const char *method) {
 	return NULL;
 }
 
-static void print_string(const RBinStringScanOptions *options, RBinString *string, PJ *pj) {
+static void print_string(const RBinStringScanOptions *options, RBinString *string, const char *text, PJ *pj) {
 	RBinFile *bf = options->bf;
 	RBin *bin = bf->rbin;
 	if (!bin) {
@@ -53,13 +53,16 @@ static void print_string(const RBinStringScanOptions *options, RBinString *strin
 	const char *section_name = s ? s->name : "";
 	const char *type_string = r_bin_string_type (string->type);
 	ut64 vaddr = io->va ? r_bin_get_vaddr (bin, string->paddr, string->vaddr) : string->paddr;
+	if (!text) {
+		return;
+	}
 
 	switch (bf->strmode) {
 	case R_MODE_JSON | R_MODE_SIMPLE:
 		if (pj) {
 			pj_o (pj);
 			pj_kn (pj, "vaddr", vaddr);
-			pj_ks (pj, "string", string->string);
+			pj_ks (pj, "string", text);
 			pj_end (pj);
 		}
 		break;
@@ -73,22 +76,22 @@ static void print_string(const RBinStringScanOptions *options, RBinString *strin
 			pj_kn (pj, "length", string->length);
 			pj_ks (pj, "section", section_name);
 			pj_ks (pj, "type", type_string);
-			pj_ks (pj, "string", string->string);
+			pj_ks (pj, "string", text);
 			pj_end (pj);
 		}
 		break;
 	case R_MODE_SIMPLEST:
-		r_strbuf_appendf (options->output, "%s\n", string->string);
+		r_strbuf_appendf (options->output, "%s\n", text);
 		break;
 	case R_MODE_SIMPLE:
 		if (options->raw == 2) {
-			r_strbuf_appendf (options->output, "0x%08"PFMT64x" %s\n", vaddr, string->string);
+			r_strbuf_appendf (options->output, "0x%08"PFMT64x" %s\n", vaddr, text);
 		} else {
-			r_strbuf_appendf (options->output, "%s\n", string->string);
+			r_strbuf_appendf (options->output, "%s\n", text);
 		}
 		break;
 	case R_MODE_RADARE: {
-		char *f_name = strdup (string->string);
+		char *f_name = strdup (text);
 		r_name_filter (f_name, -1);
 		if (bin->prefix) {
 			r_strbuf_appendf (options->output, "'0x%08"PFMT64x"'f %s.str.%s %u\n"
@@ -109,7 +112,7 @@ static void print_string(const RBinStringScanOptions *options, RBinString *strin
 			       "(%s) %5s %s\n",
 			string->ordinal, string->paddr, vaddr,
 			string->length, string->size,
-			section_name, type_string, string->string);
+			section_name, type_string, text);
 		break;
 	}
 }
@@ -261,9 +264,29 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 		runes = 0;
 		str_start = needle;
 
-		r_strbuf_set (sb, "");
+		sb->len = 0;
+		r_strbuf_get (sb)[0] = 0;
 		/* Eat a whole C string */
 		for (i = 0; i < maxstr && needle < to; i += rc) {
+			if (str_type == R_STRING_TYPE_ASCII || str_type == R_STRING_TYPE_UTF8) {
+				const ut8 *text = buf + needle - from;
+				size_t n = 0;
+				size_t available = R_MIN ((ut64)(maxstr - i), to - needle);
+				while (n < available && text[n] >= 32 && text[n] <= 126 && text[n] != '\\') {
+					n++;
+				}
+				if (n) {
+					if (!r_strbuf_reserve (sb, r_strbuf_length (sb) + n)
+							|| !r_strbuf_append_n (sb, (const char *)text, n)) {
+						goto beach;
+					}
+					needle += n;
+					runes += n;
+					i += n - 1;
+					rc = 1;
+					continue;
+				}
+			}
 			RRune r = {0};
 			if (str_type == R_STRING_TYPE_WIDE32) {
 				rc = r_utf32le_decode (buf + needle - from, to - needle, &r);
@@ -444,29 +467,30 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 			if (bf->bo) {
 				bs.paddr += bf->bo->boffset;
 			}
-			char *str = r_strbuf_drain (sb);
-			sb = r_strbuf_new ("");
-			size_t before = strlen (str);
+			char *str = r_strbuf_get (sb);
+			size_t before = r_strbuf_length (sb);
 			if (strings_nofp) {
 				r_str_trim (str); // trim spaces to ease readability
 			} else {
 				r_str_trim_tail (str);
 			}
-			bs.string = str;
-			bs.length = runes - (before - strlen (str));
+			size_t len = strlen (str);
+			bs.length = runes - (before - len);
 			if (options->strings) {
-				size_t string_index = RVecRBinString_length (options->strings);
-				RBinString *dst = RVecRBinString_emplace_back (options->strings);
+				size_t string_index = RVecRBinString_length (&options->strings->vec);
+				RBinString *dst = RVecRBinString_emplace_back (&options->strings->vec);
 				if (dst) {
 					*dst = bs;
+					if (!r_bin_string_set (options->strings, dst, r_strs_from_len (str, len))) {
+						RVecRBinString_pop_back (&options->strings->vec);
+						break;
+					}
 					r_bin_strings_index_insert (options->strings_index, dst->vaddr, string_index);
 				} else {
-					r_bin_string_fini (&bs);
 					break;
 				}
 			} else {
-				print_string (options, &bs, pj);
-				r_bin_string_fini (&bs);
+				print_string (options, &bs, str, pj);
 			}
 			if (from == 0 && to == bf->size) {
 				/* force lookup section at the next one */
@@ -475,6 +499,7 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 		}
 		ascii_only = false;
 	}
+beach:
 	free (buf);
 	if (pj) {
 		pj_end (pj);
@@ -1174,11 +1199,11 @@ R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *bf) {
 }
 
 // TODO: searchStrings() instead
-R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RStrBuf *output) {
+R_IPI RBinStrings *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RStrBuf *output) {
 	R_RETURN_VAL_IF_FAIL (bf, NULL);
 	RBinObject *bo = bf->bo;
 	RBinSection *section;
-	RVecRBinString *ret = output? NULL: RVecRBinString_new ();
+	RBinStrings *ret = output? NULL: r_bin_strings_new ();
 	const bool has_sections = !raw && bo && !RVecRBinSection_empty (&bo->sections_vec);
 	HtUP *strings_index = ret && has_sections? ht_up_new0 (): NULL;
 	RBinStringScanOptions options = {
@@ -1191,7 +1216,7 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RSt
 	};
 	const int limit = bf->rbin->options.limit;
 	if (ret && limit > 0) {
-		RVecRBinString_reserve (ret, (size_t)limit);
+		RVecRBinString_reserve (&ret->vec, (size_t)limit);
 	}
 
 	bf->string_count = 0;
@@ -1208,6 +1233,9 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RSt
 	} else {
 		get_strings_range (&options, 0, bf->size, NULL);
 		ht_up_free (strings_index);
+		if (ret) {
+			r_bin_strings_shrink (ret);
+		}
 		return ret;
 	}
 	R_VEC_FOREACH (&bo->sections_vec, section) {
@@ -1235,8 +1263,8 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RSt
 				if (cfstr_bound64 <= SZT_MAX) {
 					size_t need;
 					size_t cfstr_bound = (size_t)cfstr_bound64;
-					if (!r_add_overflow (RVecRBinString_length (ret), cfstr_bound, &need)) {
-						RVecRBinString_reserve (ret, need);
+					if (!r_add_overflow (RVecRBinString_length (&ret->vec), cfstr_bound, &need)) {
+						RVecRBinString_reserve (&ret->vec, need);
 					}
 				}
 			}
@@ -1252,10 +1280,10 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RSt
 				p = sbuf + i + cfstr_offs;
 				ut64 cfstr_vaddr = section->vaddr + i;
 				ut64 cstr_vaddr = (bits == 64) ? r_read_le64 (p) : r_read_le32 (p);
-				RBinString *s = r_bin_strings_index_get (ret, strings_index, cstr_vaddr);
+				RBinString *s = r_bin_strings_index_get (&ret->vec, strings_index, cstr_vaddr);
 				if (s) {
 					RBinString src = *s;
-					RBinString *bs = RVecRBinString_emplace_back (ret);
+					RBinString *bs = RVecRBinString_emplace_back (&ret->vec);
 					if (!bs) {
 						break;
 					}
@@ -1265,14 +1293,28 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RSt
 					bs->ordinal = src.ordinal;
 					bs->vaddr = cfstr_vaddr;
 					bs->paddr = offset + bo->boffset + i;
-					bs->string = r_str_newf ("cstr.%s", src.string);
-					r_bin_strings_index_insert (strings_index, bs->vaddr, RVecRBinString_length (ret) - 1);
+					RStrs text = r_bin_string_view (ret, &src);
+					char *name = r_str_newf ("cstr.%.*s", (int)r_strs_len (text), text.a);
+					if (!name) {
+						RVecRBinString_pop_back (&ret->vec);
+						break;
+					}
+					bool ok = r_bin_string_set (ret, bs, r_strs_from (name));
+					free (name);
+					if (!ok) {
+						RVecRBinString_pop_back (&ret->vec);
+						break;
+					}
+					r_bin_strings_index_insert (strings_index, bs->vaddr, RVecRBinString_length (&ret->vec) - 1);
 				}
 			}
 			free (sbuf);
 		}
 	}
 	ht_up_free (strings_index);
+	if (ret) {
+		r_bin_strings_shrink (ret);
+	}
 	return ret;
 }
 

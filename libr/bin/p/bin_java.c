@@ -69,7 +69,7 @@ static bool symbols_vec(RBinFile *bf) {
 	return true;
 }
 
-static RVecRBinString *strings(RBinFile *bf) {
+static RBinStrings *strings(RBinFile *bf) {
 	return r_bin_java_get_strings ((RBinJavaObj *) bf->bo->bin_obj);
 }
 
