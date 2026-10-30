@@ -15,6 +15,12 @@ results = root / "results"
 results.mkdir(exist_ok=True)
 cases = {"ls": "elf/ls", "pigz": "elf/pigz", "libc": "elf/libc-2.27.so", "Mastodon": "mach0/Mastodon"}
 installs = {}
+metadata = {"platform": os.uname()._asdict() if hasattr(os.uname(), "_asdict") else list(os.uname()),
+            "compiler": subprocess.check_output(["cc", "--version"], text=True).strip()}
+for variant in ["candidate", "baseline", "fixtures"]:
+    metadata[variant] = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root / variant, text=True).strip()
+(results / "environment.json").write_text(json.dumps(metadata, indent=2))
+print("ENVIRONMENT " + json.dumps(metadata), flush=True)
 
 def run(args, cwd, log, env=None):
     with (results / log).open("w") as out:
@@ -54,12 +60,14 @@ units = ["test_vec", "test_anal_block", "test_anal_function", "test_anal_var", "
 run(["make", "-C", "test/unit", "-j3", *["bin/" + n for n in units]], src, "unit-build.log")
 for name in units:
     run([src / "test/unit/bin" / name], src / "test", name + ".log", environment("candidate"))
-run([installs["candidate"] / "bin/r2r", "-C", "test", "db/cmd/cmd_af", "db/cmd/cmd_afb",
+run([installs["candidate"] / "bin/r2r", "-C", "test", "db/cmd/cmd_agf", "db/anal/java",
+     "db/anal/emu", "db/anal/x86_64", "db/cmd/cmd_af", "db/cmd/cmd_afb",
      "db/cmd/cmd_afl", "db/cmd/cmd_afv", "db/cmd/cmd_graph", "db/anal/vars", "db/anal/xrefs",
      "db/cmd/projects", "db/anal/arm64", "db/anal/mips", "db/anal/x86_overlapping",
      "db/cmd/cmd_pdc", "db/cmd/cmd_pdc_opt", "db/cmd/cmd_pdc_inline",
      "db/cmd/cmd_pdc_ast", "db/io"], src, "r2r.log", environment("candidate"))
 
+print("REGRESSIONS PASSED: " + ", ".join(units) + " and selected r2r suites", flush=True)
 rows = []
 rng = random.Random(27286)
 workloads = [(name, "aaa") for name in cases] + [("ls", "aaaa"), ("pigz", "aaaa")]
