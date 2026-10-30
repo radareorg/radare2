@@ -63,11 +63,9 @@ static bool socket_http_sandbox_check(const char *url_or_host) {
 	return r_sandbox_check (R_SANDBOX_GRAIN_SOCKET) && r_sandbox_check (R_SANDBOX_GRAIN_NETWORK);
 #else
 	if (r_sandbox_check (R_SANDBOX_GRAIN_NETWORK)) {
-		/* NETWORK grain is set, allow all */
 		return true;
 	}
-	/* Check if host is localhost (function handles URL parsing internally) */
-	if (socket_http_requires_curl (url_or_host) || !r_sandbox_check_localhost (url_or_host)) {
+	if (socket_http_requires_curl (url_or_host) || !r_sandbox_check_connect (url_or_host)) {
 		R_LOG_ERROR ("sandbox: network access denied for '%s'", url_or_host);
 		return false;
 	}

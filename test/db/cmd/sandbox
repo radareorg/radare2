@@ -404,3 +404,44 @@ ERROR: Sandbox prevents opening the r2k driver
 ERROR: Cannot open file r2k://
 EOF
 RUN
+
+NAME=sandbox grain none blocks localhost connections
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain=none
+e cfg.sandbox=true
+curl http://127.0.0.1:1/
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: sandbox: network access denied for 'http://127.0.0.1:1/'
+EOF
+RUN
+
+NAME=sandbox grain socket allows localhost only
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain=socket
+e cfg.sandbox=true
+curl http://127.0.0.1:1/
+curl http://192.0.2.1:1/
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot connect to 127.0.0.1:1
+ERROR: sandbox: network access denied for 'http://192.0.2.1:1/'
+EOF
+RUN
+
+NAME=sandbox grain network allows localhost
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain=network
+e cfg.sandbox=true
+curl http://127.0.0.1:1/
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot connect to 127.0.0.1:1
+EOF
+RUN

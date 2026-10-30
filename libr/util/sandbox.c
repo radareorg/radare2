@@ -400,6 +400,15 @@ R_API bool r_sandbox_check_localhost(const char *str) {
 	return ret;
 }
 
+// socket allows connecting to localhost, network to any host
+R_API bool r_sandbox_check_connect(const char *str) {
+	R_RETURN_VAL_IF_FAIL (str, false);
+	if (r_sandbox_check (R_SANDBOX_GRAIN_NETWORK)) {
+		return true;
+	}
+	return r_sandbox_check (R_SANDBOX_GRAIN_SOCKET) && r_sandbox_check_localhost (str);
+}
+
 R_API bool r_sandbox_enable(bool e) {
 	if (sandbox_scope_current ()) {
 		return true;

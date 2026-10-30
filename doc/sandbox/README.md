@@ -59,6 +59,33 @@ Only r2's sandbox is supported.
 
 	$ r2 -S /bin/ls
 
+## Permissions
+
+Each permission (grain) re-enables one kind of operation while the sandbox
+is active:
+
+| grain     | allows |
+|-----------|--------|
+| `socket`  | listening, and connecting to localhost (`127.0.0.0/8`, `::1`, `localhost`) |
+| `network` | connecting to any host: HTTP requests, `curl`, remote io plugins |
+| `disk`    | low-level file descriptors and file open operations |
+| `files`   | stdio-style file and directory access (`fopen`, `opendir`, `chdir`) |
+| `exec`    | running programs, `system`, `kill` |
+| `environ` | reading, writing and clearing environment variables |
+| `hidden`  | reading hidden files and directories |
+| `script`  | running rlang scripts (`js`, `#!`, `.r2.js`) |
+
+`socket` and `network` differ in where a connection goes, not in the API
+used: `socket` is limited to this machine, `network` reaches any host. A
+connection to localhost is allowed by either one, so `network` alone permits
+outgoing connections everywhere without allowing r2 to listen. Without
+both, no connection is made, not even to localhost services.
+
+The `gdb://`, `rap://` and `socket://` io plugins refuse to open while the
+sandbox is enabled, whatever the grains. The remote shell commands (`=+`,
+`=g`) and starting the HTTP server (`=h`) require `network`, even for
+localhost.
+
 ## Permission expressions
 
 `cfg.sandbox.grain` and `http.sandbox.grain` accept comma-separated permission
