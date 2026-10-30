@@ -1062,6 +1062,16 @@ bool test_r_str_uri_decode(void) {
 	mu_end;
 }
 
+bool test_r_str_uri_encode(void) {
+	char *s = r_str_uri_encode ("user32.pdb");
+	mu_assert_streq (s, "user32.pdb", "unreserved characters are kept");
+	free (s);
+	s = r_str_uri_encode ("a_-~[1-2]\r\n{x}/ ");
+	mu_assert_streq (s, "a_-~%5b1-2%5d%0d%0a%7bx%7d%2f%20", "reserved and control characters are encoded");
+	free (s);
+	mu_end;
+}
+
 bool test_r_str_utf8_charsize(void) {
 	char s[16] = "\x61\xc3\xa1\xe6\x97\xa5\xf0\x9f\x91\x8c\xf0\x9f\x91\x8c\x8c"; // aá日👌
 	int sz;
@@ -1662,6 +1672,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_unicode_width);
 	mu_run_test (test_r_str_utf16_to_utf8);
 	mu_run_test (test_r_str_uri_decode);
+	mu_run_test (test_r_str_uri_encode);
 	mu_run_test (test_r_str_utf8_charsize);
 	mu_run_test (test_r_str_utf8_charsize_prev);
 	mu_run_test (test_r_str_sanitize_sdb_key);

@@ -3081,7 +3081,7 @@ R_API char *r_str_uri_encode(const char *s) {
 		return NULL;
 	}
 	for (; *s; s++) {
-		if ((*s >= '0' && *s <= '9') || (*s >= 'a' && *s <= 'z') || (*s >= 'A' && *s <= 'Z')) {
+		if (isalnum ((ut8)*s) || strchr ("-._~", *s)) {
 			*d++ = *s;
 		} else {
 			*d++ = '%';

@@ -22,13 +22,14 @@ static bool download_and_write(SPDBDownloaderOpt *opt, const char *file) {
 		free (dir);
 		return false;
 	}
-	char *url = r_str_newf ("%s/%s/%s/%s", opt->symbol_server, opt->dbg_file, opt->guid, file);
 	char *path = r_str_newf ("%s%s%s", dir, R_SYS_DIR, opt->dbg_file);
 #if R2__WINDOWS__
-	if (r_str_startswith (url, "\\\\")) { // Network path
-		LPCWSTR origin = r_utf8_to_utf16 (url);
+	if (r_str_startswith (opt->symbol_server, "\\\\")) { // Network path
+		char *unc = r_str_newf ("%s/%s/%s/%s", opt->symbol_server, opt->dbg_file, opt->guid, file);
+		LPCWSTR origin = r_utf8_to_utf16 (unc);
 		LPCWSTR dest = r_utf8_to_utf16 (path);
 		BOOL ret = CopyFileW (origin, dest, FALSE);
+		free (unc);
 		free (dir);
 		free (path);
 		free ((void *)origin);
@@ -36,6 +37,12 @@ static bool download_and_write(SPDBDownloaderOpt *opt, const char *file) {
 		return ret;
 	}
 #endif
+	// the pdb name comes from the binary, keep it a literal path segment
+	char *name = r_str_uri_encode (opt->dbg_file);
+	char *fname = r_str_uri_encode (file);
+	char *url = r_str_newf ("%s/%s/%s/%s", opt->symbol_server, name, opt->guid, fname);
+	free (name);
+	free (fname);
 	int len;
 	char *file_buf = r_socket_http_get (url, NULL, NULL, &len);
 	free (url);
@@ -105,7 +112,7 @@ static int download(struct SPDBDownloader *pd) {
 		// cabextract -d %1 %2
 		// %1 - path to directory where to extract all files from cab archive
 		// %2 - absolute path to cab archive
-		extractor_cmd = r_str_newf ("cabextract -d \"%s\" \"%s\"", abs_arch_esc, abs_dir_esc);
+		extractor_cmd = r_str_newf ("cabextract -d \"%s\" \"%s\"", abs_dir_esc, abs_arch_esc);
 		free (abs_dir_esc);
 		free (abspath_to_dir);
 #endif
