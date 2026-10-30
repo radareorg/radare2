@@ -179,7 +179,8 @@ FUNC_ATTR_USED static bool dis_read_type(RBuffer *buf, struct dis_type *typ) {
 		return false;
 	}
 
-	if (!dis_read_operand (buf, &typ->number_ptrs)) {
+	// negative sizes would seek back and never reach the end of the section
+	if (!dis_read_operand (buf, &typ->number_ptrs) || typ->number_ptrs < 0) {
 		return false;
 	}
 
