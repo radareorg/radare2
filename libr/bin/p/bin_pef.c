@@ -924,9 +924,7 @@ static bool symbols_vec(RBinFile *bf) {
 	if (exportHashTablePower >= 30) {
 		return true;
 	}
-	// guard against a hostile exportedSymbolCount that would overflow
-	// the ut32 arithmetic below (stringLenTable + 4 * exportedSymbolCount)
-	// and against using it as a loop boundary
+	// guard against a hostile exportedSymbolCount before using it as a loop boundary
 	if (exportedSymbolCount > 0x10000000) {
 		return true;
 	}
@@ -935,18 +933,22 @@ static bool symbols_vec(RBinFile *bf) {
 		return true;
 	}
 	const ut64 bsize = r_buf_size (bf->buf);
-	ut32 stringLenTable = pef->ldrsec + exportHashOffset + (ut32)hashTableSize;
-	ut32 exportTable = stringLenTable + 4 * exportedSymbolCount;
-	int i;
+	const ut64 stringLenTable = (ut64)pef->ldrsec + exportHashOffset + hashTableSize;
+	const ut64 exportTable = stringLenTable + 4ULL * exportedSymbolCount;
+	// the key table (4 bytes per symbol) and the export table (10 bytes per symbol) must fit in the file
+	if (exportTable > bsize || exportedSymbolCount > (bsize - exportTable) / 10) {
+		return true;
+	}
+	ut32 i;
 
 	for (i = 0; i < exportedSymbolCount; i++) {
-		ut32 ofs = exportTable + 10 * i;
+		const ut64 ofs = exportTable + 10ULL * i;
 		ut8 kind = 0;
 		r_buf_read_at (bf->buf, ofs, &kind, 1);
 		ut32 nameOfs = pef->ldrsec + loaderStringsOffset + (r_buf_read_be32_at (bf->buf, ofs) & 0xffffff);
 		ut32 addr = r_buf_read_be32_at (bf->buf, ofs + 4);
 		st16 index = r_buf_read_be16_at (bf->buf, ofs + 8);
-		ut16 nameLen = r_buf_read_be16_at (bf->buf, stringLenTable + 4 * i);
+		ut16 nameLen = r_buf_read_be16_at (bf->buf, stringLenTable + 4ULL * i);
 		if (index < 0 || index >= pef->nsec) {
 			continue; // re-exported func or absolute mem address, not supported
 		}
