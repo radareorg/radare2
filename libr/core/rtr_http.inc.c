@@ -133,7 +133,7 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 			R_LOG_ERROR ("Cannot find http.root or http.homeroot");
 		}
 	}
-	char *arg = strchr (path, ' ');
+	const char *arg = strchr (path, ' ');
 	if (arg) {
 		path = arg + 1;
 	}

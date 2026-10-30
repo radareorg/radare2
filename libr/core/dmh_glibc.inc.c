@@ -1819,7 +1819,7 @@ static char *GH(dmh_glibc)(RCore *core, RAGraph *graph, const char *input) {
 		if (GH(resolve_main_arena) (core, &m_arena)) {
 			const char *arg = r_str_trim_head_ro (input + 1);
 			if (*arg) {
-				char *sep = strchr (arg, ':');
+				const char *sep = strchr (arg, ':');
 				if (sep) {
 					m_state = r_num_get (core->num, sep + 1);
 				}
@@ -1851,7 +1851,7 @@ static char *GH(dmh_glibc)(RCore *core, RAGraph *graph, const char *input) {
 			const bool demangle = r_config_get_b (core->config, "dbg.glibc.demangle"); // XXX reuse bin.demangle
 			const char *arg = r_str_trim_head_ro (input + 1);
 			if (*arg) {
-				char *sep = strchr (arg, ':');
+				const char *sep = strchr (arg, ':');
 				if (sep) {
 					m_state = r_num_get (core->num, arg);
 				}

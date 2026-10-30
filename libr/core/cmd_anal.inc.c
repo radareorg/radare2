@@ -1453,7 +1453,7 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 		}
 		char *k = r_str_newf ("func.%s.arg.%d", fcn->name, (int)arg_count);
 		const char *o = sdb_const_get (core->anal->sdb_types, k, 0);
-		char *comma = o? strchr (o, ','): NULL;
+		const char *comma = o? strchr (o, ','): NULL;
 		char *db_type = comma? r_str_ndup (o, comma - o): NULL;
 		char *db_name = comma? strdup (comma + 1): NULL;
 		if (!strstr (var->name, "arg_") || (o && strstr (o, ",arg_"))) {
@@ -2199,12 +2199,13 @@ static int cmd_afv(RCore *core, const char *str) {
 	case 'n': // "afvn"
 		if (str[1]) {
 			RAnalOp *op = r_core_anal_op (core, core->addr, R_ARCH_OP_MASK_BASIC);
-			const char *new_name = r_str_trim_head_ro (strchr (ostr, ' '));
+			char *new_name = strchr (ostr, ' ');
 			if (!new_name) {
 				r_anal_op_free (op);
 				free (ostr);
 				return false;
 			}
+			r_str_trim_head (new_name);
 			char *old_name = strchr (new_name, ' ');
 			if (!old_name) {
 				RAnalVar *var = op ? r_anal_get_used_function_var (core->anal, op->addr) : NULL;
@@ -4542,23 +4543,19 @@ static void afCc(RCore *core, const char *input) {
 
 static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 	bool json = (input[0] == 'j');
-	char *p = strchr (input, ' ');
-	char *fcn_name = p ? r_str_trim_dup (p): NULL;
+	const char *p = strchr (input, ' ');
+	char *name_arg = p? r_str_trim_dup (p): NULL;
 	RListIter *iter;
 	RAnalFuncArg *arg;
 
-	RAnalFunction *fcn;
-	if (fcn_name) {
-		fcn = r_anal_get_function_byname (core->anal, fcn_name);
-	} else {
-		fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
-		if (fcn) {
-			fcn_name = fcn->name;
-		}
-	}
+	RAnalFunction *fcn = name_arg
+		? r_anal_get_function_byname (core->anal, name_arg)
+		: r_anal_get_fcn_in (core->anal, core->addr, 0);
+	free (name_arg);
 	if (!fcn) {
 		return;
 	}
+	char *fcn_name = fcn->name;
 
 	if (json) {
 		PJ *j = r_core_pj_new (core);
@@ -7436,10 +7433,10 @@ static int cmd_af(RCore *core, const char *input) {
 				anal_calls = true;
 			}
 			ut64 addr = core->addr;
-			const char *name = NULL;
+			char *name = NULL;
 			// first undefine
 			if (input[0] && input[1] == ' ') {
-				name = r_str_trim_head_ro (input + 2);
+				name = r_str_trim_dup (input + 2);
 				char *uaddr = strchr (name, ' ');
 				if (uaddr) {
 					*uaddr++ = 0;
@@ -7449,6 +7446,7 @@ static int cmd_af(RCore *core, const char *input) {
 				// disable hasnext
 			}
 			r_core_af (core, addr, name, anal_calls);
+			free (name);
 		}
 		break;
 	default:
@@ -7571,7 +7569,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	int use_colors = r_config_get_i (core->config, "scr.color");
 	const char *use_color = NULL;
 	const char *name;
-	char *arg;
+	const char *arg;
 	char *save_ptr = NULL;
 
 	if (use_colors > 0) {
@@ -7954,14 +7952,12 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	case ' ': { // "ar "
 		arg = strchr (str + 1, '=');
 		if (arg) {
-			*arg = 0;
 			ut64 n = r_num_math (core->num, arg + 1);
-			char *ostr = r_str_trim_dup (str + 1);
-			char *regname = r_str_trim_nc (ostr);
+			char *regname = r_str_trim_ndup (str + 1, arg - str - 1);
 			if (!reg_name_role_set (core, regname, n)) {
 				R_LOG_ERROR ("ar: Unknown register '%s'", regname);
 			}
-			free (ostr);
+			free (regname);
 			return;
 		}
 		char name[32];
@@ -9043,15 +9039,11 @@ static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const ch
 				r_anal_op_fini (&aop);
 				break;
 			}
-			if (cfg_r2wars) {
-				if (aop.prefix  & R_ANAL_OP_PREFIX_REP) {
-					char *tmp = strstr (esilstr, ",0,GOTO");
-					if (tmp) {
-						tmp[0] = 0;
-					}
-				}
-			}
-			r_esil_parse (esil, esilstr);
+			const char *rep_goto = (cfg_r2wars && (aop.prefix & R_ANAL_OP_PREFIX_REP))
+				? strstr (esilstr, ",0,GOTO"): NULL;
+			char *rep_esil = rep_goto? r_str_ndup (esilstr, rep_goto - esilstr): NULL;
+			r_esil_parse (esil, rep_esil? rep_esil: esilstr);
+			free (rep_esil);
 			r_esil_stack_free (esil);
 		}
 		if (esilexpr) {
@@ -9867,7 +9859,7 @@ static void cmd_aes(RCore *core, const char *input) {
 	ut64 until_addr = UT64_MAX;
 	ut64 adr;
 	int off;
-	char *n, *n1;
+	const char *n, *n1;
 	const char *until_expr = NULL;
 	RAnalOp *op = NULL;
 	REsil *esil = core->anal->esil;
@@ -9912,15 +9904,12 @@ static void cmd_aes(RCore *core, const char *input) {
 	case 'B': // "aesB"
 		n = strchr (input + 2, ' ');
 		if (n) {
-			n = (char *)r_str_trim_head_ro (n + 1);
-		}
-		if (n) {
-			char *n2 = strchr (n, ' ');
-			if (n2) {
-				*n2++ = 0;
-			}
-			ut64 off = r_num_math (core->num, n);
-			ut64 nth = n2? r_num_math (core->num, n2): 1;
+			n = r_str_trim_head_ro (n + 1);
+			const char *n2 = strchr (n, ' ');
+			char *off_str = n2? r_str_ndup (n, n2 - n): strdup (n);
+			ut64 off = r_num_math (core->num, off_str);
+			free (off_str);
+			ut64 nth = n2? r_num_math (core->num, n2 + 1): 1;
 			cmd_aespc (core, core->addr, off, (int)nth);
 		} else {
 			r_cons_cmd_help_match (core->cons, help_msg_aes, "aesB", 0, true);
@@ -12065,7 +12054,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			break;
 		}
 		RAnalFunction *fcn;
-		char *space = strchr (input, ' ');
+		const char *space = strchr (input, ' ');
 		if (space) {
 			addr = r_num_math (core->num, space + 1);
 			if (core->num->nc.errors > 0) {
@@ -12368,7 +12357,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				break;
 			}
 			RAnalOp asmop;
-			char *space = strchr (input, ' ');
+			const char *space = strchr (input, ' ');
 			if (space) {
 				addr = r_num_math (core->num, space + 1);
 				if (core->num->nc.errors > 0) {
@@ -15116,13 +15105,12 @@ static void cmd_anal_abp(RCore *core, const char *input) {
 		{
 		bool showcmds = input[1] == '*';
 		int n = 1;
-		char *p = strchr (input + 1, ' ');
+		const char *p = strchr (input + 1, ' ');
 		if (!p) {
 			// TODO use r_cons_cmd_help_match () instead
 			r_cons_cmd_help (core->cons, help_msg_abp);
 			return;
 		}
-		*p = 0;
 		ut64 addr = r_num_math (core->num, p + 1);
 		RList *paths = r_core_anal_graph_to (core, addr, n);
 		if (paths) {
@@ -17404,7 +17392,6 @@ static void cmd_an(RCore *core, const char *input) {
 			R_LOG_WARN ("cant find a function here");
 		}
 	} else {
-		const char *name = "";
 		int mode = 0;
 		switch (input[1]) {
 		case '?':
@@ -17418,20 +17405,14 @@ static void cmd_an(RCore *core, const char *input) {
 			break;
 		}
 		if (mode >= 0) {
+			char *name = NULL;
 			if (input[1] == ' ') {
-				name = input + 1;
-				while (name[0] == ' ') {
-					name++;
-				}
-				char *end = strchr (name, ' ');
-				if (end) {
-					*end = '\0';
-				}
-			}
-			if (R_STR_ISEMPTY (name)) {
-				name = NULL;
+				const char *arg = r_str_trim_head_ro (input + 1);
+				const char *end = strchr (arg, ' ');
+				name = *arg? r_str_ndup (arg, end? end - arg: strlen (arg)): NULL;
 			}
 			cmd_an2 (core, name, mode);
+			free (name);
 		}
 	}
 }

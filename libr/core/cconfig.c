@@ -1923,7 +1923,7 @@ static bool cb_reloff(void *user, void *data) {
 	const char options[] = "func\nflag\nmaps\ndmap\nfmap\nsect\nsymb\nlibs\nfile\n";
 	RConfigNode *node = (RConfigNode *)data;
 	if (*node->value) {
-		char *pos = strstr (options, node->value);
+		const char *pos = strstr (options, node->value);
 		size_t len = strlen (node->value);
 		if (pos && pos[len] == '\n') {
 			return true;

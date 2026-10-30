@@ -194,11 +194,10 @@ static char *expr2cmd(RCoreLog *log, const char *line) {
 	if (!strncmp (line, "add-comment", 11)) {
 		line += 11;
 		if (*line == ' ') {
-			char *sp = strchr (line + 1, ' ');
+			const char *sp = strchr (line + 1, ' ');
 			if (sp) {
-				char *msg = sp + 1;
 				ut64 addr = r_num_get (NULL, line);
-				return r_str_newf ("CCu base64:%s @ 0x%"PFMT64x"\n", msg, addr);
+				return r_str_newf ("CCu base64:%s @ 0x%"PFMT64x"\n", sp + 1, addr);
 			}
 		}
 		R_LOG_ERROR ("Cannot parse add-comment expression");
@@ -286,7 +285,7 @@ static int cmd_log(void *data, const char *input) {
 	switch (*input) {
 	case 'e': // "Te" shell: less
 		{
-			char *p = strchr (input, ' ');
+			const char *p = strchr (input, ' ');
 			if (p) {
 				char *b = r_file_slurp (p + 1, NULL);
 				if (b) {

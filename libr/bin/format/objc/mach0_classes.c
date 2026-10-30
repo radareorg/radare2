@@ -1634,15 +1634,9 @@ static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RSk
 		}
 		klass->attr.lang = R_BIN_LANG_OBJC;
 		const char *klass_name = r_bin_name_tostring (klass->name);
-		char *par = strchr (klass_name, '(');
+		const char *par = strchr (klass_name, '(');
 		if (par) {
-			size_t idx = par - klass_name;
-			char *super = strdup (klass_name);
-			super[idx++] = 0;
-			char *cpar = strchr (super + idx, ')');
-			if (cpar) {
-				*cpar = 0;
-			}
+			char *super = r_str_ndup (klass_name, par - klass_name);
 			if (klass->super == NULL) {
 				klass->super = r_list_newf ((void *)r_bin_name_free);
 			}
@@ -1650,9 +1644,6 @@ static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RSk
 			// TODO: demangle name!!
 			r_list_append (klass->super, bn);
 			free (super);
-		//	char *name = strdup (super + idx);
-		//	free (klass->name);
-		//	klass->name = name;
 		}
 		klass->index = r_list_length (bf->bo->classes) + r_list_length (ret);
 		r_list_append (ret, klass);

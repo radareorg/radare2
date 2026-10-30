@@ -1163,7 +1163,7 @@ static void print_function_labels(RCore *core, RAnalFunction *fcn, int rad) {
 
 static void cmd_fd(RCore *core, const char *input) {
 	ut64 addr = core->addr;
-	char *arg = NULL;
+	const char *arg = NULL;
 	RFlagItem *f = NULL;
 	bool strict_offset = false;
 	switch (input[1]) {
@@ -1279,21 +1279,19 @@ static void cmd_fd(RCore *core, const char *input) {
 
 static int cmd_flag(void *data, const char *input);
 
-static bool cmd_flag_add(RCore * R_NONNULL core, const char *str, bool addsign) {
-	const char *cstr = r_str_trim_head_ro (str);
-	char* eq = strchr (cstr, '=');
-	char* b64 = strstr (cstr, "base64:");
-	char* s = strchr (cstr, ' ');
-	char* s2 = NULL, *s3 = NULL;
-	char* comment = NULL;
+static bool cmd_flag_add(RCore * R_NONNULL core, char *str, bool addsign) {
+	r_str_trim_head (str);
+	if (*str == '.') {
+		return cmd_flag (core, str);
+	}
+	char *eq = strchr (str, '=');
+	const char *b64 = strstr (str, "base64:");
+	char *s = strchr (str, ' ');
+	char *s2 = NULL, *s3 = NULL;
+	char *comment = NULL;
 	bool comment_needs_free = false;
 	RFlagItem *item;
 	ut32 bsze = 1;
-	// Get outta here as fast as we can so we can make sure that the comment
-	// buffer used on later code can be freed properly if necessary.
-	if (*cstr == '.') {
-		return cmd_flag (core, str);
-	}
 	ut64 off = core->addr;
 	// Check base64 padding
 	if (eq && !(b64 && eq > b64 && (eq[1] == '\0' || (eq[1] == '=' && eq[2] == '\0')))) {
@@ -1347,11 +1345,11 @@ static bool cmd_flag_add(RCore * R_NONNULL core, const char *str, bool addsign) 
 		}
 	}
 	if (addFlag) {
-		if (!r_name_check_utf8 (cstr, core->flags->utf8)) {
-			R_LOG_ERROR ("Invalid flag name '%s'", cstr);
+		if (!r_name_check_utf8 (str, core->flags->utf8)) {
+			R_LOG_ERROR ("Invalid flag name '%s'", str);
 			return false;
 		}
-		item = r_flag_set (core->flags, cstr, off, bsze);
+		item = r_flag_set (core->flags, str, off, bsze);
 	}
 	if (item && comment) {
 		r_flag_item_set_comment (core->flags, item, comment);
@@ -1362,7 +1360,7 @@ static bool cmd_flag_add(RCore * R_NONNULL core, const char *str, bool addsign) 
 	return true;
 }
 
-static void cmd_fR(RCore *core, const char *str) {
+static void cmd_fR(RCore *core, char *str) {
 	switch (*str) {
 	case '\0':
 		r_cons_cmd_help_match (core->cons, help_msg_f, "fR", 0, true);
@@ -1958,7 +1956,7 @@ static int cmd_flag(void *data, const char *input) {
 				r_cons_cmd_help_match (core->cons, help_msg_f, "fla", 0, true);
 				break;
 			}
-			char *glob = strchr (input, ' ');
+			const char *glob = strchr (input, ' ');
 			if (glob) {
 				glob++;
 			}

@@ -108,7 +108,7 @@ static void r_core_project_zip_export(RCore *core, const char *prjname, const ch
 }
 
 static void cmd_Pz(RCore *core, const char *cmd) {
-	char *arg = strchr (cmd, ' ');
+	const char *arg = strchr (cmd, ' ');
 	if (arg) {
 		arg++;
 	}

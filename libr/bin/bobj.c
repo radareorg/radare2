@@ -308,25 +308,17 @@ static char *swiftField(const char *dn, const char *cn) {
 		return NULL;
 	}
 
-	char *p = strstr (dn, ".getter_");
-	if (!p) {
-		p = strstr (dn, ".setter_");
-		if (!p) {
-			p = strstr (dn, ".method_");
-		}
+	if (!strstr (dn, ".getter_") && !strstr (dn, ".setter_") && !strstr (dn, ".method_")) {
+		return NULL;
 	}
-	if (p) {
-		char *q = strstr (dn, cn);
-		if (q && q[strlen (cn)] == '.') {
-			q = strdup (q + strlen (cn) + 1);
-			char *r = strchr (q, '.');
-			if (r) {
-				*r = 0;
-			}
-			return q;
-		}
+	const size_t cn_len = strlen (cn);
+	const char *q = strstr (dn, cn);
+	if (!q || q[cn_len] != '.') {
+		return NULL;
 	}
-	return NULL;
+	q += cn_len + 1;
+	const char *dot = strchr (q, '.');
+	return dot? r_str_ndup (q, dot - q): strdup (q);
 }
 
 typedef struct {

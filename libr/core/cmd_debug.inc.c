@@ -1072,7 +1072,7 @@ static void cmd_drn(RCore *core, const char *str) {
 }
 
 static void cmd_drb(RCore *core, const char *str) {
-	char *arg = strchr (str, ' ');
+	const char *arg = strchr (str, ' ');
 	int len, type = R_REG_TYPE_GPR;
 	if (arg) {
 		char *string = r_str_trim_dup (arg + 1);
@@ -2318,55 +2318,38 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				R_LOG_ERROR ("Try with omp instead");
 			}
 		} else if (input[1] == ' ') {
-			int perms;
-			ut64 size = 0, addr;
-			char *p = strchr (input + 2, ' ');
-			if (p) {
-				bool failed_somehow = false;
-				*p++ = 0;
-				char *q = strchr (p, ' ');
-				if (q) {
-					*q++ = 0;
-					addr = r_num_math (core->num, input + 2);
-					if (core->num->nc.errors != 0) {
-						failed_somehow = true;
-						R_LOG_ERROR ("Invalid address (%s)", input + 2);
-					}
-					size = r_num_math (core->num, p);
-					if (core->num->nc.errors != 0) {
-						failed_somehow = true;
-						R_LOG_ERROR ("Invalid size (%s)", p);
-					}
-					perms = r_str_rwx (q);
-					if (perms < 1) {
-						failed_somehow = true;
-						R_LOG_ERROR ("Invalid perms (%s)", q);
-					}
-				} else {
-					failed_somehow = true;
-				}
-				if (failed_somehow) {
-					R_LOG_ERROR ("Invalid arguments. See dmp?");
-				} else {
+			int argc = 0;
+			char **argv = r_str_argv (input + 2, &argc);
+			if (argc == 3) {
+				ut64 addr = r_num_math (core->num, argv[0]);
+				bool valid = !core->num->nc.errors;
+				ut64 size = r_num_math (core->num, argv[1]);
+				valid = valid && !core->num->nc.errors;
+				int perms = r_str_rwx (argv[2]);
+				if (valid && perms > 0) {
 					r_debug_map_protect (core->dbg, addr, size, perms);
+				} else {
+					R_LOG_ERROR ("Invalid arguments. See dmp?");
 				}
-			} else {
+			} else if (argc == 1) {
 				r_debug_map_sync (core->dbg); // update process memory maps
-				addr = UT64_MAX;
+				RDebugMap *cur = NULL;
 				r_list_foreach (core->dbg->maps, iter, map) {
-					if (core->addr >= map->addr  && core->addr < map->addr_end) {
-						addr = map->addr;
-						size = map->size;
+					if (core->addr >= map->addr && core->addr < map->addr_end) {
+						cur = map;
 						break;
 					}
 				}
-				perms = r_str_rwx (input + 2);
-				if (addr != UT64_MAX && perms >= 0) {
-					r_debug_map_protect (core->dbg, addr, size, perms);
+				int perms = r_str_rwx (argv[0]);
+				if (cur && perms >= 0) {
+					r_debug_map_protect (core->dbg, cur->addr, cur->size, perms);
 				} else {
 					R_LOG_WARN ("See dmp?");
 				}
+			} else {
+				R_LOG_ERROR ("Invalid arguments. See dmp?");
 			}
+			r_str_argv_free (argv);
 		} else {
 			r_core_return_invalid_command (core, "dmp", input[1]);
 		}
@@ -2643,18 +2626,18 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		}
 		break;
 	case ' ': // "dm "
+	case 'L': // "dmL"
 		{
-			int size;
-			char *p = strchr (input + 2, ' ');
-			if (p) {
-				*p++ = 0;
-				addr = r_num_math (core->num, input + 1);
-				size = r_num_math (core->num, p);
-				r_debug_map_alloc (core->dbg, addr, size, false);
-			} else {
-				r_cons_cmd_help_match (core->cons, help_msg_dm, "dm", 0, true);
+			const bool thp = input[0] == 'L';
+			const char *p = strchr (input + 2, ' ');
+			if (!p) {
+				r_cons_cmd_help_match (core->cons, help_msg_dm, thp? "dmL": "dm", 0, true);
 				return false;
 			}
+			char *addr_str = r_str_ndup (input + 1, p - input - 1);
+			addr = r_num_math (core->num, addr_str);
+			free (addr_str);
+			r_debug_map_alloc (core->dbg, addr, r_num_math (core->num, p + 1), thp);
 		}
 		break;
 	case '-': // "dm-"
@@ -2671,21 +2654,6 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			}
 		}
 		R_LOG_ERROR ("The address doesn't match with any map");
-		break;
-	case 'L': // "dmL"
-		{
-			int size;
-			char *p = strchr (input + 2, ' ');
-			if (p) {
-				*p++ = 0;
-				addr = r_num_math (core->num, input + 1);
-				size = r_num_math (core->num, p);
-				r_debug_map_alloc (core->dbg, addr, size, true);
-			} else {
-				r_cons_cmd_help_match (core->cons, help_msg_dm, "dmL", 0, true);
-				return false;
-			}
-		}
 		break;
 	case '\0': // "dm"
 	case '*': // "dm*"
@@ -3356,7 +3324,7 @@ static void __tableRegList(RCore *core, RReg *reg, const char *str) {
 
 static void cmd_debug_reg(RCore *core, const char *str) {
 	size_t i;
-	char *arg;
+	const char *arg;
 	RRegItem *r;
 	const char *name;
 	int size, type = R_REG_TYPE_GPR;
@@ -3745,13 +3713,11 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			}
 			size = atoi (regname);
 			if (size < 1) {
-				char *arg = strchr (str + 2, ' ');
-				size = 0;
-				if (arg) {
-					*arg++ = 0;
-					size = atoi (arg);
-				}
-				type = r_reg_type_by_name (str + 2);
+				arg = strchr (str + 2, ' ');
+				size = arg? atoi (arg + 1): 0;
+				char *type_name = arg? r_str_ndup (str + 2, arg - str - 2): strdup (str + 2);
+				type = r_reg_type_by_name (type_name);
+				free (type_name);
 				r_debug_reg_sync (core->dbg, type, false);
 				PJ *pj = (tolower (rad) == 'j')? r_core_pj_new (core): NULL;
 				print_owned (core, r_debug_reg_list (core->dbg, type, size, pj, rad, use_color));
@@ -3897,8 +3863,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	case ' ': // "dr"
 		arg = strchr (str + 1, '=');
 		if (arg) {
-			*arg = 0;
-			char *string = r_str_trim_dup (str + 1);
+			char *string = r_str_trim_ndup (str + 1, arg - str - 1);
 			r = r_reg_get (core->dbg->reg, string, -1);
 			if (r) {
 				if (r->flags) {
@@ -3938,8 +3903,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		if (size) {
 			print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, size, NULL, str[0], use_color));
 		} else {
-			char *comma = strchr (str + 1, ',');
-			if (comma) {
+			if (strchr (str + 1, ',')) {
 				char *args = strdup (str + 1);
 				char argc = r_str_split (args, ',');
 				for (i = 0; i < argc; i++) {
@@ -4115,7 +4079,7 @@ static void static_debug_stop(void *u) {
 
 static void core_cmd_dbi(RCore *core, const char *input, const ut64 idx) {
 	int i;
-	char *p;
+	const char *p, *q;
 	RBreakpointItem *bpi;
 	switch (input[2]) {
 	case ' ': // "dbi."
@@ -4152,7 +4116,7 @@ static void core_cmd_dbi(RCore *core, const char *input, const ut64 idx) {
 	case 'x': // "dbix"
 		if (input[3] == ' ') {
 			if ((bpi = r_bp_get_index (core->dbg->bp, idx))) {
-				char *expr = strchr (input + 4, ' ');
+				const char *expr = strchr (input + 4, ' ');
 				if (expr) {
 					free (bpi->expr);
 					bpi->expr = strdup (expr);
@@ -4170,19 +4134,16 @@ static void core_cmd_dbi(RCore *core, const char *input, const ut64 idx) {
 		break;
 	case 'c': // "dbic"
 		p = strchr (input + 3, ' ');
-		if (p) {
-			char *q = strchr (p + 1, ' ');
-			if (q) {
-				*q++ = 0;
-				ut64 addr = r_num_math (core->num, p);
-				bpi = r_bp_get_index (core->dbg->bp, addr);
-				if (bpi) {
-					bpi->data = strdup (q);
-				} else {
-					R_LOG_ERROR ("Cannot set command");
-				}
+		q = p? strchr (p + 1, ' '): NULL;
+		if (q) {
+			char *index_str = r_str_ndup (p, q - p);
+			bpi = r_bp_get_index (core->dbg->bp, r_num_math (core->num, index_str));
+			free (index_str);
+			if (bpi) {
+				free (bpi->data);
+				bpi->data = strdup (q + 1);
 			} else {
-				r_cons_cmd_help_match (core->cons, help_msg_db, "dbic", 0, true);
+				R_LOG_ERROR ("Cannot set command");
 			}
 		} else {
 			r_cons_cmd_help_match (core->cons, help_msg_db, "dbic", 0, true);
@@ -5188,7 +5149,7 @@ static void r_core_debug_kill(RCore *core, const char *input) {
 #endif
 	} else {
 		int sig = atoi (input);
-		char *p = strchr (input, '=');
+		const char *p = strchr (input, '=');
 		if (p) {
 			r_debug_kill_setup (core->dbg, sig, r_num_math (core->num, p+1));
 		} else {
@@ -5516,7 +5477,6 @@ static bool cmd_dcut(RCore *core, const char *input) {
 
 static int cmd_debug_continue(RCore *core, const char *input) {
 	int pid, old_pid, signum;
-	char *ptr;
 	// TODO: we must use this for step 'ds' too maybe...
 	switch (input[1]) {
 	case 0: // "dc"
@@ -5599,13 +5559,12 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 			// select pid and r_debug_continue_kill (core->dbg,
 			r_reg_arena_swap (core->dbg->reg, true);
 			signum = r_num_math (core->num, input + 2);
-			ptr = strchr (input + 3, ' ');
+			const char *ptr = strchr (input + 3, ' ');
 			if (ptr) {
 				int old_pid = core->dbg->pid;
 				int old_tid = core->dbg->tid;
-				int pid = atoi (ptr+1);
+				int pid = atoi (ptr + 1);
 				int tid = pid; // XXX
-				*ptr = 0;
 				r_debug_select (core->dbg, pid, tid);
 				r_debug_continue_kill (core->dbg, signum);
 				r_debug_select (core->dbg, old_pid, old_tid);
@@ -5719,7 +5678,7 @@ static int cmd_debug_step(RCore *core, const char *input) {
 	ut8 buf[64];
 	RAnalOp aop;
 	int i, times = 1;
-	char *ptr = strchr (input, ' ');
+	const char *ptr = strchr (input, ' ');
 	if (ptr) {
 		times = r_num_math (core->num, ptr + 1);
 	}
@@ -6824,9 +6783,9 @@ static int cmd_debug(void *data, const char *input) {
 				if (input[1] == '?') {
 					r_cons_cmd_help_match (core->cons, help_msg_di, "dif", 0, true);
 				} else {
-					char *arg = strchr (input, ' ');
-					if (arg) {
-						arg = strdup (r_str_trim_head_ro (arg + 1));
+					const char *space = strchr (input, ' ');
+					if (space) {
+						char *arg = strdup (r_str_trim_head_ro (space + 1));
 						char *arg2 = strchr (arg, ' ');
 						if (arg2) {
 							*arg2++ = 0;

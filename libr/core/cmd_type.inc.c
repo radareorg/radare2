@@ -2527,7 +2527,7 @@ static int cmd_type(void *data, const char *input) {
 		if (r_str_startswith (input, "est")) {
 			return cmd_test (core, r_str_trim_head_ro (input + 3));
 		}
-		char *res = NULL, *temp = strchr (input, ' ');
+		char *res = NULL;
 		Sdb *TDB = core->anal->sdb_types;
 		if (input[1] == 'n') { // "ten"
 			char mode = 0;
@@ -2569,6 +2569,7 @@ static int cmd_type(void *data, const char *input) {
 			}
 			break;
 		}
+		const char *temp = strchr (input, ' ');
 		char *name = temp ? strdup (temp + 1): NULL;
 		char *member_name = name ? strchr (name, ' '): NULL;
 
@@ -2737,7 +2738,7 @@ static int cmd_type(void *data, const char *input) {
 				free (homefile);
 			} else if (input[1] == 'u') {
 				// "tou" "touch"
-				char *arg = strchr (input, ' ');
+				const char *arg = strchr (input, ' ');
 				if (arg) {
 					r_file_touch (arg + 1);
 				} else {

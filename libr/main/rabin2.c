@@ -665,7 +665,7 @@ static int rabin2_main(RCons *cons, int argc, const char **argv) {
 	char *create = NULL;
 	bool va = true;
 	ut64 action = R_BIN_REQ_UNK;
-	char *tmp, *ptr, *arch_name = NULL;
+	char *tmp, *arch_name = NULL;
 	const char *arch = NULL;
 	const char *forcebin = NULL;
 	const char *chksum = NULL;
@@ -987,10 +987,12 @@ static int rabin2_main(RCons *cons, int argc, const char **argv) {
 			name = opt.arg;
 			break;
 		case 'N':
-			tmp = strchr (opt.arg, ':');
-			r_config_set (core.config, "bin.str.min", opt.arg);
-			if (tmp) {
-				r_config_set (core.config, "bin.str.max", tmp + 1);
+			{
+				const char *colon = strchr (opt.arg, ':');
+				r_config_set (core.config, "bin.str.min", opt.arg);
+				if (colon) {
+					r_config_set (core.config, "bin.str.max", colon + 1);
+				}
 			}
 			break;
 		case 'h':
@@ -1110,12 +1112,12 @@ static int rabin2_main(RCons *cons, int argc, const char **argv) {
 			return rabin_show_help (cons, 0);
 		}
 	}
-	if (arch) {
-		ptr = strchr (arch, '_');
-		if (ptr) {
-			*ptr = '\0';
-			bits = r_num_math (NULL, ptr + 1);
-		}
+	char arch_buf[32];
+	const char *arch_bits = arch? strchr (arch, '_'): NULL;
+	if (arch_bits) {
+		r_str_ncpy (arch_buf, arch, R_MIN (sizeof (arch_buf), arch_bits - arch + 1));
+		arch = arch_buf;
+		bits = r_num_math (NULL, arch_bits + 1);
 	}
 	if (action & R_BIN_REQ_CREATE) {
 		// TODO: move in a function outside

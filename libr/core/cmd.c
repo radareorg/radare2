@@ -1042,30 +1042,23 @@ repeat:
 }
 
 static void cmd_tcp_server(RCore *core, const char *input) {
-	char *ptr = strchr (input, ' ');
-	if (!ptr) {
+	const char *cmd = strchr (input, ' ');
+	if (!cmd) {
 		r_core_rtr_cmds (core, input);
 		return;
 	}
-	/* .:port cmd */
-	/* .:host:port cmd */
-	const char *host, *port;
-	char *cmd = ptr + 1;
-	*ptr = 0;
-	char *eol = strchr (input, ':');
-	if (eol) {
-		*eol = 0;
-		host = input;
-		port = eol + 1;
-	} else {
-		host = "localhost";
-		port = input + ((input[0] == ':')? 1: 0);
+	// ".:port cmd" or ".:host:port cmd"
+	char *host = r_str_ndup (input, cmd - input);
+	char *port = strchr (host, ':');
+	if (port) {
+		*port++ = 0;
 	}
-	char *rbuf = r_core_rtr_cmds_query (core, host, port, cmd);
+	char *rbuf = r_core_rtr_cmds_query (core, port? host: "localhost", port? port: host, cmd + 1);
 	if (rbuf) {
 		r_cons_print (core->cons, rbuf);
 		free (rbuf);
 	}
+	free (host);
 }
 
 static void session_stop(RCore *core) {
@@ -1698,43 +1691,25 @@ static int cmd_l(void *data, const char *input) { // "l"
 
 static int cmd_join(void *data, const char *input) { // "join"
 	RCore *core = (RCore *)data;
-	char *tmp = strdup (input);
-	const char *arg1 = strchr (tmp, ' ');
-	if (!arg1) {
-		goto beach;
+	const char *space = strchr (input, ' ');
+	if (*input == '?' || !space) { // "join?"
+		r_cons_cmd_help (core->cons, help_msg_j);
+		return R_CMD_RC_SUCCESS;
 	}
-	arg1 = r_str_trim_head_ro (arg1);
-	if (!*arg1) {
-		goto out;
-	}
-	char *end = strchr (arg1, ' ');
-	if (!end) {
-		goto out;
-	}
-	*end = '\0';
-	const char *arg2 = r_str_trim_head_ro (end + 1);
-	if (!*arg2) {
-		goto out;
-	}
-	switch (*input) {
-	case '?': // "join?"
-		goto beach;
-	default: // "join"
-		if (!r_fs_check (core->fs, arg1) && !r_fs_check (core->fs, arg2)) {
+	char *arg1 = r_str_trim_dup (space);
+	char *arg2 = strchr (arg1, ' ');
+	if (arg2) {
+		*arg2++ = 0;
+		r_str_trim_head (arg2);
+		if (*arg2 && !r_fs_check (core->fs, arg1) && !r_fs_check (core->fs, arg2)) {
 			char *res = r_syscmd_join (arg1, arg2);
 			if (res) {
 				r_cons_print (core->cons, res);
 				free (res);
 			}
 		}
-		break;
 	}
-out:
-	free (tmp);
-	return R_CMD_RC_SUCCESS;
-beach:
-	r_cons_cmd_help (core->cons, help_msg_j);
-	free (tmp);
+	free (arg1);
 	return R_CMD_RC_SUCCESS;
 }
 
@@ -4980,7 +4955,7 @@ repeat:;
 			r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 		}
 
-		char *nextgt = strchr (r_str_trim_head_ro (ptr + 1), '>');
+		char *nextgt = strchr (ptr + 1, '>');
 		if (nextgt && nextgt[0] != '>') {
 			char *back = ptr + 1;
 			while (nextgt > back) {
@@ -5842,32 +5817,28 @@ static bool copy_into_flagitem_list(RFlagItem *fi, void *u) {
 }
 
 static void foreach_pairs(RCore *core, const char *cmd, const char *each) {
+	RList *args = r_str_split_duplist (each, " ", false);
+	RListIter *iter;
 	const char *arg;
 	int pair = 0;
-	for (arg = each ; ; ) {
-		char *next = strchr (arg, ' ');
-		if (next) {
-			*next = 0;
+	r_list_foreach (args, iter, arg) {
+		if (!*arg) {
+			continue;
 		}
-		if (R_STR_ISNOTEMPTY (arg)) {
-			ut64 n = r_num_get (NULL, arg);
-			if (core->num->nc.errors != 0) {
-				R_LOG_ERROR ("Invalid number '%s'", arg);
-				break;
-			}
-			if (pair % 2) {
-				r_core_block_size (core, n);
-				r_core_cmd0 (core, cmd);
-			} else {
-				r_core_seek (core, n, true);
-			}
-			pair++;
-		}
-		if (!next) {
+		ut64 n = r_num_get (NULL, arg);
+		if (core->num->nc.errors != 0) {
+			R_LOG_ERROR ("Invalid number '%s'", arg);
 			break;
 		}
-		arg = next + 1;
+		if (pair % 2) {
+			r_core_block_size (core, n);
+			r_core_cmd0 (core, cmd);
+		} else {
+			r_core_seek (core, n, true);
+		}
+		pair++;
 	}
+	r_list_free (args);
 }
 
 static RList *foreach3list(RCore *core, char type, const char *glob) {
@@ -6219,126 +6190,44 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 	return 0;
 }
 
-static void cmd_foreach_word(RCore *core, const char *_cmd, const char *each) {
+static void cmd_foreach_word(RCore *core, const char *cmd, const char *each, bool seek) {
 	RCons *cons = r_core_get_cons (core);
-	char *cmd = strdup (_cmd);
-	char *nextLine = NULL;
-	/* foreach list of items */
-	while (each) {
-		// skip spaces
-		each = r_str_trim_head_ro (each);
-		// stahp on empty string
-		if (!*each) {
-			break;
+	RList *lines = r_str_split_duplist (each, "\n", true);
+	RListIter *iter, *iter2;
+	char *line, *word;
+	r_list_foreach (lines, iter, line) {
+		char *comment = strchr (line, '#');
+		if (comment) {
+			*comment = 0;
 		}
-		// find newline
-		char *nl = strchr (each, '\n');
-		if (nl) {
-			*nl = 0;
-			nextLine = nl + 1;
-		} else {
-			nextLine = NULL;
-		}
-		// chop comment in line
-		nl = strchr (each, '#');
-		if (nl) {
-			*nl = 0;
-		}
-		// space separated numbers
-		while (R_STR_ISNOTEMPTY (each)) {
-			each = r_str_trim_head_ro (each);
-			char *curword = NULL;
-			char *str = strchr (each, ' ');
-			if (str) {
-				*str = '\0';
-				curword = strdup (each);
-				*str = ' ';
-				each = str + 1;
-			} else {
-				if (!*each) {
-					break;
-				}
-				curword = strdup (each);
-				each = NULL;
+		RList *words = r_str_split_duplist (line, " ", true);
+		r_list_foreach (words, iter2, word) {
+			if (!*word) {
+				continue;
 			}
-			r_core_cmdf (core, "%s %s", cmd, curword);
-			R_FREE (curword);
-			if (!foreach_newline (core)) {
-				break;
-			}
-			r_cons_flush (cons);
-		}
-		each = nextLine;
-	}
-	free (cmd);
-}
-
-static void cmd_foreach_offset(RCore *core, const char *_cmd, const char *each) {
-	RCons *cons = r_core_get_cons (core);
-	char *cmd = strdup (_cmd);
-	char *nextLine = NULL;
-	ut64 addr;
-	/* foreach list of items */
-	while (R_STR_ISNOTEMPTY (each)) {
-		each = r_str_trim_head_ro (each);
-		// stahp if empty string
-		if (!*each) {
-			break;
-		}
-		// find newline
-		char *nl = strchr (each, '\n');
-		if (nl) {
-			*nl = 0;
-			nextLine = nl + 1;
-		} else {
-			nextLine = NULL;
-		}
-		// chop comment in line
-		nl = strchr (each, '#');
-		if (nl) {
-			*nl = 0;
-		}
-		// space separated numbers
-		while (R_STR_ISNOTEMPTY (each)) {
 			if (r_cons_is_breaked (cons)) {
 				break;
 			}
-			// find spaces
-			while (*each == ' ') {
-				each++;
-			}
-			char *str = strchr (each, ' ');
-			if (str) {
-				*str = '\0';
-				addr = r_num_math (core->num, each);
+			if (seek) {
+				ut64 addr = r_num_math (core->num, word);
 				if (core->num->nc.errors != 0) {
-					R_LOG_ERROR ("Invalid number '%s'", each);
+					R_LOG_ERROR ("Invalid number '%s'", word);
 					break;
 				}
-				*str = ' ';
-				each = str + 1;
+				r_core_seek (core, addr, true);
+				r_core_cmd (core, cmd, 0);
 			} else {
-				if (!*each) {
-					break;
-				}
-				addr = r_num_math (core->num, each);
-				if (core->num->nc.errors != 0) {
-					R_LOG_ERROR ("Invalid number '%s'", each);
-					break;
-				}
-				each = NULL;
+				r_core_cmdf (core, "%s %s", cmd, word);
 			}
-			r_core_seek (core, addr, true);
-			r_core_cmd (core, cmd, 0);
-			if (!foreach_newline (core)) {
-				r_cons_flush (cons);
+			const bool more = foreach_newline (core);
+			r_cons_flush (cons);
+			if (!more) {
 				break;
 			}
-			r_cons_flush (cons);
 		}
-		each = nextLine;
+		r_list_free (words);
 	}
-	free (cmd);
+	r_list_free (lines);
 }
 
 static void atat_i(RCore *core, const char *cmd) {
@@ -6531,16 +6420,16 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		if (each[1] == ':') {
 			char *arg = core_cmd_str_nohtml (core, NULL, each + 2);
 			if (arg) {
-				cmd_foreach_offset (core, cmd, arg);
+				cmd_foreach_word (core, cmd, arg, true);
 				free (arg);
 			}
 		}
 		break;
 	case '=': // "@@="
 		if (each[1] == '=') {
-			cmd_foreach_word (core, cmd, r_str_trim_head_ro (str + 2));
+			cmd_foreach_word (core, cmd, r_str_trim_head_ro (str + 2), false);
 		} else {
-			cmd_foreach_offset (core, cmd, r_str_trim_head_ro (str + 1));
+			cmd_foreach_word (core, cmd, r_str_trim_head_ro (str + 1), true);
 		}
 		break;
 	case 'd': // "@@d"
@@ -7110,7 +6999,7 @@ R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 	}
 	RCons *cons = r_core_get_cons (core);
 	char *tmp = NULL;
-	char *p = (*cmd != '"')? strchr (cmd, '|'): NULL;
+	const char *p = (*cmd != '"')? strchr (cmd, '|'): NULL;
 	if (r_sandbox_enable (false) || (!p && *cmd != '!' && *cmd != '.')) {
 		return r_core_cmd_str (core, cmd);
 	}

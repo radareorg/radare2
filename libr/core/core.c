@@ -782,25 +782,21 @@ out:
 // TODO: make it recursive to handle nested struct
 static int autocomplete_pfele(RCore *core, RLineCompletion *completion, char *key, char *pfx, int idx, char *ptr) {
 	int i, ret = 0;
-	int len = strlen (ptr);
 	char *fmt = sdb_get (core->print->formats, key, NULL);
 	if (fmt) {
 		int nargs = r_str_word_set0_stack (fmt);
 		if (nargs > 1) {
 			for (i = 1; i < nargs; i++) {
 				const char *arg = r_str_word_get0 (fmt, i);
-				char *p = strchr (arg, '(');
-				char *p2 = strchr (arg, ')');
-				// remove '(' and ')' from fmt
-				if (p && p2) {
-					arg = p + 1;
-					*p2 = '\0';
-				}
-				if (!len || !strncmp (ptr, arg, len)) {
-					char *s = r_str_newf ("pf%s.%s.%s", pfx, key, arg);
+				const char *p = strchr (arg, '(');
+				const char *p2 = p? strchr (p, ')'): NULL;
+				char *name = p2? r_str_ndup (p + 1, p2 - p - 1): strdup (arg);
+				if (r_str_startswith (name, ptr)) {
+					char *s = r_str_newf ("pf%s.%s.%s", pfx, key, name);
 					r_line_completion_push (completion, s);
 					free (s);
 				}
+				free (name);
 			}
 		}
 	}
@@ -935,7 +931,7 @@ static void autocomplete_flags(RCore *core, RLineCompletion *completion, const c
 // TODO: Should be refactored
 static void autocomplete_sdb(RCore *core, RLineCompletion *completion, const char *str) {
 	R_RETURN_IF_FAIL (core && completion && str);
-	char *pipe = strchr (str, '>');
+	const char *pipe = strchr (str, '>');
 	Sdb *sdb = core->sdb;
 	if (pipe) {
 		str = r_str_trim_head_ro (pipe + 1);
@@ -1129,7 +1125,7 @@ static void autocomplete_macro(RCore *core, RLineCompletion *completion, const c
 
 static void autocomplete_file(RLineCompletion *completion, const char *str) {
 	R_RETURN_IF_FAIL (completion && str);
-	char *pipe = strchr (str, '>');
+	const char *pipe = strchr (str, '>');
 	if (pipe) {
 		str = r_str_trim_head_ro (pipe + 1);
 	}
@@ -1139,7 +1135,7 @@ static void autocomplete_file(RLineCompletion *completion, const char *str) {
 
 static void autocomplete_ms_file(RCore *core, RLineCompletion *completion, const char *str) {
 	R_RETURN_IF_FAIL (str);
-	char *pipe = strchr (str, '>');
+	const char *pipe = strchr (str, '>');
 	char *path = strdup ((core->rfs->cwd && *core->rfs->cwd)? (const char *)core->rfs->cwd: "/");
 	if (pipe) {
 		str = r_str_trim_head_ro (pipe + 1);

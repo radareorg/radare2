@@ -587,75 +587,57 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 
 // path = "<port> <file_name>"
 static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
-	RSocket *sock;
-	int p, ret;
-	char port[10];
-	char *file = NULL, *args = NULL;
-	libgdbr_t *g;
-
 	if (!core || !path) {
 		return -1;
 	}
-	if (!(path = r_str_trim_head_ro (path)) || !*path) {
+	path = r_str_trim_head_ro (path);
+	if (!*path) {
 		R_LOG_ERROR ("gdbserver: Port not specified");
 		return -1;
 	}
-	if (!(p = atoi (path)) || p < 0 || p > 65535) {
+	int p = atoi (path);
+	if (p <= 0 || p > 65535) {
 		R_LOG_ERROR ("gdbserver: Invalid port: %d", p);
 		return -1;
 	}
-	snprintf (port, sizeof (port) - 1, "%d", p);
-	if (!(file = strchr (path, ' '))) {
+	char port[16];
+	snprintf (port, sizeof (port), "%d", p);
+	const char *space = strchr (path, ' ');
+	const char *filename = space? r_str_trim_head_ro (space): "";
+	if (!*filename) {
 		R_LOG_ERROR ("gdbserver: File not specified");
 		return -1;
 	}
-	if (!(file = (char *)r_str_trim_head_ro (file)) || !*file) {
-		R_LOG_ERROR ("gdbserver: File not specified");
-		return -1;
-	}
-	args = strchr (file, ' ');
-	if (args) {
-		*args++ = '\0';
-		if (!(args = (char *)r_str_trim_head_ro (args))) {
-			args = "";
-		}
-	} else {
-		args = "";
-	}
-
+	const char *args = strchr (filename, ' ');
+	char *file = args? r_str_ndup (filename, args - filename): strdup (filename);
 	if (!r_core_file_open (core, file, R_PERM_RX, 0)) {
 		R_LOG_ERROR ("Cannot open file (%s)", file);
+		free (file);
 		return -1;
 	}
-	r_core_file_reopen_debug (core, args);
-
-	if (!(sock = r_socket_new (false))) {
-		R_LOG_ERROR ("gdbserver: Could not open socket for listening");
-		return -1;
-	}
-	if (!r_socket_listen (sock, port, NULL)) {
-		r_socket_free (sock);
+	r_core_file_reopen_debug (core, args? r_str_trim_head_ro (args): "");
+	RSocket *sock = r_socket_new (false);
+	if (!sock || !r_socket_listen (sock, port, NULL)) {
 		R_LOG_ERROR ("gdbserver: Cannot listen on port: %s", port);
-		return -1;
-	}
-	if (!(g = R_NEW0 (libgdbr_t))) {
 		r_socket_free (sock);
-		R_LOG_ERROR ("gdbserver: Cannot alloc libgdbr instance");
+		free (file);
 		return -1;
 	}
+	libgdbr_t *g = R_NEW0 (libgdbr_t);
 	gdbr_init (g, true);
 	int arch = r_sys_arch_id (r_config_get (core->config, "asm.arch"));
 	int bits = r_config_get_i (core->config, "asm.bits");
 	gdbr_set_architecture (g, arch, bits);
 	core->gdbserver_up = 1;
 	R_LOG_INFO ("gdbserver started on port: %s, file: %s", port, file);
+	free (file);
 
 	for (;;) {
 		if (!(g->sock = r_socket_accept (sock))) {
 			break;
 		}
 		g->connected = 1;
-		ret = gdbr_server_serve (g, r_core_rtr_gdb_cb, (void*) core);
+		int ret = gdbr_server_serve (g, r_core_rtr_gdb_cb, (void*) core);
 		r_socket_close (g->sock);
 		g->connected = 0;
 		if (ret < 0) {

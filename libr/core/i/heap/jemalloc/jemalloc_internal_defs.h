@@ -213,12 +213,6 @@
 #endif
 
 /*
- * Used to mark unreachable code to quiet "end of non-void" compiler warnings.
- * Don't use this directly; instead use unreachable() from util.h
- */
-#define JEMALLOC_INTERNAL_UNREACHABLE __builtin_unreachable
-
-/*
  * ffs*() functions to use for bitmapping.  Don't use these directly; instead,
  * use ffs_*() from util.h.
  */

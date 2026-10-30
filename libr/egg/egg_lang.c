@@ -737,22 +737,20 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 	return ret;
 }
 
-static void rcc_fun(REgg *egg, const char *str) {
+static void rcc_fun(REgg *egg, char *str) {
 	char *ptr, *ptr2;
 	REggEmit *e = egg->remit;
-	str = r_str_trim_head_ro (str);
 	if (CTX) {
 		ptr = strchr (str, '=');
 		if (ptr) {
 			*ptr++ = '\0';
 			free (egg->lang.dstvar);
 			egg->lang.dstvar = r_str_trim_dup (str);
-			ptr2 = (char *)r_str_trim_head_ro (ptr);
-			if (*ptr2) {
-				rcc_set_callname (egg, ptr2);
+			const char *callname = r_str_trim_head_ro (ptr);
+			if (*callname) {
+				rcc_set_callname (egg, callname);
 			}
 		} else {
-			str = r_str_trim_head_ro (str);
 			rcc_set_callname (egg, str);
 			egg->remit->comment (egg, "rcc_fun %d (%s)", CTX, egg->lang.callname);
 		}

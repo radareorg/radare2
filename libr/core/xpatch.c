@@ -101,10 +101,9 @@ typedef struct {
 
 static bool ubp_parseFile(const char *line, UBP_File *uf, bool add) {
 	uf->add = add;
-	char *tab = strchr (line, '\t');
+	const char *tab = strchr (line, '\t');
 	if (tab) {
-		size_t tab_pos = tab - line;
-		uf->file = r_str_ndup (line, tab_pos);
+		uf->file = r_str_ndup (line, tab - line);
 		r_str_trim (uf->file);
 		uf->tstamp = r_str_trim_dup (tab + 1);
 	} else {

@@ -268,10 +268,7 @@ static bool has_map_deleted_part(char *name) {
 	return false;
 }
 
-static bool getAnonymousValue(char *keyw) {
-	if (!keyw) {
-		return false;
-	}
+static bool getAnonymousValue(const char *keyw) {
 	keyw = strchr (keyw, ' ');
 	if (!keyw) {
 		return false;
@@ -282,19 +279,13 @@ static bool getAnonymousValue(char *keyw) {
 	return *keyw && *keyw != '0';
 }
 
-static char *isAnonymousKeyword(const char *pp) {
-	if (!pp) {
-		return NULL;
-	}
-	char *keyw = strstr (pp, "Anonymous:");
-	if (!keyw) {
-		keyw = strstr (pp, "AnonHugePages:");
-	}
-	return keyw;
+static const char *isAnonymousKeyword(const char *pp) {
+	const char *keyw = strstr (pp, "Anonymous:");
+	return keyw? keyw: strstr (pp, "AnonHugePages:");
 }
 
 static bool has_map_anonymous_content(char *buff_smaps, unsigned long start_addr, unsigned long end_addr) {
-	char *pp, *extern_tok = NULL, *keyw = NULL;
+	char *pp, *extern_tok = NULL;
 	char *identity = r_str_newf (fmt_addr, start_addr, end_addr);
 	char *str = strdup (buff_smaps);
 	char *p = strtok_r (str, "\n", &extern_tok);
@@ -302,7 +293,8 @@ static bool has_map_anonymous_content(char *buff_smaps, unsigned long start_addr
 		if (strstr (p, identity)) {
 			pp = strtok_r (NULL, "\n", &extern_tok);
 			for (; pp ; pp = strtok_r (NULL, "\n", &extern_tok)) {
-				if ((keyw = isAnonymousKeyword (pp))) {
+				const char *keyw = isAnonymousKeyword (pp);
+				if (keyw) {
 					bool r = getAnonymousValue (keyw);
 					free (identity);
 					free (str);

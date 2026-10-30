@@ -247,7 +247,7 @@ static int rafs2_details(Rafs2State *s) {
 
 static int rafs2_extract(Rafs2State *s, const char *paths) {
 	RFS *fs = s->fs;
-	char *colon = strchr (paths, ':');
+	const char *colon = strchr (paths, ':');
 	if (!colon) {
 		R_LOG_ERROR ("Invalid extract syntax. Use: -x <src:dst>");
 		return 1;

@@ -2205,13 +2205,9 @@ static int whatbpos(const char *arg) {
 static void pfb(RCore *core, const char *arg, int mode) {
 	const char *fmt = r_str_trim_head_ro (arg);
 	int n = 0;
-	char *names = strchr (fmt, ' ');
+	const char *names = strchr (fmt, ' ');
 	const bool be = r_config_get_b (core->config, "cfg.bigendian");
-	RList *lnames = NULL;
-	if (names) {
-		names = strdup (names + 1);
-		lnames = r_str_split_list (names, " ", 0);
-	}
+	RList *lnames = names? r_str_split_duplist (names + 1, " ", true): NULL;
 	unsigned int i = 0;
 	int bpos = 0;
 	ut64 v = 0;
@@ -3268,7 +3264,7 @@ cleanup:
 #undef append_both
 
 R_API void r_core_print_examine(RCore *core, const char *str) {
-	char cmd[128], *p;
+	char cmd[128];
 	ut64 addr = core->addr;
 	int size = core->anal->config->bits / 4;
 	int count = atoi (str);
@@ -3295,9 +3291,9 @@ R_API void r_core_print_examine(RCore *core, const char *str) {
 	case 'w': size = 4; break;
 	case 'g': size = 8; break;
 	}
-	if ((p = strchr (str, ' '))) {
-		*p++ = 0;
-		addr = r_num_math (core->num, p);
+	const char *p = strchr (str, ' ');
+	if (p) {
+		addr = r_num_math (core->num, p + 1);
 	}
 	switch (*str) {
 	case '?':
@@ -4801,7 +4797,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 			size = strlen (byteorder);
 		}
 		int length = size;
-		char *space = strchr (byteorder, ' ');
+		const char *space = strchr (byteorder, ' ');
 		if (space) {
 			length = atoi (space + 1);
 		}
@@ -5454,7 +5450,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	int submode = 0; // q, j, ...
 
 	if (input[0]) {
-		char *spc = strchr (input, ' ');
+		const char *spc = strchr (input, ' ');
 		if (spc) {
 			ut64 v = r_num_math (core->num, spc + 1);
 			if (v < 1 || v > (ut64)ST32_MAX) {
@@ -6308,7 +6304,7 @@ static char *__op_refs(RCore *core, RAnalOp *op, int n) {
 static void r_core_disasm_table(RCore *core, int l, const char *input) {
 	int i;
 	RTable *t = r_core_table_new (core, "disasm");
-	char *arg = strchr (input, ' ');
+	const char *arg = strchr (input, ' ');
 	if (arg) {
 		input = arg + 1;
 	}

@@ -1719,18 +1719,17 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int gadget_type,
 	}
 
 	// Options, like JSON, linear, ...
-	grep_arg = strchr (grep, ' ');
+	const char *space = strchr (grep, ' ');
 	if (*grep) {
-		if (grep_arg) {
-			mode = *(grep_arg - 1);
+		if (space) {
+			mode = *(space - 1);
 		} else {
 			mode = *grep;
 			++grep;
 		}
 	}
-	if (grep_arg) {
-		grep_arg = strdup (grep_arg);
-		grep_arg = r_str_replace (grep_arg, ",,", ";", true);
+	if (space) {
+		grep_arg = r_str_replace (strdup (space), ",,", ";", true);
 		grep = grep_arg;
 	}
 
@@ -4842,7 +4841,7 @@ reread:
 			}
 		case 'c': // "/cc"
 			{
-				char *space = strchr (input, ' ');
+				const char *space = strchr (input, ' ');
 				const char *arg = space? r_str_trim_head_ro (space + 1): NULL;
 				if (!arg || input[2] == '?') {
 					r_cons_cmd_help (core->cons, help_msg_slash_cc);
@@ -4953,7 +4952,7 @@ reread:
 			}
 		case 'a': // "/ca"
 			{
-				char *space = strchr (input, ' ');
+				const char *space = strchr (input, ' ');
 				const char *arg = space? r_str_trim_head_ro (space + 1): NULL;
 				if (!arg || *(space - 1) == '?') {
 					r_cons_cmd_help_match (core->cons, help_msg_slash_c, "/ca", 0, true);
@@ -5005,33 +5004,28 @@ reread:
 				if (input[2] == 'j') {
 					param.outmode = R_MODE_JSON;
 				}
-				char *space = strchr (input, ' ');
+				const char *space = strchr (input, ' ');
 				const char *arg = space? r_str_trim_head_ro (space + 1): NULL;
 				if (!arg || *(space - 1) == '?') {
 					r_cons_cmd_help_match (core->cons, help_msg_slash_c, "/cp", 0, true);
 					goto beach;
 				} else {
-					char *p = strchr (arg, ' ');
-					if (p) {
-						*p++ = 0;
-					} else {
+					const char *p = strchr (arg, ' ');
+					if (!p) {
 						r_cons_cmd_help_match (core->cons, help_msg_slash_c, "/cp", 0, true);
 						goto beach;
 					}
-
-					char *algo = strdup (arg);
-					char *pubkey = strdup (r_str_trim_head_ro (p));
-					if (!strcmp (algo, "ed25519")) {
-						r_search_reset (core->search, R_SEARCH_RAW_PRIV_KEY);
-					} else {
-						R_LOG_ERROR ("Unsupported signature: %s", arg);
+					if (!r_str_startswith (arg, "ed25519 ")) {
+						R_LOG_ERROR ("Unsupported signature: %.*s", (int)(p - arg), arg);
 						goto beach;
 					}
-
+					r_search_reset (core->search, R_SEARCH_RAW_PRIV_KEY);
+					char *pubkey = strdup (r_str_trim_head_ro (p + 1));
 					if (strlen (pubkey) == ED25519_PUBKEY_LENGTH) {
 						core->search->data = (void *)pubkey;
 					} else {
 						R_LOG_ERROR ("Wrong key length");
+						free (pubkey);
 						goto beach;
 					}
 
@@ -5041,7 +5035,6 @@ reread:
 					r_search_kw_add (search, kw);
 					r_search_begin (core->search);
 					param.key_search = true;
-					free (algo);
 					break;
 				}
 			}
@@ -5163,11 +5156,12 @@ reread:
 				if (param.outmode == R_MODE_JSON) {
 					pj_a (param.pj);
 				}
-				char *w = strchr (num_str, ' ');
+				const char *w = strchr (num_str, ' ');
 				if (w) {
-					*w++ = 0;
-					ut64 vmin = r_num_math (core->num, num_str);
-					ut64 vmax = r_num_math (core->num, w);
+					char *min_str = r_str_ndup (num_str, w - num_str);
+					ut64 vmin = r_num_math (core->num, min_str);
+					ut64 vmax = r_num_math (core->num, w + 1);
+					free (min_str);
 					if (vsize > 0) {
 						RIOMap *map;
 						RListIter *iter;
@@ -5587,27 +5581,21 @@ again:
 		break;
 	case 'z': // "/z" search strings of min-max range
 	{
-		char *p;
-		ut32 min, max;
-		if (!input[1]) {
+		const char *p = input[1]? strchr (input + 2, ' '): NULL;
+		if (!p) {
 			r_cons_cmd_help_match (core->cons, help_msg_slash, "/z", 0, true);
 			break;
 		}
-		const char *maxstr = NULL;
-		if ((p = strchr (input + 2, ' '))) {
-			*p = 0;
-			maxstr = r_str_trim_head_ro (p + 1);
-			max = r_num_math (core->num, maxstr);
-		} else {
-			r_cons_cmd_help_match (core->cons, help_msg_slash, "/z", 0, true);
-			break;
-		}
-		const char *minstr = r_str_trim_head_ro (input + 2);
-		if ((maxstr && *maxstr == '-') || (minstr && *minstr == '-')) {
+		char *minstr = r_str_ndup (input + 2, p - (input + 2));
+		const char *maxstr = r_str_trim_head_ro (p + 1);
+		ut32 min = r_num_math (core->num, minstr);
+		ut32 max = r_num_math (core->num, maxstr);
+		bool negative = *maxstr == '-' || *r_str_trim_head_ro (minstr) == '-';
+		free (minstr);
+		if (negative) {
 			R_LOG_ERROR ("min and max must be positive");
 			break;
 		}
-		min = r_num_math (core->num, minstr);
 		if (!r_search_set_string_limits (core->search, min, max)) {
 			R_LOG_ERROR ("min must be lower than max");
 			break;

@@ -487,8 +487,7 @@ retry:
 	}
 	if (*p == ' ') { // "CL "
 		p = r_str_trim_head_ro (p + 1);
-		char *arg = strchr (p, ' ');
-		if (!arg) {
+		if (!strchr (p, ' ')) {
 			offset = r_num_math (core->num, p);
 			p = "";
 		}
@@ -777,13 +776,12 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		break;
 	case 'a': // "CCa"
 		{
-		char *s = strchr (input, ' ');
-		if (s) {
-			s = strdup (s + 1);
-		} else {
+		const char *sp = strchr (input, ' ');
+		if (!sp) {
 			r_cons_cmd_help_match (core->cons, help_msg_CC, "CCa", 0, true);
 			return false;
 		}
+		char *s = strdup (sp + 1);
 		char *p = strchr (s, ' ');
 		if (p) {
 			*p++ = 0;
@@ -1076,7 +1074,8 @@ static bool cmd_Cs(RCore *core, const char *input, R_INOUT ut64 *addr, R_INOUT i
 }
 
 static int cmd_meta_others(RCore *core, const char *input) {
-	char *t = 0, *p, *p2, name[256] = {0};
+	char *t = 0, *p, name[256] = {0};
+	const char *p2;
 	int n, repeat = 1;
 	ut64 addr = core->addr;
 
@@ -1116,8 +1115,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			r_meta_del (core->anal, input[0], 0, UT64_MAX);
 			break;
 		case ' ':
-			p2 = strchr (input + 3, ' ');
-			if (p2) {
+			if ((p2 = strchr (input + 3, ' '))) {
 				ut64 i;
 				ut64 size = r_num_math (core->num, input + 3);
 				ut64 rep = r_num_math (core->num, p2 + 1);

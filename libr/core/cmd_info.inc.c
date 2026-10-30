@@ -2686,13 +2686,9 @@ static void cmd_idp(RCore *core, PJ *pj, const char *input, bool is_array, int m
 			break;
 		}
 		info = r_bin_get_info (core->bin);
-		filename = strchr (input, ' ');
-		while (input[2]) {
-			input++;
-		}
-		if (filename) {
-			*filename++ = '\0';
-			filename = strdup (filename);
+		const char *arg = strchr (input, ' ');
+		if (arg) {
+			filename = strdup (arg + 1);
 			file_found = r_file_exists (filename);
 		} else {
 			/* Autodetect local file */
@@ -3949,7 +3945,7 @@ static int cmd_info(void *data, const char *input) {
 	if (!strcmp (input, "*")) {
 		input = "I*";
 	}
-	char *question = strchr (input, '?');
+	const char *question = strchr (input, '?');
 	const char *space = strchr (input, ' ');
 	if (!space && question) {
 		space = question + 1;
@@ -4264,7 +4260,7 @@ static int cmd_info(void *data, const char *input) {
 		break;
 	case 'L': // "iL"
 	{
-		char *ptr = strchr (input, ' ');
+		const char *ptr = strchr (input, ' ');
 		int json = input[1] == 'j'? 'j': 0;
 		if (ptr && ptr[0] && ptr[1]) {
 			const char *plugin_name = ptr + 1;

@@ -83,14 +83,13 @@ static int panels_command(RCore *core, const char *input) {
 		return true;
 	}
 	if (*input == 'i') {
-		char *sp = strchr (input, ' ');
+		const char *sp = strchr (input, ' ');
 		if (sp) {
 			char *r = r_core_editor (core, sp + 1, NULL, NULL);
-			if (r) {
-				free (r);
-			} else {
+			if (!r) {
 				R_LOG_ERROR ("Cannot open file (%s)", sp + 1);
 			}
+			free (r);
 		} else {
 			r_cons_cmd_help_match (core->cons, help_msg_v, "vi", 0, true);
 		}
