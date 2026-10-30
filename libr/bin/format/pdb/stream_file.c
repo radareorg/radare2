@@ -131,9 +131,3 @@ bool stream_file_get_data(R_STREAM_FILE *stream_file, char *data) {
 	return !stream_file->error;
 }
 
-int stream_file_get_size(R_STREAM_FILE *stream_file) {
-	int pn_start = 0, off_start = 0;
-	GET_PAGE (pn_start, off_start, stream_file->pos, stream_file->page_size);
-	(void)pn_start;
-	return stream_file->end - off_start;
-}

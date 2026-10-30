@@ -5,6 +5,7 @@
 #include <r_bin_dwarf.h>
 #include "../../libr/bin/format/pdb/types.h"
 #include "../../libr/bin/format/pdb/tpi.h"
+#include "../../libr/bin/format/pdb/stream_file.h"
 
 #define MODE 2
 
@@ -536,12 +537,60 @@ bool test_pdb_enum_modified_utype(void) {
 	mu_end;
 }
 
+bool test_pdb_stream_file_size(void) {
+	R_STREAM_FILE stream = {0};
+	stream.page_size = 4096;
+	stream.end = 10000;
+
+	// At start of stream
+	stream.pos = 0;
+	mu_assert_eq (stream_file_get_size (&stream), 10000, "size at pos 0");
+
+	// Intra-first-page
+	stream.pos = 500;
+	mu_assert_eq (stream_file_get_size (&stream), 9500, "size at pos 500");
+
+	// Multi-page offset (pos = 4196 on 4096-byte pages)
+	// Pre-patch bug: subtracted only (pos % page_size) = 100, returning 9900 (+4096 bytes)
+	stream.pos = 4196;
+	mu_assert_eq (stream_file_get_size (&stream), 5804, "size past page boundary");
+
+	// High page offset
+	stream.pos = 9000;
+	mu_assert_eq (stream_file_get_size (&stream), 1000, "size at pos 9000");
+
+	// At EOF
+	// Pre-patch bug: 10000 % 4096 = 1808, returning 8192 instead of 0
+	stream.pos = 10000;
+	mu_assert_eq (stream_file_get_size (&stream), 0, "size at EOF");
+
+	// Past EOF
+	stream.pos = 10001;
+	mu_assert_eq (stream_file_get_size (&stream), 0, "size past EOF");
+
+	// Stream with error flag set
+	stream.pos = 0;
+	stream.error = 1;
+	mu_assert_eq (stream_file_get_size (&stream), 0, "size with error set");
+
+	// Negative position
+	stream.error = 0;
+	stream.pos = -1;
+	mu_assert_eq (stream_file_get_size (&stream), 0, "size with negative pos");
+
+	// NULL stream
+	mu_assert_eq (stream_file_get_size (NULL), 0, "size with NULL stream");
+
+	mu_end;
+}
+
 bool all_tests(void) {
 #if R_SYS_ENDIAN == 0
 	mu_run_test (test_pdb_tpi_cpp);
 	mu_run_test (test_pdb_tpi_rust);
 	mu_run_test (test_pdb_type_save);
 	mu_run_test (test_pdb_enum_modified_utype);
+	mu_run_test (test_pdb_stream_file_size);
 #endif
 	return tests_passed != tests_run;
 }
