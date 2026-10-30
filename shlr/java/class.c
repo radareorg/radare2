@@ -1618,17 +1618,17 @@ static RBinJavaAttrInfo *r_bin_java_get_attr_from_field(RBinJavaField *field, R_
 	return attr;
 }
 
+// copy only the attribute, copying the rest of the file per attribute is quadratic
 static ut8 *r_bin_java_get_attr_buf(RBinJavaObj *bin, ut64 sz, const ut64 offset, const ut8 *buf, const ut64 len) {
-	if (offset >= len) {
+	if (offset >= len || sz > len - offset) {
 		return NULL;
 	}
-	const ut64 pending = len - offset;
-	ut8 *attr_buf = (ut8 *)calloc (1, pending + 1);
+	ut8 *attr_buf = (ut8 *)calloc (1, sz + 1);
 	if (!attr_buf) {
 		R_LOG_ERROR ("Unable to allocate 0x%04" PFMT64x "for an attribute", sz);
 		return NULL;
 	}
-	memcpy (attr_buf, buf + offset, pending);
+	memcpy (attr_buf, buf + offset, sz);
 	return attr_buf;
 }
 
@@ -1681,23 +1681,12 @@ static RBinJavaAttrInfo *r_bin_java_read_next_attr(RBinJavaObj *bin, const ut64 
 		R_LOG_ERROR ("Unable to parse class Attribute len (0x%x) + offset (0x%" PFMT64x ") exceeds length of buffer (0x%" PFMT64x ")", sz, offset, buf_len);
 		return NULL;
 	}
-	// when reading the attr bytes, need to also
-	// include the initial 6 bytes, which
-	// are not included in the attribute length
-	// ,
-	// sz, buf_offset, buf_offset+sz);
+	// the attribute bytes include the 6 header bytes, which are not part of its length
 	ut8 *buffer = r_bin_java_get_attr_buf (bin, sz, offset, buf, buf_len);
-	RBinJavaAttrInfo *attr = NULL;
-	// printf ("%d %d %d\n", sz, buf_len, offset);
-	if (offset < buf_len) {
-		attr = r_bin_java_read_next_attr_from_buffer (bin, buffer, buf_len - offset, offset);
-		free (buffer);
-		if (attr) {
-			attr->size = sz;
-		}
-	} else {
-		free (buffer);
-		R_LOG_ERROR ("Prevented OOB reading attr");
+	RBinJavaAttrInfo *attr = r_bin_java_read_next_attr_from_buffer (bin, buffer, sz, offset);
+	free (buffer);
+	if (attr) {
+		attr->size = sz;
 	}
 	return attr;
 }
