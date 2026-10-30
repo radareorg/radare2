@@ -397,35 +397,19 @@ static RList *r_bin_java_find_cp_const_by_val_int(RBinJavaObj *bin_obj, const ut
 static RList *r_bin_java_find_cp_const_by_val_long(RBinJavaObj *bin_obj, const ut8 *bytes, ut32 len);
 static RList *r_bin_java_find_cp_const_by_val_utf8(RBinJavaObj *bin_obj, const ut8 *bytes, ut32 len);
 
-static bool char_must_be_escaped(ut8 c) {
-	switch (c) {
-	case 0x7f:
-	case 0x81:
-	case 0x8f:
-	case 0x90:
-	case 0x9d:
-	case 0xa0:
-	case 0xad:
-		return true;
-	default:
-		if (c < 0x20) {
-			return true;
+// keep printable utf-8 as is, escape control characters, invalid bytes and raw NULs
+static char *convert_string(const ut8 *bytes, ut32 len) {
+	RStrBuf *sb = r_strbuf_new (NULL);
+	const ut8 *end = bytes + len; // bytes[len] is always NUL
+	while (bytes < end) {
+		char *s = r_str_escape_utf8_keep_printable ((const char *)bytes, false, false);
+		r_strbuf_append (sb, s);
+		free (s);
+		bytes += strlen ((const char *)bytes);
+		if (bytes < end) {
+			r_strbuf_append (sb, "\\x00");
+			bytes++;
 		}
-		return false;
-	}
-}
-
-static char *convert_string(const char *bytes, ut32 len) {
-	RStrBuf *sb = r_strbuf_new ("");
-	ut32 idx = 0;
-	// 4x is the increase from byte to \xHH where HH represents hexed byte
-	while (idx < len) {
-		if (char_must_be_escaped (bytes[idx])) {
-			r_strbuf_appendf (sb, "\\x%02x", bytes[idx]);
-		} else {
-			r_strbuf_appendf (sb, "%c", bytes[idx]);
-		}
-		idx++;
 	}
 	return r_strbuf_drain (sb);
 }
@@ -1290,9 +1274,10 @@ static RBinJavaCPTypeObj *r_bin_java_clone_cp_item(RBinJavaCPTypeObj *obj) {
 	clone_obj->metas->type_info = (void *)&R_BIN_JAVA_CP_METAS[clone_obj->tag];
 	clone_obj->name = strdup (obj->name? obj->name: "unk");
 	if (obj->tag == R_BIN_JAVA_CP_UTF8) {
+		clone_obj->info.cp_utf8.escaped = NULL;
 		clone_obj->info.cp_utf8.bytes = r_mem_dup (
 			obj->info.cp_utf8.bytes,
-			clone_obj->info.cp_utf8.length);
+			clone_obj->info.cp_utf8.length + 1);
 	}
 	return clone_obj;
 }
@@ -1448,17 +1433,28 @@ static char *r_bin_java_get_item_desc_from_bin_cp_list(RBinJavaObj *bin, RBinJav
 	return bin? r_bin_java_get_item_desc_from_cp_item_list (bin, obj, MAX_CPITEMS): NULL;
 }
 
+// escape each Utf8 constant once, lookups share the interned result
+static const char *r_bin_java_get_utf8_cached(RBinJavaObj *bin, ut64 idx) {
+	RBinJavaCPTypeObj *item = r_bin_java_get_item_from_cp_item_list (bin, idx);
+	if (!item || item->tag != R_BIN_JAVA_CP_UTF8 || item->metas->ord != idx) {
+		return NULL;
+	}
+	RBinJavaCPTypeUtf8 *utf8 = &item->info.cp_utf8;
+	if (!utf8->escaped) {
+		char *s = convert_string (utf8->bytes, utf8->length);
+		utf8->escaped = s? r_str_constpool_get (&bin->constpool, s): NULL;
+		free (s);
+	}
+	return utf8->escaped;
+}
+
 static char *r_bin_java_get_utf8_from_cp_item_list(RBinJavaObj *bin, ut64 idx) {
 	/*
 	Search through the Constant Pool list for the given CP Index.
 	rvalue: new char* for caller to free.
 	 */
-	char *value = NULL;
-	RBinJavaCPTypeObj *item = r_bin_java_get_item_from_cp_item_list (bin, idx);
-	if (item && item->tag == R_BIN_JAVA_CP_UTF8 && item->metas->ord == idx) {
-		value = convert_string ((const char *)item->info.cp_utf8.bytes, item->info.cp_utf8.length);
-	}
-	return value;
+	const char *value = r_bin_java_get_utf8_cached (bin, idx);
+	return value? strdup (value): NULL;
 }
 
 static ut32 r_bin_java_get_utf8_len_from_cp_item_list(RBinJavaObj *bin, ut64 idx) {
@@ -1645,10 +1641,10 @@ static RBinJavaAttrInfo *r_bin_java_default_attr_new(RBinJavaObj *bin, ut8 *buff
 	attr->name_idx = R_BIN_JAVA_USHORT (buffer, 0);
 	attr->length = R_BIN_JAVA_UINT (buffer, 2);
 	attr->size = R_BIN_JAVA_UINT (buffer, 2) + 6;
-	attr->name = r_bin_java_get_utf8_from_bin_cp_list (bin, attr->name_idx);
+	attr->name = r_bin_java_get_utf8_cached (bin, attr->name_idx);
 	if (!attr->name) {
 		// Something bad has happened
-		attr->name = strdup ("NULL");
+		attr->name = "NULL";
 		R_LOG_ERROR ("r_bin_java_default_attr_new: Unable to find the name for %d index", attr->name_idx);
 	}
 	const RBinJavaAttrTypeInfo *type_info = r_bin_java_get_attr_type_by_name (attr->name);
@@ -1702,9 +1698,9 @@ static RBinJavaAttrInfo *r_bin_java_read_next_attr_from_buffer(RBinJavaObj *bin,
 	ut64 offset = 2;
 	ut32 nsz = R_BIN_JAVA_UINT (buffer, offset);
 
-	char *name = r_bin_java_get_utf8_from_bin_cp_list (bin, name_idx);
+	const char *name = r_bin_java_get_utf8_cached (bin, name_idx);
 	if (!name) {
-		name = strdup ("unknown");
+		name = "unknown";
 	}
 	R_LOG_DEBUG ("r_bin_java_read_next_attr: name_idx = %d is %s", name_idx, name);
 	const RBinJavaAttrTypeInfo *type_info = r_bin_java_get_attr_type_by_name (name);
@@ -1712,12 +1708,10 @@ static RBinJavaAttrInfo *r_bin_java_read_next_attr_from_buffer(RBinJavaObj *bin,
 		R_LOG_DEBUG ("Typeinfo: %s, was %s", type_info->name, name);
 		// printf ("SZ %d %d %d\n", nsz, sz, buf_offset);
 		if (nsz > sz - 6) {
-			free (name);
 			return NULL;
 		}
 		if (bin->attr_depth >= MAX_ATTR_DEPTH) {
 			R_LOG_WARN ("Attribute %s nested too deep", name);
-			free (name);
 			return NULL;
 		}
 		bin->attr_depth++;
@@ -1729,7 +1723,6 @@ static RBinJavaAttrInfo *r_bin_java_read_next_attr_from_buffer(RBinJavaObj *bin,
 	} else {
 		R_LOG_ERROR ("r_bin_java_read_next_attr_from_buffer: Cannot find type_info for %s", name);
 	}
-	free (name);
 	return attr;
 }
 
@@ -2755,7 +2748,6 @@ static void r_bin_java_fmtype_free(void /*RBinJavaField*/ *f) {
 static void r_bin_java_unknown_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 	RBinJavaAttrInfo *attr = a;
 	if (attr) {
-		free (attr->name);
 		free (attr->metas);
 		free (attr);
 	}
@@ -2773,7 +2765,6 @@ static void r_bin_java_local_variable_table_attr_entry_free(void /*RBinJavaLocal
 static void r_bin_java_local_variable_table_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 	RBinJavaAttrInfo *attr = a;
 	if (attr) {
-		free (attr->name);
 		free (attr->metas);
 		r_list_free (attr->info.local_variable_table_attr.local_variable_table);
 		free (attr);
@@ -2792,7 +2783,6 @@ static void r_bin_java_local_variable_type_table_attr_entry_free(void /*RBinJava
 static void r_bin_java_local_variable_type_table_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 	RBinJavaAttrInfo *attr = a;
 	if (attr) {
-		free (attr->name);
 		free (attr->metas);
 		r_list_free (attr->info.local_variable_type_table_attr.local_variable_table);
 		free (attr);
@@ -2802,7 +2792,6 @@ static void r_bin_java_local_variable_type_table_attr_free(void /*RBinJavaAttrIn
 static void r_bin_java_deprecated_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 	RBinJavaAttrInfo *attr = a;
 	if (attr) {
-		free (attr->name);
 		free (attr->metas);
 		free (attr);
 	}
@@ -2811,7 +2800,6 @@ static void r_bin_java_deprecated_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 static void r_bin_java_enclosing_methods_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 	RBinJavaAttrInfo *attr = a;
 	if (attr) {
-		free (attr->name);
 		free (attr->metas);
 		free (attr->info.enclosing_method_attr.class_name);
 		free (attr->info.enclosing_method_attr.method_name);
@@ -2823,7 +2811,6 @@ static void r_bin_java_enclosing_methods_attr_free(void /*RBinJavaAttrInfo*/ *a)
 static void r_bin_java_synthetic_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 	RBinJavaAttrInfo *attr = a;
 	if (attr) {
-		free (attr->name);
 		free (attr->metas);
 		free (attr);
 	}
@@ -2832,7 +2819,6 @@ static void r_bin_java_synthetic_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 static void r_bin_java_constant_value_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 	RBinJavaAttrInfo *attr = a;
 	if (attr) {
-		free (attr->name);
 		free (attr->metas);
 		free (attr);
 	}
@@ -2841,7 +2827,6 @@ static void r_bin_java_constant_value_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 static void r_bin_java_line_number_table_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 	RBinJavaAttrInfo *attr = a;
 	if (attr) {
-		free (attr->name);
 		free (attr->metas);
 		r_list_free (attr->info.line_number_table_attr.line_number_table);
 		free (attr);
@@ -2858,7 +2843,6 @@ static void r_bin_java_code_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 		r_list_free (attr->info.code_attr.attributes);
 		free (attr->info.code_attr.code);
 		r_list_free (attr->info.code_attr.exception_table);
-		free (attr->name);
 		free (attr->metas);
 		free (attr);
 	}
@@ -2867,7 +2851,6 @@ static void r_bin_java_code_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 static void r_bin_java_exceptions_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 	RBinJavaAttrInfo *attr = a;
 	if (attr) {
-		free (attr->name);
 		free (attr->metas);
 		free (attr->info.exceptions_attr.exception_idx_table);
 		free (attr);
@@ -2886,7 +2869,6 @@ static void r_bin_java_inner_classes_attr_entry_free(void /*RBinJavaClassesAttri
 static void r_bin_java_inner_classes_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 	RBinJavaAttrInfo *attr = a;
 	if (attr) {
-		free (attr->name);
 		free (attr->metas);
 		r_list_free (attr->info.inner_classes_attr.classes);
 		free (attr);
@@ -2896,7 +2878,6 @@ static void r_bin_java_inner_classes_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 static void r_bin_java_signature_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 	RBinJavaAttrInfo *attr = a;
 	if (attr) {
-		free (attr->name);
 		free (attr->metas);
 		free (attr->info.signature_attr.signature);
 		free (attr);
@@ -2906,7 +2887,6 @@ static void r_bin_java_signature_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 static void r_bin_java_source_debug_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 	RBinJavaAttrInfo *attr = a;
 	if (attr) {
-		free (attr->name);
 		free (attr->metas);
 		free (attr->info.debug_extensions.debug_extension);
 		free (attr);
@@ -2916,7 +2896,6 @@ static void r_bin_java_source_debug_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 static void r_bin_java_source_code_file_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 	RBinJavaAttrInfo *attr = a;
 	if (attr) {
-		free (attr->name);
 		free (attr->metas);
 		free (attr);
 	}
@@ -2925,7 +2904,6 @@ static void r_bin_java_source_code_file_attr_free(void /*RBinJavaAttrInfo*/ *a) 
 static void r_bin_java_stack_map_table_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 	RBinJavaAttrInfo *attr = a;
 	if (attr) {
-		free (attr->name);
 		free (attr->metas);
 		r_list_free (attr->info.stack_map_table_attr.stack_map_frame_entries);
 		free (attr);
@@ -3718,7 +3696,6 @@ static void r_bin_java_nest_host_attr_free(void *a) {
 	RBinJavaAttrInfo *attr = a;
 	if (attr) {
 		free (attr->info.nest_host_attr.host_class_name);
-		free (attr->name);
 		free (attr->metas);
 		free (attr);
 	}
@@ -3775,7 +3752,6 @@ static void r_bin_java_nest_members_attr_free(void *a) {
 	if (attr) {
 		free (attr->info.nest_members_attr.classes);
 		r_list_free (attr->info.nest_members_attr.class_names);
-		free (attr->name);
 		free (attr->metas);
 		free (attr);
 	}
@@ -3840,7 +3816,6 @@ static void r_bin_java_permitted_subclasses_attr_free(void *a) {
 	if (attr) {
 		free (attr->info.permitted_subclasses_attr.classes);
 		r_list_free (attr->info.permitted_subclasses_attr.class_names);
-		free (attr->name);
 		free (attr->metas);
 		free (attr);
 	}
@@ -3929,7 +3904,6 @@ static void r_bin_java_record_attr_free(void *a) {
 	RBinJavaAttrInfo *attr = a;
 	if (attr) {
 		r_list_free (attr->info.record_attr.components);
-		free (attr->name);
 		free (attr->metas);
 		free (attr);
 	}
@@ -5729,7 +5703,7 @@ static void r_bin_java_print_utf8_cp_summary(RBinJavaCPTypeObj *obj) {
 		eprintf ("Attempting to print an invalid RBinJavaCPTypeObj*  Utf8.\n");
 		return;
 	}
-	char *str = convert_string ((const char *)obj->info.cp_utf8.bytes, obj->info.cp_utf8.length);
+	char *str = convert_string (obj->info.cp_utf8.bytes, obj->info.cp_utf8.length);
 	eprintf ("UTF8 ConstantPool Type (%d) ", obj->metas->ord);
 	eprintf ("	Offset: 0x%08" PFMT64x "", obj->file_offset);
 	eprintf ("	length = %d\n", obj->info.cp_utf8.length);
@@ -6050,7 +6024,6 @@ static void r_bin_java_annotation_default_attr_free(void /*RBinJavaAttrInfo*/ *a
 		break;
 	}
 	if (attr) {
-		free (attr->name);
 		free (attr->metas);
 		free (attr);
 	}
@@ -6481,7 +6454,6 @@ static void r_bin_java_print_bootstrap_methods_attr_summary(RBinJavaAttrInfo *at
 static void r_bin_java_bootstrap_methods_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 	RBinJavaAttrInfo *attr = a;
 	if (attr && attr->type == R_BIN_JAVA_ATTR_TYPE_BOOTSTRAP_METHODS_ATTR) {
-		free (attr->name);
 		free (attr->metas);
 		r_list_free (attr->info.bootstrap_methods_attr.bootstrap_methods);
 		free (attr);
@@ -6715,7 +6687,6 @@ static void r_bin_java_rtv_annotations_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 	if (attr && attr->type == R_BIN_JAVA_ATTR_TYPE_RUNTIME_VISIBLE_ANNOTATION_ATTR) {
 		r_list_free (attr->info.annotation_array.annotations);
 		free (attr->metas);
-		free (attr->name);
 		free (attr);
 	}
 }
@@ -6725,7 +6696,6 @@ static void r_bin_java_rti_annotations_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 	if (attr && attr->type == R_BIN_JAVA_ATTR_TYPE_RUNTIME_INVISIBLE_ANNOTATION_ATTR) {
 		r_list_free (attr->info.annotation_array.annotations);
 		free (attr->metas);
-		free (attr->name);
 		free (attr);
 	}
 }
@@ -6858,7 +6828,6 @@ static void r_bin_java_rtvp_annotations_attr_free(void /*RBinJavaAttrInfo*/ *a) 
 		if (attr->type == R_BIN_JAVA_ATTR_TYPE_RUNTIME_VISIBLE_PARAMETER_ANNOTATION_ATTR) {
 			r_list_free (attr->info.rtvp_annotations_attr.parameter_annotations);
 		}
-		free (attr->name);
 		free (attr->metas);
 		free (attr);
 	}
@@ -6869,7 +6838,6 @@ static void r_bin_java_rtip_annotations_attr_free(void /*RBinJavaAttrInfo*/ *a) 
 	if (attr) { // && attr->type == R_BIN_JAVA_ATTR_TYPE_RUNTIME_INVISIBLE_PARAMETER_ANNOTATION_ATTR) {
 		r_list_free (attr->info.rtip_annotations_attr.parameter_annotations);
 		free (attr->metas);
-		free (attr->name);
 		free (attr);
 	}
 }
@@ -7026,7 +6994,7 @@ static char *r_bin_java_resolve(RBinJavaObj *BIN_OBJ, int idx, ut8 spacy) {
 		}
 
 	} else if (!strcmp (cp_name, "Utf8")) {
-		char *tmp_str = convert_string ((const char *)item->info.cp_utf8.bytes, item->info.cp_utf8.length);
+		char *tmp_str = convert_string (item->info.cp_utf8.bytes, item->info.cp_utf8.length);
 		ut32 tmp_str_len = tmp_str? strlen (tmp_str) + 4: 0;
 		if (tmp_str) {
 			str = malloc (tmp_str_len + 4);
