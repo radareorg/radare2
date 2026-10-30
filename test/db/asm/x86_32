@@ -886,6 +886,7 @@ ad "add byte [eax], 0" 800000
 ad "add byte [eax], al" 0000
 a "add dword [eax], 1" 830001
 a "add dword [eax+8], 1" 83400801
+a "add dword [0x1000], -1" 830500100000ff
 ad "add dword [eax], eax" 0100
 a "add dword [ebp+4], 1" 83450401
 a "add dword [ebp+8], 1" 83450801

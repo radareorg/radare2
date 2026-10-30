@@ -6658,21 +6658,10 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 				}
 				addr_size = reg_type & ALL_SIZE;
 			} else {
-				const char *p = strchr (str, '+');
-				op->offset_sign = 1;
-				if (!p) {
-					p = strchr (str, '-');
-					if (p) {
-						op->offset_sign = -1;
-					}
-				}
-				//with SIB notation, we need to consider the right sign
-				const char *plus = strchr (str, '+');
+				// a '-' after the ']' belongs to the next operand
 				const char *minus = strchr (str, '-');
 				const char *closeB = strchr (str, ']');
-				if (plus && minus && plus < closeB && minus < closeB) {
-					op->offset_sign = -1;
-				}
+				op->offset_sign = (minus && closeB && minus < closeB)? -1: 1;
 				// If there's a scale, we don't want to parse out the
 				// scale with the offset (scale + offset) otherwise the scale
 				// will be the sum of the two. This splits the numbers
