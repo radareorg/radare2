@@ -6,7 +6,7 @@ permissions:
   contents: read
 jobs:
   diagnose:
-    runs-on: windows-latest
+    runs-on: windows-2022
     timeout-minutes: 25
     strategy:
       fail-fast: false
