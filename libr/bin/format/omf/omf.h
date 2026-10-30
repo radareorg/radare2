@@ -22,6 +22,7 @@ typedef struct OMF_DATA{
 	ut64 size;
 	ut32 offset;
 	ut16 seg_idx;
+	ut64 end; // sum of the block sizes of its segment up to this one
 	struct OMF_DATA	*next;
 } OMF_data;
 
@@ -33,6 +34,9 @@ typedef struct {
 	ut8 bits;
 	ut64 vaddr;
 	OMF_data *data;
+	OMF_data *data_tail;
+	OMF_data **blocks; // data blocks by position, for binary search
+	ut32 nb_blocks;
 } OMF_segment;
 
 typedef struct {
