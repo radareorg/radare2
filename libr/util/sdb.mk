@@ -26,6 +26,7 @@ SDB_OBJS+=ht.o
 SDB_OBJS+=json.o
 SDB_OBJS+=text.o
 SDB_OBJS+=lock.o
+SDB_OBJS+=file.o
 SDB_OBJS+=ls.o
 SDB_OBJS+=ns.o
 SDB_OBJS+=query.o
