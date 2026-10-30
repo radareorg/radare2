@@ -2006,10 +2006,11 @@ static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
 	int formal_index = 0;
 	RListIter *iter;
 	Variable *var;
+	// names in use mapped to the next suffix to try when they repeat
 	HtPP *taken = ht_pp_new0 ();
 	r_list_foreach (variables, iter, var) {
 		if (var->name && var->kind == VARIABLE_KIND_FORMAL_PARAMETER) {
-			ht_pp_insert (taken, var->name, var);
+			ht_pp_insert (taken, var->name, (void *)(size_t)1);
 		}
 	}
 	r_list_foreach (variables, iter, var) {
@@ -2036,17 +2037,19 @@ static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
 		} else if (var->kind == VARIABLE_KIND_LOCAL) {
 			// the function has one namespace while DWARF scopes each inlined
 			// call and lexical block, so a local that repeats a name is numbered
-			char *numbered = NULL;
-			int n = 1;
-			while (ht_pp_find (taken, numbered? numbered: var->name, NULL)) {
-				free (numbered);
-				numbered = r_str_newf ("%s_%d", var->name, n++);
-			}
-			if (numbered) {
+			// resume from the last suffix tried to avoid quadratic rescans
+			size_t n = (size_t)ht_pp_find (taken, var->name, NULL);
+			if (n > 0) {
+				char *numbered = NULL;
+				do {
+					free (numbered);
+					numbered = r_str_newf ("%s_%d", var->name, (int)n++);
+				} while (ht_pp_find (taken, numbered, NULL));
+				ht_pp_update (taken, var->name, (void *)n);
 				free (var->name);
 				var->name = numbered;
 			}
-			ht_pp_insert (taken, var->name, var);
+			ht_pp_insert (taken, var->name, (void *)(size_t)1);
 			sdb_setf (sdb, meta, 0, "fcn.%s.var.%s", sname, var->name);
 			r_strbuf_appendf (&vars_buf, "%s,", var->name);
 		}
