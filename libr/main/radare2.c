@@ -56,7 +56,7 @@ static int prompt_outdated_plugin(RCons *cons, const char *pkgname) {
 				}
 			}
 		}
-		R_LOG_ERROR ("Invalid answer. Enter y, n, d, a or i, or press Enter to rebuild.");
+		R_LOG_ERROR ("Invalid answer. Enter y, n, d, a or i, or press Enter to rebuild");
 	}
 }
 
