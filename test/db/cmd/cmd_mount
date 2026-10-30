@@ -1311,3 +1311,20 @@ f wo
 done
 EOF2
 RUN
+
+NAME=m bfs rejects a block shift that does not match the block size
+FILE=malloc://1024
+CMDS=<<EOF2
+wx 31534642454749420004000020000000 @ 0x220
+wx 00010000 @ 0x240
+wx 20000000 @ 0x24c
+wx 0000000000000100 @ 0x274
+wx 0000000000000100 @ 0x48
+m /mnt bfs 0
+m
+EOF2
+EXPECT=
+EXPECT_ERR=<<EOF2
+ERROR: Invalid BFS block shift: does not match the block size
+EOF2
+RUN

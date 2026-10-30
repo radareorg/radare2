@@ -441,6 +441,10 @@ static bool fs_bfs_mount(RFSRoot *root) {
 		goto fail;
 	}
 	ctx->block_shift = bfs_read32 (ctx, (ut8 *)&sb.block_shift);
+	if (ctx->block_shift > 16 || (1U << ctx->block_shift) != ctx->block_size) {
+		R_LOG_ERROR ("Invalid BFS block shift: does not match the block size");
+		goto fail;
+	}
 	ctx->inode_size = bfs_read32 (ctx, (ut8 *)&sb.inode_size);
 	if (!ctx->inode_size) {
 		ctx->inode_size = ctx->block_size;
@@ -450,6 +454,10 @@ static bool fs_bfs_mount(RFSRoot *root) {
 		goto fail;
 	}
 	ctx->ag_shift = bfs_read32 (ctx, (ut8 *)&sb.ag_shift);
+	if (ctx->ag_shift > 63) {
+		R_LOG_ERROR ("Invalid BFS allocation group shift: too large");
+		goto fail;
+	}
 	if (ctx->ag_shift < ctx->block_shift) {
 		ctx->ag_shift = ctx->block_shift;
 	}
