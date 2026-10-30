@@ -749,3 +749,8 @@ ad "add x0, sp, x1" e063218b
 ad "cmp x0, 0xfff" 1ffc3ff1
 ad "cmp w0, 1, lsl 12" 1f044071
 ad "cmp x0, x1, lsl 3" 1f0c01eb
+ad "add x0, x1, w2, uxtw 4" 2050228b
+ad "add x0, x1, xzr" 20001f8b
+ad "add w0, w1, wzr" 20001f0b
+ad "cmp x0, xzr" 1f001feb
+ad "cmp w0, wzr" 1f001f6b

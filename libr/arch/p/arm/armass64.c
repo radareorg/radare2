@@ -1563,15 +1563,15 @@ static ut32 addsub(ArmOp *op, bool sub, bool setflags) {
 		check_cond (!rd_sp && !rn_sp);
 	}
 	if (rm->type == ARM_CONSTANT) {
-		st64 imm = (st64)rm->immediate;
+		ut64 imm = rm->immediate;
 		bool shift12 = false;
 		if (mod) {
 			check_cond (mod->type == ARM_SHIFT && mod->shift == ARM_LSL && (mod->shift_amount == 0 || mod->shift_amount == 12));
 			shift12 = mod->shift_amount == 12;
 		}
-		if (imm < 0) {
+		if (imm >> 63) {
 			sub = !sub;
-			imm = -imm;
+			imm = 0 - imm;
 		}
 		if (!shift12 && imm > 0xfff && !(imm & 0xfff)) {
 			shift12 = true;
@@ -1585,7 +1585,7 @@ static ut32 addsub(ArmOp *op, bool sub, bool setflags) {
 	} else if (rm->type == ARM_GPR && (rd_sp || rn_sp || (mod && mod->type == ARM_EXTEND))) {
 		// extended register, lsl is uxtx or uxtw when sp is used
 		int option = sf? 3: 2;
-		int amount = 0;
+		ut64 amount = 0;
 		if (mod && mod->type == ARM_EXTEND) {
 			option = mod->shift - ARM_UXTB;
 			amount = mod->shift_amount;
@@ -1597,17 +1597,17 @@ static ut32 addsub(ArmOp *op, bool sub, bool setflags) {
 		// rm is an x register only for uxtx and sxtx in the 64-bit form
 		const bool rm64 = sf && (option & 3) == 3;
 		check_cond (rm64 == !!(rm->reg_type & ARM_REG64));
-		insn |= 0x0b200000 | ((rm->reg & 0x1f) << 16) | (option << 13) | (amount << 10);
+		insn |= 0x0b200000 | ((rm->reg & 0x1f) << 16) | (option << 13) | ((ut32)amount << 10);
 	} else if (rm->type == ARM_GPR) {
 		int shift = ARM_LSL;
-		int amount = 0;
+		ut64 amount = 0;
 		if (mod) {
 			check_cond (mod->type == ARM_SHIFT && mod->shift != ARM_ROR);
 			shift = mod->shift;
 			amount = mod->shift_amount;
 		}
-		check_cond (sf == !!(rm->reg_type & ARM_REG64) && amount < (sf? 64: 32));
-		insn |= 0x0b000000 | (shift << 22) | ((rm->reg & 0x1f) << 16) | (amount << 10);
+		check_cond (sf == !!(rm->reg_type & ARM_REG64) && !(rm->reg_type & ARM_SP) && amount < (sf? 64: 32));
+		insn |= 0x0b000000 | (shift << 22) | ((rm->reg & 0x1f) << 16) | ((ut32)amount << 10);
 	} else {
 		return data;
 	}

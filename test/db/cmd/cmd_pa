@@ -411,3 +411,36 @@ ERROR: Cannot assemble 'movzx byte [rax], al' at line 1
 ERROR: Cannot assemble 'movsx eax, byte [rip + rax]' at line 1
 EOF
 RUN
+
+NAME=pa arm64 reject out of range add and sub operands
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+pa add x0, x1, 0x8000000000000000
+pa sub x0, x1, 0x8000000000000000
+pa subs x0, x1, 0x8000000000000000
+pa cmp x0, 0x8000000000000000
+pa add x0, x1, w2, uxtw 0xffffffff
+pa add x0, x1, w2, uxtw 5
+pa add x0, x1, sp
+pa add w0, w1, wsp
+pa subs x0, x1, sp
+pa cmp x0, sp
+pa cmp w0, wsp
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'add x0, x1, 0x8000000000000000' at line 1
+ERROR: Cannot assemble 'sub x0, x1, 0x8000000000000000' at line 1
+ERROR: Cannot assemble 'subs x0, x1, 0x8000000000000000' at line 1
+ERROR: Cannot assemble 'cmp x0, 0x8000000000000000' at line 1
+ERROR: Cannot assemble 'add x0, x1, w2, uxtw 0xffffffff' at line 1
+ERROR: Cannot assemble 'add x0, x1, w2, uxtw 5' at line 1
+ERROR: Cannot assemble 'add x0, x1, sp' at line 1
+ERROR: Cannot assemble 'add w0, w1, wsp' at line 1
+ERROR: Cannot assemble 'subs x0, x1, sp' at line 1
+ERROR: Cannot assemble 'cmp x0, sp' at line 1
+ERROR: Cannot assemble 'cmp w0, wsp' at line 1
+EOF
+RUN
