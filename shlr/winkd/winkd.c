@@ -541,6 +541,9 @@ RList *winkd_list_modules(WindCtx *ctx) {
 	const ut64 sizeoff = ctx->is_x64? 0x40: 0x20;
 	const ut64 nameoff = ctx->is_x64? 0x48: 0x24;
 
+	// A process maps a few hundred modules at most; bound the walk so a
+	// cyclic list from the target cannot make us loop and allocate forever.
+	int guard = 0;
 	do {
 
 		ut64 next = 0;
@@ -597,6 +600,10 @@ RList *winkd_list_modules(WindCtx *ctx) {
 
 		r_list_append (ret, mod);
 
+		if (++guard > 4096) {
+			R_LOG_WARN ("module list walk exceeded guard, aborting");
+			break;
+		}
 	} while (ptr != base);
 
 	return ret;
