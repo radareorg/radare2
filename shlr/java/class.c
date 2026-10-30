@@ -6085,10 +6085,11 @@ static RBinJavaAnnotation *r_bin_java_annotation_new(RBinJavaObj *bin, ut8 *buff
 			break;
 		}
 		evps = r_bin_java_element_pair_new (bin, buffer + offset, sz - offset, buf_offset + offset, 0);
-		if (evps) {
-			offset += evps->size;
-			r_list_append (annotation->element_value_pairs, (void *)evps);
+		if (!evps) {
+			break;
 		}
+		offset += evps->size;
+		r_list_append (annotation->element_value_pairs, (void *)evps);
 	}
 	annotation->size = offset;
 	return annotation;
@@ -6295,12 +6296,13 @@ static RBinJavaElementValue *r_bin_java_element_value_new(RBinJavaObj *bin, ut8 
 				break;
 			}
 			RBinJavaElementValue *ev_element = r_bin_java_element_value_new (bin, buffer + offset, sz - offset, buf_offset + offset, depth + 1);
-			if (ev_element) {
-				element_value->size += ev_element->size;
-				offset += ev_element->size;
-				// read array_value.num_values, and append to array_value.values
-				r_list_append (element_value->value.array_value.values, (void *)ev_element);
+			if (!ev_element) {
+				break;
 			}
+			element_value->size += ev_element->size;
+			offset += ev_element->size;
+			// read array_value.num_values, and append to array_value.values
+			r_list_append (element_value->value.array_value.values, (void *)ev_element);
 		}
 		break;
 	case R_BIN_JAVA_EV_TAG_ANNOTATION:
@@ -6322,13 +6324,11 @@ static RBinJavaElementValue *r_bin_java_element_value_new(RBinJavaObj *bin, ut8 
 				break;
 			}
 			evps = r_bin_java_element_pair_new (bin, buffer + offset, sz - offset, buf_offset + offset, depth + 1);
-			if (evps) {
-				element_value->size += evps->size;
-				offset += evps->size;
+			if (!evps) {
+				break;
 			}
-			if (evps == NULL) {
-				// TODO: eprintf error when reading element pair
-			}
+			element_value->size += evps->size;
+			offset += evps->size;
 			r_list_append (element_value->value.annotation_value.element_value_pairs, (void *)evps);
 		}
 		break;
@@ -6457,12 +6457,11 @@ static RBinJavaBootStrapMethod *r_bin_java_bootstrap_method_new(RBinJavaObj *bin
 			break;
 		}
 		bsm_arg = r_bin_java_bootstrap_method_argument_new (bin, buffer + offset, sz - offset, buf_offset + offset);
-		if (bsm_arg) {
-			offset += bsm_arg->size;
-			r_list_append (bsm->bootstrap_arguments, (void *)bsm_arg);
-		} else {
-			// TODO eprintf Failed to read the %d boot strap method.
+		if (!bsm_arg) {
+			break;
 		}
+		offset += bsm_arg->size;
+		r_list_append (bsm->bootstrap_arguments, (void *)bsm_arg);
 	}
 	bsm->size = offset;
 	return bsm;
@@ -6570,12 +6569,12 @@ static RBinJavaAttrInfo *r_bin_java_bootstrap_methods_attr_new(RBinJavaObj *bin,
 				break;
 			}
 			bsm = r_bin_java_bootstrap_method_new (bin, buffer + offset, sz - offset, buf_offset + offset);
-			if (bsm) {
-				offset += bsm->size;
-				r_list_append (attr->info.bootstrap_methods_attr.bootstrap_methods, (void *)bsm);
-			} else {
-				// TODO eprintf Failed to read the %d boot strap method.
+			if (!bsm) {
+				// offset did not advance, retrying would fail the same way
+				break;
 			}
+			offset += bsm->size;
+			r_list_append (attr->info.bootstrap_methods_attr.bootstrap_methods, (void *)bsm);
 		}
 		attr->size = offset;
 	}
@@ -6642,10 +6641,11 @@ static RBinJavaAnnotationsArray *r_bin_java_annotation_array_new(RBinJavaObj *bi
 			break;
 		}
 		annotation = r_bin_java_annotation_new (bin, buffer + offset, sz - offset, buf_offset + offset);
-		if (annotation) {
-			offset += annotation->size;
-			r_list_append (annotation_array->annotations, (void *)annotation);
+		if (!annotation) {
+			break;
 		}
+		offset += annotation->size;
+		r_list_append (annotation_array->annotations, (void *)annotation);
 	}
 	annotation_array->size = offset;
 	return annotation_array;
@@ -6801,10 +6801,11 @@ static RBinJavaAttrInfo *r_bin_java_rtip_annotations_attr_new(RBinJavaObj *bin, 
 				buffer + offset,
 				sz - offset,
 				buf_offset + offset);
-			if (annotation_array) {
-				offset += annotation_array->size;
-				r_list_append (attr->info.rtip_annotations_attr.parameter_annotations, (void *)annotation_array);
+			if (!annotation_array) {
+				break;
 			}
+			offset += annotation_array->size;
+			r_list_append (attr->info.rtip_annotations_attr.parameter_annotations, (void *)annotation_array);
 		}
 		attr->size = offset;
 	}

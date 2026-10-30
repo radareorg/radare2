@@ -118,3 +118,37 @@ WARN: Attribute Code nested too deep
 ERROR: Unable to parse code attribute: 0
 EOF
 RUN
+
+NAME=java bootstrap methods attribute with true counts
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+wx cafebabe00000034000401000141070001010010426f6f7473747261704d6574686f64730021000200000000000000000002000300000006000100010000000300000006000100010000 @ 0
+oba 0
+i~format
+ic
+EOF
+EXPECT=<<EOF
+format   java
+0x00000000 [0x00000000 - 0x00000000]      0 java class 0 A
+EOF
+RUN
+
+NAME=java bootstrap methods rejected entry is not retried
+FILE=malloc://1024
+CMDS=<<EOF
+e scr.color=0
+wx cafebabe00000034000401000141070001010010426f6f7473747261704d6574686f64730021000200000000000000000002000300000006ffff0001ffff000300000006ffff0001ffff @ 0
+oba 0
+i~format
+ic
+EOF
+EXPECT=<<EOF
+format   java
+0x00000000 [0x00000000 - 0x00000000]      0 java class 0 A
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid bootstrap arguments count: 65535
+ERROR: Invalid bootstrap arguments count: 65535
+EOF
+RUN
