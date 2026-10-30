@@ -339,13 +339,12 @@ static st64 read_entry_bundle_entry(RBinLEObj *bin, ut64 offset, ut8 type, LE_en
 	return r_buf_fread_at (bin->buf, offset, (ut8 *)e, fmt, 1);
 }
 
-static RList *__get_entries(RBinLEObj *bin) {
+R_VEC_TYPE (RVecLEEntry, ut64);
+
+// entry addresses by ordinal - 1, unused ordinals hold 0
+static void __get_entries(RBinLEObj *bin, RVecLEEntry *l) {
 	LE_image_header *h = bin->header;
 	ut64 offset = (ut64)h->enttab + bin->headerOff;
-	RList *l = r_list_newf (free);
-	if (!l) {
-		return NULL;
-	}
 	while (true) {
 		LE_entry_bundle_header header = {0};
 		LE_entry_bundle_entry e = {{0}};
@@ -355,12 +354,17 @@ static RList *__get_entries(RBinLEObj *bin) {
 		if (!header.count) {
 			break;
 		}
+		// ordinals are 16 bit wide, so entries past UT16_MAX can never be referenced
+		if (RVecLEEntry_length (l) + header.count > UT16_MAX) {
+			R_LOG_WARN ("LE entry table has more than %d entries, ignoring the rest", UT16_MAX);
+			break;
+		}
 		ut8 type = header.type & ~ENTRY_PARAMETER_TYPING_PRESENT;
 		if (type == UNUSED_ENTRY) {
 			offset += sizeof (header.type) + sizeof (header.count);
-			while (header.count) {
-				r_list_append (l, strdup ("")); // (ut64 *)-1);
-				header.count--;
+			while (header.count--) {
+				ut64 unused = 0;
+				RVecLEEntry_push_back (l, &unused);
 			}
 			continue;
 		}
@@ -399,23 +403,22 @@ static RList *__get_entries(RBinLEObj *bin) {
 				offset += (ut64)(e.entry_32.flags & ENTRY_PARAM_COUNT_MASK) * 2;
 			}
 			if (entry != UT64_MAX) {
-				r_list_append (l, r_str_newf ("0x%"PFMT64x, entry));
+				RVecLEEntry_push_back (l, &entry);
 			}
 		}
 	}
-	return l;
 }
 
-static void __get_symbols_at(RBinLEObj *bin, RVecRBinSymbol *vec, RList *entl, ut64 offset, ut64 end) {
+static void __get_symbols_at(RBinLEObj *bin, RVecRBinSymbol *vec, RVecLEEntry *entl, ut64 offset, ut64 end) {
 	while (offset < end) {
 		RBinSymbol *sym = __get_symbol (bin, &offset);
 		if (!sym) {
 			break;
 		}
 		if (sym->ordinal) {
-			const char *n = r_list_get_n (entl, sym->ordinal - 1);
-			if (n) {
-				sym->vaddr = r_num_get (NULL, n);
+			const ut64 *addr = RVecLEEntry_at (entl, sym->ordinal - 1);
+			if (addr) {
+				sym->vaddr = *addr;
 				sym->bind = R_BIN_BIND_GLOBAL_STR;
 				sym->type = R_BIN_TYPE_FUNC_STR;
 				RVecRBinSymbol_push_back (vec, sym);
@@ -428,15 +431,17 @@ static void __get_symbols_at(RBinLEObj *bin, RVecRBinSymbol *vec, RList *entl, u
 }
 
 R_IPI void r_bin_le_load_symbols(RBinLEObj *bin, RVecRBinSymbol *vec) {
-	RList *entries = __get_entries (bin);
+	RVecLEEntry entries;
+	RVecLEEntry_init (&entries);
+	__get_entries (bin, &entries);
 	LE_image_header *h = bin->header;
 	ut64 offset = (ut64)h->restab + bin->headerOff;
 	ut32 end = h->enttab + bin->headerOff;
-	__get_symbols_at (bin, vec, entries, offset, end);
+	__get_symbols_at (bin, vec, &entries, offset, end);
 	offset = h->nrestab;
 	end = h->nrestab + h->cbnrestab;
-	__get_symbols_at (bin, vec, entries, offset, end);
-	r_list_free (entries);
+	__get_symbols_at (bin, vec, &entries, offset, end);
+	RVecLEEntry_fini (&entries);
 }
 
 R_IPI void r_bin_le_load_imports(RBinLEObj *bin, RVecRBinImport *vec) {
@@ -769,7 +774,9 @@ R_IPI RVecRBinReloc *r_bin_le_get_relocs(RBinLEObj *bin) {
 	if (!l) {
 		return NULL;
 	}
-	RList *entries = __get_entries (bin);
+	RVecLEEntry entries;
+	RVecLEEntry_init (&entries);
+	__get_entries (bin, &entries);
 	RVecLEModName modnames;
 	RVecLEModName_init (&modnames);
 	__load_modnames (bin, &modnames);
@@ -891,9 +898,9 @@ R_IPI RVecRBinReloc *r_bin_le_get_relocs(RBinLEObj *bin) {
 				break;
 			}
 			case INTERNALENTRY: {
-				const char *n = r_list_get_n (entries, ordinal - 1);
-				if (n) {
-					rel->addend = r_num_get (NULL, n);
+				const ut64 *addr = RVecLEEntry_at (&entries, ordinal - 1);
+				if (addr) {
+					rel->addend = *addr;
 				}
 				break;
 			}
@@ -951,7 +958,7 @@ R_IPI RVecRBinReloc *r_bin_le_get_relocs(RBinLEObj *bin) {
 		r_bitset_free (chained);
 	}
 	RVecLEModName_fini (&modnames);
-	r_list_free (entries);
+	RVecLEEntry_fini (&entries);
 	return l;
 }
 
