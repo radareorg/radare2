@@ -365,7 +365,7 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 	int maxstr = r_config_get_i (core->config, "bin.str.max");
 	RBin *bin = core->bin;
 	RBinObject *obj = r_bin_cur_object (bin);
-	RBinString *it, *string;
+	RBinString *it;
 	RBinSection *section;
 
 	bin->options.minstrlen = minstr;
@@ -385,8 +385,7 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 	RBinString b64 = { 0 };
 	if (list) {
 	R_VEC_FOREACH (list, it) {
-		// string may point to the decoded b64 copy, never use it as the cursor
-		string = it;
+		RBinString *string = it;
 		const char *section_name, *type_string;
 		ut64 paddr = string->paddr;
 		ut64 vaddr = rva (core->bin, paddr, string->vaddr, va);

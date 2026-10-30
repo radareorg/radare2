@@ -810,3 +810,21 @@ EXPECT=<<EOF
 1   0x00000045 0x00001005 13  14   .data   ascii second string
 EOF
 RUN
+
+NAME=base64 string display keeps the vector iterator and pagination
+FILE=hex://534756736247383d007461696c2100
+CMDS=<<EOF
+e bin.str.debase64=true
+izzqq
+izzqq 1 1
+e bin.str.debase64=false
+izzqq
+EOF
+EXPECT=<<EOF
+Hello
+tail!
+tail!
+SGVsbG8=
+tail!
+EOF
+RUN
