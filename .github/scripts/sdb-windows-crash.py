@@ -72,3 +72,5 @@ entry.write_text(text)
 meson = sdb / 'meson.build'
 text = meson.read_text().replace("sdb_exe = executable('sdb', join_paths('src','entry.c'),", "sdb_exe = executable('sdb', join_paths('src','entry.c'),\n  link_args: ['dbghelp.lib'],")
 meson.write_text(text)
+tool = sdb / 'src/tool.c'
+tool.write_text(tool.read_text().replace('content = strbuf_drain (sb);', 'content = strbuf_drain (sb);\n\tsb = NULL;'))
