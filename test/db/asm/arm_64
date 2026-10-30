@@ -732,3 +732,20 @@ ad "ldp d8, d9, [sp], 0x10" e827c16c
 ad "stp s0, s1, [x0, 8]" 0004012d
 ad "ldp q0, q1, [x0, 0x20]" 000441ad
 ad "stp q2, q3, [sp, -0x40]!" e20fbead
+ad "subs x0, x1, 1" 200400f1
+ad "subs x0, x1, x2" 200002eb
+ad "sub w0, w1, w2" 2000024b
+ad "sub w0, w1, 0x10" 20400051
+ad "add x0, x0, 1, lsl 12" 00044091
+a "add x0, x0, 0x1000" 00044091
+ad "sub sp, sp, 1, lsl 12" ff0740d1
+ad "sub x0, x1, 1" 200400d1
+a "add x0, x1, -1" 200400d1
+ad "add x0, x0, w28, uxtw" 00403c8b
+ad "sub x0, x0, w28, sxtw 2" 00c83ccb
+ad "adds x0, x0, x28, lsl 3" 000c1cab
+ad "adds x0, x0, w28, uxtw" 00403cab
+ad "add x0, sp, x1" e063218b
+ad "cmp x0, 0xfff" 1ffc3ff1
+ad "cmp w0, 1, lsl 12" 1f044071
+ad "cmp x0, x1, lsl 3" 1f0c01eb
