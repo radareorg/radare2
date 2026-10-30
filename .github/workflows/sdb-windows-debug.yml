@@ -15,6 +15,12 @@ jobs:
         - sanitizer: none
           debug: 'true'
     steps:
+    - name: Match original pagefile
+      uses: al-cheb/configure-pagefile-action@9b6da52fb72a3c6147c1aad2df22d8d905681adc
+      with:
+        minimum-size: 16GB
+        maximum-size: 16GB
+        disk-root: 'C:'
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
     - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
       with:
@@ -40,32 +46,19 @@ jobs:
       run: |
         ninja -C build -j4 subprojects/sdb/sdb.exe 2>&1 | Tee-Object diagnostics/build.log
         exit $LASTEXITCODE
-    - name: Enable full Windows page heap
+    - name: Exercise SDB throughout the full Windows build
       shell: pwsh
+      timeout-minutes: 20
       run: |
-        $key = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\sdb.exe'
-        New-Item -Path $key -Force | Out-Null
-        New-ItemProperty -Path $key -Name GlobalFlag -PropertyType String -Value '0x02000000' -Force | Out-Null
-        Get-ItemProperty $key
-    - name: Repeat database generation
-      if: always()
-      shell: pwsh
-      timeout-minutes: 10
-      run: |
-        $env:SDB_STRESS_ROUNDS = "50"
-        python .github/scripts/sdb-windows-stress.py 2>&1 | Tee-Object diagnostics/reproduce.log
-        exit $LASTEXITCODE
-    - name: Validate stack and dump capture using a deliberate exception
-      if: always()
-      shell: pwsh
-      timeout-minutes: 3
-      run: |
-        $env:SDB_DIAGNOSTIC_CRASH = '1'
-        $env:SDB_CRASH_DIR = "$PWD/diagnostics/selftest"
-        New-Item -ItemType Directory -Force $env:SDB_CRASH_DIR | Out-Null
-        & "$PWD/build/subprojects/sdb/sdb.exe" -v 2>&1 | Tee-Object diagnostics/selftest.log
-        if (!(Select-String -Path diagnostics/selftest.log -Pattern 'written=1')) { exit 1 }
-        exit 0
+        $env:SDB_STRESS_ROUNDS = "5000"
+        $stress = Start-Process python -ArgumentList '.github/scripts/sdb-windows-stress.py' -PassThru -RedirectStandardOutput diagnostics/stress.log -RedirectStandardError diagnostics/stress-errors.log
+        ninja -C build -j4 2>&1 | Tee-Object diagnostics/full-build.log
+        $buildExit = $LASTEXITCODE
+        $stress.WaitForExit()
+        Get-Content diagnostics/stress.log
+        Get-Content diagnostics/stress-errors.log
+        if ($buildExit -ne 0) { exit $buildExit }
+        exit $stress.ExitCode
     - name: Upload crash evidence
       if: always()
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
