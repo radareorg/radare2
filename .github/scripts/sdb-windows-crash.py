@@ -67,7 +67,7 @@ static LONG WINAPI sdb_crash(EXCEPTION_POINTERS *exception) {
 ''')
 entry = sdb / 'src/entry.c'
 text = entry.read_text().replace('#include <sdb/sdb.h>', '#include <sdb/sdb.h>\n#include "crash.h"')
-text = text.replace('int main(int argc, const char **argv) {', 'int main(int argc, const char **argv) {\n\tSetUnhandledExceptionFilter (sdb_crash);')
+text = text.replace('int main(int argc, const char **argv) {', 'int main(int argc, const char **argv) {\n\tSetUnhandledExceptionFilter (sdb_crash);\n\tif (getenv ("SDB_DIAGNOSTIC_CRASH")) { RaiseException (0xe0424242, 0, 0, NULL); }')
 entry.write_text(text)
 meson = sdb / 'meson.build'
 text = meson.read_text().replace("sdb_exe = executable('sdb', join_paths('src','entry.c'),", "sdb_exe = executable('sdb', join_paths('src','entry.c'),\n  link_args: ['dbghelp.lib'],")

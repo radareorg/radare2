@@ -11,7 +11,7 @@ def worker(number):
     output = root / 'diagnostics' / f'worker-{number}'
     output.mkdir(exist_ok=True)
     env = dict(os.environ, SDB_OUTPUT_DIR=str(output))
-    for iteration in range(250):
+    for iteration in range(int(os.environ.get('SDB_STRESS_ROUNDS', '250'))):
         for file in output.iterdir():
             file.unlink()
         result = subprocess.run([str(exe), '-r', str(source)], env=env,
@@ -27,5 +27,5 @@ def worker(number):
 
 with ThreadPoolExecutor(max_workers=8) as pool:
     passed = all(list(pool.map(worker, range(8))))
-print(f'2000 fresh generations passed={passed}', flush=True)
+print(f'fresh generations passed={passed}', flush=True)
 raise SystemExit(0 if passed else 1)

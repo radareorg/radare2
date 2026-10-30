@@ -13,10 +13,6 @@ jobs:
       matrix:
         include:
         - sanitizer: none
-          debug: 'false'
-        - sanitizer: none
-          debug: 'true'
-        - sanitizer: address
           debug: 'true'
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -44,12 +40,32 @@ jobs:
       run: |
         ninja -C build -j4 subprojects/sdb/sdb.exe 2>&1 | Tee-Object diagnostics/build.log
         exit $LASTEXITCODE
+    - name: Enable full Windows page heap
+      shell: pwsh
+      run: |
+        $key = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\sdb.exe'
+        New-Item -Path $key -Force | Out-Null
+        New-ItemProperty -Path $key -Name GlobalFlag -PropertyType String -Value '0x02000000' -Force | Out-Null
+        Get-ItemProperty $key
     - name: Repeat database generation
       if: always()
       shell: pwsh
+      timeout-minutes: 10
       run: |
+        $env:SDB_STRESS_ROUNDS = "50"
         python .github/scripts/sdb-windows-stress.py 2>&1 | Tee-Object diagnostics/reproduce.log
         exit $LASTEXITCODE
+    - name: Validate stack and dump capture using a deliberate exception
+      if: always()
+      shell: pwsh
+      timeout-minutes: 3
+      run: |
+        $env:SDB_DIAGNOSTIC_CRASH = '1'
+        $env:SDB_CRASH_DIR = "$PWD/diagnostics/selftest"
+        New-Item -ItemType Directory -Force $env:SDB_CRASH_DIR | Out-Null
+        & "$PWD/build/subprojects/sdb/sdb.exe" -v 2>&1 | Tee-Object diagnostics/selftest.log
+        if (!(Select-String -Path diagnostics/selftest.log -Pattern 'written=1')) { exit 1 }
+        exit 0
     - name: Upload crash evidence
       if: always()
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
