@@ -982,3 +982,32 @@ EXPECT=<<EOF
             0x00000000      57             push rdi
 EOF
 RUN
+
+NAME=prj.sandbox keeps hooks and redirections set by the project
+FILE=-
+CMDS=<<EOF
+e prj.vc=false
+e dir.projects=scripts/prjrc
+e prj.sandbox=true
+P hooks
+e cmd.prompt
+e scr.pager
+e asm.bits
+e cmd.depth
+e prj.sandbox=false
+e cmd.prompt=?e ok
+e cmd.prompt
+EOF
+EXPECT=<<EOF
+
+
+32
+10
+?e ok
+EOF
+EXPECT_ERR=<<EOF
+WARN: Cannot change 'cmd.prompt' inside the sandbox
+WARN: Cannot change 'scr.pager' inside the sandbox
+WARN: Cannot change 'http.root' inside the sandbox
+EOF
+RUN

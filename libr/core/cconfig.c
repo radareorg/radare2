@@ -4001,6 +4001,34 @@ static char *get_www_root(void) {
 	return strdup (R2_WWWROOT);
 }
 
+// keys that run commands, launch programs or redirect file access once the sandbox scope is gone
+static bool is_privileged_key(const char *k) {
+	const char *prefixes[] = { "cmd.", "key.", "http.", "dir.", "cfg.sandbox", NULL };
+	const char *keys[] = { "prj.sandbox", "prj.vc", "scr.pager", "scr.tee", "log.file", "cfg.editor", "dbg.profile", NULL };
+	int i;
+	for (i = 0; prefixes[i]; i++) {
+		if (r_str_startswith (k, prefixes[i])) {
+			return true;
+		}
+	}
+	for (i = 0; keys[i]; i++) {
+		if (!strcmp (k, keys[i])) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static void mark_privileged_keys(RConfig *cfg) {
+	RListIter *iter;
+	RConfigNode *node;
+	r_list_foreach (cfg->nodes, iter, node) {
+		if (is_privileged_key (node->name)) {
+			node->flags |= CN_PRIV;
+		}
+	}
+}
+
 R_API int r_core_config_init(RCore *core) {
 	int i;
 	char *p, *tmpdir;
@@ -5172,6 +5200,7 @@ R_API int r_core_config_init(RCore *core) {
 		}
 		free (p);
 	}
+	mark_privileged_keys (cfg);
 	r_config_lock (cfg, true);
 	return true;
 }
