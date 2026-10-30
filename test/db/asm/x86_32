@@ -164,6 +164,8 @@ d "mov dr0, eax" 0f2300
 d "mov dword [0], eax" a300000000
 d "mov dword [eax], 0" c70000000000
 d "mov dword [eax], eax" 8900
+a "mov dword [0x1000], 0x1234" c7050010000034120000
+a "mov byte [0x80], 0x7f" c605800000007f
 d "mov dword cs:[eax], eax" 2e8900
 d "mov dword ds:[eax], eax" 3e8900
 d "mov dword es:[eax], eax" 268900

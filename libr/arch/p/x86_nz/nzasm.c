@@ -3311,6 +3311,31 @@ static int opmov(RArchSession *a, ut8 *data, const Opcode *op) {
 				}
 			}
 		} else if (op->operands[0].type & OT_MEMORY) {
+			const Operand *dst = &op->operands[0];
+			if (bits == 64 || (bits == 32 && (use_op_reg_mem (bits, dst) || dst->regs[0] == X86R_UNDEFINED))) {
+				// c6 /0 ib, c7 /0 iw/id; a qword takes a sign-extended imm32
+				const ut32 size = dst->dest_size? (dst->dest_size & ALL_SIZE): (dst->type & ALL_SIZE);
+				// byte, word and dword immediates are truncated, like the old memory path
+				const st64 imm = (st64)immediate;
+				if (op->operands_count != 2 || (size == OT_DWORD && (imm < -(st64)UT32_MAX || imm > UT32_MAX))
+						|| (size == OT_QWORD && (imm < ST32_MIN || imm > ST32_MAX))) {
+					return -1;
+				}
+				l = op_rm_ext (bits, data, dst, 0, 0xc6, 0xc7);
+				if (l < 0) {
+					return -1;
+				}
+				if (size == OT_BYTE) {
+					data[l++] = (ut8)imm;
+				} else if (size == OT_WORD) {
+					r_write_le16 (data + l, (ut16)imm);
+					l += 2;
+				} else {
+					r_write_le32 (data + l, (ut32)imm);
+					l += 4;
+				}
+				return l;
+			}
 			if (!op->operands[0].explicit_size) {
 				if (op->operands[0].type & OT_GPREG) {
 					((Opcode *)op)->operands[0].dest_size = op->operands[0].reg_size;
