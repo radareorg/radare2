@@ -315,7 +315,9 @@ loaded:
 		core->prj->path = prj_path;
 		prj_path = NULL;
 		if (!sandbox) {
-			core->prj->rvc = rvc_open (core->prj->path, RVC_TYPE_GIT);
+			if (r_config_get_b (core->config, "prj.vc")) {
+				core->prj->rvc = rvc_open (core->prj->path, RVC_TYPE_GIT);
+			}
 			if (r_config_get_b (core->config, "prj.history")) {
 				char *file = r_file_new (core->prj->path, "history", NULL);
 				r_line_hist_free (core->cons->line);
