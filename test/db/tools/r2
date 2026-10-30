@@ -283,3 +283,22 @@ EXPECT=<<EOF
 
 EOF
 RUN
+
+NAME=radare2 -p honors prj.sandbox and dir.projects from R2_RCFILE
+FILE=-
+ENV=R2_RCFILE=scripts/prjrc/radare2rc;HOME=scripts/no-nl-at-eof.r2;USERPROFILE=scripts/no-nl-at-eof.r2
+CMDS=!radare2 -q -p sandboxed -c 'e prj.sandbox' - 2>/dev/null
+EXPECT=<<EOF
+loaded
+true
+EOF
+RUN
+
+NAME=radare2 -e overrides R2_RCFILE for -p projects
+FILE=-
+ENV=R2_RCFILE=scripts/prjrc/radare2rc;HOME=scripts/no-nl-at-eof.r2;USERPROFILE=scripts/no-nl-at-eof.r2
+CMDS=!radare2 -q -e dir.projects=scripts -p sandboxed - 2>/dev/null || echo notfound
+EXPECT=<<EOF
+notfound
+EOF
+RUN

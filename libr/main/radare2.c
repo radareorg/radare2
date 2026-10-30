@@ -1378,14 +1378,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	r_bin_force_plugin (r->bin, mr.forcebin);
 
-	if (mr.project_name) {
-		if (!r_core_project_open (r, mr.project_name)) {
-			R_LOG_ERROR ("Cannot find project");
-			mainr2_fini (&mr);
-			return 1;
-		}
-	}
-
 	if (mr.do_connect) {
 		const char *uri = argv[opt.ind];
 		if (opt.ind >= argc) {
@@ -1420,6 +1412,19 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		r_core_parse_radare2rc (r);
 	} else {
 		r_config_set_b (r->config, "scr.utf8", false);
+	}
+	// open the project after the rc files so prj.sandbox and dir.projects are honored
+	if (mr.project_name) {
+		RListIter *iter;
+		char *cmdn;
+		r_list_foreach (mr.evals, iter, cmdn) {
+			free (r_config_eval (r->config, cmdn, false, NULL));
+		}
+		if (!r_core_project_open (r, mr.project_name)) {
+			R_LOG_ERROR ("Cannot find project");
+			mainr2_fini (&mr);
+			return 1;
+		}
 	}
 	prompt_rebuild_outdated_plugins (r);
 

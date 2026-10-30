@@ -1,0 +1,3 @@
+e dir.projects=scripts/prjrc
+e prj.vc=false
+e prj.sandbox=true
