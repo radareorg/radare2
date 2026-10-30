@@ -347,6 +347,7 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 							free (flagname);
 							flagname = newstr;
 						}
+						flag_len = strlen (flagname);
 					}
 					const char *suffix = (ptr != ptr2)? ptr2: "";
 					char *spaced_suffix = NULL;
