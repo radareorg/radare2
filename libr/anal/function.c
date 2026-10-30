@@ -297,7 +297,7 @@ R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb) {
 		return;
 	}
 	r_list_append (bb->fcns, fcn);
-	r_ref (bb);
+	(void)r_ref (bb);
 	RVecAnalBlockPtr_push_back (&fcn->bbs, &bb);
 	fcn->meta.numcallrefs = -1;
 
