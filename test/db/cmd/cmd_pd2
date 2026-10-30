@@ -399,6 +399,7 @@ RUN
 
 NAME=esil func cmt refline
 FILE=bins/elf/ls
+ARGS=-e bin.relocs.apply=false
 CMDS=<<EOF
 e io.cache=true
 e asm.emu=true

@@ -20,6 +20,7 @@ RUN
 
 NAME=cmp obj
 FILE=bins/elf/ls
+ARGS=-e bin.relocs.apply=false
 CMDS=<<EOF
 o bins/elf/crackme
 ob
