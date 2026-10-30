@@ -694,6 +694,9 @@ static void reloc_emit(RVecRBinReloc *relocs, const RBinReloc *reloc, const LEOb
 		return;
 	}
 	RBinReloc *clone = RVecRBinReloc_emplace_back (relocs);
+	if (!clone) {
+		return;
+	}
 	*clone = *reloc;
 	clone->import = reloc->import ? r_bin_import_clone (reloc->import) : NULL;
 	clone->vaddr = vaddr;
@@ -783,6 +786,8 @@ R_IPI RVecRBinReloc *r_bin_le_get_relocs(RBinLEObj *bin) {
 		}
 		LEObjectPage page;
 		const LEObjectPage *page_ref = object_page_at (bin, cur_page, &object_index, &page) ? &page : NULL;
+		// a page dword belongs to at most one chain, cycles and shared chains are walked once
+		RBitset *chained = NULL;
 		while (offset < end) {
 			ut64 record_end;
 			if (!reloc_record_end (bin->buf, offset, end, &record_end)) {
@@ -917,13 +922,16 @@ R_IPI RVecRBinReloc *r_bin_le_get_relocs(RBinLEObj *bin) {
 					reloc_emit (l, rel, page_ref, list_source, rel->addend);
 				}
 			} else if ((header_target & F_TARGET_CHAIN) && page_ref && page_ref->has_data) {
-				ut32 chain_limit = h->pagesize / sizeof (ut32);
+				if (!chained) {
+					chained = r_bitset_new ();
+				}
 				st32 chain_source = source;
 				st64 base_target_address = rel->addend;
 				bool first = true;
-				while (chain_limit-- && chain_source >= 0
+				while (chain_source >= 0
 					&& page_ref->data_size >= sizeof (ut32)
-					&& (ut32)chain_source <= page_ref->data_size - sizeof (ut32)) {
+					&& (ut32)chain_source <= page_ref->data_size - sizeof (ut32)
+					&& r_bitset_set (chained, chain_source)) {
 					ut32 fixupinfo = r_buf_read_ble32_at (bin->buf, page_ref->paddr + chain_source, h->worder);
 					if (first) {
 						base_target_address -= fixupinfo & 0xFFFFF;
@@ -940,6 +948,7 @@ R_IPI RVecRBinReloc *r_bin_le_get_relocs(RBinLEObj *bin) {
 			}
 			r_bin_reloc_fini (rel);
 		}
+		r_bitset_free (chained);
 	}
 	RVecLEModName_fini (&modnames);
 	r_list_free (entries);
