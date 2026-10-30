@@ -301,7 +301,9 @@ static RFlirtFunction *function_new(ut16 offset, const char *name, size_t name_l
 	RFlirtFunction *function = calloc (1, sizeof (RFlirtFunction) + name_len + 1);
 	if (function) {
 		function->offset = offset;
-		memcpy (function->name, name, name_len);
+		if (name) {
+			memcpy (function->name, name, name_len);
+		}
 	}
 	return function;
 }
@@ -786,7 +788,7 @@ static ut8 read_module_referenced_functions(RFlirt *f, RFlirtModule *module) {
 		if ((int)ref_function_name_length < 0 || ref_function_name_length >= R_FLIRT_NAME_MAX) {
 			goto beach;
 		}
-		ref_function = function_new (ref_offset, "", ref_function_name_length);
+		ref_function = function_new (ref_offset, NULL, ref_function_name_length);
 		if (!ref_function) {
 			goto beach;
 		}
