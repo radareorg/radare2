@@ -79,8 +79,8 @@ and no system headers. They are not cross-architecture runtime tests.
 The implemented change keeps boolean field access and fits stack_pop into
 existing function padding while reducing the nested metadata from 40 to 32
 bytes on 64-bit targets. Function alignment falls from 16 to 8 and the block
-vector moves from offset 192 to 16. Block addr/size/jump/fail move into offsets
-32/40/48/56. These are offsets within the object; allocations are not guaranteed
+vector moves from offset 192 to 16. The CPU follow-up keeps `_max_end` at offset 32 and
+block addr/size/jump/fail at 40/48/56/64. These are offsets within the object; allocations are not guaranteed
 to start on a cache-line boundary.
 
 On this allocator, function objects cross from the 320-byte to the 256-byte
@@ -153,7 +153,7 @@ append-and-sort policy avoids it, and the final benchmark times preparation
 separately from insertion and lookup. It batches at least 4,096 insertions so
 small-function construction times are not dominated by timer resolution.
 
-## Full analysis results
+## Historical full analysis results (first PR revision)
 Three measured runs after a warmup for each phase. `baseline` is the merged
 block-vector commit; `compact` applies layout/lazy allocation only; `strict`
 keeps the vector sorted at each insertion; `cached` is the final policy. The
@@ -168,7 +168,7 @@ with all warmup and measured runs in [anal-analysis-runs.csv](anal-analysis-runs
 | Mastodon | 95,671,248 / 82,386,144 | 284,839,184 / 271,498,784 | 323,371,008 / 294,453,248 | 39.484 / 40.795 |
 
 Function-owned memory falls 10.8%, 12.0%, 8.6% and 13.9% respectively.
-The final CPU medians are 2.2–5.8% higher, with overlapping run ranges; these
+The first PR revision's CPU medians are 2.2–5.8% higher, with overlapping run ranges; these
 measurements do not establish a full-analysis speedup. This is a memory and
 lookup improvement. Timings are environment-sensitive, so use the per-run
 data rather than attributing the whole change to a single field rearrangement.
@@ -177,3 +177,117 @@ Every sample has identical function/block/membership counts and block checksums
 across all phases. `aaa`/`aaaa` snapshots of ls and pigz preserve functions,
 instructions, edges, xrefs and variables; some graph block arrays now appear
 in address order. Decompiler labels and annotation offsets follow that order.
+
+
+## Real-world CPU follow-up
+
+These measurements precede the rebase onto master `6835c8e49768`.
+The measured baseline is `766503ab572a`, the first PR is `f5ab97690cf9`,
+and current analysis code is `2809bf3e6bb8` (also present in the rebased PR).
+The rebase replays the same patches; the new master changes nine other files.
+Do not interpret these as a post-rebase performance rerun.
+
+All CPU values time the complete `aaa` or `aaaa` command, excluding file loading
+and the later synthetic traversal. Each variant has one warmup and three measured
+fresh processes, with fixed-seed randomized order. Values below are medians;
+the CSVs contain every run and CPU ranges. Process wall time includes loading,
+accounting and the traversal, so it is not analysis-only time.
+
+Native macOS 27.0.1 arm64, Apple Clang 21, `-O2`, user plugins disabled:
+
+| Case | Command | Baseline CPU s | First PR CPU s | Current CPU s | Change |
+| --- | --- | ---: | ---: | ---: | ---: |
+| ls | aaa | 0.323286 | 0.323492 | 0.308852 | -4.46% |
+| pigz | aaa | 0.830408 | 0.856542 | 0.802765 | -3.33% |
+| libc | aaa | 9.550234 | 9.737535 | 9.050020 | -5.24% |
+| Mastodon | aaa | 39.703161 | 39.899789 | 38.937766 | -1.93% |
+| ls | aaaa | 0.333862 | 0.331564 | 0.314871 | -5.69% |
+| pigz | aaaa | 0.841628 | 0.869303 | 0.805143 | -4.34% |
+
+CPU falls 1.9–5.7% across these six workloads. Function-owned memory falls
+8.6–13.9%, while whole-process live heap falls 1.4–4.7%. Peak RSS is the median
+of each process's high-water mark, not retained function storage.
+
+| Case | Function-owned bytes before / after | Live heap bytes before / after | Peak RSS bytes before / after |
+| --- | ---: | ---: | ---: |
+| ls | 752,192 / 671,056 | 9,844,112 / 9,704,480 | 24,772,608 / 24,674,304 |
+| pigz | 1,155,888 / 1,017,600 | 13,659,568 / 13,443,392 | 34,045,952 / 33,964,032 |
+| libc | 17,896,960 / 16,352,896 | 92,024,240 / 89,495,424 | 131,186,688 / 129,236,992 |
+| Mastodon | 95,671,248 / 82,386,144 | 284,836,496 / 271,515,664 | 324,468,736 / 308,051,968 |
+
+[Native medians and ranges](anal-realworld-native-results.csv) and
+[all 72 native runs](anal-realworld-native-runs.csv) include the first PR revision
+alongside the original baseline and current implementation.
+
+Ubuntu 24.04 x86-64, GCC 13.3, `-O2`, GitHub Actions runner:
+
+| Case | Command | Baseline CPU s | Current CPU s | Change |
+| --- | --- | ---: | ---: | ---: |
+| ls | aaa | 0.227612 | 0.224544 | -1.35% |
+| pigz | aaa | 0.536372 | 0.546943 | 1.97% |
+| libc | aaa | 6.306872 | 6.318451 | 0.18% |
+| Mastodon | aaa | 32.197054 | 31.969495 | -0.71% |
+| ls | aaaa | 0.234070 | 0.232023 | -0.87% |
+| pigz | aaaa | 0.548703 | 0.554813 | 1.11% |
+
+Linux is mixed: ls and Mastodon improve slightly; pigz's median is 1.1–2.0%
+higher and libc is nearly unchanged. The pigz/libc ranges overlap. These data
+do not establish a universal CPU improvement. Linux function-owned allocations
+fall 11.2–13.5% for the four `aaa` cases; live-heap reporting is unavailable on
+Linux in this driver. RSS and allocator subtotals are in
+[Linux medians and ranges](anal-realworld-linux-results.csv), with
+[all 48 runs](anal-realworld-linux-runs.csv).
+The [Linux job](https://github.com/radareorg/radare2/actions/runs/41113283906)
+passed the five unit binaries and selected analysis/graph/decompiler/IO suites.
+Its fixture revision is `ed967a566eb7ef982fab23ef74b226af7ef9a003`.
+
+A sampler during full Swift/Mastodon analysis found 2,497 of 3,846 samples in
+lseek. The follow-up avoids an unused current-position query when descriptor
+pcache reads are disabled. The cache-enabled path still captures the position;
+no new cache or state is added. Balanced block-tree range queries now recurse
+without allocating temporary vector stacks and preserve their callback order.
+The tree augmentation stays beside address/size. These changes remove 41 more
+production lines, making the full production diff 52 lines smaller.
+
+The [tree-only predecessor runs](anal-realworld-tree-only-runs.csv) record the
+interrupted 22-process experiment before the unused-seek fix. They do not form a
+complete paired sample and are excluded from the current CPU claims.
+
+Real block distributions explain why by-value storage is problematic:
+
+| Case | Functions | One-block functions | Unique blocks | Function block memberships | Pointer-vector capacity |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| ls | 145 | 18 | 3,319 | 3,319 | 5,456 |
+| pigz | 222 | 116 | 4,645 | 4,645 | 7,272 |
+| libc | 2,370 | 427 | 60,848 | 60,854 | 91,952 |
+| Mastodon | 19,551 | 14,635 | 53,774 | 54,300 | 181,896 |
+
+Swift has 526 more memberships than unique block objects, and glibc has six.
+Also, 74.9% of Swift functions contain one block, while total pointer capacity
+is 3.35 times the membership count. Replicating this spare capacity with full
+232-byte objects is expensive. Authoritative blocks need stable identity in
+multiple owners, the intrusive tree and external references. The pointer/inline
+storage matrix above is a container experiment from the first PR layout; its
+allocation totals remain applicable, while its scan timings reflect that layout.
+No complete inline analysis implementation is claimed.
+
+Validation before rebase: all five TinyCC jobs pass; full regression run:
+9,389 OK, 22 known broken, 0 failures, 60 skipped, 2 unexpected fixes.
+The updated native graph/Java/emulation/x86/IO selection gives 282 OK,
+2 known broken and 0 failures. IO/cache unit checks, root build, lint and
+`git diff --check` pass. Fresh ls/pigz `aaa` and `aaaa` snapshots preserve
+functions, instructions, graph edges, xrefs and variables after normalizing
+block-array order. Every completed timed case preserves function/block/
+membership counts and the block checksum across variants.
+
+To repeat the CI experiment, prepare checkouts at `ROOT/candidate` and
+`ROOT/baseline`, and radare2-testbins at `ROOT/fixtures`, then run:
+
+```
+python3 ROOT/candidate/test/bench/anal-realworld-ci.py ROOT
+```
+
+It builds both with identical `-O2` flags, installs into separate prefixes,
+runs the regression selections, alternates the real analyses and emits raw
+JSON/CSV plus medians/ranges into `ROOT/results`. The temporary PR-only workflow
+is removed from the final change; the experiment driver remains reproducible.
