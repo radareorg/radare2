@@ -473,17 +473,17 @@ R_API bool r_bin_file_string_delete(RBinFile *bf, ut64 vaddr, ut64 len, char typ
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && vaddr != UT64_MAX, false);
 	RBinObject *bo = bf->bo;
 	HtUP *strings_db = r_bin_object_ensure_strings_db (bo);
-	RBinString *bs = r_bin_strings_index_get (&bo->strings, strings_db, vaddr);
+	RBinString *bs = r_bin_strings_index_get (&bo->strings.vec, strings_db, vaddr);
 	if (!bs) {
 		return false;
 	}
-	size_t index = bs - R_VEC_START_ITER (&bo->strings);
+	size_t index = bs - R_VEC_START_ITER (&bo->strings.vec);
 	if ((len > 0 && bs->length != len) || (type && bs->type != type)) {
 		return false;
 	}
 	ut64 deleted_vaddr = bs->vaddr;
-	RVecRBinString_remove (&bo->strings, index);
-	r_bin_strings_index_update_after_remove (&bo->strings, strings_db, deleted_vaddr, index);
+	RVecRBinString_remove (&bo->strings.vec, index);
+	r_bin_strings_index_update_after_remove (&bo->strings.vec, strings_db, deleted_vaddr, index);
 	return true;
 }
 
@@ -560,19 +560,24 @@ R_API RBinString *r_bin_file_string_add(RBinFile *bf, ut64 paddr, ut64 vaddr, ut
 	if (!text) {
 		text = strdup ("");
 	}
-	r_bin_string_set (&bs, text);
 	bs.paddr = paddr;
 	bs.vaddr = vaddr;
 	bs.size = actual_size;
 	bs.length = actual_len;
 	bs.type = type;
-	bs.ordinal = RVecRBinString_length (&bo->strings);
-	RBinString *dst = RVecRBinString_emplace_back (&bo->strings);
+	bs.ordinal = RVecRBinString_length (&bo->strings.vec);
+	RBinString *dst = RVecRBinString_emplace_back (&bo->strings.vec);
 	if (!dst) {
-		r_bin_string_fini (&bs);
+		free (text);
 		return NULL;
 	}
 	*dst = bs;
-	r_bin_strings_index_insert (strings_db, dst->vaddr, RVecRBinString_length (&bo->strings) - 1);
+	bool ok = r_bin_string_set (&bo->strings, dst, r_strs_from (text));
+	free (text);
+	if (!ok) {
+		RVecRBinString_pop_back (&bo->strings.vec);
+		return NULL;
+	}
+	r_bin_strings_index_insert (strings_db, dst->vaddr, RVecRBinString_length (&bo->strings.vec) - 1);
 	return dst;
 }

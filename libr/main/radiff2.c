@@ -5,7 +5,7 @@
 #include <r_core.h>
 #include <r_main.h>
 
-R_VEC_TYPE (RVecRBinStringPtr, RBinString *);
+R_VEC_TYPE (RVecDiffString, RStrs);
 
 typedef enum {
 	ROF_HEXDUMP, // MODE_COLS
@@ -992,53 +992,48 @@ static ut8 *get_imports(RCore *c, int *len) {
 	return (ut8 *)r_strbuf_drain (sb);
 }
 
-static int bs_cmp(const RBinString *a, const RBinString *b) {
-	size_t alen = r_strs_len (a->text);
-	size_t blen = r_strs_len (b->text);
+static int bs_cmp(const RStrs *a, const RStrs *b) {
+	size_t alen = r_strs_len (*a);
+	size_t blen = r_strs_len (*b);
 	if (alen != blen) {
 		return alen > blen? 1: -1;
 	}
-	return alen? memcmp (a->text.a, b->text.a, alen): 0;
-}
-
-static int bs_ptr_cmp(RBinString *const *a, RBinString *const *b) {
-	return bs_cmp (*a, *b);
+	return alen? memcmp (a->a, b->a, alen): 0;
 }
 
 static ut8 *get_strings(RCore *c, int *len) {
-	RVecRBinString *strings = r_bin_get_strings (c->bin);
-	RVecRBinStringPtr list;
-	RVecRBinStringPtr_init (&list);
-	if (strings && !RVecRBinStringPtr_reserve (&list, RVecRBinString_length (strings))) {
+	RBinStrings *strings = r_bin_get_strings (c->bin);
+	RVecDiffString list;
+	RVecDiffString_init (&list);
+	if (strings && !RVecDiffString_reserve (&list, RVecRBinString_length (&strings->vec))) {
 		return NULL;
 	}
 	RBinString *str;
 	if (strings) {
-		R_VEC_FOREACH (strings, str) {
-			RVecRBinStringPtr_push_back (&list, &str);
+		R_VEC_FOREACH (&strings->vec, str) {
+			RStrs text = r_bin_string_view (strings, str);
+			RVecDiffString_push_back (&list, &text);
 		}
 	}
-	RVecRBinStringPtr_sort (&list, bs_ptr_cmp);
+	RVecDiffString_sort (&list, bs_cmp);
 	RStrBuf *sb = r_strbuf_new ("");
-	RBinString *old = NULL;
-	RBinString **it;
-	R_VEC_FOREACH (&list, it) {
-		str = *it;
-		if (old && !bs_cmp (old, str)) {
+	RStrs *old = NULL, *text;
+	R_VEC_FOREACH (&list, text) {
+		if (old && !bs_cmp (old, text)) {
 			continue;
 		}
-		size_t size = r_strs_len (str->text);
+		size_t size = r_strs_len (*text);
 		if (size >= ST32_MAX - r_strbuf_length (sb)
-				|| (size && !r_strbuf_append_n (sb, str->text.a, size))
+				|| (size && !r_strbuf_append_n (sb, text->a, size))
 				|| !r_strbuf_append (sb, "\n")) {
 			r_strbuf_free (sb);
-			RVecRBinStringPtr_fini (&list);
+			RVecDiffString_fini (&list);
 			return NULL;
 		}
-		old = str;
+		old = text;
 	}
 	*len = r_strbuf_length (sb);
-	RVecRBinStringPtr_fini (&list);
+	RVecDiffString_fini (&list);
 	return (ut8 *)r_strbuf_drain (sb);
 }
 

@@ -144,7 +144,7 @@ static ut64 baddr(RBinFile *bf) {
 }
 
 /* accelerate binary load */
-static RVecRBinString *strings(RBinFile *bf) {
+static RBinStrings *strings(RBinFile *bf) {
 	return NULL;
 }
 

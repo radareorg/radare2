@@ -6009,10 +6009,10 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 		break;
 	case 'z':
 		{
-			RVecRBinString *zlist = r_bin_get_strings (core->bin);
+			RBinStrings *zlist = r_bin_get_strings (core->bin);
 			if (zlist) {
 				RBinString *s;
-				R_VEC_FOREACH (zlist, s) {
+				R_VEC_FOREACH (&zlist->vec, s) {
 					ut64 addr = va? s->vaddr: s->paddr;
 					append_item (list, NULL, addr, s->size);
 				}

@@ -128,37 +128,12 @@ static int string_length(RBinDexObj *dex, ut32 offset, ut64 *length) {
 	return error || *length >= dex->size? 0: end - buf;
 }
 
-static const char *getstr(RBinDexObj *dex, int idx) {
-	const ut32 strings_size = dex->header.strings_size;
-	if (idx < 0 || idx >= strings_size || !dex->strings) {
-		return NULL;
-	}
-	char **cs = dex->cal_strings;
-	if (cs) {
-		const char *p = cs[idx];
-		if (p) {
-			return p;
-		}
-	} else {
-		cs = R_NEWS0 (char *, strings_size);
-		if (!cs) {
-			return NULL;
-		}
-		dex->cal_strings = cs;
-		dex->cal_strings_size = strings_size;
-	}
-	const ut32 string_index = dex->strings[idx];
-	ut64 len;
-	int uleblen = string_length (dex, string_index, &len);
-	if (!uleblen) {
-		return NULL;
-	}
-	// MUTF-8 uses at most three bytes per UTF-16 code unit, plus the terminator.
+static char *readstr(RBinDexObj *dex, ut64 offset, ut64 len) {
 	ut64 size;
-	if (r_mul_overflow (len, 3, &size) || r_add_overflow (size, 1, &size)) {
+	if (offset >= dex->size || r_mul_overflow (len, 3, &size)
+			|| r_add_overflow (size, 1, &size)) {
 		return NULL;
 	}
-	ut64 offset = (ut64)string_index + uleblen;
 	size = R_MIN (size, dex->size - offset);
 	if (size > SIZE_MAX) {
 		return NULL;
@@ -173,8 +148,35 @@ static const char *getstr(RBinDexObj *dex, int idx) {
 		free (ptr);
 		return NULL;
 	}
-	char *text = realloc (ptr, end - ptr + 1);
-	cs[idx] = text? text: ptr;
+	return ptr;
+}
+
+static const char *getstr(RBinDexObj *dex, int idx) {
+	const ut32 strings_size = dex->header.strings_size;
+	if (idx < 0 || idx >= strings_size || !dex->strings) {
+		return NULL;
+	}
+	char **cs = dex->cal_strings;
+	if (cs) {
+		if (cs[idx]) {
+			return cs[idx];
+		}
+	} else {
+		cs = R_NEWS0 (char *, strings_size);
+		if (!cs) {
+			return NULL;
+		}
+		dex->cal_strings = cs;
+		dex->cal_strings_size = strings_size;
+	}
+	ut64 len;
+	ut32 index = dex->strings[idx];
+	int uleblen = string_length (dex, index, &len);
+	char *ptr = uleblen? readstr (dex, (ut64)index + uleblen, len): NULL;
+	if (ptr) {
+		char *text = realloc (ptr, strlen (ptr) + 1);
+		cs[idx] = text? text: ptr;
+	}
 	return cs[idx];
 }
 
@@ -881,46 +883,62 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static RVecRBinString *strings(RBinFile *bf) {
+static RBinStrings *strings(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
 	RBinDexObj *bin = bf->bo->bin_obj;
 	if (!bin || !bin->strings) {
 		return NULL;
 	}
-	RVecRBinString *ret = RVecRBinString_new ();
+	RBinStrings *ret = r_bin_strings_new ();
 	ut32 i;
 	for (i = 0; i < bin->header.strings_size; i++) {
 		ut64 length;
-		if (!string_length (bin, bin->strings[i], &length)) {
+		int uleblen = string_length (bin, bin->strings[i], &length);
+		if (!uleblen) {
 			goto error;
 		}
 		if (length <= 5 || length >= R_BIN_SIZEOF_STRINGS) {
 			continue;
 		}
-		const char *str = getstr (bin, i);
+		const char *str = bin->cal_strings? bin->cal_strings[i]: NULL;
+		char *owned = NULL;
+		if (!str) {
+			str = owned = readstr (bin, (ut64)bin->strings[i] + uleblen, length);
+		}
 		if (!str) {
 			goto error;
 		}
 		RStrs text = r_strs_from (str);
 		if ((*str == 'L' && r_strs_findc (text, '/'))
 				|| r_strs_startswith (text, "[L")) {
+			free (owned);
 			continue;
 		}
-		RBinString *bs = RVecRBinString_emplace_back (ret);
+		RBinString *bs = RVecRBinString_emplace_back (&ret->vec);
 		if (!bs) {
-			break;
+			free (owned);
+			goto error;
 		}
-		bs->text = text;
-		bs->terminated = true;
+		size_t size = r_strs_len (text);
+		bool ok = true;
+		if (owned) {
+			ok = r_bin_string_set (ret, bs, text);
+			free (owned);
+		} else {
+			bs->text.ptr = str;
+		}
+		if (!ok) {
+			goto error;
+		}
 		bs->paddr = bs->vaddr = bin->strings[i];
-		bs->size = r_strs_len (text);
+		bs->size = size;
 		bs->length = length;
 		bs->ordinal = i + 1;
 		bs->type = R_STRING_TYPE_UTF8;
 	}
 	return ret;
 error:
-	RVecRBinString_free (ret);
+	r_bin_strings_free (ret);
 	return NULL;
 }
 

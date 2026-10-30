@@ -354,7 +354,7 @@ R_API bool r_core_bin_set_cur(RCore *core, RBinFile *binfile) {
 	return true;
 }
 
-static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, int va, ut64 skip, ut64 count, int type_filter) {
+static void _print_strings(RCore *core, RBinStrings *list, PJ *pj, int mode, int va, ut64 skip, ut64 count, int type_filter) {
 	RTable *table = r_core_table_new (core, "strings");
 	if (!table) {
 		return;
@@ -383,8 +383,9 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 		r_table_set_columnsf (table, "nXXnnsss", "nth", "paddr", "vaddr", "len", "size", "section", "type", "string");
 	}
 	RBinString b64 = { 0 };
+	char *decoded = NULL;
 	if (list) {
-	R_VEC_FOREACH (list, it) {
+	R_VEC_FOREACH (&list->vec, it) {
 		RBinString *string = it;
 		const char *section_name, *type_string;
 		ut64 paddr = string->paddr;
@@ -398,7 +399,7 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 		if (type_filter && string->type != type_filter) {
 			continue;
 		}
-		const char *text = r_bin_string_get (string);
+		const char *text = r_bin_string_get (list, string);
 		if (!text || !r_bin_string_filter (bin, text, vaddr)) {
 			continue;
 		}
@@ -423,13 +424,14 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 			ut8 *s = r_base64_decode_dyn (text, -1, NULL, true);
 			if (R_STR_ISNOTEMPTY (s) && IS_PRINTABLE (*s)) {
 				// TODO: add more checks
-				r_bin_string_fini (&b64);
-				memcpy (&b64, string, sizeof (b64));
-				b64.text = r_strs_from_len (NULL, 0);
-				r_bin_string_set (&b64, (char *)s);
-				b64.size = r_strs_len (b64.text);
+				free (decoded);
+				decoded = (char *)s;
+				b64 = *string;
+				b64.text.ptr = decoded;
+				b64.pooled = false;
+				b64.size = strlen (decoded);
 				string = &b64;
-				text = b64.text.a;
+				text = decoded;
 			} else {
 				free (s);
 			}
@@ -557,7 +559,7 @@ static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, 
 		}
 	}
 	}
-	r_bin_string_fini (&b64);
+	free (decoded);
 	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
 	} else if (IS_MODE_SET (mode)) {
@@ -621,9 +623,9 @@ R_IPI bool bin_raw_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut6
 		new_bf = true;
 		va = false;
 	}
-	RVecRBinString *strings = r_bin_raw_strings (bf, 0);
+	RBinStrings *strings = r_bin_raw_strings (bf, 0);
 	_print_strings (core, strings, pj, mode, va, skip, count, type_filter);
-	RVecRBinString_free (strings);
+	r_bin_strings_free (strings);
 	if (new_bf) {
 		r_unref (bf->buf);
 		bf->buf = NULL;
@@ -653,7 +655,7 @@ R_IPI bool bin_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 co
 			return false;
 		}
 	}
-	RVecRBinString *list = r_bin_get_strings (core->bin);
+	RBinStrings *list = r_bin_get_strings (core->bin);
 	if (list) {
 		_print_strings (core, list, pj, mode, va, skip, count, type_filter);
 		return true;
@@ -5701,8 +5703,8 @@ R_API bool r_core_bin_info(RCore *core, ut64 action, PJ *pj, int mode, int va, R
 	if (IS_MODE_SET (mode) && core->flags) {
 		ut64 expected = 0;
 		if (action & R_CORE_BIN_ACC_STRINGS) {
-			RVecRBinString *strings = r_bin_get_strings (core->bin);
-			expected += strings? RVecRBinString_length (strings): 0;
+			RBinStrings *strings = r_bin_get_strings (core->bin);
+			expected += strings? RVecRBinString_length (&strings->vec): 0;
 		}
 		if (action & (R_CORE_BIN_ACC_SYMBOLS | R_CORE_BIN_ACC_EXPORTS)) {
 			RVecRBinSymbol *symbols = r_bin_get_symbols_vec (core->bin);

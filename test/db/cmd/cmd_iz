@@ -828,3 +828,18 @@ SGVsbG8=
 tail!
 EOF
 RUN
+
+NAME=pooled strings preserve Unicode escapes and length limits across raw scans
+FILE=hex://6162636465c3a9666768696a5c7461696c0a3132333435007576777879cea97a00
+ARGS=-e bin.str.raw=1 -e bin.str.max=8
+CMDS=<<EOF
+izj
+izzj
+izj
+EOF
+EXPECT=<<EOF
+[{"vaddr":0,"paddr":0,"ordinal":0,"size":8,"length":7,"section":"","type":"utf8","string":"abcdeéf","blocks":["Basic Latin","Latin-1 Supplement"]},{"vaddr":8,"paddr":8,"ordinal":1,"size":7,"length":7,"section":"","type":"ascii","string":"ghij\\\\ta"},{"vaddr":15,"paddr":15,"ordinal":2,"size":7,"length":7,"section":"","type":"ascii","string":"il\\n1234"},{"vaddr":24,"paddr":24,"ordinal":3,"size":8,"length":7,"section":"","type":"utf8","string":"uvwxyΩz","blocks":["Basic Latin","Greek and Coptic"]}]
+[{"vaddr":0,"paddr":0,"ordinal":0,"size":8,"length":7,"section":"","type":"utf8","string":"abcdeéf","blocks":["Basic Latin","Latin-1 Supplement"]},{"vaddr":8,"paddr":8,"ordinal":1,"size":7,"length":7,"section":"","type":"ascii","string":"ghij\\\\ta"},{"vaddr":15,"paddr":15,"ordinal":2,"size":7,"length":7,"section":"","type":"ascii","string":"il\\n1234"},{"vaddr":24,"paddr":24,"ordinal":3,"size":8,"length":7,"section":"","type":"utf8","string":"uvwxyΩz","blocks":["Basic Latin","Greek and Coptic"]}]
+[{"vaddr":0,"paddr":0,"ordinal":0,"size":8,"length":7,"section":"","type":"utf8","string":"abcdeéf","blocks":["Basic Latin","Latin-1 Supplement"]},{"vaddr":8,"paddr":8,"ordinal":1,"size":7,"length":7,"section":"","type":"ascii","string":"ghij\\\\ta"},{"vaddr":15,"paddr":15,"ordinal":2,"size":7,"length":7,"section":"","type":"ascii","string":"il\\n1234"},{"vaddr":24,"paddr":24,"ordinal":3,"size":8,"length":7,"section":"","type":"utf8","string":"uvwxyΩz","blocks":["Basic Latin","Greek and Coptic"]}]
+EOF
+RUN

@@ -2093,7 +2093,7 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 		r_list_foreach (bfiles, iter, bf) {
 			RBinObject *bo = bf->bo;
 			if (bo) {
-				total += RVecRBinString_length (&bo->strings);
+				total += RVecRBinString_length (&bo->strings.vec);
 			}
 		}
 		r_list_free (bfiles);
@@ -2120,9 +2120,9 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 	if (*p == 'c') {
 		RBinFile *bf = r_bin_cur (core->bin);
 		if (bf) {
-			RVecRBinString *strings = r_bin_raw_strings (bf, 0);
-			r_cons_printf (core->cons, "%d\n", strings? (int)RVecRBinString_length (strings): 0);
-			RVecRBinString_free (strings);
+			RBinStrings *strings = r_bin_raw_strings (bf, 0);
+			r_cons_printf (core->cons, "%d\n", strings? (int)RVecRBinString_length (&strings->vec): 0);
+			r_bin_strings_free (strings);
 		}
 		return;
 	}
@@ -2189,17 +2189,17 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 	}
 	// Handle "iz.", "izj.", "izq." - show string at current address
 	if (dotmode) {
-		RVecRBinString *list = r_bin_get_strings (core->bin);
+		RBinStrings *list = r_bin_get_strings (core->bin);
 		if (list) {
 			ut64 addr = core->addr;
 			RBinString *string;
-		R_VEC_FOREACH (list, string) {
+		R_VEC_FOREACH (&list->vec, string) {
 			ut64 vaddr = va? string->vaddr: string->paddr;
 			if (type_filter && string->type != type_filter) {
 				continue;
 			}
 			if (vaddr == addr || string->paddr == addr) {
-					const char *text = r_str_get (r_bin_string_get (string));
+					const char *text = r_str_get (r_bin_string_get (list, string));
 					if (mode & R_MODE_JSON) {
 						PJ *lpj = r_core_pj_new (core);
 						pj_o (lpj);

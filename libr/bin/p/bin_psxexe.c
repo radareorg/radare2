@@ -71,7 +71,7 @@ static RList* entries(RBinFile* bf) {
 	return ret;
 }
 
-static RVecRBinString *strings(RBinFile* bf) {
+static RBinStrings *strings(RBinFile* bf) {
 	// hardcode minstrlen = 20
 	return r_bin_raw_strings (bf, 20);
 }

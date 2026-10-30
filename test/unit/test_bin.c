@@ -772,7 +772,52 @@ bool test_r_bin_elf_pn_xnum_phdr(void) {
 }
 
 
+bool test_r_bin_string_storage(void) {
+	RBinStrings strings = {0};
+	char text[64];
+	int i;
+	for (i = 0; i < 64; i++) {
+		RBinString *str = RVecRBinString_emplace_back (&strings.vec);
+		snprintf (text, sizeof (text), "string %d survives arena and vector growth", i);
+		mu_assert_true (r_bin_string_set (&strings, str, r_strs_from (text)), "pool append");
+	}
+	r_bin_strings_shrink (&strings);
+	for (i = 0; i < 64; i++) {
+		snprintf (text, sizeof (text), "string %d survives arena and vector growth", i);
+		RBinString *str = RVecRBinString_at (&strings.vec, i);
+		mu_assert_streq (r_bin_string_get (&strings, str), text, "pooled text after growth");
+		mu_assert_eq (r_strs_len (r_bin_string_view (&strings, str)), strlen (text), "pooled byte length");
+	}
+	RBinString *borrowed = RVecRBinString_emplace_back (&strings.vec);
+	borrowed->text.ptr = "borrowed";
+	RBinStrings moved = strings;
+	strings = (RBinStrings){0};
+	r_bin_strings_fini (&strings);
+	mu_assert_streq (r_bin_string_get (&moved, RVecRBinString_last (&moved.vec)), "borrowed", "borrowed text survives collection move");
+	r_bin_strings_fini (&moved);
+	mu_end;
+}
+
+bool test_r_bin_string_bounds(void) {
+	RBinStrings strings = {0};
+	RBinString str = {0};
+	mu_assert_true (r_bin_string_set (&strings, &str, R_STRS_LIT ("a\0b")), "bounded text");
+	RStrs text = r_bin_string_view (&strings, &str);
+	mu_assert_eq (r_strs_len (text), 3, "embedded NUL retains byte length");
+	mu_assert_eq (memcmp (text.a, "a\0b\0", 4), 0, "pool adds a terminator");
+	size_t len = strings.pool.len;
+	strings.pool.len = UT32_MAX;
+	bool ok = r_bin_string_set (&strings, &str, R_STRS_LIT ("x"));
+	strings.pool.len = len;
+	mu_assert_false (ok, "offset overflow rejected before allocation");
+	mu_assert_eq (r_strs_len (r_bin_string_view (&strings, &str)), 3, "failed update keeps old text");
+	r_bin_strings_fini (&strings);
+	mu_end;
+}
+
 bool all_tests(void) {
+	mu_run_test(test_r_bin_string_storage);
+	mu_run_test(test_r_bin_string_bounds);
 	mu_run_test(test_r_bin);
 	mu_run_test(test_r_bin_plan9_symbol_names);
 	mu_run_test(test_r_bin_plan9_history_lines);

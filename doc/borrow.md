@@ -44,3 +44,22 @@ formatted in place.
 Example: `?e [[[["A"]]]]~{}..` passed the cons buffer to `r_cons_less_str`,
 which printed it into itself; the buffer was reallocated before the copy and
 the output contained freed memory (ANT-2026-1C3D8D53).
+
+## Binary strings
+
+`RBinStrings` owns a record vector and a NUL-terminated text arena. Pooled
+records store offsets and byte lengths, so growing the arena does not invalidate
+records. A record may instead borrow a terminated string from its binary
+plugin's cache; that cache must outlive the collection.
+
+Use `r_bin_string_get(strings, record)` for a C string and
+`r_bin_string_view(strings, record)` for a bounded view. The returned text is
+borrowed and transient: reacquire it after modifying the collection. Insertion
+can also move records. `r_bin_string_set` copies its input into the arena; its
+input must not alias that arena.
+
+Free collections returned by `r_bin_raw_strings` with `r_bin_strings_free`.
+They own their arenas independently of the binary's main string collection.
+`r_bin_get_strings` returns the current object's borrowed collection; resets
+and object deletion invalidate it. Individual deletions retain arena text until
+the collection is reset or freed.
