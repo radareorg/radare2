@@ -715,13 +715,13 @@ static void syscall_function_cache_fini(SyscallFunctionCache *cache) {
 
 static bool syscall_function_cache_init(SyscallFunctionCache *cache, RCore *core, SyscallRegMap *regmap, RAnalFunction *fcn, const char *screg) {
 	SyscallFunctionAnalysis analysis = {0};
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *bb;
 	int entry_idx = -1;
 	int i;
 
-	R_RETURN_VAL_IF_FAIL (cache && core && regmap && fcn && fcn->bbs, false);
-	if (r_list_empty (fcn->bbs)) {
+	R_RETURN_VAL_IF_FAIL (cache && core && regmap && fcn, false);
+	if (RVecAnalBlockPtr_empty (&fcn->bbs)) {
 		return false;
 	}
 	memset (cache, 0, sizeof (*cache));
@@ -730,7 +730,7 @@ static bool syscall_function_cache_init(SyscallFunctionCache *cache, RCore *core
 	analysis.core = core;
 	analysis.fcn = fcn;
 	analysis.regmap = regmap;
-	analysis.blocks_count = r_list_length (fcn->bbs);
+	analysis.blocks_count = (int)RVecAnalBlockPtr_length (&fcn->bbs);
 	analysis.hits = &cache->hits;
 	analysis.blocks = calloc (analysis.blocks_count, sizeof (*analysis.blocks));
 	analysis.states = calloc (analysis.blocks_count, sizeof (*analysis.states));
@@ -740,7 +740,8 @@ static bool syscall_function_cache_init(SyscallFunctionCache *cache, RCore *core
 		goto fail;
 	}
 	i = 0;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		analysis.blocks[i] = bb;
 		if (!syscall_state_init (&analysis.states[i], regmap, false)) {
 			goto fail;

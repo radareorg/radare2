@@ -2439,7 +2439,8 @@ static char *get_bb_body(RCore *core, RAnalBlock *b, int opts, RAnalFunction *fc
 	return body;
 }
 
-static int bbcmp(RAnalBlock *a, RAnalBlock *b) {
+static int bbcmp(RAnalBlock *const *pa, RAnalBlock *const *pb) {
+	RAnalBlock *a = *pa, *b = *pb;
 	if (a->addr < b->addr) {
 		return -1;
 	}
@@ -2451,7 +2452,7 @@ static int bbcmp(RAnalBlock *a, RAnalBlock *b) {
 
 static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
-	RListIter *iter;
+	RAnalBlock **iter;
 	ut64 saved_gp = core->anal->gp;
 	ut8 *saved_arena = NULL;
 	int saved_arena_size = 0;
@@ -2462,14 +2463,15 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	if (emu) {
 		saved_arena = r_reg_arena_peek (core->anal->reg, &saved_arena_size);
 	}
-	if (fcn->bbs) {
-		r_list_sort (fcn->bbs, (RListComparator)bbcmp);
+	if (!RVecAnalBlockPtr_empty (&fcn->bbs)) {
+		RVecAnalBlockPtr_sort (&fcn->bbs, bbcmp);
 	}
 
 	int shortcuts = r_config_get_b (core->config, "graph.nodejmps");
 	RAGraphPalette palette;
 	graph_palette_begin (core, g, &palette);
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		if (bb->addr == UT64_MAX) {
 			continue;
 		}
@@ -2615,7 +2617,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		return false;
 	}
 	RAnalBlock *bb;
-	RListIter *iter;
+	RAnalBlock **iter;
 	int shortcuts = 0;
 	int ret = false;
 	ut64 saved_gp = core->anal->gp;
@@ -2629,10 +2631,11 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	if (emu) {
 		saved_arena = r_reg_arena_peek (core->anal->reg, &saved_arena_size);
 	}
-	r_list_sort (fcn->bbs, (RListComparator)bbcmp);
+	RVecAnalBlockPtr_sort (&fcn->bbs, bbcmp);
 	RAnalBlock *curbb = NULL;
 	if (few) {
-		r_list_foreach (fcn->bbs, iter, bb) {
+		R_VEC_FOREACH (&fcn->bbs, iter) {
+			bb = *iter;
 			if (!curbb) {
 				curbb = bb;
 			}
@@ -2644,14 +2647,15 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	}
 
 	core->keep_asmqjmps = false;
-	const bool breakable = r_list_length (fcn->bbs) > 1024;
+	const bool breakable = (int)RVecAnalBlockPtr_length (&fcn->bbs) > 1024;
 	if (breakable) {
 		r_cons_set_raw (core->cons, false);
 		r_cons_break_push (core->cons, NULL, NULL);
 	}
 	RAGraphPalette palette;
 	graph_palette_begin (core, g, &palette);
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		if (breakable && r_cons_is_breaked (core->cons)) {
 			goto interrupted;
 		}
@@ -2681,7 +2685,8 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		core->keep_asmqjmps = true;
 	}
 
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		if (bb->addr == UT64_MAX) {
 			continue;
 		}

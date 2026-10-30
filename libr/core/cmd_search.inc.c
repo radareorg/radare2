@@ -1151,10 +1151,11 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 
 			/* Search only inside the basic block */
 			if (!strcmp (mode, "anal.bb")) {
-				RListIter *iter;
+				RAnalBlock **iter;
 				RAnalBlock *bb;
 
-				r_list_foreach (f->bbs, iter, bb) {
+				R_VEC_FOREACH (&f->bbs, iter) {
+					bb = *iter;
 					ut64 at = core->addr;
 					if ((at >= bb->addr) && (at < (bb->addr + bb->size))) {
 						from = bb->addr;
@@ -2267,11 +2268,13 @@ static void cmd_search_aF(RCore *core, const char *input) {
 		return;
 	}
 	RAnalFunction *fcn;
-	RListIter *iter, *iter2;
+	RListIter *iter;
+	RAnalBlock **iter2;
 	RAnalBlock *bb;
 	input = r_str_trim_head_ro (input + 1);
 	r_list_foreach (core->anal->fcns, iter, fcn) {
-		r_list_foreach (fcn->bbs, iter2, bb) {
+		R_VEC_FOREACH (&fcn->bbs, iter2) {
+			bb = *iter2;
 			ut8 *bbdata = malloc (bb->size);
 			if (!bbdata) {
 				break;

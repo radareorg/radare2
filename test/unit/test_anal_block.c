@@ -147,8 +147,8 @@ bool test_r_anal_block_split_in_function(void) {
 	mu_assert_eq (r_ref_count (block), 2, "first block refs after adding to function");
 	mu_assert_eq (r_ref_count (second), 2, "second block refs after adding to function");
 
-	mu_assert ("function has first block after split", r_list_contains (fcn->bbs, block));
-	mu_assert ("function has second block after split", r_list_contains (fcn->bbs, second));
+	mu_assert ("function has first block after split", RVecAnalBlockPtr_find (&fcn->bbs, block, find_bb_cmp));
+	mu_assert ("function has second block after split", RVecAnalBlockPtr_find (&fcn->bbs, second, find_bb_cmp));
 	mu_assert ("second block is in function after split", r_list_contains (block->fcns, fcn));
 	mu_assert ("second block is in function after split", r_list_contains (second->fcns, fcn));
 
@@ -228,9 +228,9 @@ bool test_r_anal_block_merge_in_function(void) {
 	assert_invariants (anal);
 	mu_assert ("merge success", success);
 	mu_assert_eq (blocks_count (anal), 1, "count after merge");
-	mu_assert_eq (r_list_length (fcn->bbs), 1, "fcn bbs after merge");
+	mu_assert_eq ((int)RVecAnalBlockPtr_length (&fcn->bbs), 1, "fcn bbs after merge");
 	mu_assert_eq (r_list_length (first->fcns), 1, "bb functions after merge");
-	mu_assert ("function has merged block", r_list_contains (fcn->bbs, first));
+	mu_assert ("function has merged block", RVecAnalBlockPtr_find (&fcn->bbs, first, find_bb_cmp));
 	mu_assert ("merged block is in function", r_list_contains (first->fcns, fcn));
 
 	r_unref (first);
@@ -254,13 +254,13 @@ bool test_r_anal_block_delete(void) {
 	r_anal_function_add_block (fcn, block);
 	assert_invariants (anal);
 	mu_assert_eq (r_ref_count (block), 2, "refs after adding");
-	mu_assert_eq (r_list_length (fcn->bbs), 1, "fcn bbs after add");
+	mu_assert_eq ((int)RVecAnalBlockPtr_length (&fcn->bbs), 1, "fcn bbs after add");
 	mu_assert_eq (r_list_length (block->fcns), 1, "bb fcns after add");
 
 	r_anal_delete_block (block);
 	assert_invariants (anal);
 	mu_assert_eq (r_ref_count (block), 1, "refs after delete");
-	mu_assert_eq (r_list_length (fcn->bbs), 0, "fcn bbs after delete");
+	mu_assert_eq ((int)RVecAnalBlockPtr_length (&fcn->bbs), 0, "fcn bbs after delete");
 	mu_assert_eq (r_list_length (block->fcns), 0, "bb fcns after delete");
 
 	r_unref (block);
@@ -292,9 +292,9 @@ bool test_r_anal_block_reset(void) {
 	r_anal_block_reset (anal);
 	mu_assert_null (anal->bb_tree, "reset clears tree");
 	mu_assert_eq (r_list_length (anal->fcns), 2, "reset keeps functions");
-	mu_assert_eq (r_list_length (fcn->bbs), 0, "reset clears function blocks");
-	mu_assert_eq (r_list_length (shared_owner->bbs), 0, "reset clears shared blocks");
-	mu_assert_eq (r_list_length (unregistered->bbs), 0, "reset follows unregistered owners");
+	mu_assert_eq ((int)RVecAnalBlockPtr_length (&fcn->bbs), 0, "reset clears function blocks");
+	mu_assert_eq ((int)RVecAnalBlockPtr_length (&shared_owner->bbs), 0, "reset clears shared blocks");
+	mu_assert_eq ((int)RVecAnalBlockPtr_length (&unregistered->bbs), 0, "reset follows unregistered owners");
 	mu_assert_eq (r_anal_function_linear_size (fcn), 0, "reset invalidates cached range");
 	mu_assert_eq (fcn->meta.numcallrefs, -1, "reset invalidates cached call count");
 	assert_invariants (anal);
@@ -849,15 +849,15 @@ bool test_r_anal_block_chop_noreturn_shared_roots(void) {
 	}
 
 	mu_assert_ptreq (r_anal_block_chop_noreturn (chopped, 0x201), chopped, "chopped block survives");
-	mu_assert_eq (r_list_length (with_pads->bbs), 7, "landing pads keep their shared suffix");
-	mu_assert ("cycle remains reachable", r_list_contains (with_pads->bbs, join));
-	mu_assert ("other branch remains reachable", r_list_contains (with_pads->bbs, tail));
-	mu_assert ("unreachable successor removed", !r_list_contains (with_pads->bbs, dead));
-	mu_assert_eq (r_list_length (without_pads->bbs), 2, "reachability resets for each function");
-	mu_assert ("second function keeps chopped block", r_list_contains (without_pads->bbs, chopped));
+	mu_assert_eq ((int)RVecAnalBlockPtr_length (&with_pads->bbs), 7, "landing pads keep their shared suffix");
+	mu_assert ("cycle remains reachable", RVecAnalBlockPtr_find (&with_pads->bbs, join, find_bb_cmp));
+	mu_assert ("other branch remains reachable", RVecAnalBlockPtr_find (&with_pads->bbs, tail, find_bb_cmp));
+	mu_assert ("unreachable successor removed", !RVecAnalBlockPtr_find (&with_pads->bbs, dead, find_bb_cmp));
+	mu_assert_eq ((int)RVecAnalBlockPtr_length (&without_pads->bbs), 2, "reachability resets for each function");
+	mu_assert ("second function keeps chopped block", RVecAnalBlockPtr_find (&without_pads->bbs, chopped, find_bb_cmp));
 	mu_assert_ptreq (r_anal_block_chop_noreturn (chopped, 0x201), chopped, "repeated chop survives");
-	mu_assert_eq (r_list_length (with_pads->bbs), 7, "repeated chop keeps landing pads");
-	mu_assert_eq (r_list_length (without_pads->bbs), 2, "repeated chop keeps second function");
+	mu_assert_eq ((int)RVecAnalBlockPtr_length (&with_pads->bbs), 7, "repeated chop keeps landing pads");
+	mu_assert_eq ((int)RVecAnalBlockPtr_length (&without_pads->bbs), 2, "repeated chop keeps second function");
 
 	r_unref (entry);
 	r_unref (pad);
@@ -884,7 +884,7 @@ bool test_r_anal_block_chop_noreturn_contiguous(void) {
 	mu_assert_null (r_anal_block_chop_noreturn (chopped, 0x111), "chopped block merged into entry");
 	mu_assert_eq (entry->size, 0x11, "entry includes shortened block");
 	mu_assert_eq (entry->jump, UT64_MAX, "merged block has no successor");
-	mu_assert_eq (r_list_length (fcn->bbs), 1, "contiguous predecessor still merges");
+	mu_assert_eq ((int)RVecAnalBlockPtr_length (&fcn->bbs), 1, "contiguous predecessor still merges");
 	r_unref (entry);
 	assert_invariants (anal);
 	assert_leaks (anal);

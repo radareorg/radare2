@@ -114,9 +114,10 @@ static RList *cld_collect(RCore *core, RAnalFunction *fcn) {
 	if (!files) {
 		return NULL;
 	}
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		int i;
 		for (i = 0; i < bb->ninstr; i++) {
 			ut64 addr = r_anal_bb_opaddr_i (bb, i);
