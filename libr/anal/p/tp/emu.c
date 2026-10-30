@@ -402,6 +402,7 @@ TPState *tps_init(RAnal *anal) {
 		tps->cfg_bbstate = true;
 	}
 	tps->tt.enable_rollback = tps->cfg_rollback;
+	tps->tt.db.max_accesses = (core && anal->coreb.cfgGetI)? (ut32)anal->coreb.cfgGetI (core, "types.maxtrace"): TP_TRACE_MAX;
 	tps->tt.be = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config);
 	tps->tt.track.addr = tps->stack_base;
 	return tps;
@@ -900,7 +901,7 @@ TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_ops, TPE
 				res = TP_EMU_BREAK;
 				goto beach;
 			}
-			if (max_ops && ++total > max_ops) {
+			if ((max_ops && ++total > max_ops) || type_trace_full (&etrace->db)) {
 				res = TP_EMU_BUDGET;
 				goto beach;
 			}

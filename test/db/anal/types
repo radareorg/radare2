@@ -1512,3 +1512,17 @@ arg int64_t arg2 @ rsi
 var S var_10h @ rbp-0x10
 EOF
 RUN
+
+NAME=type matching bounds the trace of esil goto loops (rep movsb)
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx b9ffffff7f4889e64889e7f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4f3a4c3
+af
+aft
+afi~size
+EOF
+EXPECT=<<EOF
+size: 110
+EOF
+RUN

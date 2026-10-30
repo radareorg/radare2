@@ -719,7 +719,7 @@ void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec *recs)
 	const bool harvest = !RVecTPSizeFn_empty (&tps->sizefns);
 	r_reg_setv (tps->tt.reg, "PC", fcn->addr);
 	if (tp_emulate_linear (tps, fcn, SYNTH_MAXOPS, harvest? synth_size_cb: NULL, harvest? &szctx: NULL, false, false) == TP_EMU_BUDGET) {
-		R_LOG_WARN ("Struct synthesis hit the %d-op budget at 0x%08" PFMT64x "; result is partial", SYNTH_MAXOPS, fcn->addr);
+		R_LOG_WARN ("Struct synthesis hit the emulation budget at 0x%08" PFMT64x "; result is partial", fcn->addr);
 	}
 
 	// collect accesses in the arg windows (fields) and the poison region (deref evidence)
