@@ -142,9 +142,9 @@ R_API RAnalCond *r_anal_cond_new_from_op(RAnalOp *op) {
 R_API RAnalCond *r_anal_cond_new_from_string(const char *str) {
 	R_RETURN_VAL_IF_FAIL (str, NULL);
 	int i, type = -1;
-	char *substr = NULL;
+	const char *substr = NULL;
 	for (i = 0; i < R_ANAL_CONDTYPE_LAST; i++) {
-		substr = strstr(str, condtypestr_expr[i]);
+		substr = strstr (str, condtypestr_expr[i]);
 		if (substr) {
 			type = i;
 			break;
@@ -155,7 +155,7 @@ R_API RAnalCond *r_anal_cond_new_from_string(const char *str) {
 	}
 	RAnalCond *cond = r_anal_cond_new ();
 	cond->type = r_anal_cond_type_fromstring (condtypestr_expr[i]);
-	char *left = r_str_ndup (substr, substr - str);
+	char *left = r_str_ndup (str, substr - str);
 	char *right = strdup (substr + strlen (condtypestr_expr[i]));
 	cond->left = r_anal_value_new_from_string (left);
 	cond->right = r_anal_value_new_from_string (right);
