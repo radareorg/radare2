@@ -1355,3 +1355,31 @@ WARN: Search stopped: directory tree is too large or too deep
 WARN: Search stopped: directory tree is too large or too deep
 EOF2
 RUN
+
+NAME=mdt bounds the tree of a directory that contains itself twice
+FILE=malloc://4096
+CMDS=<<EOF2
+wx 00020101000100000000f8 @ 0xb
+wx 0800000001000000000000000200 @ 0x20
+w FAT32    @ 0x52
+wx f8ffff0fffffff0fffffff0fffffff0f @ 0x200
+wx 44495220202020202020201000000000000000000000000000000300 @ 0x400
+wx 41202020202020202020201000000000000000000000000000000300 @ 0x600
+wx 42202020202020202020201000000000000000000000000000000300 @ 0x620
+m /mnt fat 0
+mdt /mnt 2
+?v $?
+mdt /mnt~?
+EOF2
+EXPECT=<<EOF2
+/mnt
+`-- dir/
+    |-- a/
+    `-- b/
+0x0
+16385
+EOF2
+EXPECT_ERR=<<EOF2
+WARN: Tree truncated after 16384 entries, use a smaller depth or md to list subdirectories
+EOF2
+RUN
