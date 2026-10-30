@@ -895,7 +895,7 @@ static RBinStrings *strings(RBinFile *bf) {
 		ut64 length;
 		int uleblen = string_length (bin, bin->strings[i], &length);
 		if (!uleblen) {
-			goto error;
+			continue;
 		}
 		if (length <= 5 || length >= R_BIN_SIZEOF_STRINGS) {
 			continue;
@@ -906,7 +906,7 @@ static RBinStrings *strings(RBinFile *bf) {
 			str = owned = readstr (bin, (ut64)bin->strings[i] + uleblen, length);
 		}
 		if (!str) {
-			goto error;
+			continue;
 		}
 		RStrs text = r_strs_from (str);
 		if ((*str == 'L' && r_strs_findc (text, '/'))

@@ -450,12 +450,13 @@ static inline bool r_bin_string_set(RBinStrings *strings, RBinString *str, R_NOA
 	R_RETURN_VAL_IF_FAIL (strings && str, false);
 	size_t offset = r_strbuf_length (&strings->pool);
 	size_t len = r_strs_len (text);
-	if (len >= UT32_MAX || offset > UT32_MAX - len - 1
+	if (len >= ST32_MAX || offset > UT32_MAX - len - 1
 			|| (len && !r_strbuf_append_n (&strings->pool, text.a, len))
 			|| !r_strbuf_append_n (&strings->pool, "", 1)) {
 		return false;
 	}
-	str->text.entry = (RStrsEntry) { offset, len };
+	str->text.entry.off = offset;
+	str->text.entry.len = len;
 	str->pooled = true;
 	return true;
 }

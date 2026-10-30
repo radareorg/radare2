@@ -1246,7 +1246,7 @@ R_IPI RBinStrings *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RStrBu
 		const int bits = (bo->info) ? bo->info->bits : 32;
 		const int cfstr_size = (bits == 64) ? 32 : 16;
 		const int cfstr_offs = (bits == 64) ? 16 :  8;
-		if (strstr (section->name, "__cfstring")) {
+		if (ret && strstr (section->name, "__cfstring")) {
 			ut64 i;
 			// XXX do not walk if bin.strings == 0
 			ut8 *p;
@@ -1258,14 +1258,12 @@ R_IPI RBinStrings *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RStrBu
 			if (section->size < cfstr_size || section->size > SZT_MAX) {
 				continue;
 			}
-			if (ret) {
-				ut64 cfstr_bound64 = (section->size / cfstr_size) + 1;
-				if (cfstr_bound64 <= SZT_MAX) {
-					size_t need;
-					size_t cfstr_bound = (size_t)cfstr_bound64;
-					if (!r_add_overflow (RVecRBinString_length (&ret->vec), cfstr_bound, &need)) {
-						RVecRBinString_reserve (&ret->vec, need);
-					}
+			ut64 cfstr_bound64 = (section->size / cfstr_size) + 1;
+			if (cfstr_bound64 <= SZT_MAX) {
+				size_t need;
+				size_t cfstr_bound = (size_t)cfstr_bound64;
+				if (!r_add_overflow (RVecRBinString_length (&ret->vec), cfstr_bound, &need)) {
+					RVecRBinString_reserve (&ret->vec, need);
 				}
 			}
 			ut8 *sbuf = malloc (section->size);
