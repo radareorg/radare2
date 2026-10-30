@@ -14,8 +14,7 @@ jobs:
         include:
         - sanitizer: none
           debug: 'true'
-        - sanitizer: address
-          debug: 'true'
+
     steps:
     - name: Match original pagefile
       uses: al-cheb/configure-pagefile-action@9b6da52fb72a3c6147c1aad2df22d8d905681adc

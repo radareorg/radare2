@@ -40,4 +40,28 @@ def worker(number):
 with ThreadPoolExecutor(max_workers=8) as pool:
     passed = all(list(pool.map(worker, range(8))))
 print(f'shared-file generation passed={passed}', flush=True)
-raise SystemExit(0 if passed else 1)
+if not passed:
+    raise SystemExit(1)
+
+if passed:
+    import ctypes
+    from ctypes import wintypes
+    kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+    kernel.CreateFileW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD,
+                                  wintypes.LPVOID, wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
+    kernel.CreateFileW.restype = wintypes.HANDLE
+    kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+    target = output / 'symclass0.c'
+    handle = kernel.CreateFileW(str(target), 0x80000000, 1, None, 3, 128, None)
+    if handle == wintypes.HANDLE(-1).value:
+        raise ctypes.WinError(ctypes.get_last_error())
+    try:
+        print('OUTPUT HELD OPEN BY ANOTHER READER', flush=True)
+        result = subprocess.run([str(exe), '-r', str(source)], env=env,
+                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        print(result.stdout.decode(errors='replace'), flush=True)
+        print(f'locked-output exit={result.returncode}', flush=True)
+        (root / 'diagnostics/locked-output.log').write_bytes(result.stdout)
+        raise SystemExit(0 if result.returncode == 0 else 1)
+    finally:
+        kernel.CloseHandle(handle)
