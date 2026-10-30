@@ -432,43 +432,6 @@ static ut32 r_n_math(ArmOp *op, ut32 data_64, ut32 data_32, bool is64) {
 	return data;
 }
 
-static ut32 adds(ArmOp *op) {
-	ut32 data = UT32_MAX;
-	int k = 0;
-	bool check1 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64 && op->operands[2].reg_type & ARM_REG64;
-	bool check2 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32 && op->operands[2].reg_type & ARM_REG32;
-	bool check3 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64 && op->operands[2].type & ARM_CONSTANT;
-	bool check4 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32 && op->operands[2].type & ARM_CONSTANT;
-
-	if (op->operands[0].type == ARM_GPR && op->operands[1].type == ARM_GPR && op->operands[2].type == ARM_GPR) {
-		if (check1) {
-			k = 0x000000ab;
-		} else if (check2) {
-			k = 0x0000002b;
-		}
-		data = k | op->operands[0].reg << 24;
-		data |= (op->operands[1].reg & 0x7) << 29;
-		data |= (op->operands[1].reg & 0x18) << 13;
-		data |= op->operands[2].reg << 8;
-		return data;
-
-	} else if (op->operands[2].type & ARM_CONSTANT) {
-		check_cond (op->operands[2].immediate <= 0xfff);
-		if (check3) {
-			k = 0x000000b1;
-		} else if (check4) {
-			k = 0x00000031;
-		}
-		data = k | op->operands[0].reg << 24;
-		data |= (op->operands[1].reg & 0x7) << 29;
-		data |= (op->operands[1].reg & 0x18) << 13;
-		data |= (op->operands[2].immediate & 0x3f) << 18;
-		data |= (op->operands[2].immediate & 0xfc0) << 2;
-		return data;
-	}
-	return data;
-}
-
 static ut32 asr(ArmOp *op) {
 	ut32 data = UT32_MAX;
 	int k = 0;
@@ -946,37 +909,17 @@ static ut32 math3src(ArmOp *op, ut32 base) {
 	return r_swap_ut32 (data);
 }
 
+static ut32 addsub(ArmOp *op, bool sub, bool setflags);
+
+// cmp is subs with xzr or wzr as the destination
 static ut32 cmp(ArmOp *op) {
 	ut32 data = UT32_MAX;
-	int k = 0;
-	if (op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64) {
-		k = 0x1f0000eb;
-	} else if (op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32) {
-		if (op->operands[2].shift_amount > 31) {
-			return UT32_MAX;
-		}
-		k = 0x1f00006b;
-	} else if (op->operands[0].type & ARM_GPR && op->operands[1].type & ARM_CONSTANT) {
-		if (op->operands[0].reg_type & ARM_REG64) {
-			k = 0x1f0000f1;
-		} else {
-			k = 0x1f000071;
-		}
-		k |= (op->operands[1].immediate * 4) << 16;
-	} else {
-		return UT32_MAX;
-	}
-
-	data = k | (op->operands[0].reg & 0x18) << 13 | op->operands[0].reg << 29;
-
-	if (op->operands[1].type & ARM_GPR) {
-		data |= op->operands[1].reg << 8;
-	}
-
-	if (op->operands[2].type != ARM_SHIFT) {
-		data |= op->operands[2].shift_amount << 18 | op->operands[2].shift << 14;
-	}
-	return data;
+	check_cond (op->operands_count >= 2 && op->operands_count < MAX_OPERANDS && op->operands[0].type == ARM_GPR);
+	memmove (&op->operands[1], &op->operands[0], sizeof (Operand) * op->operands_count);
+	op->operands[0].reg = 31;
+	op->operands[0].reg_type &= ~ARM_SP;
+	op->operands_count++;
+	return addsub (op, true, true);
 }
 
 static ut32 regsluop(ArmOp *op, int k) {
@@ -1596,6 +1539,86 @@ static ut32 arithmetic(ArmOp *op, int k) {
 		}
 	}
 	return data;
+}
+
+// add, adds, sub and subs with an immediate, a shifted register or an extended register
+static ut32 addsub(ArmOp *op, bool sub, bool setflags) {
+	ut32 data = UT32_MAX;
+	check_cond (op->operands_count >= 3 && op->operands_count <= 4);
+	const Operand *rd = &op->operands[0];
+	const Operand *rn = &op->operands[1];
+	const Operand *rm = &op->operands[2];
+	const Operand *mod = (op->operands_count == 4)? &op->operands[3]: NULL;
+	check_cond (rd->type == ARM_GPR && rn->type == ARM_GPR);
+	const bool sf = rd->reg_type & ARM_REG64;
+	check_cond (sf == !!(rn->reg_type & ARM_REG64));
+	const bool rd_sp = rd->reg_type & ARM_SP;
+	const bool rn_sp = rn->reg_type & ARM_SP;
+	ut32 insn = sf? 0x80000000: 0;
+	if (rm->type == ARM_CONSTANT || (rm->type == ARM_GPR && (rd_sp || rn_sp || (mod && mod->type == ARM_EXTEND)))) {
+		// register 31 is sp here, except for a flag setting rd which is xzr
+		check_cond (rn->reg != 31 || rn_sp);
+		check_cond (rd->reg != 31 || rd_sp != setflags);
+	} else {
+		check_cond (!rd_sp && !rn_sp);
+	}
+	if (rm->type == ARM_CONSTANT) {
+		st64 imm = (st64)rm->immediate;
+		bool shift12 = false;
+		if (mod) {
+			check_cond (mod->type == ARM_SHIFT && mod->shift == ARM_LSL && (mod->shift_amount == 0 || mod->shift_amount == 12));
+			shift12 = mod->shift_amount == 12;
+		}
+		if (imm < 0) {
+			sub = !sub;
+			imm = -imm;
+		}
+		if (!shift12 && imm > 0xfff && !(imm & 0xfff)) {
+			shift12 = true;
+			imm >>= 12;
+		}
+		check_cond (imm <= 0xfff);
+		insn |= 0x11000000 | ((ut32)imm << 10);
+		if (shift12) {
+			insn |= 0x00400000;
+		}
+	} else if (rm->type == ARM_GPR && (rd_sp || rn_sp || (mod && mod->type == ARM_EXTEND))) {
+		// extended register, lsl is uxtx or uxtw when sp is used
+		int option = sf? 3: 2;
+		int amount = 0;
+		if (mod && mod->type == ARM_EXTEND) {
+			option = mod->shift - ARM_UXTB;
+			amount = mod->shift_amount;
+		} else if (mod) {
+			check_cond (mod->type == ARM_SHIFT && mod->shift == ARM_LSL);
+			amount = mod->shift_amount;
+		}
+		check_cond (amount <= 4 && !(rm->reg_type & ARM_SP));
+		// rm is an x register only for uxtx and sxtx in the 64-bit form
+		const bool rm64 = sf && (option & 3) == 3;
+		check_cond (rm64 == !!(rm->reg_type & ARM_REG64));
+		insn |= 0x0b200000 | ((rm->reg & 0x1f) << 16) | (option << 13) | (amount << 10);
+	} else if (rm->type == ARM_GPR) {
+		int shift = ARM_LSL;
+		int amount = 0;
+		if (mod) {
+			check_cond (mod->type == ARM_SHIFT && mod->shift != ARM_ROR);
+			shift = mod->shift;
+			amount = mod->shift_amount;
+		}
+		check_cond (sf == !!(rm->reg_type & ARM_REG64) && amount < (sf? 64: 32));
+		insn |= 0x0b000000 | (shift << 22) | ((rm->reg & 0x1f) << 16) | (amount << 10);
+	} else {
+		return data;
+	}
+	if (sub) {
+		insn |= 0x40000000;
+	}
+	if (setflags) {
+		insn |= 0x20000000;
+	}
+	insn |= ((rn->reg & 0x1f) << 5) | (rd->reg & 0x1f);
+	return r_swap_ut32 (insn);
 }
 
 static ut32 neg(ArmOp *op) {
@@ -2225,7 +2248,7 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 	} else if (r_str_startswith (str, "ror ")) {
 		*op = ror (&ops);
 	} else if (r_str_startswith (str, "adds")) {
-		*op = adds (&ops);
+		*op = addsub (&ops, false, true);
 	} else if (r_str_startswith (str, "ngc ")) {
 		*op = ngc (&ops);
 	} else if (r_str_startswith (str, "rev")) {
@@ -2287,7 +2310,7 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 	} else if (r_str_startswith (str, "ldp")) {
 		*op = stp (&ops, true);
 	} else if (r_str_startswith (str, "sub") && !r_str_startswith (str, "subg") && !r_str_startswith (str, "subp")) { // w, skip this for mte versions of sub, e.g. subg, subp ins
-		*op = arithmetic (&ops, 0xd1);
+		*op = addsub (&ops, true, r_str_startswith (str, "subs"));
 	} else if (r_str_startswith (str, "madd ")) {
 		*op = math3src (&ops, 0x1b000000);
 	} else if (r_str_startswith (str, "msub ")) {
@@ -2310,10 +2333,8 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 		*op = math3src (&ops, 0x1ba08000); // alias of umsubl with Ra=xzr
 	} else if (r_str_startswith (str, "umull ")) {
 		*op = math3src (&ops, 0x1ba00000); // alias of umaddl with Ra=xzr
-	} else if (r_str_startswith (str, "add x")) {
-		// } else if (r_str_startswith (str, "add")) {
-		// *op = math (&ops, 0x8b, has64reg (str));
-		*op = arithmetic (&ops, 0x91);
+	} else if (r_str_startswith (str, "add x") || r_str_startswith (str, "add sp") || r_str_startswith (str, "add wsp")) {
+		*op = addsub (&ops, false, false);
 	} else if (r_str_startswith (str, "udiv w") || r_str_startswith (str, "div w")) {
 		*op = math (&ops, 0x8c09a, false);
 	} else if (r_str_startswith (str, "udiv x") || r_str_startswith (str, "div x")) {
@@ -2325,7 +2346,7 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 	} else if (r_str_startswith (str, "mul x")) {
 		*op = math (&ops, 0x007c001b, true);
 	} else if (r_str_startswith (str, "add w")) {
-		*op = arithmetic (&ops, 0x11);
+		*op = addsub (&ops, false, false);
 #if 0
 	} else if (r_str_startswith (str, "eor x")) {
 		*op = math (&ops, 0x4a, true);
