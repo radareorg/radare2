@@ -409,16 +409,13 @@ R_API bool r_egg_compile(REgg *egg) {
 	// only emit begin if code is found
 	r_egg_lang_init (egg);
 	for (; b;) {
-		r_egg_lang_parsechar (egg, b);
-		if (egg->lang.elem_n >= sizeof (egg->lang.elem)) {
-			R_LOG_ERROR ("too large element");
-			break;
+		if (r_egg_lang_parsechar (egg, b) < 0) {
+			return false;
 		}
 		size_t r = r_buf_read (egg->src, (ut8 *)&b, sizeof (b));
 		if (r != sizeof (b)) {
 			break;
 		}
-		// XXX: some parse fail errors are false positives : (
 	}
 	if (egg->context > 0) {
 		R_LOG_ERROR ("expected '}' at the end of the file. %d left", egg->context);

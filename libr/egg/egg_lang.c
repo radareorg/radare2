@@ -1116,25 +1116,34 @@ static int parseinlinechar(REgg *egg, char c) {
 	return 0;
 }
 
+static int rcc_parse(REgg *egg, const char *s) {
+	for (; *s; s++) {
+		if (r_egg_lang_parsechar (egg, *s) < 0) {
+			return -1;
+		}
+	}
+	return 0;
+}
+
 /* TODO: split this function into several ones..quite long fun */
-static void rcc_next(REgg *egg) {
+static int rcc_next(REgg *egg) {
 	const char *ocn;
 	REggEmit *e = egg->remit;
 	char *str = NULL, *p, *ptr;
-	int i;
+	int i, ret = 0;
 
 	if (egg->lang.setenviron) {
 		egg->lang.elem[egg->lang.elem_n - 1] = 0;
 		r_sys_setenv (egg->lang.setenviron, egg->lang.elem);
 		R_FREE (egg->lang.setenviron);
-		return;
+		return 0;
 	}
 	if (egg->lang.includefile) {
 		char *p, *q, *path;
 		path = find_include (egg->lang.includedir, egg->lang.includefile);
 		if (!path) {
 			R_LOG_ERROR ("Cannot find include file '%s'", egg->lang.elem);
-			return;
+			return 0;
 		}
 		R_FREE (egg->lang.includefile);
 		R_FREE (egg->lang.includedir);
@@ -1145,32 +1154,30 @@ static void rcc_next(REgg *egg) {
 			egg->lang.elem[0] = 0; // TODO: this must be a separate function
 			egg->lang.elem_n = 0;
 			egg->lang.line = 0;
-			for (; *p; p++) {
-				r_egg_lang_parsechar (egg, *p);
-			}
+			ret = rcc_parse (egg, p);
 			free (q);
 			egg->lang.line = oline;
 		} else {
 			R_LOG_ERROR ("Cannot find '%s'", path);
 		}
 		free (path);
-		return;
+		return ret;
 	}
 	egg->lang.docall = 1;
 	if (egg->lang.callname) {
 		if (!strcmp (egg->lang.callname, "goto")) {
 			if (egg->lang.nargs != 1) {
 				R_LOG_ERROR ("Invalid number of arguments for goto()");
-				return;
+				return 0;
 			}
 			e->jmp (egg, egg->lang.ctxpush[CTX], 0);
 			rcc_reset_callname (egg);
-			return;
+			return 0;
 		}
 		if (!strcmp (egg->lang.callname, "break")) {
 			e->trap (egg);
 			rcc_reset_callname (egg);
-			return;
+			return 0;
 		}
 		ptr = strchr (egg->lang.callname, '=');
 		if (ptr) {
@@ -1179,12 +1186,12 @@ static void rcc_next(REgg *egg) {
 		}
 		ocn = r_str_trim_head_ro (egg->lang.callname);
 		if (!ocn) {
-			return;
+			return 0;
 		}
 		str = r_egg_mkvar (egg, NULL, ocn, 0);
 		if (!str) {
 			R_LOG_ERROR ("Cannot mkvar");
-			return;
+			return 0;
 		}
 		if (*ocn == '.') {
 			e->call (egg, str, 1);
@@ -1193,7 +1200,7 @@ static void rcc_next(REgg *egg) {
 			if (egg->lang.lastctxdelta >= 0) {
 				R_LOG_ERROR ("Unsupported while syntax");
 				free (str);
-				return;
+				return 0;
 			}
 			char *var = r_str_newf ("__begin_%d_%d_%d\n", egg->lang.nfunctions, CTX, egg->lang.nestedi[CTX - 1]);
 			e->while_end (egg, var); // get_frame_label (1));
@@ -1228,19 +1235,18 @@ static void rcc_next(REgg *egg) {
 					e->comment (egg, "syscall");
 					r_egg_lang_parsechar (egg, '\n'); /* FIX parsing issue */
 					if (p) {
-						for (; *p; p++) {
-							r_egg_lang_parsechar (egg, *p);
-						}
+						ret = rcc_parse (egg, p);
 					} else {
-						char *q, *s = e->syscall (egg, egg->lang.nargs);
+						char *s = e->syscall (egg, egg->lang.nargs);
 						if (s) {
-							for (q = s; *q; q++) {
-								r_egg_lang_parsechar (egg, *q);
-							}
+							ret = rcc_parse (egg, s);
 							free (s);
 						} else {
 							R_LOG_ERROR ("Cannot get @syscall payload");
 						}
+					}
+					if (ret < 0) {
+						goto beach;
 					}
 					egg->lang.docall = 0;
 					break;
@@ -1260,10 +1266,11 @@ static void rcc_next(REgg *egg) {
 						rcc_reset_callname (egg);
 						e->comment (egg, "inline");
 						r_egg_lang_parsechar (egg, '\n'); /* FIX parsing issue */
-						for (p = body; *p; p++) {
-							r_egg_lang_parsechar (egg, *p);
-						}
+						ret = rcc_parse (egg, body);
 						egg->lang.inlines[i].body = body;
+						if (ret < 0) {
+							goto beach;
+						}
 						egg->lang.docall = 0;
 						break;
 					}
@@ -1352,10 +1359,22 @@ static void rcc_next(REgg *egg) {
 			}
 		}
 	}
+beach:
 	free (str);
 	/* reset the element buffer so the next statement starts clean */
 	egg->lang.elem[0] = '\0';
 	egg->lang.elem_n = 0;
+	return ret;
+}
+
+static bool rcc_element_append(REgg *egg, char c) {
+	if ((unsigned int)egg->lang.elem_n >= sizeof (egg->lang.elem) - 1) {
+		R_LOG_ERROR ("too large element");
+		return false;
+	}
+	egg->lang.elem[egg->lang.elem_n++] = c;
+	egg->lang.elem[egg->lang.elem_n] = 0;
+	return true;
 }
 
 R_API int r_egg_lang_parsechar(REgg *egg, char c) {
@@ -1409,7 +1428,9 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 					free (tmp_ptr);
 					egg->lang.quotelinevar = 0;
 				} else {
-					egg->lang.elem[egg->lang.elem_n++] = c;
+					if (!rcc_element_append (egg, c)) {
+						return -1;
+					}
 				}
 			} else {
 				if (c == '`') {
@@ -1452,13 +1473,17 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 			egg->lang.elem_n = 0;
 			egg->lang.slurp = 0;
 		} else {
-			egg->lang.elem[egg->lang.elem_n++] = c;
+			if (!rcc_element_append (egg, c)) {
+				return -1;
+			}
 		}
 		egg->lang.elem[egg->lang.elem_n] = '\0';
 	} else {
 		switch (c) {
 		case ';':
-			rcc_next (egg);
+			if (rcc_next (egg) < 0) {
+				return -1;
+			}
 			break;
 		case '"':
 			egg->lang.slurp = '"';
@@ -1545,7 +1570,9 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 			if (egg->lang.oc == '\n' || egg->lang.oc == '}') {
 				egg->lang.quoteline = '\n';
 			} else {
-				egg->lang.elem[egg->lang.elem_n++] = c;
+				if (!rcc_element_append (egg, c)) {
+					return -1;
+				}
 			}
 			break;
 		case '#':
@@ -1557,11 +1584,15 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 			if (egg->lang.oc == '/') {
 				egg->lang.skipline = 1;
 			} else {
-				egg->lang.elem[egg->lang.elem_n++] = c;
+				if (!rcc_element_append (egg, c)) {
+					return -1;
+				}
 			}
 			break;
 		default:
-			egg->lang.elem[egg->lang.elem_n++] = c;
+			if (!rcc_element_append (egg, c)) {
+				return -1;
+			}
 		}
 		if (egg->lang.slurp) {
 			if (egg->lang.elem_n) {
