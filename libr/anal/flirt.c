@@ -290,12 +290,21 @@ typedef struct RFlirtTailByte {
 } RFlirtTailByte;
 
 typedef struct RFlirtFunction {
-	char name[R_FLIRT_NAME_MAX];
 	ut16 offset; // function offset from the module start
 	ut8 negative_offset; // true if offset is negative, for referenced functions
 	ut8 is_local; // true if function is static
 	ut8 is_collision; // true if was an unresolved collision
+	char name[]; // allocated to the name length
 } RFlirtFunction;
+
+static RFlirtFunction *function_new(ut16 offset, const char *name, size_t name_len) {
+	RFlirtFunction *function = calloc (1, sizeof (RFlirtFunction) + name_len + 1);
+	if (function) {
+		function->offset = offset;
+		memcpy (function->name, name, name_len);
+	}
+	return function;
+}
 
 typedef struct RFlirtModule {
 	ut32 crc_length;
@@ -757,17 +766,9 @@ static ut8 read_module_referenced_functions(RFlirt *f, RFlirtModule *module) {
 	}
 
 	for (i = 0; i < number_of_referenced_functions; i++) {
-		ref_function = R_NEW0 (RFlirtFunction);
-		if (f->version >= 9) {
-			ref_function->offset = read_multiple_bytes (f);
-			if (f->buf_eof || f->buf_err) {
-				goto beach;
-			}
-		} else {
-			ref_function->offset = read_max_2_bytes (f);
-			if (f->buf_eof || f->buf_err) {
-				goto beach;
-			}
+		const ut16 ref_offset = f->version >= 9? read_multiple_bytes (f): read_max_2_bytes (f);
+		if (f->buf_eof || f->buf_err) {
+			goto beach;
 		}
 		ref_function_name_length = read_byte (f);
 		if (f->buf_eof || f->buf_err) {
@@ -781,6 +782,10 @@ static ut8 read_module_referenced_functions(RFlirt *f, RFlirtModule *module) {
 			}
 		}
 		if ((int)ref_function_name_length < 0 || ref_function_name_length >= R_FLIRT_NAME_MAX) {
+			goto beach;
+		}
+		ref_function = function_new (ref_offset, "", ref_function_name_length);
+		if (!ref_function) {
 			goto beach;
 		}
 		for (j = 0; j < ref_function_name_length; j++) {
@@ -797,6 +802,7 @@ static ut8 read_module_referenced_functions(RFlirt *f, RFlirtModule *module) {
 		}
 		r_list_append (module->referenced_functions, ref_function);
 		R_LOG_DEBUG ("(REF: %04X: %s)", ref_function->offset, ref_function->name);
+		ref_function = NULL; // owned by the list
 	}
 
 	return true;
@@ -812,6 +818,7 @@ static ut8 read_module_public_functions(RFlirt *f, RFlirtModule *module, ut8 *fl
 	int i;
 	ut16 offset = 0;
 	ut8 current_byte;
+	char name[R_FLIRT_NAME_MAX];
 
 	module->public_functions = r_list_new ();
 	RFlirtFunction *function = NULL;
@@ -828,21 +835,12 @@ static ut8 read_module_public_functions(RFlirt *f, RFlirtModule *module, ut8 *fl
 				goto beach;
 			}
 		}
-		function = R_NEW0 (RFlirtFunction);
-		function->offset = offset;
-
 		current_byte = read_byte (f);
 		if (f->buf_eof || f->buf_err) {
 			goto beach;
 		}
+		const ut8 name_flags = current_byte < 0x20? current_byte: 0;
 		if (current_byte < 0x20) {
-			if (current_byte & IDASIG__FUNCTION__LOCAL) { // static function
-				function->is_local = true;
-			}
-			if (current_byte & IDASIG__FUNCTION__UNRESOLVED_COLLISION) {
-				// unresolved collision (happens in *.exc while creating .sig from .pat)
-				function->is_collision = true;
-			}
 #if DEBUG
 			if (current_byte & 0x01 || current_byte & 0x04) { // appears as 'd' or '?' in dumpsig
 				R_LOG_DEBUG ("Investigate public name: %02X @ %04X", current_byte, r_buf_tell (f->b) + f->header_size);
@@ -855,19 +853,23 @@ static ut8 read_module_public_functions(RFlirt *f, RFlirtModule *module, ut8 *fl
 		}
 
 		for (i = 0; current_byte >= 0x20 && i < R_FLIRT_NAME_MAX; i++) {
-			function->name[i] = current_byte;
+			name[i] = current_byte;
 			current_byte = read_byte (f);
 			if (f->buf_eof || f->buf_err) {
 				goto beach;
 			}
 		}
-
 		if (i == R_FLIRT_NAME_MAX) {
 			R_LOG_INFO ("Function name too long");
-			function->name[R_FLIRT_NAME_MAX - 1] = '\0';
-		} else {
-			function->name[i] = '\0';
+			i--;
 		}
+		function = function_new (offset, name, i);
+		if (!function) {
+			goto beach;
+		}
+		// unresolved collisions happen in *.exc while creating .sig from .pat
+		function->is_local = (name_flags & IDASIG__FUNCTION__LOCAL) != 0;
+		function->is_collision = (name_flags & IDASIG__FUNCTION__UNRESOLVED_COLLISION) != 0;
 		R_LOG_DEBUG ("flirt: %04X:%s", function->offset, function->name);
 		*flags = current_byte;
 		r_list_append (module->public_functions, function);
