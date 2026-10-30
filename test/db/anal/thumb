@@ -132,3 +132,19 @@ var int8_t var_4h @ sp+0x4
 var int16_t var_4h @ sp+0x4
 EOF
 RUN
+
+NAME=ARM imports in a Thumb ELF
+FILE=bins/elf/libmagic.so
+CMDS=<<EOF
+ahb. @ entry0
+ahb. @ 0x5e34
+pi 3 @ 0x5e34
+EOF
+EXPECT=<<EOF
+32
+32
+add ip, pc, 0, 12
+add ip, ip, 0x11000
+ldr pc, [ip, 0x148]!
+EOF
+RUN
