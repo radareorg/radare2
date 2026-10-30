@@ -778,7 +778,7 @@ R_API RAnalClassErr r_anal_class_base_set(RAnal *anal, const char *class_name, R
 	if (bases) {
 		RAnalBaseClass *existing_base;
 		R_VEC_FOREACH (bases, existing_base) {
-			if (!strcmp (existing_base->class_name, base->class_name)) {
+			if (!strcmp (existing_base->class_name, base_class_name_sanitized)) {
 				free (base_class_name_sanitized);
 				RVecAnalBaseClass_free (bases);
 				return R_ANAL_CLASS_ERR_OTHER;

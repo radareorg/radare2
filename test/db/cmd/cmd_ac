@@ -266,6 +266,26 @@ Flatline:
 EOF
 RUN
 
+NAME=acb duplicate base with sanitized name
+FILE=-
+CMDS=<<EOF
+ac Song.int.
+ac Flatline
+acb Flatline Song.int.
+acb Flatline Song.int.
+acb Flatline Song_int_
+acll
+k anal/classes/attrs/*
+EOF
+EXPECT=<<EOF
+Flatline: Song_int_
+Song_int_
+attr.Flatline.base=0
+attr.Flatline.base.0=Song_int_,0
+attrtypes.Flatline=base
+EOF
+RUN
+
 NAME=acb objc inheritance
 FILE=bins/mach0/objc-employee
 ARGS=-e bin.cache=true -e log.quiet=true
