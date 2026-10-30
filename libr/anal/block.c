@@ -156,39 +156,17 @@ R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr) {
 
 // This is a special case of what r_interval_node_all_in () does
 static bool all_in(RAnalBlock *node, ut64 addr, RAnalBlockCb cb, void *user) {
-	RVecAnalBlockPtr stack;
-	RVecAnalBlockPtr_init (&stack);
-	if (node) {
-		RVecAnalBlockPtr_push_back (&stack, &node);
+	while (node && addr < node->addr) {
+		node = unwrap (node->_rb.child[0]);
 	}
-	while (!RVecAnalBlockPtr_empty (&stack)) {
-		RAnalBlock **node_slot = RVecAnalBlockPtr_last (&stack);
-		RAnalBlock *cur = node_slot? *node_slot: NULL;
-		RVecAnalBlockPtr_pop_back (&stack);
-		while (cur && addr < cur->addr) {
-			// less than the current node, but might still be contained further down
-			cur = unwrap (cur->_rb.child[0]);
-		}
-		if (!cur || addr >= cur->_max_end) {
-			continue;
-		}
-		if (addr < cur->addr + cur->size) {
-			if (!cb (cur, user)) {
-				RVecAnalBlockPtr_fini (&stack);
-				return false;
-			}
-		}
-		RAnalBlock *right = unwrap (cur->_rb.child[1]);
-		RAnalBlock *left = unwrap (cur->_rb.child[0]);
-		if (right) {
-			RVecAnalBlockPtr_push_back (&stack, &right);
-		}
-		if (left) {
-			RVecAnalBlockPtr_push_back (&stack, &left);
-		}
+	if (!node || addr >= node->_max_end) {
+		return true;
 	}
-	RVecAnalBlockPtr_fini (&stack);
-	return true;
+	if (addr < node->addr + node->size && !cb (node, user)) {
+		return false;
+	}
+	return all_in (unwrap (node->_rb.child[0]), addr, cb, user)
+		&& all_in (unwrap (node->_rb.child[1]), addr, cb, user);
 }
 
 R_API bool r_anal_blocks_foreach_in(RAnal *anal, ut64 addr, RAnalBlockCb cb, void *user) {
@@ -210,41 +188,22 @@ R_API RList *r_anal_get_blocks_in(RAnal *anal, ut64 addr) {
 	return list;
 }
 
-static void all_intersect(RAnalBlock *node, ut64 addr, ut64 size, RAnalBlockCb cb, void *user) {
-	ut64 end = addr + size;
-	RVecAnalBlockPtr stack;
-	RVecAnalBlockPtr_init (&stack);
-	if (node) {
-		RVecAnalBlockPtr_push_back (&stack, &node);
+static void all_intersect(RAnalBlock *node, ut64 addr, ut64 end, RAnalBlockCb cb, void *user) {
+	while (node && end <= node->addr) {
+		node = unwrap (node->_rb.child[0]);
 	}
-	while (!RVecAnalBlockPtr_empty (&stack)) {
-		RAnalBlock **node_slot = RVecAnalBlockPtr_last (&stack);
-		RAnalBlock *cur = node_slot? *node_slot: NULL;
-		RVecAnalBlockPtr_pop_back (&stack);
-		while (cur && end <= cur->addr) {
-			// less than the current node, but might still be contained further down
-			cur = unwrap (cur->_rb.child[0]);
-		}
-		if (!cur || addr >= cur->_max_end) {
-			continue;
-		}
-		if (addr < cur->addr + cur->size) {
-			cb (cur, user);
-		}
-		RAnalBlock *right = unwrap (cur->_rb.child[1]);
-		RAnalBlock *left = unwrap (cur->_rb.child[0]);
-		if (right) {
-			RVecAnalBlockPtr_push_back (&stack, &right);
-		}
-		if (left) {
-			RVecAnalBlockPtr_push_back (&stack, &left);
-		}
+	if (!node || addr >= node->_max_end) {
+		return;
 	}
-	RVecAnalBlockPtr_fini (&stack);
+	if (addr < node->addr + node->size) {
+		cb (node, user);
+	}
+	all_intersect (unwrap (node->_rb.child[0]), addr, end, cb, user);
+	all_intersect (unwrap (node->_rb.child[1]), addr, end, cb, user);
 }
 
 R_API void r_anal_blocks_foreach_intersect(RAnal *anal, ut64 addr, ut64 size, RAnalBlockCb cb, void *user) {
-	all_intersect (anal->bb_tree? unwrap (anal->bb_tree): NULL, addr, size, cb, user);
+	all_intersect (anal->bb_tree? unwrap (anal->bb_tree): NULL, addr, addr + size, cb, user);
 }
 
 R_API RList *r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size) {

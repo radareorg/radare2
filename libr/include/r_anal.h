@@ -692,11 +692,11 @@ typedef struct r_anal_cond_t {
 
 typedef struct r_anal_bb_t {
 	RBNode _rb;     // private, node in the RBTree
+	ut64 _max_end;  // private, augmented value for RBTree
 	ut64 addr;
 	ut64 size;
 	ut64 jump;
 	ut64 fail;
-	ut64 _max_end;  // private, augmented value for RBTree
 	ut64 traced; // bitfield (each bit represents 1 trace)
 	ut8 *fingerprint;
 	RAnalDiff *diff;
