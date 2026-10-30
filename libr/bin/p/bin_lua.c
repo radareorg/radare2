@@ -103,11 +103,11 @@ static void addString(const ut8 *buf, ut64 offset, ut64 length, ParseStruct *par
 	if (!binstring) {
 		return;
 	}
-	binstring->string = r_str_ndup ((char *) buf + offset, length);
+	r_bin_string_set (binstring, r_str_ndup ((const char *)buf + offset, length));
 	binstring->vaddr = binstring->paddr = offset;
 	binstring->ordinal = 0;
 	binstring->size = length;
-	binstring->length = binstring->string? strlen (binstring->string): 0;
+	binstring->length = r_strs_len (binstring->text);
 }
 
 static void addSymbol(RVecRBinSymbol *vec, char *name, ut64 addr, ut32 size, const char *type) {

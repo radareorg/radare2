@@ -53,13 +53,17 @@ static void print_string(const RBinStringScanOptions *options, RBinString *strin
 	const char *section_name = s ? s->name : "";
 	const char *type_string = r_bin_string_type (string->type);
 	ut64 vaddr = io->va ? r_bin_get_vaddr (bin, string->paddr, string->vaddr) : string->paddr;
+	const char *text = r_bin_string_get (string);
+	if (!text) {
+		return;
+	}
 
 	switch (bf->strmode) {
 	case R_MODE_JSON | R_MODE_SIMPLE:
 		if (pj) {
 			pj_o (pj);
 			pj_kn (pj, "vaddr", vaddr);
-			pj_ks (pj, "string", string->string);
+			pj_ks (pj, "string", text);
 			pj_end (pj);
 		}
 		break;
@@ -73,22 +77,22 @@ static void print_string(const RBinStringScanOptions *options, RBinString *strin
 			pj_kn (pj, "length", string->length);
 			pj_ks (pj, "section", section_name);
 			pj_ks (pj, "type", type_string);
-			pj_ks (pj, "string", string->string);
+			pj_ks (pj, "string", text);
 			pj_end (pj);
 		}
 		break;
 	case R_MODE_SIMPLEST:
-		r_strbuf_appendf (options->output, "%s\n", string->string);
+		r_strbuf_appendf (options->output, "%s\n", text);
 		break;
 	case R_MODE_SIMPLE:
 		if (options->raw == 2) {
-			r_strbuf_appendf (options->output, "0x%08"PFMT64x" %s\n", vaddr, string->string);
+			r_strbuf_appendf (options->output, "0x%08"PFMT64x" %s\n", vaddr, text);
 		} else {
-			r_strbuf_appendf (options->output, "%s\n", string->string);
+			r_strbuf_appendf (options->output, "%s\n", text);
 		}
 		break;
 	case R_MODE_RADARE: {
-		char *f_name = strdup (string->string);
+		char *f_name = strdup (text);
 		r_name_filter (f_name, -1);
 		if (bin->prefix) {
 			r_strbuf_appendf (options->output, "'0x%08"PFMT64x"'f %s.str.%s %u\n"
@@ -109,7 +113,7 @@ static void print_string(const RBinStringScanOptions *options, RBinString *strin
 			       "(%s) %5s %s\n",
 			string->ordinal, string->paddr, vaddr,
 			string->length, string->size,
-			section_name, type_string, string->string);
+			section_name, type_string, text);
 		break;
 	}
 }
@@ -452,8 +456,8 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 			} else {
 				r_str_trim_tail (str);
 			}
-			bs.string = str;
-			bs.length = runes - (before - strlen (str));
+			r_bin_string_set (&bs, str);
+			bs.length = runes - (before - r_strs_len (bs.text));
 			if (options->strings) {
 				size_t string_index = RVecRBinString_length (options->strings);
 				RBinString *dst = RVecRBinString_emplace_back (options->strings);
@@ -1265,7 +1269,7 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RSt
 					bs->ordinal = src.ordinal;
 					bs->vaddr = cfstr_vaddr;
 					bs->paddr = offset + bo->boffset + i;
-					bs->string = r_str_newf ("cstr.%s", src.string);
+					r_bin_string_set (bs, r_str_newf ("cstr.%.*s", (int)r_strs_len (src.text), src.text.a));
 					r_bin_strings_index_insert (strings_index, bs->vaddr, RVecRBinString_length (ret) - 1);
 				}
 			}

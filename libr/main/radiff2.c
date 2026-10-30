@@ -993,8 +993,12 @@ static ut8 *get_imports(RCore *c, int *len) {
 }
 
 static int bs_cmp(const RBinString *a, const RBinString *b) {
-	int diff = a->length - b->length;
-	return diff == 0? strncmp (a->string, b->string, a->length): diff;
+	size_t alen = r_strs_len (a->text);
+	size_t blen = r_strs_len (b->text);
+	if (alen != blen) {
+		return alen > blen? 1: -1;
+	}
+	return alen? memcmp (a->text.a, b->text.a, alen): 0;
 }
 
 static int bs_ptr_cmp(RBinString *const *a, RBinString *const *b) {
@@ -1014,19 +1018,23 @@ static ut8 *get_strings(RCore *c, int *len) {
 			RVecRBinStringPtr_push_back (&list, &str);
 		}
 	}
-	RBinString *old = NULL;
 	RVecRBinStringPtr_sort (&list, bs_ptr_cmp);
-
-	// length counts characters, not the bytes in string
 	RStrBuf *sb = r_strbuf_new ("");
+	RBinString *old = NULL;
 	RBinString **it;
 	R_VEC_FOREACH (&list, it) {
 		str = *it;
-		if (old && bs_cmp (old, str) == 0) {
+		if (old && !bs_cmp (old, str)) {
 			continue;
 		}
-		r_strbuf_append (sb, str->string);
-		r_strbuf_append (sb, "\n");
+		size_t size = r_strs_len (str->text);
+		if (size >= ST32_MAX - r_strbuf_length (sb)
+				|| (size && !r_strbuf_append_n (sb, str->text.a, size))
+				|| !r_strbuf_append (sb, "\n")) {
+			r_strbuf_free (sb);
+			RVecRBinStringPtr_fini (&list);
+			return NULL;
+		}
 		old = str;
 	}
 	*len = r_strbuf_length (sb);
