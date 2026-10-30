@@ -253,6 +253,22 @@ R_IPI void r_bin_dex_free(RBinDexObj *dex) {
 	free (dex);
 }
 
+// not r_buf_new_with_buf, which also leaves a full copy in buf->whole_buf
+static RBuffer *memory_buf(RBuffer *buf) {
+	const ut64 size = r_buf_size (buf);
+	if (buf->type == R_BUFFER_BYTES || size > UT32_MAX) {
+		return r_ref (buf);
+	}
+	ut8 *bytes = malloc (size);
+	RBuffer *copy = bytes && r_buf_read_at (buf, 0, bytes, size) == (st64)size
+		? r_buf_new_with_pointers (bytes, size, true): NULL;
+	if (!copy) {
+		free (bytes);
+		return r_ref (buf);
+	}
+	return copy;
+}
+
 R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 	R_RETURN_VAL_IF_FAIL (buf, NULL);
 	ut32 i;
@@ -302,6 +318,9 @@ R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 		}
 		goto fail;
 	}
+	RBuffer *mem = memory_buf (buf);
+	r_unref (dex->b);
+	dex->b = mem;
 
 	/* strings */
 	if (dexhdr->strings_offset + ((ut64)dexhdr->strings_size * sizeof (ut32)) > dex->size) {
