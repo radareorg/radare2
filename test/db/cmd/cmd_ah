@@ -313,3 +313,19 @@ EXPECT=<<EOF
  0x00000084 => bits=RESET
 EOF
 RUN
+
+NAME=ARM and Thumb hints in a mixed-mode ELF
+FILE=bins/elf/r2pay-arm32.so
+CMDS=<<EOF
+ahb. @ entry0
+ahb. @ 0x4560
+pi 1 @ entry0
+pi 1 @ 0x4560
+EOF
+EXPECT=<<EOF
+32
+16
+ldr r0, [0x00004530]
+bx lr
+EOF
+RUN

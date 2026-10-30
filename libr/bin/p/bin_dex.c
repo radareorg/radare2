@@ -18,7 +18,9 @@
 #define DBG_SET_EPILOGUE_BEGIN    0x08
 #define DBG_SET_FILE              0x09
 #define DBG_FIRST_SPECIAL         0x0A
-#define DEX_PROTO_STACK_PARAMS    64
+// methods take at most 255 argument registers
+#define DEX_PROTO_MAX_PARAMS      255
+#define DEX_PROTO_MAX_SIGLEN      (64 * 1024)
 
 #define DBG_LINE_BASE             -4
 #define DBG_LINE_RANGE            15
@@ -309,6 +311,10 @@ static const char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 	}
 	// size of the list, in 16 bit entries
 	ut32 list_size = r_read_le32 (params_buf);
+	if (list_size > DEX_PROTO_MAX_PARAMS) {
+		R_LOG_DEBUG ("proto %d declares %u params", proto_id, list_size);
+		return NULL;
+	}
 	ut64 params_data = params_off + sizeof (params_buf);
 	ut64 typeidx_bufsize = (ut64)list_size * sizeof (ut16);
 	if (typeidx_bufsize > bin->size - params_data) {
@@ -316,25 +322,11 @@ static const char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 			params_data + typeidx_bufsize, (ut64)bin->size);
 		return NULL;
 	}
-	ut8 stack_typeidx_buf[DEX_PROTO_STACK_PARAMS * sizeof (ut16)];
-	ut8 *heap_typeidx_buf = NULL;
-	ut8 *typeidx_buf = stack_typeidx_buf;
-	if (typeidx_bufsize > sizeof (stack_typeidx_buf)) {
-		heap_typeidx_buf = malloc (typeidx_bufsize);
-		if (!heap_typeidx_buf) {
-			return NULL;
-		}
-		typeidx_buf = heap_typeidx_buf;
-	}
+	ut8 typeidx_buf[DEX_PROTO_MAX_PARAMS * sizeof (ut16)];
 	if (typeidx_bufsize > 0 && r_buf_read_at (bin->b, params_data, typeidx_buf, typeidx_bufsize) != typeidx_bufsize) {
-		free (heap_typeidx_buf);
 		return NULL;
 	}
 	RStrBuf *sig = r_strbuf_new ("(");
-	if (!sig) {
-		free (heap_typeidx_buf);
-		return NULL;
-	}
 	ut32 i;
 	for (i = 0; i < list_size; i++) {
 		ut16 type_idx = r_read_le16 (typeidx_buf + (i * sizeof (ut16)));
@@ -345,8 +337,11 @@ static const char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 			const char *buff = getstr (bin, type_desc_id);
 			r_strbuf_append (sig, r_str_get_fail (buff, "?;"));
 		}
+		if (r_strbuf_length (sig) > DEX_PROTO_MAX_SIGLEN) {
+			r_strbuf_append (sig, "...");
+			break;
+		}
 	}
-	free (heap_typeidx_buf);
 	r_strbuf_appendf (sig, ")%s", return_type);
 	cp[proto_id] = r_strbuf_drain (sig);
 	return cp[proto_id];
@@ -1226,7 +1221,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			continue;
 		}
 		const char *signature = dex_method_signature (dex, MI);
-		char *flag_name = r_str_newf ("%s.method.%s%s", cls_name, method_name, signature);
+		char *flag_name = r_str_newf ("%s.method.%s%s", cls_name, method_name, r_str_get (signature));
 		if (!flag_name || !*flag_name) {
 			R_FREE (flag_name);
 			continue;
@@ -1271,7 +1266,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			char* accessStr = createAccessFlagStr (MA, kAccessForMethod);
 			pf ("    #%" PFMT64d "              : (in %s;)\n", i, cls_name);
 			pf ("      name          : '%s'\n", method_name);
-			pf ("      type          : '%s'\n", signature);
+			pf ("      type          : '%s'\n", r_str_get (signature));
 			pf ("      access        : 0x%04x (%s)\n", (ut32)MA, accessStr);
 			free (accessStr);
 		}
@@ -1747,7 +1742,7 @@ static bool dex_loadcode(RBinFile *bf) {
 			const char *signature = dex_method_signature (dex, i);
 			if (!R_STR_ISEMPTY (method_name)) {
 				RBinImport imp = {0};
-				char *s = r_str_newf ("%s.method.%s%s", class_name, method_name, signature);
+				char *s = r_str_newf ("%s.method.%s%s", class_name, method_name, r_str_get (signature));
 				imp.name = r_bin_name_new (s);
 				free (s);
 				imp.type = "FUNC";

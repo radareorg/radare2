@@ -1087,6 +1087,10 @@ R_API int r_file_mkstemp(const char * R_NULLABLE prefix, char **oname) {
 	if (!prefix) {
 		prefix = "r2";
 	}
+	// same policy as r_sandbox_open: no file creation under the sandbox
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_DISK) || r_sandbox_enable (false)) {
+		return -1;
+	}
 #if R2__WINDOWS__
 	char *path = r_file_tmpdir ();
 	if (!path) {

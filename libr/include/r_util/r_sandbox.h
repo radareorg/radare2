@@ -61,6 +61,7 @@ R_API int r_sandbox_grain(int mask);
 R_API bool r_sandbox_grain_parse(const char *R_NONNULL expr, int *R_NONNULL mask);
 R_API bool r_sandbox_check(int mask);
 R_API bool r_sandbox_check_localhost(const char *str);
+R_API bool r_sandbox_check_connect(const char *str);
 typedef void *(*RSandboxCallback)(void *user);
 R_API void *r_sandbox_run(int grain, RSandboxCallback callback, void *user);
 R_API void *r_sandbox_run_path(int grain, R_UNOWNED const char *path, RSandboxCallback callback, void *user);

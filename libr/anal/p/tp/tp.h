@@ -8,6 +8,7 @@
 #include <r_anal_priv.h>
 #define LOOP_MAX 10
 #define TYPE_MATCH_MAX_BACKTRACE 512
+#define TP_TRACE_MAX 0x40000 // default types.maxtrace
 
 enum {
 	TP_VOYEUR_REG_READ = 0,
@@ -60,6 +61,7 @@ typedef struct {
 	HtUU *loop_counts;
 	HtPP *regwrites; // register name => ascending trace indexes of the ops writing it
 	ut32 indexed_ops; // ops already folded into regwrites
+	ut32 max_accesses; // types.maxtrace, 0 is unlimited
 } TypeTraceDB;
 
 R_VEC_TYPE(RVecUT64, ut64);
@@ -220,7 +222,7 @@ typedef enum {
 	TP_EMU_BREAK, // interrupted by the user
 	TP_EMU_RETRY, // a block vanished or an esil step failed, the caller may re-run
 	TP_EMU_FAIL, // invalid instruction with esil.breakoninvalid set
-	TP_EMU_BUDGET, // the max_ops emulation budget was hit; the trace is partial
+	TP_EMU_BUDGET, // the max_ops or types.maxtrace budget was hit; the trace is partial
 } TPEmuResult;
 
 // next_op is zeroed when no lookahead op was decoded
@@ -306,6 +308,7 @@ void tp_flush_pending_const(TPState *tps);
 void tp_sizefns_init(RVecTPSizeFn *v, const char *extra);
 void type_trace_fini(TypeTrace *trace, REsil *esil);
 bool type_trace_init(TypeTrace *trace, REsil *esil, RReg *reg);
+bool type_trace_full(TypeTraceDB *db);
 ut64 type_trace_loopcount(TypeTrace *trace, ut64 addr);
 void type_trace_loopcount_increment(TypeTrace *trace, ut64 addr);
 bool type_trace_op(TypeTrace *trace, REsil *esil, RAnalOp *op);
