@@ -4469,10 +4469,6 @@ static void ds_print_bytes(RDisasmState *ds) {
 
 R_VEC_TYPE(RVecUT64, ut64);
 
-static int bb_cmp(RAnalBlock *const *a, RAnalBlock *const *b) {
-	return ((*a)->addr > (*b)->addr)? 1: ((*a)->addr < (*b)->addr)? -1: 0;
-}
-
 static int cmp_ut64(const ut64 *a, const ut64 *b) {
 	return (*a > *b)? 1: (*a < *b)? -1: 0;
 }
@@ -4526,7 +4522,7 @@ static int instruction_depth(RCore *core, RAnalFunction *f, RAnalBlock *obb) {
 	if (!obb->depth && f) {
 		RAnalBlock *bb;
 		RAnalBlock **iter;
-		RVecAnalBlockPtr_sort (&f->bbs, bb_cmp);
+		r_anal_function_sort_blocks (f);
 		R_VEC_FOREACH (&f->bbs, iter) {
 			bb = *iter;
 			if (bb->depth) {

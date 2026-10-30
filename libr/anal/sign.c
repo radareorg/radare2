@@ -823,7 +823,6 @@ static RSignGraph *r_sign_fcn_graph(RAnalFunction *fcn) {
 	return graph;
 }
 
-static int cmpaddr(RAnalBlock *const *_a, RAnalBlock *const *_b);
 
 static RSignBytes *r_sign_func_empty_mask(RAnal *a, RAnalFunction *fcn) {
 	if (RVecAnalBlockPtr_empty (&fcn->bbs)) {
@@ -831,7 +830,7 @@ static RSignBytes *r_sign_func_empty_mask(RAnal *a, RAnalFunction *fcn) {
 	}
 	RCore *core = a->coreb.core;
 	int maxsz = a->coreb.cfgGetI (core, "zign.maxsz");
-	RVecAnalBlockPtr_sort (&fcn->bbs, cmpaddr);
+	r_anal_function_sort_blocks (fcn);
 	ut64 ea = fcn->addr;
 	RAnalBlock *bb = *RVecAnalBlockPtr_last (&fcn->bbs);
 	int size = R_MIN (bb->addr + bb->size - ea, maxsz);
@@ -2095,11 +2094,6 @@ R_API const char *r_sign_type_to_name(int type) {
 	}
 }
 
-static int cmpaddr(RAnalBlock *const *_a, RAnalBlock *const *_b) {
-	const RAnalBlock *a = *_a, *b = *_b;
-	return (a->addr > b->addr)? 1: (a->addr < b->addr)? -1: 0;
-}
-
 // Include SHA256 implementation for standalone use
 #define R_CRYPTO_INTERNAL 1
 #include "../muta/hash/sha2.c"
@@ -2111,7 +2105,7 @@ R_API char *r_sign_calc_bbhash(RAnal *a, RAnalFunction *fcn) {
 	RSha256Context ctx;
 	R_SHA2_API (r_sha256_init) (&ctx);
 
-	RVecAnalBlockPtr_sort (&fcn->bbs, cmpaddr);
+	r_anal_function_sort_blocks (fcn);
 	R_VEC_FOREACH (&fcn->bbs, iter) {
 		bbi = *iter;
 		ut8 *buf = malloc (bbi->size);

@@ -212,7 +212,7 @@ R_API int r_anal_call_stack_pop(RAnal *anal, RAnalOp *op) {
 		pop = fcn_type_stack_pop (anal, cc, callee_type, bits);
 	}
 	if (pop <= 0 && callee) {
-		pop = R_MAX (0, callee->meta.stack_pop);
+		pop = R_MAX (0, callee->stack_pop);
 	}
 	free (callee_type);
 	return pop;
@@ -243,10 +243,10 @@ static void fcn_set_stack_pop(RAnalFunction *fcn, int pop) {
 	if (pop < 0) {
 		return;
 	}
-	if (fcn->meta.stack_pop == R_ANAL_CC_STACK_POP_UNKNOWN) {
-		fcn->meta.stack_pop = pop;
-	} else if (fcn->meta.stack_pop != pop) {
-		fcn->meta.stack_pop = R_ANAL_CC_STACK_POP_UNKNOWN;
+	if (fcn->stack_pop == R_ANAL_CC_STACK_POP_UNKNOWN) {
+		fcn->stack_pop = pop;
+	} else if (fcn->stack_pop != pop) {
+		fcn->stack_pop = R_ANAL_CC_STACK_POP_UNKNOWN;
 	}
 }
 
@@ -2592,7 +2592,9 @@ static int fcn_walk(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, bool f
 R_API int r_anal_function_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (anal && fcn, -1);
 	// Plugin notification is in r_anal_function() to fire once per function
-	return fcn_walk (anal, fcn, addr, anal->opt.bb_max_size, true);
+	int ret = fcn_walk (anal, fcn, addr, anal->opt.bb_max_size, true);
+	r_anal_function_sort_blocks (fcn);
+	return ret;
 }
 
 R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high) {
@@ -2735,6 +2737,7 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, int reftyp
 	// Notify plugins after all basic blocks are analyzed
 	if (ret >= 0 || ret == R_ANAL_RET_END) {
 		r_anal_plugin_action (anal, R_ANAL_PLUGIN_ACTION_ANALYZE_FCN, fcn);
+		r_anal_function_sort_blocks (fcn);
 	}
 	if (!anal->fcn_depth) {
 		anal->fcn_depth++;
@@ -3476,9 +3479,13 @@ R_API int r_anal_function_count(RAnal *anal, ut64 from, ut64 to) {
 static RAnalBlock *r_anal_function_bbget_in_linear(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 	RAnalBlock **iter;
 	RAnalBlock *bb;
+	r_anal_function_sort_blocks (fcn);
 	const bool aligned = r_anal_is_aligned (anal, addr);
 	R_VEC_FOREACH (&fcn->bbs, iter) {
 		bb = *iter;
+		if (bb->addr > addr) {
+			break;
+		}
 		if (r_anal_block_contains (bb, addr)) {
 			if ((!anal->opt.jmpmid || !aligned || r_anal_block_op_starts_at (bb, addr))) {
 				return bb;
@@ -3531,23 +3538,6 @@ R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64
 		return r_anal_function_bbget_in_linear (anal, fcn, addr);
 	}
 	return ctx.bb;
-}
-
-R_API RAnalBlock *r_anal_function_bbget_at(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
-	R_RETURN_VAL_IF_FAIL (fcn && addr != UT64_MAX, NULL);
-	RAnalBlock *b = r_anal_get_block_at (anal, addr);
-	if (b) {
-		return b;
-	}
-	RAnalBlock **iter;
-	RAnalBlock *bb;
-	R_VEC_FOREACH (&fcn->bbs, iter) {
-		bb = *iter;
-		if (addr == bb->addr) {
-			return bb;
-		}
-	}
-	return NULL;
 }
 
 // compute the cyclomatic cost

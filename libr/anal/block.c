@@ -326,6 +326,7 @@ R_API bool r_anal_block_relocate(RAnalBlock *block, ut64 addr, ut64 size) {
 	RAnalFunction *fcn;
 	RListIter *iter;
 	r_list_foreach (block->fcns, iter, fcn) {
+		fcn->bbs_sorted = false;
 		fcn->meta.numcallrefs = -1;
 		if (fcn->meta._min != UT64_MAX) {
 			if (addr + size > fcn->meta._max) {
@@ -336,7 +337,7 @@ R_API bool r_anal_block_relocate(RAnalBlock *block, ut64 addr, ut64 size) {
 				fcn->meta._min = UT64_MAX;
 				continue;
 			}
-			if (block->addr < fcn->meta._min) {
+			if (addr < fcn->meta._min) {
 				// less than the minimum, we know that we are the minimum afterwards.
 				fcn->meta._min = addr;
 			} else if (block->addr == fcn->meta._min && addr != block->addr) {
@@ -351,6 +352,9 @@ R_API bool r_anal_block_relocate(RAnalBlock *block, ut64 addr, ut64 size) {
 	block->size = size;
 	r_anal_block_update_hash (block);
 	r_rbtree_aug_insert (&block->anal->bb_tree, &block->addr, &block->_rb, __bb_addr_cmp, NULL, __max_end);
+	r_list_foreach (block->fcns, iter, fcn) {
+		r_anal_function_sort_blocks (fcn);
+	}
 	return true;
 }
 

@@ -2494,7 +2494,10 @@ static bool pdc_decompile_function(RCore *core, const char *input, PDCState *par
 	pdc_emulate_blocks (&state);
 
 	r_strf_buffer (64);
-	RAnalBlock *bb = (RVecAnalBlockPtr_empty (&state.fcn->bbs)? NULL: *RVecAnalBlockPtr_at (&state.fcn->bbs, 0));
+	RAnalBlock *bb = r_anal_function_bbget_at (core->anal, state.fcn, state.fcn->addr);
+	if (!bb && !RVecAnalBlockPtr_empty (&state.fcn->bbs)) {
+		bb = *RVecAnalBlockPtr_at (&state.fcn->bbs, 0);
+	}
 	int indent = 0;
 	int nindent = 1;
 	int n_bb = (int)RVecAnalBlockPtr_length (&state.fcn->bbs);
@@ -2818,10 +2821,6 @@ static bool pdc_decompile_function(RCore *core, const char *input, PDCState *par
 		if (r_bitset_test (state.marked, bb->addr)) {
 			continue;
 		}
-		ut64 nextbbaddr = UT64_MAX;
-		if (iter + 1 != R_VEC_END_ITER (&state.fcn->bbs)) {
-			nextbbaddr = iter[1]->addr;
-		}
 		char *s = state.inline_calls? fetch_bb_pseudo (&state, bb): orphan_text (&state, bb);
 		if (!state.inline_calls) {
 			s = comments_to_c (s);
@@ -2908,7 +2907,15 @@ static bool pdc_decompile_function(RCore *core, const char *input, PDCState *par
 					sdb_setf (state.goto_cache, "1", 0, "return.%" PFMT64x, bb->addr);
 				}
 			} else {
-				PRINTGOTO (nextbbaddr, bb->jump);
+				ut64 nextbbaddr = UT64_MAX;
+				RAnalBlock **next;
+				for (next = iter + 1; next != R_VEC_END_ITER (&state.fcn->bbs); next++) {
+					if (!r_list_contains (visited, *next) && !r_bitset_test (state.marked, (*next)->addr)) {
+						nextbbaddr = (*next)->addr;
+						break;
+					}
+				}
+				PRINTGOTO (bb->jump, nextbbaddr);
 			}
 			if (h) {
 				print_line (&state, bb->addr, 1, "}");

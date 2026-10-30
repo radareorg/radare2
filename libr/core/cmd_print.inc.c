@@ -5709,17 +5709,6 @@ beach:
 	free (ptr);
 }
 
-static int bbcmp(RAnalBlock *const *pa, RAnalBlock *const *pb) {
-	RAnalBlock *a = *pa, *b = *pb;
-	if (a->addr < b->addr) {
-		return -1;
-	}
-	if (a->addr > b->addr) {
-		return 1;
-	}
-	return 0;
-}
-
 /* TODO: integrate this into r_anal */
 static void _pointer_table(RCore *core, ut64 origin, ut64 offset, const ut8 *buf, int len, int step, int mode) {
 	int i;
@@ -6134,7 +6123,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 			}
 		}
 	}
-	RVecAnalBlockPtr_sort (&f->bbs, bbcmp);
+	r_anal_function_sort_blocks (f);
 	if (input == 'j' && b) { // "pdrj"
 		pj = r_core_pj_new (core);
 		if (!pj) {
@@ -7683,7 +7672,7 @@ static int cmd_pd(RCore *core, const char *input, int len, int l, ut8 *block) {
 					pj_kn (pj, "addr", f->addr);
 					pj_k (pj, "ops");
 					pj_a (pj);
-					RVecAnalBlockPtr_sort (&f->bbs, bb_cmpaddr);
+					r_anal_function_sort_blocks (f);
 					R_VEC_FOREACH (&f->bbs, locs_it) {
 						b = *locs_it;
 						ut8 *buf = malloc (b->size);
