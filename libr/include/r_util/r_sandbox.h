@@ -60,6 +60,7 @@ R_API int r_sandbox_grain(int mask);
 // Parse without changing sandbox state; leave mask unchanged on failure.
 R_API bool r_sandbox_grain_parse(const char *R_NONNULL expr, int *R_NONNULL mask);
 R_API bool r_sandbox_check(int mask);
+R_API bool r_sandbox_in_scope(void);
 R_API bool r_sandbox_check_localhost(const char *str);
 typedef void *(*RSandboxCallback)(void *user);
 R_API void *r_sandbox_run(int grain, RSandboxCallback callback, void *user);
