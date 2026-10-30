@@ -1512,6 +1512,13 @@ ad "add r8, 3" 4983c003
 ad "add r10, 4" 4983c204
 ad "mov rax, qword [rip + 0x17792]" 488b0592770100
 a "mov rdx, [0x17792+rip]" 488b1592770100
+a "mov rcx, qword ptr fs:[0x28]" 64488b0c2528000000
+a "mov rcx, qword [fs:0x28]" 64488b0c2528000000
+a "mov rax, qword ptr fs:[rbx+8]" 64488b4308
+a "xor rax, qword ptr fs:[0x28]" 644833042528000000
+a "cmp rax, qword ptr fs:[0x28]" 64483b042528000000
+a "mov al, byte ptr gs:[rax]" 658a00
+a "mov rax, qword ptr ds:[rbx]" 488b03
 ad "inc qword [rcx]" 48ff01
 ad "shlx eax, ebx, ecx" c4e271f7c3
 ad "shrx eax, ebx, ecx" c4e273f7c3

@@ -6942,6 +6942,67 @@ static int oprep(RArchSession *a, ut8 *data, const Opcode *op) {
 	return -1;
 }
 
+// Remove the segment overrides in front of memory operands, as in
+// "qword ptr fs:[0x28]" or "[fs:0x28]", and return the prefix byte to emit, so
+// the operand is encoded like any other memory operand. es: on a string
+// instruction's destination can't be overridden, so another override wins.
+static int take_segment_override(char *op) {
+	static const char *const sregs[] = { "es", "cs", "ss", "ds", "fs", "gs" };
+	int prefix = 0;
+	char *p = op;
+	while (*p) {
+		int i = 0;
+		const char *q = NULL;
+		if (p == op || strchr (" ,[", p[-1])) {
+			for (i = 0; i < 6; i++) {
+				if (!r_str_ncasecmp (p, sregs[i], 2)) {
+					q = r_str_trim_head_ro (p + 2);
+					break;
+				}
+			}
+		}
+		if (q && *q == ':' && (*r_str_trim_head_ro (q + 1) == '[' || (p > op && p[-1] == '['))) {
+			if (!prefix || prefix == SEG_REG_PREFIXES[0]) {
+				prefix = SEG_REG_PREFIXES[i];
+			}
+			q = r_str_trim_head_ro (q + 1);
+			memmove (p, q, strlen (q) + 1);
+			continue;
+		}
+		p++;
+	}
+	return prefix;
+}
+
+// GNU as leaves out a prefix naming the segment the address already uses.
+// The es:[edi] of a string instruction is fixed, so its es: is not a prefix.
+static bool is_default_segment(const Opcode *instr, int prefix) {
+	static const char *const es_ops[] = {
+		"movsb", "movsw", "movsd", "movsq", "cmpsb", "cmpsw", "cmpsd", "cmpsq",
+		"scasb", "scasw", "scasd", "scasq", "stosb", "stosw", "stosd", "stosq",
+		"insb", "insw", "insd", NULL
+	};
+	int i;
+	if (prefix == 0x26) {
+		// rep, repe and repne keep the string instruction in rep_op
+		const char *mn = r_str_startswith (instr->mnemonic, "rep")? instr->operands[0].rep_op: instr->mnemonic;
+		for (i = 0; es_ops[i]; i++) {
+			size_t len = strlen (es_ops[i]);
+			if (!r_str_ncasecmp (mn, es_ops[i], len) && (!mn[len] || mn[len] == ' ')) {
+				return true;
+			}
+		}
+	}
+	for (i = 0; i < instr->operands_count; i++) {
+		const Operand *o = &instr->operands[i];
+		if (o->type & OT_MEMORY) {
+			bool stack = !o->extended && (o->regs[0] == X86R_EBP || o->regs[0] == X86R_ESP);
+			return prefix == (stack? 0x36: 0x3e);
+		}
+	}
+	return false;
+}
+
 R_API int x86nz_assemble(RArchSession *a, RAnalOp *ao, const char *str) {
 	ut8 __data[32] = {0};
 	ut8 *data = __data;
@@ -6953,6 +7014,7 @@ R_API int x86nz_assemble(RArchSession *a, RAnalOp *ao, const char *str) {
 	// XXX remove fixed size buffers!
 	char op[128];
 	r_str_ncpy (op, str, sizeof (op) - 1);
+	const int seg = take_segment_override (op);
 	if (parseOpcode (a, op, &instr) == -1) {
 		return -1;
 	}
@@ -7002,6 +7064,11 @@ R_API int x86nz_assemble(RArchSession *a, RAnalOp *ao, const char *str) {
 			}
 			break;
 		}
+	}
+	if (retval > 0 && seg && !is_default_segment (&instr, seg)) {
+		memmove (__data + 1, __data, retval);
+		__data[0] = seg;
+		retval++;
 	}
 	if (retval > 0) {
 		r_anal_op_set_bytes (ao, ao->addr, __data, retval);

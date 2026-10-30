@@ -1369,7 +1369,7 @@ aB "movdqu xmm0, xmmword [eax]" f30f6f00
 aB "movdqu xmmword [eax], xmm0" f30f7f00
 a "mov dr0, eax" 0f23c0
 a "mov dword [0], eax" 890500000000
-aB "mov dword cs:[eax], eax" 2e8900
+a "mov dword cs:[eax], eax" 2e8900
 aB "mov dword ds:[eax], eax" 3e8900
 a "mov dword [eax], 0" c70000000000
 a "mov dword [eax], 0x6f77206f" c7006f20776f
@@ -1387,14 +1387,14 @@ a "mov dword [ebp+16], 0x6f77206f" c745106f20776f
 a "mov dword [ebp-312], 3" c785c8feffff03000000
 a "mov dword [ebp+4], 1" c7450401000000
 a "mov dword [ebp+450], 0x6f77206f" c785c20100006f20776f
-aB "mov dword es:[eax], eax" 268900
+a "mov dword es:[eax], eax" 268900
 a "mov dword [esi+4], 33" c7460421000000
 a "mov dword [esp-312], 321" c78424c8feffff41010000
 a "mov dword [esp], 3" c7042403000000
 a "mov dword [esp+4], 1" c744240401000000
-aB "mov dword fs:[eax], eax" 648900
-aB "mov dword gs:[eax], eax" 658900
-aB "mov dword ss:[eax], eax" 368900
+a "mov dword fs:[eax], eax" 648900
+a "mov dword gs:[eax], eax" 658900
+a "mov dword ss:[eax], eax" 368900
 aB "mov eax, dword fs:[1]" 648b042501000000
 aB "movd xmm0, dword [eax]" 660f6e00
 a "mov eax, 0" b800000000
@@ -1417,7 +1417,7 @@ a "mov ecx, dword [1]" 8b0d01000000
 a "mov eax, dword [eax]" 8b00
 a "mov eax, dword [ebp]" 8b4500
 a "mov eax, dword [esp]" 8b0424
-aB "mov eax, dword fs:[ebp]" 648b4500
+a "mov eax, dword fs:[ebp]" 648b4500
 a "mov eax, [eax+1337]" 8b8039050000
 a "mov ecx, [eip+1337]" 8b0d39050000
 a "mov ecx, [eip+13]" 8b0d0d000000
@@ -1508,7 +1508,14 @@ aB "movq qword [eax], xmm0" 660fd600
 aB "movq xmm0, qword [eax]" f30f7e00
 a "movsb byte es:[edi], byte ptr [esi]" a4
 a "movsd dword es:[edi], dword ptr [esi]" a5
-aB "movsd dword es:[edi], dword ptr fs:[esi]" 64a5
+a "movsd dword es:[edi], dword ptr fs:[esi]" 64a5
+a "mov eax, dword ptr gs:[0x14]" 65a114000000
+a "xor eax, dword ptr gs:[0x14]" 65330514000000
+a "mov dword ptr fs:[0], esp" 64892500000000
+a "mov ecx, dword ptr fs:[ecx+4]" 648b4904
+a "push dword ptr fs:[0]" 64ff3500000000
+a "mov eax, dword ptr ss:[ebx]" 368b03
+a "mov eax, dword ptr ds:[ebp]" 3e8b4500
 aB "movsd qword [eax], xmm0" f20f1100
 aB "movsd xmm0, qword [eax]" f20f1000
 aB "movshdup xmm0, xmmword [eax]" f30f1600
