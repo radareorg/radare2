@@ -29,6 +29,37 @@ static char *get_file_in_cur_dir(const char *filepath) {
 	return NULL;
 }
 
+static int prompt_outdated_plugin(RCons *cons, const char *pkgname) {
+	r_cons_set_raw (cons, false);
+	r_cons_show_cursor (cons, true);
+	for (;;) {
+		r_cons_printf (cons, "Rebuild outdated '%s' plugin? (Y/n/d/a/i, then Enter) ", pkgname);
+		r_cons_flush (cons);
+		char answer[128];
+		if (!fgets (answer, sizeof (answer), cons->fdin)) {
+			return 'i';
+		}
+		bool complete = strchr (answer, '\n') != NULL;
+		if (complete) {
+			r_str_trim (answer);
+			if (!*answer) {
+				return 'y';
+			}
+			int choice = tolower ((ut8)answer[0]);
+			if (!answer[1] && strchr ("yndai", choice)) {
+				return choice;
+			}
+		} else {
+			while (fgets (answer, sizeof (answer), cons->fdin)) {
+				if (strchr (answer, '\n')) {
+					break;
+				}
+			}
+		}
+		R_LOG_ERROR ("Invalid answer. Enter y, n, d, a or i, or press Enter to rebuild.");
+	}
+}
+
 static void prompt_rebuild_outdated_plugins(RCore *core) {
 	RList *mismatches = core->lib->plugin_mismatches;
 	if (!r_config_get_b (core->config, "scr.prompt.r2pm")
@@ -39,7 +70,8 @@ static void prompt_rebuild_outdated_plugins(RCore *core) {
 	}
 	r_cons_print (core->cons,
 		"\nOutdated r2pm plugins cannot be loaded with this version of radare2.\n"
-		"  y/Enter  Rebuild this plugin\n"
+		"Enter a choice and press Enter (empty input rebuilds this plugin):\n"
+		"  y        Rebuild this plugin\n"
 		"  n        Skip this plugin\n"
 		"  d        Delete this plugin (r2pm -u)\n"
 		"  a        Rebuild this and all remaining outdated plugins\n"
@@ -51,20 +83,7 @@ static void prompt_rebuild_outdated_plugins(RCore *core) {
 	r_list_foreach (mismatches, iter, pkgname) {
 		int choice = 'y';
 		if (!rebuild_all) {
-			r_cons_printf (core->cons, "Rebuild outdated '%s' plugin? (Y/n/d/a/i) ", pkgname);
-			r_cons_flush (core->cons);
-			r_cons_set_raw (core->cons, true);
-			choice = r_cons_readchar (core->cons);
-			r_cons_set_raw (core->cons, false);
-			if (choice == '\n' || choice == '\r') {
-				choice = 'y';
-			} else if (choice < 0) {
-				choice = 'i';
-			} else {
-				choice = tolower ((ut8)choice);
-			}
-			r_cons_printf (core->cons, "%c\n", choice);
-			r_cons_flush (core->cons);
+			choice = prompt_outdated_plugin (core->cons, pkgname);
 		}
 		if (choice == 'i') {
 			break;
