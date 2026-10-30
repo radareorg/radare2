@@ -429,7 +429,7 @@ out_error:
 // https://github.com/pxb1988/dex2jar/blob/2.x/dex-reader/src/main/java/com/googlecode/d2j/reader/DexFileReader.java#L1023
 static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, int paddr, int ins_size, int insns_size, const char *class_name, int regsz, int debug_info_off, bool add_addrline) {
 	RBinDexObj *dex = bf->bo->bin_obj;
-	RBuffer *b = bf->buf;
+	RBuffer *b = dex->b;
 	RStrBuf *sb = dex->sb;
 	if (debug_info_off >= r_buf_size (b)) {
 		return;
@@ -773,9 +773,23 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return bin->kv;
 }
 
+static bool checksum_mismatch(RBinDexObj *dex) {
+	if (r_buf_size (dex->b) - 12 > ST32_MAX) {
+		return false;
+	}
+	ut64 size = 0;
+	const ut8 *data = r_buf_data (dex->b, &size);
+	return data && size > 12 && dex->header.checksum != __adler32 (data + 12, size - 12);
+}
+
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
-	bf->bo->bin_obj = r_bin_dex_new_buf (buf, bf->rbin->options.verbose);
-	return bf->bo->bin_obj != NULL;
+	RBinDexObj *dex = r_bin_dex_new_buf (buf, bf->rbin->options.verbose);
+	bf->bo->bin_obj = dex;
+	if (dex && checksum_mismatch (dex)) {
+		eprintf ("# adler32 checksum doesn't match. Type this to fix it:\n");
+		eprintf ("wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8\n");
+	}
+	return dex != NULL;
 }
 
 static bool check(RBinFile *bf, RBuffer *buf) {
@@ -841,19 +855,6 @@ static RBinInfo *info(RBinFile *bf) {
 	h = &ret->sum[2];
 	h->type = 0;
 	r_buf_read_at (bf->buf, 8, h->buf, 4);
-	// this is slow but computed once, so we can use r_buf_data or just do r_buf_read()
-	// not sure if we want to expose the computed checksum everytime we open the file
-	// also the checksum is computed by other methods in RBin, so maybe good to generalize
-	{
-		ut32 fc = r_buf_read_le32_at (bf->buf, 8);
-		ut64 tmpsz;
-		const ut8 *tmp = r_buf_data (bf->buf, &tmpsz);
-		ut32 cc = __adler32 (tmp + 12, tmpsz - 12);
-		if (fc != cc) {
-			eprintf ("# adler32 checksum doesn't match. Type this to fix it:\n");
-			eprintf ("wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8\n");
-		}
-	}
 	ret->arch = strdup ("dalvik");
 	ret->lang = "dalvik";
 	ret->bits = 32;
@@ -1100,7 +1101,7 @@ static ut64 peek_uleb(RBuffer *b, bool *err, size_t *nn) {
 
 static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls, int *sym_count, ut64 fields_count, bool is_sfield) {
 	RBinDexObj *dex = bf->bo->bin_obj;
-	RBuffer *b = bf->buf;
+	RBuffer *b = dex->b;
 	RStrBuf *sb = dex->sb;
 	const ut64 fields_offset = dex->header.fields_offset;
 	ut64 lastIndex = 0;
@@ -1170,7 +1171,7 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 // TODO: refactor this method
 static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls, int *sym_count, ut64 DM, int *methods, bool is_direct) {
 	RBinDexObj *dex = bf->bo->bin_obj;
-	RBuffer *b = bf->buf;
+	RBuffer *b = dex->b;
 	RStrBuf *sb = dex->sb;
 	const bool bin_dbginfo = bf->rbin->want_dbginfo;
 	const bool dump_dbginfo = bin_dbginfo && sb;
@@ -1499,7 +1500,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 	R_RETURN_IF_FAIL (bf && bf->bo && c);
 
 	RBinDexObj *dex = bf->bo->bin_obj;
-	RBuffer *b = bf->buf;
+	RBuffer *b = dex->b;
 	const DexHeader *hdr = &dex->header;
 	RStrBuf *sb = dex->sb;
 	const bool names_only = class_names_only (bf);
@@ -1829,7 +1830,7 @@ static void dex_skip_class_fields(RBuffer *b, ut64 fields_count, bool *err) {
 
 static void dex_parse_class_method_addrline(RBinFile *bf, RBinDexClass *c, ut64 methods_count, const char *class_name) {
 	RBinDexObj *dex = bf->bo->bin_obj;
-	RBuffer *b = bf->buf;
+	RBuffer *b = dex->b;
 	const ut64 bufsz = r_buf_size (b);
 	ut64 omi = 0;
 	ut64 i;
@@ -1885,7 +1886,7 @@ static void dex_parse_class_method_addrline(RBinFile *bf, RBinDexClass *c, ut64 
 
 static void dex_parse_class_addrline(RBinFile *bf, RBinDexClass *c) {
 	RBinDexObj *dex = bf->bo->bin_obj;
-	RBuffer *b = bf->buf;
+	RBuffer *b = dex->b;
 	const DexHeader *hdr = &dex->header;
 	if (!c->class_data_offset) {
 		return;
