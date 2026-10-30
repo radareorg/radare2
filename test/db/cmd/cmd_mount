@@ -1328,3 +1328,30 @@ EXPECT_ERR=<<EOF2
 ERROR: Invalid BFS block shift: does not match the block size
 EOF2
 RUN
+
+NAME=mfn and mfo stop on a FAT directory that contains itself
+FILE=malloc://4096
+CMDS=<<EOF2
+wx 020101000100000000f8 @ 0xc
+wx 08000000010000000000000002 @ 0x20
+wx 4641543332202020 @ 0x52
+wx f8ffff0fffffff0fffffff0fffffff0fffffff0fffffff0f @ 0x200
+wx 444952202020202020202010 @ 0x400
+wx 03 @ 0x41a
+wx 4e4f54452020202054585420 @ 0x600
+wx 05000f000000494e4e455220202020202010 @ 0x61a
+wx 03 @ 0x63a
+wx 68656c6c6f2066726f6d206661740a @ 0xa00
+m /root fat 0
+mfn /root *.txt~?
+mfo /root 0xa00~?
+EOF2
+EXPECT=<<EOF2
+63
+63
+EOF2
+EXPECT_ERR=<<EOF2
+WARN: Search stopped: directory tree is too large or too deep
+WARN: Search stopped: directory tree is too large or too deep
+EOF2
+RUN
