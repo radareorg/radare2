@@ -72,3 +72,38 @@ BITMAP_DUMP:
 0x00001030  0000 0000 0000 0000 0000 0000 0000 0000  ................
 EOF
 RUN
+
+NAME=: DMP BMP pages not backed by the dump
+FILE=malloc://0x4000
+CMDS=<<EOF
+w PAGEDU64
+wv4 5 @ 0xf98
+w SDMPDUMP @ 0x2000
+wv8 0x3000 @ 0x2020
+wv8 1 @ 0x2028
+wv8 0x3fffffff8 @ 0x2030
+wx 01 @ 0x2038
+oba 0
+i~format
+?e --
+wv8 8 @ 0x2028
+wv8 64 @ 0x2030
+wx ff @ 0x2038
+oba 0
+i~format
+?e --
+wv8 1 @ 0x2028
+wx 01 @ 0x2038
+oba 0
+i~format
+iSq
+EOF
+EXPECT=<<EOF
+format   null
+--
+format   null
+--
+format   dmp64
+0x00000000 0x00001000 -r-- Memory_Section
+EOF
+RUN
