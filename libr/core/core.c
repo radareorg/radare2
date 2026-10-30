@@ -2408,7 +2408,18 @@ static void __init_autocomplete(RCore *core) {
 }
 
 static const char *colorfor_cb(void *user, ut64 addr, ut8 ch, bool verbose) {
-	return r_core_anal_optype_colorfor ((RCore *)user, addr, ch, verbose);
+	RCore *core = (RCore *)user;
+	// verbose callers color by a value (pf pointers, pxw words), not by the byte at addr
+	const char *patched = verbose? NULL: r_core_patched_byte_color (core, addr);
+	return patched? patched: r_core_anal_optype_colorfor (core, addr, ch, verbose);
+}
+
+// The color of a byte written in the io cache this session, or NULL
+R_API const char *r_core_patched_byte_color(RCore *core, ut64 addr) {
+	if (!(core->print->flags & R_PRINT_FLAGS_COLOR) || !r_io_cache_at (core->io, addr)) {
+		return NULL;
+	}
+	return core->cons->context->pal.diff_unmatch;
 }
 
 static char *hasrefs_cb(void *user, ut64 addr, int mode) {

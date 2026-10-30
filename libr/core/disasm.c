@@ -3762,7 +3762,8 @@ static const char *ds_flag_color(RDisasmState *ds, ut64 at, bool instruction) {
 
 static const char *ds_byte_color(void *user, ut64 offset, ut8 ch, bool verbose) {
 	RDisasmState *ds = user;
-	return ds_flag_color (ds, ds->core->addr + offset, false);
+	const char *patched = r_core_patched_byte_color (ds->core, ds->core->addr + offset);
+	return patched? patched: ds_flag_color (ds, ds->core->addr + offset, false);
 }
 
 static void ds_print_offset(RDisasmState *ds) {
