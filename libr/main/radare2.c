@@ -875,7 +875,17 @@ static void dp_write(RCore *core, const char *s) {
 
 #define OPTARGS "=012AjMCwxfF:Hhm:e:Enk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSzuXt"
 
+static int main_radare2(int argc, const char **argv, bool standalone);
+
+static int main_radare2_repl(int argc, const char **argv) {
+	return main_radare2 (argc, argv, false);
+}
+
 R_API int r_main_radare2(int argc, const char **argv) {
+	return main_radare2 (argc, argv, true);
+}
+
+static int main_radare2(int argc, const char **argv, bool standalone) {
 	int c, ret;
 	RMainRadare2 mr;
 	mainr2_init (&mr);
@@ -971,7 +981,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		mainr2_fini (&mr);
 		return 1;
 	}
-	r->r_main_radare2 = r_main_radare2;
+	r->r_main_radare2 = main_radare2_repl;
 	r->r_main_radiff2 = r_main_radiff2;
 	r->r_main_rapatch2 = r_main_rapatch2;
 	r->r_main_rafind2 = r_main_rafind2;
@@ -1324,7 +1334,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		run_commands (r, NULL, mr.prefiles, false, mr.do_analysis);
 		run_commands (r, mr.cmds, mr.files, mr.quiet, mr.do_analysis);
 		if (mr.quiet_leak) {
-			exit (0);
+			if (standalone) {
+				exit (0);
+			}
+			ret = 0;
+			goto beach;
 		}
 		const char *arg = argv[opt.ind];
 		if (mr.json) {
@@ -2180,7 +2194,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	ret = r->rc;
 beach:
-	if (mr.quiet_leak) {
+	if (mr.quiet_leak && standalone) {
 		exit (r->rc);
 		return ret;
 	}

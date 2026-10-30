@@ -111,6 +111,9 @@ def check_http_sandbox_in_directory(directory, sandbox, background=False, local_
 
         for method in ("GET", "POST"):
             assert command(method, "?e ordinary") == b"ordinary\n"
+            for nested in ("r2 -NNQ --", "r2 -NNLQ --"):
+                command(method, nested)
+                assert command(method, "?e after-nested-r2") == b"after-nested-r2\n"
             if not exec_allowed:
                 assert command(method, "o r2pipe://x; ?e alive") == b"alive\n"
             assert command(method, "echo $(echo nested)") == b"nested\n"
