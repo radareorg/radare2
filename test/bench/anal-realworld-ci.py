@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import random
 import shutil
+import shlex
 import statistics
 import subprocess
 import sys
@@ -42,9 +43,11 @@ for variant in ["candidate", "baseline"]:
     run(["./configure", "--prefix=" + str(prefix), "CFLAGS=-O2"], src, variant + "-configure.log")
     run(["make", "-j3"], src, variant + "-build.log")
     run(["make", "install"], src, variant + "-install.log")
+    flags = shlex.split(subprocess.check_output(["pkg-config", "--cflags", "--libs", "r_core"], text=True,
+        env=dict(os.environ, PKG_CONFIG_PATH=str(prefix / "lib/pkgconfig"))))
     run(["cc", "-O2", "-I" + str(src / "libr/include"), "-I" + str(src / "subprojects/sdb/include"),
          src / "test/bench/anal-layout.c", "-o", results / (variant + "-bench"),
-         "-L" + str(prefix / "lib"), "-lr_core", "-lr_anal", "-lr_config", "-lr_util"],
+         *flags],
         src, variant + "-bench-build.log")
 
 def environment(variant):

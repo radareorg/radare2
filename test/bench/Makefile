@@ -41,7 +41,7 @@ clean-asm-code:
 
 anal-layout: anal-layout.c
 	$(CC) $(CPPFLAGS) -O2 -I../../libr/include -I../../subprojects/sdb/include $< \
-		-o $@ $(LDFLAGS) -L$(LIBDIR) -lr_core -lr_anal -lr_config -lr_util
+		-o $@ $(LDFLAGS) $(shell PKG_CONFIG_PATH="$(LIBDIR)/pkgconfig:$(PKG_CONFIG_PATH)" pkg-config --libs r_core)
 
 .PHONY: clean-anal-layout
 clean-anal-layout:
@@ -57,7 +57,7 @@ clean-anal-bb-storage:
 
 anal-bb-lookup: anal-bb-lookup.c
 	$(CC) $(CPPFLAGS) -O2 -DBB_ORDER_CACHE=1 -I../../libr/include -I../../subprojects/sdb/include $< \
-		-o $@ $(LDFLAGS) -L$(LIBDIR) -lr_anal -lr_util
+		-o $@ $(LDFLAGS) $(shell PKG_CONFIG_PATH="$(LIBDIR)/pkgconfig:$(PKG_CONFIG_PATH)" pkg-config --libs r_anal)
 
 .PHONY: clean-anal-bb-lookup
 clean-anal-bb-lookup:
