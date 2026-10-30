@@ -2104,8 +2104,10 @@ a "vzeroall" c5fc77
 a "vzeroupper" c5f877
 a "wbinvd" 0f09
 a "wrmsr" 0f30
-aB "xadd byte [eax], al" 0fc000
-aB "xadd dword [eax], eax" 0fc100
+a "xadd byte [eax], al" 0fc000
+a "xadd dword [eax], eax" 0fc100
+a "xadd dword ptr [esp+4], ebx" 0fc15c2404
+a "xadd dword ptr [0x1000], eax" 0fc10500100000
 aB "xchg byte [eax], al" 8600
 a "xchg dword [eax], eax" 8700
 ad "xchg al, dl" 86d0

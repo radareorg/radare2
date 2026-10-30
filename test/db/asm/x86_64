@@ -468,6 +468,14 @@ a "xor [rax], rax" 483100
 a "xor [rsi], rbx" 48311e
 a "xor rax, rax" 4831c0
 a "xor rdx, rdx" 4831d2
+a "xadd eax, ecx" 0fc1c8
+a "xadd rax, rbx" 480fc1d8
+a "xadd r8, r9" 4d0fc1c8
+a "xadd sil, dil" 400fc0fe
+a "xadd dword ptr [rax], ecx" 0fc108
+a "xadd qword ptr [rsp+8], r12" 4c0fc1642408
+a "xadd word ptr [rbp-4], cx" 660fc14dfc
+a "lock xadd qword ptr [rdi], rsi" f0480fc137
 a "rep movsd" f3a5
 a "repnz stosd" f2ab
 a "repz monitor" f30f01c8

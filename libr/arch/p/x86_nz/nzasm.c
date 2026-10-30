@@ -1234,27 +1234,71 @@ static int opor(RArchSession *a, ut8 *data, const Opcode *op) {
 	return process_1byte_op (a, data, op, 0x08);
 }
 
+// xadd r/m, reg: 0f c0 /r for bytes, 0f c1 /r otherwise
 static int opxadd(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
-	int i = 0;
-	if (op->operands_count < 2) {
+	const int bits = a->config->bits;
+	const Operand *rm = &op->operands[0];
+	const Operand *reg = &op->operands[1];
+	if (op->operands_count != 2 || !(reg->type & OT_GPREG & OT_REGTYPE) || (reg->type & OT_MEMORY)) {
 		return -1;
 	}
-	if (a->config->bits == 64) {
-		data[i++] = 0x48;
-	};
-	data[i++] = 0x0f;
-	if (op->operands[0].type & OT_BYTE && op->operands[1].type & OT_BYTE) {
-		data[i++] = 0xc0;
+	ut8 modrm[16];
+	ut8 rex = 0;
+	int l = 0;
+	int n;
+	if (reg->type & OT_QWORD) {
+		rex |= 8;
+	}
+	if (reg->extended) {
+		rex |= 4;
+	}
+	if (rm->type & OT_MEMORY) {
+		// the parser leaves explicit_size unset when the address has no register
+		const bool absolute = rm->regs[0] == X86R_UNDEFINED && rm->regs[1] == X86R_UNDEFINED;
+		if ((rm->explicit_size || (absolute && rm->dest_size)) && !(rm->dest_size & reg->type & ALL_SIZE)) {
+			return -1;
+		}
+		if (bits == 32 && absolute) {
+			modrm[0] = (reg->reg & 7) << 3 | 5;
+			r_write_le32 (modrm + 1, (ut32)(rm->offset * rm->offset_sign));
+			n = 5;
+		} else if (use_op_reg_mem (bits, rm)) {
+			n = encode_mem (modrm, reg->reg, rm, &rex);
+		} else {
+			return -1;
+		}
+		if (bits == 64 && rm->regs[0] != X86R_UNDEFINED && !(rm->reg_size & OT_QWORD)) {
+			data[l++] = 0x67; // 32-bit address registers
+		}
 	} else {
-		data[i++] = 0xc1;
+		if (!(rm->type & OT_GPREG & OT_REGTYPE) || !(rm->type & reg->type & ALL_SIZE)) {
+			return -1;
+		}
+		if (rm->extended) {
+			rex |= 1;
+		}
+		modrm[0] = 0xc0 | (reg->reg & 7) << 3 | (rm->reg & 7);
+		n = 1;
 	}
-	if (op->operands[0].type & OT_REGALL && op->operands[1].type & OT_REGALL) { // TODO memory modes
-		data[i] |= 0xc0;
-		data[i] |= (op->operands[1].reg << 3);
-		data[i++] |= op->operands[0].reg;
+	const bool rex_needed = rex || reg->rex_prefixed || rm->rex_prefixed;
+	if (n < 0 || (bits != 64 && rex_needed)) {
+		return -1;
 	}
-	return i;
+	if (rex_needed && (((reg->type & OT_BYTE) && reg->reg >= 4 && !reg->rex_prefixed && !reg->extended)
+			|| (!(rm->type & OT_MEMORY) && (rm->type & OT_BYTE) && rm->reg >= 4 && !rm->rex_prefixed && !rm->extended))) {
+		return -1; // ah, ch, dh and bh can't be encoded with a REX prefix
+	}
+	if (!(reg->type & OT_BYTE) && ((bits == 16) != !!(reg->type & OT_WORD))) {
+		data[l++] = 0x66;
+	}
+	if (rex_needed) {
+		data[l++] = 0x40 | rex;
+	}
+	data[l++] = 0x0f;
+	data[l++] = (reg->type & OT_BYTE)? 0xc0: 0xc1;
+	memcpy (data + l, modrm, n);
+	return l + n;
 }
 
 static int opxor(RArchSession *a, ut8 *data, const Opcode *op) {
