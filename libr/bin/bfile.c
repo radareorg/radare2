@@ -276,8 +276,7 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 					n++;
 				}
 				if (n) {
-					if (!r_strbuf_reserve (sb, r_strbuf_length (sb) + n)
-							|| !r_strbuf_append_n (sb, (const char *)text, n)) {
+					if (!r_strbuf_append_n (sb, (const char *)text, n)) {
 						goto beach;
 					}
 					needle += n;
@@ -1233,9 +1232,6 @@ R_IPI RBinStrings *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RStrBu
 	} else {
 		get_strings_range (&options, 0, bf->size, NULL);
 		ht_up_free (strings_index);
-		if (ret) {
-			r_bin_strings_shrink (ret);
-		}
 		return ret;
 	}
 	R_VEC_FOREACH (&bo->sections_vec, section) {
@@ -1246,7 +1242,7 @@ R_IPI RBinStrings *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RStrBu
 		const int bits = (bo->info) ? bo->info->bits : 32;
 		const int cfstr_size = (bits == 64) ? 32 : 16;
 		const int cfstr_offs = (bits == 64) ? 16 :  8;
-		if (strstr (section->name, "__cfstring")) {
+		if (ret && strstr (section->name, "__cfstring")) {
 			ut64 i;
 			// XXX do not walk if bin.strings == 0
 			ut8 *p;
@@ -1258,14 +1254,12 @@ R_IPI RBinStrings *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RStrBu
 			if (section->size < cfstr_size || section->size > SZT_MAX) {
 				continue;
 			}
-			if (ret) {
-				ut64 cfstr_bound64 = (section->size / cfstr_size) + 1;
-				if (cfstr_bound64 <= SZT_MAX) {
-					size_t need;
-					size_t cfstr_bound = (size_t)cfstr_bound64;
-					if (!r_add_overflow (RVecRBinString_length (&ret->vec), cfstr_bound, &need)) {
-						RVecRBinString_reserve (&ret->vec, need);
-					}
+			ut64 cfstr_bound64 = (section->size / cfstr_size) + 1;
+			if (cfstr_bound64 <= SZT_MAX) {
+				size_t need;
+				size_t cfstr_bound = (size_t)cfstr_bound64;
+				if (!r_add_overflow (RVecRBinString_length (&ret->vec), cfstr_bound, &need)) {
+					RVecRBinString_reserve (&ret->vec, need);
 				}
 			}
 			ut8 *sbuf = malloc (section->size);
@@ -1312,9 +1306,6 @@ R_IPI RBinStrings *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RStrBu
 		}
 	}
 	ht_up_free (strings_index);
-	if (ret) {
-		r_bin_strings_shrink (ret);
-	}
 	return ret;
 }
 
