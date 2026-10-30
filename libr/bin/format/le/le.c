@@ -639,15 +639,28 @@ R_IPI bool r_bin_le_load_sections(RBinLEObj *bin, RVecRBinSection *sections) {
 	return true;
 }
 
-static char *__get_modname_by_ord(RBinLEObj *bin, ut32 ordinal) {
-	char *modname = NULL;
+static inline void modname_fini(char **name) {
+	free (*name);
+}
+
+R_VEC_TYPE_WITH_FINI (RVecLEModName, char *, modname_fini);
+
+// read the import module name table once, fixups index it by a 1-based 16-bit ordinal
+static void __load_modnames(RBinLEObj *bin, RVecLEModName *names) {
+	const ut32 max = R_MIN (bin->header->impmodcnt, UT16_MAX);
 	ut64 off = (ut64)bin->header->impmod + bin->headerOff;
-	while (ordinal > 0) {
-		free (modname);
-		modname = __read_nonnull_str_at (bin->buf, &off);
-		ordinal--;
+	while (RVecLEModName_length (names) < max) {
+		char *name = __read_nonnull_str_at (bin->buf, &off);
+		if (!name) {
+			break;
+		}
+		RVecLEModName_push_back (names, &name);
 	}
-	return modname;
+}
+
+static const char *__get_modname_by_ord(const RVecLEModName *names, ut32 ordinal) {
+	char **name = ordinal > 0? RVecLEModName_at (names, ordinal - 1): NULL;
+	return name? *name: NULL;
 }
 
 static bool object_page_at(RBinLEObj *bin, ut64 table_index, ut32 *object_index, LEObjectPage *page) {
@@ -754,6 +767,9 @@ R_IPI RVecRBinReloc *r_bin_le_get_relocs(RBinLEObj *bin) {
 		return NULL;
 	}
 	RList *entries = __get_entries (bin);
+	RVecLEModName modnames;
+	RVecLEModName_init (&modnames);
+	__load_modnames (bin, &modnames);
 	LE_image_header *h = bin->header;
 	const ut64 fixup_start = (ut64)h->fpagetab + bin->headerOff;
 	const ut64 fixup_end = R_MIN (fixup_start + h->fixupsize, r_buf_size (bin->buf));
@@ -830,7 +846,7 @@ R_IPI RVecRBinReloc *r_bin_le_get_relocs(RBinLEObj *bin) {
 				break;
 			case IMPORTORD: {
 				RBinImport *imp = R_NEW0 (RBinImport);
-				char *mod_name = __get_modname_by_ord (bin, ordinal);
+				const char *mod_name = __get_modname_by_ord (&modnames, ordinal);
 				if (!mod_name) {
 					r_bin_import_free (imp);
 					break;
@@ -849,7 +865,6 @@ R_IPI RVecRBinReloc *r_bin_le_get_relocs(RBinLEObj *bin) {
 				imp->name = r_bin_name_new_from (r_str_newf ("%s.%u", mod_name, ordinal));
 				imp->ordinal = ordinal;
 				rel->import = imp;
-				free (mod_name);
 				break;
 			}
 			case IMPORTNAME: {
@@ -864,10 +879,9 @@ R_IPI RVecRBinReloc *r_bin_le_get_relocs(RBinLEObj *bin) {
 				}
 				ut64 off = (ut64)h->impproc + nameoff + bin->headerOff;
 				char *proc_name = __read_nonnull_str_at (bin->buf, &off);
-				char *mod_name = __get_modname_by_ord (bin, ordinal);
+				const char *mod_name = __get_modname_by_ord (&modnames, ordinal);
 				imp->name = r_bin_name_new_from (r_str_newf ("%s.%s", r_str_get (mod_name), r_str_get (proc_name)));
 				rel->import = imp;
-				free (mod_name);
 				free (proc_name);
 				break;
 			}
@@ -927,6 +941,7 @@ R_IPI RVecRBinReloc *r_bin_le_get_relocs(RBinLEObj *bin) {
 			r_bin_reloc_fini (rel);
 		}
 	}
+	RVecLEModName_fini (&modnames);
 	r_list_free (entries);
 	return l;
 }
