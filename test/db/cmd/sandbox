@@ -305,6 +305,19 @@ done
 EOF
 RUN
 
+NAME=sandbox grain=none refuses r2pipe without exiting
+FILE=--
+CMDS=<<EOF
+e cfg.sandbox.grain=none
+e cfg.sandbox=true
+o r2pipe://x
+?e alive
+EOF
+EXPECT=<<EOF
+alive
+EOF
+RUN
+
 NAME=sandbox tcc include of an absolute path
 FILE=--
 CMDS=<<EOF

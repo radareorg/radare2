@@ -2,6 +2,32 @@
 #include <r_util.h>
 #include "minunit.h"
 
+#if R2__UNIX__ && LIBC_HAVE_FORK
+static void *sandbox_fork(void *user) {
+	int *pid = user;
+	*pid = r_sys_fork ();
+	return NULL;
+}
+
+static void *sandbox_proc_open(void *user) {
+	char *argv[] = { "sandbox-fork-test", NULL };
+	return r_socket_proc_open (argv);
+}
+
+static bool test_r_socket_proc_sandbox(void) {
+	int pid = 0;
+	r_sandbox_run (R_SANDBOX_GRAIN_NONE, sandbox_fork, &pid);
+	mu_assert_eq (pid, -1, "sandbox denial reports fork failure");
+	RSocketProc *sp = r_sandbox_run (R_SANDBOX_GRAIN_NONE, sandbox_proc_open, NULL);
+	mu_assert_null (sp, "sandbox refuses process creation without killing the caller");
+	RSocketProc failed = { .pid = -1, .fd0 = { -1, -1 }, .fd1 = { -1, -1 } };
+	mu_assert_eq (r_socket_proc_close (&failed), 0, "cleanup ignores failed fork PID");
+	failed.pid = 0;
+	mu_assert_eq (r_socket_proc_close (&failed), 0, "cleanup ignores unset PID");
+	mu_end;
+}
+#endif
+
 #if R2_NETWORK && R2__UNIX__ && !__wasi__
 #include <sys/socket.h>
 #include <unistd.h>
@@ -75,6 +101,9 @@ static bool test_network_disabled(void) {
 
 static int all_tests(void) {
 	mu_run_test (test_r_socket_http_handle_upload);
+#if R2__UNIX__ && LIBC_HAVE_FORK
+	mu_run_test (test_r_socket_proc_sandbox);
+#endif
 #if !R2_NETWORK
 	mu_run_test (test_network_disabled);
 #endif

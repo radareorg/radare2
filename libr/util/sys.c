@@ -172,7 +172,7 @@ R_API void r_sys_signable(bool v) {
 
 R_API int r_sys_fork(void) {
 	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
-		return false;
+		return -1;
 	}
 #if HAVE_FORK
 #if R2__WINDOWS__

@@ -111,6 +111,8 @@ def check_http_sandbox_in_directory(directory, sandbox, background=False, local_
 
         for method in ("GET", "POST"):
             assert command(method, "?e ordinary") == b"ordinary\n"
+            if not exec_allowed:
+                assert command(method, "o r2pipe://x; ?e alive") == b"alive\n"
             assert command(method, "echo $(echo nested)") == b"nested\n"
             assert command(method, "wx 90c3; p8 2") == b"90c3\n"
             assert (b"HTTP_EXECUTED" in command(method, "!echo HTTP_EXECUTED")) == (not scoped)
