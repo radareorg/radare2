@@ -664,6 +664,10 @@ static RList *_extract_flags(char *flagstr) {
 			name_sz = sizeof (tmpflag->fields[num_fields].name);
 			r_str_ncpy (tmpflag->fields[num_fields].name, tmp1, name_sz);
 			*tmp2 = '"';
+			// names from the stub end up in the reg profile and in .dr* commands
+			if (!r_name_filter (tmpflag->fields[num_fields].name, -1)) {
+				R_LOG_WARN ("Invalid flag field name in target.xml, using %s", tmpflag->fields[num_fields].name);
+			}
 			// Get offset
 			if (!(tmp1 = strstr (field_start, "start="))) {
 				goto exit_err;
@@ -917,6 +921,9 @@ static RList *_extract_regs(char *regstr, RList *flags, RStrBuf *pc_alias) {
 		}
 		r_str_ncpy (tmpreg->name, regname, sizeof (tmpreg->name));
 		regname[regname_len] = '"';
+		if (!r_name_filter (tmpreg->name, -1)) {
+			R_LOG_WARN ("Invalid register name in target.xml, using %s", tmpreg->name);
+		}
 		r_str_ncpy (tmpreg->type, regtype, sizeof (tmpreg->type));
 		tmpreg->size = regsize;
 		tmpreg->flagnum = flagnum;

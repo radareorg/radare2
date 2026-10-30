@@ -530,6 +530,46 @@ static bool test_gdb_target_xml_regnums(void) {
 	mu_end;
 }
 
+// register and flag field names from the stub become profile tokens and .dr* command
+// arguments, so anything but identifier characters must be filtered out of them
+static bool test_gdb_target_xml_names(void) {
+	RCons *cons = r_cons_new ();
+	libgdbr_t g;
+	int fds[2];
+	mu_assert_true (session_open (&g, fds, GDB_REMOTE_TYPE_GDB), "open session");
+	g.stub_features.qXfer_features_read = true;
+	g.stub_features.pkt_sz = 4096;
+	const char *replies[] = {
+		"l<?xml version=\"1.0\"?><target version=\"1.0\"><architecture>x86_64</architecture><feature>"
+		"<flags id=\"fl\" size=\"8\">"
+		"<field name=\"CF\" start=\"0\" end=\"0\"/>"
+		"<field name=\"ZF;!id\" start=\"6\" end=\"6\"/>"
+		"</flags>"
+		"<reg name=\"rax\" bitsize=\"64\" />"
+		"<reg name=\"r15;!id\" bitsize=\"64\" />"
+		"<reg name=\"eflags\" bitsize=\"64\" type=\"fl\" />"
+		"<reg name=\"rip\" bitsize=\"64\" type=\"code_ptr\" />"
+		"</feature></target>",
+		NULL
+	};
+	Stub stub;
+	RThread *th = stub_start (&stub, fds[1], -1, replies);
+	mu_assert_eq (gdbr_read_target_xml (&g), 0, "read target.xml");
+	char *sent = stub_finish (&stub, th, fds[0]);
+	free (sent);
+	const char *profile = g.target.regprofile;
+	mu_assert_notnull (profile, "register profile");
+	mu_assert_null (strpbrk (profile, ";!`|&$"), "no command characters in profile");
+	mu_assert_notnull (strstr (profile, "gpr\trax\t.64\t.0\t0\t"), "plain register name kept");
+	mu_assert_notnull (strstr (profile, "gpr\tr15__id\t.64\t.64\t0\t"), "register name filtered");
+	mu_assert_notnull (strstr (profile, "gpr\tZF__id\t.1\t.134\t0\n"), "flag field name filtered");
+	mu_assert_notnull (strstr (profile, "=PC\trip\n"), "pc alias");
+	mu_assert_streq (g.registers[1].name, "r15__id", "filtered name in register list");
+	gdbr_cleanup (&g);
+	r_cons_free (cons);
+	mu_end;
+}
+
 // Connect over TCP to a stub that answers with transcript; return what the client sent
 static char *connect_transcript(libgdbr_t *g, const char **replies) {
 	struct sockaddr_in sa = { .sin_family = AF_INET, .sin_addr.s_addr = htonl (INADDR_LOOPBACK) };
@@ -604,6 +644,7 @@ int main(int argc, char **argv) {
 	mu_run_test (test_gdb_attach_stop_reply);
 	mu_run_test (test_gdb_target_xml_offsets);
 	mu_run_test (test_gdb_target_xml_regnums);
+	mu_run_test (test_gdb_target_xml_names);
 	mu_run_test (test_gdb_connect_probes);
 #endif
 	return tests_passed != tests_run;
