@@ -1203,7 +1203,7 @@ static inline bool arm_reloc_thumb_bit(ELFOBJ *eo, const RBinElfReloc *rel, ut64
 	return sym && (!strcmp (sym->type, R_BIN_TYPE_FUNC_STR) || !strcmp (sym->type, R_BIN_TYPE_LOPROC_STR));
 }
 
-// a defined arm-state function: a thumb branch needs a veneer to reach it
+// a defined arm-state function: thumb reaches it only by blx or a veneer
 static inline bool arm_reloc_arm_func(ELFOBJ *eo, const RBinElfReloc *rel, ut64 L) {
 	const RBinSymbol *sym = arm_reloc_sym (eo, rel, L, 32);
 	return sym && !strcmp (sym->type, R_BIN_TYPE_FUNC_STR);
@@ -1285,14 +1285,6 @@ static bool arm_attr_str(const ut8 *buf, ut32 end, ut32 *off) {
 	return true;
 }
 
-// a tag's value: ULEB128, string or both, by binutils' parity rule
-static int arm_attr_kind(ut64 tag) {
-	if (tag == 32) {
-		return 'c';
-	}
-	return (tag == 4 || tag == 5 || (tag > 32 && (tag & 1)))? 's': 'u';
-}
-
 // file-scope attributes in [off, end); a Tag_CPU_arch overrides arch
 static bool arm_file_cpu_arch(const ut8 *buf, ut32 off, ut32 end, ut64 *arch) {
 	while (off < end) {
@@ -1300,8 +1292,9 @@ static bool arm_file_cpu_arch(const ut8 *buf, ut32 off, ut32 end, ut64 *arch) {
 		if (!arm_attr_uleb (buf, end, &off, &tag)) {
 			return false;
 		}
-		const int kind = arm_attr_kind (tag);
-		if (kind == 'u' || kind == 'c') {
+		// as binutils: 4, 5 and odd tags past 32 hold a string
+		const bool str_only = tag == 4 || tag == 5 || (tag > 32 && (tag & 1));
+		if (!str_only) {
 			if (!arm_attr_uleb (buf, end, &off, &val)) {
 				return false;
 			}
@@ -1309,7 +1302,7 @@ static bool arm_file_cpu_arch(const ut8 *buf, ut32 off, ut32 end, ut64 *arch) {
 				*arch = val;
 			}
 		}
-		if ((kind == 's' || kind == 'c') && !arm_attr_str (buf, end, &off)) {
+		if ((str_only || tag == 32) && !arm_attr_str (buf, end, &off)) {
 			return false;
 		}
 	}
