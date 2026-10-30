@@ -1,0 +1,67 @@
+name: SDB Windows crash diagnostics
+on:
+  push:
+    branches: [codex/debug-sdb-windows]
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer: [none, address]
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+      with:
+        python-version: '3.10'
+    - uses: TheMrMilchmann/setup-msvc-dev@368ef7d1ee4d1171b31d4a7f67f4d954f903f5a9
+      with:
+        arch: x64
+    - name: Configure optimized build with symbols
+      shell: pwsh
+      run: |
+        pip install meson ninja
+        meson setup --buildtype=release -Ddebug=true -Dc_std=c11 -Db_sanitize=${{ matrix.sanitizer }} build
+        python .github/scripts/sdb-windows-crash.py
+        New-Item -ItemType Directory -Force diagnostics | Out-Null
+        "SDB_CRASH_DIR=$PWD/diagnostics" >> $env:GITHUB_ENV
+        "ASAN_OPTIONS=abort_on_error=1:detect_leaks=0" >> $env:GITHUB_ENV
+        $asan = Get-ChildItem "$env:VCToolsInstallDir/bin/Hostx64/x64" -Filter '*asan*' -ErrorAction SilentlyContinue
+        $asan | Format-Table FullName
+        "$env:VCToolsInstallDir/bin/Hostx64/x64" >> $env:GITHUB_PATH
+        "$PWD/build/subprojects/sdb" >> $env:GITHUB_PATH
+    - name: Reproduce full build
+      shell: pwsh
+      run: |
+        ninja -C build -j4 2>&1 | Tee-Object diagnostics/build.log
+        exit $LASTEXITCODE
+    - name: Repeat database generation
+      if: always()
+      shell: pwsh
+      run: |
+        $exe = "$PWD/build/subprojects/sdb/sdb.exe"
+        if (!(Test-Path $exe)) { exit 1 }
+        $env:SDB_OUTPUT_DIR = "$PWD/diagnostics/output"
+        1..50 | ForEach-Object {
+          Remove-Item $env:SDB_OUTPUT_DIR -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force $env:SDB_OUTPUT_DIR | Out-Null
+          Write-Output "ITERATION $_"
+          & $exe -r "$PWD/libr/bin/d" 2>&1 | Tee-Object -Append diagnostics/reproduce.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        }
+    - name: Upload crash evidence
+      if: always()
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+      with:
+        name: sdb-windows-${{ matrix.sanitizer }}
+        retention-days: 7
+        path: |
+          diagnostics/
+          build/subprojects/sdb/*.exe
+          build/subprojects/sdb/*.dll
+          build/subprojects/sdb/**/*.pdb
+          build/meson-logs/meson-log.txt
+          subprojects/sdb/src/crash.h
