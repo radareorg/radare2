@@ -652,6 +652,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ascii substring detection (quiet)
+FILE=bins/pe/Reborn_Stub-strings.exe
+CMDS=izzq~pomf
+EXPECT=<<EOF
+0x489d8a 53 26 http://pomf.cat/upload.php
+0x489edd 39 19 https://a.pomf.cat/
+0x48b9ed 53 26 http://pomf.cat/upload.php
+0x48ba22 40 19 https://a.pomf.cat/
+EOF
+RUN
+
 NAME=ascii substring detection (#14499)
 FILE=bins/pe/Reborn_Stub-strings.exe
 CMDS=izz~pomf
