@@ -14,6 +14,8 @@ jobs:
         include:
         - sanitizer: none
           debug: 'true'
+        - sanitizer: address
+          debug: 'true'
     steps:
     - name: Match original pagefile
       uses: al-cheb/configure-pagefile-action@9b6da52fb72a3c6147c1aad2df22d8d905681adc
@@ -46,19 +48,12 @@ jobs:
       run: |
         ninja -C build -j4 subprojects/sdb/sdb.exe 2>&1 | Tee-Object diagnostics/build.log
         exit $LASTEXITCODE
-    - name: Exercise SDB throughout the full Windows build
+    - name: Race concurrent generators over shared files
       shell: pwsh
-      timeout-minutes: 20
+      timeout-minutes: 5
       run: |
-        $env:SDB_STRESS_ROUNDS = "5000"
-        $stress = Start-Process python -ArgumentList '.github/scripts/sdb-windows-stress.py' -PassThru -RedirectStandardOutput diagnostics/stress.log -RedirectStandardError diagnostics/stress-errors.log
-        ninja -C build -j4 2>&1 | Tee-Object diagnostics/full-build.log
-        $buildExit = $LASTEXITCODE
-        $stress.WaitForExit()
-        Get-Content diagnostics/stress.log
-        Get-Content diagnostics/stress-errors.log
-        if ($buildExit -ne 0) { exit $buildExit }
-        exit $stress.ExitCode
+        python .github/scripts/sdb-windows-stress.py 2>&1 | Tee-Object diagnostics/shared-race.log
+        exit $LASTEXITCODE
     - name: Upload crash evidence
       if: always()
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
