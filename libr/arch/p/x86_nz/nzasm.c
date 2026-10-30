@@ -4276,6 +4276,39 @@ static int optest(RArchSession *a, ut8 *data, const Opcode *op) {
 			|| use_op_reg_mem (bits, dst) || dst->regs[0] == X86R_UNDEFINED)))) {
 		return optest_imm (bits, data, op);
 	}
+	const Operand *src = &op->operands[1];
+	if ((dst->type & OT_REGTYPE & OT_GPREG) && (src->type & OT_REGTYPE & OT_GPREG)
+			&& !((dst->type | src->type) & OT_MEMORY)) {
+		// test r/m, reg: 84 /r for bytes, 85 /r otherwise
+		if (op->operands_count != 2 || !(dst->type & src->type & ALL_SIZE)) {
+			return -1;
+		}
+		ut8 rex = 0;
+		if (dst->type & OT_QWORD) {
+			rex |= 8;
+		}
+		if (src->extended) {
+			rex |= 4;
+		}
+		if (dst->extended) {
+			rex |= 1;
+		}
+		const bool rex_needed = rex || dst->rex_prefixed || src->rex_prefixed;
+		if (rex_needed && (bits != 64 || ((dst->type & OT_BYTE)
+				&& ((dst->reg >= 4 && !dst->rex_prefixed && !dst->extended)
+				|| (src->reg >= 4 && !src->rex_prefixed && !src->extended))))) {
+			return -1; // ah, ch, dh and bh can't be encoded with a REX prefix
+		}
+		if (!(dst->type & OT_BYTE) && ((bits == 16) != !!(dst->type & OT_WORD))) {
+			data[l++] = 0x66;
+		}
+		if (rex_needed) {
+			data[l++] = 0x40 | rex;
+		}
+		data[l++] = (dst->type & OT_BYTE)? 0x84: 0x85;
+		data[l++] = 0xc0 | (src->reg & 7) << 3 | (dst->reg & 7);
+		return l;
+	}
 	if (a->config->bits == 64) {
 		if (op->operands[0].type & OT_MEMORY &&
 			op->operands[0].reg_size & OT_DWORD) {

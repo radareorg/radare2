@@ -431,6 +431,13 @@ a "test rax, rbx" 4885d8
 a "test rcx, rcx" 4885c9
 a "test rdx, rsi" 4885f2
 a "test r8, r8" 4d85c0
+a "test r8, rax" 4985c0
+a "test rax, r9" 4c85c8
+a "test eax, r9d" 4485c8
+a "test r10w, ax" 664185c2
+a "test ax, cx" 6685c8
+a "test sil, r11b" 4484de
+a "test r9b, r9b" 4584c9
 a "test dword [r13+0x10], ebx" 41855d10
 a "test [r12], r15b" 45843c24
 a "test qword [r9+r10*8+0x20], r13" 4f856cd120

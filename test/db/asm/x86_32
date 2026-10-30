@@ -1970,6 +1970,8 @@ a "test dword [eax], eax" 8500
 a "test eax, 0" f7c000000000
 a "test eax, ebx" 85d8
 a "test edx, esi" 85f2
+a "test ax, cx" 6685c8
+a "test ah, bl" 84dc
 aB "ucomisd xmm0, qword [eax]" 660f2e00
 aB "ucomiss xmm0, dword [eax]" 0f2e00
 a "ud2" 0f0b
