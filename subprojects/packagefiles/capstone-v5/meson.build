@@ -141,6 +141,11 @@ cs_c_args += [
   '-DCAPSTONE_HAS_RISCV',
 ]
 
+if host_machine.system() == 'windows'
+  # MathExtras.h defines inline away on win32, turning header helpers into unused statics
+  cs_c_args += meson.get_compiler('c').get_supported_arguments(['-Wno-unused-function'])
+endif
+
 libcapstone = static_library('capstone', cs_files,
   c_args: cs_c_args,
   include_directories: capstone_includes,

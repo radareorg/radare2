@@ -463,13 +463,17 @@ static inline void *r_new_copy(int size, void *data) {
 
 #if R2__WINDOWS__
 #if __MINGW32__
+// inttypes.h matches the printf format checker and runtime selected by mingw
 #define PFMT64x PRIx64
+#define PFMT64d PRId64
+#define PFMT64u PRIu64
+#define PFMT64o PRIo64
 #else
 #define PFMT64x "I64x"
-#endif
 #define PFMT64d "I64d"
 #define PFMT64u "I64u"
 #define PFMT64o "I64o"
+#endif
 #define PFMTSZx "Ix"
 #define PFMTSZd "Id"
 #define PFMTSZu "Iu"
