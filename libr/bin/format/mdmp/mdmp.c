@@ -1120,70 +1120,78 @@ static int check_pe64_buf(RBuffer *buf, ut64 length) {
 	return ret;
 }
 
+static bool r_bin_mdmp_has_pe_bin(struct r_bin_mdmp_obj *obj, ut64 vaddr) {
+	struct Pe32_r_bin_mdmp_pe_bin *pe32_bin;
+	struct Pe64_r_bin_mdmp_pe_bin *pe64_bin;
+	RListIter *it;
+
+	r_list_foreach (obj->pe32_bins, it, pe32_bin) {
+		if (pe32_bin->vaddr == vaddr) {
+			return true;
+		}
+	}
+	r_list_foreach (obj->pe64_bins, it, pe64_bin) {
+		if (pe64_bin->vaddr == vaddr) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static bool r_bin_mdmp_init_pe_bins(struct r_bin_mdmp_obj *obj, const char *sdbdir) {
-	ut64 paddr;
 	struct minidump_module *module;
-	struct Pe32_r_bin_mdmp_pe_bin *pe32_bin, *pe32_dup;
-	struct Pe64_r_bin_mdmp_pe_bin *pe64_bin, *pe64_dup;
-	RListIter *it, *it_dup;
+	struct Pe32_r_bin_mdmp_pe_bin *pe32_bin;
+	struct Pe64_r_bin_mdmp_pe_bin *pe64_bin;
+	RListIter *it;
+	const ut64 bufsz = r_buf_size (obj->b);
+	// real module images are disjoint regions of the dump, aliased ones must not multiply its size
+	ut64 left = bufsz;
 
 	r_list_foreach (obj->streams.modules, it, module) {
-		if (!(paddr = r_bin_mdmp_get_paddr (obj, module->base_of_image))) {
+		ut64 paddr = r_bin_mdmp_get_paddr (obj, module->base_of_image);
+		if (!paddr || paddr >= bufsz || !module->size_of_image || r_bin_mdmp_has_pe_bin (obj, module->base_of_image)) {
 			continue;
 		}
-		if (!module->size_of_image) {
-			continue;
+		ut64 size = R_MIN (module->size_of_image, bufsz - paddr);
+		if (size > left) {
+			R_LOG_WARN ("Module images exceed the dump size, ignoring the remaining modules");
+			break;
 		}
-		ut8 *b = R_NEWS (ut8, module->size_of_image);
+		ut8 *b = R_NEWS (ut8, size);
 		if (!b) {
 			continue;
 		}
-		st64 r = r_buf_read_at (obj->b, paddr, b, module->size_of_image);
+		st64 r = r_buf_read_at (obj->b, paddr, b, size);
 		RBuffer *buf = r_buf_new_with_bytes (b, r < 0? 0: r);
 		free (b);
 		if (!buf) {
 			continue;
 		}
-		bool dup = false;
-		if (check_pe32_buf (buf, module->size_of_image)) {
-			r_list_foreach (obj->pe32_bins, it_dup, pe32_dup) {
-				if (pe32_dup->vaddr == module->base_of_image) {
-					dup = true;
-					break;
-				}
+		if (check_pe32_buf (buf, size)) {
+			pe32_bin = R_NEW0 (struct Pe32_r_bin_mdmp_pe_bin);
+			r_bin_mdmp_patch_pe_headers (buf);
+			pe32_bin->vaddr = module->base_of_image;
+			pe32_bin->paddr = paddr;
+			pe32_bin->bin = Pe32_r_bin_pe_new_buf (buf, 0);
+			if (pe32_bin->bin) {
+				pe32_bin->bin->sdbdir = R_STR_ISNOTEMPTY (sdbdir)? strdup (sdbdir): NULL;
+				r_list_append (obj->pe32_bins, pe32_bin);
+				left -= size;
+			} else {
+				free (pe32_bin);
 			}
-			if (!dup) {
-				pe32_bin = R_NEW0 (struct Pe32_r_bin_mdmp_pe_bin);
-				r_bin_mdmp_patch_pe_headers (buf);
-				pe32_bin->vaddr = module->base_of_image;
-				pe32_bin->paddr = paddr;
-				pe32_bin->bin = Pe32_r_bin_pe_new_buf (buf, 0);
-				if (pe32_bin->bin) {
-					pe32_bin->bin->sdbdir = R_STR_ISNOTEMPTY (sdbdir)? strdup (sdbdir): NULL;
-					r_list_append (obj->pe32_bins, pe32_bin);
-				} else {
-					free (pe32_bin);
-				}
-			}
-		} else if (check_pe64_buf (buf, module->size_of_image)) {
-			r_list_foreach (obj->pe64_bins, it_dup, pe64_dup) {
-				if (pe64_dup->vaddr == module->base_of_image) {
-					dup = true;
-					break;
-				}
-			}
-			if (!dup) {
-				pe64_bin = R_NEW0 (struct Pe64_r_bin_mdmp_pe_bin);
-				r_bin_mdmp_patch_pe_headers (buf);
-				pe64_bin->vaddr = module->base_of_image;
-				pe64_bin->paddr = paddr;
-				pe64_bin->bin = Pe64_r_bin_pe_new_buf (buf, 0);
-				if (pe64_bin->bin) {
-					pe64_bin->bin->sdbdir = R_STR_ISNOTEMPTY (sdbdir)? strdup (sdbdir): NULL;
-					r_list_append (obj->pe64_bins, pe64_bin);
-				} else {
-					free (pe64_bin);
-				}
+		} else if (check_pe64_buf (buf, size)) {
+			pe64_bin = R_NEW0 (struct Pe64_r_bin_mdmp_pe_bin);
+			r_bin_mdmp_patch_pe_headers (buf);
+			pe64_bin->vaddr = module->base_of_image;
+			pe64_bin->paddr = paddr;
+			pe64_bin->bin = Pe64_r_bin_pe_new_buf (buf, 0);
+			if (pe64_bin->bin) {
+				pe64_bin->bin->sdbdir = R_STR_ISNOTEMPTY (sdbdir)? strdup (sdbdir): NULL;
+				r_list_append (obj->pe64_bins, pe64_bin);
+				left -= size;
+			} else {
+				free (pe64_bin);
 			}
 		}
 		r_unref (buf);
