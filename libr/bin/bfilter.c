@@ -190,7 +190,7 @@ R_IPI bool r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym)
 	r_bin_register_symbol_language (bf, sym);
 	char *oname = r_str_newf ("o.0.%c.%s", sym->is_imported ? 'i' : 's', name);
 	char *uname = r_str_newf ("%" PFMT64x ".%c.%s", vaddr, sym->is_imported ? 'i' : 's', name);
-	bool res = ht_pp_insert (ht, uname, sym);
+	bool res = oname && uname && ht_pp_insert (ht, uname, sym);
 	free (uname);
 	if (!res) {
 		free (oname);
