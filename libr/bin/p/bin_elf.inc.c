@@ -1186,7 +1186,7 @@ static ut64 elf_io_addr(RBinFile *bf, ELFOBJ *eo, ut64 v) {
 	return (any && !disagree)? agreed: moved;
 }
 
-// the defined symbol of the given state a reloc targets; L is its io address
+// the defined symbol of the given state a reloc targets at io address L
 static const RBinSymbol *arm_reloc_sym(ELFOBJ *eo, const RBinElfReloc *rel, ut64 L, int bits) {
 	if (!L || L == UT64_MAX || !rel->sym || reloc_is_import (eo, rel) || rel->sym >= eo->symbols_by_ord_size) {
 		return NULL;
@@ -1201,7 +1201,7 @@ static inline bool arm_reloc_thumb_bit(ELFOBJ *eo, const RBinElfReloc *rel, ut64
 	return sym && (!strcmp (sym->type, R_BIN_TYPE_FUNC_STR) || !strcmp (sym->type, R_BIN_TYPE_LOPROC_STR));
 }
 
-// a defined arm-state function, which a thumb branch cannot reach without a veneer
+// a defined arm-state function: a thumb branch needs a veneer to reach it
 static inline bool arm_reloc_arm_func(ELFOBJ *eo, const RBinElfReloc *rel, ut64 L) {
 	const RBinSymbol *sym = arm_reloc_sym (eo, rel, L, 32);
 	return sym && !strcmp (sym->type, R_BIN_TYPE_FUNC_STR);
@@ -1266,20 +1266,12 @@ static st64 arm_rel_addend(ELFOBJ *bo, const RBinElfReloc *rel, const ut8 *buf) 
 }
 
 static bool arm_attr_uleb(const ut8 *buf, ut32 end, ut32 *off, ut64 *v) {
-	ut64 sum = 0;
-	ut32 shift;
-	for (shift = 0; *off < end && shift < 64; shift += 7) {
-		const ut8 c = buf[(*off)++];
-		if (shift == 63 && (c & 0x7e)) {
-			return false;
-		}
-		sum |= (ut64)(c & 0x7f) << shift;
-		if (!(c & 0x80)) {
-			*v = sum;
-			return true;
-		}
+	if (*off >= end) {
+		return false;
 	}
-	return false;
+	const char *err = NULL;
+	*off = r_uleb128 (buf + *off, end - *off, v, &err) - buf;
+	return !err;
 }
 
 static bool arm_attr_str(const ut8 *buf, ut32 end, ut32 *off) {
@@ -1291,38 +1283,28 @@ static bool arm_attr_str(const ut8 *buf, ut32 end, ut32 *off) {
 	return true;
 }
 
-// the aeabi attribute tags, and which of them carry a string value
+// a tag's value: ULEB128, string or both, by binutils' parity rule
 static int arm_attr_kind(ut64 tag) {
-	switch (tag) {
-	case 4: case 5: case 65: case 67:
-		return 's';
-	case 32:
+	if (tag == 32) {
 		return 'c';
-	case 34: case 36: case 38: case 42: case 44: case 46: case 48: case 50: case 52:
-	case 64: case 66: case 68: case 70: case 74: case 76:
-		return 'u';
 	}
-	return (tag >= 6 && tag <= 31)? 'u': 0;
+	return (tag == 4 || tag == 5 || (tag > 32 && (tag & 1)))? 's': 'u';
 }
 
-// file-scope Tag_CPU_arch values in [off, end) are all v5T or later
-static bool arm_file_attrs_have_blx(const ut8 *buf, ut32 off, ut32 end) {
+// file-scope attributes in [off, end); a Tag_CPU_arch overrides arch
+static bool arm_file_cpu_arch(const ut8 *buf, ut32 off, ut32 end, ut64 *arch) {
 	while (off < end) {
 		ut64 tag, val;
 		if (!arm_attr_uleb (buf, end, &off, &tag)) {
 			return false;
 		}
 		const int kind = arm_attr_kind (tag);
-		if (!kind) {
-			return false;
-		}
 		if (kind == 'u' || kind == 'c') {
 			if (!arm_attr_uleb (buf, end, &off, &val)) {
 				return false;
 			}
-			// Tag_CPU_arch 3 is v5T, the first with blx
-			if (tag == 6 && val < 3) {
-				return false;
+			if (tag == 6) {
+				*arch = val;
 			}
 		}
 		if ((kind == 's' || kind == 'c') && !arm_attr_str (buf, end, &off)) {
@@ -1332,7 +1314,7 @@ static bool arm_file_attrs_have_blx(const ut8 *buf, ut32 off, ut32 end) {
 	return true;
 }
 
-static bool arm_aeabi_has_blx(const ut8 *buf, ut32 off, ut32 end, bool be) {
+static bool arm_aeabi_cpu_arch(const ut8 *buf, ut32 off, ut32 end, bool be, ut64 *arch) {
 	while (off < end) {
 		if (end - off < 5) {
 			return false;
@@ -1342,11 +1324,7 @@ static bool arm_aeabi_has_blx(const ut8 *buf, ut32 off, ut32 end, bool be) {
 		if (size < 5 || size > end - off) {
 			return false;
 		}
-		if (scope == 1) {
-			if (!arm_file_attrs_have_blx (buf, off + 5, off + size)) {
-				return false;
-			}
-		} else if (scope != 2 && scope != 3) {
+		if (scope == 1 && !arm_file_cpu_arch (buf, off + 5, off + size, arch)) {
 			return false;
 		}
 		off += size;
@@ -1354,37 +1332,34 @@ static bool arm_aeabi_has_blx(const ut8 *buf, ut32 off, ut32 end, bool be) {
 	return true;
 }
 
-// every aeabi subsection of the attributes in buf allows blx
-static bool arm_attrs_have_blx(const ut8 *buf, ut32 end, bool be) {
-	bool aeabi = false;
+// the last file-scope Tag_CPU_arch in buf, 0 if malformed
+static ut64 arm_attrs_cpu_arch(const ut8 *buf, ut32 end, bool be) {
+	ut64 arch = 0;
 	ut32 off = 1;
 	while (off < end) {
 		if (end - off < 4) {
-			return false;
+			return 0;
 		}
 		const ut32 len = r_read_ble32 (buf + off, be);
 		if (len < 4 || len > end - off) {
-			return false;
+			return 0;
 		}
 		const ut32 sub_end = off + len;
 		const ut32 name = off + 4;
 		ut32 attrs = name;
 		if (!arm_attr_str (buf, sub_end, &attrs)) {
-			return false;
+			return 0;
 		}
-		if (!strcmp ((const char *)buf + name, "aeabi")) {
-			if (!arm_aeabi_has_blx (buf, attrs, sub_end, be)) {
-				return false;
-			}
-			aeabi = true;
+		if (!strcmp ((const char *)buf + name, "aeabi") && !arm_aeabi_cpu_arch (buf, attrs, sub_end, be, &arch)) {
+			return 0;
 		}
 		off = sub_end;
 	}
-	return aeabi;
+	return arch;
 }
 
-// blx exists from armv5t on; unreadable attributes count as no blx
-static bool arm_has_blx(ELFOBJ *eo) {
+// Tag_CPU_arch, which is 0 (pre-v4) when the attributes do not tell
+static ut64 arm_cpu_arch(ELFOBJ *eo) {
 	const Elf_(Shdr) *sh = NULL;
 	ut32 i;
 	for (i = 0; eo->shdr && i < eo->ehdr.e_shnum; i++) {
@@ -1393,24 +1368,19 @@ static bool arm_has_blx(ELFOBJ *eo) {
 			break;
 		}
 	}
-	if (!sh) {
-		return true;
-	}
 	const ut64 bsize = r_buf_size (eo->b);
-	if (sh->sh_offset > bsize || sh->sh_size > bsize - sh->sh_offset || sh->sh_size < 1 || sh->sh_size > ST32_MAX) {
-		return false;
+	if (!sh || sh->sh_offset > bsize || sh->sh_size > bsize - sh->sh_offset || sh->sh_size < 1 || sh->sh_size > ST32_MAX) {
+		return 0;
 	}
 	const ut32 end = sh->sh_size;
 	ut8 *buf = malloc (end);
-	RBuffer *sb = r_buf_new_slice (eo->b, sh->sh_offset, end);
-	const bool ok = buf && sb && r_buf_read_at (sb, 0, buf, end) == end && buf[0] == 'A'
-		&& arm_attrs_have_blx (buf, end, eo->endian);
-	r_unref (sb);
+	const bool ok = buf && r_buf_read_at (eo->b, sh->sh_offset, buf, end) == end && buf[0] == 'A';
+	const ut64 arch = ok? arm_attrs_cpu_arch (buf, end, eo->endian): 0;
 	free (buf);
-	return ok;
+	return arch;
 }
 
-static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 P, ut64 S, ut64 bias, ut64 L, ut64 toc, bool blx) {
+static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 P, ut64 S, ut64 bias, ut64 L, ut64 toc, ut64 arm_arch) {
 	ut64 V = 0;
 	ut64 A = rel->addend;
 	ut8 buf[8] = {0};
@@ -1480,10 +1450,11 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		case R_ARM_THM_PC22:
 		case R_ARM_THM_JUMP24: {
 			// ld turns a blx to a thumb function into a bl
-			if (S & 1) {
+			if (T) {
 				lo |= 0x1000;
 			} else if (arm_reloc_arm_func (bo, rel, L)) {
-				if (rel->type == R_ARM_THM_JUMP24 || !blx) {
+				// Tag_CPU_arch 3 is v5T, the first with blx
+				if (rel->type == R_ARM_THM_JUMP24 || ((lo & 0x1000) && arm_arch < 3)) {
 					return;
 				}
 				lo &= ~0x1000;
@@ -1495,8 +1466,9 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			}
 			// blx switches to arm state, so it needs 4 alignment
 			const st64 amask = (lo & 0x1000)? 1: 3;
-			// a thumb branch reaches +-16MB, leave the rest alone
-			if ((target & amask) || !disp_fits (target, 25)) {
+			// v6T2 (8) and v7 (10) on: +-16MB bl, older +-4MB
+			const int bits = (arm_arch == 8 || arm_arch >= 10)? 25: 23;
+			if ((target & amask) || !disp_fits (target, bits)) {
 				return;
 			}
 			const ut32 sb = (target >> 24) & 1;
@@ -2291,7 +2263,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	ut64 budget = span_budget (b, eo, n_vaddr, cdsz);
 	ut64 vaddr = n_vaddr;
 	ut64 toc_base = UT64_MAX;
-	const bool has_blx = eo->ehdr.e_machine == EM_ARM && arm_has_blx (eo);
+	const ut64 arm_arch = (eo->ehdr.e_machine == EM_ARM)? arm_cpu_arch (eo): 0;
 	if (eo->ehdr.e_machine == EM_PPC64) {
 		ut64 t = Elf_(get_section_addr) (eo, ".toc");
 		if (t == UT64_MAX) {
@@ -2361,7 +2333,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		const ut64 raddr = resolved? sym_addr: addressable? slot: 0;
 		if (!skip) {
 			_patch_reloc (bf, eo, eo->ehdr.e_machine, &b->iob, reloc,
-				elf_io_addr (bf, eo, reloc->rva), raddr, bias, plt_entry_addr, toc_base, has_blx);
+				elf_io_addr (bf, eo, reloc->rva), raddr, bias, plt_entry_addr, toc_base, arm_arch);
 		}
 		RBinSymbol *csym = (takes_slot && ss && ss->common)? eo->symbols_by_ord[reloc->sym]: NULL;
 		if (csym) {
