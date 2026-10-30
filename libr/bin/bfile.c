@@ -1,5 +1,6 @@
 /* radare2 - LGPL - Copyright 2009-2026 - pancake, nibble, dso */
 
+#define NEW_MASTER 0
 #include <r_bin.h>
 #include <r_muta.h>
 #include "i/private.h"
@@ -129,6 +130,11 @@ static void string_set_addrs(RBinString *bs, ut64 str_start, ut64 pdelta, ut64 v
 // TODO: this code must be implemented in RSearch as options for the strings mode
 static void string_scan_range(const RBinStringScanOptions *options, const ut64 from, const ut64 to, int type, RBinSection *section) {
 	RBinFile *bf = options->bf;
+#if R2_USE_NEW_ABI
+	size_t utf_list_size = 0;
+	int *utf_list = NULL;
+	int *utf_freq = NULL;
+#endif
 	RBin *bin = bf->rbin;
 	const int min = options->min;
 	const bool strings_nofp = bin->strings_nofp;
@@ -340,6 +346,7 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 			// back up past the \0 to the last char just in case it starts a wide string
 			needle -= 2;
 		}
+		// TODO: allow the user to filter strings by type at scan time, this is, dont expect utf32 or utf16 strings
 		if (runes >= min) {
 			// discard unaligned strings
 			const int str_align = bin->options.str_align;
@@ -353,7 +360,7 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 			int *freq_list = NULL, expected_ascii, actual_ascii, num_chars;
 			if (str_type == R_STRING_TYPE_ASCII) {
 				for (j = 0; j < tmplen; j++) {
-					char ch = tmpstr[j];
+					const char ch = tmpstr[j];
 					if (ch != '\n' && ch != '\r' && ch != '\t') {
 						if (!IS_PRINTABLE (ch)) {
 							continue;
@@ -365,6 +372,58 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 			case R_STRING_TYPE_UTF8:
 			case R_STRING_TYPE_WIDE:
 			case R_STRING_TYPE_WIDE32:
+#if R2_USE_NEW_ABI
+				if (tmplen >= utf_list_size) {
+					// not here
+					size_t newsize, alloc_size;
+					if (r_add_overflow_size_t (tmplen, 128, &newsize) ||
+						r_mul_overflow_size_t (sizeof (int), newsize, &alloc_size)) {
+						goto cleanup;
+					}
+					int *a = realloc (utf_list, alloc_size);
+					if (!a) {
+						goto cleanup;
+					}
+					utf_list = a;
+					int *b = realloc (utf_freq, alloc_size);
+					if (b) {
+						utf_list_size = newsize;
+						utf_freq = b;
+					} else {
+						R_LOG_ERROR ("Cannot allocate %zu", tmplen);
+						goto cleanup;
+					}
+				}
+				// freq_list = (str_type == R_STRING_TYPE_WIDE || str_type == R_STRING_TYPE_WIDE32)? utf_freq: NULL;
+				freq_list = (str_type == R_STRING_TYPE_WIDE)? utf_freq: NULL;
+				num_blocks = r_utf_block_list2 ((const ut8*)tmpstr, tmplen, utf_list, freq_list);
+				if (freq_list) {
+					// not here
+					num_chars = 0;
+					actual_ascii = 0;
+					for (j = 0; j < num_blocks; j++) {
+						num_chars += freq_list[j];
+						if (!utf_list[j]) { // ASCII
+							actual_ascii += freq_list[j];
+						}
+					}
+					expected_ascii = num_blocks ? num_chars / num_blocks : 0;
+					if (actual_ascii > expected_ascii) {
+						ascii_only = true;
+						if (str_type == R_STRING_TYPE_UTF8) {
+							str_type = R_STRING_TYPE_ASCII;
+							R_LOG_DEBUG ("ascii string miss identified as utf8");
+							break;
+						}
+						needle = str_start;
+						continue;
+					}
+				}
+				if (num_blocks > R_STRING_MAX_UNI_BLOCKS) {
+					needle++;
+					continue;
+				}
+#else
 				num_blocks = 0;
 				int *block_list = r_utf_block_list ((const ut8*)tmpstr, tmplen,
 						str_type == R_STRING_TYPE_WIDE? &freq_list: NULL);
@@ -372,6 +431,16 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 					for (j = 0; block_list[j] != -1; j++) {
 						num_blocks++;
 					}
+#if NEW_MASTER
+					if (num_blocks > 0) {
+						num_blocks--;
+					}
+#if 0
+					for (j = 0; block_list[j] != -1 && block_list[j] < 200; j++) {
+						num_blocks++;
+					}
+#endif
+#endif
 				}
 				if (freq_list) {
 					num_chars = 0;
@@ -386,9 +455,22 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 					expected_ascii = num_blocks ? num_chars / num_blocks : 0;
 					if (actual_ascii > expected_ascii) {
 						ascii_only = true;
+#if NEW_MASTER
+						if (str_type == R_STRING_TYPE_UTF8) {
+							str_type = R_STRING_TYPE_ASCII;
+							R_LOG_DEBUG ("ascii string miss identified as utf8");
+						}
+						R_FREE (block_list);
+						if (str_start > needle) {
+							needle = str_start;
+							continue;
+						}
+						break;
+#else
 						needle = str_start;
 						R_FREE (block_list);
 						continue;
+#endif
 					}
 				}
 				R_FREE (block_list);
@@ -396,6 +478,7 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 					needle++;
 					continue;
 				}
+#endif
 			}
 			RBinString bs = { 0 };
 			bs.type = str_type;
@@ -406,6 +489,7 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 				break;
 			}
 			// TODO: move into adjust_offset
+#if 1
 			switch (str_type) {
 			case R_STRING_TYPE_WIDE:
 				if (str_start - from > 1) {
@@ -424,6 +508,7 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 				}
 				break;
 			}
+#endif
 			if (!s) {
 				if (section) {
 					s = section;
@@ -475,6 +560,11 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 		}
 		ascii_only = false;
 	}
+#if R2_USE_NEW_ABI
+cleanup:
+	free (utf_list);
+	free (utf_freq);
+#endif
 	free (buf);
 	if (pj) {
 		pj_end (pj);
