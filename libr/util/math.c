@@ -315,61 +315,69 @@ static bool cin_get(RNum *num, RNumCalc *nc, char *c) {
 	return true;
 }
 
-// "12e" or "1.5E": a decimal mantissa followed by the exponent marker
-static bool is_decimal_exponent_start(const char *str, int len) {
-	if (len < 2 || !isdigit ((ut8)*str) || (str[len - 1] != 'e' && str[len - 1] != 'E')) {
-		return false;
-	}
-	bool dot = false;
-	int i;
-	for (i = 1; i < len - 1; i++) {
-		if (str[i] == '.' && !dot) {
-			dot = true;
-		} else if (!isdigit ((ut8)str[i])) {
-			return false;
-		}
-	}
-	return true;
-}
-
-// "1e10", "2e-3" or "1.5E+3f", but not hex like "0x1e5" or "1e5h"
-static bool is_decimal_float_exponent(const char *str) {
-	if (!isdigit ((ut8)*str) || r_str_startswith (str, "0x") || !strpbrk (str, "eE")) {
-		return false;
-	}
-	char *end;
-	(void)strtod (str, &end);
-	return end != str && (!*end || !strcmp (end, "f"));
-}
-
 static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
 	double d = 0;
 	char str[R_NUMCALC_STRSZ + 1]; // TODO: move into the heap?
 	int i = 0;
 	char c;
 	str[0] = 0;
+	// where the exponent of a decimal number starts, so 1e-2 is one number and 0x1e-2 is not
+	bool decimal = true;
+	bool dot = false;
+	int epos = 0;
 	while (cin_get (num, nc, &c)) {
-		const bool exponent_sign = (c == '+' || c == '-') && is_decimal_exponent_start (str, i)
+		const bool exp_sign = epos && epos == i - 1 && (c == '+' || c == '-')
 			&& !nc->oc && nc->calc_buf && isdigit ((ut8)nc->calc_buf[nc->calc_i]);
-		if (!exponent_sign && c != '_' && c != ':' && c != '.' && !isalnum ((ut8)c)) {
+		if (!exp_sign && c != '_' && c != ':' && c != '.' && !isalnum ((ut8)c)) {
 			cin_putback (num, nc, c);
 			break;
 		}
 		if (i < R_NUMCALC_STRSZ) {
+			if (decimal && !epos) {
+				if (i > 0 && (c == 'e' || c == 'E')) {
+					epos = i;
+				} else if (i > 0 && c == '.' && !dot) {
+					dot = true;
+				} else if (!isdigit ((ut8)c)) {
+					decimal = false;
+				}
+			}
 			str[i++] = c;
 		}
 	}
 	str[i] = 0;
-	bool floating = isdigit ((ut8)*str) && (strchr (str, '.') || is_decimal_float_exponent (str));
+	bool floating = epos || (isdigit ((ut8)*str) && strchr (str, '.'));
 	if (floating) {
 		char *end;
 		d = strtod (str, &end);
+		const bool f32 = *end == 'f' && !end[1];
+		if (f32) {
+			// the f suffix is a float32, round once from the text
+			d = strtof (str, &end);
+			end++;
+		}
 		if (!*end) {
+			if (f32 && d >= (double)UT64_MAX) {
+				// too big for 64 bits, but its float32 bits are still wanted
+				n->n = UT64_MAX;
+				n->d = d;
+				return 1;
+			}
 			if (d >= (double)UT64_MAX) {
 				error (num, nc, "number won't fit into 64 bits");
 				d = 0;
 			}
 			*n = Nsetf (d);
+			return 1;
+		}
+		if (epos) {
+			// only hex like 1e5h can follow a decimal exponent
+			if (str[i - 1] == 'h') {
+				*n = Nset (calc_num_get (num, nc, str));
+			} else {
+				error (num, nc, "invalid float");
+				*n = Nset (0);
+			}
 			return 1;
 		}
 	}
