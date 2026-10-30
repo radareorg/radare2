@@ -276,8 +276,7 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 					n++;
 				}
 				if (n) {
-					if (!r_strbuf_reserve (sb, r_strbuf_length (sb) + n)
-							|| !r_strbuf_append_n (sb, (const char *)text, n)) {
+					if (!r_strbuf_append_n (sb, (const char *)text, n)) {
 						goto beach;
 					}
 					needle += n;
@@ -1233,9 +1232,6 @@ R_IPI RBinStrings *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RStrBu
 	} else {
 		get_strings_range (&options, 0, bf->size, NULL);
 		ht_up_free (strings_index);
-		if (ret) {
-			r_bin_strings_shrink (ret);
-		}
 		return ret;
 	}
 	R_VEC_FOREACH (&bo->sections_vec, section) {
@@ -1310,9 +1306,6 @@ R_IPI RBinStrings *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RStrBu
 		}
 	}
 	ht_up_free (strings_index);
-	if (ret) {
-		r_bin_strings_shrink (ret);
-	}
 	return ret;
 }
 
