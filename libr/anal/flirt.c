@@ -552,10 +552,18 @@ static bool module_match_buffer(RAnal *anal, const RFlirtModule *module, ut8 *b,
 		}
 	}
 
+	// entries in front of the next exported one share it, so find it once instead of per entry
+	RListIter *next_exported_it = r_list_head (module->public_functions);
 	// TODO referenced functions
 	r_list_foreach (module->public_functions, flirt_func_it, flirt_func) {
 		// Once the first module function is found, we need to go through the module->public_functions
 		// list to identify the others. See flirt doc for more information
+		if (next_exported_it == flirt_func_it) {
+			do {
+				next_exported_it = next_exported_it->n;
+			} while (next_exported_it && (((RFlirtFunction *)next_exported_it->data)->is_local
+				|| ((RFlirtFunction *)next_exported_it->data)->negative_offset));
+		}
 
 		next_module_function = r_anal_get_function_at ((RAnal *)anal, address + flirt_func->offset);
 		if (next_module_function) {
@@ -565,15 +573,9 @@ static bool module_match_buffer(RAnal *anal, const RFlirtModule *module, ut8 *b,
 
 			// get function size from flirt signature
 			ut64 flirt_fcn_size = (module->length > flirt_func->offset)? module->length - flirt_func->offset: 0;
-			RFlirtFunction *next_flirt_func;
-			RListIter *next_flirt_func_it = flirt_func_it->n;
-			while (next_flirt_func_it) {
-				next_flirt_func = next_flirt_func_it->data;
-				if (!next_flirt_func->is_local && !next_flirt_func->negative_offset) {
-					flirt_fcn_size = (next_flirt_func->offset > flirt_func->offset)? next_flirt_func->offset - flirt_func->offset: 0;
-					break;
-				}
-				next_flirt_func_it = next_flirt_func_it->n;
+			if (next_exported_it) {
+				const RFlirtFunction *next_flirt_func = next_exported_it->data;
+				flirt_fcn_size = (next_flirt_func->offset > flirt_func->offset)? next_flirt_func->offset - flirt_func->offset: 0;
 			}
 			// resize function if needed
 			next_module_function_size = r_anal_function_linear_size (next_module_function);
