@@ -307,7 +307,7 @@ a "mov rbx, [rbp + 0xbeef]" 488b9defbe0000
 a "mov rax, [rip + 0xbeef]" 488b05efbe0000
 ad "mov sil, 0" 40b600
 ad "mov dil, 0x42" 40b742
-aB "mov spl, bpl" 4088ec
+a "mov spl, bpl" 4088ec
 a "neg al" f6d8
 a "neg dh" f6de
 a "neg r15d" 41f7df
@@ -1151,6 +1151,15 @@ a "mov al, byte [rdi]" 8a07
 a "mov al, byte [rax]" 8a00
 a "mov cl, [rdi + 1]" 8a4f01
 a "mov sil, byte [rdi]" 408a37
+a "mov r10w, ax" 664189c2
+a "mov ax, r10w" 664489d0
+a "mov r10w, r15w" 664589fa
+a "mov sil, bl" 4088de
+a "mov sil, r11b" 4488de
+a "mov r11b, sil" 4188f3
+a "mov al, r8b" 4488c0
+a "mov r9b, r8b" 4588c1
+a "mov dil, spl" 4088e7
 a "mov ax, word [rdi]" 668b07
 a "mov eax, dword [rdi]" 8b07
 a "mov eax, dword [r12 + 4]" 418b442404
