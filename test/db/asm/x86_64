@@ -1409,6 +1409,13 @@ ad "cmove ax, bx" 660f44c3
 ad "cmove r8w, ax" 66440f44c0
 ad "cmovg rax, qword [rbx]" 480f4f03
 ad "cmovg r9, qword [rax]" 4c0f4f08
+a "cmove eax, dword [r13]" 410f444500
+a "cmove r10d, dword [r13+8]" 450f445508
+a "cmove rax, qword [r12+rcx*8]" 490f4404cc
+a "cmova eax, dword [rax+r10*4]" 420f470490
+a "cmovb eax, dword [rsp+0x10]" 0f42442410
+a "cmovl r9w, word [r8]" 66450f4c08
+a "cmovne eax, dword [esp+4]" 670f45442404
 a "fcmove st0, st1" dac9
 a "fcmovbe st0, st1" dad1
 a "fcmovu st0, st1" dad9
