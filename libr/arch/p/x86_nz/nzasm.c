@@ -3571,6 +3571,29 @@ static int opmov(RArchSession *a, ut8 *data, const Opcode *op) {
 			}
 		}
 
+		const Operand *dst = &op->operands[0];
+		const Operand *src = &op->operands[1];
+		if (bits == 64 && !(dst->type & OT_MEMORY)
+				&& (dst->type & OT_REGTYPE) == (OT_GPREG & OT_REGTYPE) && (src->type & OT_REGTYPE) == (OT_GPREG & OT_REGTYPE)
+				&& (dst->type & src->type & (OT_BYTE | OT_WORD))) {
+			// 8 and 16-bit registers: 0x66 goes before REX, which r8-r15 and spl, bpl, sil and dil need
+			const bool byte = dst->type & OT_BYTE;
+			const int rexbits = (dst->extended? 1: 0) | (src->extended? 4: 0);
+			if (!byte) {
+				data[l++] = 0x66;
+			}
+			if (rexbits || (byte && (dst->rex_prefixed || src->rex_prefixed))) {
+				if (byte && ((dst->reg >= 4 && !dst->rex_prefixed && !dst->extended)
+						|| (src->reg >= 4 && !src->rex_prefixed && !src->extended))) {
+					return -1; // ah, ch, dh and bh can't be encoded with a REX prefix
+				}
+				data[l++] = 0x40 | rexbits;
+			}
+			data[l++] = byte? 0x88: 0x89;
+			data[l++] = 0xc0 | (src->reg & 7) << 3 | (dst->reg & 7);
+			return l;
+		}
+
 		if (bits == 64) {
 			if (op->operands[0].extended) {
 				rex = 1;
