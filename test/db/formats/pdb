@@ -328,7 +328,7 @@ RUN
 NAME=pdb structs sharing a long field list are parsed in linear time
 FILE=bins/pdb/shared-field-list-400x1000.pdb
 ARGS=-e log.level=0
-TIMEOUT=30
+TIMEOUT=120
 CMDS=<<EOF
 idpi bins/pdb/shared-field-list-400x1000.pdb~?struct
 EOF

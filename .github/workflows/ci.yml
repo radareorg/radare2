@@ -230,7 +230,7 @@ jobs:
         ninja -C build-nogpl
   macos-test:
     runs-on: macos-15-intel
-    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-') || startsWith(github.head_ref, 'ci-')
     steps:
     - name: Checkout
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -239,9 +239,15 @@ jobs:
         python3 -m pip install r2pipe --break-system-packages
         brew install pkg-config
     - name: Building Radare2
-      run: export CFLAGS="-O2"; sys/install.sh
+      run: export CFLAGS="-O2"; sys/install.sh --without-pull
     - name: Running tests
-      run: make tests
+      run: R2R_JOBS=4 make tests
+    - name: Upload macOS test report
+      if: always()
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+      with:
+        name: macos-test-report
+        path: test/results.json
   build-rpath-linux:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     name: linux-rpath
