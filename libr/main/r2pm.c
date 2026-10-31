@@ -1333,10 +1333,10 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global, bool binar
 	free (pkgdir);
 	int res = r_sandbox_system (s, 1);
 	free (s);
+#endif
 	if (res == 0) {
 		r2pm_register (pkg, global, false);
 	}
-#endif
 	free (script);
 	free (srcdir);
 	return res;
