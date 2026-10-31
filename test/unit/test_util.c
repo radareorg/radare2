@@ -663,6 +663,23 @@ bool test_session_pidfile_symlink(void) {
 	mu_end;
 }
 
+bool test_file_copy(void) {
+#if R2__UNIX__ && !__wasi__
+	const char *src = "copy_src!$`\"\\";
+	const char *dst = "copy_dst!";
+	unlink (dst);
+	mu_assert_true (r_file_dump (src, (const ut8 *)"hello", 5, false), "cannot create source file");
+	const bool copied = r_file_copy (src, dst);
+	char *data = r_file_slurp (dst, NULL);
+	unlink (src);
+	unlink (dst);
+	mu_assert_true (copied, "copy a file whose name has shell metacharacters");
+	mu_assert_streq (data, "hello", "copied contents");
+	free (data);
+#endif
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_ignore_prefixes);
 	mu_run_test (test_remove_r2_prefixes);
@@ -686,6 +703,7 @@ int all_tests(void) {
 	mu_run_test (test_sandbox_symlink_path);
 	mu_run_test (test_file_rm_rf_symlink);
 	mu_run_test (test_session_pidfile_symlink);
+	mu_run_test (test_file_copy);
 	return tests_passed != tests_run;
 }
 
