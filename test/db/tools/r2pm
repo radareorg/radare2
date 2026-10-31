@@ -74,8 +74,6 @@ REQUIRE=windows
 FILE=-
 CMDS=<<EOF
 rmrf r2pm-win-register-r2r
-mkdir -p r2pm-win-register-r2r/git/winregister-ok
-mkdir -p r2pm-win-register-r2r/git/winregister-fail
 %R2PM_DBDIR=scripts/r2pm/radare2-pm/db
 %R2PM_GITDIR=r2pm-win-register-r2r/git
 %XDG_DATA_HOME=r2pm-win-register-r2r/data

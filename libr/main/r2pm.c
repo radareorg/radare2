@@ -1289,15 +1289,20 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global, bool binar
 	}
 	script = r_str_replace_all (script, "\n", " && ");
 
-	char *dirname = r2pm_get (pkg, "\nR2PM_DIR ", TT_VALUE);
-	char *esrcdir = r_str_escape_sh (srcdir);
-	char *etarget = r_str_escape_sh (dirname? dirname: pkg);
-	char *s = (esrcdir && etarget)
-		? r_str_newf ("cd /d \"%s\" && cd \"%s\" && %s", esrcdir, etarget, script)
+	char *pkgdir = have_builddir? r2pm_source_dir (srcdir, pkg): NULL;
+	if (have_builddir && !r_file_is_directory (pkgdir)) {
+		R_LOG_ERROR ("Cannot find directory: %s", pkgdir);
+		free (pkgdir);
+		free (script);
+		free (srcdir);
+		return 1;
+	}
+	char *epkgdir = r_str_escape_sh (pkgdir);
+	char *s = (have_builddir && epkgdir)
+		? r_str_newf ("cd /d \"%s\" && %s", epkgdir, script)
 		: r_str_newf ("%s", script);
-	free (esrcdir);
-	free (etarget);
-	free (dirname);
+	free (epkgdir);
+	free (pkgdir);
 	int res = r_sandbox_system (s, 1);
 	free (s);
 #else
