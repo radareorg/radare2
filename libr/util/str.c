@@ -1539,7 +1539,7 @@ R_API char *r_str_escape_sh(const char *buf) {
 	while (*p) {
 		switch (*p) {
 #if R2__UNIX__
-		case '!':
+		// '!' needs no escape: sh -c does no history expansion
 		case '$':
 		case '`':
 #endif
