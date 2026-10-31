@@ -1012,11 +1012,14 @@ a "cmovs eax, dword eax" 0f48c0
 a "cmova eax, [eax*2]" 0f470400
 a "cmovae eax, [ecx+4]" 0f434104
 a "cmovb eax, [edx*4+edx]" 0f420492
-a "cmovbe eax, [ecx*8]" 0f4604cd
+a "cmovbe eax, [ecx*8]" 0f4604cd00000000
 a "cmove eax, [ebx*2+44]" 0f44441b2c
 a "cmovg ecx, [eax*4+656]" 0f4f0c8590020000
 a "cmovge edx, [ebp]" 0f4d5500
 a "cmovl eax, [ebp*2+88]" 0f4c442d58
+a "cmovne eax, dword [esp+4]" 0f45442404
+a "cmovl ax, word [ebx+esi*2]" 660f4c0473
+a "cmove eax, dword [0x1000]" 0f440500100000
 ad "cmp al, 0" 3c00
 ad "cmp al, byte [eax]" 3a00
 ad "cmp byte [eax], al" 3800

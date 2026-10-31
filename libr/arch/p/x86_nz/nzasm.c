@@ -1708,6 +1708,33 @@ static int opcmov(RArchSession *a, ut8 *data, const Opcode *op) {
 		data [l++] = 0x4f;
 	}
 
+	const Operand *mem = &op->operands[1];
+	const bool absolute = mem->regs[0] == X86R_UNDEFINED && mem->regs[1] == X86R_UNDEFINED;
+	if ((mem->type & OT_MEMORY) && (use_op_reg_mem (a->config->bits, mem) || (a->config->bits == 32 && absolute))) {
+		// op_reg_mem writes the prefixes, REX, ModRM, SIB and displacement around 0x0f, the condition goes after it
+		const ut8 cc = data[l - 1];
+		Operand m = *mem;
+		if (m.scale[0] == 2 && m.regs[1] == X86R_UNDEFINED) {
+			// [reg*2] as [reg+reg], without the disp32 a lone index needs
+			m.scale[0] = m.scale[1] = 1;
+			m.regs[1] = m.regs[0];
+			m.regs_ext[1] = m.regs_ext[0];
+		}
+		ut8 enc[16];
+		int n = op_reg_mem (a->config->bits, enc, &op->operands[0], &m, 0x0f);
+		if (n < 0) {
+			return -1;
+		}
+		int p = 0;
+		while (enc[p] != 0x0f) {
+			p++;
+		}
+		memcpy (data, enc, p + 1);
+		data[p + 1] = cc;
+		memcpy (data + p + 2, enc + p + 1, n - p - 1);
+		return n + 1;
+	}
+
 	if (op->operands[0].type & OT_REGALL) {
 		if (op->operands[1].type & OT_MEMORY) {
 			if (op->operands[1].scale[0] > 1) {
