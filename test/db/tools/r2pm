@@ -69,6 +69,31 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=r2pm Windows source install registers only on success
+REQUIRE=windows
+FILE=-
+CMDS=<<EOF
+rmrf r2pm-win-register-r2r
+mkdir -p r2pm-win-register-r2r/git/winregister-ok
+mkdir -p r2pm-win-register-r2r/git/winregister-fail
+%R2PM_DBDIR=scripts/r2pm/radare2-pm/db
+%R2PM_GITDIR=r2pm-win-register-r2r/git
+%XDG_DATA_HOME=r2pm-win-register-r2r/data
+%R2PM_OFFLINE=1
+%R2_LOG_LEVEL=1
+r2pm -qi winregister-ok
+r2pm -ql
+r2pm -qi winregister-fail
+r2pm -ql
+rmrf r2pm-win-register-r2r
+EOF
+EXPECT=<<EOF
+winregister-ok
+winregister-ok
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=r2pm -H R2PM_GITDIR
 FILE=-
 CMDS=%R2PM_GITDIR=test;r2pm -H R2PM_GITDIR

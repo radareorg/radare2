@@ -1287,7 +1287,7 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global, bool binar
 		free (srcdir);
 		return 1;
 	}
-	script = r_str_replace_all (script, "\n", " & ");
+	script = r_str_replace_all (script, "\n", " && ");
 
 	char *dirname = r2pm_get (pkg, "\nR2PM_DIR ", TT_VALUE);
 	char *esrcdir = r_str_escape_sh (srcdir);
