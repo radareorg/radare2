@@ -434,6 +434,8 @@ R_API void r2r_subprocess_kill(R2RSubprocess *proc) {
 R_API void r2r_subprocess_stdin_write(R2RSubprocess *proc, const ut8 *buf, size_t buf_size) {
 	DWORD read;
 	WriteFile (proc->stdin_write, buf, buf_size, &read, NULL);
+	CloseHandle (proc->stdin_write);
+	proc->stdin_write = NULL;
 }
 
 R_API R2RProcessOutput *r2r_subprocess_drain(R2RSubprocess *proc) {
@@ -449,7 +451,9 @@ R_API R2RProcessOutput *r2r_subprocess_drain(R2RSubprocess *proc) {
 
 R_API void r2r_subprocess_free(R2RSubprocess *proc) {
 	if (R_LIKELY (proc)) {
-		CloseHandle (proc->stdin_write);
+		if (proc->stdin_write) {
+			CloseHandle (proc->stdin_write);
+		}
 		CloseHandle (proc->stdout_read);
 		CloseHandle (proc->stderr_read);
 		CloseHandle (proc->proc);
@@ -494,11 +498,29 @@ static RThreadLock *subprocs_mutex = NULL;
 static int sigchld_pipe[2];
 static RThread *sigchld_thread;
 
+static bool subprocess_pipe(int fds[2]) {
+	if (pipe (fds) == -1) {
+		return false;
+	}
+	if (fcntl (fds[0], F_SETFD, FD_CLOEXEC) == -1 || fcntl (fds[1], F_SETFD, FD_CLOEXEC) == -1) {
+		int saved_errno = errno;
+		close (fds[0]);
+		close (fds[1]);
+		fds[0] = fds[1] = -1;
+		errno = saved_errno;
+		return false;
+	}
+	return true;
+}
+
 static void handle_sigchld(int sig) {
+	int saved_errno = errno;
 	ut8 b = 1;
 	if (write (sigchld_pipe[1], &b, 1) != 1) {
+		errno = saved_errno;
 		return;
 	}
+	errno = saved_errno;
 }
 
 static void subprocs_remove(R2RSubprocess *proc) {
@@ -631,7 +653,7 @@ R_API bool r2r_subprocess_init(void) {
 	if (!subprocs_mutex) {
 		return false;
 	}
-	if (pipe (sigchld_pipe) == -1) {
+	if (!subprocess_pipe (sigchld_pipe)) {
 		r_sys_perror ("subprocess-init pipe");
 		r_th_lock_free (subprocs_mutex);
 		return false;
@@ -757,7 +779,7 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	r_strbuf_reserve (&proc->out, 32768);
 	r_strbuf_reserve (&proc->err, 32768);
 #endif
-	if (pipe (proc->killpipe) == -1) {
+	if (!subprocess_pipe (proc->killpipe)) {
 		r_sys_perror ("subproc-start pipe");
 		goto error;
 	}
@@ -765,17 +787,13 @@ R_API R2RSubprocess *r2r_subprocess_start(
 		r_sys_perror ("subproc-start fcntl");
 		goto error;
 	}
-	/* Prevent these internal notif pipes from being inherited by children */
-	(void)fcntl (proc->killpipe[0], F_SETFD, FD_CLOEXEC);
-	(void)fcntl (proc->killpipe[1], F_SETFD, FD_CLOEXEC);
-
-	if (pipe (stdin_pipe) == -1) {
+	if (!subprocess_pipe (stdin_pipe)) {
 		r_sys_perror ("subproc-start pipe");
 		goto error;
 	}
 	proc->stdin_fd = stdin_pipe[1];
 
-	if (pipe (stdout_pipe) == -1) {
+	if (!subprocess_pipe (stdout_pipe)) {
 		r_sys_perror ("subproc-start pipe");
 		goto error;
 	}
@@ -785,7 +803,7 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	}
 	proc->stdout_fd = stdout_pipe[0];
 
-	if (pipe (stderr_pipe) == -1) {
+	if (!subprocess_pipe (stderr_pipe)) {
 		r_sys_perror ("subproc-start pipe");
 		goto error;
 	}
@@ -924,7 +942,10 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			if (now >= timeout_abs) {
 				break;
 			}
-			ut64 usec_diff = timeout_abs - r_time_now_mono ();
+			ut64 usec_diff = timeout_abs - now;
+			if (poll_child) {
+				usec_diff = R_MIN (usec_diff, 100000);
+			}
 			timeout_s.tv_sec = usec_diff / R_USEC_PER_SEC;
 			timeout_s.tv_usec = usec_diff % R_USEC_PER_SEC;
 			timeout = &timeout_s;
@@ -941,9 +962,7 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			break;
 		}
 
-		bool timedout = true;
 		if (FD_ISSET (proc->stdout_fd, &rfds)) {
-			timedout = false;
 			char buf[4096];
 			ssize_t sz = read (proc->stdout_fd, buf, sizeof (buf));
 			if (sz < 0) {
@@ -956,7 +975,6 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			}
 		}
 		if (FD_ISSET (proc->stderr_fd, &rfds)) {
-			timedout = false;
 			char buf[4096];
 			ssize_t sz = read (proc->stderr_fd, buf, sizeof (buf));
 			if (sz < 0) {
@@ -969,26 +987,16 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			}
 		}
 		if (FD_ISSET (proc->killpipe[0], &rfds)) {
-			timedout = false;
 			child_dead = true;
 		}
 		if (!child_dead && (poll_child || r == 0)) {
 			child_dead = subprocess_try_wait (proc);
-			if (child_dead) {
-				timedout = false;
-			}
-		}
-		if (timedout) {
-			if (timeout_ms != UT64_MAX) {
-				break;
-			}
-			continue;
 		}
 	}
 	if (r < 0) {
 		r_sys_perror ("sp-wait select");
 	}
-	return child_dead;
+	return stdout_eof && stderr_eof && child_dead;
 }
 
 R_API void r2r_subprocess_kill(R2RSubprocess *proc) {
@@ -999,8 +1007,59 @@ R_API void r2r_subprocess_kill(R2RSubprocess *proc) {
 }
 
 R_API void r2r_subprocess_stdin_write(R2RSubprocess *proc, const ut8 *buf, size_t buf_size) {
-	if (write (proc->stdin_fd, buf, buf_size) != buf_size) {
-		// another ignored result
+	if (!buf_size) {
+		close (proc->stdin_fd);
+		proc->stdin_fd = -1;
+		return;
+	}
+	bool can_write = true;
+#if defined(F_SETNOSIGPIPE)
+	can_write = fcntl (proc->stdin_fd, F_SETNOSIGPIPE, 1) != -1;
+#elif !__wasi__
+	sigset_t blocked, previous, pending;
+	sigemptyset (&blocked);
+	sigaddset (&blocked, SIGPIPE);
+#if HAVE_PTHREAD
+	can_write = !pthread_sigmask (SIG_BLOCK, &blocked, &previous);
+#else
+	can_write = !sigprocmask (SIG_BLOCK, &blocked, &previous);
+#endif
+	bool already_pending = false;
+	if (can_write) {
+		sigpending (&pending);
+		already_pending = sigismember (&pending, SIGPIPE) == 1;
+	}
+#endif
+	if (can_write) {
+#if !defined(F_SETNOSIGPIPE) && !__wasi__
+		bool broken_pipe = false;
+#endif
+		while (buf_size) {
+			ssize_t written = write (proc->stdin_fd, buf, R_MIN (buf_size, ST32_MAX));
+			if (written > 0) {
+				buf += written;
+				buf_size -= written;
+			} else if (written < 0 && errno == EINTR) {
+				continue;
+			} else {
+#if !defined(F_SETNOSIGPIPE) && !__wasi__
+				broken_pipe = written < 0 && errno == EPIPE;
+#endif
+				break;
+			}
+		}
+#if !defined(F_SETNOSIGPIPE) && !__wasi__
+		// Consume only a SIGPIPE generated by this write before restoring the mask.
+		if (broken_pipe && !already_pending && !sigpending (&pending) && sigismember (&pending, SIGPIPE) == 1) {
+			int signal_number;
+			sigwait (&blocked, &signal_number);
+		}
+#if HAVE_PTHREAD
+		pthread_sigmask (SIG_SETMASK, &previous, NULL);
+#else
+		sigprocmask (SIG_SETMASK, &previous, NULL);
+#endif
+#endif
 	}
 	close (proc->stdin_fd);
 	proc->stdin_fd = -1;
@@ -1098,6 +1157,7 @@ static R2RProcessOutput *subprocess_runner(const char *file, const char *args[],
 	if (!proc) {
 		return NULL;
 	}
+	r2r_subprocess_stdin_write (proc, (const ut8 *)"", 0);
 	bool timeout = !r2r_subprocess_wait (proc, timeout_ms);
 	if (timeout) {
 		r2r_subprocess_kill (proc);
@@ -1213,7 +1273,7 @@ static const char **rlist_to_argv(RList *list, size_t *size) {
 	return arr;
 }
 
-static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, int repeat, const char *cmds, RList *files, RList *extra_args, RList *extra_env, bool load_plugins, R2RCmdRunner runner, void *user) {
+static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, const char *cmds, RList *files, RList *extra_args, RList *extra_env, bool load_plugins, R2RCmdRunner runner, void *user) {
 	RList *args = r_list_new ();
 	RList *envvars = r_list_new ();
 	RList *envvals = r_list_new ();
@@ -1276,16 +1336,7 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, int 
 	const char **envk = rlist_to_argv (envvars, &env_size);
 	const char **envv = rlist_to_argv (envvals, &env_size);
 
-	R2RProcessOutput *out = NULL;
-	if (repeat > 1) {
-		int rep = repeat;
-		while (rep-- > 0) {
-			r2r_process_output_free (out);
-			out = runner (config->r2_cmd, argv, args_size, envk, envv, env_size, timeout_ms, user);
-		}
-	} else {
-		out = runner (config->r2_cmd, argv, args_size, envk, envv, env_size, timeout_ms, user);
-	}
+	R2RProcessOutput *out = runner (config->r2_cmd, argv, args_size, envk, envv, env_size, timeout_ms, user);
 
 #if R2__WINDOWS__
 	free (wcmds);
@@ -1334,9 +1385,13 @@ R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test,
 	if (test->env.value) {
 		extra_env = r_str_split_duplist (test->env.value, ";", true);
 	}
-	int repeat = test->repeat.value;
+	ut64 repeat = test->repeat.value;
 	const ut64 timeout_ms = test->timeout.set? test->timeout.value * 1000: config->timeout_ms;
-	R2RProcessOutput *out = run_r2_test (config, timeout_ms, repeat, test->cmds.value, files, extra_args, extra_env, test->load_plugins, runner, user);
+	R2RProcessOutput *out = NULL;
+	do {
+		r2r_process_output_free (out);
+		out = run_r2_test (config, timeout_ms, test->cmds.value, files, extra_args, extra_env, test->load_plugins, runner, user);
+	} while (repeat-- > 1 && r2r_check_cmd_test (out, test));
 	r_list_free (extra_args);
 	r_list_free (files);
 	r_list_free (extra_env);
@@ -1375,7 +1430,7 @@ R_API bool r2r_check_jq_available(void) {
 	}
 	free (jq_bin);
 
-	const char *args[] = { "." };
+	const char *args[] = { "empty" };
 	const char *invalid_json = "this is not json lol";
 	R2RSubprocess *proc = r2r_subprocess_start (JQ_CMD, args, 1, NULL, NULL, 0);
 	if (!proc) {
@@ -1418,7 +1473,7 @@ R_API R2RProcessOutput *r2r_run_json_test(R2RRunConfig *config, R2RJsonTest *tes
 	RList *files = r_list_new ();
 	r_list_push (files, (void *)config->json_test_file);
 	// TODO: config->timeout_ms is already inside config, no need to pass it twice! chk other calls
-	R2RProcessOutput *ret = run_r2_test (config, config->timeout_ms, 1, test->cmd, files, NULL, NULL, test->load_plugins, runner, user);
+	R2RProcessOutput *ret = run_r2_test (config, config->timeout_ms, test->cmd, files, NULL, NULL, test->load_plugins, runner, user);
 	r_list_free (files);
 	return ret;
 }
@@ -1427,7 +1482,7 @@ R_API R2RProcessOutput *r2r_run_json_test_nofile(R2RRunConfig *config, R2RJsonTe
 	RList *files = r_list_new ();
 	r_list_push (files, "--");
 	// TODO: config->timeout_ms is already inside config, no need to pass it twice! chk other calls
-	R2RProcessOutput *ret = run_r2_test (config, config->timeout_ms, 1, test->cmd, files, NULL, NULL, test->load_plugins, runner, user);
+	R2RProcessOutput *ret = run_r2_test (config, config->timeout_ms, test->cmd, files, NULL, NULL, test->load_plugins, runner, user);
 	r_list_free (files);
 	return ret;
 }
@@ -1443,7 +1498,7 @@ R_API bool r2r_check_json_test(R2RProcessOutput *out, R2RJsonTest *test) {
 	if (!out || out->ret != 0 || !out->out || !out->err || out->timeout) {
 		return false;
 	}
-	const char *args[] = { "." };
+	const char *args[] = { "empty" };
 	bool ret = false;
 	if (r2r_empty_json_check (out)) {
 		R2RSubprocess *proc = r2r_subprocess_start (JQ_CMD, args, 1, NULL, NULL, 0);
@@ -1605,7 +1660,7 @@ R_API R2RProcessOutput *r2r_run_fuzz_test(R2RRunConfig *config, const char *file
 	const char *cmd = "iH;aaa";
 	RList *files = r_list_new ();
 	r_list_push (files, (void *)file);
-	R2RProcessOutput *ret = run_r2_test (config, config->timeout_ms, 1, cmd, files, NULL, NULL, false, runner, user);
+	R2RProcessOutput *ret = run_r2_test (config, config->timeout_ms, cmd, files, NULL, NULL, false, runner, user);
 	r_list_free (files);
 	return ret;
 }
@@ -2061,7 +2116,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 	case R2R_TEST_TYPE_CMD:
 		if (config->skip_cmd) {
 			success = true;
-			ret->run_failed = false;
+			ret->run_skipped = true;
 		} else {
 			R2RCmdTest *cmd_test = test->cmd_test;
 			if (check_cmd_test_skip (config, cmd_test)) {
@@ -2080,7 +2135,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 	case R2R_TEST_TYPE_ASM:
 		if (config->skip_asm) {
 			success = true;
-			ret->run_failed = false;
+			ret->run_skipped = true;
 		} else {
 			R2RAsmTest *at = test->asm_test;
 			if (!require_check (at->require, config->capstone_version) || !rasm2_has_arch (config, at->arch)) {
@@ -2099,7 +2154,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 	case R2R_TEST_TYPE_JSON:
 		if (config->skip_json) {
 			success = true;
-			ret->run_failed = false;
+			ret->run_skipped = true;
 		} else {
 			R2RJsonTest *json_test = test->json_test;
 			R2RProcessOutput *out = r2r_run_json_test (config, json_test, subprocess_runner, NULL);
@@ -2122,7 +2177,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 	case R2R_TEST_TYPE_FUZZ:
 		if (config->skip_fuzz) {
 			success = true;
-			ret->run_failed = false;
+			ret->run_skipped = true;
 		} else {
 			R2RProcessOutput *out = r2r_run_fuzz_test (config, test->path, subprocess_runner, NULL);
 			success = r2r_check_fuzz_test (out);
@@ -2134,7 +2189,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 	case R2R_TEST_TYPE_LEAK:
 		if (config->skip_leak) {
 			success = true;
-			ret->run_failed = false;
+			ret->run_skipped = true;
 		} else {
 			R2RCmdTest *cmd_test = test->cmd_test;
 			if (check_cmd_test_skip (config, cmd_test)) {

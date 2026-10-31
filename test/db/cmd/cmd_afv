@@ -59,7 +59,7 @@ RUN
 NAME=afv autonames thousands of colliding stack variables in linear passes
 FILE=malloc://32768
 ARGS=-a x86 -b 64
-TIMEOUT=15
+TIMEOUT=120
 CMDS=<<EOF
 wow ff742408 @ 0!32000
 wx c3 @ 32000

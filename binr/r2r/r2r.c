@@ -17,7 +17,7 @@ static R2RState *Gstate = NULL;
 static const char *Goutput_file = NULL;
 
 #define JSON_TEST_FILE_DEFAULT "bins/elf/crackme0x00b"
-#define TIMEOUT_DEFAULT (60 * 60)
+#define TIMEOUT_DEFAULT 3600
 #define STRV(x) #x
 #define STR(x) STRV(x)
 #define WORKERS_DEFAULT_STR STR(WORKERS_DEFAULT)
@@ -95,7 +95,7 @@ static void helpvars(int workers_count) {
 		"R2R_SKIP_ASM=0      # do not run the rasm2 tests\n"
 		"R2R_SKIP_LEAK=0     # do not run the leak tests (valgrind)\n"
 		"R2R_JOBS=%d       # maximum parallel jobs\n"
-		"R2R_TIMEOUT=%d    # timeout after 1 minute (60 * 60)\n"
+		"R2R_TIMEOUT=%d    # default per-test timeout in seconds\n"
 		"R2R_OFFLINE=0       # same as passing -u\n"
 		"R2R_NETWORK=0       # run tests marked REQUIRE=network\n"
 		"R2R_SHALLOW=0       # skip 0-100%% random tests\n"
@@ -316,7 +316,7 @@ static R2ROptions r2r_options_init(void) {
 	}
 	free (r2r_timeout);
 	ut64 r2r_jobs = r_sys_getenv_asut64 ("R2R_JOBS");
-	if (r2r_jobs > 0) {
+	if (r2r_jobs > 0 && r2r_jobs <= ST32_MAX) {
 		opt.workers_count = r2r_jobs;
 	}
 	return opt;
@@ -1262,6 +1262,10 @@ int main(int argc, char **argv) {
 	if (arg_ind < 0) {
 		ret = arg_ind + 1; // when -1 return 0, when -2, return 1
 		goto cleanup;
+	}
+
+	if (opt.log_mode) {
+		setvbuf (stdout, NULL, _IOLBF, 0);
 	}
 
 	char *cwd = NULL;

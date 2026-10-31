@@ -242,14 +242,189 @@ bool test_r2r_asm_require(void) {
 	mu_end;
 }
 
+bool test_r2r_worker_count_overflow(void) {
+	char *previous = r_sys_getenv ("R2R_JOBS");
+	r_sys_setenv ("R2R_JOBS", "4294967296");
+	R2ROptions options = r2r_options_init ();
+	r_sys_setenv ("R2R_JOBS", previous);
+	free (previous);
+	int workers = options.workers_count;
+	r2r_options_fini (&options);
+	mu_assert ("oversized job count must not wrap to zero and stall the runner", workers > 0);
+	mu_end;
+}
+
+bool test_r2r_skipped_categories(void) {
+	R2RRunConfig config = { .skip_cmd = true, .skip_asm = true, .skip_json = true, .skip_fuzz = true, .skip_leak = true };
+	R2RCmdTest cmd = {0};
+	R2RAsmTest asm_test = {0};
+	R2RJsonTest json = {0};
+	R2RTest tests[] = {
+		{ .type = R2R_TEST_TYPE_CMD, .cmd_test = &cmd },
+		{ .type = R2R_TEST_TYPE_ASM, .asm_test = &asm_test },
+		{ .type = R2R_TEST_TYPE_JSON, .json_test = &json },
+		{ .type = R2R_TEST_TYPE_FUZZ },
+		{ .type = R2R_TEST_TYPE_LEAK, .cmd_test = &cmd },
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (tests); i++) {
+		R2RTestResultInfo *result = r2r_run_test (&config, &tests[i]);
+		bool skipped = result->run_skipped;
+		r2r_test_result_info_free (result);
+		mu_assert_true (skipped, "disabled category is skipped, not passed");
+	}
+	mu_end;
+}
+
+typedef struct {
+	int calls;
+	int ret;
+	bool timeout;
+	const char *output;
+} RepeatRunner;
+
+static R2RProcessOutput *fail_first_run(const char *file, const char *args[], size_t args_size, const char *envvars[], const char *envvals[], size_t env_size, ut64 timeout_ms, void *user) {
+	RepeatRunner *state = user;
+	bool first = !state->calls++;
+	R2RProcessOutput *out = R_NEW0 (R2RProcessOutput);
+	out->ret = first? state->ret: 0;
+	out->timeout = first && state->timeout;
+	out->out = strdup (first? state->output: "");
+	out->err = strdup ("");
+	return out;
+}
+
+bool test_r2r_repeat_failure(void) {
+	R2RRunConfig config = { .r2_cmd = "mock", .timeout_ms = 1000 };
+	R2RCmdTest test = { .cmds.value = "q", .repeat.value = 2, .expect.value = "" };
+	RepeatRunner cases[] = {
+		{ .ret = 1, .output = "" },
+		{ .timeout = true, .output = "" },
+		{ .output = "unexpected" },
+		{ .output = "" },
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (cases); i++) {
+		R2RProcessOutput *out = r2r_run_cmd_test (&config, &test, fail_first_run, &cases[i]);
+		bool passed = r2r_check_cmd_test (out, &test);
+		r2r_process_output_free (out);
+		mu_assert_eq (passed, i == 3, "check every repetition, including exit, timeout and output");
+		mu_assert_eq (cases[i].calls, i == 3? 2: 1, "stop repeating a failed test");
+	}
+	mu_end;
+}
+
+#if R2__UNIX__ && !__wasi__
+bool test_r2r_closed_stdin(void) {
+	mu_assert_true (r2r_subprocess_init (), "initialize subprocesses");
+	const char *args[] = { "-c", "exit 0" };
+	R2RSubprocess *proc = r2r_subprocess_start ("/bin/sh", args, R_ARRAY_SIZE (args), NULL, NULL, 0);
+	bool complete = proc && r2r_subprocess_wait (proc, 5000);
+	if (proc) {
+		r2r_subprocess_stdin_write (proc, (const ut8 *)"input", 5);
+		r2r_subprocess_free (proc);
+	}
+	r2r_subprocess_fini ();
+	mu_assert_true (complete, "a child that closes stdin must not kill the runner with SIGPIPE");
+	mu_end;
+}
+
+bool test_r2r_pending_sigpipe(void) {
+	int fds[2];
+	mu_assert_eq (pipe (fds), 0, "create a pipe");
+	close (fds[0]);
+	R2RSubprocess proc = { .stdin_fd = fds[1] };
+	sigset_t blocked, previous, pending, restored;
+	sigemptyset (&blocked);
+	sigaddset (&blocked, SIGPIPE);
+	r_signal_sigmask (SIG_BLOCK, &blocked, &previous);
+	raise (SIGPIPE);
+	r2r_subprocess_stdin_write (&proc, (const ut8 *)"input", 5);
+	sigpending (&pending);
+	r_signal_sigmask (SIG_BLOCK, NULL, &restored);
+	bool kept_pending = sigismember (&pending, SIGPIPE) == 1;
+	if (kept_pending) {
+		int signal_number;
+		sigwait (&blocked, &signal_number);
+	}
+	r_signal_sigmask (SIG_SETMASK, &previous, NULL);
+	mu_assert_true (kept_pending, "preserve a SIGPIPE that was pending before the write");
+	mu_assert_eq (sigismember (&restored, SIGPIPE), 1, "preserve the caller's signal mask");
+	mu_assert_eq (proc.stdin_fd, -1, "close stdin after a failed write");
+	mu_end;
+}
+
+bool test_r2r_descendant_timeout(void) {
+	mu_assert_true (r2r_subprocess_init (), "initialize subprocesses");
+	const char *args[] = { "-c", "exec 3<&0; read value <&3 &" };
+	R2RSubprocess *proc = r2r_subprocess_start ("/bin/sh", args, R_ARRAY_SIZE (args), NULL, NULL, 0);
+	bool started = proc != NULL;
+	bool complete = proc && r2r_subprocess_wait (proc, 500);
+	if (proc) {
+		r2r_subprocess_kill (proc);
+		r2r_subprocess_free (proc);
+	}
+	r2r_subprocess_fini ();
+	mu_assert_true (started, "start child with a descendant holding its output pipes");
+	mu_assert_false (complete, "exit of the direct child must not hide an output-drain timeout");
+	mu_end;
+}
+
+bool test_r2r_runner_stdin_eof(void) {
+	mu_assert_true (r2r_subprocess_init (), "initialize subprocesses");
+	const char *args[] = { "-c", "cat" };
+	R2RProcessOutput *out = subprocess_runner ("/bin/sh", args, R_ARRAY_SIZE (args), NULL, NULL, 0, 500, NULL);
+	bool complete = out && !out->timeout && out->ret == 0;
+	r2r_process_output_free (out);
+	r2r_subprocess_fini ();
+	mu_assert_true (complete, "commands without input must see stdin EOF");
+	mu_end;
+}
+
+bool test_r2r_sibling_pipe_inheritance(void) {
+	mu_assert_true (r2r_subprocess_init (), "initialize subprocesses");
+	const char *reader_args[] = { "-c", "read value" };
+	R2RSubprocess *reader = r2r_subprocess_start ("/bin/sh", reader_args, R_ARRAY_SIZE (reader_args), NULL, NULL, 0);
+	bool isolated = false;
+	if (reader) {
+		r_strf_var (command, 80, "test ! -e /dev/fd/%d", reader->stdin_fd);
+		const char *args[] = { "-c", command };
+		R2RSubprocess *sibling = r2r_subprocess_start ("/bin/sh", args, R_ARRAY_SIZE (args), NULL, NULL, 0);
+		if (sibling) {
+			isolated = r2r_subprocess_wait (sibling, 5000) && sibling->ret == 0;
+			r2r_subprocess_free (sibling);
+		}
+		r2r_subprocess_stdin_write (reader, (const ut8 *)"\n", 1);
+		if (!r2r_subprocess_wait (reader, 5000)) {
+			r2r_subprocess_kill (reader);
+		}
+		r2r_subprocess_free (reader);
+	}
+	r2r_subprocess_fini ();
+	mu_assert_true (isolated, "a sibling must not inherit another child's stdin writer");
+	mu_end;
+}
+#endif
+
 int all_tests(void) {
 	mu_run_test (test_r2r_database_load_cmd);
 	mu_run_test (test_r2r_fix);
 	mu_run_test (test_r2r_require);
 	mu_run_test (test_r2r_asm_require);
+	mu_run_test (test_r2r_worker_count_overflow);
+	mu_run_test (test_r2r_skipped_categories);
+	mu_run_test (test_r2r_repeat_failure);
+#if R2__UNIX__ && !__wasi__
+	mu_run_test (test_r2r_closed_stdin);
+	mu_run_test (test_r2r_pending_sigpipe);
+	mu_run_test (test_r2r_descendant_timeout);
+	mu_run_test (test_r2r_sibling_pipe_inheritance);
+	mu_run_test (test_r2r_runner_stdin_eof);
+#endif
 	return tests_passed != tests_run;
 }
 
 int main(int argc, char **argv) {
+	setvbuf (stdout, NULL, _IONBF, 0);
 	return all_tests();
 }
