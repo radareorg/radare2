@@ -4189,6 +4189,32 @@ static int opset(RArchSession *a, ut8 *data, const Opcode *op) {
 	} else {
 		return -1;
 	}
+	if (a->config->bits != 16) {
+		// setcc always writes a byte: op_rm_ext adds REX, SIB and displacement, then 0x0f goes before the opcode
+		Operand rm = op->operands[0];
+		if (rm.type & OT_MEMORY) {
+			if (rm.dest_size & ALL_SIZE & ~OT_BYTE) {
+				return -1;
+			}
+			rm.dest_size = OT_BYTE;
+		} else if (!(rm.type & OT_BYTE)) {
+			return -1;
+		}
+		ut8 enc[16];
+		const ut8 cc = data[1];
+		int n = op_rm_ext (a->config->bits, enc, &rm, 0, cc, cc);
+		if (n < 0) {
+			return -1;
+		}
+		int p = 0;
+		while (enc[p] != cc) {
+			data[p] = enc[p]; // 0x67 and REX
+			p++;
+		}
+		data[p] = 0x0f;
+		memcpy (data + p + 1, enc + p, n - p);
+		return n + 1;
+	}
 	if (!(op->operands[0].type & OT_MEMORY)) {
 		mod = 3;
 		reg = op->operands[0].reg;

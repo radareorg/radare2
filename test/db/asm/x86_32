@@ -1899,6 +1899,9 @@ a "setns byte [eax]" 0f9900
 a "seto byte [eax]" 0f9000
 a "setp byte [eax]" 0f9a00
 a "sets byte [eax]" 0f9800
+a "sete byte [ebp-4]" 0f9445fc
+a "setne byte [esp+8]" 0f95442408
+a "setg byte [0x1000]" 0f9f0500100000
 ad "sfence" 0faef8
 a "sgdt [eax]" 0f0100
 aB "shld dword [eax], eax, 0" 0fa40000

@@ -445,6 +445,15 @@ a "test byte [rax+rcx*4], dil" 40843c88
 a "test rsi, qword [rbp-4]" 488575fc
 a "test byte [0x1000], ah" 84242500100000
 a "test word [rip+0x100], r8w" 6644850500010000
+a "sete r9b" 410f94c1
+a "setb r15b" 410f92c7
+a "sete sil" 400f94c6
+a "sets dil" 400f98c7
+a "setg byte [rbp-1]" 0f9f45ff
+a "setl byte [r12]" 410f9c0424
+a "setnp byte [r13]" 410f9b4500
+a "seta byte [rax+rcx*4+0x100]" 0f97848800010000
+a "sete byte [ebp-4]" 670f9445fc
 a "xchg sil, byte [r13+0x10]" 41867510
 a "xchg rsi, qword [r12]" 49873424
 a "xchg byte [r12], al" 41860424
