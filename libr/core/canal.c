@@ -2697,7 +2697,7 @@ static void fcn_print(RCore *core, RAnalFunction *fcn, bool quiet) {
 		const char *pin = fcn->pin? fcn->pin: "";
 		const char *pinsep = fcn->pin? " ": "";
 		if (use_colors) {
-			RAnalBlock *firstBlock = (RVecAnalBlockPtr_empty (&fcn->bbs)? NULL: *RVecAnalBlockPtr_at (&fcn->bbs, 0));
+			RAnalBlock *firstBlock = r_anal_function_bbget_at (core->anal, fcn, fcn->addr);
 			char *color = firstBlock? r_cons_rgb_str (core->cons, NULL, 0, &firstBlock->color): strdup ("");
 			r_cons_printf (core->cons, "%s0x%08"PFMT64x" %4d %6"PFMT64d" %s%s%s%s\n",
 					color, fcn->addr, (int)RVecAnalBlockPtr_length (&fcn->bbs),

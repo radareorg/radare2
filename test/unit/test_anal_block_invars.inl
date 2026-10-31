@@ -38,6 +38,9 @@ static bool block_check_invariants(RAnal *anal) {
 		ut64 realsz = 0;
 		R_VEC_FOREACH (&fcn->bbs, blockiter) {
 			block = *blockiter;
+			if (fcn->bbs_sorted && blockiter != R_VEC_START_ITER (&fcn->bbs)) {
+				mu_assert ("function blocks out of address order", blockiter[-1]->addr < block->addr);
+			}
 			RAnalBlock **blockiter2;
 			RAnalBlock *block2;
 			if (block->addr < min) {

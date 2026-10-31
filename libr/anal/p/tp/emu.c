@@ -19,11 +19,6 @@ static void tp_mem_type_kv_free(HtUPKv *kv) {
 	free (kv->value);
 }
 
-static int bb_cmpaddr(RAnalBlock *const *_a, RAnalBlock *const *_b) {
-	const RAnalBlock *a = *_a, *b = *_b;
-	return a->addr > b->addr? 1: (a->addr < b->addr? -1: 0);
-}
-
 typedef struct {
 	HtUP *blocks;
 	HtUU *seen;
@@ -845,7 +840,7 @@ TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_ops, TPE
 	RVecBuf_init (&buf);
 	RVecUT64 bblist;
 	RVecUT64_init (&bblist);
-	RVecAnalBlockPtr_sort (&fcn->bbs, bb_cmpaddr);
+	r_anal_function_sort_blocks (fcn);
 	size_t bblist_size = (int)RVecAnalBlockPtr_length (&fcn->bbs); // TODO: Use ut64
 	RVecUT64_reserve (&bblist, bblist_size);
 	RAnalBlock *bb;
