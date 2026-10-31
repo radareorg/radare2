@@ -1288,23 +1288,6 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global, bool binar
 		return 1;
 	}
 	script = r_str_replace_all (script, "\n", " && ");
-
-	char *pkgdir = have_builddir? r2pm_source_dir (srcdir, pkg): NULL;
-	if (have_builddir && !r_file_is_directory (pkgdir)) {
-		R_LOG_ERROR ("Cannot find directory: %s", pkgdir);
-		free (pkgdir);
-		free (script);
-		free (srcdir);
-		return 1;
-	}
-	char *epkgdir = r_str_escape_sh (pkgdir);
-	char *s = (have_builddir && epkgdir)
-		? r_str_newf ("cd /d \"%s\" && %s", epkgdir, script)
-		: r_str_newf ("%s", script);
-	free (epkgdir);
-	free (pkgdir);
-	int res = r_sandbox_system (s, 1);
-	free (s);
 #else
 	char *script = r2pm_get (pkg, "\nR2PM_INSTALL() {\n", TT_CODEBLOCK);
 	if (!script) {
@@ -1315,13 +1298,8 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global, bool binar
 	R_LOG_INFO ("SCRIPT=<<EOF");
 	R_LOG_INFO ("%s", script);
 	R_LOG_INFO ("EOF");
-	char *pkgdir = r_str_newf ("%s/%s", srcdir, pkg);
-	char *dirname = r2pm_get (pkg, "\nR2PM_DIR ", TT_VALUE);
-	if (dirname) {
-		free (pkgdir);
-		pkgdir = r_str_newf ("%s/%s/%s", srcdir, pkg, dirname);
-	}
-	free (dirname);
+#endif
+	char *pkgdir = have_builddir? r2pm_source_dir (srcdir, pkg): NULL;
 	if (have_builddir && !r_file_is_directory (pkgdir)) {
 		R_LOG_ERROR ("Cannot find directory: %s", pkgdir);
 		free (pkgdir);
@@ -1329,16 +1307,20 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global, bool binar
 		free (srcdir);
 		return 1;
 	}
-	char *epkgdir = r_str_escape_sh (pkgdir);
-	char *s = (have_builddir && epkgdir)
+	char *epkgdir = pkgdir? r_str_escape_sh (pkgdir): NULL;
+#if R2__WINDOWS__
+	char *s = epkgdir
+		? r_str_newf ("cd /d \"%s\" && %s", epkgdir, script)
+		: strdup (script);
+#else
+	char *s = epkgdir
 		? r_str_newf ("cd \"%s\"\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\nexit 1\n}\n%s", epkgdir, script)
 		: r_str_newf ("export MAKE=make\nR2PM_FAIL(){\n  echo $@\nexit 1\n}\n%s", script);
+#endif
 	free (epkgdir);
-	// if no srcdir is defined because no file to pull just dont cd
 	free (pkgdir);
 	int res = r_sandbox_system (s, 1);
 	free (s);
-#endif
 	if (res == 0) {
 		r2pm_register (pkg, global, false);
 	}

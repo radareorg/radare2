@@ -79,6 +79,7 @@ rmrf r2pm-win-register-r2r
 %XDG_DATA_HOME=r2pm-win-register-r2r/data
 %R2PM_OFFLINE=1
 %R2_LOG_LEVEL=1
+%R2_DEBUG_ASSERT=1
 r2pm -qi winregister-ok
 r2pm -ql
 r2pm -qi winregister-fail
