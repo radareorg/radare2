@@ -1,0 +1,30 @@
+R2PM_BEGIN
+
+R2PM_DESC "Windows native batch environment fixture"
+
+R2PM_INSTALL_WINDOWS() {
+if "%R2PM_TEST_VALUE%"=="" (
+	call "scripts\r2pm\win-helper.cmd" || exit /b 1
+) else (
+	exit /b 1
+)
+if not "%R2PM_TEST_VALUE%"=="persisted" exit /b 1
+echo env-^
+%R2PM_TEST_VALUE%
+}
+
+R2PM_UNINSTALL_WINDOWS() {
+cmd /c exit -1 || exit /b 1
+echo should-not-run
+}
+
+R2PM_BINSTALL_WINDOWS() {
+call "scripts\r2pm\win-helper.cmd" || exit /b 1
+echo binary-after-call
+}
+
+R2PM_BUNINSTALL_WINDOWS() {
+cmd /c exit -1
+}
+
+R2PM_END
