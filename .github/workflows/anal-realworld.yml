@@ -7,7 +7,11 @@ permissions:
 jobs:
   real-binaries:
     if: github.event.pull_request.number == 27286
-    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15-intel]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -28,6 +32,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: pr27286-real-binary-results
+          name: pr27286-real-binary-results-${{ matrix.os }}
           path: results/
           retention-days: 7

@@ -56,16 +56,18 @@ def environment(variant):
 
 src = root / "candidate"
 (src / "test/bins").symlink_to(root / "fixtures")
+test_env = environment("candidate")
+test_env.pop("R2_LOG_LEVEL", None)
 units = ["test_vec", "test_anal_block", "test_anal_function", "test_anal_var", "test_io"]
 run(["make", "-C", "test/unit", "-j3", *["bin/" + n for n in units]], src, "unit-build.log")
 for name in units:
-    run([src / "test/unit/bin" / name], src / "test", name + ".log", environment("candidate"))
+    run([src / "test/unit/bin" / name], src / "test", name + ".log", test_env)
 run([installs["candidate"] / "bin/r2r", "-C", "test", "db/cmd/cmd_agf", "db/anal/java",
      "db/anal/emu", "db/anal/x86_64", "db/cmd/cmd_af", "db/cmd/cmd_afb",
      "db/cmd/cmd_afl", "db/cmd/cmd_afv", "db/cmd/cmd_graph", "db/anal/vars", "db/anal/xrefs",
      "db/cmd/projects", "db/anal/arm64", "db/anal/mips", "db/anal/x86_overlapping",
      "db/cmd/cmd_pdc", "db/cmd/cmd_pdc_opt", "db/cmd/cmd_pdc_inline",
-     "db/cmd/cmd_pdc_ast", "db/io"], src, "r2r.log", environment("candidate"))
+     "db/cmd/cmd_pdc_ast", "db/io"], src, "r2r.log", test_env)
 
 print("REGRESSIONS PASSED: " + ", ".join(units) + " and selected r2r suites", flush=True)
 rows = []
