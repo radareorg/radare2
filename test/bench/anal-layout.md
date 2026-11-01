@@ -1,5 +1,125 @@
 # Analysis layout experiments
 
+## Current revision: aligned vectors and deferred construction sorting
+
+The 2026-11-01 revision restores the unchanged `R_ALIGNED(16)` vector header.
+Both function vectors are adjacent, at offsets 16 (`bbs`) and 48 (`vars`).
+On x86-64 the function is 272 bytes, aligned to 16, versus master's 288 bytes
+and the previous PR's 256-byte, 8-aligned layout. The block remains 232 bytes
+versus master's 248. The older measurements below used natural vector header
+alignment and do not describe the final layout or its memory consumption.
+
+Unsorted exact lookup uses the existing global block tree and verifies function
+membership. Removal scans an unsorted vector without reordering it, and uses
+binary search when address order is already cached. Relocation only invalidates
+order in every owner. Overlapping lookups retain insertion order while building.
+The individual block-walk entry point no longer sorts; the complete function
+analysis sorts after its plugin callback. Ordered presentation requests address
+order itself. DOT graphs and incoming-block lists therefore remain deterministic
+after later block edits. `afbs`/`afbsa` reuse the order flag; other explicit sorts
+are preserved through exact lookup and restored at an ordered presentation.
+
+The rerun compares master `f8a584ff62b1`, the previous PR rebased onto that
+same master, and the aligned analysis tree at `5f85ed10a927` with identical
+`-O2` flags. The published rebased commits have the exact trees used for the
+local timing builds; both local and published identities are in the environment
+metadata. Real-world cases have one warmup
+and three measured fresh processes, with fixed-seed randomized variant order.
+The lookup benchmark now accepts a fourth argument `lookup` to interleave an
+exact lookup after every insertion, exposing repeated sorting during construction.
+
+To reproduce, prepare installed `ROOT/baseline`, `ROOT/previous`, and
+`ROOT/radare2` checkouts, each configured with
+`./configure --prefix="$PWD/_install" CFLAGS=-O2`, built from the root and
+installed with `make install`. Provide the same fixtures at
+`ROOT/radare2/test/bins`. Run:
+
+```
+python3 ROOT/radare2/test/bench/anal-aligned.py ROOT
+```
+
+The driver compiles the three C benchmarks against each matching installation,
+runs real-world analysis, lookup (including interleaved lookup), and the complete
+pointer/pool/inline storage matrix. Results, individual runs, compiler/commit
+metadata and checksums are saved to `ROOT/results`. Linux live-heap reporting is
+unavailable in the C driver (`heap_in_use=0`); allocator subtotals and RSS are
+reported separately. Whole-process wall time includes loading and accounting.
+
+Validation for the aligned revision: root build and installation, lint and
+`git diff --check` pass. All five focused unit binaries (`test_vec`,
+`test_anal_block`, `test_anal_function`, `test_anal_var`, `test_io`) pass.
+Selected analysis/graph/decompiler/project regressions give 700 OK, two known
+broken cases, 11 skips and zero failures. The function test covers unsorted
+exact/overlapping lookup, foreign-block rejection, relocation across shared
+owners, explicit order preservation, sorted and unsorted removal, and restoration
+at the ordered boundary.
+
+### Rerun results, 2026-11-01
+
+Ubuntu 24.04 x86-64, GCC 13.3, identical `-O2` builds; one warmup and three
+measured processes per real-world case. The previous PR was rebased onto
+the same master before measuring. CPU is the complete analysis command;
+process wall time also includes loading and accounting. Medians:
+
+| Case | Command | Master CPU s | Previous PR CPU s | Aligned PR CPU s | vs master | vs previous PR |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| ls | aaa | 0.355941 | 0.367804 | 0.337398 | -5.21% | -8.27% |
+| pigz | aaa | 0.828053 | 0.763155 | 0.772904 | -6.66% | +1.28% |
+| libc | aaa | 9.224596 | 9.272366 | 8.853804 | -4.02% | -4.51% |
+| Mastodon | aaa | 46.252496 | 45.938586 | 45.408457 | -1.82% | -1.15% |
+| ls | aaaa | 0.339302 | 0.342243 | 0.339476 | +0.05% | -0.81% |
+| pigz | aaaa | 0.798971 | 0.806653 | 0.769496 | -3.69% | -4.61% |
+
+CPU samples vary; inspect the min/max ranges and individual runs before
+attributing small changes to alignment or sorting alone. These are Linux
+measurements; the historical macOS numbers below were not rerun here.
+
+| aaa case | Master function-owned B | Previous PR B | Aligned PR B | vs master | Master peak RSS B | Aligned peak RSS B |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| ls | 807,120 | 707,696 | 760,400 | -5.79% | 36,499,456 | 36,491,264 |
+| pigz | 1,234,136 | 1,067,176 | 1,150,216 | -6.80% | 42,012,672 | 41,869,312 |
+| libc | 19,311,448 | 17,155,912 | 18,510,888 | -4.15% | 144,789,504 | 142,774,272 |
+| Mastodon | 101,248,416 | 87,704,144 | 94,331,040 | -6.83% | 354,373,632 | 345,985,024 |
+
+Fresh function-owned storage is 768 B/eight allocations on master,
+304 B/two allocations in the previous unaligned PR, and 320 B/two
+allocations in this aligned revision, on this Linux allocator. Including
+the initial eight-pointer reservation gives 840/376/392 B respectively.
+Blocks and shared state are excluded. Alignment increases other embedded
+RVec headers as well, including variable-owned vectors; the old memory
+totals therefore cannot be reused.
+
+| 8,192 blocks, insertion order | Lookup after each append | Master ns/append | Previous PR ns/append | Aligned PR ns/append |
+| --- | --- | ---: | ---: | ---: |
+| asc | no | 57.399 | 55.827 | 59.089 |
+| desc | no | 89.277 | 37.635 | 41.774 |
+| shuffle | no | 195.407 | 205.692 | 220.130 |
+| asc | yes | 118.048 | 84.882 | 90.979 |
+| desc | yes | 115.234 | 85231.603 | 157.977 |
+| shuffle | yes | 272.661 | 77397.315 | 293.254 |
+
+The interleaved timer includes the lookup after each append. Final sorted
+lookup and sorting preparation are separate columns in the full CSV.
+The baseline foreign-function lookup bug is recorded, not treated as
+equivalent behavior; both PR revisions reject the foreign block.
+
+The full storage matrix contains 864 fresh processes: three revisions ×
+three storage modes × four initial capacities × eight lengths × three
+runs. It remains a container experiment, not an inline analysis engine.
+The lookup matrix has 270 processes, and real analysis has 72 including
+warmups. Every real-world case preserves function/block/membership counts
+and the block checksum across all revisions. Pointer ownership remains
+necessary for shared blocks and stable intrusive-tree identity.
+
+Raw data and medians/ranges:
+
+- [Real-world results](anal-aligned-realworld-results.csv) and [72 runs](anal-aligned-realworld-runs.csv).
+- [Lookup results](anal-aligned-lookup-results.csv) and [270 runs](anal-aligned-lookup-runs.csv).
+- [Storage results](anal-aligned-storage-results.csv) and [864 runs](anal-aligned-storage-runs.csv).
+- [Compiler, commit identities and fixture revision](anal-aligned-environment.json).
+
+## Historical experiments
+
 Build the checkout with `./configure --prefix="$PWD/_install" CFLAGS=-O2`,
 `make -j8` and `make install`. Run `make -C test/bench anal-layout anal-bb-storage`.
 Keep separate installed libraries and executable/header builds for the baseline
