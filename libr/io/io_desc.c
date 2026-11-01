@@ -199,7 +199,7 @@ R_API int r_io_desc_read(RIODesc *desc, ut8 *buf, int len) {
 	if (!(desc->perm & R_PERM_R)) {
 		return -1;
 	}
-	ut64 seek = r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR);
+	ut64 seek = desc->io && (desc->io->p_cache & 1)? r_io_desc_seek (desc, 0, R_IO_SEEK_CUR): 0;
 	int ret = r_io_plugin_read (desc, buf, len);
 	if ((ret > 0) && desc->io && (desc->io->p_cache & 1)) {
 		ret = r_io_desc_cache_read (desc, seek, buf, ret);
