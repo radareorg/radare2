@@ -630,7 +630,12 @@ static void r2pm_set_pyvenv(R2Pm *r2pm) {
 	char *venv = r_file_new (r2_prefix, "venv", NULL);
 	if (r_file_is_directory (venv)) {
 		r_sys_setenv ("VIRTUAL_ENV", venv);
-		char *venv_bin = r_file_new (venv, "bin", NULL);
+		// windows virtualenvs keep the binaries in Scripts, not in bin
+		const char *venv_subdir = "bin";
+#if R2__WINDOWS__
+		venv_subdir = "Scripts";
+#endif
+		char *venv_bin = r_file_new (venv, venv_subdir, NULL);
 		r_sys_setenv_sep ("PATH", venv_bin, false);
 		free (venv_bin);
 	}
