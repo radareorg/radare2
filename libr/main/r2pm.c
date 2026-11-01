@@ -1075,7 +1075,23 @@ static bool unzip(const char *file, const char *dir) {
 	if (r_str_endswith (file, ".tgz") || r_str_endswith (file, ".tar.gz")) {
 		res = 0 == r_sys_cmdf ("tar -xzvf \"%s\" -C \"%s\"", efile, edir);
 	} else if (r_str_endswith (file, ".zip")) {
+#if R2__WINDOWS__
+		/* windows ships bsdtar and powershell, but not unzip */
+		res = 0 == r_sys_cmdf ("tar -xf \"%s\" -C \"%s\"", efile, edir);
+		if (!res) {
+			res = 0 == r_sys_cmdf ("powershell -NoProfile -Command \"Expand-Archive -Force -LiteralPath '%s' -DestinationPath '%s'\"", efile, edir);
+		}
+#else
 		res = 0 == r_sys_cmdf ("unzip \"%s\" -d \"%s\"", efile, edir);
+		if (!res) {
+			char *unzipbin = r_file_path ("unzip");
+			if (!unzipbin) {
+				/* bsdtar/libarchive reads zip too */
+				res = 0 == r_sys_cmdf ("tar -xf \"%s\" -C \"%s\"", efile, edir);
+			}
+			free (unzipbin);
+		}
+#endif
 	}
 	free (efile);
 	free (edir);
