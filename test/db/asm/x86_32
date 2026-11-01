@@ -1604,7 +1604,7 @@ aB "pand mm0, qword [eax]" 0fdb00
 aB "pandn mm0, qword [eax]" 0fdf00
 aB "pandn xmm0, xmmword [eax]" 660fdf00
 aB "pand xmm0, xmmword [eax]" 660fdb00
-aB "pause" f390
+a "pause" f390
 aB "pavgb mm0, qword [eax]" 0fe000
 aB "pavgb mm0, qword [eax]" 0fe0
 aB "pavgb xmm0, xmmword [eax]" 660fe000
