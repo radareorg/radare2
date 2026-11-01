@@ -585,6 +585,58 @@ static int oprdseed(RArchSession *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+// [prefix] 0f opcode /r with a general purpose register and a register or memory
+// operand in 64-bit mode (bsf, bsr, popcnt, lzcnt, tzcnt). prefix 0 for none.
+static int op_0f_reg_rm64(ut8 *data, ut8 prefix, ut8 opcode, const Operand *reg, const Operand *rm) {
+	if (!(reg->type & OT_GPREG & OT_REGTYPE) || (reg->type & (OT_MEMORY | OT_BYTE))) {
+		return -1;
+	}
+	ut8 modrm[16];
+	ut8 rex = 0;
+	int l = 0;
+	int n;
+	if (reg->type & OT_QWORD) {
+		rex |= 8;
+	}
+	if (reg->extended) {
+		rex |= 4;
+	}
+	if (rm->type & OT_MEMORY) {
+		if (rm->explicit_size && !(rm->dest_size & reg->type & ALL_SIZE)) {
+			return -1;
+		}
+		n = encode_mem (modrm, reg->reg, rm, &rex);
+		if (rm->regs[0] != X86R_UNDEFINED && !(rm->reg_size & OT_QWORD)) {
+			data[l++] = 0x67; // 32-bit address registers
+		}
+	} else {
+		if (!(rm->type & OT_GPREG & OT_REGTYPE) || !(rm->type & reg->type & ALL_SIZE)) {
+			return -1;
+		}
+		if (rm->extended) {
+			rex |= 1;
+		}
+		modrm[0] = 0xc0 | (reg->reg & 7) << 3 | (rm->reg & 7);
+		n = 1;
+	}
+	if (n < 0) {
+		return -1;
+	}
+	if (reg->type & OT_WORD) {
+		data[l++] = 0x66;
+	}
+	if (prefix) {
+		data[l++] = prefix;
+	}
+	if (rex) {
+		data[l++] = 0x40 | rex;
+	}
+	data[l++] = 0x0f;
+	data[l++] = opcode;
+	memcpy (data + l, modrm, n);
+	return l + n;
+}
+
 // POPCNT reg, r/m
 static int oppopcnt(RArchSession *a, ut8 *data, const Opcode *op) {
 	if (op->operands_count != 2) {
@@ -595,6 +647,9 @@ static int oppopcnt(RArchSession *a, ut8 *data, const Opcode *op) {
 	if (!(dst->type & OT_GPREG) || (dst->type & OT_MEMORY)) {
 		return -1;
 	}
+	if (a->config->bits == 64) {
+		return op_0f_reg_rm64 (data, 0xf3, 0xb8, dst, src);
+	}
 	int l = 0;
 	// operand-size prefix for 16-bit
 	if (dst->type & OT_WORD) {
@@ -602,14 +657,6 @@ static int oppopcnt(RArchSession *a, ut8 *data, const Opcode *op) {
 	}
 	// F3 prefix is mandatory
 	data[l++] = 0xF3;
-	// REX.W for 64-bit
-	if (a->config->bits == 64 && (dst->type & OT_QWORD)) {
-		ut8 rex = 0x48; // W=1
-		if (dst->extended) rex |= 0x04; // R bit
-						// best-effort B bit for reg/mem source if it's a GP reg
-		if ((src->type & OT_GPREG) && !(src->type & OT_MEMORY) && src->extended) rex |= 0x01;
-		data[l++] = rex;
-	}
 	data[l++] = 0x0f;
 	data[l++] = 0xb8;
 	if (src->type & OT_MEMORY) {
@@ -656,20 +703,17 @@ static int opcntz(RArchSession *a, ut8 *data, const Opcode *op) {
 	if (!(dst->type & OT_GPREG) || (dst->type & OT_MEMORY)) {
 		return -1;
 	}
+	// select opcode byte from mnemonic
+	ut8 opc = (!strcmp (op->mnemonic, "lzcnt")) ? 0xbd : 0xbc;
+	if (a->config->bits == 64) {
+		return op_0f_reg_rm64 (data, 0xf3, opc, dst, src);
+	}
 	int l = 0;
 	if (dst->type & OT_WORD) {
 		data[l++] = 0x66;
 	}
 	data[l++] = 0xF3; // required prefix
-	if (a->config->bits == 64 && (dst->type & OT_QWORD)) {
-		ut8 rex = 0x48; // W=1
-		if (dst->extended) rex |= 0x04; // R bit
-		if ((src->type & OT_GPREG) && !(src->type & OT_MEMORY) && src->extended) rex |= 0x01; // B bit
-		data[l++] = rex;
-	}
 	data[l++] = 0x0f;
-	// select opcode byte from mnemonic
-	ut8 opc = (!strcmp (op->mnemonic, "lzcnt")) ? 0xbd : 0xbc;
 	data[l++] = opc;
 	if (src->type & OT_MEMORY) {
 		int base = src->regs[0];
@@ -1429,23 +1473,16 @@ static int opbs(RArchSession *a, ut8 *data, const Opcode *op) {
 	if (!(op->operands[0].type & OT_GPREG) || (op->operands[0].type & OT_MEMORY)) {
 		return -1;
 	}
+	if (a->config->bits == 64) {
+		return op_0f_reg_rm64 (data, strcmp (op->mnemonic, "tzcnt")? 0: 0xf3,
+			strcmp (op->mnemonic, "bsr")? 0xbc: 0xbd, &op->operands[0], &op->operands[1]);
+	}
 
 	// Prefixes and operand/address size handling
 	if (!strcmp (op->mnemonic, "tzcnt")) {
 		data[l++] = 0xf3;
 	}
-	if (a->config->bits == 64) {
-		if (op->operands[1].type & OT_MEMORY && (op->operands[1].reg_size & OT_DWORD)) {
-			// 32-bit addressing in 64-bit mode
-			data[l++] = 0x67;
-		}
-		if (op->operands[0].type & OT_WORD) {
-			data[l++] = 0x66;
-		}
-		if (op->operands[0].type & OT_QWORD) {
-			data[l++] = 0x48;
-		}
-	} else if (op->operands[0].type & OT_WORD) {
+	if (op->operands[0].type & OT_WORD) {
 		data[l++] = 0x66;
 	}
 
