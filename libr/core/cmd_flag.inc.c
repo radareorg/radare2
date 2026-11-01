@@ -1121,7 +1121,9 @@ static void print_function_labels_for(RCore *core, RAnalFunction *fcn, int rad, 
 		pj_o (pj);
 	}
 	PrintFcnLabelsCtx ctx = { core, rad, pj, fcn };
-	ht_up_foreach (fcn->labels, print_function_labels_cb, &ctx);
+	if (fcn->labels) {
+		ht_up_foreach (fcn->labels, print_function_labels_cb, &ctx);
+	}
 	if (json) {
 		pj_end (pj);
 	}
@@ -1143,7 +1145,7 @@ static void print_function_labels(RCore *core, RAnalFunction *fcn, int rad) {
 		RAnalFunction *f;
 		RListIter *iter;
 		r_list_foreach (anal->fcns, iter, f) {
-			if (!f->labels->count) {
+			if (!f->labels || !f->labels->count) {
 				continue;
 			}
 			if (json) {

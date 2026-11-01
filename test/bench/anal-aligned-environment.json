@@ -1,0 +1,19 @@
+{
+  "platform": [
+    "Linux",
+    "5d812adad607",
+    "6.18.57",
+    "#1 SMP Tue Oct 20 21:56:04 UTC 2026",
+    "x86_64"
+  ],
+  "compiler": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\nCopyright (C) 2023 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+  "fixtures": "ed967a566eb7ef982fab23ef74b226af7ef9a003",
+  "variants": {
+    "baseline": "f8a584ff62b12ca37d325b62129052a175dd288d",
+    "previous": "b57f3bd99740bb88b59b004e5af26ec1f511624a",
+    "radare2": "a2242925639621175568617ebe8cc84f75a7285a"
+  },
+  "candidate_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "published_equivalent_code_commit": "5f85ed10a9276a6f74f890d6d111bede20b29c3e",
+  "published_equivalent_previous_commit": "0960f02bfd1d20542aa4be371d7534df8f2784c9"
+}

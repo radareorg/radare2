@@ -3,6 +3,8 @@ Benchmark testsuite
 
 Run `make` and compare results with runs of previous commits.
 
+Generated CSV results are local artifacts and are ignored by Git.
+
 ## String pools
 
 After building radare2, run `make -C test/bench strpool` and then:
@@ -176,3 +178,9 @@ Use identical compiler flags and repeat measurements when comparing versions.
 For a real cartridge, separately time rasm2 with preprocessing, architecture
 encoding and binary output enabled, and compare every result to the reference.
 Remove the benchmark executable with `make -C test/bench clean-asm-code`.
+
+## Analysis layouts and block storage
+
+See [anal-layout.md](anal-layout.md) for the `anal-layout`, `anal-bb-storage`
+and `anal-bb-lookup` benchmarks, their measurement boundaries, the pointer/pool/
+inline matrix, and recorded result summaries.

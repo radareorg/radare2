@@ -4,6 +4,19 @@
 
 HEAPTYPE (ut64);
 
+static void labels_kv_free(HtUPKv *kv) {
+	if (kv) {
+		free (kv->value);
+	}
+}
+
+static void label_addrs_kv_free(HtPPKv *kv) {
+	if (kv) {
+		free (kv->key);
+		free (kv->value);
+	}
+}
+
 R_API ut64 r_anal_function_get_label(RAnalFunction *fcn, const char *name) {
 	R_RETURN_VAL_IF_FAIL (fcn, UT64_MAX);
 	ut64 *addr = ht_pp_find (fcn->label_addrs, name, NULL);
@@ -19,6 +32,12 @@ R_API bool r_anal_function_set_label(RAnalFunction *fcn, const char *name, ut64 
 	R_RETURN_VAL_IF_FAIL (fcn && name, false);
 	if (ht_pp_find (fcn->label_addrs, name, NULL)) {
 		return false;
+	}
+	if (!fcn->labels) {
+		fcn->labels = ht_up_new (NULL, labels_kv_free, NULL);
+	}
+	if (!fcn->label_addrs) {
+		fcn->label_addrs = ht_pp_new (NULL, label_addrs_kv_free, NULL);
 	}
 	char *n = strdup (name);
 	if (!ht_up_insert (fcn->labels, addr, n)) {

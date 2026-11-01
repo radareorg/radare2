@@ -82,18 +82,6 @@ R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb) {
 	return bb->size;
 }
 
-static int bb_sort_by_addr(RAnalBlock *const *x, RAnalBlock *const *y) {
-	ut64 a_addr = (*x)->addr;
-	ut64 b_addr = (*y)->addr;
-	if (a_addr > b_addr) {
-		return 1;
-	}
-	if (a_addr < b_addr) {
-		return -1;
-	}
-	return 0;
-}
-
 R_API size_t r_anal_diff_fingerprint_fcn(RAnal *anal, RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (anal && fcn, 0);
 	RAnalBlock *bb;
@@ -105,7 +93,7 @@ R_API size_t r_anal_diff_fingerprint_fcn(RAnal *anal, RAnalFunction *fcn) {
 
 	fcn->fingerprint = NULL;
 	fcn->fingerprint_size = 0;
-	RVecAnalBlockPtr_sort (&fcn->bbs, bb_sort_by_addr);
+	r_anal_function_sort_blocks (fcn);
 	R_VEC_FOREACH (&fcn->bbs, iter) {
 		bb = *iter;
 		fcn->fingerprint_size += bb->size;
@@ -128,7 +116,8 @@ R_API bool r_anal_diff_bb(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2) 
 		return (anal->cur->diff_bb (anal, fcn, fcn2));
 	}
 	fcn->diff->type = fcn2->diff->type = R_ANAL_DIFF_TYPE_MATCH;
-	RVecAnalBlockPtr_sort (&fcn->bbs, bb_sort_by_addr);
+	r_anal_function_sort_blocks (fcn);
+	r_anal_function_sort_blocks (fcn2);
 	R_VEC_FOREACH (&fcn->bbs, iter) {
 		bb = *iter;
 		if (bb->diff && bb->diff->type != R_ANAL_DIFF_TYPE_NULL) {
@@ -136,7 +125,6 @@ R_API bool r_anal_diff_bb(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2) 
 		}
 		ot = 0;
 		mbb = mbb2 = NULL;
-		RVecAnalBlockPtr_sort (&fcn2->bbs, bb_sort_by_addr);
 		R_VEC_FOREACH (&fcn2->bbs, iter2) {
 			bb2 = *iter2;
 			if (!bb2->diff || bb2->diff->type == R_ANAL_DIFF_TYPE_NULL) {

@@ -3295,10 +3295,6 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	}
 }
 
-static int bb_cmp(RAnalBlock *const *a, RAnalBlock *const *b) {
-	return ((*a)->addr > (*b)->addr)? 1: ((*a)->addr < (*b)->addr)? -1: 0;
-}
-
 static ut64 caseval(const void* _a) {
 	const RAnalCaseOp* a = _a;
 	return a->jump;
@@ -3782,7 +3778,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 		r_cons_printf (core->cons, "fs blocks\n");
 	}
 	if (!RVecAnalBlockPtr_empty (&fcn->bbs)) {
-		RVecAnalBlockPtr_sort (&fcn->bbs, bb_cmp);
+		r_anal_function_sort_blocks (fcn);
 	}
 	if (mode == '=') { // afb
 		RList *flist = r_list_newf ((RListFree) r_listinfo_free);
@@ -5914,8 +5910,8 @@ static void cmd_afbs(RCore *core, const char *input) {
 		break;
 	case 0: // default for "afbs"
 	case 'a': // "afba"
-		RVecAnalBlockPtr_sort (&fcn->bbs, cmpaddr_bb);
-		break;
+		r_anal_function_sort_blocks (fcn);
+		return;
 	case 's': // "afbss"
 		RVecAnalBlockPtr_sort (&fcn->bbs, cmpsize_bb);
 		break;
@@ -5934,6 +5930,7 @@ static void cmd_afbs(RCore *core, const char *input) {
 		break;
 #endif
 	}
+	fcn->bbs_sorted = false;
 }
 
 static void cmd_afls(RCore *core, const char *input) {
@@ -14149,7 +14146,7 @@ static bool cmd_graph_mermaid(RCore *core, bool add_asm) {
 	RAnalBlock *b;
 	RAnalBlock **iter;
 	int edgecount = 0;
-	RVecAnalBlockPtr_sort (&fcn->bbs, bb_cmp);
+	r_anal_function_sort_blocks (fcn);
 	R_VEC_FOREACH (&fcn->bbs, iter) {
 		b = *iter;
 		if (add_asm) {
@@ -14187,7 +14184,7 @@ static bool cmd_graph_mermaid(RCore *core, bool add_asm) {
 		fcn_switch_mermaid (b, edges, add_asm);
 	}
 	if (add_asm) {
-		RVecAnalBlockPtr_sort (&fcn->bbs, bb_cmp);
+		r_anal_function_sort_blocks (fcn);
 		R_VEC_FOREACH (&fcn->bbs, iter) {
 			b = *iter;
 			r_strbuf_appendf (nodes, "style _0x%" PFMT64x " text-align:left\n", b->addr);
@@ -16917,6 +16914,7 @@ static bool core_anal_abf(RCore *core, const char* input) {
 			return false;
 		}
 		r_list_foreach (bb->fcns, iter, fcn) {
+			r_anal_function_sort_blocks (fcn);
 			R_VEC_FOREACH (&fcn->bbs, iter2) {
 				bb2 = *iter2;
 				if (bb != bb2) {

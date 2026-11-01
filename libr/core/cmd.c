@@ -63,12 +63,6 @@ static char *core_cmd_str_nohtml(RCore *core, RCmdContext *parent, const char *c
 static RCons *core_cmd_cons(void *data);
 static bool core_fs_tree(RCore *core, RFSRoot *root, const char *path, int depth);
 
-static int bb_cmpaddr(RAnalBlock *const *_a, RAnalBlock *const *_b) {
-	const RAnalBlock *a = *_a;
-	const RAnalBlock *b = *_b;
-	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
-}
-
 static void cmd_debug_reg(RCore *core, const char *str);
 
 static void print_owned(RCore *core, R_OWNED char *s) {
@@ -6238,7 +6232,7 @@ static void atat_i(RCore *core, const char *cmd) {
 	RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->addr);
 	RBitset *seen = r_bitset_new ();
 	if (fcn) {
-		RVecAnalBlockPtr_sort (&fcn->bbs, bb_cmp);
+		r_anal_function_sort_blocks (fcn);
 		R_VEC_FOREACH (&fcn->bbs, iter) {
 			bb = *iter;
 			for (i = 0; i < bb->ninstr; i++) {
@@ -6295,7 +6289,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->addr);
 			int bs = core->blocksize;
 			if (fcn) {
-				RVecAnalBlockPtr_sort (&fcn->bbs, bb_cmp);
+				r_anal_function_sort_blocks (fcn);
 				R_VEC_FOREACH (&fcn->bbs, iter) {
 					bb = *iter;
 					r_core_block_size (core, bb->size);

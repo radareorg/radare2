@@ -428,3 +428,104 @@ lfcr doc
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=r2pm -UU preserves package modes and global environments
+FILE=-
+CMDS=<<EOF
+rmrf /tmp/r2pm-upgrade-r2r
+mkdir -p /tmp/r2pm-upgrade-r2r/git/radare2-pm
+%R2PM_DBDIR=scripts/r2pm/radare2-pm/db
+%R2PM_GITDIR=/tmp/r2pm-upgrade-r2r/git
+%XDG_DATA_HOME=/tmp/r2pm-upgrade-r2r/data
+%R2PM_OFFLINE=1
+%R2PM_TEST_FAIL=
+%R2_LOG_LEVEL=1
+r2pm -qi upgrade-source
+r2pm -qgbi upgrade-binary
+r2pm -qUU 2>/dev/null
+?vi
+cat /tmp/r2pm-upgrade-r2r/data/radare2/r2pm/pkg/upgrade-source~!InstallationDate:
+cat /tmp/r2pm-upgrade-r2r/data/radare2/r2pm/pkg/upgrade-binary~!InstallationDate:
+r2pm -qgi upgrade-source
+r2pm -qbi upgrade-binary
+r2pm -qUU 2>/dev/null
+?vi
+cat /tmp/r2pm-upgrade-r2r/data/radare2/r2pm/pkg/upgrade-source~!InstallationDate:
+cat /tmp/r2pm-upgrade-r2r/data/radare2/r2pm/pkg/upgrade-binary~!InstallationDate:
+rmrf /tmp/r2pm-upgrade-r2r
+EOF
+EXPECT=<<EOF
+source-0
+binary-1
+source-0
+binary-1
+0
+Global: false
+Binary: false
+Global: true
+Binary: true
+source-1
+binary-0
+source-1
+binary-0
+0
+Global: true
+Binary: false
+Global: false
+Binary: true
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=r2pm -UU reports failure and continues other package groups
+FILE=-
+CMDS=<<EOF
+rmrf /tmp/r2pm-upgrade-fail-r2r
+mkdir -p /tmp/r2pm-upgrade-fail-r2r/git/radare2-pm
+%R2PM_DBDIR=scripts/r2pm/radare2-pm/db
+%R2PM_GITDIR=/tmp/r2pm-upgrade-fail-r2r/git
+%XDG_DATA_HOME=/tmp/r2pm-upgrade-fail-r2r/data
+%R2PM_OFFLINE=1
+%R2PM_TEST_FAIL=
+%R2_LOG_LEVEL=1
+r2pm -qi upgrade-source
+r2pm -qbi upgrade-binary
+%R2PM_TEST_FAIL=1
+r2pm -qUU 2>/dev/null
+?vi
+rmrf /tmp/r2pm-upgrade-fail-r2r
+EOF
+EXPECT=<<EOF
+source-0
+binary-0
+source-0
+binary-0
+1
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=r2pm -UU succeeds without registered packages
+FILE=-
+CMDS=<<EOF
+rmrf /tmp/r2pm-upgrade-empty-r2r
+mkdir -p /tmp/r2pm-upgrade-empty-r2r/git/radare2-pm
+%R2PM_DBDIR=scripts/r2pm/radare2-pm/db
+%R2PM_GITDIR=/tmp/r2pm-upgrade-empty-r2r/git
+%XDG_DATA_HOME=/tmp/r2pm-upgrade-empty-r2r/data
+%R2PM_OFFLINE=1
+%R2_LOG_LEVEL=1
+r2pm -qUU 2>/dev/null
+?vi
+mkdir -p /tmp/r2pm-upgrade-empty-r2r/data/radare2/r2pm/pkg/.hidden
+mkdir -p /tmp/r2pm-upgrade-empty-r2r/data/radare2/r2pm/pkg/not-a-package
+r2pm -qUU 2>/dev/null
+?vi
+rmrf /tmp/r2pm-upgrade-empty-r2r
+EOF
+EXPECT=<<EOF
+0
+0
+EOF
+EXPECT_ERR=
+RUN
