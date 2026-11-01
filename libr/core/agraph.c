@@ -730,6 +730,71 @@ static ut64 graph_edge_key(const RGraphNode *from, const RGraphNode *to) {
 	return ((ut64)from->idx << 32) | to->idx;
 }
 
+// rank of every edge in its source, so the layout can restore the true/false order
+static HtUU *edge_order_save(const RAGraph *g) {
+	HtUU *order = ht_uu_new0 ();
+	if (!order) {
+		return NULL;
+	}
+	const RListIter *it;
+	RGraphNode *gn;
+	r_list_foreach (r_graph_get_nodes (g->graph), it, gn) {
+		RGraphNode **out;
+		ut64 nth = 0;
+		R_VEC_FOREACH (&gn->out_nodes, out) {
+			ht_uu_insert (order, graph_edge_key (gn, *out), ++nth);
+		}
+	}
+	return order;
+}
+
+static int ut64_cmp(const void *a, const void *b) {
+	const ut64 x = *(const ut64 *)a, y = *(const ut64 *)b;
+	return (x > y) - (x < y);
+}
+
+static void edge_order_restore(const RAGraph *g, HtUU *order) {
+	const RListIter *it;
+	RGraphNode *gn;
+	RANode *a;
+	graph_foreach_anode (r_graph_get_nodes (g->graph), it, gn, a) {
+		const size_t count = RVecGraphNodePtr_length (&gn->out_nodes);
+		if (a->is_dummy || count < 2) {
+			continue;
+		}
+		ut64 *keys = R_NEWS (ut64, count);
+		RGraphNode **outs = R_NEWS (RGraphNode *, count);
+		if (!keys || !outs) {
+			free (keys);
+			free (outs);
+			return;
+		}
+		size_t i;
+		for (i = 0; i < count; i++) {
+			RGraphNode *target = outs[i] = *RVecGraphNodePtr_at (&gn->out_nodes, i);
+			int steps = g->graph->n_nodes;
+			RANode *t = get_anode (target);
+			while (t && t->is_dummy && steps-- > 0) {
+				RGraphNode **next = RVecGraphNodePtr_at (&target->out_nodes, 0);
+				if (!next) {
+					break;
+				}
+				target = *next;
+				t = get_anode (target);
+			}
+			bool found = false;
+			ut64 rank = ht_uu_find (order, graph_edge_key (gn, target), &found);
+			keys[i] = ((found? rank: UT32_MAX) << 32) | i;
+		}
+		qsort (keys, count, sizeof (ut64), ut64_cmp);
+		for (i = 0; i < count; i++) {
+			*RVecGraphNodePtr_at (&gn->out_nodes, i) = outs[(ut32)keys[i]];
+		}
+		free (keys);
+		free (outs);
+	}
+}
+
 /* add dummy nodes when there are edges that span multiple layers */
 static void create_dummy_nodes(RAGraph *g) {
 	if (!g->dummy) {
@@ -1716,6 +1781,24 @@ static void set_layer_gap(RAGraph *g) {
 	}
 }
 
+static void set_layer_y(RAGraph *g) {
+	int i, j, layer_y = g->layers[0].gap;
+	for (i = 0; i < g->n_layers; i++) {
+		int tmp_y = g->is_tiny? i: layer_y;
+		for (j = 0; j < g->layers[i].n_nodes; j++) {
+			RANode *n = get_anode (g->layers[i].nodes[j]);
+			if (n) {
+				n->y = tmp_y;
+			}
+		}
+		if (i + 1 < g->n_layers) {
+			layer_y += g->layers[i].height + g->layers[i + 1].gap + 3;
+		}
+	}
+}
+
+static void compact_layer_gaps(RAGraph *g);
+
 static void fix_back_edge_dummy_nodes(RAGraph *g, RANode *from, RANode *to, RVecGraphNodePtr *dead) {
 	RANode *v, *tmp = NULL;
 	RGraphNode *gv = NULL;
@@ -1808,6 +1891,11 @@ static int get_edge_number_cached(const RAGraph *g, RANode *src, RANode *dst, bo
 	if (!cache || !src || !dst || !src->gnode || !dst->gnode) {
 		return get_edge_number (g, src, dst, outgoing);
 	}
+	if (outgoing && src->is_dummy) {
+		RGraphNode **first = RVecGraphNodePtr_at (&src->gnode->in_nodes, 0);
+		RANode *in = first? get_anode (*first): NULL;
+		return in? get_edge_number_cached (g, in, src, true, cache): 0;
+	}
 	const ut64 key = edge_number_key (src, dst);
 	bool found = false;
 	ut64 cached = ht_uu_find (cache, key, &found);
@@ -1816,6 +1904,47 @@ static int get_edge_number_cached(const RAGraph *g, RANode *src, RANode *dst, bo
 	}
 	int nth = get_edge_number (g, src, dst, outgoing);
 	ht_uu_insert (cache, key, nth + 2);
+	return nth;
+}
+
+static int edge_out_x(const RAGraph *g, const RANode *a, int out_nth) {
+	if (a->is_dummy) {
+		return a->x;
+	}
+	const int a_x_inc = R_EDGES_X_INC + 2 * (out_nth + 1);
+	const int nout = RVecGraphNodePtr_length (&a->gnode->out_nodes);
+	if (nout > 2 && !g->is_callgraph) {
+		const int t = R_EDGES_X_INC + 2 * (nout + 1);
+		return a->x + a->w / 2 + (t / 2 - a_x_inc);
+	}
+	return a->x + a_x_inc;
+}
+
+static int edge_source_pos(const RAGraph *g, RANode *src, RANode *dst, HtUU *out_cache) {
+	const int nth = get_edge_number_cached (g, src, dst, true, out_cache);
+	return g->layout? src->y + nth: edge_out_x (g, src, nth);
+}
+
+// incoming ports follow the position of their sources so they do not cross at the target
+static int get_in_edge_number(const RAGraph *g, RANode *src, RANode *dst, HtUU *out_cache) {
+	const RVecGraphNodePtr *ins = r_graph_innodes (g->graph, dst->gnode);
+	if (g->is_callgraph) {
+		return 0;
+	}
+	if (!ins || RVecGraphNodePtr_length (ins) == 1) {
+		return -1;
+	}
+	const int pos = edge_source_pos (g, src, dst, out_cache);
+	int nth = 0;
+	RGraphNode **itn;
+	RGraphNode *gv;
+	RANode *v;
+	graph_foreach_anode_vec (ins, itn, gv, v) {
+		if (v != src) {
+			const int vpos = edge_source_pos (g, v, dst, out_cache);
+			nth += vpos < pos || (vpos == pos && gv->idx < src->gnode->idx);
+		}
+	}
 	return nth;
 }
 
@@ -2049,6 +2178,7 @@ static void set_layout(RAGraph *g) {
 	g->edges = r_list_newf ((RListFree)aedge_free);
 
 	remove_dummy_nodes (g);
+	HtUU *edge_order = edge_order_save (g);
 	remove_cycles (g);
 	assign_layers (g);
 	create_dummy_nodes (g);
@@ -2056,6 +2186,7 @@ static void set_layout(RAGraph *g) {
 	minimize_crossings (g);
 
 	if (r_cons_is_breaked (cons)) {
+		ht_uu_free (edge_order);
 		r_cons_break_end (cons);
 		return;
 	}
@@ -2113,6 +2244,10 @@ static void set_layout(RAGraph *g) {
 	}
 	r_graph_del_nodes (g->graph, &dead);
 	RVecGraphNodePtr_fini (&dead);
+	if (edge_order) {
+		edge_order_restore (g, edge_order);
+		ht_uu_free (edge_order);
+	}
 
 	switch (g->layout) {
 	default:
@@ -2134,20 +2269,9 @@ static void set_layout(RAGraph *g) {
 		}
 
 		set_layer_gap (g);
-
-		/* vertical align */
-		int layer_y = g->layers[0].gap;
-		for (i = 0; i < g->n_layers; i++) {
-			int tmp_y = g->is_tiny? i: layer_y;
-			for (j = 0; j < g->layers[i].n_nodes; j++) {
-				RANode *n = get_anode (g->layers[i].nodes[j]);
-				if (n) {
-					n->y = tmp_y;
-				}
-			}
-			if (i + 1 < g->n_layers) {
-				layer_y += g->layers[i].height + g->layers[i + 1].gap + 3;
-			}
+		set_layer_y (g);
+		if (g->edgemode > 1 && g->can->linemode && !g->is_tiny) {
+			compact_layer_gaps (g);
 		}
 		break;
 	/* experimental */
@@ -3075,8 +3199,20 @@ struct tmpbackedgeinfo {
 	int fromlayer;
 	int tolayer;
 	int edge;
+	int order;
+	bool right;
 	RCanvasLineStyle style;
 };
+
+static int backedge_cmp(const void *a, const void *b) {
+	const struct tmpbackedgeinfo *ea = a, *eb = b;
+	const int spana = ea->fromlayer - ea->tolayer;
+	const int spanb = eb->fromlayer - eb->tolayer;
+	if (spana != spanb) {
+		return spana - spanb;
+	}
+	return (ea->order > eb->order) - (ea->order < eb->order);
+}
 
 typedef enum {
 	EDGE_DRAW_LINE,
@@ -3110,6 +3246,7 @@ typedef struct r_agraph_edge_routes_t {
 	RVecEdgeRouteKey scratch;
 	RVecEdgeHighlight edges;
 	RVecEdgeDraw draws;
+	HtUU *rows;
 	bool valid;
 } EdgeRoutes;
 
@@ -3267,6 +3404,262 @@ static void edge_routes_draw(RAGraph *g, EdgeRoutes *routes) {
 	}
 }
 
+// horizontal segment of a vertical edge inside the gap between two layers
+typedef struct {
+	EdgeDraw *draw;
+	int y, lo, hi;
+	int up[2], down[2];
+	int preds, track;
+	bool target, anchored;
+} EdgeNet;
+
+R_VEC_TYPE (RVecEdgeNet, EdgeNet);
+
+static int edge_net_cmp(const EdgeNet *a, const EdgeNet *b) {
+	if (a->anchored != b->anchored) {
+		return a->anchored - b->anchored;
+	}
+	if (a->y != b->y) {
+		return (a->y > b->y) - (a->y < b->y);
+	}
+	return (a->lo > b->lo) - (a->lo < b->lo);
+}
+
+static inline bool edge_net_cmp_channel(const EdgeNet *a, const EdgeNet *b) {
+	return a->anchored != b->anchored || a->y != b->y;
+}
+
+static int edge_key_cmp(const ut64 *a, const ut64 *b) {
+	return (*a > *b) - (*a < *b);
+}
+
+static inline bool edge_net_inside(const EdgeNet *n, const int pins[2]) {
+	return (pins[0] > n->lo && pins[0] < n->hi) || (pins[1] > n->lo && pins[1] < n->hi);
+}
+
+static inline bool edge_net_shared(const int up[2], const int down[2]) {
+	return up[0] != INT_MIN && (up[0] == down[0] || up[0] == down[1]);
+}
+
+// 1 when a must bend above b to avoid crossing its pins, -1 below, 0 either
+static int edge_net_order(const EdgeNet *a, const EdgeNet *b) {
+	// a column shared by an incoming and an outgoing leg is free once the upper bend leaves it
+	bool above = edge_net_inside (a, b->down) || edge_net_inside (b, a->up) || edge_net_shared (a->up, b->down);
+	bool below = edge_net_inside (b, a->down) || edge_net_inside (a, b->up) || edge_net_shared (b->up, a->down);
+	return above == below? 0: above? 1: -1;
+}
+
+static bool edge_nets_add(RVecEdgeNet *nets, EdgeDraw *d, int x, int end, int y, bool target, bool anchored) {
+	EdgeNet *n = RVecEdgeNet_emplace_back (nets);
+	if (!n) {
+		return false;
+	}
+	*n = (EdgeNet){ d, y, R_MIN (x, end), R_MAX (x, end), { INT_MIN, INT_MIN }, { INT_MIN, INT_MIN }, 0, -1, target, anchored };
+	if (d->kind == EDGE_DRAW_SQUARE) {
+		n->up[0] = x;
+		n->down[0] = end;
+	} else if (target) {
+		// the back edge climbs at end and enters the target at x
+		n->down[0] = x;
+		n->down[1] = end;
+	} else {
+		n->up[0] = x;
+		n->up[1] = end;
+	}
+	return true;
+}
+
+// constrained left-edge channel routing of the bends sharing one layer gap
+static int edge_nets_route(EdgeNet *nets, size_t count, RVecEdgeRouteKey *succ) {
+	size_t i, j, placed = 0;
+	RVecEdgeRouteKey_clear (succ);
+	for (i = 0; i < count; i++) {
+		for (j = i + 1; j < count && nets[j].lo <= nets[i].hi; j++) {
+			int order = edge_net_order (&nets[i], &nets[j]);
+			if (order) {
+				size_t from = order > 0? i: j;
+				size_t to = order > 0? j: i;
+				if (!edge_key_push (succ, ((ut64)from << 32) | to)) {
+					return -1;
+				}
+				nets[to].preds++;
+			}
+		}
+	}
+	RVecEdgeRouteKey_sort (succ, edge_key_cmp);
+	int track = 0;
+	while (placed < count) {
+		int last = INT_MIN;
+		size_t round = placed;
+		for (i = 0; i < count; i++) {
+			EdgeNet *n = &nets[i];
+			if (n->track < 0 && !n->preds && (last == INT_MIN || n->lo > last + 2)) {
+				n->track = track;
+				last = n->hi;
+				placed++;
+			}
+		}
+		if (placed == round) {
+			// break a constraint cycle with the least constrained bend
+			EdgeNet *best = NULL;
+			for (i = 0; i < count; i++) {
+				if (nets[i].track < 0 && (!best || nets[i].preds < best->preds)) {
+					best = &nets[i];
+				}
+			}
+			best->preds = 0;
+			continue;
+		}
+		for (i = 0; i < count; i++) {
+			if (nets[i].track != track) {
+				continue;
+			}
+			ut64 key = (ut64)i << 32;
+			size_t k = RVecEdgeRouteKey_lower_bound (succ, &key, edge_key_cmp);
+			for (; k < RVecEdgeRouteKey_length (succ); k++) {
+				ut64 pair = *RVecEdgeRouteKey_at (succ, k);
+				if ((pair >> 32) != i) {
+					break;
+				}
+				EdgeNet *to = &nets[(ut32)pair];
+				if (to->preds > 0) {
+					to->preds--;
+				}
+			}
+		}
+		track++;
+	}
+	return track;
+}
+
+static void edge_nets_apply(EdgeNet *nets, size_t count, int tracks) {
+	size_t i;
+	for (i = 0; i < count; i++) {
+		EdgeNet *n = &nets[i];
+		EdgeDraw *d = n->draw;
+		if (!n->target) {
+			d->bend = n->track;
+			d->maxy = R_MAX (d->maxy, d->y + d->bend + 4);
+			continue;
+		}
+		d->ybend = n->anchored? d->y2 - (n->y + n->track + 2): tracks - n->track;
+		d->miny = R_MIN (d->miny, d->y2 - d->ybend - 3);
+	}
+}
+
+typedef struct {
+	const RANode *node;
+	EdgeDraw *draw;
+	int key;
+} EdgePort;
+
+R_VEC_TYPE (RVecEdgePort, EdgePort);
+
+static int edge_port_cmp(const EdgePort *a, const EdgePort *b) {
+	if (a->node != b->node) {
+		return (a->node > b->node) - (a->node < b->node);
+	}
+	return (a->key > b->key) - (a->key < b->key);
+}
+
+// sort incoming ports by arrival, back edges enter from their side nesting inner loops closer
+static bool edge_routes_assign_ports(EdgeRoutes *routes, const RVecGraphNodePtr *targets) {
+	RVecEdgePort ports;
+	RVecEdgePort_init (&ports);
+	EdgeDraw *d;
+	R_VEC_FOREACH (&routes->draws, d) {
+		if (!d->isvert || d->kind == EDGE_DRAW_LINE) {
+			continue;
+		}
+		RGraphNode **gn = RVecGraphNodePtr_at (targets, d->edge);
+		const RANode *node = gn? get_anode (*gn): NULL;
+		if (!node || node->is_dummy || RVecGraphNodePtr_length (&node->gnode->in_nodes) < 2) {
+			continue;
+		}
+		EdgePort *port = RVecEdgePort_emplace_back (&ports);
+		if (!port) {
+			RVecEdgePort_fini (&ports);
+			return false;
+		}
+		int key = d->x;
+		if (d->kind == EDGE_DRAW_BACK) {
+			key = (d->xbend < d->x2? INT_MIN / 2: INT_MAX / 2) - d->xbend;
+		}
+		*port = (EdgePort){ node, d, key };
+	}
+	RVecEdgePort_sort (&ports, edge_port_cmp);
+	const RANode *node = NULL;
+	int nth = 0;
+	EdgePort *port;
+	R_VEC_FOREACH (&ports, port) {
+		nth = port->node == node? nth + 1: 0;
+		node = port->node;
+		d = port->draw;
+		d->x2 = node->x + R_EDGES_X_INC + 2 * (nth + 1);
+		d->minx = R_MIN (d->minx, d->x2 - 2);
+		d->maxx = R_MAX (d->maxx, d->x2 + 2);
+	}
+	RVecEdgePort_fini (&ports);
+	return true;
+}
+
+static bool edge_routes_assign_bends(EdgeRoutes *routes) {
+	bool res = false;
+	RVecEdgeNet nets;
+	RVecEdgeRouteKey succ;
+	RVecEdgeNet_init (&nets);
+	RVecEdgeRouteKey_init (&succ);
+	HtUU *tops = ht_uu_new0 ();
+	if (!tops) {
+		goto beach;
+	}
+	EdgeDraw *d;
+	R_VEC_FOREACH (&routes->draws, d) {
+		if (d->isvert && d->kind == EDGE_DRAW_SQUARE && d->y2 - d->y > 1) {
+			ht_uu_update (tops, (ut32)d->y2, (ut32)d->y);
+			if (d->x != d->x2 && !edge_nets_add (&nets, d, d->x, d->x2, d->y, false, true)) {
+				goto beach;
+			}
+		}
+	}
+	R_VEC_FOREACH (&routes->draws, d) {
+		if (!d->isvert || d->kind != EDGE_DRAW_BACK) {
+			continue;
+		}
+		bool found = false;
+		int top = (int)ht_uu_find (tops, (ut32)d->y2, &found);
+		if (!edge_nets_add (&nets, d, d->x, d->xbend, d->y, false, true)
+				|| !edge_nets_add (&nets, d, d->x2, d->xbend, found? top: d->y2, true, found)) {
+			goto beach;
+		}
+	}
+	RVecEdgeNet_sort (&nets, edge_net_cmp);
+	size_t first = 0, count = RVecEdgeNet_length (&nets);
+	while (first < count) {
+		EdgeNet *group = RVecEdgeNet_at (&nets, first);
+		size_t end = first + 1;
+		while (end < count && !edge_net_cmp_channel (group, RVecEdgeNet_at (&nets, end))) {
+			end++;
+		}
+		int tracks = edge_nets_route (group, end - first, &succ);
+		if (tracks < 0) {
+			goto beach;
+		}
+		edge_nets_apply (group, end - first, tracks);
+		if (routes->rows) {
+			const ut64 channel = group->anchored? (ut32)group->y: (1ULL << 32) | (ut32)group->y;
+			ht_uu_update (routes->rows, channel, tracks);
+		}
+		first = end;
+	}
+	res = true;
+beach:
+	ht_uu_free (tops);
+	RVecEdgeNet_fini (&nets);
+	RVecEdgeRouteKey_fini (&succ);
+	return res;
+}
+
 static int tmplayercmp(const void *a, const void *b) {
 	return ((struct tmplayer *)a)->layer > ((struct tmplayer *)b)->layer;
 }
@@ -3320,6 +3713,26 @@ static int first_x_cmp(RGraphNode *const *ga, RGraphNode *const *gb) {
 	return 0;
 }
 
+// horizontal extents of the layers a back edge has to go around
+static struct tmplayer *backedge_extents(RList *lyr, struct tmpbackedgeinfo *e, int *minx, int *maxx) {
+	struct tmplayer *tl, *tt = NULL;
+	RListIter *it;
+	r_list_foreach (lyr, it, tl) {
+		if (tl->layer <= e->tolayer) {
+			tt = tl;
+			*minx = tl->minx;
+			*maxx = tl->maxx;
+			continue;
+		}
+		*minx = R_MIN (*minx, tl->minx);
+		*maxx = R_MAX (*maxx, tl->maxx);
+		if (tl->layer >= e->fromlayer) {
+			break;
+		}
+	}
+	return tt;
+}
+
 static bool edge_routes_build(RAGraph *g, EdgeRoutes *routes) {
 	RCons *cons = g->can->cons;
 	bool complete = false;
@@ -3334,14 +3747,34 @@ static bool edge_routes_build(RAGraph *g, EdgeRoutes *routes) {
 	RList *lyr = r_list_new ();
 	RList *bckedges = r_list_new ();
 	HtUU *out_edge_numbers = ht_uu_new0 ();
-	HtUU *in_edge_numbers = ht_uu_new0 ();
 	struct tmplayer *tl, *tm;
+	RVecGraphNodePtr targets;
+	RVecGraphNodePtr_init (&targets);
 
+	// fanout ports follow their targets without reordering the edges of the graph
+	RVecGraphNodePtr fanout;
+	RVecGraphNodePtr_init (&fanout);
+	graph_foreach_anode (nodes, itm, ga, a) {
+		if (!out_edge_numbers || RVecGraphNodePtr_length (&ga->out_nodes) <= 2 || g->is_callgraph) {
+			continue;
+		}
+		RVecGraphNodePtr_clear (&fanout);
+		RGraphNode **it;
+		R_VEC_FOREACH (&ga->out_nodes, it) {
+			RVecGraphNodePtr_push_back (&fanout, it);
+		}
+		RVecGraphNodePtr_sort (&fanout, first_x_cmp);
+		int nth = 0;
+		R_VEC_FOREACH (&fanout, it) {
+			ht_uu_update (out_edge_numbers, edge_number_key (a, get_anode (*it)), nth++ + 2);
+		}
+	}
+	RVecGraphNodePtr_fini (&fanout);
 	graph_foreach_anode (nodes, itm, ga, a) {
 		const RGraphNode *gb;
 		RANode *b;
 		RVecGraphNodePtr *neighbours = &ga->out_nodes;
-		int ax, ay, bx, by, a_x_inc, b_x_inc;
+		int ax, ay, bx, by, b_x_inc;
 		tl = tm = NULL;
 		if (r_cons_is_breaked (cons)) {
 			break;
@@ -3387,12 +3820,13 @@ static bool edge_routes_build(RAGraph *g, EdgeRoutes *routes) {
 		bool many = RVecGraphNodePtr_length (neighbours) > 2;
 		int bendpoint_base = tm->edgectr;
 
-		if (many && !g->is_callgraph) {
-			RVecGraphNodePtr_sort (neighbours, first_x_cmp);
-		}
-
 		graph_foreach_anode_vec (neighbours, itn, gb, b) {
 			const int edge = RVecEdgeHighlight_length (&routes->edges);
+			RGraphNode **target = RVecGraphNodePtr_emplace_back (&targets);
+			if (!target) {
+				goto cleanup;
+			}
+			*target = (RGraphNode *)gb;
 			EdgeHighlight *eh = RVecEdgeHighlight_emplace_back (&routes->edges);
 			if (!eh) {
 				goto cleanup;
@@ -3404,7 +3838,7 @@ static bool edge_routes_build(RAGraph *g, EdgeRoutes *routes) {
 				eh->to = r_num_get (NULL, b->title);
 			}
 			out_nth = get_edge_number_cached (g, a, b, true, out_edge_numbers);
-			in_nth = get_edge_number_cached (g, a, b, false, in_edge_numbers);
+			in_nth = get_in_edge_number (g, a, b, out_edge_numbers);
 
 			bool parent_many = false;
 			if (a->is_dummy) {
@@ -3450,19 +3884,16 @@ static bool edge_routes_build(RAGraph *g, EdgeRoutes *routes) {
 					style.dot_style = DOT_STYLE_BACKEDGE;
 				}
 
-				a_x_inc = R_EDGES_X_INC + 2 *(out_nth + 1);
 				b_x_inc = R_EDGES_X_INC + 2 *(in_nth + 1);
 
 				bx = b->is_dummy? b->x: (b->x + b_x_inc);
 				ay = a->y + a->h;
 				by = b->y - 1;
 
+				ax = edge_out_x (g, a, out_nth);
 				if (many && !g->is_callgraph) {
-					int t = R_EDGES_X_INC + 2 *(RVecGraphNodePtr_length (neighbours) + 1);
-					ax = a->is_dummy? a->x: (a->x + a->w / 2 + (t / 2 - a_x_inc));
 					bendpoint = bendpoint_base + (bx < ax? RVecGraphNodePtr_length (neighbours) - out_nth: out_nth);
 				} else {
-					ax = a->is_dummy? a->x: (a->x + a_x_inc);
 					bendpoint = tm->edgectr;
 				}
 
@@ -3578,41 +4009,24 @@ static bool edge_routes_build(RAGraph *g, EdgeRoutes *routes) {
 
 	struct tmpbackedgeinfo *temp;
 	r_list_foreach (bckedges, itm, temp) {
-		int leftlen, rightlen;
 		int minx = 0, maxx = 0;
-		struct tmplayer *tt = NULL;
-		tl = r_list_get_n (lyr, temp->fromlayer);
+		backedge_extents (lyr, temp, &minx, &maxx);
+		int a = g->layout? temp->ay: temp->ax;
+		int b = g->layout? temp->by: temp->bx;
+		temp->right = (maxx - a) + (maxx - b) < (a - minx) + (b - minx);
+		// loops closer to their side take the inner columns so they nest without crossing
+		temp->order = temp->right? -R_MAX (a, b): R_MIN (a, b);
+	}
+	r_list_sort (bckedges, backedge_cmp);
+	r_list_foreach (bckedges, itm, temp) {
+		int minx = 0, maxx = 0;
 		if (r_cons_is_breaked (cons)) {
 			break;
 		}
-
-		r_list_foreach (lyr, ito, tl) {
-			if (tl->layer <= temp->tolayer) {
-				tt = tl;
-				minx = tl->minx;
-				maxx = tl->maxx;
-				continue;
-			}
-			minx = minx < tl->minx? minx: tl->minx;
-			maxx = maxx > tl->maxx? maxx: tl->maxx;
-			if (tl->layer >= temp->fromlayer) {
-				break;
-			}
-		}
-
+		struct tmplayer *tt = backedge_extents (lyr, temp, &minx, &maxx);
 		if (tt) {
 			tt->revedgectr += 1;
-		}
-		if (g->layout == 0) {
-			leftlen = (temp->ax - minx) + (temp->bx - minx);
-			rightlen = (maxx - temp->ax) + (maxx - temp->bx);
-		} else {
-			leftlen = (temp->ay - minx) + (temp->by - minx);
-			rightlen = (maxx - temp->ay) + (maxx - temp->by);
-		}
-
-		if (tt) {
-			int arg = (rightlen < leftlen)? maxx + 1: minx - 1;
+			int arg = temp->right? maxx + 1: minx - 1;
 			if (!edge_routes_add (routes, g->can, EDGE_DRAW_BACK, temp->edge, temp->ax, temp->ay, temp->bx, temp->by,
 					&temp->style, temp->edgectr, arg, tt->revedgectr, !g->layout)) {
 				goto cleanup;
@@ -3623,7 +4037,7 @@ static bool edge_routes_build(RAGraph *g, EdgeRoutes *routes) {
 			if (tl->layer < temp->tolayer) {
 				continue;
 			}
-			if (rightlen < leftlen) {
+			if (temp->right) {
 				tl->maxx = maxx + 1;
 			} else {
 				tl->minx = minx - 1;
@@ -3635,6 +4049,10 @@ static bool edge_routes_build(RAGraph *g, EdgeRoutes *routes) {
 	}
 
 	complete = true;
+	if (!g->layout && g->can->linemode && !g->is_tiny) {
+		complete = (g->is_callgraph || edge_routes_assign_ports (routes, &targets))
+			&& edge_routes_assign_bends (routes);
+	}
 cleanup:
 	r_list_foreach (lyr, ito, tl) {
 		free (tl);
@@ -3646,9 +4064,33 @@ cleanup:
 
 	r_list_free (lyr);
 	r_list_free (bckedges);
+	RVecGraphNodePtr_fini (&targets);
 	ht_uu_free (out_edge_numbers);
-	ht_uu_free (in_edge_numbers);
 	return complete && !r_cons_is_breaked (cons);
+}
+
+static int layer_top_y(const RAGraph *g, int layer) {
+	const RANode *n = g->layers[layer].n_nodes? get_anode (g->layers[layer].nodes[0]): NULL;
+	return n? n->y: 0;
+}
+
+// shrink every layer gap to the bend rows the edge router really uses
+static void compact_layer_gaps(RAGraph *g) {
+	EdgeRoutes routes = { 0 };
+	routes.rows = ht_uu_new0 ();
+	if (routes.rows && edge_routes_build (g, &routes)) {
+		int i;
+		for (i = 0; i < g->n_layers; i++) {
+			const ut64 channel = i
+				? (ut32)(layer_top_y (g, i - 1) + g->layers[i - 1].height)
+				: (1ULL << 32) | (ut32)(layer_top_y (g, 0) - 1);
+			g->layers[i].gap = (int)ht_uu_find (routes.rows, channel, NULL);
+		}
+		set_layer_y (g);
+	}
+	ht_uu_free (routes.rows);
+	RVecEdgeHighlight_fini (&routes.edges);
+	RVecEdgeDraw_fini (&routes.draws);
 }
 
 static void agraph_print_edges(RAGraph *g) {
