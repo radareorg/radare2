@@ -188,8 +188,12 @@ R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE ou
 	si.hStdInput = in;
 	si.dwFlags |= STARTF_USESTDHANDLES;
 	cmdline_ = r_sys_conv_utf8_to_win (cmdline);
-	ExpandEnvironmentStrings (cmdline_, _cmdline_, max_length - 1);
-	if ((ret = CreateProcess (NULL,
+	// the size is in characters, and the result must fit in the buffer
+	const DWORD max_chars = max_length / sizeof (TCHAR);
+	const DWORD len = ExpandEnvironmentStrings (cmdline_, _cmdline_, max_chars);
+	if (!len || len > max_chars) {
+		R_LOG_ERROR ("Cannot expand the command line");
+	} else if ((ret = CreateProcess (NULL,
 			_cmdline_,     // command line
 			NULL,          // process security attributes
 			NULL,          // primary thread security attributes
