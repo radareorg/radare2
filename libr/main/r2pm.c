@@ -508,6 +508,10 @@ static char *r2pm_list(int mode) {
 }
 
 static int r2pm_update(bool force) {
+	if (r_sys_getenv_asbool ("R2PM_OFFLINE")) {
+		R_LOG_INFO ("Offline mode, skipping database update");
+		return 0;
+	}
 	char *gpath = r2pm_gitdir ();
 	if (!gpath) {
 		R_LOG_ERROR ("Cannot find gitdir");
@@ -2008,8 +2012,8 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 			return r_main_cons_fini (cons, own_cons, 1);
 		}
 	}
-	if (r2pm.init) {
-		r2pm_update (r2pm.force);
+	if (r2pm.init && r2pm_update (r2pm.force)) {
+		r2pm.rc = 1;
 	}
 	if (r2pm.upgrade) {
 		if (r2pm_upgrade (&r2pm)) {

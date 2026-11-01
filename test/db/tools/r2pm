@@ -551,3 +551,25 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=r2pm -U reports database update failures
+REQUIRE=unix
+FILE=-
+CMDS=<<EOF
+rmrf /tmp/r2pm-update-fail-r2r
+mkdir -p /tmp/r2pm-update-fail-r2r/bin
+mkdir -p /tmp/r2pm-update-fail-r2r/git/radare2-pm
+!!printf '#!/bin/sh\nexit 1\n' > /tmp/r2pm-update-fail-r2r/bin/git && chmod +x /tmp/r2pm-update-fail-r2r/bin/git
+%R2PM_GITDIR=/tmp/r2pm-update-fail-r2r/git
+%XDG_DATA_HOME=/tmp/r2pm-update-fail-r2r/data
+%PATH=/tmp/r2pm-update-fail-r2r/bin
+%R2_LOG_LEVEL=1
+r2pm -qU 2>/dev/null
+?vi
+rmrf /tmp/r2pm-update-fail-r2r
+EOF
+EXPECT=<<EOF
+1
+EOF
+EXPECT_ERR=
+RUN
