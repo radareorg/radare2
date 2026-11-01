@@ -318,7 +318,6 @@ typedef struct r_anal_function_meta_t {
 	// instructions of the blocks, numrefs the entry: changing those drops them.
 	int numrefs;        // number of cross references
 	int numcallrefs;    // number of calls
-	int stack_pop;      // PRIVATE, inferred callee-popped argument bytes
 	ut64 refsgen;       // PRIVATE, xref generation numrefs/numcallrefs were computed at
 } RAnalFcnMeta;
 
@@ -327,12 +326,13 @@ R_VEC_TYPE (RVecAnalVarPtr, RAnalVar *);
 typedef struct r_anal_function_t {
 	// TODO R2_600 Use RBinName here
 	char *name;
+	ut64 addr;
+	RVecAnalBlockPtr bbs;
 	char *realname; // R2_590: add realname for the mangled one
 	char *pin; // user-defined pin string (emoji or any utf-8) to mark this function; NULL if not pinned
 	int bits; // ((> bits 0) (set-bits bits))
 	int type;
 	const char *callconv; // calling convention (RAnal.constpool string). May hold the bare "dyncc" marker until r_anal_function_cc() resolves it
-	ut64 addr;
 	HtUP/*<ut64, char *>*/ *labels;
 	HtPP/*<char *, ut64 *>*/ *label_addrs;
 	RVecAnalVarPtr vars;
@@ -342,6 +342,7 @@ typedef struct r_anal_function_t {
 	st64 bp_off; // offset of bp inside owned stack frame
 	st64 stack;  // stack frame size
 	int maxstack;
+	int stack_pop; // PRIVATE, inferred callee-popped argument bytes
 	int ninstr;
 	bool folded;
 	bool is_pure;
@@ -351,11 +352,11 @@ typedef struct r_anal_function_t {
 	bool bp_from_sp; // a prologue copied SP into BP, so BP really is the frame base
 	bool is_noreturn; // true if function does not return
 	bool is_inline; // true if function is inlined at its call sites
+	bool bbs_sorted; // PRIVATE, invalidated by out-of-order additions and afbs
 	ut8 swift_roles; // R_BIN_SWIFT_ROLE_* bits the linkage name gives, UT8_MAX until asked
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	size_t fingerprint_size;
 	RAnalDiff *diff;
-	RVecAnalBlockPtr bbs;
 	RAnalFcnMeta meta;
 	RList *imports; // maybe bound to class?
 	struct r_anal_t *anal; // this function is associated with this instance
@@ -691,21 +692,18 @@ typedef struct r_anal_cond_t {
 
 typedef struct r_anal_bb_t {
 	RBNode _rb;     // private, node in the RBTree
-	ut64 _max_end;  // private, augmented value for RBTree
 	ut64 addr;
 	ut64 size;
 	ut64 jump;
 	ut64 fail;
+	ut64 _max_end;  // private, augmented value for RBTree
 	ut64 traced; // bitfield (each bit represents 1 trace)
-	bool folded;
-	RColor color;
 	ut8 *fingerprint;
 	RAnalDiff *diff;
 	RAnalCond *cond;
 	RAnalSwitchOp *switch_op;
 	ut8 *op_bytes;
 	ut8 *parent_reg_arena;
-	int parent_reg_arena_size;
 #if R2_600
 	// for the oppos
 	USE RVec
@@ -714,16 +712,19 @@ typedef struct r_anal_bb_t {
 	int op_pos_size; // size of the op_pos array
 	int ninstr;
 #endif
+	int parent_reg_arena_size;
 	int stackptr;
 	int parent_stackptr;
+	ut32 bbhash; // calculated with xxhash
 	ut64 cmpval;
 	const char *cmpreg;
-	ut32 bbhash; // calculated with xxhash
 	RList *fcns;
 	RAnal *anal;
 	char *esil;
-	R_REF_TYPE;
 	int depth;
+	R_REF_TYPE;
+	bool folded;
+	RColor color;
 #undef RAnalBlock
 } RAnalBlock;
 
@@ -1120,6 +1121,7 @@ static inline bool r_anal_function_rename_unique(RAnalFunction *fcn, const char 
 	return renamed;
 }
 
+R_API void r_anal_function_sort_blocks(RAnalFunction *fcn);
 R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb);
 R_API void r_anal_function_remove_block(RAnalFunction *fcn, RAnalBlock *bb);
 

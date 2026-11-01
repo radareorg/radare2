@@ -38,3 +38,27 @@ asm_code: asm_code.c
 .PHONY: clean-asm-code
 clean-asm-code:
 	rm -f asm_code
+
+anal-layout: anal-layout.c
+	$(CC) $(CPPFLAGS) -O2 -I../../libr/include -I../../subprojects/sdb/include $< \
+		-o $@ $(LDFLAGS) -L$(LIBDIR) -lr_core -lr_anal -lr_config -lr_util
+
+.PHONY: clean-anal-layout
+clean-anal-layout:
+	rm -f anal-layout
+
+anal-bb-storage: anal-bb-storage.c
+	$(CC) $(CPPFLAGS) -O2 -I../../libr/include -I../../subprojects/sdb/include $< \
+		-o $@ $(LDFLAGS) -L$(LIBDIR) -lr_util
+
+.PHONY: clean-anal-bb-storage
+clean-anal-bb-storage:
+	rm -f anal-bb-storage
+
+anal-bb-lookup: anal-bb-lookup.c
+	$(CC) $(CPPFLAGS) -O2 -DBB_ORDER_CACHE=1 -I../../libr/include -I../../subprojects/sdb/include $< \
+		-o $@ $(LDFLAGS) -L$(LIBDIR) -lr_anal -lr_util
+
+.PHONY: clean-anal-bb-lookup
+clean-anal-bb-lookup:
+	rm -f anal-bb-lookup

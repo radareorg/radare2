@@ -2118,7 +2118,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	ut64 oldoff = core->addr;
 	r_cons_break_push (core->cons, NULL, NULL);
 	// TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
-	RVecAnalBlockPtr_sort (&fcn->bbs, bb_cmpaddr);
+	r_anal_function_sort_blocks (fcn);
 	R_VEC_FOREACH (&fcn->bbs, it) {
 		bb = *it;
 		ut64 at = bb->addr;

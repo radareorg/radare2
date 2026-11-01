@@ -979,8 +979,8 @@ pdcj~{annotations[12]}
 EOF
 EXPECT=<<EOF
 {"start":505,"end":538,"offset":4294982284,"type":"offset"}
-{"start":538,"end":586,"offset":4294982264,"type":"offset"}
-{"start":586,"end":633,"offset":4294982252,"type":"offset"}
+{"start":538,"end":585,"offset":4294982252,"type":"offset"}
+{"start":585,"end":633,"offset":4294982264,"type":"offset"}
 EOF
 RUN
 
@@ -1056,8 +1056,8 @@ f case.strcoll.result_when_greater_than_other @ 0x100003a78
 pdc~loc_0x100003a78,loc_0x100003a6c
 EOF
 EXPECT=<<EOF
-    loc_0x100003a78: // case result_when_greater_than_other
     loc_0x100003a6c: // orphan
+    loc_0x100003a78: // case result_when_greater_than_other
 EOF
 RUN
 
@@ -1072,8 +1072,8 @@ f case.strcoll.300 @ 0x100003a6c
 pdc~loc_0x100003a78,loc_0x100003a6c
 EOF
 EXPECT=<<EOF
-    loc_0x100003a78: // case 'A'
     loc_0x100003a6c: // case 300
+    loc_0x100003a78: // case 'A'
 EOF
 RUN
 

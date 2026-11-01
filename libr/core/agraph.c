@@ -2439,17 +2439,6 @@ static char *get_bb_body(RCore *core, RAnalBlock *b, int opts, RAnalFunction *fc
 	return body;
 }
 
-static int bbcmp(RAnalBlock *const *pa, RAnalBlock *const *pb) {
-	RAnalBlock *a = *pa, *b = *pb;
-	if (a->addr < b->addr) {
-		return -1;
-	}
-	if (a->addr > b->addr) {
-		return 1;
-	}
-	return 0;
-}
-
 static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RAnalBlock **iter;
@@ -2464,7 +2453,7 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		saved_arena = r_reg_arena_peek (core->anal->reg, &saved_arena_size);
 	}
 	if (!RVecAnalBlockPtr_empty (&fcn->bbs)) {
-		RVecAnalBlockPtr_sort (&fcn->bbs, bbcmp);
+		r_anal_function_sort_blocks (fcn);
 	}
 
 	int shortcuts = r_config_get_b (core->config, "graph.nodejmps");
@@ -2631,7 +2620,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	if (emu) {
 		saved_arena = r_reg_arena_peek (core->anal->reg, &saved_arena_size);
 	}
-	RVecAnalBlockPtr_sort (&fcn->bbs, bbcmp);
+	r_anal_function_sort_blocks (fcn);
 	RAnalBlock *curbb = NULL;
 	if (few) {
 		R_VEC_FOREACH (&fcn->bbs, iter) {

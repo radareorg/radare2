@@ -59,6 +59,11 @@ static inline bool anal_var_ptr_contains(RVecAnalVarPtr *vec, RAnalVar *var) {
 	return false;
 }
 
+static void inst_vars_kv_free(HtUPKv *kv) {
+	RVecAnalVarPtr *vec = kv->value;
+	RVecAnalVarPtr_free (vec);
+}
+
 static RVecAnalVarPtr *anal_var_ptr_clone(RVecAnalVarPtr *src) {
 	RVecAnalVarPtr *dst = RVecAnalVarPtr_new ();
 	if (!dst) {
@@ -921,6 +926,9 @@ R_API bool r_anal_var_set_access(RAnal *anal, RAnalVar *var, const char *reg, ut
 	acc->reg = r_str_constpool_get (&var->fcn->anal->constpool, reg);
 
 	// add the inverse reference from the instruction to the var
+	if (!var->fcn->inst_vars) {
+		var->fcn->inst_vars = ht_up_new (NULL, inst_vars_kv_free, NULL);
+	}
 	RVecAnalVarPtr *inst_accesses = ht_up_find (var->fcn->inst_vars, (ut64)offset, NULL);
 	if (!inst_accesses) {
 		inst_accesses = RVecAnalVarPtr_new ();

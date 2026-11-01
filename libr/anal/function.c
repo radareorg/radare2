@@ -55,24 +55,6 @@ static bool __fcn_exists(RAnal *anal, const char *name, ut64 addr) {
 
 R_IPI void r_anal_var_free(RAnalVar *av);
 
-static void inst_vars_kv_free(HtUPKv *kv) {
-	RVecAnalVarPtr *vec = kv->value;
-	RVecAnalVarPtr_free (vec);
-}
-
-static void labels_kv_free(HtUPKv *kv) {
-	if (kv) {
-		free (kv->value);
-	}
-}
-
-static void label_addrs_kv_free(HtPPKv *kv) {
-	if (kv) {
-		free (kv->key);
-		free (kv->value);
-	}
-}
-
 R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 	// XXX fcn->name is null because its r_anal_create_function the one that must be called
 	R_RETURN_VAL_IF_FAIL (anal, NULL);
@@ -82,19 +64,17 @@ R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 	fcn->callconv = r_str_constpool_get (&anal->constpool, r_anal_cc_default (anal));
 	fcn->bits = anal->config->bits;
 	RVecAnalBlockPtr_init (&fcn->bbs);
+	fcn->bbs_sorted = true;
 	fcn->diff = r_anal_diff_new ();
 	fcn->has_changed = true;
 	fcn->bp_frame = true;
 	fcn->swift_roles = UT8_MAX;
 	fcn->is_noreturn = false;
 	fcn->meta._min = UT64_MAX;
-	fcn->meta.stack_pop = R_ANAL_CC_STACK_POP_UNKNOWN;
+	fcn->stack_pop = R_ANAL_CC_STACK_POP_UNKNOWN;
 	fcn->meta.numrefs = -1;
 	fcn->meta.numcallrefs = -1;
 	RVecAnalVarPtr_init (&fcn->vars);
-	fcn->inst_vars = ht_up_new (NULL, inst_vars_kv_free, NULL);
-	fcn->labels = ht_up_new (NULL, labels_kv_free, NULL);
-	fcn->label_addrs = ht_pp_new (NULL, label_addrs_kv_free, NULL);
 	fcn->ts = r_time_now ();
 	return fcn;
 }
@@ -291,14 +271,51 @@ R_API bool r_anal_function_rename(RAnalFunction *fcn, const char *name) {
 	return true;
 }
 
+static int find_bb_cmp(RAnalBlock *const *a, const void *b) {
+	ut64 addr = *(const ut64 *)b;
+	return ((*a)->addr > addr) - ((*a)->addr < addr);
+}
+
+static int bb_addr_cmp(RAnalBlock *const *a, RAnalBlock *const *b) {
+	return find_bb_cmp (a, &(*b)->addr);
+}
+
+R_API void r_anal_function_sort_blocks(RAnalFunction *fcn) {
+	R_RETURN_IF_FAIL (fcn);
+	if (!fcn->bbs_sorted) {
+		RVecAnalBlockPtr_sort (&fcn->bbs, bb_addr_cmp);
+		fcn->bbs_sorted = true;
+	}
+}
+
+R_API RAnalBlock *r_anal_function_bbget_at(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (fcn && addr != UT64_MAX, NULL);
+	r_anal_function_sort_blocks (fcn);
+	RAnalBlock **start = R_VEC_START_ITER (&fcn->bbs);
+	RAnalBlock **end = R_VEC_END_ITER (&fcn->bbs);
+	if (start == end || addr < start[0]->addr || addr > end[-1]->addr) {
+		return NULL;
+	}
+	RAnalBlock **bb = RVecAnalBlockPtr_find_sorted (&fcn->bbs, &addr, find_bb_cmp);
+	return bb? *bb: NULL;
+}
+
 R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb) {
 	R_RETURN_IF_FAIL (fcn && bb);
 	if (r_list_contains (bb->fcns, fcn)) {
 		return;
 	}
+	size_t len = RVecAnalBlockPtr_length (&fcn->bbs);
+	if (fcn->bbs_sorted && len && (*RVecAnalBlockPtr_last (&fcn->bbs))->addr > bb->addr) {
+		fcn->bbs_sorted = false;
+	}
+	RAnalBlock **slot = RVecAnalBlockPtr_emplace_back (&fcn->bbs);
+	if (!slot) {
+		return;
+	}
+	*slot = bb;
 	r_list_append (bb->fcns, fcn);
 	(void)r_ref (bb);
-	RVecAnalBlockPtr_push_back (&fcn->bbs, &bb);
 	fcn->meta.numcallrefs = -1;
 
 	if (fcn->meta._min != UT64_MAX) {
@@ -315,12 +332,13 @@ R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb) {
 	}
 }
 
-static int find_bb_cmp(RAnalBlock *const *a, const void *b) {
-	return *a != b;
-}
-
 R_API void r_anal_function_remove_block(RAnalFunction *fcn, RAnalBlock *bb) {
 	R_RETURN_IF_FAIL (fcn && bb);
+	r_anal_function_sort_blocks (fcn);
+	size_t idx = RVecAnalBlockPtr_find_sorted_index (&fcn->bbs, &bb->addr, find_bb_cmp);
+	if (idx == SZT_MAX || *RVecAnalBlockPtr_at (&fcn->bbs, idx) != bb) {
+		return;
+	}
 	r_list_delete_data (bb->fcns, fcn);
 
 	if (fcn->meta._min != UT64_MAX
@@ -329,10 +347,7 @@ R_API void r_anal_function_remove_block(RAnalFunction *fcn, RAnalBlock *bb) {
 		fcn->meta._min = UT64_MAX;
 	}
 
-	size_t idx = RVecAnalBlockPtr_find_index (&fcn->bbs, bb, find_bb_cmp);
-	if (idx != SZT_MAX) {
-		RVecAnalBlockPtr_remove (&fcn->bbs, idx);
-	}
+	RVecAnalBlockPtr_remove (&fcn->bbs, idx);
 	fcn->meta.numcallrefs = -1;
 	r_unref (bb);
 }
