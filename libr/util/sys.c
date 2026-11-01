@@ -314,12 +314,16 @@ R_API RList *r_sys_dir(const char *path) {
 }
 
 R_API char *r_sys_cmd_strf(const char *fmt, ...) {
-	char *ret, cmd[4096];
+	R_RETURN_VAL_IF_FAIL (fmt, NULL);
 	va_list ap;
 	va_start (ap, fmt);
-	vsnprintf (cmd, sizeof (cmd), fmt, ap);
-	ret = r_sys_cmd_str (cmd, NULL, NULL);
+	char *cmd = r_str_newvf (fmt, ap);
 	va_end (ap);
+	if (!cmd) {
+		return NULL;
+	}
+	char *ret = r_sys_cmd_str (cmd, NULL, NULL);
+	free (cmd);
 	return ret;
 }
 
@@ -1001,13 +1005,16 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 }
 
 R_API int r_sys_cmdf(const char *fmt, ...) {
-	int ret;
-	char cmd[4096];
+	R_RETURN_VAL_IF_FAIL (fmt, -1);
 	va_list ap;
 	va_start (ap, fmt);
-	vsnprintf (cmd, sizeof (cmd), fmt, ap);
-	ret = r_sys_cmd (cmd);
+	char *cmd = r_str_newvf (fmt, ap);
 	va_end (ap);
+	if (!cmd) {
+		return -1;
+	}
+	int ret = r_sys_cmd (cmd);
+	free (cmd);
 	return ret;
 }
 
