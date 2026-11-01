@@ -492,6 +492,10 @@ a "xadd dword ptr [rax], ecx" 0fc108
 a "xadd qword ptr [rsp+8], r12" 4c0fc1642408
 a "xadd word ptr [rbp-4], cx" 660fc14dfc
 a "lock xadd qword ptr [rdi], rsi" f0480fc137
+a "cmpxchg rcx, rdx" 480fb1d1
+a "cmpxchg r9, r10" 4d0fb1d1
+a "cmpxchg byte ptr [r12], sil" 410fb03424
+a "lock cmpxchg qword ptr [rdi], rsi" f0480fb137
 a "rep movsd" f3a5
 a "movsq" 48a5
 a "rep movsq" f348a5

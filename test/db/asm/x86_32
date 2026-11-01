@@ -1065,8 +1065,8 @@ aB "cmpunordsd xmm0, qword [eax]" f20fc20003
 aB "cmpunordss xmm0, dword [eax]" f30fc20003
 aB "cmpxchg16b [eax]" 67480f0c70
 aB "cmpxchg8b dword [eax]" 0fc7c0
-aB "cmpxchg byte [eax], al" 0fb000
-aB "cmpxchg dword [eax], eax" 0fb100
+a "cmpxchg byte [eax], al" 0fb000
+a "cmpxchg dword [eax], eax" 0fb100
 aB "comisd xmm0, xmmword [eax]" 660f2f00
 aB "comiss xmm0, dword [eax]" 0f2f00
 ad "cpuid" 0fa2
