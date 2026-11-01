@@ -680,6 +680,30 @@ bool test_file_copy(void) {
 	mu_end;
 }
 
+bool test_sys_cmdf_long(void) {
+#if R2__UNIX__ && !__wasi__
+	// a command line longer than 4096 bytes
+	char *arg = malloc (5001);
+	mu_assert_notnull (arg, "cannot allocate the argument");
+	memset (arg, 'A', 5000);
+	arg[5000] = 0;
+	const char *out = "cmdf_out";
+	unlink (out);
+	r_sys_cmdf ("printf %%s %s > %s", arg, out);
+	char *data = r_file_slurp (out, NULL);
+	char *str = r_sys_cmd_strf ("printf %%s %s", arg);
+	unlink (out);
+	free (arg);
+	mu_assert_notnull (data, "r_sys_cmdf keeps the redirection after a long argument");
+	mu_assert_eq (strlen (data), 5000, "r_sys_cmdf passes the whole argument");
+	mu_assert_notnull (str, "r_sys_cmd_strf returns the output");
+	mu_assert_eq (strlen (str), 5000, "r_sys_cmd_strf passes the whole argument");
+	free (data);
+	free (str);
+#endif
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_ignore_prefixes);
 	mu_run_test (test_remove_r2_prefixes);
@@ -704,6 +728,7 @@ int all_tests(void) {
 	mu_run_test (test_file_rm_rf_symlink);
 	mu_run_test (test_session_pidfile_symlink);
 	mu_run_test (test_file_copy);
+	mu_run_test (test_sys_cmdf_long);
 	return tests_passed != tests_run;
 }
 
