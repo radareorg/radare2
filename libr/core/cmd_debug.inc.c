@@ -527,24 +527,12 @@ static RCoreHelpMessage help_msg_dt = {
 	"dta", " 0x804020 ...", "only trace given addresses",
 	"dtc", "[?][addr]|([from] [to] [addr])", "trace call/ret",
 	"dtd", "[qi] [nth-start]", "list all traced disassembled (quiet, instructions)",
-	"dte", "[?]", "show esil trace logs",
 	"dtg", "", "graph call/ret trace",
 	"dtg*", "", "graph in agn/age commands. use .dtg*;aggi for visual",
 	"dtgi", "", "interactive debug trace",
 	"dts", "[?]", "manage trace sessions, used for step back (EXPERIMENTAL)",
 	"dtt", " [tag]", "select trace tag (no arg unsets)",
 	"dtt.", "", "show current tag",
-	NULL
-};
-
-static RCoreHelpMessage help_msg_dte = {
-	"Usage: dte", "", "Show esil trace logs",
-	"dte", "", "esil trace log for a single instruction",
-	"dte", " [idx]", "show commands for that index log",
-	"dte", "-*", "delete all the esil traces recorded",
-	"dtei", "", "emulate instruction and record a trace their effects",
-	"dted", "", "disassemble all traced instructions",
-	"dtek", " [sdb query]", "esil trace log single instruction from sdb",
 	NULL
 };
 
@@ -6469,98 +6457,6 @@ static int cmd_debug(void *data, const char *input) {
 				}
 			}
 			break;
-#if 0
-		case 'e': // "dte"
-			if (!core->anal->esil) {
-				int romem = r_config_get_i (core->config, "esil.romem");
-				int stats = r_config_get_i (core->config, "esil.stats");
-				int nonull = r_config_get_i (core->config, "esil.nonull");
-				REsilOptions opt = r_esil_options (NULL, NULL);
-				opt.stacksize = r_config_get_i (core->config, "esil.stack.depth");
-				opt.iotrap = r_config_get_i (core->config, "esil.iotrap");
-				opt.addrsize = r_config_get_i (core->config, "esil.addr.size");
-				if (!(core->anal->esil = r_esil_new (&opt))) {
-					return 0;
-				}
-				r_esil_setup (core->anal->esil, core->anal, romem, stats, nonull);
-			}
-			switch (input[2]) {
-			case 0: // "dte"
-			case '*': // "dte*"
-				{
-					char *s = r_esil_trace_list (core->anal->esil, input[2]);
-					r_cons_print (core->cons, s);
-					free (s);
-				}
-				break;
-			case 'i': { // "dtei"
-				ut64 addr = r_num_math (core->num, input + 3);
-				if (!addr) {
-					addr = core->addr;
-				}
-				RAnalOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_ESIL);
-				if (op) {
-					r_esil_trace_op (core->anal->esil, op);
-					r_anal_op_free (op);
-				}
-			} break;
-			case '-': // "dte-"
-				if (!strcmp (input + 3, "*")) {
-					r_esil_trace_free (core->anal->esil->trace);
-					core->anal->esil->trace = r_esil_trace_new (core->anal->esil);
-#if 0
-					if (core->anal->esil && core->anal->esil->trace) {
-						sdb_free (core->anal->esil->trace->db);
-						core->anal->esil->trace->db = sdb_new0 ();
-					}
-#endif
-				} else {
-					R_LOG_TODO ("dte- cannot delete specific logs. Use dte-*");
-				}
-				break;
-			case ' ': { // "dte "
-					int idx = atoi (input + 3);
-					char *s = r_esil_trace_show (core->anal->esil, idx, 0);
-					r_cons_print (core->cons, s);
-					free (s);
-				}
-				break;
-			case 'd':
-				r_core_cmd0 (core, "pd 1 @@=`dte~addr[1]`");
-				break;
-#if 0
-			case 'k': // "dtek"
-				if (input[3] == 0) {
-					Sdb *db = core->anal->esil->trace->db;
-					char *s = sdb_querys (db, NULL, 0, "*");
-					if (s) {
-						r_str_trim (s);
-						r_cons_println (core->cons, s);
-						free (s);
-					}
-				} else if (input[3] == ' ') {
-					if (core->anal->esil->trace) {
-						Sdb *db = core->anal->esil->trace->db;
-						char *s = sdb_querys (db, NULL, 0, input + 4);
-						if (s) {
-							r_str_trim (s);
-							r_cons_println (core->cons, s);
-							free (s);
-						}
-					} else {
-						R_LOG_ERROR ("esil->trace is null. run 'e dbg.trace=true;dtei' to fix that. ");
-					}
-				} else {
-					r_cons_cmd_help_match (core->cons, help_msg_dte, "dtek", 0, true);
-				}
-				break;
-#endif
-			default:
-				r_cons_cmd_help (core->cons, help_msg_dte);
-				break;
-			}
-			break;
-#endif
 		case 's': // "dts"
 			switch (input[2]) {
 			case '+': // "dts+"

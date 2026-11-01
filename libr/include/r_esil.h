@@ -49,16 +49,6 @@ typedef struct r_esil_handler_t {
 	void *user;
 } REsilHandler;
 
-typedef struct r_esil_change_reg_t {
-	int idx;
-	ut64 data;
-} REsilRegChange;
-
-typedef struct r_esil_change_mem_t {
-	int idx;
-	ut8 data;
-} REsilMemChange;
-
 typedef struct {
 	const char *name;
 	ut64 value;
@@ -99,20 +89,10 @@ R_VEC_TYPE_WITH_FINI(RVecAccess, REsilTraceAccess, fini_access);
 typedef struct {
 	RVecTraceOp ops;
 	RVecAccess accesses;
-	HtUU *loop_counts;
 } REsilTraceDB;
 
 typedef struct r_esil_trace_t {
 	REsilTraceDB db;
-	int idx;
-	int end_idx;
-	int cur_idx;
-	HtUP *registers;
-	HtUP *memory;
-	RRegArena *arena[R_REG_TYPE_LAST];
-	ut64 stack_addr;
-	ut64 stack_size;
-	ut8 *stack_data;
 } REsilTrace;
 
 typedef bool (*REsilHookRegWriteCB)(ESIL *esil, const char *name, ut64 *val);
@@ -468,10 +448,6 @@ R_API void r_esil_trace_free(REsilTrace *trace);
 #include <r_arch.h>
 R_API void r_esil_trace_op(REsil *esil, struct r_anal_op_t *op);
 R_API char *r_esil_trace_list(REsil *esil, int format);
-R_API char *r_esil_trace_show(REsil *esil, int idx, int format);
-R_API void r_esil_trace_restore(REsil *esil, int idx);
-R_API ut64 r_esil_trace_loopcount(REsilTrace *etrace, ut64 addr);
-R_API void r_esil_trace_loopcount_increment(REsilTrace *etrace, ut64 addr);
 
 R_API bool r_esil_reg_write_silent(REsil *esil, const char *name, ut64 num);
 R_API bool r_esil_reg_read_nocallback(REsil *esil, const char *regname, ut64 *num, int *size);
