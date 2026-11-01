@@ -217,6 +217,30 @@ ut64 Elf_(get_phnum)(ELFOBJ *eo) {
 	return eo->ehdr.e_phnum & UT16_MAX;
 }
 
+// extended e_shnum: real count is in section[0].sh_size (gABI, mirrors get_phnum's PN_XNUM path).
+ut64 Elf_(get_shnum)(ELFOBJ *eo) {
+	R_RETURN_VAL_IF_FAIL (eo, 0);
+
+	if (eo->ehdr.e_shnum != 0 || eo->inmem) {
+		return eo->ehdr.e_shnum;
+	}
+	if (eo->ehdr.e_shoff == 0 || eo->ehdr.e_shoff > eo->size
+			|| sizeof (Elf_(Shdr)) > eo->size - eo->ehdr.e_shoff) {
+		return 0;
+	}
+	ut8 shdr[sizeof (Elf_(Shdr))] = {0};
+	if (r_buf_read_at (eo->b, eo->ehdr.e_shoff, shdr, sizeof (shdr)) != sizeof (shdr)) {
+		return 0;
+	}
+	int i = 0;
+	(void)READ32 (shdr, i);              // sh_name
+	(void)READ32 (shdr, i);              // sh_type
+	(void)R_BIN_ELF_READWORD (shdr, i);  // sh_flags
+	(void)R_BIN_ELF_READWORD (shdr, i);  // sh_addr
+	(void)R_BIN_ELF_READWORD (shdr, i);  // sh_offset
+	return R_BIN_ELF_READWORD (shdr, i); // sh_size
+}
+
 static bool read_phdr(ELFOBJ *eo) {
 	const ut64 phnum = eo->phnum;
 
@@ -360,34 +384,10 @@ static int init_phdr(ELFOBJ *eo) {
 static int init_shdr(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo && !eo->shdr, false);
 
-	// ELF extended section numbering (gABI): when the real section count does
-	// not fit in the 16-bit e_shnum, e_shnum is 0 and the true count is stored
-	// in section[0].sh_size. This mirrors get_phnum()'s existing PN_XNUM path.
-	// Guarded by !eo->inmem because init_memory_base() intentionally sets
-	// e_shnum = 0 for in-memory images (a loader never maps the section table).
-	// NOTE: e_shnum is 16-bit, so this write-back resolves counts up to 0xffff;
-	// a count that genuinely exceeds 0xffff needs a cached ut64 field, the same
-	// way eo->phnum caches the resolved program-header count (see issue).
-	if (eo->ehdr.e_shnum == 0 && !eo->inmem && eo->ehdr.e_shoff != 0
-			&& eo->ehdr.e_shoff <= eo->size
-			&& sizeof (Elf_(Shdr)) <= eo->size - eo->ehdr.e_shoff) {
-		ut8 shdr0[sizeof (Elf_(Shdr))] = {0};
-		if (r_buf_read_at (eo->b, eo->ehdr.e_shoff, shdr0, sizeof (shdr0)) == sizeof (shdr0)) {
-			int k = 0;
-			(void)READ32 (shdr0, k);              // sh_name
-			(void)READ32 (shdr0, k);              // sh_type
-			(void)R_BIN_ELF_READWORD (shdr0, k);  // sh_flags
-			(void)R_BIN_ELF_READWORD (shdr0, k);  // sh_addr
-			(void)R_BIN_ELF_READWORD (shdr0, k);  // sh_offset
-			ut64 real_shnum = R_BIN_ELF_READWORD (shdr0, k); // sh_size
-			if (real_shnum > 0 && real_shnum <= UT16_MAX) {
-				eo->ehdr.e_shnum = (Elf_(Half))real_shnum;
-			}
-		}
-	}
+	eo->shnum = Elf_(get_shnum) (eo);
 
-	ut32 shdr_size;
-	if (!UT32_MUL (&shdr_size, eo->ehdr.e_shnum, sizeof (Elf_(Shdr)))) {
+	ut64 shdr_size;
+	if (!UT64_MUL (&shdr_size, eo->shnum, sizeof (Elf_(Shdr)))) {
 		return false;
 	}
 	if (shdr_size < 1 || shdr_size > eo->size) {
@@ -396,7 +396,7 @@ static int init_shdr(ELFOBJ *eo) {
 	if (eo->ehdr.e_shoff > eo->size || eo->ehdr.e_shoff + shdr_size > eo->size) {
 		return false;
 	}
-	if (!(eo->shdr = R_NEWS0 (Elf_(Shdr), eo->ehdr.e_shnum))) {
+	if (!(eo->shdr = R_NEWS0 (Elf_(Shdr), eo->shnum))) {
 		r_sys_perror ("malloc (shdr)");
 		return false;
 	}
@@ -409,7 +409,7 @@ static int init_shdr(ELFOBJ *eo) {
 
 	ut8 shdr[sizeof (Elf_(Shdr))] = {0};
 	size_t i;
-	for (i = 0; i < eo->ehdr.e_shnum; i++) {
+	for (i = 0; i < eo->shnum; i++) {
 		size_t j = 0;
 		size_t len = r_buf_read_at (eo->b, eo->ehdr.e_shoff + i * sizeof (Elf_(Shdr)), shdr, sizeof (Elf_(Shdr)));
 		if (len != sizeof (Elf_(Shdr))) {
@@ -453,7 +453,7 @@ static int init_shdr(ELFOBJ *eo) {
 }
 
 static bool is_shidx_valid(ELFOBJ *eo, Elf_(Half) value) {
-	return value < eo->ehdr.e_shnum && !R_BETWEEN (SHN_LORESERVE, value, SHN_HIRESERVE);
+	return value < eo->shnum && !R_BETWEEN (SHN_LORESERVE, value, SHN_HIRESERVE);
 }
 
 static bool init_strtab(ELFOBJ *eo) {
@@ -463,20 +463,12 @@ static bool init_strtab(ELFOBJ *eo) {
 		return false;
 	}
 
-	// ELF extended section numbering (gABI): when the section-name string
-	// table index does not fit in the 16-bit e_shstrndx, it is set to
-	// SHN_XINDEX (0xffff) and the true index lives in section[0].sh_link.
-	// Resolve it here before the is_shidx_valid() check, which would otherwise
-	// reject 0xffff as a reserved index. Counterpart to the e_shnum fix in
-	// init_shdr(); same 16-bit write-back caveat applies.
+	// extended e_shstrndx: real index is in section[0].sh_link (gABI SHN_XINDEX).
 	ut32 shstrndx = eo->ehdr.e_shstrndx;
-	if (shstrndx == 0xffff /* SHN_XINDEX */ && eo->shdr && eo->ehdr.e_shnum > 0) {
-		// sh_link is a full 32-bit, attacker-controlled field: bounds-check the
-		// full-width value here before use. Do NOT defer to is_shidx_valid(),
-		// whose Elf_(Half) parameter would truncate shstrndx to 16 bits and let
-		// a value like 0x00010001 pass as 1 while indexing at 0x10001 (OOB read).
+	if (shstrndx == SHN_XINDEX && eo->shdr && eo->shnum > 0) {
+		// full 32-bit check: is_shidx_valid()'s 16-bit truncation would let 0x00010001 pass as 1.
 		ut32 real_idx = eo->shdr[0].sh_link;
-		if (real_idx == 0 || real_idx >= eo->ehdr.e_shnum) {
+		if (real_idx == 0 || real_idx >= eo->shnum) {
 			R_LOG_DEBUG ("invalid extended shstrndx");
 			return false;
 		}
@@ -824,7 +816,7 @@ static bool backing_at(ELFOBJ *eo, ut64 vaddr, ut64 *off, ut64 *left) {
 
 static ut64 reloc_section_size_at(ELFOBJ *eo, ut64 vaddr, ut32 sh_type) {
 	size_t i;
-	for (i = 0; eo->shdr && i < eo->ehdr.e_shnum; i++) {
+	for (i = 0; eo->shdr && i < eo->shnum; i++) {
 		const Elf_(Shdr) *sh = &eo->shdr[i];
 		if (sh->sh_type == sh_type && sh->sh_addr == vaddr && (sh->sh_flags & SHF_ALLOC)
 			&& Elf_(v2p) (eo, vaddr) == sh->sh_offset) {
@@ -1181,7 +1173,7 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *eo, Elf_(Shdr) *shdr, int sz, c
 	if (!eo->version_info[DT_VERSIONTAGIDX (DT_VERSYM)]) {
 		return NULL;
 	}
-	if (shdr->sh_link >= eo->ehdr.e_shnum) {
+	if (shdr->sh_link >= eo->shnum) {
 		return NULL;
 	}
 
@@ -1419,7 +1411,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *eo, Elf_(Shdr) *shdr, int sz) {
 	if (!eo->dynstr) {
 		return NULL;
 	}
-	if (shdr->sh_link >= eo->ehdr.e_shnum) {
+	if (shdr->sh_link >= eo->shnum) {
 		return NULL;
 	}
 	if (shdr->sh_size < sizeof (Elf_(Verdef)) || shdr->sh_size < sizeof (Elf_(Verdaux))) {
@@ -1593,7 +1585,7 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *eo, Elf_(Shdr) *shdr, int sz) 
 	if (!eo->dynstr) {
 		return NULL;
 	}
-	if (shdr->sh_link >= eo->ehdr.e_shnum) {
+	if (shdr->sh_link >= eo->shnum) {
 		return NULL;
 	}
 #ifdef R_BIN_ELF64
@@ -1675,7 +1667,7 @@ static Sdb *store_versioninfo(ELFOBJ *eo) {
 	int num_versym = 0;
 	VersionNames names = {0};
 	size_t i;
-	for (i = 0; i < eo->ehdr.e_shnum; i++) {
+	for (i = 0; i < eo->shnum; i++) {
 		Elf_(Shdr) *sh = &eo->shdr[i];
 		const ut64 sh_offset = sh->sh_offset;
 		if (sh_offset >= eo->size) {
@@ -1729,7 +1721,7 @@ static bool init_dynstr(ELFOBJ *eo) {
 	ut8 name[128] = {0};
 	const size_t shstrtab_size = eo->shstrtab_size;
 	int i;
-	for (i = 0; i < eo->ehdr.e_shnum; i++) {
+	for (i = 0; i < eo->shnum; i++) {
 		Elf_(Shdr) *sh = &eo->shdr[i];
 		const size_t sh_name = sh->sh_name;
 		const bool inshstrtab = (sh_name < shstrtab_size);
@@ -2001,11 +1993,11 @@ bool Elf_(has_nobtcfi)(ELFOBJ *eo) {
 }
 
 static bool qnx_has_nx(ELFOBJ *eo) {
-	if (!eo->shdr || eo->ehdr.e_shnum < 1) {
+	if (!eo->shdr || eo->shnum < 1) {
 		return false;
 	}
 	size_t i;
-	for (i = 0; i < eo->ehdr.e_shnum; i++) {
+	for (i = 0; i < eo->shnum; i++) {
 		Elf_(Shdr) *sh = &eo->shdr[i];
 		if (sh->sh_type != SHT_NOTE) {
 			continue;
@@ -2521,7 +2513,7 @@ bool Elf_(get_stripped)(ELFOBJ *eo, bool *have_lines, bool *have_syms, bool *hav
 	// R_BIN_DBG_LINENUMS
 	*have_lines = (sec && sec->size > 16);
 	size_t i;
-	for (i = 0; i < eo->ehdr.e_shnum; i++) {
+	for (i = 0; i < eo->shnum; i++) {
 		if (eo->shdr[i].sh_type == SHT_SYMTAB) {
 			// R_BIN_DBG_SYMS
 			*have_syms = true;
@@ -3280,7 +3272,7 @@ static char* guess_osabi_name(ELFOBJ *eo) {
 	}
 
 	if (eo->shdr && eo->shstrtab) {
-		size_t num = eo->ehdr.e_shnum;
+		size_t num = eo->shnum;
 		size_t i;
 		for (i = 0; i < num; i++) {
 			Elf_(Shdr) *sh = &eo->shdr[i];
@@ -3433,14 +3425,14 @@ char *Elf_(get_rpath)(ELFOBJ *eo) {
 
 static bool has_valid_section_header(ELFOBJ *eo, size_t pos) {
 	RBinElfSection *section = RVecRBinElfSection_at (&eo->g_sections, pos);
-	return section->info < eo->ehdr.e_shnum && eo->shdr;
+	return section->info < eo->shnum && eo->shdr;
 }
 
 static void fix_rva_and_offset_relocable_file(ELFOBJ *eo, RBinElfReloc *r, size_t pos) {
 	if (has_valid_section_header (eo, pos)) {
 		RBinElfSection *section = RVecRBinElfSection_at (&eo->g_sections, pos);
 		size_t idx = section->info;
-		if (idx < eo->ehdr.e_shnum) {
+		if (idx < eo->shnum) {
 			ut64 pa = eo->shdr[idx].sh_offset + r->offset;
 			r->offset = pa;
 			ut64 rva = Elf_(p2v) (eo, pa);
@@ -3552,7 +3544,7 @@ static bool crel_open(ELFOBJ *eo, CrelInfo *info, ut64 offset, ut64 size) {
 static bool crel_open_at(ELFOBJ *eo, CrelInfo *info, ut64 vaddr) {
 	memset (info, 0, sizeof (*info));
 	size_t i;
-	for (i = 0; eo->shdr && i < eo->ehdr.e_shnum; i++) {
+	for (i = 0; eo->shdr && i < eo->shnum; i++) {
 		const Elf_(Shdr) *sh = &eo->shdr[i];
 		if (sh->sh_type == SHT_NOBITS || !(sh->sh_flags & SHF_ALLOC)) {
 			continue;
@@ -3924,7 +3916,7 @@ static void alloc_section_offsets(ELFOBJ *eo, RVecElfOff *starts) {
 		return;
 	}
 	size_t i;
-	for (i = 0; i < eo->ehdr.e_shnum; i++) {
+	for (i = 0; i < eo->shnum; i++) {
 		const Elf_(Shdr) *sh = &eo->shdr[i];
 		if ((sh->sh_flags & SHF_ALLOC) && sh->sh_size && sh->sh_type != SHT_NOBITS) {
 			RVecElfOff_push_back (starts, &sh->sh_offset);
@@ -4324,7 +4316,7 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, RVecElfOff *starts
 					if (has_valid_section_header (eo, i)) {
 						RBinElfSection *target_section = RVecRBinElfSection_at (&eo->g_sections, i);
 						size_t idx = target_section->info;
-						if (idx < eo->ehdr.e_shnum) {
+						if (idx < eo->shnum) {
 							reloc->rva = eo->shdr[idx].sh_addr + reloc->offset;
 						}
 					}
@@ -4536,7 +4528,7 @@ static const RVecRBinElfSection *_load_elf_sections(ELFOBJ *eo) {
 		return NULL;
 	}
 
-	ut32 count = eo->ehdr.e_shnum;
+	ut32 count = eo->shnum;
 	if (!RVecRBinElfSection_reserve (&eo->g_sections, count)) {
 		return NULL;
 	}
@@ -5286,7 +5278,7 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 		if (type == R_BIN_ELF_IMPORT_SYMBOLS && is_imported) {
 			const int limit = eo->limit;
 			if (limit > 0 && ++state->import_count >= limit) {
-				if (!eo->shdr || !eo->ehdr.e_shnum || eo->ehdr.e_shnum == 0xffff) {
+				if (!eo->shdr || !eo->shnum) {
 					R_LOG_WARN ("eo.limit reached for imports");
 				}
 				break;
@@ -5331,9 +5323,9 @@ static ut64 get_phdr_symtab_upper_bound(ELFOBJ *eo, ut64 addr_sym_table) {
 			bound = R_MIN (bound, table_off);
 		}
 	}
-	if (eo->shdr && eo->ehdr.e_shnum && eo->ehdr.e_shnum != 0xffff) {
+	if (eo->shdr && eo->shnum) {
 		int i;
-		for (i = 0; i < eo->ehdr.e_shnum; i++) {
+		for (i = 0; i < eo->shnum; i++) {
 			ut64 sh_offset = eo->shdr[i].sh_offset;
 			if (sh_offset > addr_sym_table) {
 				bound = R_MIN (bound, sh_offset);
@@ -5715,12 +5707,12 @@ static RVecRBinElfSymbol *parse_gnu_debugdata(ELFOBJ *eo, size_t *ret_size) {
 	return NULL;
 }
 
-static bool section_matters(ELFOBJ *eo, int i, int type, ut32 shdr_size) {
+static bool section_matters(ELFOBJ *eo, int i, int type, ut64 shdr_size) {
 	const Elf_(Shdr) *sh = &eo->shdr[i];
 	const bool is_symtab = ((type & R_BIN_ELF_SYMTAB_SYMBOLS) && (sh->sh_type == SHT_SYMTAB));
 	const bool is_dyntab = ((type & R_BIN_ELF_DYNSYM_SYMBOLS) && (sh->sh_type == SHT_DYNSYM));
 	if (is_symtab || is_dyntab) {
-		if (sh->sh_link < 1 || sh->sh_link * sizeof (Elf_(Shdr)) >= shdr_size) {
+		if (sh->sh_link < 1 || (ut64)sh->sh_link * sizeof (Elf_(Shdr)) >= shdr_size) {
 			// oops. fix out of range pointers
 			return false;
 		}
@@ -5964,7 +5956,7 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 		}
 
 		if (is_bin_etrel (eo)) {
-			if (sym.st_shndx < eo->ehdr.e_shnum) {
+			if (sym.st_shndx < eo->shnum) {
 				offset = etrel_symbol_offset (eo, &sym);
 			}
 		} else {
@@ -6035,13 +6027,13 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 	R_RETURN_VAL_IF_FAIL (eo, NULL);
 
-	if (!eo->shdr || !eo->ehdr.e_shnum || eo->ehdr.e_shnum == 0xffff) {
+	if (!eo->shdr || !eo->shnum) {
 		R_LOG_DEBUG ("invalid section header value");
 		return load_symbols_from_phdr (eo, type);
 	}
 
-	ut32 shdr_size = 0;
-	if (!UT32_MUL (&shdr_size, eo->ehdr.e_shnum, sizeof (Elf_(Shdr)))) {
+	ut64 shdr_size = 0;
+	if (!UT64_MUL (&shdr_size, eo->shnum, sizeof (Elf_(Shdr)))) {
 		R_LOG_DEBUG ("shnum mul overflow");
 		return NULL;
 	}
@@ -6054,7 +6046,7 @@ static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 	size_t ret_ctr = 0; // amount of symbols stored in ret
 	RVecRBinElfSymbol *ret = type == R_BIN_ELF_ALL_SYMBOLS? parse_gnu_debugdata (eo, &ret_ctr): NULL;
 	int i;
-	size_t shnum = eo->ehdr.e_shnum;
+	size_t shnum = eo->shnum;
 	ut64 symtabs_size = 0;
 	for (i = 0; i < shnum; i++) {
 		if (!section_matters (eo, i, type, shdr_size)) {
@@ -6143,7 +6135,7 @@ RVecRBinSymbol *Elf_(load_symbols_vec)(RBinFile *bf, ELFOBJ *eo) {
 	}
 	RBinElfSymbol *symbol;
 	// section-less ELFs skip the section path that fills symbols_by_ord; their dynsym ordinals equal reloc->sym, so name defined slots here
-	RBinSymbol **sbo = eo->ehdr.e_shnum? NULL: eo->symbols_by_ord;
+	RBinSymbol **sbo = eo->shnum? NULL: eo->symbols_by_ord;
 	const size_t sbo_size = eo->symbols_by_ord_size;
 	R_VEC_FOREACH (elf_symbols, symbol) {
 		if (symbol->st_shndx == SHN_UNDEF) {
@@ -6389,7 +6381,7 @@ ut64 Elf_(p2v)(ELFOBJ *eo, ut64 paddr) {
 	}
 	if (eo->shdr) {
 		size_t i;
-		for (i = 0; i < eo->ehdr.e_shnum; i++) {
+		for (i = 0; i < eo->shnum; i++) {
 			Elf_(Shdr) *s = &eo->shdr[i];
 			if ((s->sh_flags & SHF_ALLOC) && s->sh_size > 0
 					&& paddr >= s->sh_offset
@@ -6422,7 +6414,7 @@ ut64 Elf_(v2p)(ELFOBJ *eo, ut64 vaddr) {
 	}
 	if (eo->shdr) {
 		size_t i;
-		for (i = 0; i < eo->ehdr.e_shnum; i++) {
+		for (i = 0; i < eo->shnum; i++) {
 			Elf_(Shdr) *s = &eo->shdr[i];
 			if ((s->sh_flags & SHF_ALLOC) && s->sh_size > 0
 					&& vaddr >= s->sh_addr
