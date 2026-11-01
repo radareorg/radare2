@@ -1,0 +1,9 @@
+R2PM_BEGIN
+
+R2PM_DESC "Binary upgrade fixture"
+
+R2PM_BINSTALL() {
+	printf 'binary-%s\n' "$R2PM_GLOBAL"
+}
+
+R2PM_END

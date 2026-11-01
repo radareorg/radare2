@@ -120,7 +120,8 @@ static ut8 *dwarf_inflate(RBinFile *bf, RBinSection *section, ut64 offset, int *
 	// Elf64_Chdr: type, reserved, size, align. Elf32_Chdr: type, size, align. Only zlib (1)
 	const ut32 ch_type = r_read_ble32 (rawbuf, be);
 	const ut64 ch_size = is64? r_read_ble64 (rawbuf + 8, be): r_read_ble32 (rawbuf + 4, be);
-	ut8 *decomp = (ch_type == 1)? r_inflate (rawbuf + header_size, (int)(raw_size - header_size), NULL, dst_len): NULL;
+	ut8 *decomp = (ch_type == 1 && ch_size / DWARF_MAX_INFLATE_RATIO <= raw_size)
+		? r_inflate (rawbuf + header_size, (int)(raw_size - header_size), NULL, dst_len): NULL;
 	free (rawbuf);
 	if (decomp && (ut64)*dst_len / DWARF_MAX_INFLATE_RATIO > raw_size) {
 		R_LOG_WARN ("DWARF: ignoring %s, %" PFMT64u " bytes inflate to %d", r_str_get (section->name), raw_size, *dst_len);
