@@ -1,0 +1,12 @@
+R2PM_BEGIN
+
+R2PM_DESC "Windows install environment fixture"
+
+R2PM_INSTALL_WINDOWS() {
+if "%R2PM_TEST_VALUE%"=="" (set R2PM_TEST_VALUE=persisted)
+echo env-%R2PM_TEST_VALUE%
+if "%R2PM_TEST_VALUE%"=="persisted" (exit /b 0)
+exit /b 1
+}
+
+R2PM_END

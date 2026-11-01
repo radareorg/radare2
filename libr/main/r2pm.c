@@ -821,17 +821,67 @@ static int r2pm_run_r2script(const char *script, const char *dir) {
 	return res;
 }
 
+#if R2__WINDOWS__
+// runs a cmd script from a temporary .bat file so set variables survive across lines
+// the script buffer is modified while splitting lines
+static int r2pm_run_batch_script(char *script, const char *dir) {
+	char *scriptfile = r_file_temp_ex ("r2pm", ".bat");
+	if (!scriptfile) {
+		R_LOG_ERROR ("Cannot create temporary batch script");
+		return 1;
+	}
+	r_str_replace_ch (scriptfile, '/', '\\', true);
+	RStrBuf *sb = r_strbuf_new ("@echo off\n");
+	RList *lines = r_str_split_list (script, "\n", 0);
+	RListIter *iter;
+	const char *line;
+	r_list_foreach (lines, iter, line) {
+		char *cmd = r_str_trim_dup (line);
+		if (R_STR_ISNOTEMPTY (cmd)) {
+			r_strbuf_appendf (sb, "%s\nif errorlevel 1 exit /b 1\n", cmd);
+		}
+		free (cmd);
+	}
+	r_list_free (lines);
+	r_strbuf_append (sb, "exit /b 0\n");
+	char *content = r_strbuf_drain (sb);
+	bool written = r_file_dump (scriptfile, (const ut8 *)content, strlen (content), false);
+	free (content);
+	int res = 1;
+	if (written) {
+		char *epath = r_str_escape_sh (scriptfile);
+		char *edir = dir? r_str_escape_sh (dir): NULL;
+		if (epath && (!dir || edir)) {
+			char *s = edir
+				? r_str_newf ("cd /d \"%s\" && \"%s\"", edir, epath)
+				: r_str_newf ("\"%s\"", epath);
+			res = s? r_sandbox_system (s, 1): 1;
+			free (s);
+		}
+		free (edir);
+		free (epath);
+	} else {
+		R_LOG_ERROR ("Cannot write temporary batch script");
+	}
+	r_file_rm (scriptfile);
+	free (scriptfile);
+	return res;
+}
+#endif
+
 // runs R2PM_BINSTALL/R2PM_BUNINSTALL blocks without a source checkout, takes ownership of script
 static int r2pm_run_binary_script(char *script) {
 #if R2__WINDOWS__
-	char *s = r_str_replace_all (script, "\n", " && ");
+	int res = r2pm_run_batch_script (script, NULL);
+	free (script);
+	return res;
 #else
 	char *s = r_str_newf ("set -e\nR2PM_FAIL(){\n  echo \"$@\" >&2\n  exit 1\n}\n%s", script);
 	free (script);
-#endif
 	int res = s? r_sandbox_system (s, 1): 1;
 	free (s);
 	return res;
+#endif
 }
 
 // looks copypaste with r2pm_install_pkg ()
@@ -875,16 +925,9 @@ static int r2pm_uninstall_pkg(const char *pkg, bool global) {
 		free (srcdir);
 		return 1;
 	}
-	script = r_str_replace_all (script, "\n", " && ");
-	char *esrcdir = r_str_escape_sh (srcdir);
-	char *epkg = r_str_escape_sh (pkg);
-	char *s = (have_builddir && esrcdir && epkg)
-		? r_str_newf ("cd /d \"%s\" && cd \"%s\" && %s", esrcdir, epkg, script)
-		: r_str_newf ("%s", script);
-	free (esrcdir);
-	free (epkg);
-	int res = r_sandbox_system (s, 1);
-	free (s);
+	char *pkgdir = have_builddir? r2pm_source_dir (srcdir, pkg): NULL;
+	int res = r2pm_run_batch_script (script, pkgdir);
+	free (pkgdir);
 #else
 	char *script = r2pm_get (pkg, "\nR2PM_UNINSTALL() {\n", TT_CODEBLOCK);
 	if (!script) {
@@ -1287,7 +1330,6 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global, bool binar
 		free (srcdir);
 		return 1;
 	}
-	script = r_str_replace_all (script, "\n", " && ");
 #else
 	char *script = r2pm_get (pkg, "\nR2PM_INSTALL() {\n", TT_CODEBLOCK);
 	if (!script) {
@@ -1307,20 +1349,18 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global, bool binar
 		free (srcdir);
 		return 1;
 	}
-	char *epkgdir = pkgdir? r_str_escape_sh (pkgdir): NULL;
 #if R2__WINDOWS__
-	char *s = epkgdir
-		? r_str_newf ("cd /d \"%s\" && %s", epkgdir, script)
-		: strdup (script);
+	int res = r2pm_run_batch_script (script, pkgdir);
 #else
+	char *epkgdir = pkgdir? r_str_escape_sh (pkgdir): NULL;
 	char *s = epkgdir
 		? r_str_newf ("cd \"%s\"\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\nexit 1\n}\n%s", epkgdir, script)
 		: r_str_newf ("export MAKE=make\nR2PM_FAIL(){\n  echo $@\nexit 1\n}\n%s", script);
-#endif
 	free (epkgdir);
-	free (pkgdir);
 	int res = r_sandbox_system (s, 1);
 	free (s);
+#endif
+	free (pkgdir);
 	if (res == 0) {
 		r2pm_register (pkg, global, false);
 	}
