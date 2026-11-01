@@ -4446,7 +4446,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("bin.dbginfo", "true", &cb_bindbginfo, "load debug information at startup if available");
 	SETB ("bin.meta", "true", "auto-emit metadata commands attached to sections by bin plugins (Cd/Css for ELF .got/.dynstr, DEX constpool, Mach-O cstrings, etc)");
 	SETB ("bin.relocs", "true", "load relocs information at startup if available");
-	SETB ("bin.relocs.apply", "false", "apply reloc information");
+	SETB ("bin.relocs.apply", "true", "apply reloc information");
 	SETB ("bin.relocs.xrefs", "true", "register xrefs from reloc information");
 	SETB ("bin.inmem", "false", "read oba input as a mapped memory image");
 	SETICB ("bin.maxsymlen", 0, &cb_binmaxsymlen, "maximum length for symbol names");

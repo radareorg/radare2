@@ -2153,7 +2153,7 @@ EXPECT=<<EOF
 |           0x00005af3      4c8d05660c..   lea r8, [0x00016760]
 |           0x00005afa      488d0def0b..   lea rcx, [0x000166f0]
 |           0x00005b01      488d3d68e5..   lea rdi, [main]             ; 0x4070 ; "AWAVAUATU\x89\xfdSH\x89\xf3H\x83\xecXH\x8b>dH\x8b\x04%("
-\           0x00005b08      ff150ac30100   call qword [reloc.__libc_start_main] ; [0x21e18:8]=0
+\           0x00005b08      ff150ac30100   call qword [reloc.__libc_start_main] ; [0x21e18:8]=0x23700
 / 46: entry0 (int64_t arg1);
 |           ; arg int64_t arg1 @ rdx
 |           0x00005ae0      f30f1efa       endbr64

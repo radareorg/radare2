@@ -81,6 +81,7 @@ RUN
 
 NAME=ELF: R_X86_64_PLT32 patch reloc 2 (no io.cache)
 FILE=bins/elf/test.ko
+ARGS=-e bin.relocs.apply=false
 CMDS=<<EOF
 e asm.comments=false
 e asm.lines=false
@@ -160,6 +161,7 @@ RUN
 
 NAME=ELF: relocs init array
 FILE=bins/elf/r2pay-arm64.so
+ARGS=-e bin.relocs.apply=false
 CMDS=<<EOF
 s section..init_array
 pd 10
@@ -2728,6 +2730,7 @@ RUN
 
 NAME=ELF: a reloc name replaces the immediate, not the register holding the same digit
 FILE=bins/elf/arm-thumb-bit.o
+ARGS=-e bin.relocs.apply=false
 CMDS=<<EOF
 e asm.bits=32
 pi 3 @ 0x08000040

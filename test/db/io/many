@@ -4,6 +4,7 @@ bins/elf/ls
 bins/elf/ls-cet
 bins/elf/ls.odd
 EOF
+ARGS=-e bin.relocs.apply=false
 CMDS=o~ls
 EXPECT=<<EOF
  3 - r-x 0x000219a8 bins/elf/ls
