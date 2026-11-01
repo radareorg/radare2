@@ -1,0 +1,17 @@
+R2PM_BEGIN
+
+R2PM_GIT "https://example.invalid/subdir"
+R2PM_DIR "source dir"
+R2PM_DESC "Source hooks run inside R2PM_DIR"
+
+R2PM_INSTALL() {
+	test -f expected || exit 1
+	echo install-subdir
+}
+
+R2PM_UNINSTALL() {
+	test -f expected || exit 1
+	echo uninstall-subdir
+}
+
+R2PM_END

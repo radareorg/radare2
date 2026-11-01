@@ -292,11 +292,15 @@ Unix scripts run with
 and can call
 .Ic R2PM_FAIL Ar message
 to abort with an error.
-On Windows the block lines are joined with
-.Ql &&
-and run by
-.Cm cmd ,
-so each line must be a single command.
+Windows install and uninstall hooks run as native batch scripts.
+Environment changes persist across lines, and normal batch control flow and
+line continuations are supported.
+Use
+.Ql command || exit /b 1
+to abort on any nonzero status, including negative exit codes, and
+.Ql call helper.cmd || exit /b 1
+to invoke another batch file and return to the hook.
+Hooks must handle command failures explicitly and return a nonzero status on failure.
 The binary installer handles its own tools and runtime dependencies;
 .Ic R2PM_NEEDS
 and

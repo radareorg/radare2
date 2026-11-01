@@ -644,6 +644,11 @@ jobs:
         # moved from -j1 to -j4 in 2cf6931a4f without issues.
         ninja -C build -j4
         ninja -C build install
+    - name: Test Windows r2pm hooks
+      shell: pwsh
+      run: |
+        $env:PATH = "$PWD\radare2-${{ steps.r2v.outputs.branch }}-w64\bin;$env:PATH"
+        r2r -u -L -C test db/tools/r2pm_windows
     - name: Create zip artifact
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w64.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w64
 #    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

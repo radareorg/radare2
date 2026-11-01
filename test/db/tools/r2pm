@@ -69,48 +69,24 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=r2pm Windows source install registers only on success
-REQUIRE=windows
+NAME=r2pm Unix source hooks respect R2PM_DIR
+REQUIRE=unix
 FILE=-
 CMDS=<<EOF
-rmrf r2pm-win-register-r2r
+rmrf r2pm-subdir-r2r
 %R2PM_DBDIR=scripts/r2pm/radare2-pm/db
-%R2PM_GITDIR=r2pm-win-register-r2r/git
-%XDG_DATA_HOME=r2pm-win-register-r2r/data
+%R2PM_GITDIR=scripts/r2pm/git
+%XDG_DATA_HOME=r2pm-subdir-r2r/data
 %R2PM_OFFLINE=1
 %R2_LOG_LEVEL=1
-%R2_DEBUG_ASSERT=1
-r2pm -qi winregister-ok
+r2pm -qi subdir
+r2pm -qu subdir
 r2pm -ql
-r2pm -qi winregister-fail
-r2pm -ql
-rmrf r2pm-win-register-r2r
+rmrf r2pm-subdir-r2r
 EOF
 EXPECT=<<EOF
-winregister-ok
-winregister-ok
-EOF
-EXPECT_ERR=
-RUN
-
-NAME=r2pm Windows source install keeps set variables across lines
-REQUIRE=windows
-FILE=-
-CMDS=<<EOF
-rmrf r2pm-win-env-r2r
-%R2PM_DBDIR=scripts/r2pm/radare2-pm/db
-%R2PM_GITDIR=r2pm-win-env-r2r/git
-%XDG_DATA_HOME=r2pm-win-env-r2r/data
-%R2PM_OFFLINE=1
-%R2_LOG_LEVEL=1
-%R2PM_TEST_VALUE=
-r2pm -qi winenv
-r2pm -ql
-rmrf r2pm-win-env-r2r
-EOF
-EXPECT=<<EOF
-env-persisted
-winenv
+install-subdir
+uninstall-subdir
 EOF
 EXPECT_ERR=
 RUN

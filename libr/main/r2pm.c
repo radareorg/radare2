@@ -822,30 +822,16 @@ static int r2pm_run_r2script(const char *script, const char *dir) {
 }
 
 #if R2__WINDOWS__
-// runs a cmd script from a temporary .bat file so set variables survive across lines
-// the script buffer is modified while splitting lines
-static int r2pm_run_batch_script(char *script, const char *dir) {
+// hooks use native batch syntax, including explicit failure checks and call for batch files
+static int r2pm_run_batch_script(const char *script, const char *dir) {
 	char *scriptfile = r_file_temp_ex ("r2pm", ".bat");
 	if (!scriptfile) {
 		R_LOG_ERROR ("Cannot create temporary batch script");
 		return 1;
 	}
 	r_str_replace_ch (scriptfile, '/', '\\', true);
-	RStrBuf *sb = r_strbuf_new ("@echo off\n");
-	RList *lines = r_str_split_list (script, "\n", 0);
-	RListIter *iter;
-	const char *line;
-	r_list_foreach (lines, iter, line) {
-		char *cmd = r_str_trim_dup (line);
-		if (R_STR_ISNOTEMPTY (cmd)) {
-			r_strbuf_appendf (sb, "%s\nif errorlevel 1 exit /b 1\n", cmd);
-		}
-		free (cmd);
-	}
-	r_list_free (lines);
-	r_strbuf_append (sb, "exit /b 0\n");
-	char *content = r_strbuf_drain (sb);
-	bool written = r_file_dump (scriptfile, (const ut8 *)content, strlen (content), false);
+	char *content = r_str_newf ("@echo off\n%s", script);
+	bool written = content && r_file_dump (scriptfile, (const ut8 *)content, strlen (content), false);
 	free (content);
 	int res = 1;
 	if (written) {
@@ -935,13 +921,13 @@ static int r2pm_uninstall_pkg(const char *pkg, bool global) {
 		free (srcdir);
 		return 1;
 	}
-	char *esrcdir = r_str_escape_sh (srcdir);
-	char *epkg = r_str_escape_sh (pkg);
-	char *s = (have_builddir && esrcdir && epkg)
-		? r_str_newf ("cd \"%s/%s\"\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", esrcdir, epkg, script)
+	char *pkgdir = have_builddir? r2pm_source_dir (srcdir, pkg): NULL;
+	char *epkgdir = pkgdir? r_str_escape_sh (pkgdir): NULL;
+	char *s = epkgdir
+		? r_str_newf ("cd \"%s\" || exit 1\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", epkgdir, script)
 		: r_str_newf ("export MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", script);
-	free (esrcdir);
-	free (epkg);
+	free (epkgdir);
+	free (pkgdir);
 	int res = r_sandbox_system (s, 1);
 	free (s);
 #endif
