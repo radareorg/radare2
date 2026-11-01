@@ -1572,6 +1572,9 @@ ad "tzcnt eax, ebx" f30fbcc3
 ad "tzcnt rax, rbx" f3480fbcc3
 ad "popcnt eax, ebx" f30fb8c3
 ad "popcnt rax, rbx" f3480fb8c3
+ad "popcnt r10d, dword [rbx]" f3440fb813
+ad "lzcnt ax, word [r12]" 66f3410fbd0424
+ad "tzcnt rax, r9" f3490fbcc1
 ad "crc32 eax, ebx" f20f38f1c3
 ad "crc32 eax, bl" f20f38f0c3
 ad "crc32 eax, bx" 66f20f38f1c3
@@ -1583,6 +1586,8 @@ ad "rdseed rax" 480fc7f8
 ad "rdseed ax" 660fc7f8
 ad "bsf rax, rbx" 480fbcc3
 ad "bsf eax, ebx" 0fbcc3
+ad "bsf rax, r9" 490fbcc1
+ad "bsr r10d, dword [rbx]" 440fbd13
 ad "bt rax, 3" 480fbae003
 ad "bts dword [rax], 5" 0fba2805
 ad "btr rax, r8" 4c0fb3c0
