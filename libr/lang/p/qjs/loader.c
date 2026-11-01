@@ -151,57 +151,70 @@ static void free_kv_str(HtPPKv *kv) {
 	free (kv->value);
 }
 
-static int r2qjs_loader(JSContext *ctx, const char *const buffer) {
-	JSRuntime *rt = JS_GetRuntime (ctx);
-	if (!r_str_startswith (buffer, package_marker)) {
-		return 0;
-	}
+static HtPP *r2qjs_parse_package(const char *buffer, char **entryfname) {
 	const char *ptr = buffer + strlen (package_marker);
 	const char *ptr_end = buffer + strlen (buffer);
 	const char *assets = strstr (ptr, delimiter_marker);
 	if (!assets) {
-		return -1;
+		return NULL;
 	}
-
-	HtPP *ht = ht_pp_new (NULL, free_kv_str, NULL);
-	JS_SetModuleLoaderFunc (rt, r2qjs_normalize_module_name, r2qjs_load_module, ht);
-	char *entry = NULL;
-	char *entryfname = NULL;
-
+	const char *header_end = assets;
 	assets += strlen (delimiter_marker);
-	while (ptr < ptr_end && assets < ptr_end) {
-		const char * nl = strchr (ptr, '\n');
+	HtPP *ht = ht_pp_new (NULL, free_kv_str, NULL);
+	while (ptr < header_end) {
+		const char *nl = memchr (ptr, '\n', header_end - ptr);
 		if (!nl) {
-			break;
+			nl = header_end;
 		}
 		if (r_str_nstr (ptr, alias_marker, nl - ptr)) {
 			ptr = nl + 1;
 			continue;
 		}
-		int size = atoi (ptr);
-		if (size < 1) {
-			break;
+		char *end;
+		ut64 size = strtoull (ptr, &end, 10);
+		if (end == ptr || end >= nl || *end != ' ' || !size || size > ptr_end - assets) {
+			goto invalid;
 		}
-		const char *const space = strchr (ptr, ' ');
-		if (!space) {
-			break;
-		}
-		char *filename = r_str_ndup (space + 1, nl - space - 1);
-		char *data = r_str_ndup (assets, size);
+		char *filename = r_str_ndup (end + 1, nl - end - 1);
 		if (r_str_endswith (filename, ".js")) {
-			R_LOG_DEBUG ("INSERT (%s)", filename);
-			if (!entry) {
-				entry = data;
-				entryfname = strdup (filename);
+			char *data = r_str_ndup (assets, size);
+			if (!*entryfname) {
+				*entryfname = strdup (filename);
 			}
 			ht_pp_insert (ht, filename, data);
-		} else {
-			free (data);
 		}
 		free (filename);
+		assets += size;
 		ptr = nl + 1;
-		assets += size + strlen (delimiter_marker);
+		if (assets == ptr_end) {
+			break;
+		}
+		if (!r_str_startswith (assets, delimiter_marker)) {
+			goto invalid;
+		}
+		assets += strlen (delimiter_marker);
 	}
+	if (*entryfname && ptr >= header_end) {
+		return ht;
+	}
+invalid:
+	R_FREE (*entryfname);
+	ht_pp_free (ht);
+	return NULL;
+}
+
+static int r2qjs_loader(JSContext *ctx, const char *const buffer) {
+	if (!r_str_startswith (buffer, package_marker)) {
+		return 0;
+	}
+	char *entryfname = NULL;
+	HtPP *ht = r2qjs_parse_package (buffer, &entryfname);
+	if (!ht) {
+		return -1;
+	}
+	JSRuntime *rt = JS_GetRuntime (ctx);
+	JS_SetModuleLoaderFunc (rt, r2qjs_normalize_module_name, r2qjs_load_module, ht);
+	char *entry = ht_pp_find (ht, entryfname, NULL);
 	if (entry) {
 		R_LOG_DEBUG ("ENTRY (%s)", entryfname);
 #if 0

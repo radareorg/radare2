@@ -192,6 +192,8 @@ static RCoreHelpMessage help_msg_j = {
 	"js!", "", "reset js vm (same as #!!)",
 	"js:", "", "enter the interactive repl with autocompletion and colors",
 	"js:", "[file]", "interpret javascript file",
+	"jsc", " file.r2.js", "compile to file.bin.r2.js (QuickJS bytecode)",
+	"jscz", " file.r2.js", "compile to file.bin.r2.js with LZ4 compression",
 	"join", " f1 f2", "join the contents of two files",
 	"jobs", "", "list status of background coretask jobs (alias for '&' command, see 'fg' and 'bg')",
 	NULL
@@ -1738,12 +1740,30 @@ static int cmd_j(void *data, const char *input) { // "j"
 		return R_CMD_RC_SUCCESS;
 	}
 	if (input[0] == 's') { // "js"
-		if (input[1] == ':' || input[1] == '.') { // "js:"
+		if (input[1] == 'c') { // "jsc"
+			bool compress = input[2] == 'z';
+			const char *arg = input + (compress? 3: 2);
+			if (*arg != ' ' || !*r_str_trim_head_ro (arg)) {
+				r_cons_cmd_help_match (core->cons, help_msg_j, "jsc", 0, false);
+				return R_CMD_RC_SUCCESS;
+			}
+			if (!r_lang_use (core->lang, "qjs")) {
+				R_LOG_ERROR ("Requires lang.qjs");
+				return R_CMD_RC_FAILURE;
+			}
+			PJ *pj = pj_new ();
+			pj_s (pj, r_str_trim_head_ro (arg));
+			char *code = r_str_newf ("r2.compile(%s, %s)", pj_string (pj), r_str_bool (compress));
+			bool ok = r_lang_run (core->lang, code, -1);
+			free (code);
+			pj_free (pj);
+			return ok? R_CMD_RC_SUCCESS: R_CMD_RC_FAILURE;
+		} else if (input[1] == ':' || input[1] == '.') { // "js:"
 			if (input[2]) {
 				if (r_lang_use (core->lang, "qjs")) {
 					const char *fn = r_str_trim_head_ro (input + 2);
 					if (!r_lang_run_file (core->lang, fn)) {
-						R_LOG_ERROR ("Cannot find %s", fn);
+						R_LOG_ERROR ("Cannot run %s", fn);
 					}
 				}
 			} else {

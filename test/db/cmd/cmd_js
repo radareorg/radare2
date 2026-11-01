@@ -1,3 +1,14 @@
+NAME=qjs compile binding
+FILE=-
+CMDS=<<EOF
+js console.log(typeof r2.compile)
+EOF
+EXPECT=<<EOF
+function
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=js tests, variable scoping
 FILE=-
 CMDS=<<EOF
