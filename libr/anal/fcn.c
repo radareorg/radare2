@@ -2592,9 +2592,7 @@ static int fcn_walk(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, bool f
 R_API int r_anal_function_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (anal && fcn, -1);
 	// Plugin notification is in r_anal_function() to fire once per function
-	int ret = fcn_walk (anal, fcn, addr, anal->opt.bb_max_size, true);
-	r_anal_function_sort_blocks (fcn);
-	return ret;
+	return fcn_walk (anal, fcn, addr, anal->opt.bb_max_size, true);
 }
 
 R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high) {
@@ -3479,11 +3477,10 @@ R_API int r_anal_function_count(RAnal *anal, ut64 from, ut64 to) {
 static RAnalBlock *r_anal_function_bbget_in_linear(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 	RAnalBlock **iter;
 	RAnalBlock *bb;
-	r_anal_function_sort_blocks (fcn);
 	const bool aligned = r_anal_is_aligned (anal, addr);
 	R_VEC_FOREACH (&fcn->bbs, iter) {
 		bb = *iter;
-		if (bb->addr > addr) {
+		if (fcn->bbs_sorted && bb->addr > addr) {
 			break;
 		}
 		if (r_anal_block_contains (bb, addr)) {

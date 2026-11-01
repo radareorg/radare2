@@ -174,7 +174,7 @@ int main(int argc, char **argv) {
 	rss *= 1024;
 #endif
 	printf ("{\"function_size\":%zu,\"block_size\":%zu,\"vector_size\":%zu,"
-		"\"function_align\":%zu,\"bbs_offset\":%zu,\"block_addr_offset\":%zu,"
+		"\"function_align\":%zu,\"vector_align\":%zu,\"bbs_offset\":%zu,\"vars_offset\":%zu,\"block_addr_offset\":%zu,"
 		"\"fresh_bytes\":%zu,\"fresh_allocations\":%zu,\"cpu_s\":%.6f,"
 		"\"fresh_one_bytes\":%zu,\"one_block_functions\":%zu,\"block_capacity\":%zu,"
 		"\"functions\":%zu,\"blocks\":%zu,\"memberships\":%zu,"
@@ -184,7 +184,8 @@ int main(int argc, char **argv) {
 		"\"walk_ns_per_block\":%.6f,\"heap_in_use\":%zu,\"peak_rss\":%zu,"
 		"\"checksum\":\"%016"PFMT64x"\"}\n",
 		sizeof (RAnalFunction), sizeof (RAnalBlock), sizeof (RVecAnalBlockPtr),
-		(size_t)__alignof__ (RAnalFunction), offsetof (RAnalFunction, bbs), offsetof (RAnalBlock, addr),
+		(size_t)__alignof__ (RAnalFunction), (size_t)__alignof__ (RVecAnalBlockPtr),
+		offsetof (RAnalFunction, bbs), offsetof (RAnalFunction, vars), offsetof (RAnalBlock, addr),
 		fresh.bytes, fresh.allocations, cpu, fresh_one.bytes, one_block, capacity, nf, nb, memberships,
 		functions.bytes, functions.allocations, blocks.bytes, empty_labels, empty_vars,
 		used_diff, fingerprints, pins, imports, walk, heap, rss, checksum);

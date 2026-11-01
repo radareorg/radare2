@@ -290,7 +290,10 @@ R_API void r_anal_function_sort_blocks(RAnalFunction *fcn) {
 
 R_API RAnalBlock *r_anal_function_bbget_at(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (fcn && addr != UT64_MAX, NULL);
-	r_anal_function_sort_blocks (fcn);
+	if (!fcn->bbs_sorted) {
+		RAnalBlock *bb = r_anal_get_block_at (fcn->anal, addr);
+		return bb && r_list_contains (bb->fcns, fcn)? bb: NULL;
+	}
 	RAnalBlock **start = R_VEC_START_ITER (&fcn->bbs);
 	RAnalBlock **end = R_VEC_END_ITER (&fcn->bbs);
 	if (start == end || addr < start[0]->addr || addr > end[-1]->addr) {
@@ -332,10 +335,15 @@ R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb) {
 	}
 }
 
+static int find_bb_ptr_cmp(RAnalBlock *const *a, const void *b) {
+	return *a != b;
+}
+
 R_API void r_anal_function_remove_block(RAnalFunction *fcn, RAnalBlock *bb) {
 	R_RETURN_IF_FAIL (fcn && bb);
-	r_anal_function_sort_blocks (fcn);
-	size_t idx = RVecAnalBlockPtr_find_sorted_index (&fcn->bbs, &bb->addr, find_bb_cmp);
+	size_t idx = fcn->bbs_sorted
+		? RVecAnalBlockPtr_find_sorted_index (&fcn->bbs, &bb->addr, find_bb_cmp)
+		: RVecAnalBlockPtr_find_index (&fcn->bbs, bb, find_bb_ptr_cmp);
 	if (idx == SZT_MAX || *RVecAnalBlockPtr_at (&fcn->bbs, idx) != bb) {
 		return;
 	}

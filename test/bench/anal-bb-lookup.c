@@ -18,6 +18,7 @@ static volatile ut64 result;
 int main(int argc, char **argv) {
 	size_t n = argc > 1? strtoul (argv[1], NULL, 0): 64;
 	const char *order = argc > 2? argv[2]: "asc";
+	bool interleaved = argc > 3 && !strcmp (argv[3], "lookup");
 	if (!n || n > 8192 || (n & (n - 1))) {
 		return 1;
 	}
@@ -48,6 +49,10 @@ int main(int argc, char **argv) {
 		for (i = 0; i < n; i++) {
 			size_t index = !strcmp (order, "desc")? n - i - 1: !strcmp (order, "shuffle")? (i * 4051) & (n - 1): i;
 			r_anal_function_add_block (functions[fidx], blocks[fidx * n + index]);
+			if (interleaved && r_anal_function_bbget_at (anal, functions[fidx], blocks[fidx * n + index]->addr)
+					!= blocks[fidx * n + index]) {
+				return 1;
+			}
 		}
 	}
 	build = (cpu_time () - build) * 1e9 / total;
@@ -84,9 +89,9 @@ int main(int argc, char **argv) {
 	misses = (cpu_time () - misses) * 1e9 / queries;
 	result = sum;
 	bool foreign_match = r_anal_function_bbget_at (anal, functions[0], 0x1000000) != NULL;
-	printf ("{\"blocks\":%zu,\"order\":\"%s\",\"insert_ns_per_block\":%.3f,"
+	printf ("{\"blocks\":%zu,\"order\":\"%s\",\"interleaved\":%s,\"insert_ns_per_block\":%.3f,"
 		"\"prepare_ns_per_block\":%.3f,\"hit_ns\":%.3f,\"miss_ns\":%.3f,\"foreign_match\":%s}\n",
-		n, order, build, prepare, hits, misses, foreign_match? "true": "false");
+		n, order, interleaved? "true": "false", build, prepare, hits, misses, foreign_match? "true": "false");
 	for (i = 0; i < total; i++) {
 		r_unref (blocks[i]);
 	}

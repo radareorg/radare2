@@ -117,6 +117,7 @@ R_API bool r_anal_diff_bb(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2) 
 	}
 	fcn->diff->type = fcn2->diff->type = R_ANAL_DIFF_TYPE_MATCH;
 	r_anal_function_sort_blocks (fcn);
+	r_anal_function_sort_blocks (fcn2);
 	R_VEC_FOREACH (&fcn->bbs, iter) {
 		bb = *iter;
 		if (bb->diff && bb->diff->type != R_ANAL_DIFF_TYPE_NULL) {
@@ -124,7 +125,6 @@ R_API bool r_anal_diff_bb(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2) 
 		}
 		ot = 0;
 		mbb = mbb2 = NULL;
-		r_anal_function_sort_blocks (fcn2);
 		R_VEC_FOREACH (&fcn2->bbs, iter2) {
 			bb2 = *iter2;
 			if (!bb2->diff || bb2->diff->type == R_ANAL_DIFF_TYPE_NULL) {

@@ -328,6 +328,7 @@ typedef struct r_anal_function_t {
 	char *name;
 	ut64 addr;
 	RVecAnalBlockPtr bbs;
+	RVecAnalVarPtr vars;
 	char *realname; // R2_590: add realname for the mangled one
 	char *pin; // user-defined pin string (emoji or any utf-8) to mark this function; NULL if not pinned
 	int bits; // ((> bits 0) (set-bits bits))
@@ -335,7 +336,6 @@ typedef struct r_anal_function_t {
 	const char *callconv; // calling convention (RAnal.constpool string). May hold the bare "dyncc" marker until r_anal_function_cc() resolves it
 	HtUP/*<ut64, char *>*/ *labels;
 	HtPP/*<char *, ut64 *>*/ *label_addrs;
-	RVecAnalVarPtr vars;
 	HtUP/*<st64, RVecAnalVarPtr *>*/ *inst_vars; // offset of instructions => the variables they access
 	ut64 reg_save_area; // size of stack area pre-reserved for saving registers
 	ut64 dirty_epoch; // incremented when typed function metadata changes

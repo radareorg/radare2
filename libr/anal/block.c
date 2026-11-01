@@ -311,9 +311,6 @@ R_API bool r_anal_block_relocate(RAnalBlock *block, ut64 addr, ut64 size) {
 	block->size = size;
 	r_anal_block_update_hash (block);
 	r_rbtree_aug_insert (&block->anal->bb_tree, &block->addr, &block->_rb, __bb_addr_cmp, NULL, __max_end);
-	r_list_foreach (block->fcns, iter, fcn) {
-		r_anal_function_sort_blocks (fcn);
-	}
 	return true;
 }
 

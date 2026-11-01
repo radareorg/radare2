@@ -4280,6 +4280,7 @@ R_API bool r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 					continue;
 				}
 			}
+			r_anal_function_sort_blocks (fcni);
 			nodes += core_anal_graph_nodes (core, fcni, &go, pj);
 			if (addr != UT64_MAX) {
 				break;

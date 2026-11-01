@@ -5910,8 +5910,8 @@ static void cmd_afbs(RCore *core, const char *input) {
 		break;
 	case 0: // default for "afbs"
 	case 'a': // "afba"
-		RVecAnalBlockPtr_sort (&fcn->bbs, cmpaddr_bb);
-		break;
+		r_anal_function_sort_blocks (fcn);
+		return;
 	case 's': // "afbss"
 		RVecAnalBlockPtr_sort (&fcn->bbs, cmpsize_bb);
 		break;
@@ -16914,6 +16914,7 @@ static bool core_anal_abf(RCore *core, const char* input) {
 			return false;
 		}
 		r_list_foreach (bb->fcns, iter, fcn) {
+			r_anal_function_sort_blocks (fcn);
 			R_VEC_FOREACH (&fcn->bbs, iter2) {
 				bb2 = *iter2;
 				if (bb != bb2) {
