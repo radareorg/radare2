@@ -66,7 +66,7 @@ static const char *helpmsg =
 	" -uci <pkgname>    uninstall + clean + install\n"
 	" -ui <pkgname>     uninstall + install\n"
 	" -U                download/initialize or update database (-f for a clean clone)\n"
-	" -UU               same as -U but upgrade all the installed r2 plugins\n"
+	" -UU               same as -U but upgrade all installed packages\n"
 	" -v                show version\n";
 
 typedef struct r_r2pm_t {
@@ -388,22 +388,89 @@ static void striptrim(RList *list) {
 	}
 }
 
-static void r2pm_upgrade(bool force) {
-#if R2__UNIX__
-	char *s = r_sys_cmd_str ("radare2 -NNqcq -- 2>&1 | grep r2pm | sed -e 's,$,;,g'", NULL, 0);
-	r_str_trim (s);
-	RList *list = r_str_split_list (s, "\n", -1);
-	striptrim (list);
-	if (r_list_length (list) < 1) {
-		R_LOG_INFO ("No packages to upgrade");
+static void r2pm_set_global(bool global) {
+	char *r2_plugdir = global? r_str_r2_prefix (R2_PLUGINS): r_xdg_datadir ("plugins");
+	r_sys_setenv ("R2PM_PLUGDIR", r2_plugdir);
+	free (r2_plugdir);
+
+	if (global) {
+		r_sys_setenv ("GLOBAL", "1");
+		r_sys_setenv ("R2PM_GLOBAL", "1");
+		char *sudo = r_sys_getenv ("SUDO");
+		if (R_STR_ISEMPTY (sudo)) {
+			free (sudo);
+			sudo = strdup ("sudo");
+		}
+		r_sys_setenv ("R2PM_SUDO", sudo);
+		r_sys_setenv ("SUDO", sudo);
+		free (sudo);
 	} else {
-		r2pm_install (list, false, true, force, false, false);
+		r_sys_setenv ("GLOBAL", "0");
+		r_sys_setenv ("R2PM_GLOBAL", "0");
+		r_sys_setenv ("R2PM_SUDO", "");
+		r_sys_setenv ("SUDO", "");
 	}
-	free (s);
-	r_list_free (list);
-#else
-	R_LOG_INFO ("Auto upgrade feature is not yet supported on windows");
-#endif
+}
+
+static int r2pm_upgrade(const R2Pm *r2pm) {
+	char *pkgdir = r2pm_pkgdir ();
+	RList *files = pkgdir? r_sys_dir (pkgdir): NULL;
+	if (!files) {
+		free (pkgdir);
+		R_LOG_INFO ("No packages to upgrade");
+		return 0;
+	}
+	// groups: 0=user source, 1=global source, 2=user binary, 3=global binary
+	RList *groups[4];
+	int i;
+	for (i = 0; i < 4; i++) {
+		groups[i] = r_list_newf (free);
+	}
+	int rc = 0;
+	RListIter *iter;
+	const char *file;
+	r_list_foreach (files, iter, file) {
+		if (*file == '.') {
+			continue;
+		}
+		char *path = r_file_new (pkgdir, file, NULL);
+		char *data = r_file_is_regular (path)? r_file_slurp (path, NULL): NULL;
+		free (path);
+		if (!data) {
+			continue;
+		}
+		bool global = r_str_startswith (data, "Global: true\n");
+		bool binary = strstr (data, "\nBinary: true\n");
+		free (data);
+		int group = (binary? 2: 0) | (global? 1: 0);
+		char *package = strdup (file);
+		if (!package || !r_list_append (groups[group], package)) {
+			free (package);
+			rc = 1;
+		}
+	}
+	r_list_free (files);
+	free (pkgdir);
+	char *sudo = r_sys_getenv ("SUDO");
+	bool any = false;
+	for (i = 0; i < 4; i++) {
+		if (!r_list_empty (groups[i])) {
+			bool global = i & 1;
+			bool binary = i & 2;
+			any = true;
+			r_sys_setenv ("SUDO", sudo);
+			r2pm_set_global (global);
+			rc |= r2pm_install (groups[i], false, true, r2pm->force, global, binary);
+		}
+		r_list_free (groups[i]);
+	}
+	r_sys_setenv ("SUDO", sudo);
+	r2pm_set_global (r2pm->global);
+	free (sudo);
+	if (!any) {
+		R_LOG_INFO ("No packages to upgrade");
+	}
+	return rc? 1: 0;
 }
 
 static char *r2pm_list(int mode) {
@@ -581,27 +648,7 @@ static void r2pm_setenv(R2Pm *r2pm) {
 	free (gmake);
 	r2pm_set_pyvenv (r2pm);
 
-	char *r2_plugdir = r2pm->global? r_str_r2_prefix (R2_PLUGINS): r_xdg_datadir ("plugins");
-	r_sys_setenv ("R2PM_PLUGDIR", r2_plugdir);
-	free (r2_plugdir);
-
-	if (r2pm->global) {
-		r_sys_setenv ("GLOBAL", "1");
-		r_sys_setenv ("R2PM_GLOBAL", "1");
-		char *sudo = r_sys_getenv ("SUDO");
-		if (R_STR_ISEMPTY (sudo)) {
-			free (sudo);
-			sudo = strdup ("sudo");
-		}
-		r_sys_setenv ("R2PM_SUDO", sudo);
-		r_sys_setenv ("SUDO", sudo);
-		free (sudo);
-	} else {
-		r_sys_setenv ("GLOBAL", "0");
-		r_sys_setenv ("R2PM_GLOBAL", "0");
-		r_sys_setenv ("R2PM_SUDO", "");
-		r_sys_setenv ("SUDO", "");
-	}
+	r2pm_set_global (r2pm->global);
 
 	if (r2pm->time) {
 		// set R2PM_TIME env var
@@ -1879,7 +1926,9 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		r2pm_update (r2pm.force);
 	}
 	if (r2pm.upgrade) {
-		r2pm_upgrade (r2pm.force);
+		if (r2pm_upgrade (&r2pm)) {
+			r2pm.rc = 1;
+		}
 	}
 	if (r2pm.version) {
 		int mode = r2pm.json? 'j': r2pm.quiet? 'q': 0;
@@ -2000,7 +2049,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		return r_main_cons_fini (cons, own_cons, res);
 	}
 	if (r2pm.init || opt.ind == 1) {
-		return r_main_cons_fini (cons, own_cons, 0);
+		return r_main_cons_fini (cons, own_cons, r2pm.rc);
 	}
 	return r_main_cons_fini (cons, own_cons, 1);
 }
