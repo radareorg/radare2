@@ -1234,8 +1234,8 @@ static int opor(RArchSession *a, ut8 *data, const Opcode *op) {
 	return process_1byte_op (a, data, op, 0x08);
 }
 
-// xadd r/m, reg: 0f c0 /r for bytes, 0f c1 /r otherwise
-static int opxadd(RArchSession *a, ut8 *data, const Opcode *op) {
+// r/m, reg: 0f opcode8 /r for bytes, 0f opcode8+1 /r otherwise (xadd, cmpxchg)
+static int op_0f_rm_reg(RArchSession *a, ut8 *data, const Opcode *op, ut8 opcode8) {
 	is_valid_registers (op);
 	const int bits = a->config->bits;
 	const Operand *rm = &op->operands[0];
@@ -1296,9 +1296,17 @@ static int opxadd(RArchSession *a, ut8 *data, const Opcode *op) {
 		data[l++] = 0x40 | rex;
 	}
 	data[l++] = 0x0f;
-	data[l++] = (reg->type & OT_BYTE)? 0xc0: 0xc1;
+	data[l++] = (reg->type & OT_BYTE)? opcode8: opcode8 + 1;
 	memcpy (data + l, modrm, n);
 	return l + n;
+}
+
+static int opxadd(RArchSession *a, ut8 *data, const Opcode *op) {
+	return op_0f_rm_reg (a, data, op, 0xc0);
+}
+
+static int opcmpxchg(RArchSession *a, ut8 *data, const Opcode *op) {
+	return op_0f_rm_reg (a, data, op, 0xb0);
 }
 
 static int opxor(RArchSession *a, ut8 *data, const Opcode *op) {
@@ -6028,6 +6036,7 @@ static const LookupTable oplookup[] = {
 	{ "cmpsb", 0, NULL, 0xa6, 1},
 	{ "cmpsd", 0, NULL, 0xa7, 1},
 	{ "cmpsw", 0, NULL, 0x66a7, 2},
+	{ "cmpxchg", 0, &opcmpxchg, 0},
 	{ "cpuid", 0, NULL, 0x0fa2, 2},
 	{ "crc32", 0, &opcrc32, 0},
 	{ "cwd", 0, NULL, 0x6699, 2},
@@ -7013,7 +7022,7 @@ err:
 static bool is_lockable(const Opcode *op) {
 	static const char *const lockable[] = {
 		"add", "adc", "and", "btc", "btr", "bts", "dec", "inc", "neg",
-		"not", "or", "sbb", "sub", "xadd", "xchg", "xor", NULL
+		"not", "or", "sbb", "sub", "xadd", "xchg", "xor", "cmpxchg", NULL
 	};
 	if (!(op->operands[0].type & OT_MEMORY)) {
 		return false;
