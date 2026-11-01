@@ -7,7 +7,7 @@ permissions:
 jobs:
   real-binaries:
     if: github.event.pull_request.number == 27286
-    runs-on: macos-15-intel
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
