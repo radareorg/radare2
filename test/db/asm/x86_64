@@ -493,6 +493,11 @@ a "xadd qword ptr [rsp+8], r12" 4c0fc1642408
 a "xadd word ptr [rbp-4], cx" 660fc14dfc
 a "lock xadd qword ptr [rdi], rsi" f0480fc137
 a "rep movsd" f3a5
+a "movsq" 48a5
+a "rep movsq" f348a5
+a "stosq" 48ab
+a "repne scasq" f248af
+a "pause" f390
 a "repnz stosd" f2ab
 a "repz monitor" f30f01c8
 a "repe vmcall" f30f01c1

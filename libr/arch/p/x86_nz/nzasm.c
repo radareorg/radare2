@@ -4167,6 +4167,28 @@ static int opretf(RArchSession *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+// movsq, cmpsq, stosq, lodsq and scasq: REX.W and the dword form's opcode, 64-bit mode only
+static int opstrq(RArchSession *a, ut8 *data, const Opcode *op) {
+	static const struct {
+		const char *mnemonic;
+		ut8 opcode;
+	} ops[] = {
+		{ "movsq", 0xa5 }, { "cmpsq", 0xa7 }, { "stosq", 0xab }, { "lodsq", 0xad }, { "scasq", 0xaf }
+	};
+	if (a->config->bits != 64 || op->operands_count) {
+		return -1;
+	}
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (ops); i++) {
+		if (!r_str_casecmp (op->mnemonic, ops[i].mnemonic)) {
+			data[0] = 0x48;
+			data[1] = ops[i].opcode;
+			return 2;
+		}
+	}
+	return -1;
+}
+
 static int opstos(RArchSession *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
@@ -6027,6 +6049,7 @@ static const LookupTable oplookup[] = {
 	{ "cmp", 0, &opcmp, 0},
 	{ "cmpsb", 0, NULL, 0xa6, 1},
 	{ "cmpsd", 0, NULL, 0xa7, 1},
+	{ "cmpsq", 0, &opstrq, 0},
 	{ "cmpsw", 0, NULL, 0x66a7, 2},
 	{ "cpuid", 0, NULL, 0x0fa2, 2},
 	{ "crc32", 0, &opcrc32, 0},
@@ -6188,6 +6211,7 @@ static const LookupTable oplookup[] = {
 	{ "lmsw", 0, &oplmsw, 0},
 	{ "lodsb", 0, NULL, 0xac, 1},
 	{ "lodsd", 0, NULL, 0xad, 1},
+	{ "lodsq", 0, &opstrq, 0},
 	{ "lodsw", 0, NULL, 0x66ad, 2},
 	{ "loop", 0, &oploop, 0},
 	{ "mfence", 0, NULL, 0x0faef0, 3},
@@ -6195,6 +6219,7 @@ static const LookupTable oplookup[] = {
 	{ "mov", 0, &opmov, 0},
 	{ "movsb", 0, NULL, 0xa4, 1},
 	{ "movsd", 0, NULL, 0xa5, 1},
+	{ "movsq", 0, &opstrq, 0},
 	{ "movsw", 0, NULL, 0x66a5, 2},
 	{ "movzx", 0, &opmovx, 0},
 	{ "movsx", 0, &opmovx, 0},
@@ -6212,6 +6237,7 @@ static const LookupTable oplookup[] = {
 	{ "outs", 0, NULL, 0x6f, 1},
 	{ "outsd", 0, NULL, 0x6f, 1},
 	{ "outsw", 0, NULL, 0x666f, 2},
+	{ "pause", 0, NULL, 0xf390, 2},
 	{ "pop", 0, &oppop, 0},
 	{ "popa", 1, NULL, 0x61, 1},
 	{ "popad", 1, NULL, 0x61, 1},
@@ -6254,6 +6280,7 @@ static const LookupTable oplookup[] = {
 	{ "sbb", 0, &opsbb, 0},
 	{ "scasb", 0, NULL, 0xae, 1},
 	{ "scasd", 0, NULL, 0xaf, 1},
+	{ "scasq", 0, &opstrq, 0},
 	{ "scasw", 0, NULL, 0x66af, 2},
 	{ "seto", 0, &opset, 0},
 	{ "setno", 0, &opset, 0},
@@ -6305,6 +6332,7 @@ static const LookupTable oplookup[] = {
 	{ "stmxcsr", 0, &opstmxcsr, 0},
 	{ "stosb", 0, &opstos, 0},
 	{ "stosd", 0, &opstos, 0},
+	{ "stosq", 0, &opstrq, 0},
 	{ "stosw", 0, &opstos, 0},
 	{ "str", 0, &opstr, 0},
 	{ "sub", 0, &opsub, 0},
