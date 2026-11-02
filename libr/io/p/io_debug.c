@@ -544,7 +544,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		const char *pidfile = file + 6;
 		char *endptr;
 		int pid = (int)strtol (pidfile, &endptr, 10);
-		if (endptr == pidfile || pid < 0) {
+		if (endptr == pidfile || *endptr || pid < 0) {
 			pid = -1;
 		}
 		if (pid == -1) {

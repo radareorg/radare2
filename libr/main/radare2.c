@@ -1632,7 +1632,7 @@ static int main_radare2(int argc, const char **argv, bool standalone) {
 						// f is a path
 						path = strdup (f);
 					} else {
-						if (isdigit (*f)) {
+						if (isdigit (*f) && r_str_isnumber (f)) {
 							path = strdup (f);
 						} else if (r_file_exists (f)) {
 							// f is a filename
