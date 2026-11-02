@@ -548,7 +548,7 @@ bool test_cons_grep_icase_does_not_mutate_word(void) {
 	mu_end;
 }
 
-static const RCoreHelpMessage test_help_message = {
+static RCoreHelpMessage test_help_message = {
 	"Usage: h", "", "help test",
 	"ha", "", "first command",
 	"hab", "", "second command",

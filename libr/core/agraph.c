@@ -4160,7 +4160,7 @@ static int agraph_scroll_step(int size, int speed) {
 	if (size > 80) {
 		scale += (size - 80) / 40.0;
 	}
-	return speed * scale;
+	return (int)(speed * scale);
 }
 
 static void agraph_init(RAGraph *g) {
