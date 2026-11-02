@@ -17,6 +17,18 @@ if "%*" == "release" (
 )
 
 set PATH=%CD%\prefix\bin;%PATH%
+
+REM Keep subprojects/sdb in sync with the revision pinned in subprojects/sdb.wrap.
+REM A stale sdb checkout makes sdb_const_getf() an implicit int on MSVC, which
+REM produces C4047 warnings and can trigger an internal compiler error (C1001).
+if exist subprojects\sdb.wrap (
+  echo === Syncing subprojects/sdb with its wrap revision
+  meson subprojects update --reset sdb
+  if errorlevel 1 (
+    echo WARNING: could not update subprojects/sdb, continuing with the existing checkout
+  )
+)
+
 set WORKS=0
 if EXIST vs (
   for /f "delims=" %%i in ('meson -v') do set MESON_VERSION=%%i
