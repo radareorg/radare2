@@ -1259,14 +1259,18 @@ static int r2pm_clone(const char *pkg) {
 			r_str_replace_ch (url_list, ',', ' ', true);
 			int url_ct, i;
 			char **urls = r_str_argv (url_list, &url_ct);
-			for (i = 0; i < url_ct; i++) {
-				if (!git_clone (srcdir, urls[i])) {
-					break;
-				}
+			bool cloned = false;
+			for (i = 0; i < url_ct && !cloned; i++) {
+				cloned = !git_clone (srcdir, urls[i]);
 			}
 			git_source = true;
 			r_str_argv_free (urls);
 			free (url_list);
+			if (!cloned) {
+				R_LOG_ERROR ("Cannot clone any of the R2PM_GIT repositories for %s", pkg);
+				free (srcdir);
+				return 1;
+			}
 		} else {
 			char *url = r2pm_get (pkg, "\nR2PM_TGZ", TT_VALUE);
 			if (!url) {
