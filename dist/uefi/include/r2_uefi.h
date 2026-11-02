@@ -289,10 +289,9 @@ static inline ssize_t r2_uefi_sockio(int fd, ...) { (void)fd; errno = EAFNOSUPPO
 #define sendto r2_uefi_sockio
 #define recvfrom r2_uefi_sockio
 
-/* the console read blocks in the firmware until a key arrives, so report
- * the descriptors as ready instead of implementing the select machinery */
-static inline int r2_uefi_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout) { (void)nfds; (void)readfds; (void)writefds; (void)exceptfds; (void)timeout; return 1; }
-static inline int r2_uefi_pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, const struct timespec *timeout, const sigset_t *sigmask) { (void)nfds; (void)readfds; (void)writefds; (void)exceptfds; (void)timeout; (void)sigmask; return 1; }
+/* only the console can block, everything else is always ready */
+int r2_uefi_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout);
+int r2_uefi_pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, const struct timespec *timeout, const sigset_t *sigmask);
 #define select r2_uefi_select
 #define pselect r2_uefi_pselect
 
@@ -324,8 +323,9 @@ static inline struct passwd *r2_uefi_getpwnam(const char *name) { (void)name; re
 #define getpwuid r2_uefi_getpwuid
 #define getpwnam r2_uefi_getpwnam
 
-static inline int r2_uefi_tcgetattr(int fd, struct termios *termios) { (void)fd; memset (termios, 0, sizeof (*termios)); return 0; }
-static inline int r2_uefi_tcsetattr(int fd, int action, const struct termios *termios) { (void)fd; (void)action; (void)termios; return 0; }
+/* the console honors ICANON, ECHO and ICRNL */
+int r2_uefi_tcgetattr(int fd, struct termios *termios);
+int r2_uefi_tcsetattr(int fd, int action, const struct termios *termios);
 static inline int r2_uefi_tcsimple(int fd, ...) { (void)fd; return 0; }
 static inline int r2_uefi_cfsetspeed(struct termios *termios, speed_t speed) { (void)termios; (void)speed; return 0; }
 static inline speed_t r2_uefi_cfgetspeed(const struct termios *termios) { (void)termios; return 0; }

@@ -656,50 +656,586 @@ void *bsearch(const void *key, const void *base, size_t nmemb, size_t size, int 
 
 /* ---------- console ---------- */
 
-static void r2efi_putws(const CHAR16 *ws) {
-	if (r2efi_st && r2efi_st->ConOut) {
-		r2efi_st->ConOut->OutputString (r2efi_st->ConOut, (CHAR16 *)ws);
+/* the firmware console has no ansi support: output parses escapes, input emits them */
+
+enum {
+	R2EFI_TEXT,
+	R2EFI_ESC,
+	R2EFI_CSI,
+	R2EFI_STR,
+	R2EFI_STR_ESC,
+};
+
+#define R2EFI_NPARAMS 16
+
+typedef struct {
+	CHAR16 buf[128];
+	size_t len;
+	int state;
+	int params[R2EFI_NPARAMS];
+	int nparams;
+	bool priv;
+	unsigned int cp;
+	int cpleft;
+	int fg;
+	int bg;
+	bool bold;
+	bool reverse;
+	int saved_col;
+	int saved_row;
+} R2EfiTerm;
+
+static R2EfiTerm r2efi_term = { .fg = EFI_LIGHTGRAY, .bg = EFI_BLACK };
+
+/* ansi color order is rgb while efi is bgr */
+static const int r2efi_ansi2efi[8] = { 0, 4, 2, 6, 1, 5, 3, 7 };
+
+static void r2efi_term_flush(void) {
+	R2EfiTerm *t = &r2efi_term;
+	if (t->len) {
+		t->buf[t->len] = 0;
+		r2efi_st->ConOut->OutputString (r2efi_st->ConOut, t->buf);
+		t->len = 0;
+	}
+}
+
+static void r2efi_term_putc(CHAR16 c) {
+	R2EfiTerm *t = &r2efi_term;
+	if (t->len + 2 >= sizeof (t->buf) / sizeof (t->buf[0])) {
+		r2efi_term_flush ();
+	}
+	t->buf[t->len++] = c;
+}
+
+static void r2efi_term_size(int *cols, int *rows) {
+	EFI_SIMPLE_TEXT_OUT_PROTOCOL *out = r2efi_st->ConOut;
+	UINTN c = 80, r = 25;
+	out->QueryMode (out, out->Mode->Mode, &c, &r);
+	*cols = (int)c;
+	*rows = (int)r;
+}
+
+static void r2efi_term_goto(int col, int row) {
+	int cols, rows;
+	r2efi_term_size (&cols, &rows);
+	col = col < 0? 0: col >= cols? cols - 1: col;
+	row = row < 0? 0: row >= rows? rows - 1: row;
+	r2efi_st->ConOut->SetCursorPosition (r2efi_st->ConOut, col, row);
+}
+
+/* blank [from, to) on the given row without moving the cursor */
+static void r2efi_term_erase(int row, int from, int to) {
+	EFI_SIMPLE_TEXT_OUT_PROTOCOL *out = r2efi_st->ConOut;
+	int cols, rows;
+	r2efi_term_size (&cols, &rows);
+	if (to > cols) {
+		to = cols;
+	}
+	if (row == rows - 1 && to == cols) {
+		/* writing the bottom right cell scrolls the screen */
+		to--;
+	}
+	if (from >= to) {
+		return;
+	}
+	int col = out->Mode->CursorColumn;
+	int cur = out->Mode->CursorRow;
+	out->SetCursorPosition (out, from, row);
+	int i;
+	for (i = from; i < to; i++) {
+		r2efi_term_putc (' ');
+	}
+	r2efi_term_flush ();
+	out->SetCursorPosition (out, col, cur);
+}
+
+static void r2efi_term_attr(void) {
+	R2EfiTerm *t = &r2efi_term;
+	int fg = t->fg;
+	int bg = t->bg;
+	if (t->bold && fg < 8) {
+		fg |= 8;
+	}
+	if (t->reverse) {
+		int tmp = fg;
+		fg = bg;
+		bg = tmp;
+	}
+	r2efi_st->ConOut->SetAttribute (r2efi_st->ConOut, EFI_TEXT_ATTR (fg, bg & 7));
+}
+
+static int r2efi_rgb2efi(int r, int g, int b) {
+	int color = (r > 85? 4: 0) | (g > 85? 2: 0) | (b > 85? 1: 0);
+	return (r > 170 || g > 170 || b > 170)? color | 8: color;
+}
+
+static int r2efi_xterm2efi(int n) {
+	if (n < 8) {
+		return r2efi_ansi2efi[n & 7];
+	}
+	if (n < 16) {
+		return r2efi_ansi2efi[n & 7] | 8;
+	}
+	if (n < 232) {
+		static const int level[6] = { 0, 95, 135, 175, 215, 255 };
+		n -= 16;
+		return r2efi_rgb2efi (level[(n / 36) % 6], level[(n / 6) % 6], level[n % 6]);
+	}
+	int gray = 8 + (n - 232) * 10;
+	return r2efi_rgb2efi (gray, gray, gray);
+}
+
+static void r2efi_term_sgr(void) {
+	R2EfiTerm *t = &r2efi_term;
+	int *p = t->params;
+	int n = t->nparams? t->nparams: 1;
+	int i;
+	for (i = 0; i < n; i++) {
+		if (p[i] == 0) {
+			t->fg = EFI_LIGHTGRAY;
+			t->bg = EFI_BLACK;
+			t->bold = false;
+			t->reverse = false;
+		} else if (p[i] == 1) {
+			t->bold = true;
+		} else if (p[i] == 22) {
+			t->bold = false;
+		} else if (p[i] == 7) {
+			t->reverse = true;
+		} else if (p[i] == 27) {
+			t->reverse = false;
+		} else if (p[i] >= 30 && p[i] <= 37) {
+			t->fg = r2efi_ansi2efi[p[i] - 30];
+		} else if (p[i] == 39) {
+			t->fg = EFI_LIGHTGRAY;
+		} else if (p[i] >= 40 && p[i] <= 47) {
+			t->bg = r2efi_ansi2efi[p[i] - 40];
+		} else if (p[i] == 49) {
+			t->bg = EFI_BLACK;
+		} else if (p[i] >= 90 && p[i] <= 97) {
+			t->fg = r2efi_ansi2efi[p[i] - 90] | 8;
+		} else if (p[i] >= 100 && p[i] <= 107) {
+			t->bg = r2efi_ansi2efi[p[i] - 100];
+		} else if ((p[i] == 38 || p[i] == 48) && i + 1 < n) {
+			bool is_fg = p[i] == 38;
+			int color = -1;
+			if (p[i + 1] == 5 && i + 2 < n) {
+				color = r2efi_xterm2efi (p[i + 2] & 0xff);
+				i += 2;
+			} else if (p[i + 1] == 2 && i + 4 < n) {
+				color = r2efi_rgb2efi (p[i + 2], p[i + 3], p[i + 4]);
+				i += 4;
+			}
+			if (color >= 0) {
+				if (is_fg) {
+					t->fg = color;
+				} else {
+					t->bg = color;
+				}
+			}
+		}
+	}
+	r2efi_term_attr ();
+}
+
+static void r2efi_term_csi(char final) {
+	R2EfiTerm *t = &r2efi_term;
+	EFI_SIMPLE_TEXT_OUT_PROTOCOL *out = r2efi_st->ConOut;
+	int p0 = t->params[0];
+	int p1 = t->params[1];
+	int n = p0? p0: 1;
+	int col = out->Mode->CursorColumn;
+	int row = out->Mode->CursorRow;
+	int cols, rows, r;
+	if (t->priv) {
+		if (p0 == 25 && (final == 'h' || final == 'l')) {
+			out->EnableCursor (out, final == 'h');
+		}
+		return;
+	}
+	r2efi_term_size (&cols, &rows);
+	switch (final) {
+	case 'm':
+		r2efi_term_sgr ();
+		break;
+	case 'H':
+	case 'f':
+		r2efi_term_goto (p1? p1 - 1: 0, p0? p0 - 1: 0);
+		break;
+	case 'A':
+		r2efi_term_goto (col, row - n);
+		break;
+	case 'B':
+		r2efi_term_goto (col, row + n);
+		break;
+	case 'C':
+		r2efi_term_goto (col + n, row);
+		break;
+	case 'D':
+		r2efi_term_goto (col - n, row);
+		break;
+	case 'G':
+		r2efi_term_goto (n - 1, row);
+		break;
+	case 'd':
+		r2efi_term_goto (col, n - 1);
+		break;
+	case 'K':
+		if (p0 == 0) {
+			r2efi_term_erase (row, col, cols);
+		} else if (p0 == 1) {
+			r2efi_term_erase (row, 0, col + 1);
+		} else {
+			r2efi_term_erase (row, 0, cols);
+		}
+		break;
+	case 'J':
+		if (p0 >= 2) {
+			out->ClearScreen (out);
+			r2efi_term_goto (col, row);
+		} else if (p0 == 1) {
+			for (r = 0; r < row; r++) {
+				r2efi_term_erase (r, 0, cols);
+			}
+			r2efi_term_erase (row, 0, col + 1);
+		} else {
+			r2efi_term_erase (row, col, cols);
+			for (r = row + 1; r < rows; r++) {
+				r2efi_term_erase (r, 0, cols);
+			}
+		}
+		break;
+	case 's':
+		t->saved_col = col;
+		t->saved_row = row;
+		break;
+	case 'u':
+		r2efi_term_goto (t->saved_col, t->saved_row);
+		break;
+	default:
+		break;
+	}
+}
+
+static void r2efi_term_esc(unsigned char c) {
+	R2EfiTerm *t = &r2efi_term;
+	EFI_SIMPLE_TEXT_OUT_PROTOCOL *out = r2efi_st->ConOut;
+	t->state = R2EFI_TEXT;
+	if (c == '[') {
+		memset (t->params, 0, sizeof (t->params));
+		t->nparams = 0;
+		t->priv = false;
+		t->state = R2EFI_CSI;
+	} else if (c == ']' || c == 'P' || c == '_' || c == '^' || c == 'X') {
+		t->state = R2EFI_STR;
+	} else if (c == '7') {
+		t->saved_col = out->Mode->CursorColumn;
+		t->saved_row = out->Mode->CursorRow;
+	} else if (c == '8') {
+		r2efi_term_goto (t->saved_col, t->saved_row);
+	}
+}
+
+static void r2efi_term_csi_byte(unsigned char c) {
+	R2EfiTerm *t = &r2efi_term;
+	if (c >= '0' && c <= '9') {
+		if (!t->nparams) {
+			t->nparams = 1;
+		}
+		int *p = &t->params[t->nparams - 1];
+		if (*p < 100000) {
+			*p = *p * 10 + (c - '0');
+		}
+	} else if (c == ';' || c == ':') {
+		if (!t->nparams) {
+			t->nparams = 1;
+		}
+		if (t->nparams < R2EFI_NPARAMS) {
+			t->nparams++;
+		}
+	} else if (c >= '<' && c <= '?') {
+		t->priv = true;
+	} else if (c >= 0x40 && c <= 0x7e) {
+		t->state = R2EFI_TEXT;
+		r2efi_term_csi ((char)c);
+	}
+}
+
+static void r2efi_term_text(unsigned char c) {
+	R2EfiTerm *t = &r2efi_term;
+	if (t->cpleft) {
+		if ((c & 0xc0) == 0x80) {
+			t->cp = (t->cp << 6) | (c & 0x3f);
+			if (!--t->cpleft) {
+				r2efi_term_putc (t->cp > 0xffff? 0xfffd: (CHAR16)t->cp);
+			}
+			return;
+		}
+		t->cpleft = 0;
+		r2efi_term_putc (0xfffd);
+	}
+	if (c == 0x1b) {
+		r2efi_term_flush ();
+		t->state = R2EFI_ESC;
+	} else if (c == '\n') {
+		r2efi_term_putc ('\r');
+		r2efi_term_putc ('\n');
+	} else if (c == '\t') {
+		r2efi_term_flush ();
+		int col = r2efi_st->ConOut->Mode->CursorColumn;
+		do {
+			r2efi_term_putc (' ');
+		} while (++col % 8);
+	} else if (c == '\r' || c == '\b' || (c >= 0x20 && c < 0x7f)) {
+		r2efi_term_putc (c);
+	} else if ((c & 0xe0) == 0xc0) {
+		t->cp = c & 0x1f;
+		t->cpleft = 1;
+	} else if ((c & 0xf0) == 0xe0) {
+		t->cp = c & 0x0f;
+		t->cpleft = 2;
+	} else if ((c & 0xf8) == 0xf0) {
+		t->cp = c & 0x07;
+		t->cpleft = 3;
+	} else if (c >= 0x80) {
+		r2efi_term_putc (0xfffd);
 	}
 }
 
 static void r2efi_conwrite(const char *buf, size_t len) {
-	CHAR16 tmp[128];
-	size_t i, o = 0;
+	if (!r2efi_st || !r2efi_st->ConOut) {
+		return;
+	}
+	R2EfiTerm *t = &r2efi_term;
+	size_t i;
 	for (i = 0; i < len; i++) {
-		if (o >= 125) {
-			tmp[o] = 0;
-			r2efi_putws (tmp);
-			o = 0;
+		unsigned char c = buf[i];
+		switch (t->state) {
+		case R2EFI_ESC:
+			r2efi_term_esc (c);
+			break;
+		case R2EFI_CSI:
+			r2efi_term_csi_byte (c);
+			break;
+		case R2EFI_STR:
+			if (c == 7) {
+				t->state = R2EFI_TEXT;
+			} else if (c == 0x1b) {
+				t->state = R2EFI_STR_ESC;
+			}
+			break;
+		case R2EFI_STR_ESC:
+			t->state = (c == '\\')? R2EFI_TEXT: R2EFI_STR;
+			break;
+		default:
+			r2efi_term_text (c);
+			break;
 		}
-		if (buf[i] == '\n') {
-			tmp[o++] = '\r';
-		}
-		tmp[o++] = (CHAR16)(unsigned char)buf[i];
 	}
-	tmp[o] = 0;
-	if (o) {
-		r2efi_putws (tmp);
-	}
+	r2efi_term_flush ();
 }
 
-static int r2efi_congetc(void) {
+static struct termios r2efi_tio = {
+	.c_iflag = ICRNL,
+	.c_oflag = OPOST | ONLCR,
+	.c_lflag = ICANON | ECHO | ECHOE | ISIG | IEXTEN,
+};
+
+/* keystrokes translated to the bytes a vt100 terminal would send */
+static unsigned char r2efi_keyq[16];
+static size_t r2efi_keyq_len = 0;
+
+/* completed line of the canonical mode, consumed by read */
+static char r2efi_line[1024];
+static size_t r2efi_line_len = 0;
+static size_t r2efi_line_off = 0;
+
+int r2_uefi_tcgetattr(int fd, struct termios *termios) {
+	if (fd < 0 || fd > 2) {
+		errno = ENOTTY;
+		return -1;
+	}
+	*termios = r2efi_tio;
+	return 0;
+}
+
+int r2_uefi_tcsetattr(int fd, int action, const struct termios *termios) {
+	(void)action;
+	if (fd < 0 || fd > 2) {
+		errno = ENOTTY;
+		return -1;
+	}
+	r2efi_tio = *termios;
+	return 0;
+}
+
+static const char *r2efi_scan_seq(UINT16 scan) {
+	/* indexed by the SCAN_* codes, from SCAN_UP to SCAN_ESC */
+	static const char *seqs[] = {
+		NULL, "\x1b[A", "\x1b[B", "\x1b[C", "\x1b[D", "\x1b[H", "\x1b[F",
+		"\x1b[2~", "\x1b[3~", "\x1b[5~", "\x1b[6~",
+		"\x1bOP", "\x1bOQ", "\x1bOR", "\x1bOS", "\x1b[15~", "\x1b[17~",
+		"\x1b[18~", "\x1b[19~", "\x1b[20~", "\x1b[21~", "\x1b[23~", "\x1b[24~",
+		"\x1b",
+	};
+	return scan < sizeof (seqs) / sizeof (seqs[0])? seqs[scan]: NULL;
+}
+
+/* fetch a pending keystroke without blocking */
+static bool r2efi_key_poll(void) {
+	if (r2efi_keyq_len) {
+		return true;
+	}
+	if (!r2efi_st || !r2efi_st->ConIn) {
+		return false;
+	}
+	EFI_INPUT_KEY key;
+	if (r2efi_st->ConIn->ReadKeyStroke (r2efi_st->ConIn, &key) != EFI_SUCCESS) {
+		return false;
+	}
+	unsigned char *q = r2efi_keyq;
+	unsigned int c = key.UnicodeChar;
+	if (!c) {
+		const char *seq = r2efi_scan_seq (key.ScanCode);
+		if (seq) {
+			r2efi_keyq_len = strlen (seq);
+			memcpy (q, seq, r2efi_keyq_len);
+		}
+	} else if (c == '\r' && (r2efi_tio.c_iflag & ICRNL)) {
+		q[r2efi_keyq_len++] = '\n';
+	} else if (c == CHAR_BACKSPACE) {
+		q[r2efi_keyq_len++] = 0x7f;
+	} else if (c < 0x80) {
+		q[r2efi_keyq_len++] = c;
+	} else if (c < 0x800) {
+		q[r2efi_keyq_len++] = 0xc0 | (c >> 6);
+		q[r2efi_keyq_len++] = 0x80 | (c & 0x3f);
+	} else {
+		q[r2efi_keyq_len++] = 0xe0 | (c >> 12);
+		q[r2efi_keyq_len++] = 0x80 | ((c >> 6) & 0x3f);
+		q[r2efi_keyq_len++] = 0x80 | (c & 0x3f);
+	}
+	return r2efi_keyq_len > 0;
+}
+
+static int r2efi_key_getc(void) {
 	if (!r2efi_st || !r2efi_st->ConIn || !r2efi_bs) {
 		return -1;
 	}
-	EFI_INPUT_KEY key;
-	UINTN idx;
-	for (;;) {
-		if (r2efi_st->ConIn->ReadKeyStroke (r2efi_st->ConIn, &key) == EFI_SUCCESS) {
-			if (key.UnicodeChar == '\r') {
-				return '\n';
-			}
-			if (key.UnicodeChar) {
-				return (int)(key.UnicodeChar & 0xff);
-			}
-			continue;
-		}
+	while (!r2efi_key_poll ()) {
+		UINTN idx;
 		r2efi_bs->WaitForEvent (1, &r2efi_st->ConIn->WaitForKey, &idx);
 	}
+	int c = r2efi_keyq[0];
+	memmove (r2efi_keyq, r2efi_keyq + 1, --r2efi_keyq_len);
+	return c;
+}
+
+static bool r2efi_con_ready(void) {
+	if (r2efi_tio.c_lflag & ICANON) {
+		return r2efi_line_off < r2efi_line_len || r2efi_key_poll ();
+	}
+	return r2efi_key_poll ();
+}
+
+static ssize_t r2efi_conread_line(char *out, size_t count) {
+	bool echo = r2efi_tio.c_lflag & ECHO;
+	if (r2efi_line_off >= r2efi_line_len) {
+		r2efi_line_off = r2efi_line_len = 0;
+		for (;;) {
+			int c = r2efi_key_getc ();
+			if (c < 0 || (c == 4 && !r2efi_line_len)) {
+				return 0;
+			}
+			if (c == 0x7f) {
+				if (r2efi_line_len) {
+					do {
+						r2efi_line_len--;
+					} while (r2efi_line_len && (r2efi_line[r2efi_line_len] & 0xc0) == 0x80);
+					if (echo) {
+						r2efi_conwrite ("\b \b", 3);
+					}
+				}
+				continue;
+			}
+			if (c == 0x1b) {
+				/* there is no line editing, drop the whole escape sequence */
+				r2efi_keyq_len = 0;
+				continue;
+			}
+			if (c != '\n' && r2efi_line_len + 1 >= sizeof (r2efi_line)) {
+				continue;
+			}
+			r2efi_line[r2efi_line_len++] = (char)c;
+			if (echo) {
+				r2efi_conwrite (&r2efi_line[r2efi_line_len - 1], 1);
+			}
+			if (c == '\n') {
+				break;
+			}
+		}
+	}
+	size_t n = r2efi_line_len - r2efi_line_off;
+	if (n > count) {
+		n = count;
+	}
+	memcpy (out, r2efi_line + r2efi_line_off, n);
+	r2efi_line_off += n;
+	return (ssize_t)n;
+}
+
+static ssize_t r2efi_conread(char *out, size_t count) {
+	if (!count) {
+		return 0;
+	}
+	if (r2efi_tio.c_lflag & ICANON) {
+		return r2efi_conread_line (out, count);
+	}
+	size_t n = 0;
+	do {
+		int c = r2efi_key_getc ();
+		if (c < 0) {
+			break;
+		}
+		out[n++] = (char)c;
+	} while (n < count && r2efi_key_poll ());
+	if (n && (r2efi_tio.c_lflag & ECHO)) {
+		r2efi_conwrite (out, n);
+	}
+	return (ssize_t)n;
+}
+
+int r2_uefi_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout) {
+	(void)writefds;
+	(void)exceptfds;
+	if (!readfds || nfds < 1 || !FD_ISSET (0, readfds) || !r2efi_st || !r2efi_st->ConIn || !r2efi_bs) {
+		return 1;
+	}
+	unsigned long long usec = timeout? (unsigned long long)timeout->tv_sec * 1000000 + timeout->tv_usec: 0;
+	while (!r2efi_con_ready ()) {
+		if (!timeout) {
+			UINTN idx;
+			r2efi_bs->WaitForEvent (1, &r2efi_st->ConIn->WaitForKey, &idx);
+			continue;
+		}
+		if (!usec) {
+			FD_ZERO (readfds);
+			return 0;
+		}
+		unsigned long long step = usec < 1000? usec: 1000;
+		r2efi_bs->Stall ((UINTN)step);
+		usec -= step;
+	}
+	return 1;
+}
+
+int r2_uefi_pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, const struct timespec *timeout, const sigset_t *sigmask) {
+	(void)sigmask;
+	if (!timeout) {
+		return r2_uefi_select (nfds, readfds, writefds, exceptfds, NULL);
+	}
+	struct timeval tv = { timeout->tv_sec, timeout->tv_nsec / 1000 };
+	return r2_uefi_select (nfds, readfds, writefds, exceptfds, &tv);
 }
 
 /* ---------- file descriptors ---------- */
@@ -826,21 +1362,7 @@ int close(int fd) {
 
 ssize_t read(int fd, void *buf, size_t count) {
 	if (fd == 0) {
-		/* console line input */
-		char *out = buf;
-		size_t n = 0;
-		while (n < count) {
-			int c = r2efi_congetc ();
-			if (c < 0) {
-				break;
-			}
-			out[n++] = (char)c;
-			r2efi_conwrite ((const char *)&out[n - 1], 1);
-			if (c == '\n') {
-				break;
-			}
-		}
-		return (ssize_t)n;
+		return r2efi_conread (buf, count);
 	}
 	if (fd < 3 || fd >= R2EFI_NFD || !r2efi_fds[fd].used) {
 		errno = EBADF;
