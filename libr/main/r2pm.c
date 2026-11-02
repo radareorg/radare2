@@ -604,9 +604,8 @@ static int r2pm_update_archive(const char *gpath, const char *pmpath) {
 		if (root && r_file_is_directory (root)) {
 			r_file_rm_rf (pmpath);
 			if (r_file_move (root, pmpath)) {
-				if (sha) {
-					r_file_dump (stamp, (const ut8 *)sha, strlen (sha), false);
-				}
+				// an empty stamp marks the archive checkout and forces the next download
+				r_file_dump (stamp, (const ut8 *)(sha? sha: ""), sha? strlen (sha): 0, false);
 				rc = 0;
 			} else {
 				R_LOG_ERROR ("Cannot move %s into %s", root, pmpath);
@@ -645,10 +644,10 @@ static int r2pm_update(bool force) {
 		r_file_rm_rf (pmpath);
 	}
 	char *git = r_file_path ("git");
-	char *gitmeta = r_file_new (pmpath, ".git", NULL);
-	// archive checkouts have no .git, keep updating them the same way
-	const bool use_git = git && (!r_file_is_directory (pmpath) || r_file_is_directory (gitmeta));
-	free (gitmeta);
+	char *stamp = r_file_new (pmpath, ".r2pm-commit", NULL);
+	// databases fetched as archives keep updating the same way
+	const bool use_git = git && !r_file_exists (stamp);
+	free (stamp);
 	free (git);
 	int rc = 0;
 	if (!use_git) {
