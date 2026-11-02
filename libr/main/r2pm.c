@@ -5,7 +5,8 @@
 #include <r_main.h>
 #include <r_lib.h>
 
-#define R2PM_GITURL "https://github.com/radareorg/radare2-pm"
+#define R2PM_GITHUB "https://github.com/"
+#define R2PM_GITURL R2PM_GITHUB "radareorg/radare2-pm"
 #define R2PM_INSTALL_R2 "\nR2PM_INSTALL_R2() {\n"
 #define R2PM_INSTALL_QJS "\nR2PM_INSTALL_QJS() {\n"
 #define R2PM_INSTALL_UNIX "\nR2PM_INSTALL() {\n"
@@ -507,6 +508,127 @@ static char *r2pm_list(int mode) {
 	return r_strbuf_drain (sb);
 }
 
+static bool download(const char *url, const char *outfile);
+static bool unzip(const char *file, const char *dir);
+
+// owner/repo of a github R2PM_GITURL, the only host with known archive urls
+static char *r2pm_github_repo(void) {
+	char *giturl = r_sys_getenv ("R2PM_GITURL");
+	if (R_STR_ISEMPTY (giturl)) {
+		free (giturl);
+		giturl = strdup (R2PM_GITURL);
+	}
+	char *repo = NULL;
+	if (r_str_startswith (giturl, R2PM_GITHUB)) {
+		repo = strdup (giturl + strlen (R2PM_GITHUB));
+		size_t len = strlen (repo);
+		while (len > 0 && repo[len - 1] == '/') {
+			repo[--len] = 0;
+		}
+		if (r_str_endswith (repo, ".git")) {
+			repo[len - 4] = 0;
+		}
+	}
+	free (giturl);
+	return repo;
+}
+
+// latest commit of the default branch, NULL when the github api is unreachable
+static char *r2pm_github_head(const char *repo, const char *gpath) {
+	char *url = r_str_newf ("https://api.github.com/repos/%s/commits?per_page=1", repo);
+	char *file = r_file_new (gpath, "radare2-pm.json", NULL);
+	char *sha = NULL;
+	if (download (url, file)) {
+		char *data = r_file_slurp (file, NULL);
+		RJson *json = data? r_json_parsedup (data): NULL;
+		const RJson *commit = json? r_json_item (json, 0): NULL;
+		const char *value = commit? r_json_get_str (commit, "sha"): NULL;
+		if (value && strlen (value) == 40 && strspn (value, "0123456789abcdef") == 40) {
+			sha = strdup (value);
+		}
+		r_json_free (json);
+		free (data);
+	}
+	r_file_rm (file);
+	free (file);
+	free (url);
+	return sha;
+}
+
+// fetches the database as a zip archive when git is not available
+// the downloaded commit is stored to skip the download when nothing changed
+static int r2pm_update_archive(const char *gpath, const char *pmpath) {
+	char *repo = r2pm_github_repo ();
+	if (!repo) {
+		R_LOG_ERROR ("Cannot find `git` in $PATH and R2PM_GITURL is not a GitHub repository");
+		return 1;
+	}
+	char *stamp = r_file_new (pmpath, ".r2pm-commit", NULL);
+	char *sha = r2pm_github_head (repo, gpath);
+	if (sha) {
+		char *local = r_file_slurp (stamp, NULL);
+		if (local) {
+			r_str_trim (local);
+		}
+		const bool uptodate = local && !strcmp (local, sha);
+		free (local);
+		if (uptodate) {
+			R_LOG_INFO ("The r2pm database is up to date (%s)", sha);
+			free (sha);
+			free (stamp);
+			free (repo);
+			return 0;
+		}
+	} else {
+		R_LOG_WARN ("Cannot check the latest database commit, downloading it anyway");
+	}
+	char *zipurl = r_str_newf (R2PM_GITHUB "%s/archive/%s.zip", repo, sha? sha: "HEAD");
+	char *zipfile = r_file_new (gpath, "radare2-pm.zip", NULL);
+	char *tmpdir = r_file_new (gpath, "radare2-pm.tmp", NULL);
+	r_file_rm_rf (tmpdir);
+	r_sys_mkdirp (tmpdir);
+	int rc = 1;
+	if (download (zipurl, zipfile) && unzip (zipfile, tmpdir)) {
+		// github archives contain a single <repo>-<ref> directory
+		RList *files = r_sys_dir (tmpdir);
+		RListIter *iter;
+		const char *name;
+		char *root = NULL;
+		r_list_foreach (files, iter, name) {
+			if (*name != '.') {
+				root = r_file_new (tmpdir, name, NULL);
+				break;
+			}
+		}
+		r_list_free (files);
+		if (root && r_file_is_directory (root)) {
+			r_file_rm_rf (pmpath);
+			if (r_file_move (root, pmpath)) {
+				if (sha) {
+					r_file_dump (stamp, (const ut8 *)sha, strlen (sha), false);
+				}
+				rc = 0;
+			} else {
+				R_LOG_ERROR ("Cannot move %s into %s", root, pmpath);
+			}
+		} else {
+			R_LOG_ERROR ("Unexpected contents in %s", zipurl);
+		}
+		free (root);
+	} else {
+		R_LOG_ERROR ("Cannot download the r2pm database from %s", zipurl);
+	}
+	r_file_rm (zipfile);
+	r_file_rm_rf (tmpdir);
+	free (tmpdir);
+	free (zipfile);
+	free (zipurl);
+	free (sha);
+	free (stamp);
+	free (repo);
+	return rc;
+}
+
 static int r2pm_update(bool force) {
 	if (r_sys_getenv_asbool ("R2PM_OFFLINE")) {
 		R_LOG_INFO ("Offline mode, skipping database update");
@@ -522,8 +644,16 @@ static int r2pm_update(bool force) {
 	if (force) {
 		r_file_rm_rf (pmpath);
 	}
+	char *git = r_file_path ("git");
+	char *gitmeta = r_file_new (pmpath, ".git", NULL);
+	// archive checkouts have no .git, keep updating them the same way
+	const bool use_git = git && (!r_file_is_directory (pmpath) || r_file_is_directory (gitmeta));
+	free (gitmeta);
+	free (git);
 	int rc = 0;
-	if (r_file_is_directory (pmpath)) {
+	if (!use_git) {
+		rc = r2pm_update_archive (gpath, pmpath);
+	} else if (r_file_is_directory (pmpath)) {
 		R_LOG_INFO ("Running git pull on %s", pmpath);
 		if (git_pull (pmpath, true, force) != 0) {
 			R_LOG_ERROR ("git pull");
@@ -533,7 +663,7 @@ static int r2pm_update(bool force) {
 		char *giturl = r_sys_getenv ("R2PM_GITURL");
 		if (R_STR_ISEMPTY (giturl)) {
 			free (giturl);
-			giturl = strdup ("R2PM_GITURL");
+			giturl = strdup (R2PM_GITURL);
 		}
 		rc = git_clone (pmpath, giturl);
 		free (giturl);
@@ -1011,7 +1141,6 @@ static int r2pm_uninstall_pkg(const char *pkg, bool global) {
 }
 
 static bool download(const char *url, const char *outfile) {
-	/// XXX add support for windows powershell download
 	char *eurl = r_str_escape_sh (url);
 	char *eout = r_str_escape_sh (outfile);
 	if (!eurl || !eout) {
@@ -1023,7 +1152,7 @@ static bool download(const char *url, const char *outfile) {
 	int res = 1;
 	R_LOG_INFO ("download: %s into %s", url, outfile);
 	if (tool) {
-		res = r_sys_cmdf ("%s -sfL -o \"%s\" \"%s\"", tool, eout, eurl);
+		res = r_sys_cmdf ("curl -sfL -o \"%s\" \"%s\"", eout, eurl);
 		free (tool);
 		free (eurl);
 		free (eout);
@@ -1031,7 +1160,7 @@ static bool download(const char *url, const char *outfile) {
 	}
 	tool = r_file_path ("wget");
 	if (tool) {
-		res = r_sys_cmdf ("%s -qO \"%s\" \"%s\"", tool, eout, eurl);
+		res = r_sys_cmdf ("wget -qO \"%s\" \"%s\"", eout, eurl);
 		free (tool);
 		free (eurl);
 		free (eout);
@@ -1039,8 +1168,20 @@ static bool download(const char *url, const char *outfile) {
 	}
 	free (eurl);
 	free (eout);
+#if R2__WINDOWS__
+	// curl.exe ships since windows 10 1803, older systems only have powershell
+	char *psurl = r_str_replace_all (strdup (url), "'", "''");
+	char *psout = r_str_replace_all (strdup (outfile), "'", "''");
+	res = r_sys_cmdf ("powershell -NoProfile -Command \"$ProgressPreference='SilentlyContinue';"
+		"[Net.ServicePointManager]::SecurityProtocol='Tls12';"
+		"Invoke-WebRequest -UseBasicParsing -Uri '%s' -OutFile '%s'\"", psurl, psout);
+	free (psurl);
+	free (psout);
+	return res == 0;
+#else
 	R_LOG_ERROR ("Please install `curl` or `wget`");
 	return false;
+#endif
 }
 
 static bool unzip(const char *file, const char *dir) {
