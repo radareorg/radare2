@@ -146,6 +146,18 @@ print_insn_shx (bfd_vma memaddr, struct disassemble_info *info)
 	    case REG_B:
 	      rb = nibs[n] & 0x07;
 	      break;
+	    case REG_N_D:
+	      if (nibs[n] & 1) {
+		      goto fail;
+	      }
+	      rn = nibs[n];
+	      break;
+	    case REG_N_B01:
+	      if ((nibs[n] & 0x3) != 1) {
+		      goto fail;
+	      }
+	      rn = (nibs[n] & 0xc) >> 2;
+	      break;
 	    default:
 	      fprintf(stderr, "sh-dis: abort");
 	      return 0;
