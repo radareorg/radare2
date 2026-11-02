@@ -80,7 +80,8 @@ static bool z80_esil(RAnalOp *op, const ut8 *data, int len) {
 	const char *rp[] = { "bc", "de", "hl", "sp" };
 	const char *rp2[] = { "bc", "de", "hl", "af" };
 	const char *rr[8], *ww[8];
-	for (size_t i = 0; i < R_ARRAY_SIZE (rr); i++) {
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (rr); i++) {
 		rr[i] = r[i];
 		ww[i] = w[i];
 	}
