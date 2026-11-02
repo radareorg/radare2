@@ -5023,7 +5023,11 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("scr.tts", "false", "use tts if available by a command (see ic)");
 	SETCB ("scr.prompt", "true", &cb_scrprompt, "show user prompt (used by r2 -q)");
 	SETICB ("scr.limit", 0, &cb_scr_limit, "stop printing after N bytes");
+#if R2_UEFI
+	const int default_color = COLOR_MODE_DISABLED;
+#else
 	const int default_color = (core->print->flags & R_PRINT_FLAGS_COLOR)? core->cons->context->color_limit: COLOR_MODE_DISABLED;
+#endif
 	SETICB ("scr.color", default_color, &cb_color, "enable colors (0: none, 1: ansi, 2: 256 colors, 3: truecolor)");
 	n = r_config_node_get (cfg, "scr.color");
 	SETOPTIONS (n, "0", "1", "2", "3", NULL);
