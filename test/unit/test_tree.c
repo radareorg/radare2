@@ -153,7 +153,7 @@ bool test_r_tree_string_labels(void) {
 	r_tree_add_node (tree, root, (void *)1);
 	r_tree_add_node (tree, root, (void *)2);
 	const char *labels[] = { "root", "custom label", NULL };
-	char *text = r_tree_to_string (tree, tree_label, labels, false);
+	char *text = r_tree_to_string (tree, tree_label, (void *)labels, false);
 	mu_assert_streq (text, "root\n|-- custom label\n`-- \n", "callback with user data and missing label");
 	free (text);
 	r_tree_free (tree);

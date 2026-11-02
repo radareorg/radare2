@@ -80,8 +80,10 @@ static bool z80_esil(RAnalOp *op, const ut8 *data, int len) {
 	const char *rp[] = { "bc", "de", "hl", "sp" };
 	const char *rp2[] = { "bc", "de", "hl", "af" };
 	const char *rr[8], *ww[8];
-	memcpy (rr, r, sizeof (rr));
-	memcpy (ww, w, sizeof (ww));
+	for (size_t i = 0; i < R_ARRAY_SIZE (rr); i++) {
+		rr[i] = r[i];
+		ww[i] = w[i];
+	}
 	RStrBuf *e = &op->esil;
 	int prefix = 0, at = 0;
 	const char *index = NULL;

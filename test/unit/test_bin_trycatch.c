@@ -111,7 +111,7 @@ static bool query_matches(RBinFile *bf, const TrycatchModel *model, ut64 source)
 			expected.entries[expected.count++] = &model->entries[i];
 		}
 	}
-	qsort (expected.entries, expected.count, sizeof (expected.entries[0]), compare_entries);
+	qsort ((void *)expected.entries, expected.count, sizeof (expected.entries[0]), compare_entries);
 	return r_bin_trycatch_foreach (bf, source, check_entry, &expected)
 		&& expected.matched && expected.visited == expected.count;
 }

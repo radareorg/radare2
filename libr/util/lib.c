@@ -108,6 +108,10 @@ R_API void *r_lib_dl_sym(void *handler, const char *name) {
 R_API bool r_lib_dl_close(void *handler) {
 #if R2__UNIX__ && WANT_DYLINK
 	return handler && dlclose (handler);
+#elif R2__WINDOWS__ && WANT_DYLINK
+	// Windows keeps the DLL mapped until the last reference is released,
+	// so skipping FreeLibrary leaves mismatched plugins locked on disk.
+	return handler && FreeLibrary ((HMODULE)handler);
 #else
 	return handler != NULL;
 #endif

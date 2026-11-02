@@ -81,7 +81,11 @@ static bool arm64_leaddr_before(RAnal *anal, RList *leaddrs, const char *reg, ut
 				la = leaddrs_find_before (leaddrs, source, addr);
 			} else if ((insn & 0xbf800000) == 0x91000000 && src && arm64_same_reg (src->reg, source)) {
 				const ut64 imm = (ut64)(insn >> 10 & 0xfff) << ((insn >> 22 & 1) * 12);
-				delta += insn & 0x40000000? -imm: imm;
+				if (insn & 0x40000000) {
+					delta -= imm;
+				} else {
+					delta += imm;
+				}
 			} else if ((insn & 0xffc003e0) == 0xf94003e0) {
 				stack_slot = (insn >> 10 & 0xfff) * 8;
 			} else {
