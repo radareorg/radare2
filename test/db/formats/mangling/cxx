@@ -1,3 +1,53 @@
+NAME=gnu v2 truncated global constructors and destructors
+FILE=-
+CMDS=<<EOF
+iD cxx _GLOBAL_
+iD cxx _GLOBAL_$
+iD cxx _GLOBAL_$I
+iD cxx _GLOBAL_$D
+iD cxx _GLOBAL_.
+iD cxx _GLOBAL_.I
+iD cxx _GLOBAL_.D
+iD cxx _GLOBAL__
+iD cxx _GLOBAL__I
+iD cxx _GLOBAL__D
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+EOF
+RUN
+
+NAME=gnu v2 global constructors and destructors separators
+FILE=-
+CMDS=<<EOF
+iD cxx _GLOBAL_$I$foo
+iD cxx _GLOBAL_$D$foo
+iD cxx _GLOBAL_.I.foo
+iD cxx _GLOBAL_.D.foo
+iD cxx _GLOBAL__I_foo
+iD cxx _GLOBAL__D_foo
+EOF
+EXPECT=<<EOF
+global constructors keyed to foo
+global destructors keyed to foo
+global constructors keyed to foo
+global destructors keyed to foo
+global constructors keyed to foo
+global destructors keyed to foo
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=long cxx symbol
 FILE=-
 CMDS=""!rabin2 -D cxx _ZZN3rtc19webrtc_logging_impl11LogStreamerIJEE4CallIJNS0_3ValILNS0_10LogArgTypeE13ENS0_11LogMetadataEEENS4_ILS5_9EPKcEENS4_ILS5_1EiEESA_SB_SA_SB_SA_SB_SA_SB_SA_SB_SA_SB_SA_SB_SA_SB_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SB_SA_SB_SB_SA_SB_SB_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SB_SA_SB_SB_SB_SB_EEEvDpRKT_E1t

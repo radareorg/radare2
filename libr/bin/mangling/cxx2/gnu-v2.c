@@ -427,13 +427,7 @@ static char *gv2_global(const char *s) {
 	}
 	const char *p = s + 8;
 	char kind = 0;
-	if (p[0] == '$' && p[2] == '$') {
-		kind = p[1];
-		p += 3;
-	} else if (p[0] == '.' && p[2] == '.') {
-		kind = p[1];
-		p += 3;
-	} else if (p[0] == '_' && p[2] == '_') {
+	if ((p[0] == '$' || p[0] == '.' || p[0] == '_') && p[1] && p[2] == p[0]) {
 		kind = p[1];
 		p += 3;
 	} else {
