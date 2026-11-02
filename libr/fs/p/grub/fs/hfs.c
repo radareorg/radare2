@@ -637,7 +637,8 @@ grub_hfs_cmp_catkeys(struct grub_hfs_catalog_key *k1,
 		[0xFE] = 214,
 		[0xFF] = 215,
 	};
-	int minlen = (k1->strlen < k2->strlen)? k1->strlen: k2->strlen;
+	// the lookup keys take strlen from the volume name and the path, which can exceed str[]
+	const int minlen = R_MIN (R_MIN (k1->strlen, k2->strlen), (int)sizeof (k1->str));
 
 	int cmp = (grub_be_to_cpu32 (k1->parent_dir) - grub_be_to_cpu32 (k2->parent_dir));
 	if (cmp != 0) {
