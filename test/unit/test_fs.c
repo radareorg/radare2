@@ -239,11 +239,47 @@ static bool test_r_fs_ntfs_attribute_list_real_size_overflow(void) {
 	mu_end;
 }
 
+static bool test_r_fs_sfs_unterminated_names(void) {
+	const int bs = 512;
+	const int imgsz = 8192;
+	ut8 *img = calloc (1, imgsz);
+	mu_assert_notnull (img, "alloc sfs image");
+	// rootblock at sector 0: magic "SFS\0", big endian fields
+	memcpy (img, "SFS", 3);
+	r_write_be32 (img + 52, bs); // blocksize
+	r_write_be32 (img + 104, 1); // rootobject -> sector 1
+	// root object container at sector 1: objects[0] starts at offset 24,
+	// its dir.dir_objc is at offset 40 and its filename at offset 49
+	ut8 *robjc = img + bs;
+	r_write_be32 (robjc + 40, 2); // dir container -> sector 2
+	memcpy (robjc + 49, "VOL", 3); // short terminated volume label
+	// directory object container at sector 2: the first entry name runs to
+	// the end of the block with no terminator, which made grub_strlen walk
+	// off the end of the blocksize sized heap buffer
+	ut8 *dobjc = img + 2 * bs;
+	memset (dobjc + 49, 'A', bs - 49);
+
+	RIO *io = r_io_new ();
+	RFS *fs = r_fs_new ();
+	r_io_bind (io, &fs->iob);
+	mu_assert_notnull (r_io_open (io, "malloc://8192", R_PERM_RW, 0), "open sfs image");
+	r_io_write_at (io, 0, img, imgsz);
+	mu_assert_notnull (r_fs_mount (fs, "sfs", "/mnt", 0), "mount sfs image with unterminated label");
+	RList *dir = r_fs_dir (fs, "/mnt");
+	mu_assert_notnull (dir, "list a directory with an unterminated entry name");
+	r_list_free (dir);
+	r_fs_free (fs);
+	r_io_free (io);
+	free (img);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_fs_ext2_read_bounds);
 	mu_run_test (test_r_fs_bfs_read_whole_file);
 	mu_run_test (test_r_fs_ntfs_fixup_bounds);
 	mu_run_test (test_r_fs_ntfs_attribute_list_real_size_overflow);
+	mu_run_test (test_r_fs_sfs_unterminated_names);
 	return tests_passed != tests_run;
 }
 
