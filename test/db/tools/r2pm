@@ -573,3 +573,53 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=r2pm installs missing dependencies and stops when one fails
+REQUIRE=unix
+FILE=-
+CMDS=<<EOF
+rmrf r2pm-deps-r2r
+%R2PM_DBDIR=scripts/r2pm/radare2-pm/db
+%R2PM_GITDIR=r2pm-deps-r2r/git
+%XDG_DATA_HOME=r2pm-deps-r2r/data
+%R2PM_OFFLINE=1
+%R2_LOG_LEVEL=1
+r2pm -qi depapp
+r2pm -qi depapp
+r2pm -qi depbroken
+r2pm -ql
+rmrf r2pm-deps-r2r
+EOF
+EXPECT=<<EOF
+install-depok-0
+install-depapp-0
+install-depapp-0
+install-depfail-0
+depapp
+depok
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot install depfail, required by depbroken
+EOF
+RUN
+
+NAME=r2pm installs dependencies globally with the package
+REQUIRE=unix
+FILE=-
+CMDS=<<EOF
+rmrf r2pm-deps-global-r2r
+%R2PM_DBDIR=scripts/r2pm/radare2-pm/db
+%R2PM_GITDIR=r2pm-deps-global-r2r/git
+%XDG_DATA_HOME=r2pm-deps-global-r2r/data
+%R2PM_OFFLINE=1
+%R2_LOG_LEVEL=1
+%SUDO=true
+r2pm -qgi depapp
+rmrf r2pm-deps-global-r2r
+EOF
+EXPECT=<<EOF
+install-depok-1
+install-depapp-1
+EOF
+EXPECT_ERR=
+RUN

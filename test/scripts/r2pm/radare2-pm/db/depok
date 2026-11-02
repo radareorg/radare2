@@ -1,0 +1,14 @@
+R2PM_BEGIN
+
+R2PM_DESC "Dependency fixture that installs"
+
+R2PM_INSTALL() {
+	echo install-depok-$R2PM_GLOBAL
+	true
+}
+
+R2PM_UNINSTALL() {
+	true
+}
+
+R2PM_END

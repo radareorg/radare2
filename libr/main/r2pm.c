@@ -1484,27 +1484,30 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global, bool binar
 		char *dep;
 		RListIter *iter;
 		RList *l = r_str_split_list (deps, " ", 0);
-		char *pkgdir = r2pm_gitdir ();
+		char *pkgdir = r2pm_pkgdir ();
+		bool failed = false;
 		r_list_foreach (l, iter, dep) {
-			if (!clean) {
-				// skip dep if already installed
-				char *srcdir = r_file_new (pkgdir, pkg, NULL);
-				bool is_installed = r_file_is_directory (srcdir);
-				free (srcdir);
-				if (is_installed) {
-					continue;
-				}
+			if (!*dep) {
+				continue;
 			}
-			if (r2pm_clone (dep) == 0) {
-				r2pm_install_pkg (dep, clean, false, false); // XXX get current pkg global value
-			} else {
-				R_LOG_ERROR ("Cannot clone %s", dep);
-				// ignore return -1;
+			char *regfile = r_file_new (pkgdir, dep, NULL);
+			const bool installed = !clean && r_file_exists (regfile);
+			free (regfile);
+			if (installed) {
+				continue;
+			}
+			if (r2pm_clone (dep) || r2pm_install_pkg (dep, clean, global, false)) {
+				R_LOG_ERROR ("Cannot install %s, required by %s", dep, pkg);
+				failed = true;
+				break;
 			}
 		}
 		free (pkgdir);
 		r_list_free (l);
 		free (deps);
+		if (failed) {
+			return 1;
+		}
 	}
 	char *srcdir = r2pm_gitdir ();
 	R_LOG_DEBUG ("Entering %s", srcdir);
