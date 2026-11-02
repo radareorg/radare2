@@ -1244,7 +1244,15 @@ static int r2pm_clone(const char *pkg) {
 	}
 	bool git_source = false;
 	if (r_file_is_directory (srcdir)) {
-		git_source = git_pull (srcdir, true, 0);
+		// tarball packages are extracted without .git and have nothing to pull
+		char *gitmeta = r_file_new (srcdir, ".git", NULL);
+		git_source = r_file_exists (gitmeta) || r_file_is_directory (gitmeta);
+		free (gitmeta);
+		if (git_source && git_pull (srcdir, true, false)) {
+			R_LOG_ERROR ("Cannot update %s", srcdir);
+			free (srcdir);
+			return 1;
+		}
 	} else {
 		char *url_list = r2pm_get (pkg, "\nR2PM_GIT ", TT_WORDLIST);
 		if (url_list) {
