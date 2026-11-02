@@ -1,4 +1,4 @@
-NAME=gnu v2 truncated global constructors and destructors
+NAME=gnu v2 malformed and truncated symbols
 FILE=-
 CMDS=<<EOF
 iD cxx _GLOBAL_
@@ -11,6 +11,9 @@ iD cxx _GLOBAL_.D
 iD cxx _GLOBAL__
 iD cxx _GLOBAL__I
 iD cxx _GLOBAL__D
+iD cxx __tfQ;iD cxx __tfQ0;iD cxx _vt$t1a
+iD cxx _vt$t1a1im;iD cxx _vt$t1a0junk;iD cxx __ti2147483640A
+iD cxx _vt$t2147483640A;iD cxx _vt$t01a0;iD cxx _vt$t1a1i
 EOF
 EXPECT=
 EXPECT_ERR=<<EOF
@@ -24,10 +27,19 @@ ERROR: Cannot demangle string
 ERROR: Cannot demangle string
 ERROR: Cannot demangle string
 ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
 EOF
 RUN
 
-NAME=gnu v2 global constructors and destructors separators
+NAME=gnu v2 globals, classes, templates and back references
 FILE=-
 CMDS=<<EOF
 iD cxx _GLOBAL_$I$foo
@@ -36,6 +48,9 @@ iD cxx _GLOBAL_.I.foo
 iD cxx _GLOBAL_.D.foo
 iD cxx _GLOBAL__I_foo
 iD cxx _GLOBAL__D_foo
+iD cxx __tfQ23foo3bar;iD cxx _vt$t1a1im2
+iD cxx _vt$t1a0;iD cxx foo__FiT0N21
+iD cxx __t1a1i0;iD cxx __ls__3fooi
 EOF
 EXPECT=<<EOF
 global constructors keyed to foo
@@ -44,6 +59,12 @@ global constructors keyed to foo
 global destructors keyed to foo
 global constructors keyed to foo
 global destructors keyed to foo
+foo::bar type_info function
+a<-2> virtual table
+a<> virtual table
+foo(int, int, int, int)
+a<0>::a(void)
+foo::operator<<(int)
 EOF
 EXPECT_ERR=
 RUN
