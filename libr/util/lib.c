@@ -488,6 +488,7 @@ R_API bool r_lib_open_ptr(RLib *lib, const char *file, void *handle, RLibStruct 
 	bool ret = r_lib_run_handler (lib, p, stru);
 	if (!ret) {
 		R_LOG_DEBUG ("Library handler has failed for '%s'", file);
+		r_lib_dl_close (handle);
 		free (p->file);
 		free (p->name);
 		free (p);
