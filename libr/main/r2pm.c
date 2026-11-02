@@ -964,6 +964,18 @@ static char *r2pm_source_dir(const char *srcdir, const char *pkg) {
 	return pkgdir;
 }
 
+// cmd /c drops the first and last quote of a line that starts with one, the extra pair keeps the inner ones
+static int r2pm_system(const char *cmd) {
+#if R2__WINDOWS__
+	char *s = r_str_newf ("\"%s\"", cmd);
+	int rc = r_sys_cmd (s);
+	free (s);
+	return rc;
+#else
+	return r_sys_cmd (cmd);
+#endif
+}
+
 static int r2pm_run_r2script(const char *script, const char *dir) {
 	char *scriptfile = NULL;
 	int fd = r_file_mkstemp ("r2pm", &scriptfile);
@@ -990,7 +1002,9 @@ static int r2pm_run_r2script(const char *script, const char *dir) {
 	if (!changed_dir) {
 		R_LOG_ERROR ("Cannot enter directory: %s", dir);
 	} else if (er2 && escript) {
-		res = r_sys_cmdf ("\"%s\" -NNQ -i \"%s\" --", er2, escript);
+		char *cmd = r_str_newf ("\"%s\" -NNQ -i \"%s\" --", er2, escript);
+		res = r2pm_system (cmd);
+		free (cmd);
 	} else {
 		R_LOG_ERROR ("Cannot find radare2 in PATH");
 	}
@@ -1659,9 +1673,9 @@ static int r2pm_edit(RList *targets) {
 			char *epkgpath = r_str_escape_sh (pkgpath);
 			if (R_STR_ISNOTEMPTY (editor) && epkgpath) {
 				char *eeditor = r_str_escape_sh (editor);
-				rc = eeditor
-					? r_sys_cmdf ("\"%s\" \"%s\"", eeditor, epkgpath)
-					: -1;
+				char *cmd = eeditor? r_str_newf ("\"%s\" \"%s\"", eeditor, epkgpath): NULL;
+				rc = cmd? r2pm_system (cmd): -1;
+				free (cmd);
 				free (eeditor);
 			} else if (epkgpath) {
 #if R2__WINDOWS__
