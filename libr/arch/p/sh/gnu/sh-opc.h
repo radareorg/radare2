@@ -37,6 +37,8 @@ typedef enum {
 	REG_M,
 	REG_NM,
         REG_B,
+	REG_N_D,
+	REG_N_B01,
 	BRANCH_12,
 	BRANCH_8,
 	DISP_8,
@@ -555,7 +557,11 @@ sh_opcode_info sh_table[] = {
 
 /* 1111101111111101 frchg               */{ "frchg",{0},{HEX_F,HEX_B,HEX_F,HEX_D}},
 
+/* 1111nnn011111101 fsca FPUL,<D_REG_N> */{ "fsca",{FPUL_M,D_REG_N},{HEX_F,REG_N_D,HEX_F,HEX_D}},
+
 /* 1111001111111101 fschg               */{ "fschg",{0},{HEX_F,HEX_3,HEX_F,HEX_D}},
+
+/* 1111nnnn01111101 fsrra <F_REG_N>     */{ "fsrra",{F_REG_N},{HEX_F,REG_N,HEX_7,HEX_D}},
 
 /* 1111nnnn01101101 fsqrt <FD_REG_N>    */{ "fsqrt",{FD_REG_N},{HEX_F,REG_N,HEX_6,HEX_D}},
 
@@ -566,7 +572,7 @@ sh_opcode_info sh_table[] = {
 
 /* 1111nnnn00111101 ftrc <FD_REG_N>,FPUL*/{ "ftrc",{FD_REG_N,FPUL_M},{HEX_F,REG_N,HEX_3,HEX_D}},
 
-/* 1111nn0111111101 ftrv XMTRX_M4,<V_REG_n>*/{ "ftrv",{XMTRX_M4,V_REG_N},{HEX_F,REG_NM,HEX_F,HEX_D}},
+/* 1111nn0111111101 ftrv XMTRX_M4,<V_REG_n>*/{ "ftrv",{XMTRX_M4,V_REG_N},{HEX_F,REG_N_B01,HEX_F,HEX_D}},
 
 { 0 }
 };
