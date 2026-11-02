@@ -878,29 +878,8 @@ static int r2pm_run_r2script(const char *script, const char *dir) {
 }
 
 #if R2__WINDOWS__
-// control flow and block commands manage their own errors, the rest gets a guard
-static bool r2pm_batch_checkable(const char *cmd) {
-	static const char *const skip[] = {
-		"rem", "if", "for", "goto", "exit", "shift", "call",
-		"pause", "cls", "title", "color", "setlocal", "endlocal",
-		NULL
-	};
-	const size_t len = strlen (cmd);
-	if (!len || strchr ("(^&|,", cmd[len - 1])) {
-		return false;
-	}
-	int i;
-	for (i = 0; skip[i]; i++) {
-		const size_t skiplen = strlen (skip[i]);
-		if (!r_str_ncasecmp (cmd, skip[i], skiplen)
-			&& (!cmd[skiplen] || IS_WHITESPACE (cmd[skiplen]) || cmd[skiplen] == '(')) {
-			return false;
-		}
-	}
-	return true;
-}
-
 // runs a cmd script from a temporary .bat file so set variables survive across lines
+// hooks must check failures themselves with `|| exit /b 1`
 // the script buffer is modified while splitting lines
 static int r2pm_run_batch_script(char *script, const char *dir) {
 	char *scriptfile = r_file_temp_ex ("r2pm", ".bat");
@@ -917,14 +896,11 @@ static int r2pm_run_batch_script(char *script, const char *dir) {
 	r_list_foreach (lines, iter, line) {
 		char *cmd = r_str_trim_dup (line);
 		if (R_STR_ISNOTEMPTY (cmd)) {
-			// `||` also catches the negative errorlevels that `if errorlevel 1` ignores
-			r_strbuf_appendf (sb, "%s%s\r\n", cmd,
-				r2pm_batch_checkable (cmd)? " || exit /b 1": "");
+			r_strbuf_appendf (sb, "%s\r\n", cmd);
 		}
 		free (cmd);
 	}
 	r_list_free (lines);
-	r_strbuf_append (sb, "exit /b 0\r\n");
 	char *content = r_strbuf_drain (sb);
 	bool written = r_file_dump (scriptfile, (const ut8 *)content, strlen (content), false);
 	free (content);

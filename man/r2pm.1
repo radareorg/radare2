@@ -292,11 +292,15 @@ Unix scripts run with
 and can call
 .Ic R2PM_FAIL Ar message
 to abort with an error.
-On Windows the block lines are joined with
-.Ql &&
-and run by
-.Cm cmd ,
-so each line must be a single command.
+On Windows the block runs as a native batch script, so
+.Ic set
+variables persist across lines.
+There is no equivalent of
+.Ql set -e ,
+so each command that can fail must be checked with
+.Ql command || exit /b 1
+and other batch files must be invoked with
+.Ql call file.bat || exit /b 1 .
 The binary installer handles its own tools and runtime dependencies;
 .Ic R2PM_NEEDS
 and
