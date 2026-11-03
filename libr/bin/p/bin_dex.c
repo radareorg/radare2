@@ -2260,7 +2260,9 @@ static bool sections_vec(RBinFile *bf) {
 		add_limited_section (bf, limit, baddr, "header", s_head, R_PERM_R, NULL);
 	}
 	if (validate_section ("constpool", &s_head, &s_pool, &s_code, &s_file)) {
-		char *s_pool_format = r_str_newf ("Cd %d[%"PFMT64d"]", 4, (ut64) s_pool.size / 4);
+		// only the string_ids and type_ids tables are dword arrays, the rest are structs
+		const ut64 dwords = R_MIN ((ut64)bin->header.strings_size + bin->header.types_size, s_pool.size / 4);
+		char *s_pool_format = dwords? r_str_newf ("Cd 4[%" PFMT64u "]", dwords): NULL;
 		add_limited_section (bf, limit, baddr, "constpool", s_pool, R_PERM_R, s_pool_format);
 	}
 	if (validate_section ("code", &s_pool, &s_code, &s_data, &s_file)) {
