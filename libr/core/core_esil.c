@@ -438,6 +438,7 @@ R_API bool r_core_esil_init(RCore *core) {
 	core->esil.sb.v_bits = r_esil_add_voyeur (&core->esil.esil, core, core_esil_voyeur_trap_revert_set_bits, R_ESIL_VOYEUR_SET_BITS);
 	core->esil.sb.v_alias = r_esil_add_voyeur (&core->esil.esil, core, core_esil_voyeur_trap_revert_reg_alias, R_ESIL_VOYEUR_REG_ALIAS);
 	core->esil.sb.list.free = core_esil_stepback_free;
+	r_esil_trace_finit (&core->esil.trace);
 	return true;
 op_fail:
 	r_esil_fini (&core->esil.esil);
@@ -612,11 +613,6 @@ R_API bool r_core_esil_single_step(RCore *core) {
 		r_anal_op_fini (&op);
 		goto skip;
 	}
-	REsil *trace_esil = R_UNWRAP4 (core, dbg, anal, esil);
-	// Legacy trace execution mutates shared state; keep stepback history authoritative.
-	if (trace_esil && trace_esil->trace && !core->esil.sb.max) {
-		r_esil_trace_op (trace_esil, &op);
-	}
 	char *expr = r_strbuf_drain_nofree (&op.esil);
 	r_esil_reg_write_silent (&core->esil.esil, "PC", pc);
 	r_anal_op_fini (&op);
@@ -632,8 +628,15 @@ R_API bool r_core_esil_single_step(RCore *core) {
 			goto skip;
 		}
 	}
+	if (has_esil) {
+		// empty exprs are nops, old trace did not record them either
+		r_esil_trace_op_begin (&core->esil.trace, old_pc);
+	}
 	r_esil_parse (&core->esil.esil, expr);
 	free (expr);
+	if (has_esil) {
+		r_esil_trace_op_end (&core->esil.trace);
+	}
 	bool success = !core->esil.esil.trap;
 	if (success && has_delay && core->esil.esil.delay &&
 		!core_esil_step_delay_slot (core, as, ds_addr, max_opsize)) {
@@ -709,6 +712,8 @@ R_API void r_core_esil_set_max_stepback(RCore *core, ut32 max_stepback) {
 R_API void r_core_esil_fini(RCoreEsil *cesil) {
 	R_RETURN_IF_FAIL (cesil);
 	core_esil_stepback_fini (&cesil->esil, &cesil->sb);
+	r_esil_trace_stop (&cesil->trace, &cesil->esil);
+	r_esil_trace_finit (&cesil->trace);
 	r_esil_fini (&cesil->esil);
 	if (cesil->reg) {
 		r_reg_free (cesil->reg);

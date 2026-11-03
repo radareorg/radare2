@@ -368,6 +368,7 @@ typedef struct r_core_esil_t {
 	RReg *reg;
 	REsilCmds cmds;
 	REsilStepback sb;
+	REsilTrace trace;
 	ut8 cfg;
 } RCoreEsil;
 
