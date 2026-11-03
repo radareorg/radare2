@@ -1295,6 +1295,43 @@ static void time_end(bool chk, ut64 time_begin) {
 	}
 }
 
+#if R2__WINDOWS__
+// runs the program with the redirected std handles and returns its exit code
+static int w32_run_program(RRunProfile *p) {
+	size_t argc = 1;
+	while (argc < R_RUN_PROFILE_NARGS && p->_args[argc]) {
+		argc++;
+	}
+	// the program path is already resolved against PATH and PATHEXT
+	free (p->_args[0]);
+	p->_args[0] = strdup (p->_program);
+	char *args = r_str_format_msvc_argv (argc, (const char **)p->_args);
+	// batch files run through cmd, /s keeps the quotes inside the command line intact
+	const bool batch = r_str_iendswith (p->_program, ".bat") || r_str_iendswith (p->_program, ".cmd");
+	if (batch) {
+		char *cmd = r_str_newf ("cmd.exe /d /s /c \"%s\"", args);
+		free (args);
+		args = cmd;
+	}
+	LPTSTR cmdline = r_sys_conv_utf8_to_win (args);
+	free (args);
+	STARTUPINFO si = { .cb = sizeof (si) };
+	PROCESS_INFORMATION pi = {0};
+	const BOOL created = CreateProcess (NULL, cmdline, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi);
+	free (cmdline);
+	if (!created) {
+		r_sys_perror ("CreateProcess");
+		return 1;
+	}
+	WaitForSingleObject (pi.hProcess, INFINITE);
+	DWORD code = 1;
+	GetExitCodeProcess (pi.hProcess, &code);
+	CloseHandle (pi.hProcess);
+	CloseHandle (pi.hThread);
+	return (int)code;
+}
+#endif
+
 // NOTE: return value is like in unix return code (0 = ok, 1 = not ok)
 R_API bool r_run_start(RRunProfile *p) {
 	R_RETURN_VAL_IF_FAIL (p, false);
@@ -1532,6 +1569,10 @@ R_API bool r_run_start(RRunProfile *p) {
 #if LIBC_HAVE_FORK
 		time_end (p->_time, time_begin);
 		exit (execv (p->_program, (char *const *)p->_args));
+#elif R2__WINDOWS__
+		const int rc = w32_run_program (p);
+		time_end (p->_time, time_begin);
+		exit (rc);
 #endif
 	}
 	if (p->_runlib) {
