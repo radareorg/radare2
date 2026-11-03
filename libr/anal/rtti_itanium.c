@@ -853,15 +853,10 @@ R_API void r_anal_rtti_itanium_recover_all(RVTableContext *context, RList *vtabl
 	rtti_list->free = rtti_itanium_type_info_free;
 	// to escape multiple same infos from multiple inheritance
 	RBitset *unique_rttis = r_bitset_new ();
-	RCore *core = context->anal->coreb.core;
-	RCons *cons = core->cons;
 
 	RListIter *iter;
 	RVTableInfo *vtable;
 	r_list_foreach (vtables, iter, vtable) {
-		if (r_cons_is_breaked (cons)) {
-			break;
-		}
 		class_type_info *cti = rtti_itanium_type_info_new (context, vtable->saddr);
 		if (!cti) {
 			continue;
@@ -881,9 +876,6 @@ R_API void r_anal_rtti_itanium_recover_all(RVTableContext *context, RList *vtabl
 
 	class_type_info *cti;
 	r_list_foreach (rtti_list, iter, cti) {
-		if (r_cons_is_breaked (cons)) {
-			break;
-		}
 		add_class_bases (context, cti);
 	}
 
