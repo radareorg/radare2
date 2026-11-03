@@ -25,7 +25,7 @@ typedef struct _cpu_const_tag {
 
 typedef struct _cpu_model_tag {
 	const char *const model;
-	int pc;
+	int pc; // bits of the program counter, which counts 16-bit words
 	char *inherit;
 	struct _cpu_model_tag *inherit_cpu_p;
 	CPU_CONST *consts[10];
@@ -56,7 +56,8 @@ static OPCODE_DESC *avr_op_analyze(RArchSession *as, RAnalOp *op, ut64 addr, con
 		consts\
 	}
 #define MASK(bits)       ((bits) == 32 ? 0xffffffff : (~((~((ut32)0)) << (bits))))
-#define CPU_PC_MASK(cpu) MASK ((cpu)->pc)
+// jump targets are byte addresses, one bit wider than the word counter
+#define CPU_PC_MASK(cpu) MASK ((cpu)->pc + 1)
 #define CPU_PC_SIZE(cpu) cpu ? ((((cpu)->pc) >> 3) + ((((cpu)->pc) & 0x07) ? 1 : 0)) : 0
 
 #define INST_CALL(OPCODE_NAME) _inst__##OPCODE_NAME (as, op, buf, len, fail, cpu)
@@ -152,12 +153,12 @@ CPU_MODEL cpu_models[] = {
 	},
 	{
 		.model = "ATmega88",
-		.pc = 8,
+		.pc = 12,
 		.inherit = "ATmega8"
 	},
 	{
 		.model = "ATmega8",
-		.pc = 13,
+		.pc = 12,
 		.consts = {
 			cpu_reg_common,
 			cpu_memsize_common,

@@ -179,14 +179,47 @@ aoe 4
 pi 4
 EOF
 EXPECT=<<EOF
-0x00000000 0xf002,pc,:=
-0x00000002 0xf006,pc,:=
-0x00000004 0xf102,pc,:=
-0x00000006 0xf106,pc,:=
+0x00000000 0x1f002,pc,:=
+0x00000002 0x1f006,pc,:=
+0x00000004 0x1f102,pc,:=
+0x00000006 0x1f106,pc,:=
 rjmp 0xfffff002
 rjmp 0xfffff006
 rjmp 0xfffff102
 rjmp 0xfffff106
+EOF
+RUN
+
+NAME=avr jump targets use the whole flash address
+FILE=malloc://0x40000
+ARGS=-a avr
+CMDS=<<EOF
+wx fecf @ 0x8da
+wx fecf @ 0xb8da
+wx fecf @ 0x1b8da
+wx fecf @ 0x3b8da
+wx 0c94ffff @ 0x100
+e asm.cpu=ATmega88
+s 0x8da
+ao~^jump
+e asm.cpu=ATmega640
+s 0xb8da
+ao~^jump
+e asm.cpu=ATmega1280
+s 0x1b8da
+ao~^jump
+s 0x100
+ao~^jump
+e asm.cpu=ATmega2560
+s 0x3b8da
+ao~^jump
+EOF
+EXPECT=<<EOF
+jump: 0x000008d8
+jump: 0x0000b8d8
+jump: 0x0001b8d8
+jump: 0x0001fffe
+jump: 0x0003b8d8
 EOF
 RUN
 
