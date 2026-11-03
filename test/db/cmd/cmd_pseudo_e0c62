@@ -1,0 +1,82 @@
+NAME=E0C62 pseudo data, memory, arithmetic and flags
+FILE=malloc://64
+ARGS=-a e0c62 -b 16 -e asm.pseudo=true
+CMDS=<<EOF
+wx 0f0ec90eaf0f900f010c910a2f0d010f160f410f5e0f440f570f
+pi 13
+EOF
+EXPECT=<<EOF
+a = 0xf
+[x] = b
+a = [0xf]
+[0x0] = b
+a += 0x1
+a += b + C
+[x] ^= 0xf
+compare (a, b)
+Z = ((b & [x]) == 0)
+C = 1
+C = 0
+D = 1
+I = 0
+EOF
+RUN
+
+NAME=E0C62 pseudo branches use page selection and real conditions
+FILE=malloc://64
+ARGS=-a e0c62 -b 16 -e asm.pseudo=true
+CMDS=<<EOF
+wx 5f0e10001002100310061007e80ff90ff80fdf0fde0ffb0fff0f
+pi 13
+EOF
+EXPECT=<<EOF
+np = 0x1f
+goto ((np << 8) | 0x10) << 1
+if (C) goto ((np << 8) | 0x10) << 1
+if (!C) goto ((np << 8) | 0x10) << 1
+if (Z) goto ((np << 8) | 0x10) << 1
+if (!Z) goto ((np << 8) | 0x10) << 1
+goto ((np << 8) | (b << 4) | a) << 1
+sleep ()
+halt ()
+return
+return; skip_next ()
+nop ()
+nop ()
+EOF
+RUN
+
+NAME=E0C62 instruction descriptions
+FILE=malloc://64
+ARGS=-a e0c62 -b 16
+CMDS=<<EOF
+aod slp
+aod ldpx
+aod rst
+EOF
+EXPECT=<<EOF
+stop the CPU and oscillator until wakeup; available on E0C6011, unsupported on E0C6S46 and E0C6S48
+copy source to destination, then increment the low byte of X
+AND F with an immediate mask to clear selected flags
+EOF
+RUN
+
+NAME=E0C62 pseudo index loads and postincrements preserve the page nibble
+FILE=malloc://64
+ARGS=-a e0c62 -b 16 -e asm.pseudo=true
+CMDS=<<EOF
+wx ff0b1208e00ef00e6f0e700e2309280f3d0f
+pi 9
+EOF
+EXPECT=<<EOF
+x = (x & 0xf00) | 0xff
+y = (y & 0xf00) | 0x12
+x = (x & 0xf00) | ((x + 1) & 0xff)
+y = (y & 0xf00) | ((y + 1) & 0xff)
+[x] = 0xf; x = (x & 0xf00) | ((x + 1) & 0xff)
+[y] = 0x0; y = (y & 0xf00) | ((y + 1) & 0xff)
+[x] = 0x23 & 0xf; x = (x & 0xf00) | ((x + 1) & 0xff); [x] = 0x23 >> 4; x = (x & 0xf00) | ((x + 1) & 0xff)
+[x] += a + C; x = (x & 0xf00) | ((x + 1) & 0xff)
+[y] -= b + C; y = (y & 0xf00) | ((y + 1) & 0xff)
+EOF
+RUN

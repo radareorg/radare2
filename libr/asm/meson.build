@@ -26,6 +26,7 @@ r_asm_sources = [
   '../arch/p/mips/pseudo.c',
   '../arch/p/sparc/pseudo.c',
   '../arch/p/m68k_cs/pseudo.c',
+  '../arch/p/e0c62/pseudo.c',
   '../arch/p/evm/pseudo.c',
   '../arch/p/ptx/pseudo.c',
   '../arch/p/hppa/pseudo.c',

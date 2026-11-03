@@ -1,0 +1,48 @@
+ad "jp 0x10" 1000
+ad "pset 0x1f" 5f0e
+ad "ld a, 0xf" 0f0e
+ad "ld xh, a" 840e
+ad "ld mx, b" c90e
+ad "rlc b" f50a
+ad "rrc my" 8f0e
+ad "not mx" 2f0d
+ad "set f, 0x3" 430f
+ad "lbpx mx, 0x23" 2309
+ad "acpx mx, a" 280f
+ad "ret" df0f
+ad "slp" f90f
+ad "halt" f80f
+ad "nop5" fb0f
+ad "nop7" ff0f
+ad "jp c, 0xff" ff02
+ad "jp nc, 0x0" 0003
+ad "jp z, 0x42" 4206
+ad "jp nz, 0x80" 8007
+ad "call 0xff" ff04
+ad "calz 0x0" 0005
+ad "retd 0xab" ab01
+ad "rets" de0f
+ad "ld y, 0xff" ff08
+ad "ld a, [0xf]" af0f
+ad "ld [0x0], b" 900f
+ad "ldpx mx, 0xf" 6f0e
+ad "ldpy my, 0x0" 700e
+ad "adc xh, 0xf" 0f0a
+ad "push xp" c40f
+ad "pop f" da0f
+ad "rst f, 0x3" 530f
+ad "inc x" e00e
+ad "inc [0xf]" 6f0f
+ad "dec sp" cb0f
+ad "sbc my, mx" be0a
+ad "scpy my, b" 3d0f
+a "SLP" f90f
+a "ld a, #15" 0f0e
+a "set f, 1" 410f
+a "rst f, 14" 5e0f
+a "xor a, 15" 0f0d
+a "xor mx, 0xf" 2f0d
+a "ldpx a, a" e00e
+a "ldpy a, a" f00e
+a "set f, 1" 410f
+a "rst f, 0xe" 5e0f

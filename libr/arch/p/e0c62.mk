@@ -1,0 +1,6 @@
+OBJ_E0C62=p/e0c62/plugin.o
+STATIC_OBJ+=${OBJ_E0C62}
+TARGET_E0C62=arch_e0c62.${EXT_SO}
+ALL_TARGETS+=${TARGET_E0C62}
+${TARGET_E0C62}: ${OBJ_E0C62}
+	${CC} $(call libname,arch_e0c62) ${CFLAGS} -o arch_e0c62.${EXT_SO} ${OBJ_E0C62}
