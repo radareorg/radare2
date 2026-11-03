@@ -320,21 +320,19 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 			continue;
 		}
 
-		st64 size = r_buf_read_at(bf->buf, sec->paddr, buf, sec->size);
-		if (size != sec->size) {
-			if (size < sec->size) {
-				R_LOG_WARN ("unexpected section size");
-			}
-			buf = realloc (buf, size);
-			if (!buf) {
-				continue;
-			}
-			sec->size = size;
+		st64 size = r_buf_read_at (bf->buf, sec->paddr, buf, sec->size);
+		if (size <= 0) {
+			free (buf);
+			continue;
 		}
+		if (size < sec->size) {
+			R_LOG_WARN ("unexpected section size");
+		}
+		const ut64 len = R_MIN ((ut64)size, sec->size);
 // XXX R2_590 this can be done once with proper compile time ifdef
 		if (bits == 32) {
 			int i;
-			for (i = 0; (i + 3) < sec->size; i += 4) {
+			for (i = 0; (i + 3) < len; i += 4) {
 				ut32 addr32 = r_read_le32 (buf + i);
 				if (addr32) {
 					RBinAddr *ba = newEntry (bf, sec->paddr + i, sec->vaddr + i,
@@ -344,7 +342,7 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 			}
 		} else {
 			int i;
-			for (i = 0; (i + 7) < sec->size; i += 8) {
+			for (i = 0; (i + 7) < len; i += 8) {
 				ut64 addr64 = r_read_le64 (buf + i);
 				if (addr64) {
 					RBinAddr *ba = newEntry (bf, sec->paddr + i, sec->vaddr + i,
