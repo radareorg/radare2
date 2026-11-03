@@ -25,3 +25,12 @@ d "fsca fpul, dr2"	fdf2
 dE "fsrra fr15"	ff7d
 dE "fschg"	f3fd
 dE "frchg"	fbfd
+dE "fcnvds dr0, fpul"	f0bd
+dE "fcnvds dr14, fpul"	febd
+dE ".word 0x0f010b0d"	f1bd
+d ".word 0x0f010b0d"	bdf1
+dE "fcnvsd fpul, dr2"	f2ad
+dE "fcnvsd fpul, dr14"	fead
+d "fcnvsd fpul, dr2"	adf2
+dE ".word 0x0f0f0a0d"	ffad
+d ".word 0x0f0f0a0d"	adff
