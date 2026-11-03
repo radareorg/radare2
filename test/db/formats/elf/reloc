@@ -1008,6 +1008,19 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ELF: ET_REL relocs against a MIPS small-common symbol take an unresolved slot
+FILE=bins/elf/mips-scommon.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+om~.got.r2
+irj~{}~sym_va
+EOF
+EXPECT=<<EOF
+-10 fd: 4 +0x00000000 0x0800016c - 0x0800016f rw- rw- .got.r2
+    "sym_va": 134218092,
+EOF
+RUN
+
 # pd shows the loaded slot; irj sym_va follows the load bias like the reloc vaddr
 NAME=ELF: common symbol slot follows the load bias under -B
 FILE=bins/elf/x86_64-common-sym.o

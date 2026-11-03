@@ -5504,7 +5504,7 @@ static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol *sym) {
 #endif
 
 static inline bool is_common_shndx(ELFOBJ *eo, ut16 shndx) {
-	return shndx == SHN_COMMON || (eo->ehdr.e_machine == EM_X86_64 && shndx == SHN_X86_64_LCOMMON);
+	return shndx == SHN_COMMON || (eo->ehdr.e_machine == EM_X86_64 && shndx == SHN_X86_64_LCOMMON) || (eo->ehdr.e_machine == EM_MIPS && shndx == SHN_MIPS_SCOMMON);
 }
 
 static void special_kv_free(HtUPKv *kv) {
