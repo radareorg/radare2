@@ -18,3 +18,7 @@ EFI_STATUS efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *systab) {
 	r_core_free (core);
 	return EFI_SUCCESS;
 }
+
+EFI_STATUS _entry(EFI_HANDLE image, EFI_SYSTEM_TABLE *systab) {
+	return efi_main (image, systab);
+}

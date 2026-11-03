@@ -2485,9 +2485,17 @@ time_t mktime(struct tm *tm) {
 }
 
 static unsigned long long r2efi_rdtsc(void) {
+#if __x86_64__
 	unsigned int lo, hi;
 	__asm__ volatile ("rdtsc": "=a" (lo), "=d" (hi));
 	return ((unsigned long long)hi << 32) | lo;
+#elif __arm64__ || __aarch64__
+	unsigned long long v;
+	__asm__ volatile ("mrs %0, cntvct_el0": "=r" (v));
+	return v;
+#else
+#error "unsupported UEFI architecture"
+#endif
 }
 
 struct tm *gmtime_r(const time_t *timep, struct tm *result) {
@@ -2625,7 +2633,13 @@ int uname(struct utsname *buf) {
 	strcpy (buf->nodename, "uefi");
 	strcpy (buf->release, "1.0");
 	strcpy (buf->version, "1.0");
+#if __x86_64__
 	strcpy (buf->machine, "x86_64");
+#elif __arm64__ || __aarch64__
+	strcpy (buf->machine, "aarch64");
+#else
+#error "unsupported UEFI architecture"
+#endif
 	return 0;
 }
 
@@ -2662,6 +2676,7 @@ char *realpath(const char *path, char *resolved_path) {
 
 /* ---------- setjmp ---------- */
 
+#if __x86_64__
 __attribute__((naked)) int setjmp(jmp_buf env) {
 	__asm__ volatile (
 		"movq %rbx, 0(%rdi)\n"
@@ -2693,6 +2708,46 @@ __attribute__((naked)) void longjmp(jmp_buf env, int val) {
 		"incl %eax\n"
 		"1: jmpq *56(%rdi)\n");
 }
+#elif __arm64__ || __aarch64__
+__attribute__((naked)) int setjmp(jmp_buf env) {
+	__asm__ volatile (
+		"stp x19, x20, [x0, #0]\n"
+		"stp x21, x22, [x0, #16]\n"
+		"stp x23, x24, [x0, #32]\n"
+		"stp x25, x26, [x0, #48]\n"
+		"stp x27, x28, [x0, #64]\n"
+		"stp x29, x30, [x0, #80]\n"
+		"mov x2, sp\n"
+		"str x2, [x0, #96]\n"
+		"stp d8, d9, [x0, #104]\n"
+		"stp d10, d11, [x0, #120]\n"
+		"stp d12, d13, [x0, #136]\n"
+		"stp d14, d15, [x0, #152]\n"
+		"mov w0, #0\n"
+		"ret\n");
+}
+
+__attribute__((naked)) void longjmp(jmp_buf env, int val) {
+	__asm__ volatile (
+		"ldp x19, x20, [x0, #0]\n"
+		"ldp x21, x22, [x0, #16]\n"
+		"ldp x23, x24, [x0, #32]\n"
+		"ldp x25, x26, [x0, #48]\n"
+		"ldp x27, x28, [x0, #64]\n"
+		"ldp x29, x30, [x0, #80]\n"
+		"ldr x2, [x0, #96]\n"
+		"mov sp, x2\n"
+		"ldp d8, d9, [x0, #104]\n"
+		"ldp d10, d11, [x0, #120]\n"
+		"ldp d12, d13, [x0, #136]\n"
+		"ldp d14, d15, [x0, #152]\n"
+		"cmp w1, #0\n"
+		"csinc w0, w1, wzr, ne\n"
+		"br x30\n");
+}
+#else
+#error "unsupported UEFI architecture"
+#endif
 
 /* ---------- math ---------- */
 
@@ -2702,7 +2757,13 @@ double fabs(double x) {
 
 double sqrt(double x) {
 	double r;
+#if __x86_64__
 	__asm__ ("sqrtsd %1, %0": "=x" (r): "x" (x));
+#elif __arm64__ || __aarch64__
+	__asm__ ("fsqrt %d0, %d1": "=w" (r): "w" (x));
+#else
+#error "unsupported UEFI architecture"
+#endif
 	return r;
 }
 

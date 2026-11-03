@@ -2,7 +2,7 @@
 
 /* The gnu-efi _relocate assumes the linker wrote the implicit addends into
  * the relocated slots, which bfd ld does but lld does not. This replacement
- * applies the R_X86_64_RELATIVE relocations using the explicit RELA addends,
+ * applies the R_*_RELATIVE relocations using the explicit RELA addends,
  * so the EFI binary can be linked with clang and lld. It runs before any
  * relocation is applied: it must only touch its own arguments and locals. */
 
@@ -24,7 +24,13 @@ typedef struct {
 #define R2EFI_DT_RELA 7
 #define R2EFI_DT_RELASZ 8
 #define R2EFI_DT_RELAENT 9
-#define R2EFI_R_X86_64_RELATIVE 8
+#if __x86_64__
+#define R2EFI_R_RELATIVE 8 /* R_X86_64_RELATIVE */
+#elif __arm64__ || __aarch64__
+#define R2EFI_R_RELATIVE 1027 /* R_AARCH64_RELATIVE */
+#else
+#error "unsupported UEFI architecture"
+#endif
 
 r2efi_u64 _relocate(r2efi_u64 ldbase, R2EfiDyn *dyn, void *image, void *systab) {
 	(void)image;
@@ -46,7 +52,7 @@ r2efi_u64 _relocate(r2efi_u64 ldbase, R2EfiDyn *dyn, void *image, void *systab) 
 		return 0;
 	}
 	while (relsz >= relent) {
-		if ((rela->r_info & 0xffffffff) == R2EFI_R_X86_64_RELATIVE) {
+		if ((rela->r_info & 0xffffffff) == R2EFI_R_RELATIVE) {
 			r2efi_u64 *addr = (r2efi_u64 *)(ldbase + rela->r_offset);
 			*addr = ldbase + (r2efi_u64)rela->r_addend;
 		}
