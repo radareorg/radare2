@@ -206,6 +206,25 @@ jobs:
       with:
         name: BOOTX64.EFI
         path: build-uefi/BOOTX64.EFI
+  linux-uefi-arm64:
+    name: linux-uefi-arm64
+    runs-on: ubuntu-24.04-arm
+    steps:
+    - name: Checkout
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+    - name: Install the uefi toolchain
+      run: |
+        sudo apt-get update --assume-yes
+        sudo apt-get --assume-yes install binutils clang lld gnu-efi musl-dev libclang-rt-dev qemu-system-arm qemu-efi-aarch64
+    - name: Build radare2 for UEFI
+      run: make -C dist/uefi
+    - name: Boot it in qemu
+      run: make -C dist/uefi smoke
+    - name: Upload the EFI application
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+      with:
+        name: BOOTAA64.EFI
+        path: build-uefi/BOOTAA64.EFI
   linux-static-meson:
 #    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     continue-on-error: true
