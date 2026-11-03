@@ -12,9 +12,78 @@ EOF
 EXPECT_ERR=<<EOF
 ERROR: ReferenceError: a is not defined
 ERROR:     at <eval> (-:1:8)
-
-ERROR: [uninitialized]
 EOF
+RUN
+
+NAME=qjs caught stack overflow retains the backtrace
+FILE=-
+CMDS=<<EOF
+'js Error.stackTraceLimit = 2; function recurse() { recurse(); } try { recurse(); } catch (e) { console.error(e); }
+'js console.log("still alive")
+EOF
+EXPECT=<<EOF
+still alive
+EOF
+EXPECT_ERR=<<EOF
+ERROR: RangeError: Maximum call stack size exceeded
+ERROR:     at recurse (-:1:49)
+ERROR:     at recurse (-:1:49)
+EOF
+RUN
+
+NAME=qjs console.error retains Error stacks and accepts plain values
+FILE=-
+CMDS=<<EOF
+'js function fail() { throw new Error("trace-test"); } try { fail(); } catch (e) { console.error(e); }
+'js console.error("plain", 42)
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Error: trace-test
+ERROR:     at fail (-:1:29)
+ERROR:     at <eval> (-:1:58)
+ERROR: plain
+ERROR: 42
+EOF
+RUN
+
+NAME=qjs rejected evaluation promises retain stacks and handled ones stay quiet
+FILE=-
+CMDS=<<EOF
+'js Promise.reject(new Error("promise-test"))
+'js Promise.reject(new Error("handled")).catch(() => console.log("handled"))
+EOF
+EXPECT=<<EOF
+handled
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Error: promise-test
+ERROR:     at <eval> (-:1:20)
+EOF
+RUN
+
+NAME=qjs core callback errors retain the backtrace
+FILE=-
+CMDS=<<EOF
+'js r2.plugin("core", function () { return { name: "qjs-stack", call: function crash(input) { if (input === "tqjscrash") { throw new Error("callback-test"); } return false; } }; });
+tqjscrash
+'js r2.unload("core", "qjs-stack")
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Error: callback-test
+ERROR:     at crash (-:1:130)
+ERROR: Invalid `q` subcommand, try `t?`
+EOF
+RUN
+
+NAME=qjs long backtraces retain the script entry beyond the log buffer size
+FILE=-
+CMDS=<<EOF
+'js function dive(n) { if (n) return dive(n - 1); throw new Error("long-trace"); } dive(40);
+EOF
+EXPECT=
+REGEXP_ERR=at <eval>
 RUN
 
 NAME=js! from a running script must not free the live runtime

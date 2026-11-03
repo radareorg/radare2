@@ -4,8 +4,6 @@ const char * const package_marker = "📦\n";
 const char * const delimiter_marker = "\n✄\n";
 const char * const alias_marker = "↻ ";
 
-static void r2qjs_dump_obj(JSContext *ctx, JSValueConst val);
-
 static char *r2qjs_normalize_path(const char *root, const char *base_name, const char *name) {
 	R_LOG_DEBUG ("NORMALIZE base_name=(%s) name=(%s) root=%s", base_name, name, root);
 	if (r_str_startswith (name, "../")) {
@@ -87,9 +85,6 @@ static JSModuleDef *r2qjs_load_module(JSContext *ctx, const char *module_name, v
 		JSValue val = JS_Eval (ctx, data, strlen (data), module_name,
 				JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_STRICT | JS_EVAL_FLAG_COMPILE_ONLY);
 		if (JS_IsException (val)) {
-			JSValue e = JS_GetException (ctx);
-			r2qjs_dump_obj (ctx, e);
-			JS_FreeValue (ctx, e);
 			return NULL;
 		}
 		JS_FreeValue (ctx, val);
@@ -104,9 +99,6 @@ static JSModuleDef *r2qjs_load_module(JSContext *ctx, const char *module_name, v
 				    ;
 		JSValue val = JS_Eval (ctx, data, strlen (data), module_name, qjs_flags);
 		if (JS_IsException (val)) {
-			JSValue e = JS_GetException (ctx);
-			r2qjs_dump_obj (ctx, e);
-			JS_FreeValue (ctx, e);
 			return NULL;
 		}
 		JS_FreeValue (ctx, val);
@@ -126,9 +118,6 @@ static JSModuleDef *r2qjs_load_module(JSContext *ctx, const char *module_name, v
 		R_LOG_DEBUG ("MODULE %s", module_name);
 		JSValue val = JS_Eval (ctx, data, strlen (data), module_name, qjs_flags);
 		if (JS_IsException (val)) {
-			JSValue e = JS_GetException (ctx);
-			r2qjs_dump_obj (ctx, e);
-			JS_FreeValue (ctx, e);
 			return NULL;
 		}
 		JS_FreeValue (ctx, val);
@@ -212,11 +201,7 @@ static int r2qjs_loader(JSContext *ctx, const char *const buffer) {
 #else
 		const int qjs_flags = JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_STRICT | JS_EVAL_TYPE_MODULE;
 		JSValue v = JS_Eval (ctx, entry, strlen (entry), entryfname, qjs_flags);
-		if (JS_IsException (v)) {
-			JSValue e = JS_GetException (ctx);
-			r2qjs_dump_obj (ctx, e);
-			JS_FreeValue (ctx, e);
-		}
+		eval_result (ctx, v);
 		JS_FreeValue (ctx, v);
 #endif
 	}

@@ -125,6 +125,7 @@ static bool r2qjs_arch_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask
 	JSValue res = JS_Call (ctx, pd->decode_func, obj, 1, args);
 	if (JS_IsException (res)) {
 		R_LOG_WARN ("exception in qjs decode");
+		js_std_dump_error (ctx);
 		return false;
 	}
 
