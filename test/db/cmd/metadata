@@ -1093,3 +1093,29 @@ EXPECT=<<EOF
             0x100003aa4      f44f04a9       stp x20, x19, [sp, 0x40]
 EOF
 RUN
+
+NAME=Cd with a binary immbase shows all 64 bits of a qword
+FILE=malloc://64
+CMDS=<<EOF
+wx 0102030405060708
+Cd 8
+ahi 1
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      .int64 0000000100000010000000110000010000000101000001100000011100001000b
+EOF
+RUN
+
+NAME=Cd larger than a qword with a binary immbase falls back to hex
+FILE=malloc://64
+CMDS=<<EOF
+wx 0102030405060708
+Cd 31
+ahi 1
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000       0102 0304 0506 0708 0000 0000 0000 0000  ................ ; +0 
+EOF
+RUN

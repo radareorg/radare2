@@ -3883,7 +3883,7 @@ static void ds_adistrick_comments(RDisasmState *ds) {
 static bool ds_print_data_type(RDisasmState *ds, const ut8 *obuf, int ib, int size) {
 	RCore *core = ds->core;
 	const char *type = NULL;
-	char msg[64];
+	char msg[(sizeof (ut64) * 8) + 1];
 	const bool isSigned = (ib == 1 || ib == 8 || ib == 10);
 	switch (size) {
 	case 1: type = isSigned? ".char": ".byte"; break;
@@ -3927,6 +3927,10 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *obuf, int ib, int si
 	}
 	switch (ib) {
 	case 1:
+		if ((size_t)size > sizeof (buf)) {
+			// buf only holds the first 8 bytes
+			return false;
+		}
 		r_str_bits (msg, buf, size * 8, NULL);
 		r_cons_printf (cons, "%s %sb", type, msg);
 		break;
