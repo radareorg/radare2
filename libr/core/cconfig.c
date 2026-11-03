@@ -825,14 +825,9 @@ static bool cb_asmarch(void *user, void *data) {
 	//	r_config_set (core->config, "dbg.backend", "bf");
 	__setsegoff (core->config, node->value, core->rasm->config->bits);
 
-	// set a default endianness
-	int bigbin = r_bin_is_big_endian (core->bin);
-	if (bigbin == -1 /* error: no endianness detected in binary */) {
-		bigbin = r_config_get_b (core->config, "cfg.bigendian");
-	}
-
-	// try to set endian of RAsm to match binary
-	r_asm_set_big_endian (core->rasm, bigbin);
+	// cfg.bigendian follows the loaded binary (r_core_bin_set_env sets it)
+	// and keeps any value set before asm.arch, so the new arch must use it
+	r_asm_set_big_endian (core->rasm, r_config_get_b (core->config, "cfg.bigendian"));
 
 	RConfigNode *asmcpu = r_config_node_get (core->config, "asm.cpu");
 	if (asmcpu) {

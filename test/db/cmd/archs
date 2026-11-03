@@ -150,6 +150,49 @@ invalid
 EOF
 RUN
 
+NAME=endian tests: cfg.bigendian set before asm.arch
+FILE=malloc://16
+CMDS=<<EOF
+e cfg.bigendian=true
+e asm.arch=mips
+e asm.bits=32
+e cfg.bigendian
+wa addiu sp, sp, -24
+p8 4
+pi 1
+EOF
+EXPECT=<<EOF
+true
+27bdffe8
+addiu sp, sp, -0x18
+EOF
+RUN
+
+NAME=endian tests: asm.arch keeps cfg.bigendian
+FILE=malloc://16
+CMDS=<<EOF
+e cfg.bigendian=true
+e asm.arch=arm
+e asm.bits=32
+wx e3a00001
+pi 1
+e asm.arch=ppc
+e asm.bits=32
+wx 38600001
+pi 1
+e cfg.bigendian=false
+e asm.arch=mips
+e asm.bits=32
+wx 27bdffe8
+pi 1
+EOF
+EXPECT=<<EOF
+mov r0, 1
+li r3, 1
+swc2 31, -0x42d9(a3)
+EOF
+RUN
+
 NAME=tests: ppcps
 FILE=malloc://256
 CMDS=<<EOF
