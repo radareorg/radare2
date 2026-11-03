@@ -392,7 +392,7 @@ static RCoreHelpMessage help_msg_ae = {
 	"aepc", " [addr]", "change esil PC to this address",
 	"aer", "[?] [..]", "handle ESIL registers like 'ar' or 'dr' does",
 	"aes", "[?]", "perform emulated debugger step",
-	"aet", "[?][s]", "esil trace listing and session management (requires aeim)",
+	"aet", "[?][s]", "esil trace listing and session management",
 	"aev", " [esil]", "visual esil debugger for expression or current instruction",
 	"aex", " [hex]", "evaluate opcode expression",
 	NULL
@@ -8009,14 +8009,6 @@ static void core_esil_sync_legacy_trap(RCore *core) {
 	}
 }
 
-static void core_esil_trace_legacy_op(RCore *core, RAnalOp *op) {
-	REsil *esil = R_UNWRAP3 (core, anal, esil);
-	// Legacy trace execution mutates shared state; keep stepback history authoritative.
-	if (esil && esil->trace && !core->esil.sb.max) {
-		r_esil_trace_op (esil, op);
-	}
-}
-
 static bool core_esil_decode_op(RCore *core, RAnalOp *op, ut64 addr) {
 	const int opflags = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT | R_ARCH_OP_MASK_ESIL;
 	int max_opsize = R_MIN (64, r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE));
@@ -8043,9 +8035,10 @@ static bool core_esil_skip_op(RCore *core, RAnalOp *op, ut64 addr) {
 		}
 		return false;
 	}
-	core_esil_trace_legacy_op (core, op);
+	r_esil_trace_op_begin (&core->esil.trace, op->addr);
 	char *expr = r_str_newf ("0x%" PFMT64x ",PC,:=", op->addr + op->size);
 	const bool ok = expr && r_core_esil_run_expr_at (core, expr, addr);
+	r_esil_trace_op_end (&core->esil.trace);
 	free (expr);
 	if (!ok) {
 		R_LOG_ERROR ("Failed to advance PC for step-over at 0x%" PFMT64x, op->addr);
@@ -8075,7 +8068,9 @@ static bool core_esil_step_one(RCore *core, ut64 addr, bool step_over, bool r2wa
 			if (tail) {
 				tail[0] = 0;
 				handled = true;
+				r_esil_trace_op_begin (&core->esil.trace, addr);
 				ok = r_core_esil_run_expr_at (core, expr, addr);
+				r_esil_trace_op_end (&core->esil.trace);
 			}
 			free (expr);
 		}
@@ -10008,7 +10003,7 @@ static void cmd_aes(RCore *core, const char *input) {
 }
 
 static void cmd_aet(RCore *core, const char *input) {
-	REsil *esil = core->anal->esil;
+	RCoreEsil *cesil = &core->esil;
 	switch (input[1]) {
 	case '?':
 		r_cons_cmd_help_match (core->cons, help_msg_ae, "aet", 0, false);
@@ -10016,34 +10011,21 @@ static void cmd_aet(RCore *core, const char *input) {
 	case 's': // "aets"
 		switch (input[2]) {
 		case '+': // "aets+"
-#if 0
-			if (!esil) {
-				R_LOG_ERROR ("ESIL is not initialized. Use `aeim` first");
-				break;
-			}
-#endif
-			if (esil->trace) {
+			if (cesil->trace.vid_reg_read != R_ESIL_VOYEUR_ERR) {
 				R_LOG_INFO ("ESIL trace already started");
 				break;
 			}
-			esil->trace = r_esil_trace_new (esil);
-			if (!esil->trace) {
-				break;
+			if (!r_esil_trace_start (&cesil->trace, &cesil->esil)) {
+				R_LOG_ERROR ("Cannot start the ESIL trace session");
 			}
-			r_config_set_b (core->config, "dbg.trace", true);
 			break;
 		case '-': // "aets-"
-			if (!esil) {
-				R_LOG_ERROR ("ESIL is not initialized. Use `aeim` first");
-				break;
-			}
-			if (!esil->trace) {
+			if (cesil->trace.vid_reg_read == R_ESIL_VOYEUR_ERR) {
 				R_LOG_ERROR ("No ESIL trace started");
 				break;
 			}
-			r_esil_trace_free (esil->trace);
-			esil->trace = NULL;
-			r_config_set_b (core->config, "dbg.trace", false);
+			r_esil_trace_stop (&cesil->trace, &cesil->esil);
+			r_esil_trace_finit (&cesil->trace);
 			break;
 		case '?':
 			r_cons_cmd_help (core->cons, help_msg_aets);
@@ -10054,8 +10036,8 @@ static void cmd_aet(RCore *core, const char *input) {
 		}
 		break;
 	case 0: // "aet"
-		if (esil) {
-			char *s = r_esil_trace_list (esil, 0);
+		{
+			char *s = r_esil_trace_list (&cesil->trace, 0);
 			r_cons_print (core->cons, s);
 			free (s);
 		}
