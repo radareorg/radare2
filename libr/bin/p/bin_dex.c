@@ -107,7 +107,7 @@ static ut64 get_method_attr(ut64 MA) {
 
 static ut64 method_addr(RBinFile *bf, int idx) {
 	RBinDexObj *dex = bf->bo->bin_obj;
-	return sdb_num_getf (dex->mdb, NULL, "method.%d", idx);
+	return ht_uu_find (dex->method_addrs, idx, NULL);
 }
 
 static ut64 dex_field_offset(RBinDexObj *bin, int fid) {
@@ -1452,10 +1452,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 					dex->code_to = code_end;
 				}
 
-				if (!dex->mdb) {
-					dex->mdb = sdb_new0 ();
-				}
-				sdb_num_setf (dex->mdb, sym->paddr, 0, "method.%"PFMT64u, MI);
+				ht_uu_update (dex->method_addrs, MI, sym->paddr);
 				// -----------------
 				// WORK IN PROGRESS
 				// -----------------
@@ -1761,7 +1758,7 @@ static bool dex_loadcode(RBinFile *bf) {
 				sym.ordinal = sym_count++;
 				sym.attr.lang = R_BIN_LANG_JAVA;
 				RVecRBinSymbol_push_back (&dex->symbols_vec, &sym);
-				sdb_num_setf (dex->mdb, sym.paddr, 0, "method.%"PFMT64u, (ut64)i);
+				ht_uu_update (dex->method_addrs, i, sym.paddr);
 			}
 			free (class_name);
 		}

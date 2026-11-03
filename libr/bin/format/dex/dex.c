@@ -247,7 +247,7 @@ R_IPI void r_bin_dex_free(RBinDexObj *dex) {
 	free (dex->version);
 	r_list_free (dex->lines_list);
 	r_strbuf_free (dex->sb);
-	sdb_free (dex->mdb);
+	ht_uu_free (dex->method_addrs);
 	sdb_free (dex->kv);
 	r_unref (dex->b);
 	free (dex);
@@ -274,6 +274,7 @@ R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 	ut32 i;
 	RBinDexObj *dex = R_NEW0 (RBinDexObj);
 	RVecRBinTrycatch_init (&dex->trycatch);
+	dex->method_addrs = ht_uu_new0 ();
 	dex->size = r_buf_size (buf);
 	dex->b = r_ref (buf);
 	dex->verbose = verbose;
