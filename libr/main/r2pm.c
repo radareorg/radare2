@@ -481,6 +481,7 @@ static char *r2pm_list(int mode) {
 	if (!files) {
 		return NULL;
 	}
+	r_list_sort (files, (RListComparator)strcmp);
 	PJ *pj = NULL;
 	RStrBuf *sb = NULL;
 	if (mode == 'j') {
@@ -1913,6 +1914,7 @@ static char *r2pm_search(const char *grep, int mode, bool all) {
 		free (path);
 		return NULL;
 	}
+	r_list_sort (files, (RListComparator)strcmp);
 	RListIter *iter;
 	const char *file;
 	PJ *pj = NULL;
