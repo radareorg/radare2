@@ -1195,14 +1195,22 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RSt
 	}
 
 	bf->string_count = 0;
+	const ut64 buffer_size = r_buf_size (bf->buf);
+	// sections can alias the same bytes, never scan more than the file holds
+	ut64 budget = buffer_size;
 	if (has_sections) {
 		R_VEC_FOREACH (&bo->sections_vec, section) {
 			if (is_data_section (bf, section)) {
 				ut64 offset = r_bin_file_get_buffer_offset (bf, section->paddr);
-				ut64 buffer_size = r_buf_size (bf->buf);
-				if (offset <= buffer_size && section->size <= buffer_size - offset) {
-					get_strings_range (&options, offset, offset + section->size, section);
+				if (offset > buffer_size || section->size > buffer_size - offset) {
+					continue;
 				}
+				if (section->size > budget) {
+					R_LOG_WARN ("Data sections overlap, skipping strings from %s", r_str_get (section->name));
+					break;
+				}
+				budget -= section->size;
+				get_strings_range (&options, offset, offset + section->size, section);
 			}
 		}
 	} else {
@@ -1210,6 +1218,7 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RSt
 		ht_up_free (strings_index);
 		return ret;
 	}
+	budget = buffer_size;
 	R_VEC_FOREACH (&bo->sections_vec, section) {
 		if (!section->name) {
 			continue;
@@ -1223,13 +1232,13 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RSt
 			// XXX do not walk if bin.strings == 0
 			ut8 *p;
 			ut64 offset = r_bin_file_get_buffer_offset (bf, section->paddr);
-			ut64 buffer_size = r_buf_size (bf->buf);
 			if (offset > buffer_size || section->size > buffer_size - offset) {
 				continue;
 			}
-			if (section->size < cfstr_size || section->size > SZT_MAX) {
+			if (section->size < cfstr_size || section->size > budget) {
 				continue;
 			}
+			budget -= section->size;
 			if (ret) {
 				ut64 cfstr_bound64 = (section->size / cfstr_size) + 1;
 				if (cfstr_bound64 <= SZT_MAX) {

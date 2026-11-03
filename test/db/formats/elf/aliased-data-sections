@@ -1,0 +1,14 @@
+NAME=ELF: aliased data sections are not rescanned per header
+FILE=bins/elf/aliased-data-sections
+CMDS=<<EOF
+izq~?
+izq~:0
+EOF
+EXPECT=<<EOF
+800
+0x100000 5 4 AAAA
+EOF
+EXPECT_ERR=<<EOF
+WARN: Data sections overlap, skipping strings from .data_2
+EOF
+RUN
