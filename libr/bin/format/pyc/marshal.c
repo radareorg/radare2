@@ -1028,10 +1028,14 @@ static bool extract_sections_symbols(PycUnmarshalCtx *ctx, pyc_object *obj, RVec
 	if (cobj->end_offset <= cobj->start_offset) {
 		return false;
 	}
-	prefix = r_str_newf ("%s%s%s", r_str_get (prefix),
-		prefix? ".": "", (const char *)cobj->name->data);
+	// TYPE_REF lets every level share one long co_name, so bound the dotted name
+	prefix = r_str_newf ("%s%s%.*s", r_str_get (prefix),
+		prefix? ".": "", R_BIN_SIZEOF_STRINGS, (const char *)cobj->name->data);
 	if (!prefix) {
 		return false;
+	}
+	if (strlen (prefix) > R_BIN_SIZEOF_STRINGS) {
+		prefix[R_BIN_SIZEOF_STRINGS] = 0;
 	}
 	const ut64 size = (ut64)(cobj->end_offset - cobj->start_offset);
 	RBinSection *section = RVecRBinSection_emplace_back (sections);
