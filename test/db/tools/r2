@@ -119,6 +119,60 @@ scripts/palette.r2
 EOF
 RUN
 
+NAME=radare2 batch startup detects redirected streams
+FILE=-
+CMDS=<<EOF
+r2 -NNq -c 'e scr.interactive' -
+r2 -NNQ -c 'e scr.interactive' -
+r2 -NN -e scr.prompt=false -c 'e scr.interactive' -
+EOF
+EXPECT=<<EOF
+false
+false
+false
+EOF
+RUN
+
+NAME=radare2 batch startup honors explicit interactivity
+FILE=-
+CMDS=<<EOF
+r2 -NNq -e scr.interactive=true -c 'e scr.interactive' -
+r2 -NN -e scr.interactive=true -q -c 'e scr.interactive' -
+r2 -NNQ -e scr.interactive=false -c 'e scr.interactive' -
+EOF
+EXPECT=<<EOF
+true
+true
+false
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=radare2 quick batch output bypasses maxpage
+FILE=-
+CMDS=r2 -NNQ -e scr.maxpage=1 -c 'pc 4' hex://00010203
+EXPECT=<<EOF
+#define _BUFFER_SIZE 4
+const uint8_t buffer[_BUFFER_SIZE] = {
+  0x00, 0x01, 0x02, 0x03
+};
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=radare2 batch scripts bypass maxpage
+FILE=-
+CMDS=<<EOF
+r2 -NNq -e scr.maxpage=1 -i scripts/no-nl-at-eof.r2 -
+r2 -NNQ -e scr.maxpage=1 -I scripts/no-nl-at-eof.r2 -
+EOF
+EXPECT=<<EOF
+1
+1
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=radare2 -h
 FILE=-
 CMDS=!!radare2 -h~Usage?

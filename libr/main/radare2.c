@@ -976,6 +976,9 @@ static int main_radare2(int argc, const char **argv, bool standalone) {
 		return 1;
 	}
 	mr.r = r;
+	if (!r_cons_isatty (0) || !r_cons_isatty (1)) {
+		r_config_set_b (r->config, "scr.interactive", false);
+	}
 	if (!r_core_signal_init (r)) {
 		R_LOG_ERROR ("Cannot initialize user signal handlers");
 		mainr2_fini (&mr);
@@ -1198,8 +1201,6 @@ static int main_radare2(int argc, const char **argv, bool standalone) {
 			mr.quiet_leak = true;
 			break;
 		case 'q':
-			// keep -c commands like v or ~.. usable from a terminal
-			r_config_set_b (r->config, "scr.interactive", r_cons_isatty (0));
 			r_config_set_b (r->config, "scr.prompt", false);
 			r_config_set_b (r->config, "cfg.fortunes", false);
 			if (mr.quiet) {
