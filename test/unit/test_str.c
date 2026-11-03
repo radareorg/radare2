@@ -1602,6 +1602,12 @@ bool test_r_str_unquote(void) {
 	mu_end;
 }
 
+bool test_r_str_arg_escape(void) {
+	mu_assert_streq_free (r_str_arg_escape ("a b\"c'd\\e"), "a\\ b\\\"c\\'d\\\\e", "quotes, spaces and backslashes");
+	mu_assert_streq_free (r_str_arg_escape ("x\n?e pwn\r\n"), "x_?e\\ pwn__", "line breaks cannot start a new command");
+	mu_end;
+}
+
 bool test_r_str_trim_args_quote_parity(void) {
 	char odd_single[] = "'pa\\'tata'";
 	r_str_trim_args (odd_single);
@@ -1694,6 +1700,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_but_escape);
 	mu_run_test (test_r_str_trim_args_quote_parity);
 	mu_run_test (test_r_str_unquote);
+	mu_run_test (test_r_str_arg_escape);
 	return tests_passed != tests_run;
 }
 

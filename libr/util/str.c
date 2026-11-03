@@ -2647,6 +2647,11 @@ R_API char *r_str_arg_escape(const char *arg) {
 			str[dest_i++] = '\\';
 			str[dest_i++] = c;
 			break;
+		case '\n':
+		case '\r':
+			// a line break would end the command and start a new one
+			str[dest_i++] = '_';
+			break;
 		default:
 			str[dest_i++] = c;
 			break;
