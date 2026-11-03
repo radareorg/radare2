@@ -77,3 +77,19 @@ rtc::webrtc_logging_impl::LogStreamer<>::Call<rtc::webrtc_logging_impl::Val<(rtc
 EOF
 RUN
 
+NAME=cxx demangler bounds exponential substitution expansion
+FILE=-
+CMDS=<<EOF
+iD cxx _Z1f1aIS_IS_IS_I1bS0_ES1_ES2_ES3_E
+iD cxx _Z1f1aIS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_I1bS0_ES1_ES2_ES3_ES4_ES5_ES6_ES7_ES8_ES9_ESA_ESB_ESC_ESD_ESE_ESF_ESG_ESH_ESI_ESJ_ESK_ESL_ESM_ESN_E
+iD cxx _Z1f1aIS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_I1bS0_ES1_ES2_ES3_ES4_ES5_ES6_ES7_ES8_ES9_ESA_ESB_ESC_ESD_ESE_ESF_ESG_ESH_ESI_ESJ_ESK_ESL_ESM_ESN_EDxi
+EOF
+EXPECT=<<EOF
+f(a<a<a<a<b, b>, a<b, b> >, a<a<b, b>, a<b, b> > >, a<a<a<b, b>, a<b, b> >, a<a<b, b>, a<b, b> > > >)
+EOF
+EXPECT_ERR=<<EOF
+WARN: Demangled name is too long, keeping it mangled
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+EOF
+RUN

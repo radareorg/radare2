@@ -14,6 +14,9 @@
 
 #define MAX_DEPTH 256
 #define MAX_NODES 200000
+// substitutions make the AST a DAG the printer walks as a tree: bound visits and output per name
+#define MAX_WORK 1000000
+#define MAX_OUTPUT 1000000
 
 typedef enum {
 	K_EMPTY = 0, // prints nothing
@@ -75,6 +78,7 @@ typedef struct node_t {
 	struct node_t **kids;
 	int nkids, capkids;
 	int num;
+	int *work; // printer visits spent on the whole name (CTX.work)
 } Node;
 
 typedef struct {
@@ -84,6 +88,7 @@ typedef struct {
 	bool fail;
 	bool tagging; // true only while parsing the entity name (defines T_ scope)
 	int depth;
+	int work; // nodes visited by the printer, see MAX_WORK
 	// arena of all allocated nodes (single bulk free)
 	Node **all;
 	int nall, capall;
@@ -110,6 +115,7 @@ static Node *node_new(CTX *c, Kind k) {
 		return NULL;
 	}
 	n->kind = k;
+	n->work = &c->work;
 	if (c->nall == c->capall) {
 		int ncap = c->capall ? c->capall * 2 : 64;
 		Node **na = realloc (c->all, ncap * sizeof (Node *));
@@ -1721,6 +1727,16 @@ static Node *parse_encoding(CTX *c, bool top) {
 // printing
 // ---------------------------------------------------------------------------
 
+// charge a visit to the name budget, once spent it stays spent so temporary buffers stop too
+static bool over_budget(Node *n, int outlen) {
+	if (*n->work < MAX_WORK && outlen <= MAX_OUTPUT) {
+		(*n->work)++;
+		return false;
+	}
+	*n->work = MAX_WORK + 1; // marks the output as truncated
+	return true;
+}
+
 static void emit_cv(RStrBuf *o, ut16 flags) {
 	if (flags & Q_CONST) {
 		r_strbuf_append (o, " const");
@@ -1743,7 +1759,7 @@ static void emit_cv(RStrBuf *o, ut16 flags) {
 // (a J...E list). These drive a parameter-pack expansion. Recursion stops at
 // each template-param (its binding is the pack itself, not something to scan).
 static void collect_packs(Node *n, Node **out, int *cnt, int max, int depth) {
-	if (!n || depth > MAX_DEPTH || *cnt >= max) {
+	if (!n || depth > MAX_DEPTH || *cnt >= max || over_budget (n, 0)) {
 		return;
 	}
 	if (n->kind == K_TPARAM) {
@@ -1847,8 +1863,8 @@ static void emit_params(RStrBuf *o, Node *params, int depth) {
 
 // close a template argument list with correct ">"/" >" spacing
 static void emit_template_close(RStrBuf *o) {
-	char *s = r_strbuf_get (o);
-	int len = s ? (int)strlen (s) : 0;
+	const char *s = r_strbuf_get (o);
+	int len = r_strbuf_length (o);
 	if (len > 0 && s[len - 1] == '>') {
 		r_strbuf_append (o, " >");
 	} else {
@@ -1879,8 +1895,8 @@ static void emit_template_args(RStrBuf *o, Node *args, int depth) {
 	// avoid "<<" ambiguity when the name ends in '<' (e.g. operator< / operator<<
 	// become "operator< <T>" / "operator<< <T>"). A trailing '>' does not need
 	// separating: c++filt prints "operator>><T>" with no space.
-	char *cur = r_strbuf_get (o);
-	int clen = cur ? (int)strlen (cur) : 0;
+	const char *cur = r_strbuf_get (o);
+	int clen = r_strbuf_length (o);
 	if (clen > 0 && cur[clen - 1] == '<') {
 		r_strbuf_append (o, " ");
 	}
@@ -1952,7 +1968,7 @@ static void emit_basename(RStrBuf *o, Node *n, int depth) {
 
 // print a "name-ish" node (no declarator)
 static void emit_name(RStrBuf *o, Node *n, int depth) {
-	if (!n || depth > MAX_DEPTH) {
+	if (!n || depth > MAX_DEPTH || over_budget (n, r_strbuf_length (o))) {
 		return;
 	}
 	switch (n->kind) {
@@ -2110,7 +2126,7 @@ static void emit_literal(RStrBuf *o, Node *n, int depth) {
 }
 
 static void emit_expr(RStrBuf *o, Node *n, int depth) {
-	if (!n || depth > MAX_DEPTH) {
+	if (!n || depth > MAX_DEPTH || over_budget (n, r_strbuf_length (o))) {
 		return;
 	}
 	switch (n->kind) {
@@ -2213,7 +2229,7 @@ static void emit_expr(RStrBuf *o, Node *n, int depth) {
 
 // print a type T with the declarator string `inner` in name position.
 static void emit_type(RStrBuf *o, Node *t, const char *inner, int depth) {
-	if (!t || depth > MAX_DEPTH) {
+	if (!t || depth > MAX_DEPTH || over_budget (t, r_strbuf_length (o))) {
 		if (inner && *inner) {
 			r_strbuf_append (o, inner);
 		}
@@ -2441,7 +2457,13 @@ char *r_demangle_itanium(const char *mangled) {
 		if (clean) {
 			RStrBuf *o = r_strbuf_new ("");
 			emit_encoding (o, root, 0);
-			while (*rest == '.') {
+			if (c.work > MAX_WORK) {
+				// the printer gave up on the expansion: keep the name mangled
+				R_LOG_WARN ("Demangled name is too long, keeping it mangled");
+				r_strbuf_free (o);
+				o = NULL;
+			}
+			while (o && *rest == '.') {
 				const char *start = rest;
 				rest++; // skip '.'
 				while (*rest && *rest != '.') {
@@ -2456,7 +2478,9 @@ char *r_demangle_itanium(const char *mangled) {
 				r_strbuf_append_n (o, start, (int)(rest - start));
 				r_strbuf_append (o, "]");
 			}
-			result = r_strbuf_drain (o);
+			if (o) {
+				result = r_strbuf_drain (o);
+			}
 		}
 	}
 	// bulk free the arena
