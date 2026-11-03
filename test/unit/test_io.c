@@ -2,6 +2,52 @@
 #include <r_util.h>
 #include "minunit.h"
 
+static int debug_attach_calls;
+static char debug_attach_uri[64];
+
+static RIODesc *debug_attach_mock(RIO *io, const char *uri, int rw, int mode) {
+	debug_attach_calls++;
+	r_str_ncpy (debug_attach_uri, uri, sizeof (debug_attach_uri));
+	return NULL;
+}
+
+bool test_r_io_debug_pid(void) {
+	RIO *io = r_io_new ();
+	RIOPlugin *debug = r_io_plugin_resolve (io, "dbg://1", false);
+	RIOPlugin *attach = r_io_plugin_resolve (io, "attach://1", false);
+	if (strcmp (debug->meta.name, "debug") || !debug->open || !attach->isdbg || !attach->open) {
+		fprintf (stderr, "SKIP: native debug IO plugin unavailable\n");
+		r_io_free (io);
+		mu_end;
+	}
+	RIODesc *(*saved_open)(RIO *, const char *, int, int) = attach->open;
+	attach->open = debug_attach_mock;
+	const char *valid[] = { "1", "000123", "2147483647" };
+	const char *expected[] = { "attach://1", "attach://123", "attach://2147483647" };
+	const char *invalid[] = { "0", "2147483648", "4294967297", "9223372036854775808",
+		"999999999999999999999999999999999999999999999999999999999999999999" };
+	bool valid_ok = true;
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (valid); i++) {
+		char *uri = r_str_newf ("dbg://%s", valid[i]);
+		debug_attach_calls = 0;
+		debug->open (io, uri, R_PERM_RW, 0);
+		valid_ok &= debug_attach_calls == 1 && !strcmp (debug_attach_uri, expected[i]);
+		free (uri);
+	}
+	debug_attach_calls = 0;
+	for (i = 0; i < R_ARRAY_SIZE (invalid); i++) {
+		char *uri = r_str_newf ("dbg://%s", invalid[i]);
+		debug->open (io, uri, R_PERM_RW, 0);
+		free (uri);
+	}
+	attach->open = saved_open;
+	r_io_free (io);
+	mu_assert_true (valid_ok, "positive decimal PIDs should reach the attach backend unchanged");
+	mu_assert_eq (debug_attach_calls, 0, "zero and overflowing PIDs must not reach the attach backend");
+	mu_end;
+}
+
 bool test_r_io_cache(void) {
 #if 0
 	RIO *io = r_io_new ();
@@ -441,6 +487,7 @@ bool test_seek_history_mapped(void) {
 }
 
 int all_tests(void) {
+	mu_run_test (test_r_io_debug_pid);
 	mu_run_test (test_seek_history_mapped);
 	mu_run_test(test_r_io_cache);
 	mu_run_test(test_r_io_nread_at);
