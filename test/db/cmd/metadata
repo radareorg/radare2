@@ -443,7 +443,7 @@ Cd 3
 pd 2
 EOF
 EXPECT=<<EOF
-            0x00000000       3930 39                                  909 ; +0 
+            0x00000000  3930 39                                  909 ; +0 
             0x00000003      3039           xor byte [ecx], bh
 EOF
 RUN
@@ -459,7 +459,7 @@ s 1
 pd 2
 EOF
 EXPECT=<<EOF
-            0x00000001       3039                                     09 ; +1  (2)
+            0x00000001  3039                                     09 ; +1  (2)
             0x00000003      3039           xor byte [ecx], bh
 EOF
 RUN
@@ -1116,6 +1116,24 @@ ahi 1
 pd 1
 EOF
 EXPECT=<<EOF
-            0x00000000       0102 0304 0506 0708 0000 0000 0000 0000  ................ ; +0 
+            0x00000000  0102 0304 0506 0708 0000 0000 0000 0000  ................ ; +0 
+EOF
+RUN
+
+NAME=Cd 3 and Cd 31 show hex with the htons and smi immbases
+FILE=malloc://64
+CMDS=<<EOF
+wx 0102030405060708
+Cd 3
+ahi 3
+pd 1
+Cd-
+Cd 31
+ahi 31
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000  0102 03                                  ... ; +0 
+            0x00000000  0102 0304 0506 0708 0000 0000 0000 0000  ................ ; +0 
 EOF
 RUN

@@ -133,3 +133,124 @@ EXPECT=<<EOF
 252
 EOF
 RUN
+
+NAME=pdj shows Cd data as data like pd
+FILE=malloc://16
+ARGS=-a arm -e asm.bits=16
+CMDS=<<EOF
+wx 5302794400bf
+Cd 4
+f data.x @ 0
+pdj 1
+pdj 2~{[1].addr}
+pdj 2~{[1].opcode}
+ahi 10
+pdj 1~{[0].disasm}
+EOF
+EXPECT=<<EOF
+[{"addr":0,"size":4,"opcode":".dword 0x44790253","disasm":".dword 0x44790253","bytes":"53027944","type":"data","flags":["data.x"]}]
+4
+nop
+.int32 1148781139
+EOF
+RUN
+
+NAME=pdj splits Cd data in hex.cols lines like pd
+FILE=malloc://64
+ARGS=-a arm -e asm.bits=16
+CMDS=<<EOF
+wx 5302794400bf
+Cd 20
+pdj 3~{[0].size}
+pdj 3~{[0].disasm}
+pdj 3~{[1].addr}
+pdj 3~{[1].size}
+pdj 3~{[2].addr}
+pdj 3~{[2].type}
+s 2
+pdj 1~{[0].addr}
+pdj 1~{[0].size}
+s 0
+e asm.meta=false
+pdj 1~{[0].opcode}
+EOF
+EXPECT=<<EOF
+16
+.hex 5302794400bf00000000000000000000
+16
+4
+20
+mov
+2
+16
+lsls r3, r2, 9
+EOF
+RUN
+
+NAME=pdj keeps Cd data inside the requested bytes
+FILE=malloc://256
+CMDS=<<EOF
+Cd 20
+pDj 1
+Cd-
+e hex.cols=32
+Cd 31
+ahi 1
+pdj 1~{[0].size}
+b 64
+e hex.cols=64
+wx 41424344 @ 192
+s 128
+Cd 4
+Cd 64 @ 132
+pdj 2~{[1].size}
+pdj 2~{[1].bytes}
+EOF
+EXPECT=<<EOF
+[{"addr":0,"size":1,"opcode":".hex 00","disasm":".hex 00","bytes":"00","type":"data"}]
+31
+64
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000041424344
+EOF
+RUN
+
+NAME=pdj only puts Cd text that assembles back in opcode
+FILE=malloc://16
+ARGS=-a arm -e asm.bits=32
+CMDS=<<EOF
+wx 01020304
+Cd 4
+ahi 1
+pdj 1~{[0].opcode}
+pdj 1~{[0].disasm}
+ahi 10
+wx ffffffff
+pdj 1~{[0].opcode}
+pdj 1~{[0].disasm}
+ahi 16
+pdj 1~{[0].opcode}
+pdj 1~{[0].disasm}
+Cd-
+Cd 1
+ahi 10
+pdj 1~{[0].opcode}
+pdj 1~{[0].disasm}
+Cd-
+e hex.cols=4
+wx 0102030405060708
+Cd 8
+ahi 16
+pdj 1~{[0].opcode}
+EOF
+EXPECT=<<EOF
+.hex 01020304
+.int32 00000001000000100000001100000100b
+.hex ffffffff
+.int32 4294967295
+.hex ffffffff
+.dword 0xffffffff
+.hex ff
+.char 255
+.qword 0x0807060504030201
+EOF
+RUN
