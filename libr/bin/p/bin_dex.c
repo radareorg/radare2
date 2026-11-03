@@ -1110,7 +1110,8 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 	DexField field;
 	size_t i, skip = 0;
 
-	for (i = 0; i < fields_count; i++) {
+	for (i = 0; i < fields_count && dex->members_left > 0; i++) {
+		dex->members_left--;
 		bool err = false;
 		ut64 fieldIndex = peek_uleb (b, &err, &skip);
 		ut64 accessFlags = peek_uleb (b, &err, &skip);
@@ -1188,7 +1189,8 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 	ut64 MI, MA, MC;
 	const char *cls_name = r_bin_name_tostring (cls->name);
 	ut64 i;
-	for (i = 0; i < DM; i++) {
+	for (i = 0; i < DM && dex->members_left > 0; i++) {
+		dex->members_left--;
 		err = false;
 		skip = 0;
 		// Needed because theres another rbufseek call inside this loop. must be fixed
@@ -1667,6 +1669,8 @@ static bool dex_loadcode(RBinFile *bf) {
 	dex->trycatch_loaded = true;
 	// try items can share a handler list and methods can share a code item, so bound the whole expansion
 	dex->trycatch_budget = dex->size;
+	// encoded members take 2+ bytes, so class_defs sharing class data cannot list more than size/2
+	dex->members_left = dex->size / 2;
 	if (dex->classes) {
 		if (!names_only) {
 			ut64 amount = sizeof (int) * dex->header.method_size;
@@ -1685,6 +1689,9 @@ static bool dex_loadcode(RBinFile *bf) {
 		}
 		if (!dex->trycatch_budget) {
 			R_LOG_WARN ("Too many catch handlers, ignoring the remaining ones");
+		}
+		if (!dex->members_left) {
+			R_LOG_WARN ("Class data lists more members than the file can hold, ignoring the rest");
 		}
 	}
 	if (methods) {
@@ -1831,7 +1838,8 @@ static void dex_parse_class_method_addrline(RBinFile *bf, RBinDexClass *c, ut64 
 	const ut64 bufsz = r_buf_size (b);
 	ut64 omi = 0;
 	ut64 i;
-	for (i = 0; i < methods_count; i++) {
+	for (i = 0; i < methods_count && dex->members_left > 0; i++) {
+		dex->members_left--;
 		bool err = false;
 		size_t skip = 0;
 		ut64 MI = peek_uleb (b, &err, &skip);
@@ -1930,6 +1938,7 @@ static void dex_load_addrline(RBinFile *bf) {
 	if (!dex->classes) {
 		return;
 	}
+	dex->members_left = dex->size / 2;
 	ut32 i;
 	for (i = 0; i < dex->header.class_size; i++) {
 		dex_parse_class_addrline (bf, &dex->classes[i]);

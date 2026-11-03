@@ -166,6 +166,7 @@ typedef struct r_bin_dex_obj_t {
 	const char *dexSubsystem;
 	bool simplifiedDemangling;
 	HtUU *method_addrs;
+	ut64 members_left; // encoded fields and methods the class data walk may still parse
 } RBinDexObj;
 
 typedef struct r_bin_dex_str_t {
