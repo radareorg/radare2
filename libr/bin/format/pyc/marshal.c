@@ -12,7 +12,6 @@
 // All mutable parse state is carried in PycUnmarshalCtx (see marshal.h).
 
 static pyc_object *get_object(PycUnmarshalCtx *ctx, RBuffer *buffer, int wtype);
-static pyc_object *copy_object(pyc_object *object);
 static void free_object(pyc_object *object);
 
 static ut8 get_ut8(RBuffer *buffer, bool *error) {
@@ -428,7 +427,6 @@ static pyc_object *get_array_object_generic(PycUnmarshalCtx *ctx, RBuffer *buffe
 		pyc_object *tmp = get_object (ctx, buffer, 0);
 		if (!tmp || !r_list_append (ret->data, tmp)) {
 			free_object (tmp);
-			((RList*)ret->data)->free = NULL;
 			r_list_free (ret->data);
 			free (ret);
 			return NULL;
@@ -585,6 +583,12 @@ static pyc_object *get_short_ascii_interned_object(PycUnmarshalCtx *ctx, RBuffer
 	return error? NULL: get_ascii_object_generic (ctx, buffer, n, true);
 }
 
+// objects are immutable once parsed, so they are shared instead of copied
+static pyc_object *ref_object(pyc_object *object) {
+	object->refcount++;
+	return object;
+}
+
 static pyc_object *get_ref_object(PycUnmarshalCtx *ctx, RBuffer *buffer) {
 	bool error = false;
 	ut32 index = get_ut32 (buffer, &error);
@@ -595,7 +599,18 @@ static pyc_object *get_ref_object(PycUnmarshalCtx *ctx, RBuffer *buffer) {
 		return NULL;
 	}
 	pyc_object *obj = r_list_get_n (ctx->refs, index);
-	return obj? copy_object (obj): NULL;
+	if (!obj) {
+		return NULL;
+	}
+	// the levels nested in the referenced object count for the limit too
+	const int deepest = ctx->depth + obj->height;
+	if (deepest > PYC_MAX_DEPTH) {
+		R_LOG_WARN ("pyc: marshal objects nested deeper than %d levels", PYC_MAX_DEPTH);
+		ctx->too_deep = true;
+		return NULL;
+	}
+	ctx->deepest = R_MAX (ctx->deepest, deepest);
+	return ref_object (obj);
 }
 
 static void free_object(pyc_object *object) {
@@ -603,6 +618,10 @@ static void free_object(pyc_object *object) {
 		return;
 	}
 	if ((int)object->type == 0) {
+		return;
+	}
+	if (object->refcount > 0) {
+		object->refcount--;
 		return;
 	}
 	switch (object->type) {
@@ -670,92 +689,6 @@ static void free_object(pyc_object *object) {
 		break;
 	}
 	free (object);
-}
-
-static pyc_object *copy_object(pyc_object *object) {
-	if (!object) {
-		return NULL;
-	}
-	pyc_object *copy = R_NEW0 (pyc_object);
-	copy->type = object->type;
-	if ((int)object->type != 0) {
-		switch (object->type) {
-		case TYPE_NULL:
-			break;
-		case TYPE_TUPLE:
-		case TYPE_SMALL_TUPLE:
-			copy->data = r_list_clone (object->data, NULL);
-			break;
-		case TYPE_INT:
-		case TYPE_INT64:
-		case TYPE_NONE:
-		case TYPE_TRUE:
-		case TYPE_FALSE:
-		case TYPE_STRING:
-		case TYPE_ASCII:
-		case TYPE_SHORT_ASCII:
-		case TYPE_ASCII_INTERNED:
-		case TYPE_SHORT_ASCII_INTERNED:
-		case TYPE_UNICODE:
-		case TYPE_FLOAT:
-		case TYPE_BINARY_FLOAT:
-			copy->data = strdup (object->data);
-			break;
-		case TYPE_INTERNED:
-			// borrowed pointer from interned_table, just copy the pointer
-			copy->data = object->data;
-			break;
-		case TYPE_LONG:
-			// TODO: handle properly - for now just copy the pointer
-			copy->data = object->data;
-			break;
-		case TYPE_LIST:
-		case TYPE_SET:
-		case TYPE_FROZENSET:
-		case TYPE_DICT:
-			copy->data = r_list_clone (object->data, NULL);
-			break;
-		case TYPE_CODE_v0:
-		case TYPE_CODE_v1: {
-			pyc_code_object *src = object->data;
-			pyc_code_object *dst = R_NEW0 (pyc_code_object);
-			memcpy (dst, src, sizeof (*dst));
-			dst->code = copy_object (src->code);
-			dst->consts = copy_object (src->consts);
-			dst->names = copy_object (src->names);
-			dst->varnames = copy_object (src->varnames);
-			dst->freevars = copy_object (src->freevars);
-			dst->cellvars = copy_object (src->cellvars);
-			dst->filename = copy_object (src->filename);
-			dst->name = copy_object (src->name);
-			dst->lnotab = copy_object (src->lnotab);
-			copy->data = dst;
-			break;
-		}
-		case TYPE_REF:
-			copy->data = copy_object (object->data);
-			break;
-		case TYPE_ELLIPSIS:
-		case TYPE_STOPITER:
-			// no data to copy
-			copy->data = NULL;
-			break;
-		case TYPE_BINARY_COMPLEX:
-		case TYPE_COMPLEX:
-		case TYPE_STRINGREF:
-		case TYPE_UNKNOWN:
-			R_LOG_DEBUG ("Copy not implemented for type %x", object->type);
-			break;
-		default:
-			R_LOG_DEBUG ("Undefined type in copy_object (%x)", object->type);
-			break;
-		}
-	}
-	// only free copy if data is NULL AND type requires data
-	if (!copy->data && copy->type != TYPE_NULL && copy->type != TYPE_ELLIPSIS && copy->type != TYPE_STOPITER) {
-		R_FREE (copy);
-	}
-	return copy;
 }
 
 static pyc_object *get_code_object(PycUnmarshalCtx *ctx, RBuffer *buffer) {
@@ -1034,12 +967,12 @@ static pyc_object *get_object_at_depth(PycUnmarshalCtx *ctx, RBuffer *buffer, in
 		if (ref_idx->data != ret) {
 			free_object (ref_idx->data);
 		}
-		ref_idx->data = copy_object (ret);
+		ref_idx->data = ref_object (ret);
 	}
 	if (!ret) {
 		ret = get_none_object ();
 		if (ret) {
-			r_list_append (ctx->refs, copy_object (ret));
+			r_list_append (ctx->refs, ref_object (ret));
 		}
 	}
 	return ret;
@@ -1054,8 +987,13 @@ static pyc_object *get_object(PycUnmarshalCtx *ctx, RBuffer *buffer, int wanted_
 		ctx->too_deep = true;
 		return NULL;
 	}
-	ctx->depth++;
+	const int deepest = ctx->deepest;
+	ctx->deepest = ++ctx->depth;
 	pyc_object *ret = get_object_at_depth (ctx, buffer, wanted_type);
+	if (ret) {
+		ret->height = ctx->deepest - ctx->depth;
+	}
+	ctx->deepest = R_MAX (ctx->deepest, deepest);
 	ctx->depth--;
 	if (ctx->too_deep) {
 		free_object (ret);
@@ -1076,6 +1014,12 @@ static bool extract_sections_symbols(PycUnmarshalCtx *ctx, pyc_object *obj, RVec
 	if_true_return (cobj->name->type != TYPE_ASCII && cobj->name->type != TYPE_STRING && cobj->name->type != TYPE_INTERNED, false);
 	if_true_return (!cobj->name->data, false);
 	if_true_return (!cobj->consts, false);
+
+	// TYPE_REF shares the code objects, so register each of them only once
+	if (set_u_contains (ctx->seen, cobj->start_offset)) {
+		return false;
+	}
+	set_u_add (ctx->seen, cobj->start_offset);
 
 	// add the cobj to objs list
 	if (!r_list_append (cobjs, cobj)) {
@@ -1135,17 +1079,20 @@ bool get_sections_symbols_from_code_objects(PycUnmarshalCtx *ctx, RBuffer *buffe
 		*out_pobj = NULL;
 	}
 	ctx->refs = r_list_newf ((RListFree)free_object);
+	ctx->seen = set_u_new ();
 	bool ret = false;
-	if (ctx->refs) {
+	if (ctx->refs && ctx->seen) {
 		pyc_object *pobj = get_object (ctx, buffer, 0);
 		ret = extract_sections_symbols (ctx, pobj, sections, symbols, cobjs, NULL);
-		r_list_free (ctx->refs);
-		ctx->refs = NULL;
 		if (out_pobj) {
 			*out_pobj = pobj;
 		} else {
 			free_object (pobj);
 		}
 	}
+	r_list_free (ctx->refs);
+	ctx->refs = NULL;
+	set_u_free (ctx->seen);
+	ctx->seen = NULL;
 	return ret;
 }

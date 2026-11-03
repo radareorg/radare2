@@ -66,6 +66,8 @@ typedef enum {
 typedef struct {
 	pyc_marshal_type type;
 	void *data;
+	ut32 refcount; // owners besides the first one (TYPE_REF and the ref table)
+	int height;    // levels of objects nested below this one
 } pyc_object;
 
 typedef struct {
