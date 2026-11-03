@@ -266,14 +266,11 @@ typedef struct r_esil_t {
 	RList *active_plugins;
 	/* deep esil parsing fills this */
 	Sdb *stats;
-	REsilTrace *trace;
 	REsilRegInterface reg_if;
 	REsilMemInterface mem_if;
 	REsilUtilInterface util_if;
 	RIDStorage voyeur[R_ESIL_VOYEUR_LAST];
 	REsilCallbacks cb;
-	REsilCallbacks ocb;
-	bool ocb_set;
 	// this is so cursed, can we please remove external commands from esil internals.
 	// Function pointers are fine, but not commands
 	char *cmd_step; // r2 (external) command to run before a step is performed
@@ -446,8 +443,6 @@ R_API void r_esil_mem_ro(REsil *esil, bool mem_readonly);
 R_API void r_esil_stats(REsil *esil, REsilStats *stats, bool enable);
 
 /* trace */
-// r_esil_trace_free exists until the REsil.trace member is excised
-R_API void r_esil_trace_free(REsilTrace *trace);
 #include <r_arch.h>
 R_API bool r_esil_trace_start(REsilTrace *trace, REsil *esil);
 R_API void r_esil_trace_stop(REsilTrace *trace, REsil *esil);

@@ -5,7 +5,6 @@ r_esil_sources = [
   'esil_plugin.c',
   'esil_stats.c',
   'esil_compiler.c',
-  'esil_trace.c',
   'esil_toc.c',
   'p/esil_null.c',
   'p/esil_forth.c',
