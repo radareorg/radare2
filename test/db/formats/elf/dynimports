@@ -27,6 +27,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ELF: aarch64 bti lld plt with several imports uses 24-byte entries
+FILE=bins/elf/pltrel/aarch64-bti-lld-imports.so
+CMDS=ii
+EXPECT=<<EOF
+nth vaddr      bind   type   lib name
+-------------------------------------
+1   0x000013f0 GLOBAL NOTYPE     bar
+2   0x00001408 GLOBAL NOTYPE     baz
+3   0x00001420 GLOBAL NOTYPE     qux
+EOF
+RUN
+
 NAME=ELF: section-less dynsym ends at the gnu hash table
 FILE=bins/elf/pltrel/aarch64-bti-lld-one-noshdr.so
 CMDS=<<EOF
