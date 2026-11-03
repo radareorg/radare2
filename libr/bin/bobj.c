@@ -808,16 +808,22 @@ static HtPP *symbol_filter_new(size_t symbols) {
 
 static bool filter_classes(RBinFile *bf, RList *list) {
 	bool rc = true;
-	HtSU *db = ht_su_new0 ();
-	HtPP *ht = symbol_filter_new (0);
-	if (!ht) {
-		ht_su_free (db);
-		return false;
-	}
 	RListIter *iter;
 	RBinClass *cls;
 	RBinSymbol *sym;
 	const bool names_only = classes_names_only (bf);
+	size_t methods_count = 0;
+	if (!names_only) {
+		r_list_foreach (list, iter, cls) {
+			methods_count += RVecRBinSymbol_length (&cls->methods);
+		}
+	}
+	HtSU *db = ht_su_new0 ();
+	HtPP *ht = symbol_filter_new (methods_count);
+	if (!ht) {
+		ht_su_free (db);
+		return false;
+	}
 	r_list_foreach (list, iter, cls) {
 		if (cls->attr.lang != R_BIN_LANG_NONE) {
 			r_bin_file_add_language (bf, cls->attr.lang);
