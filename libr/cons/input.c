@@ -730,8 +730,7 @@ R_API int r_cons_readchar_timeout(RCons *cons, ut32 msec) {
 	if (select (1, &fdset, NULL, &errset, &tv) == 1) {
 		return r_cons_readchar (cons);
 	}
-	r_cons_set_raw (cons, false);
-	// timeout
+	// Like r_cons_readchar, leave raw mode active until the caller restores it.
 	return -1;
 #else
 	return  readchar_w32 (cons, msec);

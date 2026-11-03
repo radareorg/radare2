@@ -983,7 +983,7 @@ R_API int r_cons_readchar(RCons *cons);
 R_API bool r_cons_readpush(RCons *cons, const char *str, int len);
 R_API void r_cons_readflush(RCons *cons);
 R_API void r_cons_switchbuf(RCons *cons, bool active);
-R_API int r_cons_readchar_timeout(RCons *cons, ut32 usec);
+R_API int r_cons_readchar_timeout(RCons *cons, ut32 msec);
 R_API int r_cons_any_key(RCons *cons, const char *msg);
 
 R_API int r_cons_palette_init(const unsigned char *pal);
