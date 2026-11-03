@@ -5,6 +5,8 @@
 #include <r_java/descriptor.h>
 
 #define JNI_MIN_TABLE_METHODS 2
+#define JNI_MAX_TABLE_METHODS 1024
+#define JNI_MAX_METHODS 16384
 #define JNI_MAX_DATA_SECTION (64 * 1024 * 1024)
 #define JNI_MAX_METHOD_NAME 256
 #define JNI_MAX_DESCRIPTOR 2048
@@ -31,6 +33,7 @@ typedef struct {
 	int pointer_size;
 	bool big_endian;
 	int tables_count;
+	int methods_count;
 } JniScanContext;
 
 static void jni_function_param_free(void *ptr) {
@@ -323,6 +326,9 @@ static JniMethod *jni_parse_method(JniScanContext *ctx, const ut8 *buf, ut64 rec
 	ut64 descriptor_addr;
 	ut64 function_addr;
 	const int pointer_size = ctx->pointer_size;
+	if (ctx->methods_count >= JNI_MAX_METHODS) {
+		return NULL;
+	}
 	if (!jni_resolve_function (ctx, jni_read_pointer (ctx, buf + pointer_size * 2),
 			&function_addr)) {
 		return NULL;
@@ -343,6 +349,8 @@ static JniMethod *jni_parse_method(JniScanContext *ctx, const ut8 *buf, ut64 rec
 		free (descriptor);
 		return NULL;
 	}
+	// count before parsing, rejected candidates cost as much as valid ones
+	ctx->methods_count++;
 	RJavaMember *member = r_java_member_parse (NULL, name, descriptor,
 		R_JAVA_MEMBER_METHOD, 0);
 	if (!member) {
@@ -366,7 +374,8 @@ static JniTable *jni_table_at(JniScanContext *ctx, const ut8 *b, size_t sz, size
 	JniTable *table = R_NEW (JniTable);
 	table->addr = va + off;
 	table->methods = r_list_newf (jni_method_free);
-	while (off <= sz - record_size) {
+	// longer tables continue as a new one at the next record
+	while (off <= sz - record_size && r_list_length (table->methods) < JNI_MAX_TABLE_METHODS) {
 		JniMethod *method = jni_parse_method (ctx, b + off, va + off);
 		if (!method) {
 			break;
@@ -428,7 +437,7 @@ static bool jni_section_is_scannable(const RBinSection *section, size_t min_size
 static void jni_scan_section(JniScanContext *ctx, const RBinSection *section) {
 	const size_t record_size = ctx->pointer_size * 3;
 	const size_t min_size = record_size * JNI_MIN_TABLE_METHODS;
-	if (!jni_section_is_scannable (section, min_size)) {
+	if (ctx->methods_count >= JNI_MAX_METHODS || !jni_section_is_scannable (section, min_size)) {
 		return;
 	}
 	ut64 section_addr;
@@ -448,7 +457,7 @@ static void jni_scan_section(JniScanContext *ctx, const RBinSection *section) {
 	size = nread;
 	size_t offset = (ctx->pointer_size - (section_addr % ctx->pointer_size))
 		% ctx->pointer_size;
-	while (offset <= size - min_size) {
+	while (offset <= size - min_size && ctx->methods_count < JNI_MAX_METHODS) {
 		JniTable *table = jni_table_at (ctx, buf, size, offset, section_addr);
 		if (!table) {
 			offset += ctx->pointer_size;
@@ -484,6 +493,9 @@ static int jni_scan(RAnal *anal) {
 	RBinSection *section;
 	R_VEC_FOREACH (sections, section) {
 		jni_scan_section (&ctx, section);
+	}
+	if (ctx.methods_count >= JNI_MAX_METHODS) {
+		R_LOG_WARN ("Too many JNI native method candidates, limiting to %d", JNI_MAX_METHODS);
 	}
 	sdb_num_set (db, "tables", ctx.tables_count, 0);
 	return ctx.tables_count;

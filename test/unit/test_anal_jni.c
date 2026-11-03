@@ -160,9 +160,40 @@ static bool test_jni_big_endian_32bit_table(void) {
 	mu_end;
 }
 
+static bool test_jni_method_budget(void) {
+	const ut64 big_addr = 0x100000;
+	const int records = 20000;
+	RCore *core = jni_test_core_new (64, false, 0);
+	r_io_open_at (core->io, "malloc://480000", R_PERM_RW, 0644, big_addr);
+	RBinSection *section = RVecRBinSection_at (&core->bin->cur->bo->sections_vec, 0);
+	section->vaddr = section->paddr = big_addr;
+	section->size = section->vsize = records * RECORD_SIZE64;
+	ut8 strings[0x20] = { 0 };
+	memcpy (strings, "f", sizeof ("f"));
+	memcpy (strings + 0x10, "(I)V", sizeof ("(I)V"));
+	r_io_write_at (core->io, STRINGS_ADDR, strings, sizeof (strings));
+	ut8 *data = calloc (records, RECORD_SIZE64);
+	int i;
+	for (i = 0; i < records; i++) {
+		write_record (data, i, 8, false, STRINGS_ADDR, STRINGS_ADDR + 0x10, CODE_ADDR);
+	}
+	r_io_write_at (core->io, big_addr, data, records * RECORD_SIZE64);
+	free (data);
+	RAnalPlugin *plugin = jni_test_plugin (core->anal);
+	mu_assert_true (plugin->pre_analysis (core->anal), "discover JNI tables");
+	Sdb *db = sdb_ns (core->anal->sdb, "jni", 0);
+	mu_assert_eq (sdb_num_get (db, "tables", 0), 16, "per-binary method budget");
+	mu_assert_eq (sdb_num_get (db, "table.0.count", 0), 1024, "per-table method budget");
+	mu_assert_eq (sdb_num_get (db, "table.1.addr", 0), big_addr + 1024 * RECORD_SIZE64,
+		"long table continues as a new one");
+	jni_test_core_free (core);
+	mu_end;
+}
+
 static bool all_tests(void) {
 	mu_run_test (test_jni_native_method_table_scan);
 	mu_run_test (test_jni_big_endian_32bit_table);
+	mu_run_test (test_jni_method_budget);
 	return tests_passed != tests_run;
 }
 

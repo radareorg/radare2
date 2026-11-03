@@ -21,6 +21,9 @@
 #define JAVA_ACC_ENUM 0x4000
 #define JAVA_ACC_HIDDEN 0x04000000
 
+// JVMS 4.3.3: a method descriptor holds at most 255 argument slots
+#define JAVA_MAX_ARGUMENT_SLOTS 255
+
 typedef enum {
 	JAVA_STYLE_DISPLAY,
 	JAVA_STYLE_JNI,
@@ -335,7 +338,7 @@ R_API RJavaMember *r_java_member_parse(const char *class_name, const char *name,
 	member->arguments = r_list_newf (java_type_free);
 	while (*p && *p != ')') {
 		RJavaType *argument = java_type_parse (&p, false);
-		if (!argument || member->argument_slots > UT16_MAX - argument->slots) {
+		if (!argument || member->argument_slots > JAVA_MAX_ARGUMENT_SLOTS - argument->slots) {
 			java_type_free (argument);
 			goto beach;
 		}

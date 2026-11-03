@@ -164,6 +164,16 @@ static bool test_java_descriptor(void) {
 	mu_assert_notnull (member, "accept 255 array dimensions");
 	mu_assert_eq (member->type->array_dimensions, 255, "maximum array dimensions");
 	r_java_member_free (member);
+
+	char arguments_descriptor[259];
+	arguments_descriptor[0] = '(';
+	memset (arguments_descriptor + 1, 'I', 255);
+	strcpy (arguments_descriptor + 256, ")V");
+	member = r_java_member_parse (NULL, "maximumArguments", arguments_descriptor,
+		R_JAVA_MEMBER_METHOD, 0);
+	mu_assert_notnull (member, "accept 255 argument slots");
+	mu_assert_eq (member->argument_slots, 255, "maximum argument slots");
+	r_java_member_free (member);
 	mu_end;
 }
 
@@ -193,6 +203,13 @@ static bool test_java_descriptor_rejects_malformed(void) {
 	RJavaMember *member = r_java_member_parse (NULL, "bad",
 		too_many_dimensions, R_JAVA_MEMBER_FIELD, 0);
 	mu_assert_null (member, "reject more than 255 array dimensions");
+	char too_many_arguments[259];
+	too_many_arguments[0] = '(';
+	memset (too_many_arguments + 1, 'I', 254);
+	strcpy (too_many_arguments + 255, "J)V");
+	member = r_java_member_parse (NULL, "bad",
+		too_many_arguments, R_JAVA_MEMBER_METHOD, 0);
+	mu_assert_null (member, "reject more than 255 argument slots");
 	char *demangled = r_bin_demangle_java ("nativeGreater(J[J[JJ)V");
 	mu_assert_streq (demangled, "void nativeGreater (long, long[], long[], long)",
 		"legacy demangler uses structured parser");
