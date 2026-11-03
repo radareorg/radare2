@@ -21,9 +21,6 @@ endif
 visibility_flags = [
   '-Dutf8_encode=utf8_encode_r2'
 ]
-if cc.has_argument('-fvisibility=hidden')
-  visibility_flags += ['-fvisibility=hidden']
-endif
 if host_machine.system() == 'android'
   visibility_flags += ['-Dinline=', '-Wno-unused-function']
 endif
