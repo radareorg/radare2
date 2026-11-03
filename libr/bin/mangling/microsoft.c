@@ -650,7 +650,7 @@ get_template_err:
 /// \param buf Current buffer position with mangled name
 /// \param type_code_str String with got name and namespaces
 /// \param amount_of_names Amount of names that was in list
-/// \return Return amount of processed chars
+/// \return Return amount of processed chars, 0 if the name does not parse
 ///
 static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeStr *type_code_str, size_t *amount_of_names, bool memorize) {
 	const char *tmp = NULL;
@@ -696,12 +696,12 @@ static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeS
 		// TODO:maybe add check of name correctness? like name can not start
 		//		with number
 		if ((len <= 0) || (len >= MICROSOFT_NAME_LEN)) {
-			goto get_namespace_and_name_err;
+			goto beach;
 		}
 
 		str_info = R_NEW (SStrInfo);
 		if (!str_info) {
-			break;
+			goto beach;
 		}
 
 		// check is it teamplate???
@@ -710,7 +710,7 @@ static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeS
 			i = get_template (sd, tmp + 2, str_info, memorize);
 			if (!i) {
 				R_FREE (str_info);
-				goto get_namespace_and_name_err;
+				goto beach;
 			}
 			r_list_append (names_l, str_info);
 
@@ -725,13 +725,13 @@ static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeS
 			STypeCodeStr str;
 			if (!init_type_code_str_struct (&str)) {
 				R_FREE (str_info);
-				break;
+				goto beach;
 			}
 			size_t i = get_namespace_and_name (sd, tmp + 2, &str, NULL, true);
 			if (!i) {
 				free_type_code_str_struct (&str);
 				R_FREE (str_info);
-				break;
+				goto beach;
 			}
 			prev_pos = str_skip_report (tmp, &read_len, i + 3);
 			curr_pos = strchr (prev_pos, '@');
@@ -742,8 +742,11 @@ static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeS
 			continue;
 		}
 
+		// anonymous namespace ?A0x<hash>@, the hash is not shown
+		const bool anonymous = (*tmp == '?') && (*(tmp + 1) == 'A');
+
 		// Nested name
-		if (*tmp == '?') {
+		if (*tmp == '?' && !anonymous) {
 			read_len++;
 			// Optional sequence number
 			char *num = NULL;
@@ -758,7 +761,7 @@ static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeS
 			if (parse_microsoft_mangled_name (sd, str_skip_n (tmp, 2), &demangled, &len) != eDemanglerErrOK) {
 				free (num);
 				R_FREE (str_info);
-				break;
+				goto beach;
 			}
 			read_len += len + 1;
 			if (num) {
@@ -780,11 +783,11 @@ static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeS
 			tmp = r_list_get_n (sd->abbr_names, *tmp - '0');
 			if (!tmp) {
 				R_FREE (str_info);
-				break;
+				goto beach;
 			}
 			len = 1;
 		} else {
-			tmp = r_str_ndup (prev_pos, len);
+			tmp = anonymous? strdup ("`anonymous namespace'"): r_str_ndup (prev_pos, len);
 			r_list_append (sd->abbr_names, (void*)tmp);
 		}
 
@@ -828,6 +831,12 @@ get_namespace_and_name_err:
 	r_list_free (names_l);
 	sd->depth--;
 	return read_len;
+
+beach:
+	// a partial length would make callers resume inside the failed name and walk it again
+	r_list_free (names_l);
+	sd->depth--;
+	return 0;
 }
 
 #define SINGLEQUOTED_Dollar '$'
@@ -1372,8 +1381,13 @@ static void parse_pointer(SDemangler *sd, SStateInfo *state, STypeCodeStr *type_
 				state->err = eTCStateMachineErrAlloc;
 				return;
 			};
-			size_t read = get_namespace_and_name (sd, state->buff_for_parsing, &func_str, NULL, true) + 1;
-			state_skip_n (state, read);
+			size_t read = get_namespace_and_name (sd, state->buff_for_parsing, &func_str, NULL, true);
+			if (!read) {
+				free_type_code_str_struct (&func_str);
+				state->err = eTCStateMachineErrUncorrectTypeCode;
+				return;
+			}
+			state_skip_n (state, read + 1);
 			copy_string (&func_str, "::", 2);
 			copy_string (&func_str, pointer_str, 0);
 			pf (sd, state, type_code_str, func_str.type_str);
