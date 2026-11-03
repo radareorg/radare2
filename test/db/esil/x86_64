@@ -2182,6 +2182,50 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=imul r64, m64, imm8 reads the memory source once and sets cf/of on overflow
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 486b0bfe
+wx 050000800300a5a5 @ 0x20
+aoe 1
+aeim
+ar rbx=0x20
+aes
+ar rcx
+ar cf
+ar of
+EOF
+EXPECT=<<EOF
+0x00000000 rbx,[8],DUP,DUP,63,SWAP,>>,18446744073709551614,*,SWAP,63,18446744073709551614,>>,*,+,SWAP,18446744073709551614,L*,rcx,=,-,63,rcx,>>,0,-,^,!,!,DUP,cf,:=,of,:=
+0xb4b5fff8fffffff6
+0x00000001
+0x00000001
+EOF
+RUN
+
+NAME=imul r64, m64, imm8 without overflow clears cf/of
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 486b0bfe
+wx fdffffffffffffff @ 0x20
+aeim
+ar rbx=0x20
+ar cf=1
+ar of=1
+aes
+ar rcx
+ar cf
+ar of
+EOF
+EXPECT=<<EOF
+0x00000006
+0x00000000
+0x00000000
+EOF
+RUN
+
 NAME=sar on a byte or word register keeps its sign
 FILE=malloc://0x100
 ARGS=-a x86 -b 64
