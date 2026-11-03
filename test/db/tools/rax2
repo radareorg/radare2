@@ -855,3 +855,56 @@ EXPECT=<<EOF
 +-----------------+
 EOF
 RUN
+
+NAME=rax2 -p pack 12bit le units
+FILE=-
+CMDS=<<EOF
+!printf 'bc0aef0d' | rax2 -s | rax2 -p 12 | rax2 -S
+!printf 'bc0aef0d' | rax2 -s | rax2 -p 12 | rax2 -P 12 | rax2 -S
+EOF
+EXPECT=<<EOF
+bcfade
+bc0aef0d
+EOF
+RUN
+
+NAME=rax2 -p pack 12bit be units
+FILE=-
+CMDS=<<EOF
+!printf '0abc0def' | rax2 -s | rax2 -ep 12 | rax2 -S
+!printf 'abcdef' | rax2 -s | rax2 -eP 12 | rax2 -S
+EOF
+EXPECT=<<EOF
+abcdef
+0abc0def
+EOF
+RUN
+
+NAME=rax2 -P unpack 9bit units
+FILE=-
+CMDS=<<EOF
+!printf 'abc' | rax2 -P 9 | rax2 -S
+!printf 'abc' | rax2 -eP 9 | rax2 -S
+EOF
+EXPECT=<<EOF
+6100b101
+00c20189
+EOF
+RUN
+
+NAME=rax2 -p errors
+FILE=-
+CMDS=<<EOF
+!printf 'abcd' | rax2 -p 12
+!printf 'abc' | rax2 -p 12
+!rax2 -p 65 < /dev/null
+!rax2 -p < /dev/null
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Input has values wider than 12 bits
+ERROR: Input size is not a multiple of 2 bytes
+ERROR: Invalid unit size, expected 1 to 64 bits
+ERROR: Packing with -p or -P requires the unit size in bits
+EOF
+RUN
