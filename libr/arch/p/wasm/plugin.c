@@ -272,6 +272,12 @@ static inline bool parse_control_flow(RArchSession *s, ut64 opaddr) {
 	if (addr == UT64_MAX || end == UT64_MAX) {
 		return cache_dud (cache, opaddr);
 	}
+	// walk each function only once, the entry at its start marks it as walked.
+	// a miss inside a walked function is not an instruction boundary
+	const ut64 fcnaddr = addr;
+	if (ht_up_find (cache, fcnaddr, NULL)) {
+		return cache_dud (cache, opaddr);
+	}
 
 	ut32 len = end - addr;
 	RList *scope = r_list_newf ((RListFree)free);
@@ -287,7 +293,7 @@ static inline bool parse_control_flow(RArchSession *s, ut64 opaddr) {
 	CFScope *lastcf = parse_new_scope (scope, addr, &wop, NULL);
 
 	if (lastcf && len) {
-		ut8 buffer[16];
+		ut8 buffer[64]; // same window as r_anal_op_set_bytes gives to wasm_decode
 		ut8 *ptr = buffer;
 		ut32 readsize = R_MIN (sizeof (buffer), len);
 		int nread;
@@ -306,6 +312,10 @@ static inline bool parse_control_flow(RArchSession *s, ut64 opaddr) {
 		}
 		ret = cache_offsets (cache, keep);
 	}
+	// mark the function as walked (noop when its first op is already cached)
+	// and remember that the walk found nothing at opaddr
+	cache_dud (cache, fcnaddr);
+	cache_dud (cache, opaddr);
 cleanup:
 	r_list_free (scope);
 	r_list_free (keep);

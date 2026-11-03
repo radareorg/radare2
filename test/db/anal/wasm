@@ -91,3 +91,38 @@ WARN: ignoring br at 0x17, references non-existent address
 WARN: ignoring br at 0x19, references non-existent address
 EOF
 RUN
+
+NAME=wasm br after v128.const is resolved and the function is walked once
+FILE=hex://0061736d01000000010401600000030201000a1b0119000240fd0c0101010101010101010101010101010c0c000b0b
+CMDS=<<EOF
+af
+pdf
+ao @ 0x2b~type,jump
+EOF
+EXPECT=<<EOF
+            ;-- fcn.0:
+/ 24: entry0 ();
+|           0x00000017      0240           block
+|           0x00000019      fd0c010101..   v128.const 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 0c
+|       ,=< 0x0000002b      0c00           br 0
+|       |   ; CODE XREF from entry0 @ 0x2b(x)
+|       `-> 0x0000002d      0b             end
+\           0x0000002e      0b             end
+type: jmp
+jump: 0x0000002d
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=wasm br_if in loop keeps its targets
+FILE=bins/wasm/brif-loop.wasm
+CMDS=<<EOF
+af
+ao @ 0x42~type,jump,fail
+EOF
+EXPECT=<<EOF
+type: cjmp
+jump: 0x00000036
+fail: 0x00000044
+EOF
+RUN
