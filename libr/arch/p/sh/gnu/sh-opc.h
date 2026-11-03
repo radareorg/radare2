@@ -486,9 +486,9 @@ sh_opcode_info sh_table[] = {
 /* 1111nnnnmmmm0101 fcmp/gt <F_REG_M>,<F_REG_N>*/{ "fcmp/gt",{F_REG_M,F_REG_N},{HEX_F,REG_N,REG_M,HEX_5}},
 /* 1111nnn0mmm00101 fcmp/gt <D_REG_M>,<D_REG_N>*/{ "fcmp/gt",{D_REG_M,D_REG_N},{HEX_F,REG_N,REG_M,HEX_5}},
 
-/* 1111nnn010111101 fcnvds <D_REG_N>,FPUL*/{ "fcnvds",{D_REG_N,FPUL_M},{HEX_F,REG_N,HEX_B,HEX_D}},
+/* 1111nnn010111101 fcnvds <D_REG_N>,FPUL*/{ "fcnvds",{D_REG_N,FPUL_M},{HEX_F,REG_N_D,HEX_B,HEX_D}},
 
-/* 1111nnn010101101 fcnvsd FPUL,<D_REG_N>*/{ "fcnvsd",{FPUL_M,D_REG_N},{HEX_F,REG_N,HEX_A,HEX_D}},
+/* 1111nnn010101101 fcnvsd FPUL,<D_REG_N>*/{ "fcnvsd",{FPUL_M,D_REG_N},{HEX_F,REG_N_D,HEX_A,HEX_D}},
 
 /* 1111nnnnmmmm0011 fdiv <F_REG_M>,<F_REG_N>*/{ "fdiv",{F_REG_M,F_REG_N},{HEX_F,REG_N,REG_M,HEX_3}},
 /* 1111nnn0mmm00011 fdiv <D_REG_M>,<D_REG_N>*/{ "fdiv",{D_REG_M,D_REG_N},{HEX_F,REG_N,REG_M,HEX_3}},
