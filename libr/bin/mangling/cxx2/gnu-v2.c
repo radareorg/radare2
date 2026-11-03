@@ -12,6 +12,8 @@
 #include "cxx2_internal.h"
 
 #define GV2_MAX_DEPTH 200
+// T<n> and N<count><n> back references expand exponentially, cap the output like rust v0
+#define GV2_MAX_OUTPUT 1000000
 
 typedef struct {
 	const char *p;
@@ -20,6 +22,7 @@ typedef struct {
 	int depth;
 	char **types; // typevec of rendered type strings (slot 0 = class for methods)
 	int ntypes, captypes;
+	size_t total; // bytes rendered into or copied out of the typevec
 } GV2;
 
 static void gv2_type(GV2 *c, RStrBuf *o, const char *inner);
@@ -56,11 +59,21 @@ static int gv2_number(GV2 *c) {
 	return n;
 }
 
+// charge `len` rendered bytes against the output budget
+static bool gv2_charge(GV2 *c, size_t len) {
+	c->total += len;
+	if (c->total > GV2_MAX_OUTPUT) {
+		c->fail = true;
+		return false;
+	}
+	return true;
+}
+
 static void gv2_push_type(GV2 *c, const char *s) {
 	if (c->fail || !s) {
 		return;
 	}
-	if (!cxx2_strvec_push (&c->types, &c->ntypes, &c->captypes, s, 0)) {
+	if (!gv2_charge (c, strlen (s)) || !cxx2_strvec_push (&c->types, &c->ntypes, &c->captypes, s, 0)) {
 		c->fail = true;
 	}
 }
@@ -295,7 +308,7 @@ static void gv2_type(GV2 *c, RStrBuf *o, const char *inner) {
 	case 'T': { // back reference: T<index>  (0-based into typevec)
 		c->p++;
 		int idx = isdigit ((unsigned char)gv2_peek (c)) ? (gv2_take (c) - '0') : -1;
-		if (idx >= 0 && idx < c->ntypes) {
+		if (idx >= 0 && idx < c->ntypes && gv2_charge (c, strlen (c->types[idx]))) {
 			gv2_terminal (o, c->types[idx], inner);
 		} else {
 			c->fail = true;

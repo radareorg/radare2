@@ -14,6 +14,8 @@
 
 #define IBMXL_MAX_DEPTH 128
 #define IBMXL_MAX_PARAMS 4096
+// T<n> and N<count><n> back references expand exponentially, cap the output like rust v0
+#define IBMXL_MAX_OUTPUT 1000000
 
 typedef struct {
 	const char *cur;
@@ -23,6 +25,7 @@ typedef struct {
 	char **params;
 	int nparams;
 	int cparams;
+	size_t total; // bytes rendered into params so far
 } IBMXLParser;
 
 typedef enum {
@@ -192,7 +195,8 @@ static bool ibmxl_push_param(IBMXLParser *p, const char *s) {
 	if (p->fail || !s) {
 		return false;
 	}
-	if (!cxx2_strvec_push (&p->params, &p->nparams, &p->cparams, s, IBMXL_MAX_PARAMS)) {
+	p->total += strlen (s);
+	if (p->total > IBMXL_MAX_OUTPUT || !cxx2_strvec_push (&p->params, &p->nparams, &p->cparams, s, IBMXL_MAX_PARAMS)) {
 		p->fail = true;
 		return false;
 	}
@@ -427,7 +431,9 @@ static char *ibmxl_args(IBMXLParser *p, bool stop_at_underscore) {
 					r_strbuf_append (out, ", ");
 				}
 				r_strbuf_append (out, ref);
-				ibmxl_push_param (p, ref);
+				if (!ibmxl_push_param (p, ref)) {
+					break;
+				}
 			}
 			free (ref);
 			continue;
