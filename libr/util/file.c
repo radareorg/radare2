@@ -328,46 +328,75 @@ R_API char *r_file_binsh(void) {
 	return bin_sh;
 }
 
+#if R2__WINDOWS__
+// PATHEXT suffixes to try for bin, or just "" when bin already has one of them
+static RList *file_path_exts(const char *bin) {
+	char *pathext = r_sys_getenv ("PATHEXT");
+	RList *exts = r_str_split_duplist (R_STR_ISNOTEMPTY (pathext)? pathext: ".COM;.EXE;.BAT;.CMD", ";", true);
+	free (pathext);
+	RListIter *iter;
+	const char *ext;
+	r_list_foreach (exts, iter, ext) {
+		if (*ext && r_str_iendswith (bin, ext)) {
+			r_list_purge (exts);
+			break;
+		}
+	}
+	if (r_list_empty (exts)) {
+		r_list_append (exts, strdup (""));
+	}
+	return exts;
+}
+#endif
+
 // Returns bin location in PATH, NULL if not found
 R_API char *r_file_path(const char *bin) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
-	char *file = NULL;
-	char *path = NULL;
-	char *str, *ptr;
-	const char *extension = "";
 	if (r_str_startswith (bin, "./")) {
 		return r_file_exists (bin)
 			? r_file_abspath (bin)
 			: NULL;
 	}
 	char *path_env = r_sys_getenv ("PATH");
+	if (!path_env) {
+		return NULL;
+	}
 #if R2__WINDOWS__
-	if (!r_str_iendswith (bin, ".exe")) {
-		extension = ".exe";
-	}
+	RList *exts = file_path_exts (bin);
 #endif
-	if (path_env) {
-		str = path = strdup (path_env);
-		do {
-			ptr = strchr (str, R_SYS_ENVSEP[0]);
-			if (ptr) {
-				*ptr = '\0';
-			}
-			file = r_str_newf (R_JOIN_2_PATHS ("%s", "%s%s"), str, bin, extension);
+	char *file = NULL;
+	char *str = path_env;
+	char *ptr;
+	do {
+		ptr = strchr (str, R_SYS_ENVSEP[0]);
+		if (ptr) {
+			*ptr = '\0';
+		}
+#if R2__WINDOWS__
+		RListIter *iter;
+		const char *ext;
+		r_list_foreach (exts, iter, ext) {
+			file = r_str_newf (R_JOIN_2_PATHS ("%s", "%s%s"), str, bin, ext);
 			if (r_file_exists (file)) {
-				free (path);
-				free (path_env);
-				return file;
+				break;
 			}
-			if (ptr) {
-				str = ptr + 1;
-			}
-			free (file);
-		} while (ptr);
-	}
+			R_FREE (file);
+		}
+#else
+		file = r_str_newf (R_JOIN_2_PATHS ("%s", "%s"), str, bin);
+		if (!r_file_exists (file)) {
+			R_FREE (file);
+		}
+#endif
+		if (ptr) {
+			str = ptr + 1;
+		}
+	} while (!file && ptr);
+#if R2__WINDOWS__
+	r_list_free (exts);
+#endif
 	free (path_env);
-	free (path);
-	return NULL;
+	return file;
 }
 
 R_API char *r_stdin_readline(int *sz) {
