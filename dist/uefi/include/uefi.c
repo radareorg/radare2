@@ -13,8 +13,7 @@
 #define _GNU_SOURCE 1
 #endif
 
-#define GNU_EFI_USE_MS_ABI 1
-#include <efi.h>
+#include "r2_efi.h"
 
 #include <stddef.h>
 #include <stdint.h>
