@@ -20,6 +20,7 @@ typedef struct dwarf_parse_context_t {
 	const char *lang; // for demangling
 	RArena *arena;
 	HtUP/*<offset, DwarfType*>*/ *types; // rendered once per load
+	HtUP/*<unit, size_t*>*/ *siblings; // per unit, index of the DIE after each subtree
 } Context;
 
 typedef struct {
@@ -195,17 +196,51 @@ static ut64 get_die_size(const RBinDwarfCompUnit *cu, const RBinDwarfDie *die) {
 	return size;
 }
 
+static void free_siblings_kv(HtUPKv *kv) {
+	free (kv->value);
+}
+
+// index of the DIE after the subtree at idx, built once per unit so child walks stay linear
+static size_t die_next_sibling(Context *ctx, const RBinDwarfCompUnit *unit, size_t idx) {
+	const size_t count = RVecDwarfDie_length (unit->dies);
+	size_t *next = ht_up_find (ctx->siblings, (ut64)(size_t)unit, NULL);
+	if (!next) {
+		next = R_NEWS (size_t, count);
+		if (!next) {
+			return count;
+		}
+		const RBinDwarfDie *dies = unit->dies->_start;
+		size_t i = count;
+		// backwards, so the children of a DIE are resolved before it
+		while (i-- > 0) {
+			size_t j = i + 1;
+			if (dies[i].has_children) {
+				while (j < count && dies[j].abbrev_code) {
+					j = next[j];
+				}
+				// skip the null entry terminating the sibling list
+				j += j < count;
+			}
+			next[i] = j;
+		}
+		ht_up_insert (ctx->siblings, (ut64)(size_t)unit, next);
+	}
+	return next[idx];
+}
+
+// walks the direct children of the DIE at idx, the sibling list is terminated by a null entry
+#define DIE_FOREACH_CHILD(ctx, unit, idx, j, count) \
+	for (j = (idx) + 1; j < (count) && RVecDwarfDie_at ((unit)->dies, j)->abbrev_code; j = die_next_sibling (ctx, unit, j))
+
 // appends the subrange extents of an array DIE, its children live in its own unit
-static void parse_array_type(const RBinDwarfCompUnit *unit, const RBinDwarfDie *die, RStrBuf *strbuf) {
+static void parse_array_type(Context *ctx, const RBinDwarfCompUnit *unit, const RBinDwarfDie *die, RStrBuf *strbuf) {
 	if (die->has_children) {
 		const size_t count = RVecDwarfDie_length (unit->dies);
-		int child_depth = 1;
 		size_t j;
-		for (j = (size_t)(die - unit->dies->_start) + 1; child_depth > 0 && j < count; j++) {
+		DIE_FOREACH_CHILD (ctx, unit, (size_t)(die - unit->dies->_start), j, count) {
 			const RBinDwarfDie *child_die = RVecDwarfDie_at (unit->dies, j);
-			// right now we skip non direct descendats of the structure
 			// can be also DW_TAG_suprogram for class methods or tag for templates
-			if (child_depth == 1 && child_die->tag == DW_TAG_subrange_type) {
+			if (child_die->tag == DW_TAG_subrange_type) {
 				RBinDwarfAttrValue *value;
 				R_BIN_DWARF_DIE_FOREACH_ATTR (unit, child_die, value) {
 					switch (value->attr_name) {
@@ -223,13 +258,6 @@ static void parse_array_type(const RBinDwarfCompUnit *unit, const RBinDwarfDie *
 						break;
 					}
 				}
-			}
-			if (child_die->has_children) {
-				child_depth++;
-			}
-			// sibling list is terminated by null entry
-			if (child_die->abbrev_code == 0) {
-				child_depth--;
 			}
 		}
 	}
@@ -369,12 +397,11 @@ static st32 parse_type_at(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64
 		}
 		bool first_parameter = true;
 		if (die->has_children) {
-			int depth = 1;
 			size_t j;
 			const size_t count = RVecDwarfDie_length (unit->dies);
-			for (j = (size_t)(die - unit->dies->_start) + 1; depth > 0 && j < count; j++) {
+			DIE_FOREACH_CHILD (ctx, unit, (size_t)(die - unit->dies->_start), j, count) {
 				const RBinDwarfDie *child = RVecDwarfDie_at (unit->dies, j);
-				if (depth == 1 && (child->tag == DW_TAG_formal_parameter || child->tag == DW_TAG_unspecified_parameters)) {
+				if ((child->tag == DW_TAG_formal_parameter || child->tag == DW_TAG_unspecified_parameters)) {
 					// A lone unspecified child also represents an old C declaration with unknown arity.
 					if (child->tag == DW_TAG_unspecified_parameters && first_parameter && !prototype_known) {
 						if (child->has_children) {
@@ -400,14 +427,8 @@ static st32 parse_type_at(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64
 						r_strbuf_fini (&parameter);
 					}
 				}
-				if (child->has_children) {
-					depth++;
-				}
-				if (child->abbrev_code == 0) {
-					depth--;
-				}
 			}
-			if (depth > 0) {
+			if (j >= count) {
 				return -1;
 			}
 		}
@@ -429,7 +450,7 @@ static st32 parse_type_at(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64
 			}
 		}
 		if (die->tag == DW_TAG_array_type) {
-			parse_array_type (unit, die, strbuf);
+			parse_array_type (ctx, unit, die, strbuf);
 		} else {
 			r_strbuf_append (strbuf, type_qualifier (die->tag));
 		}
@@ -658,14 +679,11 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 	RAnalStructMember member = {0};
 	// Parse out all members, can this in someway be extracted to a function?
 	if (die->has_children) {
-		int child_depth = 1; // Direct children of the node
 		size_t j;
-		idx++; // Move to the first children node
-		for (j = idx; child_depth > 0 && j < ctx->count; j++) {
+		DIE_FOREACH_CHILD (ctx, ctx->unit, idx, j, ctx->count) {
 			const RBinDwarfDie *child_die = &ctx->all_dies[j];
-			// we take only direct descendats of the structure
 			// can be also DW_TAG_suprogram for class methods or tag for templates
-			if (child_depth == 1 && child_die->tag == DW_TAG_member) {
+			if (child_die->tag == DW_TAG_member) {
 				RAnalStructMember *result = parse_struct_member (ctx, j, &member);
 				if (!result) {
 					goto cleanup;
@@ -676,12 +694,6 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 					goto cleanup;
 				}
 				*slot = member;
-			}
-			if (child_die->has_children) {
-				child_depth++;
-			}
-			if (child_die->abbrev_code == 0) { // siblings terminator
-				child_depth--;
 			}
 		}
 	}
@@ -722,13 +734,10 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 
 	RAnalEnumCase cas = {0};
 	if (die->has_children) {
-		int child_depth = 1; // Direct children of the node
 		size_t j;
-		idx++; // Move to the first children node
-		for (j = idx; child_depth > 0 && j < ctx->count; j++) {
+		DIE_FOREACH_CHILD (ctx, ctx->unit, idx, j, ctx->count) {
 			const RBinDwarfDie *child_die = &ctx->all_dies[j];
-			// we take only direct descendats of the structure
-			if (child_depth == 1 && child_die->tag == DW_TAG_enumerator) {
+			if (child_die->tag == DW_TAG_enumerator) {
 				RAnalEnumCase *result = parse_enumerator (ctx, j, &cas);
 				if (!result) {
 					goto cleanup;
@@ -736,13 +745,6 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 				RAnalEnumCase *slot = RVecAnalEnumCase_emplace_back (&base_type->enum_data.cases);
 				*slot = cas;
 				cas.name = NULL;
-			}
-			if (child_die->has_children) {
-				child_depth++;
-			}
-			// sibling list is terminated by null entry
-			if (child_die->abbrev_code == 0) {
-				child_depth--;
 			}
 		}
 	}
@@ -1615,6 +1617,11 @@ static bool parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 		size_t j;
 		for (j = idx; child_depth > 0 && j < ctx->count; j++) {
 			const RBinDwarfDie *child_die = &ctx->all_dies[j];
+			if (child_die->tag == DW_TAG_subprogram) {
+				// nested functions are parsed on their own
+				j = die_next_sibling (ctx, ctx->unit, j) - 1;
+				continue;
+			}
 			RStrBuf type;
 			r_strbuf_init (&type);
 			if (child_die->tag == DW_TAG_formal_parameter || child_die->tag == DW_TAG_variable) {
@@ -2406,6 +2413,7 @@ R_API void r_anal_dwarf_process_info(const RAnal *anal, RAnalDwarfContext *ctx) 
 	const RBinDwarfCompUnit *unit;
 	RArena *arena = r_arena_new ();
 	HtUP *types = ht_up_new0 ();
+	HtUP *siblings = ht_up_new (NULL, free_siblings_kv, NULL);
 	R_VEC_FOREACH (info->comp_units, unit) {
 		Context dw_context = { // context per unit?
 			.anal = anal,
@@ -2420,13 +2428,15 @@ R_API void r_anal_dwarf_process_info(const RAnal *anal, RAnalDwarfContext *ctx) 
 			.scope_hi = UT64_MAX,
 			.lang = NULL,
 			.arena = arena,
-			.types = types
+			.types = types,
+			.siblings = siblings
 		};
 		R_VEC_FOREACH_I (unit->dies, j) {
 			parse_type_entry (&dw_context, j);
 		}
 	}
 	ht_up_free (types);
+	ht_up_free (siblings);
 	r_arena_free (arena);
 }
 
