@@ -23,6 +23,7 @@ operating system and no libc underneath.
 
 ```bash
 sudo apt install -y build-essential binutils clang lld gnu-efi musl-dev
+sudo apt install -y libclang-rt-dev  # aarch64 only
 ```
 
 ## Building
@@ -32,17 +33,19 @@ make -C dist/uefi
 ```
 
 That configures the ACR/make build, compiles the static libraries and links
-`build-uefi/BOOTX64.EFI`. The steps can be run separately with
-`make -C dist/uefi configure build link`.
+`build-uefi/BOOTX64.EFI` (`BOOTAA64.EFI` on aarch64). The build is native:
+`EFI_ARCH` defaults to the host and cross builds are not supported. The steps
+can be run separately with `make -C dist/uefi configure build link`.
 
 ## Running
 
 ```bash
-sudo apt install -y qemu-system-x86 ovmf
+sudo apt install -y qemu-system-x86 ovmf               # x86_64
+sudo apt install -y qemu-system-arm qemu-efi-aarch64   # aarch64
 make -C dist/uefi run
 ```
 
-Which boots the application in qemu with the OVMF firmware:
+Which boots the application in qemu with the OVMF/AAVMF firmware:
 
 ```
 radare2 6.2.1 on UEFI
@@ -52,5 +55,9 @@ radare2 6.2.1 on UEFI
 [0x00000000]> px 16
 ```
 
-To run it on real hardware copy `BOOTX64.EFI` into `EFI/BOOT/` on a FAT32
-formatted usb stick and select it from the firmware boot menu.
+`make -C dist/uefi smoke` does the same headless and fails if the prompt does
+not show up.
+
+To run it on real hardware copy `BOOTX64.EFI` or `BOOTAA64.EFI` into
+`EFI/BOOT/` on a FAT32 formatted usb stick and select it from the firmware
+boot menu.

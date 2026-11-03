@@ -1,4 +1,4 @@
-/* radare2 - LGPL - gnu-efi headers for the UEFI port */
+/* radare2 - LGPL - gnu-efi headers for the UEFI build */
 
 #ifndef R2_EFI_H
 #define R2_EFI_H

@@ -1,5 +1,5 @@
 # builds radare2 as an EFI application (BOOTX64.EFI/BOOTAA64.EFI) using acr, clang and lld
-.PHONY: all configure build link clean run
+.PHONY: all configure build link clean esp run smoke
 
 R2DIR:=$(abspath ../..)
 BUILDDIR=$(R2DIR)/build-uefi
@@ -9,7 +9,7 @@ CC=clang
 
 EFI_ARCH?=$(shell uname -m)
 ifneq ($(filter $(EFI_ARCH),x86_64 amd64),)
-EFI_ARCH:=x86_64
+override EFI_ARCH:=x86_64
 EFI_NAME=BOOTX64.EFI
 ARCH_CFLAGS=-mno-red-zone
 ARCH_LIBS=
@@ -17,10 +17,10 @@ QEMU=qemu-system-x86_64 -machine q35,accel=kvm:tcg -cpu max
 QEMU_CODE?=/usr/share/OVMF/OVMF_CODE_4M.fd
 QEMU_VARS?=/usr/share/OVMF/OVMF_VARS_4M.fd
 else ifneq ($(filter $(EFI_ARCH),aarch64 arm64),)
-EFI_ARCH:=aarch64
+override EFI_ARCH:=aarch64
 EFI_NAME=BOOTAA64.EFI
-# outline atomics select the implementation at runtime through getauxval
-ARCH_CFLAGS=-mno-outline-atomics
+# outline atomics need getauxval, x18 is reserved by the UEFI calling convention
+ARCH_CFLAGS=-mno-outline-atomics -ffixed-x18
 # compiler-rt provides the soft-float helpers for the 128 bit long double
 ARCH_LIBS=$(shell $(CC) -rtlib=compiler-rt -print-libgcc-file-name)
 QEMU=qemu-system-aarch64 -machine virt,accel=kvm:tcg -cpu max
@@ -103,14 +103,27 @@ $(BUILDDIR)/$(EFI_NAME): $(BUILDDIR)/r2efi.so
 		--target efi-app-$(EFI_ARCH) --subsystem=10 $< $@
 	ls -l $@
 
-run: $(BUILDDIR)/$(EFI_NAME)
+QEMU_ARGS=-m 512M -nographic \
+	-drive if=pflash,format=raw,readonly=on,file=$(QEMU_CODE) \
+	-drive if=pflash,format=raw,file=$(BUILDDIR)/vars.fd \
+	-drive format=raw,file=fat:rw:$(BUILDDIR)/esp
+SMOKE_TIMEOUT?=300
+
+esp: $(BUILDDIR)/$(EFI_NAME)
 	mkdir -p $(BUILDDIR)/esp/EFI/BOOT
 	cp -f $(BUILDDIR)/$(EFI_NAME) $(BUILDDIR)/esp/EFI/BOOT/$(EFI_NAME)
 	cp -f $(QEMU_VARS) $(BUILDDIR)/vars.fd
-	$(QEMU) -m 512M -nographic \
-		-drive if=pflash,format=raw,readonly=on,file=$(QEMU_CODE) \
-		-drive if=pflash,format=raw,file=$(BUILDDIR)/vars.fd \
-		-drive format=raw,file=fat:rw:$(BUILDDIR)/esp
+
+run: esp
+	$(QEMU) $(QEMU_ARGS)
+
+smoke: esp
+	@$(QEMU) $(QEMU_ARGS) < /dev/null > $(BUILDDIR)/smoke.log 2>&1 & pid=$$!; \
+	i=0; while [ $$i -lt $(SMOKE_TIMEOUT) ] && kill -0 $$pid 2>/dev/null && \
+		! grep -qF ']> ' $(BUILDDIR)/smoke.log; do sleep 1; i=$$((i + 1)); done; \
+	kill $$pid 2>/dev/null; \
+	if grep -qF ']> ' $(BUILDDIR)/smoke.log; then echo "smoke: ok"; \
+	else cat $(BUILDDIR)/smoke.log; echo "smoke: no prompt after $$i s"; exit 1; fi
 
 clean:
 	$(MAKE) -C $(R2DIR) clean
