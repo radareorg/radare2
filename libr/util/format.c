@@ -10,8 +10,8 @@ static void pf_print_addr(RPrint *p, ut64 addr) {
                        addr,
                        p->consb.cons->context->pal.reset);
     } else {
-        pf_print_addr(p, addr);
-    }
+        r_print_printf (p, "0x%08" PFMT64x " = ", addr);
+}
 }
 #include <r_util.h>
 #include <r_util/r_print.h>
@@ -2160,8 +2160,16 @@ R_API int r_print_format_internal(RPrint *p, RPrintFormat *pf, ut64 seek, const 
 			}
 		}
 		const char *ends = " "; // XXX trailing space warning
-		snprintf (namefmt, sizeof (namefmt), "%%%ds :%s",
-			((maxl + 1) *(1 + pf->slide)) % STRUCTPTR, ends);
+		if (p->flags & R_PRINT_FLAGS_COLOR) {
+			snprintf (namefmt, sizeof (namefmt), "%s%%%ds%s :%s",
+				p->consb.cons->context->pal.label,
+				((maxl + 1) * (1 + pf->slide)) % STRUCTPTR,
+				p->consb.cons->context->pal.reset,
+				ends);
+		} else {
+			snprintf (namefmt, sizeof (namefmt), "%%%ds :%s",
+				((maxl + 1) * (1 + pf->slide)) % STRUCTPTR, ends);
+		}
 	}
 #define ISPOINTED ((slide % STRUCTFLAG) / STRUCTPTR <= (oldslide % STRUCTFLAG) / STRUCTPTR)
 #define ISNESTED ((slide % STRUCTPTR) <= (oldslide % STRUCTPTR))
