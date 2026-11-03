@@ -1,0 +1,13 @@
+R2PM_BEGIN
+
+R2PM_DESC "Windows binary-only fixture"
+
+R2PM_INSTALL() {
+	echo source
+}
+
+R2PM_BINSTALL_WINDOWS() {
+echo binary-%R2PM_GLOBAL%
+}
+
+R2PM_END

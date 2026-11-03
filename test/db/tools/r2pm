@@ -115,6 +115,30 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=r2pm Windows installs binary-only packages and rejects unix-only ones
+REQUIRE=windows
+FILE=-
+CMDS=<<EOF
+rmrf r2pm-win-fallback-r2r
+%R2PM_DBDIR=scripts/r2pm/radare2-pm/db
+%R2PM_GITDIR=r2pm-win-fallback-r2r/git
+%XDG_DATA_HOME=r2pm-win-fallback-r2r/data
+%R2PM_OFFLINE=1
+%R2_LOG_LEVEL=1
+r2pm -qi winbinary
+r2pm -qi winnone
+r2pm -ql
+rmrf r2pm-win-fallback-r2r
+EOF
+EXPECT=<<EOF
+binary-0
+winbinary
+EOF
+EXPECT_ERR=<<EOF
+ERROR: winnone cannot be installed on Windows
+EOF
+RUN
+
 NAME=r2pm -H R2PM_GITDIR
 FILE=-
 CMDS=%R2PM_GITDIR=test;r2pm -H R2PM_GITDIR

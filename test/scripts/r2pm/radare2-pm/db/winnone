@@ -1,0 +1,9 @@
+R2PM_BEGIN
+
+R2PM_DESC "Unix-only fixture"
+
+R2PM_INSTALL() {
+	echo source
+}
+
+R2PM_END

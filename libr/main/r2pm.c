@@ -1618,6 +1618,25 @@ static bool r2pm_have_packages(void) {
 	return res;
 }
 
+#if R2__WINDOWS__
+// unknown packages are left to the regular install path to report
+static bool r2pm_windows_installable(const char *pkg, bool *binary_only) {
+	*binary_only = false;
+	char *path = r2pm_pkgpath (pkg);
+	char *data = path? r_file_slurp (path, NULL): NULL;
+	free (path);
+	if (!data) {
+		return true;
+	}
+	r_str_normalize_newlines (data);
+	const bool source = strstr (data, R2PM_INSTALL_WINDOWS) || strstr (data, R2PM_INSTALL_R2);
+	const bool binary = strstr (data, R2PM_BINSTALL_WINDOWS);
+	free (data);
+	*binary_only = binary && !source;
+	return source || binary;
+}
+#endif
+
 static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, bool global, bool binary) {
 	RListIter *iter;
 	const char *t;
@@ -1630,7 +1649,13 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, 
 	}
 	r_str_trim (r2v);
 	R_LOG_INFO ("Using r2-%s and r2pm-" R2_VERSION, r2v);
-	if (binary) {
+#if R2__WINDOWS__
+	// packages without a source installer fall back to their binary release
+	const bool may_binary = true;
+#else
+	const bool may_binary = binary;
+#endif
+	if (may_binary) {
 		char *version = r_sys_getenv ("R2V");
 		if (R_STR_ISEMPTY (version)) {
 			r_sys_setenv ("R2V", r2v);
@@ -1652,8 +1677,21 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, 
 		if (clean) {
 			r2pm_clean_pkg (t);
 		}
-		if (binary || r2pm_clone (t) == 0) {
-			rc |= r2pm_install_pkg (t, clean, global, binary);
+		bool use_binary = binary;
+#if R2__WINDOWS__
+		bool binary_only;
+		if (!r2pm_windows_installable (t, &binary_only)) {
+			R_LOG_ERROR ("%s cannot be installed on Windows", t);
+			rc = 1;
+			continue;
+		}
+		if (binary_only && !binary) {
+			R_LOG_INFO ("%s has no Windows source installer, using its binary release", t);
+			use_binary = true;
+		}
+#endif
+		if (use_binary || r2pm_clone (t) == 0) {
+			rc |= r2pm_install_pkg (t, clean, global, use_binary);
 		} else {
 			R_LOG_ERROR ("Cannot clone %s", t);
 			rc = 1;
@@ -1742,12 +1780,18 @@ static bool is_valid_package(const char *dbdir, const char *pkg) {
 	if (data) {
 		r_str_normalize_newlines (data);
 	}
+#if R2__WINDOWS__
+	bool valid = data && (strstr (data, R2PM_INSTALL_R2)
+		|| strstr (data, R2PM_INSTALL_WINDOWS)
+		|| strstr (data, R2PM_BINSTALL_WINDOWS));
+#else
 	bool valid = data && (strstr (data, R2PM_INSTALL_R2)
 		|| strstr (data, R2PM_INSTALL_QJS)
 		|| strstr (data, R2PM_INSTALL_UNIX)
 		|| strstr (data, R2PM_INSTALL_WINDOWS)
 		|| strstr (data, R2PM_BINSTALL)
 		|| strstr (data, R2PM_BINSTALL_WINDOWS));
+#endif
 	if (!valid) {
 		R_LOG_DEBUG ("Unable to find an R2PM_INSTALL script in '%s'", pkg);
 	}
