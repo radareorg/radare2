@@ -753,7 +753,10 @@ static JSModuleDef *js_init_module_os(JSContext *ctx) {
 	return m;
 }
 
+static JSValue r2compile(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
+
 static const JSCFunctionListEntry js_r2_funcs[] = {
+	JS_CFUNC_DEF ("compile", 2, r2compile),
 	JS_CFUNC_DEF ("cmd", 1, r2cmd), // XXX deprecate, we have r2.cmd already
 	JS_CFUNC_DEF ("plugin", 2, r2plugin),
 	JS_CFUNC_DEF ("unload", 2, r2plugin_unload),
@@ -921,6 +924,8 @@ static JSModuleDef *js_init_module_r2pipe(JSContext *ctx) {
 	return m;
 }
 
+#include "qjs/bytecode.c"
+
 static void register_helpers(JSContext *ctx) {
 	js_init_module_os (ctx);
 	js_init_module_r2 (ctx);
@@ -1031,6 +1036,7 @@ static bool eval(JSContext *ctx, const char *code) {
 		code++;
 	}
 	JSValue v = JS_Eval (ctx, code, strlen (code), "-", flags);
+	bool ok = !JS_IsException (v);
 	if (JS_IsException (v)) {
 		js_std_dump_error (ctx);
 		JSValue e = JS_GetException (ctx);
@@ -1049,7 +1055,7 @@ static bool eval(JSContext *ctx, const char *code) {
 	JS_SetInterruptHandler (rt, NULL, NULL);
 	current_ctx = NULL;
 
-	return true;
+	return ok;
 }
 
 static bool lang_quickjs_run(RLangSession *s, const char *code, int len) {
@@ -1068,8 +1074,14 @@ static bool lang_quickjs_file(RLangSession *s, const char *file) {
 	QjsPluginManager *pm = s->plugin_data;
 	QjsContext *qctx = &pm->default_ctx;
 	bool rc = false;
-	char *code = r_file_slurp (file, NULL);
+	size_t size;
+	char *code = r_file_slurp (file, &size);
 	if (code) {
+		if (r_str_endswith (file, ".bin.r2.js") || (size >= 8 && !memcmp (code, QJS_BYTECODE_MAGIC, 8))) {
+			rc = r2qjs_eval_bytecode (qctx->ctx, (const ut8 *)code, size);
+			free (code);
+			return rc;
+		}
 		int loaded = r2qjs_loader (qctx->ctx, code);
 		if (loaded == 1) {
 			rc = true;
@@ -1077,8 +1089,7 @@ static bool lang_quickjs_file(RLangSession *s, const char *file) {
 			rc = false;
 		} else {
 			// not a package
-			eval (qctx->ctx, code);
-			rc = true;
+			rc = !*code || eval (qctx->ctx, code);
 		}
 		free (code);
 	}
