@@ -84,11 +84,13 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 			? 1
 			: 0;
 	} break;
-	case 4:
-		if (regset->arena->size - off - 1 >= 0) {
-			return (r_read_at_ble8 (regset->arena->bytes, off)) & 0xF;
+	case 4: {
+		int byte = item->offset / 8;
+		if (byte < regset->arena->size) {
+			return (regset->arena->bytes[byte] >> (item->offset % 8)) & 0xf;
 		}
 		break;
+	}
 	case 8:
 		if (regset->arena->size - off - 1 >= 0) {
 			return r_read_at_ble8 (regset->arena->bytes, off);
@@ -228,18 +230,12 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	case 24:
 		r_write_ble24 (src, value, be);
 		break;
-	case 4:
-		// read from buffer fill the gaps
-		{
-			ut8 tmp;
-			ut8 *buf = arena->bytes + (item->offset / 8);
-			tmp = *buf;
-			tmp >>= 4;
-			tmp <<= 4;
-			tmp |= (value & 0xf);
-			*buf = tmp;
-		}
-		break;
+	case 4: {
+		ut8 *buf = arena->bytes + item->offset / 8;
+		int shift = item->offset % 8;
+		*buf = (*buf & ~(0xf << shift)) | ((value & 0xf) << shift);
+		return true;
+	}
 	case 8:
 		r_write_ble8 (src, (ut8) (value & UT8_MAX));
 		break;
