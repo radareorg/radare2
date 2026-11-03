@@ -179,6 +179,7 @@ extern RAsmPlugin r_asm_plugin_cil;
 extern RAsmPlugin r_asm_plugin_cosmac;
 extern RAsmPlugin r_asm_plugin_dalvik;
 extern RAsmPlugin r_asm_plugin_dummy;
+extern RAsmPlugin r_asm_plugin_e0c62;
 extern RAsmPlugin r_asm_plugin_evm;
 extern RAsmPlugin r_asm_plugin_gb;
 extern RAsmPlugin r_asm_plugin_h8300;

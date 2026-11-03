@@ -9,6 +9,7 @@ sdb_files = [
   'chip8',
   'cosmac',
   'dalvik',
+  'e0c62',
   'evm',
   'gb',
   'i4004',

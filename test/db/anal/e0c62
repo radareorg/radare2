@@ -1,0 +1,61 @@
+NAME=E0C62 branch targets use the current page
+FILE=malloc://0x400
+CMDS=<<EOF2
+e log.level=0
+e asm.arch=e0c62
+e asm.bits=16
+s 0x210
+wx 1000100610051004
+ao 4~type:,jump:,fail:
+EOF2
+EXPECT=<<EOF2
+type: jmp
+jump: 0x00000220
+type: cjmp
+jump: 0x00000220
+fail: 0x00000214
+type: call
+jump: 0x00000020
+fail: 0x00000216
+type: call
+jump: 0x00000220
+fail: 0x00000218
+EOF2
+RUN
+
+NAME=E0C62 op types
+FILE=malloc://0x400
+CMDS=<<EOF2
+e log.level=0
+e asm.arch=e0c62
+e asm.bits=16
+wx fb0f100fa00a400f500f600f700f
+ao 7~^type
+EOF2
+EXPECT=<<EOF2
+type: nop
+type: acmp
+type: sub
+type: or
+type: and
+type: add
+type: sub
+EOF2
+RUN
+
+NAME=E0C62 fail address wraps within the bank
+FILE=malloc://0x4000
+CMDS=<<EOF2
+e log.level=0
+e asm.arch=e0c62
+e asm.bits=16
+wx 0002 @ 0x1ffe
+wx 0004 @ 0x3ffe
+ao 1 @ 0x1ffe~fail:
+ao 1 @ 0x3ffe~fail:
+EOF2
+EXPECT=<<EOF2
+fail: 0x00000000
+fail: 0x00002000
+EOF2
+RUN
