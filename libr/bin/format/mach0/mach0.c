@@ -412,10 +412,11 @@ static bool parse_segments(struct MACH0_(obj_t) * mo, ut64 off) {
 	if (off > mo->size || off + sizeof (struct MACH0_(segment_command)) > mo->size) {
 		return false;
 	}
-	if (! (mo->segs = realloc (mo->segs, size_sects))) {
-		r_sys_perror ("realloc (seg)");
+	struct MACH0_(segment_command) *segs = realloc (mo->segs, size_sects);
+	if (!segs) {
 		return false;
 	}
+	mo->segs = segs;
 	j = mo->nsegs - 1;
 	len = r_buf_read_at (mo->b, off, segcom, sizeof (struct MACH0_(segment_command)));
 	if (len != sizeof (struct MACH0_(segment_command))) {
@@ -491,11 +492,12 @@ static bool parse_segments(struct MACH0_(obj_t) * mo, ut64 off) {
 			return false;
 		}
 
-		if (! (mo->sects = r_array_resize (mo->sects, mo->nsects, sizeof (struct MACH0_(section))))) {
-			r_sys_perror ("realloc (sects)");
+		struct MACH0_(section) *sects = r_array_resize (mo->sects, mo->nsects, sizeof (struct MACH0_(section)));
+		if (!sects) {
 			mo->nsects = sect;
 			return false;
 		}
+		mo->sects = sects;
 
 		for (k = sect, j = 0; k < mo->nsects; k++, j++) {
 			ut64 offset = off + sizeof (struct MACH0_(segment_command)) + j * sizeof (struct MACH0_(section));

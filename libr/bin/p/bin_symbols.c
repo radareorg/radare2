@@ -214,6 +214,7 @@ static RCoreSymCacheElement *parse_dragons(RBinFile *bf, RBuffer *buf, int off, 
 		available = r_buf_read_at (buf, off - 8, b, size);
 		if (available != size) {
 			R_LOG_WARN ("r_buf_read_at failed");
+			free (b);
 			return NULL;
 		}
 		if (!memcmp ("\x1a\x2b\xb2\xa1", b, 4)) { // 0x130  ?
