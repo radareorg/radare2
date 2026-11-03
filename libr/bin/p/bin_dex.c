@@ -1139,7 +1139,7 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		const char *ftype = is_sfield ? "sfield": "ifield";
 		char *s = r_str_newf ("%s.%s_%s:%s", cls_name, ftype, fieldName, type_str);
 		sym.name = r_bin_name_new (s);
-		sym.type = is_sfield? "STATIC": "FIELD";
+		sym.type = "FIELD";
 		s = r_str_replace (s, "method.", "", 0);
 		r_str_replace_char (s, ';', 0);
 		r_bin_name_filtered (sym.name, s);

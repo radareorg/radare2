@@ -526,8 +526,8 @@ ic  Lcom/stericson/RootTools/Installer
 ic 17
 EOF
 EXPECT=<<EOF
-1649 0x00006a20 0x00006a20 NONE   FUNC   0        imp.Ljava/lang/System.method.getProperty(Ljava/lang/String;)Ljava/lang/String;
-1650 0x00006a28 0x00006a28 NONE   FUNC   0        imp.Ljava/lang/System.method.getProperty(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+1649 0x00006a20 0x00006a20 NONE   FUNC  0        imp.Ljava/lang/System.method.getProperty(Ljava/lang/String;)Ljava/lang/String;
+1650 0x00006a28 0x00006a28 NONE   FUNC  0        imp.Ljava/lang/System.method.getProperty(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 --
 0x00007890 [0x0000c6c0 - 0x0000cd2e]   1646 java class 0 Lcom/ice/tar/FastTarStream :: Ljava/lang/Object;
 0x0000c6c0 java   method   0 pC   Lcom/ice/tar/FastTarStream.method.<init>(Ljava/io/InputStream;)V
@@ -1981,7 +1981,7 @@ EXPECT=<<EOF
 --
 0x0011b938 java   method   4 p    Lcom/google/progress/Gps$1.method.onProviderEnabled(Ljava/lang/String;)V
 --
-544  0x0001b938 0x0011b938 GLOBAL FUNC   2        Lcom/google/progress/Gps$1.method.onProviderEnabled(Ljava/lang/String;)V
+544  0x0001b938 0x0011b938 GLOBAL FUNC  2        Lcom/google/progress/Gps$1.method.onProviderEnabled(Ljava/lang/String;)V
 EOF
 RUN
 
@@ -2003,7 +2003,7 @@ EXPECT=<<EOF
 --
 0x00022530 java   method   4 p    Lcom/google/progress/Gps$1.method.onProviderEnabled(Ljava/lang/String;)V
 --
-544  0x0001b938 0x00022530 GLOBAL FUNC   2        Lcom/google/progress/Gps$1.method.onProviderEnabled(Ljava/lang/String;)V
+544  0x0001b938 0x00022530 GLOBAL FUNC  2        Lcom/google/progress/Gps$1.method.onProviderEnabled(Ljava/lang/String;)V
 EOF
 RUN
 
