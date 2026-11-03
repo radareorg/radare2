@@ -1,7 +1,6 @@
 /* radare2 efi application entrypoint - LGPL - Copyright 2026 - pancake */
 
-#define GNU_EFI_USE_MS_ABI 1
-#include <efi.h>
+#include "r2_efi.h"
 
 #include <r_core.h>
 #include <r_util/libc.h>
