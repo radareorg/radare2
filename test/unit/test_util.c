@@ -704,6 +704,36 @@ bool test_sys_cmdf_long(void) {
 	mu_end;
 }
 
+bool test_mem_bits(void) {
+	const ut8 words_le[] = { 0xbc, 0x0a, 0xef, 0x0d };
+	const ut8 words_be[] = { 0x0a, 0xbc, 0x0d, 0xef };
+	const ut8 wide[] = { 0xbc, 0x1a };
+	ut8 packed[3];
+	ut8 words[4];
+	mu_assert_eq (r_mem_bits_unit (9), 2, "9 bit units use 2 bytes");
+	mu_assert_eq (r_mem_bits_unit (25), 4, "25 bit units use 4 bytes");
+	mu_assert_true (r_mem_pack_bits (packed, words_le, 2, 12, false), "le pack");
+	mu_assert_memeq (packed, (const ut8 *)"\xbc\xfa\xde", 3, "le 12 bit stream");
+	r_mem_unpack_bits (words, packed, 2, 12, false);
+	mu_assert_memeq (words, words_le, 4, "le unpack");
+	mu_assert_true (r_mem_pack_bits (packed, words_be, 2, 12, true), "be pack");
+	mu_assert_memeq (packed, (const ut8 *)"\xab\xcd\xef", 3, "be 12 bit stream");
+	r_mem_unpack_bits (words, packed, 2, 12, true);
+	mu_assert_memeq (words, words_be, 4, "be unpack");
+	mu_assert_false (r_mem_pack_bits (packed, wide, 1, 12, false), "values wider than 12 bits");
+	mu_assert_eq (r_mem_get_bits ((const ut8 *)"abc", 9, 9, false), 0x1b1, "le 9 bit unit");
+	mu_assert_eq (r_mem_get_bits ((const ut8 *)"abc", 9, 9, true), 0x189, "be 9 bit unit");
+	ut8 stream[4] = { 0 };
+	r_mem_set_bits (stream, 3, 25, 0x1abcdef, true);
+	mu_assert_eq (r_mem_get_bits (stream, 3, 25, true), 0x1abcdef, "be 25 bit roundtrip");
+	r_mem_set_bits (stream, 3, 25, 0x0fedcba, false);
+	mu_assert_eq (r_mem_get_bits (stream, 3, 25, false), 0x0fedcba, "le 25 bit roundtrip");
+	ut8 ones[3] = { 0xff, 0xff, 0xff };
+	r_mem_set_bits (ones, 4, 12, 0, false);
+	mu_assert_memeq (ones, (const ut8 *)"\x0f\x00\xff", 3, "bits outside the unit are preserved");
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_ignore_prefixes);
 	mu_run_test (test_remove_r2_prefixes);
@@ -718,6 +748,7 @@ int all_tests(void) {
 	mu_run_test (test_endian_fromstring);
 	mu_run_test (test_endian_is);
 	mu_run_test (test_endian_roundtrip);
+	mu_run_test (test_mem_bits);
 	mu_run_test (test_file_is_abspath);
 	mu_run_test (test_sys_executable_path);
 	mu_run_test (test_sandbox_grain_parse);
