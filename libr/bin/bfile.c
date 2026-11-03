@@ -1274,8 +1274,8 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RSt
 					bs->ordinal = src.ordinal;
 					bs->vaddr = cfstr_vaddr;
 					bs->paddr = offset + bo->boffset + i;
+					// not indexed, a record pointing at another one would chain cstr. prefixes
 					bs->string = r_str_newf ("cstr.%s", src.string);
-					r_bin_strings_index_insert (strings_index, bs->vaddr, RVecRBinString_length (ret) - 1);
 				}
 			}
 			free (sbuf);
