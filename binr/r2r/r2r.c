@@ -1265,7 +1265,11 @@ int main(int argc, char **argv) {
 	}
 
 	if (opt.log_mode) {
-		setvbuf (stdout, NULL, _IOLBF, 0);
+#if R2__WINDOWS__
+		setvbuf (stdout, NULL, _IONBF, 0);
+#else
+		setvbuf (stdout, NULL, _IOLBF, BUFSIZ);
+#endif
 	}
 
 	char *cwd = NULL;
