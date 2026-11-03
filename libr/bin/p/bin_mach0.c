@@ -1188,11 +1188,12 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 }
 
 static ut64 size(RBinFile *bf) {
+	RVecSegment *segments = MACH0_(get_segments_vec) (bf, bf->bo->bin_obj);
 	ut64 off = 0;
 	ut64 len = 0;
-	if (sections_vec (bf)) {
+	if (segments) {
 		RBinSection *section;
-		R_VEC_FOREACH (&bf->bo->sections_vec, section) {
+		R_VEC_FOREACH (segments, section) {
 			if (section->paddr > off) {
 				off = section->paddr;
 				len = section->size;

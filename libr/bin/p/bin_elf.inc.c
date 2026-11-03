@@ -291,10 +291,10 @@ static RBinAddr* newEntry(RBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, in
 }
 
 static void process_constructors(RBinFile *bf, RList *ret, int bits) {
-	if (!sections_vec (bf)) {
+	const RVecRBinSection *secs = Elf_(load_sections) (bf, bf->bo->bin_obj);
+	if (!secs) {
 		return;
 	}
-	RVecRBinSection *secs = &(bf->bo->sections_vec);
 	RBinSection *sec;
 	R_VEC_FOREACH (secs, sec) {
 		if (sec->size > ALLOC_SIZE_LIMIT) {
@@ -329,26 +329,13 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 			R_LOG_WARN ("unexpected section size");
 		}
 		const ut64 len = R_MIN ((ut64)size, sec->size);
-// XXX R2_590 this can be done once with proper compile time ifdef
-		if (bits == 32) {
-			int i;
-			for (i = 0; (i + 3) < len; i += 4) {
-				ut32 addr32 = r_read_le32 (buf + i);
-				if (addr32) {
-					RBinAddr *ba = newEntry (bf, sec->paddr + i, sec->vaddr + i,
-					                         (ut64)addr32, type, bits);
-					r_list_append (ret, ba);
-				}
-			}
-		} else {
-			int i;
-			for (i = 0; (i + 7) < len; i += 8) {
-				ut64 addr64 = r_read_le64 (buf + i);
-				if (addr64) {
-					RBinAddr *ba = newEntry (bf, sec->paddr + i, sec->vaddr + i,
-					                         addr64, type, bits);
-					r_list_append (ret, ba);
-				}
+		const ut64 ptrsize = bits == 32? 4: 8;
+		const ut64 ptrmax = ptrsize == 4? UT32_MAX: UT64_MAX;
+		ut64 i;
+		for (i = 0; i + ptrsize <= len; i += ptrsize) {
+			ut64 addr = ptrsize == 4? r_read_le32 (buf + i): r_read_le64 (buf + i);
+			if (addr && addr != ptrmax) {
+				r_list_append (ret, newEntry (bf, sec->paddr + i, sec->vaddr + i, addr, type, bits));
 			}
 		}
 		free (buf);
@@ -2443,12 +2430,11 @@ static void lookup_sections(RBinFile *bf, RBinInfo *ret) {
 	RBinSection *section;
 	bool is_go = false;
 	ret->has_retguard = -1;
-	if (!sections_vec (bf)) {
+	const RVecRBinSection *sections = Elf_(load_sections) (bf, bf->bo->bin_obj);
+	if (!sections) {
 		return;
 	}
-	RVecRBinSection *sections = &(bf->bo->sections_vec);
-	R_VEC_FOREACH (sections, section)
-	{
+	R_VEC_FOREACH (sections, section) {
 		if (is_go && ret->has_retguard != -1) {
 			break;
 		}
@@ -2672,11 +2658,11 @@ static RList* fields(RBinFile *bf) {
 }
 
 static ut64 size(RBinFile *bf) {
+	const RVecRBinSection *sections = Elf_(load_sections) (bf, bf->bo->bin_obj);
 	ut64 off = 0;
 	ut64 len = 0;
-	if (sections_vec (bf)) {
-		RBinSection *section;
-		RVecRBinSection *sections = &(bf->bo->sections_vec);
+	RBinSection *section;
+	if (sections) {
 		R_VEC_FOREACH (sections, section) {
 			if (section->paddr > off) {
 				off = section->paddr;
