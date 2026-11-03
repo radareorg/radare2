@@ -1,7 +1,11 @@
 /* radare - LGPL - Copyright 2019-2025 - MapleLeaf-X */
 
-#include <ntstatus.h>
+// winnt.h defines the same STATUS_* macros unless this is set, which makes
+// ntstatus.h emit a wall of macro redefinition warnings.
+#define WIN32_NO_STATUS
 #include <r_core.h>
+#undef WIN32_NO_STATUS
+#include <ntstatus.h>
 #include "windows_debug.h"
 
 // XXX remove globals
