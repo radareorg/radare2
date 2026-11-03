@@ -78,6 +78,23 @@ with features.
   * `R2_DEBUG_ASSERT=1`: Show backtrace and trap when assert checks fail.
   * `R2_LOG_LEVEL=10`: Show debug log messages, Used for plugin loading issues.
 
+### JavaScript errors
+
+QuickJS errors include their stack traces by default, including errors passed to
+`console.error(error)` and errors from bundled modules or core plugin callbacks.
+Script files retain their filenames in the trace. Pass the error object rather
+than just `error.message` or a string: converting it to a string loses the stack.
+Frames are logged separately so long traces do not share one log buffer.
+radare2 requests up to 64 frames, the bundled engine's maximum. Scripts can
+lower `Error.stackTraceLimit` if needed. This does not change the stack size
+limit or enable tracing of every call.
+
+The bundled QuickJS engine does not apply source maps, including inline maps.
+A minified bundle's trace reports generated line and column numbers. Keep the
+matching source map and remap those positions with an external source-map
+consumer, or use an unminified build for debugging. A source map alone does not
+make QuickJS report original source locations or remove its 64-frame limit.
+
 ### ABI stability and versioning
 
 During abi-stable seassons [x.y.0-x.y.8] it is not allowed to break the abi, this
