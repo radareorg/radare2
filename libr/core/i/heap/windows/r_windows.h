@@ -7,6 +7,11 @@
 #else
 
 #include <windows.h>
+// r_w32.h defines NTSTATUS as a macro for old SDKs; winternl.h provides the
+// real typedef, so drop the macro before including it.
+#ifdef NTSTATUS
+#undef NTSTATUS
+#endif
 #include <winternl.h>
 
 /*
