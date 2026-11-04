@@ -95,6 +95,10 @@ R_API char *r_anal_var_display(RAnal *anal, RAnalVar *var) {
 		R_LOG_ERROR ("type:%s doesn't exist", var->type);
 		return NULL;
 	}
+	if (!r_str_is_r2safe (fmt)) {
+		free (fmt);
+		return NULL;
+	}
 	bool usePxr = !strcmp (var->type, "int"); // hacky but useful
 	char *result = NULL;
 	switch (var->kind) {

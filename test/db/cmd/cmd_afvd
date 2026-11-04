@@ -26,3 +26,23 @@ var var_10h = 0x00177ff0 = (qword)0x1111111111111111
 var var_18h = 0x00177fe8 = (qword)0x2222222222222222
 EOF
 RUN
+
+NAME=afvd rejects unsafe type formats
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx c3
+af
+'afvb -4 a int32_t
+afvd a
+'tk type.int32_t="d;?e TYPE_FORMAT_MARKER"
+afvd a
+.afvd a
+afvd~TYPE_FORMAT_MARKER
+EOF
+EXPECT=<<EOF
+pf d @rbp-0x4
+EOF
+EXPECT_ERR=
+RUN

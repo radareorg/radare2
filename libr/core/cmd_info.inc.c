@@ -2642,12 +2642,10 @@ static void cmd_idp(RCore *core, PJ *pj, const char *input, bool is_array, int m
 
 	switch (input[2]) {
 	case ' ': // "idp file.pdb"
-		{
-			char *safe = r_str_sanitize_r2 (input + 3);
-			if (safe) {
-				r_core_callf (core, ".idpi* %s", safe);
-				free (safe);
-			}
+		if (r_str_is_r2safe (input + 3)) {
+			r_core_callf (core, ".idpi* %s", input + 3);
+		} else {
+			R_LOG_ERROR ("Invalid pdb path");
 		}
 		break;
 	case '\0': // "idp"

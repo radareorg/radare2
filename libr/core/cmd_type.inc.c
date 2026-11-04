@@ -2316,10 +2316,10 @@ static int cmd_type(void *data, const char *input) {
 		case '.': // "tu."
 			if (input[2]) {
 				const char *typename = r_str_trim_head_ro (input + 2);
-				char *safe = r_str_sanitize_r2 (typename);
-				if (safe) {
-					r_core_cmdf (core, ".tu %s", safe);
-					free (safe);
+				if (r_str_is_r2safe (typename)) {
+					r_core_cmdf (core, ".tu %s", typename);
+				} else {
+					R_LOG_ERROR ("Invalid type name");
 				}
 			}
 			break;
@@ -2451,10 +2451,10 @@ static int cmd_type(void *data, const char *input) {
 		case '.': // "ts."
 			if (input[2]) {
 				const char *typename = r_str_trim_head_ro (input + 2);
-				char *safe = r_str_sanitize_r2 (typename);
-				if (safe) {
-					r_core_cmdf (core, ".ts %s", safe);
-					free (safe);
+				if (r_str_is_r2safe (typename)) {
+					r_core_cmdf (core, ".ts %s", typename);
+				} else {
+					R_LOG_ERROR ("Invalid type name");
 				}
 			}
 			break;
@@ -3042,18 +3042,12 @@ static int cmd_type(void *data, const char *input) {
 		} else if (input[1] == 'v') { // "tpv"
 			const char *type_name = r_str_trim_head_ro (input + 2);
 			char *fmt = r_type_format (TDB, type_name);
-			if (fmt && *fmt) {
-				ut64 val = core->addr;
-				{
-				char *safe = r_str_sanitize_r2 (fmt);
-				if (safe) {
-					r_core_cmdf (core, "pf %s @v:0x%08" PFMT64x, safe, val);
-					free (safe);
-				}
-			}
+			if (R_STR_ISNOTEMPTY (fmt) && r_str_is_r2safe (fmt)) {
+				r_core_cmdf (core, "pf %s @v:0x%08" PFMT64x, fmt, core->addr);
 			} else {
 				r_cons_cmd_help_match (core->cons, help_msg_tp, "tpv", 0, true);
 			}
+			free (fmt);
 		} else if (input[1] == ' ' || input[1] == 'x' || !input[1]) {
 			char *tmp = strdup (input);
 			char *type_begin = strchr (tmp, ' ');
@@ -3078,15 +3072,11 @@ static int cmd_type(void *data, const char *input) {
 					break;
 				}
 				if (input[1] == 'x' && arg) { // "tpx"
-					{
-					char *safe = r_str_sanitize_r2 (fmt);
-					char *safe_arg = r_str_sanitize_r2 (arg);
-					if (safe && safe_arg) {
-						r_core_cmdf (core, "pf %s @x:%s", safe, safe_arg);
+					if (r_str_is_r2safe (fmt) && r_str_is_r2safe (arg)) {
+						r_core_cmdf (core, "pf %s @x:%s", fmt, arg);
+					} else {
+						R_LOG_ERROR ("Invalid format or hexpairs");
 					}
-					free (safe);
-					free (safe_arg);
-				}
 				} else {
 					ut64 addr = arg ? r_num_math (core->num, arg): core->addr;
 					ut64 original_addr = addr;

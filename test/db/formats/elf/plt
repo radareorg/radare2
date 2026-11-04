@@ -168,11 +168,15 @@ CMDS=<<EOF
 iS~.text~?
 is~plt.~?
 is~plt.crc32_z
+is~plt.__gmon_start__
+is~plt.__cxa_finalize
 EOF
 EXPECT=<<EOF
 0
-48
+50
 29  0x00003ac0 0x00003ac0 GLOBAL FUNC   28        plt.crc32_z
+12  0x00003a00 0x00003a00 WEAK   FUNC   28        plt.__gmon_start__
+13  0x00003fc0 0x00003fc0 WEAK   FUNC   28        plt.__cxa_finalize
 EOF
 RUN
 

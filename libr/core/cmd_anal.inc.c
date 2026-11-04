@@ -2050,10 +2050,7 @@ static void __cmd_afvf(RCore *core, const char *input) {
 }
 
 R_IPI char *core_varvalue(RCore *core, const char *name) {
-	char *safe = r_str_sanitize_r2 (name);
-	char *res = r_core_cmd_strf (core, ".afvd %s", safe);
-	free (safe);
-	return res;
+	return r_str_is_r2safe (name)? r_core_cmd_strf (core, ".afvd %s", name): NULL;
 }
 
 static int cmd_afv(RCore *core, const char *str) {
@@ -5584,10 +5581,8 @@ static void cmd_aflxj(RCore *core) {
 static void cmd_afci(RCore *core, RAnalFunction *fcn, const char *mycc) {
 	const char *fcncc = fcn? r_anal_function_cc (fcn): NULL;
 	const char *cc = mycc? mycc: fcncc? fcncc: "reg";
-	char *safe = r_str_sanitize_r2 (cc);
-	if (safe) {
-		r_core_cmdf (core, "afcll~%s (", safe);
-		free (safe);
+	if (r_str_is_r2safe (cc)) {
+		r_core_cmdf (core, "afcll~%s (", cc);
 	}
 }
 
