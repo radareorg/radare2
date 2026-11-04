@@ -162,3 +162,11 @@ EXPECT=<<EOF
 {"index":18,"source":4240192,"from":4240206,"to":4240617,"handler":4240617,"filter":0,"kind":"catch","typeFilter":33554822,"type":"System.Object","catchAll":true}
 EOF
 RUN
+
+NAME=dotnet: MethodDef rows sharing the exception clauses of a method body
+FILE=bins/dotnet/shared-eh-bodies.exe
+CMDS=iwq~?
+EXPECT=<<EOF
+16
+EOF
+RUN

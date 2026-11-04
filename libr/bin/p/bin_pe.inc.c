@@ -574,19 +574,23 @@ static char *dotnet_symbol_name_by_token(RList *symbols, ut32 token) {
 	return NULL;
 }
 
-// the type of a CIL catch clause is a TypeDef, TypeRef or TypeSpec token
-static char *clr_class_name(RList *symbols, ut32 token) {
-	switch (token >> 24) {
-	case 0x01: // TypeRef
-	case 0x02: // TypeDef
-	case 0x1b: // TypeSpec
-		return dotnet_symbol_name_by_token (symbols, token);
-	}
-	return NULL;
+#define CLR_MAX_TYPE_NAME 512
+
+typedef struct {
+	RIntervalTree seen; // file ranges of the clause tables already walked
+	HtUP *types; // TypeDef, TypeRef and TypeSpec tokens to their qualified names
+} ClrTrycatch;
+
+static void clr_type_free(HtUPKv *kv) {
+	free (kv->value);
+}
+
+static bool clr_seen_cb(RIntervalNode *node, void *user) {
+	return false;
 }
 
 // ECMA-335 II.25.4.6 - parse the exception clauses of a single IL method body
-static void clr_trycatch_method(RBinFile *bf, RVecRBinTrycatch *trycatch, RList *symbols, DotNetSymbol *sym, ut64 image_base) {
+static void clr_trycatch_method(RBinFile *bf, RVecRBinTrycatch *trycatch, ClrTrycatch *ct, DotNetSymbol *sym, ut64 image_base) {
 	const ut64 file_size = r_buf_size (bf->buf);
 	const ut64 source = sym->vaddr + image_base;
 	ut64 at = sym->eh_paddr;
@@ -606,6 +610,11 @@ static void clr_trycatch_method(RBinFile *bf, RVecRBinTrycatch *trycatch, RList 
 			: (ut32)shdr[1];
 		const ut32 entry_size = fat? 24: 12;
 		if (data_size < 4 + entry_size || at + data_size > file_size) {
+			return;
+		}
+		// method bodies may share their data sections, walk each one just once
+		if (!r_interval_tree_all_intersect (&ct->seen, at, at + data_size, false, clr_seen_cb, NULL)
+				|| !r_interval_tree_insert (&ct->seen, at, at + data_size, NULL)) {
 			return;
 		}
 		if (kind & CIL_SECT_EHTABLE) {
@@ -653,13 +662,15 @@ static void clr_trycatch_method(RBinFile *bf, RVecRBinTrycatch *trycatch, RList 
 				case CIL_EH_FAULT:
 					tc->kind = R_BIN_TRYCATCH_FINALLY;
 					break;
-				case CIL_EH_CATCH:
+				case CIL_EH_CATCH: {
 					tc->kind = R_BIN_TRYCATCH_CATCH;
 					tc->type_filter = extra;
-					tc->type = clr_class_name (symbols, extra);
+					const char *type = ht_up_find (ct->types, extra, NULL);
+					tc->type = type? strdup (type): NULL;
 					// catching System.Object catches everything
 					tc->catch_all = tc->type && !strcmp (tc->type, "System.Object");
 					break;
+				}
 				default:
 					break;
 				}
@@ -682,14 +693,41 @@ static void clr_trycatch(RBinFile *bf, RVecRBinTrycatch *trycatch) {
 	if (!symbols) {
 		return;
 	}
-	const ut64 image_base = PE_(r_bin_pe_get_image_base) (pe);
+	ClrTrycatch ct = { .types = ht_up_new (NULL, clr_type_free, NULL) };
+	if (!ct.types) {
+		return;
+	}
+	r_interval_tree_init (&ct.seen, NULL);
 	RListIter *iter;
 	DotNetSymbol *sym;
+	// index the names of the tokens a catch clause can name, the first symbol wins
+	r_list_foreach (symbols, iter, sym) {
+		const ut32 table = sym->token >> 24;
+		bool found;
+		if ((table != 0x01 && table != 0x02 && table != 0x1b) || !sym->name) {
+			continue;
+		}
+		ht_up_find (ct.types, sym->token, &found);
+		if (found) {
+			continue;
+		}
+		char *name = R_STR_ISNOTEMPTY (sym->namespace)
+			? r_str_newf ("%s.%s", sym->namespace, sym->name): strdup (sym->name);
+		if (name && strlen (name) > CLR_MAX_TYPE_NAME) {
+			char *trunc = r_str_trunc_ellipsis (name, CLR_MAX_TYPE_NAME);
+			free (name);
+			name = trunc;
+		}
+		ht_up_insert (ct.types, sym->token, name);
+	}
+	const ut64 image_base = PE_(r_bin_pe_get_image_base) (pe);
 	r_list_foreach (symbols, iter, sym) {
 		if (sym->eh_paddr && sym->type && !strcmp (sym->type, "methoddef")) {
-			clr_trycatch_method (bf, trycatch, symbols, sym, image_base);
+			clr_trycatch_method (bf, trycatch, &ct, sym, image_base);
 		}
 	}
+	r_interval_tree_fini (&ct.seen);
+	ht_up_free (ct.types);
 }
 
 static RVecRBinTrycatch *pe_trycatch(RBinFile *bf) {
