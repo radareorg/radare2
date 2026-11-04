@@ -74,9 +74,9 @@ static bool dwarf_is_elf(RBinFile *bf) {
 }
 
 // .zdebug_* or SHF_COMPRESSED sections
-static bool dwarf_section_is_compressed(RBinSection *section, bool is_elf) {
+R_IPI bool dwarf_section_is_compressed(RBinFile *bf, RBinSection *section) {
 	return (section->name && strstr (section->name, "zdebug"))
-		|| (is_elf && R_BIN_ELF_SCN_IS_COMPRESSED (section->flags));
+		|| (dwarf_is_elf (bf) && R_BIN_ELF_SCN_IS_COMPRESSED (section->flags));
 }
 
 // size of the line table as parsed, read from the compression header without inflating
@@ -90,7 +90,7 @@ R_API ut64 r_bin_dwarf_line_size(RBinFile *bf, const char **section_name) {
 		*section_name = section->name;
 	}
 	const bool is_elf = dwarf_is_elf (bf);
-	if (is_elf && dwarf_section_is_compressed (section, is_elf)) {
+	if (is_elf && dwarf_section_is_compressed (bf, section)) {
 		const bool is64 = r_buf_read8_at (bf->buf, EI_CLASS) == ELFCLASS64;
 		const bool be = r_bin_is_big_endian (bf->rbin);
 		const ut64 at = r_bin_file_get_buffer_offset (bf, section->paddr);
@@ -144,7 +144,7 @@ R_IPI const ut8 *dwarf_get_section_bytes(RBinFile *bf, RBinSection *section) {
 		return NULL;
 	}
 	const bool is_elf = dwarf_is_elf (bf);
-	if (dwarf_section_is_compressed (section, is_elf)) {
+	if (dwarf_section_is_compressed (bf, section)) {
 		int dst_len = 0;
 		ut8 *decomp = is_elf? dwarf_inflate (bf, section, offset, &dst_len): NULL;
 		if (!decomp) {
@@ -155,6 +155,10 @@ R_IPI const ut8 *dwarf_get_section_bytes(RBinFile *bf, RBinSection *section) {
 		}
 		// allocate 1 byte more to safely treat any offset as string if needed
 		RSlice buf = r_arena_scalloc (bf->arena, dst_len + 1);
+		if (!buf.ptr) {
+			free (decomp);
+			return NULL;
+		}
 		memcpy ((void *)buf.ptr, decomp, dst_len);
 		free (decomp);
 		section->bytes = buf;

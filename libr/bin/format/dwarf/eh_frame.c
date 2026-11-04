@@ -248,7 +248,8 @@ static void eh_add_action(RBinFile *bf, RVecRBinTrycatch *result, const EhReader
 R_IPI void r_bin_dwarf_parse_lsda(RBinFile *bf, RVecRBinTrycatch *result, ut64 fcn_addr, ut64 lsda_addr) {
 	R_RETURN_IF_FAIL (bf && bf->bo && result);
 	RBinSection *section = r_bin_get_section_at (bf->bo, lsda_addr, true);
-	if (!section || section->size > ST32_MAX) {
+	// Runtime exception tables cannot be compressed.
+	if (!section || section->size > ST32_MAX || dwarf_section_is_compressed (bf, section)) {
 		return;
 	}
 	const ut8 *bytes = dwarf_get_section_bytes (bf, section);
@@ -502,7 +503,7 @@ R_IPI void r_bin_dwarf_parse_eh_frame(RBinFile *bf, RVecRBinTrycatch *result) {
 			break;
 		}
 	}
-	if (!section || section->size < 8 || section->size > ST32_MAX) {
+	if (!section || section->size < 8 || section->size > ST32_MAX || dwarf_section_is_compressed (bf, section)) {
 		return;
 	}
 	const ut8 *bytes = dwarf_get_section_bytes (bf, section);

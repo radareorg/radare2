@@ -78,6 +78,7 @@ typedef struct {
 } DwarfStrSections;
 
 R_IPI RBinSection *dwarf_get_section(RBinFile *bf, int sn);
+R_IPI bool dwarf_section_is_compressed(RBinFile *bf, RBinSection *section);
 R_IPI const ut8 *dwarf_get_section_bytes(RBinFile *bf, RBinSection *section);
 R_IPI const char *dwarf_get_section_string(RBinFile *bf, RBinSection *section, size_t offset);
 R_IPI const ut8 *dwarf_get_section_strings(RBinFile *bf, RBinSection *section);

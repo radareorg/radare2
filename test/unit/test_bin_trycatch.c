@@ -38,6 +38,126 @@ static void fixture_fini(TrycatchFixture *fixture) {
 	r_io_free (fixture->io);
 }
 
+static RBuffer *compressed_trycatch_elf(bool frame, bool zdebug, ut64 flags) {
+	const ut8 cie[] = {
+		0x0f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x01, 0x7a, 0x4c, 0x52, 0x00, 0x01, 0x78, 0x10,
+		0x02, 0x03, 0x03
+	};
+	const ut8 lsda[] = {
+		0xff, 0xff, 0x01, 0x04, 0x00, 0x01, 0x02, 0x00
+	};
+	const ut8 compressed_lsda[] = {
+		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x78, 0x9c, 0xfb, 0xff, 0x9f, 0x91, 0x85, 0x81,
+		0x91, 0x89, 0x01, 0x00, 0x0f, 0x1a, 0x02, 0x07
+	};
+	const ut8 compressed_frame[] = {
+		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0xbf, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x78, 0x9c, 0xe3, 0x67, 0x80, 0x00, 0xc6, 0x2a,
+		0x9f, 0x20, 0x06, 0xc6, 0x0a, 0x01, 0x26, 0x66,
+		0x66, 0x41, 0x20, 0x57, 0x1c, 0x24, 0xd6, 0xc0,
+		0xc0, 0x20, 0x00, 0xa4, 0x58, 0x40, 0x24, 0x48,
+		0x50, 0x07, 0x45, 0x50, 0x01, 0x22, 0xe8, 0x88,
+		0x22, 0x68, 0x00, 0x11, 0x0c, 0x43, 0x11, 0x74,
+		0x80, 0x08, 0x66, 0xa3, 0x08, 0x06, 0x40, 0x04,
+		0x1b, 0x50, 0x04, 0x13, 0x20, 0x82, 0x53, 0x51,
+		0x04, 0x0b, 0x20, 0x82, 0xab, 0x50, 0x04, 0x1b,
+		0x20, 0xce, 0x06, 0x00, 0x59, 0xa0, 0x0c, 0x26
+	};
+	const char names[] = "\0.eh_frame\0.gcc_except_table\0.shstrtab\0.zdebug_except_table\0.zdebug.eh_frame";
+	ut8 data[1536] = {0x7f, 'E', 'L', 'F', 2, 1, 1};
+	const bool compressed = zdebug || (flags & 0x800);
+	r_write_le16 (data + 16, 3);
+	r_write_le16 (data + 18, 62);
+	r_write_le32 (data + 20, 1);
+	r_write_le64 (data + 40, 0x200);
+	r_write_le16 (data + 52, 64);
+	r_write_le16 (data + 58, 64);
+	r_write_le16 (data + 60, 11);
+	r_write_le16 (data + 62, 10);
+	memcpy (data + 0x40, cie, sizeof (cie));
+	size_t i;
+	for (i = 0; i < 8; i++) {
+		ut8 *fde = data + 0x40 + sizeof (cie) + i * 21;
+		r_write_le32 (fde, 17);
+		r_write_le32 (fde + 4, sizeof (cie) + i * 21 + 4);
+		r_write_le32 (fde + 8, 0x8000);
+		r_write_le32 (fde + 12, 16);
+		fde[16] = 4;
+		r_write_le32 (fde + 17, 0x1000 + i * 0x1000);
+	}
+	if (frame && compressed) {
+		memcpy (data + 0x40, compressed_frame, sizeof (compressed_frame));
+	}
+	const bool compressed_table = !frame && compressed;
+	memcpy (data + 0x100, compressed_table? compressed_lsda: lsda,
+		compressed_table? sizeof (compressed_lsda): sizeof (lsda));
+	memcpy (data + 0x140, names, sizeof (names));
+	for (i = 1; i <= 10; i++) {
+		ut8 *section = data + 0x200 + i * 64;
+		const bool table = i > 1 && i < 10;
+		const bool target = frame? i == 1: table;
+		ut32 name = i == 10? 29: table? (zdebug && !frame? 39: 11): (zdebug && frame? 60: 1);
+		r_write_le32 (section, name);
+		r_write_le32 (section + 4, i == 10? 3: 1);
+		r_write_le64 (section + 8, i == 10? 0: target? flags: 2);
+		r_write_le64 (section + 16, i == 10? 0: table? (i - 1) * 0x1000: 0x100000);
+		r_write_le64 (section + 24, i == 10? 0x140: table? 0x100: 0x40);
+		ut64 size = table? (compressed_table? sizeof (compressed_lsda): sizeof (lsda))
+			: frame && compressed? sizeof (compressed_frame): sizeof (cie) + 8 * 21 + 4;
+		r_write_le64 (section + 32, i == 10? sizeof (names): size);
+		r_write_le64 (section + 48, 1);
+	}
+	return r_buf_new_with_bytes (data, sizeof (data));
+}
+
+static bool test_trycatch_compressed_sections(void) {
+	const struct {
+		bool frame;
+		bool zdebug;
+		ut64 flags;
+	} cases[] = {
+		{false, false, 0x802},
+		{false, false, 0x800},
+		{false, true, 0},
+		{true, false, 0x802},
+		{true, false, 0x800},
+		{true, true, 0},
+		{false, false, 0}
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (cases); i++) {
+		TrycatchFixture fixture = fixture_new ();
+		RBuffer *buf = compressed_trycatch_elf (cases[i].frame, cases[i].zdebug, cases[i].flags);
+		mu_assert_notnull (buf, "create ELF with aliased exception sections");
+		RBinFileOptions opt = {0};
+		r_bin_file_options_init (&opt, -1, 0, 0, 0);
+		opt.filename = "compressed-trycatch";
+		mu_assert_true (r_bin_open_buf (fixture.bin, buf, &opt), "open ELF exception sections");
+		r_unref (buf);
+		RBinFile *bf = r_bin_cur (fixture.bin);
+		const bool compressed = cases[i].zdebug || (cases[i].flags & 0x800);
+		const RVecRBinTrycatch *entries = r_bin_file_get_trycatch (bf);
+		mu_assert_notnull (entries, "load exception regions");
+		mu_assert_eq (RVecRBinTrycatch_length (entries), compressed? 0: 8, "only uncompressed exception tables are parsed");
+		if (compressed) {
+			RBinSection *section;
+			R_VEC_FOREACH (&bf->bo->sections_vec, section) {
+				if (section->paddr == (cases[i].frame? 0x40: 0x100)) {
+					mu_assert_null (section->bytes.ptr, "compressed exception sections must not be inflated or cached");
+				}
+			}
+		}
+		fixture_fini (&fixture);
+	}
+	mu_end;
+}
+
 static RBinTrycatch make_entry(ut64 source, ut64 id) {
 	RBinTrycatch entry = {
 		.source = source,
@@ -470,6 +590,7 @@ int main(int argc, char **argv) {
 		return benchmark (count)? 0: 1;
 	}
 	mu_run_test (test_trycatch_lookup);
+	mu_run_test (test_trycatch_compressed_sections);
 	mu_run_test (test_trycatch_delete);
 	mu_run_test (test_trycatch_ownership);
 	mu_run_test (test_trycatch_mixed_edits);
