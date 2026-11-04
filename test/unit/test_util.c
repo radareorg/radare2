@@ -470,6 +470,56 @@ bool test_sandbox_localhost(void) {
 	mu_end;
 }
 
+bool test_file_temp_trailing_slash(void) {
+#if R2__UNIX__ && !__wasi__
+	char *cwd = r_sys_getdir ();
+	mu_assert_notnull (cwd, "get temporary test directory");
+	char *with_slash = r_str_newf ("%s/", cwd);
+	char *expected = r_str_newf ("%s/r2-temp-path.", cwd);
+	mu_assert_notnull (with_slash, "add trailing directory separator");
+	mu_assert_notnull (expected, "create expected temporary path prefix");
+	const char *directories[] = { cwd, with_slash };
+	const char *variables[] = { "TMPDIR", "XDG_RUNTIME_DIR" };
+	char *old_tmp = r_sys_getenv ("TMPDIR");
+	char *old_xdg = r_sys_getenv ("XDG_RUNTIME_DIR");
+	size_t variable, directory;
+	for (variable = 0; variable < R_ARRAY_SIZE (variables); variable++) {
+		for (directory = 0; directory < R_ARRAY_SIZE (directories); directory++) {
+			r_sys_setenv ("TMPDIR", NULL);
+			r_sys_setenv ("XDG_RUNTIME_DIR", NULL);
+			r_sys_setenv (variables[variable], directories[directory]);
+			char *path = r_file_temp ("r2-temp-path");
+			char *extended = r_file_temp_ex ("r2-temp-path", ".txt");
+			char *created = NULL;
+			int fd = r_file_mkstemp ("r2-temp-path", &created);
+			r_sys_setenv ("TMPDIR", old_tmp);
+			r_sys_setenv ("XDG_RUNTIME_DIR", old_xdg);
+			if (fd >= 0) {
+				close (fd);
+				r_file_rm (created);
+			}
+			mu_assert_notnull (path, "create temporary path");
+			mu_assert_true (r_str_startswith (path, expected), "temporary path has one directory separator");
+			mu_assert_notnull (extended, "create temporary path with extension");
+			mu_assert_true (r_str_startswith (extended, expected), "extended temporary path has one directory separator");
+			mu_assert_true (r_str_endswith (extended, ".txt"), "preserve temporary file extension");
+			mu_assert_true (fd >= 0, "create temporary file");
+			mu_assert_notnull (created, "return temporary file path");
+			mu_assert_true (r_str_startswith (created, expected), "created temporary file has one directory separator");
+			free (path);
+			free (extended);
+			free (created);
+		}
+	}
+	free (old_tmp);
+	free (old_xdg);
+	free (expected);
+	free (with_slash);
+	free (cwd);
+#endif
+	mu_end;
+}
+
 bool test_file_home(void) {
 	const char *homes[] = { NULL, "", R_SYS_DIR "home" R_SYS_DIR "r2" };
 	size_t i;
@@ -800,6 +850,7 @@ int all_tests(void) {
 	mu_run_test (test_endian_is);
 	mu_run_test (test_endian_roundtrip);
 	mu_run_test (test_mem_bits);
+	mu_run_test (test_file_temp_trailing_slash);
 	mu_run_test (test_file_home);
 	mu_run_test (test_xdg_plugins_home);
 	mu_run_test (test_file_is_abspath);

@@ -1053,7 +1053,11 @@ R_API char *r_file_temp(const char * R_NULLABLE prefix) {
 		prefix = "";
 	}
 	char *path = r_file_tmpdir ();
-	char *res = r_str_newf ("%s/%s.%"PFMT64x, path, prefix, r_time_now ());
+	if (!path) {
+		return NULL;
+	}
+	const char *separator = r_str_endswith (path, "/")? "": "/";
+	char *res = r_str_newf ("%s%s%s.%"PFMT64x, path, separator, prefix, r_time_now ());
 	free (path);
 	return res;
 }
@@ -1065,7 +1069,8 @@ R_API char *r_file_temp_ex(const char * R_NULLABLE prefix, const char * R_NULLAB
 	char *res = NULL;
 	if (path) {
 		ut64 t = r_time_now ();
-		res = r_str_newf ("%s/%s.%" PFMT64x "%s", path, prefix, t, ex);
+		const char *separator = r_str_endswith (path, "/")? "": "/";
+		res = r_str_newf ("%s%s%s.%" PFMT64x "%s", path, separator, prefix, t, ex);
 		free (path);
 	}
 	return res;
@@ -1100,10 +1105,11 @@ static inline char *file_fmt_template(const char *fmt) {
 		}
 		r_list_free (splt);
 	}
+	const char *separator = r_str_endswith (path, "/")? "": "/";
 	if (R_STR_ISNOTEMPTY (ex)) {
-		name = r_str_newf ("%s/%s%s.XXXXXX", path, pref, ex);
+		name = r_str_newf ("%s%s%s%s.XXXXXX", path, separator, pref, ex);
 	} else {
-		name = r_str_newf ("%s/%s.XXXXXX", path, pref);
+		name = r_str_newf ("%s%s%s.XXXXXX", path, separator, pref);
 	}
 	free (dup);
 	free (path);
