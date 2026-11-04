@@ -448,3 +448,24 @@ ERROR: PDB root was not initialized
 ERROR: pdb was not parsed
 EOF
 RUN
+
+NAME=pdb stream directory and streams cannot use more pages than the file has
+FILE=-
+CMDS=<<EOF
+idpi bins/pdb/aliased-directory.pdb
+idpi bins/pdb/aliased-streams.pdb
+?e done
+EOF
+EXPECT=<<EOF
+done
+EOF
+EXPECT_ERR=<<EOF
+WARN: Cannot find base address, flags will probably be misplaced
+ERROR: Invalid page count
+ERROR: pdb was not parsed
+WARN: Cannot find base address, flags will probably be misplaced
+WARN: PDB streams use more pages than the file has
+ERROR: Could not initialize root stream
+ERROR: pdb was not parsed
+EOF
+RUN

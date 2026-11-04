@@ -584,6 +584,49 @@ bool test_pdb_stream_file_size(void) {
 	mu_end;
 }
 
+bool test_pdb_page_bounds(void) {
+	const struct {
+		ut32 offset, value, size;
+		bool valid;
+	} cases[] = {
+		{ 52, 1, 3072, true },
+		{ 44, 3073, 3072, false },
+		{ 44, 3, 3072, false },
+		{ 52, 6, 3072, false },
+		{ 52, UT32_MAX, 3072, false },
+		{ 52, 1, 1023, false },
+		{ 52, 5, 3071, false },
+		{ 1028, 0x80000000, 3072, false },
+		{ 1028, UT32_MAX - 1, 3072, false },
+		{ 1028, UT32_MAX, 3072, true },
+		{ 1028, 0, 3072, true },
+		{ 1028, 3073, 3072, false },
+		{ 1028, 1024, 3072, false },
+		{ 1032, 6, 3072, false },
+		{ 1032, UT32_MAX, 3072, false },
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (cases); i++) {
+		ut8 data[3072] = "Microsoft C/C++ MSF 7.00\r\n\x1a" "DS\0\0\0";
+		r_write_le32 (data + 32, 512);
+		r_write_le32 (data + 40, 6);
+		r_write_le32 (data + 44, 12);
+		r_write_le32 (data + 52, 1);
+		r_write_le32 (data + 512, 2);
+		r_write_le32 (data + 2560, 2);
+		r_write_le32 (data + 1024, 1);
+		r_write_le32 (data + 1028, 4);
+		r_write_le32 (data + 1032, 3);
+		r_write_le32 (data + cases[i].offset, cases[i].value);
+		RBinPdb pdb = {0};
+		mu_assert_true (r_bin_pdb_parser_with_buf (&pdb, r_buf_new_with_bytes (data, cases[i].size)), "PDB header");
+		bool parsed = pdb.pdb_parse (&pdb);
+		pdb.finish_pdb_parse (&pdb);
+		mu_assert_eq (parsed, cases[i].valid, "PDB page bounds");
+	}
+	mu_end;
+}
+
 bool all_tests(void) {
 #if R_SYS_ENDIAN == 0
 	mu_run_test (test_pdb_tpi_cpp);
@@ -591,6 +634,7 @@ bool all_tests(void) {
 	mu_run_test (test_pdb_type_save);
 	mu_run_test (test_pdb_enum_modified_utype);
 	mu_run_test (test_pdb_stream_file_size);
+	mu_run_test (test_pdb_page_bounds);
 #endif
 	return tests_passed != tests_run;
 }

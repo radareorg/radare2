@@ -193,133 +193,85 @@ static int count_pages(int length, int page_size) {
 
 
 static int init_pdb7_root_stream(RBinPdb *pdb, int *root_page_list, int pages_amount, EStream indx, int root_size, int page_size) {
-	R_PDB_STREAM *pdb_stream = NULL;
-	int tmp_data_max_size = 0;
-	char *tmp_data = NULL;
-	int stream_size = 0;
-	int num_streams = 0;
-	int *sizes = NULL;
-	int num_pages = 0;
-	int data_size = 0;
-	int i = 0;
-	int pos = 0;
-
-	R_PDB7_ROOT_STREAM *root_stream7;
-
 	pdb->root_stream = R_NEW0 (R_PDB7_ROOT_STREAM);
-	init_r_pdb_stream (&pdb->root_stream->pdb_stream, pdb->buf, root_page_list, pages_amount, indx, root_size, page_size);
-
-	root_stream7 = pdb->root_stream;
-	pdb_stream = &(root_stream7->pdb_stream);
-
-	data_size = stream_file_get_size (&pdb_stream->stream_file);
-	if (data_size < 1) {
+	R_PDB7_ROOT_STREAM *root_stream = pdb->root_stream;
+	init_r_pdb_stream (&root_stream->pdb_stream, pdb->buf, root_page_list, pages_amount, indx, root_size, page_size);
+	R_STREAM_FILE *stream = &root_stream->pdb_stream.stream_file;
+	int data_size = stream_file_get_size (stream);
+	if (data_size < 4) {
 		return 0;
 	}
-	char *data = (char *)calloc (1, R_MAX (data_size, 8));
+	char *data = (char *)calloc (1, data_size);
 	if (!data) {
 		return 0;
 	}
-	if (!stream_file_get_data (&pdb_stream->stream_file, data)) {
-		free (data);
-		return 0;
+	if (!stream_file_get_data (stream, data)) {
+		goto error;
 	}
-
-	const ut32 num_streams_u = r_read_le32 (data);
-	if (data_size < 4 || num_streams_u > (ut32)((data_size - 4) / 4)) {
-		R_FREE (data);
+	ut32 num_streams = r_read_le32 (data);
+	if (num_streams > (ut32)((data_size - 4) / 4)) {
 		R_LOG_ERROR ("Too many streams: current PDB file is incorrect");
-		return 0;
+		goto error;
 	}
-	num_streams = (int)num_streams_u;
-	tmp_data = data;
-	tmp_data += 4;
-
-	root_stream7->num_streams = num_streams;
-
-	tmp_data_max_size = data_size - (num_streams * 4) - 4;
-	if (tmp_data_max_size <= 0) {
-		R_FREE (data);
-		R_LOG_ERROR ("Too many streams: current PDB file is incorrect");
-		return 0;
+	root_stream->num_streams = num_streams;
+	root_stream->streams_list = r_list_newf ((RListFree)free_stream_page);
+	if (!root_stream->streams_list) {
+		goto error;
 	}
-
-	sizes = (int *)calloc (num_streams, sizeof (int));
-	if (!sizes) {
-		R_FREE (data);
-		R_LOG_ERROR ("Size too big: current PDB file is incorrect");
-		return 0;
-	}
-
-	char *sizes_end = data + 4 + (num_streams * 4);
-	for (i = 0; i < num_streams && (tmp_data + 4 <= sizes_end); i++) {
-		stream_size = (int)r_read_le32 (tmp_data);
-		tmp_data += 4;
-		if (stream_size == UT32_MAX) {
+	char *page_data = data + 4 + (num_streams * 4);
+	int remaining = data_size - 4 - (num_streams * 4);
+	ut64 file_pages = r_buf_size (pdb->buf) / page_size;
+	ut64 free_pages = file_pages;
+	ut32 i;
+	for (i = 0; i < num_streams; i++) {
+		int stream_size = (int)r_read_le32 (data + 4 + (i * 4));
+		if (stream_size == -1) {
 			stream_size = 0;
 		}
-		sizes[i] = stream_size;
-	}
-
-	// char *tmp_file_name = (char *) malloc (strlen ("/root/test.pdb.000") + 1);
-	// short ii;
-	// FILE *tmp_file;
-	tmp_data = ((char *)data + num_streams * 4 + 4);
-	root_stream7->streams_list = r_list_newf ((RListFree)free_stream_page);
-	RList *pList = root_stream7->streams_list;
-	for (i = 0; i < num_streams; i++) {
-		num_pages = count_pages (sizes[i], page_size);
-
-		if ((pos + num_pages) > tmp_data_max_size) {
-			R_LOG_WARN ("looks like there is no correct values of stream size in PDB file");
-			free (data);
-			free (sizes);
-			return 0;
+		if (stream_size < 0) {
+			R_LOG_WARN ("Invalid PDB stream size");
+			goto error;
 		}
-		ut32 size;
-		if (r_mul_overflow (num_pages, (ut32)4, &size)) {
-			R_LOG_WARN ("num_pages overflow");
-			free (data);
-			free (sizes);
-			return 0;
+		int num_pages = count_pages (stream_size, page_size);
+		if (num_pages > free_pages) {
+			R_LOG_WARN ("PDB streams use more pages than the file has");
+			goto error;
 		}
-		if (size > UT16_MAX) {
-			R_LOG_WARN ("too many pages");
-			free (data);
-			free (sizes);
-			return 0;
+		free_pages -= num_pages;
+		if (num_pages > UT16_MAX / 4 || num_pages > remaining / 4) {
+			R_LOG_WARN ("Invalid PDB stream page count");
+			goto error;
 		}
-		int *tmp = (int *)calloc (num_pages, sizeof (int));
 		SPage *page = R_NEW0 (SPage);
-		if (num_pages != 0) {
-			if ((pos + size) > tmp_data_max_size) {
-				R_LOG_ERROR ("Data overrun by num_pages");
-				free (data);
-				free (sizes);
-				free (tmp);
-				free (page);
-				return 0;
+		if (!r_list_append (root_stream->streams_list, page)) {
+			free_stream_page (page);
+			goto error;
+		}
+		page->stream_size = stream_size;
+		page->num_pages = num_pages;
+		if (num_pages) {
+			page->stream_pages = (int *)calloc (num_pages, sizeof (int));
+			if (!page->stream_pages) {
+				goto error;
 			}
 			int j;
 			for (j = 0; j < num_pages; j++) {
-				tmp[j] = (int)r_read_le32 (tmp_data + pos + (j * 4));
+				ut32 page_index = r_read_le32 (page_data + (j * 4));
+				if (page_index > ST32_MAX || page_index >= file_pages) {
+					R_LOG_WARN ("Invalid PDB stream page index");
+					goto error;
+				}
+				page->stream_pages[j] = page_index;
 			}
-			pos += size;
-			page->stream_size = sizes[i];
-			page->stream_pages = tmp;
-			page->num_pages = num_pages;
-		} else {
-			page->stream_size = 0;
-			page->stream_pages = NULL;
-			page->num_pages = 0;
-			free (tmp);
 		}
-
-		r_list_append (pList, page);
+		page_data += num_pages * 4;
+		remaining -= num_pages * 4;
 	}
-	free (sizes);
 	free (data);
 	return 1;
+error:
+	free (data);
+	return 0;
 }
 
 static void parse_pdb_info_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream) {
@@ -484,7 +436,7 @@ static int pdb_read_root(RBinPdb *pdb) {
 
 static bool pdb7_parse(RBinPdb *pdb) {
 	char signature[PDB7_SIGNATURE_LEN + 1];
-	int *root_index_pages = NULL;
+	ut8 *root_index_data = NULL;
 	void *root_page_data = NULL;
 	int *root_page_list = NULL;
 
@@ -523,44 +475,25 @@ static bool pdb7_parse(RBinPdb *pdb) {
 	}
 
 	int num_root_pages = count_pages (root_size, page_size);
-	if (num_root_pages < 1 || num_root_pages > UT16_MAX) {
+	ut64 file_pages = r_buf_size (pdb->buf) / page_size;
+	if (num_root_pages > UT16_MAX || num_root_pages > file_pages) {
 		R_LOG_ERROR ("Invalid page count");
 		goto error;
 	}
 	int num_root_index_pages = count_pages ((num_root_pages * 4), page_size);
-	root_index_pages = (int *)calloc (sizeof (int), R_MAX (num_root_index_pages, 1));
-	if (!root_index_pages) {
-		R_LOG_ERROR ("memory allocation");
+	if (num_root_index_pages > 4096 || num_root_index_pages > file_pages) {
+		R_LOG_ERROR ("Invalid root index page count");
 		goto error;
 	}
-
 	int index = 4 * num_root_index_pages;
-	if (index < 1) {
-		R_LOG_ERROR ("memory allocation");
-		goto error;
-	}
-	ut8 *root_index_data = (ut8 *)calloc (num_root_index_pages, 4);
+	root_index_data = (ut8 *)calloc (num_root_index_pages, 4);
 	if (!root_index_data) {
 		R_LOG_ERROR ("memory allocation");
 		goto error;
 	}
 	bytes_read = r_buf_read (pdb->buf, root_index_data, index);
-	// fread (root_index_pages, 4, num_root_index_pages, pdb->fp);
-	if (bytes_read != 4 * num_root_index_pages) {
-		free (root_index_data);
+	if (bytes_read != index) {
 		R_LOG_ERROR ("reading root_index_pages");
-		goto error;
-	}
-	for (i = 0; i < num_root_index_pages; i++) {
-		root_index_pages[i] = (int)r_read_le32 (root_index_data + (i * 4));
-	}
-	free (root_index_data);
-	if (page_size < 1 || page_size > UT16_MAX) {
-		R_LOG_ERROR ("Invalid root index pages size");
-		goto error;
-	}
-	if (num_root_index_pages > 4096 || num_root_index_pages < 1) {
-		R_LOG_ERROR ("memory allocation of root_page_data");
 		goto error;
 	}
 	root_page_data = (int *)calloc (page_size, num_root_index_pages);
@@ -570,12 +503,12 @@ static bool pdb7_parse(RBinPdb *pdb) {
 	}
 	p_tmp = root_page_data;
 	for (i = 0; i < num_root_index_pages; i++) {
-		ut64 seek_pos;
-		if (r_mul_overflow ((ut64)root_index_pages[i], (ut64)page_size, &seek_pos)) {
-			break;
+		ut64 page_index = r_read_le32 (root_index_data + (i * 4));
+		if (page_index >= file_pages ||
+			r_buf_read_at (pdb->buf, page_index * page_size, p_tmp, page_size) != page_size) {
+			R_LOG_ERROR ("Invalid root index page");
+			goto error;
 		}
-		r_buf_seek (pdb->buf, seek_pos, R_BUF_SET);
-		r_buf_read (pdb->buf, p_tmp, page_size);
 		p_tmp = (char *)p_tmp + page_size;
 	}
 	root_page_list = (int *)calloc (sizeof (int), num_root_pages);
@@ -602,12 +535,12 @@ static bool pdb7_parse(RBinPdb *pdb) {
 
 	R_FREE (root_page_list);
 	R_FREE (root_page_data);
-	R_FREE (root_index_pages);
+	free (root_index_data);
 	return true;
 error:
 	R_FREE (root_page_list);
 	R_FREE (root_page_data);
-	R_FREE (root_index_pages);
+	free (root_index_data);
 	return false;
 }
 
