@@ -311,3 +311,17 @@ EXPECT=<<EOF
 '@0x00000e40'Cd 4
 EOF
 RUN
+
+NAME=COFF: sections sharing one relocation table are read once
+FILE=bins/coff/shared-reloc-table.obj
+TIMEOUT=5
+CMDS=<<EOF
+ir~?
+EOF
+EXPECT=<<EOF
+4802
+EOF
+EXPECT_ERR=<<EOF
+WARN: Ignoring overlapping relocation tables from section 1
+EOF
+RUN
