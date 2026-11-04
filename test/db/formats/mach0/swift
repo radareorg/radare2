@@ -4710,3 +4710,45 @@ lang     swift
 682
 EOF
 RUN
+
+NAME=swift cc gives no self or error to the c main
+FILE=bins/mach0/swift5.1-throwError
+CMDS=<<EOF
+e anal.cc=swift
+aa
+afvr@main
+afvr@0x100001a70
+EOF
+EXPECT=<<EOF
+arg int argc @ rdi
+arg char ** argv @ rsi
+arg int64_t self @ r13
+arg int64_t error @ r12
+EOF
+RUN
+
+NAME=swift cc gives no self or error to c++ helpers
+FILE=bins/mach0/swift-main
+CMDS=<<EOF
+e anal.cc=swift
+aa
+afvr @@F~self,error~?
+EOF
+EXPECT=<<EOF
+0
+EOF
+RUN
+
+NAME=swift cc keeps usage roles when the bin only has a func start symbol
+FILE=bins/mach0/PasswordCheck-swift
+CMDS=<<EOF
+e anal.cc=swift
+aa
+is.@0x100002840~func.
+afvr@0x100002840
+EOF
+EXPECT=<<EOF
+405 0x00002840 0x100002840 LOCAL FUNC 0        func.100002840
+arg int64_t self @ x20
+EOF
+RUN
