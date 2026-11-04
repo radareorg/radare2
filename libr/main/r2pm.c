@@ -59,7 +59,7 @@ static const char *helpmsg =
 	" -j                json output (requires -l, -s or -v)\n"
 	" -l                list installed packages\n"
 	" -q                be quiet (requires an action)\n"
-	" -r <cmd ...args>  run shell command with R2PM_BINDIR in PATH\n"
+	" -r <cmd ...args>  run command with R2PM_BINDIR in PATH (quote shell commands)\n"
 	" -R <pkgname>      reload plugin (See R2PM_RELOAD code block package)\n"
 	" -s [<keyword>]    search available packages in database matching a string\n"
 	" -t <YYYY-MM-DD>   set the package checkout date (requires an action)\n"
@@ -974,6 +974,64 @@ static int r2pm_system(const char *cmd) {
 	return rc;
 #else
 	return r_sys_cmd (cmd);
+#endif
+}
+
+static int r2pm_run(int argc, const char **argv) {
+	if (argc < 1) {
+		return 1;
+	}
+	if (argc == 1 && !r_file_exists (argv[0])) {
+		return r2pm_system (argv[0]);
+	}
+#if R2__WINDOWS__
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+		return 1;
+	}
+	char *cmd = r_str_format_msvc_argv (argc, argv);
+	if (!cmd) {
+		return 1;
+	}
+	LPTSTR cmdline = r_sys_conv_utf8_to_win (cmd);
+	free (cmd);
+	if (!cmdline) {
+		return 1;
+	}
+	STARTUPINFO si = {0};
+	PROCESS_INFORMATION pi = {0};
+	si.cb = sizeof (si);
+	BOOL created = CreateProcess (NULL, cmdline, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi);
+	free (cmdline);
+	if (!created) {
+		r_sys_perror ("CreateProcess");
+		return 1;
+	}
+	DWORD status = 1;
+	if (WaitForSingleObject (pi.hProcess, INFINITE) == WAIT_OBJECT_0) {
+		GetExitCodeProcess (pi.hProcess, &status);
+	}
+	CloseHandle (pi.hThread);
+	CloseHandle (pi.hProcess);
+	return (int)status;
+#else
+	RStrBuf *sb = r_strbuf_new ("");
+	int i;
+	for (i = 0; i < argc; i++) {
+		char *arg = r_str_escape_sh (argv[i]);
+		if (!arg || !r_strbuf_appendf (sb, "%s\"%s\"", i? " ": "", arg)) {
+			free (arg);
+			r_strbuf_free (sb);
+			return 1;
+		}
+		free (arg);
+	}
+	char *cmd = r_strbuf_drain (sb);
+	if (!cmd) {
+		return 1;
+	}
+	int res = r2pm_system (cmd);
+	free (cmd);
+	return res;
 #endif
 }
 
@@ -2225,14 +2283,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		r2pm_check_pull_age ();
 	}
 	if (r2pm.run) {
-		int i;
-		RStrBuf *sb = r_strbuf_new ("");
-		for (i = opt.ind; i < argc; i++) {
-			r_strbuf_appendf (sb, " %s", argv[i]);
-		}
-		char *cmd = r_strbuf_drain (sb);
-		int res = r_sandbox_system (cmd, 1);
-		free (cmd);
+		int res = r2pm_run (argc - opt.ind, argv + opt.ind);
 		if (res > 255) {
 			res = 1;
 		}

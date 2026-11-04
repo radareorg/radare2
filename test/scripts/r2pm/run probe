@@ -1,0 +1,5 @@
+#!/bin/sh
+printf 'argc=%s\n' "$#"
+if [ "$#" -gt 0 ]; then
+	printf '<%s>\n' "$@"
+fi

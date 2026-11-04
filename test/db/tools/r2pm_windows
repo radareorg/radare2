@@ -1,3 +1,48 @@
+NAME=r2pm -r Windows passes shell metacharacters literally
+REQUIRE=windows
+FILE=-
+CMDS=<<EOF
+%R2PM_LITERAL_TEST=expanded
+r2pm -r rax2 -S "a&echo" "a|echo" "%R2PM_LITERAL_TEST%"
+EOF
+EXPECT=<<EOF
+61266563686f
+617c6563686f
+255232504d5f4c49544552414c5f5445535425
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=r2pm -r Windows preserves argument boundaries
+REQUIRE=windows
+FILE=-
+CMDS=r2pm -r rax2 -S "one two" "" "a\"b" "C:\\one two\\"
+EXPECT=<<EOF
+6f6e652074776f
+
+612262
+433a5c6f6e652074776f5c
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=r2pm -r Windows batch command string with spaces
+REQUIRE=windows
+FILE=-
+CMDS=<<EOF
+r2pm -r '"scripts/r2pm/run probe.cmd" "one two"'
+?vi $?
+r2pm -r cmd.exe /c "exit 9"
+?vi $?
+EOF
+EXPECT=<<EOF
+<one two>
+7
+9
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=r2pm Windows hooks preserve native syntax and failure status
 REQUIRE=windows
 FILE=-
