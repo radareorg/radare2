@@ -396,6 +396,25 @@ static void token_trim_semi(RStrs *t) {
 	r_strs_trim_chars (t, " \t\n\r\v\f;");
 }
 
+static const char *array_suffix_start(RStrs s) {
+	const char *start = NULL;
+	int depth = 0;
+	const char *p;
+	for (p = s.a; p < s.b; p++) {
+		if (*p == '"' || *p == '\'') {
+			p += literal_len (p, s.b) - 1;
+		} else if (*p == '[') {
+			if (!depth && (!start || p[-1] != ']')) {
+				start = p;
+			}
+			depth++;
+		} else if (*p == ']' && depth > 0) {
+			depth--;
+		}
+	}
+	return (start && !depth)? start: s.b - 1;
+}
+
 static void token_typename(RStrs *fun_rtyp, RStrs *fun_name) {
 	fun_rtyp->b = fun_name->b;
 	token_trim_semi (fun_rtyp);
@@ -406,7 +425,7 @@ static void token_typename(RStrs *fun_rtyp, RStrs *fun_name) {
 		return;
 	}
 	const bool accept_dots_in_function_names = true;
-	const char *p = fun_rtyp->b - 1;
+	const char *p = fun_rtyp->b[-1] == ']'? array_suffix_start (*fun_rtyp): fun_rtyp->b - 1;
 	while (p >= fun_rtyp->a) {
 		bool pass = false;
 		if (accept_dots_in_function_names) {

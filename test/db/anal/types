@@ -1572,6 +1572,78 @@ int,y
 EOF
 RUN
 
+# C11 6.7.6.2: the brackets belong to the declarator, whatever their constant expression holds
+NAME=td array parameter size stays in the declarator
+FILE=malloc://16
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+"td int l2(int a[','], int y);"
+tk func.l2.arg.0
+tk func.l2.arg.1
+tk func.l2.args
+tk func.l2
+"td int l3(int a[']'], int y);"
+tk func.l3.arg.0
+"td int l4(int a['['], int y);"
+tk func.l4.arg.0
+"td int l5(char *a[' '][2], int y);"
+tk func.l5.arg.0
+"td int l6(char a[sizeof \"] [\"], int y);"
+tk func.l6.arg.0
+"td int e1(int a[N + 1], int y);"
+tk func.e1.arg.0
+"td int e2(int a[N + b[1]], int y);"
+tk func.e2.arg.0
+EOF
+EXPECT=<<EOF
+int,a[',']
+int,y
+2
+a[','],y
+int,a[']']
+int,a['[']
+char *,a[' '][2]
+char,a[sizeof "] ["]
+int,a[N + 1]
+int,a[N + b[1]]
+EOF
+RUN
+
+NAME=td declarators without a literal size split as before
+FILE=malloc://16
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+"td int k1(int a[4], char *b, int c[2][3], int d[]);"
+tk func.k1.arg.0
+tk func.k1.arg.1
+tk func.k1.arg.2
+tk func.k1.arg.3
+tk func.k1.args
+"td int k2(int [4], int);"
+tk func.k2.arg.0
+tk func.k2.arg.1
+tk func.k2.args
+"td struct K3 { char c[4]; int y; };"
+tk struct.K3.c
+tk struct.K3.y
+"td int k4(int a[[1 + 2], int y);"
+tk func.k4.arg.0
+EOF
+EXPECT=<<EOF
+int,a[4]
+char *,b
+int,c[2][3]
+int,d[]
+4
+int,[4]
+int,arg1
+2
+char,0,4
+int,4,0
+int a[[1 +,2]
+EOF
+RUN
+
 NAME=td unclosed block comment is still an error
 FILE=malloc://16
 ARGS=-a x86 -b 64
