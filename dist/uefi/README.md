@@ -37,6 +37,24 @@ That configures the ACR/make build, compiles the static libraries and links
 `EFI_ARCH` defaults to the host and cross builds are not supported. The steps
 can be run separately with `make -C dist/uefi configure build link`.
 
+### VC4 plugin on ARM64
+
+The ARM64 CI and release images statically include the VideoCore IV plugin
+from radare2-extras through XPS. To enable it locally before configuring:
+
+```bash
+git clone https://github.com/radareorg/radare2-extras libr/xps/p/vc4
+git -C libr/xps/p/vc4 checkout d5e7a28186e0cef1b698748c86bbd8aeb3c2a4de
+cp -R dist/uefi/vc4/r2plugin libr/xps/p/vc4/
+echo 'EXTERNAL_PLUGINS+=vc4' >> libr/xps/config.mk
+make -C libr/xps
+make -C dist/uefi
+```
+
+The local `vc4/r2plugin` adapter supplies the XPS metadata, the disassembler
+declaration, and a regex shim using radare2's regex engine. The resulting
+image includes the plugin's GPL-3.0-only code.
+
 ## Running
 
 ```bash
