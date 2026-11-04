@@ -2784,7 +2784,12 @@ static void cmd_idl(RCore *core, const char *input) {
 		break;
 	case 'd': // "idld" // download debug info file from remote dwarf symbols server
 		if (linkname) {
-			char *url = r_str_newf ("%s/%s/debuginfo", r_config_get (core->config, "dbg.linkurl"), linkname);
+			char *encoded_name = r_str_uri_encode (linkname);
+			if (!encoded_name) {
+				break;
+			}
+			char *url = r_str_newf ("%s/%s/debuginfo", r_config_get (core->config, "dbg.linkurl"), encoded_name);
+			free (encoded_name);
 			if (input[3] == '*') {
 				r_cons_printf (core->cons, "%s\n", url);
 			} else {
