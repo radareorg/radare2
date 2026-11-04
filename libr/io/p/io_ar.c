@@ -52,7 +52,8 @@ static RIODesc *r_io_ar_open(RIO *io, const char *file, int rw, int mode) {
 		if (arf) {
 			res = r_io_desc_new (io, &r_io_plugin_ar, file, rw, mode, arf);
 			if (res) {
-				res->name = strdup (filename);
+				// The binary loader may reopen descriptor names as URIs.
+				res->name = strdup (file);
 			}
 		}
 	}
@@ -80,7 +81,7 @@ static int __io_ar_list(RArFp *arf, void *user) {
 		return -1; // stop error
 	}
 
-	des->name = strdup (arf->name);
+	des->name = strdup (des->uri);
 	if (!r_list_append (data->list, des)) {
 		r_io_ar_close (des);
 		return -1; // stop error

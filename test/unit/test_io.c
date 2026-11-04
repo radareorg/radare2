@@ -2,6 +2,61 @@
 #include <r_util.h>
 #include "minunit.h"
 
+bool test_r_io_ar_member_uri(void) {
+	const char archive[] =
+		"!<arch>\n"
+		"//              " "0           " "0     " "0     " "100644  " "13        " "`\n"
+		"malloc://16/\n\n"
+		"/0              " "0           " "0     " "0     " "100644  " "8         " "`\n"
+		"ARCHIVE!"
+		"normal.o/       " "0           " "0     " "0     " "100644  " "8         " "`\n"
+		"NORMAL!!";
+	char *filename = r_file_temp ("r2-ar-member-uri");
+	mu_assert_notnull (filename, "create temporary archive path");
+	mu_assert_true (r_file_dump (filename, (const ut8 *)archive, sizeof (archive) - 1, false), "write archive with a URI member name");
+	const char *schemes[] = { "ar", "lib", "arall", "liball" };
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (schemes); i++) {
+		RIO *io = r_io_new ();
+		bool many = i >= 2;
+		char *uri = r_str_newf ("%s://%s%s", schemes[i], filename, many? "": "//malloc://16");
+		RList *descs;
+		if (many) {
+			descs = r_io_open_many (io, uri, R_PERM_R, 0);
+		} else {
+			descs = r_list_new ();
+			RIODesc *desc = r_io_open_nomap (io, uri, R_PERM_R, 0);
+			mu_assert_notnull (desc, "open individual archive member");
+			r_list_append (descs, desc);
+		}
+		mu_assert_notnull (descs, "open archive members");
+		mu_assert_eq (r_list_length (descs), many? 2: 1, "all requested members are opened");
+		RListIter *iter;
+		RIODesc *desc;
+		int member = 0;
+		r_list_foreach (descs, iter, desc) {
+			char *expected = r_str_newf ("%s://%s//%s", i % 2? "lib": "ar", filename, member? "normal.o": "malloc://16");
+			mu_assert_streq (desc->uri, expected, "member URI stays qualified by its archive");
+			mu_assert_streq (desc->name, expected, "member name is safe to reopen as a URI");
+			RIODesc *reopened = r_io_open_nomap (io, desc->name, R_PERM_R, 0);
+			mu_assert_notnull (reopened, "reopen archive member by descriptor name");
+			mu_assert_ptreq (reopened->plugin, desc->plugin, "reopening must use the archive plugin");
+			ut8 buf[8];
+			mu_assert_eq (r_io_desc_size (reopened), sizeof (buf), "reopened size is the member size");
+			mu_assert_eq (r_io_fd_read_at (io, reopened->fd, 0, buf, sizeof (buf)), sizeof (buf), "read reopened member");
+			mu_assert_memeq (buf, (const ut8 *)(member? "NORMAL!!": "ARCHIVE!"), sizeof (buf), "read member bytes rather than another URI");
+			free (expected);
+			member++;
+		}
+		r_list_free (descs);
+		r_io_free (io);
+		free (uri);
+	}
+	r_file_rm (filename);
+	free (filename);
+	mu_end;
+}
+
 bool test_r_io_cache(void) {
 #if 0
 	RIO *io = r_io_new ();
@@ -441,6 +496,7 @@ bool test_seek_history_mapped(void) {
 }
 
 int all_tests(void) {
+	mu_run_test (test_r_io_ar_member_uri);
 	mu_run_test (test_seek_history_mapped);
 	mu_run_test(test_r_io_cache);
 	mu_run_test(test_r_io_nread_at);
