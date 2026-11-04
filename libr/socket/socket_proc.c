@@ -69,9 +69,10 @@ error:
 R_API int r_socket_proc_close(struct r_socket_proc_t *sp) {
 	R_RETURN_VAL_IF_FAIL (sp, -1);
 #if R2__UNIX__ && !__wasi__
-	/* this is wrong */
-	kill (sp->pid, SIGKILL);
-	waitpid (sp->pid, NULL, 0); // WNOHANG);
+	if (sp->pid > 0) {
+		kill (sp->pid, SIGKILL);
+		waitpid (sp->pid, NULL, 0);
+	}
 	close (sp->fd0[0]);
 	close (sp->fd0[1]);
 	// close (sp->fd1[0]);

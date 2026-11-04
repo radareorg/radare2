@@ -29,16 +29,49 @@ static char *get_file_in_cur_dir(const char *filepath) {
 	return NULL;
 }
 
+static int prompt_outdated_plugin(RCons *cons, const char *pkgname) {
+	r_cons_set_raw (cons, false);
+	r_cons_show_cursor (cons, true);
+	for (;;) {
+		r_cons_printf (cons, "Rebuild outdated '%s' plugin? (Y/n/d/a/i, then Enter) ", pkgname);
+		r_cons_flush (cons);
+		char answer[128];
+		if (!fgets (answer, sizeof (answer), cons->fdin)) {
+			return 'i';
+		}
+		bool complete = strchr (answer, '\n') != NULL;
+		if (complete) {
+			r_str_trim (answer);
+			if (!*answer) {
+				return 'y';
+			}
+			int choice = tolower ((ut8)answer[0]);
+			if (!answer[1] && strchr ("yndai", choice)) {
+				return choice;
+			}
+		} else {
+			while (fgets (answer, sizeof (answer), cons->fdin)) {
+				if (strchr (answer, '\n')) {
+					break;
+				}
+			}
+		}
+		R_LOG_ERROR ("Invalid answer. Enter y, n, d, a or i, or press Enter to rebuild");
+	}
+}
+
 static void prompt_rebuild_outdated_plugins(RCore *core) {
 	RList *mismatches = core->lib->plugin_mismatches;
 	if (!r_config_get_b (core->config, "scr.prompt.r2pm")
+			|| !r_config_get_b (core->config, "scr.prompt")
 			|| !r_cons_is_interactive (core->cons)
 			|| r_list_empty (mismatches)) {
 		return;
 	}
 	r_cons_print (core->cons,
 		"\nOutdated r2pm plugins cannot be loaded with this version of radare2.\n"
-		"  y/Enter  Rebuild this plugin\n"
+		"Enter a choice and press Enter (empty input rebuilds this plugin):\n"
+		"  y        Rebuild this plugin\n"
 		"  n        Skip this plugin\n"
 		"  d        Delete this plugin (r2pm -u)\n"
 		"  a        Rebuild this and all remaining outdated plugins\n"
@@ -50,20 +83,7 @@ static void prompt_rebuild_outdated_plugins(RCore *core) {
 	r_list_foreach (mismatches, iter, pkgname) {
 		int choice = 'y';
 		if (!rebuild_all) {
-			r_cons_printf (core->cons, "Rebuild outdated '%s' plugin? (Y/n/d/a/i) ", pkgname);
-			r_cons_flush (core->cons);
-			r_cons_set_raw (core->cons, true);
-			choice = r_cons_readchar (core->cons);
-			r_cons_set_raw (core->cons, false);
-			if (choice == '\n' || choice == '\r') {
-				choice = 'y';
-			} else if (choice < 0) {
-				choice = 'i';
-			} else {
-				choice = tolower ((ut8)choice);
-			}
-			r_cons_printf (core->cons, "%c\n", choice);
-			r_cons_flush (core->cons);
+			choice = prompt_outdated_plugin (core->cons, pkgname);
 		}
 		if (choice == 'i') {
 			break;
@@ -119,6 +139,8 @@ static void json_plugins(RCore *core, PJ *pj, const char *name, const char *cmd)
 }
 
 static int r_main_version_verify(RCore *core, bool show, bool json) {
+	bool own_cons;
+	RCons *cons = r_main_cons_init (&own_cons);
 	int i, ret;
 	typedef const char *(*vc) ();
 	const char *base = R2_GITTAP "-" R2_ABIVERSION_STRING;
@@ -246,11 +268,11 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 		pj_end (pj);
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		printf ("%s\n", s);
+		r_cons_println (cons, s);
 		free (s);
 	} else {
 		if (show) {
-			printf ("%s  r2\n", base);
+			r_cons_printf (cons, "%s  r2\n", base);
 		}
 		for (i = ret = 0; vcs[i].name; i++) {
 			struct vcs_t *v = &vcs[i];
@@ -259,14 +281,14 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 				ret = 1;
 			}
 			if (show) {
-				printf ("%s  %s\n", name, v->name);
+				r_cons_printf (cons, "%s  %s\n", name, v->name);
 			}
 		}
 		if (ret) {
 			R_LOG_WARN ("r2 library versions mismatch! Check r2 -V");
 		}
 	}
-	return ret;
+	return r_main_cons_fini (cons, own_cons, ret);
 }
 
 static int main_help(int line) {
@@ -853,7 +875,17 @@ static void dp_write(RCore *core, const char *s) {
 
 #define OPTARGS "=012AjMCwxfF:Hhm:e:Enk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSzuXt"
 
+static int main_radare2(int argc, const char **argv, bool standalone);
+
+static int main_radare2_repl(int argc, const char **argv) {
+	return main_radare2 (argc, argv, false);
+}
+
 R_API int r_main_radare2(int argc, const char **argv) {
+	return main_radare2 (argc, argv, true);
+}
+
+static int main_radare2(int argc, const char **argv, bool standalone) {
 	int c, ret;
 	RMainRadare2 mr;
 	mainr2_init (&mr);
@@ -944,12 +976,15 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		return 1;
 	}
 	mr.r = r;
+	if (!r_cons_isatty (0) || !r_cons_isatty (1)) {
+		r_config_set_b (r->config, "scr.interactive", false);
+	}
 	if (!r_core_signal_init (r)) {
 		R_LOG_ERROR ("Cannot initialize user signal handlers");
 		mainr2_fini (&mr);
 		return 1;
 	}
-	r->r_main_radare2 = r_main_radare2;
+	r->r_main_radare2 = main_radare2_repl;
 	r->r_main_radiff2 = r_main_radiff2;
 	r->r_main_rapatch2 = r_main_rapatch2;
 	r->r_main_rafind2 = r_main_rafind2;
@@ -1166,7 +1201,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			mr.quiet_leak = true;
 			break;
 		case 'q':
-			r_config_set_b (r->config, "scr.interactive", false);
 			r_config_set_b (r->config, "scr.prompt", false);
 			r_config_set_b (r->config, "cfg.fortunes", false);
 			if (mr.quiet) {
@@ -1301,7 +1335,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		run_commands (r, NULL, mr.prefiles, false, mr.do_analysis);
 		run_commands (r, mr.cmds, mr.files, mr.quiet, mr.do_analysis);
 		if (mr.quiet_leak) {
-			exit (0);
+			if (standalone) {
+				exit (0);
+			}
+			ret = 0;
+			goto beach;
 		}
 		const char *arg = argv[opt.ind];
 		if (mr.json) {
@@ -1374,14 +1412,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	r_bin_force_plugin (r->bin, mr.forcebin);
 
-	if (mr.project_name) {
-		if (!r_core_project_open (r, mr.project_name)) {
-			R_LOG_ERROR ("Cannot find project");
-			mainr2_fini (&mr);
-			return 1;
-		}
-	}
-
 	if (mr.do_connect) {
 		const char *uri = argv[opt.ind];
 		if (opt.ind >= argc) {
@@ -1416,6 +1446,19 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		r_core_parse_radare2rc (r);
 	} else {
 		r_config_set_b (r->config, "scr.utf8", false);
+	}
+	// open the project after the rc files so prj.sandbox and dir.projects are honored
+	if (mr.project_name) {
+		RListIter *iter;
+		char *cmdn;
+		r_list_foreach (mr.evals, iter, cmdn) {
+			free (r_config_eval (r->config, cmdn, false, NULL));
+		}
+		if (!r_core_project_open (r, mr.project_name)) {
+			R_LOG_ERROR ("Cannot find project");
+			mainr2_fini (&mr);
+			return 1;
+		}
 	}
 	prompt_rebuild_outdated_plugins (r);
 
@@ -1590,11 +1633,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 						// f is a path
 						path = strdup (f);
 					} else {
-						if (isdigit (*f)) {
-							path = strdup (f);
-						} else if (r_file_exists (f)) {
+						if (r_file_exists (f)) {
 							// f is a filename
 							path = r_str_prepend (strdup (f), "./");
+						} else if (isdigit (*f) && r_str_isnumber (f)) {
+							path = strdup (f);
 						} else {
 							path = r_file_path (f);
 						}
@@ -1611,6 +1654,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				char *acpfile = r_acp_to_utf8 (f);
 				if (!acpfile) {
 					acpfile = strdup (f);
+				}
+				if (isdigit (*acpfile) && r_str_isnumber (acpfile) && r_file_exists (acpfile)) {
+					acpfile = r_str_prepend (acpfile, ".\\");
 				}
 				// backslashes must be escaped because they are unscaped when parsing the uri
 				char *r = r_str_replace (acpfile, "\\", "\\\\", true);
@@ -1932,8 +1978,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			const char *uri_splitter = strstr (f, "://");
 			const char *path = uri_splitter? uri_splitter + 3: f;
 			if (r_file_exists (path)) {
-				// TODO: should 'q' unset the interactive bit?
-				const bool isint = r_cons_is_interactive (r->cons);
+				const bool isint = !mr.quiet && r_cons_is_interactive (r->cons);
 				if (isint && r_cons_yesno (r->cons, 'n', "Do you want to run the '%s' script? (y/N) ", path)) {
 					r_core_cmd_file (r, path);
 				}
@@ -2153,7 +2198,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	ret = r->rc;
 beach:
-	if (mr.quiet_leak) {
+	if (mr.quiet_leak && standalone) {
 		exit (r->rc);
 		return ret;
 	}

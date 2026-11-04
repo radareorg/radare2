@@ -5,7 +5,6 @@
 
 typedef struct {
 	RCons *cons;
-	HtPP *ht;
 	RLineHud *hud;
 	char user_input[HUD_BUF_SIZE + 1];
 	RList *list;
@@ -13,6 +12,12 @@ typedef struct {
 	int current_entry_n;
 	RListIter iter;
 } RHudData;
+
+typedef struct {
+	char text[HUD_BUF_SIZE + 1];
+	RStringSlice tokens[HUD_BUF_SIZE / 2 + 1];
+	int count;
+} RHudFilter;
 
 // TODO: move this into a libr/util/str.c
 static void trim_repeated_spaces(char *str) {
@@ -48,6 +53,38 @@ R_API char *r_cons_hud_file(RCons *cons, const char *f) {
 	return NULL;
 }
 
+static char *hud_string(RCons *cons, const char *s, bool line_mode) {
+	char *text = strdup (s);
+	if (!text) {
+		return NULL;
+	}
+	if (line_mode) {
+		r_str_replace_ch (text, '\r', ' ', true);
+		r_str_replace_ch (text, '\t', ' ', true);
+	}
+	r_str_ansi_strip (text);
+	if (!line_mode) {
+		trim_repeated_spaces (text);
+	}
+	RList *lines = r_list_new ();
+	if (!lines) {
+		free (text);
+		return NULL;
+	}
+	char *line = text, *end;
+	while ((end = strchr (line, '\n'))) {
+		*end = 0;
+		if (*line && *line != '#') {
+			r_list_append (lines, line);
+		}
+		line = end + 1;
+	}
+	char *ret = r_cons_hud (cons, lines, NULL);
+	r_list_free (lines);
+	free (text);
+	return ret;
+}
+
 // Display a buffer in the hud (splitting it line-by-line and ignoring
 // the lines starting with # ) returns the selected line
 R_API char *r_cons_hud_line_string(RCons *cons, const char *s) {
@@ -56,37 +93,7 @@ R_API char *r_cons_hud_line_string(RCons *cons, const char *s) {
 		R_LOG_ERROR ("Hud mode requires scr.interactive=true");
 		return NULL;
 	}
-	char *os, *track, *ret, *o = strdup (s);
-	if (!o) {
-		return NULL;
-	}
-	r_str_replace_ch (o, '\r', ' ', true);
-	r_str_replace_ch (o, '\t', ' ', true);
-	r_str_ansi_strip (o);
-	RList *fl = r_list_new ();
-	int i;
-	if (!fl) {
-		free (o);
-		return NULL;
-	}
-	fl->free = free;
-	for (os = o, i = 0; o[i]; i++) {
-		if (o[i] == '\n') {
-			o[i] = 0;
-			if (*os && *os != '#') {
-				track = strdup (os);
-				if (!r_list_append (fl, track)) {
-					free (track);
-					break;
-				}
-			}
-			os = o + i + 1;
-		}
-	}
-	ret = r_cons_hud (cons, fl, NULL);
-	free (o);
-	r_list_free (fl);
-	return ret;
+	return hud_string (cons, s, true);
 }
 
 // Display a buffer in the hud (splitting it line-by-line and ignoring
@@ -97,94 +104,69 @@ R_API char *r_cons_hud_string(RCons *cons, const char *s) {
 		R_LOG_ERROR ("Hud mode requires scr.interactive=true");
 		return NULL;
 	}
-	char *os, *track, *ret, *o = strdup (s);
-	if (!o) {
-		return NULL;
-	}
-	r_str_ansi_strip (o);
-	trim_repeated_spaces (o);
-	RList *fl = r_list_new ();
-	int i;
-	if (!fl) {
-		free (o);
-		return NULL;
-	}
-	fl->free = free;
-	for (os = o, i = 0; o[i]; i++) {
-		if (o[i] == '\n') {
-			o[i] = 0;
-			if (*os && *os != '#') {
-				track = strdup (os);
-				if (!r_list_append (fl, track)) {
-					free (track);
-					break;
-				}
-			}
-			os = o + i + 1;
-		}
-	}
-	ret = r_cons_hud (cons, fl, NULL);
-	free (o);
-	r_list_free (fl);
-	return ret;
+	return hud_string (cons, s, false);
 }
 
-#if 0
-Match a filter on a line. A filter can contain multiple words
-separated by spaces, which are all matched *in any order* over the target
-entry. If all words are present, the function returns true.
-The mask is a character buffer which is filled by 'x' to mark those characters
-that match the filter
-#endif
-static bool __matchString(char *entry, char *filter, char *mask, const int mask_size) {
-	char *p, *current_token = filter;
-	const char *filter_end = filter + strlen (filter);
-	char *ansi_filtered = strdup (entry);
-	int *cps;
-	r_str_ansi_filter (ansi_filtered, NULL, &cps, -1);
-	entry = ansi_filtered;
-	// first we separate the filter in words (include the terminator char
-	// to avoid special handling of the last token)
-	for (p = filter; p <= filter_end; p++) {
-		if (*p == ' ' || *p == '\0') {
-			const char *next_match, *entry_ptr = entry;
-			char old_char = *p;
-			int token_len;
+static void hud_filter_init(RHudFilter *filter, const char *input) {
+	r_str_ncpy (filter->text, input, sizeof (filter->text));
+	filter->count = 0;
+	int count = r_str_split (filter->text, ' ');
+	char *word = filter->text;
+	int i;
+	for (i = 0; i < count; i++) {
+		size_t len = strlen (word);
+		if (len) {
+			RStringSlice *token = &filter->tokens[filter->count++];
+			token->from = word - filter->text;
+			token->to = token->from + len;
+		}
+		word += len + 1;
+	}
+}
 
-			// Ignoring consecutive spaces
-			if (p == current_token) {
-				current_token++;
-				continue;
-			}
-			*p = 0;
-			token_len = strlen (current_token);
-			// look for all matches of the current_token in this entry
-			while ((next_match = r_str_casestr (entry_ptr, current_token))) {
-				int real_pos, filtered_pos = next_match - entry;
-				int end_pos = cps[filtered_pos + token_len];
-				for (real_pos = cps[filtered_pos];
-					real_pos < end_pos && real_pos < mask_size;
-					real_pos = cps[++filtered_pos]) {
-					mask[real_pos] = 'x';
+static bool hud_match_entry(const char *entry, const RHudFilter *filter, char *mask, size_t mask_size) {
+	char *ansi_filtered = NULL;
+	int *cps = NULL;
+	bool matched = false;
+	if (strchr (entry, 0x1b)) {
+		ansi_filtered = strdup (entry);
+		if (!ansi_filtered) {
+			return false;
+		}
+		if (r_str_ansi_filter (ansi_filtered, NULL, &cps, -1) < 0) {
+			goto beach;
+		}
+		entry = ansi_filtered;
+	}
+	int i;
+	for (i = 0; i < filter->count; i++) {
+		const RStringSlice *token = &filter->tokens[i];
+		size_t token_len = token->to - token->from;
+		const char *entry_ptr = entry, *next_match;
+		while ((next_match = r_str_casestr (entry_ptr, filter->text + token->from))) {
+			size_t pos = next_match - entry;
+			if (cps) {
+				size_t end = pos + token_len;
+				for (; pos < end && (size_t)cps[pos] < mask_size; pos++) {
+					mask[cps[pos]] = 'x';
 				}
-				entry_ptr += token_len;
+			} else if (pos < mask_size) {
+				memset (mask + pos, 'x', R_MIN (token_len, mask_size - pos));
 			}
-			*p = old_char;
-			if (entry_ptr == entry) {
-				// the word is not present in the target
-				free (cps);
-				free (ansi_filtered);
-				return false;
-			}
-			current_token = p + 1;
+			entry_ptr += token_len;
+		}
+		if (entry_ptr == entry) {
+			goto beach;
 		}
 	}
+	matched = true;
+beach:
 	free (cps);
 	free (ansi_filtered);
-	return true;
+	return matched;
 }
 
-static RList *hud_filter(RHudData *data, bool simple, int selected_index) {
+static RList *hud_filter(RHudData *data, const RHudFilter *filter, bool simple, int selected_index) {
 	RListIter *iter;
 	char *current_entry;
 	// one mask byte per entry char, reused across entries
@@ -209,7 +191,7 @@ static RList *hud_filter(RHudData *data, bool simple, int selected_index) {
 			mask_size = entry_size;
 		}
 		memset (mask, 0, entry_size);
-		if (*data->user_input && !__matchString (current_entry, data->user_input, mask, entry_size)) {
+		if (filter->count && !hud_match_entry (current_entry, filter, mask, entry_size)) {
 			continue;
 		}
 		if (++counter == rows + data->hud->top_entry_n) {
@@ -290,11 +272,6 @@ static RList *hud_filter(RHudData *data, bool simple, int selected_index) {
 	return res;
 }
 
-static void mht_free_kv(HtPPKv *kv) {
-	free (kv->key);
-	r_list_free (kv->value);
-}
-
 static void hud_render_prompt(RCons *cons, const char *user_input, RList *filtered_list) {
 	int w = r_cons_get_size (cons, NULL);
 	size_t ss = strlen (user_input);
@@ -321,12 +298,14 @@ static void hud_render(RHudData *data) {
 	data->selected_entry = NULL;
 	data->current_entry_n = 0;
 
-	RList *filtered_list = hud_filter (data, false, hud->current_entry_n);
+	RHudFilter filter;
+	hud_filter_init (&filter, user_input);
+	RList *filtered_list = hud_filter (data, &filter, false, hud->current_entry_n);
 	int len = r_list_length (filtered_list);
 	if (hud->current_entry_n >= len && len > 0) {
 		hud->current_entry_n = len - 1;
 		r_list_free (filtered_list);
-		filtered_list = hud_filter (data, false, hud->current_entry_n);
+		filtered_list = hud_filter (data, &filter, false, hud->current_entry_n);
 	}
 	int w = r_cons_get_size (cons, NULL);
 	RListIter *iter;
@@ -335,14 +314,10 @@ static void hud_render(RHudData *data) {
 	r_list_foreach (filtered_list, iter, row) {
 		int len = r_str_ansi_len (row);
 		if (len > w) {
-			char *trimmed = strdup (row);
-			char *p = (char *)r_str_ansi_chrn (trimmed, w);
+			char *p = (char *)r_str_ansi_chrn (row, w);
 			*p = 0;
-			r_cons_printf (cons, "%s\n", trimmed);
-			free (trimmed);
-		} else {
-			r_cons_printf (cons, "%s\n", row);
 		}
+		r_cons_printf (cons, "%s\n", row);
 	}
 	r_list_free (filtered_list);
 	r_cons_flush (cons);
@@ -361,7 +336,6 @@ R_API char *r_cons_hud(RCons *cons, RList *list, const char *prompt) {
 	RConsEvent old_event_interrupt = cons->context->event_interrupt;
 	void *old_event_data = cons->event_data;
 
-	HtPP *ht = ht_pp_new (NULL, (HtPPKvFreeFunc)mht_free_kv, (HtPPCalcSizeV)strlen);
 	RLineHud *hud = (RLineHud *)R_NEW0 (RLineHud);
 	hud->activate = 0;
 	hud->vi = 0;
@@ -378,7 +352,6 @@ R_API char *r_cons_hud(RCons *cons, RList *list, const char *prompt) {
 
 	RHudData *data = R_NEW (RHudData);
 	data->cons = cons;
-	data->ht = ht;
 	data->hud = hud;
 	data->list = list;
 	data->selected_entry = NULL;
@@ -414,7 +387,6 @@ R_API char *r_cons_hud(RCons *cons, RList *list, const char *prompt) {
 	r_cons_show_cursor (cons, true);
 	r_cons_enable_mouse (cons, false);
 	r_cons_set_raw (cons, false);
-	ht_pp_free (ht);
 	free (data->selected_entry);
 	free (data);
 	return se;

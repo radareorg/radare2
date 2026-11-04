@@ -70,7 +70,7 @@ void z80_op_size(const ut8 *_data, int len, int *size, int *size_prefix) {
 	}
 }
 
-char *z80dis(const ut8 *buf, int len) {
+char *z80dis(const ut8 *buf, int len, ut64 addr) {
 	int op_size = 0, op_size_prefix = 0;
 	z80_op_size (buf, len, &op_size, &op_size_prefix);
 	if (op_size < 1 || op_size > len) {
@@ -84,7 +84,11 @@ char *z80dis(const ut8 *buf, int len) {
 		buf_asm = r_strf ("%s", z_op[buf[0]].name);
 		break;
 	case Z80_OP8 ^ Z80_ARG8:
-		buf_asm = r_strf (z_op[buf[0]].name, buf[1]);
+		if (buf[0] == 0x10 || buf[0] == 0x18 || (buf[0] & 0xe7) == 0x20) {
+			buf_asm = r_strf (z_op[buf[0]].name, (ut16)(addr + 2 + (st8)buf[1]));
+		} else {
+			buf_asm = r_strf (z_op[buf[0]].name, buf[1]);
+		}
 		break;
 	case Z80_OP8 ^ Z80_ARG16:
 		buf_asm = r_strf (z_op[buf[0]].name, buf[1] + (buf[2] << 8));

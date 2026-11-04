@@ -56,8 +56,8 @@ bool test_r_hex_str2binmask_question_nibbles(void) {
 	ut8 mask[3] = {0};
 	int len = r_hex_str2binmask ("0x3? 0x?5 0x88", keyword, mask);
 	mu_assert_eq (len, 3, "prefixed wildcard length");
-	mu_assert_memeq (keyword, "\x30\x05\x88", 3, "prefixed wildcard bytes");
-	mu_assert_memeq (mask, "\xf0\x0f\xff", 3, "prefixed wildcard masks");
+	mu_assert_memeq (keyword, (const ut8 *)"\x30\x05\x88", 3, "prefixed wildcard bytes");
+	mu_assert_memeq (mask, (const ut8 *)"\xf0\x0f\xff", 3, "prefixed wildcard masks");
 	len = r_hex_str2binmask ("?", keyword, mask);
 	mu_assert_eq (len, -1, "single wildcard is an odd nibble");
 	mu_assert_eq (keyword[0], 0, "single wildcard byte");

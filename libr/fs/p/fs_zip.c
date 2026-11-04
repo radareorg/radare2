@@ -118,6 +118,11 @@ static void fs_zip_close_archive(zip_t *za, zip_source_t *zs) {
 }
 
 static RList *fs_zip_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
+	// zip_open_from_source spills the buffer into a temporary file
+	if (r_sandbox_enable (false)) {
+		R_LOG_ERROR ("Sandbox prevents listing zip mounts");
+		return NULL;
+	}
 	ut64 addr = 0;
 	RIOMap *map = root->iob.map_get_at (root->iob.io, addr);
 	if (!map) {

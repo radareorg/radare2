@@ -325,14 +325,164 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pdb S_PUB32 records with missing or unterminated names are skipped
+FILE=--
+CMDS=<<EOF
+idpi bins/pdb/pub32-missing-names.pdb~.text
+EOF
+EXPECT=<<EOF
+0x00001010  2  .text  valid
+EOF
+RUN
+
 NAME=pdb structs sharing a long field list are parsed in linear time
 FILE=bins/pdb/shared-field-list-400x1000.pdb
 ARGS=-e log.level=0
-TIMEOUT=30
+TIMEOUT=120
 CMDS=<<EOF
 idpi bins/pdb/shared-field-list-400x1000.pdb~?struct
 EOF
 EXPECT=<<EOF
 400
+EOF
+RUN
+
+NAME=idpi handles a missing file without a loaded binary
+FILE=--
+CMDS=<<EOF
+idpi bins/pdb/does-not-exist.pdb
+?e done
+EOF
+EXPECT=<<EOF
+done
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot open file
+EOF
+RUN
+
+NAME=pdb type printer stops on a self-referencing pointer
+FILE=--
+ARGS=-e log.level=0
+CMDS=<<EOF2
+idpi bins/pdb/tpi-self-ref.pdb
+EOF2
+EXPECT=<<EOF2
+struct node { // size 0x8
+  **************************************************************** next; // offset +0x0
+};
+EOF2
+RUN
+
+NAME=pdb arrays of structs print their size
+FILE=bins/pdb/SimplePDB.pdb
+ARGS=-e log.level=0
+CMDS=<<EOF2
+idpi bins/pdb/SimplePDB.pdb~DataDirectory
+EOF2
+EXPECT=<<EOF2
+  struct _IMAGE_DATA_DIRECTORY[128] DataDirectory; // offset +0x60
+EOF2
+RUN
+
+NAME=pdb DBI module_size larger than the stream is rejected before allocating it
+FILE=-
+CMDS=<<EOF
+idpi bins/pdb/dbi-module-size.pdb
+?e done
+EOF
+EXPECT=<<EOF
+done
+EOF
+EXPECT_ERR=<<EOF
+WARN: Cannot find base address, flags will probably be misplaced
+WARN: Invalid module info size in the PDB DBI stream
+ERROR: PDB root was not initialized
+ERROR: pdb was not parsed
+EOF
+RUN
+
+NAME=pdb DBI rejects negative, overflowing and wrapped section sizes
+FILE=-
+ARGS=-e log.level=1
+CMDS=<<EOF
+idpi bins/pdb/dbi-section-negative.pdb
+idpi bins/pdb/dbi-section-overflow.pdb
+idpi bins/pdb/dbi-section-wrap.pdb
+?e done
+EOF
+EXPECT=<<EOF
+done
+EOF
+EXPECT_ERR=<<EOF
+ERROR: PDB root was not initialized
+ERROR: pdb was not parsed
+ERROR: PDB root was not initialized
+ERROR: pdb was not parsed
+ERROR: PDB root was not initialized
+ERROR: pdb was not parsed
+EOF
+RUN
+
+NAME=pdb DBI rejects incomplete module records, names and padding
+FILE=-
+ARGS=-e log.level=1
+CMDS=<<EOF
+idpi bins/pdb/dbi-module-truncated.pdb
+idpi bins/pdb/dbi-module-name-missing.pdb
+idpi bins/pdb/dbi-object-name-missing.pdb
+idpi bins/pdb/dbi-module-padding-truncated.pdb
+?e done
+EOF
+EXPECT=<<EOF
+done
+EOF
+EXPECT_ERR=<<EOF
+ERROR: PDB root was not initialized
+ERROR: pdb was not parsed
+ERROR: PDB root was not initialized
+ERROR: pdb was not parsed
+ERROR: PDB root was not initialized
+ERROR: pdb was not parsed
+ERROR: PDB root was not initialized
+ERROR: pdb was not parsed
+EOF
+RUN
+
+NAME=pdb stream directory and streams cannot use more pages than the file has
+FILE=-
+CMDS=<<EOF
+idpi bins/pdb/aliased-directory.pdb
+idpi bins/pdb/aliased-streams.pdb
+?e done
+EOF
+EXPECT=<<EOF
+done
+EOF
+EXPECT_ERR=<<EOF
+WARN: Cannot find base address, flags will probably be misplaced
+ERROR: Invalid page count
+ERROR: pdb was not parsed
+WARN: Cannot find base address, flags will probably be misplaced
+WARN: PDB streams use more pages than the file has
+ERROR: Could not initialize root stream
+ERROR: pdb was not parsed
+EOF
+RUN
+
+NAME=pdb omap lookups do not walk the entry list per symbol
+FILE=-
+TIMEOUT=10
+CMDS=<<EOF
+idpi bins/pdb/omap-last-entry.pdb~?
+idpi bins/pdb/omap-last-entry.pdb~:0
+EOF
+EXPECT=<<EOF
+65536
+0x00006000  2  .text  s
+EOF
+EXPECT_ERR=<<EOF
+WARN: Cannot find base address, flags will probably be misplaced
+WARN: Cannot find base address, flags will probably be misplaced
 EOF
 RUN

@@ -468,23 +468,18 @@ static int cmd_wo(void *data, const char *input) {
 	case 'D': // "woD" decrypt
 		{
 			int direction = (input[0] == 'E') ? R_MUTA_OP_ENCRYPT : R_MUTA_OP_DECRYPT;
-			const char *algo = NULL;
-			const char *key = NULL;
-			const char *iv = NULL;
-			char *space, *args = strdup (r_str_trim_head_ro (input+1));
-			space = strchr (args, ' ');
-			if (space) {
-				*space++ = 0;
-				key = space;
-				space = strchr (key, ' ');
-				if (space) {
-					*space++ = 0;
-					iv = space;
+			char *args = strdup (r_str_trim_head_ro (input + 1));
+			char *iv = NULL;
+			char *key = strchr (args, ' ');
+			if (key) {
+				*key++ = 0;
+				iv = strchr (key, ' ');
+				if (iv) {
+					*iv++ = 0;
 				}
 			}
-			algo = args;
-			if (R_STR_ISNOTEMPTY (algo) && key) {
-				write_encrypted_block (core, algo, key, direction, iv);
+			if (*args && key) {
+				write_encrypted_block (core, args, key, direction, iv);
 			} else {
 				char *s = r_muta_list (core->muta, R_MUTA_TYPE_CRYPTO, 0);
 				r_cons_print (core->cons, s);
@@ -496,18 +491,13 @@ static int cmd_wo(void *data, const char *input) {
 		break;
 		case 'S': // "woS" sign
 		{
-			const char *algo = NULL;
-			const char *key = NULL;
-			char *space, *args = strdup (r_str_trim_head_ro (input + 1));
-			space = strchr (args, ' ');
-			if (space) {
-				*space++ = 0;
-				key = space;
-				space = strchr (key, ' ');
+			char *args = strdup (r_str_trim_head_ro (input + 1));
+			char *key = strchr (args, ' ');
+			if (key) {
+				*key++ = 0;
 			}
-			algo = args;
-			if (R_STR_ISNOTEMPTY (algo) && key) {
-				write_block_signature (core, algo, key);
+			if (*args && key) {
+				write_block_signature (core, args, key);
 			} else {
 				char *s = r_muta_list (core->muta, R_MUTA_TYPE_SIGN, 0);
 				r_cons_print (core->cons, s);
@@ -520,7 +510,7 @@ static int cmd_wo(void *data, const char *input) {
 		switch (input[1]) {
 		case 'D': // "wopD"
 			{
-				char *sp = strchr (input, ' ');
+				const char *sp = strchr (input, ' ');
 				len = sp? r_num_math (core->num, sp + 1): core->blocksize;
 			}
 			if (len > 0) {
@@ -1168,7 +1158,7 @@ static int cmd_w6(void *data, const char *input) {
 
 static int cmd_wh(RCore *core, const char *input) {
 	R_RETURN_VAL_IF_FAIL (core && input, -1);
-	char *space = strchr (input, ' ');
+	const char *space = strchr (input, ' ');
 	const char *arg = space? r_str_trim_head_ro (space): NULL;
 	if (arg) {
 		char *path = r_file_path (arg);
@@ -1537,6 +1527,22 @@ static void cmd_wcf(RCore *core, const char *dfn) {
 	free (sfn);
 }
 
+static bool parse_cache_range(RCore *core, const char *arg, ut64 *from, ut64 *to) {
+	char *s = strdup (arg);
+	char *sp = strchr (s, ' ');
+	if (sp) {
+		*sp++ = 0;
+	}
+	*from = r_num_math (core->num, s);
+	*to = sp? r_num_math (core->num, sp): *from + core->blocksize;
+	free (s);
+	if (*to < *from) {
+		R_LOG_ERROR ("Invalid range (from > to)");
+		return false;
+	}
+	return true;
+}
+
 static int cmd_wc(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
@@ -1648,18 +1654,9 @@ static int cmd_wc(void *data, const char *input) {
 		} else if (input[1] == '?') {
 			r_cons_cmd_help_match (core->cons, help_msg_wc, "wc+", 0, false);
 		} else if (input[1] == ' ') { // "wc+ "
-			ut64 to;
-			ut64 from = r_num_math (core->num, input + 2);
-			char *p = strchr (input + 2, ' ');
-			if (p) {
-				*p = 0;
-				to = r_num_math (core->num, input + 2);
-				if (to < from) {
-					R_LOG_ERROR ("Invalid range (from > to)");
-					return 0;
-				}
-			} else {
-				to = from + core->blocksize;
+			ut64 from, to;
+			if (!parse_cache_range (core, input + 2, &from, &to)) {
+				return 0;
 			}
 			r_io_cache_commit (core->io, from, to, false);
 		} else {
@@ -1681,18 +1678,8 @@ static int cmd_wc(void *data, const char *input) {
 		} else {
 			ut64 from, to;
 			if (input[1] == ' ') { // "wc- "
-				char *p = strchr (input + 2, ' ');
-				if (p) {
-					*p = 0;
-					from = r_num_math (core->num, input+2);
-					to = r_num_math (core->num, p+1);
-					if (to < from) {
-						R_LOG_ERROR ("Invalid range (from > to)");
-						return 0;
-					}
-				} else {
-					from = r_num_math (core->num, input+2);
-					to = from + core->blocksize;
+				if (!parse_cache_range (core, input + 2, &from, &to)) {
+					return 0;
 				}
 			} else {
 				R_LOG_INFO ("Invalidate write cache at 0x%08"PFMT64x, core->addr);

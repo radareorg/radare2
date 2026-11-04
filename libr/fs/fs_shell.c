@@ -4,7 +4,7 @@
 
 #include <r_fs.h>
 
-static bool handlePipes(RFS *fs, char *msg, const ut8 *data, const char *cwd) {
+static bool handlePipes(RFS *fs, char *msg, const ut8 *data, int data_len, const char *cwd) {
 	char *red = strchr (msg, '>');
 	if (!red) {
 		return false;
@@ -23,7 +23,7 @@ static bool handlePipes(RFS *fs, char *msg, const ut8 *data, const char *cwd) {
 		free (red);
 		return true;
 	}
-	r_fs_write (fs, f, 0, data? data: (ut8*)msg, strlen (data? (char*)data: msg));
+	r_fs_write (fs, f, 0, data? data: (ut8*)msg, data? data_len: strlen (msg));
 	free (red);
 	r_fs_close (fs, f);
 	r_fs_file_free (f);
@@ -85,7 +85,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 		r_sandbox_system (buf + 1, 1);
 	} else if (r_str_startswith (buf, "echo")) {
 		char *msg = r_str_trim_dup (buf + 4);
-		if (!handlePipes (fs, msg, NULL, shell->cwd)) {
+		if (!handlePipes (fs, msg, NULL, 0, shell->cwd)) {
 			cb_printf (cons, "%s\n", msg);
 		}
 		free (msg);
@@ -212,24 +212,36 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 	} else if (r_str_startswith (buf, "cat ")) {
 		const char *input = r_str_trim_head_ro (buf + 3);
 		char *abspath = fs_abspath (shell, input);
+		if (!abspath) {
+			return true;
+		}
 		char *p = strchr (abspath, '>');
 		if (p) {
 			*p = 0;
-			r_str_trim (abspath);
 		}
 		file = r_fs_open (fs, abspath, false);
+		if (p) {
+			*p = '>';
+		}
 		if (file) {
-			r_fs_read (fs, file, 0, file->size);
-			char *fname = (char *)r_str_lchr (abspath, '/');
-			if (fname) {
-				fname++;
+			int nread = 0;
+			if (file->size > 0) {
+				nread = file->size <= ST32_MAX? r_fs_read (fs, file, 0, file->size): -1;
 			}
-			if (file->data && !handlePipes (fs, abspath, file->data, fname)) {
-				char *s = r_str_ndup ((const char *)file->data, file->size);
-				cb_printf (cons, "%s\n", s);
-				free (s);
+			if (nread < 0 || (nread > 0 && !file->data)) {
+				R_LOG_ERROR ("Cannot read file");
+			} else {
+				const ut8 *data = file->data? file->data: (const ut8 *)"";
+				if (!handlePipes (fs, abspath, data, nread, shell->cwd)) {
+					char *s = r_str_ndup ((const char *)data, nread);
+					if (s) {
+						cb_printf (cons, "%s\n", s);
+						free (s);
+					}
+				}
 			}
 			r_fs_close (fs, file);
+			r_fs_file_free (file);
 		} else {
 			R_LOG_ERROR ("Cannot open file");
 		}

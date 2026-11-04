@@ -358,6 +358,45 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=Cs rejects extra argument
+FILE=malloc://1024
+CMDS=<<EOF
+w hello world
+Cs 5 0x6
+Csa 5 0x6
+Cs
+Cs 5 @ 6
+Cs
+EOF
+EXPECT=<<EOF
+0x00000006 ascii[5] "world"
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Unexpected argument '0x6'. Usage: Cs [size] @addr
+ERROR: Unexpected argument '0x6'. Usage: Cs [size] @addr
+EOF
+RUN
+
+NAME=Cs rejected argument keeps existing string
+FILE=malloc://1024
+CMDS=<<EOF
+w hello world
+Cs 5 @ 6
+Cs 3 0x6 @ 6
+Cs 4 junk @ 6
+Cs
+Cs.. @ 6
+EOF
+EXPECT=<<EOF
+0x00000006 ascii[5] "world"
+ascii[5] "world"
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Unexpected argument '0x6'. Usage: Cs [size] @addr
+ERROR: Unexpected argument 'junk'. Usage: Cs [size] @addr
+EOF
+RUN
+
 NAME=Cs 5
 FILE=malloc://1024
 CMDS=<<EOF
@@ -404,7 +443,7 @@ Cd 3
 pd 2
 EOF
 EXPECT=<<EOF
-            0x00000000       3930 39                                  909 ; +0 
+            0x00000000  3930 39                                  909 ; +0 
             0x00000003      3039           xor byte [ecx], bh
 EOF
 RUN
@@ -420,7 +459,7 @@ s 1
 pd 2
 EOF
 EXPECT=<<EOF
-            0x00000001       3039                                     09 ; +1  (2)
+            0x00000001  3039                                     09 ; +1  (2)
             0x00000003      3039           xor byte [ecx], bh
 EOF
 RUN
@@ -1052,5 +1091,49 @@ EXPECT=<<EOF
         !   0x100003a9c      f85f02a9       stp x24, x23, [sp, 0x20]
         `-> 0x100003aa0      f65703a9       stp x22, x21, [sp, 0x30]
             0x100003aa4      f44f04a9       stp x20, x19, [sp, 0x40]
+EOF
+RUN
+
+NAME=Cd with a binary immbase shows all 64 bits of a qword
+FILE=malloc://64
+CMDS=<<EOF
+wx 0102030405060708
+Cd 8
+ahi 1
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      .int64 0000000100000010000000110000010000000101000001100000011100001000b
+EOF
+RUN
+
+NAME=Cd larger than a qword with a binary immbase falls back to hex
+FILE=malloc://64
+CMDS=<<EOF
+wx 0102030405060708
+Cd 31
+ahi 1
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000  0102 0304 0506 0708 0000 0000 0000 0000  ................ ; +0 
+EOF
+RUN
+
+NAME=Cd 3 and Cd 31 show hex with the htons and smi immbases
+FILE=malloc://64
+CMDS=<<EOF
+wx 0102030405060708
+Cd 3
+ahi 3
+pd 1
+Cd-
+Cd 31
+ahi 31
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000  0102 03                                  ... ; +0 
+            0x00000000  0102 0304 0506 0708 0000 0000 0000 0000  ................ ; +0 
 EOF
 RUN

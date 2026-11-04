@@ -15,3 +15,5 @@ endif
 endif
 
 include ../shlr.mk
+
+r2r.o: interact.inc.c

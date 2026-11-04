@@ -120,6 +120,12 @@ static int r_bin_dmp64_init_bmp_pages(struct r_bin_dmp64_obj_t *obj) {
 		return false;
 	}
 	ut64 paddr_base = obj->bmp_header->FirstPage;
+	ut64 file_size = r_buf_size (obj->b);
+	if (file_size < paddr_base) {
+		R_LOG_WARN ("Invalid dump size");
+		return false;
+	}
+	ut64 max_file_pages = (file_size - paddr_base) / DMP_PAGE_SIZE;
 	RBitmap *bitmap = r_bitmap_new (num_pages);
 	if (!bitmap) {
 		return false;
@@ -129,6 +135,11 @@ static int r_bin_dmp64_init_bmp_pages(struct r_bin_dmp64_obj_t *obj) {
 	ut64 num_bitset = 0;
 	size_t i = 0;
 	while ((i = r_bitmap_find_next_set (bitmap, i)) != SZT_MAX) {
+		if (num_bitset >= max_file_pages) {
+			R_LOG_WARN ("Present page is beyond the dump size");
+			r_bitmap_free (bitmap);
+			return false;
+		}
 		dmp_page_desc *page = R_NEW0 (dmp_page_desc);
 		page->start = (ut64)i * DMP_PAGE_SIZE;
 		page->file_offset = paddr_base + num_bitset * DMP_PAGE_SIZE;
@@ -165,7 +176,9 @@ static int r_bin_dmp64_init_bmp_header(struct r_bin_dmp64_obj_t *obj) {
 		return false;
 	}
 	ut64 bitmapsize = (obj->bmp_header->Pages + 7) / 8;
-	if (bitmapsize < 1 || bitmapsize > ST32_MAX) {
+	ut64 bitmap_offset = sizeof (dmp64_header) + r_offsetof (dmp_bmp_header, Bitmap);
+	ut64 file_size = r_buf_size (obj->b);
+	if (bitmapsize < 1 || bitmapsize > ST32_MAX || file_size < bitmap_offset || bitmapsize > file_size - bitmap_offset) {
 		R_LOG_WARN ("Invalid Bitmap Size");
 		return false;
 	}
@@ -173,7 +186,7 @@ static int r_bin_dmp64_init_bmp_header(struct r_bin_dmp64_obj_t *obj) {
 	if (!obj->bitmap) {
 		return false;
 	}
-	if (r_buf_read_at (obj->b, sizeof (dmp64_header) + offsetof (dmp_bmp_header, Bitmap), obj->bitmap, bitmapsize) < 0) {
+	if (r_buf_read_at (obj->b, bitmap_offset, obj->bitmap, bitmapsize) != bitmapsize) {
 		R_LOG_WARN ("read bitmap");
 		return false;
 	}

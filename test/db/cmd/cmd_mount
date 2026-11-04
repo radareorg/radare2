@@ -953,7 +953,7 @@ FILE=bins/fs/reiserfs-corrupt.img
 CMDS=md /root
 EXPECT=<<EOF
 d .
-f link
+l link
 EOF
 RUN
 
@@ -967,7 +967,7 @@ EOF
 EXPECT=<<EOF
 d .
 f hello.txt
-f link
+l link
 hello from reiserfs
 
 EOF
@@ -992,7 +992,7 @@ EXPECT=<<EOF
 d .
 d ..
 f file
-f link
+l link
 hello from xfs
 EOF
 EXPECT_ERR=<<EOF
@@ -1033,7 +1033,7 @@ EOF2
 EXPECT_ERR=
 RUN
 
-NAME=mc on ubifs file larger than the volume
+NAME=mc twice on ubifs with unknown volume size
 FILE=bins/fs/ubifs-oversize.img
 CMDS=<<EOF2
 md /root
@@ -1043,14 +1043,11 @@ mc /root/file
 EOF2
 EXPECT=<<EOF2
 r file
+hello world
+hello world
 alive
 EOF2
-EXPECT_ERR=<<EOF2
-WARN: File size (11) exceeds filesystem size (0)
-ERROR: Cannot read /root/file
-WARN: File size (11) exceeds filesystem size (0)
-ERROR: Cannot read /root/file
-EOF2
+EXPECT_ERR=
 RUN
 
 NAME=ubifs master node with a huge declared length
@@ -1280,4 +1277,137 @@ read-failed
 open-failed
 EOF2
 EXPECT_ERR=
+RUN
+
+NAME=jfs cyclic dtree leaf chain ends the directory
+FILE=malloc://65536
+CMDS=<<EOF2
+wx 4a46533101 @ 0x8000
+wx 1000000c @ 0x8011
+wx 010000000c @ 0xbc00
+wx 40 @ 0xc435
+wx 0100000000000000010000000e @ 0xc4f8
+wx 80 @ 0xc835
+wx 80 @ 0xd035
+wx 0200030012 @ 0xd0f0
+wx 01000000010000000b @ 0xd104
+wx 0e @ 0xe000
+wx 020200000001 @ 0xe010
+wx 0203 @ 0xe020
+wx 04000000ff0568006500 @ 0xe040
+wx 04000000ff0577006f00 @ 0xe060
+m /a jfs 0
+md /a
+# zero length entries in the cycle must not recurse
+wx 00 @ 0xe045
+wx 00 @ 0xe065
+m /b jfs 0
+md /b
+?e done
+EOF2
+EXPECT=<<EOF2
+f he
+f wo
+done
+EOF2
+RUN
+
+NAME=m bfs rejects a block shift that does not match the block size
+FILE=malloc://1024
+CMDS=<<EOF2
+wx 31534642454749420004000020000000 @ 0x220
+wx 00010000 @ 0x240
+wx 20000000 @ 0x24c
+wx 0000000000000100 @ 0x274
+wx 0000000000000100 @ 0x48
+m /mnt bfs 0
+m
+EOF2
+EXPECT=
+EXPECT_ERR=<<EOF2
+ERROR: Invalid BFS block shift: does not match the block size
+EOF2
+RUN
+
+NAME=mfn and mfo stop on a FAT directory that contains itself
+FILE=malloc://4096
+CMDS=<<EOF2
+wx 020101000100000000f8 @ 0xc
+wx 08000000010000000000000002 @ 0x20
+wx 4641543332202020 @ 0x52
+wx f8ffff0fffffff0fffffff0fffffff0fffffff0fffffff0f @ 0x200
+wx 444952202020202020202010 @ 0x400
+wx 03 @ 0x41a
+wx 4e4f54452020202054585420 @ 0x600
+wx 05000f000000494e4e455220202020202010 @ 0x61a
+wx 03 @ 0x63a
+wx 68656c6c6f2066726f6d206661740a @ 0xa00
+m /root fat 0
+mfn /root *.txt~?
+mfo /root 0xa00~?
+EOF2
+EXPECT=<<EOF2
+63
+63
+EOF2
+EXPECT_ERR=<<EOF2
+WARN: Search stopped: directory tree is too large or too deep
+WARN: Search stopped: directory tree is too large or too deep
+EOF2
+RUN
+
+NAME=mdt bounds the tree of a directory that contains itself twice
+FILE=malloc://4096
+CMDS=<<EOF2
+wx 00020101000100000000f8 @ 0xb
+wx 0800000001000000000000000200 @ 0x20
+w FAT32    @ 0x52
+wx f8ffff0fffffff0fffffff0fffffff0f @ 0x200
+wx 44495220202020202020201000000000000000000000000000000300 @ 0x400
+wx 41202020202020202020201000000000000000000000000000000300 @ 0x600
+wx 42202020202020202020201000000000000000000000000000000300 @ 0x620
+m /mnt fat 0
+mdt /mnt 2
+?v $?
+mdt /mnt~?
+EOF2
+EXPECT=<<EOF2
+/mnt
+`-- dir/
+    |-- a/
+    `-- b/
+0x0
+16385
+EOF2
+EXPECT_ERR=<<EOF2
+WARN: Tree truncated after 16384 entries, use a smaller depth or md to list subdirectories
+EOF2
+RUN
+
+NAME=iso9660 continuation area pointing back to itself
+FILE=malloc://0xb000
+CMDS=<<EOF2
+wx 01434430303101 @ 0x8000
+wx 220012000000000000120008000000000800000000000000000200000000000001 @ 0x809c
+wx ff434430303101 @ 0x8800
+wx 3b00120000000000001200080000000008000000000000000002000000000000010053500701beef00455212010a000001525249505f3139393141 @ 0x9000
+wx 22001200000000000012000800000000080000000000000000020000000000000101 @ 0x903b
+wx 480013000000000000130c0000000000000c00000000000000000000000000000b48454c4c4f2e5458543b31 @ 0x905d
+wx 43451c01140000000000001400000000000000004000000000000040 @ 0x9089
+wx 50582401a4810000000081a40100000000000001 @ 0xa000
+wx 43451c01150000000000001500000000000000004000000000000040 @ 0xa024
+wx 4e4d0e010068656c6c6f2e74787453540401 @ 0xa800
+m /chain iso9660 0
+md /chain
+wx 14 @ 0xa028
+m /loop iso9660 0
+md /loop
+EOF2
+EXPECT=<<EOF2
+d .
+d ..
+f hello.txt
+d .
+d ..
+EOF2
 RUN

@@ -490,19 +490,50 @@ static bool get_omf_data_info(r_bin_omf_obj *obj) {
 			return false;
 		}
 		OMF_segment *seg = obj->sections[data->seg_idx - 1];
-		if (seg->data) {
-			OMF_data *tail = seg->data;
-			while (tail->next) {
-				tail = tail->next;
-			}
-			tail->next = data;
+		if (seg->data_tail) {
+			seg->data_tail->next = data;
 		} else {
 			seg->data = data;
 		}
+		seg->data_tail = data;
+		seg->nb_blocks++;
 		((OMF_record *)tmp)->content = NULL;
 		tmp = tmp->next;
 	}
+	ut32 ct;
+	for (ct = 0; ct < obj->nb_section; ct++) {
+		OMF_segment *seg = obj->sections[ct];
+		if (!seg || !seg->nb_blocks || !(seg->blocks = R_NEWS (OMF_data *, seg->nb_blocks))) {
+			continue;
+		}
+		ut64 end = 0;
+		ut32 i = 0;
+		OMF_data *data;
+		for (data = seg->data; data; data = data->next) {
+			end += data->size;
+			data->end = end;
+			seg->blocks[i++] = data;
+		}
+	}
 	return true;
+}
+
+// first data block of the segment that ends past offset
+static OMF_data *omf_find_data(OMF_segment *seg, ut64 offset) {
+	if (!seg->blocks) {
+		return NULL;
+	}
+	ut32 lo = 0;
+	ut32 hi = seg->nb_blocks;
+	while (lo < hi) {
+		ut32 mid = lo + (hi - lo) / 2;
+		if (seg->blocks[mid]->end > offset) {
+			hi = mid;
+		} else {
+			lo = mid + 1;
+		}
+	}
+	return lo < seg->nb_blocks? seg->blocks[lo]: NULL;
 }
 
 static bool get_omf_infos(r_bin_omf_obj *obj) {
@@ -572,6 +603,7 @@ static void free_all_omf_sections(r_bin_omf_obj *obj) {
 			R_FREE (obj->sections[ct]->data);
 			obj->sections[ct]->data = next;
 		}
+		free (obj->sections[ct]->blocks);
 		R_FREE (obj->sections[ct]);
 	}
 	R_FREE (obj->sections);
@@ -645,15 +677,10 @@ bool r_bin_omf_get_entry(r_bin_omf_obj *obj, RBinAddr *addr) {
 		}
 		OMF_segment *seg = obj->sections[sym->seg_idx - 1];
 		addr->vaddr = seg->vaddr + sym->offset + OMF_BASE_ADDR;
-		ut32 offset = 0;
-		OMF_data *data = seg->data;
-		while (data) {
-			offset += data->size;
-			if (sym->offset < offset) {
-				addr->paddr = (sym->offset - data->offset) + data->paddr;
-				return true;
-			}
-			data = data->next;
+		OMF_data *data = omf_find_data (seg, sym->offset);
+		if (data) {
+			addr->paddr = (sym->offset - data->offset) + data->paddr;
+			return true;
 		}
 	}
 	return false;
@@ -699,16 +726,8 @@ ut64 r_bin_omf_get_paddr_sym(r_bin_omf_obj *obj, OMF_symbol *sym) {
 	if (!obj->sections || sym->seg_idx < 1 || sym->seg_idx - 1 >= obj->nb_section) {
 		return 0;
 	}
-	OMF_data *data = obj->sections[sym->seg_idx - 1]->data;
-	ut64 offset = 0;
-	while (data) {
-		offset += data->size;
-		if (sym->offset < offset) {
-			return sym->offset - data->offset + data->paddr;
-		}
-		data = data->next;
-	}
-	return 0;
+	OMF_data *data = omf_find_data (obj->sections[sym->seg_idx - 1], sym->offset);
+	return data? sym->offset - data->offset + data->paddr: 0;
 }
 
 ut64 r_bin_omf_get_vaddr_sym(r_bin_omf_obj *obj, OMF_symbol *sym) {

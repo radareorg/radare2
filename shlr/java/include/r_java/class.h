@@ -295,6 +295,7 @@ typedef struct  r_bin_java_name_and_type_info_t {
 typedef struct  r_bin_java_utf8_info_t {
 	ut16 length;
 	ut8 *bytes;
+	const char *escaped; // cached escaped text, owned by the bin constpool
 } RBinJavaCPTypeUtf8;
 
 typedef struct  r_bin_java_cp_object_t {
@@ -656,7 +657,7 @@ typedef struct r_bin_java_attr_t {
 	ut8 *bytes;
 	ut64 pos;
 	ut64 size;
-	char *name;
+	const char *name; // owned by the bin constpool
 	ut64 file_offset;
 	RBinJavaMetaInfo *metas;
 	int type;
@@ -762,6 +763,7 @@ typedef struct r_bin_java_obj_t {
 	ut8 offset_sz;
 	ut32 cur_method_code_length;
 	RBinJavaAttrInfo *current_code_attr;
+	int attr_depth; // nesting level of the attribute being parsed
 
 	ut32 attr_idx;
 	ut32 method_idx;

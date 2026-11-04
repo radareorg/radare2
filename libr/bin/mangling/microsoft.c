@@ -9,6 +9,8 @@
 #define MICROSOFT_NAME_LEN (256)
 #define MICROSOFR_CLASS_NAMESPACE_LEN (256)
 #define IMPOSSIBLE_LEN (MICROSOFT_NAME_LEN + MICROSOFR_CLASS_NAMESPACE_LEN)
+// types, templates and nested names recurse into each other, bound it like the cxx2 demanglers
+#define MICROSOFT_MAX_DEPTH (256)
 
 // TODO: it will be good to change this to some kind of map data structure
 typedef enum EObjectType {
@@ -550,6 +552,10 @@ static size_t get_template(SDemangler *sd, const char *buf, SStrInfo *str_info, 
 	char *str_type_code = NULL;
 	STypeCodeStr type_code_str;
 	// RListIter *it = NULL;
+	if (sd->depth > MICROSOFT_MAX_DEPTH) {
+		return 0;
+	}
+	sd->depth++;
 	RList *saved_abbr_names = sd->abbr_names;
 	RList *new_abbr_names = r_list_newf (free);
 
@@ -562,6 +568,7 @@ static size_t get_template(SDemangler *sd, const char *buf, SStrInfo *str_info, 
 		if (!names_l) {
 			free_type_code_str_struct (&type_code_str);
 			r_list_free (new_abbr_names);
+			sd->depth--;
 			return 0;
 		}
 		size_t i = get_operator_code (sd, buf, names_l, memorize);
@@ -569,6 +576,7 @@ static size_t get_template(SDemangler *sd, const char *buf, SStrInfo *str_info, 
 			r_list_free (names_l);
 			free_type_code_str_struct (&type_code_str);
 			r_list_free (new_abbr_names);
+			sd->depth--;
 			return 0;
 		}
 		buf = str_skip_report (buf, &len, i);
@@ -576,7 +584,7 @@ static size_t get_template(SDemangler *sd, const char *buf, SStrInfo *str_info, 
 		copy_string (&type_code_str, name->str_ptr, name->len);
 		r_list_free (names_l);
 	} else {
-		char *tmp = strchr(buf, '@');
+		const char *tmp = strchr (buf, '@');
 		if (!tmp) {
 			goto get_template_err;
 		}
@@ -633,6 +641,7 @@ get_template_err:
 	if (!len) {
 		free_type_code_str_struct (&type_code_str);
 	}
+	sd->depth--;
 	return len;
 }
 
@@ -641,19 +650,24 @@ get_template_err:
 /// \param buf Current buffer position with mangled name
 /// \param type_code_str String with got name and namespaces
 /// \param amount_of_names Amount of names that was in list
-/// \return Return amount of processed chars
+/// \return Return amount of processed chars, 0 if the name does not parse
 ///
 static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeStr *type_code_str, size_t *amount_of_names, bool memorize) {
 	const char *tmp = NULL;
 	RListIter *it = NULL;
 	SStrInfo *str_info = NULL;
 	size_t read_len = 0, tmp_len = 0;
+	if (sd->depth > MICROSOFT_MAX_DEPTH) {
+		return 0;
+	}
+	sd->depth++;
 	RList *names_l = r_list_newf ((RListFree)sstrinfo_free);
 
 	if (*buf == '?') {
 		size_t res = get_operator_code (sd, buf, names_l, memorize);
 		if (!res) {
 			r_list_free (names_l);
+			sd->depth--;
 			return 0;
 		}
 		memorize = true;
@@ -682,12 +696,12 @@ static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeS
 		// TODO:maybe add check of name correctness? like name can not start
 		//		with number
 		if ((len <= 0) || (len >= MICROSOFT_NAME_LEN)) {
-			goto get_namespace_and_name_err;
+			goto beach;
 		}
 
 		str_info = R_NEW (SStrInfo);
 		if (!str_info) {
-			break;
+			goto beach;
 		}
 
 		// check is it teamplate???
@@ -696,7 +710,7 @@ static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeS
 			i = get_template (sd, tmp + 2, str_info, memorize);
 			if (!i) {
 				R_FREE (str_info);
-				goto get_namespace_and_name_err;
+				goto beach;
 			}
 			r_list_append (names_l, str_info);
 
@@ -711,13 +725,13 @@ static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeS
 			STypeCodeStr str;
 			if (!init_type_code_str_struct (&str)) {
 				R_FREE (str_info);
-				break;
+				goto beach;
 			}
 			size_t i = get_namespace_and_name (sd, tmp + 2, &str, NULL, true);
 			if (!i) {
 				free_type_code_str_struct (&str);
 				R_FREE (str_info);
-				break;
+				goto beach;
 			}
 			prev_pos = str_skip_report (tmp, &read_len, i + 3);
 			curr_pos = strchr (prev_pos, '@');
@@ -728,8 +742,11 @@ static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeS
 			continue;
 		}
 
+		// anonymous namespace ?A0x<hash>@, the hash is not shown
+		const bool anonymous = (*tmp == '?') && (*(tmp + 1) == 'A');
+
 		// Nested name
-		if (*tmp == '?') {
+		if (*tmp == '?' && !anonymous) {
 			read_len++;
 			// Optional sequence number
 			char *num = NULL;
@@ -744,7 +761,7 @@ static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeS
 			if (parse_microsoft_mangled_name (sd, str_skip_n (tmp, 2), &demangled, &len) != eDemanglerErrOK) {
 				free (num);
 				R_FREE (str_info);
-				break;
+				goto beach;
 			}
 			read_len += len + 1;
 			if (num) {
@@ -766,11 +783,11 @@ static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeS
 			tmp = r_list_get_n (sd->abbr_names, *tmp - '0');
 			if (!tmp) {
 				R_FREE (str_info);
-				break;
+				goto beach;
 			}
 			len = 1;
 		} else {
-			tmp = r_str_ndup (prev_pos, len);
+			tmp = anonymous? strdup ("`anonymous namespace'"): r_str_ndup (prev_pos, len);
 			r_list_append (sd->abbr_names, (void*)tmp);
 		}
 
@@ -812,7 +829,14 @@ get_namespace_and_name_err:
 		}
 	}
 	r_list_free (names_l);
+	sd->depth--;
 	return read_len;
+
+beach:
+	// a partial length would make callers resume inside the failed name and walk it again
+	r_list_free (names_l);
+	sd->depth--;
+	return 0;
 }
 
 #define SINGLEQUOTED_Dollar '$'
@@ -1357,8 +1381,13 @@ static void parse_pointer(SDemangler *sd, SStateInfo *state, STypeCodeStr *type_
 				state->err = eTCStateMachineErrAlloc;
 				return;
 			};
-			size_t read = get_namespace_and_name (sd, state->buff_for_parsing, &func_str, NULL, true) + 1;
-			state_skip_n (state, read);
+			size_t read = get_namespace_and_name (sd, state->buff_for_parsing, &func_str, NULL, true);
+			if (!read) {
+				free_type_code_str_struct (&func_str);
+				state->err = eTCStateMachineErrUncorrectTypeCode;
+				return;
+			}
+			state_skip_n (state, read + 1);
 			copy_string (&func_str, "::", 2);
 			copy_string (&func_str, pointer_str, 0);
 			pf (sd, state, type_code_str, func_str.type_str);
@@ -1525,16 +1554,21 @@ static void free_type_code_str_struct(STypeCodeStr *type_code_str) {
 
 static EDemanglerErr get_type_code_string(SDemangler *sd, const char *sym, size_t *amount_of_read_chars, char **str_type_code) {
 	EDemanglerErr err = eDemanglerErrOK;
-	char *tmp_sym = strdup (sym);
 	STypeCodeStr type_code_str;
 	SStateInfo state;
 
+	if (sd->depth > MICROSOFT_MAX_DEPTH) {
+		*str_type_code = NULL;
+		*amount_of_read_chars = 0;
+		return eDemanglerErrUncorrectMangledSymbol;
+	}
+	sd->depth++;
 	if (!init_type_code_str_struct (&type_code_str)) {
 		err = eDemanglerErrMemoryAllocation;
 		goto get_type_code_string_err;
 	}
 
-	init_state_struct (&state, tmp_sym);
+	init_state_struct (&state, sym);
 
 	while (state.state != eTCStateEnd) {
 		run_state (sd, &state, &type_code_str);
@@ -1563,7 +1597,7 @@ static EDemanglerErr get_type_code_string(SDemangler *sd, const char *sym, size_
 	}
 
 get_type_code_string_err:
-	free (tmp_sym);
+	sd->depth--;
 	free_type_code_str_struct (&type_code_str);
 	return err;
 }

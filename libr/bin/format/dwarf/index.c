@@ -240,7 +240,7 @@ static DwarfIndexResolution dwarf_index_resolver_init_str(DwarfIndexResolver *re
 	resolver->str_offsets = resolver->str_offsets_section
 		? dwarf_get_section_bytes (resolver->bf, resolver->str_offsets_section): NULL;
 	if (!resolver->str_offsets || !resolver->str_section
-		|| !dwarf_get_section_bytes (resolver->bf, resolver->str_section)) {
+		|| !dwarf_get_section_strings (resolver->bf, resolver->str_section)) {
 		resolver->str_status = DWARF_INDEX_RESOLUTION_UNAVAILABLE;
 		return resolver->str_status;
 	}

@@ -543,9 +543,15 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (__plugin_open (io, file, 0)) {
 		const char *pidfile = file + 6;
 		char *endptr;
-		int pid = (int)strtol (pidfile, &endptr, 10);
-		if (endptr == pidfile || pid < 0) {
-			pid = -1;
+		errno = 0;
+		long parsed_pid = strtol (pidfile, &endptr, 10);
+		int pid = -1;
+		if (isdigit (*pidfile) && !*endptr) {
+			if (errno == ERANGE || parsed_pid <= 0 || parsed_pid > INT_MAX) {
+				R_LOG_ERROR ("Invalid PID: %s", pidfile);
+				return NULL;
+			}
+			pid = (int)parsed_pid;
 		}
 		if (pid == -1) {
 			pid = fork_and_ptraceme (io, io->bits, file + 6);

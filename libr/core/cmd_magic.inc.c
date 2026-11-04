@@ -8,11 +8,28 @@ typedef struct {
 	RCore *core;
 	char *ofile;
 	int hits;
+	int calls;
 	bool text;
 	// TODO: add PJ and other stuff
 } MagicContext;
 
 #define MAX_MAGIC_DEPTH 64
+// Bound branching as well as depth for each top-level address.
+#define MAX_MAGIC_CALLS 256
+
+// Descriptions contain untrusted file bytes; only allow plain names inside dir.magic.
+static char *magic_sub_database(RCore *core, const char *name) {
+	if (*name == '.' || strpbrk (name, "/\\")) {
+		return NULL;
+	}
+	const char *magicpath = r_config_get (core->config, "dir.magic");
+	char *path = r_file_new (magicpath, name, NULL);
+	if (path && r_file_is_regular (path)) {
+		return path;
+	}
+	free (path);
+	return NULL;
+}
 
 static int magic_at(MagicContext *mc, RSearchKeyword *kw, const char *file, ut64 addr, int depth, bool v, PJ *pj) {
 	RCore *core = mc->core;
@@ -28,10 +45,13 @@ static int magic_at(MagicContext *mc, RSearchKeyword *kw, const char *file, ut64
 		return 0;
 	}
 
-	if (depth > MAX_MAGIC_DEPTH) {
-		ret = 0;
-		goto seek_exit;
+	if (depth == 0) {
+		mc->calls = 0;
 	}
+	if (depth > MAX_MAGIC_DEPTH || mc->calls >= MAX_MAGIC_CALLS) {
+		return 0;
+	}
+	mc->calls++;
 	bool must_report_progress = !pj;
 	if (must_report_progress) {
 		must_report_progress = r_config_get_b (core->config, "search.verbose");
@@ -65,36 +85,27 @@ static int magic_at(MagicContext *mc, RSearchKeyword *kw, const char *file, ut64
 			file = NULL;
 		}
 	}
-	if (file && mc->ofile && file != mc->ofile) {
-		if (strcmp (file, mc->ofile)) {
-			r_magic_free (core->magic);
-			core->magic = NULL;
-		}
+	if (file && core->magic && (!mc->ofile || strcmp (file, mc->ofile))) {
+		r_magic_free (core->magic);
+		core->magic = NULL;
 	}
 	if (!core->magic) {
+		char *database = file? strdup (file): NULL;
+		if (file && !database) {
+			ret = -1;
+			goto seek_exit;
+		}
+		free (mc->ofile);
+		mc->ofile = database;
+		const char *magicpath = database? database: r_config_get (core->config, "dir.magic");
 		core->magic = r_magic_new (mc->text? R_MAGIC_CHECK_TEXT: 0);
-		if (file) {
-			char *tmp = strdup (file);
-			free (mc->ofile);
-			mc->ofile = tmp;
-			if (!r_magic_load (core->magic, mc->ofile)) {
-				const char *err = r_str_get (r_magic_error (core->magic));
-				R_LOG_ERROR ("failed r_magic_load (\"%s\") %s", mc->ofile, err);
-				r_magic_free (core->magic);
-				core->magic = NULL;
-				ret = -1;
-				goto seek_exit;
-			}
-		} else {
-			const char *magicpath = r_config_get (core->config, "dir.magic");
-			if (!r_magic_load (core->magic, magicpath)) {
-				const char *err = r_str_get (r_magic_error (core->magic));
-				R_LOG_ERROR ("failed r_magic_load (dir.magic) %s", err);
-				r_magic_free (core->magic);
-				core->magic = NULL;
-				ret = -1;
-				goto seek_exit;
-			}
+		if (!r_magic_load (core->magic, magicpath)) {
+			const char *err = r_str_get (r_magic_error (core->magic));
+			R_LOG_ERROR ("failed r_magic_load (\"%s\") %s", magicpath, err);
+			r_magic_free (core->magic);
+			core->magic = NULL;
+			ret = -1;
+			goto seek_exit;
 		}
 	}
 	//if (v) r_cons_printf (cons, "  %d # pm %s @ 0x%"PFMT64x"\n", depth, r_str_get (file), addr);
@@ -163,7 +174,7 @@ static int magic_at(MagicContext *mc, RSearchKeyword *kw, const char *file, ut64
 		}
 		//eprintf ("0x%08"PFMT64x" 0x%08"PFMT64x" %d %s\n", addr+adelta, addr+adelta, depth, p);
 		// walking children
-		for (q = p; *q; q++) {
+		for (q = p; *q && mc->calls < MAX_MAGIC_CALLS; q++) {
 			switch (*q) {
 			case ' ':
 				fmt = q + 1;
@@ -177,18 +188,24 @@ static int magic_at(MagicContext *mc, RSearchKeyword *kw, const char *file, ut64
 					} else {
 						sscanf (q + 1, "%"PFMT64d, &addr);
 					}
-					if (R_STR_ISEMPTY (fmt)) {
-						fmt = file;
+					char *sub = *fmt? magic_sub_database (core, fmt): NULL;
+					if (!*fmt || sub) {
+						magic_at (mc, kw, sub? sub: file, addr, depth + 1, true, pj);
+					} else {
+						R_LOG_WARN ("Ignoring unknown magic database '%s' named in the description", fmt);
 					}
-					magic_at (mc, kw, fmt, addr, depth + 1, true, pj);
+					free (sub);
 					*q = '@';
 				}
 				break;
 			}
 		}
 		R_FREE (p);
-		r_magic_free (core->magic);
-		core->magic = NULL;
+		// a recursive call may have released the database already
+		if (core->magic) {
+			r_magic_free (core->magic);
+			core->magic = NULL;
+		}
 	}
 	adelta ++;
 	delta ++;

@@ -63,11 +63,9 @@ static bool socket_http_sandbox_check(const char *url_or_host) {
 	return r_sandbox_check (R_SANDBOX_GRAIN_SOCKET) && r_sandbox_check (R_SANDBOX_GRAIN_NETWORK);
 #else
 	if (r_sandbox_check (R_SANDBOX_GRAIN_NETWORK)) {
-		/* NETWORK grain is set, allow all */
 		return true;
 	}
-	/* Check if host is localhost (function handles URL parsing internally) */
-	if (socket_http_requires_curl (url_or_host) || !r_sandbox_check_localhost (url_or_host)) {
+	if (socket_http_requires_curl (url_or_host) || !r_sandbox_check_connect (url_or_host)) {
 		R_LOG_ERROR ("sandbox: network access denied for '%s'", url_or_host);
 		return false;
 	}
@@ -389,7 +387,7 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 			free (escaped_body_file);
 			return NULL;
 		}
-		RStrBuf *sb = r_strbuf_new ("curl -s -D ");
+		RStrBuf *sb = r_strbuf_new ("curl -s -g -D ");
 		r_strbuf_appendf (sb, "\"%s\" -o \"%s\" -L --max-redirs %u", escaped_header_file, escaped_body_file, redirections);
 		if (headers) {
 			const char **header = headers;
@@ -558,7 +556,7 @@ R_API char *r_socket_http_post(const char *url, const char *headers[], const cha
 		if (!escaped_url) {
 			return NULL;
 		}
-		RStrBuf *sb = r_strbuf_new ("curl -s -D - -L");
+		RStrBuf *sb = r_strbuf_new ("curl -s -g -D - -L");
 		if (headers) {
 			const char **header = headers;
 			while (*header) {

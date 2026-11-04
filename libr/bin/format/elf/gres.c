@@ -16,6 +16,7 @@ typedef struct {
 	ut64 size;
 	const char *origin;
 	ut64 *values_left;
+	size_t *names_size;
 } GResCtx;
 
 typedef struct {
@@ -53,12 +54,12 @@ static bool gres_read_item(const GResCtx *ctx, ut64 offset, GResItem *item) {
 	return true;
 }
 
-static char *gres_item_name(const GResCtx *ctx, const GResItem *item, const char *parent, size_t *names_size) {
+static char *gres_item_name(const GResCtx *ctx, const GResItem *item, const char *parent) {
 	size_t parent_size = parent? strlen (parent): 0;
 	size_t name_size;
 	if (item->key_start > ctx->size || item->key_size > ctx->size - item->key_start
 		|| r_add_overflow (parent_size, (size_t)item->key_size, &name_size)
-		|| name_size >= ALLOC_SIZE_LIMIT || *names_size > ALLOC_SIZE_LIMIT - name_size - 1) {
+		|| name_size >= ALLOC_SIZE_LIMIT || *ctx->names_size > ALLOC_SIZE_LIMIT - name_size - 1) {
 		return NULL;
 	}
 	char *name = malloc (name_size + 1);
@@ -74,7 +75,7 @@ static char *gres_item_name(const GResCtx *ctx, const GResItem *item, const char
 		return NULL;
 	}
 	name[name_size] = 0;
-	*names_size += name_size + 1;
+	*ctx->names_size += name_size + 1;
 	return name;
 }
 
@@ -94,7 +95,6 @@ static bool gres_build_names(const GResCtx *ctx, const GResItem *items, size_t n
 		free (stack);
 		return false;
 	}
-	size_t names_size = 0;
 	size_t i;
 	for (i = 0; i < n_items; i++) {
 		if (status[i]) {
@@ -131,7 +131,7 @@ static bool gres_build_names(const GResCtx *ctx, const GResItem *items, size_t n
 				}
 			}
 			if (valid) {
-				names[current] = gres_item_name (ctx, &items[current], parent_name, &names_size);
+				names[current] = gres_item_name (ctx, &items[current], parent_name);
 				valid = names[current] != NULL;
 			}
 			status[current] = valid? 1: 2;
@@ -222,7 +222,7 @@ static bool gres_add_value(const GResCtx *ctx, const GResItem *item, const char 
 		ctx->paddr + data_offset, ctx->vaddr + data_offset, data_size);
 }
 
-static bool gres_parse_section(RBinFile *bf, const RBinSection *section, RVecRBinResource *resources, ut64 *values_left) {
+static bool gres_parse_section(RBinFile *bf, const RBinSection *section, RVecRBinResource *resources, ut64 *values_left, size_t *names_size) {
 	GResCtx ctx = {
 		.buf = bf->buf,
 		.paddr = section->paddr,
@@ -230,6 +230,7 @@ static bool gres_parse_section(RBinFile *bf, const RBinSection *section, RVecRBi
 		.size = section->size,
 		.origin = section->name,
 		.values_left = values_left,
+		.names_size = names_size,
 	};
 	ut8 header[GRES_HEADER_SIZE];
 	if (!gres_read (&ctx, 0, header, sizeof (header))
@@ -334,12 +335,18 @@ bool Elf_(load_gresources)(RBinFile *bf, ELFOBJ *eo, RVecRBinResource *resources
 	if (!sections) {
 		return false;
 	}
-	// values of a real bundle never overlap, so their sizes cannot add up to more than the file
+	// bundles and their values never overlap, so their sizes cannot add up to more than the file
 	ut64 values_left = r_buf_size (bf->buf);
+	ut64 sections_left = values_left;
+	size_t names_size = 0;
 	RBinSection *section;
 	R_VEC_FOREACH (sections, section) {
-		if (section->name && r_str_startswith (section->name, GRES_SECTION_PREFIX)
-			&& section->size && !gres_parse_section (bf, section, resources, &values_left)) {
+		if (!section->name || !section->size || section->size > sections_left
+			|| !r_str_startswith (section->name, GRES_SECTION_PREFIX)) {
+			continue;
+		}
+		sections_left -= section->size;
+		if (!gres_parse_section (bf, section, resources, &values_left, &names_size)) {
 			return false;
 		}
 	}

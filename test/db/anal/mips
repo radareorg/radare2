@@ -1759,3 +1759,172 @@ sq s3, 48(sp)
 0x7fb30030
 EOF
 RUN
+
+NAME=mips j delay slot write hides forwarded arg
+FILE=malloc://512
+ARGS=-a mips -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 0800004000002025@0
+wx 2482000103e0000800000000@0x100
+af@0x100
+af@0
+afva@0x100
+afva@0
+?e WRAP
+afv@0
+EOF
+EXPECT=<<EOF
+WRAP
+EOF
+RUN
+
+NAME=mips j delay slot nop keeps forwarded arg
+FILE=malloc://512
+ARGS=-a mips -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 0800004000000000@0
+wx 2482000103e0000800000000@0x100
+af@0x100
+af@0
+afva@0x100
+afva@0
+?e WRAP
+afv@0
+EOF
+EXPECT=<<EOF
+WRAP
+arg int32_t arg1 @ a0
+EOF
+RUN
+
+NAME=mips jal delay slot write hides forwarded arg
+FILE=malloc://512
+ARGS=-a mips -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 0c0000400000202503e0000800000000@0
+wx 2482000103e0000800000000@0x100
+af@0x100
+af@0
+afva@0x100
+afva@0
+?e WRAP
+afv@0
+EOF
+EXPECT=<<EOF
+WRAP
+EOF
+RUN
+
+NAME=mips j delay slot arg move forwards only the source arg
+FILE=malloc://512
+ARGS=-a mips -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 0800004000802825@0
+wx 0085102103e0000800000000@0x100
+af@0x100
+af@0
+afva@0x100
+afva@0
+afv@0x100
+?e WRAP
+afv@0
+EOF
+EXPECT=<<EOF
+arg int32_t arg1 @ a0
+arg int32_t arg2 @ a1
+WRAP
+arg int32_t arg1 @ a0
+EOF
+RUN
+
+NAME=mips j uncounted delay slot write in a jump block hides forwarded arg
+FILE=malloc://512
+ARGS=-a mips -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 14a00002000000000800004000002025@0
+wx 2482000103e0000800000000@0x100
+af@0x100
+af@0
+afva@0x100
+afva@0
+?e WRAP
+afv@0
+EOF
+EXPECT=<<EOF
+WRAP
+EOF
+RUN
+
+NAME=mips j truncated delay slot keeps forwarded arg
+FILE=malloc://512
+ARGS=-a mips -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 14a00002000000000800004000002025@0
+wx 2482000103e0000800000000@0x100
+af@0x100
+afva@0x100
+af@0
+afu 0xe@0
+afb- 0xc@0
+afbj@0~{}~size
+afva@0
+?e WRAP
+afv@0
+EOF
+EXPECT=<<EOF
+    "size": 8,
+    "size": 6,
+WRAP
+arg int32_t arg1 @ a0
+EOF
+RUN
+
+NAME=mips j slot write after the block in the same map is not walked
+FILE=malloc://512
+ARGS=-a mips -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 14a00002000000000800004000002025@0
+wx 2482000103e0000800000000@0x100
+af@0x100
+afva@0x100
+af@0
+afu 0xc@0
+afbj@0~{}~size
+afva@0
+?e WRAP
+afv@0
+EOF
+EXPECT=<<EOF
+    "size": 8,
+    "size": 4,
+WRAP
+arg int32_t arg1 @ a0
+EOF
+RUN
+
+NAME=mips j slot write in a separate map after the block is not walked
+FILE=malloc://12
+ARGS=-a mips -b 32
+CMDS=<<EOF
+o malloc://4 0xc rwx
+o malloc://16 0x100 rwx
+e cfg.bigendian=true
+wx 14a000020000000008000040@0
+wx 00002025@0xc
+wx 2482000103e0000800000000@0x100
+af@0x100
+afva@0x100
+af@0
+afu 0xc@0
+afbj@0~{}~size
+afva@0
+?e WRAP
+afv@0
+EOF
+EXPECT=<<EOF
+    "size": 8,
+    "size": 4,
+WRAP
+arg int32_t arg1 @ a0
+EOF
+RUN

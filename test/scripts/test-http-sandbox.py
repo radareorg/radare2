@@ -3,10 +3,12 @@
 import json
 import os
 from pathlib import Path
+import signal
 import socket
 import subprocess
 import tempfile
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -101,6 +103,17 @@ def check_http_sandbox_in_directory(directory, sandbox, background=False, local_
         else:
             raise AssertionError("HTTP server did not start")
 
+        if not exec_allowed:
+            with socket.socket() as candidate:
+                candidate.bind(("127.0.0.1", 0))
+                changed_port = candidate.getsockname()[1]
+            command("POST", f"e http.port={changed_port}")
+            for method in ("POST", "GET"):
+                for text in ("=h*", "=h--"):
+                    assert command(method, text) == b""
+                    assert command("GET", "?e control-denied") == b"control-denied\n"
+            command("POST", f"e http.port={port}")
+
         assert command("POST", "hello", "echo") == b"hello\n"
         assert command("POST", "world", "echo hello") == b"hello world\n"
         assert command("POST", "100%20+done", "echo") == b"100%20+done\n"
@@ -111,6 +124,11 @@ def check_http_sandbox_in_directory(directory, sandbox, background=False, local_
 
         for method in ("GET", "POST"):
             assert command(method, "?e ordinary") == b"ordinary\n"
+            for nested in ("r2 -NNQ --", "r2 -NNLQ --"):
+                command(method, nested)
+                assert command(method, "?e after-nested-r2") == b"after-nested-r2\n"
+            if not exec_allowed:
+                assert command(method, "o r2pipe://x; ?e alive") == b"alive\n"
             assert command(method, "echo $(echo nested)") == b"nested\n"
             assert command(method, "wx 90c3; p8 2") == b"90c3\n"
             assert (b"HTTP_EXECUTED" in command(method, "!echo HTTP_EXECUTED")) == (not scoped)
@@ -166,9 +184,23 @@ def check_http_sandbox_in_directory(directory, sandbox, background=False, local_
             output = command("POST", "e log.cons=true; e http.sandbox=false; e log.cons=false")
             assert b"Key 'http.sandbox' is readonly" in output, output
             assert command("GET", "e log.cons") == b"false\n"
-        if not background and (not local_sandbox or local_grain == "all" or "exec" in local_grain.split(",")):
-            command("GET", "=h--")
+        if not background and (exec_allowed or os.name == "posix"):
+            if exec_allowed:
+                command("GET", "=h*")
+                for attempt in range(100):
+                    try:
+                        if command("GET", "?e restarted") == b"restarted\n":
+                            break
+                    except (OSError, urllib.error.URLError):
+                        pass
+                    time.sleep(0.05)
+                else:
+                    raise AssertionError("HTTP server did not restart")
+                command("GET", "=h--")
+            else:
+                process.send_signal(signal.SIGINT)
             stdout, stderr = finish()
+            assert stderr.count(b"Starting http server") == (2 if exec_allowed else 1), stderr
             assert stdout.endswith(local_config), (stdout, stderr)
             assert process.returncode == 0, stderr
         else:

@@ -455,6 +455,8 @@ RVecRBinReloc *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols,
 		return NULL;
 	}
 	ut64 bufsz = r_buf_size (bin->buf);
+	// every fixup patches its own file offset, so a file cannot hold more relocs than bytes
+	const ut64 max_relocs = bufsz;
 	RList *entries = r_bin_ne_get_entrypoints (bin);
 	if (!entries) {
 		return NULL;
@@ -488,17 +490,26 @@ RVecRBinReloc *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols,
 			continue;
 		}
 		off += 2;
-		// size_t buf_size = r_buf_size (bin->buf);
+		// a patch site belongs to one chain, so the items of a segment share it
+		RBitset *visited = r_bitset_new ();
 		while (off < start + length * sizeof (NE_image_reloc_item)) {
-			// && off + sizeof (NE_image_reloc_item) < buf_size)
+			if (RVecRBinReloc_length (relocs) >= max_relocs) {
+				R_LOG_WARN ("More NE relocations than bytes in the file, ignoring the rest");
+				r_bitset_free (visited);
+				goto beach;
+			}
 			NE_image_reloc_item rel = {0};
 			if (r_buf_fread_at (bin->buf, off, (ut8 *)&rel, "2c3s", 1) < 1) {
+				r_bitset_free (visited);
 				free (modref);
 				r_list_free (entries);
 				RVecRBinReloc_free (relocs);
 				return NULL;
 			}
 			RBinReloc *reloc = RVecRBinReloc_emplace_back (relocs);
+			if (!reloc) {
+				break;
+			}
 			reloc->paddr = seg->paddr + rel.offset;
 			reloc->ntype = rel.type;
 			switch (rel.type) {
@@ -571,39 +582,40 @@ RVecRBinReloc *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols,
 
 			if (rel.flags & ADDITIVE) {
 				reloc->additive = 1;
-			} else {
-				RBitset *visited = r_bitset_new ();
-				if (r_bitset_set (visited, rel.offset)) {
-					while (reloc->paddr <= bufsz && bufsz - reloc->paddr >= sizeof (ut16)) {
-						offset = r_buf_read_le16_at (bin->buf, reloc->paddr);
-						if (offset == UT16_MAX || !r_bitset_set (visited, offset)) {
-							break;
-						}
-						if (seg->paddr > bufsz || offset > bufsz - seg->paddr) {
-							break;
-						}
-						ut64 next_paddr = seg->paddr + offset;
-						if (bufsz - next_paddr < sizeof (ut16)) {
-							break;
-						}
-						// emplace may realloc: re-fetch the previous reloc by index
-						const size_t prev = RVecRBinReloc_length (relocs) - 1;
-						RBinReloc *next = RVecRBinReloc_emplace_back (relocs);
-						reloc = RVecRBinReloc_at (relocs, prev);
-						*next = *reloc;
-						if (next->import) {
-							next->import = r_bin_import_clone (next->import);
-						}
-						next->paddr = next_paddr;
-						reloc = next;
+			} else if (r_bitset_set (visited, rel.offset)) {
+				while (reloc->paddr <= bufsz && bufsz - reloc->paddr >= sizeof (ut16)) {
+					offset = r_buf_read_le16_at (bin->buf, reloc->paddr);
+					if (offset == UT16_MAX || !r_bitset_set (visited, offset)) {
+						break;
 					}
+					if (seg->paddr > bufsz || offset > bufsz - seg->paddr) {
+						break;
+					}
+					ut64 next_paddr = seg->paddr + offset;
+					if (bufsz - next_paddr < sizeof (ut16) || RVecRBinReloc_length (relocs) >= max_relocs) {
+						break;
+					}
+					// emplace may realloc: re-fetch the previous reloc by index
+					const size_t prev = RVecRBinReloc_length (relocs) - 1;
+					RBinReloc *next = RVecRBinReloc_emplace_back (relocs);
+					if (!next) {
+						break;
+					}
+					reloc = RVecRBinReloc_at (relocs, prev);
+					*next = *reloc;
+					if (next->import) {
+						next->import = r_bin_import_clone (next->import);
+					}
+					next->paddr = next_paddr;
+					reloc = next;
 				}
-				r_bitset_free (visited);
 			}
 
 			off += sizeof (NE_image_reloc_item);
 		}
+		r_bitset_free (visited);
 	}
+beach:
 	free (modref);
 	r_list_free (entries);
 	return relocs;

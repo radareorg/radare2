@@ -2158,6 +2158,13 @@ static bool warn_if_dbg(RCore *core) {
 	return true;
 }
 
+static ut64 symbol_addr(RBin *bin, RBinSymbol *symbol, int va) {
+	if (va == VA_TRUE && bin->cur) {
+		return r_bin_file_get_symbol_vaddr (bin->cur, symbol);
+	}
+	return compute_addr (bin, symbol->paddr, symbol->vaddr, va);
+}
+
 static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 	bool bin_demangle = r_config_get_b (core->config, "bin.demangle");
 	bool keep_lib = r_config_get_i (core->config, "bin.demangle.pfxlib");
@@ -2245,6 +2252,8 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 			 * Skip section reloc because they will have their own flag.
 			 * Skip also file reloc because not useful for now.
 			 */
+		} else if (reloc->to_slot && (IS_MODE_SET (mode) || IS_MODE_RAD (mode))) {
+			// the slot's own row names the import and types the slot
 		} else if (IS_MODE_SET (mode)) {
 			set_bin_relocs (&ri, reloc, addr, &db, &sdb_module);
 			add_metadata (&ri, reloc, addr, mode);
@@ -2298,7 +2307,7 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 				}
 #endif
 			} else {
-				ut64 v = reloc->symbol? reloc->symbol->vaddr: reloc->addend;
+				ut64 v = reloc->symbol? symbol_addr (core->bin, reloc->symbol, va): reloc->addend;
 				ut64 a = addr;
 				r_cons_printf (core->cons, "'@0x%" PFMT64x "'wv8 0x%" PFMT64x "\n", a, v);
 			}
@@ -2326,10 +2335,10 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 			}
 			pj_ks (pj, "type", bin_reloc_type_name (reloc));
 			pj_kn (pj, "ntype", reloc->ntype);
-			pj_kn (pj, "vaddr", reloc->vaddr);
+			pj_kn (pj, "vaddr", addr);
 			pj_kn (pj, "paddr", reloc->paddr);
 			if (reloc->symbol) {
-				pj_kn (pj, "sym_va", reloc->symbol->vaddr);
+				pj_kn (pj, "sym_va", symbol_addr (core->bin, reloc->symbol, va));
 			}
 			pj_kb (pj, "is_ifunc", reloc->is_ifunc);
 			// end reloc item
@@ -2477,9 +2486,19 @@ static bool import_has_signature(RCore *core, RBinImport *import, const char *na
 	if (import->type && strcmp (import->type, R_BIN_TYPE_FUNC_STR)) {
 		return false;
 	}
-	char *key = r_type_func_name (core->anal->sdb_types, name);
+	Sdb *types = core->anal->sdb_types;
+	if (r_type_func_prototype_exist (types, name)) {
+		return true;
+	}
+	char *fname = r_str_newf ("sym.imp.%s", name);
+	if (!fname) {
+		return false;
+	}
+	char *key = r_type_func_name (types, fname);
+	bool found = key != NULL;
+	free (fname);
 	free (key);
-	return key != NULL;
+	return found;
 }
 
 static bool bin_imports(RCore *core, PJ *pj, int mode, int va, const char *name) {
@@ -2910,14 +2929,6 @@ static bool its_an_export(RBinSymbol *s) {
 		return false;
 	}
 	return (s->bind && !strcmp (s->bind, R_BIN_BIND_GLOBAL_STR));
-}
-
-// an absolute value is never rebased; in physical mode its mapped offset still applies
-static ut64 symbol_addr(RBin *bin, RBinSymbol *symbol, int va) {
-	if ((symbol->attr.flags & R_BIN_ATTR_ABSOLUTE) && va != VA_FALSE) {
-		return symbol->vaddr;
-	}
-	return compute_addr (bin, symbol->paddr, symbol->vaddr, va);
 }
 
 static void handle_arm_special_symbol(RCore *core, RBinSymbol *symbol, int va) {
@@ -4087,48 +4098,59 @@ R_IPI void bin_trycatch_flag(RCore *core, const RBinTrycatch *tc, size_t index, 
 	}
 }
 
+typedef struct {
+	PJ *pj;
+	size_t idx;
+} TrycatchJson;
+
+static bool bin_trycatch_json_item(const RBinTrycatch *tc, void *user) {
+	TrycatchJson *tj = user;
+	PJ *pj = tj->pj;
+	const char *kind = r_bin_trycatch_kind_tostring (tc->kind);
+	pj_o (pj);
+	pj_kn (pj, "index", tj->idx++);
+	pj_kn (pj, "source", tc->source);
+	pj_kn (pj, "from", tc->from);
+	pj_kn (pj, "to", tc->to);
+	pj_kn (pj, "handler", tc->handler);
+	pj_kn (pj, "filter", tc->filter);
+	if (tc->kind != R_BIN_TRYCATCH_UNSPECIFIED) {
+		pj_ks (pj, "kind", kind);
+		if (tc->kind != R_BIN_TRYCATCH_CLEANUP && tc->kind != R_BIN_TRYCATCH_FINALLY) {
+			pj_kN (pj, "typeFilter", tc->type_filter);
+		}
+		if (tc->type) {
+			pj_ks (pj, "type", tc->type);
+		}
+		if (tc->catch_all) {
+			pj_kb (pj, "catchAll", true);
+		}
+	}
+	pj_end (pj);
+	return true;
+}
+
 // Serialize the regions of a source function as a JSON array in pj.
 // source = UT64_MAX selects all the regions. Returns the number of entries.
 // This is the single JSON representation used by "iwj" and the trycatch
 // array embedded in function json (afij).
-R_IPI int bin_trycatch_json(PJ *pj, const RVecRBinTrycatch *tcs, ut64 source) {
+R_IPI int bin_trycatch_json(PJ *pj, RBinFile *bf, ut64 source) {
 	R_RETURN_VAL_IF_FAIL (pj, 0);
-	RVecRBinTrycatch empty = { 0 };
-	if (!tcs) {
-		tcs = &empty;
-	}
-	size_t idx = 0;
-	const RBinTrycatch *tc;
+	TrycatchJson tj = { pj, 0 };
 	pj_a (pj);
-	R_VEC_FOREACH (tcs, tc) {
-		if (source != UT64_MAX && tc->source != source) {
-			continue;
-		}
-		const char *kind = r_bin_trycatch_kind_tostring (tc->kind);
-		pj_o (pj);
-		pj_kn (pj, "index", idx);
-		pj_kn (pj, "source", tc->source);
-		pj_kn (pj, "from", tc->from);
-		pj_kn (pj, "to", tc->to);
-		pj_kn (pj, "handler", tc->handler);
-		pj_kn (pj, "filter", tc->filter);
-		if (tc->kind != R_BIN_TRYCATCH_UNSPECIFIED) {
-			pj_ks (pj, "kind", kind);
-			if (tc->kind != R_BIN_TRYCATCH_CLEANUP && tc->kind != R_BIN_TRYCATCH_FINALLY) {
-				pj_kN (pj, "typeFilter", tc->type_filter);
-			}
-			if (tc->type) {
-				pj_ks (pj, "type", tc->type);
-			}
-			if (tc->catch_all) {
-				pj_kb (pj, "catchAll", true);
+	if (bf && source != UT64_MAX) {
+		r_bin_trycatch_foreach (bf, source, bin_trycatch_json_item, &tj);
+	} else if (bf) {
+		const RVecRBinTrycatch *tcs = r_bin_file_get_trycatch (bf);
+		const RBinTrycatch *tc;
+		if (tcs) {
+			R_VEC_FOREACH (tcs, tc) {
+				bin_trycatch_json_item (tc, &tj);
 			}
 		}
-		pj_end (pj);
-		idx++;
 	}
 	pj_end (pj);
-	return idx;
+	return tj.idx;
 }
 
 static bool bin_trycatch(RCore *core, PJ *pj, int mode, ut64 source) {
@@ -4140,7 +4162,7 @@ static bool bin_trycatch(RCore *core, PJ *pj, int mode, ut64 source) {
 		trycatch = &empty;
 	}
 	if (IS_MODE_JSON (mode)) {
-		bin_trycatch_json (pj, trycatch, source);
+		bin_trycatch_json (pj, bf, source);
 		return true;
 	}
 	size_t idx = 0;
@@ -5382,6 +5404,7 @@ static void bin_elf_versioninfo(RCore *core, PJ *pj, int mode) {
 	do {
 		char *verneed_path = r_str_newf (format, "verneed", num_verneed++);
 		if (! (sdb = sdb_ns_path (core->sdb, verneed_path, 0))) {
+			free (verneed_path);
 			break;
 		}
 		const char *const section_name = sdb_const_get (sdb, "section_name", 0);

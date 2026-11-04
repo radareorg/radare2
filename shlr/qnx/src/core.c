@@ -9,6 +9,7 @@
 #include "packet.h"
 
 #define MAX_TRAN_TRIES 3
+#define MAX_PIDLIST_ENTRIES 65536
 #define HOST_QNX_PROTOVER_MAJOR 0
 #define HOST_QNX_PROTOVER_MINOR 3
 
@@ -412,8 +413,9 @@ int qnxr_write_memory (libqnxr_t *g, ut64 address, const ut8 *data, ut64 len) {
 		addr = address + tot_len;
 		g->tran.pkt.memwr.addr = EXTRACT_UNSIGNED_INTEGER (&addr, 8);
 		memcpy (g->tran.pkt.memwr.data, data + tot_len, chunk);
-		nto_send (g, offsetof (DStMsg_memwr_t, data) + chunk, 0);
-
+		if (nto_send (g, offsetof (DStMsg_memwr_t, data) + chunk, 0) < 0) {
+			return (int)tot_len;
+		}
 		switch (g->recv.pkt.hdr.cmd) {
 		case DSrMsg_ok:
 			tot_len += chunk;
@@ -448,20 +450,25 @@ void qnxr_pidlist (libqnxr_t *g, void *ctx, pidlist_cb_t *cb) {
 	pid = 1;
 	subcmd = DSMSG_PIDLIST_BEGIN;
 
-	while (1) {
+	int count;
+	for (count = 0; count < MAX_PIDLIST_ENTRIES; count++) {
 		nto_send_init (g, DStMsg_pidlist, subcmd, SET_CHANNEL_DEBUG);
 		g->tran.pkt.pidlist.pid = EXTRACT_SIGNED_INTEGER (&pid, 4);
 		g->tran.pkt.pidlist.tid = EXTRACT_SIGNED_INTEGER (&start_tid, 4);
-		nto_send (g, sizeof (g->tran.pkt.pidlist), 0);
-
-		if (g->recv.pkt.hdr.cmd == DSrMsg_err || g->recv.pkt.hdr.cmd != DSrMsg_okdata)
+		// on failure g->recv still holds the previous reply
+		if (nto_send (g, sizeof (g->tran.pkt.pidlist), 0) <= (int)sizeof (g->recv.pkt.hdr)) {
 			return;
+		}
+		if (g->recv.pkt.hdr.cmd != DSrMsg_okdata) {
+			return;
+		}
 
 		pid = EXTRACT_SIGNED_INTEGER (&pidlist->pid, 4);
 		if (cb != NULL)
 			cb (ctx, pid, pidlist->name);
 		subcmd = DSMSG_PIDLIST_NEXT;
 	}
+	eprintf ("%s: too many processes, aborting\n", __func__);
 }
 
 bool qnxr_select (libqnxr_t *g, pid_t pid, int tid) {

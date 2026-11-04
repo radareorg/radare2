@@ -997,3 +997,75 @@ EXPECT=<<EOF
 
 EOF
 RUN
+
+NAME=syntax highlight recognizes stdint types
+FILE=-
+CMDS=<<EOF
+ecd
+e scr.color=1
+?e int8_t int16_t int32_t int64_t~:))
+?e uint8_t uint16_t uint32_t uint64_t~:))
+?e int_least8_t int_least16_t int_least32_t int_least64_t~:))
+?e uint_least8_t uint_least16_t uint_least32_t uint_least64_t~:))
+?e int_fast8_t int_fast16_t int_fast32_t int_fast64_t~:))
+?e uint_fast8_t uint_fast16_t uint_fast32_t uint_fast64_t~:))
+?e intptr_t uintptr_t intmax_t uintmax_t~:))
+?e int32_t_value my_uint64_t _intptr_t intmax_t_suffix~:))
+?e "\"int32_t\""~:))
+?e /* uint64_t */~:))
+?e // intptr_t~:))
+EOF
+EXPECT=<<EOF
+[31mint8_t[0m [31mint16_t[0m [31mint32_t[0m [31mint64_t[0m
+[31muint8_t[0m [31muint16_t[0m [31muint32_t[0m [31muint64_t[0m
+[31mint_least8_t[0m [31mint_least16_t[0m [31mint_least32_t[0m [31mint_least64_t[0m
+[31muint_least8_t[0m [31muint_least16_t[0m [31muint_least32_t[0m [31muint_least64_t[0m
+[31mint_fast8_t[0m [31mint_fast16_t[0m [31mint_fast32_t[0m [31mint_fast64_t[0m
+[31muint_fast8_t[0m [31muint_fast16_t[0m [31muint_fast32_t[0m [31muint_fast64_t[0m
+[31mintptr_t[0m [31muintptr_t[0m [31mintmax_t[0m [31muintmax_t[0m
+int32_t_value my_uint64_t _intptr_t intmax_t_suffix
+[33m"int32_t[33m"[0m
+[31m/* uint64_t */[0m
+[31m// intptr_t[0m
+EOF
+RUN
+
+NAME=syntax highlight recognizes labels at column zero
+FILE=-
+CMDS=<<EOF
+ecd
+e scr.color=1
+ec label blue
+?e entry:\nloc.00401000:\n0:\n$done: return 42\x3b~:))
+?en eof_label:~:))
+?e
+?e \x20leading:\n\tindented:\nword label:\nlabel :\n:\nplain~:))
+?e "\"string:\""~:))
+?e /*\ncomment:\n*/\nnext_label:~:))
+?e // comment:\nafter_comment:~:))
+?e "\"start\nstring:\nend\""~:))
+EOF
+EXPECT=<<EOF
+[34mentry:[0m
+[34mloc.00401000:[0m
+[34m0:[0m
+[34m$done:[0m [35mreturn[0m [32m42[0m;
+[34meof_label:[0m
+ leading:
+	indented:
+word label:
+label :
+:
+plain
+[33m"string:[33m"[0m
+[31m/*
+comment:
+*/[0m
+[34mnext_label:[0m
+[31m// comment:[0m
+[34mafter_comment:[0m
+[33m"start
+string:
+end[33m"[0m
+EOF
+RUN

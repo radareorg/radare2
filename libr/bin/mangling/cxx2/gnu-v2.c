@@ -12,6 +12,8 @@
 #include "cxx2_internal.h"
 
 #define GV2_MAX_DEPTH 200
+// T<n> and N<count><n> back references expand exponentially, cap the output like rust v0
+#define GV2_MAX_OUTPUT 1000000
 
 typedef struct {
 	const char *p;
@@ -20,6 +22,7 @@ typedef struct {
 	int depth;
 	char **types; // typevec of rendered type strings (slot 0 = class for methods)
 	int ntypes, captypes;
+	size_t total; // bytes rendered into or copied out of the typevec
 } GV2;
 
 static void gv2_type(GV2 *c, RStrBuf *o, const char *inner);
@@ -56,11 +59,21 @@ static int gv2_number(GV2 *c) {
 	return n;
 }
 
+// charge `len` rendered bytes against the output budget
+static bool gv2_charge(GV2 *c, size_t len) {
+	c->total += len;
+	if (c->total > GV2_MAX_OUTPUT) {
+		c->fail = true;
+		return false;
+	}
+	return true;
+}
+
 static void gv2_push_type(GV2 *c, const char *s) {
 	if (c->fail || !s) {
 		return;
 	}
-	if (!cxx2_strvec_push (&c->types, &c->ntypes, &c->captypes, s, 0)) {
+	if (!gv2_charge (c, strlen (s)) || !cxx2_strvec_push (&c->types, &c->ntypes, &c->captypes, s, 0)) {
 		c->fail = true;
 	}
 }
@@ -112,8 +125,21 @@ static void gv2_value(GV2 *c, RStrBuf *o) {
 	(void)gv2_eat (c, '_'); // optional wrapper open
 	bool neg = gv2_eat (c, 'm');
 	int v = gv2_number (c);
+	if (v < 0) {
+		c->fail = true;
+	}
 	(void)gv2_eat (c, '_'); // optional wrapper close / terminator
-	r_strbuf_appendf (o, "%s%d", neg ? "-" : "", v < 0 ? 0 : v);
+	r_strbuf_appendf (o, "%s%d", neg ? "-" : "", v);
+}
+
+static void gv2_name(GV2 *c, RStrBuf *o) {
+	int n = gv2_peek (c) == '0' ? -1 : gv2_number (c);
+	if (n < 1 || n > c->end - c->p) {
+		c->fail = true;
+		return;
+	}
+	r_strbuf_append_n (o, c->p, n);
+	c->p += n;
 }
 
 // <class> ::= <number> <name> | Q <count> <name>+ | t <template>
@@ -133,6 +159,9 @@ static void gv2_class(GV2 *c, RStrBuf *o) {
 		} else {
 			count = isdigit ((unsigned char)gv2_peek (c)) ? (gv2_take (c) - '0') : -1;
 		}
+		if (count < 1) {
+			c->fail = true;
+		}
 		int i;
 		for (i = 0; i < count && !c->fail; i++) {
 			if (i) {
@@ -143,14 +172,11 @@ static void gv2_class(GV2 *c, RStrBuf *o) {
 	} else if (ch == 't') {
 		// t <name-len> <name> <argcount> <args>
 		c->p++;
-		int nl = gv2_number (c);
-		if (nl > 0 && c->p + nl <= c->end) {
-			r_strbuf_append_n (o, c->p, nl);
-			c->p += nl;
-		} else {
+		gv2_name (c, o);
+		int argc = isdigit ((unsigned char)gv2_peek (c)) ? (gv2_take (c) - '0') : -1;
+		if (argc < 0) {
 			c->fail = true;
 		}
-		int argc = isdigit ((unsigned char)gv2_peek (c)) ? (gv2_take (c) - '0') : -1;
 		r_strbuf_append (o, "<");
 		int i;
 		for (i = 0; i < argc && !c->fail; i++) {
@@ -171,16 +197,8 @@ static void gv2_class(GV2 *c, RStrBuf *o) {
 		char *cur = r_strbuf_get (o);
 		int cl = cur ? (int)strlen (cur) : 0;
 		r_strbuf_append (o, (cl > 0 && cur[cl - 1] == '>') ? " >" : ">");
-	} else if (gv2_peek (c) == '0') {
-		c->fail = true; // a length never has a leading zero (rejects C/JNI names)
 	} else {
-		int n = gv2_number (c);
-		if (n > 0 && c->p + n <= c->end) {
-			r_strbuf_append_n (o, c->p, n);
-			c->p += n;
-		} else {
-			c->fail = true;
-		}
+		gv2_name (c, o);
 	}
 	c->depth--;
 }
@@ -290,7 +308,7 @@ static void gv2_type(GV2 *c, RStrBuf *o, const char *inner) {
 	case 'T': { // back reference: T<index>  (0-based into typevec)
 		c->p++;
 		int idx = isdigit ((unsigned char)gv2_peek (c)) ? (gv2_take (c) - '0') : -1;
-		if (idx >= 0 && idx < c->ntypes) {
+		if (idx >= 0 && idx < c->ntypes && gv2_charge (c, strlen (c->types[idx]))) {
 			gv2_terminal (o, c->types[idx], inner);
 		} else {
 			c->fail = true;
@@ -323,30 +341,19 @@ static void gv2_args(GV2 *c, RStrBuf *o) {
 	int printed = 0;
 	while (!c->fail && gv2_peek (c) && gv2_peek (c) != '_') {
 		char ch = gv2_peek (c);
-		if (ch == 'T') { // single back reference
+		if (ch == 'T' || ch == 'N') { // T <index> or N <count> <index>
 			c->p++;
-			int idx = isdigit ((unsigned char)gv2_peek (c)) ? (gv2_take (c) - '0') : -1;
-			if (idx < 0 || idx >= c->ntypes) {
-				c->fail = true;
-				break;
+			int count = 1;
+			if (ch == 'N') {
+				count = isdigit ((unsigned char)gv2_peek (c)) ? (gv2_take (c) - '0') : -1;
 			}
-			if (printed++) {
-				r_strbuf_append (o, ", ");
-			}
-			r_strbuf_append (o, c->types[idx]);
-			gv2_push_type (c, c->types[idx]);
-			continue;
-		}
-		if (ch == 'N') { // N <count> <index> : repeat a type count times
-			c->p++;
-			int count = isdigit ((unsigned char)gv2_peek (c)) ? (gv2_take (c) - '0') : -1;
 			int idx = isdigit ((unsigned char)gv2_peek (c)) ? (gv2_take (c) - '0') : -1;
 			if (count < 0 || idx < 0 || idx >= c->ntypes) {
 				c->fail = true;
 				break;
 			}
 			int k;
-			for (k = 0; k < count; k++) {
+			for (k = 0; k < count && !c->fail; k++) {
 				if (printed++) {
 					r_strbuf_append (o, ", ");
 				}
@@ -407,7 +414,7 @@ static char *gv2_vtable(const char *s) {
 				t.end = e;
 				gv2_class (&t, o);
 				cxx2_strvec_fini (&t.types, &t.ntypes);
-				if (t.fail) {
+				if (t.fail || t.p != t.end) {
 					r_strbuf_free (o);
 					return NULL;
 			}
@@ -427,13 +434,7 @@ static char *gv2_global(const char *s) {
 	}
 	const char *p = s + 8;
 	char kind = 0;
-	if (p[0] == '$' && p[2] == '$') {
-		kind = p[1];
-		p += 3;
-	} else if (p[0] == '.' && p[2] == '.') {
-		kind = p[1];
-		p += 3;
-	} else if (p[0] == '_' && p[2] == '_') {
+	if ((p[0] == '$' || p[0] == '.' || p[0] == '_') && p[1] && p[2] == p[0]) {
 		kind = p[1];
 		p += 3;
 	} else {
@@ -451,11 +452,6 @@ char *r_demangle_gnu_v2(const char *mangled) {
 		return NULL;
 	}
 	const char *s = mangled;
-	// strip a single leading underscore on platforms that add one
-	if (s[0] == '_' && s[1] == '_' && (isalpha ((unsigned char)s[2]) || isdigit ((unsigned char)s[2]) || s[2] == 'Q')) {
-		// keep: leading __ is meaningful (ctor/operator)
-	}
-
 	// virtual tables
 	if (r_str_startswith (s, "_vt")) {
 		return gv2_vtable (s);
@@ -618,14 +614,12 @@ char *r_demangle_gnu_v2(const char *mangled) {
 
 	// emit the qualified name
 	if (is_method && cls) {
-		char *cs = r_strbuf_drain (cls);
-		cls = NULL;
+		const char *cs = r_strbuf_get (cls);
 		r_strbuf_append (o, cs);
 		r_strbuf_append (o, "::");
 		if (is_ctor || is_dtor) {
 			char *bn = cxx2_basename (cs);
 			if (!bn) {
-				free (cs);
 				goto fail;
 			}
 			if (is_dtor) {
@@ -633,18 +627,9 @@ char *r_demangle_gnu_v2(const char *mangled) {
 			}
 			r_strbuf_append (o, bn);
 			free (bn);
-		} else if (is_op) {
-			if (convtype) {
-				r_strbuf_appendf (o, "operator %s", convtype);
-			} else {
-				r_strbuf_appendf (o, "operator%s", opspell);
-			}
-		} else {
-			r_strbuf_append_n (o, name, namelen);
 		}
-		free (cs);
-	} else {
-		// global function / operator
+	}
+	if (!is_ctor && !is_dtor) {
 		if (is_op) {
 			if (convtype) {
 				r_strbuf_appendf (o, "operator %s", convtype);

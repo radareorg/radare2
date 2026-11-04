@@ -15,7 +15,7 @@ bin_demangle_plugins = get_option('demanglers')
 bin_ldr_plugins = [ 'ldr_linux' ]
 bin_xtr_plugins = []
 io_plugins = [ 'malloc', 'cyclic', 'xattr', 'fd', 'tap', 'default', 'null', 'rbuf', 'r2pipe' ]
-fs_plugins = [ 'r2', 'posix', 'io', 'ubifs', 'bfs', 'fatmacho', 'sep64' ]
+fs_plugins = [ 'r2', 'posix', 'io', 'ubifs', 'bfs', 'fatmacho', 'sep64', 'fossil', 'p9', 'tmp', 'apfs' ]
 
 if get_option('use_zip')
   io_plugins += [ 'zip' ]
@@ -158,6 +158,7 @@ if get_option('plugins') == ''
     'cr16',
     'dalvik',
     'dis',
+    'e0c62',
     'ebc',
     'evm',
     'fslsp',
@@ -456,6 +457,7 @@ io_plugins += [
     'bf',
     'bpf',
     'cosmac',
+    'e0c62',
     'evm',
     'arm',
     'avr',
@@ -479,6 +481,7 @@ io_plugins += [
     'v850',
     'vax',
     'x86',
+    'xtensa',
     'z80',
     'wasm',
     'msp430',

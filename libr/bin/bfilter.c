@@ -188,29 +188,24 @@ R_IPI bool r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym)
 	R_RETURN_VAL_IF_FAIL (ht && sym && sym->name, false);
 	const char *name = r_bin_name_tostring2 (sym->name, 'o');
 	r_bin_register_symbol_language (bf, sym);
-	char *oname = r_str_newf ("o.0.%c.%s", sym->is_imported ? 'i' : 's', name);
+	// "<vaddr>.<kind>.<name>" rejects exact dups, its ".<kind>.<name>" suffix counts same-name symbols
 	char *uname = r_str_newf ("%" PFMT64x ".%c.%s", vaddr, sym->is_imported ? 'i' : 's', name);
-	bool res = ht_pp_insert (ht, uname, sym);
-	free (uname);
-	if (!res) {
-		free (oname);
+	if (!uname || !ht_pp_insert (ht, uname, sym)) {
+		free (uname);
 		return false;
 	}
-	sym->dup_count = 0;
-	RBinSymbol *prev_sym = ht_pp_find (ht, oname, NULL);
-	if (!prev_sym) {
-		res = ht_pp_insert (ht, oname, sym);
-		free (oname);
-		if (!res) {
-			R_LOG_WARN ("Failed to insert dup_count in ht");
-			return false;
-		}
-	} else {
-		sym->dup_count = prev_sym->dup_count + 1;
-		ht_pp_update (ht, oname, sym);
-		free (oname);
+	const char *oname = strchr (uname, '.');
+	HtPPKv *kv = ht_pp_find_kv (ht, oname, NULL);
+	sym->dup_count = kv? ((RBinSymbol *)kv->value)->dup_count + 1: 0;
+	bool res = true;
+	if (kv) {
+		kv->value = sym;
+	} else if (!ht_pp_insert (ht, oname, sym)) {
+		R_LOG_WARN ("Failed to insert dup_count in ht");
+		res = false;
 	}
-	return true;
+	free (uname);
+	return res;
 }
 
 R_API void r_bin_filter_sections_vec(RBinFile *bf, RVecRBinSection *sections) {

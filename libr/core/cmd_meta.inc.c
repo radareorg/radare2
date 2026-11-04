@@ -487,8 +487,7 @@ retry:
 	}
 	if (*p == ' ') { // "CL "
 		p = r_str_trim_head_ro (p + 1);
-		char *arg = strchr (p, ' ');
-		if (!arg) {
+		if (!strchr (p, ' ')) {
 			offset = r_num_math (core->num, p);
 			p = "";
 		}
@@ -591,9 +590,10 @@ static void cmd_meta_comment_del_in_scope(RCore *core, bool basic_block) {
 	}
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
 	if (fcn) {
-		RListIter *iter;
+		RAnalBlock **iter;
 		RAnalBlock *bb;
-		r_list_foreach (fcn->bbs, iter, bb) {
+		R_VEC_FOREACH (&fcn->bbs, iter) {
+			bb = *iter;
 			cmd_meta_comment_del_in_block (core, bb);
 		}
 	}
@@ -777,13 +777,12 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		break;
 	case 'a': // "CCa"
 		{
-		char *s = strchr (input, ' ');
-		if (s) {
-			s = strdup (s + 1);
-		} else {
+		const char *sp = strchr (input, ' ');
+		if (!sp) {
 			r_cons_cmd_help_match (core->cons, help_msg_CC, "CCa", 0, true);
 			return false;
 		}
+		char *s = strdup (sp + 1);
 		char *p = strchr (s, ' ');
 		if (p) {
 			*p++ = 0;
@@ -1076,7 +1075,8 @@ static bool cmd_Cs(RCore *core, const char *input, R_INOUT ut64 *addr, R_INOUT i
 }
 
 static int cmd_meta_others(RCore *core, const char *input) {
-	char *t = 0, *p, *p2, name[256] = {0};
+	char *t = 0, *p, name[256] = {0};
+	const char *p2;
 	int n, repeat = 1;
 	ut64 addr = core->addr;
 
@@ -1116,8 +1116,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			r_meta_del (core->anal, input[0], 0, UT64_MAX);
 			break;
 		case ' ':
-			p2 = strchr (input + 3, ' ');
-			if (p2) {
+			if ((p2 = strchr (input + 3, ' '))) {
 				ut64 i;
 				ut64 size = r_num_math (core->num, input + 3);
 				ut64 rep = r_num_math (core->num, p2 + 1);
@@ -1382,6 +1381,16 @@ static int cmd_meta_others(RCore *core, const char *input) {
 					break;
 				}
 			} else if (type == 's') { // "Cs"
+				// the string contents come from memory, so anything after the size is a mistake
+				const char *extra = strchr (args, ' ');
+				if (extra) {
+					extra = r_str_trim_head_ro (extra);
+				}
+				if (extra && *extra) {
+					R_LOG_ERROR ("Unexpected argument '%s'. Usage: Cs [size] @addr", extra);
+					free (t);
+					return false;
+				}
 				if (!cmd_Cs (core, input, &addr, &n, name, sizeof (name))) {
 					free (t);
 					return false;
@@ -1391,14 +1400,14 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				free (t);
 				return false;
 			}
-			if (!*args || n > 0) {
+			if (type != 's' && (!*args || n > 0)) {
 				p = strchr (args, ' ');
 				if (p) {
 					*p++ = '\0';
 					p = (char *)r_str_trim_head_ro (p);
 					r_str_ncpy (name, p, sizeof (name));
 				} else {
-					use_flag_name = type != 'b' && type != 's';
+					use_flag_name = type != 'b';
 				}
 			}
 		}

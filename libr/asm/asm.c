@@ -91,10 +91,12 @@ static int r_asm_pseudo_string(RAnalOp *op, char *input, bool zero) {
 	return asm_op_set_data (op, (const ut8 *)input, len);
 }
 
-static int r_asm_pseudo_intN(RAsm *a, RAnalOp *op, char *input, int n, bool is_unsigned) {
+static int r_asm_pseudo_intN(RAsm *a, RAnalOp *op, char *input, int n, bool is_unsigned, bool last_stage) {
 	const char *err = NULL;
 	ut64 s64 = r_num_math_err (NULL, input, &err);
-	if (err) {
+	if (err && !last_stage) {
+		s64 = 0;
+	} else if (err) {
 		R_LOG_ERROR ("Invalid number in .intN: %s", err);
 		return -1;
 	}
@@ -177,7 +179,7 @@ static int r_asm_pseudo_float(RAsm *a, RAnalOp *op, char *input, const RCFloatPr
 	return -1;
 }
 
-static int r_asm_pseudo_byte(RAnalOp *op, const char *input) {
+static int r_asm_pseudo_byte(RAnalOp *op, const char *input, bool last_stage) {
 	// work on a copy, the directive is parsed once per stage
 	char *args = strdup (input);
 	if (!args) {
@@ -190,7 +192,9 @@ static int r_asm_pseudo_byte(RAnalOp *op, const char *input) {
 	for (i = 0; buf && i < len; i++) {
 		const char *err = NULL;
 		int num = (int)r_num_math_err (NULL, r_str_word_get0 (args, i), &err);
-		if (err) {
+		if (err && !last_stage) {
+			num = 0;
+		} else if (err) {
 			R_LOG_ERROR ("Invalid number in .byte: %s", err);
 			break;
 		}
@@ -599,6 +603,7 @@ static int r_asm_disassemble_do(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 	if (len < 1 || !a->dcur) {
 		// callers expect a mnemonic even when no arch plugin is loaded
 		r_anal_op_set_mnemonic (op, a->pc, "invalid");
+		op->size = 1;
 		return 0;
 	}
 	int ret = 0;
@@ -654,7 +659,8 @@ static int r_asm_disassemble_do(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 			free (newtext);
 		}
 	}
-	int opsz = (op->size > 0)? R_MAX (0, R_MIN (len, op->size)): 1;
+	op->size = R_MAX (1, op->size);
+	int opsz = R_MIN (len, op->size);
 	r_anal_op_set_bytes (op, op->addr, buf, opsz);
 	return ret;
 }
@@ -723,7 +729,7 @@ R_API char *r_asm_list_directives(void) {
 	return r_strbuf_drain (sb);
 }
 
-static int r_asm_assemble_single(RAsm *a, RAnalOp *op, const char *buf) {
+static int r_asm_assemble_single(RAsm *a, RAnalOp *op, const char *buf, bool sizing) {
 	R_RETURN_VAL_IF_FAIL (a && op && buf, 0);
 	r_asm_update_session (a);
 	if (!a->ecur) {
@@ -736,7 +742,7 @@ static int r_asm_assemble_single(RAsm *a, RAnalOp *op, const char *buf) {
 	r_str_case (b, false);
 	op->addr = a->pc;
 	r_anal_op_set_mnemonic (op, op->addr, b);
-	int ret = r_arch_session_encode (a->ecur, op, 0)? op->size: 0;
+	int ret = r_arch_session_encode (a->ecur, op, sizing? R_ARCH_ENCODE_MASK_SIZING: 0)? op->size: 0;
 	free (b);
 	return ret;
 }
@@ -820,14 +826,19 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 	r_str_trim (ptr);
 	if (r_str_startswith (ptr, ".intel_syntax")) {
 		a->config->syntax = R_ARCH_SYNTAX_INTEL;
+		ret = 0;
 	} else if (r_str_startswith (ptr, ".att_syntax")) {
 		a->config->syntax = R_ARCH_SYNTAX_ATT;
+		ret = 0;
 	} else if (r_str_startswith (ptr, ".endian")) {
 		r_asm_set_big_endian (a, atoi (ptr + 7));
+		ret = 0;
 	} else if (r_str_startswith (ptr, ".big_endian")) {
 		r_asm_set_big_endian (a, true);
+		ret = 0;
 	} else if (r_str_startswith (ptr, ".lil_endian") || r_str_startswith (ptr, "little_endian")) {
 		r_asm_set_big_endian (a, false);
+		ret = 0;
 	} else if (r_str_startswith (ptr, ".asciz")) {
 		char *str = r_str_trim_dup (ptr + 6);
 		ret = r_asm_pseudo_string (op, ptr + 6, 1);
@@ -912,10 +923,13 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 		}
 	} else if (r_str_startswith (ptr, ".kernel ")) {
 		r_syscall_setup (a->syscall, a->config->arch, a->config->bits, asmcpu, ptr + 8);
+		ret = 0;
 	} else if (r_str_startswith (ptr, ".cpu ")) {
 		r_arch_config_set_cpu (a->config, ptr + 5);
+		ret = 0;
 	} else if (r_str_startswith (ptr, ".os ")) {
 		r_syscall_setup (a->syscall, a->config->arch, a->config->bits, asmcpu, ptr + 4);
+		ret = 0;
 	} else if (r_str_startswith (ptr, ".hex ")) {
 		ut8 *bytes = malloc ((1 + strlen (ptr + 5)) / 2);
 		if (bytes) {
@@ -926,81 +940,77 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 			free (bytes);
 		}
 	} else if (r_str_startswith (ptr, ".byte ") || r_str_startswith (ptr, ".int8 ")) {
-		ret = r_asm_pseudo_byte (op, ptr + 6);
+		ret = r_asm_pseudo_byte (op, ptr + 6, last_stage);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if ((r_str_startswith (ptr, ".int16 ")) || r_str_startswith (ptr, ".short ")) {
-		ret = r_asm_pseudo_intN (a, op, ptr + 7, 2, false);
+		ret = r_asm_pseudo_intN (a, op, ptr + 7, 2, false, last_stage);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".int32 ")) {
-		ret = r_asm_pseudo_intN (a, op, ptr + 7, 4, false);
+		ret = r_asm_pseudo_intN (a, op, ptr + 7, 4, false, last_stage);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".int64 ")) {
-		char *str = r_asm_code_equ_replace (acode, ptr + 7);
-		ret = r_asm_pseudo_intN (a, op, ptr + 7, 8, false);
-		free (str);
+		ret = r_asm_pseudo_intN (a, op, ptr + 7, 8, false, last_stage);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".db ")) {
-		ret = r_asm_pseudo_byte (op, ptr + 4);
+		ret = r_asm_pseudo_byte (op, ptr + 4, last_stage);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".word ")) {
-		ret = r_asm_pseudo_intN (a, op, ptr + 6, 2, false);
+		ret = r_asm_pseudo_intN (a, op, ptr + 6, 2, false, last_stage);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".dw ")) {
-		ret = r_asm_pseudo_intN (a, op, ptr + 4, 2, false);
+		ret = r_asm_pseudo_intN (a, op, ptr + 4, 2, false, last_stage);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".dword ")) {
-		ret = r_asm_pseudo_intN (a, op, ptr + 7, 4, false);
+		ret = r_asm_pseudo_intN (a, op, ptr + 7, 4, false, last_stage);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".dd ")) {
-		ret = r_asm_pseudo_intN (a, op, ptr + 4, 4, false);
+		ret = r_asm_pseudo_intN (a, op, ptr + 4, 4, false, last_stage);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".qword ")) {
-		ret = r_asm_pseudo_intN (a, op, ptr + 7, 8, false);
+		ret = r_asm_pseudo_intN (a, op, ptr + 7, 8, false, last_stage);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".dq ")) {
-		char *str = r_asm_code_equ_replace (acode, ptr + 4);
-		ret = r_asm_pseudo_intN (a, op, ptr + 4, 8, false);
-		free (str);
+		ret = r_asm_pseudo_intN (a, op, ptr + 4, 8, false, last_stage);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".uint8 ")) {
-		ret = r_asm_pseudo_intN (a, op, ptr + 7, 1, true);
+		ret = r_asm_pseudo_intN (a, op, ptr + 7, 1, true, last_stage);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".uint16 ")) {
-		ret = r_asm_pseudo_intN (a, op, ptr + 8, 2, true);
+		ret = r_asm_pseudo_intN (a, op, ptr + 8, 2, true, last_stage);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".uint32 ")) {
-		ret = r_asm_pseudo_intN (a, op, ptr + 8, 4, true);
+		ret = r_asm_pseudo_intN (a, op, ptr + 8, 4, true, last_stage);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".uint64 ")) {
-		ret = r_asm_pseudo_intN (a, op, ptr + 8, 8, true);
+		ret = r_asm_pseudo_intN (a, op, ptr + 8, 8, true, last_stage);
 		if (ret < 0) {
 			return ret;
 		}
@@ -1116,17 +1126,6 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 	return ret;
 }
 
-static inline char *next_token(char *tok) {
-	const char *const delimiters = ";\n\r";
-	const char *d = delimiters;
-	for (; *d; d++) {
-		char *ptr = strchr (tok, *d);
-		if (ptr) {
-			return ptr;
-		}
-	}
-	return NULL;
-}
 
 R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 	int num, stage, ret, idx, ctr, i, linenum = 0;
@@ -1211,7 +1210,7 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 	bool labels = !!strchr (lbuf, ':');
 
 	/* Tokenize */
-	for (tokens[0] = lbuf, ctr = 0; (ptr = next_token (tokens[ctr]));) {
+	for (tokens[0] = lbuf, ctr = 0; (ptr = strpbrk (tokens[ctr], ";\n\r"));) {
 		if (ctr + 1 >= tokens_size) {
 			const size_t new_tokens_size = tokens_size * 2;
 			if (sizeof (char *) * new_tokens_size <= sizeof (char *) * tokens_size) {
@@ -1343,10 +1342,23 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 				continue;
 			}
 			if (*ptr_start == '.') { /* pseudo */
-				ret = parse_asm_directive (a, &op, acode, ptr_start, &off, stage == STAGES - 1);
-				if (ret < 0) {
+				bool literal = r_str_startswith (ptr_start, ".equ ")
+					|| r_str_startswith (ptr_start, ".ascii")
+					|| r_str_startswith (ptr_start, ".asciz")
+					|| r_str_startswith (ptr_start, ".string ")
+					|| r_str_startswith (ptr_start, ".incbin ");
+				char *str = literal? strdup (ptr_start): r_asm_code_equ_replace (acode, ptr_start);
+				if (!str) {
 					goto fail;
-				} else if (ret == 0) {
+				}
+				ret = parse_asm_directive (a, &op, acode, str, &off, stage == STAGES - 1);
+				if (ret < 0) {
+					R_LOG_ERROR ("Cannot assemble '%s' at line %d", str, linenum);
+					free (str);
+					goto fail;
+				}
+				free (str);
+				if (ret == 0) {
 					continue;
 				}
 			} else { /* Instruction */
@@ -1356,7 +1368,10 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 					continue;
 				}
 				str = r_asm_code_equ_replace (acode, ptr_start);
-				ret = r_asm_assemble_single (a, &op, str);
+				if (!str) {
+					goto fail;
+				}
+				ret = r_asm_assemble_single (a, &op, str, stage != STAGES - 1);
 				free (str);
 			}
 			// RAsmCode.len is an int

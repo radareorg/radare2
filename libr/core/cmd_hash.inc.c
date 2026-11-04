@@ -24,7 +24,7 @@ static int cmd_hash_bang(RCore *core, const char *input) {
 		return false;
 	}
 	if (!strchr (input, ' ') && r_str_endswith (input, "?")) {
-		char *ex = strchr (input, '!');
+		const char *ex = strchr (input, '!');
 		if (ex) {
 			char *name = r_str_ndup (ex + 1, strlen (ex) - 2);
 			if (!name) {
@@ -89,7 +89,7 @@ static int cmd_hash_bang(RCore *core, const char *input) {
 					if (r_lang_set_argv (core->lang, ac - 1, &av[1])) {
 						r_lang_run_file (core->lang, av[1]);
 					} else {
-						char *run_str = strstr (input + 2, av[1]);
+						const char *run_str = strstr (input + 2, av[1]);
 						if (run_str) {
 							r_lang_run_file (core->lang, run_str);
 						} else {

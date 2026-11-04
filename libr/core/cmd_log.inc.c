@@ -186,47 +186,40 @@ static int getIndexFromLogString(const char *s) {
 	return -1;
 }
 
-static char *expr2cmd(RCoreLog *log, const char *line) {
-	if (!line || !*line) {
-		return NULL;
-	}
-	line++;
-	if (!strncmp (line, "add-comment", 11)) {
-		line += 11;
-		if (*line == ' ') {
-			char *sp = strchr (line + 1, ' ');
-			if (sp) {
-				char *msg = sp + 1;
-				ut64 addr = r_num_get (NULL, line);
-				return r_str_newf ("CCu base64:%s @ 0x%"PFMT64x"\n", msg, addr);
-			}
+// replays a comment event from a synced log through the api, its text never reaches the command parser
+static void log_callback_r2(RCore *core, int count, const char *line) {
+	if (r_str_startswith (line, ":add-comment ")) {
+		const char *arg = line + strlen (":add-comment ");
+		const char *b64 = strchr (arg, ' ');
+		if (!b64) {
+			R_LOG_ERROR ("Cannot parse add-comment expression");
+			return;
 		}
-		R_LOG_ERROR ("Cannot parse add-comment expression");
-	}
-	if (!strncmp (line, "del-comment", 11)) {
-		if (line[11] == ' ') {
-			return r_str_newf ("CC-%s\n", line + 12);
+		b64++;
+		int len = 0;
+		ut8 *raw = r_base64_decode_dyn (b64, -1, &len, true);
+		if (!raw) {
+			R_LOG_ERROR ("Invalid base64 in add-comment expression");
+			return;
 		}
-		R_LOG_ERROR ("Cannot parse add-comment expression");
+		char *msg = r_str_ndup ((const char *)raw, len);
+		free (raw);
+		const ut64 addr = r_num_get (NULL, arg);
+		const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+		if (msg && (!comment || !strstr (comment, msg))) {
+			r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, msg);
+		}
+		r_cons_printf (core->cons, "CCu base64:%s @ 0x%" PFMT64x "\n", b64, addr);
+		free (msg);
+	} else if (r_str_startswith (line, ":del-comment ")) {
+		const ut64 addr = r_num_get (NULL, line + strlen (":del-comment "));
+		r_meta_del (core->anal, R_META_TYPE_COMMENT, addr, 1);
+		r_cons_printf (core->cons, "CC-0x%" PFMT64x "\n", addr);
 	}
-	return NULL;
 }
 
-static int log_callback_r2(RCore *core, int count, const char *line) {
-	if (*line == ':') {
-		char *cmd = expr2cmd (core->log, line);
-		if (cmd) {
-			r_cons_printf (core->cons, "%s\n", cmd);
-			r_core_cmd (core, cmd, 0);
-			free (cmd);
-		}
-	}
-	return 0;
-}
-
-static int log_callback_all(RCore *core, int count, const char *line) {
+static void log_callback_all(RCore *core, int count, const char *line) {
 	r_cons_printf (core->cons, "%.2d %s\n", count, line);
-	return 0;
 }
 
 R_API void r_core_log_view(RCore *core, int num, int shift) {
@@ -286,7 +279,7 @@ static int cmd_log(void *data, const char *input) {
 	switch (*input) {
 	case 'e': // "Te" shell: less
 		{
-			char *p = strchr (input, ' ');
+			const char *p = strchr (input, ' ');
 			if (p) {
 				char *b = r_file_slurp (p + 1, NULL);
 				if (b) {

@@ -663,6 +663,77 @@ bool test_session_pidfile_symlink(void) {
 	mu_end;
 }
 
+bool test_file_copy(void) {
+#if R2__UNIX__ && !__wasi__
+	const char *src = "copy_src!$`\"\\";
+	const char *dst = "copy_dst!";
+	unlink (dst);
+	mu_assert_true (r_file_dump (src, (const ut8 *)"hello", 5, false), "cannot create source file");
+	const bool copied = r_file_copy (src, dst);
+	char *data = r_file_slurp (dst, NULL);
+	unlink (src);
+	unlink (dst);
+	mu_assert_true (copied, "copy a file whose name has shell metacharacters");
+	mu_assert_streq (data, "hello", "copied contents");
+	free (data);
+#endif
+	mu_end;
+}
+
+bool test_sys_cmdf_long(void) {
+#if R2__UNIX__ && !__wasi__
+	// a command line longer than 4096 bytes
+	char *arg = malloc (5001);
+	mu_assert_notnull (arg, "cannot allocate the argument");
+	memset (arg, 'A', 5000);
+	arg[5000] = 0;
+	const char *out = "cmdf_out";
+	unlink (out);
+	r_sys_cmdf ("printf %%s %s > %s", arg, out);
+	char *data = r_file_slurp (out, NULL);
+	char *str = r_sys_cmd_strf ("printf %%s %s", arg);
+	unlink (out);
+	free (arg);
+	mu_assert_notnull (data, "r_sys_cmdf keeps the redirection after a long argument");
+	mu_assert_eq (strlen (data), 5000, "r_sys_cmdf passes the whole argument");
+	mu_assert_notnull (str, "r_sys_cmd_strf returns the output");
+	mu_assert_eq (strlen (str), 5000, "r_sys_cmd_strf passes the whole argument");
+	free (data);
+	free (str);
+#endif
+	mu_end;
+}
+
+bool test_mem_bits(void) {
+	const ut8 words_le[] = { 0xbc, 0x0a, 0xef, 0x0d };
+	const ut8 words_be[] = { 0x0a, 0xbc, 0x0d, 0xef };
+	const ut8 wide[] = { 0xbc, 0x1a };
+	ut8 packed[3];
+	ut8 words[4];
+	mu_assert_eq (r_mem_bits_unit (9), 2, "9 bit units use 2 bytes");
+	mu_assert_eq (r_mem_bits_unit (25), 4, "25 bit units use 4 bytes");
+	mu_assert_true (r_mem_pack_bits (packed, words_le, 2, 12, false), "le pack");
+	mu_assert_memeq (packed, (const ut8 *)"\xbc\xfa\xde", 3, "le 12 bit stream");
+	r_mem_unpack_bits (words, packed, 2, 12, false);
+	mu_assert_memeq (words, words_le, 4, "le unpack");
+	mu_assert_true (r_mem_pack_bits (packed, words_be, 2, 12, true), "be pack");
+	mu_assert_memeq (packed, (const ut8 *)"\xab\xcd\xef", 3, "be 12 bit stream");
+	r_mem_unpack_bits (words, packed, 2, 12, true);
+	mu_assert_memeq (words, words_be, 4, "be unpack");
+	mu_assert_false (r_mem_pack_bits (packed, wide, 1, 12, false), "values wider than 12 bits");
+	mu_assert_eq (r_mem_get_bits ((const ut8 *)"abc", 9, 9, false), 0x1b1, "le 9 bit unit");
+	mu_assert_eq (r_mem_get_bits ((const ut8 *)"abc", 9, 9, true), 0x189, "be 9 bit unit");
+	ut8 stream[4] = { 0 };
+	r_mem_set_bits (stream, 3, 25, 0x1abcdef, true);
+	mu_assert_eq (r_mem_get_bits (stream, 3, 25, true), 0x1abcdef, "be 25 bit roundtrip");
+	r_mem_set_bits (stream, 3, 25, 0x0fedcba, false);
+	mu_assert_eq (r_mem_get_bits (stream, 3, 25, false), 0x0fedcba, "le 25 bit roundtrip");
+	ut8 ones[3] = { 0xff, 0xff, 0xff };
+	r_mem_set_bits (ones, 4, 12, 0, false);
+	mu_assert_memeq (ones, (const ut8 *)"\x0f\x00\xff", 3, "bits outside the unit are preserved");
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_ignore_prefixes);
 	mu_run_test (test_remove_r2_prefixes);
@@ -677,6 +748,7 @@ int all_tests(void) {
 	mu_run_test (test_endian_fromstring);
 	mu_run_test (test_endian_is);
 	mu_run_test (test_endian_roundtrip);
+	mu_run_test (test_mem_bits);
 	mu_run_test (test_file_is_abspath);
 	mu_run_test (test_sys_executable_path);
 	mu_run_test (test_sandbox_grain_parse);
@@ -686,6 +758,8 @@ int all_tests(void) {
 	mu_run_test (test_sandbox_symlink_path);
 	mu_run_test (test_file_rm_rf_symlink);
 	mu_run_test (test_session_pidfile_symlink);
+	mu_run_test (test_file_copy);
+	mu_run_test (test_sys_cmdf_long);
 	return tests_passed != tests_run;
 }
 

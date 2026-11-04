@@ -30,7 +30,9 @@ static char* regstate(RBinFile *bf) {
 			return hexregs;
 		}
 	}
-	R_LOG_ERROR ("Cannot retrieve regstate on unsupported arch %s", Elf_(get_machine_name)(eo));
+	char *machine = Elf_(get_machine_name) (eo);
+	R_LOG_ERROR ("Cannot retrieve regstate on unsupported arch %s", machine);
+	free (machine);
 	return NULL;
 }
 
@@ -289,10 +291,10 @@ static RBinAddr* newEntry(RBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, in
 }
 
 static void process_constructors(RBinFile *bf, RList *ret, int bits) {
-	if (!sections_vec (bf)) {
+	const RVecRBinSection *secs = Elf_(load_sections) (bf, bf->bo->bin_obj);
+	if (!secs) {
 		return;
 	}
-	RVecRBinSection *secs = &(bf->bo->sections_vec);
 	RBinSection *sec;
 	R_VEC_FOREACH (secs, sec) {
 		if (sec->size > ALLOC_SIZE_LIMIT) {
@@ -318,37 +320,22 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 			continue;
 		}
 
-		st64 size = r_buf_read_at(bf->buf, sec->paddr, buf, sec->size);
-		if (size != sec->size) {
-			if (size < sec->size) {
-				R_LOG_WARN ("unexpected section size");
-			}
-			buf = realloc (buf, size);
-			if (!buf) {
-				continue;
-			}
-			sec->size = size;
+		st64 size = r_buf_read_at (bf->buf, sec->paddr, buf, sec->size);
+		if (size <= 0) {
+			free (buf);
+			continue;
 		}
-// XXX R2_590 this can be done once with proper compile time ifdef
-		if (bits == 32) {
-			int i;
-			for (i = 0; (i + 3) < sec->size; i += 4) {
-				ut32 addr32 = r_read_le32 (buf + i);
-				if (addr32) {
-					RBinAddr *ba = newEntry (bf, sec->paddr + i, sec->vaddr + i,
-					                         (ut64)addr32, type, bits);
-					r_list_append (ret, ba);
-				}
-			}
-		} else {
-			int i;
-			for (i = 0; (i + 7) < sec->size; i += 8) {
-				ut64 addr64 = r_read_le64 (buf + i);
-				if (addr64) {
-					RBinAddr *ba = newEntry (bf, sec->paddr + i, sec->vaddr + i,
-					                         addr64, type, bits);
-					r_list_append (ret, ba);
-				}
+		if (size < sec->size) {
+			R_LOG_WARN ("unexpected section size");
+		}
+		const ut64 len = R_MIN ((ut64)size, sec->size);
+		const ut64 ptrsize = bits == 32? 4: 8;
+		const ut64 ptrmax = ptrsize == 4? UT32_MAX: UT64_MAX;
+		ut64 i;
+		for (i = 0; i + ptrsize <= len; i += ptrsize) {
+			ut64 addr = ptrsize == 4? r_read_le32 (buf + i): r_read_le64 (buf + i);
+			if (addr && addr != ptrmax) {
+				r_list_append (ret, newEntry (bf, sec->paddr + i, sec->vaddr + i, addr, type, bits));
 			}
 		}
 		free (buf);
@@ -613,6 +600,8 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_390_JMP_SLOT:
 			r->additive = 0;
 			return r;
+		case R_390_32: SETA (32);
+		case R_390_64: SETA (64);
 		case R_390_RELATIVE:
 			r->additive = !rel->implicit_addend;
 			return r;
@@ -713,6 +702,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 	case EM_RISCV:
 		switch (rel->type) {
 		case R_RISCV_NONE: break;
+		case R_RISCV_64: ADD(64, 0); break;
 		case R_RISCV_JUMP_SLOT: ADD(64, 0); break;
 		case R_RISCV_RELATIVE: SETA(64); break;
 		default: ADD(64, got_addr); break; // reg relocations
@@ -827,6 +817,8 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 		case R_PPC_ADDR16_HI: ADD(16, 0); break;  // XXX extract upper 16 bits of (target - vaddr - addend)
 		case R_PPC_ADDR16_HA: ADD(16, 0); break;  // XXX extract high adjusted 16 bits of (target - vaddr - addend)
 		case R_PPC_DTPMOD32: ADD(32, 0); break;
+		case R_PPC_DTPREL32: ADD(32, 0); break;
+		case R_PPC_TPREL32: ADD(32, 0); break;
 		default:
 			R_LOG_DEBUG ("unimplemented ELF/PPC reloc type %d", rel->type);
 		}
@@ -1181,19 +1173,194 @@ static ut64 elf_io_addr(RBinFile *bf, ELFOBJ *eo, ut64 v) {
 	return (any && !disagree)? agreed: moved;
 }
 
-// AAELF's T: the reloc targets a defined thumb function; L is its io address
-static inline bool arm_reloc_thumb_bit(ELFOBJ *eo, const RBinElfReloc *rel, ut64 L) {
+// the defined symbol of the given state a reloc targets at io address L
+static const RBinSymbol *arm_reloc_sym(ELFOBJ *eo, const RBinElfReloc *rel, ut64 L, int bits) {
 	if (!L || L == UT64_MAX || !rel->sym || reloc_is_import (eo, rel) || rel->sym >= eo->symbols_by_ord_size) {
-		return false;
+		return NULL;
 	}
 	const RBinSymbol *sym = eo->symbols_by_ord[rel->sym];
-	if (!sym || sym->bits != 16 || !sym->type) {
-		return false;
-	}
-	return !strcmp (sym->type, R_BIN_TYPE_FUNC_STR) || !strcmp (sym->type, R_BIN_TYPE_LOPROC_STR);
+	return (sym && sym->bits == bits && sym->type)? sym: NULL;
 }
 
-static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 P, ut64 S, ut64 bias, ut64 L, ut64 toc) {
+// AAELF's T: the reloc targets a defined thumb function
+static inline bool arm_reloc_thumb_bit(ELFOBJ *eo, const RBinElfReloc *rel, ut64 L) {
+	const RBinSymbol *sym = arm_reloc_sym (eo, rel, L, 16);
+	return sym && (!strcmp (sym->type, R_BIN_TYPE_FUNC_STR) || !strcmp (sym->type, R_BIN_TYPE_LOPROC_STR));
+}
+
+// a defined arm-state function: thumb reaches it only by blx or a veneer
+static inline bool arm_reloc_arm_func(ELFOBJ *eo, const RBinElfReloc *rel, ut64 L) {
+	const RBinSymbol *sym = arm_reloc_sym (eo, rel, L, 32);
+	return sym && !strcmp (sym->type, R_BIN_TYPE_FUNC_STR);
+}
+
+// BE8 keeps data big-endian but stores instructions little-endian
+static inline bool arm_insn_endian(ELFOBJ *bo) {
+	return bo->endian && !(bo->ehdr.e_flags & EF_ARM_BE8);
+}
+
+// a rel site keeps its addend in place: the word, or the encoded immediate
+static st64 arm_rel_addend(ELFOBJ *bo, const RBinElfReloc *rel, const ut8 *buf) {
+	if (rel->mode != DT_REL) {
+		return rel->addend;
+	}
+	const bool ie = arm_insn_endian (bo);
+	const ut32 insn = r_read_ble32 (buf, ie);
+	const ut32 hi = r_read_ble16 (buf, ie);
+	const ut32 lo = r_read_ble16 (buf + 2, ie);
+	switch (rel->type) {
+	case R_ARM_CALL:
+	case R_ARM_JUMP24:
+	case R_ARM_PC24: {
+		st32 imm = (st32)((insn & 0x00ffffff) << 2);
+		if (imm & 0x02000000) {
+			imm |= ~0x03ffffff;
+		}
+		return imm;
+	}
+	case R_ARM_THM_PC22:
+	case R_ARM_THM_JUMP24: {
+		const ut32 sb = (hi >> 10) & 1;
+		// i1/i2 are stored inverted against the sign
+		const ut32 i1 = ((lo >> 13) & 1) ^ sb ^ 1;
+		const ut32 i2 = ((lo >> 11) & 1) ^ sb ^ 1;
+		st32 imm = (sb << 24) | (i1 << 23) | (i2 << 22)
+			| ((hi & 0x3ff) << 12) | ((lo & 0x7ff) << 1);
+		if (sb) {
+			imm |= ~0x01ffffff;
+		}
+		return imm;
+	}
+	case R_ARM_THM_JUMP19: {
+		// j1/j2 are not inverted here, unlike b.w T4
+		st32 imm = (((hi >> 10) & 1) << 20) | (((lo >> 11) & 1) << 19)
+			| (((lo >> 13) & 1) << 18) | ((hi & 0x3f) << 12) | ((lo & 0x7ff) << 1);
+		if (imm & 0x100000) {
+			imm |= ~0x1fffff;
+		}
+		return imm;
+	}
+	case R_ARM_THM_MOVW_ABS_NC:
+	case R_ARM_THM_MOVT_ABS:
+		return (st16)thumb_mov_imm (hi, lo);
+	case R_ARM_MOVW_ABS_NC:
+	case R_ARM_MOVW_PREL_NC:
+	case R_ARM_MOVT_ABS:
+	case R_ARM_MOVT_PREL:
+		return (st16)(((insn >> 4) & 0xf000) | (insn & 0x0fff));
+	}
+	return (st32)r_read_ble32 (buf, bo->endian);
+}
+
+static bool arm_attr_uleb(const ut8 *buf, ut32 end, ut32 *off, ut64 *v) {
+	if (*off >= end) {
+		return false;
+	}
+	const char *err = NULL;
+	*off = r_uleb128 (buf + *off, end - *off, v, &err) - buf;
+	return !err;
+}
+
+static bool arm_attr_str(const ut8 *buf, ut32 end, ut32 *off) {
+	const ut8 *nul = memchr (buf + *off, 0, end - *off);
+	if (!nul) {
+		return false;
+	}
+	*off = (ut32)(nul - buf) + 1;
+	return true;
+}
+
+// file-scope attributes in [off, end); a Tag_CPU_arch overrides arch
+static bool arm_file_cpu_arch(const ut8 *buf, ut32 off, ut32 end, ut64 *arch) {
+	while (off < end) {
+		ut64 tag, val;
+		if (!arm_attr_uleb (buf, end, &off, &tag)) {
+			return false;
+		}
+		// as binutils: 4, 5 and odd tags past 32 hold a string
+		const bool str_only = tag == 4 || tag == 5 || (tag > 32 && (tag & 1));
+		if (!str_only) {
+			if (!arm_attr_uleb (buf, end, &off, &val)) {
+				return false;
+			}
+			if (tag == 6) {
+				*arch = val;
+			}
+		}
+		if ((str_only || tag == 32) && !arm_attr_str (buf, end, &off)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static bool arm_aeabi_cpu_arch(const ut8 *buf, ut32 off, ut32 end, bool be, ut64 *arch) {
+	while (off < end) {
+		if (end - off < 5) {
+			return false;
+		}
+		const ut8 scope = buf[off];
+		const ut32 size = r_read_ble32 (buf + off + 1, be);
+		if (size < 5 || size > end - off) {
+			return false;
+		}
+		if (scope == 1 && !arm_file_cpu_arch (buf, off + 5, off + size, arch)) {
+			return false;
+		}
+		off += size;
+	}
+	return true;
+}
+
+// the last file-scope Tag_CPU_arch in buf, 0 if malformed
+static ut64 arm_attrs_cpu_arch(const ut8 *buf, ut32 end, bool be) {
+	ut64 arch = 0;
+	ut32 off = 1;
+	while (off < end) {
+		if (end - off < 4) {
+			return 0;
+		}
+		const ut32 len = r_read_ble32 (buf + off, be);
+		if (len < 4 || len > end - off) {
+			return 0;
+		}
+		const ut32 sub_end = off + len;
+		const ut32 name = off + 4;
+		ut32 attrs = name;
+		if (!arm_attr_str (buf, sub_end, &attrs)) {
+			return 0;
+		}
+		if (!strcmp ((const char *)buf + name, "aeabi") && !arm_aeabi_cpu_arch (buf, attrs, sub_end, be, &arch)) {
+			return 0;
+		}
+		off = sub_end;
+	}
+	return arch;
+}
+
+// Tag_CPU_arch, which is 0 (pre-v4) when the attributes do not tell
+static ut64 arm_cpu_arch(ELFOBJ *eo) {
+	const Elf_(Shdr) *sh = NULL;
+	ut32 i;
+	for (i = 0; eo->shdr && i < eo->ehdr.e_shnum; i++) {
+		if (eo->shdr[i].sh_type == SHT_ARM_ATTRIBUTES) {
+			sh = &eo->shdr[i];
+			break;
+		}
+	}
+	const ut64 bsize = r_buf_size (eo->b);
+	if (!sh || sh->sh_offset > bsize || sh->sh_size > bsize - sh->sh_offset || sh->sh_size < 1 || sh->sh_size > ST32_MAX) {
+		return 0;
+	}
+	const ut32 end = sh->sh_size;
+	ut8 *buf = malloc (end);
+	const bool ok = buf && r_buf_read_at (eo->b, sh->sh_offset, buf, end) == end && buf[0] == 'A';
+	const ut64 arch = ok? arm_attrs_cpu_arch (buf, end, eo->endian): 0;
+	free (buf);
+	return arch;
+}
+
+static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 P, ut64 S, ut64 bias, ut64 L, ut64 toc, ut64 arm_arch) {
 	ut64 V = 0;
 	ut64 A = rel->addend;
 	ut8 buf[8] = {0};
@@ -1216,65 +1383,16 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 	}
 	case EM_ARM:
 	{
-		st64 addend = rel->addend;
 		if (iob->read_at (iob->io, P, buf, 4) != 4) {
 			return;
 		}
-		ut32 insn = r_read_ble32 (buf, bo->endian);
-		ut32 hi = r_read_ble16 (buf, bo->endian);
-		ut32 lo = r_read_ble16 (buf + 2, bo->endian);
+		const st64 addend = arm_rel_addend (bo, rel, buf);
+		const bool ie = arm_insn_endian (bo);
+		const ut32 word = r_read_ble32 (buf, bo->endian);
+		ut32 insn = r_read_ble32 (buf, ie);
+		ut32 hi = r_read_ble16 (buf, ie);
+		ut32 lo = r_read_ble16 (buf + 2, ie);
 		const ut32 T = arm_reloc_thumb_bit (bo, rel, L);
-		if (rel->mode == DT_REL) {
-			switch (rel->type) {
-			case R_ARM_CALL:
-			case R_ARM_JUMP24:
-			case R_ARM_PC24: {
-				st32 imm = (st32)((insn & 0x00ffffff) << 2);
-				if (imm & 0x02000000) {
-					imm |= ~0x03ffffff;
-				}
-				addend = imm;
-				break;
-			}
-			case R_ARM_THM_PC22:
-			case R_ARM_THM_JUMP24: {
-				const ut32 sb = (hi >> 10) & 1;
-				// i1/i2 are stored inverted against the sign
-				const ut32 i1 = ((lo >> 13) & 1) ^ sb ^ 1;
-				const ut32 i2 = ((lo >> 11) & 1) ^ sb ^ 1;
-				st32 imm = (sb << 24) | (i1 << 23) | (i2 << 22)
-					| ((hi & 0x3ff) << 12) | ((lo & 0x7ff) << 1);
-				if (sb) {
-					imm |= ~0x01ffffff;
-				}
-				addend = imm;
-				break;
-			}
-			case R_ARM_THM_JUMP19: {
-				// j1/j2 are not inverted here, unlike b.w T4
-				st32 imm = (((hi >> 10) & 1) << 20) | (((lo >> 11) & 1) << 19)
-					| (((lo >> 13) & 1) << 18) | ((hi & 0x3f) << 12) | ((lo & 0x7ff) << 1);
-				if (imm & 0x100000) {
-					imm |= ~0x1fffff;
-				}
-				addend = imm;
-				break;
-			}
-			case R_ARM_THM_MOVW_ABS_NC:
-			case R_ARM_THM_MOVT_ABS:
-				addend = (st16)thumb_mov_imm (hi, lo);
-				break;
-			case R_ARM_MOVW_ABS_NC:
-			case R_ARM_MOVW_PREL_NC:
-			case R_ARM_MOVT_ABS:
-			case R_ARM_MOVT_PREL:
-				addend = (st16)(((insn >> 4) & 0xf000) | (insn & 0x0fff));
-				break;
-			default:
-				addend = (st32)r_read_ble32 (buf, bo->endian);
-				break;
-			}
-		}
 		switch (rel->type) {
 		case R_ARM_RELATIVE:
 			V = addend + bias;
@@ -1285,7 +1403,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		case R_ARM_GLOB_DAT:
 			// symbol-less rel word: S is 0, the word is the value
 			if (!rel->sym && rel->mode == DT_REL) {
-				r_write_ble32 (buf, insn, bo->endian);
+				r_write_ble32 (buf, word, bo->endian);
 				break;
 			}
 			V = (S + addend) | T;
@@ -1306,31 +1424,45 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			ut32 imm24 = (ut32)((st64)target >> 2);
 			insn &= 0xff000000;
 			insn |= imm24 & 0x00ffffff;
-			r_write_ble32 (buf, insn, bo->endian);
+			r_write_ble32 (buf, insn, ie);
 			break;
 		}
 		case R_ARM_THM_PC22:
 		case R_ARM_THM_JUMP24: {
 			// ld turns a blx to a thumb function into a bl
-			if (S & 1) {
+			if (T) {
 				lo |= 0x1000;
+			} else if (arm_reloc_arm_func (bo, rel, L)) {
+				// Tag_CPU_arch 3 is v5T, the first with blx
+				if (rel->type == R_ARM_THM_JUMP24 || ((lo & 0x1000) && arm_arch < 3)) {
+					return;
+				}
+				lo &= ~0x1000;
 			}
-			const st64 target = (S & ~1ULL) + addend - P;
+			st64 target = (S & ~1ULL) + addend - P;
+			// blx takes Align (P + 4, 4) as its base
+			if (!(lo & 0x1000)) {
+				target += P & 2;
+			}
 			// blx switches to arm state, so it needs 4 alignment
 			const st64 amask = (lo & 0x1000)? 1: 3;
-			// a thumb branch reaches +-16MB, leave the rest alone
-			if ((target & amask) || !disp_fits (target, 25)) {
+			// v6T2 (8) and v7 (10) on: +-16MB bl, older +-4MB
+			const int bits = (arm_arch == 8 || arm_arch >= 10)? 25: 23;
+			if ((target & amask) || !disp_fits (target, bits)) {
 				return;
 			}
 			const ut32 sb = (target >> 24) & 1;
 			hi = (hi & 0xf800) | (sb << 10) | ((target >> 12) & 0x3ff);
 			lo = (lo & 0xd000) | ((((target >> 23) & 1) ^ sb ^ 1) << 13)
 				| ((((target >> 22) & 1) ^ sb ^ 1) << 11) | ((target >> 1) & 0x7ff);
-			r_write_ble16 (buf, hi, bo->endian);
-			r_write_ble16 (buf + 2, lo, bo->endian);
+			r_write_ble16 (buf, hi, ie);
+			r_write_ble16 (buf + 2, lo, ie);
 			break;
 		}
 		case R_ARM_THM_JUMP19: {
+			if (arm_reloc_arm_func (bo, rel, L)) {
+				return;
+			}
 			const st64 target = S + addend - P;
 			// the conditional b.w reaches only +-1MB
 			if (!disp_fits (target, 21)) {
@@ -1339,16 +1471,16 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			hi = (hi & 0xfbc0) | (((target >> 20) & 1) << 10) | ((target >> 12) & 0x3f);
 			lo = (lo & 0xd000) | (((target >> 18) & 1) << 13)
 				| (((target >> 19) & 1) << 11) | ((target >> 1) & 0x7ff);
-			r_write_ble16 (buf, hi, bo->endian);
-			r_write_ble16 (buf + 2, lo, bo->endian);
+			r_write_ble16 (buf, hi, ie);
+			r_write_ble16 (buf + 2, lo, ie);
 			break;
 		}
 		case R_ARM_THM_MOVW_ABS_NC:
 		case R_ARM_THM_MOVT_ABS: {
 			const ut64 val = (S + addend) | T;
 			thumb_mov_set_imm (&hi, &lo, (rel->type == R_ARM_THM_MOVT_ABS)? val >> 16: val);
-			r_write_ble16 (buf, hi, bo->endian);
-			r_write_ble16 (buf + 2, lo, bo->endian);
+			r_write_ble16 (buf, hi, ie);
+			r_write_ble16 (buf + 2, lo, ie);
 			break;
 		}
 		case R_ARM_MOVW_ABS_NC:
@@ -1360,7 +1492,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			ut32 imm16 = val & 0xffff;
 			insn &= 0xfff0f000;
 			insn |= ((imm16 & 0xf000) << 4) | (imm16 & 0x0fff);
-			r_write_ble32 (buf, insn, bo->endian);
+			r_write_ble32 (buf, insn, ie);
 			break;
 		}
 		case R_ARM_MOVT_ABS:
@@ -1372,12 +1504,12 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			ut32 imm16 = (val >> 16) & 0xffff;
 			insn &= 0xfff0f000;
 			insn |= ((imm16 & 0xf000) << 4) | (imm16 & 0x0fff);
-			r_write_ble32 (buf, insn, bo->endian);
+			r_write_ble32 (buf, insn, ie);
 			break;
 		}
 		default:
 			if (!rel->sym && rel->mode == DT_REL) {
-				r_write_ble32 (buf, insn, bo->endian);
+				r_write_ble32 (buf, word, bo->endian);
 			} else {
 				V = S + addend;
 				r_write_ble32 (buf, V, bo->endian);
@@ -1773,6 +1905,24 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		}
 		break;
 	}
+	case EM_RISCV: {
+		// data words only; code relocs would need instruction encoding
+		switch (rel->type) {
+		case R_RISCV_64:
+		case R_RISCV_JUMP_SLOT:
+			V = S + A;
+			break;
+		case R_RISCV_RELATIVE:
+			V = A + bias;
+			break;
+		default:
+			return;
+		}
+		const int word = sizeof (Elf_(Addr));
+		r_write_ble (buf, V, bo->endian, word * 8);
+		iob->overlay_write_at (iob->io, P, buf, word);
+		break;
+	}
 	case EM_BPF: // CHECK: some older solana programs have set an ehdr.e_machine of EM_BPF
 	case EM_SBPF: {
 		const ut64 B = (bo->user_baddr != UT64_MAX)? bo->user_baddr: bo->baddr;
@@ -1925,6 +2075,101 @@ static RVecRBinTrycatch *trycatch(RBinFile *bf) {
 	return &eo->trycatch;
 }
 
+// a fuzzed file must not inflate .got.r2; corpus addends stay below 0x500
+#define GOTR2_ADDEND_MAX 0x1000
+#define GOTR2_GROWTH_MAX (1 << 20)
+
+// kinds whose addend is an offset from S; pc biases and got entries are not
+static bool addend_is_offset(ut16 machine, int type) {
+	switch (machine) {
+	case EM_X86_64:
+		return type == R_X86_64_64 || type == R_X86_64_32 || type == R_X86_64_32S;
+	case EM_386:
+		return type == R_386_32;
+	case EM_PPC:
+		return type == R_PPC_ADDR32;
+	case EM_PPC64:
+		return type == R_PPC64_ADDR64;
+	case EM_RISCV:
+		return type == R_RISCV_64;
+	case EM_ARM:
+		switch (type) {
+		case R_ARM_ABS32:
+		case R_ARM_TARGET1:
+		case R_ARM_REL32:
+		case R_ARM_MOVW_ABS_NC:
+		case R_ARM_THM_MOVW_ABS_NC:
+		case R_ARM_MOVT_ABS:
+		case R_ARM_THM_MOVT_ABS:
+			return true;
+		}
+		break;
+	case EM_AARCH64:
+		switch (type) {
+		case R_AARCH64_ABS64:
+		case R_AARCH64_ABS32:
+		case R_AARCH64_PREL64:
+		case R_AARCH64_PREL32:
+		case R_AARCH64_PREL16:
+		case R_AARCH64_ADR_PREL_PG_HI21:
+		case R_AARCH64_ADR_PREL_PG_HI21_NC:
+		case R_AARCH64_ADD_ABS_LO12_NC:
+		case R_AARCH64_LDST8_ABS_LO12_NC:
+		case R_AARCH64_LDST16_ABS_LO12_NC:
+		case R_AARCH64_LDST32_ABS_LO12_NC:
+		case R_AARCH64_LDST64_ABS_LO12_NC:
+		case R_AARCH64_CALL26:
+		case R_AARCH64_JUMP26:
+			return true;
+		}
+		break;
+	}
+	return false;
+}
+
+static bool offset_addend(RBinFile *bf, ELFOBJ *eo, RIOBind *iob, const RBinElfReloc *rel, st64 *a) {
+	const ut16 m = eo->ehdr.e_machine;
+	if (!addend_is_offset (m, rel->type)) {
+		return false;
+	}
+	*a = rel->addend;
+	if (rel->implicit_addend && (m == EM_ARM || m == EM_386 || m == EM_PPC)) {
+		ut8 buf[4];
+		if (iob->read_at (iob->io, elf_io_addr (bf, eo, rel->rva), buf, 4) != 4) {
+			return false;
+		}
+		*a = (m == EM_ARM)? arm_rel_addend (eo, rel, buf): (st32)r_read_ble32 (buf, eo->endian);
+	}
+	return true;
+}
+
+enum { SLOT_CRAMPED = 1, SLOT_WARNED = 2, SLOT_LISTED = 4, SLOT_NAMED = 8 };
+
+static inline bool offset_fits(st64 a) {
+	return a > -GOTR2_ADDEND_MAX && a < GOTR2_ADDEND_MAX;
+}
+
+// slots may grow up to the next io map, after room for one slot per reloc
+static ut64 span_budget(RBin *b, ELFOBJ *eo, ut64 base, size_t cdsz) {
+	RIOBank *bank = b->iob.bank_get (b->iob.io, b->iob.io->bank);
+	ut64 limit = UT64_MAX;
+	if (bank) {
+		RListIter *iter;
+		RIOMapRef *mapref;
+		r_list_foreach (bank->maprefs, iter, mapref) {
+			RIOMap *map = b->iob.map_get (b->iob.io, mapref->id);
+			if (map && r_io_map_from (map) >= base) {
+				limit = R_MIN (limit, r_io_map_from (map));
+			}
+		}
+	}
+	if (limit == UT64_MAX) {
+		return GOTR2_GROWTH_MAX;
+	}
+	const ut64 slots = (ut64)eo->g_reloc_num * cdsz;
+	return (limit > base && limit - base > slots)? R_MIN (limit - base - slots, GOTR2_GROWTH_MAX): 0;
+}
+
 static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
 	RBinReloc *ptr = NULL;
@@ -1986,12 +2231,39 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		return NULL;
 	}
 	HtUU *relocs_by_sym = ht_uu_new0 ();
-	if (!relocs_by_sym) {
+	// a slot's room must be known before its first reloc patches it
+	HtUU *lead_by_sym = ht_uu_new0 ();
+	HtUU *tail_by_sym = ht_uu_new0 ();
+	HtUU *slot_flags = ht_uu_new0 ();
+	HtUU *listed_slots = ht_uu_new0 ();
+	if (!relocs_by_sym || !lead_by_sym || !tail_by_sym || !slot_flags || !listed_slots) {
+		ht_uu_free (relocs_by_sym);
+		ht_uu_free (lead_by_sym);
+		ht_uu_free (tail_by_sym);
+		ht_uu_free (slot_flags);
+		ht_uu_free (listed_slots);
 		RVecRBinReloc_free (ret);
 		return NULL;
 	}
+	RBinElfReloc *reloc;
+	R_VEC_FOREACH (relocs, reloc) {
+		if (reloc->laddr) {
+			ht_uu_update (slot_flags, reloc->sym, ht_uu_find (slot_flags, reloc->sym, NULL) | SLOT_NAMED);
+		}
+		st64 a;
+		if (!reloc_has_slot (eo, reloc) || !offset_addend (bf, eo, &b->iob, reloc, &a) || !offset_fits (a)) {
+			continue;
+		}
+		HtUU *side = (a < 0)? lead_by_sym: tail_by_sym;
+		const ut64 mag = R_ABS (a);
+		if (mag > ht_uu_find (side, reloc->sym, NULL)) {
+			ht_uu_update (side, reloc->sym, mag);
+		}
+	}
+	ut64 budget = span_budget (b, eo, n_vaddr, cdsz);
 	ut64 vaddr = n_vaddr;
 	ut64 toc_base = UT64_MAX;
+	const ut64 arm_arch = (eo->ehdr.e_machine == EM_ARM)? arm_cpu_arch (eo): 0;
 	if (eo->ehdr.e_machine == EM_PPC64) {
 		ut64 t = Elf_(get_section_addr) (eo, ".toc");
 		if (t == UT64_MAX) {
@@ -2003,7 +2275,6 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	}
 	const ut64 bias = elf_io_addr (bf, eo, eo->baddr) - eo->baddr;
 	const st64 shift = bf->bo->baddr_shift;
-	RBinElfReloc *reloc;
 	R_VEC_FOREACH (relocs, reloc) {
 		ut64 plt_entry_addr = vaddr;
 		ut64 sym_addr = UT64_MAX;
@@ -2029,39 +2300,84 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		const bool resolved = is_abs || (sym_addr && sym_addr != UT64_MAX);
 		const bool addressable = !resolved && reloc->sym && !reloc_sym_is_tls (eo, reloc);
 		const bool takes_slot = addressable && eo->ehdr.e_machine != EM_SBPF;
+		// S follows the lead: S + A and a word read there stay inside
+		ut64 lead = 0, tail = 0;
+		const ut64 old_flags = ht_uu_find (slot_flags, reloc->sym, NULL);
+		ut64 flags = old_flags;
+		if (takes_slot) {
+			lead = R_ROUND (ht_uu_find (lead_by_sym, reloc->sym, NULL), cdsz);
+			tail = R_ROUND (ht_uu_find (tail_by_sym, reloc->sym, NULL), cdsz);
+			if (lead + tail > budget) {
+				flags |= SLOT_CRAMPED;
+				lead = tail = 0;
+			}
+			budget -= lead + tail;
+			plt_entry_addr = vaddr + lead;
+		}
+		const ut64 slot = vaddr + lead;
+		st64 a = 0;
+		const bool offset = has_slot && offset_addend (bf, eo, &b->iob, reloc, &a) && a;
+		const bool skip = offset && (!offset_fits (a) || (flags & SLOT_CRAMPED));
+		if (skip && !(flags & SLOT_WARNED)) {
+			RBinImport *imp = reloc_is_import (eo, reloc)? eo->imports_by_ord[reloc->sym]: NULL;
+			RBinSymbol *sym = (!imp && reloc->sym < eo->symbols_by_ord_size)? eo->symbols_by_ord[reloc->sym]: NULL;
+			RBinName *name = imp? imp->name: sym? sym->name: NULL;
+			R_LOG_WARN ("No .got.r2 room for %s%+"PFMT64d" at 0x%"PFMT64x", reloc left unpatched",
+				name? r_bin_name_tostring (name): "?", a, reloc->rva);
+			flags |= SLOT_WARNED;
+		}
+		if (flags != old_flags) {
+			ht_uu_update (slot_flags, reloc->sym, flags);
+		}
 		// symbol-less relocs have S = 0 (gABI); a tls value is no address
-		const ut64 raddr = resolved? sym_addr: addressable? vaddr: 0;
-		_patch_reloc (bf, eo, eo->ehdr.e_machine, &b->iob, reloc,
-			elf_io_addr (bf, eo, reloc->rva), raddr, bias, plt_entry_addr, toc_base);
+		const ut64 raddr = resolved? sym_addr: addressable? slot: 0;
+		if (!skip) {
+			_patch_reloc (bf, eo, eo->ehdr.e_machine, &b->iob, reloc,
+				elf_io_addr (bf, eo, reloc->rva), raddr, bias, plt_entry_addr, toc_base, arm_arch);
+		}
 		RBinSymbol *csym = (takes_slot && ss && ss->common)? eo->symbols_by_ord[reloc->sym]: NULL;
 		if (csym) {
-			csym->vaddr = vaddr - shift;
+			csym->vaddr = slot - shift;
 			csym->paddr = Elf_(v2p) (eo, csym->vaddr);
 		}
 		ptr = reloc_convert (eo, reloc, n_vaddr - shift, ret);
 		if (!ptr) {
 			continue;
 		}
-		// a patched code site branches to the slot, so the slot is what the
-		// reloc describes; a data site holds the value and keeps its own vaddr
-		const bool site_moves = has_slot
+		// pd looks a reloc up at the printed address, so the site keeps its row
+		const bool redirects = has_slot && !skip && (resolved || takes_slot)
 			&& (patch_redirects_code (eo->ehdr.e_machine) || reloc_is_import (eo, reloc));
-		if (site_moves) {
-			RBinSection *s = r_bin_get_section_at (bf->bo, ptr->vaddr + shift, true);
-			if (s && (s->perm & R_PERM_X)) {
-				if (resolved) {
-					ptr->vaddr = sym_addr - shift;
-				} else if (takes_slot) {
-					ptr->vaddr = vaddr - shift;
-				}
+		RBinSection *s = redirects? r_bin_get_section_at (bf->bo, ptr->vaddr + shift, true): NULL;
+		const ut64 slot_addr = resolved? sym_addr: slot;
+		if (s && (s->perm & R_PERM_X)) {
+			ptr->to_slot = true;
+			if (!(flags & SLOT_LISTED)) {
+				ht_uu_update (slot_flags, reloc->sym, flags | SLOT_LISTED);
+				r_bin_reloc_slot_row (ret, ptr, slot_addr - shift);
+				ht_uu_insert (listed_slots, slot_addr, 1);
 			}
+		} else if (redirects && reloc_is_import (eo, reloc) && !(flags & SLOT_NAMED)) {
+			// the core names laddr rsym.<import>, as for arm32 plt
+			ptr->laddr = slot_addr;
+			ht_uu_update (slot_flags, reloc->sym, flags | SLOT_NAMED);
 		}
 		if (takes_slot) {
-			ht_uu_insert (relocs_by_sym, reloc->sym, vaddr);
-			vaddr += cdsz;
+			ht_uu_insert (relocs_by_sym, reloc->sym, slot);
+			vaddr += lead + cdsz + tail;
 		}
 	}
+	// a slot row already names its slot, even one listed after a data site
+	RBinReloc *row;
+	R_VEC_FOREACH (ret, row) {
+		if (row->laddr && ht_uu_find (listed_slots, row->laddr, NULL)) {
+			row->laddr = 0;
+		}
+	}
+	ht_uu_free (listed_slots);
 	ht_uu_free (relocs_by_sym);
+	ht_uu_free (lead_by_sym);
+	ht_uu_free (tail_by_sym);
+	ht_uu_free (slot_flags);
 	if (vaddr > n_vaddr) {
 		char *muri = r_str_newf ("malloc://%" PFMT64u, vaddr - n_vaddr);
 		if (muri && b->iob.open_at (io, muri, R_PERM_R, 0664, n_vaddr)) {
@@ -2114,12 +2430,11 @@ static void lookup_sections(RBinFile *bf, RBinInfo *ret) {
 	RBinSection *section;
 	bool is_go = false;
 	ret->has_retguard = -1;
-	if (!sections_vec (bf)) {
+	const RVecRBinSection *sections = Elf_(load_sections) (bf, bf->bo->bin_obj);
+	if (!sections) {
 		return;
 	}
-	RVecRBinSection *sections = &(bf->bo->sections_vec);
-	R_VEC_FOREACH (sections, section)
-	{
+	R_VEC_FOREACH (sections, section) {
 		if (is_go && ret->has_retguard != -1) {
 			break;
 		}
@@ -2343,11 +2658,11 @@ static RList* fields(RBinFile *bf) {
 }
 
 static ut64 size(RBinFile *bf) {
+	const RVecRBinSection *sections = Elf_(load_sections) (bf, bf->bo->bin_obj);
 	ut64 off = 0;
 	ut64 len = 0;
-	if (sections_vec (bf)) {
-		RBinSection *section;
-		RVecRBinSection *sections = &(bf->bo->sections_vec);
+	RBinSection *section;
+	if (sections) {
 		R_VEC_FOREACH (sections, section) {
 			if (section->paddr > off) {
 				off = section->paddr;

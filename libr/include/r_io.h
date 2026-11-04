@@ -663,6 +663,7 @@ extern RIOPlugin r_io_plugin_gdb;
 extern RIOPlugin r_io_plugin_rap;
 extern RIOPlugin r_io_plugin_http;
 extern RIOPlugin r_io_plugin_bfdbg;
+extern RIOPlugin r_io_plugin_bits;
 extern RIOPlugin r_io_plugin_w32;
 extern RIOPlugin r_io_plugin_zip;
 extern RIOPlugin r_io_plugin_mmap;

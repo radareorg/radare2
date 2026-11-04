@@ -15,7 +15,7 @@ d "add c" 81
 d "add d" 82
 d "add e" 83
 d "add h" 84
-d "add hl, bc" 09
+ad "add hl, bc" 09
 d "add hl, de" 19
 d "add hl, hl" 29
 d "add hl, sp" 39
@@ -111,7 +111,7 @@ d "cp h" bc
 d "cp l" bd
 d "cpl" 2f
 d "daa" 27
-d "dec [hl]" 35
+ad "dec [hl]" 35
 d "dec a" 3d
 d "dec b" 05
 d "dec bc" 0b
@@ -298,7 +298,7 @@ d "ld b, d" 42
 d "ld b, e" 43
 d "ld b, h" 44
 d "ld b, l" 45
-dB "ld bc, 0x0000" 010000
+ad "ld bc, 0x0000" 010000
 d "ld c, 0x00" 0e00
 d "ld c, [hl]" 4e
 d "ld c, a" 4f
@@ -347,13 +347,13 @@ d "ld l, d" 6a
 d "ld l, e" 6b
 d "ld l, h" 6c
 d "ld l, l" 6d
-dB "ld sp, 0x0000" 310000
+ad "ld sp, 0x0000" 310000
 d "ld sp, hl" f9
 d "ldd [hl], a" 32
 d "ldd a, [hl]" 3a
 d "ldi [hl], a" 22
 d "ldi a, [hl]" 2a
-d "nop" 00
+ad "nop" 00
 d "or 0x00" f600
 d "or [hl]" b6
 d "or a" b7
@@ -577,13 +577,14 @@ d "sra h" cb2c
 d "sra l" cb2d
 d "srl [hl]" cb3e
 d "srl a" cb3f
-d "srl b" cb38
+ad "srl b" cb38
 d "srl c" cb39
 d "srl d" cb3a
 d "srl e" cb3b
 d "srl h" cb3c
 d "srl l" cb3d
-d "stop" 10
+ad "stop" 1000
+ad "rrca" 0f
 d "sub 0x00" d600
 d "sub [hl]" 96
 d "sub a" 97
@@ -610,12 +611,41 @@ d "xor d" aa
 d "xor e" ab
 d "xor h" ac
 d "xor l" ad
-aB "ld hl, 0xc3a0" 21a0c3
-aB "ld bc, 0x188" 018801
-aB "ld sp, 0xc3a0" 31a0c3
-aB "ld de, 0x188" 118801
-aB "call 0x36e0" cde036
-aB "ld b, [hl]" 46
-aB "ld [hl], a" 77
-aB "ld a, 0x63" 3e63
-aB "rlc [hl]" cb06
+a "ld hl, 0xc3a0" 21a0c3
+a "ld bc, 0x188" 018801
+a "ld sp, 0xc3a0" 31a0c3
+a "ld de, 0x188" 118801
+a "call 0x36e0" cde036
+a "ld b, [hl]" 46
+a "ld [hl], a" 77
+a "ld a, 0x63" 3e63
+a "rlc [hl]" cb06
+
+a "add a, 0x18" c618
+a "adc a, 0x01" ce01
+a "sbc a, c" 99
+a "add a, b" 80
+a "add 0x18" c618
+a "ld a, [0xc000]" fa00c0
+a "ld [0xc000], a" ea00c0
+a "ld [0xc000], sp" 0800c0
+a "ld a, [bc]" 0a
+a "ld [bc], a" 02
+a "ld a, [de]" 1a
+a "ld [de], a" 12
+a "ld a, [hl+]" 2a
+a "ld [hl+], a" 22
+a "ld a, [hl-]" 3a
+a "ld [hl-], a" 32
+a "ld hl, sp+8" f808
+a "ld sp, hl" f9
+a "stop" 1000
+
+a "ld [0xc700+1], a" ea01c7
+a "ld a, [0xc700+1]" fa01c7
+a "ld hl, 0xc700+1" 2101c7
+a "add a, 16+8" c618
+
+a "jp [hl]" e9
+a "jp [HL]" e9
+a "jp hl" e9

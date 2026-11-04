@@ -402,7 +402,7 @@ static bool gadget_esil_eval_run(RCore *core, RList *hitlist, ut64 cond_addr, ut
 		esil->addr = op.addr;
 		esil->jump_target = UT64_MAX;
 		esil->jump_target_set = 0;
-		esil->trap = 0;
+		r_esil_set_trap (esil, R_ANAL_TRAP_NONE, 0);
 		if (R_STR_ISNOTEMPTY (expr)) {
 			ok = r_esil_parse (esil, expr);
 			r_esil_stack_free (esil);

@@ -114,8 +114,7 @@ static bool r_cmd_qjs_call(RCorePluginSession *cps, const char *input) {
 	bool ret = false;
 	if (JS_IsException (res)) {
 		// An erroring plugin must not claim the command as handled.
-		JSValue e = JS_GetException (ctx);
-		JS_FreeValue (ctx, e);
+		js_std_dump_error (ctx);
 	} else {
 		ret = JS_ToBool (ctx, res) == 1;
 	}

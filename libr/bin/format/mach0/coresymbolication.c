@@ -10,6 +10,8 @@
 #define R_CS_EL_SIZE_SYM 0x18
 #define R_CS_EL_SIZE_LSYM 0x24
 #define R_CS_EL_SIZE_LINFO 0x14
+// address-line entries an element may add per byte of its size
+#define R_CS_EL_LINES_PER_BYTE 4
 
 static RCoreSymCacheElementHdr *r_coresym_cache_element_header_new(RBuffer *buf, size_t off, int bits) {
 	RCoreSymCacheElementHdr *hdr = R_NEW0 (RCoreSymCacheElementHdr);
@@ -113,13 +115,17 @@ ut64 r_coresym_cache_element_pa2va(RCoreSymCacheElement *element, ut64 pa) {
 	return pa;
 }
 
-static void meta_add_fileline(RBinFile *bf, ut64 vaddr, ut32 size, RCoreSymCacheElementFLC *flc) {
-	ut64 cursor = vaddr;
-	ut64 end = cursor + R_MAX (size, 1);
-	while (cursor < end) {
-		bf->addrline.al_add (&bf->addrline, cursor, flc->file, NULL, flc->line, 0);
-		cursor += 2;
+// one entry per 2 bytes of the range, the sizes come from the file so the element bounds their total
+static bool meta_add_fileline(RBinFile *bf, ut64 vaddr, ut32 size, RCoreSymCacheElementFLC *flc, ut64 *budget) {
+	ut64 count = ((ut64)R_MAX (size, 1) + 1) / 2;
+	const bool complete = count <= *budget;
+	count = R_MIN (count, *budget);
+	*budget -= count;
+	ut64 i;
+	for (i = 0; i < count; i++) {
+		bf->addrline.al_add (&bf->addrline, vaddr + i * 2, flc->file, NULL, flc->line, 0);
 	}
+	return complete;
 }
 
 static char *str_dup_safe(const ut8 *b, const ut8 *str, const ut8 *end) {
@@ -171,6 +177,8 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 		goto beach;
 	}
 	ut8 *end = b + hdr->size;
+	ut64 lines_budget = (ut64)hdr->size * R_CS_EL_LINES_PER_BYTE;
+	bool lines_complete = true;
 	if (file_name) {
 		result->file_name = file_name;
 	} else if (hdr->file_name_off) {
@@ -361,7 +369,7 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 				continue;
 			}
 			cursor += R_CS_EL_SIZE_LSYM;
-			meta_add_fileline (bf, r_coresym_cache_element_pa2va (result, lsym->sym.paddr), lsym->sym.size, &lsym->flc);
+			lines_complete &= meta_add_fileline (bf, r_coresym_cache_element_pa2va (result, lsym->sym.paddr), lsym->sym.size, &lsym->flc, &lines_budget);
 		}
 	}
 	if (hdr->n_line_info) {
@@ -384,8 +392,11 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 				break;
 			}
 			cursor += R_CS_EL_SIZE_LINFO;
-			meta_add_fileline (bf, r_coresym_cache_element_pa2va (result, info->paddr), info->size, &info->flc);
+			lines_complete &= meta_add_fileline (bf, r_coresym_cache_element_pa2va (result, info->paddr), info->size, &info->flc, &lines_budget);
 		}
+	}
+	if (!lines_complete) {
+		R_LOG_WARN ("CoreSymbolication line info covers more than the element can describe, truncated");
 	}
 
 	/*

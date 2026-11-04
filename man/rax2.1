@@ -1,11 +1,11 @@
-.Dd Aug 22, 2026
+.Dd Nov 3, 2026
 .Dt RAX2 1
 .Sh NAME
 .Nm rax2
 .Nd Radare2 Base Converter
 .Sh SYNOPSIS
 .Nm rax2
-.Op Fl abcCdDeEfFhHijkKnoqrsStuUvwxXzZ
+.Op Fl abcCdDeEfFhHijkKnopPqrsStuUvwxXzZ
 .Op [expr] ...
 .Sh DESCRIPTION
 A versatile calculator for numerical base conversions, string encoding/decoding, and data representation within Radare2, supporting C-string encoding, hexpairs, Base64, and other formats.
@@ -71,6 +71,17 @@ Show randomart key asciiart for values or hexpairs
 Append newline to the decoded output for human friendliness
 .It Fl o
 Convert from octal string to char (rax2 -o 162 62)
+.It Fl p Ar bits
+Pack stdin units of the smallest integer size holding
+.Ar bits
+into a contiguous bit stream (rax2 -p 12 < words.bin > packed.bin).
+Streams and units are little endian unless
+.Fl e
+is given, which makes both big endian
+.It Fl P Ar bits
+Unpack a bit stream of
+.Ar bits
+wide units read from stdin into integer units (rax2 -P 12 < packed.bin > words.bin)
 .It Fl q
 Be quiet. Show less information or drop the superfluous details in the output
 .It Fl r

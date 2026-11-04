@@ -19,6 +19,18 @@
 #define DW_EH_PE_FUNCREL 0x40
 #define DW_EH_PE_INDIRECT 0x80
 
+#define EH_MAX_ACTIONS 64
+#define EH_MAX_TYPE_NAME 512
+#define EH_MIN_REGIONS 0x4000
+
+struct r_bin_lsda_parser_t {
+	RBinFile *bf;
+	RVecRBinTrycatch *result;
+	RIntervalTree seen; // file ranges of the lsda tables already walked
+	HtUP *types; // typeinfo address to catch type name, NULL when unresolved
+	ut64 regions_left;
+};
+
 typedef struct {
 	const ut8 *buf;
 	const ut8 *p;
@@ -161,15 +173,13 @@ static char *eh_type_name(RBinFile *bf, ut64 type_addr) {
 		return NULL;
 	}
 	const char *prefix = "typeinfo for ";
-	if (r_str_startswith (demangled, prefix)) {
-		char *type = strdup (demangled + strlen (prefix));
-		free (demangled);
-		return type;
-	}
-	return demangled;
+	const char *type = r_str_startswith (demangled, prefix)? demangled + strlen (prefix): demangled;
+	char *res = strlen (type) > EH_MAX_TYPE_NAME? r_str_trunc_ellipsis (type, EH_MAX_TYPE_NAME): strdup (type);
+	free (demangled);
+	return res;
 }
 
-static char *eh_read_type(RBinFile *bf, const EhReader *lsda,
+static char *eh_read_type(RBinLsdaParser *lp, const EhReader *lsda,
 		const ut8 *type_table, ut8 encoding, st64 type_filter, bool *catch_all) {
 	*catch_all = false;
 	if (type_filter <= 0 || !type_table) {
@@ -189,14 +199,31 @@ static char *eh_read_type(RBinFile *bf, const EhReader *lsda,
 		*catch_all = true;
 		return NULL;
 	}
-	return eh_type_name (bf, type_addr);
+	// most regions catch the same few types, resolve and demangle each one once
+	bool found;
+	char *name = ht_up_find (lp->types, type_addr, &found);
+	if (!found) {
+		name = eh_type_name (lp->bf, type_addr);
+		ht_up_insert (lp->types, type_addr, name);
+	}
+	return name? strdup (name): NULL;
 }
 
-static void eh_add_action(RBinFile *bf, RVecRBinTrycatch *result, const EhReader *lsda,
+static RBinTrycatch *eh_region_add(RBinLsdaParser *lp, ut64 source, ut64 from, ut64 to, ut64 handler) {
+	if (!lp->regions_left) {
+		return NULL;
+	}
+	if (!--lp->regions_left) {
+		R_LOG_WARN ("Too many exception regions for the file size, ignoring the rest");
+	}
+	return r_bin_trycatch_add (lp->result, source, from, to, handler, 0);
+}
+
+static void eh_add_action(RBinLsdaParser *lp, const EhReader *lsda,
 		const ut8 *action_table, const ut8 *type_table, ut8 type_encoding, ut64 action,
 		ut64 source, ut64 from, ut64 to, ut64 handler) {
 	if (!action) {
-		RBinTrycatch *tc = r_bin_trycatch_add (result, source, from, to, handler, 0);
+		RBinTrycatch *tc = eh_region_add (lp, source, from, to, handler);
 		if (tc) {
 			tc->kind = R_BIN_TRYCATCH_CLEANUP;
 		}
@@ -211,9 +238,16 @@ static void eh_add_action(RBinFile *bf, RVecRBinTrycatch *result, const EhReader
 		return;
 	}
 	const ut8 *record = action_table + (action - 1);
-	// the depth limit keeps cyclic next-record chains from looping forever
-	size_t depth;
-	for (depth = 0; depth < 64; depth++) {
+	const ut8 *visited[EH_MAX_ACTIONS];
+	size_t depth, i;
+	for (depth = 0; depth < EH_MAX_ACTIONS; depth++) {
+		// stop when the next-record chain loops back
+		for (i = 0; i < depth && visited[i] != record; i++) {
+		}
+		if (i < depth) {
+			break;
+		}
+		visited[depth] = record;
 		EhReader action_reader = *lsda;
 		action_reader.p = record;
 		st64 type_filter;
@@ -225,13 +259,13 @@ static void eh_add_action(RBinFile *bf, RVecRBinTrycatch *result, const EhReader
 		if (!eh_sleb (&action_reader, &next)) {
 			break;
 		}
-		RBinTrycatch *tc = r_bin_trycatch_add (result, source, from, to, handler, 0);
+		RBinTrycatch *tc = eh_region_add (lp, source, from, to, handler);
 		if (!tc) {
 			break;
 		}
 		tc->kind = type_filter < 0? R_BIN_TRYCATCH_FILTER: R_BIN_TRYCATCH_CATCH;
 		tc->type_filter = type_filter;
-		tc->type = eh_read_type (bf, lsda, type_table, type_encoding,
+		tc->type = eh_read_type (lp, lsda, type_table, type_encoding,
 			type_filter, &tc->catch_all);
 		if (!next) {
 			break;
@@ -245,10 +279,47 @@ static void eh_add_action(RBinFile *bf, RVecRBinTrycatch *result, const EhReader
 	}
 }
 
-R_IPI void r_bin_dwarf_parse_lsda(RBinFile *bf, RVecRBinTrycatch *result, ut64 fcn_addr, ut64 lsda_addr) {
-	R_RETURN_IF_FAIL (bf && bf->bo && result);
+static void eh_type_free(HtUPKv *kv) {
+	free (kv->value);
+}
+
+R_IPI RBinLsdaParser *r_bin_dwarf_lsda_new(RBinFile *bf, RVecRBinTrycatch *result) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && result, NULL);
+	RBinLsdaParser *lp = R_NEW0 (RBinLsdaParser);
+	lp->types = ht_up_new (NULL, eh_type_free, NULL);
+	if (!lp->types) {
+		free (lp);
+		return NULL;
+	}
+	r_interval_tree_init (&lp->seen, NULL);
+	lp->bf = bf;
+	lp->result = result;
+	// a call site takes at least 4 bytes
+	lp->regions_left = R_MAX (EH_MIN_REGIONS, bf->size / 4);
+	return lp;
+}
+
+R_IPI void r_bin_dwarf_lsda_free(RBinLsdaParser *lp) {
+	if (lp) {
+		r_interval_tree_fini (&lp->seen);
+		ht_up_free (lp->types);
+		free (lp);
+	}
+}
+
+static bool eh_lsda_seen_cb(RIntervalNode *node, void *user) {
+	return false;
+}
+
+R_IPI void r_bin_dwarf_parse_lsda(RBinLsdaParser *lp, ut64 fcn_addr, ut64 lsda_addr) {
+	R_RETURN_IF_FAIL (lp);
+	RBinFile *bf = lp->bf;
+	if (!lp->regions_left) {
+		return;
+	}
 	RBinSection *section = r_bin_get_section_at (bf->bo, lsda_addr, true);
-	if (!section || section->size > ST32_MAX) {
+	// Runtime exception tables cannot be compressed.
+	if (!section || section->size > ST32_MAX || dwarf_section_is_compressed (bf, section)) {
 		return;
 	}
 	const ut8 *bytes = dwarf_get_section_bytes (bf, section);
@@ -298,7 +369,14 @@ R_IPI void r_bin_dwarf_parse_lsda(RBinFile *bf, RVecRBinTrycatch *result, ut64 f
 	}
 	const ut8 *callsite_end = r.p + callsite_size;
 	const ut8 *action_table = callsite_end;
-	while (r.p < callsite_end) {
+	// lsdas never overlap, walk the bytes of each one just once
+	const ut64 lsda_from = section->paddr + offset;
+	const ut64 lsda_to = section->paddr + (callsite_end - bytes);
+	if (!r_interval_tree_all_intersect (&lp->seen, lsda_from, lsda_to, false, eh_lsda_seen_cb, NULL)
+			|| !r_interval_tree_insert (&lp->seen, lsda_from, lsda_to, NULL)) {
+		return;
+	}
+	while (r.p < callsite_end && lp->regions_left) {
 		ut64 start, length, landing_pad, action;
 		if (!eh_encoded (&r, callsite_encoding, &start, false)
 				|| !eh_encoded (&r, callsite_encoding, &length, false)
@@ -313,7 +391,7 @@ R_IPI void r_bin_dwarf_parse_lsda(RBinFile *bf, RVecRBinTrycatch *result, ut64 f
 		if (start > UT64_MAX - fcn_addr || length > UT64_MAX - fcn_addr - start) {
 			continue;
 		}
-		eh_add_action (bf, result, &r, action_table, type_table, type_encoding,
+		eh_add_action (lp, &r, action_table, type_table, type_encoding,
 			action, fcn_addr, fcn_addr + start, fcn_addr + start + length,
 			lpstart + landing_pad);
 	}
@@ -460,8 +538,8 @@ static bool eh_record_header(const EhReader *r, ut64 offset, ut64 *length, ut64 
 }
 
 // resolve the lsda pointer held in the augmentation data of one fde
-static void eh_parse_fde(RBinFile *bf, RVecRBinTrycatch *result, const EhReader *section_reader,
-		const EhCie *cie, const ut8 *record, const ut8 *record_end, HtUP *seen) {
+static void eh_parse_fde(RBinLsdaParser *lp, const EhReader *section_reader,
+		const EhCie *cie, const ut8 *record, const ut8 *record_end) {
 	if (!cie->has_augmentation_data || cie->lsda_encoding == DW_EH_PE_OMIT) {
 		return;
 	}
@@ -485,11 +563,7 @@ static void eh_parse_fde(RBinFile *bf, RVecRBinTrycatch *result, const EhReader 
 	if (!eh_encoded (&r, cie->lsda_encoding, &lsda, true) || !lsda) {
 		return;
 	}
-	// every lsda describes a single function, so parse each one just once
-	if (!ht_up_insert (seen, lsda, (void *)(size_t)1)) {
-		return;
-	}
-	r_bin_dwarf_parse_lsda (bf, result, fcn_addr, lsda);
+	r_bin_dwarf_parse_lsda (lp, fcn_addr, lsda);
 }
 
 // walk the FDEs in the eh_frame section parsing the LSDA referenced by each one
@@ -502,7 +576,7 @@ R_IPI void r_bin_dwarf_parse_eh_frame(RBinFile *bf, RVecRBinTrycatch *result) {
 			break;
 		}
 	}
-	if (!section || section->size < 8 || section->size > ST32_MAX) {
+	if (!section || section->size < 8 || section->size > ST32_MAX || dwarf_section_is_compressed (bf, section)) {
 		return;
 	}
 	const ut8 *bytes = dwarf_get_section_bytes (bf, section);
@@ -518,8 +592,8 @@ R_IPI void r_bin_dwarf_parse_eh_frame(RBinFile *bf, RVecRBinTrycatch *result) {
 		.bits = (info && info->bits)? info->bits: 64,
 		.be = info? info->big_endian: false,
 	};
-	HtUP *seen = ht_up_new0 ();
-	if (!seen) {
+	RBinLsdaParser *lp = r_bin_dwarf_lsda_new (bf, result);
+	if (!lp) {
 		return;
 	}
 	// most objects share a single CIE, so caching the last one avoids reparsing it
@@ -552,10 +626,10 @@ R_IPI void r_bin_dwarf_parse_eh_frame(RBinFile *bf, RVecRBinTrycatch *result) {
 			}
 		}
 		if (cie_ok) {
-			eh_parse_fde (bf, result, &section_reader, &cie,
-				id_field + id_size, bytes + next_offset, seen);
+			eh_parse_fde (lp, &section_reader, &cie,
+				id_field + id_size, bytes + next_offset);
 		}
 		offset = next_offset;
 	}
-	ht_up_free (seen);
+	r_bin_dwarf_lsda_free (lp);
 }

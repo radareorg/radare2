@@ -1,0 +1,284 @@
+NAME=ARM32 scalar VFP loads and arithmetic use IEEE single precision
+FILE=malloc://512
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 000a90ed010ad0ed601a30ee201a70ee202a20ee202ac0ee600ab4ee10faf1ee400ab5ee101af1ee021a80ed040b90ed061b90ed012b30ee1eff2fe1
+wx 0000c03f00000040 @0x100
+aei
+ar r0=0x100
+ar pc=0
+6aes
+ar s2
+ar s3
+ar s4
+ar s5
+EOF
+EXPECT=<<EOF
+0xbf000000
+0x40600000
+0x40400000
+0x3f400000
+EOF
+RUN
+
+NAME=ARM32 VFP comparisons copy all NZCV flags and preserve FPSCR controls
+FILE=malloc://64
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 600ab4ee10faf1ee
+aei
+ar fpscr=0x12345
+ar s0=0x3f800000
+ar s1=0x40000000
+ar pc=0
+2aes
+ar fpscr
+ar nf
+ar zf
+ar cf
+ar vf
+ar s1=0x3f800000
+ar pc=0
+2aes
+ar fpscr
+ar s1=0
+ar pc=0
+2aes
+ar fpscr
+ar s0=0x7fc00000
+ar pc=0
+2aes
+ar fpscr
+ar nf
+ar zf
+ar cf
+ar vf
+EOF
+EXPECT=<<EOF
+0x80012345
+0x00000001
+0x00000000
+0x00000000
+0x00000000
+0x60012345
+0x20012345
+0x30012345
+0x00000000
+0x00000000
+0x00000001
+0x00000001
+EOF
+RUN
+
+NAME=ARM32 VFP zero comparisons and VMRS to a general register
+FILE=malloc://64
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 400ab5ee101af1ee
+aei
+ar s0=0xbf800000
+ar pc=0
+2aes
+ar r1
+EOF
+EXPECT=<<EOF
+0x80000000
+EOF
+RUN
+
+NAME=ARM32 double precision VFP loads use eight byte values
+FILE=malloc://512
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 040b90ed061b90ed012b30ee
+wx 000000000000f83f0000000000000040 @0x110
+aei
+ar r0=0x100
+ar pc=0
+3aes
+ar d2
+EOF
+EXPECT=<<EOF
+0x400c000000000000
+EOF
+RUN
+
+NAME=ARM32 and Thumb VFP literal pointers use the architectural aligned PC
+FILE=malloc://64
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 010a9fed
+aoj~{[0].ptr}
+e asm.bits=16
+wx 9fed010a @2
+aoj @2~{[0].ptr}
+EOF
+EXPECT=<<EOF
+12
+8
+EOF
+RUN
+
+NAME=ARM32 VMRS only uses FPSCR for FPSCR sources
+FILE=malloc://64
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 100af0ee100af1ee100af8ee
+aei
+ar fpscr=0x123
+ar r0=0x456
+ar pc=0
+aes
+ar r0
+aes
+ar r0
+ar r0=0x456
+aes
+ar r0
+EOF
+EXPECT=<<EOF
+0x00000456
+0x00000123
+0x00000456
+EOF
+RUN
+
+NAME=ARM32 NEON arithmetic does not use scalar VFP ESIL
+FILE=malloc://64
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 020d01f2020d21f2120d01f3
+aoj 3~F2D~?
+aoj~{[0].family}
+aoj @4~{[0].family}
+aoj @8~{[0].family}
+EOF
+EXPECT=<<EOF
+0
+vec
+vec
+vec
+EOF
+RUN
+
+NAME=ARM32 single precision VFP arithmetic preserves infinities
+FILE=malloc://64
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 601a30ee
+aei
+ar s1=0x3f800000
+ar s0=0x7f800000
+ar pc=0
+aes
+ar s2
+ar s0=0xff800000
+ar pc=0
+aes
+ar s2
+EOF
+EXPECT=<<EOF
+0x7f800000
+0xff800000
+EOF
+RUN
+
+NAME=ARM32 and Thumb VFP literal addresses wrap at 32 bits
+FILE=malloc://64
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 010a9fed
+omv 1 0xfffffff8
+aoj 1 @0xfffffff8~{[0].ptr}
+aoe 1 @0xfffffff8
+omv 1 0
+e asm.bits=16
+wx 9fed010a
+omv 1 0xfffffffa
+aoj 1 @0xfffffffa~{[0].ptr}
+aoe 1 @0xfffffffa
+EOF
+EXPECT=<<EOF
+4
+0xfffffff8 0x4,[4],s0,=
+0
+0xfffffffa 0x0,[4],s0,=
+EOF
+RUN
+
+NAME=ARM32 VFP stores preserve register width and signed displacement
+FILE=malloc://512
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 021a80ed020b00ed
+aei
+ar r0=0x100
+ar s2=0x3fc00000
+ar d0=0x4004000000000000
+ar pc=0
+2aes
+pxj 4 @0x108
+pxj 8 @0xf8
+EOF
+EXPECT=<<EOF
+[0,0,192,63]
+[0,0,0,0,0,0,4,64]
+EOF
+RUN
+
+NAME=ARM32 VMSR and VMRS transfer FPSCR controls
+FILE=malloc://64
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 101ae1ee102af1ee
+aei
+ar r1=0x12345678
+ar pc=0
+2aes
+ar fpscr
+ar r2
+EOF
+EXPECT=<<EOF
+0x12345678
+0x12345678
+EOF
+RUN
+
+NAME=ARM32 and Thumb VFP literals subtract negative displacements
+FILE=malloc://64
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 010a1fed
+aoj~{[0].ptr}
+aoe
+e asm.bits=16
+wx 1fed010a @2
+aoj @2~{[0].ptr}
+aoe @2
+EOF
+EXPECT=<<EOF
+4
+0x00000000 0x4,[4],s0,=
+0
+0x00000002 0x0,[4],s0,=
+EOF
+RUN
+
+NAME=ARM32 scalar memory offsets use signed Capstone displacements
+FILE=malloc://512
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 041000e5042010e5
+aei
+ar r0=0x100
+ar r1=0x12345678
+ar pc=0
+2aes
+ar r2
+pxj 4 @0xfc
+EOF
+EXPECT=<<EOF
+0x12345678
+[120,86,52,18]
+EOF
+RUN

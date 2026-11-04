@@ -150,9 +150,10 @@ static RCoreHelpMessage help_msg_pF = {
 };
 
 static RCoreHelpMessage help_msg_pri = {
-	"Usage: pri", "[n1sg]", "print raw images",
+	"Usage: pri", "[n1234rsg]", "print raw images (source row width in pixels: hex.cols)",
 	"prin", "t [msg]", "print a message",
-	"pri1", "", "1 bitmap image",
+	"pri1", " [len]", "packed 1bpp bitmap as ASCII (hex.cols pixels, hex.stride bytes; 0=tight)",
+	"pri1u", " [len]", "packed 1bpp bitmap as Unicode half blocks",
 	"pri2", " [len]", "8x8 2bpp-tiles",
 	"pri3", " [file]", "print 3D stereogram image of current block",
 	"pris", "", "sixel image",
@@ -2204,13 +2205,9 @@ static int whatbpos(const char *arg) {
 static void pfb(RCore *core, const char *arg, int mode) {
 	const char *fmt = r_str_trim_head_ro (arg);
 	int n = 0;
-	char *names = strchr (fmt, ' ');
+	const char *names = strchr (fmt, ' ');
 	const bool be = r_config_get_b (core->config, "cfg.bigendian");
-	RList *lnames = NULL;
-	if (names) {
-		names = strdup (names + 1);
-		lnames = r_str_split_list (names, " ", 0);
-	}
+	RList *lnames = names? r_str_split_duplist (names + 1, " ", true): NULL;
 	unsigned int i = 0;
 	int bpos = 0;
 	ut64 v = 0;
@@ -2357,10 +2354,9 @@ static void pfb(RCore *core, const char *arg, int mode) {
 			bool v = read_val (bm, i, 1, false);
 			r_cons_printf (core->cons, "%d", v? 1: 0);
 			if (v) {
-				if (be) {
-					bv |= (1 << i);
-				} else {
-					bv |= (1 << (bpos - i - 1));
+				int bit = be? i: bpos - i - 1;
+				if (bit < 64) {
+					bv |= 1ULL << bit;
 				}
 			}
 		}
@@ -3268,7 +3264,7 @@ cleanup:
 #undef append_both
 
 R_API void r_core_print_examine(RCore *core, const char *str) {
-	char cmd[128], *p;
+	char cmd[128];
 	ut64 addr = core->addr;
 	int size = core->anal->config->bits / 4;
 	int count = atoi (str);
@@ -3295,9 +3291,9 @@ R_API void r_core_print_examine(RCore *core, const char *str) {
 	case 'w': size = 4; break;
 	case 'g': size = 8; break;
 	}
-	if ((p = strchr (str, ' '))) {
-		*p++ = 0;
-		addr = r_num_math (core->num, p);
+	const char *p = strchr (str, ' ');
+	if (p) {
+		addr = r_num_math (core->num, p + 1);
 	}
 	switch (*str) {
 	case '?':
@@ -3391,7 +3387,7 @@ static int printzoomcallback(void *cbarg, int mode, ut64 addr, ut8 *bufz, ut64 s
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 			int value = 0;
 			if (fcn) {
-				value = r_list_length (fcn->bbs);
+				value = (int)RVecAnalBlockPtr_length (&fcn->bbs);
 			}
 			return value;
 		}
@@ -4298,8 +4294,9 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 				bool label = false;
 				/* show labels, basic blocks and (conditional) branches */
 				RAnalBlock *bb;
-				RListIter *iter;
-				r_list_foreach (fcn->bbs, iter, bb) {
+				RAnalBlock **iter;
+				R_VEC_FOREACH (&fcn->bbs, iter) {
+					bb = *iter;
 					if (addr == bb->jump) {
 						if (show_offset) {
 							r_cons_printf (core->cons, "%s0x%08" PFMT64x ":\n", use_color? Color_YELLOW: "", addr);
@@ -4312,7 +4309,8 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 					r_cons_printf (core->cons, "%s0x%08" PFMT64x ":\n", use_color? Color_YELLOW: "", addr);
 				}
 				if (strstr (line, "=<")) {
-					r_list_foreach (fcn->bbs, iter, bb) {
+					R_VEC_FOREACH (&fcn->bbs, iter) {
+						bb = *iter;
 						if (addr >= bb->addr && addr < bb->addr + bb->size) {
 							const char *op;
 							if (use_color) {
@@ -4801,7 +4799,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 			size = strlen (byteorder);
 		}
 		int length = size;
-		char *space = strchr (byteorder, ' ');
+		const char *space = strchr (byteorder, ' ');
 		if (space) {
 			length = atoi (space + 1);
 		}
@@ -5300,7 +5298,7 @@ static ut8 *compute_bar_blocks(RCore *core, int mode, RList *ranges, ut64 from, 
 				if (mode == 'a') {
 					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off + j, 0);
 					if (fcn) {
-						ptr[i] = r_list_length (fcn->bbs);
+						ptr[i] = (int)RVecAnalBlockPtr_length (&fcn->bbs);
 					}
 					continue;
 				}
@@ -5344,7 +5342,7 @@ static ut8 *compute_bar_blocks(RCore *core, int mode, RList *ranges, ut64 from, 
 					k++;
 				}
 			}
-			ptr[i] = (blocksize > 0) ? 256 * k / blocksize : 0;
+			ptr[i] = (blocksize > 0) ? R_MIN (255, 256 * (ut64)k / blocksize) : 0;
 			break;
 		case 'f':
 		case 'F':
@@ -5353,7 +5351,7 @@ static ut8 *compute_bar_blocks(RCore *core, int mode, RList *ranges, ut64 from, 
 					k++;
 				}
 			}
-			ptr[i] = (blocksize > 0) ? 256 * k / blocksize : 0;
+			ptr[i] = (blocksize > 0) ? R_MIN (255, 256 * (ut64)k / blocksize) : 0;
 			break;
 		case 'p':
 			for (j = 0; j < blocksize; j++) {
@@ -5361,7 +5359,7 @@ static ut8 *compute_bar_blocks(RCore *core, int mode, RList *ranges, ut64 from, 
 					k++;
 				}
 			}
-			ptr[i] = (blocksize > 0) ? 256 * k / blocksize : 0;
+			ptr[i] = (blocksize > 0) ? R_MIN (255, 256 * (ut64)k / blocksize) : 0;
 			break;
 		case 'd':
 			{
@@ -5389,7 +5387,7 @@ static ut8 *compute_bar_blocks(RCore *core, int mode, RList *ranges, ut64 from, 
 					slen = 0;
 				}
 			}
-			ptr[i] = (blocksize > 0) ? 256 * k / blocksize : 0;
+			ptr[i] = (blocksize > 0) ? R_MIN (255, 256 * (ut64)k / blocksize) : 0;
 			break;
 		case 'e':
 			ptr[i] = (ut8) (255 * cmd_print_entropy (core, buf, blocksize));
@@ -5454,7 +5452,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	int submode = 0; // q, j, ...
 
 	if (input[0]) {
-		char *spc = strchr (input, ' ');
+		const char *spc = strchr (input, ' ');
 		if (spc) {
 			ut64 v = r_num_math (core->num, spc + 1);
 			if (v < 1 || v > (ut64)ST32_MAX) {
@@ -5709,16 +5707,6 @@ static void cmd_print_bars(RCore *core, const char *input) {
 beach:
 	r_list_free (list);
 	free (ptr);
-}
-
-static int bbcmp(RAnalBlock *a, RAnalBlock *b) {
-	if (a->addr < b->addr) {
-		return -1;
-	}
-	if (a->addr > b->addr) {
-		return 1;
-	}
-	return 0;
 }
 
 /* TODO: integrate this into r_anal */
@@ -6118,7 +6106,7 @@ static void disasm_recursive(RCore *core, ut64 addr, int count, char type_print)
 }
 
 static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char type_print, bool fromHere) {
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *b = NULL;
 	const char *orig_bb_middle = r_config_get (core->config, "asm.bbmiddle");
 	r_config_set_i (core->config, "asm.bbmiddle", false);
@@ -6127,15 +6115,15 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 
 	// XXX: hack must be reviewed/fixed in code analysis
 	if (!b) {
-		if (r_list_length (f->bbs) >= 1) {
+		if ((int)RVecAnalBlockPtr_length (&f->bbs) >= 1) {
 			ut32 fcn_size = r_anal_function_realsize (f);
-			b = r_list_last (f->bbs);
+			b = *RVecAnalBlockPtr_last (&f->bbs);
 			if (b->size > fcn_size) {
 				b->size = fcn_size;
 			}
 		}
 	}
-	r_list_sort (f->bbs, (RListComparator)bbcmp);
+	r_anal_function_sort_blocks (f);
 	if (input == 'j' && b) { // "pdrj"
 		pj = r_core_pj_new (core);
 		if (!pj) {
@@ -6144,7 +6132,8 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 		pj_o (pj);
 		pj_ks (pj, "name", f->name);
 		pj_ka (pj, "bbs");
-		r_list_foreach (f->bbs, iter, b) {
+		R_VEC_FOREACH (&f->bbs, iter) {
+			b = *iter;
 			pj_o (pj);
 			pj_kn (pj, "addr", b->addr);
 			pj_ka (pj, "ops");
@@ -6178,7 +6167,8 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 			saved_arena = r_reg_arena_peek (core->anal->reg, &saved_arena_size);
 		}
 		r_config_set_i (core->config, "asm.lines.jmp", 0);
-		r_list_foreach (f->bbs, iter, b) {
+		R_VEC_FOREACH (&f->bbs, iter) {
+			b = *iter;
 			pr_bb (core, f, b, emu, saved_gp, saved_arena, saved_arena_size, type_print, fromHere);
 		}
 		if (emu) {
@@ -6308,7 +6298,7 @@ static char *__op_refs(RCore *core, RAnalOp *op, int n) {
 static void r_core_disasm_table(RCore *core, int l, const char *input) {
 	int i;
 	RTable *t = r_core_table_new (core, "disasm");
-	char *arg = strchr (input, ' ');
+	const char *arg = strchr (input, ' ');
 	if (arg) {
 		input = arg + 1;
 	}
@@ -6627,10 +6617,11 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 			}
 			ut64 orig = core->addr;
 			RAnalBlock *bb;
-			RListIter *iter;
+			RAnalBlock **iter;
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, orig, 0);
 			if (fcn) {
-				r_list_foreach (fcn->bbs, iter, bb) {
+				R_VEC_FOREACH (&fcn->bbs, iter) {
+					bb = *iter;
 					r_core_seek (core, orig, true);
 					r_core_disasm_pdi (core, bb->ninstr, 0, 'e');
 				}
@@ -6914,25 +6905,41 @@ static void cmd_print_pxb(RCore *core, const ut8 *data, int len, const char *inp
 }
 #undef P
 
-static void bitimage(RCore *core, const ut8 *data, const int data_size) {
+static void bitimage(RCore *core, const ut8 *data, size_t data_size, bool unicode) {
 	if (!data || data_size < 1) {
 		return;
 	}
-	int stride = r_config_get_i (core->config, "hex.stride");
-	if (stride < 1) {
-		stride = 16;
+	const int cols = r_config_get_i (core->config, "hex.cols");
+	if (cols < 1) {
+		return;
+	}
+	const size_t row_bytes = ((size_t)cols + 7) / 8;
+	if (data_size < row_bytes) {
+		return;
+	}
+	size_t stride = r_config_get_i (core->config, "hex.stride");
+	if (!stride) {
+		stride = row_bytes;
+	} else if (stride < row_bytes) {
+		R_LOG_ERROR ("hex.stride must fit hex.cols pixels");
+		return;
 	}
 	RStrBuf *sb = r_strbuf_new ("");
-	int y;
-	for (y = 0; y < 8; y++) {
-		const size_t pos = y * stride;
-		if (pos >= (size_t)data_size) {
-			break;
-		}
-		const ut8 byte = data[pos];
+	const size_t rows = 1 + (data_size - row_bytes) / stride;
+	size_t y;
+	for (y = 0; y < rows; y += unicode? 2: 1) {
 		int x;
-		for (x = 7; x >= 0; x--) {
-			r_strbuf_append (sb, (byte & (1 << x))? "##": "--");
+		for (x = 0; x < cols; x++) {
+			const ut8 mask = 0x80 >> (x & 7);
+			unsigned pixel = !!(data[y * stride + x / 8] & mask);
+			if (unicode) {
+				if (y + 1 < rows && (data[(y + 1) * stride + x / 8] & mask)) {
+					pixel |= 2;
+				}
+				r_strbuf_append (sb, (const char *[]) {" ", "▀", "▄", "█"}[pixel]);
+			} else {
+				r_strbuf_append (sb, pixel? "##": "  ");
+			}
 		}
 		r_strbuf_append (sb, "\n");
 	}
@@ -6964,7 +6971,11 @@ static void cmd_pri(RCore *core, const char *input, int l) {
 		cmd_printmsg (core, input + 4);
 		break;
 	case '1':
-		bitimage (core, buf, bsz);
+		if (input[3] == '?' || (input[3] == 'u' && input[4] == '?')) {
+			r_cons_cmd_help_match (core->cons, help_msg_pri, "pri1", 0, true);
+		} else {
+			bitimage (core, buf, R_MIN (bsz, (size_t)l), input[3] == 'u');
+		}
 		break;
 	case '2': // "pri2"
 		if (l) {
@@ -7642,7 +7653,7 @@ static int cmd_pd(RCore *core, const char *input, int len, int l, ut8 *block) {
 			if (!f) {
 				f = r_anal_get_fcn_in (core->anal, core->addr, 0);
 			}
-			RListIter *locs_it = NULL;
+			RAnalBlock **locs_it;
 			if (f) {
 				if (input[2] == 'r') { // "pdfr"
 					r_core_cmd0 (core, "pdr");
@@ -7661,8 +7672,9 @@ static int cmd_pd(RCore *core, const char *input, int len, int l, ut8 *block) {
 					pj_kn (pj, "addr", f->addr);
 					pj_k (pj, "ops");
 					pj_a (pj);
-					r_list_sort (f->bbs, bb_cmpaddr);
-					r_list_foreach (f->bbs, locs_it, b) {
+					r_anal_function_sort_blocks (f);
+					R_VEC_FOREACH (&f->bbs, locs_it) {
+						b = *locs_it;
 						ut8 *buf = malloc (b->size);
 						if (buf) {
 							r_io_read_at (core->io, b->addr, buf, b->size);
@@ -8229,12 +8241,15 @@ static int cmd_print(void *data, const char *input) {
 			}
 		}
 	}
-	if (len < 0) {
-		len = -len;
-	}
 	/* pf, pm and pa don't take a length and never read the block, so don't size an allocation from their argument */
 	if (input[0] && strchr ("fma", input[0])) {
 		len = core->blocksize;
+	} else if (len < 0) {
+		if (len == ST32_MIN) {
+			R_LOG_ERROR ("Invalid print length");
+			goto beach;
+		}
+		len = -len;
 	}
 	if (len > core->blocksize) {
 		block = calloc (1, len);

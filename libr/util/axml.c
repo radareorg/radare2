@@ -188,6 +188,24 @@ static const char *resource_value(const string_pool_t *pool, const resource_valu
 	return "null";
 }
 
+// pool strings are untrusted, keep markup and control characters out of the xml text
+static void append_xml(RStrBuf *sb, const char *s, bool name) {
+	while (*s) {
+		RRune ch = 0;
+		int n = r_utf8_decode ((const ut8 *)s, -1, &ch);
+		if (n < 1) {
+			ch = *(const ut8 *)s;
+			n = 1;
+		} else if (ch > 0x9f || (ch >= 0x20 && ch < 0x7f && (name? isalnum (ch) || strchr ("_-.:", ch): !strchr ("&<>\"'", ch)))) {
+			r_strbuf_append_n (sb, s, n);
+			s += n;
+			continue;
+		}
+		r_strbuf_appendf (sb, "&#x%x;", ch);
+		s += n;
+	}
+}
+
 static bool dump_element(PJ *pj, RStrBuf *sb, const string_pool_t *pool, const namespace_t *namespace, const void *element, size_t element_size, const ut8 *resource_map, ut32 resource_map_length, st32 depth, bool start) {
 	ut32 i;
 
@@ -205,7 +223,8 @@ static bool dump_element(PJ *pj, RStrBuf *sb, const string_pool_t *pool, const n
 		goto done;
 	}
 	r_strbuf_pad (sb, '\t', depth);
-	r_strbuf_appendf (sb, "<%s%s", start? "": "/", name);
+	r_strbuf_append (sb, start? "<": "</");
+	append_xml (sb, name, true);
 
 	if (start) {
 		const start_element_t *e = element;
@@ -232,7 +251,11 @@ static bool dump_element(PJ *pj, RStrBuf *sb, const string_pool_t *pool, const n
 				pj_ks (pj, ns, uri);
 				pj_end (pj);
 			}
-			r_strbuf_appendf (sb, " xmlns:%s=\"%s\"", ns, uri);
+			r_strbuf_append (sb, " xmlns:");
+			append_xml (sb, ns, true);
+			r_strbuf_append (sb, "=\"");
+			append_xml (sb, uri, false);
+			r_strbuf_append (sb, "\"");
 		}
 
 		for (i = 0; i < count; i++) {
@@ -269,7 +292,11 @@ static bool dump_element(PJ *pj, RStrBuf *sb, const string_pool_t *pool, const n
 					goto done;
 				}
 			}
-			r_strbuf_appendf (sb, " %s=\"%s\"", key, value);
+			r_strbuf_append (sb, " ");
+			append_xml (sb, key, true);
+			r_strbuf_append (sb, "=\"");
+			append_xml (sb, value, false);
+			r_strbuf_append (sb, "\"");
 			if (pj) {
 				pj_ks (pj, key, value);
 			}

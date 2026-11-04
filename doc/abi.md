@@ -3,6 +3,8 @@
 Since r2-6.0.0 the `ABI_VERSION` define avoid plugins built with different ABI
 to be loaded to avoid segfaults.
 
+The `R2_ABIVERSION` define is located in `r_lib.h`
+
 ## Introduction
 
 Since r2-5.6.0 the development model has changed in order to provide a reliable

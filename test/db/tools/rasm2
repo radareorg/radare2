@@ -252,6 +252,25 @@ ERROR: Cannot assemble 'mov eax, hello' at line 1
 EOF
 RUN
 
+NAME=rasm2 arm32 rejects invalid push/pop, cps and mov operands
+FILE=-
+CMDS=<<EOF
+!rasm2 -a arm -b 32 "push {r0, r1}, r2"
+!rasm2 -a arm -b 32 "pop {r0}, lsl"
+!rasm2 -a arm -b 32 "cps {r0}"
+!rasm2 -a arm -b 32 "cpseq 19"
+!rasm2 -a arm -b 32 "mov foo, r1"
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'push {r0, r1}, r2' at line 1
+ERROR: Cannot assemble 'pop {r0}, lsl' at line 1
+ERROR: Cannot assemble 'cps {r0}' at line 1
+ERROR: Cannot assemble 'cpseq 19' at line 1
+ERROR: Cannot assemble 'mov foo, r1' at line 1
+EOF
+RUN
+
 NAME=rasm2 x86_32 overlarge operand
 FILE=-
 CMDS=!rasm2 -a x86 -b 32 "mov eax, 0x1122334455"
@@ -950,6 +969,7 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 ERROR: byte value 256 out of range (0-255)
+ERROR: Cannot assemble '.db 256' at line 1
 EOF
 RUN
 
@@ -999,6 +1019,45 @@ CMDS=!rasm2 -a x86 -b 64 ".cfloat -1 8 23 127 0 0;.float 3.14"
 EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Invalid .cfloat field sizes
+ERROR: Cannot assemble '.cfloat -1 8 23 127 0 0' at line 1
+EOF
+RUN
+
+NAME=rasm2 .cfloat valid profiles
+FILE=-
+CMDS=<<EOF
+!rasm2 -a x86 -b 64 ".cfloat 1 8 23 127 0 0;.float 3.14"
+!rasm2 -a x86 -b 64 ".cfloat 1 11 52 1023 0 0;.float 3.14"
+!rasm2 -a x86 -b 64 ".cfloat 1 15 64 16383 0 1;.float 3.14"
+!rasm2 -a x86 -b 64 ".cfloat 1 10 5 15 0 0;.float 3.14"
+!rasm2 -a x86 -b 64 ".cfloat 1 8 7 127 0 0;.float 3.14"
+!rasm2 -a x86 -b 64 -e ".cfloat 1 8 23 127 0 0;.float 3.14"
+!rasm2 -a x86 -b 64 -e ".cfloat 1 11 52 1023 0 0;.float 3.14"
+!rasm2 -a x86 -b 64 -e ".cfloat 1 8 7 127 0 0;.float 3.14"
+EOF
+EXPECT=<<EOF
+c3f54840
+1f85eb51b81e0940
+00f8285c8fc2f5c80040
+1202
+4940
+4048f5c3
+40091eb851eb851f
+4049
+EOF
+RUN
+
+NAME=rasm2 .cfloat rejects truncated argument list
+FILE=-
+CMDS=!rasm2 -a x86 -b 64 ".cfloat 1 8 23 127 0;.float 3.14"
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: The .cfloat directive expects 6 arguments: (sign_bits, exp_bits, mant_bits, bias, big_endian, explicit_leading_bit)
+INFO: Example (float): .cfloat 1 8 23 127 0 0
+INFO: Example (double): .cfloat 1 11 52 1023 0 0
+INFO: Example (bf16): .cfloat 1 8 7 127 0 0
+INFO: Example (x86-80): .cfloat 1 15 64 16383 0 1
+ERROR: Cannot assemble '.cfloat 1 8 23 127 0' at line 1
 EOF
 RUN
 
@@ -1099,5 +1158,80 @@ EOF
 EXPECT=<<EOF
 9090
 90cc
+EOF
+RUN
+
+NAME=rasm2 avr reject i/o addresses that do not fit
+FILE=-
+CMDS=<<EOF
+!rasm2 -a avr "out 64, r1"
+!rasm2 -a avr "in r1, 64"
+!rasm2 -a avr "sbi 32, 1"
+!rasm2 -a avr "out 0x100000001, r1"
+!rasm2 -a avr "sbi 0x10000000c, 5"
+!rasm2 -a avr "out 18446744073709551616, r1"
+!rasm2 -a avr "out 1junk, r1"
+!rasm2 -a avr "out 0x, r1"
+!rasm2 -a avr "sbi spl, 1"
+!rasm2 -a avr "cbi sph, 1"
+!rasm2 -a avr "sbic sreg, 1"
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'out 64, r1' at line 1
+ERROR: Cannot assemble 'in r1, 64' at line 1
+ERROR: Cannot assemble 'sbi 32, 1' at line 1
+ERROR: Cannot assemble 'out 0x100000001, r1' at line 1
+ERROR: Cannot assemble 'sbi 0x10000000c, 5' at line 1
+ERROR: Cannot assemble 'out 18446744073709551616, r1' at line 1
+ERROR: Cannot assemble 'out 1junk, r1' at line 1
+ERROR: Cannot assemble 'out 0x, r1' at line 1
+ERROR: Cannot assemble 'sbi spl, 1' at line 1
+ERROR: Cannot assemble 'cbi sph, 1' at line 1
+ERROR: Cannot assemble 'sbic sreg, 1' at line 1
+EOF
+RUN
+
+NAME=rasm2 arm32 reject unencodable and out of range immediates
+FILE=-
+CMDS=<<EOF
+!rasm2 -a arm -b 32 "eor r0, r0, 0x101"
+!rasm2 -a arm -b 32 "add r0, r1, 0x100000000"
+!rasm2 -a arm -b 32 "mov r0, 0x100000000"
+!rasm2 -a arm -b 32 "cmp r3, 0x100000000"
+!rasm2 -a arm -b 32 "add r0, r1, -2147483649"
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'eor r0, r0, 0x101' at line 1
+ERROR: Cannot assemble 'add r0, r1, 0x100000000' at line 1
+ERROR: Cannot assemble 'mov r0, 0x100000000' at line 1
+ERROR: Cannot assemble 'cmp r3, 0x100000000' at line 1
+ERROR: Cannot assemble 'add r0, r1, -2147483649' at line 1
+EOF
+RUN
+
+NAME=rasm2 mips branches to labels before and after them
+FILE=--
+CMDS=<<EOF
+rasm2 -a mips -b 32 'rep:;beq t0, zero, rep;bne t0, zero, rep'
+rasm2 -a mips -b 32 'beq t0, zero, end;nop;end:;nop'
+EOF
+EXPECT=<<EOF
+ffff0810feff0814
+010008100000000000000000
+EOF
+RUN
+
+NAME=rasm2 mips reject branch targets that do not fit
+FILE=--
+CMDS=<<EOF
+rasm2 -a mips -b 32 'beq t0, zero, 0x102'
+rasm2 -a mips -b 32 -s 0x100 'b 0x40000'
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'beq t0, zero, 0x102' at line 1
+ERROR: Cannot assemble 'b 0x40000' at line 1
 EOF
 RUN

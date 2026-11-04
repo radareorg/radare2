@@ -917,3 +917,43 @@ after
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=nested r2 quick exits preserve the parent shell without PATH
+FILE=hex://01020304
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+s 1
+b 2
+r2 -NNQ -c "?e nested" --
+r2 -NNLQ -c "?e nested-list" --
+?v $$
+?v $b
+p8 2
+?e parent-alive
+EOF
+EXPECT=<<EOF
+nested
+nested-list
+0x1
+0x2
+0203
+parent-alive
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=nested r2 quick exits preserve sandboxed sessions
+FILE=-
+ARGS=-NN
+CMDS=<<EOF
+e cfg.sandbox.grain=none
+e cfg.sandbox=true
+r2 -NNQ --
+r2 -NNLQ --
+?e parent-alive
+EOF
+EXPECT=<<EOF
+parent-alive
+EOF
+RUN

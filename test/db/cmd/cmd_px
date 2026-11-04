@@ -673,3 +673,23 @@ EXPECT=<<EOF
 ABC
 EOF
 RUN
+
+NAME=px and pd color the bytes written to the io cache
+FILE=malloc://4
+CMDS=<<EOF
+. scripts/palette.r2
+e scr.color=3
+ec diff.unmatch rgb:ff0000
+e asm.arch=x86
+e asm.bits=64
+e io.cache=true
+wx 9090 @ 2
+px 4
+pd 1 @ 2
+EOF
+EXPECT=<<EOF
+[38;2;19;161;14m- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+[0m[38;2;19;161;14m0x00000000[0m  [38;2;19;161;14m00[0m[38;2;19;161;14m00[0m [38;2;255;0;0m90[0m[38;2;255;0;0m90[0m                                [38;2;19;161;14m.[0m[38;2;19;161;14m.[0m[38;2;255;0;0m.[0m[38;2;255;0;0m.[0m
+            [38;2;19;161;14m0x00000002[0m      [38;2;255;0;0m90[0m             [38;2;0;55;218mnop[0m[0m
+EOF
+RUN

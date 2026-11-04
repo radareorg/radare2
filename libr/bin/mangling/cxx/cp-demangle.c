@@ -308,6 +308,13 @@ struct d_info_checkpoint
    this is what bounds its stack use (libiberty PR 87675).  */
 #define DEMANGLE_RECURSION_LIMIT 2048
 
+/* Substitutions let a short name print to an exponentially long string:
+   give up after this many flushes of the print buffer (about 1MB of
+   output) and after visiting this many components looking for an
+   argument pack.  */
+#define MAX_FLUSH_COUNT 4096
+#define MAX_FIND_PACK_COUNT 1000000
+
 enum { D_PRINT_BUFFER_LENGTH = 256 };
 struct d_print_info
 {
@@ -341,6 +348,8 @@ struct d_print_info
   int pack_index;
   /* Number of d_print_flush calls so far.  */
   unsigned long int flush_count;
+  /* Number of components visited by d_find_pack so far.  */
+  unsigned long int find_pack_count;
   /* Stack of components, innermost first, used to avoid loops.  */
   const struct d_component_stack *component_stack;
   /* Array of saved scopes for evaluating substitutions.  */
@@ -504,7 +513,7 @@ d_growable_string_callback_adapter (const char *, size_t, void *);
 
 static void
 d_print_init (struct d_print_info *, demangle_callbackref, void *,
-	      const struct demangle_component *);
+	      struct demangle_component *);
 
 static inline void d_print_error(struct d_print_info *);
 
@@ -851,6 +860,7 @@ cplus_demangle_fill_name (struct demangle_component *p, const char *s, int len)
   if (p == NULL || s == NULL || len == 0)
     return 0;
   p->d_printing = 0;
+  p->d_counting = 0;
   p->type = DEMANGLE_COMPONENT_NAME;
   p->u.s_name.s = s;
   p->u.s_name.len = len;
@@ -867,6 +877,7 @@ cplus_demangle_fill_extended_operator (struct demangle_component *p, int args,
   if (p == NULL || args < 0 || name == NULL)
     return 0;
   p->d_printing = 0;
+  p->d_counting = 0;
   p->type = DEMANGLE_COMPONENT_EXTENDED_OPERATOR;
   p->u.s_extended_operator.args = args;
   p->u.s_extended_operator.name = name;
@@ -887,6 +898,7 @@ cplus_demangle_fill_ctor (struct demangle_component *p,
       || (int) kind > gnu_v3_object_ctor_group)
     return 0;
   p->d_printing = 0;
+  p->d_counting = 0;
   p->type = DEMANGLE_COMPONENT_CTOR;
   p->u.s_ctor.kind = kind;
   p->u.s_ctor.name = name;
@@ -907,6 +919,7 @@ cplus_demangle_fill_dtor (struct demangle_component *p,
       || (int) kind > gnu_v3_object_dtor_group)
     return 0;
   p->d_printing = 0;
+  p->d_counting = 0;
   p->type = DEMANGLE_COMPONENT_DTOR;
   p->u.s_dtor.kind = kind;
   p->u.s_dtor.name = name;
@@ -924,6 +937,7 @@ d_make_empty (struct d_info *di)
     return NULL;
   p = &di->comps[di->next_comp];
   p->d_printing = 0;
+  p->d_counting = 0;
   ++di->next_comp;
   return p;
 }
@@ -4035,11 +4049,14 @@ d_growable_string_callback_adapter (const char *s, size_t l, void *opaque)
 
 static void
 d_count_templates_scopes (int *num_templates, int *num_scopes,
-			  const struct demangle_component *dc, int depth)
+			  struct demangle_component *dc, int depth)
 {
-  if (dc == NULL) {
+  /* Substitutions make the tree a DAG: count each component at most twice
+     (as upstream libiberty does) instead of once per path leading to it.  */
+  if (dc == NULL || dc->d_counting > 1) {
     return;
   }
+  ++dc->d_counting;
   depth++;
 
   switch (dc->type)
@@ -4175,7 +4192,7 @@ d_count_templates_scopes (int *num_templates, int *num_scopes,
 
 static void
 d_print_init (struct d_print_info *dpi, demangle_callbackref callback,
-	      void *opaque, const struct demangle_component *dc)
+	      void *opaque, struct demangle_component *dc)
 {
   dpi->len = 0;
   dpi->last_char = '\0';
@@ -4183,6 +4200,7 @@ d_print_init (struct d_print_info *dpi, demangle_callbackref callback,
   dpi->modifiers = NULL;
   dpi->pack_index = 0;
   dpi->flush_count = 0;
+  dpi->find_pack_count = 0;
 
   dpi->callback = callback;
   dpi->opaque = opaque;
@@ -4231,6 +4249,8 @@ d_print_flush (struct d_print_info *dpi)
   dpi->callback (dpi->buf, dpi->len, dpi->opaque);
   dpi->len = 0;
   dpi->flush_count++;
+  if (dpi->flush_count > MAX_FLUSH_COUNT)
+    d_print_error (dpi);
 }
 
 /* Append characters and buffers for printing.  */
@@ -4391,8 +4411,13 @@ d_find_pack (struct d_print_info *dpi,
 	     const struct demangle_component *dc)
 {
   struct demangle_component *a;
-  if (dc == NULL)
+  if (dc == NULL || d_print_saw_error (dpi))
     return NULL;
+  if (++dpi->find_pack_count > MAX_FIND_PACK_COUNT)
+    {
+      d_print_error (dpi);
+      return NULL;
+    }
 
   switch (dc->type)
     {

@@ -244,8 +244,7 @@ static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_
 			// special offset calculation for 64bit
 			ut8 tmp[4] = {0};
 			if (context->anal->iob.read_at (context->anal->iob.io, addr, tmp, 4) != 4) {
-				r_list_free (ret);
-				return NULL;
+				break;
 			}
 			const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (context->anal->config);
 			ut32 bcdOffset = r_read_ble32 (tmp, be);

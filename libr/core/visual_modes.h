@@ -7,6 +7,24 @@
 
 #define PRINT_HEX_FORMATS 14
 
+static inline int visual_op_size(RCore *core, ut64 addr, int size) {
+	const int codealign = core->anal->config->codealign;
+	if (size < 1) {
+		if (codealign > 1 && addr % codealign) {
+			return codealign - (addr % codealign);
+		}
+		size = R_MAX (1, r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE));
+	}
+	if (codealign > 1) {
+		const int remainder = (addr % codealign + (ut64)size) % codealign;
+		if (remainder) {
+			const int padding = codealign - remainder;
+			size = size <= INT_MAX - padding? size + padding: codealign - (addr % codealign);
+		}
+	}
+	return size;
+}
+
 static inline void applyHexMode(RCore *core) {
 	int hexMode = core->visual.hexMode;
 	core->visual.currentFormat = R_ABS (hexMode) % PRINT_HEX_FORMATS;

@@ -93,6 +93,9 @@ R_API void r_core_log_free(RCoreLog *log) {
 
 R_API bool r_core_log_run(RCore *core, const char *_buf, RCoreLogCallback cb_runline) {
 	char *obuf = strdup (_buf);
+	if (!obuf) {
+		return false;
+	}
 	char *buf = obuf;
 	while (buf) {
 		char *nl = strchr (buf, '\n');

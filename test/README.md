@@ -17,6 +17,16 @@ Originally based on work by and now in collaboration with pancake.
  * r2pipe tests require Python and r2pipe (in CI uses python3 and r2pipe from git, but users may be good with latests releases)
  * Valgrind (optional).
 
+The V850 integer and exception matrix can run without binary fixtures:
+
+```sh
+R2=/path/to/matching/r2 python3 test/scripts/test-v850-esil.py
+```
+
+It checks native ESIL over flat memory, including operand aliases, CPU address
+widths, arithmetic flags and nested exception contexts. For uninstalled builds,
+configure the library search path as described in `DEVELOPERS.md` too.
+
 On 64-bit Linux, `make -C test r2k` runs the r2k command regressions with a
 mock ioctl driver after building and installing radare2. It requires a C
 compiler and does not load a kernel module or access kernel memory.
@@ -28,6 +38,10 @@ compiler and does not load a kernel module or access kernel memory.
  * To check HTTP sandbox enforcement on a local server, use `make http-sandbox`
    after building and installing this checkout. This requires Python 3 and
    permission to open localhost sockets.
+ * To check 9P directory listing limits and recovery after a failed listing,
+   run `python3 test/scripts/test-p9-directory.py` from the repository root
+   after building. This requires Python 3 and localhost sockets. Set `R2`
+   to select another radare2 executable.
  * To check the QuickJS HTTP binding with native socket and curl transports,
    run `python3 test/scripts/test-quickjs-http.py` from the repository root
    after building. This requires QuickJS, networking, Python 3 and localhost

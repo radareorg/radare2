@@ -946,3 +946,100 @@ EXPECT=<<EOF
 0x00000003 0x00000008 00:0000 5 j 0x00000020
 EOF
 RUN
+
+NAME=afia set, unset and query function attributes
+FILE=malloc://256
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+af+ 0x10 fcn.attr
+afb+ 0x10 0x10 8
+s 0x10
+afia~inline,noreturn
+afia+ inline,noreturn
+afia~inline,noreturn
+afiaj
+afia- inline
+afia~inline
+afia- noreturn
+afia~noreturn
+EOF
+EXPECT=<<EOF
+  noreturn  false
+  inline    false
+  noreturn  true
+  inline    true
+{"noreturn":true,"inline":true,"pure":true,"variadic":false}
+  inline    false
+  noreturn  false
+EOF
+RUN
+
+NAME=aflj reports inline per function after setting and clearing
+FILE=malloc://256
+ARGS=-a arm -b 64
+CMDS=<<EOF
+af+ 0x10 fcn.one
+afb+ 0x10 0x10 8
+af+ 0x20 fcn.two
+afb+ 0x20 0x20 8
+s 0x20
+aflj~{[0].inline}
+aflj~{[1].inline}
+afia+ inline @ 0x10
+aflj~{[0].inline}
+aflj~{[1].inline}
+afia- inline @ 0x10
+aflj~{[0].inline}
+EOF
+EXPECT=<<EOF
+false
+false
+true
+false
+false
+EOF
+RUN
+
+NAME=afia rejects unknown and read-only attributes
+FILE=malloc://256
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+af+ 0x10 fcn.attr
+afb+ 0x10 0x10 8
+s 0x10
+"afia+ pure"
+"afia+ bogus"
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Attribute 'pure' is read-only: the function does not read or write outside state (computed)
+ERROR: Unknown function attribute 'bogus'
+EOF
+RUN
+
+NAME=afl script preserves inline at its function address
+FILE=malloc://256
+ARGS=-a arm -b 64
+CMDS=<<EOF
+mkdir .tmp
+af+ 0x10 fcn.one
+afb+ 0x10 0x10 4
+af+ 0x20 fcn.two
+afb+ 0x20 0x20 4
+afia+ inline @ 0x10
+afl*~afia > .tmp/afia-legacy.r2
+afia- inline @ 0x10
+s 0x20
+. .tmp/afia-legacy.r2
+afia @ 0x10~inline
+afia @ 0x20~inline
+rm .tmp/afia-legacy.r2
+EOF
+EXPECT=<<EOF
+  inline    true
+  inline    false
+EOF
+RUN

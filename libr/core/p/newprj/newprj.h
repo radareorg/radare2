@@ -52,6 +52,7 @@ enum {
 
 enum {
 	RPRJ_FUNC_ATTR_NORETURN = 1 << 0,
+	RPRJ_FUNC_ATTR_INLINE = 1 << 1,
 };
 
 enum {

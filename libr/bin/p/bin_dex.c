@@ -18,7 +18,9 @@
 #define DBG_SET_EPILOGUE_BEGIN    0x08
 #define DBG_SET_FILE              0x09
 #define DBG_FIRST_SPECIAL         0x0A
-#define DEX_PROTO_STACK_PARAMS    64
+// methods take at most 255 argument registers
+#define DEX_PROTO_MAX_PARAMS      255
+#define DEX_PROTO_MAX_SIGLEN      (64 * 1024)
 
 #define DBG_LINE_BASE             -4
 #define DBG_LINE_RANGE            15
@@ -105,7 +107,7 @@ static ut64 get_method_attr(ut64 MA) {
 
 static ut64 method_addr(RBinFile *bf, int idx) {
 	RBinDexObj *dex = bf->bo->bin_obj;
-	return sdb_num_getf (dex->mdb, NULL, "method.%d", idx);
+	return ht_uu_find (dex->method_addrs, idx, NULL);
 }
 
 static ut64 dex_field_offset(RBinDexObj *bin, int fid) {
@@ -309,6 +311,10 @@ static const char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 	}
 	// size of the list, in 16 bit entries
 	ut32 list_size = r_read_le32 (params_buf);
+	if (list_size > DEX_PROTO_MAX_PARAMS) {
+		R_LOG_DEBUG ("proto %d declares %u params", proto_id, list_size);
+		return NULL;
+	}
 	ut64 params_data = params_off + sizeof (params_buf);
 	ut64 typeidx_bufsize = (ut64)list_size * sizeof (ut16);
 	if (typeidx_bufsize > bin->size - params_data) {
@@ -316,25 +322,11 @@ static const char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 			params_data + typeidx_bufsize, (ut64)bin->size);
 		return NULL;
 	}
-	ut8 stack_typeidx_buf[DEX_PROTO_STACK_PARAMS * sizeof (ut16)];
-	ut8 *heap_typeidx_buf = NULL;
-	ut8 *typeidx_buf = stack_typeidx_buf;
-	if (typeidx_bufsize > sizeof (stack_typeidx_buf)) {
-		heap_typeidx_buf = malloc (typeidx_bufsize);
-		if (!heap_typeidx_buf) {
-			return NULL;
-		}
-		typeidx_buf = heap_typeidx_buf;
-	}
+	ut8 typeidx_buf[DEX_PROTO_MAX_PARAMS * sizeof (ut16)];
 	if (typeidx_bufsize > 0 && r_buf_read_at (bin->b, params_data, typeidx_buf, typeidx_bufsize) != typeidx_bufsize) {
-		free (heap_typeidx_buf);
 		return NULL;
 	}
 	RStrBuf *sig = r_strbuf_new ("(");
-	if (!sig) {
-		free (heap_typeidx_buf);
-		return NULL;
-	}
 	ut32 i;
 	for (i = 0; i < list_size; i++) {
 		ut16 type_idx = r_read_le16 (typeidx_buf + (i * sizeof (ut16)));
@@ -345,8 +337,11 @@ static const char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 			const char *buff = getstr (bin, type_desc_id);
 			r_strbuf_append (sig, r_str_get_fail (buff, "?;"));
 		}
+		if (r_strbuf_length (sig) > DEX_PROTO_MAX_SIGLEN) {
+			r_strbuf_append (sig, "...");
+			break;
+		}
 	}
-	free (heap_typeidx_buf);
 	r_strbuf_appendf (sig, ")%s", return_type);
 	cp[proto_id] = r_strbuf_drain (sig);
 	return cp[proto_id];
@@ -434,7 +429,7 @@ out_error:
 // https://github.com/pxb1988/dex2jar/blob/2.x/dex-reader/src/main/java/com/googlecode/d2j/reader/DexFileReader.java#L1023
 static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, int paddr, int ins_size, int insns_size, const char *class_name, int regsz, int debug_info_off, bool add_addrline) {
 	RBinDexObj *dex = bf->bo->bin_obj;
-	RBuffer *b = bf->buf;
+	RBuffer *b = dex->b;
 	RStrBuf *sb = dex->sb;
 	if (debug_info_off >= r_buf_size (b)) {
 		return;
@@ -778,9 +773,23 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return bin->kv;
 }
 
+static bool checksum_mismatch(RBinDexObj *dex) {
+	if (r_buf_size (dex->b) - 12 > ST32_MAX) {
+		return false;
+	}
+	ut64 size = 0;
+	const ut8 *data = r_buf_data (dex->b, &size);
+	return data && size > 12 && dex->header.checksum != __adler32 (data + 12, size - 12);
+}
+
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
-	bf->bo->bin_obj = r_bin_dex_new_buf (buf, bf->rbin->options.verbose);
-	return bf->bo->bin_obj != NULL;
+	RBinDexObj *dex = r_bin_dex_new_buf (buf, bf->rbin->options.verbose);
+	bf->bo->bin_obj = dex;
+	if (dex && checksum_mismatch (dex)) {
+		eprintf ("# adler32 checksum doesn't match. Type this to fix it:\n");
+		eprintf ("wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8\n");
+	}
+	return dex != NULL;
 }
 
 static bool check(RBinFile *bf, RBuffer *buf) {
@@ -846,19 +855,6 @@ static RBinInfo *info(RBinFile *bf) {
 	h = &ret->sum[2];
 	h->type = 0;
 	r_buf_read_at (bf->buf, 8, h->buf, 4);
-	// this is slow but computed once, so we can use r_buf_data or just do r_buf_read()
-	// not sure if we want to expose the computed checksum everytime we open the file
-	// also the checksum is computed by other methods in RBin, so maybe good to generalize
-	{
-		ut32 fc = r_buf_read_le32_at (bf->buf, 8);
-		ut64 tmpsz;
-		const ut8 *tmp = r_buf_data (bf->buf, &tmpsz);
-		ut32 cc = __adler32 (tmp + 12, tmpsz - 12);
-		if (fc != cc) {
-			eprintf ("# adler32 checksum doesn't match. Type this to fix it:\n");
-			eprintf ("wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8\n");
-		}
-	}
 	ret->arch = strdup ("dalvik");
 	ret->lang = "dalvik";
 	ret->bits = 32;
@@ -1105,7 +1101,7 @@ static ut64 peek_uleb(RBuffer *b, bool *err, size_t *nn) {
 
 static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls, int *sym_count, ut64 fields_count, bool is_sfield) {
 	RBinDexObj *dex = bf->bo->bin_obj;
-	RBuffer *b = bf->buf;
+	RBuffer *b = dex->b;
 	RStrBuf *sb = dex->sb;
 	const ut64 fields_offset = dex->header.fields_offset;
 	ut64 lastIndex = 0;
@@ -1114,7 +1110,8 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 	DexField field;
 	size_t i, skip = 0;
 
-	for (i = 0; i < fields_count; i++) {
+	for (i = 0; i < fields_count && dex->members_left > 0; i++) {
+		dex->members_left--;
 		bool err = false;
 		ut64 fieldIndex = peek_uleb (b, &err, &skip);
 		ut64 accessFlags = peek_uleb (b, &err, &skip);
@@ -1143,7 +1140,7 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		const char *ftype = is_sfield ? "sfield": "ifield";
 		char *s = r_str_newf ("%s.%s_%s:%s", cls_name, ftype, fieldName, type_str);
 		sym.name = r_bin_name_new (s);
-		sym.type = is_sfield? "STATIC": "FIELD";
+		sym.type = "FIELD";
 		s = r_str_replace (s, "method.", "", 0);
 		r_str_replace_char (s, ';', 0);
 		r_bin_name_filtered (sym.name, s);
@@ -1175,7 +1172,7 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 // TODO: refactor this method
 static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls, int *sym_count, ut64 DM, int *methods, bool is_direct) {
 	RBinDexObj *dex = bf->bo->bin_obj;
-	RBuffer *b = bf->buf;
+	RBuffer *b = dex->b;
 	RStrBuf *sb = dex->sb;
 	const bool bin_dbginfo = bf->rbin->want_dbginfo;
 	const bool dump_dbginfo = bin_dbginfo && sb;
@@ -1192,7 +1189,8 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 	ut64 MI, MA, MC;
 	const char *cls_name = r_bin_name_tostring (cls->name);
 	ut64 i;
-	for (i = 0; i < DM; i++) {
+	for (i = 0; i < DM && dex->members_left > 0; i++) {
+		dex->members_left--;
 		err = false;
 		skip = 0;
 		// Needed because theres another rbufseek call inside this loop. must be fixed
@@ -1226,7 +1224,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			continue;
 		}
 		const char *signature = dex_method_signature (dex, MI);
-		char *flag_name = r_str_newf ("%s.method.%s%s", cls_name, method_name, signature);
+		char *flag_name = r_str_newf ("%s.method.%s%s", cls_name, method_name, r_str_get (signature));
 		if (!flag_name || !*flag_name) {
 			R_FREE (flag_name);
 			continue;
@@ -1271,7 +1269,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			char* accessStr = createAccessFlagStr (MA, kAccessForMethod);
 			pf ("    #%" PFMT64d "              : (in %s;)\n", i, cls_name);
 			pf ("      name          : '%s'\n", method_name);
-			pf ("      type          : '%s'\n", signature);
+			pf ("      type          : '%s'\n", r_str_get (signature));
 			pf ("      access        : 0x%04x (%s)\n", (ut32)MA, accessStr);
 			free (accessStr);
 		}
@@ -1456,10 +1454,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 					dex->code_to = code_end;
 				}
 
-				if (!dex->mdb) {
-					dex->mdb = sdb_new0 ();
-				}
-				sdb_num_setf (dex->mdb, sym->paddr, 0, "method.%"PFMT64u, MI);
+				ht_uu_update (dex->method_addrs, MI, sym->paddr);
 				// -----------------
 				// WORK IN PROGRESS
 				// -----------------
@@ -1504,7 +1499,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 	R_RETURN_IF_FAIL (bf && bf->bo && c);
 
 	RBinDexObj *dex = bf->bo->bin_obj;
-	RBuffer *b = bf->buf;
+	RBuffer *b = dex->b;
 	const DexHeader *hdr = &dex->header;
 	RStrBuf *sb = dex->sb;
 	const bool names_only = class_names_only (bf);
@@ -1674,6 +1669,8 @@ static bool dex_loadcode(RBinFile *bf) {
 	dex->trycatch_loaded = true;
 	// try items can share a handler list and methods can share a code item, so bound the whole expansion
 	dex->trycatch_budget = dex->size;
+	// encoded members take 2+ bytes, so class_defs sharing class data cannot list more than size/2
+	dex->members_left = dex->size / 2;
 	if (dex->classes) {
 		if (!names_only) {
 			ut64 amount = sizeof (int) * dex->header.method_size;
@@ -1692,6 +1689,9 @@ static bool dex_loadcode(RBinFile *bf) {
 		}
 		if (!dex->trycatch_budget) {
 			R_LOG_WARN ("Too many catch handlers, ignoring the remaining ones");
+		}
+		if (!dex->members_left) {
+			R_LOG_WARN ("Class data lists more members than the file can hold, ignoring the rest");
 		}
 	}
 	if (methods) {
@@ -1747,7 +1747,7 @@ static bool dex_loadcode(RBinFile *bf) {
 			const char *signature = dex_method_signature (dex, i);
 			if (!R_STR_ISEMPTY (method_name)) {
 				RBinImport imp = {0};
-				char *s = r_str_newf ("%s.method.%s%s", class_name, method_name, signature);
+				char *s = r_str_newf ("%s.method.%s%s", class_name, method_name, r_str_get (signature));
 				imp.name = r_bin_name_new (s);
 				free (s);
 				imp.type = "FUNC";
@@ -1765,7 +1765,7 @@ static bool dex_loadcode(RBinFile *bf) {
 				sym.ordinal = sym_count++;
 				sym.attr.lang = R_BIN_LANG_JAVA;
 				RVecRBinSymbol_push_back (&dex->symbols_vec, &sym);
-				sdb_num_setf (dex->mdb, sym.paddr, 0, "method.%"PFMT64u, (ut64)i);
+				ht_uu_update (dex->method_addrs, i, sym.paddr);
 			}
 			free (class_name);
 		}
@@ -1834,11 +1834,12 @@ static void dex_skip_class_fields(RBuffer *b, ut64 fields_count, bool *err) {
 
 static void dex_parse_class_method_addrline(RBinFile *bf, RBinDexClass *c, ut64 methods_count, const char *class_name) {
 	RBinDexObj *dex = bf->bo->bin_obj;
-	RBuffer *b = bf->buf;
+	RBuffer *b = dex->b;
 	const ut64 bufsz = r_buf_size (b);
 	ut64 omi = 0;
 	ut64 i;
-	for (i = 0; i < methods_count; i++) {
+	for (i = 0; i < methods_count && dex->members_left > 0; i++) {
+		dex->members_left--;
 		bool err = false;
 		size_t skip = 0;
 		ut64 MI = peek_uleb (b, &err, &skip);
@@ -1890,7 +1891,7 @@ static void dex_parse_class_method_addrline(RBinFile *bf, RBinDexClass *c, ut64 
 
 static void dex_parse_class_addrline(RBinFile *bf, RBinDexClass *c) {
 	RBinDexObj *dex = bf->bo->bin_obj;
-	RBuffer *b = bf->buf;
+	RBuffer *b = dex->b;
 	const DexHeader *hdr = &dex->header;
 	if (!c->class_data_offset) {
 		return;
@@ -1937,6 +1938,7 @@ static void dex_load_addrline(RBinFile *bf) {
 	if (!dex->classes) {
 		return;
 	}
+	dex->members_left = dex->size / 2;
 	ut32 i;
 	for (i = 0; i < dex->header.class_size; i++) {
 		dex_parse_class_addrline (bf, &dex->classes[i]);
@@ -2094,7 +2096,7 @@ static ut64 getoffset(RBinFile *bf, int type, int idx) {
 
 static const char *get_cc(RBinFile *bf, ut64 vaddr) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
-	RBinSymbol *m = r_bin_get_symbol_at (bf->rbin, vaddr);
+	RBinSymbol *m = r_bin_object_get_symbol_at (bf->bo, vaddr);
 	if (!m || !m->arg_prefix) {
 		return NULL;
 	}
@@ -2267,7 +2269,9 @@ static bool sections_vec(RBinFile *bf) {
 		add_limited_section (bf, limit, baddr, "header", s_head, R_PERM_R, NULL);
 	}
 	if (validate_section ("constpool", &s_head, &s_pool, &s_code, &s_file)) {
-		char *s_pool_format = r_str_newf ("Cd %d[%"PFMT64d"]", 4, (ut64) s_pool.size / 4);
+		// only the string_ids and type_ids tables are dword arrays, the rest are structs
+		const ut64 dwords = R_MIN ((ut64)bin->header.strings_size + bin->header.types_size, s_pool.size / 4);
+		char *s_pool_format = dwords? r_str_newf ("Cd 4[%" PFMT64u "]", dwords): NULL;
 		add_limited_section (bf, limit, baddr, "constpool", s_pool, R_PERM_R, s_pool_format);
 	}
 	if (validate_section ("code", &s_pool, &s_code, &s_data, &s_file)) {

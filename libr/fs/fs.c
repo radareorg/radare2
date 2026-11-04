@@ -325,7 +325,7 @@ R_API RFSFile *r_fs_open(RFS *fs, const char *p, bool create) {
 			}
 		}
 	}
-	free (roots);
+	r_list_free (roots);
 	free (path);
 	return f;
 }
@@ -354,11 +354,12 @@ R_API int r_fs_write(RFS *fs, RFSFile *file, ut64 addr, const ut8 *data, int len
 R_API int r_fs_read(RFS *fs, RFSFile *file, ut64 addr, int len) {
 	R_RETURN_VAL_IF_FAIL (fs && file && len > 0, -1);
 	if (file->p && file->p->read) {
+		// some plugins write len bytes into the existing buffer, so it must be
+		// sized for every request, not only for the first one
+		free (file->data);
+		file->data = calloc (1, (size_t)len + 1);
 		if (!file->data) {
-			file->data = calloc (1, (size_t)len + 1);
-			if (!file->data) {
-				return -1;
-			}
+			return -1;
 		}
 		return file->p->read (file, addr, len);
 	}
@@ -463,8 +464,21 @@ R_API bool r_fs_mkdir(RFS *fs, const char *path) {
 	return res;
 }
 
-R_API bool r_fs_dir_dump(RFS *fs, const char *path, const char *name) {
-	R_RETURN_VAL_IF_FAIL (fs && path && name, false);
+// image directories can contain themselves, so recursive walks are bounded
+#define FS_WALK_MAX_DEPTH 64
+#define FS_WALK_BUDGET 0x400000
+
+// path lookups resolve every component again, so deeper entries cost more
+static bool fs_walk_spend(int depth, int *budget) {
+	if (depth > FS_WALK_MAX_DEPTH || *budget < depth) {
+		*budget = -1;
+		return false;
+	}
+	*budget -= depth;
+	return true;
+}
+
+static bool fs_dir_dump(RFS *fs, const char *path, const char *name, int depth, int *budget) {
 	RListIter *iter;
 	RFSFile *file, *item;
 
@@ -475,6 +489,7 @@ R_API bool r_fs_dir_dump(RFS *fs, const char *path, const char *name) {
 	if (!r_sys_mkdir (name)) {
 		if (r_sys_mkdir_failed ()) {
 			R_LOG_ERROR ("Cannot create \"%s\"", name);
+			r_list_free (list);
 			return false;
 		}
 	}
@@ -486,15 +501,21 @@ R_API bool r_fs_dir_dump(RFS *fs, const char *path, const char *name) {
 			R_LOG_WARN ("Skipping unsafe filename \"%s\"", file->name);
 			continue;
 		}
+		if (!fs_walk_spend (depth, budget)) {
+			R_LOG_ERROR ("Directory tree is too large or too deep");
+			r_list_free (list);
+			return false;
+		}
 		char *str = r_str_newf ("%s/%s", name, file->name);
 		char *npath = r_str_newf ("%s/%s", path, file->name);
 
 		switch (file->type) {
 		// DON'T FOLLOW MOUNTPOINTS
 		case R_FS_FILE_TYPE_DIRECTORY:
-			if (!r_fs_dir_dump (fs, npath, str)) {
+			if (!fs_dir_dump (fs, npath, str, depth + 1, budget)) {
 				free (npath);
 				free (str);
+				r_list_free (list);
 				return false;
 			}
 			break;
@@ -505,6 +526,7 @@ R_API bool r_fs_dir_dump(RFS *fs, const char *path, const char *name) {
 				if (!r_file_dump (str, item->data, item->size, 0)) {
 					free (npath);
 					free (str);
+					r_list_free (list);
 					return false;
 				}
 				r_fs_close (fs, item);
@@ -514,16 +536,26 @@ R_API bool r_fs_dir_dump(RFS *fs, const char *path, const char *name) {
 		free (npath);
 		free (str);
 	}
+	r_list_free (list);
 	return true;
 }
 
-static void fs_find(RFS *fs, const char *path, const char *glob, ut64 offset, RList *list) {
+R_API bool r_fs_dir_dump(RFS *fs, const char *path, const char *name) {
+	R_RETURN_VAL_IF_FAIL (fs && path && name, false);
+	int budget = FS_WALK_BUDGET;
+	return fs_dir_dump (fs, path, name, 1, &budget);
+}
+
+static void fs_find(RFS *fs, const char *path, const char *glob, ut64 offset, RList *list, int depth, int *budget) {
 	RListIter *iter;
 	RFSFile *item;
 	RList *dirs = r_fs_dir (fs, path);
 	r_list_foreach (dirs, iter, item) {
 		if (!strcmp (item->name, ".") || !strcmp (item->name, "..")) {
 			continue;
+		}
+		if (!fs_walk_spend (depth, budget)) {
+			break;
 		}
 		char *found = r_str_newf ("%s/%s", !strcmp (path, "/")? "": path, item->name);
 		if (!found) {
@@ -542,7 +574,7 @@ static void fs_find(RFS *fs, const char *path, const char *glob, ut64 offset, RL
 			r_list_append (list, found);
 		}
 		if (item->type == R_FS_FILE_TYPE_DIRECTORY) {
-			fs_find (fs, found, glob, offset, list);
+			fs_find (fs, found, glob, offset, list, depth + 1, budget);
 		}
 		if (!matches) {
 			free (found);
@@ -558,16 +590,18 @@ static RList *fs_find_paths(RFS *fs, const char *name, const char *glob, ut64 of
 	}
 	r_str_trim_path (path);
 	RList *list = r_list_newf (free);
-	if (list) {
-		if (!*path || !strcmp (path, "/")) {
-			RListIter *iter;
-			RFSRoot *root;
-			r_list_foreach (fs->roots, iter, root) {
-				fs_find (fs, root->path, glob, offset, list);
-			}
-		} else {
-			fs_find (fs, path, glob, offset, list);
+	int budget = FS_WALK_BUDGET;
+	if (!*path || !strcmp (path, "/")) {
+		RListIter *iter;
+		RFSRoot *root;
+		r_list_foreach (fs->roots, iter, root) {
+			fs_find (fs, root->path, glob, offset, list, 1, &budget);
 		}
+	} else {
+		fs_find (fs, path, glob, offset, list, 1, &budget);
+	}
+	if (budget < 0) {
+		R_LOG_WARN ("Search stopped: directory tree is too large or too deep");
 	}
 	free (path);
 	return list;
@@ -583,32 +617,56 @@ R_API RList *r_fs_find_name(RFS *fs, const char *name, const char *glob) {
 	return fs_find_paths (fs, name, glob, 0);
 }
 
-R_API RFSFile *r_fs_slurp(RFS *fs, const char *path) {
-	R_RETURN_VAL_IF_FAIL (fs && path, NULL);
+// returns the file with its whole contents in file->data and the plugin handle
+// already closed, release it with r_fs_file_free
+R_API RFSFile *r_fs_slurp(RFS *fs, const char *p) {
+	R_RETURN_VAL_IF_FAIL (fs && p, NULL);
 	RFSFile *file = NULL;
 	RFSRoot *root;
-	RList *roots = r_fs_root (fs, path);
 	RListIter *iter;
+	char *path = r_str_trim_dup (p);
+	r_str_trim_path (path);
+	RList *roots = r_fs_root (fs, path);
 	r_list_foreach (roots, iter, root) {
 		if (!root || !root->p) {
 			continue;
 		}
-		if (root->p->open && root->p->read && root->p->close) {
-			file = root->p->open (root, path, false);
+		const char *dir = strlen (root->path) == 1? path: path + strlen (root->path);
+		if (!*dir) {
+			dir = "/";
+		}
+		if (root->p->open && root->p->read) {
+			file = root->p->open (root, dir, false);
+			if (!file) {
+				continue;
+			}
+			int len = file->size > 0? r_fs_read (fs, file, 0, file->size): 0;
+			ut8 *data = file->data;
+			file->data = NULL;
+			if (root->p->close) {
+				root->p->close (file);
+			}
+			if (len < 0 || (!data && !(data = calloc (1, 1)))) {
+				free (data);
+				r_fs_file_free (file);
+				file = NULL;
+				continue;
+			}
+			file->data = data;
+			break;
+		}
+		if (root->p->slurp) {
+			file = root->p->slurp (root, dir);
 			if (file) {
-				root->p->read (file, 0, file->size); // file->data
-			} else {
-				R_LOG_ERROR ("cannot open file");
+				break;
 			}
-		} else {
-			if (root->p->slurp) {
-				free (roots);
-				return root->p->slurp (root, path);
-			}
-			R_LOG_ERROR ("null root->p->slurp");
 		}
 	}
-	free (roots);
+	if (!file) {
+		R_LOG_ERROR ("cannot slurp %s", path);
+	}
+	r_list_free (roots);
+	free (path);
 	return file;
 }
 

@@ -570,30 +570,26 @@ typedef struct {
 static bool al_add(RBinAddrLineStore *als, ut64 addr, const char *file, const char *path, ut32 line, ut32 column) {
 	AddrLineStore *store = als->storage;
 	als->used = true;
-	bool found = false;
-	ut64 existing_idx = (ut64)(size_t)ht_up_find (store->ht, addr, &found);
-	if (found && existing_idx > 0) {
+	ut64 existing_idx = (ut64)(size_t)ht_up_find (store->ht, addr, NULL);
+	if (existing_idx > 0) {
 		RBinAddrline *hitem = RVecAddrLine_at (&store->vec, existing_idx - 1);
 		if (hitem && hitem->line == line) {
 			return false;
 		}
-		// Different line at same address - add to vec but keep first hash entry
-		RBinAddrline *di = RVecAddrLine_emplace_back (&store->vec);
-		di->addr = addr;
-		di->line = line;
-		di->column = column;
-		di->file = file ? r_strpool_add (store->pool, file) : UT32_MAX;
-		di->path = path ? r_strpool_add (store->pool, path) : UT32_MAX;
-		return true;
 	}
 	size_t new_idx = RVecAddrLine_length (&store->vec);
 	RBinAddrline *di = RVecAddrLine_emplace_back (&store->vec);
+	if (!di) {
+		return false;
+	}
 	di->addr = addr;
 	di->line = line;
 	di->column = column;
 	di->file = file ? r_strpool_add (store->pool, file) : UT32_MAX;
 	di->path = path ? r_strpool_add (store->pool, path) : UT32_MAX;
-	ht_up_insert (store->ht, addr, (void*)(size_t)(new_idx + 1));
+	if (!existing_idx) {
+		ht_up_insert (store->ht, addr, (void*)(size_t)(new_idx + 1));
+	}
 	return true;
 }
 
@@ -1195,14 +1191,22 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RSt
 	}
 
 	bf->string_count = 0;
+	const ut64 buffer_size = r_buf_size (bf->buf);
+	// sections can alias the same bytes, never scan more than the file holds
+	ut64 budget = buffer_size;
 	if (has_sections) {
 		R_VEC_FOREACH (&bo->sections_vec, section) {
 			if (is_data_section (bf, section)) {
 				ut64 offset = r_bin_file_get_buffer_offset (bf, section->paddr);
-				ut64 buffer_size = r_buf_size (bf->buf);
-				if (offset <= buffer_size && section->size <= buffer_size - offset) {
-					get_strings_range (&options, offset, offset + section->size, section);
+				if (offset > buffer_size || section->size > buffer_size - offset) {
+					continue;
 				}
+				if (section->size > budget) {
+					R_LOG_WARN ("Data sections overlap, skipping strings from %s", r_str_get (section->name));
+					break;
+				}
+				budget -= section->size;
+				get_strings_range (&options, offset, offset + section->size, section);
 			}
 		}
 	} else {
@@ -1210,6 +1214,7 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RSt
 		ht_up_free (strings_index);
 		return ret;
 	}
+	budget = buffer_size;
 	R_VEC_FOREACH (&bo->sections_vec, section) {
 		if (!section->name) {
 			continue;
@@ -1223,13 +1228,13 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RSt
 			// XXX do not walk if bin.strings == 0
 			ut8 *p;
 			ut64 offset = r_bin_file_get_buffer_offset (bf, section->paddr);
-			ut64 buffer_size = r_buf_size (bf->buf);
 			if (offset > buffer_size || section->size > buffer_size - offset) {
 				continue;
 			}
-			if (section->size < cfstr_size || section->size > SZT_MAX) {
+			if (section->size < cfstr_size || section->size > budget) {
 				continue;
 			}
+			budget -= section->size;
 			if (ret) {
 				ut64 cfstr_bound64 = (section->size / cfstr_size) + 1;
 				if (cfstr_bound64 <= SZT_MAX) {
@@ -1265,8 +1270,8 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RSt
 					bs->ordinal = src.ordinal;
 					bs->vaddr = cfstr_vaddr;
 					bs->paddr = offset + bo->boffset + i;
+					// not indexed, a record pointing at another one would chain cstr. prefixes
 					bs->string = r_str_newf ("cstr.%s", src.string);
-					r_bin_strings_index_insert (strings_index, bs->vaddr, RVecRBinString_length (ret) - 1);
 				}
 			}
 			free (sbuf);
@@ -1466,13 +1471,13 @@ R_IPI RBinSymbol *r_bin_class_add_method(RBinFile *bf, const char *classname, co
 		return NULL;
 	}
 	RBinClass *c = r_bin_file_add_class (bf, classname, NULL, 0);
-	if (!c) {
-		return NULL;
-	}
-	if (bf->rbin && bf->rbin->options.classes_names_only) {
+	if (!c || (bf->rbin && bf->rbin->options.classes_names_only)) {
 		return NULL;
 	}
 	RBinSymbol *sym = RVecRBinSymbol_emplace_back (&c->methods);
+	if (!sym) {
+		return NULL;
+	}
 	sym->name = r_bin_name_new (name);
 	sym->classname = strdup (classname);
 	return sym;
@@ -1532,6 +1537,15 @@ R_API ut64 r_bin_file_get_vaddr(RBinFile *bf, ut64 paddr, ut64 vaddr) {
 		return vaddr;
 	}
 	return paddr;
+}
+
+// an absolute or tls value is not an address, so the load bias never moves it
+R_API ut64 r_bin_file_get_symbol_vaddr(RBinFile *bf, const RBinSymbol *sym) {
+	R_RETURN_VAL_IF_FAIL (bf && sym, UT64_MAX);
+	if (sym->attr.flags & (R_BIN_ATTR_ABSOLUTE | R_BIN_ATTR_TLS)) {
+		return sym->vaddr;
+	}
+	return r_bin_file_get_vaddr (bf, sym->paddr, sym->vaddr);
 }
 
 R_API RVecRBinSymbol *r_bin_file_get_symbols_vec(RBinFile *bf) {

@@ -20,6 +20,8 @@ typedef int integer_t;
 #define MACH0_(name) name
 #endif
 
+#define MACHO_MAX_SECTIONS 4096
+
 #define R_BIN_MACH0_SYMBOL_TYPE_EXT 0
 #define R_BIN_MACH0_SYMBOL_TYPE_LOCAL 1
 

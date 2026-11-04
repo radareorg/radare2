@@ -24,6 +24,9 @@
 // 256KB max function size
 #define MAX_FCN_SIZE (1024 * 256)
 
+// Tail called functions walked nested on the stack, about 4KB each
+#define MAX_TAILCALL_DEPTH 32
+
 // Max NOP count to stop analysis
 #define MAX_NOP_PREFIX_CNT 1024
 
@@ -209,7 +212,7 @@ R_API int r_anal_call_stack_pop(RAnal *anal, RAnalOp *op) {
 		pop = fcn_type_stack_pop (anal, cc, callee_type, bits);
 	}
 	if (pop <= 0 && callee) {
-		pop = R_MAX (0, callee->meta.stack_pop);
+		pop = R_MAX (0, callee->stack_pop);
 	}
 	free (callee_type);
 	return pop;
@@ -240,17 +243,16 @@ static void fcn_set_stack_pop(RAnalFunction *fcn, int pop) {
 	if (pop < 0) {
 		return;
 	}
-	if (fcn->meta.stack_pop == R_ANAL_CC_STACK_POP_UNKNOWN) {
-		fcn->meta.stack_pop = pop;
-	} else if (fcn->meta.stack_pop != pop) {
-		fcn->meta.stack_pop = R_ANAL_CC_STACK_POP_UNKNOWN;
+	if (fcn->stack_pop == R_ANAL_CC_STACK_POP_UNKNOWN) {
+		fcn->stack_pop = pop;
+	} else if (fcn->stack_pop != pop) {
+		fcn->stack_pop = R_ANAL_CC_STACK_POP_UNKNOWN;
 	}
 }
 
 R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize) {
 	RAnal *anal = fcn->anal;
 	RAnalBlock *bb;
-	RListIter *iter, *iter2;
 
 	R_RETURN_VAL_IF_FAIL (fcn, false);
 
@@ -266,7 +268,9 @@ R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize) {
 	}
 
 	ut64 eof = fcn->addr + newsize;
-	r_list_foreach_safe (fcn->bbs, iter, iter2, bb) {
+	size_t bb_idx;
+	for (bb_idx = 0; bb_idx < RVecAnalBlockPtr_length (&fcn->bbs); ) {
+		bb = *RVecAnalBlockPtr_at (&fcn->bbs, bb_idx);
 		if (bb->addr >= eof) {
 			r_anal_function_remove_block (fcn, bb);
 			continue;
@@ -281,6 +285,7 @@ R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize) {
 		if (bb->fail != UT64_MAX && bb->fail >= eof) {
 			bb->fail = UT64_MAX;
 		}
+		bb_idx++;
 	}
 	return true;
 }
@@ -448,9 +453,10 @@ static ut64 try_get_cmpval_from_parents(RAnalFunction *fcn, RAnalBlock *my_bb, c
 		R_LOG_DEBUG ("try_get_cmpval_from_parents: cmp_reg not defined");
 		return UT64_MAX;
 	}
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *tmp_bb;
-	r_list_foreach (fcn->bbs, iter, tmp_bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		tmp_bb = *iter;
 		if (tmp_bb->jump != my_bb->addr && tmp_bb->fail != my_bb->addr) {
 			continue;
 		}
@@ -654,7 +660,7 @@ static bool reset_switch_case_stub(RAnal *anal, RAnalBlock *block) {
 	}
 	r_anal_delete_block (block);
 	r_list_foreach (fcns, iter, fcn) {
-		if (fcn->type == R_ANAL_FCN_TYPE_LOC && r_list_empty (fcn->bbs)) {
+		if (fcn->type == R_ANAL_FCN_TYPE_LOC && RVecAnalBlockPtr_empty (&fcn->bbs)) {
 			r_anal_function_delete (anal, fcn);
 		}
 	}
@@ -1888,7 +1894,12 @@ noskip:
 					// using type-jump wont analyze the destination as a function
 					/// XXX RAnalFunction *fcn = r_anal_function_new (anal, op->jump);
 					RAnalFunction *nfcn = r_anal_create_function (anal, NULL, op->jump, 0, NULL);
-					r_anal_function (anal, nfcn? nfcn: fcn, op->jump, R_ANAL_REF_TYPE_CALL);
+					if (anal->fcn_depth < MAX_TAILCALL_DEPTH) {
+						r_anal_function (anal, nfcn? nfcn: fcn, op->jump, R_ANAL_REF_TYPE_CALL);
+					} else if (nfcn) {
+						// deeper chains are walked by the outermost call instead of nesting on the stack
+						RVecAnalAddr_push_back (&anal->tailcalls, &op->jump);
+					}
 					// cmd.fcn.new may have written io, so the next block reads it again
 					w->ra.cache_addr = UT64_MAX;
 #endif
@@ -2533,7 +2544,7 @@ static int fcn_walk(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, bool f
 	w.is_amd64 = w.is_x86 ? fcn->callconv && !strcmp (fcn->callconv, "amd64") : false;
 	w.is_dalvik = w.is_x86 ? false : arch && !strncmp (arch, "dalvik", 6);
 	w.is_stm8 = (w.is_x86 || w.is_arm || w.is_dalvik || w.is_mips) ? false : arch && r_str_startswith (arch, "stm8");
-	w.walk_depth = r_list_empty (fcn->bbs);
+	w.walk_depth = RVecAnalBlockPtr_empty (&fcn->bbs);
 	w.ra.cache_addr = UT64_MAX;
 	RVecWalkFrame_init (&w.frames);
 	fcn_scan (&w, addr);
@@ -2710,18 +2721,33 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, int reftyp
 		fcn->addr = addr;
 	}
 	// re-entry continues an in-progress frame, so only preset a function with no blocks yet
-	if (r_list_empty (fcn->bbs)) {
+	if (RVecAnalBlockPtr_empty (&fcn->bbs)) {
 		const int shadow = r_anal_cc_shadow (anal, fcn->callconv);
 		const int frame = (shadow > 0)? shadow + r_anal_cc_raslot (anal, r_anal_cc_wordsize (anal, fcn->callconv)): 0;
 		fcn->stack = fcn->maxstack = fcn->reg_save_area = frame;
 	}
+	anal->fcn_depth++;
 	int ret = r_anal_function_bb (anal, fcn, addr);
+	anal->fcn_depth--;
 	if (ret < 0) {
 		R_LOG_DEBUG ("Failed to analyze basic block at 0x%"PFMT64x, addr);
 	}
 	// Notify plugins after all basic blocks are analyzed
 	if (ret >= 0 || ret == R_ANAL_RET_END) {
 		r_anal_plugin_action (anal, R_ANAL_PLUGIN_ACTION_ANALYZE_FCN, fcn);
+		r_anal_function_sort_blocks (fcn);
+	}
+	if (!anal->fcn_depth) {
+		anal->fcn_depth++;
+		while (!RVecAnalAddr_empty (&anal->tailcalls)) {
+			const ut64 at = *RVecAnalAddr_last (&anal->tailcalls);
+			RVecAnalAddr_pop_back (&anal->tailcalls);
+			RAnalFunction *tfcn = r_anal_get_function_at (anal, at);
+			if (tfcn && RVecAnalBlockPtr_empty (&tfcn->bbs)) {
+				r_anal_function (anal, tfcn, at, R_ANAL_REF_TYPE_CALL);
+			}
+		}
+		anal->fcn_depth--;
 	}
 	return ret;
 }
@@ -2848,10 +2874,11 @@ R_API bool r_anal_function_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 
 }
 
 R_API int r_anal_function_loops(RAnalFunction *fcn) {
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *bb;
 	ut32 loops = 0;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		if (bb->jump != UT64_MAX && bb->jump < bb->addr) {
 			loops ++;
 		}
@@ -2872,10 +2899,11 @@ R_API int r_anal_function_complexity(RAnalFunction *fcn) {
 #endif
 	RAnal *anal = fcn->anal;
 	int E = 0, N = 0, P = 0;
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *bb;
 
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		N++; // nodes
 		if ((!anal || anal->verbose) && bb->jump == UT64_MAX && bb->fail != UT64_MAX) {
 			R_LOG_WARN ("invalid bb jump/fail pair at 0x%08"PFMT64x" (fcn 0x%08"PFMT64x, bb->addr, fcn->addr);
@@ -3447,10 +3475,14 @@ R_API int r_anal_function_count(RAnal *anal, ut64 from, ut64 to) {
 }
 
 static RAnalBlock *r_anal_function_bbget_in_linear(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *bb;
 	const bool aligned = r_anal_is_aligned (anal, addr);
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
+		if (fcn->bbs_sorted && bb->addr > addr) {
+			break;
+		}
 		if (r_anal_block_contains (bb, addr)) {
 			if ((!anal->opt.jmpmid || !aligned || r_anal_block_op_starts_at (bb, addr))) {
 				return bb;
@@ -3505,32 +3537,17 @@ R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64
 	return ctx.bb;
 }
 
-R_API RAnalBlock *r_anal_function_bbget_at(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
-	R_RETURN_VAL_IF_FAIL (fcn && addr != UT64_MAX, NULL);
-	RAnalBlock *b = r_anal_get_block_at (anal, addr);
-	if (b) {
-		return b;
-	}
-	RListIter *iter;
-	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
-		if (addr == bb->addr) {
-			return bb;
-		}
-	}
-	return NULL;
-}
-
 // compute the cyclomatic cost
 R_API ut32 r_anal_function_cost(RAnalFunction *fcn) {
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *bb;
 	ut32 totalCycles = 0;
 	if (!fcn) {
 		return 0;
 	}
 	RAnal *anal = fcn->anal;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		RAnalOp op;
 		ut64 at, end = bb->addr + bb->size;
 		ut8 *buf = malloc (bb->size);
@@ -3560,13 +3577,14 @@ R_API ut32 r_anal_function_cost(RAnalFunction *fcn) {
 
 R_API int r_anal_function_count_edges(const RAnalFunction *fcn, int * R_NULLABLE ebbs) {
 	R_RETURN_VAL_IF_FAIL (fcn, 0);
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *bb;
 	int edges = 0;
 	if (ebbs) {
 		*ebbs = 0;
 	}
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		if (ebbs && bb->jump == UT64_MAX && bb->fail == UT64_MAX) {
 			*ebbs = *ebbs + 1;
 		} else {
@@ -3591,6 +3609,24 @@ R_API bool r_anal_function_purity(RAnalFunction *fcn) {
 		}
 	}
 	return fcn->is_pure;
+}
+
+// User-set attribute, unlike purity it is never recomputed by the analysis.
+R_API bool r_anal_function_is_inline(RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (fcn, false);
+	return fcn->is_inline;
+}
+
+R_API bool r_anal_function_set_inline(RAnalFunction *fcn, bool is_inline) {
+	R_RETURN_VAL_IF_FAIL (fcn, false);
+	if (fcn->is_inline != is_inline) {
+		fcn->is_inline = is_inline;
+		r_anal_function_bump_dirty_epoch (fcn);
+		if (fcn->anal) {
+			R_DIRTY_SET (fcn->anal);
+		}
+	}
+	return true;
 }
 
 static bool can_affect_bp(RAnal *anal, RAnalOp *op) {
@@ -3619,9 +3655,10 @@ static bool can_affect_bp(RAnal *anal, RAnalOp *op) {
 R_API void r_anal_function_check_bp_use(RAnalFunction *fcn) {
 	R_RETURN_IF_FAIL (fcn);
 	RAnal *anal = fcn->anal;
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		RAnalOp op;
 		ut64 at, end = bb->addr + bb->size;
 		ut8 *buf = malloc (bb->size);
@@ -3701,10 +3738,10 @@ static bool analize_addr_cb(ut64 addr, void *user) {
 	BlockRecurseCtx *ctx = user;
 	RAnal *anal = ctx->fcn->anal;
 	RAnalBlock *existing_bb = r_anal_get_block_at (anal, addr);
-	if (!existing_bb || !r_list_contains (ctx->fcn->bbs, existing_bb)) {
-		int old_len = r_list_length (ctx->fcn->bbs);
+	if (!existing_bb || !r_list_contains (existing_bb->fcns, ctx->fcn)) {
+		int old_len = (int)RVecAnalBlockPtr_length (&ctx->fcn->bbs);
 		r_anal_function_bb (ctx->fcn->anal, ctx->fcn, addr);
-		if (old_len != r_list_length (ctx->fcn->bbs)) {
+		if (old_len != (int)RVecAnalBlockPtr_length (&ctx->fcn->bbs)) {
 			r_anal_block_recurse (r_anal_get_block_at (anal, addr), mark_as_visited, user);
 		}
 	}
@@ -3789,7 +3826,7 @@ static void clear_bb_vars(RAnalFunction *fcn, RAnalBlock *bb, ut64 from, ut64 to
 
 static void update_analysis(RAnal *anal, RList *fcns, HtUP *reachable) {
 	// huge slowdown
-	RListIter *it, *it2, *tmp;
+	RListIter *it;
 	RAnalFunction *fcn;
 	bool old_jmpmid = anal->opt.jmpmid;
 	anal->opt.jmpmid = true;
@@ -3810,7 +3847,9 @@ static void update_analysis(RAnal *anal, RList *fcns, HtUP *reachable) {
 		r_anal_block_recurse (bb, analize_descendents, &ctx);
 
 		// Remove non-reachable blocks
-		r_list_foreach_safe (fcn->bbs, it2, tmp, bb) {
+		size_t bb_idx;
+		for (bb_idx = RVecAnalBlockPtr_length (&fcn->bbs); bb_idx > 0; bb_idx--) {
+			bb = *RVecAnalBlockPtr_at (&fcn->bbs, bb_idx - 1);
 			if (r_bitset_test (bs, bb->addr)) {
 				continue;
 			}
@@ -3823,7 +3862,11 @@ static void update_analysis(RAnal *anal, RList *fcns, HtUP *reachable) {
 			r_anal_function_remove_block (fcn, bb);
 		}
 
-		RList *bbs = r_list_clone (fcn->bbs, NULL);
+		RList *bbs = r_list_new ();
+		RAnalBlock **bbit;
+		R_VEC_FOREACH (&fcn->bbs, bbit) {
+			r_list_append (bbs, *bbit);
+		}
 		r_anal_block_automerge (bbs);
 		r_anal_function_delete_unused_vars (fcn);
 		r_list_free (bbs);
@@ -3888,12 +3931,14 @@ R_API void r_anal_update_analysis_range(RAnal *anal, ut64 addr, int size) {
 
 R_API void r_anal_function_update_analysis(RAnalFunction *fcn) {
 	R_RETURN_IF_FAIL (fcn);
-	RListIter *it, *it2, *tmp, *tmp2;
+	RListIter *it2, *tmp2;
 	RAnalBlock *bb;
 	RAnalFunction *f;
 	RList *fcns = r_list_new ();
 	HtUP *reachable = ht_up_new (NULL, free_bitset_value, NULL);
-	r_list_foreach_safe (fcn->bbs, it, tmp, bb) {
+	size_t bb_idx;
+	for (bb_idx = RVecAnalBlockPtr_length (&fcn->bbs); bb_idx > 0; bb_idx--) {
+		bb = *RVecAnalBlockPtr_at (&fcn->bbs, bb_idx - 1);
 		if (r_anal_block_was_modified (bb)) {
 			r_list_foreach_safe (bb->fcns, it2, tmp2, f) {
 				calc_reachable_and_remove_block (fcns, f, bb, reachable);

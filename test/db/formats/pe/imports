@@ -41,3 +41,18 @@ nth paddr      vaddr      bind type size lib          name            demangled
 ]
 EOF
 RUN
+
+NAME=PE import descriptors sharing one thunk table are bounded by the file size
+FILE=bins/pe/import-shared-thunks.exe
+TIMEOUT=10
+CMDS=<<EOF
+ii~?
+EOF
+EXPECT=<<EOF
+3202
+EOF
+EXPECT_ERR=<<EOF
+WARN: PE import descriptors list more thunks than the file holds
+WARN: PE import descriptors list more thunks than the file holds
+EOF
+RUN

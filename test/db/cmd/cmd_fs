@@ -1494,6 +1494,76 @@ ERROR: Invalid path
 EOF
 RUN
 
+NAME=m hfs volume name length past the catalog key
+FILE=malloc://0x2000
+CMDS=<<EOF
+# 512 byte blocks and a 40 byte length for the volume name "radare"
+wx 4244 @ 0x400
+wx 00000200 @ 0x414
+wx 28726164617265 @ 0x424
+wx 00040002 @ 0x486
+wx 00080004 @ 0x496
+# catalog header node: root node 1, node size 512
+wx 00000001 @ 0x1010
+wx 0200 @ 0x1020
+# leaf node 1: the root folder keyed by the 40 byte name, then the file hello
+wx ff010002 @ 0x1208
+wx 2e000000000128726164617265 @ 0x120e
+wx 01000000000000000002 @ 0x123e
+wx 0b00000000020568656c6c6f02 @ 0x1248
+wx 00000010 @ 0x1268
+wx 0000000e @ 0x126e
+wx 000c0001 @ 0x129e
+wx 0048000e @ 0x13fc
+w hello from hfs @ 0x1800
+m /root hfs 0
+md /root
+mc /root/hello
+EOF
+EXPECT=<<EOF
+f hello
+hello from hfs
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=mc hfs path component past the catalog key
+FILE=malloc://0x2000
+CMDS=<<EOF
+wx 4244 @ 0x400
+wx 00000200 @ 0x414
+wx 06726164617265 @ 0x424
+wx 00040002 @ 0x486
+wx 00080004 @ 0x496
+wx 00000001 @ 0x1010
+wx 0200 @ 0x1020
+# leaf node 1: the root folder, a file with a 41 byte name starting with 30 A, and hello
+wx ff010003 @ 0x1208
+wx 2e000000000106726164617265 @ 0x120e
+wx 01000000000000000002 @ 0x123e
+wx 2f000000000229414141414141414141414141414141414141414141414141414141414141 @ 0x1248
+wx 02 @ 0x1278
+wx 0b00000000020568656c6c6f02 @ 0x12ce
+wx 00000010 @ 0x12ee
+wx 0000000e @ 0x12f4
+wx 000c0001 @ 0x1324
+wx 00ce0048000e @ 0x13fa
+w hello from hfs @ 0x1800
+m /root hfs 0
+md /root
+mc /root/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+mc /root/hello
+EOF
+EXPECT=<<EOF
+f AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+f hello
+hello from hfs
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot open /root/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+EOF
+RUN
+
 NAME=m sfs clamps the extent B-tree node count to the block
 FILE=bins/fs/sfs-btree-nodes.img
 CMDS=<<EOF
@@ -1538,4 +1608,56 @@ EOF
 EXPECT_ERR=<<EOF
 ERROR: Cannot open /root/file
 EOF
+RUN
+
+NAME=ntfs index views are special entries rather than regular files
+FILE=bins/fs/ntfs.img
+CMDS=<<EOF
+m /mnt ntfs 0
+md /mnt/$Extend
+EOF
+EXPECT=<<EOF
+s $ObjId
+s $Quota
+s $Reparse
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=reiserfs preserves symlink types in directory listings
+FILE=bins/fs/reiserfs-link-root.img
+CMDS=<<EOF
+m /mnt reiserfs 0
+md /mnt
+EOF
+EXPECT=<<EOF
+d .
+f hello.txt
+l link
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=reiserfs corrupt symlink remains identifiable without opening it
+FILE=bins/fs/reiserfs-corrupt.img
+CMDS=<<EOF
+m /mnt reiserfs 0
+md /mnt
+EOF
+EXPECT=<<EOF
+d .
+l link
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=ubifs reads file data when the volume size is unknown
+FILE=bins/fs/ubifs-oversize.img
+CMDS=<<EOF
+mc /root/file
+EOF
+EXPECT=<<EOF
+hello world
+EOF
+EXPECT_ERR=
 RUN

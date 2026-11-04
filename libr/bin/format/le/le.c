@@ -339,13 +339,12 @@ static st64 read_entry_bundle_entry(RBinLEObj *bin, ut64 offset, ut8 type, LE_en
 	return r_buf_fread_at (bin->buf, offset, (ut8 *)e, fmt, 1);
 }
 
-static RList *__get_entries(RBinLEObj *bin) {
+R_VEC_TYPE (RVecLEEntry, ut64);
+
+// entry addresses by ordinal - 1, unused ordinals hold 0
+static void __get_entries(RBinLEObj *bin, RVecLEEntry *l) {
 	LE_image_header *h = bin->header;
 	ut64 offset = (ut64)h->enttab + bin->headerOff;
-	RList *l = r_list_newf (free);
-	if (!l) {
-		return NULL;
-	}
 	while (true) {
 		LE_entry_bundle_header header = {0};
 		LE_entry_bundle_entry e = {{0}};
@@ -355,12 +354,17 @@ static RList *__get_entries(RBinLEObj *bin) {
 		if (!header.count) {
 			break;
 		}
+		// ordinals are 16 bit wide, so entries past UT16_MAX can never be referenced
+		if (RVecLEEntry_length (l) + header.count > UT16_MAX) {
+			R_LOG_WARN ("LE entry table has more than %d entries, ignoring the rest", UT16_MAX);
+			break;
+		}
 		ut8 type = header.type & ~ENTRY_PARAMETER_TYPING_PRESENT;
 		if (type == UNUSED_ENTRY) {
 			offset += sizeof (header.type) + sizeof (header.count);
-			while (header.count) {
-				r_list_append (l, strdup ("")); // (ut64 *)-1);
-				header.count--;
+			while (header.count--) {
+				ut64 unused = 0;
+				RVecLEEntry_push_back (l, &unused);
 			}
 			continue;
 		}
@@ -399,23 +403,22 @@ static RList *__get_entries(RBinLEObj *bin) {
 				offset += (ut64)(e.entry_32.flags & ENTRY_PARAM_COUNT_MASK) * 2;
 			}
 			if (entry != UT64_MAX) {
-				r_list_append (l, r_str_newf ("0x%"PFMT64x, entry));
+				RVecLEEntry_push_back (l, &entry);
 			}
 		}
 	}
-	return l;
 }
 
-static void __get_symbols_at(RBinLEObj *bin, RVecRBinSymbol *vec, RList *entl, ut64 offset, ut64 end) {
+static void __get_symbols_at(RBinLEObj *bin, RVecRBinSymbol *vec, RVecLEEntry *entl, ut64 offset, ut64 end) {
 	while (offset < end) {
 		RBinSymbol *sym = __get_symbol (bin, &offset);
 		if (!sym) {
 			break;
 		}
 		if (sym->ordinal) {
-			const char *n = r_list_get_n (entl, sym->ordinal - 1);
-			if (n) {
-				sym->vaddr = r_num_get (NULL, n);
+			const ut64 *addr = RVecLEEntry_at (entl, sym->ordinal - 1);
+			if (addr) {
+				sym->vaddr = *addr;
 				sym->bind = R_BIN_BIND_GLOBAL_STR;
 				sym->type = R_BIN_TYPE_FUNC_STR;
 				RVecRBinSymbol_push_back (vec, sym);
@@ -428,15 +431,17 @@ static void __get_symbols_at(RBinLEObj *bin, RVecRBinSymbol *vec, RList *entl, u
 }
 
 R_IPI void r_bin_le_load_symbols(RBinLEObj *bin, RVecRBinSymbol *vec) {
-	RList *entries = __get_entries (bin);
+	RVecLEEntry entries;
+	RVecLEEntry_init (&entries);
+	__get_entries (bin, &entries);
 	LE_image_header *h = bin->header;
 	ut64 offset = (ut64)h->restab + bin->headerOff;
 	ut32 end = h->enttab + bin->headerOff;
-	__get_symbols_at (bin, vec, entries, offset, end);
+	__get_symbols_at (bin, vec, &entries, offset, end);
 	offset = h->nrestab;
 	end = h->nrestab + h->cbnrestab;
-	__get_symbols_at (bin, vec, entries, offset, end);
-	r_list_free (entries);
+	__get_symbols_at (bin, vec, &entries, offset, end);
+	RVecLEEntry_fini (&entries);
 }
 
 R_IPI void r_bin_le_load_imports(RBinLEObj *bin, RVecRBinImport *vec) {
@@ -639,15 +644,28 @@ R_IPI bool r_bin_le_load_sections(RBinLEObj *bin, RVecRBinSection *sections) {
 	return true;
 }
 
-static char *__get_modname_by_ord(RBinLEObj *bin, ut32 ordinal) {
-	char *modname = NULL;
+static inline void modname_fini(char **name) {
+	free (*name);
+}
+
+R_VEC_TYPE_WITH_FINI (RVecLEModName, char *, modname_fini);
+
+// read the import module name table once, fixups index it by a 1-based 16-bit ordinal
+static void __load_modnames(RBinLEObj *bin, RVecLEModName *names) {
+	const ut32 max = R_MIN (bin->header->impmodcnt, UT16_MAX);
 	ut64 off = (ut64)bin->header->impmod + bin->headerOff;
-	while (ordinal > 0) {
-		free (modname);
-		modname = __read_nonnull_str_at (bin->buf, &off);
-		ordinal--;
+	while (RVecLEModName_length (names) < max) {
+		char *name = __read_nonnull_str_at (bin->buf, &off);
+		if (!name) {
+			break;
+		}
+		RVecLEModName_push_back (names, &name);
 	}
-	return modname;
+}
+
+static const char *__get_modname_by_ord(const RVecLEModName *names, ut32 ordinal) {
+	char **name = ordinal > 0? RVecLEModName_at (names, ordinal - 1): NULL;
+	return name? *name: NULL;
 }
 
 static bool object_page_at(RBinLEObj *bin, ut64 table_index, ut32 *object_index, LEObjectPage *page) {
@@ -681,6 +699,9 @@ static void reloc_emit(RVecRBinReloc *relocs, const RBinReloc *reloc, const LEOb
 		return;
 	}
 	RBinReloc *clone = RVecRBinReloc_emplace_back (relocs);
+	if (!clone) {
+		return;
+	}
 	*clone = *reloc;
 	clone->import = reloc->import ? r_bin_import_clone (reloc->import) : NULL;
 	clone->vaddr = vaddr;
@@ -753,7 +774,12 @@ R_IPI RVecRBinReloc *r_bin_le_get_relocs(RBinLEObj *bin) {
 	if (!l) {
 		return NULL;
 	}
-	RList *entries = __get_entries (bin);
+	RVecLEEntry entries;
+	RVecLEEntry_init (&entries);
+	__get_entries (bin, &entries);
+	RVecLEModName modnames;
+	RVecLEModName_init (&modnames);
+	__load_modnames (bin, &modnames);
 	LE_image_header *h = bin->header;
 	const ut64 fixup_start = (ut64)h->fpagetab + bin->headerOff;
 	const ut64 fixup_end = R_MIN (fixup_start + h->fixupsize, r_buf_size (bin->buf));
@@ -767,6 +793,8 @@ R_IPI RVecRBinReloc *r_bin_le_get_relocs(RBinLEObj *bin) {
 		}
 		LEObjectPage page;
 		const LEObjectPage *page_ref = object_page_at (bin, cur_page, &object_index, &page) ? &page : NULL;
+		// a page dword belongs to at most one chain, cycles and shared chains are walked once
+		RBitset *chained = NULL;
 		while (offset < end) {
 			ut64 record_end;
 			if (!reloc_record_end (bin->buf, offset, end, &record_end)) {
@@ -830,7 +858,7 @@ R_IPI RVecRBinReloc *r_bin_le_get_relocs(RBinLEObj *bin) {
 				break;
 			case IMPORTORD: {
 				RBinImport *imp = R_NEW0 (RBinImport);
-				char *mod_name = __get_modname_by_ord (bin, ordinal);
+				const char *mod_name = __get_modname_by_ord (&modnames, ordinal);
 				if (!mod_name) {
 					r_bin_import_free (imp);
 					break;
@@ -849,7 +877,6 @@ R_IPI RVecRBinReloc *r_bin_le_get_relocs(RBinLEObj *bin) {
 				imp->name = r_bin_name_new_from (r_str_newf ("%s.%u", mod_name, ordinal));
 				imp->ordinal = ordinal;
 				rel->import = imp;
-				free (mod_name);
 				break;
 			}
 			case IMPORTNAME: {
@@ -864,17 +891,16 @@ R_IPI RVecRBinReloc *r_bin_le_get_relocs(RBinLEObj *bin) {
 				}
 				ut64 off = (ut64)h->impproc + nameoff + bin->headerOff;
 				char *proc_name = __read_nonnull_str_at (bin->buf, &off);
-				char *mod_name = __get_modname_by_ord (bin, ordinal);
+				const char *mod_name = __get_modname_by_ord (&modnames, ordinal);
 				imp->name = r_bin_name_new_from (r_str_newf ("%s.%s", r_str_get (mod_name), r_str_get (proc_name)));
 				rel->import = imp;
-				free (mod_name);
 				free (proc_name);
 				break;
 			}
 			case INTERNALENTRY: {
-				const char *n = r_list_get_n (entries, ordinal - 1);
-				if (n) {
-					rel->addend = r_num_get (NULL, n);
+				const ut64 *addr = RVecLEEntry_at (&entries, ordinal - 1);
+				if (addr) {
+					rel->addend = *addr;
 				}
 				break;
 			}
@@ -903,13 +929,16 @@ R_IPI RVecRBinReloc *r_bin_le_get_relocs(RBinLEObj *bin) {
 					reloc_emit (l, rel, page_ref, list_source, rel->addend);
 				}
 			} else if ((header_target & F_TARGET_CHAIN) && page_ref && page_ref->has_data) {
-				ut32 chain_limit = h->pagesize / sizeof (ut32);
+				if (!chained) {
+					chained = r_bitset_new ();
+				}
 				st32 chain_source = source;
 				st64 base_target_address = rel->addend;
 				bool first = true;
-				while (chain_limit-- && chain_source >= 0
+				while (chain_source >= 0
 					&& page_ref->data_size >= sizeof (ut32)
-					&& (ut32)chain_source <= page_ref->data_size - sizeof (ut32)) {
+					&& (ut32)chain_source <= page_ref->data_size - sizeof (ut32)
+					&& r_bitset_set (chained, chain_source)) {
 					ut32 fixupinfo = r_buf_read_ble32_at (bin->buf, page_ref->paddr + chain_source, h->worder);
 					if (first) {
 						base_target_address -= fixupinfo & 0xFFFFF;
@@ -926,8 +955,10 @@ R_IPI RVecRBinReloc *r_bin_le_get_relocs(RBinLEObj *bin) {
 			}
 			r_bin_reloc_fini (rel);
 		}
+		r_bitset_free (chained);
 	}
-	r_list_free (entries);
+	RVecLEModName_fini (&modnames);
+	RVecLEEntry_fini (&entries);
 	return l;
 }
 

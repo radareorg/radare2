@@ -42,7 +42,9 @@ ANITA_SETS ?= kern-GENERIC,modules,base,etc,rescue
 # MBR + disklabel is the best-tested BIOS boot path in v86; sysinst would
 # otherwise pick GPT
 ANITA_PART ?= MBR
-ANITA_URL ?= http://www.gson.org/netbsd/anita/download/anita-2.18.tar.gz
+ANITA_URL ?= https://www.gson.org/netbsd/anita/download/anita-2.18.tar.gz
+# pip refuses to build the tarball unless it matches
+ANITA_SHA256 ?= fa5ac3a8b3e30a3a35df9254bbee213b28210a396544592c3e604a1e53a294ce
 ANITA_ACCEL ?= -accel kvm -accel tcg
 RUN_TIMEOUT ?= 1800
 VENV = $(WORK)/venv
@@ -105,7 +107,7 @@ www: $(WWW)/.v86.stamp $(WWW)/seabios.bin $(WWW)/vgabios.bin \
 
 $(ANITA):
 	python3 -m venv $(VENV)
-	$(VENV)/bin/pip -q install pexpect $(ANITA_URL)
+	$(VENV)/bin/pip -q install pexpect '$(ANITA_URL)#sha256=$(ANITA_SHA256)'
 
 # -- sysroot from the NetBSD sets ----------------------------------------
 

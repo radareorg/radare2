@@ -25,6 +25,7 @@
 #include <grub/types.h>
 #include <grub/charset.h>
 #include <r_types.h>
+#include <sdb/set.h>
 
 #define GRUB_JFS_MAX_SYMLNK_CNT 8
 #define GRUB_JFS_MAX_SYMLNK_LEN 4096
@@ -229,6 +230,7 @@ R_PACKED(
 		grub_uint8_t *sorted;
 		struct grub_jfs_leaf_dirent *leaf;
 		struct grub_jfs_leaf_next_dirent *next_leaf;
+		SetU *pages;
 
 		/* The filename and inode of the last read dirent.  */
 		char name[GRUB_JFS_MAX_NAME_LEN * 3 + 1];
@@ -418,6 +420,8 @@ grub_jfs_opendir(struct grub_jfs_data *data, struct grub_jfs_inode *inode) {
 			break;
 		}
 		if (diro->dirpage->header.flags & GRUB_JFS_TREE_LEAF) {
+			diro->pages = set_u_new ();
+			set_u_add (diro->pages, blk);
 			return diro;
 		}
 		de = (struct grub_jfs_internal_dirent *)diro->dirpage->dirent;
@@ -434,6 +438,7 @@ grub_jfs_closedir(struct grub_jfs_diropen *diro) {
 	if (!diro) {
 		return;
 	}
+	set_u_free (diro->pages);
 	grub_free (diro->dirpage);
 	grub_free (diro);
 }
@@ -458,34 +463,34 @@ grub_jfs_getent(struct grub_jfs_diropen *diro) {
 
 	/* Add the unicode string to the utf16 filename buffer.  */
 
-	/* The last node, read in more.  */
-	if (diro->index == diro->count) {
-		unsigned int next;
-
-		/* If the inode contains the entry tree or if this was the last
-		node, there is nothing to read.  */
-		if ((diro->inode->file.tree.flags & GRUB_JFS_TREE_LEAF) || !grub_le_to_cpu64 (diro->dirpage->header.nextb)) {
+	for (;;) {
+		if (diro->index == diro->count) {
+			/* If the inode contains the entry tree or if this was the last
+			node, there is nothing to read.  */
+			if ((diro->inode->file.tree.flags & GRUB_JFS_TREE_LEAF) || !grub_le_to_cpu64 (diro->dirpage->header.nextb)) {
+				return GRUB_ERR_OUT_OF_RANGE;
+			}
+			unsigned int next = grub_le_to_cpu64 (diro->dirpage->header.nextb);
+			next <<= (grub_le_to_cpu16 (diro->data->sblock.log2_blksz) - GRUB_DISK_SECTOR_BITS);
+			// a leaf page chained twice is a cycle
+			if (set_u_contains (diro->pages, next)) {
+				return GRUB_ERR_OUT_OF_RANGE;
+			}
+			set_u_add (diro->pages, next);
+			// callers iterate until out of range, so any failure ends the directory
+			if (grub_disk_read (diro->data->disk, next, 0, grub_le_to_cpu32 (diro->data->sblock.blksz), diro->dirpage->sorted) || !grub_jfs_setpage (diro)) {
+				return GRUB_ERR_OUT_OF_RANGE;
+			}
+		}
+		if (diro->sorted[diro->index] >= diro->slots) {
 			return GRUB_ERR_OUT_OF_RANGE;
 		}
-
-		next = grub_le_to_cpu64 (diro->dirpage->header.nextb);
-		next <<= (grub_le_to_cpu16 (diro->data->sblock.log2_blksz) - GRUB_DISK_SECTOR_BITS);
-
-		// callers iterate until out of range, so any failure ends the directory
-		if (grub_disk_read (diro->data->disk, next, 0, grub_le_to_cpu32 (diro->data->sblock.blksz), diro->dirpage->sorted) || !grub_jfs_setpage (diro)) {
-			return GRUB_ERR_OUT_OF_RANGE;
+		leaf = &diro->leaf[diro->sorted[diro->index]];
+		len = leaf->len;
+		if (len) {
+			break;
 		}
-	}
-	if (diro->sorted[diro->index] >= diro->slots) {
-		return GRUB_ERR_OUT_OF_RANGE;
-	}
-
-	leaf = &diro->leaf[diro->sorted[diro->index]];
-
-	len = leaf->len;
-	if (!len) {
 		diro->index++;
-		return grub_jfs_getent (diro);
 	}
 
 	chunk = R_MIN (len, 11);

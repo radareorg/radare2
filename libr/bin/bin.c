@@ -71,8 +71,18 @@ static const char *__getname(RBin *bin, int type, int idx, bool sd) {
 	return NULL;
 }
 
+static RBinFile *bin_file_mapped_at(RBin *bin, ut64 vaddr) {
+	RIOBind *iob = &bin->iob;
+	RIOMap *map = (iob->io && iob->map_get_at)? iob->map_get_at (iob->io, vaddr): NULL;
+	RBinFile *bf = map? r_bin_file_find_by_fd (bin, map->fd): NULL;
+	if (!bf) {
+		bf = r_bin_file_at (bin, vaddr);
+	}
+	return bf? bf: r_bin_cur (bin);
+}
+
 static const char *__getcc(RBin *bin, ut64 vaddr) {
-	RBinFile *a = r_bin_cur (bin);
+	RBinFile *a = bin_file_mapped_at (bin, vaddr);
 	if (a) {
 		RBinPlugin *plugin = r_bin_file_cur_plugin (a);
 		if (plugin && plugin->get_cc) {
@@ -194,6 +204,18 @@ R_API RBinImport *r_bin_import_clone(RBinImport *o) {
 		res->descriptor = o->descriptor? strdup (o->descriptor): NULL;
 	}
 	return res;
+}
+
+// site may point into relocs, which the append can move
+R_IPI void r_bin_reloc_slot_row(RVecRBinReloc *relocs, const RBinReloc *site, ut64 vaddr) {
+	const RBinReloc copy = *site;
+	RBinReloc *row = RVecRBinReloc_emplace_back (relocs);
+	if (row) {
+		*row = copy;
+		row->to_slot = false;
+		row->vaddr = vaddr;
+		row->import = copy.import? r_bin_import_clone (copy.import): NULL;
+	}
 }
 
 R_API void r_bin_import_free(RBinImport *imp) {
@@ -1253,9 +1275,6 @@ R_IPI RBinSymbol *r_bin_object_get_symbol_at(RBinObject *o, ut64 addr) {
 			if (sym->vaddr && sym->vaddr != UT64_MAX) {
 				ht_up_insert (o->symbol_addr_ht, sym->vaddr, sym);
 			}
-			if (sym->paddr && sym->paddr != sym->vaddr && sym->paddr != UT64_MAX) {
-				ht_up_insert (o->symbol_addr_ht, sym->paddr, sym);
-			}
 		}
 	}
 	return ht_up_find (o->symbol_addr_ht, addr, NULL);
@@ -1263,7 +1282,8 @@ R_IPI RBinSymbol *r_bin_object_get_symbol_at(RBinObject *o, ut64 addr) {
 
 R_API RBinSymbol *r_bin_get_symbol_at(RBin *bin, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
-	return r_bin_object_get_symbol_at (r_bin_cur_object (bin), addr);
+	RBinFile *bf = bin_file_mapped_at (bin, addr);
+	return bf? r_bin_object_get_symbol_at (bf->bo, addr): NULL;
 }
 
 R_API RVecRBinImport *r_bin_get_imports_vec(RBin *bin) {

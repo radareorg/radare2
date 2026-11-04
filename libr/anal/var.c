@@ -59,6 +59,11 @@ static inline bool anal_var_ptr_contains(RVecAnalVarPtr *vec, RAnalVar *var) {
 	return false;
 }
 
+static void inst_vars_kv_free(HtUPKv *kv) {
+	RVecAnalVarPtr *vec = kv->value;
+	RVecAnalVarPtr_free (vec);
+}
+
 static RVecAnalVarPtr *anal_var_ptr_clone(RVecAnalVarPtr *src) {
 	RVecAnalVarPtr *dst = RVecAnalVarPtr_new ();
 	if (!dst) {
@@ -144,8 +149,8 @@ static const char * const int_type(int size) {
 	}
 }
 
-static int inferred_var_size(RAnal *anal, int access_size) {
-	return int_type (access_size) ? access_size : anal->config->bits / 8;
+static int inferred_var_size(int access_size, int default_size) {
+	return int_type (access_size) ? access_size : default_size;
 }
 
 R_API bool r_anal_function_rebase_vars(RAnal *a, RAnalFunction *fcn) {
@@ -921,6 +926,9 @@ R_API bool r_anal_var_set_access(RAnal *anal, RAnalVar *var, const char *reg, ut
 	acc->reg = r_str_constpool_get (&var->fcn->anal->constpool, reg);
 
 	// add the inverse reference from the instruction to the var
+	if (!var->fcn->inst_vars) {
+		var->fcn->inst_vars = ht_up_new (NULL, inst_vars_kv_free, NULL);
+	}
 	RVecAnalVarPtr *inst_accesses = ht_up_find (var->fcn->inst_vars, (ut64)offset, NULL);
 	if (!inst_accesses) {
 		inst_accesses = RVecAnalVarPtr_new ();
@@ -1267,7 +1275,7 @@ static bool op_dst_is_stack_reg(RAnal *anal, RAnalOp *op) {
 	}
 	const char *sp = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
 	const char *bp = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
-	return (bp && !strcmp (bp, val->reg)) || (sp && !strcmp (sp, val->reg));
+	return r_anal_reg_same (anal, bp, val->reg) || r_anal_reg_same (anal, sp, val->reg);
 }
 
 static bool extract_arg_from_immop(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, R_OUT st64 *ptr) {
@@ -1280,16 +1288,16 @@ static bool extract_arg_from_immop(RAnal *anal, RAnalFunction *fcn, RAnalOp *op,
 	}
 	// =BP is a guess on ABIs with no architectural frame pointer (ppc r31), so it only homes locals once proven
 	const char *sp = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
-	if ((!sp || strcmp (reg, sp)) && !fcn->bp_from_sp) {
+	if (!r_anal_reg_same (anal, reg, sp) && !fcn->bp_from_sp) {
 		return false;
 	}
 	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
 	RAnalValue *base = RVecRArchValue_at (&op->srcs, 0);
 	RAnalValue *imm = RVecRArchValue_at (&op->srcs, 1);
-	if (op_dst_is_stack_reg (anal, op) && dst && dst->reg && !strcmp (dst->reg, reg)) {
+	if (op_dst_is_stack_reg (anal, op) && dst && r_anal_reg_same (anal, dst->reg, reg)) {
 		return false;
 	}
-	if (!base || !imm || !base->reg || strcmp (reg, base->reg) || imm->reg) {
+	if (!base || !imm || !r_anal_reg_same (anal, reg, base->reg) || imm->reg) {
 		return false;
 	}
 	st64 delta = (ot == R_ANAL_OP_TYPE_SUB) ? -imm->imm : imm->imm;
@@ -1313,8 +1321,8 @@ static bool op_is_stack_frame_setup(RAnal *anal, RAnalOp *op, const char *reg) {
 	}
 	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
 	RAnalValue *base = RVecRArchValue_at (&op->srcs, 0);
-	return dst && dst->reg && strcmp (dst->reg, reg)
-		&& base && base->reg && !base->memref && !strcmp (base->reg, reg);
+	return dst && dst->reg && !r_anal_reg_same (anal, dst->reg, reg)
+		&& base && !base->memref && r_anal_reg_same (anal, base->reg, reg);
 }
 
 // the ppc PLT/call stubs save the TOC pointer (std/ld r2, N(r1)) into the caller linkage area, which is not an incoming stack arg
@@ -1433,7 +1441,8 @@ static void extract_arg_at(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const c
 	if (frame_off > maxargoff || frame_off < -R_MAX (fcn->maxstack, maxargoff)) {
 		return;
 	}
-	const int var_size = anal->config->bits / 8;
+	const int var_size = !strcmp (anal->config->arch, "arm")
+		? r_anal_cc_wordsize (anal, fcn->callconv): anal->config->bits / 8;
 	const bool fuzzy = !exact && !strcmp (anal->config->arch, "arm");
 	RAnalVar *var = get_stack_var (anal, fcn, frame_off, access_size, var_size, fuzzy, addr_taken);
 	if (var) {
@@ -1443,7 +1452,7 @@ static void extract_arg_at(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const c
 		if (!isarg || !var->isarg || var->delta != frame_off) {
 			return;
 		}
-		const char *deftype = int_type (inferred_var_size (anal, access_size));
+		const char *deftype = int_type (inferred_var_size (access_size, var_size));
 		r_strf_var (autoname, 32, "arg_%" PFMT64x "h", R_ABS (anal->opt.varname_stack? frame_off: ptr));
 		if (!deftype || strcmp (var->type, deftype) || strcmp (var->name, autoname)) {
 			return;
@@ -1508,7 +1517,7 @@ static void extract_arg_at(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const c
 		}
 	}
 	if (varname) {
-		const int size = inferred_var_size (anal, access_size);
+		const int size = inferred_var_size (access_size, var_size);
 		RAnalVar *var = r_anal_function_set_var (fcn, frame_off, type, vartype, size, isarg, varname);
 		if (var) {
 			r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr);
@@ -2051,7 +2060,10 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				name = r_str_newf ("arg%u", (int)i + 1);
 				vname = name;
 			}
-			RAnalVar *var = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, type, size, true, vname);
+			RRegItem *reg = regname? r_reg_get (anal->reg, regname, -1): NULL;
+			const int regsize = reg && reg->size > 0? BITS2BYTES (reg->size): size;
+			r_unref (reg);
+			RAnalVar *var = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, type, regsize, true, vname);
 			if (var && var->argnum < 0) {
 				var->argnum = *count;
 				(*count)++;
@@ -2099,7 +2111,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			r_unref (reg);
 			continue;
 		}
-		const int regsize = partial? (reg->size + 7) / 8: size;
+		const int regsize = reg && reg->size > 0? BITS2BYTES (reg->size): size;
 		bool is_arg = partial? is_used_small_reg_arg (anal, op, reg, &reg_set[slot], op_dst_writeonly)
 			: is_used_like_arg (op, op_dst_writeonly, in_src, in_dst);
 		if (is_arg) {

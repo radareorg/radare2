@@ -1,0 +1,14 @@
+R2PM_BEGIN
+
+R2PM_DESC "Package fixture with a working dependency"
+R2PM_DEPS depok
+R2PM_INSTALL() {
+	echo install-depapp-$R2PM_GLOBAL
+	true
+}
+
+R2PM_UNINSTALL() {
+	true
+}
+
+R2PM_END

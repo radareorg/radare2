@@ -37,7 +37,15 @@ typedef struct _PE {
 	void *object;
 	HtUP *symbols_by_token; // token -> DotNetSymbol (owned by the symbol list)
 	HtPP *typedefs_by_name; // full name -> first typedef DotNetSymbol with it
+	HtUP *long_names; // heap entry -> its name cut at DOTNET_MAX_NAME
 } PE;
+
+// rows name heap entries by index, so any number of them can share one long name
+#define DOTNET_MAX_NAME 512
+
+static void free_long_name_kv(HtUPKv *kv) {
+	free (kv->value);
+}
 
 static char *pe_get_dotnet_string(PE *pe, const uint8_t *string_offset, ut32 string_index) {
 	// Start of string must be within boundary
@@ -46,11 +54,21 @@ static char *pe_get_dotnet_string(PE *pe, const uint8_t *string_offset, ut32 str
 		return NULL;
 	}
 	// Calculate how much until end of boundary, don't scan past that.
-	size_t remaining = (pe->data + pe->data_size) - (string_offset + string_index);
-	// Search for a NULL terminator from start of string, up to remaining.
+	const size_t remaining = (pe->data + pe->data_size) - (string_offset + string_index);
 	char *start = (char *) (string_offset + string_index);
-	char *eos = (char *)r_mem_mem ((void *)start, remaining, (void *)"\0", 1);
-	return eos? start: NULL;
+	const size_t len = r_str_nlen (start, R_MIN (remaining, DOTNET_MAX_NAME + 1));
+	if (len <= DOTNET_MAX_NAME) {
+		return len < remaining? start: NULL;
+	}
+	if (!pe->long_names) {
+		pe->long_names = ht_up_new (NULL, free_long_name_kv, NULL);
+	}
+	char *name = ht_up_find (pe->long_names, (ut64)(size_t)start, NULL);
+	if (!name) {
+		name = r_str_ndup (start, DOTNET_MAX_NAME);
+		ht_up_insert (pe->long_names, (ut64)(size_t)start, name);
+	}
+	return name;
 }
 
 static uint32_t max_rows(int count, ...) {
@@ -1072,10 +1090,10 @@ static void dotnet_parse_tilde_typedef(
 }
 
 // ECMA-335 II.23.2 compressed-uint. Returns the value and advances *p past it.
-// Returns 0 on malformed input (and leaves *p untouched).
+// Returns UT32_MAX on malformed input (and leaves *p untouched).
 static ut32 dotnet_read_compressed_uint(const ut8 **p, const ut8 *end) {
 	if (*p >= end) {
-		return 0;
+		return UT32_MAX;
 	}
 	ut8 b0 = **p;
 	if ((b0 & 0x80) == 0) {
@@ -1083,23 +1101,42 @@ static ut32 dotnet_read_compressed_uint(const ut8 **p, const ut8 *end) {
 		return b0 & 0x7f;
 	}
 	if ((b0 & 0xc0) == 0x80) {
-		if (*p + 1 >= end) {
-			return 0;
+		if (end - *p < 2) {
+			return UT32_MAX;
 		}
 		ut32 v = ((ut32)(b0 & 0x3f) << 8) | (*p)[1];
 		*p += 2;
 		return v;
 	}
 	if ((b0 & 0xe0) == 0xc0) {
-		if (*p + 3 >= end) {
-			return 0;
+		if (end - *p < 4) {
+			return UT32_MAX;
 		}
 		ut32 v = ((ut32)(b0 & 0x1f) << 24) | ((ut32)(*p)[1] << 16)
 				| ((ut32)(*p)[2] << 8) | (*p)[3];
 		*p += 4;
 		return v;
 	}
-	return 0;
+	return UT32_MAX;
+}
+
+static const ut8 *dotnet_sig_blob(PE *pe, PSTREAM_HEADER blob_hdr, ut64 metadata_root, ut32 blob_index, const ut8 **end) {
+	if (!blob_hdr || !blob_index) {
+		return NULL;
+	}
+	const ut8 *heap = dotnet_stream_data (pe, metadata_root, blob_hdr);
+	ut32 heap_size = dotnet_stream_size (blob_hdr);
+	if (!heap || blob_index >= heap_size || heap_size > (ut64)(pe->data + pe->data_size - heap)) {
+		return NULL;
+	}
+	const ut8 *p = heap + blob_index;
+	const ut8 *heap_end = heap + heap_size;
+	ut32 size = dotnet_read_compressed_uint (&p, heap_end);
+	if (!size || size == UT32_MAX || size > (ut64)(heap_end - p)) {
+		return NULL;
+	}
+	*end = p + size;
+	return p;
 }
 
 typedef struct {
@@ -1139,6 +1176,42 @@ static char *dotnet_type_alias(ut8 element) {
 	}
 }
 
+// rendered signatures copy type names per token and rows share blobs, so their text must stay short
+#define DOTNET_MAX_SIGNATURE 4096
+// the CLR rejects arrays with more dimensions
+#define DOTNET_MAX_ARRAY_RANK 32
+
+static char *dotnet_parse_sig_type(PE *pe, const ut8 **p, const ut8 *end, int depth);
+
+static char *dotnet_signature_limit(char *text) {
+	if (text && strlen (text) > DOTNET_MAX_SIGNATURE) {
+		R_FREE (text);
+	}
+	return text;
+}
+
+static char *dotnet_parse_generic_args(PE *pe, const ut8 **p, const ut8 *end, int depth, const char *base) {
+	ut32 count = dotnet_read_compressed_uint (p, end);
+	if (count > 1024) {
+		return NULL;
+	}
+	RStrBuf *sb = r_strbuf_new (base);
+	r_strbuf_append (sb, "<");
+	ut32 i;
+	for (i = 0; i < count; i++) {
+		char *type = r_strbuf_length (sb) <= DOTNET_MAX_SIGNATURE
+			? dotnet_parse_sig_type (pe, p, end, depth): NULL;
+		if (!type) {
+			r_strbuf_free (sb);
+			return NULL;
+		}
+		r_strbuf_appendf (sb, "%s%s", i? ",": "", type);
+		free (type);
+	}
+	r_strbuf_append (sb, ">");
+	return dotnet_signature_limit (r_strbuf_drain (sb));
+}
+
 static char *dotnet_parse_sig_type(PE *pe, const ut8 **p, const ut8 *end, int depth) {
 	if (*p >= end || depth > 32) {
 		return NULL;
@@ -1151,24 +1224,21 @@ static char *dotnet_parse_sig_type(PE *pe, const ut8 **p, const ut8 *end, int de
 	switch (element) {
 	case ELEMENT_TYPE_CMOD_REQD:
 	case ELEMENT_TYPE_CMOD_OPT:
-		{
-			const ut8 *before = *p;
-			dotnet_read_compressed_uint (p, end);
-			return *p == before? NULL: dotnet_parse_sig_type (pe, p, end, depth + 1);
-		}
+		return dotnet_read_compressed_uint (p, end) == UT32_MAX
+			? NULL: dotnet_parse_sig_type (pe, p, end, depth + 1);
 	case ELEMENT_TYPE_PINNED:
 	case ELEMENT_TYPE_SENTINEL:
 		return dotnet_parse_sig_type (pe, p, end, depth + 1);
 	case ELEMENT_TYPE_CLASS:
 	case ELEMENT_TYPE_VALUETYPE:
 		{
-			const ut8 *before = *p;
 			ut32 coded = dotnet_read_compressed_uint (p, end);
-			if (*p == before) {
+			if (coded == UT32_MAX) {
 				return NULL;
 			}
 			DotNetSymbol *sym = dotnet_symbol_by_token (pe, dotnet_typedef_or_ref_token (coded));
-			return sym? dotnet_symbol_fullname (sym): r_str_newf ("type_token.0x%08x", dotnet_typedef_or_ref_token (coded));
+			return dotnet_signature_limit (sym? dotnet_symbol_fullname (sym)
+				: r_str_newf ("type_token.0x%08x", dotnet_typedef_or_ref_token (coded)));
 		}
 	case ELEMENT_TYPE_PTR:
 	case ELEMENT_TYPE_BYREF:
@@ -1182,14 +1252,13 @@ static char *dotnet_parse_sig_type(PE *pe, const ut8 **p, const ut8 *end, int de
 				: element == ELEMENT_TYPE_BYREF? "&": "[]";
 			char *out = r_str_newf ("%s%s", inner, suffix);
 			free (inner);
-			return out;
+			return dotnet_signature_limit (out);
 		}
 	case ELEMENT_TYPE_VAR:
 	case ELEMENT_TYPE_MVAR:
 		{
-			const ut8 *before = *p;
 			ut32 index = dotnet_read_compressed_uint (p, end);
-			return *p == before? NULL: r_str_newf (element == ELEMENT_TYPE_VAR? "T%u": "M%u", index);
+			return index == UT32_MAX? NULL: r_str_newf (element == ELEMENT_TYPE_VAR? "T%u": "M%u", index);
 		}
 	case ELEMENT_TYPE_ARRAY:
 		{
@@ -1197,29 +1266,30 @@ static char *dotnet_parse_sig_type(PE *pe, const ut8 **p, const ut8 *end, int de
 			if (!inner) {
 				return NULL;
 			}
-			const ut8 *before = *p;
 			ut32 rank = dotnet_read_compressed_uint (p, end);
-			if (*p == before) {
+			if (!rank || rank > DOTNET_MAX_ARRAY_RANK) {
 				free (inner);
 				return NULL;
 			}
-			ut32 sizes = dotnet_read_compressed_uint (p, end);
-			ut32 i;
-			for (i = 0; i < sizes && *p < end; i++) {
-				dotnet_read_compressed_uint (p, end);
+			ut32 shape, i;
+			for (shape = 0; shape < 2; shape++) {
+				ut32 count = dotnet_read_compressed_uint (p, end);
+				if (count > rank) {
+					free (inner);
+					return NULL;
+				}
+				for (i = 0; i < count; i++) {
+					if (dotnet_read_compressed_uint (p, end) == UT32_MAX) {
+						free (inner);
+						return NULL;
+					}
+				}
 			}
-			ut32 lows = dotnet_read_compressed_uint (p, end);
-			for (i = 0; i < lows && *p < end; i++) {
-				dotnet_read_compressed_uint (p, end);
-			}
-			RStrBuf *sb = r_strbuf_new (inner);
-			r_strbuf_append (sb, "[");
-			for (i = 1; i < rank; i++) {
-				r_strbuf_append (sb, ",");
-			}
-			r_strbuf_append (sb, "]");
+			char commas[DOTNET_MAX_ARRAY_RANK];
+			r_str_pad (commas, sizeof (commas), ',', rank - 1);
+			char *out = r_str_newf ("%s[%s]", inner, commas);
 			free (inner);
-			return r_strbuf_drain (sb);
+			return dotnet_signature_limit (out);
 		}
 	case ELEMENT_TYPE_GENERICINST:
 		{
@@ -1227,28 +1297,9 @@ static char *dotnet_parse_sig_type(PE *pe, const ut8 **p, const ut8 *end, int de
 			if (!base) {
 				return NULL;
 			}
-			const ut8 *before = *p;
-			ut32 count = dotnet_read_compressed_uint (p, end);
-			if (*p == before || count > 1024) {
-				free (base);
-				return NULL;
-			}
-			RStrBuf *sb = r_strbuf_new (base);
-			r_strbuf_append (sb, "<");
-			ut32 i;
-			for (i = 0; i < count; i++) {
-				char *arg = dotnet_parse_sig_type (pe, p, end, depth + 1);
-				if (!arg) {
-					r_strbuf_free (sb);
-					free (base);
-					return NULL;
-				}
-				r_strbuf_appendf (sb, "%s%s", i? ",": "", arg);
-				free (arg);
-			}
-			r_strbuf_append (sb, ">");
+			char *out = dotnet_parse_generic_args (pe, p, end, depth + 1, base);
 			free (base);
-			return r_strbuf_drain (sb);
+			return out;
 		}
 	case ELEMENT_TYPE_FNPTR:
 		return strdup ("delegate");
@@ -1261,23 +1312,9 @@ static bool dotnet_parse_method_sig(PE *pe, PSTREAM_HEADER blob_hdr,
 		ut64 metadata_root, ut32 blob_index, DotNetMethodSig *sig) {
 	memset (sig, 0, sizeof (*sig));
 	sig->parameters = r_list_newf (free);
-	if (!sig->parameters || !blob_hdr || !blob_index) {
-		return false;
-	}
-	const ut8 *heap = dotnet_stream_data (pe, metadata_root, blob_hdr);
-	ut32 heap_size = dotnet_stream_size (blob_hdr);
-	if (!heap || blob_index >= heap_size || heap_size > (ut64)(pe->data + pe->data_size - heap)) {
-		return false;
-	}
-	const ut8 *p = heap + blob_index;
-	const ut8 *heap_end = heap + heap_size;
-	const ut8 *before = p;
-	ut32 size = dotnet_read_compressed_uint (&p, heap_end);
-	if (p == before || size > (ut64)(heap_end - p)) {
-		return false;
-	}
-	const ut8 *end = p + size;
-	if (p >= end) {
+	const ut8 *end;
+	const ut8 *p = dotnet_sig_blob (pe, blob_hdr, metadata_root, blob_index, &end);
+	if (!sig->parameters || !p) {
 		return false;
 	}
 	ut8 header = *p++;
@@ -1287,22 +1324,18 @@ static bool dotnet_parse_method_sig(PE *pe, PSTREAM_HEADER blob_hdr,
 		return false;
 	}
 	sig->has_this = (header & 0x20) != 0;
-	if (header & 0x10) {
-		before = p;
-		dotnet_read_compressed_uint (&p, end);
-		if (p == before) {
-			return false;
-		}
+	if ((header & 0x10) && dotnet_read_compressed_uint (&p, end) == UT32_MAX) {
+		return false;
 	}
-	before = p;
 	ut32 count = dotnet_read_compressed_uint (&p, end);
-	if (p == before || count > 0xffff) {
+	if (count > 0xffff) {
 		return false;
 	}
 	sig->return_type = dotnet_parse_sig_type (pe, &p, end, 0);
 	if (!sig->return_type) {
 		return false;
 	}
+	size_t text = strlen (sig->return_type);
 	ut32 i;
 	for (i = 0; i < count; i++) {
 		if (p < end && *p == ELEMENT_TYPE_SENTINEL) {
@@ -1313,52 +1346,22 @@ static bool dotnet_parse_method_sig(PE *pe, PSTREAM_HEADER blob_hdr,
 			return false;
 		}
 		r_list_append (sig->parameters, type);
+		text += strlen (type) + 1;
+		if (text > DOTNET_MAX_SIGNATURE) {
+			return false;
+		}
 	}
 	return true;
 }
 
 static char *dotnet_parse_field_sig(PE *pe, PSTREAM_HEADER blob_hdr,
 		ut64 metadata_root, ut32 blob_index) {
-	if (!blob_hdr || !blob_index) {
-		return NULL;
-	}
-	const ut8 *heap = dotnet_stream_data (pe, metadata_root, blob_hdr);
-	ut32 heap_size = dotnet_stream_size (blob_hdr);
-	if (!heap || blob_index >= heap_size || heap_size > (ut64)(pe->data + pe->data_size - heap)) {
-		return NULL;
-	}
-	const ut8 *p = heap + blob_index;
-	const ut8 *heap_end = heap + heap_size;
-	const ut8 *before = p;
-	ut32 size = dotnet_read_compressed_uint (&p, heap_end);
-	if (p == before || size > (ut64)(heap_end - p) || !size) {
-		return NULL;
-	}
-	const ut8 *end = p + size;
-	if (p >= end || *p++ != 0x06) {
+	const ut8 *end;
+	const ut8 *p = dotnet_sig_blob (pe, blob_hdr, metadata_root, blob_index, &end);
+	if (!p || *p++ != 0x06) {
 		return NULL;
 	}
 	return dotnet_parse_sig_type (pe, &p, end, 0);
-}
-
-static char *dotnet_parse_type_spec_sig(PE *pe, PSTREAM_HEADER blob_hdr,
-		ut64 metadata_root, ut32 blob_index) {
-	if (!blob_hdr || !blob_index) {
-		return NULL;
-	}
-	const ut8 *heap = dotnet_stream_data (pe, metadata_root, blob_hdr);
-	ut32 heap_size = dotnet_stream_size (blob_hdr);
-	if (!heap || blob_index >= heap_size || heap_size > (ut64)(pe->data + pe->data_size - heap)) {
-		return NULL;
-	}
-	const ut8 *p = heap + blob_index;
-	const ut8 *heap_end = heap + heap_size;
-	const ut8 *before = p;
-	ut32 size = dotnet_read_compressed_uint (&p, heap_end);
-	if (p == before || size > (ut64)(heap_end - p) || !size) {
-		return NULL;
-	}
-	return dotnet_parse_sig_type (pe, &p, p + size, 0);
 }
 
 static void dotnet_parse_tilde_typespec(PE *pe, PTILDE_HEADER tilde_header,
@@ -1376,8 +1379,9 @@ static void dotnet_parse_tilde_typespec(PE *pe, PTILDE_HEADER tilde_header,
 			break;
 		}
 		ut32 blob_index = index_sizes.blob == 4? r_read_le32 (table): r_read_le16 (table);
-		char *name = dotnet_parse_type_spec_sig (pe, streams->blob,
-			metadata_root, blob_index);
+		const ut8 *end;
+		const ut8 *p = dotnet_sig_blob (pe, streams->blob, metadata_root, blob_index, &end);
+		char *name = p? dotnet_parse_sig_type (pe, &p, end, 0): NULL;
 		if (!name) {
 			continue;
 		}
@@ -1430,6 +1434,10 @@ static char *dotnet_build_method_signature(const char *fullname,
 	char *type;
 	ut32 i = 0;
 	r_list_foreach (sig->parameters, iter, type) {
+		if (r_strbuf_length (sb) > DOTNET_MAX_SIGNATURE) {
+			r_strbuf_free (sb);
+			return NULL;
+		}
 		char *name = dotnet_param_name (pe, param_table, param_rows,
 			param_row_size, string_size, strings, param_first, param_last, i + 1);
 		r_strbuf_appendf (sb, "%s%s", i? ",": "", type);
@@ -1440,7 +1448,7 @@ static char *dotnet_build_method_signature(const char *fullname,
 		i++;
 	}
 	r_strbuf_appendf (sb, "):%s", sig->return_type);
-	return r_strbuf_drain (sb);
+	return dotnet_signature_limit (r_strbuf_drain (sb));
 }
 
 static void dotnet_parse_tilde_methoddef(
@@ -1653,7 +1661,7 @@ static void dotnet_parse_tilde_methoddef(
 						sym->return_type = dotnet_parse_field_sig (pe, streams->blob,
 							metadata_root, signature_index);
 						if (sym->return_type) {
-							sym->signature = r_str_newf ("%s:%s", sym->name, sym->return_type);
+							sym->signature = dotnet_signature_limit (r_str_newf ("%s:%s", sym->name, sym->return_type));
 						}
 					}
 					dotnet_method_sig_fini (&method_sig);
@@ -1843,43 +1851,12 @@ static void dotnet_parse_tilde_methoddef(
 
 static char *dotnet_parse_method_instantiation(PE *pe, PSTREAM_HEADER blob_hdr,
 		ut64 metadata_root, ut32 blob_index) {
-	if (!blob_hdr || !blob_index) {
+	const ut8 *end;
+	const ut8 *p = dotnet_sig_blob (pe, blob_hdr, metadata_root, blob_index, &end);
+	if (!p || *p++ != 0x0a) { // GENERICINST method signature
 		return NULL;
 	}
-	const ut8 *heap = dotnet_stream_data (pe, metadata_root, blob_hdr);
-	ut32 heap_size = dotnet_stream_size (blob_hdr);
-	if (!heap || blob_index >= heap_size || heap_size > (ut64)(pe->data + pe->data_size - heap)) {
-		return NULL;
-	}
-	const ut8 *p = heap + blob_index;
-	const ut8 *heap_end = heap + heap_size;
-	const ut8 *before = p;
-	ut32 size = dotnet_read_compressed_uint (&p, heap_end);
-	if (p == before || !size || size > (ut64)(heap_end - p)) {
-		return NULL;
-	}
-	const ut8 *end = p + size;
-	if (p >= end || *p++ != 0x0a) { // GENERICINST method signature
-		return NULL;
-	}
-	before = p;
-	ut32 count = dotnet_read_compressed_uint (&p, end);
-	if (p == before || count > 1024) {
-		return NULL;
-	}
-	RStrBuf *sb = r_strbuf_new ("<");
-	ut32 i;
-	for (i = 0; i < count; i++) {
-		char *type = dotnet_parse_sig_type (pe, &p, end, 0);
-		if (!type) {
-			r_strbuf_free (sb);
-			return NULL;
-		}
-		r_strbuf_appendf (sb, "%s%s", i? ",": "", type);
-		free (type);
-	}
-	r_strbuf_append (sb, ">");
-	return r_strbuf_drain (sb);
+	return dotnet_parse_generic_args (pe, &p, end, 0, "");
 }
 
 static char *dotnet_add_generic_arguments(const char *name, const char *arguments) {
@@ -1888,6 +1865,9 @@ static char *dotnet_add_generic_arguments(const char *name, const char *argument
 	}
 	if (!arguments) {
 		return strdup (name);
+	}
+	if (strlen (name) + strlen (arguments) > DOTNET_MAX_SIGNATURE) {
+		return NULL;
 	}
 	const char *paren = strchr (name, '(');
 	return paren
@@ -2391,7 +2371,9 @@ RList *dotnet_parse(const ut8 *buf, int size, ut64 baddr) {
 		return NULL;
 	}
 	PE pe = { buf, (ut32)size, NULL };
-	return dotnet_parse_com (&pe, baddr);
+	RList *symbols = dotnet_parse_com (&pe, baddr);
+	ht_up_free (pe.long_names);
+	return symbols;
 }
 
 static void dotnet_manifest_resource_free(void *ptr) {
@@ -2516,7 +2498,7 @@ done:
 	return resources;
 }
 
-RList *dotnet_parse_libs(const ut8 *buf, int size) {
+static RList *dotnet_parse_libs_pe(PE *pe) {
 	PNET_METADATA metadata;
 	ut64 metadata_root;
 	STREAMS headers;
@@ -2524,11 +2506,6 @@ RList *dotnet_parse_libs(const ut8 *buf, int size) {
 	RList *libraries = NULL;
 	int i;
 	st64 metadata_offset = -1;
-	if (!buf || size < 1) {
-		return NULL;
-	}
-	PE pe_struct = { buf, (ut32)size, NULL };
-	PE *pe = &pe_struct;
 
 	libraries = r_list_newf ((RListFree)free);
 	if (!libraries) {
@@ -2632,6 +2609,16 @@ RList *dotnet_parse_libs(const ut8 *buf, int size) {
 		}
 	}
 
+	return libraries;
+}
+
+RList *dotnet_parse_libs(const ut8 *buf, int size) {
+	if (!buf || size < 1) {
+		return NULL;
+	}
+	PE pe = { buf, (ut32)size, NULL };
+	RList *libraries = dotnet_parse_libs_pe (&pe);
+	ht_up_free (pe.long_names);
 	return libraries;
 }
 

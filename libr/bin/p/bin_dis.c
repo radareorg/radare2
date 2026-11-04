@@ -31,6 +31,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 
 	o->pcs = ht_uu_new0 ();
 
+	r_buf_seek (buf, 0, R_BUF_SET);
 	if (!dis_read_operand (buf, &o->header.magic)) {
 		goto invalid;
 	}

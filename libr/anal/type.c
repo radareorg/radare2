@@ -286,28 +286,11 @@ R_API ut64 r_anal_type_bitsize(RAnal *anal, const char *type) {
 R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name) {
 	R_RETURN_IF_FAIL (anal && name);
 	Sdb *TDB = anal->sdb_types;
-	SdbKv *kv;
-	SdbListIter *iter;
-	const char *type = sdb_const_get (TDB, name, 0);
-	if (!type) {
+	if (!sdb_const_get (TDB, name, 0)) {
 		return;
 	}
-
-	// Create a subkey before the call to r_type_del (which leaves the type string invalid)
-	char *subkey = r_str_newf ("%s.%s.", type, name);
+	// r_type_del drops the subkeys of the type, sweeping the whole database for them was quadratic
 	r_type_del (TDB, name);
-
-	// TODO: This loop should be optimized
-	SdbList *l = sdb_foreach_list (TDB, true);
-	size_t subkey_len = strlen (subkey);
-	ls_foreach (l, iter, kv) {
-		const char *key = sdbkv_key (kv);
-		if (!strncmp (key, subkey, subkey_len)) {
-			r_type_del (TDB, key);
-		}
-	}
-	ls_free (l);
-	free (subkey);
 	r_anal_types_bump_dirty_epoch (anal);
 }
 
@@ -344,6 +327,13 @@ R_API bool r_anal_import_c_decls(RAnal *anal, const char *decls, char **errmsg) 
 	R_RETURN_VAL_IF_FAIL (anal && decls, false);
 	if (errmsg) {
 		*errmsg = NULL;
+	}
+	// the declarations come from debug info, they must not drive the preprocessor
+	if (strchr (decls, '#')) {
+		if (errmsg) {
+			*errmsg = strdup ("Preprocessor directives are not allowed");
+		}
+		return false;
 	}
 	char *error_msg = NULL;
 	char *out = r_anal_cparse (anal, decls, &error_msg);

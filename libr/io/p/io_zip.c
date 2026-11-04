@@ -115,8 +115,9 @@ static struct zip *r_io_zip_open_archive(const char *archivename, ut32 perm, int
 		R_LOG_ERROR ("Opening zip archives in write mode is not supported");
 		return NULL;
 	}
-	if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
-		R_LOG_ERROR ("Sandbox prevents accessing zip archives");
+	// zip_open reads the file itself, so apply the same rules as r_sandbox_open
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_DISK) || (r_sandbox_enable (false) && !r_sandbox_check_path (archivename))) {
+		R_LOG_ERROR ("Sandbox prevents accessing zip archive '%s'", archivename);
 		return NULL;
 	}
 	(void)mode; // unused
@@ -539,7 +540,10 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 			}
 			if (zfo) {
 				zfo->io_backref = io;
-				res = r_io_desc_new (io, &r_io_plugin_zip, zfo->name, rw, mode, zfo);
+				// the entry name is untrusted, never register it as a uri on its own
+				char *uri = r_str_newf ("zip://%s//%s", zip_filename, zfo->name);
+				res = r_io_desc_new (io, &r_io_plugin_zip, uri, rw, mode, zfo);
+				free (uri);
 			}
 		}
 		if (!res) {

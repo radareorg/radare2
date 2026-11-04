@@ -284,27 +284,14 @@ R_IPI void R_SHA2_API(r_sha256_init)(RSha256Context *context) {
 
 /* Unrolled SHA-256 round macros: */
 
-#if BYTE_ORDER == LITTLE_ENDIAN
-
 #define ROUND256_0_TO_15(a, b, c, d, e, f, g, h)\
-	REVERSE32 (*data++, W256[j]);\
+	W256[j] = r_read_be32 (data);\
+	data += 4;\
 	T1 = (h) + Sigma1_256 (e) + Ch ((e), (f), (g)) +\
 	K256[j] + W256[j];\
 	(d) += T1;\
 	(h) = T1 + Sigma0_256 (a) + Maj ((a), (b), (c));\
 	j++
-
-
-#else /* BYTE_ORDER == LITTLE_ENDIAN */
-
-#define ROUND256_0_TO_15(a, b, c, d, e, f, g, h)\
-	T1 = (h) + Sigma1_256 (e) + Ch ((e), (f), (g)) +\
-	K256[j] + (W256[j] = *data++);\
-	(d) += T1;\
-	(h) = T1 + Sigma0_256 (a) + Maj ((a), (b), (c));\
-	j++
-
-#endif /* BYTE_ORDER == LITTLE_ENDIAN */
 
 #define ROUND256(a, b, c, d, e, f, g, h)\
 	s0 = W256[(j + 1) & 0x0f];\
@@ -317,7 +304,7 @@ R_IPI void R_SHA2_API(r_sha256_init)(RSha256Context *context) {
 	(h) = T1 + Sigma0_256 (a) + Maj ((a), (b), (c));\
 	j++
 
-static void r_sha256_transform(RSha256Context *context, const ut32 *data) {
+static void r_sha256_transform(RSha256Context *context, const ut8 *data) {
 	ut32 a, b, c, d, e, f, g, h, s0, s1;
 	ut32 T1, *W256;
 	int j;
@@ -375,7 +362,7 @@ static void r_sha256_transform(RSha256Context *context, const ut32 *data) {
 
 #else /* SHA2_UNROLL_TRANSFORM */
 
-static void r_sha256_transform(RSha256Context *context, const ut32 *data) {
+static void r_sha256_transform(RSha256Context *context, const ut8 *data) {
 	ut32 T1, T2, s0, s1;
 	int j;
 
@@ -390,31 +377,11 @@ static void r_sha256_transform(RSha256Context *context, const ut32 *data) {
 	ut32 f = context->state[5];
 	ut32 g = context->state[6];
 	ut32 h = context->state[7];
-#if 1
-	R_ALIGNED(4) ut32 ldata[16];
-	R_ALIGNED(4) ut32 lW256[16];
-	if ((size_t)W256 % 4) {
-	// 	eprintf ("adjust context buffer\n");
-		memcpy (&lW256, W256, sizeof (lW256));
-		W256 = lW256;
-	}
-	if ((size_t)data % 4) {
-	// 	eprintf ("Prevent unaligned access\n");
-		memcpy (&ldata, data, sizeof (ldata));
-		data = ldata;
-	}
-#endif
 	j = 0;
 	do {
-#if BYTE_ORDER == LITTLE_ENDIAN
-		/* Copy data while converting to host byte order */
-		REVERSE32 (*data++, W256[j]);
-		/* Apply the SHA-256 compression function to update a..h */
+		W256[j] = r_read_be32 (data);
+		data += 4;
 		T1 = h + Sigma1_256 (e) + Ch (e, f, g) + K256[j] + W256[j];
-#else /* BYTE_ORDER == BIG_ENDIAN */
-		/* Apply the SHA-256 compression function to update a..h with copy */
-		T1 = h + Sigma1_256 (e) + Ch (e, f, g) + K256[j] + (W256[j] = *data++);
-#endif /* BYTE_ORDER == LITTLE_ENDIAN */
 		T2 = Sigma0_256 (a) + Maj (a, b, c);
 		h = g;
 		g = f;
@@ -480,7 +447,7 @@ R_IPI void R_SHA2_API(r_sha256_update)(RSha256Context *context, const ut8 *data,
 			context->bitcount += freespace << 3;
 			len -= freespace;
 			data += freespace;
-			r_sha256_transform (context, (ut32 *) context->buffer);
+			r_sha256_transform (context, context->buffer);
 		} else {
 			/* The buffer is not yet full */
 			memcpy (&context->buffer[usedspace], data, len);
@@ -490,7 +457,7 @@ R_IPI void R_SHA2_API(r_sha256_update)(RSha256Context *context, const ut8 *data,
 	}
 	while (len >= SHA256_BLOCK_LENGTH) {
 		/* Process as many complete blocks as we can */
-		r_sha256_transform (context, (ut32*)data);
+		r_sha256_transform (context, data);
 		context->bitcount += SHA256_BLOCK_LENGTH << 3;
 		len -= SHA256_BLOCK_LENGTH;
 		data += SHA256_BLOCK_LENGTH;
@@ -526,7 +493,7 @@ R_IPI void R_SHA2_API(r_sha256_final)(ut8 digest[R_SHA256_DIGEST_LENGTH], RSha25
 					memset (&context->buffer[usedspace], 0, R_SHA256_BLOCK_LENGTH - usedspace);
 				}
 				/* Do second-to-last transform: */
-				r_sha256_transform (context, (ut32 *) context->buffer);
+				r_sha256_transform (context, context->buffer);
 
 				/* And set-up for the last transform: */
 				memset (context->buffer, 0, R_SHA256_SHORT_BLOCK_LENGTH);
@@ -549,7 +516,7 @@ R_IPI void R_SHA2_API(r_sha256_final)(ut8 digest[R_SHA256_DIGEST_LENGTH], RSha25
 #endif
 
 		/* Final transform: */
-		r_sha256_transform (context, (ut32 *) context->buffer);
+		r_sha256_transform (context, context->buffer);
 #if BYTE_ORDER == LITTLE_ENDIAN
 		{
 			/* Convert TO host byte order */
@@ -612,27 +579,14 @@ R_IPI void R_SHA2_API(r_sha512_init)(RSha512Context *context) {
 #ifdef SHA2_UNROLL_TRANSFORM
 
 /* Unrolled SHA-512 round macros: */
-#if BYTE_ORDER == LITTLE_ENDIAN
-
 #define ROUND512_0_TO_15(a, b, c, d, e, f, g, h)\
-	REVERSE64 (*data++, W512[j]);\
+	W512[j] = r_read_be64 (data);\
+	data += 8;\
 	T1 = (h) + Sigma1_512 (e) + Ch ((e), (f), (g)) +\
 	K512[j] + W512[j];\
-	(d) += T1,\
-	(h) = T1 + Sigma0_512 (a) + Maj ((a), (b), (c)),\
-	j++
-
-
-#else /* BYTE_ORDER == LITTLE_ENDIAN */
-
-#define ROUND512_0_TO_15(a, b, c, d, e, f, g, h)\
-	T1 = (h) + Sigma1_512 (e) + Ch ((e), (f), (g)) +\
-	K512[j] + (W512[j] = *data++);\
 	(d) += T1;\
 	(h) = T1 + Sigma0_512 (a) + Maj ((a), (b), (c));\
 	j++
-
-#endif /* BYTE_ORDER == LITTLE_ENDIAN */
 
 #define ROUND512(a, b, c, d, e, f, g, h)\
 	s0 = W512[(j + 1) & 0x0f];\
@@ -645,7 +599,7 @@ R_IPI void R_SHA2_API(r_sha512_init)(RSha512Context *context) {
 	(h) = T1 + Sigma0_512 (a) + Maj ((a), (b), (c));\
 	j++
 
-static void r_sha512_transform(RSha512Context *context, const ut64 *data) {
+static void r_sha512_transform(RSha512Context *context, const ut8 *data) {
 	ut64 a, b, c, d, e, f, g, h, s0, s1;
 	ut64 T1, *W512 = (ut64 *) context->buffer;
 	int j;
@@ -700,7 +654,7 @@ static void r_sha512_transform(RSha512Context *context, const ut64 *data) {
 
 #else /* SHA2_UNROLL_TRANSFORM */
 
-static void r_sha512_transform(RSha512Context *context, const ut64 *data) {
+static void r_sha512_transform(RSha512Context *context, const ut8 *data) {
 	ut64 s0, s1, T1, T2, *W512 = (ut64 *) context->buffer;
 	int j;
 
@@ -716,15 +670,9 @@ static void r_sha512_transform(RSha512Context *context, const ut64 *data) {
 
 	j = 0;
 	do {
-#if BYTE_ORDER == LITTLE_ENDIAN
-		/* Convert TO host byte order */
-		REVERSE64 (*data++, W512[j]);
-		/* Apply the SHA-512 compression function to update a..h */
+		W512[j] = r_read_be64 (data);
+		data += 8;
 		T1 = h + Sigma1_512 (e) + Ch (e, f, g) + K512[j] + W512[j];
-#else /* BYTE_ORDER == LITTLE_ENDIAN */
-		/* Apply the SHA-512 compression function to update a..h with copy */
-		T1 = h + Sigma1_512 (e) + Ch (e, f, g) + K512[j] + (W512[j] = *data++);
-#endif /* BYTE_ORDER == LITTLE_ENDIAN */
 		T2 = Sigma0_512 (a) + Maj (a, b, c);
 		h = g;
 		g = f;
@@ -794,7 +742,7 @@ R_IPI void R_SHA2_API(r_sha512_update)(RSha512Context *context, const ut8 *data,
 			ADDINC128 (context->bitcount, freespace << 3);
 			len -= freespace;
 			data += freespace;
-			r_sha512_transform (context, (ut64 *) context->buffer);
+			r_sha512_transform (context, context->buffer);
 		} else {
 			/* The buffer is not yet full */
 			memcpy (&context->buffer[usedspace], data, len);
@@ -806,7 +754,7 @@ R_IPI void R_SHA2_API(r_sha512_update)(RSha512Context *context, const ut8 *data,
 	}
 	while (len >= SHA512_BLOCK_LENGTH) {
 		/* Process as many complete blocks as we can */
-		r_sha512_transform (context, (ut64 *) data);
+		r_sha512_transform (context, data);
 		ADDINC128 (context->bitcount, R_SHA512_BLOCK_LENGTH << 3);
 		len -= SHA512_BLOCK_LENGTH;
 		data += SHA512_BLOCK_LENGTH;
@@ -837,7 +785,7 @@ static void SHA512_Last(RSha512Context *context) {
 				memset (&context->buffer[usedspace], 0, R_SHA512_BLOCK_LENGTH - usedspace);
 			}
 			/* Do second-to-last transform: */
-			r_sha512_transform (context, (ut64 *) context->buffer);
+			r_sha512_transform (context, context->buffer);
 
 			/* And set-up for the last transform: */
 			memset (context->buffer, 0, R_SHA512_BLOCK_LENGTH - 2);
@@ -863,7 +811,7 @@ static void SHA512_Last(RSha512Context *context) {
 #endif
 
 	/* Final transform: */
-	r_sha512_transform (context, (ut64 *) context->buffer);
+	r_sha512_transform (context, context->buffer);
 }
 
 R_IPI void R_SHA2_API(r_sha512_final)(ut8 digest[R_SHA512_DIGEST_LENGTH], RSha512Context *context) {

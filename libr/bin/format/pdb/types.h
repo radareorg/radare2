@@ -1073,6 +1073,7 @@ typedef struct {
 typedef struct {
 	unsigned int base_idx;
 	RList *types_list;
+	int print_depth; // nested get_print_type calls
 } STpiContext;
 
 typedef struct stpi_stream_t {
@@ -1280,7 +1281,8 @@ typedef struct {
 }) SIMAGE_SECTION_HEADER;
 
 typedef struct {
-	RList *sections_hdrs;
+	SIMAGE_SECTION_HEADER *sections_hdrs;
+	int sections_count;
 } SPEStream;
 // end PE stream structures
 
@@ -1291,9 +1293,14 @@ typedef struct {
 } SOmapEntry;
 
 typedef struct {
-	RList *omap_entries;
-	ut32 *froms;
+	SOmapEntry *entries;
+	int count;
 } SOmapStream;
 // end of omap structures
+
+// symbols index sections by number, so they are looked up in an array
+static inline SIMAGE_SECTION_HEADER *pdb_pe_section(const SPEStream *pe_stream, int index) {
+	return (index >= 0 && index < pe_stream->sections_count)? &pe_stream->sections_hdrs[index]: NULL;
+}
 
 #endif // PDB_TYPES_H

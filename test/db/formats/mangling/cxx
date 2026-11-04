@@ -1,3 +1,74 @@
+NAME=gnu v2 malformed and truncated symbols
+FILE=-
+CMDS=<<EOF
+iD cxx _GLOBAL_
+iD cxx _GLOBAL_$
+iD cxx _GLOBAL_$I
+iD cxx _GLOBAL_$D
+iD cxx _GLOBAL_.
+iD cxx _GLOBAL_.I
+iD cxx _GLOBAL_.D
+iD cxx _GLOBAL__
+iD cxx _GLOBAL__I
+iD cxx _GLOBAL__D
+iD cxx __tfQ;iD cxx __tfQ0;iD cxx _vt$t1a
+iD cxx _vt$t1a1im;iD cxx _vt$t1a0junk;iD cxx __ti2147483640A
+iD cxx _vt$t2147483640A;iD cxx _vt$t01a0;iD cxx _vt$t1a1i
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+EOF
+RUN
+
+NAME=gnu v2 globals, classes, templates and back references
+FILE=-
+CMDS=<<EOF
+iD cxx _GLOBAL_$I$foo
+iD cxx _GLOBAL_$D$foo
+iD cxx _GLOBAL_.I.foo
+iD cxx _GLOBAL_.D.foo
+iD cxx _GLOBAL__I_foo
+iD cxx _GLOBAL__D_foo
+iD cxx __tfQ23foo3bar;iD cxx _vt$t1a1im2
+iD cxx _vt$t1a0;iD cxx foo__FiT0N21
+iD cxx __t1a1i0;iD cxx __ls__3fooi
+EOF
+EXPECT=<<EOF
+global constructors keyed to foo
+global destructors keyed to foo
+global constructors keyed to foo
+global destructors keyed to foo
+global constructors keyed to foo
+global destructors keyed to foo
+foo::bar type_info function
+a<-2> virtual table
+a<> virtual table
+foo(int, int, int, int)
+a<0>::a(void)
+foo::operator<<(int)
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=long cxx symbol
 FILE=-
 CMDS=""!rabin2 -D cxx _ZZN3rtc19webrtc_logging_impl11LogStreamerIJEE4CallIJNS0_3ValILNS0_10LogArgTypeE13ENS0_11LogMetadataEEENS4_ILS5_9EPKcEENS4_ILS5_1EiEESA_SB_SA_SB_SA_SB_SA_SB_SA_SB_SA_SB_SA_SB_SA_SB_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SB_SA_SB_SB_SA_SB_SB_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SA_SB_SA_SB_SB_SB_SB_EEEvDpRKT_E1t
@@ -6,3 +77,19 @@ rtc::webrtc_logging_impl::LogStreamer<>::Call<rtc::webrtc_logging_impl::Val<(rtc
 EOF
 RUN
 
+NAME=cxx demangler bounds exponential substitution expansion
+FILE=-
+CMDS=<<EOF
+iD cxx _Z1f1aIS_IS_IS_I1bS0_ES1_ES2_ES3_E
+iD cxx _Z1f1aIS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_I1bS0_ES1_ES2_ES3_ES4_ES5_ES6_ES7_ES8_ES9_ESA_ESB_ESC_ESD_ESE_ESF_ESG_ESH_ESI_ESJ_ESK_ESL_ESM_ESN_E
+iD cxx _Z1f1aIS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_IS_I1bS0_ES1_ES2_ES3_ES4_ES5_ES6_ES7_ES8_ES9_ESA_ESB_ESC_ESD_ESE_ESF_ESG_ESH_ESI_ESJ_ESK_ESL_ESM_ESN_EDxi
+EOF
+EXPECT=<<EOF
+f(a<a<a<a<b, b>, a<b, b> >, a<a<b, b>, a<b, b> > >, a<a<a<b, b>, a<b, b> >, a<a<b, b>, a<b, b> > > >)
+EOF
+EXPECT_ERR=<<EOF
+WARN: Demangled name is too long, keeping it mangled
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+EOF
+RUN

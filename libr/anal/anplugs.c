@@ -344,6 +344,9 @@ R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFun
 	return NULL;
 }
 
+// the slot count comes from the file and each new variable rescans the existing ones
+#define VM_ARGS_MAX 256
+
 // For stack-VM archs (JVM, Dalvik, ...) bin parses each method's frame header
 // and attaches (arg_first, arg_count, arg_prefix) to its RBinSymbol. Anal turns
 // that into register-kind argument variables, named "<prefix><first + i>", with
@@ -353,6 +356,10 @@ R_API bool r_anal_function_set_vm_args(RAnalFunction *fcn, const char *prefix, i
 	if (count <= 0 || !prefix) {
 		return false;
 	}
+	if (count > VM_ARGS_MAX) {
+		R_LOG_DEBUG ("Function at 0x%" PFMT64x " declares %d argument slots, keeping the first %d", fcn->addr, count, VM_ARGS_MAX);
+		count = VM_ARGS_MAX;
+	}
 	int i;
 	bool any = false;
 	for (i = 0; i < count; i++) {
@@ -360,7 +367,8 @@ R_API bool r_anal_function_set_vm_args(RAnalFunction *fcn, const char *prefix, i
 		snprintf (name, sizeof (name), "%s%d", prefix, first + i);
 		RRegItem *ri = r_reg_get (fcn->anal->reg, name, -1);
 		if (!ri) {
-			continue;
+			// register banks are contiguous, no later name can resolve
+			break;
 		}
 		int delta = ri->index;
 		r_unref (ri);

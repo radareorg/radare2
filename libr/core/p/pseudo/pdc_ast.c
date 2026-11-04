@@ -373,9 +373,10 @@ void pdc_plan_free(PdcPlan *plan) {
 
 // a two-way block left to the orphan pass would lose one of its successors
 static bool blocks_are_owned(RAnalFunction *fcn, HtUU *emitted) {
-	RListIter *it;
+	RAnalBlock **it;
 	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, it, bb) {
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		bb = *it;
 		if (bb->jump != UT64_MAX && bb->fail != UT64_MAX
 				&& !htuu_get (emitted, bb->addr, 0)) {
 			return false;
@@ -399,7 +400,7 @@ PdcPlan *pdc_plan_build(RCore *core, RAnalFunction *fcn) {
 		.ipdom = ht_uu_new0 (),
 		.loops = ht_up_new0 (),
 		.emitted = ht_uu_new0 (),
-		.cap = 4 * r_list_length (fcn->bbs) + 64
+		.cap = 4 * (int)RVecAnalBlockPtr_length (&fcn->bbs) + 64
 	};
 
 	RGraph *dt = r_graph_dom_tree (g, entry);
@@ -435,10 +436,11 @@ PdcPlan *pdc_plan_build(RCore *core, RAnalFunction *fcn) {
 	PdcRegion *root = region_seq (&ctx, fcn->addr, UT64_MAX);
 	// the orphan renderer drops a successor, so give unreached blocks a region
 	if (root) {
-		RListIter *bit;
+		RAnalBlock **bit;
 		RAnalBlock *b;
 		PdcRegion *extra = NULL;
-		r_list_foreach (fcn->bbs, bit, b) {
+		R_VEC_FOREACH (&fcn->bbs, bit) {
+			b = *bit;
 			if (htuu_get (ctx.emitted, b->addr, 0)) {
 				continue;
 			}

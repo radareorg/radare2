@@ -49,6 +49,28 @@ bool test_r_reg_set_profile_string(void) {
 	mu_end;
 }
 
+bool test_r_reg_nibbles(void) {
+	RReg *reg = r_reg_new ();
+	reg->endian = R_SYS_ENDIAN_LITTLE;
+	mu_assert ("nibble profile", r_reg_set_profile_string (reg,
+		"gpr word .16 0 0\n"
+		"gpr low .4 .0 0\n"
+		"gpr high .4 .4 0\n"
+		"gpr last .4 .12 0\n"));
+	mu_assert ("write word", r_reg_setv (reg, "word", 0xa5c3));
+	mu_assert_eq (r_reg_getv (reg, "low"), 3, "low nibble");
+	mu_assert_eq (r_reg_getv (reg, "high"), 12, "high nibble at bit offset");
+	mu_assert_eq (r_reg_getv (reg, "last"), 10, "last arena nibble");
+	mu_assert ("write high", r_reg_setv (reg, "high", 0x1d));
+	mu_assert_eq (r_reg_getv (reg, "word"), 0xa5d3, "mask value and preserve neighbors");
+	mu_assert ("write last", r_reg_setv (reg, "last", 7));
+	mu_assert_eq (r_reg_getv (reg, "word"), 0x75d3, "write last arena nibble");
+	mu_assert ("clear low", r_reg_setv (reg, "low", 0));
+	mu_assert_eq (r_reg_getv (reg, "word"), 0x75d0, "clear only selected nibble");
+	r_reg_free (reg);
+	mu_end;
+}
+
 bool test_r_reg_get_value_gpr(void) {
 	ut64 value;
 
@@ -814,6 +836,7 @@ int all_tests(void) {
 	mu_run_test (test_r_reg_cfloat_endian);
 	mu_run_test (test_r_reg_cfloat_half);
 	mu_run_test (test_r_reg_get_value_gpr);
+	mu_run_test (test_r_reg_nibbles);
 	mu_run_test (test_r_reg_get_value_flag);
 	mu_run_test (test_r_reg_set_endian);
 	mu_run_test (test_r_reg_get);

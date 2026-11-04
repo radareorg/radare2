@@ -321,6 +321,9 @@ static void plugin_manager_fini(QjsPluginManager *pm) {
 	RVecAsmPlugin_fini (&pm->asm_plugins);
 }
 
+static void js_std_dump_error(JSContext *ctx);
+static void eval_result(JSContext *ctx, JSValueConst result);
+
 #include "qjs/loader.c"
 #include "qjs/arch.c"
 #include "qjs/core.c"
@@ -338,6 +341,7 @@ static void eval_jobs(JSContext *ctx) {
 		int res = JS_ExecutePendingJob (rt, &pctx);
 		if (res == -1) {
 			R_LOG_ERROR ("Exception in pending job");
+			js_std_dump_error (pctx);
 		}
 	} while (pctx);
 }
@@ -345,7 +349,15 @@ static void eval_jobs(JSContext *ctx) {
 static void r2qjs_dump_obj(JSContext *ctx, JSValueConst val) {
 	const char *str = JS_ToCString (ctx, val);
 	if (str) {
-		R_LOG_ERROR ("%s", str);
+		RList *lines = r_str_split_duplist (str, "\n", false);
+		RListIter *iter;
+		const char *line;
+		r_list_foreach (lines, iter, line) {
+			if (*line) {
+				R_LOG_ERROR ("%s", line);
+			}
+		}
+		r_list_free (lines);
 		JS_FreeCString (ctx, str);
 	} else {
 		R_LOG_ERROR ("[exception]");
@@ -368,6 +380,26 @@ static void js_std_dump_error(JSContext *ctx) {
 	JSValue exception_val = JS_GetException (ctx);
 	js_std_dump_error1 (ctx, exception_val);
 	JS_FreeValue (ctx, exception_val);
+}
+
+static void eval_result(JSContext *ctx, JSValueConst result) {
+	if (JS_IsException (result)) {
+		js_std_dump_error (ctx);
+	}
+	eval_jobs (ctx);
+	if (JS_PromiseState (ctx, result) == JS_PROMISE_REJECTED) {
+		JSValue error = JS_PromiseResult (ctx, result);
+		js_std_dump_error1 (ctx, error);
+		JS_FreeValue (ctx, error);
+	}
+}
+
+static JSValue js_console_error(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+	int i;
+	for (i = 0; i < argc; i++) {
+		js_std_dump_error1 (ctx, argv[i]);
+	}
+	return JS_UNDEFINED;
 }
 
 static JSValue r2log(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
@@ -927,6 +959,9 @@ static void register_helpers(JSContext *ctx) {
 	js_init_module_r2pipe (ctx);
 	r2qjs_modules (ctx);
 	JSValue global_obj = JS_GetGlobalObject (ctx);
+	JSValue error = JS_GetPropertyStr (ctx, global_obj, "Error");
+	JS_SetPropertyStr (ctx, error, "stackTraceLimit", JS_NewInt32 (ctx, 64));
+	JS_FreeValue (ctx, error);
 	// JS_SetPropertyStr (ctx, global_obj, "r2", global_obj); // JS_NewCFunction (ctx, b64, "b64", 1));
 	JS_SetPropertyStr (ctx, global_obj, "b64", JS_NewCFunction (ctx, b64, "b64", 1));
 	// r2cmd deprecate . we have r2.cmd already same for r2log
@@ -944,6 +979,11 @@ static void register_helpers(JSContext *ctx) {
 		"{console.log ((typeof x==='string')?x:JSON.stringify (x, null, 2));}"
 		"}");
 	eval (ctx, "var console = { log:print, error:print, debug:print };");
+	global_obj = JS_GetGlobalObject (ctx);
+	JSValue console = JS_GetPropertyStr (ctx, global_obj, "console");
+	JS_SetPropertyStr (ctx, console, "error", JS_NewCFunction (ctx, js_console_error, "error", 1));
+	JS_FreeValue (ctx, console);
+	JS_FreeValue (ctx, global_obj);
 	eval (ctx, "r2._cmd2 = (x, a, j) => {"
 		"const cmd = (a === undefined || a === null)? x: x + ' @ ' + a;"
 		"const req = { cmd: cmd };"
@@ -1004,7 +1044,7 @@ static JSContext *JS_NewCustomContext(JSRuntime *rt) {
 	return ctx;
 }
 
-static bool eval(JSContext *ctx, const char *code) {
+static bool eval_code(JSContext *ctx, const char *code, const char *filename) {
 	if (R_STR_ISEMPTY (code)) {
 		return false;
 	}
@@ -1030,14 +1070,8 @@ static bool eval(JSContext *ctx, const char *code) {
 		flags = JS_EVAL_TYPE_GLOBAL | JS_EVAL_TYPE_MODULE; //  | JS_EVAL_FLAG_STRICT;
 		code++;
 	}
-	JSValue v = JS_Eval (ctx, code, strlen (code), "-", flags);
-	if (JS_IsException (v)) {
-		js_std_dump_error (ctx);
-		JSValue e = JS_GetException (ctx);
-		r2qjs_dump_obj (ctx, e);
-		JS_FreeValue (ctx, e);
-	}
-	eval_jobs (ctx);
+	JSValue v = JS_Eval (ctx, code, strlen (code), filename, flags);
+	eval_result (ctx, v);
 	if (wantRaw) {
 		r_cons_set_raw (cons, false);
 	}
@@ -1050,6 +1084,10 @@ static bool eval(JSContext *ctx, const char *code) {
 	current_ctx = NULL;
 
 	return true;
+}
+
+static bool eval(JSContext *ctx, const char *code) {
+	return eval_code (ctx, code, "-");
 }
 
 static bool lang_quickjs_run(RLangSession *s, const char *code, int len) {
@@ -1077,7 +1115,7 @@ static bool lang_quickjs_file(RLangSession *s, const char *file) {
 			rc = false;
 		} else {
 			// not a package
-			eval (qctx->ctx, code);
+			eval_code (qctx->ctx, code, file);
 			rc = true;
 		}
 		free (code);

@@ -477,9 +477,10 @@ static bool esil_stores_through(const char *esil, const char *regs) {
 
 // every conditional predecessor is a candidate: one failure block can guard several checks
 static void tp_canary_rename(TPState *tps, RAnalFunction *fcn, ut64 bb_addr, ut64 addr) {
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		if (bb->addr != bb_addr && (bb->jump == bb_addr || bb->fail == bb_addr)) {
 			if (tp_canary_from_guard (tps, bb, addr)) {
 				return;

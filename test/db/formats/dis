@@ -1,0 +1,48 @@
+NAME=dis: header is parsed from the start of the file
+FILE=bins/dis/hello.dis
+CMDS=<<EOF
+iS~code,types
+ie~program
+EOF
+EXPECT=<<EOF
+0   0x0000000e  0x1a 0x0000000e   0x1a -r-x 0x0   ---- code
+1   0x00000028   0xe 0x00000028    0xe -r-- 0x0   ---- types
+0x0000000e 0x0000000e ---------- ---------- program
+EOF
+RUN
+
+NAME=dis: larger module loads
+FILE=bins/dis/sh.dis
+CMDS=<<EOF
+iS~code,types
+ie~program
+EOF
+EXPECT=<<EOF
+0   0x00000012  0x7e68 0x00000012  0x7e68 -r-x 0x0   ---- code
+1   0x00007e7a   0x30d 0x00007e7a   0x30d -r-- 0x0   ---- types
+0x00000127 0x00000127 ---------- ---------- program
+EOF
+RUN
+
+NAME=dis: type descriptor with negative number_ptrs is rejected
+FILE=malloc://32
+CMDS=<<EOF
+wx c00c80300000010001000000001b00007d00
+oba
+iI~bintype
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=dis: type descriptor with no pointer map loads
+FILE=malloc://32
+CMDS=<<EOF
+wx c00c80300000010001000000001b0000000000
+oba
+iI~bintype
+EOF
+EXPECT=<<EOF
+bintype  dis
+EOF
+RUN

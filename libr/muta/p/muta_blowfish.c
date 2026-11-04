@@ -188,8 +188,8 @@ static void blowfish_crypt(struct blowfish_state *const state, const ut8 *inbuf,
 	}
 
 	for (index1 = 0; index1 < buflen; index1 += 8) {
-		left = (inbuf[index1 + 0] << 24 | inbuf[index1 + 1] << 16 | inbuf[index1 + 2] << 8 | inbuf[index1 + 3]);
-		right = (inbuf[index1 + 4] << 24 | inbuf[index1 + 5] << 16 | inbuf[index1 + 6] << 8 | inbuf[index1 + 7]);
+		left = r_read_be32 (inbuf + index1);
+		right = r_read_be32 (inbuf + index1 + 4);
 
 		for (index2 = 0; index2 < 16; index2 += 1) {
 			left ^= state->p[index2];
@@ -225,8 +225,8 @@ static void blowfish_decrypt(struct blowfish_state *const state, const ut8 *inbu
 	}
 
 	for (index1 = 0; index1 < buflen; index1 += 8) {
-		left = (inbuf[index1 + 0] << 24 | inbuf[index1 + 1] << 16 | inbuf[index1 + 2] << 8 | inbuf[index1 + 3]);
-		right = (inbuf[index1 + 4] << 24 | inbuf[index1 + 5] << 16 | inbuf[index1 + 6] << 8 | inbuf[index1 + 7]);
+		left = r_read_be32 (inbuf + index1);
+		right = r_read_be32 (inbuf + index1 + 4);
 
 		for (index2 = 17; index2 > 1; index2 -= 1) {
 			left ^= state->p[index2];
@@ -268,22 +268,22 @@ static bool blowfish_init(struct blowfish_state *const state, const ut8 *key, in
 	 * Key bits are reused when length is exceeded.
 	 * */
 	for (index1 = 0, index2 = 0; index1 < 18; index1 += 1, index2 += 4) {
-		state->p[index1] ^= ((key[index2 % keylen] << 24) | (key[(index2 + 1) % keylen] << 16) | (key[(index2 + 2) % keylen] << 8) | (key[(index2 + 3) % keylen]));
+		state->p[index1] ^= (((ut32)key[index2 % keylen] << 24) | (key[(index2 + 1) % keylen] << 16) | (key[(index2 + 2) % keylen] << 8) | (key[(index2 + 3) % keylen]));
 	}
 
 	/* Recalculating P-boxes */
 	for (index1 = 0; index1 < 18; index1 += 2) {
 		blowfish_crypt (state, block, block, 8);
-		state->p[index1] = (block[0] << 24 | block[1] << 16 | block[2] << 8 | block[3]);
-		state->p[index1 + 1] = (block[4] << 24 | block[5] << 16 | block[6] << 8 | block[7]);
+		state->p[index1] = r_read_be32 (block);
+		state->p[index1 + 1] = r_read_be32 (block + 4);
 	}
 
 	/* Recalculating S-boxes */
 	for (index1 = 0; index1 < 4; index1 += 1) {
 		for (index2 = 0; index2 < 256; index2 += 2) {
 			blowfish_crypt (state, block, block, 8);
-			state->s[index1][index2] = (block[0] << 24 | block[1] << 16 | block[2] << 8 | block[3]);
-			state->s[index1][index2 + 1] = (block[4] << 24 | block[5] << 16 | block[6] << 8 | block[7]);
+			state->s[index1][index2] = r_read_be32 (block);
+			state->s[index1][index2 + 1] = r_read_be32 (block + 4);
 		}
 	}
 	return true;

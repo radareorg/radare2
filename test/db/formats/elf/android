@@ -6,3 +6,151 @@ android
 EOF
 RUN
 
+
+NAME=DT_ANDROID_RELR without a .relr section
+FILE=bins/elf/arm-relr-android-rn.so
+CMDS=ir~SET_32
+EXPECT=<<EOF
+0x000202fc 0x000002fc SET_32 21    pf
+0x00020300 0x00000300 SET_32 21    tab
+0x00030324 0x00000324 SET_32 23     0x00030304
+0x00030328 0x00000328 SET_32 23     0x00030308
+0x0003032c 0x0000032c SET_32 23     0x0003030c
+0x00030330 0x00000330 SET_32 23     0x00030310
+0x00030334 0x00000334 SET_32 23     0x00030314
+0x00030338 0x00000338 SET_32 23     0x00030318
+0x0003033c 0x0000033c SET_32 23     0x0003031c
+0x00030340 0x00000340 SET_32 23     0x00030320
+0x00030344 0x00000344 SET_32 23     0x00010220
+EOF
+RUN
+
+NAME=DT_ANDROID_RELR slots get the load bias
+FILE=bins/elf/arm-relr-android-rn.so
+ARGS=-B 0x100000 -e bin.relocs.apply=true
+CMDS=pxw 36 @ 0x130324
+EXPECT=<<EOF
+0x00130324  0x00130304 0x00130308 0x0013030c 0x00130310  ................
+0x00130334  0x00130314 0x00130318 0x0013031c 0x00130320  ............ ...
+0x00130344  0x00110220                                    ...
+EOF
+RUN
+
+NAME=DT_ANDROID_RELR slots stay unbiased without bin.relocs.apply
+FILE=bins/elf/arm-relr-android-rn.so
+ARGS=-B 0x100000 -e bin.relocs.apply=false
+CMDS=pxw 36 @ 0x130324
+EXPECT=<<EOF
+0x00130324  0x00030304 0x00030308 0x0003030c 0x00030310  ................
+0x00130334  0x00030314 0x00030318 0x0003031c 0x00030320  ............ ...
+0x00130344  0x00010220                                    ...
+EOF
+RUN
+
+NAME=DT_RELR twin lists the same slots
+FILE=bins/elf/arm-relr-addend.so
+CMDS=ir~SET_32 23
+EXPECT=<<EOF
+0x00030324 0x00000324 SET_32 23     0x00030304
+0x00030328 0x00000328 SET_32 23     0x00030308
+0x0003032c 0x0000032c SET_32 23     0x0003030c
+0x00030330 0x00000330 SET_32 23     0x00030310
+0x00030334 0x00000334 SET_32 23     0x00030314
+0x00030338 0x00000338 SET_32 23     0x00030318
+0x0003033c 0x0000033c SET_32 23     0x0003031c
+0x00030340 0x00000340 SET_32 23     0x00030320
+0x00030344 0x00000344 SET_32 23     0x00010220
+EOF
+RUN
+
+NAME=DT_ANDROID_RELR without section headers
+FILE=malloc://0x800
+CMDS=<<EOF
+wff bins/elf/arm-relr-android-rn.so
+wx 0000 @ 0x30
+oba 0
+ir~SET_32 23?
+EOF
+EXPECT=<<EOF
+9
+EOF
+RUN
+
+# arm-relr-android-rn.so with DT_ANDROID_RELRSZ (0x2b8) 8 -> 6
+NAME=DT_ANDROID_RELR drops a truncated trailing word
+FILE=malloc://0x800
+CMDS=<<EOF
+wff bins/elf/arm-relr-android-rn.so
+wx 06000000 @ 0x2b8
+oba 0
+ir~SET_32 23
+EOF
+EXPECT=<<EOF
+0x00030324 0x00000324 SET_32 23     0x00030304
+EOF
+RUN
+
+# arm-relr-android-rn.so with DT_ANDROID_RELRSZ (0x2b8) 8 -> 2
+NAME=DT_ANDROID_RELR shorter than one word lists nothing
+FILE=malloc://0x800
+CMDS=<<EOF
+wff bins/elf/arm-relr-android-rn.so
+wx 02000000 @ 0x2b8
+oba 0
+ir~SET_32 23?
+EOF
+EXPECT=<<EOF
+0
+EOF
+RUN
+
+# arm-relr-android-rn.so with .ARM.exidx words (0x208, 0x20c) set to a bitmap
+NAME=DT_ANDROID_RELR ignores the section right after it
+FILE=malloc://0x800
+CMDS=<<EOF
+wff bins/elf/arm-relr-android-rn.so
+wx ffffffff @ 0x208
+wx ffffffff @ 0x20c
+oba 0
+ir~SET_32 23?
+EOF
+EXPECT=<<EOF
+9
+EOF
+RUN
+
+# arm-relr-android-rn.so with LOAD0 sizes (0x64, 0x68) 0x220 -> 0x208,
+# LOAD1 vaddr/paddr (0x7c, 0x80) 0x10220 -> 0x208, bitmaps at 0x208 and 0x220
+NAME=DT_ANDROID_RELR ignores a segment that remaps the next address
+FILE=malloc://0x800
+CMDS=<<EOF
+wff bins/elf/arm-relr-android-rn.so
+wx 08020000 @ 0x64
+wx 08020000 @ 0x68
+wx 08020000 @ 0x7c
+wx 08020000 @ 0x80
+wx ffffffff @ 0x208
+wx ffffffff @ 0x220
+oba 0
+ir~SET_32 23?
+EOF
+EXPECT=<<EOF
+9
+EOF
+RUN
+
+# arm-relr-android-rn.so with DT_ANDROID_RELRSZ (0x2b8) 8 -> 0x10, address 0xc at 0x208, bitmap 3 at 0x20c
+NAME=DT_ANDROID_RELR reads its whole declared size
+FILE=malloc://0x800
+CMDS=<<EOF
+wff bins/elf/arm-relr-android-rn.so
+wx 10000000 @ 0x2b8
+wx 0c000000 @ 0x208
+wx 03000000 @ 0x20c
+oba 0
+ir~SET_32 23?
+EOF
+EXPECT=<<EOF
+11
+EOF
+RUN

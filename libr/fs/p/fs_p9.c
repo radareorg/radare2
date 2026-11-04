@@ -13,6 +13,7 @@
 #define P9_DEFAULT_MSIZE 8192U
 #define P9_MAX_MSG (1024U * 1024U)
 #define P9_MAX_STR (32U * 1024U)
+#define P9_MAX_DIR_SIZE (16U * 1024U * 1024U)
 #define P9_NOTAG ((ut16)0xffffU)
 #define P9_NOFID ((ut32)0xffffffffU)
 #define P9_QID_SIZE 13
@@ -1171,7 +1172,8 @@ static RList *fs_p9_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
 			free (data);
 			break;
 		}
-		if (dlen > maxread || dlen > P9_MAX_MSG) {
+		if (dlen > P9_MAX_DIR_SIZE - off) {
+			R_LOG_ERROR ("Directory listing exceeds %u bytes", P9_MAX_DIR_SIZE);
 			free (data);
 			r_list_free (list);
 			list = NULL;

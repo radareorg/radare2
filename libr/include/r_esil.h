@@ -49,16 +49,6 @@ typedef struct r_esil_handler_t {
 	void *user;
 } REsilHandler;
 
-typedef struct r_esil_change_reg_t {
-	int idx;
-	ut64 data;
-} REsilRegChange;
-
-typedef struct r_esil_change_mem_t {
-	int idx;
-	ut8 data;
-} REsilMemChange;
-
 typedef struct {
 	const char *name;
 	ut64 value;
@@ -99,20 +89,10 @@ R_VEC_TYPE_WITH_FINI(RVecAccess, REsilTraceAccess, fini_access);
 typedef struct {
 	RVecTraceOp ops;
 	RVecAccess accesses;
-	HtUU *loop_counts;
 } REsilTraceDB;
 
 typedef struct r_esil_trace_t {
 	REsilTraceDB db;
-	int idx;
-	int end_idx;
-	int cur_idx;
-	HtUP *registers;
-	HtUP *memory;
-	RRegArena *arena[R_REG_TYPE_LAST];
-	ut64 stack_addr;
-	ut64 stack_size;
-	ut8 *stack_data;
 } REsilTrace;
 
 typedef bool (*REsilHookRegWriteCB)(ESIL *esil, const char *name, ut64 *val);
@@ -233,6 +213,13 @@ typedef enum {
 #define	VOYEUR_TYPE_MASK	((ut32)R_ESIL_VOYEUR_HIGH_MASK << VOYEUR_SHIFT_LEFT)
 #define	MAX_VOYEURS	(UT32_MAX ^ VOYEUR_TYPE_MASK)
 
+typedef struct r_esil_trap_t {
+	int type;
+	ut32 code;
+	ut64 addr;
+	bool addr_valid;
+} REsilTrap;
+
 typedef struct r_esil_t {
 	struct r_anal_t *anal; // required for io, reg, and call esil_init/fini of the selected arch plugin
 	// Fixed-size NUL-terminated ESIL string history.
@@ -259,7 +246,7 @@ typedef struct r_esil_t {
 	int jump_target_set; 	// mapped to $js in ESIL
 	int trap;
 	int data_align;
-	ut32 trap_code; // extend into a struct to store more exception info?
+	ut32 trap_code;
 	// parity flag? done with cur
 	ut64 old;	//used for carry-flagging and borrow-flagging
 	ut64 cur;	//used for carry-flagging and borrow-flagging
@@ -299,7 +286,14 @@ typedef struct r_esil_t {
 	int stack_fd;	// ahem, let's not do this
 	bool in_cmd_step;
 	RLibStore *libstore;
+	ut64 trap_addr;
+	bool trap_addr_valid;
 } REsil;
+
+R_API void r_esil_set_trap(REsil *esil, int type, ut32 code);
+R_API void r_esil_set_fault(REsil *esil, int type, ut64 addr);
+R_API REsilTrap r_esil_get_trap(const REsil *esil);
+R_API void r_esil_restore_trap(REsil *esil, const REsilTrap *trap);
 
 enum {
 	R_ESIL_PARM_INVALID = 0,
@@ -351,6 +345,7 @@ R_API bool r_esil_reg_read(REsil *esil, const char *regname, ut64 *val, ut32 *si
 R_API bool r_esil_reg_read_silent(REsil *esil, const char *name, ut64 *val, ut32 *size);
 R_API bool r_esil_reg_write(REsil *esil, const char *name, ut64 val);
 R_API bool r_esil_reg_write_silent(REsil *esil, const char *dst, ut64 val);
+R_IPI bool r_esil_reg_update(REsil *esil, const char *dst, ut64 old, ut64 val);
 R_API bool r_esil_reg_alias(REsil *esil, int alias, const char *name);
 R_API bool r_esil_set_bits(REsil *esil, int bits);
 R_API bool r_esil_pushnum(REsil *esil, ut64 num);
@@ -453,10 +448,6 @@ R_API void r_esil_trace_free(REsilTrace *trace);
 #include <r_arch.h>
 R_API void r_esil_trace_op(REsil *esil, struct r_anal_op_t *op);
 R_API char *r_esil_trace_list(REsil *esil, int format);
-R_API char *r_esil_trace_show(REsil *esil, int idx, int format);
-R_API void r_esil_trace_restore(REsil *esil, int idx);
-R_API ut64 r_esil_trace_loopcount(REsilTrace *etrace, ut64 addr);
-R_API void r_esil_trace_loopcount_increment(REsilTrace *etrace, ut64 addr);
 
 R_API bool r_esil_reg_write_silent(REsil *esil, const char *name, ut64 num);
 R_API bool r_esil_reg_read_nocallback(REsil *esil, const char *regname, ut64 *num, int *size);

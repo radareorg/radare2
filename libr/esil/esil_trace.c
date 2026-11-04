@@ -4,36 +4,9 @@
 #include <r_anal.h>
 #include <r_arch.h>
 
-#define CMP_REG_CHANGE(x, y) ((x) - ((REsilRegChange *)y)->idx)
-#define CMP_MEM_CHANGE(x, y) ((x) - ((REsilMemChange *)y)->idx)
-
-R_VEC_TYPE(RVecEsilRegChange, REsilRegChange);
-R_VEC_TYPE(RVecEsilMemChange, REsilMemChange);
-
-static int reg_change_compare(const REsilRegChange *a, const REsilRegChange *b) {
-	return a->idx - b->idx;
-}
-
-static int mem_change_compare(const REsilMemChange *a, const REsilMemChange *b) {
-	return a->idx - b->idx;
-}
-
-static void htup_reg_vector_free(HtUPKv *kv) {
-	if (kv) {
-		RVecEsilRegChange_free (kv->value);
-	}
-}
-
-static void htup_mem_vector_free(HtUPKv *kv) {
-	if (kv) {
-		RVecEsilMemChange_free (kv->value);
-	}
-}
-
 static void trace_db_init(REsilTraceDB *db) {
 	RVecTraceOp_init (&db->ops);
 	RVecAccess_init (&db->accesses);
-	db->loop_counts = ht_uu_new0 ();
 }
 
 R_API REsilTrace *r_esil_trace_new(REsil *esil) {
@@ -42,111 +15,26 @@ R_API REsilTrace *r_esil_trace_new(REsil *esil) {
 		// R_LOG_ERROR ("Run `aeim` to initialize a stack for the ESIL vm");
 		return NULL;
 	}
-	size_t i;
 	REsilTrace *trace = R_NEW0 (REsilTrace);
+	if (!trace) {
+		return NULL;
+	}
 	trace_db_init (&trace->db);
-	trace->registers = ht_up_new (NULL, htup_reg_vector_free, NULL);
-	if (!trace->registers) {
-		goto error;
-	}
-	trace->memory = ht_up_new (NULL, htup_mem_vector_free, NULL);
-	if (!trace->memory) {
-		goto error;
-	}
-	// Save initial ESIL stack memory
-	trace->stack_addr = esil->stack_addr;
-	trace->stack_size = esil->stack_size;
-	trace->stack_data = malloc (esil->stack_size);
-	if (!trace->stack_data) {
-		goto error;
-	}
-	int res = esil->anal->iob.read_at (esil->anal->iob.io, trace->stack_addr, trace->stack_data, trace->stack_size);
-	if (res != trace->stack_size) {
-		goto error;
-	}
-
-	// AFAIK this is not used
-	// Save initial registers arenas
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		RRegArena *a = esil->anal->reg->regset[i].arena;
-		RRegArena *b = r_reg_arena_new (a->size);
-		if (!b) {
-			goto error;
-		}
-		if (b->bytes && a->bytes && b->size > 0) {
-			memcpy (b->bytes, a->bytes, b->size);
-		}
-		trace->arena[i] = b;
-	}
 	return trace;
-error:
-	R_LOG_ERROR ("trace initialization failed");
-	r_esil_trace_free (trace);
-	return NULL;
 }
 
 static void trace_db_fini(REsilTraceDB *db) {
 	if (db) {
 		RVecAccess_fini (&db->accesses);
 		RVecTraceOp_fini (&db->ops);
-		ht_uu_free (db->loop_counts);
 	}
-}
-
-R_API ut64 r_esil_trace_loopcount(REsilTrace *etrace, ut64 addr) {
-	bool found = false;
-	const ut64 count = ht_uu_find (etrace->db.loop_counts, addr, &found);
-	return found? count: 0;
-}
-
-R_API void r_esil_trace_loopcount_increment(REsilTrace *etrace, ut64 addr) {
-	const ut64 count = r_esil_trace_loopcount (etrace, addr);
-	ht_uu_update (etrace->db.loop_counts, addr, count + 1);
 }
 
 R_API void r_esil_trace_free(REsilTrace *trace) {
-	size_t i;
 	if (trace) {
-		ht_up_free (trace->registers);
-		ht_up_free (trace->memory);
-		for (i = 0; i < R_REG_TYPE_LAST; i++) {
-			r_reg_arena_free (trace->arena[i]);
-		}
-		free (trace->stack_data);
 		trace_db_fini (&trace->db);
 		R_FREE (trace);
 	}
-}
-
-static void add_reg_change(REsilTrace *trace, RRegItem *ri, ut64 data) {
-	R_RETURN_IF_FAIL (trace && ri);
-	ut64 addr = ri->offset | (ri->arena << 16);
-	RVecEsilRegChange *vreg = ht_up_find (trace->registers, addr, NULL);
-	if (!vreg) {
-		vreg = RVecEsilRegChange_new ();
-		if (!vreg) {
-			R_LOG_ERROR ("creating a register vector");
-			return;
-		}
-		ht_up_insert (trace->registers, addr, vreg);
-	}
-	REsilRegChange reg = { trace->cur_idx, data }; // imho cur_idx is not necessary, we keep track of this in the other vector
-	RVecEsilRegChange_push_back (vreg, &reg);
-}
-
-static void add_mem_change(REsilTrace *trace, ut64 addr, ut8 data) {
-	R_RETURN_IF_FAIL (trace);
-	RVecEsilMemChange *vmem = ht_up_find (trace->memory, addr, NULL);
-	if (!vmem) {
-		vmem = RVecEsilMemChange_new ();
-		if (!vmem) {
-			R_LOG_ERROR ("creating a memory vector");
-			return;
-		}
-		ht_up_insert (trace->memory, addr, vmem);
-	}
-	REsilMemChange mem = { trace->cur_idx, data };
-	RVecEsilMemChange_push_back (vmem, &mem);
 }
 
 // TODO find a better name
@@ -160,7 +48,6 @@ static void update_last_trace_op(REsil *esil) {
 			if (vec_idx < 1) {
 				R_LOG_ERROR ("Invalid access database");
 			}
-			// eprintf ("update %d %d %d\n", esil->trace->cur_idx, last->end, vec_idx - 1);
 			last->end = vec_idx; //  - 1;
 		}
 	}
@@ -168,7 +55,6 @@ static void update_last_trace_op(REsil *esil) {
 
 static bool trace_hook_reg_read(REsil *esil, const char *name, ut64 *res, int *size) {
 	R_RETURN_VAL_IF_FAIL (esil && name && res, -1);
-	// D eprintf ("%d RR %s\n", esil->trace->cur_idx, name);
 	bool ret = false;
 	if (*name == '0') {
 		// eprintf ("Register not found in profile\n");
@@ -202,7 +88,6 @@ static bool trace_hook_reg_read(REsil *esil, const char *name, ut64 *res, int *s
 static bool trace_hook_reg_write(REsil *esil, const char *name, ut64 *val) {
 	bool ret = false;
 	// eprintf ("[ESIL] REG WRITE %s 0x%08"PFMT64x"\n", name, *val);
-	// D eprintf ("%d RW %s\n", esil->trace->cur_idx, name);
 	RRegItem *ri = r_reg_get (esil->anal->reg, name, -1);
 	if (ri) {
 		REsilTraceAccess *access = RVecAccess_emplace_back (&esil->trace->db.accesses);
@@ -211,8 +96,6 @@ static bool trace_hook_reg_write(REsil *esil, const char *name, ut64 *val) {
 		access->reg.value = *val;
 		access->is_write = true;
 		// TODO size
-
-		add_reg_change (esil->trace, ri, *val);
 		if (esil->ocb.hook_reg_write) {
 			REsilCallbacks cbs = esil->cb;
 			esil->cb = esil->ocb;
@@ -227,7 +110,6 @@ static bool trace_hook_reg_write(REsil *esil, const char *name, ut64 *val) {
 
 static bool trace_hook_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	int ret = 0;
-	// D eprintf ("%d MR 0x%" PFMT64x " %d\n", esil->trace->cur_idx, addr, len);
 	if (esil->cb.mem_read) {
 		ret = esil->cb.mem_read (esil, addr, buf, len);
 	}
@@ -258,9 +140,7 @@ static bool trace_hook_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 }
 
 static bool trace_hook_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
-	size_t i;
 	int ret = 0;
-	// D eprintf ("%d MW 0x%" PFMT64x " %d\n", esil->trace->cur_idx, addr, len);
 	char *hexbuf = r_hex_bin2strdup (buf, len);
 	if (!hexbuf) {
 		return false;
@@ -272,10 +152,6 @@ static bool trace_hook_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len
 	access->mem.data = hexbuf;
 	access->mem.addr = addr;
 	access->is_write = true;
-
-	for (i = 0; i < len; i++) {
-		add_mem_change (esil->trace, addr + i, buf[i]);
-	}
 
 	if (esil->ocb.hook_mem_write) {
 		REsilCallbacks cbs = esil->cb;
@@ -301,15 +177,6 @@ R_API void r_esil_trace_op(REsil *esil, struct r_anal_op_t *op) {
 		// do nothing
 		return;
 	}
-#if 0
-	// XXX condition that should not happen?
-	if (esil->trace->cur_idx != esil->trace->end_idx) {
-		// eprintf ("j %d\n", esil->trace->idx);
-		eprintf ("RESTORE\n");
-		r_esil_trace_restore (esil, esil->trace->cur_idx); //  + 1);
-		return;
-	}
-#endif
 	/* save old callbacks */
 	if (esil->ocb_set) {
 		R_LOG_WARN ("r_esil_trace_op: prevented recursive call");
@@ -323,11 +190,6 @@ R_API void r_esil_trace_op(REsil *esil, struct r_anal_op_t *op) {
 	to->end = vec_idx;
 	to->addr = op->addr;
 
-	// Tag every change recorded for this op with a fresh step number, so
-	// later restore lookups can locate the post-state of any prior step.
-	esil->trace->cur_idx = esil->trace->idx + 1;
-	RRegItem *pc_ri = r_reg_get (esil->anal->reg, "PC", -1);
-	const ut64 pc_before = pc_ri? r_reg_get_value (esil->anal->reg, pc_ri): 0;
 	/* set hooks */
 	esil->cb.hook_reg_read = trace_hook_reg_read;
 	esil->cb.hook_reg_write = trace_hook_reg_write;
@@ -339,80 +201,6 @@ R_API void r_esil_trace_op(REsil *esil, struct r_anal_op_t *op) {
 	/* restore hooks */
 	esil->cb = esil->ocb;
 	esil->ocb_set = false;
-	// update_last_trace_op (esil);
-	// Record the post-state PC so a later step-back finds the right value.
-	// If the ESIL expression did not modify PC, the caller will advance it
-	// to op->addr + op->size, so persist that value as the final PC.
-	if (pc_ri) {
-		const ut64 pc_after = r_reg_get_value (esil->anal->reg, pc_ri);
-		const ut64 final_pc = (pc_after == pc_before)? op->addr + op->size: pc_after;
-		add_reg_change (esil->trace, pc_ri, final_pc);
-		r_unref (pc_ri);
-	}
-	/* increment idx */
-	esil->trace->idx++;
-	esil->trace->end_idx++; // should be vector length
-}
-
-static bool restore_memory_cb(void *user, const ut64 key, const void *value) {
-	size_t index;
-	REsil *esil = user;
-	RVecEsilMemChange *vmem = (RVecEsilMemChange *)value;
-
-	REsilMemChange needle = { .idx = esil->trace->idx };
-	index = RVecEsilMemChange_upper_bound (vmem, &needle, mem_change_compare);
-	if (index > 0 && index <= RVecEsilMemChange_length (vmem)) {
-		REsilMemChange *c = RVecEsilMemChange_at (vmem, index - 1);
-		esil->anal->iob.write_at (esil->anal->iob.io, key, &c->data, 1);
-	}
-	return true;
-}
-
-static bool restore_register(REsil *esil, RRegItem *ri, int idx) {
-	size_t index;
-	RVecEsilRegChange *vreg = ht_up_find (esil->trace->registers, ri->offset | (ri->arena << 16), NULL);
-	if (vreg) {
-		REsilRegChange needle = { .idx = idx };
-		index = RVecEsilRegChange_upper_bound (vreg, &needle, reg_change_compare);
-		if (index > 0 && index <= RVecEsilRegChange_length (vreg)) {
-			REsilRegChange *c = RVecEsilRegChange_at (vreg, index - 1);
-			if (c) {
-				// printf ("set value %s 0x%"PFMT64x"\n", ri->name, c->data);
-				r_reg_set_value (esil->anal->reg, ri, c->data);
-			}
-		}
-	}
-	return true;
-}
-
-R_API void r_esil_trace_restore(REsil *esil, int idx) {
-	size_t i;
-	REsilTrace *trace = esil->trace;
-	if (!trace) {
-		return;
-	}
-	// Restore initial state when going backward
-	if (idx < esil->trace->idx) {
-		// Restore initial registers value
-		for (i = 0; i < R_REG_TYPE_LAST; i++) {
-			RRegArena *a = esil->anal->reg->regset[i].arena;
-			RRegArena *b = trace->arena[i];
-			if (a && b) {
-				memcpy (a->bytes, b->bytes, a->size);
-			}
-		}
-		// Restore initial stack memory
-		esil->anal->iob.write_at (esil->anal->iob.io, trace->stack_addr, trace->stack_data, trace->stack_size);
-	}
-	// Apply latest changes to registers and memory
-	esil->trace->idx = idx;
-	esil->trace->cur_idx = idx;
-	RListIter *iter;
-	RRegItem *ri;
-	r_list_foreach (esil->anal->reg->allregs, iter, ri) {
-		restore_register (esil, ri, idx);
-	}
-	ht_up_foreach (trace->memory, restore_memory_cb, esil);
 }
 
 static void print_access(RStrBuf *sb, int idx, REsilTraceAccess *a, int format) {
@@ -472,25 +260,9 @@ static void trace_show(REsil *esil, RStrBuf *sb, int idx, int format) {
 	}
 }
 
-R_API char *r_esil_trace_show(REsil *esil, int idx, int format) {
-	R_RETURN_VAL_IF_FAIL (esil, NULL);
-	RStrBuf *sb = r_strbuf_new ("");
-	trace_show (esil, sb, idx, format);
-	return r_strbuf_drain (sb);
-}
-
 R_API char *r_esil_trace_list(REsil *esil, int format) {
 	R_RETURN_VAL_IF_FAIL (esil, NULL);
 	RStrBuf *sb = r_strbuf_new ("");
-#if 0
-	// debug stuff
-	ut32 vec_idx = RVecAccess_length (&esil->trace->db.accesses);
-	int i;
-	for (i = 0; i < vec_idx; i++) {
-		REsilTraceAccess *xs = RVecAccess_at (&esil->trace->db.accesses, i);
-		eprintf ("%d XS %c%c %s\n", i, xs->is_reg? 'r': 'm', xs->is_write? 'w': 'r', xs->is_reg? xs->reg.name: "");
-	}
-#endif
 	if (esil->trace) {
 		int idx = 0;
 		REsilTraceOp *op;

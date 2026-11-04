@@ -1,0 +1,32 @@
+NAME=r2pm Windows hooks preserve native syntax and failure status
+REQUIRE=windows
+FILE=-
+CMDS=<<EOF
+rmrf r2pm-win-batch-r2r
+%R2PM_DBDIR=scripts/r2pm/radare2-pm/db
+%R2PM_GITDIR=r2pm-win-batch-r2r/git
+%XDG_DATA_HOME=r2pm-win-batch-r2r/data
+%R2PM_OFFLINE=1
+%R2_LOG_LEVEL=1
+%R2PM_TEST_VALUE=
+r2pm -qi winnegative
+r2pm -qbi winnegative
+r2pm -ql
+r2pm -qi winbatch
+r2pm -qu winbatch
+r2pm -ql
+r2pm -qbi winbatch
+r2pm -qu winbatch
+r2pm -ql
+rmrf r2pm-win-batch-r2r
+EOF
+EXPECT=<<EOF
+source- persisted
+winbatch
+binary-after-call
+winbatch
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Binary install failed for 'winnegative'; re-run without -b to build from source
+EOF
+RUN

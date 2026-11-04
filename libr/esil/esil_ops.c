@@ -4,12 +4,7 @@
 #include <r_anal.h>
 #include <r_util/r_bits.h>
 
-#if __wasi__ || EMSCRIPTEN
-#define FE_OVERFLOW 0
-#define feclearexcept(x)
-#endif
 #include <math.h>
-#include <fenv.h>
 
 #define OP(v, w, x, y, z) r_esil_set_op (esil, v, w, x, y, z, NULL)
 #define OP2(v, w, x, y, z, i) r_esil_set_op (esil, v, w, x, y, z, i)
@@ -50,6 +45,12 @@ R_IPI bool isregornum(REsil *esil, RStrs str, ut64 *num) {
 	if (isdigit (c0)) {
 		*num = r_strs_tonum (str, 0, NULL);
 		return true;
+	}
+	if (c0 == '-' && r_strs_len (str) > 1 && isdigit ((unsigned char)str.a[1])) {
+		bool error;
+		const RStrs magnitude = { str.a + 1, str.b };
+		*num = 0 - r_strs_tonum (magnitude, 0, &error);
+		return !error;
 	}
 	return r_esil_reg_read (esil, str.a, num, NULL);
 }
@@ -312,9 +313,8 @@ static bool esil_eq(REsil *esil) {
 		R_LOG_DEBUG ("esil_eq cant pop two values from stack at 0x%08"PFMT64x, esil->addr);
 		return false;
 	}
-	const bool is128reg = esil_internal_sizeof_reg (esil, dst.a) == 128;
-	const bool ispacked = esil_internal_packed_size_reg (esil, dst.a) > 0;
-	if (is128reg && esil->stackptr > 0) {
+	const ut32 regsize = esil_internal_sizeof_reg (esil, dst.a);
+	if (regsize == 128 && esil->stackptr > 0) {
 		const RStrs src2 = r_esil_pop (esil);
 		const ut64 n0 = r_strs_tonum (src, 0, NULL);
 		const ut64 n1 = r_strs_tonum (src2, 0, NULL);
@@ -322,7 +322,7 @@ static bool esil_eq(REsil *esil) {
 		char *dst2 = r_str_newf ("%sh", dst.a);
 		ret = r_esil_reg_write (esil, dst2, n0);
 		free (dst2);
-	} else if (ispacked) {
+	} else if (esil_internal_packed_size_reg (esil, dst.a) > 0) {
 		const RStrs src2 = r_esil_pop (esil);
 		char *newreg = r_str_newf ("%sl", dst.a);
 		if (r_esil_get_parm (esil, src2, &num2)) {
@@ -334,10 +334,10 @@ static bool esil_eq(REsil *esil) {
 		free (newreg);
 	} else if (r_esil_reg_read_silent (esil, dst.a, &num, NULL)) {
 		if (r_esil_get_parm (esil, src, &num2)) {
-			ret = r_esil_reg_write (esil, dst.a, num2);
+			ret = r_esil_reg_update (esil, dst.a, num, num2);
 			esil->cur = num2;
 			esil->old = num;
-			esil->lastsz = esil_internal_sizeof_reg (esil, dst.a);
+			esil->lastsz = regsize;
 		} else {
 			R_LOG_DEBUG ("esil_eq: invalid src");
 		}
@@ -383,15 +383,13 @@ static int esil_interrupt_linux_i386(REsil *esil) { 		//move this into a plugin
 
 	if (sn == 3) {
 		// trap
-		esil->trap = R_ANAL_TRAP_BREAKPOINT;
-		esil->trap_code = 3;
+		r_esil_set_trap (esil, R_ANAL_TRAP_BREAKPOINT, 3);
 		return -1;
 	}
 
 	if (sn != 0x80) {
 		R_LOG_WARN ("Unhandled interrupt 0x%x at 0x%08"PFMT64x, sn, esil->pc);
-		esil->trap = R_ANAL_TRAP_UNHANDLED;
-		esil->trap_code = sn;
+		r_esil_set_trap (esil, R_ANAL_TRAP_UNHANDLED, sn);
 		return -1;
 	}
 #undef r
@@ -432,8 +430,7 @@ static int esil_interrupt_linux_i386(REsil *esil) { 		//move this into a plugin
 static bool esil_trap(REsil *esil) {
 	ut64 s, d;
 	if (popRN (esil, &s) && popRN (esil, &d)) {
-		esil->trap = s;
-		esil->trap_code = d;
+		r_esil_set_trap (esil, s, d);
 		return r_esil_fire_trap (esil, (int)s, (int)d);
 	}
 	R_LOG_DEBUG ("esil_trap: missing parameters in stack");
@@ -792,8 +789,7 @@ static bool esil_mod(REsil *esil) {
 		if (!r_strs_empty (dst) && r_esil_get_parm (esil, dst, &d)) {
 			if (s == 0) {
 				R_LOG_DEBUG ("0x%08"PFMT64x" esil_mod: Division by zero!", esil->addr);
-				esil->trap = R_ANAL_TRAP_DIVBYZERO;
-				esil->trap_code = 0;
+				r_esil_set_trap (esil, R_ANAL_TRAP_DIVBYZERO, 0);
 				r_esil_pushnum (esil, 0);
 			} else {
 				r_esil_pushnum (esil, d % s);
@@ -815,8 +811,7 @@ static bool esil_signed_mod(REsil *esil) {
 		if (!r_strs_empty (dst) && r_esil_get_parm (esil, dst, (ut64 *)&d)) {
 			if (s == 0) {
 				R_LOG_DEBUG ("0x%08"PFMT64x" esil_mod: Division by zero!", esil->addr);
-				esil->trap = R_ANAL_TRAP_DIVBYZERO;
-				esil->trap_code = 0;
+				r_esil_set_trap (esil, R_ANAL_TRAP_DIVBYZERO, 0);
 				r_esil_pushnum (esil, 0);
 			} else if (d == ST64_MIN && s == -1) {
 				// the remainder of the wrapped division is 0; C overflows
@@ -841,8 +836,7 @@ static bool esil_div(REsil *esil) {
 		if (!r_strs_empty (dst) && r_esil_get_parm (esil, dst, &d)) {
 			if (s == 0) {
 				R_LOG_DEBUG ("esil_div: Division by zero!");
-				esil->trap = R_ANAL_TRAP_DIVBYZERO;
-				esil->trap_code = 0;
+				r_esil_set_trap (esil, R_ANAL_TRAP_DIVBYZERO, 0);
 				r_esil_pushnum (esil, 0);
 			} else {
 				r_esil_pushnum (esil, d / s);
@@ -864,8 +858,7 @@ static bool esil_signed_div(REsil *esil) {
 		if (!r_strs_empty (dst) && r_esil_get_parm (esil, dst, (ut64 *)&d)) {
 			if (s == 0) {
 				R_LOG_DEBUG ("esil_div: Division by zero!");
-				esil->trap = R_ANAL_TRAP_DIVBYZERO;
-				esil->trap_code = 0;
+				r_esil_set_trap (esil, R_ANAL_TRAP_DIVBYZERO, 0);
 				r_esil_pushnum (esil, 0);
 			} else if (d == ST64_MIN && s == -1) {
 				// wraps to ST64_MIN, as arm64 sdiv does; C overflows
@@ -992,7 +985,9 @@ static bool esil_poke_n(REsil *esil, int bits) {
 				// we disable hooks to avoid run hooks on internal peeks
 				void * oldhook = (void*)esil->cb.hook_mem_read;
 				esil->cb.hook_mem_read = NULL;
+				const REsilTrap oldtrap = r_esil_get_trap (esil);
 				r_esil_mem_read (esil, addr, b, bytes);
+				r_esil_restore_trap (esil, &oldtrap);
 				esil->cb.hook_mem_read = oldhook;
 				const bool be = esil_is_big_endian (esil);
 				n = esil_read_ble (b, bits, be);
@@ -1054,9 +1049,8 @@ static bool esil_poke_some(REsil *esil) {
 					isregornum (esil, foo, &num64);
 					r_write_ble (b, num64, esil_is_big_endian (esil), regsize);
 					const int size_bytes = regsize / 8;
-					const ut32 written = r_esil_mem_write (esil, ptr, b, size_bytes);
-					if (written != size_bytes) {
-						esil->trap = 1;
+					if (!r_esil_mem_write (esil, ptr, b, size_bytes)) {
+						return false;
 					}
 					ptr += size_bytes;
 				}
@@ -1418,11 +1412,15 @@ static bool esil_double_to_float(REsil *esil) {
 	const RStrs src = r_esil_pop (esil);
 
 	if (r_esil_get_parm (esil, src, &s) && esil_get_parm_float_strs (esil, dst, &d.f64)) {
-		if (isnan (d.f64) || isinf (d.f64)) {
-			ret = r_esil_pushnum (esil, d.u64);
-		} else if (s == 32) {
+		if (s == 32) {
 			f.f32 = (float)d.f64;
 			ret = r_esil_pushnum (esil, f.u32);
+		} else if (s == 16) {
+			RCFloatValue fval;
+			r_cfloat_value_from_double (&fval, d.f64, &R_CFLOAT_PROFILE_BINARY16);
+			ret = r_esil_pushnum (esil, fval.words[0]);
+		} else if (isnan (d.f64) || isinf (d.f64)) {
+			ret = r_esil_pushnum (esil, d.u64);
 		} else if (s == 64) {
 			ret = r_esil_pushnum (esil, d.u64);
 		} else if (s == 80 || s == 96 || s == 128 || s == 256) {
@@ -1461,7 +1459,7 @@ static bool esil_float_to_double(REsil *esil) {
 			ret = esil_pushnum_float (esil, (double)f.f32);
 		} else if (s == 64) {
 			ret = esil_pushnum_float (esil, d.f64);
-		} else if (s == 80 || s == 96 || s == 128 || s == 256) {
+		} else if (s == 16 || s == 80 || s == 96 || s == 128 || s == 256) {
 			RCFloatProfile profile;
 			if (r_cfloat_profile_from_bits (s, &profile)) {
 				profile.big_endian = false;
@@ -1558,15 +1556,7 @@ static bool esil_float_add(REsil *esil) {
 		} else if (isnan (d)) {
 			ret = esil_pushnum_float (esil, d);
 		} else {
-			feclearexcept (FE_OVERFLOW);
-			double tmp = s + d;
-			(void)(tmp); // suppress unused warning
-			int raised = fetestexcept (FE_OVERFLOW);
-			if (raised & FE_OVERFLOW) {
-				ret = esil_pushnum_float (esil, NAN);
-			} else {
-				ret = esil_pushnum_float (esil, s + d);
-			}
+			ret = esil_pushnum_float (esil, s + d);
 		}
 	} else {
 		R_LOG_DEBUG ("esil_float_add: invalid parameters");
@@ -1586,15 +1576,7 @@ static bool esil_float_sub(REsil *esil) {
 		} else if (isnan (d)) {
 			ret = esil_pushnum_float (esil, d);
 		} else {
-			feclearexcept (FE_OVERFLOW);
-			double tmp = d - s;
-			(void)(tmp);
-			int raised = fetestexcept (FE_OVERFLOW);
-			if (raised & FE_OVERFLOW) {
-				ret = esil_pushnum_float (esil, NAN);
-			} else {
-				ret = esil_pushnum_float (esil, d - s);
-			}
+			ret = esil_pushnum_float (esil, d - s);
 		}
 	} else {
 		R_LOG_DEBUG ("esil_float_sub: invalid parameters");
@@ -1614,18 +1596,33 @@ static bool esil_float_mul(REsil *esil) {
 		} else if (isnan (d)) {
 			ret = esil_pushnum_float (esil, d);
 		} else {
-			feclearexcept (FE_OVERFLOW);
-			double tmp = s * d;
-			(void)(tmp);
-			int raised = fetestexcept (FE_OVERFLOW);
-			if (raised & FE_OVERFLOW) {
-				ret = esil_pushnum_float (esil, NAN);
-			} else {
-				ret = esil_pushnum_float (esil, s * d);
-			}
+			ret = esil_pushnum_float (esil, s * d);
 		}
 	} else {
 		R_LOG_DEBUG ("esil_float_mul: invalid parameters");
+	}
+	return ret;
+}
+
+static bool esil_float_muladd(REsil *esil) {
+	bool ret = false;
+	double m, n, a;
+	const RStrs ms = r_esil_pop (esil);
+	const RStrs ns = r_esil_pop (esil);
+	const RStrs as = r_esil_pop (esil);
+
+	if (esil_get_parm_float_strs (esil, ms, &m) && esil_get_parm_float_strs (esil, ns, &n) && esil_get_parm_float_strs (esil, as, &a)) {
+		if (isnan (a)) {
+			ret = esil_pushnum_float (esil, a);
+		} else if (isnan (m)) {
+			ret = esil_pushnum_float (esil, m);
+		} else if (isnan (n)) {
+			ret = esil_pushnum_float (esil, n);
+		} else {
+			ret = esil_pushnum_float (esil, fma (m, n, a));
+		}
+	} else {
+		R_LOG_DEBUG ("esil_float_muladd: invalid parameters");
 	}
 	return ret;
 }
@@ -1642,15 +1639,7 @@ static bool esil_float_div(REsil *esil) {
 		} else if (isnan (d)) {
 			ret = esil_pushnum_float (esil, d);
 		} else {
-			feclearexcept (FE_OVERFLOW);
-			double tmp = d / s;
-			(void)(tmp);
-			int raised = fetestexcept (FE_OVERFLOW);
-			if (raised & FE_OVERFLOW) {
-				ret = esil_pushnum_float (esil, NAN);
-			} else {
-				ret = esil_pushnum_float (esil, d / s);
-			}
+			ret = esil_pushnum_float (esil, d / s);
 		}
 	} else {
 		R_LOG_DEBUG ("esil_float_div: invalid parameters");
@@ -1922,6 +1911,7 @@ R_API bool r_esil_setup_ops(REsil *esil) {
 	ret &= OP ("F+", esil_float_add, 1, 2, OT_MATH);
 	ret &= OP ("F-", esil_float_sub, 1, 2, OT_MATH);
 	ret &= OP ("F*", esil_float_mul, 1, 2, OT_MATH);
+	ret &= OP ("F*+", esil_float_muladd, 1, 3, OT_MATH);
 	ret &= OP ("F/", esil_float_div, 1, 2, OT_MATH);
 	ret &= OP ("-F", esil_float_neg, 1, 1, OT_MATH);
 	ret &= OP ("CEIL", esil_float_ceil, 1, 1, OT_MATH);

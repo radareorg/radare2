@@ -170,7 +170,7 @@ static void icc_langs(RCore *core, bool json) {
 static RCoreHelpMessage help_msg_ii = {
 	"Usage: ii", "[+-?cj*,]", "List/edit imports (volatile, does not modify the binary)",
 	"ii", "", "list imports",
-	"ii,", "[table-query]", "query imports with table syntax (sig: types db has its signature)",
+	"ii,", "[table-query]", "query imports with table syntax (sig: can resolve a function prototype)",
 	"ii*", "", "list imports as radare2 commands",
 	"iij", "", "list imports as JSON",
 	"iiq", "", "list imports in quiet mode",
@@ -2686,13 +2686,9 @@ static void cmd_idp(RCore *core, PJ *pj, const char *input, bool is_array, int m
 			break;
 		}
 		info = r_bin_get_info (core->bin);
-		filename = strchr (input, ' ');
-		while (input[2]) {
-			input++;
-		}
-		if (filename) {
-			*filename++ = '\0';
-			filename = strdup (filename);
+		const char *arg = strchr (input, ' ');
+		if (arg) {
+			filename = strdup (arg + 1);
 			file_found = r_file_exists (filename);
 		} else {
 			/* Autodetect local file */
@@ -2739,7 +2735,7 @@ static void cmd_idp(RCore *core, PJ *pj, const char *input, bool is_array, int m
 			}
 		}
 		if (!file_found) {
-			if (info->debug_file_name) {
+			if (info && info->debug_file_name) {
 				const char *fn = r_file_basename (info->debug_file_name);
 				R_LOG_ERROR ("File '%s' not found in file directory or symbol store", fn);
 			} else {
@@ -2788,7 +2784,12 @@ static void cmd_idl(RCore *core, const char *input) {
 		break;
 	case 'd': // "idld" // download debug info file from remote dwarf symbols server
 		if (linkname) {
-			char *url = r_str_newf ("%s/%s/debuginfo", r_config_get (core->config, "dbg.linkurl"), linkname);
+			char *encoded_name = r_str_uri_encode (linkname);
+			if (!encoded_name) {
+				break;
+			}
+			char *url = r_str_newf ("%s/%s/debuginfo", r_config_get (core->config, "dbg.linkurl"), encoded_name);
+			free (encoded_name);
 			if (input[3] == '*') {
 				r_cons_printf (core->cons, "%s\n", url);
 			} else {
@@ -3188,7 +3189,7 @@ static bool idd_sdb_function(void *user, const char *k, const char *v) {
 	return !strcmp (v, "fcn");
 }
 
-static int idd_symbol_size(RCore *core, const char *name) {
+static ut32 idd_symbol_size(RCore *core, const char *name) {
 	RVecRBinSymbol *symbols = r_bin_get_symbols_vec (core->bin);
 	if (symbols) {
 		RBinSymbol *sym;
@@ -3200,6 +3201,18 @@ static int idd_symbol_size(RCore *core, const char *name) {
 		}
 	}
 	return 0;
+}
+
+static void idd_print_flag(RCore *core, const char *name, ut32 size, ut64 addr) {
+	bool valid_name = r_name_check_utf8 (name, core->flags->utf8);
+	char *flagname = valid_name? NULL: strdup (name);
+	if (flagname) {
+		r_flag_name_filter (core->flags, flagname);
+	}
+	if (valid_name || flagname) {
+		r_cons_printf (core->cons, "'@0x%08" PFMT64x "'f sym.%s %u\n", addr, flagname? flagname: name, size);
+	}
+	free (flagname);
 }
 
 static void cmd_iddlf(RCore *core) {
@@ -3217,16 +3230,7 @@ static void cmd_iddlf(RCore *core) {
 			name = key;
 		}
 		ut64 addr = sdb_num_getf (dwarf_sdb, NULL, "fcn.%s.addr", key);
-		int size = idd_symbol_size (core, name);
-		bool valid_name = r_name_check_utf8 (name, core->flags->utf8);
-		char *flagname = valid_name? NULL: strdup (name);
-		if (flagname) {
-			r_flag_name_filter (core->flags, flagname);
-		}
-		if (valid_name || flagname) {
-			r_cons_printf (core->cons, "f sym.%s %d @ 0x%" PFMT64x "\n", flagname? flagname: name, size, addr);
-		}
-		free (flagname);
+		idd_print_flag (core, name, idd_symbol_size (core, name), addr);
 	}
 	ls_free (l);
 }
@@ -3253,7 +3257,7 @@ static void cmd_iddlg(RCore *core) {
 			continue;
 		}
 		sdb_set (seen, name, "1", 0);
-		r_cons_printf (core->cons, "f sym.%s %u @ 0x%" PFMT64x "\n", name, sym->attr.size, sym->vaddr);
+		idd_print_flag (core, name, sym->attr.size, sym->vaddr);
 	}
 	sdb_free (seen);
 }
@@ -3946,7 +3950,7 @@ static int cmd_info(void *data, const char *input) {
 	if (!strcmp (input, "*")) {
 		input = "I*";
 	}
-	char *question = strchr (input, '?');
+	const char *question = strchr (input, '?');
 	const char *space = strchr (input, ' ');
 	if (!space && question) {
 		space = question + 1;
@@ -4261,7 +4265,7 @@ static int cmd_info(void *data, const char *input) {
 		break;
 	case 'L': // "iL"
 	{
-		char *ptr = strchr (input, ' ');
+		const char *ptr = strchr (input, ' ');
 		int json = input[1] == 'j'? 'j': 0;
 		if (ptr && ptr[0] && ptr[1]) {
 			const char *plugin_name = ptr + 1;

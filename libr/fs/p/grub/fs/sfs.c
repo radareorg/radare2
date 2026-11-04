@@ -293,7 +293,7 @@ grub_sfs_mount(grub_disk_t disk) {
 		grub_error (GRUB_ERR_BAD_FS, "invalid SFS blocksize");
 		goto fail;
 	}
-	rootobjc_data = grub_malloc (data->blocksize);
+	rootobjc_data = grub_malloc (data->blocksize + 1);
 	if (!rootobjc_data) {
 		goto fail;
 	}
@@ -303,6 +303,8 @@ grub_sfs_mount(grub_disk_t disk) {
 	if (grub_errno) {
 		goto fail;
 	}
+	// terminate the block so the label string walk cannot run past it
+	rootobjc_data[data->blocksize] = 0;
 
 	rootobjc = (struct grub_sfs_objc *)rootobjc_data;
 
@@ -331,7 +333,7 @@ grub_sfs_read_symlink(grub_fshelp_node_t node) {
 	char *symlink;
 	char *block;
 
-	block = grub_malloc (data->blocksize);
+	block = grub_malloc (data->blocksize + 1);
 	if (!block) {
 		return 0;
 	}
@@ -341,6 +343,8 @@ grub_sfs_read_symlink(grub_fshelp_node_t node) {
 		grub_free (block);
 		return 0;
 	}
+	// terminate the block so the symlink string walk cannot run past it
+	block[data->blocksize] = 0;
 
 	/* This is just a wild guess, but it always worked for me.  How the
 	SLNK block looks like is not documented in the SFS docs.  */
@@ -383,7 +387,7 @@ grub_sfs_iterate_dir(grub_fshelp_node_t dir,
 	int pos;
 	SetU *visited = set_u_new ();
 
-	objc_data = grub_malloc (data->blocksize);
+	objc_data = grub_malloc (data->blocksize + 1);
 	if (!objc_data) {
 		goto fail;
 	}
@@ -396,6 +400,8 @@ grub_sfs_iterate_dir(grub_fshelp_node_t dir,
 		if (grub_errno) {
 			goto fail;
 		}
+		// terminate the block so the object name walks cannot run past it
+		objc_data[data->blocksize] = 0;
 
 		objc = (struct grub_sfs_objc *)objc_data;
 
@@ -411,9 +417,12 @@ grub_sfs_iterate_dir(grub_fshelp_node_t dir,
 			unsigned int block;
 
 			/* The filename and comment dynamically increase the size of
-			the object.  */
+			the object.  Both strings stay inside the terminated block.  */
+			char *blockend = (char *)objc + data->blocksize;
 			len = grub_strlen (filename);
-			len += grub_strlen (filename + len + 1);
+			if (filename + len + 1 <= blockend) {
+				len += grub_strlen (filename + len + 1);
+			}
 
 			pos += sizeof (*obj) + len;
 			/* Round up to a multiple of two bytes.  */

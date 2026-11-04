@@ -1,0 +1,171 @@
+NAME=E0C62 high nibble register aliases preserve adjacent fields
+FILE=malloc://4096
+CMDS=<<EOF2
+e log.level=0
+e asm.arch=e0c62
+e asm.bits=16
+aei
+wx 0f0e840e880e800ee00ff00f
+aes 6
+ar x
+ar sp
+ar xh
+ar xp
+EOF2
+EXPECT=<<EOF2
+0x00000fff
+0x000000ff
+0x0000000f
+0x0000000f
+EOF2
+RUN
+
+NAME=E0C62 decimal addition adjusts carry and zero
+FILE=malloc://4096
+CMDS=<<EOF2
+e log.level=0
+e asm.arch=e0c62
+e asm.bits=16
+aei
+wx 090e440f010c
+aes 3
+ar a
+ar f
+EOF2
+EXPECT=<<EOF2
+0x00000000
+0x00000007
+EOF2
+RUN
+
+NAME=E0C62 compare detects unsigned borrow
+FILE=malloc://4096
+CMDS=<<EOF2
+e log.level=0
+e asm.arch=e0c62
+e asm.bits=16
+aei
+wx 020e130e010f
+aes 3
+ar a
+ar f
+EOF2
+EXPECT=<<EOF2
+0x00000002
+0x00000001
+EOF2
+RUN
+
+NAME=E0C62 PSET supplies the following branch page
+FILE=malloc://4096
+CMDS=<<EOF2
+e log.level=0
+e asm.arch=e0c62
+e asm.bits=16
+aei
+wx 420e5500
+aes 2
+ar pc
+ar np
+EOF2
+EXPECT=<<EOF2
+0x000004aa
+0x00000002
+EOF2
+RUN
+
+NAME=E0C62 HALT and SLP have distinct power states and preserve flags
+FILE=malloc://4096
+CMDS=<<EOF
+e asm.arch=e0c62
+e asm.bits=16
+aei
+ar f=0xf
+wx f80ff90f
+aes
+ar halted
+ar sleeping
+ar f
+aes
+ar halted
+ar sleeping
+ar f
+ar pc
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000000
+0x0000000f
+0x00000001
+0x00000001
+0x0000000f
+0x00000004
+EOF
+RUN
+
+NAME=E0C62 program counter wraps within the bank
+FILE=malloc://0x12000
+CMDS=<<EOF2
+e log.level=0
+e asm.arch=e0c62
+e asm.bits=16
+aei
+wx fb0f @ 0x1ffe
+wx 0002 @ 0x3ffe
+wx de0f @ 0x100
+ar pc=0x1ffe
+aes
+ar pc
+ar pc=0x3ffe
+ar C=0
+aes
+ar pc
+ar sp=0x40
+wx 0f0f0f @ 0x10040
+ar pc=0x100
+aes
+ar pc
+EOF2
+EXPECT=<<EOF2
+0x00000000
+0x00002000
+0x00000000
+EOF2
+RUN
+
+NAME=E0C62 PSET only applies to the next branch
+FILE=malloc://0x12000
+CMDS=<<EOF2
+e log.level=0
+e asm.arch=e0c62
+e asm.bits=16
+aei
+wx 1000 @ 0x400
+wx 530e0800 @ 0x420
+wx 530efb0f0900 @ 0x440
+wx 410f540e0702 @ 0x460
+wx 5e0f450e0802 @ 0x480
+ar pc=0x400
+aes
+ar pc
+ar pc=0x420
+aes 2
+ar pc
+ar pc=0x440
+aes 3
+ar pc
+ar pc=0x460
+aes 3
+ar pc
+ar pc=0x480
+aes 3
+ar pc
+EOF2
+EXPECT=<<EOF2
+0x00000420
+0x00002610
+0x00000412
+0x0000280e
+0x00000486
+EOF2
+RUN

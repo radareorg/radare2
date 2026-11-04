@@ -5,7 +5,8 @@
 #include <r_main.h>
 #include <r_lib.h>
 
-#define R2PM_GITURL "https://github.com/radareorg/radare2-pm"
+#define R2PM_GITHUB "https://github.com/"
+#define R2PM_GITURL R2PM_GITHUB "radareorg/radare2-pm"
 #define R2PM_INSTALL_R2 "\nR2PM_INSTALL_R2() {\n"
 #define R2PM_INSTALL_QJS "\nR2PM_INSTALL_QJS() {\n"
 #define R2PM_INSTALL_UNIX "\nR2PM_INSTALL() {\n"
@@ -66,7 +67,7 @@ static const char *helpmsg =
 	" -uci <pkgname>    uninstall + clean + install\n"
 	" -ui <pkgname>     uninstall + install\n"
 	" -U                download/initialize or update database (-f for a clean clone)\n"
-	" -UU               same as -U but upgrade all the installed r2 plugins\n"
+	" -UU               same as -U but upgrade all installed packages\n"
 	" -v                show version\n";
 
 typedef struct r_r2pm_t {
@@ -388,22 +389,89 @@ static void striptrim(RList *list) {
 	}
 }
 
-static void r2pm_upgrade(bool force) {
-#if R2__UNIX__
-	char *s = r_sys_cmd_str ("radare2 -NNqcq -- 2>&1 | grep r2pm | sed -e 's,$,;,g'", NULL, 0);
-	r_str_trim (s);
-	RList *list = r_str_split_list (s, "\n", -1);
-	striptrim (list);
-	if (r_list_length (list) < 1) {
-		R_LOG_INFO ("No packages to upgrade");
+static void r2pm_set_global(bool global) {
+	char *r2_plugdir = global? r_str_r2_prefix (R2_PLUGINS): r_xdg_datadir ("plugins");
+	r_sys_setenv ("R2PM_PLUGDIR", r2_plugdir);
+	free (r2_plugdir);
+
+	if (global) {
+		r_sys_setenv ("GLOBAL", "1");
+		r_sys_setenv ("R2PM_GLOBAL", "1");
+		char *sudo = r_sys_getenv ("SUDO");
+		if (R_STR_ISEMPTY (sudo)) {
+			free (sudo);
+			sudo = strdup ("sudo");
+		}
+		r_sys_setenv ("R2PM_SUDO", sudo);
+		r_sys_setenv ("SUDO", sudo);
+		free (sudo);
 	} else {
-		r2pm_install (list, false, true, force, false, false);
+		r_sys_setenv ("GLOBAL", "0");
+		r_sys_setenv ("R2PM_GLOBAL", "0");
+		r_sys_setenv ("R2PM_SUDO", "");
+		r_sys_setenv ("SUDO", "");
 	}
-	free (s);
-	r_list_free (list);
-#else
-	R_LOG_INFO ("Auto upgrade feature is not yet supported on windows");
-#endif
+}
+
+static int r2pm_upgrade(const R2Pm *r2pm) {
+	char *pkgdir = r2pm_pkgdir ();
+	RList *files = pkgdir? r_sys_dir (pkgdir): NULL;
+	if (!files) {
+		free (pkgdir);
+		R_LOG_INFO ("No packages to upgrade");
+		return 0;
+	}
+	// groups: 0=user source, 1=global source, 2=user binary, 3=global binary
+	RList *groups[4];
+	int i;
+	for (i = 0; i < 4; i++) {
+		groups[i] = r_list_newf (free);
+	}
+	int rc = 0;
+	RListIter *iter;
+	const char *file;
+	r_list_foreach (files, iter, file) {
+		if (*file == '.') {
+			continue;
+		}
+		char *path = r_file_new (pkgdir, file, NULL);
+		char *data = r_file_is_regular (path)? r_file_slurp (path, NULL): NULL;
+		free (path);
+		if (!data) {
+			continue;
+		}
+		bool global = r_str_startswith (data, "Global: true\n");
+		bool binary = strstr (data, "\nBinary: true\n");
+		free (data);
+		int group = (binary? 2: 0) | (global? 1: 0);
+		char *package = strdup (file);
+		if (!package || !r_list_append (groups[group], package)) {
+			free (package);
+			rc = 1;
+		}
+	}
+	r_list_free (files);
+	free (pkgdir);
+	char *sudo = r_sys_getenv ("SUDO");
+	bool any = false;
+	for (i = 0; i < 4; i++) {
+		if (!r_list_empty (groups[i])) {
+			bool global = i & 1;
+			bool binary = i & 2;
+			any = true;
+			r_sys_setenv ("SUDO", sudo);
+			r2pm_set_global (global);
+			rc |= r2pm_install (groups[i], false, true, r2pm->force, global, binary);
+		}
+		r_list_free (groups[i]);
+	}
+	r_sys_setenv ("SUDO", sudo);
+	r2pm_set_global (r2pm->global);
+	free (sudo);
+	if (!any) {
+		R_LOG_INFO ("No packages to upgrade");
+	}
+	return rc? 1: 0;
 }
 
 static char *r2pm_list(int mode) {
@@ -413,6 +481,7 @@ static char *r2pm_list(int mode) {
 	if (!files) {
 		return NULL;
 	}
+	r_list_sort (files, (RListComparator)strcmp);
 	PJ *pj = NULL;
 	RStrBuf *sb = NULL;
 	if (mode == 'j') {
@@ -440,7 +509,131 @@ static char *r2pm_list(int mode) {
 	return r_strbuf_drain (sb);
 }
 
+static bool download(const char *url, const char *outfile);
+static bool unzip(const char *file, const char *dir);
+
+// owner/repo of a github R2PM_GITURL, the only host with known archive urls
+static char *r2pm_github_repo(void) {
+	char *giturl = r_sys_getenv ("R2PM_GITURL");
+	if (R_STR_ISEMPTY (giturl)) {
+		free (giturl);
+		giturl = strdup (R2PM_GITURL);
+	}
+	char *repo = NULL;
+	if (r_str_startswith (giturl, R2PM_GITHUB)) {
+		repo = strdup (giturl + strlen (R2PM_GITHUB));
+		size_t len = strlen (repo);
+		while (len > 0 && repo[len - 1] == '/') {
+			repo[--len] = 0;
+		}
+		if (r_str_endswith (repo, ".git")) {
+			repo[len - 4] = 0;
+		}
+	}
+	free (giturl);
+	return repo;
+}
+
+// latest commit of the default branch, NULL when the github api is unreachable
+static char *r2pm_github_head(const char *repo, const char *gpath) {
+	char *url = r_str_newf ("https://api.github.com/repos/%s/commits?per_page=1", repo);
+	char *file = r_file_new (gpath, "radare2-pm.json", NULL);
+	char *sha = NULL;
+	if (download (url, file)) {
+		char *data = r_file_slurp (file, NULL);
+		RJson *json = data? r_json_parsedup (data): NULL;
+		const RJson *commit = json? r_json_item (json, 0): NULL;
+		const char *value = commit? r_json_get_str (commit, "sha"): NULL;
+		if (value && strlen (value) == 40 && strspn (value, "0123456789abcdef") == 40) {
+			sha = strdup (value);
+		}
+		r_json_free (json);
+		free (data);
+	}
+	r_file_rm (file);
+	free (file);
+	free (url);
+	return sha;
+}
+
+// fetches the database as a zip archive when git is not available
+// the downloaded commit is stored to skip the download when nothing changed
+static int r2pm_update_archive(const char *gpath, const char *pmpath) {
+	char *repo = r2pm_github_repo ();
+	if (!repo) {
+		R_LOG_ERROR ("Cannot find `git` in $PATH and R2PM_GITURL is not a GitHub repository");
+		return 1;
+	}
+	char *stamp = r_file_new (pmpath, ".r2pm-commit", NULL);
+	char *sha = r2pm_github_head (repo, gpath);
+	if (sha) {
+		char *local = r_file_slurp (stamp, NULL);
+		if (local) {
+			r_str_trim (local);
+		}
+		const bool uptodate = local && !strcmp (local, sha);
+		free (local);
+		if (uptodate) {
+			R_LOG_INFO ("The r2pm database is up to date (%s)", sha);
+			free (sha);
+			free (stamp);
+			free (repo);
+			return 0;
+		}
+	} else {
+		R_LOG_WARN ("Cannot check the latest database commit, downloading it anyway");
+	}
+	char *zipurl = r_str_newf (R2PM_GITHUB "%s/archive/%s.zip", repo, sha? sha: "HEAD");
+	char *zipfile = r_file_new (gpath, "radare2-pm.zip", NULL);
+	char *tmpdir = r_file_new (gpath, "radare2-pm.tmp", NULL);
+	r_file_rm_rf (tmpdir);
+	r_sys_mkdirp (tmpdir);
+	int rc = 1;
+	if (download (zipurl, zipfile) && unzip (zipfile, tmpdir)) {
+		// github archives contain a single <repo>-<ref> directory
+		RList *files = r_sys_dir (tmpdir);
+		RListIter *iter;
+		const char *name;
+		char *root = NULL;
+		r_list_foreach (files, iter, name) {
+			if (*name != '.') {
+				root = r_file_new (tmpdir, name, NULL);
+				break;
+			}
+		}
+		r_list_free (files);
+		if (root && r_file_is_directory (root)) {
+			r_file_rm_rf (pmpath);
+			if (r_file_move (root, pmpath)) {
+				// an empty stamp marks the archive checkout and forces the next download
+				r_file_dump (stamp, (const ut8 *)(sha? sha: ""), sha? strlen (sha): 0, false);
+				rc = 0;
+			} else {
+				R_LOG_ERROR ("Cannot move %s into %s", root, pmpath);
+			}
+		} else {
+			R_LOG_ERROR ("Unexpected contents in %s", zipurl);
+		}
+		free (root);
+	} else {
+		R_LOG_ERROR ("Cannot download the r2pm database from %s", zipurl);
+	}
+	r_file_rm (zipfile);
+	r_file_rm_rf (tmpdir);
+	free (tmpdir);
+	free (zipfile);
+	free (zipurl);
+	free (sha);
+	free (stamp);
+	free (repo);
+	return rc;
+}
+
 static int r2pm_update(bool force) {
+	if (r_sys_getenv_asbool ("R2PM_OFFLINE")) {
+		R_LOG_INFO ("Offline mode, skipping database update");
+		return 0;
+	}
 	char *gpath = r2pm_gitdir ();
 	if (!gpath) {
 		R_LOG_ERROR ("Cannot find gitdir");
@@ -451,8 +644,16 @@ static int r2pm_update(bool force) {
 	if (force) {
 		r_file_rm_rf (pmpath);
 	}
+	char *git = r_file_path ("git");
+	char *stamp = r_file_new (pmpath, ".r2pm-commit", NULL);
+	// databases fetched as archives keep updating the same way
+	const bool use_git = git && !r_file_exists (stamp);
+	free (stamp);
+	free (git);
 	int rc = 0;
-	if (r_file_is_directory (pmpath)) {
+	if (!use_git) {
+		rc = r2pm_update_archive (gpath, pmpath);
+	} else if (r_file_is_directory (pmpath)) {
 		R_LOG_INFO ("Running git pull on %s", pmpath);
 		if (git_pull (pmpath, true, force) != 0) {
 			R_LOG_ERROR ("git pull");
@@ -462,7 +663,7 @@ static int r2pm_update(bool force) {
 		char *giturl = r_sys_getenv ("R2PM_GITURL");
 		if (R_STR_ISEMPTY (giturl)) {
 			free (giturl);
-			giturl = strdup ("R2PM_GITURL");
+			giturl = strdup (R2PM_GITURL);
 		}
 		rc = git_clone (pmpath, giturl);
 		free (giturl);
@@ -563,7 +764,12 @@ static void r2pm_set_pyvenv(R2Pm *r2pm) {
 	char *venv = r_file_new (r2_prefix, "venv", NULL);
 	if (r_file_is_directory (venv)) {
 		r_sys_setenv ("VIRTUAL_ENV", venv);
-		char *venv_bin = r_file_new (venv, "bin", NULL);
+		// windows virtualenvs keep the binaries in Scripts, not in bin
+		const char *venv_subdir = "bin";
+#if R2__WINDOWS__
+		venv_subdir = "Scripts";
+#endif
+		char *venv_bin = r_file_new (venv, venv_subdir, NULL);
 		r_sys_setenv_sep ("PATH", venv_bin, false);
 		free (venv_bin);
 	}
@@ -581,27 +787,7 @@ static void r2pm_setenv(R2Pm *r2pm) {
 	free (gmake);
 	r2pm_set_pyvenv (r2pm);
 
-	char *r2_plugdir = r2pm->global? r_str_r2_prefix (R2_PLUGINS): r_xdg_datadir ("plugins");
-	r_sys_setenv ("R2PM_PLUGDIR", r2_plugdir);
-	free (r2_plugdir);
-
-	if (r2pm->global) {
-		r_sys_setenv ("GLOBAL", "1");
-		r_sys_setenv ("R2PM_GLOBAL", "1");
-		char *sudo = r_sys_getenv ("SUDO");
-		if (R_STR_ISEMPTY (sudo)) {
-			free (sudo);
-			sudo = strdup ("sudo");
-		}
-		r_sys_setenv ("R2PM_SUDO", sudo);
-		r_sys_setenv ("SUDO", sudo);
-		free (sudo);
-	} else {
-		r_sys_setenv ("GLOBAL", "0");
-		r_sys_setenv ("R2PM_GLOBAL", "0");
-		r_sys_setenv ("R2PM_SUDO", "");
-		r_sys_setenv ("SUDO", "");
-	}
+	r2pm_set_global (r2pm->global);
 
 	if (r2pm->time) {
 		// set R2PM_TIME env var
@@ -779,6 +965,18 @@ static char *r2pm_source_dir(const char *srcdir, const char *pkg) {
 	return pkgdir;
 }
 
+// cmd /c drops the first and last quote of a line that starts with one, the extra pair keeps the inner ones
+static int r2pm_system(const char *cmd) {
+#if R2__WINDOWS__
+	char *s = r_str_newf ("\"%s\"", cmd);
+	int rc = r_sys_cmd (s);
+	free (s);
+	return rc;
+#else
+	return r_sys_cmd (cmd);
+#endif
+}
+
 static int r2pm_run_r2script(const char *script, const char *dir) {
 	char *scriptfile = NULL;
 	int fd = r_file_mkstemp ("r2pm", &scriptfile);
@@ -805,7 +1003,9 @@ static int r2pm_run_r2script(const char *script, const char *dir) {
 	if (!changed_dir) {
 		R_LOG_ERROR ("Cannot enter directory: %s", dir);
 	} else if (er2 && escript) {
-		res = r_sys_cmdf ("\"%s\" -NNQ -i \"%s\" --", er2, escript);
+		char *cmd = r_str_newf ("\"%s\" -NNQ -i \"%s\" --", er2, escript);
+		res = r2pm_system (cmd);
+		free (cmd);
 	} else {
 		R_LOG_ERROR ("Cannot find radare2 in PATH");
 	}
@@ -821,17 +1021,56 @@ static int r2pm_run_r2script(const char *script, const char *dir) {
 	return res;
 }
 
+#if R2__WINDOWS__
+// runs a cmd script from a temporary .bat file so set variables survive across lines
+// hooks must check failures themselves with `|| exit /b 1`
+static int r2pm_run_batch_script(const char *script, const char *dir) {
+	char *scriptfile = r_file_temp_ex ("r2pm", ".bat");
+	if (!scriptfile) {
+		R_LOG_ERROR ("Cannot create temporary batch script");
+		return 1;
+	}
+	r_str_replace_ch (scriptfile, '/', '\\', true);
+	// cmd.exe only parses crlf terminated batch files reliably
+	char *content = r_str_newf ("@echo off\n%s\n", script);
+	content = content? r_str_replace (content, "\n", "\r\n", true): NULL;
+	bool written = content && r_file_dump (scriptfile, (const ut8 *)content, strlen (content), false);
+	free (content);
+	int res = 1;
+	if (written) {
+		char *epath = r_str_escape_sh (scriptfile);
+		char *edir = dir? r_str_escape_sh (dir): NULL;
+		if (epath && (!dir || edir)) {
+			char *s = edir
+				? r_str_newf ("cd /d \"%s\" && \"%s\"", edir, epath)
+				: r_str_newf ("\"%s\"", epath);
+			res = s? r_sandbox_system (s, 1): 1;
+			free (s);
+		}
+		free (edir);
+		free (epath);
+	} else {
+		R_LOG_ERROR ("Cannot write temporary batch script");
+	}
+	r_file_rm (scriptfile);
+	free (scriptfile);
+	return res;
+}
+#endif
+
 // runs R2PM_BINSTALL/R2PM_BUNINSTALL blocks without a source checkout, takes ownership of script
 static int r2pm_run_binary_script(char *script) {
 #if R2__WINDOWS__
-	char *s = r_str_replace_all (script, "\n", " && ");
+	int res = r2pm_run_batch_script (script, NULL);
+	free (script);
+	return res;
 #else
 	char *s = r_str_newf ("set -e\nR2PM_FAIL(){\n  echo \"$@\" >&2\n  exit 1\n}\n%s", script);
 	free (script);
-#endif
 	int res = s? r_sandbox_system (s, 1): 1;
 	free (s);
 	return res;
+#endif
 }
 
 // looks copypaste with r2pm_install_pkg ()
@@ -853,12 +1092,12 @@ static int r2pm_uninstall_pkg(const char *pkg, bool global) {
 		free (bscript);
 	}
 	char *srcdir = r2pm_gitdir ();
-	char *builddir = r2pm_source_dir (srcdir, pkg);
-	const bool have_builddir = r2pm_have_builddir (pkg) && r_file_is_directory (builddir);
-	free (builddir);
+	char *pkgdir = r2pm_source_dir (srcdir, pkg);
+	if (!r2pm_have_builddir (pkg) || !r_file_is_directory (pkgdir)) {
+		R_FREE (pkgdir);
+	}
 	char *r2script = r2pm_get (pkg, R2PM_UNINSTALL_R2, TT_CODEBLOCK);
 	if (r2script) {
-		char *pkgdir = have_builddir? r2pm_source_dir (srcdir, pkg): NULL;
 		int res = r2pm_run_r2script (r2script, pkgdir);
 		if (res == 0) {
 			r2pm_unregister (pkg);
@@ -872,46 +1111,37 @@ static int r2pm_uninstall_pkg(const char *pkg, bool global) {
 	char *script = r2pm_get (pkg, "\nR2PM_UNINSTALL_WINDOWS() {\n", TT_CODEBLOCK);
 	if (!script) {
 		R_LOG_ERROR ("This package does not have R2PM_UNINSTALL_WINDOWS instructions");
+		free (pkgdir);
 		free (srcdir);
 		return 1;
 	}
-	script = r_str_replace_all (script, "\n", " && ");
-	char *esrcdir = r_str_escape_sh (srcdir);
-	char *epkg = r_str_escape_sh (pkg);
-	char *s = (have_builddir && esrcdir && epkg)
-		? r_str_newf ("cd /d \"%s\" && cd \"%s\" && %s", esrcdir, epkg, script)
-		: r_str_newf ("%s", script);
-	free (esrcdir);
-	free (epkg);
-	int res = r_sandbox_system (s, 1);
-	free (s);
+	int res = r2pm_run_batch_script (script, pkgdir);
 #else
 	char *script = r2pm_get (pkg, "\nR2PM_UNINSTALL() {\n", TT_CODEBLOCK);
 	if (!script) {
 		R_LOG_ERROR ("Cannot find the R2PM_UNINSTALL() {} script block for '%s'", pkg);
+		free (pkgdir);
 		free (srcdir);
 		return 1;
 	}
-	char *esrcdir = r_str_escape_sh (srcdir);
-	char *epkg = r_str_escape_sh (pkg);
-	char *s = (have_builddir && esrcdir && epkg)
-		? r_str_newf ("cd \"%s/%s\"\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", esrcdir, epkg, script)
+	char *epkgdir = pkgdir? r_str_escape_sh (pkgdir): NULL;
+	char *s = epkgdir
+		? r_str_newf ("cd \"%s\" || exit 1\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", epkgdir, script)
 		: r_str_newf ("export MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", script);
-	free (esrcdir);
-	free (epkg);
+	free (epkgdir);
 	int res = r_sandbox_system (s, 1);
 	free (s);
 #endif
 	if (res == 0) {
 		r2pm_unregister (pkg);
 	}
+	free (pkgdir);
 	free (script);
 	free (srcdir);
 	return res;
 }
 
 static bool download(const char *url, const char *outfile) {
-	/// XXX add support for windows powershell download
 	char *eurl = r_str_escape_sh (url);
 	char *eout = r_str_escape_sh (outfile);
 	if (!eurl || !eout) {
@@ -923,7 +1153,7 @@ static bool download(const char *url, const char *outfile) {
 	int res = 1;
 	R_LOG_INFO ("download: %s into %s", url, outfile);
 	if (tool) {
-		res = r_sys_cmdf ("%s -sfL -o \"%s\" \"%s\"", tool, eout, eurl);
+		res = r_sys_cmdf ("curl -sfL -o \"%s\" \"%s\"", eout, eurl);
 		free (tool);
 		free (eurl);
 		free (eout);
@@ -931,7 +1161,7 @@ static bool download(const char *url, const char *outfile) {
 	}
 	tool = r_file_path ("wget");
 	if (tool) {
-		res = r_sys_cmdf ("%s -qO \"%s\" \"%s\"", tool, eout, eurl);
+		res = r_sys_cmdf ("wget -qO \"%s\" \"%s\"", eout, eurl);
 		free (tool);
 		free (eurl);
 		free (eout);
@@ -939,8 +1169,20 @@ static bool download(const char *url, const char *outfile) {
 	}
 	free (eurl);
 	free (eout);
+#if R2__WINDOWS__
+	// curl.exe ships since windows 10 1803, older systems only have powershell
+	char *psurl = r_str_replace_all (strdup (url), "'", "''");
+	char *psout = r_str_replace_all (strdup (outfile), "'", "''");
+	res = r_sys_cmdf ("powershell -NoProfile -Command \"$ProgressPreference='SilentlyContinue';"
+		"[Net.ServicePointManager]::SecurityProtocol='Tls12';"
+		"Invoke-WebRequest -UseBasicParsing -Uri '%s' -OutFile '%s'\"", psurl, psout);
+	free (psurl);
+	free (psout);
+	return res == 0;
+#else
 	R_LOG_ERROR ("Please install `curl` or `wget`");
 	return false;
+#endif
 }
 
 static bool unzip(const char *file, const char *dir) {
@@ -955,7 +1197,23 @@ static bool unzip(const char *file, const char *dir) {
 	if (r_str_endswith (file, ".tgz") || r_str_endswith (file, ".tar.gz")) {
 		res = 0 == r_sys_cmdf ("tar -xzvf \"%s\" -C \"%s\"", efile, edir);
 	} else if (r_str_endswith (file, ".zip")) {
+#if R2__WINDOWS__
+		/* windows ships bsdtar and powershell, but not unzip */
+		res = 0 == r_sys_cmdf ("tar -xf \"%s\" -C \"%s\"", efile, edir);
+		if (!res) {
+			res = 0 == r_sys_cmdf ("powershell -NoProfile -Command \"Expand-Archive -Force -LiteralPath '%s' -DestinationPath '%s'\"", efile, edir);
+		}
+#else
 		res = 0 == r_sys_cmdf ("unzip \"%s\" -d \"%s\"", efile, edir);
+		if (!res) {
+			char *unzipbin = r_file_path ("unzip");
+			if (!unzipbin) {
+				/* bsdtar/libarchive reads zip too */
+				res = 0 == r_sys_cmdf ("tar -xf \"%s\" -C \"%s\"", efile, edir);
+			}
+			free (unzipbin);
+		}
+#endif
 	}
 	free (efile);
 	free (edir);
@@ -987,21 +1245,33 @@ static int r2pm_clone(const char *pkg) {
 	}
 	bool git_source = false;
 	if (r_file_is_directory (srcdir)) {
-		git_source = git_pull (srcdir, true, 0);
+		// tarball packages are extracted without .git and have nothing to pull
+		char *gitmeta = r_file_new (srcdir, ".git", NULL);
+		git_source = r_file_exists (gitmeta) || r_file_is_directory (gitmeta);
+		free (gitmeta);
+		if (git_source && git_pull (srcdir, true, false)) {
+			R_LOG_ERROR ("Cannot update %s", srcdir);
+			free (srcdir);
+			return 1;
+		}
 	} else {
 		char *url_list = r2pm_get (pkg, "\nR2PM_GIT ", TT_WORDLIST);
 		if (url_list) {
 			r_str_replace_ch (url_list, ',', ' ', true);
 			int url_ct, i;
 			char **urls = r_str_argv (url_list, &url_ct);
-			for (i = 0; i < url_ct; i++) {
-				if (!git_clone (srcdir, urls[i])) {
-					break;
-				}
+			bool cloned = false;
+			for (i = 0; i < url_ct && !cloned; i++) {
+				cloned = !git_clone (srcdir, urls[i]);
 			}
 			git_source = true;
 			r_str_argv_free (urls);
 			free (url_list);
+			if (!cloned) {
+				R_LOG_ERROR ("Cannot clone any of the R2PM_GIT repositories for %s", pkg);
+				free (srcdir);
+				return 1;
+			}
 		} else {
 			char *url = r2pm_get (pkg, "\nR2PM_TGZ", TT_VALUE);
 			if (!url) {
@@ -1216,27 +1486,30 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global, bool binar
 		char *dep;
 		RListIter *iter;
 		RList *l = r_str_split_list (deps, " ", 0);
-		char *pkgdir = r2pm_gitdir ();
+		char *pkgdir = r2pm_pkgdir ();
+		bool failed = false;
 		r_list_foreach (l, iter, dep) {
-			if (!clean) {
-				// skip dep if already installed
-				char *srcdir = r_file_new (pkgdir, pkg, NULL);
-				bool is_installed = r_file_is_directory (srcdir);
-				free (srcdir);
-				if (is_installed) {
-					continue;
-				}
+			if (!*dep) {
+				continue;
 			}
-			if (r2pm_clone (dep) == 0) {
-				r2pm_install_pkg (dep, clean, false, false); // XXX get current pkg global value
-			} else {
-				R_LOG_ERROR ("Cannot clone %s", dep);
-				// ignore return -1;
+			char *regfile = r_file_new (pkgdir, dep, NULL);
+			const bool installed = !clean && r_file_exists (regfile);
+			free (regfile);
+			if (installed) {
+				continue;
+			}
+			if (r2pm_clone (dep) || r2pm_install_pkg (dep, clean, global, false)) {
+				R_LOG_ERROR ("Cannot install %s, required by %s", dep, pkg);
+				failed = true;
+				break;
 			}
 		}
 		free (pkgdir);
 		r_list_free (l);
 		free (deps);
+		if (failed) {
+			return 1;
+		}
 	}
 	char *srcdir = r2pm_gitdir ();
 	R_LOG_DEBUG ("Entering %s", srcdir);
@@ -1287,19 +1560,6 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global, bool binar
 		free (srcdir);
 		return 1;
 	}
-	script = r_str_replace_all (script, "\n", " & ");
-
-	char *dirname = r2pm_get (pkg, "\nR2PM_DIR ", TT_VALUE);
-	char *esrcdir = r_str_escape_sh (srcdir);
-	char *etarget = r_str_escape_sh (dirname? dirname: pkg);
-	char *s = (esrcdir && etarget)
-		? r_str_newf ("cd /d \"%s\" && cd \"%s\" && %s", esrcdir, etarget, script)
-		: r_str_newf ("%s", script);
-	free (esrcdir);
-	free (etarget);
-	free (dirname);
-	int res = r_sandbox_system (s, 1);
-	free (s);
 #else
 	char *script = r2pm_get (pkg, "\nR2PM_INSTALL() {\n", TT_CODEBLOCK);
 	if (!script) {
@@ -1310,13 +1570,8 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global, bool binar
 	R_LOG_INFO ("SCRIPT=<<EOF");
 	R_LOG_INFO ("%s", script);
 	R_LOG_INFO ("EOF");
-	char *pkgdir = r_str_newf ("%s/%s", srcdir, pkg);
-	char *dirname = r2pm_get (pkg, "\nR2PM_DIR ", TT_VALUE);
-	if (dirname) {
-		free (pkgdir);
-		pkgdir = r_str_newf ("%s/%s/%s", srcdir, pkg, dirname);
-	}
-	free (dirname);
+#endif
+	char *pkgdir = have_builddir? r2pm_source_dir (srcdir, pkg): NULL;
 	if (have_builddir && !r_file_is_directory (pkgdir)) {
 		R_LOG_ERROR ("Cannot find directory: %s", pkgdir);
 		free (pkgdir);
@@ -1324,19 +1579,21 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global, bool binar
 		free (srcdir);
 		return 1;
 	}
-	char *epkgdir = r_str_escape_sh (pkgdir);
-	char *s = (have_builddir && epkgdir)
+#if R2__WINDOWS__
+	int res = r2pm_run_batch_script (script, pkgdir);
+#else
+	char *epkgdir = pkgdir? r_str_escape_sh (pkgdir): NULL;
+	char *s = epkgdir
 		? r_str_newf ("cd \"%s\"\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\nexit 1\n}\n%s", epkgdir, script)
 		: r_str_newf ("export MAKE=make\nR2PM_FAIL(){\n  echo $@\nexit 1\n}\n%s", script);
 	free (epkgdir);
-	// if no srcdir is defined because no file to pull just dont cd
-	free (pkgdir);
 	int res = r_sandbox_system (s, 1);
 	free (s);
+#endif
+	free (pkgdir);
 	if (res == 0) {
 		r2pm_register (pkg, global, false);
 	}
-#endif
 	free (script);
 	free (srcdir);
 	return res;
@@ -1348,6 +1605,25 @@ static bool r2pm_have_packages(void) {
 	free (dbdir);
 	return res;
 }
+
+#if R2__WINDOWS__
+// unknown packages are left to the regular install path to report
+static bool r2pm_windows_installable(const char *pkg, bool *binary_only) {
+	*binary_only = false;
+	char *path = r2pm_pkgpath (pkg);
+	char *data = path? r_file_slurp (path, NULL): NULL;
+	free (path);
+	if (!data) {
+		return true;
+	}
+	r_str_normalize_newlines (data);
+	const bool source = strstr (data, R2PM_INSTALL_WINDOWS) || strstr (data, R2PM_INSTALL_R2);
+	const bool binary = strstr (data, R2PM_BINSTALL_WINDOWS);
+	free (data);
+	*binary_only = binary && !source;
+	return source || binary;
+}
+#endif
 
 static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, bool global, bool binary) {
 	RListIter *iter;
@@ -1361,7 +1637,13 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, 
 	}
 	r_str_trim (r2v);
 	R_LOG_INFO ("Using r2-%s and r2pm-" R2_VERSION, r2v);
-	if (binary) {
+#if R2__WINDOWS__
+	// packages without a source installer fall back to their binary release
+	const bool may_binary = true;
+#else
+	const bool may_binary = binary;
+#endif
+	if (may_binary) {
 		char *version = r_sys_getenv ("R2V");
 		if (R_STR_ISEMPTY (version)) {
 			r_sys_setenv ("R2V", r2v);
@@ -1383,8 +1665,21 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, 
 		if (clean) {
 			r2pm_clean_pkg (t);
 		}
-		if (binary || r2pm_clone (t) == 0) {
-			rc |= r2pm_install_pkg (t, clean, global, binary);
+		bool use_binary = binary;
+#if R2__WINDOWS__
+		bool binary_only;
+		if (!r2pm_windows_installable (t, &binary_only)) {
+			R_LOG_ERROR ("%s cannot be installed on Windows", t);
+			rc = 1;
+			continue;
+		}
+		if (binary_only && !binary) {
+			R_LOG_INFO ("%s has no Windows source installer, using its binary release", t);
+			use_binary = true;
+		}
+#endif
+		if (use_binary || r2pm_clone (t) == 0) {
+			rc |= r2pm_install_pkg (t, clean, global, use_binary);
 		} else {
 			R_LOG_ERROR ("Cannot clone %s", t);
 			rc = 1;
@@ -1404,9 +1699,9 @@ static int r2pm_edit(RList *targets) {
 			char *epkgpath = r_str_escape_sh (pkgpath);
 			if (R_STR_ISNOTEMPTY (editor) && epkgpath) {
 				char *eeditor = r_str_escape_sh (editor);
-				rc = eeditor
-					? r_sys_cmdf ("\"%s\" \"%s\"", eeditor, epkgpath)
-					: -1;
+				char *cmd = eeditor? r_str_newf ("\"%s\" \"%s\"", eeditor, epkgpath): NULL;
+				rc = cmd? r2pm_system (cmd): -1;
+				free (cmd);
 				free (eeditor);
 			} else if (epkgpath) {
 #if R2__WINDOWS__
@@ -1473,12 +1768,18 @@ static bool is_valid_package(const char *dbdir, const char *pkg) {
 	if (data) {
 		r_str_normalize_newlines (data);
 	}
+#if R2__WINDOWS__
+	bool valid = data && (strstr (data, R2PM_INSTALL_R2)
+		|| strstr (data, R2PM_INSTALL_WINDOWS)
+		|| strstr (data, R2PM_BINSTALL_WINDOWS));
+#else
 	bool valid = data && (strstr (data, R2PM_INSTALL_R2)
 		|| strstr (data, R2PM_INSTALL_QJS)
 		|| strstr (data, R2PM_INSTALL_UNIX)
 		|| strstr (data, R2PM_INSTALL_WINDOWS)
 		|| strstr (data, R2PM_BINSTALL)
 		|| strstr (data, R2PM_BINSTALL_WINDOWS));
+#endif
 	if (!valid) {
 		R_LOG_DEBUG ("Unable to find an R2PM_INSTALL script in '%s'", pkg);
 	}
@@ -1600,6 +1901,7 @@ static char *r2pm_search(const char *grep, int mode, bool all) {
 		free (path);
 		return NULL;
 	}
+	r_list_sort (files, (RListComparator)strcmp);
 	RListIter *iter;
 	const char *file;
 	PJ *pj = NULL;
@@ -1888,11 +2190,13 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 			return r_main_cons_fini (cons, own_cons, 1);
 		}
 	}
-	if (r2pm.init) {
-		r2pm_update (r2pm.force);
+	if (r2pm.init && r2pm_update (r2pm.force)) {
+		r2pm.rc = 1;
 	}
 	if (r2pm.upgrade) {
-		r2pm_upgrade (r2pm.force);
+		if (r2pm_upgrade (&r2pm)) {
+			r2pm.rc = 1;
+		}
 	}
 	if (r2pm.version) {
 		int mode = r2pm.json? 'j': r2pm.quiet? 'q': 0;
@@ -2013,7 +2317,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		return r_main_cons_fini (cons, own_cons, res);
 	}
 	if (r2pm.init || opt.ind == 1) {
-		return r_main_cons_fini (cons, own_cons, 0);
+		return r_main_cons_fini (cons, own_cons, r2pm.rc);
 	}
 	return r_main_cons_fini (cons, own_cons, 1);
 }

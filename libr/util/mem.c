@@ -105,6 +105,64 @@ R_API void r_mem_copybits_delta(ut8 *dst, int doff, const ut8 *src, int soff, in
 	}
 }
 
+// be streams start at the msb of the first byte, le streams at its lsb
+R_API ut64 r_mem_get_bits(const ut8 *buf, ut64 bitoff, int bits, bool be) {
+	R_RETURN_VAL_IF_FAIL (buf && bits > 0 && bits <= 64, 0);
+	ut64 value = 0;
+	int i;
+	for (i = 0; i < bits; i++) {
+		const ut64 pos = bitoff + i;
+		if (be) {
+			value = (value << 1) | ((buf[pos >> 3] >> (7 - (pos & 7))) & 1);
+		} else {
+			value |= (ut64)((buf[pos >> 3] >> (pos & 7)) & 1) << i;
+		}
+	}
+	return value;
+}
+
+R_API void r_mem_set_bits(ut8 *buf, ut64 bitoff, int bits, ut64 value, bool be) {
+	R_RETURN_IF_FAIL (buf && bits > 0 && bits <= 64);
+	int i;
+	for (i = 0; i < bits; i++) {
+		const ut64 pos = bitoff + i;
+		const ut8 mask = 1 << (be? 7 - (pos & 7): pos & 7);
+		if ((value >> (be? bits - 1 - i: i)) & 1) {
+			buf[pos >> 3] |= mask;
+		} else {
+			buf[pos >> 3] &= ~mask;
+		}
+	}
+}
+
+// expand count packed units into r_mem_bits_unit sized containers of the same endianness
+R_API void r_mem_unpack_bits(ut8 *dst, const ut8 *src, ut64 count, int bits, bool be) {
+	R_RETURN_IF_FAIL (dst && src && bits > 0 && bits <= 64);
+	const int unit = r_mem_bits_unit (bits);
+	ut64 i;
+	for (i = 0; i < count; i++) {
+		r_write_ble (dst + i * unit, r_mem_get_bits (src, i * bits, bits, be), be, unit * 8);
+	}
+}
+
+// returns false when a container holds a value wider than bits, which gets truncated
+R_API bool r_mem_pack_bits(ut8 *dst, const ut8 *src, ut64 count, int bits, bool be) {
+	R_RETURN_VAL_IF_FAIL (dst && src && bits > 0 && bits <= 64, false);
+	const int unit = r_mem_bits_unit (bits);
+	const ut64 mask = (bits == 64)? UT64_MAX: (1ULL << bits) - 1;
+	bool fits = true;
+	ut64 i;
+	memset (dst, 0, (count * bits + 7) / 8);
+	for (i = 0; i < count; i++) {
+		const ut64 value = r_read_ble (src + i * unit, be, unit * 8);
+		if (value & ~mask) {
+			fits = false;
+		}
+		r_mem_set_bits (dst, i * bits, bits, value, be);
+	}
+	return fits;
+}
+
 R_API ut64 r_mem_get_num(const ut8 *b, int size) {
 	// LITTLE ENDIAN is the default for streams
 	switch (size) {

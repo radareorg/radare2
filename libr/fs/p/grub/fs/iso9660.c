@@ -45,6 +45,9 @@ SUSP, Rock Ridge.  */
 #define GRUB_ISO9660_VOLDESC_PART 3
 #define GRUB_ISO9660_VOLDESC_END 255
 
+/* How many continuation areas the entries of one record may span.  */
+#define GRUB_ISO9660_MAX_CE_HOPS 32
+
 /* The head of a volume descriptor.  */
 R_PACKED(
 	struct grub_iso9660_voldesc {
@@ -184,6 +187,7 @@ grub_iso9660_susp_iterate(struct grub_iso9660_data *data,
 		return grub_errno;
 	}
 	struct grub_iso9660_susp_entry *entry = (struct grub_iso9660_susp_entry *)sua;
+	int ce_hops = 0;
 
 	if (hook) {
 		for (; (char *)entry < (char *)sua + sua_size - 1;
@@ -196,6 +200,12 @@ grub_iso9660_susp_iterate(struct grub_iso9660_data *data,
 			/* Additional entries are stored elsewhere.  */
 			if (strncmp ((char *)entry->sig, "CE", 2) == 0) {
 				struct grub_iso9660_susp_ce *ce;
+
+				/* A chain of continuation areas can lead back to itself.  */
+				if (++ce_hops > GRUB_ISO9660_MAX_CE_HOPS) {
+					grub_free (sua);
+					return grub_error (GRUB_ERR_BAD_FS, "too many CE entries");
+				}
 
 				ce = (struct grub_iso9660_susp_ce *)entry;
 				sua_size = grub_le_to_cpu32 (ce->len);

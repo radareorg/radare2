@@ -139,7 +139,10 @@ typedef enum {
 } RArchEsilAction;
 
 typedef ut32 RArchDecodeMask;
-typedef ut32 RArchEncodeMask; // syntax ?
+typedef ut32 RArchEncodeMask;
+enum {
+	R_ARCH_ENCODE_MASK_SIZING = 1, // permit unresolved operands while computing labels
+};
 typedef ut32 RArchModifyMask; // syntax ?
 
 typedef int (*RArchPluginInfoCallback)(RArchSession *cfg, ut32 query);
@@ -283,6 +286,7 @@ extern const RArchPlugin r_arch_plugin_bpf;
 extern const RArchPlugin r_arch_plugin_bpf_cs;
 extern const RArchPlugin r_arch_plugin_sbpf_cs;
 extern const RArchPlugin r_arch_plugin_chip8;
+extern const RArchPlugin r_arch_plugin_e0c62;
 extern const RArchPlugin r_arch_plugin_cr16;
 extern const RArchPlugin r_arch_plugin_cris;
 extern const RArchPlugin r_arch_plugin_dalvik;

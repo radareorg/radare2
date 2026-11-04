@@ -6,6 +6,7 @@
 #include <r_lib.h>
 #include <r_bin.h>
 #include <r_vec.h>
+#include <sdb/ht_uu.h>
 
 #define R_BIN_DEX_MAXSTR 256
 #define DEX_CLASS_SIZE (32)
@@ -164,7 +165,8 @@ typedef struct r_bin_dex_obj_t {
 	bool addrline_loaded;
 	const char *dexSubsystem;
 	bool simplifiedDemangling;
-	Sdb *mdb;
+	HtUU *method_addrs;
+	ut64 members_left; // encoded fields and methods the class data walk may still parse
 } RBinDexObj;
 
 typedef struct r_bin_dex_str_t {

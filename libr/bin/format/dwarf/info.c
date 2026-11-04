@@ -2,6 +2,9 @@
 
 #include "dwarf.h"
 
+// DW_FORM_flag_present and DW_FORM_implicit_const read no bytes, so bound the values a unit keeps by its size
+#define DWARF_MAX_ATTR_VALUES_PER_BYTE 4
+
 static int abbrev_cmp(const void *a, const void *b) {
 	const RBinDwarfAbbrevDecl *first = a;
 	const RBinDwarfAbbrevDecl *second = b;
@@ -186,21 +189,12 @@ static const ut8 *parse_attr_value(DwarfStrSections *sections, const ut8 *obuf, 
 		break;
 	case DW_FORM_string:
 		value->kind = DW_AT_KIND_STRING;
-		size_t available = buf_end - buf;
-		if (available < 1 || available > ST32_MAX) {
+		const ut8 *nul = dwarf_string_end (buf, buf_end);
+		if (!nul) {
 			return NULL;
 		}
-		size_t slen = r_str_nlen ((const char *)buf, (int)available);
-		if (slen >= available) {
-			return NULL;
-		}
-		if (slen > 0) {
-			// go programs contain multibyte chars in the symbol names and strings we dont want to strip them here
-			value->string.content = (const char *)buf;
-		} else {
-			value->string.content = NULL;
-		}
-		buf += slen + 1;
+		value->string.content = nul > buf? (const char *)buf: NULL;
+		buf = nul + 1;
 		break;
 	case DW_FORM_block1:
 		value->kind = DW_AT_KIND_BLOCK;
@@ -511,6 +505,11 @@ static void dwarf_comp_unit_save_comp_dir(RBinFile *bf, RBinDwarfCompUnit *unit)
 static const ut8 *parse_die(DwarfStrSections *sections, const ut8 *buf, const ut8 *buf_end, const RBinDwarfAbbrevDecl *abbrev, ut64 abbr_code, RBinDwarfCompUnit *unit, RBinDwarfDie *die) {
 	if (!buf || !buf_end || buf > buf_end || abbrev->tag > UT16_MAX
 		|| RVecDwarfAttrValue_length (unit->attrs) > UT32_MAX) {
+		return NULL;
+	}
+	const size_t values = RVecDwarfAttrValue_length (unit->attrs) + RVecDwarfAttrDef_length (abbrev->defs);
+	if (values / DWARF_MAX_ATTR_VALUES_PER_BYTE > unit->hdr.length) {
+		R_LOG_WARN ("Too many attributes in DWARF compilation unit at 0x%" PFMT64x, unit->offset);
 		return NULL;
 	}
 	die->abbrev_code = abbr_code;

@@ -2,3 +2,19 @@ ad "nop" 13000000
 ad "auipc t0, 0x280" 97022800
 # ad "lui sp, 0x8" 37810000
 # ad "addi s0, sp, 16" 13040101
+ad "sw a1, 8(sp)" 2324b100
+ad "sw a1, -2048(sp)" 2320b180
+ad "sb a1, 8(sp)" 2304b100
+ad "sh a1, -1(sp)" a31fb1fe
+ad "sd ra, 8(sp)" 23341100
+ad "ld s0, -16(sp)" 033401ff
+ad "lbu a0, 2047(a1)" 03c5f57f
+ad "srai a0, a1, 0x3f" 13d5f543
+ad "srli a0, a0, 0x3" 13553500
+ad "slli t0, t1, 0xc" 9312c300
+a "srai a0, a0, 3" 13553540
+ad "jalr 8(a0)" e7008500
+a "jalr ra, 8(a0)" e7008500
+ad "jalr a0" e7000500
+ad "jr a5" 67800700
+ad "addi a0, a0, -1" 1305f5ff

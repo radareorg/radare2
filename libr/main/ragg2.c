@@ -158,10 +158,11 @@ static bool create(RCons *cons, const char *format, const char *arch, int bits, 
 	return ret;
 }
 
+// ragg2 also runs inside r2, so the output goes through the sandbox
 static int openfile(const char *f, int x) {
-	int fd = open (f, O_RDWR | O_CREAT, 0644);
+	int fd = r_sandbox_open (f, O_RDWR | O_CREAT, 0644);
 	if (fd == -1) {
-		fd = open (f, O_RDWR);
+		fd = r_sandbox_open (f, O_RDWR, 0);
 		if (fd == -1) {
 			return -1;
 		}
@@ -199,6 +200,26 @@ static void ragg_show_env(RCons *cons, bool show_desc) {
 			ragg_env_print (cons, env[id].name);
 		}
 	}
+}
+
+static void ragg_patch_word(REgg *egg, const char *arg, int size) {
+	const char *colon = strchr (arg, ':');
+	if (!colon) {
+		R_LOG_ERROR ("Missing colon in -%c", size == 4? 'd': 'D');
+		return;
+	}
+	char *offstr = r_str_ndup (arg, colon - arg);
+	ut64 off = r_num_math (NULL, offstr);
+	ut64 n = r_num_math (NULL, colon + 1);
+	free (offstr);
+	// TODO: support big endian
+	ut8 word[8];
+	if (size == 4) {
+		r_write_le32 (word, (ut32)n);
+	} else {
+		r_write_le64 (word, n);
+	}
+	r_egg_patch (egg, off, word, size);
 }
 
 R_API int r_main_ragg2(int argc, const char **argv) {
@@ -312,37 +333,10 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 			}
 			break;
 		case 'd':
-			{
-				ut32 off, n;
-				char *p = strchr (opt.arg, ':');
-				if (p) {
-					*p = 0;
-					off = r_num_math (NULL, opt.arg);
-					n = r_num_math (NULL, p + 1);
-					*p = ':';
-					ut8 word[4];
-					r_write_le32 (word, (ut32)n);
-					// TODO: support big endian
-					r_egg_patch (es->e, off, word, sizeof (word));
-				} else {
-					R_LOG_ERROR ("Missing colon in -d");
-				}
-			}
+			ragg_patch_word (es->e, opt.arg, 4);
 			break;
 		case 'D':
-			{
-				char *p = strchr (opt.arg, ':');
-				if (p) {
-					ut64 n, off = r_num_math (NULL, opt.arg);
-					n = r_num_math (NULL, p + 1);
-					// TODO: honor endianness here
-					ut8 word[8];
-					r_write_le64 (word, n);
-					r_egg_patch (es->e, off, word, sizeof (word));
-				} else {
-					R_LOG_ERROR ("Missing colon in -d");
-				}
-			}
+			ragg_patch_word (es->e, opt.arg, 8);
 			break;
 		case 'S':
 			str = opt.arg;
@@ -371,10 +365,11 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 			break;
 		case 'c':
 			{
-				char *p = strchr (opt.arg, '=');
-				if (p) {
-					*p++ = 0;
-					r_egg_option_set (es->e, opt.arg, p);
+				const char *eq = strchr (opt.arg, '=');
+				if (eq) {
+					char *key = r_str_ndup (opt.arg, eq - opt.arg);
+					r_egg_option_set (es->e, key, eq + 1);
+					free (key);
 				} else {
 					r_egg_option_set (es->e, opt.arg, "true");
 				}

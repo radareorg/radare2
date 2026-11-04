@@ -40,6 +40,8 @@ typedef struct {
 	bool forcebase; // -b
 	bool quiet; // -q
 	int swapbytes;
+	int pack; // -p 1, -P -1
+	int packbits;
 } RaxActions;
 
 typedef struct {
@@ -49,8 +51,61 @@ typedef struct {
 
 static bool rax(RNum *num, char *str, int len, int last, RaxActions *flags, RaxMode *mode, PJ **pj);
 
+static int rax2_pack(RaxActions *flags) {
+	const int bits = flags->packbits;
+	if (!bits) {
+		R_LOG_ERROR ("Packing with -p or -P requires the unit size in bits");
+		return 1;
+	}
+	const int unit = r_mem_bits_unit (bits);
+	const bool be = flags->swapendian;
+	int len = 0;
+	ut8 *buf = (ut8 *)r_stdin_slurp (&len);
+	if (!buf || len < 0) {
+		free (buf);
+		return 1;
+	}
+	ut64 count, outlen;
+	if (flags->pack > 0) {
+		if (len % unit) {
+			R_LOG_ERROR ("Input size is not a multiple of %d bytes", unit);
+			free (buf);
+			return 1;
+		}
+		count = len / unit;
+		outlen = (count * bits + 7) / 8;
+	} else {
+		count = ((ut64)len * 8) / bits;
+		outlen = count * unit;
+	}
+	ut8 *out = malloc (R_MAX (outlen, 1));
+	if (!out) {
+		free (buf);
+		return 1;
+	}
+	int rc = 0;
+	if (flags->pack > 0) {
+		if (!r_mem_pack_bits (out, buf, count, bits, be)) {
+			R_LOG_ERROR ("Input has values wider than %d bits", bits);
+			rc = 1;
+		}
+	} else {
+		r_mem_unpack_bits (out, buf, count, bits, be);
+	}
+	if (!rc) {
+		fwrite (out, outlen, 1, stdout);
+		fflush (stdout);
+	}
+	free (out);
+	free (buf);
+	return rc;
+}
+
 static int use_stdin(RNum *num, RaxActions *flags, RaxMode *mode, PJ **pj) {
 	R_RETURN_VAL_IF_FAIL (num && flags, -1);
+	if (flags->pack) {
+		return rax2_pack (flags);
+	}
 	if (flags->hexstr2raw && flags->swapendian && !flags->swapbytes) {
 		R_LOG_ERROR ("Endian swap with -s requires -b <8|16|32|64>");
 		return 1;
@@ -226,6 +281,9 @@ static int help(void) {
 		"  -K         randomart            ;  rax2 -K 0x34 1020304050\n"
 		"  -n         newline              ;  append newline to output (for -E/-D/-r/..)\n"
 		"  -o         octalstr -> raw      ;  rax2 -o \\162 \\62 # r2\n"
+		"  -p <bits>  pack units to bits   ;  rax2 -p 12 < words.bin > packed.bin\n"
+		"  -P <bits>  unpack bits to units ;  rax2 -P 12 < packed.bin > words.bin\n"
+		"             little endian by default, -e for big endian streams and units\n"
 		"  -q         quiet mode           ;  rax2 -qC < /etc/hosts # be quiet\n"
 		"  -r         r2 style output      ;  rax2 -r 0x1234 # same as r2 -c '? 0x1234'\n"
 		"  -s         hexstr -> raw        ;  rax2 -s 43 4a 50\n"
@@ -328,6 +386,8 @@ static bool rax(RNum *num, char *str, int len, int last, RaxActions *flags, RaxM
 			case 'e': flags->swapendian = !flags->swapendian; break;
 			case 'S': flags->raw2hexstr = !flags->raw2hexstr; break;
 			case 'Z': flags->binstr2raw = !flags->binstr2raw; break;
+			case 'p': flags->pack = 1; break;
+			case 'P': flags->pack = -1; break;
 			case 'H': flags->hashstr = !flags->hashstr; break;
 			case 'k': flags->keepbase = !flags->keepbase; break;
 			case 'f': flags->floating = !flags->floating; break;
@@ -383,6 +443,15 @@ dotherax:
 			return false;
 		}
 		flags->swapbytes = bits / 8;
+		return last? !use_stdin (num, flags, mode, pj): true;
+	}
+	if (flags->pack && !flags->packbits) {
+		ut64 bits = r_num_math_err (num, str, &errstr);
+		if (errstr || bits < 1 || bits > 64) {
+			R_LOG_ERROR ("Invalid unit size, expected 1 to 64 bits");
+			return false;
+		}
+		flags->packbits = bits;
 		return last? !use_stdin (num, flags, mode, pj): true;
 	}
 	if (flags->hexstr2raw) { // -s

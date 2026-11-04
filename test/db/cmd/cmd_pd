@@ -2414,6 +2414,44 @@ EXPECT=<<EOF2
 EOF2
 RUN
 
+NAME=pd emu does not read a null string pointer
+FILE=malloc://0x200
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e asm.emu=true
+wx 7f454c46 @ 0
+wx b880010000 @ 0x100
+wx b9e0010000 @ 0x105
+wx ba40010000 @ 0x10a
+wx be60010000 @ 0x10f
+wx 00000000000000000020000000000000 @ 0x140
+wx 000000000000000000000000000000000000000000000001 @ 0x160
+w hello world @ 0x1c0
+wx c001000000000000 @ 0x1e0
+pd 4 @ 0x100
+EOF
+EXPECT=<<EOF
+            0x00000100      b880010000     mov eax, 0x180              ; rax=0x180
+            0x00000105      b9e0010000     mov ecx, 0x1e0              ; rcx=0x1e0 (pstr 0x000001c0) "hello world"
+            0x0000010a      ba40010000     mov edx, 0x140              ; rdx=0x140
+            0x0000010f      be60010000     mov esi, 0x160              ; rsi=0x160
+EOF
+RUN
+
+NAME=pd emu reads an applied .got.r2 slot as the slot
+FILE=bins/elf/ls
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+e asm.emu=true
+aeim
+pd 1 @ 0x5b08
+EOF
+EXPECT=<<EOF
+            0x00005b08      ff150ac30100   call qword [reloc.__libc_start_main] ; [0x21e18:8]=0x23700 rsym.__libc_start_main ; rsp=0x177ff8 ; [0x00177ff8:8] = 0x5b0e ; rip=0x23700 rsym.__libc_start_main
+                                                                       ; int __libc_start_main(0, 0, 0, 0, 0, 0, 0)
+EOF
+RUN
+
 NAME=pd emu right-justifies sub-word stack varargs on big-endian
 FILE=malloc://0x1000
 ARGS=-a ppc -b 64 -e cfg.bigendian=true
@@ -2639,5 +2677,201 @@ full64
 [0x00000000] 0x00000020
 full32
 [0x00000000] 0x00000020
+EOF
+RUN
+
+NAME=disassembly signature shows inline and noreturn attributes
+FILE=malloc://256
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e asm.lines.fcn=false
+wx c0035fd6 @ 0x10
+af+ 0x10 fcn.attr
+afb+ 0x10 0x10 4
+s 0x10
+afia+ inline
+pdf~fcn.attr
+afia+ noreturn
+pdf~fcn.attr
+afia- inline
+pdf~fcn.attr
+afia- noreturn
+pdf~fcn.attr
+EOF
+EXPECT=<<EOF
+4: fcn.attr (); // inline
+4: fcn.attr (); // noreturn inline
+4: fcn.attr (); // noreturn
+4: fcn.attr ();
+EOF
+RUN
+
+NAME=pd strips control codes from flag real names
+FILE=malloc://16
+CMDS=<<EOF
+f foo=0
+fN foo `?e a\xc2\x9b2Jb\x07c\x1b`
+e asm.flags.real=true
+pd 1~foo,a2
+EOF
+EXPECT=<<EOF
+            ;-- a2Jbc:
+EOF
+RUN
+
+NAME=pd V850 excludes register flags from jump targets
+FILE=malloc://8192
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+e asm.addr=false
+e asm.bytes=false
+e asm.lines=false
+e asm.comments=false
+e asm.flags=false
+e asm.marks=false
+wx b2fd @ 0x100a
+ar pc=0x1000
+.ar*
+pd 1 @ 0x100a
+fs+symbols
+f sym.target 1 0x1000
+fs-
+pd 1 @ 0x100a
+EOF
+EXPECT=<<EOF
+be 0x1000
+be sym.target
+EOF
+RUN
+
+NAME=pd x86-64 excludes register flags from jump targets
+FILE=malloc://8192
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e asm.addr=false
+e asm.bytes=false
+e asm.lines=false
+e asm.comments=false
+e asm.flags=false
+e asm.marks=false
+wx ebf4 @ 0x100a
+ar rip=0x1000
+.ar*
+pd 1 @ 0x100a
+fs+symbols
+f sym.target 1 0x1000
+fs-
+pd 1 @ 0x100a
+EOF
+EXPECT=<<EOF
+jmp 0x1000
+jmp sym.target
+EOF
+RUN
+
+NAME=pd ARM32 excludes register flags from jump targets
+FILE=malloc://8192
+ARGS=-a arm -b 32
+CMDS=<<EOF
+e asm.addr=false
+e asm.bytes=false
+e asm.lines=false
+e asm.comments=false
+e asm.flags=false
+e asm.marks=false
+wx fcffffea @ 0x1008
+ar pc=0x1000
+.ar*
+pd 1 @ 0x1008
+fs+symbols
+f sym.target 1 0x1000
+fs-
+pd 1 @ 0x1008
+EOF
+EXPECT=<<EOF
+b 0x1000
+b sym.target
+EOF
+RUN
+
+NAME=pd ARM64 excludes register flags from jump targets
+FILE=malloc://8192
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e asm.addr=false
+e asm.bytes=false
+e asm.lines=false
+e asm.comments=false
+e asm.flags=false
+e asm.marks=false
+wx feffff17 @ 0x1008
+ar pc=0x1000
+.ar*
+pd 1 @ 0x1008
+fs+symbols
+f sym.target 1 0x1000
+fs-
+pd 1 @ 0x1008
+EOF
+EXPECT=<<EOF
+b 0x1000
+b sym.target
+EOF
+RUN
+
+NAME=pd RISC-V excludes register flags from jump targets
+FILE=malloc://8192
+ARGS=-a riscv -b 64
+CMDS=<<EOF
+e asm.addr=false
+e asm.bytes=false
+e asm.lines=false
+e asm.comments=false
+e asm.flags=false
+e asm.marks=false
+wx 6ff09fff @ 0x1008
+ar pc=0x1000
+.ar*
+pd 1 @ 0x1008
+fs+symbols
+f sym.target 1 0x1000
+fs-
+pd 1 @ 0x1008
+EOF
+EXPECT=<<EOF
+j 0x1000
+j sym.target
+EOF
+RUN
+
+NAME=pd excludes dotted register flags from immediates
+FILE=malloc://8192
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e asm.addr=false
+e asm.bytes=false
+e asm.lines=false
+e asm.comments=false
+e asm.flags=false
+e asm.marks=false
+wx b800100000
+fs+sections
+f section.test 1 0x1000
+fs-
+fs+registers
+f reg.pc 8 0x1000
+fs-
+pd 1
+f-section.test
+pd 1
+fs+custom
+f data.target 1 0x1000
+fs-
+pd 1
+EOF
+EXPECT=<<EOF
+mov eax, 0x1000
+mov eax, 0x1000
+mov eax, data.target
 EOF
 RUN

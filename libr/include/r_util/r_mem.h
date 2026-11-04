@@ -49,6 +49,10 @@ R_API bool r_mem_set_num(ut8 *dest, int dest_size, ut64 num);
 R_API bool r_mem_eq(ut8 *a, ut8 *b, int len);
 R_API void r_mem_copybits(ut8 *dst, const ut8 *src, int bits);
 R_API void r_mem_copybits_delta(ut8 *dst, int doff, const ut8 *src, int soff, int bits);
+R_API ut64 r_mem_get_bits(const ut8 *buf, ut64 bitoff, int bits, bool be);
+R_API void r_mem_set_bits(ut8 *buf, ut64 bitoff, int bits, ut64 value, bool be);
+R_API void r_mem_unpack_bits(ut8 *dst, const ut8 *src, ut64 count, int bits, bool be);
+R_API bool r_mem_pack_bits(ut8 *dst, const ut8 *src, ut64 count, int bits, bool be);
 R_API void r_mem_copyloop(ut8 *dest, const ut8 *orig, int dsize, int osize);
 R_API void r_mem_swaporcopy(ut8 *dest, const ut8 *src, int len, bool big_endian);
 R_API void r_mem_swapendian(ut8 *dest, const ut8 *orig, int size);
@@ -72,6 +76,11 @@ R_API bool r_mem_is_zero(const ut8 *b, int l);
 
 R_API int r_mem_from_binstring(const char* str, ut8 *buf, size_t len);
 R_API char *r_mem_to_binstring(const ut8* str, int len);
+
+// bytes of the smallest integer container holding a bits-wide unit
+static inline int r_mem_bits_unit(int bits) {
+	return bits <= 8? 1: bits <= 16? 2: bits <= 32? 4: 8;
+}
 
 // 27bit middle endian parser
 typedef ut32 ut27;

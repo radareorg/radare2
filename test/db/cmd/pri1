@@ -1,0 +1,96 @@
+NAME=pri1 width and row padding
+FILE=malloc://64
+CMDS=<<EOF
+e hex.cols=9
+e hex.stride=0
+wx ffff8080ff80
+pri1 6
+EOF
+EXPECT=<<EOF
+##################
+##              ##
+##################
+EOF
+RUN
+
+NAME=pri1 explicit stride
+FILE=malloc://64
+CMDS=<<EOF
+e hex.cols=9
+e hex.stride=3
+wx ff8000008000ff8000
+pri1 9
+EOF
+EXPECT=<<EOF
+##################
+                ##
+##################
+EOF
+RUN
+
+NAME=pri1u odd height
+FILE=malloc://64
+CMDS=<<EOF
+e hex.cols=9
+e hex.stride=0
+wx ff800000ff80
+pri1u 6
+EOF
+EXPECT=<<EOF
+▀▀▀▀▀▀▀▀▀
+▀▀▀▀▀▀▀▀▀
+EOF
+RUN
+
+NAME=pri1u half block mapping
+FILE=malloc://64
+CMDS=<<EOF
+e hex.cols=4
+e hex.stride=0
+wx b070f0
+pri1u 3
+EOF
+EXPECT=<<EOF
+▀▄██
+▀▀▀▀
+EOF
+RUN
+
+NAME=pri1 short row
+FILE=malloc://64
+CMDS=<<EOF
+e hex.cols=17
+e hex.stride=0
+wx ffff
+pri1 2
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=pri1 incomplete final row
+FILE=malloc://64
+CMDS=<<EOF
+e hex.cols=9
+e hex.stride=0
+wx ff8000
+pri1 3
+EOF
+EXPECT=<<EOF
+##################
+EOF
+RUN
+
+NAME=pri1 explicit length below block size
+FILE=malloc://64
+CMDS=<<EOF
+e hex.cols=8
+e hex.stride=0
+wx ffff0000
+pri1 1
+EOF
+EXPECT=<<EOF
+################
+EOF
+RUN
+

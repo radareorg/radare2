@@ -2,6 +2,10 @@
 
 #include "dwarf.h"
 
+// lookups may read this many times the section in all, many DIEs can name one long list
+#define LOCLISTS_MAX_PASSES 16
+#define LOCLISTS_MIN_BUDGET (1024 * 1024)
+
 // the .debug_loclists contribution whose header starts at `at`
 static bool dwarf_loclists_contribution_at(const ut8 *sec, size_t len, bool be, size_t at, DwarfLoclistsContribution *c) {
 	if (at > len || len - at < 12) {
@@ -130,14 +134,14 @@ static inline bool loclist_is_base(ut8 lle) {
 	return lle == DW_LLE_base_addressx || lle == DW_LLE_base_address;
 }
 
-// one list up to its DW_LLE_end_of_list; false when any entry is malformed
-static bool loclist_foreach(const LoclistCtx *ctx, const ut8 *buf, const ut8 *limit, RBinDwarfLocEntryCb cb, void *user) {
+// one list up to its DW_LLE_end_of_list, *buf ends after the last entry read; false when any entry is malformed
+static bool loclist_foreach(const LoclistCtx *ctx, const ut8 **buf, const ut8 *limit, RBinDwarfLocEntryCb cb, void *user) {
 	ut64 base = ctx->base;
 	bool has_default = false;
 	ut8 lle;
 	ut64 start, end;
 	RBinDwarfBlock expr;
-	while (loclist_entry (ctx, &buf, limit, &lle, &base, &start, &end, &expr)) {
+	while (loclist_entry (ctx, buf, limit, &lle, &base, &start, &end, &expr)) {
 		if (lle == DW_LLE_end_of_list) {
 			return true;
 		}
@@ -171,7 +175,9 @@ struct r_bin_dwarf_loclists_t {
 	const RBinDwarfCompUnit *unit; // whose bases ctx and contribution hold
 	LoclistCtx ctx;
 	DwarfLoclistsContribution contribution;
+	ut64 budget; // section bytes lookups may still read
 	bool unit_ok;
+	bool exhausted;
 	bool has_contribution;
 	bool be;
 };
@@ -188,6 +194,7 @@ R_API RBinDwarfLocLists *r_bin_dwarf_loclists_new(RBinFile *bf) {
 	ll->sec = sec;
 	ll->len = section->bytes.len;
 	ll->be = r_bin_is_big_endian (bf->rbin);
+	ll->budget = R_MAX ((ut64)ll->len * LOCLISTS_MAX_PASSES, LOCLISTS_MIN_BUDGET);
 	RBinSection *addr_section = dwarf_get_section (bf, DWARF_SN_ADDR);
 	ll->addr = addr_section? dwarf_get_section_bytes (bf, addr_section): NULL;
 	ll->addr_len = ll->addr? addr_section->bytes.len: 0;
@@ -229,6 +236,19 @@ static bool loclists_unit(RBinDwarfLocLists *ll, const RBinDwarfCompUnit *unit) 
 	return true;
 }
 
+static bool loclists_spend(RBinDwarfLocLists *ll, ut64 bytes) {
+	if (bytes > ll->budget) {
+		if (!ll->exhausted) {
+			R_LOG_WARN ("Too many reads of .debug_loclists, ignoring the remaining location lists");
+		}
+		ll->budget = 0;
+		ll->exhausted = true;
+		return false;
+	}
+	ll->budget -= bytes;
+	return true;
+}
+
 // the contribution holding the list at offset, walking headers past the last
 static bool loclists_contribution_of(RBinDwarfLocLists *ll, ut64 offset, DwarfLoclistsContribution *c) {
 	if (ll->has_contribution && offset >= ll->contribution.lists && offset < ll->contribution.end) {
@@ -237,6 +257,9 @@ static bool loclists_contribution_of(RBinDwarfLocLists *ll, ut64 offset, DwarfLo
 	}
 	size_t at = ll->has_contribution && offset >= ll->contribution.end? ll->contribution.end: 0;
 	while (dwarf_loclists_contribution_at (ll->sec, ll->len, ll->be, at, c)) {
+		if (!loclists_spend (ll, c->end - at)) {
+			return false;
+		}
 		if (offset < c->end) {
 			if (offset < c->lists || c->address_size != ll->ctx.addr_size) {
 				return false;
@@ -253,10 +276,12 @@ static bool loclists_contribution_of(RBinDwarfLocLists *ll, ut64 offset, DwarfLo
 R_API bool r_bin_dwarf_loclists_foreach(RBinDwarfLocLists *ll, const RBinDwarfCompUnit *unit, ut64 offset, RBinDwarfLocEntryCb cb, void *user) {
 	R_RETURN_VAL_IF_FAIL (unit && cb, false);
 	DwarfLoclistsContribution c;
-	if (!ll || !loclists_unit (ll, unit) || !loclists_contribution_of (ll, offset, &c)) {
+	if (!ll || ll->exhausted || offset >= ll->len || !loclists_unit (ll, unit) || !loclists_contribution_of (ll, offset, &c)) {
 		return false;
 	}
-	return loclist_foreach (&ll->ctx, ll->sec + offset, ll->sec + c.end, cb, user);
+	const ut8 *buf = ll->sec + offset;
+	const bool ok = loclist_foreach (&ll->ctx, &buf, ll->sec + c.end, cb, user);
+	return loclists_spend (ll, buf - (ll->sec + offset)) && ok;
 }
 
 static const char *dwarf_lle_names[] = {

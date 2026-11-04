@@ -9,6 +9,8 @@
 #define SI_CLASS_TYPE_INFO_NAME "__si_class_type_info"
 #define CLASS_TYPE_INFO_NAME "__class_type_info"
 #define NAME_BUF_SIZE 256
+// upper bound for the number of direct bases of a __vmi_class_type_info
+#define VMI_BASES_MAX 64
 
 #define VT_WORD_SIZE(ctx)\
 	(ctx->word_size)
@@ -195,7 +197,7 @@ static bool rtti_itanium_vmi_class_type_info_init(RVTableContext *context, ut64 
 		return false;
 	}
 	vmi_cti->vmi_base_count = at & 0xffffffff;
-	if (vmi_cti->vmi_base_count < 1 || vmi_cti->vmi_base_count > 0xfffff) {
+	if (vmi_cti->vmi_base_count < 1 || vmi_cti->vmi_base_count > VMI_BASES_MAX) {
 		return false;
 	}
 	vmi_cti->vmi_bases = calloc (sizeof (base_class_type_info), vmi_cti->vmi_base_count);
@@ -609,7 +611,7 @@ static class_type_info *raw_rtti_parse(RVTableContext *context, ut64 vtable_addr
 		}
 		vmi_base_count = integers & 0xffffffff;
 		tmp_addr = addr + 0x4;
-		if (vmi_base_count < 1 || vmi_base_count > 0xfffff) {
+		if (vmi_base_count < 1 || vmi_base_count > VMI_BASES_MAX) {
 			return create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
 		}
 

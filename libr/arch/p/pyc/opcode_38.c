@@ -6,8 +6,6 @@ pyc_opcodes *opcode_38(void) {
 		return NULL;
 	}
 
-	ret->version_sig = (void *(*)())opcode_38;
-
 	// These are removed since 3.7...
 	rm_op (.op_obj = ret->opcodes, .op_name = "BREAK_LOOP", .op_code = 80);
 	rm_op (.op_obj = ret->opcodes, .op_name = "CONTINUE_LOOP", .op_code = 119);

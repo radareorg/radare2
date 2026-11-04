@@ -74,9 +74,9 @@ static bool dwarf_is_elf(RBinFile *bf) {
 }
 
 // .zdebug_* or SHF_COMPRESSED sections
-static bool dwarf_section_is_compressed(RBinSection *section, bool is_elf) {
+R_IPI bool dwarf_section_is_compressed(RBinFile *bf, RBinSection *section) {
 	return (section->name && strstr (section->name, "zdebug"))
-		|| (is_elf && R_BIN_ELF_SCN_IS_COMPRESSED (section->flags));
+		|| (dwarf_is_elf (bf) && R_BIN_ELF_SCN_IS_COMPRESSED (section->flags));
 }
 
 // size of the line table as parsed, read from the compression header without inflating
@@ -90,7 +90,7 @@ R_API ut64 r_bin_dwarf_line_size(RBinFile *bf, const char **section_name) {
 		*section_name = section->name;
 	}
 	const bool is_elf = dwarf_is_elf (bf);
-	if (is_elf && dwarf_section_is_compressed (section, is_elf)) {
+	if (is_elf && dwarf_section_is_compressed (bf, section)) {
 		const bool is64 = r_buf_read8_at (bf->buf, EI_CLASS) == ELFCLASS64;
 		const bool be = r_bin_is_big_endian (bf->rbin);
 		const ut64 at = r_bin_file_get_buffer_offset (bf, section->paddr);
@@ -120,7 +120,8 @@ static ut8 *dwarf_inflate(RBinFile *bf, RBinSection *section, ut64 offset, int *
 	// Elf64_Chdr: type, reserved, size, align. Elf32_Chdr: type, size, align. Only zlib (1)
 	const ut32 ch_type = r_read_ble32 (rawbuf, be);
 	const ut64 ch_size = is64? r_read_ble64 (rawbuf + 8, be): r_read_ble32 (rawbuf + 4, be);
-	ut8 *decomp = (ch_type == 1)? r_inflate (rawbuf + header_size, (int)(raw_size - header_size), NULL, dst_len): NULL;
+	ut8 *decomp = (ch_type == 1 && ch_size / DWARF_MAX_INFLATE_RATIO <= raw_size)
+		? r_inflate (rawbuf + header_size, (int)(raw_size - header_size), NULL, dst_len): NULL;
 	free (rawbuf);
 	if (decomp && (ut64)*dst_len / DWARF_MAX_INFLATE_RATIO > raw_size) {
 		R_LOG_WARN ("DWARF: ignoring %s, %" PFMT64u " bytes inflate to %d", r_str_get (section->name), raw_size, *dst_len);
@@ -143,7 +144,7 @@ R_IPI const ut8 *dwarf_get_section_bytes(RBinFile *bf, RBinSection *section) {
 		return NULL;
 	}
 	const bool is_elf = dwarf_is_elf (bf);
-	if (dwarf_section_is_compressed (section, is_elf)) {
+	if (dwarf_section_is_compressed (bf, section)) {
 		int dst_len = 0;
 		ut8 *decomp = is_elf? dwarf_inflate (bf, section, offset, &dst_len): NULL;
 		if (!decomp) {
@@ -154,6 +155,10 @@ R_IPI const ut8 *dwarf_get_section_bytes(RBinFile *bf, RBinSection *section) {
 		}
 		// allocate 1 byte more to safely treat any offset as string if needed
 		RSlice buf = r_arena_scalloc (bf->arena, dst_len + 1);
+		if (!buf.ptr) {
+			free (decomp);
+			return NULL;
+		}
 		memcpy ((void *)buf.ptr, decomp, dst_len);
 		free (decomp);
 		section->bytes = buf;
@@ -169,11 +174,52 @@ R_IPI const ut8 *dwarf_get_section_bytes(RBinFile *bf, RBinSection *section) {
 	return buf;
 }
 
+// names reach terminals and generated r2 scripts, control characters never belong in them
+static inline bool dwarf_is_ctrl(ut8 ch) {
+	return ch < ' ' || ch == 0x7f;
+}
+
+R_IPI char *dwarf_string_filter(char *s) {
+	char *p;
+	for (p = s; p && *p; p++) {
+		if (dwarf_is_ctrl (*p)) {
+			*p = '_';
+		}
+	}
+	return s;
+}
+
+// filters the string in place and returns its terminator, NULL when unterminated
+R_IPI const ut8 *dwarf_string_end(const ut8 *s, const ut8 *end) {
+	ut8 *p = (ut8 *)s;
+	for (; p < end && *p; p++) {
+		if (dwarf_is_ctrl (*p)) {
+			*p = '_';
+		}
+	}
+	return p < end? p: NULL;
+}
+
+// string sections are filtered once when cached, 1:1 so merged string tails stay valid
+R_IPI const ut8 *dwarf_get_section_strings(RBinFile *bf, RBinSection *section) {
+	const bool cached = section->bytes.ptr;
+	ut8 *data = (ut8 *)dwarf_get_section_bytes (bf, section);
+	if (data && !cached) {
+		size_t i;
+		for (i = 0; i < section->bytes.len; i++) {
+			if (data[i] && dwarf_is_ctrl (data[i])) {
+				data[i] = '_';
+			}
+		}
+	}
+	return data;
+}
+
 R_IPI const char *dwarf_get_section_string(RBinFile *bf, RBinSection *section, size_t offset) {
 	if (!bf || !section) {
 		return NULL;
 	}
-	const ut8 *data = dwarf_get_section_bytes (bf, section);
+	const ut8 *data = dwarf_get_section_strings (bf, section);
 	size_t len = section->bytes.len;
 	if (!data || offset >= len) {
 		return NULL;
@@ -182,8 +228,7 @@ R_IPI const char *dwarf_get_section_string(RBinFile *bf, RBinSection *section, s
 	if (!memchr (data + offset, 0, R_MIN (len - offset, DWARF_STRING_MAX))) {
 		return NULL;
 	}
-
-	return (const char *) (data + offset);
+	return (const char *)(data + offset);
 }
 
 R_IPI const ut8 *dwarf_read_index(const ut8 *buf, const ut8 *buf_end, bool be, ut8 size, ut64 *value) {

@@ -2242,3 +2242,15 @@ vaddr      paddr      type   ntype name
 0x08000054 0x00000054 SET_64 260   f - 0x00000014
 EOF
 RUN
+
+NAME=elf/arm64 ET_REL lists MOVW_UABS_G0_NC, G1 and G2 but omits unsupported MOVW_SABS_G0
+FILE=bins/elf/aarch64-movw-uabs-nc.o
+CMDS=ir
+EXPECT=<<EOF
+vaddr      paddr      type   ntype name
+---------------------------------------
+0x08000044 0x00000044 SET_16 264   f + 0x00000040
+0x08000048 0x00000048 SET_16 265   f + 0x00000800
+0x0800004c 0x0000004c SET_16 267   f
+EOF
+RUN

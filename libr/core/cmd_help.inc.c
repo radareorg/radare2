@@ -1398,7 +1398,7 @@ static int cmd_help(void *data, const char *input) {
 			break;
 		case 'g': { // "?eg" gotoxy
 			int x = atoi (input + 2);
-			char *arg = strchr (input + 2, ' ');
+			const char *arg = strchr (input + 2, ' ');
 			int y = arg? atoi (arg + 1): 0;
 			r_cons_gotoxy (core->cons, x, y);
 			}
@@ -1514,26 +1514,21 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 's': // "?s" sequence from to step
 		{
-			input = r_str_trim_head_ro (input + 1);
-			char *p = strchr (input, ' ');
-			if (p) {
-				*p = '\0';
-				ut64 from = r_num_math (core->num, input);
-				char *p2 = strchr (p + 1, ' ');
-				int step = 0;
-				if (p2) {
-					*p2 = '\0';
-					step = r_num_math (core->num, p2 + 1);
-				}
+			int argc = 0;
+			char **argv = r_str_argv (r_str_trim_head_ro (input + 1), &argc);
+			if (argc >= 2) {
+				ut64 from = r_num_math (core->num, argv[0]);
+				ut64 to = r_num_math (core->num, argv[1]);
+				int step = (argc > 2)? r_num_math (core->num, argv[2]): 0;
 				if (step < 1) {
 					step = 1;
 				}
-				ut64 to = r_num_math (core->num, p + 1);
 				for (; from <= to; from += step) {
 					r_cons_printf (core->cons, "%"PFMT64d" ", from);
 				}
 				r_cons_newline (core->cons);
 			}
+			r_str_argv_free (argv);
 		}
 		break;
 	case 'P': // "?P"

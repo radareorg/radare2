@@ -15,6 +15,7 @@ chip8
 cil
 cosmac
 dalvik
+e0c62
 evm
 gb
 h8300
@@ -41,6 +42,7 @@ v850
 vax
 wasm
 x86
+xtensa
 z80
 EOF
 RUN

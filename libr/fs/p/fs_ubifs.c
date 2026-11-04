@@ -827,7 +827,7 @@ static int fs_ubifs_read(RFSFile *file, ut64 addr, int len) {
 	ut64 file_size = r_read_le64 ((ut8 *)&inode->ino->size);
 	// a file cannot be larger than the volume, read whatever fits
 	const ut64 max_fs_size = (ut64)ctx->leb_size * ctx->leb_cnt;
-	if (file_size > max_fs_size) {
+	if (max_fs_size && file_size > max_fs_size) {
 		R_LOG_WARN ("File size (%"PFMT64u") exceeds filesystem size (%"PFMT64u")", file_size, max_fs_size);
 		file_size = max_fs_size;
 	}

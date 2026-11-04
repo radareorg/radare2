@@ -356,21 +356,61 @@ bool test_bin_info_export_special_chars(void) {
 	mu_end;
 }
 
+static const char *idd_bad_names[] = { "bad;\nf injected", "bad;\rf injected", "bad;\r\nf injected" };
+
 bool test_dwarf_sdb_export_special_chars(void) {
-	RCore *core = r_core_new ();
-	Sdb *dwarf = sdb_ns (core->anal->sdb, "dwarf", true);
-	mu_assert_notnull (dwarf, "get dwarf database");
-	sdb_set (dwarf, "fcn.bad", "fcn", 0);
-	sdb_set (dwarf, "fcn.fcn.bad.name", "bad;f injected", 0);
-	sdb_num_set (dwarf, "fcn.fcn.bad.addr", 0x10, 0);
-	char *output = r_core_cmd_str (core, "iddlf");
-	mu_assert_streq (output, "f sym.bad_f_injected 0 @ 0x10\n", "sanitize dwarf function name");
-	char *replay = r_core_cmd_str (core, output);
-	free (replay);
-	free (output);
-	mu_assert_notnull (r_flag_get (core->flags, "sym.bad_f_injected"), "iddlf output creates the sanitized flag");
-	mu_assert_null (r_flag_get (core->flags, "injected"), "iddlf output must not inject commands");
-	r_core_free (core);
+	size_t i;
+	int utf8;
+	for (utf8 = 0; utf8 < 2; utf8++) {
+		for (i = 0; i < R_ARRAY_SIZE (idd_bad_names); i++) {
+			RCore *core = r_core_new ();
+			r_config_set_b (core->config, "asm.flags.utf8", utf8);
+			Sdb *dwarf = sdb_ns (core->anal->sdb, "dwarf", true);
+			mu_assert_notnull (dwarf, "get dwarf database");
+			sdb_set (dwarf, "fcn.bad", "fcn", 0);
+			sdb_set (dwarf, "fcn.fcn.bad.name", idd_bad_names[i], 0);
+			sdb_num_set (dwarf, "fcn.fcn.bad.addr", 0x10, 0);
+			char *output = r_core_cmd_str (core, "iddlf");
+			mu_assert_streq (output, "'@0x00000010'f sym.bad_f_injected 0\n", "sanitize dwarf function name");
+			char *replay = r_core_cmd_str (core, output);
+			free (replay);
+			free (output);
+			mu_assert_notnull (r_flag_get (core->flags, "sym.bad_f_injected"), "iddlf output creates the sanitized flag");
+			mu_assert_null (r_flag_get (core->flags, "injected"), "iddlf output must not inject commands");
+			r_core_free (core);
+		}
+	}
+	mu_end;
+}
+
+bool test_global_symbol_export_special_chars(void) {
+	size_t i;
+	int utf8;
+	for (utf8 = 0; utf8 < 2; utf8++) {
+		for (i = 0; i < R_ARRAY_SIZE (idd_bad_names); i++) {
+			RCore *core = r_core_new ();
+			r_config_set_b (core->config, "asm.flags.utf8", utf8);
+			mu_assert_notnull (r_core_file_open (core, "malloc://64", R_PERM_RW, 0), "open test buffer");
+			mu_assert_true (r_core_bin_load (core, NULL, UT64_MAX), "load test buffer");
+			RVecRBinSymbol *symbols = r_bin_get_symbols_vec (core->bin);
+			mu_assert_notnull (symbols, "get symbols vector");
+			RBinSymbol *sym = RVecRBinSymbol_emplace_back (symbols);
+			memset (sym, 0, sizeof (RBinSymbol));
+			sym->name = r_bin_name_new (idd_bad_names[i]);
+			sym->type = R_BIN_TYPE_OBJECT_STR;
+			sym->bind = R_BIN_BIND_GLOBAL_STR;
+			sym->attr.size = 4;
+			sym->vaddr = 0x20;
+			char *output = r_core_cmd_str (core, "iddlg");
+			mu_assert_streq (output, "'@0x00000020'f sym.bad_f_injected 4\n", "sanitize global symbol name");
+			char *replay = r_core_cmd_str (core, output);
+			free (replay);
+			free (output);
+			mu_assert_notnull (r_flag_get (core->flags, "sym.bad_f_injected"), "iddlg output creates the sanitized flag");
+			mu_assert_null (r_flag_get (core->flags, "injected"), "iddlg output must not inject commands");
+			r_core_free (core);
+		}
+	}
 	mu_end;
 }
 
@@ -947,6 +987,7 @@ int all_tests(void) {
 	mu_run_test (test_type_format_export_newlines);
 	mu_run_test (test_bin_info_export_special_chars);
 	mu_run_test (test_dwarf_sdb_export_special_chars);
+	mu_run_test (test_global_symbol_export_special_chars);
 	mu_run_test (test_foreach_instruction_bounds);
 	mu_run_test (test_cmd_str_issue_18799);
 	mu_run_test (test_cmd_str_capture_lifetime);

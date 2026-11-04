@@ -134,3 +134,18 @@ EXPECT=<<EOF
   ntfs         NTFS filesystem
 EOF
 RUN
+
+NAME=rafs2 -x cannot write files in the sandbox
+FILE=--
+CMDS=<<EOF
+e cfg.sandbox=true
+rafs2 -t ext2 -x /README.md:rafs2_sandbox_out.txt bins/fs/ext2.img
+?e done
+EOF
+EXPECT=<<EOF
+done
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot open 'rafs2_sandbox_out.txt' for writing
+EOF
+RUN

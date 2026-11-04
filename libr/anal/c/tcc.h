@@ -93,12 +93,14 @@ typedef struct TokenSym {
 
 typedef int nwchar_t;
 
+// Token streams store string headers at four-byte boundaries.
+R_PACKED(
 typedef struct CString {
 	int size; /* size in bytes */
 	char *data; /* either 'char *' or 'nwchar_t *' */
 	int size_allocated;
 	char *data_allocated; /* if non NULL, data has been malloced */
-} CString;
+}) CString;
 
 R_VEC_FORWARD_DECLARE (RVecCharPtr);
 
@@ -696,8 +698,8 @@ static inline int tcc_nerr(TCCState *s1) {
 
 /* public functions currently used by the tcc main function */
 R_API char *strcat2(char *buf, int buf_size, const char *s);
-R_API char *tcc_basename(const char *name);
-R_API char *tcc_fileextension(const char *name);
+R_API const char *tcc_basename(const char *name);
+R_API const char *tcc_fileextension(const char *name);
 R_API void tcc_error_noabort(const char *fmt, ...);
 R_API void tcc_error(TCCState *s1, const char *fmt, ...);
 R_API void tcc_warning(TCCState *s1, const char *fmt, ...);

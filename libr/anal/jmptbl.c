@@ -81,7 +81,11 @@ static bool arm64_leaddr_before(RAnal *anal, RList *leaddrs, const char *reg, ut
 				la = leaddrs_find_before (leaddrs, source, addr);
 			} else if ((insn & 0xbf800000) == 0x91000000 && src && arm64_same_reg (src->reg, source)) {
 				const ut64 imm = (ut64)(insn >> 10 & 0xfff) << ((insn >> 22 & 1) * 12);
-				delta += insn & 0x40000000? -imm: imm;
+				if (insn & 0x40000000) {
+					delta -= imm;
+				} else {
+					delta += imm;
+				}
 			} else if ((insn & 0xffc003e0) == 0xf94003e0) {
 				stack_slot = (insn >> 10 & 0xfff) * 8;
 			} else {
@@ -220,8 +224,9 @@ static ut64 arm64_index_bound(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, c
 		return UT64_MAX;
 	}
 	RAnalBlock *pred = NULL, *block;
-	RListIter *iter;
-	r_list_foreach (fcn->bbs, iter, block) {
+	RAnalBlock **iter;
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		block = *iter;
 		if (block->jump == bb->addr || block->fail == bb->addr) {
 			if (pred) {
 				return UT64_MAX;
@@ -602,12 +607,13 @@ static R_OWNED RAnalBlock *switch_block_refetch(RAnal *anal, R_OWNED RAnalBlock 
 }
 
 static bool function_has_ret_between(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 to) {
-	if (!fcn || !fcn->bbs || to <= from) {
+	if (!fcn || to <= from) {
 		return false;
 	}
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		if (bb->ninstr < 1) {
 			continue;
 		}
@@ -1429,10 +1435,10 @@ R_API int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnalBlock *my_bb, ut64 *table_size, ut64 *default_case, st64 *start_casenum_shift) {
 	bool isValid = false;
 	int i;
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *tmp_bb, *prev_bb;
 	prev_bb = 0;
-	if (!fcn->bbs) {
+	if (RVecAnalBlockPtr_empty (&fcn->bbs)) {
 		return false;
 	}
 
@@ -1450,7 +1456,8 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 	}
 
 	// search for the predecessor bb
-	r_list_foreach (fcn->bbs, iter, tmp_bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		tmp_bb = *iter;
 		if (tmp_bb->jump == my_bb->addr || tmp_bb->fail == my_bb->addr) {
 			prev_bb = tmp_bb;
 			break;
@@ -1598,9 +1605,10 @@ R_IPI bool r_anal_jmptbl_arm64_from_br(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 	st64 alt_shift = 0;
 	bool bounded = try_get_jmptbl_info (anal, fcn, op->addr, bb, &alt_size, &alt_default, &alt_shift) && alt_size;
 	if (bounded) {
-		RListIter *iter;
+		RAnalBlock **iter;
 		RAnalBlock *pred;
-		r_list_foreach (fcn->bbs, iter, pred) {
+		R_VEC_FOREACH (&fcn->bbs, iter) {
+			pred = *iter;
 			if ((pred->jump == bb->addr || pred->fail == bb->addr) && pred->cond) {
 				const bool on_jump = pred->jump == bb->addr;
 				const int cond = pred->cond->type;

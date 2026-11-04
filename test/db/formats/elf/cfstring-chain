@@ -1,0 +1,13 @@
+NAME=ELF: cfstring records pointing at cfstring records do not chain
+FILE=bins/elf/cfstring-chain
+CMDS=<<EOF
+izq~?
+izq~cstr.?
+izq~cstr.cstr.?
+EOF
+EXPECT=<<EOF
+5
+4
+0
+EOF
+RUN

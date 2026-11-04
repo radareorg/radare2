@@ -102,10 +102,11 @@
 #define EXT4_FEATURE_INCOMPAT_EXTENTS 0x0040 /* Extents used */
 #define EXT4_FEATURE_INCOMPAT_64BIT 0x0080
 #define EXT4_FEATURE_INCOMPAT_FLEX_BG 0x0200
+#define EXT4_FEATURE_INCOMPAT_CSUM_SEED 0x2000
 
 /* The set of back-incompatible features this driver DOES support. Add (OR)
  * flags here as the related features are implemented into the driver.  */
-#define EXT2_DRIVER_SUPPORTED_INCOMPAT (EXT2_FEATURE_INCOMPAT_FILETYPE | EXT4_FEATURE_INCOMPAT_EXTENTS | EXT4_FEATURE_INCOMPAT_FLEX_BG)
+#define EXT2_DRIVER_SUPPORTED_INCOMPAT (EXT2_FEATURE_INCOMPAT_FILETYPE | EXT4_FEATURE_INCOMPAT_EXTENTS | EXT4_FEATURE_INCOMPAT_64BIT | EXT4_FEATURE_INCOMPAT_FLEX_BG)
 /* List of rationales for the ignored "incompatible" features:
  * needs_recovery: Not really back-incompatible - was added as such to forbid
  *                 ext2 drivers from mounting an ext3 volume with a dirty
@@ -113,7 +114,8 @@
  *                 ext3 driver to mount the volume will find the journal and
  *                 replay it, potentially corrupting the metadata written by
  *                 the ext2 drivers. Safe to ignore for this RO driver.  */
-#define EXT2_DRIVER_IGNORED_INCOMPAT (EXT3_FEATURE_INCOMPAT_RECOVER)
+// The read-only driver does not verify or update metadata checksums.
+#define EXT2_DRIVER_IGNORED_INCOMPAT (EXT3_FEATURE_INCOMPAT_RECOVER | EXT4_FEATURE_INCOMPAT_CSUM_SEED)
 
 #define EXT3_JOURNAL_MAGIC_NUMBER 0xc03b3998U
 
@@ -177,7 +179,7 @@ struct grub_ext2_sblock {
 	grub_uint32_t hash_seed[4];
 	grub_uint8_t def_hash_version;
 	grub_uint8_t jnl_backup_type;
-	grub_uint16_t reserved_word_pad;
+	grub_uint16_t descriptor_size;
 	grub_uint32_t default_mount_opts;
 	grub_uint32_t first_meta_bg;
 	grub_uint32_t mkfs_time;
@@ -194,6 +196,10 @@ struct grub_ext2_block_group {
 	grub_uint16_t used_dirs;
 	grub_uint16_t pad;
 	grub_uint32_t reserved[3];
+	grub_uint32_t block_id_hi;
+	grub_uint32_t inode_id_hi;
+	grub_uint32_t inode_table_id_hi;
+	grub_uint32_t reserved_hi[5];
 };
 
 /* The ext2 inode.  */
@@ -298,17 +304,19 @@ struct grub_ext2_data {
 	grub_disk_t disk;
 	struct grub_ext2_inode *inode;
 	struct grub_fshelp_node diropen;
+	grub_uint16_t descriptor_size;
 };
 
 /* Read into BLKGRP the blockgroup descriptor of blockgroup GROUP of
 the mounted filesystem DATA.  */
 inline static grub_err_t
 grub_ext2_blockgroup(struct grub_ext2_data *data, int group, struct grub_ext2_block_group *blkgrp) {
+	grub_memset (blkgrp, 0, sizeof (*blkgrp));
 	return grub_disk_read (data->disk,
-		((grub_le_to_cpu32 (data->sblock.first_data_block) + 1)
+		(((grub_disk_addr_t)grub_le_to_cpu32 (data->sblock.first_data_block) + 1)
 			<< LOG2_EXT2_BLOCK_SIZE (data)),
-		group * sizeof (struct grub_ext2_block_group),
-		sizeof (struct grub_ext2_block_group),
+		(grub_off_t)group * data->descriptor_size,
+		data->descriptor_size < sizeof (*blkgrp)? data->descriptor_size: sizeof (*blkgrp),
 		blkgrp);
 }
 
@@ -533,10 +541,15 @@ grub_ext2_read_inode(struct grub_ext2_data *data,
 	}
 	blkno = (ino % grub_le_to_cpu32 (sblock->inodes_per_group)) / inodes_per_block;
 	blkoff = (ino % grub_le_to_cpu32 (sblock->inodes_per_group)) % inodes_per_block;
+	grub_disk_addr_t inode_table = ((grub_disk_addr_t)grub_le_to_cpu32 (blkgrp.inode_table_id_hi) << 32)
+		| grub_le_to_cpu32 (blkgrp.inode_table_id);
+	if (inode_table > (~(grub_disk_addr_t)0 >> LOG2_EXT2_BLOCK_SIZE (data)) - blkno) {
+		return grub_error (GRUB_ERR_BAD_FS, "invalid ext2 inode table");
+	}
 
 	/* Read the inode.  */
 	if (grub_disk_read (data->disk,
-		((grub_le_to_cpu32 (blkgrp.inode_table_id) + blkno)
+		((inode_table + blkno)
 			<< LOG2_EXT2_BLOCK_SIZE (data)),
 		EXT2_INODE_SIZE (data) * blkoff,
 		sizeof (struct grub_ext2_inode),
@@ -578,6 +591,15 @@ grub_ext2_mount(grub_disk_t disk) {
 	if (grub_le_to_cpu32 (data->sblock.feature_incompat) & ~ (EXT2_DRIVER_SUPPORTED_INCOMPAT | EXT2_DRIVER_IGNORED_INCOMPAT)) {
 		grub_error (GRUB_ERR_BAD_FS, "filesystem has unsupported incompatible features");
 		goto fail;
+	}
+	data->descriptor_size = 32;
+	if (grub_le_to_cpu32 (data->sblock.feature_incompat) & EXT4_FEATURE_INCOMPAT_64BIT) {
+		data->descriptor_size = grub_le_to_cpu16 (data->sblock.descriptor_size);
+		if (data->descriptor_size < 64 || data->descriptor_size > 1024
+				|| (data->descriptor_size & (data->descriptor_size - 1))) {
+			grub_error (GRUB_ERR_BAD_FS, "invalid ext4 group descriptor size");
+			goto fail;
+		}
 	}
 
 	data->disk = disk;

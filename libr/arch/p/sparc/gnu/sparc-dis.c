@@ -316,7 +316,7 @@ compare_opcodes (const void * a, const void * b)
      another, it is important to order the opcodes in the right order.  */
   for (i = 0; i < 32; i++)
     {
-      unsigned long int x = 1 << i;
+      unsigned long int x = 1UL << i;
       int x0 = (match0 & x) != 0;
       int x1 = (match1 & x) != 0;
 
@@ -327,7 +327,7 @@ compare_opcodes (const void * a, const void * b)
 
   for (i = 0; i < 32; i++)
     {
-      unsigned long int x = 1 << i;
+      unsigned long int x = 1UL << i;
       int x0 = (lose0 & x) != 0;
       int x1 = (lose1 & x) != 0;
 

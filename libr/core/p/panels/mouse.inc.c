@@ -106,37 +106,6 @@ static char *r_panels_get_word_from_canvas(RPanels *panels, int x, int y) {
 	return res;
 }
 
-static char *r_panels_get_word_from_canvas_for_menu(RCore *core, RPanels *panels, int x, int y) {
-	char *cs = r_cons_canvas_tostring (panels->can);
-	char *R = r_str_ansi_crop (cs, 0, y - 1, x + 1024, y);
-	r_str_ansi_filter (R, NULL, NULL, -1);
-	char *r = r_str_ansi_crop (cs, x - 1, y - 1, x + 1024, y);
-	r_str_ansi_filter (r, NULL, NULL, -1);
-	char *pos = strstr (R, r);
-	char *tmp = pos;
-	const char *padding = "  ";
-	if (!pos) {
-		pos = R;
-	}
-	int i = 0;
-	while (pos > R && strncmp (padding, pos, strlen (padding))) {
-		pos--;
-		i++;
-	}
-	while (R_STR_ISNOTEMPTY (tmp) && strncmp (padding, tmp, strlen (padding))) {
-		tmp++;
-		i++;
-	}
-	char *ret = R_STR_NDUP (pos += strlen (padding), i - strlen (padding));
-	if (!ret) {
-		ret = strdup (pos);
-	}
-	free (r);
-	free (R);
-	free (cs);
-	return ret;
-}
-
 static bool r_panels_handle_mouse_on_top(RCore *core, int x, int y) {
 	RPanels *panels = core->panels;
 	RPanelsMenu *menu = panels->panels_menu;

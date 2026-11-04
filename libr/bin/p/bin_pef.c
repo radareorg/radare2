@@ -32,6 +32,7 @@ typedef struct {
 
 #define PEF_MAX_RELOC_INSTRUCTIONS 0x100000
 #define PEF_MAX_RELOCATIONS 0x100000
+#define PEF_MAX_PIDATA_SIZE 0x4000000
 
 static const char *class2string(ut8 class) {
 	switch (class & 0xf) {
@@ -490,6 +491,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	}
 	pef->nsec = nsec;
 	ut64 climb = loadaddr;
+	ut64 pidata_size = 0;
 	int i;
 	for (i = 0; i < nsec; i++) {
 		PEFSection *sec = &pef->sec[i];
@@ -521,6 +523,11 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 			if (sec->lenDisk > fsize || sec->lenUnpack > 0x10000000) {
 				return false;
 			}
+			if (sec->lenUnpack > PEF_MAX_PIDATA_SIZE - pidata_size) {
+				R_LOG_WARN ("Not expanding pidata section %d: %" PFMT32u " bytes exceed the remaining budget", i, sec->lenUnpack);
+				continue;
+			}
+			pidata_size += sec->lenUnpack;
 			size_t paclen = sec->lenDisk;
 			void *pac = malloc (paclen);
 			sec->unpack = sec->lenUnpack > 0 ? malloc (sec->lenUnpack) : NULL;
@@ -924,9 +931,7 @@ static bool symbols_vec(RBinFile *bf) {
 	if (exportHashTablePower >= 30) {
 		return true;
 	}
-	// guard against a hostile exportedSymbolCount that would overflow
-	// the ut32 arithmetic below (stringLenTable + 4 * exportedSymbolCount)
-	// and against using it as a loop boundary
+	// guard against a hostile exportedSymbolCount before using it as a loop boundary
 	if (exportedSymbolCount > 0x10000000) {
 		return true;
 	}
@@ -935,18 +940,22 @@ static bool symbols_vec(RBinFile *bf) {
 		return true;
 	}
 	const ut64 bsize = r_buf_size (bf->buf);
-	ut32 stringLenTable = pef->ldrsec + exportHashOffset + (ut32)hashTableSize;
-	ut32 exportTable = stringLenTable + 4 * exportedSymbolCount;
-	int i;
+	const ut64 stringLenTable = (ut64)pef->ldrsec + exportHashOffset + hashTableSize;
+	const ut64 exportTable = stringLenTable + 4ULL * exportedSymbolCount;
+	// the key table (4 bytes per symbol) and the export table (10 bytes per symbol) must fit in the file
+	if (exportTable > bsize || exportedSymbolCount > (bsize - exportTable) / 10) {
+		return true;
+	}
+	ut32 i;
 
 	for (i = 0; i < exportedSymbolCount; i++) {
-		ut32 ofs = exportTable + 10 * i;
+		const ut64 ofs = exportTable + 10ULL * i;
 		ut8 kind = 0;
 		r_buf_read_at (bf->buf, ofs, &kind, 1);
 		ut32 nameOfs = pef->ldrsec + loaderStringsOffset + (r_buf_read_be32_at (bf->buf, ofs) & 0xffffff);
 		ut32 addr = r_buf_read_be32_at (bf->buf, ofs + 4);
 		st16 index = r_buf_read_be16_at (bf->buf, ofs + 8);
-		ut16 nameLen = r_buf_read_be16_at (bf->buf, stringLenTable + 4 * i);
+		ut16 nameLen = r_buf_read_be16_at (bf->buf, stringLenTable + 4ULL * i);
 		if (index < 0 || index >= pef->nsec) {
 			continue; // re-exported func or absolute mem address, not supported
 		}

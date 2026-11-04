@@ -902,14 +902,19 @@ R_API bool r_debug_step_soft(RDebug *dbg) {
 		return false;
 	}
 	switch (op.type) {
-	case R_ANAL_OP_TYPE_RET:
-		if (dbg->iob.read_at (dbg->iob.io, sp, (ut8 *)&sp_top, 8) != 8) {
+	case R_ANAL_OP_TYPE_RET: {
+		ut64 ret_sp = sp;
+		if (op.stackop == R_ANAL_STACK_INC && op.disp != UT64_MAX) {
+			ret_sp += op.disp;
+		}
+		if (dbg->iob.read_at (dbg->iob.io, ret_sp, (ut8 *)&sp_top, 8) != 8) {
 			r_anal_op_fini (&op);
 			return false;
 		}
 		next[0] = R_SYS_BITS_CHECK (dbg->bits, 64) ? sp_top.r64 : sp_top.r32[0];
 		br = 1;
 		break;
+	}
 	case R_ANAL_OP_TYPE_CJMP:
 	case R_ANAL_OP_TYPE_CCALL:
 		next[0] = op.jump;

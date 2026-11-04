@@ -37,7 +37,7 @@ fixup(struct grub_ntfs_data *data, char *buf, int len, char *magic) {
 	char *pu;
 	grub_uint16_t us;
 
-	if (memcmp (buf, magic, 4)) {
+	if (len < 1 || memcmp (buf, magic, 4)) {
 		return grub_error (GRUB_ERR_BAD_FS, "%s label not found", magic);
 	}
 
@@ -45,7 +45,12 @@ fixup(struct grub_ntfs_data *data, char *buf, int len, char *magic) {
 	if (ss *(int)data->blocksize != len * GRUB_DISK_SECTOR_SIZE) {
 		return grub_error (GRUB_ERR_BAD_FS, "size not match", ss *(int)data->blocksize, len * GRUB_DISK_SECTOR_SIZE);
 	}
-	pu = buf + u16at (buf, 4);
+	// the update sequence number and its ss fixup values must be inside the record
+	const int usa = u16at (buf, 4);
+	if (usa + 2 * (ss + 1) > len * GRUB_DISK_SECTOR_SIZE) {
+		return grub_error (GRUB_ERR_BAD_FS, "fixup array outside of the record");
+	}
+	pu = buf + usa;
 	us = u16at (pu, 0);
 	buf -= 2;
 	while (ss > 0) {
@@ -165,8 +170,15 @@ retry:
 		pa = at->attr_end;
 		if (pa[8]) {
 			int n;
-
-			n = ((u32at (pa, 0x30) + GRUB_DISK_SECTOR_SIZE - 1) &(~ (GRUB_DISK_SECTOR_SIZE - 1)));
+			grub_uint64_t real_size = u32at (pa, 0x30);
+			grub_uint64_t n64 = (real_size + GRUB_DISK_SECTOR_SIZE - 1) &
+				~(grub_uint64_t) (GRUB_DISK_SECTOR_SIZE - 1);
+			if (n64 > 16 * 1024 * 1024) {
+				grub_error (GRUB_ERR_BAD_FS,
+					"non-resident attribute list too large");
+				return NULL;
+			}
+			n = (int) n64;
 			at->attr_cur = at->attr_end;
 			at->edat_buf = grub_malloc (n);
 			if (!at->edat_buf) {
@@ -178,7 +190,7 @@ retry:
 				return NULL;
 			}
 			at->attr_nxt = at->edat_buf;
-			at->attr_end = at->edat_buf + u32at (pa, 0x30);
+			at->attr_end = at->edat_buf + real_size;
 		} else {
 			at->attr_nxt = at->attr_end + u16at (pa, 0x14);
 			at->attr_end = at->attr_end + u32at (pa, 4);
@@ -614,8 +626,14 @@ list_file(struct grub_ntfs_file *diro, char *pos, int(*hook)(const char *filenam
 					return 0;
 				}
 
-				type =
-					(u32at (pos, 0x48) & ATTR_DIRECTORY)? GRUB_FSHELP_DIR: GRUB_FSHELP_REG;
+				grub_uint32_t attributes = u32at (pos, 0x48);
+				if (attributes & ATTR_DIRECTORY) {
+					type = GRUB_FSHELP_DIR;
+				} else if (attributes & ATTR_INDEX_VIEW) {
+					type = GRUB_FSHELP_SPECIAL;
+				} else {
+					type = GRUB_FSHELP_REG;
+				}
 
 				fdiro = grub_zalloc (sizeof (struct grub_ntfs_file));
 				if (!fdiro) {
@@ -892,6 +910,7 @@ iterate(const char *filename,
 	struct grub_dirhook_info info;
 	grub_memset (&info, 0, sizeof (info));
 	info.dir = ((filetype & GRUB_FSHELP_TYPE_MASK) == GRUB_FSHELP_DIR);
+	info.special = ((filetype & GRUB_FSHELP_TYPE_MASK) == GRUB_FSHELP_SPECIAL);
 	grub_free (node);
 	return c->hook (filename, &info, c->closure);
 }

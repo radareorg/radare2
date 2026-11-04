@@ -43,6 +43,52 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=sandbox without exec blocks pid modifiers and thread iteration
+FILE=-
+CMDS=<<EOF
+e dbg.backend=null
+e cfg.sandbox.grain=all,!exec
+e cfg.sandbox=true
+?vi $P @p:42
+?vi $P @dp:42
+?e unexpected @@t
+?vi $P
+?e alive
+EOF
+EXPECT=<<EOF
+0
+0
+0
+alive
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Temporary pid selection is disabled in sandbox mode
+ERROR: Temporary pid selection is disabled in sandbox mode
+ERROR: Thread iteration is disabled in sandbox mode
+EOF
+RUN
+
+NAME=sandbox exec permits pid modifiers and thread iteration
+FILE=-
+CMDS=<<EOF
+e dbg.backend=null
+?vi $P @p:7
+e cfg.sandbox.grain=exec
+e cfg.sandbox=true
+?vi $P @p:42
+?vi $P @dp:43
+?e unexpected @@t
+?vi $P
+EOF
+EXPECT=<<EOF
+7
+42
+43
+7
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=sandbox grain=none blocks shell subcommands
 FILE=-
 CMDS=<<EOF
@@ -305,6 +351,19 @@ done
 EOF
 RUN
 
+NAME=sandbox grain=none refuses r2pipe without exiting
+FILE=--
+CMDS=<<EOF
+e cfg.sandbox.grain=none
+e cfg.sandbox=true
+o r2pipe://x
+?e alive
+EOF
+EXPECT=<<EOF
+alive
+EOF
+RUN
+
 NAME=sandbox tcc include of an absolute path
 FILE=--
 CMDS=<<EOF
@@ -376,4 +435,109 @@ EXPECT=<<EOF2
 90
 90
 EOF2
+RUN
+
+NAME=sandbox blocks r2k:// regardless of grain
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain=all
+e cfg.sandbox=true
+o r2k://
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Sandbox prevents opening the r2k driver
+ERROR: Cannot open file r2k://
+EOF
+RUN
+
+NAME=sandbox grain none blocks localhost connections
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain=none
+e cfg.sandbox=true
+curl http://127.0.0.1:1/
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: sandbox: network access denied for 'http://127.0.0.1:1/'
+EOF
+RUN
+
+NAME=sandbox grain socket allows localhost only
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain=socket
+e cfg.sandbox=true
+curl http://127.0.0.1:1/
+curl http://192.0.2.1:1/
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot connect to 127.0.0.1:1
+ERROR: sandbox: network access denied for 'http://192.0.2.1:1/'
+EOF
+RUN
+
+NAME=sandbox grain network allows localhost
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain=network
+e cfg.sandbox=true
+curl http://127.0.0.1:1/
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot connect to 127.0.0.1:1
+EOF
+RUN
+
+NAME=sandbox blocks mktemp
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain=none
+e cfg.sandbox=true
+mktemp ../r2r-sandbox-file || ?e refused
+EOF
+EXPECT=<<EOF
+refused
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot create '../r2r-sandbox-file'
+EOF
+RUN
+
+NAME=sandbox blocks zip archives outside the allowed paths
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox=true
+o zip:///etc/../etc/hosts.zip//inner
+?e done
+EOF
+EXPECT=<<EOF
+done
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Sandbox prevents accessing zip archive '/etc/../etc/hosts.zip'
+ERROR: Failed to open the archive /etc/../etc/hosts.zip and file inner
+ERROR: Cannot open file zip:///etc/../etc/hosts.zip//inner
+EOF
+RUN
+
+NAME=sandbox blocks listing zip mounts
+FILE=malloc://37
+CMDS=<<EOF
+wx 504b0506000000000000000000000000000000000000
+e cfg.sandbox=true
+m /z zip
+md /z
+?e done
+EOF
+EXPECT=<<EOF
+done
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Sandbox prevents listing zip mounts
+ERROR: Invalid path
+EOF
 RUN

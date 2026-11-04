@@ -1,0 +1,15 @@
+
+NAME=ir and irj agree on reloc vaddr under -B
+FILE=bins/elf/test.ko
+ARGS=-B 0x100000000
+CMDS=<<EOF
+ir~__fentry__[0]
+irj~{[0].vaddr}
+irj~{[0].name}
+EOF
+EXPECT=<<EOF
+0x10000007d
+4294967421
+__fentry__
+EOF
+RUN

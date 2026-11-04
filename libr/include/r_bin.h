@@ -237,6 +237,7 @@ typedef uint64_t RBinAttribute;
 #define R_BIN_ATTR_DESTRUCTOR (1ULL << 47)
 #define R_BIN_ATTR_ABSOLUTE (1ULL << 48) // ELF SHN_ABS: a value no rebase moves
 #define R_BIN_ATTR_FIELD_OFFSET (1ULL << 49) // field offset is known, including zero
+#define R_BIN_ATTR_TLS (1ULL << 50) // ELF STT_TLS: an offset in the thread block, not an address
 
 typedef enum {
 	R_BIN_FIELD_KIND_VARIABLE,
@@ -458,6 +459,7 @@ typedef struct r_bin_reloc_t {
 	ut8 type; // type have implicit size.. but its anoying
 	ut8 additive;
 	bool is_ifunc;
+	bool to_slot; // a patched site whose name belongs to the slot's own row
 	ut32 visibility;
 	ut64 ntype; // type number coming from the bin file
 	RBinSymbol *symbol;
@@ -1093,6 +1095,7 @@ R_API bool r_bin_file_extract_resources(RBinFile *bf, const char *output);
 R_API bool r_bin_file_extract_sections(RBinFile *bf, const char *output, bool segments);
 //
 R_API ut64 r_bin_file_get_vaddr(RBinFile *bf, ut64 paddr, ut64 vaddr);
+R_API ut64 r_bin_file_get_symbol_vaddr(RBinFile *bf, const RBinSymbol *sym);
 // RBinFile.add
 R_API RBinClass *r_bin_file_add_class(RBinFile *binfile, const char *name, const char *super, ut64 attr);
 R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *rawname, const char *classname, const char *name, int nargs);

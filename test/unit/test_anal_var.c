@@ -33,7 +33,9 @@ static bool sanitize_instr_acc(void *user, const ut64 k, const void *v) {
 }
 
 static bool sanitize(RAnalFunction *fcn) {
-	ht_up_foreach (fcn->inst_vars, sanitize_instr_acc, NULL);
+	if (fcn->inst_vars) {
+		ht_up_foreach (fcn->inst_vars, sanitize_instr_acc, NULL);
+	}
 
 	RAnalVar **it;
 	R_VEC_FOREACH (&fcn->vars, it) {
@@ -61,6 +63,9 @@ bool test_r_anal_var(void) {
 	r_anal_set_bits (anal, 64);
 
 	RAnalFunction *fcn = r_anal_create_function (anal, "fcn", 0x100, R_ANAL_FCN_TYPE_FCN, NULL);
+	mu_assert_null (fcn->inst_vars, "instruction variables start absent");
+	mu_assert_null (r_anal_function_get_var_reg_at (fcn, -8, 0x120), "empty register lookup");
+	mu_assert_eq (r_anal_function_get_var_stackptr_at (fcn, -8, 0x120), ST64_MAX, "empty stack lookup");
 	assert_sane (anal);
 
 	// creating variables and renaming

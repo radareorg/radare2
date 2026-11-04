@@ -208,12 +208,16 @@ static RList *mount_tree_dir(RCore *core, RFSRoot *root, const char *path) {
 	return list;
 }
 
-static bool mount_tree_collect(RCore *core, RFSRoot *root, const char *path, int depth, RList *list, RTreeNode *parent) {
+// the depth limit alone does not bound the tree: an image can make several
+// entries of a directory point back at it, doubling the number of nodes per level
+#define MOUNT_TREE_MAX_NODES 0x4000
+
+static bool mount_tree_collect(RCore *core, RFSRoot *root, const char *path, int depth, RList *list, RTreeNode *parent, int *budget) {
 	bool ok = true;
 	RListIter *iter;
 	RFSFile *file;
 	r_list_foreach (list, iter, file) {
-		if (r_cons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons) || --(*budget) < 0) {
 			return false;
 		}
 		bool directory = file->type == R_FS_FILE_TYPE_DIRECTORY || file->type == R_FS_FILE_TYPE_MOUNTPOINT;
@@ -238,7 +242,7 @@ static bool mount_tree_collect(RCore *core, RFSRoot *root, const char *path, int
 		}
 		RList *children = mount_tree_dir (core, root, child);
 		if (children) {
-			ok &= mount_tree_collect (core, root, child, depth - 1, children, node);
+			ok &= mount_tree_collect (core, root, child, depth - 1, children, node, budget);
 		} else {
 			ok = false;
 		}
@@ -263,8 +267,12 @@ static bool core_fs_tree(RCore *core, RFSRoot *root, const char *path, int depth
 	RTreeNode *node = r_tree_add_node (tree, NULL, escaped);
 	node->free = free;
 	r_cons_break_push (core->cons, NULL, NULL);
-	bool ok = mount_tree_collect (core, root, path, depth, list, node);
+	int budget = MOUNT_TREE_MAX_NODES;
+	bool ok = mount_tree_collect (core, root, path, depth, list, node, &budget);
 	r_cons_break_pop (core->cons);
+	if (budget < 0) {
+		R_LOG_WARN ("Tree truncated after %d entries, use a smaller depth or md to list subdirectories", MOUNT_TREE_MAX_NODES);
+	}
 	char *text = r_tree_to_string (tree, NULL, NULL, r_config_get_b (core->config, "scr.utf8"));
 	if (text) {
 		r_cons_print (core->cons, text);

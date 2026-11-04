@@ -1227,9 +1227,9 @@ za sym._Unwind_VRS_Get b 10b5041c042913d8081c00f072fd05031103030001200ce00220002
 za sym._Unwind_VRS_Get g cc=2 nbbs=4 edges=4 ebbs=1 bbsum=28
 za sym._Unwind_VRS_Get o 0x000078ea
 za sym._Unwind_VRS_Get R X1Vud2luZF9WUlNfR2V0
-za sym._Unwind_VRS_Get t void sym._Unwind_VRS_Get (int16_t arg1, int16_t arg2)
+za sym._Unwind_VRS_Get t void sym._Unwind_VRS_Get (int32_t arg1, int32_t arg2)
 za sym._Unwind_VRS_Get r sym.__gnu_thumb1_case_uqi
-za sym._Unwind_VRS_Get v tr0:arg1:int16_t, tr1:arg2:int16_t
+za sym._Unwind_VRS_Get v tr0:arg1:int32_t, tr1:arg2:int32_t
 za sym._Unwind_VRS_Get h 3132d0ebfa3b792867a4ffc36455e088bf3fcffc7627bd48c64bf901308463db
 EOF
 RUN
@@ -1706,6 +1706,213 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=collision with two bytes and one graph collider prevents renaming
+FILE=bins/elf/ls
+CMDS=<<EOF
+s main
+af
+afn bad1
+zaf
+afn bad2
+f-bad1
+zaf
+afn bad3
+f-bad2
+zaf
+za bad3 g cc=100 nbbs=2 edges=3 ebbs=8 bbsum=100
+afn main
+f-bad3
+af- $$
+zac
+z/
+afl~main?
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=collision with one bytes and two graph colliders prevents renaming
+FILE=bins/elf/ls
+CMDS=<<EOF
+s main
+af
+afn bad1
+zaf
+afn bad2
+f-bad1
+zaf
+afn bad3
+f-bad2
+zaf
+za bad3 b 91919191
+afn main
+f-bad3
+af- $$
+zac
+z/
+afl~main?
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=graph-only match checks the graph collisions, not the bytes ones
+FILE=bins/elf/ls
+CMDS=<<EOF
+s main
+af
+za ga b 90909090
+za ga g cc=429 nbbs=300 edges=437 ebbs=8 bbsum=6739
+za bb b 90909090
+za bb g cc=100 nbbs=2 edges=3 ebbs=8 bbsum=100
+za gc b 91919191
+za gc g cc=429 nbbs=300 edges=437 ebbs=8 bbsum=6739
+zac
+z/
+afl~main?
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=Rename when a matched type has no colliders
+FILE=bins/elf/ls
+CMDS=<<EOF
+s main
+af
+afn newname
+zaf
+afn badgraph
+f-newname
+zaf
+za badgraph g cc=100 nbbs=2 edges=3 ebbs=8 bbsum=100
+afn main
+f-badgraph
+af- $$
+zac
+z/
+afl~newname?
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=offset-only match with zac colliders does not rename
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e zign.bytes=false -e zign.graph=false -e zign.refs=false -e zign.hash=false -e zign.types=false -e zign.offset=true
+CMDS=<<EOF
+wx 5531c05dc3
+af main
+zaf main bad1
+zaf main bad2
+zac
+z/
+afl
+EOF
+EXPECT=<<EOF
+0x00000000    1      5 main
+EOF
+RUN
+
+NAME=graph-only match ignores colliders of the unmatched bytes
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e zign.minsz=1 -e zign.mincc=0
+CMDS=<<EOF
+wx 5531c05dc3
+af main
+zaf main s
+za s b 90909090
+za t b 90909090
+zac
+z/
+afl
+EOF
+EXPECT=<<EOF
+0x00000000    1      5 s
+EOF
+RUN
+
+NAME=disjoint bytes and graph colliders leave the match unique
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e zign.minsz=1 -e zign.mincc=0
+CMDS=<<EOF
+wx 5531c05dc3
+af main
+zaf main x
+zaf main b1
+za b1 g cc=100 nbbs=2 edges=3 ebbs=8 bbsum=100
+zaf main g1
+za g1 b 90909090
+zac
+z/
+afl
+EOF
+EXPECT=<<EOF
+0x00000000    1      5 x
+EOF
+RUN
+
+NAME=bytes and graph colliders intersect past a lower graph name
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e zign.minsz=1 -e zign.mincc=0
+CMDS=<<EOF
+wx 5531c05dc3
+af main
+zaf main x
+zaf main c
+zaf main a
+za a b 90909090
+zac
+z/
+afl
+EOF
+EXPECT=<<EOF
+0x00000000    1      5 main
+EOF
+RUN
+
+NAME=unsorted bytes and graph colliders still intersect
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e zign.minsz=1 -e zign.mincc=0
+CMDS=<<EOF
+wx 5531c05dc3
+af main
+"k anal/zigns/zign|*|x=|b:5531c05dc3:ffffffffff|g:0100000001000000000000000100000005000000|C:g:a,b:c,g:c|n:x"
+"k anal/zigns/zign|*|c=|b:5531c05dc3:ffffffffff|g:0100000001000000000000000100000005000000|C:g:a,b:x,g:x|n:c"
+"k anal/zigns/zign|*|a=|b:90909090:ffffffff|g:0100000001000000000000000100000005000000|C:g:c,g:x|n:a"
+z/
+afl
+EOF
+EXPECT=<<EOF
+0x00000000    1      5 main
+EOF
+RUN
+
+NAME=forty-one functions colliding on bytes and graph keep their names
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e zign.minsz=1 -e zign.mincc=0
+CMDS=<<EOF
+wx c3 @@s:0 40 1
+af @@s:0 40 1
+zg
+zac
+af-*
+e anal.prefix.default=g
+af @@s:0 40 1
+z/f
+afl~fcn.?
+afl~g.?
+EOF
+EXPECT=<<EOF
+0
+41
+EOF
+RUN
+
 NAME=Rename vars on sign match
 FILE=bins/elf/ls
 CMDS=<<EOF
@@ -1962,5 +2169,99 @@ EOF
 EXPECT=<<EOF
 2000
 1999
+EOF
+RUN
+
+NAME=zac drops the collisions of an item whose collider was deleted
+FILE=--
+CMDS=<<EOF
+za foo b 9090
+za bar b 9090
+za baz b 9191
+za qux b 9191
+zac
+z-bar
+zac
+zk
+EOF
+EXPECT=<<EOF
+zign|*|baz=|b:9191:ffff|C:b:qux
+zign|*|foo=|b:9090:ffff
+zign|*|qux=|b:9191:ffff|C:b:baz
+EOF
+RUN
+
+NAME=zac collisions in every listing format, deduplicated across zignspaces
+FILE=--
+CMDS=<<EOF
+za m b 9090
+za a b 9090
+zs other
+za a b 9090
+za a g cc=1 nbbs=1 edges=0 ebbs=1 bbsum=2
+zs *
+za a g cc=1 nbbs=1 edges=0 ebbs=1 bbsum=2
+za x b 9191
+zac
+zs *
+z
+zq
+zj
+z*
+EOF
+EXPECT=<<EOF
+a:
+  bytes: 9090
+  mask: ffff
+  graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=2
+  collisions: b:a, b:m, g:a
+x:
+  bytes: 9191
+  mask: ffff
+(other) a:
+  bytes: 9090
+  mask: ffff
+  graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=2
+  collisions: b:a, b:m, g:a
+m:
+  bytes: 9090
+  mask: ffff
+  collisions: b:a
+0xffffffffffffffff a:                              b(2/2) g(cc=1,nb=1,e=0,eb=1,h=2) collisions[3]
+0xffffffffffffffff x:                              b(2/2)
+0xffffffffffffffff a:                              b(2/2) g(cc=1,nb=1,e=0,eb=1,h=2) collisions[3]
+0xffffffffffffffff m:                              b(2/2) collisions[1]
+[{"name":"a","bytes":"9090","mask":"ffff","graph":{"cc":1,"nbbs":1,"edges":0,"ebbs":1,"bbsum":2},"addr":-1,"refs":[],"xrefs":[],"collisions":["b:a","b:m","g:a"],"vars":[],"hash":{}},{"name":"x","bytes":"9191","mask":"ffff","graph":{},"addr":-1,"refs":[],"xrefs":[],"collisions":[],"vars":[],"hash":{}},{"zignspace":"other","name":"a","bytes":"9090","mask":"ffff","graph":{"cc":1,"nbbs":1,"edges":0,"ebbs":1,"bbsum":2},"addr":-1,"refs":[],"xrefs":[],"collisions":["b:a","b:m","g:a"],"vars":[],"hash":{}},{"name":"m","bytes":"9090","mask":"ffff","graph":{},"addr":-1,"refs":[],"xrefs":[],"collisions":["b:a"],"vars":[],"hash":{}}]
+zs *
+za a b 9090
+za a g cc=1 nbbs=1 edges=0 ebbs=1 bbsum=2
+za a C b:a b:m g:a
+zs *
+za x b 9191
+zs other
+za a b 9090
+za a g cc=1 nbbs=1 edges=0 ebbs=1 bbsum=2
+za a C b:a b:m g:a
+zs *
+za m b 9090
+za m C b:a
+EOF
+RUN
+
+NAME=za C loads the collisions z* prints, sorted, rejecting malformed entries
+FILE=--
+CMDS=<<EOF
+za a b 9090
+za a C g:z  b:y g:a g:z
+za a C b:bad,name
+za a C q:x
+zk
+z*
+EOF
+EXPECT=<<EOF
+zign|*|a=|b:9090:ffff|C:b:y,g:a,g:z
+zs *
+za a b 9090
+za a C b:y g:a g:z
 EOF
 RUN

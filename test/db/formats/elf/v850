@@ -24,7 +24,7 @@ iorw     false
 block    0x100
 type     EXEC (Executable file)
 arch     v850
-cpu      e1
+cpu      e3v5
 baddr    0x100000
 binsz    973677
 bintype  elf
@@ -57,5 +57,17 @@ va       true
             0x00100004      3506ffff0000   mov 0xffff, r21
             0x0010000a      230600002000   mov loc._stack, sp
             0x00100010      3e06bc7d1100   mov obj.__impure_ptr, ep
+EOF
+RUN
+
+NAME=ELF: RH850 selects E3V5 and decodes indirect JARL
+FILE=bins/v850/hello-v850e
+CMDS=<<EOF
+e asm.cpu
+aoj @0x1000a2~{[0].type}
+EOF
+EXPECT=<<EOF
+e3v5
+rcall
 EOF
 RUN

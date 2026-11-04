@@ -10,12 +10,15 @@ static void r_cons_context_free_internal(RConsContext *ctx);
 struct r_cons_terminal_t {
 	RList *consoles;
 	RCons *foreground;
+	RCons *raw_owner;
 	RThreadLock lock;
 #if R2__UNIX__ && !defined(__wasi__) && !EMSCRIPTEN
 	struct termios mode;
 #elif R2__WINDOWS__
 	HANDLE input;
 	DWORD mode;
+	DWORD raw_mode;
+	DWORD raw_xterm;
 	UINT old_cp;
 #endif
 };
@@ -326,6 +329,9 @@ static void cons_terminal_detach(RCons *cons) {
 		return;
 	}
 	r_th_lock_enter (&terminal->lock);
+	if (terminal->raw_owner == cons) {
+		terminal->raw_owner = NULL;
+	}
 	r_list_delete_data (terminal->consoles, cons);
 #if CONS_NATIVE_CURRENT
 	if (current) {
@@ -416,6 +422,7 @@ R_API RCons *r_cons_thready(RCons *cons) {
 R_API void r_cons_free(RCons *cons) {
 	R_RETURN_IF_FAIL (cons);
 	cons_terminal_detach (cons);
+	r_cons_readflush (cons);
 	r_line_free (cons->line);
 	while (!r_list_empty (cons->ctx_stack)) {
 		r_cons_pop (cons);
@@ -991,9 +998,12 @@ R_API bool r_cons_is_windows(void) {
 #endif
 }
 
-R_API bool r_cons_is_tty(void) {
+// check if the given file descriptor is attached to a terminal
+// use 0 for stdin (interactivity, keys, prompts) and 1 for stdout (colors, ansi)
+R_API bool r_cons_isatty(int fd) {
 #if R2_WASM_BROWSER
-	/* Check if WASM import is available */
+	/* browsers expose a single terminal stream */
+	(void)fd;
 	extern int r2_js_is_tty (void) __attribute__((import_module ("r2"), import_name ("is_tty")));
 	if ((void *)r2_js_is_tty != NULL) {
 		return r2_js_is_tty () != 0;
@@ -1001,36 +1011,27 @@ R_API bool r_cons_is_tty(void) {
 	/* Fallback to false if import not available */
 	return false;
 #elif R2__UNIX__ && !defined(__wasi__)
-	struct winsize win = { 0 };
-	struct stat sb = { 0 };
-
-	if (!isatty (1)) {
-		return false;
-	}
-	if (ioctl (1, TIOCGWINSZ, &win)) {
-		return false;
-	}
-	if (!win.ws_col || !win.ws_row) {
-		return false;
-	}
-	char ttybuf[64];
-	if (ttyname_r (1, ttybuf, sizeof (ttybuf))) {
-		return false;
-	}
-	const char *tty = ttybuf;
-	if (stat (tty, &sb) || !S_ISCHR (sb.st_mode)) {
-		return false;
-	}
-	return true;
+	return isatty (fd);
 #elif R2__WINDOWS__
-	HANDLE hOut = GetStdHandle (STD_OUTPUT_HANDLE);
-	if (GetFileType (hOut) == FILE_TYPE_CHAR) {
-		DWORD unused;
-		return GetConsoleMode (hOut, &unused);
+	HANDLE h = INVALID_HANDLE_VALUE;
+	switch (fd) {
+	case 0:
+		h = GetStdHandle (STD_INPUT_HANDLE);
+		break;
+	case 2:
+		h = GetStdHandle (STD_ERROR_HANDLE);
+		break;
+	case 1:
+		h = GetStdHandle (STD_OUTPUT_HANDLE);
+		break;
+	default:
+		return false;
 	}
-	return false;
+	DWORD mode;
+	return h && h != INVALID_HANDLE_VALUE && GetConsoleMode (h, &mode);
 #else
 	/* non-UNIX do not have ttys */
+	(void)fd;
 	return false;
 #endif
 }
@@ -1465,6 +1466,16 @@ R_API void r_cons_set_raw(RCons *cons, bool is_raw) {
 		return;
 	}
 	r_th_lock_enter (&terminal->lock);
+	bool unchanged = is_raw && terminal->raw_owner == cons;
+#if R2__WINDOWS__
+	unchanged &= terminal->raw_mode == cons->term_raw && terminal->raw_xterm == cons->term_xterm;
+#endif
+	if (unchanged) {
+		terminal->foreground = cons;
+		r_th_lock_leave (&terminal->lock);
+		return;
+	}
+	terminal->raw_owner = NULL;
 #if R2_WASM_BROWSER
 	/* Notify JS side about terminal mode change */
 	extern void r2_js_set_raw_mode (int raw) __attribute__((import_module ("r2"), import_name ("set_raw_mode")));
@@ -1495,17 +1506,23 @@ R_API void r_cons_set_raw(RCons *cons, bool is_raw) {
 		const char *cmd = is_raw
 			? "stty raw -echo"
 			: "stty raw echo";
-		r_sandbox_system (cmd, 1);
+		if (r_sandbox_system (cmd, 1)) {
+			r_th_lock_leave (&terminal->lock);
+			return;
+		}
 	} else {
 		if (!SetConsoleMode (terminal->input, is_raw? cons->term_raw: cons->term_buf)) {
 			r_th_lock_leave (&terminal->lock);
 			return;
 		}
 	}
+	terminal->raw_mode = cons->term_raw;
+	terminal->raw_xterm = cons->term_xterm;
 #elif !__wasi__
 #warning No raw console supported for this platform
 #endif
 	terminal->foreground = cons;
+	terminal->raw_owner = is_raw? cons: NULL;
 	r_th_lock_leave (&terminal->lock);
 }
 

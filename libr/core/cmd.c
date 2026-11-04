@@ -59,14 +59,9 @@ static inline bool isAnExport(RBinSymbol *s) {
 static int r_core_cmd_subst_i(RCore *core, RCmdContext *context, char *cmd, char* colon, bool *tmpseek);
 static int core_cmd_context(RCore *core, RCmdContext *parent, const char *cstr, bool log);
 static char *core_cmd_str_context(RCore *core, RCmdContext *parent, const char *cmd);
+static char *core_cmd_str_nohtml(RCore *core, RCmdContext *parent, const char *cmd);
 static RCons *core_cmd_cons(void *data);
 static bool core_fs_tree(RCore *core, RFSRoot *root, const char *path, int depth);
-
-static int bb_cmpaddr(const void *_a, const void *_b) {
-	const RAnalBlock *a = _a;
-	const RAnalBlock *b = _b;
-	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
-}
 
 static void cmd_debug_reg(RCore *core, const char *str);
 
@@ -216,8 +211,8 @@ static RCoreHelpMessage help_msg_dash = {
 	"-L", "", "same as Lo (or r2 -L)",
 	"-p", " project", "same as 'P [prjname]' to load a project",
 	"-P", " patchfile", "apply given patch file (see doc/rapatch2.md)",
-	"-v", "", "same as -V",
-	"-V", "", "show r2 version, same as ?V",
+	"-v", "[j]", "show r2 version, same as ?V",
+	"-V", "[j]", "show library versions, same as r2 -V",
 	"--", "", "seek one block backward. Same as s-- (see `b` command)",
 	NULL
 };
@@ -1041,30 +1036,23 @@ repeat:
 }
 
 static void cmd_tcp_server(RCore *core, const char *input) {
-	char *ptr = strchr (input, ' ');
-	if (!ptr) {
+	const char *cmd = strchr (input, ' ');
+	if (!cmd) {
 		r_core_rtr_cmds (core, input);
 		return;
 	}
-	/* .:port cmd */
-	/* .:host:port cmd */
-	const char *host, *port;
-	char *cmd = ptr + 1;
-	*ptr = 0;
-	char *eol = strchr (input, ':');
-	if (eol) {
-		*eol = 0;
-		host = input;
-		port = eol + 1;
-	} else {
-		host = "localhost";
-		port = input + ((input[0] == ':')? 1: 0);
+	// ".:port cmd" or ".:host:port cmd"
+	char *host = r_str_ndup (input, cmd - input);
+	char *port = strchr (host, ':');
+	if (port) {
+		*port++ = 0;
 	}
-	char *rbuf = r_core_rtr_cmds_query (core, host, port, cmd);
+	char *rbuf = r_core_rtr_cmds_query (core, port? host: "localhost", port? port: host, cmd + 1);
 	if (rbuf) {
 		r_cons_print (core->cons, rbuf);
 		free (rbuf);
 	}
+	free (host);
 }
 
 static void session_stop(RCore *core) {
@@ -1697,43 +1685,25 @@ static int cmd_l(void *data, const char *input) { // "l"
 
 static int cmd_join(void *data, const char *input) { // "join"
 	RCore *core = (RCore *)data;
-	char *tmp = strdup (input);
-	const char *arg1 = strchr (tmp, ' ');
-	if (!arg1) {
-		goto beach;
+	const char *space = strchr (input, ' ');
+	if (*input == '?' || !space) { // "join?"
+		r_cons_cmd_help (core->cons, help_msg_j);
+		return R_CMD_RC_SUCCESS;
 	}
-	arg1 = r_str_trim_head_ro (arg1);
-	if (!*arg1) {
-		goto out;
-	}
-	char *end = strchr (arg1, ' ');
-	if (!end) {
-		goto out;
-	}
-	*end = '\0';
-	const char *arg2 = r_str_trim_head_ro (end + 1);
-	if (!*arg2) {
-		goto out;
-	}
-	switch (*input) {
-	case '?': // "join?"
-		goto beach;
-	default: // "join"
-		if (!r_fs_check (core->fs, arg1) && !r_fs_check (core->fs, arg2)) {
+	char *arg1 = r_str_trim_dup (space);
+	char *arg2 = strchr (arg1, ' ');
+	if (arg2) {
+		*arg2++ = 0;
+		r_str_trim_head (arg2);
+		if (*arg2 && !r_fs_check (core->fs, arg1) && !r_fs_check (core->fs, arg2)) {
 			char *res = r_syscmd_join (arg1, arg2);
 			if (res) {
 				r_cons_print (core->cons, res);
 				free (res);
 			}
 		}
-		break;
 	}
-out:
-	free (tmp);
-	return R_CMD_RC_SUCCESS;
-beach:
-	r_cons_cmd_help (core->cons, help_msg_j);
-	free (tmp);
+	free (arg1);
 	return R_CMD_RC_SUCCESS;
 }
 
@@ -1863,12 +1833,14 @@ static int cmd_stdin(void *data, const char *input) {
 			r_cons_cmd_help (core->cons, help_msg_dash);
 			break;
 		case 'v': // "-v"
-		case 'V': // "-V"
 			if (input[1] == 'j') {
 				r_core_call (core, "?Vj");
 			} else {
 				r_core_call (core, "?V");
 			}
+			break;
+		case 'V': // "-V"
+			r_core_call (core, input[1] == 'j'? "r2 -jV": "r2 -V");
 			break;
 		case 'L': // "-L"
 			if (input[1]) {
@@ -2430,10 +2402,7 @@ bypass:
 		if (filter) {
 			*filter = 0;
 		}
-		bool tmp_html = core->cons->context->is_html;
-		core->cons->context->is_html = false;
-		ptr = str = r_core_cmd_str (core, inp);
-		core->cons->context->is_html = tmp_html;
+		ptr = str = core_cmd_str_nohtml (core, NULL, inp);
 
 		if (filter) {
 			*filter = '~';
@@ -4449,6 +4418,10 @@ static bool tmpseek_reg(RCore *core, char *ptr) {
 }
 
 static bool tmpseek_pid(RCore *core, char *ptr, int *old_pid, int *old_tid, bool *pid_changed) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+		R_LOG_ERROR ("Temporary pid selection is disabled in sandbox mode");
+		return false;
+	}
 	char *arg = getarg (ptr);
 	if (!arg) {
 		R_LOG_ERROR ("Invalid pid for @p");
@@ -4668,7 +4641,7 @@ static int r_core_cmd_subst_i(RCore *core, RCmdContext *context, char *cmd, char
 				str = (char *)r_str_trim_head_ro (p + 1);
 				r_core_cmd_pipe (core, cmd, str);
 			} else if (quoted_grep) {
-				char *out = core_cmd_str_context (core, context, line);
+				char *out = core_cmd_str_nohtml (core, context, line);
 				if (out) {
 					r_cons_print (cons, out);
 					free (out);
@@ -4678,7 +4651,8 @@ static int r_core_cmd_subst_i(RCore *core, RCmdContext *context, char *cmd, char
 				r_cmd_call_context (core->rcmd, context, line, true);
 			}
 			if (quoted_grep) {
-				r_cons_filter (cons);
+				r_cons_grepbuf (cons);
+				cons->context->filter = false;
 				free (quoted_grep);
 				quoted_grep = NULL;
 			}
@@ -4804,7 +4778,7 @@ static int r_core_cmd_subst_i(RCore *core, RCmdContext *context, char *cmd, char
 					r_list_free (tmpenvs);
 					return ret;
 				} else if (ptr[1] == 'D') { // "|D"
-					char *s = core_cmd_str_context (core, context, cmd);
+					char *s = core_cmd_str_nohtml (core, context, cmd);
 					int len;
 					char *e = (char *)sdb_decode (s, &len);
 					r_cons_printf (cons, "%s\n", e);
@@ -4812,7 +4786,7 @@ static int r_core_cmd_subst_i(RCore *core, RCmdContext *context, char *cmd, char
 					free (s);
 					return 0;
 				} else if (ptr[1] == 'E') { // "|E"
-					char *s = core_cmd_str_context (core, context, cmd);
+					char *s = core_cmd_str_nohtml (core, context, cmd);
 					char *e = sdb_encode ((const ut8*)s, strlen (s));
 					r_cons_printf (cons, "%s\n", e);
 					free (e);
@@ -4944,6 +4918,7 @@ escape_pipe:
 		}
 		bool pipecolor = r_config_get_b (core->config, "scr.color.pipe");
 		bool use_editor = false;
+		char *editor_file = NULL;
 		int ocolor = r_config_get_i (core->config, "scr.color");
 		*ptr = '\0';
 		r_cons_set_interactive (cons, false);
@@ -4973,13 +4948,22 @@ repeat:;
 			}
 		}
 		R_LOG_DEBUG ("FD %d", fdn);
+		const char *pipe_file = str;
 		if (!strcmp (str, "-")) {
-			use_editor = true;
-			str = r_file_temp ("dumpedit");
-			r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
+			if (!editor_file) {
+				int fd = r_file_mkstemp ("dumpedit", &editor_file);
+				if (fd == -1) {
+					R_LOG_ERROR ("Cannot create temporary file for cfg.editor");
+					goto next2;
+				}
+				close (fd);
+				use_editor = true;
+				r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
+			}
+			pipe_file = editor_file;
 		}
 
-		char *nextgt = strchr (r_str_trim_head_ro (ptr + 1), '>');
+		char *nextgt = strchr (ptr + 1, '>');
 		if (nextgt && nextgt[0] != '>') {
 			char *back = ptr + 1;
 			while (nextgt > back) {
@@ -5021,7 +5005,7 @@ repeat:;
 			}
 		} else if (fdn > 0) {
 			// pipe to file (or append)
-			pipefd = r_cons_pipe_open (cons, str, fdn, appendResult);
+			pipefd = r_cons_pipe_open (cons, pipe_file, fdn, appendResult);
 			if (pipefd == -1) {
 				// R_LOG_ERROR ("Cannot open pipe with fd %d", fdn);
 				// goto errorout;
@@ -5044,16 +5028,17 @@ repeat:;
 		}
 		if (use_editor) {
 			const char *editor = r_config_get (core->config, "cfg.editor");
+			r_cons_pipe_close_all (cons);
 			if (R_STR_ISNOTEMPTY (editor)) {
-				char *estr = r_str_escape_sh (str);
+				char *estr = r_str_escape_sh (editor_file);
 				r_sys_cmdf ("%s \"%s\"", editor, estr);
 				free (estr);
-				r_file_rm (str);
 			} else {
 				R_LOG_ERROR ("No value defined for cfg.editor");
 			}
+			r_file_rm (editor_file);
+			free (editor_file);
 			r_config_set_i (core->config, "scr.color", ocolor);
-			free (str);
 		}
 		if (scr_html != -1) {
 			r_config_set_b (core->config, "scr.html", scr_html);
@@ -5108,7 +5093,7 @@ next2:
 			// Color disabled when doing backticks ?e `pi 1`
 			const int ocolor = r_config_get_i (core->config, "scr.color");
 			r_config_set_i (core->config, "scr.color", 0);// alloc
-			str = core_cmd_str_context (core, context, ptr + 1); // free
+			str = core_cmd_str_nohtml (core, context, ptr + 1); // free
 			r_config_set_i (core->config, "scr.color", ocolor); // dblfree
 		}
 		if (!str) {
@@ -5381,8 +5366,8 @@ repeat_arroba:
 				break;
 			case 'c': // "@c:"
 				{
-					char *s = core_cmd_str_context (core, context, ptr + 2);
-					if (*s) {
+					char *s = core_cmd_str_nohtml (core, context, ptr + 2);
+					if (R_STR_ISNOTEMPTY (s)) {
 						ut64 addr = r_num_math (core->num, s);
 						if (core->num->nc.errors == 0) {
 							r_core_seek (core, addr, true);
@@ -5447,14 +5432,19 @@ repeat_arroba:
 					buf = (ut8 *)s;
 					len = sz;
 				} else if (ptr[1] == 'c' && ptr[2] == ':') { // "@xc:command"
-					char *s = core_cmd_str_context (core, context, ptr + 3);
+					char *s = core_cmd_str_nohtml (core, context, ptr + 3);
+					if (!s) {
+						break;
+					}
 					buf = malloc (strlen (s) + 1);
 					if (!buf) {
+						free (s);
 						R_LOG_ERROR ("Cannot allocate");
 						break;
 					}
 					// TODO R2_600 Use the hex_from_file
 					len = r_hex_str2bin (s, buf);
+					free (s);
 				} else if (ptr[1] == ':') {
 					buf = malloc (strlen (ptr + 2) + 1);
 					if (!buf) {
@@ -5836,32 +5826,28 @@ static bool copy_into_flagitem_list(RFlagItem *fi, void *u) {
 }
 
 static void foreach_pairs(RCore *core, const char *cmd, const char *each) {
+	RList *args = r_str_split_duplist (each, " ", false);
+	RListIter *iter;
 	const char *arg;
 	int pair = 0;
-	for (arg = each ; ; ) {
-		char *next = strchr (arg, ' ');
-		if (next) {
-			*next = 0;
+	r_list_foreach (args, iter, arg) {
+		if (!*arg) {
+			continue;
 		}
-		if (R_STR_ISNOTEMPTY (arg)) {
-			ut64 n = r_num_get (NULL, arg);
-			if (core->num->nc.errors != 0) {
-				R_LOG_ERROR ("Invalid number '%s'", arg);
-				break;
-			}
-			if (pair % 2) {
-				r_core_block_size (core, n);
-				r_core_cmd0 (core, cmd);
-			} else {
-				r_core_seek (core, n, true);
-			}
-			pair++;
-		}
-		if (!next) {
+		ut64 n = r_num_get (NULL, arg);
+		if (core->num->nc.errors != 0) {
+			R_LOG_ERROR ("Invalid number '%s'", arg);
 			break;
 		}
-		arg = next + 1;
+		if (pair % 2) {
+			r_core_block_size (core, n);
+			r_core_cmd0 (core, cmd);
+		} else {
+			r_core_seek (core, n, true);
+		}
+		pair++;
 	}
+	r_list_free (args);
 }
 
 static RList *foreach3list(RCore *core, char type, const char *glob) {
@@ -6046,9 +6032,10 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 		{
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
 			if (fcn) {
-				RListIter *iter;
+				RAnalBlock **iter;
 				RAnalBlock *bb;
-				r_list_foreach (fcn->bbs, iter, bb) {
+				R_VEC_FOREACH (&fcn->bbs, iter) {
+					bb = *iter;
 					append_item (list, NULL, bb->addr, bb->size);
 				}
 			}
@@ -6130,7 +6117,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 		break;
 	case 'c': // "@@@c"
 		if (glob) {
-			char *arg = r_core_cmd_str (core, glob);
+			char *arg = core_cmd_str_nohtml (core, NULL, glob);
 			if (arg) {
 				foreach_pairs (core, cmd, arg);
 				free (arg);
@@ -6213,137 +6200,56 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 	return 0;
 }
 
-static void cmd_foreach_word(RCore *core, const char *_cmd, const char *each) {
+static void cmd_foreach_word(RCore *core, const char *cmd, const char *each, bool seek) {
 	RCons *cons = r_core_get_cons (core);
-	char *cmd = strdup (_cmd);
-	char *nextLine = NULL;
-	/* foreach list of items */
-	while (each) {
-		// skip spaces
-		each = r_str_trim_head_ro (each);
-		// stahp on empty string
-		if (!*each) {
-			break;
+	RList *lines = r_str_split_duplist (each, "\n", true);
+	RListIter *iter, *iter2;
+	char *line, *word;
+	r_list_foreach (lines, iter, line) {
+		char *comment = strchr (line, '#');
+		if (comment) {
+			*comment = 0;
 		}
-		// find newline
-		char *nl = strchr (each, '\n');
-		if (nl) {
-			*nl = 0;
-			nextLine = nl + 1;
-		} else {
-			nextLine = NULL;
-		}
-		// chop comment in line
-		nl = strchr (each, '#');
-		if (nl) {
-			*nl = 0;
-		}
-		// space separated numbers
-		while (R_STR_ISNOTEMPTY (each)) {
-			each = r_str_trim_head_ro (each);
-			char *curword = NULL;
-			char *str = strchr (each, ' ');
-			if (str) {
-				*str = '\0';
-				curword = strdup (each);
-				*str = ' ';
-				each = str + 1;
-			} else {
-				if (!*each) {
-					break;
-				}
-				curword = strdup (each);
-				each = NULL;
+		RList *words = r_str_split_duplist (line, " ", true);
+		r_list_foreach (words, iter2, word) {
+			if (!*word) {
+				continue;
 			}
-			r_core_cmdf (core, "%s %s", cmd, curword);
-			R_FREE (curword);
-			if (!foreach_newline (core)) {
-				break;
-			}
-			r_cons_flush (cons);
-		}
-		each = nextLine;
-	}
-	free (cmd);
-}
-
-static void cmd_foreach_offset(RCore *core, const char *_cmd, const char *each) {
-	RCons *cons = r_core_get_cons (core);
-	char *cmd = strdup (_cmd);
-	char *nextLine = NULL;
-	ut64 addr;
-	/* foreach list of items */
-	while (R_STR_ISNOTEMPTY (each)) {
-		each = r_str_trim_head_ro (each);
-		// stahp if empty string
-		if (!*each) {
-			break;
-		}
-		// find newline
-		char *nl = strchr (each, '\n');
-		if (nl) {
-			*nl = 0;
-			nextLine = nl + 1;
-		} else {
-			nextLine = NULL;
-		}
-		// chop comment in line
-		nl = strchr (each, '#');
-		if (nl) {
-			*nl = 0;
-		}
-		// space separated numbers
-		while (R_STR_ISNOTEMPTY (each)) {
 			if (r_cons_is_breaked (cons)) {
 				break;
 			}
-			// find spaces
-			while (*each == ' ') {
-				each++;
-			}
-			char *str = strchr (each, ' ');
-			if (str) {
-				*str = '\0';
-				addr = r_num_math (core->num, each);
+			if (seek) {
+				ut64 addr = r_num_math (core->num, word);
 				if (core->num->nc.errors != 0) {
-					R_LOG_ERROR ("Invalid number '%s'", each);
+					R_LOG_ERROR ("Invalid number '%s'", word);
 					break;
 				}
-				*str = ' ';
-				each = str + 1;
+				r_core_seek (core, addr, true);
+				r_core_cmd (core, cmd, 0);
 			} else {
-				if (!*each) {
-					break;
-				}
-				addr = r_num_math (core->num, each);
-				if (core->num->nc.errors != 0) {
-					R_LOG_ERROR ("Invalid number '%s'", each);
-					break;
-				}
-				each = NULL;
+				r_core_cmdf (core, "%s %s", cmd, word);
 			}
-			r_core_seek (core, addr, true);
-			r_core_cmd (core, cmd, 0);
-			if (!foreach_newline (core)) {
-				r_cons_flush (cons);
+			const bool more = foreach_newline (core);
+			r_cons_flush (cons);
+			if (!more) {
 				break;
 			}
-			r_cons_flush (cons);
 		}
-		each = nextLine;
+		r_list_free (words);
 	}
-	free (cmd);
+	r_list_free (lines);
 }
 
 static void atat_i(RCore *core, const char *cmd) {
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *bb;
 	int i;
 	RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->addr);
 	RBitset *seen = r_bitset_new ();
 	if (fcn) {
-		r_list_sort (fcn->bbs, bb_cmp);
-		r_list_foreach (fcn->bbs, iter, bb) {
+		r_anal_function_sort_blocks (fcn);
+		R_VEC_FOREACH (&fcn->bbs, iter) {
+			bb = *iter;
 			for (i = 0; i < bb->ninstr; i++) {
 				ut64 addr = r_anal_block_ninstr (bb, i);
 				if (!r_bitset_set (seen, addr)) {
@@ -6393,13 +6299,14 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		break;
 	case 'b': // "@@b" - function basic blocks
 		{
-			RListIter *iter;
+			RAnalBlock **iter;
 			RAnalBlock *bb;
 			RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->addr);
 			int bs = core->blocksize;
 			if (fcn) {
-				r_list_sort (fcn->bbs, bb_cmp);
-				r_list_foreach (fcn->bbs, iter, bb) {
+				r_anal_function_sort_blocks (fcn);
+				R_VEC_FOREACH (&fcn->bbs, iter) {
+					bb = *iter;
 					r_core_block_size (core, bb->size);
 					r_core_seek (core, bb->addr, true);
 					r_core_cmd (core, cmd, 0);
@@ -6483,7 +6390,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				RStrBuf *sb = r_strbuf_new ("");
 				r_list_foreach (core->anal->fcns, iter, fcn) {
 					r_core_seek (core, fcn->addr, true);
-					char *buf = r_core_cmd_str (core, cmd);
+					char *buf = core_cmd_str_nohtml (core, NULL, cmd);
 					r_strbuf_appendf (sb, "%s", buf);
 					free (buf);
 					if (!foreach_newline (core)) {
@@ -6502,6 +6409,10 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		break;
 	case 't': // "@@t"
 		{
+			if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+				R_LOG_ERROR ("Thread iteration is disabled in sandbox mode");
+				goto out_finish;
+			}
 			RDebugPid *p;
 			int pid = core->dbg->pid;
 			RDebugPlugin *plugin = R_UNWRAP3 (core->dbg, current, plugin);
@@ -6523,18 +6434,18 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		break;
 	case 'c': // "@@c:"
 		if (each[1] == ':') {
-			char *arg = r_core_cmd_str (core, each + 2);
+			char *arg = core_cmd_str_nohtml (core, NULL, each + 2);
 			if (arg) {
-				cmd_foreach_offset (core, cmd, arg);
+				cmd_foreach_word (core, cmd, arg, true);
 				free (arg);
 			}
 		}
 		break;
 	case '=': // "@@="
 		if (each[1] == '=') {
-			cmd_foreach_word (core, cmd, r_str_trim_head_ro (str + 2));
+			cmd_foreach_word (core, cmd, r_str_trim_head_ro (str + 2), false);
 		} else {
-			cmd_foreach_offset (core, cmd, r_str_trim_head_ro (str + 1));
+			cmd_foreach_word (core, cmd, r_str_trim_head_ro (str + 1), true);
 		}
 		break;
 	case 'd': // "@@d"
@@ -6916,7 +6827,7 @@ R_API bool r_core_cmd_lines(RCore *core, const char *lines) {
 	}
 	bool ret = true;
 	size_t line_count = r_str_char_count (lines, '\n');
-	const bool istty = r_cons_is_tty ();
+	const bool istty = r_cons_isatty (1);
 	const bool show_progress_bar = core->print->enable_progressbar \
 		&& r_config_get_b (core->config, "scr.interactive") \
 		&& r_config_get_b (core->config, "scr.progressbar") && istty;
@@ -7104,7 +7015,7 @@ R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 	}
 	RCons *cons = r_core_get_cons (core);
 	char *tmp = NULL;
-	char *p = (*cmd != '"')? strchr (cmd, '|'): NULL;
+	const char *p = (*cmd != '"')? strchr (cmd, '|'): NULL;
 	if (r_sandbox_enable (false) || (!p && *cmd != '!' && *cmd != '.')) {
 		return r_core_cmd_str (core, cmd);
 	}
@@ -7252,6 +7163,14 @@ static char *core_cmd_str_context(RCore *core, RCmdContext *parent, const char *
 	r_cons_pop (cons);
 	r_cons_echo (cons, NULL);
 	return result? result: strdup ("");
+}
+
+static char *core_cmd_str_nohtml(RCore *core, RCmdContext *parent, const char *cmd) {
+	const bool html = r_config_get_b (core->config, "scr.html");
+	r_config_set_b (core->config, "scr.html", false);
+	char *result = core_cmd_str_context (core, parent, cmd);
+	r_config_set_b (core->config, "scr.html", html);
+	return result;
 }
 
 /* return: pointer to a buffer with the output of the command */

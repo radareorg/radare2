@@ -23,6 +23,8 @@
 #include "cxx2_internal.h"
 
 #define ARM_MAX_DEPTH 200
+// T<n> and N<count><n> back references expand exponentially, cap the output like rust v0
+#define ARM_MAX_OUTPUT 1000000
 
 typedef struct {
 	const char *p;
@@ -31,6 +33,7 @@ typedef struct {
 	int depth;
 	char **types; // typevec of argument type strings (1-based for T/N)
 	int ntypes, captypes;
+	size_t total; // bytes rendered into or copied out of the typevec
 } ARM;
 
 static void arm_type(ARM *c, RStrBuf *o, const char *inner);
@@ -67,11 +70,21 @@ static int arm_number(ARM *c) {
 	return n;
 }
 
+// charge `len` rendered bytes against the output budget
+static bool arm_charge(ARM *c, size_t len) {
+	c->total += len;
+	if (c->total > ARM_MAX_OUTPUT) {
+		c->fail = true;
+		return false;
+	}
+	return true;
+}
+
 static void arm_push_type(ARM *c, const char *s) {
 	if (c->fail || !s) {
 		return;
 	}
-	if (!cxx2_strvec_push (&c->types, &c->ntypes, &c->captypes, s, 0)) {
+	if (!arm_charge (c, strlen (s)) || !cxx2_strvec_push (&c->types, &c->ntypes, &c->captypes, s, 0)) {
 		c->fail = true;
 	}
 }
@@ -303,7 +316,7 @@ static void arm_type(ARM *c, RStrBuf *o, const char *inner) {
 	case 'T': { // back reference: T<index>  (single digit, 1-based)
 		c->p++;
 		int idx = isdigit ((unsigned char)arm_peek (c)) ? (arm_take (c) - '0') : -1;
-		if (idx >= 1 && idx <= c->ntypes) {
+		if (idx >= 1 && idx <= c->ntypes && arm_charge (c, strlen (c->types[idx - 1]))) {
 			arm_terminal (o, c->types[idx - 1], inner);
 		} else {
 			c->fail = true;
@@ -358,7 +371,7 @@ static void arm_args(ARM *c, RStrBuf *o) {
 				break;
 			}
 			int k;
-			for (k = 0; k < count; k++) {
+			for (k = 0; k < count && !c->fail; k++) {
 				if (printed++) {
 					r_strbuf_append (o, ", ");
 				}

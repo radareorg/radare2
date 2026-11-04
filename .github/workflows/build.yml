@@ -526,9 +526,9 @@ jobs:
           disk-root: "C:"
     - name: Checkout
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+    - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
       with:
-        python-version: '3.10'
+        python-version: '3.12'
     - name: Install dependencies
       run: |
         pip install meson ninja r2pipe wget --break-system-packages
@@ -571,9 +571,9 @@ jobs:
           disk-root: "C:"
     - name: Checkout
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+    - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
       with:
-        python-version: '3.10'
+        python-version: '3.12'
     - name: Preparing nmake
       uses: TheMrMilchmann/setup-msvc-dev@368ef7d1ee4d1171b31d4a7f67f4d954f903f5a9 # v4
       with:
@@ -620,9 +620,9 @@ jobs:
           disk-root: "C:"
     - name: Checkout
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+    - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
       with:
-        python-version: '3.10'
+        python-version: '3.12'
     - name: Preparing nmake
       uses: TheMrMilchmann/setup-msvc-dev@368ef7d1ee4d1171b31d4a7f67f4d954f903f5a9 # v4
       with:
@@ -644,6 +644,14 @@ jobs:
         # moved from -j1 to -j4 in 2cf6931a4f without issues.
         ninja -C build -j4
         ninja -C build install
+    - name: Test Windows r2pm hooks
+      shell: pwsh
+      run: |
+        $prefix = "$PWD\radare2-${{ steps.r2v.outputs.branch }}-w64"
+        $env:PATH = "$prefix\bin;$prefix\lib;$env:PATH"
+        & "$prefix\bin\r2r.exe" -v
+        if ($LASTEXITCODE -ne 0) { throw "r2r startup failed with exit code $LASTEXITCODE" }
+        & "$prefix\bin\r2r.exe" -u -L -V -C test db/tools/r2pm_windows
     - name: Create zip artifact
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w64.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w64
 #    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -719,7 +727,7 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+    - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
       with:
         python-version: '3.12'
     - name: Preparing MSVC for ARM64
@@ -860,7 +868,7 @@ jobs:
         name: macos-xcframework
         path: dist/sdk/Radare2.xcframework.zip
 
-  # UEFI release binary
+  # UEFI release binaries
   linux-uefi:
     if: ${{ github.event_name != 'pull_request' }}
     runs-on: ubuntu-24.04
@@ -880,6 +888,41 @@ jobs:
         if-no-files-found: error
         name: linux-uefi
         path: radare2-*-uefi-x86_64.efi
+
+  linux-uefi-arm64:
+    if: ${{ github.event_name != 'pull_request' }}
+    runs-on: ubuntu-24.04-arm
+    steps:
+    - name: Checkout
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+    - name: Checkout VC4 sources
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      with:
+        repository: radareorg/radare2-extras
+        ref: d5e7a28186e0cef1b698748c86bbd8aeb3c2a4de
+        path: libr/xps/p/vc4
+    - name: Enable the VC4 static plugin
+      run: |
+        cp -R dist/uefi/vc4/r2plugin libr/xps/p/vc4/
+        echo 'EXTERNAL_PLUGINS+=vc4' > libr/xps/config.mk
+        make -C libr/xps
+    - name: Install the UEFI toolchain
+      run: |
+        sudo apt-get update --assume-yes
+        sudo apt-get --assume-yes install binutils clang lld gnu-efi musl-dev libclang-rt-dev qemu-system-arm qemu-efi-aarch64
+    - name: Build radare2 for UEFI
+      run: make -C dist/uefi
+    - name: Boot it in qemu
+      run: make -C dist/uefi smoke
+    - name: Verify the VC4 static plugin
+      run: nm build-uefi/r2efi.so | grep -w r_arch_plugin_vc4
+    - name: Name the release asset
+      run: mv build-uefi/BOOTAA64.EFI radare2-`./configure -qV`-uefi-arm64.efi
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+      with:
+        if-no-files-found: error
+        name: linux-uefi-arm64
+        path: radare2-*-uefi-arm64.efi
 
   # Release creation
   check_release:
@@ -910,6 +953,7 @@ jobs:
       - msys2-w64-meson
       - msys2-w64-arm-meson
       - linux-uefi
+      - linux-uefi-arm64
       - freebsd
     runs-on: ubuntu-24.04
     steps:
@@ -961,6 +1005,7 @@ jobs:
         dist/artifacts/w64-static/*.zip
         dist/artifacts/w64-arm-meson/*.zip
         dist/artifacts/linux-uefi/*.efi
+        dist/artifacts/linux-uefi-arm64/*.efi
 #       dist/artifacts/linux-static-*/*.tar.xz
 #       dist/artifacts/msys2-w64-arm-meson/*.zip
     steps:

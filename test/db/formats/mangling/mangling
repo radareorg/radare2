@@ -116,6 +116,28 @@ foo()
 EOF
 RUN
 
+NAME=cfront cxx back references expand within a bounded output size
+FILE=-
+CMDS=<<EOF
+iD ibmxl foo__FiPFN21_N21__v
+iD cxx foo__FiPFT0T0_vPFT1T1_v
+iD cxx foo__FiPFT1T1_vPFT2T2_v
+iD ibmxl foo__FiPFN91_N91_N91__vPFN929_N929_N929__vPFN957_N957_N957__vPFN985_N985_N985__vPFN9113_N9113_N9113__vPFN9141_N9141_N9141__v
+iD cxx foo__FiPFT0T0T0T0T0T0T0T0T0_vPFT1T1T1T1T1T1T1T1T1_vPFT2T2T2T2T2T2T2T2T2_vPFT3T3T3T3T3T3T3T3T3_vPFT4T4T4T4T4T4T4T4T4_vPFT5T5T5T5T5T5T5T5T5_vPFT6T6T6T6T6T6T6T6T6_vPFT7T7T7T7T7T7T7T7T7_vPFT8T8T8T8T8T8T8T8T8_v
+iD cxx foo__FiPFT1T1T1T1T1T1T1T1T1_vPFT2T2T2T2T2T2T2T2T2_vPFT3T3T3T3T3T3T3T3T3_vPFT4T4T4T4T4T4T4T4T4_vPFT5T5T5T5T5T5T5T5T5_vPFT6T6T6T6T6T6T6T6T6_vPFT7T7T7T7T7T7T7T7T7_vPFT8T8T8T8T8T8T8T8T8_vPFT9T9T9T9T9T9T9T9T9_v
+EOF
+EXPECT=<<EOF
+foo(int, void (*)(int, int, int, int))
+foo(int, void (*)(int, int), void (*)(void (*)(int, int), void (*)(int, int)))
+foo(int, void (*)(int, int), void (*)(void (*)(int, int), void (*)(int, int)))
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+ERROR: Cannot demangle string
+EOF
+RUN
+
 NAME=arm cfront cxx templates via cxx chain
 FILE=-
 CMDS=<<EOF
@@ -3886,5 +3908,45 @@ FILE=-
 CMDS="!rabin2 -D msvc ??0a@@QEAA@XZ"
 EXPECT=<<EOF
 public: void __cdecl a::constructor(void) __ptr64
+EOF
+RUN
+
+NAME=msvc nesting depth is limited
+FILE=-
+CMDS=<<EOF
+'iD msvc ?f@@YAPAPAHXZ
+'iD msvc ?f@@YAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAHXZ
+EOF
+EXPECT=<<EOF
+int * * __cdecl f(void)
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot demangle string
+EOF
+RUN
+
+NAME=msvc failed nested names are not parsed again
+FILE=-
+CMDS=<<EOF
+'iD msvc .?AUa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@@
+'iD msvc ?a@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@?!$0?Qa@@3HA
+'iD msvc ?a@?1??foo@@YAXXZ@4HA
+EOF
+EXPECT=<<EOF
+int `void __cdecl foo(void)'::`2'::a
+EOF
+RUN
+
+NAME=msvc anonymous namespace
+FILE=-
+CMDS=<<EOF
+'iD msvc .?AV_ExceptionPtr_normal@?A0x327206fc@@
+'iD msvc ?foo@?A0x12345678@@YAXXZ
+'iD msvc ?x@?A0xdeadbeef@@3HA
+EOF
+EXPECT=<<EOF
+class `anonymous namespace'::_ExceptionPtr_normal
+void __cdecl `anonymous namespace'::foo(void)
+int `anonymous namespace'::x
 EOF
 RUN

@@ -195,8 +195,8 @@ typedef struct r2r_test_result_info_t {
 	};
 } R2RTestResultInfo;
 
-static inline const char *shortpath (const char *testpath) {
-	char *shorter = strstr (testpath, "/db/");
+static inline const char *shortpath(const char *testpath) {
+	const char *shorter = strstr (testpath, "/db/");
 	if (shorter) {
 		return shorter + 1;
 	}

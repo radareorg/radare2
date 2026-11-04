@@ -517,25 +517,15 @@ static bool bin_pe_parse_imports(RBinPEObj *pe,
 	Sdb *db = NULL;
 	char *sdb_module = NULL;
 	char *symdllname = NULL;
+	bool success = false;
 
 	if (R_STR_ISEMPTY (dll_name) || *dll_name == '0') {
 		return false;
 	}
 
-#if 0
-	// R2_590
-	PE_DWord off = PE_(va2pa) (pe, OriginalFirstThunk);
-	if (!off) {
-		off = PE_(va2pa) (pe, FirstThunk);
-		if (!off) {
-			return false;
-		}
-	}
-#else
 	if (! (off = PE_(va2pa) (pe, OriginalFirstThunk)) && ! (off = PE_(va2pa) (pe, FirstThunk))) {
 		return false;
 	}
-#endif
 	do {
 		if (import_ordinal >= UT16_MAX) {
 			break;
@@ -546,6 +536,11 @@ static bool bin_pe_parse_imports(RBinPEObj *pe,
 		import_table = R_BUF_READ_PE_DWORD_AT (pe->b, off + i * sizeof (PE_DWord));
 		if (!import_table) {
 			break;
+		}
+		// every import owns a thunk slot, descriptors sharing tables cannot list more than the file holds
+		if (RVecPEImport_length (imports) >= pe->size / sizeof (PE_DWord)) {
+			R_LOG_WARN ("PE import descriptors list more thunks than the file holds");
+			goto beach;
 		}
 		if (import_table == PE_DWORD_MAX) {
 			R_LOG_WARN ("read (import table)");
@@ -634,23 +629,16 @@ static bool bin_pe_parse_imports(RBinPEObj *pe,
 		}
 	} while (import_table);
 
-	if (db) {
-		sdb_free (db);
-		db = NULL;
-	}
-	free (symdllname);
-	free (sdb_module);
-	return i > 0;
+	success = i > 0;
+	goto beach;
 
 error:
-	if (db) {
-		sdb_free (db);
-		db = NULL;
-	}
+	RVecPEImport_clear (imports);
+beach:
+	sdb_free (db);
 	free (symdllname);
 	free (sdb_module);
-	RVecPEImport_clear (imports);
-	return false;
+	return success;
 }
 
 static bool read_libname(RBinPEObj *pe, ut64 paddr, char *name, size_t name_size) {
@@ -1781,18 +1769,17 @@ static void _free_resource(r_pe_resource *rs) {
 }
 
 static int read_image_resource_directory(RBuffer *b, ut64 addr, Pe_image_resource_directory *dir) {
-	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
-	if (r_buf_seek (b, addr, R_BUF_SET) == -1) {
+	ut8 buf[sizeof (*dir)];
+	if (r_buf_read_at (b, addr, buf, sizeof (buf)) != sizeof (buf)) {
 		return -1;
 	}
-	dir->Characteristics = r_buf_read_le32 (b);
-	dir->TimeDateStamp = r_buf_read_le32 (b);
-	dir->MajorVersion = r_buf_read_le16 (b);
-	dir->MinorVersion = r_buf_read_le16 (b);
-	dir->NumberOfNamedEntries = r_buf_read_le16 (b);
-	dir->NumberOfIdEntries = r_buf_read_le16 (b);
-	r_buf_seek (b, o_addr, R_BUF_SET);
-	return sizeof (Pe_image_resource_directory);
+	PE_READ_STRUCT_FIELD (dir, Pe_image_resource_directory, Characteristics, 32);
+	PE_READ_STRUCT_FIELD (dir, Pe_image_resource_directory, TimeDateStamp, 32);
+	PE_READ_STRUCT_FIELD (dir, Pe_image_resource_directory, MajorVersion, 16);
+	PE_READ_STRUCT_FIELD (dir, Pe_image_resource_directory, MinorVersion, 16);
+	PE_READ_STRUCT_FIELD (dir, Pe_image_resource_directory, NumberOfNamedEntries, 16);
+	PE_READ_STRUCT_FIELD (dir, Pe_image_resource_directory, NumberOfIdEntries, 16);
+	return sizeof (*dir);
 }
 
 static int bin_pe_init_resource(RBinPEObj *pe) {
@@ -3164,29 +3151,25 @@ static char *_resource_type_str(int type) {
 }
 
 static int read_image_resource_directory_entry(RBuffer *b, ut64 addr, Pe_image_resource_directory_entry *entry) {
-	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
-	if (r_buf_seek (b, addr, R_BUF_SET) == -1) {
+	ut8 buf[sizeof (*entry)];
+	if (r_buf_read_at (b, addr, buf, sizeof (buf)) != sizeof (buf)) {
 		return -1;
 	}
-	entry->u1.Name = r_buf_read_le32 (b);
-	entry->u2.OffsetToData = r_buf_read_le32 (b);
-	r_buf_seek (b, o_addr, R_BUF_SET);
-	return sizeof (Pe_image_resource_directory_entry);
+	PE_READ_STRUCT_FIELD (entry, Pe_image_resource_directory_entry, u1.Name, 32);
+	PE_READ_STRUCT_FIELD (entry, Pe_image_resource_directory_entry, u2.OffsetToData, 32);
+	return sizeof (*entry);
 }
 
 static int read_image_resource_data_entry(RBuffer *b, ut64 addr, Pe_image_resource_data_entry *entry) {
-	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
-	if (r_buf_seek (b, addr, R_BUF_SET) == -1) {
+	ut8 buf[sizeof (*entry)];
+	if (r_buf_read_at (b, addr, buf, sizeof (buf)) != sizeof (buf)) {
 		return -1;
 	}
-	ut8 buf[sizeof (Pe_image_resource_data_entry)];
-	r_buf_read (b, buf, sizeof (Pe_image_resource_data_entry));
 	PE_READ_STRUCT_FIELD (entry, Pe_image_resource_data_entry, OffsetToData, 32);
 	PE_READ_STRUCT_FIELD (entry, Pe_image_resource_data_entry, Size, 32);
 	PE_READ_STRUCT_FIELD (entry, Pe_image_resource_data_entry, CodePage, 32);
 	PE_READ_STRUCT_FIELD (entry, Pe_image_resource_data_entry, Reserved, 32);
-	r_buf_seek (b, o_addr, R_BUF_SET);
-	return sizeof (Pe_image_resource_data_entry);
+	return sizeof (*entry);
 }
 
 static bool is_dos_time(const ut32 certainPosixTimeStamp, const ut32 possiblePosixOrDosTimeStamp) {
@@ -3197,8 +3180,32 @@ static bool is_dos_time(const ut32 certainPosixTimeStamp, const ut32 possiblePos
 	return true;
 }
 
+// counted UTF-16 name, keeping the low byte of each character
+static char *resource_entry_name(RBinPEObj *pe, ut32 name_offset) {
+	ut64 off = pe->resource_directory_offset + name_offset;
+	ut8 buf[2];
+	if (r_buf_read_at (pe->b, off, buf, sizeof (buf)) != sizeof (buf)) {
+		return NULL;
+	}
+	const ut16 len = r_read_le16 (buf);
+	char *name = malloc ((2 * len) + 1);
+	if (!name || r_buf_read_at (pe->b, off + 2, (ut8 *)name, 2 * len) != 2 * len) {
+		free (name);
+		return NULL;
+	}
+	int i;
+	for (i = 0; i < len; i++) {
+		name[i] = name[2 * i];
+		if (!name[i]) {
+			free (name);
+			return NULL;
+		}
+	}
+	name[len] = 0;
+	return name;
+}
+
 static void _parse_resource_directory(RBinPEObj *pe, Pe_image_resource_directory *dir, ut64 offDir, int type, int id, RBitset *dirs, const char *resource_name, int depth) {
-	char *resourceEntryName = NULL;
 	int index = 0;
 	ut32 totalRes = dir->NumberOfNamedEntries + dir->NumberOfIdEntries;
 	ut64 rsrc_base = pe->resource_directory_offset;
@@ -3223,41 +3230,19 @@ static void _parse_resource_directory(RBinPEObj *pe, Pe_image_resource_directory
 			R_LOG_WARN ("read resource entry");
 			break;
 		}
-		if (entry.u1.Name >> 31) {
-			int i;
-			ut16 buf;
-			ut32 NameOffset = entry.u1.Name & 0x7fffffff;
-			if (r_buf_read_at (pe->b, pe->resource_directory_offset + NameOffset, (ut8 *)&buf, sizeof (ut16)) != sizeof (ut16)) {
-				break;
-			}
-			ut16 resourceEntryNameLength = r_read_le16 (&buf);
-			resourceEntryName = calloc (resourceEntryNameLength + 1, 1);
-			if (resourceEntryName) {
-				for (i = 0; i < resourceEntryNameLength; i++) { /* Convert Unicode to ASCII */
-					ut8 byte;
-					int r = r_buf_read_at (pe->b, pe->resource_directory_offset + NameOffset + 2 + (i * 2), &byte, sizeof (ut8));
-					if (r != sizeof (ut8) || !byte) {
-						R_FREE (resourceEntryName);
-						break;
-					}
-					resourceEntryName[i] = byte;
-				}
-			}
-		}
 		if (entry.u2.OffsetToData >> 31) {
-			// detect here malicious file trying to making us infinite loop
 			Pe_image_resource_directory identEntry;
 			ut32 OffsetToDirectory = entry.u2.OffsetToData & 0x7fffffff;
 			off = rsrc_base + OffsetToDirectory;
-			int len = read_image_resource_directory (pe->b, off, &identEntry);
-			if (len < 1 || len != sizeof (Pe_image_resource_directory)) {
+			if (read_image_resource_directory (pe->b, off, &identEntry) < 0) {
 				R_LOG_WARN ("parsing resource directory");
+				continue;
 			}
-			_parse_resource_directory (pe, &identEntry, OffsetToDirectory, type, entry.u1.Name & 0xffff, dirs, resourceEntryName, depth + 1);
-			R_FREE (resourceEntryName);
+			char *name = (entry.u1.Name >> 31)? resource_entry_name (pe, entry.u1.Name & 0x7fffffff): NULL;
+			_parse_resource_directory (pe, &identEntry, OffsetToDirectory, type, entry.u1.Name & 0xffff, dirs, name, depth + 1);
+			free (name);
 			continue;
 		}
-		R_FREE (resourceEntryName);
 
 		Pe_image_resource_data_entry *data = R_NEW0 (Pe_image_resource_data_entry);
 		off = rsrc_base + entry.u2.OffsetToData;
@@ -3309,6 +3294,7 @@ static void _parse_resource_directory(RBinPEObj *pe, Pe_image_resource_directory
 				align32 (cur_paddr);
 			}
 			sdb_ns_set (pe->kv, "vs_version_info", sdb);
+			sdb_free (sdb);
 		}
 		r_pe_resource *rs = R_NEW0 (r_pe_resource);
 		/* Compare compileTimeStamp to resource timestamp to figure out if DOS date or POSIX date */
@@ -3461,28 +3447,23 @@ R_API bool PE_(r_bin_pe_load_resources)(RBinPEObj *pe, RVecRBinResource *resourc
 }
 
 R_API void PE_(bin_pe_parse_resource)(RBinPEObj *pe) {
-	int index = 0;
-	ut64 off = 0, rsrc_base = pe->resource_directory_offset;
 	Pe_image_resource_directory *rs_directory = pe->resource_directory;
-	ut32 curRes = 0;
-	int totalRes = 0;
-	RBitset *dirs = r_bitset_new (); // to avoid infinite loops
 	if (!rs_directory) {
-		r_bitset_free (dirs);
 		return;
 	}
-	curRes = rs_directory->NumberOfNamedEntries;
-	totalRes = curRes + rs_directory->NumberOfIdEntries;
+	int totalRes = rs_directory->NumberOfNamedEntries + rs_directory->NumberOfIdEntries;
 	if (totalRes > R_PE_MAX_RESOURCES) {
 		if (pe->verbose) {
 			R_LOG_ERROR ("parsing resource directory");
 		}
-		r_bitset_free (dirs);
 		return;
 	}
+	RBitset *dirs = r_bitset_new (); // to avoid infinite loops
+	ut64 rsrc_base = pe->resource_directory_offset;
+	int index;
 	for (index = 0; index < totalRes; index++) {
 		Pe_image_resource_directory_entry typeEntry;
-		off = rsrc_base + sizeof (*rs_directory) + index * sizeof (typeEntry);
+		ut64 off = rsrc_base + sizeof (*rs_directory) + (index * sizeof (typeEntry));
 		r_bitset_set (dirs, off);
 		if (off > pe->size || off + sizeof (typeEntry) > pe->size) {
 			break;
@@ -3495,11 +3476,11 @@ R_API void PE_(bin_pe_parse_resource)(RBinPEObj *pe) {
 			Pe_image_resource_directory identEntry;
 			ut32 OffsetToDirectory = typeEntry.u2.OffsetToData & 0x7fffffff;
 			off = rsrc_base + OffsetToDirectory;
-			int len = read_image_resource_directory (pe->b, off, &identEntry);
-			if (len != sizeof (identEntry)) {
+			if (read_image_resource_directory (pe->b, off, &identEntry) < 0) {
 				R_LOG_WARN ("parsing resource directory");
+				continue;
 			}
-			(void)_parse_resource_directory (pe, &identEntry, OffsetToDirectory, typeEntry.u1.Name & 0xffff, 0, dirs, NULL, 1);
+			_parse_resource_directory (pe, &identEntry, OffsetToDirectory, typeEntry.u1.Name & 0xffff, 0, dirs, NULL, 1);
 		}
 	}
 	r_bitset_free (dirs);

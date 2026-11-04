@@ -39,8 +39,8 @@ R_API char *strcat2(char *buf, int buf_size, const char *s) {
 }
 
 /* extract the basename of a file */
-R_API char *tcc_basename(const char *name) {
-	char *p = strchr (name, 0);
+R_API const char *tcc_basename(const char *name) {
+	const char *p = strchr (name, 0);
 	while (p && p > name && !IS_DIRSEP (p[-1])) {
 		p--;
 	}
@@ -48,9 +48,9 @@ R_API char *tcc_basename(const char *name) {
 }
 
 /* extract extension part of a file / (if no extension, return pointer to end-of-string) */
-R_API char *tcc_fileextension(const char *name) {
-	char *b = tcc_basename (name);
-	char *e = strrchr (b, '.');
+R_API const char *tcc_fileextension(const char *name) {
+	const char *b = tcc_basename (name);
+	const char *e = strrchr (b, '.');
 	return e? e: strchr (b, 0);
 }
 

@@ -1526,7 +1526,13 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		{
 			src = getarg (&gop, 1, 2, NULL, NULL);
 			dst = getarg (&gop, 0, 1, NULL, NULL);
-			esilprintf (op, "%s,%s", src, dst);
+			// with an address-size prefix the effective address wraps at the smaller size
+			const int addr_bits = insn->detail->x86.addr_size * 8;
+			if (addr_bits > 0 && addr_bits < bits) {
+				esilprintf (op, "%s,0x%"PFMT64x",&,%s", src, r_num_bitmask (addr_bits), dst);
+			} else {
+				esilprintf (op, "%s,%s", src, dst);
+			}
 			free (src);
 			free (dst);
 		}
@@ -2268,10 +2274,85 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			char *src1 = getarg (&gop, 1, 0, NULL, NULL);
 			char *src2 = getarg (&gop, 2, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 1, NULL, &bitsize);
-			esilprintf (op, "%s,%s,~,&,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,0,cf,:=,0,of,:=", src2, src1, dst, bitsize - 1);
+			if (src1 && src2 && dst && bitsize) {
+				esilprintf (op, "%s,0x%"PFMT64x",%s,^,&,%s,$z,zf,:=,%u,$s,sf,:=,0,cf,:=,0,of,:=",
+					src2, r_num_bitmask (bitsize), src1, dst, bitsize - 1);
+			}
 			free (src1);
 			free (src2);
 			free (dst);
+		}
+		break;
+	case X86_INS_BLSI:
+	case X86_INS_BLSMSK:
+	case X86_INS_BLSR:
+		{
+			ut32 bitsize;
+			src = getarg (&gop, 1, 0, NULL, NULL);
+			dst = getarg (&gop, 0, 1, NULL, &bitsize);
+			if (src && dst && bitsize) {
+				const bool isolate = insn->id == X86_INS_BLSI;
+				const bool mask = insn->id == X86_INS_BLSMSK;
+				esilprintf (op, "%s,!,%scf,:=,%s,%s,-,%s,%c,%s,%s,zf,:=,%u,$s,sf,:=,0,of,:=",
+					src, isolate? "!,": "", isolate? src: "1", isolate? "0": src,
+					src, mask? '^': '&', dst, mask? "0": "$z", bitsize - 1);
+			}
+			free (src);
+			free (dst);
+		}
+		break;
+	case X86_INS_BZHI:
+		{
+			ut32 bitsize;
+			src = getarg (&gop, 1, 0, NULL, NULL);
+			char *index = getarg (&gop, 2, 0, NULL, NULL);
+			dst = getarg (&gop, 0, 1, NULL, &bitsize);
+			if (src && index && dst && (bitsize == 32 || bitsize == 64)) {
+				const int sizebits = (bitsize == 64)? 6: 5;
+				esilprintf (op, "%d,0xff,%s,&,>>,DUP,!,!,cf,:=,?{,%s,}{,1,0xff,%s,&,1,<<,-,%s,&,},%s,"
+					"$z,zf,:=,%u,$s,sf,:=,0,of,:=",
+					sizebits, index, src, index, src, dst, bitsize - 1);
+			}
+			free (src);
+			free (index);
+			free (dst);
+		}
+		break;
+	case X86_INS_RORX:
+		{
+			ut32 bitsize;
+			src = getarg (&gop, 1, 0, NULL, NULL);
+			dst = getarg (&gop, 0, 1, NULL, &bitsize);
+			if (src && dst && (bitsize == 32 || bitsize == 64) && INSOPS > 2) {
+				const ut64 count = INSOP (2).imm & (bitsize - 1);
+				if (count) {
+					esilprintf (op, "%"PFMT64u",%s,>>,%"PFMT64u",%s,<<,|,0x%"PFMT64x",&,%s",
+						count, src, bitsize - count, src, r_num_bitmask (bitsize), dst);
+				} else {
+					esilprintf (op, "%s,%s", src, dst);
+				}
+			}
+			free (src);
+			free (dst);
+		}
+		break;
+	case X86_INS_ADCX:
+	case X86_INS_ADOX:
+		{
+			ut32 bitsize;
+			src = getarg (&gop, 1, 0, NULL, NULL);
+			dst_r = getarg (&gop, 0, 0, NULL, &bitsize);
+			dst_w = getarg (&gop, 0, 1, "+", NULL);
+			if (src && dst_r && dst_w && bitsize && bitsize <= 64) {
+				const char *flag = (insn->id == X86_INS_ADCX)? "cf": "of";
+				const ut64 mask = r_num_bitmask (bitsize);
+				esilprintf (op, "0x%"PFMT64x",%s,&,%s,0x%"PFMT64x",^,==,%u,$b,%s,$z,&,|,"
+					"%s,%s,+,%s,%s,:=",
+					mask, src, dst_r, mask, bitsize, flag, flag, src, dst_w, flag);
+			}
+			free (src);
+			free (dst_r);
+			free (dst_w);
 		}
 		break;
 	case X86_INS_PANDN:
@@ -2360,8 +2441,14 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 					multiplier = arg2;
 				}
 				zext_opnd (&gop, 0);
-				esilprintf (op, "%d,%s,~,%d,%s,~,*,DUP,%s,=,%d,%s,~,-,!,!,DUP,cf,:=,of,:=",
-					width*8, multiplier, width*8, arg1, arg0, width*8, arg0);
+				if (width == 8) {
+					// L* is unsigned: subtract the high-half fixup; the source is read once
+					esilprintf (op, "%s,DUP,DUP,63,SWAP,>>,%s,*,SWAP,63,%s,>>,*,+,SWAP,%s,L*,%s,=,-,63,%s,>>,0,-,^,!,!,DUP,cf,:=,of,:=",
+						arg1, multiplier, multiplier, multiplier, arg0, arg0);
+				} else {
+					esilprintf (op, "%d,%s,~,%d,%s,~,*,DUP,%s,=,%d,%s,~,-,!,!,DUP,cf,:=,of,:=",
+						width*8, multiplier, width*8, arg1, arg0, width*8, arg0);
+				}
 			} else if (arg0) {
 				const char *r_quot, *r_rema;
 				muldiv_regs (width, &r_quot, &r_rema);
@@ -2405,28 +2492,21 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		break;
 	case X86_INS_MULX:
 		{
-			bool free_src = true;
-			src = getarg (&gop, 1, 0, NULL, NULL);
-			dst = getarg (&gop, 0, 1, "*", NULL);
-			if (!src && dst) {
-				switch (dst[0]) {
-				case 'r':
-					src = "rax";
-					break;
-				case 'e':
-					src = "eax";
-					break;
-				default:
-					src = "al";
-					break;
+			// Write the high half last when both destinations alias.
+			ut32 bitsize;
+			char *hi = getarg (&gop, 0, 1, NULL, &bitsize);
+			char *lo = getarg (&gop, 1, 1, NULL, NULL);
+			src = getarg (&gop, 2, 0, NULL, NULL);
+			if (hi && lo && src) {
+				if (bitsize == 64) {
+					esilprintf (op, "%s,rdx,L*,%s,%s", src, lo, hi);
+				} else if (bitsize == 32) {
+					esilprintf (op, "%s,edx,*,DUP,0xffffffff,&,%s,32,SWAP,>>,%s", src, lo, hi);
 				}
-				free_src = false;
 			}
-			esilprintf (op, "%s,%s", src, dst);
-			if (free_src) {
-				free (src);
-			}
-			free (dst);
+			free (hi);
+			free (lo);
+			free (src);
 		}
 		break;
 
@@ -2495,6 +2575,115 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			}
 			R_FREE (dst);
 			R_FREE (src);
+		}
+		break;
+	case X86_INS_CMPXCHG16B:
+	case X86_INS_CMPXCHG8B:
+		// Compare-exchange an implicit register pair against memory:
+		//   if (mem == acc_hi:acc_lo) { zf = 1; mem = store_hi:store_lo; }
+		//   else                      { zf = 0; acc_hi:acc_lo = mem; }
+		// The opcode decides the size. 8B always exchanges 8 bytes as
+		// two 4-byte halves in EDX:EAX and ECX:EBX; 16B (64-bit only)
+		// exchanges 16 bytes as 8-byte halves in RDX:RAX and RCX:RBX.
+		// Intel leaves OF/SF/AF/CF/PF undefined, so only zf modelled.
+		{
+			const bool is16 = insn->id == X86_INS_CMPXCHG16B;
+			const bool pack = !is16 && bits == 64; // packed-parent reads
+			const int hw = is16 ? 8 : 4; // half width in bytes, high offset too
+			// the compared pair: rdx:rax or its low halves edx:eax
+			const char *acc_lo = is16 ? "rax" : "eax";
+			const char *acc_hi = is16 ? "rdx" : "edx";
+			// the exchange source: rcx:rbx or its low halves ecx:ebx
+			const char *store_lo = is16 ? "rbx" : "ebx";
+			const char *store_hi = is16 ? "rcx" : "ecx";
+			// where a failed compare loads the pair: 8B goes through
+			// the 64-bit names, clearing their upper halves
+			const char *load_lo = pack ? "rax" : acc_lo;
+			const char *load_hi = pack ? "rdx" : acc_hi;
+			// esil expression per accumulator half, masked when packed
+			char cmp_lo[32], cmp_hi[32];
+			if (pack) {
+				snprintf (cmp_lo, sizeof (cmp_lo), "0xffffffff,%s,&", acc_lo);
+				snprintf (cmp_hi, sizeof (cmp_hi), "0xffffffff,%s,&", acc_hi);
+			} else {
+				snprintf (cmp_lo, sizeof (cmp_lo), "%s", acc_lo);
+				snprintf (cmp_hi, sizeof (cmp_hi), "%s", acc_hi);
+			}
+			dst = getarg (&gop, 0, 2, NULL, NULL); // address expr
+			if (dst) {
+				esilprintf (op,
+					"%s,[%d],%s,%d,+,[%d]," // push mem lo, then hi
+					"%s,[%d],%s,^,%s,%d,+,[%d],%s,^,|," // xor halves, or
+					"0,==,$z,zf,:=," // zf = differences == 0
+					"zf,?{,%s,%s,=[%d],%s,%s,%d,+,=[%d],}," // store pair
+					"zf,!,?{,%s,=,%s,=,}", // pop into the accumulator
+					dst, hw, dst, hw, hw,
+					dst, hw, cmp_lo, dst, hw, hw, cmp_hi,
+					store_lo, dst, hw, store_hi, dst, hw, hw,
+					load_hi, load_lo);
+				free (dst);
+				// extensions are explicit above; no zext tail
+				gop.zext[0] = 0;
+			}
+		}
+		break;
+	case X86_INS_CMPXCHG: /* compare acc with dst; equal: dst = src, else: acc = dst */
+		{
+			ut32 bitsize = 0;
+			src = getarg (&gop, 1, 0, NULL, NULL);
+			dst_r = getarg (&gop, 0, 0, NULL, &bitsize);
+			dst_w = getarg (&gop, 0, 1, NULL, NULL);
+			if (src && dst_r && dst_w && bitsize && bitsize <= 64) {
+				const char *acc, *dummy;
+				muldiv_regs (bitsize / 8, &acc, &dummy);
+				// esil sub-register reads pack the parent and writes
+				// leave its top stale: mask the reads, write through
+				// the 64-bit name, and only touch the changed register
+				const bool pack = bits == 64 && bitsize == 32;
+				char *acc_cmp = pack
+					? r_str_newf ("0xffffffff,%s,&", acc)
+					: r_str_newf ("%s", acc);
+				char *dst_cmp = pack
+					? r_str_newf ("0xffffffff,%s,&", dst_r)
+					: r_str_newf ("%s", dst_r);
+				char *store = NULL; // success: dst = src
+				char *reload = NULL; // failure: acc = dst
+				if (pack && INSOP (0).type == X86_OP_REG) {
+					char r64[16];
+					const char *regname = cs_reg_name (handle, INSOP (0).reg);
+					if (regname && get64from32 (regname, r64, sizeof (r64))) {
+						store = r_str_newf ("0xffffffff,%s,&,%s,=", src, r64);
+					}
+				}
+				if (!store) {
+					store = r_str_newf ("%s,%s", src, dst_w);
+				}
+				if (pack) {
+					reload = r_str_newf ("0xffffffff,%s,&,rax,=", dst_r);
+				} else {
+					reload = r_str_newf ("%s,%s,=", dst_r, acc);
+				}
+				// flags as if acc - dst was subtracted; the cmp tail
+				// computes second minus first, so dst goes first
+				if (acc_cmp && dst_cmp && store && reload) {
+					esilprintf (op,
+						"%s,%s,==,$z,zf,:=,%u,$b,cf,:=,$p,pf,:=,%u,$s,sf,:=,"
+						"%s,0x%"PFMT64x",-,!,%u,$o,^,of,:=,4,$b,af,:=,"
+						"zf,?{,%s,},zf,!,?{,%s,}",
+						dst_cmp, acc_cmp, bitsize, bitsize - 1, dst_cmp,
+						(ut64)(1ULL << (bitsize - 1)), bitsize - 1,
+						store, reload);
+				}
+				free (acc_cmp);
+				free (dst_cmp);
+				free (store);
+				free (reload);
+				free (src);
+				R_FREE (dst_r);
+				R_FREE (dst_w);
+				// no zext tail: it would clobber the branch not taken
+				gop.zext[0] = 0;
+			}
 		}
 		break;
 	case X86_INS_XADD: /* xchg + add */
@@ -4227,6 +4416,12 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		break;
 	case X86_INS_XADD: /* xchg + add */
 		op->type = R_ANAL_OP_TYPE_ADD;
+		op->family = R_ANAL_OP_FAMILY_CPU;
+		break;
+	case X86_INS_CMPXCHG: /* compare-exchange acc/dst */
+	case X86_INS_CMPXCHG8B: /* compare-exchange rdx:rax / m64 */
+	case X86_INS_CMPXCHG16B: /* compare-exchange rdx:rax / m128 */
+		op->type = R_ANAL_OP_TYPE_MOV;
 		op->family = R_ANAL_OP_FAMILY_CPU;
 		break;
 	case X86_INS_FADD:

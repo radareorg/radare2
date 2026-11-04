@@ -33,6 +33,8 @@ struct grub_dirhook_info
   unsigned int dir:1;
   unsigned int mtimeset:1;
   unsigned int case_insensitive:1;
+  unsigned int symlink:1;
+  unsigned int special:1;
   grub_int32_t mtime;
 };
 

@@ -61,7 +61,9 @@ EXPECT=<<EOF
 / 2980: int main (int argc, char **argv, char **envp); // noreturn
 |           ; arg int argc @ x0
 |           ; arg char **argv @ x1
+|           ; var int64_t var_60h @ x29-0x60
 |           ; var int32_t var_64h @ x29-0x64
+|           ; var int64_t var_70h @ x29-0x70
 |           ; var int64_t var_0h @ sp+0x0
 |           ; var int64_t var_8h @ sp+0x8
 |           ; var int32_t var_14h @ sp+0x14

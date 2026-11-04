@@ -757,6 +757,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *addr);
 R_API void r_core_anal_plt_stubs(RCore *core);
 R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2);
 R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, ut8 ch, bool verbose);
+R_API const char *r_core_patched_byte_color(RCore *core, ut64 addr);
 R_API ut64 r_core_anal_address(RCore *core, ut64 addr);
 R_API void r_core_anal_undefine(RCore *core, ut64 off);
 R_IPI char *core_varvalue(RCore *core, const char *name);
@@ -1022,7 +1023,7 @@ R_API void r_core_undo_up(RCore *core);
 R_API void r_core_undo_down(RCore *core);
 
 /* logs */
-typedef int (*RCoreLogCallback)(RCore *core, int count, const char *message);
+typedef void (*RCoreLogCallback)(RCore *core, int count, const char *message);
 R_API void r_core_log_free(RCoreLog *log);
 R_API void r_core_log_view(RCore *core, int num, int shift);
 R_API void r_core_log_init(RCoreLog *log);

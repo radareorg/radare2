@@ -75,7 +75,8 @@ static ArmOp ops[] = {
 	{ "rsbs", 0x7000, TYPE_ARI },
 	{ "rsc", 0xe000, TYPE_ARI },
 	{ "rscs", 0xf000, TYPE_ARI },
-	{ "bic", 0x0000c0e1, TYPE_ARI },
+	{ "bics", 0xd001, TYPE_ARI },
+	{ "bic", 0xc001, TYPE_ARI },
 
 	{ "udf", 0xf000f000, TYPE_UDF },
 
@@ -91,14 +92,14 @@ static ArmOp ops[] = {
 	{ "strexh", 0x900fe000, TYPE_MEM },
 	{ "strexb", 0x900fc000, TYPE_MEM },
 	{ "strex", 0x900f8000, TYPE_MEM },
-	{ "strbt", 0x0000e0e4, TYPE_MEM },
-	{ "strb", 0x0000c0e5, TYPE_MEM },
-	{ "strd", 0xf000c0e1, TYPE_MEM },
-	{ "strh", 0xb00080e1, TYPE_MEM },
+	{ "strbt", 0x0000e004, TYPE_MEM },
+	{ "strb", 0x0000c005, TYPE_MEM },
+	{ "strd", 0xf000c001, TYPE_MEM },
+	{ "strh", 0xb0008001, TYPE_MEM },
 	{ "str", 0x8000, TYPE_MEM },
 
-	{ "blx", 0x30ff2fe1, TYPE_BRR },
-	{ "bx", 0x10ff2fe1, TYPE_BRR },
+	{ "blx", 0x30ff2f01, TYPE_BRR },
+	{ "bx", 0x10ff2f01, TYPE_BRR },
 
 	{ "bl", 0xb, TYPE_BRA },
 // bx/blx - to register, b, bne,.. justjust  offset
@@ -113,22 +114,24 @@ static ArmOp ops[] = {
 	//{ "mov", 0x0a3, TYPE_MOV },
 	{ "movw", 0x3, TYPE_MOVW },
 	{ "movt", 0x4003, TYPE_MOVT },
+	{ "movs", 0xb001, TYPE_MOV },
 	{ "mov", 0xa001, TYPE_MOV },
+	{ "mvns", 0xf001, TYPE_MVN },
 	{ "mvn", 0xe001, TYPE_MVN },
 	{ "svc", 0xf, TYPE_SWI }, // ???
 	{ "hlt", 0x70000001, TYPE_HLT }, // ???u
 
-	{ "mul", 0x900000e0, TYPE_MUL},
-	{ "smull", 0x9000c0e0, TYPE_MUL},
-	{ "umull", 0x900080e0, TYPE_MUL},
-	{ "smlal", 0x9000e0e0, TYPE_MUL},
-	{ "umlal", 0x9000a0e0, TYPE_MUL},
-	{ "smlabb", 0x800000e1, TYPE_MUL},
-	{ "smlabt", 0xc00000e1, TYPE_MUL},
-	{ "smlatb", 0xa00000e1, TYPE_MUL},
-	{ "smlatt", 0xe00000e1, TYPE_MUL},
-	{ "smlawb", 0x800020e1, TYPE_MUL},
-	{ "smlawt", 0xc00020e1, TYPE_MUL},
+	{ "mul", 0x90000000, TYPE_MUL},
+	{ "smull", 0x9000c000, TYPE_MUL},
+	{ "umull", 0x90008000, TYPE_MUL},
+	{ "smlal", 0x9000e000, TYPE_MUL},
+	{ "umlal", 0x9000a000, TYPE_MUL},
+	{ "smlabb", 0x80000001, TYPE_MUL},
+	{ "smlabt", 0xc0000001, TYPE_MUL},
+	{ "smlatb", 0xa0000001, TYPE_MUL},
+	{ "smlatt", 0xe0000001, TYPE_MUL},
+	{ "smlawb", 0x80002001, TYPE_MUL},
+	{ "smlawt", 0xc0002001, TYPE_MUL},
 
 
 	{ "ands", 0x1000, TYPE_ARI },
@@ -144,17 +147,17 @@ static ArmOp ops[] = {
 	{ "teq", 0x3001, TYPE_TST },
 	{ "tst", 0x1001, TYPE_TST },
 
-	{ "lsr", 0x3000a0e1, TYPE_SHFT},
-	{ "asr", 0x5000a0e1, TYPE_SHFT},
-	{ "lsl", 0x1000a0e1, TYPE_SHFT},
-	{ "ror", 0x7000a0e1, TYPE_SHFT},
+	{ "lsr", 0x3000a001, TYPE_SHFT},
+	{ "asr", 0x5000a001, TYPE_SHFT},
+	{ "lsl", 0x1000a001, TYPE_SHFT},
+	{ "ror", 0x7000a001, TYPE_SHFT},
 
 	{ "rev16", 0xb00fbf06, TYPE_REV},
 	{ "revsh", 0xb00fff06, TYPE_REV},
 	{ "rev",   0x300fbf06, TYPE_REV},
 	{ "rbit",  0x300fff06, TYPE_REV},
 
-	{ "mrc", 0x100010ee, TYPE_COPROC},
+	{ "mrc", 0x1000100e, TYPE_COPROC},
 	{ "setend", 0x000001f1, TYPE_ENDIAN},
 	{ "clz", 0x000f6f01, TYPE_CLZ},
 	{ "neg", 0x7000, TYPE_NEG },
@@ -484,10 +487,13 @@ static ut64 getnumbang(const char *str) {
 }
 
 static ut32 getimmed8(const char *str) {
-	ut32 num = getnum (str);
-	if (err) {
+	ut64 value = getnum (str);
+	// Keep signed 32-bit spellings without narrowing wider values.
+	if (err || (value > UT32_MAX && value < (ut64)(st64)ST32_MIN)) {
+		err = true;
 		return 0;
 	}
+	ut32 num = (ut32)value;
 	ut32 rotate;
 	if (num <= 0xff) {
 		return num;
@@ -1279,7 +1285,26 @@ static inline int arm_cond(char *cond_str) {
 			return i;
 		}
 	}
+	if (!strcmpnull (cond_str, "hs")) {
+		return 2;
+	}
+	if (!strcmpnull (cond_str, "lo")) {
+		return 3;
+	}
+	return -1;
+}
 
+/* ldm/stm addressing mode as P << 1 | U, accepting the stack aliases */
+static int arm_ldm_mode(const char *s, bool is_ldm) {
+	const char *modes[] = { "da", "ia", "db", "ib" };
+	const char *ldm_stack[] = { "fa", "fd", "ea", "ed" };
+	const char *stm_stack[] = { "ed", "ea", "fd", "fa" };
+	int i;
+	for (i = 0; i < 4; i++) {
+		if (r_str_startswith (s, modes[i]) || r_str_startswith (s, is_ldm? ldm_stack[i]: stm_stack[i])) {
+			return i;
+		}
+	}
 	return -1;
 }
 
@@ -5969,7 +5994,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 }
 
 static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
-	int cond, ret, reg, a, b, i, j;
+	int cond, ret, reg, a, b, i;
 	int coproc, opc;
 	bool rex = false;
 	int shift, low, high;
@@ -6054,13 +6079,29 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	/* ARM-state LDM/STM (multiple load/store) with addressing suffixes */
 	if (r_str_startswith (ao->op, "ldm") || r_str_startswith (ao->op, "stm")) {
 		bool is_ldm = r_str_startswith (ao->op, "ldm");
-		const char *mop = ao->op + 3; // after ldm/stm
-		/* Default IA if unspecified */
-		int P = 0, U = 1;
-		if (r_str_startswith (mop, "ia")) { P = 0; U = 1; }
-		else if (r_str_startswith (mop, "ib")) { P = 1; U = 1; }
-		else if (r_str_startswith (mop, "da")) { P = 0; U = 0; }
-		else if (r_str_startswith (mop, "db")) { P = 1; U = 0; }
+		char cs[3] = {0};
+		const char *sfx = ao->op + 3; // after ldm/stm
+		int mode = arm_ldm_mode (sfx, is_ldm);
+		if (mode >= 0) {
+			sfx += 2;
+		} else if (strlen (sfx) == 4 && (mode = arm_ldm_mode (sfx + 2, is_ldm)) >= 0) {
+			/* pre-UAL order: ldm<cond><mode> */
+			r_str_ncpy (cs, sfx, sizeof (cs));
+			sfx = "";
+		} else {
+			mode = 1; /* IA if unspecified */
+		}
+		if (*sfx) {
+			if (strlen (sfx) != 2) {
+				return 0;
+			}
+			r_str_ncpy (cs, sfx, sizeof (cs));
+		}
+		cond = *cs? arm_cond (cs): 14;
+		if (cond < 0) {
+			return 0;
+		}
+		int P = mode >> 1, U = mode & 1;
 		/* Merge register list across commas if needed */
 		collect_list (ao);
 		/* parse writeback on Rn (rN!) */
@@ -6075,7 +6116,6 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		}
 		int W = (rn_wb >= 0) ? 1 : 0;
 		int L = is_ldm ? 1 : 0;
-		int cond = 14; /* default AL */
 		/* Build ARM word then swap to byte order expected by tests */
 		ut32 word = 0;
 		word |= ((ut32)cond & 0xF) << 28;
@@ -6292,22 +6332,22 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 
 					break;
 				case TYPE_IMM:
-					if (*ao->a[0]++ == '{') {
-						for (j = 0; j < 16; j++) {
-							if (ao->a[j] && *ao->a[j]) {
-								getrange (ao->a[j]); // XXX filter regname string
-								reg = getreg (ao->a[j]);
-								if (reg != -1) {
-									if (reg < 8) {
-										ao->o |= 1 << (24 + reg);
-									} else {
-										ao->o |= 1 << (8 + reg);
-									}
-								}
-							}
+					if (!strcmp (ops[i].name, "cps")) {
+						// cps #mode: imod 00, M 1, unconditional
+						ut64 mode = getnum (ao->a[0]);
+						if (cond != 14 || err || mode > 31) {
+							return 0;
 						}
+						ao->o |= 0x200 | mode << 24;
+					} else if (*ao->a[0] == '{') {
+						collect_list (ao);
+						st32 list = getreglist (ao->a[0]);
+						if (list <= 0 || ao->a[1]) {
+							return 0;
+						}
+						ao->o |= (ut32)(list & 0xff) << 24 | (ut32)((list >> 8) & 0xff) << 16;
 					} else {
-						ao->o |= getnum (ao->a[0]) << 24; // ???
+						return 0;
 					}
 					break;
 				case TYPE_BRA:
@@ -6395,19 +6435,11 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				ao->o |= reg << 8;
 				reg = getreg (ao->a[2]);
 				if (reg == -1) {
-					int imm = getnum(ao->a[2]);
-					if (imm && !(imm & (imm - 1)) && imm > 255) {
-						int r;
-						for (r = 0; r != 32; r += 2) {
-							if (!(imm & ~0xff)) {
-								ao->o |= (r << 15) | (imm << 24) | 2;
-								break;
-							}
-							imm = (imm << 2) | (imm >> 30);
-						}
-					} else {
-						ao->o |= (imm << 24) | 2;
+					ut32 immed = getimmed8 (ao->a[2]);
+					if (err) {
+						return 0;
 					}
+					ao->o |= 2 | (immed & 0xff) << 24 | (immed >> 8) << 16;
 				} else {
 					ao->o |= reg << 24;
 				}
@@ -6438,24 +6470,27 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				}
 				break;
 			case TYPE_MVN:
-				if (ao->a[2]) {
-					shift = arm_getshift (ao->a[2], true);
-					if (shift == -1) {
-						return 0;
-					}
-					ao->o |= shift;
-				}
-				/* Fallthrough */
 			case TYPE_MOV:
-				if (!strcmpnull (ao->op, "movs")) {
-					ao->o = 0xb0e1;
+				reg = getreg (ao->a[0]);
+				if (reg == -1) {
+					return 0;
 				}
-				ao->o |= (ut64)getreg (ao->a[0]) << 20;
+				ao->o |= (ut64)reg << 20;
 				ret = getreg (ao->a[1]);
 				if (ret != -1) {
 					ao->o |= ret << 24;
+					if (ao->a[2]) {
+						shift = arm_getshift (ao->a[2], true);
+						if (shift == -1) {
+							return 0;
+						}
+						ao->o |= shift;
+					}
 				} else {
-					int immed = getimmed8 (ao->a[1]);
+					if (ao->a[2]) {
+						return 0;
+					}
+					ut32 immed = getimmed8 (ao->a[1]);
 					if (err) {
 						return 0;
 					}
@@ -6483,7 +6518,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				ao->o |= (ret & 0xf00) << 8;
 				break;
 			case TYPE_MUL:
-				if (!strcmpnull (ao->op, "mul")) {
+				if (!strcmp (ops[i].name, "mul")) {
 					ret = getreg (ao->a[0]);
 					a = getreg (ao->a[1]);
 					b = getreg (ao->a[2]);
@@ -6505,12 +6540,12 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					if (low == -1 || high == -1 || a == -1 || b == -1) {
 						return 0;
 					}
-					if (!strcmpnull (ao->op, "smlal")) {
+					if (!strcmp (ops[i].name, "smlal")) {
 						ao->o |= low << 20;
 						ao->o |= high << 8;
 						ao->o |= a << 24;
 						ao->o |= b << 16;
-					} else if (r_str_startswith (ao->op, "smla")) {
+					} else if (r_str_startswith (ops[i].name, "smla")) {
 						if (low > 14 || high > 14 || a > 14) {
 							return 0;
 						}
@@ -6540,10 +6575,9 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 						if (err || b < 0 || b > 0xff) {
 							return 0;
 						}
-						ao->o |= 2 | (a << 8) | ((b & 0xff) << 24);
+						ao->o |= 2 | (a << 8) | ((ut32)b << 24);
 					} else {
-						// an 8 bit value rotated right by an even amount, like mov
-						int immed = getimmed8 (ao->a[1]);
+						ut32 immed = getimmed8 (ao->a[1]);
 						if (err) {
 							return 0;
 						}

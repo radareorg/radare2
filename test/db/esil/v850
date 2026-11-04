@@ -1,0 +1,713 @@
+NAME=V850 ADDI into r0 updates flags without using r0 as a temporary
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx 010620ff
+aei
+aer r1=224
+aes
+aer r1
+aer psw
+EOF
+EXPECT=<<EOF
+0x000000e0
+0x00000009
+EOF
+RUN
+
+NAME=V850 MUL with aliased result registers retains the high word
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx e1172012
+aei
+aer r1=0x80000000
+aer r2=4
+aes
+aer r2
+EOF
+EXPECT=<<EOF
+0xfffffffe
+EOF
+RUN
+
+NAME=V850 signed division sets S from the quotient
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx e117c01a
+aei
+aer r1=3
+aer r2=100
+aes
+aer r2
+aer sp
+aer psw
+EOF
+EXPECT=<<EOF
+0x00000021
+0x00000001
+0x00000000
+EOF
+RUN
+
+NAME=V850 CTRET restores saved interrupt state
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx e0074401
+aei
+aer ctpc=0x100
+aer ctpsw=0x35
+aer psw=0xc0
+aes
+aer pc
+aer psw
+EOF
+EXPECT=<<EOF
+0x00000100
+0x00000035
+EOF
+RUN
+
+NAME=V850 CMP uses unsigned borrow
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx e209
+aei
+aer r1=1
+aer r2=8
+aes
+aer psw
+EOF
+EXPECT=<<EOF
+0x0000000a
+EOF
+RUN
+
+NAME=V850 DISPOSE without a jump register falls through
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx 8007210040062000
+aei
+aer sp=0x100
+aer lp=0x12345678
+2aes
+aer sp
+aer lp
+aer pc
+EOF
+EXPECT=<<EOF
+0x00000100
+0x12345678
+0x00000008
+EOF
+RUN
+
+NAME=V850 MUL signed low and high words
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx e117201a
+aei
+aer r1=0xfffffffe
+aer r2=3
+aes
+aer r2
+aer sp
+EOF
+EXPECT=<<EOF
+0xfffffffa
+0xffffffff
+EOF
+RUN
+
+NAME=V850 SET1 writes memory and preserves flags except old-bit Z
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx c13f0000
+aei
+aer r1=0x100
+aer psw=0xe
+aes
+p8 1 @0x100
+aer psw
+EOF
+EXPECT=<<EOF
+80
+0x0000000f
+EOF
+RUN
+
+NAME=V850 CALLT saves return PC and condition flags
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx 0302
+wx 2000 @0x106
+aei
+aer ctbp=0x100
+aer psw=0x15
+aes
+aer pc
+aer ctpc
+aer ctpsw
+EOF
+EXPECT=<<EOF
+0x00000120
+0x00000002
+0x00000015
+EOF
+RUN
+
+NAME=V850 CMOV and SASF preserve condition flags
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx e117241be2170002
+aei
+aer r1=7
+aer r2=10
+aer psw=0x21
+aes
+aer sp
+aer psw
+aes
+aer r2
+aer psw
+EOF
+EXPECT=<<EOF
+0x00000007
+0x00000021
+0x00000015
+0x00000021
+EOF
+RUN
+
+NAME=V850 saturation clamps the result and retains sticky SAT
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx c110a110
+aei
+aer r1=1
+aer r2=0x7fffffff
+aer psw=0x20
+aes
+aer r2
+aer psw
+aes
+aer r2
+aer psw
+EOF
+EXPECT=<<EOF
+0x7fffffff
+0x00000034
+0x7ffffffe
+0x00000030
+EOF
+RUN
+
+NAME=V850 swap flags inspect bytes and halfwords at their defined widths
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx e017421be017401be017441b
+aei
+aer r2=0x12340000
+aer psw=0x3f
+aes
+aer sp
+aer psw
+aes
+aer sp
+aer psw
+aes
+aer sp
+aer psw
+EOF
+EXPECT=<<EOF
+0x34120000
+0x00000039
+0x00003412
+0x00000038
+0x00001234
+0x00000038
+EOF
+RUN
+
+NAME=V850 debug trap and return use the debug context and DIR mode
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx 40f8
+wx e0074601 @0x60
+aei
+aer psw=0x35
+aer dir=0x40
+aes
+aer pc
+aer dbpc
+aer dbpsw
+aer psw
+aer dir
+aes
+aer pc
+aer psw
+aer dir
+EOF
+EXPECT=<<EOF
+0x00000060
+0x00000002
+0x00000035
+0x000000f5
+0x00000041
+0x00000002
+0x00000035
+0x00000040
+EOF
+RUN
+
+NAME=V850 indirect jumps obey the selected CPU PC width
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx 6100
+aei
+aer r1=0xffffa011
+aes
+aer pc
+e asm.cpu=e2
+aer pc=0
+aes
+aer pc
+EOF
+EXPECT=<<EOF
+0x03ffa010
+0x1fffa010
+EOF
+RUN
+
+NAME=V850 PREPARE signed16 consumes its complete immediate
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx 80072b000180
+aei
+aer sp=0x100
+aes
+aer ep
+aer sp
+aer pc
+EOF
+EXPECT=<<EOF
+0xffff8001
+0x000000fc
+0x00000006
+EOF
+RUN
+
+NAME=V850 PREPARE high16 consumes its complete immediate
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx 800733000180
+aei
+aer sp=0x100
+aes
+aer ep
+aer sp
+aer pc
+EOF
+EXPECT=<<EOF
+0x80010000
+0x000000fc
+0x00000006
+EOF
+RUN
+
+NAME=V850 PREPARE immediate32 consumes its complete immediate
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+wx 80073b0078563412
+aei
+aer sp=0x100
+aes
+aer ep
+aer sp
+aer pc
+EOF
+EXPECT=<<EOF
+0x12345678
+0x000000fc
+0x00000008
+EOF
+RUN
+
+NAME=V850 PREPARE rejects a truncated immediate
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+pad 80073b00~^truncated
+EOF
+EXPECT=<<EOF
+truncated from 8 to 4
+EOF
+RUN
+
+NAME=V850 E2 extended loads use both displacement words and six bytes
+FILE=malloc://0x20000
+CMDS=<<EOF
+e asm.arch=v850
+e asm.cpu=e1
+e asm.cpu=e2v3
+wx 810769144602
+wx 78563412 @0x13346
+aei
+aer r1=0x1000
+aes
+aer r2
+aer pc
+EOF
+EXPECT=<<EOF
+0x12345678
+0x00000006
+EOF
+RUN
+
+NAME=V850 logical immediates into r0 compute flags from the source
+FILE=malloc://0x10000
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+e asm.cpu=e1
+e esil.skipself=false
+wx 81060100a1060100
+aei
+aer r1=0x80000000
+aer psw=0x3f
+aes
+aer psw
+aes
+aer psw
+aer r1
+EOF
+EXPECT=<<EOF
+0x0000003a
+0x0000003a
+0x80000000
+EOF
+RUN
+
+NAME=V850 ECR is read only through LDSR
+FILE=malloc://0x10000
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+e asm.cpu=e1
+e esil.skipself=false
+wx e1272000
+aei
+aer r1=0x12345678
+aer ecr=0xabcd1234
+aes
+aer ecr
+EOF
+EXPECT=<<EOF
+0xabcd1234
+EOF
+RUN
+
+NAME=V850 memory addition wraps before byte reads and writes
+FILE=malloc://0x10000
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+e asm.cpu=e1
+e esil.skipself=false
+wx 0117020041170200 @0x100
+wx 81 @0
+aei
+aer pc=0x100
+aer r1=0xfffffffe
+aes
+aer r2
+aer r2=0x42
+aes
+p8 1 @0
+EOF
+EXPECT=<<EOF
+0xffffff81
+42
+EOF
+RUN
+
+NAME=V850E1 defined illegal opcodes enter the debug context and DBRET restores it
+FILE=malloc://0x10000
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+e asm.cpu=e1
+e esil.skipself=false
+wx e0078003 @0x100
+wx e0074601 @0x60
+aei
+aer pc=0x100
+aer psw=0x95
+aer dir=0x40
+aer fepc=0x2000
+aes
+aer pc
+aer dbpc
+aer dbpsw
+aer psw
+aer dir
+aes
+aer pc
+aer psw
+aer dir
+aer fepc
+EOF
+EXPECT=<<EOF
+0x00000060
+0x00000104
+0x00000095
+0x000000f5
+0x00000041
+0x00000104
+0x00000095
+0x00000040
+0x00002000
+EOF
+RUN
+
+NAME=V850E2 long branches use the encoded link and base displacement
+FILE=malloc://0x10000
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+e asm.cpu=e1
+e esil.skipself=false
+e asm.cpu=e2
+wx e10220000000 @0x100
+wx e106f0ffffff @0x120
+aei
+aer pc=0x100
+aer lp=0x12345678
+aes
+aer pc
+aer r1
+aer lp
+aer r1=0x201
+aes
+aer pc
+EOF
+EXPECT=<<EOF
+0x00000120
+0x00000106
+0x12345678
+0x000001f0
+EOF
+RUN
+
+NAME=V850E2 conditional subtraction includes borrow without clobbering sources
+FILE=malloc://0x10000
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+e asm.cpu=e1
+e esil.skipself=false
+e asm.cpu=e2
+wx e1178a1b
+aei
+aer r1=0
+aer r2=0x80000000
+aer psw=0x30
+aes
+aer sp
+aer psw
+aer r1
+aer r2
+EOF
+EXPECT=<<EOF
+0x7fffffff
+0x00000034
+0x00000000
+0x80000000
+EOF
+RUN
+
+NAME=V850E2 compare exchange aligns the address and returns the old word
+FILE=malloc://0x10000
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+e asm.cpu=e1
+e esil.skipself=false
+e asm.cpu=e2
+wx e117ee18
+wx 07000000 @0x2000
+aei
+aer r1=0x2003
+aer r2=7
+aer sp=0x12345678
+aer psw=0x30
+aes
+aer sp
+aer psw
+p8 4 @0x2000
+EOF
+EXPECT=<<EOF
+0x00000007
+0x00000031
+78563412
+EOF
+RUN
+
+NAME=V850E2 bit search handles both directions and no match
+FILE=malloc://0x10000
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+e asm.cpu=e1
+e esil.skipself=false
+e asm.cpu=e2
+wx e017621be017641b
+aei
+aer r2=0x100
+aer psw=0x30
+aes
+aer sp
+aer psw
+aer r2=0xffffffff
+aes
+aer sp
+aer psw
+EOF
+EXPECT=<<EOF
+0x00000009
+0x00000038
+0x00000000
+0x00000031
+EOF
+RUN
+
+NAME=V850E2 multiply accumulate preserves flags and handles overlapping pairs
+FILE=malloc://0x10000
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+e asm.cpu=e1
+e esil.skipself=false
+e asm.cpu=e2
+wx e117c423
+aei
+aer r1=-1
+aer r2=3
+aer gp=5
+aer tp=0
+aer psw=0x3f
+aes
+aer gp
+aer tp
+aer psw
+EOF
+EXPECT=<<EOF
+0x00000002
+0x00000000
+0x0000003f
+EOF
+RUN
+
+NAME=V850E2 FE software trap saves the next PC and FERET restores it
+FILE=malloc://0x10000
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+e asm.cpu=e1
+e esil.skipself=false
+e asm.cpu=e2
+wx 4008
+wx e0074a01 @0x30
+aei
+aer psw=0x95
+aer ecr=0xabcd1234
+aes
+aer pc
+aer fepc
+aer fepsw
+aer feic
+aer ecr
+aes
+aer pc
+aer psw
+EOF
+EXPECT=<<EOF
+0x00000030
+0x00000002
+0x00000095
+0x00000031
+0x00311234
+0x00000002
+0x00000095
+EOF
+RUN
+
+NAME=V850E2 reserved instruction saves the faulting PC
+FILE=malloc://0x10000
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+e asm.cpu=e1
+e esil.skipself=false
+e asm.cpu=e2v3
+wx 4000 @0x100
+aei
+aer pc=0x100
+aer psw=0x15
+aer ecr=0xabcd1234
+aes
+aer pc
+aer fepc
+aer feic
+aer ecr
+EOF
+EXPECT=<<EOF
+0x00000030
+0x00000100
+0x00000130
+0x01301234
+EOF
+RUN
+
+NAME=V850 HALT stops execution until before the following instruction
+FILE=malloc://32
+ARGS=-a v850 -b 32
+CMDS=<<EOF
+e asm.cpu=e1
+e log.level=0
+wx e0072001010a0000
+aei
+ar psw=0x35
+aesu 6
+ar pc
+ar r1
+ar psw
+EOF
+EXPECT=<<EOF
+0x00000004
+0x00000000
+0x00000035
+EOF
+RUN

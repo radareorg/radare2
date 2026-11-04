@@ -1395,6 +1395,14 @@ static RThreadFunctionRet thready_core(RThread *th) {
 	return false;
 }
 
+static void parse_num_pair(const char *arg, ut64 *a, ut64 *b) {
+	const char *colon = strchr (arg, ':');
+	char *first = colon? r_str_ndup (arg, colon - arg): NULL;
+	*a = r_num_math (NULL, first? first: arg);
+	*b = colon? r_num_math (NULL, colon + 1): *a;
+	free (first);
+}
+
 R_API int r_main_radiff2(int argc, const char **argv) {
 	RadiffOptions ro;
 	const char *columnSort = NULL;
@@ -1479,33 +1487,13 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			}
 			break;
 		case 'l':
-			{
-				char *p = strchr (opt.arg, ':');
-				if (p) {
-					*p = 0;
-					ro.length_a = r_num_math (NULL, opt.arg);
-					ro.length_b = r_num_math (NULL, p + 1);
-				} else {
-					ro.length_a = r_num_math (NULL, opt.arg);
-					ro.length_b = ro.length_a;
-				}
-			}
+			parse_num_pair (opt.arg, &ro.length_a, &ro.length_b);
 			break;
 		case 'n':
 			ro.showcount = true;
 			break;
 		case 'o':
-			{
-				char *p = strchr (opt.arg, ':');
-				if (p) {
-					*p = 0;
-					ro.offset_a = r_num_math (NULL, opt.arg);
-					ro.offset_b = r_num_math (NULL, p + 1);
-				} else {
-					ro.offset_a = r_num_math (NULL, opt.arg);
-					ro.offset_b = ro.offset_a;
-				}
-			}
+			parse_num_pair (opt.arg, &ro.offset_a, &ro.offset_b);
 			break;
 		case 'O': // move to options
 			ro.diffops = true;

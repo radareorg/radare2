@@ -2066,7 +2066,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 		return;
 	}
 	RAnalBlock *bb;
-	RListIter *it;
+	RAnalBlock **it;
 	RAnalOp aop = {0};
 	bool ioCache = r_config_get_b (core->config, "io.cache");
 	int stack_fd = -1;
@@ -2118,8 +2118,9 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	ut64 oldoff = core->addr;
 	r_cons_break_push (core->cons, NULL, NULL);
 	// TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
-	r_list_sort (fcn->bbs, bb_cmpaddr);
-	r_list_foreach (fcn->bbs, it, bb) {
+	r_anal_function_sort_blocks (fcn);
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		bb = *it;
 		ut64 at = bb->addr;
 		ut64 to = bb->addr + bb->size;
 		r_reg_setv (reg, "PC", at);
@@ -2527,7 +2528,7 @@ static int cmd_type(void *data, const char *input) {
 		if (r_str_startswith (input, "est")) {
 			return cmd_test (core, r_str_trim_head_ro (input + 3));
 		}
-		char *res = NULL, *temp = strchr (input, ' ');
+		char *res = NULL;
 		Sdb *TDB = core->anal->sdb_types;
 		if (input[1] == 'n') { // "ten"
 			char mode = 0;
@@ -2569,6 +2570,7 @@ static int cmd_type(void *data, const char *input) {
 			}
 			break;
 		}
+		const char *temp = strchr (input, ' ');
 		char *name = temp ? strdup (temp + 1): NULL;
 		char *member_name = name ? strchr (name, ' '): NULL;
 
@@ -2737,7 +2739,7 @@ static int cmd_type(void *data, const char *input) {
 				free (homefile);
 			} else if (input[1] == 'u') {
 				// "tou" "touch"
-				char *arg = strchr (input, ' ');
+				const char *arg = strchr (input, ' ');
 				if (arg) {
 					r_file_touch (arg + 1);
 				} else {
@@ -2870,7 +2872,11 @@ static int cmd_type(void *data, const char *input) {
 			{
 				r_list_foreach (core->anal->fcns, iter, fcn) {
 					RList *uniq = r_anal_types_from_fcn (core->anal, fcn);
-					char *fname = r_str_sanitize_r2 (fcn->name);
+					char *fname = r_str_arg_escape (fcn->name);
+					if (!fname) {
+						r_list_free (uniq);
+						continue;
+					}
 					if (r_list_length (uniq)) {
 						r_cons_printf (core->cons, "'agn %s\n", fname);
 					}
@@ -2881,6 +2887,7 @@ static int cmd_type(void *data, const char *input) {
 						free (myType);
 					}
 					free (fname);
+					r_list_free (uniq);
 				}
 			}
 			break;

@@ -1517,7 +1517,7 @@ static int decompile_ps(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf
 		return -1;
 	}
 	op->size = 4;
-	const ut32 data = (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
+	const ut32 data = r_read_be32 (buf);
 	if (libps_decode (data, &instr) < 1) {
 		return -1;
 	}
@@ -2469,7 +2469,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 							&& gpr_idx (INSOP(1).reg) == 2
 							&& INSOP(2).type == PPC_OP_IMM) {
 						pd->toc_map[ridx] = as->config->gp
-							+ (ut64)((st64)INSOP(2).imm << 16);
+							+ ((ut64)INSOP(2).imm << 16);
 					} else {
 						pd->toc_map[ridx] = 0; /* dest clobbered, invalidate */
 					}

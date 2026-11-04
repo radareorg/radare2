@@ -186,7 +186,7 @@ R_API char *r_str_pseudo_transform(const char **rules, const char *asm_str) {
 	}
 	// If no rule matched, default to original assembly
 	if (!result) {
-		result = strdup (asm_copy);
+		result = r_str_trim_dup (asm_str);
 	}
 	// Clean up
 	free (asm_copy);

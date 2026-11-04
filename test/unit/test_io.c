@@ -125,6 +125,57 @@ bool test_r_io_nread_at(void) {
 	mu_end;
 }
 
+bool test_r_io_fd_seek_read(void) {
+	char *filename = r_file_temp ("r2-io-seek");
+	mu_assert_true (r_file_dump (filename, (const ut8 *)"abcdefgh", 8, false), "file contents should be written");
+	char *uri = r_str_newf ("file://%s", filename);
+	RIO *io = r_io_new ();
+	RIODesc *desc = r_io_open (io, uri, R_PERM_RW, 0);
+	mu_assert_notnull (desc, "file should open");
+	ut8 buf[4] = { 0 };
+	mu_assert_eq (r_io_fd_seek (io, desc->fd, 2, R_IO_SEEK_SET), 2, "SEEK_SET should move to the offset");
+	mu_assert_eq (r_io_fd_seek (io, desc->fd, 3, R_IO_SEEK_CUR), 5, "SEEK_CUR should add to the last position");
+	mu_assert_eq (r_io_fd_read (io, desc->fd, buf, 2), 2, "read should return its byte count");
+	mu_assert_memeq (buf, (const ut8 *)"fg", 2, "read should start at the tracked position");
+	mu_assert_eq (r_io_fd_seek (io, desc->fd, 0, R_IO_SEEK_CUR), 7, "read should advance the position");
+	mu_assert_eq (r_io_fd_seek (io, desc->fd, 0, R_IO_SEEK_END), 8, "SEEK_END should report the size");
+	mu_assert_eq (r_io_fd_read_at (io, desc->fd, 1, buf, 2), 2, "positional read should return its byte count");
+	mu_assert_memeq (buf, (const ut8 *)"bc", 2, "positional read should ignore the previous position");
+#if R2__UNIX__ && !__wasi__
+	mu_assert_eq (r_io_fd_seek (io, desc->fd, 0x8000000000000000ULL, R_IO_SEEK_SET), UT64_MAX, "a seek past the largest file offset should fail");
+	mu_assert_eq (r_io_fd_seek (io, desc->fd, 1, R_IO_SEEK_CUR), 4, "a refused seek should keep the position");
+	mu_assert_eq (r_io_fd_seek (io, desc->fd, 16, R_IO_SEEK_SET), 16, "a seek past the end should reach the kernel");
+	mu_assert_eq (r_io_fd_seek (io, desc->fd, 2, R_IO_SEEK_SET), 2, "a seek back inside the file should not need the kernel");
+	mu_assert_eq (r_io_fd_seek (io, desc->fd, 100, R_IO_SEEK_CUR), 102, "a relative seek past the end should start from the tracked position");
+	mu_assert_eq (r_io_fd_write_at (io, desc->fd, 5, (const ut8 *)"XY", 2), 2, "write should return its byte count");
+	mu_assert_eq (r_io_fd_read_at (io, desc->fd, 4, buf, 4), 4, "read after write should return its byte count");
+	mu_assert_memeq (buf, (const ut8 *)"eXYh", 4, "write should land at its position");
+#endif
+	r_io_free (io);
+	free (uri);
+	r_file_rm (filename);
+	free (filename);
+#if __linux__
+	io = r_io_new ();
+	desc = r_io_open (io, "file:///dev/ptmx", R_PERM_R, 0);
+	if (desc) {
+		mu_assert_eq (r_io_fd_seek (io, desc->fd, 0, R_IO_SEEK_SET), UT64_MAX, "a terminal should refuse to seek");
+	}
+	r_io_free (io);
+	io = r_io_new ();
+	desc = r_io_open (io, "file:///dev/zero", R_PERM_R, 0);
+	mu_assert_notnull (desc, "a character device should open");
+	memset (buf, 0xff, sizeof (buf));
+	mu_assert_eq (r_io_fd_read_at (io, desc->fd, 0, buf, 4), 4, "a character device should read through lseek");
+	mu_assert_memeq (buf, (const ut8 *)"\0\0\0\0", 4, "a character device read should return its bytes");
+	desc = r_io_open (io, "file:///dev/null", R_PERM_RW, 0);
+	mu_assert_notnull (desc, "a character device should open for writing");
+	mu_assert_eq (r_io_fd_write_at (io, desc->fd, 0, (const ut8 *)"XY", 2), 2, "a character device should write through lseek");
+	r_io_free (io);
+#endif
+	mu_end;
+}
+
 bool test_r_io_mapsplit (void) {
 	RIO *io = r_io_new ();
 	io->va = true;
@@ -337,9 +388,63 @@ bool test_r_io_priority2(void) {
 	mu_end;
 }
 
+bool test_r_io_overlay_write_through(void) {
+	RIO *io = r_io_new ();
+	RIODesc *desc = r_io_open_at (io, "malloc://8", R_PERM_RW, 0644, 0);
+	mu_assert_notnull (desc, "malloc should open");
+	mu_assert_true (r_io_vwrite_to_overlay_at (io, 2, (const ut8 *)"\xaa\xaa", 2), "overlay write");
+	mu_assert_true (r_io_vwrite_at (io, 1, (const ut8 *)"\x11\x22\x33\x44", 4), "write across the overlay");
+	mu_assert_true (r_io_vwrite_at (io, 5, (const ut8 *)"\x55\x66", 2), "write beside the overlay");
+	mu_assert_true (r_io_vwrite_at (io, 3, (const ut8 *)"\xbb\xcc", 2), "write over the overlay's end");
+	const ut8 *exp = (const ut8 *)"\x00\x11\x22\xbb\xcc\x55\x66\x00";
+	ut8 buf[8] = {0};
+	mu_assert_true (r_io_vread_at (io, 0, buf, sizeof (buf)), "overlaid read");
+	mu_assert_memeq (buf, exp, sizeof (buf), "the overlaid view shows the writes");
+	memset (buf, 0, sizeof (buf));
+	mu_assert_eq (r_io_fd_read_at (io, desc->fd, 0, buf, sizeof (buf)), sizeof (buf), "fd read");
+	mu_assert_memeq (buf, exp, sizeof (buf), "the fd holds the writes");
+	r_io_fd_write_at (io, desc->fd, 4, (const ut8 *)"\x77", 1);
+	r_io_vread_at (io, 4, buf, 1);
+	mu_assert_eq (buf[0], 0x77, "a write across the overlay does not extend it");
+	io->overlay = false;
+	mu_assert_true (r_io_vwrite_at (io, 2, (const ut8 *)"\xdd", 1), "write with the overlay ignored");
+	io->overlay = true;
+	r_io_vread_at (io, 2, buf, 1);
+	mu_assert_eq (buf[0], 0xdd, "the overlay does not hide a write made while it was ignored");
+	r_io_free (io);
+	mu_end;
+}
+
+bool test_seek_history_mapped(void) {
+	RIO *io = r_io_new ();
+	r_io_undo_enable (io, true, false);
+	RIODesc *desc = r_io_open_at (io, "malloc://256", R_PERM_RW, 0, 0x1000);
+	mu_assert_notnull (desc, "open mapped IO");
+	RIOMap *map = r_io_map_get_at (io, 0x1000);
+	mu_assert_notnull (map, "find map");
+	map->delta = 0x20;
+	int va;
+	for (va = 0; va <= 1; va++) {
+		io->va = va;
+		r_io_sundo_reset (io);
+		r_io_sundo_push (io, 0x1010, 0);
+		r_io_seek (io, 0x1020, R_IO_SEEK_SET);
+		RIOUndos *undo = r_io_sundo (io, io->off);
+		mu_assert_notnull (undo, "undo mapped seek");
+		mu_assert_eq (io->off, 0x1010, "undo preserves seek address space");
+		undo = r_io_sundo_redo (io);
+		mu_assert_notnull (undo, "redo mapped seek");
+		mu_assert_eq (io->off, 0x1020, "redo preserves seek address space");
+	}
+	r_io_free (io);
+	mu_end;
+}
+
 int all_tests(void) {
+	mu_run_test (test_seek_history_mapped);
 	mu_run_test(test_r_io_cache);
 	mu_run_test(test_r_io_nread_at);
+	mu_run_test(test_r_io_fd_seek_read);
 	mu_run_test(test_r_io_mapsplit);
 	mu_run_test(test_r_io_mapsplit2);
 	mu_run_test(test_r_io_mapsplit3);
@@ -348,6 +453,7 @@ int all_tests(void) {
 	//mu_run_test(test_r_io_priority);
 	// mu_run_test(test_r_io_priority2);
 	mu_run_test(test_va_malloc_zero);
+	mu_run_test(test_r_io_overlay_write_through);
 	return tests_passed != tests_run;
 }
 

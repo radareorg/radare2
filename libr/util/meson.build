@@ -120,8 +120,11 @@ r_util_sources = [
 
 # No d subdirectory for util, so no r_util_d_sources to include
 
-lz4_dep = dependency('liblz4', required: false)
-if not get_option('use_sys_lz4')
+if get_option('use_sys_lz4')
+  lz4_dep = dependency('liblz4', required: false)
+else
+  # the bundled rlz4 is used, do not link (and leak into static builds) the system one
+  lz4_dep = dependency('', required: false)
   library_cflags += ['-DUSE_RLZ4']
 endif
 

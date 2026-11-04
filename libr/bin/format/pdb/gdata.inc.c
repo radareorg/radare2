@@ -12,7 +12,9 @@ static int parse_global(const ut8 *data, ut32 data_size, SGlobal *global) {
 	global->segment = r_read_le16 (data + 8);
 	ut32 read_bytes = fixed_size;
 	if (global->leaf_type == 0x110E) {
-		parse_sctring (&global->name, (ut8 *) (data + fixed_size), &read_bytes, data_size);
+		if (!parse_sctring (&global->name, (ut8 *) (data + fixed_size), &read_bytes, data_size)) {
+			return 0;
+		}
 	} else {
 		if (!can_read (read_bytes, 1, data_size)) {
 			return 0;
@@ -54,6 +56,10 @@ static void parse_gdata_stream(STpiStream *ss, void *stream, R_STREAM_FILE *stre
 			return;
 		}
 		stream_file_read (stream_file, len, (char *)data);
+		if (stream_file->error) {
+			free (data);
+			return;
+		}
 
 		ut16 leaf_type = r_read_le16 (data);
 		if ((leaf_type == 0x110E) || (leaf_type == 0x1009)) {

@@ -223,6 +223,83 @@ static bool is_sp_adjust(const v850np_inst *inst) {
 	return !is_reg_operand (inst, 0) && is_sp_operand (inst, 1) && (!inst->op->operands[2] || is_sp_operand (inst, 2));
 }
 
+static RAnalValue operand_value(const v850np_inst *inst, int i) {
+	RAnalValue value = {0};
+	value.reg = inst->args[i].str;
+	value.type = value.reg? R_ANAL_VAL_REG: R_ANAL_VAL_IMM;
+	value.imm = value.reg? 0: inst->args[i].value;
+	value.access = R_PERM_R;
+	return value;
+}
+
+static void fill_operands(RAnalOp *op, const v850np_inst *inst, RArchDecodeMask mask) {
+	const char *name = inst->op->name;
+	const bool load = op->type == R_ANAL_OP_TYPE_LOAD;
+	const bool store = op->type == R_ANAL_OP_TYPE_STORE;
+	if (load || store) {
+		const char *suffix = strchr (name, '.');
+		const int width = suffix && suffix[1] == 'b'? 1: suffix && suffix[1] == 'h'? 2: suffix && suffix[1] == 'w'? 4: 0;
+		const int base = inst->op->memop - 1;
+		if (!width || (base != 1 && base != 2) || !inst->args[base].str
+				|| !(v850_operands[inst->op->operands[base - 1]].flags & V850_OPERAND_DISP)) {
+			return;
+		}
+		RAnalValue mem = operand_value (inst, base);
+		mem.type = R_ANAL_VAL_MEM;
+		mem.memref = width;
+		mem.delta = inst->args[base - 1].value;
+		mem.access = load? R_PERM_R: R_PERM_W;
+		RAnalValue reg = operand_value (inst, load? 2: 0);
+		if (!reg.reg) {
+			return;
+		}
+		reg.access = load? R_PERM_W: R_PERM_R;
+		if (mask & R_ARCH_OP_MASK_VAL) {
+			RVecRArchValue_push_back (&op->srcs, load? &mem: &reg);
+			RVecRArchValue_push_back (&op->dsts, load? &reg: &mem);
+		}
+		op->ptrsize = width;
+		op->sign = load && (suffix[1] == 'b' || suffix[1] == 'h') && suffix[2] != 'u';
+		op->direction = load? R_ANAL_OP_DIR_READ: R_ANAL_OP_DIR_WRITE;
+		if (!strcmp (mem.reg, "r0")) {
+			op->ptr = (ut32)mem.delta;
+			op->refptr = width;
+		} else {
+			op->ptr = UT64_MAX;
+		}
+		return;
+	}
+	const bool mov = !strcmp (name, "mov") || !strcmp (name, "movhi");
+	const bool lea = !strcmp (name, "movea");
+	const bool arithmetic = !strcmp (name, "add") || !strcmp (name, "addi") || !strcmp (name, "sub");
+	if (!mov && !lea && !arithmetic) {
+		return;
+	}
+	if (lea) {
+		op->type = R_ANAL_OP_TYPE_LEA;
+		op->direction = R_ANAL_OP_DIR_REF;
+	}
+	if (!(mask & R_ARCH_OP_MASK_VAL)) {
+		return;
+	}
+	const bool three = inst->op->operands[2] != 0;
+	RAnalValue dst = operand_value (inst, three? 2: 1);
+	if (!dst.reg) {
+		return;
+	}
+	dst.access = R_PERM_W;
+	RVecRArchValue_push_back (&op->dsts, &dst);
+	RAnalValue src = operand_value (inst, three? 1: 0);
+	RVecRArchValue_push_back (&op->srcs, &src);
+	if (three) {
+		src = operand_value (inst, 0);
+		RVecRArchValue_push_back (&op->srcs, &src);
+	} else if (arithmetic) {
+		dst.access = R_PERM_R;
+		RVecRArchValue_push_back (&op->srcs, &dst);
+	}
+}
+
 static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	ut8 opcode = 0;
 	const char *reg1 = NULL;
@@ -691,14 +768,24 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 			update_flags (op, V850_FLAG_S | V850_FLAG_Z);
 			clear_flags (op, V850_FLAG_OV);
 			break;
+		case V850_EXT_TRAP:
+			op->type = R_ANAL_OP_TYPE_SWI;
+			op->family = R_ANAL_OP_FAMILY_PRIV;
+			op->val = F1_REG1 (word1);
+			break;
+		case V850_EXT_HALT:
+			op->type = R_ANAL_OP_TYPE_TRAP;
+			break;
 		case V850_EXT_RETI:
-			op->type = R_ANAL_OP_TYPE_RCJMP;
-			r_strbuf_append (&op->esil, "epi,!,npi,&,?{,fepc,pc,:=,fepsw,psw,:=,BREAK,},eipc,pc,:=,eipsw,psw,:=");
+			op->type = R_ANAL_OP_TYPE_RET;
+			op->family = R_ANAL_OP_FAMILY_PRIV;
+			r_strbuf_append (&op->esil, "epi,!,npi,&,?{,fepc,pc,:=,fepsw,psw,:=,}{,eipc,pc,:=,eipsw,psw,:=,}");
 			break;
 		case V850_EXT_EXT2:
 			//ei and di
 			op->type = R_ANAL_OP_TYPE_MOV;
-			r_strbuf_appendf (&op->esil, "%d,id,:=", (word2 >> 13) & 1);
+			op->family = R_ANAL_OP_FAMILY_PRIV;
+			r_strbuf_appendf (&op->esil, "%d,id,:=", !(word1 & 0x8000));
 			break;
 		}
 		break;
@@ -761,8 +848,33 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 #endif
 	v850np_inst inst = {0};
 	op->size = v850np_disasm (&inst, cpumodel, addr, buf, len);
+	if (op->size < 2 && cpumodel == V850_CPU_E1 && len >= 4
+			&& (r_read_le16 (buf) & 0x07e0) == 0x07e0
+			&& !(r_read_le16 (buf + 2) & 1) && (r_read_le16 (buf + 2) & 0x0780) >= 0x0380) {
+		free (inst.text);
+		free (inst.esil);
+		op->size = 4;
+		op->type = R_ANAL_OP_TYPE_SWI;
+		op->family = R_ANAL_OP_FAMILY_PRIV;
+		op->jump = 0x60;
+		if (mask & R_ARCH_OP_MASK_DISASM) {
+			op->mnemonic = strdup ("ilgop");
+		}
+		if (mask & R_ARCH_OP_MASK_ESIL) {
+			r_strbuf_set (&op->esil, "pc,0x03fffffe,&,dbpc,:=,psw,dbpsw,:=,0xe0,psw,|=,1,dir,|=,0x60,pc,:=,0,r0,:=");
+		}
+		return true;
+	}
 	if (op->size < 2) {
 		op->size = 2;
+		op->type = R_ANAL_OP_TYPE_ILL;
+		if (mask & R_ARCH_OP_MASK_DISASM) {
+			op->mnemonic = inst.text? inst.text: strdup ("invalid");
+		} else {
+			free (inst.text);
+		}
+		free (inst.esil);
+		return false;
 	}
 	if (mask & R_ARCH_OP_MASK_ESIL) {
 		r_strbuf_set (&op->esil, inst.esil);
@@ -776,6 +888,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		}
 	}
 	switch (op->type) {
+	case R_ANAL_OP_TYPE_SWI:
+	case R_ANAL_OP_TYPE_TRAP:
 	case R_ANAL_OP_TYPE_MOV:
 		op->val = inst.value;
 		break;
@@ -784,20 +898,35 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->ptr = inst.value;
 		break;
 	case R_ANAL_OP_TYPE_JMP:
-		op->jump = addr + inst.value;
+		op->jump = (addr + inst.value) & (v850_pc_mask (cpumodel));
 		break;
-	case R_ANAL_OP_TYPE_CJMP:
-		op->jump = addr + inst.value;
-		op->fail = addr + inst.size;
+	case R_ANAL_OP_TYPE_CJMP: {
+		static const int conditions[] = {
+			R_ANAL_CONDTYPE_VS, R_ANAL_CONDTYPE_LO, R_ANAL_CONDTYPE_EQ, R_ANAL_CONDTYPE_LS,
+			R_ANAL_CONDTYPE_MI, R_ANAL_CONDTYPE_AL, R_ANAL_CONDTYPE_LT, R_ANAL_CONDTYPE_LE,
+			R_ANAL_CONDTYPE_VC, R_ANAL_CONDTYPE_HS, R_ANAL_CONDTYPE_NE, R_ANAL_CONDTYPE_HI,
+			R_ANAL_CONDTYPE_PL, R_ANAL_CONDTYPE_AL, R_ANAL_CONDTYPE_GE, R_ANAL_CONDTYPE_GT,
+		};
+		op->cond = conditions[inst.op->opcode & 15];
+		op->jump = (addr + inst.value) & (v850_pc_mask (cpumodel));
+		op->fail = (addr + inst.size) & (v850_pc_mask (cpumodel));
 		break;
+	}
+	case R_ANAL_OP_TYPE_PUSH:
 	case R_ANAL_OP_TYPE_POP:
-		if (inst.op && inst.op->esil && strstr (inst.op->esil, "#2")) {
-			op->type = R_ANAL_OP_TYPE_RET;
+		if (inst.op && (!strcmp (inst.op->name, "prepare") || !strcmp (inst.op->name, "dispose"))) {
+			const bool prepare = op->type == R_ANAL_OP_TYPE_PUSH;
+			const int saved = r_bits_popcount32 (inst.args[prepare? 0: 1].value);
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = 4 * (saved + inst.args[prepare? 1: 0].value) * (prepare? 1: -1);
+			if (!prepare && inst.op->operands[2]) {
+				op->type = inst.args[2].value == 31? R_ANAL_OP_TYPE_RET: R_ANAL_OP_TYPE_RJMP;
+			}
 		}
 		break;
 	case R_ANAL_OP_TYPE_CALL:
-		op->jump = addr + inst.value;
-		op->fail = addr + inst.size;
+		op->jump = (addr + inst.value) & (v850_pc_mask (cpumodel));
+		op->fail = (addr + inst.size) & (v850_pc_mask (cpumodel));
 		break;
 	case R_ANAL_OP_TYPE_ADD:
 	case R_ANAL_OP_TYPE_SUB:
@@ -808,6 +937,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		}
 		break;
 	}
+	if (inst.op) {
+		fill_operands (op, &inst, mask);
+	}
+	free (inst.esil);
 	op->size = inst.size;
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		if (as->config->syntax == R_ARCH_SYNTAX_ATT) {
@@ -828,13 +961,13 @@ static char *regs(RArchSession *s) {
 		"=PC	pc\n"
 		"=SP	sp\n"
 		"=BP	ep\n"
+		"=LR	lp\n"
 		"=SN	r1\n"
 		"=ZF	z\n"
-		"=A0	r1\n"
-		"=A1	r5\n"
-		"=A2	r6\n"
-		"=A3	r7\n"
-		"=A4	r8\n"
+		"=A0	r6\n"
+		"=A1	r7\n"
+		"=A2	r8\n"
+		"=A3	r9\n"
 		"=SF	s\n"
 		"=OF	ov\n"
 		"=CF	cy\n"
@@ -880,14 +1013,14 @@ static char *regs(RArchSession *s) {
 
 		// 32bit [   RFU   ][NP EP ID SAT CY OV S Z]
 		"gpr	psw .32 132 0\n" // program status word
-		"gpr	npi  .1 132.16 0\n" // non maskerable interrupt (NMI)
-		"gpr	epi  .1 132.17 0\n" // exception processing interrupt
-		"gpr	id   .1 132.18 0\n" // :? should be id
-		"gpr	sat  .1 132.19 0\n" // saturation detection
-		"flg	cy  .1 132.28 0 carry\n" // carry or borrow
-		"flg	ov  .1 132.29 0 overflow\n" // overflow
-		"flg	s   .1 132.30 0 sign\n" // signed result
-		"flg	z   .1 132.31 0 zero\n" // zero result
+		"gpr	npi  .1 132.7 0\n" // non maskerable interrupt (NMI)
+		"gpr	epi  .1 132.6 0\n" // exception processing interrupt
+		"gpr	id   .1 132.5 0\n" // :? should be id
+		"gpr	sat  .1 132.4 0\n" // saturation detection
+		"flg	cy  .1 132.3 0 carry\n" // carry or borrow
+		"flg	ov  .1 132.2 0 overflow\n" // overflow
+		"flg	s   .1 132.1 0 sign\n" // signed result
+		"flg	z   .1 132.0 0 zero\n" // zero result
 
 		"gpr	eipc	.32	$	0\n"
 		"gpr	eipsw	.32	$	0\n"
@@ -905,7 +1038,7 @@ static char *regs(RArchSession *s) {
 		"gpr	feic	.32	$	0\n"
 		"gpr	dbic	.32	$	0\n"
 		"gpr	ctpc	.32	$	0\n"
-		"gpr	ctpcw	.32	$	0\n"
+		"gpr	ctpsw	.32	$	0\n"
 		"gpr	dbpc	.32	$	0\n"
 		"gpr	dbpsw	.32	$	0\n"
 		"gpr	ctbp	.32	$	0\n"
@@ -925,13 +1058,15 @@ static char *regs(RArchSession *s) {
 
 static RList *preludes(RArchSession *as) {
 	RList *l = r_list_newf (free);
-	r_list_append (l, r_str_newf ("8007 f0ff"));
+	r_list_append (l, strdup ("80070100 c0ff0100"));
 	r_list_append (l, r_str_newf ("501a630f f0ffff0f"));
 	return l;
 }
 
 static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
+	case R_ARCH_INFO_WODST:
+		return 1;
 	case R_ARCH_INFO_CODE_ALIGN:
 	case R_ARCH_INFO_DATA_ALIGN:
 		return 2;

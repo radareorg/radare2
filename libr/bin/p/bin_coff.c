@@ -544,6 +544,15 @@ static RVecRBinReloc *_relocs_list(RBin *rbin, struct r_bin_coff_obj *co, bool p
 		return NULL;
 	}
 	RVecRBinReloc *list_rel = RVecRBinReloc_new ();
+	HtUU *slot_rows = patch? ht_uu_new0 (): NULL;
+	if (!list_rel || (patch && !slot_rows)) {
+		RVecRBinReloc_free (list_rel);
+		ht_uu_free (slot_rows);
+		ht_uu_free (imp_vaddr_ht);
+		return NULL;
+	}
+	// relocation tables never overlap, so together they cannot exceed the file size
+	ut64 left = co->size;
 	for (i = 0; i < f_nscns; i++) {
 		if (!co->scn_hdrs[i].s_nreloc) {
 			continue;
@@ -553,6 +562,11 @@ static RVecRBinReloc *_relocs_list(RBin *rbin, struct r_bin_coff_obj *co, bool p
 		if (relptr > co->size || size > co->size - relptr) {
 			break;
 		}
+		if (size > left) {
+			R_LOG_WARN ("Ignoring overlapping relocation tables from section %d", i);
+			break;
+		}
+		left -= size;
 		for (j = 0; j < co->scn_hdrs[i].s_nreloc; j++) {
 			const ut64 at = relptr + (ut64)j * sizeof (struct coff_reloc);
 			struct coff_reloc rel = {
@@ -565,6 +579,9 @@ static RVecRBinReloc *_relocs_list(RBin *rbin, struct r_bin_coff_obj *co, bool p
 				continue;
 			}
 			RBinReloc *reloc = RVecRBinReloc_emplace_back (list_rel);
+			if (!reloc) {
+				break;
+			}
 			reloc->symbol = symbol;
 			reloc->paddr = co->scn_hdrs[i].s_scnptr + rel.r_vaddr;
 			if (co->scn_va) {
@@ -676,14 +693,18 @@ static RVecRBinReloc *_relocs_list(RBin *rbin, struct r_bin_coff_obj *co, bool p
 				}
 				if (patch && plen) {
 					rbin->iob.overlay_write_at (rbin->iob.io, reloc->vaddr, patch_buf, plen);
-					if (symbol->is_imported) {
-						reloc->vaddr = sym_vaddr;
+					if (symbol->is_imported && (co->scn_hdrs[i].s_flags & COFF_SCN_MEM_EXECUTE)) {
+						reloc->to_slot = true;
+						if (ht_uu_insert (slot_rows, sym_vaddr, 1)) {
+							r_bin_reloc_slot_row (list_rel, reloc, sym_vaddr);
+						}
 					}
 				}
 			}
 		}
 	}
 	ht_uu_free (imp_vaddr_ht);
+	ht_uu_free (slot_rows);
 	return list_rel;
 }
 

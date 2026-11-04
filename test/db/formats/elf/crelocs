@@ -301,3 +301,17 @@ EXPECT=<<EOF
 0x00000020 0x00000020 SET_32 2
 EOF
 RUN
+
+NAME=ELF: CREL patched call site keeps its reloc and the slot keeps its name
+FILE=bins/elf/new/compact-relocs.oo
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pd 1 @ 0x08000048
+pd 1 @ 0x080001e0
+EOF
+EXPECT=<<EOF
+            0x08000048      66000094       bl reloc.callee             ; RELOC 64 callee
+            ;-- reloc.callee:
+            0x080001e0      .qword 0x0000000000000000                  ; RELOC 64 callee
+EOF
+RUN

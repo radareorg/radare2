@@ -1,0 +1,14 @@
+R2PM_BEGIN
+
+R2PM_DESC "Package fixture with a failing dependency"
+R2PM_DEPS depok depfail
+R2PM_INSTALL() {
+	echo install-depbroken-$R2PM_GLOBAL
+	true
+}
+
+R2PM_UNINSTALL() {
+	true
+}
+
+R2PM_END

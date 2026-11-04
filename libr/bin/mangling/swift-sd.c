@@ -921,7 +921,7 @@ moreitems:
 						continue;
 					}
 					q++;
-					char *n = strstr (q, "__");
+					const char *n = strstr (q, "__");
 					if (n) {
 						q = n + 1;
 					} else {

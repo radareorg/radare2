@@ -587,7 +587,7 @@ static void analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf
 	case 0x84: /* div ab */
 		// note: escape % if this becomes a format string
 		r_strbuf_append (&op->esil,
-			"b,!,ov,:=,b,a,%,b,a,/=,b,=,0,c,=,0xff,a,&=,$p,!,p,:=,");
+			"b,!,ov,:=,b,?{,b,a,%,b,a,/=,b,=,},0,c,=,0xff,a,&=,$p,!,p,:=,");
 		break;
 	case 0x85: /* mov direct, direct */
 		exr_dir1 (op, buf[1]);

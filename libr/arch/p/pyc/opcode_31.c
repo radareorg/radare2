@@ -6,8 +6,6 @@ pyc_opcodes *opcode_31(void) {
 		return NULL;
 	}
 
-	ret->version_sig = (void *(*)())opcode_31;
-
 	// These are in Python 3.2 but not in Python 3.1
 	rm_op (.op_obj = ret->opcodes, .op_name = "DUP_TOP_TWO", .op_code = 5);
 	rm_op (.op_obj = ret->opcodes, .op_name = "DELETE_DEREF", .op_code = 138);

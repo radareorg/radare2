@@ -89,17 +89,18 @@ static int mips_r(ut8 *b, int op, int rs, int rt, int rd, int sa, int fun) {
 	return 4;
 }
 
-static int mips_i(ut8 *b, int op, int rs, int rt, int imm, int is_branch) {
+static int mips_i(ut8 *b, int op, int rs, int rt, int imm, int is_branch, ut64 pc) {
 	if (rs < 0 || rt < 0) {
 		return -1;
 	}
 	if (is_branch) {
-		if (imm > 4) {
-			imm /= 4;
-			imm--;
-		} else {
-			imm = 0;
+		// the offset counts instructions from the one after the branch
+		const st32 delta = (st32)((ut32)imm - (ut32)(pc + 4));
+		if (delta % 4 || delta < -0x20000 || delta > 0x1fffc) {
+			// misaligned or out of range
+			return -1;
 		}
+		imm = delta / 4;
 	}
 	b[3] = ((op << 2) & 0xfc) | ((rs >> 3) & 3);
 	b[2] = (rs << 5) | (rt);
@@ -293,7 +294,7 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 					}
 					if (!invalid) {
 						free (s);
-						return mips_i (out, op, rs, rt, imm, is_branch);
+						return mips_i (out, op, rs, rt, imm, is_branch, pc);
 					}
 					break;
 				}

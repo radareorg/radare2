@@ -527,24 +527,12 @@ static RCoreHelpMessage help_msg_dt = {
 	"dta", " 0x804020 ...", "only trace given addresses",
 	"dtc", "[?][addr]|([from] [to] [addr])", "trace call/ret",
 	"dtd", "[qi] [nth-start]", "list all traced disassembled (quiet, instructions)",
-	"dte", "[?]", "show esil trace logs",
 	"dtg", "", "graph call/ret trace",
 	"dtg*", "", "graph in agn/age commands. use .dtg*;aggi for visual",
 	"dtgi", "", "interactive debug trace",
 	"dts", "[?]", "manage trace sessions, used for step back (EXPERIMENTAL)",
 	"dtt", " [tag]", "select trace tag (no arg unsets)",
 	"dtt.", "", "show current tag",
-	NULL
-};
-
-static RCoreHelpMessage help_msg_dte = {
-	"Usage: dte", "", "Show esil trace logs",
-	"dte", "", "esil trace log for a single instruction",
-	"dte", " [idx]", "show commands for that index log",
-	"dte", "-*", "delete all the esil traces recorded",
-	"dtei", "", "emulate instruction and record a trace their effects",
-	"dted", "", "disassemble all traced instructions",
-	"dtek", " [sdb query]", "esil trace log single instruction from sdb",
 	NULL
 };
 
@@ -1072,7 +1060,7 @@ static void cmd_drn(RCore *core, const char *str) {
 }
 
 static void cmd_drb(RCore *core, const char *str) {
-	char *arg = strchr (str, ' ');
+	const char *arg = strchr (str, ' ');
 	int len, type = R_REG_TYPE_GPR;
 	if (arg) {
 		char *string = r_str_trim_dup (arg + 1);
@@ -1183,7 +1171,21 @@ static int showreg(RCore *core, const char *str) {
 	if (r) {
 		ut64 off;
 		utX value;
-		if (r->size > 64) {
+		if (r->size == 512) {
+			RRegArena *arena = core->dbg->reg->regset[r->arena].arena;
+			const int byte_off = BITS2BYTES (r->offset);
+			if (!arena || !arena->bytes || byte_off < 0 || byte_off + 64 > arena->size) {
+				R_LOG_ERROR ("Cannot retrieve reg '%s' of %i bits", r->name, r->size);
+				return r->size;
+			}
+			const ut8 *bytes = arena->bytes + byte_off;
+			int i;
+			r_cons_print (core->cons, "0x");
+			for (i = 7; i >= 0; i--) {
+				r_cons_printf (core->cons, "%016"PFMT64x, r_read_le64 (bytes + i * 8));
+			}
+			r_cons_newline (core->cons);
+		} else if (r->size > 64) {
 			off = r_reg_get_value_big (core->dbg->reg, r, &value);
 			switch (r->size) {
 			case 80:
@@ -1200,7 +1202,7 @@ static int showreg(RCore *core, const char *str) {
 					   value.v256.High.High, value.v256.High.Low, value.v256.Low.High, value.v256.Low.Low);
 				break;
 			default:
-				R_LOG_ERROR ("Cannot retrieve reg '%s' of %i bits", str +1, r->size);
+				R_LOG_ERROR ("Cannot retrieve reg '%s' of %i bits", r->name, r->size);
 			}
 		} else {
 			off = r_reg_get_value (core->dbg->reg, r);
@@ -2304,55 +2306,38 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				R_LOG_ERROR ("Try with omp instead");
 			}
 		} else if (input[1] == ' ') {
-			int perms;
-			ut64 size = 0, addr;
-			char *p = strchr (input + 2, ' ');
-			if (p) {
-				bool failed_somehow = false;
-				*p++ = 0;
-				char *q = strchr (p, ' ');
-				if (q) {
-					*q++ = 0;
-					addr = r_num_math (core->num, input + 2);
-					if (core->num->nc.errors != 0) {
-						failed_somehow = true;
-						R_LOG_ERROR ("Invalid address (%s)", input + 2);
-					}
-					size = r_num_math (core->num, p);
-					if (core->num->nc.errors != 0) {
-						failed_somehow = true;
-						R_LOG_ERROR ("Invalid size (%s)", p);
-					}
-					perms = r_str_rwx (q);
-					if (perms < 1) {
-						failed_somehow = true;
-						R_LOG_ERROR ("Invalid perms (%s)", q);
-					}
-				} else {
-					failed_somehow = true;
-				}
-				if (failed_somehow) {
-					R_LOG_ERROR ("Invalid arguments. See dmp?");
-				} else {
+			int argc = 0;
+			char **argv = r_str_argv (input + 2, &argc);
+			if (argc == 3) {
+				ut64 addr = r_num_math (core->num, argv[0]);
+				bool valid = !core->num->nc.errors;
+				ut64 size = r_num_math (core->num, argv[1]);
+				valid = valid && !core->num->nc.errors;
+				int perms = r_str_rwx (argv[2]);
+				if (valid && perms > 0) {
 					r_debug_map_protect (core->dbg, addr, size, perms);
+				} else {
+					R_LOG_ERROR ("Invalid arguments. See dmp?");
 				}
-			} else {
+			} else if (argc == 1) {
 				r_debug_map_sync (core->dbg); // update process memory maps
-				addr = UT64_MAX;
+				RDebugMap *cur = NULL;
 				r_list_foreach (core->dbg->maps, iter, map) {
-					if (core->addr >= map->addr  && core->addr < map->addr_end) {
-						addr = map->addr;
-						size = map->size;
+					if (core->addr >= map->addr && core->addr < map->addr_end) {
+						cur = map;
 						break;
 					}
 				}
-				perms = r_str_rwx (input + 2);
-				if (addr != UT64_MAX && perms >= 0) {
-					r_debug_map_protect (core->dbg, addr, size, perms);
+				int perms = r_str_rwx (argv[0]);
+				if (cur && perms >= 0) {
+					r_debug_map_protect (core->dbg, cur->addr, cur->size, perms);
 				} else {
 					R_LOG_WARN ("See dmp?");
 				}
+			} else {
+				R_LOG_ERROR ("Invalid arguments. See dmp?");
 			}
+			r_str_argv_free (argv);
 		} else {
 			r_core_return_invalid_command (core, "dmp", input[1]);
 		}
@@ -2629,18 +2614,18 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		}
 		break;
 	case ' ': // "dm "
+	case 'L': // "dmL"
 		{
-			int size;
-			char *p = strchr (input + 2, ' ');
-			if (p) {
-				*p++ = 0;
-				addr = r_num_math (core->num, input + 1);
-				size = r_num_math (core->num, p);
-				r_debug_map_alloc (core->dbg, addr, size, false);
-			} else {
-				r_cons_cmd_help_match (core->cons, help_msg_dm, "dm", 0, true);
+			const bool thp = input[0] == 'L';
+			const char *p = strchr (input + 2, ' ');
+			if (!p) {
+				r_cons_cmd_help_match (core->cons, help_msg_dm, thp? "dmL": "dm", 0, true);
 				return false;
 			}
+			char *addr_str = r_str_ndup (input + 1, p - input - 1);
+			addr = r_num_math (core->num, addr_str);
+			free (addr_str);
+			r_debug_map_alloc (core->dbg, addr, r_num_math (core->num, p + 1), thp);
 		}
 		break;
 	case '-': // "dm-"
@@ -2657,21 +2642,6 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			}
 		}
 		R_LOG_ERROR ("The address doesn't match with any map");
-		break;
-	case 'L': // "dmL"
-		{
-			int size;
-			char *p = strchr (input + 2, ' ');
-			if (p) {
-				*p++ = 0;
-				addr = r_num_math (core->num, input + 1);
-				size = r_num_math (core->num, p);
-				r_debug_map_alloc (core->dbg, addr, size, true);
-			} else {
-				r_cons_cmd_help_match (core->cons, help_msg_dm, "dmL", 0, true);
-				return false;
-			}
-		}
 		break;
 	case '\0': // "dm"
 	case '*': // "dm*"
@@ -3041,7 +3011,7 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 					pj_ks (pj, "type_str", r_reg_type_tostring (ri->type));
 					pj_ks (pj, "name", ri->name);
 					pj_kn (pj, "size", ri->size);
-					pj_kn (pj, "offset", ri->offset);
+					pj_ki (pj, "offset", ri->offset);
 					pj_end (pj);
 				}
 			}
@@ -3342,7 +3312,7 @@ static void __tableRegList(RCore *core, RReg *reg, const char *str) {
 
 static void cmd_debug_reg(RCore *core, const char *str) {
 	size_t i;
-	char *arg;
+	const char *arg;
 	RRegItem *r;
 	const char *name;
 	int size, type = R_REG_TYPE_GPR;
@@ -3731,13 +3701,11 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			}
 			size = atoi (regname);
 			if (size < 1) {
-				char *arg = strchr (str + 2, ' ');
-				size = 0;
-				if (arg) {
-					*arg++ = 0;
-					size = atoi (arg);
-				}
-				type = r_reg_type_by_name (str + 2);
+				arg = strchr (str + 2, ' ');
+				size = arg? atoi (arg + 1): 0;
+				char *type_name = arg? r_str_ndup (str + 2, arg - str - 2): strdup (str + 2);
+				type = r_reg_type_by_name (type_name);
+				free (type_name);
 				r_debug_reg_sync (core->dbg, type, false);
 				PJ *pj = (tolower (rad) == 'j')? r_core_pj_new (core): NULL;
 				print_owned (core, r_debug_reg_list (core->dbg, type, size, pj, rad, use_color));
@@ -3883,8 +3851,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	case ' ': // "dr"
 		arg = strchr (str + 1, '=');
 		if (arg) {
-			*arg = 0;
-			char *string = r_str_trim_dup (str + 1);
+			char *string = r_str_trim_ndup (str + 1, arg - str - 1);
 			r = r_reg_get (core->dbg->reg, string, -1);
 			if (r) {
 				if (r->flags) {
@@ -3924,8 +3891,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		if (size) {
 			print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, size, NULL, str[0], use_color));
 		} else {
-			char *comma = strchr (str + 1, ',');
-			if (comma) {
+			if (strchr (str + 1, ',')) {
 				char *args = strdup (str + 1);
 				char argc = r_str_split (args, ',');
 				for (i = 0; i < argc; i++) {
@@ -4101,7 +4067,7 @@ static void static_debug_stop(void *u) {
 
 static void core_cmd_dbi(RCore *core, const char *input, const ut64 idx) {
 	int i;
-	char *p;
+	const char *p, *q;
 	RBreakpointItem *bpi;
 	switch (input[2]) {
 	case ' ': // "dbi."
@@ -4138,7 +4104,7 @@ static void core_cmd_dbi(RCore *core, const char *input, const ut64 idx) {
 	case 'x': // "dbix"
 		if (input[3] == ' ') {
 			if ((bpi = r_bp_get_index (core->dbg->bp, idx))) {
-				char *expr = strchr (input + 4, ' ');
+				const char *expr = strchr (input + 4, ' ');
 				if (expr) {
 					free (bpi->expr);
 					bpi->expr = strdup (expr);
@@ -4156,19 +4122,16 @@ static void core_cmd_dbi(RCore *core, const char *input, const ut64 idx) {
 		break;
 	case 'c': // "dbic"
 		p = strchr (input + 3, ' ');
-		if (p) {
-			char *q = strchr (p + 1, ' ');
-			if (q) {
-				*q++ = 0;
-				ut64 addr = r_num_math (core->num, p);
-				bpi = r_bp_get_index (core->dbg->bp, addr);
-				if (bpi) {
-					bpi->data = strdup (q);
-				} else {
-					R_LOG_ERROR ("Cannot set command");
-				}
+		q = p? strchr (p + 1, ' '): NULL;
+		if (q) {
+			char *index_str = r_str_ndup (p, q - p);
+			bpi = r_bp_get_index (core->dbg->bp, r_num_math (core->num, index_str));
+			free (index_str);
+			if (bpi) {
+				free (bpi->data);
+				bpi->data = strdup (q + 1);
 			} else {
-				r_cons_cmd_help_match (core->cons, help_msg_db, "dbic", 0, true);
+				R_LOG_ERROR ("Cannot set command");
 			}
 		} else {
 			r_cons_cmd_help_match (core->cons, help_msg_db, "dbic", 0, true);
@@ -5174,7 +5137,7 @@ static void r_core_debug_kill(RCore *core, const char *input) {
 #endif
 	} else {
 		int sig = atoi (input);
-		char *p = strchr (input, '=');
+		const char *p = strchr (input, '=');
 		if (p) {
 			r_debug_kill_setup (core->dbg, sig, r_num_math (core->num, p+1));
 		} else {
@@ -5502,7 +5465,6 @@ static bool cmd_dcut(RCore *core, const char *input) {
 
 static int cmd_debug_continue(RCore *core, const char *input) {
 	int pid, old_pid, signum;
-	char *ptr;
 	// TODO: we must use this for step 'ds' too maybe...
 	switch (input[1]) {
 	case 0: // "dc"
@@ -5585,13 +5547,12 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 			// select pid and r_debug_continue_kill (core->dbg,
 			r_reg_arena_swap (core->dbg->reg, true);
 			signum = r_num_math (core->num, input + 2);
-			ptr = strchr (input + 3, ' ');
+			const char *ptr = strchr (input + 3, ' ');
 			if (ptr) {
 				int old_pid = core->dbg->pid;
 				int old_tid = core->dbg->tid;
-				int pid = atoi (ptr+1);
+				int pid = atoi (ptr + 1);
 				int tid = pid; // XXX
-				*ptr = 0;
 				r_debug_select (core->dbg, pid, tid);
 				r_debug_continue_kill (core->dbg, signum);
 				r_debug_select (core->dbg, old_pid, old_tid);
@@ -5705,7 +5666,7 @@ static int cmd_debug_step(RCore *core, const char *input) {
 	ut8 buf[64];
 	RAnalOp aop;
 	int i, times = 1;
-	char *ptr = strchr (input, ' ');
+	const char *ptr = strchr (input, ' ');
 	if (ptr) {
 		times = r_num_math (core->num, ptr + 1);
 	}
@@ -6496,98 +6457,6 @@ static int cmd_debug(void *data, const char *input) {
 				}
 			}
 			break;
-#if 0
-		case 'e': // "dte"
-			if (!core->anal->esil) {
-				int romem = r_config_get_i (core->config, "esil.romem");
-				int stats = r_config_get_i (core->config, "esil.stats");
-				int nonull = r_config_get_i (core->config, "esil.nonull");
-				REsilOptions opt = r_esil_options (NULL, NULL);
-				opt.stacksize = r_config_get_i (core->config, "esil.stack.depth");
-				opt.iotrap = r_config_get_i (core->config, "esil.iotrap");
-				opt.addrsize = r_config_get_i (core->config, "esil.addr.size");
-				if (!(core->anal->esil = r_esil_new (&opt))) {
-					return 0;
-				}
-				r_esil_setup (core->anal->esil, core->anal, romem, stats, nonull);
-			}
-			switch (input[2]) {
-			case 0: // "dte"
-			case '*': // "dte*"
-				{
-					char *s = r_esil_trace_list (core->anal->esil, input[2]);
-					r_cons_print (core->cons, s);
-					free (s);
-				}
-				break;
-			case 'i': { // "dtei"
-				ut64 addr = r_num_math (core->num, input + 3);
-				if (!addr) {
-					addr = core->addr;
-				}
-				RAnalOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_ESIL);
-				if (op) {
-					r_esil_trace_op (core->anal->esil, op);
-					r_anal_op_free (op);
-				}
-			} break;
-			case '-': // "dte-"
-				if (!strcmp (input + 3, "*")) {
-					r_esil_trace_free (core->anal->esil->trace);
-					core->anal->esil->trace = r_esil_trace_new (core->anal->esil);
-#if 0
-					if (core->anal->esil && core->anal->esil->trace) {
-						sdb_free (core->anal->esil->trace->db);
-						core->anal->esil->trace->db = sdb_new0 ();
-					}
-#endif
-				} else {
-					R_LOG_TODO ("dte- cannot delete specific logs. Use dte-*");
-				}
-				break;
-			case ' ': { // "dte "
-					int idx = atoi (input + 3);
-					char *s = r_esil_trace_show (core->anal->esil, idx, 0);
-					r_cons_print (core->cons, s);
-					free (s);
-				}
-				break;
-			case 'd':
-				r_core_cmd0 (core, "pd 1 @@=`dte~addr[1]`");
-				break;
-#if 0
-			case 'k': // "dtek"
-				if (input[3] == 0) {
-					Sdb *db = core->anal->esil->trace->db;
-					char *s = sdb_querys (db, NULL, 0, "*");
-					if (s) {
-						r_str_trim (s);
-						r_cons_println (core->cons, s);
-						free (s);
-					}
-				} else if (input[3] == ' ') {
-					if (core->anal->esil->trace) {
-						Sdb *db = core->anal->esil->trace->db;
-						char *s = sdb_querys (db, NULL, 0, input + 4);
-						if (s) {
-							r_str_trim (s);
-							r_cons_println (core->cons, s);
-							free (s);
-						}
-					} else {
-						R_LOG_ERROR ("esil->trace is null. run 'e dbg.trace=true;dtei' to fix that. ");
-					}
-				} else {
-					r_cons_cmd_help_match (core->cons, help_msg_dte, "dtek", 0, true);
-				}
-				break;
-#endif
-			default:
-				r_cons_cmd_help (core->cons, help_msg_dte);
-				break;
-			}
-			break;
-#endif
 		case 's': // "dts"
 			switch (input[2]) {
 			case '+': // "dts+"
@@ -6810,9 +6679,9 @@ static int cmd_debug(void *data, const char *input) {
 				if (input[1] == '?') {
 					r_cons_cmd_help_match (core->cons, help_msg_di, "dif", 0, true);
 				} else {
-					char *arg = strchr (input, ' ');
-					if (arg) {
-						arg = strdup (r_str_trim_head_ro (arg + 1));
+					const char *space = strchr (input, ' ');
+					if (space) {
+						char *arg = strdup (r_str_trim_head_ro (space + 1));
 						char *arg2 = strchr (arg, ' ');
 						if (arg2) {
 							*arg2++ = 0;

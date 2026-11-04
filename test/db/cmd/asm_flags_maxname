@@ -1,0 +1,33 @@
+NAME=lea shortened flag lengths (#27277)
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e asm.bytes=false
+e asm.comments=false
+wx 488d04250010000090
+f data.ABCDEFGH @ 0x1000
+e asm.flags.maxname=0
+pd 1
+e asm.flags.maxname=13
+pd 1
+e asm.flags.maxname=1
+pd 1
+fr data.ABCDEFGH data.ABC_DEF
+pd 1
+fr data.ABC_DEF data.ABCDEFGH__tail
+pd 1
+fr data.ABCDEFGH__tail data.ABCDEFGH::tail
+pd 1
+fr data.ABCDEFGH::tail a.__X
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      lea rax, data.ABCDEFGH
+            0x00000000      lea rax, data.ABCDEFGH
+            0x00000000      lea rax, ..H
+            0x00000000      lea rax, ..DEF
+            0x00000000      lea rax, (...)__tail
+            0x00000000      lea rax, (cxx)::tail
+            0x00000000      lea rax, (...)__X
+EOF
+RUN

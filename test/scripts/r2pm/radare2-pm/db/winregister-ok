@@ -1,0 +1,9 @@
+R2PM_BEGIN
+
+R2PM_DESC "Windows source registration success fixture"
+
+R2PM_INSTALL_WINDOWS() {
+cmd /c exit 0
+}
+
+R2PM_END

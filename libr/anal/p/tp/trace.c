@@ -27,10 +27,22 @@ static void update_trace_db_op(TypeTraceDB *db) {
 	last->end = vec_idx; //  - 1;
 }
 
+bool type_trace_full(TypeTraceDB *db) {
+	return db->max_accesses && VecAccess_length (&db->accesses) >= db->max_accesses;
+}
+
+// NULL once full: esil GOTO loops (x86 rep) record thousands of accesses per op
+static TypeTraceAccess *trace_access_new(TypeTraceDB *db) {
+	return type_trace_full (db)? NULL: VecAccess_emplace_back (&db->accesses);
+}
+
 void type_trace_voyeur_reg_read(void *user, const char *name, ut64 val) {
 	R_RETURN_IF_FAIL (user && name);
 	TypeTraceDB *db = user;
-	TypeTraceAccess *access = VecAccess_emplace_back (&db->accesses);
+	TypeTraceAccess *access = trace_access_new (db);
+	if (!access) {
+		return;
+	}
 	access->reg.name = strdup (name);
 	access->reg.value = val;
 	access->is_reg = true;
@@ -41,21 +53,27 @@ void type_trace_voyeur_reg_read(void *user, const char *name, ut64 val) {
 void type_trace_voyeur_reg_write(void *user, const char *name, ut64 old, ut64 val) {
 	R_RETURN_IF_FAIL (user && name);
 	TypeTrace *trace = user;
-	TypeTraceAccess *access = VecAccess_emplace_back (&trace->db.accesses);
+	if (trace->enable_rollback) {
+		r_strbuf_prependf (&trace->rollback, "0x%" PFMT64x ",%s,:=,", old, name);
+	}
+	TypeTraceAccess *access = trace_access_new (&trace->db);
+	if (!access) {
+		return;
+	}
 	access->is_reg = true;
 	access->reg.name = strdup (name);
 	access->reg.value = val;
 	access->is_write = true;
-	if (trace->enable_rollback) {
-		r_strbuf_prependf (&trace->rollback, "0x%" PFMT64x ",%s,:=,", old, name);
-	}
 	update_trace_db_op (&trace->db);
 }
 
 void type_trace_voyeur_mem_read(void *user, ut64 addr, const ut8 *buf, int len) {
 	R_RETURN_IF_FAIL (user && buf && (len > 0));
 	TypeTraceDB *db = user;
-	TypeTraceAccess *access = VecAccess_emplace_back (&db->accesses);
+	TypeTraceAccess *access = trace_access_new (db);
+	if (!access) {
+		return;
+	}
 	access->is_reg = false;
 	access->mem.addr = addr;
 	access->mem.size = len;
@@ -105,14 +123,16 @@ static void tt_track_writes(TypeTrace *trace, ut64 addr, const ut8 *buf, int len
 void type_trace_voyeur_mem_write(void *user, ut64 addr, const ut8 *old, const ut8 *buf, int len) {
 	R_RETURN_IF_FAIL (user && buf && (len > 0));
 	TypeTrace *trace = user;
-	TypeTraceAccess *access = VecAccess_emplace_back (&trace->db.accesses);
-	access->is_reg = false;
-	access->mem.addr = addr;
-	access->mem.size = len;
-	const bool pow2 = len <= 8 && !(len & (len - 1));
-	access->mem.value = pow2? r_read_ble (buf, trace->be, len * 8): 0;
-	access->is_write = true;
-
+	TypeTraceAccess *access = trace_access_new (&trace->db);
+	if (access) {
+		access->is_reg = false;
+		access->mem.addr = addr;
+		access->mem.size = len;
+		const bool pow2 = len <= 8 && !(len & (len - 1));
+		access->mem.value = pow2? r_read_ble (buf, trace->be, len * 8): 0;
+		access->is_write = true;
+		update_trace_db_op (&trace->db);
+	}
 	if (trace->enable_rollback && old) {
 		int i;
 		for (i = len - 1; i >= 0; i--) {
@@ -128,7 +148,6 @@ void type_trace_voyeur_mem_write(void *user, ut64 addr, const ut8 *old, const ut
 			tt_track_writes (trace, itv.addr, &buf[itv.addr - addr], (int)itv.size);
 		}
 	}
-	update_trace_db_op (&trace->db);
 }
 
 static void trace_db_reset_index(TypeTraceDB *db) {
@@ -263,6 +282,9 @@ bool type_trace_op(TypeTrace *trace, REsil *esil, RAnalOp *op) {
 	}
 
 	TypeTraceOp *to = VecTraceOp_emplace_back (&trace->db.ops);
+	if (!to) {
+		return false;
+	}
 	ut32 vec_idx = VecAccess_length (&trace->db.accesses);
 	to->start = vec_idx;
 	to->end = vec_idx;

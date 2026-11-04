@@ -354,3 +354,16 @@ name: sym.__AppDelegate_application:configurationForConnectingSceneSession:optio
 realname: -[AppDelegate application:configurationForConnectingSceneSession:options:]
 EOF
 RUN
+
+NAME=Xcode symbols cache line info size is bounded by the element
+FILE=bins/mach0/coresym-large-line-info.symbols
+CMDS=<<EOF
+CL~addr?
+EOF
+EXPECT=<<EOF
+440
+EOF
+EXPECT_ERR=<<EOF
+WARN: CoreSymbolication line info covers more than the element can describe, truncated
+EOF
+RUN

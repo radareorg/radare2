@@ -4,6 +4,9 @@
 #include "tpi.h"
 #include "stream_file.h"
 
+// Valid streams only refer to earlier records, so this only cuts cycles in crafted files
+#define TPI_MAX_DEPTH 64
+
 static bool is_simple_type(int idx) {
 	/* https://llvm.org/docs/PDB/TpiStream.html#type-indices */
 	return ((ut32)idx) < 0x1000;
@@ -1371,22 +1374,34 @@ static void free_tpi_stream(STpiStream *ss, void *stream) {
 	r_list_free (ss->types);
 }
 
+// Name of the type a record refers to, the indexes come from the file so cycles are cut at TPI_MAX_DEPTH
+static char *get_ref_print_type(STpiStream *ss, SType *t) {
+	if (!t) {
+		return NULL;
+	}
+	STypeInfo *ti = &t->type_data;
+	if (ti->leaf_type == eLF_SIMPLE_TYPE) {
+		SLF_SIMPLE_TYPE *base_type = ti->type_info;
+		char *name = strdup (base_type->type);
+		free_simple_type (t);
+		return name;
+	}
+	char *name = NULL;
+	if (ti->get_print_type && ss->ctx.print_depth < TPI_MAX_DEPTH) {
+		ss->ctx.print_depth++;
+		ti->get_print_type (ss, ti, &name);
+		ss->ctx.print_depth--;
+	}
+	return name;
+}
+
 static void get_array_print_type(STpiStream *ss, void *type, char **name) {
 	STypeInfo *ti = (STypeInfo *)type;
 	char *tmp_name = NULL;
 
 	SType *t = NULL;
 	ti->get_element_type (ss, ti, (void **)&t);
-	if (t && t->type_data.leaf_type == eLF_SIMPLE_TYPE) {
-		SLF_SIMPLE_TYPE *base_type = t->type_data.type_info;
-		tmp_name = strdup (base_type->type);
-		free_simple_type (t);
-	} else if (t) {
-		ti = &t->type_data;
-		if (ti->get_print_type) {
-			ti->get_print_type (ss, ti, &tmp_name);
-		}
-	}
+	tmp_name = get_ref_print_type (ss, t);
 	int size = 0;
 	if (ti->get_val) {
 		ti->get_val (ss, ti, &size);
@@ -1401,16 +1416,7 @@ static void get_pointer_print_type(STpiStream *ss, void *type, char **name) {
 	char *tmp_name = NULL;
 
 	ti->get_utype (ss, ti, (void **)&t);
-	if (t && t->type_data.leaf_type == eLF_SIMPLE_TYPE) {
-		SLF_SIMPLE_TYPE *base_type = t->type_data.type_info;
-		tmp_name = strdup (base_type->type);
-		free_simple_type (t);
-	} else if (t) {
-		ti = &t->type_data;
-		if (ti->get_print_type) {
-			ti->get_print_type (ss, ti, &tmp_name);
-		}
-	}
+	tmp_name = get_ref_print_type (ss, t);
 	*name = r_str_newf ("%s*", tmp_name? tmp_name: "");
 	free (tmp_name);
 }
@@ -1421,16 +1427,7 @@ static void get_modifier_print_type(STpiStream *ss, void *type, char **name) {
 	char *tmp_name = NULL;
 
 	stype_info->get_modified_type (ss, stype_info, (void **)&stype);
-	if (stype && stype->type_data.leaf_type == eLF_SIMPLE_TYPE) {
-		SLF_SIMPLE_TYPE *base_type = stype->type_data.type_info;
-		tmp_name = strdup (base_type->type);
-		free_simple_type (stype);
-	} else if (stype) {
-		STypeInfo *refered_type_info = &stype->type_data;
-		if (refered_type_info->get_print_type) {
-			refered_type_info->get_print_type (ss, refered_type_info, &tmp_name);
-		}
-	}
+	tmp_name = get_ref_print_type (ss, stype);
 	SLF_MODIFIER *modifier = stype_info->type_info;
 	*name = r_str_newf ("%s%s%s%s",
 		modifier->umodifier.bits.const_? "const ": "",
@@ -1451,16 +1448,7 @@ static void get_bitfield_print_type(STpiStream *ss, void *type, char **name) {
 	SLF_BITFIELD *bitfeild_info = (SLF_BITFIELD *)ti->type_info;
 
 	ti->get_base_type (ss, ti, (void **)&t);
-	if (t && t->type_data.leaf_type == eLF_SIMPLE_TYPE) {
-		SLF_SIMPLE_TYPE *base_type = t->type_data.type_info;
-		tmp_name = strdup (base_type->type);
-		free_simple_type (t);
-	} else if (t) {
-		ti = &t->type_data;
-		if (ti->get_print_type) {
-			ti->get_print_type (ss, ti, &tmp_name);
-		}
-	}
+	tmp_name = get_ref_print_type (ss, t);
 
 	*name = r_str_newf ("bitfield%s%s : %d",
 		tmp_name? " ": "",
@@ -1479,16 +1467,7 @@ static void get_enum_print_type(STpiStream *ss, void *type, char **name) {
 	char *tmp_name = NULL;
 
 	ti->get_utype (ss, ti, (void **)&t);
-	if (t && t->type_data.leaf_type == eLF_SIMPLE_TYPE) { // BaseType
-		SLF_SIMPLE_TYPE *base_type = t->type_data.type_info;
-		tmp_name = strdup (base_type->type);
-		free_simple_type (t);
-	} else if (t) {
-		ti = &t->type_data;
-		if (ti->get_print_type) {
-			ti->get_print_type (ss, ti, &tmp_name);
-		}
-	}
+	tmp_name = get_ref_print_type (ss, t);
 
 	*name = r_str_newf ("enum %s", tmp_name? tmp_name: "");
 	free (tmp_name);
@@ -1565,16 +1544,7 @@ static void get_nesttype_print_type(STpiStream *ss, void *type, char **name) {
 	char *tmp_name = 0;
 
 	ti->get_index (ss, ti, (void **)&t);
-	if (t && t->type_data.leaf_type == eLF_SIMPLE_TYPE) {
-		SLF_SIMPLE_TYPE *base_type = t->type_data.type_info;
-		tmp_name = strdup (base_type->type);
-		free_simple_type (t);
-	} else if (t) {
-		ti = &t->type_data;
-		if (ti->get_print_type) {
-			ti->get_print_type (ss, ti, &tmp_name);
-		}
-	}
+	tmp_name = get_ref_print_type (ss, t);
 
 	*name = r_str_newf ("nesttype %s", tmp_name? tmp_name: "");
 	free (tmp_name);
@@ -1593,16 +1563,7 @@ static void get_member_print_type(STpiStream *ss, void *type, char **name) {
 	char *tmp_name = NULL;
 
 	ti->get_index (ss, ti, (void **)&t);
-	if (t && t->type_data.leaf_type == eLF_SIMPLE_TYPE) {
-		SLF_SIMPLE_TYPE *base_type = t->type_data.type_info;
-		tmp_name = strdup (base_type->type);
-		free_simple_type (t);
-	} else if (t) {
-		ti = &t->type_data;
-		if (ti->get_print_type) {
-			ti->get_print_type (ss, ti, &tmp_name);
-		}
-	}
+	tmp_name = get_ref_print_type (ss, t);
 	*name = tmp_name? tmp_name: strdup ("unknown_t");
 }
 
@@ -1612,16 +1573,7 @@ static void get_onemethod_print_type(STpiStream *ss, void *type, char **name) {
 	char *tmp_name = NULL;
 
 	ti->get_index (ss, ti, (void **)&t);
-	if (t && t->type_data.leaf_type == eLF_SIMPLE_TYPE) {
-		SLF_SIMPLE_TYPE *base_type = t->type_data.type_info;
-		tmp_name = strdup (base_type->type);
-		free_simple_type (t);
-	} else if (t) {
-		ti = &t->type_data;
-		if (ti->get_print_type) {
-			ti->get_print_type (ss, ti, &tmp_name);
-		}
-	}
+	tmp_name = get_ref_print_type (ss, t);
 
 	*name = r_str_newf ("onemethod %s", tmp_name? tmp_name: "");
 	free (tmp_name);

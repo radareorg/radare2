@@ -1786,7 +1786,8 @@ static bool __rebase_flags(RFlagItem *fi, void *user) {
 }
 
 static void __rebase_everything(RCore *core, RVecRBinSection *old_sections, ut64 old_base) {
-	RListIter *it, *ititit;
+	RListIter *it;
+	RAnalBlock **ititit;
 	RAnalFunction *fcn;
 	ut64 new_base = (core->bin->cur && core->bin->cur->bo)? core->bin->cur->bo->baddr_shift: 0;
 	RBinSection *old_section;
@@ -1804,7 +1805,8 @@ static void __rebase_everything(RCore *core, RVecRBinSection *old_sections, ut64
 			r_anal_function_relocate (fcn, fcn->addr + diff);
 			RAnalBlock *bb;
 			ut64 new_sec_addr = new_base + old_section->vaddr;
-			r_list_foreach (fcn->bbs, ititit, bb) {
+			R_VEC_FOREACH (&fcn->bbs, ititit) {
+				bb = *ititit;
 				if (bb->addr >= new_sec_addr && bb->addr <= new_sec_addr + old_section->vsize) {
 					// Todo: Find better way to check if bb was already rebased
 					continue;

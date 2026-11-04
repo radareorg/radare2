@@ -31,20 +31,25 @@ else
 endif
 zydis_dep_c_args += ['-DUSE_SYS_ZYDIS=0', '-DZYDIS_STATIC_BUILD']
 
-if cc.get_id() == 'msvc'
-    add_project_arguments('/W0', language: 'c')
-elif cc.has_argument('-w')
-    add_project_arguments('-w', language: 'c')
-endif
-
 zydis_sources = [
   'amalgamated-dist/Zydis.c'
 ]
 
 zydis_includes = include_directories('amalgamated-dist')
 
+zydis_override_options = []
+zydis_warn_args = []
+if cc.get_argument_syntax() == 'msvc'
+  # Disable warnings for this vendored source without overriding /W2 with
+  # /W0 on the command line, which would warn D9025.
+  zydis_override_options += ['warning_level=0']
+elif cc.has_argument('-w')
+  zydis_warn_args += ['-w']
+endif
+
 libzydis = library('zydis', zydis_sources,
-  c_args: zydis_c_args,
+  c_args: zydis_c_args + zydis_warn_args,
+  override_options: zydis_override_options,
   include_directories: zydis_includes,
   install: false,
 )

@@ -6,7 +6,7 @@
 #include <r_types.h>
 
 /* Disassembler functions */
-char *z80dis(const ut8 *buf, int len);
+char *z80dis(const ut8 *buf, int len, ut64 addr);
 void z80_op_size(const ut8 *data, int len, int *size, int *size_prefix);
 
 #endif

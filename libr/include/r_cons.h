@@ -983,7 +983,7 @@ R_API int r_cons_readchar(RCons *cons);
 R_API bool r_cons_readpush(RCons *cons, const char *str, int len);
 R_API void r_cons_readflush(RCons *cons);
 R_API void r_cons_switchbuf(RCons *cons, bool active);
-R_API int r_cons_readchar_timeout(RCons *cons, ut32 usec);
+R_API int r_cons_readchar_timeout(RCons *cons, ut32 msec);
 R_API int r_cons_any_key(RCons *cons, const char *msg);
 
 R_API int r_cons_palette_init(const unsigned char *pal);
@@ -1000,7 +1000,7 @@ R_API int r_cons_pal_len(void);
 R_API char *r_cons_rgb_tostring(ut8 r, ut8 g, ut8 b);
 R_API void r_cons_pal_list(RCons *cons, int rad, const char *arg);
 R_API void r_cons_pal_show(RCons *cons);
-R_API bool r_cons_is_tty(void);
+R_API bool r_cons_isatty(int fd);
 R_API int r_cons_arrow_to_hjkl(RCons *cons, int ch);
 R_API char *r_cons_html_filter(const char *ptr, int *newlen);
 R_API char *r_cons_rainbow_get(RCons *cons, int idx, int last, bool bg);

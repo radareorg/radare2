@@ -154,6 +154,7 @@ struct Elf_(obj_t) {
 	Elf_(Phdr) *phdr;
 	ut64 phnum;
 	Elf_(Shdr) *shdr;
+	ut64 shnum; // resolved section count: handles e_shnum==0 extended numbering, unlike raw ehdr.e_shnum
 
 	Elf_(Shdr) *strtab_section;
 	ut64 strtab_size;
@@ -188,6 +189,7 @@ struct Elf_(obj_t) {
 	bool load_unnamed;
 	bool has_nobtcfi;
 	bool has_nx;
+	bool symbols_by_ord_from_phdr;
 	int bits_cache;
 	const char* file;
 	RBuffer *b;
@@ -284,6 +286,7 @@ bool Elf_(entry_write)(RBinFile *bf, ut64 addr);
 bool Elf_(del_rpath)(RBinFile *bf);
 
 ut64 Elf_(get_phnum)(ELFOBJ *bin);
+ut64 Elf_(get_shnum)(ELFOBJ *bin);
 bool Elf_(is_executable)(ELFOBJ *bin);
 int Elf_(has_relro)(struct Elf_(obj_t) *bin);
 bool Elf_(has_nx)(struct Elf_(obj_t) *bin);

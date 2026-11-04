@@ -10,8 +10,10 @@
 
 #if R2__UNIX__ && !__wasi__
 #define HAVE_FIFO 1
+#define HAVE_PREAD 1
 #else
 #define HAVE_FIFO 0
+#define HAVE_PREAD 0
 #endif
 
 // Forward declarations for FIFO delegation
@@ -24,8 +26,11 @@ typedef struct r_io_mmo_t {
 	int fd;
 	int isblk;
 	ut64 addr;
+	ut64 last;
+	ut64 maxoff;
 	bool rawio;
 	bool nocache;
+	st8 seekable;
 	RBuffer *buf;
 	RIO *io_backref;
 } RIOMMapFileObj;
@@ -145,8 +150,41 @@ static int open_file(const char *file, int perm, int mode) {
 	return fd;
 }
 
+#if HAVE_PREAD
+// pread and in-memory seeks match lseek only on seekable regular files
+static bool seekable_file(RIOMMapFileObj *mmo) {
+	if (mmo->seekable == -1 && mmo->fd != -1) {
+		struct stat st = {0};
+		const off_t cur = lseek (mmo->fd, 0, SEEK_CUR);
+		mmo->seekable = cur != -1 && fstat (mmo->fd, &st) == 0
+			&& S_ISREG (st.st_mode) && lseek (mmo->fd, cur + 1, SEEK_SET) == cur + 1;
+		if (cur != -1) {
+			lseek (mmo->fd, cur, SEEK_SET);
+		}
+		mmo->maxoff = mmo->seekable == 1? st.st_size: 0;
+	}
+	return mmo->seekable == 1;
+}
+#endif
+
 static ut64 mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int whence) {
 	if (mmo->rawio) {
+#if HAVE_PREAD
+		if (seekable_file (mmo)) {
+			const ut64 pos = mmo->addr == UT64_MAX? mmo->last: mmo->addr;
+			mmo->last = pos;
+			if (whence == R_IO_SEEK_SET || whence == R_IO_SEEK_CUR) {
+				const ut64 to = (whence == R_IO_SEEK_CUR? pos: 0) + offset;
+				// any offset up to an accepted one is valid
+				if (to <= mmo->maxoff) {
+					mmo->addr = to;
+					return to;
+				}
+				offset = to;
+				whence = R_IO_SEEK_SET;
+			}
+		}
+#endif
 		if (whence == 2) {
 			if (mmo->isblk == -1) {
 				check_for_blockdevice (mmo);
@@ -156,6 +194,9 @@ static ut64 mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int whence) {
 			}
 		}
 		mmo->addr = lseek (mmo->fd, offset, whence);
+		if (mmo->seekable == 1 && mmo->addr <= ST64_MAX) {
+			mmo->maxoff = R_MAX (mmo->maxoff, mmo->addr);
+		}
 	} else if (mmo->buf) {
 		mmo->addr = r_buf_seek (mmo->buf, offset, whence);
 	} else {
@@ -244,6 +285,7 @@ static RIOMMapFileObj *mmap_create(RIO *io, const char *filename, int perm, int 
 	mmo->filename = strdup (filename);
 	mmo->perm = perm;
 	mmo->isblk = -1;
+	mmo->seekable = -1;
 	mmo->mode = mode;
 	mmo->io_backref = io;
 	if (!mmap_refresh (mmo)) {
@@ -271,6 +313,30 @@ static bool uricheck(const char *filename) {
 	return *filename != 0;
 }
 
+static int raw_read(RIOMMapFileObj *mmo, ut8 *buf, int count) {
+#if HAVE_PREAD
+	if (seekable_file (mmo)) {
+		return pread (mmo->fd, buf, count, mmo->addr);
+	}
+#endif
+	if (lseek (mmo->fd, mmo->addr, SEEK_SET) < 0) {
+		return -1;
+	}
+	return read (mmo->fd, buf, count);
+}
+
+static int raw_write(RIOMMapFileObj *mmo, const ut8 *buf, int count) {
+#if HAVE_PREAD
+	if (seekable_file (mmo)) {
+		return pwrite (mmo->fd, buf, count, mmo->addr);
+	}
+#endif
+	if (lseek (mmo->fd, mmo->addr, SEEK_SET) < 0) {
+		return -1;
+	}
+	return write (mmo->fd, buf, count);
+}
+
 static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	R_RETURN_VAL_IF_FAIL (fd && fd->data && buf, -1);
 	RIOMMapFileObj *mmo = (RIOMMapFileObj *)fd->data;
@@ -279,10 +345,7 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		return count;
 	}
 	if (mmo->rawio) {
-		if (lseek (mmo->fd, mmo->addr, SEEK_SET) < 0) {
-			return -1;
-		}
-		int ret = read (mmo->fd, buf, count);
+		int ret = raw_read (mmo, buf, count);
 		if (ret > 0) {
 			mmo->addr += ret;
 		}
@@ -307,10 +370,7 @@ static int mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	RIOMMapFileObj *mmo = fd->data;
 	ut64 addr = mmo->addr;
 	if (mmo->rawio) {
-		if (lseek (mmo->fd, addr, 0) < 0) {
-			return -1;
-		}
-		int ret = write (mmo->fd, buf, count);
+		int ret = raw_write (mmo, buf, count);
 		if (ret > 0) {
 			mmo->addr += ret;
 		}

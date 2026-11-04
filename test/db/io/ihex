@@ -49,3 +49,107 @@ EXPECT=<<EOF
 0x00070010  2000 0000 1007 0040 1007 7594 0000 0000   ......@..u.....
 EOF
 RUN
+
+NAME=IHEX: the EOF record does not rewrite the last data record
+FILE=-
+CMDS=<<EOF
+?e :020000040800F2 > .tmp_ihex_eof.hex
+?e :0400000001020304F2 >> .tmp_ihex_eof.hex
+?e :0400100011121314A2 >> .tmp_ihex_eof.hex
+?e :00000001FF >> .tmp_ihex_eof.hex
+o ihex://.tmp_ihex_eof.hex
+p8 4 @ 0x8000000
+p8 4 @ 0x8000010
+rm .tmp_ihex_eof.hex
+EOF
+EXPECT=<<EOF
+01020304
+11121314
+EOF
+RUN
+
+NAME=IHEX: many records load in linear time
+FILE=ihex://bins/ihex/many-records.hex
+TIMEOUT=5
+CMDS=<<EOF
+:r~?
+p8 4
+p8 2 @ 0xfffe
+EOF
+EXPECT=<<EOF
+32768
+41ff41ff
+41ff
+EOF
+RUN
+
+NAME=IHEX: records in random order load in linear time
+FILE=ihex://bins/ihex/shuffled-records.hex
+TIMEOUT=3
+CMDS=<<EOF
+:r~?
+:r~:0..2
+p8 9 @ 0x30000
+EOF
+EXPECT=<<EOF
+32768
+0x0003fff8-0x0003fff9
+0x0003fff0-0x0003fff1
+41ffffffffffffff41
+EOF
+RUN
+
+NAME=IHEX: :i prints valid 16-byte records
+FILE=ihex://bins/other/test.ihex
+CMDS=<<EOF
+:i
+EOF
+EXPECT=<<EOF
+:108000008200813582009DAF82009DAF82009DAFCE
+:1080100082009DAF82009DAF82009DAF82009DAF28
+:1080200082009DAF82009DAF82009DAF82009DAF18
+:1080300082009DAF82009DAF82009DAF82009DAF08
+:0C80800068656C6C6F20776F726C640098
+:00000001FF
+EOF
+RUN
+
+NAME=IHEX: out of order and overlapping records are all loaded
+FILE=ihex://bins/ihex/overlapping-records.hex
+CMDS=<<EOF
+p8 8
+:r
+EOF
+EXPECT=<<EOF
+41ff42ff434443ff
+0x00000004-0x00000007
+0x00000002-0x00000003
+0x00000000-0x00000001
+EOF
+RUN
+
+NAME=IHEX: unknown record types are rejected
+FILE=-
+CMDS=<<EOF
+o ihex://bins/ihex/unknown-record-type.hex
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Unknown ihex record type 0a
+ERROR: ihex: failed to parse file
+ERROR: Cannot open file ihex://bins/ihex/unknown-record-type.hex
+EOF
+RUN
+
+NAME=IHEX: the checksum of the last record is checked
+FILE=-
+CMDS=<<EOF
+o ihex://bins/ihex/bad-checksum-last-record.hex
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Checksum failed in ihex record (:0100050043FF)
+ERROR: ihex: failed to parse file
+ERROR: Cannot open file ihex://bins/ihex/bad-checksum-last-record.hex
+EOF
+RUN

@@ -88,6 +88,7 @@ typedef struct {
 	char * file_name;
 	ut64 start;
 	ut64 end;
+	ut64 slide_info_left;
 	RIODscRebaseInfos rebase_infos;
 } RIODscSlice;
 
@@ -665,6 +666,13 @@ error:
 }
 
 static bool dsc_dig_subcache(RIODscObject * dsc, const char * filename, ut64 start, ut8 * check_uuid, ut64 * out_size) {
+	RIODscSlice *slice;
+	R_VEC_FOREACH (&dsc->slices, slice) {
+		if (slice->file_name && !strcmp (slice->file_name, filename)) {
+			R_LOG_ERROR ("Subcache %s is already loaded", filename);
+			return false;
+		}
+	}
 	int sc_fd = r_io_posix_open (filename, O_RDONLY, dsc->mode, dsc->nocache);
 	if (sc_fd == -1) {
 		R_LOG_ERROR ("Could not open subcache %s", filename);
@@ -717,6 +725,8 @@ static bool dsc_dig_one_slice(RIODscObject * dsc, int fd, const char * file_name
 
 	slice->fd = fd;
 	slice->start = start;
+	const st64 file_size = lseek (fd, 0, SEEK_END);
+	slice->slide_info_left = R_MAX (file_size, 0);
 	if (file_name) {
 		slice->file_name = strdup (file_name);
 	}
@@ -1353,6 +1363,19 @@ static bool is_null_uuid(ut8 uuid[16]) {
 	return sum == 0;
 }
 
+// slide infos are distinct parts of the cache file, so together they never exceed it
+static bool slide_info_fits(RIODscSlice *slice, ut64 size) {
+	if (size > slice->slide_info_left) {
+		if (slice->slide_info_left) {
+			R_LOG_ERROR ("Slide infos are larger than the cache file");
+			slice->slide_info_left = 0;
+		}
+		return false;
+	}
+	slice->slide_info_left -= size;
+	return true;
+}
+
 static bool get_rebase_infos(RIODscSlice * slice, int fd, ut64 start, RDSCHeader * header, bool monocache) {
 	ut64 slideInfoOffset, slideInfoSize;
 	dsc_header_get_u64 (header, "slideInfoOffsetUnused", &slideInfoOffset);
@@ -1385,6 +1408,9 @@ static bool get_rebase_infos(RIODscSlice * slice, int fd, ut64 start, RDSCHeader
 			}
 
 			if (entry.slideInfoOffset && entry.slideInfoSize) {
+				if (!slide_info_fits (slice, entry.slideInfoSize)) {
+					return false;
+				}
 				RDyldRebaseInfosEntry * info = RIODscRebaseInfos_emplace_back (&slice->rebase_infos);
 				memset (info, 0, sizeof (RDyldRebaseInfosEntry));
 				info->start = entry.fileOffset;
@@ -1413,7 +1439,7 @@ static bool get_rebase_infos(RIODscSlice * slice, int fd, ut64 start, RDSCHeader
 			bool got_map = false;
 			mappingOffset += sizeof (w_map);
 			RIO_FREAD_AT (fd, mappingOffset, w_map, "3l2i", got_map);
-			if (!got_map) {
+			if (!got_map || !slide_info_fits (slice, slideInfoSize)) {
 				return false;
 			}
 

@@ -37,7 +37,8 @@ enum grub_fshelp_filetype
     GRUB_FSHELP_UNKNOWN,
     GRUB_FSHELP_REG,
     GRUB_FSHELP_DIR,
-    GRUB_FSHELP_SYMLINK
+    GRUB_FSHELP_SYMLINK,
+    GRUB_FSHELP_SPECIAL
   };
 
 /* Lookup the node PATH.  The node ROOTNODE describes the root of the

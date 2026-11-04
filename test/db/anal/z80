@@ -33,7 +33,7 @@ EXPECT=<<EOF
         :   0x08048369      54             ld d, h
         :   0x0804836a      52             ld d, d
         :   0x0804836b      68             ld l, b
-        `=< 0x0804836c      1085           djnz 0x85
+        `=< 0x0804836c      1085           djnz 0x82f3
             0x0804836e      04             inc b
             0x0804836f      08             ex af, af'
             0x08048370      68             ld l, b
@@ -56,7 +56,7 @@ EXPECT=<<EOF
         :   0x08048369      54             d = h
         :   0x0804836a      52             d = d
         :   0x0804836b      68             l = b
-        `=< 0x0804836c      1085           b--; if (b != 0) goto 0x85
+        `=< 0x0804836c      1085           b--; if (b != 0) goto 0x82f3
             0x0804836e      04             b++
             0x0804836f      08             swap(af, af')
             0x08048370      68             l = b

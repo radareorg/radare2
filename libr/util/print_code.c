@@ -513,7 +513,14 @@ R_API char *r_print_code_tocolor(const char *o, RConsCodeColors *cc) {
 	static const char *types[] = {
 		"const", "int", "char", "short", "long", "void", "float", "double",
 		"bool", "boolean", "string", "signed", "unsigned",
-		"ut8", "uint8_t", "ut64", "uint64_t", NULL
+		"ut8", "ut64",
+		"int8_t", "int16_t", "int32_t", "int64_t",
+		"uint8_t", "uint16_t", "uint32_t", "uint64_t",
+		"int_least8_t", "int_least16_t", "int_least32_t", "int_least64_t",
+		"uint_least8_t", "uint_least16_t", "uint_least32_t", "uint_least64_t",
+		"int_fast8_t", "int_fast16_t", "int_fast32_t", "int_fast64_t",
+		"uint_fast8_t", "uint_fast16_t", "uint_fast32_t", "uint_fast64_t",
+		"intptr_t", "uintptr_t", "intmax_t", "uintmax_t", NULL
 	};
 
 	static const char *preprocessor[] = {
@@ -616,6 +623,20 @@ R_API char *r_print_code_tocolor(const char *o, RConsCodeColors *cc) {
 		if (in_string || in_char) {
 			r_strbuf_append_n (out, p++, 1);
 			continue;
+		}
+
+		if (p == o || p[-1] == '\n') {
+			const char *label_end = p;
+			while (*label_end && !IS_WHITECHAR (*label_end)) {
+				label_end++;
+			}
+			if (label_end - p > 1 && label_end[-1] == ':') {
+				r_strbuf_append (out, color_cpp);
+				r_strbuf_append_n (out, p, label_end - p);
+				r_strbuf_append (out, Color_RESET);
+				p = label_end;
+				continue;
+			}
 		}
 
 		// Highlight numbers

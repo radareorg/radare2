@@ -917,7 +917,8 @@ static bool r_cmd_java_handle_find_cp_const(RCore *core, const char *cmd) {
 	RBinJavaObj *obj = (RBinJavaObj *)r_cmd_java_get_bin_obj (get_anal (core));
 	RAnalFunction *fcn = NULL;
 	RAnalBlock *bb = NULL;
-	RListIter *bb_iter, *fn_iter, *iter;
+	RListIter *fn_iter, *iter;
+	RAnalBlock **bb_iter;
 	RCmdJavaCPResult *cp_res = NULL;
 	ut16 idx = -1;
 	RList *find_list;
@@ -947,7 +948,8 @@ static bool r_cmd_java_handle_find_cp_const(RCore *core, const char *cmd) {
 	find_list->free = free;
 	// XXX - this will break once RAnal moves to sdb
 	r_list_foreach (core->anal->fcns, fn_iter, fcn) {
-		r_list_foreach (fcn->bbs, bb_iter, bb) {
+		R_VEC_FOREACH (&fcn->bbs, bb_iter) {
+			bb = *bb_iter;
 			char op = bb->op_bytes[0];
 			cp_res = NULL;
 			switch (op) {

@@ -3778,3 +3778,685 @@ EXPECT=<<EOF
 0x00000008 zf,?{,18446744073709551360,r0,&,0,255,r1,&,<<,|,0xffffffff,&,r0,=,}
 EOF
 RUN
+
+NAME=arm32 conditional vldm/vstm/nop keep the condition prefix
+FILE=malloc://32
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 020b901c041b801c041b201d080b301d00f02013
+aoe 5
+EOF
+EXPECT=<<EOF
+0x00000000 zf,!,?{,0,r0,+,[8],d0,=,,}
+0x00000004 zf,!,?{,d1,0,r0,+,=[8],d2,8,r0,+,=[8],,}
+0x00000008 zf,!,?{,d2,8,r0,-,=[8],d1,16,r0,-,=[8],16,r0,-=,,}
+0x0000000c zf,!,?{,8,r0,-,[8],d3,=,16,r0,-,[8],d2,=,24,r0,-,[8],d1,=,32,r0,-,[8],d0,=,32,r0,-=,,}
+0x00000010 zf,!,?{,,}
+EOF
+RUN
+
+NAME=arm32 unconditional vldmia and bkpt stay unguarded
+FILE=malloc://16
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 020b90ec700020e1
+aoe 2
+EOF
+EXPECT=<<EOF
+0x00000000 0,r0,+,[8],d0,=,
+0x00000004 0,0,TRAP
+EOF
+RUN
+
+NAME=arm32 sdiv and udiv esil
+FILE=malloc://16
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 11f210e711f230e7
+aei
+ar r1=-100
+ar r2=7
+aes
+ar r0
+ar r1=-100
+aes
+ar r0
+ar pc=0
+ar r0=9
+ar r2=0
+aes
+ar r0
+ar r0=9
+ar r1=100
+aes
+ar r0
+ar pc=0
+ar r2=-7
+aes
+ar r0
+ar pc=0
+ar r1=0x80000000
+ar r2=-1
+aes
+ar r0
+EOF
+EXPECT=<<EOF
+0xfffffff2
+0x24924916
+0x00000000
+0x00000000
+0xfffffff2
+0x80000000
+EOF
+RUN
+
+NAME=arm32 sdiveq and udiveq honour the condition
+FILE=malloc://16
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 11f2100711f23007
+aei
+ar zf=0
+ar r0=9
+ar r1=100
+ar r2=7
+aes
+ar r0
+aes
+ar r0
+s 0
+ar pc=0
+ar zf=1
+aes
+ar r0
+ar r0=9
+aes
+ar r0
+EOF
+EXPECT=<<EOF
+0x00000009
+0x00000009
+0x0000000e
+0x0000000e
+EOF
+RUN
+
+NAME=arm32 rrx shifted register operand
+FILE=malloc://0x100
+ARGS=-a arm -b 32
+CMDS=<<EOF
+aei
+aeim
+wx 620081e0
+ar r1=0
+ar r2=3
+ar cpsr=0x20000000
+aes
+ar r0
+s 0
+wx 620021e0
+ar pc=0
+ar r1=0
+ar r2=0
+ar cpsr=0x20000000
+aes
+ar r0
+EOF
+EXPECT=<<EOF
+0x80000001
+0x80000000
+EOF
+RUN
+
+NAME=arm32 rbit, sbfx, pkhbt and pkhtb
+FILE=malloc://0x100
+ARGS=-a arm -b 32
+CMDS=<<EOF
+aei
+aeim
+wx 310fffe6
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 310fffe6
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx d101a4e7
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx d101a4e7
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx 5100bfe7
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 5100bfe7
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx d10fa0e7
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx d10fa0e7
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx 120081e6
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 120081e6
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx 120481e6
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 120481e6
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx 520481e6
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 520481e6
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx d20f81e6
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx d20f81e6
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+EOF
+EXPECT=<<EOF
+0x80feff01
+0x1e6a2c48
+0x00000000
+0x0000000f
+0x80ff7f01
+0x12345678
+0xffffffff
+0x00000000
+0x7ffe7f01
+0xfedc5678
+0xfe807f01
+0xdcba5678
+0x80fffe80
+0x1234dcba
+0x80ff0000
+0x1234ffff
+EOF
+RUN
+
+NAME=arm32 smull, umlal, smlal and umaal use the 64-bit result, umulls sets z from all of it
+FILE=malloc://0x100
+ARGS=-a arm -b 32
+CMDS=<<EOF
+aei
+aeim
+s 0
+wx 9203c1e0
+ar pc=0
+ar r0=0x0
+ar r1=0x0
+ar r2=0xffffffff
+ar r3=0x2
+aes
+ar r0
+ar r1
+s 0
+wx 920391e0
+ar pc=0
+ar r0=0x0
+ar r1=0x0
+ar r2=0x2
+ar r3=0x3
+ar cpsr=0x0
+aes
+ar r0
+ar r1
+ar cpsr
+s 0
+wx 9203a1e0
+ar pc=0
+ar r0=0xffffffff
+ar r1=0x0
+ar r2=0x1
+ar r3=0x1
+aes
+ar r0
+ar r1
+s 0
+wx 9203e1e0
+ar pc=0
+ar r0=0x0
+ar r1=0x0
+ar r2=0xffffffff
+ar r3=0x1
+aes
+ar r0
+ar r1
+s 0
+wx 920341e0
+ar pc=0
+ar r0=0xffffffff
+ar r1=0xffffffff
+ar r2=0xffffffff
+ar r3=0xffffffff
+aes
+ar r0
+ar r1
+s 0
+wx 9203f1e0
+ar pc=0
+ar r0=0x0
+ar r1=0x0
+ar r2=0xffffffff
+ar r3=0x1
+ar cpsr=0x0
+aes
+ar r0
+ar r1
+ar cpsr
+s 0
+wx 9203b1e0
+ar pc=0
+ar r0=0x0
+ar r1=0x0
+ar r2=0x0
+ar r3=0x5
+ar cpsr=0x0
+aes
+ar r0
+ar r1
+ar cpsr
+EOF
+EXPECT=<<EOF
+0xfffffffe
+0xffffffff
+0x00000006
+0x00000000
+0x00000000
+0x00000000
+0x00000001
+0xffffffff
+0xffffffff
+0xffffffff
+0xffffffff
+0xffffffff
+0xffffffff
+0x80000000
+0x00000000
+0x00000000
+0x40000000
+EOF
+RUN
+
+NAME=arm32 uxth, uxtb16, sxtb16 and the extend and add instructions
+FILE=malloc://0x100
+ARGS=-a arm -b 32
+CMDS=<<EOF
+aei
+aeim
+wx 7100ffe6
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 7100ffe6
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx 7104ffe6
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 7104ffe6
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx 7100cfe6
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 7100cfe6
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx 71048fe6
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 71048fe6
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx 7200e1e6
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 7200e1e6
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx 7208f1e6
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 7208f1e6
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx 7200a1e6
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 7200a1e6
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx 7204b1e6
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 7204b1e6
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx 7200c1e6
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 7200c1e6
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx 720881e6
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 720881e6
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+EOF
+EXPECT=<<EOF
+0x00007f01
+0x00005678
+0x0000ff7f
+0x00003456
+0x00ff0001
+0x00340078
+0xff80007f
+0x00120056
+0x80ff7f82
+0x12345710
+0x80fffeff
+0x12355554
+0x80ff7e82
+0x12345610
+0x80ff7d81
+0x12343332
+0x81fd7f82
+0x13105710
+0x80807eff
+0x11cc5654
+EOF
+RUN
+
+NAME=arm32 teq sets n and z from the exclusive or and keeps c and v
+FILE=malloc://0x100
+ARGS=-a arm -b 32
+CMDS=<<EOF
+aei
+aeim
+wx 020031e1
+ar r1=0x80000000
+ar r2=0
+ar cpsr=0x30000000
+aes
+ar cpsr
+s 0
+ar pc=0
+ar r1=5
+ar r2=5
+ar cpsr=0x30000000
+aes
+ar cpsr
+ao~^type:
+EOF
+EXPECT=<<EOF
+0xb0000000
+0x70000000
+type: cmp
+EOF
+RUN
+
+NAME=arm32 adds, subs, rsbs, adcs and sbcs set nzcv from the operands, adc keeps them
+FILE=malloc://0x100
+ARGS=-a arm -b 32
+CMDS=<<EOF
+aei
+aeim
+s 0
+wx 020091e0
+ar pc=0
+ar r0=0xdeadbeef
+ar r1=0
+ar r2=0
+ar cpsr=0
+aes
+ar r0
+ar cpsr
+s 0
+wx 020091e0
+ar pc=0
+ar r1=0xffffffff
+ar r2=1
+ar cpsr=0
+aes
+ar r0
+ar cpsr
+s 0
+wx 020091e0
+ar pc=0
+ar r1=0x7fffffff
+ar r2=1
+ar cpsr=0
+aes
+ar r0
+ar cpsr
+s 0
+wx 020051e0
+ar pc=0
+ar r0=0xdeadbeef
+ar r1=0
+ar r2=0x80000000
+ar cpsr=0
+aes
+ar r0
+ar cpsr
+s 0
+wx 010050e2
+ar pc=0
+ar r0=0
+ar cpsr=0
+aes
+ar r0
+ar cpsr
+s 0
+wx 000071e2
+ar pc=0
+ar r1=1
+ar cpsr=0
+aes
+ar r0
+ar cpsr
+s 0
+wx 000071e2
+ar pc=0
+ar r0=0xdeadbeef
+ar r1=0
+ar cpsr=0
+aes
+ar r0
+ar cpsr
+s 0
+wx 0200b1e0
+ar pc=0
+ar r1=0xffffffff
+ar r2=0
+ar cpsr=0x20000000
+aes
+ar r0
+ar cpsr
+s 0
+wx 0200d1e0
+ar pc=0
+ar r1=0
+ar r2=0
+ar cpsr=0
+aes
+ar r0
+ar cpsr
+s 0
+wx 0100a1e2
+ar pc=0
+ar r1=5
+ar cpsr=0x20000000
+aes
+ar r0
+ar cpsr
+EOF
+EXPECT=<<EOF
+0x00000000
+0x40000000
+0x00000000
+0x60000000
+0x80000000
+0x90000000
+0x80000000
+0x90000000
+0xffffffff
+0x80000000
+0xffffffff
+0x80000000
+0x00000000
+0x60000000
+0x00000000
+0x60000000
+0xffffffff
+0x80000000
+0x00000007
+0x20000000
+EOF
+RUN
+
+NAME=arm32 cmp sets v on a signed overflow, cmn sets c
+FILE=malloc://0x100
+ARGS=-a arm -b 32
+CMDS=<<EOF
+aei
+aeim
+wx 020051e1
+ar r1=0
+ar r2=0x80000000
+ar cpsr=0
+aes
+ar cpsr
+s 0
+wx 020071e1
+ar pc=0
+ar r1=0xffffffff
+ar r2=1
+ar cpsr=0
+aes
+ar cpsr
+EOF
+EXPECT=<<EOF
+0x90000000
+0x60000000
+EOF
+RUN

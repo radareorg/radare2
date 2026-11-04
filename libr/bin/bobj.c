@@ -308,25 +308,17 @@ static char *swiftField(const char *dn, const char *cn) {
 		return NULL;
 	}
 
-	char *p = strstr (dn, ".getter_");
-	if (!p) {
-		p = strstr (dn, ".setter_");
-		if (!p) {
-			p = strstr (dn, ".method_");
-		}
+	if (!strstr (dn, ".getter_") && !strstr (dn, ".setter_") && !strstr (dn, ".method_")) {
+		return NULL;
 	}
-	if (p) {
-		char *q = strstr (dn, cn);
-		if (q && q[strlen (cn)] == '.') {
-			q = strdup (q + strlen (cn) + 1);
-			char *r = strchr (q, '.');
-			if (r) {
-				*r = 0;
-			}
-			return q;
-		}
+	const size_t cn_len = strlen (cn);
+	const char *q = strstr (dn, cn);
+	if (!q || q[cn_len] != '.') {
+		return NULL;
 	}
-	return NULL;
+	q += cn_len + 1;
+	const char *dot = strchr (q, '.');
+	return dot? r_str_ndup (q, dot - q): strdup (q);
 }
 
 typedef struct {
@@ -816,16 +808,22 @@ static HtPP *symbol_filter_new(size_t symbols) {
 
 static bool filter_classes(RBinFile *bf, RList *list) {
 	bool rc = true;
-	HtSU *db = ht_su_new0 ();
-	HtPP *ht = symbol_filter_new (0);
-	if (!ht) {
-		ht_su_free (db);
-		return false;
-	}
 	RListIter *iter;
 	RBinClass *cls;
 	RBinSymbol *sym;
 	const bool names_only = classes_names_only (bf);
+	size_t methods_count = 0;
+	if (!names_only) {
+		r_list_foreach (list, iter, cls) {
+			methods_count += RVecRBinSymbol_length (&cls->methods);
+		}
+	}
+	HtSU *db = ht_su_new0 ();
+	HtPP *ht = symbol_filter_new (methods_count);
+	if (!ht) {
+		ht_su_free (db);
+		return false;
+	}
 	r_list_foreach (list, iter, cls) {
 		if (cls->attr.lang != R_BIN_LANG_NONE) {
 			r_bin_file_add_language (bf, cls->attr.lang);

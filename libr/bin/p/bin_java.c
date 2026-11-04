@@ -3,6 +3,7 @@
 #define R_LOG_ORIGIN "bin.java"
 
 #include <r_bin.h>
+#include "../i/private.h"
 #include <r_java/class.h>
 
 static bool add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj) {
@@ -151,7 +152,7 @@ static bool sections_vec(RBinFile *bf) {
 
 static const char *get_cc(RBinFile *bf, ut64 vaddr) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
-	RBinSymbol *m = r_bin_get_symbol_at (bf->rbin, vaddr);
+	RBinSymbol *m = r_bin_object_get_symbol_at (bf->bo, vaddr);
 	if (!m || !m->arg_prefix) {
 		return NULL;
 	}

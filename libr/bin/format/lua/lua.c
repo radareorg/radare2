@@ -2,6 +2,9 @@
 
 #include "lua.h"
 
+// luac can not nest functions deeper than its LUAI_MAXCCALLS parser limit
+#define LUA_MAX_PROTO_DEPTH 200
+
 void lua_header_free(RLuaHeader *lhead) {
 	if (lhead) {
 		r_list_free (lhead->functionList);
@@ -31,17 +34,23 @@ static ut64 parseProtos(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64
 	if (!has_bytes (size, offset, lh->intSize)) {
 		return 0;
 	}
+	if (lh->depth >= LUA_MAX_PROTO_DEPTH) {
+		R_LOG_WARN ("Function prototypes nested deeper than %d levels", LUA_MAX_PROTO_DEPTH);
+		return 0;
+	}
 	ut64 length = parseInt (data + offset);
 	offset += lh->intSize;
 	R_LOG_DEBUG ("Function has %" PFMT64x " Prototypes", length);
 
 	int i;
+	lh->depth++;
 	for (i = 0; i < length; i++) {
 		offset = lua53parseFunction (lh, data, offset, size, func, parseStruct);
 		if (offset == 0) {
-			return 0;
+			break;
 		}
 	}
+	lh->depth--;
 	return offset;
 }
 

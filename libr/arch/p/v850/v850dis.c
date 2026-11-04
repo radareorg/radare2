@@ -24,13 +24,13 @@ static void print_value_dec(RStrBuf *sb, int flags, st64 value) {
 	}
 }
 
-static void print_value(RStrBuf *sb, int flags, ut64 memaddr, st64 value) {
+static void print_value(RStrBuf *sb, int flags, ut64 memaddr, st64 value, ut32 pc_mask) {
 	if (flags & V850_PCREL) {
 		ut64 addr = value + memaddr;
 		if (flags & V850_INVERSE_PCREL) {
 			addr = memaddr - value;
 		}
-		r_strbuf_appendf (sb, "0x%"PFMT64x, (ut64)addr); // memaddr);
+		r_strbuf_appendf (sb, "0x%"PFMT64x, (ut64)addr & pc_mask);
 	} else if (flags & V850_OPERAND_DISP) {
 		print_value_dec (sb, flags, value);
 	} else if ((flags & V850E_IMMEDIATE32) || (flags & V850E_IMMEDIATE16HI)) {
@@ -60,7 +60,7 @@ static st64 get_operand_value(const struct v850_operand *operand, unsigned long 
 			// truncated
 			return 0;
 		}
-		ut32 value = r_read_le16 (buffer);
+		ut32 value = (insn >> 16) | ((ut32)r_read_le16 (buffer) << 16);
 		return operand->extract (value, invalid);
 	}
 	if (operand->flags & V850E_IMMEDIATE32) {
@@ -265,48 +265,73 @@ static bool print_reglist(RStrBuf *sb, v850np_inst *inst, const struct v850_oper
 	return true;
 }
 
-static char *distillate(v850np_inst *inst, const char *esilfmt) {
+static char *saturated_expression(const char *lhs, const char *rhs, const char *dst, bool subtract) {
+	RStrBuf *sb = r_strbuf_newf ("%s,0xffffffff,&,%s,0xffffffff,&,%c", rhs, lhs, subtract? '-': '+');
+	if (subtract) {
+		r_strbuf_appendf (sb, ",%s,0xffffffff,&,%s,0xffffffff,&,<,cy,:=", rhs, lhs);
+	} else {
+		r_strbuf_append (sb, ",DUP,32,SWAP,>>,1,&,cy,:=");
+	}
+	r_strbuf_appendf (sb, ",DUP,%s,^,%s,%s,^%s,&,0x80000000,&,!,!,ov,:=", lhs, rhs, lhs, subtract? "": ",0xffffffff,^");
+	r_strbuf_appendf (sb, ",ov,?{,POP,1,sat,:=,0x80000000,%s,&,?{,0x80000000,}{,0x7fffffff,},}", lhs);
+	r_strbuf_appendf (sb, ",DUP,31,SWAP,>>,1,&,s,:=,DUP,0xffffffff,&,!,z,:=,%s,:=", dst);
+	return r_strbuf_drain (sb);
+}
+
+static char *conditional_arithmetic_expression(const char *condition, const char *lhs, const char *rhs, const char *dst, bool subtract) {
+	RStrBuf *sb = r_strbuf_newf ("%s,!,!,%s,+,%s,%c", condition, rhs, lhs, subtract? '-': '+');
+	if (subtract) {
+		r_strbuf_appendf (sb, ",%s,!,!,%s,+,%s,0xffffffff,&,<,cy,:=", condition, rhs, lhs);
+	} else {
+		r_strbuf_append (sb, ",DUP,32,SWAP,>>,1,&,cy,:=");
+	}
+	r_strbuf_appendf (sb, ",DUP,%s,^,%s,%s,^%s,&,0x80000000,&,!,!,ov,:=", lhs, rhs, lhs, subtract? "": ",0xffffffff,^");
+	r_strbuf_appendf (sb, ",DUP,31,SWAP,>>,1,&,s,:=,DUP,0xffffffff,&,!,z,:=,%s,:=", dst);
+	return r_strbuf_drain (sb);
+}
+
+static char *distillate(v850np_inst *inst, const char *esilfmt, ut64 memaddr, int cpumodel) {
+	const ut32 pc_mask = v850_pc_mask (cpumodel);
 	RStrBuf *sb = r_strbuf_new ("");
-	RList *args = NULL;
-	char *arg = strchr (inst->text, ' ');
-	char *p = inst->text;
-	bool in_list = false;
-	while (*p) {
-		if (*p == '{') {
-			in_list = true;
-		} else if (*p == '}') {
-			in_list = false;
-		} else if (in_list) {
-			if (*p == ',') {
-				*p = ';';
-			}
+	RList *args = r_list_newf (free);
+	int i;
+	// ESIL operands must not depend on absolute-address display formatting.
+	for (i = 0; i < R_ARRAY_SIZE (inst->args) && inst->op->operands[i]; i++) {
+		const struct v850_operand *operand = &v850_operands[inst->op->operands[i]];
+		const st64 value = inst->args[i].value;
+		RStrBuf *arg = r_strbuf_new ("");
+		if (operand->flags & V850_OPERAND_REG) {
+			r_strbuf_append (arg, get_v850_reg_name ((operand->flags & V850_REG_EVEN)? value * 2: value));
+		} else if (operand->flags & V850_OPERAND_EP) {
+			r_strbuf_append (arg, "ep");
+		} else if (operand->flags & V850_OPERAND_SRG) {
+			r_strbuf_append (arg, get_v850_sreg_name (value));
+		} else if (operand->flags & V850_OPERAND_CC) {
+			static const char *conditions[] = {
+				"ov", "cy", "z", "cy,z,|", "s", "1", "s,ov,^", "s,ov,^,z,|",
+				"ov,!", "cy,!", "z,!", "cy,z,|,!", "s,!", "sat", "s,ov,^,!", "s,ov,^,z,|,!"
+			};
+			r_strbuf_append (arg, conditions[value & 15]);
+		} else if (operand->flags & V850E_OPERAND_REG_LIST) {
+			print_reglist (arg, inst, operand, value);
+		} else {
+			print_value (arg, operand->flags, memaddr, value, pc_mask);
 		}
-		p++;
-	}
-	if (arg) {
-		arg = strdup (arg + 1);
-		arg = r_str_replace (arg, "{", "", true);
-		arg = r_str_replace (arg, "}", "", true);
-		arg = r_str_replace (arg, "[", ",", true);
-		arg = r_str_replace (arg, "]", "", true);
-		args = r_str_split_list (arg, ",", 0);
-		RListIter *iter;
-		r_list_foreach (args, iter, arg) {
-			r_str_replace_ch (arg, ';', ',', true);
-			r_str_replace_ch (arg, ' ', 0, true);
-		}
-	}
-	p = inst->text;
-	while (*p) {
-		if (*p == ';') {
-			*p = ',';
-		}
-		p++;
+		char *text = r_strbuf_drain (arg);
+		text = r_str_replace (text, "{", "", true);
+		text = r_str_replace (text, "}", "", true);
+		r_str_replace_ch (text, ' ', 0, true);
+		r_list_append (args, text);
 	}
 	if (args) {
 		while (*esilfmt) {
 			char ch = *esilfmt;
 			if (ch == '#') {
+				if (esilfmt[1] == 'P') {
+					r_strbuf_appendf (sb, "0x%x", pc_mask & ~1U);
+					esilfmt += 2;
+					continue;
+				}
 				const int n = esilfmt[1] - '0';
 				if (n >= 0 && n < 10) {
 					const char *argn = (const char *)r_list_get_n (args, n);
@@ -318,36 +343,73 @@ static char *distillate(v850np_inst *inst, const char *esilfmt) {
 			r_strbuf_append_n (sb, &ch, 1);
 			esilfmt++;
 		}
-		r_list_free (args);
 	}
 	char *res = r_strbuf_drain (sb);
-	if (r_str_startswith (res, "DISPOSE,")) {
-		RList *regs = r_str_split_list (res + 8, ",", 0);
+	if (!strcmp (res, "CONDITIONAL")) {
+		free (res);
+		res = conditional_arithmetic_expression (r_list_get_n (args, 0), r_list_get_n (args, 2),
+			r_list_get_n (args, 1), r_list_get_n (args, 3), !strcmp (inst->op->name, "sbf"));
+	} else if (!strcmp (res, "MAC")) {
+		const unsigned accumulator = inst->args[2].value * 2;
+		const unsigned destination = inst->args[3].value * 2;
+		const char *extend = !strcmp (inst->op->name, "mac")? ",32,SWAP,~": "";
+		free (res);
+		res = r_str_newf ("%s%s,%s%s,*,32,%s,<<,%s,|,+,DUP,%s,:=,32,SWAP,>>,%s,:=",
+			(char *)r_list_get_n (args, 0), extend, (char *)r_list_get_n (args, 1), extend,
+			get_v850_reg_name (accumulator + 1), get_v850_reg_name (accumulator),
+			get_v850_reg_name (destination), get_v850_reg_name (destination + 1));
+	}
+	if (!strcmp (inst->op->name, "trap") && (cpumodel & V850_CPU_E2_UP)) {
+		char *with_cause = r_str_newf ("%s,0x%x,eiic,:=", res, 0x40 + (unsigned)inst->args[0].value);
+		free (res);
+		res = with_cause;
+	}
+	if (!strcmp (inst->op->name, "ldsr") && inst->op->operands[1] == OLDSR2 && inst->args[1].value == 4) {
+		free (res);
+		res = strdup (",");
+	}
+	if (!strcmp (res, "SATURATE")) {
+		bool reverse = !strcmp (inst->op->name, "satsubr");
+		const char *lhs = r_list_get_n (args, reverse? 0: 1);
+		const char *rhs = r_list_get_n (args, reverse? 1: 0);
+		const char *dst = r_list_get_n (args, inst->op->operands[2]? 2: 1);
+		free (res);
+		res = saturated_expression (lhs, rhs, dst, strcmp (inst->op->name, "satadd"));
+	}
+	const bool prepare = r_str_startswith (res, "PREPARE,");
+	if (prepare || r_str_startswith (res, "DISPOSE,")) {
+		const int list_index = prepare? 0: 1;
+		const int allocation = inst->args[prepare? 1: 0].value * 4;
+		RList *regs = r_str_split_list (r_list_get_n (args, list_index), ",", 0);
 		RListIter *iter;
 		char *reg;
-		RStrBuf *sb2 = r_strbuf_new ("");
-		int count = 0;
-		r_list_foreach (regs, iter, reg) {
-			r_strbuf_appendf (sb2, "%ssp,[4],%s,:=,4,sp,+=", count?",":"", reg);
-			count ++;
+		RStrBuf *stack = r_strbuf_new ("");
+		if (prepare) {
+			r_list_foreach (regs, iter, reg) {
+				if (*reg) {
+					r_strbuf_appendf (stack, "4,sp,-=,%s,sp,0xfffffffc,&,=[4],", reg);
+				}
+			}
+			r_strbuf_appendf (stack, "%d,sp,-=", allocation);
+			if (inst->op->operands[2]) {
+				r_strbuf_appendf (stack, ",%s,ep,:=", (char *)r_list_get_n (args, 2));
+			}
+		} else {
+			r_strbuf_appendf (stack, "%d,sp,+=", allocation);
+			r_list_foreach_prev (regs, iter, reg) {
+				if (*reg) {
+					r_strbuf_appendf (stack, ",sp,0xfffffffc,&,[4],%s,:=,4,sp,+=", reg);
+				}
+			}
+			if (inst->op->operands[2]) {
+				r_strbuf_appendf (stack, ",0x%x,%s,&,PC,:=", pc_mask & ~1U, (char *)r_list_get_n (args, 2));
+			}
 		}
 		free (res);
-		res = r_strbuf_drain (sb2);
-		r_list_free (regs);
-	} else if (r_str_startswith (res, "PREPARE,")) {
-		RList *regs = r_str_split_list (res + 8, ",", 0);
-		RListIter *iter;
-		char *reg;
-		RStrBuf *sb2 = r_strbuf_new ("");
-		int count = 0;
-		r_list_foreach (regs, iter, reg) {
-			r_strbuf_appendf (sb2, "%s4,sp,-=,%s,sp,=[4]", count?",":"", reg);
-			count ++;
-		}
-		free (res);
-		res = r_strbuf_drain (sb2);
+		res = r_strbuf_drain (stack);
 		r_list_free (regs);
 	}
+	r_list_free (args);
 	return res;
 }
 
@@ -378,13 +440,14 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 		unsigned int opnum;
 		unsigned int memop;
 
+		const unsigned extra = op->mask > 0xffff? 4: 2;
 		bool operand_fail = false;
 		for (opindex_ptr = op->operands, opnum = 1; !operand_fail && *opindex_ptr != 0; opindex_ptr++, opnum++) {
 			bool invalid = false;
 
 			operand = &v850_operands[*opindex_ptr];
 
-			st64 value = get_operand_value (operand, insn, buffer, buffer_size, &invalid);
+			st64 value = get_operand_value (operand, insn, buffer + extra, buffer_size - extra, &invalid);
 			if (value) {
 				inst->value = value;
 			}
@@ -436,7 +499,7 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 			prevalue = value;
 
 			bool invalid = false;
-			value = get_operand_value (operand, insn, buffer + 2, buffer_size - 2, &invalid);
+			value = get_operand_value (operand, insn, buffer + extra, buffer_size - extra, &invalid);
 			if (invalid) {
 				// R_LOG_WARN ("Cannot get operand value");
 				break;
@@ -509,10 +572,15 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 					| V850_OPERAND_PREFOP
 					| V850_OPERAND_FLOAT_CC);
 
+			if (flag == V850_OPERAND_REG) {
+				inst->args[opnum - 1].str = get_v850_reg_name (value);
+			} else if (flag == V850_OPERAND_EP) {
+				inst->args[opnum - 1].str = "ep";
+			}
 			if (!done)
 			switch (flag) {
 			case V850_OPERAND_REG:
-				r_strbuf_append (sb, get_v850_reg_name (value));
+				r_strbuf_append (sb, inst->args[opnum - 1].str);
 				break;
 			case (V850_OPERAND_REG|V850_REG_EVEN):
 				r_strbuf_append (sb, get_v850_reg_name (value * 2));
@@ -547,17 +615,17 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 				{
 #if ABS_R0REF
 					const struct v850_operand *nextop = &v850_operands[opindex_ptr[1]];
-					st64 nextvalue = get_operand_value (nextop, insn, buffer + 2, buffer_size - 2, &invalid);
+					st64 nextvalue = get_operand_value (nextop, insn, buffer + extra, buffer_size - extra, &invalid);
 					if (opnum > 0 && (v850_operands[*(opindex_ptr)].flags & V850_OPERAND_DISP)
-							&& opnum + 1 == memop && nextvalue == 0 && value < 1) {
+							&& opnum == 1 && opnum + 1 == memop && nextvalue == 0 && value < 1) {
 						// dont print coz we replace later
 						//r_strbuf_append (sb, "?");
 					} else {
-						print_value (sb, operand->flags, memaddr, value);
+						print_value (sb, operand->flags, memaddr, value, v850_pc_mask (cpumodel));
 						inst->value = value;
 					}
 #else
-					print_value (sb, operand->flags, memaddr, value);
+					print_value (sb, operand->flags, memaddr, value, v850_pc_mask (cpumodel));
 					inst->value = value;
 #endif
 				}
@@ -579,10 +647,11 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 		inst->text = r_strbuf_drain (sb);
 		if (op->esil) {
 			// take advantage of the arguments parsed and honor the formats tring below
-			inst->esil = distillate (inst, op->esil);
+			inst->esil = distillate (inst, op->esil, memaddr, cpumodel);
 		}
 	} else {
 		r_strbuf_free (sb);
+		return false;
 	}
 	return true;
 fail:
@@ -664,17 +733,19 @@ int v850np_disasm(v850np_inst *inst, int cpumodel, ut64 addr, const ut8* buffer,
 
 	if (length == 4 || (length == 0 && (insn & 0x0600) == 0x0600)) {
 		if (len < 4) {
-			inst->text = r_str_newf ("truncated from %d to %d", code_length, length);
+			code_length = R_MAX (code_length, 4);
+			inst->text = r_str_newf ("truncated from %d to %d", code_length, (int)len);
 			return -1;
 		}
 		/* This is a 4 byte insn.  */
 		insn = r_read_le32 (buffer);
-		length = code_length = 4;
+		length = 4;
+		code_length = R_MAX (code_length, 4);
 	}
 
 	if (code_length > len) {
 		// truncated instruction
-		inst->text = r_str_newf ("truncated from %d to %d", code_length, length);
+		inst->text = r_str_newf ("truncated from %d to %d", code_length, (int)len);
 		return -1;
 	}
 

@@ -509,11 +509,11 @@ afvW
     var_eh  0xa
     var_fh  0xe
     var_4h
-/ 50: fcn.00000000 (int16_t arg1, int16_t arg2, int16_t arg3);
-|           ; arg int16_t arg1 @ r0
-|           ; arg int16_t arg2 @ r1
-|           ; arg int16_t arg3 @ r2
-|           ; var int16_t var_10h @ sp+0x0
+/ 50: fcn.00000000 (int32_t arg1, int32_t arg2, int32_t arg3);
+|           ; arg int32_t arg1 @ r0
+|           ; arg int32_t arg2 @ r1
+|           ; arg int32_t arg3 @ r2
+|           ; var int32_t var_10h @ sp+0x0
 |           ; var int8_t var_fh @ sp+0x1
 |           ; var int16_t var_eh @ sp+0x2
 |           ; var int32_t var_ch @ sp+0x4
@@ -592,11 +592,11 @@ pd 1
 pd 1 @..2a
 EOF
 EXPECT=<<EOF
-/ 66: fcn.00000000 (int16_t arg1, int16_t arg2);
-|           ; arg int16_t arg1 @ r0
-|           ; arg int16_t arg2 @ r1
-|           ; var int16_t var_90h @ sp+0x90
-|           ; var int16_t var_290h @ sp+0x290
+/ 66: fcn.00000000 (int32_t arg1, int32_t arg2);
+|           ; arg int32_t arg1 @ r0
+|           ; arg int32_t arg2 @ r1
+|           ; var int32_t var_90h @ sp+0x90
+|           ; var int32_t var_290h @ sp+0x290
 |           ; var char *config @ sp+0x690
 |           0x00000000      2de9f04f       push.w {r4, r5, r6, r7, r8, sb, sl, fp, lr}
 ...

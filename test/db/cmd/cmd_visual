@@ -230,6 +230,71 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=visual invalid arm64 instructions keep scrolling
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e scr.interactive=true
+e arch.codealign=4
+wx ffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+Vpjjjjjjq
+s
+EOF
+EXPECT=<<EOF
+0x18
+EOF
+RUN
+
+NAME=visual short instructions respect code alignment
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e scr.interactive=true
+e arch.codealign=4
+wx 90909090909090909090909090909090909090909090909090909090
+Vpjjjjjjq
+s
+EOF
+EXPECT=<<EOF
+0x18
+EOF
+RUN
+
+NAME=visual folded function scrolls to its end
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e scr.interactive=true
+af+ 0x100 fcn
+afb+ 0x100 0x100 16
+s 0x100
+afF 1
+Vpjq
+s
+EOF
+EXPECT=<<EOF
+0x110
+EOF
+RUN
+
+NAME=panels invalid arm64 instructions keep scrolling
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+"$capture=v @e:scr.interactive=true > $panel"
+e scr.wheel=false
+e scr.cols=100
+e scr.rows=20
+wx ffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+<jjjjjjQ
+$capture > /dev/null
+cat $panel~0x00000018]~?
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
 NAME=visual arm64 string meta scroll down aligns after end
 FILE=-
 ARGS=-a arm -b 64

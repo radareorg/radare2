@@ -825,14 +825,9 @@ static bool cb_asmarch(void *user, void *data) {
 	//	r_config_set (core->config, "dbg.backend", "bf");
 	__setsegoff (core->config, node->value, core->rasm->config->bits);
 
-	// set a default endianness
-	int bigbin = r_bin_is_big_endian (core->bin);
-	if (bigbin == -1 /* error: no endianness detected in binary */) {
-		bigbin = r_config_get_b (core->config, "cfg.bigendian");
-	}
-
-	// try to set endian of RAsm to match binary
-	r_asm_set_big_endian (core->rasm, bigbin);
+	// cfg.bigendian follows the loaded binary (r_core_bin_set_env sets it)
+	// and keeps any value set before asm.arch, so the new arch must use it
+	r_asm_set_big_endian (core->rasm, r_config_get_b (core->config, "cfg.bigendian"));
 
 	RConfigNode *asmcpu = r_config_node_get (core->config, "asm.cpu");
 	if (asmcpu) {
@@ -1662,8 +1657,8 @@ static RCoreHelpMessage help_msg_grain = {
 	"disk", "", "allow low-level file descriptors and file open operations",
 	"files", "", "allow stdio-style file and directory access (fopen, opendir, chdir)",
 	"exec", "", "allow process execution and kill/system helpers",
-	"socket", "", "allow socket creation, listening and socket state checks",
-	"network", "", "allow non-localhost network connections and HTTP requests",
+	"socket", "", "allow listening and connecting to localhost",
+	"network", "", "allow connecting to any host (HTTP requests, remote io, ...)",
 	"environ", "", "allow environment variable read, write, clear operations",
 	"hidden", "", "allow reading hidden files and directories",
 	"script", "", "allow running scripts with the rlang plugins (js, #!, .r2.js)",
@@ -1923,7 +1918,7 @@ static bool cb_reloff(void *user, void *data) {
 	const char options[] = "func\nflag\nmaps\ndmap\nfmap\nsect\nsymb\nlibs\nfile\n";
 	RConfigNode *node = (RConfigNode *)data;
 	if (*node->value) {
-		char *pos = strstr (options, node->value);
+		const char *pos = strstr (options, node->value);
 		size_t len = strlen (node->value);
 		if (pos && pos[len] == '\n') {
 			return true;
@@ -4116,6 +4111,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("types.constraint", "false", "enable constraint types analysis for variables");
 	SETB ("types.fields", "false", "propagate callee types into struct and union members during type analysis");
 	SETB ("types.rollback", "false", "enable state rollback for type propagation recovery");
+	SETI ("types.maxtrace", 0x40000, "max register and memory accesses recorded per function during type analysis (0 = unlimited)");
 	SETB ("types.bbstate", "true", "restore register and stack state from a real predecessor block during type analysis");
 	SETB ("types.synth", "false", "synthesize struct types for untyped pointer args and allocator returns (see afts)");
 	SETB ("types.sizes", "false", "harvest object sizes from memset-style and allocator call sites during type analysis");
@@ -4209,6 +4205,7 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	SETB ("dbg.glibc.demangle", "false", "demangle linked-lists pointers introduced in glibc 2.32");
 	SETB ("esil.prestep", "true", "step before esil evaluation in `de` commands");
+	SETB ("esil.skipself", "true", "skip instructions that return to their own address during ESIL stepping");
 	SETI ("esil.maxsteps", 0, "If !=0 defines the maximum amount of steps to perform on aesu/aec/..");
 	SETICB ("esil.maxbacksteps", 256, &cb_esilmaxbacksteps, "esil back step capacity");
 	SETB ("esil.stepover.force", "false", "force PC to the return address when ESIL step-over stops before returning");
@@ -4939,7 +4936,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("scr.maxpage", 102400, &cb_scr_maxpage, "change max chars to print before prompting the user");
 	SETICB ("scr.pagesize", 1, &cb_scrpagesize, "flush in pages when scr.linesleep is != 0");
 	SETCB ("scr.flush", "false", &cb_scrflush, "force flush to console in realtime (breaks scripting)");
-	SETB ("scr.slow", "true", "do slow stuff on visual mode like RFlag.get_at(true)");
 #if R2__WINDOWS__
 	SETICB ("scr.vtmode", core->cons->vtmode? 1: 0, &scr_vtmode, "use VT sequences on Windows (0: Disable, 1: Shell, 2: Visual)");
 #else
@@ -5022,7 +5018,11 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("scr.tts", "false", "use tts if available by a command (see ic)");
 	SETCB ("scr.prompt", "true", &cb_scrprompt, "show user prompt (used by r2 -q)");
 	SETICB ("scr.limit", 0, &cb_scr_limit, "stop printing after N bytes");
+#if R2_UEFI
+	const int default_color = COLOR_MODE_DISABLED;
+#else
 	const int default_color = (core->print->flags & R_PRINT_FLAGS_COLOR)? core->cons->context->color_limit: COLOR_MODE_DISABLED;
+#endif
 	SETICB ("scr.color", default_color, &cb_color, "enable colors (0: none, 1: ansi, 2: 256 colors, 3: truecolor)");
 	n = r_config_node_get (cfg, "scr.color");
 	SETOPTIONS (n, "0", "1", "2", "3", NULL);

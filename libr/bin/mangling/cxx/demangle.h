@@ -501,6 +501,7 @@ struct demangle_component
      Initialize to zero.  Private to d_print_comp.
      All other fields are final after initialization.  */
   int d_printing;
+  int d_counting;
 
   union
   {

@@ -290,12 +290,23 @@ typedef struct RFlirtTailByte {
 } RFlirtTailByte;
 
 typedef struct RFlirtFunction {
-	char name[R_FLIRT_NAME_MAX];
 	ut16 offset; // function offset from the module start
 	ut8 negative_offset; // true if offset is negative, for referenced functions
 	ut8 is_local; // true if function is static
 	ut8 is_collision; // true if was an unresolved collision
+	char name[]; // allocated to the name length
 } RFlirtFunction;
+
+static RFlirtFunction *function_new(ut16 offset, const char *name, size_t name_len) {
+	RFlirtFunction *function = calloc (1, sizeof (RFlirtFunction) + name_len + 1);
+	if (function) {
+		function->offset = offset;
+		if (name) {
+			memcpy (function->name, name, name_len);
+		}
+	}
+	return function;
+}
 
 typedef struct RFlirtModule {
 	ut32 crc_length;
@@ -543,10 +554,18 @@ static bool module_match_buffer(RAnal *anal, const RFlirtModule *module, ut8 *b,
 		}
 	}
 
+	// entries in front of the next exported one share it, so find it once instead of per entry
+	RListIter *next_exported_it = r_list_head (module->public_functions);
 	// TODO referenced functions
 	r_list_foreach (module->public_functions, flirt_func_it, flirt_func) {
 		// Once the first module function is found, we need to go through the module->public_functions
 		// list to identify the others. See flirt doc for more information
+		if (next_exported_it == flirt_func_it) {
+			do {
+				next_exported_it = next_exported_it->n;
+			} while (next_exported_it && (((RFlirtFunction *)next_exported_it->data)->is_local
+				|| ((RFlirtFunction *)next_exported_it->data)->negative_offset));
+		}
 
 		next_module_function = r_anal_get_function_at ((RAnal *)anal, address + flirt_func->offset);
 		if (next_module_function) {
@@ -556,15 +575,9 @@ static bool module_match_buffer(RAnal *anal, const RFlirtModule *module, ut8 *b,
 
 			// get function size from flirt signature
 			ut64 flirt_fcn_size = (module->length > flirt_func->offset)? module->length - flirt_func->offset: 0;
-			RFlirtFunction *next_flirt_func;
-			RListIter *next_flirt_func_it = flirt_func_it->n;
-			while (next_flirt_func_it) {
-				next_flirt_func = next_flirt_func_it->data;
-				if (!next_flirt_func->is_local && !next_flirt_func->negative_offset) {
-					flirt_fcn_size = (next_flirt_func->offset > flirt_func->offset)? next_flirt_func->offset - flirt_func->offset: 0;
-					break;
-				}
-				next_flirt_func_it = next_flirt_func_it->n;
+			if (next_exported_it) {
+				const RFlirtFunction *next_flirt_func = next_exported_it->data;
+				flirt_fcn_size = (next_flirt_func->offset > flirt_func->offset)? next_flirt_func->offset - flirt_func->offset: 0;
 			}
 			// resize function if needed
 			next_module_function_size = r_anal_function_linear_size (next_module_function);
@@ -578,9 +591,10 @@ static bool module_match_buffer(RAnal *anal, const RFlirtModule *module, ut8 *b,
 					const ut64 delta = fcn->addr - next_module_function->addr;
 					if (fcn->addr > next_module_function->addr &&
 						delta >= next_module_function_size && delta < flirt_fcn_size) {
-						RListIter *iter_bb;
+						RAnalBlock **iter_bb;
 						RAnalBlock *block;
-						r_list_foreach (fcn->bbs, iter_bb, block) {
+						R_VEC_FOREACH (&fcn->bbs, iter_bb) {
+							block = *iter_bb;
 							r_anal_function_add_block (next_module_function, block);
 						}
 						next_module_function->ninstr += fcn->ninstr;
@@ -757,17 +771,9 @@ static ut8 read_module_referenced_functions(RFlirt *f, RFlirtModule *module) {
 	}
 
 	for (i = 0; i < number_of_referenced_functions; i++) {
-		ref_function = R_NEW0 (RFlirtFunction);
-		if (f->version >= 9) {
-			ref_function->offset = read_multiple_bytes (f);
-			if (f->buf_eof || f->buf_err) {
-				goto beach;
-			}
-		} else {
-			ref_function->offset = read_max_2_bytes (f);
-			if (f->buf_eof || f->buf_err) {
-				goto beach;
-			}
+		const ut16 ref_offset = f->version >= 9? read_multiple_bytes (f): read_max_2_bytes (f);
+		if (f->buf_eof || f->buf_err) {
+			goto beach;
 		}
 		ref_function_name_length = read_byte (f);
 		if (f->buf_eof || f->buf_err) {
@@ -781,6 +787,10 @@ static ut8 read_module_referenced_functions(RFlirt *f, RFlirtModule *module) {
 			}
 		}
 		if ((int)ref_function_name_length < 0 || ref_function_name_length >= R_FLIRT_NAME_MAX) {
+			goto beach;
+		}
+		ref_function = function_new (ref_offset, NULL, ref_function_name_length);
+		if (!ref_function) {
 			goto beach;
 		}
 		for (j = 0; j < ref_function_name_length; j++) {
@@ -797,6 +807,7 @@ static ut8 read_module_referenced_functions(RFlirt *f, RFlirtModule *module) {
 		}
 		r_list_append (module->referenced_functions, ref_function);
 		R_LOG_DEBUG ("(REF: %04X: %s)", ref_function->offset, ref_function->name);
+		ref_function = NULL; // owned by the list
 	}
 
 	return true;
@@ -812,6 +823,7 @@ static ut8 read_module_public_functions(RFlirt *f, RFlirtModule *module, ut8 *fl
 	int i;
 	ut16 offset = 0;
 	ut8 current_byte;
+	char name[R_FLIRT_NAME_MAX];
 
 	module->public_functions = r_list_new ();
 	RFlirtFunction *function = NULL;
@@ -828,21 +840,12 @@ static ut8 read_module_public_functions(RFlirt *f, RFlirtModule *module, ut8 *fl
 				goto beach;
 			}
 		}
-		function = R_NEW0 (RFlirtFunction);
-		function->offset = offset;
-
 		current_byte = read_byte (f);
 		if (f->buf_eof || f->buf_err) {
 			goto beach;
 		}
+		const ut8 name_flags = current_byte < 0x20? current_byte: 0;
 		if (current_byte < 0x20) {
-			if (current_byte & IDASIG__FUNCTION__LOCAL) { // static function
-				function->is_local = true;
-			}
-			if (current_byte & IDASIG__FUNCTION__UNRESOLVED_COLLISION) {
-				// unresolved collision (happens in *.exc while creating .sig from .pat)
-				function->is_collision = true;
-			}
 #if DEBUG
 			if (current_byte & 0x01 || current_byte & 0x04) { // appears as 'd' or '?' in dumpsig
 				R_LOG_DEBUG ("Investigate public name: %02X @ %04X", current_byte, r_buf_tell (f->b) + f->header_size);
@@ -855,19 +858,23 @@ static ut8 read_module_public_functions(RFlirt *f, RFlirtModule *module, ut8 *fl
 		}
 
 		for (i = 0; current_byte >= 0x20 && i < R_FLIRT_NAME_MAX; i++) {
-			function->name[i] = current_byte;
+			name[i] = current_byte;
 			current_byte = read_byte (f);
 			if (f->buf_eof || f->buf_err) {
 				goto beach;
 			}
 		}
-
 		if (i == R_FLIRT_NAME_MAX) {
 			R_LOG_INFO ("Function name too long");
-			function->name[R_FLIRT_NAME_MAX - 1] = '\0';
-		} else {
-			function->name[i] = '\0';
+			i--;
 		}
+		function = function_new (offset, name, i);
+		if (!function) {
+			goto beach;
+		}
+		// unresolved collisions happen in *.exc while creating .sig from .pat
+		function->is_local = (name_flags & IDASIG__FUNCTION__LOCAL) != 0;
+		function->is_collision = (name_flags & IDASIG__FUNCTION__UNRESOLVED_COLLISION) != 0;
 		R_LOG_DEBUG ("flirt: %04X:%s", function->offset, function->name);
 		*flags = current_byte;
 		r_list_append (module->public_functions, function);
@@ -974,11 +981,11 @@ static bool read_node_bytes(RFlirt *f, RFlirtNode *node) {
 		R_LOG_ERROR ("Invalid flirt node size %d", node->length);
 		return false;
 	}
-	ut64 current_mask_bit = 1ULL << (node->length - 1);
-	if (! (node->pattern_bytes = malloc (node->length))) {
+	ut64 current_mask_bit = node->length? 1ULL << (node->length - 1): 0;
+	if (! (node->pattern_bytes = malloc (R_MAX (node->length, 1)))) {
 		return false;
 	}
-	if (! (node->variant_bool_array = malloc (node->length))) {
+	if (! (node->variant_bool_array = malloc (R_MAX (node->length, 1)))) {
 		return false;
 	}
 	for (i = 0; i < node->length; i++, current_mask_bit >>= 1) {
@@ -995,8 +1002,11 @@ static bool read_node_bytes(RFlirt *f, RFlirtNode *node) {
 	return true;
 }
 
+// The leading pattern of a module, split along the nodes from the root to its leaf
+#define FLIRT_MAX_PATTERN 64
+
 // parse a signature pattern tree or sub-tree, returns false on parsing error
-static bool parse_tree(RFlirt *f, RFlirtNode *root_node) {
+static bool parse_tree(RFlirt *f, RFlirtNode *root_node, int pattern_len) {
 	RFlirtNode *node = NULL;
 	int i, tree_nodes = read_multiple_bytes (f);
 	if (f->buf_eof || f->buf_err) {
@@ -1019,8 +1029,14 @@ static bool parse_tree(RFlirt *f, RFlirtNode *root_node) {
 		if (!read_node_bytes (f, node)) {
 			goto beach;
 		}
+		// every level holds pattern bytes, so this also bounds the tree depth
+		const int child_len = pattern_len + R_MAX (node->length, 1);
+		if (child_len > FLIRT_MAX_PATTERN) {
+			R_LOG_ERROR ("flirt pattern longer than %d bytes", FLIRT_MAX_PATTERN);
+			goto beach;
+		}
 		r_list_append (root_node->child_list, node);
-		if (!parse_tree (f, node)) {
+		if (!parse_tree (f, node, child_len)) {
 			R_LOG_DEBUG ("flirst child node parsing fails");
 			goto beach;
 		}
@@ -1330,7 +1346,7 @@ static RFlirtNode *flirt_parse(RFlirt *f) {
 	r_unref (f->b);
 	f->b = r_buf_new_with_pointers (buf, size, false);
 	// DEBUG r_file_dump ("sig_dump", f->b, size, false);
-	if (parse_tree (f, node)) {
+	if (parse_tree (f, node, 0)) {
 		ret = node;
 	} else {
 		R_LOG_ERROR ("flirt parse tree error");

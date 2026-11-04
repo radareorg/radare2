@@ -1,0 +1,14 @@
+# Source: Reflow test/bin/rust/hello.rs, rustc 1.99.1 Darwin arm64.
+NAME=Mach-O exported main outranks a Rust mangled main
+FILE=bins/mach0/rust-main
+CMDS=<<EOF
+iM
+?v sym._main
+?v sym.rust_hello::main
+EOF
+EXPECT=<<EOF
+vaddr=0x10000091c paddr=0x10000091c
+0x10000091c
+0x10000090c
+EOF
+RUN

@@ -627,10 +627,9 @@ static int cmd_seek(void *data, const char *input) {
 		r_cons_printf (core->cons, "0x%"PFMT64x "\n", core->addr);
 		return 0;
 	}
-	char *ptr;
-	if ((ptr = strstr (input, "+."))) {
-		char *dup = strdup (input);
-		dup[ptr - input] = '\x00';
+	const char *ptr = strstr (input, "+.");
+	if (ptr) {
+		char *dup = r_str_ndup (input, ptr - input);
 		const char *err = NULL;
 		off = r_num_math_err (core->num, dup + 1, &err);
 		if (err) {

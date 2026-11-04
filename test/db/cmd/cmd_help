@@ -343,3 +343,46 @@ EXPECT=<<EOF
 {"res":"recovered\n","error":false,"value":0,"code":0}
 EOF
 RUN
+
+NAME=-V shows library versions through the console
+FILE=--
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+s 0x123
+f keep=0x456
+-V~r_core[1]
+-V~r_main[1]
+-V >$versions
+cat $versions~r_util[1]
+s
+?v keep
+?e after
+EOF
+EXPECT=<<EOF
+r_core
+r_main
+r_util
+0x123
+0x456
+after
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=-Vj shows detailed JSON while -vj keeps version JSON
+FILE=--
+ARGS=-NN
+CMDS=<<EOF
+env PATH=
+-Vj~{radare2.license}
+-vj~{}~arch~?
+?e after
+EOF
+EXPECT=<<EOF
+LGPL-3.0-only
+1
+after
+EOF
+EXPECT_ERR=
+RUN

@@ -6,8 +6,6 @@ pyc_opcodes *opcode_35(void) {
 		return NULL;
 	}
 
-	ret->version_sig = (void *(*)())opcode_35;
-
 	// These are removed since Python 3.5.
 	// Removals happen before adds since
 	// some opcodes are reused

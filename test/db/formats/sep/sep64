@@ -117,3 +117,36 @@ WARN: fs_sep64: init mach-o parse failed at 0x0
 ERROR: Cannot mount sep64 filesystem at offset 0x0
 EOF
 RUN
+
+NAME=sep64: aliasing app records stay within the copy budget
+FILE=malloc://0x20000
+CMDS=<<EOF
+wv4 0x10003fe2 @ 4
+wv4 0xd518c002 @ 8
+wv4 0x14000000 @ 0x800
+wv4 0x14000000 @ 0xffc
+w ion2 @ 0x1010
+wv8 0x2000 @ 0x1014
+wv8 0x10000 @ 0x2018
+wv8 0x20000 @ 0x2038
+wv8 0x12000 @ 0x2068
+wv8 256 @ 0x20c0
+wx cffaedfe0c000001000000000200000002000000900000 @ 0x10000
+wx 19000000480000005f5f544558540000 @ 0x10020
+wv8 0x100 @ 0x10050
+wx 19000000480000005f5f444154410000 @ 0x10068
+wv8 0x100 @ 0x10090
+wv8 8 @ 0x10098
+y 0xb0 @ 0x10000
+yy @ 0x12000
+yy @ 0x14000
+wv8 0xb000 @ 0x14050
+wv8 0xb000 @ 0x14090
+wv8 0x14000 @@s:0x20c8 0xa0c8 120
+wv8 0x15000 @@s:0x20d8 0xa0d8 120
+oba 0
+EOF
+EXPECT_ERR=<<EOF
+WARN: fs_sep64: skipping 251 app slices over the copy budget
+EOF
+RUN

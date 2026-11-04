@@ -351,7 +351,7 @@ static void cmov(ge_precomp *t, const ge_precomp *u, unsigned char b) {
 static void ge_select(ge_precomp *t, int pos, signed char b) {
 	ge_precomp minust;
 	unsigned char bnegative = negative (b);
-	unsigned char babs = b - (((-bnegative) & b) << 1);
+	unsigned char babs = b - 2 * ((-bnegative) & b);
 	fe_1 (t->yplusx);
 	fe_1 (t->yminusx);
 	fe_0 (t->xy2d);

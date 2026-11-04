@@ -60,6 +60,7 @@ typedef struct {
 	ut64 section_size;
 	ut64 section_vaddr;
 	ut64 text_base;
+	ut64 copied_bytes; // name and source file bytes duplicated out of the section
 	bool big_endian;
 } GoPclnCtx;
 
@@ -368,7 +369,6 @@ static bool go_parse_header(GoPclnCtx *ctx) {
 }
 
 static bool go_load_range(GoPclnCtx *ctx, ut64 vaddr, ut64 size) {
-	R_RETURN_VAL_IF_FAIL (ctx && ctx->anal, false);
 	if (!size || size > GO_MAX_SECTION_READ) {
 		return false;
 	}
@@ -380,6 +380,18 @@ static bool go_load_range(GoPclnCtx *ctx, ut64 vaddr, ut64 size) {
 	if (rc != (int)size) {
 		free (buf);
 		return false;
+	}
+	// Trim virtual zero padding to avoid parsing millions of fake functab entries.
+	ut64 used = size;
+	while (used > 0 && !buf[used - 1]) {
+		used--;
+	}
+	if (used + 64 < size) {
+		ut8 *trimmed = realloc (buf, (size_t)(used + 64));
+		if (trimmed) {
+			buf = trimmed;
+		}
+		size = used + 64;
 	}
 	free (ctx->section_data);
 	ctx->section_data = buf;
@@ -588,11 +600,16 @@ static char *go_first_source_file(GoPclnCtx *ctx, ut32 pcfile_off, ut32 cu_off) 
 }
 
 static bool go_append_function(GoPclnCtx *ctx, GoPclnFunc *f) {
-	R_RETURN_VAL_IF_FAIL (ctx && f, false);
-	if (!f->safe_name && R_STR_ISNOTEMPTY (f->name)) {
+	// names live once in the section, shared offsets would amplify nfunc * strlen
+	ctx->copied_bytes += f->name? strlen (f->name): 0;
+	ctx->copied_bytes += f->source_file? strlen (f->source_file): 0;
+	if (ctx->copied_bytes > ctx->section_size * 2) {
+		R_LOG_WARN ("Function names exceed the gopclntab size at function %u", f->index);
+		return false;
+	}
+	if (R_STR_ISNOTEMPTY (f->name)) {
 		f->safe_name = r_name_filter_dup (f->name);
-		if (R_STR_ISEMPTY (f->safe_name)) {
-			free (f->safe_name);
+		if (!f->safe_name) {
 			f->safe_name = r_str_newf ("go.%"PFMT64x, f->addr);
 		}
 	}
@@ -617,9 +634,6 @@ static bool go_parse_functions_12(GoPclnCtx *ctx) {
 			continue;
 		}
 		GoPclnFunc *f = R_NEW0 (GoPclnFunc);
-		if (!f) {
-			return false;
-		}
 		f->addr = entry_addr;
 		f->index = (ut32)i;
 		if (nameoff >= 0) {
@@ -653,9 +667,6 @@ static bool go_parse_functions_116(GoPclnCtx *ctx) {
 			continue;
 		}
 		GoPclnFunc *f = R_NEW0 (GoPclnFunc);
-		if (!f) {
-			return false;
-		}
 		f->addr = entry_addr;
 		f->args = args;
 		f->index = (ut32)i;
@@ -697,9 +708,6 @@ static bool go_parse_functions_118_plus(GoPclnCtx *ctx) {
 			continue;
 		}
 		GoPclnFunc *f = R_NEW0 (GoPclnFunc);
-		if (!f) {
-			return false;
-		}
 		f->addr = ctx->text_base + entryoff;
 		f->args = args;
 		f->start_line = start_line;

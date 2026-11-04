@@ -80,12 +80,6 @@
 #	define unlikely(x) !!(x)
 #endif
 
-#if !defined(JEMALLOC_INTERNAL_UNREACHABLE)
-#  error JEMALLOC_INTERNAL_UNREACHABLE should have been defined by configure
-#endif
-
-#define unreachable() JEMALLOC_INTERNAL_UNREACHABLE()
-
 #endif /* JEMALLOC_H_TYPES */
 /******************************************************************************/
 #ifdef JEMALLOC_H_STRUCTS

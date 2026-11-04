@@ -4,8 +4,9 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    commit-message:
-      prefix: "##build "
-      prefix-development: "##build "
     labels:
       - buildsystem
+    allow:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-minor"

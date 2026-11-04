@@ -114,6 +114,28 @@ bool test_r_anal_function_relocate(void) {
 	mu_end;
 }
 
+bool test_r_anal_function_filtered_name_collision(void) {
+	RAnal *anal = r_anal_new ();
+	RAnalFunction *original = r_anal_create_function (anal, "a_b", 0, 0, NULL);
+	RAnalFunction *filtered = r_anal_create_function (anal, "a;b", 0x10, 0, NULL);
+	mu_assert_notnull (filtered, "filtering preserves a distinct function");
+	mu_assert_streq (filtered->name, "a_b_10", "filtered name gains an address suffix");
+	mu_assert_ptreq (r_anal_get_function_byname (anal, "a_b"), original, "original name stays indexed");
+	mu_assert_ptreq (r_anal_get_function_byname (anal, "a_b_10"), filtered, "unique name is indexed");
+	mu_assert_ptreq (r_anal_get_function_at (anal, 0x10), filtered, "unique function is indexed by address");
+	mu_assert_null (r_anal_create_function (anal, "a_b", 0x20, 0, NULL), "explicit duplicate names still fail");
+	mu_assert_null (r_anal_create_function (anal, "a|b", 0x10, 0, NULL), "filtered names cannot duplicate an address");
+	assert_invariants (anal);
+
+	RAnalFunction *suffix = r_anal_create_function (anal, "a_b_20", 0x30, 0, NULL);
+	mu_assert_null (r_anal_create_function (anal, "a`b", 0x20, 0, NULL), "occupied suffix fails without replacing a function");
+	mu_assert_ptreq (r_anal_get_function_byname (anal, suffix->name), suffix, "occupied suffix stays indexed");
+	mu_assert_null (r_anal_get_function_at (anal, 0x20), "failed fallback leaves no address entry");
+	assert_invariants (anal);
+	r_anal_free (anal);
+	mu_end;
+}
+
 static int function_renamed_cb(RAnal *anal, void *user, RAnalFunction *fcn, const char *oldname) {
 	int *count = user;
 	mu_assert_streq (oldname, "original", "callback receives old name");
@@ -189,10 +211,82 @@ bool test_r_core_function_rename(void) {
 	mu_end;
 }
 
+bool test_r_anal_function_block_order(void) {
+	RAnal *anal = r_anal_new ();
+	anal->opt.jmpmid = false;
+	RAnalFunction *f = r_anal_create_function (anal, "ordered", 0x100, 0, NULL);
+	RAnalFunction *other = r_anal_create_function (anal, "other", 0x400, 0, NULL);
+	RAnalBlock *low = r_anal_create_block (anal, 0x100, 0x100);
+	RAnalBlock *mid = r_anal_create_block (anal, 0x180, 0x10);
+	RAnalBlock *high = r_anal_create_block (anal, 0x300, 0x10);
+	RAnalBlock *foreign = r_anal_create_block (anal, 0x400, 0x10);
+	r_anal_function_add_block (f, high);
+	r_anal_function_add_block (f, low);
+	r_anal_function_add_block (f, mid);
+	r_anal_function_add_block (other, low);
+	r_anal_function_add_block (other, foreign);
+	r_unref (low);
+	r_unref (mid);
+	r_unref (high);
+	r_unref (foreign);
+	assert_invariants (anal);
+	mu_assert_false (f->bbs_sorted, "out-of-order bulk insertion invalidates order");
+	mu_assert_ptreq (r_anal_function_bbget_at (anal, f, 0x180), mid, "unsorted member lookup");
+	mu_assert_null (r_anal_function_bbget_at (anal, f, 0x400), "unsorted lookup rejects foreign block");
+	mu_assert_ptreq (r_anal_function_bbget_in (anal, f, 0x185), low, "unsorted overlapping lookup");
+	mu_assert_false (f->bbs_sorted, "lookups do not sort during construction");
+	mu_assert_ptreq (*RVecAnalBlockPtr_at (&f->bbs, 0), high, "lookups preserve insertion order");
+	r_anal_function_sort_blocks (f);
+	mu_assert_ptreq (*RVecAnalBlockPtr_at (&f->bbs, 0), low, "prepare address order");
+	mu_assert_ptreq (r_anal_function_bbget_at (anal, f, 0x180), mid, "exact member lookup");
+	mu_assert_null (r_anal_function_bbget_at (anal, f, 0x400), "foreign block is not a member");
+	mu_assert_null (r_anal_function_bbget_at (anal, f, 0x181), "exact lookup rejects interior");
+	mu_assert_ptreq (r_anal_function_bbget_in (anal, f, 0x185), low, "overlap picks first address");
+	mu_assert_null (r_anal_function_bbget_in (anal, f, 0x50), "before function");
+	mu_assert_null (r_anal_function_bbget_in (anal, f, 0x310), "after function");
+	mu_assert_eq (r_anal_function_min_addr (f), 0x100, "cache original minimum");
+	mu_assert_true (r_anal_block_relocate (mid, 0x80, 0x10), "relocate below minimum");
+	mu_assert_eq (r_anal_function_min_addr (f), 0x80, "update minimum");
+	mu_assert_false (f->bbs_sorted, "relocation defers sorting");
+	mu_assert_ptreq (r_anal_function_bbget_at (anal, f, 0x80), mid, "lookup relocated block before sorting");
+	mu_assert_true (r_anal_block_relocate (low, 0x500, 0x100), "relocate shared block");
+	mu_assert_false (other->bbs_sorted, "relocation invalidates every owner");
+	r_anal_function_sort_blocks (f);
+	r_anal_function_sort_blocks (other);
+	mu_assert_ptreq (*RVecAnalBlockPtr_last (&f->bbs), low, "first owner reordered");
+	mu_assert_ptreq (*RVecAnalBlockPtr_last (&other->bbs), low, "second owner reordered");
+	RAnalBlock **blocks = R_VEC_START_ITER (&f->bbs);
+	blocks[0] = low;
+	blocks[2] = mid;
+	f->bbs_sorted = false;
+	mu_assert_ptreq (r_anal_function_bbget_at (anal, f, 0x80), mid, "lookup after explicit sort");
+	mu_assert_false (f->bbs_sorted, "lookup preserves explicit order");
+	r_anal_function_remove_block (f, foreign);
+	mu_assert_eq (r_ref_count (foreign), 1, "removing a nonmember keeps its reference");
+	r_anal_function_remove_block (f, high);
+	mu_assert_false (f->bbs_sorted, "removal defers sorting");
+	mu_assert_null (r_anal_function_bbget_at (anal, f, 0x300), "removed block is absent");
+	r_anal_function_sort_blocks (f);
+	mu_assert_ptreq (*RVecAnalBlockPtr_at (&f->bbs, 0), mid, "ordered read restores address order");
+	r_anal_function_remove_block (f, low);
+	mu_assert_true (f->bbs_sorted, "sorted removal preserves order");
+	assert_invariants (anal);
+	assert_leaks (anal);
+	r_anal_free (anal);
+	mu_end;
+}
+
 bool test_r_anal_function_labels(void) {
 	RAnal *anal = r_anal_new ();
 
 	RAnalFunction *f = r_anal_create_function (anal, "do_something", 0x1337, 0, NULL);
+
+	mu_assert_null (f->labels, "labels start absent");
+	mu_assert_null (f->label_addrs, "label addresses start absent");
+	mu_assert_eq (r_anal_function_get_label (f, "missing"), UT64_MAX, "empty label lookup");
+	mu_assert_null (r_anal_function_get_label_at (f, 0x1339), "empty address lookup");
+	mu_assert_false (r_anal_function_delete_label (f, "missing"), "empty label deletion");
+	mu_assert_false (r_anal_function_delete_label_at (f, 0x1339), "empty address deletion");
 
 	bool s = r_anal_function_set_label (f, "smartfriend", 0x1339);
 	mu_assert_true (s, "set label");
@@ -858,9 +952,11 @@ bool test_r_anal_function_switches_foreach(void) {
 
 int all_tests(void) {
 	mu_run_test (test_r_anal_function_relocate);
+	mu_run_test (test_r_anal_function_filtered_name_collision);
 	mu_run_test (test_r_anal_function_rename);
 	mu_run_test (test_r_core_function_rename);
 	mu_run_test (test_r_anal_function_labels);
+	mu_run_test (test_r_anal_function_block_order);
 	mu_run_test (test_r_anal_str_to_fcn_returns_status);
 	mu_run_test (test_r_core_anal_fcn_prefers_exact_start_match);
 	mu_run_test (test_r_core_anal_fcn_variadic_marker_requires_unclobbered_al);

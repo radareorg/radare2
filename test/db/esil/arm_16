@@ -1405,3 +1405,309 @@ EXPECT=<<EOF
 EOF
 RUN
 
+
+NAME=thumb rrx shifted register operand
+FILE=malloc://0x100
+ARGS=-a arm -b 16
+CMDS=<<EOF
+aei
+aeim
+wx 01eb3200
+ar r1=0
+ar r2=3
+ar cpsr=0x20000000
+aes
+ar r0
+EOF
+EXPECT=<<EOF
+0x80000001
+EOF
+RUN
+
+NAME=thumb rbit, sbfx, pkhbt and pkhtb
+FILE=malloc://0x100
+ARGS=-a arm -b 16
+CMDS=<<EOF
+aei
+aeim
+wx 91faa1f0
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 91faa1f0
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx 41f3c400
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 41f3c400
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx c1ea0220
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx c1ea0220
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx c1ea2240
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx c1ea2240
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+EOF
+EXPECT=<<EOF
+0x80feff01
+0x1e6a2c48
+0x00000000
+0x0000000f
+0xfe807f01
+0xdcba5678
+0x80ff7ffe
+0x1234fedc
+EOF
+RUN
+
+NAME=thumb smull, umlal, smlal and umaal use the 64-bit result
+FILE=malloc://0x100
+ARGS=-a arm -b 16
+CMDS=<<EOF
+aei
+aeim
+s 0
+wx 82fb0301
+ar pc=0
+ar r0=0x0
+ar r1=0x0
+ar r2=0xffffffff
+ar r3=0x2
+aes
+ar r0
+ar r1
+s 0
+wx e2fb0301
+ar pc=0
+ar r0=0xffffffff
+ar r1=0x0
+ar r2=0x1
+ar r3=0x1
+aes
+ar r0
+ar r1
+s 0
+wx c2fb0301
+ar pc=0
+ar r0=0x0
+ar r1=0x0
+ar r2=0xffffffff
+ar r3=0x1
+aes
+ar r0
+ar r1
+s 0
+wx e2fb6301
+ar pc=0
+ar r0=0xffffffff
+ar r1=0xffffffff
+ar r2=0xffffffff
+ar r3=0xffffffff
+aes
+ar r0
+ar r1
+EOF
+EXPECT=<<EOF
+0xfffffffe
+0xffffffff
+0x00000000
+0x00000001
+0xffffffff
+0xffffffff
+0xffffffff
+0xffffffff
+EOF
+RUN
+
+NAME=thumb uxth, uxtb16, sxtb16 and the extend and add instructions
+FILE=malloc://0x100
+ARGS=-a arm -b 16
+CMDS=<<EOF
+aei
+aeim
+wx 1ffa81f0
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 1ffa81f0
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx 2ffa91f0
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 2ffa91f0
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx 51fa82f0
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 51fa82f0
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx 01fa82f0
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 01fa82f0
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+wx 21fa82f0
+ar pc=0
+ar r1=0x80ff7f01
+ar r2=0x7ffe8081
+aes
+ar r0
+wx 21fa82f0
+ar pc=0
+ar r1=0x12345678
+ar r2=0xfedcba98
+aes
+ar r0
+EOF
+EXPECT=<<EOF
+0x00007f01
+0x00005678
+0xff80007f
+0x00120056
+0x80ff7f82
+0x12345710
+0x80feff82
+0x12341110
+0x80fd7e82
+0x12105610
+EOF
+RUN
+
+NAME=thumb teq.w sets n and z from the exclusive or and keeps c and v
+FILE=malloc://0x100
+ARGS=-a arm -b 16
+CMDS=<<EOF
+aei
+aeim
+wx 91ea020f
+ar r1=0x80000000
+ar r2=0
+ar cpsr=0x30000000
+aes
+ar cpsr
+s 0
+ar pc=0
+ar r1=5
+ar r2=5
+ar cpsr=0x30000000
+aes
+ar cpsr
+ao~^type:
+EOF
+EXPECT=<<EOF
+0xb0000000
+0x70000000
+type: cmp
+EOF
+RUN
+
+NAME=thumb adds and subs set nzcv from the operands
+FILE=malloc://0x100
+ARGS=-a arm -b 16
+CMDS=<<EOF
+aei
+aeim
+s 0
+wx 8818
+ar pc=0
+ar r0=0xdeadbeef
+ar r1=0
+ar r2=0
+ar cpsr=0
+aes
+ar r0
+ar cpsr
+s 0
+wx 881a
+ar pc=0
+ar r0=0xdeadbeef
+ar r1=0
+ar r2=0x80000000
+ar cpsr=0
+aes
+ar r0
+ar cpsr
+EOF
+EXPECT=<<EOF
+0x00000000
+0x40000000
+0x80000000
+0x90000000
+EOF
+RUN
+
+NAME=thumb cmp sets v on a signed overflow
+FILE=malloc://0x100
+ARGS=-a arm -b 16
+CMDS=<<EOF
+aei
+aeim
+wx 9142
+ar r1=0
+ar r2=0x80000000
+ar cpsr=0
+aes
+ar cpsr
+EOF
+EXPECT=<<EOF
+0x90000000
+EOF
+RUN

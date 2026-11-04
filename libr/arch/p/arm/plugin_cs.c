@@ -10,13 +10,16 @@
 #include <r_util/r_assert.h>
 #include "../capstone.inc.c"
 #include "arm_hacks.inc.c"
+#include "arm_code_endian.h"
 #include "asm_arm_hacks.inc.c"
 #include "arm_regprofile.inc.c"
+#include "arm64_crypto.inc.c"
 
 typedef char RStringShort[32];
 
 typedef struct plugin_data_t {
 	bool bigendian;
+	bool code_bigendian;
 	int bits;
 	char *cpu;
 	csh cs_handle;
@@ -64,10 +67,9 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 #define MEMINDEX64(x) r_str_getf (cs_reg_name (*handle, insn->detail->arm64.operands[x].mem.index))
 #define HASMEMINDEX64(x) ((arm64_reg)insn->detail->arm64.operands[x].mem.index != ARM64_REG_INVALID)
 #define ISMEMINDEXSUB(x) insn->detail->arm.operands[x].subtracted
-#define MEMDISP(x) insn->detail->arm.operands[x].mem.disp
+#define MEMDISP(x) arm_mem_disp32 (&insn->detail->arm.operands[x])
 #define MEMDISP64(x) (ut64)insn->detail->arm64.operands[x].mem.disp
 #define ISIMM(x) (insn->detail->arm.operands[x].type == ARM_OP_IMM)
-#define ISIMM64(x) ((arm64_op_type)insn->detail->arm64.operands[x].type & (ARM64_OP_IMM | ARM64_OP_CIMM | ARM64_OP_FP))
 #define ISREG(x) (insn->detail->arm.operands[x].type == ARM_OP_REG)
 #define ISREG64(x) ((arm64_op_type)insn->detail->arm64.operands[x].type == ARM64_OP_REG)
 #define ISMEM(x) (insn->detail->arm.operands[x].type == ARM_OP_MEM)
@@ -91,6 +93,7 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 		SHIFTTYPE(x) == ARM_SFT_RRX_REG)
 #define ISWRITEBACK32() (insn->detail->arm.writeback == true)
 #define ISWRITEBACK64() (insn->detail->arm64.writeback == true)
+#define ISIMM64(x) ((arm64_op_type)insn->detail->arm64.operands[x].type & (ARM64_OP_IMM | ARM64_OP_CIMM | ARM64_OP_FP))
 #define PSTATE() op->pstate
 #define SYS() (ut64)op->sys
 #define PREFETCH() op->prefetch
@@ -103,6 +106,10 @@ static inline HtUU *ht_it_for_session (RArchSession *as) {
 		SHIFTTYPE(x) == ARM_SFT_LSR_REG || SHIFTTYPE(x) == ARM_SFT_ROR_REG)
 #define ISWRITEBACK32() (insn->detail->writeback == true)
 #define ISWRITEBACK64() ISWRITEBACK32 ()
+// the v6 operand enum is sparse, so its types cannot be tested with &
+#define ISIMM64(x) ((arm64_op_type)insn->detail->arm64.operands[x].type == ARM64_OP_IMM || \
+	(arm64_op_type)insn->detail->arm64.operands[x].type == ARM64_OP_CIMM || \
+	(arm64_op_type)insn->detail->arm64.operands[x].type == ARM64_OP_FP)
 #define PSTATE() op->sysop.alias.pstateimm0_15
 #define SYS() (ut64)op->sysop.reg.tlbi
 #define PREFETCH() op->sysop.alias.prfm
@@ -668,6 +675,18 @@ static int vas_size(arm64_vas vas) {
 		return 16;
 	case ARM64_VAS_1S:
 		return 32;
+#if CS_API_MAJOR == 6
+	case AARCH64LAYOUT_VL_B:
+		return 8;
+	case AARCH64LAYOUT_VL_H:
+		return 16;
+	case AARCH64LAYOUT_VL_S:
+		return 32;
+	case AARCH64LAYOUT_VL_D:
+		return 64;
+	case AARCH64LAYOUT_VL_Q:
+		return 128;
+#endif
 #if CS_API_MAJOR < 6
 	case ARM64_VAS_1B:
 		return 8;
@@ -701,6 +720,15 @@ static int vas_count(arm64_vas vas) {
 		return 4;
 	case ARM64_VAS_2H:
 		return 2;
+#if CS_API_MAJOR == 6
+	// v6 encodes a scalar lane as a bare layout without element count
+	case AARCH64LAYOUT_VL_B:
+	case AARCH64LAYOUT_VL_H:
+	case AARCH64LAYOUT_VL_S:
+	case AARCH64LAYOUT_VL_D:
+	case AARCH64LAYOUT_VL_Q:
+		return 1;
+#endif
 #if CS_API_MAJOR < 6
 	case ARM64_VAS_1B:
 	case ARM64_VAS_1H:
@@ -971,6 +999,12 @@ static const char *decode_shift_64(arm64_shifter shift) {
 #define DECODE_SHIFT(x) decode_shift(insn->detail->arm.operands[x].shift.type)
 #define DECODE_SHIFT64(x) decode_shift_64(insn->detail->arm64.operands[x].shift.type)
 
+static int arm_mem_disp32(const cs_arm_op *operand) {
+	// Capstone 6 reports subtraction separately from the displacement.
+	const int disp = operand->mem.disp;
+	return operand->subtracted && disp > 0? -disp: disp;
+}
+
 static unsigned int regsize32(cs_insn *insn, int n) {
 	R_RETURN_VAL_IF_FAIL (n >= 0 && n < insn->detail->arm.op_count, 0);
 	unsigned int reg = insn->detail->arm.operands[n].reg;
@@ -1112,7 +1146,10 @@ static const char *arg(RArchSession *as, csh *handle, cs_insn *insn, char *buf, 
 	buf[0] = 0;
 	switch (insn->detail->arm.operands[n].type) {
 	case ARM_OP_REG:
-		if (ISSHIFTED (n)) {
+		if (SHIFTTYPE (n) == ARM_SFT_RRX) {
+			// capstone gives rrx a shift value of 0; it shifts the carry flag into bit 31
+			snprintf (buf, buf_sz, "31,cf,<<,1,%s,>>,|", REG (n));
+		} else if (ISSHIFTED (n)) {
 			if (SHIFTTYPEREG (n)) {
 				// the shift count is Rs[7:0]
 				snprintf (buf, buf_sz, "0xff,%s,&,%s,%s",
@@ -1360,7 +1397,7 @@ static void arm64math(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 				VECARG64_APPEND (&op->esil, c, -1, sign);
 				r_strbuf_append (&op->esil, ",-,");
 				VECARG64_APPEND (&op->esil, c, -1, sign);
-				r_strbuf_append (&op->esil, ",^,&,>>,vf,:=,");
+				r_strbuf_append (&op->esil, ",^,&,>>,1,&,vf,:=,");
 				break;
 			case 'l':
 				// A64 flag-setting logical ops set NZ from the result and clear CV
@@ -1480,6 +1517,26 @@ static void arm64_esil_zext_vupper(RAnalOp *op, csh *handle, cs_insn *insn) {
 	if (R_STR_ISEMPTY (r_strbuf_get (&op->esil))) {
 		return;
 	}
+	switch (insn->id) {
+	case ARM64_INS_LD1:
+	case ARM64_INS_LD2:
+	case ARM64_INS_LD3:
+	case ARM64_INS_LD4:
+	case ARM64_INS_LD1R:
+	case ARM64_INS_LD2R:
+	case ARM64_INS_LD3R:
+	case ARM64_INS_LD4R:
+	case ARM64_INS_ST1:
+	case ARM64_INS_ST2:
+	case ARM64_INS_ST3:
+	case ARM64_INS_ST4:
+		// structure accesses write whole register lists through their own
+		// ESIL, including the upper-half zeroing of D-form loads; the access
+		// bits capstone v5 reports for these forms are unreliable
+		return;
+	default:
+		break;
+	}
 	int i;
 	// The lane index of an indexed structure access applies to every
 	// register in its list, so one indexed write operand means all the
@@ -1487,7 +1544,7 @@ static void arm64_esil_zext_vupper(RAnalOp *op, csh *handle, cs_insn *insn) {
 	// rest of their register and must not be zero-extended.
 	for (i = 0; i < OPCOUNT64 (); i++) {
 		cs_arm64_op o = INSOP64 (i);
-		if (o.type == ARM64_OP_REG && (o.access & CS_AC_WRITE) && o.vector_index != -1) {
+		if (ISREG64 (i) && (o.access & CS_AC_WRITE) && o.vector_index != -1) {
 			return;
 		}
 	}
@@ -1495,7 +1552,7 @@ static void arm64_esil_zext_vupper(RAnalOp *op, csh *handle, cs_insn *insn) {
 		cs_arm64_op dst = INSOP64 (i);
 		const char *name;
 		int bits, n;
-		if (dst.type != ARM64_OP_REG || !(dst.access & CS_AC_WRITE) || dst.vector_index != -1) {
+		if (!ISREG64 (i) || !(dst.access & CS_AC_WRITE) || dst.vector_index != -1) {
 			continue;
 		}
 		name = cs_reg_name (*handle, dst.reg);
@@ -1582,6 +1639,352 @@ static const char *arm64_esil_cond_alt(int id) {
 	}
 }
 
+// LD1/ST1/LD2-4/ST2-4 single and multiple structures and LD1R/LD2R-4R:
+// contiguous per-element accesses in the ISA loop order (for r { for e }
+// for the LD1/ST1 family, for e { for r } when interleaving), plus
+// post-indexed structure forms walk the base by the architecture-fixed access
+// footprint; Capstone omits that immediate for most of them, so derive it.
+// Returns the memory operand index, or -1 when the layout is unknown or the
+// delta is only known at runtime (register walk)
+static int vec_ldst_wb(cs_insn *insn, st64 *off) {
+	if (!ISWRITEBACK64 ()) {
+		return -1;
+	}
+	const int argc = OPCOUNT64 ();
+	int memi = argc - 1;
+	if (!ISMEM64 (memi)) {
+		memi--; // LD1 keeps the post-index offset in a separate operand
+	}
+	if (memi < 1 || !ISMEM64 (memi)) {
+		return -1;
+	}
+	int r;
+	for (r = 0; r < memi; r++) {
+		if (!ISREG64 (r) || !is_vector_op (&INSOP64 (r))) {
+			return -1;
+		}
+	}
+	if (memi + 1 < argc && ISIMM64 (memi + 1)) {
+		*off = (st64)IMM64 (memi + 1);
+		return memi;
+	}
+	if (memi + 1 < argc && ISREG64 (memi + 1)) {
+		return -1;
+	}
+	bool indexed = false;
+	for (r = 0; r < memi; r++) {
+		if (INSOP64 (r).vector_index != -1) {
+			indexed = true;
+			break;
+		}
+	}
+#if CS_API_MAJOR == 6
+	// v6 flags lane-indexed structures as writeback even without a post operand
+	if (indexed && MEMDISP64 (memi) == 0) {
+		return -1;
+	}
+#endif
+	bool replicate = false;
+	switch (insn->id) {
+	case ARM64_INS_LD1R:
+	case ARM64_INS_LD2R:
+	case ARM64_INS_LD3R:
+	case ARM64_INS_LD4R:
+		replicate = true;
+		break;
+	default:
+		break;
+	}
+	int ebytes = vector_size (&INSOP64 (0)) / 8;
+	int lanes = indexed? 1: vas_count (INSOP64 (0).vas);
+	if (memi > 4 || ebytes < 1 || ebytes > 8 || lanes < 1) {
+		return -1;
+	}
+	*off = (indexed || replicate)? (st64)memi * ebytes: (st64)memi * lanes * ebytes;
+	return memi;
+}
+
+// post-indexed structure accesses on SP move the stack by the writeback
+// delta, like the pre/post-indexed pair forms
+static void arm64_vec_ldst_stack(RAnalOp *op, cs_insn *insn) {
+	st64 off;
+	int memi = vec_ldst_wb (insn, &off);
+	if (memi >= 0 && (arm64_reg)REGBASE64 (memi) == ARM64_REG_SP) {
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = -off;
+	}
+}
+
+// post-index writeback
+static void arm64_esil_vec_ldst(RAnalOp *op, csh *handle, cs_insn *insn, bool big_endian) {
+	const ut32 id = insn->id;
+	const int argc = OPCOUNT64 ();
+	int memi = argc - 1;
+	bool is_store, interleave, replicate, indexed;
+	int nregs, r, lanes, ebytes, total, k;
+	int lane; // shared lane index of the indexed (single structure) forms
+	cs_arm64_op op0;
+	const char *base;
+	ut64 disp, off;
+	if (!ISMEM64 (memi)) {
+		memi--; // LD1 keeps the post-index offset in a separate operand
+	}
+	if (memi < 1 || !ISMEM64 (memi) || !ISREG64 (0) || !is_vector_op (&INSOP64 (0))) {
+		return;
+	}
+	is_store = false;
+	interleave = false;
+	replicate = false;
+	switch (id) {
+	case ARM64_INS_ST1:
+		is_store = true;
+		break;
+	case ARM64_INS_ST2:
+	case ARM64_INS_ST3:
+	case ARM64_INS_ST4:
+		is_store = true;
+		interleave = true;
+		break;
+	case ARM64_INS_LD2:
+	case ARM64_INS_LD3:
+	case ARM64_INS_LD4:
+		interleave = true;
+		break;
+	case ARM64_INS_LD1R:
+	case ARM64_INS_LD2R:
+	case ARM64_INS_LD3R:
+	case ARM64_INS_LD4R:
+		replicate = true;
+		break;
+	default:
+		break;
+	}
+	nregs = memi;
+	lane = -1;
+	for (r = 0; r < nregs; r++) {
+		if (!ISREG64 (r) || !is_vector_op (&INSOP64 (r))) {
+			return;
+		}
+		if (INSOP64 (r).vector_index != -1) {
+			lane = INSOP64 (r).vector_index;
+		}
+	}
+	op0 = INSOP64 (0);
+	indexed = lane != -1;
+	lanes = indexed? 1: vas_count (op0.vas);
+	ebytes = vector_size (&op0) / 8;
+	if (lanes < 1 || ebytes < 1 || ebytes > 8 || nregs < 1 || nregs > 4) {
+		return;
+	}
+	base = MEMBASE64 (memi);
+	// no structure form has an addressing offset, so element addressing
+	// starts at the base: v5 reports disp 0 while v6 parks the post-index
+	// delta there, which the element loop must not see
+	disp = (ut64)MEMDISP64 (memi);
+#if CS_API_MAJOR == 6
+	if (ISWRITEBACK64 ()) {
+		disp = 0;
+	}
+#endif
+	// one memory access per (register, lane) element: linear per register for
+	// LD1/ST1, per lane across registers when interleaving, one element
+	// replicated over the lanes for LDxR, shared lane for the indexed forms
+	total = indexed? nregs: nregs * lanes;
+	off = disp;
+	if (!big_endian && !indexed && !interleave && !replicate && lanes * ebytes == 16) {
+		// LD1/ST1 family Q forms fill whole registers from contiguous
+		// memory: two 8-byte accesses per register instead of one per
+		// element. Only while the data is little-endian, when the memory
+		// order matches the lane order; the per-element loop below decodes
+		// every element value through the data byte order instead
+		for (r = 0; r < nregs; r++) {
+			ut64 lo = disp + (ut64)r * 16;
+			if (is_store) {
+				r_strbuf_appendf (&op->esil, "%sl,0x%" PFMT64x ",%s,+,=[8],%sh,0x%" PFMT64x ",%s,+,=[8]",
+					REG64 (r), lo, base, REG64 (r), lo + 8, base);
+			} else {
+				r_strbuf_appendf (&op->esil, "0x%" PFMT64x ",%s,+,[8],%sl,=,0x%" PFMT64x ",%s,+,[8],%sh,=",
+					lo, base, REG64 (r), lo + 8, base, REG64 (r));
+			}
+			if (r + 1 < nregs) {
+				COMMA (&op->esil);
+			}
+		}
+	} else if (replicate && ebytes < 8 && (lanes * ebytes == 16 || lanes * ebytes == 8)) {
+		// LDxR replicates one element over the whole register or over the
+		// low 64 bits: read it once and spread it across the lanes with a
+		// multiply; the single element read stays correct under
+		// cfg.bigendian because esil decodes its value
+		ut64 spread = UT64_MAX / (((ut64)1 << (ebytes * 8)) - 1);
+		const bool full = lanes * ebytes == 16;
+		for (r = 0; r < nregs; r++) {
+			if (full) {
+				r_strbuf_appendf (&op->esil, "0x%" PFMT64x ",%s,+,[%d],0x%" PFMT64x ",*,tmp,=,tmp,%sl,=,tmp,%sh,=",
+					disp + (ut64)r * ebytes, base, ebytes, spread, REG64 (r), REG64 (r));
+			} else {
+				// the D forms leave the upper half to the zeroing below
+				r_strbuf_appendf (&op->esil, "0x%" PFMT64x ",%s,+,[%d],0x%" PFMT64x ",*,tmp,=,tmp,%sl,=",
+					disp + (ut64)r * ebytes, base, ebytes, spread, REG64 (r));
+			}
+			if (r + 1 < nregs) {
+				COMMA (&op->esil);
+			}
+		}
+	} else {
+		for (k = 0; k < total; k++) {
+			int rr, el;
+			if (indexed) {
+				rr = k;
+				el = lane;
+				off = disp + (ut64)k * ebytes;
+			} else if (replicate) {
+				rr = k / lanes;
+				el = k % lanes;
+				off = disp + (ut64)rr * ebytes; // re-read for each lane
+			} else if (interleave) {
+				rr = k % nregs;
+				el = k / nregs;
+				off = disp + (ut64)k * ebytes;
+			} else {
+				rr = k / lanes;
+				el = k % lanes;
+				off = disp + (ut64)k * ebytes;
+			}
+			if (k > 0) {
+				COMMA (&op->esil);
+			}
+			if (is_store) {
+				VECARG64_APPEND (&op->esil, rr, el, 0);
+				r_strbuf_appendf (&op->esil, ",0x%" PFMT64x ",%s,+,=[%d]", off, base, ebytes);
+			} else {
+				r_strbuf_appendf (&op->esil, "0x%" PFMT64x ",%s,+,[%d],", off, base, ebytes);
+				VEC64_DST_APPEND (&op->esil, rr, el);
+				r_strbuf_append (&op->esil, ",=");
+			}
+		}
+	}
+	if (!is_store && !indexed && lanes * ebytes == 8) {
+		// structures that only fill the low 64 bits of each register zero the
+		// upper halves, for every register of the list; the zext pass skips
+		// these instructions, so zero them all here
+		for (r = 0; r < nregs; r++) {
+			r_strbuf_appendf (&op->esil, ",0,%sh,=", REG64 (r));
+		}
+	}
+	bool wb = ISWRITEBACK64 ();
+#if CS_API_MAJOR == 6
+	// v6 flags lane-indexed structures as writeback even without a post operand
+	wb = wb && (!indexed || OPCOUNT64 () > memi + 1 || MEMDISP64 (memi) != 0);
+#endif
+	if (wb) {
+		st64 wboff;
+		if (memi + 1 < argc && ISREG64 (memi + 1)) {
+			r_strbuf_appendf (&op->esil, ",%s,%s,+,%s,=", REG64 (memi + 1), base, base);
+		} else if (vec_ldst_wb (insn, &wboff) >= 0) {
+			r_strbuf_appendf (&op->esil, ",0x%" PFMT64x ",%s,+,%s,=", (ut64)wboff, base, base);
+		}
+	}
+}
+
+// reverse bytes of the 64-bit chunk src into dst at the granularity the
+// instruction mirrors over; the tmp staging lets src and dst alias (e.g. rev x0, x0)
+static void arm64_esil_rev_dword(RStrBuf *sb, const char *src, const char *dst, int id) {
+	switch (id) {
+	case ARM64_INS_REV16:
+		// REV16: swap bytes within each 16-bit halfword
+		r_strbuf_appendf (sb,
+			"8,0xff00ff00ff00ff00,%s,&,>>,tmp,=,"
+			"8,0x00ff00ff00ff00ff,%s,&,<<,tmp,|=,tmp,%s,=",
+			src, src, dst);
+		break;
+	case ARM64_INS_REV32:
+		// REV32: reverse bytes within each 32-bit word
+		r_strbuf_appendf (sb,
+			"24,0x000000ff000000ff,%s,&,<<,tmp,=,"
+			"16,0x000000ff000000ff,8,%s,>>,&,<<,tmp,|=,"
+			"8,0x000000ff000000ff,16,%s,>>,&,<<,tmp,|=,"
+			"0x000000ff000000ff,24,%s,>>,&,tmp,|=,tmp,%s,=",
+			src, src, src, src, dst);
+		break;
+	default:
+		// REV64: reverse bytes across the whole chunk
+		r_strbuf_appendf (sb,
+			"56,0xff,%s,&,<<,tmp,=,"
+			"48,0xff,8,%s,>>,&,<<,tmp,|=,"
+			"40,0xff,16,%s,>>,&,<<,tmp,|=,"
+			"32,0xff,24,%s,>>,&,<<,tmp,|=,"
+			"24,0xff,32,%s,>>,&,<<,tmp,|=,"
+			"16,0xff,40,%s,>>,&,<<,tmp,|=,"
+			"8,0xff,48,%s,>>,&,<<,tmp,|=,"
+			"0xff,56,%s,>>,&,tmp,|=,tmp,%s,=",
+			src, src, src, src, src, src, src, src, dst);
+		break;
+	}
+}
+
+// vector REV*: reverse the element-sized lanes within the chunk the
+// instruction flips over (16 bits for REV16, 32 for REV32, 64 for REV64);
+// same shift-OR lane moves as the merged vector REV32
+static void arm64_esil_rev_vector(RAnalOp *op, csh *handle, cs_insn *insn) {
+	cs_arm64_op src = INSOP64 (1);
+	const int chunk_bits = (insn->id == ARM64_INS_REV16)? 16: (insn->id == ARM64_INS_REV32)? 32: 64;
+	const int lane_bits = vector_size (&src);
+	const int bits = vas_count (src.vas) * lane_bits;
+	if (lane_bits < 8 || lane_bits >= chunk_bits || (bits != 64 && bits != 128)) {
+		// reserved arrangement for this instruction, nothing to emulate
+		return;
+	}
+	const int halves = bits / 64;
+	const char *suffix[2] = { "l", "h" };
+	const int lanes = 64 / lane_bits;
+	const int flip = (chunk_bits / lane_bits) - 1;
+	int half, lane;
+	for (half = 0; half < halves; half++) {
+		r_strbuf_append (&op->esil, half? ",0": "0");
+		for (lane = 0; lane < lanes; lane++) {
+			COMMA (&op->esil);
+			VEC64_APPEND (&op->esil, 1, half * lanes + (lane ^ flip));
+			r_strbuf_appendf (&op->esil, ",%d,SWAP,<<,|", lane * lane_bits);
+		}
+		r_strbuf_appendf (&op->esil, ",%s%s,=", REG64 (0), suffix[half]);
+	}
+}
+
+// apply a per-lane unary op over each vas lane of src into dst
+static void arm64_esil_vec_unary(RAnalOp *op, csh *handle, cs_insn *insn) {
+	cs_arm64_op src = INSOP64 (1);
+	int lanes = vas_count (src.vas);
+	int lane_bits = vector_size (&src);
+	int i;
+	for (i = 0; i < lanes; i++) {
+		if (i > 0) {
+			COMMA (&op->esil);
+		}
+		switch (insn->id) {
+		case ARM64_INS_CNT:
+			VECARG64_APPEND (&op->esil, 1, i, 0);
+			r_strbuf_append (&op->esil, ",POPCNT,");
+			break;
+		case ARM64_INS_CLS:
+			// leading sign bits per lane: CLZ of x ^ (x << 1), with bit 0 set
+			// to stop the count at lane_bits - 1; same trick as the scalar case
+			r_strbuf_appendf (&op->esil, "%d,1,", lane_bits);
+			VECARG64_APPEND (&op->esil, 1, i, 0);
+			r_strbuf_append (&op->esil, ",<<,");
+			VECARG64_APPEND (&op->esil, 1, i, 0);
+			r_strbuf_append (&op->esil, ",^,1,|,CLZ,");
+			break;
+		case ARM64_INS_CLZ:
+			r_strbuf_appendf (&op->esil, "%d,", lane_bits);
+			VECARG64_APPEND (&op->esil, 1, i, 0);
+			r_strbuf_append (&op->esil, ",CLZ,");
+			break;
+		}
+		VEC64_DST_APPEND (&op->esil, 0, i);
+		r_strbuf_append (&op->esil, ",=");
+	}
+}
+
 static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
@@ -1592,50 +1995,126 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	case ARM64_INS_BRK:
 		r_strbuf_setf (&op->esil, "0,%d,TRAP", (int) (IMM64 (0) & 0xffff));
 		break;
+	case ARM64_INS_SHA256SU0:
+		r_strbuf_setf (&op->esil, "%d,%d,ARM64_SHA256SU0", atoi (REG64 (1) + 1), atoi (REG64 (0) + 1));
+		break;
+	case ARM64_INS_SHA256SU1:
+	case ARM64_INS_SHA256H:
+	case ARM64_INS_SHA256H2:
+		r_strbuf_setf (&op->esil, "%d,%d,%d,%s", atoi (REG64 (2) + 1), atoi (REG64 (1) + 1), atoi (REG64 (0) + 1),
+			insn->id == ARM64_INS_SHA256SU1? "ARM64_SHA256SU1": insn->id == ARM64_INS_SHA256H? "ARM64_SHA256H": "ARM64_SHA256H2");
+		break;
+	case ARM64_INS_MOVI: {
+		cs_arm64_op dst = INSOP64 (0);
+		const int bits = dst.vas? vector_size (&dst): REGBITS64 (0);
+		const int lanes = dst.vas? vas_count (dst.vas): 1;
+		if ((bits != 8 && bits != 16 && bits != 32 && bits != 64) || bits * lanes > 128) {
+			break;
+		}
+		const ut64 value = SHIFTED_IMM64 (1, bits) & bitmask_by_width[bits - 1];
+		ut64 half = 0;
+		int shift;
+		for (shift = 0; shift < 64; shift += bits) {
+			half |= value << shift;
+		}
+		if (dst.vas) {
+			r_strbuf_setf (&op->esil, "0x%"PFMT64x",%sl,=,0x%"PFMT64x",%sh,=", half, REG64 (0), bits * lanes == 128? half: 0, REG64 (0));
+		} else {
+			r_strbuf_setf (&op->esil, "0x%"PFMT64x",%s,=", half, REG64 (0));
+		}
+		break;
+	}
+	case ARM64_INS_CMHI: {
+		const int bits = vector_size (&INSOP64 (1));
+		const int lanes = vas_count (INSOP64 (1).vas);
+		if ((bits != 8 && bits != 16 && bits != 32 && bits != 64) || bits * lanes < 64 || bits * lanes > 128) {
+			break;
+		}
+		op->type = R_ANAL_OP_TYPE_CMP;
+		int half, i;
+		const int halves = bits * lanes / 64;
+		for (half = 0; half < halves; half++) {
+			r_strbuf_append (&op->esil, half? ",0": "0");
+			for (i = 0; i < 64 / bits; i++) {
+				r_strbuf_append (&op->esil, ",");
+				VEC64_APPEND (&op->esil, 1, half * (64 / bits) + i);
+				r_strbuf_append (&op->esil, ",");
+				VEC64_APPEND (&op->esil, 2, half * (64 / bits) + i);
+				r_strbuf_appendf (&op->esil, ",==,%d,$b,0x%"PFMT64x",*,%d,SWAP,<<,|", bits, bitmask_by_width[bits - 1], i * bits);
+			}
+		}
+		if (halves == 2) {
+			r_strbuf_appendf (&op->esil, ",%sh,=", REG64 (0));
+		} else {
+			r_strbuf_appendf (&op->esil, ",0,%sh,=", REG64 (0));
+		}
+		r_strbuf_appendf (&op->esil, ",%sl,=", REG64 (0));
+		break;
+	}
+	case ARM64_INS_UMINV: {
+		const int bits = vector_size (&INSOP64 (1));
+		const int lanes = vas_count (INSOP64 (1).vas);
+		if ((bits != 8 && bits != 16 && bits != 32) || lanes < 4 || bits * lanes > 128) {
+			break;
+		}
+		op->type = R_ANAL_OP_TYPE_MOV;
+		r_strbuf_setf (&op->esil, "0x%"PFMT64x",tmp,=", bitmask_by_width[bits - 1]);
+		int i;
+		for (i = 0; i < lanes; i++) {
+			r_strbuf_append (&op->esil, ",tmp,");
+			VEC64_APPEND (&op->esil, 1, i);
+			r_strbuf_appendf (&op->esil, ",==,%d,$b,?{,", bits);
+			VEC64_APPEND (&op->esil, 1, i);
+			r_strbuf_append (&op->esil, ",tmp,=,}");
+		}
+		r_strbuf_appendf (&op->esil, ",tmp,%s,=", REG64 (0));
+		break;
+	}
 	case ARM64_INS_REV:
 	case ARM64_INS_REV64:
-	// these REV* instructions were almost right, except in the cases like rev x0, x0
-	// where the use of |= caused copies of the value to be erroneously present
 	{
-		const char *r0 = REG64 (0);
-		const char *r1 = REG64 (1);
-		int size = REGSIZE64 (1);
-		if (size == 8) {
-			r_strbuf_setf (&op->esil,
-				"56,0xff,%s,&,<<,tmp,=,"
-				"48,0xff,8,%s,>>,&,<<,tmp,|=,"
-				"40,0xff,16,%s,>>,&,<<,tmp,|=,"
-				"32,0xff,24,%s,>>,&,<<,tmp,|=,"
-				"24,0xff,32,%s,>>,&,<<,tmp,|=,"
-				"16,0xff,40,%s,>>,&,<<,tmp,|=,"
-				"8,0xff,48,%s,>>,&,<<,tmp,|=,"
-				"0xff,56,%s,>>,&,tmp,|=,tmp,%s,=",
-				r1, r1, r1, r1,
-				r1, r1, r1, r1, r0);
+		cs_arm64_op src = INSOP64 (1);
+		if (is_vector_op (&src)) {
+			arm64_esil_rev_vector (op, handle, insn);
+		} else if (REGSIZE64 (1) == 8) {
+			arm64_esil_rev_dword (&op->esil, REG64 (1), REG64 (0), insn->id);
 		} else {
+			// REV Wd, Wn reverses the whole word
 			r_strbuf_setf (&op->esil,
 				"24,0xff,%s,&,<<,tmp,=,"
 				"16,0xff,8,%s,>>,&,<<,tmp,|=,"
 				"8,0xff,16,%s,>>,&,<<,tmp,|=,"
 				"0xff,24,%s,>>,&,tmp,|=,tmp,%s,=",
-				r1, r1, r1, r1, r0);
+				REG64 (1), REG64 (1), REG64 (1), REG64 (1), REG64 (0));
 		}
 		break;
 	}
 	case ARM64_INS_REV32:
-		r_strbuf_setf (&op->esil,
-			"24,0x000000ff000000ff,%s,&,<<,tmp,=,"
-			"16,0x000000ff000000ff,8,%s,>>,&,<<,tmp,|=,"
-			"8,0x000000ff000000ff,16,%s,>>,&,<<,tmp,|=,"
-			"0x000000ff000000ff,24,%s,>>,&,tmp,|=,tmp,%s,=",
-			REG64 (1), REG64 (1), REG64 (1), REG64 (1), REG64 (0));
+	{
+		cs_arm64_op src = INSOP64 (1);
+		if (is_vector_op (&src)) {
+			arm64_esil_rev_vector (op, handle, insn);
+		} else {
+			arm64_esil_rev_dword (&op->esil, REG64 (1), REG64 (0), insn->id);
+		}
 		break;
+	}
 	case ARM64_INS_REV16:
-		r_strbuf_setf (&op->esil,
-			"8,0xff00ff00ff00ff00,%s,&,>>,tmp,=,"
-			"8,0x00ff00ff00ff00ff,%s,&,<<,tmp,|=,tmp,%s,=",
-			REG64 (1), REG64 (1), REG64 (0));
+	{
+		cs_arm64_op src = INSOP64 (1);
+		if (is_vector_op (&src)) {
+			arm64_esil_rev_vector (op, handle, insn);
+		} else if (REGSIZE64 (1) == 8) {
+			arm64_esil_rev_dword (&op->esil, REG64 (1), REG64 (0), insn->id);
+		} else {
+			// REV16 Wd, Wn swaps bytes within each 16-bit halfword of the word
+			r_strbuf_setf (&op->esil,
+				"8,0xff00ff00,%s,&,>>,tmp,=,"
+				"8,0x00ff00ff,%s,&,<<,tmp,|=,tmp,%s,=",
+				REG64 (1), REG64 (1), REG64 (0));
+		}
 		break;
+	}
 	case ARM64_INS_ADR:
 		// TODO: must be 21bit signed
 		r_strbuf_setf (&op->esil,
@@ -1665,10 +2144,20 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		r_strbuf_setf (&op->esil, "%s,%s,*,%s,-,%s,=",
 			REG64 (2), REG64 (1), REG64 (3), REG64 (0));
 		break;
+#if CS_API_MAJOR < 6
+	// capstone 6 has no ids for these, it reports them as aliases of umsubl and smsubl
+	case ARM64_INS_UMNEGL:
+#endif
 	case ARM64_INS_MNEG:
 		r_strbuf_setf (&op->esil, "%s,%s,*,0,-,%s,=",
 			REG64 (2), REG64 (1), REG64 (0));
 		break;
+#if CS_API_MAJOR < 6
+	case ARM64_INS_SMNEGL:
+		r_strbuf_setf (&op->esil, "%d,%s,~,%d,%s,~,*,0,-,%s,=",
+			REGBITS64 (1), REG64 (2), REGBITS64 (1), REG64 (1), REG64 (0));
+		break;
+#endif
 #if CS_API_MAJOR >= 6
 	case ARM64_INS_ADDPT:
 		if (REG64 (0)[0] != 'z') {
@@ -1986,7 +2475,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		break;
 	}
 	case ARM64_INS_FABS:
-		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,DUP,0,I2D,F<,?{,-F,},D2F,%s,=",
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,DUP,0,I2D,SWAP,F<,?{,-F,},D2F,%s,=",
 			REGBITS64 (1), REG64 (1), REG64 (0));
 		break;
 	case ARM64_INS_FNEG:
@@ -2016,28 +2505,28 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		FPOPCALL_NEGATE ("*");
 		break;
 	case ARM64_INS_FMADD:
-		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,%d,%s,F2D,F+,D2F,%s,=",
-			REGBITS64 (1), REG64 (1),
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,%d,%s,F2D,F*+,D2F,%s,=",
+			REGBITS64 (3), REG64 (3),
 			REGBITS64 (2), REG64 (2),
-			REGBITS64 (3), REG64 (3), REG64 (0));
+			REGBITS64 (1), REG64 (1), REG64 (0));
 		break;
 	case ARM64_INS_FNMADD:
-		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,-F,%d,%s,F2D,F+,-F,D2F,%s,=",
-			REGBITS64 (1), REG64 (1),
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,-F,%d,%s,F2D,%d,%s,F2D,-F,F*+,D2F,%s,=",
+			REGBITS64 (3), REG64 (3),
 			REGBITS64 (2), REG64 (2),
-			REGBITS64 (3), REG64 (3), REG64 (0));
+			REGBITS64 (1), REG64 (1), REG64 (0));
 		break;
 	case ARM64_INS_FMSUB:
-		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,%d,%s,F2D,F-,D2F,%s,=",
-			REGBITS64 (1), REG64 (1),
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,%d,%s,F2D,-F,F*+,D2F,%s,=",
+			REGBITS64 (3), REG64 (3),
 			REGBITS64 (2), REG64 (2),
-			REGBITS64 (3), REG64 (3), REG64 (0));
+			REGBITS64 (1), REG64 (1), REG64 (0));
 		break;
 	case ARM64_INS_FNMSUB:
-		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,-F,%d,%s,F2D,F-,-F,D2F,%s,=",
-			REGBITS64 (1), REG64 (1),
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,-F,%d,%s,F2D,%d,%s,F2D,F*+,D2F,%s,=",
+			REGBITS64 (3), REG64 (3),
 			REGBITS64 (2), REG64 (2),
-			REGBITS64 (3), REG64 (3), REG64 (0));
+			REGBITS64 (1), REG64 (1), REG64 (0));
 		break;
 	case ARM64_INS_FDIV:
 		FPOPCALL ("/");
@@ -2059,8 +2548,6 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	case ARM64_INS_BRAAZ:
 	case ARM64_INS_BRAB:
 	case ARM64_INS_BRABZ:
-		r_strbuf_setf (&op->esil, "%s,pc,+,%s,+,pc,:=", REG64 (0), REG64(1));
-		break;
 #endif
 	case ARM64_INS_BR:
 		r_strbuf_setf (&op->esil, "%s,pc,:=", REG64 (0));
@@ -2085,9 +2572,38 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		r_strbuf_setf (&op->esil, "pc,lr,:=,%s,pc,:=", REG64 (0));
 		break;
 	case ARM64_INS_CLZ:
-		r_strbuf_setf (&op->esil, "%d,%s,CLZ,%s,=",
-			8 * REGSIZE64 (0), REG64 (1), REG64 (0));
+	{
+		cs_arm64_op src = INSOP64 (1);
+		if (is_vector_op (&src)) {
+			arm64_esil_vec_unary (op, handle, insn);
+		} else {
+			r_strbuf_setf (&op->esil, "%d,%s,CLZ,%s,=",
+				8 * REGSIZE64 (0), REG64 (1), REG64 (0));
+		}
 		break;
+	}
+	case ARM64_INS_CLS:
+	{
+		cs_arm64_op src = INSOP64 (1);
+		if (is_vector_op (&src)) {
+			arm64_esil_vec_unary (op, handle, insn);
+		} else {
+			// leading sign bits: CLZ of x ^ (x << 1), with bit 0 set to stop the count at size - 1
+			r_strbuf_setf (&op->esil, "%d,1,%s,<<,%s,^,1,|,CLZ,%s,=",
+				8 * REGSIZE64 (0), REG64 (1), REG64 (1), REG64 (0));
+		}
+		break;
+	}
+	case ARM64_INS_CNT:
+	{
+		cs_arm64_op src = INSOP64 (1);
+		// scalar cnt is a base A64 instruction gated by FEAT_CSSC, which the
+		// bundled capstone does not decode, so only the vector form lands here
+		if (is_vector_op (&src)) {
+			arm64_esil_vec_unary (op, handle, insn);
+		}
+		break;
+	}
 	case ARM64_INS_LDRH:
 	case ARM64_INS_LDUR:
 	case ARM64_INS_LDURB:
@@ -2305,7 +2821,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		ARG64_APPEND (&op->esil, 0);
 		r_strbuf_append (&op->esil, ",-,");
 		ARG64_APPEND (&op->esil, 0);
-		r_strbuf_append (&op->esil, ",^,&,>>,vf,:=");
+		r_strbuf_append (&op->esil, ",^,&,>>,1,&,vf,:=");
 
 		// an AL cond opens no ?{, so there is no else arm
 		if (*postfix && insn->id == ARM64_INS_CCMP) {
@@ -2544,6 +3060,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		break;
 	}
 	case ARM64_INS_LDP: // ldp x29, x30, [sp], 0x10
+	case ARM64_INS_LDNP: // ldnp q0, q1, [x1] (relaxed non-temporal pair load)
 	{
 		const int disp = (int)MEMDISP64 (2);
 		char sign = (disp >= 0)? '+': '-';
@@ -2592,6 +3109,20 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		// (rn:rm) >> lsb: the high half shifts left by regsize - lsb
 		r_strbuf_setf (&op->esil, "%" PFMT64d ",%s,>>,%d,%s,<<,|,%s,=",
 			IMM64 (3), REG64 (2), (int)(REGBITS64 (1) - IMM64 (3)), REG64 (1), REG64 (0));
+		break;
+	case ARM64_INS_LD1:
+	case ARM64_INS_LD1R:
+	case ARM64_INS_LD2:
+	case ARM64_INS_LD2R:
+	case ARM64_INS_LD3:
+	case ARM64_INS_LD3R:
+	case ARM64_INS_LD4:
+	case ARM64_INS_LD4R:
+	case ARM64_INS_ST1:
+	case ARM64_INS_ST2:
+	case ARM64_INS_ST3:
+	case ARM64_INS_ST4:
+		arm64_esil_vec_ldst (op, handle, insn, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config));
 		break;
 	case ARM64_INS_RBIT:
 		// slightly shorter expression to reverse bits
@@ -2836,6 +3367,87 @@ static void arm32carry(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 		rev? rn: op2, comp, rev? op2: rn, ARG (0));
 }
 
+// capstone v5 lists cpsr as written by adc, sbc and rsc even without the s suffix
+static bool arm32addsub_sets_flags(cs_insn *insn) {
+	switch (insn->id) {
+	case ARM_INS_ADC:
+	case ARM_INS_SBC:
+	case ARM_INS_RSC:
+		return insn->mnemonic[3] == 's';
+	case ARM_INS_ADD:
+	case ARM_INS_SUB:
+	case ARM_INS_RSB:
+		return insn->detail->arm.update_flags;
+	case ARM_INS_CMP:
+	case ARM_INS_CMN:
+		return true;
+	default:
+		return false;
+	}
+}
+
+// NZCV of AddWithCarry (x, y, carry_in), computed before the destination is written because it can be
+// one of the operands. The carry is left on the stack and popped into cf once the result is stored, as
+// adc, sbc and rsc read the old cf.
+static void arm32addsub_flags(RArchSession *as, RAnalOp *op, ut64 addr, csh *handle, cs_insn *insn,
+	int pcdelta, RStringShort str[32]) {
+	if (!arm32addsub_sets_flags (insn) || (ISREG (0) && REGID (0) == ARM_REG_PC)) {
+		return;
+	}
+	const bool three = OPCOUNT () > 2;
+	char rn[64], op2[64];
+	if (ISREG (three? 1: 0) && REGID (three? 1: 0) == ARM_REG_PC) {
+		snprintf (rn, sizeof (rn), "0x%"PFMT64x, addr + pcdelta);
+	} else {
+		r_str_ncpy (rn, three? ARG (1): ARG (0), sizeof (rn));
+	}
+	if (OPCOUNT () > 3) {
+		snprintf (op2, sizeof (op2), "%s,%s,ROR", ARG (3), ARG (2));
+	} else if (ISREG (three? 2: 1) && REGID (three? 2: 1) == ARM_REG_PC) {
+		snprintf (op2, sizeof (op2), "0x%"PFMT64x, addr + pcdelta);
+	} else {
+		r_str_ncpy (op2, three? ARG (2): ARG (1), sizeof (op2));
+	}
+	const char *x = rn;
+	const char *y = op2;
+	const char *ny = "";
+	const char *cin = "cf";
+	switch (insn->id) {
+	case ARM_INS_ADD:
+	case ARM_INS_CMN:
+		cin = "0";
+		break;
+	case ARM_INS_SUB:
+	case ARM_INS_CMP:
+		cin = "1";
+		/* fallthrough */
+	case ARM_INS_SBC:
+		ny = ",0xffffffff,^";
+		break;
+	case ARM_INS_RSB:
+		cin = "1";
+		/* fallthrough */
+	case ARM_INS_RSC:
+		x = op2;
+		y = rn;
+		ny = ",0xffffffff,^";
+		break;
+	}
+	// a register-specified shift can leave bits above bit 31
+	char *ex = r_str_newf ("%s,0xffffffff,&", x);
+	char *ey = r_str_newf ("%s,0xffffffff,&%s", y, ny);
+	char *sum = r_str_newf ("%s,%s,+,%s,+", cin, ey, ex);
+	r_strbuf_appendf (&op->esil,
+		"31,%s,0xffffffff,&,>>,nf,:=,"
+		"%s,0xffffffff,&,!,zf,:=,"
+		"31,%s,%s,0xffffffff,&,^,%s,%s,0xffffffff,&,^,&,>>,vf,:=,"
+		"32,%s,>>,",
+		sum, sum, ex, sum, ey, sum, sum);
+	free (ex);
+	free (ey);
+	free (sum);
+}
+
 static void arm32math(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	csh *handle, cs_insn *insn, int pcdelta, RStringShort str[32], const char *opchar, int negate) {
 	const char *dest = ARG(0);
@@ -2936,6 +3548,8 @@ static void arm32mathaddsub(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 
 		(!strcmp (opchar, "+")? "30,$c,31,$c,^,31,$c": "30,$c,31,$c,^,32,$b"));
 }
 
+static int arm_memref_size(RAnalOp *op, cs_insn *insn, int x, int bits);
+
 static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, bool thumb) {
 	int i;
 	const char *postfix = NULL;
@@ -2952,6 +3566,71 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 	postfix = arm_prefix_cond (op, insn->detail->arm.cc);
 
 	switch (insn->id) {
+	case ARM_INS_VLDR:
+	case ARM_INS_VSTR:
+		if (OPCOUNT () == 2 && ISREG (0) && ISMEM (1) && REGSIZE32 (0) <= 8) {
+			if (insn->id == ARM_INS_VSTR) {
+				r_strbuf_appendf (&op->esil, "%s,", REG (0));
+			}
+			if (REGBASE (1) == ARM_REG_PC) {
+				r_strbuf_appendf (&op->esil, "0x%" PFMT64x, (ut64)(ut32)((addr & ~3ULL) + pcdelta + MEMDISP (1)));
+			} else {
+				r_strbuf_appendf (&op->esil, "%d,%s,+,0xffffffff,&", MEMDISP (1), MEMBASE (1));
+			}
+			if (insn->id == ARM_INS_VLDR) {
+				r_strbuf_appendf (&op->esil, ",[%u],%s,=", REGSIZE32 (0), REG (0));
+			} else {
+				r_strbuf_appendf (&op->esil, ",=[%u]", REGSIZE32 (0));
+			}
+		}
+		break;
+	case ARM_INS_VADD:
+	case ARM_INS_VSUB:
+	case ARM_INS_VMUL:
+	case ARM_INS_VDIV:
+		if (OPCOUNT () == 3 && ISREG (0) && ISREG (1) && ISREG (2) &&
+				((REGID (0) >= ARM_REG_S0 && REGID (0) <= ARM_REG_S31 &&
+				insn->detail->arm.vector_data == ARM_VECTORDATA_F32) ||
+				(REGID (0) >= ARM_REG_D0 && REGID (0) <= ARM_REG_D31 &&
+				insn->detail->arm.vector_data == ARM_VECTORDATA_F64)) &&
+				REGSIZE32 (0) == REGSIZE32 (1) && REGSIZE32 (0) == REGSIZE32 (2)) {
+			const char *math = insn->id == ARM_INS_VADD? "+": insn->id == ARM_INS_VSUB? "-": insn->id == ARM_INS_VMUL? "*": "/";
+			r_strbuf_appendf (&op->esil, "%u,DUP,%s,F2D,%u,%s,F2D,F%s,D2F,%s,=",
+				REGBITS32 (0), REG (2), REGBITS32 (0), REG (1), math, REG (0));
+		}
+		break;
+	case ARM_INS_VCMP:
+	case ARM_INS_VCMPE:
+		if (OPCOUNT () == 2 && ISREG (0) && REGSIZE32 (0) <= 8 &&
+				(ISREG (1) || (ISIMM (1) && !IMM (1)) ||
+				(INSOP (1).type == ARM_OP_FP && INSOP (1).fp == 0.0))) {
+			const unsigned int bits = REGBITS32 (0);
+			const char *right = ISREG (1)? REG (1): "0";
+			// Unordered is NZCV=0011; ordered results are less=1000, equal=0110, greater=0010.
+			r_strbuf_appendf (&op->esil,
+				"%u,%s,F2D,%u,%s,F2D,F==,%u,%s,F2D,%u,%s,F2D,F==,&,?{,"
+				"%u,%s,F2D,%u,%s,F2D,F==,?{,0x60000000,}{,"
+				"%u,%s,F2D,%u,%s,F2D,F<,?{,0x80000000,}{,0x20000000,},},"
+				"}{,0x30000000,},0x0fffffff,fpscr,&,|,fpscr,:=",
+				bits, REG (0), bits, REG (0), bits, right, bits, right,
+				bits, right, bits, REG (0), bits, right, bits, REG (0));
+		}
+		break;
+#if CS_API_MAJOR == 5
+	case ARM_INS_FMSTAT:
+#endif
+	case ARM_INS_VMRS:
+		if (!OPCOUNT () || REGID (0) == ARM_REG_APSR_NZCV) {
+			r_strbuf_append (&op->esil, "31,fpscr,>>,1,&,nf,:=,30,fpscr,>>,1,&,zf,:=,29,fpscr,>>,1,&,cf,:=,28,fpscr,>>,1,&,vf,:=");
+		} else if (OPCOUNT () == 2 && REGID (1) == ARM_REG_FPSCR) {
+			r_strbuf_appendf (&op->esil, "fpscr,%s,=", REG (0));
+		}
+		break;
+	case ARM_INS_VMSR:
+		if (OPCOUNT () == 2 && REGID (0) == ARM_REG_FPSCR) {
+			r_strbuf_appendf (&op->esil, "%s,fpscr,=", REG (1));
+		}
+		break;
 	case ARM_INS_CLZ:
 		r_strbuf_appendf (&op->esil, "32,%s,CLZ,%s,=", REG (1), REG (0));
 		break;
@@ -2959,10 +3638,12 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 		r_strbuf_appendf (&op->esil, "0x%"PFMT64x",pc,:=", addr + 2);
 		break;
 	case ARM_INS_BKPT:
-		r_strbuf_setf (&op->esil, "%d,%d,TRAP", IMM (0), IMM (0));
+		r_strbuf_appendf (&op->esil, "%d,%d,TRAP", IMM (0), IMM (0));
 		break;
 	case ARM_INS_NOP:
-		r_strbuf_set (&op->esil, ",");
+		if (r_strbuf_is_empty (&op->esil)) {
+			r_strbuf_set (&op->esil, ",");
+		}
 		break;
 	case ARM_INS_BL:
 	case ARM_INS_BLX:
@@ -2991,11 +3672,13 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 		break;
 	case ARM_INS_ADDW:
 	case ARM_INS_ADD:
+		arm32addsub_flags (as, op, addr, handle, insn, pcdelta, str);
 		MATH32 ("+");
 		break;
 	case ARM_INS_ADC:
 	case ARM_INS_SBC:
 	case ARM_INS_RSC:
+		arm32addsub_flags (as, op, addr, handle, insn, pcdelta, str);
 		arm32carry (as, op, handle, insn, str);
 		break;
 	case ARM_INS_SSUB16:
@@ -3004,10 +3687,20 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 		break;
 	case ARM_INS_SUBW:
 	case ARM_INS_SUB:
+		arm32addsub_flags (as, op, addr, handle, insn, pcdelta, str);
 		MATH32 ("-");
 		break;
 	case ARM_INS_MUL:
 		MATH32 ("*");
+		break;
+	case ARM_INS_SDIV:
+		// a zero divisor yields zero when divide traps are disabled
+		r_strbuf_appendf (&op->esil, "%s,!,?{,0,%s,=,}{,32,%s,~,32,%s,~,~/,0xffffffff,&,%s,=,}",
+			ARG (2), REG (0), ARG (2), ARG (1), REG (0));
+		break;
+	case ARM_INS_UDIV:
+		r_strbuf_appendf (&op->esil, "%s,!,?{,0,%s,=,}{,%s,%s,/,%s,=,}",
+			ARG (2), REG (0), ARG (2), ARG (1), REG (0));
 		break;
 	case ARM_INS_AND:
 		MATH32 ("&");
@@ -3113,7 +3806,6 @@ PUSH { r4, r5, r6, r7, lr }
 		break;
 	}
 	case ARM_INS_VSTMIA:
-		r_strbuf_set (&op->esil, "");
 		width = 0;
 		for (i = 1; i < insn->detail->arm.op_count; i++) {
 			r_strbuf_appendf (&op->esil, "%s,%d,%s,+,=[%d],",
@@ -3126,7 +3818,6 @@ PUSH { r4, r5, r6, r7, lr }
 		}
 		break;
 	case ARM_INS_VSTMDB:
-		r_strbuf_set (&op->esil, "");
 		width = 0;
 		for (i = insn->detail->arm.op_count - 1; i > 0; i--) {
 			width += REGSIZE32 (i);
@@ -3137,7 +3828,6 @@ PUSH { r4, r5, r6, r7, lr }
 		r_strbuf_appendf (&op->esil, "%d,%s,-=,", width, ARG (0));
 		break;
 	case ARM_INS_VLDMIA:
-		r_strbuf_set (&op->esil, "");
 		width = 0;
 		for (i = 1; i < insn->detail->arm.op_count; i++) {
 			r_strbuf_appendf (&op->esil, "%d,%s,+,[%d],%s,=,",
@@ -3150,7 +3840,6 @@ PUSH { r4, r5, r6, r7, lr }
 		}
 		break;
 	case ARM_INS_VLDMDB:
-		r_strbuf_set (&op->esil, "");
 		width = 0;
 		for (i = insn->detail->arm.op_count - 1; i > 0; i--) {
 			width += REGSIZE32 (i);
@@ -3216,11 +3905,9 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		break;
 	}
 	case ARM_INS_CMP:
-		r_strbuf_appendf (&op->esil, "%s,%s,==", ARG (1), ARG (0));
-		break;
 	case ARM_INS_CMN:
-		// rn + op2 as rn - (-op2) so == commits old/cur for the shared $z/$c/$o block
-		r_strbuf_appendf (&op->esil, "%s,-1,*,%s,==", ARG (1), ARG (0));
+		arm32addsub_flags (as, op, addr, handle, insn, pcdelta, str);
+		r_strbuf_append (&op->esil, "cf,:=");
 		break;
 	case ARM_INS_MOVT:
 		// replace rd[31:16] with imm16, preserving rd[15:0]
@@ -3419,11 +4106,14 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 	case ARM_INS_TST:
 		r_strbuf_appendf (&op->esil, "0,%s,%s,&,==", ARG(1), ARG(0));
 		break;
+	case ARM_INS_TEQ:
+		r_strbuf_appendf (&op->esil, "0,%s,%s,^,==", ARG (1), ARG (0));
+		break;
 	case ARM_INS_LDRD:
 		addr &= ~3LL;
 		if (MEMDISP (2) < 0) {
 			if (REGBASE (2) == ARM_REG_PC) {
-				op->refptr = 4;
+				op->refptr = 8;
 				op->ptr = addr + pcdelta + MEMDISP (2);
 				r_strbuf_appendf (&op->esil, "0x%"PFMT64x",2,2,0x%"PFMT64x
 					",>>,<<,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
@@ -3443,7 +4133,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			}
 		} else {
 			if (REGBASE (2) == ARM_REG_PC) {
-				op->refptr = 4;
+				op->refptr = 8;
 				op->ptr = addr + pcdelta + MEMDISP (2);
 				if (HASMEMINDEX (2) || ISREG (2)) {
 					const char op_index = ISMEMINDEXSUB (2)? '-': '+';
@@ -3561,7 +4251,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		addr &= ~3LL;
 		if (MEMDISP (1) < 0) {
 			if (REGBASE (1) == ARM_REG_PC) {
-				op->refptr = 4;
+				op->refptr = arm_memref_size (op, insn, 1, 32);
 				op->ptr = addr + pcdelta + MEMDISP(1);
 				r_strbuf_appendf (&op->esil, "0x%"PFMT64x",2,2,0x%"PFMT64x
 					",>>,<<,+,0xffffffff,&,[%d],%s,%s,=",
@@ -3579,7 +4269,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			}
 		} else {
 			if (REGBASE(1) == ARM_REG_PC) {
-				op->refptr = 4;
+				op->refptr = arm_memref_size (op, insn, 1, 32);
 				op->ptr = addr + pcdelta + MEMDISP(1);
 				if (ISMEM(1) && LSHIFT2(1)) {
 					r_strbuf_appendf (&op->esil, "2,2,0x%"PFMT64x
@@ -3654,6 +4344,22 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		}
 		r_strbuf_appendf (&op->esil, "DUP,!,SWAP,&,%s,SWAP,cpsr,&,|,cpsr,=", REG(1));
 		break;
+	case ARM_INS_RBIT:
+		// swap adjacent bits, then pairs, nibbles, bytes and halfwords
+		r_strbuf_appendf (&op->esil, "%s,DUP,1,SWAP,>>,0x55555555,&,SWAP,0x55555555,&,1,SWAP,<<,|,DUP,2,SWAP,>>,0x33333333,&,SWAP,0x33333333,&,2,SWAP,<<,|,DUP,4,SWAP,>>,0x0f0f0f0f,&,SWAP,0x0f0f0f0f,&,4,SWAP,<<,|,DUP,8,SWAP,>>,0x00ff00ff,&,SWAP,0x00ff00ff,&,8,SWAP,<<,|,DUP,16,SWAP,>>,SWAP,16,SWAP,<<,0xffffffff,&,|,%s,=", REG (1), REG (0));
+		break;
+	case ARM_INS_SBFX:
+		if (IMM (3) > 0 && IMM (3) <= 32 - IMM (2)) {
+			r_strbuf_appendf (&op->esil, "%d,%d,%s,%d,%"PFMT64u",<<,&,>>,~,%s,=",
+				IMM (3), IMM (2), REG (1), IMM (2), bitmask_by_width[IMM (3) - 1], REG (0));
+		}
+		break;
+	case ARM_INS_PKHBT:
+		r_strbuf_appendf (&op->esil, "0xffff0000,%s,&,0xffff,%s,&,|,%s,=", ARG (2), ARG (1), REG (0));
+		break;
+	case ARM_INS_PKHTB:
+		r_strbuf_appendf (&op->esil, "0xffff,%s,&,0xffff0000,%s,&,|,%s,=", ARG (2), ARG (1), REG (0));
+		break;
 	case ARM_INS_UBFX:
 		if (IMM (3) > 0 && IMM (3) <= 32 - IMM (2)) {
 			size_t index = IMM (3) - 1;
@@ -3667,7 +4373,40 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 	case ARM_INS_UXTB:
 		r_strbuf_appendf (&op->esil, "%s,0xff,&,%s,=", ARG(1), REG(0));
 		break;
+	case ARM_INS_UXTH:
+		r_strbuf_appendf (&op->esil, "%s,0xffff,&,%s,=", ARG (1), REG (0));
+		break;
+	case ARM_INS_UXTB16:
+		r_strbuf_appendf (&op->esil, "%s,0x00ff00ff,&,%s,=", ARG (1), REG (0));
+		break;
+	case ARM_INS_SXTB16:
+		// bytes 0 and 2 sign-extended into the two halfwords
+		r_strbuf_appendf (&op->esil, "0xffff0000,16,8,0xff,16,%s,>>,&,~,<<,&,0xffff,8,0xff,%s,&,~,&,|,%s,=",
+			ARG (1), ARG (1), REG (0));
+		break;
+	case ARM_INS_UXTAB:
+	case ARM_INS_UXTAH:
+		r_strbuf_appendf (&op->esil, "%s,%s,&,%s,+,%s,=",
+			ARG (2), (insn->id == ARM_INS_UXTAB)? "0xff": "0xffff", ARG (1), REG (0));
+		break;
+	case ARM_INS_SXTAB:
+	case ARM_INS_SXTAH:
+		r_strbuf_appendf (&op->esil, "%s,%s,%s,&,~,%s,+,%s,=",
+			(insn->id == ARM_INS_SXTAB)? "8": "16", (insn->id == ARM_INS_SXTAB)? "0xff": "0xffff",
+			ARG (2), ARG (1), REG (0));
+		break;
+	case ARM_INS_UXTAB16:
+		// each halfword of rn plus the byte below it in rm, without a carry between the halves
+		r_strbuf_appendf (&op->esil, "0xffff0000,0xff0000,%s,&,0xffff0000,%s,&,+,&,0xffff,0xff,%s,&,%s,+,&,|,%s,=",
+			ARG (2), ARG (1), ARG (2), ARG (1), REG (0));
+		break;
+	case ARM_INS_SXTAB16:
+		r_strbuf_appendf (&op->esil, "0xffff0000,16,8,0xff,16,%s,>>,&,~,<<,0xffff0000,%s,&,+,&,"
+			"0xffff,8,0xff,%s,&,~,%s,+,&,|,%s,=",
+			ARG (2), ARG (1), ARG (2), ARG (1), REG (0));
+		break;
 	case ARM_INS_RSB:
+		arm32addsub_flags (as, op, addr, handle, insn, pcdelta, str);
 		if (OPCOUNT () == 2) {
 			r_strbuf_appendf (&op->esil, "%s,%s,-=", ARG(0), ARG(1));
 		} else if (OPCOUNT () == 3) {
@@ -3690,8 +4429,32 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			REG(1), REG(2), REG(3), REG(0));
 		break;
 	case ARM_INS_UMULL:
-		r_strbuf_appendf (&op->esil, "32,%s,%s,*,DUP,0xffffffff,&,%s,=,>>,%s,=",
-			REG(2), REG(3), REG(0), REG(1));
+	case ARM_INS_SMULL:
+	case ARM_INS_UMLAL:
+	case ARM_INS_SMLAL:
+	case ARM_INS_UMAAL:
+		{
+			// rdhi:rdlo = rn * rm, plus rdhi:rdlo (umlal, smlal) or plus rdhi and rdlo (umaal), as one 64-bit sum
+			const bool sign = insn->id == ARM_INS_SMULL || insn->id == ARM_INS_SMLAL;
+			const char *lo = REG (0);
+			const char *hi = REG (1);
+			if (sign) {
+				r_strbuf_appendf (&op->esil, "32,32,%s,~,32,%s,~,*", REG (2), REG (3));
+			} else {
+				r_strbuf_appendf (&op->esil, "32,%s,%s,*", REG (2), REG (3));
+			}
+			if (insn->id == ARM_INS_UMLAL || insn->id == ARM_INS_SMLAL) {
+				r_strbuf_appendf (&op->esil, ",32,%s,<<,%s,|,+", hi, lo);
+			} else if (insn->id == ARM_INS_UMAAL) {
+				r_strbuf_appendf (&op->esil, ",%s,+,%s,+", hi, lo);
+			}
+			r_strbuf_appendf (&op->esil, ",DUP,0xffffffff,&,%s,=,>>,%s,=", lo, hi);
+			if (insn->detail->arm.update_flags && insn->id != ARM_INS_UMAAL) {
+				// the shared nz update reads the last compared value: give it the sign of rdhi,
+				// and make it zero only when all 64 bits are
+				r_strbuf_appendf (&op->esil, ",0,%s,%s,!,!,|,==", hi, lo);
+			}
+		}
 		break;
 	case ARM_INS_MLS:
 		r_strbuf_appendf (&op->esil, "%s,%s,*,%s,-,0xffffffff,&,%s,=",
@@ -3785,11 +4548,20 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 	// many errors
 	if (insn->detail->arm.update_flags) {
 		switch(insn->id) {
+#if CS_API_MAJOR == 5
+		case ARM_INS_FMSTAT:
+#endif
+		case ARM_INS_VMRS:
+		case ARM_INS_VMSR:
+		case ARM_INS_VCMP:
+		case ARM_INS_VCMPE:
+			break;
 		case ARM_INS_UADD8:
 			// the parallel add/sub family writes GE, never NZCV
 			break;
 		case ARM_INS_CMP:
-			r_strbuf_append (&op->esil, ",$z,zf,:=,31,$s,nf,:=,32,$b,!,cf,:=,31,$o,vf,:=");
+		case ARM_INS_CMN:
+			// set by arm32addsub_flags
 			break;
 		case ARM_INS_ADD:
 		case ARM_INS_RSB:
@@ -3797,8 +4569,10 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		case ARM_INS_SUB:
 		case ARM_INS_SBC:
 		case ARM_INS_ADC:
-		case ARM_INS_CMN:
-			r_strbuf_append (&op->esil, ",$z,zf,:=,31,$s,nf,:=,31,$c,cf,:=,31,$o,vf,:=");
+			// nzv were set by arm32addsub_flags, which left the carry on the stack
+			if (arm32addsub_sets_flags (insn) && !(ISREG (0) && REGID (0) == ARM_REG_PC)) {
+				r_strbuf_append (&op->esil, ",cf,:=");
+			}
 			break;
 		default:
 			r_strbuf_append (&op->esil, ",$z,zf,:=,31,$s,nf,:=");
@@ -4118,10 +4892,16 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->type = R_ANAL_OP_TYPE_SYNC; // or cache
 		break;
 	//  XXX unimplemented instructions
+	case ARM64_INS_CLZ:
+	case ARM64_INS_CLS:
+	case ARM64_INS_CNT:
 	case ARM64_INS_DUP:
 	case ARM64_INS_XTN:
 	case ARM64_INS_XTN2:
+	case ARM64_INS_REV:
 	case ARM64_INS_REV64:
+	case ARM64_INS_REV16:
+	case ARM64_INS_REV32:
 	case ARM64_INS_EXT:
 	case ARM64_INS_INS:
 		op->type = R_ANAL_OP_TYPE_MOV;
@@ -4222,6 +5002,26 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -(st64)IMM64 (2);
 		}
+		break;
+	case ARM64_INS_ST1:
+	case ARM64_INS_ST2:
+	case ARM64_INS_ST3:
+	case ARM64_INS_ST4:
+		// the fixed post-index offset is derived by vec_ldst_wb when
+		// Capstone leaves the operand out
+		op->type = R_ANAL_OP_TYPE_STORE;
+		arm64_vec_ldst_stack (op, insn);
+		break;
+	case ARM64_INS_LD1:
+	case ARM64_INS_LD1R:
+	case ARM64_INS_LD2:
+	case ARM64_INS_LD2R:
+	case ARM64_INS_LD3:
+	case ARM64_INS_LD3R:
+	case ARM64_INS_LD4:
+	case ARM64_INS_LD4R:
+		op->type = R_ANAL_OP_TYPE_LOAD;
+		arm64_vec_ldst_stack (op, insn);
 		break;
 	case ARM64_INS_LDUR:
 	case ARM64_INS_LDURB:
@@ -4524,6 +5324,39 @@ jmp $$ + 4 + ( [delta] * 2 )
 			}
 		}
 		break;
+	case ARM_INS_VLDR:
+	case ARM_INS_VSTR:
+		op->type = insn->id == ARM_INS_VLDR? R_ANAL_OP_TYPE_LOAD: R_ANAL_OP_TYPE_STORE;
+		op->family = R_ANAL_OP_FAMILY_FPU;
+		op->ptrsize = REGSIZE32 (0);
+		if (ISMEM (1) && REGBASE (1) == ARM_REG_PC) {
+			op->ptr = (ut32)((addr & ~3ULL) + (thumb? 4: 8) + MEMDISP (1));
+			op->refptr = REGSIZE32 (0);
+		}
+		break;
+	case ARM_INS_VADD:
+	case ARM_INS_VSUB:
+		op->type = insn->id == ARM_INS_VADD? R_ANAL_OP_TYPE_ADD: R_ANAL_OP_TYPE_SUB;
+		if (op->family != R_ANAL_OP_FAMILY_VEC) {
+			op->family = R_ANAL_OP_FAMILY_FPU;
+		}
+		break;
+	case ARM_INS_VCMPE:
+		op->type = R_ANAL_OP_TYPE_CMP;
+		op->family = R_ANAL_OP_FAMILY_FPU;
+		break;
+#if CS_API_MAJOR == 5
+	case ARM_INS_FMSTAT:
+#endif
+	case ARM_INS_VMRS:
+	case ARM_INS_VMSR:
+		op->type = R_ANAL_OP_TYPE_MOV;
+		op->family = R_ANAL_OP_FAMILY_FPU;
+		break;
+	case ARM_INS_MLA:
+	case ARM_INS_MLS:
+		op->type = R_ANAL_OP_TYPE_MUL;
+		break;
 	case ARM_INS_IT:
 		anal_itblock (as, insn);
 		op->cycles = 2;
@@ -4551,6 +5384,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		for (i = 0; i < insn->detail->arm.op_count; i++) {
 			if (insn->detail->arm.operands[i].type == ARM_OP_REG &&
 					insn->detail->arm.operands[i].reg == ARM_REG_PC) {
+				op->disp = i * 4;
 				if ((arm_cc)insn->detail->arm.cc == ARM_CC_AL) {
 					op->type = R_ANAL_OP_TYPE_RET;
 				} else {
@@ -4627,6 +5461,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->cycles = 4;
 		/* fall-thru */
 	case ARM_INS_VDIV:
+		op->family = R_ANAL_OP_FAMILY_FPU;
 		op->type = R_ANAL_OP_TYPE_DIV;
 		break;
 	case ARM_INS_MUL:
@@ -4637,6 +5472,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->cycles = 4;
 		/* fall-thru */
 	case ARM_INS_VMUL:
+		if (insn->id == ARM_INS_VMUL && op->family != R_ANAL_OP_FAMILY_VEC) {
+			op->family = R_ANAL_OP_FAMILY_FPU;
+		}
 		op->type = R_ANAL_OP_TYPE_MUL;
 		break;
 	case ARM_INS_TRAP:
@@ -4707,12 +5545,16 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_CMP:
 	case ARM_INS_CMN:
 	case ARM_INS_TST:
+	case ARM_INS_TEQ:
 		if (ISIMM(1)) {
 			op->val = IMM(1);
 		}
 		op->reg = r_str_getf (cs_reg_name (handle, INSOP (0).reg));
 		/* fall-thru */
 	case ARM_INS_VCMP:
+		if (insn->id == ARM_INS_VCMP) {
+			op->family = R_ANAL_OP_FAMILY_FPU;
+		}
 		op->type = R_ANAL_OP_TYPE_CMP;
 		break;
 	case ARM_INS_LSL:
@@ -4813,9 +5655,12 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->stackop = R_ANAL_STACK_GET;
 			op->stackptr = 0;
 			op->ptr = -MEMDISP (1);
+		} else if (ISMEM (2) && REGBASE (2) == ARM_REG_PC) {
+			op->ptr = (addr & ~3LL) + (thumb? 4: 8) + MEMDISP (2);
+			op->refptr = arm_memref_size (op, insn, 2, 32);
 		} else if (ISMEM (1) && REGBASE (1) == ARM_REG_PC) {
 			op->ptr = (addr & ~3LL) + (thumb? 4: 8) + MEMDISP (1);
-			op->refptr = 4;
+			op->refptr = arm_memref_size (op, insn, 1, 32);
 			if (REGID(0) == ARM_REG_PC && (arm_cc)insn->detail->arm.cc != ARM_CC_AL) {
 				//op->type = R_ANAL_OP_TYPE_MCJMP;
 				op->type = R_ANAL_OP_TYPE_UCJMP;
@@ -5163,7 +6008,7 @@ static void set_src_dst(RAnalOp *op, RAnalValue *val, csh *handle, cs_insn *insn
 			val->type = R_ANAL_VAL_MEM;
 			val->memref = arm_memref_size (op, insn, x, bits);
 			val->mul = armop.mem.scale;
-			val->delta = armop.mem.disp;
+			val->delta = arm_mem_disp32 (&armop);
 			break;
 		case ARM_OP_IMM:
 			val->type = R_ANAL_VAL_IMM;
@@ -5383,6 +6228,9 @@ static bool plugin_changed(RArchSession *as) {
 	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config) != pd->bigendian) {
 		return true;
 	}
+	if (arm_code_is_be (as->config) != pd->code_bigendian) {
+		return true;
+	}
 	return strcmp (r_str_get (pd->cpu), r_str_get (as->config->cpu)) != 0;
 }
 
@@ -5463,6 +6311,7 @@ static bool init(RArchSession* as) {
 	PluginData *pd = as->data;
 	pd->bits = as->config->bits;
 	pd->bigendian = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
+	pd->code_bigendian = arm_code_is_be (as->config);
 	pd->cpu = as->config->cpu? strdup (as->config->cpu): NULL;
 	pd->ht_it = ht_uu_new0 ();
 	if (!pd->ht_it) {
@@ -5515,6 +6364,7 @@ const RArchPlugin r_arch_plugin_arm_cs = {
 	.fini = fini,
 	.info = archinfo,
 	.regs = regs,
+	.esilcb = esilcb,
 	.mnemonics = arm_mnemonics,
 };
 

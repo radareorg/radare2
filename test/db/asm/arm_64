@@ -365,6 +365,13 @@ a "stur w3, [x8, 113]" 031107b8
 a "stur w3, [x8, 236]" 03c10eb8
 a "sub x0, xzr, x2" e00302cb
 ad "svc 6" c10000d4
+ad "svc 0x800" 010001d4
+ad "svc 0x1234" 814602d4
+ad "svc 0xffff" e1ff1fd4
+ad "hvc 0x8000" 020010d4
+ad "smc 0xabcd" a37915d4
+ad "brk 0xf000" 00003ed4
+ad "hlt 0x1000" 000042d4
 a "mrs x3, SP_EL0" 034138d5
 a "msr 0xc208, x3" 034118d5
 a "msr SP_EL0, x3" 034118d5
@@ -621,6 +628,8 @@ ad "ccmn x30, 0x1f, 0xf, eq" cf0b5fba
 ad "ccmn x30, 0x1f, 0xf, ne" cf1b5fba
 ad "ccmn w30, 0x1f, 0xf, eq" cf0b5f3a
 ad "ccmn w30, 0x1f, 0xf, ne" cf1b5f3a
+ad "ccmn x3, x4, 2, lt" 62B044BA
+ad "ccmn w5, 7, 4, ge" A4A8473A
 ad "csel x30, x30, x30, eq" DE039E9A
 ad "csel x15, x25, x19, ne" 2F13939A
 ad "csel x5, x11, x22, eq" 6501969A
@@ -631,6 +640,10 @@ ad "csel w15, w25, w19, eq" 2F03931A
 ad "csel w5, w11, w22, ne" 6511961A
 ad "csel w1, w2, w3, eq" 4100831A
 ad "csel w10, w16, w13, ne" 0A128D1A
+ad "csel x1, x2, x3, lt" 41B0839A
+ad "csel x4, x5, x6, hi" A480869A
+ad "csel w7, w8, w9, ge" 07A1891A
+ad "csel w10, w11, w12, lo" 6A318C1A
 ad "cset x0, eq" E0179F9A
 ad "cset x11, eq" EB179F9A
 ad "cset x30, ne" FE079F9A
@@ -645,6 +658,9 @@ ad "cset w22, eq" F6179F1A
 ad "cset w7, ne" E7079F1A
 ad "cset w9, eq" E9179F1A
 ad "cset w17, ne" F1079F1A
+ad "cset x0, lt" E0A79F9A
+ad "cset w1, gt" E1D79F1A
+ad "cset x2, hs" E2379F9A
 ad "sxtb x30, w30" DE1F4093
 ad "sxtb x1, w12" 811D4093
 ad "sxtb x22, w3" 761C4093
@@ -660,6 +676,11 @@ ad "sxth w9, w8" 093D0013
 ad "sxtw x30, w30" DE7F4093
 ad "sxtw x25, w15" F97D4093
 ad "sxtw x5, w11" 657D4093
+ad "uxtb w0, w1" 201C0053
+ad "uxtb w9, w8" 091D0053
+ad "uxtb w30, w30" DE1F0053
+ad "uxth w5, w7" E53C0053
+ad "uxth w30, w30" DE3F0053
 ad "rev16 x30, x30" DE07C0DA
 ad "rev16 x15, x25" 2F07C0DA
 ad "rev16 x5, x11" 6505C0DA

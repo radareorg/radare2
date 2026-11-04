@@ -157,6 +157,7 @@ EXPECT=<<EOF
 arm16
 arm32
 reg
+swift
 EOF
 RUN
 
@@ -168,6 +169,7 @@ EXPECT=<<EOF
 arm16
 arm32
 reg
+swift
 EOF
 RUN
 

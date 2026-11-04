@@ -448,7 +448,7 @@ static int dalvik_disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut
 			// int[size] = relative offsets
 			if (len > 7) {
 				ut16 array_size = buf[2] | (buf[3] << 8);
-				int first_key = buf[4] | (buf[5] << 8) | (buf[6] << 16) | (buf[7] << 24);
+				int first_key = (st32)r_read_le32 (buf + 4);
 				op->mnemonic = r_str_newf ("packed-switch-payload %d, %d", array_size, first_key);
 				size = 8;
 				payload = 2 * (array_size * 2);
@@ -537,7 +537,7 @@ static int dalvik_disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut
 			break;
 		case fmtopvAAcBBBBBBBB:
 			vA = (int) buf[1];
-			vB = buf[2] | (buf[3] << 8) | (buf[4] << 16) | (buf[5] << 24);
+			vB = r_read_le32 (buf + 2);
 			if (buf[0] == 0x17) { //const-wide/32
 				snprintf (str, sizeof (str), " v%i:v%i, 0x%08x", vA, vA + 1, vB);
 			} else { //const
@@ -605,7 +605,7 @@ static int dalvik_disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut
 			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoppAAAAAAAA:
-			vA = (int) (buf[2] | (buf[3] << 8) | (buf[4] << 16) | (buf[5] << 24));
+			vA = (st32)r_read_le32 (buf + 2);
 			//snprintf (str, sizeof (str), " %#08x", vA*2); // vA: word -> byte
 			snprintf (str, sizeof (str), " 0x%08"PFMT64x, addr + (vA*2)); // vA : word -> byte
 			strasm = r_str_append (strasm, str);
@@ -620,7 +620,7 @@ static int dalvik_disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut
 			break;
 		case fmtopvAApBBBBBBBB:
 			vA = buf[1];
-			vB = buf[2] | (buf[3] << 8) | (buf[4] << 16) | (buf[5] << 24);
+			vB = r_read_le32 (buf + 2);
 			snprintf (str, sizeof (str), " v%i, 0x%08"PFMT64x, vA, addr + (vB * 2) + 8);
 			strasm = r_str_append (strasm, str);
 			break;
@@ -756,7 +756,7 @@ static int dalvik_disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut
 			break;
 		case fmtopvAAtBBBBBBBB:
 			vA = (int) buf[1];
-			vB = (int) (buf[5] | (buf[4] << 8) | (buf[3] << 16) | (buf[2] << 24));
+			vB = (st32)r_read_be32 (buf + 2);
 			offset = _anal_get_offset (a, 's', vB);
 			if (offset == UT64_MAX) {
 				snprintf (str, sizeof (str), " v%i, string+%i", vA, vB);

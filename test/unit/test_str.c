@@ -745,6 +745,16 @@ bool test_r_str_split_list(void) {
 		r_list_free (r);
 		free (hi);
 	}
+	{
+		char* hi = strdup ("a::b:c::d");
+		RList *r = r_str_split_list (hi, "::", 0);
+		mu_assert_eq (r_list_length (r), 3, "split on a two-char separator");
+		mu_assert_streq (r_list_get_n (r, 0), "a", "two-char separator first field");
+		mu_assert_streq (r_list_get_n (r, 1), "b:c", "keep a lone colon");
+		mu_assert_streq (r_list_get_n (r, 2), "d", "two-char separator last field");
+		r_list_free (r);
+		free (hi);
+	}
 	mu_end;
 }
 
@@ -1052,6 +1062,16 @@ bool test_r_str_uri_decode(void) {
 	mu_end;
 }
 
+bool test_r_str_uri_encode(void) {
+	char *s = r_str_uri_encode ("user32.pdb");
+	mu_assert_streq (s, "user32.pdb", "unreserved characters are kept");
+	free (s);
+	s = r_str_uri_encode ("a_-~[1-2]\r\n{x}/ ");
+	mu_assert_streq (s, "a_-~%5b1-2%5d%0d%0a%7bx%7d%2f%20", "reserved and control characters are encoded");
+	free (s);
+	mu_end;
+}
+
 bool test_r_str_utf8_charsize(void) {
 	char s[16] = "\x61\xc3\xa1\xe6\x97\xa5\xf0\x9f\x91\x8c\xf0\x9f\x91\x8c\x8c"; // aá日👌
 	int sz;
@@ -1165,7 +1185,7 @@ bool test_r_str_escape_sh(void) {
 	mu_assert_streq (escaped, "Hello, \\`World\\`", "escaped `command`");
 	free (escaped);
 	escaped = r_str_escape_sh ("Hello, !World!");
-	mu_assert_streq (escaped, "Hello, \\!World\\!", "escaped history expansion");
+	mu_assert_streq (escaped, "Hello, !World!", "! is not escaped");
 	free (escaped);
 #endif
 	mu_end;
@@ -1582,6 +1602,12 @@ bool test_r_str_unquote(void) {
 	mu_end;
 }
 
+bool test_r_str_arg_escape(void) {
+	mu_assert_streq_free (r_str_arg_escape ("a b\"c'd\\e"), "a\\ b\\\"c\\'d\\\\e", "quotes, spaces and backslashes");
+	mu_assert_streq_free (r_str_arg_escape ("x\n?e pwn\r\n"), "x_?e\\ pwn__", "line breaks cannot start a new command");
+	mu_end;
+}
+
 bool test_r_str_trim_args_quote_parity(void) {
 	char odd_single[] = "'pa\\'tata'";
 	r_str_trim_args (odd_single);
@@ -1652,6 +1678,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_unicode_width);
 	mu_run_test (test_r_str_utf16_to_utf8);
 	mu_run_test (test_r_str_uri_decode);
+	mu_run_test (test_r_str_uri_encode);
 	mu_run_test (test_r_str_utf8_charsize);
 	mu_run_test (test_r_str_utf8_charsize_prev);
 	mu_run_test (test_r_str_sanitize_sdb_key);
@@ -1673,6 +1700,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_but_escape);
 	mu_run_test (test_r_str_trim_args_quote_parity);
 	mu_run_test (test_r_str_unquote);
+	mu_run_test (test_r_str_arg_escape);
 	return tests_passed != tests_run;
 }
 

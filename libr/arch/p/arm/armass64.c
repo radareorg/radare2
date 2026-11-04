@@ -684,54 +684,60 @@ static ut32 tst(ArmOp *op) {
 	return data;
 }
 
+// Condition code named by the last operand ("eq" .. "nv", "cs" and "cc"), or -1
+static int cond_code(const char *str) {
+	static const char *names[] = { "eq", "ne", "hs", "lo", "mi", "pl", "vs", "vc", "hi", "ls", "ge", "lt", "gt", "le", "al", "nv" };
+	const char *last = strrchr (str, ',');
+	if (!last) {
+		return -1;
+	}
+	last = r_str_trim_head_ro (last + 1);
+	if (!strcmp (last, "cs")) {
+		return 2;
+	}
+	if (!strcmp (last, "cc")) {
+		return 3;
+	}
+	int i;
+	for (i = 0; i < 16; i++) {
+		if (!strcmp (last, names[i])) {
+			return i;
+		}
+	}
+	return -1;
+}
+
 static ut32 ccmn(ArmOp *op, const char *str) {
 	ut32 data = UT32_MAX;
 	int k = 0;
+	int cond = cond_code (str);
 	bool check1 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64 && op->operands[2].type & ARM_CONSTANT;
 	bool check2 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32 && op->operands[2].type & ARM_CONSTANT;
 	bool check3 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].type & ARM_CONSTANT && op->operands[2].type & ARM_CONSTANT;
 	bool check4 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].type & ARM_CONSTANT && op->operands[2].type & ARM_CONSTANT;
 
+	check_cond (cond >= 0);
 	if (op->operands[0].type == ARM_GPR && op->operands[1].type == ARM_GPR) {
-		if (strstr (str, "eq")) {
-			if (check1) {
-				k = 0x000040ba;
-			} else if (check2) {
-				k = 0x0000403a;
-			} else {
-				return data;
-			}
+		if (check1) {
+			k = 0x000040ba;
+		} else if (check2) {
+			k = 0x0000403a;
 		} else {
-			if (check1) {
-				k = 0x001040ba;
-			} else if (check2) {
-				k = 0x0010403a;
-			} else {
-				return data;
-			}
+			return data;
 		}
 	} else if (op->operands[1].type & ARM_CONSTANT) {
-		if (strstr (str, "eq")) {
-			if (check3) {
-				k = 0x000840BA;
-			} else if (check4) {
-				k = 0x0008403A;
-			} else {
-				return data;
-			}
+		if (check3) {
+			k = 0x000840BA;
+		} else if (check4) {
+			k = 0x0008403A;
 		} else {
-			if (check3) {
-				k = 0x001840BA;
-			} else if (check4) {
-				k = 0x0018403A;
-			} else {
-				return data;
-			}
+			return data;
 		}
 	} else {
 		return data;
 	}
-	data = k | (op->operands[0].reg & 0x7) << 29;
+	data = k | cond << 20;
+	data |= (op->operands[0].reg & 0x7) << 29;
 	data |= (op->operands[0].reg & 0x18) << 13;
 	data |= (op->operands[1].reg & 0x1f) << 8;
 	data |= (op->operands[2].immediate & 0xf) << 24;
@@ -742,27 +748,20 @@ static ut32 csel(ArmOp *op, const char *str) {
 	ut32 data_32 = 0;
 	ut32 data_64 = 0;
 	bool is64 = false;
+	int cond = cond_code (str);
 	bool check1 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64 && op->operands[2].reg_type & ARM_REG64;
 	bool check2 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32 && op->operands[2].reg_type & ARM_REG32;
 
-	if (strstr (str, "eq")) {
-		if (check1) {
-			is64 = true;
-			data_64 = 0x0000809a;
-		} else if (check2) {
-			data_32 = 0x0000801a;
-		} else {
-			return UT32_MAX;
-		}
+	if (cond < 0) {
+		return UT32_MAX;
+	}
+	if (check1) {
+		is64 = true;
+		data_64 = 0x0000809a | cond << 20;
+	} else if (check2) {
+		data_32 = 0x0000801a | cond << 20;
 	} else {
-		if (check1) {
-			is64 = true;
-			data_64 = 0x0010809a;
-		} else if (check2) {
-			data_32 = 0x0010801a;
-		} else {
-			return UT32_MAX;
-		}
+		return UT32_MAX;
 	}
 	return r_n_math (op, data_64, data_32, is64);
 }
@@ -772,27 +771,20 @@ static ut32 cset(ArmOp *op, const char *str) {
 	int k = 0;
 	bool reg_64 = op->operands[0].reg_type & ARM_REG64;
 	bool reg_32 = op->operands[0].reg_type & ARM_REG32;
+	int cond = cond_code (str);
 
 	check_cond (op->operands[0].type == ARM_GPR);
-
-	if (strstr (str, "eq")) {
-		if (reg_64) {
-			k = 0xe0179f9a;
-		} else if (reg_32) {
-			k = 0xe0179f1a;
-		} else {
-			return data;
-		}
+	// cset is csinc with the inverted condition, which al and nv don't have
+	check_cond (cond >= 0 && cond < 14);
+	if (reg_64) {
+		k = 0xe0079f9a;
+	} else if (reg_32) {
+		k = 0xe0079f1a;
 	} else {
-		if (reg_64) {
-			k = 0xe0079f9a;
-		} else if (reg_32) {
-			k = 0xe0079f1a;
-		} else {
-			return data;
-		}
+		return data;
 	}
-	data = k | (op->operands[0].reg & 0x1f) << 24;
+	data = k | (cond ^ 1) << 20;
+	data |= (op->operands[0].reg & 0x1f) << 24;
 	return data;
 }
 
@@ -827,6 +819,17 @@ static ut32 sxt(ArmOp *op) {
 		} else {
 			return UT32_MAX;
 		}
+	} else if (r_str_startswith (op->mnemonic, "uxtb")) {
+		// ubfm wd, wn, 0, 7; uxtb and uxth only have the 32-bit form
+		if (!reg_32) {
+			return UT32_MAX;
+		}
+		k = 0x001c0053;
+	} else if (r_str_startswith (op->mnemonic, "uxth")) {
+		if (!reg_32) {
+			return UT32_MAX;
+		}
+		k = 0x003c0053;
 	} else {
 		return data;
 	}
@@ -1535,11 +1538,13 @@ static ut32 stp(ArmOp *op, bool load) {
 static ut32 exception(ArmOp *op, ut32 k) {
 	ut32 data = UT32_MAX;
 
-	if (op->operands[0].type == ARM_CONSTANT) {
+	if (op->operands[0].type == ARM_CONSTANT && op->operands[0].immediate <= 0xffff) {
 		ut32 n = op->operands[0].immediate;
+		// imm16 sits in bits 20:5 of the (byte swapped) instruction word
 		data = k;
-		data += (((n / 8) & 0xff) << 16);
-		data += (n << 29);
+		data += (n & 7) << 29;
+		data += ((n >> 3) & 0xff) << 16;
+		data += ((n >> 11) & 0x1f) << 8;
 	}
 	return data;
 }
@@ -1558,7 +1563,7 @@ static ut32 arithmetic(ArmOp *op, int k) {
 	}
 	data = k;
 	data += encode1reg (op);
-	data += (op->operands[1].reg & 7) << (24 + 5);
+	data += ((ut32)op->operands[1].reg & 7) << (24 + 5);
 	data += (op->operands[1].reg >> 3) << 16;
 	if (op->operands[2].type & ARM_GPR) {
 		data += op->operands[2].reg << 8;
@@ -2241,7 +2246,7 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 		*op = csel (&ops, str);
 	} else if (r_str_startswith (str, "cset")) {
 		*op = cset (&ops, str);
-	} else if (r_str_startswith (str, "sxt")) {
+	} else if (R_STR_STARTSWITH_ANY (str, "sxt", "uxtb", "uxth")) {
 		*op = sxt (&ops);
 	} else if (r_str_startswith (str, "tb")) {
 		*op = tb (&ops);

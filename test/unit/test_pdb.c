@@ -5,6 +5,7 @@
 #include <r_bin_dwarf.h>
 #include "../../libr/bin/format/pdb/types.h"
 #include "../../libr/bin/format/pdb/tpi.h"
+#include "../../libr/bin/format/pdb/stream_file.h"
 
 #define MODE 2
 
@@ -536,12 +537,104 @@ bool test_pdb_enum_modified_utype(void) {
 	mu_end;
 }
 
+bool test_pdb_stream_file_size(void) {
+	R_STREAM_FILE stream = {0};
+	stream.page_size = 4096;
+	stream.end = 10000;
+
+	// At start of stream
+	stream.pos = 0;
+	mu_assert_eq (stream_file_get_size (&stream), 10000, "size at pos 0");
+
+	// Intra-first-page
+	stream.pos = 500;
+	mu_assert_eq (stream_file_get_size (&stream), 9500, "size at pos 500");
+
+	// Multi-page offset (pos = 4196 on 4096-byte pages)
+	// Pre-patch bug: subtracted only (pos % page_size) = 100, returning 9900 (+4096 bytes)
+	stream.pos = 4196;
+	mu_assert_eq (stream_file_get_size (&stream), 5804, "size past page boundary");
+
+	// High page offset
+	stream.pos = 9000;
+	mu_assert_eq (stream_file_get_size (&stream), 1000, "size at pos 9000");
+
+	// At EOF
+	// Pre-patch bug: 10000 % 4096 = 1808, returning 8192 instead of 0
+	stream.pos = 10000;
+	mu_assert_eq (stream_file_get_size (&stream), 0, "size at EOF");
+
+	// Past EOF
+	stream.pos = 10001;
+	mu_assert_eq (stream_file_get_size (&stream), 0, "size past EOF");
+
+	// Stream with error flag set
+	stream.pos = 0;
+	stream.error = 1;
+	mu_assert_eq (stream_file_get_size (&stream), 0, "size with error set");
+
+	// Negative position
+	stream.error = 0;
+	stream.pos = -1;
+	mu_assert_eq (stream_file_get_size (&stream), 0, "size with negative pos");
+
+	// NULL stream
+	mu_assert_eq (stream_file_get_size (NULL), 0, "size with NULL stream");
+
+	mu_end;
+}
+
+bool test_pdb_page_bounds(void) {
+	const struct {
+		ut32 offset, value, size;
+		bool valid;
+	} cases[] = {
+		{ 52, 1, 3072, true },
+		{ 44, 3073, 3072, false },
+		{ 44, 3, 3072, false },
+		{ 52, 6, 3072, false },
+		{ 52, UT32_MAX, 3072, false },
+		{ 52, 1, 1023, false },
+		{ 52, 5, 3071, false },
+		{ 1028, 0x80000000, 3072, false },
+		{ 1028, UT32_MAX - 1, 3072, false },
+		{ 1028, UT32_MAX, 3072, true },
+		{ 1028, 0, 3072, true },
+		{ 1028, 3073, 3072, false },
+		{ 1028, 1024, 3072, false },
+		{ 1032, 6, 3072, false },
+		{ 1032, UT32_MAX, 3072, false },
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (cases); i++) {
+		ut8 data[3072] = "Microsoft C/C++ MSF 7.00\r\n\x1a" "DS\0\0\0";
+		r_write_le32 (data + 32, 512);
+		r_write_le32 (data + 40, 6);
+		r_write_le32 (data + 44, 12);
+		r_write_le32 (data + 52, 1);
+		r_write_le32 (data + 512, 2);
+		r_write_le32 (data + 2560, 2);
+		r_write_le32 (data + 1024, 1);
+		r_write_le32 (data + 1028, 4);
+		r_write_le32 (data + 1032, 3);
+		r_write_le32 (data + cases[i].offset, cases[i].value);
+		RBinPdb pdb = {0};
+		mu_assert_true (r_bin_pdb_parser_with_buf (&pdb, r_buf_new_with_bytes (data, cases[i].size)), "PDB header");
+		bool parsed = pdb.pdb_parse (&pdb);
+		pdb.finish_pdb_parse (&pdb);
+		mu_assert_eq (parsed, cases[i].valid, "PDB page bounds");
+	}
+	mu_end;
+}
+
 bool all_tests(void) {
 #if R_SYS_ENDIAN == 0
 	mu_run_test (test_pdb_tpi_cpp);
 	mu_run_test (test_pdb_tpi_rust);
 	mu_run_test (test_pdb_type_save);
 	mu_run_test (test_pdb_enum_modified_utype);
+	mu_run_test (test_pdb_stream_file_size);
+	mu_run_test (test_pdb_page_bounds);
 #endif
 	return tests_passed != tests_run;
 }

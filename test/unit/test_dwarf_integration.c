@@ -314,6 +314,82 @@ static bool test_dwarf_function_parsing_rust(void) {
 	mu_end;
 }
 
+// offsets are the position in the unit, starting at 1
+#define NESTED_INT_OFFSET 2
+
+static void push_nested_die(RBinDwarfCompUnit *unit, ut16 tag, bool has_children, const char *name, ut64 addr) {
+	static const ut8 reg0[] = { DW_OP_reg0 };
+	RBinDwarfDie die = {
+		.tag = tag,
+		.abbrev_code = tag? 1: 0,
+		.offset = RVecDwarfDie_length (unit->dies) + 1,
+		.attr_idx = RVecDwarfAttrValue_length (unit->attrs),
+		.has_children = has_children
+	};
+	if (tag) {
+		RBinDwarfAttrValue av = { .attr_name = DW_AT_name, .kind = DW_AT_KIND_STRING, .string = { .content = name } };
+		RVecDwarfAttrValue_push_back (unit->attrs, &av);
+	}
+	if (tag == DW_TAG_subprogram) {
+		RBinDwarfAttrValue av = { .attr_name = DW_AT_low_pc, .kind = DW_AT_KIND_ADDRESS, .address = addr };
+		RVecDwarfAttrValue_push_back (unit->attrs, &av);
+	} else if (tag == DW_TAG_variable || tag == DW_TAG_member) {
+		RBinDwarfAttrValue type = { .attr_name = DW_AT_type, .kind = DW_AT_KIND_REFERENCE, .reference = NESTED_INT_OFFSET };
+		RVecDwarfAttrValue_push_back (unit->attrs, &type);
+		RBinDwarfAttrValue loc = { .attr_name = DW_AT_location, .kind = DW_AT_KIND_BLOCK, .block = { sizeof (reg0), reg0 } };
+		RVecDwarfAttrValue_push_back (unit->attrs, &loc);
+	}
+	die.attr_count = RVecDwarfAttrValue_length (unit->attrs) - die.attr_idx;
+	RVecDwarfDie_push_back (unit->dies, &die);
+}
+
+static bool test_dwarf_nested_scopes(void) {
+	r_str_ncpy (anal->config->arch, "x86", sizeof (anal->config->arch));
+	anal->config->bits = 64;
+
+	RBinDwarfCompUnit unit = { .dies = RVecDwarfDie_new (), .attrs = RVecDwarfAttrValue_new () };
+	push_nested_die (&unit, DW_TAG_compile_unit, true, "nested.c", 0);
+	push_nested_die (&unit, DW_TAG_base_type, false, "int", 0);
+	push_nested_die (&unit, DW_TAG_subprogram, true, "outer", 0x1000);
+	push_nested_die (&unit, DW_TAG_variable, false, "ov", 0);
+	push_nested_die (&unit, DW_TAG_subprogram, true, "inner", 0x2000);
+	push_nested_die (&unit, DW_TAG_variable, false, "iv", 0);
+	push_nested_die (&unit, 0, false, NULL, 0);
+	push_nested_die (&unit, DW_TAG_lexical_block, true, "block", 0);
+	push_nested_die (&unit, DW_TAG_variable, false, "bv", 0);
+	push_nested_die (&unit, 0, false, NULL, 0);
+	push_nested_die (&unit, DW_TAG_variable, false, "after", 0);
+	push_nested_die (&unit, 0, false, NULL, 0);
+	push_nested_die (&unit, DW_TAG_structure_type, true, "Outer", 0);
+	push_nested_die (&unit, DW_TAG_member, false, "a", 0);
+	push_nested_die (&unit, DW_TAG_structure_type, true, "Inner", 0);
+	push_nested_die (&unit, DW_TAG_member, false, "x", 0);
+	push_nested_die (&unit, 0, false, NULL, 0);
+	push_nested_die (&unit, DW_TAG_member, false, "z", 0);
+	push_nested_die (&unit, 0, false, NULL, 0);
+	push_nested_die (&unit, 0, false, NULL, 0);
+
+	RBinDwarfDebugInfo info = { .comp_units = RVecDwarfCompUnit_new () };
+	RVecDwarfCompUnit_push_back (info.comp_units, &unit);
+	RAnalDwarfContext ctx = { .info = &info };
+	r_anal_dwarf_process_info (anal, &ctx);
+
+	const char *value = NULL;
+	Sdb *sdb = sdb_ns (anal->sdb, "dwarf", 0);
+	mu_assert_notnull (sdb, "No dwarf function information in db");
+	// a nested function owns its variables, the blocks of a function do not
+	check_kv ("fcn.outer.vars", "ov,bv,after");
+	check_kv ("fcn.inner.vars", "iv");
+	sdb = anal->sdb_types;
+	check_kv ("struct.Outer", "a,z");
+	check_kv ("struct.Inner", "x");
+
+	RVecDwarfDie_free (unit.dies);
+	RVecDwarfAttrValue_free (unit.attrs);
+	RVecDwarfCompUnit_free (info.comp_units);
+	mu_end;
+}
+
 #define run_test_with_setup(test_func) \
 	do { \
 		if (!setup ()) { \
@@ -329,6 +405,7 @@ int all_tests(void) {
 	run_test_with_setup (test_dwarf_function_parsing_cpp);
 	run_test_with_setup (test_dwarf_function_parsing_rust);
 	run_test_with_setup (test_dwarf_function_parsing_go);
+	run_test_with_setup (test_dwarf_nested_scopes);
 	return tests_passed != tests_run;
 }
 

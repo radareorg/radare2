@@ -8,7 +8,6 @@
 // R2R db/formats/mach0/strip
 // R2R db/formats/zip
 
-#define MACHO_MAX_SECTIONS 4096
 // Microsoft C++: 2048 characters; Intel C++: 2048 characters; g++: No limit
 // see -e bin.maxsymlen (honor bin.limit too?)
 
@@ -225,7 +224,7 @@ static ut64 addr_to_offset(struct MACH0_(obj_t) * mo, ut64 addr) {
 	return 0; // UT64_MAX?
 }
 
-static ut64 offset_to_vaddr(struct MACH0_(obj_t) * mo, ut64 offset) {
+static bool offset_in_segment(struct MACH0_(obj_t) * mo, ut64 offset, ut64 *vaddr) {
 	if (mo->segs) {
 		size_t i;
 		for (i = 0; i < mo->nsegs; i++) {
@@ -233,11 +232,21 @@ static ut64 offset_to_vaddr(struct MACH0_(obj_t) * mo, ut64 offset) {
 			ut64 segment_base = (ut64)seg->fileoff;
 			ut64 segment_size = (ut64)seg->filesize;
 			if (offset >= segment_base && offset < segment_base + segment_size) {
-				return seg->vmaddr + (offset - segment_base);
+				*vaddr = seg->vmaddr + (offset - segment_base);
+				return true;
 			}
 		}
 	}
-	return 0; // UT64_MAX?
+	return false;
+}
+
+static ut64 offset_to_vaddr(struct MACH0_(obj_t) * mo, ut64 offset) {
+	ut64 vaddr;
+	return offset_in_segment (mo, offset, &vaddr)? vaddr: 0; // UT64_MAX?
+}
+
+bool MACH0_(paddr_to_vaddr)(struct MACH0_(obj_t) * mo, ut64 offset, ut64 *vaddr) {
+	return offset_in_segment (mo, offset, vaddr);
 }
 
 static ut64 pa2va(RBinFile *bf, ut64 offset) {
@@ -403,10 +412,11 @@ static bool parse_segments(struct MACH0_(obj_t) * mo, ut64 off) {
 	if (off > mo->size || off + sizeof (struct MACH0_(segment_command)) > mo->size) {
 		return false;
 	}
-	if (! (mo->segs = realloc (mo->segs, size_sects))) {
-		r_sys_perror ("realloc (seg)");
+	struct MACH0_(segment_command) *segs = realloc (mo->segs, size_sects);
+	if (!segs) {
 		return false;
 	}
+	mo->segs = segs;
 	j = mo->nsegs - 1;
 	len = r_buf_read_at (mo->b, off, segcom, sizeof (struct MACH0_(segment_command)));
 	if (len != sizeof (struct MACH0_(segment_command))) {
@@ -482,11 +492,12 @@ static bool parse_segments(struct MACH0_(obj_t) * mo, ut64 off) {
 			return false;
 		}
 
-		if (! (mo->sects = r_array_resize (mo->sects, mo->nsects, sizeof (struct MACH0_(section))))) {
-			r_sys_perror ("realloc (sects)");
+		struct MACH0_(section) *sects = r_array_resize (mo->sects, mo->nsects, sizeof (struct MACH0_(section)));
+		if (!sects) {
 			mo->nsects = sect;
 			return false;
 		}
+		mo->sects = sects;
 
 		for (k = sect, j = 0; k < mo->nsects; k++, j++) {
 			ut64 offset = off + sizeof (struct MACH0_(segment_command)) + j * sizeof (struct MACH0_(section));
@@ -2024,6 +2035,101 @@ static bool parse_threaded_rebase(struct MACH0_(obj_t) * mo) {
 	return true;
 }
 
+static bool chained_starts_have_heads(struct MACH0_(obj_t) * mo) {
+	if (!mo->chained_starts) {
+		return false;
+	}
+	int i;
+	for (i = 0; i < mo->nsegs && i < mo->segs_count; i++) {
+		struct r_dyld_chained_starts_in_segment *starts = mo->chained_starts[i];
+		if (!starts || !starts->page_start) {
+			continue;
+		}
+		ut32 j;
+		for (j = 0; j < starts->page_count; j++) {
+			if (starts->page_start[j] != DYLD_CHAINED_PTR_START_NONE) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+static bool parse_chain_starts_section(struct MACH0_(obj_t) * mo) {
+	if (mo->nsegs < 1 || !mo->sects) {
+		return false;
+	}
+	struct MACH0_(section) *cs = NULL;
+	int i;
+	for (i = 0; i < mo->nsects; i++) {
+		if (!strncmp (mo->sects[i].segname, "__TEXT", 16) &&
+			!strncmp (mo->sects[i].sectname, "__chain_starts", 16)) {
+			cs = &mo->sects[i];
+			break;
+		}
+	}
+	if (!cs || cs->size < 8 || !fits_in (mo->size, cs->offset, cs->size)) {
+		return false;
+	}
+	ut32 pointer_format = r_buf_read_le32_at (mo->b, cs->offset);
+	ut32 starts_count = r_buf_read_le32_at (mo->b, cs->offset + 4);
+	if (pointer_format != DYLD_CHAINED_PTR_ARM64E_KERNEL || !starts_count || starts_count > (cs->size - 8) / sizeof (ut32)) {
+		return false;
+	}
+	int first = 0;
+	if (mo->nsegs > 1 && (!strncmp (mo->segs[0].segname, "__PAGEZERO", 16) || !(mo->segs[0].initprot & 1))) {
+		first = 1;
+	}
+	struct MACH0_(segment_command) *last = &mo->segs[mo->nsegs - 1];
+	ut32 last_start = r_buf_read_le32_at (mo->b, cs->offset + 8 + (ut64)(starts_count - 1) * sizeof (ut32));
+	bool file_offsets = last->fileoff + last->vmsize >= last_start;
+	if (cs->reserved1 == DYLD_CHAINED_STARTS_USE_FILE_OFFSET) {
+		file_offsets = true;
+	} else if (cs->reserved1 == DYLD_CHAINED_STARTS_USE_VM_OFFSET) {
+		file_offsets = false;
+	}
+	ut64 *heads = R_NEWS (ut64, starts_count);
+	if (!heads) {
+		return false;
+	}
+	ut32 count = 0;
+	ut32 j;
+	for (j = 0; j < starts_count; j++) {
+		ut32 start = r_buf_read_le32_at (mo->b, cs->offset + 8 + (ut64)j * sizeof (ut32));
+		ut64 head = UT64_MAX;
+		if (file_offsets) {
+			head = mo->segs[first].fileoff + start;
+		} else {
+			int s;
+			for (s = first; s < mo->nsegs; s++) {
+				ut64 runtime_off = mo->segs[s].vmaddr - mo->segs[first].vmaddr;
+				ut64 filebacked = 0;
+				if (start >= runtime_off && segment_filebacked_size (mo, s, &filebacked)
+						&& start - runtime_off < filebacked) {
+					head = mo->segs[s].fileoff + (start - runtime_off);
+					break;
+				}
+			}
+		}
+		if (fits_in (mo->size, head, 8)) {
+			heads[count++] = head;
+		}
+	}
+	if (!count) {
+		free (heads);
+		return false;
+	}
+	free (mo->fw_chain_starts);
+	mo->fw_chain_starts = heads;
+	mo->fw_chain_count = count;
+	mo->fw_pointer_format = pointer_format;
+	return true;
+}
+
+bool MACH0_(has_fixup_chains)(struct MACH0_(obj_t) * mo) {
+	return mo->chained_starts || mo->fw_chain_count;
+}
+
 static int init_items(struct MACH0_(obj_t) * mo) {
 	bool skip_chained_fixups = r_sys_getenv_asbool ("RABIN2_MACHO_SKIPFIXUPS");
 	struct load_command lc = { 0, 0 };
@@ -2505,7 +2611,10 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 		bool isarm64e = mo->hdr.cputype == CPU_TYPE_ARM64 \
 			&& (mo->hdr.cpusubtype & ~CPU_SUBTYPE_MASK) == CPU_SUBTYPE_ARM64E;
 		if (isarm64e) {
-			parse_threaded_rebase (mo);
+			have_chained_starts = parse_threaded_rebase (mo) && chained_starts_have_heads (mo);
+		}
+		if (!have_chained_starts) {
+			parse_chain_starts_section (mo);
 		}
 	}
 	return true;
@@ -2586,6 +2695,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) * mo) {
 	}
 	RVecRBinReloc_fini (&mo->reloc_fixups);
 	free_chained_starts (mo);
+	free (mo->fw_chain_starts);
 	sdb_free (mo->kv);
 	r_unref (mo->b);
 	free (mo);
@@ -5570,7 +5680,189 @@ struct MACH0_(mach_header) * MACH0_(get_hdr)(RBuffer *buf) {
 	return mh;
 }
 
+
 #define IS_FMT_32BIT(x) (x == DYLD_CHAINED_PTR_32 || x == DYLD_CHAINED_PTR_32_CACHE || x == DYLD_CHAINED_PTR_32_FIRMWARE)
+
+static bool walk_fixup_chain(struct MACH0_(obj_t) * mo, ut64 cursor, ut64 chain_end, ut16 pointer_format, RBitmap *visited, ut64 limit_start, ut64 limit_end, ut32 event_mask, RFixupCallback callback, void *context) {
+	while (cursor < limit_end && cursor < chain_end) {
+		if (visited) {
+			if (r_bitmap_test (visited, cursor / 4)) {
+				break;
+			}
+			r_bitmap_set (visited, cursor / 4);
+		}
+		ut8 tmp[8];
+		const int width = IS_FMT_32BIT (pointer_format)? 4: 8;
+		bool previous_rebasing = mo->rebasing_buffer;
+		mo->rebasing_buffer = true;
+		if (r_buf_read_at (mo->b, cursor, tmp, width) != width) {
+			mo->rebasing_buffer = previous_rebasing;
+			break;
+		}
+		mo->rebasing_buffer = previous_rebasing;
+		ut64 raw_ptr = IS_FMT_32BIT (pointer_format)? r_read_le32 (tmp): r_read_le64 (tmp);
+		ut64 ptr_value = raw_ptr;
+		ut64 delta = 0, stride = 0, addend = 0;
+		RFixupEvent event = R_FIXUP_EVENT_NONE;
+		ut8 key = 0, addr_div = 0;
+		ut16 diversity = 0;
+		ut32 ordinal = UT32_MAX;
+		ut8 ptr_size = 8;
+		switch (pointer_format) {
+		case DYLD_CHAINED_PTR_ARM64E:
+		case DYLD_CHAINED_PTR_ARM64E_KERNEL:
+			{
+				const bool kernel = pointer_format == DYLD_CHAINED_PTR_ARM64E_KERNEL;
+				stride = kernel? 4: 8;
+				bool is_auth = IS_PTR_AUTH (raw_ptr);
+				bool is_bind = IS_PTR_BIND (raw_ptr);
+				if (is_auth && is_bind) {
+					event = R_FIXUP_EVENT_BIND_AUTH;
+					delta = CHAIN_BITS (raw_ptr, 51, 11);
+					ordinal = CHAIN_BITS (raw_ptr, 0, 16);
+					key = CHAIN_BITS (raw_ptr, 49, 2);
+					addr_div = CHAIN_BITS (raw_ptr, 48, 1);
+					diversity = CHAIN_BITS (raw_ptr, 32, 16);
+				} else if (!is_auth && is_bind) {
+					event = R_FIXUP_EVENT_BIND;
+					delta = CHAIN_BITS (raw_ptr, 51, 11);
+					ordinal = CHAIN_BITS (raw_ptr, 0, 16);
+					addend = CHAIN_BITS (raw_ptr, 32, 19);
+				} else if (is_auth && !is_bind) {
+					event = R_FIXUP_EVENT_REBASE_AUTH;
+					delta = CHAIN_BITS (raw_ptr, 51, 11);
+					ptr_value = CHAIN_BITS (raw_ptr, 0, 32) + mo->baddr;
+					key = CHAIN_BITS (raw_ptr, 49, 2);
+					addr_div = CHAIN_BITS (raw_ptr, 48, 1);
+					diversity = CHAIN_BITS (raw_ptr, 32, 16);
+				} else {
+					event = R_FIXUP_EVENT_REBASE;
+					delta = CHAIN_BITS (raw_ptr, 51, 11);
+					ptr_value = CHAIN_BITS (raw_ptr, 0, 43);
+					if (kernel) {
+						ptr_value += mo->baddr;
+					}
+					ptr_value |= CHAIN_BITS (raw_ptr, 43, 8) << 56;
+				}
+			}
+			break;
+		case DYLD_CHAINED_PTR_ARM64E_USERLAND24:
+			{
+				stride = 8;
+				if (IS_PTR_BIND (raw_ptr)) {
+					delta = CHAIN_BITS (raw_ptr, 51, 11);
+					if (IS_PTR_AUTH (raw_ptr)) {
+						event = R_FIXUP_EVENT_BIND_AUTH;
+						ordinal = CHAIN_BITS (raw_ptr, 0, 24);
+						key = CHAIN_BITS (raw_ptr, 49, 2);
+						addr_div = CHAIN_BITS (raw_ptr, 48, 1);
+						diversity = CHAIN_BITS (raw_ptr, 32, 16);
+					} else {
+						event = R_FIXUP_EVENT_BIND;
+						ordinal = CHAIN_BITS (raw_ptr, 0, 24);
+						addend = CHAIN_BITS (raw_ptr, 32, 19);
+					}
+				} else {
+					if (IS_PTR_AUTH (raw_ptr)) {
+						event = R_FIXUP_EVENT_REBASE_AUTH;
+						delta = CHAIN_BITS (raw_ptr, 51, 11);
+						ptr_value = CHAIN_BITS (raw_ptr, 0, 32) + mo->baddr;
+						key = CHAIN_BITS (raw_ptr, 49, 2);
+						addr_div = CHAIN_BITS (raw_ptr, 48, 1);
+						diversity = CHAIN_BITS (raw_ptr, 32, 16);
+					} else {
+						event = R_FIXUP_EVENT_REBASE;
+						delta = CHAIN_BITS (raw_ptr, 51, 11);
+						ptr_value = (CHAIN_BITS (raw_ptr, 43, 8) << 56)
+							| CHAIN_BITS (raw_ptr, 0, 43);
+						ptr_value += mo->baddr;
+					}
+				}
+			}
+			break;
+		case DYLD_CHAINED_PTR_64:
+		case DYLD_CHAINED_PTR_64_OFFSET:
+			{
+				stride = 4;
+				if (CHAIN_BITS (raw_ptr, 63, 1)) {
+					event = R_FIXUP_EVENT_BIND;
+					delta = CHAIN_BITS (raw_ptr, 51, 12);
+					ordinal = CHAIN_BITS (raw_ptr, 0, 24);
+					addend = CHAIN_BITS (raw_ptr, 24, 8);
+				} else {
+					event = R_FIXUP_EVENT_REBASE;
+					delta = CHAIN_BITS (raw_ptr, 51, 12);
+					ptr_value = (CHAIN_BITS (raw_ptr, 36, 8) << 56)
+						| CHAIN_BITS (raw_ptr, 0, 36);
+					if (pointer_format == DYLD_CHAINED_PTR_64_OFFSET) {
+						ptr_value += mo->baddr;
+					}
+				}
+			}
+			break;
+		case DYLD_CHAINED_PTR_32:
+			{
+				stride = 4;
+				ptr_size = 4;
+				if (CHAIN_BITS (raw_ptr, 31, 1)) {
+					event = R_FIXUP_EVENT_BIND;
+					delta = CHAIN_BITS (raw_ptr, 26, 5);
+					ordinal = CHAIN_BITS (raw_ptr, 0, 20);
+					addend = CHAIN_BITS (raw_ptr, 20, 6);
+				} else {
+					event = R_FIXUP_EVENT_REBASE;
+					delta = CHAIN_BITS (raw_ptr, 26, 5);
+					ptr_value = CHAIN_BITS (raw_ptr, 0, 26);
+				}
+			}
+			break;
+		case DYLD_CHAINED_PTR_32_CACHE:
+			{
+				stride = 4;
+				ptr_size = 4;
+				event = R_FIXUP_EVENT_REBASE;
+				delta = CHAIN_BITS (raw_ptr, 30, 2);
+				ptr_value = CHAIN_BITS (raw_ptr, 0, 30);
+			}
+			break;
+		case DYLD_CHAINED_PTR_32_FIRMWARE:
+			{
+				stride = 4;
+				ptr_size = 4;
+				event = R_FIXUP_EVENT_REBASE;
+				delta = CHAIN_BITS (raw_ptr, 26, 6);
+				ptr_value = CHAIN_BITS (raw_ptr, 0, 26);
+			}
+			break;
+		default:
+			R_LOG_WARN ("Unsupported chained pointer format %d", pointer_format);
+			return false;
+		}
+		if (cursor >= limit_start && cursor <= limit_end - width && (event & event_mask) != 0) {
+			RFixupEventDetails ed = {
+				.type = event,
+				.bin = mo,
+				.offset = cursor,
+				.raw_ptr = raw_ptr,
+				.ptr_size = ptr_size,
+				.ordinal = ordinal,
+				.addend = addend,
+				.ptr_value = ptr_value,
+				.key = key,
+				.addr_div = addr_div,
+				.diversity = diversity,
+			};
+			if (!callback (context, &ed)) {
+				return false;
+			}
+		}
+		if (!delta) {
+			break;
+		}
+		cursor += delta * stride;
+	}
+	return true;
+}
 
 void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) * mo, ut64 limit_start, ut64 limit_end, ut32 event_mask, RFixupCallback callback, void *context) {
 	int i;
@@ -5605,173 +5897,24 @@ void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) * mo, ut64 limit_start,
 				if (!starts->threaded) {
 					chain_end = R_MIN (end, start + (page_idx + 1) * page_size);
 				}
-				while (cursor < limit_end && cursor < chain_end) {
-					ut8 tmp[8];
-					bool previous_rebasing = mo->rebasing_buffer;
-					mo->rebasing_buffer = true;
-					if (r_buf_read_at (mo->b, cursor, tmp, 8) != 8) {
-						mo->rebasing_buffer = previous_rebasing;
-						break;
-					}
-					mo->rebasing_buffer = previous_rebasing;
-					ut16 pointer_format = starts->pointer_format;
-					ut64 raw_ptr = IS_FMT_32BIT (pointer_format)? r_read_le32 (tmp): r_read_le64 (tmp);
-					ut64 ptr_value = raw_ptr;
-					ut64 delta = 0, stride = 0, addend = 0;
-					RFixupEvent event = R_FIXUP_EVENT_NONE;
-					ut8 key = 0, addr_div = 0;
-					ut16 diversity = 0;
-					ut32 ordinal = UT32_MAX;
-					ut8 ptr_size = 8;
-					switch (pointer_format) {
-					case DYLD_CHAINED_PTR_ARM64E:
-						{
-							stride = 8;
-							bool is_auth = IS_PTR_AUTH (raw_ptr);
-							bool is_bind = IS_PTR_BIND (raw_ptr);
-							if (is_auth && is_bind) {
-								event = R_FIXUP_EVENT_BIND_AUTH;
-								delta = CHAIN_BITS (raw_ptr, 51, 11);
-								ordinal = CHAIN_BITS (raw_ptr, 0, 16);
-								key = CHAIN_BITS (raw_ptr, 49, 2);
-								addr_div = CHAIN_BITS (raw_ptr, 48, 1);
-								diversity = CHAIN_BITS (raw_ptr, 32, 16);
-							} else if (!is_auth && is_bind) {
-								event = R_FIXUP_EVENT_BIND;
-								delta = CHAIN_BITS (raw_ptr, 51, 11);
-								ordinal = CHAIN_BITS (raw_ptr, 0, 16);
-								addend = CHAIN_BITS (raw_ptr, 32, 19);
-							} else if (is_auth && !is_bind) {
-								event = R_FIXUP_EVENT_REBASE_AUTH;
-								delta = CHAIN_BITS (raw_ptr, 51, 11);
-								ptr_value = CHAIN_BITS (raw_ptr, 0, 32) + mo->baddr;
-								key = CHAIN_BITS (raw_ptr, 49, 2);
-								addr_div = CHAIN_BITS (raw_ptr, 48, 1);
-								diversity = CHAIN_BITS (raw_ptr, 32, 16);
-							} else {
-								event = R_FIXUP_EVENT_REBASE;
-								delta = CHAIN_BITS (raw_ptr, 51, 11);
-								ptr_value = (CHAIN_BITS (raw_ptr, 43, 8) << 56)
-									| CHAIN_BITS (raw_ptr, 0, 43);
-							}
-						}
-						break;
-					case DYLD_CHAINED_PTR_ARM64E_USERLAND24:
-						{
-							stride = 8;
-							if (IS_PTR_BIND (raw_ptr)) {
-								delta = CHAIN_BITS (raw_ptr, 51, 11);
-								if (IS_PTR_AUTH (raw_ptr)) {
-									event = R_FIXUP_EVENT_BIND_AUTH;
-									ordinal = CHAIN_BITS (raw_ptr, 0, 24);
-									key = CHAIN_BITS (raw_ptr, 49, 2);
-									addr_div = CHAIN_BITS (raw_ptr, 48, 1);
-									diversity = CHAIN_BITS (raw_ptr, 32, 16);
-								} else {
-									event = R_FIXUP_EVENT_BIND;
-									ordinal = CHAIN_BITS (raw_ptr, 0, 24);
-									addend = CHAIN_BITS (raw_ptr, 32, 19);
-								}
-							} else {
-								if (IS_PTR_AUTH (raw_ptr)) {
-									event = R_FIXUP_EVENT_REBASE_AUTH;
-									delta = CHAIN_BITS (raw_ptr, 51, 11);
-									ptr_value = CHAIN_BITS (raw_ptr, 0, 32) + mo->baddr;
-									key = CHAIN_BITS (raw_ptr, 49, 2);
-									addr_div = CHAIN_BITS (raw_ptr, 48, 1);
-									diversity = CHAIN_BITS (raw_ptr, 32, 16);
-								} else {
-									event = R_FIXUP_EVENT_REBASE;
-									delta = CHAIN_BITS (raw_ptr, 51, 11);
-									ptr_value = (CHAIN_BITS (raw_ptr, 43, 8) << 56)
-										| CHAIN_BITS (raw_ptr, 0, 43);
-									ptr_value += mo->baddr;
-								}
-							}
-						}
-						break;
-					case DYLD_CHAINED_PTR_64:
-					case DYLD_CHAINED_PTR_64_OFFSET:
-						{
-							stride = 4;
-							if (CHAIN_BITS (raw_ptr, 63, 1)) {
-								event = R_FIXUP_EVENT_BIND;
-								delta = CHAIN_BITS (raw_ptr, 51, 12);
-								ordinal = CHAIN_BITS (raw_ptr, 0, 24);
-								addend = CHAIN_BITS (raw_ptr, 24, 8);
-							} else {
-								event = R_FIXUP_EVENT_REBASE;
-								delta = CHAIN_BITS (raw_ptr, 51, 12);
-								ptr_value = (CHAIN_BITS (raw_ptr, 36, 8) << 56)
-									| CHAIN_BITS (raw_ptr, 0, 36);
-								if (pointer_format == DYLD_CHAINED_PTR_64_OFFSET) {
-									ptr_value += mo->baddr;
-								}
-							}
-						}
-						break;
-					case DYLD_CHAINED_PTR_32:
-						{
-							stride = 4;
-							ptr_size = 4;
-							if (CHAIN_BITS (raw_ptr, 31, 1)) {
-								event = R_FIXUP_EVENT_BIND;
-								delta = CHAIN_BITS (raw_ptr, 26, 5);
-								ordinal = CHAIN_BITS (raw_ptr, 0, 20);
-								addend = CHAIN_BITS (raw_ptr, 20, 6);
-							} else {
-								event = R_FIXUP_EVENT_REBASE;
-								delta = CHAIN_BITS (raw_ptr, 26, 5);
-								ptr_value = CHAIN_BITS (raw_ptr, 0, 26);
-							}
-						}
-						break;
-					case DYLD_CHAINED_PTR_32_CACHE:
-						{
-							stride = 4;
-							ptr_size = 4;
-							event = R_FIXUP_EVENT_REBASE;
-							delta = CHAIN_BITS (raw_ptr, 30, 2);
-							ptr_value = CHAIN_BITS (raw_ptr, 0, 30);
-						}
-						break;
-					case DYLD_CHAINED_PTR_32_FIRMWARE:
-						{
-							stride = 4;
-							ptr_size = 4;
-							event = R_FIXUP_EVENT_REBASE;
-							delta = CHAIN_BITS (raw_ptr, 26, 6);
-							ptr_value = CHAIN_BITS (raw_ptr, 0, 26);
-						}
-						break;
-					default:
-						R_LOG_WARN ("Unsupported chained pointer format %d", pointer_format);
-						return;
-					}
-					if (cursor >= limit_start && cursor <= limit_end - 8 && (event & event_mask) != 0) {
-						RFixupEventDetails ed = {
-							.type = event,
-							.bin = mo,
-							.offset = cursor,
-							.raw_ptr = raw_ptr,
-							.ptr_size = ptr_size,
-							.ordinal = ordinal,
-							.addend = addend,
-							.ptr_value = ptr_value,
-							.key = key,
-							.addr_div = addr_div,
-							.diversity = diversity,
-						};
-						if (!callback (context, &ed)) {
-							return;
-						}
-					}
-					if (!delta) {
-						break;
-					}
-					cursor += delta * stride;
+				if (!walk_fixup_chain (mo, cursor, chain_end, starts->pointer_format, NULL, limit_start, limit_end, event_mask, callback, context)) {
+					return;
 				}
 			}
 		}
 	}
+	if (!mo->fw_chain_count) {
+		return;
+	}
+	RBitmap *visited = r_bitmap_new ((size_t)(mo->size / 4 + 1));
+	if (!visited) {
+		return;
+	}
+	ut32 j;
+	for (j = 0; j < mo->fw_chain_count; j++) {
+		if (!walk_fixup_chain (mo, mo->fw_chain_starts[j], mo->size, mo->fw_pointer_format, visited, limit_start, limit_end, event_mask, callback, context)) {
+			break;
+		}
+	}
+	r_bitmap_free (visited);
 }

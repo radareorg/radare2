@@ -734,7 +734,7 @@ static bool dyncc_refs_exist(RAnal *anal, const RAnalDynCC *d) {
 }
 
 // the keys spelling a cc's argument and return layout, all invalidated by a redefinition
-static const char *cc_layout_keys[] = { "ret", "retn", "argn", "revarg", "pop", "shadow", "retmech", "stackalloc", "redzone", NULL };
+static const char *cc_layout_keys[] = { "ret", "retn", "argn", "revarg", "pop", "shadow", "retmech", "stackalloc", "redzone", "clobber", "preserve", NULL };
 
 static void cc_unset_keys(Sdb *db, const char *name, const char **keys) {
 	RStrBuf sb;
@@ -768,7 +768,7 @@ R_API void r_anal_cc_del(RAnal *anal, const char *name) {
 	if (dyncc_parse (name, &d)) {
 		return;
 	}
-	static const char *keys[] = { "self", "error", "clobber", "preserve", NULL };
+	static const char *keys[] = { "self", "error", NULL };
 	sdb_unset (DB, name, 0);
 	cc_unset_keys (DB, name, cc_layout_keys);
 	cc_unset_keys (DB, name, keys);

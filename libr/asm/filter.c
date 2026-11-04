@@ -11,7 +11,7 @@
 static bool isvalidflag(RFlagItem *flag) {
 	if (flag) {
 		if (flag->space) {
-			if (!strcmp (flag->space->name, "format")) {
+			if (R_STR_CMP_ANY (flag->space->name, "format", "registers")) {
 				return false;
 			}
 		}
@@ -347,6 +347,7 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 							free (flagname);
 							flagname = newstr;
 						}
+						flag_len = strlen (flagname);
 					}
 					const char *suffix = (ptr != ptr2)? ptr2: "";
 					char *spaced_suffix = NULL;

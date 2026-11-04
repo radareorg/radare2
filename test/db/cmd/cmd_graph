@@ -462,7 +462,7 @@ agraph.nodes.p6.x=0xb6
 agraph.nodes.p7.x=0x82
 agraph.nodes.u.x=0x11
 agraph.nodes.v.x=0x6c
-agraph.nodes.w.x=0x47
+agraph.nodes.w.x=0x48
 EOF
 RUN
 
@@ -488,9 +488,9 @@ digraph code {
 	node [fillcolor=white style=filled shape=box];
 	edge [arrowhead="normal"];
 	"0x0000044b" [URL="fcn.0000044b/0x0000044b", fontcolor="#767676", fontname="Courier", label="54: fcn.0000044b (int64_t arg1, int32_t arg_4h, int32_t arg_8h, int32_t arg_34h, int32_t arg_38h);\l; arg int64_t arg1 @ rsi\l; arg int32_t arg_4h @ rsp+0x4\l; arg int32_t arg_8h @ rsp+0x8\l; arg int32_t arg_34h @ rsp+0x34\l; arg int32_t arg_38h @ rsp+0x38\l0x0000044b      sar esi, 2                                             ; arg1\l0x0000044e      test esi, esi                                          ; arg1\l0x00000450      je 0x479\l"]
-	"0x00000479" [URL="fcn.0000044b/0x00000479", fontcolor="#767676", fontname="Courier", label="0x00000479      add esp, 0x1c\l0x0000047c      pop rbx\l0x0000047d      pop rsi\l0x0000047e      pop rdi\l0x0000047f      pop rbp\l0x00000480      ret\l"]
 	"0x00000452" [URL="fcn.0000044b/0x00000452", fontcolor="#767676", fontname="Courier", label="0x00000452      lea esi, [rsi]                                         ; arg1\l"]
 	"0x00000458" [URL="fcn.0000044b/0x00000458", fontcolor="#767676", fontname="Courier", label="0x00000458      mov eax, dword [arg_38h]\l0x0000045c      mov dword [rsp], ebp\l0x0000045f      mov dword [arg_8h], eax\l0x00000463      mov eax, dword [arg_34h]\l0x00000467      mov dword [arg_4h], eax\l0x0000046b      call qword [rbx + rdi*4 - 0xf8]\l0x00000472      add edi, 1\l0x00000475      cmp edi, esi\l0x00000477      jne 0x458\l"]
+	"0x00000479" [URL="fcn.0000044b/0x00000479", fontcolor="#767676", fontname="Courier", label="0x00000479      add esp, 0x1c\l0x0000047c      pop rbx\l0x0000047d      pop rsi\l0x0000047e      pop rdi\l0x0000047f      pop rbp\l0x00000480      ret\l"]
         "0x0000044b" -> "0x00000479" [color="#13a10e"];
         "0x0000044b" -> "0x00000452" [color="#c50f1f"];
         "0x00000452" -> "0x00000458" [color="cyan"];
@@ -567,6 +567,73 @@ ERROR: No function to graph
 EOF
 RUN
 
+NAME=generated graphs preserve quoted function names and edges
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e anal.in=io.maps
+wx e80b000000c3
+wx c3 @ 16
+af
+af @ 16
+afn base64:YSJiJ2NcZCBl
+axC 16 0
+.agC*
+aggj
+agg* > $graph
+ag-
+. $graph
+aggj
+'age- a\"b\'c\\d\ e fcn.00000010
+aggj
+'agn- a\"b\'c\\d\ e
+aggj
+ag-
+.agr*
+aggj
+ag-
+.axg* @ 16
+aggj
+ag-
+afvr rdi x int
+.txg
+aggj
+ag-
+afn caller @ 0
+afn base64:YSJiJ2NcZCBl @ 16
+.axtg @ 16
+aggj
+EOF
+EXPECT=<<EOF
+{"nodes":[{"id":0,"title":"a\"b'c\\d e","body":"","out_nodes":[1]},{"id":1,"title":"fcn.00000010","body":"","out_nodes":[]}]}
+{"nodes":[{"id":0,"title":"a\"b'c\\d e","body":"\n","out_nodes":[1]},{"id":1,"title":"fcn.00000010","body":"\n","out_nodes":[]}]}
+{"nodes":[{"id":0,"title":"a\"b'c\\d e","body":"\n","out_nodes":[]},{"id":1,"title":"fcn.00000010","body":"\n","out_nodes":[]}]}
+{"nodes":[{"id":1,"title":"fcn.00000010","body":"\n","out_nodes":[]}]}
+{"nodes":[{"id":0,"title":"a\"b'c\\d e","body":"","out_nodes":[1]},{"id":1,"title":"fcn.00000010","body":"","out_nodes":[]}]}
+{"nodes":[{"id":0,"title":"0x00000010","body":"fcn.00000010\n","out_nodes":[]},{"id":1,"title":"0x00000000","body":"a\"b'c\\d e\n","out_nodes":[0]}]}
+{"nodes":[{"id":0,"title":"a\"b'c\\d e","body":"","out_nodes":[]},{"id":1,"title":"int","body":"","out_nodes":[0]}]}
+{"nodes":[{"id":0,"title":"0x0","body":"a_bcd_e\n","out_nodes":[1]},{"id":1,"title":"0x10","body":"a\"b'c\\d e\n","out_nodes":[]}]}
+EOF
+RUN
+
+NAME=graph escaping preserves paths and unknown backslash escapes
+FILE=-
+CMDS=<<EOF
+'agn C:\tmp\file "body\text\next"
+'agn C:\\tmp\\ "body\\text\\"
+'age C:\tmp\file C:\\tmp\\
+aggj
+agg* > $graph
+ag-
+. $graph
+aggj
+EOF
+EXPECT=<<EOF
+{"nodes":[{"id":0,"title":"C:\\tmp\\file","body":"body\\text\\next\n","out_nodes":[1]},{"id":1,"title":"C:\\tmp\\","body":"body\\text\\\n","out_nodes":[]}]}
+{"nodes":[{"id":0,"title":"C:\\tmp\\file","body":"body\\text\\next\n","out_nodes":[1]},{"id":1,"title":"C:\\tmp\\","body":"body\\text\\\n","out_nodes":[]}]}
+EOF
+RUN
+
 NAME=agg node body ending in an unterminated ANSI escape
 FILE=-
 CMDS=<<EOF
@@ -575,5 +642,64 @@ agg~QQQQ
 EOF
 EXPECT=<<EOF
 | QQQQ                                     |
+EOF
+RUN
+
+NAME=Function graphs retain interrupt handlers
+FILE=malloc://16
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx cf
+af
+aflj~{[0].type}
+agfj~{[0].type}
+agfj~{[0].blocks[0].ops[0].type}
+agfj~{[0].blocks[0].ops[0].opcode}
+EOF
+EXPECT=<<EOF
+int
+int
+ret
+iretd
+EOF
+RUN
+
+NAME=fanout nodes in the same layer use separate bend lanes
+FILE=-
+CMDS=<<EOF
+e scr.utf8=false
+e scr.color=0
+agn a
+agn b
+agn c
+agn d
+agn e
+agn f
+age a d
+age a e
+age a f
+age b c
+age b d
+age b e
+agg
+EOF
+EXPECT=<<EOF
+                          .--------------------.    .--------------------.
+                          |  a                 |    |  b                 |
+                          `--------------------'    `--------------------'
+                                 v v v                     v v v
+                                 | | |                     | | |
+                                 | | '--------------------.| | |
+    .----------------------------' |                      || | |
+    |                           .--'                      || | |
+    |                           |                         || | |
+    |                           |                         || | '------------------.
+    |                           | .------------------------' |                    |
+    |                           | |                       | .'                    |
+    |                           | |                       | |                     |
+    |                           | |                       | |                     |
+.--------------------.    .--------------------.    .--------------------.    .--------------------.
+|  f                 |    |  d                 |    |  e                 |    |  c                 |
+`--------------------'    `--------------------'    `--------------------'    `--------------------'
 EOF
 RUN

@@ -426,6 +426,9 @@ static void rprj_function_attr_load(RPrjCursor *cur, RAnalFunction *fcn, R2Proje
 		if (attr->flags & RPRJ_FUNC_ATTR_NORETURN) {
 			r_strbuf_appendf (cur->out, "'tn 0x%08"PFMT64x"\n", va);
 		}
+		if (attr->flags & RPRJ_FUNC_ATTR_INLINE) {
+			r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'afia+ inline\n", va);
+		}
 	}
 	if ((mode & R_CORE_NEWPRJ_MODE_LOAD) && fcn) {
 		fcn->type = attr->type;
@@ -440,6 +443,7 @@ static void rprj_function_attr_load(RPrjCursor *cur, RAnalFunction *fcn, R2Proje
 		if (fcn->is_noreturn) {
 			r_anal_noreturn_add (cur->core->anal, name, va);
 		}
+		fcn->is_inline = attr->flags & RPRJ_FUNC_ATTR_INLINE;
 	}
 }
 
@@ -714,6 +718,9 @@ static void rprj_print_function_attrs(RPrjCursor *cur, RAnalFunction *fcn) {
 	if (fcn->is_noreturn) {
 		r_strbuf_appendf (cur->out, "'tn 0x%08"PFMT64x"\n", fcn->addr);
 	}
+	if (fcn->is_inline) {
+		r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'afia+ inline\n", fcn->addr);
+	}
 }
 
 static void rprj_print_function_script(RPrjCursor *cur, RAnalFunction *fcn) {
@@ -721,9 +728,10 @@ static void rprj_print_function_script(RPrjCursor *cur, RAnalFunction *fcn) {
 		return;
 	}
 	r_strbuf_appendf (cur->out, "'af+ 0x%08"PFMT64x" %s\n", fcn->addr, fcn->name);
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		r_strbuf_appendf (cur->out, "'afb+ 0x%08"PFMT64x" 0x%08"PFMT64x" %"PFMT64u" 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
 			fcn->addr, bb->addr, bb->size, bb->jump, bb->fail);
 		if (rprj_color_is_set (&bb->color)) {
@@ -741,8 +749,10 @@ static void rprj_print_function_script(RPrjCursor *cur, RAnalFunction *fcn) {
 
 static void rprj_diff_function_blocks(RPrjCursor *cur, RAnalFunction *fcn, RList *pbbs) {
 	RListIter *iter;
+	RAnalBlock **bb_iter;
 	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, bb_iter) {
+		bb = *bb_iter;
 		R2ProjectDiffBlock *pbb = rprj_diff_block_find (pbbs, bb->addr);
 		if (pbb) {
 			pbb->seen = true;
@@ -786,6 +796,12 @@ static void rprj_diff_function_attrs(RPrjCursor *cur, RAnalFunction *fcn, R2Proj
 		r_strbuf_appendf (cur->out, fcn->is_noreturn
 			? "'tn 0x%08"PFMT64x"\n"
 			: "'tn- 0x%08"PFMT64x"\n", fcn->addr);
+	}
+	const bool inl = attr && (attr->flags & RPRJ_FUNC_ATTR_INLINE);
+	if (inl != fcn->is_inline) {
+		r_strbuf_appendf (cur->out, fcn->is_inline
+			? "'0x%08"PFMT64x"'afia+ inline\n"
+			: "'0x%08"PFMT64x"'afia- inline\n", fcn->addr);
 	}
 }
 

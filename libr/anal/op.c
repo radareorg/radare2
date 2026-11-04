@@ -689,8 +689,9 @@ R_API int r_anal_op_reg_delta(RAnal *anal, ut64 addr, const char *name) {
 		dst = RVecRArchValue_at (&op.dsts, 0);
 		if (dst && dst->reg && (!name || !strcmp (dst->reg, name))) {
 			if (RVecRArchValue_length (&op.srcs) > 0) {
+				const int delta = RVecRArchValue_at (&op.srcs, 0)->delta;
 				r_anal_op_fini (&op);
-				return ((RAnalValue*)RVecRArchValue_at (&op.srcs, 0))->delta;
+				return delta;
 			}
 		}
 	}
@@ -703,6 +704,8 @@ R_API const char *r_anal_op_direction_tostring(RAnalOp *op) {
 		return "none";
 	}
 	switch (op->direction) {
+	case R_ANAL_OP_DIR_RW:
+		return "read,write";
 	case R_ANAL_OP_DIR_READ:
 		return "read";
 	case R_ANAL_OP_DIR_WRITE:

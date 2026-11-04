@@ -180,3 +180,68 @@ EXPECT=<<EOF
 [{"complete_object_locator":{"signature":0,"vftable_offset":0,"cd_offset":0,"type_desc_addr":4298928,"class_desc_addr":4290676,"object_base":0},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVAlbum@@"},"class_hierarchy_desc":{"signature":0,"attributes":0,"num_base_classes":1,"base_class_array_addr":4290692},"base_classes":[{"desc":{"type_desc_addr":4298928,"num_contained_bases":0,"where":{"mdisp":0,"pdisp":-1,"vdisp":0},"attributes":64},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVAlbum@@"}}]},{"complete_object_locator":{"signature":0,"vftable_offset":0,"cd_offset":0,"type_desc_addr":4298948,"class_desc_addr":4290748,"object_base":0},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVInAbsentia@@"},"class_hierarchy_desc":{"signature":0,"attributes":0,"num_base_classes":2,"base_class_array_addr":4290764},"base_classes":[{"desc":{"type_desc_addr":4298948,"num_contained_bases":1,"where":{"mdisp":0,"pdisp":-1,"vdisp":0},"attributes":64},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVInAbsentia@@"}},{"desc":{"type_desc_addr":4298928,"num_contained_bases":0,"where":{"mdisp":0,"pdisp":-1,"vdisp":0},"attributes":64},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVAlbum@@"}}]},{"complete_object_locator":{"signature":0,"vftable_offset":0,"cd_offset":0,"type_desc_addr":4298976,"class_desc_addr":4290824,"object_base":0},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVtype_info@@"},"class_hierarchy_desc":{"signature":0,"attributes":0,"num_base_classes":1,"base_class_array_addr":4290840},"base_classes":[{"desc":{"type_desc_addr":4298976,"num_contained_bases":0,"where":{"mdisp":0,"pdisp":-1,"vdisp":0},"attributes":64},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVtype_info@@"}}]}]
 EOF
 RUN
+
+NAME=avr itanium vmi base_count bound
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e anal.cxxabi=itanium
+w 1A @ 0
+wv8 0x100 @ 0x100
+wv8 0x200 @ 0x108
+wv8 0x300 @ 0x110
+wv8 0 @ 0x200
+wv8 0 @ 0x208
+wv4 0 @ 0x210
+wv4 2 @ 0x214
+wv8 0x200 @ 0x218
+wv8 0x2 @ 0x220
+wv8 0x200 @ 0x228
+wv8 0x102 @ 0x230
+avr @ 0x110
+?e -- max accepted
+wv4 0x40 @ 0x214
+avr @ 0x110~Type Info type,Count
+?e -- too many bases
+wv4 0x41 @ 0x214
+avr @ 0x110
+?e -- flagged typeinfo, too many bases
+wv8 0x400 @ 0x200
+f sym.__vmi_class_type_info @ 0x3f0
+avr @ 0x110
+?e -- flagged typeinfo, max accepted
+wv4 0x40 @ 0x214
+avr @ 0x110~Type Info type,Count
+EOF
+EXPECT=<<EOF
+Type Info at 0x00000200:
+  Type Info type: __vmi_class_type_info
+  Belongs to class vtable: 0x00000110
+  Reference to RTTI's type class: 0x00000000
+  Reference to type's name: 0x00000000
+  Type Name: A
+  Name unique: true
+  Flags: 0x0
+  Count of base classes: 0x2
+    Base class type descriptor address: 0x00000200
+    Base class flags: 0x2
+    Base class type descriptor address: 0x00000200
+    Base class flags: 0x102
+-- max accepted
+  Type Info type: __vmi_class_type_info
+  Count of base classes: 0x40
+-- too many bases
+Type Info at 0x00000200:
+  Type Info type: __class_type_info
+  Belongs to class vtable: 0x00000110
+  Reference to RTTI's type class: 0x00000000
+  Reference to type's name: 0x00000000
+  Type Name: A
+  Name unique: true
+-- flagged typeinfo, too many bases
+-- flagged typeinfo, max accepted
+  Type Info type: __vmi_class_type_info
+  Count of base classes: 0x40
+EOF
+RUN

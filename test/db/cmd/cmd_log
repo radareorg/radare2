@@ -69,3 +69,31 @@ EOF
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=T= replays base64 comments only and never command text from the log
+FILE=malloc://16
+ARGS=-e http.port=9749 -e log.level=0
+CMDS=<<EOF
+=h&
+sleep 0.5
+e http.sync=http://127.0.0.1:9749
+T base64:OmFkZC1jb21tZW50IDB4NCBhR1ZzYkc4PQ==
+T base64:OmFkZC1jb21tZW50IDB4OCBkMjl5YkdRPQ==
+T base64:OmFkZC1jb21tZW50IDB4YyBoZWxsbzs/ZSBQV05FRA==
+T base64:OmRlbC1jb21tZW50IDB4ODs/ZSBQV05FRDI=
+T=
+=h-
+?e --
+CC.@4
+CC.@8
+CC.@0xc
+EOF
+EXPECT=<<EOF
+CCu base64:aGVsbG8= @ 0x4
+CCu base64:d29ybGQ= @ 0x8
+CC-0x8
+--
+hello
+EOF
+REGEXP_ERR=Starting http server
+RUN

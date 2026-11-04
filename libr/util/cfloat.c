@@ -423,6 +423,8 @@ R_API void r_cfloat_value_from_double(RCFloatValue *value, double d, const RCFlo
 		set_bits (value, sign_pos, profile->sign_bits, sign);
 		set_bits (value, exp_pos, profile->exp_bits, exp_mask);
 		set_bits (value, mant_pos, profile->mant_bits, 0);
+	} else if (d == 0.0) {
+		set_bits (value, sign_pos, profile->sign_bits, sign);
 	} else {
 		long double val = fabsl ((long double)d);
 

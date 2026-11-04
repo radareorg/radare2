@@ -1916,8 +1916,7 @@ bool __magic_file_apprentice(RMagic *ms, const char *fn, size_t fn_size, int act
 		__magic_file_oomem (ms, fn_size);
 		return false;
 	}
-	fn = mfn;
-	for (it = fn; (it = strstr (it, R_SYS_ENVSEP)); it += strlen (R_SYS_ENVSEP)) {
+	for (it = mfn; (it = strstr (it, R_SYS_ENVSEP)); it += strlen (R_SYS_ENVSEP)) {
 		path_count++;
 	}
 	if (!RVecMagicMList_reserve (mlist, path_count)) {
@@ -1926,17 +1925,18 @@ bool __magic_file_apprentice(RMagic *ms, const char *fn, size_t fn_size, int act
 		return false;
 	}
 
-	while (fn) {
-		p = strstr (fn, R_SYS_ENVSEP);
+	char *path = mfn;
+	while (path) {
+		p = strstr (path, R_SYS_ENVSEP);
 		if (p) {
 			*p++ = '\0';
 		}
-		if (*fn == '\0') {
+		if (*path == '\0') {
 			break;
 		}
-		file_err = apprentice_1 (ms, fn, action, mlist);
+		file_err = apprentice_1 (ms, path, action, mlist);
 		errs = R_MAX (errs, file_err);
-		fn = p;
+		path = p;
 	}
 	if (errs == -1) {
 		free (mfn);

@@ -44,44 +44,38 @@ R_API bool r_core_patch_line(RCore *core, char *str) {
 }
 
 static bool __core_patch_bracket(RCore *core, const char *str, ut64 *noff) {
-	char tmp[128];
-	char *s, *p, *q, *off;
+	char tmp[32];
+	char *off = strdup (str);
+	if (!off) {
+		return false;
+	}
 	RBuffer *b = r_buf_new ();
-	if (!b) {
-		return false;
-	}
-	p = off = strdup (str);
-	if (!p) {
-		r_unref (b);
-		return false;
-	}
-	for (;*p;) {
-		if (*p == '\n') {
-			*p++ = 0;
-		} else {
-			p++;
+	char *line = off;
+	char *p = off;
+	while (*p) {
+		if (*p++ != '\n') {
 			continue;
 		}
-		if (*str == '}') {
+		p[-1] = 0;
+		if (*line == '}') {
 			break;
 		}
-		if ((q = strstr (str, "${"))) {
-			char *end = strchr (q + 2,'}');
-			if (end) {
-				*q = *end = 0;
-				*noff = r_num_math (core->num, q + 2);
-				r_buf_append_bytes (b, (const ut8*)str, strlen (str));
-				snprintf (tmp, sizeof (tmp), "0x%08"PFMT64x, *noff);
-				r_buf_append_bytes (b, (const ut8*)tmp, strlen (tmp));
-				r_buf_append_bytes (b, (const ut8*)end + 1, strlen (end + 1));
-			}
-		} else {
-			r_buf_append_bytes (b, (const ut8*)str, strlen (str));
+		char *q = strstr (line, "${");
+		char *end = q? strchr (q + 2, '}'): NULL;
+		if (end) {
+			*q = *end = 0;
+			*noff = r_num_math (core->num, q + 2);
+			snprintf (tmp, sizeof (tmp), "0x%08"PFMT64x, *noff);
+			r_buf_append_string (b, line);
+			r_buf_append_string (b, tmp);
+			r_buf_append_string (b, end + 1);
+		} else if (!q) {
+			r_buf_append_string (b, line);
 		}
-		str = p;
+		line = p;
 	}
 
-	s = r_buf_tostring (b);
+	char *s = r_buf_tostring (b);
 	r_egg_load (core->egg, s, 0);
 	free (s);
 

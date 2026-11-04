@@ -137,9 +137,9 @@ call sym.imp.atexit
 nop
 sethi 0xb0, o0
 --
-0x00018c08  357   7304 main
+0x00018c08  387   8340 main
 --
-0x00018c08  357   7304 main
+0x00018c08  387   8340 main
 0x0001b334    7    136 sym.set_program_name
 0x0003fa34    1      8 sym.imp.strrchr
 0x0003fa04    1      8 sym.imp.strncmp
@@ -153,9 +153,9 @@ sethi 0xb0, o0
 0x0003fa70    1      8 sym.imp.strlen
 0x0003fa4c    1      8 sym.imp..umul
 0x0003fc50    1      8 sym.imp.memcmp
-0x00021a50   26    408 sym.human_options
+0x00021a50   26    416 sym.human_options
 0x00021a14    1     60 sym.default_block_size
-0x00025e38   14    232 sym.xstrtoumax
+0x00025e38   53    804 sym.xstrtoumax
 0x0003fb90    1      8 sym.imp.ioctl
 0x00025948   53    796 sym.xstrtoul
 0x0003fe54    1      8 sym.imp.strtoul
@@ -183,9 +183,12 @@ sethi 0xb0, o0
 0x00022a8c    3     80 sym.set_char_quoting
 0x0001386c    5    180 sym.clear_files
 0x0003f9f8    1      8 sym.imp.free
-0x00015f6c  132   2488 sym.gobble_file
+0x00015f6c  140   2740 sym.gobble_file
 0x0003fa88    1      8 sym.imp.memset
 0x0003fa94    1      8 sym.imp.lstat64
+0x00020bfc  131   2340 sym.human_readable
+0x0001b318    1     28 sym.gnu_mbswidth
+0x0001b158   36    448 sym.mbsnwidth
 0x00015ee0    4     80 sym.format_user_or_group_width
 0x00015f30    3     60 sym.format_user_width
 0x00021bf0   12    168 sym.getuser
@@ -200,7 +203,7 @@ sethi 0xb0, o0
 0x00013ca0    5     56 sym.set_exit_status
 0x0003faa0    1      8 sym.imp.stat64
 0x000254e4    3     88 sym.umaxtostr
-0x0002bcac   61    704 sym.__umoddi3
+0x0002bcac   62    712 sym.__umoddi3
 0x0002b940   58    680 sym.__udivdi3
 0x0003faac    1      8 sym.imp.__major
 0x0003fab8    1      8 sym.imp.__minor
@@ -208,28 +211,37 @@ sethi 0xb0, o0
 0x0003fac4    1      8 sym.imp.strncpy
 0x0003fad0    1      8 sym.imp.strcpy
 0x000137a4    9    132 sym.is_colored
+0x00013d54    1      8 sym.unsigned_file_size
 0x00021db4   12    168 sym.getgroup
 0x0001ac9c    3     48 sym.file_has_acl
 0x0003fc2c    1      8 sym.imp.acl_trivial
+0x00020818   25    524 sym.hash_delete
+0x00020348   15    260 sym.hash_find_entry
+0x0001fe74    9    192 sym.check_tuning
+0x0002044c   21    380 sym.hash_rehash
 0x00013774    1     16 sym.dev_ino_free
 0x00013784    1     32 sym.free_pending_ent
 0x0003fb9c    1      8 sym.imp.opendir
 0x0001ba88    1      8 sym.dirfd
 0x0003fba8    1      8 sym.imp.fstat64
+0x000205c8   28    592 sym.hash_insert
+0x000202f8    4     60 sym.allocate_entry
 0x0003fbb4    1      8 sym.imp.readdir64
 0x00013d0c    6     72 sym.patterns_match
-0x0001e84c    4     92 sym.gnu_fnmatch
-0x0001caf4  206   2720 sym.internal_fnmatch
-0x0003fbc0    1      8 sym.imp.closedir
+0x0001e84c   22    552 sym.gnu_fnmatch
 0x00015c2c   16    396 sym.sort_files
 0x00015be8    4     68 sym.initialize_ordering_vector
 0x0003fa58    1      8 sym.imp.setjmp
 0x00022234    1     28 sym.mpsort
 0x00022030   25    516 sym.mpsort_with_tmp
-0x00016a20   31    512 sym.quote_name
+0x00017b7c    3     56 sym.print_current_files
+0x0003fbc0    1      8 sym.imp.closedir
+0x00016a20   46    748 sym.quote_name
 0x0002348c    3     76 sym.quotearg_buffer
 0x00022b84    3    100 sym.quotearg_buffer_restyled
-0x0001b158   18    240 sym.mbsnwidth
+0x0003fadc    1      8 sym.imp.mbrtowc
+0x0003fae8    1      8 sym.imp.wcwidth
+0x0003faf4    1      8 sym.imp.mbsinit
 0x0003f9d4    1      8 sym.imp.fputs
 0x00016da0    1     32 sym.restore_default_color
 0x00016d50    3     80 sym.put_indicator
@@ -244,17 +256,18 @@ sethi 0xb0, o0
 0x0001b7e4    3     88 sym.__xargmatch_internal
 0x0001b694    3     88 sym.argmatch_invalid
 0x00023810    1     28 sym.quotearg_n_style
-0x00022afc    1     16 sym.quoting_options_from_style
+0x00022afc    1    112 sym.quoting_options_from_style
 0x00022750    1     24 sym.quote_n
 0x0001b6ec    9    248 sym.argmatch_valid
 0x00013920    1     40 sym.add_ignore_pattern
 0x0001b528    1     48 sym.version_etc
 0x0001b3e4   16    316 sym.version_etc_va
-0x00013d80   23    352 sym.extract_dirs_from_files
-0x00013d5c    1     36 sym.is_directory
-0x0001b894   10    152 sym.last_component
+0x00013d80   30    476 sym.extract_dirs_from_files
 0x00013c38    5    104 sym.queue_directory
-0x00017b7c    3     56 sym.print_current_files
+0x00013d5c    1     36 sym.is_directory
+0x0001c000    3     48 sym.file_name_concat
+0x0001bf2c    9    212 sym.mfile_name_concat
+0x0001b894   10    152 sym.last_component
 0x00022414   23    408 sym._obstack_newchunk
 0x0003f9ec    1      8 sym.imp.__flsbuf
 0x0001f998    1      8 sym.hash_get_n_entries
@@ -268,7 +281,6 @@ sethi 0xb0, o0
 0x0003fc08    1      8 sym.imp.sigaction
 0x0003fc14    1      8 sym.imp.sigaddset
 0x0001ff34   28    480 sym.hash_initialize
-0x0001fe74    9    192 sym.check_tuning
 0x0003fb48    1      8 sym.imp..urem
 0x0003fd1c    1      8 sym.imp.calloc
 0x00022250   10    224 sym._obstack_begin
@@ -815,7 +827,7 @@ EXPECT=<<EOF
 0x000100f8      d203a058       ld [sp+0x58], o1
 0x000100fc      9403a05c       add sp, 0x5c, o2
 ;-- main:
-0x000104b4      fc3ba038       invalid
+0x000104b4      fc3ba038       std fp, [sp+0x38]
 0x000104b8      9c03bfa0       add sp, -0x60, sp
 0x000104bc      bc23bfa0       sub sp, -0x60, fp
 0x000104c0      be10000f       mov o7, i7

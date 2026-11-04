@@ -91,7 +91,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 laddr) {
 	struct MACH0_(obj_t) *mo = MACH0_(new_buf) (bf, buf, &opts);
 	if (mo) {
 		bf->bo->bin_obj = mo;
-		if (mo->chained_starts) {
+		if (MACH0_(has_fixup_chains) (mo)) {
 			RBuffer *nb = rebase_buffer (mo);
 			if (nb != bf->buf) {
 				r_unref (bf->buf);
@@ -354,11 +354,15 @@ static void append_load_relocs(RBinFile *bf, RBinObject *bo, const RSkipList *re
 	}
 	RBinReloc *r;
 	R_VEC_FOREACH (&mo->reloc_fixups, r) {
+		ut64 vaddr;
+		if (!MACH0_(paddr_to_vaddr) (mo, r->paddr, &vaddr)) {
+			continue;
+		}
 		RBinReloc *ptr = RVecRBinReloc_emplace_back (ret);
-		ptr->type = R_BIN_RELOC_64;
+		ptr->type = r->type;
 		ptr->ntype = r->ntype;
-		ptr->vaddr = r->paddr + mo->baddr;
-		ptr->paddr = r->vaddr;
+		ptr->vaddr = vaddr;
+		ptr->paddr = r->paddr;
 		ptr->addend = r->vaddr;
 	}
 }
@@ -552,14 +556,18 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 			if (count-- == 0) {
 				break;
 			}
-			ut64 paddr = r->paddr + mo->baddr;
-			r_write_ble64 (buf, r->vaddr, false);
-			if (iob->read_at (io, paddr, obuf, 8) != 8) {
+			ut64 vaddr;
+			if (!MACH0_(paddr_to_vaddr) (mo, r->paddr, &vaddr)) {
 				continue;
 			}
-			if (memcmp (buf, obuf, 8)) {
-				if (!iob->overlay_write_at (io, paddr, buf, 8)) {
-					R_LOG_ERROR ("write error at 0x%"PFMT64x, paddr);
+			const int width = r->type / 8;
+			r_write_ble (buf, r->vaddr, false, r->type);
+			if (iob->read_at (io, vaddr, obuf, width) != width) {
+				continue;
+			}
+			if (memcmp (buf, obuf, width)) {
+				if (!iob->overlay_write_at (io, vaddr, buf, width)) {
+					R_LOG_ERROR ("write error at 0x%"PFMT64x, vaddr);
 				}
 			}
 		}
@@ -754,12 +762,12 @@ static RBuffer *rebase_buffer(struct MACH0_(obj_t) *obj) {
 	return nb;
 }
 
-static void add_fixup(RVecRBinReloc *fixups, ut64 addr, ut64 value) {
+static void add_fixup(RVecRBinReloc *fixups, ut64 addr, ut64 value, ut32 psz) {
 	if (!fixups) {
 		return;
 	}
 	RBinReloc *r = RVecRBinReloc_emplace_back (fixups);
-	r->type = R_BIN_RELOC_64;
+	r->type = psz == 4? R_BIN_RELOC_32: R_BIN_RELOC_64;
 	r->vaddr = value;
 	r->paddr = addr;
 }
@@ -784,7 +792,7 @@ static bool rebase_buffer_callback2(void *context, RFixupEventDetails * event_de
 			}
 			memset (data, 0, psz);
 			ctx->chunk_dirty = true;
-			add_fixup (rflist, in_buf, 0);
+			add_fixup (rflist, in_buf, 0, psz);
 		}
 		break;
 	case R_FIXUP_EVENT_REBASE:
@@ -795,7 +803,7 @@ static bool rebase_buffer_callback2(void *context, RFixupEventDetails * event_de
 				return false;
 			}
 			ut64 v = event_details->ptr_value;
-			add_fixup (rflist, in_buf, v);
+			add_fixup (rflist, in_buf, v, psz);
 			r_write_ble (data, v, false, psz * 8);
 			ctx->chunk_dirty = true;
 		}
@@ -1180,11 +1188,12 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 }
 
 static ut64 size(RBinFile *bf) {
+	RVecSegment *segments = MACH0_(get_segments_vec) (bf, bf->bo->bin_obj);
 	ut64 off = 0;
 	ut64 len = 0;
-	if (sections_vec (bf)) {
+	if (segments) {
 		RBinSection *section;
-		R_VEC_FOREACH (&bf->bo->sections_vec, section) {
+		R_VEC_FOREACH (segments, section) {
 			if (section->paddr > off) {
 				off = section->paddr;
 				len = section->size;
@@ -1230,23 +1239,32 @@ static RVecRBinTrycatch *trycatch(RBinFile *bf) {
 		free (bytes);
 		return result;
 	}
+	RBinLsdaParser *lp = r_bin_dwarf_lsda_new (bf, result);
+	if (!lp) {
+		free (bytes);
+		return result;
+	}
 	const ut64 base = baddr (bf);
+	// the index entries slice one sorted descriptor array, never walk back over it
+	ut32 walked = 0;
 	ut32 i;
 	for (i = 0; i + 1 < index_count; i++) {
 		const ut8 *index = bytes + index_offset + (i * 12);
 		ut32 lsda_offset = r_read_ble32 (index + 8, be);
 		ut32 next_lsda_offset = r_read_ble32 (index + 20, be);
-		if (lsda_offset > next_lsda_offset || next_lsda_offset > section->size
+		if (lsda_offset < walked || lsda_offset > next_lsda_offset || next_lsda_offset > section->size
 				|| (next_lsda_offset - lsda_offset) % 8) {
 			continue;
 		}
+		walked = next_lsda_offset;
 		ut32 at;
 		for (at = lsda_offset; at < next_lsda_offset; at += 8) {
 			ut32 function_offset = r_read_ble32 (bytes + at, be);
 			ut32 lsda = r_read_ble32 (bytes + at + 4, be);
-			r_bin_dwarf_parse_lsda (bf, result, base + function_offset, base + lsda);
+			r_bin_dwarf_parse_lsda (lp, base + function_offset, base + lsda);
 		}
 	}
+	r_bin_dwarf_lsda_free (lp);
 	free (bytes);
 	RVecRBinTrycatch_shrink_to_fit (result);
 	return result;

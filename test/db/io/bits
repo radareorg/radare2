@@ -1,0 +1,73 @@
+NAME=bits:// le 12bit units
+FILE=bits://12/bins/elf/hello_world
+ARGS=-n
+CMDS=<<EOF
+px 8
+?v $s
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  7f05 c404 4602 1000                      ....F...
+0x2c60
+EOF
+RUN
+
+NAME=bits:// be 12bit units
+FILE=bits://12be/bins/elf/hello_world
+ARGS=-n
+CMDS=<<EOF
+px 8
+px 3 @ 1
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  07f4 054c 0460 0201                      ...L.`..
+- offset -   1 2  3 4  5 6  7 8  9 A  B C  D E  F10  123456789ABCDEF0
+0x00000001  f405 4c                                  ..L
+EOF
+RUN
+
+NAME=bits:// le 9bit units
+FILE=bits://9le/bins/elf/hello_world
+ARGS=-n
+CMDS=<<EOF
+px 8
+?v $s
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  7f01 2200 9301 4800                      .."...H.
+0x3b2a
+EOF
+RUN
+
+NAME=bits:// identity for 8bit units
+FILE=bits://8/bins/elf/hello_world
+ARGS=-n
+CMDS=<<EOF
+p8 4
+?v $s
+EOF
+EXPECT=<<EOF
+7f454c46
+0x2148
+EOF
+RUN
+
+NAME=bits:// invalid uris
+FILE=--
+CMDS=<<EOF
+o bits://0/bins/elf/hello_world
+o bits://12xx/bins/elf/hello_world
+o bits://12
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Invalid unit size in bits://0/bins/elf/hello_world, expected 1 to 64 bits
+ERROR: Cannot open file bits://0/bins/elf/hello_world
+ERROR: Invalid unit size in bits://12xx/bins/elf/hello_world, expected 1 to 64 bits
+ERROR: Cannot open file bits://12xx/bins/elf/hello_world
+ERROR: Usage: bits://<bits>[le|be]/<path>
+ERROR: Cannot open file bits://12
+EOF
+RUN

@@ -1,32 +1,32 @@
 /* radare2 - LGPL - Copyright 2014-2026 - pancake, vane11ope */
 
 static ut64 r_panels_parse_string_on_cursor(RCore *core, RPanel *panel, int idx) {
-	if (!panel->model->cmdStrCache) {
+	const char *content = r_panels_rendered_content (panel);
+	RPanelsModel *model = r_panels_content_index (panel, content);
+	if (!model || idx < 0 || idx >= model->height) {
 		return UT64_MAX;
 	}
-	RStrBuf *buf = r_strbuf_new (NULL);
-	char *s = panel->model->cmdStrCache;
-	int l = 0;
-	while (R_STR_ISNOTEMPTY (s) && l != idx) {
-		if (*s == '\n') {
-			l++;
-		}
-		s++;
-	}
-	while (R_STR_ISNOTEMPTY (s) && R_STR_ISNOTEMPTY (s + 1)) {
-		if (*s == '0' && *(s + 1) == 'x') {
-			r_strbuf_append_n (buf, s, 2);
-			while (*s != ' ') {
-				r_strbuf_append_n (buf, s, 1);
-				s++;
+	const char *s = content + *RPanelsLines_at (&model->lines, idx);
+	const char *end = content + *RPanelsLines_at (&model->lines, idx + 1);
+	for (; end - s > 2; s++) {
+		if (*s == '0' && (s[1] == 'x' || s[1] == 'X') && IS_HEXCHAR (s[2])) {
+			const char *address_end = s + 2;
+			while (address_end < end && IS_HEXCHAR (*address_end)) {
+				address_end++;
 			}
-			ut64 ret = r_num_math (core->num, r_strbuf_get (buf));
-			r_strbuf_free (buf);
-			return ret;
+			if (address_end - s > INT_MAX) {
+				return UT64_MAX;
+			}
+			char *address = r_str_ndup (s, address_end - s);
+			if (!address) {
+				return UT64_MAX;
+			}
+			const char *error = NULL;
+			ut64 value = r_num_get_err (core->num, address, &error);
+			free (address);
+			return error? UT64_MAX: value;
 		}
-		s++;
 	}
-	r_strbuf_free (buf);
 	return UT64_MAX;
 }
 
@@ -97,10 +97,9 @@ static void r_panels_fix_cursor_down(RCore *core) {
 		// XXX: ugly hack
 		for (i = 0; i < 2; i++) {
 			RAnalOp op;
-			int sz = r_asm_disassemble (core->rasm, &op, core->block, 32);
-			if (sz < 1) {
-				sz = 1;
-			}
+			r_asm_set_pc (core->rasm, core->addr);
+			int sz = r_asm_disassemble (core->rasm, &op, core->block, R_MIN (core->blocksize, 32));
+			sz = visual_op_size (core, core->addr, sz);
 			r_anal_op_fini (&op);
 			r_core_seek_delta (core, sz);
 			print->cur = R_MAX (print->cur - sz, 0);
@@ -674,7 +673,7 @@ static bool r_panels_check_func(RCore *core) {
 		r_cons_message (core->cons, "Not in a function. Type 'df' to define it here");
 		return false;
 	}
-	if (r_list_empty (fun->bbs)) {
+	if (RVecAnalBlockPtr_empty (&fun->bbs)) {
 		r_cons_message (core->cons, "No basic blocks in this function. You may want to use 'afb+'.");
 		return false;
 	}
@@ -751,6 +750,7 @@ static void handlePrompt(RCore *core, RPanels *panels) {
 	int h, w = r_panels_get_size (core, &h);
 	r_panels_resize_layout (panels, w, h);
 	r_panels_seek_all (core, core->addr);
+	r_panels_set_refresh_all (core, false, false);
 }
 
 static int add_cmd_panel(void *user) {
@@ -1314,6 +1314,7 @@ static void panel_breakpoint(RCore *core) {
 
 static void panel_continue(RCore *core) {
 	r_core_cmd (core, "dc", 0);
+	r_panels_set_refresh_all (core, false, false);
 }
 
 static bool handle_console(RCore *core, RPanel *panel, const int key) {
@@ -1365,10 +1366,6 @@ static void prevOpcode(RCore *core) {
 static void nextOpcode(RCore *core) {
 	RAnalOp *aop = r_core_anal_op (core, core->addr + core->print->cur, R_ARCH_OP_MASK_BASIC);
 	RPrint *p = core->print;
-	if (aop) {
-		p->cur += aop->size;
-		r_anal_op_free (aop);
-	} else {
-		p->cur += 4;
-	}
+	p->cur += visual_op_size (core, core->addr + p->cur, aop? aop->size: 0);
+	r_anal_op_free (aop);
 }
