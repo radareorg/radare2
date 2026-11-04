@@ -67,3 +67,18 @@ EXPECT=<<EOF
 11121314
 EOF
 RUN
+
+NAME=IHEX: many records load in linear time
+FILE=ihex://bins/ihex/many-records.hex
+TIMEOUT=5
+CMDS=<<EOF
+:r~?
+p8 4
+p8 2 @ 0xfffe
+EOF
+EXPECT=<<EOF
+32768
+41ff41ff
+41ff
+EOF
+RUN

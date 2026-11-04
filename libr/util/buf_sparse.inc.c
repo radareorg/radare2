@@ -1,84 +1,93 @@
-/* radare - LGPL - Copyright 2009-2020 - ret2libc */
+/* radare - LGPL - Copyright 2009-2026 - ret2libc */
 
 #include <r_util.h>
+
+typedef struct {
+	RBNode rb;
+	RBufferSparseItem si;
+} SparseChunk;
+
+// chunks are sorted by address and never overlap; the index lives behind the public struct
+typedef struct {
+	RBufferSparse pub;
+	RBNode *chunks;
+} SparseState;
 
 static void buffer_sparse_item_free(void *a) {
 	RBufferSparseItem *si = a;
 	free (si->data);
-	free (si);
+	free (container_of (si, SparseChunk, si));
 }
 
-static bool sparse_limits(RList *l, ut64 *max) {
-	bool set = false;
-	RBufferSparseItem *si;
-	RListIter *iter;
-
-	r_list_foreach (l, iter, si) {
-		if (set) {
-			if (max && si->to > *max) {
-				*max = si->to;
-			}
-			continue;
-		}
-		set = true;
-		if (max) {
-			*max = si->to;
-		}
-	}
-	return set;
+static int sparse_cmp_from(const void *incoming, const RBNode *in_tree, void *user) {
+	const ut64 addr = *(const ut64 *)incoming;
+	const ut64 from = container_of (in_tree, const SparseChunk, rb)->si.from;
+	return (addr > from) - (addr < from);
 }
 
-static RBufferSparseItem *sparse_item_append(RList *l, ut64 addr, const ut8 *data, ut64 len) {
-	if (!(l && data)) {
-		return NULL;
+// lower bound is the first chunk ending after addr
+static int sparse_cmp_end(const void *incoming, const RBNode *in_tree, void *user) {
+	const ut64 addr = *(const ut64 *)incoming;
+	return addr < container_of (in_tree, const SparseChunk, rb)->si.to? -1: 1;
+}
+
+static ut64 sparse_end(SparseState *s) {
+	RBNode *node = s->chunks;
+	if (!node) {
+		return 0;
 	}
-	RBufferSparseItem *si = R_NEW0 (RBufferSparseItem);
-	if (!si) {
-		return NULL;
+	while (node->child[1]) {
+		node = node->child[1];
 	}
-	si->data = calloc (sizeof (ut8), len);
-	if (!si->data) {
-		free (si);
-		return NULL;
+	return container_of (node, SparseChunk, rb)->si.to;
+}
+
+static bool sparse_chunk_add(SparseState *s, ut64 addr, const ut8 *data, ut64 len) {
+	SparseChunk *c = R_NEW0 (SparseChunk);
+	c->si.data = malloc (len);
+	if (!c->si.data) {
+		free (c);
+		return false;
 	}
-	si->from = addr;
-	si->to = addr + len;
-	si->size = len;
-	memcpy (si->data, data, len);
-	return r_list_append (l, si)? si: NULL;
+	memcpy (c->si.data, data, len);
+	c->si.from = addr;
+	c->si.to = addr + len;
+	c->si.size = len;
+	r_list_append (s->pub.sparse, &c->si);
+	r_rbtree_insert (&s->chunks, &addr, &c->rb, sparse_cmp_from, NULL);
+	return true;
 }
 
 //ret -1 if failed; # of bytes copied if success
-static st64 sparse_write(RList *l, ut64 addr, const ut8 *data, ut64 len) {
-	RBufferSparseItem *si;
-	RListIter *iter;
-	ut64 olen = len;
-
-	r_list_foreach (l, iter, si) {
-		if (addr >= si->from && addr < si->to) {
-			ut64 delta = addr - si->from;
-			ut64 reallen = si->size - delta >= len? len: si->size - delta;
-			memcpy (si->data + delta, data, reallen);
-			data += reallen;
-			len -= reallen;
-			addr += reallen;
+static st64 sparse_write(SparseState *s, ut64 addr, const ut8 *data, ut64 len) {
+	const ut64 olen = len;
+	while (len > 0) {
+		RBNode *node = r_rbtree_lower_bound (s->chunks, &addr, sparse_cmp_end, NULL);
+		RBufferSparseItem *si = node? &container_of (node, SparseChunk, rb)->si: NULL;
+		ut64 n = len;
+		if (si && si->from <= addr) {
+			n = R_MIN (len, si->to - addr);
+			memcpy (si->data + addr - si->from, data, n);
+		} else {
+			// fill the gap up to the next chunk
+			if (si && si->from - addr < len) {
+				n = si->from - addr;
+			}
+			if (!sparse_chunk_add (s, addr, data, n)) {
+				return -1;
+			}
 		}
-		if (len == 0) {
-			return olen;
-		}
-	}
-	if (len > 0 && !sparse_item_append (l, addr, data, len)) {
-		return -1;
+		data += n;
+		addr += n;
+		len -= n;
 	}
 	return olen;
 }
 
 static bool buf_sparse_init(RBuffer *b, const void *user) {
-	b->rb_sparse = R_NEW (RBufferSparse);
-	if (!b->rb_sparse) {
-		return false;
-	}
-	b->rb_sparse[0] = (RBufferSparse){.sparse = r_list_newf (buffer_sparse_item_free)};
+	SparseState *s = R_NEW0 (SparseState);
+	s->pub.sparse = r_list_newf (buffer_sparse_item_free);
+	b->rb_sparse = &s->pub;
 	return true;
 }
 
@@ -91,85 +100,71 @@ static bool buf_sparse_fini(RBuffer *b) {
 
 static bool buf_sparse_resize(RBuffer *b, ut64 newsize) {
 	R_WARN_IF_FAIL (b->rb_sparse);
+	SparseState *s = (SparseState *)b->rb_sparse;
 	RListIter *iter, *tmp;
 	RBufferSparseItem *si;
 
-	r_list_foreach_safe (b->rb_sparse->sparse, iter, tmp, si) {
+	r_list_foreach_safe (s->pub.sparse, iter, tmp, si) {
 		if (si->from >= newsize) {
-			r_list_delete (b->rb_sparse->sparse, iter);
-		} else if (si->to >= newsize) {
-			RBufferSparseItem *nsi = R_NEW (RBufferSparseItem);
-			nsi->from = si->from;
-			nsi->to = newsize;
-			nsi->size = nsi->to - nsi->from;
-			ut8 *tmp = realloc (si->data, si->size);
-			if (!tmp) {
-				free (nsi);
-				return false;
-			}
-			// otherwise it will be double-freed by r_list_delete
-			si->data = NULL;
-			nsi->data = tmp;
-			nsi->written = si->written;
-			r_list_append (b->rb_sparse->sparse, nsi);
-			r_list_delete (b->rb_sparse->sparse, iter);
+			r_rbtree_delete (&s->chunks, &si->from, sparse_cmp_from, NULL, NULL, NULL);
+			r_list_delete (s->pub.sparse, iter);
+		} else if (si->to > newsize) {
+			si->to = newsize;
+			si->size = newsize - si->from;
 		}
 	}
-	ut64 max;
-	max = sparse_limits (b->rb_sparse->sparse, &max)? max: 0;
-	if (max < newsize) {
-		return !!sparse_write (b->rb_sparse->sparse, newsize - 1, &b->Oxff_priv, 1);
+	if (sparse_end (s) < newsize) {
+		return sparse_write (s, newsize - 1, &b->Oxff_priv, 1) == 1;
 	}
 	return true;
 }
 
 static ut64 buf_sparse_size(RBuffer *b) {
 	R_WARN_IF_FAIL (b->rb_sparse);
-	ut64 max;
-
-	return sparse_limits (b->rb_sparse->sparse, &max)? max: 0;
+	return sparse_end ((SparseState *)b->rb_sparse);
 }
 
 static st64 buf_sparse_read(RBuffer *b, ut8 *buf, ut64 len) {
 	R_WARN_IF_FAIL (b->rb_sparse);
-	RBufferSparseItem *si;
-	RListIter *iter;
-	ut64 max = 0;
+	SparseState *s = (SparseState *)b->rb_sparse;
+	ut64 offset = s->pub.offset;
+	const ut64 max = sparse_end (s);
 
 	memset (buf, b->Oxff_priv, len);
-	r_list_foreach (b->rb_sparse->sparse, iter, si) {
-		if (max < si->to) {
-			max = si->to;
-		}
-		if (!(b->rb_sparse->offset < si->to && si->from < b->rb_sparse->offset + len)) {
-			continue;
-		}
-		if (b->rb_sparse->offset < si->from) {
-			const ut64 l = R_MIN (b->rb_sparse->offset + len - si->from, si->size);
-			memcpy (buf + si->from - b->rb_sparse->offset, si->data, l);
-		} else {
-			const ut64 l = R_MIN (si->to - b->rb_sparse->offset, len);
-			memcpy (buf, si->data + b->rb_sparse->offset - si->from, l);
-		}
-	}
-	if (b->rb_sparse->offset > max) {
+	if (offset > max) {
 		return -1;
 	}
-	ut64 r = R_MIN (max - b->rb_sparse->offset, len);
-	b->rb_sparse->offset += r;
+	RBIter it = r_rbtree_lower_bound_forward (s->chunks, &offset, sparse_cmp_end, NULL);
+	SparseChunk *c;
+	r_rbtree_iter_while (it, c, SparseChunk, rb) {
+		RBufferSparseItem *si = &c->si;
+		if (si->from >= offset + len) {
+			break;
+		}
+		if (offset < si->from) {
+			const ut64 l = R_MIN (offset + len - si->from, si->size);
+			memcpy (buf + si->from - offset, si->data, l);
+		} else {
+			const ut64 l = R_MIN (si->to - offset, len);
+			memcpy (buf, si->data + offset - si->from, l);
+		}
+	}
+	ut64 r = R_MIN (max - offset, len);
+	s->pub.offset += r;
 	return r;
 }
 
 static st64 buf_sparse_write(RBuffer *b, const ut8 *buf, ut64 len) {
 	R_WARN_IF_FAIL (b->rb_sparse);
-	st64 r = sparse_write (b->rb_sparse->sparse, b->rb_sparse->offset, buf, len);
-	b->rb_sparse->offset += r;
+	st64 r = sparse_write ((SparseState *)b->rb_sparse, b->rb_sparse->offset, buf, len);
+	if (r > 0) {
+		b->rb_sparse->offset += r;
+	}
 	return r;
 }
 
 static st64 buf_sparse_seek(RBuffer *b, st64 addr, int whence) {
 	R_WARN_IF_FAIL (b->rb_sparse);
-	ut64 max;
 	if (addr < 0 && (-addr) > (st64)b->rb_sparse->offset) {
 		return -1;
 	}
@@ -182,10 +177,7 @@ static st64 buf_sparse_seek(RBuffer *b, st64 addr, int whence) {
 		b->rb_sparse->offset = addr;
 		break;
 	case R_BUF_END:
-		if (!sparse_limits (b->rb_sparse->sparse, &max)) {
-			max = 0;
-		}
-		b->rb_sparse->offset = max + addr;
+		b->rb_sparse->offset = sparse_end ((SparseState *)b->rb_sparse) + addr;
 		break;
 	default:
 		R_WARN_IF_REACHED ();

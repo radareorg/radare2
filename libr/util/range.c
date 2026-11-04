@@ -17,6 +17,7 @@ R_API RRange *r_range_new(void) {
 		return NULL;
 	}
 	r->ranges->free = free;
+	r->ranges->sorted = true;
 	return r;
 }
 
@@ -159,25 +160,35 @@ RRangeItem *r_range_add(RRange *rgs, ut64 fr, ut64 to, int rw) {
 	int add = 1;
 
 	r_num_minmax_swap (&fr, &to);
-	r_list_foreach (rgs->ranges, iter, r) {
-		if (r->fr == fr && r->to == to) {
-			add = 0;
-		} else if (r->fr <= fr && r->fr <= to && r->to >= fr && r->to <= to) {
-			r->to = to;
-			ret = r;
-			add = 0;
-		} else if (r->fr >= fr && r->fr <= to && r->to >= fr && r->to >= to) {
-			r->fr = fr;
-			ret = r;
-			add = 0;
-		} else if (r->fr <= fr && r->fr <= to && r->to >= fr && r->to >= to) {
-			/* ignore */
-			add = 0;
-		} else if (r->fr >= fr && r->fr <= to && r->to >= fr && r->to <= to) {
-			r->fr = fr;
-			r->to = to;
-			ret = r;
-			add = 0;
+	// while ranges arrive in ascending order the list stays sorted and disjoint, so only the tail matters
+	RRangeItem *last = r_list_last (rgs->ranges);
+	const bool ascending = rgs->ranges->sorted && (!last || fr >= last->to);
+	if (ascending && last && fr == last->to) {
+		last->to = to;
+		return last;
+	}
+	if (!ascending) {
+		rgs->ranges->sorted = false;
+		r_list_foreach (rgs->ranges, iter, r) {
+			if (r->fr == fr && r->to == to) {
+				add = 0;
+			} else if (r->fr <= fr && r->fr <= to && r->to >= fr && r->to <= to) {
+				r->to = to;
+				ret = r;
+				add = 0;
+			} else if (r->fr >= fr && r->fr <= to && r->to >= fr && r->to >= to) {
+				r->fr = fr;
+				ret = r;
+				add = 0;
+			} else if (r->fr <= fr && r->fr <= to && r->to >= fr && r->to >= to) {
+				/* ignore */
+				add = 0;
+			} else if (r->fr >= fr && r->fr <= to && r->to >= fr && r->to <= to) {
+				r->fr = fr;
+				r->to = to;
+				ret = r;
+				add = 0;
+			}
 		}
 	}
 
@@ -188,6 +199,7 @@ RRangeItem *r_range_add(RRange *rgs, ut64 fr, ut64 to, int rw) {
 		ret->datalen = 0;
 		ret->data = NULL;
 		r_list_append (rgs->ranges, ret);
+		rgs->ranges->sorted = ascending;
 		rgs->changed = 1;
 	}
 
