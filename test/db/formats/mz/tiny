@@ -1,0 +1,16 @@
+NAME=MZ: unpadded DOS executable shorter than 0x3e bytes
+FILE=malloc://37
+CMDS=<<EOF
+wx 4d5a25000100000002000101ffff010000100000000000002000000000000000b8004ccd21
+wtf .tmp_mz_tiny.exe 37
+o .tmp_mz_tiny.exe
+i~^bintype
+pi 2 @ entry0
+rm .tmp_mz_tiny.exe
+EOF
+EXPECT=<<EOF
+bintype  mz
+mov ax, 0x4c00
+int 0x21
+EOF
+RUN
