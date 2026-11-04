@@ -3753,22 +3753,10 @@ static size_t populate_relr_at(ELFOBJ *eo, ut64 vaddr, ut64 vsize, size_t pos, s
 	return pos;
 }
 
-static bool read_reloc(ELFOBJ *eo, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 vaddr) {
-	// RELR is fully expanded by populate_relr_at, not one entry at a time
-	if (rel_mode == DT_CREL) {
-		// one entry only, so decoder state does not outlive the call
-		CrelInfo crel;
-		bool ok = crel_open_at (eo, &crel, vaddr) && read_crel_reloc (&crel, r);
-		crel_close (&crel);
-		return ok;
-	}
-	ut64 offset = Elf_(v2p) (eo, vaddr);
-	if (offset == UT64_MAX) {
-		return false;
-	}
+static bool read_reloc_at(ELFOBJ *eo, RBuffer *b, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 offset) {
 	size_t size_struct = get_size_rel_mode (rel_mode);
 	ut8 buf[sizeof (Elf_(Rela))] = {0};
-	int res = r_buf_read_at (eo->b, offset, buf, size_struct);
+	int res = r_buf_read_at (b, offset, buf, size_struct);
 	if (res != size_struct) {
 		return false;
 	}
@@ -3786,6 +3774,22 @@ static bool read_reloc(ELFOBJ *eo, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 v
 	r->sym = ELF_R_SYM (reloc_info.r_info);
 	r->type = ELF_R_TYPE (reloc_info.r_info);
 	return true;
+}
+
+static bool read_reloc(ELFOBJ *eo, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 vaddr) {
+	// RELR is fully expanded by populate_relr_at, not one entry at a time
+	if (rel_mode == DT_CREL) {
+		// one entry only, so decoder state does not outlive the call
+		CrelInfo crel;
+		bool ok = crel_open_at (eo, &crel, vaddr) && read_crel_reloc (&crel, r);
+		crel_close (&crel);
+		return ok;
+	}
+	ut64 offset = Elf_(v2p) (eo, vaddr);
+	if (offset == UT64_MAX) {
+		return false;
+	}
+	return read_reloc_at (eo, eo->b, r, rel_mode, offset);
 }
 
 static size_t get_num_relocs_mips_got(ELFOBJ *eo) {
@@ -4298,27 +4302,24 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, RVecElfOff *starts
 			if (!size) {
 				continue;
 			}
-			ut64 dim_relocs = section->size / size;
-			dim_relocs = R_MIN (dim_relocs, num_relocs) + 2;
-			// ET_REL: cap per-section (scount), else cumulative pos (also dedups the dynamic pass)
-			const bool etrel = is_bin_etrel (eo);
-			ut64 scount = 0;
+			RBuffer *section_bytes = r_buf_new_slice (eo->b, section->offset, ssize);
 			ut64 j;
 			for (j = get_next_not_analysed_offset (eo, section->rva, 0);
-				has_entry (j, size, ssize) && (etrel? scount: pos) <= dim_relocs;
+				section_bytes && has_entry (j, size, ssize) && pos < num_relocs;
 				j = get_next_not_analysed_offset (eo, section->rva, j + size)) {
 
 				RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
-				if (!read_reloc (eo, reloc, rel_mode, section->rva + j)) {
+				// an entry at an address no segment maps stays unread
+				if (Elf_(v2p) (eo, section->rva + j) == UT64_MAX || !read_reloc_at (eo, section_bytes, reloc, rel_mode, j)) {
 					RVecRBinElfReloc_pop_back (&eo->g_relocs);
 					break;
 				}
 
 				rel_cache_add (eo, reloc);
 				fix_rva_and_offset (eo, reloc, i);
-				scount++;
 				pos++;
 			}
+			r_unref (section_bytes);
 		}
 
 		i++;
