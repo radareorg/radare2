@@ -210,6 +210,61 @@ bool test_o_autocomplete_uses_file_completion(void) {
 	mu_end;
 }
 
+static bool autocomplete_offers(RLineCompletion *completion, const char *name) {
+	char **it;
+	R_VEC_FOREACH (&completion->args, it) {
+		if (!strcmp (*it, name)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static void autocomplete_line(RCore *core, RLineCompletion *completion, const char *line) {
+	RLineBuffer buf = {0};
+	r_str_ncpy (buf.data, line, sizeof (buf.data));
+	buf.length = strlen (buf.data);
+	buf.index = buf.length;
+	r_line_completion_clear (completion);
+	r_core_autocomplete (core, completion, &buf, R_LINE_PROMPT_DEFAULT);
+}
+
+bool test_autocomplete_skips_names_with_command_syntax(void) {
+	RCore *core = r_core_new ();
+	mu_assert_notnull (core, "Couldn't create new RCore");
+	mu_assert_notnull (r_core_file_open (core, "malloc://512", R_PERM_RW, 0), "open test buffer");
+	RAnalFunction *fcn = r_anal_create_function (core->anal, "dbg.check_plain", 0x100, 0, NULL);
+	mu_assert_notnull (fcn, "create plain function");
+	RAnalBlock *bb = r_anal_create_block (core->anal, 0x100, 12);
+	r_anal_function_add_block (fcn, bb);
+	r_unref (bb);
+	// names taken from DWARF keep every byte, including command separators
+	mu_assert_notnull (r_anal_create_function (core->anal, "dbg.check;!id", 0x200, 0, NULL), "create hostile function");
+	mu_assert_notnull (r_anal_function_set_var (fcn, -8, R_ANAL_VAR_KIND_BPV, "int", 4, false, "count_plain"), "add plain var");
+	mu_assert_notnull (r_anal_function_set_var (fcn, -16, R_ANAL_VAR_KIND_BPV, "int", 4, false, "count;!id"), "add hostile var");
+	r_core_seek (core, 0x100, true);
+
+	RLineCompletion completion = {0};
+	r_line_completion_init (&completion, 16);
+
+	autocomplete_line (core, &completion, "afi dbg.check");
+	bool plain_fcn = autocomplete_offers (&completion, "dbg.check_plain");
+	bool hostile_fcn = autocomplete_offers (&completion, "dbg.check;!id");
+
+	autocomplete_line (core, &completion, "afvn new count");
+	bool plain_var = autocomplete_offers (&completion, "count_plain");
+	bool hostile_var = autocomplete_offers (&completion, "count;!id");
+
+	r_line_completion_clear (&completion);
+	RVecCString_fini (&completion.args);
+	r_core_free (core);
+	mu_assert_true (plain_fcn, "afi completes plain function names");
+	mu_assert_false (hostile_fcn, "afi must not paste a function name holding r2 syntax into the command line");
+	mu_assert_true (plain_var, "afvn completes plain variable names");
+	mu_assert_false (hostile_var, "afvn must not paste a variable name holding r2 syntax into the command line");
+	mu_end;
+}
+
 static RCmdResult autocomplete_context_handler(RCmdContext *ctx) {
 	(void)ctx;
 	return (RCmdResult) { 0 };
@@ -998,6 +1053,7 @@ int all_tests(void) {
 	mu_run_test (test_prompt_format_preserves_trailing_escaped_newline);
 	mu_run_test (test_autocomplete_find_prefers_exact_match);
 	mu_run_test (test_o_autocomplete_uses_file_completion);
+	mu_run_test (test_autocomplete_skips_names_with_command_syntax);
 	mu_run_test (test_registered_command_autocomplete);
 	mu_run_test (test_cmd_str_pipe_sandbox);
 	mu_run_test_named (test_cmd_str_pipe_sandbox_exec, "test_cmd_str_pipe_sandbox_exec_shell", "!!echo CAPTURED", "CAPTURED\n");

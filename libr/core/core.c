@@ -1077,7 +1077,7 @@ static void autocomplete_functions(RCore *core, RLineCompletion *completion, con
 	int n = strlen (str);
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		char *name = r_core_anal_fcn_name (core, fcn);
-		if (!strncmp (name, str, n)) {
+		if (!strncmp (name, str, n) && r_str_is_r2safe (name)) {
 			r_line_completion_push (completion, name);
 		}
 		free (name);
@@ -1100,7 +1100,7 @@ static void autocomplete_vars(RCore *core, RLineCompletion *completion, const ch
 	RAnalVar **it;
 	R_VEC_FOREACH (&fcn->vars, it) {
 		RAnalVar *var = *it;
-		if (!strncmp (var->name, str, len)) {
+		if (!strncmp (var->name, str, len) && r_str_is_r2safe (var->name)) {
 			r_line_completion_push (completion, var->name);
 		}
 	}

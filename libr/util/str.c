@@ -1286,31 +1286,22 @@ R_API int r_str_unescape(char *buf) {
 	return i;
 }
 
+#define R_STR_R2_SPECIAL "`${}~|;#@&\\\"\n\r<>"
+
 R_API void r_str_sanitize(char *c) {
 	if (c) {
 		for (; *c; c++) {
-			switch (*c) {
-			case '`':
-			case '$':
-			case '{':
-			case '}':
-			case '~':
-			case '|':
-			case ';':
-			case '#':
-			case '@':
-			case '&':
-			case '\\':
-			case '"':
-			case '\n':
-			case '\r':
-			case '<':
-			case '>':
+			if (strchr (R_STR_R2_SPECIAL, *c)) {
 				*c = '_';
-				break;
 			}
 		}
 	}
+}
+
+// true when the string can be pasted into an r2 command line verbatim
+R_API bool r_str_is_r2safe(const char *str) {
+	R_RETURN_VAL_IF_FAIL (str, false);
+	return !strpbrk (str, R_STR_R2_SPECIAL) && r_str_is_printable (str);
 }
 
 R_API void r_str_sanitize_space(char *c) {
@@ -1508,12 +1499,8 @@ R_API char *r_str_sanitize_r2(const char *buf) {
 // the argument itself when an r2 script can replay it verbatim, base64:<b64> otherwise
 R_API char *r_str_r2arg(const char *arg) {
 	R_RETURN_VAL_IF_FAIL (arg, NULL);
-	if (*arg && r_str_is_printable (arg) && !r_str_startswith (arg, "base64:")) {
-		char *safe = r_str_sanitize_r2 (arg);
-		if (!strcmp (safe, arg)) {
-			return safe;
-		}
-		free (safe);
+	if (*arg && r_str_is_r2safe (arg) && !r_str_startswith (arg, "base64:")) {
+		return strdup (arg);
 	}
 	char *b64 = r_base64_encode_dyn ((const ut8 *)arg, -1);
 	char *res = r_str_newf ("base64:%s", r_str_get (b64));
