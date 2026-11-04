@@ -98,3 +98,58 @@ EXPECT=<<EOF
 41ffffffffffffff41
 EOF
 RUN
+
+NAME=IHEX: :i prints valid 16-byte records
+FILE=ihex://bins/other/test.ihex
+CMDS=<<EOF
+:i
+EOF
+EXPECT=<<EOF
+:108000008200813582009DAF82009DAF82009DAFCE
+:1080100082009DAF82009DAF82009DAF82009DAF28
+:1080200082009DAF82009DAF82009DAF82009DAF18
+:1080300082009DAF82009DAF82009DAF82009DAF08
+:0C80800068656C6C6F20776F726C640098
+:00000001FF
+EOF
+RUN
+
+NAME=IHEX: out of order and overlapping records are all loaded
+FILE=ihex://bins/ihex/overlapping-records.hex
+CMDS=<<EOF
+p8 8
+:r
+EOF
+EXPECT=<<EOF
+41ff42ff434443ff
+0x00000004-0x00000007
+0x00000002-0x00000003
+0x00000000-0x00000001
+EOF
+RUN
+
+NAME=IHEX: unknown record types are rejected
+FILE=-
+CMDS=<<EOF
+o ihex://bins/ihex/unknown-record-type.hex
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Unknown ihex record type 0a
+ERROR: ihex: failed to parse file
+ERROR: Cannot open file ihex://bins/ihex/unknown-record-type.hex
+EOF
+RUN
+
+NAME=IHEX: the checksum of the last record is checked
+FILE=-
+CMDS=<<EOF
+o ihex://bins/ihex/bad-checksum-last-record.hex
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Checksum failed in ihex record (:0100050043FF)
+ERROR: ihex: failed to parse file
+ERROR: Cannot open file ihex://bins/ihex/bad-checksum-last-record.hex
+EOF
+RUN
