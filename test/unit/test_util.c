@@ -470,6 +470,57 @@ bool test_sandbox_localhost(void) {
 	mu_end;
 }
 
+bool test_file_home(void) {
+	const char *homes[] = { NULL, "", R_SYS_DIR "home" R_SYS_DIR "r2" };
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (homes); i++) {
+		char *old_home = r_sys_getenv (R_SYS_HOME);
+		r_sys_setenv (R_SYS_HOME, homes[i]);
+		char *home = r_file_home (NULL);
+		char *path = r_file_home ("plugins");
+		r_sys_setenv (R_SYS_HOME, old_home);
+		free (old_home);
+		if (R_STR_ISNOTEMPTY (homes[i])) {
+			mu_assert_streq (home, homes[i], "preserve the configured home");
+			mu_assert_streq (path, R_SYS_DIR "home" R_SYS_DIR "r2" R_SYS_DIR "plugins", "append the home-relative path");
+		} else {
+			mu_assert_null (home, "missing or empty home must not fall back to a temporary directory");
+			mu_assert_null (path, "missing or empty home must not produce a home-relative path");
+		}
+		free (home);
+		free (path);
+	}
+	mu_end;
+}
+
+bool test_xdg_plugins_home(void) {
+	const char *homes[] = { NULL, "", R_SYS_DIR "home" R_SYS_DIR "r2" };
+	const char *datahomes[] = { NULL, "", R_SYS_DIR "data" };
+	size_t i, j;
+	for (i = 0; i < R_ARRAY_SIZE (homes); i++) {
+		for (j = 0; j < R_ARRAY_SIZE (datahomes); j++) {
+			char *old_home = r_sys_getenv (R_SYS_HOME);
+			char *old_datahome = r_sys_getenv ("XDG_DATA_HOME");
+			r_sys_setenv (R_SYS_HOME, homes[i]);
+			r_sys_setenv ("XDG_DATA_HOME", datahomes[j]);
+			char *plugins = r_xdg_datadir ("plugins");
+			r_sys_setenv (R_SYS_HOME, old_home);
+			r_sys_setenv ("XDG_DATA_HOME", old_datahome);
+			free (old_home);
+			free (old_datahome);
+			if (R_STR_ISNOTEMPTY (datahomes[j])) {
+				mu_assert_streq (plugins, R_SYS_DIR "data" R_SYS_DIR "radare2" R_SYS_DIR "plugins", "explicit XDG data home takes precedence");
+			} else if (R_STR_ISNOTEMPTY (homes[i])) {
+				mu_assert_streq (plugins, R_SYS_DIR "home" R_SYS_DIR "r2" R_SYS_DIR ".local" R_SYS_DIR "share" R_SYS_DIR "radare2" R_SYS_DIR "plugins", "default plugins are relative to the configured home");
+			} else {
+				mu_assert_null (plugins, "do not search for user plugins without a home");
+			}
+			free (plugins);
+		}
+	}
+	mu_end;
+}
+
 bool test_file_is_abspath(void) {
 	const char *absolute[] = {
 		"/", "/bin/ls", "C:/", "z:\\", "C:/Windows/notepad.exe",
@@ -749,6 +800,8 @@ int all_tests(void) {
 	mu_run_test (test_endian_is);
 	mu_run_test (test_endian_roundtrip);
 	mu_run_test (test_mem_bits);
+	mu_run_test (test_file_home);
+	mu_run_test (test_xdg_plugins_home);
 	mu_run_test (test_file_is_abspath);
 	mu_run_test (test_sys_executable_path);
 	mu_run_test (test_sandbox_grain_parse);

@@ -1851,11 +1851,9 @@ R_API int r_sys_endian_fromstring(const char *str) {
 
 R_API R_MUSTUSE char *r_file_home(const char *str) {
 	char *dst, *home = r_sys_getenv (R_SYS_HOME);
-	if (!home) {
-		home = r_file_tmpdir ();
-		if (!home) {
-			return NULL;
-		}
+	if (R_STR_ISEMPTY (home)) {
+		free (home);
+		return NULL;
 	}
 	size_t length = strlen (home) + 1;
 	if (R_STR_ISNOTEMPTY (str)) {
