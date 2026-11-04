@@ -1,0 +1,14 @@
+R2PM_BEGIN
+
+R2PM_DESC "Windows negative exit status fixture"
+
+R2PM_INSTALL_WINDOWS() {
+cmd /c exit -1
+}
+
+R2PM_BINSTALL_WINDOWS() {
+cmd /c exit -1 || exit /b 1
+echo should-not-run
+}
+
+R2PM_END

@@ -1024,8 +1024,7 @@ static int r2pm_run_r2script(const char *script, const char *dir) {
 #if R2__WINDOWS__
 // runs a cmd script from a temporary .bat file so set variables survive across lines
 // hooks must check failures themselves with `|| exit /b 1`
-// the script buffer is modified while splitting lines
-static int r2pm_run_batch_script(char *script, const char *dir) {
+static int r2pm_run_batch_script(const char *script, const char *dir) {
 	char *scriptfile = r_file_temp_ex ("r2pm", ".bat");
 	if (!scriptfile) {
 		R_LOG_ERROR ("Cannot create temporary batch script");
@@ -1033,20 +1032,9 @@ static int r2pm_run_batch_script(char *script, const char *dir) {
 	}
 	r_str_replace_ch (scriptfile, '/', '\\', true);
 	// cmd.exe only parses crlf terminated batch files reliably
-	RStrBuf *sb = r_strbuf_new ("@echo off\r\n");
-	RList *lines = r_str_split_list (script, "\n", 0);
-	RListIter *iter;
-	const char *line;
-	r_list_foreach (lines, iter, line) {
-		char *cmd = r_str_trim_dup (line);
-		if (R_STR_ISNOTEMPTY (cmd)) {
-			r_strbuf_appendf (sb, "%s\r\n", cmd);
-		}
-		free (cmd);
-	}
-	r_list_free (lines);
-	char *content = r_strbuf_drain (sb);
-	bool written = r_file_dump (scriptfile, (const ut8 *)content, strlen (content), false);
+	char *content = r_str_newf ("@echo off\n%s\n", script);
+	content = content? r_str_replace (content, "\n", "\r\n", true): NULL;
+	bool written = content && r_file_dump (scriptfile, (const ut8 *)content, strlen (content), false);
 	free (content);
 	int res = 1;
 	if (written) {
@@ -1104,12 +1092,12 @@ static int r2pm_uninstall_pkg(const char *pkg, bool global) {
 		free (bscript);
 	}
 	char *srcdir = r2pm_gitdir ();
-	char *builddir = r2pm_source_dir (srcdir, pkg);
-	const bool have_builddir = r2pm_have_builddir (pkg) && r_file_is_directory (builddir);
-	free (builddir);
+	char *pkgdir = r2pm_source_dir (srcdir, pkg);
+	if (!r2pm_have_builddir (pkg) || !r_file_is_directory (pkgdir)) {
+		R_FREE (pkgdir);
+	}
 	char *r2script = r2pm_get (pkg, R2PM_UNINSTALL_R2, TT_CODEBLOCK);
 	if (r2script) {
-		char *pkgdir = have_builddir? r2pm_source_dir (srcdir, pkg): NULL;
 		int res = r2pm_run_r2script (r2script, pkgdir);
 		if (res == 0) {
 			r2pm_unregister (pkg);
@@ -1123,32 +1111,31 @@ static int r2pm_uninstall_pkg(const char *pkg, bool global) {
 	char *script = r2pm_get (pkg, "\nR2PM_UNINSTALL_WINDOWS() {\n", TT_CODEBLOCK);
 	if (!script) {
 		R_LOG_ERROR ("This package does not have R2PM_UNINSTALL_WINDOWS instructions");
+		free (pkgdir);
 		free (srcdir);
 		return 1;
 	}
-	char *pkgdir = have_builddir? r2pm_source_dir (srcdir, pkg): NULL;
 	int res = r2pm_run_batch_script (script, pkgdir);
-	free (pkgdir);
 #else
 	char *script = r2pm_get (pkg, "\nR2PM_UNINSTALL() {\n", TT_CODEBLOCK);
 	if (!script) {
 		R_LOG_ERROR ("Cannot find the R2PM_UNINSTALL() {} script block for '%s'", pkg);
+		free (pkgdir);
 		free (srcdir);
 		return 1;
 	}
-	char *esrcdir = r_str_escape_sh (srcdir);
-	char *epkg = r_str_escape_sh (pkg);
-	char *s = (have_builddir && esrcdir && epkg)
-		? r_str_newf ("cd \"%s/%s\"\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", esrcdir, epkg, script)
+	char *epkgdir = pkgdir? r_str_escape_sh (pkgdir): NULL;
+	char *s = epkgdir
+		? r_str_newf ("cd \"%s\" || exit 1\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", epkgdir, script)
 		: r_str_newf ("export MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", script);
-	free (esrcdir);
-	free (epkg);
+	free (epkgdir);
 	int res = r_sandbox_system (s, 1);
 	free (s);
 #endif
 	if (res == 0) {
 		r2pm_unregister (pkg);
 	}
+	free (pkgdir);
 	free (script);
 	free (srcdir);
 	return res;

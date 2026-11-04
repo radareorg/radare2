@@ -3156,3 +3156,44 @@ EXPECT=<<EOF
 0x00004000 0x00004000 SET_32 8
 EOF
 RUN
+
+NAME=ELF: sparse phdr dynsym ordinals keep relocation names and values
+FILE=malloc://2264
+ARGS=-e bin.relocs.apply=true -e bin.baddr=0x400000
+CMDS=<<EOF
+wff bins/elf/x86_64-abs-sym-shoff-eof.so
+wx 00000000 @ 0x218
+io
+ir~ADD_64
+pv8 @ 0x403400
+EOF
+EXPECT=<<EOF
+0x004033f0 0x000003f0 ADD_64 1     absval
+0x004033f8 0x000003f8 ADD_64 1     abshit
+0x00403400 0x00000400 ADD_64 1     abszero
+0x00403408 0x00000408 ADD_64 1
+0x0000000000000000
+EOF
+RUN
+
+NAME=ELF: sparse phdr dynsym ordinals keep import relocation names
+FILE=malloc://2264
+ARGS=-e bin.relocs.apply=true -e bin.baddr=0x400000
+CMDS=<<EOF
+wff bins/elf/x86_64-abs-sym-shoff-eof.so
+wx 00000000 @ 0x218
+wx 0000 @ 0x266
+io
+ii
+ir~ADD_64
+EOF
+EXPECT=<<EOF
+nth vaddr      bind   type   lib name
+-------------------------------------
+4   ---------- GLOBAL NOTYPE     abszero
+0x004033f0 0x000003f0 ADD_64 1     absval
+0x004033f8 0x000003f8 ADD_64 1     abshit
+0x00403400 0x00000400 ADD_64 1     abszero
+0x00403408 0x00000408 ADD_64 1
+EOF
+RUN

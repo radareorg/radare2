@@ -1,7 +1,6 @@
 /* radare2 efi application entrypoint - LGPL - Copyright 2026 - pancake */
 
-#define GNU_EFI_USE_MS_ABI 1
-#include <efi.h>
+#include "r2_efi.h"
 
 #include <r_core.h>
 #include <r_util/libc.h>
@@ -17,4 +16,8 @@ EFI_STATUS efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *systab) {
 	r_core_prompt_loop (core);
 	r_core_free (core);
 	return EFI_SUCCESS;
+}
+
+EFI_STATUS _entry(EFI_HANDLE image, EFI_SYSTEM_TABLE *systab) {
+	return efi_main (image, systab);
 }

@@ -5172,6 +5172,7 @@ typedef struct {
 	int import_count;
 	RVecRBinElfSymbol *ret;
 	ut64 addr_sym_table;
+	ut64 max_ordinal; // highest retained dynsym ordinal, 0 when none
 } ReadPhdrSymbolState;
 
 static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
@@ -5271,6 +5272,7 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 		r_str_ncpy (psym->name, symname, ELF_STRING_LENGTH);
 
 		psym->ordinal = i;
+		state->max_ordinal = i;
 		psym->in_shdr = false;
 		fill_symbol_bind_and_type (eo, psym, &new_symbol);
 		psym->is_vaddr = is_vaddr;
@@ -5392,14 +5394,16 @@ static RVecRBinElfSymbol* load_symbols_from_phdr(ELFOBJ *eo, int type) {
 		R_LOG_WARN ("eo.limit reached for phdr symbols");
 		nsym = limit;
 	}
-	ReadPhdrSymbolState state = { .type = type, .ret = ret, .nsym = nsym, .addr_sym_table = addr_sym_table, };
+	ReadPhdrSymbolState state = { .type = type, .ret = ret, .nsym = nsym, .addr_sym_table = addr_sym_table, .max_ordinal = 0, };
 	if (!_read_symbols_from_phdr (eo, &state)) {
 		RVecRBinElfSymbol_free (ret);
 		return NULL;
 	}
 	RVecRBinElfSymbol_shrink_to_fit (ret);
 	// XXX refactor this code, also allocated in another place, but this is used in other situations..
-	size_t ret_size = RVecRBinElfSymbol_length (ret) + 1;  // + 1 because ordinals are 1-based
+	// Ordinals are 1-based dynsym indexes, and skipped entries leave holes, so
+	// size the lookup by the highest retained ordinal instead of the count.
+	size_t ret_size = state.max_ordinal + 1;
 	if (type == R_BIN_ELF_IMPORT_SYMBOLS && !eo->imports_by_ord_size) {
 		eo->imports_by_ord = (RBinImport**) calloc (ret_size, sizeof (RBinImport*));
 		if (eo->imports_by_ord) {

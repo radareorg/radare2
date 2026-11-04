@@ -570,30 +570,26 @@ typedef struct {
 static bool al_add(RBinAddrLineStore *als, ut64 addr, const char *file, const char *path, ut32 line, ut32 column) {
 	AddrLineStore *store = als->storage;
 	als->used = true;
-	bool found = false;
-	ut64 existing_idx = (ut64)(size_t)ht_up_find (store->ht, addr, &found);
-	if (found && existing_idx > 0) {
+	ut64 existing_idx = (ut64)(size_t)ht_up_find (store->ht, addr, NULL);
+	if (existing_idx > 0) {
 		RBinAddrline *hitem = RVecAddrLine_at (&store->vec, existing_idx - 1);
 		if (hitem && hitem->line == line) {
 			return false;
 		}
-		// Different line at same address - add to vec but keep first hash entry
-		RBinAddrline *di = RVecAddrLine_emplace_back (&store->vec);
-		di->addr = addr;
-		di->line = line;
-		di->column = column;
-		di->file = file ? r_strpool_add (store->pool, file) : UT32_MAX;
-		di->path = path ? r_strpool_add (store->pool, path) : UT32_MAX;
-		return true;
 	}
 	size_t new_idx = RVecAddrLine_length (&store->vec);
 	RBinAddrline *di = RVecAddrLine_emplace_back (&store->vec);
+	if (!di) {
+		return false;
+	}
 	di->addr = addr;
 	di->line = line;
 	di->column = column;
 	di->file = file ? r_strpool_add (store->pool, file) : UT32_MAX;
 	di->path = path ? r_strpool_add (store->pool, path) : UT32_MAX;
-	ht_up_insert (store->ht, addr, (void*)(size_t)(new_idx + 1));
+	if (!existing_idx) {
+		ht_up_insert (store->ht, addr, (void*)(size_t)(new_idx + 1));
+	}
 	return true;
 }
 
@@ -1475,13 +1471,13 @@ R_IPI RBinSymbol *r_bin_class_add_method(RBinFile *bf, const char *classname, co
 		return NULL;
 	}
 	RBinClass *c = r_bin_file_add_class (bf, classname, NULL, 0);
-	if (!c) {
-		return NULL;
-	}
-	if (bf->rbin && bf->rbin->options.classes_names_only) {
+	if (!c || (bf->rbin && bf->rbin->options.classes_names_only)) {
 		return NULL;
 	}
 	RBinSymbol *sym = RVecRBinSymbol_emplace_back (&c->methods);
+	if (!sym) {
+		return NULL;
+	}
 	sym->name = r_bin_name_new (name);
 	sym->classname = strdup (classname);
 	return sym;
