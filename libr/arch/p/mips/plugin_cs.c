@@ -1903,7 +1903,12 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 	ut8 buf[4] = {0};
 	int ret = mips_assemble (op->mnemonic, op->addr, buf);
 	if (ret < 1) {
-		return false;
+		if (!(mask & R_ARCH_ENCODE_MASK_SIZING)) {
+			return false;
+		}
+		// a label defined further down is not known yet while labels are
+		// sized, and every instruction takes 4 bytes
+		ret = 4;
 	}
 	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config)) {
 		ut8 tmp = buf[0];
