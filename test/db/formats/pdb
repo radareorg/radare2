@@ -401,3 +401,50 @@ ERROR: PDB root was not initialized
 ERROR: pdb was not parsed
 EOF
 RUN
+
+NAME=pdb DBI rejects negative, overflowing and wrapped section sizes
+FILE=-
+ARGS=-e log.level=1
+CMDS=<<EOF
+idpi bins/pdb/dbi-section-negative.pdb
+idpi bins/pdb/dbi-section-overflow.pdb
+idpi bins/pdb/dbi-section-wrap.pdb
+?e done
+EOF
+EXPECT=<<EOF
+done
+EOF
+EXPECT_ERR=<<EOF
+ERROR: PDB root was not initialized
+ERROR: pdb was not parsed
+ERROR: PDB root was not initialized
+ERROR: pdb was not parsed
+ERROR: PDB root was not initialized
+ERROR: pdb was not parsed
+EOF
+RUN
+
+NAME=pdb DBI rejects incomplete module records, names and padding
+FILE=-
+ARGS=-e log.level=1
+CMDS=<<EOF
+idpi bins/pdb/dbi-module-truncated.pdb
+idpi bins/pdb/dbi-module-name-missing.pdb
+idpi bins/pdb/dbi-object-name-missing.pdb
+idpi bins/pdb/dbi-module-padding-truncated.pdb
+?e done
+EOF
+EXPECT=<<EOF
+done
+EOF
+EXPECT_ERR=<<EOF
+ERROR: PDB root was not initialized
+ERROR: pdb was not parsed
+ERROR: PDB root was not initialized
+ERROR: pdb was not parsed
+ERROR: PDB root was not initialized
+ERROR: pdb was not parsed
+ERROR: PDB root was not initialized
+ERROR: pdb was not parsed
+EOF
+RUN

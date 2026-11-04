@@ -83,9 +83,13 @@ static int parse_dbi_ex_header(ut8 *data, ut32 max_len, SDBIExHeader *dbi_ex_hea
 	ut32 read_bytes = fixed_size;
 	ut8 *str_data = data + fixed_size;
 	ut32 before = read_bytes;
-	parse_sctring (&dbi_ex_header->modName, str_data, &read_bytes, max_len);
+	if (!parse_sctring (&dbi_ex_header->modName, str_data, &read_bytes, max_len)) {
+		return 0;
+	}
 	str_data += (read_bytes - before);
-	parse_sctring (&dbi_ex_header->objName, str_data, &read_bytes, max_len);
+	if (!parse_sctring (&dbi_ex_header->objName, str_data, &read_bytes, max_len)) {
+		return 0;
+	}
 	return read_bytes;
 }
 
@@ -139,15 +143,16 @@ void parse_dbi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream_file) {
 			break;
 		}
 		int sz = parse_dbi_ex_header (p_tmp, size - i, dbi_ex_header);
-		if (sz < 1) {
+		int padding = (PDB_ALIGN - sz % PDB_ALIGN) % PDB_ALIGN;
+		if (sz < 1 || sz > size - i - padding) {
 			free (dbi_ex_header->modName.name);
 			free (dbi_ex_header->objName.name);
 			free (dbi_ex_header);
-			break;
+			free (dbiexhdr_data);
+			stream_file->error = READ_PAGE_FAIL;
+			return;
 		}
-		if ((sz % PDB_ALIGN)) {
-			sz = sz + (PDB_ALIGN - (sz % PDB_ALIGN));
-		}
+		sz += padding;
 		i += sz;
 		p_tmp += sz;
 		r_list_append (dbi_stream->dbiexhdrs, dbi_ex_header);
@@ -155,11 +160,14 @@ void parse_dbi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream_file) {
 	free (dbiexhdr_data);
 
 	// skip unparsed sections
-	stream_file_seek (stream_file, dbi_stream->dbi_header.seccon_size, 1);
-	stream_file_seek (stream_file, dbi_stream->dbi_header.secmap_size, 1);
-	stream_file_seek (stream_file, dbi_stream->dbi_header.filinf_size, 1);
-	stream_file_seek (stream_file, dbi_stream->dbi_header.tsmap_size, 1);
-	stream_file_seek (stream_file, dbi_stream->dbi_header.ecinfo_size, 1);
+	ut64 skip_size = (ut64)dbi_stream->dbi_header.seccon_size + dbi_stream->dbi_header.secmap_size
+		+ dbi_stream->dbi_header.filinf_size + dbi_stream->dbi_header.tsmap_size
+		+ dbi_stream->dbi_header.ecinfo_size;
+	if (skip_size > stream_file->end - stream_file->pos) {
+		stream_file->error = READ_PAGE_FAIL;
+		return;
+	}
+	stream_file_seek (stream_file, (int)skip_size, 1);
 
 	parse_dbg_header (&dbi_stream->dbg_header, stream_file);
 }
