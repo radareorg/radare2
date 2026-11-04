@@ -380,6 +380,9 @@ static bool sections_vec(RBinFile *bf) {
 			break;
 		}
 		RBinSection *sec = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		if (!sec) {
+			break;
+		}
 		if (R_STR_ISNOTEMPTY (section->name)) {
 			sec->name = strdup ((const char*)section->name);
 		} else {
@@ -742,6 +745,9 @@ static RList* classes(RBinFile *bf) {
 				DotNetField *dfield;
 				r_list_foreach (dsym->fields, iter_field, dfield) {
 					RBinField *field = RVecRBinField_emplace_back (&cls->fields);
+					if (!field) {
+						break;
+					}
 					field->name = r_bin_name_new (dfield->name);
 					field->type = r_bin_name_new (r_str_get_fail (dfield->type_name, "unknown"));
 					field->attr.kind = R_BIN_FIELD_KIND_FIELD;
@@ -856,10 +862,9 @@ static bool symbols_vec(RBinFile *bf) {
 	if ((symbols = PE_(r_bin_pe_get_exports)(pe))) {
 		struct r_bin_pe_export_t *symbol;
 		R_VEC_FOREACH (symbols, symbol) {
-			if (limit_reached_vec (ret, limit)) {
+			if (limit_reached_vec (ret, limit) || !(ptr = RVecRBinSymbol_emplace_back (ret))) {
 				break;
 			}
-			ptr = RVecRBinSymbol_emplace_back (ret);
 			ptr->name = r_bin_name_new ((char *)symbol->name);
 			ptr->libname = *symbol->libname ? strdup ((char *)symbol->libname) : NULL;
 			ptr->forwarder = r_str_constpool_get (&bf->rbin->constpool, (char *)symbol->forwarder);
@@ -875,10 +880,9 @@ static bool symbols_vec(RBinFile *bf) {
 	if ((imports = PE_(r_bin_pe_get_imports)(pe))) {
 		struct r_bin_pe_import_t *import;
 		R_VEC_FOREACH (imports, import) {
-			if (limit_reached_vec (ret, limit)) {
+			if (limit_reached_vec (ret, limit) || !(ptr = RVecRBinSymbol_emplace_back (ret))) {
 				break;
 			}
-			ptr = RVecRBinSymbol_emplace_back (ret);
 			ptr->name = r_bin_name_new ((const char *)import->name);
 			ptr->libname = strdup ((const char *)import->libname);
 			ptr->is_imported = true;
@@ -899,58 +903,55 @@ static bool symbols_vec(RBinFile *bf) {
 	if (pe && pe->dos_header && pe->nt_headers) {
 		ut64 image_base = PE_(r_bin_pe_get_image_base) (pe);
 		RList *dotnet_symbols = get_dotnet_symbols (bf);
-		if (dotnet_symbols) {
-			if (r_list_length (dotnet_symbols) > 0) {
-				r_bin_file_add_language (bf, R_BIN_LANG_CIL);
-				RListIter *iter;
-				DotNetSymbol *dsym;
-				r_list_foreach (dotnet_symbols, iter, dsym) {
-					if (limit_reached_vec (ret, limit)) {
-						break;
+		if (!r_list_empty (dotnet_symbols)) {
+			r_bin_file_add_language (bf, R_BIN_LANG_CIL);
+			RListIter *iter;
+			DotNetSymbol *dsym;
+			r_list_foreach (dotnet_symbols, iter, dsym) {
+				if (strcmp (dsym->type, "methoddef")) {
+					continue;
+				}
+				if (limit_reached_vec (ret, limit) || !(ptr = RVecRBinSymbol_emplace_back (ret))) {
+					break;
+				}
+				if (dsym->namespace && dsym->namespace[0]) {
+					char *full_name = r_str_newf ("%s.%s", dsym->namespace, dsym->name);
+					ptr->name = r_bin_name_new (full_name);
+					free (full_name);
+				} else {
+					ptr->name = r_bin_name_new (dsym->name);
+				}
+				if (ptr->name && dsym->signature) {
+					ptr->name->name = strdup (dsym->name);
+					r_bin_name_update (ptr->name, dsym->signature);
+				}
+				ptr->type = R_BIN_TYPE_FUNC_STR;
+				ptr->bind = R_BIN_BIND_GLOBAL_STR;
+				if (dsym->is_native) {
+					ptr->attr.lang = R_BIN_LANG_C;
+					if (!has_native_dotnet) {
+						r_bin_file_add_language (bf, R_BIN_LANG_C);
+						has_native_dotnet = true;
 					}
-					if (!strcmp (dsym->type, "methoddef")) {
-						// Add methoddef at its RVA
-						ptr = RVecRBinSymbol_emplace_back (ret);
-						if (dsym->namespace && dsym->namespace[0]) {
-							char *full_name = r_str_newf ("%s.%s", dsym->namespace, dsym->name);
-							ptr->name = r_bin_name_new (full_name);
-							free (full_name);
-						} else {
-							ptr->name = r_bin_name_new (dsym->name);
-						}
-						if (ptr->name && dsym->signature) {
-							ptr->name->name = strdup (dsym->name);
-							r_bin_name_update (ptr->name, dsym->signature);
-						}
-						ptr->type = R_BIN_TYPE_FUNC_STR;
-						ptr->bind = R_BIN_BIND_GLOBAL_STR;
-						if (dsym->is_native) {
-							ptr->attr.lang = R_BIN_LANG_C;
-							if (!has_native_dotnet) {
-								r_bin_file_add_language (bf, R_BIN_LANG_C);
-								has_native_dotnet = true;
-							}
-						} else {
-							ptr->attr.lang = R_BIN_LANG_CIL;
-							ptr->rtype = strdup (r_str_get_fail (dsym->return_type, "unknown"));
-							ptr->arg_first = 0;
-							ptr->arg_count = dsym->param_count;
-							ptr->cc_arg_count = dsym->param_count;
-							ptr->arg_prefix = "a";
-							ptr->ret_count = dsym->ret_count;
-							ptr->attr.flags |= dotnet_method_attr (dsym->flags, dsym->short_name);
-							if (!dsym->is_instance) {
-								ptr->attr.flags |= R_BIN_ATTR_STATIC;
-							}
-						}
-						if (dsym->vaddr > 0) {
-							ptr->vaddr = dsym->vaddr + image_base;
-							ptr->paddr = dsym->paddr;
-							ptr->hsize = dsym->hsize;
-						}
-						ptr->attr.size = dsym->size;
+				} else {
+					ptr->attr.lang = R_BIN_LANG_CIL;
+					ptr->rtype = strdup (r_str_get_fail (dsym->return_type, "unknown"));
+					ptr->arg_first = 0;
+					ptr->arg_count = dsym->param_count;
+					ptr->cc_arg_count = dsym->param_count;
+					ptr->arg_prefix = "a";
+					ptr->ret_count = dsym->ret_count;
+					ptr->attr.flags |= dotnet_method_attr (dsym->flags, dsym->short_name);
+					if (!dsym->is_instance) {
+						ptr->attr.flags |= R_BIN_ATTR_STATIC;
 					}
 				}
+				if (dsym->vaddr > 0) {
+					ptr->vaddr = dsym->vaddr + image_base;
+					ptr->paddr = dsym->paddr;
+					ptr->hsize = dsym->hsize;
+				}
+				ptr->attr.size = dsym->size;
 			}
 		}
 	}
@@ -991,6 +992,9 @@ static bool imports_vec(RBinFile *bf) {
 		}
 		filter_import (imp->name);
 		RBinImport *ptr = RVecRBinImport_emplace_back (ret);
+		if (!ptr) {
+			break;
+		}
 		ptr->name = r_bin_name_new ((char*)imp->name);
 		ptr->libname = strdup ((char*)imp->libname);
 		ptr->bind = "NONE";
@@ -998,6 +1002,9 @@ static bool imports_vec(RBinFile *bf) {
 		ptr->ordinal = imp->ordinal;
 
 		RBinReloc *rel = RVecRBinReloc_emplace_back (relocs);
+		if (!rel) {
+			break;
+		}
 #ifdef R_BIN_PE64
 		rel->type = R_BIN_RELOC_64;
 #else

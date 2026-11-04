@@ -517,25 +517,15 @@ static bool bin_pe_parse_imports(RBinPEObj *pe,
 	Sdb *db = NULL;
 	char *sdb_module = NULL;
 	char *symdllname = NULL;
+	bool success = false;
 
 	if (R_STR_ISEMPTY (dll_name) || *dll_name == '0') {
 		return false;
 	}
 
-#if 0
-	// R2_590
-	PE_DWord off = PE_(va2pa) (pe, OriginalFirstThunk);
-	if (!off) {
-		off = PE_(va2pa) (pe, FirstThunk);
-		if (!off) {
-			return false;
-		}
-	}
-#else
 	if (! (off = PE_(va2pa) (pe, OriginalFirstThunk)) && ! (off = PE_(va2pa) (pe, FirstThunk))) {
 		return false;
 	}
-#endif
 	do {
 		if (import_ordinal >= UT16_MAX) {
 			break;
@@ -546,6 +536,11 @@ static bool bin_pe_parse_imports(RBinPEObj *pe,
 		import_table = R_BUF_READ_PE_DWORD_AT (pe->b, off + i * sizeof (PE_DWord));
 		if (!import_table) {
 			break;
+		}
+		// every import owns a thunk slot, descriptors sharing tables cannot list more than the file holds
+		if (RVecPEImport_length (imports) >= pe->size / sizeof (PE_DWord)) {
+			R_LOG_WARN ("PE import descriptors list more thunks than the file holds");
+			goto beach;
 		}
 		if (import_table == PE_DWORD_MAX) {
 			R_LOG_WARN ("read (import table)");
@@ -634,23 +629,16 @@ static bool bin_pe_parse_imports(RBinPEObj *pe,
 		}
 	} while (import_table);
 
-	if (db) {
-		sdb_free (db);
-		db = NULL;
-	}
-	free (symdllname);
-	free (sdb_module);
-	return i > 0;
+	success = i > 0;
+	goto beach;
 
 error:
-	if (db) {
-		sdb_free (db);
-		db = NULL;
-	}
+	RVecPEImport_clear (imports);
+beach:
+	sdb_free (db);
 	free (symdllname);
 	free (sdb_module);
-	RVecPEImport_clear (imports);
-	return false;
+	return success;
 }
 
 static bool read_libname(RBinPEObj *pe, ut64 paddr, char *name, size_t name_size) {
