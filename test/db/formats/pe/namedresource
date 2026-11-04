@@ -1,6 +1,86 @@
-NAME=PE: corkami namedresource.exe - open
+NAME=PE: corkami namedresource.exe - resource name
 FILE=bins/pe/namedresource.exe
-CMDS=q!
+CMDS=iuj~{0.name}
 EXPECT=<<EOF
+RES
+EOF
+RUN
+
+NAME=PE: directory resource names are not limited to import name length
+FILE=bins/pe/namedresource.exe
+CMDS=<<EOF
+e io.va=false
+y $s @0
+o malloc://4096
+yy 0
+wx d0000080 @0x358
+wx 2f01 @0x400
+wX 4100 @0x402!606
+wx 45004e004400 @0x65a
+oba 0
+iuj~END~?
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=PE: empty, truncated and zero-containing directory resource names
+FILE=bins/pe/namedresource.exe
+CMDS=<<EOF
+e io.va=false
+y $s @0
+o malloc://4096
+yy 0
+wx d0000080 @0x358
+wx 0000 @0x400
+oba 0
+iuj~{0.named}
+e io.va=false
+wx ffff @0x400
+oba 0
+iuj~{0.name}
+e io.va=false
+wx 01000000 @0x400
+oba 0
+iuj~{0.name}
+EOF
+EXPECT=<<EOF
+true
+208
+208
+EOF
+RUN
+
+NAME=PE: resource entries sharing one long name load quickly
+FILE=bins/pe/resource-long-shared-name.exe
+TIMEOUT=3
+CMDS=<<EOF
+iI~^class
+EOF
+EXPECT=<<EOF
+class    PE32
+EOF
+RUN
+
+NAME=PE: truncated child and type resource directories
+FILE=bins/pe/namedresource.exe
+CMDS=<<EOF
+e io.va=false
+y $s @0
+o malloc://1024
+yy 0
+wx c8000080 @0x35c
+oba 0
+iuj
+e io.va=false
+wx 30000080 @0x35c
+wx c8000080 @0x344
+oba 0
+iuj
+EOF
+EXPECT=<<EOF
+[]
+[]
 EOF
 RUN
