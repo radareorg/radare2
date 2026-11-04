@@ -3294,6 +3294,7 @@ static void _parse_resource_directory(RBinPEObj *pe, Pe_image_resource_directory
 				align32 (cur_paddr);
 			}
 			sdb_ns_set (pe->kv, "vs_version_info", sdb);
+			sdb_free (sdb);
 		}
 		r_pe_resource *rs = R_NEW0 (r_pe_resource);
 		/* Compare compileTimeStamp to resource timestamp to figure out if DOS date or POSIX date */

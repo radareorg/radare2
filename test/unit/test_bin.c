@@ -417,6 +417,50 @@ bool test_r_bin_pebble_resources(void) {
 	mu_end;
 }
 
+bool test_r_bin_pe_version_resource_ownership(void) {
+	size_t size;
+	ut8 *bytes = (ut8 *)r_file_slurp ("bins/pe/version_std.exe", &size);
+	mu_assert_notnull (bytes, "Read PE version fixture");
+	mu_assert_true (size >= 0x218, "PE resource directory entry fits");
+	// Redirect the VERSION directory to repeated references to the existing data entry.
+	r_write_le32 (bytes + 0x214, 0x80000000 | (size - 0x200));
+	RBuffer *buf = r_buf_new_with_bytes (bytes, size);
+	free (bytes);
+	mu_assert_notnull (buf, "PE version resource buffer");
+	ut8 directory[16 + 64 * 8] = {0};
+	r_write_le16 (directory + 14, 64);
+	int i;
+	for (i = 0; i < 64; i++) {
+		r_write_le32 (directory + 16 + i * 8, i);
+		r_write_le32 (directory + 20 + i * 8, 0x48);
+	}
+	mu_assert_true (r_buf_append_bytes (buf, directory, sizeof (directory)), "Append VERSION directory");
+	RBin *bin = r_bin_new ();
+	RIO *io = r_io_new ();
+	r_io_bind (io, &bin->iob);
+	RBinFileOptions opt = {0};
+	r_bin_file_options_init (&opt, -1, 0, 0, 0);
+	opt.filename = "versions.exe";
+	mu_assert_true (r_bin_open_buf (bin, buf, &opt), "Open repeated VERSION resources");
+	RBinFile *bf = r_bin_cur (bin);
+	mu_assert_notnull (bf, "PE binfile");
+	RVecRBinResource *resources = r_bin_file_get_resources (bf);
+	mu_assert_notnull (resources, "PE resources");
+	mu_assert_eq (RVecRBinResource_length (resources), 64, "All VERSION resources parsed");
+	Sdb *info = sdb_ns (bf->sdb, "info", false);
+	Sdb *versions = sdb_ns (info, "vs_version_info", false);
+	mu_assert_notnull (versions, "VERSION namespace");
+	Sdb *version = sdb_ns (versions, "VS_VERSIONINFO0", false);
+	Sdb *fixed = sdb_ns (version, "fixed_file_info", false);
+	mu_assert_eq (sdb_num_get (fixed, "Signature", 0), 0xfeef04bd, "VERSION contents preserved");
+	int refs = versions->refs;
+	r_bin_free (bin);
+	r_io_free (io);
+	r_unref (buf);
+	mu_assert_eq (refs, 1, "VERSION tree owned only by its parent namespace");
+	mu_end;
+}
+
 static RBuffer *le_resource_binary(bool is_le) {
 	const ut32 object_table = 0xb0;
 	const ut32 page_table = object_table + 48;
@@ -783,6 +827,7 @@ bool all_tests(void) {
 	mu_run_test(test_r_bin_languages);
 	mu_run_test(test_r_bin_function_kind_attributes);
 	mu_run_test(test_r_bin_pebble_resources);
+	mu_run_test(test_r_bin_pe_version_resource_ownership);
 	mu_run_test(test_r_bin_le_resources);
 	mu_run_test(test_r_bin_external_resource_data);
 	mu_run_test(test_r_bin_resource_decoding);
