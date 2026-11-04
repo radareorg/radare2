@@ -22,28 +22,43 @@ typedef struct {
 	RBuffer *rbuf;
 	ut64 min;
 	ut64 max;
-	RRange *range;
 } Rsrec;
 
-static void update_bounds(Rsrec *rs, ut64 min, ut64 max, const ut8 *buf) {
-	size_t i, len = max - min;
-	bool isff = true;
+static bool is_all_ff(const ut8 *buf, size_t len) {
+	size_t i;
 	for (i = 0; i < len; i++) {
 		if (buf[i] != 0xff) {
-			isff = false;
-			break;
+			return false;
 		}
 	}
-	if (isff) {
+	return true;
+}
+
+static void update_bounds(Rsrec *rs, ut64 min, ut64 max, const ut8 *buf) {
+	if (is_all_ff (buf, max - min)) {
 		return;
 	}
-	r_range_add (rs->range, min, max, 1);
 	if (min < rs->min) {
 		rs->min = min;
 	}
 	if (max > rs->max) {
 		rs->max = max;
 	}
+}
+
+// written chunks that are not all 0xff, adjacent ones merged
+static RRange *written_ranges(RBuffer *rbuf) {
+	RRange *rgs = r_range_new ();
+	RList *chunks = r_buf_nonempty_list (rbuf);
+	RListIter *iter;
+	RBufferSparseItem *si;
+	r_list_foreach (chunks, iter, si) {
+		if (!is_all_ff (si->data, si->size)) {
+			r_range_add (rgs, si->from, si->to, 1);
+		}
+	}
+	r_list_free (chunks);
+	return rgs;
 }
 
 static bool srec_parse_byte(const char *s, ut8 *out) {
@@ -195,7 +210,6 @@ static bool __close(RIODesc *fd) {
 	}
 	Rsrec *rs = fd->data;
 	r_unref (rs->rbuf);
-	r_range_free (rs->range);
 	free (rs);
 	fd->data = NULL;
 	return true;
@@ -227,7 +241,6 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		free (str);
 		return NULL;
 	}
-	rs->range = r_range_new ();
 	rs->min = UT64_MAX;
 	rs->rbuf = r_buf_new_sparse (io->Oxff);
 	if (!rs->rbuf) {
@@ -271,7 +284,9 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		break;
 	case 'r':
 		{
-			char *s = r_range_tostring (rs->range);
+			RRange *rgs = written_ranges (rs->rbuf);
+			char *s = r_range_tostring (rgs);
+			r_range_free (rgs);
 			r_str_replace_char (s, ',', '\n');
 			r_strbuf_append (sb, s);
 			free (s);

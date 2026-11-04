@@ -82,3 +82,19 @@ EXPECT=<<EOF
 41ff
 EOF
 RUN
+
+NAME=IHEX: records in random order load in linear time
+FILE=ihex://bins/ihex/shuffled-records.hex
+TIMEOUT=3
+CMDS=<<EOF
+:r~?
+:r~:0..2
+p8 9 @ 0x30000
+EOF
+EXPECT=<<EOF
+32768
+0x0003fff8-0x0003fff9
+0x0003fff0-0x0003fff1
+41ffffffffffffff41
+EOF
+RUN

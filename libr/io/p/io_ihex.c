@@ -33,28 +33,43 @@ typedef struct {
 	RBuffer *rbuf;
 	ut64 min;
 	ut64 max;
-	RRange *range;
 } Rihex;
 
-static void update_bounds(Rihex *rih, ut64 min, ut64 max, const ut8 *buf) {
-	size_t i, len = max - min;
-	bool isff = true;
+static bool is_all_ff(const ut8 *buf, size_t len) {
+	size_t i;
 	for (i = 0; i < len; i++) {
 		if (buf[i] != 0xff) {
-			isff = false;
-			break;
+			return false;
 		}
 	}
-	if (isff) {
+	return true;
+}
+
+static void update_bounds(Rihex *rih, ut64 min, ut64 max, const ut8 *buf) {
+	if (is_all_ff (buf, max - min)) {
 		return;
 	}
-	r_range_add (rih->range, min, max, 1);
 	if (min < rih->min) {
 		rih->min = min;
 	}
 	if (max > rih->max) {
 		rih->max = max;
 	}
+}
+
+// written chunks that are not all 0xff, adjacent ones merged
+static RRange *written_ranges(RBuffer *rbuf) {
+	RRange *rgs = r_range_new ();
+	RList *chunks = r_buf_nonempty_list (rbuf);
+	RListIter *iter;
+	RBufferSparseItem *si;
+	r_list_foreach (chunks, iter, si) {
+		if (!is_all_ff (si->data, si->size)) {
+			r_range_add (rgs, si->from, si->to, 1);
+		}
+	}
+	r_list_free (chunks);
+	return rgs;
 }
 
 // fw04b : write 04 record (extended address); ret <0 if error
@@ -216,7 +231,6 @@ static bool __close(RIODesc *fd) {
 	}
 	Rihex *rih = fd->data;
 	r_unref (rih->rbuf);
-	r_range_free (rih->range);
 	free (rih);
 	fd->data = NULL;
 	return true;
@@ -413,7 +427,6 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		free (str);
 		return NULL;
 	}
-	rih->range = r_range_new ();
 	rih->min = UT64_MAX;
 	rih->rbuf = r_buf_new_sparse (io->Oxff);
 	if (!rih->rbuf) {
@@ -458,9 +471,10 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		break;
 	case 'i':
 		{
+			RRange *rgs = written_ranges (rih->rbuf);
 			RRangeItem *r;
 			RListIter *iter;
-			r_list_foreach_prev (rih->range->ranges, iter, r) {
+			r_list_foreach_prev (rgs->ranges, iter, r) {
 				ut8 buf[0x20];
 				// use r_io instead?
 				int i, j;
@@ -484,11 +498,14 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 					i += max - 1;
 				}
 			}
+			r_range_free (rgs);
 		}
 		break;
 	case 'r':
 		{
-			char *s = r_range_tostring (rih->range);
+			RRange *rgs = written_ranges (rih->rbuf);
+			char *s = r_range_tostring (rgs);
+			r_range_free (rgs);
 			r_str_replace_char (s, ',', '\n');
 			r_strbuf_append (sb, s);
 			free (s);
@@ -502,14 +519,16 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			pj_kn (pj, "max", rih->max);
 			pj_kn (pj, "size", rih->max - rih->min);
 			pj_ka (pj, "ranges");
+			RRange *rgs = written_ranges (rih->rbuf);
 			RRangeItem *r;
 			RListIter *iter;
-			r_list_foreach_prev (rih->range->ranges, iter, r) {
+			r_list_foreach_prev (rgs->ranges, iter, r) {
 				pj_o (pj);
 				pj_kn (pj, "from", r->fr);
 				pj_kn (pj, "to", r->to);
 				pj_end (pj);
 			}
+			r_range_free (rgs);
 			pj_end (pj);
 			pj_end (pj);
 			char *s = pj_drain (pj);

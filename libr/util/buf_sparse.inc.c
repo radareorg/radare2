@@ -188,7 +188,13 @@ static st64 buf_sparse_seek(RBuffer *b, st64 addr, int whence) {
 
 static RList *buf_sparse_nonempty_list(RBuffer *b) {
 	R_WARN_IF_FAIL (b->rb_sparse);
-	return r_list_clone (b->rb_sparse->sparse, NULL);
+	RList *chunks = r_list_new ();
+	RBIter it;
+	SparseChunk *c;
+	r_rbtree_foreach (((SparseState *)b->rb_sparse)->chunks, it, c, SparseChunk, rb) {
+		r_list_append (chunks, &c->si);
+	}
+	return chunks;
 }
 
 static const RBufferMethods buffer_sparse_methods = {
