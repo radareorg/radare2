@@ -3156,3 +3156,24 @@ EXPECT=<<EOF
 0x00004000 0x00004000 SET_32 8
 EOF
 RUN
+
+NAME=ELF: sparse phdr dynsym ordinals keep relocation names and values
+FILE=bins/elf/x86_64-abs-sym-shoff-eof.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+!cp bins/elf/x86_64-abs-sym-shoff-eof.so /tmp/r2r-sparse-ordinals.so
+o /tmp/r2r-sparse-ordinals.so
+oo+
+wx 00000000 @ 0x400218
+o /tmp/r2r-sparse-ordinals.so
+ir~ADD_64
+pv8 @ 0x403400
+EOF
+EXPECT=<<EOF
+0x004033f0 0x000003f0 ADD_64 1     absval
+0x004033f8 0x000003f8 ADD_64 1     abshit
+0x00403400 0x00000400 ADD_64 1     abszero
+0x00403408 0x00000408 ADD_64 1
+0x0000000000000000
+EOF
+RUN
