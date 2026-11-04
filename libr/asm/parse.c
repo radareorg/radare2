@@ -53,10 +53,10 @@ R_API char *r_asm_parse_immtrim(RAsm *a, const char *_opstr) {
 		opstr = r_str_replace (opstr, " + ", "+", 1);
 	}
 	r_str_trim (opstr);
-	char *last = opstr + strlen (opstr) - 1;
-	if (*last == ',') {
-		*last = 0;
-		r_str_trim (opstr);
+	size_t len = strlen (opstr);
+   	if (len > 0 && opstr[len - 1] == ',') {
+   		opstr[len - 1] = 0;
+   		r_str_trim (opstr);
 	}
 	return opstr;
 }
@@ -97,7 +97,7 @@ R_API char *r_asm_parse_immbase(RAsm *a, const char *_opstr, int base) {
 			last = end;
 			p = end;
 		} else {
-			p = end;
+			last = p - 1;
 		}
 	}
 	r_strbuf_append (sb, last);
