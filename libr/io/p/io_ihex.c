@@ -309,9 +309,6 @@ static bool ihex_parse(Rihex *rih, char *str) {
 				R_LOG_ERROR ("sparse buffer problem, giving up");
 				goto fail;
 			}
-			sec_size = 0;
-
-			sec_size += bc;
 			//next_addr += bc;
 			if (eol) {
 				// checksum
@@ -336,20 +333,13 @@ static bool ihex_parse(Rihex *rih, char *str) {
 			str = eol;
 			break;
 		case 1: // EOF. we don't validate checksum here
-			if (at && sec_size) {
-				update_bounds (rih, at, at + sec_size, sec_tmp);
-				if (r_buf_write_at (rbuf, at, sec_tmp, sec_size) != sec_size) {
-					R_LOG_ERROR ("sparse buffer problem, giving up. ssiz=%X, sstart=%X", sec_size, sec_start);
-					goto fail;
-				}
-			}
+			// every data record is already written, nothing is left to flush
 			str = NULL;
 			break;
 		case 2:	// extended segment record
 		case 4:	// extended linear address rec
 			// both rec types are handled the same except:
 			// new address = seg_reg <<4 for type 02; new address = lin_addr <<16 for type 04.
-			sec_size = 0;
 
 			eol = strchr (str + 1, ':');
 			if (eol) {
