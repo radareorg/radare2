@@ -70,3 +70,13 @@ DEBUG: RCoreCmd: =!
 DEBUG: RCoreCmd: ieq
 EOF
 RUN
+
+NAME=rel shared reloc tables are loaded once
+FILE=bins/rel/shared-relocs.rel
+CMDS=<<EOF
+ir*~wv8?
+EOF
+EXPECT=<<EOF
+4
+EOF
+RUN

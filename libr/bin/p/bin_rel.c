@@ -169,6 +169,11 @@ static int load_reloc_table(RelReloc *out, RBuffer *buf, ut64 addr) {
 	return i;
 }
 
+static int cmp_imp_relocs_paddr(const void *a, const void *b) {
+	const RelImp *ia = a, *ib = b;
+	return (ia->relocs_paddr > ib->relocs_paddr) - (ia->relocs_paddr < ib->relocs_paddr);
+}
+
 static bool vread_at_be32(RBin *b, ut32 vaddr, ut32 *out) {
 	ut8 buf[4] = { 0 };
 	if (b->iob.read_at (b->iob.io, vaddr, (void *)&buf, sizeof (buf)) != sizeof (buf)) {
@@ -276,12 +281,20 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 		goto beach;
 	}
 	r_buf_fread_at (bf->buf, rel->hdr.imp_table_paddr, (void *)imps, "II", num_imps);
+	// walk the tables in file order so shared or overlapping ones are loaded only once
+	qsort (imps, num_imps, sizeof (RelImp), cmp_imp_relocs_paddr);
+	ut64 loaded_end = 0;
 	for (i = 0; i < num_imps; i++) {
 		if (imps[i].relocs_paddr == 0) {
 			continue;
 		}
+		if (imps[i].relocs_paddr < loaded_end) {
+			R_LOG_WARN ("imp %d: reloc table overlaps the previous one, skipping", i);
+			continue;
+		}
 		// Load reloc subtable
 		int num_relocs = load_reloc_table (NULL, bf->buf, imps[i].relocs_paddr);
+		loaded_end = imps[i].relocs_paddr + ((ut64)num_relocs + 1) * sizeof (RelReloc);
 		R_LOG_DEBUG ("imp %d: %d relocs", i, num_relocs);
 		reloc_counts[i] = num_relocs;
 		relocs[i] = R_NEWS0 (RelReloc, num_relocs);
