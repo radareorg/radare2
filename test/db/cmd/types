@@ -1015,6 +1015,60 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=aat counts a stack frame of 8 KiB or more
+FILE=malloc://1024
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 4881ec083000008b442404c3
+af
+aeim
+ar rip=0x0b
+'td struct foo {int a; int b;};
+tl foo=0x178000
+aat
+afv
+EOF
+EXPECT=<<EOF
+var struct var_4h @ rsp+0x4
+EOF
+RUN
+
+NAME=aat counts a stack frame under 8 KiB
+FILE=malloc://1024
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 4881ec001f00008b442404c3
+af
+aeim
+ar rip=0x0b
+'td struct foo {int a; int b;};
+tl foo=0x178000
+aat
+afv
+EOF
+EXPECT=<<EOF
+var struct var_4h @ rsp+0x4
+EOF
+RUN
+
+NAME=aat does not link a struct below a large stack frame
+FILE=malloc://1024
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 4881ec083000008b442404c3
+af
+aeim
+ar rip=0x0b
+'td struct foo {int a; int b;};
+tl foo=0x174ff8
+aat
+afv
+EOF
+EXPECT=<<EOF
+var int32_t var_4h @ rsp+0x4
+EOF
+RUN
+
 NAME=Comments and var in struct offset propagation
 FILE=bins/elf/struct_sample
 CMDS=<<EOF
