@@ -32,6 +32,7 @@ typedef struct {
 
 #define PEF_MAX_RELOC_INSTRUCTIONS 0x100000
 #define PEF_MAX_RELOCATIONS 0x100000
+#define PEF_MAX_PIDATA_SIZE 0x4000000
 
 static const char *class2string(ut8 class) {
 	switch (class & 0xf) {
@@ -490,6 +491,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	}
 	pef->nsec = nsec;
 	ut64 climb = loadaddr;
+	ut64 pidata_size = 0;
 	int i;
 	for (i = 0; i < nsec; i++) {
 		PEFSection *sec = &pef->sec[i];
@@ -521,6 +523,11 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 			if (sec->lenDisk > fsize || sec->lenUnpack > 0x10000000) {
 				return false;
 			}
+			if (sec->lenUnpack > PEF_MAX_PIDATA_SIZE - pidata_size) {
+				R_LOG_WARN ("Not expanding pidata section %d: %" PFMT32u " bytes exceed the remaining budget", i, sec->lenUnpack);
+				continue;
+			}
+			pidata_size += sec->lenUnpack;
 			size_t paclen = sec->lenDisk;
 			void *pac = malloc (paclen);
 			sec->unpack = sec->lenUnpack > 0 ? malloc (sec->lenUnpack) : NULL;
