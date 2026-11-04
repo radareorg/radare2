@@ -469,3 +469,20 @@ ERROR: Could not initialize root stream
 ERROR: pdb was not parsed
 EOF
 RUN
+
+NAME=pdb omap lookups do not walk the entry list per symbol
+FILE=-
+TIMEOUT=10
+CMDS=<<EOF
+idpi bins/pdb/omap-last-entry.pdb~?
+idpi bins/pdb/omap-last-entry.pdb~:0
+EOF
+EXPECT=<<EOF
+65536
+0x00006000  2  .text  s
+EOF
+EXPECT_ERR=<<EOF
+WARN: Cannot find base address, flags will probably be misplaced
+WARN: Cannot find base address, flags will probably be misplaced
+EOF
+RUN

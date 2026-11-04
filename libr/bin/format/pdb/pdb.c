@@ -1282,7 +1282,7 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	RStrBuf sb;
 	r_strbuf_init (&sb);
 	r_list_foreach (gsym_data_stream->globals_list, it, gdata) {
-		sctn_header = r_list_get_n (pe_stream->sections_hdrs, (gdata->segment - 1));
+		sctn_header = pdb_pe_section (pe_stream, gdata->segment - 1);
 		if (sctn_header) {
 			char *filtered_name;
 			char sname[PDB_SIZEOF_SECTION_NAME + 1];
