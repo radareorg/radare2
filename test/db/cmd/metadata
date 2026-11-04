@@ -592,7 +592,7 @@ ahi 1
 pd 3
 EOF
 EXPECT=<<EOF
-            0x0000db98      .int32 00111000010100000000100000000000b ; obj.main_arena ; global.main_arena
+            0x0000db98      .int32 00000000000010000101000000111000b ; obj.main_arena ; global.main_arena
             0x0000db9c      .dword 0x000844ac ; obj.check_action ; global.check_action
             0x0000dba0      .dword 0x000663c4 ; str.free__:_invalid_pointer
 EOF
@@ -1103,7 +1103,7 @@ ahi 1
 pd 1
 EOF
 EXPECT=<<EOF
-            0x00000000      .int64 0000000100000010000000110000010000000101000001100000011100001000b
+            0x00000000      .int64 0000100000000111000001100000010100000100000000110000001000000001b
 EOF
 RUN
 
@@ -1135,5 +1135,22 @@ EOF
 EXPECT=<<EOF
             0x00000000  0102 03                                  ... ; +0 
             0x00000000  0102 0304 0506 0708 0000 0000 0000 0000  ................ ; +0 
+EOF
+RUN
+
+NAME=Cd with a binary immbase follows the endianness like hex does
+FILE=malloc://16
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 03000000
+Cd 4
+ahi 1
+pd 1
+e cfg.bigendian=true
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      .int32 00000000000000000000000000000011b
+            0x00000000      .int32 00000011000000000000000000000000b
 EOF
 RUN

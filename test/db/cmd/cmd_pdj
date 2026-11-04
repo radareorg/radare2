@@ -223,6 +223,9 @@ Cd 4
 ahi 1
 pdj 1~{[0].opcode}
 pdj 1~{[0].disasm}
+wx 01020384
+pdj 1~{[0].opcode}
+pdj 1~{[0].disasm}
 ahi 10
 wx ffffffff
 pdj 1~{[0].opcode}
@@ -241,10 +244,17 @@ wx 0102030405060708
 Cd 8
 ahi 16
 pdj 1~{[0].opcode}
+Cd-
+wx 0300
+Cd 2
+ahi 1
+pdj 1~{[0].opcode}
 EOF
 EXPECT=<<EOF
-.hex 01020304
-.int32 00000001000000100000001100000100b
+.int32 00000100000000110000001000000001b
+.int32 00000100000000110000001000000001b
+.hex 01020384
+.int32 10000100000000110000001000000001b
 .hex ffffffff
 .int32 4294967295
 .hex ffffffff
@@ -252,5 +262,6 @@ EXPECT=<<EOF
 .hex ff
 .char 255
 .qword 0x0807060504030201
+.int16 0000000000000011b
 EOF
 RUN
