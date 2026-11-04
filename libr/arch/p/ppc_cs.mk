@@ -1,6 +1,7 @@
 OBJ_PPC_CS=p/ppc_cs/plugin.o
 OBJ_PPC_CS+=p/ppc/libvle/vle.o
 OBJ_PPC_CS+=p/ppc/libps/libps.o
+OBJ_PPC_CS+=p/ppc/libas/libas.o
 
 include p/capstone.mk
 

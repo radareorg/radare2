@@ -26,6 +26,7 @@ r_arch_sources = [
   'p/ppc/libvle/vle.c',
   'p/stm8/plugin.c',
   'p/ppc/libps/libps.c',
+  'p/ppc/libas/libas.c',
   'p/ppc_cs/plugin.c',
   'p/null/plugin.c',
   'p/lm32/plugin.c',

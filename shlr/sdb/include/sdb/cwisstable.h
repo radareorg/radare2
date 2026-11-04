@@ -365,17 +365,17 @@
 
 /// Maximally careful endianness detection.
 /// Assume LITTLE_ENDIAN by default.
-#if defined(__ppc__) || defined(__powerpc__)
-# define CWISS_IS_BIG_ENDIAN 1
-#elif defined(_AIX)
-# define CWISS_IS_BIG_ENDIAN 1
-#elif defined(__has_include)
+#if defined(__has_include)
 # if __has_include(<endian.h>)
 #   include <endian.h>
 #   if defined(__BYTE_ORDER) && (__BYTE_ORDER == __BIG_ENDIAN)
 #     define CWISS_IS_BIG_ENDIAN 1
 #   endif
 # endif
+#elif defined(__ppc__) || defined(__powerpc__)
+# define CWISS_IS_BIG_ENDIAN 1
+#elif defined(_AIX)
+# define CWISS_IS_BIG_ENDIAN 1
 #else
 # warning "Cannot detect endianness; assuming little-endian."
 #endif

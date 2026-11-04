@@ -6,6 +6,7 @@
 #include <capstone/ppc.h>
 #include "../ppc/libvle/vle.h"
 #include "../ppc/libps/libps.h"
+#include "../ppc/libas/libas.h"
 
 #define SPR_HID0 0x3f0 /* Hardware Implementation Register 0 */
 #define SPR_HID1 0x3f1 /* Hardware Implementation Register 1 */
@@ -643,6 +644,135 @@ static int decompile_ps(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf
 	return op->size;
 }
 
+/* PowerPC-AS (IBM i LIC) disassembly: mnemonic only. Type + ESIL are set in
+ * analop_as (which runs regardless of the R_ARCH_OP_MASK_DISASM flag, so that
+ * `aes` emulation works even without a textual disassembly pass). */
+static int decompile_as(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+	if (len < 4) {
+		return -1;
+	}
+	op->size = 4;
+	const ut32 w = (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
+	char buf_asm[64] = {0};
+	if (!libas_decode (w, buf_asm, sizeof buf_asm)) {
+		return -1;
+	}
+	op->mnemonic = strdup (buf_asm);
+	return op->size;
+}
+
+/* PowerPC-AS analysis + ESIL lift. Sets op->type and op->esil. The AS tag
+ * bits live in the 32-bit XER: TAG=0x100000 (IBM bit43), T07=0x200000
+ * (bit42), T02=0x400000 (bit41). Field layout mirrors the patched QEMU AS
+ * hooks. Returns op->size on an AS op, -1 otherwise (caller falls back to
+ * Capstone). */
+static int analop_as(RArchSession *as, RAnalOp *op, const ut8 *buf, int len) {
+	if (len < 4) {
+		return -1;
+	}
+	op->size = 4;
+	const ut32 w = (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
+	const int op1 = (w >> 21) & 0x1f;   /* RT field  */
+	const int rD = (w >> 16) & 0x1f;   /* RA field  */
+	const int op2 = (w >> 11) & 0x1f;   /* RB field  */
+	switch ((w >> 26) & 0x3f) {
+	case 31: {
+		const int xo = (w >> 1) & 0x3ff;
+		if (xo == 228) {            /* TXER: cr7 <- XER[43] (TAG): GT if set, EQ if clear */
+			op->type = R_ANAL_OP_TYPE_CMP;
+			esilprintf (op, "xer,0x100000,&,?{,4,cr7,=,}{,2,cr7,=,}");
+		} else if (xo == 499) {     /* SETTAG: XER[43] <- 1 */
+			op->type = R_ANAL_OP_TYPE_MOV;
+			esilprintf (op, "0x100000,xer,|=,");
+		} else if (xo == 676) {     /* AS private no-op */
+			op->type = R_ANAL_OP_TYPE_NOP;
+		} else {
+			return -1;
+		}
+		break;
+	}
+	case 16: {                      /* BCA: BO=14 BI=29 LK -> trace vector */
+		if (((w >> 21) & 0x1f) != 14 || ((w >> 16) & 0x1f) != 29 || !(w & 1)) {
+			return -1;
+		}
+		/* QEMU models this as a private no-op (ok = true, no TCG emitted). */
+		op->type = R_ANAL_OP_TYPE_NOP;
+		break;
+	}
+	case 56: {                      /* AS tagged-quad load (op56 under TA) */
+		const int rt = (w >> 21) & 0x1f;
+		const int ra = (w >> 16) & 0x1f;
+		const int dq = (w >> 4) & 0xfff;
+		const int32_t off = (int32_t)dq * 4;
+		op->type = R_ANAL_OP_TYPE_LOAD;
+		char base[8];
+		snprintf (base, sizeof base, ra? "r%d": "0", ra);
+		esilprintf (op, "%s,%d,+,[8],r%d,=", base, off, rt);
+		break;
+	}
+	case 57: {                      /* LTPTR: tagged pointer load */
+		const int rt = (w >> 21) & 0x1f;
+		const int ra = (w >> 16) & 0x1f;
+		const int dq = (w >> 4) & 0xfff;
+		const int32_t off = (int32_t)dq * 4;
+		op->type = R_ANAL_OP_TYPE_LOAD;
+		char base[8];
+		snprintf (base, sizeof base, ra? "r%d": "0", ra);
+		/* always-valid tag model: nonzero result sets TAG|T07|T02 */
+		esilprintf (op, "%s,%d,+,[8],r%d,=,r%d,?{,0x700000,xer,|=,}", base, off, rt, rt);
+		break;
+	}
+	case 30: {                      /* SELxx: rD = XER[32+imm] ? op1 : op2 */
+		const int minor = w & 0x1f;
+		if (minor < 24) {
+			return -1;
+		}
+		const int imm = (w >> 7) & 0xf;
+		const ut32 mask = 1u << (31 - imm);
+		const bool op1_reg = (minor >= 28);
+		const bool op2_reg = (minor == 26 || minor == 27 || minor == 30 || minor == 31);
+		char o1[16], o2[16];
+		snprintf (o1, sizeof o1, op1_reg? "r%d": "%d", op1);
+		snprintf (o2, sizeof o2, op2_reg? "r%d": "%d", op2);
+		op->type = R_ANAL_OP_TYPE_CMOV;
+		esilprintf (op, "xer,0x%x,&,?{,%s,r%d,=,}{,%s,r%d,=,}",
+			(unsigned)mask, o1, rD, o2, rD);
+		break;
+	}
+	case 58: {                      /* AS ld (op58 XO=3), DS-form */
+		if ((w & 3) != 3) {
+			return -1;
+		}
+		const int rt = (w >> 21) & 0x1f;
+		const int ra = (w >> 16) & 0x1f;
+		/* DS(14b)||0b00 sign-extended as int16 (QEMU: (int16_t)ds) */
+		const int32_t ds = (int32_t)(int16_t)(w & ~3u);
+		op->type = R_ANAL_OP_TYPE_LOAD;
+		char base[8];
+		snprintf (base, sizeof base, ra? "r%d": "0", ra);
+		esilprintf (op, "%s,%d,+,[8],r%d,=", base, ds, rt);
+		break;
+	}
+	case 62: {                      /* AS std (op62 XO=3), DS-form */
+		if ((w & 3) != 3) {
+			return -1;
+		}
+		const int rs = (w >> 21) & 0x1f;
+		const int ra = (w >> 16) & 0x1f;
+		/* DS(14b)||0b00 sign-extended as int16 (QEMU: (int16_t)ds) */
+		const int32_t ds = (int32_t)(int16_t)(w & ~3u);
+		op->type = R_ANAL_OP_TYPE_STORE;
+		char base[8];
+		snprintf (base, sizeof base, ra? "r%d": "0", ra);
+		esilprintf (op, "r%d,%s,%d,+,=[8]", rs, base, ds);
+		break;
+	}
+	default:
+		return -1;
+	}
+	return op->size;
+}
+
 static csh cs_handle_for_session(RArchSession *as) {
 	r_return_val_if_fail (as && as->data, 0);
 	CapstonePluginData *pd = as->data;
@@ -696,6 +826,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 				return false;
 			}
 			ret = decompile_ps (as, op, addr, buf, len);
+		} else if (cpu && !strcmp (cpu, "as") && be) {
+			// PowerPC-AS: overlay the AS private ops on top of Capstone.
+			// Non-AS words fall through to Capstone (ret stays -1).
+			ret = decompile_as (as, op, addr, buf, len);
 		}
 		if (ret < 1) {
 			if (n > 0) {
@@ -716,6 +850,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		ret = analop_vle (as, op, addr, buf, len);
 		if (ret >= 0) {
 			return op->size > 0;
+		}
+	} else if (cpu && !strcmp (cpu, "as") && be) {
+		// PowerPC-AS analysis + ESIL lift (runs even without the DISASM
+		// mask so `aes` emulation works without a disassembly pass).
+		ret = analop_as (as, op, buf, len);
+		if (ret >= 1) {
+			return true;
 		}
 	}
 
@@ -1471,7 +1612,7 @@ const RArchPlugin r_arch_plugin_ppc_cs = {
 	},
 	.arch = "ppc",
 	.bits = R_SYS_BITS_PACK2 (32, 64),
-	.cpus = "ppc,vle,ps",
+	.cpus = "ppc,vle,ps,as",
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.info = archinfo,
 	.preludes = preludes,
