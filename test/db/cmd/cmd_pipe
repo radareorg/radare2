@@ -68,3 +68,34 @@ EXPECT=<<EOF
 helloworld
 EOF
 RUN
+
+NAME=redirect into cfg.editor
+FILE=malloc://512
+CMDS=<<EOF
+e cfg.editor=cat
+wx 90c3
+p8 2 > -
+?e done
+EOF
+EXPECT=<<EOF
+90c3
+done
+EOF
+RUN
+
+NAME=redirect into cfg.editor in sandbox
+FILE=malloc://512
+CMDS=<<EOF
+e cfg.editor=cat
+e cfg.sandbox=true
+p8 2 > -
+?e done
+EOF
+EXPECT=<<EOF
+0000
+done
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot create temporary file for cfg.editor
+EOF
+RUN

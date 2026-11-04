@@ -4914,6 +4914,7 @@ escape_pipe:
 		}
 		bool pipecolor = r_config_get_b (core->config, "scr.color.pipe");
 		bool use_editor = false;
+		char *editor_file = NULL;
 		int ocolor = r_config_get_i (core->config, "scr.color");
 		*ptr = '\0';
 		r_cons_set_interactive (cons, false);
@@ -4943,10 +4944,19 @@ repeat:;
 			}
 		}
 		R_LOG_DEBUG ("FD %d", fdn);
+		const char *pipe_file = str;
 		if (!strcmp (str, "-")) {
-			use_editor = true;
-			str = r_file_temp ("dumpedit");
-			r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
+			if (!editor_file) {
+				int fd = r_file_mkstemp ("dumpedit", &editor_file);
+				if (fd == -1) {
+					R_LOG_ERROR ("Cannot create temporary file for cfg.editor");
+					goto next2;
+				}
+				close (fd);
+				use_editor = true;
+				r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
+			}
+			pipe_file = editor_file;
 		}
 
 		char *nextgt = strchr (ptr + 1, '>');
@@ -4991,7 +5001,7 @@ repeat:;
 			}
 		} else if (fdn > 0) {
 			// pipe to file (or append)
-			pipefd = r_cons_pipe_open (cons, str, fdn, appendResult);
+			pipefd = r_cons_pipe_open (cons, pipe_file, fdn, appendResult);
 			if (pipefd == -1) {
 				// R_LOG_ERROR ("Cannot open pipe with fd %d", fdn);
 				// goto errorout;
@@ -5014,16 +5024,17 @@ repeat:;
 		}
 		if (use_editor) {
 			const char *editor = r_config_get (core->config, "cfg.editor");
+			r_cons_pipe_close_all (cons);
 			if (R_STR_ISNOTEMPTY (editor)) {
-				char *estr = r_str_escape_sh (str);
+				char *estr = r_str_escape_sh (editor_file);
 				r_sys_cmdf ("%s \"%s\"", editor, estr);
 				free (estr);
-				r_file_rm (str);
 			} else {
 				R_LOG_ERROR ("No value defined for cfg.editor");
 			}
+			r_file_rm (editor_file);
+			free (editor_file);
 			r_config_set_i (core->config, "scr.color", ocolor);
-			free (str);
 		}
 		if (scr_html != -1) {
 			r_config_set_b (core->config, "scr.html", scr_html);
