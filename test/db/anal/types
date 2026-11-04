@@ -1526,3 +1526,73 @@ EXPECT=<<EOF
 size: 110
 EOF
 RUN
+
+NAME=td comments and literals in a parameter list do not split it
+FILE=malloc://16
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+"td int wc1(int a /* hi */);"
+tk func.wc1.arg.0
+"td void f(int x /* ) */, int y);"
+tk func.f.args
+tk func.f.arg.1
+"td int g(char *s, int c);"
+tk func.g.args
+tk func.g.arg.1
+"td int l1(int a[')'], int y);"
+tk func.l1.args
+"td int l2(int a[','], int y);"
+tk func.l2.args
+tk func.l2.arg.1
+"td int s1(char a[sizeof \"),\"], int y);"
+tk func.s1.args
+tk func.s1.arg.1
+'td int s2(char a[sizeof "\"),"], int y)
+tk func.s2.args
+tk func.s2.arg.1
+"td int s3(char a['\''], char b[')'], int y);"
+tk func.s3.args
+tk func.s3.arg.2
+EOF
+EXPECT=<<EOF
+int,a
+2
+int,y
+2
+int,c
+2
+2
+int,y
+2
+int,y
+2
+int,y
+3
+int,y
+EOF
+RUN
+
+NAME=td unclosed block comment is still an error
+FILE=malloc://16
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+"td int uc(void); /* unclosed"
+tk func.uc.args
+"td int uc2(int x /* unclosed);"
+tk func.uc2.args
+"td int uc3(void); /* a */ /* b"
+tk func.uc3.args
+"td int s(char *p /* \"x */, int y);"
+tk func.s.args
+tk func.s.arg.1
+EOF
+EXPECT=<<EOF
+2
+int,y
+EOF
+EXPECT_ERR=<<EOF
+ERROR: at line 1: Unclosed comment
+ERROR: at line 1: Unclosed comment
+ERROR: at line 1: Unclosed comment
+EOF
+RUN
