@@ -506,3 +506,38 @@ EXPECT_ERR=<<EOF
 ERROR: Cannot create '../r2r-sandbox-file'
 EOF
 RUN
+
+NAME=sandbox blocks zip archives outside the allowed paths
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox=true
+o zip:///etc/../etc/hosts.zip//inner
+?e done
+EOF
+EXPECT=<<EOF
+done
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Sandbox prevents accessing zip archive '/etc/../etc/hosts.zip'
+ERROR: Failed to open the archive /etc/../etc/hosts.zip and file inner
+ERROR: Cannot open file zip:///etc/../etc/hosts.zip//inner
+EOF
+RUN
+
+NAME=sandbox blocks listing zip mounts
+FILE=malloc://37
+CMDS=<<EOF
+wx 504b0506000000000000000000000000000000000000
+e cfg.sandbox=true
+m /z zip
+md /z
+?e done
+EOF
+EXPECT=<<EOF
+done
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Sandbox prevents listing zip mounts
+ERROR: Invalid path
+EOF
+RUN

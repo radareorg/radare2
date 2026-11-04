@@ -128,3 +128,16 @@ EXPECT=<<EOF
 0x2407c
 EOF
 RUN
+
+NAME=io-zip reopen entry opened by index
+FILE=zip://bins/java/example.zip::0
+CMDS=<<EOF
+o~*[4]
+oo
+o~*[4]
+EOF
+EXPECT=<<EOF
+zip://bins/java/example.zip//research_data/experiment/decompiler/dumped_jar_dec/c.class
+zip://bins/java/example.zip//research_data/experiment/decompiler/dumped_jar_dec/c.class
+EOF
+RUN
