@@ -140,3 +140,30 @@ EXPECT_ERR=<<EOF
 WARN: Too many attributes in DWARF compilation unit at 0x0
 EOF
 RUN
+
+NAME=dwarf5 variables sharing one location list walk it once
+FILE=bins/elf/dwarf5_shared_loclist
+ARGS=-N
+TIMEOUT=10
+CMDS=<<EOF
+k anal/dwarf/fcn.f0.addr
+EOF
+EXPECT=<<EOF
+0x400100
+EOF
+RUN
+
+NAME=dwarf5 location list reads across functions are bounded
+FILE=bins/elf/dwarf5_loclist_many_functions
+ARGS=-N
+TIMEOUT=10
+CMDS=<<EOF
+k anal/dwarf/fcn.f0.addr
+EOF
+EXPECT=<<EOF
+0x400100
+EOF
+EXPECT_ERR=<<EOF
+WARN: Too many reads of .debug_loclists, ignoring the remaining location lists
+EOF
+RUN

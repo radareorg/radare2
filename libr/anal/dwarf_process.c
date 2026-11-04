@@ -21,6 +21,7 @@ typedef struct dwarf_parse_context_t {
 	RArena *arena;
 	HtUP/*<offset, DwarfType*>*/ *types; // rendered once per load
 	HtUP/*<unit, size_t*>*/ *siblings; // per unit, index of the DIE after each subtree
+	HtUP/*<key, LocMemo*>*/ *picks; // location list picks, many DIEs can share one list
 } Context;
 
 typedef struct {
@@ -1375,33 +1376,62 @@ static bool pick_loclist_entry(void *user, ut64 start, ut64 end, const RBinDwarf
 	return true;
 }
 
-// the default location only where no range covers the scope
-static bool pick_location(Context *ctx, const RBinDwarfAttrValue *loc, bool at_entry, RBinDwarfBlock *block) {
-	LocPick pick = { .lo = ctx->scope_lo, .hi = ctx->scope_hi, .at_entry = at_entry };
+typedef struct {
+	const RBinDwarfCompUnit *unit;
+	ut64 lo;
+	ut64 hi;
+	RBinDwarfBlock block;
+	bool found;
+} LocMemo;
+
+static bool walk_location(Context *ctx, const RBinDwarfAttrValue *loc, LocPick *pick) {
 	if (loc->kind == DW_AT_KIND_LOCLISTPTR) {
-		if (!ctx->loclist_foreach
-			|| !ctx->loclist_foreach (ctx->loclists, ctx->unit, loc->reference, pick_loclist_entry, &pick)) {
-			return false;
-		}
-	} else {
-		RBinDwarfLocList *list = ctx->locations? ht_up_find (ctx->locations, loc->reference, NULL): NULL;
-		if (!list) {
-			return false;
-		}
-		// .debug_loc ranges lack their unit base, so the scope cannot bound them
-		pick.lo = 0;
-		pick.hi = UT64_MAX;
-		RListIter *iter;
-		RBinDwarfLocRange *range;
-		r_list_foreach (list->list, iter, range) {
-			pick_range (&pick, range->start, range->end, range->expression);
-		}
+		return ctx->loclist_foreach
+			&& ctx->loclist_foreach (ctx->loclists, ctx->unit, loc->reference, pick_loclist_entry, pick);
 	}
-	if (!pick.has_best && !pick.has_dflt) {
+	RBinDwarfLocList *list = ctx->locations? ht_up_find (ctx->locations, loc->reference, NULL): NULL;
+	if (!list) {
 		return false;
 	}
-	*block = pick.has_best? pick.best: pick.dflt;
+	RListIter *iter;
+	RBinDwarfLocRange *range;
+	r_list_foreach (list->list, iter, range) {
+		pick_range (pick, range->start, range->end, range->expression);
+	}
 	return true;
+}
+
+// the default location only where no range covers the scope
+static bool pick_location(Context *ctx, const RBinDwarfAttrValue *loc, bool at_entry, RBinDwarfBlock *block) {
+	const bool loclists = loc->kind == DW_AT_KIND_LOCLISTPTR;
+	// .debug_loc ranges lack their unit base, so the scope cannot bound them
+	LocPick pick = {
+		.lo = loclists? ctx->scope_lo: 0,
+		.hi = loclists? ctx->scope_hi: UT64_MAX,
+		.at_entry = at_entry
+	};
+	const ut64 key = (loc->reference << 2) | (loclists << 1) | at_entry;
+	LocMemo *memo = ht_up_find (ctx->picks, key, NULL);
+	if (memo && memo->unit == ctx->unit && memo->lo == pick.lo && memo->hi == pick.hi) {
+		*block = memo->block;
+		return memo->found;
+	}
+	const bool found = walk_location (ctx, loc, &pick) && (pick.has_best || pick.has_dflt);
+	if (found) {
+		*block = pick.has_best? pick.best: pick.dflt;
+	}
+	if (!memo) {
+		memo = r_arena_alloc (ctx->arena, sizeof (LocMemo));
+		if (!memo) {
+			return found;
+		}
+		ht_up_insert (ctx->picks, key, memo);
+	}
+	*memo = (LocMemo){ .unit = ctx->unit, .lo = pick.lo, .hi = pick.hi, .found = found };
+	if (found) {
+		memo->block = *block;
+	}
+	return found;
 }
 
 /* TODO move a lot of the parsing here into dwarf.c and do only processing here */
@@ -2431,6 +2461,7 @@ R_API void r_anal_dwarf_process_info(const RAnal *anal, RAnalDwarfContext *ctx) 
 	RArena *arena = r_arena_new ();
 	HtUP *types = ht_up_new0 ();
 	HtUP *siblings = ht_up_new (NULL, free_siblings_kv, NULL);
+	HtUP *picks = ht_up_new0 ();
 	R_VEC_FOREACH (info->comp_units, unit) {
 		Context dw_context = { // context per unit?
 			.anal = anal,
@@ -2446,7 +2477,8 @@ R_API void r_anal_dwarf_process_info(const RAnal *anal, RAnalDwarfContext *ctx) 
 			.lang = NULL,
 			.arena = arena,
 			.types = types,
-			.siblings = siblings
+			.siblings = siblings,
+			.picks = picks
 		};
 		R_VEC_FOREACH_I (unit->dies, j) {
 			parse_type_entry (&dw_context, j);
@@ -2454,6 +2486,7 @@ R_API void r_anal_dwarf_process_info(const RAnal *anal, RAnalDwarfContext *ctx) 
 	}
 	ht_up_free (types);
 	ht_up_free (siblings);
+	ht_up_free (picks);
 	r_arena_free (arena);
 }
 
