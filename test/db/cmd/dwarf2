@@ -126,3 +126,17 @@ EXPECT=<<EOF
 typedef.matrix=int[3][4]
 EOF
 RUN
+
+NAME=dwarf zero-size attribute forms are bounded by the unit size
+FILE=bins/elf/dwarf_zero_size_attrs
+ARGS=-N
+CMDS=<<EOF
+?e loaded
+EOF
+EXPECT=<<EOF
+loaded
+EOF
+EXPECT_ERR=<<EOF
+WARN: Too many attributes in DWARF compilation unit at 0x0
+EOF
+RUN
