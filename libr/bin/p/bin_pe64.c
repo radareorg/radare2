@@ -384,6 +384,16 @@ static inline bool is_cxx_magic(ut32 magic) {
 	return magic >= PE64_CXX_MAGIC_MIN && magic <= PE64_CXX_MAGIC_MAX;
 }
 
+// exception tables are shared through rvas, so bound the total records parsed by the file size
+static inline bool take_records(ut64 *budget, ut64 count) {
+	if (count > *budget) {
+		*budget = 0;
+		return false;
+	}
+	*budget -= count;
+	return true;
+}
+
 // read the name of an RTTI type descriptor: `struct { void *vft; void *spare; char name[]; }`
 static char *read_type_descriptor_name(RBinFile *bf, RIO *io, ut64 addr) {
 	char name[256];
@@ -440,7 +450,7 @@ static bool cxx_state_range(const ut32 *ipmap, ut32 ip_count, ut64 baseAddr,
 
 // parse the MSVC FuncInfo of a __CxxFrameHandler3 protected function
 static void cxx_trycatch(RBinFile *bf, RIO *io, RVecRBinTrycatch *trycatch, ut64 baseAddr,
-		const PE64_RUNTIME_FUNCTION *rfcn, ut32 funcinfo) {
+		const PE64_RUNTIME_FUNCTION *rfcn, ut32 funcinfo, ut64 *budget) {
 	const ut64 fi = baseAddr + funcinfo;
 	ut32 try_count, try_map, ip_count, ip_map;
 	if (!read_u32_at (io, fi + 12, &try_count) || !read_u32_at (io, fi + 16, &try_map)
@@ -449,6 +459,9 @@ static void cxx_trycatch(RBinFile *bf, RIO *io, RVecRBinTrycatch *trycatch, ut64
 	}
 	if (!try_count || !try_map || !ip_count || !ip_map
 			|| try_count > 0x1000 || ip_count > 0x10000) {
+		return;
+	}
+	if (!take_records (budget, ip_count)) {
 		return;
 	}
 	// IptoStateMapEntry: ip rva, state
@@ -469,7 +482,8 @@ static void cxx_trycatch(RBinFile *bf, RIO *io, RVecRBinTrycatch *trycatch, ut64
 		// TryBlockMapEntry: tryLow, tryHigh, catchHigh, nCatches, dispHandlerArray
 		const ut64 tb = baseAddr + try_map + (ut64)i * 20;
 		ut32 try_low, try_high, catch_count, handlers;
-		if (!read_u32_at (io, tb, &try_low) || !read_u32_at (io, tb + 4, &try_high)
+		if (!take_records (budget, 1)
+				|| !read_u32_at (io, tb, &try_low) || !read_u32_at (io, tb + 4, &try_high)
 				|| !read_u32_at (io, tb + 12, &catch_count) || !read_u32_at (io, tb + 16, &handlers)) {
 			break;
 		}
@@ -487,7 +501,8 @@ static void cxx_trycatch(RBinFile *bf, RIO *io, RVecRBinTrycatch *trycatch, ut64
 			// HandlerType: adjectives, dispType, dispCatchObj, addressOfHandler, dispFrame
 			const ut64 ht = baseAddr + handlers + (ut64)j * 20;
 			ut32 type_rva, handler_rva;
-			if (!read_u32_at (io, ht + 4, &type_rva) || !read_u32_at (io, ht + 12, &handler_rva)) {
+			if (!take_records (budget, 1)
+					|| !read_u32_at (io, ht + 4, &type_rva) || !read_u32_at (io, ht + 12, &handler_rva)) {
 				break;
 			}
 			if (!handler_rva) {
@@ -511,7 +526,7 @@ static void cxx_trycatch(RBinFile *bf, RIO *io, RVecRBinTrycatch *trycatch, ut64
 
 // parse the scope table of a __C_specific_handler protected function
 static void seh_trycatch(RIO *io, RVecRBinTrycatch *trycatch, ut64 baseAddr,
-		const PE64_RUNTIME_FUNCTION *rfcn, ut64 scopeTableOff) {
+		const PE64_RUNTIME_FUNCTION *rfcn, ut64 scopeTableOff, ut64 *budget) {
 	ut32 scope_count;
 	if (!read_u32_at (io, scopeTableOff, &scope_count)
 			|| !scope_count || scope_count > PE64_SCOPE_LIMIT) {
@@ -522,7 +537,7 @@ static void seh_trycatch(RIO *io, RVecRBinTrycatch *trycatch, ut64 baseAddr,
 	ut32 i;
 	for (i = 0; i < scope_count; i++, scopeRecOff += sizeof (PE64_SCOPE_RECORD)) {
 		PE64_SCOPE_RECORD scope;
-		if (!read_scope_record_at (io, scopeRecOff, &scope)) {
+		if (!take_records (budget, 1) || !read_scope_record_at (io, scopeRecOff, &scope)) {
 			return;
 		}
 		if (scope.BeginAddress > scope.EndAddress
@@ -593,8 +608,14 @@ static RVecRBinTrycatch *trycatch(RBinFile *bf) {
 		// RUNTIME_FUNCTION entries beyond the file contents can only be padding or garbage
 		dirsize = filesize;
 	}
+	// the smallest record is the 8 byte IptoStateMapEntry
+	ut64 budget = filesize / 8;
 
 	for (offset = expdir->VirtualAddress; offset < (ut64)expdir->VirtualAddress + dirsize; offset += sizeof (PE64_RUNTIME_FUNCTION)) {
+		if (!budget) {
+			R_LOG_WARN ("The exception tables hold more records than the file can fit, ignoring the rest");
+			break;
+		}
 		PE64_RUNTIME_FUNCTION rfcn;
 		bool suc = read_runtime_function_at (io, offset + baseAddr, &rfcn);
 		if (!suc || !rfcn.BeginAddress || rfcn.BeginAddress == UT32_MAX) {
@@ -689,7 +710,7 @@ static RVecRBinTrycatch *trycatch(RBinFile *bf) {
 			if (read_u32_at (io, exceptionDataOff, &rva_to_fcninfo)
 					&& read_u32_at (io, baseAddr + rva_to_fcninfo, &magic)
 					&& is_cxx_magic (magic)) {
-				cxx_trycatch (bf, io, tcs, baseAddr, &rfcn, rva_to_fcninfo);
+				cxx_trycatch (bf, io, tcs, baseAddr, &rfcn, rva_to_fcninfo, &budget);
 				continue;
 			}
 		}
@@ -697,7 +718,7 @@ static RVecRBinTrycatch *trycatch(RBinFile *bf) {
 			continue;
 		}
 		const size_t before = RVecRBinTrycatch_length (tcs);
-		seh_trycatch (io, tcs, baseAddr, &rfcn, exceptionDataOff);
+		seh_trycatch (io, tcs, baseAddr, &rfcn, exceptionDataOff, &budget);
 		if (RVecRBinTrycatch_length (tcs) != before) {
 			// the language specific handler of this binary is now known
 			c_handler = handler;
