@@ -455,9 +455,9 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 						r_str_uri_decode (cmd);
 						// r_config_set_b (core->config, "scr.interactive", false);
 
-						if (r_sandbox_check (R_SANDBOX_GRAIN_EXEC) &&
-								(!strcmp (cmd, "=h*") ||
-								 !strcmp (cmd, "=h--"))) {
+						// the request sandbox scope only exists inside cmdstr, so check its grain here
+						const bool can_control = (policy->grain & R_SANDBOX_GRAIN_EXEC) && r_sandbox_check (R_SANDBOX_GRAIN_EXEC);
+						if (can_control && (!strcmp (cmd, "=h*") || !strcmp (cmd, "=h--"))) {
 							out = NULL;
 						} else if (*cmd == ':') {
 							/* commands in /cmd/: starting with : do not show any output */
@@ -477,7 +477,7 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 							r_socket_http_response (rs, 200, "", 0, headers);
 						}
 
-						if (r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+						if (can_control) {
 							if (!strcmp (cmd, "=h*")) {
 								/* do stuff */
 								rtr_http_request_free (rs);
