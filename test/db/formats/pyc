@@ -383,3 +383,20 @@ nth paddr       size vaddr       vsize perm flags type name
 0   0x0000001e   0x2 0x0000001e    0x2 -r-x 0x0   ---- main
 EOF
 RUN
+
+NAME=pyc code object with argcount 65535 bounds the recovered vm args
+FILE=hex://550d0d0a000000000000000000000000e3ffff0000000000000000000000000000010000004000000073040000006400530029014e29002900290029007a04612e70797a083c6d6f64756c653e010000007300000000
+TIMEOUT=30
+CMDS=<<EOF
+af
+afl~?
+afv~?
+afvr~l255$
+afvr~l256$
+EOF
+EXPECT=<<EOF
+1
+256
+arg int l255 @ l255
+EOF
+RUN
