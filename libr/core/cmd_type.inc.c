@@ -1979,8 +1979,11 @@ static void set_offset_hint(RCore *core, RAnalOp *op, const char *type, ut64 lad
 	}
 }
 
+// same limit as R_ANAL_MAX_INCSTACK in libr/anal/fcn.c
+#define R_CORE_MAX_INCSTACK (1024 * 1024)
+
 R_API int r_core_get_stacksz(RCore *core, ut64 from, ut64 to) {
-	int stack = 0, maxstack = 0;
+	int stack = 0;
 	ut64 at = from;
 
 	if (from >= to) {
@@ -1995,16 +1998,13 @@ R_API int r_core_get_stacksz(RCore *core, ut64 from, ut64 to) {
 			r_anal_op_free (op);
 			continue;
 		}
-		if ((op->stackop == R_ANAL_STACK_INC) && R_ABS (op->stackptr) < 8096) {
+		if ((op->stackop == R_ANAL_STACK_INC) && R_ABS (op->stackptr) < R_CORE_MAX_INCSTACK) {
 			stack += op->stackptr;
-			if (stack > maxstack) {
-				maxstack = stack;
-			}
 		}
 		at += op->size;
 		r_anal_op_free (op);
 	}
-	return maxstack;
+	return stack;
 }
 
 static void set_retval(RCore *core, RReg *reg, ut64 at) {
