@@ -298,3 +298,43 @@ EXPECT=<<EOF
 55000000000000000000000000000000
 EOF
 RUN
+
+NAME=dsc mapping entries sharing one slide info are bounded by the file size
+FILE=dsc://bins/dsc/shared-slide-info
+ARGS=-n
+CMDS=<<EOF
+p8 8
+EOF
+EXPECT=<<EOF
+64796c645f763120
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Slide infos are larger than the cache file
+EOF
+RUN
+
+NAME=dsc concatenated headers sharing one slide info are bounded by the file size
+FILE=dsc://bins/dsc/legacy-shared-slide-info
+ARGS=-n
+CMDS=<<EOF
+p8 8
+EOF
+EXPECT=<<EOF
+64796c645f763120
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Slide infos are larger than the cache file
+EOF
+RUN
+
+NAME=dsc subcache naming the cache itself is rejected
+FILE=-
+CMDS=<<EOF
+o dsc://bins/dsc/self-subcache
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Subcache bins/dsc/self-subcache is already loaded
+ERROR: Cannot open file dsc://bins/dsc/self-subcache
+EOF
+RUN
