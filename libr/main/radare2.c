@@ -1633,11 +1633,11 @@ static int main_radare2(int argc, const char **argv, bool standalone) {
 						// f is a path
 						path = strdup (f);
 					} else {
-						if (isdigit (*f)) {
-							path = strdup (f);
-						} else if (r_file_exists (f)) {
+						if (r_file_exists (f)) {
 							// f is a filename
 							path = r_str_prepend (strdup (f), "./");
+						} else if (isdigit (*f) && r_str_isnumber (f)) {
+							path = strdup (f);
 						} else {
 							path = r_file_path (f);
 						}
@@ -1654,6 +1654,9 @@ static int main_radare2(int argc, const char **argv, bool standalone) {
 				char *acpfile = r_acp_to_utf8 (f);
 				if (!acpfile) {
 					acpfile = strdup (f);
+				}
+				if (isdigit (*acpfile) && r_str_isnumber (acpfile) && r_file_exists (acpfile)) {
+					acpfile = r_str_prepend (acpfile, ".\\");
 				}
 				// backslashes must be escaped because they are unscaped when parsing the uri
 				char *r = r_str_replace (acpfile, "\\", "\\\\", true);
