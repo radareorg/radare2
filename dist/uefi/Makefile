@@ -37,6 +37,15 @@ RANLIB=ranlib
 LLD?=ld.lld
 OBJCOPY?=objcopy
 
+EFI_FORMAT=--target efi-app-$(EFI_ARCH) --subsystem=10
+ifeq ($(EFI_ARCH),aarch64)
+# Older gnu-efi CRTs embed the PE header.
+ifneq ($(findstring EFI_SUBSYSTEM,$(shell nm -u $(CRT0) 2>/dev/null)),)
+EFI_LDFLAGS=--defsym=EFI_SUBSYSTEM=10
+EFI_FORMAT=-O binary
+endif
+endif
+
 UEFI_CFLAGS=-DR2_UEFI=1 -D__thread= -D_GNU_SOURCE -ffreestanding \
 	-fno-stack-protector $(ARCH_CFLAGS) -fPIC -ffunction-sections \
 	-fdata-sections -nostdlibinc -include $(UEFI_INCLUDE)/r2_uefi.h \
@@ -92,7 +101,7 @@ $(BUILDDIR)/uefi.o: include/uefi.c $(CONFIG_STAMP)
 # so relocate.o provides a rela-aware replacement for it
 $(BUILDDIR)/r2efi.so: build $(BUILDDIR)/main.o $(BUILDDIR)/relocate.o \
 		$(BUILDDIR)/uefi.o
-	$(LLD) -nostdlib -shared -Bsymbolic --no-undefined --gc-sections \
+	$(LLD) $(EFI_LDFLAGS) -nostdlib -shared -Bsymbolic --no-undefined --gc-sections \
 		-znocombreloc -T $(LDS) $(CRT0) $(BUILDDIR)/relocate.o \
 		$(BUILDDIR)/main.o $(BUILDDIR)/uefi.o --start-group $(R2LIBS) \
 		$(ARCH_LIBS) --end-group -o $@
@@ -100,7 +109,7 @@ $(BUILDDIR)/r2efi.so: build $(BUILDDIR)/main.o $(BUILDDIR)/relocate.o \
 $(BUILDDIR)/$(EFI_NAME): $(BUILDDIR)/r2efi.so
 	$(OBJCOPY) -j .text -j .sdata -j .data -j .rodata -j .dynamic -j .dynsym \
 		-j .rel -j .rela -j '.rel.*' -j '.rela.*' -j .reloc \
-		--target efi-app-$(EFI_ARCH) --subsystem=10 $< $@
+		$(EFI_FORMAT) $< $@
 	ls -l $@
 
 QEMU_ARGS=-m 512M -nographic \
