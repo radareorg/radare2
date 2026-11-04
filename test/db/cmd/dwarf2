@@ -114,3 +114,15 @@ EXPECT=<<EOF
 loaded
 EOF
 RUN
+
+NAME=dwarf array with too many dimensions is not imported
+FILE=bins/elf/dwarf_many_dimensions
+ARGS=-N
+CMDS=<<EOF
+tk~^typedef.matrix=
+tk~^typedef.huge=
+EOF
+EXPECT=<<EOF
+typedef.matrix=int[3][4]
+EOF
+RUN

@@ -31,6 +31,8 @@ typedef struct {
 
 // compilers never nest a declarator this deep, a longer DW_AT_type chain is crafted
 #define DWARF_TYPE_MAX_DEPTH 64
+// every DIE referring to a type keeps its own copy of the text, real declarations never get this long
+#define DWARF_TYPE_MAX_LEN 4096
 
 typedef struct dwarf_function_t {
 	ut64 addr;
@@ -238,6 +240,9 @@ static void parse_array_type(Context *ctx, const RBinDwarfCompUnit *unit, const 
 		const size_t count = RVecDwarfDie_length (unit->dies);
 		size_t j;
 		DIE_FOREACH_CHILD (ctx, unit, (size_t)(die - unit->dies->_start), j, count) {
+			if (strbuf->len > DWARF_TYPE_MAX_LEN) {
+				break;
+			}
 			const RBinDwarfDie *child_die = RVecDwarfDie_at (unit->dies, j);
 			// can be also DW_TAG_suprogram for class methods or tag for templates
 			if (child_die->tag == DW_TAG_subrange_type) {
@@ -400,6 +405,9 @@ static st32 parse_type_at(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64
 			size_t j;
 			const size_t count = RVecDwarfDie_length (unit->dies);
 			DIE_FOREACH_CHILD (ctx, unit, (size_t)(die - unit->dies->_start), j, count) {
+				if (strbuf->len > DWARF_TYPE_MAX_LEN) {
+					return -1;
+				}
 				const RBinDwarfDie *child = RVecDwarfDie_at (unit->dies, j);
 				if ((child->tag == DW_TAG_formal_parameter || child->tag == DW_TAG_unspecified_parameters)) {
 					// A lone unspecified child also represents an old C declaration with unknown arity.
@@ -464,24 +472,33 @@ static st32 parse_type_at(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64
 // a type is rendered once per load, every DIE referring to it reuses the text
 static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *size) {
 	R_RETURN_VAL_IF_FAIL (strbuf, -1);
-	if (strbuf->len) {
-		return parse_type_at (ctx, offset, strbuf, size, 0);
-	}
 	DwarfType *t = ht_up_find (ctx->types, offset, NULL);
-	if (t) {
-		r_strbuf_append (strbuf, t->str);
-	} else {
+	if (!t) {
+		RStrBuf text;
+		r_strbuf_init (&text);
 		ut64 tsize = 0;
-		const st32 tag = parse_type_at (ctx, offset, strbuf, &tsize, 0);
-		t = r_arena_alloc (ctx->arena, sizeof (DwarfType) + strbuf->len + 1);
-		if (!t) {
-			return tag;
+		st32 tag = parse_type_at (ctx, offset, &text, &tsize, 0);
+		if (text.len > DWARF_TYPE_MAX_LEN) {
+			R_LOG_DEBUG ("anal.dwarf.parse_type: type too long at 0x%" PFMT64x, offset);
+			r_strbuf_set (&text, "");
+			tag = -1;
 		}
-		t->size = tsize;
-		t->tag = tag;
-		memcpy (t->str, r_strbuf_get (strbuf), strbuf->len + 1);
-		ht_up_insert (ctx->types, offset, t);
+		t = r_arena_alloc (ctx->arena, sizeof (DwarfType) + text.len + 1);
+		if (t) {
+			t->size = tsize;
+			t->tag = tag;
+			memcpy (t->str, r_strbuf_get (&text), text.len + 1);
+			ht_up_insert (ctx->types, offset, t);
+		}
+		r_strbuf_fini (&text);
+		if (!t) {
+			return -1;
+		}
 	}
+	if (strbuf->len > DWARF_TYPE_MAX_LEN) {
+		return -1;
+	}
+	r_strbuf_append (strbuf, t->str);
 	if (size && !*size) {
 		*size = t->size;
 	}
