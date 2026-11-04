@@ -1210,3 +1210,28 @@ ERROR: Cannot assemble 'cmp r3, 0x100000000' at line 1
 ERROR: Cannot assemble 'add r0, r1, -2147483649' at line 1
 EOF
 RUN
+
+NAME=rasm2 mips branches to labels before and after them
+FILE=--
+CMDS=<<EOF
+rasm2 -a mips -b 32 'rep:;beq t0, zero, rep;bne t0, zero, rep'
+rasm2 -a mips -b 32 'beq t0, zero, end;nop;end:;nop'
+EOF
+EXPECT=<<EOF
+ffff0810feff0814
+010008100000000000000000
+EOF
+RUN
+
+NAME=rasm2 mips reject branch targets that do not fit
+FILE=--
+CMDS=<<EOF
+rasm2 -a mips -b 32 'beq t0, zero, 0x102'
+rasm2 -a mips -b 32 -s 0x100 'b 0x40000'
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'beq t0, zero, 0x102' at line 1
+ERROR: Cannot assemble 'b 0x40000' at line 1
+EOF
+RUN
