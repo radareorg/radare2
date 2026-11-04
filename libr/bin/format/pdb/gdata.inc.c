@@ -54,6 +54,10 @@ static void parse_gdata_stream(STpiStream *ss, void *stream, R_STREAM_FILE *stre
 			return;
 		}
 		stream_file_read (stream_file, len, (char *)data);
+		if (stream_file->error) {
+			free (data);
+			return;
+		}
 
 		ut16 leaf_type = r_read_le16 (data);
 		if ((leaf_type == 0x110E) || (leaf_type == 0x1009)) {

@@ -115,14 +115,22 @@ void parse_dbi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream_file) {
 	int pos = sizeof (SDBIHeader) - 2;
 	stream_file_seek (stream_file, pos, 0);
 
-	int size = dbi_stream->dbi_header.module_size;
+	dbi_stream->dbiexhdrs = r_list_new ();
+	const int size = dbi_stream->dbi_header.module_size;
+	if (size < 0 || size > stream_file->end - stream_file->pos) {
+		R_LOG_WARN ("Invalid module info size in the PDB DBI stream");
+		stream_file->error = READ_PAGE_FAIL;
+		return;
+	}
 	ut8 *dbiexhdr_data = malloc (size);
 	if (!dbiexhdr_data) {
 		return;
 	}
 	stream_file_read (stream_file, size, (char *)dbiexhdr_data);
-
-	dbi_stream->dbiexhdrs = r_list_new ();
+	if (stream_file->error) {
+		free (dbiexhdr_data);
+		return;
+	}
 	ut8 *p_tmp = dbiexhdr_data;
 	int i = 0;
 	while (i < size) {

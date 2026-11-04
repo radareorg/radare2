@@ -374,3 +374,20 @@ EXPECT=<<EOF2
   struct _IMAGE_DATA_DIRECTORY[128] DataDirectory; // offset +0x60
 EOF2
 RUN
+
+NAME=pdb DBI module_size larger than the stream is rejected before allocating it
+FILE=-
+CMDS=<<EOF
+idpi bins/pdb/dbi-module-size.pdb
+?e done
+EOF
+EXPECT=<<EOF
+done
+EOF
+EXPECT_ERR=<<EOF
+WARN: Cannot find base address, flags will probably be misplaced
+WARN: Invalid module info size in the PDB DBI stream
+ERROR: PDB root was not initialized
+ERROR: pdb was not parsed
+EOF
+RUN
