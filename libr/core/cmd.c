@@ -4418,6 +4418,10 @@ static bool tmpseek_reg(RCore *core, char *ptr) {
 }
 
 static bool tmpseek_pid(RCore *core, char *ptr, int *old_pid, int *old_tid, bool *pid_changed) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+		R_LOG_ERROR ("Temporary pid selection is disabled in sandbox mode");
+		return false;
+	}
 	char *arg = getarg (ptr);
 	if (!arg) {
 		R_LOG_ERROR ("Invalid pid for @p");
@@ -6405,6 +6409,10 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		break;
 	case 't': // "@@t"
 		{
+			if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+				R_LOG_ERROR ("Thread iteration is disabled in sandbox mode");
+				goto out_finish;
+			}
 			RDebugPid *p;
 			int pid = core->dbg->pid;
 			RDebugPlugin *plugin = R_UNWRAP3 (core->dbg, current, plugin);

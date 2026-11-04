@@ -43,6 +43,52 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=sandbox without exec blocks pid modifiers and thread iteration
+FILE=-
+CMDS=<<EOF
+e dbg.backend=null
+e cfg.sandbox.grain=all,!exec
+e cfg.sandbox=true
+?vi $P @p:42
+?vi $P @dp:42
+?e unexpected @@t
+?vi $P
+?e alive
+EOF
+EXPECT=<<EOF
+0
+0
+0
+alive
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Temporary pid selection is disabled in sandbox mode
+ERROR: Temporary pid selection is disabled in sandbox mode
+ERROR: Thread iteration is disabled in sandbox mode
+EOF
+RUN
+
+NAME=sandbox exec permits pid modifiers and thread iteration
+FILE=-
+CMDS=<<EOF
+e dbg.backend=null
+?vi $P @p:7
+e cfg.sandbox.grain=exec
+e cfg.sandbox=true
+?vi $P @p:42
+?vi $P @dp:43
+?e unexpected @@t
+?vi $P
+EOF
+EXPECT=<<EOF
+7
+42
+43
+7
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=sandbox grain=none blocks shell subcommands
 FILE=-
 CMDS=<<EOF
