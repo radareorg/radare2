@@ -20,3 +20,15 @@ EXPECT=<<EOF
 opened
 EOF
 RUN
+
+NAME=dotnet long names shared by many rows are truncated, not dropped
+FILE=bins/pe/dotnet-long-names.exe
+CMDS=<<EOF
+?l `icq`
+ic~?
+EOF
+EXPECT=<<EOF
+1066
+651
+EOF
+RUN

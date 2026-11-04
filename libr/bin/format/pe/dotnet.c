@@ -37,7 +37,15 @@ typedef struct _PE {
 	void *object;
 	HtUP *symbols_by_token; // token -> DotNetSymbol (owned by the symbol list)
 	HtPP *typedefs_by_name; // full name -> first typedef DotNetSymbol with it
+	HtUP *long_names; // heap entry -> its name cut at DOTNET_MAX_NAME
 } PE;
+
+// rows name heap entries by index, so any number of them can share one long name
+#define DOTNET_MAX_NAME 512
+
+static void free_long_name_kv(HtUPKv *kv) {
+	free (kv->value);
+}
 
 static char *pe_get_dotnet_string(PE *pe, const uint8_t *string_offset, ut32 string_index) {
 	// Start of string must be within boundary
@@ -46,11 +54,21 @@ static char *pe_get_dotnet_string(PE *pe, const uint8_t *string_offset, ut32 str
 		return NULL;
 	}
 	// Calculate how much until end of boundary, don't scan past that.
-	size_t remaining = (pe->data + pe->data_size) - (string_offset + string_index);
-	// Search for a NULL terminator from start of string, up to remaining.
+	const size_t remaining = (pe->data + pe->data_size) - (string_offset + string_index);
 	char *start = (char *) (string_offset + string_index);
-	char *eos = (char *)r_mem_mem ((void *)start, remaining, (void *)"\0", 1);
-	return eos? start: NULL;
+	const size_t len = r_str_nlen (start, R_MIN (remaining, DOTNET_MAX_NAME + 1));
+	if (len <= DOTNET_MAX_NAME) {
+		return len < remaining? start: NULL;
+	}
+	if (!pe->long_names) {
+		pe->long_names = ht_up_new (NULL, free_long_name_kv, NULL);
+	}
+	char *name = ht_up_find (pe->long_names, (ut64)(size_t)start, NULL);
+	if (!name) {
+		name = r_str_ndup (start, DOTNET_MAX_NAME);
+		ht_up_insert (pe->long_names, (ut64)(size_t)start, name);
+	}
+	return name;
 }
 
 static uint32_t max_rows(int count, ...) {
@@ -2391,7 +2409,9 @@ RList *dotnet_parse(const ut8 *buf, int size, ut64 baddr) {
 		return NULL;
 	}
 	PE pe = { buf, (ut32)size, NULL };
-	return dotnet_parse_com (&pe, baddr);
+	RList *symbols = dotnet_parse_com (&pe, baddr);
+	ht_up_free (pe.long_names);
+	return symbols;
 }
 
 static void dotnet_manifest_resource_free(void *ptr) {
@@ -2516,7 +2536,7 @@ done:
 	return resources;
 }
 
-RList *dotnet_parse_libs(const ut8 *buf, int size) {
+static RList *dotnet_parse_libs_pe(PE *pe) {
 	PNET_METADATA metadata;
 	ut64 metadata_root;
 	STREAMS headers;
@@ -2524,11 +2544,6 @@ RList *dotnet_parse_libs(const ut8 *buf, int size) {
 	RList *libraries = NULL;
 	int i;
 	st64 metadata_offset = -1;
-	if (!buf || size < 1) {
-		return NULL;
-	}
-	PE pe_struct = { buf, (ut32)size, NULL };
-	PE *pe = &pe_struct;
 
 	libraries = r_list_newf ((RListFree)free);
 	if (!libraries) {
@@ -2632,6 +2647,16 @@ RList *dotnet_parse_libs(const ut8 *buf, int size) {
 		}
 	}
 
+	return libraries;
+}
+
+RList *dotnet_parse_libs(const ut8 *buf, int size) {
+	if (!buf || size < 1) {
+		return NULL;
+	}
+	PE pe = { buf, (ut32)size, NULL };
+	RList *libraries = dotnet_parse_libs_pe (&pe);
+	ht_up_free (pe.long_names);
 	return libraries;
 }
 
