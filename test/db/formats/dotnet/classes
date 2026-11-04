@@ -32,3 +32,40 @@ EXPECT=<<EOF
 651
 EOF
 RUN
+
+NAME=dotnet rejects huge ranks and malformed array shapes
+FILE=malloc://1024
+TIMEOUT=10
+CMDS=<<EOF
+e io.va=false
+wff bins/pe/dotnet-array-rank.exe @ 0
+obf
+icc csharp~cells
+wx 06061408020000 @ 0x2ea; obf; icc csharp~cells
+wx 0606140802ff00 @ 0x2ea; obf; icc csharp~cells
+wx 06061408020180 @ 0x2ea; obf; icc csharp~cells
+wx 06061408020080 @ 0x2ea; obf; icc csharp~cells
+wx 06061408020001 @ 0x2ea; obf; icc csharp~cells
+EOF
+EXPECT=<<EOF
+	public unknown cells;
+	public int[,] cells;
+	public unknown cells;
+	public unknown cells;
+	public unknown cells;
+	public unknown cells;
+EOF
+RUN
+
+NAME=dotnet signatures shared by many rows are not rendered past the limit
+FILE=bins/pe/dotnet-shared-sig.exe
+TIMEOUT=10
+CMDS=<<EOF
+is~?
+?l `isq`
+EOF
+EXPECT=<<EOF
+27
+12687
+EOF
+RUN
