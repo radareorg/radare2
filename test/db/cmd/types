@@ -864,6 +864,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=tpv accepts safe formats and rejects command separators
+FILE=-
+CMDS=<<EOF
+tpv int32_t @ 42
+'tk type.int32_t="d;?e TYPE_FORMAT_MARKER"
+tpv int32_t
+EOF
+EXPECT=<<EOF
+0x0000002a = 0x0000002a
+| tpv <type> [@addr]  show offset formatted for given type
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=aht and arm
 FILE=-
 CMDS=<<EOF

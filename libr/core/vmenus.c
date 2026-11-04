@@ -3208,19 +3208,13 @@ static void variable_rename(RCore *core, ut64 addr, int vindex, const char *name
 	if (!fcn) {
 		return;
 	}
-	ut64 a_tmp = core->addr;
 	int i = 0;
 
 	RVecAnalVarPtr *vars = r_anal_function_vars (core->anal, fcn);
 	RAnalVar **it;
 	R_VEC_FOREACH (vars, it) {
-		RAnalVar *var = *it;
 		if (i == vindex) {
-			r_core_seek (core, addr, false);
-			char *safe_name = r_str_sanitize_r2 (var->name);
-			free (r_core_cmd_strf (core, "afvn %s %s", name, safe_name));
-			free (safe_name);
-			r_core_seek (core, a_tmp, false);
+			r_anal_var_rename (core->anal, *it, name);
 			break;
 		}
 		i++;
