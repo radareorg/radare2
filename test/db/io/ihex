@@ -49,3 +49,21 @@ EXPECT=<<EOF
 0x00070010  2000 0000 1007 0040 1007 7594 0000 0000   ......@..u.....
 EOF
 RUN
+
+NAME=IHEX: the EOF record does not rewrite the last data record
+FILE=-
+CMDS=<<EOF
+?e :020000040800F2 > .tmp_ihex_eof.hex
+?e :0400000001020304F2 >> .tmp_ihex_eof.hex
+?e :0400100011121314A2 >> .tmp_ihex_eof.hex
+?e :00000001FF >> .tmp_ihex_eof.hex
+o ihex://.tmp_ihex_eof.hex
+p8 4 @ 0x8000000
+p8 4 @ 0x8000010
+rm .tmp_ihex_eof.hex
+EOF
+EXPECT=<<EOF
+01020304
+11121314
+EOF
+RUN
