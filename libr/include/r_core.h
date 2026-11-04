@@ -1023,7 +1023,7 @@ R_API void r_core_undo_up(RCore *core);
 R_API void r_core_undo_down(RCore *core);
 
 /* logs */
-typedef int (*RCoreLogCallback)(RCore *core, int count, const char *message);
+typedef void (*RCoreLogCallback)(RCore *core, int count, const char *message);
 R_API void r_core_log_free(RCoreLog *log);
 R_API void r_core_log_view(RCore *core, int num, int shift);
 R_API void r_core_log_init(RCoreLog *log);

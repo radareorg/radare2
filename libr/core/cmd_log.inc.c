@@ -187,20 +187,20 @@ static int getIndexFromLogString(const char *s) {
 }
 
 // replays a comment event from a synced log through the api, its text never reaches the command parser
-static int log_callback_r2(RCore *core, int count, const char *line) {
+static void log_callback_r2(RCore *core, int count, const char *line) {
 	if (r_str_startswith (line, ":add-comment ")) {
 		const char *arg = line + strlen (":add-comment ");
 		const char *b64 = strchr (arg, ' ');
 		if (!b64) {
 			R_LOG_ERROR ("Cannot parse add-comment expression");
-			return 0;
+			return;
 		}
 		b64++;
 		int len = 0;
 		ut8 *raw = r_base64_decode_dyn (b64, -1, &len, true);
 		if (!raw) {
 			R_LOG_ERROR ("Invalid base64 in add-comment expression");
-			return 0;
+			return;
 		}
 		char *msg = r_str_ndup ((const char *)raw, len);
 		free (raw);
@@ -216,12 +216,10 @@ static int log_callback_r2(RCore *core, int count, const char *line) {
 		r_meta_del (core->anal, R_META_TYPE_COMMENT, addr, 1);
 		r_cons_printf (core->cons, "CC-0x%" PFMT64x "\n", addr);
 	}
-	return 0;
 }
 
-static int log_callback_all(RCore *core, int count, const char *line) {
+static void log_callback_all(RCore *core, int count, const char *line) {
 	r_cons_printf (core->cons, "%.2d %s\n", count, line);
-	return 0;
 }
 
 R_API void r_core_log_view(RCore *core, int num, int shift) {
