@@ -385,6 +385,9 @@ static RList *fs_sep64_bins(RBuffer *b) {
 		return NULL;
 	}
 	RList *out = r_list_newf ((RListFree)r_fs_file_free);
+	// apps are disjoint, so aliasing records must not multiply the file in memory
+	ut64 budget = 2 * r_buf_size (b);
+	ut32 skipped = 0;
 	ut32 i;
 	for (i = 0; i < ctx->nslices; i++) {
 		Slice *s = &ctx->slices[i];
@@ -396,7 +399,8 @@ static RList *fs_sep64_bins(RBuffer *b) {
 		if (contiguous) {
 			sbuf = r_buf_new_slice (b, s->phys_text, s->size);
 		} else {
-			if (s->size > SIZE_MAX) {
+			if (s->size > SIZE_MAX || s->size > budget) {
+				skipped++;
 				continue;
 			}
 			ut8 *bytes = malloc (s->size);
@@ -404,6 +408,7 @@ static RList *fs_sep64_bins(RBuffer *b) {
 				free (bytes);
 				continue;
 			}
+			budget -= s->size;
 			sbuf = r_buf_new_with_pointers (bytes, s->size, true);
 		}
 		if (!sbuf) {
@@ -422,6 +427,9 @@ static RList *fs_sep64_bins(RBuffer *b) {
 		f->bits = 64;
 		f->machine = strdup ("arm64e");
 		r_list_append (out, f);
+	}
+	if (skipped) {
+		R_LOG_WARN ("fs_sep64: skipping %u app slices over the copy budget", skipped);
 	}
 	ctx_free (ctx);
 	return out;
