@@ -29,6 +29,9 @@ R_API char *r_asm_parse_immtrim(RAsm *a, const char *_opstr) {
 		return NULL;
 	}
 	char *opstr = strdup (_opstr);
+	if (!opstr) {
+		return NULL;
+	}
 	char *n = strstr (opstr, "0x");
 	if (n) {
 		char *p = n + 2;
@@ -54,9 +57,9 @@ R_API char *r_asm_parse_immtrim(RAsm *a, const char *_opstr) {
 	}
 	r_str_trim (opstr);
 	size_t len = strlen (opstr);
-   	if (len > 0 && opstr[len - 1] == ',') {
-   		opstr[len - 1] = 0;
-   		r_str_trim (opstr);
+	if (len > 0 && opstr[len - 1] == ',') {
+		opstr[len - 1] = 0;
+		r_str_trim (opstr);
 	}
 	return opstr;
 }

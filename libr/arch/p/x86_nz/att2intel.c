@@ -67,7 +67,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 		*ptr = 0;
 		r_str_trim (buf);
 	}
-	if (*buf == '.' || buf[strlen(buf)-1] == ':') {
+	if (*buf == '.' || r_str_endswith (buf, ":")) {
 		free (buf);
 		return strdup (data);
 	}

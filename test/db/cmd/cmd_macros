@@ -323,3 +323,19 @@ z
 alive
 EOF
 RUN
+
+NAME=macro with empty body and blank lines
+FILE=-
+CMDS=<<EOF
+(empty;)
+.(empty)
+(blank;;?e hi; ;?e there)
+.(blank)
+?e alive
+EOF
+EXPECT=<<EOF
+hi
+there
+alive
+EOF
+RUN

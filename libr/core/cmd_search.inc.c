@@ -4122,8 +4122,7 @@ static bool is_json_command(const char *input, int *param_offset) {
 		}
 		return false;
 	}
-	lastch = input + strlen (input) - 1;
-	return (*lastch == 'j');
+	return r_str_endswith (input, "j");
 }
 
 #if 1

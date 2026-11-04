@@ -2187,3 +2187,19 @@ WARN: 0x00000002 Sequential hit ignored
 WARN: 0x00000004 Sequential hit ignored
 EOF_ERR
 RUN
+
+NAME=repeat empty search
+FILE=-
+CMDS=<<EOF
+/
+//
+?e alive
+EOF
+EXPECT=<<EOF
+alive
+EOF
+EXPECT_ERR=<<EOF
+INFO: See /? for help
+INFO: See /? for help
+EOF
+RUN

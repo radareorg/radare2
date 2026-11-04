@@ -1004,7 +1004,7 @@ R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, in
 	for (; *ptr == ' '; ptr++) {
 		;
 	}
-	if (ptr[strlen (ptr) - 1] == ':' && !strchr (ptr, ' ')) {
+	if (r_str_endswith (ptr, ":") && !strchr (ptr, ' ')) {
 		/* label detected */
 		if (ptr[0] == '.') {
 		//	eprintf("---> GOTO '%s'\n", ptr+1);
