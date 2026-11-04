@@ -76,7 +76,10 @@ static double get_float64(RBuffer *buffer, bool *error) {
 }
 
 static ut8 *get_bytes(RBuffer *buffer, ut32 size) {
-	if (size >= ST32_MAX) {
+	// a short read pads the whole allocation, so the size must fit in what is left
+	const ut64 pos = r_buf_tell (buffer);
+	const ut64 end = r_buf_size (buffer);
+	if (size >= ST32_MAX || pos > end || size > end - pos) {
 		return NULL;
 	}
 	ut8 *ret = R_NEWS0 (ut8, size + 1);
@@ -278,7 +281,6 @@ static pyc_object *get_binary_float_object(RBuffer *buffer) {
 
 static pyc_object *get_complex_object(PycUnmarshalCtx *ctx, RBuffer *buffer) {
 	bool error = false;
-	ut32 size = 0;
 	st32 n1 = 0;
 	st32 n2 = 0;
 
@@ -292,19 +294,12 @@ static pyc_object *get_complex_object(PycUnmarshalCtx *ctx, RBuffer *buffer) {
 		free (ret);
 		return NULL;
 	}
-	ut8 *s1 = malloc ((ut32)n1 + 1);
+	/* object contain string representation of the number */
+	ut8 *s1 = get_bytes (buffer, n1);
 	if (!s1) {
 		free (ret);
 		return NULL;
 	}
-	/* object contain string representation of the number */
-	size = r_buf_read (buffer, s1, n1);
-	if (size != n1) {
-		R_FREE (s1);
-		R_FREE (ret);
-		return NULL;
-	}
-	s1[n1] = '\0';
 
 	if ((ctx->magic & 0xffff) <= 62061) {
 		n2 = get_ut8 (buffer, &error);
@@ -316,21 +311,12 @@ static pyc_object *get_complex_object(PycUnmarshalCtx *ctx, RBuffer *buffer) {
 		R_FREE (ret);
 		return NULL;
 	}
-	ut8 *s2 = malloc ((ut32)n2 + 1);
+	ut8 *s2 = get_bytes (buffer, n2);
 	if (!s2) {
 		R_FREE (s1);
 		R_FREE (ret);
 		return NULL;
 	}
-	/* object contain string representation of the number */
-	size = r_buf_read (buffer, s2, n2);
-	if (size != n2) {
-		R_FREE (s1);
-		R_FREE (s2);
-		R_FREE (ret);
-		return NULL;
-	}
-	s2[n2] = '\0';
 
 	ret->type = TYPE_COMPLEX;
 	ret->data = r_str_newf ("%s+%sj", s1, s2);

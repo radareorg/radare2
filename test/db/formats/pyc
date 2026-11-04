@@ -355,3 +355,31 @@ EXPECT=<<EOF
 512
 EOF
 RUN
+
+NAME=pyc string length larger than the file is rejected without allocating it
+FILE=bins/pyc/string-length-past-eof.pyc
+CMDS=<<EOF
+iI~arch
+iS
+EOF
+EXPECT=<<EOF
+arch     pyc
+nth paddr       size vaddr       vsize perm flags type name
+-----------------------------------------------------------
+0   0x0000002e   0x2 0x0000002e    0x2 -r-x 0x0   ---- main
+EOF
+RUN
+
+NAME=pyc complex length larger than the file is rejected without allocating it
+FILE=bins/pyc/complex-length-past-eof.pyc
+CMDS=<<EOF
+iI~arch
+iS
+EOF
+EXPECT=<<EOF
+arch     pyc
+nth paddr       size vaddr       vsize perm flags type name
+-----------------------------------------------------------
+0   0x0000001e   0x2 0x0000001e    0x2 -r-x 0x0   ---- main
+EOF
+RUN
