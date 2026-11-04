@@ -166,3 +166,21 @@ gpr     PCON    .32     212     0   # Peripheral Control Register (Optional, dep
 
 EOF
 RUN
+
+NAME=TriCore v2 BOL loads and stores
+FILE=malloc://512
+CMDS=!rasm2 -a tricore -c v2 -d 99ff0c3579ff0c3539ff0c35c9ff0c35b9ff0c3519ff0c35d9ff0c35b5ff0c35e9ff0c35f9ff0c3559ff0c35
+EXPECT=<<EOF
+ld.a a15, [a15]0x50cc
+ld.b d15, [a15]0x50cc
+ld.bu d15, [a15]0x50cc
+ld.h d15, [a15]0x50cc
+ld.hu d15, [a15]0x50cc
+ld.w d15, [a15]0x50cc
+lea a15, [a15]0x50cc
+st.a [a15]0x50cc, a15
+st.b [a15]0x50cc, d15
+st.h [a15]0x50cc, d15
+st.w [a15]0x50cc, d15
+EOF
+RUN
