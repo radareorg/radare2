@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2019-2025 - GustavoLCR */
 
 #include "ne.h"
+#include "../../i/private.h"
 
 static bool ne_header_at(RBuffer *buf, ut64 offset) {
 	ut64 bufsz = r_buf_size (buf);
@@ -92,12 +93,13 @@ static char *__func_name_from_ord(const char *module, ut16 ordinal) {
 	char *lower_module = strdup (module);
 	r_str_case (lower_module, false);
 	char *pfx = r_sys_prefix (NULL);
-	char *path = r_str_newf (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"), pfx, lower_module);
+	char *sdbdir = r_file_new (pfx, R2_SDB_FORMAT, "dll", NULL);
+	Sdb *sdb = open_ordinalsdb (sdbdir, lower_module);
+	free (sdbdir);
 	free (pfx);
 	free (lower_module);
 	char *name = NULL;
-	if (r_file_exists (path)) {
-		Sdb *sdb = sdb_new (NULL, path, 0);
+	if (sdb) {
 		const char *value = sdb_const_getf (sdb, NULL, "%d", ordinal);
 		name = value? strdup (value): NULL;
 		sdb_free (sdb);
@@ -105,7 +107,6 @@ static char *__func_name_from_ord(const char *module, ut16 ordinal) {
 	if (!name) {
 		name = r_str_newf ("%d", ordinal);
 	}
-	free (path);
 	return name;
 }
 

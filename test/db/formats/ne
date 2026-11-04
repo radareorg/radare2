@@ -196,3 +196,11 @@ EXPECT=<<EOF
 780
 EOF
 RUN
+
+NAME=NE: ordinal databases are only taken from the dll directory
+FILE=bins/ne/ordinal-traversal.exe
+CMDS=ir~SET[4]
+EXPECT=<<EOF
+../dll/USER.1
+EOF
+RUN

@@ -54,3 +54,15 @@ WARN: PE import descriptors list more thunks than the file holds
 WARN: PE import descriptors list more thunks than the file holds
 EOF
 RUN
+
+NAME=PE: ordinal databases are only taken from dir.binsdb
+FILE=bins/pe/ordinal-traversal.exe
+CMDS=<<EOF
+ii~wsock32[4,5]
+ir~wsock32[4]
+EOF
+EXPECT=<<EOF
+../dll/wsock32.dll Ordinal_1
+../dll/wsock32.dll_Ordinal_1
+EOF
+RUN

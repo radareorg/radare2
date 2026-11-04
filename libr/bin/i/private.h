@@ -27,6 +27,10 @@ static inline ut64 r_bin_file_get_buffer_offset(RBinFile *bf, ut64 paddr) {
 R_IPI RBinPlugin *r_bin_get_binplugin_any(RBin *bin);
 
 static inline Sdb *open_ordinalsdb(const char *sdbdir, const char *mod) {
+	// the module name comes from the binary and must not leave sdbdir
+	if (R_STR_ISEMPTY (mod) || strpbrk (mod, "/\\")) {
+		return NULL;
+	}
 	char *sfn = r_str_newf ("%s%s%s.sdb",
 			r_str_get_fail (sdbdir, "."), R_SYS_DIR, mod);
 	Sdb *db = r_file_exists (sfn)? sdb_new (NULL, sfn, 0): NULL;
