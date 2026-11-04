@@ -705,6 +705,10 @@ static void trycatch_depth(RAnal *anal, RAnalFunction *fcn, ut64 to) {
 	free (buf);
 }
 
+static bool trycatch_found_cb(const RBinTrycatch *tc, void *user) {
+	return false;
+}
+
 // Analyze exception handlers in their owning function without adding CFG edges.
 static bool anal_trycatch(const RBinTrycatch *tc, void *user) {
 	RAnalFunction *fcn = user;
@@ -3190,20 +3194,10 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 	{
 		// embed the trycatch regions owned by this function (same json as "iwj.")
 		RBinFile *bf = r_bin_cur (core->bin);
-		const RVecRBinTrycatch *tcs = bf? r_bin_file_get_trycatch (bf): NULL;
-		if (tcs) {
-			const RBinTrycatch *tc;
-			bool found = false;
-			R_VEC_FOREACH (tcs, tc) {
-				if (tc->source == fcn->addr) {
-					found = true;
-					break;
-				}
-			}
-			if (found) {
-				pj_k (pj, "trycatch");
-				bin_trycatch_json (pj, tcs, fcn->addr);
-			}
+		// the callback stops at the first region, so a false result means the function has some
+		if (bf && !r_bin_trycatch_foreach (bf, fcn->addr, trycatch_found_cb, NULL)) {
+			pj_k (pj, "trycatch");
+			bin_trycatch_json (pj, bf, fcn->addr);
 		}
 	}
 	pj_end (pj);

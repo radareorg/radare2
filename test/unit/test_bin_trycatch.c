@@ -144,7 +144,8 @@ static bool test_trycatch_compressed_sections(void) {
 		const bool compressed = cases[i].zdebug || (cases[i].flags & 0x800);
 		const RVecRBinTrycatch *entries = r_bin_file_get_trycatch (bf);
 		mu_assert_notnull (entries, "load exception regions");
-		mu_assert_eq (RVecRBinTrycatch_length (entries), compressed? 0: 8, "only uncompressed exception tables are parsed");
+		// the eight sections alias the same bytes, which are walked just once
+		mu_assert_eq (RVecRBinTrycatch_length (entries), compressed? 0: 1, "only uncompressed exception tables are parsed");
 		if (compressed) {
 			RBinSection *section;
 			R_VEC_FOREACH (&bf->bo->sections_vec, section) {

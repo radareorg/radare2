@@ -159,8 +159,12 @@ R_IPI void r_bin_class_add_field(RBinFile *binfile, const char *classname, const
 R_IPI RBinFile *r_bin_file_xtr_load(RBin *bin, RBinXtrPlugin *xtr, const char *filename, RBuffer *buf, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr);
 R_IPI RBinFile *r_bin_file_new_from_buffer(RBin *bin, const char *file, RBuffer *buf, RBinFileOptions *opt);
 
+// state shared by all the LSDAs of one file
+typedef struct r_bin_lsda_parser_t RBinLsdaParser;
+R_IPI RBinLsdaParser *r_bin_dwarf_lsda_new(RBinFile *bf, RVecRBinTrycatch *result);
+R_IPI void r_bin_dwarf_lsda_free(RBinLsdaParser *lp);
 // parse the Itanium C++ ABI LSDA at lsda_addr filling result with RBinTrycatch entries
-R_IPI void r_bin_dwarf_parse_lsda(RBinFile *bf, RVecRBinTrycatch *result, ut64 fcn_addr, ut64 lsda_addr);
+R_IPI void r_bin_dwarf_parse_lsda(RBinLsdaParser *lp, ut64 fcn_addr, ut64 lsda_addr);
 // walk the FDEs in the eh_frame section parsing the LSDA referenced by each one
 R_IPI void r_bin_dwarf_parse_eh_frame(RBinFile *bf, RVecRBinTrycatch *result);
 

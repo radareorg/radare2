@@ -1239,23 +1239,32 @@ static RVecRBinTrycatch *trycatch(RBinFile *bf) {
 		free (bytes);
 		return result;
 	}
+	RBinLsdaParser *lp = r_bin_dwarf_lsda_new (bf, result);
+	if (!lp) {
+		free (bytes);
+		return result;
+	}
 	const ut64 base = baddr (bf);
+	// the index entries slice one sorted descriptor array, never walk back over it
+	ut32 walked = 0;
 	ut32 i;
 	for (i = 0; i + 1 < index_count; i++) {
 		const ut8 *index = bytes + index_offset + (i * 12);
 		ut32 lsda_offset = r_read_ble32 (index + 8, be);
 		ut32 next_lsda_offset = r_read_ble32 (index + 20, be);
-		if (lsda_offset > next_lsda_offset || next_lsda_offset > section->size
+		if (lsda_offset < walked || lsda_offset > next_lsda_offset || next_lsda_offset > section->size
 				|| (next_lsda_offset - lsda_offset) % 8) {
 			continue;
 		}
+		walked = next_lsda_offset;
 		ut32 at;
 		for (at = lsda_offset; at < next_lsda_offset; at += 8) {
 			ut32 function_offset = r_read_ble32 (bytes + at, be);
 			ut32 lsda = r_read_ble32 (bytes + at + 4, be);
-			r_bin_dwarf_parse_lsda (bf, result, base + function_offset, base + lsda);
+			r_bin_dwarf_parse_lsda (lp, base + function_offset, base + lsda);
 		}
 	}
+	r_bin_dwarf_lsda_free (lp);
 	free (bytes);
 	RVecRBinTrycatch_shrink_to_fit (result);
 	return result;

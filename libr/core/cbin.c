@@ -4071,48 +4071,59 @@ R_IPI void bin_trycatch_flag(RCore *core, const RBinTrycatch *tc, size_t index, 
 	}
 }
 
+typedef struct {
+	PJ *pj;
+	size_t idx;
+} TrycatchJson;
+
+static bool bin_trycatch_json_item(const RBinTrycatch *tc, void *user) {
+	TrycatchJson *tj = user;
+	PJ *pj = tj->pj;
+	const char *kind = r_bin_trycatch_kind_tostring (tc->kind);
+	pj_o (pj);
+	pj_kn (pj, "index", tj->idx++);
+	pj_kn (pj, "source", tc->source);
+	pj_kn (pj, "from", tc->from);
+	pj_kn (pj, "to", tc->to);
+	pj_kn (pj, "handler", tc->handler);
+	pj_kn (pj, "filter", tc->filter);
+	if (tc->kind != R_BIN_TRYCATCH_UNSPECIFIED) {
+		pj_ks (pj, "kind", kind);
+		if (tc->kind != R_BIN_TRYCATCH_CLEANUP && tc->kind != R_BIN_TRYCATCH_FINALLY) {
+			pj_kN (pj, "typeFilter", tc->type_filter);
+		}
+		if (tc->type) {
+			pj_ks (pj, "type", tc->type);
+		}
+		if (tc->catch_all) {
+			pj_kb (pj, "catchAll", true);
+		}
+	}
+	pj_end (pj);
+	return true;
+}
+
 // Serialize the regions of a source function as a JSON array in pj.
 // source = UT64_MAX selects all the regions. Returns the number of entries.
 // This is the single JSON representation used by "iwj" and the trycatch
 // array embedded in function json (afij).
-R_IPI int bin_trycatch_json(PJ *pj, const RVecRBinTrycatch *tcs, ut64 source) {
+R_IPI int bin_trycatch_json(PJ *pj, RBinFile *bf, ut64 source) {
 	R_RETURN_VAL_IF_FAIL (pj, 0);
-	RVecRBinTrycatch empty = { 0 };
-	if (!tcs) {
-		tcs = &empty;
-	}
-	size_t idx = 0;
-	const RBinTrycatch *tc;
+	TrycatchJson tj = { pj, 0 };
 	pj_a (pj);
-	R_VEC_FOREACH (tcs, tc) {
-		if (source != UT64_MAX && tc->source != source) {
-			continue;
-		}
-		const char *kind = r_bin_trycatch_kind_tostring (tc->kind);
-		pj_o (pj);
-		pj_kn (pj, "index", idx);
-		pj_kn (pj, "source", tc->source);
-		pj_kn (pj, "from", tc->from);
-		pj_kn (pj, "to", tc->to);
-		pj_kn (pj, "handler", tc->handler);
-		pj_kn (pj, "filter", tc->filter);
-		if (tc->kind != R_BIN_TRYCATCH_UNSPECIFIED) {
-			pj_ks (pj, "kind", kind);
-			if (tc->kind != R_BIN_TRYCATCH_CLEANUP && tc->kind != R_BIN_TRYCATCH_FINALLY) {
-				pj_kN (pj, "typeFilter", tc->type_filter);
-			}
-			if (tc->type) {
-				pj_ks (pj, "type", tc->type);
-			}
-			if (tc->catch_all) {
-				pj_kb (pj, "catchAll", true);
+	if (bf && source != UT64_MAX) {
+		r_bin_trycatch_foreach (bf, source, bin_trycatch_json_item, &tj);
+	} else if (bf) {
+		const RVecRBinTrycatch *tcs = r_bin_file_get_trycatch (bf);
+		const RBinTrycatch *tc;
+		if (tcs) {
+			R_VEC_FOREACH (tcs, tc) {
+				bin_trycatch_json_item (tc, &tj);
 			}
 		}
-		pj_end (pj);
-		idx++;
 	}
 	pj_end (pj);
-	return idx;
+	return tj.idx;
 }
 
 static bool bin_trycatch(RCore *core, PJ *pj, int mode, ut64 source) {
@@ -4124,7 +4135,7 @@ static bool bin_trycatch(RCore *core, PJ *pj, int mode, ut64 source) {
 		trycatch = &empty;
 	}
 	if (IS_MODE_JSON (mode)) {
-		bin_trycatch_json (pj, trycatch, source);
+		bin_trycatch_json (pj, bf, source);
 		return true;
 	}
 	size_t idx = 0;
