@@ -1383,6 +1383,9 @@ static int rabin2_main(RCons *cons, int argc, const char **argv) {
 	run_action ("entries", R_BIN_REQ_ENTRIES, R_CORE_BIN_ACC_ENTRIES);
 	run_action ("initfini", R_BIN_REQ_INITFINI, R_CORE_BIN_ACC_INITFINI);
 	run_action ("main", R_BIN_REQ_MAIN, R_CORE_BIN_ACC_MAIN);
+	if ((action & R_BIN_REQ_IMPORTS) && rad == R_MODE_JSON) {
+		r_core_bin_info (&core, R_CORE_BIN_ACC_INFO, NULL, R_MODE_SET, va, NULL, NULL);
+	}
 	run_action ("imports", R_BIN_REQ_IMPORTS, R_CORE_BIN_ACC_IMPORTS);
 	run_action ("classes", R_BIN_REQ_CLASSES, R_CORE_BIN_ACC_CLASSES);
 	run_action ("symbols", R_BIN_REQ_SYMBOLS, R_CORE_BIN_ACC_SYMBOLS);

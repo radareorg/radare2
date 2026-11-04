@@ -3475,6 +3475,31 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ii sig resolves user import prototypes and reflects edits
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=<<EOF
+ii+ reviewunknown
+ii,name/eq/reviewunknown,name/cols/sig
+td int sym.imp.reviewunknown(int custom);
+ii,name/eq/reviewunknown,name/cols/sig
+iij~{[3].sig}
+t- sym.imp.reviewunknown
+ii,name/eq/reviewunknown,name/cols/sig
+EOF
+EXPECT=<<EOF
+name          sig
+-----------------
+reviewunknown false
+name          sig
+-----------------
+reviewunknown true
+true
+name          sig
+-----------------
+reviewunknown false
+EOF
+RUN
+
 NAME=ii dupped imports
 FILE=bins/elf/varsub
 CMDS=ii

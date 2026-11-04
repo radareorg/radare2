@@ -1,3 +1,11 @@
+NAME=rabin2 import signatures use the target types
+FILE=bins/pe/imports.exe
+CMDS=!!rabin2 -ij ${R2_FILE}~{imports[0].sig}
+EXPECT=<<EOF
+true
+EOF
+RUN
+
 NAME=baddr ==
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=!rabin2 -qe ${R2_FILE};!rabin2 -B 0x400000 -qe ${R2_FILE}

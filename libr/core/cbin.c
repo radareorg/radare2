@@ -2486,9 +2486,19 @@ static bool import_has_signature(RCore *core, RBinImport *import, const char *na
 	if (import->type && strcmp (import->type, R_BIN_TYPE_FUNC_STR)) {
 		return false;
 	}
-	char *key = r_type_func_name (core->anal->sdb_types, name);
+	Sdb *types = core->anal->sdb_types;
+	if (r_type_func_prototype_exist (types, name)) {
+		return true;
+	}
+	char *fname = r_str_newf ("sym.imp.%s", name);
+	if (!fname) {
+		return false;
+	}
+	char *key = r_type_func_name (types, fname);
+	bool found = key != NULL;
+	free (fname);
 	free (key);
-	return key != NULL;
+	return found;
 }
 
 static bool bin_imports(RCore *core, PJ *pj, int mode, int va, const char *name) {
