@@ -744,6 +744,55 @@ static bool test_anal_cparse_multiline_fnptr(void) {
 	mu_end;
 }
 
+static bool test_anal_cparse_line_comments_in_params(void) {
+	const char *decls[] = { "void f(int x, // ) here\nint y);", "void f(int x, /// )\nint y);" };
+	RAnal *anal = r_anal_new ();
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (decls); i++) {
+		char *error = NULL;
+		char *kv = r_anal_cparse (anal, decls[i], &error);
+		mu_assert_null (error, "a ) in a line comment does not close the parameter list");
+		mu_assert_notnull (kv, "serialize parameters around a line comment");
+		mu_assert_notnull (strstr (kv, "func.f.args=2\n"), "the line comment adds no parameter");
+		mu_assert_notnull (strstr (kv, "func.f.arg.0=int,x\n"), "the first parameter stays int x");
+		mu_assert_notnull (strstr (kv, "func.f.arg.1=int,y\n"), "the second parameter is int y");
+		free (kv);
+	}
+	r_anal_free (anal);
+	mu_end;
+}
+
+static bool test_anal_cparse_comment_marker_in_literal(void) {
+	RAnal *anal = r_anal_new ();
+	char *error = NULL;
+	char *kv = r_anal_cparse (anal, "int lit(char a[sizeof \"// )\"], int y);", &error);
+	mu_assert_null (error, "a // in a string literal opens no comment");
+	mu_assert_notnull (kv, "serialize parameters around the string literal");
+	mu_assert_notnull (strstr (kv, "func.lit.args=2\n"), "the literal adds no parameter");
+	mu_assert_notnull (strstr (kv, "func.lit.arg.1=int,y\n"), "the second parameter is int y");
+	free (kv);
+	r_anal_free (anal);
+	mu_end;
+}
+
+static bool test_anal_cparse_error_line_after_comments(void) {
+	RAnal *anal = r_anal_new ();
+	char *error = NULL;
+	char *kv = r_anal_cparse (anal, "/* one\ntwo */\n// three\nenum e { A B };\n", &error);
+	mu_assert_null (kv, "a malformed enum stores nothing");
+	mu_assert_notnull (error, "a malformed enum reports an error");
+	mu_assert_notnull (strstr (error, "at line 4:"), "the error names the line of the enum");
+	free (error);
+	error = NULL;
+	kv = r_anal_cparse (anal, "/* one\ntwo */\n// three\n/* unclosed", &error);
+	mu_assert_null (kv, "an unclosed comment stores nothing");
+	mu_assert_notnull (error, "an unclosed comment reports an error");
+	mu_assert_notnull (strstr (error, "at line 4: Unclosed comment"), "the error names the line the comment opens on");
+	free (error);
+	r_anal_free (anal);
+	mu_end;
+}
+
 static bool test_anal_type_bitsize_struct_recorded(void) {
 	RAnal *anal = r_anal_new ();
 	Sdb *TDB = anal->sdb_types;
@@ -872,6 +921,9 @@ int all_tests(void) {
 	mu_run_test (test_anal_save_base_type_union_redefine);
 	mu_run_test (test_anal_base_type_to_kv);
 	mu_run_test (test_anal_cparse_multiline_fnptr);
+	mu_run_test (test_anal_cparse_line_comments_in_params);
+	mu_run_test (test_anal_cparse_comment_marker_in_literal);
+	mu_run_test (test_anal_cparse_error_line_after_comments);
 	mu_run_test (test_anal_get_base_type_union);
 	mu_run_test (test_anal_save_base_type_union);
 	mu_run_test (test_anal_get_base_type_enum);

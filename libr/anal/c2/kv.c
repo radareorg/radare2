@@ -187,6 +187,14 @@ static bool skip_until(KVCParser *kvc, char ch) {
 	return false;
 }
 
+static size_t literal_len(const char *lit, const char *end) {
+	const char *p = lit + 1;
+	while (p < end && *p != *lit) {
+		p += (*p == '\\' && p + 1 < end)? 2: 1;
+	}
+	return (p < end? p + 1: end) - lit;
+}
+
 static const char *scan_toplevel(RStrs s, char ch) {
 	int depth = 0;
 	const char *p;
@@ -194,7 +202,9 @@ static const char *scan_toplevel(RStrs s, char ch) {
 		if (*p == ch && depth == 0) {
 			return p;
 		}
-		if (*p == '(') {
+		if (*p == '"' || *p == '\'') {
+			p += literal_len (p, s.b) - 1;
+		} else if (*p == '(') {
 			depth++;
 		} else if (*p == ')' && depth > 0) {
 			depth--;
@@ -1766,6 +1776,42 @@ static bool tryparse(KVCParser *kvc, const char *word, const char *type, KVCPars
 	return false;
 }
 
+static const char *blank_comments(char *s) {
+	const char *str_end = s + strlen (s);
+	int depth = 0;
+	while (*s) {
+		if (*s == '"' || *s == '\'') {
+			s += literal_len (s, str_end);
+		} else if (s[0] == '/' && s[1] == '/') {
+			// keep /// attribute annotations for parse_attributes
+			const bool keep = s[2] == '/' && depth == 0;
+			for (; *s && *s != '\n'; s++) {
+				if (!keep) {
+					*s = ' ';
+				}
+			}
+		} else if (s[0] == '/' && s[1] == '*') {
+			char *end = strstr (s + 2, "*/");
+			if (!end) {
+				return s;
+			}
+			for (end += 2; s < end; s++) {
+				if (*s != '\n') {
+					*s = ' ';
+				}
+			}
+		} else {
+			if (*s == '(') {
+				depth++;
+			} else if (*s == ')' && depth > 0) {
+				depth--;
+			}
+			s++;
+		}
+	}
+	return NULL;
+}
+
 R_IPI char *kvc_parse(const char *header_content, int ptr_size, char **errmsg) {
 	// Initialize a preprocessing state for this parse
 	PPState *pps = pp_new ();
@@ -1778,6 +1824,11 @@ R_IPI char *kvc_parse(const char *header_content, int ptr_size, char **errmsg) {
 	KVCParser _kvc = { 0 };
 	KVCParser *kvc = &_kvc;
 	kvcparser_init (&_kvc, pre);
+	const char *unclosed = blank_comments (pre);
+	if (unclosed) {
+		kvc_skipn (kvc, unclosed - kvc->s.a);
+		kvc_error (kvc, "Unclosed comment");
+	}
 	kvc->ptr_size = ptr_size > 0? ptr_size: 8;
 	while (!r_strs_empty (kvc->s)) {
 		skip_ws (kvc);
