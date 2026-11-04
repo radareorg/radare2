@@ -200,6 +200,60 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=r2pm -r preserves argument boundaries
+FILE=-
+CMDS=r2pm -r rax2 -S "one two" "" "a\"b" "C:\\one two\\"
+EXPECT=<<EOF
+6f6e652074776f
+
+612262
+433a5c6f6e652074776f5c
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=r2pm -r preserves a shell command string
+REQUIRE=unix
+FILE=-
+CMDS=r2pm -r "rax2 -S 'one two' | rax2 -s"
+EXPECT=one two
+EXPECT_ERR=
+RUN
+
+NAME=r2pm -r executable path with spaces
+REQUIRE=unix
+FILE=-
+CMDS=<<EOF
+r2pm -r "./scripts/r2pm/run probe" "one two" "" "a\"b" "C:\\one two\\"
+r2pm -r "./scripts/r2pm/run probe"
+EOF
+EXPECT=<<EOF
+argc=4
+<one two>
+<>
+<a\"b>
+<C:\\one two\\>
+argc=0
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=r2pm -r preserves child exit status
+REQUIRE=unix
+FILE=-
+CMDS=<<EOF
+r2pm -r sh -c "exit 7"
+?vi $?
+r2pm -r "exit 9"
+?vi $?
+EOF
+EXPECT=<<EOF
+7
+9
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=r2pm -e requires package
 FILE=-
 CMDS=!r2pm -e

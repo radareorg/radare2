@@ -74,7 +74,9 @@ List installed packages
 .It Fl q
 Be quiet. Requires an action
 .It Fl r Ar cmd ...args
-Run shell command with R2PM_BINDIR in PATH
+Run a command with R2PM_BINDIR in PATH, preserving separate arguments.
+Pass a shell command, including pipelines or redirections, as a single argument.
+On Windows, pass batch scripts as a shell command string or invoke cmd.exe explicitly.
 .It Fl R Ar pkgname
 Reload plugin (See R2PM_RELOAD code block package)
 .It Fl s Op keyword
