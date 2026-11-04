@@ -1927,6 +1927,16 @@ static int lookup_swift_roles(RAnal *anal, RAnalFunction *fcn) {
 		}
 		roles = 0;
 	}
+	if (roles == R_BIN_SWIFT_ROLE_ANY && anal->binb.bin && anal->binb.get_symbol_at) {
+		// the flag rawname may be clobbered by a func.<addr> start; ask the bin
+		RBinSymbol *sym = anal->binb.get_symbol_at (anal->binb.bin, fcn->addr);
+		if (sym && sym->name) {
+			const char *name = sym->name->oname? sym->name->oname: sym->name->name;
+			if (name) {
+				roles = anal->binb.swift_roles (name);
+			}
+		}
+	}
 	return roles;
 }
 
