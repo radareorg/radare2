@@ -1056,6 +1056,10 @@ static void cmd_tcp_server(RCore *core, const char *input) {
 }
 
 static void session_stop(RCore *core) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+		R_LOG_ERROR ("Stopping HTTP sessions is disabled in sandbox mode");
+		return;
+	}
 	if (core->http_up) {
 		r_core_rtr_http_stop (core);
 	} else {

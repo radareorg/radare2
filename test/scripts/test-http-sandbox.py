@@ -109,7 +109,7 @@ def check_http_sandbox_in_directory(directory, sandbox, background=False, local_
                 changed_port = candidate.getsockname()[1]
             command("POST", f"e http.port={changed_port}")
             for method in ("POST", "GET"):
-                for text in ("=h*", "=h--"):
+                for text in ("=h*", "=h--", "=l-", ":=l-"):
                     assert command(method, text) == b""
                     assert command("GET", "?e control-denied") == b"control-denied\n"
             command("POST", f"e http.port={port}")
