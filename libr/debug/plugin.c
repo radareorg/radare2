@@ -81,6 +81,12 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 	return dbg->current;
 }
 
+R_API RDebugPlugin *r_debug_plugin_get(RDebug *dbg, const char *name) {
+	R_RETURN_VAL_IF_FAIL (dbg && name, NULL);
+	RDebugPluginSession *ds = r_libstore_find (dbg->libstore, name, debug_plugin_session_cmp_name);
+	return ds? ds->plugin: NULL;
+}
+
 R_API R_OWNED char *r_debug_plugin_list(RDebug *dbg, int mode) {
 	R_RETURN_VAL_IF_FAIL (dbg, NULL);
 	char spaces[16];

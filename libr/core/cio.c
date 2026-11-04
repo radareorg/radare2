@@ -2,12 +2,30 @@
 
 #include "r_core.h"
 
+R_IPI const char *r_core_debug_io_backend(RCore *core) {
+	R_RETURN_VAL_IF_FAIL (core && core->io && core->dbg, NULL);
+	RIODesc *desc = core->io->desc;
+	if (!desc || !desc->plugin || !r_io_desc_info (desc).isdbg) {
+		return NULL;
+	}
+	RDebugPlugin *plugin = r_debug_plugin_get (core->dbg, desc->plugin->meta.name);
+	if (!plugin) {
+		return NULL;
+	}
+	r_config_set (core->config, "dbg.backend", plugin->meta.name);
+	return plugin->meta.name;
+}
+
 R_API int r_core_setup_debugger(RCore *r, const char *debugbackend, bool attach) {
 	int pid, *p = NULL;
-	bool is_gdb = !strcmp (debugbackend, "gdb");
 	RIODesc * fd = r->io->desc;
 	const char *prompt = NULL;
 
+	const char *iobackend = r_core_debug_io_backend (r);
+	if (iobackend) {
+		debugbackend = iobackend;
+	}
+	bool is_gdb = !strcmp (debugbackend, "gdb");
 	p = fd ? fd->data : NULL;
 	r_config_set_b (r->config, "cfg.debug", true);
 	if (!p) {

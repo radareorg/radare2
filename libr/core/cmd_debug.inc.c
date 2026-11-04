@@ -1721,6 +1721,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			r_debug_attach (core->dbg, pid);
 		} else {
 			if (core->io && core->io->desc) {
+				r_core_debug_io_backend (core);
 				const int pid = r_io_fd_get_pid (core->io, core->io->desc->fd);
 				r_debug_attach (core->dbg, pid);
 			}
@@ -1735,6 +1736,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		break;
 	case 'f': // "dpf"
 		if (core->io && core->io->desc) {
+			r_core_debug_io_backend (core);
 			r_debug_select (core->dbg, r_io_fd_get_pid (core->io, core->io->desc->fd),
 					r_io_fd_get_tid (core->io, core->io->desc->fd));
 		}

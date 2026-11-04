@@ -1555,6 +1555,7 @@ static bool cb_cfgdebug(void *user, void *data) {
 		return false;
 	}
 	if (core->dbg && node->i_value) {
+		r_core_debug_io_backend (core);
 		const char *dbgbackend = r_config_get (core->config, "dbg.backend");
 		r_config_set (core->config, "anal.in", "dbg.map");
 		r_config_set (core->config, "search.in", "dbg.map");

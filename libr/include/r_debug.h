@@ -560,6 +560,7 @@ R_IPI void r_debug_plugins_init(RDebug *dbg);
 R_IPI void r_debug_plugins_fini(RDebug *dbg);
 R_API int r_debug_plugin_set(RDebug *dbg, const char *str);
 R_API R_OWNED char *r_debug_plugin_list(RDebug *dbg, int mode);
+R_API RDebugPlugin *r_debug_plugin_get(RDebug *dbg, const char *name);
 R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *plugin);
 R_API bool r_debug_plugin_remove(RDebug *dbg, RDebugPlugin *plugin);
 R_API bool r_debug_plugin_set_reg_profile(RDebug *dbg, const char *str);

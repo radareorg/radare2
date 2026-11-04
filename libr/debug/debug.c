@@ -1868,7 +1868,13 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 	if (!dbg || !dbg->iob.io || !dbg->iob.io->desc) {
 		return 0LL;
 	}
-	if (!strcmp (dbg->iob.io->desc->plugin->meta.name, "gdb")) { // this is very bad
+	const char *ioplugin = dbg->iob.io->desc->plugin->meta.name;
+	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
+	if (r_debug_plugin_get (dbg, ioplugin) && (!plugin || strcmp (plugin->meta.name, ioplugin))) {
+		// the pid reported by a remote debugger means nothing to the other backends
+		return 0LL;
+	}
+	if (!strcmp (ioplugin, "gdb")) { // this is very bad
 		// Tell gdb that we want baddr, not full mem map
 		dbg->iob.system (dbg->iob.io, "baddr");
 	}

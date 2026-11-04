@@ -478,6 +478,7 @@ static int r_core_file_load_for_debug(RCore *r, ut64 baseaddr, const char * R_NU
 		return false;
 	}
 	int fd = desc->fd;
+	r_core_debug_io_backend (r);
 	r_debug_select (r->dbg, r_io_fd_get_pid (r->io, fd),
 			r_io_fd_get_tid (r->io, fd));
 #if !__linux__

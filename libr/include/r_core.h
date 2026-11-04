@@ -700,6 +700,7 @@ R_API bool r_core_file_close_all_but(RCore *core);
 R_API char *r_core_slurp(RCore *core, const char *path, size_t *len);
 
 R_API int r_core_setup_debugger(RCore *r, const char *debugbackend, bool attach);
+R_IPI const char *r_core_debug_io_backend(RCore *core);
 R_API int r_core_seek_delta(RCore *core, st64 addr);
 R_API bool r_core_extend_at(RCore *core, ut64 addr, int size);
 R_API bool r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size);
