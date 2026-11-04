@@ -76,7 +76,8 @@ static bool checkEntrypointBuffer(RBuffer *b) {
 static bool check(RBinFile *bf, RBuffer *b) {
 	R_RETURN_VAL_IF_FAIL (b, false);
 	ut64 b_size = r_buf_size (b);
-	if (b_size <= 0x3d) {
+	// the DOS header is 0x1c bytes, the new exe header offset comes after it
+	if (b_size < 0x1c) {
 		return false;
 	}
 
@@ -90,10 +91,12 @@ static bool check(RBinFile *bf, RBuffer *b) {
 	}
 
 	// See if there is a new exe header.
-	ut16 new_exe_header_offset = r_buf_read_le16_at (b, 0x3c);
-	if (b_size > new_exe_header_offset + 2) {
-		if (knownHeaderBuffer (b, new_exe_header_offset)) {
-			return false;
+	if (b_size > 0x3d) {
+		ut16 new_exe_header_offset = r_buf_read_le16_at (b, 0x3c);
+		if (b_size > new_exe_header_offset + 2) {
+			if (knownHeaderBuffer (b, new_exe_header_offset)) {
+				return false;
+			}
 		}
 	}
 
