@@ -157,6 +157,43 @@ static bool session_open(libgdbr_t *g, int fds[2], int remote_type) {
 	return !gdbr_set_reg_profile (g, PROFILE);
 }
 
+static bool test_gdb_monitor_output(void) {
+	const struct {
+		const char *replies[4];
+		const char *output;
+		int result;
+	} cases[] = {
+		{ { "O68656c6c6f20", "O25730a", "OK", NULL }, "hello %s\n", 0 },
+		{ { "OK", NULL }, "", 0 },
+		{ { "E01", NULL }, "", -1 },
+		{ { "O68656c6c6f20", "E01", NULL }, "hello ", -1 },
+		{ { "O20203132330a0a", "OK", NULL }, "  123\n\n", 0 },
+	};
+	RCons *cons = r_cons_new ();
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (cases); i++) {
+		libgdbr_t g;
+		int fds[2];
+		mu_assert_true (session_open (&g, fds, GDB_REMOTE_TYPE_GDB), "open monitor session");
+		const char *const *reply;
+		for (reply = cases[i].replies; *reply; reply++) {
+			mu_assert_true (send_response (fds[1], *reply), "queue monitor reply");
+		}
+		RStrBuf output;
+		r_strbuf_init (&output);
+		mu_assert_eq (gdbr_send_qRcmd (&g, "help", &output), cases[i].result, "monitor command status");
+		mu_assert_streq (r_strbuf_get (&output), cases[i].output, "monitor output is returned unchanged");
+		r_strbuf_fini (&output);
+		size_t len;
+		r_cons_get_buffer (cons, &len);
+		mu_assert_eq (len, 0, "monitor output does not print to the console");
+		gdbr_cleanup (&g);
+		close (fds[1]);
+	}
+	r_cons_free (cons);
+	mu_end;
+}
+
 static bool test_gdb_gdbserver_reads_g(void) {
 	RCons *cons = r_cons_new ();
 	libgdbr_t g;
@@ -627,11 +664,56 @@ static bool test_gdb_connect_probes(void) {
 	r_cons_free (cons);
 	mu_end;
 }
+
+static bool test_gdb_io_monitor_output(void) {
+	RCons *cons = r_cons_new ();
+	RIO *io = r_io_new ();
+	struct sockaddr_in sa = { .sin_family = AF_INET, .sin_addr.s_addr = htonl (INADDR_LOOPBACK) };
+	socklen_t salen = sizeof (sa);
+	int lfd = socket (AF_INET, SOCK_STREAM, 0);
+	mu_assert ("create monitor listener", lfd >= 0);
+	mu_assert_eq (bind (lfd, (struct sockaddr *)&sa, salen), 0, "bind monitor listener");
+	mu_assert_eq (listen (lfd, 1), 0, "listen for monitor connection");
+	mu_assert_eq (getsockname (lfd, (struct sockaddr *)&sa, &salen), 0, "get monitor listener port");
+	const char *replies[] = {
+		"PacketSize=1000;QStartNoAckMode+", "OK", "QC1", "vCont;c;C;s;S", "OK", "OK", "l/bin/test", NULL
+	};
+	Stub stub;
+	RThread *th = stub_start (&stub, -1, lfd, replies);
+	char *uri = r_str_newf ("gdb://127.0.0.1:%u", ntohs (sa.sin_port));
+	RIODesc *desc = r_io_open_nomap (io, uri, R_PERM_R, 0);
+	free (uri);
+	mu_assert_notnull (desc, "open GDB IO plugin");
+	mu_assert_true (send_response (stub.fd, "O20203132330a0a"), "send monitor output");
+	mu_assert_true (send_response (stub.fd, "OK"), "complete monitor command");
+	char *output = r_io_system (io, "monitor help");
+	mu_assert_streq_free (output, "  123\n\n", "IO returns monitor whitespace unchanged");
+	mu_assert_true (send_response (stub.fd, "O7061727469616c"), "send partial monitor output");
+	mu_assert_true (send_response (stub.fd, "E01"), "fail monitor command");
+	output = r_io_system (io, "monitor help");
+	mu_assert_streq_free (output, "partial", "IO preserves output before a monitor error");
+	mu_assert_true (send_response (stub.fd, "OK"), "complete silent monitor command");
+	mu_assert_null (r_io_system (io, "monitor help"), "silent monitor command returns no text");
+	mu_assert_true (send_response (stub.fd, "E01"), "fail silent monitor command");
+	mu_assert_null (r_io_system (io, "monitor help"), "silent monitor failure returns no text");
+	size_t len;
+	r_cons_get_buffer (cons, &len);
+	mu_assert_eq (len, 0, "IO returns output without printing it");
+	r_io_free (io);
+	r_th_wait (th);
+	r_th_free (th);
+	close (stub.fd);
+	close (lfd);
+	r_strbuf_free (stub.sent);
+	r_cons_free (cons);
+	mu_end;
+}
 #endif
 
 int main(int argc, char **argv) {
 #if R2__UNIX__ && !__wasi__
 	mu_run_test (test_gdb_processes_xml);
+	mu_run_test (test_gdb_monitor_output);
 	mu_run_test (test_gdb_gdbserver_reads_g);
 	mu_run_test (test_gdb_lldb_reads_g_with_thread);
 	mu_run_test (test_gdb_lldb_reads_p);
@@ -646,6 +728,7 @@ int main(int argc, char **argv) {
 	mu_run_test (test_gdb_target_xml_regnums);
 	mu_run_test (test_gdb_target_xml_names);
 	mu_run_test (test_gdb_connect_probes);
+	mu_run_test (test_gdb_io_monitor_output);
 #endif
 	return tests_passed != tests_run;
 }

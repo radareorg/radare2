@@ -56,7 +56,8 @@ int gdbr_check_vcont(libgdbr_t *g);
  * remote target's interpreter.
  * \returns 0 on success and -1 on failure
  */
-int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, PrintfCallback cb_printf);
+// Appends monitor output, including output received before an error.
+int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, RStrBuf *output);
 
 /*!
  * \brief attaches to a process
