@@ -2231,3 +2231,18 @@ EXPECT=<<EOF
 callconv: dyncc::result
 EOF
 RUN
+
+NAME=DEX: a rebased method keeps its calling convention with io.va=false
+FILE=bins/java/Main.dex
+ARGS=-B 0x18 -e io.va=false
+CMDS=<<EOF
+af @ 0x23c
+afi @ 0x23c~callconv
+af @ 0x224
+afi @ 0x224~callconv
+EOF
+EXPECT=<<EOF
+callconv: dyncc:v6+1:
+callconv: dyncc:v0+1:!T0
+EOF
+RUN

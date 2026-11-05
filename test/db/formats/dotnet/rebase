@@ -11,3 +11,27 @@ dyncc:a0+1:!T0
 arg int a0 @ a0
 EOF
 RUN
+
+NAME=CIL: a method keeps its calling convention with io.va=false
+FILE=bins/cil/hello.exe
+ARGS=-e io.va=false
+CMDS=<<EOF
+af @ 0x251
+afc @ 0x251
+EOF
+EXPECT=<<EOF
+dyncc:a0+1:!T0
+EOF
+RUN
+
+NAME=CIL: a rebased method keeps its calling convention with io.va=false
+FILE=bins/cil/hello.exe
+ARGS=-B 0x500000 -e io.va=false
+CMDS=<<EOF
+af @ 0x251
+afc @ 0x251
+EOF
+EXPECT=<<EOF
+dyncc:a0+1:!T0
+EOF
+RUN

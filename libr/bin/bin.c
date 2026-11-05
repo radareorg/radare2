@@ -82,16 +82,21 @@ static RBinFile *bin_file_mapped_at(RBin *bin, ut64 vaddr) {
 }
 
 // symbols are indexed by their file vaddr; without has_va -B moves nothing
-static ut64 symbol_vaddr_at(RBinObject *o, ut64 vaddr) {
-	return (o && o->info && o->info->has_va)? vaddr - (ut64)o->baddr_shift: vaddr;
+static ut64 symbol_vaddr_at(RBin *bin, RBinObject *o, ut64 addr) {
+	RIO *io = bin->iob.io;
+	if (io && !io->va) {
+		RBinSection *s = r_bin_get_section_at (o, addr, false);
+		return s? s->vaddr + (addr - s->paddr): addr;
+	}
+	return (o->info && o->info->has_va)? addr - (ut64)o->baddr_shift: addr;
 }
 
 static const char *__getcc(RBin *bin, ut64 vaddr) {
 	RBinFile *a = bin_file_mapped_at (bin, vaddr);
 	if (a) {
 		RBinPlugin *plugin = r_bin_file_cur_plugin (a);
-		if (plugin && plugin->get_cc) {
-			return plugin->get_cc (a, symbol_vaddr_at (a->bo, vaddr));
+		if (plugin && plugin->get_cc && a->bo) {
+			return plugin->get_cc (a, symbol_vaddr_at (bin, a->bo, vaddr));
 		}
 	}
 	return NULL;
@@ -1291,7 +1296,7 @@ R_API RBinSymbol *r_bin_get_symbol_at(RBin *bin, ut64 addr) {
 	if (!bf || !bf->bo) {
 		return NULL;
 	}
-	return r_bin_object_get_symbol_at (bf->bo, symbol_vaddr_at (bf->bo, addr));
+	return r_bin_object_get_symbol_at (bf->bo, symbol_vaddr_at (bin, bf->bo, addr));
 }
 
 R_API RVecRBinImport *r_bin_get_imports_vec(RBin *bin) {
