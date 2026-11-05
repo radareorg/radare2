@@ -216,3 +216,248 @@ EXPECT=<<EOF
 3   0x00010410 GLOBAL NOTYPE     baz
 EOF
 RUN
+
+# readelf: .plt at 0x13c0, a 0x30 header then 0x20 entries; lld loads each slot at the entry start
+NAME=ELF: lazy x86_64 retpoline imports sit at their plt entry
+FILE=bins/elf/x86_64-retpoline-plt-lazy.so
+CMDS=ii
+EXPECT=<<EOF
+nth vaddr      bind   type   lib name
+-------------------------------------
+1   0x000013f0 GLOBAL NOTYPE     foo
+2   0x00001410 GLOBAL NOTYPE     bar
+EOF
+RUN
+
+NAME=ELF: x86_64 retpoline -z now imports stop at the plt section or file end
+FILE=malloc://2856
+CMDS=<<EOF
+# a fresh image with dynsym add2, mul2, sub2: st_shndx and st_value zeroed
+(fresh;wff bins/elf/pltrel/x86_64-retpoline-now.so;wx 0000 @ 0x21e;wx 0000000000000000 @ 0x220;wx 0000 @ 0x236;wx 0000000000000000 @ 0x238;wx 0000 @ 0x24e;wx 0000000000000000 @ 0x250)
+.(fresh)
+oba 0
+ii
+# .plt sh_size 0x50 -> 0x46: sub2's entry is cut one byte short
+wx 46 @ 0x948
+oba 0
+ii
+# .plt sh_size 0x46 -> 0x30: mul2's and sub2's entries lie past the section
+wx 30 @ 0x948
+oba 0
+ii
+# .dynamic's header becomes a section right after .plt, holding those entries: sh_addr (0x978) 0x1470, sh_offset (0x980) 0x470, sh_size (0x988) 0x20
+wx 7014 @ 0x978
+wx 7004 @ 0x980
+wx 20 @ 0x988
+oba 0
+ii
+# .dynamic's header restored; code LOAD p_filesz/p_memsz (0xd0, 0xd8) 0xc0 -> 0xa0; GNU_STACK (0x1c8) becomes a LOAD of 0x1470 from .comment (0x580), patched with the movs of mul2's and sub2's entries
+wx 9024 @ 0x978
+wx 9004 @ 0x980
+wx c0 @ 0x988
+wx a0 @ 0xd0
+wx a0 @ 0xd8
+wx 01000000 @ 0x1c8
+wx 8005 @ 0x1d0
+wx 7014 @ 0x1d8
+wx 7014 @ 0x1e0
+wx 20 @ 0x1e8
+wx 20 @ 0x1f0
+wx 4c8b1df9100000 @ 0x580
+wx 4c8b1df1100000 @ 0x590
+oba 0
+ii
+.(fresh)
+# .plt sh_size (0x948) 0x50 -> 0x100000: the slice stops at the file end
+wx 0000100000000000 @ 0x948
+oba 0
+ii
+.(fresh)
+# control, no sh_size write: sub2's mov (0x480) wiped and planted at 0xb20, in the file's last stride but past the section
+wx 00 @ 0x480
+wx 4c8b1d510a0000 @ 0xb20
+oba 0
+ii
+.(fresh)
+# sh_size oversized and the same plant: the mov is reached through the header
+wx 0000100000000000 @ 0x948
+wx 00 @ 0x480
+wx 4c8b1d510a0000 @ 0xb20
+oba 0
+ii
+.(fresh)
+# sh_offset (0x940) 0x440 -> 0x441, sh_size oversized: the planted mov ends exactly at the file end
+wx 41 @ 0x940
+wx 0000100000000000 @ 0x948
+wx 4c8b1d510a0000 @ 0xb21
+oba 0
+ii
+.(fresh)
+# sh_offset (0x940) 0x440 -> 0x442, sh_size oversized: the planted mov is cut one byte short by the file end
+wx 42 @ 0x940
+wx 0000100000000000 @ 0x948
+wx 4c8b1d510a0000 @ 0xb22
+oba 0
+ii
+.(fresh)
+# .plt sh_size (0x948) 0x50 -> all ones: no entry resolves
+wx ffffffffffffffff @ 0x948
+oba 0
+ii
+EOF
+EXPECT=<<EOF
+nth vaddr      bind   type lib name
+-----------------------------------
+1   0x00001460 GLOBAL FUNC     add2
+2   0x00001470 GLOBAL FUNC     mul2
+3   0x00001480 GLOBAL FUNC     sub2
+nth vaddr      bind   type lib name
+-----------------------------------
+1   0x00001460 GLOBAL FUNC     add2
+2   0x00001470 GLOBAL FUNC     mul2
+3   ---------- GLOBAL FUNC     sub2
+nth vaddr      bind   type lib name
+-----------------------------------
+1   0x00001460 GLOBAL FUNC     add2
+2   ---------- GLOBAL FUNC     mul2
+3   ---------- GLOBAL FUNC     sub2
+nth vaddr      bind   type lib name
+-----------------------------------
+1   0x00001460 GLOBAL FUNC     add2
+2   ---------- GLOBAL FUNC     mul2
+3   ---------- GLOBAL FUNC     sub2
+nth vaddr      bind   type lib name
+-----------------------------------
+1   0x00001460 GLOBAL FUNC     add2
+2   ---------- GLOBAL FUNC     mul2
+3   ---------- GLOBAL FUNC     sub2
+nth vaddr      bind   type lib name
+-----------------------------------
+1   0x00001460 GLOBAL FUNC     add2
+2   0x00001470 GLOBAL FUNC     mul2
+3   0x00001480 GLOBAL FUNC     sub2
+nth vaddr      bind   type lib name
+-----------------------------------
+1   0x00001460 GLOBAL FUNC     add2
+2   0x00001470 GLOBAL FUNC     mul2
+3   ---------- GLOBAL FUNC     sub2
+nth vaddr      bind   type lib name
+-----------------------------------
+1   0x00001460 GLOBAL FUNC     add2
+2   0x00001470 GLOBAL FUNC     mul2
+3   0x00001b20 GLOBAL FUNC     sub2
+nth vaddr      bind   type lib name
+-----------------------------------
+1   ---------- GLOBAL FUNC     add2
+2   ---------- GLOBAL FUNC     mul2
+3   0x00001b20 GLOBAL FUNC     sub2
+nth vaddr      bind   type lib name
+-----------------------------------
+1   ---------- GLOBAL FUNC     add2
+2   ---------- GLOBAL FUNC     mul2
+3   ---------- GLOBAL FUNC     sub2
+nth vaddr      bind   type lib name
+-----------------------------------
+1   ---------- GLOBAL FUNC     add2
+2   ---------- GLOBAL FUNC     mul2
+3   ---------- GLOBAL FUNC     sub2
+EOF
+RUN
+
+NAME=ELF: x86_64 .plt.got import stays at its stub
+FILE=bins/elf/pltrel/add.so
+CMDS=ii
+EXPECT=<<EOF
+nth vaddr      bind type   lib name
+-----------------------------------
+1   0x00001040 WEAK NOTYPE     __cxa_finalize
+2   ---------- WEAK NOTYPE     _ITM_registerTMCloneTable
+3   ---------- WEAK NOTYPE     _ITM_deregisterTMCloneTable
+4   ---------- WEAK NOTYPE     __gmon_start__
+EOF
+RUN
+
+NAME=ELF: lazy x86_64 retpoline entries not loading their slot from the plt section keep the classic math
+FILE=malloc://2760
+CMDS=<<EOF
+wff bins/elf/x86_64-retpoline-plt-lazy.so
+# foo's mov at 0x13f0: disp (0x3f3) f1 -> f9, so it loads bar's slot and not its own
+wx f9 @ 0x3f3
+oba 0
+ii
+wff bins/elf/x86_64-retpoline-plt-lazy.so
+# .plt sh_size (0x8e8) 0x70 -> 0x36: foo's mov is cut one byte short, bar's entry lies past the section
+wx 36 @ 0x8e8
+oba 0
+ii
+wff bins/elf/x86_64-retpoline-plt-lazy.so
+# .plt sh_addr (0x8d8) 0x13c0 -> 0x1400, sh_offset (0x8e0) 0x3c0 -> 0x400, sh_size (0x8e8) 0x70 -> 0x30: foo's entry precedes the section
+wx 0014 @ 0x8d8
+wx 0004 @ 0x8e0
+wx 30 @ 0x8e8
+oba 0
+ii
+wff bins/elf/x86_64-retpoline-plt-lazy.so
+# .plt sh_size (0x8e8) 0x70 -> 0x30; .dynamic's header becomes a section right after: sh_addr (0x918) 0x13f0, sh_offset (0x920) 0x3f0, sh_size (0x928) 0x40
+wx 30 @ 0x8e8
+wx f013 @ 0x918
+wx f003 @ 0x920
+wx 40 @ 0x928
+oba 0
+ii
+wff bins/elf/x86_64-retpoline-plt-lazy.so
+# .plt sh_size (0x8e8) 0x70 -> 0x30; code LOAD p_filesz/p_memsz (0xd0, 0xd8) 0x80 -> 0x40; GNU_STACK (0x200) becomes a LOAD of 0x13f0 from .comment (0x4f8), which holds foo's mov
+wx 30 @ 0x8e8
+wx 40 @ 0xd0
+wx 40 @ 0xd8
+wx 01000000 @ 0x200
+wx f804 @ 0x208
+wx f013 @ 0x210
+wx f013 @ 0x218
+wx 20 @ 0x220
+wx 20 @ 0x228
+wx 4c8b1df1200000 @ 0x4f8
+oba 0
+ii
+wff bins/elf/x86_64-retpoline-plt-lazy.so
+# .plt sh_type (0x8cc) PROGBITS -> NOBITS: the section holds no file bytes to decode
+wx 08 @ 0x8cc
+oba 0
+ii
+wff bins/elf/x86_64-retpoline-plt-lazy.so
+# e_machine (0x12) x86_64 -> i386: the retpoline layout is x86_64's
+wx 03 @ 0x12
+oba 0
+ii
+EOF
+EXPECT=<<EOF
+nth vaddr      bind   type   lib name
+-------------------------------------
+1   0x000013fb GLOBAL NOTYPE     foo
+2   0x00001410 GLOBAL NOTYPE     bar
+nth vaddr      bind   type   lib name
+-------------------------------------
+1   0x000013fb GLOBAL NOTYPE     foo
+2   0x0000141b GLOBAL NOTYPE     bar
+nth vaddr      bind   type   lib name
+-------------------------------------
+1   0x000013fb GLOBAL NOTYPE     foo
+2   0x00001410 GLOBAL NOTYPE     bar
+nth vaddr      bind   type   lib name
+-------------------------------------
+1   0x000013fb GLOBAL NOTYPE     foo
+2   0x0000141b GLOBAL NOTYPE     bar
+nth vaddr      bind   type   lib name
+-------------------------------------
+1   0x000013fb GLOBAL NOTYPE     foo
+2   0x0000141b GLOBAL NOTYPE     bar
+nth vaddr      bind   type   lib name
+-------------------------------------
+1   0x000013fb GLOBAL NOTYPE     foo
+2   0x0000141b GLOBAL NOTYPE     bar
+nth vaddr      bind   type   lib name
+-------------------------------------
+1   0x000013fb GLOBAL NOTYPE     foo
+2   0x0000141b GLOBAL NOTYPE     bar
+EOF
+RUN
