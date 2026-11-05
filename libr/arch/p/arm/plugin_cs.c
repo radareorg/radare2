@@ -2478,10 +2478,17 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		r_strbuf_append (&op->esil, ",=");
 		break;
 	}
-	case ARM64_INS_FABS:
-		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,DUP,0,I2D,SWAP,F<,?{,-F,},D2F,%s,=",
-			REGBITS64 (1), REG64 (1), REG64 (0));
+	case ARM64_INS_FABS: {
+		int fabs_bits = REGBITS64 (1);
+		if (fabs_bits > 1 && fabs_bits <= 64) {
+			r_strbuf_setf (&op->esil, "0x%"PFMT64x",%s,&,%s,=",
+				UT64_MAX >> (65 - fabs_bits), REG64 (1), REG64 (0));
+		} else {
+			r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,DUP,0,I2D,SWAP,F<,?{,-F,},D2F,%s,=",
+				fabs_bits, REG64 (1), REG64 (0));
+		}
 		break;
+	}
 	case ARM64_INS_FNEG:
 		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,-F,D2F,%s,=",
 			REGBITS64 (1), REG64 (1), REG64 (0));
