@@ -200,7 +200,7 @@ static void emit_set_string(REgg *egg, const char *dstvar, const char *str, int 
 
 static void emit_jmp(REgg *egg, const char *str, int atr) {
 	if (atr) {
-		r_egg_printf (egg, "  ldr r0, %s", str);
+		load_value (egg, "r0", str);
 		r_egg_printf (egg, "  bx r0\n");
 	} else {
 		r_egg_printf (egg, "  b %s\n", str);
@@ -211,8 +211,8 @@ static void emit_call(REgg *egg, const char *str, int atr) {
 	load_arg_regs (egg, lastarg);
 
 	if (atr) {
-		r_egg_printf (egg, "  ldr r0, %s", str);
-		r_egg_printf (egg, "  blx r0\n");
+		load_value (egg, "r12", str);
+		r_egg_printf (egg, "  blx r12\n");
 	} else {
 		r_egg_printf (egg, "  bl %s\n", str);
 	}
@@ -330,7 +330,16 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 }
 
 static void emit_load(REgg *egg, const char *dst, int sz) {
-	load_deref (egg, R_AX, dst, sz);
+	load_deref (egg, "r0", dst, sz);
+}
+
+// mul and sdiv have no two-operand form; Keystone rejects "op dst, src" for them in ARM and Thumb
+static void emit_binop(REgg *egg, const char *op, const char *dst, const char *src) {
+	if (!strcmp (op, "sdiv") || !strcmp (op, "mul")) {
+		r_egg_printf (egg, "  %s %s, %s, %s\n", op, dst, dst, src);
+	} else {
+		r_egg_printf (egg, "  %s %s, %s\n", op, dst, src);
+	}
 }
 
 static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, const char *p) {
@@ -342,7 +351,7 @@ static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, con
 	case '-': op = "sub"; break;
 	case '+': op = "add"; break;
 	case '*': op = "mul"; break;
-	case '/': op = "div"; break;
+	case '/': op = "sdiv"; break;
 	default: op = "mov"; break;
 	}
 	if (!eq) {
@@ -351,15 +360,35 @@ static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, con
 	if (!p) {
 		p = R_AX;
 	}
-	if (ch == '=' && is_memref (p)) {
-		load_value (egg, R_TMP, eq);
+	if (is_memref (p)) {
+		if (ch == '=') {
+			load_value (egg, R_TMP, eq);
+		} else {
+			load_value (egg, R_TMP, p);
+			if (is_memref (eq) || ((ch == '*' || ch == '/') && !is_reg (eq))) {
+				load_value (egg, R_AX, eq);
+				emit_binop (egg, op, R_TMP, R_AX);
+			} else {
+				emit_binop (egg, op, R_TMP, eq);
+			}
+		}
 		store_slot (egg, R_TMP, p, vs);
 		return;
 	}
 	if (type == '*') {
-		r_egg_printf (egg, "  %s %s, [%s]\n", op, p, eq);
+		if (ch == '=') {
+			r_egg_printf (egg, "  ldr %s, [%s]\n", p, eq);
+		} else {
+			r_egg_printf (egg, "  ldr " R_TMP ", [%s]\n", eq);
+			emit_binop (egg, op, p, R_TMP);
+		}
+	} else if (ch == '=') {
+		load_value (egg, p, eq);
+	} else if (is_memref (eq) || ((ch == '*' || ch == '/') && !is_reg (eq))) {
+		load_value (egg, R_TMP, eq);
+		emit_binop (egg, op, p, R_TMP);
 	} else {
-		r_egg_printf (egg, "  %s %s, %s\n", op, p, eq);
+		emit_binop (egg, op, p, eq);
 	}
 }
 

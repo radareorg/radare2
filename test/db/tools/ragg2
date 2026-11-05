@@ -296,6 +296,165 @@ main:
 EOF
 RUN
 
+NAME=ragg2 issue25590 arm thumb mathop and compound assignment emit valid stack loads
+FILE=-
+CMDS=!ragg2 -s -a arm -b 16 -e 'main@global(64,64) { .var0 = 1; .var4 = .var0 + 2; .var4 += 3; }'
+EXPECT=<<EOF
+
+.global main
+main:
+  push {fp,lr}
+  add fp, sp, 4
+  sub sp, sp, 192
+  mov r1, 0
+  mov r1, 1
+  mov r9, r1
+  str r9, [sp, 68]
+  mov r1, 0
+  ldr r1, [sp, 68]
+  add r1, 2
+  mov r9, r1
+  str r9, [sp, 72]
+  mov r1, 0
+  mov r1, 3
+  ldr r9, [sp, 72]
+  add r9, r1
+  str r9, [sp, 72]
+  add sp, fp, 192
+  pop {fp,pc}
+
+
+EOF
+RUN
+
+NAME=ragg2 issue25590 arm thumb dereference assignment loads into r0
+FILE=-
+CMDS=!ragg2 -s -a arm -b 16 -e 'main@global(64,64) { .var0 = 0xb0000000; .var4 = *.var0; }'
+EXPECT=<<EOF
+
+.global main
+main:
+  push {fp,lr}
+  add fp, sp, 4
+  sub sp, sp, 192
+  mov r1, 0
+  mov r1, 0xb0000000
+  mov r9, r1
+  str r9, [sp, 68]
+  mov r1, 0
+  ldr r0, [sp, 68]
+  ldr r0, [r0]
+  mov r1, r0
+  mov r9, r1
+  str r9, [sp, 72]
+  add sp, fp, 192
+  pop {fp,pc}
+
+
+EOF
+RUN
+
+NAME=ragg2 issue25590 arm thumb indirect call emits valid ldr and blx
+FILE=-
+CMDS=!ragg2 -s -a arm -b 16 -e 'main@global(64,64) { .var0(); }'
+EXPECT=<<EOF
+
+.global main
+main:
+  push {fp,lr}
+  add fp, sp, 4
+  sub sp, sp, 192
+# rcc_fun 1 (.var0)
+  ldr r12, [sp, 68]
+  blx r12
+  add sp, fp, 192
+  pop {fp,pc}
+
+
+EOF
+RUN
+
+NAME=ragg2 issue25590 arm thumb indirect call keeps args out of the target register
+FILE=-
+CMDS=!ragg2 -s -a arm -b 16 -e 'main@global(64,64) { .var0(42); }'
+EXPECT=<<EOF
+
+.global main
+main:
+  push {fp,lr}
+  add fp, sp, 4
+  sub sp, sp, 192
+# rcc_fun 1 (.var0)
+  mov r0, 42
+  str r0, [sp, 12]
+  ldr r0, [sp, 12]
+  ldr r12, [sp, 68]
+  blx r12
+  add sp, fp, 192
+  pop {fp,pc}
+
+
+EOF
+RUN
+
+NAME=ragg2 issue25590 arm thumb division emits three-operand sdiv
+FILE=-
+CMDS=!ragg2 -s -a arm -b 16 -e 'main@global(64,64) { .var0 = 8 / 2; .var0 /= 2; }'
+EXPECT=<<EOF
+
+.global main
+main:
+  push {fp,lr}
+  add fp, sp, 4
+  sub sp, sp, 192
+  mov r1, 0
+  mov r2, 8
+  mov r9, 2
+  sdiv r2, r2, r9
+  mov r1, r2
+  mov r9, r1
+  str r9, [sp, 68]
+  mov r1, 0
+  mov r1, 2
+  ldr r9, [sp, 68]
+  sdiv r9, r9, r1
+  str r9, [sp, 68]
+  add sp, fp, 192
+  pop {fp,pc}
+
+
+EOF
+RUN
+
+NAME=ragg2 issue25590 arm thumb multiplication emits three-operand mul
+FILE=-
+CMDS=!ragg2 -s -a arm -b 16 -e 'main@global(64,64) { .var0 = 6 * 7; .var0 *= 2; }'
+EXPECT=<<EOF
+
+.global main
+main:
+  push {fp,lr}
+  add fp, sp, 4
+  sub sp, sp, 192
+  mov r1, 0
+  mov r2, 6
+  mov r9, 7
+  mul r2, r2, r9
+  mov r1, r2
+  mov r9, r1
+  str r9, [sp, 68]
+  mov r1, 0
+  mov r1, 2
+  ldr r9, [sp, 68]
+  mul r9, r9, r1
+  str r9, [sp, 68]
+  add sp, fp, 192
+  pop {fp,pc}
+
+
+EOF
+RUN
+
 #CLANG=e900000000488d3524000000bf01000000b80400000248c7c2070000000f05b80100000248c7c7000000000f0531c0c348656c6c6f210a00
 NAME=ragg2c bins/other/ragg2/hi.c
 BROKEN=1

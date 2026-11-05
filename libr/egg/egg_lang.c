@@ -1193,6 +1193,7 @@ static int rcc_next(REgg *egg) {
 		}
 		if (*ocn == '.') {
 			e->call (egg, str, 1);
+			egg->lang.docall = 0;
 		}
 		if (!strcmp (str, "while")) {
 			if (egg->lang.lastctxdelta >= 0) {
@@ -1465,7 +1466,7 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 			egg->lang.elem[egg->lang.elem_n] = '\0';
 			if (egg->lang.elem_n > 0) {
 				rcc_element (egg, egg->lang.elem);
-			} else if (!(egg->lang.mode == LANG_MODE_FASTCALL && CTX == 0)) {
+			} else if (CTX == 0 && egg->lang.mode != LANG_MODE_FASTCALL) {
 				e->frame (egg, 0);
 			}
 			egg->lang.elem_n = 0;
