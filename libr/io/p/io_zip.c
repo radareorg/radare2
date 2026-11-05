@@ -2,6 +2,7 @@
 
 #include <r_io.h>
 #include <r_lib.h>
+#include <errno.h>
 #include <zip.h>
 
 // limits to avoid memory exhaustion with crafted archives (zipbombs)
@@ -394,29 +395,22 @@ static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode) {
 }
 
 static char *r_io_zip_get_by_file_idx(const char *archivename, const char *idx, ut32 perm, int mode, int rw) {
-	if (!idx) {
+	if (!idx || !isdigit ((ut8)*idx)) {
+		return NULL;
+	}
+	char *end;
+	errno = 0;
+	ut64 file_idx = strtoull (idx, &end, 10);
+	if (errno == ERANGE || *end) {
 		return NULL;
 	}
 	struct zip *za = r_io_zip_open_archive (archivename, perm, mode, rw);
 	if (!za) {
 		return NULL;
 	}
-	ut64 i, num_entries = zip_get_num_files (za);
-	ut32 file_idx = atoi (idx);
-	if ((file_idx == 0 && idx[0] != '0') || (file_idx >= num_entries)) {
-		zip_close (za);
-		return NULL;
-	}
-	char *filename = NULL;
-	for (i = 0; i < num_entries; i++) {
-		struct zip_stat sb;
-		zip_stat_init (&sb);
-		zip_stat_index (za, i, 0, &sb);
-		if (file_idx == i) {
-			filename = strdup (sb.name);
-			break;
-		}
-	}
+	struct zip_stat sb;
+	zip_stat_init (&sb);
+	char *filename = !zip_stat_index (za, file_idx, 0, &sb) && sb.name? strdup (sb.name): NULL;
 	zip_close (za);
 	return filename;
 }
