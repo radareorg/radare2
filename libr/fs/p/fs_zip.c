@@ -94,16 +94,6 @@ static void fs_zip_close(RFSFile *file) {
 	// fclose (file->ptr);
 }
 
-static void append_file(RList *list, const char *name, int type, int time, ut64 size) {
-	RFSFile *fsf = r_fs_file_new (NULL, name);
-	if (fsf) {
-		fsf->type = type;
-		fsf->time = time;
-		fsf->size = size;
-		r_list_append (list, fsf);
-	}
-}
-
 static void fs_zip_close_archive(zip_t *za, zip_source_t *zs) {
 	zip_close (za);
 #ifdef OTEZIP_H_
@@ -160,55 +150,60 @@ static RList *fs_zip_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
 	}
 	int num_entries = zip_get_num_files (za);
 	int i;
-	bool hasdir = false;
-	bool hasfailed = false;
-	RList *list = r_list_new ();
-	if (!list) {
-		fs_zip_close_archive (za, zs);
-		free (buf);
-		return NULL;
+	if (*path == '/') {
+		path++;
 	}
-	for (i = 0; i < num_entries; i++) {
+	size_t path_len = strlen (path);
+	bool hasdir = !path_len;
+	RList *list = r_list_newf ((RListFree)r_fs_file_free);
+	HtPP *names = ht_pp_new0 ();
+	bool failed = !list || !names;
+	for (i = 0; !failed && i < num_entries; i++) {
 		struct zip_stat sb;
 		zip_stat_init (&sb);
-		zip_stat_index (za, i, 0, &sb);
+		if (zip_stat_index (za, i, 0, &sb) < 0 || !sb.name) {
+			failed = true;
+			break;
+		}
 		const char *name = sb.name;
-		if (*path == '/') {
-			path++;
-		}
-		bool is_dir = r_str_endswith (sb.name, "/");
-		char *k = is_dir? strdup (path): r_str_newf ("%s/", path);
-		if (r_str_startswith (name, k)) {
-			hasdir = true;
-			const char *n = name + strlen (path);
-			if (*n != '/' && strlen (path) > 0) {
-				hasfailed = true;
-				free (k);
+		if (path_len) {
+			if (strncmp (name, path, path_len) || name[path_len] != '/') {
 				continue;
 			}
-			if (*n && n[1] != '/') {
-				if (*path) {
-					n++;
-				}
-			}
-			if (!*n) {
-				free (k);
-				continue;
-			}
-			const char *p = strchr (n, '/');
-			if (!p || (*p && !p[1])) {
-				char type = (sb.size == 0 && is_dir)? 'd': 'f';
-				char *nn = (type == 'd')? r_str_ndup (n, strlen (n) - 1): strdup (n);
-				append_file (list, nn, type, 0, sb.size);
-				free (nn);
-			}
+			name += path_len + 1;
 		}
-		free (k);
+		hasdir = true;
+		if (!*name) {
+			continue;
+		}
+		const char *slash = strchr (name, '/');
+		char *child = slash? r_str_ndup (name, slash - name): strdup (name);
+		if (!child) {
+			failed = true;
+			break;
+		}
+		if (!*child || ht_pp_find (names, child, NULL)) {
+			free (child);
+			continue;
+		}
+		RFSFile *file = r_fs_file_new (NULL, child);
+		free (child);
+		if (!file || !file->path || !file->name) {
+			r_fs_file_free (file);
+			failed = true;
+			break;
+		}
+		file->type = slash? 'd': 'f';
+		file->size = slash? 0: sb.size;
+		if (!ht_pp_insert (names, file->name, file) || !r_list_append (list, file)) {
+			r_fs_file_free (file);
+			failed = true;
+		}
 	}
-
+	ht_pp_free (names);
 	fs_zip_close_archive (za, zs);
 	free (buf);
-	if (!hasdir || hasfailed) {
+	if (!hasdir || failed) {
 		r_list_free (list);
 		list = NULL;
 	}
