@@ -551,6 +551,22 @@ EOF
 EXPECT_ERR=
 RUN
 
+# zmm512.r2 with the offset of zmm0 16 -> ?, so bytes 1..64 of zmm0 overrun its arena; rip still prints
+NAME=ar rejects a 512-bit register that overruns a shorter arena
+FILE=malloc://64
+CMDS=<<EOF
+arp bins/regprofile/zmm512-nooff.r2
+ar zmm0
+ar rip
+EOF
+EXPECT=<<EOF
+0x00000000
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot retrieve reg 'zmm0' of 512 bits
+EOF
+RUN
+
 # gpr arena takes bytes 01..10, the vec512 arena starts at 16, zmm0 at its offset 16 holds 26..65
 NAME=ar prints distinct chunks of a 512-bit register
 FILE=malloc://64
