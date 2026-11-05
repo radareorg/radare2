@@ -1979,6 +1979,11 @@ static void arm64_esil_vec_unary(RAnalOp *op, csh *handle, cs_insn *insn) {
 			VECARG64_APPEND (&op->esil, 1, i, 0);
 			r_strbuf_append (&op->esil, ",CLZ,");
 			break;
+		case ARM64_INS_FABS:
+			r_strbuf_appendf (&op->esil, "0x%"PFMT64x",", UT64_MAX >> (65 - lane_bits));
+			VECARG64_APPEND (&op->esil, 1, i, 0);
+			r_strbuf_append (&op->esil, ",&,");
+			break;
 		}
 		VEC64_DST_APPEND (&op->esil, 0, i);
 		r_strbuf_append (&op->esil, ",=");
@@ -2478,14 +2483,18 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		r_strbuf_append (&op->esil, ",=");
 		break;
 	}
-	case ARM64_INS_FABS: {
-		int fabs_bits = REGBITS64 (1);
-		if (fabs_bits > 1 && fabs_bits <= 64) {
-			r_strbuf_setf (&op->esil, "0x%"PFMT64x",%s,&,%s,=",
-				UT64_MAX >> (65 - fabs_bits), REG64 (1), REG64 (0));
+	case ARM64_INS_FABS:
+	{
+		cs_arm64_op dst = INSOP64 (0);
+		if (is_vector_op (&dst)) {
+			arm64_esil_vec_unary (op, handle, insn);
+			// not redundant with arm64_esil_zext_vupper, which misses the 4h form
+			if (vas_count (dst.vas) * vector_size (&dst) == 64) {
+				r_strbuf_appendf (&op->esil, ",0,%sh,=", REG64 (0));
+			}
 		} else {
-			r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,DUP,0,I2D,SWAP,F<,?{,-F,},D2F,%s,=",
-				fabs_bits, REG64 (1), REG64 (0));
+			r_strbuf_setf (&op->esil, "0x%"PFMT64x",%s,&,%s,=",
+				UT64_MAX >> (65 - REGBITS64 (1)), REG64 (1), REG64 (0));
 		}
 		break;
 	}
