@@ -5961,3 +5961,41 @@ EXPECT=<<EOF
 0x00000000
 EOF
 RUN
+
+NAME=arm64 ESIL SVE CLZ CLS CNT REV RBIT stay unemulated
+REQUIRE=cs5
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 20a0190420a0180420a01a04203838052040340520802705 # clz/cls/cnt z0.b, rev z0.b, rev p0.b, rbit z0.b
+e asm.esil=true
+ao 6~opcode:,esil:
+EOF
+EXPECT=<<EOF
+opcode: clz z0.b, p0/m, z1.b
+opcode: cls z0.b, p0/m, z1.b
+opcode: cnt z0.b, p0/m, z1.b
+opcode: rev z0.b, z1.b
+opcode: rev p0.b, p1.b
+opcode: rbit z0.b, p0/m, z1.b
+EOF
+RUN
+
+NAME=arm64 ESIL SVE CLZ CLS CNT REV RBIT stay unemulated (cs6)
+REQUIRE=cs6
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 20a0190420a0180420a01a04203838052040340520802705 # clz/cls/cnt z0.b, rev z0.b, rev p0.b, rbit z0.b
+e asm.esil=true
+ao 6~opcode:,esil:
+EOF
+EXPECT=<<EOF
+opcode: clz z0.b, p0/m, z1.b
+opcode: cls z0.b, p0/m, z1.b
+opcode: cnt z0.b, p0/m, z1.b
+opcode: rev z0.b, z1.b
+opcode: rev p0.b, p1.b
+opcode: rbit z0.b, p0/m, z1.b
+EOF
+RUN
