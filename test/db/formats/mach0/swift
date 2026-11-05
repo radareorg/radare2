@@ -4752,3 +4752,17 @@ EXPECT=<<EOF
 arg int64_t self @ x20
 EOF
 RUN
+
+NAME=swift cc roles look up the bin symbol of a rebased closure
+FILE=bins/mach0/WheresMyBrowser
+ARGS=-B 0xffffc978
+CMDS=<<EOF
+e bin.demangle=false
+e anal.cc=swift
+af@0x10000c6fc
+afvr@0x10000c6fc~self,error
+EOF
+EXPECT=<<EOF
+arg int64_t error @ x21
+EOF
+RUN

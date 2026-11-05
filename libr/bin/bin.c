@@ -1283,7 +1283,11 @@ R_IPI RBinSymbol *r_bin_object_get_symbol_at(RBinObject *o, ut64 addr) {
 R_API RBinSymbol *r_bin_get_symbol_at(RBin *bin, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	RBinFile *bf = bin_file_mapped_at (bin, addr);
-	return bf? r_bin_object_get_symbol_at (bf->bo, addr): NULL;
+	if (!bf || !bf->bo) {
+		return NULL;
+	}
+	// symbols are indexed by their file vaddr, not the rebased one
+	return r_bin_object_get_symbol_at (bf->bo, addr - (ut64)bf->bo->baddr_shift);
 }
 
 R_API RVecRBinImport *r_bin_get_imports_vec(RBin *bin) {
