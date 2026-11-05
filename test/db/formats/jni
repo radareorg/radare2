@@ -201,6 +201,7 @@ RUN
 NAME=jni slot calls keep distinct prototypes through spills
 FILE=bins/elf/jni/slot-calls-O0-arm64.so
 CMDS=<<EOF
+e pdc.optimize=false
 e asm.os=android
 aaa
 tk calllink.00001860
@@ -242,6 +243,7 @@ RUN
 NAME=jni slot calls follow optimized register copies
 FILE=bins/elf/jni/jniO2-arm64
 CMDS=<<EOF
+e pdc.optimize=false
 e asm.os=android
 aaa
 tk calllink.000005bc
@@ -325,6 +327,7 @@ RUN
 NAME=jni GetEnv output feeds FindClass and RegisterNatives
 FILE=bins/elf/librsjni_androix.so
 CMDS=<<EOF
+e pdc.optimize=false
 e asm.os=android
 aaa
 tk calllink.00000248

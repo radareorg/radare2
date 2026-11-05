@@ -340,7 +340,7 @@ static PdcExpr parse_expr(RCore *core, char *line) {
 	expr.dst = find_reg (core->anal->reg, expr.body);
 	*space = ' ';
 	const char *rhs = r_str_trim_head_ro (space);
-	char compound = *rhs && strchr ("+|-", *rhs)? *rhs++: 0;
+	char compound = *rhs && strchr ("+|-&^*", *rhs)? *rhs++: 0;
 	if (!expr.dst || !r_str_startswith (rhs, "= ")) {
 		expr.dst = NULL;
 		return expr;
@@ -376,6 +376,9 @@ static bool prepare_expr(RAnalOp *op, PdcExpr *expr) {
 	case R_ANAL_OP_TYPE_ADD:
 	case R_ANAL_OP_TYPE_SUB:
 	case R_ANAL_OP_TYPE_OR:
+	case R_ANAL_OP_TYPE_AND:
+	case R_ANAL_OP_TYPE_XOR:
+	case R_ANAL_OP_TYPE_MUL:
 	case R_ANAL_OP_TYPE_SHL:
 	case R_ANAL_OP_TYPE_LOAD:
 		break;
@@ -459,7 +462,7 @@ static void call_dead(RCore *core, RBitset *dead, RBitset *live, RAnalOp *op) {
 }
 
 static char *fold_number(RCore *core, const char *value, int bits) {
-	if (R_STR_ISEMPTY (value) || strspn (value, "0123456789abcdefABCDEFxX ()+-|<&") != strlen (value)) {
+	if (R_STR_ISEMPTY (value) || strspn (value, "0123456789abcdefABCDEFxX ()+-|<&^*") != strlen (value)) {
 		return NULL;
 	}
 	// r_num evaluates shifts and bitwise operations left to right.
@@ -478,8 +481,8 @@ static char *fold_number(RCore *core, const char *value, int bits) {
 			if (!depth--) {
 				return NULL;
 			}
-		} else if (strchr ("+-|<&", *p) && !((*p == '+' || *p == '-')
-				&& (!previous || strchr ("(+-|<&", previous)))) {
+		} else if (strchr ("+-|<&^*", *p) && !((*p == '+' || *p == '-')
+				&& (!previous || strchr ("(+-|<&^*", previous)))) {
 			calculated = true;
 			ut8 kind = *p == '-'? '+': *p;
 			if (operators[depth] && operators[depth] != kind) {
@@ -645,7 +648,7 @@ char *pdc_optimize(RCore *core, char *code) {
 			&& (!strchr (expr.rhs, '[') || preserves_load_order (next.rhs, use))
 			&& strlen (expr.rhs) + strlen (next.rhs) < 1024;
 		if (fold) {
-			bool atom = expr_atom (expr.rhs);
+			bool atom = expr_atom (expr.rhs) || !strcmp (next.rhs, expr.dst->name);
 			char *rhs = r_str_newf ("%.*s%s%s%s%s", (int)(use - next.rhs), next.rhs, atom? "": "(", expr.rhs, atom? "": ")", use + strlen (expr.dst->name));
 			if (rhs) {
 				rhs = fold_value (core, rhs, next.dst);

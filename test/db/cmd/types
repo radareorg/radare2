@@ -1,6 +1,7 @@
 NAME=strcpy lowerdashes
 FILE=bins/mach0/strcpy-overflow
 CMDS=<<EOF
+e pdc.optimize=false
 af;pdc~strcp
 EOF
 EXPECT=<<EOF

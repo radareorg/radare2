@@ -151,6 +151,7 @@ RUN
 NAME=pd* pi* ps* pu* pz on empty range (with aa for pdc/pdr/pdf)
 FILE=malloc://1024
 CMDS=<<EOF
+e pdc.optimize=false
 aa
 pd 0
 ?e ---

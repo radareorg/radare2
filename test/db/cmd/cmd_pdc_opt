@@ -1,12 +1,25 @@
-NAME=pdc optimization is opt-in
+NAME=pdc optimization is enabled by default
+FILE=--
+CMDS=<<EOF
+e pdc.optimize
+EOF
+EXPECT=<<EOF
+true
+EOF
+RUN
+
+NAME=pdc optimization can be disabled
 FILE=malloc://0x2000
-ARGS=-a arm -b 64 -e anal.vars=false
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
 CMDS=<<EOF
 wx 080000b0089142f9c0035fd6
 af
 pdc~=
+e pdc.optimize=false
+pdc~=
 EOF
 EXPECT=<<EOF
+    x8 = [0x1520]
     x8 = 0x1000
     x8 = [x8 + 0x520]
 EOF
@@ -523,7 +536,7 @@ af
 pdc~=
 EOF2
 EXPECT=<<EOF2
-    x0 = (x1 + 1)
+    x0 = x1 + 1
     x8 = 0
 EOF2
 RUN
@@ -537,7 +550,7 @@ af
 pdc~=
 EOF2
 EXPECT=<<EOF2
-    r0 = (r1 | 4)
+    r0 = r1 | 4
     r2 = 0
 EOF2
 RUN
@@ -552,6 +565,85 @@ pdc~=
 EOF2
 EXPECT=<<EOF2
     x0 = 2
+    x8 = 0
+EOF2
+RUN
+
+NAME=pdc folds bitwise and multiply chains with their precedence intact
+FILE=malloc://64
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF2
+wx e80301aa0801028a080103ca087d049be00308aa080080d2c0035fd6
+af
+pdco~=
+e pdc.structured=false
+pdc~=
+EOF2
+EXPECT=<<EOF2
+ 0x00000010 |     x0 = ((x1 & x2) ^ x3) * x4
+ 0x00000014 |     x8 = 0
+        x0 = ((x1 & x2) ^ x3) * x4
+        x8 = 0
+EOF2
+RUN
+
+NAME=pdc folds xor constants
+FILE=malloc://64
+ARGS=-a arm -b 32 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF2
+wx 0520a0e3032022e20200a0e10020a0e31eff2fe1
+af
+pdc~=
+EOF2
+EXPECT=<<EOF2
+    r0 = 0x6
+    r2 = 0
+EOF2
+RUN
+
+NAME=pdc folded multiplication wraps at the destination width
+FILE=malloc://64
+ARGS=-a arm -b 32 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF2
+wx 0210a0e3ff2f0fe3ff2f4fe3920102e00200a0e10020a0e30010a0e31eff2fe1
+af
+pdc~=
+EOF2
+EXPECT=<<EOF2
+    r0 = 0xfffffffe
+    r2 = 0
+    r1 = 0
+EOF2
+RUN
+
+NAME=pdc keeps bitwise instructions that update flags
+FILE=malloc://64
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF2
+wx e80301aa080102eae00308aa080080d2c0035fd6
+af
+pdc~=
+EOF2
+EXPECT=<<EOF2
+    x8 = x1
+    x8 &= x2
+    x0 = x8
+    x8 = 0
+EOF2
+RUN
+
+NAME=pdc keeps narrow multiplication before a wider read
+FILE=malloc://64
+ARGS=-a arm -b 64 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF2
+wx e803012a087d021be00308aa080080d2c0035fd6
+af
+pdc~=
+EOF2
+EXPECT=<<EOF2
+    w8 = w1
+    w8 *= w2
+    x0 = x8
     x8 = 0
 EOF2
 RUN

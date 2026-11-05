@@ -176,7 +176,7 @@ static bool plugin_init(RCorePluginSession *cps) {
 	r_config_node_desc (node, "emit structured if/else instead of goto in pdc");
 	node = r_config_set_b (cfg, "pdc.trycatch", true);
 	r_config_node_desc (node, "render the exception regions of the bin as try/catch blocks");
-	node = r_config_set_b (cfg, "pdc.optimize", false);
+	node = r_config_set_b (cfg, "pdc.optimize", true);
 	r_config_node_desc (node, "simplify register expressions and remove dead assignments in pdc");
 	node = r_config_set_b (cfg, "pdc.inline", false);
 	r_config_node_desc (node, "expand calls to functions marked inline in pdc");
