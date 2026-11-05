@@ -1411,3 +1411,23 @@ ret
 8
 EOF
 RUN
+
+NAME=arm ands pseudo preserves both source operands
+FILE=malloc://64
+ARGS=-a arm -b 64 -e asm.pseudo=true
+CMDS=<<EOF2
+wx 080102ea
+pi 1
+e asm.bits=32
+wx 020011e0
+pi 1
+e asm.bits=16
+wx 0840
+pi 1
+EOF2
+EXPECT=<<EOF2
+x8 &= x2
+r0 = r1 & r2
+r0 &= r1
+EOF2
+RUN

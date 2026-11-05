@@ -2,6 +2,7 @@ NAME=JNI native tables materialize typed overloads
 FILE=bins/elf/jni/native-methods-arm64.so
 ARGS=-e bin.relocs.apply=true
 CMDS=<<EOF
+e pdc.optimize=false
 aa
 k anal/jni/tables
 k anal/jni/table.0.count

@@ -2,6 +2,7 @@ NAME=pdc inline is opt-in and follows the function mark
 FILE=malloc://256
 ARGS=-a x86 -b64
 CMDS=<<EOF
+e pdc.optimize=false
 wx e83b00000083c002c3
 wx 83c001c3 @ 0x40
 af child @ 0x40
@@ -34,6 +35,7 @@ NAME=pdc inline nested and repeated calls have distinct labels
 FILE=malloc://256
 ARGS=-a x86 -b64 -e pdc.inline=true
 CMDS=<<EOF
+e pdc.optimize=false
 wx e83b000000e836000000c3
 wx e83b000000c3 @ 0x40
 wx 85ff7401c383c001c3 @ 0x80
@@ -62,6 +64,7 @@ NAME=pdc inline redirects both early returns to the call continuation
 FILE=malloc://256
 ARGS=-a x86 -b64 -e pdc.inline=true
 CMDS=<<EOF
+e pdc.optimize=false
 wx e83b00000083c002c3
 wx 85ff740483c001c383c003c3 @ 0x40
 af child @ 0x40
@@ -88,6 +91,7 @@ NAME=pdc inline stops self recursion and mutual recursion
 FILE=malloc://256
 ARGS=-a x86 -b64 -e pdc.inline=true
 CMDS=<<EOF
+e pdc.optimize=false
 wx e83b00000083c002c3
 wx e8fbffffff83c001c3 @ 0x40
 af child @ 0x40
@@ -173,6 +177,7 @@ NAME=pdc inline assigns a return value held in another register
 FILE=malloc://256
 ARGS=-a x86 -b64 -e pdc.inline=true
 CMDS=<<EOF
+e pdc.optimize=false
 wx e83b00000083c002c3
 wx 85ff740389c8c389d0c3 @ 0x40
 af child @ 0x40
@@ -198,6 +203,7 @@ NAME=pdc inline leaves marked functions without bodies as calls
 FILE=malloc://256
 ARGS=-a x86 -b64 -e pdc.inline=true
 CMDS=<<EOF
+e pdc.optimize=false
 wx e83b000000c3
 af+ 0x40 child
 af caller @ 0
@@ -215,6 +221,7 @@ NAME=pdc inline modes retain callee instruction addresses and restore configurat
 FILE=malloc://256
 ARGS=-a x86 -b64 -e pdc.inline=true
 CMDS=<<EOF
+e pdc.optimize=false
 wx e83b00000083c002c3
 wx 83c001c3 @ 0x40
 af child @ 0x40
@@ -251,6 +258,7 @@ NAME=pdc inline expands an arm64 callee
 FILE=malloc://256
 ARGS=-a arm -b64 -e pdc.inline=true
 CMDS=<<EOF
+e pdc.optimize=false
 wx 1000009400080011c0035fd6
 wx 00040011c0035fd6 @ 0x40
 af child @ 0x40
@@ -269,6 +277,7 @@ NAME=pdc inline expands a callee at address zero
 FILE=malloc://256
 ARGS=-a x86 -b64 -e pdc.inline=true
 CMDS=<<EOF
+e pdc.optimize=false
 wx 83c001c3
 wx e8bbffffff83c002c3 @ 0x40
 af child @ 0
@@ -287,6 +296,7 @@ NAME=pdc inline preserves calls with stack argument locations
 FILE=malloc://256
 ARGS=-a x86 -b32 -e pdc.inline=true
 CMDS=<<EOF
+e pdc.optimize=false
 wx 6a07e83900000083c404c3
 wx 8b442404c3 @ 0x40
 af child @ 0x40
@@ -306,6 +316,7 @@ NAME=pdc inline preserves delayed calls
 FILE=malloc://256
 ARGS=-a mips -b32 -e cfg.bigendian=false -e pdc.inline=true
 CMDS=<<EOF
+e pdc.optimize=false
 wx 1000000c010002240800e00300000000
 wx 010042240800e00300000000 @ 0x40
 af child @ 0x40
@@ -325,6 +336,7 @@ NAME=pdc inline bounds the depth of an acyclic call chain
 FILE=malloc://512
 ARGS=-a x86 -b64 -e pdc.inline=true
 CMDS=<<EOF
+e pdc.optimize=false
 wx e80b000000c3 @ 0x0
 wx e80b000000c3 @ 0x10
 wx e80b000000c3 @ 0x20

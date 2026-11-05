@@ -1,6 +1,7 @@
 NAME=pdc @ main ioli0x0
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
+e pdc.optimize=false
 e scr.color=0
 aaa
 pdc @ main~250382
@@ -17,6 +18,7 @@ NAME=pdc preserves comment punctuation in string arguments
 FILE=malloc://4096
 ARGS=-a arm -b 64
 CMDS=<<EOF
+e pdc.optimize=false
 wx 000800107f000094c0035fd6 @ 0
 f sym.imp.puts @ 0x200
 wx 61203b2062202f2f206300 @ 0x100
@@ -32,6 +34,7 @@ NAME=pdc promotes call hints in every output layout
 FILE=malloc://4096
 ARGS=-a arm -b 64
 CMDS=<<EOF
+e pdc.optimize=false
 wx 000800107f000094c0035fd6 @ 0
 f sym.imp.puts @ 0x200
 wx 61202862292c2022203b202f2f206300 @ 0x100
@@ -58,6 +61,7 @@ NAME=pdc assigns floating return registers and omits void assignments
 FILE=malloc://4096
 ARGS=-a arm -b 64
 CMDS=<<EOF
+e pdc.optimize=false
 wx 80000094c0035fd6 @ 0
 f sym.imp.pdc_result @ 0x200
 td double pdc_result(void);
@@ -75,6 +79,7 @@ RUN
 NAME=pdc dedup dalvik call comments
 FILE=bins/dex/HelloWorld.dex
 CMDS=<<EOF
+e pdc.optimize=false
 e scr.color=0
 af
 pdc~println
@@ -135,6 +140,7 @@ NAME=pdc @ t1
 FILE=bins/pe/t1.exe
 ARGS=-e bin.str.real=true
 CMDS=<<EOF
+e pdc.optimize=false
 e asm.flags.real=true
 af
 pdf
@@ -247,6 +253,7 @@ NAME=pdc @ main ls-m1
 FILE=bins/mach0/ls-m1
 ARGS=-a arm -b64
 CMDS=<<EOF
+e pdc.optimize=false
 s 0x100003a54
 af
 pdc
@@ -282,6 +289,7 @@ RUN
 NAME=pdc suppress switch table goto
 FILE=-
 CMDS=<<EOF
+e pdc.optimize=false
 e asm.arch=x86
 e asm.bits=64
 wx 49bf00000000000000804c8b24244c89e04c31f84d85e46a0159480f48c8488d053b00000048630c884801c1ffe1eb1890eb1590eb1290eb0f909090909090909090909090909090c390909090909090c3909090909090909090909090909090ceffffffd6ffffffd0ffffffd3fffffff0ffffff
@@ -325,6 +333,7 @@ NAME=pdco @ main ls-m1
 FILE=bins/mach0/ls-m1
 ARGS=-a arm -b64
 CMDS=<<EOF
+e pdc.optimize=false
 s 0x100003a54
 af
 pdco
@@ -357,6 +366,7 @@ RUN
 NAME=pdc ppc64 conditional branch predicate
 FILE=malloc://32
 CMDS=<<EOF
+e pdc.optimize=false
 e asm.arch=ppc
 e asm.bits=64
 e cfg.bigendian=true
@@ -384,6 +394,7 @@ RUN
 NAME=pdc ppc64 fold resolved toc global load
 FILE=malloc://0x9000
 CMDS=<<EOF
+e pdc.optimize=false
 e asm.arch=ppc
 e asm.bits=64
 e cfg.bigendian=true
@@ -407,6 +418,7 @@ RUN
 NAME=pdc ppc64 fold resolved toc string load
 FILE=malloc://0x9000
 CMDS=<<EOF
+e pdc.optimize=false
 e asm.arch=ppc
 e asm.bits=64
 e cfg.bigendian=true
@@ -432,6 +444,7 @@ RUN
 NAME=pdc ppc64 fold resolved toc global store
 FILE=malloc://0x9000
 CMDS=<<EOF
+e pdc.optimize=false
 e asm.arch=ppc
 e asm.bits=64
 e cfg.bigendian=true
@@ -454,6 +467,7 @@ RUN
 NAME=pdc ppc64 keep toc setup when its reg has other uses
 FILE=malloc://0x9000
 CMDS=<<EOF
+e pdc.optimize=false
 e asm.arch=ppc
 e asm.bits=64
 e cfg.bigendian=true
@@ -479,6 +493,7 @@ RUN
 NAME=pdc ppc64 no fold without a confirming flag
 FILE=malloc://0x9000
 CMDS=<<EOF
+e pdc.optimize=false
 e asm.arch=ppc
 e asm.bits=64
 e cfg.bigendian=true
@@ -502,6 +517,7 @@ RUN
 NAME=pdc ppc64 drop toc setup when reg is overwritten later
 FILE=malloc://0x9000
 CMDS=<<EOF
+e pdc.optimize=false
 e asm.arch=ppc
 e asm.bits=64
 e cfg.bigendian=true
@@ -526,6 +542,7 @@ RUN
 NAME=pdc ppc64 fold two loads sharing one toc setup
 FILE=malloc://0x9000
 CMDS=<<EOF
+e pdc.optimize=false
 e asm.arch=ppc
 e asm.bits=64
 e cfg.bigendian=true
@@ -551,6 +568,7 @@ RUN
 NAME=pdc ppc64 fold toc load that clobbers its own base
 FILE=malloc://0x9000
 CMDS=<<EOF
+e pdc.optimize=false
 e asm.arch=ppc
 e asm.bits=64
 e cfg.bigendian=true
@@ -574,6 +592,7 @@ RUN
 NAME=pdc ppc64 toc setup reg use detection is word exact
 FILE=malloc://0x9000
 CMDS=<<EOF
+e pdc.optimize=false
 e asm.arch=ppc
 e asm.bits=64
 e cfg.bigendian=true
@@ -598,6 +617,7 @@ RUN
 NAME=pdco ppc64 fold keeps the offset column
 FILE=malloc://0x9000
 CMDS=<<EOF
+e pdc.optimize=false
 e asm.arch=ppc
 e asm.bits=64
 e cfg.bigendian=true
@@ -622,6 +642,7 @@ NAME=pdc linear emits goto on its own line
 FILE=malloc://0x20
 ARGS=-e pdc.structured=0
 CMDS=<<EOF
+e pdc.optimize=false
 e asm.arch=ppc
 e asm.bits=64
 e cfg.bigendian=true
@@ -651,6 +672,7 @@ NAME=pdc temporarily clears asm.addr.relto
 FILE=malloc://16
 ARGS=-a x86 -b 64 -e scr.color=0
 CMDS=<<EOF
+e pdc.optimize=false
 wx c3
 af
 e asm.addr.relto=func
@@ -667,6 +689,7 @@ NAME=pdc* emits comment commands
 FILE=malloc://16
 ARGS=-a x86 -b 64 -e scr.color=0
 CMDS=<<EOF
+e pdc.optimize=false
 wx 31c0c3
 af
 pdc*
@@ -681,6 +704,7 @@ NAME=pdc signature from recovered args
 FILE=malloc://0x40
 ARGS=-a mips -b 32 -e cfg.bigendian=true
 CMDS=<<EOF
+e pdc.optimize=false
 wx 008510210046102103e0000800000000
 af
 pdc
@@ -700,6 +724,7 @@ NAME=pdc mips fold resolved gp global load
 FILE=malloc://0x100
 ARGS=-a mips -b 32 -e cfg.bigendian=true -e anal.gp=0x90000
 CMDS=<<EOF
+e pdc.optimize=false
 f obj.myglobal=0x88010
 wx 8f8480100000000003e00008
 af
@@ -719,6 +744,7 @@ NAME=pdc mips gp load not folded without a flag
 FILE=malloc://0x100
 ARGS=-a mips -b 32 -e cfg.bigendian=true -e anal.gp=0x90000
 CMDS=<<EOF
+e pdc.optimize=false
 wx 8f8480100000000003e00008
 af
 pdc~a0 =
@@ -731,6 +757,7 @@ RUN
 NAME=pdc mips real binary gp global fold
 FILE=bins/elf/boa-mips
 CMDS=<<EOF
+e pdc.optimize=false
 e anal.vars=false
 aaa
 pdc @ sym.updateCurNetworkSpeed~v0 = [obj
@@ -743,6 +770,7 @@ RUN
 NAME=pdc expands printf varargs from the literal format string
 FILE=bins/elf/format
 CMDS=<<EOF2
+e pdc.optimize=false
 aa
 s main
 pdc~printf ("Results
@@ -757,6 +785,7 @@ RUN
 NAME=pdc expands varargs when the format string is on the stack
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF2
+e pdc.optimize=false
 aa
 s main
 pdc~printf ("IOLI
@@ -769,6 +798,7 @@ RUN
 NAME=pdc help lists all subcommands
 FILE=--
 CMDS=<<EOF
+e pdc.optimize=false
 pdc?
 EOF
 EXPECT=<<EOF
@@ -787,6 +817,7 @@ RUN
 NAME=pdc subcommand help prints only the matching row
 FILE=--
 CMDS=<<EOF
+e pdc.optimize=false
 pdcj?
 EOF
 EXPECT=<<EOF
@@ -797,6 +828,7 @@ RUN
 NAME=pdc without a function reports failure status
 FILE=--
 CMDS=<<EOF
+e pdc.optimize=false
 pdc && ?e SHOULD_NOT_RUN
 pdc || ?e reported-failure
 EOF
@@ -813,6 +845,7 @@ NAME=pdc success reports zero status
 FILE=malloc://32
 ARGS=-a x86 -b 64
 CMDS=<<EOF
+e pdc.optimize=false
 wx c3
 af
 pdc && ?e decompile-ok
@@ -830,6 +863,7 @@ RUN
 NAME=failing external decompiler propagates through cmd.pdc
 FILE=--
 CMDS=<<EOF
+e pdc.optimize=false
 e cmd.pdc=prj open /this/does/not/exist/x.prj
 pdc || ?e external-failed
 EOF
@@ -845,6 +879,7 @@ NAME=pdc structured if-else on a diamond
 FILE=malloc://64
 ARGS=-a x86 -b 64
 CMDS=<<EOF
+e pdc.optimize=false
 wx 83ff01 7507 b801000000 eb05 b802000000 c3 @ 0
 af @ 0
 pdc~if (,eax,else
@@ -861,6 +896,7 @@ NAME=pdc structured if-else on a flag-jump diamond
 FILE=malloc://64
 ARGS=-a x86 -b 64
 CMDS=<<EOF
+e pdc.optimize=false
 wx 83ff01 7807 b801000000 eb05 b802000000 c3 @ 0
 af @ 0
 e pdc.structured=1
@@ -878,6 +914,7 @@ NAME=pdc linear keeps gotos with the structured renderer off
 FILE=malloc://64
 ARGS=-a x86 -b 64 -e pdc.structured=0
 CMDS=<<EOF
+e pdc.optimize=false
 wx 83ff01 7507 b801000000 eb05 b802000000 c3 @ 0
 af @ 0
 pdc~goto
@@ -891,6 +928,7 @@ RUN
 NAME=pdc structured single-armed if on ppc64
 FILE=bins/elf/ppc64v1-more
 CMDS=<<EOF
+e pdc.optimize=false
 s 0xd500
 af
 e pdc.structured=1
@@ -906,6 +944,7 @@ NAME=pdc structured renders a self loop as do while
 FILE=bins/elf/ls
 ARGS=-e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 aa
 s 0x15e70
 pdc~do {,} while
@@ -928,6 +967,7 @@ NAME=pdc structured recovers continue and break in a loop body
 FILE=malloc://64
 ARGS=-a x86 -b 64 -e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 wx 31c0eb0c83c00183f80a7504c390909089c3ebf0
 af
 pdc~while (true),continue,break
@@ -942,6 +982,7 @@ RUN
 NAME=pdc structured renders each jump table case with its own body
 FILE=bins/elf/ls
 CMDS=<<EOF
+e pdc.optimize=false
 aaa
 s 0x145b0
 pdc~switch (r12),case 0:,abort,break
@@ -957,6 +998,7 @@ RUN
 NAME=pdcj annotation ranges cover the emitted code
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
+e pdc.optimize=false
 af
 pdcj~{annotations[0]}
 pdcj~{annotations[1]}
@@ -971,6 +1013,7 @@ NAME=pdcj linear orphan annotations use the block address
 FILE=bins/mach0/ls-m1
 ARGS=-a arm -b64 -e pdc.structured=0
 CMDS=<<EOF
+e pdc.optimize=false
 s 0x100003a54
 af
 pdcj~{annotations[10]}
@@ -988,6 +1031,7 @@ NAME=pdc linear keeps a function's only orphan block
 FILE=malloc://32
 ARGS=-a x86 -b64 -e pdc.structured=0
 CMDS=<<EOF
+e pdc.optimize=false
 wx 31c0c390b801000000c3
 af
 afb+ 0 4 6
@@ -1010,6 +1054,7 @@ NAME=pdca linear renders an orphan block in the asm column layout
 FILE=malloc://32
 ARGS=-a x86 -b64 -e pdc.structured=0
 CMDS=<<EOF
+e pdc.optimize=false
 wx 31c0c390b801000000c3
 af
 afb+ 0 4 6
@@ -1032,6 +1077,7 @@ NAME=pdc keeps a semicolon that comes from the arch pseudo template
 FILE=malloc://16
 ARGS=-a ppc -b 64 -e cfg.bigendian=true
 CMDS=<<EOF
+e pdc.optimize=false
 wx fc20102e4e800020
 af
 pdc
@@ -1050,6 +1096,7 @@ NAME=pdc linear keeps a renamed case tag on an orphan block untruncated
 FILE=bins/mach0/ls-m1
 ARGS=-a arm -b64 -e pdc.structured=0
 CMDS=<<EOF
+e pdc.optimize=false
 s 0x100003a54
 af
 f case.strcoll.result_when_greater_than_other @ 0x100003a78
@@ -1065,6 +1112,7 @@ NAME=pdc linear reads the case value of an orphan tag in decimal like the jmptbl
 FILE=bins/mach0/ls-m1
 ARGS=-a arm -b64 -e pdc.structured=0
 CMDS=<<EOF
+e pdc.optimize=false
 s 0x100003a54
 af
 f case.strcoll.65 @ 0x100003a78
@@ -1080,6 +1128,7 @@ RUN
 NAME=pdc renders no switch default when the switch op has none
 FILE=bins/elf/boa-mips
 CMDS=<<EOF
+e pdc.optimize=false
 af @ 0x415694
 s 0x415694
 pdc~switch (,default:
@@ -1093,6 +1142,7 @@ NAME=pdc structured keeps both arms of a loop header that branches inside the lo
 FILE=malloc://64
 ARGS=-a x86 -b 64 -e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 wx 85c0750583c001ebf783e80183f8057402ebedc3
 af
 pdc~while (true),eax += 1,eax -= 1,continue,break
@@ -1110,6 +1160,7 @@ NAME=pdc structured ends every switch arm with an explicit transfer
 FILE=bins/elf/bomb
 ARGS=-e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 aaa
 s 0x400f43
 pdc~case ,goto loc_0x00400fbe
@@ -1137,6 +1188,7 @@ NAME=pdc structured renders a repeated case target once and jumps to it
 FILE=bins/elf/ls
 ARGS=-e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 aaa
 s 0x5c40
 pdc~case 88:,loc_0x00005d80:,case 120:,goto loc_0x00005d80
@@ -1153,6 +1205,7 @@ NAME=pdc structured strips a flag-named own edge instead of rendering it twice
 FILE=bins/elf/ls
 ARGS=-e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 aaa
 s 0x5c40
 pdc~goto case.~?
@@ -1170,6 +1223,7 @@ NAME=pdc structured keeps the body of a loop whose header jumps to itself
 FILE=malloc://64
 ARGS=-a x86 -b 64 -e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 wx 85c074fc83c00183f80575f4c3
 af
 pdc~while (true),eax += 1,continue,break
@@ -1185,6 +1239,7 @@ RUN
 NAME=pdc structured labels no arm for an adjacent only case run
 FILE=bins/elf/ls
 CMDS=<<EOF
+e pdc.optimize=false
 aaa
 s 0x5c40
 pdc~case 48...55:,loc_0x00005d48:
@@ -1198,6 +1253,7 @@ NAME=pdc structured renders both arms behind a loop secondary exit
 FILE=malloc://64
 ARGS=-a x86 -b 64 -e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 wx 85c0741483c00183f80574f483f807750483c002c383c003c3
 af
 pdc~loc_0x0000000c:,eax - 7,eax += 2,eax += 3
@@ -1215,6 +1271,7 @@ NAME=pdc structured recovers arm64 b.cond operands from the cmp
 FILE=malloc://64
 ARGS=-a arm -b 64 -e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 wx 1f00016b 6c000054 20008052 02000014 40008052 c0035fd6 @ 0
 af @ 0
 pdc~if (,w0 =,else
@@ -1233,6 +1290,7 @@ NAME=pdc structured recovers arm32 b<cc> operands from the cmp
 FILE=malloc://64
 ARGS=-a arm -b 32 -e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 wx 010050e1 010000ca 0100a0e3 000000ea 0200a0e3 1eff2fe1 @ 0
 af @ 0
 pdc~if (,r0 =,else
@@ -1251,6 +1309,7 @@ NAME=pdc structured ppc64 plt stub has no placeholder for the bcl get-pc idiom
 FILE=bins/elf/ppc64v1-more
 ARGS=-e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 s 0xdb14
 af
 pdc~cond_0x~?
@@ -1268,6 +1327,7 @@ NAME=pdc structured keeps a jump into another function as a transfer
 FILE=malloc://64
 ARGS=-a x86 -b 64
 CMDS=<<EOF
+e pdc.optimize=false
 wx b801000000eb09 @ 0
 wx b802000000c3 @ 0x10
 af @ 0x10
@@ -1289,6 +1349,7 @@ NAME=pdc structured returns from a block that ends without a terminator
 FILE=malloc://64
 ARGS=-a x86 -b 64 -e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 wx b805000000f4 @ 0
 af
 pdc
@@ -1321,6 +1382,7 @@ NAME=pdc structured recovers riscv unsigned branch operands
 FILE=malloc://64
 ARGS=-a riscv -b 64
 CMDS=<<EOF
+e pdc.optimize=false
 wx 6366b500 13051000 67800000 13052000 67800000 @ 0
 af @ 0
 pdc~if (,a0 =,else
@@ -1339,6 +1401,7 @@ NAME=pdc structured recovers sparc b<cc> operands from the cmp
 FILE=malloc://64
 ARGS=-a sparc -b 32 -e cfg.bigendian=true
 CMDS=<<EOF
+e pdc.optimize=false
 wx 80a20009 04800005 01000000 90102001 81c3e008 01000000 90102002 81c3e008 01000000 @ 0
 af @ 0
 pdc~if (,o0 =,else
@@ -1356,6 +1419,7 @@ RUN
 NAME=pdc structured renders an s390 diamond
 FILE=bins/elf/ls-s390x
 CMDS=<<EOF
+e pdc.optimize=false
 af @ 0x176d8
 pdc @ 0x176d8~if (cc,} else {,r3 = 0x38
 EOF
@@ -1371,6 +1435,7 @@ NAME=pdc modes render an if and else through the structured renderer
 FILE=malloc://64
 ARGS=-a x86 -b 64 -e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 wx 83ff01 7507 b801000000 eb05 b802000000 c3 @ 0
 af @ 0
 pdco~if (,eax,else,}
@@ -1411,6 +1476,7 @@ NAME=pdc modes anchor a transfer on the jump that performs it
 FILE=malloc://64
 ARGS=-a x86 -b 64 -e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 wx 83c701 83ff05 7d0e 83ff09 7407 b801000000 ebec c3 90 b802000000 c3 @ 0
 af @ 0
 pdco~break,continue,goto,else
@@ -1445,6 +1511,7 @@ NAME=pdcj annotates no empty line
 FILE=malloc://32
 ARGS=-a x86 -b 64 -e anal.nopskip=false
 CMDS=<<EOF
+e pdc.optimize=false
 wx 90 b801000000 c3 @ 0
 af @ 0
 pdcj~{}~"offset":~?
@@ -1464,6 +1531,7 @@ NAME=pdca structured places the switch header after the dispatching block
 FILE=-
 ARGS=-a x86 -b 64 -e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 wx 49bf00000000000000804c8b24244c89e04c31f84d85e46a0159480f48c8488d053b00000048630c884801c1ffe1909090eb1590eb1290eb0f909090909090909090909090909090c390909090909090c3909090909090909090909090909090ceffffffd6ffffffd0ffffffcefffffff0ffffff @ 0
 s 0
 afr
@@ -1488,6 +1556,7 @@ NAME=pdca case labels carry no asm column
 FILE=-
 ARGS=-a x86 -b 64
 CMDS=<<EOF
+e pdc.optimize=false
 wx 49bf00000000000000804c8b24244c89e04c31f84d85e46a0159480f48c8488d053b00000048630c884801c1ffe1909090eb1590eb1290eb0f909090909090909090909090909090c390909090909090c3909090909090909090909090909090ceffffffd6ffffffd0ffffffcefffffff0ffffff @ 0
 s 0
 afr
@@ -1505,6 +1574,7 @@ NAME=pdca structured renders a transfer after its delay slot
 FILE=malloc://128
 ARGS=-a mips -b 32 -e cfg.bigendian=true -e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 wx 24840001 28820005 10400009 00000000 24080003 15080003 00000000 10000004 24630001 24630002 1000fff5 24630003 03e00008 00000000 @ 0
 af @ 0
 pdca~continue,break,v1 += 3
@@ -1520,6 +1590,7 @@ NAME=pdc* linear keeps one comment per line
 FILE=malloc://64
 ARGS=-a x86 -b 64 -e pdc.structured=0
 CMDS=<<EOF
+e pdc.optimize=false
 wx 83c701 83ff05 7d0e 83ff09 7407 b801000000 ebec c3 90 b802000000 c3 @ 0
 af @ 0
 pdc*
@@ -1553,6 +1624,7 @@ NAME=pdc modes anchor a transfer with no jump of its own on the line above it
 FILE=malloc://64
 ARGS=-a x86 -b 64 -e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 wx 31ff 83c701 83f805 7d0a 83f803 75f3 b801000000 c3 @ 0
 af @ 0
 pdco~eax = 1,goto loc_0x00000014
@@ -1569,6 +1641,7 @@ RUN
 NAME=pdc trycatch blocks mach0 compact unwind
 FILE=bins/mach0/ClassCpp.out
 CMDS=<<EOF
+e pdc.optimize=false
 e scr.color=0
 aaa
 s main
@@ -1588,6 +1661,7 @@ NAME=pdc trycatch blocks mach0 structured
 FILE=bins/mach0/ClassCpp.out
 ARGS=-e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 e scr.color=0
 aaa
 s main
@@ -1606,6 +1680,7 @@ RUN
 NAME=pdc trycatch blocks elf itanium attached typed catch
 FILE=bins/elf/0pack
 CMDS=<<EOF
+e pdc.optimize=false
 e scr.color=0
 af @ 0x4779b4
 s 0x4779b4
@@ -1625,6 +1700,7 @@ RUN
 NAME=pdc trycatch blocks pe64 seh
 FILE=bins/pe/dhcpssvc.dll
 CMDS=<<EOF
+e pdc.optimize=false
 e scr.color=0
 af @ 0x7ff5d426bdc
 s 0x7ff5d426bdc
@@ -1641,6 +1717,7 @@ RUN
 NAME=pdc trycatch blocks dotnet finally
 FILE=bins/dotnet/HelloWorld.dll
 CMDS=<<EOF
+e pdc.optimize=false
 e scr.color=0
 s 0x100021c0
 af
@@ -1657,6 +1734,7 @@ RUN
 NAME=pdc trycatch blocks dex attached catch
 FILE=bins/dex/dex38.dex
 CMDS=<<EOF
+e pdc.optimize=false
 e scr.color=0
 af @ 0x1378
 s 0x1378
@@ -1684,6 +1762,7 @@ NAME=pdc trycatch blocks dex structured
 FILE=bins/dex/dex38.dex
 ARGS=-e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 e scr.color=0
 af @ 0x1378
 s 0x1378
@@ -1700,6 +1779,7 @@ NAME=pdc emu string args are not clipped to the block size
 FILE=bins/elf/analysis/clark
 ARGS=-e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 aa
 s main
 pdc~puts ("Booh,puts ("No no
@@ -1714,6 +1794,7 @@ NAME=pdc leaves no emulated writes in the io cache
 FILE=bins/elf/format
 ARGS=-e io.cache=true
 CMDS=<<EOF
+e pdc.optimize=false
 aa
 s main
 wx 41 @ main
@@ -1733,6 +1814,7 @@ NAME=pdc structured reports the same emulated args as linear
 FILE=bins/elf/format
 ARGS=-e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 aa
 s main
 pdc~printf ("Results
@@ -1746,6 +1828,7 @@ NAME=pdc emulates each block once
 FILE=malloc://0x2000
 ARGS=-a x86 -b 64
 CMDS=<<EOF
+e pdc.optimize=false
 wx 488b1c2500080000488b0425000800004883c00148890425000800004883fb037c1e @ 0
 wx 488b1c2508080000488b0425080800004883c0014889042508080000eb20 @ 34
 wx 488b1c2510080000488b0425100800004883c0014889042510080000eb02 @ 64
@@ -1764,6 +1847,7 @@ RUN
 NAME=pdc renders a landing pad no edge reaches
 FILE=bins/elf/demangle-test-cpp
 CMDS=<<EOF
+e pdc.optimize=false
 aaa
 pdco @ 0x15aa~&0x000017b6,rax = qword
 pdco @ 0x15aa~&0x000017d8,rax = qword
@@ -1780,6 +1864,7 @@ NAME=pdc seeds jump table cases from the dispatcher state
 FILE=bins/elf/ls
 ARGS=-e pdc.structured=1
 CMDS=<<EOF2
+e pdc.optimize=false
 aaa
 s 0x145b0
 pdc~rdx = rax
@@ -1798,6 +1883,7 @@ NAME=pdc disassembles the bytes an emulated store overwrote
 FILE=malloc://0x2000
 ARGS=-a x86 -b 64
 CMDS=<<EOF2
+e pdc.optimize=false
 wx c604251100000002eb06909090909090b801000000c3 @ 0
 af @ 0
 pdc @ 0~eax =
@@ -1811,6 +1897,7 @@ NAME=pdc keeps a branch's stores from the sibling branch
 FILE=malloc://0x2000
 ARGS=-a x86 -b 64
 CMDS=<<EOF2
+e pdc.optimize=false
 wx 4885ff740a488b1c2500080000eb0c48c704250008000001000000c3 @ 0
 af @ 0
 pdc @ 0~0x800]
@@ -1825,6 +1912,7 @@ NAME=pdc ignores the seeds another command left on the blocks
 FILE=bins/elf/ls
 ARGS=-e asm.emu=true -e graph.few=true
 CMDS=<<EOF2
+e pdc.optimize=false
 aaa
 s 0x145b0
 agf~zzznomatch
@@ -1845,6 +1933,7 @@ NAME=pdc structured names a goto leaving the function
 FILE=malloc://128
 ARGS=-a arm -b 64 -e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 wa cbz x0, 0x20
 wa mov x0, 1 @ 4
 wa ret @ 8
@@ -1874,6 +1963,7 @@ NAME=pdc structured names a foreign switch target the same in every arm
 FILE=malloc://0x200
 ARGS=-a x86 -b 64 -e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 wx 4883f8027700ff24c50001000000 @ 0
 wx 770a @ 4
 wx c3 @ 0x10
@@ -1902,6 +1992,7 @@ NAME=pdc structured keeps loc for a jump table case body
 FILE=malloc://0x200
 ARGS=-a x86 -b 64 -e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 wx 4883f8027700ff24c50001000000 @ 0
 wx 770a @ 4
 wx c3 @ 0x10
@@ -1939,6 +2030,7 @@ NAME=pdc structured keeps loc where the same rendering prints the label
 FILE=malloc://0x200
 ARGS=-a x86 -b 64 -e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 wx 83ff01 @ 0
 wx 89f8 @ 8
 wx b82a00000090c3 @ 0x40
@@ -1970,6 +2062,7 @@ NAME=pdc structured keeps loc for an orphan labelled block
 FILE=malloc://0x2000
 ARGS=-a x86 -b 64 -e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 af+ 0 F
 afb+ 0 0 0x10 0x10
 afb+ 0 0x10 0x10
@@ -1996,6 +2089,7 @@ NAME=pdc structured names a hoisted switch arm like the rest of the rendering
 FILE=malloc://0x2000
 ARGS=-a x86 -b 64 -e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 af+ 0 F
 afb+ 0 0 0x10 0x10
 afb+ 0 0x10 0x10
@@ -2015,6 +2109,7 @@ REQUIRE=cs5
 FILE=bins/elf/ppc64v1-libz.so
 ARGS=-e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 aaa
 af+ 0 zerofn
 af+ 0x194a0 named_target
@@ -2032,6 +2127,7 @@ REQUIRE=cs6
 FILE=bins/elf/ppc64v1-libz.so
 ARGS=-e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 aaa
 af+ 0 zerofn
 af+ 0x194a0 named_target
@@ -2047,6 +2143,7 @@ NAME=pdc structured keeps a loop exit out of the labels it prints
 FILE=malloc://0x100
 ARGS=-a x86 -b 64 -e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 wx 85c07510 @ 0
 wx 85c074ec @ 0x10
 wx eb0e @ 0x30
@@ -2072,6 +2169,7 @@ NAME=pdc structured keeps loc where no function starts at the target
 FILE=malloc://128
 ARGS=-a arm -b 64 -e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 wa cbz x0, 0x24
 wa cbz x1, 0x40 @ 4
 wa cbz x2, 0x20 @ 8
@@ -2099,6 +2197,7 @@ NAME=pdc keeps zero pointer arguments as calling convention registers
 FILE=malloc://4096
 ARGS=-a arm -b 64
 CMDS=<<EOF
+e pdc.optimize=false
 wx 010800107f000094c0035fd6 @ 0
 f sym.imp.strcmp @ 0x200
 wx 68656c7000 @ 0x100
@@ -2124,6 +2223,7 @@ RUN
 NAME=pdc recovers gettext calls from the gnome-extensions binary
 FILE=bins/elf/gnome-extensions
 CMDS=<<EOF
+e pdc.optimize=false
 af @ 0x3b40
 pdc @ 0x3b40~bind_textdomain_codeset
 pdc @ 0x3b40~strcmp:0
@@ -2138,6 +2238,7 @@ NAME=pdc resolves GLib strings and preserves runtime GObject pointers
 FILE=bins/elf/gnome-extensions
 ARGS=-e bin.relocs.apply=true
 CMDS=<<EOF
+e pdc.optimize=false
 af @ 0x5084
 pdc @ 0x5084~g_object_get_data,g_strcmp0
 e pdc.structured=false
@@ -2157,6 +2258,7 @@ NAME=pdc resolves chained scalar and string pointer typedefs
 FILE=malloc://4096
 ARGS=-a arm -b 64
 CMDS=<<EOF
+e pdc.optimize=false
 wa adr x0, 0x100 @ 0
 wa mov w1, 5 @ 4
 wa bl 0x200 @ 8
@@ -2180,6 +2282,7 @@ NAME=pdc preserves readable empty string arguments
 FILE=malloc://4096
 ARGS=-a arm -b 64
 CMDS=<<EOF
+e pdc.optimize=false
 wa adr x0, 0x100 @ 0
 wa adr x1, 0x120 @ 4
 wa bl 0x200 @ 8
@@ -2199,6 +2302,7 @@ NAME=pdc recovers IPA-RA arguments and returns the arithmetic destination
 FILE=malloc://256
 ARGS=-a x86 -b64
 CMDS=<<EOF
+e pdc.optimize=false
 wx e83b0000008d047f01f0c3
 wx 83051000000001c3 @ 0x40
 af leaf @ 0x40
@@ -2220,6 +2324,7 @@ RUN
 NAME=pdc recovers GCC IPA-RA ELF arguments and arithmetic result
 FILE=bins/elf/gcc-fipara/ipara_on
 CMDS=<<EOF
+e pdc.optimize=false
 aaa
 pdc @ sym.use_after_call
 EOF
@@ -2240,6 +2345,7 @@ NAME=pdc renders an unconditional self loop with a body as while true
 FILE=malloc://32
 ARGS=-a x86 -b 64
 CMDS=<<EOF
+e pdc.optimize=false
 wx 4889c7ebfb
 af
 pdc~while,do {,rdi = rax
@@ -2263,6 +2369,7 @@ NAME=pdc structured renders a mips self loop as while true
 FILE=malloc://64
 ARGS=-a mips -b 32 -e cfg.bigendian=false -e pdc.structured=1
 CMDS=<<EOF
+e pdc.optimize=false
 wx 01000224feff001000000000
 af
 pdc~while,goto,v0 = 0 + 1

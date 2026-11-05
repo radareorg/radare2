@@ -2,6 +2,7 @@ NAME=pdct region ast if-else diamond
 FILE=malloc://64
 ARGS=-a x86 -b 64
 CMDS=<<EOF
+e pdc.optimize=false
 wx 83ff01 7507 b801000000 eb05 b802000000 c3 @ 0
 af @ 0
 pdct
@@ -19,6 +20,7 @@ NAME=pdct region ast while loop
 FILE=malloc://64
 ARGS=-a x86 -b 64
 CMDS=<<EOF
+e pdc.optimize=false
 wx b800000000 83f80a 7d07 83c001 ebf6 0000 c3 @ 0
 af @ 0
 pdct
@@ -36,6 +38,7 @@ RUN
 NAME=pdct region ast sequential fall-through blocks
 FILE=bins/elf/ppc64v1-more
 CMDS=<<EOF
+e pdc.optimize=false
 s 0x4bf8
 af
 pdct
@@ -60,6 +63,7 @@ RUN
 NAME=pdct region ast switch with case arms
 FILE=bins/jmptbl/test_gcc_5.5.0_64.out
 CMDS=<<EOF
+e pdc.optimize=false
 aa
 s main
 pdct
@@ -87,6 +91,7 @@ RUN
 NAME=pdct region ast single block
 FILE=bins/elf/ls
 CMDS=<<EOF
+e pdc.optimize=false
 s sym.main
 af
 pdct
@@ -114,6 +119,7 @@ NAME=pdct region ast loop behind a fail-only fallthrough block
 FILE=malloc://64
 ARGS=-a x86 -b 64
 CMDS=<<EOF
+e pdc.optimize=false
 af+ 0 test
 afb+ 0 0 4 0xffffffffffffffff 0x10
 afb+ 0 0x10 4 0x20 0x30
@@ -134,6 +140,7 @@ NAME=pdct region ast bottom-tested loop keeps the exit outside
 FILE=malloc://64
 ARGS=-a x86 -b 64
 CMDS=<<EOF
+e pdc.optimize=false
 wx 31c0eb0c83c00183f80a7504c390909089c3ebf0
 af
 pdct
@@ -154,6 +161,7 @@ NAME=pdct region ast irreducible cycle falls back to gotos
 FILE=malloc://64
 ARGS=-a x86 -b 64
 CMDS=<<EOF
+e pdc.optimize=false
 wx 85c0740a83c00183f80075f8c39089c3ebf5
 af
 pdct
@@ -172,6 +180,7 @@ RUN
 NAME=pdct region ast has no arm for an unset switch default
 FILE=bins/elf/boa-mips
 CMDS=<<EOF
+e pdc.optimize=false
 af @ 0x415694
 pdct @ 0x415694
 EOF
@@ -189,6 +198,7 @@ RUN
 NAME=pdct region ast joins a switch through its default edge
 FILE=bins/elf/bomb
 CMDS=<<EOF
+e pdc.optimize=false
 aaa
 pdct @ 0x400f43
 EOF
@@ -232,6 +242,7 @@ NAME=pdct region ast keeps both arms when a loop header branches inside the loop
 FILE=malloc://64
 ARGS=-a x86 -b 64
 CMDS=<<EOF
+e pdc.optimize=false
 wx 85c0750583c001ebf783e80183f8057402ebedc3
 af
 pdct
@@ -255,6 +266,7 @@ NAME=pdct region ast keeps the body of a loop whose header jumps to itself
 FILE=malloc://64
 ARGS=-a x86 -b 64
 CMDS=<<EOF
+e pdc.optimize=false
 wx 85c074fc83c00183f80575f4c3
 af
 pdct
