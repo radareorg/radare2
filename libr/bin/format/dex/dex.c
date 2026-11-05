@@ -324,14 +324,17 @@ R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 	dex->b = mem;
 
 	/* strings */
-	if (dexhdr->strings_offset + ((ut64)dexhdr->strings_size * sizeof (ut32)) > dex->size) {
+	const ut64 strings_bytes = (ut64)dexhdr->strings_size * sizeof (ut32);
+	if (dexhdr->strings_offset + strings_bytes > dex->size) {
 		goto fail;
 	}
-	dex->strings = (ut32 *) calloc (dexhdr->strings_size + 1, sizeof (ut32));
+	dex->strings = (ut32 *) calloc (R_MAX (dexhdr->strings_size, 1), sizeof (ut32));
 	if (!dex->strings) {
 		goto fail;
 	}
-	r_buf_read_at (dex->b, dexhdr->strings_offset, (ut8*)dex->strings, dexhdr->strings_size * sizeof (ut32));
+	if (r_buf_read_at (dex->b, dexhdr->strings_offset, (ut8*)dex->strings, strings_bytes) != (st64)strings_bytes) {
+		goto fail;
+	}
 	for (i = 0; i < dexhdr->strings_size; i++) {
 		// swap on big endian hosts, no-op on little endian ones
 		dex->strings[i] = r_read_le32 (&dex->strings[i]);
