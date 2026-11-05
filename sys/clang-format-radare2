@@ -618,21 +618,46 @@ def fix_string_continuation_indent(lines):
 	return fixed
 
 
+def mask_literals(line):
+	# Blank out the contents of string and char literals, keeping the offsets
+	result = []
+	quote = None
+	escape = False
+	for ch in line:
+		if quote is None:
+			if ch in ("'", '"'):
+				quote = ch
+			result.append(ch)
+		elif escape:
+			escape = False
+			result.append(" ")
+		elif ch == "\\":
+			escape = True
+			result.append(" ")
+		elif ch == quote:
+			quote = None
+			result.append(ch)
+		else:
+			result.append(" ")
+	return "".join(result)
+
+
 def fix_ternary_lines(lines):
 	fixed = []
 	i = 0
 	while i < len(lines):
 		line = lines[i]
 		content, ending = split_line_ending(line)
+		code = mask_literals(content)
 		# Check if line has ? and the ? is not followed by : in the same line
-		if '?' in content and not re.search(r'\?\s*[^:]*$', content):
+		if '?' in code and not re.search(r'\?\s*[^:]*$', code):
 			# If next line starts with spaces and :
 			if i + 1 < len(lines):
 				next_line = lines[i + 1]
 				next_content, next_ending = split_line_ending(next_line)
 				if next_content.strip().startswith(':'):
 					# Find the last ? in content
-					last_q = content.rfind('?')
+					last_q = code.rfind('?')
 					if last_q != -1:
 						before_q = content[:last_q]
 						after_q = content[last_q:]
