@@ -1240,6 +1240,10 @@ static st64 arm_rel_addend(ELFOBJ *bo, const RBinElfReloc *rel, const ut8 *buf) 
 		}
 		return imm;
 	}
+	case R_ARM_THM_PC11:
+		return ((st32)((hi & 0x7ff) << 21)) >> 20;
+	case R_ARM_THM_PC9:
+		return ((st32)((hi & 0xff) << 24)) >> 23;
 	case R_ARM_THM_MOVW_ABS_NC:
 	case R_ARM_THM_MOVT_ABS:
 		return (st16)thumb_mov_imm (hi, lo);
@@ -1474,6 +1478,23 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			r_write_ble16 (buf, hi, ie);
 			r_write_ble16 (buf + 2, lo, ie);
 			break;
+		}
+		case R_ARM_THM_PC11:
+		case R_ARM_THM_PC9: {
+			if (arm_reloc_arm_func (bo, rel, L)) {
+				return;
+			}
+			const st64 target = (S & ~1ULL) + addend - P;
+			const int imm_bits = rel->type == R_ARM_THM_PC9? 8: 11;
+			const ut16 imm_mask = (1 << imm_bits) - 1;
+			if ((target & 1) || !disp_fits (target, imm_bits + 1)) {
+				return;
+			}
+			hi = (hi & ~imm_mask) | ((target >> 1) & imm_mask);
+			r_write_ble16 (buf, hi, ie);
+			// a 16-bit branch only owns its halfword
+			iob->overlay_write_at (iob->io, P, buf, 2);
+			return;
 		}
 		case R_ARM_THM_MOVW_ABS_NC:
 		case R_ARM_THM_MOVT_ABS: {
