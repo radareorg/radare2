@@ -239,3 +239,17 @@ EOF
 EXPECT_ERR=<<EOF
 EOF
 RUN
+
+NAME=WASM: -B moves no symbol, so a function keeps its convention and args
+FILE=bins/wasm/basic-tracing.wasm
+ARGS=-B 0x100000
+CMDS=<<EOF
+af @ 0x28
+afi @ 0x28~callconv
+afv @ 0x28
+EOF
+EXPECT=<<EOF
+callconv: dyncc:l0+1:r0+1
+arg int l0 @ l0
+EOF
+RUN
