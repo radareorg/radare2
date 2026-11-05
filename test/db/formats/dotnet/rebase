@@ -1,0 +1,13 @@
+NAME=CIL: a rebased method keeps its calling convention
+FILE=bins/cil/hello.exe
+ARGS=-B 0x500000
+CMDS=<<EOF
+af @ 0x502051
+afc @ 0x502051
+afv @ 0x502051
+EOF
+EXPECT=<<EOF
+dyncc:a0+1:!T0
+arg int a0 @ a0
+EOF
+RUN

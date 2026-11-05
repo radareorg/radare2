@@ -81,12 +81,17 @@ static RBinFile *bin_file_mapped_at(RBin *bin, ut64 vaddr) {
 	return bf? bf: r_bin_cur (bin);
 }
 
+// symbols are indexed by their file vaddr; without has_va -B moves nothing
+static ut64 symbol_vaddr_at(RBinObject *o, ut64 vaddr) {
+	return (o && o->info && o->info->has_va)? vaddr - (ut64)o->baddr_shift: vaddr;
+}
+
 static const char *__getcc(RBin *bin, ut64 vaddr) {
 	RBinFile *a = bin_file_mapped_at (bin, vaddr);
 	if (a) {
 		RBinPlugin *plugin = r_bin_file_cur_plugin (a);
 		if (plugin && plugin->get_cc) {
-			return plugin->get_cc (a, vaddr);
+			return plugin->get_cc (a, symbol_vaddr_at (a->bo, vaddr));
 		}
 	}
 	return NULL;
@@ -1286,8 +1291,7 @@ R_API RBinSymbol *r_bin_get_symbol_at(RBin *bin, ut64 addr) {
 	if (!bf || !bf->bo) {
 		return NULL;
 	}
-	// symbols are indexed by their file vaddr, not the rebased one
-	return r_bin_object_get_symbol_at (bf->bo, addr - (ut64)bf->bo->baddr_shift);
+	return r_bin_object_get_symbol_at (bf->bo, symbol_vaddr_at (bf->bo, addr));
 }
 
 R_API RVecRBinImport *r_bin_get_imports_vec(RBin *bin) {
