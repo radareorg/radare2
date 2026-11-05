@@ -152,6 +152,15 @@ zip://bins/dex/Hello.apk//classes.dex
 EOF
 RUN
 
+NAME=io-zip0 opens only the first archive member
+FILE=zip0://bins/dex/mobipwn-nores.apk
+ARGS=-n
+CMDS=o~[4]
+EXPECT=<<EOF
+zip://bins/dex/mobipwn-nores.apk//AndroidManifest.xml
+EOF
+RUN
+
 NAME=apk:// dex import xrefs
 FILE=apk://bins/dex/org.radare.radare2installer.apk
 CMDS=<<EOF
