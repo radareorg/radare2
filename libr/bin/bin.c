@@ -83,12 +83,15 @@ static RBinFile *bin_file_mapped_at(RBin *bin, ut64 vaddr) {
 
 // symbols are indexed by their file vaddr; without has_va -B moves nothing
 static ut64 symbol_vaddr_at(RBin *bin, RBinObject *o, ut64 addr) {
+	if (!o->info || !o->info->has_va) {
+		return addr;
+	}
 	RIO *io = bin->iob.io;
 	if (io && !io->va) {
 		RBinSection *s = r_bin_get_section_at (o, addr, false);
 		return s? s->vaddr + (addr - s->paddr): addr;
 	}
-	return (o->info && o->info->has_va)? addr - (ut64)o->baddr_shift: addr;
+	return addr - (ut64)o->baddr_shift;
 }
 
 static const char *__getcc(RBin *bin, ut64 vaddr) {
