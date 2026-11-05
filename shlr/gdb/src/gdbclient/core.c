@@ -1685,12 +1685,12 @@ void gdbr_invalidate_reg_cache(libgdbr_t *g) {
 	gdbr_regs_invalidate (g);
 }
 
-int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, PrintfCallback cb_printf) {
+int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, RStrBuf *output) {
 	int ret = -1;
 	char *buf;
 	size_t len;
 
-	if (!g || !cmd) {
+	if (!g || !cmd || !output) {
 		return -1;
 	}
 	len = strlen (cmd) * 2 + 8;
@@ -1731,7 +1731,10 @@ int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, PrintfCallback cb_printf) {
 			// Console output from gdbserver
 			unpack_hex (g->data + 1, g->data_len - 1, g->data + 1);
 			g->data[g->data_len - 1] = '\0';
-			cb_printf ("%s", g->data + 1);
+			if (!r_strbuf_append (output, g->data + 1)) {
+				ret = -1;
+				goto end;
+			}
 		}
 		if ((ret = read_packet (g, false)) < 0) {
 			goto end;

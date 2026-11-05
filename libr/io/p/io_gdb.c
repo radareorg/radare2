@@ -322,11 +322,16 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		if (!isspace ((ut8)cmd[7])) {
 			qrcmd = "help";
 		}
-		if (gdbr_send_qRcmd (desc, qrcmd, io->cb_printf) < 0) {
+		RStrBuf output;
+		r_strbuf_init (&output);
+		if (gdbr_send_qRcmd (desc, qrcmd, &output) < 0) {
 			R_LOG_ERROR ("remote command error");
+		}
+		if (r_strbuf_is_empty (&output)) {
+			r_strbuf_fini (&output);
 			return NULL;
 		}
-		return NULL;
+		return r_strbuf_drain_nofree (&output);
 	}
 	if (r_str_startswith (cmd, "inv.reg")) {
 		gdbr_invalidate_reg_cache (desc);
