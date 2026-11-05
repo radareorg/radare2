@@ -2388,8 +2388,9 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			// IDIV does not change flags
 			op->sign = true;
 			if (!arg2 && !arg1) {
-				// TODO: 64-bit idiv needs a 128-bit dividend
-				if (arg0) {
+				if (arg0 && INSOP(0).size == 8) {
+					esilprintf (op, "rax,rdx,%s,~L/,rax,=,rdx,=", arg0);
+				} else if (arg0) {
 					int width = INSOP(0).size;
 					const char *r_quot, *r_rema;
 					muldiv_regs (width, &r_quot, &r_rema);
@@ -2413,9 +2414,13 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_DIV:
 		{
 			// DIV does not change flags and is unsigned
-			// TODO: 64-bit div needs a 128-bit dividend, so rdx is ignored there
 			int width = INSOP(0).size;
 			dst = getarg (&gop, 0, 0, NULL, NULL);
+			if (width == 8) {
+				esilprintf (op, "rax,rdx,%s,L/,rax,=,rdx,=", dst);
+				free (dst);
+				break;
+			}
 			const char *r_quot, *r_rema;
 			muldiv_regs (width, &r_quot, &r_rema);
 			char *num = muldiv_dividend (width, r_quot, r_rema, false);

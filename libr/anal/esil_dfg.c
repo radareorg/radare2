@@ -938,6 +938,20 @@ static bool edf_dup(REsil *esil) {
 }
 #endif
 
+static bool edf_push_result(REsil *esil, RGraphNode *op_node, bool const_result) {
+	RAnalEsilDFG *edf = (RAnalEsilDFG *)esil->user;
+	RAnalEsilDFGNode *result = r_anal_esil_dfg_node_new (edf, "result_");
+	result->type = R_ANAL_ESIL_DFG_TAG_RESULT;
+	if (const_result) {
+		result->type |= R_ANAL_ESIL_DFG_TAG_CONST;
+	}
+	r_strbuf_appendf (result->content, "%d", edf->idx++);
+	RGraphNode *result_node = r_graph_add_node (edf->flow, result);
+	r_graph_add_edge (edf->flow, op_node, result_node);
+	_edf_var_set (edf, r_strbuf_get (result->content), result_node);
+	return r_esil_push (esil, r_strs_from (r_strbuf_get (result->content)));
+}
+
 static bool edf_consume_n_push_1(REsil *esil, ut32 n) {
 	const char *op_string = esil->current_opstr;
 	RAnalEsilDFG *edf = (RAnalEsilDFG *)esil->user;
@@ -968,17 +982,7 @@ static bool edf_consume_n_push_1(REsil *esil, ut32 n) {
 		r_graph_add_edge (edf->flow, src_node, op_node);
 	}
 
-	RAnalEsilDFGNode *result = r_anal_esil_dfg_node_new (edf, "result_");
-	result->type = R_ANAL_ESIL_DFG_TAG_RESULT;
-	if (const_result) {
-		result->type |= R_ANAL_ESIL_DFG_TAG_CONST;
-	}
-	r_strbuf_appendf (result->content, "%d", edf->idx++);
-	RGraphNode *result_node = r_graph_add_node (edf->flow, result);
-	r_graph_add_edge (edf->flow, op_node, result_node);
-	_edf_var_set (edf, r_strbuf_get (result->content), result_node);
-	r_esil_push (esil, r_strs_from (r_strbuf_get (result->content)));
-	return true;
+	return edf_push_result (esil, op_node, const_result);
 }
 
 static bool edf_consume_2_push_1(REsil *esil) {
@@ -987,6 +991,29 @@ static bool edf_consume_2_push_1(REsil *esil) {
 
 static bool edf_consume_3_push_1(REsil *esil) {
 	return edf_consume_n_push_1 (esil, 3);
+}
+
+static bool edf_long_div_push_output(REsil *esil, RGraphNode *pair_node, const char *pair, const char *selector) {
+	RAnalEsilDFG *edf = (RAnalEsilDFG *)esil->user;
+	RAnalEsilDFGNode *eop_node = r_anal_esil_dfg_node_new (edf, pair);
+	r_strbuf_appendf (eop_node->content, ",%s", selector);
+	eop_node->type = R_ANAL_ESIL_DFG_TAG_GENERATIVE;
+	RGraphNode *op_node = r_graph_add_node (edf->flow, eop_node);
+	r_graph_add_edge (edf->flow, pair_node, op_node);
+	return edf_push_result (esil, op_node, false);
+}
+
+static bool edf_long_div(REsil *esil) {
+	if (!edf_consume_3_push_1 (esil)) {
+		return false;
+	}
+	RAnalEsilDFG *edf = (RAnalEsilDFG *)esil->user;
+	const RStrs pair_s = r_esil_pop (esil);
+	RGraphNode *pair_node = _edf_var_get (edf, pair_s.a);
+	// const folding frees the nodes it visits, and both outputs share this one
+	((RAnalEsilDFGNode *)pair_node->data)->type &= ~R_ANAL_ESIL_DFG_TAG_CONST;
+	return edf_long_div_push_output (esil, pair_node, pair_s.a, "POP")
+		&& edf_long_div_push_output (esil, pair_node, pair_s.a, "SWAP,POP");
 }
 
 static bool edf_consume_1_push_1(REsil *esil) {
@@ -1729,6 +1756,8 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *R_NULLABLE d
 	r_esil_set_op (esil, "*", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH, NULL);
 	r_esil_set_op (esil, "/", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH, NULL);
 	r_esil_set_op (esil, ">>", edf_consume_2_push_1, 1, 2, R_ESIL_OP_TYPE_MATH, NULL);
+	r_esil_set_op (esil, "L/", edf_long_div, 2, 3, R_ESIL_OP_TYPE_MATH, NULL);
+	r_esil_set_op (esil, "~L/", edf_long_div, 2, 3, R_ESIL_OP_TYPE_MATH, NULL);
 	r_esil_set_op (esil, "POP", edf_pop, 0, 1, R_ESIL_OP_TYPE_UNKNOWN, NULL);
 #if 1
 	r_esil_set_op (esil, "DUP", edf_dup, 2, 1, R_ESIL_OP_TYPE_UNKNOWN, NULL);
