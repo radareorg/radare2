@@ -60,11 +60,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=io-zip
+NAME=io-zip requires a member
 FILE=zip://bins/java/example.zip
 CMDS=q
-EXPECT=<<EOF
-0 research_data/experiment/decompiler/dumped_jar_dec/c.class
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: ZIP member required: use zip://archive.zip//path or zip://archive.zip::index
+INFO: List files with: rafs2 -t zip -l / archive.zip
+INFO: Use zipall://archive.zip to open all files or zip0://archive.zip to open the first
+ERROR: Cannot open 'zip://bins/java/example.zip'
 EOF
 RUN
 
@@ -98,11 +102,53 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=io-zip hello.apk
+NAME=io-zip apk requires a member
 FILE=zip://bins/dex/Hello.apk
 CMDS=ieq
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: ZIP member required: use zip://archive.zip//path or zip://archive.zip::index
+INFO: List files with: rafs2 -t zip -l / archive.zip
+INFO: Use zipall://archive.zip to open all files or zip0://archive.zip to open the first
+ERROR: Cannot open 'zip://bins/dex/Hello.apk'
+EOF
+RUN
+
+NAME=io-zip failed member selection preserves the current descriptor
+FILE=malloc://1
+CMDS=<<EOF
+o~*[4]
+o zip://bins/dex/Hello.apk
+o jar://bins/dex/Hello.apk
+o zip://bins/dex/Hello.apk::999
+o zip://bins/dex/Hello.apk::nonsense
+o~*[4]
+EOF
 EXPECT=<<EOF
-0 classes.dex
+malloc://1
+malloc://1
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ZIP member required: use zip://archive.zip//path or zip://archive.zip::index
+INFO: List files with: rafs2 -t zip -l / archive.zip
+INFO: Use zipall://archive.zip to open all files or zip0://archive.zip to open the first
+ERROR: Cannot open file zip://bins/dex/Hello.apk
+ERROR: ZIP member required: use zip://archive.zip//path or zip://archive.zip::index
+INFO: List files with: rafs2 -t zip -l / archive.zip
+INFO: Use zipall://archive.zip to open all files or zip0://archive.zip to open the first
+ERROR: Cannot open file jar://bins/dex/Hello.apk
+ERROR: Cannot open ZIP member at index '999'
+ERROR: Cannot open file zip://bins/dex/Hello.apk::999
+ERROR: Cannot open ZIP member at index 'nonsense'
+ERROR: Cannot open file zip://bins/dex/Hello.apk::nonsense
+EOF
+RUN
+
+NAME=io-zipall opens archive members
+FILE=zipall://bins/dex/Hello.apk
+CMDS=o~*[4]
+EXPECT=<<EOF
+zip://bins/dex/Hello.apk//classes.dex
 EOF
 RUN
 

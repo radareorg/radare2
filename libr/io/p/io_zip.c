@@ -2,7 +2,6 @@
 
 #include <r_io.h>
 #include <r_lib.h>
-#include <r_cons.h>
 #include <zip.h>
 
 // limits to avoid memory exhaustion with crafted archives (zipbombs)
@@ -498,6 +497,10 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 			*sep++ = 0;
 			ut32 idx_perm = (rw & R_PERM_W)? ZIP_CREATE: ZIP_RDONLY;
 			filename_in_zipfile = r_io_zip_get_by_file_idx (zip_filename, sep, idx_perm, mode, rw);
+			if (!filename_in_zipfile) {
+				R_LOG_ERROR ("Cannot open ZIP member at index '%s'", sep);
+				goto beach;
+			}
 		} else {
 			filename_in_zipfile = strdup (zip_filename);
 			free (zip_filename_alloc);
@@ -509,22 +512,10 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 		}
 	}
 
-	if (!zip_filename) {
-		R_LOG_INFO ("Use: zip:///path/to/archive//filepath or zip:///path/to/archive::[number]");
-	}
-
 	if (!filename_in_zipfile) {
-		RList *files = r_io_zip_get_files (zip_filename, 0, mode, rw);
-		if (files) {
-			ut32 i = 0;
-			char *name;
-			RListIter *iter;
-			r_list_foreach (files, iter, name) {
-				io->cb_printf ("%d %s\n", i, name);
-				i++;
-			}
-			r_list_free (files);
-		}
+		R_LOG_ERROR ("ZIP member required: use zip://archive.zip//path or zip://archive.zip::index");
+		R_LOG_INFO ("List files with: rafs2 -t zip -l / archive.zip");
+		R_LOG_INFO ("Use zipall://archive.zip to open all files or zip0://archive.zip to open the first");
 	} else {
 		ut32 perm = (rw & R_PERM_W)? ZIP_CREATE: ZIP_RDONLY;
 		RIOZipFileObj *zfo = alloc_zipfileobj (zip_filename, filename_in_zipfile, perm, mode, rw);
@@ -550,6 +541,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 			R_LOG_ERROR ("Failed to open the archive %s and file %s", zip_filename, filename_in_zipfile);
 		}
 	}
+beach:
 	free (filename_in_zipfile);
 	free (zip_uri);
 	free (zip_filename_alloc);
