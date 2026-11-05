@@ -382,7 +382,7 @@ static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode) {
 				continue;
 			}
 			r_list_append (list_fds, res);
-			if (r_str_startswith (zip_uri, "zip0://")) {
+			if (r_str_startswith (file, "zip0://")) {
 				break;
 			}
 		}
