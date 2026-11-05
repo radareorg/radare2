@@ -122,6 +122,12 @@ o zip://bins/dex/Hello.apk
 o jar://bins/dex/Hello.apk
 o zip://bins/dex/Hello.apk::999
 o zip://bins/dex/Hello.apk::nonsense
+o zip://bins/dex/Hello.apk::0junk
+o zip://bins/dex/mobipwn-nores.apk::1junk
+o zip://bins/dex/Hello.apk::4294967296
+o zip://bins/dex/Hello.apk::18446744073709551616
+o zip://bins/dex/Hello.apk::-0
+o zip://bins/dex/Hello.apk::+0
 o~*[4]
 EOF
 EXPECT=<<EOF
@@ -141,6 +147,27 @@ ERROR: Cannot open ZIP member at index '999'
 ERROR: Cannot open file zip://bins/dex/Hello.apk::999
 ERROR: Cannot open ZIP member at index 'nonsense'
 ERROR: Cannot open file zip://bins/dex/Hello.apk::nonsense
+ERROR: Cannot open ZIP member at index '0junk'
+ERROR: Cannot open file zip://bins/dex/Hello.apk::0junk
+ERROR: Cannot open ZIP member at index '1junk'
+ERROR: Cannot open file zip://bins/dex/mobipwn-nores.apk::1junk
+ERROR: Cannot open ZIP member at index '4294967296'
+ERROR: Cannot open file zip://bins/dex/Hello.apk::4294967296
+ERROR: Cannot open ZIP member at index '18446744073709551616'
+ERROR: Cannot open file zip://bins/dex/Hello.apk::18446744073709551616
+ERROR: Cannot open ZIP member at index '-0'
+ERROR: Cannot open file zip://bins/dex/Hello.apk::-0
+ERROR: Cannot open ZIP member at index '+0'
+ERROR: Cannot open file zip://bins/dex/Hello.apk::+0
+EOF
+RUN
+
+NAME=io-zip accepts decimal member indices with leading zeros
+FILE=zip://bins/dex/mobipwn-nores.apk::00031
+ARGS=-n
+CMDS=o~*[4]
+EXPECT=<<EOF
+zip://bins/dex/mobipwn-nores.apk//classes.dex
 EOF
 RUN
 
