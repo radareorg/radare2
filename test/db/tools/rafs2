@@ -1,3 +1,56 @@
+NAME=rafs2 -l list ZIP root directory
+FILE=--
+CMDS=!rafs2 -t zip -l / bins/dex/Hello.apk
+EXPECT=<<EOF
+f       1000  classes.dex
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rafs2 -l list implicit ZIP root directory
+FILE=--
+CMDS=!rafs2 -t zip -l / bins/java/example.zip
+EXPECT=<<EOF
+d          0  research_data
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rafs2 -l list nested ZIP directory
+FILE=--
+CMDS=!rafs2 -t zip -l /research_data/experiment/decompiler/dumped_jar_dec bins/java/example.zip
+EXPECT=<<EOF
+f       1263  c.class
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rafs2 -l list ZIP files and directories once
+FILE=--
+CMDS=!rafs2 -t zip -l / bins/dex/org.radare.radare2installer.apk
+EXPECT=<<EOF
+d          0  META-INF
+f       7084  AndroidManifest.xml
+f      26703  LICENSES
+f        945  NOTICE
+f     288780  classes.dex
+d          0  res
+f       3396  resources.arsc
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rafs2 -l list explicit ZIP subdirectories
+FILE=--
+CMDS=!rafs2 -t zip -l /res/ bins/dex/org.radare.radare2installer.apk
+EXPECT=<<EOF
+d          0  drawable
+d          0  layout
+d          0  xml
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=rafs2 -l list FAT root directory
 FILE=--
 CMDS=!rafs2 -t fat -l / bins/fs/fat.img 2>/dev/null
