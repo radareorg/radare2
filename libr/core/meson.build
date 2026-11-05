@@ -102,6 +102,7 @@ r_core_deps = [
 if use_libuv
   r_core_deps += libuv_dep
 endif
+r_core_deps += r_core_additional_deps
 
 r_core = library('r_core', r_core_sources,
   include_directories: r_core_inc,
@@ -143,6 +144,7 @@ r_core_static_deps = [
   r_socket_static_dep,
   r_syscall_static_dep,
   r_util_static_dep,
+  r_core_additional_deps,
 ]
 r_core_static = static_library('r_core_static', r_core_sources,
   include_directories: r_core_inc,

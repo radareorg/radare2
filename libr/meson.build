@@ -4,6 +4,7 @@ user_plugins = get_option('plugins').split(',')
 r_core_sources = []
 r_core_additional_sources = []
 r_core_additional_inc = []
+r_core_additional_deps = []
 core_plugins = []
 
 esil_plugins = [ 'dummy', 'forth', 'null' ]
