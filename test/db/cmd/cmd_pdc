@@ -795,6 +795,7 @@ EXPECT=<<EOF2
 EOF2
 RUN
 
+# re-pinned: pdc forwards help to the pseudo plugin, which owns pd:c and names its rows pd:c
 NAME=pdc help lists all subcommands
 FILE=--
 CMDS=<<EOF
@@ -802,18 +803,19 @@ e pdc.optimize=false
 pdc?
 EOF
 EXPECT=<<EOF
-Usage: pdc[acjlot*]  experimental, unreliable and hacky pseudo-decompiler
-| pdc   pseudo decompile function in current offset
-| pdc*  emit decompiled lines as CCu comment commands
-| pdca  side by side comparing assembly and pseudo
-| pdcc  pseudo-decompile with C helpers around
-| pdcl  linear pseudo-decompilation scrolling across functions
-| pdco  show associated offset next to pseudecompiled output
-| pdcj  in json format for codemeta annotations (used by frontends like iaito)
-| pdct  dump the structuring region AST (decompiler debug)
+Usage: pd:c[acjlot*]  experimental, unreliable and hacky pseudo-decompiler
+| pd:c   pseudo decompile function in current offset
+| pd:c*  emit decompiled lines as CCu comment commands
+| pd:ca  side by side comparing assembly and pseudo
+| pd:cc  pseudo-decompile with C helpers around
+| pd:cl  linear pseudo-decompilation scrolling across functions
+| pd:co  show associated offset next to pseudecompiled output
+| pd:cj  in json format for codemeta annotations (used by frontends like iaito)
+| pd:ct  dump the structuring region AST (decompiler debug)
 EOF
 RUN
 
+# re-pinned: pdc forwards help to the pseudo plugin, which owns pd:c and names its rows pd:c
 NAME=pdc subcommand help prints only the matching row
 FILE=--
 CMDS=<<EOF
@@ -821,7 +823,7 @@ e pdc.optimize=false
 pdcj?
 EOF
 EXPECT=<<EOF
-| pdcj  in json format for codemeta annotations (used by frontends like iaito)
+| pd:cj  in json format for codemeta annotations (used by frontends like iaito)
 EOF
 RUN
 
@@ -2380,24 +2382,43 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pd:c runs the pseudo decompiler, pd:f is not pdf, cmd.pdc naming pseudo does not loop
+NAME=pd:c runs pseudo, pd:f is not pdf, cmd.pdc keeps its mode and cannot loop
 FILE=bins/elf/ls
 CMDS=<<EOF
 af
 pd:c~entry0
 pd:cj~{}~"offset": 23268
 pd:cl 3~entry0~?
+pd:cl 0~entry0~?
 pd:f
 e cmd.pdc=pd:c
 pdc~entry0
 e cmd.pdc=pdc
 pdc~entry0
+e cmd.pdc=pd:cj
+pdc~{}~"offset": 23268
+pdc?
+e cmd.pdc=pd:co
+pdc~entry0
+e cmd.pdc=pdcj
+pdc~{}~"offset": 23268
+e cmd.pdc
+"e cmd.pdc=echo routed;pdc"
+pdc~routed,entry0
 EOF
 EXPECT=<<EOF
 void entry0 (int64_t arg1) {
       "offset": 23268,
 1
+2
 void entry0 (int64_t arg1) {
+void entry0 (int64_t arg1) {
+      "offset": 23268,
+| pd:cj  in json format for codemeta annotations (used by frontends like iaito)
+ 0x00005ae0 | void entry0 (int64_t arg1) {
+      "offset": 23268,
+pdcj
+routed
 void entry0 (int64_t arg1) {
 EOF
 EXPECT_ERR=<<EOF
@@ -2405,15 +2426,19 @@ ERROR: Unknown subcommand
 EOF
 RUN
 
-NAME=pdc routes to the cmd.pdc decompiler, pd:g without r2ghidra prints the install hint
+NAME=pdc routes to the cmd.pdc command, pd:g and its modes print the install hint
 FILE=-
 CMDS=<<EOF
 pd:g
+pd:gj
+pd:g?
 e cmd.pdc=echo routed
 pdc
 pdcj
 pdcj?
 e cmd.pdc=echo pd:c
+pdc
+e cmd.pdc=echo pdc
 pdc
 e cmd.pdc=echo !*
 pdc*
@@ -2425,10 +2450,13 @@ e asm.addr.base
 EOF
 EXPECT=<<EOF
 You need to install the plugin with r2pm -ci r2ghidra
+You need to install the plugin with r2pm -ci r2ghidra
+You need to install the plugin with r2pm -ci r2ghidra
 routed
 routedj
 routedj?
 pd:c
+pdc
 !* -r2
 !* -a
 16

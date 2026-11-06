@@ -7442,14 +7442,13 @@ static int cmd_pd(RCore *core, const char *input, int len, int l, ut8 *block) {
 		} else if (!input[2]) {
 			r_core_cmd0 (core, "pd:?");
 		} else {
-			char *name = r_str_ndup (input, strcspn (input, " @"));
-			const char *fallback_cmd = sdb_const_getf (core->sdb, NULL, "fallbackcmd.p%s", name);
+			// "d:g" is the base key of pd:g, pd:gj and pd:g?
+			const char *fallback_cmd = sdb_const_getf (core->sdb, NULL, "fallbackcmd.p%.3s", input);
 			if (fallback_cmd && r_str_startswith (fallback_cmd, "?e ")) {
 				r_core_cmd0 (core, fallback_cmd);
 			} else {
 				R_LOG_ERROR ("Unknown subcommand");
 			}
-			free (name);
 		}
 		return 0;
 	case ',': // "pd,"
