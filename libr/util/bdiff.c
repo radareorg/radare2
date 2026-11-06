@@ -323,12 +323,12 @@ R_API int r_diff_buffers_delta(RDiff *d, const ut8 *sa, int la, const ut8 *sb, i
 
 			if (d->callback) {
 				/* source file */
-				dop.a_off = offa;
+				dop.a_off = d->off_a + offa;
 				dop.a_buf = (ut8 *)al[la].l;
 				dop.a_len = rlen;
 
 				/* destination file */
-				dop.b_off = offa; // XXX offb not used??
+				dop.b_off = d->off_b + (bl[lb].l - bl->l);
 				dop.b_buf = (ut8 *)bl[lb].l;
 				dop.b_len = len;
 				if (!d->callback (d, d->user, &dop)) {
