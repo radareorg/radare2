@@ -1,3 +1,4 @@
+#include <r_core.h>
 #include <r_io.h>
 #include <r_util.h>
 #include "minunit.h"
@@ -340,6 +341,8 @@ bool test_va_malloc_zero(void) {
 	mu_assert ("should be able to read", ret);
 	mu_test_status = MU_TEST_BROKEN;
 	mu_assert_memeq ((ut8 *)&buf, (ut8 *)"\x00\x00\x00\x00\x00\x00\x00\x00", 8, "0 should be there initially");
+	// a passing broken test must not excuse the next test's first failure
+	mu_test_status = MU_TEST_UNBROKEN;
 	r_io_free (io);
 
 	mu_end;
@@ -470,6 +473,171 @@ bool test_r_io_overlay_write_through(void) {
 	mu_end;
 }
 
+// io_map_new clamps to the desc, r_io_map_resize (oms) does not
+static RIOMap *map_past_desc(RIO *io, int fd, ut64 delta, ut64 addr, ut64 size) {
+	RIOMap *map = r_io_map_add (io, fd, R_PERM_RW, delta, addr, size);
+	return (map && r_io_map_resize (io, map->id, size))? map: NULL;
+}
+
+static const ut8 LAYER_VIEW[8] = { 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17 };
+static const ut8 LAYER_FD[8] = { 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27 };
+
+bool test_r_io_layers_short_write_keeps_the_rest(void) {
+	RIO *io = r_io_new ();
+	io->va = true;
+	RIODesc *desc = r_io_open_nomap (io, "malloc://4", R_PERM_RW, 0644);
+	mu_assert_notnull (desc, "open");
+	mu_assert_notnull (map_past_desc (io, desc->fd, 0, 0x100, 8), "map past the desc");
+	const ut8 old[6] = { 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7 };
+	mu_assert_true (r_io_vwrite_to_overlay_at (io, 0x102, old, sizeof (old)), "overlay");
+	mu_assert_false (r_io_write_layers_at (io, 0x100, LAYER_FD, LAYER_VIEW, 8), "a short write reports failure");
+	ut8 buf[8] = {0};
+	r_io_vread_at (io, 0x100, buf, 8);
+	const ut8 expv[8] = { 0x10, 0x11, 0x12, 0x13, 0xa4, 0xa5, 0xa6, 0xa7 };
+	mu_assert_memeq (buf, expv, 8, "reached bytes show the view, the others keep the overlay");
+	r_io_fd_read_at (io, desc->fd, 0, buf, 4);
+	mu_assert_memeq (buf, LAYER_FD, 4, "the fd took its own bytes");
+	r_io_free (io);
+	mu_end;
+}
+
+bool test_r_io_layers_failed_write_changes_nothing(void) {
+	RIO *io = r_io_new ();
+	io->va = true;
+	RIODesc *desc = r_io_open_nomap (io, "malloc://4", R_PERM_RW, 0644);
+	mu_assert_notnull (r_io_map_add (io, desc->fd, R_PERM_RW, 0, 0x100, 4), "writable map");
+	desc->perm = R_PERM_R; // the plugin write now returns 0
+	const ut8 old[4] = { 0xa0, 0xa1, 0xa2, 0xa3 };
+	mu_assert_true (r_io_vwrite_to_overlay_at (io, 0x100, old, sizeof (old)), "overlay");
+	mu_assert_false (r_io_write_layers_at (io, 0x100, LAYER_FD, LAYER_VIEW, 4), "nothing reached the fd");
+	ut8 buf[4] = {0};
+	r_io_vread_at (io, 0x100, buf, 4);
+	mu_assert_memeq (buf, old, 4, "the overlay keeps every byte");
+	r_io_free (io);
+	mu_end;
+}
+
+bool test_r_io_layers_two_maps_first_reaches_second_fails(void) {
+	RIO *io = r_io_new ();
+	io->va = true;
+	RIODesc *d0 = r_io_open_nomap (io, "malloc://4", R_PERM_RW, 0644);
+	RIODesc *d1 = r_io_open_nomap (io, "malloc://4", R_PERM_RW, 0644);
+	mu_assert_notnull (r_io_map_add (io, d0->fd, R_PERM_RW, 0, 0x100, 4), "first map");
+	mu_assert_notnull (r_io_map_add (io, d1->fd, R_PERM_RW, 0, 0x104, 4), "second map");
+	d1->perm = R_PERM_R;
+	const ut8 old[4] = { 0xa2, 0xa3, 0xa4, 0xa5 };
+	mu_assert_true (r_io_vwrite_to_overlay_at (io, 0x102, old, sizeof (old)), "overlay across both");
+	mu_assert_false (r_io_write_layers_at (io, 0x100, LAYER_FD, LAYER_VIEW, 8), "second map failed");
+	ut8 buf[8] = {0};
+	r_io_vread_at (io, 0x102, buf, 4);
+	const ut8 expv[4] = { 0x12, 0x13, 0xa4, 0xa5 };
+	mu_assert_memeq (buf, expv, 4, "the first map moved on, the second did not");
+	r_io_free (io);
+	mu_end;
+}
+
+bool test_r_io_layers_no_view_byte_where_the_layers_agree(void) {
+	RIO *io = r_io_new ();
+	io->va = true;
+	RIODesc *desc = r_io_open_at (io, "malloc://8", R_PERM_RW, 0644, 0x100);
+	mu_assert_notnull (desc, "open");
+	RIOMap *map = r_io_map_get_at (io, 0x100);
+	const ut8 chunk[1] = { 0xaa };
+	mu_assert_true (r_io_vwrite_to_overlay_at (io, 0x103, chunk, 1), "one byte of overlay");
+	ut8 fd[8], view[8];
+	memcpy (fd, LAYER_FD, 8);
+	memcpy (view, LAYER_FD, 8);
+	view[6] = 0x77;
+	mu_assert_true (r_io_write_layers_at (io, 0x100, fd, view, 8), "write");
+	mu_assert_eq (map->overlay->size, 2, "the old chunk and one new byte, nothing where they agree");
+	r_io_free (io);
+	mu_end;
+}
+
+bool test_r_io_layers_mask_phase_over_two_maps(void) {
+	RIO *io = r_io_new ();
+	io->va = true;
+	RIODesc *d0 = r_io_open_nomap (io, "malloc://8", R_PERM_RW, 0644);
+	mu_assert_notnull (r_io_map_add (io, d0->fd, R_PERM_RW, 0, 0x100, 3), "first map");
+	mu_assert_notnull (r_io_map_add (io, d0->fd, R_PERM_RW, 3, 0x103, 5), "second map");
+	const ut8 old[8] = {0};
+	mu_assert_true (r_io_vwrite_to_overlay_at (io, 0x100, old, 8), "overlay");
+	const ut8 mask[2] = { 0xff, 0x00 };
+	r_io_set_write_mask (io, mask, 2);
+	mu_assert_true (r_io_write_layers_at (io, 0x100, LAYER_FD, LAYER_VIEW, 8), "write");
+	r_io_set_write_mask (io, NULL, 0);
+	ut8 buf[8] = {0};
+	r_io_vread_at (io, 0x100, buf, 8);
+	const ut8 expv[8] = { 0x10, 0, 0x12, 0, 0x14, 0, 0x16, 0 };
+	mu_assert_memeq (buf, expv, 8, "one phase over the whole command");
+	r_io_free (io);
+	mu_end;
+}
+
+bool test_r_io_layers_ordinary_write_mirrors_a_short_write(void) {
+	RIO *io = r_io_new ();
+	io->va = true;
+	RIODesc *desc = r_io_open_nomap (io, "malloc://4", R_PERM_RW, 0644);
+	mu_assert_notnull (map_past_desc (io, desc->fd, 0, 0x100, 8), "map past the desc");
+	const ut8 old[6] = { 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7 };
+	mu_assert_true (r_io_vwrite_to_overlay_at (io, 0x102, old, sizeof (old)), "overlay");
+	mu_assert_false (r_io_write_at (io, 0x100, LAYER_FD, 8), "short");
+	ut8 buf[8] = {0};
+	r_io_vread_at (io, 0x100, buf, 8);
+	const ut8 expv[8] = { 0x20, 0x21, 0x22, 0x23, 0xa4, 0xa5, 0xa6, 0xa7 };
+	mu_assert_memeq (buf, expv, 8, "r_io_write_at: what reached the fd, nothing past it");
+	r_io_free (io);
+	mu_end;
+}
+
+bool test_r_io_layers_gate_answers_for_its_range(void) {
+	RIO *io = r_io_new ();
+	io->va = true;
+	r_io_open_at (io, "malloc://16", R_PERM_RW, 0644, 0x100);
+	mu_assert_false (r_io_bank_overlay_in_range (io, io->bank, 0x100, 16), "no overlay yet");
+	const ut8 chunk[1] = { 0xaa };
+	mu_assert_true (r_io_vwrite_to_overlay_at (io, 0x106, chunk, 1), "one byte of overlay");
+	mu_assert_false (r_io_bank_overlay_in_range (io, io->bank, 0x100, 6), "the same map, before the chunk");
+	mu_assert_false (r_io_bank_overlay_in_range (io, io->bank, 0x107, 9), "the same map, after the chunk");
+	mu_assert_true (r_io_bank_overlay_in_range (io, io->bank, 0x106, 1), "on the chunk");
+	mu_assert_true (r_io_bank_overlay_in_range (io, io->bank, 0x100, 16), "across the chunk");
+	RIODesc *second = r_io_open_nomap (io, "malloc://16", R_PERM_RW, 0644);
+	mu_assert_notnull (r_io_map_add (io, second->fd, R_PERM_RW, 0, 0x200, 16), "second map");
+	mu_assert_true (r_io_vwrite_to_overlay_at (io, 0x208, chunk, 1), "overlay on the second map");
+	mu_assert_false (r_io_bank_overlay_in_range (io, io->bank, 0x1fe, 9), "a block ending before the chunk");
+	mu_assert_true (r_io_bank_overlay_in_range (io, io->bank, 0x1fe, 11), "a block reaching it from before the map");
+	r_io_free (io);
+	mu_end;
+}
+
+bool test_r_io_layers_core_block_follows_the_view(void) {
+	RCore *core = r_core_new ();
+	RIO *io = core->io;
+	io->va = true;
+	r_io_open_at (io, "malloc://8", R_PERM_RW, 0644, 0x100);
+	const ut8 chunk[4] = { 0xa2, 0xa3, 0xa4, 0xa5 };
+	mu_assert_true (r_io_vwrite_to_overlay_at (io, 0x102, chunk, 4), "overlay");
+	r_core_block_size (core, 4);
+	r_core_seek (core, 0x102, true);
+	mu_assert_true (r_core_write_op (core, "01", 'a'), "wo");
+	const ut8 expected[4] = { 0xa3, 0xa4, 0xa5, 0xa6 };
+	mu_assert_memeq (core->block, expected, 4, "core->block is the view after the write");
+	r_core_free (core);
+	mu_end;
+}
+
+bool test_r_io_layers_pa_mode_writes_the_fd(void) {
+	RIO *io = r_io_new ();
+	io->va = false;
+	RIODesc *desc = r_io_open_at (io, "malloc://8", R_PERM_RW, 0644, 0x100);
+	mu_assert_true (r_io_write_layers_at (io, 2, LAYER_FD, LAYER_VIEW, 4), "write");
+	ut8 buf[4] = {0};
+	r_io_fd_read_at (io, desc->fd, 2, buf, 4);
+	mu_assert_memeq (buf, LAYER_FD, 4, "no overlay in physical mode, the fd takes its own bytes");
+	r_io_free (io);
+	mu_end;
+}
+
 bool test_seek_history_mapped(void) {
 	RIO *io = r_io_new ();
 	r_io_undo_enable (io, true, false);
@@ -510,6 +678,15 @@ int all_tests(void) {
 	// mu_run_test(test_r_io_priority2);
 	mu_run_test(test_va_malloc_zero);
 	mu_run_test(test_r_io_overlay_write_through);
+	mu_run_test(test_r_io_layers_short_write_keeps_the_rest);
+	mu_run_test(test_r_io_layers_failed_write_changes_nothing);
+	mu_run_test(test_r_io_layers_two_maps_first_reaches_second_fails);
+	mu_run_test(test_r_io_layers_no_view_byte_where_the_layers_agree);
+	mu_run_test(test_r_io_layers_mask_phase_over_two_maps);
+	mu_run_test(test_r_io_layers_ordinary_write_mirrors_a_short_write);
+	mu_run_test(test_r_io_layers_gate_answers_for_its_range);
+	mu_run_test(test_r_io_layers_core_block_follows_the_view);
+	mu_run_test(test_r_io_layers_pa_mode_writes_the_fd);
 	return tests_passed != tests_run;
 }
 

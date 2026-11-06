@@ -327,14 +327,33 @@ static void write_encrypted_block(RCore *core, const char *algo, const char *key
 		}
 	}
 
+	r_core_block_read (core);
 	RMutaResult res = r_muta_process (core->muta, algo, (const ut8*)core->block, core->blocksize,
 		binkey, keylen, biniv, ivlen, direction);
 
 	if (res.success && res.output) {
-		if (!r_core_write_at (core, core->addr, res.output, res.output_len)) {
+		RMutaResult fdres = {0};
+		const ut8 *fdout = NULL;
+		const int bsz = core->blocksize;
+		ut8 *fdbytes = calloc (1, bsz);
+		bool ok = fdbytes != NULL;
+		if (ok && core_read_fd_layer (core, core->addr, fdbytes, bsz)) {
+			r_log_set_quiet (true);
+			fdres = r_muta_process (core->muta, algo, fdbytes, bsz,
+				binkey, keylen, biniv, ivlen, direction);
+			r_log_set_quiet (r_config_get_b (core->config, "log.quiet"));
+			ok = fdres.success && fdres.output;
+			if (ok && fdres.output_len == res.output_len) {
+				fdout = fdres.output;
+			}
+		}
+		free (fdbytes);
+		if (ok && core_write_layers_at (core, core->addr, fdout, res.output, res.output_len)) {
+			R_LOG_INFO ("Written %d byte(s)", res.output_len);
+		} else {
 			R_LOG_ERROR ("write failed at 0x%08"PFMT64x, core->addr);
 		}
-		R_LOG_INFO ("Written %d byte(s)", res.output_len);
+		r_muta_result_free (&fdres);
 	}
 
 	r_muta_result_free (&res);
@@ -387,22 +406,23 @@ static void write_block_signature(RCore *core, const char *algo, const char *key
 
 static void cmd_write_bits(RCore *core, int set, ut64 val) {
 	ut8 buf[sizeof (ut64)] = { 0 };
+	ut8 fdbytes[sizeof (ut64)] = { 0 };
 	// used to set/unset bit in current address
 	if (!r_io_read_at (core->io, core->addr, buf, sizeof (buf))) {
 		cmd_write_fail (core);
 		return;
 	}
+	const bool layered = core_read_fd_layer (core, core->addr, fdbytes, sizeof (fdbytes));
 	ut64 orig = r_read_le64 (buf);
-	ut64 ret = set? orig | val: orig & ~val;
-	r_write_le64 (buf, ret);
-	if (!r_core_write_at (core, core->addr, buf, sizeof (buf))) {
+	r_write_le64 (buf, set? orig | val: orig & ~val);
+	orig = r_read_le64 (fdbytes);
+	r_write_le64 (fdbytes, set? orig | val: orig & ~val);
+	if (!core_write_layers_at (core, core->addr, layered? fdbytes: NULL, buf, sizeof (buf))) {
 		cmd_write_fail (core);
 	}
 }
 
-static void cmd_write_inc(RCore *core, int size, st64 num) {
-	const bool be = r_config_get_b (core->config, "cfg.bigendian");
-	ut8 *b = core->block;
+static void write_inc_buf(ut8 *b, int size, st64 num, bool be) {
 	switch (size) {
 	case 1:
 		b[0] += num;
@@ -417,7 +437,20 @@ static void cmd_write_inc(RCore *core, int size, st64 num) {
 		r_write_ble64 (b, r_read_ble64 (b, be) + num, be);
 		break;
 	}
-	if (!r_core_write_at (core, core->addr, b, size)) {
+}
+
+static void cmd_write_inc(RCore *core, int size, st64 num) {
+	const bool be = r_config_get_b (core->config, "cfg.bigendian");
+	ut8 view[sizeof (ut64)] = { 0 };
+	ut8 fdbytes[sizeof (ut64)] = { 0 };
+	if (!r_io_read_at (core->io, core->addr, view, size)) {
+		cmd_write_fail (core);
+		return;
+	}
+	const bool layered = core_read_fd_layer (core, core->addr, fdbytes, size);
+	write_inc_buf (view, size, num, be);
+	write_inc_buf (fdbytes, size, num, be);
+	if (!core_write_layers_at (core, core->addr, layered? fdbytes: NULL, view, size)) {
 		cmd_write_fail (core);
 	}
 }

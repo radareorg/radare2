@@ -69,6 +69,8 @@ typedef enum {
 R_IPI bool r_cmd_register_args(RCmd *cmd, const char *name, RCmdCtxCb callback, void *user, RCmdArgFlags flags);
 R_IPI RCmdResult r_cmd_call_result(RCmd *cmd, RCmdContext *parent, const char *input, bool raw);
 R_IPI int r_cmd_call_context(RCmd *cmd, RCmdContext *parent, const char *input, bool raw);
+R_IPI bool core_read_fd_layer(RCore *core, ut64 addr, ut8 *fd, int len);
+R_IPI bool core_write_layers_at(RCore *core, ut64 addr, const ut8 *fd, const ut8 *view, int len);
 
 #ifdef __cplusplus
 }

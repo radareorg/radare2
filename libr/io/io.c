@@ -191,17 +191,20 @@ R_API bool r_io_vread_at(RIO *io, ut64 vaddr, ut8* buf, int len) {
 	return r_io_bank_read_at (io, io->bank, vaddr, buf, len);
 }
 
-R_API bool r_io_vwrite_at(RIO *io, ut64 vaddr, const ut8 *buf, int len) {
-	R_RETURN_VAL_IF_FAIL (io && buf && len > 0, false);
+static bool vwrite_layers_at(RIO *io, ut64 vaddr, const ut8 *fd, const ut8 *view, int len) {
 	if ((UT64_MAX - (len - 1)) < vaddr) {
-		int _len = UT64_MAX - vaddr + 1;
-		len -= _len;
-		if (!r_io_vwrite_at (io, 0ULL, &buf[_len], len)) {
+		const int head = UT64_MAX - vaddr + 1;
+		if (!vwrite_layers_at (io, 0ULL, fd + head, view? view + head: NULL, len - head)) {
 			return false;
 		}
-		len = _len;
+		len = head;
 	}
-	return r_io_bank_write_at (io, io->bank, vaddr, buf, len);
+	return io_bank_write_layers_at (io, io->bank, vaddr, fd, view, len);
+}
+
+R_API bool r_io_vwrite_at(RIO *io, ut64 vaddr, const ut8 *buf, int len) {
+	R_RETURN_VAL_IF_FAIL (io && buf && len > 0, false);
+	return vwrite_layers_at (io, vaddr, buf, NULL, len);
 }
 
 R_API bool r_io_vwrite_to_overlay_at(RIO *io, ut64 vaddr, const ut8 *buf, int len) {
@@ -334,35 +337,64 @@ R_API int r_io_nread_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	return total;
 }
 
-R_API bool r_io_write_at(RIO* io, ut64 addr, const ut8* buf, int len) {
-	R_RETURN_VAL_IF_FAIL (io && buf && len > 0, false);
-	bool ret = false;
-	ut8 *mybuf = (ut8*)buf;
-	if (io->write_mask) {
-		mybuf = r_mem_dup ((void*)buf, len);
+static ut8 *masked_dup(RIO *io, const ut8 *buf, int len) {
+	ut8 *out = r_mem_dup (buf, len);
+	if (out) {
 		int i;
 		for (i = 0; i < len; i++) {
 			// this sucks
-			mybuf[i] &= io->write_mask[i % io->write_mask_len];
+			out[i] &= io->write_mask[i % io->write_mask_len];
 		}
 	}
+	return out;
+}
+
+// the cache holds one layer, so a no-op must leave no patch
+static bool cache_holds(RIO *io, ut64 addr, const ut8 *view, int len) {
+	ut8 *cur = calloc (1, len);
+	if (!cur) {
+		return false;
+	}
+	r_io_read_at (io, addr, cur, len);
+	const bool same = !memcmp (cur, view, len);
+	free (cur);
+	return same;
+}
+
+static bool write_masked_at(RIO *io, ut64 addr, const ut8 *fd, const ut8 *view, int len) {
 	if ((io->cache.mode & R_PERM_X) == R_PERM_X) {
+		if (view && cache_holds (io, addr, view, len)) {
+			return true;
+		}
 		if (io->cache.mode & R_PERM_W) {
-			ret = r_io_cache_write_at (io, addr, mybuf, len);
-		} else {
-			R_LOG_ERROR ("enable io.cache.write");
+			return r_io_cache_write_at (io, addr, view? view: fd, len);
 		}
-	} else {
-		if (io->va) {
-			ret = r_io_vwrite_at (io, addr, mybuf, len);
-		} else {
-			ret = r_io_pwrite_at (io, addr, mybuf, len) > 0; // == len;
-		}
+		R_LOG_ERROR ("enable io.cache.write");
+		return false;
 	}
-	if (buf != mybuf) {
-		free (mybuf);
+	if (io->va) {
+		return vwrite_layers_at (io, addr, fd, view, len);
 	}
+	return r_io_pwrite_at (io, addr, fd, len) > 0; // == len;
+}
+
+// a byte that reached the fd shows view, any other keeps its overlay
+R_API bool r_io_write_layers_at(RIO *io, ut64 addr, const ut8 *fd, const ut8 *view, int len) {
+	R_RETURN_VAL_IF_FAIL (io && fd && len > 0, false);
+	if (!io->write_mask) {
+		return write_masked_at (io, addr, fd, view, len);
+	}
+	ut8 *mfd = masked_dup (io, fd, len);
+	ut8 *mview = view? masked_dup (io, view, len): NULL;
+	const bool ret = mfd && (mview || !view) && write_masked_at (io, addr, mfd, mview, len);
+	free (mfd);
+	free (mview);
 	return ret;
+}
+
+R_API bool r_io_write_at(RIO* io, ut64 addr, const ut8* buf, int len) {
+	R_RETURN_VAL_IF_FAIL (io && buf && len > 0, false);
+	return r_io_write_layers_at (io, addr, buf, NULL, len);
 }
 
 R_API bool r_io_read(RIO* io, ut8* buf, int len) {

@@ -1,0 +1,595 @@
+NAME=wo over an applied reloc transforms the file and the view on their own
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+wox 00 @ sym.main+5!4
+p8 4 @ sym.main+5
+p8 4 @ sym.main+5 @e:io.overlay=false
+wow @ sym.main+5!4
+p8 4 @ sym.main+5 @e:io.overlay=false
+wox ff @ sym.main+5!4
+p8 4 @ sym.main+5
+p8 4 @ sym.main+5 @e:io.overlay=false
+wox ff @ sym.main+5!4
+p8 4 @ sym.main+5
+p8 4 @ sym.main+5 @e:io.overlay=false
+woa 7f @ sym.main+5!4
+p8 4 @ sym.main+5
+p8 4 @ sym.main+5 @e:io.overlay=false
+wos 7f @ sym.main+5!4
+wo4 @ sym.main+3!8
+p8 8 @ sym.main+3
+p8 8 @ sym.main+3 @e:io.overlay=false
+wo4 @ sym.main+3!8
+p8 8 @ sym.main+3
+p8 8 @ sym.main+3 @e:io.overlay=false
+woi @ sym.main+3!8
+p8 8 @ sym.main+3
+p8 8 @ sym.main+3 @e:io.overlay=false
+EOF
+EXPECT=<<EOF
+e7ffffff
+00000000
+00000000
+18000000
+ffffffff
+e7ffffff
+00000000
+667e7e7e
+7f7f7f7f
+ffe7e8e5c35dffff
+0000e8e5c35d0000
+e5e8e7ffffff5dc3
+e5e8000000005dc3
+c35dffffffe7e8e5
+c35d00000000e8e5
+EOF
+RUN
+
+NAME=a fill over an applied reloc is the same in the file and the view
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+wow 90 @ sym.main+5!4
+p8 4 @ sym.main+5
+p8 4 @ sym.main+5 @e:io.overlay=false
+EOF
+EXPECT=<<EOF
+90909090
+90909090
+EOF
+RUN
+
+NAME=wB beside an applied reloc leaves the reloc out of the file
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+wB 0x1 @ sym.main+1
+p8 8 @ sym.main+1
+p8 8 @ sym.main+1 @e:io.overlay=false
+EOF
+EXPECT=<<EOF
+4989e5e8e7ffffff
+4989e5e800000000
+EOF
+RUN
+
+NAME=wi over an applied reloc increments the file and the view on their own
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+wi4+ 1 @ sym.main+5
+p8 4 @ sym.main+5
+p8 4 @ sym.main+5 @e:io.overlay=false
+EOF
+EXPECT=<<EOF
+e8ffffff
+01000000
+EOF
+RUN
+
+NAME=woE and woD over an applied reloc restore the file and the view
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+woE aes-ecb 00112233445566778899aabbccddeeff @ sym.main!16
+woD aes-ecb 00112233445566778899aabbccddeeff @ sym.main!16
+p8 4 @ sym.main+5
+p8 4 @ sym.main+5 @e:io.overlay=false
+EOF
+EXPECT=<<EOF
+e7ffffff
+00000000
+EOF
+RUN
+
+NAME=wo with no overlay in range is an ordinary write
+FILE=malloc://16
+ARGS=-w
+CMDS=<<EOF
+wx 00112233
+wox ff @ 0!4
+p8 4 @ 0
+wo4 @ 0!4
+p8 4 @ 0
+wi1+ 1 @ 0
+wB 0x10 @ 0
+p8 9 @ 0
+omo~?
+EOF
+EXPECT=<<EOF
+ffeeddcc
+ccddeeff
+ddddeeff0000000000
+0
+EOF
+RUN
+
+NAME=wo without write permission changes neither the file nor the view
+FILE=bins/elf/analysis/test.obj
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+wox ff @ sym.main+5!4
+p8 4 @ sym.main+5
+p8 4 @ sym.main+5 @e:io.overlay=false
+woA 7f @ sym.main+5!4
+p8 4 @ sym.main+5
+wB- 0x80 @ sym.main+5
+p8 4 @ sym.main+5
+EOF
+EXPECT=<<EOF
+e7ffffff
+00000000
+e7ffffff
+e7ffffff
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot write. Use `omp`, `io.cache` or reopen the file in rw with `oo+`
+EOF
+RUN
+
+NAME=woD whose layers decode to different lengths still writes
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+w AAAAA @ sym.main
+w AAAAAAA @ sym.main+9
+woa 41 @ sym.main+5!4
+woD base64 00 @ sym.main!16
+p8 9 @ sym.main
+EOF
+EXPECT=<<EOF
+000000000000000000
+EOF
+RUN
+
+NAME=a no-op under io.cache leaves the view and adds no patch
+FILE=bins/elf/analysis/test.obj
+ARGS=-e bin.relocs.apply=true -e io.cache=true
+CMDS=<<EOF
+wox 00 @ sym.main+5!4
+p8 4 @ sym.main+5
+wc~?
+wx e7ffffff @ sym.main+5
+wc~?
+wox ff @ sym.main+5!4
+p8 4 @ sym.main+5
+EOF
+EXPECT=<<EOF
+e7ffffff
+0
+1
+18000000
+EOF
+RUN
+
+NAME=one wo under io.cache is one patch
+FILE=bins/elf/analysis/test.obj
+ARGS=-e bin.relocs.apply=true -e io.cache=true
+CMDS=<<EOF
+woo 01 @ sym.main!8
+wc~?
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=a no-op committed from io.cache leaves the reloc out of the file
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true -e io.cache=true
+CMDS=<<EOF
+wox 00 @ sym.main+5!4
+wci
+p8 4 @ sym.main+5
+p8 4 @ sym.main+5 @e:io.overlay=false
+EOF
+EXPECT=<<EOF
+e7ffffff
+00000000
+EOF
+RUN
+
+NAME=a write mask masks the file and the view on their own
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+wm 0f
+wox ff @ sym.main+5!4
+wm-
+p8 4 @ sym.main+5
+p8 4 @ sym.main+5 @e:io.overlay=false
+EOF
+EXPECT=<<EOF
+08000000
+0f0f0f0f
+EOF
+RUN
+
+NAME=a block running into a map without write permission keeps the view
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+omp 7 r--
+wox 00 @ sym.main+5!11
+p8 4 @ sym.main+5
+p8 4 @ sym.main+5 @e:io.overlay=false
+woi @ 0x08000052!14
+p8 14 @ 0x08000052
+EOF
+EXPECT=<<EOF
+e7ffffff
+00000000
+6f6c6c6548c35dffff48656c6c6f
+EOF
+RUN
+
+NAME=a block running over a gap keeps the view past it
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+woi @ 0x08000073!46
+p8 46 @ 0x08000073
+EOF
+EXPECT=<<EOF
+ffffffffffffffffa80000001c0000001c0000019008070c1b0110780100527a010000000000000014ffffffffff
+EOF
+RUN
+
+NAME=a read-only map on top of a block keeps showing its bytes
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+om 3 0x08000057 2 0x57 r--
+wox ff @ 0x08000055!4
+p8 4 @ 0x08000055
+EOF
+EXPECT=<<EOF
+18000000
+EOF
+RUN
+
+NAME=a transform over a write-only map adds no overlay
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+omo~?
+wox ff @ 0x08000055!0x1e
+omo~?
+EOF
+EXPECT=<<EOF
+5
+5
+EOF
+RUN
+
+NAME=a write mask under io.cache keeps its phase across changed runs
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true -e io.cache=true
+CMDS=<<EOF
+wm 00ff
+woo 01 @ sym.main+1!8
+wm-
+p8 8 @ sym.main+1
+EOF
+EXPECT=<<EOF
+008900e900ff00ff
+EOF
+RUN
+
+NAME=a write mask adds no overlay where the file and the view agree
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+omo~?
+wm ff00
+wox ff @ sym.main+1!8
+wm-
+omo~?
+EOF
+EXPECT=<<EOF
+5
+5
+EOF
+RUN
+
+NAME=a write mask under io.cache counts in what a transform changes
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true -e io.cache=true
+CMDS=<<EOF
+wm ff
+wox 00 @ sym.main+5!4
+wm-
+wc~?
+wm 0f
+wox 00 @ sym.main+5!4
+wm-
+p8 4 @ sym.main+5
+wc~?
+EOF
+EXPECT=<<EOF
+0
+070f0f0f
+1
+EOF
+RUN
+
+NAME=wo evaluates its operand once for the file and the view
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+s sym.main+5
+b 4
+?v 1
+woa +($?+1)
+p8 4
+p8 4 @e:io.overlay=false
+?v 5
+woe $? 0xff 1
+p8 4
+p8 4 @e:io.overlay=false
+EOF
+EXPECT=<<EOF
+0x1
+e9010101
+02020202
+0x5
+05060708
+05060708
+EOF
+RUN
+
+NAME=woE with io.overlay off and a block read before it encrypts the file
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+s sym.main
+b 16
+e io.overlay=false
+woE aes-ecb 00112233445566778899aabbccddeeff
+p8 16
+e io.overlay=true
+omo~?
+EOF
+EXPECT=<<EOF
+ca296bbe4056af15724d67ade984340d
+5
+EOF
+RUN
+
+NAME=io.cache with writes off reports its error once
+FILE=bins/elf/analysis/test.obj
+ARGS=-e bin.relocs.apply=true -e io.cache=true -e io.cache.write=false
+CMDS=<<EOF
+woA 7f @ sym.main!16
+p8 4 @ sym.main+5
+EOF
+EXPECT=<<EOF
+e7ffffff
+EOF
+EXPECT_ERR=<<EOF
+ERROR: enable io.cache.write
+EOF
+RUN
+
+NAME=a cipher over an applied reloc logs once
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+woE serpent-ecb 00112233445566778899aabbccddeeff @ sym.main!16
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+INFO: key_length: 16
+INFO: key_size: 128
+INFO: Written 16 byte(s)
+EOF
+RUN
+
+NAME=woe over an applied reloc logs once
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+woe 1 0xff 1 @ sym.main+5!4
+p8 4 @ sym.main+5
+EOF
+EXPECT=<<EOF
+01020304
+EOF
+EXPECT_ERR=<<EOF
+INFO: from 1 to 255 step 1 size 1
+EOF
+RUN
+
+NAME=a short backing write keeps the overlay for the bytes that did not reach the fd
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+r 0x47
+oms 9 0x1b
+p8 4 @ 0x08000045
+woa 01 @ 0x08000045!4
+p8 4 @ 0x08000045
+p8 4 @ 0x08000045 @e:io.overlay=false
+EOF
+EXPECT=<<EOF
+5b000008
+5c010008
+0101ffff
+EOF
+RUN
+
+NAME=a backing write that reaches nothing keeps the overlay
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+r 0x45
+oms 9 0x1b
+woa 01 @ 0x08000045!4
+p8 4 @ 0x08000045
+p8 4 @ 0x08000045 @e:io.overlay=false
+EOF
+EXPECT=<<EOF
+5b000008
+ffffffff
+EOF
+RUN
+
+NAME=a backing write that reaches everything still keeps the view
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+r 0x100
+oms 9 0x1b
+woa 01 @ 0x08000045!4
+p8 4 @ 0x08000045
+p8 4 @ 0x08000045 @e:io.overlay=false
+EOF
+EXPECT=<<EOF
+5c010109
+01010101
+EOF
+RUN
+
+NAME=a block past UT64_MAX transforms the file and the view on their own
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+omv 9 0
+om 3 0xfffffffffffffffc 4 0x10 rw-
+wox ff @ 0xfffffffffffffffc!12
+p8 12 @ 0xfffffffffffffffc
+p8 12 @ 0xfffffffffffffffc @e:io.overlay=false
+EOF
+EXPECT=<<EOF
+feffc1ffaab7761a40a4ffff
+feffc1ffaab7761a40ffffff
+EOF
+RUN
+
+NAME=a block from an overlay at the top of memory past UT64_MAX
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+omv 9 0xffffffffffffffe5
+om 3 0 4 0x10 rw-
+wox ff @ 0xfffffffffffffffc!8
+p8 8 @ 0xfffffffffffffffc
+p8 8 @ 0xfffffffffffffffc @e:io.overlay=false
+EOF
+EXPECT=<<EOF
+0000a23cfeffc1ff
+ffffa23cfeffc1ff
+EOF
+RUN
+
+NAME=an operand that does not parse reports once and writes nothing
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+s sym.main+5
+b 4
+woa +0x100
+wox z
+woe 1 2 1 3
+p8 4
+p8 4 @e:io.overlay=false
+EOF
+EXPECT=<<EOF
+e7ffffff
+00000000
+EOF
+EXPECT_ERR=<<EOF
+ERROR: 256 doesnt fit in ut8.max
+ERROR: Invalid hexpair string
+INFO: from 1 to 2 step 1 size 3
+ERROR: Invalid word size. Use 1, 2, 4 or 8
+EOF
+RUN
+
+NAME=an operand that does not parse adds no patch under io.cache
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-e bin.relocs.apply=true -e io.cache=true
+CMDS=<<EOF
+wox z @ sym.main!4
+woa +0x100 @ sym.main!4
+wc~?
+wx 55 @ sym.main
+wc~?
+EOF
+EXPECT=<<EOF
+0
+1
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid hexpair string
+ERROR: 256 doesnt fit in ut8.max
+EOF
+RUN
+
+NAME=po prints through the same transform as wo
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-e bin.relocs.apply=true -e hex.header=false
+CMDS=<<EOF
+s sym.main+5
+b 4
+pox ff
+po2
+po4
+EOF
+EXPECT=<<EOF
+0x08000055  1800 0000                                ....
+0x08000055  ffe7 ffff                                ....
+0x08000055  ffff ffe7                                ....
+EOF
+RUN
+
+NAME=a block starting in a gap keeps the reloc out of the file
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+woa 01 @ 0x08000073!0x29
+p8 4 @ 0x08000098
+p8 4 @ 0x08000098 @e:io.overlay=false
+EOF
+EXPECT=<<EOF
+a9000000
+01010101
+EOF
+RUN
+
+NAME=a block starting on a map without overlay keeps the reloc out of the file
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+om 3 0x08000070 8 0x10 rw-
+woa 01 @ 0x08000070!0x2c
+p8 4 @ 0x08000098
+p8 4 @ 0x08000098 @e:io.overlay=false
+EOF
+EXPECT=<<EOF
+a9000000
+01010101
+EOF
+RUN

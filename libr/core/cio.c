@@ -1,6 +1,7 @@
 /* radare2 - LGPL - Copyright 2009-2026 - pancake */
 
 #include "r_core.h"
+#include "r_core_priv.h"
 
 R_API int r_core_setup_debugger(RCore *r, const char *debugbackend, bool attach) {
 	int pid, *p = NULL;
@@ -109,17 +110,13 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 	return true;
 }
 
-R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
-	int i, j;
+// one evaluation of the operand, whatever number of buffers it transforms
+static bool transform_buffers(RCore *core, const char *arg, char op, ut8 *bufs[], int nbufs) {
+	int i, j, b;
 	ut64 len;
 	size_t bsz = core->blocksize;
 	char *str = NULL;
-	ut8 *buf = (ut8 *)malloc (bsz);
-	if (!buf) {
-		return NULL;
-	}
 	bool isnum = false;
-	r_io_read_at (core->io, core->addr, buf, bsz);
 	const char *plus = arg? strchr (arg, '+'): NULL;
 	int numsize = 1;
 	if (plus) {
@@ -131,14 +128,16 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 		arg = r_str_trim_head_ro (plus + 1);
 	}
 	if (op == 'i') { // "woi"
-		int hbs = bsz / 2;
-		int j = bsz - 1;
-		for (i = 0; i < hbs; i++, j--) {
-			ut8 tmp = buf[i];
-			buf[i] = buf[j];
-			buf[j] = tmp;
+		const int hbs = bsz / 2;
+		for (b = 0; b < nbufs; b++) {
+			ut8 *buf = bufs[b];
+			for (i = 0, j = bsz - 1; i < hbs; i++, j--) {
+				ut8 tmp = buf[i];
+				buf[i] = buf[j];
+				buf[j] = tmp;
+			}
 		}
-		return buf;
+		return true;
 	}
 
 	if (op != 'e') {
@@ -213,52 +212,34 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 		if (wordsize < 1) {
 			wordsize = 1;
 		}
-		if (wordsize == 1) {
-			for (i = n = 0; i < bsz; i++, n += step) {
-				buf[i] = (ut8)(n % dif) + from;
-			}
-		} else if (wordsize == 2 || wordsize == 4 || wordsize == 8) {
-			ut64 num = from;
-			for (i = 0; i + wordsize <= bsz; i += wordsize, num += step) {
-				r_write_ble (buf + i, num, false, wordsize * 8);
-			}
-		} else {
+		const bool wide = wordsize == 2 || wordsize == 4 || wordsize == 8;
+		if (wordsize != 1 && !wide) {
 			R_LOG_ERROR ("Invalid word size. Use 1, 2, 4 or 8");
 		}
+		for (b = 0; b < nbufs; b++) {
+			ut8 *buf = bufs[b];
+			if (wordsize == 1) {
+				for (i = n = 0; i < bsz; i++, n += step) {
+					buf[i] = (ut8)(n % dif) + from;
+				}
+			} else if (wide) {
+				ut64 num = from;
+				for (i = 0; i + wordsize <= bsz; i += wordsize, num += step) {
+					r_write_ble (buf + i, num, false, wordsize * 8);
+				}
+			}
+		}
 	} else if (op == '2' || op == '4' || op == '8') { // "wo2" "wo4" "wo8"
-		int inc = op - '0';
-		ut8 tmp;
-		for (i = 0; (i + inc) <= bsz; i += inc) {
-			if (inc == 2) {
-				tmp = buf[i];
-				buf[i] = buf[i+1];
-				buf[i+1] = tmp;
-			} else if (inc == 4) {
-				tmp = buf[i];
-				buf[i] = buf[i+3];
-				buf[i+3] = tmp;
-				tmp = buf[i+1];
-				buf[i+1] = buf[i+2];
-				buf[i+2] = tmp;
-			} else if (inc == 8) {
-				tmp = buf[i];
-				buf[i] = buf[i+7];
-				buf[i+7] = tmp;
-
-				tmp = buf[i+1];
-				buf[i+1] = buf[i+6];
-				buf[i+6] = tmp;
-
-				tmp = buf[i+2];
-				buf[i+2] = buf[i+5];
-				buf[i+5] = tmp;
-
-				tmp = buf[i+3];
-				buf[i+3] = buf[i+4];
-				buf[i+4] = tmp;
-			} else {
-				R_LOG_ERROR ("Invalid inc, use 2, 4 or 8");
-				break;
+		const int inc = op - '0';
+		for (b = 0; b < nbufs; b++) {
+			ut8 *buf = bufs[b];
+			for (i = 0; (i + inc) <= bsz; i += inc) {
+				int lo, hi;
+				for (lo = i, hi = i + inc - 1; lo < hi; lo++, hi--) {
+					const ut8 tmp = buf[lo];
+					buf[lo] = buf[hi];
+					buf[hi] = tmp;
+				}
 			}
 		}
 	} else {
@@ -303,46 +284,88 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 			}
 		}
 		if (str) {
-			for (i = j = 0; i < bsz; i++) {
-				switch (op) {
-				case 'x': buf[i] ^= str[j]; break;
-				case 'a': buf[i] += str[j]; break;
-				case 's': buf[i] -= str[j]; break;
-				case 'm': buf[i] *= str[j]; break;
-				case 'w': buf[i] = str[j]; break;
-				case 'd': {
-					ut8 divisor = str[j];
-					buf[i] = divisor ? (buf[i] / divisor) : 0;
-					break;
-				}
-				case 'r': buf[i] >>= str[j]; break;
-				case 'l': buf[i] <<= str[j]; break;
-				case 'o': buf[i] |= str[j]; break;
-				case 'A': buf[i] &= str[j]; break;
-				}
-				j++;
-				if (j >= len) {
-					j = 0; /* cyclic key */
+			for (b = 0; b < nbufs; b++) {
+				ut8 *buf = bufs[b];
+				for (i = j = 0; i < bsz; i++) {
+					switch (op) {
+					case 'x': buf[i] ^= str[j]; break;
+					case 'a': buf[i] += str[j]; break;
+					case 's': buf[i] -= str[j]; break;
+					case 'm': buf[i] *= str[j]; break;
+					case 'w': buf[i] = str[j]; break;
+					case 'd': {
+						ut8 divisor = str[j];
+						buf[i] = divisor ? (buf[i] / divisor) : 0;
+						break;
+					}
+					case 'r': buf[i] >>= str[j]; break;
+					case 'l': buf[i] <<= str[j]; break;
+					case 'o': buf[i] |= str[j]; break;
+					case 'A': buf[i] &= str[j]; break;
+					}
+					j++;
+					if (j >= len) {
+						j = 0; /* cyclic key */
+					}
 				}
 			}
 		}
 	}
 
 	free (str);
-	return buf;
+	return true;
 beach:
 	free (str);
-	free (buf);
-	return NULL;
+	return false;
+}
+
+R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
+	ut8 *buf = (ut8 *)malloc (core->blocksize);
+	if (!buf) {
+		return NULL;
+	}
+	r_io_read_at (core->io, core->addr, buf, core->blocksize);
+	if (!transform_buffers (core, arg, op, &buf, 1)) {
+		R_FREE (buf);
+	}
+	return buf;
+}
+
+// bytes alone would not do: a live fd can read differently twice
+R_IPI bool core_read_fd_layer(RCore *core, ut64 addr, ut8 *fd, int len) {
+	RIO *io = core->io;
+	if (!r_io_bank_overlay_in_range (io, io->bank, addr, len)) {
+		return false;
+	}
+	const bool overlay = io->overlay;
+	io->overlay = false;
+	r_io_read_at (io, addr, fd, len);
+	io->overlay = overlay;
+	return true;
+}
+
+R_IPI bool core_write_layers_at(RCore *core, ut64 addr, const ut8 *fd, const ut8 *view, int len) {
+	if (!fd) {
+		return r_core_write_at (core, addr, view, len);
+	}
+	const bool ret = r_io_write_layers_at (core->io, addr, fd, view, len);
+	r_core_block_read (core);
+	return ret;
 }
 
 R_API int r_core_write_op(RCore *core, const char *arg, char op) {
-	ut8 *buf = r_core_transform_op (core, arg, op);
-	if (!buf) {
+	const int len = core->blocksize;
+	ut8 *view = calloc (2, len);
+	if (!view) {
 		return false;
 	}
-	int ret = r_core_write_at (core, core->addr, buf, core->blocksize);
-	free (buf);
+	ut8 *fd = view + len;
+	r_io_read_at (core->io, core->addr, view, len);
+	const bool layered = core_read_fd_layer (core, core->addr, fd, len);
+	ut8 *bufs[2] = { view, fd };
+	const bool ret = transform_buffers (core, arg, op, bufs, layered? 2: 1)
+		&& core_write_layers_at (core, core->addr, layered? fd: NULL, view, len);
+	free (view);
 	return ret;
 }
 
