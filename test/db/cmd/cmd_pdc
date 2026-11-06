@@ -2379,3 +2379,59 @@ EXPECT=<<EOF
         v0 = 0 + 1
 EOF
 RUN
+
+NAME=pd:c runs the pseudo decompiler, pd:f is not pdf, cmd.pdc naming pseudo does not loop
+FILE=bins/elf/ls
+CMDS=<<EOF
+af
+pd:c~entry0
+pd:cj~{}~"offset": 23268
+pd:cl 3~entry0~?
+pd:f
+e cmd.pdc=pd:c
+pdc~entry0
+e cmd.pdc=pdc
+pdc~entry0
+EOF
+EXPECT=<<EOF
+void entry0 (int64_t arg1) {
+      "offset": 23268,
+1
+void entry0 (int64_t arg1) {
+void entry0 (int64_t arg1) {
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Unknown subcommand
+EOF
+RUN
+
+NAME=pdc routes to the cmd.pdc decompiler, pd:g without r2ghidra prints the install hint
+FILE=-
+CMDS=<<EOF
+pd:g
+e cmd.pdc=echo routed
+pdc
+pdcj
+pdcj?
+e cmd.pdc=echo pd:c
+pdc
+e cmd.pdc=echo !*
+pdc*
+pdc=
+e asm.addr.base=10
+e cmd.pdc=e asm.addr.base
+pdc
+e asm.addr.base
+EOF
+EXPECT=<<EOF
+You need to install the plugin with r2pm -ci r2ghidra
+routed
+routedj
+routedj?
+pd:c
+!* -r2
+!* -a
+16
+10
+EOF
+RUN

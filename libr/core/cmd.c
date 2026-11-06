@@ -110,6 +110,7 @@ R_API ut8 *r_core_readblock(RCore *core, ut64 size) {
 #include "cmd_print.inc.c"
 #include "r/block.inc.c"
 #include "r/echo.inc.c"
+#include "r/pdc.inc.c"
 #include "cmd_help.inc.c"
 
 #undef R_INCLUDE_BEGIN
@@ -7317,6 +7318,9 @@ R_API void r_core_cmd_init(RCore *core) {
 		}
 		if (!r_core_cmd_echo_init (core->rcmd)) {
 			R_LOG_ERROR ("Cannot register echo commands");
+		}
+		if (!r_core_cmd_pdc_init (core->rcmd)) {
+			R_LOG_ERROR ("Cannot register the pdc router");
 		}
 		if (!r_core_cmd_http_init (core->rcmd)) {
 			R_LOG_ERROR ("Cannot register HTTP commands");

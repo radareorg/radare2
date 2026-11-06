@@ -317,7 +317,7 @@ static RCoreHelpMessage help_msg_pd = {
 	"pD", " N", "disassemble N bytes",
 	"pd", " -N", "disassemble N instructions backwards",
 	"pd", " N", "disassemble N instructions",
-	"pd:", "[cmd]", "run pseudo-decompiler plugin command (pdg is now pd:g, ..)",
+	"pd:", "[cmd]", "run a decompiler plugin (pd:c pseudo, pd:g r2ghidra, ..)",
 	"pd--", " N", "context disassembly of N instructions",
 	"pda", "", "disassemble all possible opcodes (byte per byte)",
 	"pdaj", "", "disassemble all possible opcodes (byte per byte) in JSON",
@@ -7442,7 +7442,14 @@ static int cmd_pd(RCore *core, const char *input, int len, int l, ut8 *block) {
 		} else if (!input[2]) {
 			r_core_cmd0 (core, "pd:?");
 		} else {
-			R_LOG_ERROR ("Unknown subcommand");
+			char *name = r_str_ndup (input, strcspn (input, " @"));
+			const char *fallback_cmd = sdb_const_getf (core->sdb, NULL, "fallbackcmd.p%s", name);
+			if (fallback_cmd && r_str_startswith (fallback_cmd, "?e ")) {
+				r_core_cmd0 (core, fallback_cmd);
+			} else {
+				R_LOG_ERROR ("Unknown subcommand");
+			}
+			free (name);
 		}
 		return 0;
 	case ',': // "pd,"
