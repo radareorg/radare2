@@ -219,6 +219,7 @@ rasm2 -S invalid
 EOF
 EXPECT=<<EOF
 Usage: rasm2 [-ACdDehHLBvw] [-a arch] [-b bits] [-s addr] [-S syntax]
+ -I [dir]     add include directory for -p (repeatable, after source directory)
 .include
 .incbin foo.bin include binary file
 ret
