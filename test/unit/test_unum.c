@@ -229,6 +229,16 @@ bool test_r_num_reference_nesting_limit(void) {
 	mu_end;
 }
 
+bool test_r_num_math_less_greater_equal(void) {
+	mu_assert_eq (r_num_math (num, "2<=2"), 1, "2 <= 2");
+	mu_assert_eq (r_num_math (num, "3<=2"), 0, "3 <= 2");
+	mu_assert_eq (r_num_math (num, "2>=2"), 1, "2 >= 2");
+	mu_assert_eq (r_num_math (num, "3>=4"), 0, "3 >= 4");
+	mu_assert_eq (r_num_math (num, "1<2"), 1, "1 < 2 still works");
+	mu_assert_eq (r_num_math (num, "1<<2"), 4, "1 << 2 still works");
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_num_reference_nesting_limit);
 	mu_run_test (test_r_num_nested_reference_tokens);
@@ -238,6 +248,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_num_between);
 	mu_run_test (test_r_num_math_shifts);
 	mu_run_test (test_r_num_math_rotates);
+	mu_run_test (test_r_num_math_less_greater_equal);
 	mu_run_test (test_r_num_str_len);
 	mu_run_test (test_r_num_str_split);
 	mu_run_test (test_r_num_str_split_list);
