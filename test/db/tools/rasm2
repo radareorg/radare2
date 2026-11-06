@@ -547,8 +547,8 @@ FILE=-
 CMDS=!rasm2 -a x86 -b 32 -p -f bins/other/rasm2/asm/nest.asm
 EXPECT=
 EXPECT_ERR=<<EOF
-WARNING: WARN (line=1)
-ERROR: ERR (line=1)
+WARNING: WARN (line=17)
+ERROR: ERR (line=24)
 EOF
 RUN
 
@@ -1309,10 +1309,12 @@ FILE=--
 CMDS=<<EOF
 rasm2 -p -f scripts/rasm2/nested/main.asm
 rasm2 -p -I scripts/rasm2/nested/child -f scripts/rasm2/nested/main.asm
+rasm2 -p -a arm -b 32 -f scripts/rasm2/nested/immediate.asm
 EOF
 EXPECT=<<EOF
 0102030405
 0102030405
+0100a0e30110a0e301
 EOF
 RUN
 
@@ -1322,5 +1324,16 @@ CMDS=rasm2 -p -f scripts/rasm2/nested/cycle.asm
 EXPECT=
 EXPECT_ERR=<<EOF
 Include nesting limit exceeded
+EOF
+RUN
+
+NAME=rasm2 SPP restores source lines across includes
+FILE=--
+CMDS=rasm2 -p -I scripts/rasm2/nested ".include diagnostics.asm"
+EXPECT=
+EXPECT_ERR=<<EOF
+WARNING: child (line=3)
+WARNING: parent (line=2)
+ERROR: parent (line=3)
 EOF
 RUN

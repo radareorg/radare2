@@ -140,24 +140,21 @@ S_API void lbuf_strcat(SppBuf *dst, char *src) {
 S_API int do_fputs(Output *out, char *str) {
 	SppProc *p = out->proc? out->proc: proc;
 	out->proc = p;
-	int i;
-	int printed = 0;
-	for (i = 0; i <= p->state.ifl; i++) {
-		if (!p->state.echo[i]) {
-			return printed;
+	if (p->filter) {
+		const char *line;
+		for (line = str; *line; line++) {
+			p->state.lineno += *line == '\n';
 		}
 	}
-	if (str[0]) {
-		printed = 1;
+	if (!spp_active (&p->state)) {
+		return 0;
 	}
 	if (p->fputs) {
 		p->fputs (out, str);
-	} else {
-		if (out->fout) {
-			fprintf (out->fout, "%s", str);
-		}
+	} else if (out->fout) {
+		fprintf (out->fout, "%s", str);
 	}
-	return printed;
+	return *str != 0;
 }
 
 S_API void spp_eval(char *buf, Output *out) {
@@ -208,9 +205,7 @@ retry:
 		if (!proc->tag_begin || (proc->tag_begin && ptr == buf)) {
 			*ptr = '\0';
 			ptr = ptr + strlen (proc->tag_pre);
-			if (do_fputs (out, buf)) {
-				printed = 1;
-			}
+			printed |= do_fputs (out, buf);
 			D printf ("==> 0 (%s)\n", ptr);
 		}
 		ptrr = strstr (ptr + strlen (proc->tag_pre), proc->tag_pre);
@@ -218,13 +213,18 @@ retry:
 
 	/* (post) tag */
 	if (!ptr) {
-		if (do_fputs (out, buf)) {
-			printed = 1;
-		}
+		do_fputs (out, buf);
 		return;
 	}
 	ptr2 = strstr (ptr, proc->tag_post);
 	if (ptr2) {
+		int tag_lines = 0;
+		if (proc->filter) {
+			const char *line;
+			for (line = ptr; line < ptr2; line++) {
+				tag_lines += *line == '\n';
+			}
+		}
 		*ptr2 = '\0';
 		if (ptrr) {
 			if (ptrr < ptr2) {
@@ -255,40 +255,23 @@ retry:
 		}
 		if (proc->buf.lbuf && proc->buf.lbuf[0]) {
 			D printf("==> 1 (%s)\n", proc->buf.lbuf);
-			if (ptr) {
-				lbuf_strcat (&proc->buf, buf);
-				if (do_fputs (out, buf)) {
-					printed = 1;
-				}
-				spp_run (ptr, out);
-			} else {
-				lbuf_strcat (&proc->buf, buf);
-				D printf ("=(1)=> spp_run(%s)\n", proc->buf.lbuf);
-				spp_run (proc->buf.lbuf + delta, out);
-				D printf ("=(1)=> spp_run(%s)\n", proc->buf.lbuf);
-			}
+			lbuf_strcat (&proc->buf, buf);
+			do_fputs (out, buf);
+			spp_run (ptr, out);
+			proc->state.lineno += tag_lines;
 			proc->buf.lbuf[0]='\0';
 			proc->buf.lbuf_n = 0;
 		} else {
 			D printf ("==> 2 (%s)\n", ptr);
-			if (ptr) {
-				D printf (" ==> 2.1: run(%s)\n", ptr);
-				spp_run (ptr, out);
-				buf = ptr2 + delta;
-				if (buf[0] == '\n' && printed) {
-					buf++;
-				}
-				D printf (" ==> 2.1: continue(%s)\n", buf);
-				goto retry;
-			} else {
-				if (do_fputs (out, buf)) {
-					printed = 1;
-				}
+			spp_run (ptr, out);
+			proc->state.lineno += tag_lines;
+			buf = ptr2 + delta;
+			if (!proc->filter && buf[0] == '\n' && printed) {
+				buf++;
 			}
+			goto retry;
 		}
-		if (do_fputs (out, buf)) {
-			printed = 1;
-		}
+		do_fputs (out, buf);
 	} else {
 		D printf ("==> 3\n");
 		lbuf_strcat (&proc->buf, ptr);
@@ -393,11 +376,14 @@ static int spp_open_file(const char *file, Output *out) {
 		dir[0] = 0;
 	}
 	const char *saved = p->state.include_dir;
+	int saved_line = p->state.lineno;
+	p->state.lineno = 1;
 	p->state.include_dir = dir;
 	p->state.include_depth++;
 	spp_io (in, out);
 	p->state.include_depth--;
 	p->state.include_dir = saved;
+	p->state.lineno = saved_line;
 	free (dir);
 	fclose (in);
 	return 1;
