@@ -673,6 +673,19 @@ R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 
 typedef int(*Ase)(RAsm *a, RAnalOp *op, const char *buf);
 
+static bool is_hash_comment(const char *line, const char *hash) {
+	if (R_BETWEEN ('0', hash[1], '9') || hash[1] == '-') {
+		return false;
+	}
+	const char *comma = memchr (line, ',', hash - line);
+	if (!comma) {
+		return true;
+	}
+	for (comma++; comma < hash && isspace ((ut8)*comma); comma++) {
+	}
+	return comma != hash;
+}
+
 static char *replace_directives(const char *str) {
 	RStrBuf sb = {0};
 	const char *p = str;
@@ -703,7 +716,7 @@ static char *replace_directives(const char *str) {
 				}
 				continue;
 			}
-			if (*p == ';' || *p == '#') {
+			if (*p == ';' || (*p == '#' && is_hash_comment (line, p))) {
 				comment = p;
 				break;
 			}
@@ -737,12 +750,11 @@ static char *replace_directives(const char *str) {
 			ok = r_strbuf_append_n (&sb, line, directive - line)
 				&& r_strbuf_append (&sb, "<{")
 				&& r_strbuf_append_n (&sb, directive + 1, comment - directive - 1)
-				&& r_strbuf_append (&sb, "}>\n");
+				&& r_strbuf_append (&sb, "}>");
 		} else {
-			ok = r_strbuf_append_n (&sb, line, end - line)
-				&& r_strbuf_append (&sb, "\n");
+			ok = r_strbuf_append_n (&sb, line, end - line);
 		}
-		if (!ok) {
+		if (!ok || (*end && !r_strbuf_append (&sb, "\n"))) {
 			r_strbuf_fini (&sb);
 			return NULL;
 		}
@@ -1306,28 +1318,9 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 				}
 				continue;
 			}
-			/* Comments */
-			{
-				bool likely_comment = true;
-				char *cptr = strchr (ptr_start, ',');
-				ptr = strchr (ptr_start, '#');
-				// a comma is probably not followed by a comment
-				// 8051 often uses #symbol notation as 2nd arg
-				if (cptr && ptr && cptr < ptr) {
-					likely_comment = false;
-					for (cptr += 1; cptr < ptr; cptr += 1) {
-						if (!isspace ((int)*cptr)) {
-							likely_comment = true;
-							break;
-						}
-					}
-				}
-				// # followed by number literal also
-				// isn't likely to be a comment
-				likely_comment = likely_comment && ptr && !R_BETWEEN ('0', ptr[1], '9') && ptr[1] != '-';
-				if (likely_comment) {
-					*ptr = '\0';
-				}
+			ptr = strchr (ptr_start, '#');
+			if (ptr && is_hash_comment (ptr_start, ptr)) {
+				*ptr = '\0';
 			}
 			r_asm_set_pc (a, a->pc + ret);
 			off = a->pc;

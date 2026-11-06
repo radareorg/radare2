@@ -56,6 +56,8 @@ static bool test_equ_long_names(void) {
 static bool test_assembly_delimiters(void) {
 	const char *sources[] = {
 		".byte 1\n.byte 2; .byte 3",
+		".byte 1; .byte 2\n.byte 3",
+		".byte 1; .byte 2; .byte 3",
 		".byte 1\r\n.byte 2\r.byte 3\n",
 		".byte 1,,.byte 2,,.byte 3",
 		".byte 1\n; comment\n.byte 2\n.byte 3\n",
@@ -63,8 +65,9 @@ static bool test_assembly_delimiters(void) {
 	const ut8 expected[] = { 1, 2, 3 };
 	RAsm *a = r_asm_new ();
 	size_t i;
-	for (i = 0; i < R_ARRAY_SIZE (sources); i++) {
-		RAsmCode *code = r_asm_assemble (a, sources[i]);
+	for (i = 0; i < 2 * R_ARRAY_SIZE (sources); i++) {
+		a->use_spp = i >= R_ARRAY_SIZE (sources);
+		RAsmCode *code = r_asm_assemble (a, sources[i % R_ARRAY_SIZE (sources)]);
 		mu_assert_notnull (code, "assemble mixed separators");
 		mu_assert_eq (code->len, sizeof (expected), "all directives emitted");
 		mu_assert_memeq (code->bytes, expected, sizeof (expected), "separator order");
@@ -81,7 +84,12 @@ static bool test_preprocessor_sources(void) {
 		".set\tR2_ASM_TEST\t1 ; enabled\n  .ifeq\tR2_ASM_TEST\t1 # selected\n.byte 1\n.endif ; done\n",
 		".set R2_ASM_TEST .byte 2-1\n.get R2_ASM_TEST\n",
 		".set R2_ASM_TEST 2-1\n.byte .get R2_ASM_TEST\n",
+		".set R2_ASM_TEST 1\n.byte .get R2_ASM_TEST",
 		"; .error comment\n# .error comment\n/*\n.error comment\n*/\n.byte 1\n",
+		".set R2_ASM_TEST 2\n.ifeq\tR2_ASM_TEST\t1\n.byte 2\n.else\n.byte 1\n.endif\n",
+		".set R2_ASM_TEST 2\n.ifeq R2_ASM_TEST    2\n.byte 1\n.else\n.byte 2\n.endif\n",
+		"<{set R2_ASM_TEST 0}><{ifnot R2_ASM_TEST}>\n.byte 1\n<{else}>\n.byte 2\n<{endif}>\n",
+		"<{set R2_ASM_TEST 1}><{switch R2_ASM_TEST}><{case 0}>\n.byte 2\n<{case 1}>\n.byte 1\n<{endswitch}>\n",
 	};
 	RAsm *a = r_asm_new ();
 	a->use_spp = true;
@@ -99,6 +107,13 @@ static bool test_preprocessor_sources(void) {
 	mu_assert_notnull (code, "quoted directives stay literal");
 	mu_assert_eq (code->len, sizeof (expected) - 1, "literal length");
 	mu_assert_memeq (code->bytes, expected, sizeof (expected) - 1, "literal bytes");
+	r_asm_code_free (code);
+	r_asm_set_pc (a, 0);
+	code = r_asm_assemble (a, "label.get:\n.byte 1\n.uint16 label.get\n");
+	const ut8 symbol_bytes[] = { 1, 0, 0 };
+	mu_assert_notnull (code, "dot in a symbol is not a preprocessor directive");
+	mu_assert_eq (code->len, sizeof (symbol_bytes), "symbol length");
+	mu_assert_memeq (code->bytes, symbol_bytes, sizeof (symbol_bytes), "symbol bytes");
 	r_asm_code_free (code);
 	r_sys_setenv ("R2_ASM_TEST", saved);
 	free (saved);
@@ -129,37 +144,6 @@ static bool test_preprocessor_errors(void) {
 		mu_assert_eq (code->bytes[0], 7, "recovery bytes");
 		r_asm_code_free (code);
 	}
-	r_asm_free (a);
-	mu_end;
-}
-
-static bool test_preprocessor_spp_tags(void) {
-	const char *sources[] = {
-		".set R2_ASM_TEST 2\n.ifeq\tR2_ASM_TEST\t1\n.byte 2\n.else\n.byte 1\n.endif\n",
-		".set R2_ASM_TEST 2\n.ifeq R2_ASM_TEST    2\n.byte 1\n.else\n.byte 2\n.endif\n",
-		"<{set R2_ASM_TEST 0}><{ifnot R2_ASM_TEST}>\n.byte 1\n<{else}>\n.byte 2\n<{endif}>\n",
-		"<{set R2_ASM_TEST 1}><{switch R2_ASM_TEST}><{case 0}>\n.byte 2\n<{case 1}>\n.byte 1\n<{endswitch}>\n",
-	};
-	RAsm *a = r_asm_new ();
-	a->use_spp = true;
-	char *saved = r_sys_getenv ("R2_ASM_TEST");
-	size_t i;
-	for (i = 0; i < R_ARRAY_SIZE (sources); i++) {
-		RAsmCode *code = r_asm_assemble (a, sources[i]);
-		mu_assert_notnull (code, "preprocessor tag selection");
-		mu_assert_eq (code->len, 1, "one selected byte");
-		mu_assert_eq (code->bytes[0], 1, "tag selects correct branch");
-		r_asm_code_free (code);
-	}
-	r_asm_set_pc (a, 0);
-	RAsmCode *code = r_asm_assemble (a, "label.get:\n.byte 1\n.uint16 label.get\n");
-	const ut8 expected[] = { 1, 0, 0 };
-	mu_assert_notnull (code, "dot in a symbol is not a preprocessor directive");
-	mu_assert_eq (code->len, sizeof (expected), "symbol length");
-	mu_assert_memeq (code->bytes, expected, sizeof (expected), "symbol bytes");
-	r_asm_code_free (code);
-	r_sys_setenv ("R2_ASM_TEST", saved);
-	free (saved);
 	r_asm_free (a);
 	mu_end;
 }
@@ -204,7 +188,6 @@ int all_tests(void) {
 	mu_run_test (test_preprocessor_sources);
 	mu_run_test (test_preprocessor_errors);
 	mu_run_test (test_preprocessor_nesting);
-	mu_run_test (test_preprocessor_spp_tags);
 	return tests_passed != tests_run;
 }
 

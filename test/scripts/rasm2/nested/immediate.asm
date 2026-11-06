@@ -1,0 +1,4 @@
+.set R2_ASM_IMMEDIATE 1
+mov r0,#.get R2_ASM_IMMEDIATE
+mov r1, #.get R2_ASM_IMMEDIATE
+.byte .get R2_ASM_IMMEDIATE
