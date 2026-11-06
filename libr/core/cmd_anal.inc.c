@@ -1453,15 +1453,15 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 		char *k = r_str_newf ("func.%s.arg.%d", fcn->name, (int)arg_count);
 		const char *o = sdb_const_get (core->anal->sdb_types, k, 0);
 		const char *comma = o? strchr (o, ','): NULL;
-		char *db_type = comma? r_str_ndup (o, comma - o): NULL;
-		char *db_name = comma? strdup (comma + 1): NULL;
+		const char *db_name = NULL;
+		char *db_type = comma? r_type_func_arg_split (o, &db_name): NULL;
 		if (!strstr (var->name, "arg_") || (o && strstr (o, ",arg_"))) {
 			char *type = db_type && strstr (var->type, "arg_")? db_type: var->type;
 			char *v = r_str_newf ("%s,%s", type, var->name);
 			sdb_set (core->anal->sdb_types, k, v, 0);
 			free (v);
 		} else {
-			char *name = db_name? db_name: var->name;
+			const char *name = db_name? db_name: var->name;
 			char *type = strdup (db_type? db_type: var->type);
 			// eprintf ("VARTYPE1 %s %s %c", var->type,db_type, 10);
 			if (var->name && !strstr (var->name, "arg_")) {
@@ -1485,7 +1485,6 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 			free (v);
 			free (type);
 		}
-		free (db_name);
 		free (db_type);
 		free (k);
 		arg_count++;
@@ -5087,16 +5086,14 @@ R_API char *fcnshowr(RAnalFunction *function) {
 	}
 	int i;
 	for (i = 0; i < argc; i++) {
-		const char *value = sdb_const_getf (a->sdb_types, NULL, "func.%s.arg.%d", realname, i);
-		char *type = value? strdup (value): NULL;
+		const char *argname;
+		char *type = func_arg_at (a->sdb_types, realname, i, &argname);
 		if (!type) {
 			continue;
 		}
-		char *comma = strchr (type, ',');
-		if (comma) {
-			*comma = 0;
+		if (argname) {
 			const char *cc_arg = r_reg_alias_getname (a->reg, R_REG_ALIAS_A0 + i);
-			r_strbuf_appendf (sb, "afvr %s %s %s\n", cc_arg, comma + 1, type);
+			r_strbuf_appendf (sb, "afvr %s %s %s\n", cc_arg, argname, type);
 		}
 		free (type);
 	}
@@ -5157,16 +5154,14 @@ static void printfcnjson(RCore *core, RAnalFunction *fcn) {
 	pj_k (pj, "args");
 	pj_a (pj);
 	for (i = 0; i < argc; i++) {
-		const char *value = sdb_const_getf (a->sdb_types, NULL, "func.%s.arg.%d", realname, i);
-		char *arg_i = value? strdup (value): NULL;
+		const char *argname;
+		char *arg_i = func_arg_at (a->sdb_types, realname, i, &argname);
 		if (!arg_i) {
 			continue;
 		}
 		pj_o (pj);
-		char *comma = strchr (arg_i, ',');
-		if (comma) {
-			*comma = 0;
-			pj_ks (pj, "name", comma + 1);
+		if (argname) {
+			pj_ks (pj, "name", argname);
 			pj_ks (pj, "type", arg_i);
 			const char *rn = fcncc? r_anal_cc_argloc (a, fcncc, i, 0, -1): NULL;
 			if (!rn) {

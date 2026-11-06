@@ -1203,16 +1203,57 @@ R_API bool r_type_func_args_count(Sdb *TDB, const char *name, int *argc) {
 	return true;
 }
 
-R_API R_OWNED char *r_type_func_args_type(Sdb *TDB, const char *R_NONNULL func_name, int i) {
-	const char *value = sdb_const_getf (TDB, NULL, "func.%s.arg.%d", trim_lodashes (TDB, func_name), i);
-	char *ret = value? strdup (value): NULL;
-	if (ret) {
-		char *comma = strrchr (ret, ',');
-		if (comma) {
-			*comma = 0;
+// Commas inside brackets or parentheses belong to the parameter's declarator
+static const char *func_arg_separator(const char *row) {
+	const char *separator = NULL;
+	int depth = 0;
+	const char *p;
+	for (p = row; *p; p++) {
+		if (*p == '[' || *p == '(') {
+			depth++;
+		} else if ((*p == ']' || *p == ')') && depth > 0) {
+			depth--;
+		} else if (*p == ',' && !depth) {
+			separator = p;
+		} else if (depth && (*p == '\'' || *p == '"')) {
+			const char quote = *p++;
+			while (*p && *p != quote) {
+				p += (*p == '\\' && p[1])? 2: 1;
+			}
+			if (!*p) {
+				break;
+			}
 		}
 	}
-	return ret;
+	return (separator && !depth)? separator: strrchr (row, ',');
+}
+
+// __foo's recovered rows are not foo's: trim only to a declared prototype
+static const char *func_arg_row(Sdb *TDB, const char *func_name, int i) {
+	const bool trim = r_str_startswith (func_name, "__") && r_type_func_prototype_exist (TDB, func_name);
+	return sdb_const_getf (TDB, NULL, "func.%s.arg.%d", trim? trim_lodashes (TDB, func_name): func_name, i);
+}
+
+// *name points into the returned copy, so freeing the type frees both
+R_API R_OWNED char *r_type_func_arg_split(const char *R_NONNULL row, const char **name) {
+	if (name) {
+		*name = NULL;
+	}
+	R_RETURN_VAL_IF_FAIL (row, NULL);
+	char *type = strdup (row);
+	char *comma = type? (char *)func_arg_separator (type): NULL;
+	if (comma) {
+		*comma = 0;
+		if (name) {
+			*name = comma + 1;
+		}
+	}
+	return type;
+}
+
+R_API R_OWNED char *r_type_func_args_type(Sdb *TDB, const char *R_NONNULL func_name, int i) {
+	const char *value = func_arg_row (TDB, func_name, i);
+	return value? r_type_func_arg_split (value, NULL): NULL;
 }
 
 static const char *const argnames[10] = {
@@ -1221,9 +1262,9 @@ static const char *const argnames[10] = {
 };
 
 R_API const char *r_type_func_args_name(Sdb *TDB, const char *R_NONNULL func_name, int i) {
-	const char *row = sdb_const_getf (TDB, NULL, "func.%s.arg.%d", trim_lodashes (TDB, func_name), i);
+	const char *row = func_arg_row (TDB, func_name, i);
 	if (row) {
-		const char *ret = strrchr (row, ',');
+		const char *ret = func_arg_separator (row);
 		if (ret) {
 			return ret + 1;
 		}
@@ -1236,11 +1277,11 @@ R_API bool r_type_func_is_variadic(Sdb *TDB, const char *R_NONNULL func_name, in
 	if (argc < 1) {
 		return false;
 	}
-	const char *row = sdb_const_getf (TDB, NULL, "func.%s.arg.%d", trim_lodashes (TDB, func_name), argc - 1);
+	const char *row = func_arg_row (TDB, func_name, argc - 1);
 	if (!row) {
 		return false;
 	}
-	const char *comma = strrchr (row, ',');
+	const char *comma = func_arg_separator (row);
 	// Current declarations store "..." in the name; older ones used the type.
 	return comma? !strcmp (comma + 1, "...") || (comma - row == 3 && !strncmp (row, "...", 3)): !strcmp (row, "...");
 }
