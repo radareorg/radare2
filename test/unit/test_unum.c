@@ -229,6 +229,14 @@ bool test_r_num_reference_nesting_limit(void) {
 	mu_end;
 }
 
+bool test_r_num_math_unary_not(void) {
+	mu_assert_eq (r_num_math (num, "~0xff"), 0xffffffffffffff00ULL, "bitwise not of a number");
+	mu_assert_eq (r_num_math (num, "0x1234&~0xf"), 0x1230, "mask with a bitwise not");
+	mu_assert_eq (r_num_math (num, "!5"), 0, "logical not of a number");
+	mu_assert_eq (r_num_math (num, "!0+1"), 2, "logical not binds to its operand");
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_num_reference_nesting_limit);
 	mu_run_test (test_r_num_nested_reference_tokens);
@@ -238,6 +246,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_num_between);
 	mu_run_test (test_r_num_math_shifts);
 	mu_run_test (test_r_num_math_rotates);
+	mu_run_test (test_r_num_math_unary_not);
 	mu_run_test (test_r_num_str_len);
 	mu_run_test (test_r_num_str_split);
 	mu_run_test (test_r_num_str_split_list);
