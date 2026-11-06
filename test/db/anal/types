@@ -1609,6 +1609,268 @@ int,a[N + b[1]]
 EOF
 RUN
 
+# C11 6.7.6.2: bound punctuation stays in the declarator and brackets must balance, 6.4: whitespace only separates tokens
+NAME=td array and function pointer declarators in parameters
+FILE=malloc://16
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx c3c3c3c3c3c3c3c3
+"td int h(int q[','], int y);"
+"td int f(int r[b[1,2]], int y);"
+"td int g(char s[sizeof(*p)], int y);"
+"td int m(int t[(1,2)][c[3,4]], int y);"
+"td int v(int w[\",]\"], ...);"
+"td int e(int n['\'' + ','], int y);"
+"td int b(int d[']',x]);"
+tk func.f.args
+tk func.f.arg.0
+tk func.f.arg.1
+tk func.g.args
+tk func.g.arg.0
+tk func.m.args
+tk func.m.arg.0
+"td int u1(int a[, int y);"
+tk func.u1.args
+"td int u2(int a[[1 + 2], int y);"
+tk func.u2.args
+"td int u3(int a], int y);"
+tk func.u3.args
+"td int u4(void (*cb)(int b]), int y);"
+tk func.u4.args
+"td int u5(int a[(1,2]);"
+tk func.u5.args
+"td int u7(int a[), int y]);"
+tk func.u7.args
+"td int u8(int a][, int y);"
+tk func.u8.args
+"td int u6(int a[1], int y);"
+tk func.u6.args
+"td int s1(int a [2], int y);"
+tk func.s1.arg.0
+tk func.s1.arg.1
+tk func.s1.args
+"td int s2(int a[2] [3], int y);"
+tk func.s2.arg.0
+"td int s3(int a [2] [3], int y);"
+tk func.s3.arg.0
+"td int s4(char *p [' '], struct K k [N + 1]);"
+tk func.s4.arg.0
+tk func.s4.arg.1
+"td int s5(const x[2] [3]);"
+tk func.s5.arg.0
+"td int p1(int (*a)[(1,2)], int y);"
+tk func.p1.arg.0
+tk func.p1.args
+tfj p1
+tfc p1
+tfv p1
+"td int p2(int (*a)(int, char), int y);"
+tk func.p2.args
+tk func.p2.arg.0
+tfc p2
+tfj p2
+tfv p2
+"td int p3(int (*a)[','], int y);"
+tk func.p3.arg.0
+"td int p4(int (*a)(int b[1,2]), int y);"
+tk func.p4.arg.0
+"td int p5(int (*a)(int b[1,2], char c), int y);"
+tk func.p5.arg.0
+"td int p6(int (*a)['['](int, char), int y);"
+tk func.p6.arg.0
+"td int c(double _Complex [4], int _Atomic [5], _Atomic foo [6], double _Complex z [8], int y);"
+tk func.c.args
+tk func.c.arg.0
+tk func.c.arg.1
+tk func.c.arg.2
+tk func.c.arg.3
+af h @ 0
+af f @ 1
+af g @ 2
+af v @ 3
+af e @ 4
+af s1 @ 5
+af p1 @ 6
+af b @ 7
+afs @ 0
+afs @ 1
+afs @ 2
+afs @ 3
+afs @ 4
+afs @ 5
+afs @ 6
+afs @ 7
+afsj @ 6
+EOF
+EXPECT=<<EOF
+2
+int,r[b[1,2]]
+int,y
+2
+char,s[sizeof(*p)]
+2
+int,t[(1,2)][c[3,4]]
+2
+int,a[2]
+int,y
+2
+int,a[2][3]
+int,a[2][3]
+char *,p[' ']
+struct K,k[N + 1]
+const,x[2][3]
+int (*)[(1,2)],a
+2
+{"name":"p1","ret":"int","cc":"cdecl","args":[{"type":"int (*)[(1,2)]","name":"a","size":8,"offset":0,"loc":"stack"},{"type":"int","name":"y","size":4,"offset":8,"loc":"stack"}],"size":12}
+int p1 (int (*)[(1,2)] a, int y);
+0x00000000 int p1 ( // cc:cdecl ret:?
+0x00000000   int (*)[(1,2)] a // stack
+0x00000008   int y // stack
+0x0000000c );
+2
+int (*)(int, char),a
+int p2 (int (*)(int, char) a, int y);
+{"name":"p2","ret":"int","cc":"cdecl","args":[{"type":"int (*)(int, char)","name":"a","size":8,"offset":0,"loc":"stack"},{"type":"int","name":"y","size":4,"offset":8,"loc":"stack"}],"size":12}
+0x00000000 int p2 ( // cc:cdecl ret:?
+0x00000000   int (*)(int, char) a // stack
+0x00000008   int y // stack
+0x0000000c );
+int (*)[','],a
+int (*)(int b[1,2]),a
+int (*)(int b[1,2], char c),a
+int (*)['['](int, char),a
+5
+double,_Complex[4]
+int,_Atomic[5]
+_Atomic,foo[6]
+double _Complex,z[8]
+int h (int q[','], int y);
+int f (int r[b[1,2]], int y);
+int g (char s[sizeof(*p)], int y);
+int v (int w[",]"], ...);
+int e (int n['\'' + ','], int y);
+int s1 (int a[2], int y);
+int p1 (int (*)[(1,2)] a, int y);
+int b (int d[']',x]);
+{"name":"p1","noreturn":false,"ret":"int","callconv":"amd64","argc":2,"args":[{"name":"a","type":"int (*)[(1,2)]","cc":"rdi"},{"name":"y","type":"int","cc":"rsi"}]}
+EOF
+RUN
+
+# C11 6.7.6: function pointers and unnamed arrays are unchanged, members still reject a spaced suffix, malformed rows keep the last-comma split, and types.sdb.txt stores bsearch's callback with a parenthesised comma
+NAME=td function pointers, unnamed arrays, members, unbalanced and nameless rows
+FILE=malloc://16
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx c3c3c3c3
+"td int c1(void (*cb)(int), int y);"
+tk func.c1.args
+tk func.c1.arg.0
+"td int c2(int a[2], void (*cb)(int));"
+tk func.c2.arg.1
+"td int n1(int [4], unsigned int [4], struct K [2], const size_t [3], char * [5], int const [6]);"
+tk func.n1.arg.0
+tk func.n1.arg.1
+tk func.n1.arg.2
+tk func.n1.arg.3
+tk func.n1.arg.4
+tk func.n1.arg.5
+"td int t1(int a[2] b, int y);"
+tk func.t1.arg.0
+"td struct M1 { char a [4]; int y; };"
+tk struct.M1.a
+tk struct.M1.y
+"td int k(int a, int y);"
+tk func.k.arg.0=int,a[1,2
+tk func.k.arg.1=int,b'c,d'
+af k @ 0
+afs @ 0
+tk func.b1=func
+tk func.b1.ret=int
+tk func.b1.args=1
+tk func.b1.arg.0=int,(*c)(const void *,const void *)
+tfc b1
+tfj b1
+af b1 @ 1
+afsj @ 1
+afs @ 1
+tk func.n2=func
+tk func.n2.ret=int
+tk func.n2.args=1
+tk func.n2.arg.0=void*
+tfc n2
+tfj n2
+af n2 @ 2
+afsj @ 2
+af __r1 @ 3
+tk func.__r1.args=1
+tk func.__r1.arg.0=int,x
+tfc __r1
+afsj @ 3
+EOF
+EXPECT=<<EOF
+2
+void (*)(int),cb
+void (*)(int),cb
+int [4],arg0
+unsigned,int[4]
+struct,K[2]
+const,size_t[3]
+char *,[5]
+int,const[6]
+int a[2],b
+int k (int,a[1 2, int,b'c d');
+int b1 (int (*c)(const void *,const void *));
+{"name":"b1","ret":"int","cc":"amd64","ret_reg":"rax","args":[{"type":"int","name":"(*c)(const void *,const void *)","size":4,"offset":0,"loc":"rdi"}],"size":4}
+{"name":"b1","noreturn":false,"ret":"int","callconv":"amd64","argc":1,"args":[{"name":"(*c)(const void *,const void *)","type":"int","cc":"rdi"}]}
+int b1 (int (*c)(const void *,const void *));
+int n2 (void* (null));
+{"name":"n2","ret":"int","cc":"amd64","ret_reg":"rax","args":[{"type":"void*","name":"(null)","size":8,"offset":0,"loc":"rdi"}],"size":8}
+{"name":"n2","noreturn":false,"ret":"int","callconv":"amd64","argc":1,"args":[{}]}
+void __r1 (int x);
+{"name":"__r1","noreturn":false,"ret":null,"callconv":"amd64","argc":1,"args":[{"name":"x","type":"int","cc":"rdi"}]}
+EOF
+RUN
+
+NAME=recovered rows of __foo stay apart from the rows of foo
+FILE=malloc://16
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx c3c3c3
+af __foo @ 0
+tk func.__foo.args=1
+tk func.__foo.arg.0=char,x
+tk func.foo.args=1
+tk func.foo.arg.0=double,y
+tfc __foo
+afsj @ 0
+tfc foo
+af __two @ 1
+tk func.__two.args=2
+tk func.__two.arg.0=char,x
+tk func.__two.arg.1=int,z
+tk func.two.args=1
+tk func.two.arg.0=double,y
+tfc __two
+afsj @ 1
+"td int baz(long q, char *w);"
+af __baz @ 2
+afs @ 2
+"td int dcl(long q);"
+tk func.__dcl.args=1
+tk func.__dcl.arg.0=char,x
+tfc __dcl
+EOF
+EXPECT=<<EOF
+void __foo (char x);
+{"name":"__foo","noreturn":false,"ret":null,"callconv":"amd64","argc":1,"args":[{"name":"x","type":"char","cc":"rdi"}]}
+void foo (double y);
+void __two (char x, int z);
+{"name":"__two","noreturn":false,"ret":null,"callconv":"amd64","argc":2,"args":[{"name":"x","type":"char","cc":"rdi"},{"name":"z","type":"int","cc":"rsi"}]}
+int __baz (long q, char *w);
+void __dcl (long q);
+EOF
+RUN
+
 NAME=td declarators without a literal size split as before
 FILE=malloc://16
 ARGS=-a x86 -b 64
@@ -1626,8 +1888,6 @@ tk func.k2.args
 "td struct K3 { char c[4]; int y; };"
 tk struct.K3.c
 tk struct.K3.y
-"td int k4(int a[[1 + 2], int y);"
-tk func.k4.arg.0
 EOF
 EXPECT=<<EOF
 int,a[4]
@@ -1635,12 +1895,11 @@ char *,b
 int,c[2][3]
 int,d[]
 4
-int,[4]
+int [4],arg0
 int,arg1
 2
 char,0,4
 int,4,0
-int a[[1 +,2]
 EOF
 RUN
 
