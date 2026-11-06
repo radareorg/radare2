@@ -2775,6 +2775,16 @@ typedef struct {
 	char *methflag; // methods flag sym.[class].[method]
 } SymName;
 
+// mach0 names LC_FUNCTION_STARTS entries func.<addr>; thumb entries keep the low bit in the name
+static inline bool is_func_start(const RBinSymbol *symbol, const char *name) {
+	if (!r_str_startswith (name, "func.")) {
+		return false;
+	}
+	char *end = NULL;
+	const ut64 named_addr = strtoull (name + strlen ("func."), &end, 16);
+	return !*end && (named_addr & ~1ULL) == (symbol->vaddr & ~1ULL);
+}
+
 static void set_symbol_flag(RCore *core, RBinSymbol *symbol, const SymName *sn, ut64 addr, const char *display_name, int mode) {
 	const char *fn = sn->nameflag;
 	if (R_STR_ISEMPTY (fn)) {
@@ -2811,7 +2821,9 @@ static void set_symbol_flag(RCore *core, RBinSymbol *symbol, const SymName *sn, 
 	}
 	if (fi) {
 		r_flag_item_set_realname (core->flags, fi, display_name);
-		r_flag_item_set_rawname (core->flags, fi, sn->name);
+		if (!fi->rawname || !is_func_start (symbol, sn->name)) {
+			r_flag_item_set_rawname (core->flags, fi, sn->name);
+		}
 		if (sn->demname) {
 			fi->demangled = true;
 		}

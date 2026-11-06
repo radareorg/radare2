@@ -4766,3 +4766,26 @@ EXPECT=<<EOF
 arg int64_t error @ x21
 EOF
 RUN
+
+NAME=function start symbol keeps a named symbol's rawname and names its own flag otherwise
+FILE=bins/mach0/WheresMyBrowser
+CMDS=<<EOF
+fu sym.WheresMyBrowser.MainTabBarViewController.checkForUpdates.allocator~rawn
+fu sym.func.10000a6b8~rawn
+EOF
+EXPECT=<<EOF
+rawn _$s15WheresMyBrowser24MainTabBarViewControllerC15checkForUpdatesyyFy10Foundation4DataVSg_So13NSURLResponseCSgs5Error_pSgtYbcfU_
+rawn func.10000a6b8
+EOF
+RUN
+
+NAME=function start symbol keeps its own flag without demangling
+FILE=bins/mach0/WheresMyBrowser
+ARGS=-e bin.demangle=false
+CMDS=<<EOF
+fu sym.func.10000fd84~rawn
+EOF
+EXPECT=<<EOF
+rawn func.10000fd84
+EOF
+RUN
