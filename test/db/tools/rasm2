@@ -466,9 +466,79 @@ RUN
 
 NAME=rasm2  SPP include directive
 FILE=-
-CMDS=!rasm2 -a x86 -b 32 -p -f bins/other/rasm2/asm/include.asm
+CMDS=!rasm2 -a x86 -b 32 -p -I . -f bins/other/rasm2/asm/include.asm
 EXPECT=<<EOF
 9083e803bb00000000cd80c3
+EOF
+RUN
+
+NAME=rasm2 SPP includes relative to source directory
+FILE=--
+CMDS=<<EOF
+rasm2 -p -f scripts/rasm2/include.asm
+rasm2 -p -I scripts/rasm2/extra -f scripts/rasm2/include.asm
+cd scripts/rasm2
+rasm2 -p -f include.asm
+cd ../..
+rasm2 -p -f scripts/rasm2/include.asm
+EOF
+EXPECT=<<EOF
+111133
+111133
+111133
+111133
+EOF
+RUN
+
+NAME=rasm2 SPP include search directories
+FILE=--
+CMDS=<<EOF
+rasm2 -p -I scripts/rasm2/extra -I "scripts/rasm2/other includes" -f scripts/rasm2/search.asm
+rasm2 -p -I "scripts/rasm2/other includes" -I scripts/rasm2/extra -f scripts/rasm2/search.asm
+rasm2 -p -I scripts/rasm2/missing -I scripts/rasm2/extra -f scripts/rasm2/search.asm
+rasm2 -p -Iscripts/rasm2/extra '.include extra.asm'
+EOF
+EXPECT=<<EOF
+114433
+115533
+114433
+44
+EOF
+RUN
+
+NAME=rasm2 SPP absolute paths and standard input
+FILE=--
+CMDS=<<EOF
+rasm2 -p -f `pwd`/scripts/rasm2/include.asm
+rasm2 -p -I scripts/rasm2/extra ".include `pwd`/scripts/rasm2/local.asm"
+!rasm2 -p -I scripts/rasm2 -I scripts/rasm2/extra -f - < scripts/rasm2/search.asm
+cd scripts/rasm2/extra
+rasm2 -p -f ../include.asm
+EOF
+EXPECT=<<EOF
+111133
+11
+114433
+111133
+EOF
+RUN
+
+NAME=rasm2 SPP restores include environment
+FILE=--
+CMDS=<<EOF
+env SPP_INCDIR=scripts/rasm2/extra
+rasm2 -p -f scripts/rasm2/include.asm
+env SPP_INCDIR
+rasm2 -p -I "scripts/rasm2/other includes" '.include extra.asm'
+env SPP_INCDIR
+rasm2 -p '.include extra.asm'
+EOF
+EXPECT=<<EOF
+111133
+scripts/rasm2/extra
+55
+scripts/rasm2/extra
+44
 EOF
 RUN
 

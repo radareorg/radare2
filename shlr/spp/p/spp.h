@@ -3,6 +3,8 @@
 #ifndef INCLUDE_P_SPP_H
 #define INCLUDE_P_SPP_H
 
+#include <ctype.h>
+
 #if R2__UNIX__
 #include <unistd.h>
 #endif
@@ -209,23 +211,57 @@ static TAG_CALLBACK(spp_system) {
 }
 
 static TAG_CALLBACK(spp_include) {
-	char *incdir;
 	if (!state->echo[state->ifl]) {
 		return 0;
 	}
-	incdir = getenv("SPP_INCDIR");
-	if (incdir) {
-		char *b = strdup (incdir);
-		char *p = realloc (b, strlen (b) + strlen (buf) + 3);
-		if (p) {
-			b = p;
-			strcat (b, "/");
-			strcat (b, buf);
-			spp_file (b, out);
+	bool absolute = *buf == '/' || (*buf == '\\' && buf[1] == '\\')
+		|| (isalpha ((unsigned char)*buf) && buf[1] == ':' && (buf[2] == '/' || buf[2] == '\\'));
+	char *incdir = r_sys_getenv ("SPP_INCDIR");
+	if (!incdir || absolute) {
+		spp_file (buf, out);
+		free (incdir);
+		return 0;
+	}
+#if R2__WINDOWS__
+	const char separator = ';';
+#else
+	const char separator = ':';
+#endif
+	char *dir = incdir;
+	size_t buflen = strlen (buf);
+	bool found = false;
+	while (dir) {
+		char *next = strchr (dir, separator);
+		if (next) {
+			*next++ = '\0';
 		}
-		free (b);
-	} else {
-		spp_file(buf, out);
+		if (!*dir) {
+			dir = ".";
+		}
+		size_t dirlen = strlen (dir);
+		if (dirlen > SIZE_MAX - buflen - 2) {
+			break;
+		}
+		char *path = malloc (dirlen + buflen + 2);
+		if (!path) {
+			break;
+		}
+		memcpy (path, dir, dirlen);
+		path[dirlen] = '/';
+		memcpy (path + dirlen + 1, buf, buflen + 1);
+		FILE *in = r_sandbox_fopen (path, "r");
+		free (path);
+		if (in) {
+			spp_io (in, out);
+			fclose (in);
+			found = true;
+			break;
+		}
+		dir = next;
+	}
+	free (incdir);
+	if (!found) {
+		fprintf (stderr, "Cannot find '%s'\n", buf);
 	}
 	return 0;
 }

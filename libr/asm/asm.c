@@ -679,9 +679,7 @@ static char *replace_directives_for(char *str, const char *token) {
 	char *q = str;
 	bool changes = false;
 	for (;;) {
-		if (q) {
-			p = strstr (q, token);
-		}
+		p = q? strstr (q, token): NULL;
 		if (p) {
 			char *nl = strchr (p, '\n');
 			if (nl) {

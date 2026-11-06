@@ -27,6 +27,8 @@ typedef struct {
 	RAsm *a;
 	RAnal *anal;
 	RAsmOptions opt;
+	const char *file;
+	RStrBuf include_dirs;
 } RAsmState;
 
 typedef struct {
@@ -88,6 +90,7 @@ static void rasm_free(RAsmState *as) {
 		r_anal_free (as->anal);
 		// r_unref (as->a->config);
 		r_lib_free (as->l);
+		r_strbuf_fini (&as->include_dirs);
 		free (as);
 	}
 }
@@ -350,7 +353,7 @@ static void rasm2_list_parse_plugins(RAsmState *as, const char *arch) {
 static int rasm_show_help(RCons *cons, int v) {
 	if (v < 2) {
 		r_cons_printf (cons, "Usage: rasm2 [-ACdDehHLBvw] [-a arch] [-b bits] [-s addr] [-S syntax]\n"
-		"   [-f file] [-o file] [-F fil:ter] [-i skip] [-l len] 'code'|hex|0101b|-\n");
+		"   [-f file] [-o file] [-F fil:ter] [-I dir] [-i skip] [-l len] 'code'|hex|0101b|-\n");
 	}
 	if (v != 1) {
 		r_cons_printf (cons, " -a [arch]    set architecture to assemble/disassemble (see -L)\n"
@@ -367,6 +370,7 @@ static int rasm_show_help(RCons *cons, int v) {
 		" -h, -hh      show this help, -hh for long\n"
 		" -H ([var])   display variable\n"
 		" -i [len]     ignore/skip N bytes of the input buffer\n"
+		" -I [dir]     add include directory for -p (repeatable, after source directory)\n"
 		" -j           output in json format\n"
 		" -k [kernel]  select operating system (linux, windows, darwin, android, ios, ..)\n"
 		" -l [len]     input/Output length\n"
@@ -676,13 +680,52 @@ static bool print_label(void *user, const void *k, const void *v) {
 	return true;
 }
 
+static RAsmCode *rasm_assemble(RAsmState *as, const char *buf) {
+	if (!as->a->use_spp || (!as->file && !r_strbuf_length (&as->include_dirs))) {
+		return r_asm_assemble (as->a, buf);
+	}
+	char *source = as->file? r_file_abspath (as->file): NULL;
+	if (as->file && !source) {
+		return NULL;
+	}
+	char *dir = source? r_file_dirname (source): r_sys_getdir ();
+	free (source);
+	if (!dir) {
+		return NULL;
+	}
+	RStrBuf dirs = {0};
+	bool ok = r_strbuf_set (&dirs, *dir? dir: R_SYS_DIR);
+	free (dir);
+	if (r_strbuf_length (&as->include_dirs)) {
+		ok &= r_strbuf_appendf (&dirs, R_SYS_ENVSEP "%s", r_strbuf_get (&as->include_dirs));
+	}
+	char *saved_incdir = r_sys_getenv ("SPP_INCDIR");
+	if (R_STR_ISNOTEMPTY (saved_incdir)) {
+		ok &= r_strbuf_appendf (&dirs, R_SYS_ENVSEP "%s", saved_incdir);
+	}
+	RAsmCode *code = NULL;
+	if (ok && !r_sys_setenv ("SPP_INCDIR", r_strbuf_get (&dirs))) {
+		code = r_asm_assemble (as->a, buf);
+		if (r_sys_setenv ("SPP_INCDIR", saved_incdir)) {
+			R_LOG_ERROR ("Cannot restore include directories");
+			r_asm_code_free (code);
+			code = NULL;
+		}
+	} else {
+		R_LOG_ERROR ("Cannot set include directories");
+	}
+	free (saved_incdir);
+	r_strbuf_fini (&dirs);
+	return code;
+}
+
 static bool rasm_asm(RAsmState *as, const char *buf, ut64 offset, ut64 len, int bits, bool hexwords) {
 	int i, j, ret = 0;
 
 	r_asm_set_pc (as->a, offset);
 	as->a->use_spp = as->opt.use_spp;
 
-	RAsmCode *acode = r_asm_assemble (as->a, buf);
+	RAsmCode *acode = rasm_assemble (as, buf);
 	if (!acode) {
 		return false;
 	}
@@ -871,7 +914,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	}
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "a:Ab:Bc:CdDeEf:F:hH:i:jk:l:L@:o:S:pqrs:vwx");
+	r_getopt_init (&opt, argc, argv, "a:Ab:Bc:CdDeEf:F:hH:i:I:jk:l:L@:o:S:pqrs:vwx");
 	if (argc == 2 && !strcmp (argv[1], "-H")) {
 		rasm_show_env (cons, false);
 		goto beach;
@@ -926,6 +969,13 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			break;
 		case 'i':
 			skip = r_num_math (NULL, opt.arg);
+			break;
+		case 'I':
+			if (!r_strbuf_appendf (&as->include_dirs, "%s%s",
+					r_strbuf_length (&as->include_dirs)? R_SYS_ENVSEP: "", opt.arg)) {
+				ret = 1;
+				goto beach;
+			}
 			break;
 		case 'j':
 			as->opt.json = true;
@@ -1109,6 +1159,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 				content = (char *)io_slurp (file, &length);
 			}
 			if (content) {
+				as->file = file;
 				if (length > ST32_MAX) {
 					R_LOG_ERROR ("File %s is too big", file);
 					ret = 1;
@@ -1187,7 +1238,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 				if (hexlen <= 0 || hexlen % 2) {
 					// assemble and get the string back
 					as->a->use_spp = as->opt.use_spp;
-					RAsmCode *acode = r_asm_assemble (as->a, usrstr);
+					RAsmCode *acode = rasm_assemble (as, usrstr);
 					if (!acode) {
 						free (usrstr);
 						ret = 1;

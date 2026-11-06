@@ -91,6 +91,10 @@ spp specific flags:
  -D   define value of variable
 ```
 
+`SPP_INCDIR` (also set by `-I`) accepts an ordered list of include directories,
+separated by colons on Unix or semicolons on Windows. Absolute include paths
+bypass this search. Without `SPP_INCDIR`, includes use the current directory.
+
 Preprocessors
 =============
 

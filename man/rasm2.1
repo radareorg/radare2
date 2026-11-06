@@ -16,6 +16,7 @@
 .Op Fl @ Ar addr
 .Op Fl S Ar syntax
 .Op Fl i Ar len
+.Op Fl I Ar dir
 .Op Fl l Ar len
 .Op Ar code|hex|-
 .Sh DESCRIPTION
@@ -54,6 +55,10 @@ Show long help message including supported assembler directives
 Display variable
 .It Fl i Ar len
 Ignore/skip N bytes from the beginning of the input buffer
+.It Fl I Ar dir
+Add an include search directory for SPP (\-p). May be repeated; directories are
+searched in command-line order after the input file's directory. Relative
+\-I paths are resolved from the current working directory.
 .It Fl j
 Output in json format
 .It Fl k Ar kernel
@@ -70,6 +75,12 @@ Don't load any plugin, same as R2_NOPLUGINS=1 or r2 -N
 Output to file, for example 'rasm2 \-Bf a.asm'
 .It Fl p
 Run SPP over input for assembly
+.Pp
+Relative .include paths are resolved from the directory of the input file
+specified with \-f, or the current directory for standard input and inline code.
+Additional \-I directories and SPP_INCDIR are searched afterward. SPP_INCDIR
+accepts a colon-separated list of directories (semicolon-separated on Windows).
+Absolute include paths are used directly.
 .It Fl q
 Quiet output (handy for -L, -v, ...)
 .It Fl r
