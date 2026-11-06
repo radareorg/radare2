@@ -9,7 +9,7 @@ static inline RNumCalcValue Nsetf(double v) { RNumCalcValue n; n.d = v; n.n =(ut
 // UNUSED static inline RNumCalcValue Naddf(RNumCalcValue n, double v) { n.d += v; n.n += (ut64)v; return n; }
 static inline RNumCalcValue Naddi(RNumCalcValue n, ut64 v) { n.d +=(double)v; n.n += v; return n; }
 static inline RNumCalcValue Nsubi(RNumCalcValue n, ut64 v) { n.d -=(double)v; n.n -= v; return n; }
-static inline RNumCalcValue Nneg(RNumCalcValue n) { n.n = ~n.n; return n; }
+static inline RNumCalcValue Nneg(RNumCalcValue n) { return Nset (~n.n); }
 static inline RNumCalcValue Nor(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n |= v.n; return n; }
 static inline RNumCalcValue Nxor(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n ^= v.n; return n; }
 static inline RNumCalcValue Nlt(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n = n.n < v.n; return n; }
@@ -79,7 +79,7 @@ static inline RNumCalcValue Ndiv(RNumCalcValue n, RNumCalcValue v) {
 	return n;
 }
 
-static inline RNumCalcValue Bnot(RNumCalcValue n) { n.n = !n.n; return n; }
+static inline RNumCalcValue Bnot(RNumCalcValue n) { return Nset (!n.n); }
 static inline RNumCalcValue Bor(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n = n.n || v.n; return n; }
 static inline RNumCalcValue Band(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n = n.n && v.n; return n; }
 static inline RNumCalcValue Bxor(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n = (n.n && !v.n) || (!n.n && v.n); return n; }
@@ -89,7 +89,7 @@ static inline RNumCalcValue Bxnor(RNumCalcValue n, RNumCalcValue v) {
 	return n;
 }
 static inline RNumCalcValue Beq(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n = n.n == v.n; return n; }
-static inline RNumCalcValue Bneq(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n = n.n != v.n; return n; }
+static inline RNumCalcValue Bneq(RNumCalcValue n, RNumCalcValue v) { return Nset (n.n != v.n); }
 
 static RNumCalcValue expr(RNum*, RNumCalc*, int);
 static RNumCalcValue term(RNum*, RNumCalc*, int);
@@ -230,11 +230,9 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 		}
 		return v;
 	case RNCBNOT:
-		get_token (num, nc);
-		return Bnot (expr (num, nc, 1));
+		return Bnot (prim (num, nc, 1));
 	case RNCNEG:
-		get_token (num, nc);
-		return Nneg (expr (num, nc, 1));
+		return Nneg (prim (num, nc, 1));
 	case RNCINC:
 		return Naddi (prim (num, nc, 1), 1);
 	case RNCDEC:
@@ -380,12 +378,6 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 		}
 		cin_putback (num, nc, c);
 		return nc->curr_tok = (RNumCalcToken) ch;
-	case '~': // negate hack
-		if (cin_get (num, nc, &c) && c == '-') {
-			return nc->curr_tok = RNCNEG;
-		}
-		cin_putback (num, nc, c);
-		return nc->curr_tok = (RNumCalcToken) ch;
 	case '-': // negative number
 		if (cin_get (num, nc, &c) && c == '-') {
 			return nc->curr_tok = RNCDEC;
@@ -447,6 +439,7 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 		}
 		cin_putback (num, nc, c);
 		return nc->curr_tok = RNCBNOT;
+	case '~':
 	case '*':
 	case '%':
 	case '/':
