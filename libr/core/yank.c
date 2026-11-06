@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2026 - pancake & dso */
 
 #include <r_core.h>
+#include <r_core_priv.h>
 
 R_API bool r_core_yank_set(RCore *core, ut64 addr, const ut8 *buf, ut32 len) {
 	R_RETURN_VAL_IF_FAIL (core && (buf || !len), false);
@@ -13,6 +14,9 @@ R_API bool r_core_yank_set(RCore *core, ut64 addr, const ut8 *buf, ut32 len) {
 
 R_API bool r_core_yank(RCore *core, ut64 addr, ut32 len) {
 	R_RETURN_VAL_IF_FAIL (core, false);
+	if (!core_check_readable (core, addr, len)) {
+		return false;
+	}
 	ut8 *buf = len? malloc (len): NULL;
 	if (buf) {
 		r_io_read_at (core->io, addr, buf, len);
