@@ -294,6 +294,9 @@ static void disasm_diff(RadiffOptions *ro, RDiffOp *op) {
 		return;
 	}
 	RDiffOp expanded = *op;
+	// the disassembler works on buffer offsets
+	expanded.a_off -= ro->disasm_a.offset;
+	expanded.b_off -= ro->disasm_b.offset;
 	disasm_range (ro, &ro->disasm_a, &expanded.a_off, &expanded.a_len);
 	disasm_range (ro, &ro->disasm_b, &expanded.b_off, &expanded.b_len);
 	RDiffOp *pending = &ro->disasm_pending;
@@ -356,27 +359,23 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 		if (ro->disasm) {
 			R_LOG_WARN ("r2cmds (-r) + disasm (-D) is not yet implemented");
 		}
-		if (op->a_len == op->b_len) {
+		// address in A after the bytes inserted or removed so far
+		const ut64 addr = op->a_off + ro->delta + ro->baddr;
+		if (op->a_len != op->b_len) {
+			if (op->a_len > 0) {
+				printf ("r-%d @ 0x%08" PFMT64x "\n", op->a_len, addr);
+			}
+			if (op->b_len > 0) {
+				printf ("r+%d @ 0x%08" PFMT64x "\n", op->b_len, addr);
+			}
+			ro->delta += (int)op->b_len - (int)op->a_len;
+		}
+		if (op->b_len > 0) {
 			printf ("wx ");
 			for (i = 0; i < op->b_len; i++) {
 				printf ("%02x", op->b_buf[i]);
 			}
-			printf (" @ 0x%08" PFMT64x "\n", op->b_off + ro->baddr);
-		} else {
-			if (op->a_len > 0) {
-				printf ("r-%d @ 0x%08" PFMT64x "\n",
-					op->a_len, op->a_off + ro->delta + ro->baddr);
-			}
-			if (op->b_len > 0) {
-				printf ("r+%d @ 0x%08" PFMT64x "\n",
-					op->b_len, op->b_off + ro->delta + ro->baddr);
-				printf ("wx ");
-				for (i = 0; i < op->b_len; i++) {
-					printf ("%02x", op->b_buf[i]);
-				}
-				printf (" @ 0x%08" PFMT64x "\n", op->b_off + ro->delta + ro->baddr);
-			}
-			ro->delta += (op->b_off - op->a_off);
+			printf (" @ 0x%08" PFMT64x "\n", addr);
 		}
 		return 1;
 	case 'j':
@@ -535,7 +534,7 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 		print_bytes (&remain_size, sizeof (remain_size), true);
 	}
 	print_bytes (op->b_buf, op->b_len, false);
-	ro->gdiff_start = op->b_off + op->b_len;
+	ro->gdiff_start = op->a_off + op->a_len;
 	return 0;
 }
 
@@ -1792,7 +1791,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 
 	switch (ro.mode) {
 	case MODE_XPATCH:
-		d = r_diff_new ();
+		d = r_diff_new_from (ro.offset_a, ro.offset_b);
 		r_diff_set_delta (d, delta);
 		r_cons_printf (ro.cons, "--- %s\n", ro.file);
 		r_cons_printf (ro.cons, "+++ %s\n", ro.file2);
@@ -1819,7 +1818,8 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 	case MODE_DIFF_METHODS:
 	case MODE_DIFF_CLASSES:
 	case MODE_DIFF_IMPORTS:
-		d = r_diff_new ();
+		// only the raw byte diff works on the -o slices
+		d = (ro.mode == MODE_DIFF)? r_diff_new_from (ro.offset_a, ro.offset_b): r_diff_new ();
 		r_diff_set_delta (d, delta);
 		if (ro.diffmode == 'j') {
 			pj_o (ro.pj);

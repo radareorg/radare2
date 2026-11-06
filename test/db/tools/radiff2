@@ -77,6 +77,60 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=radiff2 -o reports file offsets
+FILE=-
+CMDS=<<EOF
+!radiff2 -q -o 4 hex://68656c6c6f20776f726c64 hex://68786c6c6f207778726c64
+!radiff2 -r -o 4 hex://68656c6c6f20776f726c64 hex://68786c6c6f207778726c64
+!radiff2 -o 2:4 hex://585868656c6c6f20776f726c64 hex://5959595968656c6c6f207778726c64
+!radiff2 -r -o 2:4 hex://585868656c6c6f20776f726c64 hex://5959595968656c6c6f207778726c64
+!radiff2 -q -iz -o 4 bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
+EOF
+EXPECT=<<EOF
+0x00000007 6f => 78 0x00000007
+wx 78 @ 0x00000007
+0x00000009 6f => 78 0x0000000b
+wx 78 @ 0x00000009
+0x00000000 48656c6c => 41414141 0x00000000
+EOF
+RUN
+
+NAME=radiff2 -d -r -o script patches the first file
+FILE=malloc://11
+CMDS=<<EOF
+wx 585861610a62620a63630a
+e io.va=false
+.!radiff2 -d -r -o 2:4 hex://585861610a62620a63630a hex://5959595961610a4e45570a62620a43430a
+p8 15
+EOF
+EXPECT=<<EOF
+585861610a4e45570a62620a43430a
+EOF
+RUN
+
+NAME=radiff2 -d -D -o disassembles from both offsets
+FILE=-
+CMDS=<<EOF
+!radiff2 -dqD -a x86 -b 64 -o 2:4 hex://585890 hex://59595959c3
+EOF
+EXPECT=<<EOF
+--- 0x00000002  90
+- 0x00000002  nop
++++ 0x00000004  c3
++ 0x00000004  ret
+EOF
+RUN
+
+NAME=radiff2 -f bdiff -o copies from the first file
+FILE=-
+CMDS=<<EOF
+!radiff2 -f bdiff -o 2:4 hex://5858616263 hex://59595959786279 | rax2 -S
+EOF
+EXPECT=<<EOF
+d1ffd1ff04f90000020178f9000301017900
+EOF
+RUN
+
 NAME=radiff2 unified string context
 FILE=-
 CMDS=<<EOF
