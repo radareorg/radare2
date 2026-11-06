@@ -5308,8 +5308,10 @@ static ut64 get_phdr_symtab_count(ELFOBJ *eo) {
 }
 
 static ut64 get_phdr_symtab_upper_bound(ELFOBJ *eo, ut64 addr_sym_table) {
-	ut64 bound = eo->size;
 	const RBinElfDynamicInfo *di = &eo->dyn_info;
+	ut64 off, loaded = 0;
+	backing_at (eo, di->dt_symtab, &off, &loaded);
+	ut64 bound = addr_sym_table + loaded;
 	// with no exact count the symtab ends where the next table starts
 	const ut64 vsym = eo->version_info[DT_VERSIONTAGIDX (DT_VERSYM)];
 	const Elf_(Addr) table_vaddrs[] = {
@@ -5345,16 +5347,12 @@ static RVecRBinElfSymbol* load_symbols_from_phdr(ELFOBJ *eo, int type) {
 		return NULL;
 	}
 	const RBinElfDynamicInfo *di = &eo->dyn_info;
-	if (di->dt_symtab == R_BIN_ELF_ADDR_MAX || !di->dt_syment) {
+	if (di->dt_symtab == R_BIN_ELF_ADDR_MAX) {
 		return NULL;
 	}
 
 	ut64 addr_sym_table = Elf_(v2p) (eo, di->dt_symtab);
 	if (addr_sym_table == UT64_MAX) {
-		return NULL;
-	}
-	const ut32 sym_size = di->dt_syment;
-	if (!sym_size) {
 		return NULL;
 	}
 
@@ -5365,7 +5363,8 @@ static RVecRBinElfSymbol* load_symbols_from_phdr(ELFOBJ *eo, int type) {
 
 	// Stop at the next table boundary so the phdr fallback does not decode
 	// adjacent dynamic metadata as synthetic dynsym entries.
-	int nsym = (symtab_end - addr_sym_table) / sym_size;
+	// the class fixes the entry size, a DT_SYMENT that differs is malformed
+	int nsym = (symtab_end - addr_sym_table) / sizeof (Elf_(Sym));
 	const ut64 nexact = get_phdr_symtab_count (eo);
 	if (nexact && nexact < (ut64)nsym) {
 		nsym = (int)nexact;
