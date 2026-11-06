@@ -13,3 +13,98 @@ EXPECT=<<EOF
 __fentry__
 EOF
 RUN
+
+NAME=ir still patches under cfg.debug with no debug target
+FILE=bins/elf/arg
+ARGS=-e bin.relocs.apply=true -e dbg.backend=esil -e cfg.debug=true
+CMDS=<<EOF
+ir~?
+om~got.r2~?
+EOF
+EXPECT=<<EOF
+16
+1
+EOF
+RUN
+
+NAME=ir in a debug session lists a file's relocs but does not patch it
+FILE=/bin/true
+ARGS=-d -e bin.relocs.apply=true
+REQUIRE=linux
+CMDS=<<EOF
+irj
+oba 0x100000 bins/elf/elf_one_symbol_shdr
+ir~?
+o bins/elf/lab2
+ir~?
+f~reloc.~?
+o bins/elf/arg
+ir~?
+om~got.r2~?
+ir*~wv8~?
+dk 9
+EOF
+EXPECT=<<EOF
+[]
+6
+10
+7
+16
+0
+0
+EOF
+RUN
+
+NAME=ir under bin.cache does not turn on io.cache in a debug session
+FILE=/bin/true
+ARGS=-d -e bin.relocs.apply=false -e bin.cache=true
+REQUIRE=linux
+CMDS=<<EOF
+o bins/elf/lab2
+ir~?
+o bins/elf/arg
+om~got.r2~?
+e io.cache
+dk 9
+EOF
+EXPECT=<<EOF
+10
+0
+false
+EOF
+RUN
+
+NAME=ir does not patch once a debug target is opened later
+FILE=-
+ARGS=-e bin.relocs.apply=true
+REQUIRE=linux
+CMDS=<<EOF
+o dbg:///bin/true
+e cfg.debug
+o bins/elf/arg
+ir~?
+om~got.r2~?
+dk 9
+EOF
+EXPECT=<<EOF
+false
+16
+0
+EOF
+RUN
+
+NAME=ir with relocs off lists the same rows in a debug session
+FILE=/bin/true
+ARGS=-d -e bin.relocs.apply=false
+REQUIRE=linux
+CMDS=<<EOF
+o bins/elf/lab2
+ir~?
+f~reloc.~?
+dk 9
+EOF
+EXPECT=<<EOF
+10
+7
+EOF
+RUN
