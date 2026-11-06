@@ -160,7 +160,8 @@ main:
 # call in egg->lang.mode 0
   ldr r0, [sp, 4]
   bl printf
-  add sp, fp, 32
+  mov sp, fp
+  sub sp, sp, 4
   pop {fp,pc}
 
 
@@ -188,7 +189,7 @@ main:
 # call in egg->lang.mode 0
   ldr r0, [sp, 4]
   bl printf
-  add sp, fp, 32
+  sub sp, fp, 4
   pop {fp,pc}
 
 
@@ -253,7 +254,8 @@ main:
   ldr r1, [sp, 12]
   ldr r0, [sp, 20]
   bl printf
-  add sp, fp, 192
+  mov sp, fp
+  sub sp, sp, 4
   pop {fp,pc}
 
 
@@ -289,7 +291,7 @@ main:
   ldr r1, [sp, 12]
   ldr r0, [sp, 20]
   bl printf
-  add sp, fp, 192
+  sub sp, fp, 4
   pop {fp,pc}
 
 
@@ -320,7 +322,8 @@ main:
   ldr r9, [sp, 72]
   add r9, r1
   str r9, [sp, 72]
-  add sp, fp, 192
+  mov sp, fp
+  sub sp, sp, 4
   pop {fp,pc}
 
 
@@ -347,7 +350,8 @@ main:
   mov r1, r0
   mov r9, r1
   str r9, [sp, 72]
-  add sp, fp, 192
+  mov sp, fp
+  sub sp, sp, 4
   pop {fp,pc}
 
 
@@ -367,7 +371,8 @@ main:
 # rcc_fun 1 (.var0)
   ldr r12, [sp, 68]
   blx r12
-  add sp, fp, 192
+  mov sp, fp
+  sub sp, sp, 4
   pop {fp,pc}
 
 
@@ -390,7 +395,8 @@ main:
   ldr r0, [sp, 12]
   ldr r12, [sp, 68]
   blx r12
-  add sp, fp, 192
+  mov sp, fp
+  sub sp, sp, 4
   pop {fp,pc}
 
 
@@ -419,7 +425,8 @@ main:
   ldr r9, [sp, 68]
   sdiv r9, r9, r1
   str r9, [sp, 68]
-  add sp, fp, 192
+  mov sp, fp
+  sub sp, sp, 4
   pop {fp,pc}
 
 
@@ -448,10 +455,126 @@ main:
   ldr r9, [sp, 68]
   mul r9, r9, r1
   str r9, [sp, 68]
-  add sp, fp, 192
+  mov sp, fp
+  sub sp, sp, 4
   pop {fp,pc}
 
 
+EOF
+RUN
+
+NAME=ragg2 issue25590 arm thumb nonzero-frame return restores sp fp pc (ESIL)
+FILE=malloc://256
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+aei
+aeim
+aer lr=0x8005
+aer fp=0xdeadbeef
+aer sp=0x177ff0
+s 0
+wa+ push {fp,lr}
+wa+ add fp, sp, 4
+wa+ sub sp, sp, 32
+wa+ mov sp, fp
+wa+ sub sp, sp, 4
+wa+ pop {fp,pc}
+s 0
+aepc 0
+6aes
+aer sp
+aer fp
+aer pc
+EOF
+EXPECT=<<EOF
+0x00177ff0
+0xdeadbeef
+0x00008004
+EOF
+RUN
+
+NAME=ragg2 issue25590 arm thumb zero-frame return restores sp fp pc (ESIL)
+FILE=malloc://256
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+aei
+aeim
+aer lr=0x8005
+aer fp=0xdeadbeef
+aer sp=0x177ff0
+s 0
+wa+ push {fp,lr}
+wa+ pop {fp,pc}
+s 0
+aepc 0
+2aes
+aer sp
+aer fp
+aer pc
+EOF
+EXPECT=<<EOF
+0x00177ff0
+0xdeadbeef
+0x00008004
+EOF
+RUN
+
+NAME=ragg2 issue25590 arm32 nonzero-frame return restores sp fp pc (ESIL)
+FILE=malloc://256
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+aei
+aeim
+aer lr=0x8004
+aer fp=0xdeadbeef
+aer sp=0x177ff0
+s 0
+wa+ push {fp,lr}
+wa+ add fp, sp, 4
+wa+ sub sp, sp, 32
+wa+ sub sp, fp, 4
+wa+ pop {fp,pc}
+s 0
+aepc 0
+5aes
+aer sp
+aer fp
+aer pc
+EOF
+EXPECT=<<EOF
+0x00177ff0
+0xdeadbeef
+0x00008004
+EOF
+RUN
+
+NAME=ragg2 issue25590 arm32 zero-frame return restores sp fp pc (ESIL)
+FILE=malloc://256
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+aei
+aeim
+aer lr=0x8004
+aer fp=0xdeadbeef
+aer sp=0x177ff0
+s 0
+wa+ push {fp,lr}
+wa+ pop {fp,pc}
+s 0
+aepc 0
+2aes
+aer sp
+aer fp
+aer pc
+EOF
+EXPECT=<<EOF
+0x00177ff0
+0xdeadbeef
+0x00008004
 EOF
 RUN
 

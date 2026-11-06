@@ -141,7 +141,14 @@ static void emit_frame(REgg *egg, int sz) {
 
 static void emit_frame_end(REgg *egg, int sz, int ctx) {
 	if (sz > 0) {
-		r_egg_printf (egg, "  add sp, fp, %d\n", sz);
+		// restore sp onto the saved {fp,lr} (fp = entry sp - 4). Thumb-2 cannot encode
+		// `sub sp, fp, #imm` (sub-immediate requires sp as the operand), so route via sp.
+		if (egg->bits == 16) {
+			r_egg_printf (egg, "  mov sp, fp\n");
+			r_egg_printf (egg, "  sub sp, sp, 4\n");
+		} else {
+			r_egg_printf (egg, "  sub sp, fp, 4\n");
+		}
 	}
 	if (ctx > 0) {
 		r_egg_printf (egg, "  pop {fp,pc}\n");
