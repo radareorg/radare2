@@ -1387,7 +1387,8 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 	}
 	case EM_ARM:
 	{
-		if (iob->read_at (iob->io, P, buf, 4) != 4) {
+		const int read_size = (rel->type == R_ARM_THM_PC11 || rel->type == R_ARM_THM_PC9)? 2: 4;
+		if (iob->read_at (iob->io, P, buf, read_size) != read_size) {
 			return;
 		}
 		const st64 addend = arm_rel_addend (bo, rel, buf);
