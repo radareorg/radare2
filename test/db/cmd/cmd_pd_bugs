@@ -470,7 +470,7 @@ FILE=bins/elf/analysis/ls-alxchk
 CMDS=pd 1 @ 0x3520
 EXPECT=<<EOF
             ;-- fwrite_unlocked:
-            0x00003520      ff253abe0100   jmp qword [reloc.fwrite_unlocked] ; [0x1f360:8]=0x3526
+            0x00003520      ff253abe0100   jmp qword [reloc.fwrite_unlocked] ; [0x1f360:8]=0x21830
 EOF
 RUN
 

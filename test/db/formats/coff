@@ -32,31 +32,31 @@ EOF
 EXPECT=<<EOF
 nth vaddr      bind type lib name
 ---------------------------------
-0   ---------- NONE FUNC     __TIFFmalloc
-1   ---------- NONE FUNC     __TIFFrealloc
-2   ---------- NONE FUNC     __TIFFmemset
-3   ---------- NONE FUNC     __TIFFmemcpy
-4   ---------- NONE FUNC     __TIFFfree
-5   ---------- NONE FUNC     _TIFFFindField
-6   ---------- NONE FUNC     _TIFFFieldWithTag
-7   ---------- NONE FUNC     _TIFFReadDirectory
-8   ---------- NONE FUNC     _TIFFErrorExt
-9   ---------- NONE FUNC     _TIFFWarningExt
-10  ---------- NONE FUNC     _TIFFSwabShort
-11  ---------- NONE FUNC     _TIFFSwabLong
-12  ---------- NONE FUNC     _TIFFSwabLong8
-13  ---------- NONE FUNC     __TIFFGetFields
-14  ---------- NONE FUNC     __TIFFGetExifFields
-15  ---------- NONE FUNC     __TIFFSetupFields
-16  ---------- NONE FUNC     __TIFFFillStriles
-17  ---------- NONE FUNC     __TIFFNoPostDecode
-18  ---------- NONE FUNC     __TIFFSwab16BitData
-19  ---------- NONE FUNC     __TIFFSwab24BitData
-20  ---------- NONE FUNC     __TIFFSwab32BitData
-21  ---------- NONE FUNC     __TIFFSwab64BitData
-22  ---------- NONE FUNC     _TIFFSetCompressionScheme
-23  ---------- NONE FUNC     __TIFFDataSize
-24  ---------- NONE FUNC     __TIFFCheckMalloc
+0   0x0000b6f0 NONE FUNC     __TIFFmalloc
+1   0x0000b730 NONE FUNC     __TIFFrealloc
+2   0x0000b6a0 NONE FUNC     __TIFFmemset
+3   0x0000b6f8 NONE FUNC     __TIFFmemcpy
+4   0x0000b6a8 NONE FUNC     __TIFFfree
+5   0x0000b690 NONE FUNC     _TIFFFindField
+6   0x0000b6d8 NONE FUNC     _TIFFFieldWithTag
+7   0x0000b6c0 NONE FUNC     _TIFFReadDirectory
+8   0x0000b698 NONE FUNC     _TIFFErrorExt
+9   0x0000b728 NONE FUNC     _TIFFWarningExt
+10  0x0000b750 NONE FUNC     _TIFFSwabShort
+11  0x0000b6c8 NONE FUNC     _TIFFSwabLong
+12  0x0000b6d0 NONE FUNC     _TIFFSwabLong8
+13  0x0000b6e0 NONE FUNC     __TIFFGetFields
+14  0x0000b6b8 NONE FUNC     __TIFFGetExifFields
+15  0x0000b6b0 NONE FUNC     __TIFFSetupFields
+16  0x0000b748 NONE FUNC     __TIFFFillStriles
+17  0x0000b6e8 NONE FUNC     __TIFFNoPostDecode
+18  0x0000b700 NONE FUNC     __TIFFSwab16BitData
+19  0x0000b708 NONE FUNC     __TIFFSwab24BitData
+20  0x0000b710 NONE FUNC     __TIFFSwab32BitData
+21  0x0000b718 NONE FUNC     __TIFFSwab64BitData
+22  0x0000b720 NONE FUNC     _TIFFSetCompressionScheme
+23  0x0000b738 NONE FUNC     __TIFFDataSize
+24  0x0000b740 NONE FUNC     __TIFFCheckMalloc
 25  ---------- NONE UNK      __fltused
 nth paddr         size vaddr        vsize perm flags type name
 --------------------------------------------------------------
@@ -78,21 +78,24 @@ NAME=tiny coff
 FILE=bins/coff/coff.obj
 CMDS=om;is;ir;e anal.cc;afci
 EXPECT=<<EOF
+- 3 fd: 4 +0x00000000 0x00000050 - 0x0000005f rw- rw- .imports.r2
 * 2 fd: 3 +0x00000064 0x00000000 - 0x00000026 r-x r-x fmap..text_0
 - 1 fd: 3 +0x0000008b 0x00000030 - 0x0000004b r-- rw- fmap..data_1
 nth paddr      vaddr      bind   type size lib name            demangled
 ------------------------------------------------------------------------
-0   ---------- ---------- NONE   UNK  4        imp.MessageBoxA
-0   ---------- ---------- NONE   UNK  4        imp.ExitProcess
+0   ---------- 0x00000050 NONE   UNK  4        imp.MessageBoxA
+0   ---------- 0x00000058 NONE   UNK  4        imp.ExitProcess
 0   0x00000064 0x00000000 LOCAL  SECT 4        .text
 0   0x00000064 0x00000000 GLOBAL FUNC 4        main
 0   0x0000008b 0x00000030 LOCAL  SECT 4        .data
 vaddr      paddr      type   ntype name
 ---------------------------------------
 0x00000009 0x0000006d ADD_32 4     .data
-0x00000010 0x00000074 ADD_32 4     .data
+0x00000010 0x00000074 ADD_32 4     .data + 0x0000000f
 0x0000001c 0x00000080 ADD_32 4     MessageBoxA
 0x00000023 0x00000087 ADD_32 4     ExitProcess
+0x00000050 0x00000080 ADD_32 4     MessageBoxA
+0x00000058 0x00000087 ADD_32 4     ExitProcess
 ms
 rax ms (rcx, rdx, r8, r9, stack);
 EOF
@@ -101,6 +104,7 @@ RUN
 # merged: tiny coff2
 NAME=tiny coff2 symbol language
 FILE=bins/coff/coff2.obj
+ARGS=-e bin.relocs.apply=false
 CMDS=<<EOF
 e bin.lang
 e anal.cc
