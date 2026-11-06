@@ -8035,10 +8035,10 @@ static bool core_esil_skip_op(RCore *core, RAnalOp *op, ut64 addr) {
 		}
 		return false;
 	}
-	r_esil_trace_op_begin (&core->esil.trace, op->addr);
+	r_core_esil_trace_op_begin (core, op->addr);
 	char *expr = r_str_newf ("0x%" PFMT64x ",PC,:=", op->addr + op->size);
 	const bool ok = expr && r_core_esil_run_expr_at (core, expr, addr);
-	r_esil_trace_op_end (&core->esil.trace);
+	r_core_esil_trace_op_end (core);
 	free (expr);
 	if (!ok) {
 		R_LOG_ERROR ("Failed to advance PC for step-over at 0x%" PFMT64x, op->addr);
@@ -8068,9 +8068,9 @@ static bool core_esil_step_one(RCore *core, ut64 addr, bool step_over, bool r2wa
 			if (tail) {
 				tail[0] = 0;
 				handled = true;
-				r_esil_trace_op_begin (&core->esil.trace, addr);
+				r_core_esil_trace_op_begin (core, addr);
 				ok = r_core_esil_run_expr_at (core, expr, addr);
-				r_esil_trace_op_end (&core->esil.trace);
+				r_core_esil_trace_op_end (core);
 			}
 			free (expr);
 		}
@@ -10015,7 +10015,7 @@ static void cmd_aet(RCore *core, const char *input) {
 				R_LOG_INFO ("ESIL trace already started");
 				break;
 			}
-			if (!r_esil_trace_start (&cesil->trace, &cesil->esil)) {
+			if (!r_core_esil_trace_start (core)) {
 				R_LOG_ERROR ("Cannot start the ESIL trace session");
 			}
 			break;
@@ -10024,8 +10024,8 @@ static void cmd_aet(RCore *core, const char *input) {
 				R_LOG_ERROR ("No ESIL trace started");
 				break;
 			}
-			r_esil_trace_stop (&cesil->trace, &cesil->esil);
-			r_esil_trace_finit (&cesil->trace);
+			r_core_esil_trace_stop (core);
+			r_core_esil_trace_finit (core);
 			break;
 		case '?':
 			r_cons_cmd_help (core->cons, help_msg_aets);
@@ -10037,7 +10037,7 @@ static void cmd_aet(RCore *core, const char *input) {
 		break;
 	case 0: // "aet"
 		{
-			char *s = r_esil_trace_list (&cesil->trace, 0);
+			char *s = r_core_esil_trace_list (core, 0);
 			r_cons_print (core->cons, s);
 			free (s);
 		}

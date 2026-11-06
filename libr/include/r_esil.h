@@ -49,55 +49,6 @@ typedef struct r_esil_handler_t {
 	void *user;
 } REsilHandler;
 
-typedef struct {
-	const char *name;
-	ut64 value;
-	// TODO: size
-} REsilRegAccess;
-
-typedef struct {
-	char *data;
-	ut64 addr;
-	// TODO: size
-} REsilMemoryAccess;
-
-typedef struct {
-	union {
-		REsilRegAccess reg;
-		REsilMemoryAccess mem;
-	};
-	bool is_write;
-	bool is_reg;
-} REsilTraceAccess;
-
-typedef struct {
-	ut64 addr;
-	ut32 start;
-	ut32 end; // 1 past the end of the op for this index
-} REsilTraceOp;
-
-static inline void fini_access(REsilTraceAccess *access) {
-	// reg names and mem data are strdups of esil stack tokens, so they die here
-	if (access->is_reg) {
-		free ((char *)access->reg.name);
-		return;
-	}
-	free (access->mem.data);
-}
-
-R_VEC_TYPE(RVecTraceOp, REsilTraceOp);
-R_VEC_TYPE_WITH_FINI(RVecAccess, REsilTraceAccess, fini_access);
-
-typedef struct r_esil_trace_t {
-	ut32 vid_reg_read;
-	ut32 vid_reg_write;
-	ut32 vid_mem_read;
-	ut32 vid_mem_write;
-	ut32 idx;
-	RVecTraceOp ops;
-	RVecAccess accesses;
-} REsilTrace;
-
 typedef bool (*REsilHookRegWriteCB)(ESIL *esil, const char *name, ut64 *val);
 
 typedef struct r_esil_callbacks_t {
@@ -442,15 +393,7 @@ R_API void r_esil_mem_ro(REsil *esil, bool mem_readonly);
 //R_API void r_esil_stats(REsil *esil, bool enable);
 R_API void r_esil_stats(REsil *esil, REsilStats *stats, bool enable);
 
-/* trace */
 #include <r_arch.h>
-R_API bool r_esil_trace_start(REsilTrace *trace, REsil *esil);
-R_API void r_esil_trace_stop(REsilTrace *trace, REsil *esil);
-R_API void r_esil_trace_finit(REsilTrace *trace);
-R_API void r_esil_trace_reset(REsilTrace *trace);
-R_API void r_esil_trace_op_begin(REsilTrace *trace, ut64 addr);
-R_API void r_esil_trace_op_end(REsilTrace *trace);
-R_API char *r_esil_trace_list(REsilTrace *trace, int format);
 
 R_API bool r_esil_reg_write_silent(REsil *esil, const char *name, ut64 num);
 R_API bool r_esil_reg_read_nocallback(REsil *esil, const char *regname, ut64 *num, int *size);
