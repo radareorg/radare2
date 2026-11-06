@@ -2,6 +2,55 @@
 
 #include "r_core.h"
 
+static int debug_bits_value(RDebug *dbg) {
+	if (!dbg) {
+		return 0;
+	}
+	if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
+		return 64;
+	}
+	if (R_SYS_BITS_CHECK (dbg->bits, 32)) {
+		return 32;
+	}
+	if (R_SYS_BITS_CHECK (dbg->bits, 16)) {
+		return 16;
+	}
+	return 0;
+}
+
+static void sync_debug_arch(RCore *r) {
+	if (!r || !r->dbg || R_STR_ISEMPTY (r->dbg->arch)) {
+		return;
+	}
+	int bits = debug_bits_value (r->dbg);
+	r_config_set (r->config, "asm.arch", r->dbg->arch);
+	if (bits > 0) {
+		r_config_set_i (r->config, "asm.bits", bits);
+	}
+}
+
+static void sync_debug_reg_profile(RCore *r) {
+	if (!r || !r->dbg || !r->anal) {
+		return;
+	}
+	RDebugPlugin *plugin = R_UNWRAP3 (r->dbg, current, plugin);
+	if (!plugin || !plugin->reg_profile) {
+		return;
+	}
+	char *rp = plugin->reg_profile (r->dbg);
+	if (!rp) {
+		return;
+	}
+	r_reg_set_profile_string (r->dbg->reg, rp);
+	r_reg_set_profile_string (r->anal->reg, rp);
+	free (rp);
+	if (r->print) {
+		r->print->reg = r->anal->reg;
+		r->print->get_register = r_reg_get;
+	}
+	r_core_anal_cc_init (r);
+}
+
 R_API int r_core_setup_debugger(RCore *r, const char *debugbackend, bool attach) {
 	int pid, *p = NULL;
 	bool is_gdb = !strcmp (debugbackend, "gdb");
@@ -9,6 +58,11 @@ R_API int r_core_setup_debugger(RCore *r, const char *debugbackend, bool attach)
 	const char *prompt = NULL;
 
 	p = fd ? fd->data : NULL;
+	if (fd && fd->plugin && fd->plugin->meta.name && !strcmp (fd->plugin->meta.name, "gdb")) {
+		debugbackend = "gdb";
+		is_gdb = true;
+		r_config_set (r->config, "dbg.backend", debugbackend);
+	}
 	r_config_set_b (r->config, "cfg.debug", true);
 	if (!p) {
 		R_LOG_ERROR ("Invalid debug io");
@@ -17,6 +71,10 @@ R_API int r_core_setup_debugger(RCore *r, const char *debugbackend, bool attach)
 
 	r_config_set_b (r->config, "io.ff", true);
 	r_core_cmdf (r, "dL %s", debugbackend);
+	if (is_gdb) {
+		sync_debug_arch (r);
+		sync_debug_reg_profile (r);
+	}
 	if (!is_gdb) {
 		pid = r_io_desc_get_pid (fd);
 		if (pid >= 0) {
@@ -45,6 +103,10 @@ R_API int r_core_setup_debugger(RCore *r, const char *debugbackend, bool attach)
 		}
 	}
 	r_core_cmd (r, "sr PC", 0);
+	if (is_gdb) {
+		sync_debug_arch (r);
+		sync_debug_reg_profile (r);
+	}
 
 	/* set the prompt if it's not been set already by the callbacks */
 	prompt = r_config_get (r->config, "cmd.prompt");

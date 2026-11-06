@@ -23,6 +23,7 @@
 #include <mach/mach_error.h>
 #include <mach/thread_info.h>
 #include <mach/thread_act.h>
+#include <mach/vm_attributes.h>
 
 #if APPLE_SDK_IPHONEOS
 // iPhoneOS have some missing includes
@@ -291,44 +292,102 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 	return len;
 }
 
-static int tsk_getperm(RIO *io, task_t task, vm_address_t addr) {
+static bool tsk_get_region(task_t task, vm_address_t addr, vm_address_t *region_addr, vm_size_t *region_size, vm_prot_t *region_perm) {
+	vm_address_t raddr = addr;
+	vm_size_t vmsize = 0;
+	natural_t depth = 0;
+	vm_region_submap_info_data_64_t info;
 	kern_return_t kr;
-	mach_port_t object;
-	vm_size_t vmsize;
-	mach_msg_type_number_t info_count = VM_REGION_BASIC_INFO_COUNT_64;
-	vm_region_flavor_t flavor = VM_REGION_BASIC_INFO_64;
-	vm_region_basic_info_data_64_t info;
-	kr = vm_region_64 (task, &addr, &vmsize, flavor, (vm_region_info_t)&info, &info_count, &object);
-	return (kr != KERN_SUCCESS? 0: info.protection);
+	do {
+		mach_msg_type_number_t info_count = VM_REGION_SUBMAP_INFO_COUNT_64;
+		memset (&info, 0, sizeof (info));
+		kr = vm_region_recurse_64 (task, &raddr, &vmsize, &depth, (vm_region_info_t)&info, &info_count);
+		if (kr != KERN_SUCCESS) {
+			return false;
+		}
+		if (info.is_submap) {
+			depth++;
+		}
+	} while (info.is_submap);
+	if (kr != KERN_SUCCESS || vmsize < 1 || addr < raddr || addr - raddr >= vmsize) {
+		return false;
+	}
+	if (region_addr) {
+		*region_addr = raddr;
+	}
+	if (region_size) {
+		*region_size = vmsize;
+	}
+	if (region_perm) {
+		*region_perm = info.protection;
+	}
+	return true;
 }
 
 static int tsk_pagesize(RIODesc *desc) {
-	int tid = __get_pid (desc);
-	task_t task = pid_to_task (desc, tid);
 	RIOMachData *iodd = desc? (RIOMachData *)desc->data: NULL;
 	if (iodd && iodd->pagesize) {
 		return iodd->pagesize;
 	}
 	vm_size_t pagesize = 0;
-	if (host_page_size (task, &pagesize) == KERN_SUCCESS) {
+	host_t host = mach_host_self ();
+	if (host != MACH_PORT_NULL && host_page_size (host, &pagesize) == KERN_SUCCESS) {
 		if (iodd) {
 			iodd->pagesize = pagesize;
 		}
+		mach_port_deallocate (mach_task_self (), host);
 		return pagesize;
+	}
+	if (host != MACH_PORT_NULL) {
+		mach_port_deallocate (mach_task_self (), host);
 	}
 	return 4096;
 }
 
-static vm_address_t tsk_getpagebase(RIODesc *desc, ut64 addr) {
-	vm_address_t pagesize = tsk_pagesize (desc);
-	return (addr & ~ (pagesize - 1));
+static vm_size_t tsk_target_pagesize(RIODesc *desc, task_t task, vm_address_t addr) {
+	vm_address_t region_addr = 0;
+	vm_size_t region_size = 0;
+	vm_size_t pagesize = tsk_pagesize (desc);
+	if (pagesize > 4096 && tsk_get_region (task, addr, &region_addr, &region_size, NULL)) {
+		if ((region_addr & (pagesize - 1)) || region_size < pagesize || (region_size & (pagesize - 1))) {
+			return 4096;
+		}
+	}
+	return pagesize;
 }
 
-static bool tsk_setperm(RIO *io, task_t task, vm_address_t addr, int len, int perm) {
-	kern_return_t kr;
-	kr = vm_protect (task, addr, len, 0, perm);
+static bool tsk_protect_range(RIODesc *desc, task_t task, vm_address_t addr, int len, vm_address_t *pageaddr, vm_size_t *total_size, vm_prot_t *operms) {
+	vm_address_t region_addr = 0;
+	vm_size_t region_size = 0;
+	vm_prot_t region_perm = VM_PROT_NONE;
+	if (len < 1 || !tsk_get_region (task, addr, &region_addr, &region_size, &region_perm)) {
+		return false;
+	}
+	vm_size_t pagesize = tsk_target_pagesize (desc, task, addr);
+	vm_address_t base = addr & ~ (pagesize - 1);
+	if (base < region_addr) {
+		base = region_addr;
+	}
+	ut64 range_size = R_ROUND ((ut64)(addr - base) + len, pagesize);
+	ut64 range_end = (ut64)base + range_size;
+	ut64 region_end = (ut64)region_addr + region_size;
+	if (range_end > region_end) {
+		range_end = region_end;
+	}
+	if (range_end <= base) {
+		return false;
+	}
+	*pageaddr = base;
+	*total_size = range_end - base;
+	*operms = region_perm;
+	return true;
+}
+
+static bool tsk_setperm(RIO *io, task_t task, vm_address_t addr, vm_size_t len, vm_prot_t perm) {
+	(void)io;
+	kern_return_t kr = vm_protect (task, addr, len, 0, perm);
 	if (kr != KERN_SUCCESS) {
-		r_sys_perror ("tsk_setperm");
+		R_LOG_ERROR ("tsk_setperm: %s", MACH_ERROR_STRING (kr));
 		return false;
 	}
 	return true;
@@ -342,6 +401,14 @@ static bool tsk_write(task_t task, vm_address_t addr, const ut8 *buf, int len) {
 	return true;
 }
 
+static void tsk_flush(task_t task, vm_address_t addr, vm_size_t len) {
+	vm_machine_attribute_val_t attr = MATTR_VAL_CACHE_FLUSH;
+	kern_return_t kr = vm_machine_attribute (task, addr, len, MATTR_CACHE, &attr);
+	if (kr != KERN_SUCCESS) {
+		R_LOG_DEBUG ("io.mach: Cannot flush target cache: %s", MACH_ERROR_STRING (kr));
+	}
+}
+
 static int mach_write_at(RIO *io, RIODesc *desc, const void *buf, int len, ut64 addr) {
 	vm_address_t vaddr = addr;
 	int pid = __get_pid (desc);
@@ -352,24 +419,28 @@ static int mach_write_at(RIO *io, RIODesc *desc, const void *buf, int len, ut64 
 	if (len < 1 || task_is_dead (desc, task)) {
 		return 0;
 	}
-	vm_address_t pageaddr = tsk_getpagebase (desc, addr);
-	vm_size_t pagesize = tsk_pagesize (desc);
-	vm_size_t total_size = (len > pagesize)
-		? pagesize *(1 + (len / pagesize))
-		: pagesize;
 	if (tsk_write (task, vaddr, buf, len)) {
+		tsk_flush (task, vaddr, len);
 		return len;
 	}
-	int operms = tsk_getperm (io, task, pageaddr);
+	vm_address_t pageaddr = 0;
+	vm_size_t total_size = 0;
+	vm_prot_t operms = VM_PROT_NONE;
+	if (!tsk_protect_range (desc, task, vaddr, len, &pageaddr, &total_size, &operms)) {
+		R_LOG_ERROR ("io.mach: Cannot find page perms for 0x%08" PFMT64x, (ut64)vaddr);
+		return -1;
+	}
 	if (!tsk_setperm (io, task, pageaddr, total_size, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_COPY)) {
-		R_LOG_ERROR ("io.mach: Cannot set page perms for %d byte(s) at 0x%08" PFMT64x, (int)pagesize, (ut64)pageaddr);
+		R_LOG_ERROR ("io.mach: Cannot set page perms for %" PFMT64u " byte(s) at 0x%08" PFMT64x, (ut64)total_size, (ut64)pageaddr);
 		return -1;
 	}
 	if (!tsk_write (task, vaddr, buf, len)) {
 		R_LOG_ERROR ("io.mach: Cannot write on memory");
 		len = -1;
+	} else {
+		tsk_flush (task, pageaddr, total_size);
 	}
-	if (operms && !tsk_setperm (io, task, pageaddr, total_size, operms)) {
+	if (!tsk_setperm (io, task, pageaddr, total_size, operms)) {
 		R_LOG_ERROR ("io.mach: Cannot restore page perms");
 		return -1;
 	}
