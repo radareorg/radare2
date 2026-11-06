@@ -2134,28 +2134,14 @@ static inline bool is_file_reloc(RBinReloc *core) {
 	return is_file_symbol (core->symbol);
 }
 
-static bool warn_if_dbg(RCore *core) {
-	RIODesc *desc = NULL;
-	RIOMap *map = r_io_map_get_at (core->io, 0); // core->addr);
-	if (map) {
-		desc = r_io_desc_get (core->io, map->fd);
-	} else {
-		RBinFile *bf = core->bin->cur;
-		int fd;
-		if (bf) {
-			fd = bf->fd;
-		} else {
-			fd = r_io_fd_get_current (core->io);
-		}
-		if (fd != -1) {
-			desc = r_io_desc_get (core->io, fd);
+static bool has_dbg_desc(RIO *io) {
+	RIODesc *desc;
+	for (desc = r_io_desc_get_lowest (io); desc; desc = r_io_desc_get_next (io, desc)) {
+		if (r_io_desc_info (desc).isdbg) {
+			return true;
 		}
 	}
-	if (r_io_desc_info (desc).isdbg) {
-		R_LOG_ERROR ("bin.relocs and io.cache should not be used for %s", desc->uri);
-		return false;
-	}
-	return true;
+	return false;
 }
 
 static ut64 symbol_addr(RBin *bin, RBinSymbol *symbol, int va) {
@@ -2175,25 +2161,19 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 	char *sdb_module = NULL;
 
 	R_TIME_PROFILE_BEGIN;
-	int fd = r_io_fd_get_current (core->io);
-	if (fd != -1) {
-		RIODesc *desc = r_io_desc_get (core->io, fd);
-		if (r_io_desc_info (desc).isdbg) {
-			R_LOG_DEBUG ("Ignoring reloc patching in debugger mode");
-			r_table_free (table);
-			return false;
-		}
-	}
+	RBinFile *bf = core->bin->cur;
+	const bool dbg_target = bf && r_io_desc_info (r_io_desc_get (core->io, bf->fd)).isdbg;
 
 	va = VA_TRUE; // XXX relocs always vaddr?
 	// this has been created for reloc object files
-	RVecRBinReloc *relocs = r_bin_get_relocs (core->bin);
+	RVecRBinReloc *relocs = dbg_target? NULL: r_bin_get_relocs (core->bin);
 	const bool apply_relocs = r_config_get_b (core->config, "bin.relocs.apply");
 	const bool bc = r_config_get_b (core->config, "bin.cache");
-	if (apply_relocs) {
-		if (!warn_if_dbg (core)) {
-			return false;
-		}
+	// slots and io.cache would hide the process or keep writes from it
+	const bool dbg = has_dbg_desc (core->io);
+	if (dbg) {
+		R_LOG_DEBUG ("Relocs are not patched in debugger mode");
+	} else if (apply_relocs) {
 		// TODO: remove the bin.cache crap
 		if (bc) {
 			if (! (core->io->cachemode & R_PERM_W)) {
@@ -2201,25 +2181,20 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 			}
 			core->bin->iob.overlay_write_at = r_io_cache_write_at;
 		}
-		relocs = r_bin_patch_relocs (core->bin->cur); // XXX other way to get RBinFile?
+		relocs = r_bin_patch_relocs (bf);
 		if (bc) {
 			core->bin->iob.overlay_write_at = r_io_vwrite_to_overlay_at;
 		} else {
 			r_io_drain_overlay (core->io);
 		}
-	} else {
-		if (bc) {
-			if (!warn_if_dbg (core)) {
-				return false;
-			}
-			if (! (core->io->cachemode & R_PERM_W)) {
-				r_config_set_b (core->config, "io.cache", true);
-			}
-			core->bin->iob.overlay_write_at = r_io_write_at;
-			relocs = r_bin_patch_relocs (core->bin->cur); // XXX other way to get RBinFile?
-		} else if (relocs) {
-			R_LOG_HINT ("Relocs not applied, some references may not resolve: use -e bin.relocs.apply=true");
+	} else if (bc) {
+		if (! (core->io->cachemode & R_PERM_W)) {
+			r_config_set_b (core->config, "io.cache", true);
 		}
+		core->bin->iob.overlay_write_at = r_io_write_at;
+		relocs = r_bin_patch_relocs (bf);
+	} else if (relocs) {
+		R_LOG_HINT ("Relocs not applied, some references may not resolve: use -e bin.relocs.apply=true");
 	}
 	if (!relocs) {
 		if (pj) {
@@ -2306,7 +2281,7 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 						core->bin->prefix? ".": "", n, reloc_size, saddr);
 				}
 #endif
-			} else {
+			} else if (!dbg) {
 				ut64 v = reloc->symbol? symbol_addr (core->bin, reloc->symbol, va): reloc->addend;
 				ut64 a = addr;
 				r_cons_printf (core->cons, "'@0x%" PFMT64x "'wv8 0x%" PFMT64x "\n", a, v);
