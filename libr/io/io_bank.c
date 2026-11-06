@@ -861,8 +861,29 @@ R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, in
 	return ret;
 }
 
+static bool map_keep_view(RIOMap *map, ut64 addr, const ut8 *fd, const ut8 *view, int len) {
+	bool ret = true;
+	int i = 0;
+	while (i < len) {
+		int j = i;
+		while (j < len && fd[j] != view[j]) {
+			j++;
+		}
+		if (j > i) {
+			ret &= r_io_map_write_to_overlay (map, addr + i, view + i, j - i);
+		}
+		i = j + 1;
+	}
+	return ret;
+}
+
 R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (io, false);
+	return io_bank_write_layers_at (io, bankid, addr, buf, NULL, len);
+}
+
+// a chunk gets what reached the fd, or the view's byte where that differs
+R_IPI bool io_bank_write_layers_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *buf, const ut8 *view, int len) {
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	if (!bank) {
 		R_LOG_WARN ("Tfw no bank(id %u) in the io", bankid);
@@ -909,12 +930,46 @@ R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *
 				const RInterval overlap = r_itv_intersect (vitv, witv);
 				ret &= r_io_map_write_to_overlay (map, overlap.addr, &buf[overlap.addr - addr], overlap.size);
 			}
+			if (view) {
+				ret &= map_keep_view (map, addr + buf_off, &buf[buf_off], &view[buf_off], written);
+			}
 		}
 		// check return value here?
 		node = r_rbnode_next (node);
 		sm = node ? (RIOSubMap *)node->data : NULL;
 	}
 	return ret;
+}
+
+R_API bool r_io_bank_overlay_in_range(RIO *io, const ut32 bankid, ut64 addr, int len) {
+	R_RETURN_VAL_IF_FAIL (io && len > 0, false);
+	RIOBank *bank = r_io_bank_get (io, bankid);
+	if (!bank) {
+		return false;
+	}
+	if ((UT64_MAX - (len - 1)) < addr) {
+		const int head = UT64_MAX - addr + 1;
+		if (r_io_bank_overlay_in_range (io, bankid, 0ULL, len - head)) {
+			return true;
+		}
+		len = head;
+	}
+	RIOSubMap fake_sm = { .itv = { addr, len } };
+	RRBNode *node = _find_entry_submap_node (bank, &fake_sm);
+	RIOSubMap *sm = node? (RIOSubMap *)node->data: NULL;
+	while (sm && r_io_submap_overlap ((&fake_sm), sm)) {
+		RIOMap *map = r_io_map_get_by_ref (io, &sm->mapref);
+		if (map) {
+			const ut64 from = R_MAX (addr, r_io_submap_from (sm));
+			const ut64 to = R_MIN (r_io_submap_to ((&fake_sm)), r_io_submap_to (sm));
+			if (io_map_has_overlay_in (map, from, to - from + 1)) {
+				return true;
+			}
+		}
+		node = r_rbnode_next (node);
+		sm = node? (RIOSubMap *)node->data: NULL;
+	}
+	return false;
 }
 
 R_API bool r_io_bank_write_to_overlay_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *buf, int len) {

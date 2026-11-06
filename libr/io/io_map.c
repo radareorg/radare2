@@ -667,6 +667,11 @@ R_API bool r_io_map_write_to_overlay(RIOMap *map, ut64 addr, const ut8 *buf, int
 	return true;
 }
 
+R_IPI bool io_map_has_overlay_in(RIOMap *map, ut64 addr, int len) {
+	RInterval itv = {addr - map->itv.addr, len};
+	return map->overlay && r_crbtree_find_node (map->overlay, &itv, _overlay_chunk_find, NULL);
+}
+
 R_IPI bool io_map_get_overlay_intersects(RIOMap *map, RQueue *q, ut64 addr, int len) {
 	R_RETURN_VAL_IF_FAIL (map && q, false);
 	if (!map->overlay) {
