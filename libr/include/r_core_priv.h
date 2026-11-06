@@ -59,6 +59,7 @@ typedef struct r_core_priv_t {
 R_IPI HtUP *r_core_pdc_blocks(RCore *core, RAnalFunction *fcn);
 
 R_IPI bool isVisualDisasm(RCore *core);
+R_IPI bool core_check_readable(RCore *core, ut64 addr, int len);
 R_IPI int r_core_vmark_select(RCore *core, bool delete_mark);
 typedef int (*RCoreVisualDefineReadCallback)(RCore *core, const char **lines);
 R_IPI void r_core_visual_define_input(RCore *core, const char *args, int distance, RCoreVisualDefineReadCallback readchar);

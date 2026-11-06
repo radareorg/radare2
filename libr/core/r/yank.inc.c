@@ -277,6 +277,9 @@ static bool yank_string(RCmdContext *ctx) {
 	RCore *core = ctx->user;
 	ut64 max = 0;
 	const ut32 bsize = ctx->blocksize;
+	if (!core_check_readable (core, core->addr, 1)) {
+		return false;
+	}
 	ut8 *buf = r_cmdctx_num (ctx, 0, core->num, &max)? calloc (1, bsize + 1): NULL;
 	if (!buf) {
 		return false;
