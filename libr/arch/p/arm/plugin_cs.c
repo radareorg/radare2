@@ -2436,7 +2436,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 			r_strbuf_append (&op->esil, ",U2D");
 		}
 		if (OPCOUNT64 () > 2 && ISIMM64 (2)) {
-			r_strbuf_appendf (&op->esil, ",0x%"PFMT64x",SWAP,F/", (1023ULL + IMM64 (2)) << 52);
+			r_strbuf_appendf (&op->esil, ",0x%"PFMT64x",SWAP,F/", ((ut64)1023 + IMM64 (2)) << 52);
 		}
 		r_strbuf_append (&op->esil, ",D2F,");
 		VEC64_DST_APPEND (&op->esil, 0, -1);
@@ -2457,7 +2457,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		ARG64_APPEND (&op->esil, 1);
 		r_strbuf_append (&op->esil, ",F2D");
 		if (OPCOUNT64 () > 2 && ISIMM64 (2)) {
-			r_strbuf_appendf (&op->esil, ",0x%"PFMT64x",F*", (1023ULL + IMM64 (2)) << 52);
+			r_strbuf_appendf (&op->esil, ",0x%"PFMT64x",F*", ((ut64)1023 + IMM64 (2)) << 52);
 		}
 		if (insn->id == ARM64_INS_FCVTZU || insn->id == ARM64_INS_FCVTZS) {
 			r_strbuf_appendf (&op->esil, ",%d,D2%sS,", REGBITS64 (0), insn->id == ARM64_INS_FCVTZU? "U": "I");
