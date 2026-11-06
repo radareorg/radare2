@@ -1771,7 +1771,7 @@ static bool esil_float_log2p1(REsil *esil) {
 	if (r_strs_empty (src) || !esil_get_parm_float_strs (esil, src, &value)) {
 		return false;
 	}
-	return esil_pushnum_float (esil, log1p (value) / 0.6931471805599453);
+	return esil_pushnum_float (esil, fabs (value) < 0.5? log1p (value) / 0.6931471805599453: log2 (1 + value));
 }
 
 static bool esil_float_exp2m1(REsil *esil) {
@@ -1780,7 +1780,7 @@ static bool esil_float_exp2m1(REsil *esil) {
 	if (r_strs_empty (src) || !esil_get_parm_float_strs (esil, src, &value)) {
 		return false;
 	}
-	return esil_pushnum_float (esil, expm1 (value * 0.6931471805599453));
+	return esil_pushnum_float (esil, fabs (value) < 0.5? expm1 (value * 0.6931471805599453): exp2 (value) - 1);
 }
 
 static bool esil_float_scale(REsil *esil) {

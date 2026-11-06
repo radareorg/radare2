@@ -317,9 +317,9 @@ static char *ppc_vector_profile(const char *profile) {
 	}
 	int reg, lane;
 	for (reg = 0; reg < 32; reg++) {
-		r_strbuf_appendf (sb, "vec128\tv%d\t.128\t%d\t0\n", reg, reg * 16);
+		r_strbuf_appendf (sb, "vec128\tv%d\t.128\t%d\t0\n", reg, 4096 + reg * 16);
 		for (lane = 0; lane < 4; lane++) {
-			r_strbuf_appendf (sb, "fpu@vec128\tv%dw%d\t.32\t%d\t0\n", reg, lane, reg * 16 + lane * 4);
+			r_strbuf_appendf (sb, "fpu@vec128\tv%dw%d\t.32\t%d\t0\n", reg, lane, 4096 + reg * 16 + lane * 4);
 		}
 	}
 	return r_strbuf_drain (sb);
