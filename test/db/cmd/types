@@ -5485,7 +5485,7 @@ func.once.args=1
 func.once.cc=cdecl
 func.once.ret=void
 func.apply=fn,seed
-func.apply.arg.0=int (*)(),fn
+func.apply.arg.0=int (*)(int, int),fn
 func.apply.arg.1=int,seed
 func.apply.args=2
 func.apply.cc=cdecl
@@ -5506,7 +5506,7 @@ tk~func.N
 EOF
 EXPECT=<<EOF
 func.N.cb=inner,c
-func.N.cb.arg.0=int (*)(),inner
+func.N.cb.arg.0=int (*)(int, int),inner
 func.N.cb.arg.1=char,c
 func.N.cb.args=2
 func.N.cb.cc=cdecl

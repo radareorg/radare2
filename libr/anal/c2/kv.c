@@ -195,19 +195,32 @@ static size_t literal_len(const char *lit, const char *end) {
 	return (p < end? p + 1: end) - lit;
 }
 
+// NULL also means an unmatched bracket
 static const char *scan_toplevel(RStrs s, char ch) {
-	int depth = 0;
+	int parens = 0;
+	int brackets = 0;
 	const char *p;
 	for (p = s.a; p < s.b; p++) {
-		if (*p == ch && depth == 0) {
+		if (*p == ch && !parens && !brackets) {
 			return p;
 		}
 		if (*p == '"' || *p == '\'') {
 			p += literal_len (p, s.b) - 1;
 		} else if (*p == '(') {
-			depth++;
-		} else if (*p == ')' && depth > 0) {
-			depth--;
+			parens++;
+		} else if (*p == ')') {
+			if (parens > 0) {
+				parens--;
+			} else if (brackets > 0) {
+				return NULL;
+			}
+		} else if (*p == '[') {
+			brackets++;
+		} else if (*p == ']') {
+			if (!brackets) {
+				return NULL;
+			}
+			brackets--;
 		}
 	}
 	return NULL;
@@ -1578,11 +1591,7 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 	return true;
 }
 
-static bool split_fnptr_param(RStrs full, char **type, char **name) {
-	const char *open = r_strs_findc (full, '(');
-	if (!open) {
-		return false;
-	}
+static bool split_fnptr_param(RStrs full, const char *open, char **type, char **name) {
 	RStrs inner = r_strs_new (open + 1, full.b);
 	r_strs_skip_chars (&inner, " \t\n\r\v\f");
 	if (r_strs_at (inner, 0) != '*') {
@@ -1600,14 +1609,8 @@ static bool split_fnptr_param(RStrs full, char **type, char **name) {
 		return false;
 	}
 	RStrs suffix = r_strs_new (inner.a, full.b);
-	// Commas delimit SDB argument rows, so collapse nested multi-argument types.
-	char *raw_type;
-	if (r_strs_findc (suffix, ',')) {
-		raw_type = r_str_newf ("%.*s)()", (int)r_strs_len (prefix), prefix.a);
-	} else {
-		raw_type = r_str_newf ("%.*s%.*s", (int)r_strs_len (prefix), prefix.a,
-			(int)r_strs_len (suffix), suffix.a);
-	}
+	char *raw_type = r_str_newf ("%.*s%.*s", (int)r_strs_len (prefix), prefix.a,
+		(int)r_strs_len (suffix), suffix.a);
 	if (!raw_type) {
 		return false;
 	}
@@ -1635,6 +1638,7 @@ static void emit_func_signature(KVCParser *kvc, const char *fn, RStrs fun_parm, 
 			RStrs full = r_strs_new (parms.a, comma? comma: parms.b);
 			parms.a = comma? comma + 1: parms.b;
 			r_strs_trim (&full);
+			const char *open = scan_toplevel (full, '(');
 			RStrs arg_type = full;
 			RStrs arg_name = full;
 			token_typename (&arg_type, &arg_name);
@@ -1646,10 +1650,10 @@ static void emit_func_signature(KVCParser *kvc, const char *fn, RStrs fun_parm, 
 				at = strdup ("");
 				free (an);
 				an = r_strs_tostring (full);
-			} else if (r_strs_findc (full, '(')) {
+			} else if (open) {
 				char *ft = NULL;
 				char *fnm = NULL;
-				if (split_fnptr_param (full, &ft, &fnm)) {
+				if (split_fnptr_param (full, open, &ft, &fnm)) {
 					free (at);
 					at = ft;
 					free (an);
