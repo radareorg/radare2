@@ -290,12 +290,21 @@ Floating-point arithmetic uses IEEE 754 double bit patterns on the stack.
 double; `bits,value,D2F` converts a double back to that width. `I2D` and `U2D`
 convert signed and unsigned integers to doubles. `D2I` and `D2U` truncate a
 double to a signed or unsigned integer, returning zero for values outside their
-64-bit range, including NaN and infinities.
+64-bit range, including NaN and infinities. `value,bits,D2IS` and
+`value,bits,D2US` instead saturate to the signed or unsigned range of the given
+width (1 to 64 bits), with NaN producing zero.
 
 `value,LOG2` computes the base-2 logarithm and `value,EXP2` computes 2 raised
 to the given power. Both consume one double and push one double. They follow
 the host math library for NaN, infinity, overflow and underflow. For example,
 `8,I2D,LOG2,D2I` yields 3, and `3,I2D,EXP2,D2I` yields 8.
+
+`LOG2P1` computes `log2(1 + value)` and `EXP2M1` computes `2^value - 1`
+without losing small inputs or negative zero. `exponent,value,FSCALE` scales
+a double by `2^trunc(exponent)` without an intermediate power-of-two value.
+NaN exponents produce NaN; infinite exponents follow multiplication by zero
+or infinity. These operations use binary64 precision, as do the other ESIL
+floating-point operations.
 
 Conversions with a register-supplied binary scale can combine these operations.
 For a 32-bit float in `src` and an integer exponent in `shift`, this multiplies

@@ -640,16 +640,16 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_FYL2X:
 	case X86_INS_FYL2XP1:
 		esilprintf (op,
-			"st1,st0,%sLOG2,F*,st1,=,"
+			"st1,st0,%s,F*,st1,=,"
 			"st1,st0,=,st2,st1,=,st3,st2,=,st4,st3,=,"
 			"st5,st4,=,st6,st5,=,st7,st6,=",
-			insn->id == X86_INS_FYL2XP1? "1,I2D,F+,": "");
+			insn->id == X86_INS_FYL2XP1? "LOG2P1": "LOG2");
 		break;
 	case X86_INS_F2XM1:
-		esilprintf (op, "1,I2D,st0,EXP2,F-,st0,=");
+		esilprintf (op, "st0,EXP2M1,st0,=");
 		break;
 	case X86_INS_FSCALE:
-		esilprintf (op, "st1,DUP,0,I2D,SWAP,F<,?{,CEIL,}{,FLOOR,},EXP2,st0,F*,st0,=");
+		esilprintf (op, "st1,st0,FSCALE,st0,=");
 		break;
 	case X86_INS_FTST:
 	case X86_INS_FUCOMI:
