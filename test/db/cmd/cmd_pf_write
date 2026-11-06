@@ -100,3 +100,24 @@ EXPECT=<<EOF
 0x0000000c      .dword 0x6c726f77
 EOF
 RUN
+
+NAME=setting a pf field leaves applied relocs in the block out of the file
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e bin.relocs.apply=true
+CMDS=<<EOF
+pf.x xx a b
+pf.x.a=1 @ sym.main
+p8 4 @ sym.main+5 @e:io.overlay=false
+.pf.x.a=1 @ sym.main
+p8 4 @ sym.main
+p8 4 @ sym.main+5
+p8 4 @ sym.main+5 @e:io.overlay=false
+EOF
+EXPECT=<<EOF
+wv4 1 @ 0x08000050
+00000000
+01000000
+e7ffffff
+00000000
+EOF
+RUN

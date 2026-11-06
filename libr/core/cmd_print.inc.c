@@ -2783,7 +2783,6 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8 *block, 
 					r_str_trim_tail (name);
 					mode = R_PRINT_MUSTSET;
 					r_print_format (core->print, core->addr, buf, bufsize, name, mode, eq, dot);
-					r_io_write_at (core->io, core->addr, buf, bufsize);
 				} else {
 					r_print_format (core->print, core->addr, buf, bufsize, name, mode, NULL, dot);
 				}
