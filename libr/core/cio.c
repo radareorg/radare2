@@ -1,6 +1,7 @@
 /* radare2 - LGPL - Copyright 2009-2026 - pancake */
 
 #include "r_core.h"
+#include "r_core_priv.h"
 
 R_API int r_core_setup_debugger(RCore *r, const char *debugbackend, bool attach) {
 	int pid, *p = NULL;
@@ -336,13 +337,133 @@ beach:
 	return NULL;
 }
 
-R_API int r_core_write_op(RCore *core, const char *arg, char op) {
-	ut8 *buf = r_core_transform_op (core, arg, op);
+R_IPI bool core_read_fd_layer(RCore *core, ut64 addr, ut8 *buf, int len) {
+	RIO *io = core->io;
+	const bool overlay = io->overlay;
+	io->overlay = false;
+	const bool ret = r_io_read_at (io, addr, buf, len);
+	io->overlay = overlay;
+	return ret;
+}
+
+static bool overlay_in_range(RIO *io, ut64 addr, int len) {
+	RIOBank *bank = r_io_bank_get (io, io->bank);
+	if (!bank) {
+		return false;
+	}
+	RListIter *iter;
+	RIOMapRef *mapref;
+	r_list_foreach (bank->maprefs, iter, mapref) {
+		RIOMap *map = r_io_map_get_by_ref (io, mapref);
+		if (map && map->overlay && map->overlay->size && r_itv_overlap2 (map->itv, addr, len)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+// bytes alone would not do: a live fd can read differently twice
+R_IPI bool core_layers_differ(RCore *core) {
+	RIO *io = core->io;
+	const int len = core->blocksize;
+	if (!overlay_in_range (io, core->addr, len)) {
+		return false;
+	}
+	ut8 *buf = calloc (2, len);
 	if (!buf) {
 		return false;
 	}
-	int ret = r_core_write_at (core, core->addr, buf, core->blocksize);
+	r_io_read_at (io, core->addr, buf, len);
+	core_read_fd_layer (core, core->addr, buf + len, len);
+	const bool differ = memcmp (buf, buf + len, len) != 0;
 	free (buf);
+	return differ;
+}
+
+static ut8 *masked_dup(RIO *io, const ut8 *buf, int len) {
+	ut8 *out = r_mem_dup (buf, len);
+	if (out && io->write_mask) {
+		int i;
+		for (i = 0; i < len; i++) {
+			out[i] &= io->write_mask[i % io->write_mask_len];
+		}
+	}
+	return out;
+}
+
+static inline bool writable_at(RIO *io, ut64 addr) {
+	RIOMap *map = r_io_map_get_at (io, addr);
+	return map && (map->perm & R_PERM_W);
+}
+
+static void keep_view_in_overlay(RIO *io, ut64 addr, const ut8 *fd, const ut8 *view, int len) {
+	ut8 *written = masked_dup (io, fd, len);
+	ut8 *shown = masked_dup (io, view, len);
+	if (written && shown) {
+		int i = 0;
+		while (i < len) {
+			int j = i;
+			while (j < len && written[j] != shown[j] && writable_at (io, addr + j)) {
+				j++;
+			}
+			if (j > i) {
+				r_io_vwrite_to_overlay_at (io, addr + i, shown + i, j - i);
+			}
+			i = j + 1;
+		}
+	}
+	free (written);
+	free (shown);
+}
+
+// the cache holds one layer, so a no-op must leave no patch
+static bool view_changes(RIO *io, ut64 addr, const ut8 *view, int len) {
+	ut8 *cur = calloc (1, len);
+	if (!cur) {
+		return true;
+	}
+	r_io_read_at (io, addr, cur, len);
+	const bool changes = memcmp (cur, view, len) != 0;
+	free (cur);
+	return changes;
+}
+
+// the fd takes its own result and the overlay keeps the view's
+R_IPI bool core_write_layers_at(RCore *core, ut64 addr, const ut8 *fd, const ut8 *view, int len) {
+	RIO *io = core->io;
+	if (!overlay_in_range (io, addr, len) || !memcmp (fd, view, len)) {
+		return r_core_write_at (core, addr, view, len);
+	}
+	if ((io->cache.mode & R_PERM_X) == R_PERM_X) {
+		return !view_changes (io, addr, view, len) || r_core_write_at (core, addr, view, len);
+	}
+	const bool ret = r_core_write_at (core, addr, fd, len);
+	keep_view_in_overlay (io, addr, fd, view, len);
+	r_core_block_read (core);
+	return ret;
+}
+
+R_API int r_core_write_op(RCore *core, const char *arg, char op) {
+	ut8 *view = r_core_transform_op (core, arg, op);
+	if (!view) {
+		return false;
+	}
+	int ret;
+	if (core_layers_differ (core)) {
+		RIO *io = core->io;
+		const bool overlay = io->overlay;
+		// the view's pass already reported anything worth reporting
+		r_log_set_quiet (true);
+		io->overlay = false;
+		ut8 *fd = r_core_transform_op (core, arg, op);
+		io->overlay = overlay;
+		r_log_set_quiet (r_config_get_b (core->config, "log.quiet"));
+		ret = fd && core_write_layers_at (core, core->addr, fd, view, core->blocksize);
+		free (fd);
+	} else {
+		ret = r_core_write_at (core, core->addr, view, core->blocksize);
+	}
+	free (view);
 	return ret;
 }
 
