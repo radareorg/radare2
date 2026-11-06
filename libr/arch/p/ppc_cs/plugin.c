@@ -310,6 +310,21 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 #define ARG(n) getarg2(pd, &gop, n, "")
 #define ARG2(n,m) getarg2(pd, &gop, n, m)
 
+static char *ppc_vector_profile(const char *profile) {
+	RStrBuf *sb = r_strbuf_new (profile);
+	if (!sb) {
+		return NULL;
+	}
+	int reg, lane;
+	for (reg = 0; reg < 32; reg++) {
+		r_strbuf_appendf (sb, "vec128\tv%d\t.128\t%d\t0\n", reg, reg * 16);
+		for (lane = 0; lane < 4; lane++) {
+			r_strbuf_appendf (sb, "fpu@vec128\tv%dw%d\t.32\t%d\t0\n", reg, lane, reg * 16 + lane * 4);
+		}
+	}
+	return r_strbuf_drain (sb);
+}
+
 static char *regs(RArchSession *as) {
 	if (as->config->bits == 32) {
 		const char p[] =
@@ -449,7 +464,7 @@ static char *regs(RArchSession *as) {
 			"gpr	ca .1 163.5 0\n"
 			"gpr	ov .1 163.6 0\n"
 			"gpr	so .1 163.7 0\n";
-		return strdup (p);
+		return ppc_vector_profile (p);
 	}
 
 	const char p[] =
@@ -589,7 +604,7 @@ static char *regs(RArchSession *as) {
 		"gpr	ca .1 315.5 0\n"
 		"gpr	ov .1 315.6 0\n"
 		"gpr	so .1 315.7 0\n";
-	return strdup (p);
+	return ppc_vector_profile (p);
 }
 
 static int analop_vle(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
@@ -2202,8 +2217,23 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			op->type = R_ANAL_OP_TYPE_CAST;
 			ppc_fpop (op, pd, &gop, insn->id == PPC_INS_FCFIDUS, 1, "U2D");
 			break;
-		case PPC_INS_FCTID:
+		case PPC_INS_VLOGEFP:
+		case PPC_INS_VEXPTEFP:
+			{
+				op->family = R_ANAL_OP_FAMILY_VEC;
+				const char *fop = insn->id == PPC_INS_VLOGEFP? "LOG2": "EXP2";
+				int lane;
+				for (lane = 0; lane < 4; lane++) {
+					r_strbuf_appendf (&op->esil, "%s32,32,%sw%d,F2D,%s,D2F,%sw%d,=",
+						lane? ",": "", ARG (1), lane, fop, ARG (0), lane);
+				}
+			}
+			break;
 		case PPC_INS_FCTIDUZ:
+			op->type = R_ANAL_OP_TYPE_CAST;
+			ppc_fpop (op, pd, &gop, false, 1, "D2U");
+			break;
+		case PPC_INS_FCTID:
 		case PPC_INS_FCTIDZ:
 		case PPC_INS_FCTIW:
 		case PPC_INS_FCTIWUZ:

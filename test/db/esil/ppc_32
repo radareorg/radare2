@@ -1192,3 +1192,27 @@ EXPECT=<<EOF
 0x11223344
 EOF
 RUN
+
+NAME=AltiVec exponent preserves in-place lanes ppc-32 little endian
+FILE=malloc://16
+ARGS=-a ppc -b 32 -e cfg.bigendian=false
+CMDS=<<EOF
+wx 8af9e013
+aei
+ar v31w0=0
+ar v31w1=0x3f800000
+ar v31w2=0xbf800000
+ar v31w3=0x40400000
+aes
+ar v31w0
+ar v31w1
+ar v31w2
+ar v31w3
+EOF
+EXPECT=<<EOF
+0x3f800000
+0x40000000
+0x3f000000
+0x41000000
+EOF
+RUN

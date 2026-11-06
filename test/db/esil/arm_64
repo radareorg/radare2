@@ -5585,3 +5585,135 @@ EXPECT=<<EOF
 0x3333333344444444
 EOF
 RUN
+
+NAME=arm64 fixed-point conversions with 32-bit operands
+FILE=malloc://32
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 20f4021e20f4031e20f4181e20f4191e
+aei
+ar w1=-14
+aes
+ar s0
+ar w1=14
+aes
+ar s0
+ar s1=0xbfe00000
+aes
+ar x0
+ar s1=0x3fe00000
+aes
+ar x0
+EOF
+EXPECT=<<EOF
+0xbfe00000
+0x3fe00000
+0xfffffff2
+0x0000000e
+EOF
+RUN
+
+NAME=arm64 fixed-point conversions with 64-bit operands
+FILE=malloc://32
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 20f4429e20f4439e20f4589e20f4599e
+aei
+ar x1=-14
+aes
+ar d0
+ar x1=0x8000000000000000
+aes
+ar d0
+ar d1=0xbffc000000000000
+aes
+ar x0
+ar d1=0x43b0000000000000
+aes
+ar x0
+EOF
+EXPECT=<<EOF
+0xbffc000000000000
+0x43b0000000000000
+0xfffffffffffffff2
+0x8000000000000000
+EOF
+RUN
+
+NAME=arm64 fixed-point conversions with maximum fractional bits
+FILE=malloc://32
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2080021e2080181e2000429e2000599e2000589e
+aei
+ar w1=0x80000000
+aes
+ar s0
+ar s1=0xbf000000
+aes
+ar x0
+ar x1=0x8000000000000000
+aes
+ar d0
+ar d1=0x3fe0000000000000
+aes
+ar x0
+ar d1=0xbfe0000000000000
+aes
+ar x0
+EOF
+EXPECT=<<EOF
+0xbf000000
+0x80000000
+0xbfe0000000000000
+0x8000000000000000
+0x8000000000000000
+EOF
+RUN
+
+NAME=arm64 fcvtzu preserves the unsigned 64-bit range without scaling
+FILE=malloc://16
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2000799e2000799e
+aei
+ar d1=0x43e0000000000000
+aes
+ar x0
+ar d1=0xbff0000000000000
+aes
+ar x0
+EOF
+EXPECT=<<EOF
+0x8000000000000000
+0x00000000
+EOF
+RUN
+
+NAME=arm.v35 fixed-point conversions with 64-bit operands
+FILE=malloc://32
+REQUIRE=arm.v35
+ARGS=-a arm.v35 -b 64
+CMDS=<<EOF
+wx 20f4429e20f4439e20f4589e20f4599e
+aei
+ar x1=-14
+aes
+ar d0
+ar x1=0x8000000000000000
+aes
+ar d0
+ar d1=0xbffc000000000000
+aes
+ar x0
+ar d1=0x43b0000000000000
+aes
+ar x0
+EOF
+EXPECT=<<EOF
+0xbffc000000000000
+0x43b0000000000000
+0xfffffffffffffff2
+0x8000000000000000
+EOF
+RUN

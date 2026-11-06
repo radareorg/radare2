@@ -1519,17 +1519,22 @@ static int analop_esil(RArchSession *a, RAnalOp *op, const ut8 *buf, int len, In
 			REGBITS64 (0), REGBITS64 (1), REG64 (1), REG64 (0));
 		break;
 	case ARM64_SCVTF:
-		r_strbuf_setf (&op->esil, "%d,", REGBITS64 (0));
-		ARG64_SIGN_APPEND(&op->esil, 1, REGBITS64 (1));
-		r_strbuf_append (&op->esil, ",I2D,D2F,");
-		VEC64_DST_APPEND(&op->esil, 0, -1);
-		r_strbuf_append (&op->esil, ",=");
-		break;
 	case ARM64_UCVTF:
 		r_strbuf_setf (&op->esil, "%d,", REGBITS64 (0));
-		ARG64_APPEND(&op->esil, 1);
-		r_strbuf_append (&op->esil, ",U2D,D2F,");
-		VEC64_DST_APPEND(&op->esil, 0, -1);
+		if (insn->operation == ARM64_SCVTF) {
+			ARG64_SIGN_APPEND (&op->esil, 1, REGBITS64 (1));
+			r_strbuf_append (&op->esil, ",I2D");
+		} else {
+			ARG64_APPEND (&op->esil, 1);
+			r_strbuf_append (&op->esil, ",U2D");
+		}
+		if (OPCOUNT64 () > 2 && ISIMM64 (2)) {
+			r_strbuf_append (&op->esil, ",");
+			ARG64_APPEND (&op->esil, 2);
+			r_strbuf_append (&op->esil, ",I2D,EXP2,SWAP,F/");
+		}
+		r_strbuf_append (&op->esil, ",D2F,");
+		VEC64_DST_APPEND (&op->esil, 0, -1);
 		r_strbuf_append (&op->esil, ",=");
 		break;
 	case ARM64_FCVTAU:
@@ -1542,11 +1547,16 @@ static int analop_esil(RArchSession *a, RAnalOp *op, const ut8 *buf, int len, In
 	case ARM64_FCVTPS:
 	case ARM64_FCVTZU:
 	case ARM64_FCVTZS:
-		// TODO: unsigned int won't be right, idk entirely what it even means
-		// also the rounding mode... idk i hate floats
+		// TODO: Handle the remaining rounding modes and unsigned conversions.
 		r_strbuf_setf (&op->esil, "%d,", REGBITS64 (1));
 		ARG64_APPEND (&op->esil, 1);
-		r_strbuf_append (&op->esil, ",F2D,D2I,");
+		r_strbuf_append (&op->esil, ",F2D");
+		if (OPCOUNT64 () > 2 && ISIMM64 (2)) {
+			r_strbuf_append (&op->esil, ",");
+			ARG64_APPEND (&op->esil, 2);
+			r_strbuf_append (&op->esil, ",I2D,EXP2,F*");
+		}
+		r_strbuf_append (&op->esil, insn->operation == ARM64_FCVTZU? ",D2U,": ",D2I,");
 		VEC64_DST_APPEND (&op->esil, 0, -1);
 		r_strbuf_append (&op->esil, ",=");
 		break;

@@ -626,7 +626,6 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_FRNDINT:
 	case X86_INS_FRSTOR:
 	case X86_INS_FNSAVE:
-	case X86_INS_FSCALE:
 	case X86_INS_FSETPM:
 	case X86_INS_FSINCOS:
 	case X86_INS_FNSTENV:
@@ -634,11 +633,23 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_FXSAVE:
 	case X86_INS_FXSAVE64:
 	case X86_INS_FXTRACT:
-	case X86_INS_FYL2X:
-	case X86_INS_FYL2XP1:
 	case X86_INS_FISTTP:
 	case X86_INS_FSQRT:
 	case X86_INS_FXCH:
+		break;
+	case X86_INS_FYL2X:
+	case X86_INS_FYL2XP1:
+		esilprintf (op,
+			"st1,st0,%sLOG2,F*,st1,=,"
+			"st1,st0,=,st2,st1,=,st3,st2,=,st4,st3,=,"
+			"st5,st4,=,st6,st5,=,st7,st6,=",
+			insn->id == X86_INS_FYL2XP1? "1,I2D,F+,": "");
+		break;
+	case X86_INS_F2XM1:
+		esilprintf (op, "1,I2D,st0,EXP2,F-,st0,=");
+		break;
+	case X86_INS_FSCALE:
+		esilprintf (op, "st1,DUP,0,I2D,SWAP,F<,?{,CEIL,}{,FLOOR,},EXP2,st0,F*,st0,=");
 		break;
 	case X86_INS_FTST:
 	case X86_INS_FUCOMI:
@@ -3532,6 +3543,7 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case X86_INS_FPTAN:
 	case X86_INS_FFREEP:
 	case X86_INS_FRNDINT:
+	case X86_INS_F2XM1:
 	case X86_INS_FSCALE:
 	case X86_INS_FSETPM:
 	case X86_INS_FSINCOS:

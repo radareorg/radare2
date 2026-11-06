@@ -458,6 +458,8 @@ static RCoreHelpMessage help_detail_ae = {
 	"CEIL", "", "float ceil",
 	"FLOOR", "", "float floor",
 	"ROUND", "", "float round",
+	"LOG2", "", "float base-2 logarithm",
+	"EXP2", "", "float base-2 exponentiation",
 	"SQRT", "", "float square root",
 	"POP", "", "drops last element in the esil stack",
 	"DUP", "", "duplicate last value in stack",
