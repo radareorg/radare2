@@ -73,20 +73,16 @@ static TAG_CALLBACK(spp_set) {
 	if (!state->echo[state->ifl]) {
 		return 0;
 	}
-	for (eq=buf; eq[0]; eq++) {
-		switch (eq[0]) {
-		case '-':
-		case '.':
-			eq[0] = '_';
-			break;
-		}
-	}
-	eq = strchr (buf, ' ');
+	eq = strpbrk (buf, " \t");
 	if (eq) {
 		*eq = '\0';
 		val = eq + 1;
+		while (IS_SPACE (*val)) {
+			val++;
+		}
 	}
 	if (spp_var_set (buf, val) == -1) {
+		state->failed = true;
 		fprintf (stderr, "Invalid variable name '%s' at line %d\n", buf, state->lineno);
 	}
 	return 0;
@@ -187,7 +183,8 @@ static TAG_CALLBACK(spp_error) {
 		return 0;
 	}
 	fprintf (stderr, "ERROR: %s (line=%d)\n", buf, state->lineno);
-	return -1;
+	state->failed = true;
+	return 0;
 }
 
 static TAG_CALLBACK(spp_warning) {
@@ -214,26 +211,34 @@ static TAG_CALLBACK(spp_include) {
 	if (!state->echo[state->ifl]) {
 		return 0;
 	}
+	size_t buflen = strlen (buf);
+	if (buflen >= 2 && *buf == '"' && buf[buflen - 1] == '"') {
+		buf[--buflen] = 0;
+		buf++;
+		buflen--;
+	}
 	bool absolute = *buf == '/' || (*buf == '\\' && buf[1] == '\\')
-		|| (isalpha ((unsigned char)*buf) && buf[1] == ':' && (buf[2] == '/' || buf[2] == '\\'));
-	char *incdir = r_sys_getenv ("SPP_INCDIR");
-	if (!incdir || absolute) {
+		|| (buflen >= 3 && isalpha ((unsigned char)*buf) && buf[1] == ':' && (buf[2] == '/' || buf[2] == '\\'));
+	if (absolute) {
 		spp_file (buf, out);
-		free (incdir);
 		return 0;
 	}
+	char *incdir = r_sys_getenv ("SPP_INCDIR");
 #if R2__WINDOWS__
 	const char separator = ';';
 #else
 	const char separator = ':';
 #endif
-	char *dir = incdir;
-	size_t buflen = strlen (buf);
+	char *next = incdir;
+	const char *dir = state->include_dir? state->include_dir: (incdir? NULL: ".");
 	bool found = false;
-	while (dir) {
-		char *next = strchr (dir, separator);
-		if (next) {
-			*next++ = '\0';
+	while (dir || next) {
+		if (!dir) {
+			dir = next;
+			next = strchr (next, separator);
+			if (next) {
+				*next++ = 0;
+			}
 		}
 		if (!*dir) {
 			dir = ".";
@@ -249,19 +254,17 @@ static TAG_CALLBACK(spp_include) {
 		memcpy (path, dir, dirlen);
 		path[dirlen] = '/';
 		memcpy (path + dirlen + 1, buf, buflen + 1);
-		FILE *in = r_sandbox_fopen (path, "r");
+		found = spp_open_file (path, out);
 		free (path);
-		if (in) {
-			spp_io (in, out);
-			fclose (in);
-			found = true;
+		if (found) {
 			break;
 		}
-		dir = next;
+		dir = NULL;
 	}
 	free (incdir);
 	if (!found) {
 		fprintf (stderr, "Cannot find '%s'\n", buf);
+		state->failed = true;
 	}
 	return 0;
 }
@@ -275,24 +278,16 @@ static TAG_CALLBACK(spp_if) {
 
 /* {{ ifeq $path / }} */
 static TAG_CALLBACK(spp_ifeq) {
-	char *value = buf;
-	char *eq = strchr(buf, ' ');
+	char *eq = strpbrk (buf, " \t");
 	if (eq) {
-		*eq = '\0';
-		value = spp_var_get(value);
-		if (value && !strcmp(value, eq+1)) {
-			state->echo[state->ifl + 1] = 1;
-		} else state->echo[state->ifl + 1] = 0;
-		free (value);
-//fprintf(stderr, "IFEQ(%s)(%s)=%d\n", buf, eq+1, echo[ifl]);
-	} else {
-		value = spp_var_get(buf);
-		if (!value || *value=='\0')
-			state->echo[state->ifl + 1] = 1;
-		else state->echo[state->ifl + 1] = 0;
-		free (value);
-//fprintf(stderr, "IFEQ(%s)(%s)=%d\n", buf, value, echo[ifl]);
+		*eq++ = 0;
+		while (IS_SPACE (*eq)) {
+			eq++;
+		}
 	}
+	char *value = spp_var_get (buf);
+	state->echo[state->ifl + 1] = eq? value && !strcmp (value, eq): !value || !*value;
+	free (value);
 	return 1;
 }
 
@@ -347,7 +342,7 @@ static TAG_CALLBACK(spp_else) {
 
 static TAG_CALLBACK(spp_ifnot) {
 	spp_if (state, out, buf);
-	spp_else (state, out, buf);
+	state->echo[state->ifl + 1] = !state->echo[state->ifl + 1];
 	return 1;
 }
 

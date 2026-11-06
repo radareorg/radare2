@@ -107,6 +107,10 @@ typedef struct SppState {
 	int lineno;
 	int echo[MAXIFL];
 	int ifl;
+	bool failed;
+	bool seen_else[MAXIFL];
+	unsigned int include_depth;
+	const char *include_dir;
 } SppState;
 
 typedef struct SppBuf {
@@ -148,6 +152,7 @@ typedef struct Proc {
 	int default_echo;
 	SppState state;
 	SppBuf buf;
+	char *(*filter)(const char *input);
 } SppProc;
 
 typedef struct spp_t {
@@ -164,7 +169,7 @@ S_API void spp_proc_list(void);
 S_API void spp_proc_list_kw(void);
 S_API void spp_proc_set(SppProc *p, const char *arg, int fail);
 S_API const SppProc *spp_default_proc(void);
-/* A NULL processor uses an isolated copy of the default spp processor. */
+/* Evaluation uses an isolated copy of p, or the default processor when NULL. */
 S_API char *spp_eval_str(SppProc *p, const char *code);
 
 S_API Spp *spp_new(SppProc *proc);

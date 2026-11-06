@@ -74,11 +74,137 @@ static bool test_assembly_delimiters(void) {
 	mu_end;
 }
 
+static bool test_preprocessor_sources(void) {
+	const char *sources[] = {
+		".set R2_ASM_TEST 1\n.if R2_ASM_TEST\n.byte 1\n.else\n.byte 2\n.endif\n",
+		".set R2_ASM_TEST 0\n.if R2_ASM_TEST\n.if R2_ASM_TEST\n.else\n.set R2_ASM_TEST 1\n.error skipped\n.include /missing\n.endif\n.endif\n.if R2_ASM_TEST\n.byte 2\n.else\n.byte 1\n.endif\n",
+		".set\tR2_ASM_TEST\t1 ; enabled\n  .ifeq\tR2_ASM_TEST\t1 # selected\n.byte 1\n.endif ; done\n",
+		".set R2_ASM_TEST .byte 2-1\n.get R2_ASM_TEST\n",
+		".set R2_ASM_TEST 2-1\n.byte .get R2_ASM_TEST\n",
+		"; .error comment\n# .error comment\n/*\n.error comment\n*/\n.byte 1\n",
+	};
+	RAsm *a = r_asm_new ();
+	a->use_spp = true;
+	char *saved = r_sys_getenv ("R2_ASM_TEST");
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (sources); i++) {
+		RAsmCode *code = r_asm_assemble (a, sources[i]);
+		mu_assert_notnull (code, "preprocessor selects valid source");
+		mu_assert_eq (code->len, 1, "one selected byte");
+		mu_assert_eq (code->bytes[0], 1, "selected branch and exact variable value");
+		r_asm_code_free (code);
+	}
+	RAsmCode *code = r_asm_assemble (a, ".ascii \".if R2_ASM_TEST\"\n.byte 1\n");
+	const ut8 expected[] = ".if R2_ASM_TEST\x01";
+	mu_assert_notnull (code, "quoted directives stay literal");
+	mu_assert_eq (code->len, sizeof (expected) - 1, "literal length");
+	mu_assert_memeq (code->bytes, expected, sizeof (expected) - 1, "literal bytes");
+	r_asm_code_free (code);
+	r_sys_setenv ("R2_ASM_TEST", saved);
+	free (saved);
+	r_asm_free (a);
+	mu_end;
+}
+
+static bool test_preprocessor_errors(void) {
+	const char *sources[] = {
+		".error intentional\n.byte 1\n",
+		".include /missing-r2-asm-test\n.byte 1\n",
+		".endif\n.byte 1\n",
+		".else\n.byte 1\n",
+		".if R2_ASM_TEST\n.else\n.else\n.endif\n.byte 1\n",
+		".if R2_ASM_TEST\n.byte 1\n",
+		"<{if R2_ASM_TEST\n.byte 1\n",
+		".ifdef R2_ASM_TEST\n.byte 1\n",
+	};
+	RAsm *a = r_asm_new ();
+	a->use_spp = true;
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (sources); i++) {
+		RAsmCode *code = r_asm_assemble (a, sources[i]);
+		mu_assert_null (code, "preprocessor error must reject the whole assembly");
+		code = r_asm_assemble (a, ".byte 7\n");
+		mu_assert_notnull (code, "next assembly recovers after a preprocessor error");
+		mu_assert_eq (code->len, 1, "recovery length");
+		mu_assert_eq (code->bytes[0], 7, "recovery bytes");
+		r_asm_code_free (code);
+	}
+	r_asm_free (a);
+	mu_end;
+}
+
+static bool test_preprocessor_spp_tags(void) {
+	const char *sources[] = {
+		".set R2_ASM_TEST 2\n.ifeq\tR2_ASM_TEST\t1\n.byte 2\n.else\n.byte 1\n.endif\n",
+		".set R2_ASM_TEST 2\n.ifeq R2_ASM_TEST    2\n.byte 1\n.else\n.byte 2\n.endif\n",
+		"<{set R2_ASM_TEST 0}><{ifnot R2_ASM_TEST}>\n.byte 1\n<{else}>\n.byte 2\n<{endif}>\n",
+		"<{set R2_ASM_TEST 1}><{switch R2_ASM_TEST}><{case 0}>\n.byte 2\n<{case 1}>\n.byte 1\n<{endswitch}>\n",
+	};
+	RAsm *a = r_asm_new ();
+	a->use_spp = true;
+	char *saved = r_sys_getenv ("R2_ASM_TEST");
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (sources); i++) {
+		RAsmCode *code = r_asm_assemble (a, sources[i]);
+		mu_assert_notnull (code, "preprocessor tag selection");
+		mu_assert_eq (code->len, 1, "one selected byte");
+		mu_assert_eq (code->bytes[0], 1, "tag selects correct branch");
+		r_asm_code_free (code);
+	}
+	r_asm_set_pc (a, 0);
+	RAsmCode *code = r_asm_assemble (a, "label.get:\n.byte 1\n.uint16 label.get\n");
+	const ut8 expected[] = { 1, 0, 0 };
+	mu_assert_notnull (code, "dot in a symbol is not a preprocessor directive");
+	mu_assert_eq (code->len, sizeof (expected), "symbol length");
+	mu_assert_memeq (code->bytes, expected, sizeof (expected), "symbol bytes");
+	r_asm_code_free (code);
+	r_sys_setenv ("R2_ASM_TEST", saved);
+	free (saved);
+	r_asm_free (a);
+	mu_end;
+}
+
+static bool test_preprocessor_nesting(void) {
+	RAsm *a = r_asm_new ();
+	a->use_spp = true;
+	char *saved = r_sys_getenv ("R2_ASM_TEST");
+	r_sys_setenv ("R2_ASM_TEST", "1");
+	int depth;
+	for (depth = 127; depth <= 128; depth++) {
+		RStrBuf source = {0};
+		int i;
+		for (i = 0; i < depth; i++) {
+			r_strbuf_append (&source, ".if R2_ASM_TEST\n");
+		}
+		r_strbuf_append (&source, ".byte 1\n");
+		for (i = 0; i < depth; i++) {
+			r_strbuf_append (&source, ".endif\n");
+		}
+		RAsmCode *code = r_asm_assemble (a, r_strbuf_get (&source));
+		if (depth == 127) {
+			mu_assert_notnull (code, "maximum conditional nesting");
+			mu_assert_eq (code->len, 1, "deep branch emits one byte");
+		} else {
+			mu_assert_null (code, "conditional depth overflow is rejected before indexing");
+		}
+		r_asm_code_free (code);
+		r_strbuf_fini (&source);
+	}
+	r_sys_setenv ("R2_ASM_TEST", saved);
+	free (saved);
+	r_asm_free (a);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_equ_tokens);
 	mu_run_test (test_equ_aliases);
 	mu_run_test (test_equ_long_names);
 	mu_run_test (test_assembly_delimiters);
+	mu_run_test (test_preprocessor_sources);
+	mu_run_test (test_preprocessor_errors);
+	mu_run_test (test_preprocessor_nesting);
+	mu_run_test (test_preprocessor_spp_tags);
 	return tests_passed != tests_run;
 }
 

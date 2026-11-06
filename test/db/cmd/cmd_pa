@@ -135,8 +135,10 @@ pa nop
 EOF
 EXPECT=<<EOF
 90
-90
 done
+EOF
+EXPECT_ERR=<<EOF
+Unterminated preprocessor conditional or tag
 EOF
 RUN
 

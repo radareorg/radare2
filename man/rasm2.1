@@ -80,7 +80,17 @@ Relative .include paths are resolved from the directory of the input file
 specified with \-f, or the current directory for standard input and inline code.
 Additional \-I directories and SPP_INCDIR are searched afterward. SPP_INCDIR
 accepts a colon-separated list of directories (semicolon-separated on Windows).
-Absolute include paths are used directly.
+Absolute include paths are used directly. Nested includes first search the
+including file's directory; included assembly is preprocessed recursively.
+Include names may be double quoted. Missing includes, .error, unbalanced
+conditionals and excessive nesting fail assembly without emitting partial code.
+.Pp
+.set NAME VALUE stores a preprocessor environment variable; .get NAME expands
+its value. .if NAME tests that variable (unset, empty, or a value starting with
+0 is false), and .ifeq NAME VALUE compares it as a string. .else and .endif
+control the selected branch. These conditions do not evaluate assembler .equ
+symbols or numeric expressions: use .set TARGET_GB 1 followed by .if TARGET_GB.
+Directives inside comments and quoted assembly strings are literal.
 .It Fl q
 Quiet output (handy for -L, -v, ...)
 .It Fl r
