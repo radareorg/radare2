@@ -3,11 +3,23 @@
 #include <limits.h>
 #include "spp.h"
 #include "r_api.h"
+static int spp_open_file(const char *file, Output *out);
+
 #include "config.h"
 
 #if !USE_R2
 #include "r_api.c"
 #endif
+
+static bool spp_active(SppState *state) {
+	int i;
+	for (i = 0; i <= state->ifl; i++) {
+		if (!state->echo[i]) {
+			return false;
+		}
+	}
+	return true;
+}
 
 S_API int spp_run(char *buf, Output *out) {
 	SppProc *p = out->proc? out->proc: proc;
@@ -27,15 +39,41 @@ S_API int spp_run(char *buf, Output *out) {
 	}
 
 	if (p->token) {
-		tok = strstr (buf, p->token);
+		tok = !strcmp (p->token, " ")? strpbrk (buf, " \t"): strstr (buf, p->token);
 		if (tok) {
 			*tok = '\0';
 			tok = tok + 1;
+			while (IS_SPACE (*tok)) {
+				tok++;
+			}
 		} else {
 			tok = buf;
 		}
 	} else {
 		tok = buf;
+	}
+	bool opening = !strcmp (buf, "if") || !strcmp (buf, "ifeq")
+		|| !strcmp (buf, "ifnot") || !strcmp (buf, "ifin") || !strcmp (buf, "switch")
+		|| !strcmp (buf, "ifdef") || !strcmp (buf, "ifndef");
+	bool closing = !strcmp (buf, "endif") || !strcmp (buf, "endswitch");
+	bool alternate = !strcmp (buf, "else");
+	bool selector = !strcmp (buf, "case");
+	if (p->state.failed) {
+		return 0;
+	}
+	if ((opening && p->state.ifl >= MAXIFL - 1)
+			|| ((closing || alternate || selector) && p->state.ifl <= 0)
+			|| (alternate && p->state.seen_else[p->state.ifl])) {
+		fprintf (stderr, "Invalid conditional '%s' at line %d\n", buf, p->state.lineno);
+		p->state.failed = true;
+		return 0;
+	}
+	if (opening) {
+		p->state.seen_else[p->state.ifl + 1] = false;
+	} else if (alternate) {
+		p->state.seen_else[p->state.ifl] = true;
+	} else if (!closing && !selector && !spp_active (&p->state)) {
+		return 0;
 	}
 	for (i = 0; tags[i].callback; i++) {
 		D fprintf (stderr, "NAME=(%s)\n", tok);
@@ -50,6 +88,7 @@ S_API int spp_run(char *buf, Output *out) {
 			}
 			if (ret) {
 				if (p->state.ifl < 0 || p->state.ifl >= MAXIFL) {
+					p->state.failed = true;
 					fprintf (stderr, "Nested conditionals parsing error.\n");
 					break;
 				}
@@ -132,6 +171,9 @@ S_API void spp_proc_eval(SppProc *proc, char *buf, Output *out) {
 	int delta;
 	int printed = 0;
 retry:
+	if (proc->state.failed) {
+		return;
+	}
 	/* per word */
 	if (!proc->tag_pre && proc->token) {
 		do {
@@ -259,6 +301,22 @@ S_API void spp_io(FILE *in, Output *out) {
 	out->proc = p;
 	char buf[4096];
 	int lines;
+	if (p->filter) {
+		SStrBuf *input = r_strbuf_new (NULL);
+		bool ok = input != NULL;
+		while (ok && fgets (buf, sizeof (buf), in)) {
+			ok = r_strbuf_append (input, buf);
+		}
+		char *filtered = ok && !ferror (in)? p->filter (r_strbuf_get (input)): NULL;
+		r_strbuf_free (input);
+		if (filtered) {
+			spp_proc_eval (p, filtered, out);
+			free (filtered);
+		} else {
+			p->state.failed = true;
+		}
+		return;
+	}
 	if (!p->buf.lbuf) {
 		p->buf.lbuf = calloc (1, 4096);
 		if (!p->buf.lbuf) {
@@ -305,15 +363,52 @@ S_API void spp_io(FILE *in, Output *out) {
 	(void)do_fputs (out, p->buf.lbuf);
 }
 
-S_API int spp_file(const char *file, Output *out) {
+static int spp_open_file(const char *file, Output *out) {
+	SppProc *p = out->proc? out->proc: proc;
+	if (p->state.include_depth >= 32) {
+		fprintf (stderr, "Include nesting limit exceeded\n");
+		p->state.failed = true;
+		return 1;
+	}
 	FILE *in = r_sandbox_fopen (file, "r");
-	D fprintf (stderr, "SPP-FILE(%s)\n", file);
-	if (in) {
-		spp_io (in, out);
+	if (!in) {
+		return 0;
+	}
+	char *dir = strdup (file);
+	if (!dir) {
 		fclose (in);
+		p->state.failed = true;
+		return 1;
+	}
+	char *slash = strrchr (dir, '/');
+#if R2__WINDOWS__
+	char *backslash = strrchr (dir, '\\');
+	if (backslash && (!slash || backslash > slash)) {
+		slash = backslash;
+	}
+#endif
+	if (slash) {
+		slash[1] = 0;
+	} else {
+		dir[0] = 0;
+	}
+	const char *saved = p->state.include_dir;
+	p->state.include_dir = dir;
+	p->state.include_depth++;
+	spp_io (in, out);
+	p->state.include_depth--;
+	p->state.include_dir = saved;
+	free (dir);
+	fclose (in);
+	return 1;
+}
+
+S_API int spp_file(const char *file, Output *out) {
+	if (spp_open_file (file, out)) {
 		return 1;
 	}
 	fprintf (stderr, "Cannot find '%s'\n", file);
+	(out->proc? out->proc: proc)->state.failed = true;
 	return 0;
 }
 
@@ -394,25 +489,29 @@ static void spp_proc_init(SppProc *p) {
 }
 
 S_API char *spp_eval_str(SppProc *p, const char *code) {
-	SppProc local;
-	if (!p) {
-		local = *spp_default_proc ();
-		local.buf = (SppBuf) {0};
-		local.state.pipe_fd = NULL;
-		local.state.switch_str = NULL;
-		p = &local;
-	}
+	SppProc local = p? *p: *spp_default_proc ();
+	local.buf = (SppBuf) {0};
+	local.state = (SppState) { .user = local.state.user };
+	p = &local;
 	spp_proc_init (p);
 	Output out = { .proc = p };
 	out.fout = NULL;
 	out.cout = r_strbuf_new (NULL);
 	r_strbuf_init (out.cout);
-	char *c = strdup (code);
+	char *c = p->filter? p->filter (code): strdup (code);
 	if (c) {
 		spp_proc_eval (p, c, &out);
 		free (c);
 	}
+	if (!p->state.failed && (p->state.ifl || p->buf.lbuf_n)) {
+		fprintf (stderr, "Unterminated preprocessor conditional or tag\n");
+		p->state.failed = true;
+	}
 	char *result = r_strbuf_drain (out.cout);
+	if (!c || p->state.failed) {
+		free (result);
+		result = NULL;
+	}
 	free (p->state.switch_str);
 	p->state.switch_str = NULL;
 #if SPP_HAVE_SYSTEM
@@ -421,8 +520,6 @@ S_API char *spp_eval_str(SppProc *p, const char *code) {
 		p->state.pipe_fd = NULL;
 	}
 #endif
-	if (p == &local) {
-		free (local.buf.lbuf);
-	}
+	free (local.buf.lbuf);
 	return result;
 }

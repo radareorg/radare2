@@ -12,7 +12,7 @@ R_LIB_VERSION(r_asm);
 static RAsmPlugin *asm_static_plugins[] = { R_ASM_STATIC_PLUGINS };
 
 static const char *directives[] = {
-	".include", ".error", ".warning", ".echo", ".if", ".ifeq", ".endif", ".else", ".set", ".get", ".extern", NULL
+	".include", ".error", ".warning", ".echo", ".if", ".ifeq", ".endif", ".else", ".set", ".get", NULL
 };
 
 R_API bool r_asm_plugin_add(RAsm *a, RAsmPlugin *foo) {
@@ -673,49 +673,82 @@ R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 
 typedef int(*Ase)(RAsm *a, RAnalOp *op, const char *buf);
 
-static char *replace_directives_for(char *str, const char *token) {
-	RStrBuf *sb = r_strbuf_new ("");
-	char *p = NULL;
-	char *q = str;
-	bool changes = false;
-	for (;;) {
-		p = q? strstr (q, token): NULL;
-		if (p) {
-			char *nl = strchr (p, '\n');
-			if (nl) {
-				*nl++ = 0;
-			}
-			char _ = *p;
-			*p = 0;
-			r_strbuf_append (sb, q);
-			*p = _;
-			r_strbuf_appendf (sb, "<{%s}>\n", p + 1);
-			q = nl;
-			changes = true;
-		} else {
-			if (q) {
-				r_strbuf_append (sb, q);
-			}
-			break;
+static char *replace_directives(const char *str) {
+	RStrBuf sb = {0};
+	const char *p = str;
+	bool block_comment = false;
+	while (*p) {
+		const char *line = p;
+		const char *end = strchr (p, '\n');
+		if (!end) {
+			end = p + strlen (p);
 		}
+		const char *directive = NULL;
+		const char *comment = end;
+		bool quoted = false;
+		bool leading = true;
+		for (; p < end; p++) {
+			if (block_comment) {
+				if (*p == '*' && p + 1 < end && p[1] == '/') {
+					block_comment = false;
+					p++;
+				}
+				continue;
+			}
+			if (quoted) {
+				if (*p == '\\' && p + 1 < end) {
+					p++;
+				} else if (*p == '"') {
+					quoted = false;
+				}
+				continue;
+			}
+			if (*p == ';' || *p == '#') {
+				comment = p;
+				break;
+			}
+			if (*p == '/' && p + 1 < end && p[1] == '*') {
+				block_comment = true;
+				p++;
+				continue;
+			}
+			if (*p == '"') {
+				quoted = true;
+			}
+			if (*p == '.' && !directive && (p == line
+					|| (!isalnum ((ut8)p[-1]) && p[-1] != '_' && p[-1] != '.'))) {
+				int i;
+				for (i = 0; directives[i]; i++) {
+					size_t len = strlen (directives[i]);
+					if ((leading || !strcmp (directives[i], ".get"))
+							&& (size_t)(end - p) >= len && !strncmp (p, directives[i], len)
+							&& (p + len == end || isspace ((ut8)p[len]))) {
+						directive = p;
+						break;
+					}
+				}
+			}
+			if (!isspace ((ut8)*p)) {
+				leading = false;
+			}
+		}
+		bool ok;
+		if (directive) {
+			ok = r_strbuf_append_n (&sb, line, directive - line)
+				&& r_strbuf_append (&sb, "<{")
+				&& r_strbuf_append_n (&sb, directive + 1, comment - directive - 1)
+				&& r_strbuf_append (&sb, "}>\n");
+		} else {
+			ok = r_strbuf_append_n (&sb, line, end - line)
+				&& r_strbuf_append (&sb, "\n");
+		}
+		if (!ok) {
+			r_strbuf_fini (&sb);
+			return NULL;
+		}
+		p = *end? end + 1: end;
 	}
-	if (changes) {
-		free (str);
-		return r_strbuf_drain (sb);
-	}
-	r_strbuf_free (sb);
-	return str;
-}
-
-static char *replace_directives(char *str) {
-	int i = 0;
-	const char *dir = directives[i++];
-	char *o = replace_directives_for (str, dir);
-	while (dir) {
-		o = replace_directives_for (o, dir);
-		dir = directives[i++];
-	}
-	return o;
+	return r_strbuf_drain_nofree (&sb);
 }
 
 R_API char *r_asm_list_directives(void) {
@@ -1157,8 +1190,9 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 
 	char *lbuf = strdup (assembly);
 	if (a->use_spp) {
-		lbuf = replace_directives (lbuf);
-		char *expanded = spp_eval_str (NULL, lbuf);
+		SppProc preprocessor = *spp_default_proc ();
+		preprocessor.filter = replace_directives;
+		char *expanded = spp_eval_str (&preprocessor, lbuf);
 		free (lbuf);
 		lbuf = expanded;
 		if (!lbuf) {

@@ -433,7 +433,10 @@ EXPECT=<<EOF2
 90
 90
 90
-90
+EOF2
+EXPECT_ERR=<<EOF2
+Cannot find '/etc/hosts'
+Unable to open '/etc/hosts'
 EOF2
 RUN
 

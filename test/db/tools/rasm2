@@ -468,7 +468,7 @@ NAME=rasm2  SPP include directive
 FILE=-
 CMDS=!rasm2 -a x86 -b 32 -p -I . -f bins/other/rasm2/asm/include.asm
 EXPECT=<<EOF
-9083e803bb00000000cd80c3
+9083e80341bb00000000cd80c3
 EOF
 RUN
 
@@ -542,12 +542,10 @@ scripts/rasm2/extra
 EOF
 RUN
 
-NAME=rasm2  SPP nested conditionals
+NAME=rasm2 SPP error stops assembly after nested conditionals
 FILE=-
 CMDS=!rasm2 -a x86 -b 32 -p -f bins/other/rasm2/asm/nest.asm
-EXPECT=<<EOF
-83c10283e90583c301b90200000090
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
 WARNING: WARN (line=1)
 ERROR: ERR (line=1)
@@ -1303,5 +1301,26 @@ EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Cannot assemble 'beq t0, zero, 0x102' at line 1
 ERROR: Cannot assemble 'b 0x40000' at line 1
+EOF
+RUN
+
+NAME=rasm2 SPP recursive directives and include-local paths
+FILE=--
+CMDS=<<EOF
+rasm2 -p -f scripts/rasm2/nested/main.asm
+rasm2 -p -I scripts/rasm2/nested/child -f scripts/rasm2/nested/main.asm
+EOF
+EXPECT=<<EOF
+0102030405
+0102030405
+EOF
+RUN
+
+NAME=rasm2 SPP cyclic includes fail without partial output
+FILE=--
+CMDS=rasm2 -p -f scripts/rasm2/nested/cycle.asm
+EXPECT=
+EXPECT_ERR=<<EOF
+Include nesting limit exceeded
 EOF
 RUN
