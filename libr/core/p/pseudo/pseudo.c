@@ -2398,27 +2398,6 @@ static bool pdc_decompile_function(RCore *core, const char *input, PDCState *par
 		return true;
 	}
 
-	const char *cmdPdc = r_config_get (core->config, "cmd.pdc");
-	if (R_STR_ISNOTEMPTY (cmdPdc) && !strstr (cmdPdc, "pdc")) {
-		RConfigHold *hc = r_config_hold_new (core->config);
-		if (hc) {
-			r_config_hold (hc, "asm.addr.relto", "asm.addr.base", NULL);
-			r_config_set (core->config, "asm.addr.relto", "");
-			r_config_set_i (core->config, "asm.addr.base", 16);
-		}
-		if (strstr (cmdPdc, "!*") || strstr (cmdPdc, "#!")) {
-			if (!strcmp (input, "*")) {
-				input = " -r2";
-			} else if (!strcmp (input, "=")) {
-				input = " -a";
-			}
-		}
-		const bool ok = r_core_cmdf (core, "%s%s", cmdPdc, input) == 0;
-		r_config_hold_restore (hc);
-		r_config_hold_free (hc);
-		return ok;
-	}
-
 	PDCState state = { 0 };
 	state.parent = parent;
 	state.inline_prefix = inline_prefix;
