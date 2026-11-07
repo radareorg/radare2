@@ -1030,6 +1030,57 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rasm2 .org without fill preserves PC-only behavior
+FILE=-
+CMDS=<<EOF
+!rasm2 -a z80 -b 8 ".byte 1; .org 8; here:; jp here"
+!rasm2 -a z80 -b 8 ".byte 1; .org 0; here:; jp here"
+EOF
+EXPECT=<<EOF
+01c30800
+01c30000
+EOF
+RUN
+
+NAME=rasm2 .org padding keeps vector labels and forward branches
+FILE=-
+CMDS=!rasm2 -a z80 -b 8 "jp reset; .org 8, 0xff; reset:; jr next; .org 0x10, 0xff; next:; ret"
+EXPECT=<<EOF
+c30800ffffffffff1806ffffffffffffc9
+EOF
+RUN
+
+NAME=rasm2 .org padding honors the initial PC
+FILE=-
+CMDS=<<EOF
+!rasm2 -a z80 -b 8 -s 0x100 "jp reset; .org 0x108, 0xff; reset:; ret"
+!rasm2 -a z80 -b 8 ".org 0x100; jp reset; .org 0x108, 0xff; reset:; ret"
+EOF
+EXPECT=<<EOF
+c30801ffffffffffc9
+c30801ffffffffffc9
+EOF
+RUN
+
+NAME=rasm2 .org padding zero gap and zero fill
+FILE=-
+CMDS=!rasm2 -a z80 -b 8 ".byte 1; .org 1, 0xff; .byte 2; .org 4, 0"
+EXPECT=<<EOF
+01020000
+EOF
+RUN
+
+NAME=rasm2 .org padding rejects backwards targets
+FILE=-
+CMDS=!rasm2 -a z80 -b 8 ".byte 1; .org 0, 0xff"
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: .org with fill cannot move backwards
+ERROR: Cannot assemble '.org 0, 0xff' at line 2
+EOF
+RUN
+
 NAME=rasm2 .db out of range
 FILE=-
 CMDS=!rasm2 ".db 256"
