@@ -336,10 +336,18 @@ beach:
 	return NULL;
 }
 
-// a write-only map reads as 0xff, which a transform would store as data
+// an unreadable map reads as 0xff, which a transform would store as data
 R_IPI bool core_check_readable(RCore *core, ut64 addr, int len) {
 	RIO *io = core->io;
-	if (!io->va) {
+	if (!io->va || len < 1) {
+		return true;
+	}
+	if (io->mask) {
+		addr &= io->mask;
+	}
+	// a region_at walk crawls through holes, so only try the first region
+	RIORegion first;
+	if (r_io_get_region_at (io, &first, addr) && (first.perm & R_PERM_R) && (r_itv_end (first.itv) - addr) >= (ut64)len) {
 		return true;
 	}
 	const RInterval itv = {addr, len};
@@ -350,7 +358,7 @@ R_IPI bool core_check_readable(RCore *core, ut64 addr, int len) {
 	bool ok = true;
 	RIORegion *region;
 	R_VEC_FOREACH (regions, region) {
-		if ((region->perm & R_PERM_RW) == R_PERM_W) {
+		if (!(region->perm & R_PERM_R)) {
 			R_LOG_ERROR ("Cannot use unreadable bytes at 0x%08"PFMT64x", narrow the range or make the map readable with omp", R_MAX (region->itv.addr, addr));
 			r_core_return_value (core, R_CMD_RC_FAILURE);
 			ok = false;
