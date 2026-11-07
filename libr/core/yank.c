@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2024 - pancake & dso */
 
 #include <r_core.h>
+#include <r_core_priv.h>
 
 static ut32 find_next_char(const char *input, char b) {
 	ut32 i = 0;
@@ -82,6 +83,9 @@ R_API bool r_core_yank(RCore *core, ut64 addr, int len) {
 	if (len == 0) {
 		len = core->blocksize;
 	}
+	if (!core_check_readable (core, addr, len)) {
+		return false;
+	}
 	ut8 *buf = malloc (len);
 	if (!buf) {
 		return false;
@@ -121,12 +125,15 @@ R_API bool r_core_yank_string(RCore *core, ut64 addr, int maxlen) {
 	} else if (maxlen > core->blocksize) {
 		maxlen = core->blocksize;
 	}
-	r_core_yank_set (core, addr, buf, maxlen);
+	const bool readable = core_check_readable (core, addr, maxlen);
+	if (readable) {
+		r_core_yank_set (core, addr, buf, maxlen);
+	}
 	if (curseek != addr) {
 		r_core_seek (core, curseek, true);
 	}
 	free (buf);
-	return true;
+	return readable;
 }
 
 R_API bool r_core_yank_paste(RCore *core, ut64 addr, int len) {
