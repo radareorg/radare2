@@ -365,17 +365,87 @@ ffffffff
 EOF
 RUN
 
-NAME=a read-modify-write runs over a map it can neither read nor write
+NAME=unreadable maps refuse swaps, copies, yz past them and io.mask aliases
 FILE=malloc://32
 CMDS=<<EOF
 wx 1011121314151617
+wx 41424300 @ 0x10
+wx 51005354 @ 0x18
 om 3 2 2 2 --- x
+om 3 0x104 1 4 --- alias
+om 3 0x11 1 0x11 -w- past
+om 3 0x1a 1 0x1a -w- after
 wox ff @ 0!6
+wo2 @ 1!2
+wd 2 1 @ 8
+wow 41 @ 0!4
+e io.mask=0xff
+wd 0x102 1 @ 8
+wd 0x104 1 @ 9
+e io.mask=0
+y 2 @ 0x1e
+yz 3 @ 0x10
+y8
+yz @ 0x10
+y8
+yz @ 0x18
+y8
+b 2
+yz 4 @ 0x18
+y8
 e io.va=false
 p8 6 @ 0
+p8 2 @ 8
 EOF
 EXPECT=<<EOF
-efee1213ebea
+0000
+0000
+51
+5100
+414112131415
+0014
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot use unreadable bytes at 0x00000002, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x00000002, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x00000002, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x00000002, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x00000011, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x00000011, narrow the range or make the map readable with omp
+EOF
+RUN
+
+NAME=yz of an empty string is not refused for a map elsewhere
+FILE=malloc://32
+ARGS=-e io.0xff=0
+CMDS=<<EOF
+om 3 8 1 8 -w- elsewhere
+wx 41 @ 0x10
+y 1 @ 0x10
+yz @ 0x100
+y8
+EOF
+EXPECT=<<EOF
+41
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=a read-only session still reads an unreadable map and refuses to yank it
+FILE=bins/elf/analysis/test.obj
+CMDS=<<EOF
+p8 4 @ section..comment
+y 4 @ section..comment
+y 4 @ section..text
+y8
+EOF
+EXPECT=<<EOF
+ffffffff
+554889e5
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot use unreadable bytes at 0x08000061, narrow the range or make the map readable with omp
 EOF
 RUN
 

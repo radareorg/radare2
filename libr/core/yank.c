@@ -109,9 +109,6 @@ R_API bool r_core_yank_string(RCore *core, ut64 addr, int maxlen) {
 		R_LOG_ERROR ("Cannot yank negative bytes");
 		return false;
 	}
-	if (!core_check_readable (core, addr, 1)) {
-		return false;
-	}
 	if (addr != core->addr) {
 		r_core_seek (core, addr, true);
 	}
@@ -128,12 +125,15 @@ R_API bool r_core_yank_string(RCore *core, ut64 addr, int maxlen) {
 	} else if (maxlen > core->blocksize) {
 		maxlen = core->blocksize;
 	}
-	r_core_yank_set (core, addr, buf, maxlen);
+	const bool readable = core_check_readable (core, addr, maxlen);
+	if (readable) {
+		r_core_yank_set (core, addr, buf, maxlen);
+	}
 	if (curseek != addr) {
 		r_core_seek (core, curseek, true);
 	}
 	free (buf);
-	return true;
+	return readable;
 }
 
 R_API bool r_core_yank_paste(RCore *core, ut64 addr, int len) {
