@@ -578,6 +578,53 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ragg2 two-function arm thumb second frame is balanced (parser)
+FILE=-
+CMDS=!ragg2 -s -a arm -b 16 -e 'first@global(8,8) { ; } second@global() { ; }'
+EXPECT=<<EOF
+
+.global first
+first:
+  push {fp,lr}
+  add fp, sp, 4
+  sub sp, sp, 24
+  mov sp, fp
+  sub sp, sp, 4
+  pop {fp,pc}
+
+
+.global second
+second:
+  push {fp,lr}
+  pop {fp,pc}
+
+
+EOF
+RUN
+
+NAME=ragg2 two-function arm32 second frame is balanced (parser)
+FILE=-
+CMDS=!ragg2 -s -a arm -b 32 -e 'first@global(8,8) { ; } second@global() { ; }'
+EXPECT=<<EOF
+
+.global first
+first:
+  push {fp,lr}
+  add fp, sp, 4
+  sub sp, sp, 24
+  sub sp, fp, 4
+  pop {fp,pc}
+
+
+.global second
+second:
+  push {fp,lr}
+  pop {fp,pc}
+
+
+EOF
+RUN
+
 #CLANG=e900000000488d3524000000bf01000000b80400000248c7c2070000000f05b80100000248c7c7000000000f0531c0c348656c6c6f210a00
 NAME=ragg2c bins/other/ragg2/hi.c
 BROKEN=1
