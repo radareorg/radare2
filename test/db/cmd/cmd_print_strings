@@ -30,3 +30,38 @@ delta
 EOF
 RUN
 
+NAME=Raw string after a rejected Unicode candidate
+FILE=-
+CMDS=<<EOF
+wx 61c3a9cea9d096e4b8ad005445535400
+izzj
+EOF
+EXPECT=<<EOF
+[{"vaddr":11,"paddr":11,"ordinal":0,"size":5,"length":4,"section":"","type":"ascii","string":"TEST"}]
+EOF
+RUN
+
+NAME=Raw strings preserve accepted escapes with nofp
+FILE=-
+CMDS=<<EOF
+e bin.str.nofp=true
+wx 48656c6c6f09776f726c640a706174685c6e616d6500
+izzj
+EOF
+EXPECT=<<EOF
+[{"vaddr":0,"paddr":0,"ordinal":0,"size":22,"length":21,"section":"","type":"ascii","string":"Hello\\tworld\\npath\\\\name"}]
+EOF
+RUN
+
+NAME=Raw strings reject bell with nofp
+FILE=-
+CMDS=<<EOF
+e bin.str.nofp=true
+wx 48656c6c6f07776f726c6400
+izzj
+EOF
+EXPECT=<<EOF
+[{"vaddr":0,"paddr":0,"ordinal":0,"size":6,"length":5,"section":"","type":"ascii","string":"Hello"},{"vaddr":6,"paddr":6,"ordinal":1,"size":6,"length":5,"section":"","type":"ascii","string":"world"}]
+EOF
+RUN
+
