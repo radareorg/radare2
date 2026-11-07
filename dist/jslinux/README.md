@@ -139,8 +139,9 @@ The ordinary `make serve` server only serves static files and cannot execute PHP
 Configure these environment variables in the PHP server or PHP-FPM pool:
 
 - `R2_HTTP_UPSTREAM`: the fixed upstream base URL, for example
-  `https://llm.example/v1` or `http://127.0.0.1:11434` for Ollama running
-  on the web server.
+  `https://llm.example/v1`, `http://127.0.0.1:11434` for Ollama running
+  on the web server, or `https://api.orcarouter.ai/v1` for
+  [OrcaRouter Cyber Inference](https://www.orcarouter.ai/cyber).
 - `R2_HTTP_TOKEN`: a private access token supplied by each relay client.
   Keep it out of the static page and offline bundle.
 
@@ -224,6 +225,19 @@ they are not included in the image. The PHP endpoint is also required.
 For an OpenAI-compatible upstream at `https://llm.example/v1`, use
 `e r2ai.baseurl=https://llm.example/v1` and
 `decai -e baseurl=https://llm.example`. decai appends `/v1` itself.
+
+[OrcaRouter](https://www.orcarouter.ai) Cyber Inference is a hosted
+OpenAI-compatible gateway for security teams working on authorized
+analysis, and needs no code changes here. Configure the relay with
+`R2_HTTP_UPSTREAM=https://api.orcarouter.ai/v1`, then use
+`e r2ai.baseurl=https://api.orcarouter.ai/v1` or
+`decai -e baseurl=https://api.orcarouter.ai`; the API key travels in the
+`Authorization` header like any other upstream key. `orcarouter/auto` is
+the default model, `orcarouter/fusion` the general fallback, and the
+dedicated cyber models `orcacyber-ultra-1.0` and `orcacyber-zero-1.5` are
+available to verified security teams. `GET
+https://api.orcarouter.ai/v1/models` lists the catalog; the cyber tier is
+at https://www.orcarouter.ai/models?tier=cyber.
 
 Run the relay regression locally, without contacting an AI provider:
 
