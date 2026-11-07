@@ -15,6 +15,7 @@ R_LIB_VERSION_HEADER(r_config);
 #define CN_STR   0x000008
 #define CN_RO    0x000010
 #define CN_RW    0x000020
+#define CN_PRIV  0x000040 // cannot be changed inside a restricted sandbox scope
 
 #if LEFTOVER_FOR_MY_FUTURE_SELF
 // type != attrib

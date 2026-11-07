@@ -32,8 +32,34 @@ bool test_config_reject_newlines(void) {
 	mu_end;
 }
 
+static void *set_privileged(void *user) {
+	RConfig *cfg = user;
+	r_config_set (cfg, "cmd.hook", "!id");
+	r_config_set_i (cfg, "cmd.depth", 99);
+	r_config_set (cfg, "asm.bits", "32");
+	return user;
+}
+
+bool test_config_privileged_in_sandbox(void) {
+	RConfig *cfg = r_config_new (NULL);
+	r_config_set (cfg, "cmd.hook", "");
+	r_config_set_i (cfg, "cmd.depth", 10);
+	r_config_set (cfg, "asm.bits", "64");
+	r_config_node_get (cfg, "cmd.hook")->flags |= CN_PRIV;
+	r_config_node_get (cfg, "cmd.depth")->flags |= CN_PRIV;
+	r_sandbox_run (R_SANDBOX_GRAIN_DISK | R_SANDBOX_GRAIN_FILES, set_privileged, cfg);
+	mu_assert_streq (r_config_get (cfg, "cmd.hook"), "", "privileged string kept inside the scope");
+	mu_assert_eq (r_config_get_i (cfg, "cmd.depth"), 10, "privileged int kept inside the scope");
+	mu_assert_streq (r_config_get (cfg, "asm.bits"), "32", "ordinary key changes inside the scope");
+	set_privileged (cfg);
+	mu_assert_streq (r_config_get (cfg, "cmd.hook"), "!id", "privileged key changes outside the scope");
+	r_config_free (cfg);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_config_reject_newlines);
+	mu_run_test (test_config_privileged_in_sandbox);
 	return tests_passed != tests_run;
 }
 
