@@ -275,16 +275,13 @@ static bool yank_paste(RCore *core, RCmdContext *ctx) {
 static bool yank_string(RCore *core, RCmdContext *ctx) {
 	ut64 max = 0;
 	const ut32 bsize = ctx->blocksize;
-	if (!core_check_readable (core, core->addr, 1)) {
-		return false;
-	}
 	ut8 *buf = r_cmdctx_num (ctx, 0, core->num, &max)? calloc (1, bsize + 1): NULL;
 	if (!buf) {
 		return false;
 	}
 	r_io_read_at (core->io, core->addr, buf, bsize);
 	const ut32 len = max? R_MIN (max, bsize): r_str_nlen ((const char *)buf, bsize);
-	const bool ok = r_core_yank_set (core, core->addr, buf, len);
+	const bool ok = core_check_readable (core, core->addr, len) && r_core_yank_set (core, core->addr, buf, len);
 	free (buf);
 	return ok;
 }
