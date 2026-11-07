@@ -271,6 +271,65 @@ static int r_asm_pseudo_fill(RAsm *a, RAnalOp *op, const char *input, bool verbo
 	return len;
 }
 
+static int r_asm_pseudo_org(RAsm *a, RAnalOp *op, char *input, ut64 *off) {
+	char *comma = strchr (input, ',');
+	if (comma && (strchr (comma + 1, ',') || !*r_str_trim_head_ro (comma + 1))) {
+		R_LOG_ERROR ("Invalid usage of .org address[,fill]");
+		return -1;
+	}
+	if (comma) {
+		*comma = 0;
+	}
+	const char *err = NULL;
+	const char *address = r_str_trim_head_ro (input);
+	ut64 target = r_num_math_err (NULL, address, &err);
+	if (!*address) {
+		err = "missing address";
+	}
+	if (comma) {
+		*comma = ',';
+	}
+	if (err) {
+		R_LOG_ERROR ("Invalid number for .org: %s", err);
+		return -1;
+	}
+	if (!comma) {
+		r_asm_set_pc (a, target);
+		*off = a->pc;
+		return 0;
+	}
+	ut64 fill = r_num_math_err (NULL, comma + 1, &err);
+	if (err) {
+		R_LOG_ERROR ("Invalid fill for .org: %s", err);
+		return -1;
+	}
+	if (fill > UT8_MAX) {
+		R_LOG_ERROR (".org fill must be a byte (0-255)");
+		return -1;
+	}
+	if (target < a->pc) {
+		R_LOG_ERROR (".org with fill cannot move backwards");
+		return -1;
+	}
+	ut64 size = target - a->pc;
+	if (size > INT_MAX) {
+		R_LOG_ERROR ("Too large .org padding");
+		return -1;
+	}
+	if (!size) {
+		return 0;
+	}
+	ut8 *buf = malloc (size);
+	if (!buf) {
+		return -1;
+	}
+	memset (buf, fill, size);
+	int len = asm_op_set_data (op, buf, size);
+	free (buf);
+	// The assembly loop advances the PC by the emitted size.
+	return len? len: -1;
+}
+
 static int r_asm_pseudo_incbin(RAnalOp *op, const char *input) {
 	size_t bytes_read = 0;
 	// work on a copy, the directive is parsed once per stage
@@ -1083,16 +1142,7 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 			R_LOG_ERROR ("Invalid syntax for '.equ': Use '.equ <word>=<word>'");
 		}
 	} else if (r_str_startswith (ptr, ".org ")) {
-		const char *err = NULL;
-		ut64 pc_val = r_num_math_err (NULL, ptr + 5, &err);
-		if (err) {
-			R_LOG_ERROR ("Invalid number for .org: %s", err);
-			ret = -1;
-		} else {
-			r_asm_set_pc (a, pc_val);
-			ret = 0;
-			*off = a->pc;
-		}
+		ret = r_asm_pseudo_org (a, op, ptr + 5, off);
 	} else if (r_str_startswith (ptr, ".offset ")) {
 		R_LOG_ERROR ("Invalid use of the .offset directory. This directive is only supported in r2 -c 'waf'");
 	} else if (r_str_startswith (ptr, ".text")) {

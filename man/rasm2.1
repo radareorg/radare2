@@ -131,7 +131,31 @@ Same as rasm2 -b
 List the supported assembler and preprocessor directives with:
 .Pp
  $ rasm2 -hh
+.Bl -tag -width ".org address, fill"
+.It Cm .org Ar address
+Set the program counter without emitting bytes.
+This preserves the historical
+behavior, including moving backwards, and changes the addresses used for
+labels and relative instructions without seeking in the output file.
+.It Cm .org Ar address , Ar fill
+Emit enough copies of the fill byte to advance the current program counter to
+address.
+The fill expression must evaluate to a byte (0 through 255).
+The target uses the same address space as the current PC, including any
+initial \-s address or preceding one-argument .org; it is not a file offset.
+A target equal to the current PC emits nothing.
+A backwards target, invalid
+fill or padding size exceeding the assembler's output-size limit is an error.
+Expressions must be resolvable when the directive is encountered.
+.El
 .Pp
+The two-argument form provides GAS-style padding.
+Unlike GAS, omitting fill
+retains the PC-only behavior; use an explicit zero fill to emit zero padding.
+For example, this emits 01ffffff02 and places the final byte at address 4:
+.Bd -literal -offset indent
+rasm2 '.byte 1; .org 4, 0xff; .byte 2'
+.Ed
 .Sh EXAMPLES
 .Pp
 Assemble opcode:

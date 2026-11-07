@@ -77,6 +77,75 @@ static bool test_assembly_delimiters(void) {
 	mu_end;
 }
 
+static bool test_assembly_org(void) {
+	const struct {
+		ut64 pc;
+		const char *source;
+		const char *hex;
+	} cases[] = {
+		{ 0, ".byte 1; .org 8; here:; .uint16 here", "010800" },
+		{ 0, ".byte 1; .org 0; here:; .uint16 here", "010000" },
+		{ 0, ".byte 1; .org 8, 0xff; here:; .uint16 here", "01ffffffffffffff0800" },
+		{ 0, ".byte 1; .org 1, 0xff; .byte 2; .org 4, 0", "01020000" },
+		{ 0, ".org 4, 0xff", "ffffffff" },
+		{ 0, ".org 0, 0xff; .byte 1", "01" },
+		{ 0, ".org 0x100; .byte 1; .org 0x104, 0xff; here:; .uint16 here", "01ffffff0401" },
+		{ 0x100, ".byte 1; .org 0x104, 0xff; here:; .uint16 here", "01ffffff0401" },
+		{ 0x100000000, ".byte 1; .org 0x100000004, 0xff; .byte 2", "01ffffff02" },
+		{ 0, ".equ target, 4; .equ fill, 0xf0; .byte 1; .org target, fill+15; .byte 2", "01ffffff02" },
+		{ 0, "base:; .byte 1; .org base+4, 0xff; here:; .uint16 here", "01ffffff0400" },
+		{ 0, ".endian 1; .byte 1; .org 4, 0xff; here:; .uint16 here", "01ffffff0004" },
+	};
+	RAsm *a = r_asm_new ();
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (cases); i++) {
+		r_asm_set_pc (a, cases[i].pc);
+		r_asm_set_big_endian (a, false);
+		RAsmCode *code = r_asm_assemble (a, cases[i].source);
+		mu_assert_notnull (code, cases[i].source);
+		char *hex = r_hex_bin2strdup (code->bytes, code->len);
+		mu_assert_streq (hex, cases[i].hex, cases[i].source);
+		free (hex);
+		r_asm_code_free (code);
+	}
+	r_asm_set_pc (a, 0);
+	RAsmCode *code = r_asm_assemble (a, ".org 128, 0xa5");
+	mu_assert_notnull (code, "padding larger than the inline operation buffer");
+	mu_assert_eq (code->len, 128, "large padding length");
+	for (i = 0; i < 128; i++) {
+		mu_assert_eq (code->bytes[i], 0xa5, "large padding bytes");
+	}
+	r_asm_code_free (code);
+	r_asm_free (a);
+	mu_end;
+}
+
+static bool test_assembly_org_errors(void) {
+	const char *sources[] = {
+		".byte 1; .org 0, 0xff",
+		".org 0x100; .org 0xff, 0",
+		".org 0x80000000, 0",
+		".org 0xffffffffffffffff, 0",
+		".org 4, 256",
+		".org 4, -1",
+		".org 4,",
+		".org , 0xff",
+		".org 4, 0, 1",
+		".org unknown, 0",
+		".org 4, unknown",
+		".org unknown",
+	};
+	RAsm *a = r_asm_new ();
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (sources); i++) {
+		r_asm_set_pc (a, 0);
+		RAsmCode *code = r_asm_assemble (a, sources[i]);
+		mu_assert_null (code, sources[i]);
+	}
+	r_asm_free (a);
+	mu_end;
+}
+
 static bool test_preprocessor_sources(void) {
 	const char *sources[] = {
 		".set R2_ASM_TEST 1\n.if R2_ASM_TEST\n.byte 1\n.else\n.byte 2\n.endif\n",
@@ -185,6 +254,8 @@ int all_tests(void) {
 	mu_run_test (test_equ_aliases);
 	mu_run_test (test_equ_long_names);
 	mu_run_test (test_assembly_delimiters);
+	mu_run_test (test_assembly_org);
+	mu_run_test (test_assembly_org_errors);
 	mu_run_test (test_preprocessor_sources);
 	mu_run_test (test_preprocessor_errors);
 	mu_run_test (test_preprocessor_nesting);

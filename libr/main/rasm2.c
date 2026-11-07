@@ -425,7 +425,8 @@ static int rasm_show_help(RCons *cons, int v) {
 		".byte 0x10,0x20 space or comma separated list of byte values\n"
 		".glob           n/a\n"
 		".equ K=V        define K to be replaced with V in the lines below\n"
-		".org            change the PC=$$ to make relative instructions work\n"
+		".org addr       set the PC without emitting padding (may move backwards)\n"
+		".org addr,fill  pad to the target PC with a byte (0-255); forward only\n"
 		".text           tell the linker where the code starts\n"
 		".data           tell the linker where the data starts\n"
 		".incbin foo.bin include binary file\n");
