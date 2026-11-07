@@ -294,6 +294,9 @@ static void disasm_diff(RadiffOptions *ro, RDiffOp *op) {
 		return;
 	}
 	RDiffOp expanded = *op;
+	// the disassembler works on buffer offsets
+	expanded.a_off -= ro->disasm_a.offset;
+	expanded.b_off -= ro->disasm_b.offset;
 	disasm_range (ro, &ro->disasm_a, &expanded.a_off, &expanded.a_len);
 	disasm_range (ro, &ro->disasm_b, &expanded.b_off, &expanded.b_len);
 	RDiffOp *pending = &ro->disasm_pending;
@@ -376,7 +379,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 				}
 				printf (" @ 0x%08" PFMT64x "\n", op->b_off + ro->delta + ro->baddr);
 			}
-			ro->delta += (op->b_off - op->a_off);
+			ro->delta += (op->b_off - ro->offset_b) - (op->a_off - ro->offset_a);
 		}
 		return 1;
 	case 'j':
@@ -1792,7 +1795,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 
 	switch (ro.mode) {
 	case MODE_XPATCH:
-		d = r_diff_new ();
+		d = r_diff_new_from (ro.offset_a, ro.offset_b);
 		r_diff_set_delta (d, delta);
 		r_cons_printf (ro.cons, "--- %s\n", ro.file);
 		r_cons_printf (ro.cons, "+++ %s\n", ro.file2);
@@ -1819,7 +1822,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 	case MODE_DIFF_METHODS:
 	case MODE_DIFF_CLASSES:
 	case MODE_DIFF_IMPORTS:
-		d = r_diff_new ();
+		d = r_diff_new_from (ro.offset_a, ro.offset_b);
 		r_diff_set_delta (d, delta);
 		if (ro.diffmode == 'j') {
 			pj_o (ro.pj);

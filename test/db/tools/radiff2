@@ -77,6 +77,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=radiff2 -o reports file offsets
+FILE=-
+CMDS=<<EOF
+!radiff2 -q -o 4 hex://68656c6c6f20776f726c64 hex://68786c6c6f207778726c64
+!radiff2 -r -o 4 hex://68656c6c6f20776f726c64 hex://68786c6c6f207778726c64
+!radiff2 -o 2:4 hex://585868656c6c6f20776f726c64 hex://5959595968656c6c6f207778726c64
+EOF
+EXPECT=<<EOF
+0x00000007 6f => 78 0x00000007
+wx 78 @ 0x00000007
+0x00000009 6f => 78 0x0000000b
+EOF
+RUN
+
 NAME=radiff2 unified string context
 FILE=-
 CMDS=<<EOF
