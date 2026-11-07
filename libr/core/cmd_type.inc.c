@@ -1376,6 +1376,12 @@ static RList *collect_func_xrefs(RCore *core, const char *func_name) {
 	return xrefs;
 }
 
+// NULL for a row without a name, where r_type_func_args_name falls back to argN
+static const char *func_arg_declared_name(Sdb *tdb, const char *func_name, int i) {
+	const char *row = sdb_const_getf (tdb, NULL, "func.%s.arg.%d", func_name, i);
+	return (row && strchr (row, ','))? r_type_func_args_name (tdb, func_name, i): NULL;
+}
+
 static void print_func_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 	SdbKv *kv;
 	SdbListIter *iter;
@@ -1448,15 +1454,11 @@ static void print_func_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 		int max_cc_args = cc ? r_anal_cc_max_arg (core->anal, cc) : 0;
 		ut32 current_offset = 0;
 		for (i = 0; i < args; i++) {
-			const char *value = sdb_const_getf (TDB, NULL, "func.%s.arg.%d", name, i);
-			char *type = value? strdup (value): NULL;
+			char *type = r_type_func_args_type (TDB, name, i);
 			if (!type) {
 				continue;
 			}
-			char *argname = strchr (type, ',');
-			if (argname) {
-				*argname++ = 0;
-			}
+			const char *argname = func_arg_declared_name (TDB, name, i);
 
 			const char *arg_loc = NULL;
 			if (cc && i < max_cc_args) {
@@ -1705,15 +1707,11 @@ static void printFunctionTypeC(RCore *core, const char *input) {
 
 	r_cons_printf (core->cons, "%s %s (", ret, name);
 	for (i = 0; i < args; i++) {
-		const char *value = sdb_const_getf (TDB, NULL, "func.%s.arg.%d", name, i);
-		char *type = value? strdup (value): NULL;
+		char *type = r_type_func_args_type (TDB, name, i);
 		if (!type) {
 			continue;
 		}
-		char *argname = strchr (type, ',');
-		if (argname) {
-			*argname++ = 0;
-		}
+		const char *argname = func_arg_declared_name (TDB, name, i);
 		if (r_type_arg_is_vararg (type, argname)) {
 			r_cons_printf (core->cons, "%s...", (i == 0)? "": ", ");
 		} else {
@@ -1759,13 +1757,9 @@ static void printFunctionTypeJson(TypePrintCtx *ctx, const char *input) {
 	pj_ka (pj, "args");
 	ut32 current_offset = 0;
 	for (i = 0; i < args; i++) {
-		const char *value = sdb_const_getf (tdb, NULL, "func.%s.arg.%d", name, i);
-		char *type = value? strdup (value): NULL;
+		char *type = r_type_func_args_type (tdb, name, i);
 		if (type) {
-			char *argname = strchr (type, ',');
-			if (argname) {
-				*argname++ = 0;
-			}
+			const char *argname = func_arg_declared_name (tdb, name, i);
 			const char *arg_loc = NULL;
 			if (cc && i < max_cc_args) {
 				arg_loc = r_anal_cc_argloc (core->anal, cc, i, 0, args);

@@ -1454,8 +1454,8 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 		char *k = r_str_newf ("func.%s.arg.%d", fcn->name, (int)arg_count);
 		const char *o = sdb_const_get (core->anal->sdb_types, k, 0);
 		const char *comma = o? strchr (o, ','): NULL;
-		char *db_type = comma? r_str_ndup (o, comma - o): NULL;
-		char *db_name = comma? strdup (comma + 1): NULL;
+		char *db_type = comma? r_type_func_args_type (core->anal->sdb_types, fcn->name, (int)arg_count): NULL;
+		char *db_name = comma? strdup (r_type_func_args_name (core->anal->sdb_types, fcn->name, (int)arg_count)): NULL;
 		if (!strstr (var->name, "arg_") || (o && strstr (o, ",arg_"))) {
 			char *type = db_type && strstr (var->type, "arg_")? db_type: var->type;
 			char *v = r_str_newf ("%s,%s", type, var->name);
@@ -5088,16 +5088,14 @@ R_API char *fcnshowr(RAnalFunction *function) {
 	}
 	int i;
 	for (i = 0; i < argc; i++) {
-		const char *value = sdb_const_getf (a->sdb_types, NULL, "func.%s.arg.%d", realname, i);
-		char *type = value? strdup (value): NULL;
+		char *type = r_type_func_args_type (a->sdb_types, realname, i);
 		if (!type) {
 			continue;
 		}
-		char *comma = strchr (type, ',');
-		if (comma) {
-			*comma = 0;
+		const char *argname = func_arg_declared_name (a->sdb_types, realname, i);
+		if (argname) {
 			const char *cc_arg = r_reg_alias_getname (a->reg, R_REG_ALIAS_A0 + i);
-			r_strbuf_appendf (sb, "afvr %s %s %s\n", cc_arg, comma + 1, type);
+			r_strbuf_appendf (sb, "afvr %s %s %s\n", cc_arg, argname, type);
 		}
 		free (type);
 	}
@@ -5158,16 +5156,14 @@ static void printfcnjson(RCore *core, RAnalFunction *fcn) {
 	pj_k (pj, "args");
 	pj_a (pj);
 	for (i = 0; i < argc; i++) {
-		const char *value = sdb_const_getf (a->sdb_types, NULL, "func.%s.arg.%d", realname, i);
-		char *arg_i = value? strdup (value): NULL;
+		char *arg_i = r_type_func_args_type (a->sdb_types, realname, i);
 		if (!arg_i) {
 			continue;
 		}
 		pj_o (pj);
-		char *comma = strchr (arg_i, ',');
-		if (comma) {
-			*comma = 0;
-			pj_ks (pj, "name", comma + 1);
+		const char *argname = func_arg_declared_name (a->sdb_types, realname, i);
+		if (argname) {
+			pj_ks (pj, "name", argname);
 			pj_ks (pj, "type", arg_i);
 			const char *rn = fcncc? r_anal_cc_argloc (a, fcncc, i, 0, -1): NULL;
 			if (!rn) {
