@@ -5585,3 +5585,31 @@ EXPECT=<<EOF
 0x3333333344444444
 EOF
 RUN
+
+NAME=arm64 ESIL SVE CLZ CLS CNT REV stay unemulated
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 20a01904 # clz z0.b, p0/m, z1.b
+e asm.esil=true
+pd 1
+wx 20a01804 @ 0 # cls z0.b, p0/m, z1.b
+pd 1
+wx 20a01a04 @ 0 # cnt z0.b, p0/m, z1.b
+pd 1
+wx 20383805 @ 0 # rev z0.b, z1.b
+pd 1
+wx 20403405 @ 0 # rev p0.b, p1.b
+pd 1
+wx 20802705 @ 0 # rbit z0.b, p0/m, z1.b
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      20a01904       ,
+            0x00000000      20a01804       ,
+            0x00000000      20a01a04       ,
+            0x00000000      20383805       ,
+            0x00000000      20403405       ,
+            0x00000000      20802705       ,
+EOF
+RUN

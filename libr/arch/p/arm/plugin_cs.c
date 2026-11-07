@@ -1985,6 +1985,17 @@ static void arm64_esil_vec_unary(RAnalOp *op, csh *handle, cs_insn *insn) {
 	}
 }
 
+// the unemulated SVE forms have a z register or a merging p register operand
+static bool arm64_esil_sve_form(cs_insn *insn) {
+#if CS_API_MAJOR > 4
+	const cs_arm64_op dst = INSOP64 (0);
+	return (dst.reg >= ARM64_REG_Z0 && dst.reg <= ARM64_REG_Z31) ||
+		(dst.reg >= ARM64_REG_P0 && dst.reg <= ARM64_REG_P15);
+#else
+	return false;
+#endif
+}
+
 static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
@@ -2074,6 +2085,9 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	case ARM64_INS_REV64:
 	{
 		cs_arm64_op src = INSOP64 (1);
+		if (arm64_esil_sve_form (insn)) {
+			break;
+		}
 		if (is_vector_op (&src)) {
 			arm64_esil_rev_vector (op, handle, insn);
 		} else if (REGSIZE64 (1) == 8) {
@@ -2585,6 +2599,9 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	case ARM64_INS_CLZ:
 	{
 		cs_arm64_op src = INSOP64 (1);
+		if (arm64_esil_sve_form (insn)) {
+			break;
+		}
 		if (is_vector_op (&src)) {
 			arm64_esil_vec_unary (op, handle, insn);
 		} else {
@@ -2596,6 +2613,9 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	case ARM64_INS_CLS:
 	{
 		cs_arm64_op src = INSOP64 (1);
+		if (arm64_esil_sve_form (insn)) {
+			break;
+		}
 		if (is_vector_op (&src)) {
 			arm64_esil_vec_unary (op, handle, insn);
 		} else {
@@ -3136,6 +3156,9 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		arm64_esil_vec_ldst (op, handle, insn, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config));
 		break;
 	case ARM64_INS_RBIT:
+		if (arm64_esil_sve_form (insn)) {
+			break;
+		}
 		// slightly shorter expression to reverse bits
 		r_strbuf_setf (&op->esil, "0,tmp,=,0,DUP,DUP,DUP,%d,-,%s,>>,1,&,<<,tmp,+=,%d,-,?{,++,4,GOTO,},tmp,%s,=",
 			REGBITS64 (1)-1, REG64 (1), REGBITS64 (1)-1, REG64 (0));
