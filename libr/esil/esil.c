@@ -485,8 +485,6 @@ R_API void r_esil_fini(REsil *esil) {
 	r_esil_stack_free (esil);
 	R_FREE (esil->stack);
 	R_FREE (esil->ring);
-	r_esil_trace_free (esil->trace);
-	esil->trace = NULL;
 	R_FREE (esil->cmd_intr);
 	R_FREE (esil->cmd_trap);
 	R_FREE (esil->cmd_mdev);

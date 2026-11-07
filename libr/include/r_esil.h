@@ -49,52 +49,6 @@ typedef struct r_esil_handler_t {
 	void *user;
 } REsilHandler;
 
-typedef struct {
-	const char *name;
-	ut64 value;
-	// TODO: size
-} REsilRegAccess;
-
-typedef struct {
-	char *data;
-	ut64 addr;
-	// TODO: size
-} REsilMemoryAccess;
-
-typedef struct {
-	union {
-		REsilRegAccess reg;
-		REsilMemoryAccess mem;
-	};
-	bool is_write;
-	bool is_reg;
-} REsilTraceAccess;
-
-typedef struct {
-	ut64 addr;
-	ut32 start;
-	ut32 end; // 1 past the end of the op for this index
-} REsilTraceOp;
-
-static inline void fini_access(REsilTraceAccess *access) {
-	if (access->is_reg) {
-		return;
-	}
-	free (access->mem.data);
-}
-
-R_VEC_TYPE(RVecTraceOp, REsilTraceOp);
-R_VEC_TYPE_WITH_FINI(RVecAccess, REsilTraceAccess, fini_access);
-
-typedef struct {
-	RVecTraceOp ops;
-	RVecAccess accesses;
-} REsilTraceDB;
-
-typedef struct r_esil_trace_t {
-	REsilTraceDB db;
-} REsilTrace;
-
 typedef bool (*REsilHookRegWriteCB)(ESIL *esil, const char *name, ut64 *val);
 
 typedef struct r_esil_callbacks_t {
@@ -263,14 +217,11 @@ typedef struct r_esil_t {
 	RList *active_plugins;
 	/* deep esil parsing fills this */
 	Sdb *stats;
-	REsilTrace *trace;
 	REsilRegInterface reg_if;
 	REsilMemInterface mem_if;
 	REsilUtilInterface util_if;
 	RIDStorage voyeur[R_ESIL_VOYEUR_LAST];
 	REsilCallbacks cb;
-	REsilCallbacks ocb;
-	bool ocb_set;
 	// this is so cursed, can we please remove external commands from esil internals.
 	// Function pointers are fine, but not commands
 	char *cmd_step; // r2 (external) command to run before a step is performed
@@ -442,12 +393,7 @@ R_API void r_esil_mem_ro(REsil *esil, bool mem_readonly);
 //R_API void r_esil_stats(REsil *esil, bool enable);
 R_API void r_esil_stats(REsil *esil, REsilStats *stats, bool enable);
 
-/* trace */
-R_API REsilTrace *r_esil_trace_new(REsil *esil);
-R_API void r_esil_trace_free(REsilTrace *trace);
 #include <r_arch.h>
-R_API void r_esil_trace_op(REsil *esil, struct r_anal_op_t *op);
-R_API char *r_esil_trace_list(REsil *esil, int format);
 
 R_API bool r_esil_reg_write_silent(REsil *esil, const char *name, ut64 num);
 R_API bool r_esil_reg_read_nocallback(REsil *esil, const char *regname, ut64 *num, int *size);

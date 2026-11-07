@@ -363,11 +363,61 @@ typedef struct r_esil_stepback_t {
 	ut32 v_alias;
 } REsilStepback;
 
+typedef struct {
+	const char *name;
+	ut64 value;
+	// TODO: size
+} REsilRegAccess;
+
+typedef struct {
+	char *data;
+	ut64 addr;
+	// TODO: size
+} REsilMemoryAccess;
+
+typedef struct {
+	union {
+		REsilRegAccess reg;
+		REsilMemoryAccess mem;
+	};
+	bool is_write;
+	bool is_reg;
+} REsilTraceAccess;
+
+typedef struct {
+	ut64 addr;
+	ut32 start;
+	ut32 end; // 1 past the end of the op for this index
+} REsilTraceOp;
+
+static inline void fini_access(REsilTraceAccess *access) {
+	// reg names and mem data are strdups of esil stack tokens, so they die here
+	if (access->is_reg) {
+		free ((char *)access->reg.name);
+		return;
+	}
+	free (access->mem.data);
+}
+
+R_VEC_TYPE(RVecTraceOp, REsilTraceOp);
+R_VEC_TYPE_WITH_FINI(RVecAccess, REsilTraceAccess, fini_access);
+
+typedef struct r_esil_trace_t {
+	ut32 vid_reg_read;
+	ut32 vid_reg_write;
+	ut32 vid_mem_read;
+	ut32 vid_mem_write;
+	ut32 idx;
+	RVecTraceOp ops;
+	RVecAccess accesses;
+} REsilTrace;
+
 typedef struct r_core_esil_t {
 	REsil esil;
 	RReg *reg;
 	REsilCmds cmds;
 	REsilStepback sb;
+	REsilTrace trace;
 	ut8 cfg;
 } RCoreEsil;
 
@@ -853,13 +903,21 @@ R_API int r_core_flag_in_middle(RCore *core, ut64 at, int oplen, int *midflags);
 R_API int r_core_bb_starts_in_middle(RCore *core, ut64 at, int oplen);
 
 R_API bool r_core_esil_init(RCore *core);
-R_API void r_core_esil_fini(RCoreEsil *cesil);
+R_API void r_core_esil_fini(RCore *core);
 R_API void r_core_esil_load_arch(RCore *core);
 R_API void r_core_esil_unload_arch(RCore *core);
 R_API bool r_core_esil_run_expr_at(RCore *core, const char *expr, ut64 addr);
 R_API bool r_core_esil_single_step(RCore *core);
 R_API bool r_core_esil_stepback(RCore *core);
 R_API void r_core_esil_set_max_stepback(RCore *core, ut32 max_stepback);
+/* trace */
+R_IPI bool r_core_esil_trace_start(RCore *core);
+R_IPI void r_core_esil_trace_stop(RCore *core);
+R_IPI void r_core_esil_trace_reset(RCore *core);
+R_IPI void r_core_esil_trace_finit(RCore *core);
+R_IPI void r_core_esil_trace_op_begin(RCore *core, ut64 addr);
+R_IPI void r_core_esil_trace_op_end(RCore *core);
+R_IPI char *r_core_esil_trace_list(RCore *core, int format);
 
 // both do the same, we should get rid of one of them
 R_API bool r_core_bin_raise(RCore *core, ut32 bfid);
