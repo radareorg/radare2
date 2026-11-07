@@ -3309,3 +3309,110 @@ EXPECT=<<EOF
 0x000008d7
 EOF
 RUN
+
+NAME=div and idiv r64 use rdx:rax and keep it at a zero divisor
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 48f7f1
+pie 1
+aei
+aeim
+ar rax=0
+ar rdx=1
+ar rcx=2
+aes
+ar rax,rdx
+ar rip=0
+ar rax=-1
+ar rdx=0xfffffffffffffffe
+ar rcx=-1
+aes
+ar rax,rdx
+ar rip=0
+ar rax=5
+ar rdx=1
+ar rcx=0
+aes
+ar rax,rdx
+e esil.maxbacksteps=0
+ar rip=0
+aes
+ar rax,rdx
+ar rip=0
+ar rcx=2
+aes
+ar rax,rdx
+wx 48f7f9
+ar rip=0
+ar rax=5
+ar rdx=1
+ar rcx=0
+aes
+ar rax,rdx
+ar rip=0
+ar rax=0
+ar rdx=-1
+ar rcx=2
+aes
+ar rax,rdx
+ar rip=0
+ar rax=-7
+ar rdx=-1
+ar rcx=2
+aes
+ar rax,rdx
+ar rip=0
+ar rax=0
+ar rdx=0x8000000000000000
+ar rcx=-1
+aes
+ar rax,rdx
+EOF
+EXPECT=<<EOF
+0x00000000 rax,rdx,rcx,L/,rax,=,rdx,=
+0x8000000000000000
+0x00000000
+0xffffffffffffffff
+0xfffffffffffffffe
+0x00000005
+0x00000001
+0x00000005
+0x00000001
+0x8000000000000002
+0x00000001
+0x00000005
+0x00000001
+0x8000000000000000
+0x00000000
+0xfffffffffffffffd
+0xffffffffffffffff
+0x00000000
+0x00000000
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000000: divbyzero (divbyzero)
+ERROR: ESIL stopped at 0x00000000: divbyzero (divbyzero)
+ERROR: ESIL stopped at 0x00000000: divbyzero (divbyzero)
+EOF
+RUN
+
+NAME=L/ and ~L/ by zero stop before the assignments in ae
+FILE=--
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+ar rax=5
+ar rdx=1
+ar rcx=0
+ae rax,rdx,rcx,L/,rax,=,rdx,=
+ar rax,rdx
+'ae rax,rdx,rcx,~L/,rax,=,rdx,=
+ar rax,rdx
+EOF
+EXPECT=<<EOF
+0x00000005
+0x00000001
+0x00000005
+0x00000001
+EOF
+RUN

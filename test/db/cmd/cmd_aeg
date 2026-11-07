@@ -133,3 +133,46 @@ EXPECT=<<EOF
 1,so,=
 EOF
 RUN
+
+NAME=aegf keeps the inputs of both L/ outputs and their values
+FILE=--
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+ar rax=10
+ar rdx=0
+ar rcx=2
+aegf rax,rdx,rcx,L/,rax,=,rdx,= rax
+aegf rax,rdx,rcx,L/,rax,=,rdx,= rdx
+'aegf rax,rdx,rcx,~L/,rax,=,rdx,= rax
+'aegf rax,rdx,rcx,~L/,rax,=,rdx,= rdx
+aegf rax,1,+,rdx,rcx,2,*,L/,rax,=,rdx,= rax
+aegf rax,1,+,rdx,rcx,2,*,L/,rax,=,rdx,= rdx
+aegf rax,rdx,rcx,L/,1,+,rbx,= rbx
+ar rcx=3
+ae rax,rdx,rcx,L/,SWAP,POP,rbx,=
+ae rax,rdx,rcx,L/,POP,rsi,=
+ar rbx,rsi
+EOF
+EXPECT=<<EOF
+rax,rdx,rcx,L/,SWAP,POP,rax,=
+rax,rdx,rcx,L/,POP,rdx,=
+rax,rdx,rcx,~L/,SWAP,POP,rax,=
+rax,rdx,rcx,~L/,POP,rdx,=
+rax,1,+,rdx,rcx,2,*,L/,SWAP,POP,rax,=
+rax,1,+,rdx,rcx,2,*,L/,POP,rdx,=
+rax,rdx,rcx,L/,SWAP,POP,1,+,rbx,=
+0x00000003
+0x00000001
+EOF
+RUN
+
+NAME=aegf leaves an expression without L/ as it was
+FILE=--
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aegf rcx,rax,/,rbx,= rbx
+EOF
+EXPECT=<<EOF
+rcx,rax,/,rbx,=
+EOF
+RUN
