@@ -760,6 +760,26 @@ static ut64 get_import_addr_ppc(ELFOBJ *eo, RBinElfReloc *rel) {
 
 #define X86_PLTGOT_ENTRY_SIZE 8
 #define X86_IBT_PLTGOT_ENTRY_SIZE 16
+#define X86_64_MOV_R11_SIZE 7
+#define X86_64_RETPOLINE_LAZY_RESUME 0x11
+
+// the slot a mov r11, [rip + disp] at plt offset `at` loads, read only from the section's bytes
+static ut64 x86_64_mov_r11_slot(RBuffer *plt, ut64 plt_rva, ut64 at) {
+	ut8 b[X86_64_MOV_R11_SIZE];
+	if (r_buf_read_at (plt, at, b, sizeof (b)) != sizeof (b) || b[0] != 0x4c || b[1] != 0x8b || b[2] != 0x1d) {
+		return UT64_MAX;
+	}
+	return plt_rva + at + X86_64_MOV_R11_SIZE + (st32)r_read_le32 (b + 3);
+}
+
+static RBuffer *x86_64_plt_slice(ELFOBJ *eo, RBinElfSection **section) {
+	RBinElfSection *s = Elf_(plt_section_by_name) (eo, ".plt");
+	if (eo->ehdr.e_machine != EM_X86_64 || !s || s->type == SHT_NOBITS) {
+		return NULL;
+	}
+	*section = s;
+	return r_buf_new_slice (eo->b, s->offset, s->size);
+}
 
 // the got slot a .plt.got stub jumps through: [endbr] [bnd] jmp [rip + disp]
 // on x86-64, jmp [disp] or jmp [ebx + disp] with ebx = DT_PLTGOT on i386
@@ -810,12 +830,43 @@ static HtUU *x86_build_pltgot_map(ELFOBJ *eo) {
 	return map;
 }
 
+// entries of lld's -z now retpoline plt keep this stride and its slots hold no plt address
+static void x86_64_retpoline_map_entries(ELFOBJ *eo, HtUU *map) {
+	RBinElfSection *s = NULL;
+	RBuffer *plt = x86_64_plt_slice (eo, &s);
+	if (!plt) {
+		return;
+	}
+	ut64 at;
+	for (at = 0; at + X86_64_MOV_R11_SIZE <= r_buf_size (plt); at += X86_PLT_ENTRY_SIZE) {
+		const ut64 slot = x86_64_mov_r11_slot (plt, s->rva, at);
+		if (slot != UT64_MAX) {
+			ht_uu_insert (map, slot, s->rva + at);
+		}
+	}
+	r_unref (plt);
+}
+
+// lld's lazy retpoline slot resumes 17 bytes into an entry that loads that very slot
+static bool x86_64_retpoline_entry_loads_slot(ELFOBJ *eo, ut64 entry, ut64 slot) {
+	RBinElfSection *s = NULL;
+	RBuffer *plt = x86_64_plt_slice (eo, &s);
+	if (!plt) {
+		return false;
+	}
+	// an entry outside the section wraps past the slice's end and fails the read
+	const bool loads = x86_64_mov_r11_slot (plt, s->rva, entry - s->rva) == slot;
+	r_unref (plt);
+	return loads;
+}
+
 static ut64 get_import_addr_x86_pltgot(ELFOBJ *eo, RBinElfReloc *rel) {
 	if (!eo->x86_pltgot_stubs) {
 		eo->x86_pltgot_stubs = x86_build_pltgot_map (eo);
 		if (!eo->x86_pltgot_stubs) {
 			return UT64_MAX;
 		}
+		x86_64_retpoline_map_entries (eo, eo->x86_pltgot_stubs);
 	}
 	bool found = false;
 	const ut64 stub = ht_uu_find (eo->x86_pltgot_stubs, rel->rva, &found);
@@ -832,6 +883,10 @@ static ut64 get_import_addr_x86(ELFOBJ *eo, RBinElfReloc *rel) {
 		ut64 got_addr = eo->dyn_info.dt_pltgot;
 		ut64 pos = COMPUTE_PLTGOT_POSITION (rel, got_addr, 3);
 		return pltsec->rva + pos * X86_PLT_ENTRY_SIZE;
+	}
+	const ut64 entry = tmp - X86_64_RETPOLINE_LAZY_RESUME;
+	if (tmp >= X86_64_RETPOLINE_LAZY_RESUME && x86_64_retpoline_entry_loads_slot (eo, entry, rel->rva)) {
+		return entry;
 	}
 	return tmp + X86_OFFSET_PLT_ENTRY_FROM_GOT_ADDR;
 }
