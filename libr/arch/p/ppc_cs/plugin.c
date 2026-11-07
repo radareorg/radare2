@@ -315,11 +315,11 @@ static char *ppc_vector_profile(const char *profile) {
 	if (!sb) {
 		return NULL;
 	}
-	int reg, lane;
+	unsigned int reg, lane;
 	for (reg = 0; reg < 32; reg++) {
-		r_strbuf_appendf (sb, "vec128\tv%d\t.128\t%d\t0\n", reg, 4096 + reg * 16);
+		r_strbuf_appendf (sb, "vec128\tv%u\t.128\t%u\t0\n", reg, 4096 + reg * 16);
 		for (lane = 0; lane < 4; lane++) {
-			r_strbuf_appendf (sb, "fpu@vec128\tv%dw%d\t.32\t%d\t0\n", reg, lane, 4096 + reg * 16 + lane * 4);
+			r_strbuf_appendf (sb, "fpu@vec128\tv%uw%u\t.32\t%u\t0\n", reg, lane, 4096 + reg * 16 + lane * 4);
 		}
 	}
 	return r_strbuf_drain (sb);
@@ -2218,29 +2218,36 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			ppc_fpop (op, pd, &gop, insn->id == PPC_INS_FCFIDUS, 1, "U2D");
 			break;
 		case PPC_INS_VLOGEFP:
-		case PPC_INS_VEXPTEFP:
-			{
-				op->family = R_ANAL_OP_FAMILY_VEC;
-				const char *fop = insn->id == PPC_INS_VLOGEFP? "LOG2": "EXP2";
-				int lane;
-				for (lane = 0; lane < 4; lane++) {
-					r_strbuf_appendf (&op->esil, "%s32,32,%sw%d,F2D,%s,D2F,%sw%d,=",
-						lane? ",": "", ARG (1), lane, fop, ARG (0), lane);
-				}
+		case PPC_INS_VEXPTEFP: {
+			op->type = R_ANAL_OP_TYPE_MOV;
+			op->family = R_ANAL_OP_FAMILY_VEC;
+			const char *fop = insn->id == PPC_INS_VLOGEFP? "LOG2": "EXP2";
+			const char *src = ARG (1);
+			const char *dst = ARG (0);
+			unsigned int lane;
+			for (lane = 0; lane < 4; lane++) {
+				r_strbuf_appendf (&op->esil, "%s32,32,%sw%u,F2D,%s,D2F,%sw%u,=",
+					lane? ",": "", src, lane, fop, dst, lane);
 			}
 			break;
+		}
+#if CS_API_MAJOR > 4
+		case PPC_INS_FCTIDU:
+#endif
 		case PPC_INS_FCTIDUZ:
 			op->type = R_ANAL_OP_TYPE_CAST;
-			ppc_fpop (op, pd, &gop, false, 1, "D2U");
+			ppc_fpop (op, pd, &gop, false, 1, "64,D2US");
+			break;
+#if CS_API_MAJOR > 4
+		case PPC_INS_FCTIWU:
+#endif
+		case PPC_INS_FCTIWUZ:
+			op->type = R_ANAL_OP_TYPE_CAST;
+			ppc_fpop (op, pd, &gop, false, 1, "32,D2US");
 			break;
 		case PPC_INS_FCTID:
 		case PPC_INS_FCTIDZ:
 		case PPC_INS_FCTIW:
-		case PPC_INS_FCTIWUZ:
-#if CS_API_MAJOR > 4
-		case PPC_INS_FCTIDU:
-		case PPC_INS_FCTIWU:
-#endif
 		case PPC_INS_FCTIWZ:
 			op->type = R_ANAL_OP_TYPE_CAST;
 			ppc_fpop (op, pd, &gop, false, 1, "D2I");

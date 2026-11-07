@@ -292,7 +292,8 @@ convert signed and unsigned integers to doubles. `D2I` and `D2U` truncate a
 double to a signed or unsigned integer, returning zero for values outside their
 64-bit range, including NaN and infinities. `value,bits,D2IS` and
 `value,bits,D2US` instead saturate to the signed or unsigned range of the given
-width (1 to 64 bits), with NaN producing zero.
+width (1 to 64 bits), with NaN producing zero. `D2IS` sign-extends its result
+to 64 bits.
 
 `value,LOG2` computes the base-2 logarithm and `value,EXP2` computes 2 raised
 to the given power. Both consume one double and push one double. They follow

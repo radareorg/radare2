@@ -2889,21 +2889,32 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=unsigned doubleword truncation preserves the upper range ppc-64
-FILE=malloc://16
+NAME=unsigned floating-point conversions respect destination width ppc-64
+FILE=malloc://32
 ARGS=-a ppc -b 64 -e cfg.bigendian=true
 CMDS=<<EOF
-wx fc20175efc20175e
+wx fc20175efc20175cfc20175efc20111cfc20111e
 aei
 ar f2=0x43e0000000000000
+aes
+ar f1
 aes
 ar f1
 ar f2=0x400c000000000000
 aes
 ar f1
+ar f2=0x41f0000000000000
+aes
+ar f1
+ar f2=0xbff0000000000000
+aes
+ar f1
 EOF
 EXPECT=<<EOF
 0x8000000000000000
+0x8000000000000000
 0x00000003
+0xffffffff
+0x00000000
 EOF
 RUN

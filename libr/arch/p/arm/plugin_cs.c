@@ -1990,8 +1990,9 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	r_strbuf_set (&op->esil, "");
 
 	const char *postfix = arm_prefix_cond (op, insn->detail->arm64.cc);
+	const ut32 id = insn->id;
 
-	switch (insn->id) {
+	switch (id) {
 	case ARM64_INS_BRK:
 		r_strbuf_setf (&op->esil, "0,%d,TRAP", (int) (IMM64 (0) & 0xffff));
 		break;
@@ -2428,7 +2429,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	case ARM64_INS_SCVTF:
 	case ARM64_INS_UCVTF:
 		r_strbuf_setf (&op->esil, "%d,", REGBITS64 (0));
-		if (insn->id == ARM64_INS_SCVTF) {
+		if (id == ARM64_INS_SCVTF) {
 			ARG64_SIGN_APPEND (&op->esil, 1, REGBITS64 (1));
 			r_strbuf_append (&op->esil, ",I2D");
 		} else {
@@ -2451,22 +2452,24 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	case ARM64_INS_FCVTPU:
 	case ARM64_INS_FCVTPS:
 	case ARM64_INS_FCVTZU:
-	case ARM64_INS_FCVTZS:
+	case ARM64_INS_FCVTZS: {
 		// TODO: Handle the remaining rounding modes and unsigned conversions.
+		const char sign = id == ARM64_INS_FCVTZU? 'U': id == ARM64_INS_FCVTZS? 'I': 0;
 		r_strbuf_setf (&op->esil, "%d,", REGBITS64 (1));
 		ARG64_APPEND (&op->esil, 1);
 		r_strbuf_append (&op->esil, ",F2D");
 		if (OPCOUNT64 () > 2 && ISIMM64 (2)) {
 			r_strbuf_appendf (&op->esil, ",0x%"PFMT64x",F*", ((ut64)1023 + IMM64 (2)) << 52);
 		}
-		if (insn->id == ARM64_INS_FCVTZU || insn->id == ARM64_INS_FCVTZS) {
-			r_strbuf_appendf (&op->esil, ",%d,D2%sS,", REGBITS64 (0), insn->id == ARM64_INS_FCVTZU? "U": "I");
+		if (sign) {
+			r_strbuf_appendf (&op->esil, ",%d,D2%cS,", REGBITS64 (0), sign);
 		} else {
 			r_strbuf_append (&op->esil, ",D2I,");
 		}
 		VEC64_DST_APPEND (&op->esil, 0, -1);
 		r_strbuf_append (&op->esil, ",=");
 		break;
+	}
 	case ARM64_INS_FRINTA:
 	case ARM64_INS_FRINTI:
 	case ARM64_INS_FRINTN:

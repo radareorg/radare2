@@ -1544,22 +1544,30 @@ static int analop_esil(RArchSession *a, RAnalOp *op, const ut8 *buf, int len, In
 	case ARM64_FCVTPU:
 	case ARM64_FCVTPS:
 	case ARM64_FCVTZU:
-	case ARM64_FCVTZS:
+	case ARM64_FCVTZS: {
 		// TODO: Handle the remaining rounding modes and unsigned conversions.
+		const Operation operation = insn->operation;
+		const char sign = operation == ARM64_FCVTZU? 'U': operation == ARM64_FCVTZS? 'I': 0;
 		r_strbuf_setf (&op->esil, "%d,", REGBITS64 (1));
 		ARG64_APPEND (&op->esil, 1);
 		r_strbuf_append (&op->esil, ",F2D");
 		if (OPCOUNT64 () > 2 && ISIMM64 (2)) {
 			r_strbuf_appendf (&op->esil, ",0x%"PFMT64x",F*", ((ut64)1023 + GETIMM64 (2)) << 52);
 		}
-		if (insn->operation == ARM64_FCVTZU || insn->operation == ARM64_FCVTZS) {
-			r_strbuf_appendf (&op->esil, ",%d,D2%sS,", REGBITS64 (0), insn->operation == ARM64_FCVTZU? "U": "I");
+		if (sign) {
+			r_strbuf_appendf (&op->esil, ",%d,D2%cS,", REGBITS64 (0), sign);
 		} else {
 			r_strbuf_append (&op->esil, ",D2I,");
 		}
-		VEC64_DST_APPEND (&op->esil, 0, -1);
+		const Register dst = REGID64 (0);
+		if (dst >= REG_W0 && dst <= REG_W30) {
+			r_strbuf_appendf (&op->esil, "0xffffffff,&,%s", get_register_name (REG_X0 + (dst - REG_W0)));
+		} else {
+			VEC64_DST_APPEND (&op->esil, 0, -1);
+		}
 		r_strbuf_append (&op->esil, ",=");
 		break;
+	}
 	case ARM64_FRINTA:
 	case ARM64_FRINTI:
 	case ARM64_FRINTN:

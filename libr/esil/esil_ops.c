@@ -1769,6 +1769,7 @@ static bool esil_float_log2p1(REsil *esil) {
 	double value;
 	const RStrs src = r_esil_pop (esil);
 	if (r_strs_empty (src) || !esil_get_parm_float_strs (esil, src, &value)) {
+		R_LOG_DEBUG ("esil_float_log2p1: invalid parameter");
 		return false;
 	}
 	return esil_pushnum_float (esil, fabs (value) < 0.5? log1p (value) / 0.6931471805599453: log2 (1 + value));
@@ -1778,6 +1779,7 @@ static bool esil_float_exp2m1(REsil *esil) {
 	double value;
 	const RStrs src = r_esil_pop (esil);
 	if (r_strs_empty (src) || !esil_get_parm_float_strs (esil, src, &value)) {
+		R_LOG_DEBUG ("esil_float_exp2m1: invalid parameter");
 		return false;
 	}
 	return esil_pushnum_float (esil, fabs (value) < 0.5? expm1 (value * 0.6931471805599453): exp2 (value) - 1);
@@ -1787,7 +1789,9 @@ static bool esil_float_scale(REsil *esil) {
 	double value, scale;
 	const RStrs src = r_esil_pop (esil);
 	const RStrs exponent = r_esil_pop (esil);
-	if (!esil_get_parm_float_strs (esil, src, &value) || !esil_get_parm_float_strs (esil, exponent, &scale)) {
+	if (r_strs_empty (src) || r_strs_empty (exponent)
+			|| !esil_get_parm_float_strs (esil, src, &value) || !esil_get_parm_float_strs (esil, exponent, &scale)) {
+		R_LOG_DEBUG ("esil_float_scale: invalid parameters");
 		return false;
 	}
 	if (!isfinite (scale)) {
