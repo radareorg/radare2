@@ -5,6 +5,7 @@
 #include <r_util/r_bits.h>
 
 #include <math.h>
+#include <limits.h>
 
 #define OP(v, w, x, y, z) r_esil_set_op (esil, v, w, x, y, z, NULL)
 #define OP2(v, w, x, y, z, i) r_esil_set_op (esil, v, w, x, y, z, i)
@@ -1379,28 +1380,45 @@ static bool esil_unsigned_to_double(REsil *esil) {
 	return esil_int_to_double (esil, 0);
 }
 
-static bool esil_double_to_int(REsil *esil) {
-	bool ret = false;
-	RNumFloat s;
-	const RStrs src = r_esil_pop (esil);
-	if (!r_strs_empty (src)) {
-		if (esil_get_parm_float_strs (esil, src, &s.f64)) {
-			if (isnan (s.f64) || isinf (s.f64)) {
-				R_LOG_DEBUG ("esil_float_to_int: nan or inf detected");
-			}
-			if (s.f64 > (double)ST64_MIN && s.f64 < (double)ST64_MAX) {
-				ret = r_esil_pushnum (esil, (st64)(s.f64));
-			} else {
-				R_LOG_DEBUG ("double-to-int out of range");
-				ret = r_esil_pushnum (esil, 0);
-			}
-		} else {
-			R_LOG_DEBUG ("esil_float_to_int: invalid parameters");
-		}
-	} else {
-		R_LOG_DEBUG ("esil_float_to_int: fail to get argument from stack");
+static bool esil_double_to_integer(REsil *esil, bool sign, bool saturate) {
+	ut64 bits = 64;
+	if (saturate && (!popRN (esil, &bits) || !bits || bits > 64)) {
+		return false;
 	}
-	return ret;
+	double value;
+	const RStrs src = r_esil_pop (esil);
+	if (r_strs_empty (src) || !esil_get_parm_float_strs (esil, src, &value)) {
+		R_LOG_DEBUG ("esil_double_to_integer: invalid parameter");
+		return false;
+	}
+	const ut64 max = (UT64_MAX >> (64 - bits)) >> sign;
+	const double upper = (double)max + 1.0;
+	const double lower = sign? -upper: 0.0;
+	ut64 result = 0;
+	if (value >= lower && value < upper) {
+		result = sign? (ut64)(st64)value: (ut64)value;
+	} else if (saturate && value >= upper) {
+		result = max;
+	} else if (saturate && sign && value < lower) {
+		result = 0 - max - 1;
+	}
+	return r_esil_pushnum (esil, result);
+}
+
+static bool esil_double_to_int(REsil *esil) {
+	return esil_double_to_integer (esil, true, false);
+}
+
+static bool esil_double_to_unsigned(REsil *esil) {
+	return esil_double_to_integer (esil, false, false);
+}
+
+static bool esil_double_to_int_saturate(REsil *esil) {
+	return esil_double_to_integer (esil, true, true);
+}
+
+static bool esil_double_to_unsigned_saturate(REsil *esil) {
+	return esil_double_to_integer (esil, false, true);
 }
 
 static bool esil_double_to_float(REsil *esil) {
@@ -1727,6 +1745,62 @@ static bool esil_float_round(REsil *esil) {
 	return ret;
 }
 
+static bool esil_float_log2(REsil *esil) {
+	double value;
+	const RStrs src = r_esil_pop (esil);
+	if (r_strs_empty (src) || !esil_get_parm_float_strs (esil, src, &value)) {
+		R_LOG_DEBUG ("esil_float_log2: invalid parameter");
+		return false;
+	}
+	return esil_pushnum_float (esil, log2 (value));
+}
+
+static bool esil_float_exp2(REsil *esil) {
+	double value;
+	const RStrs src = r_esil_pop (esil);
+	if (r_strs_empty (src) || !esil_get_parm_float_strs (esil, src, &value)) {
+		R_LOG_DEBUG ("esil_float_exp2: invalid parameter");
+		return false;
+	}
+	return esil_pushnum_float (esil, exp2 (value));
+}
+
+static bool esil_float_log2p1(REsil *esil) {
+	double value;
+	const RStrs src = r_esil_pop (esil);
+	if (r_strs_empty (src) || !esil_get_parm_float_strs (esil, src, &value)) {
+		R_LOG_DEBUG ("esil_float_log2p1: invalid parameter");
+		return false;
+	}
+	return esil_pushnum_float (esil, fabs (value) < 0.5? log1p (value) / 0.6931471805599453: log2 (1 + value));
+}
+
+static bool esil_float_exp2m1(REsil *esil) {
+	double value;
+	const RStrs src = r_esil_pop (esil);
+	if (r_strs_empty (src) || !esil_get_parm_float_strs (esil, src, &value)) {
+		R_LOG_DEBUG ("esil_float_exp2m1: invalid parameter");
+		return false;
+	}
+	return esil_pushnum_float (esil, fabs (value) < 0.5? expm1 (value * 0.6931471805599453): exp2 (value) - 1);
+}
+
+static bool esil_float_scale(REsil *esil) {
+	double value, scale;
+	const RStrs src = r_esil_pop (esil);
+	const RStrs exponent = r_esil_pop (esil);
+	if (r_strs_empty (src) || r_strs_empty (exponent)
+			|| !esil_get_parm_float_strs (esil, src, &value) || !esil_get_parm_float_strs (esil, exponent, &scale)) {
+		R_LOG_DEBUG ("esil_float_scale: invalid parameters");
+		return false;
+	}
+	if (!isfinite (scale)) {
+		return esil_pushnum_float (esil, value * exp2 (scale));
+	}
+	int shift = scale >= INT_MAX? INT_MAX: scale <= INT_MIN? INT_MIN: (int)scale;
+	return esil_pushnum_float (esil, scalbn (value, shift));
+}
+
 static bool esil_float_sqrt(REsil *esil) {
 	bool ret = false;
 	double s;
@@ -1902,6 +1976,9 @@ R_API bool r_esil_setup_ops(REsil *esil) {
 	// OP ("S2D", esil_signed_to_double, 1, 1, OT_MATH); R_DEPRECATE
 	ret &= OP ("U2D", esil_unsigned_to_double, 1, 1, OT_MATH);
 	ret &= OP ("D2I", esil_double_to_int, 1, 1, OT_MATH);
+	ret &= OP2 ("D2U", esil_double_to_unsigned, 1, 1, OT_MATH, "double to unsigned integer, truncating toward zero");
+	ret &= OP2 ("D2IS", esil_double_to_int_saturate, 1, 2, OT_MATH, "double to signed integer, saturating to the given bit width");
+	ret &= OP2 ("D2US", esil_double_to_unsigned_saturate, 1, 2, OT_MATH, "double to unsigned integer, saturating to the given bit width");
 	ret &= OP ("D2F", esil_double_to_float, 1, 2, OT_MATH);
 	ret &= OP ("F2D", esil_float_to_double, 1, 2, OT_MATH);
 	ret &= OP ("F==", esil_float_cmp, 1, 2, OT_MATH);
@@ -1917,6 +1994,11 @@ R_API bool r_esil_setup_ops(REsil *esil) {
 	ret &= OP ("CEIL", esil_float_ceil, 1, 1, OT_MATH);
 	ret &= OP ("FLOOR", esil_float_floor, 1, 1, OT_MATH);
 	ret &= OP ("ROUND", esil_float_round, 1, 1, OT_MATH);
+	ret &= OP2 ("LOG2", esil_float_log2, 1, 1, OT_MATH, "base-2 logarithm of a double");
+	ret &= OP2 ("EXP2", esil_float_exp2, 1, 1, OT_MATH, "2 raised to a double power");
+	ret &= OP2 ("LOG2P1", esil_float_log2p1, 1, 1, OT_MATH, "base-2 logarithm of one plus a double");
+	ret &= OP2 ("EXP2M1", esil_float_exp2m1, 1, 1, OT_MATH, "2 raised to a double power minus one");
+	ret &= OP2 ("FSCALE", esil_float_scale, 1, 2, OT_MATH, "scale a double by a power of two, truncating the exponent toward zero");
 	return ret & OP ("SQRT", esil_float_sqrt, 1, 1, OT_MATH);
 }
 

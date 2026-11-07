@@ -1819,6 +1819,20 @@ static void anop_esil(RArchSession *as, RAnalOp *op, const ZydisDecodedInstructi
 	case ZYDIS_MNEMONIC_ENDBR64:
 		esilprintf (op, ",");
 		break;
+	case ZYDIS_MNEMONIC_FYL2X:
+	case ZYDIS_MNEMONIC_FYL2XP1:
+		esilprintf (op,
+			"st1,st0,%s,F*,st1,=,"
+			"st1,st0,=,st2,st1,=,st3,st2,=,st4,st3,=,"
+			"st5,st4,=,st6,st5,=,st7,st6,=",
+			insn->mnemonic == ZYDIS_MNEMONIC_FYL2XP1? "LOG2P1": "LOG2");
+		break;
+	case ZYDIS_MNEMONIC_F2XM1:
+		esilprintf (op, "st0,EXP2M1,st0,=");
+		break;
+	case ZYDIS_MNEMONIC_FSCALE:
+		esilprintf (op, "st1,st0,FSCALE,st0,=");
+		break;
 	case ZYDIS_MNEMONIC_MOV:
 	case ZYDIS_MNEMONIC_MOVAPS:
 	case ZYDIS_MNEMONIC_MOVUPS:

@@ -2800,20 +2800,35 @@ double fma(double x, double y, double z) {
 }
 
 double ldexp(double x, int exp_) {
-	while (exp_ > 0) {
-		x *= 2;
-		exp_--;
+	if (!isfinite (x) || x == 0) {
+		return x;
 	}
-	while (exp_ < 0) {
-		x *= 0.5;
-		exp_++;
+	while (exp_ > 1023) {
+		x *= 0x1p512;
+		exp_ -= 512;
+		if (!isfinite (x)) {
+			return x;
+		}
 	}
-	return x;
+	// Keep intermediate values normal before the final subnormal rounding.
+	while (exp_ < -1022) {
+		x *= 0x1p-512;
+		exp_ += 512;
+		if (x == 0) {
+			return x;
+		}
+	}
+	union { double d; uint64_t u; } scale = { .u = (uint64_t)(1023 + exp_) << 52 };
+	return x * scale.d;
+}
+
+double scalbn(double x, int exp_) {
+	return ldexp (x, exp_);
 }
 
 double frexp(double x, int *exp_) {
 	int e = 0;
-	if (x == 0 || x != x) {
+	if (x == 0 || !isfinite (x)) {
 		*exp_ = 0;
 		return x;
 	}
@@ -2845,6 +2860,9 @@ double log(double x) {
 	if (x == 0) {
 		return -HUGE_VAL;
 	}
+	if (isinf (x)) {
+		return x;
+	}
 	/* reduce to [1,2) via exponent extraction, then atanh series */
 	int e = 0;
 	double m = frexp (x, &e);
@@ -2866,10 +2884,10 @@ double exp(double x) {
 	if (x != x) {
 		return x;
 	}
-	if (x > 709) {
+	if (x > 709.782712893384) {
 		return HUGE_VAL;
 	}
-	if (x < -709) {
+	if (x < -745.1332191019412) {
 		return 0;
 	}
 	/* x = k*ln2 + r; e^x = 2^k * e^r with |r| <= ln2/2 */
@@ -2883,6 +2901,56 @@ double exp(double x) {
 		sum += term;
 	}
 	return ldexp (sum, k);
+}
+
+double exp2(double x) {
+	if (isnan (x)) {
+		return x;
+	}
+	if (x >= 1024) {
+		return HUGE_VAL;
+	}
+	if (x <= -1075) {
+		return 0;
+	}
+	int exponent = (int)floor (x);
+	return ldexp (exp ((x - exponent) * M_LN2), exponent);
+}
+
+double expm1(double x) {
+	if (isnan (x) || fabs (x) < 0x1p-54) {
+		return x;
+	}
+	if (fabs (x) > 0.5) {
+		return exp (x) - 1;
+	}
+	double sum = x;
+	double term = x;
+	int i;
+	for (i = 2; i < 20; i++) {
+		term *= x / i;
+		sum += term;
+	}
+	return sum;
+}
+
+double log1p(double x) {
+	if (isnan (x) || fabs (x) < 0x1p-54) {
+		return x;
+	}
+	if (fabs (x) > 0.5) {
+		return log (1 + x);
+	}
+	double z = x / (2 + x);
+	double z2 = z * z;
+	double sum = z;
+	double term = z;
+	int i;
+	for (i = 3; i < 40; i += 2) {
+		term *= z2;
+		sum += term / i;
+	}
+	return 2 * sum;
 }
 
 double pow(double x, double y) {
