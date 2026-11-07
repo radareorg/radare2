@@ -56,7 +56,7 @@ static int asm_op_set_data(RAnalOp *op, const ut8 *data, int size) {
 	} else if (op->bytes != op->bytes_buf) {
 		free (op->bytes);
 	}
-	op->bytes = r_mem_dup (data, size);
+	op->bytes = data? r_mem_dup (data, size): malloc (size);
 	op->size = op->bytes? size: 0;
 	return op->size;
 }
@@ -271,7 +271,7 @@ static int r_asm_pseudo_fill(RAsm *a, RAnalOp *op, const char *input, bool verbo
 	return len;
 }
 
-static int r_asm_pseudo_org(RAsm *a, RAnalOp *op, char *input, ut64 *off) {
+static int r_asm_pseudo_org(RAsm *a, RAnalOp *op, char *input, ut64 *off, bool last_stage) {
 	char *comma = strchr (input, ',');
 	if (comma && (strchr (comma + 1, ',') || !*r_str_trim_head_ro (comma + 1))) {
 		R_LOG_ERROR ("Invalid usage of .org address[,fill]");
@@ -319,15 +319,15 @@ static int r_asm_pseudo_org(RAsm *a, RAnalOp *op, char *input, ut64 *off) {
 	if (!size) {
 		return 0;
 	}
-	ut8 *buf = malloc (size);
-	if (!buf) {
+	if (!last_stage) {
+		return (int)size;
+	}
+	int len = asm_op_set_data (op, NULL, (int)size);
+	if (!len) {
 		return -1;
 	}
-	memset (buf, fill, size);
-	int len = asm_op_set_data (op, buf, size);
-	free (buf);
-	// The assembly loop advances the PC by the emitted size.
-	return len? len: -1;
+	memset (op->bytes, fill, len);
+	return len;
 }
 
 static int r_asm_pseudo_incbin(RAnalOp *op, const char *input) {
@@ -1142,7 +1142,7 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 			R_LOG_ERROR ("Invalid syntax for '.equ': Use '.equ <word>=<word>'");
 		}
 	} else if (r_str_startswith (ptr, ".org ")) {
-		ret = r_asm_pseudo_org (a, op, ptr + 5, off);
+		ret = r_asm_pseudo_org (a, op, ptr + 5, off, last_stage);
 	} else if (r_str_startswith (ptr, ".offset ")) {
 		R_LOG_ERROR ("Invalid use of the .offset directory. This directive is only supported in r2 -c 'waf'");
 	} else if (r_str_startswith (ptr, ".text")) {

@@ -109,12 +109,14 @@ static bool test_assembly_org(void) {
 		r_asm_code_free (code);
 	}
 	r_asm_set_pc (a, 0);
-	RAsmCode *code = r_asm_assemble (a, ".org 128, 0xa5");
+	RAsmCode *code = r_asm_assemble (a, ".org 4096, 0xa5; tail:; .uint16 tail-4096");
 	mu_assert_notnull (code, "padding larger than the inline operation buffer");
-	mu_assert_eq (code->len, 128, "large padding length");
-	for (i = 0; i < 128; i++) {
+	mu_assert_eq (code->len, 4098, "large padding length");
+	for (i = 0; i < 4096; i++) {
 		mu_assert_eq (code->bytes[i], 0xa5, "large padding bytes");
 	}
+	mu_assert_eq (code->bytes[4096], 0, "label offset low byte");
+	mu_assert_eq (code->bytes[4097], 0, "label offset high byte");
 	r_asm_code_free (code);
 	r_asm_free (a);
 	mu_end;
