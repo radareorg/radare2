@@ -909,6 +909,7 @@ static void rcc_context(REgg *egg, int delta) {
 		}
 		if (egg->lang.mode == LANG_MODE_NORMAL) { /* XXX : commenting this makes hello.r unhappy! TODO: find a cleaner alternative */
 			egg->lang.stackframe = 0;
+			egg->lang.stackfixed = 0; // reset both so the fixed area doesn't leak into the next function's frame_end
 		}
 		egg->lang.mode = LANG_MODE_NORMAL;
 	} else {
