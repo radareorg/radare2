@@ -145,6 +145,26 @@ directives use the same syntax and range.
 For example,
 .Cm .byte 1 + 2, (1 + 2) * 3
 emits 0309.
+.It Cm .align Ar boundary Op , Ns Ar fill
+Emit fill bytes until the current program counter is a multiple of boundary.
+Without fill, the byte set by
+.Cm .fillvalue
+is used.
+An already aligned PC, or a boundary of 0 or 1, emits nothing.
+Alignment is relative to the PC, not to the file offset.
+For example,
+.Cm .byte 1; .align 4, 0xcc
+emits 01cccccc.
+.It Cm .fillvalue Ar byte
+Set the default padding byte used by
+.Cm .align
+and by
+.Cm .fill
+when its value is omitted.
+It must be in the range 0 through 255, starts at 0 for each assembly and
+applies to the directives that follow it.
+.Cm .org
+without fill never emits bytes and ignores it.
 .It Cm .org Ar address
 Set the program counter without emitting bytes.
 This preserves the historical

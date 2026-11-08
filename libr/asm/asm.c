@@ -61,17 +61,69 @@ static int asm_op_set_data(RAnalOp *op, const ut8 *data, int size) {
 	return op->size;
 }
 
-static int r_asm_pseudo_align(RAsmCode *acode, RAnalOp *op, const char *input) {
-	const char *err = NULL;
-	ut64 align_val = r_num_math_err (NULL, input, &err);
+static int asm_op_set_padding(RAnalOp *op, ut64 size, ut8 fill, bool last_stage) {
+	if (size > INT_MAX) {
+		R_LOG_ERROR ("Too large padding");
+		return -1;
+	}
+	if (!size || !last_stage) {
+		return (int)size;
+	}
+	int len = asm_op_set_data (op, NULL, (int)size);
+	if (!len) {
+		return -1;
+	}
+	memset (op->bytes, fill, len);
+	return len;
+}
 
+static bool asm_parse_fill_byte(const char *input, const char *directive, ut8 *fill) {
+	const char *err = NULL;
+	const char *arg = r_str_trim_head_ro (input);
+	ut64 value = r_num_math_err (NULL, arg, &err);
+	if (!*arg) {
+		err = "missing value";
+	}
+	if (err) {
+		R_LOG_ERROR ("Invalid fill for %s: %s", directive, err);
+		return false;
+	}
+	if (value > UT8_MAX) {
+		R_LOG_ERROR ("%s fill must be a byte (0-255)", directive);
+		return false;
+	}
+	*fill = (ut8)value;
+	return true;
+}
+
+static int r_asm_pseudo_align(RAsm *a, RAsmCode *acode, RAnalOp *op, char *input, bool last_stage) {
+	ut8 fill = acode->fill_value;
+	char *comma = strchr (input, ',');
+	if (comma) {
+		*comma = 0;
+		if (strchr (comma + 1, ',')) {
+			R_LOG_ERROR ("Invalid usage of .align boundary[,fill]");
+			return -1;
+		}
+		if (!asm_parse_fill_byte (comma + 1, ".align", &fill)) {
+			return -1;
+		}
+	}
+	const char *err = NULL;
+	const char *arg = r_str_trim_head_ro (input);
+	ut64 boundary = r_num_math_err (NULL, arg, &err);
+	if (!*arg) {
+		err = "missing boundary";
+	}
 	if (err) {
 		R_LOG_ERROR ("Invalid alignment: %s", err);
 		return -1;
 	}
-
-	acode->code_align = align_val;
-	return 0;
+	if (boundary < 2) {
+		return 0;
+	}
+	const ut64 mod = a->pc % boundary;
+	return asm_op_set_padding (op, mod? boundary - mod: 0, fill, last_stage);
 }
 
 static int r_asm_pseudo_string(RAnalOp *op, char *input, bool zero) {
@@ -220,7 +272,7 @@ static int r_asm_pseudo_byte(RAnalOp *op, const char *input, bool last_stage) {
 	return ret;
 }
 
-static int r_asm_pseudo_fill(RAsm *a, RAnalOp *op, const char *input, bool verbose) {
+static int r_asm_pseudo_fill(RAsm *a, RAnalOp *op, const char *input, ut8 fill, bool verbose) {
 	// .fill repeat[,size[,value]] like gas
 	st64 repeat = 1, size = 1;
 	ut32 value = 0;
@@ -263,6 +315,9 @@ static int r_asm_pseudo_fill(RAsm *a, RAnalOp *op, const char *input, bool verbo
 	}
 	if (!total) {
 		return 0;
+	}
+	if (nargs < 3) {
+		return asm_op_set_padding (op, total, fill, true);
 	}
 	ut8 *buf = calloc (1, total);
 	if (!buf) {
@@ -308,36 +363,15 @@ static int r_asm_pseudo_org(RAsm *a, RAnalOp *op, char *input, ut64 *off, bool l
 		*off = a->pc;
 		return 0;
 	}
-	ut64 fill = r_num_math_err (NULL, comma + 1, &err);
-	if (err) {
-		R_LOG_ERROR ("Invalid fill for .org: %s", err);
-		return -1;
-	}
-	if (fill > UT8_MAX) {
-		R_LOG_ERROR (".org fill must be a byte (0-255)");
+	ut8 fill;
+	if (!asm_parse_fill_byte (comma + 1, ".org", &fill)) {
 		return -1;
 	}
 	if (target < a->pc) {
 		R_LOG_ERROR (".org with fill cannot move backwards");
 		return -1;
 	}
-	ut64 size = target - a->pc;
-	if (size > INT_MAX) {
-		R_LOG_ERROR ("Too large .org padding");
-		return -1;
-	}
-	if (!size) {
-		return 0;
-	}
-	if (!last_stage) {
-		return (int)size;
-	}
-	int len = asm_op_set_data (op, NULL, (int)size);
-	if (!len) {
-		return -1;
-	}
-	memset (op->bytes, fill, len);
-	return len;
+	return asm_op_set_padding (op, target - a->pc, fill, last_stage);
 }
 
 static int r_asm_pseudo_incbin(RAnalOp *op, const char *input) {
@@ -994,10 +1028,15 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 		} else {
 			R_LOG_ERROR ("Unknown directive %s. use .ascii or .asciiz", ptr);
 		}
-	} else if (r_str_startswith (ptr, ".align")) {
-		char *str = r_str_trim_dup (ptr + 6);
-		ret = r_asm_pseudo_align (acode, op, str);
+	} else if (r_str_startswith (ptr, ".align ")) {
+		char *str = r_str_trim_dup (ptr + 7);
+		ret = r_asm_pseudo_align (a, acode, op, str, last_stage);
 		free (str);
+		if (ret < 0) {
+			return ret;
+		}
+	} else if (r_str_startswith (ptr, ".fillvalue ")) {
+		ret = asm_parse_fill_byte (ptr + 11, ".fillvalue", &acode->fill_value)? 0: -1;
 	} else if (r_str_startswith (ptr, ".arm64")) {
 		r_asm_use (a, "arm");
 		r_asm_set_bits (a, 64);
@@ -1029,7 +1068,7 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 			ret = 0;
 		}
 	} else if (r_str_startswith (ptr, ".fill ")) {
-		ret = r_asm_pseudo_fill (a, op, ptr + 6, last_stage);
+		ret = r_asm_pseudo_fill (a, op, ptr + 6, acode->fill_value, last_stage);
 		if (ret < 0) {
 			return ret;
 		}
@@ -1273,8 +1312,6 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 			return NULL;
 		}
 	}
-	acode->code_align = 0;
-
 	/* consider ,, an alias for a newline */
 	lbuf = r_str_replace (lbuf, ",,", "\n", true);
 	/* accept ';' as comments when input is multiline */
@@ -1350,6 +1387,7 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 			continue;
 		}
 		inComment = false;
+		acode->fill_value = 0;
 		r_asm_set_pc (a, pc);
 		linenum = 0;
 		for (idx = ret = i = 0, off = a->pc; i <= ctr; i++) {
@@ -1407,9 +1445,6 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 						*ptr = 0;
 						char *p = strdup (ptr_start);
 						*ptr = ':';
-						if (acode->code_align) {
-							off += (acode->code_align - (off % acode->code_align));
-						}
 						char *food = r_str_newf ("0x%" PFMT64x, off);
 						if (food) {
 							ht_pp_insert (a->flags, ptr_start, food);
