@@ -143,70 +143,69 @@ static int r_asm_pseudo_string(RAnalOp *op, char *input, bool zero) {
 	return asm_op_set_data (op, (const ut8 *)input, len);
 }
 
-static int r_asm_pseudo_intN(RAsm *a, RAnalOp *op, char *input, int n, bool is_unsigned, bool last_stage) {
+static bool asm_eval_operand(const char *arg, const char *directive, bool last_stage, ut64 *value) {
+	const char *operand = r_str_trim_head_ro (arg);
+	if (!*operand) {
+		R_LOG_ERROR ("Missing expression in %s", directive);
+		return false;
+	}
+	// Parentheses make the evaluator reject adjacent operands without a comma.
+	char *expression = r_str_newf ("(%s)", operand);
 	const char *err = NULL;
-	ut64 s64 = r_num_math_err (NULL, input, &err);
+	*value = r_num_math_err (NULL, expression, &err);
+	free (expression);
 	if (err && !last_stage) {
-		s64 = 0;
+		*value = 0;
 	} else if (err) {
-		R_LOG_ERROR ("Invalid number in .intN: %s", err);
+		R_LOG_ERROR ("Invalid number in %s: %s", directive, err);
+		return false;
+	}
+	return true;
+}
+
+static bool asm_int_in_range(ut64 value, int n, bool is_unsigned) {
+	if (is_unsigned) {
+		if (n != 8 && value >> (n * 8)) {
+			R_LOG_ERROR ("uint%d out of range", n * 8);
+			return false;
+		}
+		return true;
+	}
+	if (n == 8) {
+		return true;
+	}
+	const st64 val = (st64)value;
+	const st64 max = (1LL << (n * 8 - 1)) - 1;
+	const st64 min = -(1LL << (n * 8 - 1));
+	if (val < min || val > max) {
+		R_LOG_ERROR ("int%d value %" PFMT64d " out of range (%" PFMT64d " to %" PFMT64d ")", n * 8, val, min, max);
+		return false;
+	}
+	return true;
+}
+
+static int r_asm_pseudo_intN(RAsm *a, RAnalOp *op, const char *input, int n, bool is_unsigned, bool last_stage) {
+	// work on a copy, the directive is parsed once per stage
+	char *args = strdup (input);
+	if (!args) {
 		return -1;
 	}
-	if (is_unsigned) {
-		if (n != 8 && s64 >> (n * 8)) {
-			R_LOG_ERROR ("uint%d out of range", n * 8);
-			return -1;
-		}
-	} else {
-		st64 val = (st64)s64;
-		st64 max, min;
-		if (n == 8) {
-			max = LLONG_MAX;
-			min = LLONG_MIN;
-		} else {
-			max = (1LL << (n * 8 - 1)) - 1;
-			min = - (1LL << (n * 8 - 1));
-		}
-		if (val < min || val > max) {
-			R_LOG_ERROR ("int%d value %" PFMT64d " out of range (%" PFMT64d " to %" PFMT64d ")", n * 8, val, min, max);
-			return -1;
-		}
-	}
-	ut8 *buf = malloc (8);
-	if (!buf) {
-		return 0;
-	}
+	int i, count = r_str_split (args, ',');
+	ut64 size;
+	ut8 *buf = (r_mul_overflow ((ut64)count, (ut64)n, &size) || size > INT_MAX)? NULL: malloc (R_MAX (size, 1));
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
-	if (is_unsigned) {
-		if (n == 1) {
-			buf[0] = (ut8)s64;
-		} else if (n == 2) {
-			r_write_ble16 (buf, (ut16)s64, be);
-		} else if (n == 4) {
-			r_write_ble32 (buf, (ut32)s64, be);
-		} else if (n == 8) {
-			r_write_ble64 (buf, s64, be);
-		} else {
-			free (buf);
-			return 0;
+	const char *arg = args;
+	for (i = 0; buf && i < count; i++, arg += strlen (arg) + 1) {
+		ut64 value;
+		if (!asm_eval_operand (arg, ".intN", last_stage, &value) || !asm_int_in_range (value, n, is_unsigned)) {
+			break;
 		}
-	} else {
-		if (n == 1) {
-			buf[0] = (ut8) (st64)s64;
-		} else if (n == 2) {
-			r_write_ble16 (buf, (ut16)(st64)s64, be);
-		} else if (n == 4) {
-			r_write_ble32 (buf, (ut32)(st64)s64, be);
-		} else if (n == 8) {
-			r_write_ble64 (buf, (ut64)(st64)s64, be);
-		} else {
-			free (buf);
-			return 0;
-		}
+		r_write_ble (buf + i * n, value, be, n * 8);
 	}
-	r_anal_op_set_bytes (op, op->addr, buf, n);
+	const int ret = !buf || i < count? -1: asm_op_set_data (op, buf, (int)size);
 	free (buf);
-	return n;
+	free (args);
+	return ret;
 }
 
 static int r_asm_pseudo_float(RAsm *a, RAnalOp *op, char *input, const RCFloatProfile *profile) {
@@ -241,25 +240,11 @@ static int r_asm_pseudo_byte(RAnalOp *op, const char *input, bool last_stage) {
 	ut8 *buf = malloc (R_MAX (len, 1));
 	const char *arg = args;
 	for (i = 0; buf && i < len; i++, arg += strlen (arg) + 1) {
-		const char *operand = r_str_trim_head_ro (arg);
-		if (!*operand) {
-			R_LOG_ERROR ("Missing expression in .byte");
+		ut64 value;
+		if (!asm_eval_operand (arg, ".byte", last_stage, &value)) {
 			break;
 		}
-		// Parentheses make the evaluator reject adjacent operands without a comma.
-		char *expression = r_str_newf ("(%s)", operand);
-		if (!expression) {
-			break;
-		}
-		const char *err = NULL;
-		st64 num = (st64)r_num_math_err (NULL, expression, &err);
-		free (expression);
-		if (err && !last_stage) {
-			num = 0;
-		} else if (err) {
-			R_LOG_ERROR ("Invalid number in .byte: %s", err);
-			break;
-		}
+		const st64 num = (st64)value;
 		if (num < 0 || num > 255) {
 			R_LOG_ERROR ("byte value %" PFMT64d " out of range (0-255)", num);
 			break;
