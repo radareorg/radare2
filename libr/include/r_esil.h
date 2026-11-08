@@ -224,8 +224,6 @@ typedef struct r_esil_t {
 	REsilCallbacks cb;
 	// this is so cursed, can we please remove external commands from esil internals.
 	// Function pointers are fine, but not commands
-	char *cmd_step; // r2 (external) command to run before a step is performed
-	char *cmd_step_out; // r2 (external) command to run after a step is performed
 	char *cmd_intr; // r2 (external) command to run when an interrupt occurs
 	char *cmd_trap; // r2 (external) command to run when a trap occurs
 	char *cmd_mdev; // r2 (external) command to run when an memory mapped device address is used
@@ -235,7 +233,6 @@ typedef struct r_esil_t {
 	bool (*cmd)(ESIL *esil, const char *name, ut64 a0, ut64 a1);
 	void *user;
 	int stack_fd;	// ahem, let's not do this
-	bool in_cmd_step;
 	RLibStore *libstore;
 	ut64 trap_addr;
 	bool trap_addr_valid;
