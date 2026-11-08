@@ -3,7 +3,7 @@ FILE=bins/elf/analysis/calls_x64
 ARGS=-d
 CMDS=<<EOF
 dcu main
-dr rbp=0x1234
+dr rbp=0x1234 > /dev/null
 f slot=`dr rsp`-8
 wv8 0x5678 @ slot
 dts+

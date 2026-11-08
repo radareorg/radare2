@@ -2965,6 +2965,11 @@ static int cmd_open(void *data, const char *input) {
 				R_LOG_ERROR ("This command can only be executed on the main task!");
 				return 0;
 			}
+			RCoreEsil *esil = r_core_esil_new (core);
+			if (!esil) {
+				R_LOG_ERROR ("Cannot initialize ESIL");
+				return 0;
+			}
 			// memleak? lose all settings wtf
 			// if load fails does not fallbacks to previous file
 			r_core_task_sync_end (&core->tasks);
@@ -2975,6 +2980,7 @@ static int cmd_open(void *data, const char *input) {
 			core->cons = NULL;
 			r_core_fini (core);
 			core->cons = cons;
+			core->esil = esil;
 			r_core_init (core);
 			r_core_task_sync_begin (&core->tasks);
 			if (r_core_file_open (core, input + 2, R_PERM_RX, 0)) {
