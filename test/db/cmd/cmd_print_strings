@@ -65,3 +65,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=psa null byte with odd block size
+FILE=-
+CMDS=<<EOF
+w \x00
+b 1
+psa
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=psa null byte with 3-byte block
+FILE=-
+CMDS=<<EOF
+w \x00A\x00
+b 3
+psa
+EOF
+EXPECT=<<EOF
+EOF
+RUN
