@@ -467,6 +467,22 @@ static ut32 asr(ArmOp *op) {
 	return data;
 }
 
+/* lsl #N and lsr #N are UBFM aliases: lsl mirrors immr, lsr keeps it */
+static ut32 shift_imm(ArmOp *op, bool left) {
+	const bool w64 = (op->operands[0].reg_type & ARM_REG64) && (op->operands[1].reg_type & ARM_REG64);
+	const ut64 width = w64? 64: 32;
+	const ut64 n = op->operands[2].immediate;
+	if (n >= width) {
+		return UT32_MAX;
+	}
+	const ut64 immr = left? (width - n) & (width - 1): n;
+	const ut64 imms = left? width - n - 1: width - 1;
+	const ut32 base = w64? 0xd3400000: 0x53000000;
+	const ut32 data = base | ((ut32)immr << 16) | ((ut32)imms << 10)
+		| (op->operands[1].reg & 0x1f) << 5 | (op->operands[0].reg & 0x1f);
+	return r_swap_ut32 (data);
+}
+
 static ut32 ror(ArmOp *op) {
 	ut32 data = UT32_MAX;
 	int k = 0;
@@ -2234,9 +2250,13 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 	} else if (r_str_startswith (str, "sdiv")) {
 		*op = r_n_math (&ops, 0x000cc09a, 0x000cc01a, has64reg (str));
 	} else if (r_str_startswith (str, "lsl ")) {
-		*op = r_n_math (&ops, 0x0020c09a, 0x0020c01a, has64reg (str));
+		*op = (ops.operands_count > 2 && (ops.operands[2].type & ARM_CONSTANT))
+			? shift_imm (&ops, true)
+			: r_n_math (&ops, 0x0020c09a, 0x0020c01a, has64reg (str));
 	} else if (r_str_startswith (str, "lsr ")) {
-		*op = r_n_math (&ops, 0x0024c09a, 0x0024c01a, has64reg (str));
+		*op = (ops.operands_count > 2 && (ops.operands[2].type & ARM_CONSTANT))
+			? shift_imm (&ops, false)
+			: r_n_math (&ops, 0x0024c09a, 0x0024c01a, has64reg (str));
 	} else if (r_str_startswith (str, "adc ")) {
 		*op = r_n_math (&ops, 0x0000009a, 0x0000001a, has64reg (str));
 	} else if (r_str_startswith (str, "adcs")) {

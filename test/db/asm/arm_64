@@ -754,3 +754,17 @@ ad "add x0, x1, xzr" 20001f8b
 ad "add w0, w1, wzr" 20001f0b
 ad "cmp x0, xzr" 1f001feb
 ad "cmp w0, wzr" 1f001f6b
+ad "lsl x0, x1, 1" 20f87fd3
+ad "lsl w0, w1, 1" 20781f53
+ad "lsr x0, x1, 1" 20fc41d3
+ad "lsr w0, w1, 1" 207c0153
+a "lsl x0, x1, 0" 20fc40d3
+a "lsl x0, x1, 32" 207c60d3
+a "lsl x0, x1, 63" 200041d3
+a "lsl w0, w1, 0" 207c0053
+a "lsl w0, w1, 31" 20000153
+a "lsr x0, x1, 0" 20fc40d3
+a "lsr x0, x1, 32" 20fc60d3
+a "lsr x0, x1, 63" 20fc7fd3
+a "lsr w0, w1, 0" 207c0053
+a "lsr w0, w1, 31" 207c1f53
