@@ -1286,3 +1286,20 @@ ERROR: Cannot assemble 'ld ,a' at line 1
 ERROR: Cannot assemble 'ld a, b, c' at line 1
 EOF
 RUN
+
+NAME=pa arm64 ldpsw rejects w and fp registers
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+pa ldpsw w0, w1, [x2]
+pa ldpsw s0, s1, [x2]
+pa ldpsw x0, x1, [x2, 6]
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'ldpsw w0, w1, [x2]' at line 1
+ERROR: Cannot assemble 'ldpsw s0, s1, [x2]' at line 1
+ERROR: Cannot assemble 'ldpsw x0, x1, [x2, 6]' at line 1
+EOF
+RUN

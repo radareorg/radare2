@@ -1505,9 +1505,14 @@ static ut32 stp(ArmOp *op, bool load) {
 	check_cond (op->operands[0].reg_type == op->operands[1].reg_type && !(op->operands[0].reg_type & ARM_SP));
 	check_cond (op->operands[2].type == ARM_GPR && op->operands[2].reg_type & ARM_REG64);
 	check_cond (!load || op->operands[0].reg != op->operands[1].reg);
+	const bool ldpsw = load && !strcmp (op->mnemonic, "ldpsw");
 	int size;
 	ut32 insn;
-	if (fp) {
+	if (ldpsw) {
+		check_cond (!fp && op->operands[0].reg_type & ARM_REG64);
+		size = 4;
+		insn = 0x68000000;
+	} else if (fp) {
 		size = (op->operands[0].reg_type & ARM_REG128)? 16: (op->operands[0].reg_type & ARM_REG64)? 8: 4;
 		insn = (size == 16)? 0xac000000: (size == 8)? 0x6c000000: 0x2c000000;
 	} else {

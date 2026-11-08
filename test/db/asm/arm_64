@@ -732,6 +732,11 @@ ad "ldp d8, d9, [sp], 0x10" e827c16c
 ad "stp s0, s1, [x0, 8]" 0004012d
 ad "ldp q0, q1, [x0, 0x20]" 000441ad
 ad "stp q2, q3, [sp, -0x40]!" e20fbead
+ad "ldpsw x0, x1, [x2]" 40044069
+ad "ldpsw x0, x1, [x2, 8]" 40044169
+ad "ldpsw x0, x1, [x2, -0x100]" 40046069
+ad "ldpsw x0, x26, [x19, 0xa0]!" 606ad469
+ad "ldpsw x3, x4, [sp], -8" e313ff68
 ad "subs x0, x1, 1" 200400f1
 ad "subs x0, x1, x2" 200002eb
 ad "sub w0, w1, w2" 2000024b
