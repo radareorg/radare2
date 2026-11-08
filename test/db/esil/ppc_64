@@ -2824,3 +2824,97 @@ EXPECT=<<EOF
 0x1122334455667788
 EOF
 RUN
+
+NAME=AltiVec logarithm applies to all four lanes ppc-64
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 102011ca
+aei
+ar v2w0=0x3f800000
+ar v2w1=0x40000000
+ar v2w2=0x3f000000
+ar v2w3=0x41000000
+aes
+ar v1w0
+ar v1w1
+ar v1w2
+ar v1w3
+ar v2w3
+EOF
+EXPECT=<<EOF
+0x00000000
+0x3f800000
+0xbf800000
+0x40400000
+0x41000000
+EOF
+RUN
+
+NAME=AltiVec logarithm and exponent special values ppc-64
+FILE=malloc://16
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 102011ca1020118a
+aei
+ar v2w0=0
+ar v2w1=0x7f800000
+ar v2w2=0xbf800000
+ar v2w3=0x7fc00000
+aes
+ar v1w0
+ar v1w1
+ae 32,v1w2,F2D,NAN
+ae 32,v1w3,F2D,NAN
+ar pc=4
+ar v2w0=0xff800000
+ar v2w1=0x7f800000
+ar v2w2=0x43000000
+ar v2w3=0x7fc00000
+aes
+ar v1w0
+ar v1w1
+ar v1w2
+ae 32,v1w3,F2D,NAN
+EOF
+EXPECT=<<EOF
+0xff800000
+0x7f800000
+0x1
+0x1
+0x00000000
+0x7f800000
+0x7f800000
+0x1
+EOF
+RUN
+
+NAME=unsigned floating-point conversions respect destination width ppc-64
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx fc20175efc20175cfc20175efc20111cfc20111e
+aei
+ar f2=0x43e0000000000000
+aes
+ar f1
+aes
+ar f1
+ar f2=0x400c000000000000
+aes
+ar f1
+ar f2=0x41f0000000000000
+aes
+ar f1
+ar f2=0xbff0000000000000
+aes
+ar f1
+EOF
+EXPECT=<<EOF
+0x8000000000000000
+0x8000000000000000
+0x00000003
+0xffffffff
+0x00000000
+EOF
+RUN

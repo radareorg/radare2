@@ -332,3 +332,338 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=x87 fyl2x multiplies the logarithm and pops the stack
+FILE=malloc://16
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx d9f1
+aei
+ar st0=0x4020000000000000
+ar st1=0xc000000000000000
+ar st2=0x4010000000000000
+ar st3=0x4014000000000000
+ar st4=0x4018000000000000
+ar st5=0x401c000000000000
+ar st6=0x4020000000000000
+ar st7=0x4022000000000000
+aes
+ar st0
+ar st1
+ar st2
+ar st3
+ar st4
+ar st5
+ar st6
+EOF
+EXPECT=<<EOF
+0xc018000000000000
+0x4010000000000000
+0x4014000000000000
+0x4018000000000000
+0x401c000000000000
+0x4020000000000000
+0x4022000000000000
+EOF
+RUN
+
+NAME=x87 fyl2xp1 preserves small inputs and negative zero
+FILE=malloc://16
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx d9f9d9f9d9f9
+aei
+ar st0=0x3c30000000000000
+ar st1=0x3ff0000000000000
+aes
+ae 0x3c30000000000000,st0,F/,1000000,I2D,F*,D2I
+ar st0=0xbc30000000000000
+ar st1=0x3ff0000000000000
+aes
+ae 0xbc30000000000000,st0,F/,1000000,I2D,F*,D2I
+ar st0=0x8000000000000000
+ar st1=0x3ff0000000000000
+aes
+ar st0
+EOF
+EXPECT=<<EOF
+0x160387
+0x160387
+0x8000000000000000
+EOF
+RUN
+
+NAME=x87 f2xm1 subtracts one without popping
+FILE=malloc://16
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx d9f0d9f0d9f0d9f0d9f0
+aei
+ar st0=0x3ff0000000000000
+ar st1=0x4000000000000000
+aes
+ar st0
+ar st1
+ar st0=0xbff0000000000000
+aes
+ar st0
+ar st0=0x8000000000000000
+aes
+ar st0
+ar st0=0x3c30000000000000
+aes
+ae 0x3c30000000000000,st0,F/,1000000,I2D,F*,D2I
+ar st0=0xbc30000000000000
+aes
+ae 0xbc30000000000000,st0,F/,1000000,I2D,F*,D2I
+EOF
+EXPECT=<<EOF
+0x3ff0000000000000
+0x4000000000000000
+0xbfe0000000000000
+0x8000000000000000
+0xa939b
+0xa939b
+EOF
+RUN
+
+NAME=x87 fscale truncates positive and negative exponents
+FILE=malloc://16
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx d9fdd9fdd9fd
+aei
+ar st0=0x3ff8000000000000
+ar st1=0x4006000000000000
+aes
+ar st0
+ar st1
+ar st0=0x3ff8000000000000
+ar st1=0xc006000000000000
+aes
+ar st0
+ar st1
+ar st0=0x3ff8000000000000
+ar st1=0
+aes
+ar st0
+EOF
+EXPECT=<<EOF
+0x4018000000000000
+0x4006000000000000
+0x3fd8000000000000
+0xc006000000000000
+0x3ff8000000000000
+EOF
+RUN
+
+NAME=zydis x87 fyl2x multiplies the logarithm and pops the stack
+FILE=malloc://16
+REQUIRE=zydis
+ARGS=-a x86.zydis -b 64
+CMDS=<<EOF
+wx d9f1
+aei
+ar st0=0x4020000000000000
+ar st1=0xc000000000000000
+ar st2=0x4010000000000000
+ar st3=0x4014000000000000
+ar st4=0x4018000000000000
+ar st5=0x401c000000000000
+ar st6=0x4020000000000000
+ar st7=0x4022000000000000
+aes
+ar st0
+ar st1
+ar st2
+ar st3
+ar st4
+ar st5
+ar st6
+EOF
+EXPECT=<<EOF
+0xc018000000000000
+0x4010000000000000
+0x4014000000000000
+0x4018000000000000
+0x401c000000000000
+0x4020000000000000
+0x4022000000000000
+EOF
+RUN
+
+NAME=zydis x87 fyl2xp1 preserves small inputs and negative zero
+FILE=malloc://16
+REQUIRE=zydis
+ARGS=-a x86.zydis -b 32
+CMDS=<<EOF
+wx d9f9d9f9d9f9
+aei
+ar st0=0x3c30000000000000
+ar st1=0x3ff0000000000000
+aes
+ae 0x3c30000000000000,st0,F/,1000000,I2D,F*,D2I
+ar st0=0xbc30000000000000
+ar st1=0x3ff0000000000000
+aes
+ae 0xbc30000000000000,st0,F/,1000000,I2D,F*,D2I
+ar st0=0x8000000000000000
+ar st1=0x3ff0000000000000
+aes
+ar st0
+EOF
+EXPECT=<<EOF
+0x160387
+0x160387
+0x8000000000000000
+EOF
+RUN
+
+NAME=zydis x87 f2xm1 subtracts one without popping
+FILE=malloc://16
+REQUIRE=zydis
+ARGS=-a x86.zydis -b 64
+CMDS=<<EOF
+wx d9f0d9f0d9f0d9f0d9f0
+aei
+ar st0=0x3ff0000000000000
+ar st1=0x4000000000000000
+aes
+ar st0
+ar st1
+ar st0=0xbff0000000000000
+aes
+ar st0
+ar st0=0x8000000000000000
+aes
+ar st0
+ar st0=0x3c30000000000000
+aes
+ae 0x3c30000000000000,st0,F/,1000000,I2D,F*,D2I
+ar st0=0xbc30000000000000
+aes
+ae 0xbc30000000000000,st0,F/,1000000,I2D,F*,D2I
+EOF
+EXPECT=<<EOF
+0x3ff0000000000000
+0x4000000000000000
+0xbfe0000000000000
+0x8000000000000000
+0xa939b
+0xa939b
+EOF
+RUN
+
+NAME=zydis x87 fscale truncates positive and negative exponents
+FILE=malloc://16
+REQUIRE=zydis
+ARGS=-a x86.zydis -b 64
+CMDS=<<EOF
+wx d9fdd9fdd9fd
+aei
+ar st0=0x3ff8000000000000
+ar st1=0x4006000000000000
+aes
+ar st0
+ar st1
+ar st0=0x3ff8000000000000
+ar st1=0xc006000000000000
+aes
+ar st0
+ar st1
+ar st0=0x3ff8000000000000
+ar st1=0
+aes
+ar st0
+EOF
+EXPECT=<<EOF
+0x4018000000000000
+0x4006000000000000
+0x3fd8000000000000
+0xc006000000000000
+0x3ff8000000000000
+EOF
+RUN
+
+
+NAME=x86 fscale avoids intermediate overflow and underflow
+FILE=malloc://32
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx d9fdd9fdd9fdd9fdd9fdd9fd
+aei
+ar st0=0x0170000000000000
+ar st1=0x4090000000000000
+aes
+ar st0
+ar st0=0x7e70000000000000
+ar st1=0xc090cc0000000000
+aes
+ar st0
+ar st0=0x8000000000000000
+ar st1=0x7fefffffffffffff
+aes
+ar st0
+ar st0=0x7ff0000000000000
+ar st1=0xffefffffffffffff
+aes
+ar st0
+ar st0=0
+ar st1=0x7ff0000000000000
+aes
+ae st0,NAN
+ar st0=0x7ff0000000000000
+ar st1=0xfff0000000000000
+aes
+ae st0,NAN
+EOF
+EXPECT=<<EOF
+0x4170000000000000
+0x3b40000000000000
+0x8000000000000000
+0x7ff0000000000000
+0x1
+0x1
+EOF
+RUN
+
+NAME=x86.zydis fscale avoids intermediate overflow and underflow
+FILE=malloc://32
+REQUIRE=zydis
+ARGS=-a x86.zydis -b 64
+CMDS=<<EOF
+wx d9fdd9fdd9fdd9fdd9fdd9fd
+aei
+ar st0=0x0170000000000000
+ar st1=0x4090000000000000
+aes
+ar st0
+ar st0=0x7e70000000000000
+ar st1=0xc090cc0000000000
+aes
+ar st0
+ar st0=0x8000000000000000
+ar st1=0x7fefffffffffffff
+aes
+ar st0
+ar st0=0x7ff0000000000000
+ar st1=0xffefffffffffffff
+aes
+ar st0
+ar st0=0
+ar st1=0x7ff0000000000000
+aes
+ae st0,NAN
+ar st0=0x7ff0000000000000
+ar st1=0xfff0000000000000
+aes
+ae st0,NAN
+EOF
+EXPECT=<<EOF
+0x4170000000000000
+0x3b40000000000000
+0x8000000000000000
+0x7ff0000000000000
+0x1
+0x1
+EOF
+RUN
