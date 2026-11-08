@@ -32,6 +32,16 @@ static bool test_r_socket_proc_sandbox(void) {
 #include <sys/socket.h>
 #include <unistd.h>
 
+typedef struct {
+	int calls;
+} RapCmdSpy;
+
+static char *rap_cmdstr_spy(void *core, const char *cmd) {
+	RapCmdSpy *spy = core;
+	spy->calls++;
+	return strdup ("");
+}
+
 static bool test_r_socket_gets_buffer_limit(void) {
 	int fds[2];
 	mu_assert_eq (socketpair (AF_UNIX, SOCK_STREAM, 0, fds), 0, "create socket pair");
@@ -50,6 +60,41 @@ static bool test_r_socket_gets_buffer_limit(void) {
 	mu_assert_eq (output.buf[sizeof (output.buf) - 2], 'A', "read line contents");
 	mu_assert_eq (output.buf[sizeof (output.buf) - 1], '\0', "terminate line");
 	mu_assert_eq (output.guard, 'G', "preserve byte after output buffer");
+	close (fds[0]);
+	close (fds[1]);
+	mu_end;
+}
+
+static bool test_r_socket_rap_client_refuses_server_cmd(void) {
+	int fds[2];
+	mu_assert_eq (socketpair (AF_UNIX, SOCK_STREAM, 0, fds), 0, "create socket pair");
+
+	/* the server answers the client command with an unsolicited RAP_PACKET_CMD
+	 * instead of the reply, followed by a valid reply to prove the payload was
+	 * drained and not executed */
+	const char *payload = "!echo pwned";
+	ut32 payload_len = strlen (payload) + 1;
+	const char *reply = "ok";
+	ut32 reply_len = strlen (reply) + 1;
+	ut8 pkt[5 + 32];
+	pkt[0] = RAP_PACKET_CMD;
+	r_write_be32 (pkt + 1, payload_len);
+	memcpy (pkt + 5, payload, payload_len);
+	pkt[5 + payload_len] = RAP_PACKET_CMD | RAP_PACKET_REPLY;
+	r_write_be32 (pkt + 6 + payload_len, reply_len);
+	memcpy (pkt + 10 + payload_len, reply, reply_len);
+	mu_assert_eq (write (fds[1], pkt, 10 + payload_len + reply_len),
+		10 + payload_len + reply_len, "write server packets");
+
+	RapCmdSpy spy = { 0 };
+	RCoreBind bind = { .cmdStr = rap_cmdstr_spy, .core = &spy };
+	RSocket socket = { .fd = fds[0] };
+	char *res = r_socket_rap_client_command (&socket, "", &bind);
+
+	mu_assert_null (res, "refuse the server initiated command");
+	mu_assert_eq (spy.calls, 0, "never execute a command sent by the server");
+
+	free (res);
 	close (fds[0]);
 	close (fds[1]);
 	mu_end;
@@ -109,6 +154,7 @@ static int all_tests(void) {
 #endif
 #if R2_NETWORK && R2__UNIX__ && !__wasi__
 	mu_run_test (test_r_socket_gets_buffer_limit);
+	mu_run_test (test_r_socket_rap_client_refuses_server_cmd);
 #endif
 	return tests_passed != tests_run;
 }

@@ -61,7 +61,7 @@ R_API int r_socket_rap_client_open(RSocket *s, const char *file, int rw) {
 	return fd;
 }
 
-R_API char *r_socket_rap_client_command(RSocket *s, const char *cmd, RCoreBind *c) {
+R_API char *r_socket_rap_client_command(RSocket *s, const char *cmd, RCoreBind * R_UNUSED c) {
 	char *buf = malloc (strlen (cmd) + 8);
 	if (!buf) {
 		return NULL;
@@ -80,36 +80,21 @@ R_API char *r_socket_rap_client_command(RSocket *s, const char *cmd, RCoreBind *
 		R_LOG_ERROR ("Cannot read command reply");
 		return NULL;
 	}
-	while (bufr[0] == (char)(RAP_PACKET_CMD)) {
-		size_t cmd_len = r_read_at_be32 (bufr, 1);
-		if (cmd_len > RAP_CMD_MAX) {
-			R_LOG_ERROR ("cmd_len is wrong");
-			return NULL;
-		}
-		char *rcmd = calloc (1, cmd_len + 1);
-		if (rcmd) {
-			if (r_socket_read_block (s, (ut8*)rcmd, cmd_len) != (int)cmd_len) {
+	if (bufr[0] == (char)(RAP_PACKET_CMD)) {
+		/* the server sent a command to run on the client, which would let a
+		 * malicious rap:// server execute local commands just by being opened.
+		 * the protocol is one directional (see doc/rap.md), so refuse it and
+		 * drain the payload to keep the stream in sync before bailing out. */
+		size_t pkt_len = r_read_at_be32 (bufr, 1);
+		R_LOG_ERROR ("Ignoring command sent by the server");
+		if (pkt_len > 0 && pkt_len <= RAP_CMD_MAX) {
+			ut8 *rcmd = calloc (1, pkt_len);
+			if (rcmd) {
+				r_socket_read_block (s, rcmd, pkt_len);
 				free (rcmd);
-				return NULL;
 			}
-			// char *res = r_core_cmd_str (core, rcmd);
-			char *res = c->cmdStr (c->core, rcmd);
-			if (res) {
-				int res_len = strlen (res) + 1;
-				ut8 *pkt = r_rap_packet ((RAP_PACKET_CMD | RAP_PACKET_REPLY), res_len);
-				r_rap_packet_fill (pkt, (const ut8*)res, res_len);
-				r_socket_write (s, pkt, 5 + res_len);
-				r_socket_flush (s);
-				free (res);
-				free (pkt);
-			}
-			free (rcmd);
 		}
-		/* read response */
-		if (r_socket_read_block (s, (ut8*)bufr, 5) != 5) {
-			R_LOG_ERROR ("Cannot read command reply");
-			return NULL;
-		}
+		return NULL;
 	}
 	if (bufr[0] != (char)(RAP_PACKET_CMD | RAP_PACKET_REPLY)) {
 		R_LOG_ERROR ("Wrong reply for command 0x%02x", bufr[0]);
