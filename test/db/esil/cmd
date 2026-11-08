@@ -202,10 +202,9 @@ NAME=cmd.esil.stepout
 FILE=-
 ARGS=-a x86 -b 64
 CMDS=<<EOF
-wx c3
+wx 90
 e cmd.esil.stepout=?e stepout triggered
-aa
-aef 0
+aes
 EOF
 EXPECT=<<EOF
 stepout triggered 0 0

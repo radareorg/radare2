@@ -489,8 +489,6 @@ R_API void r_esil_fini(REsil *esil) {
 	R_FREE (esil->cmd_trap);
 	R_FREE (esil->cmd_mdev);
 	R_FREE (esil->cmd_todo);
-	R_FREE (esil->cmd_step);
-	R_FREE (esil->cmd_step_out);
 	R_FREE (esil->cmd_ioer);
 	R_FREE (esil->mdev_range);
 }
@@ -1313,27 +1311,10 @@ static int eval_word(REsil *esil, const char *ostr, const char **str) {
 	return 3;
 }
 
-static bool step_out(REsil *esil, const char *cmd) {
-	if (cmd && esil && esil->cmd && !esil->in_cmd_step) {
-		esil->in_cmd_step = true;
-		if (esil->cmd (esil, cmd, esil->addr, 0)) {
-			esil->in_cmd_step = false;
-			// if returns 1 we skip the impl
-			return true;
-		}
-		esil->in_cmd_step = false;
-	}
-	return false;
-}
-
 R_API bool r_esil_parse(REsil *esil, const char *str) {
 	R_RETURN_VAL_IF_FAIL (esil, false);
 	if (R_STR_ISEMPTY (str)) {
 		return false;
-	}
-	if (step_out (esil, esil->cmd_step)) {
-		(void)step_out (esil, esil->cmd_step_out);
-		return true;
 	}
 	r_esil_set_trap (esil, R_ANAL_TRAP_NONE, 0);
 	if (esil->cmd && esil->cmd_todo && r_str_startswith (str, "TODO")) {
@@ -1385,7 +1366,6 @@ step_out:
 			esil->jump_target_set = 0;
 		}
 	}
-	step_out (esil, esil->cmd_step_out);
 	return rc;
 }
 
