@@ -5308,10 +5308,8 @@ static ut64 get_phdr_symtab_count(ELFOBJ *eo) {
 }
 
 static ut64 get_phdr_symtab_upper_bound(ELFOBJ *eo, ut64 addr_sym_table) {
+	ut64 bound = eo->size;
 	const RBinElfDynamicInfo *di = &eo->dyn_info;
-	ut64 off, loaded = 0;
-	backing_at (eo, di->dt_symtab, &off, &loaded);
-	ut64 bound = addr_sym_table + loaded;
 	// with no exact count the symtab ends where the next table starts
 	const ut64 vsym = eo->version_info[DT_VERSIONTAGIDX (DT_VERSYM)];
 	const Elf_(Addr) table_vaddrs[] = {
