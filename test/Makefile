@@ -58,6 +58,9 @@ dwarf: bins
 vc4: bins
 	${RUNTEST} db/extras/asm/vc4
 
+mn103: bins
+	${RUNTEST} db/extras/asm/mn103
+
 clean:
 	$(MAKE) -C unit clean
 	rm -rf tmp

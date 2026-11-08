@@ -1,0 +1,55 @@
+d "and 0xf0ff, psw" fafcfff0
+d "nop" cb
+d "add -0x4, sp" f8fefc
+d "calls 0x0000008c" fcff8c000000
+d "mov 0x98100000, a2" fcde00001098
+d "mov 0x10, d3" 8f10
+d "mov d3, (0x8, a2)" f81e08
+d "call 0x00000417, [d2,d3], 0x2c" dd17040000c02c
+d "add -0x100, sp" fafe00ff
+d "mov a0, sp" f2f0
+d "jmp (a0)" f0f4
+d "movhu (0x8070), d0" 387080
+d "movhu d0, (0x8070)" 037080
+d "rets" f0fc
+d "ret [d2,d3], 0x8" dfc008
+d "retf [d2,d3], 0x8" dec008
+d "movm [a2,a3], (sp)" cf30
+d "movm (sp), [a2,a3]" ce30
+d "mov (a0), d0" 70
+d "mov d0, (a0)" 60
+d "mov d3, (0x1e, sp)" 4e1e
+d "mov (0x1e, sp), d2" 5a1e
+d "clr d0" 00
+d "exthu d3" 1f
+d "ext d0" f2d0
+d "cmp 0x5, d0" a005
+d "blt 0x00000004" c004
+d "beq 0x00000002" c802
+d "bra 0x0000003c" ca3c
+d "add -0x115, d2" fac2ebfe
+d "cmp 0xce4, d0" fac8e40c
+d "div d3, d0" f26c
+d "divu d3, d0" f27c
+d "mul d3, d0" f24c
+d "mulu d3, d0" f25c
+d "mov d0, mdr" f2f2
+d "mov mdr, d0" f2e0
+d "btst 0x2, (0x8070)" fe027080000002
+d "bset 0x80, (0x8070)" fe007080000080
+d "lsr 0x7, d3" f8c707
+d "setlb" db
+d "lne" d9
+d "trap" f0fe
+d "break" ff
+d "mulq d3, d0" f60c
+d "mulqu 0xa, d0" f9140a
+d "mulq 0x23, d1" f90123
+d "swap d1, d0" f684
+d "mov r0, r0" f90800
+d "mov xr9, r0" f9e890
+d "mac r0, r0, r0, r0" fb0f0000
+d "sub_mov r2, d0, r3, d1" f7622c3d
+d "fadd fd4, fd0" f9e040
+d "fmov fpcr, r0" f9b700
+d "fmov (a0+), fs0" f92280
