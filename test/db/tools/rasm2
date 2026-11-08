@@ -1023,6 +1023,52 @@ f0debc9a78563412
 EOF
 RUN
 
+NAME=rasm2 wider integer directives emit every comma-separated value
+FILE=-
+CMDS=<<EOF
+!rasm2 ".dw 0x1234, 0x5678"
+!rasm2 -e ".dw 0x1234, 0x5678"
+!rasm2 ".dd 1, 2"
+!rasm2 ".dq 1, -1"
+!rasm2 ".int16 -1, 5"
+!rasm2 ".uint8 1, 255"
+!rasm2 ".uint16 1 + 2, (1 + 2) * 3"
+!rasm2 -a z80 -b 8 ".uint16 a, b; a:; b:"
+EOF
+EXPECT=<<EOF
+34127856
+12345678
+0100000002000000
+0100000000000000ffffffffffffffff
+ffff0500
+01ff
+03000900
+04000400
+EOF
+RUN
+
+NAME=rasm2 wider integer directives reject bad lists
+FILE=-
+CMDS=<<EOF
+!rasm2 ".dw 1 2"
+!rasm2 ".dw 1,"
+!rasm2 ".dw 0x7fff, 0x8000"
+!rasm2 ".uint16 1, 0x10000"
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid number in .intN:  ')' expected
+ERROR: Cannot assemble '.dw 1 2' at line 1
+ERROR: Missing expression in .intN
+ERROR: Cannot assemble '.dw 1,' at line 1
+ERROR: int16 value 32768 out of range (-32768 to 32767)
+ERROR: Cannot assemble '.dw 0x7fff, 0x8000' at line 1
+ERROR: uint16 out of range
+ERROR: Cannot assemble '.uint16 1, 0x10000' at line 1
+EOF
+RUN
+
 NAME=rasm2 .fill directive
 FILE=-
 CMDS=!rasm2 ".fill 5"

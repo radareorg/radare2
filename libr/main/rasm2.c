@@ -418,7 +418,7 @@ static int rasm_show_help(RCons *cons, int v) {
 		".cpu [name]     set asm.cpu=?\n"
 		".os [os]        same as .kernel\n"
 		".hex 102030     set bytes in linear hexpair string, no endian applied\n"
-		".int16 [num]    write int16 number honoring endian\n"
+		".int16 n[,n]    comma-separated int16 values honoring endian\n"
 		".int32 [num]    same for 32bit\n"
 		".int64 [num]    same for 64bit\n"
 		".size           n/a\n"
