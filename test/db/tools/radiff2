@@ -121,6 +121,34 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=radiff2 -D -iz -o matches the output without -o
+FILE=-
+CMDS=<<EOF
+!radiff2 -qD -iz bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1 2> /dev/null
+!radiff2 -qD -iz -o 4 bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1 2> /dev/null
+EOF
+EXPECT=<<EOF
+--- 0x00000000  48656c6c
+- 0x00000000  dec eax
+- 0x00000001  insb byte es:[edi], dx
+- 0x00000003  insb byte es:[edi], dx
++++ 0x00000000  41414141
++ 0x00000000  inc ecx
++ 0x00000001  inc ecx
++ 0x00000002  inc ecx
++ 0x00000003  inc ecx
+--- 0x00000000  48656c6c
+- 0x00000000  dec eax
+- 0x00000001  insb byte es:[edi], dx
+- 0x00000003  insb byte es:[edi], dx
++++ 0x00000000  41414141
++ 0x00000000  inc ecx
++ 0x00000001  inc ecx
++ 0x00000002  inc ecx
++ 0x00000003  inc ecx
+EOF
+RUN
+
 NAME=radiff2 -f bdiff -o copies from the first file
 FILE=-
 CMDS=<<EOF
