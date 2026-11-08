@@ -1400,7 +1400,7 @@ static ut32 logical(ArmOp *op, bool invert, LogicalOp opc) {
 		data |= op->operands[1].reg << 5;
 		data |= (opc & 3) << 29;
 
-		ut32 imm_orig = op->operands[2].immediate;
+		ut64 imm_orig = op->operands[2].immediate;
 		ut32 imm = encodeBitMasksWithSize (invert? ~imm_orig: imm_orig, is64bit? 64: 32);
 		if (imm == UT32_MAX) {
 			return UT32_MAX;
