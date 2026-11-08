@@ -74,6 +74,10 @@ bool test_r_num_math_shifts(void) {
 	mu_assert_eq (r_num_math (num, "0x8000000000000000>>63"), 1, "right shift by 63");
 	mu_assert_eq (r_num_math (num, "0x8000000000000000>>64"), 0, "right shift by 64");
 	mu_assert_eq (r_num_math (num, "0x8000000000000000>>200"), 0, "right shift by 200");
+	mu_assert_eq (r_num_math (num, "8/(1>>1)"), 0, "right shift yields a zero divisor");
+	mu_assert_true (num->dbz, "8/(1>>1) flags division by zero");
+	mu_assert_eq (r_num_math (num, "8/(1>>0)"), 8, "right shift preserves the divisor");
+	mu_assert_false (num->dbz, "8/(1>>0) clears the division by zero flag");
 	mu_end;
 }
 
@@ -250,6 +254,28 @@ bool test_r_num_math_unary_not(void) {
 	mu_end;
 }
 
+bool test_r_num_math_boolean_divisor(void) {
+	const char *expressions[] = {
+		"8/(1>0)",
+		"8/(1<2)",
+		"8/(0<=0)",
+		"8/(1>=0)",
+		"8/(0==0)",
+		"8/(1||0)",
+		"8/(1&&2)",
+		"8/(1^^0)",
+	};
+	mu_assert_eq (r_num_math (num, "8/(1>2)"), 0, "a false comparison is a zero divisor");
+	mu_assert_true (num->dbz, "division by zero is flagged");
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (expressions); i++) {
+		mu_assert_eq (r_num_math (num, expressions[i]), 8, expressions[i]);
+		mu_assert_false (num->dbz, expressions[i]);
+		mu_assert (expressions[i], num->fvalue == 8.0);
+	}
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_num_reference_nesting_limit);
 	mu_run_test (test_r_num_nested_reference_tokens);
@@ -261,6 +287,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_num_math_rotates);
 	mu_run_test (test_r_num_math_less_greater_equal);
 	mu_run_test (test_r_num_math_unary_not);
+	mu_run_test (test_r_num_math_boolean_divisor);
 	mu_run_test (test_r_num_str_len);
 	mu_run_test (test_r_num_str_split);
 	mu_run_test (test_r_num_str_split_list);

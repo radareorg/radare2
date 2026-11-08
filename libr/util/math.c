@@ -12,10 +12,10 @@ static inline RNumCalcValue Nsubi(RNumCalcValue n, ut64 v) { n.d -=(double)v; n.
 static inline RNumCalcValue Nneg(RNumCalcValue n) { return Nset (~n.n); }
 static inline RNumCalcValue Nor(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n |= v.n; return n; }
 static inline RNumCalcValue Nxor(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n ^= v.n; return n; }
-static inline RNumCalcValue Nlt(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n = n.n < v.n; return n; }
-static inline RNumCalcValue Ngt(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n = n.n > v.n; return n; }
-static inline RNumCalcValue Nle(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n = n.n <= v.n; return n; }
-static inline RNumCalcValue Nge(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n = n.n >= v.n; return n; }
+static inline RNumCalcValue Nlt(RNumCalcValue n, RNumCalcValue v) { return Nset (n.n < v.n); }
+static inline RNumCalcValue Ngt(RNumCalcValue n, RNumCalcValue v) { return Nset (n.n > v.n); }
+static inline RNumCalcValue Nle(RNumCalcValue n, RNumCalcValue v) { return Nset (n.n <= v.n); }
+static inline RNumCalcValue Nge(RNumCalcValue n, RNumCalcValue v) { return Nset (n.n >= v.n); }
 static inline RNumCalcValue Nand(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n &= v.n; return n; }
 static inline RNumCalcValue Nadd(RNumCalcValue n, RNumCalcValue v) { n.d += v.d; n.n += v.n; return n; }
 static inline RNumCalcValue Nsub(RNumCalcValue n, RNumCalcValue v) { n.d -= v.d; n.n -= v.n; return n; }
@@ -80,15 +80,13 @@ static inline RNumCalcValue Ndiv(RNumCalcValue n, RNumCalcValue v) {
 }
 
 static inline RNumCalcValue Bnot(RNumCalcValue n) { return Nset (!n.n); }
-static inline RNumCalcValue Bor(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n = n.n || v.n; return n; }
-static inline RNumCalcValue Band(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n = n.n && v.n; return n; }
-static inline RNumCalcValue Bxor(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n = (n.n && !v.n) || (!n.n && v.n); return n; }
+static inline RNumCalcValue Bor(RNumCalcValue n, RNumCalcValue v) { return Nset (n.n || v.n); }
+static inline RNumCalcValue Band(RNumCalcValue n, RNumCalcValue v) { return Nset (n.n && v.n); }
+static inline RNumCalcValue Bxor(RNumCalcValue n, RNumCalcValue v) { return Nset ((n.n && !v.n) || (!n.n && v.n)); }
 static inline RNumCalcValue Bxnor(RNumCalcValue n, RNumCalcValue v) {
-	n.d = v.d;
-	n.n = (n.n && v.n) || (!n.n && !v.n);
-	return n;
+	return Nset ((n.n && v.n) || (!n.n && !v.n));
 }
-static inline RNumCalcValue Beq(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n = n.n == v.n; return n; }
+static inline RNumCalcValue Beq(RNumCalcValue n, RNumCalcValue v) { return Nset (n.n == v.n); }
 static inline RNumCalcValue Bneq(RNumCalcValue n, RNumCalcValue v) { return Nset (n.n != v.n); }
 
 static RNumCalcValue expr(RNum*, RNumCalc*, int);
