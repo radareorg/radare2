@@ -431,6 +431,12 @@ static inline bool is_true_or_false(const char *s) {
 	return s && (!r_str_casecmp (s, "true") || !r_str_casecmp (s, "false"));
 }
 
+// privileged keys run commands or redirect file access later, once the sandbox scope is gone
+static bool sandbox_denies(RConfigNode *node) {
+	return (node->flags & CN_PRIV) && r_sandbox_in_scope () && !(r_sandbox_check (R_SANDBOX_GRAIN_EXEC)
+		&& r_sandbox_check (R_SANDBOX_GRAIN_DISK) && r_sandbox_check (R_SANDBOX_GRAIN_FILES));
+}
+
 /* TODO: reduce number of strdups here */
 R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *value) {
 	R_RETURN_VAL_IF_FAIL (cfg && cfg->ht, NULL);
@@ -445,6 +451,15 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 	if (node) {
 		if (r_config_node_is_ro (node)) {
 			R_LOG_ERROR ("Key '%s' is readonly", name);
+			return node;
+		}
+		if (sandbox_denies (node)) {
+			const bool same = r_config_node_is_bool (node)
+				? r_str_is_true (value) == (node->i_value != 0)
+				: !strcmp (r_str_get (value), r_str_get (node->value));
+			if (!same) {
+				R_LOG_WARN ("Cannot change '%s' inside the sandbox", name);
+			}
 			return node;
 		}
 		oi = node->i_value;
@@ -592,6 +607,12 @@ R_API RConfigNode* r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 	if (node) {
 		if (r_config_node_is_ro (node)) {
 			node = NULL;
+			goto beach;
+		}
+		if (sandbox_denies (node)) {
+			if (node->i_value != i) {
+				R_LOG_WARN ("Cannot change '%s' inside the sandbox", name);
+			}
 			goto beach;
 		}
 		ov = node->value;

@@ -359,6 +359,11 @@ R_API bool r_sandbox_check(int mask) {
 	return !G_enabled || (G_graintype & mask) != 0;
 }
 
+// true while r_sandbox_run restricts the current thread
+R_API bool r_sandbox_in_scope(void) {
+	return sandbox_scope_current () != NULL;
+}
+
 // only the dotted quad form of 127.0.0.0/8, "127.example.com" is a name that resolves anywhere
 static bool is_ipv4_loopback(const char *host) {
 	ut32 b, c, d;
