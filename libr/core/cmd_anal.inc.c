@@ -7996,7 +7996,7 @@ static bool is_steporeable(int type) {
 static void core_esil_sync_legacy_trap(RCore *core) {
 	REsil *esil = R_UNWRAP3 (core, anal, esil);
 	if (esil) {
-		const REsilTrap trap = r_esil_get_trap (&core->esil.esil);
+		const REsilTrap trap = r_esil_get_trap (&core->esil->esil);
 		r_esil_restore_trap (esil, &trap);
 	}
 }
@@ -8022,8 +8022,8 @@ static bool core_esil_decode_op(RCore *core, RAnalOp *op, ut64 addr) {
 static bool core_esil_skip_op(RCore *core, RAnalOp *op, ut64 addr) {
 	const int align = r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN);
 	if (align > 1 && (addr % align)) {
-		if (R_STR_ISNOTEMPTY (core->esil.cmds.trap)) {
-			r_core_cmd0 (core, core->esil.cmds.trap);
+		if (R_STR_ISNOTEMPTY (core->esil->cmds.trap)) {
+			r_core_cmd0 (core, core->esil->cmds.trap);
 		}
 		return false;
 	}
@@ -8034,7 +8034,7 @@ static bool core_esil_skip_op(RCore *core, RAnalOp *op, ut64 addr) {
 		R_LOG_ERROR ("Failed to advance PC for step-over at 0x%" PFMT64x, op->addr);
 		return false;
 	}
-	r_esil_set_trap (&core->esil.esil, R_ANAL_TRAP_NONE, 0);
+	r_esil_set_trap (&core->esil->esil, R_ANAL_TRAP_NONE, 0);
 	return true;
 }
 
@@ -8075,8 +8075,8 @@ static void core_esil_set_pc(RCore *core, ut64 pc) {
 }
 
 static int core_esil_stop_trap_type(RCore *core) {
-	const int trap = core->esil.esil.trap;
-	const ut32 trap_code = core->esil.esil.trap_code;
+	const int trap = core->esil->esil.trap;
+	const ut32 trap_code = core->esil->esil.trap_code;
 	if (trap > R_ANAL_TRAP_NONE && trap <= R_ANAL_TRAP_HALT) {
 		return trap;
 	}
@@ -8097,7 +8097,7 @@ static RCoreEsilStepStatus core_esil_step_status_from_trap(RCore *core) {
 	if (trap == R_ANAL_TRAP_INVALID || trap == R_ANAL_TRAP_UNALIGNED || trap == R_ANAL_TRAP_EXEC_ERR) {
 		return R_CORE_ESIL_STEP_STATUS_INVALID;
 	}
-	if (core->esil.esil.trap || core->esil.esil.trap_code) {
+	if (core->esil->esil.trap || core->esil->esil.trap_code) {
 		return R_CORE_ESIL_STEP_STATUS_TRAP;
 	}
 	return R_CORE_ESIL_STEP_STATUS_ERROR;
@@ -8192,13 +8192,13 @@ static void core_esil_update_debug_reason(RCore *core, RCoreEsilStepStatus statu
 		return;
 	}
 	const int trap_type = core_esil_stop_trap_type (core);
-	const ut64 trap_code = core->esil.esil.trap_code;
+	const ut64 trap_code = core->esil->esil.trap_code;
 	core->dbg->reason.type = core_esil_debug_reason_from_stop (status, trap_type);
 	core->dbg->reason.signum = -1;
 	core->dbg->reason.tid = core->dbg->tid;
 	core->dbg->reason.bp_addr = status == R_CORE_ESIL_STEP_STATUS_BREAKPOINT? stop_addr: 0;
 	core->dbg->reason.timestamp = r_time_now ();
-	const REsilTrap trap = r_esil_get_trap (&core->esil.esil);
+	const REsilTrap trap = r_esil_get_trap (&core->esil->esil);
 	core->dbg->reason.ptr = trap.addr_valid? trap.addr: trap_code;
 	if (trap.addr_valid || trap_type == R_ANAL_TRAP_READ_ERR || trap_type == R_ANAL_TRAP_WRITE_ERR) {
 		core->dbg->reason.addr = trap.addr_valid? trap.addr: trap_code;
@@ -8219,7 +8219,7 @@ static void core_esil_log_stop_reason(RCore *core, RCoreEsilStepStatus status, u
 		return;
 	}
 	const int trap_type = core_esil_stop_trap_type (core);
-	const REsilTrap trap = r_esil_get_trap (&core->esil.esil);
+	const REsilTrap trap = r_esil_get_trap (&core->esil->esil);
 	const char *reason = core_esil_fault_stop_name (status, trap_type);
 	if (trap.addr_valid || trap_type == R_ANAL_TRAP_READ_ERR || trap_type == R_ANAL_TRAP_WRITE_ERR) {
 		R_LOG_ERROR ("ESIL stopped at 0x%08" PFMT64x ": %s (%s at 0x%08" PFMT64x ")",
@@ -8324,7 +8324,7 @@ static RCoreEsilStepStatus core_esil_step_until_internal(RCore *core, ut64 until
 				}
 				addr = next;
 				r_reg_setv (core->anal->reg, "PC", addr);
-				r_esil_set_trap (&core->esil.esil, R_ANAL_TRAP_NONE, 0);
+				r_esil_set_trap (&core->esil->esil, R_ANAL_TRAP_NONE, 0);
 				status = R_CORE_ESIL_STEP_STATUS_DONE;
 				if (single_step) {
 					break;
@@ -8339,7 +8339,7 @@ static RCoreEsilStepStatus core_esil_step_until_internal(RCore *core, ut64 until
 				// the trap did not advance PC, stop to avoid an endless loop
 				break;
 			}
-			r_esil_set_trap (&core->esil.esil, R_ANAL_TRAP_NONE, 0);
+			r_esil_set_trap (&core->esil->esil, R_ANAL_TRAP_NONE, 0);
 			status = R_CORE_ESIL_STEP_STATUS_DONE;
 			continue;
 		}
@@ -8359,9 +8359,9 @@ static RCoreEsilStepStatus core_esil_step_until_internal(RCore *core, ut64 until
 		}
 		if (until_expr) {
 			// keep the trap state of the step across the condition evaluation
-			const REsilTrap trap = r_esil_get_trap (&core->esil.esil);
-			const bool matched = r_esil_condition (&core->esil.esil, until_expr);
-			r_esil_restore_trap (&core->esil.esil, &trap);
+			const REsilTrap trap = r_esil_get_trap (&core->esil->esil);
+			const bool matched = r_esil_condition (&core->esil->esil, until_expr);
+			r_esil_restore_trap (&core->esil->esil, &trap);
 			if (matched) {
 				break;
 			}
@@ -9806,12 +9806,12 @@ static void core_esil_log_step_over_stop(RCore *core, RCoreEsilStepStatus status
 	R_LOG_WARN ("ESIL step-over stopped at 0x%08" PFMT64x " before return to 0x%08" PFMT64x ": %s",
 		stop_addr, ret_addr, core_esil_step_status_name (status));
 	if (status == R_CORE_ESIL_STEP_STATUS_IOTRAP || status == R_CORE_ESIL_STEP_STATUS_TRAP) {
-		const int trap = core->esil.esil.trap;
-		const ut32 trap_code = core->esil.esil.trap_code;
+		const int trap = core->esil->esil.trap;
+		const ut32 trap_code = core->esil->esil.trap_code;
 		R_LOG_WARN ("ESIL trap '%s' (%" PFMT32u ") at 0x%08" PFMT64x,
 			r_esil_trapstr (trap), trap_code, stop_addr);
-		if (core->esil.esil.trap_addr_valid) {
-			R_LOG_WARN ("ESIL fault address 0x%" PFMT64x, core->esil.esil.trap_addr);
+		if (core->esil->esil.trap_addr_valid) {
+			R_LOG_WARN ("ESIL fault address 0x%" PFMT64x, core->esil->esil.trap_addr);
 		}
 	}
 }

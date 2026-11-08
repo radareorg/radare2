@@ -2676,6 +2676,12 @@ static void core_visual_init(RCoreVisual *visual) {
 
 R_API bool r_core_init(RCore *core) {
 	r_w32_init ();
+	if (!core->esil) {
+		core->esil = r_core_esil_new (core);
+		if (!core->esil) {
+			return false;
+		}
+	}
 	core->muta = r_muta_new ();
 	core->priv = R_NEW0 (RCorePriv);
 	RCorePriv *priv = core->priv;
@@ -2685,7 +2691,7 @@ R_API bool r_core_init(RCore *core) {
 	core->block = (ut8 *)calloc (R_CORE_BLOCKSIZE + 1, 1);
 	if (!core->block) {
 		R_LOG_ERROR ("Cannot allocate %d byte(s)", R_CORE_BLOCKSIZE);
-		return false;
+		goto esil_fail;
 	}
 	r_core_vmark_reset (core);
 	core->chan = NULL;
@@ -2750,7 +2756,7 @@ R_API bool r_core_init(RCore *core) {
 	core->egg = r_egg_new ();
 	if (!core->egg) {
 		R_LOG_ERROR ("Cannot initialize REgg");
-		return false;
+		goto esil_fail;
 	}
 	// 	core->egg->rasm = core->rasm;
 
@@ -2888,7 +2894,7 @@ R_API bool r_core_init(RCore *core) {
 	core->dbg->ev = core->ev;
 	core->autocomplete = R_NEW0 (RCoreAutocomplete);
 	r_core_plugins_init (core->rcmd);
-	r_core_esil_init (core);
+	core->esil->esil.anal = core->anal;
 	r_core_config_init (core);
 	r_core_plugins_load (core->rcmd);
 	core->print->reg = core->anal->reg;
@@ -2914,6 +2920,10 @@ R_API bool r_core_init(RCore *core) {
 	r_core_anal_type_init (core);
 	r_anal_bind (core->anal, &(core->rasm->analb));
 	return true;
+esil_fail:
+	r_core_esil_free (core->esil);
+	core->esil = NULL;
+	return false;
 }
 
 R_API void __cons_cb_fkey(RCore *core, int fkey) {
@@ -3012,7 +3022,8 @@ R_API void r_core_fini(RCore *c) {
 	r_core_task_scheduler_fini (&c->tasks);
 	free (c->sessionfile);
 	r_event_free (c->ev);
-	r_core_esil_fini (c);
+	r_core_esil_free (c->esil);
+	c->esil = NULL;
 	if (c->anal->esil) {
 		c->anal->esil->anal = NULL;
 	}

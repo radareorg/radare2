@@ -1,0 +1,30 @@
+NAME=debug stepback restores stack writes and replays them on step
+FILE=bins/elf/analysis/calls_x64
+ARGS=-d
+CMDS=<<EOF
+dcu main
+dr rbp=0x1234 > /dev/null
+f slot=`dr rsp`-8
+wv8 0x5678 @ slot
+dts+
+ds
+?e step PC=`dr rip` value=`pv8 @ slot`
+?vi `dr rsp`-slot
+dsb
+?e back PC=`dr rip` value=`pv8 @ slot`
+?vi `dr rsp`-slot
+ds
+?e replay PC=`dr rip` value=`pv8 @ slot`
+?vi `dr rsp`-slot
+dts-
+dk 9
+EOF
+EXPECT=<<EOF
+step PC=0x00400575 value=0x0000000000001234
+0
+back PC=0x00400574 value=0x0000000000005678
+8
+replay PC=0x00400575 value=0x0000000000001234
+0
+EOF
+RUN

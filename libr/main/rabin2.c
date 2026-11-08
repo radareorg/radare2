@@ -678,7 +678,9 @@ static int rabin2_main(RCons *cons, int argc, const char **argv) {
 	RCore core = { 0 };
 	ut64 at = UT64_MAX;
 
-	r_core_init (&core);
+	if (!r_core_init (&core)) {
+		return 1;
+	}
 	RBin *bin = core.bin;
 	RCons *core_cons = core.cons;
 	core.cons = cons;

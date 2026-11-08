@@ -399,7 +399,7 @@ struct r_core_t {
 	RCmd *rcmd;
 	RAnal *anal;
 	RAsm *rasm;
-	RCoreEsil esil;
+	RCoreEsil *esil;
 	/* ^^ */
 	RCoreTimes *times;
 	// RParse *parser;
@@ -852,8 +852,8 @@ R_API int r_core_get_prc_cols(RCore *core);
 R_API int r_core_flag_in_middle(RCore *core, ut64 at, int oplen, int *midflags);
 R_API int r_core_bb_starts_in_middle(RCore *core, ut64 at, int oplen);
 
-R_API bool r_core_esil_init(RCore *core);
-R_API void r_core_esil_fini(RCore *core);
+R_API R_OWNED RCoreEsil *r_core_esil_new(RCore *core);
+R_API void r_core_esil_free(RCoreEsil *R_NULLABLE cesil);
 R_API void r_core_esil_load_arch(RCore *core);
 R_API void r_core_esil_unload_arch(RCore *core);
 R_API bool r_core_esil_run_expr_at(RCore *core, const char *expr, ut64 addr);

@@ -28,6 +28,93 @@ back ebx=0x00000000
 EOF
 RUN
 
+NAME=ESIL stepback across a skipped self-loop
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e esil.skipself=true
+e io.cache=true
+o malloc://4096 0x100
+wx 90b801000000ebfe9090 @ 0x100
+s 0x100
+aei
+aeim
+aeip
+4aeso
+?e final PC=`dr PC`
+?e final rax=`dr rax`
+aesb
+aesb
+aesb
+aesb
+?e restored PC=`dr PC`
+?e restored rax=`dr rax`
+EOF
+EXPECT=<<EOF
+final PC=0x00000109
+final rax=0x00000001
+restored PC=0x00000100
+restored rax=0x00000000
+EOF
+RUN
+
+NAME=ESIL dsb keeps only the configured self-loop history
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx e2fe
+aei
+aeip
+e esil.skipself=false
+e esil.maxbacksteps=2
+ar rcx=4
+3ds
+ar rcx
+ar rip
+dsb
+ar rcx
+dsb
+ar rcx
+ar rip
+dsb
+ar rcx
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000000
+0x00000002
+0x00000003
+0x00000000
+0x00000003
+EOF
+EXPECT_ERR=<<EOF
+ERROR: cannot step back
+EOF
+RUN
+
+NAME=ESIL stepback restores MIPS delay-slot writes
+FILE=malloc://64
+ARGS=-a mips -b 32 -e cfg.bigendian=false
+CMDS=<<EOF
+wx 0400000807000224
+aei
+aeip
+aes
+ar pc
+ar v0
+aesb
+ar pc
+ar v0
+EOF
+EXPECT=<<EOF
+0x00000010
+0x00000007
+0x00000000
+0x00000000
+EOF
+RUN
+
 NAME=ESIL stepback restores push memory
 FILE=malloc://4096
 ARGS=-a x86 -b 64
