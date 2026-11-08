@@ -788,3 +788,37 @@ a "bfxil x0, x1, 0, 1" 200040b3
 a "bfm x0, x1, 3, 7" 201c43b3
 a "bfm w0, w1, 3, 7" 201c0333
 a "bfxil x0, x1, 63, 1" 20fc7fb3
+ad "lsl x0, x1, 1" 20f87fd3
+ad "lsl w0, w1, 1" 20781f53
+ad "lsr x0, x1, 1" 20fc41d3
+ad "lsr w0, w1, 1" 207c0153
+a "lsl x0, x1, 0" 20fc40d3
+a "lsl x0, x1, 32" 207c60d3
+a "lsl x0, x1, 63" 200041d3
+a "lsl w0, w1, 0" 207c0053
+a "lsl w0, w1, 31" 20000153
+a "lsr x0, x1, 0" 20fc40d3
+a "lsr x0, x1, 32" 20fc60d3
+a "lsr x0, x1, 63" 20fc7fd3
+a "lsr w0, w1, 0" 207c0053
+a "lsr w0, w1, 31" 207c1f53
+ad "lsl xzr, xzr, xzr" ff23df9a
+ad "lsr xzr, xzr, xzr" ff27df9a
+ad "lsl wzr, wzr, wzr" ff23df1a
+ad "lsr wzr, wzr, wzr" ff27df1a
+a "lsl xzr, xzr, #1" fffb7fd3
+a "lsr xzr, xzr, #1" ffff41d3
+a "lsl wzr, wzr, #1" ff7b1f53
+a "lsr wzr, wzr, #1" ff7f0153
+a "asr w0, w1, #0" 207c0013
+a "asr w0, w1, #31" 207c1f13
+a "asr x0, x1, #0" 20fc4093
+a "asr x0, x1, #63" 20fc7f93
+a "ror w0, w1, #0" 20008113
+a "ror w0, w1, #31" 207c8113
+a "ror x0, x1, #0" 2000c193
+a "ror x0, x1, #63" 20fcc193
+a "ubfm xzr, xzr, #1, #63" ffff41d3
+a "ubfm wzr, wzr, #1, #31" ff7f0153
+a "lsl x0, x1, 1+2" 20f07dd3
+a "lsr w0, w1, #0x1f" 207c1f53

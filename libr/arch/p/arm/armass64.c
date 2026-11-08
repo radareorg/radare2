@@ -63,6 +63,7 @@ typedef struct operand_t {
 			ut64 immediate;
 			bool sign;
 			bool preindex;
+			bool immediate_valid;
 		};
 		struct {
 			ut64 shift_amount;
@@ -432,8 +433,25 @@ static ut32 r_n_math(ArmOp *op, ut32 data_64, ut32 data_32, bool is64) {
 	return data;
 }
 
+static bool is_valid_shift(ArmOp *op) {
+	// Unused slots stay zero; parsed but unrecognized operands become ARM_NOTYPE.
+	if (op->operands_count != 3 || op->operands[3].type != 0
+			|| op->operands[0].type != ARM_GPR || op->operands[1].type != ARM_GPR) {
+		return false;
+	}
+	RegType reg_type = op->operands[0].reg_type;
+	if ((reg_type != ARM_REG32 && reg_type != ARM_REG64) || op->operands[1].reg_type != reg_type) {
+		return false;
+	}
+	if (op->operands[2].type == ARM_CONSTANT) {
+		return op->operands[2].immediate_valid && op->operands[2].immediate < (reg_type == ARM_REG64? 64: 32);
+	}
+	return op->operands[2].type == ARM_GPR && op->operands[2].reg_type == reg_type;
+}
+
 static ut32 asr(ArmOp *op) {
 	ut32 data = UT32_MAX;
+	check_cond (is_valid_shift (op));
 	int k = 0;
 	bool check1 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64 && op->operands[2].reg_type & ARM_REG64;
 	bool check2 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32 && op->operands[2].reg_type & ARM_REG32;
@@ -452,7 +470,6 @@ static ut32 asr(ArmOp *op) {
 		data |= op->operands[2].reg << 8;
 		return data;
 	} else if (op->operands[2].type & ARM_CONSTANT) {
-		check_cond (op->operands[2].immediate <= 0x3f);
 		if (check3) {
 			k = 0x00fc4093;
 		} else if (check4) {
@@ -467,8 +484,28 @@ static ut32 asr(ArmOp *op) {
 	return data;
 }
 
+static ut32 logical_shift(ArmOp *op, bool left) {
+	if (!is_valid_shift (op)) {
+		return UT32_MAX;
+	}
+	const bool w64 = op->operands[0].reg_type == ARM_REG64;
+	if (op->operands[2].type == ARM_GPR) {
+		return r_n_math (op, left? 0x0020c09a: 0x0024c09a, left? 0x0020c01a: 0x0024c01a, w64);
+	}
+	// Immediate LSL and LSR are UBFM aliases.
+	const ut64 width = w64? 64: 32;
+	const ut64 n = op->operands[2].immediate;
+	const ut64 immr = left? (width - n) & (width - 1): n;
+	const ut64 imms = left? width - n - 1: width - 1;
+	const ut32 base = w64? 0xd3400000: 0x53000000;
+	const ut32 data = base | ((ut32)immr << 16) | ((ut32)imms << 10)
+		| (op->operands[1].reg & 0x1f) << 5 | (op->operands[0].reg & 0x1f);
+	return r_swap_ut32 (data);
+}
+
 static ut32 ror(ArmOp *op) {
 	ut32 data = UT32_MAX;
+	check_cond (is_valid_shift (op));
 	int k = 0;
 	bool check1 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64 && op->operands[2].reg_type & ARM_REG64;
 	bool check2 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32 && op->operands[2].reg_type & ARM_REG32;
@@ -487,7 +524,6 @@ static ut32 ror(ArmOp *op) {
 		data |= op->operands[2].reg << 8;
 		return data;
 	} else if (op->operands[2].type & ARM_CONSTANT) {
-		check_cond (op->operands[2].immediate <= 0x3f);
 		if (check3) {
 			k = 0x0000c093;
 		} else if (check4) {
@@ -1589,6 +1625,7 @@ static ut32 bitfield(ArmOp *op, int k) {
 	check_cond (op->operands[0].type == ARM_GPR);
 	check_cond (op->operands[1].type == ARM_GPR);
 	check_cond (op->operands[0].reg_type == op->operands[1].reg_type);
+	check_cond (!(op->operands[0].reg_type & ARM_SP));
 	check_cond (op->operands[2].type == ARM_CONSTANT);
 	check_cond (op->operands[3].type == ARM_CONSTANT);
 	int bits = (op->operands[0].reg_type & ARM_REG64)? 64: 32;
@@ -1619,6 +1656,13 @@ static ut32 bitfield(ArmOp *op, int k) {
 	k |= op->operands[2].immediate << 8 | op->operands[3].immediate << 18;
 	data = k | encode2regs (op);
 	return data;
+}
+
+static void parse_constant(Operand *operand, const char *token) {
+	const char *err = NULL;
+	token = r_str_trim_head_ro (token);
+	operand->immediate = r_num_math_err (NULL, token, &err);
+	operand->immediate_valid = *token && !err;
 }
 
 static bool parseOperands(char *str, ArmOp *op) {
@@ -1889,7 +1933,7 @@ static bool parseOperands(char *str, ArmOp *op) {
 			}
 			op->operands_count++;
 			op->operands[operand].type = ARM_CONSTANT;
-			op->operands[operand].immediate = r_num_math (NULL, token + 1);
+			parse_constant (&op->operands[operand], token + 1);
 			op->operands[operand].preindex = token - t < index_bound;
 			// imm_count++;
 			break;
@@ -1899,7 +1943,7 @@ static bool parseOperands(char *str, ArmOp *op) {
 		default:
 			op->operands_count++;
 			op->operands[operand].type = ARM_CONSTANT;
-			op->operands[operand].immediate = r_num_math (NULL, token);
+			parse_constant (&op->operands[operand], token);
 			op->operands[operand].preindex = token - t < index_bound;
 			// imm_count++;
 			break;
@@ -2194,9 +2238,9 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 	} else if (r_str_startswith (str, "sdiv")) {
 		*op = r_n_math (&ops, 0x000cc09a, 0x000cc01a, has64reg (str));
 	} else if (r_str_startswith (str, "lsl ")) {
-		*op = r_n_math (&ops, 0x0020c09a, 0x0020c01a, has64reg (str));
+		*op = logical_shift (&ops, true);
 	} else if (r_str_startswith (str, "lsr ")) {
-		*op = r_n_math (&ops, 0x0024c09a, 0x0024c01a, has64reg (str));
+		*op = logical_shift (&ops, false);
 	} else if (r_str_startswith (str, "adc ")) {
 		*op = r_n_math (&ops, 0x0000009a, 0x0000001a, has64reg (str));
 	} else if (r_str_startswith (str, "adcs")) {

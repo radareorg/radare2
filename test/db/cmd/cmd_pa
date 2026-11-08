@@ -536,3 +536,122 @@ ERROR: Cannot assemble 'ubfx x0, x1, 5, 0' at line 1
 ERROR: Cannot assemble 'sbfx w0, w1, 30, 4' at line 1
 EOF
 RUN
+
+NAME=pa arm64 reject invalid logical shift operands
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+"pa lsl x0, w1, #1"
+"pa lsr w0, x1, #1"
+"pa lsr d0, d1, #1"
+"pa lsl s0, s1, #1"
+"pa lsr x0, sp, #1"
+"pa lsl sp, x1, #1"
+"pa lsl w0, wsp, #1"
+"pa lsr wsp, w1, #1"
+"pa lsl x0, x1, #1, x2"
+"pa lsr x0, x1, #1, nop"
+"pa lsl x0, x1, #1,"
+"pa lsr x0, x1, #bogus"
+"pa lsr x0, x1, bogus"
+"pa lsl w0, w1, #1+bogus"
+"pa lsl x0, x1,"
+"pa lsr x0, x1, #"
+"pa lsl x0, x1"
+"pa lsr x0, x1, nop"
+"pa lsl x0, x1, #64"
+"pa lsr x0, x1, #64"
+"pa lsl w0, w1, #32"
+"pa lsr w0, w1, #32"
+"pa lsl x0, x1, #-1"
+"pa lsr w0, w1, #-1"
+"pa lsl x0, x1, w2"
+"pa lsr w0, w1, x2"
+"pa lsl x0, x1, sp"
+"pa lsr w0, w1, wsp"
+"pa lsl x0, x1, x2, nop"
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'lsl x0, w1, #1' at line 1
+ERROR: Cannot assemble 'lsr w0, x1, #1' at line 1
+ERROR: Cannot assemble 'lsr d0, d1, #1' at line 1
+ERROR: Cannot assemble 'lsl s0, s1, #1' at line 1
+ERROR: Cannot assemble 'lsr x0, sp, #1' at line 1
+ERROR: Cannot assemble 'lsl sp, x1, #1' at line 1
+ERROR: Cannot assemble 'lsl w0, wsp, #1' at line 1
+ERROR: Cannot assemble 'lsr wsp, w1, #1' at line 1
+ERROR: Cannot assemble 'lsl x0, x1, #1, x2' at line 1
+ERROR: Cannot assemble 'lsr x0, x1, #1, nop' at line 1
+ERROR: Cannot assemble 'lsl x0, x1, #1,' at line 1
+ERROR: Cannot assemble 'lsr x0, x1,' at line 1
+ERROR: Cannot assemble 'lsr x0, x1, bogus' at line 1
+ERROR: Cannot assemble 'lsl w0, w1, #1+bogus' at line 1
+ERROR: Cannot assemble 'lsl x0, x1,' at line 1
+ERROR: Cannot assemble 'lsr x0, x1,' at line 1
+ERROR: Cannot assemble 'lsl x0, x1' at line 1
+ERROR: Cannot assemble 'lsr x0, x1, nop' at line 1
+ERROR: Cannot assemble 'lsl x0, x1, #64' at line 1
+ERROR: Cannot assemble 'lsr x0, x1, #64' at line 1
+ERROR: Cannot assemble 'lsl w0, w1, #32' at line 1
+ERROR: Cannot assemble 'lsr w0, w1, #32' at line 1
+ERROR: Cannot assemble 'lsl x0, x1, #-1' at line 1
+ERROR: Cannot assemble 'lsr w0, w1, #-1' at line 1
+ERROR: Cannot assemble 'lsl x0, x1, w2' at line 1
+ERROR: Cannot assemble 'lsr w0, w1, x2' at line 1
+ERROR: Cannot assemble 'lsl x0, x1, sp' at line 1
+ERROR: Cannot assemble 'lsr w0, w1, wsp' at line 1
+ERROR: Cannot assemble 'lsl x0, x1, x2, nop' at line 1
+EOF
+RUN
+
+NAME=pa arm64 reject invalid asr and ror operands
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+"pa asr w0, w1, #32"
+"pa ror w0, w1, #32"
+"pa asr x0, x1, #64"
+"pa ror x0, x1, #64"
+"pa asr w0, w1, #-1"
+"pa ror x0, x1, #-1"
+"pa asr x0, w1, #1"
+"pa ror d0, d1, #1"
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'asr w0, w1, #32' at line 1
+ERROR: Cannot assemble 'ror w0, w1, #32' at line 1
+ERROR: Cannot assemble 'asr x0, x1, #64' at line 1
+ERROR: Cannot assemble 'ror x0, x1, #64' at line 1
+ERROR: Cannot assemble 'asr w0, w1, #-1' at line 1
+ERROR: Cannot assemble 'ror x0, x1, #-1' at line 1
+ERROR: Cannot assemble 'asr x0, w1, #1' at line 1
+ERROR: Cannot assemble 'ror d0, d1, #1' at line 1
+EOF
+RUN
+
+NAME=pa arm64 reject stack pointer bitfield operands
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+"pa ubfm sp, sp, #1, #63"
+"pa ubfm wsp, wsp, #1, #31"
+"pa ubfm x0, sp, #1, #63"
+"pa ubfm sp, x1, #1, #63"
+"pa sbfm sp, sp, #1, #63"
+"pa bfm wsp, wsp, #1, #31"
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'ubfm sp, sp, #1, #63' at line 1
+ERROR: Cannot assemble 'ubfm wsp, wsp, #1, #31' at line 1
+ERROR: Cannot assemble 'ubfm x0, sp, #1, #63' at line 1
+ERROR: Cannot assemble 'ubfm sp, x1, #1, #63' at line 1
+ERROR: Cannot assemble 'sbfm sp, sp, #1, #63' at line 1
+ERROR: Cannot assemble 'bfm wsp, wsp, #1, #31' at line 1
+EOF
+RUN
