@@ -1011,10 +1011,11 @@ static ut32 reglsop(ArmOp *op, int k) {
 		k -= 0x40;
 	}
 	if (op->operands[2].type & ARM_GPR) {
-		k += 0x00682000;
-		data = k | encode2regs (op);
-		data |= op->operands[2].reg << 8;
-	} else {
+		// scaled register offsets are encoded by lsop, reject them here
+		return data;
+	}
+
+	{
 		int n = op->operands[2].immediate;
 		if (n > 0x100 || n < -0x100) {
 			return UT32_MAX;
@@ -1131,14 +1132,11 @@ static ut32 lsop(ArmOp *op, int k, ut64 addr) {
 				default:
 					return data;
 				}
-			} else { // w
-				switch (op->operands[3].shift_amount) {
-				case 2:
+			} else { // word access, scaled by the access size
+				const int scale = (width == 'w')? 2: (op->operands[0].reg_type & ARM_REG64)? 3: 2;
+				if (op->operands[3].shift_amount == scale) {
 					k |= 0x00100000;
-				// fall through
-				case 0:
-					break;
-				default:
+				} else if (op->operands[3].shift_amount != 0) {
 					return data;
 				}
 			}
@@ -2292,10 +2290,7 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 	} else if (r_str_startswith (str, "strh")) {
 		*op = lsop (&ops, 0x00000078, -1);
 	} else if (r_str_startswith (str, "ldr")) {
-		*op = UT32_MAX;
-		if (!strstr (str, " w")) {
-			*op = lsop (&ops, 0x000040f8, -1);
-		}
+		*op = lsop (&ops, 0x000040f8, -1);
 		if (*op == UT32_MAX) {
 			*op = reglsop (&ops, 0x000040f8);
 		}
