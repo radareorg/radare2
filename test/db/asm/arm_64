@@ -754,3 +754,10 @@ ad "add x0, x1, xzr" 20001f8b
 ad "add w0, w1, wzr" 20001f0b
 ad "cmp x0, xzr" 1f001feb
 ad "cmp w0, wzr" 1f001f6b
+ad "bfi x0, x1, 5, 8" 201c7bb3
+ad "bfi w0, w1, 5, 8" 201c1b33
+ad "bfxil x0, x1, 5, 8" 203045b3
+ad "bfxil w0, w1, 5, 8" 20300533
+a "bfi x0, x1, 0, 64" 20fc40b3
+a "bfi x0, x1, 60, 4" 200c44b3
+a "bfxil x0, x1, 0, 1" 200040b3

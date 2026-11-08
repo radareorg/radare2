@@ -1642,13 +1642,19 @@ static ut32 bitfield(ArmOp *op, int k) {
 	check_cond (op->operands[3].type == ARM_CONSTANT);
 	int bits = (op->operands[0].reg_type & ARM_REG64)? 64: 32;
 	// unalias
-	if (!strcmp (op->mnemonic, "sbfx") || !strcmp (op->mnemonic, "ubfx")) {
+	if (!strcmp (op->mnemonic, "sbfx") || !strcmp (op->mnemonic, "ubfx") || !strcmp (op->mnemonic, "bfxil")) {
 		op->operands[3].immediate += op->operands[2].immediate - 1;
 	} else if (!strcmp (op->mnemonic, "sbfiz") || !strcmp (op->mnemonic, "ubfiz")) {
 		check_cond (op->operands[2].immediate < bits);
 		int temp = bits - op->operands[2].immediate;
 		check_cond (op->operands[3].immediate <= temp);
 		op->operands[2].immediate = temp & (bits - 1);
+		op->operands[3].immediate--;
+	} else if (!strcmp (op->mnemonic, "bfi")) {
+		check_cond (op->operands[2].immediate < bits);
+		check_cond (op->operands[3].immediate > 0);
+		check_cond (op->operands[3].immediate <= bits - op->operands[2].immediate);
+		op->operands[2].immediate = (bits - op->operands[2].immediate) & (bits - 1);
 		op->operands[3].immediate--;
 	}
 	check_cond (op->operands[2].immediate < bits);
@@ -2477,6 +2483,8 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 		*op = bitfield (&ops, 0x00000013);
 	} else if (R_STR_STARTSWITH_ANY (str, "ubfiz ", "ubfm ", "ubfx ")) {
 		*op = bitfield (&ops, 0x00000053);
+	} else if (R_STR_STARTSWITH_ANY (str, "bfi ", "bfxil ")) {
+		*op = bitfield (&ops, 0x00000033);
 	} else {
 		*op = UT32_MAX;
 	}
