@@ -853,7 +853,7 @@ R_API int r_core_flag_in_middle(RCore *core, ut64 at, int oplen, int *midflags);
 R_API int r_core_bb_starts_in_middle(RCore *core, ut64 at, int oplen);
 
 R_API bool r_core_esil_init(RCore *core);
-R_API void r_core_esil_fini(RCore *core);
+R_API void r_core_esil_fini(RCoreEsil *cesil);
 R_API void r_core_esil_load_arch(RCore *core);
 R_API void r_core_esil_unload_arch(RCore *core);
 R_API bool r_core_esil_run_expr_at(RCore *core, const char *expr, ut64 addr);

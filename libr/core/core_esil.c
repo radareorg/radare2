@@ -701,14 +701,14 @@ R_API void r_core_esil_set_max_stepback(RCore *core, ut32 max_stepback) {
 	}
 }
 
-R_API void r_core_esil_fini(RCore *core) {
-	R_RETURN_IF_FAIL (core);
-	core_esil_stepback_fini (&core->esil.esil, &core->esil.sb);
-	r_esil_fini (&core->esil.esil);
-	if (core->esil.reg) {
-		r_reg_free (core->esil.reg);
-		core->esil.reg = NULL;
+R_API void r_core_esil_fini(RCoreEsil *cesil) {
+	R_RETURN_IF_FAIL (cesil);
+	core_esil_stepback_fini (&cesil->esil, &cesil->sb);
+	r_esil_fini (&cesil->esil);
+	if (cesil->reg) {
+		r_reg_free (cesil->reg);
+		cesil->reg = NULL;
 	}
-	core_esil_cmds_fini (&core->esil.cmds);
-	core->esil.esil = (const REsil){ 0 };
+	core_esil_cmds_fini (&cesil->cmds);
+	cesil->esil = (const REsil){ 0 };
 }

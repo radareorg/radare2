@@ -3012,7 +3012,7 @@ R_API void r_core_fini(RCore *c) {
 	r_core_task_scheduler_fini (&c->tasks);
 	free (c->sessionfile);
 	r_event_free (c->ev);
-	r_core_esil_fini (c);
+	r_core_esil_fini (&c->esil);
 	if (c->anal->esil) {
 		c->anal->esil->anal = NULL;
 	}

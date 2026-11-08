@@ -145,8 +145,8 @@ jobs:
     - name: Running tests
       run: |
         export LD_LIBRARY_PATH=/usr/local/lib
-        export R2R_SKIP_ARCHOS=1
-        make tests
+        R2R_SKIP_ARCHOS=1 make tests
+        r2r -u -C test db/archos/linux-x86_64/dbg_stepback_session
     - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         name: results.json
