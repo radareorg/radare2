@@ -190,7 +190,7 @@ grub_iso9660_susp_iterate(struct grub_iso9660_data *data,
 	int ce_hops = 0;
 
 	if (hook) {
-		for (; (char *)entry < (char *)sua + sua_size - 1;
+		for (; (char *)entry + 4 <= (char *)sua + sua_size;
 			entry = (struct grub_iso9660_susp_entry *) ((char *)entry + entry->len)) {
 			/* The last entry.  */
 			if (strncmp ((char *)entry->sig, "ST", 2) == 0) {
@@ -207,6 +207,9 @@ grub_iso9660_susp_iterate(struct grub_iso9660_data *data,
 					return grub_error (GRUB_ERR_BAD_FS, "too many CE entries");
 				}
 
+				if ((char *)entry + sizeof (struct grub_iso9660_susp_ce) > (char *)sua + sua_size) {
+					break;
+				}
 				ce = (struct grub_iso9660_susp_ce *)entry;
 				sua_size = grub_le_to_cpu32 (ce->len);
 				sua_pos = grub_le_to_cpu32 (ce->off);
@@ -218,14 +221,18 @@ grub_iso9660_susp_iterate(struct grub_iso9660_data *data,
 					return grub_errno;
 				}
 				entry = (struct grub_iso9660_susp_entry *)sua;
+				if ((char *)entry + 4 > (char *)sua + sua_size) {
+					break;
+				}
 			}
 
+			/* Reject entries whose header or body runs past the loaded area.  */
+			if (entry->len < 4 || (char *)entry + entry->len > (char *)sua + sua_size) {
+				break;
+			}
 			if (hook (entry, closure)) {
 				grub_free (sua);
 				return 0;
-			}
-			if (entry->len == 0) {
-				break;
 			}
 		}
 	}
@@ -401,16 +408,19 @@ susp_iterate_sl(struct grub_iso9660_susp_entry *entry, void *closure) {
 	struct grub_iso9660_read_symlink_closure *c = closure;
 
 	if (strncmp ("SL", (char *)entry->sig, 2) == 0) {
-		unsigned int pos = 1;
+		unsigned char *data = ENTRY_DATA (entry);
+		/* Component records live in the entry->len - 4 bytes after the header.  */
+		int avail = (int)entry->len - 4;
+		int pos = 1;
 
 		/* The symlink is not stored as a POSIX symlink, translate it.  */
-		while (pos < grub_le_to_cpu32 (entry->len)) {
+		while (pos + 1 < avail) {
+			int complen = data[pos + 1];
 			if (c->addslash) {
 				add_part ("/", 1, c);
 				c->addslash = 0;
 			}
 
-			unsigned char *data = ENTRY_DATA (entry);
 			/* The current position is the `Component Flag'.  */
 			switch (data[pos] & 30) {
 			case 0:
@@ -418,8 +428,11 @@ susp_iterate_sl(struct grub_iso9660_susp_entry *entry, void *closure) {
 					/* The data on pos + 2 is the actual data, pos + 1
 					is the length.  Both are part of the `Component
 					Record'.  */
+					if (pos + 2 + complen > avail) {
+						return 0;
+					}
 					add_part ((char *)&data[pos + 2],
-						data[pos + 1],
+						complen,
 						c);
 					if ((data[pos] & 1)) {
 						c->addslash = 1;
@@ -442,7 +455,7 @@ susp_iterate_sl(struct grub_iso9660_susp_entry *entry, void *closure) {
 			}
 			/* In pos + 1 the length of the `Component Record' is
 			stored.  */
-			pos += data[pos + 1] + 2;
+			pos += complen + 2;
 		}
 
 		/* Check if `grub_realloc' failed.  */
@@ -500,27 +513,32 @@ susp_iterate_dir(struct grub_iso9660_susp_entry *entry, void *closure) {
 		/* The flags are stored at the data position 0, here the
 		filename type is stored.  */
 		grub_uint8_t *data = ENTRY_DATA (entry);
+		/* NM holds the 4-byte header, a flags byte and the name.  */
+		if (entry->len < 5) {
+			*(c->filename) = filename;
+			return 0;
+		}
 		if (data[0] & GRUB_ISO9660_RR_DOT) {
 			filename = strdup (".");
 		} else if (data[0] & GRUB_ISO9660_RR_DOTDOT) {
 			filename = strdup ("..");
 		} else {
-			int size = 1;
-			if (filename) {
-				size += grub_strlen (filename);
-				grub_realloc (filename,
-					grub_strlen (filename) + entry->len);
-			} else {
-				size = entry->len - 5;
-				filename = grub_zalloc (size + 1);
+			/* The name is the entry->len - 5 bytes after the flags.  */
+			int csize = entry->len - 5;
+			int off = filename? grub_strlen (filename): 0;
+			char *tmp = grub_realloc (filename, off + csize + 1);
+			if (!tmp) {
+				*(c->filename) = filename;
+				return 0;
 			}
+			filename = tmp;
 			c->filename_alloc = 1;
-			grub_strncpy (filename, (char *)data + 1, size);
-			filename[size] = '\0';
+			grub_memcpy (filename + off, (char *)data + 1, csize);
+			filename[off + csize] = '\0';
 		}
 	}
 	/* The mode information (st_mode).  */
-	else if (strncmp ((char *)entry->sig, "PX", 2) == 0) {
+	else if (strncmp ((char *)entry->sig, "PX", 2) == 0 && entry->len >= 6) {
 		/* At position 0 of the PX record the st_mode information is
 		stored (little-endian).  */
 		grub_uint8_t *data = ENTRY_DATA (entry);
