@@ -1295,6 +1295,28 @@ static bool sections_from_bin(RBinFile *bf, RDyldBinImage *bin) {
 		}
 		ptr->perm = section->perm;
 	}
+
+	const RVecSegment *segments = MACH0_(get_segments_vec) (bf, mach0);
+	if (segments) {
+		RBinSection *segment;
+		R_VEC_FOREACH (segments, segment) {
+			RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+			if (bin->file) {
+				ptr->name = r_str_newf ("%s.%s", bin->file, segment->name);
+			} else {
+				ptr->name = r_str_newf ("%s", segment->name);
+			}
+			ptr->size = segment->size;
+			ptr->vsize = segment->vsize;
+			ptr->vaddr = segment->vaddr;
+			ptr->paddr = va2pa (segment->vaddr, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
+			if (!ptr->vaddr) {
+				ptr->vaddr = ptr->paddr;
+			}
+			ptr->perm = segment->perm;
+			ptr->is_segment = true;
+		}
+	}
 	MACH0_(mach0_free) (mach0);
 	return true;
 }
