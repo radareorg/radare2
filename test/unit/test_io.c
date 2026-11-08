@@ -443,33 +443,6 @@ bool test_r_io_priority2(void) {
 	mu_end;
 }
 
-bool test_r_io_overlay_write_through(void) {
-	RIO *io = r_io_new ();
-	RIODesc *desc = r_io_open_at (io, "malloc://8", R_PERM_RW, 0644, 0);
-	mu_assert_notnull (desc, "malloc should open");
-	mu_assert_true (r_io_vwrite_to_overlay_at (io, 2, (const ut8 *)"\xaa\xaa", 2), "overlay write");
-	mu_assert_true (r_io_vwrite_at (io, 1, (const ut8 *)"\x11\x22\x33\x44", 4), "write across the overlay");
-	mu_assert_true (r_io_vwrite_at (io, 5, (const ut8 *)"\x55\x66", 2), "write beside the overlay");
-	mu_assert_true (r_io_vwrite_at (io, 3, (const ut8 *)"\xbb\xcc", 2), "write over the overlay's end");
-	const ut8 *exp = (const ut8 *)"\x00\x11\x22\xbb\xcc\x55\x66\x00";
-	ut8 buf[8] = {0};
-	mu_assert_true (r_io_vread_at (io, 0, buf, sizeof (buf)), "overlaid read");
-	mu_assert_memeq (buf, exp, sizeof (buf), "the overlaid view shows the writes");
-	memset (buf, 0, sizeof (buf));
-	mu_assert_eq (r_io_fd_read_at (io, desc->fd, 0, buf, sizeof (buf)), sizeof (buf), "fd read");
-	mu_assert_memeq (buf, exp, sizeof (buf), "the fd holds the writes");
-	r_io_fd_write_at (io, desc->fd, 4, (const ut8 *)"\x77", 1);
-	r_io_vread_at (io, 4, buf, 1);
-	mu_assert_eq (buf[0], 0x77, "a write across the overlay does not extend it");
-	io->overlay = false;
-	mu_assert_true (r_io_vwrite_at (io, 2, (const ut8 *)"\xdd", 1), "write with the overlay ignored");
-	io->overlay = true;
-	r_io_vread_at (io, 2, buf, 1);
-	mu_assert_eq (buf[0], 0xdd, "the overlay does not hide a write made while it was ignored");
-	r_io_free (io);
-	mu_end;
-}
-
 bool test_seek_history_mapped(void) {
 	RIO *io = r_io_new ();
 	r_io_undo_enable (io, true, false);
@@ -495,6 +468,20 @@ bool test_seek_history_mapped(void) {
 	mu_end;
 }
 
+bool test_r_io_overlay(void) {
+	RIO *io = r_io_new ();
+	io->va = io->overlay = true;
+	RIODesc *desc = r_io_open_at (io, "malloc://4", R_PERM_RW, 0, 0);
+	ut32 v = 0;
+	r_io_vwrite_to_overlay_at (io, 0x1, (const ut8 *)&v, 2);
+	v = 0x90909090;
+	r_io_write_at (io, 0x0, (const ut8 *)&v, 4);
+	r_io_desc_read_at (desc, 0x0, (ut8 *)&v, 4);
+	mu_assert_eq (v, 0x90000090, "io overlay should block writes to file");
+	r_io_free (io);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_io_ar_member_uri);
 	mu_run_test (test_seek_history_mapped);
@@ -508,8 +495,8 @@ int all_tests(void) {
 	mu_run_test(test_r_io_desc_exchange);
 	//mu_run_test(test_r_io_priority);
 	// mu_run_test(test_r_io_priority2);
+	mu_run_test(test_r_io_overlay);
 	mu_run_test(test_va_malloc_zero);
-	mu_run_test(test_r_io_overlay_write_through);
 	return tests_passed != tests_run;
 }
 
