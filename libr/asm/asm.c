@@ -58,7 +58,7 @@ static int asm_op_set_data(RAnalOp *op, const ut8 *data, int size) {
 	}
 	op->bytes = data? r_mem_dup (data, size): malloc (size);
 	op->size = op->bytes? size: 0;
-	return op->size;
+	return op->bytes? size: -1;
 }
 
 static int asm_op_set_padding(RAnalOp *op, ut64 size, ut8 fill, bool last_stage) {
@@ -143,20 +143,25 @@ static int r_asm_pseudo_string(RAnalOp *op, char *input, bool zero) {
 	return asm_op_set_data (op, (const ut8 *)input, len);
 }
 
-static bool asm_eval_operand(const char *arg, const char *directive, bool last_stage, ut64 *value) {
-	const char *operand = r_str_trim_head_ro (arg);
-	if (!*operand) {
+static bool asm_eval_operand(const char *arg, size_t len, char *expression, const char *directive, ut64 *value) {
+	while (len && isspace ((ut8)*arg)) {
+		arg++;
+		len--;
+	}
+	while (len && isspace ((ut8)arg[len - 1])) {
+		len--;
+	}
+	if (!len) {
 		R_LOG_ERROR ("Missing expression in %s", directive);
 		return false;
 	}
-	// Parentheses make the evaluator reject adjacent operands without a comma.
-	char *expression = r_str_newf ("(%s)", operand);
+	expression[0] = '(';
+	memcpy (expression + 1, arg, len);
+	expression[len + 1] = ')';
+	expression[len + 2] = 0;
 	const char *err = NULL;
 	*value = r_num_math_err (NULL, expression, &err);
-	free (expression);
-	if (err && !last_stage) {
-		*value = 0;
-	} else if (err) {
+	if (err) {
 		R_LOG_ERROR ("Invalid number in %s: %s", directive, err);
 		return false;
 	}
@@ -184,28 +189,56 @@ static bool asm_int_in_range(ut64 value, int n, bool is_unsigned) {
 	return true;
 }
 
-static int r_asm_pseudo_intN(RAsm *a, RAnalOp *op, const char *input, int n, bool is_unsigned, bool last_stage) {
-	// work on a copy, the directive is parsed once per stage
-	char *args = strdup (input);
-	if (!args) {
+static int r_asm_pseudo_intN(RAsm *a, RAnalOp *op, const char *input, int n, bool is_unsigned, bool last_stage, bool is_byte) {
+	int count = 1;
+	const char *p = input;
+	for (; *p; p++) {
+		count += *p == ',';
+	}
+	ut64 size;
+	if (r_mul_overflow ((ut64)count, (ut64)n, &size) || size > INT_MAX) {
 		return -1;
 	}
-	int i, count = r_str_split (args, ',');
-	ut64 size;
-	ut8 *buf = (r_mul_overflow ((ut64)count, (ut64)n, &size) || size > INT_MAX)? NULL: malloc (R_MAX (size, 1));
+	if (!last_stage) {
+		return (int)size;
+	}
+	if (asm_op_set_data (op, NULL, (int)size) < 0) {
+		return -1;
+	}
+	const size_t inputlen = p - input;
+	char stack[128];
+	char *expression = inputlen <= sizeof (stack) - 3? stack: malloc (inputlen + 3);
+	if (!expression) {
+		return -1;
+	}
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
-	const char *arg = args;
-	for (i = 0; buf && i < count; i++, arg += strlen (arg) + 1) {
+	const char *arg = input;
+	int i;
+	for (i = 0; i < count; i++) {
+		const char *end = strchr (arg, ',');
+		if (!end) {
+			end = input + inputlen;
+		}
 		ut64 value;
-		if (!asm_eval_operand (arg, ".intN", last_stage, &value) || !asm_int_in_range (value, n, is_unsigned)) {
+		if (!asm_eval_operand (arg, end - arg, expression, is_byte? ".byte": ".intN", &value)) {
 			break;
 		}
-		r_write_ble (buf + i * n, value, be, n * 8);
+		if (is_byte) {
+			const st64 num = (st64)value;
+			if (num < 0 || num > 255) {
+				R_LOG_ERROR ("byte value %" PFMT64d " out of range (0-255)", num);
+				break;
+			}
+		} else if (!asm_int_in_range (value, n, is_unsigned)) {
+			break;
+		}
+		r_write_ble (op->bytes + i * n, value, be, n * 8);
+		arg = end + 1;
 	}
-	const int ret = !buf || i < count? -1: asm_op_set_data (op, buf, (int)size);
-	free (buf);
-	free (args);
-	return ret;
+	if (expression != stack) {
+		free (expression);
+	}
+	return i == count? (int)size: -1;
 }
 
 static int r_asm_pseudo_float(RAsm *a, RAnalOp *op, char *input, const RCFloatProfile *profile) {
@@ -228,33 +261,6 @@ static int r_asm_pseudo_float(RAsm *a, RAnalOp *op, char *input, const RCFloatPr
 		return byte_size;
 	}
 	return -1;
-}
-
-static int r_asm_pseudo_byte(RAnalOp *op, const char *input, bool last_stage) {
-	// work on a copy, the directive is parsed once per stage
-	char *args = strdup (input);
-	if (!args) {
-		return -1;
-	}
-	int i, len = r_str_split (args, ',');
-	ut8 *buf = malloc (R_MAX (len, 1));
-	const char *arg = args;
-	for (i = 0; buf && i < len; i++, arg += strlen (arg) + 1) {
-		ut64 value;
-		if (!asm_eval_operand (arg, ".byte", last_stage, &value)) {
-			break;
-		}
-		const st64 num = (st64)value;
-		if (num < 0 || num > 255) {
-			R_LOG_ERROR ("byte value %" PFMT64d " out of range (0-255)", num);
-			break;
-		}
-		buf[i] = num;
-	}
-	const int ret = !buf || i < len? -1: asm_op_set_data (op, buf, len);
-	free (buf);
-	free (args);
-	return ret;
 }
 
 static int r_asm_pseudo_fill(RAsm *a, RAnalOp *op, const char *input, ut8 fill, bool last_stage) {
@@ -309,7 +315,7 @@ static int r_asm_pseudo_fill(RAsm *a, RAnalOp *op, const char *input, ut8 fill, 
 	}
 	ut8 *buf = calloc (1, total);
 	if (!buf) {
-		return 0;
+		return -1;
 	}
 	ut8 pattern[sizeof (value)] = { 0 };
 	r_write_ble32 (pattern, value, R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config));
@@ -1079,77 +1085,77 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, ut8 *fill_
 			free (bytes);
 		}
 	} else if (r_str_startswith (ptr, ".byte ") || r_str_startswith (ptr, ".int8 ")) {
-		ret = r_asm_pseudo_byte (op, ptr + 6, last_stage);
+		ret = r_asm_pseudo_intN (a, op, ptr + 6, 1, true, last_stage, true);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if ((r_str_startswith (ptr, ".int16 ")) || r_str_startswith (ptr, ".short ")) {
-		ret = r_asm_pseudo_intN (a, op, ptr + 7, 2, false, last_stage);
+		ret = r_asm_pseudo_intN (a, op, ptr + 7, 2, false, last_stage, false);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".int32 ")) {
-		ret = r_asm_pseudo_intN (a, op, ptr + 7, 4, false, last_stage);
+		ret = r_asm_pseudo_intN (a, op, ptr + 7, 4, false, last_stage, false);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".int64 ")) {
-		ret = r_asm_pseudo_intN (a, op, ptr + 7, 8, false, last_stage);
+		ret = r_asm_pseudo_intN (a, op, ptr + 7, 8, false, last_stage, false);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".db ")) {
-		ret = r_asm_pseudo_byte (op, ptr + 4, last_stage);
+		ret = r_asm_pseudo_intN (a, op, ptr + 4, 1, true, last_stage, true);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".word ")) {
-		ret = r_asm_pseudo_intN (a, op, ptr + 6, 2, false, last_stage);
+		ret = r_asm_pseudo_intN (a, op, ptr + 6, 2, false, last_stage, false);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".dw ")) {
-		ret = r_asm_pseudo_intN (a, op, ptr + 4, 2, false, last_stage);
+		ret = r_asm_pseudo_intN (a, op, ptr + 4, 2, false, last_stage, false);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".dword ")) {
-		ret = r_asm_pseudo_intN (a, op, ptr + 7, 4, false, last_stage);
+		ret = r_asm_pseudo_intN (a, op, ptr + 7, 4, false, last_stage, false);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".dd ")) {
-		ret = r_asm_pseudo_intN (a, op, ptr + 4, 4, false, last_stage);
+		ret = r_asm_pseudo_intN (a, op, ptr + 4, 4, false, last_stage, false);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".qword ")) {
-		ret = r_asm_pseudo_intN (a, op, ptr + 7, 8, false, last_stage);
+		ret = r_asm_pseudo_intN (a, op, ptr + 7, 8, false, last_stage, false);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".dq ")) {
-		ret = r_asm_pseudo_intN (a, op, ptr + 4, 8, false, last_stage);
+		ret = r_asm_pseudo_intN (a, op, ptr + 4, 8, false, last_stage, false);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".uint8 ")) {
-		ret = r_asm_pseudo_intN (a, op, ptr + 7, 1, true, last_stage);
+		ret = r_asm_pseudo_intN (a, op, ptr + 7, 1, true, last_stage, false);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".uint16 ")) {
-		ret = r_asm_pseudo_intN (a, op, ptr + 8, 2, true, last_stage);
+		ret = r_asm_pseudo_intN (a, op, ptr + 8, 2, true, last_stage, false);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".uint32 ")) {
-		ret = r_asm_pseudo_intN (a, op, ptr + 8, 4, true, last_stage);
+		ret = r_asm_pseudo_intN (a, op, ptr + 8, 4, true, last_stage, false);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (r_str_startswith (ptr, ".uint64 ")) {
-		ret = r_asm_pseudo_intN (a, op, ptr + 8, 8, true, last_stage);
+		ret = r_asm_pseudo_intN (a, op, ptr + 8, 8, true, last_stage, false);
 		if (ret < 0) {
 			return ret;
 		}
