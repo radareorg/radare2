@@ -74,6 +74,10 @@ bool test_r_num_math_shifts(void) {
 	mu_assert_eq (r_num_math (num, "0x8000000000000000>>63"), 1, "right shift by 63");
 	mu_assert_eq (r_num_math (num, "0x8000000000000000>>64"), 0, "right shift by 64");
 	mu_assert_eq (r_num_math (num, "0x8000000000000000>>200"), 0, "right shift by 200");
+	mu_assert_eq (r_num_math (num, "8/(1>>1)"), 0, "right shift yields a zero divisor");
+	mu_assert_true (num->dbz, "8/(1>>1) flags division by zero");
+	mu_assert_eq (r_num_math (num, "8/(1>>0)"), 8, "right shift preserves the divisor");
+	mu_assert_false (num->dbz, "8/(1>>0) clears the division by zero flag");
 	mu_end;
 }
 
