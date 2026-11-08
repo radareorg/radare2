@@ -134,6 +134,7 @@ typedef void (*REsilVoyeurMemRead)(void *user, ut64 addr, const ut8 *buf, int le
 typedef	void (*REsilVoyeurMemWrite)(void *user, ut64 addr, const ut8 *old, const ut8 *buf, int len);
 typedef	void (*REsilVoyeurSetBits)(void *user, int bits);
 typedef void (*REsilVoyeurOp)(void *user, const char *op);
+typedef void (*REsilVoyeurInterrupt)(void *user, ut32 intr_num);
 
 typedef struct r_esil_voyeur_t {
 	void *user;
@@ -145,6 +146,7 @@ typedef struct r_esil_voyeur_t {
 		REsilVoyeurMemWrite mem_write;
 		REsilVoyeurSetBits set_bits;
 		REsilVoyeurOp op;
+		REsilVoyeurInterrupt intr;
 		void *vfn;
 	};
 } REsilVoyeur;
@@ -157,6 +159,7 @@ typedef enum {
 	R_ESIL_VOYEUR_MEM_WRITE,
 	R_ESIL_VOYEUR_SET_BITS,
 	R_ESIL_VOYEUR_OP,
+	R_ESIL_VOYEUR_INTERRUPT,
 	R_ESIL_VOYEUR_LAST,
 	R_ESIL_VOYEUR_HIGH_MASK = 0xf,
 	R_ESIL_VOYEUR_ERR = UT32_MAX,
@@ -224,7 +227,6 @@ typedef struct r_esil_t {
 	REsilCallbacks cb;
 	// this is so cursed, can we please remove external commands from esil internals.
 	// Function pointers are fine, but not commands
-	char *cmd_intr; // r2 (external) command to run when an interrupt occurs
 	char *cmd_trap; // r2 (external) command to run when a trap occurs
 	char *cmd_mdev; // r2 (external) command to run when an memory mapped device address is used
 	char *cmd_todo; // r2 (external) command to run when esil expr contains TODO

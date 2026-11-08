@@ -103,10 +103,13 @@ R_API void r_esil_del_syscall(REsil *esil, ut32 sysc_num) {
 R_API int r_esil_fire_interrupt(REsil *esil, ut32 intr_num) {
 	R_RETURN_VAL_IF_FAIL (esil, false);
 
-	if (esil->cmd && esil->cmd (esil, esil->cmd_intr, intr_num, 0)) { //compatibility
-		return true;
+	ut32 vi;
+	if (r_id_storage_get_lowest (&esil->voyeur[R_ESIL_VOYEUR_INTERRUPT], &vi)) {
+		do {
+			REsilVoyeur *voy = r_id_storage_get (&esil->voyeur[R_ESIL_VOYEUR_INTERRUPT], vi);
+			voy->intr (voy->user, intr_num);
+		} while (r_id_storage_get_next (&esil->voyeur[R_ESIL_VOYEUR_INTERRUPT], &vi));
 	}
-
 	if (!esil->interrupts) {
 		eprintf ("no interrupts initialized\n");
 		return false;

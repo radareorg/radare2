@@ -337,6 +337,7 @@ R_API ut32 r_esil_add_voyeur(REsil *esil, void *user, void *vfn, REsilVoyeurType
 	case R_ESIL_VOYEUR_MEM_WRITE:
 	case R_ESIL_VOYEUR_SET_BITS:
 	case R_ESIL_VOYEUR_OP:
+	case R_ESIL_VOYEUR_INTERRUPT:
 		break;
 	default:
 		R_WARN_IF_REACHED ();
@@ -367,6 +368,7 @@ R_API void r_esil_del_voyeur(REsil *esil, ut32 vid) {
 	case R_ESIL_VOYEUR_MEM_WRITE:
 	case R_ESIL_VOYEUR_SET_BITS:
 	case R_ESIL_VOYEUR_OP:
+	case R_ESIL_VOYEUR_INTERRUPT:
 		break;
 	default:
 		R_WARN_IF_REACHED ();
@@ -485,7 +487,6 @@ R_API void r_esil_fini(REsil *esil) {
 	r_esil_stack_free (esil);
 	R_FREE (esil->stack);
 	R_FREE (esil->ring);
-	R_FREE (esil->cmd_intr);
 	R_FREE (esil->cmd_trap);
 	R_FREE (esil->cmd_mdev);
 	R_FREE (esil->cmd_todo);
@@ -1341,15 +1342,15 @@ loop:
 		const RStrs tok = { start, str };
 		if (!r_strs_empty (tok)) {
 			if (!runword (esil, tok)) {
-				goto step_out;
+				goto beach;
 			}
 			switch (eval_word (esil, ostr, &str)) {
 			case 0: goto loop;
-			case 1: goto step_out;
+			case 1: goto beach;
 			case 2: continue;
 			}
 			if (sep == ';') {
-				goto step_out;
+				goto beach;
 			}
 		}
 		if (sep) {
@@ -1357,7 +1358,7 @@ loop:
 		}
 	}
 	rc = 1;
-step_out:
+beach:
 	// Handle delayed jumps after executing the delay slot
 	if (in_delay && esil->delay > 0) {
 		esil->delay--;

@@ -16,17 +16,13 @@ static bool core_esil_op_todo(REsil *esil) {
 	return true;
 }
 
-static bool core_esil_op_interrupt(REsil *esil) {
-	const RStrs str = r_esil_pop (esil);
-	ut64 interrupt;
-	if (!r_esil_get_parm (esil, str, &interrupt)) {
-		return false;
-	}
-	RCore *core = esil->user;
+// fired for every r_esil_fire_interrupt, regardless of who fired it ($ op or
+// external code) and whether an interrupt handler is registered
+static void core_esil_voyeur_interrupt(void *user, ut32 intr_num) {
+	RCore *core = user;
 	if (R_STR_ISNOTEMPTY (core->esil.cmds.intr)) {
-		r_core_cmdf (core, "%s %" PFMT64d " 0", core->esil.cmds.intr, interrupt);
+		r_core_cmdf (core, "%s %d 0", core->esil.cmds.intr, intr_num);
 	}
-	return r_esil_fire_interrupt (esil, (ut32)interrupt);
 }
 
 // the first argument passed to esil cmd handlers is an address, the second one
@@ -428,16 +424,22 @@ R_API bool r_core_esil_init(RCore *core) {
 		goto init_fail;
 	}
 	core->esil.esil.anal = core->anal;
-	if (!r_esil_set_op (&core->esil.esil, "TODO", core_esil_op_todo, 0, 0, R_ESIL_OP_TYPE_UNKNOWN, NULL) || !r_esil_set_op (&core->esil.esil, "$", core_esil_op_interrupt, 0, 1, R_ESIL_OP_TYPE_UNKNOWN, NULL)) {
+	if (!r_esil_set_op (&core->esil.esil, "TODO", core_esil_op_todo, 0, 0, R_ESIL_OP_TYPE_UNKNOWN, NULL)) {
 		goto op_fail;
 	}
 	r_strbuf_init (&core->esil.sb.revert);
 	core->esil.esil.user = core;
-	core->esil.sb.v_reg = r_esil_add_voyeur (&core->esil.esil, &core->esil, core_esil_voyeur_trap_revert_reg_write, R_ESIL_VOYEUR_REG_WRITE);
-	core->esil.sb.v_mem = r_esil_add_voyeur (&core->esil.esil, &core->esil, core_esil_voyeur_trap_revert_mem_write, R_ESIL_VOYEUR_MEM_WRITE);
-	core->esil.sb.v_bits = r_esil_add_voyeur (&core->esil.esil, core, core_esil_voyeur_trap_revert_set_bits, R_ESIL_VOYEUR_SET_BITS);
-	core->esil.sb.v_alias = r_esil_add_voyeur (&core->esil.esil, core, core_esil_voyeur_trap_revert_reg_alias, R_ESIL_VOYEUR_REG_ALIAS);
+	core->esil.sb.v_reg = r_esil_add_voyeur (&core->esil.esil, &core->esil,
+		core_esil_voyeur_trap_revert_reg_write, R_ESIL_VOYEUR_REG_WRITE);
+	core->esil.sb.v_mem = r_esil_add_voyeur (&core->esil.esil, &core->esil,
+		core_esil_voyeur_trap_revert_mem_write, R_ESIL_VOYEUR_MEM_WRITE);
+	core->esil.sb.v_bits = r_esil_add_voyeur (&core->esil.esil, core,
+		core_esil_voyeur_trap_revert_set_bits, R_ESIL_VOYEUR_SET_BITS);
+	core->esil.sb.v_alias = r_esil_add_voyeur (&core->esil.esil, core,
+		core_esil_voyeur_trap_revert_reg_alias, R_ESIL_VOYEUR_REG_ALIAS);
 	core->esil.sb.list.free = core_esil_stepback_free;
+	core->esil.v_intr = r_esil_add_voyeur (&core->esil.esil, core,
+		core_esil_voyeur_interrupt, R_ESIL_VOYEUR_INTERRUPT);
 	return true;
 op_fail:
 	r_esil_fini (&core->esil.esil);
@@ -703,6 +705,7 @@ R_API void r_core_esil_set_max_stepback(RCore *core, ut32 max_stepback) {
 
 R_API void r_core_esil_fini(RCore *core) {
 	R_RETURN_IF_FAIL (core);
+	r_esil_del_voyeur (&core->esil.esil, core->esil.v_intr);
 	core_esil_stepback_fini (&core->esil.esil, &core->esil.sb);
 	r_esil_fini (&core->esil.esil);
 	if (core->esil.reg) {
