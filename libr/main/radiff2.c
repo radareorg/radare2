@@ -424,80 +424,14 @@ void print_bytes(const void *p, size_t len, bool big_endian) {
 	}
 }
 
+#include "radiff2_gdiff.inc.c"
+
 static int bcb(RDiff *d, void *user, RDiffOp *op) {
 	RadiffOptions *ro = user;
-	ut64 offset_diff = op->a_off - ro->gdiff_start;
-	ut8 opcode;
-	ut16 USAddr = 0;
-	int IAddr = 0;
-	ut8 UCLen = 0;
 	ut16 USLen = 0;
 	int ILen = 0;
 
-	// we copy from gdiff_start to a_off
-	if (offset_diff > 0) {
-
-		// size for the position
-		if (ro->gdiff_start <= USHRT_MAX) {
-			opcode = 249;
-			USAddr = (unsigned short)ro->gdiff_start;
-		} else if (ro->gdiff_start <= INT_MAX) {
-			opcode = 252;
-			IAddr = (int)ro->gdiff_start;
-		} else {
-			opcode = 255;
-		}
-
-		// size for the length
-		if (opcode != 255 && offset_diff <= UCHAR_MAX) {
-			UCLen = (unsigned char)offset_diff;
-		} else if (opcode != 255 && offset_diff <= USHRT_MAX) {
-			USLen = (unsigned short)offset_diff;
-			opcode += 1;
-		} else if (opcode != 255 && offset_diff <= INT_MAX) {
-			ILen = (int)offset_diff;
-			opcode += 2;
-		} else if (offset_diff > INT_MAX) {
-			int times = offset_diff / INT_MAX;
-			int max = INT_MAX;
-			size_t i;
-			for (i = 0; i < times; i++) {
-				print_bytes (&opcode, sizeof (opcode), true);
-				// XXX this is overflowingly wrong
-				// XXX print_bytes (&gdiff_start + i * max, sizeof (gdiff_start), true);
-				print_bytes (&max, sizeof (max), true);
-			}
-		}
-
-		// print opcode for COPY
-		print_bytes (&opcode, sizeof (opcode), true);
-
-		// print position for COPY
-		if (opcode <= 251) {
-			print_bytes (&USAddr, sizeof (USAddr), true);
-		} else if (opcode < 255) {
-			print_bytes (&IAddr, sizeof (IAddr), true);
-		} else {
-			print_bytes (&ro->gdiff_start, sizeof (ro->gdiff_start), true);
-		}
-
-		// print length for COPY
-		switch (opcode) {
-		case 249:
-		case 252:
-			print_bytes (&UCLen, sizeof (UCLen), true);
-			break;
-		case 250:
-		case 253:
-			print_bytes (&USLen, sizeof (USLen), true);
-			break;
-		case 251:
-		case 254:
-		case 255:
-			print_bytes (&ILen, sizeof (ILen), true);
-			break;
-		}
-	}
+	gdiff_copy (ro->gdiff_start, op->a_off);
 
 	// we append data
 	if (op->b_len <= 246) {
@@ -1856,10 +1790,10 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			} else {
 				ro.disasm_a.buf = bufa;
 				ro.disasm_a.size = sza;
-				ro.disasm_a.offset = ro.offset_a;
+				ro.disasm_a.offset = d->off_a;
 				ro.disasm_b.buf = bufb;
 				ro.disasm_b.size = szb;
-				ro.disasm_b.offset = ro.offset_b;
+				ro.disasm_b.offset = d->off_b;
 				ro.bufa_end = bufa + sza;
 				ro.bufb_end = bufb + szb;
 				r_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);

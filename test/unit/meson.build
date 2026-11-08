@@ -76,6 +76,7 @@ if get_option('enable_tests')
     'queue',
     'r2pipe',
     'r2r',
+    'radiff2_gdiff',
     'rbtree',
     'reg',
     'seek_history',
