@@ -926,6 +926,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rasm2 comma-separated byte expressions
+FILE=-
+CMDS=<<EOF
+!rasm2 ".byte 1 + 2, 3"
+!rasm2 ".db (1 + 2) * 3, 4"
+!rasm2 ".int8 1 << 4, (0xf0 >> 4) | 0x80"
+!rasm2 "base:; .byte end - base, end - base + 1; end:; .byte 0"
+EOF
+EXPECT=<<EOF
+0303
+0904
+108f
+020300
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=rasm2 .word directive
 FILE=-
 CMDS=!rasm2 ".word 0x1234"

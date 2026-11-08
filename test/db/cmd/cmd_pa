@@ -308,14 +308,14 @@ FILE=--
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-pa .byte 1 2 3
+pa .byte 1 + 2, 4 * 2, 0xff
 pa .byte 1,2,3
-pa .db 1	2
-"pa .byte 1 2;nop"
+pa .db 1,	2
+"pa .byte 1,2;nop"
 pa .byte 1:2:3:4
 EOF
 EXPECT=<<EOF
-010203
+0308ff
 010203
 0102
 010290

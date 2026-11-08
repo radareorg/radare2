@@ -132,6 +132,19 @@ List the supported assembler and preprocessor directives with:
 .Pp
  $ rasm2 -hh
 .Bl -tag -width ".org address, fill"
+.It Cm .byte Ar expression Ns Op , Ns Ar expression ...
+Emit one byte for each comma-separated expression.
+Spaces and tabs are allowed within expressions; commas are required between
+operands, so whitespace-only lists are no longer accepted.
+Each result must be in the range 0 through 255.
+The
+.Cm .db
+and
+.Cm .int8
+directives use the same syntax and range.
+For example,
+.Cm .byte 1 + 2, (1 + 2) * 3
+emits 0309.
 .It Cm .org Ar address
 Set the program counter without emitting bytes.
 This preserves the historical

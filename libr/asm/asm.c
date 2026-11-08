@@ -185,13 +185,23 @@ static int r_asm_pseudo_byte(RAnalOp *op, const char *input, bool last_stage) {
 	if (!args) {
 		return -1;
 	}
-	r_str_replace_char (args, ',', ' ');
-	r_str_replace_char (args, '\t', ' ');
-	int i, len = r_str_word_set0 (args);
+	int i, len = r_str_split (args, ',');
 	ut8 *buf = malloc (R_MAX (len, 1));
-	for (i = 0; buf && i < len; i++) {
+	const char *arg = args;
+	for (i = 0; buf && i < len; i++, arg += strlen (arg) + 1) {
+		const char *operand = r_str_trim_head_ro (arg);
+		if (!*operand) {
+			R_LOG_ERROR ("Missing expression in .byte");
+			break;
+		}
+		// Parentheses make the evaluator reject adjacent operands without a comma.
+		char *expression = r_str_newf ("(%s)", operand);
+		if (!expression) {
+			break;
+		}
 		const char *err = NULL;
-		int num = (int)r_num_math_err (NULL, r_str_word_get0 (args, i), &err);
+		st64 num = (st64)r_num_math_err (NULL, expression, &err);
+		free (expression);
 		if (err && !last_stage) {
 			num = 0;
 		} else if (err) {
@@ -199,12 +209,12 @@ static int r_asm_pseudo_byte(RAnalOp *op, const char *input, bool last_stage) {
 			break;
 		}
 		if (num < 0 || num > 255) {
-			R_LOG_ERROR ("byte value %d out of range (0-255)", num);
+			R_LOG_ERROR ("byte value %" PFMT64d " out of range (0-255)", num);
 			break;
 		}
 		buf[i] = num;
 	}
-	const int ret = !buf? 0: (i < len)? -1: asm_op_set_data (op, buf, len);
+	const int ret = !buf || i < len? -1: asm_op_set_data (op, buf, len);
 	free (buf);
 	free (args);
 	return ret;

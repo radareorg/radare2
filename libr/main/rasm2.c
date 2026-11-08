@@ -422,7 +422,7 @@ static int rasm_show_help(RCons *cons, int v) {
 		".int64 [num]    same for 64bit\n"
 		".size           n/a\n"
 		".section        n/a\n"
-		".byte 0x10,0x20 space or comma separated list of byte values\n"
+		".byte 1 + 2,3  comma-separated byte expressions (0-255)\n"
 		".glob           n/a\n"
 		".equ K=V        define K to be replaced with V in the lines below\n"
 		".org addr       set the PC without emitting padding (may move backwards)\n"

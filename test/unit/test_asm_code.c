@@ -77,6 +77,59 @@ static bool test_assembly_delimiters(void) {
 	mu_end;
 }
 
+static bool test_assembly_byte_expressions(void) {
+	const struct {
+		const char *source;
+		const char *hex;
+	} cases[] = {
+		{ ".byte 1 + 2, 3", "0303" },
+		{ ".db (1 + 2) * 3, 4", "0904" },
+		{ ".int8 1 << 4, (0xf0 >> 4) | 0x80", "108f" },
+		{ ".byte \t1\t+\t2 ,\t3\t", "0303" },
+		{ ".byte -(-1), +2, 0, 255", "010200ff" },
+		{ ".equ X, 2; .byte X * 3, (X + 1) * 2", "0606" },
+		{ "base:; .byte end - base, end - base + 1; end:; .byte 0", "020300" },
+	};
+	RAsm *a = r_asm_new ();
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (cases); i++) {
+		r_asm_set_pc (a, 0);
+		RAsmCode *code = r_asm_assemble (a, cases[i].source);
+		mu_assert_notnull (code, cases[i].source);
+		char *hex = r_hex_bin2strdup (code->bytes, code->len);
+		mu_assert_streq (hex, cases[i].hex, cases[i].source);
+		free (hex);
+		r_asm_code_free (code);
+	}
+	r_asm_free (a);
+	mu_end;
+}
+
+static bool test_assembly_byte_expression_errors(void) {
+	const char *sources[] = {
+		".byte 1 2",
+		".db 1\t2",
+		".int8 1 + 2 3",
+		".byte 1,",
+		".db ,1",
+		".int8 1, ,2",
+		".byte 1, missing",
+		".byte 256",
+		".byte -1",
+		".byte 0x100000000",
+		".byte 1, (2",
+	};
+	RAsm *a = r_asm_new ();
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (sources); i++) {
+		r_asm_set_pc (a, 0);
+		RAsmCode *code = r_asm_assemble (a, sources[i]);
+		mu_assert_null (code, sources[i]);
+	}
+	r_asm_free (a);
+	mu_end;
+}
+
 static bool test_assembly_org(void) {
 	const struct {
 		ut64 pc;
@@ -256,6 +309,8 @@ int all_tests(void) {
 	mu_run_test (test_equ_aliases);
 	mu_run_test (test_equ_long_names);
 	mu_run_test (test_assembly_delimiters);
+	mu_run_test (test_assembly_byte_expressions);
+	mu_run_test (test_assembly_byte_expression_errors);
 	mu_run_test (test_assembly_org);
 	mu_run_test (test_assembly_org_errors);
 	mu_run_test (test_preprocessor_sources);
