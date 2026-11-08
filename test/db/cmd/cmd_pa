@@ -447,6 +447,69 @@ ERROR: Cannot assemble 'cmp w0, wsp' at line 1
 EOF
 RUN
 
+NAME=pa arm64 reject invalid neg and negs operands
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+pa neg w0, x1
+pa negs x0, w1
+"pa neg x0, #1"
+"pa negs w0, #1"
+pa neg x0, sp
+pa negs w0, wsp
+pa neg sp, x1
+pa negs wsp, w1
+pa neg w0, w1, lsl 32
+pa neg w0, w1, lsr 32
+pa neg w0, w1, asr 32
+pa negs w0, w1, lsl 32
+pa negs w0, w1, lsr 32
+pa negs w0, w1, asr 32
+pa neg x0, x1, lsl 64
+pa neg x0, x1, lsr 64
+pa neg x0, x1, asr 64
+pa negs x0, x1, lsl 64
+pa negs x0, x1, lsr 64
+pa negs x0, x1, asr 64
+pa neg x0, x1, ror 1
+pa negs w0, w1, ror 1
+pa neg x0, w1, uxtw
+pa negs w0, w1, uxtw
+pa neg x0
+pa negs x0, x1, lsl 1, x2
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'neg w0, x1' at line 1
+ERROR: Cannot assemble 'negs x0, w1' at line 1
+ERROR: Cannot assemble 'neg x0, #1' at line 1
+ERROR: Cannot assemble 'negs w0, #1' at line 1
+ERROR: Cannot assemble 'neg x0, sp' at line 1
+ERROR: Cannot assemble 'negs w0, wsp' at line 1
+ERROR: Cannot assemble 'neg sp, x1' at line 1
+ERROR: Cannot assemble 'negs wsp, w1' at line 1
+ERROR: Cannot assemble 'neg w0, w1, lsl 32' at line 1
+ERROR: Cannot assemble 'neg w0, w1, lsr 32' at line 1
+ERROR: Cannot assemble 'neg w0, w1, asr 32' at line 1
+ERROR: Cannot assemble 'negs w0, w1, lsl 32' at line 1
+ERROR: Cannot assemble 'negs w0, w1, lsr 32' at line 1
+ERROR: Cannot assemble 'negs w0, w1, asr 32' at line 1
+ERROR: Cannot assemble 'neg x0, x1, lsl 64' at line 1
+ERROR: Cannot assemble 'neg x0, x1, lsr 64' at line 1
+ERROR: Cannot assemble 'neg x0, x1, asr 64' at line 1
+ERROR: Cannot assemble 'negs x0, x1, lsl 64' at line 1
+ERROR: Cannot assemble 'negs x0, x1, lsr 64' at line 1
+ERROR: Cannot assemble 'negs x0, x1, asr 64' at line 1
+ERROR: Cannot assemble 'neg x0, x1, ror 1' at line 1
+ERROR: Cannot assemble 'negs w0, w1, ror 1' at line 1
+ERROR: Cannot assemble 'neg x0, w1, uxtw' at line 1
+ERROR: Cannot assemble 'negs w0, w1, uxtw' at line 1
+ERROR: Cannot assemble 'neg x0' at line 1
+ERROR: Cannot assemble 'negs x0, x1, lsl 1, x2' at line 1
+EOF
+RUN
+
 NAME=pa arm64 reject out of range bitfield widths
 FILE=-
 CMDS=<<EOF

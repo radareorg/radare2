@@ -754,6 +754,30 @@ ad "add x0, x1, xzr" 20001f8b
 ad "add w0, w1, wzr" 20001f0b
 ad "cmp x0, xzr" 1f001feb
 ad "cmp w0, wzr" 1f001f6b
+ad "neg x0, x1" e00301cb
+ad "negs x0, x1" e00301eb
+ad "neg w0, w1" e003014b
+ad "negs w0, w1" e003016b
+ad "neg x5, x9" e50309cb
+ad "negs w13, w21" ed03156b
+ad "neg x0, x1, lsl 1" e00701cb
+ad "neg x5, x9, lsr 63" e5ff49cb
+ad "neg x5, x9, asr 63" e5ff89cb
+ad "negs x0, x1, lsl 63" e0ff01eb
+ad "negs x5, x9, lsr 1" e50749eb
+ad "negs x5, x9, asr 1" e50789eb
+ad "neg w0, w1, lsl 31" e07f014b
+ad "neg w13, w21, lsr 1" ed07554b
+ad "neg w13, w21, asr 1" ed07954b
+ad "negs w0, w1, lsl 1" e007016b
+ad "negs w13, w21, lsr 31" ed7f556b
+ad "negs w13, w21, asr 31" ed7f956b
+a "neg x0, x1, lsl #0" e00301cb
+a "negs w0, w1, lsl #0" e003016b
+ad "neg x0, xzr" e0031fcb
+ad "negs w0, wzr" e0031f6b
+ad "neg xzr, x1" ff0301cb
+a "negs wzr, w1" ff03016b
 ad "bfi x0, x1, 5, 8" 201c7bb3
 ad "bfi w0, w1, 5, 8" 201c1b33
 ad "bfxil x0, x1, 5, 8" 203045b3

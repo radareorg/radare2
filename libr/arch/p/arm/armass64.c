@@ -1492,55 +1492,6 @@ static ut32 exception(ArmOp *op, ut32 k) {
 	return data;
 }
 
-static ut32 arithmetic(ArmOp *op, int k) {
-	ut32 data = UT32_MAX;
-	if (op->operands_count < 3) {
-		return data;
-	}
-
-	if (!(op->operands[0].type & ARM_GPR && op->operands[1].type & ARM_GPR)) {
-		return data;
-	}
-	if (op->operands[2].type & ARM_GPR) {
-		k -= 6;
-	}
-	data = k;
-	data += encode1reg (op);
-	data += ((ut32)op->operands[1].reg & 7) << (24 + 5);
-	data += (op->operands[1].reg >> 3) << 16;
-	if (op->operands[2].type & ARM_GPR) {
-		data += op->operands[2].reg << 8;
-	} else if (op->operands[2].type & ARM_CONSTANT) {
-		data += (op->operands[2].immediate & 0x3f) << 18;
-		data += (op->operands[2].immediate >> 6) << 8;
-	} else {
-		return UT32_MAX;
-	}
-
-	if (op->operands[2].type & ARM_CONSTANT && op->operands[3].type & ARM_SHIFT) {
-		if ((op->operands[3].shift == ARM_LSL) && (op->operands[3].shift_amount == 12)) {
-			data |= (0x4000);
-		}
-	}
-
-	if (op->operands[2].type & ARM_GPR && op->operands[3].type & ARM_SHIFT) {
-		switch (op->operands[3].shift) {
-		case ARM_LSL:
-			data |= (0x00040000 * op->operands[3].shift_amount);
-			break;
-		case ARM_LSR:
-			data |= (0x00040000 * op->operands[3].shift_amount) | (0x4000);
-			break;
-		case ARM_ASR:
-			data |= (0x00040000 * op->operands[3].shift_amount) | (0x8000);
-			break;
-		default:
-			return data;
-		}
-	}
-	return data;
-}
-
 // add, adds, sub and subs with an immediate, a shifted register or an extended register
 static ut32 addsub(ArmOp *op, bool sub, bool setflags) {
 	ut32 data = UT32_MAX;
@@ -1622,14 +1573,14 @@ static ut32 addsub(ArmOp *op, bool sub, bool setflags) {
 }
 
 static ut32 neg(ArmOp *op) {
-	if (op->operands_count < 2) {
-		return -1;
-	}
+	ut32 data = UT32_MAX;
+	check_cond (op->operands_count == 2 || op->operands_count == 3);
+	check_cond (op->operands[1].type == ARM_GPR);
+	memmove (&op->operands[2], &op->operands[1], sizeof (Operand) * (op->operands_count - 1));
+	op->operands[1].reg = 31;
+	op->operands[1].reg_type &= ~ARM_SP;
 	op->operands_count++;
-	op->operands[2] = op->operands[1];
-	op->operands[1].reg = 31; // xzr
-
-	return arithmetic (op, 0xd1); // sub reg0, xzr, reg1
+	return addsub (op, true, !strcmp (op->mnemonic, "negs"));
 }
 
 static ut32 bitfield(ArmOp *op, int k) {
