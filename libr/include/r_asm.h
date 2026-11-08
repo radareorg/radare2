@@ -34,7 +34,7 @@ typedef struct r_asm_code_t {
 	HtPP *equs;
 	ut64 code_offset;
 	ut64 data_offset;
-	ut8 fill_value;
+	int code_align;
 	RCFloatProfile cfloat_profile;
 } RAsmCode;
 

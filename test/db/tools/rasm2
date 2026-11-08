@@ -1140,6 +1140,34 @@ cccccccc0000
 EOF
 RUN
 
+NAME=rasm2 alignment and fillvalue accept tabs
+FILE=-
+CMDS=<<EOF
+!rasm2 -a z80 -b 8 ".byte 1; .align	4, 0xcc; .byte 2"
+!rasm2 -a z80 -b 8 ".fillvalue	0x7f; .byte 1; .align	4; .fill 2,2"
+EOF
+EXPECT=<<EOF
+01cccccc02
+017f7f7f7f7f7f7f
+EOF
+RUN
+
+NAME=rasm2 assembly PC overflow rejected
+FILE=-
+CMDS=<<EOF
+!rasm2 -a z80 -b 8 -s 0xffffffffffffffff ".align 2"
+!rasm2 -a z80 -b 8 -s 0xffffffffffffffff ".fill 2"
+!rasm2 -a z80 -b 8 -s 0xffffffffffffffff ".byte 1"
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Assembled PC overflow at line 1
+ERROR: Assembled PC overflow at line 1
+ERROR: Assembled PC overflow at line 1
+EOF
+RUN
+
 NAME=rasm2 .align and .fillvalue reject invalid operands
 FILE=-
 CMDS=<<EOF

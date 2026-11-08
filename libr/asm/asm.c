@@ -96,8 +96,7 @@ static bool asm_parse_fill_byte(const char *input, const char *directive, ut8 *f
 	return true;
 }
 
-static int r_asm_pseudo_align(RAsm *a, RAsmCode *acode, RAnalOp *op, char *input, bool last_stage) {
-	ut8 fill = acode->fill_value;
+static int r_asm_pseudo_align(RAsm *a, RAsmCode *acode, RAnalOp *op, char *input, ut8 fill, bool last_stage) {
 	char *comma = strchr (input, ',');
 	if (comma) {
 		*comma = 0;
@@ -119,6 +118,7 @@ static int r_asm_pseudo_align(RAsm *a, RAsmCode *acode, RAnalOp *op, char *input
 		R_LOG_ERROR ("Invalid alignment: %s", err);
 		return -1;
 	}
+	acode->code_align = (int)boundary;
 	if (boundary < 2) {
 		return 0;
 	}
@@ -272,7 +272,7 @@ static int r_asm_pseudo_byte(RAnalOp *op, const char *input, bool last_stage) {
 	return ret;
 }
 
-static int r_asm_pseudo_fill(RAsm *a, RAnalOp *op, const char *input, ut8 fill, bool verbose) {
+static int r_asm_pseudo_fill(RAsm *a, RAnalOp *op, const char *input, ut8 fill, bool last_stage) {
 	// .fill repeat[,size[,value]] like gas
 	st64 repeat = 1, size = 1;
 	ut32 value = 0;
@@ -303,7 +303,7 @@ static int r_asm_pseudo_fill(RAsm *a, RAnalOp *op, const char *input, ut8 fill, 
 		return -1;
 	}
 	if (repeat < 0 || size < 0) {
-		if (verbose) {
+		if (last_stage) {
 			R_LOG_WARN (".fill with a negative %s is ignored", repeat < 0? "repeat": "size");
 		}
 		return 0;
@@ -315,6 +315,9 @@ static int r_asm_pseudo_fill(RAsm *a, RAnalOp *op, const char *input, ut8 fill, 
 	}
 	if (!total) {
 		return 0;
+	}
+	if (!last_stage) {
+		return (int)total;
 	}
 	if (nargs < 3) {
 		return asm_op_set_padding (op, total, fill, true);
@@ -964,7 +967,7 @@ static void *htpp_strdup(const void *v) {
 	return (void *)strdup ((char *)v);
 }
 
-static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_start, R_INOUT ut64 *off, bool last_stage) {
+static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, ut8 *fill_value, char *ptr_start, R_INOUT ut64 *off, bool last_stage) {
 	const char *asmcpu = R_UNWRAP3 (a, config, cpu);
 	int ret = -1;
 	char *ptr = ptr_start;
@@ -1028,15 +1031,15 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 		} else {
 			R_LOG_ERROR ("Unknown directive %s. use .ascii or .asciiz", ptr);
 		}
-	} else if (r_str_startswith (ptr, ".align ")) {
-		char *str = r_str_trim_dup (ptr + 7);
-		ret = r_asm_pseudo_align (a, acode, op, str, last_stage);
+	} else if (r_str_startswith (ptr, ".align") && isspace ((ut8)ptr[6])) {
+		char *str = r_str_trim_dup (ptr + 6);
+		ret = str? r_asm_pseudo_align (a, acode, op, str, *fill_value, last_stage): -1;
 		free (str);
 		if (ret < 0) {
 			return ret;
 		}
-	} else if (r_str_startswith (ptr, ".fillvalue ")) {
-		ret = asm_parse_fill_byte (ptr + 11, ".fillvalue", &acode->fill_value)? 0: -1;
+	} else if (r_str_startswith (ptr, ".fillvalue") && isspace ((ut8)ptr[10])) {
+		ret = asm_parse_fill_byte (ptr + 10, ".fillvalue", fill_value)? 0: -1;
 	} else if (r_str_startswith (ptr, ".arm64")) {
 		r_asm_use (a, "arm");
 		r_asm_set_bits (a, 64);
@@ -1068,7 +1071,7 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 			ret = 0;
 		}
 	} else if (r_str_startswith (ptr, ".fill ")) {
-		ret = r_asm_pseudo_fill (a, op, ptr + 6, acode->fill_value, last_stage);
+		ret = r_asm_pseudo_fill (a, op, ptr + 6, *fill_value, last_stage);
 		if (ret < 0) {
 			return ret;
 		}
@@ -1274,6 +1277,7 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 	char *ptr = NULL, *ptr_start = NULL;
 	RAnalOp op = { 0 };
 	ut64 off, pc;
+	ut8 fill_value = 0;
 
 	char *buf_token = NULL;
 	size_t tokens_size = 32;
@@ -1387,7 +1391,7 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 			continue;
 		}
 		inComment = false;
-		acode->fill_value = 0;
+		fill_value = 0;
 		r_asm_set_pc (a, pc);
 		linenum = 0;
 		for (idx = ret = i = 0, off = a->pc; i <= ctr; i++) {
@@ -1471,7 +1475,7 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 				if (!str) {
 					goto fail;
 				}
-				ret = parse_asm_directive (a, &op, acode, str, &off, stage == STAGES - 1);
+				ret = parse_asm_directive (a, &op, acode, &fill_value, str, &off, stage == STAGES - 1);
 				if (ret < 0) {
 					R_LOG_ERROR ("Cannot assemble '%s' at line %d", str, linenum);
 					free (str);
@@ -1493,6 +1497,10 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 				}
 				ret = r_asm_assemble_single (a, &op, str, stage != STAGES - 1);
 				free (str);
+			}
+			if (ret > 0 && (ut64)ret > UT64_MAX - a->pc) {
+				R_LOG_ERROR ("Assembled PC overflow at line %d", linenum);
+				goto fail;
 			}
 			// RAsmCode.len is an int
 			size_t len = 0;
