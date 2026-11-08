@@ -468,6 +468,20 @@ bool test_seek_history_mapped(void) {
 	mu_end;
 }
 
+bool test_r_io_overlay(void) {
+	RIO *io = r_io_new ();
+	io->va = io->overlay = true;
+	RIODesc *desc = r_io_open_at (io, "malloc://4", R_PERM_RW, 0, 0);
+	ut32 v = 0;
+	r_io_vwrite_to_overlay_at (io, 0x1, (const ut8 *)&v, 2);
+	v = 0x90909090;
+	r_io_write_at (io, 0x0, (const ut8 *)&v, 4);
+	r_io_desc_read_at (desc, 0x0, (ut8 *)&v, 4);
+	mu_assert_eq (v, 0x90000090, "io overlay should block writes to file");
+	r_io_free (io);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_io_ar_member_uri);
 	mu_run_test (test_seek_history_mapped);
@@ -481,6 +495,7 @@ int all_tests(void) {
 	mu_run_test(test_r_io_desc_exchange);
 	//mu_run_test(test_r_io_priority);
 	// mu_run_test(test_r_io_priority2);
+	mu_run_test(test_r_io_overlay);
 	mu_run_test(test_va_malloc_zero);
 	return tests_passed != tests_run;
 }
