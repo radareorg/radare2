@@ -1629,7 +1629,10 @@ static ut32 neg(ArmOp *op) {
 	op->operands[2] = op->operands[1];
 	op->operands[1].reg = 31; // xzr
 
-	return arithmetic (op, 0xd1); // sub reg0, xzr, reg1
+	// negs is the flag setting form, subs instead of sub
+	const bool setflags = r_str_startswith (op->mnemonic, "negs");
+	const int k = (op->operands[0].reg_type & ARM_REG32)? 0x51: 0xd1;
+	return arithmetic (op, k + (setflags? 0x20: 0));
 }
 
 static ut32 bitfield(ArmOp *op, int k) {
