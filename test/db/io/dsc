@@ -348,6 +348,6 @@ iSS~__text
 EOF
 EXPECT=<<EOF
 1   0x00024000     0xb3 0x184024000     0xb3 -r-- 0x0   MAP  lib/liba-1.0.dylib.__LINKEDIT
-6   0x00024000     0xb3 0x184024000     0xb3 -r-- 0x0   MAP  lib/libb-1.0.dylib.__LINKEDIT
+3   0x00024000     0xb3 0x184024000     0xb3 -r-- 0x0   MAP  lib/libb-1.0.dylib.__LINKEDIT
 EOF
 RUN

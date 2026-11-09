@@ -1,15 +1,11 @@
-%global         gituser         radareorg
-%global         gitname         radare2
-
 Name:           radare2
-# This version must be a valid and existing release number otherwise CI will fail
-Version:        6.2.7
+Version:        %{r2version}
 Release:        1%{?dist}
 Summary:        The %{name} reverse engineering framework
 Group:          Applications/Engineering
 License:        LGPLv3
 URL:            https://www.radare.org/
-Source0:        https://github.com/%{gituser}/%{gitname}/archive/refs/tags/%{version}.tar.gz
+Source0:        %{name}-%{version}.tar.gz
 
 # BuildRequires:  file-devel
 # BuildRequires:  libzip-devel
@@ -37,8 +33,7 @@ information.
 
 
 %prep
-#%setup -q -n %{name}-%{version}
-%setup -q -n %{gitname}-%{version}
+%setup -q
 
 
 %build

@@ -1296,7 +1296,8 @@ static bool sections_from_bin(RBinFile *bf, RDyldBinImage *bin) {
 		ptr->perm = section->perm;
 	}
 
-	for (int i = 0; i < mach0->nsegs; i++) {
+	int i;
+	for (i = 0; i < mach0->nsegs; i++) {
 		const struct MACH0_(segment_command) *seg = &mach0->segs[i];
 		if (!seg->initprot) {
 			continue;
