@@ -15195,10 +15195,13 @@ static bool is_executable(RCore *core, ut64 addr) {
 	return false;
 }
 
-static bool strnullpad_check(const ut8 *buf, int len, int clen, int inc, bool be) {
+static bool strnullpad_check(const ut8 *buf, int len, int inc, bool be) {
 	int i;
 	for (i = 0; i < len; i += inc) {
 		if (inc == 2) {
+			if (i + 1 >= len) {
+				return false;
+			}
 			if (be) {
 				if (!buf[i] && !buf[i + 1]) {
 					return false;
@@ -15228,6 +15231,9 @@ static bool check_string_at(RCore *core, ut64 addr, bool and_print_it) {
 	}
 	const int len = core->blocksize; // max string length
 	int i;
+	if (len < 1) {
+		return false;
+	}
 	// bool is_utf32le = false;
 	// bool is_utf32be = false;
 	bool is_pascal1 = false;
@@ -15270,14 +15276,14 @@ static bool check_string_at(RCore *core, ut64 addr, bool and_print_it) {
 	}
 
 	// utf16le check
-	if (strnullpad_check (buf, R_MIN (len, 10), 10, 2, false)) {
+	if (strnullpad_check (buf, R_MIN (len, 10), 2, false)) {
 		out = malloc (len + 1);
 		if (r_str_utf16_to_utf8 ((ut8*)out, len, buf, len, false) < 1) {
 			R_FREE (out);
 		}
 	}
 	// utf16be check
-	if (strnullpad_check (buf, R_MIN (len, 10), 10, 2, true)) {
+	if (strnullpad_check (buf, R_MIN (len, 10), 2, true)) {
 		out = malloc (len + 1);
 		if (r_str_utf16_to_utf8 ((ut8*)out, len, buf, len, true) < 1) {
 			R_FREE (out);
@@ -15296,9 +15302,9 @@ static bool check_string_at(RCore *core, ut64 addr, bool and_print_it) {
 			}
 		}
 	}
-	if (!is_pascal1) {
+	if (!is_pascal1 && len >= 2) {
 		ut8 plen = r_read_le16 (buf);
-		if (plen > 2 && plen < len) {
+		if (plen > 2 && plen + 2 <= len) {
 			is_pascal2 = r_str_pnlen ((const char *)buf + 2, plen - 2) == (size_t)(plen - 2);
 			if (is_pascal2) {
 				char *oout = r_str_ndup ((const char *)buf + 2, plen);
