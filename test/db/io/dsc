@@ -338,3 +338,16 @@ ERROR: Subcache bins/dsc/self-subcache is already loaded
 ERROR: Cannot open file dsc://bins/dsc/self-subcache
 EOF
 RUN
+
+NAME=dsc iSS reports per image segment bounds
+FILE=-
+CMDS=<<EOF
+o dsc://bins/mach0/dyld_shared_cache_arm64-macOS
+iSS~__LINKEDIT
+iSS~__text
+EOF
+EXPECT=<<EOF
+1   0x00024000     0xb3 0x184024000     0xb3 -r-- 0x0   MAP  lib/liba-1.0.dylib.__LINKEDIT
+6   0x00024000     0xb3 0x184024000     0xb3 -r-- 0x0   MAP  lib/libb-1.0.dylib.__LINKEDIT
+EOF
+RUN
