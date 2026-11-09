@@ -405,16 +405,21 @@ static inline int delete_between(RLine *line, int start, int end) {
 }
 
 static void paste(RLine *line) {
-	if (line->clipboard) {
-		char *cursor = line->state.buffer.data + line->state.buffer.index;
-		int dist = (line->state.buffer.data + line->state.buffer.length) - cursor;
-		int len = strlen (line->clipboard);
-		line->state.buffer.length += len;
-		memmove (cursor + len, cursor, dist);
-		memcpy (cursor, line->clipboard, len);
-		line->state.buffer.index += len;
-		D.enable_yank_pop = true;
+	D.enable_yank_pop = false;
+	if (!line->clipboard) {
+		return;
 	}
+	size_t len = strlen (line->clipboard);
+	if (line->state.buffer.length + len >= R_LINE_BUFSIZE) {
+		return;
+	}
+	char *cursor = line->state.buffer.data + line->state.buffer.index;
+	int dist = (line->state.buffer.data + line->state.buffer.length) - cursor;
+	line->state.buffer.length += len;
+	memmove (cursor + len, cursor, dist);
+	memcpy (cursor, line->clipboard, len);
+	line->state.buffer.index += len;
+	D.enable_yank_pop = true;
 }
 
 static void unix_word_rubout(RCons *cons) {
@@ -2047,7 +2052,7 @@ repeat:
 			break;
 		case 25: // ^Y - paste
 			paste (line);
-			D.yank_flag = true;
+			D.yank_flag = D.enable_yank_pop;
 			break;
 		case 29: // ^^ - rotate kill ring
 			rotate_kill_ring (cons);
