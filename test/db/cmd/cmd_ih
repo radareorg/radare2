@@ -108,7 +108,7 @@ EXPECT=<<EOF
       {
         "type": "x",
         "offset": 0,
-        "value": 4294967295
+        "value": 1179403647
       }
     ]
   },
@@ -123,7 +123,7 @@ EXPECT=<<EOF
       {
         "type": "w",
         "offset": 16,
-        "value": 65535
+        "value": 2
       }
     ]
   },
@@ -138,7 +138,7 @@ EXPECT=<<EOF
       {
         "type": "w",
         "offset": 18,
-        "value": 65535
+        "value": 3
       }
     ]
   },
@@ -153,7 +153,7 @@ EXPECT=<<EOF
       {
         "type": "x",
         "offset": 20,
-        "value": 4294967295
+        "value": 1
       }
     ]
   },
@@ -168,7 +168,7 @@ EXPECT=<<EOF
       {
         "type": "x",
         "offset": 24,
-        "value": 4294967295
+        "value": 134513408
       }
     ]
   },
@@ -183,7 +183,7 @@ EXPECT=<<EOF
       {
         "type": "x",
         "offset": 28,
-        "value": 4294967295
+        "value": 52
       }
     ]
   },
@@ -198,7 +198,7 @@ EXPECT=<<EOF
       {
         "type": "x",
         "offset": 32,
-        "value": 4294967295
+        "value": 1996
       }
     ]
   },
@@ -212,7 +212,7 @@ EXPECT=<<EOF
       {
         "type": "x",
         "offset": 36,
-        "value": 4294967295
+        "value": 0
       }
     ]
   },
@@ -227,7 +227,7 @@ EXPECT=<<EOF
       {
         "type": "w",
         "offset": 40,
-        "value": 65535
+        "value": 52
       }
     ]
   },
@@ -242,7 +242,7 @@ EXPECT=<<EOF
       {
         "type": "w",
         "offset": 42,
-        "value": 65535
+        "value": 32
       }
     ]
   },
@@ -257,7 +257,7 @@ EXPECT=<<EOF
       {
         "type": "w",
         "offset": 44,
-        "value": 65535
+        "value": 8
       }
     ]
   },
@@ -272,7 +272,7 @@ EXPECT=<<EOF
       {
         "type": "w",
         "offset": 46,
-        "value": 65535
+        "value": 40
       }
     ]
   },
@@ -287,7 +287,7 @@ EXPECT=<<EOF
       {
         "type": "w",
         "offset": 48,
-        "value": 65535
+        "value": 30
       }
     ]
   },
@@ -302,7 +302,7 @@ EXPECT=<<EOF
       {
         "type": "w",
         "offset": 50,
-        "value": 65535
+        "value": 27
       }
     ]
   }
@@ -342,5 +342,25 @@ EXPECT=<<EOF
 'pf.EntryPoint x
 0x18
 0x8048300
+EOF
+RUN
+
+NAME=ihj pf values of PE header fields come from the file
+FILE=bins/pe/65535sects.exe
+CMDS=<<EOF
+ihj~{[1].name}
+ihj~{[1].value}
+ihj~{[1].pf[0].value}
+ihj~{[7].name}
+ihj~{[7].value}
+ihj~{[7].pf[0].value}
+EOF
+EXPECT=<<EOF
+Machine
+332
+332
+Characteristics
+258
+258
 EOF
 RUN

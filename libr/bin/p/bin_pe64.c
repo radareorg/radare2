@@ -32,7 +32,8 @@ static RList *fields(RBinFile *bf) {
 	RList *ret  = r_list_new ();
 
 	#define ROWL(nam,siz,val,fmt) \
-		r_list_append (ret, r_bin_field_new (addr, addr, val, siz, nam, NULL, fmt, false));
+		r_list_append (ret, r_bin_field_new (addr, addr, val, siz, nam, NULL, \
+			pe_field_format (siz, fmt), false));
 
 	struct PE_(r_bin_pe_obj_t) * bin = bf->bo->bin_obj;
 	ut64 addr = bin->rich_header_offset ? bin->rich_header_offset : 128;
@@ -40,12 +41,14 @@ static RList *fields(RBinFile *bf) {
 	RListIter *it;
 	Pe_image_rich_entry *rich;
 	r_list_foreach (bin->rich_entries, it, rich) {
-		r_list_append (ret, r_bin_field_new (addr, addr, 0, 0, "RICH_ENTRY_NAME", rich->productName, "s", false));
-		ROWL ("RICH_ENTRY_ID", 2, rich->productId, "x"); addr += 2;
-		ROWL ("RICH_ENTRY_VERSION", 2, rich->minVersion, "x"); addr += 2;
-		ROWL ("RICH_ENTRY_TIMES", 4, rich->timesUsed, "x"); addr += 4;
+		// the rich entries are XOR-masked in the file, so they have no pf format
+		r_list_append (ret, r_bin_field_new (addr, addr, 0, 0, "RICH_ENTRY_NAME", rich->productName, "", false));
+		ROWL ("RICH_ENTRY_ID", 2, rich->productId, ""); addr += 2;
+		ROWL ("RICH_ENTRY_VERSION", 2, rich->minVersion, ""); addr += 2;
+		ROWL ("RICH_ENTRY_TIMES", 4, rich->timesUsed, ""); addr += 4;
 	}
 
+	addr = bin->nt_header_offset;
 	ROWL ("Signature", 4, bin->nt_headers->Signature, "x"); addr += 4;
 	ROWL ("Machine", 2, bin->nt_headers->file_header.Machine, "x"); addr += 2;
 	ROWL ("NumberOfSections", 2, bin->nt_headers->file_header.NumberOfSections, "x"); addr += 2;
@@ -62,7 +65,7 @@ static RList *fields(RBinFile *bf) {
 	ROWL ("SizeOfUninitializedData", 4, bin->nt_headers->optional_header.SizeOfUninitializedData, "x"); addr += 4;
 	ROWL ("AddressOfEntryPoint", 4, bin->nt_headers->optional_header.AddressOfEntryPoint, "x"); addr += 4;
 	ROWL ("BaseOfCode", 4, bin->nt_headers->optional_header.BaseOfCode, "x"); addr += 4;
-	ROWL ("ImageBase", 4, bin->nt_headers->optional_header.ImageBase, "x"); addr += 4;
+	ROWL ("ImageBase", 8, bin->nt_headers->optional_header.ImageBase, "x"); addr += 8;
 	ROWL ("SectionAlignment", 4, bin->nt_headers->optional_header.SectionAlignment, "x"); addr += 4;
 	ROWL ("FileAlignment", 4, bin->nt_headers->optional_header.FileAlignment, "x"); addr += 4;
 	ROWL ("MajorOperatingSystemVersion", 2, bin->nt_headers->optional_header.MajorOperatingSystemVersion, "x"); addr += 2;
@@ -75,12 +78,12 @@ static RList *fields(RBinFile *bf) {
 	ROWL ("SizeOfImage", 4, bin->nt_headers->optional_header.SizeOfImage, "x"); addr += 4;
 	ROWL ("SizeOfHeaders", 4, bin->nt_headers->optional_header.SizeOfHeaders, "x"); addr += 4;
 	ROWL ("CheckSum", 4, bin->nt_headers->optional_header.CheckSum, "x"); addr += 4;
-	ROWL ("Subsystem",24, bin->nt_headers->optional_header.Subsystem, "x"); addr += 2;
+	ROWL ("Subsystem", 2, bin->nt_headers->optional_header.Subsystem, "x"); addr += 2;
 	ROWL ("DllCharacteristics", 2, bin->nt_headers->optional_header.DllCharacteristics, "x"); addr += 2;
-	ROWL ("SizeOfStackReserve", 4, bin->nt_headers->optional_header.SizeOfStackReserve, "x"); addr += 4;
-	ROWL ("SizeOfStackCommit", 4, bin->nt_headers->optional_header.SizeOfStackCommit, "x"); addr += 4;
-	ROWL ("SizeOfHeapReserve", 4, bin->nt_headers->optional_header.SizeOfHeapReserve, "x"); addr += 4;
-	ROWL ("SizeOfHeapCommit", 4, bin->nt_headers->optional_header.SizeOfHeapCommit, "x"); addr += 4;
+	ROWL ("SizeOfStackReserve", 8, bin->nt_headers->optional_header.SizeOfStackReserve, "x"); addr += 8;
+	ROWL ("SizeOfStackCommit", 8, bin->nt_headers->optional_header.SizeOfStackCommit, "x"); addr += 8;
+	ROWL ("SizeOfHeapReserve", 8, bin->nt_headers->optional_header.SizeOfHeapReserve, "x"); addr += 8;
+	ROWL ("SizeOfHeapCommit", 8, bin->nt_headers->optional_header.SizeOfHeapCommit, "x"); addr += 8;
 	ROWL ("LoaderFlags", 4, bin->nt_headers->optional_header.LoaderFlags, "x"); addr += 4;
 	ROWL ("NumberOfRvaAndSizes", 4, bin->nt_headers->optional_header.NumberOfRvaAndSizes, "x"); addr += 4;
 

@@ -20,9 +20,9 @@ EOF
 EXPECT=<<EOF
   VersionString: v.`?e X`.
   Stream 0: #~
-'f header.Machine 1 0x000000e4
+'f header.Machine 1 0x000000fc
 'f header.Machine.value 1 0x0000014c
-'pf.Machine x
+'pf.Machine w
 0x14c
 EOF
 RUN
