@@ -282,13 +282,17 @@ static int get_template_params(SDemangler *sd, const char *sym, size_t *amount_o
 			SDataType data_type;
 			if (isdigit ((unsigned char)*sym)) {
 				err = parse_data_type (sd, sym, &data_type, &ret);
-				*str_type_code = r_str_newf ("&%s %s%s", data_type.left, str.type_str, data_type.right);
+				if (err == eDemanglerErrOK) {
+					*str_type_code = r_str_newf ("&%s %s%s", data_type.left, str.type_str, data_type.right);
+				}
 				free (data_type.left);
 				free (data_type.right);
 			} else {
 				char *tmp = NULL;
 				err = parse_function (sd, sym, &str, &tmp, &ret);
-				*str_type_code = r_str_newf ("&%s", tmp);
+				if (err == eDemanglerErrOK) {
+					*str_type_code = r_str_newf ("&%s", tmp);
+				}
 				free (tmp);
 			}
 			sym = str_skip_n (sym, ret);
@@ -513,11 +517,13 @@ static size_t get_operator_code(SDemangler *sd, const char *buf, RList *names_l,
 					return 0;
 				}
 				read_len += state.amount_of_read_chars + 1;
-				r_str_newf ("`RTTI Base Class Descriptor at (%s,%s,%s,%s)'", a, b, c, d);
+				char *str = r_str_newf ("`RTTI Base Class Descriptor at (%s,%s,%s,%s)'", a, b, c, d);
 				free (a);
 				free (b);
 				free (c);
 				free (d);
+				SET_OPERATOR_CODE (str);
+				free (str);
 				break;
 			}
 			case '2': SET_OPERATOR_CODE ("`RTTI Base Class Array'"); break;
@@ -1705,7 +1711,6 @@ static EDemanglerErr parse_data_type(SDemangler *sd, const char *sym, SDataType 
 			}
 			curr_pos++;
 
-			data_type->left = r_str_newf ("%s%s%s", storage_class, modifier.left , modifier.right);
 			if (*curr_pos != '@') {
 				STypeCodeStr str;
 				if (!init_type_code_str_struct (&str)) {
@@ -1739,6 +1744,7 @@ static EDemanglerErr parse_data_type(SDemangler *sd, const char *sym, SDataType 
 			} else {
 				data_type->right = strdup ("");
 			}
+			data_type->left = r_str_newf ("%s%s%s", storage_class, modifier.left, modifier.right);
 		}
 		break;
 	}
@@ -1824,7 +1830,7 @@ static EDemanglerErr parse_function(SDemangler *sd, const char *sym, STypeCodeSt
 	char *demangled_args;
 	char *ret_type = NULL;
 	const char *curr_pos = sym;
-	SDataType data_type;
+	SDataType data_type = { "", "" };
 	const char *__64ptr = NULL;
 	size_t len;
 
@@ -1938,7 +1944,6 @@ static EDemanglerErr parse_function(SDemangler *sd, const char *sym, STypeCodeSt
 
 	if (*data_type.right) {
 		copy_string (&func_str, data_type.right, 0);
-		free (data_type.right);
 	}
 
 	copy_string (&func_str, demangled_args, 0);
@@ -1975,6 +1980,9 @@ parse_function_err:
 	}
 	free_type_code_str_struct (&func_str);
 	free (ret_type);
+	if (*data_type.right) {
+		free (data_type.right);
+	}
 	return err;
 }
 
