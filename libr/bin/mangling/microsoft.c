@@ -66,6 +66,7 @@ typedef struct STypeCodeStr {
 	char *type_str;
 	size_t type_str_len;
 	size_t curr_pos;
+	bool overflow;
 } STypeCodeStr;
 
 typedef struct SStateInfo {
@@ -205,7 +206,7 @@ static void run_state(SDemangler *sd, SStateInfo *state_info, STypeCodeStr *type
 
 static int copy_string(STypeCodeStr *type_code_str, const char *str_for_copy, size_t copy_len) {
 	size_t str_for_copy_len = (copy_len == 0 && str_for_copy) ? strlen (str_for_copy) : copy_len;
-	if (type_code_str->curr_pos >= type_code_str->type_str_len) {
+	if (type_code_str->overflow || type_code_str->curr_pos >= type_code_str->type_str_len) {
 		return 0;
 	}
 	size_t free_space = type_code_str->type_str_len - type_code_str->curr_pos - 1;
@@ -213,10 +214,8 @@ static int copy_string(STypeCodeStr *type_code_str, const char *str_for_copy, si
 		size_t newlen = type_code_str->type_str_len + (str_for_copy_len << 1) + 1;
 		char *type_str = (newlen > UT16_MAX)? NULL: realloc (type_code_str->type_str, newlen);
 		if (!type_str) {
-			// the buffer is unusable from here on. Drop it and reset the
-			// bookkeeping so any later call bails out at the curr_pos check
-			// above rather than writing through a stale offset.
-			free_type_code_str_struct (type_code_str);
+			// keep the caller-owned buffer valid, just stop appending to it
+			type_code_str->overflow = true;
 			return 0;
 		}
 		type_code_str->type_str = type_str;
@@ -1294,8 +1293,11 @@ static EDemanglerErr parse_function_args(SDemangler *sd, const char *sym, char *
 	}
 
 	copy_string (&func_str, ")", 0);
+	if (func_str.overflow && err == eDemanglerErrOK) {
+		err = eDemanglerErrMemoryAllocation;
+	}
 
-	if (demangled_args) {
+	if (demangled_args && err == eDemanglerErrOK) {
 		*demangled_args = strdup (func_str.type_str);
 	}
 
@@ -1538,6 +1540,7 @@ static bool init_type_code_str_struct(STypeCodeStr *type_code_str) {
 	type_code_str->type_str = calloc (len, 1);
 	type_code_str->type_str_len = type_code_str->type_str? len: 0;
 	type_code_str->curr_pos = 0;
+	type_code_str->overflow = false;
 	return type_code_str->type_str != NULL;
 }
 
@@ -1589,8 +1592,8 @@ static EDemanglerErr get_type_code_string(SDemangler *sd, const char *sym, size_
 		}
 	}
 
-	// a failed copy_string drops the buffer, report that as an allocation error
-	*str_type_code = type_code_str.type_str? strdup (type_code_str.type_str): NULL;
+	// a failed copy_string truncates the buffer, report that as an allocation error
+	*str_type_code = type_code_str.overflow? NULL: strdup (type_code_str.type_str);
 	*amount_of_read_chars = state.amount_of_read_chars;
 	if (!*str_type_code) {
 		err = eDemanglerErrMemoryAllocation;
@@ -1950,6 +1953,10 @@ static EDemanglerErr parse_function(SDemangler *sd, const char *sym, STypeCodeSt
 		copy_string (&func_str, __64ptr, 0);
 	}
 
+	if (func_str.overflow) {
+		err = eDemanglerErrMemoryAllocation;
+		goto parse_function_err;
+	}
 	if (ret_type) {
 		if (strstr (func_str.type_str, "#{return_type}")) {
 			func_str.type_str = r_str_replace (func_str.type_str, "#{return_type}", ret_type, 0);
