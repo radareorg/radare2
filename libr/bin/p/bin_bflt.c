@@ -2,6 +2,7 @@
 
 #include <r_bin.h>
 #include <r_io.h>
+#include <sdb/ht_uu.h>
 #include "bflt/bflt.h"
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
@@ -25,16 +26,6 @@ static void __patch_reloc(RIOBind *iob, ut32 addr_to_patch, ut32 data_offset) {
 	ut8 val[4] = { 0 };
 	r_write_le32 (val, data_offset);
 	iob->overlay_write_at (iob->io, addr_to_patch, val, sizeof (val));
-}
-
-static int search_old_relocation(struct reloc_struct_t *reloc_table, ut32 addr_to_patch, int n_reloc) {
-	int i;
-	for (i = 0; i < n_reloc; i++) {
-		if (addr_to_patch == reloc_table[i].data_offset) {
-			return i;
-		}
-	}
-	return -1;
 }
 
 static bool read_be32_at(RBuffer *b, ut64 offset, ut32 *out) {
@@ -73,21 +64,24 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 
 	if (bin->reloc_table) {
 		struct reloc_struct_t *reloc_table = bin->reloc_table;
-		int i = 0;
-		for (i = 0; i < bin->hdr->reloc_count; i++) {
-			int found = search_old_relocation (reloc_table,
-				reloc_table[i].addr_to_patch,
-				bin->hdr->reloc_count);
-			if (found != -1) {
-				__patch_reloc (&b->iob, reloc_table[found].addr_to_patch, reloc_table[i].data_offset);
-			} else {
-				__patch_reloc (&b->iob, reloc_table[i].addr_to_patch, reloc_table[i].data_offset);
-			}
+		const ut32 n_reloc = bin->hdr->reloc_count;
+		// map each data_offset to the first relocation holding it
+		HtUU *first_by_data = ht_uu_new0 ();
+		ut32 i;
+		for (i = 0; i < n_reloc; i++) {
+			ht_uu_insert (first_by_data, reloc_table[i].data_offset, i);
+		}
+		for (i = 0; i < n_reloc; i++) {
+			bool found = false;
+			ut64 j = ht_uu_find (first_by_data, reloc_table[i].addr_to_patch, &found);
+			ut32 addr_to_patch = found? reloc_table[j].addr_to_patch: reloc_table[i].addr_to_patch;
+			__patch_reloc (&b->iob, addr_to_patch, reloc_table[i].data_offset);
 			RBinReloc *reloc = RVecRBinReloc_emplace_back (list);
 			reloc->type = R_BIN_RELOC_32;
 			reloc->paddr = reloc_table[i].addr_to_patch;
 			reloc->vaddr = reloc->paddr;
 		}
+		ht_uu_free (first_by_data);
 		R_FREE (bin->reloc_table);
 	}
 	if (RVecRBinReloc_empty (list)) {
