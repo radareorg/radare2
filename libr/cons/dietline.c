@@ -1215,18 +1215,27 @@ R_API const char *r_line_readline(RCons *cons) {
 
 static inline void rotate_kill_ring(RCons *cons) {
 	RLine *line = cons->line;
-	if (D.enable_yank_pop) {
-		line->state.buffer.index -= strlen (r_list_get_n (line->kill_ring, line->kill_ring_ptr));
-		line->state.buffer.data[line->state.buffer.index] = 0;
-		line->state.buffer.length = line->state.buffer.index;
-		line->kill_ring_ptr -= 1;
-		if (line->kill_ring_ptr < 0) {
-			line->kill_ring_ptr = line->kill_ring->length - 1;
-		}
-		free (line->clipboard);
-		line->clipboard = r_str_new (r_list_get_n (line->kill_ring, line->kill_ring_ptr));
-		paste (line);
+	if (!D.enable_yank_pop) {
+		return;
 	}
+	const char *yanked = r_list_get_n (line->kill_ring, line->kill_ring_ptr);
+	if (!yanked) {
+		return;
+	}
+	size_t yanked_len = strlen (yanked);
+	if (yanked_len > (size_t)line->state.buffer.index) {
+		return;
+	}
+	line->state.buffer.index -= yanked_len;
+	line->state.buffer.data[line->state.buffer.index] = 0;
+	line->state.buffer.length = line->state.buffer.index;
+	line->kill_ring_ptr -= 1;
+	if (line->kill_ring_ptr < 0) {
+		line->kill_ring_ptr = line->kill_ring->length - 1;
+	}
+	free (line->clipboard);
+	line->clipboard = r_str_new (r_list_get_n (line->kill_ring, line->kill_ring_ptr));
+	paste (line);
 }
 
 static inline void __delete_prev_char(RLine *line) {
@@ -1822,6 +1831,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 	if (!line->hud || (line->hud && !line->hud->activate)) {
 		line->state.buffer.index = line->state.buffer.length = 0;
 		line->state.buffer.data[0] = '\0';
+		D.enable_yank_pop = false;
 		if (line->hud) {
 			line->hud->activate = true;
 			line->hud->current_entry_n = 0;
