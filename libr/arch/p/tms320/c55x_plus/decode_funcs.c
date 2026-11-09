@@ -100,7 +100,8 @@ char *get_AR_regs_class2(ut32 ins_bits, ut32 *ret_len, ut32 ins_pos, ut32 idx) {
 		*ret_len = 0;
 	}
 	//printf("OP1 %x OP2 0x%x %x\n", op, op2, reg_num);
-	res = malloc(50);
+	// addressing modes without a case below leave the operand empty
+	res = calloc (1, 50);
 	if (!res) {
 		return NULL;
 	}
