@@ -1226,9 +1226,10 @@ static inline void rotate_kill_ring(RCons *cons) {
 	if (yanked_len > (size_t)line->state.buffer.index) {
 		return;
 	}
+	char *cursor = line->state.buffer.data + line->state.buffer.index;
+	memmove (cursor - yanked_len, cursor, line->state.buffer.length - line->state.buffer.index + 1);
 	line->state.buffer.index -= yanked_len;
-	line->state.buffer.data[line->state.buffer.index] = 0;
-	line->state.buffer.length = line->state.buffer.index;
+	line->state.buffer.length -= yanked_len;
 	line->kill_ring_ptr -= 1;
 	if (line->kill_ring_ptr < 0) {
 		line->kill_ring_ptr = line->kill_ring->length - 1;
