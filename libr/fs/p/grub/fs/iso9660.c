@@ -279,7 +279,7 @@ grub_iso9660_mount(grub_disk_t disk) {
 	struct grub_iso9660_dir rootdir;
 	int sua_pos;
 	int sua_size;
-	char *sua;
+	char *sua = NULL;
 	struct grub_iso9660_susp_entry *entry;
 	struct grub_iso9660_primary_voldesc voldesc;
 	int block;
@@ -339,6 +339,10 @@ grub_iso9660_mount(grub_disk_t disk) {
 
 	sua_pos = (sizeof (rootdir) + rootdir.namelen + (rootdir.namelen % 2) - 1);
 	sua_size = rootdir.len - sua_pos;
+	/* SUSP starts with a 7-byte SP entry, a shorter root SUA cannot hold it.  */
+	if (sua_size < 7) {
+		return data;
+	}
 
 	// sua = grub_malloc (sua_size + 2);
 	sua = calloc (1, sua_size + 1024);
@@ -377,9 +381,11 @@ grub_iso9660_mount(grub_disk_t disk) {
 	}
 #endif
 
+	free (sua);
 	return data;
 
 fail:
+	free (sua);
 	grub_free (data);
 	return 0;
 }
