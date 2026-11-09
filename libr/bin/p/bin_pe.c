@@ -50,7 +50,8 @@ static RList *fields(RBinFile *bf) {
 	}
 
 	#define ROWL(nam,siz,val,fmt) \
-	r_list_append (ret, r_bin_field_new (addr, addr, val, siz, nam, NULL, fmt, false));
+	r_list_append (ret, r_bin_field_new (addr, addr, val, siz, nam, NULL, \
+		pe_field_format (siz, fmt), false));
 
 	RBinPEObj *pe = PE_(get)(bf);
 	ut64 addr = pe->rich_header_offset ? pe->rich_header_offset : 128;
@@ -58,12 +59,14 @@ static RList *fields(RBinFile *bf) {
 	RListIter *it;
 	Pe_image_rich_entry *rich;
 	r_list_foreach (pe->rich_entries, it, rich) {
-		r_list_append (ret, r_bin_field_new (addr, addr, 0, 0, "RICH_ENTRY_NAME", rich->productName, "s", false));
-		ROWL ("RICH_ENTRY_ID", 2, rich->productId, "x"); addr += 2;
-		ROWL ("RICH_ENTRY_VERSION", 2, rich->minVersion, "x"); addr += 2;
-		ROWL ("RICH_ENTRY_TIMES", 4, rich->timesUsed, "x"); addr += 4;
+		// the rich entries are XOR-masked in the file, so they have no pf format
+		r_list_append (ret, r_bin_field_new (addr, addr, 0, 0, "RICH_ENTRY_NAME", rich->productName, "", false));
+		ROWL ("RICH_ENTRY_ID", 2, rich->productId, ""); addr += 2;
+		ROWL ("RICH_ENTRY_VERSION", 2, rich->minVersion, ""); addr += 2;
+		ROWL ("RICH_ENTRY_TIMES", 4, rich->timesUsed, ""); addr += 4;
 	}
 
+	addr = pe->nt_header_offset;
 	ROWL ("Signature", 4, pe->nt_headers->Signature, "x"); addr += 4;
 	ROWL ("Machine", 2, pe->nt_headers->file_header.Machine, "x"); addr += 2;
 	ROWL ("NumberOfSections", 2, pe->nt_headers->file_header.NumberOfSections, "x"); addr += 2;
@@ -94,7 +97,7 @@ static RList *fields(RBinFile *bf) {
 	ROWL ("SizeOfImage", 4, pe->nt_headers->optional_header.SizeOfImage, "x"); addr += 4;
 	ROWL ("SizeOfHeaders", 4, pe->nt_headers->optional_header.SizeOfHeaders, "x"); addr += 4;
 	ROWL ("CheckSum", 4, pe->nt_headers->optional_header.CheckSum, "x"); addr += 4;
-	ROWL ("Subsystem",24, pe->nt_headers->optional_header.Subsystem, "x"); addr += 2;
+	ROWL ("Subsystem", 2, pe->nt_headers->optional_header.Subsystem, "x"); addr += 2;
 	ROWL ("DllCharacteristics", 2, pe->nt_headers->optional_header.DllCharacteristics, "x"); addr += 2;
 	ROWL ("SizeOfStackReserve", 4, pe->nt_headers->optional_header.SizeOfStackReserve, "x"); addr += 4;
 	ROWL ("SizeOfStackCommit", 4, pe->nt_headers->optional_header.SizeOfStackCommit, "x"); addr += 4;

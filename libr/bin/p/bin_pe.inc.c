@@ -6,6 +6,19 @@
 #include "pe/pe.h"
 #include "../format/pe/dotnet.h"
 
+// the pf letter of a hex header field of siz bytes, so pf reads only that field
+static const char *pe_field_format(int siz, const char *fmt) {
+	if (R_STR_ISEMPTY (fmt)) {
+		return fmt;
+	}
+	switch (siz) {
+	case 1: return "b";
+	case 2: return "w";
+	case 8: return "q";
+	}
+	return fmt;
+}
+
 static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
 	if ((opt->arch && strcmp (opt->arch, "x86")) || (opt->bits != 32 && opt->bits != 64)) {
 		R_LOG_ERROR ("PE creation supports x86 in 32 or 64 bits");

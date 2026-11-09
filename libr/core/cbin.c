@@ -4006,9 +4006,11 @@ static bool bin_fields(RCore *core, PJ *pj, int mode, int va) {
 				char *e = sdb_encode ((const ut8 *)cmt, -1);
 				r_cons_printf (core->cons, "'@0x%" PFMT64x "'CCu base64:%s\n", addr, e);
 				free (e);
-				char *f = r_name_filter_shell (field->format);
-				r_cons_printf (core->cons, "'@0x%" PFMT64x "'Cf %u %s\n", addr, field->attr.size, f);
-				free (f);
+				if (R_STR_ISNOTEMPTY (field->format)) {
+					char *f = r_name_filter_shell (field->format);
+					r_cons_printf (core->cons, "'@0x%" PFMT64x "'Cf %u %s\n", addr, field->attr.size, f);
+					free (f);
+				}
 			}
 			if (field->attr.size > 0) {
 				if (field->attr.size == 8) {
@@ -4039,8 +4041,25 @@ static bool bin_fields(RCore *core, PJ *pj, int mode, int va) {
 				// TODO: filter comment before json
 				pj_ks (pj, "format", field->format);
 			}
-			char *o = r_core_cmd_strf (core, "pfj%c%s@0x%" PFMT64x,
-				field->format_named? '.': ' ', field->format, field->vaddr);
+			char *o = NULL;
+			if (R_STR_ISNOTEMPTY (field->format)) {
+				if (field->paddr != UT64_MAX && (!core->io->va || !r_io_map_get_at (core->io, field->vaddr))) {
+					// ELF and PE give header fields their file offset as vaddr, where nothing is
+					// mapped in VA mode: read them in the file, in this bin's slice of it
+					RBinFile *bf = r_bin_cur (bin);
+					const ut64 boffset = (bf && bf->bo)? bf->bo->boffset: 0;
+					char *at = r_str_newf ("0x%" PFMT64x "@e:io.va=false", field->paddr + boffset);
+					if (bf && core->io->desc && bf->fd != core->io->desc->fd) {
+						at = r_str_appendf (at, "@o:%d", bf->fd);
+					}
+					o = r_core_cmd_strf (core, "pfj%c%s@%s",
+						field->format_named? '.': ' ', field->format, at);
+					free (at);
+				} else {
+					o = r_core_cmd_strf (core, "pfj%c%s@0x%" PFMT64x,
+						field->format_named? '.': ' ', field->format, field->vaddr);
+				}
+			}
 			if (R_STR_ISNOTEMPTY (o)) {
 				r_str_trim_tail (o);
 				pj_k (pj, "pf");
