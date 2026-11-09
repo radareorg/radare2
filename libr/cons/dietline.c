@@ -293,7 +293,7 @@ static inline int vi_motion_seek_to_char_backward(RLine *line, int c) {
 }
 
 static inline void shift_buffer(RLine *line, int start, int end) {
-	int len = end - start + 1;
+	int len = end - start;
 	free (line->clipboard);
 	line->clipboard = r_str_ndup (line->state.buffer.data + start, len);
 	r_line_clipboard_push (line, line->clipboard);
@@ -442,7 +442,7 @@ static void unix_word_rubout(RCons *cons) {
 		if (line->state.buffer.index > line->state.buffer.length) {
 			line->state.buffer.length = line->state.buffer.index;
 		}
-		len = line->state.buffer.index - i + 1;
+		len = line->state.buffer.index - i;
 		free (line->clipboard);
 		line->clipboard = r_str_ndup (line->state.buffer.data + i, len);
 		r_line_clipboard_push (line, line->clipboard);
