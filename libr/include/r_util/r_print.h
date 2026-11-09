@@ -229,6 +229,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 #define R_PRINT_DOT       (1 << 7)
 #define R_PRINT_QUIET     (1 << 8)
 #define R_PRINT_STRUCT    (1 << 9)
+#define R_PRINT_SETCMD    (1 << 10)
 typedef struct r_print_format_t {
 	RPrint *p;
 	PJ *pj;

@@ -178,8 +178,8 @@ pf u ulebtest
 wx 00000000e58e258e2525 @ 0x10
 pf.plop [4]u ulebtest
 pf.plop @ 0x14
+pf*.plop.ulebtest[2]=42 @ 0x14
 pf.plop.ulebtest[2]=42 @ 0x14
-.pf.plop.ulebtest[2]=42 @ 0x14
 pf.plop @ 0x14
 pfj.plop @ 0x14
 EOF
