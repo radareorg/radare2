@@ -13,6 +13,7 @@ static bool core_esil_op_todo(REsil *esil) {
 	if (R_STR_ISNOTEMPTY (core->esil.cmds.todo)) {
 		r_core_cmdf (core, "%s %" PFMT64d " 0", core->esil.cmds.todo, esil->addr);
 	}
+	core->esil.esil.parse_stop = 2;
 	return true;
 }
 

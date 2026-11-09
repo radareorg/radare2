@@ -489,7 +489,6 @@ R_API void r_esil_fini(REsil *esil) {
 	R_FREE (esil->ring);
 	R_FREE (esil->cmd_trap);
 	R_FREE (esil->cmd_mdev);
-	R_FREE (esil->cmd_todo);
 	R_FREE (esil->cmd_ioer);
 	R_FREE (esil->mdev_range);
 }
@@ -1318,9 +1317,6 @@ R_API bool r_esil_parse(REsil *esil, const char *str) {
 		return false;
 	}
 	r_esil_set_trap (esil, R_ANAL_TRAP_NONE, 0);
-	if (esil->cmd && esil->cmd_todo && r_str_startswith (str, "TODO")) {
-		esil->cmd (esil, esil->cmd_todo, esil->addr, 0);
-	}
 	// Start each parse with an empty stack.
 	esil->stackptr = 0;
 	const bool in_delay = esil->delay > 0;
