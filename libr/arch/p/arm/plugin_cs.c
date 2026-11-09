@@ -5339,12 +5339,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_PLD:
 		op->type = R_ANAL_OP_TYPE_LEA; // not really a lea, just a prefetch
 		if (ISMEM (0)) {
-			int regBase = REGBASE(0);
-			int delta = MEMDISP(0);
-			if (regBase == ARM_REG_PC) {
-				op->ptr = addr + 4 + delta;
-			} else {
-				// exotic pld
+			// an index register's value is unknown, so only a literal pld has an address
+			if (REGBASE (0) == ARM_REG_PC && !HASMEMINDEX (0)) {
+				op->ptr = (addr & ~3LL) + (thumb? 4: 8) + MEMDISP (0);
 			}
 		}
 		break;
