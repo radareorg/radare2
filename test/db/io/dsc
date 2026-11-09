@@ -344,6 +344,7 @@ FILE=-
 CMDS=<<EOF
 o dsc://bins/mach0/dyld_shared_cache_arm64-macOS
 iSS~__LINKEDIT
+iSS~__text
 EOF
 EXPECT=<<EOF
 1   0x00024000     0xb3 0x184024000     0xb3 -r-- 0x0   MAP  lib/liba-1.0.dylib.__LINKEDIT
