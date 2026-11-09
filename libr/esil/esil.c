@@ -488,7 +488,6 @@ R_API void r_esil_fini(REsil *esil) {
 	R_FREE (esil->stack);
 	R_FREE (esil->ring);
 	R_FREE (esil->cmd_trap);
-	R_FREE (esil->cmd_ioer);
 }
 
 R_API void r_esil_free(REsil *esil) {
@@ -502,23 +501,10 @@ R_API void r_esil_free(REsil *esil) {
 static bool setup_esil_mem_read(void *user, ut64 addr, ut8 *buf, int len);
 static bool setup_esil_mem_write(void *user, ut64 addr, const ut8 *buf, int len);
 
-static bool esil_legacy_mem_cb(REsil *esil, bool write) {
-	if (write) {
-		return esil->mem_if.mem == esil && esil->mem_if.mem_write == setup_esil_mem_write;
-	}
-	return esil->mem_if.mem == esil && esil->mem_if.mem_read == setup_esil_mem_read;
-}
-
 static bool esil_invalid_mem_access(REsil *esil, ut64 addr) {
 	RIOBind *iob = esil && esil->anal? &esil->anal->iob: NULL;
 	return iob && iob->io && iob->is_valid_offset
 		&& !iob->is_valid_offset (iob->io, addr, false);
-}
-
-static void esil_cmd_ioer(REsil *esil, bool write) {
-	if (!esil_legacy_mem_cb (esil, write) && esil->cmd && esil->cmd_ioer && *esil->cmd_ioer) {
-		esil->cmd (esil, esil->cmd_ioer, esil->addr, write? 1: 0);
-	}
 }
 
 R_API bool r_esil_mem_read_silent(REsil *esil, ut64 addr, ut8 *buf, int len) {
@@ -542,14 +528,13 @@ R_API bool r_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 		return true;
 	}
 	if (R_UNLIKELY (!r_esil_mem_read_silent (esil, addr, buf, len))) {
-		esil_cmd_ioer (esil, false);
+		// shouldn't this set a fault?
 		return false;
 	}
-	if (!esil_legacy_mem_cb (esil, false) && esil_invalid_mem_access (esil, addr)) {
+	if (esil_invalid_mem_access (esil, addr)) {
 		if (esil->iotrap) {
 			r_esil_set_fault (esil, R_ANAL_TRAP_READ_ERR, addr);
 		}
-		esil_cmd_ioer (esil, false);
 	}
 	ut32 i;
 	if (!r_id_storage_get_lowest (&esil->voyeur[R_ESIL_VOYEUR_MEM_READ], &i)) {
@@ -581,14 +566,11 @@ static bool internal_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int 
 	if (iob->write_at (io, addr, buf, len)) {
 		ret = len;
 	}
-	// check if request address is mapped , if don't fire trap and esil ioer callback
+	// check if request address is mapped ; if it is not, fire trap
 	// now with siol, write_at return true/false can't be used to check error vs len
 	if (!iob->is_valid_offset (io, addr, false)) {
 		if (esil->iotrap) {
 			r_esil_set_fault (esil, R_ANAL_TRAP_WRITE_ERR, addr);
-		}
-		if (esil->cmd && esil->cmd_ioer && *esil->cmd_ioer) {
-			esil->cmd (esil, esil->cmd_ioer, esil->addr, 1);
 		}
 	}
 	return ret;
@@ -609,7 +591,7 @@ static bool internal_esil_mem_write_no_null(REsil *esil, ut64 addr, const ut8 *b
 	if (iob->write_at (io, addr, buf, len)) {
 		ret = len;
 	}
-	// check if request address is mapped , if don't fire trap and esil ioer callback
+	// check if request address is mapped ; if it is not, fire trap
 	// now with siol, write_at return true/false can't be used to check error vs len
 	if (!iob->is_valid_offset (io, addr, false)) {
 		if (esil->iotrap) {
@@ -627,11 +609,7 @@ R_API bool r_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	}
 	ut32 i;
 	if (!r_id_storage_get_lowest (&esil->voyeur[R_ESIL_VOYEUR_MEM_WRITE], &i)) {
-		bool ret = r_esil_mem_write_silent (esil, addr, buf, len);
-		if (R_UNLIKELY (!ret)) {
-			esil_cmd_ioer (esil, true);
-		}
-		return ret;
+		return r_esil_mem_write_silent (esil, addr, buf, len);
 	}
 	union {
 		ut8 buf[16];
@@ -640,12 +618,9 @@ R_API bool r_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	const REsilTrap oldtrap = r_esil_get_trap (esil);
 	if (R_LIKELY (len < 17)) {
 		memset (o.buf, 0xff, len);
-		if (R_UNLIKELY (!r_esil_mem_read_silent (esil, addr, o.buf, len))) {
-			esil_cmd_ioer (esil, false);
-		}
+		(void)r_esil_mem_read_silent (esil, addr, o.buf, len);
 		r_esil_restore_trap (esil, &oldtrap);
 		if (R_UNLIKELY (!r_esil_mem_write_silent (esil, addr, buf, len))) {
-			esil_cmd_ioer (esil, true);
 			return false;
 		}
 		if (!r_id_storage_get_lowest (&esil->voyeur[R_ESIL_VOYEUR_MEM_WRITE], &i)) {
@@ -659,19 +634,12 @@ R_API bool r_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	}
 	o.ptr = R_NEWS (ut8, len);
 	if (R_UNLIKELY (!o.ptr)) {
-		bool ret = r_esil_mem_write_silent (esil, addr, buf, len);
-		if (R_UNLIKELY (!ret)) {
-			esil_cmd_ioer (esil, true);
-		}
-		return ret;
+		return r_esil_mem_write_silent (esil, addr, buf, len);
 	}
 	memset (o.ptr, 0xff, len);
-	if (R_UNLIKELY (!r_esil_mem_read_silent (esil, addr, o.ptr, len))) {
-		esil_cmd_ioer (esil, false);
-	}
+	(void)r_esil_mem_read_silent (esil, addr, o.ptr, len);
 	r_esil_restore_trap (esil, &oldtrap);
 	if (R_UNLIKELY (!r_esil_mem_write_silent (esil, addr, buf, len))) {
-		esil_cmd_ioer (esil, true);
 		free (o.ptr);
 		return false;
 	}
@@ -1432,13 +1400,10 @@ static bool internal_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 		return false;
 	}
 	const int nread = esil->anal->iob.read_at (io, addr, buf, len);
-	// check if request address is mapped , if don't fire trap and esil ioer callback
+	// check if request address is mapped ; if it is not, fire trap
 	if (nread != len || !esil->anal->iob.is_valid_offset (io, addr, false)) {
 		if (esil->iotrap) {
 			r_esil_set_fault (esil, R_ANAL_TRAP_READ_ERR, addr);
-		}
-		if (esil->cmd && esil->cmd_ioer && *esil->cmd_ioer) {
-			esil->cmd (esil, esil->cmd_ioer, esil->addr, 0);
 		}
 	}
 	return nread == len;

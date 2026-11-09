@@ -2481,11 +2481,6 @@ static bool cb_cmd_esil_ioer(void *user, void *data) {
 	RConfigNode *node = data;
 	if (core) {
 		core_esil_set_cmd (&core->esil.cmds.ioer, node->value);
-		REsil *esil = R_UNWRAP3 (core, anal, esil);
-		if (esil) {
-			esil->cmd = r_core_esil_cmd;
-			core_esil_set_cmd (&esil->cmd_ioer, node->value);
-		}
 	}
 	return true;
 }
