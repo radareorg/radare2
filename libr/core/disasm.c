@@ -3879,8 +3879,14 @@ static void ds_adistrick_comments(RDisasmState *ds) {
 	}
 }
 
+// ahi b sets 2, binary as for instructions. 1 (now ahi s, a string for instructions) stays binary for data,
+// as when ahi b set 1
+static bool data_type_is_binary(int ib) {
+	return ib == 1 || ib == 2;
+}
+
 static const char *data_type_name(int ib, int size) {
-	const bool isSigned = (ib == 1 || ib == 8 || ib == 10);
+	const bool isSigned = (data_type_is_binary (ib) || ib == 8 || ib == 10);
 	switch (size) {
 	case 1: return isSigned? ".char": ".byte";
 	case 2: return isSigned? ".int16": ".word";
@@ -3907,15 +3913,14 @@ static bool data_type_tostring(char *out, size_t outsz, const ut8 *obuf, int ib,
 		*value = n;
 	}
 	char bits[(sizeof (ut64) * 8) + 1];
-	switch (ib) {
-	case 1: {
+	if (data_type_is_binary (ib)) {
 		// most significant byte first, so the digits show the value as in the other bases
-		ut8 msb[sizeof (ut64)];
-		r_write_ble (msb, n, true, size * 8);
-		r_str_bits (bits, msb, size * 8, NULL);
+		r_write_ble (buf, n, true, size * 8);
+		r_str_bits (bits, buf, size * 8, NULL);
 		snprintf (out, outsz, "%s %sb", type, bits);
-		break;
+		return true;
 	}
+	switch (ib) {
 	case 3:
 		snprintf (out, outsz, "%s %d", type, ntohs (n & 0xFFFF));
 		break;
@@ -3943,6 +3948,7 @@ static bool data_type_assembles(int ib, int size, ut64 n) {
 	case 31:
 		return false;
 	case 1:
+	case 2:
 	case 10:
 		if (size == 1) {
 			return false; // there is no .char directive

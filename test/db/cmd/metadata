@@ -1154,3 +1154,28 @@ EXPECT=<<EOF
             0x00000000      .int32 00000011000000000000000000000000b
 EOF
 RUN
+
+NAME=Cd takes ahi b and ahi 2 as binary like instructions do, and ahi 1 still shows binary
+FILE=malloc://16
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 03000000
+Cd 4
+ahi b
+pd 1
+pdj 1~{[0].opcode}
+ahi 2
+pd 1
+ahi 1
+pd 1
+ahi s
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      .int32 00000000000000000000000000000011b
+.int32 00000000000000000000000000000011b
+            0x00000000      .int32 00000000000000000000000000000011b
+            0x00000000      .int32 00000000000000000000000000000011b
+            0x00000000      .int32 00000000000000000000000000000011b
+EOF
+RUN
