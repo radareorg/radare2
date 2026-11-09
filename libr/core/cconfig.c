@@ -2495,11 +2495,6 @@ static bool cb_cmd_esil_todo(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (core) {
 		core_esil_set_cmd (&core->esil.cmds.todo, node->value);
-		REsil *esil = R_UNWRAP3 (core, anal, esil);
-		if (esil) {
-			esil->cmd = r_core_esil_cmd;
-			core_esil_set_cmd (&esil->cmd_todo, node->value);
-		}
 	}
 	return true;
 }
