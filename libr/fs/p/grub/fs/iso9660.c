@@ -390,16 +390,16 @@ struct grub_iso9660_read_symlink_closure {
 };
 
 /* Extend the symlink.  */
-static void
+static grub_err_t
 add_part(const char *part, int len, struct grub_iso9660_read_symlink_closure *c) {
 	int size = grub_strlen (c->symlink);
-
-	c->symlink = grub_realloc (c->symlink, size + len + 1);
-	if (!c->symlink) {
-		return;
+	char *symlink = grub_realloc (c->symlink, size + len + 1);
+	if (!symlink) {
+		return grub_error (GRUB_ERR_OUT_OF_MEMORY, "out of memory");
 	}
-
+	c->symlink = symlink;
 	grub_strncat (c->symlink, part, len);
+	return GRUB_ERR_NONE;
 }
 
 /* Read in a symlink.  */
@@ -416,11 +416,12 @@ susp_iterate_sl(struct grub_iso9660_susp_entry *entry, void *closure) {
 		/* The symlink is not stored as a POSIX symlink, translate it.  */
 		while (pos + 1 < avail) {
 			int complen = data[pos + 1];
-			if (c->addslash) {
-				add_part ("/", 1, c);
-				c->addslash = 0;
+			if (c->addslash && add_part ("/", 1, c)) {
+				goto fail;
 			}
+			c->addslash = 0;
 
+			grub_err_t err = GRUB_ERR_NONE;
 			/* The current position is the `Component Flag'.  */
 			switch (data[pos] & 30) {
 			case 0:
@@ -431,7 +432,7 @@ susp_iterate_sl(struct grub_iso9660_susp_entry *entry, void *closure) {
 					if (pos + 2 + complen > avail) {
 						return 0;
 					}
-					add_part ((char *)&data[pos + 2],
+					err = add_part ((char *)&data[pos + 2],
 						complen,
 						c);
 					if ((data[pos] & 1)) {
@@ -442,29 +443,32 @@ susp_iterate_sl(struct grub_iso9660_susp_entry *entry, void *closure) {
 				}
 
 			case 2:
-				add_part ("./", 2, c);
+				err = add_part ("./", 2, c);
 				break;
 
 			case 4:
-				add_part ("../", 3, c);
+				err = add_part ("../", 3, c);
 				break;
 
 			case 8:
-				add_part ("/", 1, c);
+				err = add_part ("/", 1, c);
 				break;
+			}
+			if (err) {
+				goto fail;
 			}
 			/* In pos + 1 the length of the `Component Record' is
 			stored.  */
 			pos += complen + 2;
 		}
-
-		/* Check if `grub_realloc' failed.  */
-		if (grub_errno) {
-			return grub_errno;
-		}
 	}
 
 	return 0;
+fail:
+	/* Drop the partial path so grub_iso9660_read_symlink reports the error.  */
+	grub_free (c->symlink);
+	c->symlink = NULL;
+	return grub_errno;
 }
 
 static char *
