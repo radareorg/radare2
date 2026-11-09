@@ -488,9 +488,7 @@ R_API void r_esil_fini(REsil *esil) {
 	R_FREE (esil->stack);
 	R_FREE (esil->ring);
 	R_FREE (esil->cmd_trap);
-	R_FREE (esil->cmd_mdev);
 	R_FREE (esil->cmd_ioer);
-	R_FREE (esil->mdev_range);
 }
 
 R_API void r_esil_free(REsil *esil) {
@@ -579,13 +577,6 @@ static bool internal_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int 
 	if (!alignCheck (esil, addr)) {
 		r_esil_set_fault (esil, R_ANAL_TRAP_READ_ERR, addr);
 		return false;
-	}
-	if (esil->cmd_mdev && esil->mdev_range) {
-		if (r_str_range_in (esil->mdev_range, addr)) {
-			if (esil->cmd (esil, esil->cmd_mdev, addr, 1)) {
-				return true;
-			}
-		}
 	}
 	if (iob->write_at (io, addr, buf, len)) {
 		ret = len;
@@ -1439,13 +1430,6 @@ static bool internal_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	if (!alignCheck (esil, addr)) {
 		r_esil_set_fault (esil, R_ANAL_TRAP_READ_ERR, addr);
 		return false;
-	}
-	if (esil->cmd_mdev && esil->mdev_range) {
-		if (r_str_range_in (esil->mdev_range, addr)) {
-			if (esil->cmd (esil, esil->cmd_mdev, addr, 0)) {
-				return true;
-			}
-		}
 	}
 	const int nread = esil->anal->iob.read_at (io, addr, buf, len);
 	// check if request address is mapped , if don't fire trap and esil ioer callback

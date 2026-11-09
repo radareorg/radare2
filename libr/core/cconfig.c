@@ -2513,12 +2513,6 @@ static bool cb_mdevrange(void *user, void *data) {
 	RConfigNode *node = data;
 	if (core) {
 		core_esil_set_cmd (&core->esil.cmds.mdev_range, node->value);
-		REsil *esil = R_UNWRAP3 (core, anal, esil);
-		if (esil) {
-			esil->cmd = r_core_esil_cmd;
-			free (esil->mdev_range);
-			esil->mdev_range = strdup (node->value);
-		}
 	}
 	return true;
 }
@@ -2556,11 +2550,6 @@ static bool cb_cmd_esil_mdev(void *user, void *data) {
 	RConfigNode *node = data;
 	if (core) {
 		core_esil_set_cmd (&core->esil.cmds.mdev, node->value);
-		REsil *esil = R_UNWRAP3 (core, anal, esil);
-		if (esil) {
-			esil->cmd = r_core_esil_cmd;
-			core_esil_set_cmd (&esil->cmd_mdev, node->value);
-		}
 	}
 	return true;
 }
