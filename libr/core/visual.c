@@ -2073,7 +2073,7 @@ static void visual_textlogs(RCore *core) {
 				r_line_set_prompt (cons->line, "cmd.vprompt> ");
 				I->line->state.contents = strdup (cmd);
 				buf = r_line_readline (core->cons);
-				I->line->state.contents = NULL;
+				R_FREE (I->line->state.contents);
 				(void)r_config_set (core->config, "cmd.vprompt", buf);
 				r_core_visual_showcursor (core, false);
 			}
@@ -3233,7 +3233,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_line_set_prompt (core->cons->line, "cmd.vprompt> ");
 			core->cons->line->state.contents = strdup (cmd);
 			const char *buf = r_line_readline (core->cons);
-			core->cons->line->state.contents = NULL;
+			R_FREE (core->cons->line->state.contents);
 			(void)r_config_set (core->config, "cmd.vprompt", buf);
 			r_core_visual_showcursor (core, false);
 		}

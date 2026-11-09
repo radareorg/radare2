@@ -154,6 +154,7 @@ R_API const char *r_cons_visual_readln(RCons *cons, const char *prompt, const ch
 	r_cons_set_raw (cons, false);
 	r_line_set_prompt (cons->line, prompt);
 	const char *res = r_line_readline (cons);
+	R_FREE (cons->line->state.contents);
 	r_cons_set_raw (cons, true);
 	r_cons_show_cursor (cons, false);
 	return res;
