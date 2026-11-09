@@ -5,15 +5,15 @@
 R_IPI bool pdc_decompile(RCore *core, const char *input);
 
 static RCoreHelpMessage help_msg_pdc = {
-	"Usage: pdc[acjlot*]", "", "experimental, unreliable and hacky pseudo-decompiler",
-	"pdc", "", "pseudo decompile function in current offset",
-	"pdc*", "", "emit decompiled lines as CCu comment commands",
-	"pdca", "", "side by side comparing assembly and pseudo",
-	"pdcc", "", "pseudo-decompile with C helpers around",
-	"pdcl", "", "linear pseudo-decompilation scrolling across functions",
-	"pdco", "", "show associated offset next to pseudecompiled output",
-	"pdcj", "", "in json format for codemeta annotations (used by frontends like iaito)",
-	"pdct", "", "dump the structuring region AST (decompiler debug)",
+	"Usage: pd:c[acjlot*]", "", "experimental, unreliable and hacky pseudo-decompiler",
+	"pd:c", "", "pseudo decompile function in current offset",
+	"pd:c*", "", "emit decompiled lines as CCu comment commands",
+	"pd:ca", "", "side by side comparing assembly and pseudo",
+	"pd:cc", "", "pseudo-decompile with C helpers around",
+	"pd:cl", "", "linear pseudo-decompilation scrolling across functions",
+	"pd:co", "", "show associated offset next to pseudecompiled output",
+	"pd:cj", "", "in json format for codemeta annotations (used by frontends like iaito)",
+	"pd:ct", "", "dump the structuring region AST (decompiler debug)",
 	NULL
 };
 
@@ -77,7 +77,7 @@ static void linear_pseudo(RCore *core, const char *arg) {
 	ut64 addr = initial_addr;
 repeat:;
 	offpos = NULL;
-	char *cur = r_core_cmd_str (core, "pdco");
+	char *cur = r_core_cmd_str (core, "pd:co");
 	if (cur) {
 		// we have a function, but we need to find the
 		// current offset inside the output of the decompiler
@@ -143,8 +143,8 @@ repeat:;
 
 static RCmdResult pseudo_help(RCmdContext *ctx, char sub) {
 	if (sub) {
-		char subhelp[5] = "pdc";
-		subhelp[3] = sub;
+		char subhelp[6] = "pd:c";
+		subhelp[4] = sub;
 		if (r_cons_cmd_help_match (ctx->cons, help_msg_pdc, subhelp, 0, true) > 0) {
 			return (RCmdResult) { 0 };
 		}
@@ -200,13 +200,13 @@ static bool plugin_fini(RCorePluginSession *cps) {
 RCorePlugin r_core_plugin_pseudo = {
 	.meta = {
 		.name = "pseudo",
-		.desc = "pdc pseudo decompiler",
+		.desc = "pd:c pseudo decompiler",
 		.license = "LGPL-3.0-only",
 		.author = "pancake",
 	},
 	.init = plugin_init,
 	.fini = plugin_fini,
-	.command = "pdc",
+	.command = "pd:c",
 	.call_ctx = pseudo_callback,
 };
 
