@@ -116,3 +116,26 @@ ldr r1, [0x000010e4]
 add r0, pc
 EOF
 RUN
+
+NAME=ELF: an M-profile ARM object selects the cortex cpu
+FILE=bins/elf/main.elf
+CMDS=<<EOF
+i~^cpu
+e asm.cpu
+pd 1 @ 0x1000010c
+EOF
+EXPECT=<<EOF
+cpu      cortex
+cortex
+            0x1000010c      81f30888       msr msp, r1
+EOF
+RUN
+
+NAME=ELF: an A-profile ARM object states no cpu
+FILE=bins/elf/arm-init
+CMDS=<<EOF
+i~^cpu
+EOF
+EXPECT=<<EOF
+EOF
+RUN
