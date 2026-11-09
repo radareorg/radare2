@@ -5472,3 +5472,19 @@ EXPECT=<<EOF
 done
 EOF
 RUN
+
+NAME=dwarf debug_loc with sub-byte asm.bits
+FILE=bins/elf/bomb
+ARGS=-e log.level=0
+TIMEOUT=30
+CMDS=<<EOF
+e asm.arch=i4004
+e asm.bits=4
+id~?debug_loc
+?e done
+EOF
+EXPECT=<<EOF
+0
+done
+EOF
+RUN

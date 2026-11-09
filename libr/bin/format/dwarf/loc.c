@@ -34,6 +34,9 @@ static void parse_loc_raw(RBin *bin, HtUP /*<offset, List *<LocListEntry>*/ *loc
 	const ut8 *buf_end = buf + len;
 	/* for recognizing Base address entry */
 	const ut64 max_offset = get_max_offset (addr_size);
+	if (!max_offset) {
+		return;
+	}
 
 	ut64 address_base = 0; /* remember base of the loclist */
 	ut64 list_offset = 0;
@@ -191,6 +194,9 @@ R_API R_OWNED char *r_bin_dwarf_print_loc_stream(RBinFile *bf, int addr_size) {
 	const ut8 *const buf_start = buf;
 	const ut8 *buf_end = buf + section->bytes.len;
 	const ut64 max_offset = get_max_offset (addr_size);
+	if (!max_offset) {
+		return NULL;
+	}
 	RStrBuf *sb = r_strbuf_new (NULL);
 	ut64 address_base = 0;
 	ut64 list_offset = 0;
