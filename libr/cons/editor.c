@@ -22,7 +22,8 @@ static void setcurline(RCons *cons) {
 	RLine *line = cons->line;
 	r_str_ncpy (line->state.buffer.data, curline, sizeof (line->state.buffer.data));
 	line->state.buffer.index = line->state.buffer.length = strlen (line->state.buffer.data);
-	line->state.contents = (char*)curline;
+	free (line->state.contents);
+	line->state.contents = strdup (curline);
 }
 
 static void emptyline(RCons *cons) {
@@ -99,6 +100,7 @@ R_API char *r_cons_editor(RCons *cons, const char *file, const char *str, int st
 	RLine *line = cons->line;
 	RLineState old_state = line->state;
 	line->state.prompt = NULL;
+	line->state.contents = NULL;
 	bool old_echo = cons->echo;
 	const bool edit_file = R_STR_ISNOTEMPTY (file);
 	char *result = NULL;
@@ -140,7 +142,6 @@ R_API char *r_cons_editor(RCons *cons, const char *file, const char *str, int st
 	R_LOG_INFO ("Loaded %d lines. Use ^D or '.' to save and quit", r_list_length (editor.lines));
 	line->state.hist_up = up;
 	line->state.hist_down = down;
-	line->state.contents = line->state.buffer.data;
 	cons->echo = false;
 	for (;;) {
 		setcurline (cons);
@@ -197,6 +198,7 @@ R_API char *r_cons_editor(RCons *cons, const char *file, const char *str, int st
 
 beach:
 	free (line->state.prompt);
+	free (line->state.contents);
 	line->state = old_state;
 	cons->echo = old_echo;
 	cons->editor = old_editor;
