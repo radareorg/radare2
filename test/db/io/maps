@@ -399,6 +399,26 @@ ERROR: Cannot use unreadable bytes at 0x00000011, narrow the range or make the m
 EOF
 RUN
 
+NAME=wfx still swaps the bytes a partial write reached
+FILE=malloc://32
+CMDS=<<EOF
+wx 0102030405060708
+wx 1112131415161718 @ 0x10
+om 3 4 4 4 r-- ro
+wfx 0x10 8 @ 0
+e io.va=false
+p8 8 @ 0
+p8 8 @ 0x10
+EOF
+EXPECT=<<EOF
+1112131405060708
+0102030405060708
+EOF
+EXPECT_ERR=<<EOF
+ERROR: write failed at 0x00000000
+EOF
+RUN
+
 NAME=yz of an empty string is not refused for a map elsewhere
 FILE=malloc://32
 ARGS=-e io.0xff=0
