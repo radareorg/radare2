@@ -446,3 +446,30 @@ ERROR: Cannot assemble 'cmp x0, sp' at line 1
 ERROR: Cannot assemble 'cmp w0, wsp' at line 1
 EOF
 RUN
+
+NAME=pa arm64 reject out of range bitfield widths
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+pa bfxil x0, x1, 5, 0
+pa bfxil x0, x1, 60, 8
+pa bfxil w0, w1, 30, 4
+pa bfxil x0, x1, 64, 1
+pa bfi x0, x1, 5, 0
+pa bfi x0, x1, 60, 8
+pa ubfx x0, x1, 5, 0
+pa sbfx w0, w1, 30, 4
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'bfxil x0, x1, 5, 0' at line 1
+ERROR: Cannot assemble 'bfxil x0, x1, 60, 8' at line 1
+ERROR: Cannot assemble 'bfxil w0, w1, 30, 4' at line 1
+ERROR: Cannot assemble 'bfxil x0, x1, 64, 1' at line 1
+ERROR: Cannot assemble 'bfi x0, x1, 5, 0' at line 1
+ERROR: Cannot assemble 'bfi x0, x1, 60, 8' at line 1
+ERROR: Cannot assemble 'ubfx x0, x1, 5, 0' at line 1
+ERROR: Cannot assemble 'sbfx w0, w1, 30, 4' at line 1
+EOF
+RUN

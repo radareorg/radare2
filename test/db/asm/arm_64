@@ -761,3 +761,6 @@ ad "bfxil w0, w1, 5, 8" 20300533
 a "bfi x0, x1, 0, 64" 20fc40b3
 a "bfi x0, x1, 60, 4" 200c44b3
 a "bfxil x0, x1, 0, 1" 200040b3
+a "bfm x0, x1, 3, 7" 201c43b3
+a "bfm w0, w1, 3, 7" 201c0333
+a "bfxil x0, x1, 63, 1" 20fc7fb3
