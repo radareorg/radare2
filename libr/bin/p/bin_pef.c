@@ -100,7 +100,9 @@ static int unpack_pidata(char *dest, size_t dlen, const char *src, size_t slen) 
 			if (pidata_getcount (&src, slim, &repeatCountMin1)) {
 				return 4;
 			}
-
+			if (!blockSize) {
+				continue;
+			}
 			do {
 				for (i = 0; i < blockSize; i++) {
 					if (src + i >= slim || dest >= dlim) {
@@ -118,6 +120,9 @@ static int unpack_pidata(char *dest, size_t dlen, const char *src, size_t slen) 
 			}
 			if (pidata_getcount (&src, slim, &repeatCount)) {
 				return 7;
+			}
+			if (!commonSize && !customSize) {
+				continue;
 			}
 
 			const char *common = src;
@@ -151,6 +156,9 @@ static int unpack_pidata(char *dest, size_t dlen, const char *src, size_t slen) 
 			}
 			if (pidata_getcount (&src, slim, &repeatCount)) {
 				return 12;
+			}
+			if (!commonSize && !customSize) {
+				continue;
 			}
 
 			for (i = 0; i < commonSize; i++) {
