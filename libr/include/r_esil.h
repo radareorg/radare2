@@ -228,7 +228,6 @@ typedef struct r_esil_t {
 	// this is so cursed, can we please remove external commands from esil internals.
 	// Function pointers are fine, but not commands
 	char *cmd_trap; // r2 (external) command to run when a trap occurs
-	char *cmd_ioer; // r2 (external) command to run when esil fails to IO
 	bool (*cmd)(ESIL *esil, const char *name, ut64 a0, ut64 a1);
 	void *user;
 	int stack_fd;	// ahem, let's not do this
