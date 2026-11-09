@@ -841,17 +841,16 @@ static bool cmd_wfx(RCore *core, const char *input) {
 		free (args);
 		return false;
 	}
-	if (len > 0 && core_check_readable (core, dst, len)) {
+	if (len > 0 && core_check_readable (core, dst, len) && core_check_readable (core, src, len)) {
 		// cache dest, memcpy, write cache
 		ut8 *buf = calloc (1, len);
 		if (buf) {
 			if (r_io_read_at (core->io, dst, buf, len)) {
-				if (ioMemcpy (core, core->addr, src, len)) {
-					if (r_io_write_at (core->io, src, buf, len)) {
-						r_core_block_read (core);
-					} else {
-						R_LOG_ERROR ("Failed to write at 0x%08"PFMT64x, src);
-					}
+				ioMemcpy (core, core->addr, src, len);
+				if (r_io_write_at (core->io, src, buf, len)) {
+					r_core_block_read (core);
+				} else {
+					R_LOG_ERROR ("Failed to write at 0x%08"PFMT64x, src);
 				}
 			} else {
 				R_LOG_ERROR ("cmd_wfx: failed to read at 0x%08"PFMT64x, dst);
