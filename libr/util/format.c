@@ -13,6 +13,20 @@ static void pf_print_addr(const RPrint *p, ut64 addr) {
 	r_print_printf (p, "%s0x%08" PFMT64x "%s = ", color, addr, reset);
 }
 
+static void pf_set(RPrintFormat *pf, const char *fmt, ...) {
+	va_list ap;
+	va_start (ap, fmt);
+	char *cmd = r_str_newvf (fmt, ap);
+	va_end (ap);
+	RPrint *p = pf->p;
+	if (p->coreb.cmd && !(pf->mode & R_PRINT_SETCMD)) {
+		p->coreb.cmd (p->coreb.core, cmd);
+	} else {
+		r_print_printf (p, "%s\n", cmd);
+	}
+	free (cmd);
+}
+
 enum {
 	PF_PTR_NONE = 0,
 	PF_PTR_SEEK = 1,
@@ -211,7 +225,7 @@ static void pf_qword(RPrintFormat *pf, const char *setval, ut64 seeki, ut8 *buf,
 	PF_EXTRACT_ELEM (elem, size);
 	updateAddr (buf + i, size - i, pf->endian, NULL, &addr64);
 	if (MUSTSET) {
-		r_print_printf (p, "wv8 %s @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0)? elem * 8: 0));
+		pf_set (pf, "wv8 %s @ 0x%08" PFMT64x, setval, seeki + ((elem >= 0)? elem * 8: 0));
 	} else if (MUSTSEE || MUSTSEESTRUCT) {
 		if (!SEEVALUE && !ISQUIET && !MUSTSEESTRUCT) {
 			pf_print_addr (p, seeki + ((elem >= 0)? elem * 8: 0));
@@ -270,7 +284,7 @@ static void r_print_format_byte(RPrintFormat *pf, const char *setval, ut64 seeki
 	PF_EXTRACT_ELEM (elem, size);
 	if (MUSTSET) {
 		ut64 addr = seeki + ((elem >= 0)? elem: 0);
-		r_print_printf (p, "'0x%08" PFMT64x "'w %s\n", addr, setval);
+		pf_set (pf, "'0x%08" PFMT64x "'w %s", addr, setval);
 	} else if (MUSTSEEJSON) {
 		if (size == -1) {
 			pj_kn (pf->pj, "value", buf[i]);
@@ -341,7 +355,7 @@ static int pf_uleb(RPrintFormat *pf, const char *setval, ut64 seeki, ut8 *buf, i
 		} while (elem--);
 		tmp = (ut8 *)r_uleb128_encode (r_num_math (NULL, setval), &s);
 		nbr = r_hex_bin2strdup (tmp, s);
-		r_print_printf (p, "\"wx %s\" @ 0x%08" PFMT64x "\n", nbr, seeki + offset - s);
+		pf_set (pf, "\"wx %s\" @ 0x%08" PFMT64x, nbr, seeki + offset - s);
 		free (tmp);
 		free (nbr);
 	} else if (MUSTSEE || MUSTSEESTRUCT) {
@@ -412,7 +426,7 @@ static void r_print_format_char(RPrintFormat *pf, const char *setval, ut64 seeki
 	int elem;
 	PF_EXTRACT_ELEM (elem, size);
 	if (MUSTSET) {
-		r_print_printf (p, "\"w %s\" @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0)? elem: 0));
+		pf_set (pf, "\"w %s\" @ 0x%08" PFMT64x, setval, seeki + ((elem >= 0)? elem: 0));
 	} else if (MUSTSEE) {
 		if (!SEEVALUE && !ISQUIET) {
 			pf_print_addr (p, seeki + ((elem >= 0)? elem: 0));
@@ -477,7 +491,7 @@ static void r_print_format_decchar(RPrintFormat *pf, const char *setval, ut64 se
 	int elem;
 	PF_EXTRACT_ELEM (elem, size);
 	if (MUSTSET) {
-		r_print_printf (p, "\"w %s\" @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0)? elem: 0));
+		pf_set (pf, "\"w %s\" @ 0x%08" PFMT64x, setval, seeki + ((elem >= 0)? elem: 0));
 	} else if (MUSTSEE) {
 		if (!SEEVALUE && !ISQUIET) {
 			pf_print_addr (p, seeki + ((elem >= 0)? elem: 0));
@@ -569,7 +583,7 @@ static void pf_time(RPrintFormat *pf, const char *setval, ut64 seeki, ut8 *buf, 
 	PF_EXTRACT_ELEM (elem, size);
 	updateAddr (buf + i, size - i, endian, &addr, NULL);
 	if (MUSTSET) {
-		r_print_printf (p, "wv4 %s @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0)? elem * 4: 0));
+		pf_set (pf, "wv4 %s @ 0x%08" PFMT64x, setval, seeki + ((elem >= 0)? elem * 4: 0));
 	} else if (MUSTSEE) {
 		char *timestr = malloc (ASCTIME_BUF_MAXLEN);
 		if (!timestr) {
@@ -635,7 +649,7 @@ static void r_print_format_hex(RPrintFormat *pf, const char *setval, ut64 seeki,
 	PF_EXTRACT_ELEM (elem, size);
 	updateAddr (buf + i, size - i, pf->endian, &addr, NULL);
 	if (MUSTSET) {
-		r_print_printf (p, "wv4 %s @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0)? elem * 4: 0));
+		pf_set (pf, "wv4 %s @ 0x%08" PFMT64x, setval, seeki + ((elem >= 0)? elem * 4: 0));
 	} else if (mode & R_PRINT_DOT) {
 		r_print_printf (p, "0x%08" PFMT64x, addr);
 	} else if (MUSTSEESTRUCT) {
@@ -699,7 +713,7 @@ static void pf_int(RPrintFormat *pf, const char *setval, ut64 seeki, ut8 *buf, i
 	PF_EXTRACT_ELEM (elem, size);
 	updateAddr (buf + i, size - i, endian, &addr, NULL);
 	if (MUSTSET) {
-		r_print_printf (p, "wv4 %s @ %" PFMT64d "\n", setval, seeki + ((elem >= 0)? elem * 4: 0));
+		pf_set (pf, "wv4 %s @ %" PFMT64d, setval, seeki + ((elem >= 0)? elem * 4: 0));
 	} else if (MUSTSEESTRUCT) {
 		r_print_printf (p, "0x%08" PFMT64x, addr);
 	} else if (mode & R_PRINT_DOT) {
@@ -763,7 +777,7 @@ static void r_print_format_octal(RPrintFormat *pf, const char *setval, ut64 seek
 	PF_EXTRACT_ELEM (elem, size);
 	updateAddr (buf + i, size - i, endian, &addr, NULL);
 	if (MUSTSET) {
-		r_print_printf (p, "wv4 %s @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0)? elem * 4: 0));
+		pf_set (pf, "wv4 %s @ 0x%08" PFMT64x, setval, seeki + ((elem >= 0)? elem * 4: 0));
 	} else if ((mode & R_PRINT_DOT) || MUSTSEESTRUCT) {
 		r_print_printf (p, "0%" PFMT64o, addr);
 	} else if (MUSTSEE) {
@@ -816,7 +830,7 @@ static void pf_hexflag(RPrintFormat *pf, const char *setval, ut64 seeki, ut8 *bu
 	PF_EXTRACT_ELEM (elem, size);
 	updateAddr (buf + i, size - i, endian, &addr, NULL);
 	if (MUSTSET) {
-		r_print_printf (p, "wv4 %s @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0)? elem * 4: 0));
+		pf_set (pf, "wv4 %s @ 0x%08" PFMT64x, setval, seeki + ((elem >= 0)? elem * 4: 0));
 	} else if ((mode & R_PRINT_DOT) || MUSTSEESTRUCT) {
 		r_print_printf (p, "0x%08" PFMT64x, addr & UT32_MAX);
 	} else if (pf->pj) {
@@ -868,7 +882,7 @@ static int r_print_format_10bytes(RPrintFormat *pf, const char *setval, ut64 see
 	ut8 buffer[255];
 	int j;
 	if (MUSTSET) {
-		r_print_printf (p, "?e pf B not yet implemented\n");
+		R_LOG_ERROR ("pf T not yet implemented");
 	} else if (mode & R_PRINT_DOT) {
 		for (j = 0; j < 10; j++) {
 			r_print_printf (p, "%02x ", buf[j]);
@@ -923,7 +937,7 @@ static int r_print_format_hexpairs(RPrintFormat *pf, const char *setval, ut64 se
 		size = 1;
 	}
 	if (MUSTSET) {
-		r_print_printf (p, "?e pf X not yet implemented\n");
+		R_LOG_ERROR ("pf X not yet implemented");
 	} else if (mode & R_PRINT_DOT) {
 		for (j = 0; j < size; j++) {
 			r_print_printf (p, "%02x", buf[i + j]);
@@ -980,7 +994,7 @@ static void r_print_format_float(RPrintFormat *pf, const char *setval, ut64 seek
 	PF_EXTRACT_ELEM (elem, size);
 	float val_f = updateAddr (buf + i, 4, endian, &addr, NULL);
 	if (MUSTSET) {
-		r_print_printf (p, "wv4 %s @ 0x%08" PFMT64x "\n", setval,
+		pf_set (pf, "wv4 %s @ 0x%08" PFMT64x, setval,
 			seeki + ((elem >= 0)? elem * 4: 0));
 	} else if ((mode & R_PRINT_DOT) || MUSTSEESTRUCT) {
 		r_print_printf (p, "%.9g", val_f);
@@ -1021,7 +1035,7 @@ static void r_print_format_bf16(RPrintFormat *pf, const char *setval, ut64 seeki
 	ut16 val_u16 = r_read_ble16 (buf + i, endian);
 	float val_f = r_num_bf16_to_float (val_u16);
 	if (MUSTSET) {
-		r_print_printf (p, "wv2 %s @ 0x%08" PFMT64x "\n", setval,
+		pf_set (pf, "wv2 %s @ 0x%08" PFMT64x, setval,
 			seeki + ((elem >= 0)? elem * 2: 0));
 	} else if ((mode & R_PRINT_DOT) || MUSTSEESTRUCT) {
 		r_print_printf (p, "%.9g", val_f);
@@ -1065,7 +1079,7 @@ static void r_print_format_double(RPrintFormat *pf, const char *setval, ut64 see
 	updateAddr (buf + i, 8, endian, &addr, NULL);
 	r_mem_swaporcopy ((ut8 *)&val_f, buf + i, sizeof (double), endian);
 	if (MUSTSET) {
-		r_print_printf (p, "wv8 %s @ 0x%08" PFMT64x "\n", setval,
+		pf_set (pf, "wv8 %s @ 0x%08" PFMT64x, setval,
 			seeki + ((elem >= 0)? elem * 8: 0));
 	} else if ((mode & R_PRINT_DOT) || MUSTSEESTRUCT) {
 		r_print_printf (p, "%.17lg", val_f);
@@ -1130,7 +1144,7 @@ static void r_print_format_long_double(RPrintFormat *pf, const char *setval, ut6
 	updateAddr (buf + i, 16, endian, &addr, NULL);
 	r_mem_swaporcopy ((ut8 *)&val_f, buf + i, sizeof (long double), endian);
 	if (MUSTSET) {
-		r_print_printf (p, "wv8 %s @ 0x%08" PFMT64x "\n", setval,
+		pf_set (pf, "wv8 %s @ 0x%08" PFMT64x, setval,
 			seeki + ((elem >= 0)? elem * 8: 0));
 	} else if ((mode & R_PRINT_DOT) || MUSTSEESTRUCT) {
 		r_print_printf (p, "%.17Lg", val_f);
@@ -1174,7 +1188,7 @@ static void r_print_format_word(RPrintFormat *pf, const char *setval, ut64 seeki
 		? (*(buf + i)) << 8 | (*(buf + i + 1))
 		: (*(buf + i + 1)) << 8 | (*(buf + i));
 	if (MUSTSET) {
-		r_print_printf (p, "wv2 %s @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0)? elem * 2: 0));
+		pf_set (pf, "wv2 %s @ 0x%08" PFMT64x, setval, seeki + ((elem >= 0)? elem * 2: 0));
 	} else if ((mode & R_PRINT_DOT) || MUSTSEESTRUCT) {
 		if (size == -1) {
 			if (sign) {
@@ -1288,16 +1302,17 @@ static void r_print_format_nulltermstring(RPrintFormat *pf, int len, const char 
 		if (vallen > buflen) {
 			R_LOG_WARN ("new string is longer than previous one");
 		}
-		r_print_printf (p, "wx ");
+		RStrBuf *hex = r_strbuf_new ("");
 		for (i = 0; i < vallen; i++) {
 			if (i < vallen - 3 && newstring[i] == '\\' && newstring[i + 1] == 'x') {
-				r_print_printf (p, "%c%c", newstring[i + 2], newstring[i + 3]);
+				r_strbuf_appendf (hex, "%c%c", newstring[i + 2], newstring[i + 3]);
 				i += 3;
 			} else {
-				r_print_printf (p, "%2x", newstring[i]);
+				r_strbuf_appendf (hex, "%2x", newstring[i]);
 			}
 		}
-		r_print_printf (p, " @ 0x%08" PFMT64x "\n", seeki);
+		pf_set (pf, "wx %s @ 0x%08" PFMT64x, r_strbuf_get (hex), seeki);
+		r_strbuf_free (hex);
 		free (ons);
 	} else if ((mode & R_PRINT_DOT) || MUSTSEESTRUCT) {
 		int j = i;
@@ -1356,7 +1371,7 @@ static void r_print_format_nulltermwidestring(RPrintFormat *pf, const int len, c
 		if ((size = vallen) > r_wstr_clen ((char *) (buf + seeki))) {
 			R_LOG_WARN ("new string is longer than previous one");
 		}
-		r_print_printf (p, "ww %s @ 0x%08" PFMT64x "\n", newstring, seeki);
+		pf_set (pf, "ww %s @ 0x%08" PFMT64x, newstring, seeki);
 		free (ons);
 	} else if (MUSTSEE) {
 		int j = i;
@@ -1474,7 +1489,7 @@ static void r_print_format_register(RPrintFormat *pf, const char *name, const ch
 	RRegItem *ri = p->get_register (p->reg, name, R_REG_TYPE_ALL);
 	if (ri) {
 		if (MUSTSET) {
-			r_print_printf (p, "dr %s=%s\n", name, setval);
+			pf_set (pf, "dr %s=%s", name, setval);
 		} else if (MUSTSEE) {
 			if (!SEEVALUE) {
 				r_print_printf (p, "%s : 0x%08" PFMT64x "\n", ri->name, p->get_register_value (p->reg, ri));
@@ -1522,7 +1537,7 @@ static void r_print_format_num(RPrintFormat *pf, const char *setval, ut64 seeki,
 		addr = r_read_ble64 (buf + i, endian);
 	}
 	if (MUSTSET) {
-		r_print_printf (p, "wv%d %s @ 0x%08" PFMT64x "\n", bytes, setval, seeki + ((elem >= 0)? elem *(bytes): 0));
+		pf_set (pf, "wv%d %s @ 0x%08" PFMT64x, bytes, setval, seeki + ((elem >= 0)? elem *(bytes): 0));
 	} else if ((mode & R_PRINT_DOT) || MUSTSEESTRUCT) {
 		r_print_format_num_specifier (p, addr, bytes, sign);
 	} else if (MUSTSEE) {
@@ -2728,7 +2743,7 @@ R_API int r_print_format_internal(RPrint *p, RPrintFormat *pf, ut64 seek, const 
 				case 'B': // resolve bitfield
 					PF_EXTRACT_ELEM (elem, size);
 					if (MUSTSET) {
-						r_print_printf (p, "wv4 %s @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0)? elem * 4: 0));
+						pf_set (pf, "wv4 %s @ 0x%08" PFMT64x, setval, seeki + ((elem >= 0)? elem * 4: 0));
 						// R_LOG_ERROR ("Set val not implemented yet for bitfields!");
 					}
 					addr = pf_read_value (buf + i, size, pf->endian);
@@ -2738,7 +2753,7 @@ R_API int r_print_format_internal(RPrint *p, RPrintFormat *pf, ut64 seek, const 
 				case 'E': // resolve enum
 					PF_EXTRACT_ELEM (elem, size);
 					if (MUSTSET) {
-						r_print_printf (p, "wv4 %s @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0)? elem * 4: 0));
+						pf_set (pf, "wv4 %s @ 0x%08" PFMT64x, setval, seeki + ((elem >= 0)? elem * 4: 0));
 					}
 					addr = pf_read_value (buf + i, size, pf->endian);
 					if (fmtname) {

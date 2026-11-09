@@ -105,10 +105,10 @@ wx 14000000641620000000@0x30
 pf.troll iw*? integer word (troll)Bah
 pf.plop i?w first (troll)Boh bwa
 pf.gobelin ww?x blah meh (plop)Buh foo
+pf*.gobelin.Buh.first=42
 pf.gobelin.Buh.first=42
-.pf.gobelin.Buh.first=42
+pf*.gobelin.Buh.Boh.Bah.Bah.word=0xadde
 pf.gobelin.Buh.Boh.Bah.Bah.word=0xadde
-.pf.gobelin.Buh.Boh.Bah.Bah.word=0xadde
 pf.gobelin
 EOF
 EXPECT=<<EOF

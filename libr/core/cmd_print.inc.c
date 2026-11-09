@@ -408,6 +408,7 @@ static RCoreHelpMessage help_msg_pf = {
 	"pf", "??", "help on format characters",
 	"pf", "???", "show usage examples",
 	"pf* ", "fmt_name|fmt", "show data using (named) format as r2 flag create commands",
+	"pf*.", "fmt_name.field_name=33", "show the r2 command that sets the field",
 	"pf.", "", "list all format definitions",
 	"pf.", "fmt_name", "show data using named format",
 	"pf.", "fmt_name.field_name", "show specific data field using named format",
@@ -2781,9 +2782,8 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8 *block, 
 				if (eq) { // Write mode (pf.field=value)
 					*eq++ = 0;
 					r_str_trim_tail (name);
-					mode = R_PRINT_MUSTSET;
+					mode = (mode == R_PRINT_SEEFLAGS)? R_PRINT_MUSTSET | R_PRINT_SETCMD: R_PRINT_MUSTSET;
 					r_print_format (core->print, core->addr, buf, bufsize, name, mode, eq, dot);
-					r_io_write_at (core->io, core->addr, buf, bufsize);
 				} else {
 					r_print_format (core->print, core->addr, buf, bufsize, name, mode, NULL, dot);
 				}

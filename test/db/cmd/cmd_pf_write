@@ -100,3 +100,35 @@ EXPECT=<<EOF
 0x0000000c      .dword 0x6c726f77
 EOF
 RUN
+
+NAME=pf field set writes only the field, pf* only prints it
+FILE=malloc://32
+CMDS=<<EOF
+wx 41424344 @ 0
+wx 99 @ 8
+om 3 8 1 8 -w- hidden
+pf.x xx a b
+pf*.x.a=1 @ 0
+p8 12 @ 0 @e:io.va=false
+pf.x.a=1 @ 0
+p8 12 @ 0 @e:io.va=false
+pf.y [4]XT c d
+pf.y.c=11 @ 0x10
+pf*.y.c=11 @ 0x10
+.pf.y.c=11 @ 0x10
+pf.y.d=1 @ 0x10
+p8 16 @ 0x10
+EOF
+EXPECT=<<EOF
+wv4 1 @ 0x00000000
+414243440000000099000000
+010000000000000099000000
+00000000000000000000000000000000
+EOF
+EXPECT_ERR=<<EOF
+ERROR: pf X not yet implemented
+ERROR: pf X not yet implemented
+ERROR: pf X not yet implemented
+ERROR: pf T not yet implemented
+EOF
+RUN
