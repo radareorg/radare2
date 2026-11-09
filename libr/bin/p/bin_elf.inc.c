@@ -1274,8 +1274,14 @@ static bool arm_attr_str(const ut8 *buf, ut32 end, ut32 *off) {
 	return true;
 }
 
-// file-scope attributes in [off, end); a Tag_CPU_arch overrides arch
-static bool arm_file_cpu_arch(const ut8 *buf, ut32 off, ut32 end, ut64 *arch) {
+// Tag_CPU_arch and Tag_CPU_arch_profile, 0 where the attributes do not tell
+typedef struct {
+	ut64 arch;
+	ut64 profile;
+} ArmCpuAttrs;
+
+// file-scope attributes in [off, end); a later tag overrides an earlier one
+static bool arm_file_cpu_attrs(const ut8 *buf, ut32 off, ut32 end, ArmCpuAttrs *attrs) {
 	while (off < end) {
 		ut64 tag, val;
 		if (!arm_attr_uleb (buf, end, &off, &tag)) {
@@ -1288,7 +1294,9 @@ static bool arm_file_cpu_arch(const ut8 *buf, ut32 off, ut32 end, ut64 *arch) {
 				return false;
 			}
 			if (tag == 6) {
-				*arch = val;
+				attrs->arch = val;
+			} else if (tag == 7) {
+				attrs->profile = val;
 			}
 		}
 		if ((str_only || tag == 32) && !arm_attr_str (buf, end, &off)) {
@@ -1298,7 +1306,7 @@ static bool arm_file_cpu_arch(const ut8 *buf, ut32 off, ut32 end, ut64 *arch) {
 	return true;
 }
 
-static bool arm_aeabi_cpu_arch(const ut8 *buf, ut32 off, ut32 end, bool be, ut64 *arch) {
+static bool arm_aeabi_cpu_attrs(const ut8 *buf, ut32 off, ut32 end, bool be, ArmCpuAttrs *attrs) {
 	while (off < end) {
 		if (end - off < 5) {
 			return false;
@@ -1308,7 +1316,7 @@ static bool arm_aeabi_cpu_arch(const ut8 *buf, ut32 off, ut32 end, bool be, ut64
 		if (size < 5 || size > end - off) {
 			return false;
 		}
-		if (scope == 1 && !arm_file_cpu_arch (buf, off + 5, off + size, arch)) {
+		if (scope == 1 && !arm_file_cpu_attrs (buf, off + 5, off + size, attrs)) {
 			return false;
 		}
 		off += size;
@@ -1316,34 +1324,36 @@ static bool arm_aeabi_cpu_arch(const ut8 *buf, ut32 off, ut32 end, bool be, ut64
 	return true;
 }
 
-// the last file-scope Tag_CPU_arch in buf, 0 if malformed
-static ut64 arm_attrs_cpu_arch(const ut8 *buf, ut32 end, bool be) {
-	ut64 arch = 0;
+// the last file-scope attributes in buf, all 0 if malformed
+static ArmCpuAttrs arm_attrs_cpu(const ut8 *buf, ut32 end, bool be) {
+	const ArmCpuAttrs none = {0};
+	ArmCpuAttrs attrs = {0};
 	ut32 off = 1;
 	while (off < end) {
 		if (end - off < 4) {
-			return 0;
+			return none;
 		}
 		const ut32 len = r_read_ble32 (buf + off, be);
 		if (len < 4 || len > end - off) {
-			return 0;
+			return none;
 		}
 		const ut32 sub_end = off + len;
 		const ut32 name = off + 4;
-		ut32 attrs = name;
-		if (!arm_attr_str (buf, sub_end, &attrs)) {
-			return 0;
+		ut32 at = name;
+		if (!arm_attr_str (buf, sub_end, &at)) {
+			return none;
 		}
-		if (!strcmp ((const char *)buf + name, "aeabi") && !arm_aeabi_cpu_arch (buf, attrs, sub_end, be, &arch)) {
-			return 0;
+		if (!strcmp ((const char *)buf + name, "aeabi") && !arm_aeabi_cpu_attrs (buf, at, sub_end, be, &attrs)) {
+			return none;
 		}
 		off = sub_end;
 	}
-	return arch;
+	return attrs;
 }
 
-// Tag_CPU_arch, which is 0 (pre-v4) when the attributes do not tell
-static ut64 arm_cpu_arch(ELFOBJ *eo) {
+// a Tag_CPU_arch of 0 is pre-v4, the default when the attributes do not tell
+static ArmCpuAttrs arm_cpu_attrs(ELFOBJ *eo) {
+	const ArmCpuAttrs none = {0};
 	const Elf_(Shdr) *sh = NULL;
 	ut32 i;
 	for (i = 0; eo->shdr && i < eo->ehdr.e_shnum; i++) {
@@ -1354,14 +1364,14 @@ static ut64 arm_cpu_arch(ELFOBJ *eo) {
 	}
 	const ut64 bsize = r_buf_size (eo->b);
 	if (!sh || sh->sh_offset > bsize || sh->sh_size > bsize - sh->sh_offset || sh->sh_size < 1 || sh->sh_size > ST32_MAX) {
-		return 0;
+		return none;
 	}
 	const ut32 end = sh->sh_size;
 	ut8 *buf = malloc (end);
 	const bool ok = buf && r_buf_read_at (eo->b, sh->sh_offset, buf, end) == end && buf[0] == 'A';
-	const ut64 arch = ok? arm_attrs_cpu_arch (buf, end, eo->endian): 0;
+	const ArmCpuAttrs attrs = ok? arm_attrs_cpu (buf, end, eo->endian): none;
 	free (buf);
-	return arch;
+	return attrs;
 }
 
 static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 P, ut64 S, ut64 bias, ut64 L, ut64 toc, ut64 arm_arch) {
@@ -2285,7 +2295,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	ut64 budget = span_budget (b, eo, n_vaddr, cdsz);
 	ut64 vaddr = n_vaddr;
 	ut64 toc_base = UT64_MAX;
-	const ut64 arm_arch = (eo->ehdr.e_machine == EM_ARM)? arm_cpu_arch (eo): 0;
+	const ut64 arm_arch = (eo->ehdr.e_machine == EM_ARM)? arm_cpu_attrs (eo).arch: 0;
 	if (eo->ehdr.e_machine == EM_PPC64) {
 		ut64 t = Elf_(get_section_addr) (eo, ".toc");
 		if (t == UT64_MAX) {
@@ -2568,6 +2578,10 @@ static RBinInfo* info(RBinFile *bf) {
 	}
 	ret->arch = str;
 	ret->cpu = Elf_(get_cpu) (obj);
+	// Tag_CPU_arch_profile 'M' is a microcontroller, whose system registers capstone decodes in its M-class mode
+	if (!ret->cpu && ((ELFOBJ *)obj)->ehdr.e_machine == EM_ARM && arm_cpu_attrs (obj).profile == 'M') {
+		ret->cpu = strdup ("cortex");
+	}
 
 	ut32 elf_flags = ((ELFOBJ *)obj)->ehdr.e_flags;
 	if (elf_flags) {
