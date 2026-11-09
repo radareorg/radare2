@@ -1296,26 +1296,26 @@ static bool sections_from_bin(RBinFile *bf, RDyldBinImage *bin) {
 		ptr->perm = section->perm;
 	}
 
-	const RVecSegment *segments = MACH0_(get_segments_vec) (bf, mach0);
-	if (segments) {
-		RBinSection *segment;
-		R_VEC_FOREACH (segments, segment) {
-			RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-			if (bin->file) {
-				ptr->name = r_str_newf ("%s.%s", bin->file, segment->name);
-			} else {
-				ptr->name = r_str_newf ("%s", segment->name);
-			}
-			ptr->size = segment->size;
-			ptr->vsize = segment->vsize;
-			ptr->vaddr = segment->vaddr;
-			ptr->paddr = va2pa (segment->vaddr, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
-			if (!ptr->vaddr) {
-				ptr->vaddr = ptr->paddr;
-			}
-			ptr->perm = segment->perm;
-			ptr->is_segment = true;
+	for (int i = 0; i < mach0->nsegs; i++) {
+		const struct MACH0_(segment_command) *seg = &mach0->segs[i];
+		if (!seg->initprot) {
+			continue;
 		}
+		char name[17];
+		memcpy (name, seg->segname, 16);
+		name[16] = 0;
+		r_str_filter (name, -1);
+		RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		ptr->name = bin->file? r_str_newf ("%s.%s", bin->file, name): strdup (name);
+		ptr->size = seg->filesize;
+		ptr->vsize = seg->vmsize;
+		ptr->vaddr = seg->vmaddr;
+		ptr->paddr = va2pa (seg->vmaddr, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
+		if (!ptr->vaddr) {
+			ptr->vaddr = ptr->paddr;
+		}
+		ptr->perm = prot2perm (seg->initprot);
+		ptr->is_segment = true;
 	}
 	MACH0_(mach0_free) (mach0);
 	return true;
