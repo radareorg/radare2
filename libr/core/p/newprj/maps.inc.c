@@ -403,6 +403,16 @@ static void rprj_maps_write(RPrjCursor *cur) {
 	}
 }
 
+// only plain files and memory buffers can be reopened without approval
+static bool rprj_uri_is_inert(RIO *io, const char *uri) {
+	RIOPlugin *plugin = r_io_plugin_resolve (io, uri, false);
+	if (!plugin) {
+		return true;
+	}
+	const char *name = plugin->meta.name;
+	return !strcmp (name, "default") || !strcmp (name, "malloc") || !strcmp (name, "null");
+}
+
 static void rprj_maps_restore(RPrjCursor *cur) {
 	RCore *core = cur->core;
 	RBuffer *b = cur->b;
@@ -418,6 +428,9 @@ static void rprj_maps_restore(RPrjCursor *cur) {
 		}
 		const int perm = map.perm & R_PERM_RWX;
 		RIODesc *d = r_io_desc_get_byuri (core->io, uri);
+		if (!d && !cur->run_cmds && !rprj_uri_is_inert (core->io, uri)) {
+			continue;
+		}
 		if (!d) {
 			d = r_io_open_nomap (core->io, uri, perm? perm: R_PERM_R, 0644);
 		}

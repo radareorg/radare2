@@ -1480,6 +1480,10 @@ static void rprj_breakpoint_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 			}
 		}
 		if ((mode & R_CORE_NEWPRJ_MODE_LOAD) && cur->core->dbg && cur->core->dbg->bp) {
+			if (!cur->run_cmds) {
+				saved.data = NULL;
+				saved.cond = NULL;
+			}
 			rprj_breakpoint_add (cur->core->dbg->bp, &saved);
 		}
 	}
@@ -1604,7 +1608,13 @@ static void rprj_cmds_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 	}
 }
 
-// list the Cmds strings and command hook evals of the project, escaped so they show what will run
+static void rprj_cmds_list_one(RStrBuf *sb, const char *prefix, const char *cmd) {
+	char *escaped = r_str_escape_utf8 (cmd, false, true);
+	r_strbuf_appendf (sb, "  %s%s\n", prefix, escaped);
+	free (escaped);
+}
+
+// list the Cmds strings, command hook evals, breakpoint commands and non-file map uris of the project, escaped so they show what will run
 static int rprj_cmds_list(RPrjCursor *cur, RStrBuf *sb) {
 	RBuffer *b = cur->b;
 	const ut64 last = r_buf_size (b);
@@ -1620,11 +1630,32 @@ static int rprj_cmds_list(RPrjCursor *cur, RStrBuf *sb) {
 		char *script;
 		if (entry.type == RPRJ_CMDS) {
 			while (r_buf_at (b) < next_entry && rprj_string_read (b, next_entry, &script)) {
-				char *escaped = r_str_escape_utf8 (script, false, true);
-				r_strbuf_appendf (sb, "  %s\n", escaped);
-				free (escaped);
+				rprj_cmds_list_one (sb, "", script);
 				free (script);
 				count++;
+			}
+		} else if (entry.type == RPRJ_MAPS) {
+			R2ProjectMap map;
+			while (rprj_entry_has (b, next_entry, RPRJ_MAP_SIZE) && rprj_map_read (b, &map)) {
+				const char *uri = rprj_st_get (cur->st, map.uri);
+				if (uri && !rprj_uri_is_inert (cur->core->io, uri)) {
+					rprj_cmds_list_one (sb, "o ", uri);
+					count++;
+				}
+			}
+		} else if (entry.type == RPRJ_BRKP) {
+			R2ProjectBreakpoint bp;
+			while (rprj_entry_has (b, next_entry, RPRJ_BREAKPOINT_SIZE) && rprj_breakpoint_read (b, &bp)) {
+				const char *data = rprj_st_get (cur->st, bp.data);
+				const char *cond = rprj_st_get (cur->st, bp.cond);
+				if (R_STR_ISNOTEMPTY (data)) {
+					rprj_cmds_list_one (sb, "dbc ", data);
+					count++;
+				}
+				if (R_STR_ISNOTEMPTY (cond)) {
+					rprj_cmds_list_one (sb, "dbC ", cond);
+					count++;
+				}
 			}
 		} else if (entry.type == RPRJ_EVAL && rprj_entry_has (b, next_entry, 4) && rprj_read_le32 (b, &n)) {
 			while (n-- > 0 && rprj_entry_has (b, next_entry, 8) && rprj_read_le32 (b, &k) && rprj_read_le32 (b, &v)) {

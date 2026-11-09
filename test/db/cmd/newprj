@@ -922,8 +922,19 @@ prj diff .tmp/newprj-bps.prj~db
 rm .tmp/newprj-bps.prj
 EOF
 EXPECT=<<EOF
-[{"addr":16,"size":1,"perm":"--x","hw":false,"trace":true,"enabled":false,"valid":true,"data":"?e hit","cond":"dr PC","name":"saved.bp"},{"addr":32,"size":1,"perm":"--x","hw":true,"trace":false,"enabled":true,"valid":true,"data":"","cond":"","name":"0x20"},{"addr":48,"size":1,"perm":"-w-","hw":true,"trace":false,"enabled":true,"valid":true,"data":"","cond":"","name":"0x30"}]
+[{"addr":16,"size":1,"perm":"--x","hw":false,"trace":true,"enabled":false,"valid":true,"data":"","cond":"","name":"saved.bp"},{"addr":32,"size":1,"perm":"--x","hw":true,"trace":false,"enabled":true,"valid":true,"data":"","cond":"","name":"0x20"},{"addr":48,"size":1,"perm":"-w-","hw":true,"trace":false,"enabled":true,"valid":true,"data":"","cond":"","name":"0x30"}]
 0x00000010 saved.expr
+'db- 0x00000010
+'dbb 0
+db 0x00000010 @e:dbg.hwbp=false
+'dbte 0x00000010
+'dbd 0x00000010 3
+'@0x00000010'dbn saved.bp
+'@0x00000010'dbx saved.expr
+EOF
+EXPECT_ERR=<<EOF
+WARN: Skipping 2 commands embedded in the project, load it with scr.interactive=true to review them
+WARN: Skipping 2 commands embedded in the project, load it with scr.interactive=true to review them
 EOF
 RUN
 
@@ -1467,4 +1478,31 @@ EXPECT=<<EOF
   inline    true
   inline    false
 EOF
+RUN
+
+NAME=newprj direct opening skips non-file map uris when not interactive
+FILE=bins/prj/cyclicmap.rprj
+CMDS=<<END
+o~cyclic
+om~cyclic
+?e done
+END
+EXPECT=<<END
+done
+END
+EXPECT_ERR=<<END
+WARN: Skipping 1 commands embedded in the project, load it with scr.interactive=true to review them
+END
+RUN
+
+NAME=newprj direct opening restores malloc map uris
+FILE=bins/prj/mallocmap.rprj
+CMDS=<<END
+o~malloc://16
+om~[-1]
+END
+EXPECT=<<END
+ 3 * rw- 0x00000010 malloc://16
+m
+END
 RUN
