@@ -186,12 +186,17 @@ grub_iso9660_susp_iterate(struct grub_iso9660_data *data,
 	if (!sua) {
 		return grub_errno;
 	}
-	struct grub_iso9660_susp_entry *entry = (struct grub_iso9660_susp_entry *)sua;
 	int ce_hops = 0;
+	int off = 0;
 
 	if (hook) {
-		for (; (char *)entry + 4 <= (char *)sua + sua_size;
-			entry = (struct grub_iso9660_susp_entry *) ((char *)entry + entry->len)) {
+		while (sua_size - off >= 4) {
+			struct grub_iso9660_susp_entry *entry = (struct grub_iso9660_susp_entry *) (sua + off);
+			/* Reject entries whose header or body runs past the loaded area.  */
+			if (entry->len < 4 || entry->len > sua_size - off) {
+				break;
+			}
+
 			/* The last entry.  */
 			if (strncmp ((char *)entry->sig, "ST", 2) == 0) {
 				break;
@@ -207,7 +212,7 @@ grub_iso9660_susp_iterate(struct grub_iso9660_data *data,
 					return grub_error (GRUB_ERR_BAD_FS, "too many CE entries");
 				}
 
-				if ((char *)entry + sizeof (struct grub_iso9660_susp_ce) > (char *)sua + sua_size) {
+				if (entry->len < sizeof (struct grub_iso9660_susp_ce)) {
 					break;
 				}
 				ce = (struct grub_iso9660_susp_ce *)entry;
@@ -220,20 +225,15 @@ grub_iso9660_susp_iterate(struct grub_iso9660_data *data,
 				if (!sua) {
 					return grub_errno;
 				}
-				entry = (struct grub_iso9660_susp_entry *)sua;
-				if ((char *)entry + 4 > (char *)sua + sua_size) {
-					break;
-				}
+				off = 0;
+				continue;
 			}
 
-			/* Reject entries whose header or body runs past the loaded area.  */
-			if (entry->len < 4 || (char *)entry + entry->len > (char *)sua + sua_size) {
-				break;
-			}
 			if (hook (entry, closure)) {
 				grub_free (sua);
 				return 0;
 			}
+			off += entry->len;
 		}
 	}
 
