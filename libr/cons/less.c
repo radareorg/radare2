@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2025 - pancake */
+/* radare2 - LGPL - Copyright 2014-2026 - pancake */
 
 #include <r_cons.h>
 #include <r_regex.h>
@@ -13,6 +13,7 @@ static const char *r_cons_less_help = \
 	" /        - search in buffer\n"
 	" _        - enter the hud mode\n"
 	" n/p      - next/prev search result\n"
+	" :        - command prompt (w <path>, q; empty returns)\n"
 	" q        - quit\n"
 	" ?        - show this help\n"
 	"\n";
@@ -127,6 +128,41 @@ R_API int r_cons_less_str(RCons * R_NONNULL cons, const char * R_NONNULL str, co
 				from--;
 			}
 			break;
+		case ':': {
+			char *prompt = r_line_get_prompt (cons->line);
+			if (!prompt) {
+				break;
+			}
+			r_cons_reset_colors (cons);
+			for (;;) {
+				const char *command = r_cons_visual_readln (cons, ":", NULL);
+				if (!command) {
+					break;
+				}
+				command = r_str_trim_head_ro (command);
+				if (!*command) {
+					break;
+				}
+				if (!strcmp (command, "q")) {
+					ui = 0;
+					break;
+				}
+				if (*command == 'w' && IS_WHITESPACE (command[1])) {
+					const char *path = r_str_trim_head_ro (command + 1);
+					if (*path) {
+						if (r_file_dump (path, (const ut8 *)ostr, -1, false)) {
+							R_LOG_INFO ("Written to '%s'", path);
+						}
+						continue;
+					}
+				}
+				R_LOG_ERROR ("Use w <path> or q; empty input returns to the pager");
+			}
+			r_line_set_prompt (cons->line, prompt);
+			free (prompt);
+			last_from = -1;
+			break;
+		}
 		case '/': { /* search */
 			last_from = -1;
 			char *prompt = r_line_get_prompt (cons->line);

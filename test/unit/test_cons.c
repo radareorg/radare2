@@ -973,6 +973,132 @@ bool test_cons_less_mouse_scroll(void) {
 	mu_end;
 }
 
+static RCons *cons_less_test_new(void) {
+	RCons *cons = r_cons_new ();
+	cons->force_columns = 8;
+	cons->force_rows = 3;
+	cons->context->is_interactive = true;
+	cons->context->noflush = true;
+	cons->line->echo = false;
+	r_line_set_prompt (cons->line, "original> ");
+	return cons;
+}
+
+static bool cons_less_count_errors(void *user, int type, const char *origin, const char *message) {
+	if (type == R_LOG_LEVEL_ERROR && message) {
+		(*(int *)user)++;
+	}
+	return true;
+}
+
+bool test_cons_less_commands(void) {
+	const struct {
+		const char *keys;
+		bool quit;
+		int errors;
+	} cases[] = {
+		{ ":q\nX", true, 0 },
+		{ ":\njX", false, 0 },
+		{ ":   \njX", false, 0 },
+		{ ":unknown\nq\nX", true, 1 },
+		{ ":w\nw   \nqx\nq\nX", true, 3 },
+		{ ":\x03jX", false, 0 },
+		{ ":\x04jX", false, 0 }
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (cases); i++) {
+		RCons *cons = cons_less_test_new ();
+		mu_assert_true (r_cons_readpush (cons, cases[i].keys, strlen (cases[i].keys)), "queue pager commands");
+		int errors = 0;
+		r_log_add_callback (cons_less_count_errors, &errors);
+		int ret = r_cons_less_str (cons, "one\ntwo\nthree\nfour\nfive", "X");
+		r_log_del_callback (cons_less_count_errors);
+		mu_assert_eq (ret, cases[i].quit? 0: 'X', "quit or return to pager navigation");
+		mu_assert_eq (errors, cases[i].errors, "invalid commands report errors and prompt again");
+		mu_assert_eq (cons->input_state.readbuffer_length, cases[i].quit? 1: 0, "consume only command input");
+		mu_assert_streq (cons->line->state.prompt, "original> ", "restore caller prompt");
+		if (!cases[i].quit) {
+			char *output = strdup (cons->context->buffer);
+			r_str_ansi_strip (output);
+			mu_assert_notnull (strstr (output, "two\nthree\nfour"), "navigation works after leaving command mode");
+			free (output);
+		}
+		r_cons_free (cons);
+	}
+	mu_end;
+}
+
+bool test_cons_less_write(void) {
+	char *path = NULL;
+	int fd = r_file_mkstemp ("r2 less dump", &path);
+	mu_assert ("create pager output file with spaces in its name", fd >= 0);
+	close (fd);
+	mu_assert_true (r_file_dump (path, (const ut8 *)"old output that must be replaced completely", -1, false), "initialize existing output");
+	const char *text = "one\ntwo\n" Color_RED "three" Color_RESET "\nfour\nfive";
+	char *keys = r_str_newf ("G:w %s/missing\nw %s\n\nX", path, path);
+	RCons *cons = cons_less_test_new ();
+	mu_assert_true (r_cons_readpush (cons, keys, strlen (keys)), "queue failed write, retry and return to pager");
+	free (keys);
+	r_cons_print (cons, text);
+	int errors = 0;
+	r_log_add_callback (cons_less_count_errors, &errors);
+	int ret = r_cons_less_str (cons, cons->context->buffer, "X");
+	r_log_del_callback (cons_less_count_errors);
+	char *output = r_file_slurp (path, NULL);
+	r_file_rm (path);
+	free (path);
+	mu_assert_eq (ret, 'X', "empty command returns to pager after writing");
+	mu_assert_eq (errors, 1, "failed write reports an error before retrying");
+	mu_assert_streq (cons->line->state.prompt, "original> ", "restore prompt after writing");
+	r_cons_free (cons);
+	mu_assert_notnull (output, "read saved pager contents");
+	mu_assert_streq_free (output, text, "dump entire original buffer without clipping, highlighting or an extra newline");
+	mu_end;
+}
+
+static void *cons_less_sandbox_write(void *user) {
+	r_cons_less_str (user, "sandbox output", NULL);
+	return user;
+}
+
+bool test_cons_less_write_sandbox(void) {
+	char *path = NULL;
+	int fd = r_file_mkstemp ("r2-less-sandbox", &path);
+	mu_assert ("create sandbox output fixture", fd >= 0);
+	close (fd);
+	mu_assert_true (r_file_dump (path, (const ut8 *)"untouched", -1, false), "initialize sandbox output");
+	const int grains[] = { R_SANDBOX_GRAIN_NONE, R_SANDBOX_GRAIN_DISK, R_SANDBOX_GRAIN_ALL };
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (grains); i++) {
+		RCons *cons = cons_less_test_new ();
+		char *keys = r_str_newf (":w %s\nq\nX", path);
+		mu_assert_true (r_cons_readpush (cons, keys, strlen (keys)), "queue sandbox write and quit");
+		free (keys);
+		int errors = 0;
+		r_log_add_callback (cons_less_count_errors, &errors);
+		r_sandbox_run (grains[i], cons_less_sandbox_write, cons);
+		r_log_del_callback (cons_less_count_errors);
+		mu_assert_eq (errors, 1, "sandbox write denial reports an error");
+		mu_assert_eq (cons->input_state.readbuffer_length, 1, "denied write stays in command mode until q");
+		r_cons_free (cons);
+		char *output = r_file_slurp (path, NULL);
+		mu_assert_notnull (output, "sandbox preserves output file");
+		mu_assert_streq_free (output, "untouched", "sandbox prevents truncating existing output");
+	}
+	r_file_rm (path);
+	RCons *cons = cons_less_test_new ();
+	char *keys = r_str_newf (":w %s\nq\n", path);
+	mu_assert_true (r_cons_readpush (cons, keys, strlen (keys)), "queue sandbox file creation");
+	free (keys);
+	r_sandbox_run (R_SANDBOX_GRAIN_NONE, cons_less_sandbox_write, cons);
+	bool exists = r_file_exists (path);
+	r_file_rm (path);
+	free (path);
+	r_cons_free (cons);
+	mu_assert_false (exists, "sandbox prevents creating output files");
+	mu_end;
+}
+
 bool test_cons_string_palette_alias(void) {
 	mu_assert_eq (r_offsetof (RConsPalette, str), r_offsetof (RConsPalette, ai_ascii), "color field alias preserves layout");
 	mu_assert_eq (r_offsetof (RConsPrintablePalette, str), r_offsetof (RConsPrintablePalette, ai_ascii), "printable field alias preserves layout");
@@ -1075,6 +1201,9 @@ bool all_tests(void) {
 	mu_run_test (test_cons_canvas_many_attributes);
 	mu_run_test (test_cons_canvas_print_rows);
 	mu_run_test (test_cons_less_mouse_scroll);
+	mu_run_test (test_cons_less_commands);
+	mu_run_test (test_cons_less_write);
+	mu_run_test (test_cons_less_write_sandbox);
 	mu_run_test (test_cons_string_palette_alias);
 	return tests_passed != tests_run;
 }
