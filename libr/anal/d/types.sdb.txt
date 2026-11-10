@@ -122,7 +122,7 @@ func.setstate.ret=const char *
 srandom=func
 func.srandom.args=1
 func.srandom.arg.0=uint32_t,seed
-func.srandom.ret=uint32_t
+func.srandom.ret=void
 
 calloc=func
 func.calloc.args=2

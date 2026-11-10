@@ -6226,3 +6226,17 @@ struct.bar.val=int,8,0
 struct.bar.val.@.aligned=8
 EXPECT
 RUN
+
+NAME=srandom returns nothing
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+tk func.srandom.ret
+tfc srandom
+EOF
+EXPECT=<<EOF
+void
+void srandom (uint32_t seed);
+EOF
+RUN
