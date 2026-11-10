@@ -110,7 +110,7 @@ static bool r_muta_charset_outgrow(ut8 **out, int *outcap, int need) {
 	}
 	int cap = *outcap;
 	while (need > cap) {
-		cap = cap? cap * 2: 64;
+		cap = cap > INT_MAX / 2? need: cap? cap * 2: 64;
 	}
 	ut8 *tmpbuf = realloc (*out, cap);
 	if (!tmpbuf) {
@@ -222,6 +222,44 @@ R_API ut8 *r_muta_charset_encode_ex(const ut8 *in, int in_len, int *out_len, con
 
 R_API ut8 *r_muta_charset_encode(const ut8 *in, int in_len, int *out_len, const RMutaCharsetMap *table, RMutaCharsetParserFn parser) {
 	return r_muta_charset_encode_ex (in, in_len, out_len, table, parser, '?');
+}
+
+R_API int r_muta_charset_encode_strict(const ut8 *in, int len, ut8 **out, int *consumed, const RMutaCharsetMap *table) {
+	R_RETURN_VAL_IF_FAIL (in && len >= 0 && out && consumed && table, -1);
+	*out = NULL;
+	*consumed = 0;
+	ut8 *buf = NULL;
+	int capacity = 0, size = 0;
+	while (*consumed < len) {
+		const ut8 *text = in + *consumed;
+		const int left = len - *consumed;
+		if (!r_utf8_decode (text, left, NULL)) {
+			break;
+		}
+		const RMutaCharsetMap *entry, *best = NULL;
+		size_t match = 0;
+		for (entry = table; entry->utf8; entry++) {
+			const size_t n = strlen (entry->utf8);
+			if (n > match && n <= left && !memcmp (text, entry->utf8, n)) {
+				best = entry;
+				match = n;
+			}
+		}
+		if (!best || !best->byte_count || best->byte_count > R_MUTA_CHARSET_MAX_BYTES
+				|| size > INT_MAX - best->byte_count
+				|| !r_muta_charset_outgrow (&buf, &capacity, size + best->byte_count)) {
+			break;
+		}
+		memcpy (buf + size, best->bytes, best->byte_count);
+		size += best->byte_count;
+		*consumed += match;
+	}
+	if (*consumed != len) {
+		free (buf);
+		return -1;
+	}
+	*out = buf;
+	return size;
 }
 
 R_API int r_muta_charset_tr_decode(const ut8 *in, int len, ut8 **out, int *consumed, const ut8 tr[256]) {

@@ -1,4 +1,5 @@
 #include <r_muta.h>
+#include <r_muta/charset.h>
 #include "minunit.h"
 
 static bool test_sha2_unaligned_input(void) {
@@ -39,9 +40,59 @@ static bool test_new_free_lifecycle(void) {
 	mu_end;
 }
 
+static bool test_strict_charset_table(void) {
+	const RMutaCharsetMap table[] = {
+		{ "A", { 0x80 }, 1 },
+		{ "AB", { 0x81, 0x82 }, 2 },
+		{ "A", { 0xff }, 1 },
+		{ "é", { 0xe0 }, 1 },
+		{ "?", { 0xe6 }, 1 },
+		{ "\\", { 0x01 }, 1 },
+		{ "n", { 0x02 }, 1 },
+		{ NULL, { 0 }, 0 },
+	};
+	const ut8 input[] = "ABAé?\\n";
+	const ut8 expected[] = { 0x81, 0x82, 0x80, 0xe0, 0xe6, 0x01, 0x02 };
+	ut8 *out = NULL;
+	int consumed = 0;
+	int len = r_muta_charset_encode_strict (input, sizeof (input) - 1, &out, &consumed, table);
+	mu_assert_eq (len, sizeof (expected), "longest match and UTF-8 output length");
+	mu_assert_eq (consumed, sizeof (input) - 1, "complete input consumed");
+	mu_assert_memeq (out, expected, len, "first duplicate wins and escapes remain literal");
+	free (out);
+	len = r_muta_charset_encode_strict (input, 0, &out, &consumed, table);
+	mu_assert_eq (len, 0, "empty input succeeds");
+	mu_assert_eq (consumed, 0, "empty input consumption");
+	free (out);
+	const ut8 invalid[][4] = {
+		{ 'A', 'Z', 0, 0 },
+		{ 'A', 0, 'A', 0 },
+		{ 'A', 0xc0, 0x80, 0 },
+		{ 'A', 0xed, 0xa0, 0x80 },
+		{ 'A', 0xf4, 0x90, 0x80 },
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (invalid); i++) {
+		len = r_muta_charset_encode_strict (invalid[i], sizeof (invalid[i]), &out, &consumed, table);
+		mu_assert_eq (len, -1, "unmappable, NUL and malformed UTF-8 fail");
+		mu_assert_eq (consumed, 1, "failure offset follows valid prefix");
+		mu_assert_null (out, "no partial result on failure");
+	}
+	ut8 repeated[129];
+	memset (repeated, 'A', sizeof (repeated));
+	len = r_muta_charset_encode_strict (repeated, sizeof (repeated), &out, &consumed, table);
+	mu_assert_eq (len, sizeof (repeated), "output grows across buffer boundaries");
+	for (i = 0; i < sizeof (repeated); i++) {
+		mu_assert_eq (out[i], 0x80, "grown output contents");
+	}
+	free (out);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_new_free_lifecycle);
 	mu_run_test (test_sha2_unaligned_input);
+	mu_run_test (test_strict_charset_table);
 	return tests_passed != tests_run;
 }
 
