@@ -693,3 +693,16 @@ EXPECT=<<EOF
             [38;2;19;161;14m0x00000002[0m      [38;2;255;0;0m90[0m             [38;2;0;55;218mnop[0m[0m
 EOF
 RUN
+
+NAME=pxr8 on 4-bit arch
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=i4004
+e asm.bits=4
+wx 41424344
+pxr8 16~[0-1]
+EOF
+EXPECT=<<EOF
+0x00000000 0x0000000044434241
+EOF
+RUN

@@ -1113,6 +1113,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	const char *a, *b;
 	int K = 0;
 	bool hex_style = false;
+	if (step < 1) {
+		step = 1;
+	}
 	if (step < len) {
 		len = len - (len % step);
 	}
@@ -1137,9 +1140,6 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	}
 	if (!use_hexa) {
 		inc *= 4;
-	}
-	if (step < 1) {
-		step = 1;
 	}
 	if (inc < 1) {
 		inc = 1;
