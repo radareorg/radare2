@@ -3386,6 +3386,7 @@ R_API int r_core_block_size(RCore *core, int bsize) {
 		core->block = bump;
 		core->blocksize = bsize;
 		memset (core->block, 0xff, core->blocksize);
+		core->block[bsize] = 0;
 		r_core_block_read (core);
 	}
 	r_th_lock_leave (core->lock);

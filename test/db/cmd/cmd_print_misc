@@ -48,3 +48,21 @@ EXPECT_ERR=<<EOF
 ERROR: Invalid size
 EOF
 RUN
+
+NAME=prz stops at the block end after resize
+FILE=malloc://512
+CMDS=<<EOF
+b 512
+wow 41
+b 15
+prz
+?e
+b 31
+prz
+?e
+EOF
+EXPECT=<<EOF
+AAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+EOF
+RUN
