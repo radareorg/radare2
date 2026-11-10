@@ -1,0 +1,5 @@
+.charset "ebcdic37"
+.include "../../bins/other/rasm2/asm/str2.asm"
+.string "AB"
+.charset "raw"
+.string "AB"

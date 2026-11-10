@@ -133,6 +133,84 @@ static bool test_assembly_string_errors(void) {
 	mu_end;
 }
 
+static bool test_assembly_charsets(void) {
+	const struct {
+		const char *source;
+		const char *hex;
+	} cases[] = {
+		{ ".charset \"pokered\"; .ascii \"A<LINE>B\"; .byte 0x50", "804f8150" },
+		{ ".charset \"pokered\"; .string \"Aé?\"", "80e0e600" },
+		{ ".charset\t\"ebcdic37\"; .asciiz\t\"ABé\"", "c1c25100" },
+		{ ".charset \"base64\"; .string \"AB\"", "5155493d00" },
+		{ ".charset \"base64\"; .ascii \"A\"; .ascii \"B\"", "51513d3d51673d3d" },
+		{ ".charset \"base64\"; .ascii \"\\xff\"", "2f773d3d" },
+		{ ".charset \"pokered\"; .ascii \"A\"; .charset \"raw\"; .string \"A\"", "804100" },
+		{ ".charset \"ebcdic37\"; .string \"A\\x00B\"", "c100c200" },
+		{ ".charset \"base64\"; .ascii \"A\\x00B\"", "51514243" },
+		{ ".charset \"ebcdic37\"; .ascii \"\\\\n\"", "e095" },
+		{ ".charset \"pokered\"; .asciz \"\"; .ascii \"\"; .asciiz \"\"; .string \"\"", "000000" },
+		{ ".charset \"base64\"; .string \"\"", "00" },
+		{ ".ascii \"A\"; .charset \"base64\"; .ascii \"AB\"; end:; .uint16 end", "415155493d0500" },
+		{ ".charset \"pokered\"; .byte 65; .hex 4243; .ascii \"A\"", "41424380" },
+		{ ".equ pokered, missing; .charset \"pokered\"; .ascii \"A\"", "80" },
+		{ ".charset \"raw\"; .ascii \"\\xff\"", "ff" },
+	};
+	RAsm *a = r_asm_new ();
+	size_t i;
+	for (i = 0; i < 2 * R_ARRAY_SIZE (cases); i++) {
+		a->use_spp = i >= R_ARRAY_SIZE (cases);
+		r_asm_set_pc (a, 0);
+		const size_t n = i % R_ARRAY_SIZE (cases);
+		RAsmCode *code = r_asm_assemble (a, cases[n].source);
+		mu_assert_notnull (code, cases[n].source);
+		char *hex = r_hex_bin2strdup (code->bytes, code->len);
+		mu_assert_streq (hex, cases[n].hex, cases[n].source);
+		free (hex);
+		r_asm_code_free (code);
+		code = r_asm_assemble (a, ".string \"AB\"");
+		mu_assert_notnull (code, "new assembly resets charset");
+		mu_assert_eq (code->len, 3, "raw length after encoded assembly");
+		mu_assert_memeq (code->bytes, "AB", 3, "raw bytes after encoded assembly");
+		r_asm_code_free (code);
+	}
+	r_asm_free (a);
+	mu_end;
+}
+
+static bool test_assembly_charset_errors(void) {
+	const char *sources[] = {
+		".charset \"missing\"",
+		".ascii \"A\"; .charset \"missing\"",
+		".charset \"pokered\"; .charset \"missing\"; .string \"AB\"",
+		".charset \"ascii.oem\"",
+		".charset \"aes\"",
+		".charset \"sha256\"",
+		".charset \"\"",
+		".charset \"raw\\x00missing\"",
+		".charset",
+		".charset raw",
+		".charsetx \"raw\"",
+		".charset \"raw\" trailing",
+		".charset \"pokered\"; .ascii \"A☃\"",
+		".charset \"pokered\"; .ascii \"A\\x00B\"",
+		".charset \"pokered\"; .ascii \"A\\xc3\"",
+		".charset \"ebcdic37\"; .ascii \"A☃\"",
+	};
+	RAsm *a = r_asm_new ();
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (sources); i++) {
+		RAsmCode *code = r_asm_assemble (a, sources[i]);
+		mu_assert_null (code, sources[i]);
+		code = r_asm_assemble (a, ".ascii \"AB\"");
+		mu_assert_notnull (code, "assembly after failure succeeds");
+		mu_assert_eq (code->len, 2, "charset reset after failure");
+		mu_assert_memeq (code->bytes, "AB", 2, "raw bytes after failure");
+		r_asm_code_free (code);
+	}
+	r_asm_free (a);
+	mu_end;
+}
+
 static bool test_assembly_byte_expressions(void) {
 	const struct {
 		const char *source;
@@ -367,6 +445,8 @@ int all_tests(void) {
 	mu_run_test (test_assembly_delimiters);
 	mu_run_test (test_assembly_strings);
 	mu_run_test (test_assembly_string_errors);
+	mu_run_test (test_assembly_charsets);
+	mu_run_test (test_assembly_charset_errors);
 	mu_run_test (test_assembly_byte_expressions);
 	mu_run_test (test_assembly_byte_expression_errors);
 	mu_run_test (test_assembly_org);

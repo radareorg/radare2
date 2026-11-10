@@ -1552,3 +1552,11 @@ WARNING: parent (line=2)
 ERROR: parent (line=3)
 EOF
 RUN
+
+NAME=rasm2 charset selection is inherited by includes
+FILE=--
+CMDS=rasm2 -p -f scripts/rasm2/charset.asm
+EXPECT=<<EOF
+c88593939600e69699938400c1c200414200
+EOF
+RUN
