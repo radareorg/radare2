@@ -487,7 +487,6 @@ R_API void r_esil_fini(REsil *esil) {
 	r_esil_stack_free (esil);
 	R_FREE (esil->stack);
 	R_FREE (esil->ring);
-	R_FREE (esil->cmd_trap);
 }
 
 R_API void r_esil_free(REsil *esil) {
