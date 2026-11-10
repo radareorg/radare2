@@ -5635,6 +5635,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=C11 aligned_alloc returns the allocation
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+tk~aligned_alloc
+tfc aligned_alloc
+EOF
+EXPECT=<<EOF
+aligned_alloc=func
+func.aligned_alloc.arg.0=size_t,alignment
+func.aligned_alloc.arg.1=size_t,size
+func.aligned_alloc.args=2
+func.aligned_alloc.ret=void *
+void * aligned_alloc (size_t alignment, size_t size);
+EOF
+RUN
+
 NAME=posix and glibc prototypes
 FILE=-
 CMDS=<<EOF
