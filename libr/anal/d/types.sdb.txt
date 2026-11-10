@@ -1831,11 +1831,11 @@ func.quick_exit.args=1
 func.quick_exit.arg.0=int,status
 func.quick_exit.ret=void
 
-*aligned_alloc=func
-func.*aligned_alloc.args=2
-func.*aligned_alloc.arg.0=size_t,alignment
-func.*aligned_alloc.arg.1=size_t,size
-func.*aligned_alloc.ret=void
+aligned_alloc=func
+func.aligned_alloc.args=2
+func.aligned_alloc.arg.0=size_t,alignment
+func.aligned_alloc.arg.1=size_t,size
+func.aligned_alloc.ret=void *
 
 bzero=func
 func.bzero.args=2
