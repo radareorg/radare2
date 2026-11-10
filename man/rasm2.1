@@ -108,6 +108,48 @@ Describe opcode (what's op)
 .It Fl x
 Use hex dwords instead of hexpairs in the assembler output
 .El
+.Sh STRING DIRECTIVES
+.Li .charset \(dqname\(dq
+selects an RMuta encoder for subsequent string literals.
+Supported encoders initially include pokered, ebcdic37 and base64.
+.Li .charset \(dqraw\(dq
+restores direct source-byte emission, the default at the start of each assembly.
+Unknown names and plugins without strict encoding support fail the entire
+assembly, even if no string follows.
+Selection emits no bytes and is inherited by textually included source.
+.Pp
+.Li .ascii \(dqtext\(dq
+emits the encoded literal without a terminator.
+.Li .string \(dqtext\(dq ,
+.Li .asciz \(dqtext\(dq
+and
+.Li .asciiz \(dqtext\(dq
+append one raw zero byte after encoding.
+Game-specific terminators must be emitted explicitly with a numeric
+.Li .byte
+directive.
+.Pp
+Strings must be double quoted.
+Escapes are interpreted once before encoding; \exNN supplies an input byte
+to the encoder.
+Text encoders reject malformed UTF-8 and unmappable characters without
+emitting partial output.
+Embedded NUL is encoded or rejected explicitly, never treated as the end
+of the input.
+Base64 processes each complete literal independently, including its padding.
+Numeric data directives, .hex, .incbin and instructions bypass charset encoding.
+.Bd -literal -offset indent
+\&.charset "pokered"
+\&.ascii "A<LINE>B"
+\&.byte 0x50
+\&.charset "ebcdic37"
+\&.string "AB"
+\&.charset "base64"
+\&.string "AB"
+\&.charset "raw"
+.Ed
+.Pp
+This emits 804f8150c1c2005155493d00.
 .Sh ENVIRONMENT
 .Pp
 .Bl -tag -width Fl
