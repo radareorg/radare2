@@ -89,6 +89,9 @@ typedef struct r_muta_plugin_t {
 #endif
 	int (*decode)(RMutaSession *ms, const ut8 *in, int len, ut8 **out, int *consumed);
 	bool (*fini)(RMutaSession *ms);
+	// Complete-buffer encoding: owned output, length or -1; consumed is the error offset on failure.
+	// No escape processing, terminator or state carried between calls; failure leaves output NULL.
+	int (*encode)(RMutaSession *ms, const ut8 *in, int len, ut8 **out, int *consumed);
 } RMutaPlugin;
 
 typedef struct {
