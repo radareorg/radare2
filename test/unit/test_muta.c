@@ -26,7 +26,21 @@ static bool test_sha2_unaligned_input(void) {
 	mu_end;
 }
 
+static bool test_new_free_lifecycle(void) {
+	// The default plugin list registers the "null" plugin twice;
+	// the rejected duplicate must be freed, not leaked (caught by LSan).
+	RMuta *muta = r_muta_new ();
+	mu_assert_notnull (muta, "r_muta_new");
+	mu_assert_notnull (r_muta_find (muta, "null"), "null plugin registered");
+	RMutaSession *s = r_muta_use (muta, "null");
+	mu_assert_notnull (s, "null plugin session");
+	r_muta_session_free (s);
+	r_muta_free (muta);
+	mu_end;
+}
+
 int all_tests(void) {
+	mu_run_test (test_new_free_lifecycle);
 	mu_run_test (test_sha2_unaligned_input);
 	return tests_passed != tests_run;
 }
