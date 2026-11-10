@@ -340,3 +340,23 @@ EXPECT=<<EOF
  `-> 0x00000030
 EOF
 RUN
+
+NAME=abtn get and set trace tag
+FILE=malloc://16
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx c3
+af
+abtn
+abtn 3
+abtn
+abtn 70
+EOF
+EXPECT=<<EOF
+0x0
+0x3
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid trace tag number
+EOF
+RUN

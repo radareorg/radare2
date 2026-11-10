@@ -14974,7 +14974,7 @@ static void cmd_anal_abtn(RCore *core, const char *input) {
 static void cmd_anal_abt(RCore *core, const char *input) {
 	switch (*input) {
 	case 'n': // "abtn"
-		cmd_anal_abtn (core, input);
+		cmd_anal_abtn (core, input + 1);
 		break;
 	case '*': // "abt*"
 	case 'j': // "abtj"
