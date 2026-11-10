@@ -115,11 +115,67 @@ static bool test_pokered_encode(void) {
 	mu_end;
 }
 
+static bool test_literal_encoders(void) {
+	const struct {
+		const char *name;
+		const char *input;
+		int len;
+		const char *hex;
+	} cases[] = {
+		{ "ebcdic37", "ABé?", 5, "c1c2516f" },
+		{ "ebcdic37", "A\0B", 3, "c100c2" },
+		{ "ebcdic37", "[]^~\n", 5, "babbb0a125" },
+		{ "ebcdic37", "\\n", 2, "e095" },
+		{ "ebcdic37", "", 0, "" },
+		{ "base64", "A", 1, "51513d3d" },
+		{ "base64", "AB", 2, "5155493d" },
+		{ "base64", "ABC", 3, "51554a44" },
+		{ "base64", "A\0B", 3, "51514243" },
+		{ "base64", "\xff", 1, "2f773d3d" },
+		{ "base64", "", 0, "" },
+	};
+	RMuta *muta = r_muta_new ();
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (cases); i++) {
+		RMutaSession *ms = r_muta_use (muta, cases[i].name);
+		mu_assert_notnull (ms, "encoder session");
+		mu_assert ("strict encoder capability", ms->h->encode);
+		int repeat;
+		for (repeat = 0; repeat < 2; repeat++) {
+			ut8 *out = NULL;
+			int consumed = 0;
+			int len = ms->h->encode (ms, (const ut8 *)cases[i].input, cases[i].len, &out, &consumed);
+			mu_assert ("encoding succeeds", len >= 0);
+			mu_assert_eq (consumed, cases[i].len, "complete input consumption");
+			char *hex = len? r_hex_bin2strdup (out, len): strdup ("");
+			mu_assert_streq (hex, cases[i].hex, "independent literal bytes");
+			free (hex);
+			free (out);
+		}
+		r_muta_session_free (ms);
+	}
+	RMutaSession *ms = r_muta_use (muta, "ebcdic37");
+	ut8 *out = NULL;
+	int consumed = 0;
+	int len = ms->h->encode (ms, (const ut8 *)"A☃", 4, &out, &consumed);
+	mu_assert_eq (len, -1, "CP37 rejects unmappable codepoints");
+	mu_assert_eq (consumed, 1, "CP37 failure offset");
+	mu_assert_null (out, "CP37 discards partial output");
+	len = ms->h->encode (ms, (const ut8 *)"A\xc3", 2, &out, &consumed);
+	mu_assert_eq (len, -1, "CP37 rejects truncated UTF-8");
+	mu_assert_eq (consumed, 1, "truncated UTF-8 error offset");
+	mu_assert_null (out, "truncated UTF-8 discards partial output");
+	r_muta_session_free (ms);
+	r_muta_free (muta);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_new_free_lifecycle);
 	mu_run_test (test_sha2_unaligned_input);
 	mu_run_test (test_strict_charset_table);
 	mu_run_test (test_pokered_encode);
+	mu_run_test (test_literal_encoders);
 	return tests_passed != tests_run;
 }
 
