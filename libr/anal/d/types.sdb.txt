@@ -2869,7 +2869,7 @@ signal=func
 func.signal.args=2
 func.signal.arg.0=int,sig
 func.signal.arg.1=void *,func
-func.signal.ret=void
+func.signal.ret=void *
 
 send=func
 func.send.args=4
