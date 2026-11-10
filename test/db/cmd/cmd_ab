@@ -324,3 +324,19 @@ EXPECT=<<EOF
 0
 EOF
 RUN
+
+NAME=abt+ without backtrace list
+FILE=--
+CMDS=<<EOF
+abt+0x100
+abt+0x200 1,2,0x30
+abt
+EOF
+EXPECT=<<EOF
+| abt+[addr] [bt0,bt1,bt2,..]  add a new backtrace
+-> 0x00000200
+ `-> 0x00000001
+ `-> 0x00000002
+ `-> 0x00000030
+EOF
+RUN

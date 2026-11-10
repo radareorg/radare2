@@ -3504,8 +3504,19 @@ R_API char *r_str_slice(const char *str, RStringSlice s) {
 R_API RVecStringSlice *r_str_split_vec(const char *str, const char *c, int n) {
 	R_RETURN_VAL_IF_FAIL (str && c, NULL);
 	size_t b = 0;
-	// TODO honor 'c' and 'n'. not just split by ' '
 	RVecStringSlice *vs = RVecStringSlice_new ();
+	if (*c) {
+		const size_t clen = strlen (c);
+		const char *p;
+		while ((n <= 0 || RVecStringSlice_length (vs) + 1 < (size_t)n) && (p = strstr (str + b, c))) {
+			RStringSlice slice = { b, p - str };
+			RVecStringSlice_push_back (vs, &slice);
+			b = slice.to + clen;
+		}
+		RStringSlice slice = { b, strlen (str) };
+		RVecStringSlice_push_back (vs, &slice);
+		return vs;
+	}
 	while (str[b]) {
 		const char ch = str[b];
 		if (isspace (ch)) {

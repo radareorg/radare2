@@ -14985,6 +14985,11 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 		{
 			char *arg_addr = strdup (input);
 			char *arg_bt = r_str_after (arg_addr, ' ');
+			if (!arg_bt) {
+				r_cons_cmd_help_match (core->cons, help_msg_abt, "abt+", 0, true);
+				free (arg_addr);
+				break;
+			}
 			ut64 addr = r_num_math (core->num, arg_addr);
 			RVecStringSlice *ss = r_str_split_vec (arg_bt, ",", 0);
 			RVecBacktrace *bt = RVecBacktrace_new ();
