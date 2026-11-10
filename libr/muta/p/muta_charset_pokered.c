@@ -125,6 +125,10 @@ static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	return r_muta_charset_table_update (ms, buf, len, pokered_table, "\\x%02x", r_muta_charset_parse_default, '?');
 }
 
+static int encode(RMutaSession *ms, const ut8 *in, int len, ut8 **out, int *consumed) {
+	return r_muta_charset_encode_strict (in, len, out, consumed, pokered_table);
+}
+
 RMutaPlugin r_muta_plugin_charset_pokered = {
 	.meta = {
 		.name = "pokered",
@@ -133,6 +137,7 @@ RMutaPlugin r_muta_plugin_charset_pokered = {
 	},
 	.type = R_MUTA_TYPE_CHARSET,
 	.implements = "pokered",
+	.encode = encode,
 	.update = update,
 	.end = update
 };

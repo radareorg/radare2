@@ -89,10 +89,37 @@ static bool test_strict_charset_table(void) {
 	mu_end;
 }
 
+static bool test_pokered_encode(void) {
+	RMuta *muta = r_muta_new ();
+	RMutaSession *ms = r_muta_use (muta, "pokered");
+	mu_assert_notnull (ms, "pokered session");
+	mu_assert ("pokered supports strict encoding", ms->h->encode);
+	const ut8 input[] = "A<LINE>Bé?'d-";
+	const ut8 expected[] = { 0x80, 0x4f, 0x81, 0xe0, 0xe6, 0xbb, 0x7f };
+	ut8 *out = NULL;
+	int consumed = 0;
+	int len = ms->h->encode (ms, input, sizeof (input) - 1, &out, &consumed);
+	mu_assert_eq (len, sizeof (expected), "pokered output length");
+	mu_assert_eq (consumed, sizeof (input) - 1, "pokered complete input");
+	mu_assert_memeq (out, expected, len, "UTF-8, controls, contractions and canonical hyphen");
+	free (out);
+	len = ms->h->encode (ms, (const ut8 *)"A☃", 4, &out, &consumed);
+	mu_assert_eq (len, -1, "unmappable character fails");
+	mu_assert_eq (consumed, 1, "pokered failure offset");
+	mu_assert_null (out, "pokered failure discards prefix");
+	len = ms->h->encode (ms, input, 0, &out, &consumed);
+	mu_assert_eq (len, 0, "empty literal after failure succeeds");
+	free (out);
+	r_muta_session_free (ms);
+	r_muta_free (muta);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_new_free_lifecycle);
 	mu_run_test (test_sha2_unaligned_input);
 	mu_run_test (test_strict_charset_table);
+	mu_run_test (test_pokered_encode);
 	return tests_passed != tests_run;
 }
 
