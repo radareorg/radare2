@@ -186,7 +186,7 @@ EOF
 EXPECT=<<EOF
  ulebtest : 0x00000000 = 624485
  ulebtest : 0x00000014 = [ 608101, 4750, 37, 0 ]
-"wx 2a" @ 0x00000019
+wx 2a @ 0x00000019
  ulebtest : 0x00000014 = [ 608101, 4750, 42, 0 ]
 [{"name":"ulebtest","type":"u","offset":20,"values":[608101,4750,42,0]}]
 EOF
@@ -330,8 +330,8 @@ pf.troll
 EOF
 EXPECT=<<EOF
     hu : 0x00000000 = 42
- swagg : 0x00000004 = "B*A AABLABLA"
-  plop : 0x00000011 = 4000
+ swagg : 0x00000004 = "B*A AA"
+  plop : 0x0000000b = 4000
 EOF
 RUN
 

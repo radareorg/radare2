@@ -101,9 +101,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pf field set writes only the field, pf* only prints it
-FILE=malloc://32
+NAME=pf field set writes only the field's own bytes
+FILE=malloc://256
 CMDS=<<EOF
+td enum en {A=1,B=2}
 wx 41424344 @ 0
 wx 99 @ 8
 om 3 8 1 8 -w- hidden
@@ -112,23 +113,184 @@ pf*.x.a=1 @ 0
 p8 12 @ 0 @e:io.va=false
 pf.x.a=1 @ 0
 p8 12 @ 0 @e:io.va=false
-pf.y [4]XT c d
+pf.y [4]XTQP c d e f
 pf.y.c=11 @ 0x10
 pf*.y.c=11 @ 0x10
 .pf.y.c=11 @ 0x10
 pf.y.d=1 @ 0x10
+pf.y.e=1 @ 0x10
+pf.y.f=1 @ 0x10
 p8 16 @ 0x10
+wx 1122334455667788aabbccdd @ 0x20
+pf.inner x a
+pf.outer [2]? (inner)entries
+pf*.outer.entries[1].a=1 @ 0x20
+p8 12 @ 0x20
+pf.outer.entries[1].a=1 @ 0x20
+p8 12 @ 0x20
+pf.outer.entries.a=5 @ 0x20
+pf.outer.entries=7 @ 0x20
+p8 12 @ 0x20
+wx 11223344 @ 0x2c
+pf.r 2bb a b
+pf*.r.b=7 @ 0x2c
+pf.r.b=7 @ 0x2c
+p8 4 @ 0x2c
+wx 1122334401567788 @ 0x30
+pf.u x[1]u a b
+pf.u.b[0]=128 @ 0x30
+p8 8 @ 0x30
+pf.u.b[0]=127 @ 0x30
+p8 8 @ 0x30
+wx ac02112233445566 @ 0x38
+pf.v ux a b
+pf.v.b=1 @ 0x38
+pf.v.a=301 @ 0x38
+p8 8 @ 0x38
+wx 6162636465660099 @ 0x40
+pf.s zb s t
+pf.s.s=xy @ 0x40
+p8 8 @ 0x40
+pf.s.s=abc @ 0x40
+pf.s.s=\x4 @ 0x40
+pf.s.s=\x01\x0a @ 0x40
+p8 8 @ 0x40
+wx 41424300 @ 0x48
+pf.s4 [4]z s
+pf.s4.s[1]=xxxx @ 0x48
+pf.s4.s='xy' @ 0x48
+p8 4 @ 0x48
+wx 6100620063000000aa @ 0x50
+pf.w Zb s t
+pf.w.s=d @ 0x50
+pf.w.s=ef @ 0x50
+p8 9 @ 0x50
+wx 6800000000000000 @ 0x60
+wx 11223344 @ 0x68
+pf.p *x ptr
+pf*.p.ptr=5 @ 0x60
+pf.p.ptr=5 @ 0x60
+p8 12 @ 0x60
+wx 02000000aabbccdd @ 0x70
+pf.e Ex (en)k v
+pf.e.k=1 @ 0x70
+pf.e.v=5 @ 0x70
+p8 8 @ 0x70
+wx 02000000aabbccdd @ 0x78
+pf.bf Bx (en)k v
+pf.bf.k=3 @ 0x78
+pf.bf.v=5 @ 0x78
+p8 8 @ 0x78
+pf.gd G v
+pf.gd.v=1.5 @ 0xd0
+pf.gd @ 0xd0
+wx ac020501 @ 0xc0
+pf.ud [3]u a
+pf.ud.a[2] @ 0xc0
+s 0x80
+wow a5 @ $$!64
+pf.t ebCwWxdiotqn1N2[1]EfFg[2]c fb fC fw fW fx fd fi fo ft fq fn fN (en)fE ff fF fg fc
+p8 64
+pf.t.fb=0x42
+pf.t.fC=7
+pf.t.fw=0x1234
+pf.t.fW=-2
+pf.t.fx=0xdeadbeef
+pf.t.fd=2 + 3
+pf.t.fi=0x10
+pf.t.fo=8
+pf.t.ft=1
+pf.t.fq=0x0102030405060708
+pf.t.fn=-1
+pf.t.fN=0x0a0b
+pf.t.fE=2
+pf.t.ff=1.5
+pf.t.fF=2.5
+pf.t.fg=1
+pf.t.fc=
+pf.t.fc=x
+pf.t.fc[1]=y
+pf.t.fc[1]=yz
+p8 64
 EOF
 EXPECT=<<EOF
-wv4 1 @ 0x00000000
+wx 01000000 @ 0x00000000
 414243440000000099000000
 010000000000000099000000
 00000000000000000000000000000000
+wx 01000000 @ 0x00000024
+1122334455667788aabbccdd
+1122334401000000aabbccdd
+0500000001000000aabbccdd
+wx 07 @ 0x0000002d
+11073344
+1122334401567788
+112233447f567788
+ad02010000005566
+7879006465660099
+010a006465660099
+78790000
+6400000063000000aa
+wx 05000000 @ 0x00000068
+680000000000000005000000
+0100000005000000
+0300000005000000
+ v : 0x000000d0 = 1.5
+ a : 0x000000c0 = [ 1 ]
+a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5
+42071234fffedeadbeef000000050000001000000008000000010102030405060708ff0a0b023fc0000040040000000000003f807879a5a5a5a5a5a5a5a5a5a5
 EOF
 EXPECT_ERR=<<EOF
 ERROR: pf X not yet implemented
 ERROR: pf X not yet implemented
 ERROR: pf X not yet implemented
 ERROR: pf T not yet implemented
+ERROR: pf Q not yet implemented
+ERROR: pf P not yet implemented
+ERROR: Cannot set a struct field as a whole, name one of its members
+ERROR: Cannot resize the uleb field from 1 to 2 bytes
+ERROR: Cannot grow the string field from 2 to 3 chars
+ERROR: Unexpected end of string
+ERROR: Cannot grow the string field from 3 to 4 chars
+ERROR: Cannot grow the string field from 1 to 2 chars
+ERROR: Cannot grow the string field from 1 to 2 chars
+EOF
+RUN
+
+NAME=pf* field set prints only the command and replaying it matches pf
+FILE=malloc://64
+CMDS=<<EOF
+wow a5 @ 0!64
+wx 00000000
+pf.l fgFxQGP f g F x q G p
+pf*.l.x=0x55
+p8 24
+.pf*.l.x=0x55
+p8 24
+wow a5 @ 0!64
+wx 00000000
+pf.l.x=0x55
+p8 24
+EOF
+EXPECT=<<EOF
+wx 55000000 @ 0x0000000e
+00000000a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5
+00000000a5a5a5a5a5a5a5a5a5a555000000a5a5a5a5a5a5
+00000000a5a5a5a5a5a5a5a5a5a555000000a5a5a5a5a5a5
+EOF
+RUN
+
+NAME=pf register field set evaluates the value
+FILE=malloc://32
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+pf.r r (eax)reg
+pf*.r.reg=2 + 3
+pf.r.reg=2 + 3
+dr?eax
+EOF
+EXPECT=<<EOF
+dr eax=0x5
+0x00000005
 EOF
 RUN
