@@ -126,21 +126,46 @@ static int r_asm_pseudo_align(RAsm *a, RAsmCode *acode, RAnalOp *op, char *input
 	return asm_op_set_padding (op, mod? boundary - mod: 0, fill, last_stage);
 }
 
+static bool asm_directive(const char *input, const char *name) {
+	size_t len = strlen (name);
+	return !strncmp (input, name, len) && (!input[len] || isspace ((ut8)input[len]));
+}
+
+static int asm_parse_string(char *input, char **text) {
+	input = (char *)r_str_trim_head_ro (input);
+	if (*input != '"') {
+		R_LOG_ERROR ("Expected a quoted string");
+		return -1;
+	}
+	char *end = input + 1;
+	for (; *end && *end != '"'; end++) {
+		if (*end == '\\') {
+			if (end[1] == 'x' && (!isxdigit ((ut8)end[2]) || !isxdigit ((ut8)end[3]))) {
+				R_LOG_ERROR ("Invalid hex escape in string");
+				return -1;
+			}
+			if (end[1]) {
+				end++;
+			}
+		}
+	}
+	if (*end != '"' || *r_str_trim_head_ro (end + 1) || end - input > INT_MAX) {
+		R_LOG_ERROR ("Invalid quoted string");
+		return -1;
+	}
+	*end = 0;
+	*text = input + 1;
+	return r_str_unescape (*text);
+}
+
 static int r_asm_pseudo_string(RAnalOp *op, char *input, bool zero) {
-	int len = strlen (input) - 1;
-	if (len < 1) {
-		return 0;
+	char *text;
+	int len = asm_parse_string (input, &text);
+	if (len < 0 || (zero && len == INT_MAX)) {
+		return -1;
 	}
-	// TODO: if not starting with '"'.. give up
-	if (input[len] == '"') {
-		input[len] = 0;
-	}
-	if (*input == '"') {
-		input++;
-	}
-	len = r_str_unescape (input) + (zero? 1: 0);
-	r_anal_op_set_mnemonic (op, op->addr, input);
-	return asm_op_set_data (op, (const ut8 *)input, len);
+	r_anal_op_set_mnemonic (op, op->addr, text);
+	return asm_op_set_data (op, (const ut8 *)text, len + (zero? 1: 0));
 }
 
 static bool asm_eval_operand(const char *arg, size_t len, char *expression, const char *directive, ut64 *value) {
@@ -783,6 +808,90 @@ static bool is_hash_comment(const char *line, const char *hash) {
 	return comma != hash;
 }
 
+static char *asm_find_unquoted(char *str, const char *chars) {
+	bool quoted = false;
+	for (; *str; str++) {
+		if (quoted && *str == '\\' && str[1]) {
+			str++;
+		} else if (*str == '"') {
+			quoted = !quoted;
+		} else if (!quoted && strchr (chars, *str)) {
+			return str;
+		}
+	}
+	return NULL;
+}
+
+static char *asm_prepare_source(RAsm *a, char *source) {
+	char *p = source;
+	while ((p = asm_find_unquoted (p, ","))) {
+		if (p[1] == ',') {
+			*p++ = '\n';
+			*p = ' ';
+		}
+		p++;
+	}
+	char *nl = strchr (source, '\n');
+	const bool semicolon_comments = nl && strchr (nl + 1, '\n');
+	char *line = source;
+	p = source;
+	while ((p = asm_find_unquoted (p, ";#\n/"))) {
+		char *end = NULL;
+		if (*p == '/' && p[1] == '*') {
+			end = strstr (p + 2, "*/");
+			end = end? end + 2: p + strlen (p);
+		} else if ((*p == ';' && semicolon_comments) || (*p == '#' && is_hash_comment (line, p))) {
+			end = p + strcspn (p, "\r\n");
+		}
+		if (end) {
+			while (p < end) {
+				if (*p == '\n' || *p == '\r') {
+					line = p + 1;
+				} else {
+					*p = ' ';
+				}
+				p++;
+			}
+		} else {
+			if (*p == '\n' || *p == ';') {
+				line = p + 1;
+			}
+			p++;
+		}
+	}
+	RStrBuf sb = {0};
+	char *start = source;
+	p = source;
+	while ((p = asm_find_unquoted (p, "$"))) {
+		char *end = p + 1;
+		char value[32];
+		if (p[1] == '$') {
+			end = p + 2;
+			snprintf (value, sizeof (value), "0x%" PFMT64x, a->pc);
+		} else if (a->syscall && r_str_startswith (p, "$sys.")) {
+			end = p + strcspn (p, " \t\n\r#;");
+			char saved = *end;
+			*end = 0;
+			int num = r_syscall_get_num (a->syscall, p + 5);
+			*end = saved;
+			snprintf (value, sizeof (value), "%d", num);
+		} else {
+			p++;
+			continue;
+		}
+		if (!r_strbuf_append_n (&sb, start, p - start) || !r_strbuf_append (&sb, value)) {
+			r_strbuf_fini (&sb);
+			return NULL;
+		}
+		start = p = end;
+	}
+	if (!r_strbuf_append (&sb, start)) {
+		r_strbuf_fini (&sb);
+		return NULL;
+	}
+	return r_strbuf_drain_nofree (&sb);
+}
+
 static char *replace_directives(const char *str) {
 	RStrBuf sb = {0};
 	const char *p = str;
@@ -979,10 +1088,13 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, ut8 *fill_
 	} else if (r_str_startswith (ptr, ".lil_endian") || r_str_startswith (ptr, "little_endian")) {
 		r_asm_set_big_endian (a, false);
 		ret = 0;
-	} else if (r_str_startswith (ptr, ".asciz")) {
-		char *str = r_str_trim_dup (ptr + 6);
-		ret = r_asm_pseudo_string (op, ptr + 6, 1);
-		free (str);
+	} else if (asm_directive (ptr, ".ascii") || asm_directive (ptr, ".asciz")
+			|| asm_directive (ptr, ".asciiz") || asm_directive (ptr, ".string")) {
+		char *arg = ptr;
+		while (*arg && !isspace ((ut8)*arg)) {
+			arg++;
+		}
+		ret = r_asm_pseudo_string (op, arg, !asm_directive (ptr, ".ascii"));
 	} else if (r_str_startswith (ptr, ".extern")) {
 		char *str = r_str_trim_dup (ptr + strlen (".extern"));
 		if (!r_asm_code_equ_get (acode, str)) {
@@ -1002,26 +1114,6 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, ut8 *fill_
 		}
 		free (str);
 		ret = 0;
-	} else if (r_str_startswith (ptr, ".string ")) {
-		char *str = r_str_trim_dup (ptr + 8);
-		ret = r_asm_pseudo_string (op, str, 1);
-		free (str);
-	} else if (r_str_startswith (ptr, ".asciiz")) {
-		if (isspace (ptr[7])) {
-			char *str = r_str_trim_dup (ptr + 8);
-			ret = r_asm_pseudo_string (op, ptr + 8, true);
-			free (str);
-		} else {
-			R_LOG_ERROR ("Unknown directive %s. use .ascii or .asciiz", ptr);
-		}
-	} else if (r_str_startswith (ptr, ".ascii")) {
-		if (isspace (ptr[6])) {
-			char *str = r_str_trim_dup (ptr + 7);
-			ret = r_asm_pseudo_string (op, ptr + 7, false);
-			free (str);
-		} else {
-			R_LOG_ERROR ("Unknown directive %s. use .ascii or .asciiz", ptr);
-		}
 	} else if (r_str_startswith (ptr, ".align") && isspace ((ut8)ptr[6])) {
 		char *str = r_str_trim_dup (ptr + 6);
 		ret = str? r_asm_pseudo_align (a, acode, op, str, *fill_value, last_stage): -1;
@@ -1264,7 +1356,7 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, ut8 *fill_
 
 
 R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
-	int num, stage, ret, idx, ctr, i, linenum = 0;
+	int stage, ret, idx, ctr, i, linenum = 0;
 	char *ptr = NULL, *ptr_start = NULL;
 	RAnalOp op = { 0 };
 	ut64 off, pc;
@@ -1307,46 +1399,16 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 			return NULL;
 		}
 	}
-	/* consider ,, an alias for a newline */
-	lbuf = r_str_replace (lbuf, ",,", "\n", true);
-	/* accept ';' as comments when input is multiline */
-	{
-		char *nl = strchr (lbuf, '\n');
-		if (nl) {
-			if (strchr (nl + 1, '\n')) {
-				r_str_replace_char (lbuf, ';', '#');
-			}
-		}
+	char *prepared = asm_prepare_source (a, lbuf);
+	free (lbuf);
+	lbuf = prepared;
+	if (!lbuf) {
+		goto fail;
 	}
-	// XXX: ops like mov eax, $pc+33 fail coz '+' is not a valid number!!!
-	// XXX: must be handled here to be global.. and not arch-specific
-	{
-		char val[32];
-		snprintf (val, sizeof (val), "0x%" PFMT64x, a->pc);
-		lbuf = r_str_replace (lbuf, "$$", val, 1);
-	}
-	if (a->syscall) {
-		char val[32];
-		char *aa, *p = strstr (lbuf, "$sys.");
-		while (p) {
-			char *sp = (char *)r_str_closer_chr (p, " \n\r#");
-			if (sp) {
-				char osp = *sp;
-				*sp = 0;
-				aa = strdup (p);
-				*sp = osp;
-				num = r_syscall_get_num (a->syscall, aa + 5);
-				snprintf (val, sizeof (val), "%d", num);
-				lbuf = r_str_replace (lbuf, aa, val, 1);
-				free (aa);
-			}
-			p = strstr (p + 5, "$sys.");
-		}
-	}
-	bool labels = !!strchr (lbuf, ':');
+	bool labels = !!asm_find_unquoted (lbuf, ":");
 
 	/* Tokenize */
-	for (tokens[0] = lbuf, ctr = 0; (ptr = strpbrk (tokens[ctr], ";\n\r"));) {
+	for (tokens[0] = lbuf, ctr = 0; (ptr = asm_find_unquoted (tokens[ctr], ";\n\r"));) {
 		if (ctr + 1 >= tokens_size) {
 			const size_t new_tokens_size = tokens_size * 2;
 			if (sizeof (char *) * new_tokens_size <= sizeof (char *) * tokens_size) {
@@ -1376,24 +1438,16 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 // XXX: stages must be dynamic. until all equs have been resolved
 #define STAGES 5
 	pc = a->pc;
-	bool inComment = false;
 	for (stage = 0; stage < STAGES; stage++) {
 		if (stage < 2 && !labels) {
 			continue;
 		}
-		inComment = false;
 		fill_value = 0;
 		r_asm_set_pc (a, pc);
 		linenum = 0;
 		for (idx = ret = i = 0, off = a->pc; i <= ctr; i++) {
 			buf_token = tokens[i];
 			if (!buf_token) {
-				continue;
-			}
-			if (inComment) {
-				if (strstr (buf_token, "*/")) {
-					inComment = false;
-				}
 				continue;
 			}
 			// XXX TODO remove arch-specific hacks
@@ -1405,16 +1459,6 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 				for (ptr_start = buf_token; *ptr_start && IS_SEPARATOR (*ptr_start); ptr_start++)
 					;
 			}
-			if (r_str_startswith (ptr_start, "/*")) {
-				if (!strstr (ptr_start + 2, "*/")) {
-					inComment = true;
-				}
-				continue;
-			}
-			ptr = strchr (ptr_start, '#');
-			if (ptr && is_hash_comment (ptr_start, ptr)) {
-				*ptr = '\0';
-			}
 			r_asm_set_pc (a, a->pc + ret);
 			off = a->pc;
 			idx += ret;
@@ -1424,7 +1468,7 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 			}
 			linenum++;
 			/* labels */
-			if (labels && (ptr = strchr (ptr_start, ':'))) {
+			if (labels && (ptr = asm_find_unquoted (ptr_start, ":"))) {
 				bool is_a_label = true;
 				char *q = ptr_start;
 				while (*q) {
@@ -1460,7 +1504,7 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 				bool literal = r_str_startswith (ptr_start, ".equ ")
 					|| r_str_startswith (ptr_start, ".ascii")
 					|| r_str_startswith (ptr_start, ".asciz")
-					|| r_str_startswith (ptr_start, ".string ")
+					|| asm_directive (ptr_start, ".string")
 					|| r_str_startswith (ptr_start, ".incbin ");
 				char *str = literal? strdup (ptr_start): r_asm_code_equ_replace (acode, ptr_start);
 				if (!str) {
