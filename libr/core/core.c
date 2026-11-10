@@ -3894,6 +3894,7 @@ static char *core_editor_line(const RCore *core, const char *file, const char *s
 		if (!escaped_name) {
 			goto beach;
 		}
+		r_cons_set_raw (core->cons, false);
 		const int rc = start_line > 0 && editor_supports_line (editor)
 			? r_sys_cmdf ("%s +%d \"+normal! zt\" \"%s\"", editor, start_line, escaped_name)
 			: r_sys_cmdf ("%s \"%s\"", editor, escaped_name);

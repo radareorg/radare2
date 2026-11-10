@@ -905,6 +905,7 @@ R_API void r_cons_flush(RCons *cons) {
 				r_cons_reset (cons);
 				goto beach;
 			}
+			r_cons_set_raw (cons, false);
 			r_sys_cmd_str_full (cons->pager, ctx->buffer, -1, NULL, NULL, NULL);
 			r_cons_reset (cons);
 		} else if (cons->maxpage > 0 && ctx->buffer_len > cons->maxpage) {

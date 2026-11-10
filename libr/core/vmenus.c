@@ -4285,6 +4285,7 @@ onemoretime:
 				r_cons_clear (core->cons);
 				r_cons_flush (core->cons);
 				char *eman = r_str_escape_sh (man);
+				r_cons_set_raw (core->cons, false);
 				r_sys_cmdf ("man \"%s\"", eman);
 				free (eman);
 				free (man);

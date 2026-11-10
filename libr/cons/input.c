@@ -38,7 +38,9 @@ R_API int r_cons_controlz(RCons *cons, int ch) {
 	if (ch == 0x1a) {
 		r_cons_show_cursor (cons, true);
 		r_cons_enable_mouse (cons, false);
+		r_cons_set_raw (cons, false);
 		r_sys_stop ();
+		r_cons_set_raw (cons, true);
 		return 0;
 	}
 #endif

@@ -2,6 +2,86 @@
 #include <r_util/r_time.h>
 #include "minunit.h"
 
+#if R2__UNIX__ && LIBC_HAVE_FORK && !__wasi__
+#include <sys/wait.h>
+
+static bool test_cons_suspend_raw(void) {
+	int master = posix_openpt (O_RDWR | O_NOCTTY);
+	mu_assert ("open pseudo-terminal", master >= 0);
+	mu_assert_eq (grantpt (master), 0, "grant pseudo-terminal");
+	mu_assert_eq (unlockpt (master), 0, "unlock pseudo-terminal");
+	int slave = open (ptsname (master), O_RDWR | O_NOCTTY);
+	mu_assert ("open slave terminal", slave >= 0);
+	struct termios cooked;
+	mu_assert_eq (tcgetattr (slave, &cooked), 0, "read terminal mode");
+	cooked.c_lflag |= ICANON | ECHO | ISIG;
+	mu_assert_eq (tcsetattr (slave, TCSANOW, &cooked), 0, "initialize cooked mode");
+	pid_t child = fork ();
+	mu_assert ("fork console reader", child >= 0);
+	if (!child) {
+		alarm (5);
+		// Only stop the test child, never the test runner's process group.
+		if (setpgid (0, 0) || dup2 (slave, STDIN_FILENO) < 0) {
+			_exit (1);
+		}
+		close (master);
+		close (slave);
+		r_sys_signal (SIGTSTP, SIG_DFL);
+		RCons *cons = r_cons_new ();
+		r_cons_set_raw (cons, true);
+		int i;
+		for (i = 0; i < 2; i++) {
+			if (r_cons_controlz (cons, 0x1a) != 0) {
+				_exit (2);
+			}
+			struct termios resumed;
+			if (tcgetattr (STDIN_FILENO, &resumed) || (resumed.c_lflag & (ICANON | ECHO | ISIG))) {
+				_exit (3);
+			}
+			int ch = i? r_cons_readchar_timeout (cons, 1000): r_cons_readchar (cons);
+			if (ch != 'x') {
+				_exit (4);
+			}
+		}
+		r_cons_set_raw (cons, false);
+		r_cons_free (cons);
+		_exit (0);
+	}
+	int status = 0, stops = 0;
+	bool cooked_while_stopped = true;
+	pid_t waited;
+	for (;;) {
+		waited = waitpid (child, &status, WUNTRACED);
+		if (waited < 0 && errno == EINTR) {
+			continue;
+		}
+		if (waited != child || !WIFSTOPPED (status)) {
+			break;
+		}
+		stops++;
+		struct termios stopped;
+		cooked_while_stopped &= !tcgetattr (slave, &stopped)
+			&& (stopped.c_lflag & (ICANON | ECHO | ISIG)) == (ICANON | ECHO | ISIG);
+		// Simulate the shell restoring its terminal settings before fg.
+		tcsetattr (slave, TCSANOW, &cooked);
+		write (master, "x", 1);
+		kill (child, SIGCONT);
+	}
+	struct termios restored;
+	bool cooked_on_exit = !tcgetattr (slave, &restored)
+		&& (restored.c_lflag & (ICANON | ECHO | ISIG)) == (ICANON | ECHO | ISIG);
+	close (slave);
+	close (master);
+	mu_assert_eq (waited, child, "reap console reader");
+	mu_assert_true (WIFEXITED (status), "console reader exits normally");
+	mu_assert_eq (WEXITSTATUS (status), 0, "console reader exits successfully");
+	mu_assert_eq (stops, 2, "repeated suspend and resume");
+	mu_assert_true (cooked_while_stopped, "release raw mode before stopping");
+	mu_assert_true (cooked_on_exit, "restore cooked mode on exit");
+	mu_end;
+}
+#endif
+
 bool test_r_cons(void) {
 	// NOTE: not initializing a value here results in UB
 	ut8 r = 0, g = 0, b = 0, a = 0;
@@ -963,6 +1043,9 @@ bool test_cons_image_width(void) {
 }
 
 bool all_tests(void) {
+#if R2__UNIX__ && LIBC_HAVE_FORK && !__wasi__
+	mu_run_test (test_cons_suspend_raw);
+#endif
 	mu_run_test (test_cons_image_pixel_rows);
 	mu_run_test (test_cons_image_width);
 	mu_run_test (test_cons_image_color_state);
