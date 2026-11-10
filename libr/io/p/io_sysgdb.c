@@ -171,9 +171,6 @@ repeat:
 				if (colon) {
 					colon++;
 				}
-				if (nextline) {
-					*nextline = 0;
-				}
 				while (colon && bufi < count) {
 					char *sp = strchr (colon, ' ');
 					if (sp) {
@@ -188,7 +185,7 @@ repeat:
 						break;
 					}
 				}
-				res = nextline + 1;
+				res = nextline;
 			} while (nextline && bufi < count);
 		} else {
 			do {
@@ -205,7 +202,7 @@ repeat:
 						colon++;
 					}
 				}
-				res = nextline + 1;
+				res = nextline;
 			} while (nextline);
 		}
 		free (ores);
