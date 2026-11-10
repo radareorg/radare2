@@ -4804,13 +4804,15 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 			length = atoi (space + 1);
 		}
 		int i = 0;
-		if (length + size > 0xfffff) {
-			R_LOG_ERROR ("Too large");
+		if (size < 1 || length < 0 || length + size > 0xfffff) {
+			R_LOG_ERROR ("Invalid size");
 			break;
 		}
-		ut8 *data = calloc (length + size, 1);
+		// convert reads up to 4 bytes regardless of the step size
+		const int datalen = length + R_MAX (size, 4);
+		ut8 *data = calloc (datalen, 1);
 		if (data) {
-			(void)r_io_read_at (core->io, core->addr, data, length + size);
+			(void)r_io_read_at (core->io, core->addr, data, datalen);
 			while (i < length) {
 				ut32 n = convert (data + i, byteorder);
 				r_cons_printf (core->cons, "0x%08" PFMT64x "  %d (0x%08x)\n", core->addr + i, n, n);

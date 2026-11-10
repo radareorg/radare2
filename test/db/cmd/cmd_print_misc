@@ -30,3 +30,21 @@ Mon Feb  6 06:28:15 2040
 Thu Jan  1 00:00:00 1970
 EOF
 RUN
+
+NAME=pve step smaller than byteorder digits
+FILE=malloc://16
+CMDS=<<EOF
+wx 0102030405060708090a0b0c0d0e0f10
+pve1 4321 15~?
+pve2 21 4
+pve0 4321 4
+EOF
+EXPECT=<<EOF
+15
+0x00000000  513 (0x00000201)
+0x00000002  1027 (0x00000403)
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid size
+EOF
+RUN
