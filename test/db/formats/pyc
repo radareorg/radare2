@@ -400,3 +400,28 @@ EXPECT=<<EOF
 arg int l255 @ l255
 EOF
 RUN
+
+NAME=pyc constant tuples sharing children through refs are rendered bounded
+FILE=bins/pyc/tuple-ref-fanout.pyc
+TIMEOUT=10
+CMDS=<<EOF
+pi 1~[0]
+pi 1~?,...)
+EOF
+EXPECT=<<EOF
+load_const
+1
+EOF
+RUN
+
+NAME=pyc long and complex constants are rendered and owned by their objects
+FILE=bins/pyc/long-complex-consts.pyc
+CMDS=<<EOF
+pi 3
+EOF
+EXPECT=<<EOF
+load_const 0x10000000000000000000000000
+load_const -0x0100000000000000000000
+load_const 1.5+2j
+EOF
+RUN

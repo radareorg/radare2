@@ -212,7 +212,8 @@ static pyc_object *get_long_object(RBuffer *buffer) {
 		hexstr[--j] = '-';
 	}
 
-	ret->data = &hexstr[j];
+	memmove (hexstr, hexstr + j, size - j);
+	ret->data = hexstr;
 	return ret;
 }
 
@@ -633,14 +634,13 @@ static void free_object(pyc_object *object) {
 	case TYPE_FLOAT:
 	case TYPE_BINARY_FLOAT:
 	case TYPE_INT64:
+	case TYPE_LONG:
+	case TYPE_COMPLEX:
+	case TYPE_BINARY_COMPLEX:
 		free (object->data);
 		break;
 	case TYPE_INTERNED:
 		// data is borrowed from interned_table, don't free
-		break;
-	case TYPE_LONG:
-		// data points inside allocated buffer, can't free directly
-		// TODO: store original pointer for proper freeing
 		break;
 	case TYPE_CODE_v0:
 	case TYPE_CODE_v1: {
@@ -664,8 +664,6 @@ static void free_object(pyc_object *object) {
 	case TYPE_STOPITER:
 		// no data to free
 		break;
-	case TYPE_BINARY_COMPLEX:
-	case TYPE_COMPLEX:
 	case TYPE_STRINGREF:
 	case TYPE_UNKNOWN:
 		R_LOG_DEBUG ("Free not implemented for type %x", object->type);

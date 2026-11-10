@@ -92,10 +92,17 @@ static bool symbols_vec(RBinFile *bf) {
 	if (!obj) {
 		return false;
 	}
-	if (!obj->cobjs) {
+	// rebasing reparses the code objects, so drop the previous parse first
+	pyc_object_free (obj->pobj);
+	obj->pobj = NULL;
+	if (obj->cobjs) {
+		r_list_purge (obj->cobjs);
+	} else {
 		obj->cobjs = r_list_newf (NULL); // borrowed pointers into pobj
 	}
-	if (!obj->interned_table) {
+	if (obj->interned_table) {
+		r_list_purge (obj->interned_table);
+	} else {
 		obj->interned_table = r_list_newf ((RListFree)free);
 	}
 	RBuffer *buffer = bf->buf;

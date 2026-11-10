@@ -65,32 +65,40 @@ static const char *str_from_pycobj(pyc_object *obj) {
 	return NULL;
 }
 
-static char *obj_tostring(pyc_object *obj);
+// TYPE_REF lets nested tuples share children, so bound the rendered constant
+#define PYC_MAX_CONST_LEN 1024
 
-static char *generic_array_obj_tostring(RList *l) {
+static void obj_tostring_sb(RStrBuf *sb, pyc_object *obj);
+
+static void generic_array_obj_tostring(RStrBuf *sb, RList *l) {
 	RListIter *iter;
 	pyc_object *e;
-	RStrBuf *sb = r_strbuf_new ("(");
+	r_strbuf_append (sb, "(");
 	r_list_foreach (l, iter, e) {
-		char *s = obj_tostring (e);
-		r_strbuf_appendf (sb, "%s%s", iter == l->head? "": ",", r_str_get (s));
-		free (s);
+		if (iter != l->head) {
+			r_strbuf_append (sb, ",");
+		}
+		if (r_strbuf_length (sb) > PYC_MAX_CONST_LEN) {
+			r_strbuf_append (sb, "...");
+			break;
+		}
+		obj_tostring_sb (sb, e);
 	}
 	r_strbuf_append (sb, ")");
-	return r_strbuf_drain (sb);
 }
 
-static char *obj_tostring(pyc_object *obj) {
+static void obj_tostring_sb(RStrBuf *sb, pyc_object *obj) {
 	if (!obj) {
-		return NULL;
+		return;
 	}
 	switch (obj->type) {
 	case TYPE_CODE_v0:
 	case TYPE_CODE_v1: {
 		pyc_code_object *co = obj->data;
-		return r_str_newf ("CodeObject(%s) from %s",
+		r_strbuf_appendf (sb, "CodeObject(%s) from %s",
 			r_str_get (str_from_pycobj (co->name)),
 			r_str_get (str_from_pycobj (co->filename)));
+		break;
 	}
 	case TYPE_DICT:
 	case TYPE_TUPLE:
@@ -98,19 +106,39 @@ static char *obj_tostring(pyc_object *obj) {
 	case TYPE_FROZENSET:
 	case TYPE_LIST:
 	case TYPE_SMALL_TUPLE:
-		return generic_array_obj_tostring (obj->data);
+		generic_array_obj_tostring (sb, obj->data);
+		break;
 	case TYPE_STRING:
 	case TYPE_INTERNED:
 	case TYPE_STRINGREF:
-		return r_str_newf ("'%s'", (char *)obj->data);
+		r_strbuf_appendf (sb, "'%s'", (char *)obj->data);
+		break;
 	case TYPE_ELLIPSIS:
-		return strdup ("Ellipsis");
+		r_strbuf_append (sb, "Ellipsis");
+		break;
 	case TYPE_STOPITER:
-		return strdup ("StopIteration");
+		r_strbuf_append (sb, "StopIteration");
+		break;
 	default:
 		// the remaining scalar types keep their text in data
-		return r_str_new (obj->data);
+		if (obj->data) {
+			r_strbuf_append (sb, obj->data);
+		}
+		break;
 	}
+}
+
+static char *obj_tostring(pyc_object *obj) {
+	if (!obj) {
+		return NULL;
+	}
+	RStrBuf *sb = r_strbuf_new ("");
+	obj_tostring_sb (sb, obj);
+	if (!r_strbuf_length (sb)) {
+		r_strbuf_free (sb);
+		return NULL;
+	}
+	return r_strbuf_drain (sb);
 }
 
 static char *parse_arg(pyc_opcode_object *op, ut32 oparg, pyc_code_object *cobj, RList *interned_table, RList *opcode_arg_fmt) {
