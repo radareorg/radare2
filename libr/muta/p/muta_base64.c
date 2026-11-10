@@ -13,6 +13,21 @@ static int base64_get_key_size(RMutaSession *ms) {
 	return 0;
 }
 
+static int encode(RMutaSession *ms, const ut8 *in, int len, ut8 **out, int *consumed) {
+	R_RETURN_VAL_IF_FAIL (in && len >= 0 && out && consumed, -1);
+	*out = NULL;
+	*consumed = 0;
+	if (len > (INT_MAX / 4) * 3) {
+		return -1;
+	}
+	*out = (ut8 *)r_base64_encode_dyn (in, len);
+	if (!*out) {
+		return -1;
+	}
+	*consumed = len;
+	return (int)strlen ((const char *)*out);
+}
+
 static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	if (len < 1) {
 		return len == 0;
@@ -46,6 +61,7 @@ RMutaPlugin r_muta_plugin_base64 = {
 		.license = "LGPL-3.0-only" },
 	.type = R_MUTA_TYPE_CRYPTO,
 	.implements = "base64",
+	.encode = encode,
 	.set_key = base64_set_key,
 	.get_key_size = base64_get_key_size,
 	.update = update,
