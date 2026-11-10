@@ -112,8 +112,8 @@ pf.gobelin.Buh.Boh.Bah.Bah.word=0xadde
 pf.gobelin
 EOF
 EXPECT=<<EOF
-wv4 42 @ 4
-wv2 0xadde @ 0x00000024
+wx 2a000000 @ 0x00000004
+wx dead @ 0x00000024
  blah : 0x00000000 = 0x1234
   meh : 0x00000002 = 0x6789
   Buh : 

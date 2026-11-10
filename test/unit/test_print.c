@@ -57,10 +57,9 @@ bool test_r_print_format_without_console(void) {
 		r_print_format (print, 0x1000, buf, sizeof (buf), "b field", R_PRINT_JSON, NULL, NULL);
 		mu_assert_streq (r_strbuf_get (&format_output), "[{\"name\":\"field\",\"type\":\"b\",\"offset\":4096,\"value\":42}]\n", "JSON format without a console context");
 		r_strbuf_set (&format_output, "");
-		const ut8 word[] = { 0x2a, 0x00 };
 		char field[] = "field";
-		r_print_format (print, 0x1000, word, sizeof (word), "w field", R_PRINT_MUSTSET, "5", field);
-		mu_assert_streq (r_strbuf_get (&format_output), "wv2 5 @ 0x00001000\n", "set without a core prints the command");
+		r_print_format (print, 0x1000, buf, sizeof (buf), "b field", R_PRINT_MUSTSET, "5", field);
+		mu_assert_streq (r_strbuf_get (&format_output), "wx 05 @ 0x00001000\n", "set without a core prints the command");
 		r_strbuf_set (&format_output, "");
 	}
 	r_strbuf_fini (&format_output);
