@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <r_cons.h>
 #include <r_util/r_time.h>
 #include "minunit.h"
