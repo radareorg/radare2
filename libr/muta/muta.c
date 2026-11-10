@@ -19,8 +19,8 @@ static bool muta_load_plugins(RLibStore *store) {
 	int i;
 	for (i = 0; muta_static_plugins[i]; i++) {
 		RMutaPlugin *p = r_mem_dup (muta_static_plugins[i], sizeof (RMutaPlugin));
-		if (p) {
-			r_libstore_add (store, p);
+		if (p && !r_libstore_add (store, p)) {
+			free (p);
 		}
 	}
 	return true;
