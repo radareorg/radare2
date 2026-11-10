@@ -655,3 +655,34 @@ ERROR: Cannot assemble 'sbfm sp, sp, #1, #63' at line 1
 ERROR: Cannot assemble 'bfm wsp, wsp, #1, #31' at line 1
 EOF
 RUN
+
+NAME=Assembly string delimiters and escapes
+FILE=malloc://64
+CMDS=<<EOF
+pa .ascii "a#b"
+"pa .ascii \"a;b,,c\""
+pa .string "AB"
+pa .ascii "$$:$sys.write"
+pa .ascii "A\x00B"
+EOF
+EXPECT=<<EOF
+612362
+613b622c2c63
+414200
+24243a247379732e7772697465
+410042
+EOF
+RUN
+
+NAME=Assembly strings reject invalid hex escapes
+FILE=malloc://64
+CMDS=<<EOF
+pa .ascii "\xg0"
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid hex escape in string
+ERROR: Cannot assemble '.ascii "\xg0"' at line 1
+EOF
+RUN

@@ -77,6 +77,62 @@ static bool test_assembly_delimiters(void) {
 	mu_end;
 }
 
+static bool test_assembly_strings(void) {
+	const struct {
+		const char *source;
+		const char *hex;
+	} cases[] = {
+		{ ".ascii \"a#b;c,,d\"", "6123623b632c2c64" },
+		{ ".ascii \"$$:$sys.write\"", "24243a247379732e7772697465" },
+		{ ".ascii \"a\\\"#;b\\\\n\"", "6122233b625c6e" },
+		{ ".ascii \"A\\x00B\"", "410042" },
+		{ ".ascii \"\"; .string \"\"", "00" },
+		{ ".asciz\t\"AB\"; .asciiz \"C\"; .string\t\"D\"", "41420043004400" },
+		{ ".ascii \"#;\" ; comment with \"\n.ascii \"B\"\n", "233b42" },
+		{ ".ascii \"A\" # comment with \"\n.ascii \"B\"\n", "4142" },
+		{ ".ascii \"A\" /* comment with \" */; .ascii \"B\"", "4142" },
+		{ "start:; .ascii \"#;\"; end:; .uint16 end-start", "233b0200" },
+		{ ".uint16 $$; .ascii \"$$\"", "00002424" },
+	};
+	RAsm *a = r_asm_new ();
+	size_t i;
+	for (i = 0; i < 2 * R_ARRAY_SIZE (cases); i++) {
+		a->use_spp = i >= R_ARRAY_SIZE (cases);
+		r_asm_set_pc (a, 0);
+		const size_t n = i % R_ARRAY_SIZE (cases);
+		RAsmCode *code = r_asm_assemble (a, cases[n].source);
+		mu_assert_notnull (code, cases[n].source);
+		char *hex = r_hex_bin2strdup (code->bytes, code->len);
+		mu_assert_streq (hex, cases[n].hex, cases[n].source);
+		free (hex);
+		r_asm_code_free (code);
+	}
+	r_asm_free (a);
+	mu_end;
+}
+
+static bool test_assembly_string_errors(void) {
+	const char *sources[] = {
+		".ascii",
+		".ascii unquoted",
+		".ascii \"unterminated",
+		".ascii \"A\" trailing",
+		".ascii \"A\", \"B\"",
+		".ascii \"\\x\"",
+		".ascii \"\\x4\"",
+		".ascii \"\\xgg\"",
+		".ascizextra \"A\"",
+	};
+	RAsm *a = r_asm_new ();
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (sources); i++) {
+		RAsmCode *code = r_asm_assemble (a, sources[i]);
+		mu_assert_null (code, sources[i]);
+	}
+	r_asm_free (a);
+	mu_end;
+}
+
 static bool test_assembly_byte_expressions(void) {
 	const struct {
 		const char *source;
@@ -309,6 +365,8 @@ int all_tests(void) {
 	mu_run_test (test_equ_aliases);
 	mu_run_test (test_equ_long_names);
 	mu_run_test (test_assembly_delimiters);
+	mu_run_test (test_assembly_strings);
+	mu_run_test (test_assembly_string_errors);
 	mu_run_test (test_assembly_byte_expressions);
 	mu_run_test (test_assembly_byte_expression_errors);
 	mu_run_test (test_assembly_org);
