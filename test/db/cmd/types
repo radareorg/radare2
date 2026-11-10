@@ -5649,6 +5649,7 @@ tf errno_location~ret
 tf ctype_b_loc~ret
 tf fprintf_chk~func.fprintf_chk.arg.3
 tf longjmp_chk~noreturn
+tf signal~func.signal.ret
 EOF
 EXPECT=<<EOF
 func.lseek.ret=off_t
@@ -5659,6 +5660,7 @@ func.errno_location.ret=int *
 func.ctype_b_loc.ret=const unsigned short **
 func.fprintf_chk.arg.3=,...
 func.longjmp_chk.noreturn=true
+func.signal.ret=void *
 EOF
 RUN
 
