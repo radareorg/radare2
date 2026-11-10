@@ -393,3 +393,70 @@ EXPECT=<<EOF
 1f0167d51c8f6e4eb1f0286f52cf9cf97d904baf9ddda8a4
 EOF
 RUN
+
+NAME=Assembly charset encoding and raw reset
+FILE=malloc://64
+CMDS=<<EOF
+"pa .charset \"pokered\";.ascii \"A<LINE>B\";.byte 0x50"
+"pa .charset \"ebcdic37\";.string \"ABé\""
+"pa .charset \"base64\";.string \"AB\""
+"pa .charset \"pokered\";.ascii \"#;\""
+"pa .charset \"ebcdic37\";.ascii \"\\n\""
+"pa .charset \"pokered\";.ascii \"A\";.charset \"raw\";.string \"AB\""
+pa .string "AB"
+EOF
+EXPECT=<<EOF
+804f8150
+c1c25100
+5155493d00
+549d
+e095
+80414200
+414200
+EOF
+RUN
+
+NAME=Assembly charsets preserve layout and independent base64 literals
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+"pa .ascii \"A\";.charset \"base64\";.ascii \"AB\";end:;.uint16 end"
+"pa .charset \"base64\";.ascii \"A\";.ascii \"B\""
+"pa .charset \"ebcdic37\";.string \"A\x00B\""
+"pa .charset \"pokered\";.byte 65;.hex 4243;nop"
+EOF
+EXPECT=<<EOF
+415155493d0500
+51513d3d51673d3d
+c100c200
+41424390
+EOF
+RUN
+
+NAME=Assembly rejects unknown and unsupported charsets without partial output
+FILE=malloc://64
+CMDS=<<EOF
+"pa .byte 0x41;.charset \"missing\""
+"pa .charset \"missing\""
+"pa .charset \"ascii.oem\""
+"pa .charset \"aes\""
+"pa .charset \"pokered\";.ascii \"A☃\""
+pa .string "AB"
+EOF
+EXPECT=<<EOF
+414200
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Unknown or unsupported assembly charset 'missing'
+ERROR: Cannot assemble '.charset "missing"' at line 2
+ERROR: Unknown or unsupported assembly charset 'missing'
+ERROR: Cannot assemble '.charset "missing"' at line 1
+ERROR: Unknown or unsupported assembly charset 'ascii.oem'
+ERROR: Cannot assemble '.charset "ascii.oem"' at line 1
+ERROR: Unknown or unsupported assembly charset 'aes'
+ERROR: Cannot assemble '.charset "aes"' at line 1
+ERROR: Cannot encode string with 'pokered' at byte 1
+ERROR: Cannot assemble '.ascii "A☃"' at line 2
+EOF
+RUN

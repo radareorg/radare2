@@ -126,6 +126,11 @@ static int r_asm_pseudo_align(RAsm *a, RAsmCode *acode, RAnalOp *op, char *input
 	return asm_op_set_padding (op, mod? boundary - mod: 0, fill, last_stage);
 }
 
+typedef struct {
+	RMuta *muta;
+	RMutaSession *encoder;
+} AsmCharset;
+
 static bool asm_directive(const char *input, const char *name) {
 	size_t len = strlen (name);
 	return !strncmp (input, name, len) && (!input[len] || isspace ((ut8)input[len]));
@@ -158,14 +163,66 @@ static int asm_parse_string(char *input, char **text) {
 	return r_str_unescape (*text);
 }
 
-static int r_asm_pseudo_string(RAnalOp *op, char *input, bool zero) {
-	char *text;
-	int len = asm_parse_string (input, &text);
-	if (len < 0 || (zero && len == INT_MAX)) {
+static int asm_set_charset(AsmCharset *state, char *input) {
+	char *name;
+	int len = asm_parse_string (input, &name);
+	if (len < 0) {
 		return -1;
 	}
+	if (!len || strlen (name) != len) {
+		R_LOG_ERROR ("Invalid charset name");
+		return -1;
+	}
+	r_muta_session_free (state->encoder);
+	state->encoder = NULL;
+	if (!strcmp (name, "raw")) {
+		return 0;
+	}
+	if (!state->muta) {
+		state->muta = r_muta_new ();
+	}
+	state->encoder = r_muta_use (state->muta, name);
+	if (!state->encoder || !state->encoder->h->encode) {
+		R_LOG_ERROR ("Unknown or unsupported assembly charset '%s'", name);
+		return -1;
+	}
+	return 0;
+}
+
+static int r_asm_pseudo_string(RAnalOp *op, AsmCharset *state, char *input, bool zero) {
+	char *text;
+	int len = asm_parse_string (input, &text);
+	if (len < 0) {
+		return -1;
+	}
+	ut8 *encoded = NULL;
+	const ut8 *data = (const ut8 *)text;
+	if (state->encoder) {
+		int consumed = 0;
+		int size = state->encoder->h->encode (state->encoder, data, len, &encoded, &consumed);
+		if (size < 0 || consumed != len || (size && !encoded)) {
+			R_LOG_ERROR ("Cannot encode string with '%s' at byte %d", state->encoder->h->meta.name, consumed);
+			free (encoded);
+			return -1;
+		}
+		data = encoded;
+		len = size;
+	}
+	int size = -1;
+	if (!zero || len < INT_MAX) {
+		size = asm_op_set_data (op, NULL, len + (zero? 1: 0));
+		if (size > 0) {
+			if (len) {
+				memcpy (op->bytes, data, len);
+			}
+			if (zero) {
+				op->bytes[len] = 0;
+			}
+		}
+	}
+	free (encoded);
 	r_anal_op_set_mnemonic (op, op->addr, text);
-	return asm_op_set_data (op, (const ut8 *)text, len + (zero? 1: 0));
+	return size;
 }
 
 static bool asm_eval_operand(const char *arg, size_t len, char *expression, const char *directive, ut64 *value) {
@@ -1067,7 +1124,7 @@ static void *htpp_strdup(const void *v) {
 	return (void *)strdup ((char *)v);
 }
 
-static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, ut8 *fill_value, char *ptr_start, R_INOUT ut64 *off, bool last_stage) {
+static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, ut8 *fill_value, AsmCharset *charset, char *ptr_start, R_INOUT ut64 *off, bool last_stage) {
 	const char *asmcpu = R_UNWRAP3 (a, config, cpu);
 	int ret = -1;
 	char *ptr = ptr_start;
@@ -1088,13 +1145,15 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, ut8 *fill_
 	} else if (r_str_startswith (ptr, ".lil_endian") || r_str_startswith (ptr, "little_endian")) {
 		r_asm_set_big_endian (a, false);
 		ret = 0;
+	} else if (asm_directive (ptr, ".charset")) {
+		ret = asm_set_charset (charset, ptr + 8);
 	} else if (asm_directive (ptr, ".ascii") || asm_directive (ptr, ".asciz")
 			|| asm_directive (ptr, ".asciiz") || asm_directive (ptr, ".string")) {
 		char *arg = ptr;
 		while (*arg && !isspace ((ut8)*arg)) {
 			arg++;
 		}
-		ret = r_asm_pseudo_string (op, arg, !asm_directive (ptr, ".ascii"));
+		ret = r_asm_pseudo_string (op, charset, arg, !asm_directive (ptr, ".ascii"));
 	} else if (r_str_startswith (ptr, ".extern")) {
 		char *str = r_str_trim_dup (ptr + strlen (".extern"));
 		if (!r_asm_code_equ_get (acode, str)) {
@@ -1361,6 +1420,7 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 	RAnalOp op = { 0 };
 	ut64 off, pc;
 	ut8 fill_value = 0;
+	AsmCharset charset = {0};
 
 	char *buf_token = NULL;
 	size_t tokens_size = 32;
@@ -1387,6 +1447,9 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 	acode->bytes = calloc (1, bytes_size);
 
 	char *lbuf = strdup (assembly);
+	if (!lbuf || !acode->assembly || !acode->bytes) {
+		goto fail;
+	}
 	if (a->use_spp) {
 		SppProc preprocessor = *spp_default_proc ();
 		preprocessor.filter = replace_directives;
@@ -1443,6 +1506,8 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 			continue;
 		}
 		fill_value = 0;
+		r_muta_session_free (charset.encoder);
+		charset.encoder = NULL;
 		r_asm_set_pc (a, pc);
 		linenum = 0;
 		for (idx = ret = i = 0, off = a->pc; i <= ctr; i++) {
@@ -1505,14 +1570,15 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 					|| r_str_startswith (ptr_start, ".ascii")
 					|| r_str_startswith (ptr_start, ".asciz")
 					|| asm_directive (ptr_start, ".string")
+					|| asm_directive (ptr_start, ".charset")
 					|| r_str_startswith (ptr_start, ".incbin ");
 				char *str = literal? strdup (ptr_start): r_asm_code_equ_replace (acode, ptr_start);
 				if (!str) {
 					goto fail;
 				}
-				ret = parse_asm_directive (a, &op, acode, &fill_value, str, &off, stage == STAGES - 1);
+				ret = parse_asm_directive (a, &op, acode, &fill_value, &charset, str, &off, stage == STAGES - 1);
 				if (ret < 0) {
-					R_LOG_ERROR ("Cannot assemble '%s' at line %d", str, linenum);
+					R_LOG_ERROR ("Cannot assemble '%s' at line %d", literal? ptr_start: str, linenum);
 					free (str);
 					goto fail;
 				}
@@ -1567,11 +1633,15 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 			}
 		}
 	}
+	r_muta_session_free (charset.encoder);
+	r_muta_free (charset.muta);
 	free (lbuf);
 	free (tokens);
 	r_anal_op_fini (&op);
 	return acode;
 fail:
+	r_muta_session_free (charset.encoder);
+	r_muta_free (charset.muta);
 	free (lbuf);
 	free (tokens);
 	r_anal_op_fini (&op);
