@@ -22,3 +22,18 @@ EXPECT_ERR=<<EOF
 ERROR: Cannot find vector register 'rax'
 EOF
 RUN
+
+NAME=Vector register exports select one x64 lane
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF_CMDS
+aei
+ae 0x0123456789abcdef,xmm0[1],=
+arvj xmm0 1 64
+arv* xmm0 1 64
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+{"name":"xmm0","bits":128,"lane_bits":64,"first":1,"values":["0x0123456789abcdef"]}
+arv xmm0 1 64 = 0x123456789abcdef
+EOF_EXPECT
+RUN
