@@ -7,7 +7,7 @@ iM
 ?v sym.rust_hello::main
 EOF
 EXPECT=<<EOF
-vaddr=0x10000091c paddr=0x10000091c
+vaddr=0x10000091c paddr=0x0000091c
 0x10000091c
 0x10000090c
 EOF

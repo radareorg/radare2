@@ -1181,7 +1181,8 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 		if (addr != UT64_MAX && addr != 0) {
 			ret = R_NEW0 (RBinAddr);
 			ret->vaddr = ((addr >> 1) << 1);
-			ret->paddr = ret->vaddr;
+			ut64 offset;
+			ret->paddr = MACH0_(vaddr_to_paddr) (mo, ret->vaddr, &offset)? offset + bf->bo->boffset: ret->vaddr;
 		}
 	}
 	return ret;
