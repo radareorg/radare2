@@ -602,6 +602,53 @@ R_API ut64 r_reg_getv(RReg *reg, const char *name) {
 	return res;
 }
 
+// Indexed register names are transient 64-bit views of the backing arena.
+static RRegItem *reg_slice(RReg *reg, const char *name, int type) {
+	const char *open = strchr (name, '[');
+	char base_name[128], *end;
+	if (!open || open == name || (size_t)(open - name) >= sizeof (base_name) || !isdigit ((ut8)open[1])) {
+		return NULL;
+	}
+	const unsigned long index = strtoul (open + 1, &end, 10);
+	if (*end != ']' || end[1] || end - open > 11) {
+		return NULL;
+	}
+	const size_t len = open - name;
+	memcpy (base_name, name, len);
+	base_name[len] = 0;
+	RRegItem *base = r_reg_get (reg, base_name, type);
+	if (!base) {
+		return NULL;
+	}
+	RRegItem *slice = NULL;
+	if (base->size > 0 && base->offset >= 0 && !(base->offset & 7) && !(base->size & 7)
+		&& index <= (base->size - 1) / 64) {
+		const int offset = index * 64;
+		RRegArena *arena = reg->regset[base->arena].arena;
+		const int bits = R_MIN (64, base->size - offset);
+		const st64 end_bit = (st64)base->offset + offset + bits;
+		if (arena && arena->bytes && end_bit <= INT_MAX && end_bit <= (st64)arena->size * 8) {
+			const size_t name_size = strlen (name) + 1;
+			slice = calloc (1, sizeof (*slice) + name_size);
+			if (!slice) {
+				r_unref (base);
+				return NULL;
+			}
+			slice->name = (char *)(slice + 1);
+			memcpy (slice->name, name, name_size);
+			slice->offset = base->offset + offset;
+			slice->size = bits;
+			slice->type = base->type;
+			slice->arena = base->arena;
+			slice->index = -1;
+			slice->ro = base->ro;
+			r_ref_init (slice, free);
+		}
+	}
+	r_unref (base);
+	return slice;
+}
+
 R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 	int i, e;
 	R_RETURN_VAL_IF_FAIL (reg && name, NULL);
@@ -639,7 +686,7 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 			return r_ref (item);
 		}
 	}
-	return NULL;
+	return reg_slice (reg, name, type);
 }
 
 R_API RList *r_reg_get_list(RReg *reg, int type) {

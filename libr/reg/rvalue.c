@@ -59,6 +59,22 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 	return ret;
 }
 
+static ut64 reg_read_bytes(const ut8 *bytes, int count, bool be) {
+	ut64 value = 0;
+	int i;
+	for (i = 0; i < count; i++) {
+		value = (value << 8) | bytes[be? i: count - 1 - i];
+	}
+	return value;
+}
+
+static void reg_write_bytes(ut8 *bytes, int count, bool be, ut64 value) {
+	int i;
+	for (i = 0; i < count; i++, value >>= 8) {
+		bytes[be? count - 1 - i: i] = value & 0xff;
+	}
+}
+
 R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	R_RETURN_VAL_IF_FAIL (reg && item, 0);
 	if (item->offset == -2) {
@@ -124,17 +140,14 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 		R_LOG_WARN ("32bit oob read %d", off);
 		break;
 	case 40:
-		if (off + 8 <= regset->arena->size) {
-			return r_read_ble64 (regset->arena->bytes + off, be) & 0xFFFFFFFFFF;
-		}
-		R_LOG_WARN ("48bit oob read %d", off);
-		break;
 	case 48:
-		if (off + 8 <= regset->arena->size) {
-			return r_read_ble64 (regset->arena->bytes + off, be) & 0xFFFFFFFFFFFF;
+	case 56: {
+		const int count = BITS2BYTES (item->size);
+		if (off + count <= regset->arena->size) {
+			return reg_read_bytes (regset->arena->bytes + off, count, be);
 		}
-		R_LOG_WARN ("48bit oob read %d", off);
 		break;
+	}
 	case 64:
 		if (regset->arena && regset->arena->bytes && (off + 8 <= regset->arena->size)) {
 			return r_read_ble64 (regset->arena->bytes + off, be);
@@ -230,6 +243,11 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	case 24:
 		r_write_ble24 (src, value, be);
 		break;
+	case 40:
+	case 48:
+	case 56:
+		reg_write_bytes (src, BITS2BYTES (item->size), be, value);
+		break;
 	case 4: {
 		ut8 *buf = arena->bytes + item->offset / 8;
 		int shift = item->offset % 8;
@@ -312,70 +330,48 @@ R_API R_HEAP char *r_reg_get_bvalue(RReg *reg, RRegItem *item) {
 // packbits can be 8, 16, 32 or 64
 // result value is always casted into ut64
 // TODO: support packbits=128 for xmm registers
-R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) {
-	R_RETURN_VAL_IF_FAIL (reg && item, 0LL);
-
-	if (packbits < 1) {
-		packbits = item->packed_size;
+static int reg_pack_offset(RReg *reg, RRegItem *item, int index, int *bits, bool be) {
+	if (*bits < 1) {
+		*bits = item->packed_size;
 	}
-	if (packbits > 64) {
-		packbits = 64;
+	if (*bits > 64) {
+		*bits = 64;
 		R_LOG_WARN ("Does not support pack bits > 64");
 	}
-
-	ut64 ret = 0LL;
-	const int packbytes = packbits / 8;
-	const int packmod = packbits % 8;
-	if (packmod) {
-		R_LOG_WARN ("Invalid bit size for packet register");
-		return 0LL;
+	if (*bits < 8 || (*bits & 7) || item->offset < 0 || (item->offset & 7)
+		|| index < 0 || index >= item->size / *bits) {
+		return -1;
 	}
-	if ((packidx + 1) * packbits > item->size) {
-		R_LOG_WARN ("Packed index is beyond the register size");
-		return 0LL;
+	RRegArena *arena = reg->regset[item->arena].arena;
+	const int bytes = *bits / 8;
+	int lane_offset = index * bytes;
+	if (be && !(64 % *bits)) {
+		const int chunk = lane_offset & ~7;
+		const int chunk_bytes = R_MIN (8, BITS2BYTES (item->size) - chunk);
+		lane_offset = chunk + chunk_bytes - (lane_offset - chunk) - bytes;
 	}
-	RRegSet *regset = &reg->regset[item->arena];
-	if (!regset->arena) {
-		return 0LL;
-	}
-	int off = BITS2BYTES (item->offset);
-	off += (packidx * packbytes);
-	if (regset->arena->size - off - 1 >= 0) {
-		int i;
-		for (i = packbytes - 1; i >= 0; i--) {
-			ret = (ret << 8) | regset->arena->bytes[off + i];
-		}
-	}
-	return ret;
+	const st64 offset = BITS2BYTES (item->offset) + (st64)lane_offset;
+	return arena && arena->bytes && offset + bytes <= arena->size? offset: -1;
 }
 
-// TODO: support packbits=128 for xmm registers
+R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) {
+	R_RETURN_VAL_IF_FAIL (reg && item, 0);
+	const bool be = (reg->endian & R_SYS_ENDIAN_BIG) == R_SYS_ENDIAN_BIG;
+	const int offset = reg_pack_offset (reg, item, packidx, &packbits, be);
+	return offset >= 0? reg_read_bytes (reg->regset[item->arena].arena->bytes + offset, packbits / 8, be): 0;
+}
+
 R_API bool r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, ut64 val) {
-	R_RETURN_VAL_IF_FAIL (reg && reg->regset->arena && item, false);
-
-	if (packbits < 1) {
-		packbits = item->packed_size;
-	}
-	if (packbits > 64) {
-		packbits = 64;
-		R_LOG_WARN ("Does not support pack bits > 64");
-	}
-
-	int packbytes = packbits / 8;
-	if ((packidx + 1) * packbits > item->size) {
-		R_LOG_WARN ("Packed index is beyond the register size");
+	R_RETURN_VAL_IF_FAIL (reg && item, false);
+	const bool be = (reg->endian & R_SYS_ENDIAN_BIG) == R_SYS_ENDIAN_BIG;
+	const int offset = reg_pack_offset (reg, item, packidx, &packbits, be);
+	if (offset < 0) {
 		return false;
 	}
-	int off = BITS2BYTES (item->offset) + (packidx * packbytes);
-	if (reg->regset[item->arena].arena->size - BITS2BYTES (off) - BITS2BYTES (packbytes) >= 0) {
-		r_reg_arena_materialize (reg->regset[item->arena].arena);
-		ut8 *dst = reg->regset[item->arena].arena->bytes + off;
-		int i;
-		for (i = 0; i < packbytes; i++, val >>= 8) {
-			dst[i] = val & 0xff;
-		}
-		return true;
+	if (!item->ro) {
+		RRegArena *arena = reg->regset[item->arena].arena;
+		r_reg_arena_materialize (arena);
+		reg_write_bytes (arena->bytes + offset, packbits / 8, be, val);
 	}
-	R_LOG_WARN ("Cannot set %s to 0x%" PFMT64x, item->name, val);
-	return false;
+	return true;
 }
