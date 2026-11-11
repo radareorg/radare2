@@ -3557,3 +3557,95 @@ EXPECT=<<EOF
 0x00000ad7
 EOF
 RUN
+
+NAME=Packed byte arithmetic wraps and saturates per lane without changing flags
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 660ffcc1660ff8c1660fecc1660fdcc1660fe8c1660fd8c1
+aei
+ar xmm0l=0x80ff007f80ff007f
+ar xmm0h=0xdeadbeef
+ar xmm1l=0xff010101ff010101
+arv zmm0 7=0x1234
+ar eflags=0xad7
+aes
+ar xmm0l
+aes
+ar xmm0l
+aes
+ar xmm0l
+ar xmm0l=0x80ff007f80ff007f
+aes
+ar xmm0l
+ar xmm0l=0x80ff007f80ff007f
+ar xmm1l=0x01ff010101ff0101
+aes
+ar xmm0l
+ar xmm0l=0x80ff007f80ff007f
+aes
+ar xmm0l
+ar xmm0h
+arv zmm0 7
+ar eflags
+EOF
+EXPECT=<<EOF
+0x7f0001807f000180
+0x80ff007f80ff007f
+0x8000017f8000017f
+0xffff0180ffff0180
+0x8000ff7e8000ff7e
+0x7f00007e7f00007e
+0xdeadbeef
+0x0000000000001234
+0x00000ad7
+EOF
+RUN
+
+NAME=MMX lanes alias the FPU profile and packed AND NOT accepts memory
+FILE=malloc://128
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 0ffcc10ff8c10fdf00
+wx ffffffffffffffff @ 0x40
+aei
+ar rax=0x40
+ar mm0=0x80ff007f80ff007f
+ar mm1=0xff010101ff010101
+aes
+ar mm0
+ar st0
+aes
+ar mm0
+aes
+ar mm0
+EOF
+EXPECT=<<EOF
+0x7f0001807f000180
+0x7f0001807f000180
+0x80ff007f80ff007f
+0x7f00ff807f00ff80
+EOF
+RUN
+
+NAME=AVX512 masked packed add broadcasts dwords and zeroes inactive lanes
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 62f175d9fe00
+wx 01000000 @ 0x80
+aei
+ar rax=0x80
+ar k1=0x8005
+arv zmm0 0=0xaaaaaaaaaaaaaaaa
+arv zmm0 7=0xbbbbbbbbbbbbbbbb
+arv zmm1 0=0xfffffffe
+arv zmm1 1=0x7fffffff
+arv zmm1 7=0x7fffffff00000000
+aes
+arv zmm0
+EOF
+EXPECT=<<EOF
+0x00000000ffffffff 0x0000000080000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x8000000000000000
+EOF
+RUN

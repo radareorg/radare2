@@ -342,8 +342,152 @@ bool test_x86_vector_instructions(void) {
 	mu_end;
 }
 
+static ut64 packed_result(ut64 a, ut64 b, int bytes, int type, int saturation) {
+	const ut64 mask = r_num_bitmask (bytes * 8);
+	if (type == '&') {
+		return a & b;
+	}
+	if (type == '|') {
+		return a | b;
+	}
+	if (type == '^') {
+		return a ^ b;
+	}
+	if (type == '~') {
+		return (~a & b) & mask;
+	}
+	if (saturation < 0) {
+		const st64 limit = 1 << (bytes * 8 - 1);
+		const st64 left = a >= limit? (st64)a - 2 * limit: a;
+		const st64 right = b >= limit? (st64)b - 2 * limit: b;
+		const st64 result = type == '+'? left + right: left - right;
+		return R_CLAMP (result, -limit, limit - 1) & mask;
+	}
+	if (saturation > 0) {
+		return type == '+'? R_MIN (a + b, mask): a > b? a - b: 0;
+	}
+	return (type == '+'? a + b: a - b) & mask;
+}
+
+bool test_x86_packed_operations(void) {
+	const struct { ut8 opcode; int bytes; int type; int saturation; int prefix; } cases[] = {
+		{ 0xfc, 1, '+', 0, 1 }, { 0xfd, 2, '+', 0, 1 }, { 0xfe, 4, '+', 0, 1 }, { 0xd4, 8, '+', 0, 1 },
+		{ 0xec, 1, '+', -1, 1 }, { 0xed, 2, '+', -1, 1 }, { 0xdc, 1, '+', 1, 1 }, { 0xdd, 2, '+', 1, 1 },
+		{ 0xf8, 1, '-', 0, 1 }, { 0xf9, 2, '-', 0, 1 }, { 0xfa, 4, '-', 0, 1 }, { 0xfb, 8, '-', 0, 1 },
+		{ 0xe8, 1, '-', -1, 1 }, { 0xe9, 2, '-', -1, 1 }, { 0xd8, 1, '-', 1, 1 }, { 0xd9, 2, '-', 1, 1 },
+		{ 0xdb, 4, '&', 0, 1 }, { 0xdb, 8, '&', 0, 1 }, { 0xdf, 4, '~', 0, 1 }, { 0xdf, 8, '~', 0, 1 },
+		{ 0xeb, 4, '|', 0, 1 }, { 0xeb, 8, '|', 0, 1 },
+		{ 0xef, 4, '^', 0, 1 }, { 0xef, 8, '^', 0, 1 },
+		{ 0x54, 4, '&', 0, 0 }, { 0x54, 8, '&', 0, 1 }, { 0x55, 4, '~', 0, 0 }, { 0x55, 8, '~', 0, 1 },
+		{ 0x56, 4, '|', 0, 0 }, { 0x56, 8, '|', 0, 1 },
+	};
+	int bits, syntax, form, variant, sample, c, i;
+	for (bits = 32; bits <= 64; bits += 32) {
+		RCore *core = r_core_new ();
+		r_config_set (core->config, "asm.arch", "x86");
+		r_config_set_i (core->config, "asm.bits", bits);
+		RIODesc *file = r_core_file_open (core, "malloc://256", R_PERM_RWX, 0);
+		mu_assert_notnull (file, "packed memory");
+		mu_assert_notnull (r_io_map_add (core->io, file->fd, R_PERM_RWX, 0, 0, 256), "packed memory map");
+		r_core_esil_load_arch (core);
+		RReg *reg = core->anal->reg;
+		for (syntax = 0; syntax < 2; syntax++) {
+			r_config_set (core->config, "asm.syntax", syntax? "att": "intel");
+			for (c = 0; c < R_ARRAY_SIZE (cases); c++) {
+				const int bytes = cases[c].bytes;
+				const ut64 mask = r_num_bitmask (bytes * 8);
+				const ut64 sign = 1ULL << (bytes * 8 - 1);
+				const ut64 left[] = { 0, mask, sign - 1, sign, sign - 1, sign, mask, sign };
+				const ut64 right[] = { 1, 1, 1, 1, mask, mask, mask, sign };
+				for (form = cases[c].opcode < 0x80? 1: 0; form < 7; form++) {
+					const int width = form == 0? 8: form < 3? 16: form == 3? 32: 16 << (form - 4);
+					const bool legacy = form < 2;
+					const bool evex = form >= 4;
+					RRegItem *dst = r_reg_get (reg, form? "zmm0": "mm0", -1);
+					RRegItem *src1 = r_reg_get (reg, form? "zmm1": "mm1", -1);
+					RRegItem *src2 = r_reg_get (reg, form? "zmm2": "mm2", -1);
+					const int size = form? 64: 8;
+					for (variant = 0; variant < (evex && bytes >= 4? 5: 4); variant++) {
+						ut8 code[6];
+						int len = 0;
+						if (legacy) {
+							if (form && cases[c].prefix) {
+								code[len++] = 0x66;
+							}
+							code[len++] = 0x0f;
+						} else if (evex) {
+							code[len++] = 0x62;
+							code[len++] = 0xf1;
+							code[len++] = 0x74 | cases[c].prefix | (bytes == 8? 0x80: 0) | (variant == 1? 8: 0);
+							code[len++] = 8 | ((form - 4) << 5) | (variant == 0? 0: 1) | (variant == 2? 0x80: 0) | (variant == 4? 0x10: 0);
+						} else {
+							code[len++] = 0xc5;
+							code[len++] = 0xf0 | cases[c].prefix | (form == 3? 4: 0) | (variant == 1? 8: 0);
+						}
+						code[len++] = cases[c].opcode;
+						code[len++] = variant >= 3? 0: variant == 2? 0xc0: 0xc2;
+						char hex[13];
+						r_hex_bin2str (code, len, hex);
+						RAnalOp op;
+						mu_assert_eq (r_anal_op (core->anal, &op, 0, code, len, R_ARCH_OP_MASK_ESIL), len, hex);
+						mu_assert_true (r_strbuf_length (&op.esil) > 0, hex);
+						const int type = cases[c].type == '+'? R_ANAL_OP_TYPE_ADD: cases[c].type == '-'? R_ANAL_OP_TYPE_SUB: cases[c].type == '|'? R_ANAL_OP_TYPE_OR: cases[c].type == '^'? R_ANAL_OP_TYPE_XOR: R_ANAL_OP_TYPE_AND;
+						mu_assert_eq (op.type, type, "packed operation type");
+						for (sample = 0; sample < 8; sample++) {
+							ut8 first[64], second[64], original[64], expected[64], actual[64];
+							memset (original, 0xa5, sizeof (original));
+							for (i = 0; i < 64; i += bytes) {
+								r_write_ble (first + i, left[(i / bytes + sample) % 8], false, bytes * 8);
+								r_write_ble (second + i, right[(i / bytes + sample) % 8], false, bytes * 8);
+							}
+							if (legacy || variant == 1 || variant == 2) {
+								memcpy (original, legacy || variant == 1? first: second, 64);
+							}
+							memcpy (expected, original, 64);
+							const ut64 active = sample == 0? 0: sample == 1? UT64_MAX: 0x80000000a55a5aa5ULL;
+							for (i = 0; i < width; i += bytes) {
+								if (!evex || variant == 0 || (active & (1ULL << (i / bytes)))) {
+									ut64 a = r_read_ble ((legacy || variant == 1? original: first) + i, false, bytes * 8);
+									ut64 b = r_read_ble ((variant == 2? original: second) + (variant == 4? 0: i), false, bytes * 8);
+									r_write_ble (expected + i, packed_result (a, b, bytes, cases[c].type, cases[c].saturation), false, bytes * 8);
+								} else if (variant == 2) {
+									memset (expected + i, 0, bytes);
+								}
+							}
+							if (!legacy) {
+								memset (expected + width, 0, 64 - width);
+							}
+							mu_assert_true (r_reg_set_value_bytes (reg, dst, original, size), "seed packed destination");
+							mu_assert_true (r_reg_set_value_bytes (reg, src1, first, size), "seed packed first source");
+							mu_assert_true (r_reg_set_value_bytes (reg, src2, second, size), "seed packed second source");
+							r_io_write_at (core->io, 128, second, 64);
+							r_reg_setv (reg, bits == 64? "rax": "eax", 128);
+							r_reg_setv (reg, "k1", active);
+							r_reg_setv (reg, "eflags", 0xad7);
+							mu_assert_true (r_core_esil_run_expr_at (core, r_strbuf_get (&op.esil), 0), hex);
+							mu_assert_true (r_reg_get_value_bytes (reg, dst, actual, size), "read packed result");
+							mu_assert_memeq (actual, expected, size, hex);
+							mu_assert_eq (r_reg_getv (reg, "eflags"), 0xad7, "packed operations preserve flags");
+						}
+						r_anal_op_fini (&op);
+					}
+					r_unref (dst);
+					r_unref (src1);
+					r_unref (src2);
+				}
+			}
+		}
+		r_core_free (core);
+	}
+	mu_end;
+}
+
 bool test_x86_vector_masked_memory(void) {
-	const char *instructions[] = { "62f17ec96f00", "62f17e497f08", "62f175c9ef00", "62f175d9ef00" };
+	const struct { const char *hex; int bytes; } instructions[] = {
+		{ "62f17ec96f00", 4 }, { "62f17e497f08", 4 }, { "62f175c9ef00", 4 }, { "62f175d9ef00", 4 },
+		{ "62f175c9fc00", 1 }, { "62f175c9ed00", 2 }, { "62f175c9fe00", 4 }, { "62f1f5c9fb00", 8 },
+		{ "62f175c9df00", 4 }, { "62f1f5d9eb00", 8 },
+	};
 	RCore *core = r_core_new ();
 	r_config_set (core->config, "asm.arch", "x86");
 	r_config_set_i (core->config, "asm.bits", 64);
@@ -354,14 +498,14 @@ bool test_x86_vector_masked_memory(void) {
 	size_t i;
 	for (i = 0; i < R_ARRAY_SIZE (instructions); i++) {
 		ut8 code[16];
-		int len = r_hex_str2bin (instructions[i], code);
+		int len = r_hex_str2bin (instructions[i].hex, code);
 		RAnalOp op;
 		mu_assert_eq (r_anal_op (core->anal, &op, 0, code, len, R_ARCH_OP_MASK_ESIL), len, "decode masked memory instruction");
 		r_reg_setv (core->anal->reg, "rax", 64);
 		r_reg_setv (core->anal->reg, "k1", 0);
 		mu_assert_true (r_core_esil_run_expr_at (core, r_strbuf_get (&op.esil), 0), "inactive lanes do not touch unmapped memory");
 		r_reg_setv (core->anal->reg, "k1", 1);
-		r_reg_setv (core->anal->reg, "rax", 60);
+		r_reg_setv (core->anal->reg, "rax", 64 - instructions[i].bytes);
 		mu_assert_true (r_core_esil_run_expr_at (core, r_strbuf_get (&op.esil), 0), "only the active element needs to be mapped");
 		r_reg_setv (core->anal->reg, "rax", 64);
 		mu_assert_false (r_core_esil_run_expr_at (core, r_strbuf_get (&op.esil), 0), "active unmapped element still faults");
@@ -404,6 +548,7 @@ int main(int argc, char **argv) {
 	mu_run_test (test_vector_debug_sync);
 	mu_run_test (test_wide_register_restore);
 	mu_run_test (test_x86_vector_instructions);
+	mu_run_test (test_x86_packed_operations);
 	mu_run_test (test_x86_vector_masked_memory);
 	mu_run_test (test_x86_vector_address_size);
 	return tests_passed != tests_run;

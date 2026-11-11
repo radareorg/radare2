@@ -312,7 +312,8 @@ static char *get_reg_profile(RArchSession *as) {
 			reg, offset, reg, offset, reg, offset, reg, offset, reg, offset + 8);
 	}
 	for (reg = 0; reg < 8; reg++) {
-		r_strbuf_appendf (profile, "fpu k%d .64 %d 0\n", reg, 160 + count * 64 + reg * 8);
+		r_strbuf_appendf (profile, "fpu k%d .64 %d 0\nvec64@fpu mm%d .64 %d 8\n",
+			reg, 160 + count * 64 + reg * 8, reg, 32 + reg * 16);
 	}
 	return r_strbuf_drain (profile);
 }
