@@ -2891,6 +2891,68 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=arm64 ESIL vector RBIT reverses bits within each byte
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2058606e
+aei
+aeip
+aer v1l=0x0102040810204080
+aer v1h=0xaa55000ff08001ff
+aer v0l=0xffffffffffffffff
+aer v0h=0xffffffffffffffff
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x8040201008040201
+0x55aa00f00f0180ff
+EOF
+RUN
+
+NAME=arm64 ESIL vector RBIT D-form reverses bits within each byte and zeroes upper half
+REQUIRE=cs5
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2058602e
+aei
+aeip
+aer v1l=0x0102040810204080
+aer v1h=0x8899aabbccddeeff
+aer v0h=0xffffffffffffffff
+aes
+aer v0l
+aer v0h
+EOF
+EXPECT=<<EOF
+0x8040201008040201
+0x00000000
+EOF
+RUN
+
+NAME=arm64 ESIL scalar RBIT reverses bits
+FILE=malloc://0x200
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 2000c05a2000c0da
+aei
+aeip
+aer x1=0xdeadbeef
+aes
+aer w0
+aer x1=1
+aes
+aer x0
+EOF
+EXPECT=<<EOF
+0xf77db57b
+0x8000000000000000
+EOF
+RUN
+
 NAME=arm64 ESIL scalar REV reverses the doubleword
 FILE=malloc://0x200
 ARGS=-a arm -b 64

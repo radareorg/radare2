@@ -1955,7 +1955,12 @@ static void arm64_esil_vec_unary(RAnalOp *op, csh *handle, cs_insn *insn) {
 	cs_arm64_op src = INSOP64 (1);
 	int lanes = vas_count (src.vas);
 	int lane_bits = vector_size (&src);
+	const int bits = lanes * lane_bits;
 	int i;
+	if (insn->id == ARM64_INS_RBIT && (lane_bits != 8 || (bits != 64 && bits != 128))) {
+		// reserved arrangement for this instruction, nothing to emulate
+		return;
+	}
 	for (i = 0; i < lanes; i++) {
 		if (i > 0) {
 			COMMA (&op->esil);
@@ -1984,6 +1989,20 @@ static void arm64_esil_vec_unary(RAnalOp *op, csh *handle, cs_insn *insn) {
 			VECARG64_APPEND (&op->esil, 1, i, 0);
 			r_strbuf_append (&op->esil, ",&,");
 			break;
+		case ARM64_INS_RBIT:
+		{
+			// reuse the scalar bit-reversal loop for the bits of this byte lane
+			const char *prev = r_strbuf_get (&op->esil);
+			int target = 4;
+			const char *c;
+			for (c = prev; c && *c; c++) {
+				target += (*c == ',');
+			}
+			r_strbuf_append (&op->esil, "0,tmp,=,0,DUP,DUP,DUP,7,-,");
+			VECARG64_APPEND (&op->esil, 1, i, 0);
+			r_strbuf_appendf (&op->esil, ",>>,1,&,<<,tmp,+=,7,-,?{,++,%d,GOTO,},tmp,", target);
+			break;
+		}
 		}
 		VEC64_DST_APPEND (&op->esil, 0, i);
 		r_strbuf_append (&op->esil, ",=");
@@ -3179,6 +3198,10 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		break;
 	case ARM64_INS_RBIT:
 		if (arm64_esil_sve_form (insn)) {
+			break;
+		}
+		if (is_vector_op (&INSOP64 (1))) {
+			arm64_esil_vec_unary (op, handle, insn);
 			break;
 		}
 		// slightly shorter expression to reverse bits
