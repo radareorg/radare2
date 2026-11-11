@@ -170,7 +170,7 @@ static bool test_assembly_charsets(void) {
 		code = r_asm_assemble (a, ".string \"AB\"");
 		mu_assert_notnull (code, "new assembly resets charset");
 		mu_assert_eq (code->len, 3, "raw length after encoded assembly");
-		mu_assert_memeq (code->bytes, "AB", 3, "raw bytes after encoded assembly");
+		mu_assert_memeq (code->bytes, (const ut8 *)"AB", 3, "raw bytes after encoded assembly");
 		r_asm_code_free (code);
 	}
 	r_asm_free (a);
@@ -204,7 +204,7 @@ static bool test_assembly_charset_errors(void) {
 		code = r_asm_assemble (a, ".ascii \"AB\"");
 		mu_assert_notnull (code, "assembly after failure succeeds");
 		mu_assert_eq (code->len, 2, "charset reset after failure");
-		mu_assert_memeq (code->bytes, "AB", 2, "raw bytes after failure");
+		mu_assert_memeq (code->bytes, (const ut8 *)"AB", 2, "raw bytes after failure");
 		r_asm_code_free (code);
 	}
 	r_asm_free (a);
