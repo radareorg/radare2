@@ -267,6 +267,9 @@ performed in big-endian byte order.
 		case SPARC_INS_LDUB:
 		case SPARC_INS_LDUH:
 		case SPARC_INS_LDX:
+#if CS_SIX
+		case SPARC_INS_LDSTUB:
+#endif
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
 		case SPARC_INS_STBAR:

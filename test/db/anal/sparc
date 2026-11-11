@@ -971,3 +971,30 @@ ret
 1
 EOF
 RUN
+
+NAME=sparc integer ldd and std types
+FILE=malloc://16
+ARGS=-a sparc -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx d8184002d83863d8
+ao 1 @ 0~^type
+ao 1 @ 4~^type
+EOF
+EXPECT=<<EOF
+type: load
+type: store
+EOF
+RUN
+
+NAME=sparc ldstub type (cs6)
+REQUIRE=cs6
+FILE=malloc://16
+ARGS=-a sparc -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx d8686000
+ao 1~^type
+EOF
+EXPECT=<<EOF
+type: load
+EOF
+RUN
