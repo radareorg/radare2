@@ -653,6 +653,30 @@ bool test_r_reg_x87_multi_offset(void) {
 	mu_end;
 }
 
+bool test_r_reg_vector_bank(void) {
+	RReg *reg = r_reg_new ();
+	mu_assert_notnull (reg, "r_reg_new");
+	mu_assert ("vector bank profile", r_reg_set_profile_string (reg,
+		"fpu v[2] .384 0 48\n"
+		"fpu p[2] .48 $ 6\n"));
+	r_reg_set_endian (reg, R_SYS_ENDIAN_BIG);
+	mu_assert ("write last vector chunk", r_reg_setv (reg, "v1[5]", 0x123456789abcdef0ULL));
+	mu_assert ("write partial predicate chunk", r_reg_setv (reg, "p0[0]", 0x123456789abcULL));
+	mu_assert_eq (r_reg_getv (reg, "p0[0]"), 0x123456789abcULL, "48-bit predicate round trip");
+	RRegItem *vec = r_reg_get (reg, "v1", -1);
+	mu_assert_notnull (vec, "vector materialized");
+	mu_assert_eq (r_reg_get_pack (reg, vec, 5, 64), 0x123456789abcdef0ULL, "last quadword");
+	mu_assert_eq (r_reg_get_pack (reg, vec, 20, 16), 0xdef0, "least-significant lane of last chunk");
+	mu_assert ("write packed lane", r_reg_set_pack (reg, vec, 20, 16, 0xbeef));
+	mu_assert_eq (r_reg_getv (reg, "v1[5]"), 0x123456789abcbeefULL, "packed lane aliases chunk");
+	mu_assert ("reject negative lane", !r_reg_set_pack (reg, vec, -1, 64, 0));
+	mu_assert ("reject out-of-range slice", !r_reg_get (reg, "v1[6]", -1));
+	mu_assert_eq (r_list_length (r_reg_get_list (reg, R_REG_TYPE_ALL)), 2, "slices stay out of register lists");
+	r_unref (vec);
+	r_reg_free (reg);
+	mu_end;
+}
+
 bool test_r_reg_vbank(void) {
 	RReg *reg = r_reg_new ();
 	mu_assert_notnull (reg, "r_reg_new () failed");
@@ -824,6 +848,7 @@ int all_tests(void) {
 	mu_run_test (test_r_reg_profile_to_cc);
 	mu_run_test (test_r_reg_x87_multi_offset);
 	mu_run_test (test_r_reg_vbank);
+	mu_run_test (test_r_reg_vector_bank);
 	mu_run_test (test_r_reg_clone);
 	mu_run_test (test_r_reg_set_name);
 	mu_run_test (test_r_reg_set_profile_string);

@@ -18,7 +18,7 @@ R_LIB_VERSION_HEADER (r_reg);
 #define R_REG_VBANK_MAX_REGS 65536
 
 static inline bool r_reg_vbank_prefix(char ch) {
-	return ch == 'l' || ch == 'r' || ch == 'v';
+	return ch == 'l' || ch == 'r' || ch == 'v' || ch == 'z' || ch == 'p';
 }
 
 /*
@@ -215,6 +215,7 @@ R_API bool r_reg_setv(RReg *reg, const char *name, ut64 val);
 R_API const char *r_reg_32_to_64(RReg *reg, const char *rreg32);
 R_API const char *r_reg_64_to_32(RReg *reg, const char *rreg64);
 
+// name[index] resolves a transient 64-bit chunk, starting at the low chunk.
 R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type);
 /* R_REG_TYPE_ALL returns fixed registers and materialized vbank items. Use
  * r_reg_index_get() to resolve an unmaterialized vbank slot by its index. */
