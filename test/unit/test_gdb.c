@@ -18,7 +18,7 @@ static bool test_gdb_server_register_values(void) {
 			mu_assert_true (r_reg_set_profile_string (dbg->reg, profile), "server register profile");
 			free (profile);
 			dbg->reg->endian = endian? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE;
-			gdb_reg_t registers[] = { { .name = "wide", .size = widths[width] }, { .name = "after", .size = 64 }, {0} };
+			gdb_reg_t registers[] = { { .name = "wide", .size = widths[width] }, { .name = "after", .size = 64 }, { .name = "" } };
 			ut8 bytes[256], actual[256];
 			for (i = 0; i < size; i++) {
 				bytes[i] = i + 1;
@@ -48,7 +48,7 @@ static bool test_gdb_server_register_values(void) {
 			r_unref (item);
 		}
 		mu_assert_true (r_reg_set_profile_string (dbg->reg, "gpr small .16 0 0\ngpr large .64 8 0\n"), "scalar width differences");
-		gdb_reg_t registers[] = { { .name = "small", .size = 32 }, { .name = "large", .size = 32 }, {0} };
+		gdb_reg_t registers[] = { { .name = "small", .size = 32 }, { .name = "large", .size = 32 }, { .name = "" } };
 		r_reg_setv (dbg->reg, "small", 0x1234);
 		r_reg_setv (dbg->reg, "large", 0x1122334455667788ULL);
 		char output[17];

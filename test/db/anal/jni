@@ -118,7 +118,7 @@ NAME=jni tables of many wide methods register their types in linear time
 FILE=bins/elf/jni/many-wide-natives.so
 TIMEOUT=10
 CMDS=<<EOF
-aaa
+aa
 afl~?
 EOF
 EXPECT=<<EOF

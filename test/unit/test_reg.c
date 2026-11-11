@@ -1033,7 +1033,7 @@ bool test_r_reg_checked_lanes(void) {
 }
 
 bool test_r_reg_value_hex(void) {
-	const char *profile = "fpu small .80 0 0\nfpu wide .384 16 0\nfpu huge .2048 64 0\n";
+	const char *profile = "fpu partial .80 0 0\nfpu wide .384 16 0\nfpu huge .2048 64 0\n";
 	int endian;
 	for (endian = 0; endian < 2; endian++) {
 		RReg *reg = r_reg_new ();
@@ -1046,10 +1046,10 @@ bool test_r_reg_value_hex(void) {
 		mu_assert_streq_free (hex,
 			"0xfedcba987654321000000000000000000000000000000000000000000000000000000000000000000123456789abcdef",
 			"384-bit hexadecimal follows logical lane order");
-		RRegItem *small = r_reg_get (reg, "small", R_REG_TYPE_ALL);
-		mu_assert_true (r_reg_set_pack (reg, small, 0, 64, 0x0123456789abcdefULL), "partial register low chunk");
-		mu_assert_true (r_reg_set_pack (reg, small, 4, 16, 0xabcd), "partial register high chunk");
-		mu_assert_streq_free (r_reg_get_value_hex (reg, small), "0xabcd0123456789abcdef", "partial final chunk");
+		RRegItem *partial = r_reg_get (reg, "partial", R_REG_TYPE_ALL);
+		mu_assert_true (r_reg_set_pack (reg, partial, 0, 64, 0x0123456789abcdefULL), "partial register low chunk");
+		mu_assert_true (r_reg_set_pack (reg, partial, 4, 16, 0xabcd), "partial register high chunk");
+		mu_assert_streq_free (r_reg_get_value_hex (reg, partial), "0xabcd0123456789abcdef", "partial final chunk");
 		RRegItem *huge = r_reg_get (reg, "huge", R_REG_TYPE_ALL);
 		mu_assert_true (r_reg_set_pack (reg, huge, 31, 64, 1), "2048-bit high lane");
 		mu_assert_true (r_reg_set_pack (reg, huge, 0, 64, 0x22), "2048-bit low lane");
@@ -1066,17 +1066,17 @@ bool test_r_reg_value_hex(void) {
 		mu_assert_streq_free (r_reg_get_value_hex (reg, huge), expected, "snapshot remains intact");
 		free (expected);
 		free (zeros);
-		mu_assert_true (r_reg_set_value_hex (reg, small, "abcd0123456789abcdef"), "partial chunk without prefix");
-		mu_assert_eq (r_reg_get_pack (reg, small, 4, 16), 0xabcd, "partial high chunk written in target byte order");
+		mu_assert_true (r_reg_set_value_hex (reg, partial, "abcd0123456789abcdef"), "partial chunk without prefix");
+		mu_assert_eq (r_reg_get_pack (reg, partial, 4, 16), 0xabcd, "partial high chunk written in target byte order");
 		const char *invalid[] = { "", "0x", "0x100000000000000000000", "0x123g", "0x12 34", "-1", "0x1+2" };
 		int i;
 		for (i = 0; i < R_ARRAY_SIZE (invalid); i++) {
-			mu_assert_false (r_reg_set_value_hex (reg, small, invalid[i]), "reject invalid hexadecimal");
-			mu_assert_streq_free (r_reg_get_value_hex (reg, small), "0xabcd0123456789abcdef", "invalid write is atomic");
+			mu_assert_false (r_reg_set_value_hex (reg, partial, invalid[i]), "reject invalid hexadecimal");
+			mu_assert_streq_free (r_reg_get_value_hex (reg, partial), "0xabcd0123456789abcdef", "invalid write is atomic");
 		}
-		small->ro = true;
-		mu_assert_true (r_reg_set_value_hex (reg, small, "0"), "read-only write is a successful no-op");
-		mu_assert_streq_free (r_reg_get_value_hex (reg, small), "0xabcd0123456789abcdef", "read-only value preserved");
+		partial->ro = true;
+		mu_assert_true (r_reg_set_value_hex (reg, partial, "0"), "read-only write is a successful no-op");
+		mu_assert_streq_free (r_reg_get_value_hex (reg, partial), "0xabcd0123456789abcdef", "read-only value preserved");
 		RRegArena *arena = reg->regset[wide->arena].arena;
 		const int saved_size = arena->size;
 		arena->size = 63;
@@ -1089,7 +1089,7 @@ bool test_r_reg_value_hex(void) {
 		wide->offset = INT_MAX - 7;
 		mu_assert_null (r_reg_get_value_hex (reg, wide), "reject overflowing extent");
 		r_unref (wide);
-		r_unref (small);
+		r_unref (partial);
 		r_unref (huge);
 		r_reg_free (reg);
 	}

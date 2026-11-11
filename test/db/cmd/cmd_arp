@@ -78,9 +78,9 @@ arp~?
 EOF
 EXPECT=<<EOF
 160
-292
+300
 64
-130
+138
 68
 129
 808
@@ -399,13 +399,21 @@ regset 2 (fpu)
    xmm31l fpu @ fpu (offset: 2144  size: 8)
    xmm31h fpu @ fpu (offset: 2152  size: 8)
    k0 fpu @ fpu (offset: 2208  size: 8)
+   mm0 vec64 @ fpu (offset: 32  size: 8)
    k1 fpu @ fpu (offset: 2216  size: 8)
+   mm1 vec64 @ fpu (offset: 48  size: 8)
    k2 fpu @ fpu (offset: 2224  size: 8)
+   mm2 vec64 @ fpu (offset: 64  size: 8)
    k3 fpu @ fpu (offset: 2232  size: 8)
+   mm3 vec64 @ fpu (offset: 80  size: 8)
    k4 fpu @ fpu (offset: 2240  size: 8)
+   mm4 vec64 @ fpu (offset: 96  size: 8)
    k5 fpu @ fpu (offset: 2248  size: 8)
+   mm5 vec64 @ fpu (offset: 112  size: 8)
    k6 fpu @ fpu (offset: 2256  size: 8)
+   mm6 vec64 @ fpu (offset: 128  size: 8)
    k7 fpu @ fpu (offset: 2264  size: 8)
+   mm7 vec64 @ fpu (offset: 144  size: 8)
 regset 3 (vec64)
 * arena vec64 size 1
 regset 4 (vec128)
@@ -539,12 +547,14 @@ mxcsr = 0x00000000
 ah = 0x00000000
 dr7 = 0x00000000
 mxcr_mask = 0x00000000
+mm0 = 0x00000000
 st0 = 0x00000000
 xfs = 0x00000000
 xgs = 0x00000000
 oeax = 0x00000000
 ip = 0x00000000
 eip = 0x00000000
+mm1 = 0x00000000
 st1 = 0x00000000
 cs = 0x00000000
 xcs = 0x00000000
@@ -565,11 +575,17 @@ rf = 0x00000000
 vm = 0x00000000
 sp = 0x00000000
 esp = 0x00000000
+mm2 = 0x00000000
 st2 = 0x00000000
+mm3 = 0x00000000
 st3 = 0x00000000
+mm4 = 0x00000000
 st4 = 0x00000000
+mm5 = 0x00000000
 st5 = 0x00000000
+mm6 = 0x00000000
 st6 = 0x00000000
+mm7 = 0x00000000
 st7 = 0x00000000
 xmm0l = 0x00000000
 xmm0 = 0x00000000000000000000000000000000
