@@ -430,3 +430,19 @@ EXPECT=<<EOF
 {"offset":320,"size":64,"perm":"rwx"}
 EOF
 RUN
+
+NAME=p=2 clamps negative step and does not crash
+FILE=malloc://64
+CMDS=<<EOF
+wx 0102030405060708090a0b0c0d0e0f10
+b 16
+p=2-2~?
+p=2-1~?
+p=2-8~?
+EOF
+EXPECT=<<EOF
+8
+8
+8
+EOF
+RUN

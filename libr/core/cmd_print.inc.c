@@ -5568,6 +5568,9 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			short *word = (short *)core->block;
 			int i, words = core->blocksize / 2;
 			int step = r_num_math (core->num, input + 2);
+			if (step < 0) {
+				step = 0;
+			}
 			ut64 oldword = 0;
 			for (i = 0; i < words; i++) {
 				ut64 word64 = word[i] + ST16_MAX;
