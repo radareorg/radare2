@@ -111,7 +111,7 @@ typedef struct r_reg_item_t {
 	int /*RRegType*/ type;
 	int size; /* 8,16,32,64 ... 128/256 ??? rename to bitsize */
 	int offset; /* offset in data structure */
-	int packed_size; /* 0 means no packed register, 1byte pack, 2b pack... */
+	int packed_size; // Default lane width in bits; 0 means unpacked.
 	bool is_float;
 	char *flags;
 	char *comment;
@@ -291,6 +291,95 @@ R_API ut8 *r_reg_arena_dup(RReg *reg, const ut8 *source);
 R_API const char *r_reg_cond_tostring(int n);
 R_API int r_reg_cond_from_string(const char *str);
 R_API void r_reg_arena_shrink(RReg *reg);
+
+// Checked access requires byte-aligned storage and validates the entire register.
+static inline RRegArena *r_reg_value_arena(RReg *reg, RRegItem *item) {
+	if (item->arena < 0 || item->arena >= R_REG_TYPE_LAST || item->offset < 0
+			|| item->size < 1 || (item->offset & 7) || (item->size & 7)) {
+		return NULL;
+	}
+	RRegArena *arena = reg->regset[item->arena].arena;
+	return arena && arena->bytes && (st64)item->offset + item->size <= (st64)arena->size * 8? arena: NULL;
+}
+
+// Buffer size must match the register exactly; bytes retain the arena's layout.
+static inline bool r_reg_get_value_bytes(RReg *reg, RRegItem *item, ut8 *buf, int len) {
+	R_RETURN_VAL_IF_FAIL (reg && item && buf, false);
+	RRegArena *arena = r_reg_value_arena (reg, item);
+	if (!arena || len != item->size / 8) {
+		return false;
+	}
+	memmove (buf, arena->bytes + item->offset / 8, len);
+	return true;
+}
+
+static inline bool r_reg_set_value_bytes(RReg *reg, RRegItem *item, const ut8 *buf, int len) {
+	R_RETURN_VAL_IF_FAIL (reg && item && buf, false);
+	RRegArena *arena = r_reg_value_arena (reg, item);
+	if (!arena || len != item->size / 8) {
+		return false;
+	}
+	if (!item->ro) {
+		r_reg_arena_materialize (arena);
+		if (!arena->bytes) {
+			return false;
+		}
+		memmove (arena->bytes + item->offset / 8, buf, len);
+	}
+	return true;
+}
+
+static inline bool r_reg_pack_access(RReg *reg, RRegItem *item, int index, int bits, ut64 *value, bool write) {
+	if (!bits) {
+		bits = item->packed_size;
+	}
+	RRegArena *arena = r_reg_value_arena (reg, item);
+	if (!arena || bits < 1 || bits > 64 || index < 0 || index >= item->size / bits) {
+		return false;
+	}
+	if (write) {
+		if (item->ro) {
+			return true;
+		}
+		r_reg_arena_materialize (arena);
+		if (!arena->bytes) {
+			return false;
+		}
+	}
+	const bool be = (reg->endian & R_SYS_ENDIAN_BIG) == R_SYS_ENDIAN_BIG;
+	ut8 *bytes = arena->bytes + item->offset / 8;
+	ut64 result = 0;
+	int done = 0;
+	while (done < bits) {
+		const int bit = index * bits + done;
+		int offset = bit / 8;
+		const int shift = bit & 7;
+		const int count = R_MIN (8 - shift, bits - done);
+		const ut8 mask = (1U << count) - 1;
+		if (be) {
+			const int chunk = offset & ~7;
+			const int size = R_MIN (8, item->size / 8 - chunk);
+			offset = chunk + size - 1 - (offset & 7);
+		}
+		if (write) {
+			bytes[offset] = (bytes[offset] & ~(mask << shift)) | (((*value >> done) & mask) << shift);
+		} else {
+			result |= (ut64)((bytes[offset] >> shift) & mask) << done;
+		}
+		done += count;
+	}
+	if (!write) {
+		*value = result;
+	}
+	return true;
+}
+
+// Lanes are low-bit first within low-first 64-bit chunks; bits=0 uses packed_size.
+// Accepts widths 1..64, including lanes spanning chunks; leaves value unchanged on error.
+static inline bool r_reg_get_pack_checked(RReg *reg, RRegItem *item, int index, int bits, ut64 *value) {
+	R_RETURN_VAL_IF_FAIL (reg && item && value, false);
+	return r_reg_pack_access (reg, item, index, bits, value, false);
+}
 
 #ifdef __cplusplus
 }

@@ -444,6 +444,29 @@ expressions to get:
 - all regs modified (write)
 - all regs accessed (read)
 
+## RReg vector access
+
+Register sizes, offsets and `packed_size` are measured in bits. Vector storage
+uses low-first 64-bit chunks; bytes within each chunk follow the register
+endianness. A partial final chunk uses only its remaining bytes.
+
+`r_reg_get_pack_checked(reg, item, index, bits, &value)` reads a lane of 1–64
+bits and returns success separately from the value. It leaves the output
+unchanged on failure. `bits=0` uses `packed_size`; invalid widths and indexes
+are rejected. `r_reg_set_pack` uses the same numbering and validation. One-bit
+lanes provide predicate access, and lanes may cross chunk boundaries. The
+legacy `r_reg_get_pack` still returns zero on error.
+
+`r_reg_get_value_bytes` and `r_reg_set_value_bytes` transfer a whole register
+without a width limit imposed by `utX`. Both require byte-aligned storage and
+an exact buffer length of `item->size / 8`. The bytes retain the arena layout;
+these APIs do not change endianness. Writes preserve neighboring registers,
+read-only registers, and arena snapshots.
+
+For vectors of at least 128 bits, `r_reg_get_value` returns the low 64 bits and
+`r_reg_set_value` writes those bits while clearing the rest. These RReg APIs
+do not invoke ESIL hooks; emulation must continue through its register callbacks.
+
 # API HOOKS
 
 It is important for emulation to be able to setup hooks in the parser, so we

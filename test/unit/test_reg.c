@@ -890,7 +890,157 @@ bool test_r_reg_profile_to_cc(void) {
 	mu_end;
 }
 
+bool test_r_reg_wide_access(void) {
+	const int widths[] = {128, 256, 384, 512, 2048};
+	int endian, width, i, operation;
+	for (endian = 0; endian < 2; endian++) {
+		for (width = 0; width < R_ARRAY_SIZE (widths); width++) {
+			RReg *reg = r_reg_new ();
+			r_reg_set_endian (reg, endian? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE);
+			const int len = widths[width] / 8;
+			char *profile = r_str_newf ("fpu before .64 0 0\nfpu wide .%d 8 .64\nfpu after .64 %d 0\n", widths[width], len + 8);
+			mu_assert_true (r_reg_set_profile_string (reg, profile), "wide profile");
+			free (profile);
+			RRegItem *item = r_reg_get (reg, "wide", -1);
+			ut8 bytes[256], result[256];
+			for (i = 0; i < len; i += 8) {
+				r_write_ble64 (bytes + i, 0x1122334455667788ULL + i, endian);
+			}
+			r_reg_setv (reg, "before", 0xaabb);
+			r_reg_setv (reg, "after", 0xccdd);
+			mu_assert_true (r_reg_set_value_bytes (reg, item, bytes, len), "write all register bytes");
+			mu_assert_true (r_reg_get_value_bytes (reg, item, result, len), "read all register bytes");
+			mu_assert_memeq (result, bytes, len, "byte round trip preserves arena layout");
+			mu_assert_eq (r_reg_get_value (reg, item), 0x1122334455667788ULL, "scalar read returns low chunk");
+			if (widths[width] == 256) {
+				utX value = {0};
+				mu_assert_eq (r_reg_get_value_big (reg, item, &value), 0x1122334455667788ULL, "wide read low chunk");
+				mu_assert_eq (value.v256.Low.High, 0x1122334455667790ULL, "wide read second chunk");
+				mu_assert_eq (value.v256.High.Low, 0x1122334455667798ULL, "wide read third chunk");
+				mu_assert_eq (value.v256.High.High, 0x11223344556677a0ULL, "wide read final chunk");
+				RRegArena *arena = reg->regset[item->arena].arena;
+				const int arena_size = arena->size;
+				arena->size = 8 + len - 1;
+				mu_assert_eq (r_reg_get_value_big (reg, item, &value), 0, "truncated wide read rejected");
+				mu_assert_eq (value.v256.High.High, 0x11223344556677a0ULL, "failed wide read preserves output");
+				mu_assert_false (r_reg_set_value (reg, item, 0), "truncated scalar write rejected");
+				arena->size = arena_size;
+			}
+			mu_assert_false (r_reg_get_value_bytes (reg, item, result, len - 1), "reject short output buffer");
+			mu_assert_memeq (result, bytes, len, "failed read leaves buffer unchanged");
+			mu_assert_false (r_reg_set_value_bytes (reg, item, bytes, len - 1), "reject short input buffer");
+			mu_assert_false (r_reg_set_value_bytes (reg, item, bytes, len + 1), "reject oversized input buffer");
+			for (operation = 0; operation < 3; operation++) {
+				r_reg_arena_push (reg);
+				mu_assert_true (r_reg_get_value_bytes (reg, item, result, len), "read snapshot without materializing");
+				mu_assert_true (reg->regset[item->arena].arena->shared, "read preserves shared snapshot");
+				memset (result, 0, len);
+				if (operation == 0) {
+					mu_assert_true (r_reg_set_value_bytes (reg, item, result, len), "byte write materializes snapshot");
+				} else if (operation == 1) {
+					mu_assert_true (r_reg_set_pack (reg, item, 0, 1, 1), "predicate write materializes snapshot");
+				} else {
+					mu_assert_true (r_reg_set_value (reg, item, 0x42), "scalar write materializes wide snapshot");
+					for (i = 0; i < len / 8; i++) {
+						mu_assert_eq (r_reg_get_pack (reg, item, i, 64), i? 0: 0x42, "scalar write clears every upper chunk");
+					}
+				}
+				mu_assert_false (reg->regset[item->arena].arena->shared, "write owns its storage");
+				r_reg_arena_pop (reg);
+				mu_assert_true (r_reg_get_value_bytes (reg, item, result, len), "read restored snapshot");
+				mu_assert_memeq (result, bytes, len, "snapshot is unchanged by register write");
+			}
+			item->ro = true;
+			memset (result, 0, len);
+			mu_assert_true (r_reg_set_value_bytes (reg, item, result, len), "read-only byte write is a no-op");
+			mu_assert_true (r_reg_set_pack (reg, item, 0, 64, 0), "read-only packed write is a no-op");
+			mu_assert_true (r_reg_get_value_bytes (reg, item, result, len), "read read-only register");
+			mu_assert_memeq (result, bytes, len, "read-only register unchanged");
+			mu_assert_eq (r_reg_getv (reg, "before"), 0xaabb, "preceding register intact");
+			mu_assert_eq (r_reg_getv (reg, "after"), 0xccdd, "following register intact");
+			r_unref (item);
+			r_reg_free (reg);
+		}
+	}
+	mu_end;
+}
+
+bool test_r_reg_checked_lanes(void) {
+	int endian, bits, index, bit, i;
+	for (endian = 0; endian < 2; endian++) {
+		RReg *reg = r_reg_new ();
+		r_reg_set_endian (reg, endian? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE);
+		mu_assert_true (r_reg_set_profile_string (reg, "fpu pred .136 8 .1\n"), "predicate with partial final chunk");
+		RRegItem *item = r_reg_get (reg, "pred", -1);
+		ut8 canonical[17], raw[17], expected[17], actual[17];
+		for (i = 0; i < sizeof (canonical); i++) {
+			canonical[i] = 0x31 + 7 * i;
+		}
+		r_write_ble64 (raw, r_read_le64 (canonical), endian);
+		r_write_ble64 (raw + 8, r_read_le64 (canonical + 8), endian);
+		raw[16] = canonical[16];
+		for (bits = 1; bits <= 64; bits++) {
+			for (index = 0; index < item->size / bits; index++) {
+				mu_assert_true (r_reg_set_value_bytes (reg, item, raw, sizeof (raw)), "initialize lane data");
+				ut64 want = 0, value = 0;
+				for (bit = 0; bit < bits; bit++) {
+					const int pos = index * bits + bit;
+					want |= (ut64)((canonical[pos / 8] >> (pos & 7)) & 1) << bit;
+				}
+				mu_assert_true (r_reg_get_pack_checked (reg, item, index, bits, &value), "read valid lane");
+				mu_assert_eq (value, want, "lane agrees with logical bit numbering");
+				mu_assert_eq (r_reg_get_pack (reg, item, index, bits), want, "legacy getter uses checked path");
+				memcpy (expected, canonical, sizeof (expected));
+				for (bit = 0; bit < bits; bit++) {
+					const int pos = index * bits + bit;
+					expected[pos / 8] ^= 1U << (pos & 7);
+				}
+				mu_assert_true (r_reg_set_pack (reg, item, index, bits, ~want), "write lane including chunk boundaries");
+				mu_assert_true (r_reg_get_value_bytes (reg, item, actual, sizeof (actual)), "inspect entire register after lane write");
+				mu_assert_eq (r_read_ble64 (actual, endian), r_read_le64 (expected), "write preserves neighbors in first chunk");
+				mu_assert_eq (r_read_ble64 (actual + 8, endian), r_read_le64 (expected + 8), "write preserves neighbors in second chunk");
+				mu_assert_eq (actual[16], expected[16], "write preserves partial final chunk");
+			}
+		}
+		mu_assert_true (r_reg_set_value (reg, item, 0), "clear predicate register");
+		ut64 value = 0x1234;
+		mu_assert_true (r_reg_get_pack_checked (reg, item, 135, 0, &value), "default one-bit predicate access");
+		mu_assert_eq (value, 0, "valid zero is successful");
+		mu_assert_true (r_reg_set_pack (reg, item, 135, 0, 1), "write final predicate bit");
+		mu_assert_eq (r_reg_getv (reg, "pred[2]"), 0x80, "predicate bit aliases partial chunk");
+		const int invalid[][2] = {{-1, 1}, {136, 1}, {INT_MAX, 64}, {0, -1}, {0, 65}, {0, 128}, {0, INT_MAX}};
+		for (i = 0; i < R_ARRAY_SIZE (invalid); i++) {
+			value = 0x1234;
+			mu_assert_false (r_reg_get_pack_checked (reg, item, invalid[i][0], invalid[i][1], &value), "invalid lane rejected");
+			mu_assert_eq (value, 0x1234, "failed lane read leaves output unchanged");
+			mu_assert_false (r_reg_set_pack (reg, item, invalid[i][0], invalid[i][1], 0), "invalid lane write rejected");
+			mu_assert_eq (r_reg_getv (reg, "pred[2]"), 0x80, "invalid write preserves register");
+		}
+		item->packed_size = 136;
+		mu_assert_false (r_reg_get_pack_checked (reg, item, 0, 0, &value), "oversized default is not clamped");
+		RRegItem invalid_item = *item;
+		invalid_item.arena = R_REG_TYPE_LAST;
+		mu_assert_false (r_reg_get_pack_checked (reg, &invalid_item, 0, 1, &value), "invalid arena rejected");
+		invalid_item = *item;
+		invalid_item.offset = INT_MAX - 7;
+		mu_assert_false (r_reg_get_value_bytes (reg, &invalid_item, actual, sizeof (actual)), "large offset rejected without overflow");
+		invalid_item.offset = -1;
+		mu_assert_false (r_reg_set_value_bytes (reg, &invalid_item, raw, sizeof (raw)), "unbacked register rejected");
+		RRegArena *arena = reg->regset[item->arena].arena;
+		const int size = arena->size;
+		arena->size = 9;
+		mu_assert_false (r_reg_get_pack_checked (reg, item, 0, 1, &value), "truncated register rejected even for first lane");
+		mu_assert_false (r_reg_set_pack (reg, item, 0, 1, 0), "truncated arena write rejected");
+		arena->size = size;
+		r_unref (item);
+		r_reg_free (reg);
+	}
+	mu_end;
+}
+
 int all_tests(void) {
+	mu_run_test (test_r_reg_wide_access);
+	mu_run_test (test_r_reg_checked_lanes);
 	mu_run_test (test_r_reg_profile_to_cc);
 	mu_run_test (test_r_reg_x87_multi_offset);
 	mu_run_test (test_r_reg_vbank);

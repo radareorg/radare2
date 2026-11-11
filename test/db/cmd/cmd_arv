@@ -102,3 +102,22 @@ EXPECT=<<EOF_EXPECT
 {"name":"xmm15","bits":128,"lane_bits":64,"first":0,"values":["0x0000000000000000","0x0000000000000000"]}
 EOF_EXPECT
 RUN
+
+NAME=ARM64 big-endian 256-bit register reads agree with indexed chunks
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e asm.cpu=sve256
+e cfg.bigendian=true
+ar z0[0]=0x1122334455667788
+ar z0[1]=0x99aabbccddeeff00
+ar z0[2]=0x0123456789abcdef
+ar z0[3]=0xfedcba9876543210
+ar z0
+arvj z0
+EOF
+EXPECT=<<EOF
+0xfedcba98765432100123456789abcdef99aabbccddeeff001122334455667788
+{"name":"z0","bits":256,"lane_bits":64,"first":0,"values":["0x1122334455667788","0x99aabbccddeeff00","0x0123456789abcdef","0xfedcba9876543210"]}
+EOF
+RUN

@@ -4,59 +4,36 @@
 #include <r_util.h>
 
 R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
-	R_RETURN_VAL_IF_FAIL (reg && item, 0);
-
-	ut64 ret = 0LL;
-	int off = BITS2BYTES (item->offset);
-	RRegSet *regset = &reg->regset[item->arena];
-	if (!regset->arena) {
-		return 0LL;
+	R_RETURN_VAL_IF_FAIL (reg && item && val, 0);
+	RRegArena *arena = r_reg_value_arena (reg, item);
+	if (!arena) {
+		return 0;
 	}
+	const ut8 *bytes = arena->bytes + item->offset / 8;
 	const bool be = (reg->endian & R_SYS_ENDIAN_BIG) == R_SYS_ENDIAN_BIG;
 	switch (item->size) {
-	case 80: // word + qword
-		if (regset->arena->bytes && (off + 10 <= regset->arena->size)) {
-			val->v80.Low = r_read_le64 (regset->arena->bytes + off);
-			val->v80.High = r_read_le16 (regset->arena->bytes + off + 8);
-		} else {
-			R_LOG_WARN ("null or oob arena for current regset");
-		}
-		ret = val->v80.Low;
-		break;
-	case 96: // dword + qword
-		if (regset->arena->bytes && (off + 12 <= regset->arena->size)) {
-			val->v96.Low = r_read_le64 (regset->arena->bytes + off);
-			val->v96.High = r_read_le32 (regset->arena->bytes + off + 8);
-		} else {
-			R_LOG_WARN ("null or oob arena for current regset");
-		}
-		ret = val->v96.Low;
-		break;
-	case 128: // qword + qword
-		if (regset->arena->bytes && (off + 16 <= regset->arena->size)) {
-			val->v128.Low = r_read_ble64 (regset->arena->bytes + off, be);
-			val->v128.High = r_read_ble64 (regset->arena->bytes + off + 8, be);
-		} else {
-			R_LOG_WARN ("null or oob arena for current regset");
-		}
-		ret = val->v128.Low;
-		break;
-	case 256:// qword + qword + qword + qword
-		if (regset->arena->bytes && (off + 32 <= regset->arena->size)) {
-			val->v256.Low.Low = r_read_le64 (regset->arena->bytes + off);
-			val->v256.Low.High = r_read_le64 (regset->arena->bytes + off + 8);
-			val->v256.High.Low = r_read_le64 (regset->arena->bytes + off + 16);
-			val->v256.High.High = r_read_le64 (regset->arena->bytes + off + 24);
-		} else {
-			R_LOG_WARN ("null or oob arena for current regset");
-		}
-		ret = val->v256.Low.Low;
-		break;
+	case 80:
+		val->v80.Low = r_read_le64 (bytes);
+		val->v80.High = r_read_le16 (bytes + 8);
+		return val->v80.Low;
+	case 96:
+		val->v96.Low = r_read_le64 (bytes);
+		val->v96.High = r_read_le32 (bytes + 8);
+		return val->v96.Low;
+	case 128:
+		val->v128.Low = r_read_ble64 (bytes, be);
+		val->v128.High = r_read_ble64 (bytes + 8, be);
+		return val->v128.Low;
+	case 256:
+		val->v256.Low.Low = r_read_ble64 (bytes, be);
+		val->v256.Low.High = r_read_ble64 (bytes + 8, be);
+		val->v256.High.Low = r_read_ble64 (bytes + 16, be);
+		val->v256.High.High = r_read_ble64 (bytes + 24, be);
+		return val->v256.Low.Low;
 	default:
 		R_LOG_WARN ("Bit size %d not supported", item->size);
-		break;
+		return 0;
 	}
-	return ret;
 }
 
 static ut64 reg_read_bytes(const ut8 *bytes, int count, bool be) {
@@ -82,6 +59,11 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	}
 	if (item->offset == -1) {
 		return 0LL;
+	}
+	if (item->size >= 128) {
+		RRegArena *arena = r_reg_value_arena (reg, item);
+		return arena? r_read_ble64 (arena->bytes + item->offset / 8,
+			(reg->endian & R_SYS_ENDIAN_BIG) == R_SYS_ENDIAN_BIG): 0;
 	}
 	int off = BITS2BYTES (item->offset);
 	RRegSet *regset = &reg->regset[item->arena];
@@ -165,13 +147,6 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 #endif
 			return isnan (ld)? UT64_MAX: (ut64)ld;
 		}
-	case 128:
-	case 256:
-		if (off + BITS2BYTES (item->size) <= regset->arena->size) {
-			return r_read_ble64 (regset->arena->bytes + off, be);
-		}
-		R_LOG_WARN ("%dbit oob read %d", item->size, off);
-		break;
 	default:
 		R_LOG_WARN ("Bit size %d not supported", item->size);
 		break;
@@ -203,14 +178,28 @@ static bool item_is_zero(RReg *reg, RRegItem *item, RRegArena *arena) {
 
 R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	R_RETURN_VAL_IF_FAIL (reg && item, false);
-	ut8 bytes[32] = {0};
-	ut8 *src = bytes;
 	if (item->ro) {
 		return true;
 	}
 	if (item->offset < 0) {
 		return true;
 	}
+	if (item->size >= 128) {
+		RRegArena *arena = r_reg_value_arena (reg, item);
+		if (!arena) {
+			return false;
+		}
+		r_reg_arena_materialize (arena);
+		if (!arena->bytes) {
+			return false;
+		}
+		ut8 *bytes = arena->bytes + item->offset / 8;
+		memset (bytes, 0, item->size / 8);
+		r_write_ble64 (bytes, value, (reg->endian & R_SYS_ENDIAN_BIG) == R_SYS_ENDIAN_BIG);
+		return true;
+	}
+	ut8 bytes[16] = {0};
+	ut8 *src = bytes;
 	RRegArena *arena = reg->regset[item->arena].arena;
 	if (!arena) {
 		return false;
@@ -264,11 +253,6 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 			*buf = value? (*buf | mask): (*buf & ~mask);
 		}
 		return true;
-	case 128:
-	case 256:
-		// a ut64 reaches only the low qword
-		r_write_ble64 (src, value, be);
-		break;
 	default:
 		R_LOG_WARN ("Bit size %d not supported", item->size);
 		return false;
@@ -326,52 +310,13 @@ R_API R_HEAP char *r_reg_get_bvalue(RReg *reg, RRegItem *item) {
 	return out;
 }
 
-/* packed registers */
-// packbits can be 8, 16, 32 or 64
-// result value is always casted into ut64
-// TODO: support packbits=128 for xmm registers
-static int reg_pack_offset(RReg *reg, RRegItem *item, int index, int *bits, bool be) {
-	if (*bits < 1) {
-		*bits = item->packed_size;
-	}
-	if (*bits > 64) {
-		*bits = 64;
-		R_LOG_WARN ("Does not support pack bits > 64");
-	}
-	if (*bits < 8 || (*bits & 7) || item->offset < 0 || (item->offset & 7)
-		|| index < 0 || index >= item->size / *bits) {
-		return -1;
-	}
-	RRegArena *arena = reg->regset[item->arena].arena;
-	const int bytes = *bits / 8;
-	int lane_offset = index * bytes;
-	if (be && !(64 % *bits)) {
-		const int chunk = lane_offset & ~7;
-		const int chunk_bytes = R_MIN (8, BITS2BYTES (item->size) - chunk);
-		lane_offset = chunk + chunk_bytes - (lane_offset - chunk) - bytes;
-	}
-	const st64 offset = BITS2BYTES (item->offset) + (st64)lane_offset;
-	return arena && arena->bytes && offset + bytes <= arena->size? offset: -1;
-}
-
 R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) {
-	R_RETURN_VAL_IF_FAIL (reg && item, 0);
-	const bool be = (reg->endian & R_SYS_ENDIAN_BIG) == R_SYS_ENDIAN_BIG;
-	const int offset = reg_pack_offset (reg, item, packidx, &packbits, be);
-	return offset >= 0? reg_read_bytes (reg->regset[item->arena].arena->bytes + offset, packbits / 8, be): 0;
+	ut64 value = 0;
+	r_reg_get_pack_checked (reg, item, packidx, packbits, &value);
+	return value;
 }
 
 R_API bool r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, ut64 val) {
 	R_RETURN_VAL_IF_FAIL (reg && item, false);
-	const bool be = (reg->endian & R_SYS_ENDIAN_BIG) == R_SYS_ENDIAN_BIG;
-	const int offset = reg_pack_offset (reg, item, packidx, &packbits, be);
-	if (offset < 0) {
-		return false;
-	}
-	if (!item->ro) {
-		RRegArena *arena = reg->regset[item->arena].arena;
-		r_reg_arena_materialize (arena);
-		reg_write_bytes (arena->bytes + offset, packbits / 8, be, val);
-	}
-	return true;
+	return r_reg_pack_access (reg, item, packidx, packbits, &val, true);
 }

@@ -98,7 +98,7 @@ typedef struct r_esil_register_interface_t {
 	REsilRegWrite reg_write;
 	REsilRegAlias reg_alias;
 	REsilRegSize reg_size;
-	REsilRegPackedSize reg_packed_size; /// 0 == not packed; lane size in bytes otherwise
+	REsilRegPackedSize reg_packed_size; /// 0 == not packed; lane size in bits otherwise
 } REsilRegInterface;
 
 typedef bool (*REsilSetBits)(void *user, int bits);
