@@ -1831,7 +1831,13 @@ static int main_radare2(int argc, const char **argv, bool standalone) {
 				mr.fh = f;
 			}
 			if (mr.fh) {
-				r_debug_use (r->dbg, mr.is_gdb? "gdb": mr.debugbackend);
+				const char *backend = mr.is_gdb? "gdb": mr.debugbackend;
+				RIODesc *desc = r->io? r->io->desc: NULL;
+				if (desc && desc->plugin && desc->plugin->meta.name && !strcmp (desc->plugin->meta.name, "gdb")) {
+					backend = "gdb";
+					r_config_set (r->config, "dbg.backend", backend);
+				}
+				r_debug_use (r->dbg, backend);
 			}
 			/* load symbols when doing r2 -d ls */
 			// NOTE: the baddr is redefined to support PIE/ASLR
