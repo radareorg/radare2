@@ -3598,6 +3598,7 @@ static bool parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 	int bits = MACH0_(get_bits_from_hdr) (&mo->hdr);
 	bool is_stripped = true;
 	bool has_strip_marker = false;
+	const bool is_object = mo->hdr.filetype == MH_OBJECT;
 	const int limit = bf->rbin->options.limit;
 	for (s = 0; s < 2; s++) {
 		if (!dysym_bounds (mo, s, &from, &to)) {
@@ -3620,7 +3621,7 @@ static bool parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 				continue;
 			}
 			ut64 vaddr = nl->n_value;
-			if (vaddr < 100) {
+			if (is_object? (nl->n_type & N_TYPE) != N_SECT: vaddr < 100) {
 				continue;
 			}
 			int stridx = nl->n_strx;
@@ -3713,7 +3714,7 @@ static bool parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 		int section = st->n_sect;
 		if (section == 1 && j < symbols_count) { // text?? st->n_type == 1) maybe wrong
 			ut64 vaddr = st->n_value;
-			if (vaddr < 100) {
+			if (mo->hdr.filetype == MH_OBJECT? (st->n_type & N_TYPE) != N_SECT: vaddr < 100) {
 				continue;
 			}
 			char *sym_name = get_name (mo, st->n_strx, false);
