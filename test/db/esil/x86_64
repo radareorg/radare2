@@ -3444,3 +3444,36 @@ EXPECT=<<EOF
 0x99aabbccddeeff001122334455667788
 EOF
 RUN
+
+NAME=Whole XMM assignment is independent of stack depth
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aei
+ar xmm1l=0x1122334455667788
+ar xmm1h=0x99aabbccddeeff00
+ae xmm1,xmm0,=
+ar xmm0
+ae 0x99,xmm1,xmm0,=,rax,=
+ar xmm0
+ar rax
+ae 0x77,xmm1,xmm0,:=,rax,=
+ar xmm0
+ar rax
+ae 0x99,rax,xmm0,=,rbx,=
+ar xmm0
+ar rbx
+ae 0x55,xmm0,:=
+ar xmm0
+EOF
+EXPECT=<<EOF
+0x99aabbccddeeff001122334455667788
+0x99aabbccddeeff001122334455667788
+0x00000099
+0x99aabbccddeeff001122334455667788
+0x00000077
+0x00000000000000000000000000000077
+0x00000099
+0x00000000000000000000000000000055
+EOF
+RUN

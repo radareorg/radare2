@@ -2071,6 +2071,10 @@ static void arm64_emit_sve_unary(RAnalOp *op, const ut8 *buf) {
 	r_strbuf_setf (&op->esil, "0x%08"PFMT32x",ARM64_SVE_UNARY", r_read_le32 (buf));
 }
 
+static char *arm64_esil_load_dst(const char *reg, int size) {
+	return size == 16? r_str_newf ("%sh,=,%sl,=", reg, reg): r_str_newf ("%s,=", reg);
+}
+
 static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
@@ -2765,15 +2769,16 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 			break;
 		}
 		op->ptrsize = size;
+		char *dst = arm64_esil_load_dst (REG64 (0), size);
 		if (ISMEM64 (1)) {
 			if (HASMEMINDEX64 (1)) {
 				if (LSHIFT2_64 (1) || EXT64 (1)) {
 					ARG64_APPEND (&op->esil, 1);
-					r_strbuf_appendf (&op->esil, ",%s,+,[%d],%s,=",
-							MEMBASE64 (1), size, REG64 (0));
+					r_strbuf_appendf (&op->esil, ",%s,+,[%d],%s",
+							MEMBASE64 (1), size, dst);
 				} else {
-					r_strbuf_appendf (&op->esil, "%s,%s,+,[%d],%s,=",
-							MEMBASE64 (1), MEMINDEX64 (1), size, REG64 (0));
+					r_strbuf_appendf (&op->esil, "%s,%s,+,[%d],%s",
+							MEMBASE64 (1), MEMINDEX64 (1), size, dst);
 				}
 			} else {
 				if (LSHIFT2_64 (1)) {
@@ -2794,7 +2799,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 					r_strbuf_appendf (&op->esil, ",tmp,%s,=", REG64 (1));
 				}
 
-				r_strbuf_appendf (&op->esil, ",[%d],%s,=", size, REG64 (0));
+				r_strbuf_appendf (&op->esil, ",[%d],%s", size, dst);
 
 				if (ISPOSTINDEX64 ()) {
 					if (ISREG64 (2)) { // not sure if register valued post indexing exists?
@@ -2808,8 +2813,8 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		} else {
 			if (ISREG64 (1)) {
 				if (OPCOUNT64 () == 2) {
-					r_strbuf_setf (&op->esil, "%s,[%d],%s,=",
-						REG64 (1), size, REG64 (0));
+					r_strbuf_setf (&op->esil, "%s,[%d],%s",
+						REG64 (1), size, dst);
 				} else if (OPCOUNT64 () == 3) {
 					/*
 						This seems like a capstone bug:
@@ -2820,15 +2825,16 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 						fall in this case instead.
 					*/
 					if (ISREG64 (2)) {
-						r_strbuf_setf (&op->esil, "%s,%s,+,[%d],%s,=",
-							REG64 (1), REG64 (2), size, REG64 (0));
+						r_strbuf_setf (&op->esil, "%s,%s,+,[%d],%s",
+							REG64 (1), REG64 (2), size, dst);
 					}
 				}
 			} else {
-				r_strbuf_setf (&op->esil, "%"PFMT64d",[%d],%s,=",
-					IMM64 (1), size, REG64 (0));
+				r_strbuf_setf (&op->esil, "%"PFMT64d",[%d],%s",
+					IMM64 (1), size, dst);
 			}
 		}
+		free (dst);
 		break;
 	}
 	case ARM64_INS_LDRSB:
@@ -3187,17 +3193,19 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		char sign = (disp >= 0)? '+': '-';
 		ut64 abs = (ut64)((disp >= 0)? MEMDISP64 (2): (st64)(-disp));
 		const int size = REGSIZE64 (0);
+		char *dst0 = arm64_esil_load_dst (REG64 (0), size);
+		char *dst1 = arm64_esil_load_dst (REG64 (1), size);
 		// a writeback form is unpredictable when rt == rn, so it may write first
 		if (ISPREINDEX64 ()) {
 			// "ldp x0, x1, [x8, -0x10]!"
 			// 16,x8,-=,x8,[8],x0,=,x8,8,+,[8],x1,=
 			r_strbuf_setf (&op->esil,
 					"%"PFMT64d",%s,%c=,"
-					"%s,[%d],%s,=,"
-					"%d,%s,+,[%d],%s,=",
+					"%s,[%d],%s,"
+					"%d,%s,+,[%d],%s",
 					abs, MEMBASE64 (2), sign,
-					MEMBASE64 (2), size, REG64 (0),
-					size, MEMBASE64 (2), size, REG64 (1));
+					MEMBASE64 (2), size, dst0,
+					size, MEMBASE64 (2), size, dst1);
 		} else if (ISPOSTINDEX64 ()) {
 			int val = IMM64 (3);
 			sign = (val >= 0)?'+':'-';
@@ -3205,22 +3213,24 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 			// ldp x4, x5, [x8], -0x10
 			// x8,[8],x4,=,x8,8,+,[8],x5,=,16,x8,+=
 			r_strbuf_setf (&op->esil,
-					"%s,[%d],%s,=,"
-					"%s,%d,+,[%d],%s,=,"
+					"%s,[%d],%s,"
+					"%s,%d,+,[%d],%s,"
 					"%" PFMT64d ",%s,%c=",
-					MEMBASE64 (2), size, REG64 (0),
-					MEMBASE64 (2), size, size, REG64 (1),
+					MEMBASE64 (2), size, dst0,
+					MEMBASE64 (2), size, size, dst1,
 					abs, MEMBASE64 (2), sign);
 		} else {
 			// both words are loaded first, so the base may be a destination
 			r_strbuf_setf (&op->esil,
 					"%"PFMT64d",%s,%c,[%d],"
 					"%d,%"PFMT64d",%s,%c,+,[%d],"
-					"%s,=,%s,=",
+					"%s,%s",
 					abs, MEMBASE64 (2), sign, size,
 					size, abs, MEMBASE64 (2), sign, size,
-					REG64 (1), REG64 (0));
+					dst1, dst0);
 		}
+		free (dst0);
+		free (dst1);
 		break;
 	}
 	case ARM64_INS_ADRP:

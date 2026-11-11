@@ -43,6 +43,23 @@ You can evaluate a string using this command:
 The double quote tells the command parser to ignore the rest of the line, it's handy
 to avoid undesired effects when not escaping the `|` or `>` operators.
 
+### Vector assignment
+
+`source,destination,=` and `source,destination,:=` consume exactly two stack
+entries. For vector destinations of 128 bits or more, a vector source is copied
+in full, truncated or zero-extended to the destination width. A scalar source
+sets the low 64 bits and clears the remaining chunks. The 80- and 96-bit floating
+point register conversions keep their scalar behavior.
+
+Vector access uses the register interface's `name[index]` views, numbered from
+the low 64-bit chunk. Copies snapshot the source before writing, so overlapping
+aliases work. Each chunk goes through the normal register hooks and observers.
+
+`[16]` pushes two scalar values, low then high. Assign them explicitly:
+`address,[16],q0[1],=,q0[0],=`. Assignment never takes an extra stack value as an
+implicit upper half. Ordinary 64-bit loads and stores with indexed register
+names also work without a wide stack value.
+
 ### Debugging ESIL
 
 In visual mode, `V`, one can iterate through the instructions via the `s` (step) key
