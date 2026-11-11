@@ -23,6 +23,7 @@
 #include <mach/thread_status.h>
 #include <mach/vm_statistics.h>
 #include <AvailabilityMacros.h>
+#include "../reg_vector.h"
 
 #if APPLE_SDK_IPHONEOS
 kern_return_t mach_vm_protect
@@ -481,7 +482,71 @@ bool xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 #endif
 }
 
-char *xnu_reg_profile(RDebug *dbg) {
+#if __i386__ || __x86_64__
+typedef struct {
+	NativeX86Layout layout;
+	int flavor;
+	mach_msg_type_number_t count;
+	int bits;
+	int width;
+} XnuVectorState;
+
+#define XNU_VECTOR_STATE(type, flavor, count, bits, width, ymm, opmask, zmm, hi16) \
+	{ { offsetof (type, __fpu_fcw), ymm, opmask, zmm, hi16 }, flavor, count, bits, width }
+
+static const XnuVectorState xnu_vector_states[] = {
+#ifdef x86_AVX512_STATE64
+	XNU_VECTOR_STATE (x86_avx512_state64_t, x86_AVX512_STATE64, x86_AVX512_STATE64_COUNT, 64, 512,
+		offsetof (x86_avx512_state64_t, __fpu_ymmh0), offsetof (x86_avx512_state64_t, __fpu_k0),
+		offsetof (x86_avx512_state64_t, __fpu_zmmh0), offsetof (x86_avx512_state64_t, __fpu_zmm16)),
+	XNU_VECTOR_STATE (x86_avx512_state32_t, x86_AVX512_STATE32, x86_AVX512_STATE32_COUNT, 32, 512,
+		offsetof (x86_avx512_state32_t, __fpu_ymmh0), offsetof (x86_avx512_state32_t, __fpu_k0),
+		offsetof (x86_avx512_state32_t, __fpu_zmmh0), -1),
+#endif
+	XNU_VECTOR_STATE (x86_avx_state64_t, x86_AVX_STATE64, x86_AVX_STATE64_COUNT, 64, 256,
+		offsetof (x86_avx_state64_t, __fpu_ymmh0), -1, -1, -1),
+	XNU_VECTOR_STATE (x86_avx_state32_t, x86_AVX_STATE32, x86_AVX_STATE32_COUNT, 32, 256,
+		offsetof (x86_avx_state32_t, __fpu_ymmh0), -1, -1, -1),
+	XNU_VECTOR_STATE (x86_float_state64_t, x86_FLOAT_STATE64, x86_FLOAT_STATE64_COUNT, 64, 128, -1, -1, -1, -1),
+	XNU_VECTOR_STATE (x86_float_state32_t, x86_FLOAT_STATE32, x86_FLOAT_STATE32_COUNT, 32, 128, -1, -1, -1, -1),
+};
+#undef XNU_VECTOR_STATE
+
+static const XnuVectorState *xnu_get_vector(xnu_thread_t *th, int bits, int width, natural_t *state) {
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (xnu_vector_states); i++) {
+		const XnuVectorState *v = &xnu_vector_states[i];
+		mach_msg_type_number_t count = v->count;
+		if (v->bits == bits && (!width || width == v->width)
+				&& thread_get_state (th->port, v->flavor, state, &count) == KERN_SUCCESS && count == v->count) {
+			return v;
+		}
+	}
+	return NULL;
+}
+#endif
+
+static bool xnu_vector_regs(RDebug *dbg, xnu_thread_t *th, ut8 *buf, int size, bool write) {
+#if __i386__ || __x86_64__
+	natural_t state[THREAD_STATE_MAX];
+	const int width = native_vector_width (dbg->reg, "zmm0")? 512: native_vector_width (dbg->reg, "ymm0")? 256: 128;
+	const XnuVectorState *v = xnu_get_vector (th, dbg->bits, width, state);
+	return v && native_x86_transfer (buf, size, (ut8 *)state, v->count * sizeof (natural_t), &v->layout, dbg->bits, width, write)
+		&& (!write || thread_set_state (th->port, v->flavor, state, v->count) == KERN_SUCCESS);
+#elif __aarch64__ || __arm64__ || __arm64e__
+	if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
+		arm_neon_state64_t state;
+		mach_msg_type_number_t count = ARM_NEON_STATE64_COUNT;
+		return thread_get_state (th->port, ARM_NEON_STATE64, (thread_state_t)&state, &count) == KERN_SUCCESS
+			&& count == ARM_NEON_STATE64_COUNT
+			&& native_arm64_fpsimd (buf, size, (ut8 *)&state, sizeof (state), 16, false, R_SYS_ENDIAN, write)
+			&& (!write || thread_set_state (th->port, ARM_NEON_STATE64, (thread_state_t)&state, count) == KERN_SUCCESS);
+	}
+#endif
+	return false;
+}
+
+static char *xnu_reg_profile_base(RDebug *dbg) {
 #if __i386__ || __x86_64__
 	if (R_SYS_BITS_CHECK (dbg->bits, 32)) {
 #		include "reg/darwin-x86.h"
@@ -504,16 +569,40 @@ char *xnu_reg_profile(RDebug *dbg) {
 #endif
 }
 
-//using getcurthread has some drawbacks. You lose the ability to select
-//the thread you want to write or read from. but how that feature
-//is not implemented yet i don't care so much
+char *xnu_reg_profile(RDebug *dbg) {
+	char *base = xnu_reg_profile_base (dbg);
+#if __i386__ || __x86_64__
+	int width = 128;
+	if (dbg->pid > 0) {
+		xnu_thread_t *th = get_xnu_thread (dbg, dbg->tid);
+		natural_t state[THREAD_STATE_MAX];
+		const XnuVectorState *v = th? xnu_get_vector (th, dbg->bits, 0, state): NULL;
+		if (v) {
+			width = v->width;
+		}
+	}
+	return native_x86_profile (base, dbg->bits, width);
+#elif __aarch64__ || __arm64__ || __arm64e__
+	if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
+		return native_arm64_profile (base, 16, false);
+	}
+#endif
+	return base;
+}
+
 bool xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	bool ret;
-	xnu_thread_t *th = get_xnu_thread (dbg, getcurthread (dbg));
+	xnu_thread_t *th = get_xnu_thread (dbg, dbg->tid);
 	if (!th) {
 		return false;
 	}
 	switch (type) {
+	case R_REG_TYPE_FPU:
+	case R_REG_TYPE_VEC64:
+	case R_REG_TYPE_VEC128:
+	case R_REG_TYPE_VEC256:
+	case R_REG_TYPE_VEC512:
+		return xnu_vector_regs (dbg, th, (ut8 *)buf, size, true);
 	case R_REG_TYPE_DRX:
 #if __x86_64__
 		memcpy (&th->drx.uds.ds32, buf, R_MIN (size, sizeof (th->drx)));
@@ -530,7 +619,9 @@ bool xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 #endif
 		ret = xnu_thread_set_drx (dbg, th);
 		break;
-	default:
+	case R_REG_TYPE_GPR:
+	case R_REG_TYPE_SEG:
+	case R_REG_TYPE_FLG:
 		//th->gpr has a header and the state we should copy on the state only
 #if __POWERPC__
 #warning TODO powerpc support here
@@ -548,16 +639,24 @@ bool xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 #endif
 		ret = xnu_thread_set_gpr (dbg, th);
 		break;
+	default:
+		return false;
 	}
 	return ret;
 }
 
 bool xnu_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
-	xnu_thread_t *th = get_xnu_thread (dbg, getcurthread (dbg));
+	xnu_thread_t *th = get_xnu_thread (dbg, dbg->tid);
 	if (!th) {
 		return false;
 	}
 	switch (type) {
+	case R_REG_TYPE_FPU:
+	case R_REG_TYPE_VEC64:
+	case R_REG_TYPE_VEC128:
+	case R_REG_TYPE_VEC256:
+	case R_REG_TYPE_VEC512:
+		return xnu_vector_regs (dbg, th, buf, size, false);
 	case R_REG_TYPE_SEG:
 	case R_REG_TYPE_FLG:
 	case R_REG_TYPE_GPR:

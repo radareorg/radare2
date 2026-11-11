@@ -180,14 +180,26 @@ static bool r_debug_native_detach(RDebug *dbg, int pid) {
 #endif
 }
 
-#if R2__WINDOWS__ || __linux__
+#if R2__WINDOWS__ || __linux__ || __APPLE__
 static bool r_debug_native_select(RDebug *dbg, int pid, int tid) {
 #if R2__WINDOWS__
 	return w32_select (dbg, pid, tid);
-#elif __linux__
-	return linux_select (dbg, pid, tid);
 #else
-	return false;
+#if __linux__
+	if (!linux_select (dbg, pid, tid)) {
+		return false;
+	}
+#endif
+	const int old_pid = dbg->pid;
+	const int old_tid = dbg->tid;
+	dbg->pid = pid;
+	dbg->tid = tid;
+	char *profile = r_debug_native_reg_profile (dbg);
+	bool ok = profile && r_reg_set_profile_string (dbg->reg, profile);
+	free (profile);
+	dbg->pid = old_pid;
+	dbg->tid = old_tid;
+	return ok;
 #endif
 }
 #endif
@@ -782,15 +794,16 @@ static bool r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 }
 
 static bool r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int size) {
+#if __APPLE__
+	return xnu_reg_write (dbg, type, buf, size);
+#elif __linux__
+	return linux_reg_write (dbg, type, buf, size);
+#else
 	// XXX use switch or so
 	if (type == R_REG_TYPE_DRX) {
 #if __i386__ || __x86_64__
-#if __APPLE__
-		return xnu_reg_write (dbg, type, buf, size);
-#elif R2__WINDOWS__
+#if R2__WINDOWS__
 		return w32_reg_write (dbg, type, buf, size);
-#elif __linux__
-		return linux_reg_write (dbg, type, buf, size);
 #elif __HAIKU__
 		return false;
 #else
@@ -800,12 +813,8 @@ static bool r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int 
 		return false;
 #endif
 	} else if (type == R_REG_TYPE_GPR) {
-#if __APPLE__
-		return xnu_reg_write (dbg, type, buf, size);
-#elif R2__WINDOWS__
+#if R2__WINDOWS__
 		return w32_reg_write (dbg, type, buf, size);
-#elif __linux__
-		return linux_reg_write (dbg, type, buf, size);
 #elif __sun
 		int ret = ptrace (PTRACE_SETREGS, dbg->pid,
 			(void*)(size_t)buf, sizeof (R_DEBUG_REG_T));
@@ -819,11 +828,7 @@ static bool r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int 
 		return bsd_reg_write (dbg, type, buf, size);
 #endif
 	} else if (type == R_REG_TYPE_FPU) {
-#if __linux__
-		return linux_reg_write (dbg, type, buf, size);
-#elif __APPLE__
-		return false;
-#elif R2__WINDOWS__
+#if R2__WINDOWS__
 		return false;
 #elif __HAIKU__
 		return false;
@@ -832,6 +837,7 @@ static bool r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int 
 #endif
 	} //else R_LOG_TODO ("reg_write_non-gpr (%d)", type);
 	return false;
+#endif
 }
 
 #if __linux__
@@ -1870,7 +1876,7 @@ RDebugPlugin r_debug_plugin_native = {
 	.attach = &r_debug_native_attach,
 	.detach = &r_debug_native_detach,
 // TODO: add native select for other platforms?
-#if R2__WINDOWS__ || __linux__
+#if R2__WINDOWS__ || __linux__ || __APPLE__
 	.select = &r_debug_native_select,
 #endif
 	.pids = &r_debug_native_pids,

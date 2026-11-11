@@ -18,13 +18,144 @@
 
 #include "linux_ptrace.h"
 
-#ifdef __GLIBC__
-#define HAVE_YMM 1
-#else
-#define HAVE_YMM 0
+#include "../reg_vector.h"
+
+#if __x86_64__
+#include <cpuid.h>
+
+static ut8 *linux_xstate(RDebug *dbg, struct iovec *iov, NativeX86Layout *layout, int *width) {
+	unsigned int a, b, c, d;
+	if (!__get_cpuid_count (0xd, 0, &a, &b, &c, &d) || c < 576 || c > INT_MAX) {
+		return NULL;
+	}
+	iov->iov_base = calloc (1, c);
+	iov->iov_len = c;
+	if (!iov->iov_base) {
+		return NULL;
+	}
+	const int tid = dbg->tid > 0? dbg->tid: dbg->pid;
+	ut8 *state = iov->iov_base;
+	if (tid <= 0 || r_debug_ptrace (dbg, PTRACE_GETREGSET, tid, (void *)NT_X86_XSTATE, iov)
+			|| iov->iov_len < 576 || (r_read_le64 (state + 520) >> 63)) {
+		free (state);
+		return NULL;
+	}
+	// Linux exports the supported XCR0 mask in the legacy software-reserved area.
+	const ut64 features = r_read_le64 (state + 464);
+	int *offsets[] = { &layout->ymm, &layout->opmask, &layout->zmm, &layout->hi16 };
+	const int ids[] = { 2, 5, 6, 7 };
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (ids); i++) {
+		*offsets[i] = -1;
+		if ((features & (1ULL << ids[i])) && __get_cpuid_count (0xd, ids[i], &a, &b, &c, &d)
+				&& b >= 576 && (ut64)b + a <= iov->iov_len) {
+			*offsets[i] = b;
+		}
+	}
+	*width = layout->ymm < 0? 128: layout->opmask >= 0 && layout->zmm >= 0 && layout->hi16 >= 0? 512: 256;
+	return state;
+}
+
+static int linux_vector_width(RDebug *dbg) {
+	NativeX86Layout layout = {0};
+	struct iovec iov;
+	int width = 128;
+	free (linux_xstate (dbg, &iov, &layout, &width));
+	return width;
+}
+
+static bool linux_vector_regs(RDebug *dbg, ut8 *buf, int size, bool write) {
+	NativeX86Layout layout = {0};
+	struct iovec iov;
+	int available = 128;
+	ut8 *state = linux_xstate (dbg, &iov, &layout, &available);
+	struct user_fpregs_struct legacy;
+	const int tid = dbg->tid > 0? dbg->tid: dbg->pid;
+	const int width = native_vector_width (dbg->reg, "zmm0")? 512: native_vector_width (dbg->reg, "ymm0")? 256: 128;
+	bool ok = width <= available;
+	if (ok && !state) {
+		ok = !r_debug_ptrace (dbg, PTRACE_GETFPREGS, tid, NULL, &legacy);
+	}
+	if (ok) {
+		ok = native_x86_transfer (buf, size, state? state: (ut8 *)&legacy,
+			state? iov.iov_len: sizeof (legacy), &layout, dbg->bits, width, write);
+	}
+	if (ok && write) {
+		if (state) {
+			ut64 features = width == 512? 0xe7: width == 256? 7: 3;
+			r_write_le64 (state + 512, r_read_le64 (state + 512) | features);
+			ok = !r_debug_ptrace (dbg, PTRACE_SETREGSET, tid, (void *)NT_X86_XSTATE, &iov);
+		} else {
+			ok = !r_debug_ptrace (dbg, PTRACE_SETFPREGS, tid, NULL, &legacy);
+		}
+	}
+	free (state);
+	return ok;
+}
+#elif __aarch64__ || __arm64__
+static int linux_sve_vl(RDebug *dbg) {
+#ifdef NT_ARM_SVE
+	struct user_sve_header header = {0};
+	struct iovec iov = { &header, sizeof (header) };
+	int tid = dbg->tid > 0? dbg->tid: dbg->pid;
+	if (tid > 0 && !r_debug_ptrace (dbg, PTRACE_GETREGSET, tid, (void *)NT_ARM_SVE, &iov)
+			&& iov.iov_len == sizeof (header) && header.vl >= 16 && header.vl <= 256 && !(header.vl & 15)) {
+		return header.vl;
+	}
+#endif
+	return 0;
+}
+
+static bool linux_vector_regs(RDebug *dbg, ut8 *buf, int size, bool write) {
+	const int tid = dbg->tid > 0? dbg->tid: dbg->pid;
+	const int vl = native_vector_width (dbg->reg, "z0") / 8;
+#ifdef NT_ARM_SVE
+	if (vl) {
+		if (vl < 16 || vl > 256 || (vl & 15)) {
+			return false;
+		}
+		const int vq = vl / 16;
+		const int len = SVE_PT_SIZE (vq, SVE_PT_REGS_SVE);
+		ut8 *state = calloc (1, len);
+		if (!state) {
+			return false;
+		}
+		struct iovec iov = { state, len };
+		struct user_sve_header *header = (struct user_sve_header *)state;
+		bool ok = !r_debug_ptrace (dbg, PTRACE_GETREGSET, tid, (void *)NT_ARM_SVE, &iov)
+			&& iov.iov_len >= sizeof (*header) && header->vl == vl;
+		if (ok && (header->flags & SVE_PT_REGS_MASK) == SVE_PT_REGS_FPSIMD) {
+			ok = iov.iov_len >= SVE_PT_FPSIMD_OFFSET + 520;
+			if (ok && !write) {
+				ok = native_arm64_fpsimd (buf, size, state + SVE_PT_FPSIMD_OFFSET,
+					iov.iov_len - SVE_PT_FPSIMD_OFFSET, vl, true, R_SYS_ENDIAN, false);
+			}
+		} else if (ok) {
+			ok = iov.iov_len >= len;
+			if (ok && !write) {
+				ok = native_arm64_sve (buf, size, state, len, vl, R_SYS_ENDIAN, false);
+			}
+		}
+		if (ok && write) {
+			header->flags = (header->flags & ~SVE_PT_REGS_MASK) | SVE_PT_REGS_SVE;
+			header->size = len;
+			iov.iov_len = len;
+			ok = native_arm64_sve (buf, size, state, len, vl, R_SYS_ENDIAN, true)
+				&& !r_debug_ptrace (dbg, PTRACE_SETREGSET, tid, (void *)NT_ARM_SVE, &iov);
+		}
+		free (state);
+		return ok;
+	}
+#endif
+	ut8 state[528];
+	struct iovec iov = { state, sizeof (state) };
+	return !r_debug_ptrace (dbg, PTRACE_GETREGSET, tid, (void *)NT_PRFPREG, &iov)
+		&& native_arm64_fpsimd (buf, size, state, iov.iov_len, 16, false, R_SYS_ENDIAN, write)
+		&& (!write || !r_debug_ptrace (dbg, PTRACE_SETREGSET, tid, (void *)NT_PRFPREG, &iov));
+}
 #endif
 
-char *linux_reg_profile (RDebug *dbg) {
+static char *linux_reg_profile_base(RDebug *dbg) {
 #if __arm__
 #	include "reg/linux-arm.h"
 #elif __riscv
@@ -74,6 +205,19 @@ char *linux_reg_profile (RDebug *dbg) {
 #	error "Unsupported Linux CPU"
 	return NULL;
 #endif
+}
+
+char *linux_reg_profile(RDebug *dbg) {
+	char *base = linux_reg_profile_base (dbg);
+#if __x86_64__
+	return native_x86_profile (base, dbg->bits, linux_vector_width (dbg));
+#elif __aarch64__ || __arm64__
+	if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
+		const int vl = linux_sve_vl (dbg);
+		return native_arm64_profile (base, vl? vl: 16, vl != 0);
+	}
+#endif
+	return base;
 }
 
 static void linux_detach_all(RDebug *dbg);
@@ -740,6 +884,14 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 			}
 		}
 	}
+#if __aarch64__ || __arm64__
+	const int vl = R_SYS_BITS_CHECK (dbg->bits, 64)? linux_sve_vl (dbg): 0;
+	if (vl && vl != native_vector_width (dbg->reg, "z0") / 8) {
+		char *profile = linux_reg_profile (dbg);
+		r_reg_set_profile_string (dbg->reg, profile);
+		free (profile);
+	}
+#endif
 	dbg->reason.tid = tid;
 	return reason;
 }
@@ -1121,295 +1273,7 @@ RList *linux_thread_list(RDebug *dbg, int pid, RList *list) {
 	return list;
 }
 
-#define PRINT_FPU(cons, fpregs) \
-	r_cons_printf (cons, "cwd = 0x%04x  ; control   ", (fpregs).cwd);\
-	r_cons_printf (cons, "swd = 0x%04x  ; status\n", (fpregs).swd);\
-	r_cons_printf (cons, "ftw = 0x%04x              ", (fpregs).ftw);\
-	r_cons_printf (cons, "fop = 0x%04x\n", (fpregs).fop);\
-	r_cons_printf (cons, "rip = 0x%016"PFMT64x"  ", (ut64)(fpregs).rip);\
-	r_cons_printf (cons, "rdp = 0x%016"PFMT64x"\n", (ut64)(fpregs).rdp);\
-	r_cons_printf (cons, "mxcsr = 0x%08x        ", (fpregs).mxcsr);\
-	r_cons_printf (cons, "mxcr_mask = 0x%08x\n", (fpregs).mxcr_mask)\
-
-#define PRINT_FPU_NOXMM(cons, fpregs) \
-	r_cons_printf (cons, "cwd = 0x%04lx  ; control   ", (fpregs).cwd);\
-	r_cons_printf (cons, "swd = 0x%04lx  ; status\n", (fpregs).swd);\
-	r_cons_printf (cons, "twd = 0x%04lx              ", (fpregs).twd);\
-	r_cons_printf (cons, "fip = 0x%04lx          \n", (fpregs).fip);\
-	r_cons_printf (cons, "fcs = 0x%04lx              ", (fpregs).fcs);\
-	r_cons_printf (cons, "foo = 0x%04lx          \n", (fpregs).foo);\
-	r_cons_printf (cons, "fos = 0x%04lx              ", (fpregs).fos)
-
-static void print_fpu(RCons *cons, void *f, int bits) {
-	if (!f) {
-		R_LOG_WARN ("getfpregs not implemented");
-		return;
-	}
-#if __x86_64__
-	int i,j;
-	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct *)f;
-	const bool is32 = R_SYS_BITS_CHECK (bits, 32);
-	const int nxmm = is32? 8: 16;
-#if __ANDROID__
-	PRINT_FPU (cons, fpregs);
-	for (i = 0;i < 8; i++) {
-		ut64 *b = (ut64 *)&fpregs.st_space[i*4];
-		ut32 *c = (ut32*)&fpregs.st_space;
-		float *f = (float *)&fpregs.st_space;
-		c = c + (i * 4);
-		f = f + (i * 4);
-		r_cons_printf (cons, "st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (%08x) | "\
-			"%0.3f (%08x) \n", i,
-			(double)*((double*)&fpregs.st_space[i*4]), *b, (float) f[0],
-			c[0], (float) f[1], c[1]);
-	}
-#else
-	r_cons_printf (cons, "---- %s ----\n", is32? "x86-32": "x86-64");
-	PRINT_FPU (cons, fpregs);
-	r_cons_printf (cons, "size = 0x%08x\n", (ut32)sizeof (fpregs));
-	for (i = 0; i < nxmm; i++) {
-		ut32 *a = (ut32 *)&fpregs.xmm_space;
-		a = a + (i * 4);
-		r_cons_printf (cons, "xmm%d = %08x %08x %08x %08x   ", i, (int)a[0], (int)a[1],
-					   (int)a[2], (int)a[3] );
-		if (i < 8) {
-			ut64 *st_u64 = (ut64*)&fpregs.st_space[i * 4];
-			ut8 *st_u8 = (ut8 *)&fpregs.st_space[i * 4];
-			long double *st_ld = (long double *)&fpregs.st_space[i * 4];
-			r_cons_printf (cons, "mm%d = 0x%016" PFMT64x " | st%d = ", i, *st_u64, i);
-			// print as hex TBYTE - always little endian
-			for (j = 9; j >= 0; j--) {
-				r_cons_printf (cons, "%02x", st_u8[j]);
-			}
-			// Using %Lf and %Le even though we do not show the extra precision to avoid another cast
-			// %f with (double)*st_ld would also work
-#if R2_NO_LONG_DOUBLE
-			r_cons_printf (cons, " %e %f\n", (double)(*st_ld), (double)(*st_ld));
-#else
-			r_cons_printf (cons, " %Le %Lf\n", *st_ld, *st_ld);
-#endif
-		} else {
-			r_cons_printf (cons, "\n");
-		}
-	}
-#endif // __ANDROID__
-#elif __i386__
-	int i;
-#if __ANDROID__
-	struct user_fpxregs_struct fpxregs = *(struct user_fpxregs_struct*)f;
-	r_cons_printf (cons, "---- x86-32 ----\n");
-	r_cons_printf (cons, "cwd = 0x%04x  ; control   ", fpxregs.cwd);
-	r_cons_printf (cons, "swd = 0x%04x  ; status\n", fpxregs.swd);
-	r_cons_printf (cons, "twd = 0x%04x ", fpxregs.twd);
-	r_cons_printf (cons, "fop = 0x%04x\n", fpxregs.fop);
-	r_cons_printf (cons, "fip = 0x%08x\n", (ut32)fpxregs.fip);
-	r_cons_printf (cons, "fcs = 0x%08x\n", (ut32)fpxregs.fcs);
-	r_cons_printf (cons, "foo = 0x%08x\n", (ut32)fpxregs.foo);
-	r_cons_printf (cons, "fos = 0x%08x\n", (ut32)fpxregs.fos);
-	r_cons_printf (cons, "mxcsr = 0x%08x\n", (ut32)fpxregs.mxcsr);
-	for (i = 0; i < 8; i++) {
-		ut32 *a = (ut32*)(&fpxregs.xmm_space);
-		ut64 *b = (ut64 *)(&fpxregs.st_space[i * 4]);
-		ut32 *c = (ut32*)&fpxregs.st_space;
-		float *f = (float *)&fpxregs.st_space;
-		a = a + (i * 4);
-		c = c + (i * 4);
-		f = f + (i * 4);
-		r_cons_printf (cons, "xmm%d = %08x %08x %08x %08x   ", i, (int)a[0],
-			(int)a[1], (int)a[2], (int)a[3] );
-		r_cons_printf (cons, "st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x) | "\
-			"%0.3f (0x%08x)\n", i,
-			(double)*((double*)(&fpxregs.st_space[i*4])), b[0],
-			f[0], c[0], f[1], c[1]);
-	}
-#else
-	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct *)f;
-	r_cons_printf (cons, "---- x86-32-noxmm ----\n");
-	PRINT_FPU_NOXMM (cons, fpregs);
-	for (i = 0; i < 8; i++) {
-		ut64 *b = (ut64 *)(&fpregs.st_space[i*4]);
-		double *d = (double*)b;
-		ut32 *c = (ut32*)&fpregs.st_space;
-		float *f = (float *)&fpregs.st_space;
-		c = c + (i * 4);
-		f = f + (i * 4);
-		r_cons_printf (cons, "st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x) | "\
-			"%0.3f (0x%08x)\n", i, d[0], b[0], f[0], c[0], f[1], c[1]);
-	}
-#endif
-#elif __arm64__ || __aarch64__
-	{
-		// ARM64/AArch64 FPSIMD state is typically 528 bytes:
-		// - 32x 128-bit vector registers (v0-v31), also viewed as d0-d31/s0-s31
-		// - FP status and control registers (FPSR, FPCR)
-		// The code below interprets the first 512 bytes as v0-v31 in various views.
-		ut8 *fpu_regs = (ut8 *)f;
-		int i;
-
-		// Print vector registers (128-bit)
-		r_cons_printf (cons, "Vector registers (v0-v31):\n");
-		for (i = 0; i < 32; i++) {
-			ut32 *reg = (ut32 *)(fpu_regs + i * 16);
-			r_cons_printf (cons, "v%d = 0x%08x %08x %08x %08x\n", i,
-				(int)reg[0], (int)reg[1], (int)reg[2], (int)reg[3]);
-		}
-
-		// Print FP registers as doubles (64-bit)
-		r_cons_printf (cons, "\nDouble precision FP registers (d0-d31):\n");
-		for (i = 0; i < 32; i++) {
-			double *dreg = (double *)(fpu_regs + i * 16);
-			r_cons_printf (cons, "d%d = %g (0x%016"PFMT64x")\n", i,
-				*dreg, *(ut64 *)dreg);
-		}
-
-		// Print FP registers as floats (32-bit)
-		r_cons_printf (cons, "\nSingle precision FP registers (s0-s31):\n");
-		for (i = 0; i < 32; i++) {
-			float *freg = (float *)(fpu_regs + i * 16);
-			r_cons_printf (cons, "s%d = %g (0x%08x)\n", i,
-				*freg, *(ut32 *)freg);
-		}
-	}
-#elif __arm__
-	{
-		// ARM32 VFP/NEON registers
-		ut8 *fpu_regs = (ut8 *)f;
-		int i;
-
-		r_cons_printf (cons, "VFP/NEON registers:\n");
-		for (i = 0; i < 32; i++) {
-			double *dreg = (double *)(fpu_regs + i * 8);
-			r_cons_printf (cons, "d%d = %g (0x%016"PFMT64x")\n", i,
-				*dreg, *(ut64 *)dreg);
-		}
-
-		r_cons_printf (cons, "\nSingle precision registers (s0-s31):\n");
-		for (i = 0; i < 32; i++) {
-			/* On ARM32, s-registers are views into the same
-			 * physical register file as the d-registers:
-			 *   d0 holds s0 (low 32) and s1 (high 32)
-			 *   d1 holds s2 (low 32) and s3 (high 32), etc.
-			 */
-			ut64 *dregs = (ut64 *)fpu_regs;
-			int d_index = i / 2;
-			ut64 dval = dregs[d_index];
-			ut32 sval;
-			union {
-				ut32 u;
-				float f;
-			} uval;
-
-#if R_SYS_ENDIAN
-			/* Little-endian: low 32 bits are the even s-regs */
-			if (i & 1) {
-				sval = (ut32)(dval >> 32);
-			} else {
-				sval = (ut32)(dval & 0xffffffffU);
-			}
-#else
-			/* Big-endian: high 32 bits are the even s-regs */
-			if (i & 1) {
-				sval = (ut32)(dval & 0xffffffffU);
-			} else {
-				sval = (ut32)(dval >> 32);
-			}
-#endif
-			uval.u = sval;
-			r_cons_printf (cons, "s%d = %g (0x%08x)\n", i,
-				uval.f, sval);
-		}
-	}
-#elif __riscv || __riscv__ || __riscv64__
-	{
-		r_cons_printf (cons, "---- RISC-V ----\n");
-		// RISC-V FPU registers: 32x 64-bit double precision registers
-		// The layout follows the Linux kernel's fpregs_struct for RV64
-		ut8 *fpu_regs = (ut8 *)f;
-		int i;
-
-		for (i = 0; i < 32; i++) {
-			double *freg = (double *)(fpu_regs + i * 8);
-			r_cons_printf (cons, "f%d = %g (0x%016"PFMT64x")\n", i,
-				*freg, *(ut64 *)freg);
-		}
-
-		r_cons_printf (cons, "\nSingle precision registers (f0-f31 as float):\n");
-		for (i = 0; i < 32; i++) {
-			float *freg = (float *)(fpu_regs + i * 8);
-			r_cons_printf (cons, "f%d = %g (0x%08x)\n", i,
-				*freg, *(ut32 *)freg);
-		}
-	}
-#elif __mips__
-	{
-		r_cons_printf (cons, "---- MIPS ----\n");
-		// MIPS FPU registers: 32x 64-bit double precision registers
-		ut8 *fpu_regs = (ut8 *)f;
-		int i;
-
-		for (i = 0; i < 32; i++) {
-			double *freg = (double *)(fpu_regs + i * 8);
-			r_cons_printf (cons, "$f%d = %g (0x%016"PFMT64x")\n", i,
-				*freg, *(ut64 *)freg);
-		}
-
-		r_cons_printf (cons, "\nSingle precision registers ($f0-$f31 as float):\n");
-		for (i = 0; i < 32; i++) {
-			float *freg = (float *)(fpu_regs + i * 4);
-			r_cons_printf (cons, "$f%d = %g (0x%08x)\n", i,
-				*freg, *(ut32 *)freg);
-		}
-	}
-#elif __POWERPC__
-	{
-		r_cons_printf (cons, "---- PowerPC ----\n");
-		// PowerPC FPU registers: 32x 64-bit double precision registers
-		ut8 *fpu_regs = (ut8 *)f;
-		int i;
-
-		for (i = 0; i < 32; i++) {
-			double *freg = (double *)(fpu_regs + i * 8);
-			r_cons_printf (cons, "f%d = %g (0x%016"PFMT64x")\n", i,
-				*freg, *(ut64 *)freg);
-		}
-
-		r_cons_printf (cons, "\nSingle precision registers (f0-f31 as float):\n");
-		for (i = 0; i < 32; i++) {
-			// BE? float *freg = (float *)(fpu_regs + i * 8 + 4);
-			float *freg = (float *)(fpu_regs + i * 8);
-			r_cons_printf (cons, "f%d = %g (0x%08x)\n", i,
-				*freg, *(ut32 *)freg);
-		}
-	}
-#elif __s390x__ || __s390__
-	{
-		r_cons_printf (cons, "---- s390x ----\n");
-		// s390x FPU registers: 16x 64-bit double precision registers
-		ut8 *fpu_regs = (ut8 *)f;
-		int i;
-
-		for (i = 0; i < 16; i++) {
-			double *freg = (double *)(fpu_regs + i * 8);
-			r_cons_printf (cons, "f%d = %g (0x%016"PFMT64x")\n", i,
-				*freg, *(ut64 *)freg);
-		}
-
-		r_cons_printf (cons, "\nSingle precision registers (f0-f15 as float):\n");
-		for (i = 0; i < 16; i++) {
-			float *freg = (float *)(fpu_regs + i * 8);
-			r_cons_printf (cons, "f%d = %g (0x%08x)\n", i,
-				*freg, *(ut32 *)freg);
-		}
-	}
-#else
-#warning print_fpu not implemented for this platform
-#endif
-}
-
 bool linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
-	bool showfpu = false;
-	RCore *core = dbg->coreb.core;
-	RCons *cons = core->cons;
 	int pid = dbg->tid;
 	if (pid == -1) {
 		if (dbg->pid == -1) {
@@ -1419,10 +1283,11 @@ bool linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		pid = dbg->pid;
 	}
 	int ret = 0;
-	if (type < -1) {
-		showfpu = true;
-		type = -type;
+#if __x86_64__ || __aarch64__ || __arm64__
+	if (type == R_REG_TYPE_FPU || (type >= R_REG_TYPE_VEC64 && type <= R_REG_TYPE_VEC512)) {
+		return linux_vector_regs (dbg, buf, size, false);
 	}
+#endif
 	switch (type) {
 	case R_REG_TYPE_DRX:
 #if __POWERPC__
@@ -1453,6 +1318,7 @@ bool linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 #endif
 		return true;
 		break;
+#if !(__x86_64__ || __aarch64__ || __arm64__)
 	case R_REG_TYPE_FPU:
 	case R_REG_TYPE_VEC64: // MMX
 	case R_REG_TYPE_VEC128: // XMM
@@ -1460,34 +1326,16 @@ bool linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 #if __x86_64__ || __i386__
 		struct user_fpregs_struct fpregs;
 		if (type == R_REG_TYPE_FPU) {
-#if __x86_64__
-			ret = r_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, &fpregs);
-			if (ret != 0) {
-				r_sys_perror ("PTRACE_GETFPREGS");
-				return false;
-			}
-			if (showfpu) {
-				print_fpu (cons, (void *)&fpregs, dbg->bits);
-			}
-			size = R_MIN (sizeof (fpregs), size);
-			memcpy (buf, &fpregs, size);
-			return size;
-#elif __i386__
+#if __i386__
 #if !__ANDROID__
 			struct user_fpxregs_struct fpxregs;
 			ret = r_debug_ptrace (dbg, PTRACE_GETFPXREGS, pid, NULL, &fpxregs);
 			if (ret == 0) {
-				if (showfpu) {
-					print_fpu (cons, (void *)&fpxregs, dbg->bits);
-				}
 				size = R_MIN (sizeof (fpxregs), size);
 				memcpy (buf, &fpxregs, size);
 				return size;
 			} else {
 				ret = r_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, &fpregs);
-				if (showfpu) {
-					print_fpu (cons, (void *)&fpregs, dbg->bits);
-				}
 				if (ret != 0) {
 					r_sys_perror ("PTRACE_GETFPREGS");
 					return false;
@@ -1498,9 +1346,6 @@ bool linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			}
 #else
 			ret = r_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, &fpregs);
-			if (showfpu) {
-				print_fpu (cons, (void *)&fpregs, dbg->bits);
-			}
 			if (ret != 0) {
 				r_sys_perror ("PTRACE_GETFPREGS");
 				return false;
@@ -1512,79 +1357,12 @@ bool linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 #endif // __i386__
 		}
 		return size;
-#elif (__arm64__ || __aarch64__) && defined(PTRACE_GETREGSET)
-		// ARM64 FPU register reading using ptrace GETREGSET
-		struct iovec iov;
-		ut8 fpu_regs[512]; // ARM64 FPU register space (32 * 16 bytes for v0-v31)
-		memset (fpu_regs, 0, sizeof (fpu_regs));
-		iov.iov_base = fpu_regs;
-		iov.iov_len = sizeof (fpu_regs);
-
-		ret = r_debug_ptrace (dbg, PTRACE_GETREGSET, pid, (void*)(size_t)NT_PRFPREG, &iov);
-		if (ret != 0) {
-			r_sys_perror ("PTRACE_GETREGSET NT_PRFPREG");
-			return false;
-		}
-
-		if (showfpu) {
-			print_fpu (cons, (void *)fpu_regs, dbg->bits);
-		}
-
-		size = R_MIN (iov.iov_len, size);
-		memcpy (buf, fpu_regs, size);
-		return size;
 #else
-		if (showfpu) {
-			print_fpu (cons, NULL, dbg->bits);
-		}
 	#warning getfpregs not implemented for this platform
 #endif
 		}
 		break;
-	case R_REG_TYPE_VEC512: // ZMM
-		R_LOG_DEBUG ("zmm registers not supported yet");
-		break;
-	case R_REG_TYPE_VEC256: // YMM
-		{
-#if HAVE_YMM && __x86_64__ && defined(PTRACE_GETREGSET)
-		ut32 ymm_space[128];	// full ymm registers
-		struct _xstate xstate;
-		struct iovec iov = {};
-		iov.iov_base = &xstate;
-		iov.iov_len = sizeof (struct _xstate);
-		ret = r_debug_ptrace (dbg, PTRACE_GETREGSET, pid, (void*)NT_X86_XSTATE, &iov);
-		if (errno == ENODEV) {
-			// ignore ENODEV, it just means this CPU or kernel doesn't support XSTATE
-			ret = 0;
-		} else if (ret != 0) {
-			if (dbg->options.verbose) {
-				// WSL1 doesnt support retrieving YMM registers, so this call just fails, no need to be noisy
-				r_sys_perror ("PTRACE_GETREGSET");
-			}
-			return false;
-		}
-		// stitch together xstate.fpstate._xmm and xstate.ymmh assuming LE
-		int ri,rj;
-		int nymm = R_SYS_BITS_CHECK (dbg->bits, 32)? 8: 16;
-		for (ri = 0; ri < nymm; ri++)	{
-			for (rj = 0; rj < 4; rj++)	{
-#ifdef __ANDROID__
-				ymm_space[ri*8+rj] = ((struct _libc_fpstate*) &xstate.fpstate)->_xmm[ri].element[rj];
-#else
-				ymm_space[ri*8+rj] = xstate.fpstate._xmm[ri].element[rj];
 #endif
-			}
-			for (rj = 0; rj < 4; rj++)	{
-				ymm_space[ri * 8 + (rj + 4)] = xstate.ymmh.ymmh_space[ri * 4 + rj];
-			}
-		}
-		size = R_MIN (sizeof (ymm_space), size);
-		memcpy (buf, &ymm_space, size);
-		return size;
-#endif
-		return false;
-		}
-		break;
 	case R_REG_TYPE_SEG:
 	case R_REG_TYPE_FLG:
 	case R_REG_TYPE_GPR:
@@ -1632,6 +1410,11 @@ bool linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 }
 
 bool linux_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
+#if __x86_64__ || __aarch64__ || __arm64__
+	if (type == R_REG_TYPE_FPU || (type >= R_REG_TYPE_VEC64 && type <= R_REG_TYPE_VEC512)) {
+		return linux_vector_regs (dbg, (ut8 *)buf, size, true);
+	}
+#endif
 	int pid = dbg->tid;
 
 	if (type == R_REG_TYPE_DRX) {
@@ -1680,18 +1463,6 @@ bool linux_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 #if __i386__ || __x86_64__
 		int ret = r_debug_ptrace (dbg, PTRACE_SETFPREGS, pid, 0, (void*)buf);
 		return (ret != 0) ? false : true;
-#elif (__arm64__ || __aarch64__) && defined(PTRACE_SETREGSET)
-		// ARM64 FPU/VEC register writing using ptrace SETREGSET
-		struct iovec iov;
-		iov.iov_base = (void*)buf;
-		iov.iov_len = size;
-
-		int ret = r_debug_ptrace (dbg, PTRACE_SETREGSET, pid, (void*)(size_t)NT_PRFPREG, &iov);
-		if (ret != 0) {
-			r_sys_perror ("PTRACE_SETREGSET NT_PRFPREG");
-			return false;
-		}
-		return true;
 #endif
 	}
 	return false;

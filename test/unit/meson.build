@@ -78,6 +78,7 @@ if get_option('enable_tests')
     'r2r',
     'radiff2_gdiff',
     'rbtree',
+    'native_reg',
     'reg',
     'seek_history',
     'sign',
