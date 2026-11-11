@@ -1,3 +1,11 @@
 d "ldub [l7], l3" 00c00de6
 d "sethi 0x21d950, g2" 50d92105
 d "sub l0, i2, i3" 1a0024b6
+dE "std o4, [g1+0x3d8]" d83863d8
+dE "std o4, [g1+g2]" d8384002
+dE "ldd [g1+g2], o4" d8184002
+dE "ldd [g1+0x3d8], o4" da1863d8
+dE "ldstub [g1], o4" d8686000
+dE "ldstub [g1+g2], o4" d8684002
+dE "invalid" 18184002
+dE "invalid" d8184022

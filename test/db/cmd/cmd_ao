@@ -403,7 +403,7 @@ aoml~?
 EOF
 EXPECT=<<EOF
 unimp
-278
+279
 EOF
 RUN
 
