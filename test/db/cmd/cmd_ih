@@ -364,3 +364,69 @@ Characteristics
 258
 EOF
 RUN
+
+NAME=ihj pf values of 8 byte PE32+ fields and the ones after them
+FILE=bins/pe/testapp-msvc64.exe
+CMDS=<<EOF
+ihj~{[56].name}
+ihj~{[56].value}
+ihj~{[56].pf[0].value}
+ihj~{[74].name}
+ihj~{[74].value}
+ihj~{[74].pf[0].value}
+ihj~{[76].name}
+ihj~{[76].value}
+ihj~{[76].pf[0].value}
+EOF
+EXPECT=<<EOF
+ImageBase
+5368709120
+5368709120
+SizeOfHeapCommit
+4096
+4096
+NumberOfRvaAndSizes
+16
+16
+EOF
+RUN
+
+NAME=ihj pf skips a map of another file over the header offsets
+FILE=bins/pe/testapp-msvc64.exe
+CMDS=<<EOF
+on malloc://4096 0
+ihj~{[41].name}
+ihj~{[41].value}
+ihj~{[41].pf[0].value}
+EOF
+EXPECT=<<EOF
+Machine
+34404
+34404
+EOF
+RUN
+
+NAME=ihj pf of an ELF loaded with oba from an offset in the file
+FILE=malloc://16384
+ARGS=-n -w
+CMDS=<<EOF
+wff bins/elf/analysis/x86-helloworld-gcc @ 0x1000
+oba 0x1000
+ihj~{[1].name}
+ihj~{[1].paddr}
+ihj~{[1].value}
+ihj~{[1].pf[0].value}
+ihj~{[2].name}
+ihj~{[2].value}
+ihj~{[2].pf[0].value}
+EOF
+EXPECT=<<EOF
+Type
+4112
+2
+2
+Machine
+3
+3
+EOF
+RUN

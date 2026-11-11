@@ -3987,6 +3987,10 @@ static bool bin_fields(RCore *core, PJ *pj, int mode, int va) {
 	} else if (IS_MODE_RAD (mode)) {
 		r_cons_println (core->cons, "'fs+header");
 	}
+	RBinFile *bf = r_bin_cur (bin);
+	const int bfd = bf? bf->fd: -1;
+	const ut64 boffset = o->boffset;
+	const bool debug = r_config_get_b (core->config, "cfg.debug");
 	r_list_foreach (fields, iter, field) {
 		const bool haveComment = R_STR_ISNOTEMPTY (field->comment);
 		ut64 v = field->value;
@@ -4043,21 +4047,26 @@ static bool bin_fields(RCore *core, PJ *pj, int mode, int va) {
 			}
 			char *o = NULL;
 			if (R_STR_ISNOTEMPTY (field->format)) {
-				if (field->paddr != UT64_MAX && (!core->io->va || !r_io_map_get_at (core->io, field->vaddr))) {
-					// ELF and PE give header fields their file offset as vaddr, where nothing is
-					// mapped in VA mode: read them in the file, in this bin's slice of it
-					RBinFile *bf = r_bin_cur (bin);
-					const ut64 boffset = (bf && bf->bo)? bf->bo->boffset: 0;
-					char *at = r_str_newf ("0x%" PFMT64x "@e:io.va=false", field->paddr + boffset);
-					if (bf && core->io->desc && bf->fd != core->io->desc->fd) {
-						at = r_str_appendf (at, "@o:%d", bf->fd);
-					}
-					o = r_core_cmd_strf (core, "pfj%c%s@%s",
-						field->format_named? '.': ' ', field->format, at);
-					free (at);
-				} else {
+				const char dot = field->format_named? '.': ' ';
+				const ut64 paddr = field->paddr + boffset;
+				// a debugged process is not laid out like the file, keep its addresses
+				bool at_vaddr = field->paddr == UT64_MAX || debug;
+				if (!at_vaddr && core->io->va) {
+					// ELF and PE give header fields their file offset as vaddr: read there
+					// only if that address maps this bin's file at the field's offset
+					RIOMap *map = r_io_map_get_at (core->io, field->vaddr);
+					at_vaddr = map && map->fd == bfd
+						&& field->vaddr - r_io_map_from (map) + map->delta == paddr;
+				}
+				if (at_vaddr) {
 					o = r_core_cmd_strf (core, "pfj%c%s@0x%" PFMT64x,
-						field->format_named? '.': ' ', field->format, field->vaddr);
+						dot, field->format, field->vaddr);
+				} else if (bf && core->io->desc && core->io->desc->fd != bfd) {
+					o = r_core_cmd_strf (core, "pfj%c%s@0x%" PFMT64x "@e:io.va=false@o:%d",
+						dot, field->format, paddr, bfd);
+				} else {
+					o = r_core_cmd_strf (core, "pfj%c%s@0x%" PFMT64x "@e:io.va=false",
+						dot, field->format, paddr);
 				}
 			}
 			if (R_STR_ISNOTEMPTY (o)) {
