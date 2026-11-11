@@ -5761,8 +5761,7 @@ static void ds_print_relocs(RDisasmState *ds) {
 		} else if (rel->symbol) {
 			RBinSymbol *sym = rel->symbol;
 			const char *rel_sym_name = r_bin_name_tostring2 (sym->name, pref);
-			const ut64 sym_addr = sym->paddr == UT64_MAX? sym->vaddr
-				: r_bin_get_vaddr (core->bin, sym->paddr, sym->vaddr);
+			const ut64 sym_addr = r_bin_file_get_symbol_vaddr (core->bin->cur, sym);
 			r_cons_printf (cons, "%s RELOC %d %s", ds->cmtoken, rel->type, rel_sym_name);
 			// an unplaced symbol (a common one before the link) has no address to show
 			if (sym_addr != UT64_MAX) {

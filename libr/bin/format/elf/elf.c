@@ -5596,6 +5596,10 @@ static void fill_symbol(ELFOBJ *eo, RBinElfSymbol *symbol, RBinSymbol *sym) {
 		ut64 va = Elf_(p2v) (eo, paddr);
 		vaddr = (va != UT64_MAX) ? va : paddr;
 	}
+	if (is_bin_etrel (eo) && eo->shdr && symbol->st_shndx < eo->shnum
+			&& eo->shdr[symbol->st_shndx].sh_type == SHT_NOBITS) {
+		paddr = UT64_MAX;
+	}
 	memset (sym, 0, sizeof (RBinSymbol));
 	sym->name = r_bin_name_new (symbol->name);
 	sym->forwarder = "NONE";
