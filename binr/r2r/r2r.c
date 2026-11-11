@@ -785,10 +785,6 @@ static void test_result_to_json(PJ *pj, R2RTestResultInfo *result) {
 }
 
 static void print_diff(const char *actual, const char *expected, bool diffchar, const char *regexp) {
-	RDiff *d = r_diff_new ();
-#ifdef R2__WINDOWS__
-	d->diff_cmd = "git diff --no-index";
-#endif
 	if (!actual) {
 		actual = "";
 	}
@@ -815,6 +811,12 @@ static void print_diff(const char *actual, const char *expected, bool diffchar, 
 			r_diffchar_free (diff);
 			goto cleanup;
 		}
+	}
+	RDiff *d = r_diff_new ();
+#ifdef R2__WINDOWS__
+	d->diff_cmd = "git diff --no-index";
+#endif
+	if (diffchar) {
 		d->diff_cmd = "git diff --no-index --word-diff=porcelain --word-diff-regex=.";
 	}
 	char *uni = r_diff_buffers_tostring (d, (const ut8 *)expected, (int)strlen (expected), (const ut8 *)output, (int)strlen (output));
