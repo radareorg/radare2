@@ -3551,7 +3551,7 @@ static int clamp_count(ut64 count, int limit) {
 	return (int)count;
 }
 
-static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcache) {
+static bool parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcache) {
 	size_t i, j, s, symbols_size, symbols_count;
 	ut64 to = UT64_MAX;
 	ut64 from = UT64_MAX;
@@ -3559,7 +3559,7 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 
 	RBinObject *obj = bf? bf->bo: NULL;
 	if (!obj) {
-		return;
+		return false;
 	}
 
 	const bool load_unnamed = mo->options.load_unnamed;
@@ -3577,7 +3577,7 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 
 	if (!mo->symtab || !mo->symstr) {
 		ht_pp_free (hash);
-		return;
+		return false;
 	}
 	// Mach-O string tables are NUL-separated blobs, not a single C string.
 	const bool has_redacted = mo->symstrlen > 0
@@ -3587,16 +3587,17 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 	symbols_count = ds->nextdefsym + ds->nlocalsym + ds->nundefsym + mo->nsymtab;
 	if (symbols_count == 0) {
 		ht_pp_free (hash);
-		return;
+		return false;
 	}
 
 	if (r_mul_overflow (symbols_count, 2 * sizeof (RBinSymbol), &symbols_size)) {
 		ht_pp_free (hash);
-		return;
+		return false;
 	}
 	j = 0; // symbol_idx
 	int bits = MACH0_(get_bits_from_hdr) (&mo->hdr);
 	bool is_stripped = true;
+	bool has_strip_marker = false;
 	const int limit = bf->rbin->options.limit;
 	for (s = 0; s < 2; s++) {
 		if (!dysym_bounds (mo, s, &from, &to)) {
@@ -3611,6 +3612,11 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 		for (i = from; i < to && j < symbols_count; i++) {
 			struct MACH0_(nlist) *nl = &mo->symtab[i];
 			if (nl->n_type & N_STAB) {
+				if (!has_strip_marker && nl->n_type == N_OPT) {
+					char *stab_name = get_name (mo, nl->n_strx, false);
+					has_strip_marker = stab_name && !strcmp (stab_name, "radr://5614542");
+					free (stab_name);
+				}
 				continue;
 			}
 			ut64 vaddr = nl->n_value;
@@ -3749,6 +3755,7 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 	}
 
 	ht_pp_free (hash);
+	return has_strip_marker;
 }
 
 static bool parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcache) {
@@ -3846,7 +3853,7 @@ const bool MACH0_(load_symbols)(struct MACH0_(obj_t) * mo) {
 
 	mo->symbols_loaded = true;
 	HtPP *symcache = mo->options.load_unnamed && mo->parse_start_symbols? ht_pp_new0 (): NULL;
-	parse_symbols (bf, mo, symcache);
+	const bool has_strip_marker = parse_symbols (bf, mo, symcache);
 	if (symcache) {
 		if (mo->parse_start_symbols && mo->options.load_unnamed) {
 			bool is_stripped = parse_function_start_symbols (bf, mo, symcache);
@@ -3855,6 +3862,9 @@ const bool MACH0_(load_symbols)(struct MACH0_(obj_t) * mo) {
 			}
 		}
 		ht_pp_free (symcache);
+	}
+	if (has_strip_marker) {
+		mo->dbg_info |= R_BIN_DBG_STRIPPED;
 	}
 	if (has_nonruntime_public_symbols (mo)) {
 		mo->dbg_info |= R_BIN_DBG_UNCAPS;

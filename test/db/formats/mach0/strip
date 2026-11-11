@@ -109,3 +109,24 @@ stripped false
 uncaps   false
 EOF
 RUN
+
+NAME=stripped check 9 ld64 radr strip marker
+FILE=bins/mach0/radr-strip-marker
+ARGS=-e bin.unnamed=false
+CMDS=<<EOF
+i~^stripp
+EOF
+EXPECT=<<EOF
+stripped true
+EOF
+RUN
+
+NAME=stripped check 10 radr strip marker with default symbols
+FILE=bins/mach0/radr-strip-marker
+CMDS=<<EOF
+i~^stripp
+EOF
+EXPECT=<<EOF
+stripped true
+EOF
+RUN
