@@ -173,8 +173,8 @@ void snprint_mem(char *out, size_t out_size, const ut8 *buf, size_t len) {
 #define mu_assert_memeq(actual, expected, len, message) do { \
 		char _meqstr[MU_BUF_SIZE]; \
 		size_t _meqstr_len; \
-		const ut8 *act__ = (actual); \
-		const ut8 *exp__ = (expected); \
+		const void *act__ = (actual); \
+		const void *exp__ = (expected); \
 		snprintf (_meqstr, MU_BUF_SIZE, "%s: expected ", message); \
 		_meqstr_len = strlen (_meqstr); \
 		snprint_mem (_meqstr + _meqstr_len, MU_BUF_SIZE - _meqstr_len, (exp__), (len)); \
