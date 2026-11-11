@@ -139,8 +139,7 @@ static inline const RBinElfSpecialSym *special_sym(ELFOBJ *eo, const RBinElfRelo
 	return special? ht_up_find (special, rel->sym, NULL): NULL;
 }
 
-static inline bool reloc_has_slot(ELFOBJ *eo, const RBinElfReloc *rel) {
-	const RBinElfSpecialSym *ss = special_sym (eo, rel);
+static inline bool reloc_has_slot(ELFOBJ *eo, const RBinElfReloc *rel, const RBinElfSpecialSym *ss) {
 	return reloc_is_import (eo, rel) || (ss && ss->common);
 }
 
@@ -1580,7 +1579,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		int word = 0;
 		// only a slotted symbol has a GOT entry; S is its .got.r2 slot
 		if (aarch64_got_reloc (rel->type)) {
-			if (!reloc_has_slot (bo, rel)) {
+			if (!reloc_has_slot (bo, rel, special_sym (bo, rel))) {
 				R_LOG_DEBUG ("unpatched aarch64 got reloc %d at 0x%"PFMT64x, rel->type, rel->rva);
 				break;
 			}
@@ -2200,31 +2199,33 @@ static bool offset_addend(RBinFile *bf, ELFOBJ *eo, RIOBind *iob, const RBinElfR
 	return true;
 }
 
-enum { SLOT_CRAMPED = 1, SLOT_WARNED = 2, SLOT_LISTED = 4, SLOT_NAMED = 8 };
+enum { SLOT_CRAMPED = 1, SLOT_WARNED = 2, SLOT_LISTED = 4, SLOT_NAMED = 8, SLOT_NOSPACE = 16 };
 
-static inline bool offset_fits(st64 a) {
-	return a > -GOTR2_ADDEND_MAX && a < GOTR2_ADDEND_MAX;
+static inline bool offset_fits(st64 a, const RBinElfSpecialSym *ss) {
+	return (a > -GOTR2_ADDEND_MAX && a < GOTR2_ADDEND_MAX)
+		|| (ss && ss->common && a >= 0 && (ut64)a < ss->size);
 }
 
-// slots may grow up to the next io map, after room for one slot per reloc
-static ut64 span_budget(RBin *b, ELFOBJ *eo, ut64 base, size_t cdsz) {
-	RIOBank *bank = b->iob.bank_get (b->iob.io, b->iob.io->bank);
+static bool place_slot(ut64 at, ut64 size, ut64 align, ut64 lead, ut64 limit, ut64 room, ut64 *slot, ut64 *end) {
+	if (size > GOTR2_GROWTH_MAX || align > GOTR2_GROWTH_MAX
+			|| r_add_overflow (at, lead, slot) || r_add_overflow (*slot, align - 1, slot)) {
+		return false;
+	}
+	*slot -= *slot % align;
+	return !r_add_overflow (*slot, size, end) && *end <= limit && *end - at <= room;
+}
+
+static ut64 slot_limit(RBin *b, RIOBank *bank, ut64 base) {
 	ut64 limit = UT64_MAX;
-	if (bank) {
-		RListIter *iter;
-		RIOMapRef *mapref;
-		r_list_foreach (bank->maprefs, iter, mapref) {
-			RIOMap *map = b->iob.map_get (b->iob.io, mapref->id);
-			if (map && r_io_map_from (map) >= base) {
-				limit = R_MIN (limit, r_io_map_from (map));
-			}
+	RListIter *iter;
+	RIOMapRef *mapref;
+	r_list_foreach (bank->maprefs, iter, mapref) {
+		RIOMap *map = b->iob.map_get (b->iob.io, mapref->id);
+		if (map && r_io_map_from (map) >= base) {
+			limit = R_MIN (limit, r_io_map_from (map));
 		}
 	}
-	if (limit == UT64_MAX) {
-		return GOTR2_GROWTH_MAX;
-	}
-	const ut64 slots = (ut64)eo->g_reloc_num * cdsz;
-	return (limit > base && limit - base > slots)? R_MIN (limit - base - slots, GOTR2_GROWTH_MAX): 0;
+	return limit;
 }
 
 static RVecRBinReloc *patch_relocs(RBinFile *bf) {
@@ -2274,11 +2275,13 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		n_vaddr = elf_io_addr (bf, eo, eo->baddr + eo->etrel_slots);
 	}
 	// branch and lo12 relocs cannot encode a misaligned import slot address
-	if (eo->ehdr.e_type == ET_REL && (eo->ehdr.e_machine == EM_PPC64
+	const ut64 slot_align = (eo->ehdr.e_type == ET_REL && (eo->ehdr.e_machine == EM_PPC64
 			|| eo->ehdr.e_machine == EM_PPC || eo->ehdr.e_machine == EM_AARCH64
-			|| eo->ehdr.e_machine == EM_ARM || eo->ehdr.e_machine == EM_BPF)) {
-		n_vaddr = (n_vaddr + cdsz - 1) & ~(cdsz - 1);
+			|| eo->ehdr.e_machine == EM_ARM || eo->ehdr.e_machine == EM_BPF))? cdsz: 1;
+	if (r_add_overflow (n_vaddr, slot_align - 1, &n_vaddr)) {
+		return NULL;
 	}
+	n_vaddr -= n_vaddr % slot_align;
 	const RVecRBinElfReloc *relocs = Elf_(load_relocs) (eo);
 	if (!relocs) {
 		return NULL;
@@ -2307,8 +2310,9 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		if (reloc->laddr) {
 			ht_uu_update (slot_flags, reloc->sym, ht_uu_find (slot_flags, reloc->sym, NULL) | SLOT_NAMED);
 		}
+		const RBinElfSpecialSym *ss = special_sym (eo, reloc);
 		st64 a;
-		if (!reloc_has_slot (eo, reloc) || !offset_addend (bf, eo, &b->iob, reloc, &a) || !offset_fits (a)) {
+		if (!reloc_has_slot (eo, reloc, ss) || !offset_addend (bf, eo, &b->iob, reloc, &a) || !offset_fits (a, ss)) {
 			continue;
 		}
 		HtUU *side = (a < 0)? lead_by_sym: tail_by_sym;
@@ -2317,7 +2321,9 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 			ht_uu_update (side, reloc->sym, mag);
 		}
 	}
-	ut64 budget = span_budget (b, eo, n_vaddr, cdsz);
+	const ut64 limit = slot_limit (b, bank, n_vaddr);
+	// One pointer per slot is reserved; all additional bytes share this budget.
+	ut64 budget = GOTR2_GROWTH_MAX;
 	ut64 vaddr = n_vaddr;
 	ut64 toc_base = UT64_MAX;
 	const ut64 arm_arch = (eo->ehdr.e_machine == EM_ARM)? arm_cpu_attrs (eo).arch: 0;
@@ -2335,8 +2341,9 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	R_VEC_FOREACH (relocs, reloc) {
 		ut64 plt_entry_addr = vaddr;
 		ut64 sym_addr = UT64_MAX;
-		const bool has_slot = reloc_has_slot (eo, reloc);
 		const RBinElfSpecialSym *ss = special_sym (eo, reloc);
+		const bool common = ss && ss->common;
+		const bool has_slot = reloc_has_slot (eo, reloc, ss);
 		bool is_abs = false;
 
 		if (has_slot) {
@@ -2356,31 +2363,46 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		}
 		const bool resolved = is_abs || (sym_addr && sym_addr != UT64_MAX);
 		const bool addressable = !resolved && reloc->sym && !reloc_sym_is_tls (eo, reloc);
-		const bool takes_slot = addressable && eo->ehdr.e_machine != EM_SBPF;
-		// S follows the lead: S + A and a word read there stay inside
-		ut64 lead = 0, tail = 0;
 		const ut64 old_flags = ht_uu_find (slot_flags, reloc->sym, NULL);
 		ut64 flags = old_flags;
+		bool takes_slot = addressable && eo->ehdr.e_machine != EM_SBPF && !(flags & SLOT_NOSPACE);
+		const ut64 slot_size = (common && ss->size)? ss->size: cdsz;
+		ut64 slot = vaddr;
 		if (takes_slot) {
-			lead = R_ROUND (ht_uu_find (lead_by_sym, reloc->sym, NULL), cdsz);
-			tail = R_ROUND (ht_uu_find (tail_by_sym, reloc->sym, NULL), cdsz);
-			if (lead + tail > budget) {
+			const ut64 align = common? R_MAX (slot_align, ss->value): slot_align;
+			const ut64 lead = R_ROUND (ht_uu_find (lead_by_sym, reloc->sym, NULL), cdsz);
+			const ut64 tail = R_ROUND (ht_uu_find (tail_by_sym, reloc->sym, NULL), cdsz);
+			const ut64 size = tail? R_MAX (slot_size, tail + cdsz): slot_size;
+			ut64 end;
+			if (!place_slot (vaddr, size, align, lead, limit, budget + cdsz, &slot, &end)) {
 				flags |= SLOT_CRAMPED;
-				lead = tail = 0;
+				if (!place_slot (vaddr, slot_size, align, 0, limit, budget + cdsz, &slot, &end)) {
+					flags |= SLOT_NOSPACE;
+					takes_slot = false;
+				}
 			}
-			budget -= lead + tail;
-			plt_entry_addr = vaddr + lead;
+			if (takes_slot) {
+				budget -= (end - vaddr) - R_MIN (end - vaddr, cdsz);
+				vaddr = end;
+				ht_uu_insert (relocs_by_sym, reloc->sym, slot);
+				plt_entry_addr = slot;
+			}
 		}
-		const ut64 slot = vaddr + lead;
 		st64 a = 0;
 		const bool offset = has_slot && offset_addend (bf, eo, &b->iob, reloc, &a) && a;
-		const bool skip = offset && (!offset_fits (a) || (flags & SLOT_CRAMPED));
+		const bool skip = (flags & SLOT_NOSPACE) || (offset && (!offset_fits (a, ss)
+			|| ((flags & SLOT_CRAMPED) && (a < 0 || (ut64)a + cdsz > slot_size))));
 		if (skip && !(flags & SLOT_WARNED)) {
 			RBinImport *imp = reloc_is_import (eo, reloc)? eo->imports_by_ord[reloc->sym]: NULL;
 			RBinSymbol *sym = !imp? reloc_symbol (eo, reloc): NULL;
 			RBinName *name = imp? imp->name: sym? sym->name: NULL;
-			R_LOG_WARN ("No .got.r2 room for %s%+"PFMT64d" at 0x%"PFMT64x", reloc left unpatched",
-				name? r_bin_name_tostring (name): "?", a, reloc->rva);
+			if (flags & SLOT_NOSPACE) {
+				R_LOG_WARN ("No .got.r2 room for %s (%"PFMT64u" bytes), relocs left unpatched",
+					name? r_bin_name_tostring (name): "?", slot_size);
+			} else {
+				R_LOG_WARN ("No .got.r2 room for %s%+"PFMT64d" at 0x%"PFMT64x", reloc left unpatched",
+					name? r_bin_name_tostring (name): "?", a, reloc->rva);
+			}
 			flags |= SLOT_WARNED;
 		}
 		if (flags != old_flags) {
@@ -2392,7 +2414,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 			_patch_reloc (bf, eo, eo->ehdr.e_machine, &b->iob, reloc,
 				elf_io_addr (bf, eo, reloc->rva), raddr, bias, plt_entry_addr, toc_base, arm_arch);
 		}
-		RBinSymbol *csym = (takes_slot && ss && ss->common)? reloc_symbol (eo, reloc): NULL;
+		RBinSymbol *csym = (takes_slot && common)? reloc_symbol (eo, reloc): NULL;
 		if (csym) {
 			csym->vaddr = slot - shift;
 			csym->paddr = Elf_(v2p) (eo, csym->vaddr);
@@ -2417,10 +2439,6 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 			// the core names laddr rsym.<import>, as for arm32 plt
 			ptr->laddr = slot_addr;
 			ht_uu_update (slot_flags, reloc->sym, flags | SLOT_NAMED);
-		}
-		if (takes_slot) {
-			ht_uu_insert (relocs_by_sym, reloc->sym, slot);
-			vaddr += lead + cdsz + tail;
 		}
 	}
 	// a slot row already names its slot, even one listed after a data site

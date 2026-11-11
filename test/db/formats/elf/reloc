@@ -1057,11 +1057,11 @@ irj~{}~sym_va
 is~cbuf
 EOF
 EXPECT=<<EOF
-0x00000000080000f4
-0x00000000080000f4
-- 6 fd: 4 +0x00000000 0x080000f4 - 0x080000fb rw- rw- .got.r2
-    "sym_va": 134217972,
-    "sym_va": 134217972,
+0x00000000080000f8
+0x00000000080000f8
+- 6 fd: 4 +0x00000000 0x080000f4 - 0x080000ff rw- rw- .got.r2
+    "sym_va": 134217976,
+    "sym_va": 134217976,
 1   ---------- ---------- GLOBAL OBJ    8        cbuf
 EOF
 RUN
@@ -1088,10 +1088,10 @@ pd 2 @ 0x10000040~RELOC[5-7]
 irj~{}~sym_va
 EOF
 EXPECT=<<EOF
-cbuf @ 0x100000f4
-cbuf @ 0x100000f4
-    "sym_va": 268435700,
-    "sym_va": 268435700,
+cbuf @ 0x100000f8
+cbuf @ 0x100000f8
+    "sym_va": 268435704,
+    "sym_va": 268435704,
 EOF
 RUN
 
@@ -1183,25 +1183,243 @@ EXPECT=<<EOF
 0x0800004f 0x0000004f ADD_32 2     counter - 0x08000053
 0x0800006d 0x0000006d ADD_32 2     counter - 0x08000071
 0x08000078 0x00000078 ADD_32 2     counter - 0x0800007c
-0x080002b5 0x00000046 ADD_32 2     counter - 0x0800004a
+0x080002b8 0x00000046 ADD_32 2     counter - 0x0800004a
     "name": "counter",
-    "sym_va": 134218421,
+    "sym_va": 134218424,
     "name": "counter",
-    "sym_va": 134218421,
+    "sym_va": 134218424,
     "name": "table",
-    "sym_va": 134218429,
+    "sym_va": 134218432,
     "name": "big",
-    "sym_va": 134218437,
+    "sym_va": 134218464,
     "name": "counter",
-    "sym_va": 134218421,
+    "sym_va": 134218424,
     "name": "counter",
-    "sym_va": 134218421,
+    "sym_va": 134218424,
     "name": "counter",
-    "sym_va": 134218421,
+    "sym_va": 134218424,
     "name": "table",
-    "sym_va": 134218429,
+    "sym_va": 134218432,
     "name": "big",
-    "sym_va": 134218437,
+    "sym_va": 134218464,
+EOF
+RUN
+
+NAME=ELF: common symbol slots take st_size bytes at st_value alignment
+FILE=bins/elf/x86_64-common-refs.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+om~.got.r2
+pd 2 @ 0x08000056
+EOF
+EXPECT=<<EOF
+- 9 fd: 4 +0x00000000 0x080002b5 - 0x0800031f rw- rw- .got.r2
+            0x08000056      4889056b02..   mov qword [0x080002c8], rax ; [0x80002c8:8]=0; RELOC 32 table @ 0x080002c0 - 0x8000055
+            0x0800005d      0fbe057f02..   movsx eax, byte [0x080002e3] ; [0x80002e3:1]=0; RELOC 32 big @ 0x080002e0 - 0x8000061
+EOF
+RUN
+
+NAME=ELF: an access into a common array stays inside its slot
+FILE=bins/elf/x86_64-common-array.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+om~.got.r2
+pd 2 @ 0x08000040
+EOF
+EXPECT=<<EOF
+- 6 fd: 4 +0x00000000 0x08000108 - 0x0800012f rw- rw- .got.r2
+            ;-- section..text:
+            ;-- f:
+            0x08000040      488b05c900..   mov rax, qword [0x08000110] ; [0x8000110:8]=0; RELOC 32 arr @ 0x08000108 - 0x800003f ; [02] -r-x section size 15 named .text
+            0x08000047      488b05da00..   mov rax, qword [reloc.other] ; [0x8000128:8]=0; RELOC 32 other @ 0x08000128 - 0x800004e
+EOF
+RUN
+
+NAME=ELF: unsupported common sizes and alignments stay unpatched
+FILE=bins/elf/x86_64-common-oversize.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+om~.got.r2
+irj~{}~"name",sym_va
+EOF
+EXPECT=<<EOF
+- 7 fd: 4 +0x00000000 0x080001a1 - 0x080801a7 rw- rw- .got.r2
+    "name": "fits",
+    "sym_va": 134218152,
+    "name": "big2m",
+    "name": "align2m",
+    "name": "wrap32",
+    "name": "fits",
+    "sym_va": 134218152,
+EOF
+EXPECT_ERR=<<EOF
+WARN: No .got.r2 room for big2m (2097152 bytes), relocs left unpatched
+WARN: No .got.r2 room for align2m (8 bytes), relocs left unpatched
+WARN: No .got.r2 room for wrap32 (4294967312 bytes), relocs left unpatched
+EOF
+RUN
+
+NAME=ELF: common slots over the growth budget stay unpatched
+FILE=bins/elf/x86_64-common-many.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+om~.got.r2
+irj~{}~"name",sym_va
+EOF
+EXPECT=<<EOF
+- 7 fd: 4 +0x00000000 0x080002e9 - 0x0810003f rw- rw- .got.r2
+    "name": "c0",
+    "sym_va": 134221824,
+    "name": "c1",
+    "sym_va": 134352896,
+    "name": "c2",
+    "sym_va": 134483968,
+    "name": "c3",
+    "sym_va": 134615040,
+    "name": "c4",
+    "sym_va": 134746112,
+    "name": "c5",
+    "sym_va": 134877184,
+    "name": "c6",
+    "sym_va": 135008256,
+    "name": "c7",
+    "name": "c8",
+    "name": "huge",
+    "sym_va": 135266304,
+    "name": "c0",
+    "sym_va": 134221824,
+    "name": "c1",
+    "sym_va": 134352896,
+    "name": "c2",
+    "sym_va": 134483968,
+    "name": "c3",
+    "sym_va": 134615040,
+    "name": "c4",
+    "sym_va": 134746112,
+    "name": "c5",
+    "sym_va": 134877184,
+    "name": "c6",
+    "sym_va": 135008256,
+    "name": "huge",
+    "sym_va": 135266304,
+EOF
+EXPECT_ERR=<<EOF
+WARN: No .got.r2 room for c7 (131072 bytes), relocs left unpatched
+WARN: No .got.r2 room for c8 (131072 bytes), relocs left unpatched
+EOF
+RUN
+
+NAME=ELF: oversized common slots stay unpatched without overlapping .bss
+FILE=bins/elf/x86_64-common-bss.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+om~.got.r2[5,7]
+om~mmap..bss[5,7]
+pv8 3 @ section..data
+EOF
+EXPECT=<<EOF
+0x08000119 0x08000127
+0x080002e0 0x080002ff
+0x0000000000000000
+0x0000000000000000
+0x0000000008000120
+EOF
+EXPECT_ERR=<<EOF
+WARN: No .got.r2 room for arr (4096 bytes), relocs left unpatched
+EOF
+RUN
+
+NAME=ELF: in-range common addends need no extra room before .bss
+FILE=bins/elf/x86_64-common-bss-fit.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+om~.got.r2[5,7]
+om~mmap..bss[5,7]
+pv8 2 @ section..data
+EOF
+EXPECT=<<EOF
+0x080000db 0x08000297
+0x080002a0 0x080002bf
+0x00000000080000e0
+0x00000000080000e8
+EOF
+RUN
+
+NAME=ELF: common storage permits large in-range addends and bounded leading padding
+FILE=bins/elf/x86_64-common-addend.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+om~.got.r2[5,7]
+pv8 4 @ section..data
+EOF
+EXPECT=<<EOF
+0x08000116 0x0800411f
+0x0000000008000120
+0x0000000008002120
+0x0000000008000118
+0x0000000000000000
+EOF
+EXPECT_ERR=<<EOF
+WARN: No .got.r2 room for arr+20480 at 0x8000058, reloc left unpatched
+EOF
+RUN
+
+NAME=ELF: common storage and synthetic addend padding share one growth budget
+FILE=bins/elf/x86_64-common-growth.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+om~.got.r2[5,7]
+pv8 3 @ section..data
+EOF
+EXPECT=<<EOF
+0x0800012b 0x0810013a
+0x000000000800012b
+0x000000000810012a
+0x0000000000000000
+EOF
+EXPECT_ERR=<<EOF
+WARN: No .got.r2 room for ext2+4095 at 0x8000050, reloc left unpatched
+EOF
+RUN
+
+NAME=ELF: common alignment charges actual padding instead of the worst case
+FILE=bins/elf/x86_64-common-aligned.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+om~.got.r2[5,7]
+pv8 @ section..data
+EOF
+EXPECT=<<EOF
+0x080000ba 0x0810003f
+0x0000000008100000
+EOF
+RUN
+
+NAME=ELF: tiny ARM64 commons preserve GOT load and import branch slot alignment
+FILE=bins/elf/aarch64-common-tiny.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+om~.got.r2[5,7]
+p8 20 @ section..text
+EOF
+EXPECT=<<EOF
+0x08000190 0x080001a7
+00000090004006910100009021cc40f954000094
+EOF
+RUN
+
+NAME=ELF: overflowing common alignment stays unpatched
+FILE=bins/elf/x86_64-common-aligned.o
+ARGS=-B 0xfffffffffffe0000 -e bin.relocs.apply=true
+CMDS=<<EOF
+om~.got.r2
+pv8 @ section..data
+EOF
+EXPECT=<<EOF
+0x0000000000000000
+EOF
+EXPECT_ERR=<<EOF
+WARN: No .got.r2 room for aligned (64 bytes), relocs left unpatched
 EOF
 RUN
 
@@ -1215,17 +1433,17 @@ pv8 @ 0x08000059
 o-*
 EOF
 EXPECT=<<EOF
+mov rax, qword [rip + 0x181]
+call 0x80001c8
 mov rax, qword [rip + 0x17d]
-call 0x80001c4
-mov rax, qword [rip + 0x179]
-call 0x80001cc
+call 0x80001d0
 0x08000043 0x00000043 ADD_32 2     cbuf - 0x08000047
 0x08000048 0x00000048 ADD_32 4     cbuf - 0x0800004c
 0x0800004f 0x0000004f ADD_32 2     ext - 0x08000053
 0x08000054 0x00000054 ADD_32 4     ext - 0x08000058
-0x080001c4 0x00000043 ADD_32 2     cbuf - 0x08000047
-0x080001cc 0x0000004f ADD_32 2     ext - 0x08000053
-0x00000000080001d4
+0x080001c8 0x00000043 ADD_32 2     cbuf - 0x08000047
+0x080001d0 0x0000004f ADD_32 2     ext - 0x08000053
+0x00000000080001d8
 EOF
 RUN
 
@@ -1850,20 +2068,19 @@ EXPECT=<<EOF
 0x080004a2 0x08000661
 0x08000668
 0x00000000080004e2
-0x0000000000000000
+0x000000000800064a
 EOF
 EXPECT_ERR=<<EOF
-WARN: No .got.r2 room for ext_6+64 at 0x8000069, reloc left unpatched
 WARN: No .got.r2 room for ext_7+64 at 0x8000071, reloc left unpatched
 WARN: No .got.r2 room for ext_8+64 at 0x8000079, reloc left unpatched
-WARN: No .got.r2 room for ext_9+64 at 0x8000081, reloc left unpatched
-WARN: No .got.r2 room for ext_10+64 at 0x8000089, reloc left unpatched
-WARN: No .got.r2 room for ext_11+64 at 0x8000091, reloc left unpatched
-WARN: No .got.r2 room for ext_12+64 at 0x8000099, reloc left unpatched
-WARN: No .got.r2 room for ext_13+64 at 0x80000a1, reloc left unpatched
-WARN: No .got.r2 room for ext_14+64 at 0x80000a9, reloc left unpatched
-WARN: No .got.r2 room for ext_15+64 at 0x80000b1, reloc left unpatched
-WARN: No .got.r2 room for ext_16+64 at 0x80000b9, reloc left unpatched
+WARN: No .got.r2 room for ext_9 (8 bytes), relocs left unpatched
+WARN: No .got.r2 room for ext_10 (8 bytes), relocs left unpatched
+WARN: No .got.r2 room for ext_11 (8 bytes), relocs left unpatched
+WARN: No .got.r2 room for ext_12 (8 bytes), relocs left unpatched
+WARN: No .got.r2 room for ext_13 (8 bytes), relocs left unpatched
+WARN: No .got.r2 room for ext_14 (8 bytes), relocs left unpatched
+WARN: No .got.r2 room for ext_15 (8 bytes), relocs left unpatched
+WARN: No .got.r2 room for ext_16 (8 bytes), relocs left unpatched
 EOF
 RUN
 
