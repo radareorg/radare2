@@ -1,10 +1,3 @@
-# API/ABI/CMD Stability in R2
-
-Since r2-6.0.0 the `ABI_VERSION` define avoid plugins built with different ABI
-to be loaded to avoid segfaults.
-
-The `R2_ABIVERSION` define is located in `r_lib.h`
-
 ## Introduction
 
 Since r2-5.6.0 the development model has changed in order to provide a reliable
@@ -24,14 +17,19 @@ introduce new features or simplify the usage of some apis.
 
 ## Development rules
 
-What you **CANNOT** do between X.Y.0 and X.Y.8:
+Since r2-6.0.0 the `ABI_VERSION` define avoid plugins built with different ABI
+to be loaded to avoid segfaults.
+
+The `R2_ABIVERSION` define is located in `libr/include/r_lib.h`
+
+What breaking ABI means, aka what forces you to increment `R2_ABIVERSION`:
 
 * Add, Remove or rename public functions, structs or enums
 * Change function signature (adding or removing arguments)
 * Add, remove or reorder fields in structs
 * Remove or change r2 commands (must be documented in release)
 
-What you **CAN** do between X.Y.0 and X.Y.8:
+What you **CAN** without breaking abi.
 
 * Remove global symbols (they shouldn't be accessed directly anyway)
 * Change internal structs or functions (static)

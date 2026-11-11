@@ -1175,7 +1175,7 @@ static RCoreHelpMessage help_msg_ar = {
 	"arb", " <type>", "display hexdump of the given arena",
 	"arc", "[cq=] <name>", "conditional flag registers",
 	"arcc", "", "derive calling convention from the register profile",
-	"ard", " <name>", "show only different registers",
+	"ard", " [type]", "show changed registers (default: gpr; type can be fpu, vec128 or all)",
 	"arn", " <regalias>", "get regname for pc,sp,bp,a0-3,zf,cf,of,sg",
 	"aro", "", "show old (previous) register values",
 	"arp", "[?] <file>", "load register profile from file",
@@ -7877,8 +7877,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		cmd_reg_vector (core, core->anal->reg, str, false, "arv");
 		break;
 	case 'd': // "ard"
-		print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, core->anal->config->bits,
-			NULL, 3, use_color)); // XXX detect which one is current usage
+		cmd_reg_diff (core, core->anal->reg, str + 1, core->anal->config->bits, use_color);
 		break;
 	case 'o': // "aro"
 		r_reg_arena_swap (core->dbg->reg, false);
@@ -7962,7 +7961,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 					r_str_ncpy (name, str + i, j - i + 1);
 					if (isdigit (name[0] & 0xff)) { // e.g. ar 32
 						__anal_reg_list (core, R_REG_TYPE_GPR, atoi (name), '\0');
-					} else if (showreg (core, name) > 0) {
+					} else if (showreg (core, core->anal->reg, name) > 0) {
 						// e.g. ar rax
 					} else { // e.g. ar gpr ; ar all
 						type = r_reg_type_by_name (name);

@@ -381,6 +381,32 @@ static inline bool r_reg_get_pack_checked(RReg *reg, RRegItem *item, int index, 
 	return r_reg_pack_access (reg, item, index, bits, value, false);
 }
 
+// Full-width hexadecimal value, using the same chunk order as checked lanes.
+static inline R_OWNED char *r_reg_get_value_hex(RReg *reg, RRegItem *item) {
+	R_RETURN_VAL_IF_FAIL (reg && item, NULL);
+	size_t len;
+	if (!r_reg_value_arena (reg, item) || r_add_overflow_size_t (item->size / 4, 3, &len)) {
+		return NULL;
+	}
+	char *hex = malloc (len);
+	if (!hex) {
+		return NULL;
+	}
+	hex[0] = '0';
+	hex[1] = 'x';
+	hex[len - 1] = 0;
+	int byte;
+	for (byte = 0; byte < item->size / 8; byte++) {
+		ut64 value;
+		if (!r_reg_get_pack_checked (reg, item, byte, 8, &value)) {
+			free (hex);
+			return NULL;
+		}
+		r_hex_from_byte (hex + len - 3 - byte * 2, value);
+	}
+	return hex;
+}
+
 #ifdef __cplusplus
 }
 #endif

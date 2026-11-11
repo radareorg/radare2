@@ -176,8 +176,48 @@ bool test_vector_debug_sync(void) {
 	mu_end;
 }
 
+bool test_wide_register_restore(void) {
+	RCore *core = r_core_new ();
+	r_core_esil_load_arch (core);
+	RReg *reg = core->anal->reg;
+	mu_assert_true (r_reg_set_profile_string (reg, "=PC pc\ngpr pc .64 0 0\nfpu wide .384 0 0\nfpu tail .80 48 0\n"), "restore profile");
+	RRegItem *wide = r_reg_get (reg, "wide", R_REG_TYPE_ALL);
+	RRegItem *tail = r_reg_get (reg, "tail", R_REG_TYPE_ALL);
+	const char modes[] = { 'R', '.', 'e' };
+	int endian, mode;
+	for (endian = 0; endian < 2; endian++) {
+		reg->endian = endian? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE;
+		for (mode = 0; mode < R_ARRAY_SIZE (modes); mode++) {
+			mu_assert_true (r_reg_set_pack (reg, wide, 0, 64, 0x11), "restore low lane");
+			mu_assert_true (r_reg_set_pack (reg, wide, 5, 64, 0x22), "restore high lane");
+			mu_assert_true (r_reg_set_pack (reg, tail, 0, 64, 0x33), "partial low chunk");
+			mu_assert_true (r_reg_set_pack (reg, tail, 4, 16, 0xabcd), "partial high chunk");
+			RReg *previous = core->dbg->reg;
+			core->dbg->reg = reg;
+			char *commands = r_debug_reg_list (core->dbg, R_REG_TYPE_FPU, 0, NULL, modes[mode], NULL);
+			core->dbg->reg = previous;
+			r_reg_arena_zero (reg);
+			if (modes[mode] == 'e') {
+				r_core_cmdf (core, "ae %s", commands);
+			} else {
+				r_core_cmd0 (core, commands);
+			}
+			free (commands);
+			mu_assert_eq (r_reg_get_pack (reg, wide, 0, 64), 0x11, "restored low lane");
+			mu_assert_eq (r_reg_get_pack (reg, wide, 5, 64), 0x22, "restored high lane");
+			mu_assert_eq (r_reg_get_pack (reg, tail, 0, 64), 0x33, "restored partial low chunk");
+			mu_assert_eq (r_reg_get_pack (reg, tail, 4, 16), 0xabcd, "restored partial high chunk");
+		}
+	}
+	r_unref (wide);
+	r_unref (tail);
+	r_core_free (core);
+	mu_end;
+}
+
 int main(int argc, char **argv) {
 	mu_run_test (test_core_fault_state);
 	mu_run_test (test_vector_debug_sync);
+	mu_run_test (test_wide_register_restore);
 	return tests_passed != tests_run;
 }

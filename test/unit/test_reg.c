@@ -1038,7 +1038,77 @@ bool test_r_reg_checked_lanes(void) {
 	mu_end;
 }
 
+bool test_r_reg_value_hex(void) {
+	const char *profile = "fpu small .80 0 0\nfpu wide .384 16 0\nfpu huge .2048 64 0\n";
+	int endian;
+	for (endian = 0; endian < 2; endian++) {
+		RReg *reg = r_reg_new ();
+		mu_assert_true (r_reg_set_profile_string (reg, profile), "hex profile");
+		reg->endian = endian? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE;
+		RRegItem *wide = r_reg_get (reg, "wide", R_REG_TYPE_ALL);
+		mu_assert_true (r_reg_set_pack (reg, wide, 0, 64, 0x0123456789abcdefULL), "low lane");
+		mu_assert_true (r_reg_set_pack (reg, wide, 5, 64, 0xfedcba9876543210ULL), "high lane");
+		char *hex = r_reg_get_value_hex (reg, wide);
+		mu_assert_streq_free (hex,
+			"0xfedcba987654321000000000000000000000000000000000000000000000000000000000000000000123456789abcdef",
+			"384-bit hexadecimal follows logical lane order");
+		RRegItem *small = r_reg_get (reg, "small", R_REG_TYPE_ALL);
+		mu_assert_true (r_reg_set_pack (reg, small, 0, 64, 0x0123456789abcdefULL), "partial register low chunk");
+		mu_assert_true (r_reg_set_pack (reg, small, 4, 16, 0xabcd), "partial register high chunk");
+		mu_assert_streq_free (r_reg_get_value_hex (reg, small), "0xabcd0123456789abcdef", "partial final chunk");
+		RRegItem *huge = r_reg_get (reg, "huge", R_REG_TYPE_ALL);
+		mu_assert_true (r_reg_set_pack (reg, huge, 31, 64, 1), "2048-bit high lane");
+		mu_assert_true (r_reg_set_pack (reg, huge, 0, 64, 0x22), "2048-bit low lane");
+		char *zeros = r_str_pad (NULL, 0, '0', 480);
+		char *expected = r_str_newf ("0x0000000000000001%s0000000000000022", zeros);
+		mu_assert_streq_free (r_reg_get_value_hex (reg, huge), expected, "hexadecimal is not truncated by a fixed buffer");
+		free (expected);
+		free (zeros);
+		RRegArena *arena = reg->regset[wide->arena].arena;
+		const int saved_size = arena->size;
+		arena->size = 63;
+		mu_assert_null (r_reg_get_value_hex (reg, wide), "reject truncated storage");
+		arena->size = saved_size;
+		wide->offset++;
+		mu_assert_null (r_reg_get_value_hex (reg, wide), "reject unaligned storage");
+		wide->offset = INT_MAX - 7;
+		mu_assert_null (r_reg_get_value_hex (reg, wide), "reject overflowing extent");
+		r_unref (wide);
+		r_unref (small);
+		r_unref (huge);
+		r_reg_free (reg);
+	}
+	mu_end;
+}
+
+bool test_r_reg_next_diff_bounds(void) {
+	RReg *reg = r_reg_new ();
+	mu_assert_true (r_reg_set_profile_string (reg,
+		"vec128@fpu first .128 8 0\nvec512@fpu last .512 24 0\n"), "diff profile");
+	RRegItem *first = r_reg_get (reg, "first", R_REG_TYPE_ALL);
+	RRegItem *last = r_reg_get (reg, "last", R_REG_TYPE_ALL);
+	ut8 previous[88] = {0};
+	mu_assert_true (r_reg_set_pack (reg, first, 1, 64, 1), "upper 128-bit change");
+	mu_assert_true (r_reg_set_pack (reg, last, 7, 64, 2), "upper 512-bit change");
+	mu_assert_ptreq (r_reg_next_diff (reg, R_REG_TYPE_FPU, previous, sizeof (previous), NULL, 64), first, "first full-width change");
+	mu_assert_ptreq (r_reg_next_diff (reg, R_REG_TYPE_FPU, previous, sizeof (previous), first, 64), last, "next full-width change");
+	mu_assert_null (r_reg_next_diff (reg, R_REG_TYPE_FPU, previous, sizeof (previous), last, 64), "end of changes");
+	mu_assert_null (r_reg_next_diff (reg, R_REG_TYPE_FPU, previous, 23, NULL, 64), "short comparison buffer");
+	mu_assert_null (r_reg_next_diff (reg, R_REG_TYPE_FPU, previous, 87, first, 64), "short upper register");
+	RRegArena *arena = reg->regset[R_REG_TYPE_FPU].arena;
+	const int saved_size = arena->size;
+	arena->size = 23;
+	mu_assert_null (r_reg_next_diff (reg, R_REG_TYPE_FPU, previous, sizeof (previous), NULL, 64), "short current arena");
+	arena->size = saved_size;
+	r_unref (first);
+	r_unref (last);
+	r_reg_free (reg);
+	mu_end;
+}
+
 int all_tests(void) {
+	mu_run_test (test_r_reg_value_hex);
+	mu_run_test (test_r_reg_next_diff_bounds);
 	mu_run_test (test_r_reg_wide_access);
 	mu_run_test (test_r_reg_checked_lanes);
 	mu_run_test (test_r_reg_profile_to_cc);

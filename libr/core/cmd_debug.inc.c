@@ -377,7 +377,7 @@ static RCoreHelpMessage help_msg_dr = {
 	"drb", "[1|2|4|8] [type]", "display hexdump of gpr arena (WIP)",
 	"drc", " [name]", "related to conditional flag registers",
 	"drC", " [register]", "show register comments",
-	"drd", "", "show only different registers",
+	"drd", " [type]", "show changed registers (default: gpr; type can be fpu, vec128 or all)",
 	"dre", "", "show esil expression to set register values (like dr*)",
 	"drf", "", "show fpu registers (80 bit long double)",
 	"dri", "", "show inverse registers dump (sorted by value)",
@@ -1143,68 +1143,43 @@ static void cmd_debug_cont_syscall(RCore *core, const char *_str) {
 	free (syscalls);
 }
 
-static int showreg(RCore *core, const char *str) {
-	int size = 0;
-	RRegItem *r = 0;
-#if 0
-	const char *rname = str;
-	// check for alias reg
-	int role = r_reg_get_name_idx (str);
-	if (role != -1) {
-		rname = r_reg_get_name (core->dbg->reg, role);
-	}
-	if (!rname) {
-		return 0;
-	}
-#endif
-	r = r_reg_get (core->dbg->reg, str, -1);
-	if (r) {
-		ut64 off;
-		utX value;
-		if (r->size == 512) {
-			RRegArena *arena = core->dbg->reg->regset[r->arena].arena;
-			const int byte_off = BITS2BYTES (r->offset);
-			if (!arena || !arena->bytes || byte_off < 0 || byte_off + 64 > arena->size) {
-				R_LOG_ERROR ("Cannot retrieve reg '%s' of %i bits", r->name, r->size);
-				return r->size;
-			}
-			const ut8 *bytes = arena->bytes + byte_off;
-			int i;
-			r_cons_print (core->cons, "0x");
-			for (i = 7; i >= 0; i--) {
-				r_cons_printf (core->cons, "%016"PFMT64x, r_read_le64 (bytes + i * 8));
-			}
-			r_cons_newline (core->cons);
-		} else if (r->size > 64) {
-			off = r_reg_get_value_big (core->dbg->reg, r, &value);
-			switch (r->size) {
-			case 80:
-				r_cons_printf (core->cons, "0x%04x%016"PFMT64x"\n", value.v80.High, value.v80.Low);
-				break;
-			case 96:
-				r_cons_printf (core->cons, "0x%08x%016"PFMT64x"\n", value.v96.High, value.v96.Low);
-				break;
-			case 128:
-				r_cons_printf (core->cons, "0x%016"PFMT64x"%016"PFMT64x"\n", value.v128.High, value.v128.Low);
-				break;
-			case 256:
-				r_cons_printf (core->cons, "0x%016"PFMT64x"%016"PFMT64x"%016"PFMT64x"%016"PFMT64x"\n",
-					   value.v256.High.High, value.v256.High.Low, value.v256.Low.High, value.v256.Low.Low);
-				break;
-			default:
-				R_LOG_ERROR ("Cannot retrieve reg '%s' of %i bits", r->name, r->size);
+static int showreg(RCore *core, RReg *reg, const char *str) {
+	RRegItem *item = r_reg_get (reg, str, R_REG_TYPE_ALL);
+	if (item) {
+		const int size = item->size;
+		if (size > 64) {
+			char *value = r_reg_get_value_hex (reg, item);
+			if (value) {
+				r_cons_println (core->cons, value);
+				free (value);
+			} else {
+				R_LOG_ERROR ("Cannot retrieve reg '%s' of %i bits", item->name, size);
 			}
 		} else {
-			off = r_reg_get_value (core->dbg->reg, r);
-			r_cons_printf (core->cons, "0x%08"PFMT64x "\n", off);
+			r_cons_printf (core->cons, "0x%08"PFMT64x"\n", r_reg_get_value (reg, item));
 		}
-		return r->size;
+		r_unref (item);
+		return size;
 	}
 	const char *arg = strchr (str + 1, ' ');
-	if (arg && size == 0) {
-		str = arg;
+	return atoi (arg? arg + 1: str + 1);
+}
+
+static void cmd_reg_diff(RCore *core, RReg *reg, const char *args, int bits, const char *color) {
+	args = r_str_trim_head_ro (args);
+	int type = R_REG_TYPE_GPR;
+	if (*args) {
+		type = r_reg_type_by_name (args);
+		if (type == R_REG_TYPE_ALL && strcmp (args, "all")) {
+			R_LOG_ERROR ("Unknown register type '%s'", args);
+			return;
+		}
+		bits = 0;
 	}
-	return atoi (str + 1);
+	RReg *previous = core->dbg->reg;
+	core->dbg->reg = reg;
+	print_owned (core, r_debug_reg_list (core->dbg, type, bits, NULL, 'd', color));
+	core->dbg->reg = previous;
 }
 
 static RGraphNode *get_graphtrace_node(RGraph *g, Sdb *nodes, struct trace_node *tn) {
@@ -3831,7 +3806,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		cmd_drn (core, str);
 		break;
 	case 'd': // "drd"
-		print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, NULL, 3, use_color)); // xxx detect which one is current usage
+		cmd_reg_diff (core, core->dbg->reg, str + 1, bits, use_color);
 		break;
 	case 'o': // "dro"
 		r_reg_arena_swap (core->dbg->reg, false);
@@ -3991,11 +3966,11 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				char *args = strdup (str + 1);
 				char argc = r_str_split (args, ',');
 				for (i = 0; i < argc; i++) {
-					showreg (core, r_str_word_get0 (args, i));
+					showreg (core, core->dbg->reg, r_str_word_get0 (args, i));
 				}
 				free (args);
 			} else {
-				showreg (core, str + 1);
+				showreg (core, core->dbg->reg, str + 1);
 			}
 		}
 		break;

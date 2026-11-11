@@ -594,7 +594,55 @@ bool test_r_debug_reg_offset(void) {
 	mu_end;
 }
 
+bool test_r_debug_wide_reg_list(void) {
+	RReg *reg = r_reg_new ();
+	mu_assert_true (r_reg_set_profile_string (reg,
+		"gpr scalar .64 0 0\nfpu vector .384 0 0\nfpu huge .2048 48 0\n"), "wide display profile");
+	RDebug dbg = { .reg = reg, .bits = 64 };
+	RRegItem *vector = r_reg_get (reg, "vector", R_REG_TYPE_ALL);
+	RRegItem *huge = r_reg_get (reg, "huge", R_REG_TYPE_ALL);
+	mu_assert_true (r_reg_set_pack (reg, vector, 0, 64, 0x11), "previous low lane");
+	r_reg_arena_swap (reg, false);
+	mu_assert_true (r_reg_set_pack (reg, vector, 0, 64, 0x11), "unchanged low lane");
+	mu_assert_true (r_reg_set_pack (reg, vector, 5, 64, 0x22), "changed high lane");
+	mu_assert_true (r_reg_set_pack (reg, huge, 31, 64, 0x33), "changed highest SVE lane");
+	mu_assert_true (r_reg_setv (reg, "scalar", 1ULL << 40), "scalar change above 32 bits");
+	const char *current = "0x000000000000002200000000000000000000000000000000000000000000000000000000000000000000000000000011";
+	const char *previous = "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011";
+	char *output = r_debug_reg_list (&dbg, R_REG_TYPE_ALL, 0, NULL, 'd', NULL);
+	char *line = r_str_newf ("vector = %s was %s\n", current, previous);
+	mu_assert_notnull (strstr (output, line), "wide difference prints full current and previous values");
+	mu_assert_notnull (strstr (output, "scalar = 0x10000000000 was 0x0 delta 1099511627776"), "scalar delta is not truncated to int");
+	mu_assert_notnull (strstr (output, "huge = 0x0000000000000033"), "highest 2048-bit change is detected");
+	free (line);
+	free (output);
+	mu_assert_eq (r_reg_get_pack (reg, vector, 5, 64), 0x22, "display restores active arena");
+	PJ *pj = pj_new ();
+	free (r_debug_reg_list (&dbg, R_REG_TYPE_ALL, 0, pj, 'j', NULL));
+	RJson *json = r_json_parsedup (pj_string (pj));
+	mu_assert_streq (r_json_get (json, "vector")->str_value, current, "JSON uses the same wide value");
+	mu_assert_eq (strlen (r_json_get (json, "huge")->str_value), 514, "JSON preserves 2048 bits");
+	r_json_free (json);
+	pj_free (pj);
+	output = r_debug_reg_list (&dbg, R_REG_TYPE_FPU, 0, NULL, '=', NULL);
+	mu_assert_notnull (strstr (output, current), "column display retains full width");
+	mu_assert_true (strlen (output) > 514, "column display has no fixed value buffer");
+	free (output);
+	output = r_debug_reg_list (&dbg, R_REG_TYPE_FPU, 0, NULL, 'R', NULL);
+	mu_assert_notnull (strstr (output, "aer vector[5] = 0x0000000000000022\n"), "restore emits upper chunks");
+	mu_assert_notnull (strstr (output, "aer huge[31] = 0x0000000000000033\n"), "restore reaches the last SVE chunk");
+	free (output);
+	mu_assert_true (r_reg_set_pack (reg, vector, 5, 64, 0), "return to previous vector value");
+	mu_assert_true (r_reg_set_pack (reg, huge, 31, 64, 0), "return to previous SVE value");
+	mu_assert_streq_free (r_debug_reg_list (&dbg, R_REG_TYPE_FPU, 0, NULL, 'd', NULL), "", "unchanged wide registers are omitted");
+	r_unref (vector);
+	r_unref (huge);
+	r_reg_free (reg);
+	mu_end;
+}
+
 int all_tests(void) {
+	mu_run_test (test_r_debug_wide_reg_list);
 	mu_run_test (test_r_debug_use);
 	mu_run_test (test_gdb_reg_profile_parser);
 	mu_run_test (test_r2_gdb_remote_open);

@@ -93,14 +93,12 @@ static bool is_mandatory(RRegItem *item, const char *pcname, const char *spname)
 
 R_API R_OWNED char *r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, const char *use_color) {
 	R_RETURN_VAL_IF_FAIL (dbg && dbg->reg, NULL);
-	int delta, cols, n = 0;
-	const char *fmt, *fmt2, *kwhites;
+	int cols, n = 0;
+	const char *fmt, *fmt2;
 	RPrint *pr = NULL;
 	int colwidth = 20;
 	RListIter *iter;
 	RRegItem *item;
-	ut64 diff;
-	char strvalue[256];
 	bool isJson = tolower (rad) == 'j';
 	R_RETURN_VAL_IF_FAIL (!isJson || pj, NULL);
 
@@ -120,13 +118,11 @@ R_API R_OWNED char *r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, in
 	if (size == 64) {
 		fmt = "%s = %s%s";
 		fmt2 = "%s%6s%s %s%s";
-		kwhites = "         ";
 		colwidth = dbg->options.regcols? 30: 25;
 		cols = 3;
 	} else {
 		fmt = "%s = %s%s";
 		fmt2 = "%s%7s%s %s%s";
-		kwhites = "    ";
 		colwidth = 20;
 		cols = 4;
 	}
@@ -153,8 +149,6 @@ R_API R_OWNED char *r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, in
 	const char *spname = r_reg_alias_getname (dbg->reg, R_REG_ALIAS_SP);
 	bool isfirst = true;
 	r_list_foreach (list, iter, item) {
-		ut64 value;
-		utX valueBig;
 		if (type != -1 && is_mandatory (item, pcname, spname)) {
 			if (type != item->type && R_REG_TYPE_FLG != item->type) {
 				continue;
@@ -191,114 +185,118 @@ R_API R_OWNED char *r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, in
 				goto beach;
 			}
 		}
-		int regSize = item->size;
-		if (regSize < 80) {
+		ut64 value = 0, previous = 0;
+		char scalar[32];
+		char *wide = NULL, *oldwide = NULL;
+		const char *strvalue = scalar;
+		const bool compare = !isJson && (rad == 'd' || rad == 3 || use_color);
+		bool changed = false;
+		if (item->size <= 64) {
 			value = r_reg_get_value (dbg->reg, item);
-			r_reg_arena_swap (dbg->reg, false);
-			diff = r_reg_get_value (dbg->reg, item);
-			r_reg_arena_swap (dbg->reg, false);
-			delta = value - diff;
-			if (isJson) {
-				pj_kn (pj, item->name, value);
-			} else {
-				if (pr != NULL && pr->wide_offsets && R_SYS_BITS_CHECK (dbg->bits, 64)) {
-					snprintf (strvalue, sizeof (strvalue), "0x%016"PFMT64x, value);
-				} else {
-					snprintf (strvalue, sizeof (strvalue),"0x%08"PFMT64x, value);
-				}
+			if (compare) {
+				r_reg_arena_swap (dbg->reg, false);
+				previous = r_reg_get_value (dbg->reg, item);
+				r_reg_arena_swap (dbg->reg, false);
+				changed = value != previous;
 			}
+			const int width = pr && pr->wide_offsets && R_SYS_BITS_CHECK (dbg->bits, 64)? 16: 8;
+			snprintf (scalar, sizeof (scalar), "0x%0*"PFMT64x, width, value);
 		} else {
-			value = r_reg_get_value_big (dbg->reg, item, &valueBig);
-			switch (regSize) {
-			case 80:
-				snprintf (strvalue, sizeof (strvalue), "0x%04x%016"PFMT64x, valueBig.v80.High, valueBig.v80.Low);
-				break;
-			case 96:
-				snprintf (strvalue, sizeof (strvalue), "0x%08x%016"PFMT64x, valueBig.v96.High, valueBig.v96.Low);
-				break;
-			case 128:
-				snprintf (strvalue, sizeof (strvalue), "0x%016"PFMT64x"%016"PFMT64x, valueBig.v128.High, valueBig.v128.Low);
-				break;
-			case 256:
-				snprintf (strvalue, sizeof (strvalue), "0x%016"PFMT64x"%016"PFMT64x"%016"PFMT64x"%016"PFMT64x,
-						valueBig.v256.High.High, valueBig.v256.High.Low, valueBig.v256.Low.High, valueBig.v256.Low.Low);
-				break;
-			default:
-				snprintf (strvalue, sizeof (strvalue), "ERROR");
-				break;
+			wide = r_reg_get_value_hex (dbg->reg, item);
+			if (!wide) {
+				R_LOG_ERROR ("Cannot retrieve reg '%s' of %i bits", item->name, item->size);
+				continue;
 			}
-			if (isJson) {
-				pj_ks (pj, item->name, strvalue);
+			strvalue = wide;
+			if (compare) {
+				r_reg_arena_swap (dbg->reg, false);
+				oldwide = r_reg_get_value_hex (dbg->reg, item);
+				r_reg_arena_swap (dbg->reg, false);
+				changed = !oldwide || strcmp (wide, oldwide);
 			}
-			delta = 0; // TODO: calculate delta with big values.
 		}
 		itmidx++;
-
 		if (isJson) {
+			if (wide) {
+				pj_ks (pj, item->name, wide);
+			} else {
+				pj_kn (pj, item->name, value);
+			}
+			free (wide);
 			continue;
 		}
+
 		switch (rad) {
 		case '-':
 			r_strbuf_appendf (sb, "f-%s\n", item->name);
-			break;
-		case 'R':
-			r_strbuf_appendf (sb, "aer %s = %s\n", item->name, strvalue);
 			break;
 		case 1:
 		case '*':
 			r_strbuf_appendf (sb, "f %s %d %s\n", item->name, item->size / 8, strvalue);
 			break;
+		case 'R':
 		case 'e':
-			r_strbuf_appendf (sb, "%s%s,%s,:=", isfirst?"":",", strvalue, item->name);
-			isfirst = false;
+		case '.': {
+			int digits = strlen (strvalue + 2);
+			int chunk = 0;
+			while (digits > 0) {
+				const int count = R_MIN (16, digits);
+				digits -= count;
+				char suffix[32] = "";
+				if (wide) {
+					snprintf (suffix, sizeof (suffix), "[%d]", chunk++);
+				}
+				if (rad == 'e') {
+					r_strbuf_appendf (sb, "%s0x%.*s,%s%s,:=", isfirst? "": ",", count, strvalue + 2 + digits, item->name, suffix);
+					isfirst = false;
+				} else {
+					r_strbuf_appendf (sb, "%s %s%s%s0x%.*s\n", rad == 'R'? "aer": "dr", item->name, suffix,
+						rad == 'R'? " = ": "=", count, strvalue + 2 + digits);
+				}
+			}
 			break;
-		case '.':
-			r_strbuf_appendf (sb, "dr %s=%s\n", item->name, strvalue);
-			break;
+		}
 		case '=':
 			{
 				bool highlight = (use_color && pr && pr->cur_enabled && itmidx == pr->cur);
-				char whites[32], content[300];
+				char whites[32];
 				const char *a = "", *b = "";
 				if (highlight) {
 					a = Color_INVERT;
 					b = Color_INVERT_RESET;
 					dbg->creg = item->name;
 				}
-				strcpy (whites, kwhites);
-				if (delta && use_color) {
+				if (changed && use_color) {
 					r_strbuf_append (sb, use_color);
 				}
-				snprintf (content, sizeof (content),
-						fmt2, "", item->name, "", strvalue, "");
-				int len = colwidth - strlen (content);
-				if (len < 0) {
-					len = 0;
-				}
+				const size_t len = R_MAX (strlen (item->name), size == 64? 6: 7) + strlen (strvalue) + 1;
+				const size_t padding = len < colwidth? colwidth - len: 0;
 				memset (whites, ' ', sizeof (whites));
-				whites[len] = 0;
+				whites[padding] = 0;
 
 				r_strbuf_appendf (sb, fmt2, a, item->name, b, strvalue,
 						((n+1)%cols)? whites: "\n");
 				if (highlight) {
 					r_strbuf_append (sb, Color_INVERT_RESET);
 				}
-				if (delta && use_color) {
+				if (changed && use_color) {
 					r_strbuf_append (sb, Color_RESET);
 				}
 			}
 			break;
 		case 'd':
 		case 3:
-			if (delta) {
-				char woot[512];
-				snprintf (woot, sizeof (woot),
-						" was 0x%"PFMT64x" delta %d\n", diff, delta);
-				r_strbuf_appendf (sb, fmt, item->name, strvalue, woot);
+			if (changed) {
+				r_strbuf_appendf (sb, "%s = %s was ", item->name, strvalue);
+				if (wide) {
+					r_strbuf_appendf (sb, "%s\n", oldwide? oldwide: "unavailable");
+				} else {
+					r_strbuf_appendf (sb, "0x%"PFMT64x" delta %"PFMT64d"\n", previous, (st64)(value - previous));
+				}
 			}
 			break;
 		default:
-			if (delta && use_color) {
+			if (changed && use_color) {
 				r_strbuf_append (sb, use_color);
 				r_strbuf_appendf (sb, fmt, item->name, strvalue, Color_RESET"\n");
 			} else {
@@ -306,6 +304,8 @@ R_API R_OWNED char *r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, in
 			}
 			break;
 		}
+		free (oldwide);
+		free (wide);
 		n++;
 	}
 	if (rad == 'e') {

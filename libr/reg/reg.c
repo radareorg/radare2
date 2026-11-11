@@ -732,18 +732,16 @@ R_API RRegItem *r_reg_next_diff(RReg *reg, int type, const ut8 *buf, int buflen,
 	if (type < 0 || type > (R_REG_TYPE_LAST - 1)) {
 		return NULL;
 	}
-	RRegArena *arena = reg->regset[type].arena;
-	int prev_offset = prev_ri ? (prev_ri->offset / 8) + (prev_ri->size / 8) : 0;
+	const st64 prev_end = prev_ri? (st64)prev_ri->offset + prev_ri->size: 0;
 	RList *list = reg->regset[type].regs;
 	RRegItem *ri;
 	RListIter *iter;
-	int offset;
 	r_list_foreach (list, iter, ri) {
-		offset = ri->offset / 8;
-		if (offset >= prev_offset) {
-			if (memcmp (arena->bytes + offset, buf + offset, ri->size / 8)) {
-				return ri;
-			}
+		const int offset = ri->offset / 8;
+		RRegArena *arena = r_reg_value_arena (reg, ri);
+		if (arena && ri->offset >= prev_end && offset <= buflen && ri->size / 8 <= buflen - offset
+				&& memcmp (arena->bytes + offset, buf + offset, ri->size / 8)) {
+			return ri;
 		}
 	}
 	return NULL;
