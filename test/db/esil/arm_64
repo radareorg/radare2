@@ -5962,14 +5962,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=arm64 ESIL SVE CLZ CLS CNT REV RBIT stay unemulated
+NAME=arm64 ESIL SVE CLZ CLS CNT REV RBIT NEG FABS FNEG stay unemulated
 REQUIRE=cs5
 FILE=malloc://0x200
 ARGS=-a arm -b 64
 CMDS=<<EOF
-wx 20a0190420a0180420a01a04203838052040340520802705 # clz/cls/cnt z0.b, rev z0.b, rev p0.b, rbit z0.b
+wx 20a0190420a0180420a01a0420383805204034052080270500a01704ffbf5c04ffbf5d04 # clz/cls/cnt/rev/rbit/neg z0.b, rev p0.b, fabs/fneg z31.h
 e asm.esil=true
-ao 6~opcode:,esil:
+ao 9~opcode:,esil:
 EOF
 EXPECT=<<EOF
 opcode: clz z0.b, p0/m, z1.b
@@ -5978,17 +5978,20 @@ opcode: cnt z0.b, p0/m, z1.b
 opcode: rev z0.b, z1.b
 opcode: rev p0.b, p1.b
 opcode: rbit z0.b, p0/m, z1.b
+opcode: neg z0.b, p0/m, z0.b
+opcode: fabs z31.h, p7/m, z31.h
+opcode: fneg z31.h, p7/m, z31.h
 EOF
 RUN
 
-NAME=arm64 ESIL SVE CLZ CLS CNT REV RBIT stay unemulated (cs6)
+NAME=arm64 ESIL SVE CLZ CLS CNT REV RBIT NEG FABS FNEG stay unemulated (cs6)
 REQUIRE=cs6
 FILE=malloc://0x200
 ARGS=-a arm -b 64
 CMDS=<<EOF
-wx 20a0190420a0180420a01a04203838052040340520802705 # clz/cls/cnt z0.b, rev z0.b, rev p0.b, rbit z0.b
+wx 20a0190420a0180420a01a0420383805204034052080270500a01704ffbf5c04ffbf5d04 # clz/cls/cnt/rev/rbit/neg z0.b, rev p0.b, fabs/fneg z31.h
 e asm.esil=true
-ao 6~opcode:,esil:
+ao 9~opcode:,esil:
 EOF
 EXPECT=<<EOF
 opcode: clz z0.b, p0/m, z1.b
@@ -5997,5 +6000,8 @@ opcode: cnt z0.b, p0/m, z1.b
 opcode: rev z0.b, z1.b
 opcode: rev p0.b, p1.b
 opcode: rbit z0.b, p0/m, z1.b
+opcode: neg z0.b, p0/m, z0.b
+opcode: fabs z31.h, p7/m, z31.h
+opcode: fneg z31.h, p7/m, z31.h
 EOF
 RUN
