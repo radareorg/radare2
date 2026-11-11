@@ -2512,6 +2512,9 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	}
 	case ARM64_INS_FABS:
 	{
+		if (arm64_esil_sve_form (insn)) {
+			break;
+		}
 		cs_arm64_op dst = INSOP64 (0);
 		if (is_vector_op (&dst)) {
 			arm64_esil_vec_unary (op, handle, insn);
@@ -2526,6 +2529,9 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		break;
 	}
 	case ARM64_INS_FNEG:
+		if (arm64_esil_sve_form (insn)) {
+			break;
+		}
 		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,-F,D2F,%s,=",
 			REGBITS64 (1), REG64 (1), REG64 (0));
 		break;
@@ -3377,6 +3383,10 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		}
 		break;
 	case ARM64_INS_NEG:
+		if (arm64_esil_sve_form (insn)) {
+			break;
+		}
+		// fallthrough
 	case ARM64_INS_NEGS:
 		if (insn->id == ARM64_INS_NEGS) {
 			ARG64_APPEND (&op->esil, 1);
