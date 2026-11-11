@@ -11,3 +11,42 @@ EXPECT=<<EOF
 nop
 EOF
 RUN
+
+NAME=?em accepts a wide treemap
+FILE=malloc://64
+CMDS=<<EOF
+e scr.cols=5000
+e scr.rows=6
+?em 1~?
+EOF
+EXPECT=<<EOF
+3
+EOF
+RUN
+
+NAME=?em accepts a tall treemap
+FILE=malloc://64
+CMDS=<<EOF
+e scr.cols=8
+e scr.rows=10000
+?em 1~?
+EOF
+EXPECT=<<EOF
+5000
+EOF
+RUN
+
+NAME=?em small treemap
+FILE=malloc://64
+CMDS=<<EOF
+e scr.cols=6
+e scr.rows=6
+?em 1
+EOF
+EXPECT=<<EOF
++----+
+|1   |
++----+
+
+EOF
+RUN
