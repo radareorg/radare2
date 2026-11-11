@@ -24,13 +24,14 @@ static void drawBox(char **buffer, int width, int height, int x, int y, int w, i
 	if (x < 0 || y < 0 || x + w > width || y + h > height) {
 		return;
 	}
+	const size_t stride = (size_t)width + 1;
 	int i, j;
 	for (i = 0; i < h; i++) {
 		for (j = 0; j < w; j++) {
 			char ch = charat (i, j, w, h);
 			int gx = x + j;
 			int gy = y + i;
-			(*buffer)[gy *(width + 1) + gx] = ch;
+			(*buffer)[(size_t)gy * stride + gx] = ch;
 		}
 	}
 	if (text && w >= MIN_BOX_WIDTH && h >= MIN_BOX_HEIGHT) {
@@ -41,7 +42,7 @@ static void drawBox(char **buffer, int width, int height, int x, int y, int w, i
 		if (len > maxlen) {
 			len = maxlen;
 		}
-		memcpy (*buffer + ty * (width + 1) + tx, text, len);
+		memcpy (*buffer + (size_t)ty * stride + tx, text, len);
 	}
 }
 
@@ -128,18 +129,24 @@ static void treemapRecurse(char **buffer, int width, int height, int x, int y, i
 
 R_API char *r_print_treemap(int n, const ut32 *values, const char **labels, int width, int height) {
 	R_RETURN_VAL_IF_FAIL (n > 0 && values, NULL);
-	if (n < 1 || width < 1 || height < 1 || width > 0x1000 || height > 0x1000) {
+	if (n < 1 || width < 1 || height < 1) {
 		return NULL;
 	}
-	char *buf = calloc (1, (size_t)(width + 1) * height + 1);
+	size_t stride, size;
+	if (r_add_overflow_size_t ((size_t)width, 1, &stride)
+			|| r_mul_overflow_size_t (stride, (size_t)height, &size)
+			|| r_add_overflow_size_t (size, 1, &size)) {
+		return NULL;
+	}
+	char *buf = calloc (1, size);
 	if (!buf) {
 		return NULL;
 	}
 	int i;
 	for (i = 0; i < height; i++) {
-		const size_t w1 = width + 1;
-		memset (buf + (i * w1), ' ', width);
-		buf[(i * w1) + width] = '\n';
+		const size_t offset = (size_t)i * stride;
+		memset (buf + offset, ' ', width);
+		buf[offset + width] = '\n';
 	}
 	ut64 total = 0;
 	for (i = 0; i < n; i++) {
