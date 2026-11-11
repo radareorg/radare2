@@ -714,8 +714,20 @@ static bool cb_asmcpu(void *user, void *data) {
 		free (node->value);
 		node->value = cpu;
 	}
+	const char *old_cpu = r_str_get (core->rasm->config->cpu);
+	const bool sve_profile_changed = ap && !strcmp (ap->meta.name, "arm")
+		&& core->anal->config->bits == 64 && strcmp (old_cpu, node->value)
+		&& (r_str_startswith (old_cpu, "sve") || r_str_startswith (node->value, "sve"));
 	r_core_esil_unload_arch (core);
 	r_arch_config_set_cpu (core->rasm->config, node->value);
+	if (sve_profile_changed && !r_config_get_b (core->config, "cfg.debug")) {
+		char *profile = r_anal_get_reg_profile (core->anal);
+		if (profile && strcmp (r_str_get (core->anal->reg->reg_profile_str), profile)) {
+			(void)r_anal_set_reg_profile (core->anal, profile);
+			r_list_purge (&core->esil.sb.list);
+		}
+		free (profile);
+	}
 	r_core_esil_load_arch (core);
 	const int v = r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN);
 	if (v >= 0) {
