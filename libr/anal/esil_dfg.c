@@ -203,24 +203,24 @@ static int _rv_ins_cmp(void *incoming, void *in, void *user) {
 	return rv_incoming->from - rv_in->from;
 }
 
-static const char *edf_reg_resolve(RAnalEsilDFG *dfg, const char *reg, EsilDFGVar *rv) {
+static RRegItem *edf_reg_resolve(RAnalEsilDFG *dfg, const char *reg, EsilDFGVar *rv) {
 	RRegItem *ri = r_reg_get (dfg->reg, reg, -1);
 	if (!ri) {
 		return NULL;
 	}
 	rv->from = ri->offset;
 	rv->to = ri->offset + ri->size - 1;
-	const char *name = ri->name;
-	r_unref (ri);
-	return name;
+	return ri;
 }
 
 static bool _edf_reg_set(RAnalEsilDFG *dfg, const char *reg, RGraphNode *node) {
 	R_RETURN_VAL_IF_FAIL (dfg && !dfg->malloc_failed && reg, false);
 	EsilDFGVar range = {0};
-	if (!edf_reg_resolve (dfg, reg, &range)) {
+	RRegItem *ri = edf_reg_resolve (dfg, reg, &range);
+	if (!ri) {
 		return false;
 	}
+	r_unref (ri);
 	EsilDFGVar *rv = R_NEWCOPY (EsilDFGVar, &range);
 	r_queue_enqueue (dfg->todo, rv);
 	while (!r_queue_is_empty (dfg->todo) && !dfg->malloc_failed) {
@@ -377,14 +377,16 @@ static int _rv_find_cmp(void *incoming, void *in, void *user) {
 static RGraphNode *_edf_origin_reg_get(RAnalEsilDFG *dfg, const char *reg) {
 	R_RETURN_VAL_IF_FAIL (dfg && reg, NULL);
 	EsilDFGVar rv;
-	reg = edf_reg_resolve (dfg, reg, &rv);
-	if (!reg) {
+	RRegItem *ri = edf_reg_resolve (dfg, reg, &rv);
+	if (!ri) {
 		return NULL;
 	}
+	reg = ri->name;
 	char *origin_reg = r_str_newf ("ori.%s", reg);
 	RGraphNode *origin_reg_node = sdb_ptr_get (dfg->regs, origin_reg, 0);
 	if (origin_reg_node) {
 		free (origin_reg);
+		r_unref (ri);
 		return origin_reg_node;
 	}
 	RGraphNode *reg_node = r_graph_add_node (dfg->flow, r_anal_esil_dfg_node_new (dfg, reg));
@@ -395,20 +397,23 @@ static RGraphNode *_edf_origin_reg_get(RAnalEsilDFG *dfg, const char *reg) {
 	r_graph_add_edge (dfg->flow, reg_node, origin_reg_node);
 	sdb_ptr_set (dfg->regs, origin_reg, origin_reg_node, 0);
 	free (origin_reg);
+	r_unref (ri);
 	return origin_reg_node;
 }
 
 static RGraphNode *_edf_reg_get(RAnalEsilDFG *dfg, const char *reg) {
 	R_RETURN_VAL_IF_FAIL (dfg && reg, NULL);
 	EsilDFGVar range = {0};
-	reg = edf_reg_resolve (dfg, reg, &range);
-	if (!reg) {
+	RRegItem *ri = edf_reg_resolve (dfg, reg, &range);
+	if (!ri) {
 		return NULL;
 	}
+	reg = ri->name;
 	EsilDFGVar *rv = R_NEWCOPY (EsilDFGVar, &range);
 	RQueue *parts = r_queue_new (8);
 	if (!parts) {
 		free (rv);
+		r_unref (ri);
 		return NULL;
 	}
 	r_queue_enqueue (dfg->todo, rv);
@@ -494,6 +499,7 @@ static RGraphNode *_edf_reg_get(RAnalEsilDFG *dfg, const char *reg) {
 	}
 beach:
 	r_queue_free (parts);
+	r_unref (ri);
 	return reg_node;
 }
 
@@ -2172,9 +2178,11 @@ R_API RStrBuf *r_anal_esil_dfg_filter_expr(RAnal *anal, const char *expr, const 
 R_API bool r_anal_esil_dfg_reg_is_const(RAnalEsilDFG *dfg, const char *reg) {
 	R_RETURN_VAL_IF_FAIL (dfg && reg, false);
 	EsilDFGVar range = {0};
-	if (!edf_reg_resolve (dfg, reg, &range)) {
+	RRegItem *ri = edf_reg_resolve (dfg, reg, &range);
+	if (!ri) {
 		return false;
 	}
+	r_unref (ri);
 	EsilDFGVar *rv = R_NEWCOPY (EsilDFGVar, &range);
 	r_queue_enqueue (dfg->todo, rv);
 

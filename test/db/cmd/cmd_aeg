@@ -36,6 +36,18 @@ EOF
 RUN
 
 NAME=aeg 16 byte memory write
+FILE=--
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aeg xmm0,rdi,=[16]~generative,mem_var
+EOF
+EXPECT=<<EOF
+          | generative:xmm0,rdi,=[16] |
+         | [16]@<rdi:var_5>:mem_var_8 |
+EOF
+RUN
+
+NAME=aeg vector memory write keeps both register chunks
 FILE=malloc://64
 ARGS=-w -a x86 -b 64
 CMDS=<<EOF
@@ -43,8 +55,43 @@ wx 0f1107
 aeg~generative,mem_var
 EOF
 EXPECT=<<EOF
-          | generative:xmm0,rdi,=[16] |
-         | [16]@<rdi:var_5>:mem_var_8 |
+                                | generative:0,rdi,+ |                    |    | generative:8,rdi,+ |    |
+                                        | generative:xmm0[0],result_8,=[8] |    | generative:xmm0[1],result_19,=[8] |
+                                            | [8]@<result_8>:mem_var_14 |          | [8]@<result_19>:mem_var_25 |
+EOF
+RUN
+
+NAME=aegf resolves indexed registers and overlapping vector aliases
+FILE=--
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aegf xmm1[1],xmm0[1],= xmm0[1]
+aegf xmm1[1],xmm0[1],= xmm0
+aegf 1,xmm0[0],=,2,xmm0[1],= xmm0[0]
+aegf 1,xmm0[0],=,2,xmm0[1],= xmm0[1]
+aegf 1,xmm0[0],=,2,xmm0[1],= xmm0
+aegf 1,ymm0[3],=,2,zmm0[3],= ymm0[3]
+EOF
+EXPECT=<<EOF
+xmm1[1],xmm0[1],=
+xmm1[1],xmm0[1],=
+1,xmm0[0],=
+2,xmm0[1],=
+1,xmm0[0],=,2,xmm0[1],=
+2,zmm0[3],=
+EOF
+RUN
+
+NAME=aegf resolves indexed vbank registers and fixed aliases
+FILE=--
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aegf z1[1],z0[1],= q0h
+aegf z1[1],q0h,= z0[1]
+EOF
+EXPECT=<<EOF
+z1[1],z0[1],=
+z1[1],q0h,=
 EOF
 RUN
 
