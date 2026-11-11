@@ -359,27 +359,44 @@ static int _server_handle_qsThreadInfo(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, 
 	return 0;
 }
 
+static int server_read_registers(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr, const char *cmd, size_t size) {
+	if (size > INT_MAX - 4) {
+		return send_msg (g, "E01");
+	}
+	if (size + 4 > g->send_max) {
+		char *buf = realloc (g->send_buff, size + 4);
+		if (!buf) {
+			return send_msg (g, "E01");
+		}
+		g->send_buff = buf;
+		g->send_max = size + 4;
+	}
+	char *buf = calloc (1, size);
+	if (!buf) {
+		return send_msg (g, "E01");
+	}
+	int len = cmd_cb (g, core_ptr, cmd, buf, size);
+	int ret = send_msg (g, len < 0 || len >= size? "E01": buf);
+	free (buf);
+	return ret;
+}
+
 static int _server_handle_g(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
-	char *buf;
-	// To be very safe
-	int buf_len = 4096;
-	int ret;
 	if (send_ack (g) < 0) {
 		return -1;
 	}
-	if (!(buf = malloc (buf_len))) {
-		send_msg (g, "E01");
-		return -1;
+	if (!g->registers) {
+		return send_msg (g, "E01");
 	}
-	memset (buf, 0, buf_len);
-	if ((buf_len = cmd_cb (g, core_ptr, "dr", buf, buf_len)) < 0) {
-		free (buf);
-		send_msg (g, "E01");
-		return -1;
+	size_t size = 1;
+	gdb_reg_t *reg;
+	for (reg = g->registers; *reg->name; reg++) {
+		if (!reg->size || (reg->size & 7) || reg->size / 4 > INT_MAX - size) {
+			return send_msg (g, "E01");
+		}
+		size += reg->size / 4;
 	}
-	ret = send_msg (g, buf);
-	free (buf);
-	return ret;
+	return server_read_registers (g, cmd_cb, core_ptr, "dr", size);
 }
 
 static int _server_handle_m(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
@@ -410,7 +427,7 @@ static int _server_handle_m(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 
 // Read register number
 static int _server_handle_p(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
-	char message[128] = {0}, cmd[128] = { 0 };
+	char cmd[128];
 	int regnum, i;
 	if (send_ack (g) < 0) {
 		return -1;
@@ -432,11 +449,11 @@ static int _server_handle_p(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 		send_msg (g, "E01");
 		return -1;
 	}
-	if (cmd_cb (g, core_ptr, cmd, message, sizeof (message)) < 0) {
-		send_msg (g, "E01");
-		return -1;
+	const ut64 size = g->registers[regnum].size;
+	if (!*g->registers[regnum].name || !size || (size & 7) || size / 4 > INT_MAX - 1) {
+		return send_msg (g, "E01");
 	}
-	return send_msg (g, message);
+	return server_read_registers (g, cmd_cb, core_ptr, cmd, size / 4 + 1);
 }
 
 // Write register number

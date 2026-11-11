@@ -263,108 +263,7 @@ static const char *rtr_proto_tostring(int proto) {
 #include "rtr_http.inc.c"
 #include "rtr_shell.inc.c"
 
-static int write_reg_val(char *buf, ut64 sz, ut64 reg, int regsize, bool bigendian) {
-	if (!bigendian) {
-		switch (regsize) {
-		case 2:
-			reg = r_swap_ut16 (reg);
-			break;
-		case 4:
-			reg = r_swap_ut32 (reg);
-			break;
-		case 8:
-			reg = r_swap_ut64 (reg);
-			break;
-		default:
-			R_LOG_ERROR ("Unsupported reg size: %d", regsize);
-			return -1;
-		}
-	}
-	return snprintf (buf, sz, regsize == 2 ? "%04"PFMT64x
-			 : regsize == 4 ? "%08"PFMT64x : "%016"PFMT64x, reg);
-}
-
-static int write_big_reg(char *buf, ut64 sz, const utX *val, int regsize, bool bigendian) {
-	switch (regsize) {
-	case 10:
-		if (bigendian) {
-			return snprintf (buf, sz,
-					 "%04x%016"PFMT64x, val->v80.High,
-					 val->v80.Low);
-		}
-		return snprintf (buf, sz,
-				 "%016"PFMT64x"%04x", r_swap_ut64 (val->v80.Low),
-				 r_swap_ut16 (val->v80.High));
-	case 12:
-		if (bigendian) {
-			return snprintf (buf, sz,
-					 "%08"PFMT32x"%016"PFMT64x, val->v96.High,
-					 val->v96.Low);
-		}
-		return snprintf (buf, sz,
-				 "%016"PFMT64x"%08"PFMT32x, r_swap_ut64 (val->v96.Low),
-				 r_swap_ut32 (val->v96.High));
-	case 16:
-		if (bigendian) {
-			return snprintf (buf, sz,
-					 "%016"PFMT64x"%016"PFMT64x, val->v128.High,
-					 val->v128.Low);
-		}
-		return snprintf (buf, sz,
-				 "%016"PFMT64x"%016"PFMT64x,
-				 r_swap_ut64 (val->v128.Low),
-				 r_swap_ut64 (val->v128.High));
-	default:
-		R_LOG_ERROR ("big registers (%d byte(s)) not yet supported", regsize);
-		return -1;
-	}
-}
-
-static int swap_big_regs(char *dest, ut64 sz, const char *src, int regsz) {
-	utX val;
-	char sdup[128] = {0};
-	if (!src || !src[0] || !src[1]) {
-		return -1;
-	}
-	strncpy (sdup, src + 2, sizeof (sdup) - 1);
-	int len = strlen (sdup);
-	memset (&val, 0, sizeof (val));
-	switch (regsz) {
-	case 10:
-		if (len <= 4) {
-			val.v80.High = (ut16) strtoul (sdup, NULL, 16);
-		} else {
-			val.v80.High = (ut16) strtoul (sdup + (len - 4), NULL, 16);
-			sdup[len - 4] = '\0';
-			val.v80.Low = (ut64) strtoull (sdup, NULL, 16);
-		}
-		return snprintf (dest, sz, "0x%04x%016"PFMT64x,
-				 val.v80.High, val.v80.Low);
-	case 12:
-		if (len <= 8) {
-			val.v96.High = (ut32) strtoul (sdup, NULL, 16);
-		} else {
-			val.v96.High = (ut32) strtoul (sdup + (len - 8), NULL, 16);
-			sdup[len - 8] = '\0';
-			val.v96.Low = (ut64) strtoull (sdup, NULL, 16);
-		}
-		return snprintf (dest, sz, "0x%08x%016"PFMT64x,
-				 val.v96.High, val.v96.Low);
-	case 16:
-		if (len <= 16) {
-			val.v128.High = (ut64) strtoul (sdup, NULL, 16);
-		} else {
-			val.v128.High = (ut64) strtoul (sdup + (len - 16), NULL, 16);
-			sdup[len - 16] = '\0';
-			val.v128.Low = (ut64) strtoull (sdup, NULL, 16);
-		}
-		return snprintf (dest, sz, "0x%016"PFMT64x"%016"PFMT64x,
-				 val.v128.High, val.v128.Low);
-	default:
-		R_LOG_ERROR ("big registers (%d byte(s)) not yet supported", regsz);
-		return -1;
-	}
-}
+#include "rtr_gdb.inc.c"
 
 // Handle the gdb 'm' (read memory) command: "m<addr>,<len>".
 // The client-requested length is clamped to the output buffer size to avoid
@@ -389,11 +288,6 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 	int ret;
 	RList *list;
 	RListIter *iter;
-	gdb_reg_t *gdb_reg;
-	RRegItem *r;
-	utX val_big;
-	ut64 reg_val;
-	bool be;
 	RDebugPid *dbgpid;
 	if (!core_ptr || !cmd) {
 		return -1;
@@ -468,86 +362,7 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 			}
 			break;
 		case 'r': // dr
-			r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false);
-			be = r_config_get_b (core->config, "cfg.bigendian");
-			if (isspace ((ut8)cmd[2])) { // dr reg
-				const char *name, *val_ptr;
-				char new_cmd[128] = {0};
-				int off = 0;
-				name = cmd + 3;
-				// Temporarily using new_cmd to store reg name
-				if ((val_ptr = strchr (name, '='))) {
-					strncpy (new_cmd, name, R_MIN (val_ptr - name, sizeof (new_cmd) - 1));
-				} else {
-					strncpy (new_cmd, name, sizeof (new_cmd) - 1);
-				}
-				if (!(r = r_reg_get (core->dbg->reg, new_cmd, -1))) {
-					return -1;
-				}
-				if (val_ptr) { // dr reg=val
-					val_ptr++;
-					off = val_ptr - cmd;
-					if (be) {
-						// We don't need to swap
-						r_core_cmd (core, cmd, 0);
-					}
-					// Previous contents are overwritten, since len(name) < off
-					strncpy (new_cmd, cmd, off);
-					if (r->size <= 64) {
-						reg_val = strtoll (val_ptr, NULL, 16);
-						if (write_reg_val (new_cmd + off, sizeof (new_cmd) - off - 1,
-								   reg_val, r->size / 8, be) < 0) {
-							return -1;
-						}
-						return r_core_cmd (core, new_cmd, 0);
-					}
-					// Big registers
-					if (swap_big_regs (new_cmd + off, sizeof (new_cmd) - off - 1,
-							   val_ptr, r->size / 8) < 0) {
-						return -1;
-					}
-					return r_core_cmd (core, new_cmd, 0);
-				}
-				if (r->size <= 64) {
-					reg_val = r_reg_get_value (core->dbg->reg, r);
-					return write_reg_val (out_buf, max_len - 1,
-							      reg_val, r->size / 8, be);
-				}
-				r_reg_get_value_big (core->dbg->reg,
-						     r, &val_big);
-				return write_big_reg (out_buf, max_len - 1,
-						      &val_big, r->size / 8, be);
-			}
-			// dr - Print all registers
-			ret = 0;
-			if (!(gdb_reg = g->registers)) {
-				return -1;
-			}
-			while (*gdb_reg->name) {
-				if (ret + gdb_reg->size * 2 >= max_len - 1) {
-					return -1;
-				}
-				if (gdb_reg->size <= 8) {
-					reg_val = r_reg_getv (core->dbg->reg, gdb_reg->name);
-					if (write_reg_val (out_buf + ret,
-							   gdb_reg->size * 2 + 1,
-							   reg_val, gdb_reg->size, be) < 0) {
-						return -1;
-					}
-				} else {
-					r_reg_get_value_big (core->dbg->reg,
-							     r_reg_get (core->dbg->reg, gdb_reg->name, -1),
-							     &val_big);
-					if (write_big_reg (out_buf + ret, gdb_reg->size * 2 + 1,
-							   &val_big, gdb_reg->size, be) < 0) {
-						return -1;
-					}
-				}
-				ret += gdb_reg->size * 2;
-				gdb_reg++;
-			}
-			out_buf[ret] = '\0';
-			return ret;
+			return gdb_cmd_reg (core->dbg, g->registers, cmd + 2, out_buf, max_len);
 		default:
 			return r_core_cmd (core, cmd, 0);
 		}

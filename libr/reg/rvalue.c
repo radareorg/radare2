@@ -3,37 +3,61 @@
 #include <r_reg.h>
 #include <r_util.h>
 
-R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
-	R_RETURN_VAL_IF_FAIL (reg && item && val, 0);
+R_API R_OWNED char *r_reg_get_value_hex(RReg *reg, RRegItem *item) {
+	R_RETURN_VAL_IF_FAIL (reg && item, NULL);
 	RRegArena *arena = r_reg_value_arena (reg, item);
-	if (!arena) {
-		return 0;
+	size_t len;
+	if (!arena || r_add_overflow_size_t (item->size / 4, 3, &len)) {
+		return NULL;
 	}
-	const ut8 *bytes = arena->bytes + item->offset / 8;
+	const int size = item->size / 8;
+	char *hex = malloc (len);
+	if (hex) {
+		const bool be = (reg->endian & R_SYS_ENDIAN_BIG) == R_SYS_ENDIAN_BIG;
+		const ut8 *bytes = arena->bytes + item->offset / 8;
+		hex[0] = '0';
+		hex[1] = 'x';
+		int i;
+		for (i = 0; i < size; i++) {
+			r_hex_from_byte (hex + 2 + (size - i - 1) * 2, bytes[r_reg_value_byte_offset (i, size, be)]);
+		}
+		hex[size * 2 + 2] = 0;
+	}
+	return hex;
+}
+
+// Accept an unsigned hexadecimal integer, zero-extended to the register width.
+R_API bool r_reg_set_value_hex(RReg *reg, RRegItem *item, const char *hex) {
+	R_RETURN_VAL_IF_FAIL (reg && item && hex, false);
+	if (!r_reg_value_arena (reg, item)) {
+		return false;
+	}
+	if (hex[0] == '0' && (hex[1] == 'x' || hex[1] == 'X')) {
+		hex += 2;
+	}
+	const int size = item->size / 8;
+	const size_t digits = strlen (hex);
+	if (!digits || digits > size * 2) {
+		return false;
+	}
+	ut8 *bytes = calloc (1, size);
+	if (!bytes) {
+		return false;
+	}
 	const bool be = (reg->endian & R_SYS_ENDIAN_BIG) == R_SYS_ENDIAN_BIG;
-	switch (item->size) {
-	case 80:
-		val->v80.Low = r_read_le64 (bytes);
-		val->v80.High = r_read_le16 (bytes + 8);
-		return val->v80.Low;
-	case 96:
-		val->v96.Low = r_read_le64 (bytes);
-		val->v96.High = r_read_le32 (bytes + 8);
-		return val->v96.Low;
-	case 128:
-		val->v128.Low = r_read_ble64 (bytes, be);
-		val->v128.High = r_read_ble64 (bytes + 8, be);
-		return val->v128.Low;
-	case 256:
-		val->v256.Low.Low = r_read_ble64 (bytes, be);
-		val->v256.Low.High = r_read_ble64 (bytes + 8, be);
-		val->v256.High.Low = r_read_ble64 (bytes + 16, be);
-		val->v256.High.High = r_read_ble64 (bytes + 24, be);
-		return val->v256.Low.Low;
-	default:
-		R_LOG_WARN ("Bit size %d not supported", item->size);
-		return 0;
+	bool ok = true;
+	size_t i;
+	for (i = 0; i < digits; i++) {
+		ut8 nibble = 0;
+		if (!r_hex_to_byte (&nibble, hex[digits - i - 1])) {
+			ok = false;
+			break;
+		}
+		bytes[r_reg_value_byte_offset (i / 2, size, be)] |= nibble << ((i & 1) * 4);
 	}
+	ok = ok && r_reg_set_value_bytes (reg, item, bytes, size);
+	free (bytes);
+	return ok;
 }
 
 static ut64 reg_read_bytes(const ut8 *bytes, int count, bool be) {

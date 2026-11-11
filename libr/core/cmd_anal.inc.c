@@ -1167,6 +1167,7 @@ static RCoreHelpMessage help_msg_ar = {
 	"ar", " 32", "show 32 bit registers",
 	"ar", " all", "show all bit registers",
 	"ar", " <type>", "show all registers of given type",
+	"ar", " <reg>=<value>", "set register value (wide registers accept hex literals)",
 	"arC", "", "display register profile comments",
 	"arr", "", "show register references (telescoping)",
 	"arrj", "", "show register references (telescoping) in JSON format",
@@ -7942,12 +7943,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	case ' ': { // "ar "
 		arg = strchr (str + 1, '=');
 		if (arg) {
-			ut64 n = r_num_math (core->num, arg + 1);
-			char *regname = r_str_trim_ndup (str + 1, arg - str - 1);
-			if (!reg_name_role_set (core, regname, n)) {
-				R_LOG_ERROR ("ar: Unknown register '%s'", regname);
-			}
-			free (regname);
+			cmd_reg_set (core, core->anal->reg, str + 1, false);
 			return;
 		}
 		char name[32];

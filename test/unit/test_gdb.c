@@ -3,7 +3,63 @@
 #include <gdbclient/responses.h>
 #include <gdbclient/xml.h>
 #include <gdbr_common.h>
+#include <gdbserver/core.h>
 #include "minunit.h"
+#include "../../libr/core/rtr_gdb.inc.c"
+
+static bool test_gdb_server_register_values(void) {
+	const int widths[] = { 8, 16, 24, 32, 64, 80, 96, 128, 256, 384, 512, 2048 };
+	RDebug *dbg = r_debug_new (false);
+	int endian, width, i;
+	for (endian = 0; endian < 2; endian++) {
+		for (width = 0; width < R_ARRAY_SIZE (widths); width++) {
+			const int size = widths[width] / 8;
+			char *profile = r_str_newf ("gpr before .64 0 0\nfpu wide .%d 8 0\nfpu after .64 %d 0\n", widths[width], size + 8);
+			mu_assert_true (r_reg_set_profile_string (dbg->reg, profile), "server register profile");
+			free (profile);
+			dbg->reg->endian = endian? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE;
+			gdb_reg_t registers[] = { { .name = "wide", .size = widths[width] }, { .name = "after", .size = 64 }, {0} };
+			ut8 bytes[256], actual[256];
+			for (i = 0; i < size; i++) {
+				bytes[i] = i + 1;
+			}
+			char *hex = r_hex_bin2strdup (bytes, size);
+			char *cmd = r_str_newf (" wide=0x%s", hex);
+			mu_assert_eq (gdb_cmd_reg (dbg, registers, cmd, NULL, 0), 0, "write raw target bytes");
+			free (cmd);
+			RRegItem *item = r_reg_get (dbg->reg, "wide", R_REG_TYPE_ALL);
+			mu_assert_true (r_reg_get_value_bytes (dbg->reg, item, actual, size), "read back register storage");
+			mu_assert_memeq (actual, bytes, size, "wire preserves target byte layout");
+			char output[530];
+			mu_assert_eq (gdb_cmd_reg (dbg, registers, " wide", output, size * 2 + 1), size * 2, "exact output buffer including terminator");
+			mu_assert_streq (output, hex, "single register packet");
+			mu_assert_eq (gdb_cmd_reg (dbg, registers, " wide", output, size * 2), -1, "reject short output buffer");
+			mu_assert_eq (gdb_cmd_reg (dbg, registers, " wide=0x", NULL, 0), -1, "reject short input");
+			cmd = r_str_newf (" wide=0x%s00", hex);
+			mu_assert_eq (gdb_cmd_reg (dbg, registers, cmd, NULL, 0), -1, "reject oversized input");
+			cmd[strlen (cmd) - 2] = 0;
+			cmd[8] = 'z';
+			mu_assert_eq (gdb_cmd_reg (dbg, registers, cmd, NULL, 0), -1, "reject invalid input");
+			free (cmd);
+			mu_assert_eq (gdb_cmd_reg (dbg, registers, "", output, sizeof (output)), size * 2 + 16, "all-register packet length");
+			char *expected = r_str_newf ("%s0000000000000000", hex);
+			mu_assert_streq_free (expected, output, "all-register bytes and untouched neighbor");
+			free (hex);
+			r_unref (item);
+		}
+		mu_assert_true (r_reg_set_profile_string (dbg->reg, "gpr small .16 0 0\ngpr large .64 8 0\n"), "scalar width differences");
+		gdb_reg_t registers[] = { { .name = "small", .size = 32 }, { .name = "large", .size = 32 }, {0} };
+		r_reg_setv (dbg->reg, "small", 0x1234);
+		r_reg_setv (dbg->reg, "large", 0x1122334455667788ULL);
+		char output[17];
+		mu_assert_eq (gdb_cmd_reg (dbg, registers, "", output, sizeof (output)), 16, "scalar wire widths");
+		mu_assert_streq (output, endian? "0000123455667788": "3412000088776655", "scalar padding and truncation");
+		mu_assert_eq (gdb_cmd_reg (dbg, registers, " large=0x12345678", NULL, 0), 0, "write narrower scalar packet");
+		mu_assert_eq (r_reg_getv (dbg->reg, "large"), endian? 0x12345678: 0x78563412, "scalar write zero-extends");
+	}
+	r_debug_free (dbg);
+	mu_end;
+}
 
 #if R2__UNIX__ && !__wasi__
 #include <arpa/inet.h>
@@ -104,6 +160,67 @@ static char *stub_recv(int fd) {
 	}
 	r_strbuf_free (sb);
 	return NULL;
+}
+
+typedef struct {
+	libgdbr_t g;
+	RDebug *dbg;
+} RegisterServer;
+
+static int register_server_cmd(libgdbr_t *g, void *user, const char *cmd, char *out, size_t size) {
+	return r_str_startswith (cmd, "dr")? gdb_cmd_reg (user, g->registers, cmd + 2, out, size): -1;
+}
+
+static RThreadFunctionRet register_server_run(RThread *th) {
+	RegisterServer *server = th->user;
+	gdbr_server_serve (&server->g, register_server_cmd, server->dbg);
+	return R_TH_STOP;
+}
+
+static bool test_gdb_server_wide_packets(void) {
+	const int widths[] = { 512, 2048 };
+	int width, i;
+	for (width = 0; width < R_ARRAY_SIZE (widths); width++) {
+		RegisterServer server = {0};
+		server.dbg = r_debug_new (false);
+		mu_assert_eq (gdbr_init (&server.g, true), 0, "initialize GDB server");
+		RStrBuf *profile = r_strbuf_new ("");
+		RStrBuf *expected = r_strbuf_new ("");
+		char *hex = r_str_pad (NULL, 0, 'a', widths[width] / 4);
+		for (i = 0; hex[i]; i++) {
+			hex[i] = "0123456789abcdef"[i & 15];
+		}
+		for (i = 0; i < 9; i++) {
+			r_strbuf_appendf (profile, "fpu v%d .%d 0 0\n", i, widths[width]);
+			r_strbuf_append (expected, hex);
+		}
+		mu_assert_true (r_reg_set_profile_string (server.dbg->reg, r_strbuf_get (profile)), "server storage profile");
+		mu_assert_eq (gdbr_set_reg_profile (&server.g, r_strbuf_get (profile)), 0, "server packet profile");
+		int fds[2];
+		mu_assert_eq (socketpair (AF_UNIX, SOCK_STREAM, 0, fds), 0, "server socket pair");
+		server.g.sock->fd = fds[0];
+		server.g.no_ack = true;
+		RThread *thread = r_th_new (register_server_run, &server, 0);
+		r_th_start (thread);
+		char *packet = r_str_newf ("P0=%s", hex);
+		mu_assert_true (send_response (fds[1], packet), "send wide register write");
+		free (packet);
+		mu_assert_streq_free (stub_recv (fds[1]), "OK", "accept wide register packet");
+		mu_assert_true (send_response (fds[1], "p0"), "request wide register");
+		mu_assert_streq_free (stub_recv (fds[1]), hex, "complete single-register reply");
+		mu_assert_true (send_response (fds[1], "g"), "request all registers");
+		mu_assert_streq_free (stub_recv (fds[1]), r_strbuf_get (expected), "complete reply beyond old fixed buffer");
+		mu_assert_true (send_response (fds[1], "k"), "stop server");
+		r_th_wait (thread);
+		r_th_free (thread);
+		gdbr_cleanup (&server.g);
+		close (fds[1]);
+		r_debug_free (server.dbg);
+		r_strbuf_free (profile);
+		r_strbuf_free (expected);
+		free (hex);
+	}
+	mu_end;
 }
 
 static RThreadFunctionRet stub_run(RThread *th) {
@@ -711,7 +828,9 @@ static bool test_gdb_io_monitor_output(void) {
 #endif
 
 int main(int argc, char **argv) {
+	mu_run_test (test_gdb_server_register_values);
 #if R2__UNIX__ && !__wasi__
+	mu_run_test (test_gdb_server_wide_packets);
 	mu_run_test (test_gdb_processes_xml);
 	mu_run_test (test_gdb_monitor_output);
 	mu_run_test (test_gdb_gdbserver_reads_g);

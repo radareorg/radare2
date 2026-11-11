@@ -84,12 +84,6 @@ typedef struct _ut256 {
 	ut128 Low;
 	ut128 High;
 } ut256;
-typedef struct _utX {
-	ut80 v80;
-	ut96 v96;
-	ut128 v128;
-	ut256 v256;
-} utX;
 
 #include <stdbool.h>
 

@@ -209,7 +209,7 @@ static bool syscall_handle_stop(RDebug *dbg, int tid) {
 		syscall_run_cmd (dbg, "cmd.syscall.enter");
 		if (syscall_fasttime_enabled (dbg)) {
 			bool err = false;
-			int syscall_num = (int)r_debug_reg_get_err (dbg, "SN", &err, NULL);
+			int syscall_num = (int)r_debug_reg_get_err (dbg, "SN", &err);
 			if (!err) {
 				syscall_fasttime_enter (dbg, core->sdb, tid, syscall_num);
 			}

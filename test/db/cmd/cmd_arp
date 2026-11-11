@@ -668,6 +668,7 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 WARN: RRegSetOverflow 145 vs 8
+ERROR: Cannot set register 'zf'
 EOF
 RUN
 

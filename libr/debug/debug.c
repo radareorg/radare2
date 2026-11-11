@@ -347,7 +347,7 @@ static const char *str_callback(RNum *userptr, ut64 off, bool *ok) {
 static ut64 num_callback(RNum *userptr, const char *str, bool *ok) {
 	RDebug *dbg = (RDebug *)userptr;
 	// resolve using regnu
-	return r_debug_reg_get_err (dbg, str, ok, NULL);
+	return r_debug_reg_get_err (dbg, str, ok);
 }
 
 static void r_debug_options_init(RDebugOptions *options) {
@@ -1684,7 +1684,7 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 		return -1;
 	}
 	bool err;
-	reg = (int)r_debug_reg_get_err (dbg, "SN", &err, NULL);
+	reg = (int)r_debug_reg_get_err (dbg, "SN", &err);
 	if (err) {
 		R_LOG_ERROR ("Cannot find 'sn' register for current arch-os");
 		debug_syscall_hook_suppress (dbg, prev_syscall_suppress);

@@ -1,6 +1,7 @@
 #include <r_reg.h>
 #include <r_util/r_str.h>
 #include <r_util/r_cfloat.h>
+#include <r_util/r_mem.h>
 #include <r_endian.h>
 #include <math.h>
 #include <string.h>
@@ -578,7 +579,7 @@ bool test_r_cfloat_multiword_io(void) {
 bool test_r_reg_x87_multi_offset(void) {
 	// Mimics the real user_fpregs_struct layout: st0-st7 are .80 regs
 	// at 16-byte intervals starting at offset 32 bytes into the arena.
-	// This tests that arena sizing, get_value_big, and longdouble
+	// This tests that arena sizing, byte access, and longdouble
 	// round-trip all work for .80 regs at non-zero offsets.
 	RReg *reg = r_reg_new ();
 	mu_assert_notnull (reg, "r_reg_new () failed");
@@ -626,16 +627,15 @@ bool test_r_reg_x87_multi_offset(void) {
 		mu_assert (msg, fabsl (got - vals[i]) < 0.0001L);
 	}
 
-	// Verify r_reg_get_value_big works for .80 at non-zero offset
+	// Verify raw byte access for .80 at non-zero offset
 	RRegItem *st7 = r_reg_get (reg, "st7", R_REG_TYPE_FPU);
 	mu_assert_notnull (st7, "st7 lookup");
 	mu_assert_eq (st7->size, 80, "st7 is 80 bits");
 	mu_assert_eq (BITS2BYTES (st7->offset), 144, "st7 offset is 144 bytes");
-	utX val;
-	memset (&val, 0, sizeof (val));
-	ut64 ret = r_reg_get_value_big (reg, st7, &val);
-	// Just verify it doesn't crash and returns something non-zero
-	mu_assert ("st7 get_value_big returns data", ret != 0 || val.v80.High != 0);
+	ut8 bytes[10];
+	mu_assert_true (r_reg_get_value_bytes (reg, st7, bytes, sizeof (bytes)), "read x87 bytes");
+	mu_assert_false (r_mem_is_zero (bytes, sizeof (bytes)), "st7 contains data");
+	r_unref (st7);
 
 	// Write all st regs, then verify no cross-contamination
 	for (i = 0; i < 8; i++) {
@@ -912,20 +912,13 @@ bool test_r_reg_wide_access(void) {
 			mu_assert_true (r_reg_get_value_bytes (reg, item, result, len), "read all register bytes");
 			mu_assert_memeq (result, bytes, len, "byte round trip preserves arena layout");
 			mu_assert_eq (r_reg_get_value (reg, item), 0x1122334455667788ULL, "scalar read returns low chunk");
-			if (widths[width] == 256) {
-				utX value = {0};
-				mu_assert_eq (r_reg_get_value_big (reg, item, &value), 0x1122334455667788ULL, "wide read low chunk");
-				mu_assert_eq (value.v256.Low.High, 0x1122334455667790ULL, "wide read second chunk");
-				mu_assert_eq (value.v256.High.Low, 0x1122334455667798ULL, "wide read third chunk");
-				mu_assert_eq (value.v256.High.High, 0x11223344556677a0ULL, "wide read final chunk");
-				RRegArena *arena = reg->regset[item->arena].arena;
-				const int arena_size = arena->size;
-				arena->size = 8 + len - 1;
-				mu_assert_eq (r_reg_get_value_big (reg, item, &value), 0, "truncated wide read rejected");
-				mu_assert_eq (value.v256.High.High, 0x11223344556677a0ULL, "failed wide read preserves output");
-				mu_assert_false (r_reg_set_value (reg, item, 0), "truncated scalar write rejected");
-				arena->size = arena_size;
-			}
+			RRegArena *arena = reg->regset[item->arena].arena;
+			const int arena_size = arena->size;
+			arena->size = 8 + len - 1;
+			mu_assert_false (r_reg_get_value_bytes (reg, item, result, len), "truncated wide read rejected");
+			mu_assert_memeq (result, bytes, len, "failed wide read preserves output");
+			mu_assert_false (r_reg_set_value (reg, item, 0), "truncated scalar write rejected");
+			arena->size = arena_size;
 			mu_assert_false (r_reg_get_value_bytes (reg, item, result, len - 1), "reject short output buffer");
 			mu_assert_memeq (result, bytes, len, "failed read leaves buffer unchanged");
 			mu_assert_false (r_reg_set_value_bytes (reg, item, bytes, len - 1), "reject short input buffer");
@@ -1062,15 +1055,36 @@ bool test_r_reg_value_hex(void) {
 		char *zeros = r_str_pad (NULL, 0, '0', 480);
 		char *expected = r_str_newf ("0x0000000000000001%s0000000000000022", zeros);
 		mu_assert_streq_free (r_reg_get_value_hex (reg, huge), expected, "hexadecimal is not truncated by a fixed buffer");
+		r_reg_arena_push (reg);
+		mu_assert_true (r_reg_set_value_hex (reg, huge, "0Xabc"), "odd uppercase-prefixed literal");
+		mu_assert_eq (r_reg_get_pack (reg, huge, 0, 64), 0xabc, "short literal sets low bits");
+		mu_assert_eq (r_reg_get_pack (reg, huge, 31, 64), 0, "short literal clears high bits");
+		mu_assert_true (r_reg_set_value_hex (reg, huge, expected), "full 2048-bit write");
+		mu_assert_streq_free (r_reg_get_value_hex (reg, huge), expected, "full-width round trip");
+		r_reg_arena_pop (reg);
+		mu_assert_streq_free (r_reg_get_value_hex (reg, huge), expected, "snapshot remains intact");
 		free (expected);
 		free (zeros);
+		mu_assert_true (r_reg_set_value_hex (reg, small, "abcd0123456789abcdef"), "partial chunk without prefix");
+		mu_assert_eq (r_reg_get_pack (reg, small, 4, 16), 0xabcd, "partial high chunk written in target byte order");
+		const char *invalid[] = { "", "0x", "0x100000000000000000000", "0x123g", "0x12 34", "-1", "0x1+2" };
+		int i;
+		for (i = 0; i < R_ARRAY_SIZE (invalid); i++) {
+			mu_assert_false (r_reg_set_value_hex (reg, small, invalid[i]), "reject invalid hexadecimal");
+			mu_assert_streq_free (r_reg_get_value_hex (reg, small), "0xabcd0123456789abcdef", "invalid write is atomic");
+		}
+		small->ro = true;
+		mu_assert_true (r_reg_set_value_hex (reg, small, "0"), "read-only write is a successful no-op");
+		mu_assert_streq_free (r_reg_get_value_hex (reg, small), "0xabcd0123456789abcdef", "read-only value preserved");
 		RRegArena *arena = reg->regset[wide->arena].arena;
 		const int saved_size = arena->size;
 		arena->size = 63;
 		mu_assert_null (r_reg_get_value_hex (reg, wide), "reject truncated storage");
+		mu_assert_false (r_reg_set_value_hex (reg, wide, "0"), "reject truncated write");
 		arena->size = saved_size;
 		wide->offset++;
 		mu_assert_null (r_reg_get_value_hex (reg, wide), "reject unaligned storage");
+		mu_assert_false (r_reg_set_value_hex (reg, wide, "0"), "reject unaligned write");
 		wide->offset = INT_MAX - 7;
 		mu_assert_null (r_reg_get_value_hex (reg, wide), "reject overflowing extent");
 		r_unref (wide);

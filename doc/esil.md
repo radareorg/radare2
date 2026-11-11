@@ -458,10 +458,27 @@ lanes provide predicate access, and lanes may cross chunk boundaries. The
 legacy `r_reg_get_pack` still returns zero on error.
 
 `r_reg_get_value_bytes` and `r_reg_set_value_bytes` transfer a whole register
-without a width limit imposed by `utX`. Both require byte-aligned storage and
+without a fixed width limit. Both require byte-aligned storage and
 an exact buffer length of `item->size / 8`. The bytes retain the arena layout;
 these APIs do not change endianness. Writes preserve neighboring registers,
 read-only registers, and arena snapshots.
+
+`r_reg_get_value_hex` formats the full logical value with a `0x` prefix.
+`r_reg_set_value_hex` accepts an unsigned hexadecimal integer with an optional
+`0x` or `0X` prefix, including odd digit counts. Short values are zero-extended;
+invalid characters and values wider than the register are rejected before any
+bytes change. Both APIs use the same chunk order as checked lane access.
+
+`ar <reg>=<value>` and `dr <reg>=<value>` accept full-width hexadecimal literals
+for wide registers. Arithmetic expressions still use the 64-bit numeric evaluator.
+Debugger writes synchronize the containing arena and restore the local value if
+the backend rejects the write. GDB packets transfer raw target bytes using the
+checked byte APIs, including registers wider than 128 bits.
+
+The fixed-width `utX` type and `r_reg_get_value_big` have been removed.
+`r_debug_reg_get_err` now takes only `(dbg, name, err)` and returns a scalar;
+callers needing wide values should synchronize the arena and use the byte or
+hexadecimal APIs. These API changes increment `R2_ABIVERSION` to 179.
 
 For vectors of at least 128 bits, `r_reg_get_value` returns the low 64 bits and
 `r_reg_set_value` writes those bits while clearing the rest. These RReg APIs

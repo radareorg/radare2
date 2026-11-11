@@ -365,7 +365,7 @@ static RCoreHelpMessage help_msg_dp = {
 static RCoreHelpMessage help_msg_dr = {
 	"Usage: dr", "", "Registers commands",
 	"dr", "", "show 'gpr' registers",
-	"dr", " <register>=<val>", "set register value",
+	"dr", " <register>=<val>", "set register value (wide registers accept hex literals)",
 	"dr.", " >$snapshot", "capture current register values in r2 alias file",
 	"dr,", " [table-query]", "enumerate registers in table format",
 	"dr0", "", "zero-fill the register arena, reset their state",
@@ -3061,6 +3061,76 @@ static bool cmd_reg_vector_sync(RCore *core, int type, bool write, bool debug) {
 	return true;
 }
 
+static void cmd_reg_set(RCore *core, RReg *reg, const char *assignment, bool debug) {
+	const char *eq = strchr (assignment, '=');
+	char *name = r_str_trim_ndup (assignment, eq - assignment);
+	char *value = r_str_trim_dup (eq + 1);
+	RRegItem *item = name? r_reg_get (reg, name, R_REG_TYPE_ALL): NULL;
+	const bool sync = debug && r_config_get_b (core->config, "cfg.debug");
+	bool ok = false;
+	char *previous = NULL;
+	ut64 old = 0;
+	if (!item || !value || !*value) {
+		goto beach;
+	}
+	if (sync && !r_debug_reg_sync (core->dbg, item->arena, false)) {
+		goto beach;
+	}
+	if (item->size > 64) {
+		previous = r_reg_get_value_hex (reg, item);
+		if (!previous) {
+			goto beach;
+		}
+	} else {
+		old = r_reg_get_value (reg, item);
+	}
+	const size_t hex_digits = (value[0] == '0' && (value[1] == 'x' || value[1] == 'X'))
+		? strspn (value + 2, "0123456789abcdefABCDEF"): 0;
+	if (item->size > 64 && (hex_digits > 16 || (hex_digits && !value[hex_digits + 2]))) {
+		ok = r_reg_set_value_hex (reg, item, value);
+	} else {
+		ut64 number = debug && item->flags? r_str_bits_from_string (value, item->flags): UT64_MAX;
+		if (number == UT64_MAX) {
+			number = r_num_math (core->num, value);
+			if (r_num_failed (core->num)) {
+				goto beach;
+			}
+		}
+		ok = r_reg_set_value (reg, item, number);
+	}
+	if (ok && sync && !r_debug_reg_sync (core->dbg, item->arena, true)) {
+		if (previous) {
+			r_reg_set_value_hex (reg, item, previous);
+		} else {
+			r_reg_set_value (reg, item, old);
+		}
+		ok = false;
+	}
+	if (ok && debug) {
+		if (previous) {
+			char *current = r_reg_get_value_hex (reg, item);
+			r_cons_printf (core->cons, "%s -> %s\n", previous, r_str_get (current));
+			free (current);
+		} else {
+			r_cons_printf (core->cons, "0x%08"PFMT64x" -> 0x%08"PFMT64x"\n", old, r_reg_get_value (reg, item));
+		}
+	}
+	if (ok && item->size <= 64) {
+		const int bits = debug? (R_SYS_BITS_CHECK (core->dbg->bits, 64)? 64: 32): core->anal->config->bits;
+		r_core_cmdf (core, ".%cr*%d", debug? 'd': 'a', bits);
+	}
+beach:
+	if (!ok) {
+		R_LOG_ERROR ("Cannot set register '%s'", r_str_get (name));
+	}
+	r_core_return_value (core, ok? R_CMD_RC_SUCCESS: R_CMD_RC_FAILURE);
+	r_core_return_code (core, ok? R_CMD_RC_SUCCESS: R_CMD_RC_FAILURE);
+	free (previous);
+	free (name);
+	free (value);
+	r_unref (item);
+}
+
 static int reg_vector_lane_size(RRegItem *item, int size) {
 	if (!size) {
 		size = 64;
@@ -3922,39 +3992,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	case ' ': // "dr"
 		arg = strchr (str + 1, '=');
 		if (arg) {
-			char *string = r_str_trim_ndup (str + 1, arg - str - 1);
-			r = r_reg_get (core->dbg->reg, string, -1);
-			if (r) {
-				if (r->flags) {
-					r_cons_printf (core->cons, "0x%08"PFMT64x" ->",
-							r_reg_get_value (core->dbg->reg, r));
-					r_reg_set_bvalue (core->dbg->reg, r, arg+1);
-					r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
-					r_cons_printf (core->cons, "0x%08"PFMT64x"\n",
-							r_reg_get_value (core->dbg->reg, r));
-				} else {
-					ut64 oval = r_reg_get_value (core->dbg->reg, r);
-					ut64 wval = r_num_math (core->num, arg + 1);
-
-					r_reg_set_value (core->dbg->reg, r, wval);
-					bool sync_works = r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
-					if (!sync_works) {
-						// read them back
-						r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false);
-					}
-					ut64 nval = r_reg_get_value (core->dbg->reg, r);
-					if (nval == wval) {
-						r_cons_printf (core->cons, "0x%08"PFMT64x" -> 0x%08"PFMT64x"\n", oval, nval);
-					} else {
-						r_cons_printf (core->cons, "0x%08"PFMT64x" -> 0x%08"PFMT64x" -> 0x%08"PFMT64x"\n", oval, wval, nval);
-					}
-				}
-			} else {
-				R_LOG_ERROR ("unknown register '%s'", string);
-			}
-			free (string);
-			// update flags here
-			r_core_cmdf (core, ".dr*%d", bits);
+			cmd_reg_set (core, core->dbg->reg, str + 1, true);
 			return;
 		}
 

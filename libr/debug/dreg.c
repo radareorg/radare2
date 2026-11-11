@@ -343,7 +343,7 @@ R_API bool r_debug_reg_set(RDebug *dbg, const char *name, ut64 num) {
 	return (ri);
 }
 
-R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, bool *err, utX *value) {
+R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, bool *err) {
 	RRegItem *ri = NULL;
 	ut64 ret = 0LL;
 	if (err) {
@@ -355,29 +355,10 @@ R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, bool *err, utX *va
 		}
 		return UT64_MAX;
 	}
-#if 0
-	int alias = r_reg_alias_tostring (name);
-	if (alias != -1) {
-		name = r_reg_get_name (dbg->reg, alias);
-		if (R_STR_ISEMPTY (name)) {
-			if (err) {
-				*err = 1;
-			}
-			return UT64_MAX;
-		}
-	}
-#endif
 	ri = r_reg_get (dbg->reg, name, R_REG_TYPE_ALL);
 	if (ri) {
 		r_debug_reg_sync (dbg, R_REG_TYPE_ALL, false);
-		if (value && ri->size > 64) {
-			if (err) {
-				*err = ri->size;
-			}
-			ret = r_reg_get_value_big (dbg->reg, ri, value);
-		} else {
-			ret = r_reg_get_value (dbg->reg, ri);
-		}
+		ret = r_reg_get_value (dbg->reg, ri);
 		r_unref (ri);
 	} else {
 		if (err) {
@@ -388,5 +369,5 @@ R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, bool *err, utX *va
 }
 
 R_API ut64 r_debug_reg_get(RDebug *dbg, const char *name) {
-	return r_debug_reg_get_err (dbg, name, NULL, NULL);
+	return r_debug_reg_get_err (dbg, name, NULL);
 }

@@ -4410,7 +4410,7 @@ static bool tmpseek_reg(RCore *core, char *ptr) {
 		return false;
 	}
 	bool err = false;
-	ut64 v = r_debug_reg_get_err (core->dbg, arg, &err, 0);
+	ut64 v = r_debug_reg_get_err (core->dbg, arg, &err);
 	free (arg);
 	if (err) {
 		R_LOG_ERROR ("Invalid register name for @r");
