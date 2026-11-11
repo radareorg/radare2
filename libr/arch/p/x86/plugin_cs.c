@@ -107,7 +107,7 @@ static inline RAnalValue * R_NONNULL newvalue(int type, int access, const char *
 #define INSOP(n) insn->detail->x86.operands[n]
 #define INSOPS insn->detail->x86.op_count
 #define ISIMM(x) insn->detail->x86.operands[x].type == X86_OP_IMM
-#define ISMEM(x) insn->detail->x86.operands[x].type == X86_OP_MEM
+#define ISMEM(x) (insn->detail->x86.operands[x].type == X86_OP_MEM)
 
 struct Getarg {
 	csh handle;
@@ -236,41 +236,11 @@ static void opex(RArchSession *as, RStrBuf *buf, cs_insn *insn, int mode) {
 }
 
 static bool is_xmm_reg(cs_x86_op op) {
-	switch (op.reg) {
-	case X86_REG_XMM0:
-	case X86_REG_XMM1:
-	case X86_REG_XMM2:
-	case X86_REG_XMM3:
-	case X86_REG_XMM4:
-	case X86_REG_XMM5:
-	case X86_REG_XMM6:
-	case X86_REG_XMM7:
-	case X86_REG_XMM8:
-	case X86_REG_XMM9:
-	case X86_REG_XMM10:
-	case X86_REG_XMM11:
-	case X86_REG_XMM12:
-	case X86_REG_XMM13:
-	case X86_REG_XMM14:
-	case X86_REG_XMM15:
-	case X86_REG_XMM16:
-	case X86_REG_XMM17:
-	case X86_REG_XMM18:
-	case X86_REG_XMM19:
-	case X86_REG_XMM20:
-	case X86_REG_XMM21:
-	case X86_REG_XMM22:
-	case X86_REG_XMM23:
-	case X86_REG_XMM24:
-	case X86_REG_XMM25:
-	case X86_REG_XMM26:
-	case X86_REG_XMM27:
-	case X86_REG_XMM28:
-	case X86_REG_XMM29:
-	case X86_REG_XMM30:
-	case X86_REG_XMM31: return true;
-	default: return false;
-	}
+	return op.type == X86_OP_REG && op.reg >= X86_REG_XMM0 && op.reg <= X86_REG_XMM31;
+}
+
+static bool is_vector_reg(cs_x86_op op) {
+	return op.type == X86_OP_REG && op.reg >= X86_REG_XMM0 && op.reg <= X86_REG_ZMM31;
 }
 
 /**
@@ -512,14 +482,84 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, ut32 *bitsi
 	return NULL;
 }
 
-static char *getarg_vector_chunk(struct Getarg *gop, int n, int chunk, bool write) {
+static char *getarg_vector_lane(struct Getarg *gop, int n, int offset, int bytes, bool write) {
 	cs_insn *insn = gop->insn;
 	char *arg = getarg (gop, n, 2, NULL, NULL);
-	char *result = INSOP (n).type == X86_OP_MEM
-		? r_str_newf ("%d,%s,+,%s[8]", chunk * 8, R_STR_ISEMPTY (arg)? "0": arg, write? "=": "")
-		: r_str_newf ("%s[%d]%s", arg, chunk, write? ",=": "");
+	char *result;
+	if (INSOP (n).type == X86_OP_MEM) {
+		const int addrsize = insn->detail->x86.addr_size;
+		const char *wrap = addrsize == 4? "0xffffffff,&,": addrsize == 2? "0xffff,&,": "";
+		result = r_str_newf ("%d,%s,%s+,%s[%d]", offset, R_STR_ISEMPTY (arg)? "0": arg, wrap, write? "=": "", bytes);
+	} else if (bytes == 8) {
+		result = r_str_newf ("%s[%d]%s", arg, offset / 8, write? ",=": "");
+	} else {
+		const int shift = (offset & 7) * 8;
+		const ut64 mask = r_num_bitmask (bytes * 8);
+		result = write
+			? r_str_newf ("0x%"PFMT64x",&,%d,SWAP,<<,0x%"PFMT64x",%s[%d],&,|,%s[%d],=",
+				mask, shift, ~(mask << shift), arg, offset / 8, arg, offset / 8)
+			: r_str_newf ("%d,%s[%d],>>,0x%"PFMT64x",&", shift, arg, offset / 8, mask);
+	}
 	free (arg);
 	return result;
+}
+
+static void vector_esil(RAnalOp *op, struct Getarg *gop, bool is_xor) {
+	cs_insn *insn = gop->insn;
+	cs_x86 *x = &insn->detail->x86;
+	const bool avx = x->opcode[0] == 0xc4 || x->opcode[0] == 0xc5 || x->opcode[0] == 0x62;
+	const bool masked = INSOPS > 1 && INSOP (1).type == X86_OP_REG
+		&& INSOP (1).reg >= X86_REG_K0 && INSOP (1).reg <= X86_REG_K7;
+	const int source = INSOPS - 1;
+	const int width = INSOP (0).size;
+	if (INSOPS != 2 + (is_xor && avx) + masked || (width != 16 && width != 32 && width != 64)
+			|| (!is_vector_reg (INSOP (0)) && (is_xor || !ISMEM (0)))
+			|| (!is_vector_reg (INSOP (source)) && !ISMEM (source))) {
+		return;
+	}
+	// EVEX.W remains reliable when Capstone loses the element width in 32-bit memory forms.
+	const bool small = insn->id == X86_INS_VMOVDQU8 || insn->id == X86_INS_VMOVDQU16;
+	const int element = (small? 1: 4) << (x->opcode[2] >> 7);
+	const bool broadcast = x->opcode[0] == 0x62 && (x->opcode[3] & 0x10) && ISMEM (source);
+	if ((!broadcast && INSOP (source).size != width)
+			|| (broadcast && !is_xor)
+			|| (is_xor && (!is_vector_reg (INSOP (source - 1)) || INSOP (source - 1).size != width))) {
+		return;
+	}
+	const char *mask = masked? cs_reg_name (gop->handle, INSOP (1).reg): NULL;
+	const bool zero = masked && INSOP (1).avx_zero_opmask && !ISMEM (0);
+	const int step = masked || broadcast? element: 8;
+	int offset;
+	for (offset = 0; offset < width; offset += step) {
+		if (offset) {
+			r_strbuf_append (&op->esil, ",");
+		}
+		if (masked) {
+			r_strbuf_appendf (&op->esil, "%d,%s,>>,1,&,?{,", offset / step, mask);
+		}
+		char *src = getarg_vector_lane (gop, source, broadcast? 0: offset, step, false);
+		char *dst = getarg_vector_lane (gop, 0, offset, step, true);
+		if (is_xor) {
+			char *src1 = getarg_vector_lane (gop, source - 1, offset, step, false);
+			r_strbuf_appendf (&op->esil, "%s,", src1);
+			free (src1);
+		}
+		r_strbuf_appendf (&op->esil, "%s,%s%s", src, is_xor? "^,": "", dst);
+		if (zero) {
+			r_strbuf_appendf (&op->esil, ",}{,0,%s", dst);
+		}
+		if (masked) {
+			r_strbuf_append (&op->esil, ",}");
+		}
+		free (src);
+		free (dst);
+	}
+	if (avx && !ISMEM (0)) {
+		const char *name = cs_reg_name (gop->handle, INSOP (0).reg);
+		for (offset = width / 8; offset < 8; offset++) {
+			r_strbuf_appendf (&op->esil, ",0,zmm%s[%d],=", name + 3, offset);
+		}
+	}
 }
 
 static int cond_x862r2(int id) {
@@ -1148,22 +1188,30 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 					dst, width, src, width, dst);
 		}
 		break;
-	case X86_INS_VMOVDQU16:
-	case X86_INS_VMOVDQU32:
-	case X86_INS_VMOVDQU64:
 	case X86_INS_VMOVDQU8:
+	case X86_INS_VMOVDQU16:
+	case X86_INS_VMOVDQA64:
+	case X86_INS_VMOVDQU64:
+	case X86_INS_VMOVAPD:
+	case X86_INS_VMOVUPD:
+	case X86_INS_VMOVDQA32:
+	case X86_INS_VMOVDQU32:
+	case X86_INS_VMOVDQA:
 	case X86_INS_VMOVDQU:
-		if (INSOPS != 2 || INSOP (0).size != 16 || INSOP (1).size != 16) {
-			break;
-		}
-		// fall through
+	case X86_INS_VMOVAPS:
+	case X86_INS_VMOVUPS:
+	case X86_INS_MOVAPS:
+	case X86_INS_MOVAPD:
+	case X86_INS_MOVUPS:
+	case X86_INS_MOVUPD:
+	case X86_INS_MOVDQU:
+	case X86_INS_MOVDQA:
+		vector_esil (op, &gop, false);
+		break;
 	// mov
 	case X86_INS_MOVSS:
 	case X86_INS_MOV:
-	case X86_INS_MOVAPS:
-	case X86_INS_MOVAPD:
 	case X86_INS_MOVZX:
-	case X86_INS_MOVUPS:
 	case X86_INS_MOVABS:
 	case X86_INS_MOVHPD:
 	case X86_INS_MOVHPS:
@@ -1172,21 +1220,8 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_MOVSX:
 	case X86_INS_MOVSXD:
 	case X86_INS_MOVQ:
-	case X86_INS_MOVDQU:
-	case X86_INS_MOVDQA:
 	case X86_INS_MOVDQ2Q:
 		{
-		if (INSOP (0).size == 16 && INSOP (1).size == 16) {
-			int chunk;
-			for (chunk = 0; chunk < 2; chunk++) {
-				src = getarg_vector_chunk (&gop, 1, chunk, false);
-				dst = getarg_vector_chunk (&gop, 0, chunk, true);
-				r_strbuf_appendf (&op->esil, "%s%s,%s", chunk? ",": "", src, dst);
-				free (src);
-				free (dst);
-			}
-			break;
-		}
 		switch (INSOP (0).type) {
 		case X86_OP_MEM:
 			if (op->prefix & R_ANAL_OP_PREFIX_REP) {
@@ -2026,36 +2061,39 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		}
 		break;
 	case X86_INS_VXORPD:
+	case X86_INS_VPXORQ:
 	case X86_INS_VXORPS:
 	case X86_INS_VPXORD:
-	case X86_INS_VPXORQ:
 	case X86_INS_VPXOR:
 	case X86_INS_XORPD:
 	case X86_INS_XORPS:
 	case X86_INS_PXOR:
-		if ((INSOPS == 2 || INSOPS == 3) && is_xmm_reg (INSOP (0))
-				&& is_xmm_reg (INSOP (INSOPS - 2)) && INSOP (INSOPS - 1).size == 16) {
-			int chunk;
-			for (chunk = 0; chunk < 2; chunk++) {
-				src = getarg_vector_chunk (&gop, INSOPS - 2, chunk, false);
-				src2 = getarg_vector_chunk (&gop, INSOPS - 1, chunk, false);
-				dst = getarg_vector_chunk (&gop, 0, chunk, true);
-				r_strbuf_appendf (&op->esil, "%s%s,%s,^,%s", chunk? ",": "", src, src2, dst);
-				free (src);
-				free (src2);
-				free (dst);
+		vector_esil (op, &gop, true);
+		break;
+	case X86_INS_VZEROALL:
+	case X86_INS_VZEROUPPER: {
+		int reg, chunk;
+		for (reg = 0; reg < (bits == 64? 16: 8); reg++) {
+			for (chunk = insn->id == X86_INS_VZEROALL? 0: 2; chunk < 8; chunk++) {
+				r_strbuf_appendf (&op->esil, "0,zmm%d[%d],=,", reg, chunk);
 			}
 		}
 		break;
-	case X86_INS_KXORW:
+	}
+	case X86_INS_KXORB:
+	case X86_INS_KXORD:
+	case X86_INS_KXORQ:
+	case X86_INS_KXORW: {
+		const int width = insn->id == X86_INS_KXORB? 8: insn->id == X86_INS_KXORW? 16: insn->id == X86_INS_KXORD? 32: 64;
 		src = getarg (&gop, 1, 0, NULL, NULL);
 		src2 = getarg (&gop, 2, 0, NULL, NULL);
 		dst = getarg (&gop, 0, 1, NULL, NULL);
-		esilprintf (op, "%s,%s,^,%s", src, src2, dst);
+		esilprintf (op, "%s,%s,^,0x%"PFMT64x",&,%s", src, src2, r_num_bitmask (width), dst);
 		free (src);
 		free (src2);
 		free (dst);
 		break;
+	}
 	case X86_INS_XOR:
 		{
 			ut32 bitsize;
@@ -3430,7 +3468,7 @@ static void set_opdir(RAnalOp *op, cs_insn *insn) {
 			op->direction = R_ANAL_OP_DIR_WRITE;
 			break;
 		case X86_OP_REG:
-			if (INSOP (1).type == X86_OP_MEM) {
+			if (INSOPS > 1 && ISMEM (INSOPS - 1)) {
 				op->direction = R_ANAL_OP_DIR_READ;
 			}
 			break;
@@ -3767,6 +3805,8 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case X86_INS_VMOVQ:
 	case X86_INS_VMOVDDUP:
 	case X86_INS_VMOVD:
+	case X86_INS_VMOVAPS:
+	case X86_INS_VMOVAPD:
 	case X86_INS_VMOVDQA32:
 	case X86_INS_VMOVDQA64:
 	case X86_INS_VMOVDQA:
@@ -4279,15 +4319,25 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case X86_INS_VPXORD:
 	case X86_INS_VPXORQ:
 	case X86_INS_VPXOR:
+	case X86_INS_XORPD:
 	case X86_INS_XORPS:
+	case X86_INS_KXORB:
+	case X86_INS_KXORD:
+	case X86_INS_KXORQ:
 	case X86_INS_KXORW:
 	case X86_INS_PXOR:
 		op->type = R_ANAL_OP_TYPE_XOR;
+		op->family = R_ANAL_OP_FAMILY_VEC;
 		if (INSOP(0).type == X86_OP_MEM) {
 			op->direction = R_ANAL_OP_DIR_WRITE;
-		} else if (INSOP(1).type == X86_OP_MEM) {
+		} else if (INSOP (INSOPS - 1).type == X86_OP_MEM) {
 			op->direction = R_ANAL_OP_DIR_READ;
 		}
+		break;
+	case X86_INS_VZEROALL:
+	case X86_INS_VZEROUPPER:
+		op->type = R_ANAL_OP_TYPE_MOV;
+		op->family = R_ANAL_OP_FAMILY_VEC;
 		break;
 	case X86_INS_XOR:
 		op->type = R_ANAL_OP_TYPE_XOR;
@@ -4573,6 +4623,15 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		}
 		op->size = 1;
 	} else {
+		cs_x86 *x = &insn->detail->x86;
+		// Capstone's AT&T printer puts the EVEX mask before its destination.
+		if (x->opcode[0] == 0x62 && INSOPS > 1 && INSOP (0).type == X86_OP_REG
+				&& INSOP (0).reg >= X86_REG_K0 && INSOP (0).reg <= X86_REG_K7
+				&& (is_vector_reg (INSOP (1)) || ISMEM (1))) {
+			cs_x86_op mask = INSOP (0);
+			INSOP (0) = INSOP (1);
+			INSOP (1) = mask;
+		}
 		switch (insn->id) {
 		case X86_INS_ROL:
 		case X86_INS_ROR:

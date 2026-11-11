@@ -157,70 +157,10 @@ static char *get_reg_profile(RArchSession *as) {
 		"fpu	st4	.64	96	0\n"
 		"fpu	st5	.64	112	0\n"
 		"fpu	st6	.64	128	0\n"
-		"fpu	st7	.64	144	0\n"
-		"vec128@fpu    xmm0  .128 160  4\n"
-		"vec64@fpu    xmm0l .64 160  0\n"
-		"vec64@fpu    xmm0h .64 168  0\n"
-
-		"vec128@fpu    xmm1  .128 176  4\n"
-		"fpu    xmm1l .64 176  0\n"
-		"fpu    xmm1h .64 184  0\n"
-
-		"vec128@fpu    xmm2  .128 192  4\n"
-		"fpu    xmm2l .64 192  0\n"
-		"fpu    xmm2h .64 200  0\n"
-
-		"vec128@fpu    xmm3  .128 208  4\n"
-		"fpu    xmm3l .64 208  0\n"
-		"fpu    xmm3h .64 216  0\n"
-
-		"vec128@fpu    xmm4  .128 224  4\n"
-		"fpu    xmm4l .64 224  0\n"
-		"fpu    xmm4h .64 232  0\n"
-
-		"vec128@fpu    xmm5  .128 240  4\n"
-		"fpu    xmm5l .64 240  0\n"
-		"fpu    xmm5h .64 248  0\n"
-
-		"vec128@fpu    xmm6  .128 256  4\n"
-		"fpu    xmm6l .64 256  0\n"
-		"fpu    xmm6h .64 264  0\n"
-
-		"vec128@fpu    xmm7  .128 272  4\n"
-		"fpu    xmm7l .64 272  0\n"
-		"fpu    xmm7h .64 280  0\n";
+		"fpu	st7	.64	144	0\n";
 
 		break;
-	case 64:
-	{
-#if 0
-		const char *cc = "cdecl"; // r_anal_cc_default (anal); // R2_590
-		const char *args_prof = cc && !strcmp (cc, "ms")
-		? // Microsoft x64 CC
-		"# RAX     return value\n"
-		"# RCX     argument 1\n"
-		"# RDX     argument 2\n"
-		"# R8      argument 3\n"
-		"# R9      argument 4\n"
-		"# R10-R11 syscall/sysret\n"
-		"# R12-R15 GP preserved\n"
-		"# RSI     preserved source\n"
-		"# RDI     preserved destination\n"
-		"# RSP     stack pointer\n"
-		"=PC	rip\n"
-		"=SP	rsp\n"
-		"=R0	rax\n"
-		"=F0	xmm0\n"
-		"=BP	rbp\n"
-		"=A0	rcx\n"
-		"=A1	rdx\n"
-		"=A2	r8\n"
-		"=A3	r9\n"
-		"=SN	rax\n"
-		 : // System V AMD64 ABI
-#endif
-		// R2_590 - this info shouldnt be used as a calling convention if anal.cc is set
-		const char *args_prof =
+	case 64: p =
 		"=PC	rip\n"
 		"=SP	rsp\n"
 		"=BP	rbp\n"
@@ -233,8 +173,7 @@ static char *get_reg_profile(RArchSession *as) {
 		"=A5	r9\n"
 		"=A6	r10\n"
 		"=A7	r11\n"
-		"=SN	rax\n";
-		RStrBuf *profile = r_strbuf_newf ("%s%s", args_prof,
+		"=SN	rax\n"
 		 "gpr	rax	.64	80	0\n"
 		 "gpr	eax	.32	80	0\n"
 		 "gpr	ax	.16	80	0\n"
@@ -336,21 +275,6 @@ static char *get_reg_profile(RArchSession *as) {
 		 "drx	dr6	.64	48	0\n"
 		 "drx	dr7	.64	56	0\n"
 
-		 /*0030 struct user_fpregs_struct
-		   0031 {
-		   0032   __uint16_t        cwd;
-		   0033   __uint16_t        swd;
-		   0034   __uint16_t        ftw;
-		   0035   __uint16_t        fop;
-		   0036   __uint64_t        rip;
-		   0037   __uint64_t        rdp;
-		   0038   __uint32_t        mxcsr;
-		   0039   __uint32_t        mxcr_mask;
-		   0040   __uint32_t        st_space[32];   // 8*16 bytes for each FP-reg = 128 bytes
-		   0041   __uint32_t        xmm_space[64];  // 16*16 bytes for each XMM-reg = 256 bytes
-		   0042   __uint32_t        padding[24];
-		   0043 };
-		  */
 		 "fpu    cwd .16 0   0\n"
 		 "fpu    swd .16 2   0\n"
 		 "fpu    ftw .16 4   0\n"
@@ -367,18 +291,28 @@ static char *get_reg_profile(RArchSession *as) {
 		 "fpu    st4 .64 96  0\n"
 		 "fpu    st5 .64 112  0\n"
 		 "fpu    st6 .64 128  0\n"
-		 "fpu    st7 .64 144  0\n");
-		int reg;
-		for (reg = 0; reg < 16; reg++) {
-			const int offset = 160 + reg * 16;
-			r_strbuf_appendf (profile,
-				"vec128@fpu xmm%d .128 %d 4\n"
-				"fpu xmm%dl .64 %d 0\n"
-				"fpu xmm%dh .64 %d 0\n",
-				reg, offset, reg, offset, reg, offset + 8);
-		}
-		return r_strbuf_drain (profile);
+		 "fpu    st7 .64 144  0\n";
+		break;
 	}
+	if (bits == 16) {
+		return strdup (p);
 	}
-	return (R_STR_ISNOTEMPTY (p))? strdup (p): NULL;
+	RStrBuf *profile = r_strbuf_new (p);
+	const int count = bits == 64? 32: 8;
+	int reg;
+	// Analysis aliases share full ZMM slots; native backends supply their own layouts.
+	for (reg = 0; reg < count; reg++) {
+		const int offset = 160 + reg * 64;
+		r_strbuf_appendf (profile,
+			"vec128@fpu xmm%d .128 %d 4\n"
+			"vec256@fpu ymm%d .256 %d 4\n"
+			"vec512@fpu zmm%d .512 %d 4\n"
+			"fpu xmm%dl .64 %d 0\n"
+			"fpu xmm%dh .64 %d 0\n",
+			reg, offset, reg, offset, reg, offset, reg, offset, reg, offset + 8);
+	}
+	for (reg = 0; reg < 8; reg++) {
+		r_strbuf_appendf (profile, "fpu k%d .64 %d 0\n", reg, 160 + count * 64 + reg * 8);
+	}
+	return r_strbuf_drain (profile);
 }

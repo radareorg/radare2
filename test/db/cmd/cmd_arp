@@ -78,9 +78,9 @@ arp~?
 EOF
 EXPECT=<<EOF
 160
-172
+292
 64
-106
+130
 68
 129
 808
@@ -221,7 +221,7 @@ regset 1 (drx)
    dr6 drx @ drx (offset: 48  size: 8)
    dr7 drx @ drx (offset: 56  size: 8)
 regset 2 (fpu)
-* arena fpu size 416
+* arena fpu size 2272
    cwd fpu @ fpu (offset: 0  size: 2)
    swd fpu @ fpu (offset: 2  size: 2)
    ftw fpu @ fpu (offset: 4  size: 2)
@@ -239,53 +239,173 @@ regset 2 (fpu)
    st6 fpu @ fpu (offset: 128  size: 8)
    st7 fpu @ fpu (offset: 144  size: 8)
    xmm0 vec128 @ fpu (offset: 160  size: 16)
+   ymm0 vec256 @ fpu (offset: 160  size: 32)
+   zmm0 vec512 @ fpu (offset: 160  size: 64)
    xmm0l fpu @ fpu (offset: 160  size: 8)
    xmm0h fpu @ fpu (offset: 168  size: 8)
-   xmm1 vec128 @ fpu (offset: 176  size: 16)
-   xmm1l fpu @ fpu (offset: 176  size: 8)
-   xmm1h fpu @ fpu (offset: 184  size: 8)
-   xmm2 vec128 @ fpu (offset: 192  size: 16)
-   xmm2l fpu @ fpu (offset: 192  size: 8)
-   xmm2h fpu @ fpu (offset: 200  size: 8)
-   xmm3 vec128 @ fpu (offset: 208  size: 16)
-   xmm3l fpu @ fpu (offset: 208  size: 8)
-   xmm3h fpu @ fpu (offset: 216  size: 8)
-   xmm4 vec128 @ fpu (offset: 224  size: 16)
-   xmm4l fpu @ fpu (offset: 224  size: 8)
-   xmm4h fpu @ fpu (offset: 232  size: 8)
-   xmm5 vec128 @ fpu (offset: 240  size: 16)
-   xmm5l fpu @ fpu (offset: 240  size: 8)
-   xmm5h fpu @ fpu (offset: 248  size: 8)
-   xmm6 vec128 @ fpu (offset: 256  size: 16)
-   xmm6l fpu @ fpu (offset: 256  size: 8)
-   xmm6h fpu @ fpu (offset: 264  size: 8)
-   xmm7 vec128 @ fpu (offset: 272  size: 16)
-   xmm7l fpu @ fpu (offset: 272  size: 8)
-   xmm7h fpu @ fpu (offset: 280  size: 8)
-   xmm8 vec128 @ fpu (offset: 288  size: 16)
-   xmm8l fpu @ fpu (offset: 288  size: 8)
-   xmm8h fpu @ fpu (offset: 296  size: 8)
-   xmm9 vec128 @ fpu (offset: 304  size: 16)
-   xmm9l fpu @ fpu (offset: 304  size: 8)
-   xmm9h fpu @ fpu (offset: 312  size: 8)
-   xmm10 vec128 @ fpu (offset: 320  size: 16)
-   xmm10l fpu @ fpu (offset: 320  size: 8)
-   xmm10h fpu @ fpu (offset: 328  size: 8)
-   xmm11 vec128 @ fpu (offset: 336  size: 16)
-   xmm11l fpu @ fpu (offset: 336  size: 8)
-   xmm11h fpu @ fpu (offset: 344  size: 8)
-   xmm12 vec128 @ fpu (offset: 352  size: 16)
-   xmm12l fpu @ fpu (offset: 352  size: 8)
-   xmm12h fpu @ fpu (offset: 360  size: 8)
-   xmm13 vec128 @ fpu (offset: 368  size: 16)
-   xmm13l fpu @ fpu (offset: 368  size: 8)
-   xmm13h fpu @ fpu (offset: 376  size: 8)
-   xmm14 vec128 @ fpu (offset: 384  size: 16)
-   xmm14l fpu @ fpu (offset: 384  size: 8)
-   xmm14h fpu @ fpu (offset: 392  size: 8)
-   xmm15 vec128 @ fpu (offset: 400  size: 16)
-   xmm15l fpu @ fpu (offset: 400  size: 8)
-   xmm15h fpu @ fpu (offset: 408  size: 8)
+   xmm1 vec128 @ fpu (offset: 224  size: 16)
+   ymm1 vec256 @ fpu (offset: 224  size: 32)
+   zmm1 vec512 @ fpu (offset: 224  size: 64)
+   xmm1l fpu @ fpu (offset: 224  size: 8)
+   xmm1h fpu @ fpu (offset: 232  size: 8)
+   xmm2 vec128 @ fpu (offset: 288  size: 16)
+   ymm2 vec256 @ fpu (offset: 288  size: 32)
+   zmm2 vec512 @ fpu (offset: 288  size: 64)
+   xmm2l fpu @ fpu (offset: 288  size: 8)
+   xmm2h fpu @ fpu (offset: 296  size: 8)
+   xmm3 vec128 @ fpu (offset: 352  size: 16)
+   ymm3 vec256 @ fpu (offset: 352  size: 32)
+   zmm3 vec512 @ fpu (offset: 352  size: 64)
+   xmm3l fpu @ fpu (offset: 352  size: 8)
+   xmm3h fpu @ fpu (offset: 360  size: 8)
+   xmm4 vec128 @ fpu (offset: 416  size: 16)
+   ymm4 vec256 @ fpu (offset: 416  size: 32)
+   zmm4 vec512 @ fpu (offset: 416  size: 64)
+   xmm4l fpu @ fpu (offset: 416  size: 8)
+   xmm4h fpu @ fpu (offset: 424  size: 8)
+   xmm5 vec128 @ fpu (offset: 480  size: 16)
+   ymm5 vec256 @ fpu (offset: 480  size: 32)
+   zmm5 vec512 @ fpu (offset: 480  size: 64)
+   xmm5l fpu @ fpu (offset: 480  size: 8)
+   xmm5h fpu @ fpu (offset: 488  size: 8)
+   xmm6 vec128 @ fpu (offset: 544  size: 16)
+   ymm6 vec256 @ fpu (offset: 544  size: 32)
+   zmm6 vec512 @ fpu (offset: 544  size: 64)
+   xmm6l fpu @ fpu (offset: 544  size: 8)
+   xmm6h fpu @ fpu (offset: 552  size: 8)
+   xmm7 vec128 @ fpu (offset: 608  size: 16)
+   ymm7 vec256 @ fpu (offset: 608  size: 32)
+   zmm7 vec512 @ fpu (offset: 608  size: 64)
+   xmm7l fpu @ fpu (offset: 608  size: 8)
+   xmm7h fpu @ fpu (offset: 616  size: 8)
+   xmm8 vec128 @ fpu (offset: 672  size: 16)
+   ymm8 vec256 @ fpu (offset: 672  size: 32)
+   zmm8 vec512 @ fpu (offset: 672  size: 64)
+   xmm8l fpu @ fpu (offset: 672  size: 8)
+   xmm8h fpu @ fpu (offset: 680  size: 8)
+   xmm9 vec128 @ fpu (offset: 736  size: 16)
+   ymm9 vec256 @ fpu (offset: 736  size: 32)
+   zmm9 vec512 @ fpu (offset: 736  size: 64)
+   xmm9l fpu @ fpu (offset: 736  size: 8)
+   xmm9h fpu @ fpu (offset: 744  size: 8)
+   xmm10 vec128 @ fpu (offset: 800  size: 16)
+   ymm10 vec256 @ fpu (offset: 800  size: 32)
+   zmm10 vec512 @ fpu (offset: 800  size: 64)
+   xmm10l fpu @ fpu (offset: 800  size: 8)
+   xmm10h fpu @ fpu (offset: 808  size: 8)
+   xmm11 vec128 @ fpu (offset: 864  size: 16)
+   ymm11 vec256 @ fpu (offset: 864  size: 32)
+   zmm11 vec512 @ fpu (offset: 864  size: 64)
+   xmm11l fpu @ fpu (offset: 864  size: 8)
+   xmm11h fpu @ fpu (offset: 872  size: 8)
+   xmm12 vec128 @ fpu (offset: 928  size: 16)
+   ymm12 vec256 @ fpu (offset: 928  size: 32)
+   zmm12 vec512 @ fpu (offset: 928  size: 64)
+   xmm12l fpu @ fpu (offset: 928  size: 8)
+   xmm12h fpu @ fpu (offset: 936  size: 8)
+   xmm13 vec128 @ fpu (offset: 992  size: 16)
+   ymm13 vec256 @ fpu (offset: 992  size: 32)
+   zmm13 vec512 @ fpu (offset: 992  size: 64)
+   xmm13l fpu @ fpu (offset: 992  size: 8)
+   xmm13h fpu @ fpu (offset: 1000  size: 8)
+   xmm14 vec128 @ fpu (offset: 1056  size: 16)
+   ymm14 vec256 @ fpu (offset: 1056  size: 32)
+   zmm14 vec512 @ fpu (offset: 1056  size: 64)
+   xmm14l fpu @ fpu (offset: 1056  size: 8)
+   xmm14h fpu @ fpu (offset: 1064  size: 8)
+   xmm15 vec128 @ fpu (offset: 1120  size: 16)
+   ymm15 vec256 @ fpu (offset: 1120  size: 32)
+   zmm15 vec512 @ fpu (offset: 1120  size: 64)
+   xmm15l fpu @ fpu (offset: 1120  size: 8)
+   xmm15h fpu @ fpu (offset: 1128  size: 8)
+   xmm16 vec128 @ fpu (offset: 1184  size: 16)
+   ymm16 vec256 @ fpu (offset: 1184  size: 32)
+   zmm16 vec512 @ fpu (offset: 1184  size: 64)
+   xmm16l fpu @ fpu (offset: 1184  size: 8)
+   xmm16h fpu @ fpu (offset: 1192  size: 8)
+   xmm17 vec128 @ fpu (offset: 1248  size: 16)
+   ymm17 vec256 @ fpu (offset: 1248  size: 32)
+   zmm17 vec512 @ fpu (offset: 1248  size: 64)
+   xmm17l fpu @ fpu (offset: 1248  size: 8)
+   xmm17h fpu @ fpu (offset: 1256  size: 8)
+   xmm18 vec128 @ fpu (offset: 1312  size: 16)
+   ymm18 vec256 @ fpu (offset: 1312  size: 32)
+   zmm18 vec512 @ fpu (offset: 1312  size: 64)
+   xmm18l fpu @ fpu (offset: 1312  size: 8)
+   xmm18h fpu @ fpu (offset: 1320  size: 8)
+   xmm19 vec128 @ fpu (offset: 1376  size: 16)
+   ymm19 vec256 @ fpu (offset: 1376  size: 32)
+   zmm19 vec512 @ fpu (offset: 1376  size: 64)
+   xmm19l fpu @ fpu (offset: 1376  size: 8)
+   xmm19h fpu @ fpu (offset: 1384  size: 8)
+   xmm20 vec128 @ fpu (offset: 1440  size: 16)
+   ymm20 vec256 @ fpu (offset: 1440  size: 32)
+   zmm20 vec512 @ fpu (offset: 1440  size: 64)
+   xmm20l fpu @ fpu (offset: 1440  size: 8)
+   xmm20h fpu @ fpu (offset: 1448  size: 8)
+   xmm21 vec128 @ fpu (offset: 1504  size: 16)
+   ymm21 vec256 @ fpu (offset: 1504  size: 32)
+   zmm21 vec512 @ fpu (offset: 1504  size: 64)
+   xmm21l fpu @ fpu (offset: 1504  size: 8)
+   xmm21h fpu @ fpu (offset: 1512  size: 8)
+   xmm22 vec128 @ fpu (offset: 1568  size: 16)
+   ymm22 vec256 @ fpu (offset: 1568  size: 32)
+   zmm22 vec512 @ fpu (offset: 1568  size: 64)
+   xmm22l fpu @ fpu (offset: 1568  size: 8)
+   xmm22h fpu @ fpu (offset: 1576  size: 8)
+   xmm23 vec128 @ fpu (offset: 1632  size: 16)
+   ymm23 vec256 @ fpu (offset: 1632  size: 32)
+   zmm23 vec512 @ fpu (offset: 1632  size: 64)
+   xmm23l fpu @ fpu (offset: 1632  size: 8)
+   xmm23h fpu @ fpu (offset: 1640  size: 8)
+   xmm24 vec128 @ fpu (offset: 1696  size: 16)
+   ymm24 vec256 @ fpu (offset: 1696  size: 32)
+   zmm24 vec512 @ fpu (offset: 1696  size: 64)
+   xmm24l fpu @ fpu (offset: 1696  size: 8)
+   xmm24h fpu @ fpu (offset: 1704  size: 8)
+   xmm25 vec128 @ fpu (offset: 1760  size: 16)
+   ymm25 vec256 @ fpu (offset: 1760  size: 32)
+   zmm25 vec512 @ fpu (offset: 1760  size: 64)
+   xmm25l fpu @ fpu (offset: 1760  size: 8)
+   xmm25h fpu @ fpu (offset: 1768  size: 8)
+   xmm26 vec128 @ fpu (offset: 1824  size: 16)
+   ymm26 vec256 @ fpu (offset: 1824  size: 32)
+   zmm26 vec512 @ fpu (offset: 1824  size: 64)
+   xmm26l fpu @ fpu (offset: 1824  size: 8)
+   xmm26h fpu @ fpu (offset: 1832  size: 8)
+   xmm27 vec128 @ fpu (offset: 1888  size: 16)
+   ymm27 vec256 @ fpu (offset: 1888  size: 32)
+   zmm27 vec512 @ fpu (offset: 1888  size: 64)
+   xmm27l fpu @ fpu (offset: 1888  size: 8)
+   xmm27h fpu @ fpu (offset: 1896  size: 8)
+   xmm28 vec128 @ fpu (offset: 1952  size: 16)
+   ymm28 vec256 @ fpu (offset: 1952  size: 32)
+   zmm28 vec512 @ fpu (offset: 1952  size: 64)
+   xmm28l fpu @ fpu (offset: 1952  size: 8)
+   xmm28h fpu @ fpu (offset: 1960  size: 8)
+   xmm29 vec128 @ fpu (offset: 2016  size: 16)
+   ymm29 vec256 @ fpu (offset: 2016  size: 32)
+   zmm29 vec512 @ fpu (offset: 2016  size: 64)
+   xmm29l fpu @ fpu (offset: 2016  size: 8)
+   xmm29h fpu @ fpu (offset: 2024  size: 8)
+   xmm30 vec128 @ fpu (offset: 2080  size: 16)
+   ymm30 vec256 @ fpu (offset: 2080  size: 32)
+   zmm30 vec512 @ fpu (offset: 2080  size: 64)
+   xmm30l fpu @ fpu (offset: 2080  size: 8)
+   xmm30h fpu @ fpu (offset: 2088  size: 8)
+   xmm31 vec128 @ fpu (offset: 2144  size: 16)
+   ymm31 vec256 @ fpu (offset: 2144  size: 32)
+   zmm31 vec512 @ fpu (offset: 2144  size: 64)
+   xmm31l fpu @ fpu (offset: 2144  size: 8)
+   xmm31h fpu @ fpu (offset: 2152  size: 8)
+   k0 fpu @ fpu (offset: 2208  size: 8)
+   k1 fpu @ fpu (offset: 2216  size: 8)
+   k2 fpu @ fpu (offset: 2224  size: 8)
+   k3 fpu @ fpu (offset: 2232  size: 8)
+   k4 fpu @ fpu (offset: 2240  size: 8)
+   k5 fpu @ fpu (offset: 2248  size: 8)
+   k6 fpu @ fpu (offset: 2256  size: 8)
+   k7 fpu @ fpu (offset: 2264  size: 8)
 regset 3 (vec64)
 * arena vec64 size 1
 regset 4 (vec128)
@@ -453,28 +573,52 @@ st6 = 0x00000000
 st7 = 0x00000000
 xmm0l = 0x00000000
 xmm0 = 0x00000000000000000000000000000000
+ymm0 = 0x0000000000000000000000000000000000000000000000000000000000000000
+zmm0 = 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 xmm0h = 0x00000000
 xmm1l = 0x00000000
 xmm1 = 0x00000000000000000000000000000000
+ymm1 = 0x0000000000000000000000000000000000000000000000000000000000000000
+zmm1 = 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 xmm1h = 0x00000000
 xmm2l = 0x00000000
 xmm2 = 0x00000000000000000000000000000000
+ymm2 = 0x0000000000000000000000000000000000000000000000000000000000000000
+zmm2 = 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 xmm2h = 0x00000000
 xmm3l = 0x00000000
 xmm3 = 0x00000000000000000000000000000000
+ymm3 = 0x0000000000000000000000000000000000000000000000000000000000000000
+zmm3 = 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 xmm3h = 0x00000000
 xmm4l = 0x00000000
 xmm4 = 0x00000000000000000000000000000000
+ymm4 = 0x0000000000000000000000000000000000000000000000000000000000000000
+zmm4 = 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 xmm4h = 0x00000000
 xmm5l = 0x00000000
 xmm5 = 0x00000000000000000000000000000000
+ymm5 = 0x0000000000000000000000000000000000000000000000000000000000000000
+zmm5 = 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 xmm5h = 0x00000000
 xmm6l = 0x00000000
 xmm6 = 0x00000000000000000000000000000000
+ymm6 = 0x0000000000000000000000000000000000000000000000000000000000000000
+zmm6 = 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 xmm6h = 0x00000000
 xmm7l = 0x00000000
 xmm7 = 0x00000000000000000000000000000000
+ymm7 = 0x0000000000000000000000000000000000000000000000000000000000000000
+zmm7 = 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 xmm7h = 0x00000000
+k0 = 0x00000000
+k1 = 0x00000000
+k2 = 0x00000000
+k3 = 0x00000000
+k4 = 0x00000000
+k5 = 0x00000000
+k6 = 0x00000000
+k7 = 0x00000000
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Parse error @ line 3 (Invalid syntax: Wrong number of columns)

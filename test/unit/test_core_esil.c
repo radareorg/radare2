@@ -215,9 +215,177 @@ bool test_wide_register_restore(void) {
 	mu_end;
 }
 
+bool test_x86_vector_instructions(void) {
+	enum { XOR = 1, MASK = 2, ZERO = 4, LOAD = 8, STORE = 16, BROADCAST = 32, LEGACY = 64, ALIAS1 = 128, ALIAS2 = 256 };
+	const struct { const char *hex; int width; int element; int flags; } cases[] = {
+		{ "660fefc2", 16, 4, XOR | LEGACY | ALIAS1 },
+		{ "0f28c1", 16, 4, LEGACY },
+		{ "660f10c1", 16, 8, LEGACY },
+		{ "c5f1efc2", 16, 4, XOR },
+		{ "c5f5efc2", 32, 4, XOR },
+		{ "c5fdefc2", 32, 4, XOR | ALIAS1 },
+		{ "c5f5efc0", 32, 4, XOR | ALIAS2 },
+		{ "62f17548efc2", 64, 4, XOR },
+		{ "62f17549efc2", 64, 4, XOR | MASK },
+		{ "62f175c9efc2", 64, 4, XOR | MASK | ZERO },
+		{ "62f175c9efc0", 64, 4, XOR | MASK | ZERO | ALIAS2 },
+		{ "62f1f5c9efc2", 64, 8, XOR | MASK | ZERO },
+		{ "62f174c957c2", 64, 4, XOR | MASK | ZERO },
+		{ "62f1f52957c2", 32, 8, XOR | MASK },
+		{ "c5fe6f00", 32, 4, LOAD },
+		{ "c5fe7f08", 32, 4, STORE },
+		{ "62f17fc96fc1", 64, 1, MASK | ZERO },
+		{ "62f1ff496fc1", 64, 2, MASK },
+		{ "62f17ec96f00", 64, 4, MASK | ZERO | LOAD },
+		{ "62f1fe496f00", 64, 8, MASK | LOAD },
+		{ "62f17f497f08", 64, 1, MASK | STORE },
+		{ "62f1ff497f08", 64, 2, MASK | STORE },
+		{ "62f17e497f08", 64, 4, MASK | STORE },
+		{ "62f1fe497f08", 64, 8, MASK | STORE },
+		{ "62f17cc910c1", 64, 4, MASK | ZERO },
+		{ "62f1fd2910c1", 32, 8, MASK },
+		{ "62f17518ef00", 16, 4, XOR | LOAD | BROADCAST },
+		{ "62f175d9ef00", 64, 4, XOR | MASK | ZERO | LOAD | BROADCAST },
+		{ "62f1f559ef00", 64, 8, XOR | MASK | LOAD | BROADCAST },
+		{ "62f17d486fc1", 64, 4, 0 },
+		{ "62f1fda96fc1", 32, 8, MASK | ZERO },
+		{ "62f17c4828c1", 64, 4, 0 },
+		{ "62f1fd8928c1", 16, 8, MASK | ZERO },
+	};
+	int bits;
+	for (bits = 32; bits <= 64; bits += 32) {
+		RCore *core = r_core_new ();
+		r_config_set (core->config, "asm.arch", "x86");
+		r_config_set_i (core->config, "asm.bits", bits);
+		RIODesc *file = r_core_file_open (core, "malloc://256", R_PERM_RWX, 0);
+		mu_assert_notnull (file, "vector memory");
+		mu_assert_notnull (r_io_map_add (core->io, file->fd, R_PERM_RWX, 0, 0, 256), "vector memory map");
+		r_core_esil_load_arch (core);
+		RReg *reg = core->anal->reg;
+		RRegItem *dst = r_reg_get (reg, "zmm0", R_REG_TYPE_ALL);
+		RRegItem *src1 = r_reg_get (reg, "zmm1", R_REG_TYPE_ALL);
+		RRegItem *src2 = r_reg_get (reg, "zmm2", R_REG_TYPE_ALL);
+		const ut64 masks[] = { 0, UT64_MAX, 0x80000000a55a5aa5ULL };
+		size_t c, m;
+		int i;
+		int syntax;
+		for (syntax = 0; syntax < 2; syntax++) {
+			r_config_set (core->config, "asm.syntax", syntax? "att": "intel");
+			for (c = 0; c < R_ARRAY_SIZE (cases); c++) {
+				ut8 code[16];
+				const int len = r_hex_str2bin (cases[c].hex, code);
+				const int flags = cases[c].flags;
+				RAnalOp op;
+				mu_assert_eq (r_anal_op (core->anal, &op, 0, code, len, R_ARCH_OP_MASK_ESIL), len, cases[c].hex);
+				mu_assert_true (r_strbuf_length (&op.esil) > 0, cases[c].hex);
+				for (m = 0; m < R_ARRAY_SIZE (masks); m++) {
+					ut8 original[64], first[64], second[64], expected[64], actual[64];
+					memset (original, 0xa5, sizeof (original));
+					memcpy (expected, original, sizeof (expected));
+					for (i = 0; i < 64; i++) {
+						first[i] = flags & ALIAS1? original[i]: i * 3 + 1;
+						second[i] = flags & ALIAS2? original[i]: i * 5 + 7;
+						if (i < cases[c].width) {
+							if (!(flags & MASK) || (masks[m] & (1ULL << (i / cases[c].element)))) {
+								const int source = flags & BROADCAST? i % cases[c].element: i;
+								expected[i] = flags & XOR? first[i] ^ second[source]: first[i];
+							} else if (flags & ZERO) {
+								expected[i] = 0;
+							}
+						} else if (!(flags & (LEGACY | STORE))) {
+							expected[i] = 0;
+						}
+					}
+					mu_assert_true (r_reg_set_value_bytes (reg, dst, original, 64), "seed destination");
+					mu_assert_true (r_reg_set_value_bytes (reg, src1, first, 64), "seed first source");
+					mu_assert_true (r_reg_set_value_bytes (reg, src2, second, 64), "seed second source");
+					mu_assert_true (r_io_write_at (core->io, 128, flags & STORE? original: flags & XOR? second: first, 64), "seed vector memory");
+					r_reg_setv (reg, bits == 64? "rax": "eax", 128);
+					r_reg_setv (reg, "k1", masks[m]);
+					r_reg_setv (reg, "eflags", 0xad7);
+					mu_assert_true (r_core_esil_run_expr_at (core, r_strbuf_get (&op.esil), 0), cases[c].hex);
+					if (flags & STORE) {
+						mu_assert_true (r_io_read_at (core->io, 128, actual, 64), "read stored vector");
+					} else {
+						mu_assert_true (r_reg_get_value_bytes (reg, dst, actual, 64), "read vector result");
+					}
+					mu_assert_memeq (actual, expected, 64, cases[c].hex);
+					mu_assert_eq (r_reg_getv (reg, "eflags"), 0xad7, "vector operations preserve flags");
+				}
+				r_anal_op_fini (&op);
+			}
+		}
+		r_unref (dst);
+		r_unref (src1);
+		r_unref (src2);
+		r_core_free (core);
+	}
+	mu_end;
+}
+
+bool test_x86_vector_masked_memory(void) {
+	const char *instructions[] = { "62f17ec96f00", "62f17e497f08", "62f175c9ef00", "62f175d9ef00" };
+	RCore *core = r_core_new ();
+	r_config_set (core->config, "asm.arch", "x86");
+	r_config_set_i (core->config, "asm.bits", 64);
+	RIODesc *file = r_core_file_open (core, "malloc://64", R_PERM_RWX, 0);
+	mu_assert_notnull (file, "masked memory");
+	mu_assert_notnull (r_io_map_add (core->io, file->fd, R_PERM_RWX, 0, 0, 64), "masked memory map");
+	r_core_esil_load_arch (core);
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (instructions); i++) {
+		ut8 code[16];
+		int len = r_hex_str2bin (instructions[i], code);
+		RAnalOp op;
+		mu_assert_eq (r_anal_op (core->anal, &op, 0, code, len, R_ARCH_OP_MASK_ESIL), len, "decode masked memory instruction");
+		r_reg_setv (core->anal->reg, "rax", 64);
+		r_reg_setv (core->anal->reg, "k1", 0);
+		mu_assert_true (r_core_esil_run_expr_at (core, r_strbuf_get (&op.esil), 0), "inactive lanes do not touch unmapped memory");
+		r_reg_setv (core->anal->reg, "k1", 1);
+		r_reg_setv (core->anal->reg, "rax", 60);
+		mu_assert_true (r_core_esil_run_expr_at (core, r_strbuf_get (&op.esil), 0), "only the active element needs to be mapped");
+		r_reg_setv (core->anal->reg, "rax", 64);
+		mu_assert_false (r_core_esil_run_expr_at (core, r_strbuf_get (&op.esil), 0), "active unmapped element still faults");
+		r_anal_op_fini (&op);
+	}
+	r_core_free (core);
+	mu_end;
+}
+
+bool test_x86_vector_address_size(void) {
+	RCore *core = r_core_new ();
+	r_config_set (core->config, "asm.arch", "x86");
+	r_config_set_i (core->config, "asm.bits", 64);
+	RIODesc *file = r_core_file_open (core, "malloc://64", R_PERM_RWX, 0);
+	mu_assert_notnull (file, "address-size memory");
+	mu_assert_notnull (r_io_map_add (core->io, file->fd, R_PERM_RWX, 0, 0xfffffffc, 64), "vector crossing 4 GiB");
+	ut8 expected[32], actual[32];
+	int i;
+	for (i = 0; i < 32; i++) {
+		expected[i] = i + 1;
+	}
+	mu_assert_true (r_io_write_at (core->io, 0xfffffffc, expected, 32), "seed crossing vector");
+	r_core_esil_load_arch (core);
+	const ut8 code[] = { 0x67, 0xc5, 0xfe, 0x6f, 0x40, 0x08 };
+	RAnalOp op;
+	mu_assert_eq (r_anal_op (core->anal, &op, 0, code, sizeof (code), R_ARCH_OP_MASK_ESIL), sizeof (code), "decode address-size override");
+	r_reg_setv (core->anal->reg, "rax", 0x1fffffff4ULL);
+	mu_assert_true (r_core_esil_run_expr_at (core, r_strbuf_get (&op.esil), 0), "truncate effective address before adding lane offsets");
+	RRegItem *ymm0 = r_reg_get (core->anal->reg, "ymm0", R_REG_TYPE_ALL);
+	mu_assert_true (r_reg_get_value_bytes (core->anal->reg, ymm0, actual, 32), "read crossing vector");
+	mu_assert_memeq (actual, expected, 32, "vector bytes stay contiguous across 4 GiB");
+	r_unref (ymm0);
+	r_anal_op_fini (&op);
+	r_core_free (core);
+	mu_end;
+}
+
 int main(int argc, char **argv) {
 	mu_run_test (test_core_fault_state);
 	mu_run_test (test_vector_debug_sync);
 	mu_run_test (test_wide_register_restore);
+	mu_run_test (test_x86_vector_instructions);
+	mu_run_test (test_x86_vector_masked_memory);
+	mu_run_test (test_x86_vector_address_size);
 	return tests_passed != tests_run;
 }
