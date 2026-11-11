@@ -663,6 +663,16 @@ bool test_r_reg_vector_bank(void) {
 	mu_assert ("write last vector chunk", r_reg_setv (reg, "v1[5]", 0x123456789abcdef0ULL));
 	mu_assert ("write partial predicate chunk", r_reg_setv (reg, "p0[0]", 0x123456789abcULL));
 	mu_assert_eq (r_reg_getv (reg, "p0[0]"), 0x123456789abcULL, "48-bit predicate round trip");
+	RRegItem *slice = r_reg_get (reg, "p0[0]", -1);
+	mu_assert_notnull (slice, "predicate slice");
+	mu_assert_eq (slice->packed_size, 48, "slice preserves packed access");
+	mu_assert_eq (r_reg_get_pack (reg, slice, 0, 0), 0x123456789abcULL, "default predicate packing");
+	r_unref (slice);
+	slice = r_reg_get (reg, "v1[5]", -1);
+	mu_assert_notnull (slice, "vector slice");
+	mu_assert_eq (slice->packed_size, 64, "slice limits packed access to its size");
+	mu_assert_eq (r_reg_get_pack (reg, slice, 0, 0), 0x123456789abcdef0ULL, "default vector packing");
+	r_unref (slice);
 	RRegItem *vec = r_reg_get (reg, "v1", -1);
 	mu_assert_notnull (vec, "vector materialized");
 	mu_assert_eq (r_reg_get_pack (reg, vec, 5, 64), 0x123456789abcdef0ULL, "last quadword");

@@ -78,13 +78,13 @@ arp~?
 EOF
 EXPECT=<<EOF
 160
-149
+172
 64
 106
 68
 129
 808
-455
+426
 EOF
 RUN
 
@@ -221,7 +221,7 @@ regset 1 (drx)
    dr6 drx @ drx (offset: 48  size: 8)
    dr7 drx @ drx (offset: 56  size: 8)
 regset 2 (fpu)
-* arena fpu size 296
+* arena fpu size 416
    cwd fpu @ fpu (offset: 0  size: 2)
    swd fpu @ fpu (offset: 2  size: 2)
    ftw fpu @ fpu (offset: 4  size: 2)
@@ -262,7 +262,30 @@ regset 2 (fpu)
    xmm7 vec128 @ fpu (offset: 272  size: 16)
    xmm7l fpu @ fpu (offset: 272  size: 8)
    xmm7h fpu @ fpu (offset: 280  size: 8)
-   x64 fpu @ fpu (offset: 288  size: 8)
+   xmm8 vec128 @ fpu (offset: 288  size: 16)
+   xmm8l fpu @ fpu (offset: 288  size: 8)
+   xmm8h fpu @ fpu (offset: 296  size: 8)
+   xmm9 vec128 @ fpu (offset: 304  size: 16)
+   xmm9l fpu @ fpu (offset: 304  size: 8)
+   xmm9h fpu @ fpu (offset: 312  size: 8)
+   xmm10 vec128 @ fpu (offset: 320  size: 16)
+   xmm10l fpu @ fpu (offset: 320  size: 8)
+   xmm10h fpu @ fpu (offset: 328  size: 8)
+   xmm11 vec128 @ fpu (offset: 336  size: 16)
+   xmm11l fpu @ fpu (offset: 336  size: 8)
+   xmm11h fpu @ fpu (offset: 344  size: 8)
+   xmm12 vec128 @ fpu (offset: 352  size: 16)
+   xmm12l fpu @ fpu (offset: 352  size: 8)
+   xmm12h fpu @ fpu (offset: 360  size: 8)
+   xmm13 vec128 @ fpu (offset: 368  size: 16)
+   xmm13l fpu @ fpu (offset: 368  size: 8)
+   xmm13h fpu @ fpu (offset: 376  size: 8)
+   xmm14 vec128 @ fpu (offset: 384  size: 16)
+   xmm14l fpu @ fpu (offset: 384  size: 8)
+   xmm14h fpu @ fpu (offset: 392  size: 8)
+   xmm15 vec128 @ fpu (offset: 400  size: 16)
+   xmm15l fpu @ fpu (offset: 400  size: 8)
+   xmm15h fpu @ fpu (offset: 408  size: 8)
 regset 3 (vec64)
 * arena vec64 size 1
 regset 4 (vec128)

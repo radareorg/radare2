@@ -234,7 +234,7 @@ static char *get_reg_profile(RArchSession *as) {
 		"=A6	r10\n"
 		"=A7	r11\n"
 		"=SN	rax\n";
-		char *prof = r_str_newf ("%s%s", args_prof,
+		RStrBuf *profile = r_strbuf_newf ("%s%s", args_prof,
 		 "gpr	rax	.64	80	0\n"
 		 "gpr	eax	.32	80	0\n"
 		 "gpr	ax	.16	80	0\n"
@@ -367,41 +367,17 @@ static char *get_reg_profile(RArchSession *as) {
 		 "fpu    st4 .64 96  0\n"
 		 "fpu    st5 .64 112  0\n"
 		 "fpu    st6 .64 128  0\n"
-		 "fpu    st7 .64 144  0\n"
-
-		 "vec128@fpu    xmm0  .128 160  4\n"
-		 "fpu    xmm0l .64 160  0\n"
-		 "fpu    xmm0h .64 168  0\n"
-
-		 "vec128@fpu    xmm1  .128 176  4\n"
-		 "fpu    xmm1l .64 176  0\n"
-		 "fpu    xmm1h .64 184  0\n"
-
-		 "vec128@fpu    xmm2  .128 192  4\n"
-		 "fpu    xmm2l .64 192  0\n"
-		 "fpu    xmm2h .64 200  0\n"
-
-		 "vec128@fpu    xmm3  .128 208  4\n"
-		 "fpu    xmm3l .64 208  0\n"
-		 "fpu    xmm3h .64 216  0\n"
-
-		 "vec128@fpu    xmm4  .128 224  4\n"
-		 "fpu    xmm4l .64 224  0\n"
-		 "fpu    xmm4h .64 232  0\n"
-
-		 "vec128@fpu    xmm5  .128 240  4\n"
-		 "fpu    xmm5l .64 240  0\n"
-		 "fpu    xmm5h .64 248  0\n"
-
-		 "vec128@fpu    xmm6  .128 256  4\n"
-		 "fpu    xmm6l .64 256  0\n"
-		 "fpu    xmm6h .64 264  0\n"
-
-		 "vec128@fpu    xmm7  .128 272  4\n"
-		 "fpu    xmm7l .64 272  0\n"
-		 "fpu    xmm7h .64 280  0\n"
-		 "fpu    x64   .64 288  0\n");
-		return prof;
+		 "fpu    st7 .64 144  0\n");
+		int reg;
+		for (reg = 0; reg < 16; reg++) {
+			const int offset = 160 + reg * 16;
+			r_strbuf_appendf (profile,
+				"vec128@fpu xmm%d .128 %d 4\n"
+				"fpu xmm%dl .64 %d 0\n"
+				"fpu xmm%dh .64 %d 0\n",
+				reg, offset, reg, offset, reg, offset + 8);
+		}
+		return r_strbuf_drain (profile);
 	}
 	}
 	return (R_STR_ISNOTEMPTY (p))? strdup (p): NULL;

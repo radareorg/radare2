@@ -37,3 +37,68 @@ EXPECT=<<EOF_EXPECT
 arv xmm0 1 64 = 0x123456789abcdef
 EOF_EXPECT
 RUN
+
+NAME=Vector chunks retain ARM64 packed access
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF_CMDS
+e asm.cpu=sve384
+e cfg.bigendian=true
+arv z0[5] 0 64 = 0x0123456789abcdef
+arvj z0[5]
+aei
+ae 0x1234,x0,=,x0,p15[0],=
+arvj p15[0]
+arv* p15[0]
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+{"name":"z0[5]","bits":64,"lane_bits":64,"first":0,"values":["0x0123456789abcdef"]}
+{"name":"p15[0]","bits":48,"lane_bits":16,"first":0,"values":["0x1234","0x0000","0x0000"]}
+arv p15[0] 0 16 = 0x1234
+arv p15[0] 1 16 = 0x0
+arv p15[0] 2 16 = 0x0
+EOF_EXPECT
+RUN
+
+NAME=Vector arguments reject invalid numbers without changing lanes
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF_CMDS
+arv xmm0 0 = 0x1234
+arv xmm0 invalid_lane 32 = 0xdeadbeef
+arv xmm0 -1 32 = 0xdeadbeef
+arv xmm0 0 32 = invalid_value
+arvj xmm0 0 32
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+{"name":"xmm0","bits":128,"lane_bits":32,"first":0,"values":["0x00001234"]}
+EOF_EXPECT
+EXPECT_ERR=<<EOF_EXPECT
+ERROR: Invalid vector lane
+ERROR: Invalid vector lane
+ERROR: Cannot set lane 0 of xmm0
+EOF_EXPECT
+RUN
+
+NAME=x86-64 upper XMM registers share chunks and support ESIL step-back
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF_CMDS
+wx 66450f6ff8
+aei
+arv xmm8 0 64 = 0x0123456789abcdef
+arv xmm8 1 64 = 0xfedcba9876543210
+aes
+arvj xmm15
+ar xmm15l
+ar xmm15h
+aesb
+arvj xmm15
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+{"name":"xmm15","bits":128,"lane_bits":64,"first":0,"values":["0x0123456789abcdef","0xfedcba9876543210"]}
+0x123456789abcdef
+0xfedcba9876543210
+{"name":"xmm15","bits":128,"lane_bits":64,"first":0,"values":["0x0000000000000000","0x0000000000000000"]}
+EOF_EXPECT
+RUN

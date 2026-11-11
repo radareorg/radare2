@@ -638,6 +638,7 @@ static RRegItem *reg_slice(RReg *reg, const char *name, int type) {
 			memcpy (slice->name, name, name_size);
 			slice->offset = base->offset + offset;
 			slice->size = bits;
+			slice->packed_size = R_MIN (base->packed_size, bits);
 			slice->type = base->type;
 			slice->arena = base->arena;
 			slice->index = -1;

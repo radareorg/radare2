@@ -3069,6 +3069,7 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 #define NUM_PACK_TYPES 6
 #define NUM_INT_PACK_TYPES 4
 static const int pack_sizes[NUM_PACK_TYPES] = { 8, 16, 32, 64, 32, 64 };
+static const char pack_modes[] = "bwdqfl";
 static const char *pack_format[NUM_PACK_TYPES] = {
 	"%s0x%02" PFMT64x, "%s0x%04" PFMT64x, "%s0x%08" PFMT64x,
 	"%s0x%016" PFMT64x, "%s%lf" , "%s%lf"
@@ -3256,14 +3257,19 @@ static void cmd_reg_vector(RCore *core, RReg *reg, const char *str, bool debug, 
 		if (eq) {
 			*eq++ = 0;
 		}
+		r_str_trim (name);
 		p = strchr (name, ' ');
 		if (p) {
 			*p++ = 0;
+			p = (char *)r_str_trim_head_ro (p);
 			q = strchr (p, ' ');
+			if (q) {
+				*q++ = 0;
+			}
 			if (p[0] != '*') {
 				explicit_index = 1;
 				const ut64 lane = r_num_math (core->num, p);
-				if (lane > INT_MAX) {
+				if (r_num_failed (core->num) || lane > INT_MAX) {
 					R_LOG_ERROR ("Invalid vector lane");
 					free (name);
 					return;
@@ -3271,9 +3277,8 @@ static void cmd_reg_vector(RCore *core, RReg *reg, const char *str, bool debug, 
 				index = lane;
 			}
 			if (q) {
-				*q++ = 0;
 				const ut64 width = r_num_math (core->num, q);
-				if (width != 8 && width != 16 && width != 32 && width != 64) {
+				if (r_num_failed (core->num) || (width != 8 && width != 16 && width != 32 && width != 64)) {
 					R_LOG_ERROR ("Unsupported wordsize %"PFMT64u, width);
 					free (name);
 					return;
@@ -3296,35 +3301,14 @@ static void cmd_reg_vector(RCore *core, RReg *reg, const char *str, bool debug, 
 			name = strdup (str + 3);
 			explicit_name = 1;
 		}
-		switch (str[1]) {
-		case 'b':
-			size = pack_sizes[0];
-			pack_show[0] = 1;
-			break;
-		case 'w':
-			size = pack_sizes[1];
-			pack_show[1] = 1;
-			break;
-		case 'd':
-			size = pack_sizes[2];
-			pack_show[2] = 1;
-			break;
-		case 'q':
-			size = pack_sizes[3];
-			pack_show[3] = 1;
-			break;
-		case 'f':
-			size = pack_sizes[4];
-			pack_show[4] = 1;
-			break;
-		case 'l':
-			size = pack_sizes[5];
-			pack_show[5] = 1;
-			break;
-		default:
+		const char *packing = strchr (pack_modes, str[1]);
+		if (!packing) {
 			R_LOG_ERROR ("Unknown command");
 			return;
 		}
+		const int pi = packing - pack_modes;
+		size = pack_sizes[pi];
+		pack_show[pi] = 1;
 	}
 
 	if (explicit_name) {
@@ -3345,7 +3329,7 @@ static void cmd_reg_vector(RCore *core, RReg *reg, const char *str, bool debug, 
 			R_LOG_WARN ("Writing %s through the debugger is unsupported", name);
 		} else if (eq) {
 			ut64 val = r_num_math (core->num, eq);
-			if (r_reg_set_pack (reg, item, index, size, val)) {
+			if (!r_num_failed (core->num) && r_reg_set_pack (reg, item, index, size, val)) {
 				cmd_reg_vector_sync (core, reg_type, true, debug);
 			} else {
 				R_LOG_ERROR ("Cannot set lane %d of %s", index, name);

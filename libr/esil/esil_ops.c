@@ -323,7 +323,7 @@ static bool esil_eq(REsil *esil) {
 		char *dst2 = r_str_newf ("%sh", dst.a);
 		ret = r_esil_reg_write (esil, dst2, n0);
 		free (dst2);
-	} else if (esil_internal_packed_size_reg (esil, dst.a) > 0) {
+	} else if (regsize > 64 && esil_internal_packed_size_reg (esil, dst.a) > 0) {
 		const RStrs src2 = r_esil_pop (esil);
 		char *newreg = r_str_newf ("%sl", dst.a);
 		if (r_esil_get_parm (esil, src2, &num2)) {
