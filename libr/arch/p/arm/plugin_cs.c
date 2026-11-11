@@ -1613,6 +1613,7 @@ static const char *arm64_profile_sysreg(cs_insn *insn, int n) {
 	case 0xde82: return "tpidr_el0";
 	case 0xde83: return "tpidrro_el0";
 	case 0xda10: return "nzcv";
+	case 0xda20: return "fpcr";
 	}
 	return NULL;
 }
@@ -6419,7 +6420,12 @@ const RArchPlugin r_arch_plugin_arm_cs = {
 	.arch = "arm",
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.bits = R_SYS_BITS_PACK3 (16, 32, 64),
-	.cpus = "cortex,v8",
+	.cpus = "cortex,v8"
+#if CS_API_MAJOR > 4
+		",sve128,sve256,sve384,sve512,sve640,sve768,sve896,sve1024"
+		",sve1152,sve1280,sve1408,sve1536,sve1664,sve1792,sve1920,sve2048"
+#endif
+	,
 #if 0
 	// made obsolete by "e anal.mask = true"
 	.anal_mask = anal_mask,
