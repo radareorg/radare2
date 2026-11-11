@@ -7874,7 +7874,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		cmd_drn (core, str);
 		break;
 	case 'v': // "arv"
-		cmd_reg_vector (core, core->anal->reg, str, false, help_msg_arv);
+		cmd_reg_vector (core, core->anal->reg, str, false, "arv");
 		break;
 	case 'd': // "ard"
 		print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, core->anal->config->bits,

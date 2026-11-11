@@ -10,6 +10,7 @@ drv xmm0 0 64
 drv xmm0 1 64 = 0x8877665544332211
 arv xmm0 1 64
 arv rax
+q 0
 EOF
 EXPECT=<<EOF
 | arv[?]                show vector registers (also known as sve / packed / vector)
@@ -120,4 +121,150 @@ EXPECT=<<EOF
 0xfedcba98765432100123456789abcdef99aabbccddeeff001122334455667788
 {"name":"z0","bits":256,"lane_bits":64,"first":0,"values":["0x1122334455667788","0x99aabbccddeeff00","0x0123456789abcdef","0xfedcba9876543210"]}
 EOF
+RUN
+
+NAME=Vector lane defaults and formatting agree across commands
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF_CMDS
+arv xmm0 1 = 0x123456789abcdef0
+arv xmm0
+arv xmm0h
+drv xmm0 1
+arvj xmm0
+drvj xmm0 1
+drv* xmm0 1
+arv xmm0 * 32
+arv~^xmm0
+arvq~^xmm0
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+0x0000000000000000 0x123456789abcdef0
+0x123456789abcdef0
+0x123456789abcdef0
+{"name":"xmm0","bits":128,"lane_bits":64,"first":0,"values":["0x0000000000000000","0x123456789abcdef0"]}
+{"name":"xmm0","bits":128,"lane_bits":64,"first":1,"values":["0x123456789abcdef0"]}
+drv xmm0 1 64 = 0x123456789abcdef0
+0x00000000 0x00000000 0x9abcdef0 0x12345678
+xmm0  = 0x0000000000000000 0x123456789abcdef0
+xmm0  = 0x0000000000000000 0x123456789abcdef0
+EOF_EXPECT
+RUN
+
+NAME=ARM64 aliases and banks share discovery and checked predicate bits
+FILE=-
+ARGS=-a arm -b 64 -e cfg.bigendian=true -e asm.cpu=sve384
+CMDS=<<EOF_CMDS
+arvj
+arv v0 1 = 0x1122334455667788
+arv q0
+arv v0[1]
+arv d0
+drvj q0 1
+arv p15 47 1 = 1
+arv p15 47 1
+arvj p15 47 1
+arv p15
+arvj p15
+drv* p15
+arv~^z0
+arv~^p15
+arvj
+drvj
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+[{"prefix":"z","count":32,"bits":384},{"prefix":"p","count":16,"bits":48}]
+0x0000000000000000 0x1122334455667788
+0x1122334455667788
+0x0000000000000000
+{"name":"q0","bits":128,"lane_bits":64,"first":1,"values":["0x1122334455667788"]}
+0x1
+{"name":"p15","bits":48,"lane_bits":1,"first":47,"values":["0x1"]}
+0x0000 0x0000 0x8000
+{"name":"p15","bits":48,"lane_bits":16,"first":0,"values":["0x0000","0x0000","0x8000"]}
+drv p15 0 16 = 0x0
+drv p15 1 16 = 0x0
+drv p15 2 16 = 0x8000
+z0    = 0x0000000000000000 0x1122334455667788 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000
+p15   = 0x0000 0x0000 0x8000
+[{"prefix":"z","count":32,"bits":384},{"prefix":"p","count":16,"bits":48}]
+[{"prefix":"z","count":32,"bits":384},{"prefix":"p","count":16,"bits":48}]
+EOF_EXPECT
+RUN
+
+NAME=Vector bounds errors are shared by reads writes JSON and restore output
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF_CMDS
+arv xmm0 2
+arvj xmm0 2
+drv* xmm0 2
+drv xmm0 2 = 42
+arv xmm0 *garbage 32
+arv xmm0 * 32 = 42
+arv xmm0 0 0
+arv xmm0 0 65
+arv xmm0 0 32 extra
+arvj xmm0 0 = 42
+arv xmm0 0 =
+arvj xmm0
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+{"name":"xmm0","bits":128,"lane_bits":64,"first":0,"values":["0x0000000000000000","0x0000000000000000"]}
+EOF_EXPECT
+EXPECT_ERR=<<EOF_EXPECT
+ERROR: Vector lane 2 is outside xmm0
+ERROR: Vector lane 2 is outside xmm0
+ERROR: Vector lane 2 is outside xmm0
+ERROR: Vector lane 2 is outside xmm0
+ERROR: Invalid vector lane
+ERROR: Vector writes require one lane
+ERROR: Unsupported wordsize 0
+ERROR: Unsupported wordsize 65
+ERROR: Invalid vector arguments
+ERROR: Invalid vector arguments
+ERROR: Cannot set lane 0 of xmm0
+EOF_EXPECT
+RUN
+
+NAME=Vector sub-byte lanes can cross chunks but full exports require complete lanes
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF_CMDS
+arv xmm0 21 3 = 7
+arv xmm0 21 3
+arvj xmm0 21 3
+arvj xmm0
+arv xmm0 * 3
+arvj xmm0 * 3
+arv* xmm0 * 3
+q 0
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+0x7
+{"name":"xmm0","bits":128,"lane_bits":3,"first":21,"values":["0x7"]}
+{"name":"xmm0","bits":128,"lane_bits":64,"first":0,"values":["0x8000000000000000","0x0000000000000003"]}
+EOF_EXPECT
+EXPECT_ERR=<<EOF_EXPECT
+ERROR: Wordsize 3 does not divide xmm0
+ERROR: Wordsize 3 does not divide xmm0
+ERROR: Wordsize 3 does not divide xmm0
+EOF_EXPECT
+RUN
+
+NAME=Vector shorthand floats and integers keep distinct formatting
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF_CMDS
+arv xmm0 0 64 = 0x400000003f800000
+arv xmm0 1 64 = 0x3ff0000000000000
+arvf xmm0
+arvl xmm0
+arv xmm0 * 32
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+1.000000 2.000000 0.000000 1.875000
+2.000000 1.000000
+0x3f800000 0x40000000 0x00000000 0x3ff00000
+EOF_EXPECT
 RUN

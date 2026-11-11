@@ -62,15 +62,13 @@ R_API bool r_debug_reg_sync(RDebug *dbg, int type, int must_write) {
 			}
 			free (buf);
 		} else {
-			int bufsize = dbg->reg->size;
-			if (bufsize > 0) {
-				ut8 *buf = calloc (2, bufsize);
-				if (buf) {
-					if (plugin->reg_read (dbg, i, buf, bufsize)) {
-						r_reg_set_bytes (dbg->reg, i, buf, bufsize);
-					}
-					free (buf);
-				}
+			const int bufsize = dbg->reg->size;
+			ut8 *buf = bufsize > 0? calloc (2, bufsize): NULL;
+			bool ok = buf && plugin->reg_read (dbg, i, buf, bufsize)
+				&& r_reg_set_bytes (dbg->reg, i, buf, bufsize);
+			free (buf);
+			if (!ok && (type != R_REG_TYPE_ALL || i == R_REG_TYPE_GPR)) {
+				return false;
 			}
 		}
 		// DO NOT BREAK R_REG_TYPE_ALL PLEASE

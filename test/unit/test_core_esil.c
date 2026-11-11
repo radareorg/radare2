@@ -64,7 +64,120 @@ bool test_core_fault_state(void) {
 	mu_end;
 }
 
+typedef struct {
+	ut8 bytes[64];
+	int reads;
+	int writes;
+	int errors;
+	bool read_ok;
+	bool write_ok;
+} VectorTarget;
+
+static bool vector_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
+	VectorTarget *target = dbg->current->plugin_data;
+	target->reads++;
+	if (!target->read_ok || type != R_REG_TYPE_FPU) {
+		return false;
+	}
+	memset (buf, 0, size);
+	memcpy (buf, target->bytes, R_MIN (size, sizeof (target->bytes)));
+	return true;
+}
+
+static bool vector_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
+	VectorTarget *target = dbg->current->plugin_data;
+	target->writes++;
+	if (!target->write_ok || type != R_REG_TYPE_FPU) {
+		return false;
+	}
+	memcpy (target->bytes, buf, R_MIN (size, sizeof (target->bytes)));
+	return true;
+}
+
+static bool vector_sync_error(void *user, int type, const char *origin, const char *msg) {
+	VectorTarget *target = user;
+	if (type == R_LOG_LEVEL_ERROR && msg && strstr (msg, "debugger vector registers")) {
+		target->errors++;
+	}
+	return true;
+}
+
+bool test_vector_debug_sync(void) {
+	RCore *core = r_core_new ();
+	r_config_set_b (core->config, "cfg.debug", true);
+	mu_assert_true (r_reg_set_profile_string (core->dbg->reg,
+		"gpr rax .64 0 0\nvec128@fpu xmm0 .128 0 4\nfpu xmm0l .64 0 8\nvec256@fpu ymm0 .256 0 4\n"), "vector profile");
+	core->dbg->reg->endian = R_SYS_ENDIAN_LITTLE;
+	VectorTarget target = { 0 };
+	RDebugPlugin plugin = {
+		.meta = { .name = "vector-test" },
+		.reg_read = vector_reg_read,
+		.reg_write = vector_reg_write,
+	};
+	RDebugPluginSession session = { .plugin = &plugin, .plugin_data = &target };
+	RDebugPluginSession *previous = core->dbg->current;
+	core->dbg->current = &session;
+	core->dbg->pid = 123;
+	r_log_add_callback (vector_sync_error, &target);
+	mu_assert_false (r_debug_reg_sync (core->dbg, R_REG_TYPE_VEC128, false), "backend read failure propagates through redirected arena");
+	char *output = r_core_cmd_str (core, "drvj xmm0");
+	mu_assert_streq (output, "", "failed read emits no stale JSON");
+	mu_assert_eq (core->rc, R_CMD_RC_FAILURE, "failed read sets command status");
+	free (output);
+	r_core_cmd0 (core, "drv xmm0 0 = 51");
+	mu_assert_eq (target.writes, 0, "failed preread prevents write");
+	mu_assert_eq (target.errors, 2, "both commands report read failure");
+
+	target.read_ok = true;
+	r_write_le64 (target.bytes, 17);
+	r_write_le64 (target.bytes + 8, 34);
+	r_core_cmd0 (core, "drv xmm0 0 = 51");
+	mu_assert_eq (target.writes, 1, "backend write attempted");
+	mu_assert_eq (target.errors, 3, "write failure reported");
+	mu_assert_eq (core->rc, R_CMD_RC_FAILURE, "failed write sets command status");
+	RRegItem *item = r_reg_get (core->dbg->reg, "xmm0", R_REG_TYPE_ALL);
+	mu_assert_eq (r_reg_get_pack (core->dbg->reg, item, 0, 64), 17, "failed write restores last synchronized lane");
+	mu_assert_eq (r_reg_get_pack (core->dbg->reg, item, 1, 64), 34, "preread loads untouched lane");
+	target.write_ok = true;
+	r_write_le64 (target.bytes + 8, 68);
+	r_core_cmd0 (core, "drv xmm0 0 = 51");
+	mu_assert_eq (r_read_le64 (target.bytes), 51, "write updates selected lane");
+	mu_assert_eq (core->rc, R_CMD_RC_SUCCESS, "successful write clears command failure");
+	mu_assert_eq (r_read_le64 (target.bytes + 8), 68, "write preserves target changes in other lanes");
+	r_core_cmd0 (core, "drv ymm0 3 = 85");
+	mu_assert_eq (r_read_le64 (target.bytes + 24), 85, "wide writes use backend capability");
+
+	target.write_ok = false;
+	output = r_core_cmd_str (core, "drv* ymm0 3");
+	mu_assert_streq (output, "drv ymm0 3 64 = 0x55\n", "wide restore export only reads registers");
+	free (output);
+	mu_assert_eq (target.writes, 3, "export does not write debugger registers");
+	int reads = target.reads;
+	output = r_core_cmd_str (core, "drvq");
+	mu_assert_notnull (strstr (output, "xmm0"), "list includes XMM");
+	mu_assert_notnull (strstr (output, "ymm0"), "list includes YMM");
+	mu_assert_null (strstr (output, "xmm0l"), "list omits overlapping scalar aliases");
+	mu_assert_eq (target.reads, reads + 1, "list reads a shared arena once");
+	free (output);
+	target.read_ok = false;
+	output = r_core_cmd_str (core, "drv");
+	mu_assert_streq (output, "", "failed list read emits no stale text");
+	free (output);
+	reads = target.reads;
+	output = r_core_cmd_str (core, "drvj");
+	mu_assert_notnull (strstr (output, "xmm0"), "discovery works without live register values");
+	mu_assert_null (strstr (output, "xmm0l"), "JSON discovery omits the same aliases");
+	mu_assert_eq (target.reads, reads, "discovery does not synchronize");
+	free (output);
+	r_unref (item);
+	r_log_del_callback (vector_sync_error);
+	core->dbg->current = previous;
+	r_core_free (core);
+	mu_end;
+}
+
 int main(int argc, char **argv) {
 	mu_run_test (test_core_fault_state);
+	mu_run_test (test_vector_debug_sync);
 	return tests_passed != tests_run;
 }

@@ -6061,7 +6061,7 @@ EXPECT=<<EOF_EXPECT
 [{"prefix":"z","count":32,"bits":256},{"prefix":"p","count":16,"bits":32}]
 {"name":"z0","bits":256,"lane_bits":64,"first":2,"values":["0xdeadbeefdeadbe80"]}
 arv z0 2 64 = 0xdeadbeefdeadbe80
-0x00000000
+0x0000000000000000
 0xdeadbeefdeadbe80
 0xdeadbeefdeadbeef
 EOF_EXPECT

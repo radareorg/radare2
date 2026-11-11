@@ -444,55 +444,39 @@ static RCoreHelpMessage help_msg_drx = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_drv = {
-	"Usage: drv", " [reg] [idx] [wordsize] [= value]", "Show vector packed registers",
-	"drv", "", "show XMM registers",
-	"drv", " xmm0", "show all packings of xmm0",
-	"drvj", "", "list vector registers and banks as JSON",
-	"drvj", " reg [idx] [wordsize]", "show one vector register or lane as JSON",
-	"drv*", " reg [idx] [wordsize]", "emit commands to restore one vector register or lane",
-	"drv", " xmm0 0 32 = 12", "set the first 32 bit word of the xmm0 reg to 12",
-	"drvb", " [reg]", "show registers as bytes",
-	"drvw", " [reg]", "show registers as words",
-	"drvd", " [reg]", "show registers as doublewords",
-	"drvq", " [reg]", "show registers as quadwords",
-	"drvq", " xmm0~[0]", "show first quadword of xmm0",
-	"drvf", " [reg]", "show registers as 32-bit floating point",
-	"drvl", " [reg]", "show registers as 64-bit floating point",
-	"drvyb", " [reg]", "show YMM registers as bytes",
-	"drvyw", " [reg]", "show YMM registers as words",
-	"drvyd", " [reg]", "show YMM registers as doublewords",
-	"drvyq", " [reg]", "show YMM registers as quadwords",
-	"drvq", " ymm0~[3]", "show fourth quadword of ymm0",
-	"drvyf", " [reg]", "show YMM registers as 32-bit floating point",
-	"drvyl", " [reg]", "show YMM registers as 64-bit floating point",
+#define VECTOR_REGISTER_HELP(prefix, description) \
+	"Usage: " prefix, " [reg] [idx] [wordsize] [= value]", description, \
+	prefix, "", "show vector registers and banks as integer lanes", \
+	prefix, " xmm0", "show integer lanes (default: largest power of two up to 64 dividing the register)", \
+	prefix "j", "", "list vector registers and banks as JSON", \
+	prefix "j", " reg [idx] [wordsize]", "show one vector register or lane as JSON", \
+	prefix "*", " reg [idx] [wordsize]", "emit commands to restore one vector register or lane", \
+	prefix, " reg idx bits", "select a lane with a width of 1 to 64 bits (idx=* selects all lanes)", \
+	prefix, " xmm0 0 32 = 12", "set the first 32 bit word of the xmm0 reg to 12", \
+	prefix "b", " [reg]", "show registers as bytes", \
+	prefix "w", " [reg]", "show registers as words", \
+	prefix "d", " [reg]", "show registers as doublewords", \
+	prefix "q", " [reg]", "show registers as quadwords", \
+	prefix "q", " xmm0~[0]", "show first quadword of xmm0", \
+	prefix "f", " [reg]", "show registers as 32-bit floating point", \
+	prefix "l", " [reg]", "show registers as 64-bit floating point", \
+	prefix "yb", " [reg]", "show YMM registers as bytes", \
+	prefix "yw", " [reg]", "show YMM registers as words", \
+	prefix "yd", " [reg]", "show YMM registers as doublewords", \
+	prefix "yq", " [reg]", "show YMM registers as quadwords", \
+	prefix "q", " ymm0~[3]", "show fourth quadword of ymm0", \
+	prefix "yf", " [reg]", "show YMM registers as 32-bit floating point", \
+	prefix "yl", " [reg]", "show YMM registers as 64-bit floating point", \
 	NULL
+
+static RCoreHelpMessage help_msg_drv = {
+	VECTOR_REGISTER_HELP ("drv", "Show vector packed registers")
 };
 
 static RCoreHelpMessage help_msg_arv = {
-	"Usage: arv", " [reg] [idx] [wordsize] [= value]", "Show analysis vector packed registers",
-	"arv", "", "show XMM registers",
-	"arv", " xmm0", "show all packings of xmm0",
-	"arvj", "", "list vector registers and banks as JSON",
-	"arvj", " reg [idx] [wordsize]", "show one vector register or lane as JSON",
-	"arv*", " reg [idx] [wordsize]", "emit commands to restore one vector register or lane",
-	"arv", " xmm0 0 32 = 12", "set the first 32 bit word of the xmm0 reg to 12",
-	"arvb", " [reg]", "show registers as bytes",
-	"arvw", " [reg]", "show registers as words",
-	"arvd", " [reg]", "show registers as doublewords",
-	"arvq", " [reg]", "show registers as quadwords",
-	"arvq", " xmm0~[0]", "show first quadword of xmm0",
-	"arvf", " [reg]", "show registers as 32-bit floating point",
-	"arvl", " [reg]", "show registers as 64-bit floating point",
-	"arvyb", " [reg]", "show YMM registers as bytes",
-	"arvyw", " [reg]", "show YMM registers as words",
-	"arvyd", " [reg]", "show YMM registers as doublewords",
-	"arvyq", " [reg]", "show YMM registers as quadwords",
-	"arvq", " ymm0~[3]", "show fourth quadword of ymm0",
-	"arvyf", " [reg]", "show YMM registers as 32-bit floating point",
-	"arvyl", " [reg]", "show YMM registers as 64-bit floating point",
-	NULL
+	VECTOR_REGISTER_HELP ("arv", "Show analysis vector packed registers")
 };
+#undef VECTOR_REGISTER_HELP
 
 static RCoreHelpMessage help_msg_ds = {
 	"Usage: ds", "", "Step commands",
@@ -3065,125 +3049,67 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 }
 
 
-// helpers for packed registers
-#define NUM_PACK_TYPES 6
-#define NUM_INT_PACK_TYPES 4
-static const int pack_sizes[NUM_PACK_TYPES] = { 8, 16, 32, 64, 32, 64 };
-static const char pack_modes[] = "bwdqfl";
-static const char *pack_format[NUM_PACK_TYPES] = {
-	"%s0x%02" PFMT64x, "%s0x%04" PFMT64x, "%s0x%08" PFMT64x,
-	"%s0x%016" PFMT64x, "%s%lf" , "%s%lf"
-};
-
-#define pack_print(i, reg, pack_type_index) r_cons_printf (core->cons, pack_format[pack_type_index], i != 0 ? " " : "", reg);
-
-static void cmd_reg_print_packed_reg(RCore *core, RReg *reg, RRegItem *item, char explicit_size, char *pack_show) {
-	int pi, i;
-	for (pi = 0; pi < NUM_PACK_TYPES; pi++) {
-		if (!explicit_size || pack_show[pi]) {
-			for (i = 0; i < item->size / pack_sizes[pi]; i++) {
-				ut64 res = r_reg_get_pack (reg, item, i, pack_sizes[pi]);
-				if (pi > NUM_INT_PACK_TYPES - 1) { // are we printing int or double?
-					if (pack_sizes[pi] == 64) {
-						double dres;
-						memcpy ((void *)&dres, (void *)&res, 8);
-						pack_print (i, dres, pi);
-					} else if (pack_sizes[pi] == 32) {
-						float fres;
-						memcpy ((void *)&fres, (void *)&res, 4);
-						pack_print (i, fres, pi);
-					}
-				} else {
-					pack_print (i, res, pi);
-				}
-			}
-			r_cons_newline (core->cons);
-		}
-	}
-}
-
-static void cmd_reg_vector_sync(RCore *core, RRegType type, bool write, bool debug) {
-	if (debug) {
-		r_debug_reg_sync (core->dbg, type, write);
-	}
-}
-
-static void cmd_reg_vector_list(RCore *core, RReg *reg, RRegType type, int bits) {
-	RReg *debug_reg = core->dbg->reg;
-	core->dbg->reg = reg;
-	print_owned (core, r_debug_reg_list (core->dbg, type, bits, NULL, 0, NULL));
-	core->dbg->reg = debug_reg;
-}
-
-static bool reg_is_vector(int type, int packed_size) {
+static bool reg_is_vector(int type, int bits, int packed_size) {
 	return (type >= R_REG_TYPE_VEC128 && type <= R_REG_TYPE_VEC512)
-		|| (packed_size && (type == R_REG_TYPE_FPU || type == R_REG_TYPE_VEC64));
+		|| (type == R_REG_TYPE_FPU && (bits >= 128 || packed_size))
+		|| (type == R_REG_TYPE_VEC64 && packed_size);
 }
 
-static bool reg_is_bank_member(RReg *reg, RRegItem *item) {
+static bool reg_is_vector_alias(RReg *reg, RRegItem *item) {
 	RRegVBank *bank;
 	R_VEC_FOREACH (&reg->regset[item->arena].vbanks, bank) {
-		if (item->index >= bank->index && item->index - bank->index < bank->count) {
+		if (item->offset >= bank->offset && (st64)item->offset + item->size
+				<= bank->offset + (st64)bank->count * bank->size
+				&& reg_is_vector (bank->type, bank->size, bank->packed_size)) {
 			return true;
+		}
+	}
+	if (item->size < 128) {
+		RListIter *iter;
+		RRegItem *parent;
+		r_list_foreach (reg->regset[item->arena].regs, iter, parent) {
+			if (parent->size >= 128 && parent->offset <= item->offset
+					&& (st64)item->offset + item->size <= (st64)parent->offset + parent->size
+					&& reg_is_vector (parent->type, parent->size, parent->packed_size)) {
+				return true;
+			}
 		}
 	}
 	return false;
 }
 
-static void cmd_reg_vector_json(RCore *core, RReg *reg) {
-	PJ *pj = r_core_pj_new (core);
-	if (!pj) {
-		return;
+static bool cmd_reg_vector_sync(RCore *core, int type, bool write, bool debug) {
+	if (debug && !r_debug_reg_sync (core->dbg, type, write)) {
+		R_LOG_ERROR ("Cannot %s debugger vector registers", write? "write": "read");
+		return false;
 	}
-	pj_a (pj);
-	RListIter *iter;
-	RRegItem *item;
-	r_list_foreach (r_reg_get_list (reg, R_REG_TYPE_ALL), iter, item) {
-		if (reg_is_vector (item->type, item->packed_size) && !reg_is_bank_member (reg, item)) {
-			pj_o (pj);
-			pj_ks (pj, "name", item->name);
-			pj_ki (pj, "bits", item->size);
-			pj_end (pj);
-		}
-	}
-	int arena;
-	for (arena = 0; arena < R_REG_TYPE_LAST; arena++) {
-		RRegVBank *bank;
-		R_VEC_FOREACH (&reg->regset[arena].vbanks, bank) {
-			if (reg_is_vector (bank->type, bank->packed_size)) {
-				const char prefix[] = { bank->prefix, 0 };
-				pj_o (pj);
-				pj_ks (pj, "prefix", prefix);
-				pj_ki (pj, "count", bank->count);
-				pj_ki (pj, "bits", bank->size);
-				pj_end (pj);
-			}
-		}
-	}
-	pj_end (pj);
-	r_cons_println (core->cons, pj_string (pj));
-	pj_free (pj);
+	return true;
 }
 
-static void cmd_reg_vector_export(RCore *core, RReg *reg, RRegItem *item, int index, int size, char format, bool debug) {
+static int reg_vector_lane_size(RRegItem *item, int size) {
 	if (!size) {
 		size = 64;
-		while (size > 8 && item->size % size) {
+		while (size > 1 && item->size % size) {
 			size /= 2;
 		}
 	}
-	const int count = item->size / size;
-	if (index >= count) {
-		R_LOG_ERROR ("Vector lane %d is outside %s", index, item->name);
-		return;
-	}
+	return size;
+}
+
+static bool cmd_reg_vector_values(RCore *core, RReg *reg, RRegItem *item, int index, int size, char mode, const char *command, RStrBuf *out) {
+	size = reg_vector_lane_size (item, size);
 	const int first = R_MAX (0, index);
-	const int end = index < 0? count: index + 1;
+	const int end = index < 0? item->size / size: index + 1;
+	ut64 value;
+	if (!r_reg_get_pack_checked (reg, item, first, size, &value)) {
+		R_LOG_ERROR ("Cannot read lane %d of %s", first, item->name);
+		return false;
+	}
 	PJ *pj = NULL;
-	if (format == 'j') {
+	if (mode == 'j') {
 		pj = r_core_pj_new (core);
 		if (!pj) {
-			return;
+			return false;
 		}
 		pj_o (pj);
 		pj_ks (pj, "name", item->name);
@@ -3194,172 +3120,237 @@ static void cmd_reg_vector_export(RCore *core, RReg *reg, RRegItem *item, int in
 	}
 	int lane;
 	for (lane = first; lane < end; lane++) {
-		const ut64 value = r_reg_get_pack (reg, item, lane, size);
+		if (!r_reg_get_pack_checked (reg, item, lane, size, &value)) {
+			pj_free (pj);
+			return false;
+		}
 		if (pj) {
 			char hex[19];
-			snprintf (hex, sizeof (hex), "0x%0*"PFMT64x, size / 4, value);
+			snprintf (hex, sizeof (hex), "0x%0*"PFMT64x, (size + 3) / 4, value);
 			pj_s (pj, hex);
+		} else if (mode == '*') {
+			r_strbuf_appendf (out, "%s %s %d %d = 0x%"PFMT64x"\n", command, item->name, lane, size, value);
 		} else {
-			r_cons_printf (core->cons, "%s %s %d %d = 0x%"PFMT64x"\n",
-				debug? "drv": "arv", item->name, lane, size, value);
+			const char *sep = lane == first? "": " ";
+			if (mode == 'f') {
+				ut32 bits = value;
+				float number;
+				memcpy (&number, &bits, sizeof (number));
+				r_strbuf_appendf (out, "%s%lf", sep, (double)number);
+			} else if (mode == 'l') {
+				double number;
+				memcpy (&number, &value, sizeof (number));
+				r_strbuf_appendf (out, "%s%lf", sep, number);
+			} else {
+				r_strbuf_appendf (out, "%s0x%0*"PFMT64x, sep, (size + 3) / 4, value);
+			}
 		}
 	}
 	if (pj) {
 		pj_end (pj);
 		pj_end (pj);
-		r_cons_println (core->cons, pj_string (pj));
+		r_strbuf_append (out, pj_string (pj));
 		pj_free (pj);
 	}
+	if (mode != '*') {
+		r_strbuf_append (out, "\n");
+	}
+	return true;
 }
 
-static void cmd_reg_vector(RCore *core, RReg *reg, const char *str, bool debug, RCoreHelpMessage help) {
-	const char format = str[1] == 'j' || str[1] == '*'? str[1]: 0;
-	if (format == 'j' && !str[2]) {
-		cmd_reg_vector_json (core, reg);
-		return;
+static bool cmd_reg_vector_list_item(RCore *core, RReg *reg, RRegItem *item, int size, char mode, bool debug, ut32 *synced, RStrBuf *out) {
+	if (size && (item->size < size || item->size % size)) {
+		return true;
 	}
-	if (format) {
-		str++;
+	const ut32 mask = 1U << item->arena;
+	if (!(*synced & mask) && !cmd_reg_vector_sync (core, item->arena, false, debug)) {
+		return false;
 	}
-	if (str[1] == '?' || (format && (str[1] != ' ' || !str[2]))) {
-		r_cons_cmd_help (core->cons, help);
-		return;
-	}
-	if (!str[1] || (str[1] == 'y' && !str[2])) {
-		RRegType type = str[1] == 'y'? R_REG_TYPE_VEC256: R_REG_TYPE_VEC128;
-		cmd_reg_vector_sync (core, type, false, debug);
-		cmd_reg_vector_list (core, reg, type, type == R_REG_TYPE_VEC256? 256: 128);
-		return;
-	}
-	char mode = str[1] == 'y'? str[2]: str[1];
-	if (mode != ' ' && mode != 'b' && mode != 'd' && mode != 'w' && mode != 'q' && mode != 'l' && mode != 'f') {
-		r_core_return_invalid_command (core, debug? "drv": "arv", mode);
-		return;
-	}
+	*synced |= mask;
+	r_strbuf_appendf (out, "%-5s = ", item->name);
+	return cmd_reg_vector_values (core, reg, item, -1, size, mode, NULL, out);
+}
 
-	char explicit_index = 0;
-	char explicit_size = 0;
-	char explicit_name = 0;
-	char pack_show[NUM_PACK_TYPES] = { 0, 0, 0, 0, 0, 0 };
-	int index = 0;
-	int size = 0; // auto
-	char *q, *p, *name = NULL;
-	char *eq = NULL;
-	RRegType reg_type = R_REG_TYPE_VEC128;
-	if ((str[1] == ' ' && str[2]) || (str[1] == 'y' && str[2] == ' ' && str[3])) {
-		if (str[1] == 'y') { // support `drvy ymm0`, `drv ymm0` and their `ar` variants
-			str++;
-			reg_type = R_REG_TYPE_VEC256;
-		}
-		name = strdup (str + 2);
-		explicit_name = 1;
-		eq = strchr (name, '=');
-		if (eq) {
-			*eq++ = 0;
-		}
-		r_str_trim (name);
-		p = strchr (name, ' ');
-		if (p) {
-			*p++ = 0;
-			p = (char *)r_str_trim_head_ro (p);
-			q = strchr (p, ' ');
-			if (q) {
-				*q++ = 0;
-			}
-			if (p[0] != '*') {
-				explicit_index = 1;
-				const ut64 lane = r_num_math (core->num, p);
-				if (r_num_failed (core->num) || lane > INT_MAX) {
-					R_LOG_ERROR ("Invalid vector lane");
-					free (name);
-					return;
-				}
-				index = lane;
-			}
-			if (q) {
-				const ut64 width = r_num_math (core->num, q);
-				if (r_num_failed (core->num) || (width != 8 && width != 16 && width != 32 && width != 64)) {
-					R_LOG_ERROR ("Unsupported wordsize %"PFMT64u, width);
-					free (name);
-					return;
-				}
-				size = width;
-				explicit_size = 1;
-				size_t i;
-				for (i = 0; i < NUM_PACK_TYPES; i++) {
-					pack_show[i] = size == pack_sizes[i];
-				}
-			}
-		}
-	} else {
-		explicit_size = 1;
-		if (str[1] == 'y') {
-			reg_type = R_REG_TYPE_VEC256;
-			str++;
-		}
-		if (str[2] == ' ' && str[3]) {
-			name = strdup (str + 3);
-			explicit_name = 1;
-		}
-		const char *packing = strchr (pack_modes, str[1]);
-		if (!packing) {
-			R_LOG_ERROR ("Unknown command");
-			return;
-		}
-		const int pi = packing - pack_modes;
-		size = pack_sizes[pi];
-		pack_show[pi] = 1;
+static bool cmd_reg_vector_list(RCore *core, RReg *reg, int size, char mode, bool debug, bool ymm, RStrBuf *out) {
+	PJ *pj = mode == 'j'? r_core_pj_new (core): NULL;
+	if (mode == 'j' && !pj) {
+		return false;
 	}
-
-	if (explicit_name) {
-		RRegItem *item = r_reg_get (reg, name, -1);
-		if (item && !reg_is_vector (item->type, item->packed_size)) {
-			r_unref (item);
-			item = NULL;
-		}
-		if (!item) {
-			R_LOG_ERROR ("Cannot find vector register '%s'", name);
-			free (name);
-			return;
-		}
-		reg_type = item->type;
-		if (format && eq) {
-			R_LOG_ERROR ("Vector export takes a register and an optional lane");
-		} else if (debug && reg_type >= R_REG_TYPE_VEC256 && reg_type <= R_REG_TYPE_VEC512 && (format == '*' || eq)) {
-			R_LOG_WARN ("Writing %s through the debugger is unsupported", name);
-		} else if (eq) {
-			ut64 val = r_num_math (core->num, eq);
-			if (!r_num_failed (core->num) && r_reg_set_pack (reg, item, index, size, val)) {
-				cmd_reg_vector_sync (core, reg_type, true, debug);
-			} else {
-				R_LOG_ERROR ("Cannot set lane %d of %s", index, name);
-			}
-		} else {
-			cmd_reg_vector_sync (core, reg_type, false, debug);
-			if (format) {
-				cmd_reg_vector_export (core, reg, item, explicit_index? index: -1, size, format, debug);
-			} else if (!explicit_index) {
-				cmd_reg_print_packed_reg (core, reg, item, explicit_size, pack_show);
-			} else {
-				ut64 res = r_reg_get_pack (reg, item, index, size);
-				r_cons_printf (core->cons, "0x%08" PFMT64x "\n", res);
-			}
-		}
-		r_unref (item);
-		free (name);
-		return;
+	if (pj) {
+		pj_a (pj);
 	}
-
-	cmd_reg_vector_sync (core, reg_type, false, debug);
-	RList *head = r_reg_get_list (reg, reg_type);
+	ut32 synced = 0;
 	RListIter *iter;
 	RRegItem *item;
-	r_list_foreach (head, iter, item) {
-		if (item->type == reg_type) {
-			r_cons_printf (core->cons, "%-5s = ", item->name);
-			cmd_reg_print_packed_reg (core, reg, item, explicit_size, pack_show);
+	r_list_foreach (r_reg_get_list (reg, R_REG_TYPE_ALL), iter, item) {
+		if (!reg_is_vector (item->type, item->size, item->packed_size)
+				|| reg_is_vector_alias (reg, item) || (ymm && item->size != 256)) {
+			continue;
+		}
+		if (pj) {
+			pj_o (pj);
+			pj_ks (pj, "name", item->name);
+			pj_ki (pj, "bits", item->size);
+			pj_end (pj);
+		} else if (!cmd_reg_vector_list_item (core, reg, item, size, mode, debug, &synced, out)) {
+			return false;
 		}
 	}
+	int arena;
+	for (arena = 0; arena < R_REG_TYPE_LAST; arena++) {
+		RRegVBank *bank;
+		R_VEC_FOREACH (&reg->regset[arena].vbanks, bank) {
+			if (!reg_is_vector (bank->type, bank->size, bank->packed_size) || (ymm && bank->size != 256)) {
+				continue;
+			}
+			if (pj) {
+				const char prefix[] = { bank->prefix, 0 };
+				pj_o (pj);
+				pj_ks (pj, "prefix", prefix);
+				pj_ki (pj, "count", bank->count);
+				pj_ki (pj, "bits", bank->size);
+				pj_end (pj);
+			} else {
+				int i;
+				for (i = 0; i < bank->count; i++) {
+					char name[32];
+					snprintf (name, sizeof (name), "%c%d", bank->prefix, i);
+					RRegItem *member = r_reg_get (reg, name, bank->type);
+					bool ok = member && cmd_reg_vector_list_item (core, reg, member, size, mode, debug, &synced, out);
+					r_unref (member);
+					if (!ok) {
+						return false;
+					}
+				}
+			}
+		}
+	}
+	if (pj) {
+		pj_end (pj);
+		r_strbuf_appendf (out, "%s\n", pj_string (pj));
+		pj_free (pj);
+	}
+	return true;
+}
+
+static void cmd_reg_vector(RCore *core, RReg *reg, const char *str, bool debug, const char *command) {
+	const bool ymm = *++str == 'y';
+	if (ymm) {
+		str++;
+	}
+	char mode = 0;
+	int size = 0;
+	if (*str && strchr ("j*bwdqfl", *str)) {
+		mode = *str++;
+		const char *modes = "bwdqfl";
+		const char *packing = strchr (modes, mode);
+		const int sizes[] = { 8, 16, 32, 64, 32, 64 };
+		if (packing) {
+			size = sizes[packing - modes];
+		}
+	}
+	if (*str == '?') {
+		r_cons_cmd_help (core->cons, !strcmp (command, "drv")? help_msg_drv: help_msg_arv);
+		return;
+	}
+	if (*str && !IS_WHITECHAR (*str)) {
+		r_core_return_invalid_command (core, command, *str);
+		return;
+	}
+	char *args = r_str_trim_dup (str);
+	if (!args) {
+		return;
+	}
+	char *eq = strchr (args, '=');
+	if (eq) {
+		*eq++ = 0;
+	}
+	r_str_trim (args);
+	r_str_replace_char (args, '\t', ' ');
+	const int argc = r_str_word_set0 (args);
+	bool ok = false;
+	RRegItem *item = NULL;
+	RStrBuf out;
+	r_strbuf_init (&out);
+	if (argc > 3 || (mode && argc > 1 && mode != 'j' && mode != '*')
+			|| (eq && (mode || !argc)) || (mode == '*' && !argc)) {
+		R_LOG_ERROR ("Invalid vector arguments");
+		goto beach;
+	}
+	if (!argc) {
+		ok = cmd_reg_vector_list (core, reg, size, mode, debug, ymm, &out);
+		goto beach;
+	}
+	item = r_reg_get (reg, args, R_REG_TYPE_ALL);
+	const bool vector = item && (reg_is_vector (item->type, item->size, item->packed_size)
+		|| ((item->type == R_REG_TYPE_FPU || item->type == R_REG_TYPE_VEC64) && reg_is_vector_alias (reg, item)));
+	if (!vector) {
+		R_LOG_ERROR ("Cannot find vector register '%s'", args);
+		goto beach;
+	}
+	int index = eq? 0: -1;
+	if (argc > 1) {
+		const char *lane = r_str_word_get0 (args, 1);
+		if (strcmp (lane, "*")) {
+			ut64 number = r_num_math (core->num, lane);
+			if (r_num_failed (core->num) || number >= INT_MAX) {
+				R_LOG_ERROR ("Invalid vector lane");
+				goto beach;
+			}
+			index = number;
+		} else if (eq) {
+			R_LOG_ERROR ("Vector writes require one lane");
+			goto beach;
+		}
+	}
+	if (argc > 2) {
+		ut64 width = r_num_math (core->num, r_str_word_get0 (args, 2));
+		if (r_num_failed (core->num) || width < 1 || width > 64) {
+			R_LOG_ERROR ("Unsupported wordsize %"PFMT64u, width);
+			goto beach;
+		}
+		size = width;
+	}
+	size = reg_vector_lane_size (item, size);
+	if (size > item->size || index >= item->size / size) {
+		R_LOG_ERROR ("Vector lane %d is outside %s", R_MAX (0, index), item->name);
+		goto beach;
+	}
+	if (index < 0 && item->size % size) {
+		R_LOG_ERROR ("Wordsize %d does not divide %s", size, item->name);
+		goto beach;
+	}
+	ut64 value = eq? r_num_math (core->num, eq): 0;
+	if (eq && (R_STR_ISEMPTY (r_str_trim_head_ro (eq)) || r_num_failed (core->num))) {
+		R_LOG_ERROR ("Cannot set lane %d of %s", index, args);
+		goto beach;
+	}
+	if (!cmd_reg_vector_sync (core, item->arena, false, debug)) {
+		goto beach;
+	}
+	if (eq) {
+		ut64 previous;
+		if (!r_reg_get_pack_checked (reg, item, index, size, &previous)
+				|| !r_reg_set_pack (reg, item, index, size, value)) {
+			R_LOG_ERROR ("Cannot set lane %d of %s", index, args);
+			goto beach;
+		}
+		ok = cmd_reg_vector_sync (core, item->arena, true, debug);
+		if (!ok) {
+			r_reg_set_pack (reg, item, index, size, previous);
+		}
+	} else {
+		ok = cmd_reg_vector_values (core, reg, item, index, size, mode, command, &out);
+	}
+beach:
+	if (ok) {
+		r_cons_print (core->cons, r_strbuf_get (&out));
+	}
+	r_core_return_value (core, ok? R_CMD_RC_SUCCESS: R_CMD_RC_FAILURE);
+	r_core_return_code (core, ok? R_CMD_RC_SUCCESS: R_CMD_RC_FAILURE);
+	r_strbuf_fini (&out);
+	r_unref (item);
+	free (args);
 }
 
 static char *__table_format_string(RTable *t, int fmt) {
@@ -3709,7 +3700,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		}
 		break;
 	case 'v': // "drv"
-		cmd_reg_vector (core, core->dbg->reg, str, true, help_msg_drv);
+		cmd_reg_vector (core, core->dbg->reg, str, true, "drv");
 		break;
 	case 'f': // "drf"
 		// r_debug_drx_list (core->dbg);
@@ -6683,7 +6674,7 @@ static int cmd_debug(void *data, const char *input) {
 		if (r_config_get_b (core->config, "cfg.debug") || input[1] == '?') {
 			cmd_debug_reg (core, input + 1);
 		} else if (input[1] == 'v') {
-			cmd_reg_vector (core, core->anal->reg, input + 1, false, help_msg_drv);
+			cmd_reg_vector (core, core->anal->reg, input + 1, false, "drv");
 		} else {
 			cmd_anal_reg (core, input + 1);
 		}
