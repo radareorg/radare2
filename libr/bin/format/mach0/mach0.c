@@ -3121,6 +3121,14 @@ static int hash_find_or_insert(HtPP *hash, const char *name, ut64 addr) {
 	return false;
 }
 
+// object symbol values are section offsets, so filter objects by nlist type instead of by value
+static bool is_defined_symbol(bool is_object, const struct MACH0_(nlist) *nl) {
+	if (is_object) {
+		return (nl->n_type & N_TYPE) == N_SECT;
+	}
+	return nl->n_value >= 100;
+}
+
 static bool is_unnamed_symbol_name(const char *name) {
 	return R_STR_ISEMPTY (name) || !strcmp (name, "???");
 }
@@ -3620,10 +3628,10 @@ static bool parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 				}
 				continue;
 			}
-			ut64 vaddr = nl->n_value;
-			if (is_object? (nl->n_type & N_TYPE) != N_SECT: vaddr < 100) {
+			if (!is_defined_symbol (is_object, nl)) {
 				continue;
 			}
+			ut64 vaddr = nl->n_value;
 			int stridx = nl->n_strx;
 			char *sym_name = get_name (mo, stridx, false);
 			if (!sym_name) {
@@ -3713,10 +3721,10 @@ static bool parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 		// 2 is for func.eh (exception handlers?)
 		int section = st->n_sect;
 		if (section == 1 && j < symbols_count) { // text?? st->n_type == 1) maybe wrong
-			ut64 vaddr = st->n_value;
-			if (mo->hdr.filetype == MH_OBJECT? (st->n_type & N_TYPE) != N_SECT: vaddr < 100) {
+			if (!is_defined_symbol (is_object, st)) {
 				continue;
 			}
+			ut64 vaddr = st->n_value;
 			char *sym_name = get_name (mo, st->n_strx, false);
 			if (sym_name) {
 				if (strstr (sym_name, "<redacted>")) {

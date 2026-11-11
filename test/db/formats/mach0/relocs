@@ -472,3 +472,27 @@ EXPECT=<<EOF
 0   0x00000188 0x00000000 GLOBAL FUNC 0        _main
 EOF
 RUN
+
+NAME=Mach-O arm64 MH_OBJECT lists only local and global defined symbols
+FILE=bins/mach0/objsyms-arm64.o
+CMDS=<<EOF
+is~_
+EOF
+EXPECT=<<EOF
+0   0x00000178 0x00000008 GLOBAL FUNC 0        _main
+1   0x00000170 0x00000000 LOCAL  FUNC 0        _lf
+2   0x00000180 0x00000010 LOCAL  OBJ  0        _sdata
+EOF
+RUN
+
+NAME=Mach-O armv7 MH_OBJECT lists only local and global defined symbols
+FILE=bins/mach0/objsyms-armv7.o
+CMDS=<<EOF
+is~_
+EOF
+EXPECT=<<EOF
+0   0x0000014c 0x00000008 GLOBAL FUNC 0        _main
+1   0x00000144 0x00000000 LOCAL  FUNC 0        _lf
+2   0x00000154 0x00000010 LOCAL  OBJ  0        _sdata
+EOF
+RUN
