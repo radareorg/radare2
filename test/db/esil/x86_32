@@ -2744,3 +2744,75 @@ EXPECT=<<EOF
 0x20000000
 EOF
 RUN
+
+NAME=AVX XMM xor uses both sources and preserves flags
+FILE=malloc://256
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx c5f1efc2c5f157c2c5f057c2c5f1ef00c5f1efc0
+aei
+ar eax=0x80
+wx 0f000000000000005555555555555555 @ 0x80
+ar xmm0l=0xff
+ar xmm0h=0xff
+ar xmm1l=0x33
+ar xmm1h=0xaaaaaaaaaaaaaaaa
+ar xmm2l=0x0f
+ar xmm2h=0x5555555555555555
+ar eflags=0xad7
+aes
+ar xmm0
+aes
+ar xmm0
+aes
+ar xmm0
+aes
+ar xmm0
+aes
+ar xmm0
+ar xmm1
+ar xmm2
+ar eflags
+EOF
+EXPECT=<<EOF
+0xffffffffffffffff000000000000003c
+0xffffffffffffffff000000000000003c
+0xffffffffffffffff000000000000003c
+0xffffffffffffffff000000000000003c
+0x5555555555555555000000000000000f
+0xaaaaaaaaaaaaaaaa0000000000000033
+0x5555555555555555000000000000000f
+0x00000ad7
+EOF
+RUN
+
+NAME=AVX and SSE XMM moves preserve both chunks in memory and registers
+FILE=malloc://256
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx c5fa7f00c5fa6f10c5fa6ff8f30f7f00f30f6f18
+aei
+ar eax=0x81
+ar xmm0l=0x1122334455667788
+ar xmm0h=0x99aabbccddeeff00
+aes
+p8 16 @ 0x81
+aes
+ar xmm2
+aes
+ar xmm7
+ar xmm0l=0x0123456789abcdef
+ar xmm0h=0xfedcba9876543210
+aes
+p8 16 @ 0x81
+aes
+ar xmm3
+EOF
+EXPECT=<<EOF
+887766554433221100ffeeddccbbaa99
+0x99aabbccddeeff001122334455667788
+0x99aabbccddeeff001122334455667788
+efcdab89674523011032547698badcfe
+0xfedcba98765432100123456789abcdef
+EOF
+RUN

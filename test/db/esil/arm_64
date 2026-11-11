@@ -6159,3 +6159,196 @@ EXPECT=<<EOF_EXPECT
 890089ab89abcdef
 EOF_EXPECT
 RUN
+
+NAME=ARM64 little-endian FNEG flips lane signs and clears upper bits
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 20f8f82e20f8f86e20f8a02e20f8a06e20f8e06e00f8a06e2040e11e2040211e2040611e
+e asm.cpu=sve256
+aei
+ar v0l=0xffffffffffffffff
+ar v0h=0xffffffffffffffff
+ar z0[2]=0xffffffffffffffff
+ar z0[3]=0xffffffffffffffff
+ar v1l=0x800000007f800001
+ar v1h=0xfff1234580000000
+aes
+ar v0
+ar z0[2]
+ar z0[3]
+ar v0l=0xffffffffffffffff
+ar v0h=0xffffffffffffffff
+ar z0[2]=0xffffffffffffffff
+ar z0[3]=0xffffffffffffffff
+ar v1l=0x800000007f800001
+ar v1h=0xfff1234580000000
+aes
+ar v0
+ar z0[2]
+ar z0[3]
+ar v0l=0xffffffffffffffff
+ar v0h=0xffffffffffffffff
+ar z0[2]=0xffffffffffffffff
+ar z0[3]=0xffffffffffffffff
+ar v1l=0x800000007f800001
+ar v1h=0xfff1234580000000
+aes
+ar v0
+ar z0[2]
+ar z0[3]
+ar v0l=0xffffffffffffffff
+ar v0h=0xffffffffffffffff
+ar z0[2]=0xffffffffffffffff
+ar z0[3]=0xffffffffffffffff
+ar v1l=0x800000007f800001
+ar v1h=0xfff1234580000000
+aes
+ar v0
+ar z0[2]
+ar z0[3]
+ar v0l=0xffffffffffffffff
+ar v0h=0xffffffffffffffff
+ar z0[2]=0xffffffffffffffff
+ar z0[3]=0xffffffffffffffff
+ar v1l=0x800000007f800001
+ar v1h=0xfff1234580000000
+aes
+ar v0
+ar z0[2]
+ar z0[3]
+ar v0l=0x400000003f800000
+ar v0h=0x4080000040400000
+aes
+ar v0
+ar v1l=0x7c01
+aes
+ar v0
+ar v1l=0x7f800001
+aes
+ar v0
+ar v1l=0x7ff0000000000001
+aes
+ar v0
+ar v1
+EOF
+EXPECT=<<EOF
+0x000000000000000000008000ff808001
+0x00000000
+0x00000000
+0x7ff1a3450000800000008000ff808001
+0x00000000
+0x00000000
+0x000000000000000000000000ff800001
+0x00000000
+0x00000000
+0x7ff123450000000000000000ff800001
+0x00000000
+0x00000000
+0x7ff1234580000000000000007f800001
+0x00000000
+0x00000000
+0xc0800000c0400000c0000000bf800000
+0x0000000000000000000000000000fc01
+0x000000000000000000000000ff800001
+0x0000000000000000fff0000000000001
+0xfff12345800000007ff0000000000001
+EOF
+RUN
+
+NAME=ARM64 big-endian FNEG flips lane signs and clears upper bits
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 20f8f82e20f8f86e20f8a02e20f8a06e20f8e06e00f8a06e2040e11e2040211e2040611e
+e asm.cpu=sve256
+e cfg.bigendian=true
+aei
+ar v0l=0xffffffffffffffff
+ar v0h=0xffffffffffffffff
+ar z0[2]=0xffffffffffffffff
+ar z0[3]=0xffffffffffffffff
+ar v1l=0x800000007f800001
+ar v1h=0xfff1234580000000
+aes
+ar v0
+ar z0[2]
+ar z0[3]
+ar v0l=0xffffffffffffffff
+ar v0h=0xffffffffffffffff
+ar z0[2]=0xffffffffffffffff
+ar z0[3]=0xffffffffffffffff
+ar v1l=0x800000007f800001
+ar v1h=0xfff1234580000000
+aes
+ar v0
+ar z0[2]
+ar z0[3]
+ar v0l=0xffffffffffffffff
+ar v0h=0xffffffffffffffff
+ar z0[2]=0xffffffffffffffff
+ar z0[3]=0xffffffffffffffff
+ar v1l=0x800000007f800001
+ar v1h=0xfff1234580000000
+aes
+ar v0
+ar z0[2]
+ar z0[3]
+ar v0l=0xffffffffffffffff
+ar v0h=0xffffffffffffffff
+ar z0[2]=0xffffffffffffffff
+ar z0[3]=0xffffffffffffffff
+ar v1l=0x800000007f800001
+ar v1h=0xfff1234580000000
+aes
+ar v0
+ar z0[2]
+ar z0[3]
+ar v0l=0xffffffffffffffff
+ar v0h=0xffffffffffffffff
+ar z0[2]=0xffffffffffffffff
+ar z0[3]=0xffffffffffffffff
+ar v1l=0x800000007f800001
+ar v1h=0xfff1234580000000
+aes
+ar v0
+ar z0[2]
+ar z0[3]
+ar v0l=0x400000003f800000
+ar v0h=0x4080000040400000
+aes
+ar v0
+ar v1l=0x7c01
+aes
+ar v0
+ar v1l=0x7f800001
+aes
+ar v0
+ar v1l=0x7ff0000000000001
+aes
+ar v0
+ar v1
+EOF
+EXPECT=<<EOF
+0x000000000000000000008000ff808001
+0x00000000
+0x00000000
+0x7ff1a3450000800000008000ff808001
+0x00000000
+0x00000000
+0x000000000000000000000000ff800001
+0x00000000
+0x00000000
+0x7ff123450000000000000000ff800001
+0x00000000
+0x00000000
+0x7ff1234580000000000000007f800001
+0x00000000
+0x00000000
+0xc0800000c0400000c0000000bf800000
+0x0000000000000000000000000000fc01
+0x000000000000000000000000ff800001
+0x0000000000000000fff0000000000001
+0xfff12345800000007ff0000000000001
+EOF
+RUN

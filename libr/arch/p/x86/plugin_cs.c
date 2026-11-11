@@ -512,6 +512,16 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, ut32 *bitsi
 	return NULL;
 }
 
+static char *getarg_vector_chunk(struct Getarg *gop, int n, int chunk, bool write) {
+	cs_insn *insn = gop->insn;
+	char *arg = getarg (gop, n, 2, NULL, NULL);
+	char *result = INSOP (n).type == X86_OP_MEM
+		? r_str_newf ("%d,%s,+,%s[8]", chunk * 8, R_STR_ISEMPTY (arg)? "0": arg, write? "=": "")
+		: r_str_newf ("%s[%d]%s", arg, chunk, write? ",=": "");
+	free (arg);
+	return result;
+}
+
 static int cond_x862r2(int id) {
 	switch (id) {
 	case X86_INS_JE:
@@ -1138,6 +1148,15 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 					dst, width, src, width, dst);
 		}
 		break;
+	case X86_INS_VMOVDQU16:
+	case X86_INS_VMOVDQU32:
+	case X86_INS_VMOVDQU64:
+	case X86_INS_VMOVDQU8:
+	case X86_INS_VMOVDQU:
+		if (INSOPS != 2 || INSOP (0).size != 16 || INSOP (1).size != 16) {
+			break;
+		}
+		// fall through
 	// mov
 	case X86_INS_MOVSS:
 	case X86_INS_MOV:
@@ -1157,6 +1176,17 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_MOVDQA:
 	case X86_INS_MOVDQ2Q:
 		{
+		if (INSOP (0).size == 16 && INSOP (1).size == 16) {
+			int chunk;
+			for (chunk = 0; chunk < 2; chunk++) {
+				src = getarg_vector_chunk (&gop, 1, chunk, false);
+				dst = getarg_vector_chunk (&gop, 0, chunk, true);
+				r_strbuf_appendf (&op->esil, "%s%s,%s", chunk? ",": "", src, dst);
+				free (src);
+				free (dst);
+			}
+			break;
+		}
 		switch (INSOP (0).type) {
 		case X86_OP_MEM:
 			if (op->prefix & R_ANAL_OP_PREFIX_REP) {
@@ -1195,9 +1225,7 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 				dst = getarg (&gop, 0, 0, NULL, NULL);
 				char dst64[16];
 				const bool wide = bits == 64 && get64from32 (dst, dst64, sizeof (dst64));
-				if (width == 16 && is_xmm_reg (INSOP (0)) && is_xmm_reg (INSOP (1))) {
-					esilprintf (op, "%s[0],%s[0],=,%s[1],%s[1],=", src, dst, src, dst);
-				} else if (insn->id == X86_INS_MOVSX || insn->id == X86_INS_MOVSXD) {
+				if (insn->id == X86_INS_MOVSX || insn->id == X86_INS_MOVSXD) {
 					// the sign extension stops at the 32-bit destination
 					zext_opnd (&gop, 0);
 					esilprintf (op, "%d,%s,~,%s,=", width*8, src, dst);
@@ -2002,7 +2030,32 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_VPXORD:
 	case X86_INS_VPXORQ:
 	case X86_INS_VPXOR:
+	case X86_INS_XORPD:
+	case X86_INS_XORPS:
+	case X86_INS_PXOR:
+		if ((INSOPS == 2 || INSOPS == 3) && is_xmm_reg (INSOP (0))
+				&& is_xmm_reg (INSOP (INSOPS - 2)) && INSOP (INSOPS - 1).size == 16) {
+			int chunk;
+			for (chunk = 0; chunk < 2; chunk++) {
+				src = getarg_vector_chunk (&gop, INSOPS - 2, chunk, false);
+				src2 = getarg_vector_chunk (&gop, INSOPS - 1, chunk, false);
+				dst = getarg_vector_chunk (&gop, 0, chunk, true);
+				r_strbuf_appendf (&op->esil, "%s%s,%s,^,%s", chunk? ",": "", src, src2, dst);
+				free (src);
+				free (src2);
+				free (dst);
+			}
+		}
+		break;
 	case X86_INS_KXORW:
+		src = getarg (&gop, 1, 0, NULL, NULL);
+		src2 = getarg (&gop, 2, 0, NULL, NULL);
+		dst = getarg (&gop, 0, 1, NULL, NULL);
+		esilprintf (op, "%s,%s,^,%s", src, src2, dst);
+		free (src);
+		free (src2);
+		free (dst);
+		break;
 	case X86_INS_XOR:
 		{
 			ut32 bitsize;
@@ -2023,18 +2076,6 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			R_FREE (src);
 			R_FREE (dst);
 			R_FREE (dst2);
-		}
-		break;
-	case X86_INS_XORPS:
-	case X86_INS_PXOR:
-		{
-			if (is_xmm_reg (INSOP(0)) && is_xmm_reg (INSOP(1))) {
-				src = getarg (&gop, 1, 0, NULL, NULL);
-				dst = getarg (&gop, 0, 0, NULL, NULL);
-				esilprintf (op, "%sl,%sl,^=,%sh,%sh,^=", src, dst, src, dst);
-				R_FREE (src);
-				R_FREE (dst);
-			}
 		}
 		break;
 	case X86_INS_BSF:
@@ -3037,32 +3078,6 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 			}
 			free (src);
 			free (dst_r);
-		}
-		break;
-	case X86_INS_VMOVDQU16:
-	case X86_INS_VMOVDQU32:
-	case X86_INS_VMOVDQU64:
-	case X86_INS_VMOVDQU8:
-	case X86_INS_VMOVDQU:
-		{
-			char *src = getarg (&gop, 1, 0, NULL, NULL);
-			if (is_xmm_reg (INSOP (1))) {
-				if (is_xmm_reg (INSOP (0))) {
-					r_strbuf_appendf (&op->esil, "%sl,%sh", src, src);
-				} else {
-					r_strbuf_appendf (&op->esil, "%sh,%sl", src, src);
-				}
-			} else {
-				r_strbuf_append (&op->esil, src);
-			}
-			char *dst = getarg (&gop, 0, 0, NULL, NULL);
-			if (is_xmm_reg (INSOP (0))) {
-				r_strbuf_appendf (&op->esil, ",%sh,:=,%sl,:=", dst, dst);
-			} else {
-				r_strbuf_appendf (&op->esil, ",%s", dst);
-			}
-			free (dst);
-			free (src);
 		}
 		break;
 	}
