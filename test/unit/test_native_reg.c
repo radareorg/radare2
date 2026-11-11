@@ -89,7 +89,6 @@ static bool test_arm64_layout(void) {
 }
 
 #if __linux__ && __x86_64__
-#include <cpuid.h>
 #include <sys/ptrace.h>
 #include <sys/uio.h>
 #include <elf.h>
@@ -129,8 +128,14 @@ static long mock_ptrace(RIO *io, r_ptrace_request_t request, pid_t pid, void *ad
 }
 
 static bool test_linux_xstate(void) {
-	unsigned int a = 0, b, c = 512, d;
-	__get_cpuid_count (0xd, 0, &a, &b, &c, &d);
+	ut32 a, b, c, d;
+	native_x86_cpuid (0, 0, &a, &b, &c, &d);
+	if (a >= 0xd) {
+		native_x86_cpuid (0xd, 0, &a, &b, &c, &d);
+	} else {
+		a = 0;
+		c = 512;
+	}
 	NativeMock mock = { .size = R_MAX (c, 512) };
 	mock.state = malloc (mock.size);
 	ut8 *expected = malloc (mock.size);

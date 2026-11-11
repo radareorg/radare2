@@ -518,8 +518,8 @@ static void vector_esil(RAnalOp *op, struct Getarg *gop, bool is_xor) {
 		return;
 	}
 	// EVEX.W remains reliable when Capstone loses the element width in 32-bit memory forms.
-	const bool small = insn->id == X86_INS_VMOVDQU8 || insn->id == X86_INS_VMOVDQU16;
-	const int element = (small? 1: 4) << (x->opcode[2] >> 7);
+	const bool small_elements = insn->id == X86_INS_VMOVDQU8 || insn->id == X86_INS_VMOVDQU16;
+	const int element = (small_elements? 1: 4) << (x->opcode[2] >> 7);
 	const bool broadcast = x->opcode[0] == 0x62 && (x->opcode[3] & 0x10) && ISMEM (source);
 	if ((!broadcast && INSOP (source).size != width)
 			|| (broadcast && !is_xor)

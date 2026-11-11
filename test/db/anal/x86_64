@@ -4232,7 +4232,7 @@ sign: false
 type: mov
 cycles: 1
 scale: 1
-esil: 0x1fce0,rip,+,[16],xmm0,=
+esil: 0,0x1fce0,rip,+,+,[8],xmm0[0],=,8,0x1fce0,rip,+,+,[8],xmm0[1],=
 direction: read
 family: vec
             0x140001358      660f6f05e0..   movdqa xmm0, xmmword [str._n_2.__1__a_] ; [0x140021040:16]=-1 ; "\n*,2.)%#1%#)a~"

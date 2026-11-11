@@ -43,6 +43,14 @@ typedef struct {
 	int hi16;
 } NativeX86Layout;
 
+#if __linux__ && __x86_64__
+static inline void native_x86_cpuid(ut32 leaf, ut32 subleaf, ut32 *eax, ut32 *ebx, ut32 *ecx, ut32 *edx) {
+	__asm__ volatile ("cpuid"
+		: "=a" (*eax), "=b" (*ebx), "=c" (*ecx), "=d" (*edx)
+		: "a" (leaf), "c" (subleaf));
+}
+#endif
+
 static inline bool native_x86_transfer(ut8 *arena, int arena_size, ut8 *state, int state_size, const NativeX86Layout *layout, int bits, int width, bool write) {
 	if (width != 128 && width != 256 && width != 512) {
 		return false;

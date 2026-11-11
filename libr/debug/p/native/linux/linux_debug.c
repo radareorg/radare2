@@ -21,11 +21,14 @@
 #include "../reg_vector.h"
 
 #if __x86_64__
-#include <cpuid.h>
-
 static ut8 *linux_xstate(RDebug *dbg, struct iovec *iov, NativeX86Layout *layout, int *width) {
-	unsigned int a, b, c, d;
-	if (!__get_cpuid_count (0xd, 0, &a, &b, &c, &d) || c < 576 || c > INT_MAX) {
+	ut32 a, b, c, d;
+	native_x86_cpuid (0, 0, &a, &b, &c, &d);
+	if (a < 0xd) {
+		return NULL;
+	}
+	native_x86_cpuid (0xd, 0, &a, &b, &c, &d);
+	if (c < 576 || c > INT_MAX) {
 		return NULL;
 	}
 	iov->iov_base = calloc (1, c);
@@ -47,9 +50,11 @@ static ut8 *linux_xstate(RDebug *dbg, struct iovec *iov, NativeX86Layout *layout
 	int i;
 	for (i = 0; i < R_ARRAY_SIZE (ids); i++) {
 		*offsets[i] = -1;
-		if ((features & (1ULL << ids[i])) && __get_cpuid_count (0xd, ids[i], &a, &b, &c, &d)
-				&& b >= 576 && (ut64)b + a <= iov->iov_len) {
-			*offsets[i] = b;
+		if (features & (1ULL << ids[i])) {
+			native_x86_cpuid (0xd, ids[i], &a, &b, &c, &d);
+			if (b >= 576 && (ut64)b + a <= iov->iov_len) {
+				*offsets[i] = b;
+			}
 		}
 	}
 	*width = layout->ymm < 0? 128: layout->opmask >= 0 && layout->zmm >= 0 && layout->hi16 >= 0? 512: 256;
