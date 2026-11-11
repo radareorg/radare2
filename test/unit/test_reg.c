@@ -891,7 +891,7 @@ bool test_r_reg_profile_to_cc(void) {
 }
 
 bool test_r_reg_wide_access(void) {
-	const int widths[] = {128, 256, 384, 512, 2048};
+	const int widths[] = {128, 256, 384, 512, 1024, 2048};
 	int endian, width, i, operation;
 	for (endian = 0; endian < 2; endian++) {
 		for (width = 0; width < R_ARRAY_SIZE (widths); width++) {
@@ -900,6 +900,7 @@ bool test_r_reg_wide_access(void) {
 			const int len = widths[width] / 8;
 			char *profile = r_str_newf ("fpu before .64 0 0\nfpu wide .%d 8 .64\nfpu after .64 %d 0\n", widths[width], len + 8);
 			mu_assert_true (r_reg_set_profile_string (reg, profile), "wide profile");
+			mu_assert_true (r_reg_hasbits_check (reg, widths[width]), "track wide register size");
 			free (profile);
 			RRegItem *item = r_reg_get (reg, "wide", -1);
 			ut8 bytes[256], result[256];

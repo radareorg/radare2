@@ -32,6 +32,9 @@ R_API bool r_reg_hasbits_use(RReg *reg, int size) {
 	HB(64);
 	HB(128);
 	HB(256);
+	HB(512);
+	HB(1024);
+	HB(2048);
 #undef HB
 	return done;
 }

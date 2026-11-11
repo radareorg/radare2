@@ -2046,7 +2046,7 @@ static void arm64_esil_vec_unary(RAnalOp *op, csh *handle, cs_insn *insn) {
 		case ARM64_INS_FABS:
 		case ARM64_INS_FNEG:
 			r_strbuf_appendf (&op->esil, "0x%"PFMT64x",", insn->id == ARM64_INS_FABS
-				? UT64_MAX >> (65 - lane_bits): 1ULL << (lane_bits - 1));
+				? UT64_MAX >> (65 - lane_bits): (ut64)1 << (lane_bits - 1));
 			VECARG64_APPEND (&op->esil, 1, i, 0);
 			r_strbuf_appendf (&op->esil, ",%s,", insn->id == ARM64_INS_FABS? "&": "^");
 			break;
@@ -2592,7 +2592,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 			arm64_esil_vec_unary (op, handle, insn);
 		} else {
 			r_strbuf_setf (&op->esil, "0x%"PFMT64x",%s,%s,%s,=",
-				id == ARM64_INS_FABS? UT64_MAX >> (65 - REGBITS64 (1)): 1ULL << (REGBITS64 (1) - 1),
+				id == ARM64_INS_FABS? UT64_MAX >> (65 - REGBITS64 (1)): (ut64)1 << (REGBITS64 (1) - 1),
 				REG64 (1), id == ARM64_INS_FABS? "&": "^", REG64 (0));
 		}
 		break;

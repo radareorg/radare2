@@ -776,7 +776,7 @@ e cfg.bigendian=true
 aei
 wx 0x3124
 dr sr=0x0
-dr r1=02345678
+dr r1=0234567
 dr r2=00120000
 aes
 dr? sr
