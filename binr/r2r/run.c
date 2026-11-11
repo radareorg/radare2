@@ -2001,6 +2001,9 @@ static bool require_check(const char *require, int capstone_version) {
 	if (require_has (require, "cs6")) {
 		res &= capstone_version == 6;
 	}
+	if (require_has (require, "cs5+")) {
+		res &= capstone_version >= 5;
+	}
 	if (require_has (require, "gas")) {
 		char *as_bin = r_file_path ("as");
 		res &= (bool)as_bin;
