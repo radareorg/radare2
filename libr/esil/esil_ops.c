@@ -108,13 +108,6 @@ static ut8 esil_internal_sizeof_reg(REsil *esil, const char *r) {
 	return (ut8)reg_size;
 }
 
-static ut32 esil_internal_packed_size_reg(REsil *esil, const char *r) {
-	if (!r || !esil->reg_if.reg_packed_size) {
-		return 0;
-	}
-	return esil->reg_if.reg_packed_size (esil->reg_if.reg, r);
-}
-
 // width,value,CLZ: leading zeros of value in the low width bits (width if 0)
 static bool esil_clz(REsil *esil) {
 	ut64 val, width;
@@ -286,66 +279,82 @@ static bool esil_js(REsil *esil) {
 	return r_esil_pushnum (esil, esil->jump_target_set);
 }
 
-static bool esil_weak_eq(REsil *esil) {
-	R_RETURN_VAL_IF_FAIL (esil && esil->anal, false);
-	const RStrs dst = r_esil_pop (esil);
-	const RStrs src = r_esil_pop (esil);
-	if (r_strs_empty (dst) || r_strs_empty (src)) {
+static bool esil_assign_vector(REsil *esil, RStrs dst, RStrs src, ut32 bits) {
+	const ut32 chunks = bits / 64 + !!(bits % 64);
+	const ut32 srcbits = esil->reg_if.reg_size (esil->reg_if.reg, src.a);
+	size_t size;
+	if (r_mul_overflow_size_t (chunks, sizeof (ut64), &size)) {
 		return false;
 	}
-	if (r_esil_get_parm_type (esil, dst) != R_ESIL_PARM_REG) {
+	ut64 *values = calloc (1, size);
+	if (!values) {
 		return false;
 	}
-	ut64 src_num;
-	if (r_esil_get_parm (esil, src, &src_num)) {
-		(void)r_esil_reg_write (esil, dst.a, src_num);
-		return true;
+	bool ret = false;
+	ut32 i;
+	if (srcbits >= 128) {
+		const ut32 count = R_MIN (chunks, srcbits / 64 + !!(srcbits % 64));
+		// Snapshot all source chunks before writing overlapping aliases.
+		for (i = 0; i < count; i++) {
+			char *name = r_str_newf ("%s[%u]", src.a, i);
+			bool read = name && r_esil_reg_read (esil, name, &values[i], NULL);
+			free (name);
+			if (!read) {
+				goto beach;
+			}
+		}
+	} else if (!r_esil_get_parm (esil, src, values)) {
+		goto beach;
 	}
-	return false;
+	for (i = 0; i < chunks; i++) {
+		char *name = r_str_newf ("%s[%u]", dst.a, i);
+		bool written = name && r_esil_reg_write (esil, name, values[i]);
+		free (name);
+		if (!written) {
+			goto beach;
+		}
+	}
+	ret = true;
+beach:
+	free (values);
+	return ret;
 }
 
-static bool esil_eq(REsil *esil) {
-	R_RETURN_VAL_IF_FAIL (esil, false);
-	bool ret = false;
-	ut64 num, num2;
+static bool esil_assign(REsil *esil, bool weak) {
 	const RStrs dst = r_esil_pop (esil);
 	const RStrs src = r_esil_pop (esil);
 	if (r_strs_empty (src) || r_strs_empty (dst)) {
-		R_LOG_DEBUG ("esil_eq cant pop two values from stack at 0x%08"PFMT64x, esil->addr);
 		return false;
 	}
-	const ut32 regsize = esil_internal_sizeof_reg (esil, dst.a);
-	if (regsize == 128 && esil->stackptr > 0) {
-		const RStrs src2 = r_esil_pop (esil);
-		const ut64 n0 = r_strs_tonum (src, 0, NULL);
-		const ut64 n1 = r_strs_tonum (src2, 0, NULL);
-		ret = r_esil_reg_write (esil, dst.a, n1);
-		char *dst2 = r_str_newf ("%sh", dst.a);
-		ret = r_esil_reg_write (esil, dst2, n0);
-		free (dst2);
-	} else if (regsize > 64 && esil_internal_packed_size_reg (esil, dst.a) > 0) {
-		const RStrs src2 = r_esil_pop (esil);
-		char *newreg = r_str_newf ("%sl", dst.a);
-		if (r_esil_get_parm (esil, src2, &num2)) {
-			ret = r_esil_reg_write (esil, newreg, num2);
-		} else {
-			const ut64 n0 = r_strs_tonum (src, 0, NULL);
-			ret = r_esil_reg_write (esil, dst.a, n0);
-		}
-		free (newreg);
-	} else if (r_esil_reg_read_silent (esil, dst.a, &num, NULL)) {
-		if (r_esil_get_parm (esil, src, &num2)) {
-			ret = r_esil_reg_update (esil, dst.a, num, num2);
-			esil->cur = num2;
-			esil->old = num;
-			esil->lastsz = regsize;
-		} else {
-			R_LOG_DEBUG ("esil_eq: invalid src");
-		}
-	} else {
-		R_LOG_DEBUG ("esil_eq: invalid parameters");
+	const ut32 regsize = esil->reg_if.reg_size? esil->reg_if.reg_size (esil->reg_if.reg, dst.a): 0;
+	if (regsize >= 128) {
+		return esil_assign_vector (esil, dst, src, regsize);
 	}
-	return ret;
+	ut64 num, num2;
+	if (!weak && !r_esil_reg_read_silent (esil, dst.a, &num, NULL)) {
+		return false;
+	}
+	if (!r_esil_get_parm (esil, src, &num2)) {
+		return false;
+	}
+	if (weak) {
+		return r_esil_reg_write (esil, dst.a, num2);
+	}
+	if (!r_esil_reg_update (esil, dst.a, num, num2)) {
+		return false;
+	}
+	esil->cur = num2;
+	esil->old = num;
+	esil->lastsz = regsize;
+	return true;
+}
+
+static bool esil_weak_eq(REsil *esil) {
+	return esil_assign (esil, true);
+}
+
+static bool esil_eq(REsil *esil) {
+	return esil_assign (esil, false);
 }
 
 static bool esil_neg(REsil *esil) {

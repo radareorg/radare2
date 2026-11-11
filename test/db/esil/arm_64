@@ -244,7 +244,7 @@ e asm.bits=64
 e hex.header=false
 woe 1
 x 16
-ae 0,[16],q0,=
+ae 0,[16],q0[1],=,q0[0],=
 ar q0
 ?e --
 wow 00
@@ -274,7 +274,7 @@ ar0
 ar q0
 ?e --
 woe 1
-ae 0,[16],q0,=
+ae 0,[16],q0[1],=,q0[0],=
 ar q0
 EOF
 EXPECT=<<EOF
@@ -291,7 +291,7 @@ FILE=malloc://0x200
 ARGS=-a arm -b 64 -e cfg.bigendian=true -e hex.header=false
 CMDS=<<EOF
 woe 1
-ae 0,[16],q0,=
+ae 0,[16],q0[1],=,q0[0],=
 ar v0l
 ar v0h
 ae q0,0x10,=[16]
@@ -6350,5 +6350,166 @@ EXPECT=<<EOF
 0x000000000000000000000000ff800001
 0x0000000000000000fff0000000000001
 0xfff12345800000007ff0000000000001
+EOF
+RUN
+
+NAME=Whole scalable vector and predicate assignment uses all chunks
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e asm.cpu=sve2048
+aei
+ar z1[0]=0x1122334455667788
+ar z1[15]=0x99aabbccddeeff00
+ar z1[31]=0x123456789abcdef0
+ar p1[0]=0x1357
+ar p1[3]=0x2468
+ae 0x99,z1,z0,=,x0,=
+ar z0[0]
+ar z0[15]
+ar z0[31]
+ar x0
+ae p1,p0,:=
+ar p0[0]
+ar p0[3]
+ae v1,z0,=
+ar z0[0]
+ar z0[15]
+ar z0[31]
+ae 0x55,z0,=
+ar z0[0]
+ar z0[31]
+EOF
+EXPECT=<<EOF
+0x1122334455667788
+0x99aabbccddeeff00
+0x123456789abcdef0
+0x00000099
+0x00001357
+0x00002468
+0x1122334455667788
+0x00000000
+0x00000000
+0x00000055
+0x00000000
+EOF
+RUN
+
+NAME=ARM64 little-endian Q loads assign both halves explicitly
+FILE=malloc://512
+ARGS=-a arm -b 64 -e cfg.bigendian=false
+CMDS=<<EOF
+e asm.cpu=sve256
+wx 2000c03d2110c03c2004c1ad2004c1ac2068e23c6007009c
+wx 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f @ 0x100
+aei
+ar x1=0x100
+ar z0[2]=0xffffffffffffffff
+aes
+ar q0
+ar z0[2]
+aes
+ar q1
+ar x1=0xe0
+aes
+ar q0
+ar q1
+ar x1
+aes
+ar q0
+ar q1
+ar x1
+ar x1=0xf0
+ar x2=0x10
+aes
+ar q0
+aes
+ar q0
+EOF
+EXPECT=<<EOF
+0x0f0e0d0c0b0a09080706050403020100
+0x00000000
+0x100f0e0d0c0b0a090807060504030201
+0x0f0e0d0c0b0a09080706050403020100
+0x1f1e1d1c1b1a19181716151413121110
+0x00000100
+0x0f0e0d0c0b0a09080706050403020100
+0x1f1e1d1c1b1a19181716151413121110
+0x00000120
+0x0f0e0d0c0b0a09080706050403020100
+0x0f0e0d0c0b0a09080706050403020100
+EOF
+RUN
+
+NAME=ARM64 big-endian Q loads assign both halves explicitly
+FILE=malloc://512
+ARGS=-a arm -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+e asm.cpu=sve256
+wx 2000c03d2110c03c2004c1ad2004c1ac2068e23c6007009c
+wx 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f @ 0x100
+aei
+ar x1=0x100
+ar z0[2]=0xffffffffffffffff
+aes
+ar q0
+ar z0[2]
+aes
+ar q1
+ar x1=0xe0
+aes
+ar q0
+ar q1
+ar x1
+aes
+ar q0
+ar q1
+ar x1
+ar x1=0xf0
+ar x2=0x10
+aes
+ar q0
+aes
+ar q0
+EOF
+EXPECT=<<EOF
+0x000102030405060708090a0b0c0d0e0f
+0x00000000
+0x0102030405060708090a0b0c0d0e0f10
+0x000102030405060708090a0b0c0d0e0f
+0x101112131415161718191a1b1c1d1e1f
+0x00000100
+0x000102030405060708090a0b0c0d0e0f
+0x101112131415161718191a1b1c1d1e1f
+0x00000120
+0x000102030405060708090a0b0c0d0e0f
+0x000102030405060708090a0b0c0d0e0f
+EOF
+RUN
+
+NAME=Whole scalable vector assignment supports step-back
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e asm.cpu=sve2048
+wx 1f2003d5
+ahe z1,z0,=
+aei
+ar z0[0]=0x11
+ar z0[31]=0x22
+ar z1[0]=0x33
+ar z1[31]=0x44
+aes
+ar z0[0]
+ar z0[31]
+aesb
+ar z0[0]
+ar z0[31]
+EOF
+EXPECT=<<EOF
+0x00000033
+0x00000044
+0x00000011
+0x00000022
 EOF
 RUN

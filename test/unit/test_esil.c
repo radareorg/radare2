@@ -400,7 +400,110 @@ bool test_reg_write_observation(void) {
 	mu_end;
 }
 
+static void counted_vector_read(void *user, const char *name, ut64 value) {
+	TestRegWrite *test = user;
+	test->reads++;
+}
+
+static bool failing_vector_read(void *user, const char *name, ut64 *value) {
+	*value = 0x1234;
+	return strcmp (name, "src[1]");
+}
+
+static bool failing_vector_write(void *user, const char *name, ut64 value) {
+	return false;
+}
+
+bool test_vector_assignment(void) {
+	int endian, weak;
+	for (endian = 0; endian < 2; endian++) {
+		for (weak = 0; weak < 2; weak++) {
+			RReg *reg = r_reg_new ();
+			r_reg_set_endian (reg, endian? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE);
+			mu_assert_true (r_reg_set_profile_string (reg,
+				"vec512 src .512 0 .64\n"
+				"vec512 dst .512 64 .64\n"
+				"vec128 small .128 128 0\n"
+				"vec128 overlap .128 136 0\n"
+				"vec256 partial .136 160 .8\n"
+				"gpr scalar .64 184 0\n"), "set vector profile");
+			REsilOptions opt = r_esil_options (reg, NULL);
+			REsil *esil = r_esil_new (&opt);
+			const char *assign = weak? ":=": "=";
+			ut64 values[8];
+			int i;
+			for (i = 0; i < 8; i++) {
+				char name[16];
+				snprintf (name, sizeof (name), "src[%d]", i);
+				values[i] = 0x1020304050607080ULL + i;
+				mu_assert_true (r_reg_setv (reg, name, values[i]), "initialize source chunk");
+				snprintf (name, sizeof (name), "dst[%d]", i);
+				mu_assert_true (r_reg_setv (reg, name, UT64_MAX), "initialize destination chunk");
+			}
+			TestRegWrite observer = {0};
+			r_esil_add_voyeur (esil, &observer, counted_reg_voyeur, R_ESIL_VOYEUR_REG_WRITE);
+			r_esil_add_voyeur (esil, &observer, counted_vector_read, R_ESIL_VOYEUR_REG_READ);
+			char *expr = r_str_newf ("0x99,src,dst,%s", assign);
+			mu_assert_true (r_esil_parse (esil, expr), "copy wide registers");
+			free (expr);
+			mu_assert_eq (esil->stackptr, 1, "assignment consumes only source and destination");
+			mu_assert_eq (r_strs_tonum (r_esil_pop (esil), 0, NULL), 0x99, "unrelated stack value is untouched");
+			mu_assert_eq (observer.reads, 8, "all source chunks observed");
+			mu_assert_eq (observer.notifications, 8, "all destination chunks observed");
+			mu_assert_eq (observer.observed_old, UT64_MAX, "observer sees previous chunk");
+			mu_assert_eq (observer.observed_new, values[7], "observer sees new chunk");
+			for (i = 0; i < 8; i++) {
+				char name[16];
+				snprintf (name, sizeof (name), "dst[%d]", i);
+				mu_assert_eq (r_reg_getv (reg, name), values[i], "whole register copied");
+			}
+			expr = r_str_newf ("src,small,%s,small,overlap,%s", assign, assign);
+			mu_assert_true (r_esil_parse (esil, expr), "copy into overlapping alias");
+			free (expr);
+			mu_assert_eq (r_reg_getv (reg, "overlap[0]"), values[0], "overlapping low chunk");
+			mu_assert_eq (r_reg_getv (reg, "overlap[1]"), values[1], "overlapping source snapshotted");
+			expr = r_str_newf ("overlap,overlap,%s,overlap,dst,%s,src,partial,%s", assign, assign, assign);
+			mu_assert_true (r_esil_parse (esil, expr), "self copy, extension and partial chunk");
+			free (expr);
+			mu_assert_eq (r_reg_getv (reg, "dst[0]"), values[0], "narrow vector low chunk");
+			mu_assert_eq (r_reg_getv (reg, "dst[1]"), values[1], "narrow vector high chunk");
+			mu_assert_eq (r_reg_getv (reg, "partial[0]"), values[0], "partial register low chunk");
+			mu_assert_eq (r_reg_getv (reg, "partial[2]"), values[2] & 0xff, "partial chunk truncated");
+			for (i = 2; i < 8; i++) {
+				char name[16];
+				snprintf (name, sizeof (name), "dst[%d]", i);
+				mu_assert_eq (r_reg_getv (reg, name), 0, "narrow vector zero extended");
+			}
+			expr = r_str_newf ("0x55,scalar,=,0x99,scalar,dst,%s", assign);
+			mu_assert_true (r_esil_parse (esil, expr), "scalar register assignment");
+			free (expr);
+			mu_assert_eq (esil->stackptr, 1, "scalar assignment preserves stack");
+			mu_assert_eq (r_strs_tonum (r_esil_pop (esil), 0, NULL), 0x99, "scalar stack sentinel");
+			mu_assert_eq (r_reg_getv (reg, "dst[0]"), 0x55, "scalar source resolved");
+			for (i = 1; i < 8; i++) {
+				char name[16];
+				snprintf (name, sizeof (name), "dst[%d]", i);
+				mu_assert_eq (r_reg_getv (reg, name), 0, "scalar zero extended");
+			}
+			esil->reg_if.reg_read = failing_vector_read;
+			mu_assert_true (r_esil_push (esil, R_STRS_LIT ("src")), "push failing source");
+			mu_assert_true (r_esil_push (esil, R_STRS_LIT ("dst")), "push destination");
+			REsilOp *op = r_esil_get_op (esil, r_strs_from (assign));
+			mu_assert_false (op->code (esil), "read failure propagates");
+			mu_assert_eq (r_reg_getv (reg, "dst[0]"), 0x55, "read failure does not write partial copy");
+			esil->reg_if.reg_write = failing_vector_write;
+			mu_assert_true (r_esil_push (esil, R_STRS_LIT ("1")), "push scalar");
+			mu_assert_true (r_esil_push (esil, R_STRS_LIT ("dst")), "push failing destination");
+			mu_assert_false (op->code (esil), "write failure propagates");
+			r_esil_free (esil);
+			r_reg_free (reg);
+		}
+	}
+	mu_end;
+}
+
 int main(int argc, char **argv) {
+	mu_run_test (test_vector_assignment);
 	mu_run_test (test_reg_write_observation);
 	mu_run_test (test_fault_record);
 	mu_run_test (test_memory_fault_addresses);
