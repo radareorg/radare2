@@ -812,8 +812,6 @@ static void print_diff(const char *actual, const char *expected, bool diffchar, 
 			goto cleanup;
 		}
 	}
-	// the diffchar path needs no RDiff, so it is only allocated here, once
-	// the unified diff below is known to be needed
 	RDiff *d = r_diff_new ();
 #ifdef R2__WINDOWS__
 	d->diff_cmd = "git diff --no-index";
