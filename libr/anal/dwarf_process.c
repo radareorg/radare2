@@ -44,6 +44,7 @@ typedef struct dwarf_function_t {
 	bool is_method;
 	bool is_virtual;
 	bool is_trampoline; // intermediary in making call to another func
+	bool is_clone; // formals reordered against the abstract origin
 	ut8 access; // public = 1, protected = 2, private = 3, if not set assume private
 	ut64 vtable_addr; // location description
 	ut64 call_conv; // normal || program || nocall
@@ -1648,7 +1649,7 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 	return location;
 }
 
-static bool parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, RList/*<Variable*>*/ *variables, bool *has_unspecified_parameters) {
+static bool parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, RList/*<Variable*>*/ *variables, bool *has_unspecified_parameters, bool *is_clone) {
 	const RBinDwarfDie *die = &ctx->all_dies[idx++];
 	bool complete = true;
 
@@ -1658,6 +1659,7 @@ static bool parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 		bool get_linkage_name = prefer_linkage_name (ctx->lang);
 		bool has_linkage_name = false;
 		int argNumber = 1;
+		ut64 last_formal_origin = 0;
 		const char *name = NULL;
 		// cache frame_base once instead of looking it up per-variable
 		const RBinDwarfAttrValue *frame_base = r_bin_dwarf_die_find_attr (ctx->unit, die, DW_AT_frame_base);
@@ -1701,6 +1703,13 @@ static bool parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 						break;
 					// abstract origin is supposed to have omitted information
 					case DW_AT_abstract_origin:
+						if (child_die->tag == DW_TAG_formal_parameter && child_depth == 1) {
+							// a clone reorders its formals against the origin, so its registers differ
+							if (val->reference < last_formal_origin) {
+								*is_clone = true;
+							}
+							last_formal_origin = val->reference;
+						}
 						parse_abstract_origin (ctx, val->reference, &type, &name);
 						break;
 					case DW_AT_location:
@@ -2037,6 +2046,9 @@ static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
 	sdb_setf (sdb, real_name, 0, "fcn.%s.name", sname);
 
 	sdb_setf (sdb, dwarf_fcn->signature, 0, "fcn.%s.sig", sname);
+	if (dwarf_fcn->is_clone) {
+		sdb_setf (sdb, "1", 0, "fcn.%s.clone", sname);
+	}
 
 	RStrBuf vars_buf;
 	RStrBuf args_buf;
@@ -2263,10 +2275,10 @@ static void parse_function(Context *ctx, ut64 idx) {
 	}
 	ctx->scope_lo = low_pc;
 	ctx->scope_hi = high_pc? high_pc: UT64_MAX;
-	bool formals_complete = parse_function_args_and_vars (ctx, idx, &args, variables, &has_unspecified_parameters);
+	bool formals_complete = parse_function_args_and_vars (ctx, idx, &args, variables, &has_unspecified_parameters, &fcn.is_clone);
 	ctx->scope_lo = 0;
 	ctx->scope_hi = UT64_MAX;
-	fcn.prototype_complete = address_count == 1 && !has_ranges && formals_complete;
+	fcn.prototype_complete = address_count == 1 && !has_ranges && formals_complete && !fcn.is_clone;
 
 	if (ret_type.len == 0) { /* DW_AT_type is omitted in case of `void` ret type */
 		if (has_ret_type) {
@@ -2622,7 +2634,8 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwar
 		if (fcn) {
 			/* prepend dwarf debug info stuff with dbg. */
 			const char *value = sdb_const_getf (dwarf_sdb, NULL, "fcn.%s.name", func_sname);
-			if (value) {
+			// a clone keeps its symbol name so the origin's prototype is not looked up for it
+			if (value && !sdb_const_getf (dwarf_sdb, NULL, "fcn.%s.clone", func_sname)) {
 				char *dwf_name = r_str_newf ("dbg.%s", value);
 				r_anal_function_rename (fcn, dwf_name);
 				free (dwf_name);
