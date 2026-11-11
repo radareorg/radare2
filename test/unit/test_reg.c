@@ -687,6 +687,42 @@ bool test_r_reg_vector_bank(void) {
 	mu_end;
 }
 
+bool test_r_reg_vector_alias_endian(void) {
+	RReg *reg = r_reg_new ();
+	r_reg_set_endian (reg, R_SYS_ENDIAN_BIG);
+	mu_assert ("vector alias profile", r_reg_set_profile_string (reg,
+		"fpu b0 .8 0 0\n"
+		"fpu h0 .16 0 0\n"
+		"fpu s0 .32 0 0\n"
+		"fpu d0 .64 0 0\n"
+		"fpu last .32 88 0\n"
+		"fpu z[2] .384 0 48\n"
+		"fpu fpcr .32 $ 0\n"));
+	int phase;
+	for (phase = 0; phase < 3; phase++) {
+		r_reg_set_endian (reg, phase == 1? R_SYS_ENDIAN_LITTLE: R_SYS_ENDIAN_BIG);
+		mu_assert ("write vector chunk", r_reg_setv (reg, "z0[0]", 0x123456789abcdef0ULL));
+		mu_assert_eq (r_reg_getv (reg, "b0"), 0xf0, "byte aliases low vector bits");
+		mu_assert_eq (r_reg_getv (reg, "h0"), 0xdef0, "halfword aliases low vector bits");
+		mu_assert_eq (r_reg_getv (reg, "s0"), 0x9abcdef0, "word aliases low vector bits");
+		mu_assert_eq (r_reg_getv (reg, "d0"), 0x123456789abcdef0ULL, "doubleword alias stays in place");
+		mu_assert ("write word", r_reg_setv (reg, "s0", 0x11223344));
+		mu_assert ("write halfword", r_reg_setv (reg, "h0", 0xaabb));
+		mu_assert ("write byte", r_reg_setv (reg, "b0", 0xcc));
+		mu_assert_eq (r_reg_getv (reg, "z0[0]"), 0x123456781122aaccULL, "alias writes preserve upper bits");
+		mu_assert ("write final vector chunk", r_reg_setv (reg, "z1[5]", 0x0123456789abcdefULL));
+		mu_assert_eq (r_reg_getv (reg, "last"), 0x89abcdef, "alias in final bank chunk");
+		mu_assert ("write final alias", r_reg_setv (reg, "last", 0xaabbccdd));
+		mu_assert_eq (r_reg_getv (reg, "z1[5]"), 0x01234567aabbccddULL, "final alias write");
+		RRegItem *control = r_reg_get (reg, "fpcr", -1);
+		mu_assert_notnull (control, "control register outside vector bank");
+		mu_assert_eq (control->offset, 96 * 8, "unrelated scalar offset stays unchanged");
+		r_unref (control);
+	}
+	r_reg_free (reg);
+	mu_end;
+}
+
 bool test_r_reg_vbank(void) {
 	RReg *reg = r_reg_new ();
 	mu_assert_notnull (reg, "r_reg_new () failed");
@@ -859,6 +895,7 @@ int all_tests(void) {
 	mu_run_test (test_r_reg_x87_multi_offset);
 	mu_run_test (test_r_reg_vbank);
 	mu_run_test (test_r_reg_vector_bank);
+	mu_run_test (test_r_reg_vector_alias_endian);
 	mu_run_test (test_r_reg_clone);
 	mu_run_test (test_r_reg_set_name);
 	mu_run_test (test_r_reg_set_profile_string);

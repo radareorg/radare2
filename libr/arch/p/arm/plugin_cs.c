@@ -1523,10 +1523,10 @@ static int arm64_vreg_bit(const char *tok, size_t len) {
 }
 
 // W writes zero-extend into X; the profile maps wN onto xN's low half only
-static void arm64_esil_zext_regs(RAnalOp *op, bool scalable) {
+static ut32 arm64_esil_zext_regs(RAnalOp *op, bool scalable) {
 	const char *tok = r_strbuf_get (&op->esil);
 	if (R_STR_ISEMPTY (tok)) {
-		return;
+		return 0;
 	}
 	ut32 regs = 0, vectors = 0;
 	const char *prev = NULL;
@@ -1542,7 +1542,7 @@ static void arm64_esil_zext_regs(RAnalOp *op, bool scalable) {
 			const int bit = arm64_wreg_bit (prev, prevlen);
 			if (bit >= 0) {
 				regs |= 1u << bit;
-			} else if (scalable) {
+			} else {
 				const int vec = arm64_vreg_bit (prev, prevlen);
 				if (vec >= 0) {
 					vectors |= 1u << vec;
@@ -1562,15 +1562,17 @@ static void arm64_esil_zext_regs(RAnalOp *op, bool scalable) {
 	if (regs & (1u << 31)) {
 		r_strbuf_append (&op->esil, ",wsp,sp,=");
 	}
-	for (n = 0; vectors; n++, vectors >>= 1) {
+	const ut32 vector_writes = vectors;
+	for (n = 0; scalable && vectors; n++, vectors >>= 1) {
 		if (vectors & 1) {
 			r_strbuf_appendf (&op->esil, ",%d,ARM64_SVE_CLEAR", n);
 		}
 	}
+	return vector_writes;
 }
 
 // Narrow FP/SIMD writes clear the rest of the register; lane inserts preserve it.
-static void arm64_esil_zext_vupper(RAnalOp *op, csh *handle, cs_insn *insn) {
+static void arm64_esil_zext_vupper(RAnalOp *op, csh *handle, cs_insn *insn, ut32 vector_writes) {
 	if (R_STR_ISEMPTY (r_strbuf_get (&op->esil))) {
 		return;
 	}
@@ -1609,18 +1611,22 @@ static void arm64_esil_zext_vupper(RAnalOp *op, csh *handle, cs_insn *insn) {
 		cs_arm64_op dst = INSOP64 (i);
 		const char *name;
 		int bits, n;
-		if (!ISREG64 (i) || !(dst.access & CS_AC_WRITE) || dst.vector_index != -1) {
+		if (!ISREG64 (i) || dst.vector_index != -1) {
 			continue;
 		}
 		name = cs_reg_name (*handle, dst.reg);
 		if (!name || !strchr ("bhsdvq", name[0]) || !isdigit ((ut8)name[1])) {
 			continue;
 		}
+		n = atoi (name + 1);
+		// Capstone can omit write access for half-precision FP destinations.
+		if (!(dst.access & CS_AC_WRITE) && (i || !(vector_writes & (1u << n)))) {
+			continue;
+		}
 		bits = dst.vas? vas_count (dst.vas) * vector_size (&dst): REGBITS64 (i);
 		if (bits < 8 || bits >= 128) {
 			continue;
 		}
-		n = atoi (name + 1);
 		if (bits < 64) {
 			r_strbuf_appendf (&op->esil, ",0x%"PFMT64x",v%dl,&=", bitmask_by_width[bits - 1], n);
 		}
@@ -2581,10 +2587,6 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		cs_arm64_op dst = INSOP64 (0);
 		if (is_vector_op (&dst)) {
 			arm64_esil_vec_unary (op, handle, insn);
-			// not redundant with arm64_esil_zext_vupper, which misses the 4h form
-			if (vas_count (dst.vas) * vector_size (&dst) == 64) {
-				r_strbuf_appendf (&op->esil, ",0,%sh,=", REG64 (0));
-			}
 		} else {
 			r_strbuf_setf (&op->esil, "0x%"PFMT64x",%s,&,%s,=",
 				UT64_MAX >> (65 - REGBITS64 (1)), REG64 (1), REG64 (0));
@@ -3472,8 +3474,8 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	}
 
 	const PluginData *pd = as->data;
-	arm64_esil_zext_regs (op, pd->sve_vl > 128);
-	arm64_esil_zext_vupper (op, handle, insn);
+	const ut32 vector_writes = arm64_esil_zext_regs (op, pd->sve_vl > 128);
+	arm64_esil_zext_vupper (op, handle, insn, vector_writes);
 	r_strbuf_append (&op->esil, postfix);
 
 	return 0;

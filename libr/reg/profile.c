@@ -301,15 +301,36 @@ static RRegItem *widest_host(RList *regs, RRegItem *bit) {
 	return host;
 }
 
-// sub-byte items are declared at their little endian byte of the host register
-static void mirror_bits(RReg *reg) {
+static bool mirror_vector_alias(RRegSet *regset, RRegItem *item) {
+	if ((item->size & 7) || (item->offset & 7)) {
+		return false;
+	}
+	RRegVBank *bank;
+	R_VEC_FOREACH (&regset->vbanks, bank) {
+		const int offset = item->offset - bank->offset;
+		if (!bank->packed_size || bank->size < 128 || (bank->size & 63) || offset < 0
+			|| offset + item->size > bank->size * bank->count || (offset & 63) + item->size > 64) {
+			continue;
+		}
+		// Vector chunks stay low-first; bytes inside each chunk follow endianness.
+		item->offset = bank->offset + (offset & ~63) + 64 - (offset & 63) - item->size;
+		return true;
+	}
+	return false;
+}
+
+// Aliases are declared at their little-endian byte offsets.
+static void mirror_aliases(RReg *reg) {
 	int i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		RList *regs = reg->regset[i].regs;
 		RListIter *iter;
 		RRegItem *ri;
 		r_list_foreach (regs, iter, ri) {
-			if (ri->size >= 8 || ri->offset < 0) {
+			if (ri->size >= 64 || ri->offset < 0) {
+				continue;
+			}
+			if (mirror_vector_alias (&reg->regset[i], ri) || ri->size >= 8) {
 				continue;
 			}
 			RRegItem *host = widest_host (regs, ri);
@@ -329,7 +350,7 @@ R_API void r_reg_set_endian(RReg *reg, int endian) {
 	const bool flip = is_big (reg->endian) != is_big (endian);
 	reg->endian = endian;
 	if (flip) {
-		mirror_bits (reg);
+		mirror_aliases (reg);
 	}
 }
 
@@ -472,7 +493,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 	} while (*p++);
 	(void)have_a0;
 	if (is_big (reg->endian)) {
-		mirror_bits (reg);
+		mirror_aliases (reg);
 	}
 	reg->size = 0;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {

@@ -6088,3 +6088,74 @@ EXPECT=<<EOF_EXPECT
 0xffadbeefdeadbeef
 EOF_EXPECT
 RUN
+
+NAME=arm64 big endian scalar FP aliases clear scalable upper lanes and support step-back
+FILE=malloc://64
+ARGS=-a arm -b 64 -e cfg.bigendian=true
+CMDS=<<EOF_CMDS
+e asm.cpu=sve256
+wx 2040201e20c0e01e
+aei
+arv z0 0 64 = 0xdeadbeefdeadbeef
+arv z0 1 64 = 0x1122334455667788
+arv z0 2 64 = 0x0123456789abcdef
+arv z0 3 64 = 0xfedcba9876543210
+aer v1l=0xcafebabe3f800000
+aes
+aer s0
+arvj z0
+aesb
+arvj z0
+aes
+aer v1l=0x112233445566bc00
+aes
+aer h0
+arvj z0
+aer v1l
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+0x3f800000
+{"name":"z0","bits":256,"lane_bits":64,"first":0,"values":["0x000000003f800000","0x0000000000000000","0x0000000000000000","0x0000000000000000"]}
+{"name":"z0","bits":256,"lane_bits":64,"first":0,"values":["0xdeadbeefdeadbeef","0x1122334455667788","0x0123456789abcdef","0xfedcba9876543210"]}
+0x00003c00
+{"name":"z0","bits":256,"lane_bits":64,"first":0,"values":["0x0000000000003c00","0x0000000000000000","0x0000000000000000","0x0000000000000000"]}
+0x112233445566bc00
+EOF_EXPECT
+RUN
+
+NAME=arm64 big endian narrow vector loads and stores agree with scalar aliases
+FILE=malloc://0x200
+ARGS=-a arm -b 64 -e cfg.bigendian=true
+CMDS=<<EOF_CMDS
+wx 1f00403d1f20003d1f00407d1f14007d1f0040bd1f0c00bd
+wx 89abcdef000000000000000000000000 @ 0x100
+aei
+aer x0=0x100
+aer v31l=0xdeadbeefdeadbeef
+aer v31h=0x1122334455667788
+aes
+aer b31
+aer v31l
+aer v31h
+aes
+aes
+aer h31
+aer v31l
+aes
+aes
+aer s31
+aer v31l
+aes
+p8 8 @ 0x108
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+0x00000089
+0x00000089
+0x00000000
+0x000089ab
+0x000089ab
+0x89abcdef
+0x89abcdef
+890089ab89abcdef
+EOF_EXPECT
+RUN
