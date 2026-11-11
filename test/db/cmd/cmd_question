@@ -11,3 +11,16 @@ EXPECT=<<EOF
 nop
 EOF
 RUN
+
+NAME=?em rejects oversized treemap size without crashing
+FILE=malloc://64
+CMDS=<<EOF
+e scr.columns=65535
+e scr.rows=131072
+?em 10 20
+?e survived
+EOF
+EXPECT=<<EOF
+survived
+EOF
+RUN

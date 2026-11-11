@@ -128,16 +128,16 @@ static void treemapRecurse(char **buffer, int width, int height, int x, int y, i
 
 R_API char *r_print_treemap(int n, const ut32 *values, const char **labels, int width, int height) {
 	R_RETURN_VAL_IF_FAIL (n > 0 && values, NULL);
-	if (n < 1 || width < 1 || height < 1) {
+	if (n < 1 || width < 1 || height < 1 || width > 0x1000 || height > 0x1000) {
 		return NULL;
 	}
-	char *buf = calloc (1, (width + 1) * height + 1);
+	char *buf = calloc (1, (size_t)(width + 1) * height + 1);
 	if (!buf) {
 		return NULL;
 	}
 	int i;
 	for (i = 0; i < height; i++) {
-		const int w1 = width + 1;
+		const size_t w1 = width + 1;
 		memset (buf + (i * w1), ' ', width);
 		buf[(i * w1) + width] = '\n';
 	}
