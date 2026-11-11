@@ -2110,6 +2110,7 @@ static RVecRBinTrycatch *trycatch(RBinFile *bf) {
 // a fuzzed file must not inflate .got.r2; corpus addends stay below 0x500
 #define GOTR2_ADDEND_MAX 0x1000
 #define GOTR2_GROWTH_MAX (1 << 20)
+#define GOTR2_ALIGN_MAX 0x100000
 
 // kinds whose addend is an offset from S; pc biases and got entries are not
 static bool addend_is_offset(ut16 machine, int type) {
@@ -2175,14 +2176,30 @@ static bool offset_addend(RBinFile *bf, ELFOBJ *eo, RIOBind *iob, const RBinElfR
 	return true;
 }
 
-enum { SLOT_CRAMPED = 1, SLOT_WARNED = 2, SLOT_LISTED = 4, SLOT_NAMED = 8 };
+enum { SLOT_CRAMPED = 1, SLOT_WARNED = 2, SLOT_LISTED = 4, SLOT_NAMED = 8, SLOT_SIZED = 16, SLOT_NOSPACE = 32 };
 
 static inline bool offset_fits(st64 a) {
 	return a > -GOTR2_ADDEND_MAX && a < GOTR2_ADDEND_MAX;
 }
 
+// a common symbol's slot is its link-time storage: st_size bytes, as in .bss
+static inline ut64 common_slot_size(const RBinElfSpecialSym *ss, size_t cdsz) {
+	return ss->size? ss->size: cdsz;
+}
+
+// storage beyond these limits is refused, never capped into a smaller slot
+static inline bool common_slot_supported(const RBinElfSpecialSym *ss) {
+	return ss->size <= GOTR2_GROWTH_MAX && ss->value <= GOTR2_ALIGN_MAX;
+}
+
+// gABI: a common symbol's st_value is its alignment, not an address
+static inline ut64 common_slot_align(const RBinElfSpecialSym *ss) {
+	const ut64 a = ss->value;
+	return (a > 1)? a: 1;
+}
+
 // slots may grow up to the next io map, after room for one slot per reloc
-static ut64 span_budget(RBin *b, ELFOBJ *eo, ut64 base, size_t cdsz) {
+static ut64 span_budget(RBin *b, ELFOBJ *eo, ut64 base, size_t cdsz, ut64 extra) {
 	RIOBank *bank = b->iob.bank_get (b->iob.io, b->iob.io->bank);
 	ut64 limit = UT64_MAX;
 	if (bank) {
@@ -2198,7 +2215,7 @@ static ut64 span_budget(RBin *b, ELFOBJ *eo, ut64 base, size_t cdsz) {
 	if (limit == UT64_MAX) {
 		return GOTR2_GROWTH_MAX;
 	}
-	const ut64 slots = (ut64)eo->g_reloc_num * cdsz;
+	const ut64 slots = (ut64)eo->g_reloc_num * cdsz + extra;
 	return (limit > base && limit - base > slots)? R_MIN (limit - base - slots, GOTR2_GROWTH_MAX): 0;
 }
 
@@ -2263,6 +2280,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		return NULL;
 	}
 	HtUU *relocs_by_sym = ht_uu_new0 ();
+	ut64 commons_extra = 0;
 	// a slot's room must be known before its first reloc patches it
 	HtUU *lead_by_sym = ht_uu_new0 ();
 	HtUU *tail_by_sym = ht_uu_new0 ();
@@ -2282,8 +2300,26 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		if (reloc->laddr) {
 			ht_uu_update (slot_flags, reloc->sym, ht_uu_find (slot_flags, reloc->sym, NULL) | SLOT_NAMED);
 		}
+		if (!reloc_has_slot (eo, reloc)) {
+			continue;
+		}
+		// sized common slots take more than the pointer width reserved per reloc
+		const RBinElfSpecialSym *ss = special_sym (eo, reloc->sym);
+		if (ss && ss->common && !(ht_uu_find (slot_flags, reloc->sym, NULL) & SLOT_SIZED)) {
+			// extra room for common storage stays under GOTR2_GROWTH_MAX
+			ut64 flags = ht_uu_find (slot_flags, reloc->sym, NULL) | SLOT_SIZED;
+			const bool ok = common_slot_supported (ss);
+			const ut64 csz = ok? common_slot_size (ss, cdsz): 0;
+			const ut64 cost = ok? (csz > cdsz? csz - cdsz: 0) + common_slot_align (ss) - 1: 0;
+			if (!ok || cost > GOTR2_GROWTH_MAX - R_MIN (commons_extra, GOTR2_GROWTH_MAX)) {
+				flags |= SLOT_NOSPACE;
+			} else {
+				commons_extra += cost;
+			}
+			ht_uu_update (slot_flags, reloc->sym, flags);
+		}
 		st64 a;
-		if (!reloc_has_slot (eo, reloc) || !offset_addend (bf, eo, &b->iob, reloc, &a) || !offset_fits (a)) {
+		if (!offset_addend (bf, eo, &b->iob, reloc, &a) || !offset_fits (a)) {
 			continue;
 		}
 		HtUU *side = (a < 0)? lead_by_sym: tail_by_sym;
@@ -2292,7 +2328,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 			ht_uu_update (side, reloc->sym, mag);
 		}
 	}
-	ut64 budget = span_budget (b, eo, n_vaddr, cdsz);
+	ut64 budget = span_budget (b, eo, n_vaddr, cdsz, commons_extra);
 	ut64 vaddr = n_vaddr;
 	ut64 toc_base = UT64_MAX;
 	const ut64 arm_arch = (eo->ehdr.e_machine == EM_ARM)? arm_cpu_attrs (eo).arch: 0;
@@ -2331,11 +2367,19 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		}
 		const bool resolved = is_abs || (sym_addr && sym_addr != UT64_MAX);
 		const bool addressable = !resolved && reloc->sym && !reloc_sym_is_tls (eo, reloc);
-		const bool takes_slot = addressable && eo->ehdr.e_machine != EM_SBPF;
 		// S follows the lead: S + A and a word read there stay inside
 		ut64 lead = 0, tail = 0;
 		const ut64 old_flags = ht_uu_find (slot_flags, reloc->sym, NULL);
 		ut64 flags = old_flags;
+		// an over-budget common gets no storage instead of a truncating slot
+		const bool nospace = ss && ss->common && (flags & SLOT_NOSPACE);
+		const bool takes_slot = addressable && eo->ehdr.e_machine != EM_SBPF && !nospace;
+		ut64 slot_size = cdsz;
+		ut64 slot_align = 1;
+		if (ss && ss->common) {
+			slot_size = common_slot_size (ss, cdsz);
+			slot_align = common_slot_align (ss);
+		}
 		if (takes_slot) {
 			lead = R_ROUND (ht_uu_find (lead_by_sym, reloc->sym, NULL), cdsz);
 			tail = R_ROUND (ht_uu_find (tail_by_sym, reloc->sym, NULL), cdsz);
@@ -2344,18 +2388,29 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 				lead = tail = 0;
 			}
 			budget -= lead + tail;
-			plt_entry_addr = vaddr + lead;
 		}
-		const ut64 slot = vaddr + lead;
+		// a common's storage starts at its alignment, past any lead room
+		ut64 slot = vaddr + lead;
+		if (slot_align > 1 && slot <= UT64_MAX - slot_align) {
+			slot = R_ROUND (slot, slot_align);
+		}
+		if (takes_slot) {
+			plt_entry_addr = slot;
+		}
 		st64 a = 0;
 		const bool offset = has_slot && offset_addend (bf, eo, &b->iob, reloc, &a) && a;
-		const bool skip = offset && (!offset_fits (a) || (flags & SLOT_CRAMPED));
+		const bool skip = nospace || (offset && (!offset_fits (a) || (flags & SLOT_CRAMPED)));
 		if (skip && !(flags & SLOT_WARNED)) {
 			RBinImport *imp = reloc_is_import (eo, reloc)? eo->imports_by_ord[reloc->sym]: NULL;
 			RBinSymbol *sym = (!imp && reloc->sym < eo->symbols_by_ord_size)? eo->symbols_by_ord[reloc->sym]: NULL;
 			RBinName *name = imp? imp->name: sym? sym->name: NULL;
-			R_LOG_WARN ("No .got.r2 room for %s%+"PFMT64d" at 0x%"PFMT64x", reloc left unpatched",
-				name? r_bin_name_tostring (name): "?", a, reloc->rva);
+			if (nospace) {
+				R_LOG_WARN ("No .got.r2 room for common %s (%"PFMT64u" bytes), relocs left unpatched",
+					name? r_bin_name_tostring (name): "?", slot_size);
+			} else {
+				R_LOG_WARN ("No .got.r2 room for %s%+"PFMT64d" at 0x%"PFMT64x", reloc left unpatched",
+					name? r_bin_name_tostring (name): "?", a, reloc->rva);
+			}
 			flags |= SLOT_WARNED;
 		}
 		if (flags != old_flags) {
@@ -2395,7 +2450,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		}
 		if (takes_slot) {
 			ht_uu_insert (relocs_by_sym, reloc->sym, slot);
-			vaddr += lead + cdsz + tail;
+			vaddr = slot + slot_size + tail;
 		}
 	}
 	// a slot row already names its slot, even one listed after a data site

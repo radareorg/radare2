@@ -69,6 +69,7 @@ typedef struct r_bin_elf_symbol_t {
 // an SHN_ABS or common symbol, whose st_value is not an address
 typedef struct r_bin_elf_special_sym_t {
 	ut64 value;
+	ut64 size;
 	bool common;
 } RBinElfSpecialSym;
 
