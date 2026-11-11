@@ -11,7 +11,6 @@ r_debug_sources = [
   'dsignal.c',
   'snap.c',
   'trace.c',
-  'p/bfvm.c',
   'p/debug_bf.c',
   'p/debug_bochs.c',
   'p/debug_esil.c',

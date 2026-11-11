@@ -1,7 +1,8 @@
 /* radare - LGPL - Copyright 2011-2024 - pancake */
 
 #include <r_io.h>
-#include "../debug/p/bfvm.h"
+#undef R_API
+#define R_API static inline
 #include "../debug/p/bfvm.c"
 
 typedef struct {

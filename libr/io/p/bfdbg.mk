@@ -15,4 +15,4 @@ LINKFLAGS+=-L.. -lr_io
 endif
 
 ${TARGET_BFDBG}: ${OBJ_BFDBG}
-	${CC_LIB} ../debug/p/bfvm.c $(call libname,io_bfdbg) ${CFLAGS} -o ${TARGET_BFDBG} ${OBJ_BFDBG} ${LINKFLAGS}
+	${CC_LIB} $(call libname,io_bfdbg) ${CFLAGS} -o ${TARGET_BFDBG} ${OBJ_BFDBG} ${LINKFLAGS}
