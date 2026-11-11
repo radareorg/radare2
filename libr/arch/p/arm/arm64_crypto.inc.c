@@ -34,7 +34,8 @@ static bool arm64_crypto_write(REsil *esil, ut64 reg, const ut32 words[4]) {
 		return false;
 	}
 	snprintf (name, sizeof (name), "v%uh", (unsigned)reg);
-	return r_esil_reg_write (esil, name, words[2] | ((ut64)words[3] << 32));
+	return r_esil_reg_write (esil, name, words[2] | ((ut64)words[3] << 32))
+		&& arm64_sve_clear_upper (esil, reg);
 }
 
 static bool arm64_sha256su0(REsil *esil) {
@@ -104,28 +105,4 @@ static bool arm64_sha256h(REsil *esil) {
 
 static bool arm64_sha256h2(REsil *esil) {
 	return arm64_sha256hash (esil, true);
-}
-
-static bool esilcb(RArchSession *as, REsil *esil, RArchEsilAction action) {
-	if (!esil) {
-		return false;
-	}
-	switch (action) {
-	case R_ARCH_ESIL_ACTION_INIT:
-		if (as->config->bits != 64) {
-			return true;
-		}
-		return r_esil_set_op (esil, "ARM64_SHA256SU0", arm64_sha256su0, 0, 2, R_ESIL_OP_TYPE_CUSTOM | R_ESIL_OP_TYPE_CRYPTO, NULL)
-			&& r_esil_set_op (esil, "ARM64_SHA256SU1", arm64_sha256su1, 0, 3, R_ESIL_OP_TYPE_CUSTOM | R_ESIL_OP_TYPE_CRYPTO, NULL)
-			&& r_esil_set_op (esil, "ARM64_SHA256H", arm64_sha256h, 0, 3, R_ESIL_OP_TYPE_CUSTOM | R_ESIL_OP_TYPE_CRYPTO, NULL)
-			&& r_esil_set_op (esil, "ARM64_SHA256H2", arm64_sha256h2, 0, 3, R_ESIL_OP_TYPE_CUSTOM | R_ESIL_OP_TYPE_CRYPTO, NULL);
-	case R_ARCH_ESIL_ACTION_FINI:
-		r_esil_del_op (esil, "ARM64_SHA256SU0");
-		r_esil_del_op (esil, "ARM64_SHA256SU1");
-		r_esil_del_op (esil, "ARM64_SHA256H");
-		r_esil_del_op (esil, "ARM64_SHA256H2");
-		return true;
-	default:
-		return false;
-	}
 }

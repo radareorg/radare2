@@ -13,7 +13,36 @@
 #include "arm_code_endian.h"
 #include "asm_arm_hacks.inc.c"
 #include "arm_regprofile.inc.c"
+#include "arm64_sve.inc.c"
 #include "arm64_crypto.inc.c"
+
+static bool esilcb(RArchSession *as, REsil *esil, RArchEsilAction action) {
+	if (!esil) {
+		return false;
+	}
+	switch (action) {
+	case R_ARCH_ESIL_ACTION_INIT:
+		if (as->config->bits != 64) {
+			return true;
+		}
+		return r_esil_set_op (esil, "ARM64_SHA256SU0", arm64_sha256su0, 0, 2, R_ESIL_OP_TYPE_CUSTOM | R_ESIL_OP_TYPE_CRYPTO, NULL)
+			&& r_esil_set_op (esil, "ARM64_SHA256SU1", arm64_sha256su1, 0, 3, R_ESIL_OP_TYPE_CUSTOM | R_ESIL_OP_TYPE_CRYPTO, NULL)
+			&& r_esil_set_op (esil, "ARM64_SHA256H", arm64_sha256h, 0, 3, R_ESIL_OP_TYPE_CUSTOM | R_ESIL_OP_TYPE_CRYPTO, NULL)
+			&& r_esil_set_op (esil, "ARM64_SHA256H2", arm64_sha256h2, 0, 3, R_ESIL_OP_TYPE_CUSTOM | R_ESIL_OP_TYPE_CRYPTO, NULL)
+			&& r_esil_set_op (esil, "ARM64_SVE_UNARY", arm64_sve_unary, 0, 1, R_ESIL_OP_TYPE_CUSTOM | R_ESIL_OP_TYPE_REG_WRITE, NULL)
+			&& r_esil_set_op (esil, "ARM64_SVE_CLEAR", arm64_sve_clear, 0, 1, R_ESIL_OP_TYPE_CUSTOM | R_ESIL_OP_TYPE_REG_WRITE, NULL);
+	case R_ARCH_ESIL_ACTION_FINI:
+		r_esil_del_op (esil, "ARM64_SHA256SU0");
+		r_esil_del_op (esil, "ARM64_SHA256SU1");
+		r_esil_del_op (esil, "ARM64_SHA256H");
+		r_esil_del_op (esil, "ARM64_SHA256H2");
+		r_esil_del_op (esil, "ARM64_SVE_UNARY");
+		r_esil_del_op (esil, "ARM64_SVE_CLEAR");
+		return true;
+	default:
+		return false;
+	}
+}
 
 typedef char RStringShort[32];
 
@@ -21,6 +50,7 @@ typedef struct plugin_data_t {
 	bool bigendian;
 	bool code_bigendian;
 	int bits;
+	unsigned sve_vl;
 	char *cpu;
 	csh cs_handle;
 	HtUU *ht_itblock;
@@ -1477,13 +1507,28 @@ static int arm64_wreg_bit(const char *tok, size_t len) {
 	return n <= 30? n: -1;
 }
 
+static int arm64_vreg_bit(const char *tok, size_t len) {
+	if (len < 2 || len > 4 || !strchr ("bhsdvq", tok[0]) || !isdigit ((ut8)tok[1])) {
+		return -1;
+	}
+	int reg = tok[1] - '0';
+	size_t end = 2;
+	if (end < len && isdigit ((ut8)tok[end])) {
+		reg = reg * 10 + tok[end++] - '0';
+	}
+	if (end < len && (tok[0] == 'v' || tok[0] == 'q') && strchr ("lh", tok[end])) {
+		end++;
+	}
+	return end == len && reg < 32? reg: -1;
+}
+
 // W writes zero-extend into X; the profile maps wN onto xN's low half only
-static void arm64_esil_zext_wregs(RAnalOp *op) {
+static void arm64_esil_zext_regs(RAnalOp *op, bool scalable) {
 	const char *tok = r_strbuf_get (&op->esil);
 	if (R_STR_ISEMPTY (tok)) {
 		return;
 	}
-	ut32 regs = 0;
+	ut32 regs = 0, vectors = 0;
 	const char *prev = NULL;
 	size_t prevlen = 0;
 	while (tok) {
@@ -1493,9 +1538,16 @@ static void arm64_esil_zext_wregs(RAnalOp *op) {
 		bool assign = len > 0 && tok[len - 1] == '='
 			&& !(len == 2 && strchr ("=<>", tok[0]))
 			&& !memchr (tok, '[', len);
-		int bit = assign && prev? arm64_wreg_bit (prev, prevlen): -1;
-		if (bit >= 0) {
-			regs |= 1u << bit;
+		if (assign && prev) {
+			const int bit = arm64_wreg_bit (prev, prevlen);
+			if (bit >= 0) {
+				regs |= 1u << bit;
+			} else if (scalable) {
+				const int vec = arm64_vreg_bit (prev, prevlen);
+				if (vec >= 0) {
+					vectors |= 1u << vec;
+				}
+			}
 		}
 		prev = tok;
 		prevlen = len;
@@ -1509,6 +1561,11 @@ static void arm64_esil_zext_wregs(RAnalOp *op) {
 	}
 	if (regs & (1u << 31)) {
 		r_strbuf_append (&op->esil, ",wsp,sp,=");
+	}
+	for (n = 0; vectors; n++, vectors >>= 1) {
+		if (vectors & 1) {
+			r_strbuf_appendf (&op->esil, ",%d,ARM64_SVE_CLEAR", n);
+		}
 	}
 }
 
@@ -1991,7 +2048,7 @@ static void arm64_esil_vec_unary(RAnalOp *op, csh *handle, cs_insn *insn) {
 	}
 }
 
-// the unemulated SVE forms have a z register or a merging p register operand
+// SVE destinations use Z or P registers
 static bool arm64_esil_sve_form(cs_insn *insn) {
 #if CS_API_MAJOR > 4
 	const int reg = INSOP64 (0).reg;
@@ -2000,6 +2057,10 @@ static bool arm64_esil_sve_form(cs_insn *insn) {
 #else
 	return false;
 #endif
+}
+
+static void arm64_emit_sve_unary(RAnalOp *op, const ut8 *buf) {
+	r_strbuf_setf (&op->esil, "0x%08"PFMT32x",ARM64_SVE_UNARY", r_read_le32 (buf));
 }
 
 static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
@@ -2514,6 +2575,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	case ARM64_INS_FABS:
 	{
 		if (arm64_esil_sve_form (insn)) {
+			arm64_emit_sve_unary (op, buf);
 			break;
 		}
 		cs_arm64_op dst = INSOP64 (0);
@@ -2531,6 +2593,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 	}
 	case ARM64_INS_FNEG:
 		if (arm64_esil_sve_form (insn)) {
+			arm64_emit_sve_unary (op, buf);
 			break;
 		}
 		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,-F,D2F,%s,=",
@@ -3385,6 +3448,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		break;
 	case ARM64_INS_NEG:
 		if (arm64_esil_sve_form (insn)) {
+			arm64_emit_sve_unary (op, buf);
 			break;
 		}
 		// fallthrough
@@ -3407,7 +3471,8 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		break;
 	}
 
-	arm64_esil_zext_wregs (op);
+	const PluginData *pd = as->data;
+	arm64_esil_zext_regs (op, pd->sve_vl > 128);
 	arm64_esil_zext_vupper (op, handle, insn);
 	r_strbuf_append (&op->esil, postfix);
 
@@ -6377,6 +6442,7 @@ static bool init(RArchSession* as) {
 
 	PluginData *pd = as->data;
 	pd->bits = as->config->bits;
+	pd->sve_vl = arm64_sve_vl (as->config->cpu);
 	pd->bigendian = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
 	pd->code_bigendian = arm_code_is_be (as->config);
 	pd->cpu = as->config->cpu? strdup (as->config->cpu): NULL;

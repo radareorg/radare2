@@ -5962,14 +5962,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=arm64 ESIL SVE CLZ CLS CNT REV RBIT NEG FABS FNEG stay unemulated
-REQUIRE=cs5
+NAME=arm64 ESIL SVE CLZ CLS CNT REV RBIT stay unemulated
+REQUIRE=cs5+
 FILE=malloc://0x200
 ARGS=-a arm -b 64
 CMDS=<<EOF
-wx 20a0190420a0180420a01a0420383805204034052080270500a01704ffbf5c04ffbf5d04 # clz/cls/cnt/rev/rbit/neg z0.b, rev p0.b, fabs/fneg z31.h
+wx 20a0190420a0180420a01a04203838052040340520802705 # clz/cls/cnt/rev/rbit z0.b, rev p0.b
 e asm.esil=true
-ao 9~opcode:,esil:
+ao 6~opcode:,esil:
 EOF
 EXPECT=<<EOF
 opcode: clz z0.b, p0/m, z1.b
@@ -5978,30 +5978,113 @@ opcode: cnt z0.b, p0/m, z1.b
 opcode: rev z0.b, z1.b
 opcode: rev p0.b, p1.b
 opcode: rbit z0.b, p0/m, z1.b
-opcode: neg z0.b, p0/m, z0.b
-opcode: fabs z31.h, p7/m, z31.h
-opcode: fneg z31.h, p7/m, z31.h
 EOF
 RUN
 
-NAME=arm64 ESIL SVE CLZ CLS CNT REV RBIT NEG FABS FNEG stay unemulated (cs6)
-REQUIRE=cs6
-FILE=malloc://0x200
+NAME=arm64 ESIL SVE NEG merges or zeroes inactive byte lanes
+REQUIRE=cs5+
+FILE=malloc://64
 ARGS=-a arm -b 64
-CMDS=<<EOF
-wx 20a0190420a0180420a01a0420383805204034052080270500a01704ffbf5c04ffbf5d04 # clz/cls/cnt/rev/rbit/neg z0.b, rev p0.b, fabs/fneg z31.h
-e asm.esil=true
-ao 9~opcode:,esil:
-EOF
-EXPECT=<<EOF
-opcode: clz z0.b, p0/m, z1.b
-opcode: cls z0.b, p0/m, z1.b
-opcode: cnt z0.b, p0/m, z1.b
-opcode: rev z0.b, z1.b
-opcode: rev p0.b, p1.b
-opcode: rbit z0.b, p0/m, z1.b
-opcode: neg z0.b, p0/m, z0.b
-opcode: fabs z31.h, p7/m, z31.h
-opcode: fneg z31.h, p7/m, z31.h
-EOF
+CMDS=<<EOF_CMDS
+wx 20a41704
+aei
+aer p1=0x8105
+aer v0l=0xdeadbeefdeadbeef
+aer v0h=0x1122334455667788
+aer v1l=0x0102030405060780
+aer v1h=0x8102030405060708
+aes
+aer v0l
+aer v0h
+ae 0x0407a420,ARM64_SVE_UNARY
+aer v0l
+aer v0h
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+0xdeadbeefdefabe80
+0x7f223344556677f8
+0x00fa0080
+0x7f000000000000f8
+EOF_EXPECT
+RUN
+
+NAME=arm64 ESIL SVE FABS and FNEG preserve inactive lanes and NaN payloads
+REQUIRE=cs5+
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF_CMDS
+e cfg.bigendian=true
+wx ffbf5c04ffbf5d04
+aei
+aer p7=0x55
+aer v31l=0x8000fe018001bc00
+aer v31h=0x9988776655443322
+aes
+aer v31l
+aer v31h
+aer fpcr=2
+aes
+aer v31l
+aer v31h
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+0x7e0100013c00
+0x9988776655443322
+0x80007e018001bc00
+0x9988776655443322
+EOF_EXPECT
+RUN
+
+NAME=arm64 ESIL SVE upper lanes and NEON alias writes support step-back
+REQUIRE=cs5+
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF_CMDS
+e asm.cpu=sve256
+wx 20a4170420440c6e
+aei
+aer p1=0x10000
+arv z0 2 64 = 0xdeadbeefdeadbeef
+arv z1 2 64 = 0x0102030405060780
+aes
+arvj
+arvj z0 2 64
+arv* z0 2 64
+aes
+arv z0 2 64
+aesb
+arv z0 2 64
+aesb
+arv z0 2 64
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+[{"prefix":"z","count":32,"bits":256},{"prefix":"p","count":16,"bits":32}]
+{"name":"z0","bits":256,"lane_bits":64,"first":2,"values":["0xdeadbeefdeadbe80"]}
+arv z0 2 64 = 0xdeadbeefdeadbe80
+0x00000000
+0xdeadbeefdeadbe80
+0xdeadbeefdeadbeef
+EOF_EXPECT
+RUN
+
+NAME=arm64 ESIL SVE last predicate bit at 2048 bits
+REQUIRE=cs5+
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF_CMDS
+e asm.cpu=sve2048
+wx 20a4170420a41704
+aei
+arv z0 31 64 = 0xdeadbeefdeadbeef
+arv z1 31 64 = 0x0102030405060780
+aes
+arv z0 31 64
+arv p1 3 64 = 0x8000000000000000
+aes
+arv z0 31 64
+EOF_CMDS
+EXPECT=<<EOF_EXPECT
+0xdeadbeefdeadbeef
+0xffadbeefdeadbeef
+EOF_EXPECT
 RUN

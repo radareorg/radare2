@@ -151,7 +151,7 @@ Example commands tests for the other `db/` folders:
 * **EXPECT** is the expected output of the test
 * **BROKEN** (optional) is 1 if the tests is expected to be fail, 0 otherwise
 * **TIMEOUT** (optional) is the number of seconds to wait before considering the test timeout
-* **REQUIRE** (optional) lists requirements separated by whitespace, commas or semicolons; all must be satisfied. `cs5` and `cs6` select the Capstone major version reported by the tested radare2 executable. Tests for other versions are skipped. For version-dependent output, pair a `REQUIRE=cs5` test with a `REQUIRE=cs6` test.
+* **REQUIRE** (optional) lists requirements separated by whitespace, commas or semicolons; all must be satisfied. `cs5` and `cs6` select the Capstone major version reported by the tested radare2 executable. Use `cs5+` for Capstone 5 or later. For version-dependent output, pair a `REQUIRE=cs5` test with a `REQUIRE=cs6` test.
 
 You must end the test by adding RUN keyword
 
