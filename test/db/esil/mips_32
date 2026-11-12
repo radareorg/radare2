@@ -245,6 +245,43 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=mips.gnu addiu a1, zero, -5 uses 32-bit gprs
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=mips.gnu
+e asm.bits=32
+arp~gpr[1-3]:0..5
+ar > /dev/null
+wx fbff0524
+aei
+aeim
+aeip
+aes
+ar a1
+EOF
+EXPECT=<<EOF
+zero .32 0
+at .32 4
+v0 .32 8
+v1 .32 12
+a0 .32 16
+0xfffffffb
+EOF
+RUN
+
+NAME=mips.gnu at 64 bits keeps 64-bit gprs
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=mips.gnu
+e asm.bits=64
+arp~gpr[1-3]:0..2
+EOF
+EXPECT=<<EOF
+zero .64 0
+at .64 8
+EOF
+RUN
+
 NAME=addiu a1, 6, -5
 FILE=malloc://0x200
 CMDS=<<EOF
