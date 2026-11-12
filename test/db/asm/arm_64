@@ -822,3 +822,15 @@ a "ubfm xzr, xzr, #1, #63" ffff41d3
 a "ubfm wzr, wzr, #1, #31" ff7f0153
 a "lsl x0, x1, 1+2" 20f07dd3
 a "lsr w0, w1, #0x1f" 207c1f53
+ad "ldr x0, [x1, x2, lsl 3]" 207862f8
+ad "ldr w0, [x1, x2, lsl 2]" 207862b8
+ad "str x0, [x1, x2, lsl 3]" 207822f8
+ad "str w0, [x1, x2, lsl 2]" 207822b8
+ad "ldr x0, [x1, w2, uxtw]" 204862f8
+ad "ldr x0, [x1, w2, sxtw]" 20c862f8
+ad "ldr x0, [x1, w2, uxtw 3]" 205862f8
+ad "ldr x0, [x1, x2, sxtx 3]" 20f862f8
+ad "ldr x0, [x1, x3]" 206863f8
+ad "ldrsw x0, [x1, x2, lsl 2]" 2078a2b8
+ad "ldr w0, [x1], 4" 204440b8
+ad "ldr x0, [x1], 8" 208440f8
