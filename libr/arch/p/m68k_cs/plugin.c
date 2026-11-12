@@ -108,6 +108,7 @@ static int get_capstone_mode (RArchSession *as) {
 typedef struct plugin_data_t {
 	CapstonePluginData cpd;
 	RRegItem reg;
+	int cs_mode;
 } PluginData;
 
 #define OPERAND(x) insn->detail->m68k.operands[x]
@@ -240,8 +241,15 @@ static void op_fillval(PluginData *pd, RAnalOp *op, csh handle, cs_insn *insn) {
 
 static inline csh cs_handle_for_session(RArchSession *as) {
 	R_RETURN_VAL_IF_FAIL (as && as->data, 0);
-	CapstonePluginData *pd = as->data;
-	return pd->cs_handle;
+	PluginData *pd = as->data;
+	const int mode = get_capstone_mode (as);
+	if (mode != pd->cs_mode) {
+		// m68k capstone ignores CS_OPT_MODE, so reopen the handle
+		cs_close (&pd->cpd.cs_handle);
+		r_arch_cs_init (as, &pd->cpd.cs_handle);
+		pd->cs_mode = mode;
+	}
+	return pd->cpd.cs_handle;
 }
 
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
@@ -892,6 +900,7 @@ static bool init(RArchSession *s) {
 		R_FREE (s->data);
 		return false;
 	}
+	pd->cs_mode = get_capstone_mode (s);
 	return true;
 }
 
