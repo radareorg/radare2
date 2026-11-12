@@ -70,3 +70,53 @@ EXPECT=<<EOF
             0x08048378      14             d++
 EOF
 RUN
+
+NAME=z80: relative branch targets and cb/index jump types
+FILE=malloc://0x30000
+ARGS=-a z80
+CMDS=<<EOF
+wx 18fc10fc20fc
+ao~^jump
+s 2
+ao~^jump
+s 4
+ao~^jump
+s 0x20000
+wx 18fc
+ao~^jump
+s 0x10
+wx cb07cb1fcb26cb2fcb3fcb47cb87cbc7dde9fde9ddcb0106ddcb01c6
+pi 12
+ao 12~^type
+EOF
+EXPECT=<<EOF
+jump: 0x0000fffe
+jump: 0x00000000
+jump: 0x00000002
+jump: 0x0002fffe
+rlc a
+rr a
+sla [hl]
+sra a
+srl a
+bit 0, a
+res 0, a
+set 0, a
+jp [ix]
+jp [iy]
+rlc [ix+0x01]
+set 0, [ix+0x01]
+type: rol
+type: ror
+type: shl
+type: sar
+type: shr
+type: and
+type: and
+type: or
+type: ujmp
+type: ujmp
+type: rol
+type: or
+EOF
+RUN

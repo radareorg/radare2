@@ -47,10 +47,23 @@ static void z80_exchange(RStrBuf *e, const char *a, const char *b) {
 	r_strbuf_appendf (e, "%s,t0,=,%s,%s,=,t0,%s,=,", a, b, a, b);
 }
 
+static ut32 z80_cb_type(ut8 code) {
+	static const ut32 shifts[] = { R_ANAL_OP_TYPE_ROL, R_ANAL_OP_TYPE_ROR, R_ANAL_OP_TYPE_ROL, R_ANAL_OP_TYPE_ROR,
+		R_ANAL_OP_TYPE_SHL, R_ANAL_OP_TYPE_SAR, R_ANAL_OP_TYPE_SHL, R_ANAL_OP_TYPE_SHR };
+	switch (code >> 6) {
+	case 0:
+		return shifts[(code >> 3) & 7];
+	case 1: // bit
+	case 2: // res
+		return R_ANAL_OP_TYPE_AND;
+	}
+	return R_ANAL_OP_TYPE_OR; // set
+}
+
 static void z80_cb(RAnalOp *op, ut8 code, const char *src, const char *dst, const char *copy) {
 	RStrBuf *e = &op->esil;
 	int x = code >> 6, y = (code >> 3) & 7;
-	op->type = x == 1? R_ANAL_OP_TYPE_AND: R_ANAL_OP_TYPE_MOV;
+	op->type = z80_cb_type (code);
 	r_strbuf_appendf (e, "%s,t0,=,", src);
 	if (x == 1) {
 		r_strbuf_appendf (e, "1,C,&,f,=,1,H,=,%u,t0,&,!,Z,=,Z,P,=,%sS,=,0x28,t0,&,f,|=,", 1 << y, y == 7? "7,t0,>>,": "0,");

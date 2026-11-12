@@ -11,6 +11,11 @@
 
 // R2R test/db/esil/z80
 
+// relative branches wrap within the 64K address space the code runs in
+static ut64 z80_rel_target(ut64 addr, int ilen, ut8 rel) {
+	return (addr & ~0xffffULL) | ((addr + ilen + (st8)rel) & 0xffff);
+}
+
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut64 addr = op->addr;
 	const int len = op->size;
@@ -150,6 +155,12 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			op->refptr = 2;
 			op->ptr = data[2] | data[3] << 8;
 			break;
+		case 0xcb: // ddcb/fdcb d op
+			op->type = z80_cb_type (data[3]);
+			break;
+		case 0xe9: // jp (ix); jp (iy)
+			op->type = R_ANAL_OP_TYPE_UJMP;
+			break;
 		}
 		break;
 	case 0x05:
@@ -194,12 +205,12 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 
 	case 0x10: // djnz
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = addr + (st8)data[1] + ilen;
+		op->jump = z80_rel_target (addr, ilen, data[1]);
 		op->fail = addr + ilen;
 		break;
 	case 0x18: // jr xx
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = addr + (st8)data[1] + ilen;
+		op->jump = z80_rel_target (addr, ilen, data[1]);
 		break;
 	// jr cond, xx
 	case 0x20:
@@ -207,7 +218,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	case 0x30:
 	case 0x38:
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = addr + ((len > 1)? (st8)data[1]: 0) + ilen;
+		op->jump = z80_rel_target (addr, ilen, data[1]);
 		op->fail = addr + ilen;
 		break;
 	// conditional jumps
@@ -286,51 +297,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->stackptr = 2;
 		op->jump = data[1] | data[2] << 8;
 		break;
-	case 0xcb: // the same as for gameboy
-		switch (data[1] / 8) {
-		case 0:
-		case 2:
-		case 4:
-		case 6: // swap
-			op->type = R_ANAL_OP_TYPE_ROL;
-			break;
-		case 1:
-		case 3:
-		case 5:
-		case 7:
-			op->type = R_ANAL_OP_TYPE_ROR;
-			break;
-		case 8:
-		case 9:
-		case 10:
-		case 11:
-		case 12:
-		case 13:
-		case 14:
-		case 15:
-			op->type = R_ANAL_OP_TYPE_AND;
-			break; // bit
-		case 16:
-		case 17:
-		case 18:
-		case 19:
-		case 20:
-		case 21:
-		case 22:
-		case 23:
-			op->type = R_ANAL_OP_TYPE_XOR;
-			break; // set
-		case 24:
-		case 25:
-		case 26:
-		case 27:
-		case 28:
-		case 29:
-		case 30:
-		case 31:
-			op->type = R_ANAL_OP_TYPE_MOV;
-			break; // res
-		}
+	case 0xcb:
+		op->type = z80_cb_type (data[1]);
 		break;
 	}
 	if (mask & R_ARCH_OP_MASK_ESIL) {
