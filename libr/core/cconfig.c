@@ -5125,6 +5125,7 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	/* rap */
 	SETB ("rap.loop", "true", "run rap as a forever-listening daemon (=:9090)");
+	SETB ("rap.reverse", "true", "allow remote RAP servers to run commands in this r2 instance");
 
 	/* nkeys */
 	SETS ("key.s", "", "override step into action");

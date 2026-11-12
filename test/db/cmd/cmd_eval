@@ -1,3 +1,24 @@
+NAME=rap.reverse defaults to enabled
+FILE=-
+CMDS=<<EOF
+e rap.reverse
+et rap.reverse
+EOF
+EXPECT=<<EOF
+true
+bool
+EOF
+RUN
+
+NAME=rap.reverse can be disabled with -e
+FILE=-
+ARGS=-e rap.reverse=false
+CMDS=e rap.reverse
+EXPECT=<<EOF
+false
+EOF
+RUN
+
 NAME=e,
 FILE=-
 CMDS=<<EOF

@@ -662,6 +662,9 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			r_socket_free (fd);
 			return;
 		} else {
+			if (r_config_get_b (core->config, "rap.reverse")) {
+				R_LOG_WARN ("Remote RAP servers can run commands in this r2 instance. Use -e rap.reverse=false to disable");
+			}
 			int n = r_socket_rap_client_open (fd, file, 0);
 			R_LOG_INFO ("opened as fd = %d", n);
 		}

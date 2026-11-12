@@ -164,6 +164,9 @@ static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
 		return NULL;
 	}
 	R_LOG_INFO ("Connected to: %s at port %s", host, port);
+	if (!io->coreb.cfgGetB || io->coreb.cfgGetB (io->coreb.core, "rap.reverse")) {
+		R_LOG_WARN ("Remote RAP servers can run commands in this r2 instance. Use -e rap.reverse=false to disable");
+	}
 	RIORap *rior = R_NEW0 (RIORap);
 	if (!rior) {
 		r_socket_free (s);

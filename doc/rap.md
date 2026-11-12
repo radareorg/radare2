@@ -21,6 +21,15 @@ In another machine or terminal connect it:
 As you see, the path of the remote file to load must be specified, and this handled
 by the open() packet.
 
+RAP servers can send commands to run in the client r2 instance, including shell
+commands. This reverse execution is enabled by default (`rap.reverse=true`),
+and clients warn when connecting with it enabled. To disable it before connecting:
+
+	r2 -e rap.reverse=false rap://localhost:9999//bin/ls
+
+The setting also applies to connections added with `=+`. When disabled, reverse
+commands receive empty replies without being executed; ordinary replies still work.
+
 Known Bugs
 ----------
 
@@ -35,9 +44,10 @@ Known Bugs
 Operations
 ----------
 
-The protocol is designed to be bidirectional, but right now, only one way is supported.
-The client sends a byte specifying the operation and the server will reply the same byte
-masked with the RMT_REPLY value (0x80 | op)
+The client sends a byte specifying the operation and the server replies with the
+same byte masked with the RAP_REPLY value (0x80 | op). While waiting for a command
+reply, the client can also receive RAP_CMD requests from the server and respond
+with RAP_CMD | RAP_REPLY before reading the original reply.
 
 	RAP_OPEN   = 1
 	RAP_READ   = 2
