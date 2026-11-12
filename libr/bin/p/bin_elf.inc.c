@@ -1435,7 +1435,24 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		case R_ARM_CALL:
 		case R_ARM_JUMP24:
 		case R_ARM_PC24: {
-			st64 target = S + addend - P;
+			const bool is_blx = (insn >> 25) == 0x7d;
+			if (T) {
+				// only an unconditional call may become blx, from v5T on
+				if (rel->type != R_ARM_CALL || arm_arch < 3 || (!is_blx && (insn >> 28) != 0xe)) {
+					return;
+				}
+			} else if (is_blx && arm_reloc_arm_func (bo, rel, L)) {
+				insn = 0xeb000000;
+			}
+			st64 target = (S & ~1ULL) + addend - P;
+			if (T) {
+				if (target & 1) {
+					return;
+				}
+				insn = 0xfa000000 | (((target >> 1) & 1) << 24);
+			} else if (target & 3) {
+				return;
+			}
 			ut32 imm24 = (ut32)((st64)target >> 2);
 			insn &= 0xff000000;
 			insn |= imm24 & 0x00ffffff;
