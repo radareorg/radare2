@@ -1642,3 +1642,116 @@ EXPECT=<<EOF
 0
 EOF
 RUN
+
+NAME=Global mutations replace stale return values on success
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e log.level=0
+CMDS=<<EOF
+?= 7
+avg char counter @ 0x20
+?vi $?
+?= 7
+avg int counter @ 0x20
+?vi $?
+?= 7
+avg- @ 0x20
+?vi $?
+avgj
+EOF
+EXPECT=<<EOF
+0
+0
+0
+[]
+EOF
+RUN
+
+NAME=Global registration reports unknown types and preserves existing globals
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e log.level=0
+CMDS=<<EOF
+avg int counter @ 0x20
+?= 7
+avg missing_type invalid @ 0x40
+?vi $?
+?= 7
+avg missing_type counter @ 0x20
+?vi $?
+avgj
+EOF
+EXPECT=<<EOF
+1
+1
+[{"name":"counter","addr":32,"size":4,"type":"int"}]
+EOF
+RUN
+
+NAME=Global registration reports name and address conflicts
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e log.level=0
+CMDS=<<EOF
+fs symbols
+f occupied 4 @ 0x10
+?= 7
+avg int occupied @ 0x20
+?vi $?
+avg char first @ 0x40
+?= 7
+avg int second @ 0x40
+?vi $?
+?= 7
+avg int first @ 0x60
+?vi $?
+avgj
+EOF
+EXPECT=<<EOF
+1
+1
+1
+[{"name":"first","addr":64,"size":1,"type":"char"}]
+EOF
+RUN
+
+NAME=Global deletion reports missing variables without deleting ordinary flags
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e log.level=0
+CMDS=<<EOF
+fs symbols
+f ordinary 4 @ 0x20
+?= 7
+avg- @ 0x20
+?vi $?
+avg int counter @ 0x40
+avg- @ 0x40
+?vi $?
+?= 7
+avg- @ 0x40
+?vi $?
+fj
+EOF
+EXPECT=<<EOF
+1
+0
+1
+[{"name":"ordinary","size":4,"addr":32}]
+EOF
+RUN
+
+NAME=Global registration reports incomplete arguments
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e log.level=0
+CMDS=<<EOF
+?= 7
+avg int
+?vi $?
+?= 7
+"avg "
+?vi $?
+avgj
+EOF
+EXPECT=<<EOF
+1
+1
+[]
+EOF
+RUN

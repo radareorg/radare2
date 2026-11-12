@@ -16359,16 +16359,18 @@ static void cmd_avg(RCore *core, const char *input) {
 		{
 			char *a = r_str_trim_dup (input + 1);
 			char *b = strrchr (a, ' ');
+			bool success = false;
 			if (b) {
 				*b++ = 0;
 				r_str_trim (a);
-				r_anal_global_add (core->anal, core->addr, a, b);
+				success = r_anal_global_add (core->anal, core->addr, a, b);
 			}
 			free (a);
+			r_core_return_value (core, success? R_CMD_RC_SUCCESS: R_CMD_RC_FAILURE);
 		}
 		break;
 	case '-': // "avg-"
-		r_anal_global_del (core->anal, core->addr);
+		r_core_return_value (core, r_anal_global_del (core->anal, core->addr)? R_CMD_RC_SUCCESS: R_CMD_RC_FAILURE);
 		break;
 	case '.': // "avg."
 		{
