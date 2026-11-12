@@ -76,6 +76,25 @@ func.exit.arg.0=int,status
 func.exit.noreturn=true
 func.exit.ret=void
 
+do_exit=func
+func.do_exit.args=1
+func.do_exit.arg.0=long,error_code
+func.do_exit.noreturn=true
+func.do_exit.ret=void
+
+fortify_panic=func
+func.fortify_panic.args=1
+func.fortify_panic.arg.0=const char *,name
+func.fortify_panic.noreturn=true
+func.fortify_panic.ret=void
+
+panic=func
+func.panic.args=2
+func.panic.arg.0=const char *,fmt
+func.panic.arg.1=,...
+func.panic.noreturn=true
+func.panic.ret=void
+
 access=func
 func.access.args=2
 func.access.arg.0=const char *,path
