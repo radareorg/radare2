@@ -1,0 +1,30 @@
+# LINK.L An,#disp32 (0x4808|An) exists on 68020 and later per the M68000 PRM
+NAME="m68k: runtime asm.cpu switch toggles link.l"
+FILE=malloc://16
+ARGS=-a m68k
+CMDS=<<EOF
+e asm.cpu=68020
+wx 480efffedcbb
+pi 1
+ao~^mnemonic
+e asm.cpu=68000
+pi 1
+EOF
+EXPECT=<<EOF
+link.l a6, 0xfffedcbb
+mnemonic: link.l
+invalid
+EOF
+RUN
+
+NAME="m68k: default cpu keeps link.l invalid"
+FILE=malloc://16
+ARGS=-a m68k
+CMDS=<<EOF
+wx 480efffedcbb
+pi 1
+EOF
+EXPECT=<<EOF
+invalid
+EOF
+RUN
