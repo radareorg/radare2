@@ -461,7 +461,33 @@ static void call_dead(RCore *core, RBitset *dead, RBitset *live, RAnalOp *op) {
 	}
 }
 
-static char *fold_number(RCore *core, const char *value, int bits) {
+// Flag names substituted by the disassembler stand for their addresses.
+static char *flag_values(RCore *core, const char *value, bool *relative) {
+	RStrBuf *sb = r_strbuf_new ("");
+	const char *p = value;
+	while (*p) {
+		size_t length = strspn (p, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.$:");
+		if (!length || isdigit ((ut8)*p)) {
+			length = R_MAX (length, 1);
+			r_strbuf_append_n (sb, p, length);
+			p += length;
+			continue;
+		}
+		char *name = r_str_ndup (p, length);
+		RFlagItem *flag = name && !find_reg (core->anal->reg, name)? r_flag_get (core->flags, name): NULL;
+		free (name);
+		if (!flag) {
+			r_strbuf_free (sb);
+			return NULL;
+		}
+		r_strbuf_appendf (sb, "0x%" PFMT64x, flag->addr);
+		*relative |= flag->addr != 0;
+		p += length;
+	}
+	return r_strbuf_drain (sb);
+}
+
+static char *fold_resolved_number(RCore *core, const char *value, int bits) {
 	if (R_STR_ISEMPTY (value) || strspn (value, "0123456789abcdefABCDEFxX ()+-|<&^*") != strlen (value)) {
 		return NULL;
 	}
@@ -507,6 +533,18 @@ static char *fold_number(RCore *core, const char *value, int bits) {
 	}
 	RFlagItem *flag = pdc_flag_at (core, number);
 	return flag? strdup (flag->name): r_str_newf ("0x%" PFMT64x, number);
+}
+
+static char *fold_number(RCore *core, const char *value, int bits) {
+	bool relative = false;
+	char *resolved = value? flag_values (core, value, &relative): NULL;
+	char *result = resolved? fold_resolved_number (core, resolved, bits): NULL;
+	// keep flag-relative expressions unless they fold onto another flag
+	if (result && relative && r_str_startswith (result, "0x")) {
+		R_FREE (result);
+	}
+	free (resolved);
+	return result;
 }
 
 static char *fold_value(RCore *core, char *rhs, RRegItem *dst) {
