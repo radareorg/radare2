@@ -787,6 +787,28 @@ static ut32 cset(ArmOp *op, const char *str) {
 	return data;
 }
 
+// csetm is csinv with the inverted condition and both sources as xzr
+static ut32 csetm(ArmOp *op, const char *str) {
+	ut32 data = UT32_MAX;
+	const bool reg_64 = op->operands[0].reg_type & ARM_REG64;
+	const bool reg_32 = op->operands[0].reg_type & ARM_REG32;
+	const int cond = cond_code (str);
+
+	check_cond (op->operands[0].type == ARM_GPR);
+	check_cond (cond >= 0 && cond < 14);
+	if (reg_64) {
+		data = 0xda9f0000;
+	} else if (reg_32) {
+		data = 0x5a9f0000;
+	} else {
+		return UT32_MAX;
+	}
+	data |= (ut32)(cond ^ 1) << 12;
+	data |= 31 << 5; // rn
+	data |= op->operands[0].reg & 0x1f;
+	return r_swap_ut32 (data);
+}
+
 static ut32 sxt(ArmOp *op) {
 	ut32 data = UT32_MAX;
 	int k = 0;
@@ -2271,6 +2293,8 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 		*op = ccmn (&ops, str);
 	} else if (r_str_startswith (str, "csel")) {
 		*op = csel (&ops, str);
+	} else if (r_str_startswith (str, "csetm")) {
+		*op = csetm (&ops, str);
 	} else if (r_str_startswith (str, "cset")) {
 		*op = cset (&ops, str);
 	} else if (R_STR_STARTSWITH_ANY (str, "sxt", "uxtb", "uxth")) {
