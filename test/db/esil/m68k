@@ -1,0 +1,21 @@
+# Bcc condition codes per M68000 PRM Table 3-19: 66=NE 67=EQ 62=HI 63=LS 6b=MI 6a=PL 69=VS 68=VC
+NAME=m68k pseudo conditional branches
+FILE=malloc://32
+ARGS=-a m68k
+CMDS=<<EOF
+wx 66026702620263026b026a02690268026002
+e asm.pseudo=true
+pi 9
+EOF
+EXPECT=<<EOF
+if (!=) jmp 0x4
+if (==) jmp 0x6
+if (hi) jmp 0x8
+if (ls) jmp 0xa
+if (mi) jmp 0xc
+if (pl) jmp 0xe
+if (vs) jmp 0x10
+if (vc) jmp 0x12
+jmp 0x14
+EOF
+RUN
