@@ -1431,3 +1431,52 @@ r0 = r1 & r2
 r0 &= r1
 EOF2
 RUN
+
+NAME=arm ldr from pc plus a register reads no known address
+FILE=malloc://64
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 01109fe7 00109fe5 03f19f97 d4008fe1 d400cfe1 d4004fe1
+ao 1~ptr
+ao 1 @ 8~ptr
+ao 1 @ 0xc~ptr
+ao 1 @ 0x10~ptr
+ao 1 @ 0x14~ptr
+pd 6
+e asm.emu=true
+pd 6
+EOF
+EXPECT=<<EOF
+ptr: 0x00000010
+refptr: 4
+ptr: 0x0000001c
+refptr: 8
+ptr: 0x00000018
+refptr: 8
+            0x00000000      01109fe7       ldr r1, [pc, r1]
+            0x00000004      00109fe5       ldr r1, [pc]                ; [0xc:4]=0xe18f00d4
+            0x00000008      03f19f97       ldrls pc, [pc, r3, lsl 2]   ; [0x10:4]=0xe1cf00d4
+            0x0000000c      d4008fe1       ldrd r0, r1, [pc, r4]
+            0x00000010      d400cfe1       ldrd r0, r1, [0x0000001c]   ; [0x1c:8]=0
+            0x00000014      d4004fe1       ldrd r0, r1, [0x00000018]   ; [0x18:8]=0
+            0x00000000      01109fe7       ldr r1, [pc, r1]            ; r1=0x979ff103
+            0x00000004      00109fe5       ldr r1, [pc]                ; [0xc:4]=0xe18f00d4 ; r1=0xe18f00d4
+            0x00000008      03f19f97       ldrls pc, [pc, r3, lsl 2]   ; [0x10:4]=0xe1cf00d4 ; pc=0xe1cf00d4
+            0x0000000c      d4008fe1       ldrd r0, r1, [pc, r4]       ; r0=0xe14f00d4 ; r1=0x0
+            0x00000010      d400cfe1       ldrd r0, r1, [0x0000001c]   ; [0x1c:8]=0 ; r0=0x0 ; r1=0x0
+            0x00000014      d4004fe1       ldrd r0, r1, [0x00000018]   ; [0x18:8]=0 ; r0=0x0 ; r1=0x0
+EOF
+RUN
+
+NAME=arm ldrls pc table base recovers the switch cases
+FILE=malloc://64
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 020053e3 03f19f97 050000ea 18000000 1c000000 20000000 1eff2fe1 1eff2fe1 1eff2fe1 1eff2fe1
+af
+afbj~{[0].switch_op.cases}
+EOF
+EXPECT=<<EOF
+[{"addr":24,"jump":24,"value":0},{"addr":28,"jump":28,"value":1},{"addr":32,"jump":32,"value":2}]
+EOF
+RUN
