@@ -941,6 +941,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=sll/srl/sra zero, v0, 1 and sllv/srlv/srav zero, v0, v1
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=mips
+e asm.bits=32
+wx 400002004200020043000200040062000600620007006200
+pie 6
+EOF
+EXPECT=<<EOF
+0x00000000 ,
+0x00000004 ,
+0x00000008 ,
+0x0000000c ,
+0x00000010 ,
+0x00000014 ,
+EOF
+RUN
+
 NAME=sll v0, v0, 16
 FILE=malloc://0x200
 CMDS=<<EOF
