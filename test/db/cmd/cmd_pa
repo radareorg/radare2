@@ -709,3 +709,24 @@ EXPECT_ERR=<<EOF
 ERROR: Cannot assemble 'ld b, ((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((1))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))' at line 1
 EOF
 RUN
+
+NAME=pa z80 rejects invalid ld a and bit operands
+FILE=-
+ARGS=-a z80
+CMDS=<<EOF
+pa ld a, (1 n
+pa ld a, (sp)
+pa ld a, foo bar
+pa bit 10, a
+pa bit 7, a
+EOF
+EXPECT=<<EOF
+cb7f
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'ld a, (1 n' at line 1
+ERROR: Cannot assemble 'ld a, (sp)' at line 1
+ERROR: Cannot assemble 'ld a, foo bar' at line 1
+ERROR: Cannot assemble 'bit 10, a' at line 1
+EOF
+RUN

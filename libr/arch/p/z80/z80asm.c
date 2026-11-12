@@ -830,6 +830,13 @@ static int rd_byte(PluginData *pd, const char **p, char delimiter) {
 	return 1;
 }
 
+/* read a db/dw/ds operand up to the delimiter */
+static bool rd_data_value(PluginData *pd, const char **p, char delimiter, int *value) {
+	int valid;
+	*value = rd_expr (pd, p, delimiter, &valid, pd->sp);
+	return valid || pd->sizing;
+}
+
 /* read (SP), DE, or AF */
 static inline int rd_ex1(PluginData *pd, const char **p) {
 #define DE 2
@@ -951,7 +958,7 @@ static int rd_jp(PluginData *pd, const char **p) {
 	int i;
 	const char *list[] = {
 		"nz", "z", "nc", "c", "po", "pe", "p", "m", "( ix )", "( iy )",
-		"(hl)", NULL
+		"( hl )", NULL
 	};
 	i = indx (pd, p, list, 0, NULL);
 	if (i < 9) {
@@ -1102,16 +1109,12 @@ static int rd_r_(PluginData *pd, const char **p) {
 
 /* read a number from 0 to 7, for bit, set or res */
 static int rd_0_7(PluginData *pd, const char **p) {
-	*p = delspc (*p);
-	if (**p == 0) {
+	int valid;
+	pd->bitsetres = delspc (*p);
+	const int bit_num = rd_expr (pd, p, ',', &valid, pd->sp);
+	if (!valid || bit_num < 0 || bit_num > 7) {
 		return 0;
 	}
-	int bit_num = **p - '0';
-	if (bit_num < 0 || bit_num > 7) {
-		return 0;
-	}
-	pd->bitsetres = *p;
-	skipword (pd, p, ',');
 	return bit_num + 1; /* return 1-8 to indicate bit 0-7 */
 }
 
@@ -1227,6 +1230,9 @@ static int rd_lda(PluginData *pd, const char **p) {
 	};
 	const char *nn;
 	i = indx (pd, p, list, 0, &nn);
+	if (i < 2) { /* nothing matched or (sp) */
+		return 0;
+	}
 	if (i == 2 || i == 5) {
 		pd->indexed = (i == 2)? 0xFD: 0xDD;
 		pd->indexjmp = nn;
@@ -1919,6 +1925,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf, int _
 			wrtb (0x20 + r);
 		}
 		break;
+	case Z80_SLL:
 	case Z80_SLI:
 		if (! (r = rd_r_(pd, &ptr))) {
 			break;
@@ -1988,8 +1995,12 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf, int _
 					++ptr;
 				}
 			} else {
-				/* Read expression.  */
-				skipword (pd, &ptr, ',');
+				int value;
+				if (!rd_data_value (pd, &ptr, ',', &value)) {
+					pd->obuflen = 0;
+					break;
+				}
+				write_one_byte (value, 0);
 			}
 			ptr = delspc (ptr);
 			if (*ptr == ',') {
@@ -2004,38 +2015,43 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf, int _
 		break;
 	case Z80_DEFW:
 	case Z80_DW:
-		if (!rd_word (pd, &ptr, ',')) {
+		ptr = delspc (ptr);
+		if (!*ptr) {
 			R_LOG_ERROR ("No data for word definition");
 			break;
 		}
 		while (1) {
+			int value;
+			if (!rd_data_value (pd, &ptr, ',', &value)) {
+				pd->obuflen = 0;
+				break;
+			}
+			wrtb (value);
+			wrtb (value >> 8);
 			ptr = delspc (ptr);
 			if (*ptr != ',') {
 				break;
 			}
 			++ptr;
-			if (!rd_word (pd, &ptr, ',')) {
-				R_LOG_ERROR ("Missing expression in defw");
-			}
 		}
 		break;
 	case Z80_DEFS:
 	case Z80_DS:
 		r = rd_expr (pd, &ptr, ',', NULL, pd->sp);
 		if (r < 0) {
-			R_LOG_ERROR ("ds should have its first argument >=0 (not -0x%x)", -r);
+			R_LOG_ERROR ("ds should have its first argument >=0 (not %d)", r);
 			break;
 		}
+		int fill = 0;
 		ptr = delspc (ptr);
 		if (*ptr) {
 			rd_comma (&ptr);
-			pd->readbyte = 0;
-			rd_byte (pd, &ptr, '\0');
-			pd->writebyte = 0;
-			break;
+			if (!rd_data_value (pd, &ptr, '\0', &fill)) {
+				break;
+			}
 		}
 		for (i = 0; i < r && pd->obuflen <= pd->obufsz; i++) {
-			write_one_byte (0, 0);
+			write_one_byte (fill, 0);
 		}
 		break;
 	case Z80_END:
