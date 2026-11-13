@@ -1883,7 +1883,7 @@ static EDemanglerErr parse_function(SDemangler *sd, const char *sym, STypeCodeSt
 
 	// get storage class code for return
 	if (*curr_pos == '?') {
-		err = get_storage_class (*++curr_pos, &memb_func_access_code);
+		err = get_storage_class (*++curr_pos, &storage_class_code_for_ret);
 		if (err != eDemanglerErrOK) {
 			goto parse_function_err;
 		}
