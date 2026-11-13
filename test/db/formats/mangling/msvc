@@ -120,3 +120,17 @@ void __stdcall `eh vector ctor iterator'(void *, unsigned int, int, void (__this
 const Foo::`local vftable'
 EOF
 RUN
+
+NAME=msvc RTTI descriptors
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc "??_R2Ex5@@8"
+!rabin2 -D msvc "??_R3Ex5@@8"
+!rabin2 -D msvc "??_R4Ex5@@6BEx2@@@"
+EOF
+EXPECT=<<EOF
+Ex5::`RTTI Base Class Array'
+Ex5::`RTTI Class Hierarchy Descriptor'
+const Ex5::`RTTI Complete Object Locator'{for `Ex2'}
+EOF
+RUN

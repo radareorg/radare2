@@ -526,9 +526,9 @@ static size_t get_operator_code(SDemangler *sd, const char *buf, RList *names_l,
 				free (str);
 				break;
 			}
-			case '2': SET_OPERATOR_CODE ("`RTTI Base Class Array'"); break;
-			case '3': SET_OPERATOR_CODE ("`RTTI Class Hierarchy Descriptor'"); break;
-			case '4': SET_OPERATOR_CODE ("`RTTI Complete Object Locator'"); break;
+			case '2': SET_OPERATOR_CODE ("`RTTI Base Class Array'"); read_len++; break;
+			case '3': SET_OPERATOR_CODE ("`RTTI Class Hierarchy Descriptor'"); read_len++; break;
+			case '4': SET_OPERATOR_CODE ("`RTTI Complete Object Locator'"); read_len++; break;
 			default: return 0;
 			}
 			break;
