@@ -3652,6 +3652,8 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 			pj_a (pj);
 			pj_end (pj);
 		}
+		ht_pp_free (dup_chk_ht);
+		r_table_free (table);
 		return false;
 	}
 	r_io_use_fd (core->io, core->bin->cur->fd);
