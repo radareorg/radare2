@@ -668,8 +668,9 @@ static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeS
 	sd->depth++;
 	RList *names_l = r_list_newf ((RListFree)sstrinfo_free);
 
-	// ?0 and ?1 are the constructor and destructor, named after their class
-	const char structor = (buf[0] == '?' && (buf[1] == '0' || buf[1] == '1'))? buf[1]: 0;
+	// ?0 and ?1 are the constructor and destructor, named after their class; ?$?0 is a template constructor
+	const char *code = r_str_startswith (buf, "?$?")? buf + 2: buf;
+	const char structor = (code[0] == '?' && (code[1] == '0' || code[1] == '1'))? code[1]: 0;
 	if (*buf == '?') {
 		size_t res = get_operator_code (sd, buf, names_l, memorize);
 		if (!res) {
@@ -824,11 +825,15 @@ get_namespace_and_name_err:
 	if (structor && r_list_length (names_l) > 1) {
 		SStrInfo *op = r_list_first (names_l);
 		const SStrInfo *klass = r_list_get_n (names_l, 1);
-		char *name = r_str_newf ("%s%s", structor == '1'? "~": "", klass->str_ptr);
-		if (name) {
-			free (op->str_ptr);
-			op->str_ptr = name;
-			op->len = strlen (name);
+		const char *placeholder = structor == '1'? "~destructor": "constructor";
+		if (r_str_startswith (op->str_ptr, placeholder)) {
+			// keep the template arguments that follow the placeholder
+			char *name = r_str_newf ("%s%s%s", structor == '1'? "~": "", klass->str_ptr, op->str_ptr + strlen (placeholder));
+			if (name) {
+				free (op->str_ptr);
+				op->str_ptr = name;
+				op->len = strlen (name);
+			}
 		}
 	}
 	tmp_len = r_list_length (names_l);

@@ -162,3 +162,15 @@ EXPECT=<<EOF
 [thunk]:public virtual: void __thiscall A::f`vtordispex{16,0,-4,8}'(void)
 EOF
 RUN
+
+NAME=msvc template constructors
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc '??$?0H@Foo@@QAE@H@Z'
+!rabin2 -D msvc '??$?0ABV?$allocator@H@std@@$0A@@?$_Hash_vec@H@std@@QAE@ABV?$allocator@H@1@@Z'
+EOF
+EXPECT=<<EOF
+public: __thiscall Foo::Foo<int>(int)
+public: __thiscall std::_Hash_vec<int>::_Hash_vec<int><class std::allocator<int> const &, 0>(class std::allocator<int> const &)
+EOF
+RUN
