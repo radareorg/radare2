@@ -15,6 +15,6 @@ CMDS=<<EOF
 "iD msvc ??0A@@QAE@XZ"
 EOF
 EXPECT=<<EOF
-public: void __thiscall A::constructor(void)
+public: __thiscall A::A(void)
 EOF
 RUN

@@ -126,7 +126,7 @@ cdecl
 0   0x00000d8f 0x00000c20 LOCAL  SECT 4        .text$mn
 0   0x00000ec2 0x00000d30 LOCAL  SECT 4        .text$mn
             ;-- section..text_mn_5:
-            ;-- public: void __thiscall FooBar::~destructor(void):
+            ;-- public: __thiscall FooBar::~FooBar(void):
             0x00000d30      55             push ebp                    ; [05] -r-x section size 42 named .text$mn-5
             0x00000d31      8bec           mov ebp, esp
 EOF

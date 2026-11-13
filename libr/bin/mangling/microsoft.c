@@ -668,6 +668,8 @@ static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeS
 	sd->depth++;
 	RList *names_l = r_list_newf ((RListFree)sstrinfo_free);
 
+	// ?0 and ?1 are the constructor and destructor, named after their class
+	const char structor = (buf[0] == '?' && (buf[1] == '0' || buf[1] == '1'))? buf[1]: 0;
 	if (*buf == '?') {
 		size_t res = get_operator_code (sd, buf, names_l, memorize);
 		if (!res) {
@@ -819,6 +821,16 @@ static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeS
 	}
 
 get_namespace_and_name_err:
+	if (structor && r_list_length (names_l) > 1) {
+		SStrInfo *op = r_list_first (names_l);
+		const SStrInfo *klass = r_list_get_n (names_l, 1);
+		char *name = r_str_newf ("%s%s", structor == '1'? "~": "", klass->str_ptr);
+		if (name) {
+			free (op->str_ptr);
+			op->str_ptr = name;
+			op->len = strlen (name);
+		}
+	}
 	tmp_len = r_list_length (names_l);
 	if (amount_of_names) {
 		*amount_of_names = tmp_len;
@@ -1890,9 +1902,8 @@ static EDemanglerErr parse_function(SDemangler *sd, const char *sym, STypeCodeSt
 		curr_pos++;
 	}
 
-	// Return type, or @ if 'void'
+	// Return type, or @ if there is none (constructors and destructors)
 	if (*curr_pos == '@') {
-		ret_type = strdup ("void");
 		curr_pos++;
 	} else {
 		err = get_type_code_string (sd, curr_pos, &len, &ret_type);
