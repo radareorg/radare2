@@ -399,7 +399,7 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 		case MIPS_INS_DROTR:
 		case MIPS_INS_DROTR32:
 		case MIPS_INS_DROTRV:
-			{
+			PROTECT_ZERO () {
 				const int id = insn->id;
 				const bool var = id == MIPS_INS_DSLLV || id == MIPS_INS_DSRLV
 					|| id == MIPS_INS_DSRAV || id == MIPS_INS_DROTRV;
@@ -537,11 +537,13 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 		case MIPS_INS_ROTR:
 		case MIPS_INS_ROTRV:
 			// a 32-bit rotate, masked back to a word
-			r_strbuf_appendf (&op->esil,
-				"0x1f,%s,&," ES_W ("%s") ",>>,0x1f,%s,&,32,-," ES_W ("%s")
-				",<<,0xffffffff,&,|,%s,=",
-				ARG (2), ARG (1), ARG (2), ARG (1), ARG (0));
-			ES_SIGN32_64 (ARG (0));
+			PROTECT_ZERO () {
+				r_strbuf_appendf (&op->esil,
+					"0x1f,%s,&," ES_W ("%s") ",>>,0x1f,%s,&,32,-," ES_W ("%s")
+					",<<,0xffffffff,&,|,%s,=",
+					ARG (2), ARG (1), ARG (2), ARG (1), ARG (0));
+				ES_SIGN32_64 (ARG (0));
+			}
 			break;
 		case MIPS_INS_SHRAV:
 		case MIPS_INS_SHRAV_R:

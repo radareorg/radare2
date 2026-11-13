@@ -49,6 +49,19 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=mips64 dsll and rotr leave the hardwired zero register alone
+FILE=malloc://8
+ARGS=-a mips -b 64
+CMDS=<<EOF
+wx 7800020042002200
+pie 2
+EOF
+EXPECT=<<EOF
+0x00000000 ,
+0x00000004 ,
+EOF
+RUN
+
 NAME=mips64 addu subu negu and lui sign-extend but daddu does not
 FILE=malloc://64
 ARGS=-a mips -b 64
