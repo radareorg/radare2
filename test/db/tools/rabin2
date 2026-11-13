@@ -1452,6 +1452,7 @@ RUN
 NAME=rabin2 -O section resize and permissions (#15449)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
+mkdir .tmp
 rmrf .tmp/rabin2-mod
 !rabin2 -O r/.data/1024 -o .tmp/rabin2-mod ${R2_FILE} 2>/dev/null
 !rabin2 -S .tmp/rabin2-mod | grep '\.data$'
