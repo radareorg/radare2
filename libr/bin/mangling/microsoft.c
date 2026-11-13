@@ -1828,6 +1828,41 @@ static EDemanglerErr parse_function_type(const char *sym, SDataType *data_type, 
 	SET_ACCESS_MODIFIER ('V', implicit_this, "public virtual");
 	SET_THUNK_MODIFIER ('W', "[thunk]:public virtual");
 	SET_THUNK_MODIFIER ('X', "[thunk]:public virtual");
+	case '$': {
+		// vtordisp thunks: $0-$5 {vtordisp, adjustor}, $R0-$R5 {vbptr, vbindex, vtordisp, adjustor}
+		const bool ex = *curr_pos == 'R';
+		if (ex) {
+			curr_pos++;
+		}
+		if (*curr_pos < '0' || *curr_pos > '5') {
+			return eDemanglerErrUncorrectMangledSymbol;
+		}
+		static char *const access[] = { "[thunk]:private virtual", "[thunk]:protected virtual", "[thunk]:public virtual" };
+		data_type->left = access[(*curr_pos++ - '0') / 2];
+		RStrBuf *sb = r_strbuf_new (ex? "`vtordispex{": "`vtordisp{");
+		if (!sb) {
+			return eDemanglerErrMemoryAllocation;
+		}
+		int i;
+		for (i = 0; i < (ex? 4: 2); i++) {
+			SStateInfo state;
+			init_state_struct (&state, curr_pos);
+			char *num = get_num (&state);
+			if (!num) {
+				r_strbuf_free (sb);
+				data_type->right = "";
+				return eDemanglerErrUncorrectMangledSymbol;
+			}
+			// the offsets are signed 32-bit values
+			r_strbuf_appendf (sb, "%s%d", i? ",": "", (int)(ut32)strtoul (num, NULL, 10));
+			free (num);
+			curr_pos += state.amount_of_read_chars;
+		}
+		r_strbuf_append (sb, "}'");
+		data_type->right = r_strbuf_drain (sb);
+		*implicit_this = true;
+		break;
+	}
 	case 'Y': // near
 	case 'Z': // far
 		break;
@@ -2052,7 +2087,7 @@ static EDemanglerErr parse_microsoft_mangled_name(SDemangler *sd, const char *sy
 		*demangled_name = r_str_append (*demangled_name, data_type.right);
 		free (data_type.left);
 		free (data_type.right);
-	} else if (isalpha ((ut8)*curr_pos)) {
+	} else if (isalpha ((ut8)*curr_pos) || *curr_pos == '$') {
 		err = parse_function (sd, curr_pos, &type_code_str, demangled_name, &len);
 		curr_pos += len;
 	} else {

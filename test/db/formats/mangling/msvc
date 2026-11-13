@@ -148,3 +148,17 @@ void __cdecl f<-11>(void)
 ??$f@$0??@@YAXXZ
 EOF
 RUN
+
+NAME=msvc vtordisp thunks
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc '?sonido@Perro@@$4PPPPPPPM@A@BEXXZ'
+!rabin2 -D msvc '?f@A@@$1PPPPPPPM@3AEXXZ'
+!rabin2 -D msvc '?f@A@@$R4BA@A@PPPPPPPM@7AEXXZ'
+EOF
+EXPECT=<<EOF
+[thunk]:public virtual: void __thiscall Perro::sonido`vtordisp{-4,0}'(void)const
+[thunk]:private virtual: void __thiscall A::f`vtordisp{-4,4}'(void)
+[thunk]:public virtual: void __thiscall A::f`vtordispex{16,0,-4,8}'(void)
+EOF
+RUN
