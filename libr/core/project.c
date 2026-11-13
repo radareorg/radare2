@@ -558,6 +558,10 @@ static bool project_save_script(RCore *core, const char *file, int opts, const c
 		flush (core, sb);
 	}
 	r_core_cmd (core, "wc*", 0);
+	// the flag and function dumps above select other spaces with "fs"
+	const char *flag_space = r_flag_space_cur_name (core->flags);
+	r_cons_printf (cons, "fs %s\n", flag_space? flag_space: "*");
+	flush (core, sb);
 	if (opts & R_CORE_PRJ_ANAL_SEEK) {
 		r_cons_printf (cons, "# seek\n" "s 0x%08" PFMT64x "\n", core->addr);
 		flush (core, sb);
