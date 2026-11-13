@@ -545,6 +545,11 @@ static bool project_save_script(RCore *core, const char *file, int opts, const c
 		r_core_cmd (core, "t*", 0);
 		flush (core, sb);
 	}
+	if (opts & R_CORE_PRJ_FCNS) {
+		r_cons_println (cons, "# classes");
+		r_core_cmd (core, "acl*", 0);
+		flush (core, sb);
+	}
 	if (opts & R_CORE_PRJ_ANAL_MACROS) {
 		r_cons_println (cons, "# macros");
 		r_core_cmd (core, "(*", 0);
