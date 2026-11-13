@@ -1,5 +1,6 @@
 NAME=ELF: arm relocs
 FILE=bins/elf/analysis/arm-relocs
+ARGS=-e bin.relocs.apply=false
 CMDS=<<EOF
 ir*~reloc?
 ir*~!1

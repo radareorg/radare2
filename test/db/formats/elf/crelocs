@@ -23,12 +23,12 @@ vaddr      paddr      type   ntype name
 ---------------------------------------
 0x08000048 0x00000048 ADD_64 283   callee
 0x0800008c 0x0000008c ADD_64 261   .text
+0x080001e0 0x00000048 ADD_64 283   callee
             ;-- section..text:
 / 20: sym.caller ();
 |           0x08000040      fd7bbfa9       stp x29, x30, [sp, -0x10]!  ; [02] -r-x section size 20 named .text
 |           0x08000044      fd030091       mov x29, sp
-|           ;-- reloc.callee:
-|           0x08000048      00000094       bl reloc.callee             ; RELOC 64 callee
+|           0x08000048      66000094       bl reloc.callee             ; RELOC 64 callee
 |           0x0800004c      fd7bc1a8       ldp x29, x30, [sp], 0x10
 \           0x08000050      c0035fd6       ret
 --
@@ -39,6 +39,7 @@ vaddr      paddr      type   ntype name
 ---------------------------------------
 0x08000048 0x00000048 ADD_64 283   callee
 0x0800008c 0x0000008c ADD_64 261   .text
+0x080001e0 0x00000048 ADD_64 283   callee
 EOF
 RUN
 
@@ -66,7 +67,7 @@ ob 1
 ir~ADD_64?
 EOF
 EXPECT=<<EOF
-2
+3
 EOF
 RUN
 

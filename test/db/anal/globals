@@ -529,7 +529,7 @@ stripped true
 0x100004004 1 global.0x100004004 uint8_t
 0x100004008 8 global.0x100004008 uint64_t
 0x100004014 4 global.0x100004014 uint32_t
-0x100004020 8 global.0x100004020 uint64_t
+0x100004020 8 global.0x100004020 void *
 0x100004028 4 global.0x100004028 uint32_t
 0x100004030 4 global.0x100004030 uint32_t
 0x100004034 2 global.0x100004034 int16_t
@@ -1212,7 +1212,7 @@ avg. @ 0x100004020
 avg~?
 EOF
 EXPECT=<<EOF
-uint64_t
+void *
 9
 EOF
 RUN

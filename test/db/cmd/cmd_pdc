@@ -992,7 +992,7 @@ EOF
 EXPECT=<<EOF
         switch (r12) { // jump table of 10 cases at 0x0001bca4
             case 0: // 0x00004056
-                abort ()
+                abort () // rsym.abort
                 break;
 EOF
 RUN
