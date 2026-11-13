@@ -209,7 +209,7 @@ static ut64 entry_to_vaddr(struct MACH0_(obj_t) * bin) {
 	}
 }
 
-static bool addr_in_segment(struct MACH0_(obj_t) * mo, ut64 addr, ut64 *offset) {
+static ut64 addr_to_offset(struct MACH0_(obj_t) * mo, ut64 addr) {
 	if (mo->segs) {
 		size_t i;
 		for (i = 0; i < mo->nsegs; i++) {
@@ -217,17 +217,11 @@ static bool addr_in_segment(struct MACH0_(obj_t) * mo, ut64 addr, ut64 *offset) 
 			const ut64 segment_base = (ut64)seg->vmaddr;
 			const ut64 segment_size = (ut64)seg->vmsize;
 			if (addr >= segment_base && addr < segment_base + segment_size) {
-				*offset = seg->fileoff + (addr - segment_base);
-				return true;
+				return seg->fileoff + (addr - segment_base);
 			}
 		}
 	}
-	return false;
-}
-
-static ut64 addr_to_offset(struct MACH0_(obj_t) * mo, ut64 addr) {
-	ut64 offset;
-	return addr_in_segment (mo, addr, &offset)? offset: 0; // UT64_MAX?
+	return 0; // UT64_MAX?
 }
 
 static bool offset_in_segment(struct MACH0_(obj_t) * mo, ut64 offset, ut64 *vaddr) {
@@ -256,7 +250,16 @@ bool MACH0_(paddr_to_vaddr)(struct MACH0_(obj_t) * mo, ut64 offset, ut64 *vaddr)
 }
 
 bool MACH0_(vaddr_to_paddr)(struct MACH0_(obj_t) * mo, ut64 vaddr, ut64 *offset) {
-	return addr_in_segment (mo, vaddr, offset);
+	int i;
+	for (i = 0; i < mo->nsegs; i++) {
+		struct MACH0_(segment_command) *seg = &mo->segs[i];
+		ut64 size;
+		if (vaddr >= seg->vmaddr && segment_filebacked_size (mo, i, &size) && vaddr - seg->vmaddr < size) {
+			*offset = seg->fileoff + (vaddr - seg->vmaddr);
+			return true;
+		}
+	}
+	return false;
 }
 
 static ut64 pa2va(RBinFile *bf, ut64 offset) {

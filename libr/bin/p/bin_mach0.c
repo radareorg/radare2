@@ -892,6 +892,22 @@ static bool load_resources(RBinFile *bf) {
 	return true;
 }
 
+static RBinAddr *binsym(RBinFile *bf, int sym) {
+	if (sym != R_BIN_SYM_MAIN) {
+		return NULL;
+	}
+	struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, bo, bin_obj);
+	ut64 addr = MACH0_(get_main) (mo);
+	if (addr == UT64_MAX || !addr) {
+		return NULL;
+	}
+	RBinAddr *ret = R_NEW0 (RBinAddr);
+	ret->vaddr = (mo->hdr.cputype == CPU_TYPE_ARM)? addr & ~1ULL: addr;
+	ut64 offset;
+	ret->paddr = MACH0_(vaddr_to_paddr) (mo, ret->vaddr, &offset)? offset + bf->bo->boffset: UT64_MAX;
+	return ret;
+}
+
 #if !R_BIN_MACH064
 
 static bool check(RBinFile *bf, RBuffer *b) {
@@ -1171,21 +1187,6 @@ static RBuffer *create(RBin *bin, const ut8 *code, int clen, const ut8 *data, in
 	}
 
 	return buf;
-}
-
-static RBinAddr *binsym(RBinFile *bf, int sym) {
-	RBinAddr *ret = NULL;
-	if (sym == R_BIN_SYM_MAIN) {
-		struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, bo, bin_obj);
-		ut64 addr = MACH0_(get_main) (mo);
-		if (addr != UT64_MAX && addr != 0) {
-			ret = R_NEW0 (RBinAddr);
-			ret->vaddr = ((addr >> 1) << 1);
-			ut64 offset;
-			ret->paddr = MACH0_(vaddr_to_paddr) (mo, ret->vaddr, &offset)? offset + bf->bo->boffset: ret->vaddr;
-		}
-	}
-	return ret;
 }
 
 static ut64 size(RBinFile *bf) {

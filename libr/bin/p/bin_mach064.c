@@ -267,25 +267,6 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-static RBinAddr* binsym(RBinFile *bf, int sym) {
-	RBinAddr *ret = NULL;
-	switch (sym) {
-	case R_BIN_SYM_MAIN:
-		{
-			struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, bo, bin_obj);
-			ut64 addr = MACH0_(get_main) (mo);
-			if (addr != UT64_MAX && addr) {
-				ret = R_NEW0 (RBinAddr);
-				ret->vaddr = addr;
-				ut64 offset;
-				ret->paddr = MACH0_(vaddr_to_paddr) (mo, addr, &offset)? offset + bf->bo->boffset: addr;
-			}
-		}
-		break;
-	}
-	return ret;
-}
-
 RBinPlugin r_bin_plugin_mach064 = {
 	.meta = {
 		.name = "mach064",

@@ -906,7 +906,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	if (p->binsym) {
 		for (i = 0; i < R_BIN_SYM_LAST; i++) {
 			bo->binsym[i] = p->binsym (bf, i);
-			if (bo->binsym[i]) {
+			if (bo->binsym[i] && bo->binsym[i]->paddr != UT64_MAX) {
 				bo->binsym[i]->paddr += bo->loadaddr;
 			}
 		}
