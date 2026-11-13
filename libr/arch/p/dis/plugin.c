@@ -101,6 +101,7 @@ static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 			op->mnemonic = strdup ("invalid");
 		}
 		op->size = 0;
+		r_unref (buf);
 		return true;
 	}
 	if (mask & R_ARCH_OP_MASK_DISASM) {

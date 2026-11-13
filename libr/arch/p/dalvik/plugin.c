@@ -885,6 +885,7 @@ static int dalvik_disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut
 			} else {
 				strasm = r_str_appendf (strasm, ", method+%i", vB);
 			}
+			R_FREE (flag_str);
 
 			flag_str = _anal_get_name (a, 'p', vH);
 			if (flag_str) {
@@ -905,6 +906,7 @@ static int dalvik_disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut
 				snprintf (str, sizeof (str), " {v%i..v%i}, method+%i", vC, vC + vA - 1, vB);
 			}
 			strasm = r_str_append (strasm, str);
+			R_FREE (flag_str);
 
 			flag_str = _anal_get_name (a, 'p', vH);
 			if (flag_str) {

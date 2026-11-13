@@ -6906,6 +6906,7 @@ static int parseOperand(RArchSession *a, const char *str, Operand *op, bool isre
 				bool berr;
 				st64 read = getnum (a, tmp, &berr);
 				if (berr) {
+					free (tmp);
 					return -1;
 				}
 				if (bracket) {

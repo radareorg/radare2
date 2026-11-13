@@ -44,6 +44,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		PluginData *pd = as->data;
 		(void)lua53dissasm (pd, op, data, len);
 	}
+	free (op->mnemonic);
 	op->mnemonic = strdup (instruction_names[GET_OPCODE (instruction)]);
 	switch (GET_OPCODE (instruction)) {
 	case OP_MOVE:	/*   A B     R(A) := R(B)              */
