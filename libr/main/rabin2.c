@@ -1014,11 +1014,6 @@ static int rabin2_main(RCons *cons, int argc, const char **argv) {
 	PJ *pj = NULL;
 	if (rad == R_MODE_JSON) {
 		pj = r_core_pj_new (&core);
-		if (!pj) {
-			rabin_core_fini (&core, core_cons);
-			free (state.stdin_buf);
-			return 1;
-		}
 	}
 
 	if (is_active (R_BIN_REQ_LISTPLUGINS)) {

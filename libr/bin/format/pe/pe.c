@@ -4722,9 +4722,6 @@ RBinPEObj *PE_(r_bin_pe_new)(const char *file, bool verbose) {
 
 R_API RBinPEObj *PE_(r_bin_pe_new_buf)(RBuffer *buf, bool verbose) {
 	RBinPEObj *pe = R_NEW0 (RBinPEObj);
-	if (!pe) {
-		return NULL;
-	}
 	pe->kv = sdb_new0 ();
 	pe->b = r_ref (buf);
 	pe->verbose = verbose;

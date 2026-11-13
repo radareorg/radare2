@@ -49,10 +49,6 @@ static RAnalStructMember *parse_member(STpiStream *ss, STypeInfo *type_info, RLi
 	type_info->get_name (ss, type_info, &name);
 	type_info->get_print_type (ss, type_info, &type);
 	RAnalStructMember *member = R_NEW0 (RAnalStructMember);
-	if (!member) {
-		free (type);
-		return NULL;
-	}
 	char *sname = r_str_sanitize_sdb_key (name);
 	member->name = sname;
 	member->type = type; // type is already allocated, use directly
@@ -78,15 +74,10 @@ static RAnalEnumCase *parse_enumerate(STpiStream *ss, STypeInfo *type_info, RLis
 	type_info->get_val (ss, type_info, &value);
 	type_info->get_name (ss, type_info, &name);
 	RAnalEnumCase *cas = R_NEW0 (RAnalEnumCase);
-	if (!cas) {
-		goto cleanup;
-	}
 	char *sname = r_str_sanitize_sdb_key (name);
 	cas->name = sname;
 	cas->val = value;
 	return cas;
-cleanup:
-	return NULL;
 }
 
 /**

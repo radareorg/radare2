@@ -467,15 +467,13 @@ R_API TCCState *tcc_new(const char *arch, int bits, const char *os) {
 	}
 	// tcc_cleanup (NULL); // wtf no globals anymore
 	TCCState *s = R_NEW0 (TCCState);
-	if (s) {
-		s->arch = strdup (arch);
-		s->bits = bits;
-		s->os = strdup (os);
-		s->anon_sym = SYM_FIRST_ANOM;
-		s->output_type = TCC_OUTPUT_MEMORY;
-		preprocess_new (s);
-		s->include_stack_ptr = s->include_stack;
-	}
+	s->arch = strdup (arch);
+	s->bits = bits;
+	s->os = strdup (os);
+	s->anon_sym = SYM_FIRST_ANOM;
+	s->output_type = TCC_OUTPUT_MEMORY;
+	preprocess_new (s);
+	s->include_stack_ptr = s->include_stack;
 	return s;
 }
 

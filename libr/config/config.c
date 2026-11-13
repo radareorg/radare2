@@ -739,9 +739,6 @@ R_API bool r_config_readonly(RConfig *cfg, const char *key) {
 
 R_API RConfig* r_config_new(void *user) {
 	RConfig *cfg = R_NEW0 (RConfig);
-	if (!cfg) {
-		return NULL;
-	}
 	cfg->ht = ht_pp_new0 ();
 	cfg->nodes = r_list_newf ((RListFree)r_config_node_free);
 	if (!cfg->nodes) {

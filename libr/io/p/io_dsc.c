@@ -336,9 +336,6 @@ static char *__infoPointer(RIODscObject * dsc, ut64 size, int mode) {
 	RStrBuf *sb = NULL;
 	if (mode == R_MODE_JSON) {
 		pj = pj_new ();
-		if (!pj) {
-			return NULL;
-		}
 	} else if (mode == R_MODE_PRINT) {
 		sb = r_strbuf_new ("");
 	} else {
@@ -391,9 +388,6 @@ static char *__infoSubCache(RIODscObject * dsc, ut64 size, int mode) {
 	RStrBuf *sb = NULL;
 	if (mode == R_MODE_JSON) {
 		pj = pj_new ();
-		if (!pj) {
-			return NULL;
-		}
 	} else if (mode == R_MODE_PRINT) {
 		sb = r_strbuf_new ("");
 	} else {
@@ -518,9 +512,6 @@ static RIODscObject *dsc_object_new(RIO  *io, const char *filename, int perm, in
 	R_RETURN_VAL_IF_FAIL (io && filename, NULL);
 
 	RIODscObject *dsc = R_NEW0 (RIODscObject);
-	if (!dsc) {
-		return NULL;
-	}
 
 	if (r_str_startswith (filename, URL_SCHEME)) {
 		filename += strlen (URL_SCHEME);
@@ -927,9 +918,6 @@ static RList *dsc_get_slices_by_range(RIODscObject * dsc, ut64 off_global, int s
 
 		if (end > off_global && start < ffo) {
 			RIODscTrimmedSlice * trimmed_slice = R_NEW0 (RIODscTrimmedSlice);
-			if (!trimmed_slice) {
-				break;
-			}
 
 			trimmed_slice->slice = slice;
 
@@ -1015,9 +1003,6 @@ static RList * dsc_slice_get_rebase_infos_by_range(RIODscSlice * slice, ut64 off
 
 		if (end > off_local && start < ffo) {
 			RIODscTrimmedRebaseInfo * trimmed_info = R_NEW0 (RIODscTrimmedRebaseInfo);
-			if (!trimmed_info) {
-				break;
-			}
 
 			trimmed_info->info = info;
 
@@ -1511,9 +1496,6 @@ static RDyldRebaseInfo *get_rebase_info(int fd, ut64 slideInfoOffset, ut64 slide
 		}
 
 		RDyldRebaseInfo5 *rebase_info = R_NEW0 (RDyldRebaseInfo5);
-		if (!rebase_info) {
-			goto beach;
-		}
 
 		rebase_info->version = 5;
 		rebase_info->delta_mask = 0x7ff0000000000000ULL;
@@ -1565,9 +1547,6 @@ static RDyldRebaseInfo *get_rebase_info(int fd, ut64 slideInfoOffset, ut64 slide
 		}
 
 		RDyldRebaseInfo3 *rebase_info = R_NEW0 (RDyldRebaseInfo3);
-		if (!rebase_info) {
-			goto beach;
-		}
 
 		rebase_info->version = 3;
 		rebase_info->delta_mask = 0x3ff8000000000000ULL;
@@ -1639,9 +1618,6 @@ static RDyldRebaseInfo *get_rebase_info(int fd, ut64 slideInfoOffset, ut64 slide
 		}
 
 		RDyldRebaseInfo2 *rebase_info = R_NEW0 (RDyldRebaseInfo2);
-		if (!rebase_info) {
-			goto beach;
-		}
 
 		rebase_info->version = slide_info_version;
 		rebase_info->start_of_data = start_of_data;
@@ -1719,9 +1695,6 @@ static RDyldRebaseInfo *get_rebase_info(int fd, ut64 slideInfoOffset, ut64 slide
 		}
 
 		RDyldRebaseInfo1 *rebase_info = R_NEW0 (RDyldRebaseInfo1);
-		if (!rebase_info) {
-			goto beach;
-		}
 
 		rebase_info->version = 1;
 		rebase_info->start_of_data = start_of_data;

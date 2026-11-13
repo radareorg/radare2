@@ -166,10 +166,6 @@ static int show_analinfo(RAsmState *as, const char *arg, ut64 offset) {
 	RAnalOp aop = { 0 };
 	if (as->opt.json) {
 		pj = pj_new ();
-		if (!pj) {
-			free (buf);
-			return 0;
-		}
 		pj_a (pj);
 	}
 	for (ret = 0; ret < len;) {

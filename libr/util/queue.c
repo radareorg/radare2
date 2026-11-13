@@ -7,9 +7,6 @@ R_API RQueue *r_queue_new(int n) {
 		return NULL;
 	}
 	RQueue *q = R_NEW0 (RQueue);
-	if (!q) {
-		return NULL;
-	}
 	q->elems = R_NEWS0 (void *, n);
 	if (!q->elems) {
 		free (q);

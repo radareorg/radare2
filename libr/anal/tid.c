@@ -29,9 +29,6 @@ R_API int r_anal_tid_add(RAnal *anal, int map) {
 	RListIter *iter;
 	RAnalThread *th;
 	RAnalThread *at = R_NEW0 (RAnalThread);
-	if (!at) {
-		return -1;
-	}
 	at->map = map;
 	int tid = 0;
 	r_list_foreach (anal->threads, iter, th) {

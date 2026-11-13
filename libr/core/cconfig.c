@@ -2481,11 +2481,6 @@ static bool cb_cmd_esil_ioer(void *user, void *data) {
 	RConfigNode *node = data;
 	if (core) {
 		core_esil_set_cmd (&core->esil.cmds.ioer, node->value);
-		REsil *esil = R_UNWRAP3 (core, anal, esil);
-		if (esil) {
-			esil->cmd = r_core_esil_cmd;
-			core_esil_set_cmd (&esil->cmd_ioer, node->value);
-		}
 	}
 	return true;
 }
@@ -2495,11 +2490,6 @@ static bool cb_cmd_esil_todo(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (core) {
 		core_esil_set_cmd (&core->esil.cmds.todo, node->value);
-		REsil *esil = R_UNWRAP3 (core, anal, esil);
-		if (esil) {
-			esil->cmd = r_core_esil_cmd;
-			core_esil_set_cmd (&esil->cmd_todo, node->value);
-		}
 	}
 	return true;
 }
@@ -2518,12 +2508,6 @@ static bool cb_mdevrange(void *user, void *data) {
 	RConfigNode *node = data;
 	if (core) {
 		core_esil_set_cmd (&core->esil.cmds.mdev_range, node->value);
-		REsil *esil = R_UNWRAP3 (core, anal, esil);
-		if (esil) {
-			esil->cmd = r_core_esil_cmd;
-			free (esil->mdev_range);
-			esil->mdev_range = strdup (node->value);
-		}
 	}
 	return true;
 }
@@ -2561,11 +2545,6 @@ static bool cb_cmd_esil_mdev(void *user, void *data) {
 	RConfigNode *node = data;
 	if (core) {
 		core_esil_set_cmd (&core->esil.cmds.mdev, node->value);
-		REsil *esil = R_UNWRAP3 (core, anal, esil);
-		if (esil) {
-			esil->cmd = r_core_esil_cmd;
-			core_esil_set_cmd (&esil->cmd_mdev, node->value);
-		}
 	}
 	return true;
 }
@@ -5146,6 +5125,7 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	/* rap */
 	SETB ("rap.loop", "true", "run rap as a forever-listening daemon (=:9090)");
+	SETB ("rap.reverse", "true", "allow remote RAP servers to run commands in this r2 instance");
 
 	/* nkeys */
 	SETS ("key.s", "", "override step into action");

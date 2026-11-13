@@ -63,20 +63,18 @@ static RVecRBinString *strings(RBinFile *bf) {
 static RBinInfo* info(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (ret) {
-		ret->file = bf->file? strdup (bf->file): NULL;
-		ret->type = strdup ("fs");
-		ret->bclass = fsname (bf->buf);
-		ret->rclass = strdup ("fs");
-		ret->os = strdup ("any");
-		ret->subsystem = strdup ("unknown");
-		ret->machine = strdup ("any");
-		// ret->arch = strdup ("any");
-		ret->has_va = 0;
-		ret->bits = 32;
-		ret->big_endian = 0;
-		ret->dbg_info = 0;
-	}
+	ret->file = bf->file? strdup (bf->file): NULL;
+	ret->type = strdup ("fs");
+	ret->bclass = fsname (bf->buf);
+	ret->rclass = strdup ("fs");
+	ret->os = strdup ("any");
+	ret->subsystem = strdup ("unknown");
+	ret->machine = strdup ("any");
+	// ret->arch = strdup ("any");
+	ret->has_va = 0;
+	ret->bits = 32;
+	ret->big_endian = 0;
+	ret->dbg_info = 0;
 	return ret;
 }
 

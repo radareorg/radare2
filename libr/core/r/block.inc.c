@@ -84,9 +84,6 @@ static ut32 block_size_max(RCore *core) {
 static RCmdResult block_json(RCmdContext *ctx) {
 	RCore *core = ctx->user;
 	PJ *pj = r_core_pj_new (core);
-	if (!pj) {
-		return (RCmdResult) { .status = 1 };
-	}
 	pj_o (pj);
 	pj_kn (pj, "blocksize", ctx->blocksize);
 	pj_kn (pj, "blocksize_limit", block_size_max (core));

@@ -881,9 +881,6 @@ err_w32_info_exe:
 
 RDebugInfo *w32_info(RDebug *dbg, const char *arg) {
 	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
-	if (!rdi) {
-		return NULL;
-	}
 	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this
 	rdi->pid = dbg->pid;
 	rdi->tid = dbg->tid;

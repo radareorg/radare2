@@ -191,9 +191,6 @@ R_API void r_core_diff_show_json(RCore *c, RCore *c2) {
 		return;
 	}
 	PJ *pj = r_core_pj_new (c);
-	if (!pj) {
-		return;
-	}
 	pj_a (pj);
 
 	r_list_foreach (fcns, iter, f) {

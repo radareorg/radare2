@@ -13,9 +13,7 @@ static void _r_big_zero_out(RNumBig *n);
 
 R_API RNumBig *r_big_new(void) {
 	RNumBig *n = R_NEW (RNumBig);
-	if (n) {
-		_r_big_zero_out (n);
-	}
+	_r_big_zero_out (n);
 	return n;
 }
 

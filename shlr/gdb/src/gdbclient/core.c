@@ -1907,7 +1907,8 @@ RList* gdbr_pids_list(libgdbr_t *g, int pid) {
 					continue;
 				}
 			}
-			if (!(dpid = R_NEW0 (RDebugPid)) || !(dpid->path = strdup (exec_file))) {
+			dpid = R_NEW0 (RDebugPid);
+			if (!(dpid->path = strdup (exec_file))) {
 				ret = -1;
 				goto end;
 			}
@@ -2009,7 +2010,8 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid) {
 				ptr = ptr2;
 				continue;
 			}
-			if (!(dpid = R_NEW0 (RDebugPid)) || !(dpid->path = strdup (exec_file))) {
+			dpid = R_NEW0 (RDebugPid);
+			if (!(dpid->path = strdup (exec_file))) {
 				ret = -1;
 				goto end;
 			}

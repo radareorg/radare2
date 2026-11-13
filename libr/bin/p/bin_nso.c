@@ -64,11 +64,9 @@ static bool check(RBinFile *bf, RBuffer *b) {
 
 static RBinNXOObj *nso_new(void) {
 	RBinNXOObj *bin = R_NEW0 (RBinNXOObj);
-	if (bin) {
-		RVecRBinSymbol_init (&bin->methods_list);
-		RVecRBinImport_init (&bin->imports_list);
-		bin->classes_list = r_list_newf ((RListFree)free);
-	}
+	RVecRBinSymbol_init (&bin->methods_list);
+	RVecRBinImport_init (&bin->imports_list);
+	bin->classes_list = r_list_newf ((RListFree)free);
 	return bin;
 }
 
@@ -174,11 +172,10 @@ static RList *entries(RBinFile *bf) {
 		return NULL;
 	}
 	ret->free = free;
-	if ((ptr = R_NEW0 (RBinAddr))) {
-		ptr->paddr = r_buf_read_le32_at (b, NSO_OFF (text_memoffset));
-		ptr->vaddr = r_buf_read_le32_at (b, NSO_OFF (text_loc)) + baddr (bf);
-		r_list_append (ret, ptr);
-	}
+	ptr = R_NEW0 (RBinAddr);
+	ptr->paddr = r_buf_read_le32_at (b, NSO_OFF (text_memoffset));
+	ptr->vaddr = r_buf_read_le32_at (b, NSO_OFF (text_loc)) + baddr (bf);
+	r_list_append (ret, ptr);
 	return ret;
 }
 
@@ -249,9 +246,6 @@ static bool sections_vec(RBinFile *bf) {
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
 	ut8 magic[4];
 	if (r_buf_read_at (bf->buf, NSO_OFF (magic), magic, sizeof (magic)) != sizeof (magic)) {
 		free (ret);

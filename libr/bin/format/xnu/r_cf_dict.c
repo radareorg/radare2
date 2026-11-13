@@ -417,9 +417,7 @@ beach:
 
 static RCFParseState *r_cf_parse_state_new(RCFParsePhase phase) {
 	RCFParseState *state = R_NEW0 (RCFParseState);
-	if (state) {
-		state->phase = phase;
-	}
+	state->phase = phase;
 	return state;
 }
 
@@ -433,9 +431,6 @@ static void r_cf_parse_state_free(RCFParseState *state) {
 
 static RCFKeyValue *r_cf_key_value_new(R_OWNED char *key, R_OWNED RCFValue *value) {
 	RCFKeyValue *key_value = R_NEW0 (RCFKeyValue);
-	if (!key_value) {
-		return NULL;
-	}
 
 	key_value->key = key;
 	key_value->value = value;
@@ -461,9 +456,6 @@ static void r_cf_key_value_free(RCFKeyValue *key_value) {
 
 static RCFValueDict *r_cf_value_dict_new(void) {
 	RCFValueDict *dict = R_NEW0 (RCFValueDict);
-	if (!dict) {
-		return NULL;
-	}
 
 	dict->type = R_CF_DICT;
 	dict->pairs = r_list_newf ((RListFree)&r_cf_key_value_free);
@@ -507,10 +499,8 @@ static void r_cf_value_dict_print(RCFValueDict *dict) {
 
 static RCFValueArray *r_cf_value_array_new(void) {
 	RCFValueArray *array = R_NEW0 (RCFValueArray);
-	if (array) {
-		array->type = R_CF_ARRAY;
-		array->values = r_list_newf ((RListFree)&r_cf_value_free);
-	}
+	array->type = R_CF_ARRAY;
+	array->values = r_list_newf ((RListFree)&r_cf_value_free);
 	return array;
 }
 
@@ -549,9 +539,6 @@ static void r_cf_value_array_print(RCFValueArray *array) {
 
 static RCFValueString *r_cf_value_string_new(char *string) {
 	RCFValueString *value_string = R_NEW0 (RCFValueString);
-	if (!value_string) {
-		return NULL;
-	}
 
 	value_string->type = R_CF_STRING;
 	value_string->value = string;
@@ -581,9 +568,6 @@ static void r_cf_value_string_print(RCFValueString *string) {
 
 static RCFValueInteger *r_cf_value_integer_new(char *string) {
 	RCFValueInteger *integer = R_NEW0 (RCFValueInteger);
-	if (!integer) {
-		return NULL;
-	}
 
 	integer->type = R_CF_INTEGER;
 	integer->value = r_num_get (NULL, string);
@@ -606,9 +590,6 @@ static void r_cf_value_integer_print(RCFValueInteger *integer) {
 
 static RCFValueData *r_cf_value_data_new(char *string) {
 	RCFValueData *data = R_NEW0 (RCFValueData);
-	if (!data) {
-		return NULL;
-	}
 
 	const int len = strlen (string);
 	int out_len;
@@ -645,9 +626,6 @@ static void r_cf_value_data_print(RCFValueData *data) {
 
 static RCFValueNULL *r_cf_value_null_new(void) {
 	RCFValueNULL *null = R_NEW0 (RCFValueNULL);
-	if (!null) {
-		return NULL;
-	}
 
 	null->type = R_CF_NULL;
 
@@ -669,9 +647,6 @@ static void r_cf_value_null_print(RCFValueNULL *null) {
 
 static RCFValueBool *r_cf_value_bool_new(bool value) {
 	RCFValueBool *bool_value = R_NEW0 (RCFValueBool);
-	if (!bool_value) {
-		return NULL;
-	}
 
 	bool_value->type = value ? R_CF_TRUE : R_CF_FALSE;
 	return bool_value;
@@ -759,33 +734,27 @@ static R_OWNED RCFValue *r_cf_value_clone(RCFValue *value, R_INOUT ut64 *budget)
 	}
 	case R_CF_STRING: {
 		RCFValueString *string = R_NEW0 (RCFValueString);
-		if (string) {
-			string->value = strdup (((RCFValueString *)value)->value);
-			if (string->value) {
-				copy = (RCFValue *)string;
-			} else {
-				R_FREE (string);
-			}
+		string->value = strdup (((RCFValueString *)value)->value);
+		if (string->value) {
+			copy = (RCFValue *)string;
+		} else {
+			R_FREE (string);
 		}
 		break;
 	}
 	case R_CF_INTEGER: {
 		RCFValueInteger *integer = R_NEW0 (RCFValueInteger);
-		if (integer) {
-			integer->value = ((RCFValueInteger *)value)->value;
-			copy = (RCFValue *)integer;
-		}
+		integer->value = ((RCFValueInteger *)value)->value;
+		copy = (RCFValue *)integer;
 		break;
 	}
 	case R_CF_DATA: {
 		RCFValueData *data = R_NEW0 (RCFValueData);
-		if (data) {
-			data->value = r_buf_new_with_buf(((RCFValueData *)value)->value);
-			if (data->value) {
-				copy = (RCFValue *)data;
-			} else {
-				R_FREE (data);
-			}
+		data->value = r_buf_new_with_buf(((RCFValueData *)value)->value);
+		if (data->value) {
+			copy = (RCFValue *)data;
+		} else {
+			R_FREE (data);
 		}
 		break;
 	}

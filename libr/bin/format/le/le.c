@@ -301,9 +301,6 @@ static char *__read_nonnull_str_at(RBuffer *buf, ut64 *offset) {
 
 static RBinSymbol *__get_symbol(RBinLEObj *bin, ut64 *offset) {
 	RBinSymbol *sym = R_NEW0 (RBinSymbol);
-	if (!sym) {
-		return NULL;
-	}
 	char *name = __read_nonnull_str_at (bin->buf, offset);
 	if (!name) {
 		r_bin_symbol_free (sym);
@@ -466,10 +463,8 @@ R_IPI RList *r_bin_le_get_entrypoints(RBinLEObj *bin) {
 		return NULL;
 	}
 	RBinAddr *entry = R_NEW0 (RBinAddr);
-	if (entry) {
-		if ((bin->header->startobj - 1) < bin->header->objcnt) {
-			entry->vaddr = get_object_base (bin, bin->header->startobj - 1) + bin->header->eip;
-		}
+	if ((bin->header->startobj - 1) < bin->header->objcnt) {
+		entry->vaddr = get_object_base (bin, bin->header->startobj - 1) + bin->header->eip;
 	}
 	r_list_append (l, entry);
 
@@ -971,13 +966,8 @@ static bool __init_header(RBinLEObj *bin, RBuffer *buf) {
 		bin->headerOff = 0;
 	}
 	bin->header = R_NEW0 (LE_image_header);
-	if (bin->header) {
-		if (!read_le_image_header (buf, bin->headerOff, bin->header)) {
-			R_LOG_ERROR ("Cannot read LE header");
-			return false;
-		}
-	} else {
-		R_LOG_ERROR ("Failed to allocate memory");
+	if (!read_le_image_header (buf, bin->headerOff, bin->header)) {
+		R_LOG_ERROR ("Cannot read LE header");
 		return false;
 	}
 	return true;

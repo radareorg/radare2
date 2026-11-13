@@ -175,10 +175,6 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			return NULL;
 		}
 		RIOGzip *mal = R_NEW0 (RIOGzip);
-		if (!mal) {
-			free (data);
-			return NULL;
-		}
 		int *size = (int*)&mal->size;
 		mal->buf = r_inflate (data, (int)len, NULL, size);
 		free (data);

@@ -127,9 +127,6 @@ R_API void r_interval_tree_fini(RIntervalTree *tree) {
 R_API bool r_interval_tree_insert(RIntervalTree *tree, ut64 start, ut64 end, void *data) {
 	R_RETURN_VAL_IF_FAIL (end >= start, false);
 	RIntervalNode *node = R_NEW0 (RIntervalNode);
-	if (!node) {
-		return false;
-	}
 	node->start = start;
 	node->end = end;
 	node->data = data;

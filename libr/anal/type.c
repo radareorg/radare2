@@ -846,19 +846,17 @@ R_API void r_anal_base_type_free(RAnalBaseType *type) {
 
 R_API RAnalBaseType *r_anal_base_type_new(RAnalBaseTypeKind kind) {
 	RAnalBaseType *type = R_NEW0 (RAnalBaseType);
-	if (type) {
-		type->kind = kind;
-		switch (type->kind) {
-		case R_ANAL_BASE_TYPE_KIND_STRUCT:
-		case R_ANAL_BASE_TYPE_KIND_UNION:
-			RVecAnalTypeMember_init (r_anal_base_type_members (type));
-			break;
-		case R_ANAL_BASE_TYPE_KIND_ENUM:
-			RVecAnalEnumCase_init (&type->enum_data.cases);
-			break;
-		default:
-			break;
-		}
+	type->kind = kind;
+	switch (type->kind) {
+	case R_ANAL_BASE_TYPE_KIND_STRUCT:
+	case R_ANAL_BASE_TYPE_KIND_UNION:
+		RVecAnalTypeMember_init (r_anal_base_type_members (type));
+		break;
+	case R_ANAL_BASE_TYPE_KIND_ENUM:
+		RVecAnalEnumCase_init (&type->enum_data.cases);
+		break;
+	default:
+		break;
 	}
 	return type;
 }

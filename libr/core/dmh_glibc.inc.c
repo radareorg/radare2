@@ -1272,11 +1272,6 @@ static void GH (print_tcache_instance)(RCore *core, RStrBuf *sb, GHT m_arena, Ma
 	if (main_arena->GH (next) != m_arena) {
 		GHT mmap_start = GHT_MAX, tcache_start = GHT_MAX;
 		MallocState *ta = R_NEW0 (MallocState);
-		if (!ta) {
-			free (ta);
-			GH (tcache_free) (r_tcache);
-			return;
-		}
 		ta->GH (next) = main_arena->GH (next);
 		while (GH (is_arena) (core, m_arena, ta->GH (next)) && ta->GH (next) != m_arena) {
 			hprint (sb, "Tcache thread arena @  0x%"PFMT64x, (ut64)ta->GH (next));
@@ -1385,9 +1380,6 @@ static void GH(print_heap_segment)(RCore *core, RStrBuf *sb, RAGraph *g, MallocS
 	switch (format_out) {
 	case 'j':
 		pj = r_core_pj_new (core);
-		if (!pj) {
-			return;
-		}
 		pj_o (pj);
 		pj_ka (pj, "chunks");
 		break;

@@ -12,9 +12,6 @@ struct buf_file_user {
 static bool buf_file_init(RBuffer *b, const void *user) {
 	const struct buf_file_user *u = user;
 	b->rb_file = R_NEW0 (RBufferFile);
-	if (!b->rb_file) {
-		return false;
-	}
 	b->rb_file->fd = r_sandbox_open (u->file, u->perm, u->mode);
 	if (b->rb_file->fd == -1) {
 		free (b->rb_file);

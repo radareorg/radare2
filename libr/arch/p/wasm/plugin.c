@@ -49,17 +49,15 @@ static inline ut64 func_off_from_idx(RArch *a, ut32 id) {
 
 static inline CFScope *parse_new_scope(RList *list, ut64 addr, WasmOp *wop, CFScope *prev) {
 	CFScope *sc = R_NEW0 (CFScope);
-	if (sc) {
-		sc->opcode = wop->op.core;
-		sc->addr = addr;
-		sc->jump = addr + wop->len;
-		sc->fail = UT64_MAX;
-		sc->parent = prev;
-		if (r_list_push (list, sc)) {
-			return sc;
-		}
-		free (sc);
+	sc->opcode = wop->op.core;
+	sc->addr = addr;
+	sc->jump = addr + wop->len;
+	sc->fail = UT64_MAX;
+	sc->parent = prev;
+	if (r_list_push (list, sc)) {
+		return sc;
 	}
+	free (sc);
 	return NULL;
 }
 
@@ -187,15 +185,13 @@ static void inline find_br_scope(CFInfo *nfo, CFScope *sc) {
 
 static bool cache_dud(HtUP *cache, ut64 addr) {
 	CFInfo *nfo = R_NEW (CFInfo);
-	if (nfo) {
-		nfo->jump = UT64_MAX;
-		nfo->fail = UT64_MAX;
-		nfo->type = R_ANAL_OP_TYPE_ILL;
-		if (ht_up_insert (cache, addr, nfo)) {
-			return true;
-		}
-		free (nfo);
+	nfo->jump = UT64_MAX;
+	nfo->fail = UT64_MAX;
+	nfo->type = R_ANAL_OP_TYPE_ILL;
+	if (ht_up_insert (cache, addr, nfo)) {
+		return true;
 	}
+	free (nfo);
 	return false;
 }
 

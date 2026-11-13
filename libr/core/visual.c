@@ -3932,13 +3932,11 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case 'Y':
-			if (!core->yank_buf) {
+			if (!r_core_yank_paste (core, core->addr + core->print->cur, 0)) {
 				r_cons_print (core->cons, "Cannot paste, clipboard is empty.\n");
 				r_cons_flush (core->cons);
 				r_cons_any_key (core->cons, NULL);
 				r_cons_clear00 (core->cons);
-			} else {
-				r_core_yank_paste (core, core->addr + core->print->cur, 0);
 			}
 			break;
 		case '0':

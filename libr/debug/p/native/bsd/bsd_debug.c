@@ -272,9 +272,6 @@ RDebugInfo *bsd_info(RDebug *dbg, const char *arg) {
 #if __KFBSD__
 	struct kinfo_proc *kp;
 	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
-	if (!rdi) {
-		return NULL;
-	}
 
 	if (!(kp = kinfo_getproc (dbg->pid))) {
 		free (rdi);
@@ -315,9 +312,6 @@ RDebugInfo *bsd_info(RDebug *dbg, const char *arg) {
 	char err[_POSIX2_LINE_MAX];
 	int rc;
 	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
-	if (!rdi) {
-		return NULL;
-	}
 
 	kvm_t *kd = kvm_openfiles (NULL, NULL, NULL, KVM_NO_FILES, err);
 	if (!kd) {
@@ -357,9 +351,6 @@ RDebugInfo *bsd_info(RDebug *dbg, const char *arg) {
 	char err[_POSIX2_LINE_MAX];
 	int np;
 	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
-	if (!rdi) {
-		return NULL;
-	}
 
 	kvm_t *kd = kvm_openfiles (NULL, NULL, NULL, KVM_NO_FILES, err);
 	if (!kd) {

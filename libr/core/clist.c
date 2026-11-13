@@ -41,9 +41,6 @@ R_API void r_core_list_bin(RCore *core, PJ *pj, int mode) {
 	bool local_pj = mode == 'j' && !pj;
 	if (local_pj) {
 		pj = r_core_pj_new (core);
-		if (!pj) {
-			return;
-		}
 	}
 	if (mode == 'q') {
 		pj = NULL;

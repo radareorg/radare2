@@ -146,9 +146,6 @@ static RList *entries(RBinFile *bf) {
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *const ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
 	ret->file = strdup (bf->file);
 	ret->bclass = strdup ("MZ");
 	ret->rclass = strdup ("mz");

@@ -246,9 +246,6 @@ static RFlagsAtOffset *flags_at_addr(RFlag *f, ut64 addr) {
 	// skiplist hand back the existing one when the address is taken.
 	// The element is cheap to build because it needs no allocation
 	RFlagsAtOffset *res = R_NEW (RFlagsAtOffset);
-	if (!res) {
-		return NULL;
-	}
 	flags_at_init (res, addr);
 	RSkipListNode *node = r_skiplist_insert (f->by_addr, res);
 	if (!node) {

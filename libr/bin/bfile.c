@@ -169,9 +169,7 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 	PJ *pj = NULL;
 	if ((bf->strmode & R_MODE_JSON) && options->output) {
 		pj = pj_new ();
-		if (pj) {
-			pj_a (pj);
-		}
+		pj_a (pj);
 	}
 	r_buf_read_at (bf->buf, from, buf, len);
 	const char *charset = sdb_const_get (bin->sdb, "bin.charset", NULL);
@@ -1377,14 +1375,12 @@ static void class_set_super(RBinClass *c, const char *super) {
 R_API RBinClass *r_bin_class_new(const char *name, const char *super, ut64 attr) {
 	R_RETURN_VAL_IF_FAIL (name, NULL);
 	RBinClass *c = R_NEW0 (RBinClass);
-	if (c) {
-		c->name = r_bin_name_new (name);
-		class_set_super (c, super);
-		RVecRBinSymbol_init (&c->methods);
-		RVecRBinField_init (&c->fields);
-		c->attr.flags = attr;
-		c->origin = R_BIN_CLASS_ORIGIN_BIN;
-	}
+	c->name = r_bin_name_new (name);
+	class_set_super (c, super);
+	RVecRBinSymbol_init (&c->methods);
+	RVecRBinField_init (&c->fields);
+	c->attr.flags = attr;
+	c->origin = R_BIN_CLASS_ORIGIN_BIN;
 	return c;
 }
 

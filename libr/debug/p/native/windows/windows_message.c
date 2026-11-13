@@ -256,9 +256,6 @@ void __free_window (void *ptr) {
 static window *__window_from_handle(HANDLE hwnd) {
 	R_RETURN_VAL_IF_FAIL (hwnd, NULL);
 	window *win = R_NEW0 (window);
-	if (!win) {
-		return NULL;
-	}
 	win->h = hwnd;
 	win->tid = GetWindowThreadProcessId (hwnd, &win->pid);
 	win->proc = GetClassLongPtrW (hwnd, GCLP_WNDPROC);

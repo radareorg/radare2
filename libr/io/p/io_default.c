@@ -422,10 +422,6 @@ static RIODesc *mmap_open(RIO *io, const char *file, int perm, int mode) {
 		}
 		// Wrap slurped FIFO data in RIOMalloc (same as slurp:// does)
 		RIOMalloc *mal = R_NEW0 (RIOMalloc);
-		if (!mal) {
-			free (fifo_buf);
-			return NULL;
-		}
 		mal->offset = 0;
 		mal->buf = fifo_buf;
 		mal->size = fifo_sz;

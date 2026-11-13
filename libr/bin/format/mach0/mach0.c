@@ -1935,9 +1935,6 @@ static bool parse_threaded_rebase(struct MACH0_(obj_t) * mo) {
 							cur_seg = mo->chained_starts[seg_idx];
 							if (!cur_seg) {
 								cur_seg = R_NEW0 (struct r_dyld_chained_starts_in_segment);
-								if (!cur_seg) {
-									break;
-								}
 								mo->chained_starts[seg_idx] = cur_seg;
 								cur_seg->pointer_format = DYLD_CHAINED_PTR_ARM64E;
 								cur_seg->threaded = true;
@@ -3131,6 +3128,14 @@ static int hash_find_or_insert(HtPP *hash, const char *name, ut64 addr) {
 	return false;
 }
 
+// object symbol values are section offsets, so filter objects by nlist type instead of by value
+static bool is_defined_symbol(bool is_object, const struct MACH0_(nlist) *nl) {
+	if (is_object) {
+		return (nl->n_type & N_TYPE) == N_SECT;
+	}
+	return nl->n_value >= 100;
+}
+
 static bool is_unnamed_symbol_name(const char *name) {
 	return R_STR_ISEMPTY (name) || !strcmp (name, "???");
 }
@@ -3608,6 +3613,7 @@ static bool parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 	int bits = MACH0_(get_bits_from_hdr) (&mo->hdr);
 	bool is_stripped = true;
 	bool has_strip_marker = false;
+	const bool is_object = mo->hdr.filetype == MH_OBJECT;
 	const int limit = bf->rbin->options.limit;
 	for (s = 0; s < 2; s++) {
 		if (!dysym_bounds (mo, s, &from, &to)) {
@@ -3629,10 +3635,10 @@ static bool parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 				}
 				continue;
 			}
-			ut64 vaddr = nl->n_value;
-			if (vaddr < 100) {
+			if (!is_defined_symbol (is_object, nl)) {
 				continue;
 			}
+			ut64 vaddr = nl->n_value;
 			int stridx = nl->n_strx;
 			char *sym_name = get_name (mo, stridx, false);
 			if (!sym_name) {
@@ -3722,10 +3728,10 @@ static bool parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 		// 2 is for func.eh (exception handlers?)
 		int section = st->n_sect;
 		if (section == 1 && j < symbols_count) { // text?? st->n_type == 1) maybe wrong
-			ut64 vaddr = st->n_value;
-			if (vaddr < 100) {
+			if (!is_defined_symbol (is_object, st)) {
 				continue;
 			}
+			ut64 vaddr = st->n_value;
 			char *sym_name = get_name (mo, st->n_strx, false);
 			if (sym_name) {
 				if (strstr (sym_name, "<redacted>")) {

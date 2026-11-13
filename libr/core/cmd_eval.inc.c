@@ -271,9 +271,6 @@ static void nextpal(RCore *core, int mode) {
 	PJ *pj = NULL;
 	if (mode == 'j') {
 		pj = r_core_pj_new (core);
-		if (!pj) {
-			return;
-		}
 		pj_a (pj);
 	}
 	RList *themes = r_core_list_themes (core);

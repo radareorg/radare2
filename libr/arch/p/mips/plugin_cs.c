@@ -248,9 +248,6 @@ static inline void es_add_ck(RAnalOp *op, const char *a1, const char *a2, const 
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	PJ *pj = pj_new ();
-	if (!pj) {
-		return;
-	}
 	pj_o (pj);
 	pj_ka (pj, "operands");
 	cs_mips *x = &insn->detail->mips;
@@ -551,32 +548,40 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 		case MIPS_INS_SHRA:
 		case MIPS_INS_SHRA_R:
 		case MIPS_INS_SRA:
-			r_strbuf_appendf (&op->esil,
-				"0xffffffff,%s,%s,>>,&,31,%s,>>,?{,%s,32,-,0xffffffff,<<,0xffffffff,&,}{,0,},|,%s,=",
-				ARG (2), ARG (1), ARG (1), ARG (2), ARG (0));
-			ES_SIGN32_64 (ARG (0));
+			PROTECT_ZERO () {
+				r_strbuf_appendf (&op->esil,
+					"0xffffffff,%s,%s,>>,&,31,%s,>>,?{,%s,32,-,0xffffffff,<<,0xffffffff,&,}{,0,},|,%s,=",
+					ARG (2), ARG (1), ARG (1), ARG (2), ARG (0));
+				ES_SIGN32_64 (ARG (0));
+			}
 			break;
 		case MIPS_INS_SRAV:
 			// like SRA but the shift amount is rs & 0x1f
-			r_strbuf_appendf (&op->esil,
-				"0xffffffff,%s,0x1f,&,%s,>>,&,31,%s,>>,?{,%s,0x1f,&,32,-,0xffffffff,<<,0xffffffff,&,}{,0,},|,%s,=",
-				ARG (2), ARG (1), ARG (1), ARG (2), ARG (0));
-			ES_SIGN32_64 (ARG (0));
+			PROTECT_ZERO () {
+				r_strbuf_appendf (&op->esil,
+					"0xffffffff,%s,0x1f,&,%s,>>,&,31,%s,>>,?{,%s,0x1f,&,32,-,0xffffffff,<<,0xffffffff,&,}{,0,},|,%s,=",
+					ARG (2), ARG (1), ARG (1), ARG (2), ARG (0));
+				ES_SIGN32_64 (ARG (0));
+			}
 			break;
 		case MIPS_INS_SHRL:
 			// suffix 'S' forces conditional flag to be updated
 		case MIPS_INS_SRLV:
 		case MIPS_INS_SRL:
 			// srl shifts the zero-extended low word, not the whole register
-			r_strbuf_appendf (&op->esil, "0x1f,%s,&," ES_W ("%s") ",>>,%s,=",
-				ARG (2), ARG (1), ARG (0));
-			ES_SIGN32_64 (ARG (0));
+			PROTECT_ZERO () {
+				r_strbuf_appendf (&op->esil, "0x1f,%s,&," ES_W ("%s") ",>>,%s,=",
+					ARG (2), ARG (1), ARG (0));
+				ES_SIGN32_64 (ARG (0));
+			}
 			break;
 		case MIPS_INS_SLLV:
 		case MIPS_INS_SLL:
-			r_strbuf_appendf (&op->esil, "0x1f,%s,&,%s,<<,%s,=",
-				ARG (2), ARG (1), ARG (0));
-			ES_SIGN32_64 (ARG (0));
+			PROTECT_ZERO () {
+				r_strbuf_appendf (&op->esil, "0x1f,%s,&,%s,<<,%s,=",
+					ARG (2), ARG (1), ARG (0));
+				ES_SIGN32_64 (ARG (0));
+			}
 			break;
 		case MIPS_INS_BALC:
 			// BALC address

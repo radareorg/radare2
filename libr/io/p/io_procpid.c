@@ -83,10 +83,6 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		fd = r_sandbox_open (procpidpath, O_RDWR, 0);
 		if (fd != -1) {
 			RIOProcpid *riop = R_NEW0 (RIOProcpid);
-			if (!riop) {
-				close (fd);
-				return NULL;
-			}
 			riop->pid = pid;
 			riop->fd = fd;
 			RIODesc *d = r_io_desc_new (io, &r_io_plugin_procpid, file, true, 0, riop);

@@ -414,10 +414,6 @@ static RAnalEsilCFG *esil_cfg_gen(RAnalEsilCFG *cfg, RAnal *anal,
 		return cfg; // NULL?
 	}
 	RAnalEsilBB *end_bb = R_NEW0 (RAnalEsilBB);
-	if (!end_bb) {
-		free (_expr);
-		return cfg;
-	}
 	RGraphNode *start, *end = r_graph_add_node (cfg->g, end_bb);
 	if (!end) {
 		free (end_bb);
@@ -500,38 +496,32 @@ static RAnalEsilCFG *esil_cfg_gen(RAnalEsilCFG *cfg, RAnal *anal,
 
 R_IPI RAnalEsilCFG *r_anal_esil_cfg_new(void) {
 	RAnalEsilCFG *cf = R_NEW0 (RAnalEsilCFG);
-	if (cf) {
-		RAnalEsilBB *p = R_NEW0 (RAnalEsilBB);
-		if (!p) {
-			free (cf);
-			return NULL;
-		}
-		p->expr = strdup ("end");
-		if (!p->expr) {
-			free (p);
-			free (cf);
-			return NULL;
-		}
-		cf->g = r_graph_new ();
-		if (!cf->g) {
-			free (p->expr);
-			free (p);
-			free (cf);
-			return NULL;
-		}
-		cf->start = cf->end = r_graph_add_node (cf->g, p);
-		// end node is always needed as post-dominator
-		// idea here is to split the initial one node graph in the node
-		if (!cf->end) {
-			free (p->expr);
-			free (p);
-			r_graph_free (cf->g);
-			free (cf);
-			return NULL;
-		}
-		if (cf->g->nodes) {
-			cf->end->free = _free_bb_cb;
-		}
+	RAnalEsilBB *p = R_NEW0 (RAnalEsilBB);
+	p->expr = strdup ("end");
+	if (!p->expr) {
+		free (p);
+		free (cf);
+		return NULL;
+	}
+	cf->g = r_graph_new ();
+	if (!cf->g) {
+		free (p->expr);
+		free (p);
+		free (cf);
+		return NULL;
+	}
+	cf->start = cf->end = r_graph_add_node (cf->g, p);
+	// end node is always needed as post-dominator
+	// idea here is to split the initial one node graph in the node
+	if (!cf->end) {
+		free (p->expr);
+		free (p);
+		r_graph_free (cf->g);
+		free (cf);
+		return NULL;
+	}
+	if (cf->g->nodes) {
+		cf->end->free = _free_bb_cb;
 	}
 	return cf;
 }
@@ -580,9 +570,6 @@ R_API RAnalEsilCFG *r_anal_esil_cfg_op(RAnalEsilCFG *R_NULLABLE cfg,
 		return NULL;
 	}
 	RAnalEsilBB *glue_bb = R_NEW0 (RAnalEsilBB);
-	if (!glue_bb) {
-		return NULL;
-	}
 	RStrBuf *glue = r_strbuf_new ("");
 	if (!glue) {
 		free (glue_bb);

@@ -686,3 +686,47 @@ ERROR: Invalid hex escape in string
 ERROR: Cannot assemble '.ascii "\xg0"' at line 1
 EOF
 RUN
+
+NAME=pa z80 expression nesting limit and INT_MIN division
+FILE=-
+ARGS=-a z80
+CMDS=<<EOF
+pa ld b, ((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((1))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))
+pa ld b, (((1)))
+pa ld a, (0-2147483647-1)/-1
+pa ld a, 1==1==1
+pa ld a, 1<2<3
+'pa ld a, 1|2^3&1
+EOF
+EXPECT=<<EOF
+0601
+3e00
+3e01
+3e01
+3e03
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'ld b, ((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((1))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))' at line 1
+EOF
+RUN
+
+NAME=pa z80 rejects invalid ld a and bit operands
+FILE=-
+ARGS=-a z80
+CMDS=<<EOF
+pa ld a, (1 n
+pa ld a, (sp)
+pa ld a, foo bar
+pa bit 10, a
+pa bit 7, a
+EOF
+EXPECT=<<EOF
+cb7f
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'ld a, (1 n' at line 1
+ERROR: Cannot assemble 'ld a, (sp)' at line 1
+ERROR: Cannot assemble 'ld a, foo bar' at line 1
+ERROR: Cannot assemble 'bit 10, a' at line 1
+EOF
+RUN

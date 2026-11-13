@@ -1041,10 +1041,6 @@ static PHeapBlock GetSingleBlock(RDebug *dbg, ut64 offset) {
 		goto err;
 	}
 	extra = R_NEW0 (HeapBlockExtraInfo);
-	if (!extra) {
-		R_LOG_ERROR ("GetSingleBlock: Allocation failed");
-		goto err;
-	}
 	WPARAM NtLFHKey;
 	GetLFHKey (dbg, h_proc, false, &NtLFHKey);
 	PHeapInformation heapInfo = db->HeapInformation;

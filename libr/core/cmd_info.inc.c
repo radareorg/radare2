@@ -149,9 +149,6 @@ static void icc_langs(RCore *core, bool json) {
 	const char **lang = classdump_langs;
 	if (json) {
 		PJ *pj = pj_new ();
-		if (!pj) {
-			return;
-		}
 		pj_a (pj);
 		for (; *lang; lang++) {
 			pj_s (pj, *lang);
@@ -3933,9 +3930,6 @@ static int cmd_info(void *data, const char *input) {
 #define INIT_PJ() \
 	if (!pj) { \
 		pj = r_core_pj_new (core); \
-		if (!pj) { \
-			return 1; \
-		} \
 	}
 	if (mode == R_MODE_JSON) {
 		INIT_PJ ();

@@ -235,10 +235,6 @@ static RList *r_debug_winkd_pids(RDebug *dbg, int pid) {
 	}
 	r_list_foreach (pids, it, p) {
 		RDebugPid *newpid = R_NEW0 (RDebugPid);
-		if (!newpid) {
-			r_list_free (ret);
-			return NULL;
-		}
 		newpid->path = strdup (p->name);
 		newpid->pid = p->uniqueid;
 		newpid->status = 's';
@@ -291,10 +287,6 @@ static RList *r_debug_winkd_threads(RDebug *dbg, int pid) {
 
 	r_list_foreach (threads, it, t) {
 		RDebugPid *newpid = R_NEW0 (RDebugPid);
-		if (!newpid) {
-			r_list_free (ret);
-			return NULL;
-		}
 		newpid->pid = t->uniqueid;
 		newpid->status = t->status;
 		newpid->runnable = t->runnable;

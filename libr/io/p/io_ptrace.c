@@ -252,9 +252,6 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	}
 
 	RIOPtrace *riop = R_NEW0 (RIOPtrace);
-	if (!riop) {
-		return NULL;
-	}
 
 	riop->pid = riop->tid = pid;
 	open_pidmem (riop);

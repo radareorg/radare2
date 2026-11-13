@@ -8507,10 +8507,6 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 	PJ *pj = NULL;
 	if (mode == 'j') {
 		pj = r_core_pj_new (core);
-		if (!pj) {
-			ds_free (ds);
-			return 0;
-		}
 		pj_a (pj);
 	}
 	int minopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
@@ -8936,9 +8932,6 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 	PJ *pj = NULL;
 	if (mode == R_MODE_JSON) {
 		pj = r_core_pj_new (core);
-		if (!pj) {
-			return -1;
-		}
 		pj_a (pj);
 	}
 	REsil *esil = core->anal->esil;

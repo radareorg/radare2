@@ -49,7 +49,6 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 	}
 	int i, j, pos = 0, max;
 	const bool stack_rev = r_anal_cc_stack_rev (anal, cc);
-	r_cons_break_push (r_cons_singleton (), NULL, NULL);
 
 	// asked of the convention, not of an argument, so the arg count is not known yet
 	const char *first = r_anal_cc_argloc (anal, cc, 0, 0, -1);
@@ -274,7 +273,6 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 		free (owned_type);
 	}
 	RVecString_fini (&types);
-	r_cons_break_pop (r_cons_singleton ());
 }
 
 typedef struct {

@@ -165,9 +165,6 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 		goto beach;
 	}
 	result = R_NEW0 (RCoreSymCacheElement);
-	if (!result) {
-		goto beach;
-	}
 	result->hdr = hdr;
 	b = malloc (hdr->size);
 	if (!b) {

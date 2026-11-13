@@ -16,13 +16,11 @@ static void prepend_current_pc(RDebug *dbg, RList *list) {
 	ut64 addr = r_reg_getv (dbg->reg, "PC");
 	if (addr != UT64_MAX) {
 		RDebugFrame *frame = R_NEW0 (RDebugFrame);
-		if (frame) {
-			frame->addr = addr;
-			frame->size = 0;
-			frame->sp = r_reg_getv (dbg->reg, "SP");
-			frame->bp = r_reg_getv (dbg->reg, "BP");
-			r_list_prepend (list, frame);
-		}
+		frame->addr = addr;
+		frame->size = 0;
+		frame->sp = r_reg_getv (dbg->reg, "SP");
+		frame->bp = r_reg_getv (dbg->reg, "BP");
+		r_list_prepend (list, frame);
 	}
 }
 

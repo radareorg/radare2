@@ -480,9 +480,6 @@ R_API RReg *r_reg_new(void) {
 R_API RRegItem *r_reg_item_clone(RRegItem *r) {
 	R_RETURN_VAL_IF_FAIL (r, NULL);
 	RRegItem *ri = R_NEW0 (RRegItem);
-	if (!ri) {
-		return NULL;
-	}
 	ri->name = strdup (r->name);
 	ri->size = r->size;
 	ri->type = r->type;
@@ -533,9 +530,6 @@ static inline char *dups(const char *x) {
 R_API RReg *r_reg_clone(RReg *r) {
 	R_RETURN_VAL_IF_FAIL (r, NULL);
 	RReg *rr = R_NEW0 (RReg);
-	if (!rr) {
-		return NULL;
-	}
 	rr->profile = dups (r->profile);
 	rr->reg_profile_cmt = dups (r->reg_profile_cmt);
 	rr->reg_profile_str = dups (r->reg_profile_str);

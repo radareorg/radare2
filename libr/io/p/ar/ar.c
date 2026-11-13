@@ -16,16 +16,14 @@ typedef struct Filetable {
 static RArFp *arfp_new(RBuffer *b, ut32 *refcount) {
 	R_RETURN_VAL_IF_FAIL (b, NULL);
 	RArFp *f = R_NEW (RArFp);
-	if (f) {
-		if (refcount) {
-			(*refcount)++;
-		}
-		f->name = NULL;
-		f->refcount = refcount;
-		f->buf = b;
-		f->start = 0;
-		f->end = 0;
+	if (refcount) {
+		(*refcount)++;
 	}
+	f->name = NULL;
+	f->refcount = refcount;
+	f->buf = b;
+	f->start = 0;
+	f->end = 0;
 	return f;
 }
 

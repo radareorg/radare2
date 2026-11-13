@@ -20,9 +20,6 @@ static Rvc *open_git(const char *path) {
 	}
 	free (git_path);
 	Rvc *vc = R_NEW (Rvc);
-	if (!vc) {
-		return NULL;
-	}
 	vc->path = strdup (path);
 	if (!vc->path) {
 		free (vc);

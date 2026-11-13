@@ -87,7 +87,6 @@ R_API ut8 *r_core_readblock(RCore *core, ut64 size) {
 #include "cmd_debug.inc.c"
 #include "cmd_task.inc.c"
 #include "cmd_log.inc.c"
-#include "cmd_yank.inc.c"
 #include "cmd_flag.inc.c"
 #include "cmd_zign.inc.c"
 #include "cmd_project.inc.c"
@@ -111,6 +110,7 @@ R_API ut8 *r_core_readblock(RCore *core, ut64 size) {
 #include "r/block.inc.c"
 #include "r/echo.inc.c"
 #include "r/pdc.inc.c"
+#include "r/yank.inc.c"
 #include "cmd_help.inc.c"
 
 #undef R_INCLUDE_BEGIN
@@ -2484,10 +2484,6 @@ static int cmd_kuery(void *data, const char *input) {
 			break;
 		}
 		PJ *pj = r_core_pj_new (core);
-		if (!pj) {
-  			free (out);
-  			break;
-		}
 		pj_o (pj);
 		pj_ko (pj, "anal");
 		pj_ka (pj, "cur_cmd");
@@ -7293,7 +7289,6 @@ R_API void r_core_cmd_init(RCore *core) {
 		{ "V", "enter visual mode", cmd_visual },
 		{ "w", "write bytes", cmd_write },
 		{ "x", "alias for px", cmd_hexdump },
-		{ "y", "yank bytes", cmd_yank },
 		{ "z", "zignatures", cmd_zign },
 	};
 
@@ -7321,6 +7316,9 @@ R_API void r_core_cmd_init(RCore *core) {
 		}
 		if (!r_core_cmd_pdc_init (core->rcmd)) {
 			R_LOG_ERROR ("Cannot register the pdc router");
+		}
+		if (!r_core_cmd_yank_init (core->rcmd)) {
+			R_LOG_ERROR ("Cannot register yank commands");
 		}
 		if (!r_core_cmd_http_init (core->rcmd)) {
 			R_LOG_ERROR ("Cannot register HTTP commands");

@@ -94,9 +94,6 @@ static bool init(RArchSession *as) {
 		return false;
 	}
 	PluginData *pd = R_NEW0 (PluginData);
-	if (!pd) {
-		return false;
-	}
 	if (!zydis_configure (pd, as->config)) {
 		free (pd);
 		return false;
@@ -821,13 +818,11 @@ static bool is_setcc(ZydisMnemonic mnemonic) {
 
 static RAnalValue *new_access_value(int type, int access, const char *reg, st64 delta, int memref) {
 	RAnalValue *val = R_NEW0 (RAnalValue);
-	if (val) {
-		val->type = type;
-		val->access = access;
-		val->reg = reg;
-		val->delta = delta;
-		val->memref = memref;
-	}
+	val->type = type;
+	val->access = access;
+	val->reg = reg;
+	val->delta = delta;
+	val->memref = memref;
 	return val;
 }
 
@@ -2242,9 +2237,6 @@ static void anop_esil(RArchSession *as, RAnalOp *op, const ZydisDecodedInstructi
 
 static void opex(RStrBuf *buf, const ZydisDecodedInstruction *insn, const ZydisDecodedOperand *ops, ut64 addr) {
 	PJ *pj = pj_new ();
-	if (!pj) {
-		return;
-	}
 	pj_o (pj);
 	pj_ka (pj, "operands");
 	size_t i;
@@ -2418,9 +2410,6 @@ static char *mnemonics(RArchSession *as, int id, bool json) {
 		}
 		if (json) {
 			PJ *pj = pj_new ();
-			if (!pj) {
-				return NULL;
-			}
 			pj_a (pj);
 			pj_s (pj, name);
 			pj_end (pj);
@@ -2432,9 +2421,6 @@ static char *mnemonics(RArchSession *as, int id, bool json) {
 	RStrBuf *buf = NULL;
 	if (json) {
 		pj = pj_new ();
-		if (!pj) {
-			return NULL;
-		}
 		pj_a (pj);
 	} else {
 		buf = r_strbuf_new ("");

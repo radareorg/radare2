@@ -56999,6 +56999,43 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=arm64 linux kernel noreturn types end the block at the bl
+FILE=malloc://512
+ARGS=-a arm -b 64 -e asm.os=linux
+CMDS=<<EOF
+tn~panic,do_exit
+wx 40000094 78563412 1f2003d5 c0035fd6 @ 0
+wx 40000094 78563412 1f2003d5 c0035fd6 @ 0x10
+wx 40000094 78563412 1f2003d5 c0035fd6 @ 0x20
+wx 40000094 1f2003d5 1f2003d5 c0035fd6 @ 0x30
+wx c0035fd6 @ 0x100
+wx c0035fd6 @ 0x110
+wx c0035fd6 @ 0x120
+wx c0035fd6 @ 0x130
+f reloc.fortify_panic @ 0x100
+f reloc.panic @ 0x110
+f reloc.do_exit @ 0x120
+f reloc.printk @ 0x130
+af @ 0
+af @ 0x10
+af @ 0x20
+af @ 0x30
+afb @ 0
+afb @ 0x10
+afb @ 0x20
+afb @ 0x30
+EOF
+EXPECT=<<EOF
+panic
+do_exit
+fortify_panic
+0x00000000 0x00000004 00:0000 4
+0x00000010 0x00000014 00:0000 4
+0x00000020 0x00000024 00:0000 4
+0x00000030 0x00000040 00:0000 16
+EOF
+RUN
+
 NAME=af ends a block at the edge of executable memory
 FILE=malloc://64
 CMDS=<<EOF

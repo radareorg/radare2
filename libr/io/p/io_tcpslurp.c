@@ -66,9 +66,6 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__check (io, pathname, 0)) {
 		int rlen, code;
 		RIOMalloc *mal = R_NEW0 (RIOMalloc);
-		if (!mal) {
-			return NULL;
-		}
 		mal->offset = 0;
 		mal->buf = tcpme (pathname, &code, &rlen);
 		if (mal->buf && rlen > 0) {

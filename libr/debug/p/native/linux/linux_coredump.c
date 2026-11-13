@@ -83,10 +83,6 @@ static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg, proc_per_process_t *proc_data
 	size_t len;
 
 	p = R_NEW0 (prpsinfo_t);
-	if (!p) {
-		R_LOG_ERROR ("Couldn't allocate memory for prpsinfo_t");
-		return NULL;
-	}
 
 	p->pr_pid = mypid = dbg->pid;
 	/* Start filling pr_fname and pr_psargs */
@@ -143,10 +139,6 @@ static proc_per_thread_t *get_proc_thread_content(int pid, int tid) {
 	}
 
 	proc_per_thread_t *t = R_NEW0 (proc_per_thread_t);
-	if (!t) {
-		free (buff);
-		return NULL;
-	}
 	{
 		char no_str[128];
 		long unsigned int no_lui;
@@ -201,9 +193,6 @@ static prstatus_t *linux_get_prstatus(RDebug *dbg, int pid, int tid, proc_conten
 		return NULL;
 	}
 	p = R_NEW0 (prstatus_t);
-	if (!p) {
-		return NULL;
-	}
 	p->pr_cursig = p->pr_info.si_signo = signr;
 	p->pr_pid = tid;
 	p->pr_ppid = proc_data->per_process->ppid;
@@ -233,22 +222,17 @@ static prstatus_t *linux_get_prstatus(RDebug *dbg, int pid, int tid, proc_conten
 
 static elf_fpregset_t *linux_get_fp_regset(RDebug *dbg, int pid) {
 	elf_fpregset_t *p = R_NEW0 (elf_fpregset_t);
-	if (p) {
-		if (r_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, p) < 0) {
-			r_sys_perror ("PTRACE_GETFPREGS");
-			free (p);
-			return NULL;
-		}
-		return p;
+	if (r_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, p) < 0) {
+		r_sys_perror ("PTRACE_GETFPREGS");
+		free (p);
+		return NULL;
 	}
+	return p;
 	return NULL;
 }
 
 static siginfo_t *linux_get_siginfo(RDebug *dbg, int pid) {
 	siginfo_t *siginfo = R_NEW0 (siginfo_t);
-	if (!siginfo) {
-		return NULL;
-	}
 	int ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, pid, 0, (r_ptrace_data_t)(size_t)siginfo);
 	if (ret == -1 || !siginfo->si_signo) {
 		r_sys_perror ("PTRACE_GETSIGINFO");
@@ -493,9 +477,6 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, int filter_flags) 
 	}
 	r_list_foreach (dbg->maps, iter, map) {
 		linux_map_entry_t *pmentry = R_NEW0 (linux_map_entry_t);
-		if (!pmentry) {
-			goto error;
-		}
 		pmentry->start_addr = map->addr;
 		pmentry->end_addr = map->addr_end;
 		pmentry->offset = map->offset;
@@ -563,10 +544,6 @@ static auxv_buff_t *linux_get_auxv(RDebug *dbg) {
 	auxv_entries = size / sizeof (elf_auxv_t);
 	if (auxv_entries > 0) {
 		auxv = R_NEW0 (auxv_buff_t);
-		if (!auxv) {
-			free (buff);
-			return NULL;
-		}
 		auxv->size = size;
 		auxv->data = r_mem_dup (buff, (int)size);
 		if (!auxv->data) {
@@ -584,9 +561,6 @@ static elf_hdr_t *build_elf_hdr(int n_segments) {
 	int ph_size;
 	int ph_offset;
 	elf_hdr_t *h = R_NEW0 (elf_hdr_t);
-	if (!h) {
-		return NULL;
-	}
 
 	ph_offset = ELF_HDR_SIZE;
 	ph_size = sizeof (elf_phdr_t);
@@ -798,10 +772,6 @@ static proc_per_process_t *get_proc_process_content(RDebug *dbg) {
 	}
 
 	p = R_NEW0 (proc_per_process_t);
-	if (!p) {
-		free (buff);
-		return NULL;
-	}
 
 	/* /proc/[pid]/stat */
 	/* we only need few fields which are process-wide */
@@ -908,13 +878,11 @@ static elf_fpxregset_t *linux_get_fpx_regset(RDebug *dbg, int tid) {
 #ifdef PTRACE_GETREGSET
 	struct iovec transfer;
 	elf_fpxregset_t *fpxregset = R_NEW0 (elf_fpxregset_t);
-	if (fpxregset) {
-		transfer.iov_base = fpxregset;
-		transfer.iov_len = sizeof (elf_fpxregset_t);
-		if (r_debug_ptrace (dbg, PTRACE_GETREGSET, tid, (void *)NT_PRXFPREG, &transfer) < 0) {
-			r_sys_perror ("linux_get_fpx_regset");
-			R_FREE (fpxregset);
-		}
+	transfer.iov_base = fpxregset;
+	transfer.iov_len = sizeof (elf_fpxregset_t);
+	if (r_debug_ptrace (dbg, PTRACE_GETREGSET, tid, (void *)NT_PRXFPREG, &transfer) < 0) {
+		r_sys_perror ("linux_get_fpx_regset");
+		R_FREE (fpxregset);
 	}
 	return fpxregset;
 #else
@@ -1192,9 +1160,6 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 	/* prstatus + fpregset + (prxfpreg) + siginfo + x86xstate per thread */
 	{
 		elf_proc_note->thread_note = R_NEW0 (thread_elf_note_t);
-		if (!elf_proc_note->thread_note) {
-			goto fail;
-		}
 		for (i = 0; i < elf_proc_note->n_threads; i++) {
 			elf_proc_note->thread_note->siginfo = linux_get_siginfo (dbg, thread_id[i]);
 			if (!elf_proc_note->thread_note->siginfo) {

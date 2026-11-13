@@ -243,9 +243,6 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	}
 
 	proc = R_NEW0 (R2RSubprocess);
-	if (!proc) {
-		goto error;
-	}
 	proc->ret = -1;
 	proc->lock = r_th_lock_new (false);
 
@@ -2109,9 +2106,6 @@ static bool check_cmd_test_skip(R2RRunConfig *config, R2RCmdTest *cmd_test) {
 
 R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 	R2RTestResultInfo *ret = R_NEW0 (R2RTestResultInfo);
-	if (!ret) {
-		return NULL;
-	}
 	ret->test = test;
 	bool success = false;
 	ut64 start_time = r_time_now_mono ();

@@ -142,9 +142,6 @@ static bool rtti_itanium_class_type_info_init(RVTableContext *context, ut64 addr
 
 static class_type_info *rtti_itanium_class_type_info_new(RVTableContext *context, ut64 addr, ut64 source_vtable) {
 	class_type_info *result = R_NEW0 (class_type_info);
-	if (!result) {
-		return NULL;
-	}
 
 	if (!rtti_itanium_class_type_info_init (context, addr, result)) {
 		rtti_itanium_class_type_info_free (result);
@@ -225,9 +222,6 @@ static bool rtti_itanium_vmi_class_type_info_init(RVTableContext *context, ut64 
 
 static vmi_class_type_info *rtti_itanium_vmi_class_type_info_new(RVTableContext *context, ut64 addr, ut64 source_vtable) {
 	vmi_class_type_info *result = R_NEW0 (vmi_class_type_info);
-	if (!result) {
-		return NULL;
-	}
 
 	if (!rtti_itanium_vmi_class_type_info_init (context, addr, result)) {
 		rtti_itanium_vmi_class_type_info_free (result);
@@ -277,9 +271,6 @@ static bool rtti_itanium_si_class_type_info_init(RVTableContext *context, ut64 a
 
 static si_class_type_info *rtti_itanium_si_class_type_info_new(RVTableContext *context, ut64 addr, ut64 source_vtable) {
 	si_class_type_info *result = R_NEW0 (si_class_type_info);
-	if (!result) {
-		return NULL;
-	}
 
 	if (!rtti_itanium_si_class_type_info_init (context, addr, result)) {
 		rtti_itanium_si_class_type_info_free (result);
@@ -325,10 +316,6 @@ static void rtti_itanium_print_class_type_info(class_type_info *cti, const char 
 
 static void rtti_itanium_print_class_type_info_json(class_type_info *cti) {
 	PJ *pj = pj_new ();
-	if (!pj) {
-		return;
-	}
-
 	pj_o (pj);
 	pj_ks (pj, "type", type_tostring (cti->type));
 	pj_kn (pj, "found_at", cti->typeinfo_addr);
@@ -378,10 +365,6 @@ static void rtti_itanium_print_vmi_class_type_info(vmi_class_type_info *vmi_cti,
 
 static void rtti_itanium_print_vmi_class_type_info_json(vmi_class_type_info *vmi_cti) {
 	PJ *pj = pj_new ();
-	if (!pj) {
-		return;
-	}
-
 	pj_o (pj);
 	pj_ks (pj, "type", type_tostring (vmi_cti->type));
 	pj_kn (pj, "found_at", vmi_cti->typeinfo_addr);
@@ -430,10 +413,6 @@ static void rtti_itanium_print_si_class_type_info(si_class_type_info *si_cti, co
 
 static void rtti_itanium_print_si_class_type_info_json(si_class_type_info *si_cti) {
 	PJ *pj = pj_new ();
-	if (!pj) {
-		return;
-	}
-
 	pj_o (pj);
 	pj_ks (pj, "type", type_tostring (si_cti->type));
 	pj_kn (pj, "found_at", si_cti->typeinfo_addr);
@@ -490,9 +469,6 @@ static bool can_section_contain_rtti_vpointer(RBinSection *section) {
 
 static class_type_info *create_class_type(ut64 vtable_addr, char *name, ut64 name_addr, bool unique_name, ut64 typeinfo_addr, ut64 source_vtable) {
 	class_type_info *result = R_NEW0 (class_type_info);
-	if (!result) {
-		return NULL;
-	}
 	result->type = R_TYPEINFO_TYPE_CLASS;
 
 	result->vtable_addr = vtable_addr;
@@ -506,9 +482,6 @@ static class_type_info *create_class_type(ut64 vtable_addr, char *name, ut64 nam
 
 static si_class_type_info *create_si_class_type(ut64 vtable_addr, char *name, ut64 name_addr, bool unique_name, ut64 basetype_addr, ut64 typeinfo_addr, ut64 source_vtable) {
 	si_class_type_info *result = R_NEW0 (si_class_type_info);
-	if (!result) {
-		return NULL;
-	}
 	result->type = R_TYPEINFO_TYPE_SI_CLASS;
 	result->base_class_addr = basetype_addr;
 	result->vtable_addr = vtable_addr;
@@ -522,9 +495,6 @@ static si_class_type_info *create_si_class_type(ut64 vtable_addr, char *name, ut
 
 static vmi_class_type_info *create_vmi_class_type(ut64 vtable_addr, char *name, ut64 name_addr, bool unique_name, ut32 flags, ut32 base_count, base_class_type_info *bases, ut64 typeinfo_addr, ut64 source_vtable) {
 	vmi_class_type_info *result = R_NEW0 (vmi_class_type_info);
-	if (!result) {
-		return NULL;
-	}
 	result->type = R_TYPEINFO_TYPE_VMI_CLASS;
 	result->vmi_bases = bases;
 	result->vmi_base_count = base_count;

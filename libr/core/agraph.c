@@ -1434,16 +1434,14 @@ static void collect_changes(const RAGraph *g, int l, const RGraphNode *b, int fr
 	if (b) {
 		const RANode *ab = get_anode (b);
 		cx = R_NEW (struct len_pos_t);
-		if (cx) {
-			cx->len = is_left? INT_MAX: INT_MIN;
-			cx->pos = ab->x;
-			if (is_left) {
-				cx->pos += dist_nodes (g, b, vt);
-			} else {
-				cx->pos -= dist_nodes (g, vtp, b);
-			}
-			r_list_add_sorted (list, cx, lcmp);
+		cx->len = is_left? INT_MAX: INT_MIN;
+		cx->pos = ab->x;
+		if (is_left) {
+			cx->pos += dist_nodes (g, b, vt);
+		} else {
+			cx->pos -= dist_nodes (g, vtp, b);
 		}
+		r_list_add_sorted (list, cx, lcmp);
 	}
 }
 

@@ -752,11 +752,6 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 	RAnalFunction *fcn = r_anal_function_new (core->anal);
 	R_WARN_IF_FAIL (fcn);
 	const char *fcnpfx = r_anal_fcn_prefix_at (core->anal, at);
-#if 0
-	if (R_STR_ISEMPTY (fcnpfx)) {
-		fcnpfx = "fcn";
-	}
-#endif
 	const char *cc = r_anal_cc_default (core->anal);
 	if (!cc) {
 		const bool isvm = r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM;
@@ -856,11 +851,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 					if (R_STR_ISEMPTY (myfcnpfx) || !strcmp (myfcnpfx, "fcn")) {
 						myfcnpfx = r_anal_fcn_prefix_at (core->anal, fcn->addr);
 					}
-					if (R_STR_ISEMPTY (myfcnpfx)) {
-						fcn->name = r_str_newf ("fcn_%08"PFMT64x, fcn->addr);
-					} else {
-						fcn->name = r_str_newf ("%s.%08"PFMT64x, myfcnpfx, fcn->addr);
-					}
+					fcn->name = r_str_newf ("%s.%08"PFMT64x, myfcnpfx, fcn->addr);
 					autoname_imp_trampoline (core, fcn);
 					/* Add flag */
 					r_flag_space_push (core->flags, R_FLAGS_FS_FUNCTIONS);
@@ -2334,9 +2325,6 @@ R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt) {
 	switch (fmt) {
 	case R_GRAPH_FORMAT_JSON:
 		pj = pj_new ();
-		if (!pj) {
-			return;
-		}
 		pj_a (pj);
 		break;
 	case R_GRAPH_FORMAT_GML:
@@ -3209,10 +3197,6 @@ static int fcn_list_json(RCore *core, RList *fcns, bool quiet, bool dorefs) {
 	RListIter *iter;
 	RAnalFunction *fcn;
 	PJ *pj = r_core_pj_new (core);
-	if (!pj) {
-		r_cons_println (core->cons, "[]");
-		return -1;
-	}
 	pj_a (pj);
 	r_list_foreach (fcns, iter, fcn) {
 		if (quiet) {
@@ -4258,11 +4242,6 @@ R_API bool r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	}
 	if (go.is_json) {
 		pj = r_core_pj_new (core);
-		if (!pj) {
-			r_config_hold_restore (hc);
-			r_config_hold_free (hc);
-			return false;
-		}
 		pj_a (pj);
 	}
 	r_list_foreach (core->anal->fcns, iter, fcni) {
@@ -5327,11 +5306,6 @@ R_API RList* r_core_anal_cycles(RCore *core, int ccl) {
 			}
 		} else {
 			ch = R_NEW0 (RAnalCycleHook);
-			if (!ch) {
-				r_anal_cycle_frame_free (cf);
-				r_list_free (hooks);
-				return NULL;
-			}
 			ch->addr = addr;
 			ch->cycles = ccl;
 			r_list_append (hooks, ch);

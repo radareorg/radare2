@@ -450,9 +450,6 @@ static bool _init(RArchSession *as) {
 	}
 
 	PluginData *pd = R_NEW0 (PluginData);
-	if (!pd) {
-		return false;
-	}
 	pd->insns = ht_su_new0 ();
 	if (!pd->insns || !nds32_build_insn_db (pd->insns)) {
 		ht_su_free (pd->insns);

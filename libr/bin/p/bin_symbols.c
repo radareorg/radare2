@@ -142,21 +142,19 @@ static RBinSymbol *bin_symbol_from_symbol(RCoreSymCacheElement *element, RCoreSy
 		return NULL;
 	}
 	RBinSymbol *sym = R_NEW0 (RBinSymbol);
-	if (sym) {
-		if (s->name && s->mangled_name) {
-			sym->name = r_bin_name_new (s->mangled_name);
-			r_bin_name_demangled (sym->name, s->name);
-		} else if (s->name) {
-			sym->name = r_bin_name_new (s->name);
-		} else if (s->mangled_name) {
-			sym->name = r_bin_name_new (s->mangled_name);
-		}
-		sym->paddr = s->paddr;
-		sym->vaddr = r_coresym_cache_element_pa2va (element, s->paddr);
-		sym->attr.size = s->size;
-		sym->type = R_BIN_TYPE_FUNC_STR;
-		sym->bind = "NONE";
+	if (s->name && s->mangled_name) {
+		sym->name = r_bin_name_new (s->mangled_name);
+		r_bin_name_demangled (sym->name, s->name);
+	} else if (s->name) {
+		sym->name = r_bin_name_new (s->name);
+	} else if (s->mangled_name) {
+		sym->name = r_bin_name_new (s->mangled_name);
 	}
+	sym->paddr = s->paddr;
+	sym->vaddr = r_coresym_cache_element_pa2va (element, s->paddr);
+	sym->attr.size = s->size;
+	sym->type = R_BIN_TYPE_FUNC_STR;
+	sym->bind = "NONE";
 	return sym;
 }
 

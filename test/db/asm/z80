@@ -1174,3 +1174,11 @@ ad "and 0xf0" e6f0
 ad "cp 0x60" fe60
 a "ld a, '['" 3e5b
 a "ld a, ']'" 3e5d
+a "bit 1+2, [ix+3]" ddcb035e
+a "sll a" cb37
+a "sll [ix+2]" ddcb0236
+a "db 1,2,3" 010203
+a "db 'ab',0,'c'" 61620063
+a "dw 1,0x1234" 01003412
+a "ds 3,0xff" ffffff
+a "jp ( hl )" e9

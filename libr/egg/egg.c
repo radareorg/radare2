@@ -577,9 +577,6 @@ R_API bool r_egg_encode(REgg *egg, const char *name) {
 
 R_API bool r_egg_patch(REgg *egg, int off, const ut8 *buf, int len) {
 	struct egg_patch_t *ep = R_NEW (struct egg_patch_t);
-	if (!ep) {
-		return false;
-	}
 	ep->b = r_buf_new_with_bytes (buf, len);
 	if (!ep->b) {
 		egg_patch_free (ep);

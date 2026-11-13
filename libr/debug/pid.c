@@ -4,9 +4,6 @@
 
 R_API RDebugPid *r_debug_pid_new(const char *path, int pid, int uid, char status, ut64 pc) {
 	RDebugPid *p = R_NEW0 (RDebugPid);
-	if (!p) {
-		return NULL;
-	}
 	p->path = strdup (path? path: "");
 	p->pid = pid;
 	p->uid = uid;

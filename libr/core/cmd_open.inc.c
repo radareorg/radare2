@@ -631,9 +631,6 @@ static void map_list(RCore *core, int mode, RPrint *p, int fd) {
 	PJ *pj = NULL;
 	if (mode == 'j') {
 		pj = r_core_pj_new (core);
-		if (!pj) {
-			return;
-		}
 		pj_a (pj);
 	}
 	char *om_cmds = NULL;
@@ -1276,9 +1273,6 @@ static void cmd_open_map(RCore *core, const char *input) {
 		if (map) {
 			if (input[2] == 'j') { // "om.j"
 				pj = r_core_pj_new (core);
-				if (!pj) {
-					return;
-				}
 				pj_o (pj);
 				pj_ki (pj, "map", map->id);
 				pj_ki (pj, "fd", map->fd);

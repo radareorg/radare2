@@ -130,9 +130,6 @@ static bool read_xbe_lib(RBuffer *b, ut64 addr, xbe_lib *lib) {
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	r_bin_xbe_obj_t *obj = R_NEW (r_bin_xbe_obj_t);
-	if (!obj) {
-		return false;
-	}
 	if (!read_xbe_header (buf, &obj->header)) {
 		R_FREE (obj);
 		return false;

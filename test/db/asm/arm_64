@@ -822,3 +822,8 @@ a "ubfm xzr, xzr, #1, #63" ffff41d3
 a "ubfm wzr, wzr, #1, #31" ff7f0153
 a "lsl x0, x1, 1+2" 20f07dd3
 a "lsr w0, w1, #0x1f" 207c1f53
+ad "csetm x0, eq" e0139fda
+ad "csetm x0, ne" e0039fda
+ad "csetm x0, gt" e0d39fda
+ad "csetm w0, eq" e0139f5a
+ad "csetm w21, mi" f5539f5a

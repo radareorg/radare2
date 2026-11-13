@@ -380,9 +380,6 @@ static const char *cc_name(arm_cc cc) {
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	PJ *pj = pj_new ();
-	if (!pj) {
-		return;
-	}
 	pj_o (pj);
 	pj_ka (pj, "operands");
 	cs_arm *x = &insn->detail->arm;
@@ -808,9 +805,6 @@ static int vess_size(arm64_vess vess) {
 static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	PJ *pj = pj_new ();
-	if (!pj) {
-		return;
-	}
 	pj_o (pj);
 	pj_ka (pj, "operands");
 	cs_arm64 *x = &insn->detail->arm64;
@@ -1221,6 +1215,13 @@ static const char *arg(RArchSession *as, csh *handle, cs_insn *insn, char *buf, 
 #define VEC64(n) insn->detail->arm64.operands[n].vess
 #define VEC64_APPEND(sb, n, i) vector64_append(sb, handle, insn, n, i)
 
+// capstone v6 names the vector forms d0..d31 and q0..q31, the esil banks are v0..v31
+static void vector64_split_name(const char *rn, const char **bank, const char **base) {
+	const bool valias = R_STR_ISNOTEMPTY (rn) && (rn[0] == 'd' || rn[0] == 'q') && isdigit ((ut8)rn[1]);
+	*bank = valias? "v": "";
+	*base = valias? rn + 1: rn;
+}
+
 static void vector64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int i) {
 	cs_arm64_op op = INSOP64 (n);
 	if (op.vector_index != -1) {
@@ -1234,15 +1235,17 @@ static void vector64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int 
 			shift -= 64;
 			regc = "h";
 		}
+		const char *vbank, *vname;
+		vector64_split_name (REG64 (n), &vbank, &vname);
 
 		size_t s = sizeof (bitmask_by_width) / sizeof (*bitmask_by_width);
 		int width = size > 0? (size - 1) % s: 0;
 		if (shift > 0) {
-			r_strbuf_appendf (sb, "0x%"PFMT64x",%d,%s%s,>>,&",
-				bitmask_by_width[width], shift, REG64 (n), regc);
+			r_strbuf_appendf (sb, "0x%"PFMT64x",%d,%s%s%s,>>,&",
+				bitmask_by_width[width], shift, vbank, vname, regc);
 		} else {
-			r_strbuf_appendf (sb, "0x%"PFMT64x",%s%s,&",
-				bitmask_by_width[width], REG64 (n), regc);
+			r_strbuf_appendf (sb, "0x%"PFMT64x",%s%s%s,&",
+				bitmask_by_width[width], vbank, vname, regc);
 		}
 	} else {
 		r_strbuf_appendf (sb, "%s", REG64 (n));
@@ -1268,20 +1271,22 @@ static void vector64_dst_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, 
 		shift -= 64;
 		regc = "h";
 	}
+	const char *vbank, *vname;
+	vector64_split_name (REG64 (n), &vbank, &vname);
 	// the lane covers the whole half; the final '=' comes from the caller
 	if (size >= 64 && !shift) {
-		r_strbuf_appendf (sb, "%s%s", REG64 (n), regc);
+		r_strbuf_appendf (sb, "%s%s%s", vbank, vname, regc);
 		return;
 	}
 	ut64 mask = (size > 0 && size <= 64)? bitmask_by_width[size - 1]: 1;
 	// keep the old bits that lie outside the lane being written
 	ut64 clear = shift? ~(mask << shift): ~mask;
 	if (shift) {
-		r_strbuf_appendf (sb, "%d,SWAP,0x%"PFMT64x",&,<<,%s%s,0x%"PFMT64x",&,|,%s%s",
-			shift, mask, REG64 (n), regc, clear, REG64 (n), regc);
+		r_strbuf_appendf (sb, "%d,SWAP,0x%"PFMT64x",&,<<,%s%s%s,0x%"PFMT64x",&,|,%s%s%s",
+			shift, mask, vbank, vname, regc, clear, vbank, vname, regc);
 	} else {
-		r_strbuf_appendf (sb, "0x%"PFMT64x",&,%s%s,0x%"PFMT64x",&,|,%s%s",
-			mask, REG64 (n), regc, clear, REG64 (n), regc);
+		r_strbuf_appendf (sb, "0x%"PFMT64x",&,%s%s%s,0x%"PFMT64x",&,|,%s%s%s",
+			mask, vbank, vname, regc, clear, vbank, vname, regc);
 	}
 }
 
@@ -1863,12 +1868,14 @@ static void arm64_esil_vec_ldst(RAnalOp *op, csh *handle, cs_insn *insn, bool bi
 		// every element value through the data byte order instead
 		for (r = 0; r < nregs; r++) {
 			ut64 lo = disp + (ut64)r * 16;
+			const char *vbank, *vname;
+			vector64_split_name (REG64 (r), &vbank, &vname);
 			if (is_store) {
-				r_strbuf_appendf (&op->esil, "%sl,0x%" PFMT64x ",%s,+,=[8],%sh,0x%" PFMT64x ",%s,+,=[8]",
-					REG64 (r), lo, base, REG64 (r), lo + 8, base);
+				r_strbuf_appendf (&op->esil, "%s%sl,0x%" PFMT64x ",%s,+,=[8],%s%sh,0x%" PFMT64x ",%s,+,=[8]",
+					vbank, vname, lo, base, vbank, vname, lo + 8, base);
 			} else {
-				r_strbuf_appendf (&op->esil, "0x%" PFMT64x ",%s,+,[8],%sl,=,0x%" PFMT64x ",%s,+,[8],%sh,=",
-					lo, base, REG64 (r), lo + 8, base, REG64 (r));
+				r_strbuf_appendf (&op->esil, "0x%" PFMT64x ",%s,+,[8],%s%sl,=,0x%" PFMT64x ",%s,+,[8],%s%sh,=",
+					lo, base, vbank, vname, lo + 8, base, vbank, vname);
 			}
 			if (r + 1 < nregs) {
 				COMMA (&op->esil);
@@ -1882,13 +1889,15 @@ static void arm64_esil_vec_ldst(RAnalOp *op, csh *handle, cs_insn *insn, bool bi
 		ut64 spread = UT64_MAX / (((ut64)1 << (ebytes * 8)) - 1);
 		const bool full = lanes * ebytes == 16;
 		for (r = 0; r < nregs; r++) {
+			const char *vbank, *vname;
+			vector64_split_name (REG64 (r), &vbank, &vname);
 			if (full) {
-				r_strbuf_appendf (&op->esil, "0x%" PFMT64x ",%s,+,[%d],0x%" PFMT64x ",*,tmp,=,tmp,%sl,=,tmp,%sh,=",
-					disp + (ut64)r * ebytes, base, ebytes, spread, REG64 (r), REG64 (r));
+				r_strbuf_appendf (&op->esil, "0x%" PFMT64x ",%s,+,[%d],0x%" PFMT64x ",*,tmp,=,tmp,%s%sl,=,tmp,%s%sh,=",
+					disp + (ut64)r * ebytes, base, ebytes, spread, vbank, vname, vbank, vname);
 			} else {
 				// the D forms leave the upper half to the zeroing below
-				r_strbuf_appendf (&op->esil, "0x%" PFMT64x ",%s,+,[%d],0x%" PFMT64x ",*,tmp,=,tmp,%sl,=",
-					disp + (ut64)r * ebytes, base, ebytes, spread, REG64 (r));
+				r_strbuf_appendf (&op->esil, "0x%" PFMT64x ",%s,+,[%d],0x%" PFMT64x ",*,tmp,=,tmp,%s%sl,=",
+					disp + (ut64)r * ebytes, base, ebytes, spread, vbank, vname);
 			}
 			if (r + 1 < nregs) {
 				COMMA (&op->esil);
@@ -1932,7 +1941,9 @@ static void arm64_esil_vec_ldst(RAnalOp *op, csh *handle, cs_insn *insn, bool bi
 		// upper halves, for every register of the list; the zext pass skips
 		// these instructions, so zero them all here
 		for (r = 0; r < nregs; r++) {
-			r_strbuf_appendf (&op->esil, ",0,%sh,=", REG64 (r));
+			const char *vbank, *vname;
+			vector64_split_name (REG64 (r), &vbank, &vname);
+			r_strbuf_appendf (&op->esil, ",0,%s%sh,=", vbank, vname);
 		}
 	}
 	bool wb = ISWRITEBACK64 ();
@@ -2002,6 +2013,8 @@ static void arm64_esil_rev_vector(RAnalOp *op, csh *handle, cs_insn *insn) {
 	const char *suffix[2] = { "l", "h" };
 	const int lanes = 64 / lane_bits;
 	const int flip = (chunk_bits / lane_bits) - 1;
+	const char *vbank, *vname;
+	vector64_split_name (REG64 (0), &vbank, &vname);
 	int half, lane;
 	for (half = 0; half < halves; half++) {
 		r_strbuf_append (&op->esil, half? ",0": "0");
@@ -2010,7 +2023,7 @@ static void arm64_esil_rev_vector(RAnalOp *op, csh *handle, cs_insn *insn) {
 			VEC64_APPEND (&op->esil, 1, half * lanes + (lane ^ flip));
 			r_strbuf_appendf (&op->esil, ",%d,SWAP,<<,|", lane * lane_bits);
 		}
-		r_strbuf_appendf (&op->esil, ",%s%s,=", REG64 (0), suffix[half]);
+		r_strbuf_appendf (&op->esil, ",%s%s%s,=", vbank, vname, suffix[half]);
 	}
 }
 
@@ -2105,7 +2118,9 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 			half |= value << shift;
 		}
 		if (dst.vas) {
-			r_strbuf_setf (&op->esil, "0x%"PFMT64x",%sl,=,0x%"PFMT64x",%sh,=", half, REG64 (0), bits * lanes == 128? half: 0, REG64 (0));
+			const char *vbank, *vname;
+			vector64_split_name (REG64 (0), &vbank, &vname);
+			r_strbuf_setf (&op->esil, "0x%"PFMT64x",%s%sl,=,0x%"PFMT64x",%s%sh,=", half, vbank, vname, bits * lanes == 128? half: 0, vbank, vname);
 		} else {
 			r_strbuf_setf (&op->esil, "0x%"PFMT64x",%s,=", half, REG64 (0));
 		}
@@ -2130,12 +2145,14 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 				r_strbuf_appendf (&op->esil, ",==,%d,$b,0x%"PFMT64x",*,%d,SWAP,<<,|", bits, bitmask_by_width[bits - 1], i * bits);
 			}
 		}
+		const char *vbank, *vname;
+		vector64_split_name (REG64 (0), &vbank, &vname);
 		if (halves == 2) {
-			r_strbuf_appendf (&op->esil, ",%sh,=", REG64 (0));
+			r_strbuf_appendf (&op->esil, ",%s%sh,=", vbank, vname);
 		} else {
-			r_strbuf_appendf (&op->esil, ",0,%sh,=", REG64 (0));
+			r_strbuf_appendf (&op->esil, ",0,%s%sh,=", vbank, vname);
 		}
-		r_strbuf_appendf (&op->esil, ",%sl,=", REG64 (0));
+		r_strbuf_appendf (&op->esil, ",%s%sl,=", vbank, vname);
 		break;
 	}
 	case ARM64_INS_UMINV: {
@@ -2465,8 +2482,11 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 		cs_arm64_op src = INSOP64 (1);
 
 		if (dst.vas && src.vas && dst.vector_index == -1 && src.vector_index == -1) {
-			r_strbuf_setf (&op->esil, "%sh,%sh,=,%sl,%sl,=",
-				REG64 (1), REG64 (0), REG64 (1), REG64 (0));
+			const char *sbank, *sname, *dbank, *dname;
+			vector64_split_name (REG64 (1), &sbank, &sname);
+			vector64_split_name (REG64 (0), &dbank, &dname);
+			r_strbuf_setf (&op->esil, "%s%sh,%s%sh,=,%s%sl,%s%sl,=",
+				sbank, sname, dbank, dname, sbank, sname, dbank, dname);
 		} else {
 			// lane insert; src and destination lanes come from each operand's
 			// vector_index (e.g. ins v0.s[1], v1.s[2])

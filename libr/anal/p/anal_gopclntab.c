@@ -910,9 +910,6 @@ static char *go_hexstr(ut64 n) {
 static char *go_format_json(const GoPclnCtx *ctx) {
 	R_RETURN_VAL_IF_FAIL (ctx, NULL);
 	PJ *pj = pj_new ();
-	if (!pj) {
-		return NULL;
-	}
 	const GoPcHeader *h = &ctx->header;
 	pj_o (pj);
 	pj_ko (pj, "header");

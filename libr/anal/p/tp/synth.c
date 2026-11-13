@@ -1025,9 +1025,6 @@ void type_synth(RAnal *anal, RAnalFunction *fcn, bool apply, RVecSynthRec *recs)
 
 char *synth_json(RVecSynthRec *recs) {
 	PJ *pj = pj_new ();
-	if (!pj) {
-		return NULL;
-	}
 	pj_a (pj);
 	SynthRec *rec;
 	R_VEC_FOREACH (recs, rec) {

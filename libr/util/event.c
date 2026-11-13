@@ -8,9 +8,6 @@ static void ht_callback_free(HtUPKv *kv) {
 
 R_API REvent *r_event_new(void *user) {
 	REvent *ev = R_NEW0 (REvent);
-	if (!ev) {
-		return NULL;
-	}
 	ev->user = user;
 	ut32 i;
 	for (i = 0; i < R_EVENT_LAST; i++) {

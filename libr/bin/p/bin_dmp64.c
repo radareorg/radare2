@@ -47,9 +47,6 @@ static char *header(RBinFile *bf, int mode) {
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
 	struct r_bin_dmp64_obj_t *obj = (struct r_bin_dmp64_obj_t *)bf->bo->bin_obj;
 
 	ret->arch = strdup ("x86");

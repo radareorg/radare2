@@ -6,9 +6,7 @@
 
 R_API RNumBig *r_big_new(void) {
 	RNumBig *n = R_NEW (RNumBig);
-	if (n) {
-		mpz_init (*n);
-	}
+	mpz_init (*n);
 	return n;
 }
 

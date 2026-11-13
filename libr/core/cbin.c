@@ -3846,10 +3846,6 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 					// the way IO works maps would be shown
 					// in reverse order
 					struct io_bin_section_info_t *ibs = R_NEW (struct io_bin_section_info_t);
-					if (!ibs) {
-						R_LOG_ERROR ("Could not allocate memory");
-						goto out;
-					}
 					ibs->sec = section;
 					ibs->addr = addr;
 					ibs->fd = fd;
@@ -6077,9 +6073,6 @@ R_API bool r_core_bin_list(RCore *core, int mode) {
 	PJ *pj = NULL;
 	if (mode == 'j') {
 		pj = r_core_pj_new (core);
-		if (!pj) {
-			return 0;
-		}
 		pj_a (pj);
 	}
 	r_list_foreach (binfiles, iter, binfile) {

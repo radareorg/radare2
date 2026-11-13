@@ -6,9 +6,6 @@
 
 R_API RFSFile* r_fs_file_new(RFSRoot* root, const char* path) {
 	RFSFile* file = R_NEW0 (RFSFile);
-	if (!file) {
-		return NULL;
-	}
 	file->root = root;
 	if (root) {
 		file->p = file->root->p; // XXX dupe
@@ -51,9 +48,6 @@ R_API char* r_fs_file_copy_abs_path(RFSFile* file) {
 R_API RFSRoot* r_fs_root_new(const char* path, ut64 delta) {
 	char* p;
 	RFSRoot* root = R_NEW0 (RFSRoot);
-	if (!root) {
-		return NULL;
-	}
 	root->path = strdup (path);
 	if (!root->path) {
 		R_FREE (root);
@@ -81,9 +75,6 @@ R_API void r_fs_root_free(RFSRoot* root) {
 
 R_API RFSPartition* r_fs_partition_new(int num, ut64 start, ut64 length) {
 	RFSPartition* p = R_NEW0 (RFSPartition);
-	if (!p) {
-		return NULL;
-	}
 	p->number = num;
 	p->type = 0; // TODO we need an enum with all the partition types
 	p->start = start;

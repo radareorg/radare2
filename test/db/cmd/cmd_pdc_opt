@@ -178,6 +178,51 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# movw r0, 0x8008; movt r0, 0; ldr r0, [r0]: MOVT keeps Rd[15:0], so the load reads 0x8008
+NAME=pdc arm32 movw movt global folds to its flag
+FILE=malloc://0x9000
+ARGS=-a arm -b 32 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF
+f obj.myglobal @ 0x8008
+wx 080008e3000040e3000090e51eff2fe1
+af
+pdc~=
+EOF
+EXPECT=<<EOF
+    r0 = [obj.myglobal]
+EOF
+RUN
+
+# movw r0, 0x8008; movt r0, 0; ldr r0, [r0] with no flag at 0x8008
+NAME=pdc arm32 movw movt global without a flag
+FILE=malloc://0x9000
+ARGS=-a arm -b 32 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF
+wx 080008e3000040e3000090e51eff2fe1
+af
+pdc~=
+EOF
+EXPECT=<<EOF
+    r0 = [0x8008]
+EOF
+RUN
+
+# mov r1, 0; add r0, r1, r2: register flags are not folded as constants
+NAME=pdc arm32 register operand is not a flag
+FILE=malloc://0x2000
+ARGS=-a arm -b 32 -e anal.vars=false -e pdc.optimize=true
+CMDS=<<EOF
+f r2 @ 0x10
+wx 0010a0e3020081e01eff2fe1
+af
+pdc~=
+EOF
+EXPECT=<<EOF
+    r1 = 0
+    r0 = r1 + r2
+EOF
+RUN
+
 NAME=pdc arm32 flag updates are preserved
 FILE=malloc://0x2000
 ARGS=-a arm -b 32 -e anal.vars=false -e pdc.optimize=true

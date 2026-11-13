@@ -202,6 +202,7 @@ typedef struct plugin_data_t {
 	int define_macro;
 	/* file (and macro) stack */
 	int sp;
+	int expr_depth;
 	struct stack stack[MAX_INCLUDE]; /* maximum level of includes */
 } PluginData;
 

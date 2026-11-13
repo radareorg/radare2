@@ -1627,10 +1627,6 @@ noskip:
 				anal->iob.read_at (anal->iob.io, op->ptr, buf, sizeof (buf));
 				if ((buf[2] == 0xff || buf[2] == 0xfe) && buf[3] == 0xff) {
 					RLeaddrPair *pair = R_NEW0 (RLeaddrPair);
-					if (!pair) {
-						R_LOG_ERROR ("Cannot create RLeaddrPair");
-						gotoBeach (R_ANAL_RET_ERROR);
-					}
 					pair->op_addr = op->addr;
 					pair->leaddr = op->ptr; // XXX movdisp is dupped but seems to be trashed sometimes(?), better track leaddr separately
 					r_list_append (anal->leaddrs, pair);

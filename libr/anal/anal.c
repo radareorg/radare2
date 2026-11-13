@@ -152,7 +152,7 @@ static bool anal_esil_mem_read(void *mem, ut64 addr, ut8 *buf, int len) {
 			&& anal->iob.read_at (anal->iob.io, addr, buf, _len) == _len;
 	}
 	// do not set esil->trap or esil->trap_code here. esil handles that on it's own
-	// do not invoke esil->cmd_ioer, this is about to get removed from esil. core_esil is supposed to handle this
+	// do not invoke esil cmd_ioer, it does not exist anymore. core_esil is supposed to handle this
 	return anal->iob.read_at (anal->iob.io, addr, buf, len) == len;
 }
 
@@ -176,7 +176,7 @@ static bool anal_esil_mem_write(void *mem, ut64 addr, const ut8 *buf, int len) {
 			&& anal->iob.write_at (anal->iob.io, addr, buf, _len);
 	}
 	// do not set esil->trap or esil->trap_code here. esil handles that on it's own
-	// do not invoke esil->cmd_ioer, this is about to get removed from esil. core_esil is supposed to handle this
+	// do not invoke esil cmd_ioer, it does not exist anymore. core_esil is supposed to handle this
 	return anal->iob.write_at (anal->iob.io, addr, buf, len);
 }
 

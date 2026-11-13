@@ -56,9 +56,7 @@ static RList* entries(RBinFile *bf) {
 		return NULL;
 	}
 	RBinAddr *ptr = NULL;
-	if (!(ptr = R_NEW0 (RBinAddr))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinAddr);
 	int addr;
 	ut8 b[1024];
 	int last = r_buf_read_at (bf->buf, 0, b, sizeof (b)) - 4;

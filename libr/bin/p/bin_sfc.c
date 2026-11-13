@@ -94,9 +94,6 @@ static void addrom(RBinFile *bf, const char *name, int i, ut64 paddr, ut64 vaddr
 #if 0
 static void addsym(RList *ret, const char *name, ut64 addr, ut32 size) {
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
-	if (!ptr) {
-		return;
-	}
 	ptr->name = strdup (r_str_get (name));
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->size = size;
@@ -226,9 +223,7 @@ static RList* entries(RBinFile *bf) { //Should be 3 offsets pointed by NMI, RESE
 	}
 	/*
 	RBinAddr *ptr = NULL;
-	if (!(ptr = R_NEW0 (RBinAddr))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinAddr);
 	ptr->paddr = INES_HDR_SIZE;
 	ptr->vaddr = ROM_START_ADDRESS;
 	r_list_append (ret, ptr);

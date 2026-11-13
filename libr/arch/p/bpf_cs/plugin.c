@@ -1043,9 +1043,6 @@ static bool init(RArchSession *s) {
 		return false;
 	}
 	PluginData *pd = R_NEW0 (PluginData);
-	if (!pd) {
-		return false;
-	}
 	pd->bits = s->config->bits;
 	pd->endian = s->config->endian;
 	pd->cpu = s->config->cpu? strdup (s->config->cpu): NULL;

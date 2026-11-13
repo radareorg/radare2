@@ -9,10 +9,8 @@ R_API RIOSubMap *r_io_submap_new(RIO *io, RIOMapRef *mapref) {
 		return NULL;
 	}
 	RIOSubMap *sm = R_NEW (RIOSubMap);
-	if (sm) {
-		sm->mapref = *mapref;
-		sm->itv = map->itv;
-	}
+	sm->mapref = *mapref;
+	sm->itv = map->itv;
 	return sm;
 }
 

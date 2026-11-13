@@ -146,25 +146,26 @@ static const char *mnemonics[] = {
  * ~ + - (unary)  rd_factor
  */
 
+#define Z80_MAX_EXPR_DEPTH 128
+
 static int do_rd_expr(PluginData *pd, const char **p, char delimiter, int *valid, int level,
 	int *check);
 
 static int rd_number(PluginData *pd, const char **p, const char **endp, int base) {
-	int result = 0, i;
+	ut32 result = 0;
 	char num[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 	num[base] = '\0';
 	char *c;
 	*p = delspc (*p);
 	while (**p && (c = strchr (num, tolower ((const unsigned char)**p)))) {
-		i = c - num;
-		result = result * base + i;
+		result = result * base + (c - num);
 		(*p)++;
 	}
 	if (endp) {
 		*endp = *p;
 	}
 	*p = delspc (*p);
-	return result;
+	return (int)result;
 }
 
 static int rd_otherbasenumber(PluginData *pd, const char **p, int *valid) {
@@ -485,7 +486,8 @@ rd_factor(PluginData *pd, const char **p, int *valid, int level, int *check) {
 			if (value == 0) {
 				return -1;
 			}
-			result /= value;
+			// INT_MIN / -1 traps on x86
+			result = (value == -1)? (int)(0U - (ut32)result): result / value;
 		}
 		*p = delspc (*p);
 	}
@@ -530,23 +532,18 @@ static int rd_expr_shift(PluginData *pd, const char **p, int *valid, int level, 
 static int rd_expr_unequal(PluginData *pd, const char **p, int *valid, int level, int *check) {
 	int result = rd_expr_shift (pd, p, valid, level, check);
 	*p = delspc (*p);
-	if (**p == '<' && (*p)[1] == '=') {
+	while ((**p == '<' || **p == '>') && (*p)[1] != **p) {
+		const char op = **p;
+		const bool or_equal = (*p)[1] == '=';
 		*check = 0;
-		(*p) += 2;
-		return result <= rd_expr_unequal (pd, p, valid, level, check);
-	} else if (**p == '>' && (*p)[1] == '=') {
-		*check = 0;
-		(*p) += 2;
-		return result >= rd_expr_unequal (pd, p, valid, level, check);
-	}
-	if (**p == '<' && (*p)[1] != '<') {
-		*check = 0;
-		(*p)++;
-		return result < rd_expr_unequal (pd, p, valid, level, check);
-	} else if (**p == '>' && (*p)[1] != '>') {
-		*check = 0;
-		(*p)++;
-		return result > rd_expr_unequal (pd, p, valid, level, check);
+		(*p) += or_equal? 2: 1;
+		const int rhs = rd_expr_shift (pd, p, valid, level, check);
+		if (op == '<') {
+			result = or_equal? result <= rhs: result < rhs;
+		} else {
+			result = or_equal? result >= rhs: result > rhs;
+		}
+		*p = delspc (*p);
 	}
 	return result;
 }
@@ -554,17 +551,16 @@ static int rd_expr_unequal(PluginData *pd, const char **p, int *valid, int level
 static int rd_expr_equal(PluginData *pd, const char **p, int *valid, int level, int *check) {
 	int result = rd_expr_unequal (pd, p, valid, level, check);
 	*p = delspc (*p);
-	if (**p == '=') {
+	while (**p == '=' || (**p == '!' && (*p)[1] == '=')) {
+		const bool equal = **p == '=';
 		*check = 0;
 		++*p;
 		if (**p == '=') {
 			++*p;
 		}
-		return result == rd_expr_equal (pd, p, valid, level, check);
-	} else if (**p == '!' && (*p)[1] == '=') {
-		*check = 0;
-		(*p) += 2;
-		return result != rd_expr_equal (pd, p, valid, level, check);
+		const int rhs = rd_expr_unequal (pd, p, valid, level, check);
+		result = equal? result == rhs: result != rhs;
+		*p = delspc (*p);
 	}
 	return result;
 }
@@ -572,10 +568,11 @@ static int rd_expr_equal(PluginData *pd, const char **p, int *valid, int level, 
 static int rd_expr_and(PluginData *pd, const char **p, int *valid, int level, int *check) {
 	int result = rd_expr_equal (pd, p, valid, level, check);
 	*p = delspc (*p);
-	if (**p == '&') {
+	while (**p == '&') {
 		*check = 0;
 		(*p)++;
-		result &= rd_expr_and (pd, p, valid, level, check);
+		result &= rd_expr_equal (pd, p, valid, level, check);
+		*p = delspc (*p);
 	}
 	return result;
 }
@@ -583,10 +580,11 @@ static int rd_expr_and(PluginData *pd, const char **p, int *valid, int level, in
 static int rd_expr_xor(PluginData *pd, const char **p, int *valid, int level, int *check) {
 	int result = rd_expr_and (pd, p, valid, level, check);
 	*p = delspc (*p);
-	if (**p == '^') {
+	while (**p == '^') {
 		*check = 0;
 		(*p)++;
-		result ^= rd_expr_xor (pd, p, valid, level, check);
+		result ^= rd_expr_and (pd, p, valid, level, check);
+		*p = delspc (*p);
 	}
 	return result;
 }
@@ -594,10 +592,11 @@ static int rd_expr_xor(PluginData *pd, const char **p, int *valid, int level, in
 static int rd_expr_or(PluginData *pd, const char **p, int *valid, int level, int *check) {
 	int result = rd_expr_xor (pd, p, valid, level, check);
 	*p = delspc (*p);
-	if (**p == '|') {
+	while (**p == '|') {
 		*check = 0;
 		(*p)++;
-		result |= rd_expr_or (pd, p, valid, level, check);
+		result |= rd_expr_xor (pd, p, valid, level, check);
+		*p = delspc (*p);
 	}
 	return result;
 }
@@ -605,12 +604,13 @@ static int rd_expr_or(PluginData *pd, const char **p, int *valid, int level, int
 static int do_rd_expr(PluginData *pd, const char **p, char delimiter, int *valid, int level, int *check) {
 	/* read an expression. delimiter can _not_ be '?' */
 	*p = delspc (*p);
-	if (!**p || **p == delimiter) {
+	if (!**p || **p == delimiter || pd->expr_depth >= Z80_MAX_EXPR_DEPTH) {
 		if (valid) {
 			*valid = 0;
 		}
 		return 0;
 	}
+	pd->expr_depth++;
 	int result = rd_expr_or (pd, p, valid, level, check);
 	*p = delspc (*p);
 	if (**p == '?') {
@@ -636,6 +636,7 @@ static int do_rd_expr(PluginData *pd, const char **p, char delimiter, int *valid
 			*valid = 0;
 		}
 	}
+	pd->expr_depth--;
 	return result;
 }
 
@@ -829,6 +830,13 @@ static int rd_byte(PluginData *pd, const char **p, char delimiter) {
 	return 1;
 }
 
+/* read a db/dw/ds operand up to the delimiter */
+static bool rd_data_value(PluginData *pd, const char **p, char delimiter, int *value) {
+	int valid;
+	*value = rd_expr (pd, p, delimiter, &valid, pd->sp);
+	return valid || pd->sizing;
+}
+
 /* read (SP), DE, or AF */
 static inline int rd_ex1(PluginData *pd, const char **p) {
 #define DE 2
@@ -950,7 +958,7 @@ static int rd_jp(PluginData *pd, const char **p) {
 	int i;
 	const char *list[] = {
 		"nz", "z", "nc", "c", "po", "pe", "p", "m", "( ix )", "( iy )",
-		"(hl)", NULL
+		"( hl )", NULL
 	};
 	i = indx (pd, p, list, 0, NULL);
 	if (i < 9) {
@@ -1101,16 +1109,12 @@ static int rd_r_(PluginData *pd, const char **p) {
 
 /* read a number from 0 to 7, for bit, set or res */
 static int rd_0_7(PluginData *pd, const char **p) {
-	*p = delspc (*p);
-	if (**p == 0) {
+	int valid;
+	pd->bitsetres = delspc (*p);
+	const int bit_num = rd_expr (pd, p, ',', &valid, pd->sp);
+	if (!valid || bit_num < 0 || bit_num > 7) {
 		return 0;
 	}
-	int bit_num = **p - '0';
-	if (bit_num < 0 || bit_num > 7) {
-		return 0;
-	}
-	pd->bitsetres = *p;
-	skipword (pd, p, ',');
 	return bit_num + 1; /* return 1-8 to indicate bit 0-7 */
 }
 
@@ -1226,6 +1230,9 @@ static int rd_lda(PluginData *pd, const char **p) {
 	};
 	const char *nn;
 	i = indx (pd, p, list, 0, &nn);
+	if (i < 2) { /* nothing matched or (sp) */
+		return 0;
+	}
 	if (i == 2 || i == 5) {
 		pd->indexed = (i == 2)? 0xFD: 0xDD;
 		pd->indexjmp = nn;
@@ -1918,6 +1925,7 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf, int _
 			wrtb (0x20 + r);
 		}
 		break;
+	case Z80_SLL:
 	case Z80_SLI:
 		if (! (r = rd_r_(pd, &ptr))) {
 			break;
@@ -1987,8 +1995,12 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf, int _
 					++ptr;
 				}
 			} else {
-				/* Read expression.  */
-				skipword (pd, &ptr, ',');
+				int value;
+				if (!rd_data_value (pd, &ptr, ',', &value)) {
+					pd->obuflen = 0;
+					break;
+				}
+				write_one_byte (value, 0);
 			}
 			ptr = delspc (ptr);
 			if (*ptr == ',') {
@@ -2003,38 +2015,43 @@ static int assemble(PluginData *pd, const char *str, unsigned char *_obuf, int _
 		break;
 	case Z80_DEFW:
 	case Z80_DW:
-		if (!rd_word (pd, &ptr, ',')) {
+		ptr = delspc (ptr);
+		if (!*ptr) {
 			R_LOG_ERROR ("No data for word definition");
 			break;
 		}
 		while (1) {
+			int value;
+			if (!rd_data_value (pd, &ptr, ',', &value)) {
+				pd->obuflen = 0;
+				break;
+			}
+			wrtb (value);
+			wrtb (value >> 8);
 			ptr = delspc (ptr);
 			if (*ptr != ',') {
 				break;
 			}
 			++ptr;
-			if (!rd_word (pd, &ptr, ',')) {
-				R_LOG_ERROR ("Missing expression in defw");
-			}
 		}
 		break;
 	case Z80_DEFS:
 	case Z80_DS:
 		r = rd_expr (pd, &ptr, ',', NULL, pd->sp);
 		if (r < 0) {
-			R_LOG_ERROR ("ds should have its first argument >=0 (not -0x%x)", -r);
+			R_LOG_ERROR ("ds should have its first argument >=0 (not %d)", r);
 			break;
 		}
+		int fill = 0;
 		ptr = delspc (ptr);
 		if (*ptr) {
 			rd_comma (&ptr);
-			pd->readbyte = 0;
-			rd_byte (pd, &ptr, '\0');
-			pd->writebyte = 0;
-			break;
+			if (!rd_data_value (pd, &ptr, '\0', &fill)) {
+				break;
+			}
 		}
 		for (i = 0; i < r && pd->obuflen <= pd->obufsz; i++) {
-			write_one_byte (0, 0);
+			write_one_byte (fill, 0);
 		}
 		break;
 	case Z80_END:

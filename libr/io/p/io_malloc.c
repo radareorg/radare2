@@ -79,9 +79,6 @@ static bool __check(RIO *io, const char *pathname, bool many) {
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__check (io, pathname, 0)) {
 		RIOMalloc *mal = R_NEW0 (RIOMalloc);
-		if (!mal) {
-			return NULL;
-		}
 		if (r_str_startswith (pathname, "slurp://")) {
 			size_t size;
 			char *buf = r_file_slurp (pathname + 8, &size);

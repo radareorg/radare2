@@ -82,10 +82,6 @@ static Rvc *rvc_rvc_new(const char *path) {
 	}
 #endif
 	Rvc *rvc = R_NEW (Rvc);
-	if (!rvc) {
-		R_LOG_ERROR ("Failed to create repo");
-		return NULL;
-	}
 	rvc->path = strdup (path);
 	if (!rvc->path) {
 		free (rvc);
@@ -203,9 +199,6 @@ static bool update_blobs(const RList *ignore, RList *blobs, const RList *nh) {
 		return (bool) blob->fhash;
 	}
 	blob = R_NEW (RvcBlob);
-	if (!blob) {
-		return false;
-	}
 	blob->fhash = strdup (nh->tail->data);
 	blob->fname = strdup (nh->head->data);
 	if (!blob->fhash || !blob->fname) {
@@ -337,10 +330,6 @@ static RvcBlob *bfadd(Rvc *rvc, const char *fname) {
 		return NULL;
 	}
 	RvcBlob *ret = R_NEW (RvcBlob);
-	if (!ret) {
-		free (absp);
-		return NULL;
-	}
 	ret->fname = absp2rp (rvc, absp);
 	if (!ret->fname) {
 		free (ret);

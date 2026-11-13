@@ -64,16 +64,14 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		return NULL;
 	}
 	RIOFdata *fdd = R_NEW0 (RIOFdata);
-	if (fdd) {
-		fdd->fd = r_num_math (NULL, pathname + strlen (FDURI));
+	fdd->fd = r_num_math (NULL, pathname + strlen (FDURI));
 #if R2__WINDOWS__
-		fdd->fd = _open_osfhandle (fdd->fd, 0);
+	fdd->fd = _open_osfhandle (fdd->fd, 0);
 #endif
-		if (fdd->fd < 0) {
-			free (fdd);
-			R_LOG_ERROR ("Invalid filedescriptor");
-			return NULL;
-		}
+	if (fdd->fd < 0) {
+		free (fdd);
+		R_LOG_ERROR ("Invalid filedescriptor");
+		return NULL;
 	}
 	return r_io_desc_new (io, &r_io_plugin_fd, pathname, R_PERM_RW | rw, mode, fdd);
 }

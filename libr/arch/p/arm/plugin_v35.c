@@ -298,9 +298,6 @@ static const char *decode_shift_64(ShiftType shift) {
 static void opex64(RStrBuf *buf, Instruction *insn) {
 	int i;
 	PJ *pj = pj_new ();
-	if (!pj) {
-		return;
-	}
 	pj_o (pj);
 	pj_ka (pj, "operands");
 	Instruction *x = insn;

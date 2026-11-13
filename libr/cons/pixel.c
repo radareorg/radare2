@@ -9,9 +9,6 @@ R_API RConsPixel *r_cons_pixel_new(int w, int h) {
 		return NULL;
 	}
 	RConsPixel *p = R_NEW (RConsPixel);
-	if (!p) {
-		return NULL;
-	}
 	p->w = w;
 	p->h = h;
 	p->buf_size = buf_size;

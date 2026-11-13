@@ -5,9 +5,6 @@
 R_API RStack *r_stack_new(ut32 n) {
 	R_RETURN_VAL_IF_FAIL (n > 0 && n < ST32_MAX, NULL);
 	RStack *s = R_NEW0 (RStack);
-	if (!s) {
-		return NULL;
-	}
 	s->elems = R_NEWS0 (void *, n);
 	if (!s->elems) {
 		free (s);

@@ -87,9 +87,6 @@ R_API int r_bp_traptrace_add(RBreakpoint *bp, ut64 from, ut64 to) {
 	r_bp_get_bytes (bp, trap, (int)len, bp->endian, 0);
 
 	RBreakpointTrace *trace = R_NEW (RBreakpointTrace);
-	if (!trace) {
-		goto cleanup;
-	}
 	trace->addr = from;
 	trace->addr_end = to;
 	trace->bits = bits;

@@ -205,10 +205,8 @@ static void r_type_test_free(TypeTest *tt) {
 
 static TypeTest *r_type_test_new(const char *name) {
 	TypeTest *tt = R_NEW0 (TypeTest);
-	if (tt) {
-		r_ref_init (tt, r_type_test_free);
-		tt->name = name;
-	}
+	r_ref_init (tt, r_type_test_free);
+	tt->name = name;
 	return tt;
 }
 

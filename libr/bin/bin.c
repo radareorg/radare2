@@ -747,10 +747,8 @@ R_API bool r_bin_ldr_add(RBin *bin, RBinLdrPlugin *foo) {
 		return false;
 	}
 	RBinLdrPlugin *p = R_NEW0 (RBinLdrPlugin);
-	if (p) {
-		*p = *foo;
-		r_list_append (ldrs, p);
-	}
+	*p = *foo;
+	r_list_append (ldrs, p);
 	return p != NULL;
 }
 
@@ -761,10 +759,8 @@ R_API bool r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo) {
 		return false;
 	}
 	RBinXtrPlugin *p = R_NEW0 (RBinXtrPlugin);
-	if (p) {
-		*p = *foo;
-		r_list_append (xtrs, p);
-	}
+	*p = *foo;
+	r_list_append (xtrs, p);
 	return p != NULL;
 }
 

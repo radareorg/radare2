@@ -63,9 +63,7 @@ static bool sections_vec(RBinFile *bf) {
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 #if 0
 	RBinSection *ptr;
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("vtable");
 	ptr->paddr = ptr->vaddr = 0;
 	ptr->size = ptr->vsize = 0x100;
@@ -73,9 +71,7 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("header");
 	ptr->paddr = ptr->vaddr = 0x100;
 	ptr->size = ptr->vsize = sizeof (SMD_Header);
@@ -83,9 +79,7 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("text");
 	ptr->paddr = ptr->vaddr = 0x100 + sizeof (SMD_Header);
 	{

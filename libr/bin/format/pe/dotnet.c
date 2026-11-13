@@ -1386,10 +1386,6 @@ static void dotnet_parse_tilde_typespec(PE *pe, PTILDE_HEADER tilde_header,
 			continue;
 		}
 		DotNetSymbol *sym = R_NEW0 (DotNetSymbol);
-		if (!sym) {
-			free (name);
-			break;
-		}
 		sym->name = name;
 		sym->short_name = strdup (name);
 		sym->type = strdup ("typespec");
@@ -1897,10 +1893,6 @@ static void dotnet_parse_tilde_standalonesig(PE *pe, PTILDE_HEADER tilde_header,
 			continue;
 		}
 		DotNetSymbol *sym = R_NEW0 (DotNetSymbol);
-		if (!sym) {
-			dotnet_method_sig_fini (&method_sig);
-			break;
-		}
 		sym->name = r_str_newf ("calli.%u", i + 1);
 		sym->short_name = strdup ("calli");
 		sym->signature = dotnet_build_method_signature ("calli", &method_sig,
@@ -1942,10 +1934,6 @@ static void dotnet_parse_tilde_methodspec(PE *pe, PTILDE_HEADER tilde_header,
 		char *arguments = dotnet_parse_method_instantiation (pe, streams->blob,
 			metadata_root, blob_index);
 		DotNetSymbol *sym = R_NEW0 (DotNetSymbol);
-		if (!sym) {
-			free (arguments);
-			break;
-		}
 		sym->name = dotnet_add_generic_arguments (base? base->name: "methodspec", arguments);
 		sym->short_name = dotnet_add_generic_arguments (base? base->short_name: "methodspec", arguments);
 		sym->signature = dotnet_add_generic_arguments (base? base->signature: NULL, arguments);

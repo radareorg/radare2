@@ -563,9 +563,6 @@ R_API char *r_io_cache_list(RIO *io, int rad, bool many) {
 	PJ *pj = NULL;
 	if (rad == 2 || rad == 'j') {
 		pj = pj_new ();
-		if (!pj) {
-			return NULL;
-		}
 		pj_o (pj);
 		pj_ka (pj, many? "layers": "layer");
 	}

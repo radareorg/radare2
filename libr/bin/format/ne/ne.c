@@ -375,10 +375,6 @@ RList *r_bin_ne_get_entrypoints(r_bin_ne_obj_t *bin) {
 	RList *entries = r_list_newf (free);
 	if (bin->ne_header->csEntryPoint) {
 		RBinAddr *entry = R_NEW0 (RBinAddr);
-		if (!entry) {
-			r_list_free (entries);
-			return NULL;
-		}
 		entry->bits = 16;
 		ut32 entry_cs = bin->ne_header->csEntryPoint;
 		if (entry_cs > 0 && entry_cs <= bin->ne_header->SegCount) {
@@ -409,10 +405,6 @@ RList *r_bin_ne_get_entrypoints(r_bin_ne_obj_t *bin) {
 				break;
 			}
 			RBinAddr *entry = R_NEW0 (RBinAddr);
-			if (!entry) {
-				r_list_free (entries);
-				return NULL;
-			}
 			off++;
 			if (!bundle_type) { // Skip
 				off--;

@@ -834,8 +834,6 @@ TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_ops, TPE
 	int ret, total = 0;
 	TPEmuResult res = TP_EMU_DONE;
 	RAnalOp *next_op = R_NEW0 (RAnalOp);
-	RCons *cons = r_cons_singleton ();
-	r_cons_break_push (cons, NULL, NULL);
 	RVecBuf buf;
 	RVecBuf_init (&buf);
 	RVecUT64 bblist;
@@ -895,10 +893,6 @@ TPEmuResult tp_emulate_linear(TPState *tps, RAnalFunction *fcn, int max_ops, TPE
 		ut64 addr = bb_addr;
 		bool have_cached_op = false;
 		for (i = 0; i < bb_size;) {
-			if (r_cons_is_breaked (cons)) {
-				res = TP_EMU_BREAK;
-				goto beach;
-			}
 			if ((max_ops && ++total > max_ops) || type_trace_full (&etrace->db)) {
 				res = TP_EMU_BUDGET;
 				goto beach;
@@ -1012,7 +1006,6 @@ beach:
 	ht_up_free (bbstate);
 	r_anal_op_fini (&aop);
 	r_anal_op_free (next_op); // a cached lookahead op may still be live on a break/budget exit
-	r_cons_break_pop (cons);
 	RVecBuf_fini (&buf);
 	RVecUT64_fini (&bblist);
 	return res;

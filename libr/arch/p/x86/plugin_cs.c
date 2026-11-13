@@ -57,9 +57,6 @@ static bool init(RArchSession *as) {
 		return false;
 	}
 	PluginData *pd = R_NEW0 (PluginData);
-	if (!pd) {
-		return false;
-	}
 	// pd->cpu = as->config->cpu? strdup (as->config->cpu): NULL;
 	if (!r_arch_cs_init (as, &pd->cpd.cs_handle)) {
 		R_LOG_ERROR ("Cannot initialize capstone");
@@ -165,9 +162,6 @@ static void opex(RArchSession *as, RStrBuf *buf, cs_insn *insn, int mode) {
 
 	int i;
 	PJ *pj = pj_new ();
-	if (!pj) {
-		return;
-	}
 	pj_o (pj);
 	cs_x86 *x = &insn->detail->x86;
 	if (x->op_count == 0) {

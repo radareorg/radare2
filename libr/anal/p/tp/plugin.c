@@ -55,9 +55,6 @@ RAnalOp *tp_anal_op(RAnal *anal, ut64 addr, int mask) {
 		goto beach;
 	}
 	op = R_NEW0 (RAnalOp);
-	if (!op) {
-		goto beach;
-	}
 	if (r_anal_op (anal, op, addr, buf, nread, mask) < 1) {
 		r_anal_op_free (op);
 		op = NULL;
@@ -144,10 +141,8 @@ static char *tp_cmd(RAnal *anal, const char *input) {
 			R_LOG_WARN ("Cannot find function at current offset");
 			return strdup ("");
 		}
-		r_cons_break_push (r_cons_singleton (), NULL, NULL);
 		r_esil_set_pc (anal->esil, fcn->addr);
 		r_anal_type_match (anal, fcn);
-		r_cons_break_pop (r_cons_singleton ());
 		if (anal->coreb.cfgGetB && anal->coreb.cfgGetB (core, "types.synth") && synth_args_untyped (fcn)) {
 			type_synth (anal, fcn, true, NULL);
 		}

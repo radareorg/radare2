@@ -34,9 +34,7 @@ static RBinAddr *binsym(RBinFile *bf, int type) {
 	RBinAddr *ret = NULL;
 	switch (type) {
 	case R_BIN_SYM_MAIN:
-		if (!(ret = R_NEW (RBinAddr))) {
-			return NULL;
-		}
+		ret = R_NEW (RBinAddr);
 		ret->paddr = ret->vaddr = r_bin_te_get_main_paddr (bf->bo->bin_obj);
 		break;
 	}

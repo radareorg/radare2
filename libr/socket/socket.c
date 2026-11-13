@@ -687,9 +687,6 @@ R_API RSocket *r_socket_accept(RSocket *s) {
 		return NULL;
 	}
 	sock = R_NEW0 (RSocket);
-	if (!sock) {
-		return NULL;
-	}
 	// signal (SIGPIPE, SIG_DFL);
 	sock->fd = accept (s->fd, (struct sockaddr *)&s->sa, &salen);
 	if (sock->fd == R_INVALID_SOCKET) {
@@ -965,10 +962,8 @@ R_API int r_socket_gets(RSocket *s, char *buf, int size) {
 
 R_API RSocket *r_socket_new_from_fd(int fd) {
 	RSocket *s = R_NEW0 (RSocket);
-	if (s) {
-		s->fd = fd;
-		s->proto = R_SOCKET_PROTO_DEFAULT;
-	}
+	s->fd = fd;
+	s->proto = R_SOCKET_PROTO_DEFAULT;
 	return s;
 }
 

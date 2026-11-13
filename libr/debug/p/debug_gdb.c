@@ -614,9 +614,7 @@ static RDebugInfo* r_debug_gdb_info(RDebug *dbg, const char *arg) {
 	}
 
 	RDebugInfo *rdi;
-	if (!(rdi = R_NEW0 (RDebugInfo))) {
-		return NULL;
-	}
+	rdi = R_NEW0 (RDebugInfo);
 	RList *th_list;
 	bool list_alloc = false;
 	if (dbg->threads) {
@@ -660,9 +658,6 @@ static bool init_plugin(RDebug *dbg, RDebugPluginSession *ds) {
 	R_RETURN_VAL_IF_FAIL (dbg && ds, false);
 
 	PluginData *pd = R_NEW0 (PluginData);
-	if (!pd) {
-		return false;
-	}
 
 	pd->support_sw_bp = UNKNOWN;
 	pd->support_hw_bp = UNKNOWN;

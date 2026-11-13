@@ -13,6 +13,7 @@ static bool core_esil_op_todo(REsil *esil) {
 	if (R_STR_ISNOTEMPTY (core->esil.cmds.todo)) {
 		r_core_cmdf (core, "%s %" PFMT64d " 0", core->esil.cmds.todo, esil->addr);
 	}
+	core->esil.esil.parse_stop = 2;
 	return true;
 }
 
@@ -264,11 +265,6 @@ static void core_esil_record_stepback(RCore *core) {
 	RCoreEsilStepBack *cesb = NULL;
 	if (sb->max > r_list_length (&sb->list)) {
 		cesb = R_NEW (RCoreEsilStepBack);
-		if (!cesb) {
-			R_LOG_WARN ("RCoreEsilStepBack allocation failed");
-			r_strbuf_fini (&sb->revert);
-			return;
-		}
 		if (!r_list_push (&sb->list, cesb)) {
 			R_LOG_WARN ("Pushing RCoreEsilStepBack failed");
 			free (cesb);

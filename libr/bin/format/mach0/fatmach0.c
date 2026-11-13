@@ -107,12 +107,10 @@ struct r_bin_fatmach0_obj_t* r_bin_fatmach0_new(const char* file) {
 struct r_bin_fatmach0_obj_t* r_bin_fatmach0_from_buffer_new(RBuffer *b) {
 	R_RETURN_VAL_IF_FAIL (b, NULL);
 	struct r_bin_fatmach0_obj_t *bo = R_NEW0 (struct r_bin_fatmach0_obj_t);
-	if (bo) {
-		bo->b = r_ref (b);
-		bo->size = r_buf_size (bo->b); // XXX implicit in bo->b
-		if (!r_bin_fatmach0_init (bo)) {
-			return r_bin_fatmach0_free (bo);
-		}
+	bo->b = r_ref (b);
+	bo->size = r_buf_size (bo->b); // XXX implicit in bo->b
+	if (!r_bin_fatmach0_init (bo)) {
+		return r_bin_fatmach0_free (bo);
 	}
 	return bo;
 }

@@ -120,9 +120,6 @@ static void *iob_net_open(const char *path) {
 	size_t i;
 
 	iobnet_t *obj = R_NEW0 (iobnet_t);
-	if (!obj) {
-		return NULL;
-	}
 
 	char *host = strdup (path);
 	char *port = strchr (host, ':');
