@@ -54,6 +54,17 @@ WARN: bins/pdb/Project1.pdb does not belong to this binary (PDB GUID C6B50FBD700
 EOF
 RUN
 
+NAME=idp accepts a PDB without a global symbol stream
+FILE=-
+CMDS=<<EOF
+idpi bins/pdb/issue_12924.pdb~not-present
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+WARN: Cannot find base address, flags will probably be misplaced
+EOF
+RUN
+
 NAME=idp creates the functions of the PDB public symbols
 FILE=bins/pdb/SimplePDB.exe
 CMDS=<<EOF
@@ -73,6 +84,20 @@ idpi* bins/pdb/SimplePDB-thiscall.pdb~afc
 EOF
 EXPECT=<<EOF
 '@0x401000'afc thiscall
+EOF
+RUN
+NAME=idp adds the static functions of the module symbols
+FILE=bins/pdb/SimplePDB.exe
+CMDS=<<EOF
+idp bins/pdb/SimplePDB.pdb
+afl~pre_c,tmainCRT
+f~pre_cpp_init
+EOF
+EXPECT=<<EOF
+0x0040112b   24    330 pdb.__tmainCRTStartup
+0x00401027   11    185 pdb.pre_c_init
+0x004010e0    3     75 pdb.pre_cpp_init
+0x004010e0 75 pdb.pre_cpp_init
 EOF
 RUN
 NAME=idp and baddr
@@ -380,6 +405,9 @@ idpi bins/pdb/pub32-missing-names.pdb~.text
 EOF
 EXPECT=<<EOF
 0x00001010  2  .text  valid
+0x00001000  2  .text  function
+0x00001018  2  .text  main
+0x00001056  2  .text  mainCRTStartup
 EOF
 RUN
 

@@ -686,6 +686,7 @@ typedef enum EStream_{
 	ePDB_STREAM_XDATA,
 	ePDB_STREAM_PDATA,
 	ePDB_STREAM_TOKEN_RID_MAP,
+	ePDB_STREAM_MODULE,
 	ePDB_STREAM_MAX
 } EStream;
 
@@ -1256,6 +1257,24 @@ typedef struct {
 	SCString name;
 }) SGlobal;
 #define PDB_PUBSYM_FUNCTION 2 // CV_PUBSYMFLAGS.fFunction in S_PUB32 symtype
+
+// procedure symbols of the module streams listed in the DBI stream
+#define PDB_S_LPROC32 0x110F
+#define PDB_S_GPROC32 0x1110
+#define PDB_S_LPROC32_ID 0x1146
+#define PDB_S_GPROC32_ID 0x1147
+
+typedef struct {
+	ut32 offset;
+	ut32 size;
+	ut16 segment;
+	char *name;
+} SModuleProc;
+
+typedef struct {
+	ut32 sym_size;
+	RList *procs;
+} SModuleStream;
 // end GDATA structures
 
 // PE stream structures
