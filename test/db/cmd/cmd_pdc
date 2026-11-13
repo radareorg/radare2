@@ -57,6 +57,101 @@ x0 = puts ("a (b), \" ; // c") // user's note
 EOF
 RUN
 
+# 0x4 starts fcn.00000004, so it is not a block of fcn.00000000 (afb)
+NAME=pdc linear walk does not step onto a block of another function
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e pdc.structured=false
+wx 85ff750c31c0ffc0c3 @ 0
+wx ffc7ebec @ 0x10
+af @ 4
+af @ 0
+afb @ 0
+pdc @ 0~loc_
+EOF
+EXPECT=<<EOF
+0x00000000 0x00000004 00:0000 4 j 0x00000010 f 0x00000004
+0x00000010 0x00000014 00:0000 4 j 0x00000000
+    loc_0x00000000:
+        if (v) goto loc_0x10 // unlikely
+    loc_0x00000010:
+        goto loc_0    // fcn.00000000(0x1)
+EOF
+EXPECT_ERR=
+RUN
+
+# 0x8 starts fcn.00000008, so the fall-through of block 0x4 is not a block of fcn.00000000 (afb)
+NAME=pdc linear walk does not step onto another function from an analyzed block
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e pdc.structured=false
+wx 85ff750c85f6751831c0c3 @ 0
+wx ebf2 @ 0x10
+wx c3 @ 0x20
+af @ 8
+af @ 0
+afb @ 0
+pdc @ 0~loc_
+EOF
+EXPECT=<<EOF
+0x00000000 0x00000004 00:0000 4 j 0x00000010 f 0x00000004
+0x00000004 0x00000008 00:0000 4 j 0x00000020 f 0x00000008
+0x00000010 0x00000012 00:0000 2 j 0x00000004
+0x00000020 0x00000021 00:0000 1
+        if (v) goto loc_0x10 // unlikely
+        goto loc_0x00000004;
+    loc_0x00000010:
+        goto loc_4
+            goto loc_0x00000004;
+    loc_0x00000004:
+        if (v) goto loc_0x20 // unlikely
+    loc_0x00000020:
+EOF
+EXPECT_ERR=
+RUN
+
+# 0x4 starts fcn.00000004; block 0x0 loops on itself (jne 0)
+NAME=pdc linear walk does not fall into another function after a self-loop
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e pdc.structured=false
+wx 85ff75fc31c0c3 @ 0
+af @ 4
+af @ 0
+afb @ 0
+pdc @ 0~loc_
+EOF
+EXPECT=<<EOF
+0x00000000 0x00000004 00:0000 4 j 0x00000000 f 0x00000004
+    loc_0x00000000:
+        if (v) goto loc_0 // unlikely
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=pdc linear walk keeps the fall-through block of the same function
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e pdc.structured=false
+wx 85ff750c31c0ffc0c3 @ 0
+wx ffc7ebec @ 0x10
+af @ 0
+pdc @ 0~loc_
+EOF
+EXPECT=<<EOF
+    loc_0x00000000:
+        if (v) goto loc_0x10 // unlikely
+    loc_0x00000010:
+        goto loc_0    // fcn.00000000(0x1)
+            goto loc_0x00000004;
+    loc_0x00000004:
+EOF
+RUN
+
 NAME=pdc assigns floating return registers and omits void assignments
 FILE=malloc://4096
 ARGS=-a arm -b 64

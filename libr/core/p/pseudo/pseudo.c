@@ -2381,6 +2381,10 @@ static bool pdc_structured_body(PDCState *state, int indent) {
 	return reducible;
 }
 
+static inline RAnalBlock *fcn_block(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
+	return r_anal_function_contains (fcn, addr)? r_anal_bb_from_offset (anal, addr): NULL;
+}
+
 static bool pdc_decompile_function(RCore *core, const char *input, PDCState *parent, const char *inline_prefix, char **inline_output) {
 	RCons *cons = r_core_get_cons (core);
 	bool show_c_headers = *input == 'c';
@@ -2671,9 +2675,12 @@ static bool pdc_decompile_function(RCore *core, const char *input, PDCState *par
 					PRINTF (r0? "return %s;": "return;", r0);
 					sdb_setf (state.goto_cache, "1", 0, "return.%" PFMT64x, bb->addr);
 				}
-				RAnalBlock *nbb = r_anal_bb_from_offset (core->anal, bb->fail);
-				if (r_list_contains (visited, nbb)) {
-					nbb = r_anal_bb_from_offset (core->anal, bb->jump);
+				RAnalBlock *nbb = fcn_block (core->anal, state.fcn, bb->fail);
+				if (!nbb || r_list_contains (visited, nbb)) {
+					nbb = fcn_block (core->anal, state.fcn, bb->jump);
+					if (!nbb) {
+						break;
+					}
 					if (bb->jump == bb->addr) {
 						R_LOG_DEBUG ("Basic block loop found at 0x%08" PFMT64x, bb->jump);
 						if (r_list_contains (visited, nbb)) {
@@ -2722,6 +2729,9 @@ static bool pdc_decompile_function(RCore *core, const char *input, PDCState *par
 					} else {
 						break;
 					}
+				}
+				if (fail != UT64_MAX && !r_anal_function_contains (state.fcn, fail)) {
+					fail = UT64_MAX;
 				}
 				if (sdb_const_getf (state.db, 0, "loc.%" PFMT64x, jump)) {
 					if (fail != UT64_MAX && !sdb_const_getf (state.db, 0, "loc.%" PFMT64x, fail)) {
