@@ -1027,6 +1027,18 @@ DEF_STATE_ACTION(V) {
 
 static char *get_num(SStateInfo *state) {
 	char *ptr = NULL;
+	if (*state->buff_for_parsing == '?' && state->buff_for_parsing[1] != '?') {
+		// negative number
+		state->buff_for_parsing++;
+		state->amount_of_read_chars++;
+		char *num = get_num (state);
+		if (!num) {
+			return NULL;
+		}
+		ptr = r_str_newf ("-%s", num);
+		free (num);
+		return ptr;
+	}
 	if (*state->buff_for_parsing >= '0' && *state->buff_for_parsing <= '8') {
 		ptr = malloc (2);
 		if (!ptr) {

@@ -134,3 +134,17 @@ Ex5::`RTTI Class Hierarchy Descriptor'
 const Ex5::`RTTI Complete Object Locator'{for `Ex2'}
 EOF
 RUN
+
+NAME=msvc negative numbers
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc "??_R1A@?0A@EA@Ex5@@8"
+!rabin2 -D msvc '??$f@$0?L@@@YAXXZ'
+!rabin2 -D msvc '??$f@$0??@@YAXXZ'
+EOF
+EXPECT=<<EOF
+Ex5::`RTTI Base Class Descriptor at (0,-1,0,64)'
+void __cdecl f<-11>(void)
+??$f@$0??@@YAXXZ
+EOF
+RUN
