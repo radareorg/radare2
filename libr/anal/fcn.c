@@ -1033,6 +1033,7 @@ typedef struct {
 	ut64 section_to;
 	bool section_exec;
 	bool walk_depth; // a fresh function's walk, so fcn->stack is trustworthy
+	bool follow; // false when only rebuilding a known block (afb+): jump targets are not analyzed
 	ReadAhead ra; // one cache for the walk, so a block inside the last read reads no io
 } FcnWalk;
 
@@ -1872,7 +1873,7 @@ noskip:
 				bb->jump = op->jump;
 				bb->fail = UT64_MAX;
 			}
-			if (!anal->opt.tailcall) {
+			if (!anal->opt.tailcall || !w->follow) {
 				goto beach;
 			}
 			// TAILCALL CHECKS BELOW
@@ -2532,6 +2533,7 @@ static int fcn_walk(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, bool f
 		.flagbounds = anal->opt.flagbounds,
 		.propagate_noreturn = anal->opt.propagate_noreturn,
 		.nopskip = anal->opt.nopskip && r_arch_info (anal->arch, R_ARCH_INFO_ISVM) != R_ARCH_INFO_ISVM,
+		.follow = follow,
 	};
 	w.is_arm = r_str_startswith (arch, "arm");
 	w.is_mips = !w.is_arm && r_str_startswith (arch, "mips");

@@ -89,3 +89,19 @@ opaddr: 0x1000011e9
 opaddr: 0x1000011ec
 EOF
 RUN
+
+NAME=afb+ does not analyze the target of a tail call
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx e90b000000 @ 0
+wx 5589e5c3 @ 0x10
+af+ 0 stub
+afb+ 0 0 5 0x10
+afl
+EOF
+EXPECT=<<EOF
+0x00000000    1      5 stub
+EOF
+RUN
