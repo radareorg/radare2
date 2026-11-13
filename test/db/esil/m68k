@@ -19,3 +19,19 @@ if (vc) jmp 0x12
 jmp 0x14
 EOF
 RUN
+
+# M68000 PRM: ADD/SUB/SUBQ write the second (destination) operand; TST compares with zero
+NAME=m68k pseudo add sub tst
+FILE=malloc://16
+ARGS=-a m68k
+CMDS=<<EOF
+wx d24053404a40
+e asm.pseudo=true
+pi 3
+EOF
+EXPECT=<<EOF
+d1 += d0
+d0 -= 0x1
+d0 == 0
+EOF
+RUN
