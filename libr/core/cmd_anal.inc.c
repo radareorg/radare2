@@ -16668,7 +16668,9 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 					r_cons_printf (core->cons, "%s\n", pj_string (pj));
 					pj_free (pj);
 				} else {
-					r_anal_class_print (core->anal, class_name, true);
+					char *res = r_anal_class_print (core->anal, class_name, true);
+					r_cons_print (core->cons, res);
+					free (res);
 				}
 				free (class_name);
 				break;
