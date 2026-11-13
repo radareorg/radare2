@@ -349,7 +349,7 @@ ffffffff
 EOF
 RUN
 
-NAME=unreadable maps refuse swaps, copies, yz past them and io.mask aliases
+NAME=unreadable maps refuse swaps, copies, shifts, yz past them and io.mask aliases
 FILE=malloc://32
 CMDS=<<EOF
 wx 1011121314151617
@@ -363,10 +363,16 @@ wox ff @ 0!6
 wo2 @ 1!2
 wd 2 1 @ 8
 wow 41 @ 0!4
+wes 2 -2 2
 e io.mask=0xff
 wd 0x102 1 @ 8
 wd 0x104 1 @ 9
+e io.mask=0x1f
+wd 0x1a 8 @ 0xc
+wd 0x1e 6 @ 0xc
+wd 0x1e 4 @ 0xc
 e io.mask=0
+wd 0xfffffffffffffffe 6 @ 0xc
 y 2 @ 0x1e
 yz 3 @ 0x10
 y8
@@ -380,6 +386,7 @@ y8
 e io.va=false
 p8 6 @ 0
 p8 2 @ 8
+p8 4 @ 0xc
 EOF
 EXPECT=<<EOF
 0000
@@ -388,10 +395,15 @@ EXPECT=<<EOF
 5100
 414112131415
 0014
+00004141
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Cannot use unreadable bytes at 0x00000002, narrow the range or make the map readable with omp
 ERROR: Cannot use unreadable bytes at 0x00000002, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x00000002, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x00000002, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x00000002, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x0000001a, narrow the range or make the map readable with omp
 ERROR: Cannot use unreadable bytes at 0x00000002, narrow the range or make the map readable with omp
 ERROR: Cannot use unreadable bytes at 0x00000002, narrow the range or make the map readable with omp
 ERROR: Cannot use unreadable bytes at 0x00000011, narrow the range or make the map readable with omp
