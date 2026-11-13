@@ -1037,6 +1037,15 @@ typedef struct {
 	ReadAhead ra; // one cache for the walk, so a block inside the last read reads no io
 } FcnWalk;
 
+// name a tail call target like the core names new functions: after the flag at its address
+static const char *tailcall_name(RAnal *anal, ut64 addr) {
+	RFlagItem *fi = anal->flag_get? anal->flag_get (anal->flb.f, false, addr): NULL;
+	if (fi && fi->name && !r_str_startswith (fi->name, "sect")) {
+		return fi->name;
+	}
+	return NULL;
+}
+
 static bool walk_code_section(FcnWalk *w, ut64 addr) {
 	RAnal *anal = w->anal;
 	if (anal->opt.noncode || !anal->binb.get_vsect_at || !anal->binb.bin) {
@@ -1890,7 +1899,10 @@ noskip:
 					(void) r_anal_xrefs_setf (anal, fcn, op->addr, op->jump, R_ANAL_REF_TYPE_JUMP | R_ANAL_REF_TYPE_EXEC);
 					// using type-jump wont analyze the destination as a function
 					/// XXX RAnalFunction *fcn = r_anal_function_new (anal, op->jump);
-					RAnalFunction *nfcn = r_anal_create_function (anal, NULL, op->jump, 0, NULL);
+					RAnalFunction *nfcn = r_anal_create_function (anal, tailcall_name (anal, op->jump), op->jump, 0, NULL);
+					if (!nfcn) {
+						nfcn = r_anal_create_function (anal, NULL, op->jump, 0, NULL);
+					}
 					if (anal->fcn_depth < MAX_TAILCALL_DEPTH) {
 						r_anal_function (anal, nfcn? nfcn: fcn, op->jump, R_ANAL_REF_TYPE_CALL);
 					} else if (nfcn) {

@@ -3937,3 +3937,18 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=tail call target named after its flag
+FILE=bins/pdb/SimplePDB.exe
+ARGS=-e io.cache=true
+CMDS=<<EOF
+wx e90b000000 @ 0x401000
+wx 5589e55dc3 @ 0x401010
+f target @ 0x401010
+af @ 0x401000
+afi @ 0x401010~^name
+EOF
+EXPECT=<<EOF
+name: target
+EOF
+RUN
