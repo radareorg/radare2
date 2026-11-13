@@ -268,7 +268,7 @@ static void pf_u128(RPrintFormat *pf, const char *setval, ut64 seeki, ut8 *buf, 
 			pj_kn (pj, "low", hig);
 			pj_kn (pj, "high", low);
 		}
-	} else if (!SETMODE) {
+	} else if (MUSTSEE) {
 		const RPrint *p = pf->p;
 		if (!SEEVALUE && !ISQUIET) {
 			pf_print_addr (p, seeki);
@@ -1067,7 +1067,7 @@ static void r_print_format_float(RPrintFormat *pf, const char *setval, ut64 seek
 		pf_set_float (pf, seeki + ((elem >= 0)? elem * 4: 0), setval, 4);
 	} else if ((mode & R_PRINT_DOT) || MUSTSEESTRUCT) {
 		r_print_printf (p, "%.9g", val_f);
-	} else if (!SETMODE) {
+	} else if (MUSTSEE) {
 		if (MUSTSEE) {
 			if (!SEEVALUE && !ISQUIET) {
 				pf_print_addr (p, seeki + ((elem >= 0)? elem * 4: 0));
@@ -1107,7 +1107,7 @@ static void r_print_format_bf16(RPrintFormat *pf, const char *setval, ut64 seeki
 		pf_set_float (pf, seeki + ((elem >= 0)? elem * 2: 0), setval, 2);
 	} else if ((mode & R_PRINT_DOT) || MUSTSEESTRUCT) {
 		r_print_printf (p, "%.9g", val_f);
-	} else if (!SETMODE) {
+	} else if (MUSTSEE) {
 		if (MUSTSEE) {
 			if (!SEEVALUE && !ISQUIET) {
 				pf_print_addr (p, seeki + ((elem >= 0)? elem * 2: 0));
@@ -1167,7 +1167,7 @@ static void r_print_format_double(RPrintFormat *pf, const char *setval, ut64 see
 			}
 			pj_end (pf->pj);
 		}
-	} else if (!SETMODE) {
+	} else if (MUSTSEE) {
 		if (MUSTSEE) {
 			if (!SEEVALUE && !ISQUIET) {
 				pf_print_addr (p, seeki + ((elem >= 0)? elem * 8: 0));
@@ -1215,7 +1215,7 @@ static void r_print_format_long_double(RPrintFormat *pf, const char *setval, ut6
 		pf_set_float (pf, seeki + ((elem >= 0)? elem * n: 0), setval, n);
 	} else if ((mode & R_PRINT_DOT) || MUSTSEESTRUCT) {
 		r_print_printf (p, "%.17Lg", val_f);
-	} else if (!SETMODE) {
+	} else if (MUSTSEE) {
 		if (MUSTSEE) {
 			if (!SEEVALUE && !ISQUIET) {
 				pf_print_addr (p, seeki + ((elem >= 0)? elem * 8: 0));

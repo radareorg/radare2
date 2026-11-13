@@ -1179,3 +1179,21 @@ EXPECT=<<EOF
             0x00000000      .int32 00000000000000000000000000000011b
 EOF
 RUN
+
+NAME=Cf with floating point formats prints nothing
+FILE=malloc://64
+CMDS=<<EOF
+wx 000000000000f87f
+Cf 8 F
+Cf 4 f @ 8
+Cf 16 Q @ 16
+?e --
+C*
+EOF
+EXPECT=<<EOF
+--
+'@0x00000000'Cf 8 F
+'@0x00000008'Cf 4 f
+'@0x00000010'Cf 16 Q
+EOF
+RUN
