@@ -1091,6 +1091,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ELF: unapplied relocs omit the common symbol address at a custom base
+FILE=bins/elf/x86_64-common-refs.o
+ARGS=-B 0x1000 -e bin.relocs.apply=false
+CMDS=<<EOF
+is~GLOBAL OBJ
+pd 9 @ sym.bump~RELOC
+EOF
+EXPECT=<<EOF
+3   ---------- ---------- GLOBAL OBJ  4        counter
+4   ---------- ---------- GLOBAL OBJ  32       table
+5   ---------- ---------- GLOBAL OBJ  64       big
+            0x00001044      8b0500000000   mov eax, dword [0x0000104a] ; [0x104a:4]=0x8901508d; RELOC 32 counter - 0x800004a
+            0x0000104d      891500000000   mov dword [0x00001053], edx ; [0x1053:4]=0x48c26348; RELOC 32 counter - 0x8000053
+            0x00001056      4889050000..   mov qword [0x0000105d], rax ; [0x105d:8]=0x10000000005be0f; RELOC 32 table - 0x8000055
+            0x0000105d      0fbe050000..   movsx eax, byte [0x00001064] ; [0x1064:1]=1; RELOC 32 big - 0x8000061
+EOF
+RUN
+
 NAME=ELF: applied relocs to one common symbol share its slot
 FILE=bins/elf/x86_64-common-refs.o
 ARGS=-e bin.relocs.apply=true
@@ -1600,7 +1618,7 @@ EOF
 EXPECT=<<EOF
 6   0x00012af8     0x0 0x08012af8   0x400 -rw- 0x3   NOBITS   .bss
 7   0x000057f8   0x168 0x080057f8   0x168 -r-- 0x2   PROGBITS .rodata
-9   0x00012af8 0x08012af8 LOCAL  OBJ    1024     crc32_tab
+9   ---------- 0x08012af8 LOCAL  OBJ    1024     crc32_tab
 EOF
 RUN
 
@@ -1629,7 +1647,7 @@ EOF
 EXPECT=<<EOF
 0x080384db 0x08038962
 4   0x00040e40      0x0 0x08040e40  0x618a0 -rw- 0x3   NOBITS   .bss
-8   0x00040e40 0x08040e40 LOCAL  OBJ    8          rabin_cmd
+8   ---------- 0x08040e40 LOCAL  OBJ    8          rabin_cmd
 EOF
 RUN
 
