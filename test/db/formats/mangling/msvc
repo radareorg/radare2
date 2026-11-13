@@ -22,6 +22,18 @@ public: void __thiscall Foo::constructor(void)
 EOF
 RUN
 
+NAME=const methods returning by value
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc "??HVector2D@@QBE?AV0@ABV0@@Z"
+!rabin2 -D msvc "?f@X@@QAE?BVY@@XZ"
+EOF
+EXPECT=<<EOF
+public: class Vector2D __thiscall Vector2D::operator+(class Vector2D const &)const
+public: const class Y __thiscall X::f(void)
+EOF
+RUN
+
 NAME=Static Class Methods
 FILE=-
 CMDS="!rabin2 -D msvc \"?create@Factory@@SA?AVProduct@@XZ\""
