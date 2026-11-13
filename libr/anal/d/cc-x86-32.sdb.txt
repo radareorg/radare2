@@ -13,6 +13,14 @@ cc.cdecl-fastcall-ms.argn=stack
 cc.cdecl-fastcall-ms.pop=callee
 cc.cdecl-fastcall-ms.ret0=eax
 
+thiscall=cc
+cc.thiscall.arg0=ecx
+cc.thiscall.argn=stack
+cc.thiscall.pop=callee
+cc.thiscall.clobber=eax,ecx,edx
+cc.thiscall.preserve=ebx,esi,edi,ebp,esp
+cc.thiscall.ret0=eax
+
 optlink=cc
 cc.optlink.arg0=eax
 cc.optlink.arg1=edx
