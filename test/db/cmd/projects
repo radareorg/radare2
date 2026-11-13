@@ -997,3 +997,27 @@ EXPECT=<<EOF
 'acb Sandstorm Flatline 8
 EOF
 RUN
+
+NAME=P* restores the selected flag space
+FILE=malloc://512
+CMDS=<<EOF
+f foo @ 0x10
+P*~^fs
+?e --
+fs symbols
+P*~^fs
+EOF
+EXPECT=<<EOF
+fs functions
+fs+registers
+fs-
+fs *
+fs *
+--
+fs functions
+fs+registers
+fs-
+fs *
+fs symbols
+EOF
+RUN
