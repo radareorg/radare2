@@ -475,18 +475,18 @@ static size_t get_operator_code(SDemangler *sd, const char *buf, RList *names_l,
 		case '8': SET_OPERATOR_CODE ("vbtable"); break;
 		case '9': SET_OPERATOR_CODE ("vcall"); break;
 		case 'A': SET_OPERATOR_CODE ("typeof"); break;
-		case 'B': SET_OPERATOR_CODE ("local_static_guard"); break;
+		case 'B': SET_OPERATOR_CODE ("`local static guard'"); break;
 		case 'C': SET_OPERATOR_CODE ("string"); break;
-		case 'D': SET_OPERATOR_CODE ("vbase_dtor"); break;
-		case 'E': SET_OPERATOR_CODE ("vector_dtor"); break;
-		case 'G': SET_OPERATOR_CODE ("scalar_dtor"); break;
-		case 'H': SET_OPERATOR_CODE ("vector_ctor_iter"); break;
-		case 'I': SET_OPERATOR_CODE ("vector_dtor_iter"); break;
-		case 'J': SET_OPERATOR_CODE ("vector_vbase_ctor_iter"); break;
-		case 'L': SET_OPERATOR_CODE ("eh_vector_ctor_iter"); break;
-		case 'M': SET_OPERATOR_CODE ("eh_vector_dtor_iter"); break;
-		case 'N': SET_OPERATOR_CODE ("eh_vector_vbase_ctor_iter"); break;
-		case 'O': SET_OPERATOR_CODE ("copy_ctor_closure"); break;
+		case 'D': SET_OPERATOR_CODE ("`vbase dtor'"); break;
+		case 'E': SET_OPERATOR_CODE ("`vector deleting dtor'"); break;
+		case 'G': SET_OPERATOR_CODE ("`scalar deleting dtor'"); break;
+		case 'H': SET_OPERATOR_CODE ("`vector ctor iterator'"); break;
+		case 'I': SET_OPERATOR_CODE ("`vector dtor iterator'"); break;
+		case 'J': SET_OPERATOR_CODE ("`vector vbase ctor iterator'"); break;
+		case 'L': SET_OPERATOR_CODE ("`eh vector ctor iterator'"); break;
+		case 'M': SET_OPERATOR_CODE ("`eh vector dtor iterator'"); break;
+		case 'N': SET_OPERATOR_CODE ("`eh vector vbase ctor iterator'"); break;
+		case 'O': SET_OPERATOR_CODE ("`copy ctor closure'"); break;
 		case 'R':
 			buf++;
 			switch (*buf) {
@@ -532,12 +532,12 @@ static size_t get_operator_code(SDemangler *sd, const char *buf, RList *names_l,
 			default: return 0;
 			}
 			break;
-		case 'S': SET_OPERATOR_CODE ("local_vftable"); break;
-		case 'T': SET_OPERATOR_CODE ("local_vftable_ctor_closure"); break;
+		case 'S': SET_OPERATOR_CODE ("`local vftable'"); break;
+		case 'T': SET_OPERATOR_CODE ("`local vftable ctor closure'"); break;
 		case 'U': SET_OPERATOR_CODE ("operator new[]"); break;
 		case 'V': SET_OPERATOR_CODE ("operator delete[]"); break;
-		case 'X': SET_OPERATOR_CODE ("placement_new_closure"); break;
-		case 'Y': SET_OPERATOR_CODE ("placement_delete_closure"); break;
+		case 'X': SET_OPERATOR_CODE ("`placement delete closure'"); break;
+		case 'Y': SET_OPERATOR_CODE ("`placement delete[] closure'"); break;
 		default:
 			return 0;
 		}

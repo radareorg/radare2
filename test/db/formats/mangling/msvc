@@ -102,3 +102,21 @@ EXPECT=<<EOF
 ?f@?$g@$1?h@@3_@@YAXXZ
 EOF
 RUN
+
+NAME=msvc special member functions
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc "??_GFoo@@UAEPAXI@Z"
+!rabin2 -D msvc "??_EFoo@@UAEPAXI@Z"
+!rabin2 -D msvc "??_DFoo@@QAEXXZ"
+!rabin2 -D msvc "??_L@YGXPAXIHP6EX0@Z@Z"
+!rabin2 -D msvc "??_SFoo@@6B@"
+EOF
+EXPECT=<<EOF
+public virtual: void * __thiscall Foo::`scalar deleting dtor'(unsigned int)
+public virtual: void * __thiscall Foo::`vector deleting dtor'(unsigned int)
+public: void __thiscall Foo::`vbase dtor'(void)
+void __stdcall `eh vector ctor iterator'(void *, unsigned int, int, void (__thiscall *)(void *))
+const Foo::`local vftable'
+EOF
+RUN
