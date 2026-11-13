@@ -342,8 +342,12 @@ R_IPI bool core_check_readable(RCore *core, ut64 addr, int len) {
 	if (!io->va || len < 1) {
 		return true;
 	}
-	if (io->mask) {
-		addr &= io->mask;
+	const ut64 mask = io->mask? io->mask: UT64_MAX;
+	addr &= mask;
+	const ut64 left = mask - addr + 1;
+	if (left && (ut64)len > left) {
+		return core_check_readable (core, addr, left)
+			&& core_check_readable (core, 0, R_MIN (len - left, mask));
 	}
 	// a region_at walk crawls through holes, so only try the first region
 	RIORegion first;
@@ -594,7 +598,7 @@ R_API bool r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	// addr + dist > file_end
 	} else if ((addr) + dist > fend) {
 		res = false;
-	} else {
+	} else if (core_check_readable (core, addr, b_size)) {
 		r_io_read_at (core->io, addr, shift_buf, b_size);
 		r_io_write_at (core->io, addr + dist, shift_buf, b_size);
 		res = true;
