@@ -579,3 +579,18 @@ Function address: 0x00400ac8, in B vtable 0
 Function address: 0x00400ac8, in C vtable 0
 EOF
 RUN
+
+NAME=acll class_name
+FILE=-
+CMDS=<<EOF
+ac Flatline
+ac Sandstorm
+acb Sandstorm Flatline 8
+acm Sandstorm Darude 0x1337 0x42
+acll Sandstorm
+EOF
+EXPECT=<<EOF
+Sandstorm: Flatline
+  Darude @ 0x1337 (vtable + 0x42)
+EOF
+RUN
