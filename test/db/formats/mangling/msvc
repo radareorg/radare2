@@ -18,7 +18,7 @@ NAME=Constructors / Destructors
 FILE=-
 CMDS="!rabin2 -D msvc \"??0Foo@@QAE@XZ\""
 EXPECT=<<EOF
-public: void __thiscall Foo::constructor(void)
+public: __thiscall Foo::Foo(void)
 EOF
 RUN
 

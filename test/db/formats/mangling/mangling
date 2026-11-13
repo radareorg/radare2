@@ -3463,7 +3463,7 @@ NAME=copy constructor demangler test
 FILE=-
 CMDS="!rabin2 -D msvc ??0TEST_CLASS@@QEAA@AEBV0@@Z"
 EXPECT=<<EOF
-public: void __cdecl TEST_CLASS::constructor(class TEST_CLASS const & __ptr64) __ptr64
+public: __cdecl TEST_CLASS::TEST_CLASS(class TEST_CLASS const & __ptr64) __ptr64
 EOF
 RUN
 
@@ -3471,7 +3471,7 @@ NAME=constructor demangler test
 FILE=-
 CMDS="!rabin2 -D msvc ??0TEST_CLASS@@QEAA@H@Z"
 EXPECT=<<EOF
-public: void __cdecl TEST_CLASS::constructor(int) __ptr64
+public: __cdecl TEST_CLASS::TEST_CLASS(int) __ptr64
 EOF
 RUN
 
@@ -3479,7 +3479,7 @@ NAME=destructor demangler test
 FILE=-
 CMDS="!rabin2 -D msvc ??1TEST_CLASS@@QEAA@XZ"
 EXPECT=<<EOF
-public: void __cdecl TEST_CLASS::~destructor(void) __ptr64
+public: __cdecl TEST_CLASS::~TEST_CLASS(void) __ptr64
 EOF
 RUN
 
@@ -3727,11 +3727,11 @@ class Class::Template<struct UnnamedStruct, &struct StructType1 const StructName
 EOF
 RUN
 
-NAME=public: void __cdecl Platform::Delegate::constructor(void) __ptr64
+NAME=public: __cdecl Platform::Delegate::Delegate(void) __ptr64
 FILE=-
 CMDS="!rabin2 -D msvc ??0Delegate@Platform@@QE\$AAA@XZ"
 EXPECT=<<EOF
-public: void __cdecl Platform::Delegate::constructor(void) __ptr64
+public: __cdecl Platform::Delegate::Delegate(void) __ptr64
 EOF
 RUN
 
@@ -3775,11 +3775,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=public: void __cdecl std::_Func_class<void, enum Windows::System::LaunchUriStatus, struct std::_Nil, struct std::_Nil>::~destructor(void) __ptr64
+NAME=public: __cdecl std::_Func_class<void, enum Windows::System::LaunchUriStatus, struct std::_Nil, struct std::_Nil>::~_Func_class<void, enum Windows::System::LaunchUriStatus, struct std::_Nil, struct std::_Nil>(void) __ptr64
 FILE=-
 CMDS="!rabin2 -D msvc ??1?\$_Func_class@XW4LaunchUriStatus@System@Windows@@U_Nil@std@@U45@@std@@QEAA@XZ"
 EXPECT=<<EOF
-public: void __cdecl std::_Func_class<void, enum Windows::System::LaunchUriStatus, struct std::_Nil, struct std::_Nil>::~destructor(void) __ptr64
+public: __cdecl std::_Func_class<void, enum Windows::System::LaunchUriStatus, struct std::_Nil, struct std::_Nil>::~_Func_class<void, enum Windows::System::LaunchUriStatus, struct std::_Nil, struct std::_Nil>(void) __ptr64
 EOF
 RUN
 
@@ -3851,7 +3851,7 @@ NAME=public: void __cdecl cask::PoolingFwdFP16x2Shader::constructor(class cask::
 FILE=-
 CMDS="!rabin2 -D msvc ??0PoolingFwdFP16x2Shader@cask@@QEAA@PEBVKernelInfo@1@Q6A?AV?\$SafeEnum@UErrorEnum@cask@@@1@AEAUpoolingDescription@PoolingOperation@1@PEBXPEAXPEAUCUstream_st@@AEAW4cudaError@@@Z@Z"
 EXPECT=<<EOF
-public: void __cdecl cask::PoolingFwdFP16x2Shader::constructor(class cask::KernelInfo const * __ptr64, class cask::SafeEnum<struct cask::ErrorEnum> (__cdecl * const)(struct cask::PoolingOperation::poolingDescription & __ptr64, void const * __ptr64, void * __ptr64, struct CUstream_st * __ptr64, enum cudaError & __ptr64)) __ptr64
+public: __cdecl cask::PoolingFwdFP16x2Shader::PoolingFwdFP16x2Shader(class cask::KernelInfo const * __ptr64, class cask::SafeEnum<struct cask::ErrorEnum> (__cdecl * const)(struct cask::PoolingOperation::poolingDescription & __ptr64, void const * __ptr64, void * __ptr64, struct CUstream_st * __ptr64, enum cudaError & __ptr64)) __ptr64
 EOF
 RUN
 
@@ -3907,7 +3907,7 @@ NAME=msvc single letter class constructor
 FILE=-
 CMDS="!rabin2 -D msvc ??0a@@QEAA@XZ"
 EXPECT=<<EOF
-public: void __cdecl a::constructor(void) __ptr64
+public: __cdecl a::a(void) __ptr64
 EOF
 RUN
 
