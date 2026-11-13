@@ -342,9 +342,6 @@ static bool xnu_fill_info_thread(RDebug *dbg, xnu_thread_t *thread) {
 
 static xnu_thread_t *xnu_get_thread_with_info(RDebug *dbg, thread_t port) {
 	xnu_thread_t *thread = R_NEW0 (xnu_thread_t);
-	if (!thread) {
-		return NULL;
-	}
 	thread->port = port;
 	if (!xnu_fill_info_thread (dbg, thread)) {
 		free (thread->name);

@@ -878,10 +878,6 @@ static bool init(RArchSession *s) {
 	}
 
 	s->data = R_NEW0 (PluginData);
-	if (!s->data) {
-		R_LOG_ERROR ("Could not allocate memory for m68k_cs plugin");
-		return false;
-	}
 
 	PluginData *pd = s->data;
 	if (!r_arch_cs_init (s, &pd->cpd.cs_handle)) {

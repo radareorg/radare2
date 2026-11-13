@@ -145,11 +145,10 @@ static RList* entries(RBinFile *bf) {
 		return NULL;
 	}
 	ret->free = free;
-	if ((ptr = R_NEW0 (RBinAddr))) {
-		ptr->paddr = 0x10;
-		ptr->vaddr = 0x10 + BADDR;
-		r_list_append (ret, ptr);
-	}
+	ptr = R_NEW0 (RBinAddr);
+	ptr->paddr = 0x10;
+	ptr->vaddr = 0x10 + BADDR;
+	r_list_append (ret, ptr);
 	return ret;
 }
 

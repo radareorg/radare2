@@ -118,9 +118,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		i_port = atoi (port);
 	}
 
-	if (!(riog = R_NEW0 (RIOGdb))) {
-		return NULL;
-	}
+	riog = R_NEW0 (RIOGdb);
 	gdbr_init (&riog->desc, false);
 
 	if (gdbr_connect (&riog->desc, host, i_port) == 0) {

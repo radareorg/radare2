@@ -329,9 +329,6 @@ static RList *windbg_frames(RDebug *dbg, ut64 at) {
 	size_t i;
 	for (i = 0; i < frames_filled; i++) {
 		RDebugFrame *f = R_NEW0 (RDebugFrame);
-		if (!f) {
-			break;
-		}
 		f->sp = dbgframes[i].StackOffset;
 		f->bp = dbgframes[i].FrameOffset;
 		f->addr = dbgframes[i].ReturnOffset;
@@ -557,9 +554,6 @@ static RDebugInfo *windbg_info(RDebug *dbg, const char *arg) {
 	char cmdline[MAX_PATH];
 	if (SUCCEEDED (ITHISCALL (dbgClient, GetRunningProcessDescription, idbg->server, dbg->pid, DEBUG_PROC_DESC_NO_SERVICES | DEBUG_PROC_DESC_NO_MTS_PACKAGES, exeinfo, MAX_PATH, NULL, cmdline, MAX_PATH, NULL))) {
 		RDebugInfo *info = R_NEW0 (RDebugInfo);
-		if (!info) {
-			return NULL;
-		}
 		info->pid = dbg->pid;
 		info->tid = dbg->tid;
 		info->exe = strdup (exeinfo);

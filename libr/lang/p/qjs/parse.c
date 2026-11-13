@@ -93,9 +93,6 @@ static JSValue r2plugin_parse_load(JSContext *ctx, JSValueConst this_val, int ar
 	}
 
 	RAsmPlugin *ap = R_NEW0 (RAsmPlugin);
-	if (!ap) {
-		return JS_ThrowRangeError (ctx, "could not allocate qjs core plugin");
-	}
 
 	JSValue desc = JS_GetPropertyStr (ctx, res, "desc");
 	const char *descptr = JS_ToCStringLen2 (ctx, &namelen, desc, false);
@@ -121,10 +118,6 @@ static JSValue r2plugin_parse_load(JSContext *ctx, JSValueConst this_val, int ar
 	pp->fn_parse_js = fn_parse_js;
 
 	RLibStruct *lib = R_NEW0 (RLibStruct);
-	if (!lib) {
-		free (ap);
-		return JS_NewBool (ctx, false);
-	}
 
 	lib->type = R_LIB_TYPE_ASM;
 	lib->data = ap;

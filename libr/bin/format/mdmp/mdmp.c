@@ -352,9 +352,6 @@ static void read_hdr(RBuffer *b, struct minidump_header *hdr) {
 
 static bool r_bin_mdmp_init_hdr(struct r_bin_mdmp_obj *obj) {
 	obj->hdr = R_NEW (struct minidump_header);
-	if (!obj->hdr) {
-		return false;
-	}
 	read_hdr (obj->b, obj->hdr);
 
 	if (obj->hdr->number_of_streams == 0) {
@@ -393,9 +390,6 @@ static struct minidump_module *read_module(RBuffer *b, ut64 addr) {
 		return NULL;
 	}
 	struct minidump_module *module = R_NEW0 (struct minidump_module);
-	if (!module) {
-		return NULL;
-	}
 	module->base_of_image = r_buf_read_le64 (b);
 	module->size_of_image = r_buf_read_le32 (b);
 	module->check_sum = r_buf_read_le32 (b);
@@ -628,9 +622,6 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 
 		for (i = 0; i < max_memory_ranges; i++) {
 			struct minidump_memory_descriptor *desc = R_NEW (struct minidump_memory_descriptor);
-			if (!desc) {
-				break;
-			}
 			if (!read_memory_descriptor (obj->b, offset, desc)) {
 				free (desc);
 				break;
@@ -713,9 +704,6 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 
 		for (i = 0; i < max_ex_threads; i++) {
 			struct minidump_thread_ex *thread = R_NEW (struct minidump_thread_ex);
-			if (!thread) {
-				break;
-			}
 			r = r_buf_read_at (obj->b, offset, (ut8 *)thread, sizeof (*thread));
 			if (r != sizeof (*thread)) {
 				break;
@@ -742,9 +730,6 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		obj->streams.memories64.base_rva = memory64_list.base_rva;
 		for (i = 0; i < max_memory64_ranges; i++) {
 			struct minidump_memory_descriptor64 *desc = R_NEW (struct minidump_memory_descriptor64);
-			if (!desc) {
-				break;
-			}
 			read_desc (obj->b, offset, desc);
 			r_list_append (obj->streams.memories64.memories, desc);
 			offset += sizeof (*desc);
@@ -849,9 +834,6 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 			sizeof (struct minidump_unloaded_module), stream_end, "UnloadedModule");
 		for (i = 0; i < max_unloaded; i++) {
 			struct minidump_unloaded_module *module = R_NEW (struct minidump_unloaded_module);
-			if (!module) {
-				break;
-			}
 			r = r_buf_read_at (obj->b, offset, (ut8 *)module, sizeof (*module));
 			if (r != sizeof (*module)) {
 				break;
@@ -863,9 +845,6 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 	case MISC_INFO_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
 		obj->streams.misc_info.misc_info_1 = R_NEW (struct minidump_misc_info);
-		if (!obj->streams.misc_info.misc_info_1) {
-			break;
-		}
 		r = r_buf_read_at (obj->b, entry->location.rva, (ut8 *)obj->streams.misc_info.misc_info_1, sizeof (*obj->streams.misc_info.misc_info_1));
 		if (r != sizeof (*obj->streams.misc_info.misc_info_1)) {
 			break;
@@ -905,9 +884,6 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 
 		for (i = 0; i < max_mem_infos; i++) {
 			struct minidump_memory_info *info = R_NEW (struct minidump_memory_info);
-			if (!info) {
-				break;
-			}
 			if (!read_memory_info (obj->b, offset, info)) {
 				free (info);
 				break;
@@ -936,9 +912,6 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 			sizeof (struct minidump_thread_info), stream_end, "ThreadInfo");
 		for (i = 0; i < max_thread_infos; i++) {
 			struct minidump_thread_info *info = R_NEW (struct minidump_thread_info);
-			if (!info) {
-				break;
-			}
 			r = r_buf_read_at (obj->b, offset, (ut8 *)info, sizeof (*info));
 			if (r != sizeof (*info)) {
 				break;
@@ -964,9 +937,6 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 			sizeof (struct avrf_handle_operation), stream_end, "HandleOperation");
 		for (i = 0; i < max_handle_ops; i++) {
 			struct avrf_handle_operation *op = R_NEW (struct avrf_handle_operation);
-			if (!op) {
-				break;
-			}
 			r = r_buf_read_at (obj->b, offset, (ut8 *)op, sizeof (*op));
 			if (r != sizeof (*op)) {
 				break;
@@ -995,9 +965,6 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 			sizeof (struct minidump_token_info), stream_end, "TokenInfo");
 		for (i = 0; i < max_tokens; i++) {
 			struct minidump_token_info *info = R_NEW (struct minidump_token_info);
-			if (!info) {
-				break;
-			}
 			r = r_buf_read_at (obj->b, offset, (ut8 *)info, sizeof (*info));
 			if (r != sizeof (*info)) {
 				break;

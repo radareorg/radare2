@@ -344,9 +344,6 @@ R_API ut32 r_esil_add_voyeur(REsil *esil, void *user, void *vfn, REsilVoyeurType
 		return R_ESIL_VOYEUR_ERR;
 	}
 	REsilVoyeur *voyeur = R_NEW (REsilVoyeur);
-	if (!voyeur) {
-		return R_ESIL_VOYEUR_ERR;
-	}
 	ut32 id;
 	if (!r_id_storage_add (&esil->voyeur[vt], voyeur, &id)) {
 		free (voyeur);

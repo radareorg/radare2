@@ -171,10 +171,6 @@ R_API RRegex *r_regex_new(const char *pattern, const char *flags) {
 		return NULL;
 	}
 	r = R_NEW (RRegex);
-	if (!r) {
-		r_regex_fini (&rx);
-		return NULL;
-	}
 	*r = rx;
 	return r;
 }

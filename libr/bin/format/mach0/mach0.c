@@ -1925,9 +1925,6 @@ static bool parse_threaded_rebase(struct MACH0_(obj_t) * mo) {
 							cur_seg = mo->chained_starts[seg_idx];
 							if (!cur_seg) {
 								cur_seg = R_NEW0 (struct r_dyld_chained_starts_in_segment);
-								if (!cur_seg) {
-									break;
-								}
 								mo->chained_starts[seg_idx] = cur_seg;
 								cur_seg->pointer_format = DYLD_CHAINED_PTR_ARM64E;
 								cur_seg->threaded = true;

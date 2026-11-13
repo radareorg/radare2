@@ -26,9 +26,6 @@ R_API RDebugSnap *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 	}
 
 	RDebugSnap *snap = R_NEW0 (RDebugSnap);
-	if (!snap) {
-		return NULL;
-	}
 
 	snap->name = strdup (map->name);
 	snap->addr = map->addr;

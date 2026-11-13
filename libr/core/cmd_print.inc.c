@@ -2147,14 +2147,12 @@ typedef struct {
 
 static RLart *lart_add(RList *list, const char *name, int pos, int sz, ut64 value, bool skip) {
 	RLart *la = R_NEW0 (RLart);
-	if (la) {
-		la->sz = sz;
-		la->pos = pos;
-		la->name = name;
-		la->value = value;
-		la->skip = skip;
-		r_list_append (list, la);
-	}
+	la->sz = sz;
+	la->pos = pos;
+	la->name = name;
+	la->value = value;
+	la->skip = skip;
+	r_list_append (list, la);
 	return la;
 }
 

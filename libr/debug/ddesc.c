@@ -4,13 +4,11 @@
 
 R_API RDebugDesc *r_debug_desc_new(int fd, const char* path, int perm, int type, int off) {
 	RDebugDesc *desc = R_NEW (RDebugDesc);
-	if (desc) {
-		desc->fd = fd;
-		desc->path = strdup (path);
-		desc->perm = perm;
-		desc->type = type;
-		desc->off = off;
-	}
+	desc->fd = fd;
+	desc->path = strdup (path);
+	desc->perm = perm;
+	desc->type = type;
+	desc->off = off;
 	return desc;
 }
 

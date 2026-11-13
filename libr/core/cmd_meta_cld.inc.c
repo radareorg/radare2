@@ -63,9 +63,6 @@ static CLdFile *cld_file_get(RList *files, const char *file, ut64 addr, ut32 lin
 		}
 	}
 	f = R_NEW0 (CLdFile);
-	if (!f) {
-		return NULL;
-	}
 	f->file = strdup (file);
 	f->lines = ht_up_new (NULL, cld_line_free, NULL);
 	f->min_addr = addr;
@@ -184,12 +181,10 @@ static void cld_anno_add(RList *annos, size_t start, size_t end, ut64 offset) {
 		return;
 	}
 	CLdAnno *a = R_NEW0 (CLdAnno);
-	if (a) {
-		a->start = start;
-		a->end = end;
-		a->offset = offset;
-		r_list_append (annos, a);
-	}
+	a->start = start;
+	a->end = end;
+	a->offset = offset;
+	r_list_append (annos, a);
 }
 
 #define CLD_MAX_SPAN 0x10000

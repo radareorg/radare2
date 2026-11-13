@@ -52,9 +52,6 @@ static PTHREAD_ITEM __r_debug_thread_add(RDebug *dbg, DWORD pid, DWORD tid, HAND
 		return NULL;
 	}
 	pthread = R_NEW0 (THREAD_ITEM);
-	if (!pthread) {
-		return NULL;
-	}
 	*pthread = th;
 	r_list_append (dbg->threads, pthread);
 	return pthread;
@@ -626,10 +623,6 @@ static PLIB_ITEM lib_list_add(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, char 
 		}
 	}
 	lib = R_NEW0 (LIB_ITEM);
-	if (!lib) {
-		R_LOG_ERROR ("Failed to allocate memory");
-		return NULL;
-	}
 	lib->pid = pid;
 	lib->hFile = hFile;
 	lib->BaseOfDll = lpBaseOfDll;
@@ -1320,9 +1313,6 @@ static void __w32_info_exe(RDebug *dbg, RDebugInfo *rdi) {
 
 RDebugInfo *w32_info(RDebug *dbg, const char *arg) {
 	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
-	if (!rdi) {
-		return NULL;
-	}
 	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this
 	rdi->pid = dbg->pid;
 	rdi->tid = dbg->tid;

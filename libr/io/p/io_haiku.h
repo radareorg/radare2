@@ -125,9 +125,6 @@ static inline void r_haiku_dbg_free(RIOHaikuDbg *hdbg, bool detach) {
 // install ourselves as the debugger of the given team
 static inline RIOHaikuDbg *r_haiku_dbg_new(int pid) {
 	RIOHaikuDbg *hdbg = R_NEW0 (RIOHaikuDbg);
-	if (!hdbg) {
-		return NULL;
-	}
 	hdbg->team = (team_id)pid;
 	hdbg->main_thread = hdbg->stopped_thread = -1;
 	hdbg->debugger_port = create_port (10, "radare2 debugger port");

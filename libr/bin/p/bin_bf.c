@@ -18,9 +18,7 @@ static RVecRBinString *strings(RBinFile *bf) {
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
-	if (!(ret = R_NEW0 (RBinInfo))) {
-		return NULL;
-	}
+	ret = R_NEW0 (RBinInfo);
 	ret->lang = NULL;
 	ret->file = bf->file? strdup (bf->file): NULL;
 	ret->type = strdup ("brainfuck");
@@ -84,10 +82,8 @@ static RList *entries(RBinFile *bf) {
 	RList *ret = r_list_newf (free);
 	if (ret) {
 		RBinAddr *ptr = R_NEW0 (RBinAddr);
-		if (ptr) {
-			ptr->paddr = ptr->vaddr = 0;
-			r_list_append (ret, ptr);
-		}
+		ptr->paddr = ptr->vaddr = 0;
+		r_list_append (ret, ptr);
 	}
 	return ret;
 }

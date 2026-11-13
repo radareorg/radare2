@@ -55,9 +55,6 @@ RAnalOp *tp_anal_op(RAnal *anal, ut64 addr, int mask) {
 		goto beach;
 	}
 	op = R_NEW0 (RAnalOp);
-	if (!op) {
-		goto beach;
-	}
 	if (r_anal_op (anal, op, addr, buf, nread, mask) < 1) {
 		r_anal_op_free (op);
 		op = NULL;

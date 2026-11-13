@@ -417,20 +417,18 @@ static RList *libs(RBinFile *bf) {
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (ret) {
-		ret->file = strdup (bf->file);
-		ret->bclass = strdup ("module");
-		ret->rclass = strdup ("wasm");
-		ret->os = strdup ("WebAssembly");
-		ret->arch = strdup ("wasm");
-		ret->machine = strdup (ret->arch);
-		ret->subsystem = strdup ("wasm");
-		ret->type = strdup ("EXEC");
-		ret->bits = 32;
-		ret->has_va = 0;
-		ret->big_endian = false;
-		ret->dbg_info = 0;
-	}
+	ret->file = strdup (bf->file);
+	ret->bclass = strdup ("module");
+	ret->rclass = strdup ("wasm");
+	ret->os = strdup ("WebAssembly");
+	ret->arch = strdup ("wasm");
+	ret->machine = strdup (ret->arch);
+	ret->subsystem = strdup ("wasm");
+	ret->type = strdup ("EXEC");
+	ret->bits = 32;
+	ret->has_va = 0;
+	ret->big_endian = false;
+	ret->dbg_info = 0;
 	return ret;
 }
 

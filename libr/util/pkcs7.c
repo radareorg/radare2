@@ -136,9 +136,6 @@ static RPKCS7Attribute *r_pkcs7_attribute_parse(RASN1Object *object) {
 		return NULL;
 	}
 	attribute = R_NEW0 (RPKCS7Attribute);
-	if (!attribute) {
-		return NULL;
-	}
 	if (object->list.objects[0]) {
 		attribute->oid = r_asn1_stringify_oid (object->list.objects[0]->sector, object->list.objects[0]->length);
 	}
@@ -312,9 +309,6 @@ R_API RCMS *r_pkcs7_cms_parse(const ut8 *buffer, ut32 length) {
 		return NULL;
 	}
 	RCMS *container = R_NEW0 (RCMS);
-	if (!container) {
-		return NULL;
-	}
 	RASN1Object *object = r_asn1_object_parse (buffer, buffer, length, 0);
 	if (!object || object->list.length < 2 || !object->list.objects ||
 		!object->list.objects[0] || !object->list.objects[1] ||
@@ -639,9 +633,6 @@ R_API SpcIndirectDataContent *r_pkcs7_parse_spcinfo(RCMS *cms) {
 	}
 
 	SpcIndirectDataContent *spcinfo = R_NEW0 (SpcIndirectDataContent);
-	if (!spcinfo) {
-		return NULL;
-	}
 
 	RASN1Binary *content = cms->signedData.contentInfo.content;
 	if (!content) {
@@ -698,9 +689,6 @@ R_API SpcIndirectDataContent *r_pkcs7_spcinfo_parse(RCMS *cms) {
 	}
 
 	SpcIndirectDataContent *spcinfo = R_NEW0 (SpcIndirectDataContent);
-	if (!spcinfo) {
-		return NULL;
-	}
 
 	RASN1Binary *content = cms->signedData.contentInfo.content;
 	if (!content) {

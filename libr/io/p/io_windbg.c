@@ -266,10 +266,6 @@ fail:
 static DbgEngContext *create_remote_context(const char *opts) {
 	DbgEngContext *idbg = R_NEW0 (DbgEngContext);
 
-	if (!idbg) {
-		return false;
-	}
-
 	LPWSTR wopts = (LPWSTR)r_utf8_to_utf16 (opts);
 
 	// Initialize interfaces
@@ -306,10 +302,6 @@ fail:
 
 static DbgEngContext *create_context(void) {
 	DbgEngContext *idbg = R_NEW0 (DbgEngContext);
-
-	if (!idbg) {
-		return false;
-	}
 
 	// Initialize interfaces
 	if (w32_DebugCreate (&IID_IDebugClient4, (PVOID *)&idbg->dbgClient) != S_OK) {

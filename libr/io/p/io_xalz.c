@@ -11,9 +11,6 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__check (io, pathname, 0)) {
 		const char *diskpath = r_str_trim_head_ro (pathname + 7);
 		RIOMalloc *mal = R_NEW0 (RIOMalloc);
-		if (!mal) {
-			return NULL;
-		}
 		size_t sz;
 		int outsize;
 		char *data = r_file_slurp (diskpath, &sz);

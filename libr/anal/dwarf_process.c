@@ -1638,13 +1638,11 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 		return NULL;
 	}
 	VariableLocation *location = R_NEW0 (VariableLocation);
-	if (location) {
-		location->reg_name = reg_name;
-		location->reg_num = reg_num;
-		location->kind = kind;
-		location->offset = offset;
-		location->address = address;
-	}
+	location->reg_name = reg_name;
+	location->reg_num = reg_num;
+	location->kind = kind;
+	location->offset = offset;
+	location->address = address;
 	return location;
 }
 

@@ -1654,9 +1654,6 @@ R_IPI bool r_anal_jmptbl_arm64_from_br(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 
 static RAnalSwitchCursor *switch_cursor_new(RAnal *anal, RAnalFunction *fcn, R_UNOWNED RAnalBlock *block, ut64 ip, int ret0) {
 	RAnalSwitchCursor *c = R_NEW0 (RAnalSwitchCursor);
-	if (!c) {
-		return NULL;
-	}
 	c->anal = anal;
 	c->fcn = fcn;
 	c->block = block? r_ref (block): NULL;

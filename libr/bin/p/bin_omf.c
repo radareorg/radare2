@@ -63,10 +63,7 @@ static RList *entries(RBinFile *bf) {
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
-	if (!(addr = R_NEW0 (RBinAddr))) {
-		r_list_free (ret);
-		return NULL;
-	}
+	addr = R_NEW0 (RBinAddr);
 	if (!r_bin_omf_get_entry (bf->bo->bin_obj, addr)) {
 		R_FREE (addr);
 	} else {

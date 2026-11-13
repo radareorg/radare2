@@ -162,9 +162,6 @@ static RBinMdtPart *load_segment_part(ELFOBJ *header, int idx) {
 
 	// Create map for this part
 	RBinMap *map = R_NEW0 (RBinMap);
-	if (!map) {
-		goto error;
-	}
 	map->offset = 0;
 	map->size = segment->p_filesz;
 	map->addr = segment->p_vaddr;
@@ -275,11 +272,9 @@ static RList *maps(RBinFile *bf) {
 	r_list_foreach (mdt->parts, iter, part) {
 		if (part->map) {
 			RBinMap *clone = R_NEW0 (RBinMap);
-			if (clone) {
-				*clone = *part->map;
-				clone->file = strdup (part->map->file);
-				r_list_append (maps, clone);
-			}
+			*clone = *part->map;
+			clone->file = strdup (part->map->file);
+			r_list_append (maps, clone);
 		}
 	}
 
@@ -295,10 +290,6 @@ static RList *entries(RBinFile *bf) {
 	}
 
 	RBinAddr *entry = R_NEW0 (RBinAddr);
-	if (!entry) {
-		r_list_free (entries);
-		return NULL;
-	}
 
 	// Get entry from header
 	entry->vaddr = mdt->header->ehdr.e_entry;
@@ -420,9 +411,6 @@ static RBinInfo *info(RBinFile *bf) {
 	const RBinMdtObj *mdt = bf->bo->bin_obj;
 
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
 
 	ret->file = strdup (bf->file);
 	ret->type = strdup ("MDT");

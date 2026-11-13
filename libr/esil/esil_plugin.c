@@ -78,9 +78,6 @@ R_API bool r_esil_plugin_activate(REsil *esil, const char *name) {
 	REsilPlugin *ep = r_libstore_find_name (esil->libstore, name);
 	if (ep) {
 		REsilActivePlugin *eap = R_NEW (REsilActivePlugin);
-		if (!eap) {
-			return false;
-		}
 		eap->plugin = ep;
 		eap->user = ep->init (esil);
 		r_list_append (esil->active_plugins, eap);

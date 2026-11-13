@@ -13,14 +13,12 @@ enum {
 
 static RGraphNode *r_graph_node_new(void *data) {
 	RGraphNode *p = R_NEW0 (RGraphNode);
-	if (p) {
-		p->data = data;
+	p->data = data;
 // R_NEW0 already sets p->free to NULL
 //		p->free = NULL;
-		RVecGraphNodePtr_init (&p->out_nodes);
-		RVecGraphNodePtr_init (&p->in_nodes);
-		RVecGraphNodePtr_init (&p->all_neighbours);
-	}
+	RVecGraphNodePtr_init (&p->out_nodes);
+	RVecGraphNodePtr_init (&p->in_nodes);
+	RVecGraphNodePtr_init (&p->all_neighbours);
 	return p;
 }
 

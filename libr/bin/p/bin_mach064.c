@@ -276,9 +276,7 @@ static RBinAddr* binsym(RBinFile *bf, int sym) {
 			ut64 addr = MACH0_(get_main) (mo);
 			if (addr != UT64_MAX && addr) {
 				ret = R_NEW0 (RBinAddr);
-				if (ret) {
-					ret->paddr = ret->vaddr = addr;
-				}
+				ret->paddr = ret->vaddr = addr;
 			}
 		}
 		break;

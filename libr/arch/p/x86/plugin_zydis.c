@@ -94,9 +94,6 @@ static bool init(RArchSession *as) {
 		return false;
 	}
 	PluginData *pd = R_NEW0 (PluginData);
-	if (!pd) {
-		return false;
-	}
 	if (!zydis_configure (pd, as->config)) {
 		free (pd);
 		return false;
@@ -821,13 +818,11 @@ static bool is_setcc(ZydisMnemonic mnemonic) {
 
 static RAnalValue *new_access_value(int type, int access, const char *reg, st64 delta, int memref) {
 	RAnalValue *val = R_NEW0 (RAnalValue);
-	if (val) {
-		val->type = type;
-		val->access = access;
-		val->reg = reg;
-		val->delta = delta;
-		val->memref = memref;
-	}
+	val->type = type;
+	val->access = access;
+	val->reg = reg;
+	val->delta = delta;
+	val->memref = memref;
 	return val;
 }
 

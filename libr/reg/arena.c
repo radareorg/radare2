@@ -311,9 +311,6 @@ R_API int r_reg_arena_push(RReg *reg) {
 		RRegArena *b;
 		if (a->size > 0) {
 			b = R_NEW0 (RRegArena);
-			if (!b) {
-				continue;
-			}
 			b->size = a->size;
 			b->bytes = a->bytes;
 			b->shared = true;

@@ -145,9 +145,6 @@ typedef struct {
 
 static PathInfo *resolve_path_info(const char *input) {
 	PathInfo *pi = R_NEW0 (PathInfo);
-	if (!pi) {
-		return NULL;
-	}
 	const char *path = ".";
 	char *homepath = NULL;
 	char *d = NULL;

@@ -18,9 +18,6 @@ static ut64 baddr(RBinFile *bf) {
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
 	ret->file = strdup (bf->file);
 	ret->type = strdup ("PRG");
 	ret->machine = strdup ("Commodore 64");
@@ -54,9 +51,6 @@ static RList *entries(RBinFile *bf) {
 		return NULL;
 	}
 	RBinAddr *binaddr = R_NEW0 (RBinAddr);
-	if (!binaddr) {
-		return ret;
-	}
 	binaddr->paddr = 2;
 	binaddr->vaddr = baddr (bf);
 	r_list_append (ret, binaddr);

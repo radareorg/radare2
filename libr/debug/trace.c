@@ -8,9 +8,6 @@ R_VEC_TYPE(RVecDebugTracepoint, RDebugTracepointItem);
 
 R_API RDebugTrace *r_debug_trace_new(void) {
 	RDebugTrace *t = R_NEW0 (RDebugTrace);
-	if (!t) {
-		return NULL;
-	}
 	t->tag = 1; // UT32_MAX;
 	t->addresses = NULL;
 	t->enabled = false;
@@ -65,9 +62,6 @@ R_API bool r_debug_trace_ins_before(RDebug *dbg) {
 		return false;
 	}
 	dbg->cur_op = R_NEW0 (RAnalOp);
-	if (!dbg->cur_op) {
-		return false;
-	}
 	if (!r_anal_op (dbg->anal, dbg->cur_op, pc, buf_pc, sizeof (buf_pc), R_ARCH_OP_MASK_VAL)) {
 		r_anal_op_free (dbg->cur_op);
 		dbg->cur_op = NULL;

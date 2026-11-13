@@ -233,9 +233,6 @@ R_API RSearchKeyword *r_search_keyword_new_regexp(const char *str, const char *d
 	}
 
 	RSearchKeyword *kw = R_NEW0 (RSearchKeyword);
-	if (!kw) {
-		return NULL;
-	}
 	kw->bin_keyword = malloc (length+1);
 	if (!kw->bin_keyword) {
 		r_search_keyword_free (kw);

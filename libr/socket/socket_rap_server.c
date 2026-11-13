@@ -6,16 +6,14 @@
 R_API RSocketRapServer *r_socket_rap_server_new(bool use_ssl, const char *port) {
 	R_RETURN_VAL_IF_FAIL (port, NULL);
 	RSocketRapServer *s = R_NEW0 (RSocketRapServer);
-	if (s) {
-		s->port = strdup (port);
-		s->fd = r_socket_new (use_ssl);
-		if (s->fd) {
-			return s;
-		}
-		r_socket_free (s->fd);
-		free (s->port);
-		free (s);
+	s->port = strdup (port);
+	s->fd = r_socket_new (use_ssl);
+	if (s->fd) {
+		return s;
 	}
+	r_socket_free (s->fd);
+	free (s->port);
+	free (s);
 	return NULL;
 }
 

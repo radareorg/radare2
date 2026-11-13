@@ -168,9 +168,6 @@ static inline int getmalfd(RIOBfdbg *mal) {
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname, 0)) {
 		RIOBfdbg *mal = R_NEW0 (RIOBfdbg);
-		if (!mal) {
-			return NULL;
-		}
 		RIOBind iob;
 		r_io_bind (io, &iob);
 		mal->fd = getmalfd (mal);

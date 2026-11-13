@@ -132,9 +132,6 @@ R_API RArchConfig *r_arch_config_clone(RArchConfig *c) {
 
 R_API RArchConfig *r_arch_config_new(void) {
 	RArchConfig *ac = R_NEW0 (RArchConfig);
-	if (!ac) {
-		return NULL;
-	}
 	r_str_ncpy (ac->arch, R_SYS_ARCH, sizeof (ac->arch));
 	ac->bits = R_SYS_BITS_CHECK (R_SYS_BITS, 64)? 64: 32;
 	ac->bitshift = 0;

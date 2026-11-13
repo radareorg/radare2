@@ -110,10 +110,6 @@ static Node *node_new(CTX *c, Kind k) {
 		return NULL;
 	}
 	Node *n = R_NEW0 (Node);
-	if (!n) {
-		c->fail = true;
-		return NULL;
-	}
 	n->kind = k;
 	n->work = &c->work;
 	if (c->nall == c->capall) {

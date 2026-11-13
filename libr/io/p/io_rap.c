@@ -168,11 +168,6 @@ static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
 		R_LOG_WARN ("Remote RAP servers can run commands in this r2 instance. Use -e rap.reverse=false to disable");
 	}
 	RIORap *rior = R_NEW0 (RIORap);
-	if (!rior) {
-		r_socket_free (s);
-		free (host);
-		return NULL;
-	}
 	rior->listener = false;
 	rior->client = rior->fd = s;
 	if (R_STR_ISNOTEMPTY (file)) {

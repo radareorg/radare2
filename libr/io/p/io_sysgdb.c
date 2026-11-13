@@ -252,9 +252,6 @@ static bool __plugin_open(RIO *io, const char *pathname, bool many) {
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname, 0)) {
 		RIOSysGdb *state = R_NEW0 (RIOSysGdb);
-		if (!state) {
-			return NULL;
-		}
 #if __APPLE__
 		state->use_lldb = true;
 		state->usefirst = true;

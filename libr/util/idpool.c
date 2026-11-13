@@ -19,10 +19,8 @@ R_API RIDPool* r_id_pool_new(ut32 start_id, ut32 last_id) {
 	RIDPool* pool = NULL;
 	if (start_id < last_id) {
 		pool = R_NEW0 (RIDPool);
-		if (pool) {
-			pool->next_id = pool->start_id = start_id;
-			pool->last_id = last_id;
-		}
+		pool->next_id = pool->start_id = start_id;
+		pool->last_id = last_id;
 	}
 	return pool;
 }
@@ -284,12 +282,10 @@ R_API RList *r_id_storage_list(RIDStorage *s) { // remove this pls
 
 R_API ROIDStorage *r_oids_new(ut32 start_id, ut32 last_id) {
 	ROIDStorage *storage = R_NEW0 (ROIDStorage);
-	if (storage) {
-		storage->data = r_id_storage_new (start_id, last_id);
-		if (!storage->data) {
-			free (storage);
-			return NULL;
-		}
+	storage->data = r_id_storage_new (start_id, last_id);
+	if (!storage->data) {
+		free (storage);
+		return NULL;
 	}
 	return storage;
 }

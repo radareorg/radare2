@@ -129,9 +129,6 @@ R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *plugin) {
 		return false;
 	}
 	RDebugPluginSession *ds = R_NEW0 (RDebugPluginSession);
-	if (!ds) {
-		return false;
-	}
 	ds->dbg = dbg;
 	ds->plugin = plugin;
 	ds->plugin_data = NULL;

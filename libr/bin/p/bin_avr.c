@@ -92,16 +92,14 @@ static void destroy(RBinFile *bf) {
 static RBinInfo* info(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf, NULL);
 	RBinInfo *bi = R_NEW0 (RBinInfo);
-	if (bi) {
-		bi->file = strdup (bf->file);
-		bi->type = strdup ("ROM");
-		bi->machine = strdup ("ATmel");
-		bi->os = strdup ("avr");
-		bi->has_va = 0; // 1;
-		bi->has_lit = false;
-		bi->arch = strdup ("avr");
-		bi->bits = 8;
-	}
+	bi->file = strdup (bf->file);
+	bi->type = strdup ("ROM");
+	bi->machine = strdup ("ATmel");
+	bi->os = strdup ("avr");
+	bi->has_va = 0; // 1;
+	bi->has_lit = false;
+	bi->arch = strdup ("avr");
+	bi->bits = 8;
 	return bi;
 }
 
@@ -116,11 +114,10 @@ static RList* entries(RBinFile *bf) {
 		return NULL;
 	}
 	ret->free = free;
-	if ((ptr = R_NEW0 (RBinAddr))) {
-		ut64 addr = ap->tmp_entry;
-		ptr->vaddr = ptr->paddr = addr;
-		r_list_append (ret, ptr);
-	}
+	ptr = R_NEW0 (RBinAddr);
+	ut64 addr = ap->tmp_entry;
+	ptr->vaddr = ptr->paddr = addr;
+	r_list_append (ret, ptr);
 	return ret;
 }
 

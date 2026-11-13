@@ -25,13 +25,12 @@ static void PE_(add_tls_callbacks)(struct PE_(r_bin_pe_obj_t) *bin, RList *list)
 		if (!haddr) {
 			break;
 		}
-		if ((ptr = R_NEW0 (RBinAddr))) {
-			ptr->paddr = paddr;
-			ptr->vaddr = vaddr;
-			ptr->hpaddr = haddr;
-			ptr->type = R_BIN_ENTRY_TYPE_TLS;
-			r_list_append (list, ptr);
-		}
+		ptr = R_NEW0 (RBinAddr);
+		ptr->paddr = paddr;
+		ptr->vaddr = vaddr;
+		ptr->hpaddr = haddr;
+		ptr->type = R_BIN_ENTRY_TYPE_TLS;
+		r_list_append (list, ptr);
 		count++;
 	} while (vaddr);
 }
@@ -49,18 +48,17 @@ RList *PE_(r_bin_mdmp_pe_get_entrypoint) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin
 		return NULL;
 	}
 
-	if ((ptr = R_NEW0 (RBinAddr))) {
-		offset = entry->vaddr;
-		if (offset > pe_bin->vaddr) {
-			offset -= pe_bin->vaddr;
-		}
-		ptr->paddr = offset + pe_bin->paddr;
-		ptr->vaddr = offset + pe_bin->vaddr;
-		ptr->hpaddr = pe_bin->paddr + entry->haddr;
-		ptr->type = R_BIN_ENTRY_TYPE_PROGRAM;
-
-		r_list_append (ret, ptr);
+	ptr = R_NEW0 (RBinAddr);
+	offset = entry->vaddr;
+	if (offset > pe_bin->vaddr) {
+		offset -= pe_bin->vaddr;
 	}
+	ptr->paddr = offset + pe_bin->paddr;
+	ptr->vaddr = offset + pe_bin->vaddr;
+	ptr->hpaddr = pe_bin->paddr + entry->haddr;
+	ptr->type = R_BIN_ENTRY_TYPE_PROGRAM;
+
+	r_list_append (ret, ptr);
 
 	PE_(add_tls_callbacks)
 	(pe_bin->bin, ret);

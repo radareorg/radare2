@@ -397,9 +397,6 @@ void* r_bin_te_free(struct r_bin_te_obj_t* bin) {
 
 struct r_bin_te_obj_t* r_bin_te_new(const char* file) {
 	struct r_bin_te_obj_t *bin = R_NEW0 (struct r_bin_te_obj_t);
-	if (!bin) {
-		return NULL;
-	}
 	bin->file = file;
 	size_t binsz;
 	ut8 *buf = (ut8*)r_file_slurp (file, &binsz);
@@ -421,9 +418,6 @@ struct r_bin_te_obj_t* r_bin_te_new(const char* file) {
 
 struct r_bin_te_obj_t* r_bin_te_new_buf(RBuffer *buf) {
 	struct r_bin_te_obj_t *bin = R_NEW0 (struct r_bin_te_obj_t);
-	if (!bin) {
-		return NULL;
-	}
 	bin->kv = sdb_new0 ();
 	bin->size = r_buf_size (buf);
 	bin->b = r_buf_new_with_buf (buf);

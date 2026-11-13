@@ -11,9 +11,6 @@ struct buf_ref_user {
 static bool buf_ref_init(RBuffer *b, const void *user) {
 	const struct buf_ref_user *u = user;
 	b->rb_ref = R_NEW0 (RBufferRef);
-	if (!b->rb_ref) {
-		return false;
-	}
 
 	// NOTE: we only support readonly ref-buffers for now. Supporting
 	// read-write would mean to choose how we want to handle writing to the

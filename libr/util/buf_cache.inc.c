@@ -192,9 +192,6 @@ static st64 buf_cache_write(RBuffer *b, const ut8 *buf, ut64 len) {
 static bool buf_cache_init(RBuffer *b, const void *user) {
 	// TODO take sb and owned from user instead of setting it in with_cache() after init
 	b->rb_cache = R_NEW0 (RBufferCache);
-	if (!b->rb_cache) {
-		return false;
-	}
 	b->rb_cache->cl = iocache_layer_new ();
 	return true;
 }

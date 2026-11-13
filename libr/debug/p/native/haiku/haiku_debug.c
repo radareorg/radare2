@@ -345,9 +345,6 @@ static RList *haiku_dbg_pids(RDebug *dbg, int pid, RList *list) {
 
 static RDebugInfo *haiku_dbg_info(RDebug *dbg, const char *arg) {
 	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
-	if (!rdi) {
-		return NULL;
-	}
 	rdi->pid = dbg->pid;
 	rdi->tid = dbg->tid;
 	RIOHaikuDbg *hdbg = haiku_dbg_get (dbg);

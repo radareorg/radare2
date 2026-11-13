@@ -133,10 +133,7 @@ static RList *mem(RBinFile *bf) {
 		n->perms = r_str_rwx ("rwx");
 		r_list_append (m->mirrors, n);
 	}
-	if (!(m = R_NEW0 (RBinMem))) {
-		r_list_free (ret);
-		return NULL;
-	}
+	m = R_NEW0 (RBinMem);
 	m->name = strdup ("PPU_REG");
 	m->addr = PPU_REG_ADDRESS;
 	m->size = PPU_REG_SIZE;
@@ -155,19 +152,13 @@ static RList *mem(RBinFile *bf) {
 		n->perms = r_str_rwx ("rwx");
 		r_list_append (m->mirrors, n);
 	}
-	if (!(m = R_NEW0 (RBinMem))) {
-		r_list_free (ret);
-		return NULL;
-	}
+	m = R_NEW0 (RBinMem);
 	m->name = strdup ("APU_AND_IOREGS");
 	m->addr = APU_AND_IOREGS_START_ADDRESS;
 	m->size = APU_AND_IOREGS_SIZE;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
-	if (!(m = R_NEW0 (RBinMem))) {
-		r_list_free (ret);
-		return NULL;
-	}
+	m = R_NEW0 (RBinMem);
 	m->name = strdup ("SRAM");
 	m->addr = SRAM_START_ADDRESS;
 	m->size = SRAM_SIZE;

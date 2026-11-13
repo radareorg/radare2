@@ -68,9 +68,6 @@ static bool r2qjs_arch_init(RArchSession *s) {
 	R_RETURN_VAL_IF_FAIL (s, false);
 
 	QjsArchPluginData *pd = R_NEW0 (QjsArchPluginData);
-	if (!pd) {
-		return false;
-	}
 
 	RCore *core = s->user;
 	QjsPluginManager *pm = R_UNWRAP4 (core, lang, session, plugin_data);
@@ -162,9 +159,6 @@ static JSValue r2plugin_arch_load(JSContext *ctx, JSValueConst this_val, int arg
 	}
 
 	RArchPlugin *ap = R_NEW0 (RArchPlugin);
-	if (!ap) {
-		return JS_ThrowRangeError (ctx, "could not allocate arch plugin");
-	}
 
 	ap->meta.name = qjs_get_string (ctx, res, "name");
 	if (!ap->meta.name) {
@@ -210,11 +204,6 @@ static JSValue r2plugin_arch_load(JSContext *ctx, JSValueConst this_val, int arg
 	plugin_manager_add_arch_plugin (pm, ap->meta.name, ap->arch, ctx, decode_func);
 
 	RLibStruct *lib = R_NEW0 (RLibStruct);
-	if (!lib) {
-		R_LOG_WARN ("r2.plugin with name %s is already registered", ap->meta.name);
-		cleanup_arch_plugin (ap);
-		return JS_NewBool (ctx, false);
-	}
 
 	lib->type = R_LIB_TYPE_ARCH;
 	lib->data = ap;

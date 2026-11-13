@@ -212,9 +212,6 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	}
 
 	RRegItem *item = R_NEW0 (RRegItem);
-	if (!item) {
-		return "Unable to allocate memory";
-	}
 	item->type = type;
 	item->name = strdup (tok[1]);
 	// All the numeric arguments are strictly checked

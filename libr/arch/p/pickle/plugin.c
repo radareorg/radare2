@@ -813,10 +813,8 @@ static char *pickle_mnemonics(RArchSession *s, int id, bool json) {
 static bool pickle_init(RArchSession *s) {
 	R_RETURN_VAL_IF_FAIL (s, false);
 	s->data = R_NEW (int);
-	if (s->data) {
-		*((int *)s->data) = MAXSTRLEN;
-		return true;
-	}
+	*((int *)s->data) = MAXSTRLEN;
+	return true;
 	return false;
 }
 

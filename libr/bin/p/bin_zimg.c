@@ -43,9 +43,6 @@ static bool check(RBinFile *bf, RBuffer *b) {
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
 	ret->file = bf->file? strdup (bf->file): NULL;
 	ret->type = strdup ("Linux zImage Kernel");
 	ret->has_va = false;

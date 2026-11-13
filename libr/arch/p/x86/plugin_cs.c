@@ -57,9 +57,6 @@ static bool init(RArchSession *as) {
 		return false;
 	}
 	PluginData *pd = R_NEW0 (PluginData);
-	if (!pd) {
-		return false;
-	}
 	// pd->cpu = as->config->cpu? strdup (as->config->cpu): NULL;
 	if (!r_arch_cs_init (as, &pd->cpd.cs_handle)) {
 		R_LOG_ERROR ("Cannot initialize capstone");

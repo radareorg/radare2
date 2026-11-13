@@ -19,10 +19,8 @@ typedef RInterval r_itv_t;
 
 static inline RInterval *r_itv_new(ut64 addr, ut64 size) {
 	RInterval *itv = R_NEW (RInterval);
-	if (itv) {
-		itv->addr = addr;
-		itv->size = size;
-	}
+	itv->addr = addr;
+	itv->size = size;
 	return itv;
 }
 

@@ -1043,9 +1043,6 @@ static char *read_link(int pid, const char *file) {
 RDebugInfo *linux_info(RDebug *dbg, const char *arg) {
 	char proc_buff[1024];
 	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
-	if (!rdi) {
-		return NULL;
-	}
 
 	RList *th_list;
 	bool list_alloc = false;

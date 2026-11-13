@@ -11,12 +11,10 @@ TODO:
 
 R_API RCoreUndo *r_core_undo_new(ut64 addr, const char *action, const char *revert) {
 	RCoreUndo *cu = R_NEW (RCoreUndo);
-	if (cu) {
-		cu->action = strdup (action);
-		cu->revert = strdup (revert);
-		cu->tstamp = r_time_now ();
-		cu->addr = addr;
-	}
+	cu->action = strdup (action);
+	cu->revert = strdup (revert);
+	cu->tstamp = r_time_now ();
+	cu->addr = addr;
 	return cu;
 }
 

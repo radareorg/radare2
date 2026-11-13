@@ -2055,10 +2055,8 @@ static RList *entries(RBinFile *bf) {
 	if (r_list_empty (ret)) {
 		if (!already_entry (ret, bin->code_from)) {
 			ptr = R_NEW0 (RBinAddr);
-			if (ptr) {
-				ptr->paddr = ptr->vaddr = bin->code_from;
-				r_list_append (ret, ptr);
-			}
+			ptr->paddr = ptr->vaddr = bin->code_from;
+			r_list_append (ret, ptr);
 		}
 	}
 #endif

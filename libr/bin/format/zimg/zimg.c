@@ -7,9 +7,6 @@
 
 struct r_bin_zimg_obj_t* r_bin_zimg_new_buf(RBuffer *buf) {
 	struct r_bin_zimg_obj_t *bin = R_NEW0 (struct r_bin_zimg_obj_t);
-	if (!bin) {
-		goto fail;
-	}
 	bin->size = r_buf_size (buf);
 	bin->b = r_ref (buf);
 	if (r_buf_size (bin->b) < sizeof (struct zimg_header_t)) {

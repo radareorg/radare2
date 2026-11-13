@@ -6351,9 +6351,6 @@ static RBinJavaBootStrapArgument *r_bin_java_bootstrap_method_argument_new(RBinJ
 		return NULL;
 	}
 	RBinJavaBootStrapArgument *bsm_arg = R_NEW0 (RBinJavaBootStrapArgument);
-	if (!bsm_arg) {
-		return NULL;
-	}
 	bsm_arg->file_offset = buf_offset;
 	bsm_arg->argument_info_idx = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;

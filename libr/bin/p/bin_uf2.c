@@ -17,9 +17,6 @@ static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
 	ret->file = strdup (bf->file);
 	ret->type = strdup ("UF2");
 	ret->machine = strdup ("Microsoft UF2"); // XXX

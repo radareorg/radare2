@@ -123,9 +123,6 @@ R_API bool r_lang_define(RLang *lang, const char *type, const char *name, void *
 		}
 	}
 	def = R_NEW0 (RLangDef);
-	if (!def) {
-		return false;
-	}
 	def->type = strdup (type);
 	def->name = strdup (name);
 	def->value = value;
@@ -220,15 +217,13 @@ R_API RLangPlugin *r_lang_get_by_name(RLang *lang, const char *name) {
 R_API RLangSession *r_lang_session(RLang *lang, RLangPlugin *h) {
 	R_RETURN_VAL_IF_FAIL (lang && h, NULL);
 	RLangSession *session = R_NEW0 (RLangSession);
-	if (session) {
-		session->lang = lang;
-		session->plugin = h;
-		if (h->init) {
-			// session->plugin_data = h->init (session);
-			if (!h->init (session)) {
-				R_LOG_ERROR ("Cannot initialize plugin for this rlang session");
-				R_FREE (session);
-			}
+	session->lang = lang;
+	session->plugin = h;
+	if (h->init) {
+		// session->plugin_data = h->init (session);
+		if (!h->init (session)) {
+			R_LOG_ERROR ("Cannot initialize plugin for this rlang session");
+			R_FREE (session);
 		}
 	}
 	return session;

@@ -80,10 +80,6 @@ static bool _add_ref(AdjacencyList *adj_list, ut64 from, ut64 to, RAnalRefType t
 	if (!edges) {
 		// optionally add a hashtable if missing
 		edges = R_NEW0 (Edges);
-		if (!edges) {
-			R_LOG_WARN ("failed to allocate hashtable for xrefs");
-			return false;
-		}
 
 		*edges = Edges_new (INITIAL_CAPACITY);
 		AdjacencyList_Entry new_entry = { .key = from, .val = edges };

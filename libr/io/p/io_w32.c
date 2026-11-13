@@ -45,9 +45,6 @@ static bool w32__plugin_open(RIO *io, const char *pathname, bool many) {
 static RIODesc *w32__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (r_str_startswith (pathname, "w32://")) {
 		RIOW32 *w32 = R_NEW0 (RIOW32);
-		if (!w32) {
-			return NULL;
-		}
 		const char *filename = pathname + 6;
 		LPTSTR filename_ = r_sys_conv_utf8_to_win (filename);
 		w32->hnd = CreateFile (filename_,

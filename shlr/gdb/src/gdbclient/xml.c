@@ -438,7 +438,8 @@ static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int 
 			}
 		} else {
 			R_LOG_ERROR ("Failed to open procfs file of pid (%d)", ipid);
-			if (!(pid_info = R_NEW0 (RDebugPid)) || !(pid_info->path = strdup (cmdline))) {
+			pid_info = R_NEW0 (RDebugPid);
+			if (!(pid_info->path = strdup (cmdline))) {
 				ret = -1;
 				goto end;
 			}
@@ -708,9 +709,6 @@ exit_err:
 
 static RDebugPid *_extract_pid_info(const char *info, const char *path, int tid) {
 	RDebugPid *pid_info = R_NEW0 (RDebugPid);
-	if (!pid_info) {
-		return NULL;
-	}
 	const char *ptr = strstr (info, "State:");
 	if (ptr) {
 		switch (*(ptr + 7)) {

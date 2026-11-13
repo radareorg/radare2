@@ -39,9 +39,6 @@ R_API RArchValue *r_arch_value_copy(RArchValue *ov) {
 	R_RETURN_VAL_IF_FAIL (ov, NULL);
 
 	RArchValue *v = R_NEW0 (RArchValue);
-	if (!v) {
-		return NULL;
-	}
 
 	*v = *ov;
 	// pointers to reg and regdelta should be kept

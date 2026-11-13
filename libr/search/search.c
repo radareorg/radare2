@@ -171,11 +171,9 @@ R_IPI int r_search_hit_sz(RSearch *s, RSearchKeyword *kw, ut64 addr, ut32 sz) {
 		return 1;
 	}
 	RSearchHit* hit = R_NEW0 (RSearchHit);
-	if (hit) {
-		hit->kw = kw;
-		hit->addr = addr;
-		r_list_append (s->hits, hit);
-	}
+	hit->kw = kw;
+	hit->addr = addr;
+	r_list_append (s->hits, hit);
 	return s->maxhits && s->nhits >= s->maxhits? 2: 1;
 }
 

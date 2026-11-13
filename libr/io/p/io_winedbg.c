@@ -172,9 +172,6 @@ static bool __plugin_open(RIO *io, const char *pathname, bool many) {
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname, 0)) {
 		RIOWinedbg *wd = R_NEW0 (RIOWinedbg);
-		if (!wd) {
-			return NULL;
-		}
 		wd->sock = r_socket_new (0);
 		char *cmd = r_str_newf ("winedbg '%s'", pathname + 10);
 		int res = r_socket_spawn (wd->sock, cmd, 1000);

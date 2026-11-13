@@ -86,10 +86,6 @@ static int _rv_del_alloc_cmp(void *incoming, void *in, void *user) {
 
 	if (rv_in->from < rv_incoming->from && rv_incoming->to < rv_in->to) {
 		EsilDFGVar *rv = R_NEW (EsilDFGVar);
-		if (!rv) {
-			dfg->malloc_failed = true;
-			return -1;
-		}
 		rv[0] = rv_in[0];
 		rv_in->to = rv_incoming->from - 1;
 		rv->from = rv_incoming->to + 1;
@@ -107,19 +103,11 @@ static int _rv_del_alloc_cmp(void *incoming, void *in, void *user) {
 	if (rv_incoming->from < rv_in->from && rv_in->to < rv_incoming->to) {
 		// lower part
 		EsilDFGVar *rv = R_NEW (EsilDFGVar);
-		if (!rv) {
-			dfg->malloc_failed = true;
-			return -1;
-		}
 		rv[0] = rv_incoming[0];
 		rv->to = rv_in->from - 1;
 		r_queue_enqueue (dfg->todo, rv);
 		// upper part
 		rv = R_NEW (EsilDFGVar);
-		if (!rv) {
-			dfg->malloc_failed = true;
-			return -1;
-		}
 		rv[0] = rv_incoming[0];
 		rv->from = rv_in->to + 1;
 		r_queue_enqueue (dfg->todo, rv);
@@ -135,10 +123,6 @@ static int _rv_del_alloc_cmp(void *incoming, void *in, void *user) {
 
 	if (rv_incoming->from == rv_in->from && rv_in->to < rv_incoming->to) {
 		EsilDFGVar *rv = R_NEW (EsilDFGVar);
-		if (!rv) {
-			dfg->malloc_failed = true;
-			return -1;
-		}
 		rv[0] = rv_incoming[0];
 		rv->from = rv_in->to + 1;
 		r_queue_enqueue (dfg->todo, rv);
@@ -152,10 +136,6 @@ static int _rv_del_alloc_cmp(void *incoming, void *in, void *user) {
 
 	if (rv_incoming->from < rv_in->from && rv_in->to == rv_incoming->to) {
 		EsilDFGVar *rv = R_NEW (EsilDFGVar);
-		if (!rv) {
-			dfg->malloc_failed = true;
-			return -1;
-		}
 		rv[0] = rv_incoming[0];
 		rv->to = rv_in->from - 1;
 		r_queue_enqueue (dfg->todo, rv);
@@ -248,9 +228,6 @@ static bool _edf_reg_set(RAnalEsilDFG *dfg, const char *reg, RGraphNode *node) {
 static bool _edf_mem_set(RAnalEsilDFG *dfg, ut64 addr, ut32 size, RGraphNode *node) {
 	R_RETURN_VAL_IF_FAIL (dfg && !dfg->malloc_failed && size, false);
 	EsilDFGVar *mv = R_NEW0 (EsilDFGVar);
-	if (!mv) {
-		return false;
-	}
 
 	mv->from = addr;
 	mv->to = addr + size - 1;
@@ -322,19 +299,11 @@ static int _rv_find_cmp(void *incoming, void *in, void *user) {
 	if (rv_incoming->from < rv_in->from && rv_in->to < rv_incoming->to) {
 		// lower part
 		EsilDFGVar *rv = R_NEW (EsilDFGVar);
-		if (!rv) {
-			dfg->malloc_failed = true;
-			return -1;
-		}
 		rv[0] = rv_incoming[0];
 		rv->to = rv_in->from - 1;
 		r_queue_enqueue (dfg->todo, rv);
 		// upper part
 		rv = R_NEW (EsilDFGVar);
-		if (!rv) {
-			dfg->malloc_failed = true;
-			return -1;
-		}
 		rv[0] = rv_incoming[0];
 		rv->from = rv_in->to + 1;
 		r_queue_enqueue (dfg->todo, rv);
@@ -349,10 +318,6 @@ static int _rv_find_cmp(void *incoming, void *in, void *user) {
 	 */
 	if (rv_in->from <= rv_incoming->from && rv_in->to < rv_incoming->to) {
 		EsilDFGVar *rv = R_NEW (EsilDFGVar);
-		if (!rv) {
-			dfg->malloc_failed = true;
-			return -1;
-		}
 		rv[0] = rv_incoming[0];
 		rv->from = rv_in->to + 1;
 		r_queue_enqueue (dfg->todo, rv);
@@ -364,10 +329,6 @@ static int _rv_find_cmp(void *incoming, void *in, void *user) {
 		=in=
 	 */
 	EsilDFGVar *rv = R_NEW (EsilDFGVar);
-	if (!rv) {
-		dfg->malloc_failed = true;
-		return -1;
-	}
 	rv[0] = rv_incoming[0];
 	rv->to = rv_in->from - 1;
 	r_queue_enqueue (dfg->todo, rv);
@@ -431,11 +392,6 @@ static RGraphNode *_edf_reg_get(RAnalEsilDFG *dfg, const char *reg) {
 			reg_node = _edf_origin_reg_get (dfg, reg);
 			// insert in the gap
 			part_rv = R_NEW (EsilDFGVar);
-			if (!part_rv) {
-				R_FREE (rv);
-				dfg->malloc_failed = true;
-				break;
-			}
 			part_rv[0] = rv[0];
 			part_rv->node = reg_node;
 			r_crbtree_insert (dfg->vars, part_rv, _rv_ins_cmp, NULL);
@@ -445,11 +401,6 @@ static RGraphNode *_edf_reg_get(RAnalEsilDFG *dfg, const char *reg) {
 			// initial regnode was already created
 			// only need to insert in the tree
 			part_rv = R_NEW (EsilDFGVar);
-			if (!part_rv) {
-				R_FREE (rv);
-				dfg->malloc_failed = true;
-				break;
-			}
 			part_rv[0] = rv[0];
 			part_rv->node = reg_node;
 			r_crbtree_insert (dfg->vars, part_rv, _rv_ins_cmp, NULL);
@@ -527,9 +478,6 @@ static RGraphNode *_edf_uninitialized_mem_get(RAnalEsilDFG *dfg, ut64 addr, ut32
 static RGraphNode *_edf_mem_get(RAnalEsilDFG *dfg, ut64 addr, ut32 size) {
 	R_RETURN_VAL_IF_FAIL (dfg && size, NULL);
 	EsilDFGVar *mv = R_NEW0 (EsilDFGVar);
-	if (!mv) {
-		return NULL;
-	}
 	mv->from = addr;
 	mv->to = addr + size - 1;
 	mv->type = VAR_TYPE_MEM;
@@ -557,11 +505,6 @@ static RGraphNode *_edf_mem_get(RAnalEsilDFG *dfg, ut64 addr, ut32 size) {
 			}
 			// insert in the gap
 			part_mv = R_NEW (EsilDFGVar);
-			if (!part_mv) {
-				R_FREE (mv);
-				dfg->malloc_failed = true;
-				break;
-			}
 			part_mv[0] = mv[0];
 			part_mv->node = mem_node;
 			r_crbtree_insert (dfg->vars, part_mv, _rv_ins_cmp, NULL);
@@ -571,11 +514,6 @@ static RGraphNode *_edf_mem_get(RAnalEsilDFG *dfg, ut64 addr, ut32 size) {
 			// initial regnode was already created
 			// only need to insert in the tree
 			part_mv = R_NEW (EsilDFGVar);
-			if (!part_mv) {
-				R_FREE (mv);
-				dfg->malloc_failed = true;
-				break;
-			}
 			part_mv[0] = mv[0];
 			part_mv->node = mem_node;
 			r_crbtree_insert (dfg->vars, part_mv, _rv_ins_cmp, NULL);
@@ -1564,9 +1502,6 @@ static bool _dfg_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 R_API RAnalEsilDFG *r_anal_esil_dfg_new(RAnal *anal, bool use_map_info, bool use_maps) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->reg, NULL);
 	RAnalEsilDFG *dfg = R_NEW0 (RAnalEsilDFG);
-	if (!dfg) {
-		return NULL;
-	}
 	dfg->use_map_info = use_map_info;
 	dfg->use_maps = use_maps;
 	if (anal->iob.io) {

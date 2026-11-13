@@ -488,9 +488,6 @@ R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b
 R_API RDiffChar *r_diffchar_new(const ut8 *a, const ut8 *b) {
 	R_RETURN_VAL_IF_FAIL (a && b, NULL);
 	RDiffChar *diffchar = R_NEW0 (RDiffChar);
-	if (!diffchar) {
-		return NULL;
-	}
 
 	const size_t len_a = strlen ((const char *)a);
 	const size_t len_b = strlen ((const char *)b);

@@ -1028,13 +1028,11 @@ static RList *collect_type_xrefs(RCore *core, const char *type_name) {
 				RAnalVarAccess *acc;
 				R_VEC_FOREACH (&var->accesses, acc) {
 					TypeXref *xref = R_NEW0 (TypeXref);
-					if (xref) {
-						xref->addr = fcn->addr + acc->offset;
-						xref->fcn_name = strdup (fcn->name);
-						xref->field_name = NULL;
-						xref->access_type = acc->type;
-						r_list_append (xrefs, xref);
-					}
+					xref->addr = fcn->addr + acc->offset;
+					xref->fcn_name = strdup (fcn->name);
+					xref->field_name = NULL;
+					xref->access_type = acc->type;
+					r_list_append (xrefs, xref);
 				}
 			}
 			free (var_type);
@@ -1079,13 +1077,11 @@ static RList *collect_field_xrefs(RCore *core, const char *type_name, const char
 				R_VEC_FOREACH (&var->accesses, acc) {
 					if (acc->stackptr == (st64)field_offset) {
 						TypeXref *xref = R_NEW0 (TypeXref);
-						if (xref) {
-							xref->addr = fcn->addr + acc->offset;
-							xref->fcn_name = strdup (fcn->name);
-							xref->field_name = strdup (field_name);
-							xref->access_type = acc->type;
-							r_list_append (xrefs, xref);
-						}
+						xref->addr = fcn->addr + acc->offset;
+						xref->fcn_name = strdup (fcn->name);
+						xref->field_name = strdup (field_name);
+						xref->access_type = acc->type;
+						r_list_append (xrefs, xref);
 					}
 				}
 			}
@@ -1357,13 +1353,11 @@ static RList *collect_func_xrefs(RCore *core, const char *func_name) {
 					if (rt == R_ANAL_REF_TYPE_CALL || rt == R_ANAL_REF_TYPE_CODE) {
 						RAnalFunction *caller = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 						TypeXref *xref = R_NEW0 (TypeXref);
-						if (xref) {
-							xref->addr = ref->addr;
-							xref->fcn_name = strdup (caller ? caller->name : "unknown");
-							xref->field_name = NULL;
-							xref->access_type = R_PERM_X;
-							r_list_append (xrefs, xref);
-						}
+						xref->addr = ref->addr;
+						xref->fcn_name = strdup (caller ? caller->name : "unknown");
+						xref->field_name = NULL;
+						xref->access_type = R_PERM_X;
+						r_list_append (xrefs, xref);
 					}
 				}
 				RVecAnalRef_free (refs);

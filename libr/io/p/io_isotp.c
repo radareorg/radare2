@@ -81,9 +81,6 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		return NULL;
 	}
 	RIOMalloc *mal = R_NEW0 (RIOMalloc);
-	if (!mal) {
-		return NULL;
-	}
 	RIOSocketData *data = R_NEW0 (RIOSocketData);
 	if (!mal || !data) {
 		free (mal);

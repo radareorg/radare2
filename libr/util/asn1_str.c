@@ -8,11 +8,9 @@ R_API RASN1String *r_asn1_string_new(const char *string, bool allocated, ut32 le
 		return NULL;
 	}
 	RASN1String *s = R_NEW0 (RASN1String);
-	if (s) {
-		s->allocated = allocated;
-		s->length = length;
-		s->string = (char *)string;
-	}
+	s->allocated = allocated;
+	s->length = length;
+	s->string = (char *)string;
 	return s;
 }
 

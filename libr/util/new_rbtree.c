@@ -42,9 +42,7 @@ static void _set_link(RRBNode *parent, RRBNode *child, const int dir) {
 
 R_API RRBTree *r_crbtree_new(RRBFree freefn) {
 	RRBTree *tree = R_NEW0 (RRBTree);
-	if (tree) {
-		tree->free = freefn;
-	}
+	tree->free = freefn;
 	return tree;
 }
 
@@ -102,7 +100,6 @@ R_API void *r_crbtree_find(RRBTree *tree, void *data, RRBComparator cmp, void *u
 
 static RRBNode *_node_new(void *data, RRBNode *parent) {
 	RRBNode *node = R_NEW0 (RRBNode);
-	R_RETURN_VAL_IF_FAIL (node, NULL);
 
 	node->red = 1;
 	node->data = data;

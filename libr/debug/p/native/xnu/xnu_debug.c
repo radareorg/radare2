@@ -737,9 +737,6 @@ static int xnu_get_kinfo_proc(int pid, struct kinfo_proc *kp) {
 RDebugInfo *xnu_info(RDebug *dbg, const char *arg) {
 	struct kinfo_proc kp; // XXX This need to be freed?
 	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
-	if (!rdi) {
-		return NULL;
-	}
 	int kinfo_proc_error = xnu_get_kinfo_proc(dbg->pid, &kp);
 	if (kinfo_proc_error) {
 		R_LOG_ERROR ("Error while querying the process info to sysctl");

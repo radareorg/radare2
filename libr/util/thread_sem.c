@@ -16,9 +16,6 @@
 
 R_API RThreadSemaphore *r_th_sem_new(unsigned int initial) {
 	RThreadSemaphore *sem = R_NEW (RThreadSemaphore);
-	if (!sem) {
-		return NULL;
-	}
 #if HAVE_PTHREAD
 #  if R_SEM_NAMED_ONLY
 	uuid_t uuid;

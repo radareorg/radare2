@@ -3441,10 +3441,8 @@ R_API char *r_core_op_str(RCore *core, ut64 addr) {
 R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr, RAnalOpMask mask) {
 	ut8 buf[64];
 	RAnalOp *op = R_NEW (RAnalOp);
-	if (op) {
-		r_io_read_at (core->io, addr, buf, sizeof (buf));
-		r_anal_op (core->anal, op, addr, buf, sizeof (buf), mask);
-	}
+	r_io_read_at (core->io, addr, buf, sizeof (buf));
+	r_anal_op (core->anal, op, addr, buf, sizeof (buf), mask);
 	return op;
 }
 

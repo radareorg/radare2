@@ -328,9 +328,6 @@ R_API char *r_anal_data_tostring(RAnalData *d, RConsPrintablePalette * R_NULLABL
 R_API RAnalData *r_anal_data_new_string(ut64 addr, const char *p, int len, int type) {
 	// R_RETURN_VAL_IF_FAIL (p, NULL);
 	RAnalData *ad = R_NEW0 (RAnalData);
-	if (!ad) {
-		return NULL;
-	}
 	ad->str = NULL;
 	ad->addr = addr;
 	ad->type = type;

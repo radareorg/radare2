@@ -140,9 +140,6 @@ pyc_opcodes *get_opcode_by_version(const char *version) {
 pyc_opcodes *new_pyc_opcodes() {
 	int i, j;
 	pyc_opcodes *ret = R_NEW0 (pyc_opcodes);
-	if (!ret) {
-		return NULL;
-	}
 	ret->have_argument = 90;
 	ret->opcodes = calloc (sizeof (pyc_opcode_object), 256);
 	if (!ret->opcodes) {
@@ -185,9 +182,6 @@ void free_opcode(pyc_opcodes *opcodes) {
 
 void add_arg_fmt(pyc_opcodes *ret, char *op_name, char *(*formatter) (ut32 oparg)) {
 	pyc_arg_fmt *fmt = R_NEW0 (pyc_arg_fmt);
-	if (!fmt) {
-		return;
-	}
 	fmt->op_name = op_name;
 	fmt->formatter = formatter;
 	r_list_append (ret->opcode_arg_fmt, fmt);

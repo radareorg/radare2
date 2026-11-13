@@ -477,10 +477,6 @@ static bool fs_bfs_mount(RFSRoot *root) {
 			goto fail;
 		}
 		BeosInodeCache *root_cache = R_NEW0 (BeosInodeCache);
-		if (!root_cache) {
-			free (root_inode);
-			goto fail;
-		}
 		root_cache->inode_num = root_block;
 		root_cache->parent_inode_num = 0; // root has no parent
 		root_cache->name = NULL;

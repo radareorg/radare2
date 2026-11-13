@@ -4,10 +4,8 @@
 
 io_desc_t *io_desc_new(io_backend_t *iob, void *fp) {
 	io_desc_t *desc = R_NEW0 (io_desc_t);
-	if (desc) {
-		desc->iob = iob;
-		desc->fp = fp;
-	}
+	desc->iob = iob;
+	desc->fp = fp;
 	return desc;
 }
 

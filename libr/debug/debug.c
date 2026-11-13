@@ -373,9 +373,6 @@ static void r_debug_options_fini(RDebugOptions *options) {
 
 R_API RDebug *r_debug_new(int hard) {
 	RDebug *dbg = R_NEW0 (RDebug);
-	if (!dbg) {
-		return NULL;
-	}
 	// R_SYS_ARCH
 	dbg->arch = strdup (R_SYS_ARCH);
 	dbg->bits = R_SYS_BITS_CHECK (R_SYS_BITS, 64)? 64: 32;

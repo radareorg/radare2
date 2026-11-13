@@ -673,9 +673,6 @@ struct recovery_type_descriptor_t {
 
 RecoveryTypeDescriptor *recovery_type_descriptor_new() {
 	RecoveryTypeDescriptor *td = R_NEW (RecoveryTypeDescriptor);
-	if (!td) {
-		return NULL;
-	}
 
 	td->addr = 0;
 	td->valid = false;

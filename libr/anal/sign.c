@@ -308,9 +308,7 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 			DBL_VAL_FAIL (it->graph, R_SIGN_GRAPH);
 			if (strlen (token) == 2 * sizeof (RSignGraph)) {
 				it->graph = R_NEW0 (RSignGraph);
-				if (it->graph) {
-					r_hex_str2bin (token, (ut8 *)it->graph);
-				}
+				r_hex_str2bin (token, (ut8 *)it->graph);
 			}
 			break;
 		case R_SIGN_OFFSET:
@@ -349,9 +347,7 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 			DBL_VAL_FAIL (it->hash, R_SIGN_BBHASH);
 			if (token[0] != 0) {
 				it->hash = R_NEW0 (RSignHash);
-				if (it->hash) {
-					it->hash->bbhash = strdup (token);
-				}
+				it->hash->bbhash = strdup (token);
 			}
 			break;
 		case R_SIGN_BYTES:
@@ -743,10 +739,6 @@ static bool addHash(RAnal *a, const char *name, int type, const char *val) {
 		return false;
 	}
 	it->hash = R_NEW0 (RSignHash);
-	if (!it->hash) {
-		r_sign_item_free (it);
-		return false;
-	}
 	it->space = r_spaces_current (&a->zign_spaces);
 
 	bool retval = false;
@@ -814,12 +806,10 @@ R_API bool r_sign_add_anal(RAnal *a, const char *name, const char *val) {
 
 static RSignGraph *r_sign_fcn_graph(RAnalFunction *fcn) {
 	RSignGraph *graph = R_NEW0 (RSignGraph);
-	if (graph) {
-		graph->cc = r_anal_function_complexity (fcn),
-		graph->nbbs = (int)RVecAnalBlockPtr_length (&fcn->bbs);
-		graph->edges = r_anal_function_count_edges (fcn, &graph->ebbs);
-		graph->bbsum = r_anal_function_realsize (fcn);
-	}
+	graph->cc = r_anal_function_complexity (fcn),
+	graph->nbbs = (int)RVecAnalBlockPtr_length (&fcn->bbs);
+	graph->edges = r_anal_function_count_edges (fcn, &graph->ebbs);
+	graph->bbsum = r_anal_function_realsize (fcn);
 	return graph;
 }
 
@@ -837,13 +827,11 @@ static RSignBytes *r_sign_func_empty_mask(RAnal *a, RAnalFunction *fcn) {
 
 	// alloc space for signature
 	RSignBytes *sig = R_NEW0 (RSignBytes);
-	if (sig) {
-		sig->bytes = malloc (size);
-		sig->mask = R_NEWS0 (ut8, size);
-		sig->size = size;
-		if (sig->bytes && sig->mask && a->iob.read_at (a->iob.io, ea, sig->bytes, size) == size) {
-			return sig;
-		}
+	sig->bytes = malloc (size);
+	sig->mask = R_NEWS0 (ut8, size);
+	sig->size = size;
+	if (sig->bytes && sig->mask && a->iob.read_at (a->iob.io, ea, sig->bytes, size) == size) {
+		return sig;
 	}
 	r_sign_bytes_free (sig);
 	return NULL;
@@ -891,9 +879,6 @@ static RSignBytes *r_sign_fcn_bytes(RAnal *a, RAnalFunction *fcn) {
 static RSignHash *r_sign_fcn_bbhash(RAnal *a, RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (a && fcn, NULL);
 	RSignHash *hash = R_NEW0 (RSignHash);
-	if (!hash) {
-		return NULL;
-	}
 
 	char *digest_hex = r_sign_calc_bbhash (a, fcn);
 	if (!digest_hex) {
@@ -1433,10 +1418,6 @@ static bool closest_match_update(RSignItem *it, ClosestMatchData *data) {
 
 	// add new element
 	RSignCloseMatch *row = R_NEW (RSignCloseMatch);
-	if (!row) {
-		r_sign_item_free (it);
-		return false;
-	}
 	row->score = score;
 	row->gscore = gscore;
 	row->bscore = bscore;
@@ -2209,10 +2190,8 @@ R_API RList *r_sign_get_list(RAnal *a) {
 
 R_API RSignSearch *r_sign_search_new(void) {
 	RSignSearch *ret = R_NEW0 (RSignSearch);
-	if (ret) {
-		ret->search = r_search_new (R_SEARCH_KEYWORD);
-		ret->items = r_list_newf ((RListFree) r_sign_item_free);
-	}
+	ret->search = r_search_new (R_SEARCH_KEYWORD);
+	ret->items = r_list_newf ((RListFree) r_sign_item_free);
 	return ret;
 }
 
@@ -2921,9 +2900,7 @@ R_API int r_sign_fcn_match_metrics(RSignSearchMetrics *sm, RAnalFunction *fcn) {
 
 R_API RSignItem *r_sign_item_new(void) {
 	RSignItem *ret = R_NEW0 (RSignItem);
-	if (ret) {
-		ret->addr = UT64_MAX;
-	}
+	ret->addr = UT64_MAX;
 	return ret;
 }
 
@@ -3362,9 +3339,6 @@ R_API bool r_sign_save(RAnal *a, const char *file) {
 R_API RSignOptions *r_sign_options_new(const char *bytes_thresh, const char *graph_thresh) {
 	R_RETURN_VAL_IF_FAIL (bytes_thresh && graph_thresh, NULL);
 	RSignOptions *options = R_NEW0 (RSignOptions);
-	if (!options) {
-		return NULL;
-	}
 
 	options->bytes_diff_threshold = r_num_get_double (NULL, bytes_thresh);
 	options->graph_diff_threshold = r_num_get_double (NULL, graph_thresh);

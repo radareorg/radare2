@@ -1096,9 +1096,6 @@ static void rtr_cmds_new_connection(uv_stream_t *server, int status) {
 	rtr_cmds_context *context = server->loop->data;
 
 	uv_tcp_t *client = R_NEW (uv_tcp_t);
-	if (!client) {
-		return;
-	}
 
 	uv_tcp_init (server->loop, client);
 	if (uv_accept (server, (uv_stream_t *)client) == 0) {

@@ -357,10 +357,6 @@ static void GH(jemalloc_get_runs)(RCore *core, const char *input) {
 			ut64 npages, chunksize_mask, map_bias, map_misc_offset, chunk, mapbits;
 			arena_chunk_t *c = R_NEW0 (arena_chunk_t);
 
-			if (!c) {
-				return;
-			}
-
 			input += 1;
 			chunk = r_num_math (core->num, input);
 
@@ -399,10 +395,6 @@ static void GH(jemalloc_get_runs)(RCore *core, const char *input) {
 			eprintf ("map_bits @ 0x%08"PFMT64x"\n", (ut64)(chunk + offset));
 
 			arena_run_t *r = R_NEW0 (arena_run_t);
-			if (!r) {
-				R_LOG_ERROR ("calling calloc");
-				return;
-			}
 			for (pageind = map_bias; pageind < npages; pageind++) {
 				arena_chunk_map_bits_t mapelm = dwords[pageind-map_bias];
 				if (mapelm.bits & CHUNK_MAP_ALLOCATED) {
@@ -410,16 +402,14 @@ static void GH(jemalloc_get_runs)(RCore *core, const char *input) {
 					ut64 elm = chunk + map_misc_offset + pageind-map_bias;
 					eprintf ("\nelm: 0x%"PFMT64x"\n", elm);
 					arena_chunk_map_misc_t *m = R_NEW0 (arena_chunk_map_misc_t);
-					if (m) {
-						ut64 run = elm + r_offsetof (arena_chunk_map_misc_t, run);
-						r_io_read_at (core->io, elm, (ut8*)m, sizeof (arena_chunk_map_misc_t));
-						eprintf ("Small run @ 0x%08"PFMT64x"\n", (ut64)elm);
-						r_io_read_at (core->io, run, (ut8*)r, sizeof (arena_run_t));
-						eprintf ("binind: 0x%08"PFMT64x"\n", (ut64)r->binind);
-						eprintf ("nfree: 0x%08"PFMT64x"\n", (ut64)r->nfree);
-						eprintf ("bitmap: 0x%08"PFMT64x"\n\n", (ut64)*(GHT*)r->bitmap);
-						free (m);
-					}
+					ut64 run = elm + r_offsetof (arena_chunk_map_misc_t, run);
+					r_io_read_at (core->io, elm, (ut8*)m, sizeof (arena_chunk_map_misc_t));
+					eprintf ("Small run @ 0x%08"PFMT64x"\n", (ut64)elm);
+					r_io_read_at (core->io, run, (ut8*)r, sizeof (arena_run_t));
+					eprintf ("binind: 0x%08"PFMT64x"\n", (ut64)r->binind);
+					eprintf ("nfree: 0x%08"PFMT64x"\n", (ut64)r->nfree);
+					eprintf ("bitmap: 0x%08"PFMT64x"\n\n", (ut64)*(GHT*)r->bitmap);
+					free (m);
 				} else if (mapelm.bits & CHUNK_MAP_LARGE) {
 					ut64 run = (ut64) (size_t) chunk + (pageind << LG_PAGE);
 					eprintf ("Large run @ 0x%08"PFMT64x"\n", run);

@@ -382,9 +382,6 @@ static RList* entries(RBinFile *bf) {
 		&& is_in_load_memory (eo, e_entry);
 	if (paddr != UT64_MAX || unbacked) {
 		RBinAddr *ptr = R_NEW0 (RBinAddr);
-		if (!ptr) {
-			return ret;
-		}
 
 		ptr->paddr = paddr;
 		ptr->vaddr = unbacked? e_entry: Elf_(p2v) (eo, ptr->paddr);
@@ -435,13 +432,11 @@ static RList* entries(RBinFile *bf) {
 			continue;
 		}
 		RBinAddr *ptr = R_NEW0 (RBinAddr);
-		if (ptr) {
-			ptr->paddr = symbol->offset;
-			ptr->vaddr = Elf_(p2v) (eo, ptr->paddr);
-			ptr->hpaddr = UT64_MAX;
-			ptr->type = R_BIN_ENTRY_TYPE_INIT;
-			r_list_append (ret, ptr);
-		}
+		ptr->paddr = symbol->offset;
+		ptr->vaddr = Elf_(p2v) (eo, ptr->paddr);
+		ptr->hpaddr = UT64_MAX;
+		ptr->type = R_BIN_ENTRY_TYPE_INIT;
+		r_list_append (ret, ptr);
 		break;
 	}
 

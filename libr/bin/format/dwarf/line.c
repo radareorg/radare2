@@ -1098,14 +1098,12 @@ static void row_free(void *p) {
 static bool cb(void *user, const RBinAddrline *item) {
 	RList *list = (RList *)user;
 	RBinAddrline *row = R_NEW0 (RBinAddrline);
-	if (row) {
-		row->addr = item->addr;
-		row->line = item->line;
-		row->column = item->column;
-		row->file = item->file;
-		row->path = item->path;
-		r_list_append (list, row);
-	}
+	row->addr = item->addr;
+	row->line = item->line;
+	row->column = item->column;
+	row->file = item->file;
+	row->path = item->path;
+	r_list_append (list, row);
 	return true;
 }
 

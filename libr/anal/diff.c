@@ -7,13 +7,11 @@
 
 R_API RAnalDiff *r_anal_diff_new(void) {
 	RAnalDiff *diff = R_NEW0 (RAnalDiff);
-	if (diff) {
-		diff->type = R_ANAL_DIFF_TYPE_NULL;
-		diff->addr = UT64_MAX;
-		diff->dist = 0;
-		diff->name = NULL;
-		diff->size = 0;
-	}
+	diff->type = R_ANAL_DIFF_TYPE_NULL;
+	diff->addr = UT64_MAX;
+	diff->dist = 0;
+	diff->name = NULL;
+	diff->size = 0;
 	return diff;
 }
 

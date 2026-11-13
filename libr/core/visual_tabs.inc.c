@@ -111,9 +111,7 @@ static void visual_tabget(RCore *core, RCoreVisualTab *tab) {
 
 static RCoreVisualTab *r_core_visual_tab_new(RCore *core) {
 	RCoreVisualTab *tab = R_NEW0 (RCoreVisualTab);
-	if (tab) {
-		visual_tabget (core, tab);
-	}
+	visual_tabget (core, tab);
 	return tab;
 }
 

@@ -94,11 +94,9 @@ static RIODesc* __open(RIO* io, const char* pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname, 0)) {
 		if (r_str_startswith (pathname, "null://")) {
 			RIONull *null = R_NEW0 (RIONull);
-			if (null) {
-				null->size = r_num_math (NULL, pathname + 7) + 1;
-				null->offset = 0LL;
-				return r_io_desc_new (io, &r_io_plugin_null, pathname, rw & R_PERM_RWX, mode, null);
-			}
+			null->size = r_num_math (NULL, pathname + 7) + 1;
+			null->offset = 0LL;
+			return r_io_desc_new (io, &r_io_plugin_null, pathname, rw & R_PERM_RWX, mode, null);
 		}
 	}
 	return NULL;

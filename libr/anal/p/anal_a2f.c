@@ -369,11 +369,7 @@ static bool analyzeFunction(RCore *core, ut64 addr) {
 		function_label = strdup (fi->name);
 	} else {
 		const char *fcnpfx = r_anal_fcn_prefix_at (core->anal, addr);
-		if (R_STR_ISEMPTY (fcnpfx)) {
-			function_label = r_str_newf ("fcn_%08"PFMT64x, addr);
-		} else {
-			function_label = r_str_newf ("%s.%08"PFMT64x, fcnpfx, addr);
-		}
+		function_label = r_str_newf ("%s.%08"PFMT64x, fcnpfx, addr);
 	}
 	// loc_addr = core->addr; // sdb_num_get (db, "addr", NULL);
 	loc_addr = sdb_num_get (db, "addr", NULL);

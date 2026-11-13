@@ -38,9 +38,6 @@ static bool check(RBinFile *bf, RBuffer *b) {
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	R_RETURN_VAL_IF_FAIL (bf && buf, false);
 	RBinPDBObj *res = R_NEW0 (RBinPDBObj);
-	if (!res) {
-		return false;
-	}
 	if (!r_bin_pdb_parser_with_buf (&res->pdb, r_ref (buf))) {
 		free (res);
 		return false;

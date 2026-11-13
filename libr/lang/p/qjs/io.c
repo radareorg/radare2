@@ -237,9 +237,6 @@ static JSValue r2plugin_io(JSContext *ctx, JSValueConst this_val, int argc, JSVa
 	}
 
 	RIOPlugin *ap = R_NEW0 (RIOPlugin);
-	if (!ap) {
-		return JS_ThrowRangeError (ctx, "could not allocate qjs core plugin");
-	}
 
 	JSValue desc = JS_GetPropertyStr (ctx, res, "desc");
 	JSValue license = JS_GetPropertyStr (ctx, res, "license");
@@ -268,10 +265,6 @@ static JSValue r2plugin_io(JSContext *ctx, JSValueConst this_val, int argc, JSVa
 	iop->fn_close_js = fn_close_js;
 
 	RLibStruct *lib = R_NEW0 (RLibStruct);
-	if (!lib) {
-		free (ap);
-		return JS_NewBool (ctx, false);
-	}
 
 	lib->type = R_LIB_TYPE_IO;
 	lib->data = ap;

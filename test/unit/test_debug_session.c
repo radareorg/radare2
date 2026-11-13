@@ -77,18 +77,16 @@ static RDebugSession *ref_session(void) {
 	}
 	checkpoint.snaps = r_list_newf ((RListFree)r_debug_snap_free);
 	snap = R_NEW0 (RDebugSnap);
-	if (snap) {
-		snap->name = strdup ("[stack]");
-		snap->addr = 0x7fffffde000;
-		snap->addr_end = 0x7fffffde100;
-		snap->size = 0x100;
-		snap->perm = 7;
-		snap->user = 0;
-		snap->shared = true;
-		snap->data = malloc (snap->size);
-		memset (snap->data, 0xf0, snap->size);
-		r_list_append (checkpoint.snaps, snap);
-	}
+	snap->name = strdup ("[stack]");
+	snap->addr = 0x7fffffde000;
+	snap->addr_end = 0x7fffffde100;
+	snap->size = 0x100;
+	snap->perm = 7;
+	snap->user = 0;
+	snap->shared = true;
+	snap->data = malloc (snap->size);
+	memset (snap->data, 0xf0, snap->size);
+	r_list_append (checkpoint.snaps, snap);
 	RVecDebugCheckpoint_push_back (session->checkpoints, &checkpoint);
 	session->current_checkpoint_id = checkpoint.id;
 	session->next_checkpoint_id = 2;

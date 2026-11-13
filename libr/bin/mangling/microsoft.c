@@ -705,9 +705,6 @@ static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeS
 		}
 
 		str_info = R_NEW (SStrInfo);
-		if (!str_info) {
-			goto beach;
-		}
 
 		// check is it teamplate???
 		if ((*tmp == '?') && (*(tmp + 1) == '$')) {

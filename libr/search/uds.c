@@ -110,9 +110,6 @@ R_API RList *r_search_find_uds(RSearch *search, ut64 addr, const ut8 *data, size
 			continue;
 		}
 		RSearchUds *uh = R_NEW0 (RSearchUds);
-		if (!uh) {
-			break;
-		}
 		uh->score = max_score;
 		uh->stride = max_stride;
 		uh->addr = addr + candb_position;

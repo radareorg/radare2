@@ -137,11 +137,7 @@ R_API bool r_anal_add_function(RAnal *anal, RAnalFunction *fcn) {
 		// r_sys_breakpoint ();
 		free (fcn->name);
 		const char *fcnprefix = r_anal_fcn_prefix_at (anal, fcn->addr);
-		if (R_STR_ISEMPTY (fcnprefix)) {
-			fcn->name = r_str_newf ("fcn_%08"PFMT64x, fcn->addr);
-		} else {
-			fcn->name = r_str_newf ("%s.%"PFMT64x, fcnprefix, fcn->addr);
-		}
+		fcn->name = r_str_newf ("%s.%"PFMT64x, fcnprefix, fcn->addr);
 	}
 	if (filtered && !r_anal_function_rename_unique (fcn, fcn->name)) {
 		return false;
@@ -180,11 +176,7 @@ R_API RAnalFunction *r_anal_create_function(RAnal *anal, const char *name, ut64 
 		fcn->name = strdup (name);
 	} else {
 		const char *fcnprefix = r_anal_fcn_prefix_at (anal, fcn->addr);
-		if (R_STR_ISEMPTY (fcnprefix)) {
-			fcn->name = r_str_newf ("fcn_%08"PFMT64x, fcn->addr);
-		} else {
-			fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnprefix, fcn->addr);
-		}
+		fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnprefix, fcn->addr);
 	}
 	if (diff) {
 		fcn->diff->type = diff->type;

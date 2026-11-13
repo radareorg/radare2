@@ -3846,10 +3846,6 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 					// the way IO works maps would be shown
 					// in reverse order
 					struct io_bin_section_info_t *ibs = R_NEW (struct io_bin_section_info_t);
-					if (!ibs) {
-						R_LOG_ERROR ("Could not allocate memory");
-						goto out;
-					}
 					ibs->sec = section;
 					ibs->addr = addr;
 					ibs->fd = fd;

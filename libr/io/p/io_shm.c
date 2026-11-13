@@ -107,9 +107,6 @@ static RIODesc *shm__open(RIO *io, const char *pathname, int rw, int mode) {
 			return NULL;
 		}
 		RIOShm *shm = R_NEW0 (RIOShm);
-		if (!shm) {
-			return NULL;
-		}
 		const char *ptr = pathname + 6;
 		shm->id = atoi (ptr);
 		if (!shm->id) {

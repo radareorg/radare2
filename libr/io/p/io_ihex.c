@@ -241,10 +241,6 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		return NULL;
 	}
 	Rihex *rih = R_NEW0 (Rihex);
-	if (!rih) {
-		free (str);
-		return NULL;
-	}
 	rih->min = UT64_MAX;
 	rih->rbuf = r_buf_new_sparse (io->Oxff);
 	if (!rih->rbuf) {
