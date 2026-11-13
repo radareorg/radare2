@@ -6077,9 +6077,6 @@ R_API bool r_core_bin_list(RCore *core, int mode) {
 	PJ *pj = NULL;
 	if (mode == 'j') {
 		pj = r_core_pj_new (core);
-		if (!pj) {
-			return 0;
-		}
 		pj_a (pj);
 	}
 	r_list_foreach (binfiles, iter, binfile) {

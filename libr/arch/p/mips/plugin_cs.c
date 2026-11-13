@@ -248,9 +248,6 @@ static inline void es_add_ck(RAnalOp *op, const char *a1, const char *a2, const 
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	PJ *pj = pj_new ();
-	if (!pj) {
-		return;
-	}
 	pj_o (pj);
 	pj_ka (pj, "operands");
 	cs_mips *x = &insn->detail->mips;

@@ -153,9 +153,6 @@ R_API bool r_core_vmark_dump(RCore *core, int mode) {
 	PJ *pj = NULL;
 	if (mode == 'j') {
 		pj = r_core_pj_new (core);
-		if (!pj) {
-			return false;
-		}
 		pj_a (pj);
 	}
 	for (i = 0; i <= UT8_MAX; i++) {

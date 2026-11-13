@@ -735,9 +735,6 @@ static char *debug_replay_list(RCore *core, int mode) {
 	RStrBuf *sb = NULL;
 	if (mode == 'j') {
 		pj = pj_new ();
-		if (!pj) {
-			return NULL;
-		}
 		pj_a (pj);
 	} else {
 		sb = r_strbuf_new ("");
@@ -1888,9 +1885,6 @@ show_help:
 	PJ *pj = NULL;
 	if (mode == 'j') {
 		pj = r_core_pj_new (core);
-		if (!pj) {
-			return;
-		}
 		pj_a (pj);
 	}
 	// TODO: honor mode
@@ -2384,9 +2378,6 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				case 'j':
 					mode = R_MODE_JSON;
 					pj = r_core_pj_new (core);
-					if (!pj) {
-						return false;
-					}
 					break;
 				case 'q':
 					mode = input[2] == 'q' ? input++, R_MODE_SIMPLEST : R_MODE_SIMPLE;
@@ -2951,9 +2942,6 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 			RRegItem *ri;
 			int i;
 			PJ *pj = r_core_pj_new (core);
-			if (!pj) {
-				return;
-			}
 			pj_o (pj);
 			pj_k (pj, "alias_info");
 			pj_a (pj);
@@ -3153,9 +3141,6 @@ static bool cmd_reg_vector_values(RCore *core, RReg *reg, RRegItem *item, int in
 	PJ *pj = NULL;
 	if (mode == 'j') {
 		pj = r_core_pj_new (core);
-		if (!pj) {
-			return false;
-		}
 		pj_o (pj);
 		pj_ks (pj, "name", item->name);
 		pj_ki (pj, "bits", item->size);
@@ -3479,9 +3464,6 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				if (r) {
 					if (json_out) {
 						PJ *pj = r_core_pj_new (core);
-						if (!pj) {
-							return;
-						}
 						pj_o (pj);
 						if (r->comment) {
 							pj_ks (pj, r->name, r->comment);
@@ -3561,9 +3543,6 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				PJ *pj = NULL;
 				if (json_out) {
 					pj = r_core_pj_new (core);
-					if (!pj) {
-						return;
-					}
 					pj_a (pj);
 				}
 				r_list_foreach (rs->regs, iter, r) {
@@ -3820,9 +3799,6 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			str++;
 			if (rad == 'j' && !str[1]) {
 				PJ *pj = r_core_pj_new (core);
-				if (!pj) {
-					break;
-				}
 				pj_a (pj);
 				for (i = 0; (name = r_reg_type_tostring (i)); i++) {
 					pj_s (pj, name);
@@ -3973,9 +3949,6 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			}
 			if (str[0] == 'j') {
 				PJ *pj = r_core_pj_new (core);
-				if (!pj) {
-					return;
-				}
 				print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, pj, 'j', use_color));
 				char *s = pj_drain (pj);
 				if (s) {
@@ -4513,9 +4486,6 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			break;
 		case 'j': { // "dbtj"
 			PJ *pj = r_core_pj_new (core);
-			if (!pj) {
-				return;
-			}
 			addr = UT64_MAX;
 			if (input[2] == ' ' && input[3]) {
 				addr = r_num_math (core->num, input + 2);

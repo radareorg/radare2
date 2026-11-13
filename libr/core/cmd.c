@@ -2484,10 +2484,6 @@ static int cmd_kuery(void *data, const char *input) {
 			break;
 		}
 		PJ *pj = r_core_pj_new (core);
-		if (!pj) {
-  			free (out);
-  			break;
-		}
 		pj_o (pj);
 		pj_ko (pj, "anal");
 		pj_ka (pj, "cur_cmd");

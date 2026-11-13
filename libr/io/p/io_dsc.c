@@ -336,9 +336,6 @@ static char *__infoPointer(RIODscObject * dsc, ut64 size, int mode) {
 	RStrBuf *sb = NULL;
 	if (mode == R_MODE_JSON) {
 		pj = pj_new ();
-		if (!pj) {
-			return NULL;
-		}
 	} else if (mode == R_MODE_PRINT) {
 		sb = r_strbuf_new ("");
 	} else {
@@ -391,9 +388,6 @@ static char *__infoSubCache(RIODscObject * dsc, ut64 size, int mode) {
 	RStrBuf *sb = NULL;
 	if (mode == R_MODE_JSON) {
 		pj = pj_new ();
-		if (!pj) {
-			return NULL;
-		}
 	} else if (mode == R_MODE_PRINT) {
 		sb = r_strbuf_new ("");
 	} else {

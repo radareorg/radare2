@@ -245,10 +245,6 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 	PJ *pj = NULL;
 	if (rad == 'j' || rad == 'J') {
 		pj = pj_new ();
-		if (!pj) {
-			free (buf);
-			return 1;
-		}
 		if (rad == 'J') {
 			pj_o (pj);
 		} else {
@@ -877,12 +873,6 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			PJ *pj = NULL;
 			if (rad == 'j' || rad == 'J') {
 				pj = pj_new ();
-				if (!pj) {
-					if (str != nhashstr) {
-						free (str);
-					}
-					ret (1);
-				}
 				if (rad == 'J') {
 					pj_o (pj);
 				} else {

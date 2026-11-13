@@ -34,12 +34,10 @@ R_API PJ * R_NONNULL pj_new(void) {
 	return j;
 }
 
-R_API PJ *pj_new_with_encoding(PJEncodingStr str_encoding, PJEncodingNum num_encoding) {
+R_API PJ * R_NONNULL pj_new_with_encoding(PJEncodingStr str_encoding, PJEncodingNum num_encoding) {
 	PJ *j = pj_new ();
-	if (j) {
-		j->str_encoding = str_encoding;
-		j->num_encoding = num_encoding;
-	}
+	j->str_encoding = str_encoding;
+	j->num_encoding = num_encoding;
 	return j;
 }
 

@@ -208,9 +208,6 @@ R_API void r_core_task_list(RCore *core, int mode) {
 
 	if (mode == 'j') {
 		pj = r_core_pj_new (core);
-		if (!pj) {
-			return;
-		}
 		pj_a (pj);
 	} else {
 		t = r_core_table_new (core, "tasks");

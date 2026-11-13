@@ -111,9 +111,6 @@ static int tms320_c55x_plus_op(RArchSession *as, RAnalOp *op, ut64 addr, const u
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	PJ *pj = pj_new ();
-	if (!pj) {
-		return;
-	}
 	pj_o (pj);
 	pj_ka (pj, "operands");
 	if (insn->detail) {

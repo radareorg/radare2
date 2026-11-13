@@ -165,9 +165,6 @@ static void opex(RArchSession *as, RStrBuf *buf, cs_insn *insn, int mode) {
 
 	int i;
 	PJ *pj = pj_new ();
-	if (!pj) {
-		return;
-	}
 	pj_o (pj);
 	cs_x86 *x = &insn->detail->x86;
 	if (x->op_count == 0) {

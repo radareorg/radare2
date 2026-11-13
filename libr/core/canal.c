@@ -2334,9 +2334,6 @@ R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt) {
 	switch (fmt) {
 	case R_GRAPH_FORMAT_JSON:
 		pj = pj_new ();
-		if (!pj) {
-			return;
-		}
 		pj_a (pj);
 		break;
 	case R_GRAPH_FORMAT_GML:
@@ -3209,10 +3206,6 @@ static int fcn_list_json(RCore *core, RList *fcns, bool quiet, bool dorefs) {
 	RListIter *iter;
 	RAnalFunction *fcn;
 	PJ *pj = r_core_pj_new (core);
-	if (!pj) {
-		r_cons_println (core->cons, "[]");
-		return -1;
-	}
 	pj_a (pj);
 	r_list_foreach (fcns, iter, fcn) {
 		if (quiet) {
@@ -4258,11 +4251,6 @@ R_API bool r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	}
 	if (go.is_json) {
 		pj = r_core_pj_new (core);
-		if (!pj) {
-			r_config_hold_restore (hc);
-			r_config_hold_free (hc);
-			return false;
-		}
 		pj_a (pj);
 	}
 	r_list_foreach (core->anal->fcns, iter, fcni) {

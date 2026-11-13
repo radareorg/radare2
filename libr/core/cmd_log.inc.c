@@ -663,9 +663,6 @@ static int cmd_plugins(void *data, const char *input) {
 		switch (input[1]) {
 		case 'j': { // "Lcj"
 			PJ *pj = r_core_pj_new (core);
-			if (!pj) {
-				return 1;
-			}
 			pj_a (pj);
 			r_list_foreach (core->rcmd->libstore->plugins, iter, cps) {
 				cp = cps->plugin;

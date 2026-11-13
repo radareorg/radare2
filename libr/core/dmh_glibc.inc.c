@@ -1385,9 +1385,6 @@ static void GH(print_heap_segment)(RCore *core, RStrBuf *sb, RAGraph *g, MallocS
 	switch (format_out) {
 	case 'j':
 		pj = r_core_pj_new (core);
-		if (!pj) {
-			return;
-		}
 		pj_o (pj);
 		pj_ka (pj, "chunks");
 		break;

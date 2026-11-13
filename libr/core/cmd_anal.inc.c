@@ -2112,9 +2112,6 @@ static int cmd_afv(RCore *core, const char *str) {
 	PJ *pj = NULL;
 	if (str[0] == 'j') { // "afvj"
 		pj = r_core_pj_new (core);
-		if (!pj) {
-			return false;
-		}
 		pj_o (pj);
 		pj_k (pj, "reg");
 		r_anal_var_list_show (core->anal, fcn, 'r', 'j', pj);
@@ -2155,9 +2152,6 @@ static int cmd_afv(RCore *core, const char *str) {
 			}
 			if (str[1] == 'j') {
 				pj = r_core_pj_new (core);
-				if (!pj) {
-					return false;
-				}
 			}
 			list_vars (core, fcn, pj, str[0], name);
 			if (str[1] == 'j') {
@@ -2344,9 +2338,6 @@ static int cmd_afv(RCore *core, const char *str) {
 		break;
 	case 'j':  // "afv[bsr]j"
 		pj = r_core_pj_new (core);
-		if (!pj) {
-			return false;
-		}
 		if (fcn) {
 			r_anal_var_list_show (core->anal, fcn, type, str[1], pj);
 			r_cons_println (core->cons, pj_string (pj));
@@ -3751,10 +3742,6 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	}
 	if (mode == 'j' || mode == 'J') {
 		pj = r_core_pj_new (core);
-		if (!pj) {
-			r_cons_println (core->cons, "[]");
-			return false;
-		}
 		pj_a (pj);
 	}
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
@@ -4106,9 +4093,6 @@ static void afbt_show_swop(RCore *core, RAnalBlock *block, int mode) {
 	RAnalSwitchOp *sop = block->switch_op;
 	if (mode == 'j') {
 		PJ *pj = r_core_pj_new (core);
-		if (!pj) {
-			return;
-		}
 		pj_o (pj);
 		pj_kn (pj, "addr", sop->addr);
 		if (sop->jump_addr && sop->jump_addr != UT64_MAX && sop->jump_addr != sop->addr) {
@@ -4557,9 +4541,6 @@ static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 
 	if (json) {
 		PJ *j = r_core_pj_new (core);
-		if (!j) {
-			return;
-		}
 		pj_a (j);
 		char *key = fcn_name? r_type_func_name (core->anal->sdb_types, fcn_name): NULL;
 		int nargs;
@@ -5612,9 +5593,6 @@ static char *afch_tostring(RCore *core, RAnalFunction *fcn, bool json) {
 	const bool is_dyncc = cc && r_str_startswith (cc, "dyncc:");
 	if (json) {
 		PJ *pj = r_core_pj_new (core);
-		if (!pj) {
-			return NULL;
-		}
 		pj_o (pj);
 		if (is_dyncc) {
 			core_anal_cc_json (pj, anal, cc, true);
@@ -6423,9 +6401,6 @@ static int cmd_af(RCore *core, const char *input) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 		if (input[2] == 'j') { // afdj
 			PJ *pj = r_core_pj_new (core);
-			if (!pj) {
-				return false;
-			}
 			pj_o (pj);
 			if (fcn) {
 				pj_ks (pj, "name", fcn->name);
@@ -6559,9 +6534,6 @@ static int cmd_af(RCore *core, const char *input) {
 			{
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);
 				PJ *pj = r_core_pj_new (core);
-				if (!pj) {
-					return false;
-				}
 				pj_o (pj);
 				if (fcn) {
 					pj_ki (pj, "address", fcn->addr);
@@ -7119,9 +7091,6 @@ static int cmd_af(RCore *core, const char *input) {
 			bool json = input[3] == 'j';
 			if (json) {
 				pj = r_core_pj_new (core);
-				if (!pj) {
-					return false;
-				}
 				pj_o (pj);
 			}
 			const char *regname = sdb_const_getf (core->anal->sdb_cc, NULL, "cc.%s.ret0", fcn->callconv);
@@ -7335,9 +7304,6 @@ static int cmd_af(RCore *core, const char *input) {
 			if (input[2] == 'j') {
 				pj_a (pj);
 			}
-			if (!pj) {
-				return false;
-			}
 			// list xrefs from current address
 			{
 				ut64 addr = (input[2] == ' ')? r_num_math (core->num, input + 2): core->addr;
@@ -7476,9 +7442,6 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 	}
 	if (mode == 'j') {
 		pj = r_core_pj_new (core);
-		if (!pj) {
-			return;
-		}
 	}
 	RReg *hack = core->dbg->reg;
 	core->dbg->reg = core->anal->reg;
@@ -8390,9 +8353,6 @@ static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
 	switch (fmt) {
 	case 'j': {
 		PJ *pj = r_core_pj_new (core);
-		if (!pj) {
-			return;
-		}
 		pj_o (pj);
 		if (type & R_ANAL_ADDR_TYPE_PROGRAM) {
 			pj_ks (pj, "program", "true");
@@ -9058,10 +9018,6 @@ static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const ch
 		break;
 	case 'j':
 		pj = r_core_pj_new (core);
-		if (!pj) {
-			free (regnow);
-			return false;
-		}
 		pj_o (pj);
 		pj_k (pj, "A");
 		showregs_json (stats.regs, pj);
@@ -12056,9 +12012,6 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				}
 			} else if (input[1] == 'j') { // "axtj"
 				PJ *pj = r_core_pj_new (core);
-				if (!pj) {
-					return false;
-				}
 				pj_a (pj);
 				RAnalRef *ref;
 				R_VEC_FOREACH (list, ref) {
@@ -12302,9 +12255,6 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					}
 				} else if (input[1] == 'j') { // "axfj"
 					PJ *pj = r_core_pj_new (core);
-					if (!pj) {
-						return false;
-					}
 					pj_a (pj);
 					RAnalRef *ref;
 					R_VEC_FOREACH (list, ref) {
@@ -14518,9 +14468,6 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 		input++;
 		if (rad == 'j') {
 			pj = r_core_pj_new (core);
-			if (!pj) {
-				return 0;
-			}
 		}
 	} else {
 		rad = 0;
@@ -16386,9 +16333,6 @@ static void cmd_avg(RCore *core, const char *input) {
 			GlobalListContext ctx = { .core = core };
 			if (input[0] == 'j') {
 				ctx.pj = pj_new ();
-				if (!ctx.pj) {
-					break;
-				}
 				pj_a (ctx.pj);
 			}
 			RSpace *space = r_flag_space_get (core->flags, "globals");

@@ -44,9 +44,6 @@ static int get_capstone_mode(RArchSession *as) {
 
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	PJ *pj = pj_new ();
-	if (!pj) {
-		return;
-	}
 	pj_o (pj);
 	pj_ka (pj, "operands");
 	int i;

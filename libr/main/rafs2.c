@@ -109,9 +109,6 @@ static int rafs2_list_plugins(Rafs2State *s) {
 
 	if (s->opt.json) {
 		PJ *pj = pj_new ();
-		if (!pj) {
-			return 1;
-		}
 		pj_a (pj);
 		RListIter *iter;
 		RFSPlugin *plugin;
@@ -152,10 +149,6 @@ static int rafs2_list(Rafs2State *s, const char *path) {
 
 	if (s->opt.json) {
 		PJ *pj = pj_new ();
-		if (!pj) {
-			r_list_free (list);
-			return 1;
-		}
 		pj_a (pj);
 		RListIter *iter;
 		RFSFile *file;
@@ -220,10 +213,6 @@ static int rafs2_details(Rafs2State *s) {
 
 	if (s->opt.json) {
 		PJ *pj = pj_new ();
-		if (!pj) {
-			r_list_free (roots);
-			return 1;
-		}
 		pj_o (pj);
 		pj_ks (pj, "fstype", plugin->meta.name);
 		pj_kn (pj, "offset", root->delta);

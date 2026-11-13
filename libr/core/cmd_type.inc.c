@@ -799,9 +799,6 @@ static void types_remove_glob(RCore *core, SdbForeachCallback filter, const char
 */
 static int print_struct_union_list_json(RCore *core, Sdb *TDB, SdbForeachCallback filter) {
 	PJ *pj = r_core_pj_new (core);
-	if (!pj) {
-		return 0;
-	}
 	SdbList *l = sdb_foreach_list_filter (TDB, filter, true);
 	SdbListIter *it;
 	SdbKv *kv;

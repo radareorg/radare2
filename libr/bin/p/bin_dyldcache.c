@@ -1598,9 +1598,6 @@ static char *header(RBinFile *bf, int mode) {
 	ut64 slide = rebase_infos_get_slide (cache);
 
 	PJ *pj = pj_new ();
-	if (!pj) {
-		return NULL;
-	}
 
 	pj_o (pj);
 	pj_k (pj, "header");

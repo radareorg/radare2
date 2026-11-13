@@ -380,9 +380,6 @@ static const char *cc_name(arm_cc cc) {
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	PJ *pj = pj_new ();
-	if (!pj) {
-		return;
-	}
 	pj_o (pj);
 	pj_ka (pj, "operands");
 	cs_arm *x = &insn->detail->arm;
@@ -808,9 +805,6 @@ static int vess_size(arm64_vess vess) {
 static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	PJ *pj = pj_new ();
-	if (!pj) {
-		return;
-	}
 	pj_o (pj);
 	pj_ka (pj, "operands");
 	cs_arm64 *x = &insn->detail->arm64;

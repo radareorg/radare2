@@ -522,9 +522,6 @@ static void print_meta_list(RAnal *a, int type, int rad, ut64 addr, ut64 from, u
 		r_table_add_column (t, s, "string", 0);
 	} else if (rad == 'j') {
 		pj = pj_new ();
-		if (!pj) {
-			return;
-		}
 		pj_a (pj);
 	}
 	RStrBuf *sb = r_strbuf_new ("");

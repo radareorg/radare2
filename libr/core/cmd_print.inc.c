@@ -1541,9 +1541,6 @@ static bool pdu_has_json(const char *input) {
 static int pdu_print_until_opcode_json(RCore *core, ut64 addr, ut8 *buf, int len, const char *opcode) {
 	int ret;
 	PJ *pj = r_core_pj_new (core);
-	if (!pj) {
-		return 1;
-	}
 	pj_a (pj);
 	ret = r_core_print_disasm_json_ipi (core, addr, buf, len, 0, pj, opcode);
 	pj_end (pj);
@@ -1688,9 +1685,6 @@ static void cmd_pDj(RCore *core, const char *arg) {
 		bsize = -bsize;
 	}
 	PJ *pj = r_core_pj_new (core);
-	if (!pj) {
-		return;
-	}
 	pj_a (pj);
 	ut8 *buf = malloc (bsize);
 	if (buf) {
@@ -4736,9 +4730,6 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 	case 'j': // "pvj"
 		{
 			PJ *pj = r_core_pj_new (core);
-			if (!pj) {
-				return;
-			}
 			pj_a (pj);
 			ut64 at = core->addr;
 			for (i = 0; i < repeat; i++) {
@@ -5056,9 +5047,6 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 		goto cleanup;
 	case 'j': // "p-j"
 		pj = r_core_pj_new (core);
-		if (!pj) {
-			goto cleanup;
-		}
 		pj_o (pj);
 		pj_kn (pj, "from", from);
 		pj_kn (pj, "to", to);
@@ -5088,9 +5076,6 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 	case 'e':
 		if (submode == 'j') {
 			pj = r_core_pj_new (core);
-			if (!pj) {
-				goto cleanup;
-			}
 			bar_json_begin (pj, mode, piece, from, to - from);
 		} else {
 			r_cons_printf (core->cons, "0x%08" PFMT64x " [", from);
@@ -5673,9 +5658,6 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		case 'j':
 			{
 				PJ *pj = r_core_pj_new (core);
-				if (!pj) {
-					return;
-				}
 				bar_json_begin (pj, mode, blocksize, from, totalsize);
 				for (i = 0; i < nblocks; i++) {
 					ut8 ep = ptr[i];
@@ -6070,9 +6052,6 @@ static void disasm_recursive(RCore *core, ut64 addr, int count, char type_print)
 	PJ *pj = NULL;
 	if (type_print == 'j') {
 		pj = r_core_pj_new (core);
-		if (!pj) {
-			return;
-		}
 		pj_a (pj);
 	}
 	while (count-- > 0) {
@@ -6131,9 +6110,6 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 	r_anal_function_sort_blocks (f);
 	if (input == 'j' && b) { // "pdrj"
 		pj = r_core_pj_new (core);
-		if (!pj) {
-			return;
-		}
 		pj_o (pj);
 		pj_ks (pj, "name", f->name);
 		pj_ka (pj, "bbs");
@@ -6378,9 +6354,6 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 	}
 	if (mode == 'j') {
 		pj = r_core_pj_new (core);
-		if (!pj) {
-			return;
-		}
 	}
 	RCons *cons = core->cons;
 	ut64 o_offset = core->addr;
@@ -7585,9 +7558,6 @@ static int cmd_pd(RCore *core, const char *input, int len, int l, ut8 *block) {
 					r_io_read_at (core->io, b->addr, block, b->size);
 					if (input[2] == 'j') {
 						PJ *pj = r_core_pj_new (core);
-						if (!pj) {
-							break;
-						}
 						pj_a (pj);
 						r_core_print_disasm_json_ipi (core, b->addr, block, b->size, 0, pj, NULL);
 						pj_end (pj);
@@ -7674,9 +7644,6 @@ static int cmd_pd(RCore *core, const char *input, int len, int l, ut8 *block) {
 					const char *orig_bb_middle = r_config_get (core->config, "asm.bbmiddle");
 					r_config_set_i (core->config, "asm.bbmiddle", false);
 					PJ *pj = r_core_pj_new (core);
-					if (!pj) {
-						break;
-					}
 					pj_o (pj);
 					pj_ks (pj, "name", f->name);
 					pj_kn (pj, "size", fcn_size);

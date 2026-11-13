@@ -325,10 +325,6 @@ static void rtti_itanium_print_class_type_info(class_type_info *cti, const char 
 
 static void rtti_itanium_print_class_type_info_json(class_type_info *cti) {
 	PJ *pj = pj_new ();
-	if (!pj) {
-		return;
-	}
-
 	pj_o (pj);
 	pj_ks (pj, "type", type_tostring (cti->type));
 	pj_kn (pj, "found_at", cti->typeinfo_addr);
@@ -378,10 +374,6 @@ static void rtti_itanium_print_vmi_class_type_info(vmi_class_type_info *vmi_cti,
 
 static void rtti_itanium_print_vmi_class_type_info_json(vmi_class_type_info *vmi_cti) {
 	PJ *pj = pj_new ();
-	if (!pj) {
-		return;
-	}
-
 	pj_o (pj);
 	pj_ks (pj, "type", type_tostring (vmi_cti->type));
 	pj_kn (pj, "found_at", vmi_cti->typeinfo_addr);
@@ -430,10 +422,6 @@ static void rtti_itanium_print_si_class_type_info(si_class_type_info *si_cti, co
 
 static void rtti_itanium_print_si_class_type_info_json(si_class_type_info *si_cti) {
 	PJ *pj = pj_new ();
-	if (!pj) {
-		return;
-	}
-
 	pj_o (pj);
 	pj_ks (pj, "type", type_tostring (si_cti->type));
 	pj_kn (pj, "found_at", si_cti->typeinfo_addr);

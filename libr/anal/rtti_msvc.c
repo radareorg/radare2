@@ -464,9 +464,6 @@ R_API void r_anal_rtti_msvc_print_complete_object_locator(RVTableContext *contex
 
 	if (mode == 'j') {
 		PJ *pj = pj_new ();
-		if (!pj) {
-			return;
-		}
 		rtti_msvc_print_complete_object_locator_json (pj, &col);
 		RCons *cons = r_cons_singleton ();
 		r_cons_print (cons, pj_string (pj));
@@ -485,9 +482,6 @@ R_API void r_anal_rtti_msvc_print_type_descriptor(RVTableContext *context, ut64 
 
 	if (mode == 'j') {
 		PJ *pj = pj_new ();
-		if (!pj) {
-			return;
-		}
 		RCons *cons = r_cons_singleton ();
 		rtti_msvc_print_type_descriptor_json (pj, &td);
 		r_cons_print (cons, pj_string (pj));
@@ -508,9 +502,6 @@ R_API void r_anal_rtti_msvc_print_class_hierarchy_descriptor(RVTableContext *con
 
 	if (mode == 'j') {
 		PJ *pj = pj_new ();
-		if (!pj) {
-			return;
-		}
 		rtti_msvc_print_class_hierarchy_descriptor_json (pj, &chd);
 		RCons *cons = r_cons_singleton ();
 		r_cons_print (cons, pj_string (pj));
@@ -529,9 +520,6 @@ R_API void r_anal_rtti_msvc_print_base_class_descriptor(RVTableContext *context,
 
 	if (mode == 'j') {
 		PJ *pj = pj_new ();
-		if (!pj) {
-			return;
-		}
 		RCons *cons = r_cons_singleton ();
 		rtti_msvc_print_base_class_descriptor_json (pj, &bcd);
 		r_cons_print (cons, pj_string (pj));
@@ -601,9 +589,6 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 	// print
 	if (use_json) {
 		pj = pj_new ();
-		if (!pj) {
-			return false;
-		}
 		pj_o (pj);
 		pj_k (pj, "complete_object_locator");
 		rtti_msvc_print_complete_object_locator_json (pj, &col);

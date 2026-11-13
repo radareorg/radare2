@@ -2242,9 +2242,6 @@ static void anop_esil(RArchSession *as, RAnalOp *op, const ZydisDecodedInstructi
 
 static void opex(RStrBuf *buf, const ZydisDecodedInstruction *insn, const ZydisDecodedOperand *ops, ut64 addr) {
 	PJ *pj = pj_new ();
-	if (!pj) {
-		return;
-	}
 	pj_o (pj);
 	pj_ka (pj, "operands");
 	size_t i;
@@ -2418,9 +2415,6 @@ static char *mnemonics(RArchSession *as, int id, bool json) {
 		}
 		if (json) {
 			PJ *pj = pj_new ();
-			if (!pj) {
-				return NULL;
-			}
 			pj_a (pj);
 			pj_s (pj, name);
 			pj_end (pj);
@@ -2432,9 +2426,6 @@ static char *mnemonics(RArchSession *as, int id, bool json) {
 	RStrBuf *buf = NULL;
 	if (json) {
 		pj = pj_new ();
-		if (!pj) {
-			return NULL;
-		}
 		pj_a (pj);
 	} else {
 		buf = r_strbuf_new ("");
