@@ -982,3 +982,18 @@ EXPECT=<<EOF
             0x00000000      57             push rdi
 EOF
 RUN
+
+NAME=P* saves analysis classes
+FILE=malloc://512
+CMDS=<<EOF
+ac Flatline
+ac Sandstorm
+acb Sandstorm Flatline 8
+P*~^'ac
+EOF
+EXPECT=<<EOF
+'ac Sandstorm
+'ac Flatline
+'acb Sandstorm Flatline 8
+EOF
+RUN
