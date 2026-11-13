@@ -125,9 +125,9 @@ RUN
 
 NAME=member2 type of structure R2_TEST_STRUCT
 FILE=bins/pdb/Project1.pdb
-CMDS=!!rabin2 -P ${R2_FILE} | grep r2_struct_var_2 | grep -ao uint16_t
+CMDS=!!rabin2 -P ${R2_FILE} | grep r2_struct_var_2 | grep -aow int16_t
 EXPECT=<<EOF
-uint16_t
+int16_t
 EOF
 RUN
 
@@ -268,7 +268,7 @@ union R2_TEST_UNION {
 int32_t,0,0
 struct R2_TEST_STRUCT {
   int32_t r2_struct_var_1;
-  uint16_t r2_struct_var_2;
+  int16_t r2_struct_var_2;
 };
 EOF
 RUN
