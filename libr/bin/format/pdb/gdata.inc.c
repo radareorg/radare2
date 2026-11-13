@@ -79,3 +79,65 @@ static void free_gdata_stream(STpiStream *ss, void *stream) {
 	SGDATAStream *data_stream = (SGDATAStream *)stream;
 	r_list_free (data_stream->globals_list);
 }
+
+static void free_module_proc(void *ptr) {
+	SModuleProc *proc = (SModuleProc *)ptr;
+	free (proc->name);
+	free (proc);
+}
+
+static void parse_module_stream(STpiStream *ss, void *stream, R_STREAM_FILE *stream_file) {
+	SModuleStream *module = (SModuleStream *)stream;
+	module->procs = r_list_newf (free_module_proc);
+	const ut32 size = module->sym_size;
+	if (!module->procs || size < 4 || size > stream_file->end - stream_file->pos) {
+		return;
+	}
+	ut8 *data = malloc (size);
+	if (!data) {
+		return;
+	}
+	stream_file_read (stream_file, size, (char *)data);
+	if (stream_file->error) {
+		// a broken module must not discard the rest of the PDB
+		stream_file->error = 0;
+		free (data);
+		return;
+	}
+	// skip the CV_SIGNATURE_C13 signature
+	ut32 i = 4;
+	while (i + 4 <= size) {
+		const ut16 len = r_read_le16 (data + i);
+		if (len < 2 || len > size - i - 2) {
+			break;
+		}
+		const ut8 *rec = data + i + 2;
+		const ut16 kind = r_read_le16 (rec);
+		// parent, end, next, length, debug start, debug end, type, offset, segment, flags, name
+		const ut32 fixed_size = 2 + 35;
+		const bool is_proc = kind == PDB_S_LPROC32 || kind == PDB_S_GPROC32
+			|| kind == PDB_S_LPROC32_ID || kind == PDB_S_GPROC32_ID;
+		if (is_proc && len > fixed_size) {
+			SModuleProc *proc = R_NEW0 (SModuleProc);
+			if (!proc) {
+				break;
+			}
+			proc->size = r_read_le32 (rec + 2 + 12);
+			proc->offset = r_read_le32 (rec + 2 + 28);
+			proc->segment = r_read_le16 (rec + 2 + 32);
+			proc->name = r_str_ndup ((const char *)rec + fixed_size, len - fixed_size);
+			if (!proc->name) {
+				free (proc);
+				break;
+			}
+			r_list_append (module->procs, proc);
+		}
+		i += 2 + len;
+	}
+	free (data);
+}
+
+static void free_module_stream(STpiStream *ss, void *stream) {
+	SModuleStream *module = (SModuleStream *)stream;
+	r_list_free (module->procs);
+}

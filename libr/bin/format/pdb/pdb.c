@@ -1,6 +1,8 @@
 /* radare - LGPL - Copyright 2014-2026 - inisider, pancake */
 
 #include <r_bin.h>
+#include <sdb/ht_su.h>
+#include <sdb/set.h>
 
 #include "types.h"
 #include "stream_pe.h"
@@ -310,9 +312,9 @@ static void free_info_stream(STpiStream *ss, void *stream) {
 }
 
 
-static void add_index(RList *list, RBinPdb *pdb, int index, int stream_size, EStream stream_type, free_func ff, parse_stream_ parse_func) {
+static void *add_index(RList *list, RBinPdb *pdb, int index, int stream_size, EStream stream_type, free_func ff, parse_stream_ parse_func) {
 	if (index == -1) {
-		return;
+		return NULL;
 	}
 	SStreamParseFunc *stream_parse_func = R_NEW0 (SStreamParseFunc);
 	stream_parse_func->pdb = pdb;
@@ -324,12 +326,13 @@ static void add_index(RList *list, RBinPdb *pdb, int index, int stream_size, ESt
 		stream_parse_func->stream = calloc (1, stream_size);
 		if (!stream_parse_func->stream) {
 			R_FREE (stream_parse_func);
-			return;
+			return NULL;
 		}
 	} else {
 		stream_parse_func->stream = NULL;
 	}
 	r_list_append (list, stream_parse_func);
+	return stream_parse_func->stream;
 }
 
 
@@ -346,6 +349,16 @@ static void fill_list_for_stream_parsing(RList *l, RBinPdb *pdb, SDbiStream *dbi
 	add_index (l, pdb, dbis->dbg_header.sn_xdata, 0, ePDB_STREAM_XDATA, 0, 0);
 	add_index (l, pdb, dbis->dbg_header.sn_pdata, 0, ePDB_STREAM_PDATA, 0, 0);
 	add_index (l, pdb, dbis->dbg_header.sn_token_rid_map, 0, ePDB_STREAM_TOKEN_RID_MAP, 0, 0);
+	SDBIExHeader *module;
+	RListIter *it;
+	r_list_foreach (dbis->dbiexhdrs, it, module) {
+		if (module->stream > 0 && module->symSize > 4) {
+			SModuleStream *ms = add_index (l, pdb, module->stream, sizeof (SModuleStream), ePDB_STREAM_MODULE, free_module_stream, parse_module_stream);
+			if (ms) {
+				ms->sym_size = module->symSize;
+			}
+		}
+	}
 }
 
 
@@ -1236,6 +1249,69 @@ static char *print_types(const RBinPdb *pdb, PJ *pj, const int mode) {
 }
 
 
+typedef struct {
+	RStrBuf sb;
+	RStrBuf fcns;
+	PJ *pj;
+	int format;
+	HtSU *names;
+} GVarsOutput;
+
+static void print_gvar(GVarsOutput *out, ut64 addr, ut32 symtype, ut32 size, const char *sname, const char *name, bool unique) {
+	switch (out->format) {
+	case 2:
+	case 'j': // JSON
+		pj_o (out->pj);
+		pj_kN (out->pj, "address", addr);
+		pj_kN (out->pj, "symtype", symtype);
+		if (size) {
+			pj_kn (out->pj, "size", size);
+		}
+		pj_ks (out->pj, "section_name", sname);
+		pj_ks (out->pj, "gdata_name", name);
+		pj_end (out->pj);
+		break;
+	case 1:
+	case '*':
+	case 'r': { // r2 script
+		char *filtered_name = r_name_filter_dup (r_str_trim_head_ro (name));
+		bool found = false;
+		ht_su_find (out->names, filtered_name, &found);
+		if (found && unique) {
+			// static functions of different modules can share a name
+			char *suffixed = r_str_newf ("%s_%" PFMT64x, filtered_name, addr);
+			free (filtered_name);
+			filtered_name = suffixed;
+		}
+		ht_su_update (out->names, filtered_name, addr);
+		if (size) {
+			r_strbuf_appendf (&out->sb, "'@0x%" PFMT64x "'f pdb.%s %u\n", addr, filtered_name, size);
+		} else {
+			r_strbuf_appendf (&out->sb, "'@0x%" PFMT64x "'f pdb.%s\n", addr, filtered_name);
+		}
+		// the filtered name drops characters like the ++ of operator++
+		char *realname = r_base64_encode_dyn ((const ut8 *)name, strlen (name));
+		if (realname) {
+			r_strbuf_appendf (&out->sb, "'fN pdb.%s base64:%s\n", filtered_name, realname);
+			free (realname);
+		}
+		if (symtype & PDB_PUBSYM_FUNCTION) {
+			r_strbuf_appendf (&out->fcns, "'@0x%" PFMT64x "'af\n", addr);
+			// x86-32 MSVC member functions: this in ecx and the callee cleans the stack
+			if (strstr (name, "__thiscall")) {
+				r_strbuf_appendf (&out->fcns, "'@0x%" PFMT64x "'afc thiscall\n", addr);
+			}
+		}
+		free (filtered_name);
+		break;
+	}
+	// case 'd':
+	default:
+		r_strbuf_appendf (&out->sb, "0x%08" PFMT64x "  %d  %s  %s\n", addr, symtype, sname, name);
+		break;
+	}
+}
+
 static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	SStreamParseFunc *omap = NULL, *sctns = NULL, *sctns_orig = NULL, *gsym = NULL, *tmp;
 	SIMAGE_SECTION_HEADER *sctn_header = NULL;
@@ -1261,15 +1337,8 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 			break;
 		}
 	}
-	if (!gsym) {
-		R_LOG_ERROR ("There is no global symbols in current PDB");
-		return NULL;
-	}
 
-	if (format == 'j') {
-		pj_ka (pj, "gvars");
-	}
-	SGDATAStream *gsym_data_stream = (SGDATAStream *)gsym->stream;
+	SGDATAStream *gsym_data_stream = gsym? (SGDATAStream *)gsym->stream: NULL;
 	SPEStream *pe_stream = NULL;
 	if ((omap != 0) && (sctns_orig != 0)) {
 		pe_stream = (SPEStream *)sctns_orig->stream;
@@ -1279,77 +1348,80 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	if (!pe_stream) {
 		return NULL;
 	}
-	RStrBuf sb;
-	r_strbuf_init (&sb);
+	GVarsOutput out = { .pj = pj, .format = format, .names = ht_su_new0 () };
+	SetU *fcn_addrs = set_u_new ();
+	if (!out.names || !fcn_addrs) {
+		ht_su_free (out.names);
+		set_u_free (fcn_addrs);
+		return NULL;
+	}
+	r_strbuf_init (&out.sb);
+	r_strbuf_init (&out.fcns);
+	if (format == 'j') {
+		pj_ka (pj, "gvars");
+	}
 	if (format == 'r' || format == '*' || format == 1) {
 		// in the symbols space they name functions before the section flags at the same address
-		r_strbuf_append (&sb, "fs+symbols\n");
+		r_strbuf_append (&out.sb, "fs+symbols\n");
 	}
-	// functions are analyzed after every flag is set, so jumps into them are seen as tail calls
-	RStrBuf fcns;
-	r_strbuf_init (&fcns);
-	r_list_foreach (gsym_data_stream->globals_list, it, gdata) {
-		sctn_header = pdb_pe_section (pe_stream, gdata->segment - 1);
-		if (sctn_header) {
-			char *filtered_name;
-			char sname[PDB_SIZEOF_SECTION_NAME + 1];
+	char sname[PDB_SIZEOF_SECTION_NAME + 1];
+	if (gsym_data_stream) {
+		r_list_foreach (gsym_data_stream->globals_list, it, gdata) {
+			sctn_header = pdb_pe_section (pe_stream, gdata->segment - 1);
+			if (!sctn_header) {
+				R_LOG_DEBUG ("Skipping %s, segment %d does not exist", gdata->name.name, (gdata->segment - 1));
+				continue;
+			}
 			r_str_ncpy (sname, sctn_header->name, sizeof (sname));
 			r_str_sanitize (sname);
 			name = r_bin_demangle_msvc (gdata->name.name);
 			name = (name)? name: strdup (gdata->name.name);
 			ut64 addr = img_base + omap_remap ((omap)? (omap->stream): 0, gdata->offset + sctn_header->virtual_address);
-			switch (format) {
-			case 2:
-			case 'j': // JSON
-				pj_o (pj);
-				pj_kN (pj, "address", addr);
-				pj_kN (pj, "symtype", gdata->symtype);
-				pj_ks (pj, "section_name", sname);
-				pj_ks (pj, "gdata_name", name);
-				pj_end (pj);
-				break;
-			case 1:
-			case '*':
-			case 'r': // r2 script
-				filtered_name = r_name_filter_dup (r_str_trim_head_ro (name));
-				r_strbuf_appendf (&sb, "'@0x%" PFMT64x "'f pdb.%s\n", addr, filtered_name);
-				// the filtered name drops characters like the ++ of operator++
-				char *realname = r_base64_encode_dyn ((const ut8 *)name, strlen (name));
-				if (realname) {
-					r_strbuf_appendf (&sb, "'fN pdb.%s base64:%s\n", filtered_name, realname);
-					free (realname);
-				}
-				if (gdata->symtype & PDB_PUBSYM_FUNCTION) {
-					r_strbuf_appendf (&fcns, "'@0x%" PFMT64x "'af\n", addr);
-					// x86-32 MSVC member functions: this in ecx and the callee cleans the stack
-					if (strstr (name, "__thiscall")) {
-						r_strbuf_appendf (&fcns, "'@0x%" PFMT64x "'afc thiscall\n", addr);
-					}
-				}
-				free (filtered_name);
-				break;
-			// case 'd':
-			default:
-				r_strbuf_appendf (&sb, "0x%08" PFMT64x "  %d  %s  %s\n",
-					(ut64) addr, gdata->symtype, sname, name);
-				break;
+			print_gvar (&out, addr, gdata->symtype, 0, sname, name, false);
+			if (gdata->symtype & PDB_PUBSYM_FUNCTION) {
+				set_u_add (fcn_addrs, addr);
 			}
 			free (name);
-		} else {
-			R_LOG_DEBUG ("Skipping %s, segment %d does not exist", gdata->name.name, (gdata->segment - 1));
 		}
 	}
+	// the procedures of the modules add the static functions, which have no public symbol
+	r_list_foreach (pdb->pdb_streams2, it, tmp) {
+		if (tmp->type != ePDB_STREAM_MODULE || !tmp->stream) {
+			continue;
+		}
+		SModuleStream *module = (SModuleStream *)tmp->stream;
+		SModuleProc *proc;
+		RListIter *iter;
+		r_list_foreach (module->procs, iter, proc) {
+			sctn_header = pdb_pe_section (pe_stream, proc->segment - 1);
+			if (!sctn_header || R_STR_ISEMPTY (proc->name)) {
+				continue;
+			}
+			ut64 addr = img_base + omap_remap ((omap)? (omap->stream): 0, proc->offset + sctn_header->virtual_address);
+			if (set_u_contains (fcn_addrs, addr)) {
+				continue;
+			}
+			set_u_add (fcn_addrs, addr);
+			r_str_ncpy (sname, sctn_header->name, sizeof (sname));
+			r_str_sanitize (sname);
+			print_gvar (&out, addr, PDB_PUBSYM_FUNCTION, proc->size, sname, proc->name, true);
+		}
+	}
+	set_u_free (fcn_addrs);
+	ht_su_free (out.names);
 	if (format == 'j') {
 		pj_end (pj);
-		r_strbuf_fini (&fcns);
+		r_strbuf_fini (&out.sb);
+		r_strbuf_fini (&out.fcns);
 		return NULL;
 	}
 	if (format == 'r' || format == '*' || format == 1) {
-		r_strbuf_append (&sb, "fs-\n");
+		r_strbuf_append (&out.sb, "fs-\n");
 	}
-	r_strbuf_append (&sb, r_strbuf_get (&fcns));
-	r_strbuf_fini (&fcns);
-	return r_strbuf_drain_nofree (&sb);
+	// functions are analyzed after every flag is set, so jumps into them are seen as tail calls
+	r_strbuf_append (&out.sb, r_strbuf_get (&out.fcns));
+	r_strbuf_fini (&out.fcns);
+	return r_strbuf_drain_nofree (&out.sb);
 }
 
 
