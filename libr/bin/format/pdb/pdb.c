@@ -1381,3 +1381,17 @@ R_API bool r_bin_pdb_parser(RBinPdb *pdb, const char *filename) {
 	}
 	return r_bin_pdb_parser_with_buf (pdb, buf);
 }
+
+// same format as the guid of RBinInfo, without the age suffix
+R_API char *r_bin_pdb_guid(const RBinPdb *pdb) {
+	R_RETURN_VAL_IF_FAIL (pdb, NULL);
+	const SPDBInfoStream *info = r_list_get_n (pdb->pdb_streams, ePDB_STREAM_PDB);
+	if (!info) {
+		return NULL;
+	}
+	const SGUID *guid = &info->guid;
+	return r_str_newf ("%08X%04X%04X%02X%02X%02X%02X%02X%02X%02X%02X",
+		guid->data1, guid->data2, guid->data3,
+		guid->data4[0], guid->data4[1], guid->data4[2], guid->data4[3],
+		guid->data4[4], guid->data4[5], guid->data4[6], guid->data4[7]);
+}

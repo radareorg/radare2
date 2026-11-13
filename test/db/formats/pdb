@@ -42,6 +42,18 @@ ERROR: Cannot open file
 EOF
 RUN
 
+NAME=idp warns when the PDB belongs to another binary
+FILE=bins/pdb/SimplePDB.exe
+CMDS=<<EOF
+idp bins/pdb/Project1.pdb
+idp bins/pdb/SimplePDB.pdb
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+WARN: bins/pdb/Project1.pdb does not belong to this binary (PDB GUID C6B50FBD7002442F906FEF957AF8D781, binary 1516D2A3E6864C06BD82C50FBE6152363)
+EOF
+RUN
+
 NAME=idp and baddr
 FILE=-
 CMDS=<<EOF

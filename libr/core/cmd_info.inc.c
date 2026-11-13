@@ -2691,24 +2691,21 @@ static void cmd_idp(RCore *core, PJ *pj, const char *input, bool is_array, int m
 				R_LOG_ERROR ("Cannot get file's debug information");
 				break;
 			}
-			// Check raw path for debug filename
-			const char *dfn = r_file_basename (info->debug_file_name);
-			file_found = r_file_exists (dfn);
-			if (file_found) {
-				filename = strdup (dfn);
-			} else {
-				// Check debug filename basename in current directory
-				char *basename = (char *)r_file_basename (dfn);
-				file_found = r_file_exists (basename);
-				if (!file_found) {
-					// Check if debug file is in file directory
-					char *dir = r_file_dirname (core->bin->cur->file);
-					filename = r_str_newf ("%s/%s", dir, basename);
-					file_found = r_file_exists (filename);
-					free (dir);
-				} else {
-					filename = strdup (basename);
-				}
+			// next to the binary first: a same-named PDB in cwd may be another build
+			const char *basename = r_file_basename (info->debug_file_name);
+			char *dir = r_file_dirname (core->bin->cur->file);
+			filename = r_str_newf ("%s" R_SYS_DIR "%s", dir, basename);
+			free (dir);
+			file_found = r_file_exists (filename);
+			if (!file_found) {
+				free (filename);
+				filename = strdup (info->debug_file_name);
+				file_found = r_file_exists (filename);
+			}
+			if (!file_found) {
+				free (filename);
+				filename = strdup (basename);
+				file_found = r_file_exists (filename);
 			}
 
 			// Last chance: Check if file is in downstream symbol store

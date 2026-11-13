@@ -1564,6 +1564,13 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 		}
 		return false;
 	}
+	RBinInfo *info = r_bin_get_info (core->bin);
+	char *pdb_guid = r_bin_pdb_guid (&pdb);
+	if (info && pdb_guid && info->guid && (strlen (info->guid) < strlen (pdb_guid)
+			|| r_str_ncasecmp (info->guid, pdb_guid, strlen (pdb_guid)))) {
+		R_LOG_WARN ("%s does not belong to this binary (PDB GUID %s, binary %s)", file, pdb_guid, info->guid);
+	}
+	free (pdb_guid);
 
 	int fmt_mode = 'd'; // default
 	if (jsonmode) {
