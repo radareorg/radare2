@@ -254,7 +254,22 @@ idp bins/pdb/Project1.pdb
 fN @ 0x00011000
 EOF
 EXPECT=<<EOF
-pdb.__enc_textbss_end
+__enc$textbss$end
+EOF
+RUN
+
+NAME=PDB flag realname keeps the demangled name
+FILE=bins/pdb/SimplePDB.exe
+CMDS=<<EOF
+idp bins/pdb/SimplePDB.pdb
+s pdb.void___cdecl_SomeCoolFunction_void_
+fN
+e asm.flags.real=true
+pd 1~SomeCool
+EOF
+EXPECT=<<EOF
+void __cdecl SomeCoolFunction(void)
+            ;-- void __cdecl SomeCoolFunction(void):
 EOF
 RUN
 
