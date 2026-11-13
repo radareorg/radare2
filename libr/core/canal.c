@@ -591,10 +591,23 @@ static void autoname_tail_jmp_stub(RCore *core, RAnalFunction *fcn) {
 	}
 }
 
+static const char *trampoline_target_name(RCore *core, ut64 addr) {
+	RAnalFunction *target = r_anal_get_function_at (core->anal, addr);
+	if (target && target->name && !r_str_startswith (target->name, "fcn.")) {
+		return target->name;
+	}
+	RFlagItem *f = r_core_flag_get_by_spaces (core->flags, false, addr);
+	if (f && f->name && !r_str_startswith (f->name, "sect") && !r_str_startswith (f->name, "fcn.")) {
+		return f->name;
+	}
+	return NULL;
+}
+
 static void autoname_imp_trampoline(RCore *core, RAnalFunction *fcn) {
 	if (RVecAnalBlockPtr_length (&fcn->bbs) == 1 && (*RVecAnalBlockPtr_at (&fcn->bbs, 0))->ninstr == 1) {
 		// TODO seems wasteful, maybe we should add a function to only retrieve the first?
 		RVecAnalRef *refs = r_anal_function_get_refs (fcn);
+		bool renamed = false;
 		if (refs && RVecAnalRef_length (refs) == 1) {
 			RAnalRef *ref = RVecAnalRef_at (refs, 0);
 			int rt = R_ANAL_REF_TYPE_MASK (ref->type);
@@ -604,10 +617,24 @@ static void autoname_imp_trampoline(RCore *core, RAnalFunction *fcn) {
 					char *newname = r_str_newf ("sub.%s", flg->name + 8);
 					r_anal_function_rename_unique (fcn, newname);
 					free (newname);
+					renamed = true;
 				}
 			}
 		}
 		RVecAnalRef_free (refs);
+		if (!renamed) {
+			// a lone jmp, like the incremental linking thunks of MSVC, is named after its target
+			RAnalOp *op = r_core_anal_op (core, fcn->addr, R_ARCH_OP_MASK_BASIC);
+			if (op && op->type == R_ANAL_OP_TYPE_JMP && op->jump != UT64_MAX) {
+				const char *target = trampoline_target_name (core, op->jump);
+				if (target) {
+					char *newname = r_str_newf ("j.%s", target);
+					r_anal_function_rename_unique (fcn, newname);
+					free (newname);
+				}
+			}
+			r_anal_op_free (op);
+		}
 		return;
 	}
 	autoname_tail_jmp_stub (core, fcn);

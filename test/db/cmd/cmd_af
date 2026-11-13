@@ -1073,3 +1073,17 @@ afl~401010
 EOF
 EXPECT=
 RUN
+
+NAME=af names a lone jmp after its target
+FILE=bins/pdb/SimplePDB.exe
+ARGS=-e io.cache=true
+CMDS=<<EOF
+wx e90b000000 @ 0x401000
+f sym.target @ 0x401010
+af @ 0x401000
+afl~401000
+EOF
+EXPECT=<<EOF
+0x00401000    1      5 j.sym.target
+EOF
+RUN
