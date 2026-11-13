@@ -50,3 +50,18 @@ EXPECT=<<EOF
 
 EOF
 RUN
+
+NAME=?ep rejects oversized pie chart size without crashing
+FILE=malloc://64
+CMDS=<<EOF
+e scr.color=0
+e hex.cols=65536
+?ep 10 20
+e hex.cols=46341
+?ep 10 20
+?e survived
+EOF
+EXPECT=<<EOF
+survived
+EOF
+RUN

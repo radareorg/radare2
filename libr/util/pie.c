@@ -68,8 +68,8 @@ static void drawPieChart(char *out, int diameter, int numSlices, int sliceSizes[
 }
 
 R_API void r_print_pie(RPrint * R_NULLABLE p, int nvalues, int *values, const char **text, int size) {
-	if (size < 1) {
-		R_LOG_WARN ("No one cant eat such smol pie");
+	if (size < 1 || size > 0x400) {
+		R_LOG_WARN ("Invalid pie chart size");
 		return;
 	}
 	if (nvalues > 9) {
@@ -77,8 +77,11 @@ R_API void r_print_pie(RPrint * R_NULLABLE p, int nvalues, int *values, const ch
 		nvalues = 9;
 	}
 	ut8 *nv = calloc (nvalues, sizeof (ut8));
-	char *out = calloc (size, size * size);
-
+	char *out = calloc (size + 1, size + 1);
+	if (!out) {
+		free (nv);
+		return;
+	}
 	drawPieChart (out, size, nvalues, values, text);
 
 	const bool use_colors = p? p->flags & R_PRINT_FLAGS_COLOR: false;
