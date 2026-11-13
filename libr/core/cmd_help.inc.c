@@ -484,6 +484,13 @@ static void cmd_help_percent(RCore *core) {
 	r_cons_cmd_help (core->cons, help_msg_env);
 }
 
+// Yanks str including its NUL terminator and frees it
+static bool question_yank_string(RCore *core, R_OWNED char *str) {
+	const bool ok = str && r_core_yank_set (core, R_CORE_FOREIGN_ADDR, (const ut8 *)str, strlen (str) + 1);
+	free (str);
+	return ok;
+}
+
 static void cmd_help_em(RCore *core, const char *input) {
 	char *word, *str = strdup (r_str_trim_head_ro (input + 2));
 	char *legend = strchr (str, ',');
@@ -1563,7 +1570,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case '_': // "?_" hud input
-		r_core_yank_hud_file (core, input + 1);
+		question_yank_string (core, r_cons_hud_file (core->cons, r_str_trim_head_ro (input + 1)));
 		break;
 	case 'i': // "?i" input num
 		r_cons_set_raw (core->cons, 0);
@@ -1586,7 +1593,7 @@ static int cmd_help(void *data, const char *input) {
 				{
 					const bool interactive = r_config_get_b (core->config, "scr.interactive");
 					if (interactive) {
-						r_core_return_value (core, r_core_yank_hud_path (core, input + 2, 0) == true);
+						r_core_return_value (core, question_yank_string (core, r_cons_hud_path (core->cons, r_str_trim_head_ro (input + 2), 0)));
 					} else {
 						R_LOG_WARN ("?ip requires scr.interactive=true");
 						r_core_return_code (core, R_CMD_RC_FAILURE);
@@ -1630,7 +1637,7 @@ static int cmd_help(void *data, const char *input) {
 				r_line_set_prompt (core->cons->line, foo);
 				r_cons_fgets (core->cons, foo, sizeof (foo), 0, NULL);
 				foo[sizeof (foo) - 1] = 0;
-				r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, foo, strlen (foo) + 1);
+				r_core_yank_set (core, R_CORE_FOREIGN_ADDR, (const ut8 *)foo, strlen (foo) + 1);
 				r_core_return_value (core, r_num_math (core->num, foo));
 				}
 				break;

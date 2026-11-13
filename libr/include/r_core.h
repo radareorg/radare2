@@ -717,15 +717,9 @@ R_API RList *r_core_fortune_types(RCore *core);
 R_API void r_core_fortune_print_random(RCore *core);
 
 #define R_CORE_FOREIGN_ADDR -1
-R_API bool r_core_yank(RCore *core, ut64 addr, int len);
-R_API void r_core_yank_unset(RCore *core);
-R_API bool r_core_yank_string(RCore *core, ut64 addr, int maxlen);
-R_API bool r_core_yank_paste(RCore *core, ut64 addr, int len);
-R_API bool r_core_yank_set(RCore *core, ut64 addr, const ut8 *buf, ut32 len);  // set yank buffer bytes
-R_API bool r_core_yank_set_str(RCore *core, ut64 addr, const char *buf, ut32 len); // Null terminate the bytes
-R_API bool r_core_yank_hud_file(RCore *core, const char *input);
-R_API bool r_core_yank_hud_path(RCore *core, const char *input, int dir);
-R_API bool r_core_yank_file(RCore *core, ut64 offset, ut64 len, const char *filename);
+R_API bool r_core_yank(RCore *core, ut64 addr, ut32 len);
+R_API bool r_core_yank_paste(RCore *core, ut64 addr, ut32 len);
+R_API bool r_core_yank_set(RCore *core, ut64 addr, const ut8 *buf, ut32 len);
 
 #define R_CORE_LOADLIBS_ALL R_LIB_LOAD_ALL
 
