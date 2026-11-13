@@ -1091,6 +1091,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ELF: unapplied relocs omit the common symbol address at a custom base
+FILE=bins/elf/x86_64-common-refs.o
+ARGS=-B 0x1000 -e bin.relocs.apply=false
+CMDS=<<EOF
+is~GLOBAL OBJ
+pd 9 @ sym.bump~RELOC
+EOF
+EXPECT=<<EOF
+3   ---------- ---------- GLOBAL OBJ  4        counter
+4   ---------- ---------- GLOBAL OBJ  32       table
+5   ---------- ---------- GLOBAL OBJ  64       big
+            0x00001044      8b0500000000   mov eax, dword [0x0000104a] ; [0x104a:4]=0x8901508d; RELOC 32 counter - 0x800004a
+            0x0000104d      891500000000   mov dword [0x00001053], edx ; [0x1053:4]=0x48c26348; RELOC 32 counter - 0x8000053
+            0x00001056      4889050000..   mov qword [0x0000105d], rax ; [0x105d:8]=0x10000000005be0f; RELOC 32 table - 0x8000055
+            0x0000105d      0fbe050000..   movsx eax, byte [0x00001064] ; [0x1064:1]=1; RELOC 32 big - 0x8000061
+EOF
+RUN
+
 NAME=ELF: applied relocs to one common symbol share its slot
 FILE=bins/elf/x86_64-common-refs.o
 ARGS=-e bin.relocs.apply=true

@@ -5596,7 +5596,7 @@ static void fill_symbol(ELFOBJ *eo, RBinElfSymbol *symbol, RBinSymbol *sym) {
 		ut64 va = Elf_(p2v) (eo, paddr);
 		vaddr = (va != UT64_MAX) ? va : paddr;
 	}
-	if (is_bin_etrel (eo) && eo->shdr && symbol->st_shndx < eo->shnum
+	if (is_bin_etrel (eo) && eo->shdr && is_shidx_valid (eo, symbol->st_shndx)
 			&& eo->shdr[symbol->st_shndx].sh_type == SHT_NOBITS) {
 		paddr = UT64_MAX;
 	}
