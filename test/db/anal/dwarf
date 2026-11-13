@@ -1,0 +1,17 @@
+
+NAME=DWARF: an IPA-SRA clone does not inherit its origin's prototype
+FILE=bins/elf/x86_64-isra-clone-prototype
+CMDS=<<EOF
+aaa
+?e link_f=`k anal/types/fcnlink.00401000`
+?e link_use=`k anal/types/fcnlink.00401010`
+afn @ 0x401000
+afs @ 0x401010
+EOF
+EXPECT=<<EOF
+link_f=
+link_use=use
+sym.f.isra.0
+long int dbg.use (long int x, long int y);
+EOF
+RUN
