@@ -1281,6 +1281,13 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	}
 	RStrBuf sb;
 	r_strbuf_init (&sb);
+	if (format == 'r' || format == '*' || format == 1) {
+		// in the symbols space they name functions before the section flags at the same address
+		r_strbuf_append (&sb, "fs+symbols\n");
+	}
+	// functions are analyzed after every flag is set, so jumps into them are seen as tail calls
+	RStrBuf fcns;
+	r_strbuf_init (&fcns);
 	r_list_foreach (gsym_data_stream->globals_list, it, gdata) {
 		sctn_header = pdb_pe_section (pe_stream, gdata->segment - 1);
 		if (sctn_header) {
@@ -1312,6 +1319,9 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 					r_strbuf_appendf (&sb, "'fN pdb.%s base64:%s\n", filtered_name, realname);
 					free (realname);
 				}
+				if (gdata->symtype & PDB_PUBSYM_FUNCTION) {
+					r_strbuf_appendf (&fcns, "'@0x%" PFMT64x "'af\n", addr);
+				}
 				free (filtered_name);
 				break;
 			// case 'd':
@@ -1327,8 +1337,14 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	}
 	if (format == 'j') {
 		pj_end (pj);
+		r_strbuf_fini (&fcns);
 		return NULL;
 	}
+	if (format == 'r' || format == '*' || format == 1) {
+		r_strbuf_append (&sb, "fs-\n");
+	}
+	r_strbuf_append (&sb, r_strbuf_get (&fcns));
+	r_strbuf_fini (&fcns);
 	return r_strbuf_drain_nofree (&sb);
 }
 

@@ -12,8 +12,8 @@ e asm.bits
 EOF
 EXPECT=<<EOF
 0x00401000 4096 section..text
-0x00401000 1 pdb.void___cdecl_SomeCoolFunction_void_
-0x00401010 1 pdb._main
+0x00401000 13 pdb.void___cdecl_SomeCoolFunction_void_
+0x00401010 8 pdb._main
 --
 32
 0x00401000  2  .text  void __cdecl SomeCoolFunction(void)

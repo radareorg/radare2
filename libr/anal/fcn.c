@@ -1886,10 +1886,11 @@ noskip:
 				goto beach;
 			}
 			// TAILCALL CHECKS BELOW
-			{ // check if destination is a prelude, so we assume that's a tailcall
+			{ // an existing function or a prelude marks a tail call
 				ut8 buf[32];
 				const int nread = anal->iob.read_at (anal->iob.io, op->jump, (ut8 *)buf, sizeof (buf));
-				if (nread > 0 && r_anal_is_prelude (anal, op->jump, buf, nread)) {
+				RAnalFunction *nfcn = r_anal_get_function_at (anal, op->jump);
+				if (nfcn || (nread > 0 && r_anal_is_prelude (anal, op->jump, buf, nread))) {
 					R_LOG_DEBUG ("tail call jump found at 0x%08"PFMT64x, op->addr);
 					// XXX using type-jump wont analyze the destination as a function
 					// walking it from here wont make it analyze it either
@@ -1897,17 +1898,17 @@ noskip:
 					(void) r_anal_xrefs_setf (anal, fcn, op->addr, op->jump, R_ANAL_REF_TYPE_CALL | R_ANAL_REF_TYPE_EXEC);
 #else
 					(void) r_anal_xrefs_setf (anal, fcn, op->addr, op->jump, R_ANAL_REF_TYPE_JUMP | R_ANAL_REF_TYPE_EXEC);
-					// using type-jump wont analyze the destination as a function
-					/// XXX RAnalFunction *fcn = r_anal_function_new (anal, op->jump);
-					RAnalFunction *nfcn = r_anal_create_function (anal, tailcall_name (anal, op->jump), op->jump, 0, NULL);
 					if (!nfcn) {
-						nfcn = r_anal_create_function (anal, NULL, op->jump, 0, NULL);
-					}
-					if (anal->fcn_depth < MAX_TAILCALL_DEPTH) {
-						r_anal_function (anal, nfcn? nfcn: fcn, op->jump, R_ANAL_REF_TYPE_CALL);
-					} else if (nfcn) {
-						// deeper chains are walked by the outermost call instead of nesting on the stack
-						RVecAnalAddr_push_back (&anal->tailcalls, &op->jump);
+						nfcn = r_anal_create_function (anal, tailcall_name (anal, op->jump), op->jump, 0, NULL);
+						if (!nfcn) {
+							nfcn = r_anal_create_function (anal, NULL, op->jump, 0, NULL);
+						}
+						if (anal->fcn_depth < MAX_TAILCALL_DEPTH) {
+							r_anal_function (anal, nfcn? nfcn: fcn, op->jump, R_ANAL_REF_TYPE_CALL);
+						} else if (nfcn) {
+							// deeper chains are walked by the outermost call instead of nesting on the stack
+							RVecAnalAddr_push_back (&anal->tailcalls, &op->jump);
+						}
 					}
 					// cmd.fcn.new may have written io, so the next block reads it again
 					w->ra.cache_addr = UT64_MAX;

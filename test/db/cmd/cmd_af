@@ -1043,3 +1043,33 @@ EXPECT=<<EOF
   inline    false
 EOF
 RUN
+
+NAME=af does not create again the function at a tail call target
+FILE=bins/pdb/SimplePDB.exe
+ARGS=-e io.cache=true
+CMDS=<<EOF
+wx e90b000000 @ 0x401000
+f pdb.target @ 0x401010
+af @ 0x401010
+af @ 0x401000
+afl~401010
+EOF
+EXPECT=<<EOF
+0x00401010    1      8 pdb.target
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=a PDB data flag is not a function prelude
+FILE=bins/pdb/SimplePDB.exe
+ARGS=-e io.cache=true
+CMDS=<<EOF
+wx e90b000000 @ 0x401000
+wx 0000000000 @ 0x401010
+f pdb.data @ 0x401010
+af @ 0x401000
+afl~401010
+EOF
+EXPECT=
+RUN
