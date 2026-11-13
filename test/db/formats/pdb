@@ -66,6 +66,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=idp applies thiscall from a demangled PDB public symbol
+FILE=bins/pdb/SimplePDB.exe
+CMDS=<<EOF
+idpi* bins/pdb/SimplePDB-thiscall.pdb~afc
+EOF
+EXPECT=<<EOF
+'@0x401000'afc thiscall
+EOF
+RUN
 NAME=idp and baddr
 FILE=-
 CMDS=<<EOF

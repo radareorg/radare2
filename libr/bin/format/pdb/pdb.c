@@ -1321,6 +1321,10 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 				}
 				if (gdata->symtype & PDB_PUBSYM_FUNCTION) {
 					r_strbuf_appendf (&fcns, "'@0x%" PFMT64x "'af\n", addr);
+					// x86-32 MSVC member functions: this in ecx and the callee cleans the stack
+					if (strstr (name, "__thiscall")) {
+						r_strbuf_appendf (&fcns, "'@0x%" PFMT64x "'afc thiscall\n", addr);
+					}
 				}
 				free (filtered_name);
 				break;
