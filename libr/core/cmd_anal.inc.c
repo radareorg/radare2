@@ -5524,9 +5524,7 @@ static void cmd_aflxj(RCore *core) {
 	SdbListIter *liter;
 	SdbKv *kv;
 	PJ * pj = r_core_pj_new (core);
-	if (pj) {
-		pj_o (pj);
-	}
+	pj_o (pj);
 	ls_foreach (keys, liter, kv) {
 		const char *key = sdbkv_key (kv);
 		const char *value = sdbkv_value (kv);
@@ -13803,11 +13801,9 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 	case 'j': // "ag_j"
 		{
 			PJ *pj = r_core_pj_new (core);
-			if (pj) {
-				r_graph_drawable_to_json (graph, pj, use_offset);
-				r_cons_println (core->cons, pj_string (pj));
-				pj_free (pj);
-			}
+			r_graph_drawable_to_json (graph, pj, use_offset);
+			r_cons_println (core->cons, pj_string (pj));
+			pj_free (pj);
 		}
 		break;
 	case 'g': // "ag_j"
@@ -15030,18 +15026,16 @@ static void cmd_anal_abp(RCore *core, const char *input) {
 		}
 		RList *path = r_anal_block_shortest_path (block, addr);
 		PJ *pj = r_core_pj_new (core);
-		if (pj) {
-			pj_a (pj);
-			if (path) {
-				RListIter *it;
-				r_list_foreach (path, it, block) {
-					pj_n (pj, block->addr);
-				}
+		pj_a (pj);
+		if (path) {
+			RListIter *it;
+			r_list_foreach (path, it, block) {
+				pj_n (pj, block->addr);
 			}
-			pj_end (pj);
-			r_cons_println (core->cons, pj_string (pj));
-			pj_free (pj);
 		}
+		pj_end (pj);
+		r_cons_println (core->cons, pj_string (pj));
+		pj_free (pj);
 		r_list_free (path);
 		break;
 	}

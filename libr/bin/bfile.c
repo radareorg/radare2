@@ -169,9 +169,7 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 	PJ *pj = NULL;
 	if ((bf->strmode & R_MODE_JSON) && options->output) {
 		pj = pj_new ();
-		if (pj) {
-			pj_a (pj);
-		}
+		pj_a (pj);
 	}
 	r_buf_read_at (bf->buf, from, buf, len);
 	const char *charset = sdb_const_get (bin->sdb, "bin.charset", NULL);

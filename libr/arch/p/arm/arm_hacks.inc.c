@@ -25,27 +25,25 @@ static void hack_cpa_values(RAnalOp *op, const char *const *regs, int count, int
 	}
 	if (mask & R_ARCH_OP_MASK_OPEX) {
 		PJ *pj = pj_new ();
-		if (pj) {
+		pj_o (pj);
+		pj_ka (pj, "operands");
+		int i;
+		for (i = 0; i < count; i++) {
 			pj_o (pj);
-			pj_ka (pj, "operands");
-			int i;
-			for (i = 0; i < count; i++) {
-				pj_o (pj);
-				pj_ks (pj, "type", "reg");
-				pj_ks (pj, "value", regs[i]);
-				if (i == 2 && shift) {
-					pj_ko (pj, "shift");
-					pj_ks (pj, "type", "lsl");
-					pj_ki (pj, "value", shift);
-					pj_end (pj);
-				}
+			pj_ks (pj, "type", "reg");
+			pj_ks (pj, "value", regs[i]);
+			if (i == 2 && shift) {
+				pj_ko (pj, "shift");
+				pj_ks (pj, "type", "lsl");
+				pj_ki (pj, "value", shift);
 				pj_end (pj);
 			}
 			pj_end (pj);
-			pj_end (pj);
-			r_strbuf_set (&op->opex, pj_string (pj));
-			pj_free (pj);
 		}
+		pj_end (pj);
+		pj_end (pj);
+		r_strbuf_set (&op->opex, pj_string (pj));
+		pj_free (pj);
 	}
 }
 

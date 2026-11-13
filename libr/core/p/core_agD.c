@@ -125,11 +125,9 @@ static RCmdResult r_cmd_agD_call(RCmdContext *ctx) {
 	case 'j':
 		{
 			PJ *pj = pj_new ();
-			if (pj) {
-				r_agraph_print_json (dtagraph, pj);
-				r_cons_println (ctx->cons, pj_string (pj));
-				pj_free (pj);
-			}
+			r_agraph_print_json (dtagraph, pj);
+			r_cons_println (ctx->cons, pj_string (pj));
+			pj_free (pj);
 			break;
 		}
 	default:

@@ -778,20 +778,17 @@ static int pickle_info(RArchSession *s, ut32 q) {
 
 static inline char *pickle_json_mnemonic(int id) {
 	PJ *pj = pj_new ();
-	if (pj) {
-		pj_a (pj);
-		if (id >= 0 && id < R_ARRAY_SIZE (op_name_map)) {
-			pj_s (pj, op_name_map[id].name);
-		} else if (id == -1) {
-			size_t i;
-			for (i = 0; i < R_ARRAY_SIZE (op_name_map); i++) {
-				pj_s (pj, op_name_map[i].name);
-			}
+	pj_a (pj);
+	if (id >= 0 && id < R_ARRAY_SIZE (op_name_map)) {
+		pj_s (pj, op_name_map[id].name);
+	} else if (id == -1) {
+		size_t i;
+		for (i = 0; i < R_ARRAY_SIZE (op_name_map); i++) {
+			pj_s (pj, op_name_map[i].name);
 		}
-		pj_end (pj);
-		return pj_drain (pj);
 	}
-	return NULL;
+	pj_end (pj);
+	return pj_drain (pj);
 }
 
 static char *pickle_mnemonics(RArchSession *s, int id, bool json) {

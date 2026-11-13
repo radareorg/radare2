@@ -1717,13 +1717,11 @@ static void cmd_pdj(RCore *core, const char *arg, ut8 *block) {
 		}
 	}
 	PJ *pj = r_core_pj_new (core);
-	if (pj) {
-		pj_a (pj);
-		r_core_print_disasm_json_ipi (core, core->addr, buf, buflen, nblines, pj, NULL);
-		pj_end (pj);
-		r_cons_println (core->cons, pj_string (pj));
-		pj_free (pj);
-	}
+	pj_a (pj);
+	r_core_print_disasm_json_ipi (core, core->addr, buf, buflen, nblines, pj, NULL);
+	pj_end (pj);
+	r_cons_println (core->cons, pj_string (pj));
+	pj_free (pj);
 	free (mybuf);
 }
 
@@ -6224,23 +6222,21 @@ static void print_json_string(RCore *core, const char *block, int len, const cha
 		slen = strlen (tblock);
 	}
 	PJ *pj = r_core_pj_new (core);
-	if (pj) {
-		pj_o (pj);
-		pj_k (pj, "string");
-		// TODO: add pj_kd for data to pass key (string) and value (data,len) instead of pj_ks which null terminates
-		char *str = r_str_utf16_encode (tblock, slen); // XXX just block + len should be fine, pj takes care of this
-		pj_raw (pj, "\"");
-		pj_raw (pj, str);
-		free (str);
-		pj_raw (pj, "\"");
-		pj_kn (pj, "offset", core->addr);
-		pj_ks (pj, "section", section_name);
-		pj_ki (pj, "length", slen);
-		pj_ks (pj, "type", type);
-		pj_end (pj);
-		r_cons_println (core->cons, pj_string (pj));
-		pj_free (pj);
-	}
+	pj_o (pj);
+	pj_k (pj, "string");
+	// TODO: add pj_kd for data to pass key (string) and value (data,len) instead of pj_ks which null terminates
+	char *str = r_str_utf16_encode (tblock, slen); // XXX just block + len should be fine, pj takes care of this
+	pj_raw (pj, "\"");
+	pj_raw (pj, str);
+	free (str);
+	pj_raw (pj, "\"");
+	pj_kn (pj, "offset", core->addr);
+	pj_ks (pj, "section", section_name);
+	pj_ki (pj, "length", slen);
+	pj_ks (pj, "type", type);
+	pj_end (pj);
+	r_cons_println (core->cons, pj_string (pj));
+	pj_free (pj);
 	if (tblock != block) {
 		free (tblock);
 	}
