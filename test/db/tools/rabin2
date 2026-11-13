@@ -1288,7 +1288,7 @@ EXPECT=<<EOF
             "offset": 0
           },
           {
-            "member_type": "uint16_t",
+            "member_type": "int16_t",
             "member_name": "b",
             "offset": 1
           },
@@ -1366,7 +1366,7 @@ EXPECT=<<EOF
             "offset": 0
           },
           {
-            "member_type": "uint16_t",
+            "member_type": "int16_t",
             "member_name": "b",
             "offset": 0
           },

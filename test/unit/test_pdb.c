@@ -505,7 +505,7 @@ bool test_pdb_type_save(void) {
 	check_kv ("union.__m64.m64_u64", "uint64_t,0,0");
 	check_kv ("union.__m64.m64_f32", "float[8],0,0");
 	check_kv ("union.__m64.m64_i8", "char[8],0,0");
-	check_kv ("union.__m64.m64_i16", "uint16_t[8],0,0");
+	check_kv ("union.__m64.m64_i16", "int16_t[8],0,0");
 	check_kv ("union.__m64.m64_i32", "int32_t[8],0,0");
 	check_kv ("union.__m64.m64_i64", "int64_t,0,0");
 	check_kv ("union.__m64.m64_u8", "uint8_t[8],0,0");
@@ -515,7 +515,7 @@ bool test_pdb_type_save(void) {
 	check_kv ("TEST_CLASS", "struct");
 	check_kv ("struct.TEST_CLASS", "class_var1,calss_var2");
 	check_kv ("struct.TEST_CLASS.class_var1", "int32_t,0,0");
-	check_kv ("struct.TEST_CLASS.calss_var2", "uint16_t,4,0");
+	check_kv ("struct.TEST_CLASS.calss_var2", "int16_t,4,0");
 
 	check_kv ("localeinfo_struct", "struct");
 	check_kv ("struct.localeinfo_struct", "locinfo,mbcinfo");

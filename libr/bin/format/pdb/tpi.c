@@ -181,12 +181,12 @@ static STypeInfo parse_simple_type(ut32 idx) {
 	case eT_INT16: // 16 bit
 	case eT_SHORT: // 16 bit short
 		simple_type->size = 2;
-		simple_type->type = strdup ("uint16_t");
+		simple_type->type = strdup ("int16_t");
 		break;
 	case eT_PINT16:
 	case eT_PSHORT:
 		simple_type->size = 2;
-		simple_type->type = strdup ("uint16_t *");
+		simple_type->type = strdup ("int16_t *");
 		break;
 	case eT_PFSHORT:
 	case eT_PHSHORT:
@@ -197,12 +197,12 @@ static STypeInfo parse_simple_type(ut32 idx) {
 	case eT_32PINT16:
 	case eT_32PFINT16:
 		simple_type->size = 4;
-		simple_type->type = strdup ("uint16_t *");
+		simple_type->type = strdup ("int16_t *");
 		break;
 	case eT_64PINT16:
 	case eT_64PSHORT:
 		simple_type->size = 8;
-		simple_type->type = strdup ("uint16_t *");
+		simple_type->type = strdup ("int16_t *");
 		break;
 
 	case eT_UINT16: // 16 bit
