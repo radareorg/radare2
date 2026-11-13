@@ -917,6 +917,71 @@ static bool esil_long_mul(REsil *esil) {
 	return ret;
 }
 
+// 128 by 64 bit division, the quotient is truncated to its low 64 bits
+static void div128by64(ut64 hi, ut64 lo, ut64 div, ut64 *quot, ut64 *rem) {
+	ut64 r = 0;
+	ut64 q = 0;
+	int i;
+	for (i = 127; i >= 0; i--) {
+		const bool carry = r >> 63;
+		const ut64 bit = (i >= 64)? (hi >> (i - 64)) & 1: (lo >> i) & 1;
+		r = (r << 1) | bit;
+		q <<= 1;
+		if (carry || r >= div) {
+			r -= div;
+			q |= 1;
+		}
+	}
+	*quot = q;
+	*rem = r;
+}
+
+static bool esil_long_div_common(REsil *esil, bool sign) {
+	ut64 div, hi, lo;
+	const RStrs s_div = r_esil_pop (esil);
+	const RStrs s_hi = r_esil_pop (esil);
+	const RStrs s_lo = r_esil_pop (esil);
+	if (r_strs_empty (s_div) || !r_esil_get_parm (esil, s_div, &div)
+			|| r_strs_empty (s_hi) || !r_esil_get_parm (esil, s_hi, &hi)
+			|| r_strs_empty (s_lo) || !r_esil_get_parm (esil, s_lo, &lo)) {
+		R_LOG_DEBUG ("esil_long_div: invalid parameters");
+		return false;
+	}
+	if (div == 0) {
+		R_LOG_DEBUG ("esil_long_div: Division by zero!");
+		r_esil_set_trap (esil, R_ANAL_TRAP_DIVBYZERO, 0);
+		return false;
+	}
+	const bool neg_dividend = sign && (hi >> 63);
+	const bool neg_divisor = sign && (div >> 63);
+	if (neg_dividend) {
+		lo = ~lo + 1;
+		hi = ~hi + (lo == 0);
+	}
+	if (neg_divisor) {
+		div = ~div + 1;
+	}
+	ut64 quot, rem;
+	div128by64 (hi, lo, div, &quot, &rem);
+	if (neg_dividend != neg_divisor) {
+		quot = ~quot + 1;
+	}
+	if (neg_dividend) {
+		rem = ~rem + 1;
+	}
+	r_esil_pushnum (esil, rem);
+	r_esil_pushnum (esil, quot);
+	return true;
+}
+
+static bool esil_long_div(REsil *esil) {
+	return esil_long_div_common (esil, false);
+}
+
+static bool esil_long_sdiv(REsil *esil) {
+	return esil_long_div_common (esil, true);
+}
+
 static bool esil_mul(REsil *esil) {
 	ut64 s, d;
 	const RStrs dst = r_esil_pop (esil);
@@ -1873,6 +1938,8 @@ R_API bool r_esil_setup_ops(REsil *esil) {
 	ret &= OP ("=", esil_eq, 0, 2, OT_REGW);
 	ret &= OP (":=", esil_weak_eq, 0, 2, OT_REGW);
 	ret &= OP ("L*", esil_long_mul, 2, 2, OT_MATH);
+	ret &= OP ("L/", esil_long_div, 2, 3, OT_MATH);
+	ret &= OP ("~L/", esil_long_sdiv, 2, 3, OT_MATH);
 	ret &= OP ("*", esil_mul, 1, 2, OT_MATH);
 	ret &= OPD ("*=", "DUP,ROT,SWAP,*,SWAP,=", 0, 2, OT_MATH | OT_REGW);
 	ret &= OP ("^", esil_xor, 1, 2, OT_MATH);

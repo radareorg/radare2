@@ -175,3 +175,38 @@ EXPECT=<<EOF
 0x100000fed -> 0x100000fff  CODE:--x
 EOF
 RUN
+
+NAME=type propagation over a div keeps the 4-byte globals beside it
+FILE=bins/mach0/ls-osx-x86_64
+CMDS=<<EOF
+aaa
+avg~5628
+avg~562c
+EOF
+EXPECT=<<EOF
+0x100005628 4 global.0x100005628 uint32_t
+0x10000562c 4 global.0x10000562c uint32_t
+EOF
+RUN
+
+NAME=a zero divisor still leaves the registers alone in emulation after type propagation
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 48f7f1c3
+af
+aaft
+aei
+aeim
+e esil.maxbacksteps=0
+ar rax=5
+ar rdx=1
+ar rcx=0
+aes
+ar rax,rdx
+EOF
+EXPECT=<<EOF
+0x00000005
+0x00000001
+EOF
+RUN
