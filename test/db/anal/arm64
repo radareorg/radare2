@@ -57008,31 +57008,54 @@ wx 40000094 78563412 1f2003d5 c0035fd6 @ 0
 wx 40000094 78563412 1f2003d5 c0035fd6 @ 0x10
 wx 40000094 78563412 1f2003d5 c0035fd6 @ 0x20
 wx 40000094 1f2003d5 1f2003d5 c0035fd6 @ 0x30
+wx 40000094 78563412 1f2003d5 c0035fd6 @ 0x40
 wx c0035fd6 @ 0x100
 wx c0035fd6 @ 0x110
 wx c0035fd6 @ 0x120
 wx c0035fd6 @ 0x130
+wx c0035fd6 @ 0x140
 f reloc.fortify_panic @ 0x100
 f reloc.panic @ 0x110
 f reloc.do_exit @ 0x120
 f reloc.printk @ 0x130
+f reloc.__fortify_panic @ 0x140
 af @ 0
 af @ 0x10
 af @ 0x20
 af @ 0x30
+af @ 0x40
 afb @ 0
 afb @ 0x10
 afb @ 0x20
 afb @ 0x30
+afb @ 0x40
 EOF
 EXPECT=<<EOF
 panic
 do_exit
+__fortify_panic
 fortify_panic
 0x00000000 0x00000004 00:0000 4
 0x00000010 0x00000014 00:0000 4
 0x00000020 0x00000024 00:0000 4
 0x00000030 0x00000040 00:0000 16
+0x00000040 0x00000044 00:0000 4
+EOF
+RUN
+
+# Linux v6.9 include/linux/fortify-string.h: void __fortify_panic(const u8 reason, const size_t avail, const size_t size) __cold __noreturn;
+NAME=arm64 linux __fortify_panic is a noreturn type of its own
+FILE=malloc://512
+ARGS=-a arm -b 64 -e asm.os=linux
+CMDS=<<EOF
+k anal/types/func.__fortify_panic.noreturn
+k anal/types/func.__fortify_panic.args
+k anal/types/func.__fortify_panic.ret
+EOF
+EXPECT=<<EOF
+true
+3
+void
 EOF
 RUN
 

@@ -82,6 +82,14 @@ func.do_exit.arg.0=long,error_code
 func.do_exit.noreturn=true
 func.do_exit.ret=void
 
+__fortify_panic=func
+func.__fortify_panic.args=3
+func.__fortify_panic.arg.0=const uint8_t,reason
+func.__fortify_panic.arg.1=const size_t,avail
+func.__fortify_panic.arg.2=const size_t,size
+func.__fortify_panic.noreturn=true
+func.__fortify_panic.ret=void
+
 fortify_panic=func
 func.fortify_panic.args=1
 func.fortify_panic.arg.0=const char *,name
