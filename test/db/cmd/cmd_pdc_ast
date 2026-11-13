@@ -310,3 +310,39 @@ seq 0x00000000
   bb 0x00000040
 EOF
 RUN
+
+NAME=pdct retains the single-block loop without a dominator traversal
+FILE=malloc://128
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e pdc.optimize=false
+af+ 0 0 rootself
+afb+ 0 0 4 0x0 0x10
+afb+ 0 0x10 4
+pdct
+EOF
+EXPECT=<<EOF
+seq 0x00000000
+  do-while 0x00000000
+  bb 0x00000010
+EOF
+RUN
+
+NAME=pdct retains an entry-dominated natural loop
+FILE=malloc://128
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e pdc.optimize=false
+af+ 0 0 rootback
+afb+ 0 0 4 0x10 0x20
+afb+ 0 0x10 4 0
+afb+ 0 0x20 4
+pdct
+EOF
+EXPECT=<<EOF
+seq 0x00000000
+  while 0x00000000
+    bb 0x00000010
+  bb 0x00000020
+EOF
+RUN

@@ -77,8 +77,12 @@ static ut64 htuu_get(HtUU *m, ut64 key, ut64 dflt) {
 
 static void ensure_dom_intervals(PdcCtx *ctx);
 
-// DFS intervals make each dominance query constant time.
+// DFS intervals make each nontrivial dominance query constant time.
 static bool dominates(PdcCtx *ctx, ut64 a, ut64 b) {
+	// Every node dominates itself; the entry dominates every reachable node.
+	if (a == b || a == ctx->fcn->addr) {
+		return true;
+	}
 	if (!ctx->dom_pre) {
 		ensure_dom_intervals (ctx);
 	}
