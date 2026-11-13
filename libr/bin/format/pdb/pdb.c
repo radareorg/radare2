@@ -1306,6 +1306,12 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 			case 'r': // r2 script
 				filtered_name = r_name_filter_dup (r_str_trim_head_ro (name));
 				r_strbuf_appendf (&sb, "'@0x%" PFMT64x "'f pdb.%s\n", addr, filtered_name);
+				// the filtered name drops characters like the ++ of operator++
+				char *realname = r_base64_encode_dyn ((const ut8 *)name, strlen (name));
+				if (realname) {
+					r_strbuf_appendf (&sb, "'fN pdb.%s base64:%s\n", filtered_name, realname);
+					free (realname);
+				}
 				free (filtered_name);
 				break;
 			// case 'd':
