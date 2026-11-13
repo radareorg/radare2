@@ -54,6 +54,18 @@ WARN: bins/pdb/Project1.pdb does not belong to this binary (PDB GUID C6B50FBD700
 EOF
 RUN
 
+NAME=idp creates the functions of the PDB public symbols
+FILE=bins/pdb/SimplePDB.exe
+CMDS=<<EOF
+idp bins/pdb/SimplePDB.pdb
+afl~SomeCool,_main
+EOF
+EXPECT=<<EOF
+0x00401010    1      8 pdb._main
+0x00401000    1     13 pdb.void___cdecl_SomeCoolFunction_void_
+EOF
+RUN
+
 NAME=idp and baddr
 FILE=-
 CMDS=<<EOF
@@ -269,7 +281,7 @@ pd 1~SomeCool
 EOF
 EXPECT=<<EOF
 void __cdecl SomeCoolFunction(void)
-            ;-- void __cdecl SomeCoolFunction(void):
+/ 13: void __cdecl SomeCoolFunction(void) ();
 EOF
 RUN
 

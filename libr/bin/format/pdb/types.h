@@ -1255,6 +1255,7 @@ typedef struct {
 	ut16 segment;
 	SCString name;
 }) SGlobal;
+#define PDB_PUBSYM_FUNCTION 2 // CV_PUBSYMFLAGS.fFunction in S_PUB32 symtype
 // end GDATA structures
 
 // PE stream structures
