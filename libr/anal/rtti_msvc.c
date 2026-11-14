@@ -54,6 +54,7 @@ typedef struct recovery_complete_object_locator_t {
 	ut64 addr;
 	bool valid;
 	RVTableInfo *vtable;
+	bool vtable_applied; // the vtable was already added to its class
 	rtti_complete_object_locator col;
 	RecoveryTypeDescriptor *td;
 	rtti_class_hierarchy_descriptor chd;
@@ -85,6 +86,7 @@ typedef struct rtti_msvc_anal_context_t {
 	RVecVTableInfo vtables; // <RVTableInfo>
 	RVecRecoveryCompleteObjectLocator complete_object_locators; // <RecoveryCompleteObjectLocator>
 	HtUP *addr_col; // <ut64, RecoveryCompleteObjectLocator *>
+	HtUP *vtable_col; // <ut64, RecoveryCompleteObjectLocator *> by vtable address
 	RVecRecoveryTypeDescriptor type_descriptors; // <RecoveryTypeDescriptor>
 	HtUP *addr_td; // <ut64, RecoveryTypeDescriptor *>
 	HtUP *col_td_classes; // <ut64, char *> contains already recovered classes for col (or td) addresses
@@ -707,56 +709,112 @@ RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *cont
 	return td;
 }
 
-static char *unique_class_name(RAnal *anal, const char *original_name) {
-	if (!r_anal_class_exists (anal, original_name)) {
-		return strdup (original_name);
+// whether the class holds a vtable of the type descriptor (recovered by a previous avrr)
+static bool class_has_td_vtable(RRTTIMSVCAnalContext *context, const char *class_name, RecoveryTypeDescriptor *td) {
+	RVecAnalVTable *vtables = r_anal_class_vtable_get_all (context->vt_context->anal, class_name);
+	if (!vtables) {
+		return false;
 	}
+	bool found = false;
+	RAnalVTable *vtable;
+	R_VEC_FOREACH (vtables, vtable) {
+		RecoveryCompleteObjectLocator *col = ht_up_find (context->vtable_col, vtable->addr, NULL);
+		if (col && col->td == td) {
+			found = true;
+			break;
+		}
+	}
+	RVecAnalVTable_free (vtables);
+	return found;
+}
 
-	char *name = NULL;
-	if (anal->verbose) {
-		R_LOG_WARN ("class name %s already taken!", original_name);
-	}
+// the class already recovered for the type descriptor, or a new unique class name
+static char *recovery_class_name(RRTTIMSVCAnalContext *context, const char *original_name, RecoveryTypeDescriptor *td) {
+	RAnal *anal = context->vt_context->anal;
+	char *name = strdup (original_name);
 	int i = 1;
-
-	do {
+	while (name && r_anal_class_exists (anal, name)) {
+		if (class_has_td_vtable (context, name, td)) {
+			return name;
+		}
+		if (anal->verbose) {
+			R_LOG_WARN ("class name %s already taken!", name);
+		}
 		free (name);
 		name = r_str_newf ("%s.%d", original_name, i++);
-		if (!name) {
-			return NULL;
-		}
-	} while (r_anal_class_exists (anal, name));
-
+	}
 	return name;
 }
 
-static void recovery_apply_vtable(RAnal *anal, const char *class_name, RVTableInfo *vtable_info, ut64 class_offset) {
-	if (!vtable_info) {
-		return;
-	}
-
-	RAnalVTable vtable = {0};
-	vtable.addr = vtable_info->saddr;
-	vtable.offset = class_offset;
-	const size_t vtable_len = RVecRVTableMethodInfo_length (&vtable_info->methods);
-	const ut32 word_size = anal->config->bits / 8;
-	if (vtable_len && word_size) {
-		vtable.size = vtable_len * word_size;
-		r_anal_class_vtable_set (anal, class_name, &vtable);
-		r_anal_class_vtable_fini (&vtable);
-
-		RVTableMethodInfo *vmeth;
-		R_VEC_FOREACH (&vtable_info->methods, vmeth) {
-			RAnalMethod meth;
-			meth.addr = vmeth->addr;
-			meth.vtable_offset = vmeth->vtable_offset;
-			meth.vtable_addr = vtable_info->saddr;
-			meth.name = class_offset
-				? r_str_newf ("virtual_%"PFMT64u"_%"PFMT64d, class_offset, meth.vtable_offset)
-				: r_str_newf ("virtual_%"PFMT64d, meth.vtable_offset);
-			r_anal_class_method_set (anal, class_name, &meth);
-			r_anal_class_method_fini (&meth);
+static bool class_has_vtable_method(RVecAnalMethod *methods, ut64 vtable_addr, RVTableMethodInfo *vmeth) {
+	RAnalMethod *meth;
+	R_VEC_FOREACH (methods, meth) {
+		if (meth->addr == vmeth->addr && meth->vtable_offset == (st64)vmeth->vtable_offset
+				&& (!R_ANAL_CLASS_METHOD_HAS_VTABLE_ADDR (meth) || meth->vtable_addr == vtable_addr)) {
+			return true;
 		}
 	}
+	return false;
+}
+
+static void recovery_apply_vtable(RAnal *anal, const char *class_name, RecoveryCompleteObjectLocator *col) {
+	if (!col || !col->vtable || col->vtable_applied) {
+		return;
+	}
+	col->vtable_applied = true;
+	RVTableInfo *vtable_info = col->vtable;
+	const ut64 class_offset = col->col.vtable_offset;
+	const size_t vtable_len = RVecRVTableMethodInfo_length (&vtable_info->methods);
+	const ut32 word_size = anal->config->bits / 8;
+	if (!vtable_len || !word_size) {
+		return;
+	}
+	const ut64 vtable_size = vtable_len * word_size;
+
+	// a class restored from a project or a script may hold the vtable already: fill in what is missing
+	bool reused = false;
+	RVecAnalVTable *vtables = r_anal_class_vtable_get_all (anal, class_name);
+	if (vtables) {
+		RAnalVTable *existing;
+		R_VEC_FOREACH (vtables, existing) {
+			if (existing->addr == vtable_info->saddr) {
+				reused = true;
+				if (!existing->size) {
+					existing->size = vtable_size;
+					r_anal_class_vtable_set (anal, class_name, existing);
+				}
+				break;
+			}
+		}
+		RVecAnalVTable_free (vtables);
+	}
+	if (!reused) {
+		RAnalVTable vtable = {0};
+		vtable.addr = vtable_info->saddr;
+		vtable.offset = class_offset;
+		vtable.size = vtable_size;
+		r_anal_class_vtable_set (anal, class_name, &vtable);
+		r_anal_class_vtable_fini (&vtable);
+	}
+
+	// keep the methods of a reused vtable, even if they were renamed
+	RVecAnalMethod *methods = reused? r_anal_class_method_get_all (anal, class_name): NULL;
+	RVTableMethodInfo *vmeth;
+	R_VEC_FOREACH (&vtable_info->methods, vmeth) {
+		if (methods && class_has_vtable_method (methods, vtable_info->saddr, vmeth)) {
+			continue;
+		}
+		RAnalMethod meth;
+		meth.addr = vmeth->addr;
+		meth.vtable_offset = vmeth->vtable_offset;
+		meth.vtable_addr = vtable_info->saddr;
+		meth.name = class_offset
+			? r_str_newf ("virtual_%"PFMT64u"_%"PFMT64d, class_offset, meth.vtable_offset)
+			: r_str_newf ("virtual_%"PFMT64d, meth.vtable_offset);
+		r_anal_class_method_set (anal, class_name, &meth);
+		r_anal_class_method_fini (&meth);
+	}
+	RVecAnalMethod_free (methods);
 }
 
 static void recovery_apply_bases(RRTTIMSVCAnalContext *context, const char *class_name, RVecRecoveryBaseDescriptor *base_descs) {
@@ -812,7 +870,7 @@ static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *
 	// the secondary vtables (multiple inheritance) belong to the same class
 	const char *existing = ht_up_find (context->col_td_classes, col->td->addr, NULL);
 	if (existing) {
-		recovery_apply_vtable (anal, existing, col->vtable, col->col.vtable_offset);
+		recovery_apply_vtable (anal, existing, col);
 		return existing;
 	}
 
@@ -828,7 +886,7 @@ static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *
 	}
 
 	char *tmp = name;
-	name = unique_class_name (anal, name);
+	name = recovery_class_name (context, name, col->td);
 	free (tmp);
 	if (!name) {
 		return NULL;
@@ -837,7 +895,7 @@ static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *
 	r_anal_class_create (anal, name);
 	ht_up_insert (context->col_td_classes, col->td->addr, name);
 
-	recovery_apply_vtable (anal, name, col->vtable, col->col.vtable_offset);
+	recovery_apply_vtable (anal, name, col);
 	recovery_apply_bases (context, name, &col->base_td);
 
 	return name;
@@ -873,7 +931,7 @@ static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context,
 		return name;
 	}
 
-	recovery_apply_vtable (anal, name, td->col->vtable, td->col->col.vtable_offset);
+	recovery_apply_vtable (anal, name, td->col);
 	recovery_apply_bases (context, name, &td->col->base_td);
 
 	return name;
@@ -893,6 +951,7 @@ R_IPI void r_anal_rtti_msvc_recover_all(RVTableContext *vt_context, RList *vtabl
 
 	RVecRecoveryCompleteObjectLocator_init (&context.complete_object_locators);
 	context.addr_col = ht_up_new0 ();
+	context.vtable_col = ht_up_new0 ();
 	RVecRecoveryTypeDescriptor_init (&context.type_descriptors);
 	context.addr_td = ht_up_new0 ();
 
@@ -906,7 +965,10 @@ R_IPI void r_anal_rtti_msvc_recover_all(RVTableContext *vt_context, RList *vtabl
 		if (!vt_context->read_addr (vt_context->anal, colRefAddr, &colAddr)) {
 			continue;
 		}
-		recovery_anal_complete_object_locator (&context, colAddr, table);
+		RecoveryCompleteObjectLocator *col = recovery_anal_complete_object_locator (&context, colAddr, table);
+		if (col) {
+			ht_up_insert (context.vtable_col, table->saddr, col);
+		}
 	}
 
 #if USE_TD_RECOVERY
@@ -931,6 +993,7 @@ R_IPI void r_anal_rtti_msvc_recover_all(RVTableContext *vt_context, RList *vtabl
 	RVecVTableInfo_fini (&context.vtables);
 	RVecRecoveryCompleteObjectLocator_fini (&context.complete_object_locators);
 	ht_up_free (context.addr_col);
+	ht_up_free (context.vtable_col);
 	RVecRecoveryTypeDescriptor_fini (&context.type_descriptors);
 	ht_up_free (context.addr_td);
 	ht_up_free (context.col_td_classes);

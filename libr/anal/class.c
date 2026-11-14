@@ -932,38 +932,39 @@ R_API RVecAnalVTable *r_anal_class_vtable_get_all(RAnal *anal, const char *class
 	return vec;
 }
 
-static bool vtable_exists_at(RAnal *anal, const char *class_name, ut64 addr) {
+// whether another vtable than the one with the given id (if any) is at addr
+static bool vtable_exists_at(RAnal *anal, const char *class_name, ut64 addr, const char *id) {
+	bool found = false;
 	RVecAnalVTable *vtables = r_anal_class_vtable_get_all (anal, class_name);
 	if (vtables) {
 		RAnalVTable *existing_vtable;
 		R_VEC_FOREACH (vtables, existing_vtable) {
-			if (addr == existing_vtable->addr) {
-				RVecAnalVTable_free (vtables);
-				return true;
+			if (addr == existing_vtable->addr && (!id || strcmp (id, existing_vtable->id))) {
+				found = true;
+				break;
 			}
 		}
 	}
 	RVecAnalVTable_free (vtables);
-	return false;
+	return found;
 }
 
+// a vtable with an id updates that vtable (and its flag), one without it adds a new vtable
 R_API RAnalClassErr r_anal_class_vtable_set(RAnal *anal, const char *class_name, RAnalVTable *vtable) {
 	R_RETURN_VAL_IF_FAIL (anal && class_name && vtable, R_ANAL_CLASS_ERR_OTHER);
-	if (vtable_exists_at (anal, class_name, vtable->addr)) {
+	if (vtable_exists_at (anal, class_name, vtable->addr, vtable->id)) {
 		return R_ANAL_CLASS_ERR_OTHER;
 	}
 	char *content = r_str_newf ("0x%"PFMT64x SDB_SS "%"PFMT64u SDB_SS "%"PFMT64u, vtable->addr, vtable->offset, vtable->size);
+	RAnalClassErr err;
 	if (vtable->id) {
-		RAnalClassErr err = r_anal_class_set_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_VTABLE, vtable->id, content);
-		free (content);
-		return err;
+		err = r_anal_class_set_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_VTABLE, vtable->id, content);
+	} else {
+		vtable->id = malloc (16);
+		err = vtable->id
+			? r_anal_class_add_attr_unique (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_VTABLE, content, vtable->id, 16)
+			: R_ANAL_CLASS_ERR_OTHER;
 	}
-	vtable->id = malloc (16);
-	if (!vtable->id) {
-		free (content);
-		return R_ANAL_CLASS_ERR_OTHER;
-	}
-	RAnalClassErr err = r_anal_class_add_attr_unique (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_VTABLE, content, vtable->id, 16);
 	free (content);
 	if (err != R_ANAL_CLASS_ERR_SUCCESS) {
 		return err;
