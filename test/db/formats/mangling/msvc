@@ -6,6 +6,18 @@ void __cdecl Func(int)
 EOF
 RUN
 
+NAME=msvc integer type names
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc '?f@@YAXFGJK_J_K@Z'
+!rabin2 -D msvc '??0DName@@QAE@PAVUnDecorator@@_J@Z'
+EOF
+EXPECT=<<EOF
+void __cdecl f(short, unsigned short, long, unsigned long, __int64, unsigned __int64)
+public: __thiscall DName::DName(class UnDecorator *, __int64)
+EOF
+RUN
+
 NAME=Namespaced / Class Methods
 FILE=-
 CMDS="!rabin2 -D msvc \"?DoWork@Worker@@QAEXH@Z\""

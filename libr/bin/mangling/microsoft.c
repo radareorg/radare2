@@ -904,12 +904,12 @@ beach:
 ONE_LETTER_ACTIION(C, "signed char")
 ONE_LETTER_ACTIION(D, "char")
 ONE_LETTER_ACTIION(E, "unsigned char")
-ONE_LETTER_ACTIION(F, "short int")
-ONE_LETTER_ACTIION(G, "unsigned short int")
+ONE_LETTER_ACTIION(F, "short")
+ONE_LETTER_ACTIION(G, "unsigned short")
 ONE_LETTER_ACTIION(H, "int")
 ONE_LETTER_ACTIION(I, "unsigned int")
-ONE_LETTER_ACTIION(J, "long int")
-ONE_LETTER_ACTIION(K, "unsigned long int")
+ONE_LETTER_ACTIION(J, "long")
+ONE_LETTER_ACTIION(K, "unsigned long")
 ONE_LETTER_ACTIION(M, "float")
 ONE_LETTER_ACTIION(N, "double")
 ONE_LETTER_ACTIION(O, "long double")
@@ -923,8 +923,8 @@ DEF_STATE_ACTION(_) {
 		break;
 
 	switch(*(state->buff_for_parsing)) {
-		PROCESS_CASE (J, "long long(__int64)")
-		PROCESS_CASE (K, "unsigned long long(unsigned __int64)")
+		PROCESS_CASE (J, "__int64")
+		PROCESS_CASE (K, "unsigned __int64")
 		PROCESS_CASE (T, "long double(80 bit precision)")
 		PROCESS_CASE (Z, "long double(64 bit precision)")
 		PROCESS_CASE (W, "wchar_t")
