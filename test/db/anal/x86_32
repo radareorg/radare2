@@ -3974,3 +3974,21 @@ pushl $0xffffff80
 enter $0xfefe, $0xfe
 EOF
 RUN
+
+NAME=x86_32 comisd reads a qword stack argument
+FILE=malloc://64
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 558bec83ec08f20f104508660f2f4510c5f92f4518660f2e45108be55dc3
+af
+pi 4 @ 6
+ao 1 @ 0xb~^type
+EOF
+EXPECT=<<EOF
+movsd xmm0, qword [arg_8h]
+comisd xmm0, qword [arg_10h]
+vcomisd xmm0, qword [arg_18h]
+ucomisd xmm0, qword [arg_10h]
+type: cmp
+EOF
+RUN
