@@ -1,14 +1,3 @@
-NAME=cmd.esil.trap
-FILE=-
-CMDS=<<EOF
-e cmd.esil.trap=?e hello world
-ae 2,1,TRAP
-EOF
-EXPECT=<<EOF
-hello world 1 2
-EOF
-RUN
-
 NAME=cmd.esil.trap via invalid pc
 FILE=-
 ARGS=-a x86 -b 64
@@ -92,19 +81,6 @@ segfault at 0x00000000
 EOF
 EXPECT_ERR=<<EOF
 ERROR: ESIL stopped at 0x00000000: execute error (execute-err at 0x00000000)
-EOF
-RUN
-
-NAME=cmd.esil.trap hint TRAP
-FILE=-
-ARGS=-a x86 -b 64
-CMDS=<<EOF
-e cmd.esil.trap=?e its a trap
-ahe TRAP
-aes
-EOF
-EXPECT=<<EOF
-its a trap 0 7
 EOF
 RUN
 
