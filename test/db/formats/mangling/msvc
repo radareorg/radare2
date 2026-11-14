@@ -276,3 +276,17 @@ void __cdecl f<int const>(void)
 unsigned int __cdecl std::_Find_elem<char, 27>(char const (&)[27], char)
 EOF
 RUN
+
+NAME=msvc empty template parameter packs
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc '??$_Construct_in_place@UGrande@@$$V@std@@YAXAAUGrande@@@Z'
+!rabin2 -D msvc '??$f@$$V@@YAXXZ'
+!rabin2 -D msvc '??$f@H$$Z@@YAXXZ'
+EOF
+EXPECT=<<EOF
+void __cdecl std::_Construct_in_place<struct Grande>(struct Grande &)
+void __cdecl f<>(void)
+void __cdecl f<int>(void)
+EOF
+RUN
