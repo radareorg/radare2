@@ -428,3 +428,13 @@ EXPECT=<<EOF
 struct StringLiteral __cdecl operator ""_l(char const *, unsigned int)
 EOF
 RUN
+
+NAME=msvc static variables of extern C functions
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc '?_OptionsStorage@?1??__local_stdio_printf_options@@9@4_KA'
+EOF
+EXPECT=<<EOF
+unsigned __int64 `extern "C" __local_stdio_printf_options'::`2'::_OptionsStorage
+EOF
+RUN
