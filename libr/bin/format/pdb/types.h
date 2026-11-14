@@ -1258,22 +1258,26 @@ typedef struct {
 }) SGlobal;
 #define PDB_PUBSYM_FUNCTION 2 // CV_PUBSYMFLAGS.fFunction in S_PUB32 symtype
 
-// procedure symbols of the module streams listed in the DBI stream
+// symbols of the module streams listed in the DBI stream
+#define PDB_S_LABEL32 0x1105
 #define PDB_S_LPROC32 0x110F
 #define PDB_S_GPROC32 0x1110
 #define PDB_S_LPROC32_ID 0x1146
 #define PDB_S_GPROC32_ID 0x1147
 
+// procedures (S_*PROC32) and code labels (S_LABEL32)
 typedef struct {
 	ut32 offset;
 	ut32 size;
 	ut16 segment;
+	bool nested; // label inside the scope of a procedure
 	char *name;
 } SModuleProc;
 
 typedef struct {
 	ut32 sym_size;
 	RList *procs;
+	RList *labels;
 } SModuleStream;
 // end GDATA structures
 
@@ -1299,6 +1303,7 @@ typedef struct {
 	ut16 number_of_line_numbers;
 	ut32 charactestics;
 }) SIMAGE_SECTION_HEADER;
+#define PDB_SCN_MEM_EXECUTE 0x20000000 // IMAGE_SCN_MEM_EXECUTE in charactestics
 
 typedef struct {
 	SIMAGE_SECTION_HEADER *sections_hdrs;
