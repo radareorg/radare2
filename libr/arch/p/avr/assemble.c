@@ -150,12 +150,6 @@ int avr_encode(RArchSession *as, ut64 pc, const char *str, ut8 *outbuf) {
 					assemble_operand (pc, tok.ens[2], instructionSet[instr_idx].operandTypes[1], &op2) < 0) {
 					return 0;
 				}
-				// Short lds/sts encode bits 0..6; bit 7 is implied by the address range.
-				if (instructionSet[instr_idx].opcodeMask == 0xa000) {
-					op2 &= 0x7f;
-				} else if (instructionSet[instr_idx].opcodeMask == 0xa800) {
-					op1 &= 0x7f;
-				}
 				if (operand_fits (op1, instructionSet[instr_idx].operandTypes[0], instructionSet[instr_idx].operandMasks[0]) &&
 				   operand_fits (op2, instructionSet[instr_idx].operandTypes[1], instructionSet[instr_idx].operandMasks[1])) {
 
@@ -339,7 +333,6 @@ uint16_t packDataByMask(uint16_t data, uint16_t mask) {
  * returns index of the instruction in the table */
 static int search_instruction(RArchSession *as, AvrToken *tok, int args) {
 	int i;
-	st64 address, reg;
 
 	for (i = 0; i < AVR_TOTAL_INSTRUCTIONS - 1; i++) {
 		// check instruction mnemonic
@@ -364,15 +357,6 @@ static int search_instruction(RArchSession *as, AvrToken *tok, int args) {
 					if (instructionSet[i].operandTypes[1] == parse_specialreg (tok->ens[2])) {
 						return i;
 					}
-					// handling lds command, distinguishing long from 16-bit version
-				} else if (instructionSet[i].mnemonic[0] == 'l'
-					&& instructionSet[i].mnemonic[1] == 'd'
-					&& instructionSet[i].mnemonic[2] == 's'
-					&& instructionSet[i].operandTypes[1] == OPERAND_LONG_ABSOLUTE_ADDRESS) {
-					if (!getnum (tok->ens[2], &address) || address < 0x40 || address > 0xbf ||
-						assemble_operand (0, tok->ens[1], OPERAND_REGISTER_STARTR16, &reg) < 0 || reg < 0 || reg > 15) {
-						return i;
-					}
 				// handling st & std instruction with 2 args
 				} else if (instructionSet[i].mnemonic[0] == 's'
 					&& instructionSet[i].mnemonic[1] == 't'
@@ -381,16 +365,8 @@ static int search_instruction(RArchSession *as, AvrToken *tok, int args) {
 					if (instructionSet[i].operandTypes[0] == parse_specialreg (tok->ens[1])) {
 						return i;
 					}
-					// handling sts long command
-				} else if (instructionSet[i].mnemonic[0] == 's'
-					&& instructionSet[i].mnemonic[1] == 't'
-					&& instructionSet[i].mnemonic[2] == 's'
-					&& instructionSet[i].operandTypes[0] == OPERAND_LONG_ABSOLUTE_ADDRESS) {
-					if (!getnum (tok->ens[1], &address) || address < 0x40 || address > 0xbf ||
-						assemble_operand (0, tok->ens[2], OPERAND_REGISTER_STARTR16, &reg) < 0 || reg < 0 || reg > 15) {
-						return i;
-					}
 				} else {
+					// lds/sts select the 32-bit entry before the reduced-core encoding.
 					return i; // it's not st/ld/lpm-like instruction with 2 args
 				}
 			}

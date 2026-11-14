@@ -160,40 +160,37 @@ int avr_format_insn(RArchSession *as, avrDisassembleContext *context, char *out,
 	return 1;
 }
 
+static int parse_pair_register(const char **operand) {
+	const char *reg = *operand;
+	if (reg[0] == 'r' && isdigit ((ut8)reg[1])) {
+		char *end;
+		const long number = strtol (reg + 1, &end, 10);
+		*operand = end;
+		return (number >= 0 && number <= 31)? number: -1;
+	}
+	if (reg[0] >= 'x' && reg[0] <= 'z') {
+		int number = 26 + ((reg[0] - 'x') * 2);
+		reg++;
+		if (*reg == 'l' || *reg == 'h') {
+			number += *reg == 'h';
+			reg++;
+		}
+		*operand = reg;
+		return number;
+	}
+	return -1;
+}
+
+// Accept an even register or adjacent high:low registers and return the pair index.
 int parse_registerpair(const char *operand) {
-	int res = -1;
-	char *op = strdup (operand);
-	char *save_ptr = NULL;
-	char *first = r_str_tok_r (op, ":", &save_ptr);
-
-	if (!first || strlen (first) < 2) {
-		free (op);
-		return -1;
-	}
-
-	char *second = r_str_tok_r (NULL, ":", &save_ptr);
-	if (second && strlen (second) < 2) {
-		if (first[0] == 'r' && second[0] == 'r') {
-			int fnum = atoi (first + 1);
-			int snum = atoi (second + 1);
-			if (fnum > snum && snum >= 0 && snum <= 30) {
-				res = snum / 2;
-			}
-		} else if (first[0] >= 'x' && first[0] <= 'z'
-				&& second[0] >= 'x' && second[0] <= 'z'
-				&& first[1] == 'h' && second[1] == 'l') {
-			res = (2 - ('z' - first[0])) + 12;
-		}
-	} else {
-		if (first[0] == 'r') {
-			int snum = atoi (first + 1);
-			if (snum >= 0 && snum <= 30) {
-				res = snum / 2;
-			}
-		} else if (first[0] >= 'x' && first[0] <= 'z') {
-			res = (2 - ('z' - first[0])) + 12;
+	int low = parse_pair_register (&operand);
+	if (*operand == ':') {
+		int high = low;
+		operand++;
+		low = parse_pair_register (&operand);
+		if (high != low + 1) {
+			return -1;
 		}
 	}
-	free (op);
-	return res;
+	return (!*operand && low >= 0 && !(low & 1))? low / 2: -1;
 }

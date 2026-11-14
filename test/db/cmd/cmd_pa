@@ -1082,3 +1082,55 @@ ERROR: Cannot assemble 'strh r1, [r1]!' at line 1
 ERROR: Cannot assemble 'ldrd r0, r1, [r1]!' at line 1
 EOF
 RUN
+
+NAME=pa avr rejects malformed and invalid register pairs
+FILE=-
+CMDS=<<EOF
+e asm.arch=avr
+pa movw r3, r1
+pa movw foo, r2
+pa movw r30:r31, r0
+pa adiw r25, 1
+pa adiw foo, 1
+pa movw r0, r1
+pa movw r31, r0
+pa movw r1:r0, r4:r2
+pa movw r1:r0, r2:r1
+pa movw r32:r30, r0
+pa movw r1junk, r0
+pa movw r21474836480, r0
+pa movw r9223372036854775808, r0
+pa movw r1:r0:r2, r0
+pa movw r1:, r0
+pa movw :r0, r0
+pa movw xjunk, r0
+pa movw xh, r0
+pa movw xh:yl, r0
+pa movw xl:xh, r0
+pa adiw r23:r22, 1
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'movw r3, r1' at line 1
+ERROR: Cannot assemble 'movw foo, r2' at line 1
+ERROR: Cannot assemble 'movw r30:r31, r0' at line 1
+ERROR: Cannot assemble 'adiw r25, 1' at line 1
+ERROR: Cannot assemble 'adiw foo, 1' at line 1
+ERROR: Cannot assemble 'movw r0, r1' at line 1
+ERROR: Cannot assemble 'movw r31, r0' at line 1
+ERROR: Cannot assemble 'movw r1:r0, r4:r2' at line 1
+ERROR: Cannot assemble 'movw r1:r0, r2:r1' at line 1
+ERROR: Cannot assemble 'movw r32:r30, r0' at line 1
+ERROR: Cannot assemble 'movw r1junk, r0' at line 1
+ERROR: Cannot assemble 'movw r21474836480, r0' at line 1
+ERROR: Cannot assemble 'movw r9223372036854775808, r0' at line 1
+ERROR: Cannot assemble 'movw r1:r0:r2, r0' at line 1
+ERROR: Cannot assemble 'movw r1:, r0' at line 1
+ERROR: Cannot assemble 'movw :r0, r0' at line 1
+ERROR: Cannot assemble 'movw xjunk, r0' at line 1
+ERROR: Cannot assemble 'movw xh, r0' at line 1
+ERROR: Cannot assemble 'movw xh:yl, r0' at line 1
+ERROR: Cannot assemble 'movw xl:xh, r0' at line 1
+ERROR: Cannot assemble 'adiw r23:r22, 1' at line 1
+EOF
+RUN

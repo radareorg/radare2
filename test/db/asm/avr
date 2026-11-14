@@ -105,7 +105,7 @@ a "mov r31, r31" ff2f
 a "clr r31" ff27
 a "fmul r23, r23" 7f03
 a "muls r31, r31" ff02
-a "movw r0, r2" 0101
+ad "movw r0, r2" 0101
 a "movw r30, r0" f001
 a "adiw r30, 63" ff96
 a "rjmp -4" fecf 4
@@ -133,20 +133,35 @@ a "jmp 0" 0c940000
 a "jmp 0x7ffffe" fd95ffff
 a "call 0x7ffffe" ff95ffff
 a "lds r16, 0x3f" 00913f00
-a "lds r16, 0x40" 00a4
-a "lds r31, 0x7f" ffa7
-a "lds r31, 0x80" f0a0
-a "lds r16, 0xbf" 0fa3
+ad "lds r16, 0x40" 00914000
+ad "lds r31, 0x7f" f0917f00
+ad "lds r31, 0x80" f0918000
+ad "lds r16, 0xbf" 0091bf00
 a "lds r16, 0xc0" 0091c000
 a "lds r0, 0x40" 00904000
 a "sts 0x0f, r16" 00930f00
 a "sts 0x3f, r16" 00933f00
-a "sts 0x40, r16" 00ac
-a "sts 0x7f, r31" ffaf
-a "sts 0x80, r31" f0a8
-a "sts 0xbf, r16" 0fab
+ad "sts 0x40, r16" 00934000
+ad "sts 0x7f, r31" f0937f00
+ad "sts 0x80, r31" f0938000
+ad "sts 0xbf, r16" 0093bf00
 a "sts 0xc0, r16" 0093c000
 a "sts 0x40, r0" 00924000
 a "sts 0x8000, r16" 00930080
 a "sts 0xffff, r31" f093ffff
 a "cbr r16, -1" 0070
+ad "sts 0x0, r16" 00930000
+ad "lds r10, 0x0" a0900000
+ad "lds r16, 0x10" 00911000
+ad "movw r2, r0" 1001
+a "movw r1:r0, r3:r2" 0101
+a "movw r31:r30, r29:r28" fe01
+a "movw x, y" de01
+a "adiw zh:zl, 1" 3196
+a "adiw xh:xl, 1" 1196
+a "adiw yh:yl, 1" 2196
+a "adiw r31:r30, 1" 3196
+a "adiw r25:r24, 1" 0196
+a "sbiw x, 2" 1297
+a "sbiw y, 2" 2297
+a "sbiw z, 2" 3297
