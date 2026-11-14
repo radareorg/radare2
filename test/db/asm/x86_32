@@ -290,6 +290,12 @@ d "psubusw mm0, qword [eax]" 0fd900
 d "punpckhqdq xmm0, xmmword [eax]" 660f6d00
 d "punpcklqdq xmm0, xmmword [eax]" 660f6c00
 d "push 0" 6a00
+d "push 0xffffffff" 6aff
+d "push 0xfffffffe" 6afe
+d "push 0xffffff80" 6a80
+d "push 0xffff" 666aff
+d "enter 0xfefe, 0xfe" c8fefefe
+d "enter 8, 0" c8080000
 d "push cs" 0E
 d "push ds" 1E
 d "push dword [eax]" ff30
