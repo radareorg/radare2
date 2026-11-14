@@ -548,6 +548,18 @@ static size_t get_operator_code(SDemangler *sd, const char *buf, RList *names_l,
 		case 'V': SET_OPERATOR_CODE ("operator delete[]"); break;
 		case 'X': SET_OPERATOR_CODE ("`placement delete closure'"); break;
 		case 'Y': SET_OPERATOR_CODE ("`placement delete[] closure'"); break;
+		case '_': {
+			// user-defined literal operators, ?__K and the suffix
+			const char *end = (buf[1] == 'K')? strchr (buf + 2, '@'): NULL;
+			if (!end) {
+				return 0;
+			}
+			char *str = r_str_newf ("operator \"\"%.*s", (int)(end - buf - 2), buf + 2);
+			SET_OPERATOR_CODE (str);
+			free (str);
+			read_len += end - buf;
+			break;
+		}
 		default:
 			return 0;
 		}
