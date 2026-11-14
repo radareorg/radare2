@@ -139,3 +139,7 @@ d "i16x8.any_true" fd8201
 d "i16x8.all_true" fd8301
 d "i16x8.narrow_i32x4_s" fd8501
 d "i16x8.narrow_i32x4_u" fd8601
+d "call 4294967295" 10ffffffff0f
+d "get_local 2147483648" 208080808008
+d "i64.load 2 4294967295" 2902ffffffff0f
+d "call_indirect 2147483648 0" 11808080800800

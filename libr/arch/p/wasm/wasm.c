@@ -965,7 +965,7 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 					goto err;
 				}
 				if (txt && opdef->txt) {
-					op->txt = r_str_newf ("%s %d", opdef->txt, op->val);
+					op->txt = r_str_newf ("%s %u", opdef->txt, op->val);
 				}
 				op->len += n;
 			}
@@ -1000,11 +1000,11 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 				if (txt && opdef->txt) {
 					RStrBuf *sb = r_strbuf_new ("");
 					if (sb) {
-						r_strbuf_setf (sb, "%s %d ", opdef->txt, count);
+						r_strbuf_setf (sb, "%s %u ", opdef->txt, count);
 						for (i = 0; i < count; i++) {
-							r_strbuf_appendf (sb, "%d ", table[i]);
+							r_strbuf_appendf (sb, "%u ", table[i]);
 						}
-						r_strbuf_appendf (sb, "%d", def);
+						r_strbuf_appendf (sb, "%u", def);
 						op->txt = r_strbuf_drain (sb);
 					}
 				}
@@ -1029,7 +1029,7 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 					goto err;
 				}
 				if (txt && opdef->txt) {
-					op->txt = r_str_newf ("%s %d %d", opdef->txt, val, reserved);
+					op->txt = r_str_newf ("%s %u %u", opdef->txt, val, reserved);
 				}
 				op->len += n;
 			}
@@ -1114,7 +1114,7 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 					goto err;
 				}
 				if (txt && opdef->txt) {
-					op->txt = r_str_newf ("%s %d", opdef->txt, val);
+					op->txt = r_str_newf ("%s %u", opdef->txt, val);
 				}
 				op->len += n;
 			}
@@ -1154,7 +1154,7 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 					goto err;
 				}
 				if (txt && opdef->txt) {
-					op->txt = r_str_newf ("%s %d %d", opdef->txt, flag, offset);
+					op->txt = r_str_newf ("%s %u %u", opdef->txt, flag, offset);
 				}
 				op->len += n;
 			}
@@ -1423,7 +1423,7 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 					goto err;
 				}
 				if (txt && opdef->txt) {
-					op->txt = r_str_newf ("%s %d %d", opdef->txt, flag, offset);
+					op->txt = r_str_newf ("%s %u %u", opdef->txt, flag, offset);
 				}
 				op->len += n;
 			}
@@ -1623,7 +1623,7 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 					goto err;
 				}
 				if (txt && opdef->txt) {
-					op->txt = r_str_newf ("%s o:%d a:2^%d", opdef->txt, offset, align);
+					op->txt = r_str_newf ("%s o:%u a:2^%u", opdef->txt, offset, align);
 				}
 			}
 			break;
