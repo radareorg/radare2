@@ -527,3 +527,29 @@ EXPECT=<<EOF
 6   0x00001038 0x10001038 LOCAL  TLS  0        _t$tlv$init
 EOF
 RUN
+
+NAME=mach0 main in the zero-fill tail of a segment has no file offset
+FILE=malloc://16384
+CMDS=<<EOF
+wff bins/mach0/mach0-x86-64
+wx 0022000001000000 @ 0x20c0
+oba 0
+iMj
+EOF
+EXPECT=<<EOF
+{"vaddr":8704,"paddr":18446744073709551615}
+EOF
+RUN
+
+NAME=mach0 i386 main at an odd address keeps bit 0
+FILE=malloc://16384
+CMDS=<<EOF
+wff bins/mach0/mach0-i386
+wx 811f0000 @ 0x1088
+oba 0
+iM
+EOF
+EXPECT=<<EOF
+vaddr=0x00000f81 paddr=0x00000f81
+EOF
+RUN

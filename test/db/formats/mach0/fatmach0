@@ -600,3 +600,12 @@ machine  arm64.x1
 962e179a
 EOF
 RUN
+
+NAME=fatmacho main paddr is its file offset in the selected slice
+FILE=bins/mach0/ls-m1
+ARGS=-aarm -b64
+CMDS=iM
+EXPECT=<<EOF
+vaddr=0x100003a90 paddr=0x0001ba90
+EOF
+RUN

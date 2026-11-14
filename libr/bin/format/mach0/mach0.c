@@ -249,6 +249,19 @@ bool MACH0_(paddr_to_vaddr)(struct MACH0_(obj_t) * mo, ut64 offset, ut64 *vaddr)
 	return offset_in_segment (mo, offset, vaddr);
 }
 
+bool MACH0_(vaddr_to_paddr)(struct MACH0_(obj_t) * mo, ut64 vaddr, ut64 *offset) {
+	int i;
+	for (i = 0; i < mo->nsegs; i++) {
+		struct MACH0_(segment_command) *seg = &mo->segs[i];
+		ut64 size;
+		if (vaddr >= seg->vmaddr && segment_filebacked_size (mo, i, &size) && vaddr - seg->vmaddr < size) {
+			*offset = seg->fileoff + (vaddr - seg->vmaddr);
+			return true;
+		}
+	}
+	return false;
+}
+
 static ut64 pa2va(RBinFile *bf, ut64 offset) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, offset);
 	RIO *io = bf->rbin->iob.io;
