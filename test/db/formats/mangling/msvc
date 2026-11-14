@@ -396,3 +396,13 @@ public: static union __m128i __cdecl __crt_simd_traits<0, unsigned char>::compar
 void __cdecl f(struct __m128d)
 EOF
 RUN
+
+NAME=msvc function types
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc '??1?$function@$$A6AHH@Z@std@@QAE@XZ'
+EOF
+EXPECT=<<EOF
+public: __thiscall std::function<int __cdecl(int)>::~function<int __cdecl(int)>(void)
+EOF
+RUN

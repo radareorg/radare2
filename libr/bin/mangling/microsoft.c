@@ -1408,13 +1408,18 @@ static void pf(SDemangler *sd, SStateInfo *state, STypeCodeStr *type_code_str, c
 		copy_string (type_code_str, " ", 1);
 		copy_string (type_code_str, storage, 0);
 	}
-	copy_string (type_code_str, " (", 0);
 	R_FREE (ret_type);
-
-	copy_string (type_code_str, call_conv, 0);
-	copy_string (type_code_str, " ", 1);
-	copy_string (type_code_str, pointer_str, 0);
-	copy_string (type_code_str, ")", 1);
+	if (pointer_str) {
+		copy_string (type_code_str, " (", 0);
+		copy_string (type_code_str, call_conv, 0);
+		copy_string (type_code_str, " ", 1);
+		copy_string (type_code_str, pointer_str, 0);
+		copy_string (type_code_str, ")", 1);
+	} else {
+		// function types, like the $$A6AHH@Z of std::function<int __cdecl(int)>
+		copy_string (type_code_str, " ", 1);
+		copy_string (type_code_str, call_conv, 0);
+	}
 
 	state->amount_of_read_chars += i;
 	state->buff_for_parsing += i;
@@ -1492,7 +1497,13 @@ DEF_STATE_ACTION(Dollar) {
 	state->amount_of_read_chars += 2;
 	switch (*state->buff_for_parsing++) {
 	case 'A':
-		state->state = eTCStateP;
+		if (*state->buff_for_parsing == '6') {
+			// a function type, not a pointer to it
+			state->buff_for_parsing++;
+			pf (sd, state, type_code_str, NULL);
+		} else {
+			state->state = eTCStateP;
+		}
 		break;
 	case 'B':
 		parse_type_modifier (sd, state, type_code_str, "");
