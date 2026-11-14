@@ -207,11 +207,15 @@ static bool gb_parse_ld2(ut8 *buf, char *buf_asm) {
 		if ((i = gb_reg_idx (buf_asm[3])) == -1) {
 			return false;
 		}
+		if (buf_asm[5] == '[') {
+			// no 8-bit register but a takes a memory operand other than [hl]
+			return false;
+		}
 		buf[0] = 0x6 + (ut8)(i * 8);
 		num = r_num_math (NULL, buf_asm + 5);
 		buf[1] = (ut8)(num & 0xff);
 		return true;
-	} else if (!strncmp (buf_asm + 3, "[hl],", 5)) {
+	} else if (!strncmp (buf_asm + 3, "[hl],", 5) && buf_asm[8] != '[') {
 		buf[0] = 0x36;
 		num = r_num_math (NULL, buf_asm + 8);
 		buf[1] = (ut8)(num & 0xff);
@@ -224,7 +228,7 @@ static bool gb_parse_ld3(ut8 *buf, char *buf_asm) {
 	if (strlen (buf_asm) < 7) {
 		return false;
 	}
-	if (buf_asm[5] != ',') {
+	if (buf_asm[5] != ',' || buf_asm[6] == '[') {
 		return false;
 	}
 

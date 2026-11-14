@@ -1134,3 +1134,21 @@ ERROR: Cannot assemble 'movw xl:xh, r0' at line 1
 ERROR: Cannot assemble 'adiw r23:r22, 1' at line 1
 EOF
 RUN
+
+NAME=pa gb rejects memory operands where an immediate goes
+FILE=-
+CMDS=<<EOF
+e asm.arch=gb
+pa ld b, [0x1234]
+pa ld c, [bc]
+pa ld [hl], [bc]
+pa ld bc, [0x1234]
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'ld b, [0x1234]' at line 1
+ERROR: Cannot assemble 'ld c, [bc]' at line 1
+ERROR: Cannot assemble 'ld [hl], [bc]' at line 1
+ERROR: Cannot assemble 'ld bc, [0x1234]' at line 1
+EOF
+RUN
