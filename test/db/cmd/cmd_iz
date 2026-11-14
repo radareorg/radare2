@@ -810,3 +810,16 @@ EXPECT=<<EOF
 1   0x00000045 0x00001005 13  14   .data   ascii second string
 EOF
 RUN
+
+NAME=iz skips 64bit pointers into the image
+FILE=bins/pe/dhcpssvc.dll
+CMDS=<<EOF
+pv8 @ 0x7ff5d4a12a0
+iz~0x7ff5d4a12a0
+iz~?
+EOF
+EXPECT=<<EOF
+0x000007ff5d424e40
+469
+EOF
+RUN
