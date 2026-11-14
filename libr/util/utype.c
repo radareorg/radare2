@@ -1363,12 +1363,21 @@ static void clean_function_name(char *func_name) {
 	*last = '\0';
 }
 
+// lone jmp thunks, like the MSVC incremental linking ones, are named j.<target>
+static const char *strip_thunk_prefix(const char *func_name) {
+	while (r_str_startswith (func_name, "j.")) {
+		func_name += 2;
+	}
+	return func_name;
+}
+
 // TODO:
 // - symbol names are long and noisy, some of them might not be matched due
 //	 to additional information added around name
 R_API R_OWNED char *r_type_func_guess(Sdb *TDB, const char *R_NONNULL func_name) {
 	R_RETURN_VAL_IF_FAIL (TDB && func_name, NULL);
-	const char *str = func_name;
+	const char *str = strip_thunk_prefix (func_name);
+	const char *target = str;
 	char *result = NULL;
 
 	size_t slen = strlen (str);
@@ -1386,7 +1395,7 @@ R_API R_OWNED char *r_type_func_guess(Sdb *TDB, const char *R_NONNULL func_name)
 	}
 
 	// afs stores prototypes under the prefixed name, retry it unstripped
-	if (str != func_name && (result = type_func_try_guess (TDB, func_name))) {
+	if (str != target && (result = type_func_try_guess (TDB, target))) {
 		return result;
 	}
 
