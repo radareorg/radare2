@@ -126,6 +126,26 @@ static void string_set_addrs(RBinString *bs, ut64 str_start, ut64 pdelta, ut64 v
 	bs->vaddr = addr;
 }
 
+/*
+ * A short run of printable bytes filling a pointer-aligned slot whose value
+ * points into the binary is an address, not a string: 64bit pointers into
+ * images loaded above 4GB (0x140000000 for PE) decode as 4 printable chars
+ * ending in '@' followed by \x01. A real NUL-terminated string cannot make
+ * such a value, the terminator lands in its high bytes.
+ */
+static bool string_is_pointer(RBinFile *bf, const ut8 *buf, ut64 from, ut64 to, ut64 str_start, ut64 size) {
+	RBinObject *bo = bf->bo;
+	if (!bo || !bo->info) {
+		return false;
+	}
+	const ut64 ws = bo->info->bits / 8;
+	if ((ws != 4 && ws != 8) || size > ws || str_start % ws || str_start + ws > to) {
+		return false;
+	}
+	ut64 ptr = r_read_ble (buf + str_start - from, bo->info->big_endian, ws * 8);
+	return ptr && r_bin_get_section_at (bo, ptr, true);
+}
+
 // TODO: this code must be implemented in RSearch as options for the strings mode
 static void string_scan_range(const RBinStringScanOptions *options, const ut64 from, const ut64 to, int type, RBinSection *section) {
 	RBinFile *bf = options->bf;
@@ -373,6 +393,9 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 				if (num_blocks > R_STRING_MAX_UNI_BLOCKS) {
 					continue;
 				}
+			}
+			if (string_is_pointer (bf, buf, from, to, str_start, needle - str_start)) {
+				continue;
 			}
 			RBinString bs = { 0 };
 			bs.type = str_type;
