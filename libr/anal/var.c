@@ -782,13 +782,22 @@ R_API bool r_anal_var_rename(RAnal *anal, RAnalVar *var, const char *new_name) {
 	if (!nn) {
 		return false;
 	}
-	RAnalVarAccess *acc;
-	R_VEC_FOREACH (&var->accesses, acc) {
-		ut64 addr = var->fcn->addr + acc->offset;
-		const char *vartype = r_meta_get_string (anal, R_META_TYPE_VARTYPE, addr);
-		if (vartype && !strcmp (vartype, var->name)) {
-			r_meta_set_string (anal, R_META_TYPE_VARTYPE, addr, new_name);
+	// a loaded project may not restore every access, so look the comments up in the blocks
+	RAnalBlock **bbit;
+	R_VEC_FOREACH (&var->fcn->bbs, bbit) {
+		RAnalBlock *bb = *bbit;
+		RVecIntervalNodePtr *metas = r_meta_get_all_intersect (anal, bb->addr, bb->size, R_META_TYPE_VARTYPE);
+		if (!metas) {
+			continue;
 		}
+		RIntervalNode **it;
+		R_VEC_FOREACH (metas, it) {
+			RAnalMetaItem *mi = (*it)->data;
+			if (mi->str && !strcmp (mi->str, var->name)) {
+				r_meta_set_string (anal, R_META_TYPE_VARTYPE, (*it)->start, new_name);
+			}
+		}
+		RVecIntervalNodePtr_free (metas);
 	}
 	free (var->name);
 	var->name = nn;
