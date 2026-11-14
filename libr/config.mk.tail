@@ -146,6 +146,7 @@ EXT_AR=lib
 EXT_SO=dll
 EXT_EXE=.exe
 TH_LIBS=
+LDFLAGS+=-lbcrypt
 endif
 
 ifeq (${OSTYPE},bsd)

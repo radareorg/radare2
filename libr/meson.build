@@ -618,6 +618,7 @@ r_util_files = [
   'include/r_util/r_utf16.h',
   'include/r_util/r_utf32.h',
   'include/r_util/r_utf8.h',
+  'include/r_util/r_uuid.h',
   'include/r_util/r_w32.h',
   'include/r_util/r_w32dw.h',
   'include/r_util/r_x509.h',

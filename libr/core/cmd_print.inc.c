@@ -220,6 +220,7 @@ static RCoreHelpMessage help_msg_p = {
 	"ps", "[?][pwz] [len]", "print pascal/wide/zero-terminated strings",
 	"pt", "[?][dn] [len]", "print different timestamps",
 	"pu", "[w] [len]", "print N url encoded bytes (w=wide)",
+	"puuid[0-8]", "[format] | <namespace> <name> [format]", "versions 0-8",
 	"pv", "[?][ejh] [mode]", "show value of given size (1, 2, 4, 8)",
 	"pwd", "", "display current working directory",
 	"px", "[?][owq] [len]", "hexdump of N bytes (o=octal, w=32bit, q=64bit)",
@@ -228,6 +229,26 @@ static RCoreHelpMessage help_msg_p = {
 	"pkill", " [process-name]", "kill all processes with the given name",
 	"pushd", " [dir]", "cd to dir and push current directory to stack",
 	"popd", "[-a][-h]", "pop dir off top of stack and cd to it",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_pu = {
+	"pu", "[w] [len]", "print N url encoded bytes (w=wide)",
+	"puuid[0-8]", "[format] | <namespace> <name> [format]", "versions 0-8",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_puuid = {
+	"Usage:", "puuid[0-8] [format] | puuid[35] <namespace> <name> [format]", "version digits: 0-8; formats: std, upper, compact, braces, urn",
+	"puuid0", "", "nil UUID",
+	"puuid1", "", "timestamp-based UUID",
+	"puuid2", "", "DCE security UUID (person domain, current user ID)",
+	"puuid3", "<namespace> <name> [format]", "MD5 name UUID; namespace: dns, url, oid, x500, or UUID",
+	"puuid4", "", "random UUID",
+	"puuid5", "<namespace> <name> [format]", "SHA-1 name UUID; namespace: dns, url, oid, x500, or UUID",
+	"puuid6", "", "reordered timestamp-based UUID",
+	"puuid7", "", "Unix timestamp and random UUID",
+	"puuid8", "", "custom UUID using random data",
 	NULL
 };
 
@@ -8118,6 +8139,91 @@ static int cmd_print_md(RCore *core, const char *input) {
 	return 0;
 }
 
+static void cmd_print_uuid(RCore *core, const char *input) {
+	const char *version_ptr = r_str_trim_head_ro (input + 4);
+	const char *ns_name = NULL;
+	RUuidFmt format = R_UUID_FMT_STD;
+	RUuid uuid;
+	RUuid ns;
+	RUuidOpts opts;
+	char **argv;
+	int argc = 0;
+	int format_index = 0;
+	int version;
+	char out[R_UUID_STR_FMT_MAX];
+	if (*version_ptr == '?') {
+		r_cons_cmd_help (core->cons, help_msg_puuid);
+		return;
+	}
+	if (!*version_ptr || !isdigit ((ut8)*version_ptr)) {
+		r_cons_cmd_help (core->cons, help_msg_puuid);
+		return;
+	}
+	version = *version_ptr++ - '0';
+	if (*version_ptr && !isspace ((ut8)*version_ptr)) {
+		R_LOG_ERROR ("Expected one UUID version digit");
+		return;
+	}
+	argv = r_str_argv (r_str_trim_head_ro (version_ptr), &argc);
+	if (!argv) {
+		R_LOG_ERROR ("Unable to parse UUID arguments");
+		return;
+	}
+	if (version == R_UUID_V3 || version == R_UUID_V5) {
+		if (argc < 2 || argc > 3) {
+			R_LOG_ERROR ("UUID v%d requires <namespace> <name> [format]", version);
+			r_str_argv_free (argv);
+			return;
+		}
+		ns_name = argv[0];
+		format_index = 2;
+	} else if (argc > 1) {
+		R_LOG_ERROR ("UUID v%d accepts at most one format", version);
+		r_str_argv_free (argv);
+		return;
+	}
+	if (argc > format_index) {
+		format = r_uuid_format_from_str (argv[format_index]);
+		if (format >= R_UUID_FMT_MAX) {
+			R_LOG_ERROR ("Unsupported UUID format <%s> (expected std, upper, compact, braces, or urn)", argv[format_index]);
+			r_str_argv_free (argv);
+			return;
+		}
+	}
+	if (version == R_UUID_V0) {
+		memset (&uuid, 0, sizeof (uuid));
+	} else {
+		r_uuid_opts_init (&opts);
+		if (version == R_UUID_V2) {
+			opts.v2_domain = 0; /* person */
+			opts.v2_local_id = (ut32)r_sys_uid ();
+		} else if (version == R_UUID_V3 || version == R_UUID_V5) {
+			opts.ns = r_uuid_namespace (ns_name);
+			if (!opts.ns) {
+				if (!r_uuid_from_string (&ns, ns_name)) {
+					R_LOG_ERROR ("Invalid UUID namespace <%s> (expected dns, url, oid, x500, or a UUID)", ns_name);
+					r_str_argv_free (argv);
+					return;
+				}
+				opts.ns = &ns;
+			}
+			opts.name = (const ut8 *)argv[1];
+			opts.name_len = strlen (argv[1]);
+		}
+		if (!r_uuid_generate (&uuid, (RUuidVersion)version, &opts)) {
+			R_LOG_ERROR ("Unsupported UUID version or generation failed <%d>", version);
+			r_str_argv_free (argv);
+			return;
+		}
+	}
+	r_str_argv_free (argv);
+	if (!r_uuid_format (&uuid, format, out, sizeof (out))) {
+		R_LOG_ERROR ("Unable to format UUID");
+		return;
+	}
+	r_cons_printf (core->cons, "%s\n", out);
+}
+
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	st64 l;
@@ -8735,11 +8841,27 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'u': // "pu"
 		if (input[1] == '?') {
-			r_cons_cmd_help_match (core->cons, help_msg_p, "pu", 0, true);
-		} else {
+			r_cons_cmd_help (core->cons, help_msg_pu);
+		} else if (input[1] == 'w') { // "puw"
 			if (l > 0) {
-				r_print_string (core->print, core->addr, block, len, R_PRINT_STRING_URLENCODE | ((input[1] == 'w')? R_PRINT_STRING_WIDE: 0));
+				r_print_string (core->print, core->addr, core->block, len,
+					R_PRINT_STRING_URLENCODE | R_PRINT_STRING_WIDE);
 			}
+		} else if (input[1] == '\0' || input[1] == ' ') { // "pu" || "pu "
+			if (l > 0) {
+				r_print_string (core->print, core->addr, core->block, len,
+					R_PRINT_STRING_URLENCODE | 0);
+			}
+		} else if (!strncmp (input, "uu", 2)) {
+			if (!strncmp (input, "uu?", 3) ||
+				!strncmp (input, "uui?", 4) ||
+				!strncmp (input, "uuid", 4)) {
+					cmd_print_uuid (core, input);
+			} else {
+				r_core_return_invalid_command (core, "puu", input[2]);
+			}
+		} else {
+			r_core_return_invalid_command (core, "pu", input[1]);
 		}
 		break;
 	case 'c': // "pc"
