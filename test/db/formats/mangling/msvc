@@ -406,3 +406,15 @@ EXPECT=<<EOF
 public: __thiscall std::function<int __cdecl(int)>::~function<int __cdecl(int)>(void)
 EOF
 RUN
+
+NAME=msvc vcall thunks
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc '??_9ConVirtual@@$BA@AE'
+!rabin2 -D msvc '??_9ConVirtual@@$B7AA'
+EOF
+EXPECT=<<EOF
+[thunk]: __thiscall ConVirtual::`vcall'{0, {flat}}
+[thunk]: __cdecl ConVirtual::`vcall'{8, {flat}}
+EOF
+RUN
