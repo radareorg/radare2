@@ -773,3 +773,18 @@ ERROR: Cannot assemble 'asrs r0, r2, 0' at line 1
 ERROR: Cannot assemble 'asrs r0, r2, 33' at line 1
 EOF
 RUN
+
+NAME=pa thumb rejects ldm writeback into a loaded register
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+pa ldm r5!, {r0, r5}
+pa ldm r5!, {r5, r8}
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'ldm r5!, {r0, r5}' at line 1
+ERROR: Cannot assemble 'ldm r5!, {r5, r8}' at line 1
+EOF
+RUN

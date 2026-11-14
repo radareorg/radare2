@@ -1137,3 +1137,6 @@ a "asr.w r8, r9, 32" 4fea2908
 a "sub sp, 508" ffb0
 a "sub sp, 512" adf5007d
 a "sub sp, 1024" adf5806d
+a "ldm r5, {r0}" 95e80100
+a "ldm r5, {r0, r5}" 21cd
+a "ldm r5!, {r0, r1}" 03cd

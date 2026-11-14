@@ -2431,12 +2431,13 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		case THUMB_REGBANG_LIST: {
 			ut8 reg1 = getregmembang (ao->a[0]);
 			ut32 list = getreglist (ao->a[1]);
+			if (list & (1 << reg1)) {
+				// writeback into a register that is also loaded
+				return -1;
+			}
 			if (!((m & DB_BIT) || (m & EA_BIT)) && !(list & 0xff00) && (reg1 < 8) && !(m & DOTW_BIT)) {
 				ao->o = 0x00c8;
 				ao->o |= reg1;
-				if (list & (1 << reg1)) {
-					list ^= 1 << (reg1);
-				}
 				ao->o |= (list & 0xff) << 8;
 
 				return 2;
@@ -2460,10 +2461,10 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		case THUMB_REG_LIST: {
 			ut8 reg1 = getreg (ao->a[0]);
 			ut32 list = getreglist (ao->a[1]);
-			if (!((m & DB_BIT) || (m & EA_BIT)) && !(list & 0xff00) && (reg1 < 8) && !(m & DOTW_BIT)) {
+			// the 16-bit form only skips the writeback when the base register is in the list
+			if (!((m & DB_BIT) || (m & EA_BIT)) && !(list & 0xff00) && (reg1 < 8) && (list & (1 << reg1)) && !(m & DOTW_BIT)) {
 				ao->o = 0x00c8;
 				ao->o |= reg1;
-				ao->o |= 1 << (reg1 + 8);
 				ao->o |= (list & 0xff) << 8;
 				return 2;
 			}
