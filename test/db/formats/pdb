@@ -411,6 +411,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=idpi script skips empty and whitespace-only public names
+FILE=bins/pdb/SimplePDB.exe
+CMDS=<<EOF
+idpi* bins/pdb/SimplePDB-empty-names.pdb~f pdb.void___cdecl_SomeCoolFunction_void_,f pdb.__imp__printf,f pdb._main
+EOF
+EXPECT=<<EOF
+'@0x401010'f pdb._main
+'@0x401290'f pdb._mainCRTStartup
+EOF
+RUN
+
 NAME=pdb structs sharing a long field list are parsed in linear time
 FILE=bins/pdb/shared-field-list-400x1000.pdb
 ARGS=-e log.level=0

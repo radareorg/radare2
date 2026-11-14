@@ -1258,6 +1258,9 @@ typedef struct {
 } GVarsOutput;
 
 static void print_gvar(GVarsOutput *out, ut64 addr, ut32 symtype, ut32 size, const char *sname, const char *name, bool unique) {
+	if (R_STR_ISEMPTY (name)) {
+		return;
+	}
 	switch (out->format) {
 	case 2:
 	case 'j': // JSON
@@ -1275,6 +1278,10 @@ static void print_gvar(GVarsOutput *out, ut64 addr, ut32 symtype, ut32 size, con
 	case '*':
 	case 'r': { // r2 script
 		char *filtered_name = r_name_filter_dup (r_str_trim_head_ro (name));
+		if (R_STR_ISEMPTY (filtered_name)) {
+			free (filtered_name);
+			break;
+		}
 		bool found = false;
 		ht_su_find (out->names, filtered_name, &found);
 		if (found && unique) {
@@ -1367,6 +1374,9 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	char sname[PDB_SIZEOF_SECTION_NAME + 1];
 	if (gsym_data_stream) {
 		r_list_foreach (gsym_data_stream->globals_list, it, gdata) {
+			if (R_STR_ISEMPTY (gdata->name.name)) {
+				continue;
+			}
 			sctn_header = pdb_pe_section (pe_stream, gdata->segment - 1);
 			if (!sctn_header) {
 				R_LOG_DEBUG ("Skipping %s, segment %d does not exist", gdata->name.name, (gdata->segment - 1));
