@@ -146,6 +146,12 @@ static int gb_parse_ldmem(ut8 *buf, const char *buf_asm) {
 				buf[0] = (!strcmp (mem, "hl+")? 0x22: 0x32) | (load? 8: 0);
 				len = 1;
 			}
+		} else if (!strcmp (mem, "c") || !strcmp (mem, "0xff00+c") || !strcmp (mem, "$ff00+c")) {
+			// ld [0xff00 + c], a and ld a, [0xff00 + c]
+			if (load || !strcmp (src, "a")) {
+				buf[0] = load? 0xf2: 0xe2;
+				len = 1;
+			}
 		} else if (strcmp (mem, "hl")) {
 			ut64 address = r_num_math (NULL, mem);
 			buf[0] = load? 0xfa: !strcmp (src, "sp")? 0x08: 0xea;

@@ -151,7 +151,8 @@ d "jr nC, 0x00" 3000
 d "jr nZ, 0x00" 2000
 d "ld [0x0000], a" ea0000
 d "ld [0x0000], sp" 080000
-d "ld [0xff00 + c], a" e2
+ad "ld [0xff00 + c], a" e2
+a "ld [c], a" e2
 d "ld [rP1], a" e000
 d "ld [rSB], a" e001
 d "ld [rSC], a" e002
@@ -221,7 +222,8 @@ d "ld [hl], h" 74
 d "ld [hl], l" 75
 d "ld a, 0x00" 3e00
 d "ld a, [0x0000]" fa0000
-d "ld a, [0xff00 + c]" f2
+ad "ld a, [0xff00 + c]" f2
+a "ld a, [c]" f2
 d "ld a, [rP1]" f000
 d "ld a, [rSB]" f001
 d "ld a, [rSC]" f002
