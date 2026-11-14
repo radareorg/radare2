@@ -7007,6 +7007,10 @@ static int cmd_af(RCore *core, const char *input) {
 		if (!input[2] || input[2] == ' ' || input[2] == 'i' || input[2] == 'r' || input[2] == 'a') {
 			fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
 			if (!fcn) {
+				// a function added with af+ has no blocks yet, like the ones afl* restores
+				fcn = r_anal_get_function_at (core->anal, core->addr);
+			}
+			if (!fcn) {
 				if (!input[2]) {
 					r_cons_println (core->cons, r_config_get (core->config, "anal.cc"));
 					break;

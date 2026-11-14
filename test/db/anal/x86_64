@@ -261,6 +261,9 @@ EOF
 EXPECT=<<EOF
 'f sym._checkinput 288 0x100000da0
 'af+ 0x100000da0 sym._checkinput f n
+s 0x100000da0
+'afc amd64
+s-
 afb+ 0x100000da0 0x100000da0 22 0x100000db6 0xffffffffffffffff
 afb+ 0x100000da0 0x100000db6 26 0x100000e99 0x100000dd0
 afb+ 0x100000da0 0x100000dd0 20 0xffffffffffffffff 0xffffffffffffffff
@@ -286,9 +289,6 @@ afb+ 0x100000da0 0x100000e9e 24 0x100000db6 0x100000eb6
 afb+ 0x100000da0 0x100000eb6 4 0x100000eba 0xffffffffffffffff
 afb+ 0x100000da0 0x100000eba 6 0xffffffffffffffff 0xffffffffffffffff
 '@0x100000da0'afB 64
-s 0x100000da0
-'afc amd64
-s-
 '0x100000da0'afS 8
 s 0x100000da0
 'afvb -1 var_1h int8_t

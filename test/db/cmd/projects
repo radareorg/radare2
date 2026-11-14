@@ -1038,3 +1038,34 @@ fs *
 fs symbols
 EOF
 RUN
+
+NAME=afl* restores the vars of a function with a non default convention as they were
+FILE=malloc://0x100
+ARGS=-a x86 -b 64 -e anal.cc=ms
+CMDS=<<EOF
+wx 535657415441564157 4883ec58 4d8bf1 4d8bf8 4c63e2 488bf9 4c89742420 398424b0000000 4889842490000000 4883c458 415f415e415c5f5e5bc3
+af
+afl*~afc,afb+
+afl* > .tmp/afl-ms-vars.r2
+af-*
+e anal.cc=amd64
+. .tmp/afl-ms-vars.r2
+rm .tmp/afl-ms-vars.r2
+afc
+afs
+afv
+EOF
+EXPECT=<<EOF
+'afc ms
+afb+ 0x00000000 0x00000000 59 0xffffffffffffffff 0xffffffffffffffff
+ms
+void fcn.00000000 (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int32_t arg_28h);
+arg int64_t arg1 @ rcx
+arg int64_t arg2 @ rdx
+arg int64_t arg3 @ r8
+arg int64_t arg4 @ r9
+arg int32_t arg_28h @ rsp+0xb0
+var int64_t var_20h @ rsp+0x20
+var int64_t var_90h @ rsp+0x90
+EOF
+RUN

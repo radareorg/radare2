@@ -3264,11 +3264,8 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 				fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?'u':'n');
 		free (sanitized_name);
 	}
-	// FIXME: this command prints something annoying. Does it have important side-effects?
-	fcn_list_bbs (core, fcn);
-	if (fcn->bits != 0) {
-		r_cons_printf (cons, "'@0x%08"PFMT64x"'afB %d\n", fcn->addr, fcn->bits);
-	}
+	// the convention goes before the blocks: afc reanalyzes the args of a function with blocks,
+	// and the restored blocks have no stack depths, so it would make args of the locals
 	if (fcn->callconv || defaultCC) {
 		char *cc = r_str_sanitize_r2 (fcn->callconv? fcn->callconv: defaultCC);
 		if (cc) {
@@ -3277,6 +3274,11 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 			r_cons_println (cons, "s-");
 			free (cc);
 		}
+	}
+	// FIXME: this command prints something annoying. Does it have important side-effects?
+	fcn_list_bbs (core, fcn);
+	if (fcn->bits != 0) {
+		r_cons_printf (cons, "'@0x%08"PFMT64x"'afB %d\n", fcn->addr, fcn->bits);
 	}
 	if (fcn->folded) {
 		r_cons_printf (cons, "afF @ 0x%08"PFMT64x"\n", fcn->addr);

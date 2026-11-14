@@ -1330,7 +1330,9 @@ static void fcn_scan(FcnWalk *w, ut64 addr) {
 	}
 	int loadsize = 0;
 
-	bool varset = has_vars (anal, addr); // Checks if var is already analyzed at given addr
+	// a block added by hand (afb+, projects) has no stack depth from the blocks before it, so
+	// the offsets would make vars of nothing: those come from afv[bsr] or a later afva
+	bool varset = !w->follow || has_vars (anal, addr); // Checks if var is already analyzed at given addr
 
 	ut64 movdisp = UT64_MAX; // used by jmptbl when coded as "mov Reg,[Reg*Scale+Disp]"
 	ut64 movdisp_addr = UT64_MAX;
