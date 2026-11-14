@@ -177,3 +177,123 @@ invalid
 pop mmap(@st1_55)
 EOF
 RUN
+
+NAME=C55x+ control flow analysis
+FILE=-
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.cpu=c55x+
+s 0x1000
+?e nop;ao 1 @x:2021~type
+?e ret;ao 1 @x:2120~type
+?e nop16;ao 1 @x:0000~type
+?e reti;ao 1 @x:00c0~type
+?e fret;ao 1 @x:00d0~type
+?e b ac;ao 1 @x:0225~type,jump,fail
+?e call ac;ao 1 @x:02a5~type,jump,fail
+?e intr;ao 1 @x:0305~type,val
+?e trap;ao 1 @x:0345~type,val
+?e retcc;ao 1 @x:08e4~type,jump,fail
+?e b rel;ao 1 @x:68fff0~type,jump,fail
+?e call rel;ao 1 @x:690010~type,jump,fail
+?e bcc rel8;ao 1 @x:6af0e4~type,jump,fail
+?e bcc rel16;ao 1 @x:9afff0e4~type,jump,fail
+?e callcc rel16;ao 1 @x:9b0010e4~type,jump,fail
+?e b abs;ao 1 @x:9c123456~type,jump,fail
+?e call abs;ao 1 @x:9d123456~type,jump,fail
+?e b far;ao 1 @x:9e123456~type,jump,fail
+?e call far;ao 1 @x:9f123456~type,jump,fail
+?e bcc abs;ao 1 @x:d8123456e4~type,jump,fail
+?e callcc abs;ao 1 @x:d9123456e4~type,jump,fail
+?e bcc smem;ao 1 @x:b000000010~type,jump,fail
+?e cmp branch;ao 1 @x:da00120010~type,jump,fail
+?e qualified b;ao 1 @x:259c123456~type,jump,fail
+?e qualified ret;ao 1 @x:2421~type
+?e truncated;ao 1 @x:68ff~type,jump
+?e other;ao 1 @x:770030~type
+EOF
+EXPECT=<<EOF
+nop
+type: nop
+ret
+type: ret
+nop16
+type: nop
+reti
+type: ret
+fret
+type: ret
+b ac
+type: ujmp
+call ac
+type: ucall
+fail: 0x00001002
+intr
+val: 0x00000005
+type: swi
+trap
+val: 0x00000005
+type: trap
+retcc
+type: cret
+fail: 0x00001002
+b rel
+type: jmp
+jump: 0x00000ff3
+call rel
+type: call
+jump: 0x00001013
+fail: 0x00001003
+bcc rel8
+type: cjmp
+jump: 0x00000ff3
+fail: 0x00001003
+bcc rel16
+type: cjmp
+jump: 0x00000ff4
+fail: 0x00001004
+callcc rel16
+type: ccall
+jump: 0x00001014
+fail: 0x00001004
+b abs
+type: jmp
+jump: 0x00123456
+call abs
+type: call
+jump: 0x00123456
+fail: 0x00001004
+b far
+type: jmp
+jump: 0x00123456
+call far
+type: call
+jump: 0x00123456
+fail: 0x00001004
+bcc abs
+type: cjmp
+jump: 0x00123456
+fail: 0x00001005
+callcc abs
+type: ccall
+jump: 0x00123456
+fail: 0x00001005
+bcc smem
+type: cjmp
+jump: 0x00001015
+fail: 0x00001005
+cmp branch
+type: cjmp
+jump: 0x00001015
+fail: 0x00001005
+qualified b
+type: jmp
+jump: 0x00123456
+qualified ret
+type: ret
+truncated
+type: ill
+other
+type: unk
+EOF
+RUN
