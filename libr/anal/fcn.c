@@ -891,6 +891,12 @@ static inline bool has_vars(RAnal *anal, ut64 addr) {
 	return fcn && r_anal_var_count_all (fcn) > 0;
 }
 
+// a flag in the functions space marks an entry point given by the symbols, like the PDB ones
+static bool is_function_flag_at(RAnal *anal, ut64 addr) {
+	RFlagItem *flag = anal->flag_get? anal->flag_get (anal->flb.f, false, addr): NULL;
+	return flag && flag->space && !strcmp (flag->space->name, R_FLAGS_FS_FUNCTIONS);
+}
+
 static void fcn_rename_readdr(RAnalFunction *fcn, ut64 to) {
 	r_strf_var (addrstr, 64, "%08"PFMT64x, fcn->addr);
 	if (!r_anal_function_relocate (fcn, to)) {
@@ -1897,9 +1903,7 @@ noskip:
 				ut8 buf[32];
 				const int nread = anal->iob.read_at (anal->iob.io, op->jump, (ut8 *)buf, sizeof (buf));
 				RAnalFunction *nfcn = r_anal_get_function_at (anal, op->jump);
-				RFlagItem *flag = anal->flag_get? anal->flag_get (anal->flb.f, false, op->jump): NULL;
-				bool function_flag = flag && flag->space && !strcmp (flag->space->name, R_FLAGS_FS_FUNCTIONS);
-				if (nfcn || function_flag || (nread > 0 && r_anal_is_prelude (anal, op->jump, buf, nread))) {
+				if (nfcn || is_function_flag_at (anal, op->jump) || (nread > 0 && r_anal_is_prelude (anal, op->jump, buf, nread))) {
 					R_LOG_DEBUG ("tail call jump found at 0x%08"PFMT64x, op->addr);
 					// XXX using type-jump wont analyze the destination as a function
 					// walking it from here wont make it analyze it either
@@ -2555,7 +2559,9 @@ static int fcn_walk(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, bool f
 		.flagends = anal->opt.flagends,
 		.flagbounds = anal->opt.flagbounds,
 		.propagate_noreturn = anal->opt.propagate_noreturn,
-		.nopskip = anal->opt.nopskip && r_arch_info (anal->arch, R_ARCH_INFO_ISVM) != R_ARCH_INFO_ISVM,
+		// the entry point of a function flag is kept, like the nops starting a PDB __ehhandler$ stub
+		.nopskip = anal->opt.nopskip && r_arch_info (anal->arch, R_ARCH_INFO_ISVM) != R_ARCH_INFO_ISVM
+			&& !is_function_flag_at (anal, fcn->addr),
 		.follow = follow,
 	};
 	w.is_arm = r_str_startswith (arch, "arm");
