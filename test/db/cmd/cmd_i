@@ -4181,3 +4181,19 @@ ERROR: Cannot demangle string
 ERROR: Cannot demangle string
 EOF
 RUN
+
+NAME=iD msvc with a quoted or escaped symbol
+FILE=-
+CMDS=<<EOF
+iD msvc "??$f@H@@YAXH@Z"
+iD msvc '?f@A@@QAEXXZ'
+iD msvc ?f\@A\@\@QAEXXZ
+iDj msvc "?f@A@@QAEXXZ"
+EOF
+EXPECT=<<EOF
+void __cdecl f<int>(int)
+public: void __thiscall A::f(void)
+public: void __thiscall A::f(void)
+{"lang":"msvc","mangled":"?f@A@@QAEXXZ","demangled":"public: void __thiscall A::f(void)"}
+EOF
+RUN
