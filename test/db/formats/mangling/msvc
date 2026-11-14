@@ -114,8 +114,8 @@ CMDS=<<EOF
 !rabin2 -D msvc '??$?_R10000@@YAXXZ'
 EOF
 EXPECT=<<EOF
-A::`RTTI Base Class Descriptor at (1,1,1,1)'
-void __cdecl `RTTI Base Class Descriptor at (1,1,1,1)'(void)
+A::`RTTI Base Class Descriptor at (1, 1, 1, 1)'
+void __cdecl `RTTI Base Class Descriptor at (1, 1, 1, 1)'(void)
 EOF
 RUN
 
@@ -189,7 +189,7 @@ CMDS=<<EOF
 !rabin2 -D msvc '??$f@$0??@@YAXXZ'
 EOF
 EXPECT=<<EOF
-Ex5::`RTTI Base Class Descriptor at (0,-1,0,64)'
+Ex5::`RTTI Base Class Descriptor at (0, -1, 0, 64)'
 void __cdecl f<-11>(void)
 ??$f@$0??@@YAXXZ
 EOF
@@ -221,9 +221,9 @@ CMDS=<<EOF
 !rabin2 -D msvc '?f@A@@$R4BA@A@PPPPPPPM@7AEXXZ'
 EOF
 EXPECT=<<EOF
-[thunk]: public: virtual void __thiscall Dog::sound`vtordisp{-4,0}'(void) const
-[thunk]: private: virtual void __thiscall A::f`vtordisp{-4,4}'(void)
-[thunk]: public: virtual void __thiscall A::f`vtordispex{16,0,-4,8}'(void)
+[thunk]: public: virtual void __thiscall Dog::sound`vtordisp{-4, 0}'(void) const
+[thunk]: private: virtual void __thiscall A::f`vtordisp{-4, 4}'(void)
+[thunk]: public: virtual void __thiscall A::f`vtordispex{16, 0, -4, 8}'(void)
 EOF
 RUN
 
