@@ -59,3 +59,24 @@ EXPECT=<<EOF
 0x00000067
 EOF
 RUN
+
+NAME=/ search.in=bin.section at the first byte of a section
+FILE=bins/pe/cpp-msvc-x86.exe
+CMDS=<<EOF
+e search.in=bin.section
+s 0x411fff
+/x 4000~?
+/x 558bec~?
+?e --
+s 0x412000
+/x 4000~?
+/x 558bec~?
+EOF
+EXPECT=<<EOF
+79
+331
+--
+91
+0
+EOF
+RUN
