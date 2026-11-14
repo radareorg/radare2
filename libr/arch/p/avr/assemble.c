@@ -1,6 +1,7 @@
 #include "r_asm.h"
 #include "format.h"
 #include "assemble.h"
+#include <errno.h>
 
 extern instructionInfo instructionSet[AVR_TOTAL_INSTRUCTIONS];
 
@@ -21,16 +22,18 @@ typedef struct _specialregs specialregs;
 
 #define REGS_TABLE 9
 
-/* gets the number from string
- * duplicate from arch.x86_nz.c -- may be create a generic function? */
-static int getnum(const char *s) {
-	if (!s || !*s) {
-		return 0;
-	}
+static bool getnum(const char *s, st64 *value) {
 	if (*s == '$') {
 		s++;
 	}
-	return sdb_atoi (s);
+	char *end;
+	errno = 0;
+	st64 number = strtoll (s, &end, 0);
+	if (errno == ERANGE || end == s || *end) {
+		return false;
+	}
+	*value = number;
+	return true;
 }
 
 // radare tolower instruction in rasm, so we use 'x' instead of 'X' etc.
@@ -41,26 +44,41 @@ specialregs RegsTable[REGS_TABLE] = {
 };
 
 
-// an i/o address must fit the bits of its field, 6 for in and out, 5 for sbi, cbi, sbic and sbis
-static bool io_fits(uint32_t value, int type, uint16_t mask) {
-	if (type != OPERAND_IO_REGISTER) {
+// Negative 8-bit data is encoded in two's complement.
+static bool operand_fits(st64 value, int type, ut16 mask) {
+	int bits;
+	switch (type) {
+	case OPERAND_DATA:
+		bits = r_bits_popcount32 (mask);
+		return value >= (bits == 8? -128: 0) && value < (1LL << bits);
+	case OPERAND_REGISTER:
+	case OPERAND_REGISTER_STARTR16:
+	case OPERAND_REGISTER_EVEN_PAIR:
+	case OPERAND_REGISTER_EVEN_PAIR_STARTR24:
+	case OPERAND_IO_REGISTER:
+	case OPERAND_BIT:
+	case OPERAND_DES_ROUND:
+	case OPERAND_YPQ:
+	case OPERAND_ZPQ:
+		return value >= 0 && value < (1LL << r_bits_popcount32 (mask));
+	case OPERAND_BRANCH_ADDRESS:
+	case OPERAND_RELATIVE_ADDRESS:
+		bits = r_bits_popcount32 (mask);
+		return value >= -(1LL << (bits - 1)) && value < (1LL << (bits - 1));
+	case OPERAND_LONG_ABSOLUTE_ADDRESS:
+		return value >= 0 && value <= 0xffff;
+	default:
 		return true;
 	}
-	int bits = 0;
-	while (mask) {
-		bits += mask & 1;
-		mask >>= 1;
-	}
-	return value < (1u << bits);
 }
 
 int avr_encode(RArchSession *as, ut64 pc, const char *str, ut8 *outbuf) {
-	AvrToken tok;
+	AvrToken tok = {0};
 	char *token;
 	char *save_ptr = NULL;
-	uint32_t coded = 0;
+	ut32 coded = 0;
 	int len  = 0;
-	uint32_t op1 = 0, op2 = 0;
+	st64 op1 = 0, op2 = 0;
 	unsigned int tokens_cnt = 0;
 	int instr_idx = -1;
 
@@ -68,12 +86,17 @@ int avr_encode(RArchSession *as, ut64 pc, const char *str, ut8 *outbuf) {
 	// the delimiters are ' ' and ','
 	token = r_str_tok_r ((char *)str, TOKEN_DELIM, &save_ptr);
 	while (token && tokens_cnt < 3) {
-		memset (tok.ens[tokens_cnt], 0, MAX_TOKEN_SIZE);
-		strncpy (tok.ens[tokens_cnt], token, MAX_TOKEN_SIZE-1);
+		if (strlen (token) >= MAX_TOKEN_SIZE) {
+			return 0;
+		}
+		strcpy (tok.ens[tokens_cnt], token);
 		token = r_str_tok_r (NULL, TOKEN_DELIM, &save_ptr);
 		tokens_cnt += 1;
 	}
 
+	if (token) {
+		return 0;
+	}
 	if (tokens_cnt > 0) {
 		// find nearest instruction that looks like supplied
 		instr_idx = search_instruction (as, &tok, tokens_cnt - 1);
@@ -95,12 +118,17 @@ int avr_encode(RArchSession *as, ut64 pc, const char *str, ut8 *outbuf) {
 				if (assemble_operand (pc, tok.ens[1], instructionSet[instr_idx].operandTypes[0], &op1) >= 0) {
 					// jmp and call has 4-byte opcode
 					if (instructionSet[instr_idx].operandTypes[0] == OPERAND_LONG_ABSOLUTE_ADDRESS) {
+						if (op1 < 0 || op1 > 0x7ffffe || (op1 & 1)) {
+							return 0;
+						}
 						op1 = op1/2;
 						coded = instructionSet[instr_idx].opcodeMask
 						| packDataByMask((op1 >> 16), instructionSet[instr_idx].operandMasks[0]);
 						// memory addressed in bytes for jumps
-						coded |= ((uint16_t)op1) << 16;
+						coded |= (ut32)(ut16)op1 << 16;
 						len = 4;
+					} else if (!operand_fits (op1, instructionSet[instr_idx].operandTypes[0], instructionSet[instr_idx].operandMasks[0])) {
+						return 0;
 					} else {
 						// see avr_disasm.h for OPERAND_REGISTER_GHOST description
 						// e.g. clr r0 == eor r0, r0
@@ -118,10 +146,18 @@ int avr_encode(RArchSession *as, ut64 pc, const char *str, ut8 *outbuf) {
 				}
 
 			} else if (instructionSet[instr_idx].numOperands == 2 && tokens_cnt == 3) {
-				if (assemble_operand(pc, tok.ens[1], instructionSet[instr_idx].operandTypes[0], &op1) >= 0 &&
-				   assemble_operand(pc, tok.ens[2], instructionSet[instr_idx].operandTypes[1], &op2) >= 0 &&
-				   io_fits (op1, instructionSet[instr_idx].operandTypes[0], instructionSet[instr_idx].operandMasks[0]) &&
-				   io_fits (op2, instructionSet[instr_idx].operandTypes[1], instructionSet[instr_idx].operandMasks[1])) {
+				if (assemble_operand (pc, tok.ens[1], instructionSet[instr_idx].operandTypes[0], &op1) < 0 ||
+					assemble_operand (pc, tok.ens[2], instructionSet[instr_idx].operandTypes[1], &op2) < 0) {
+					return 0;
+				}
+				// Short lds/sts encode bits 0..6; bit 7 is implied by the address range.
+				if (instructionSet[instr_idx].opcodeMask == 0xa000) {
+					op2 &= 0x7f;
+				} else if (instructionSet[instr_idx].opcodeMask == 0xa800) {
+					op1 &= 0x7f;
+				}
+				if (operand_fits (op1, instructionSet[instr_idx].operandTypes[0], instructionSet[instr_idx].operandMasks[0]) &&
+				   operand_fits (op2, instructionSet[instr_idx].operandTypes[1], instructionSet[instr_idx].operandMasks[1])) {
 
 					coded = instructionSet[instr_idx].opcodeMask
 						| packDataByMask(op1, instructionSet[instr_idx].operandMasks[0])
@@ -131,10 +167,10 @@ int avr_encode(RArchSession *as, ut64 pc, const char *str, ut8 *outbuf) {
 
 					// handling lds/sts instructions
 					if (instructionSet[instr_idx].operandTypes[0] == OPERAND_LONG_ABSOLUTE_ADDRESS) {
-						coded |= ((uint16_t)op1) << 16;
+						coded |= (ut32)(ut16)op1 << 16;
 						len = 4;
 					} else if (instructionSet[instr_idx].operandTypes[1] == OPERAND_LONG_ABSOLUTE_ADDRESS) {
-						coded |= ((uint16_t)op2) << 16;
+						coded |= (ut32)(ut16)op2 << 16;
 						len = 4;
 					}
 				}
@@ -153,7 +189,7 @@ int avr_encode(RArchSession *as, ut64 pc, const char *str, ut8 *outbuf) {
 	return len;
 }
 
-static int assemble_general_io_operand(const char *operand, uint32_t *res) {
+static int assemble_general_io_operand(const char *operand, st64 *res) {
 	/*@
 		 requires strcmp (operand, "spl") == 0 || strcmp (operand, "0x3d") == 0 ||
 		 strcmp (operand, "sph") == 0 || strcmp (operand, "0x3e") == 0 ||
@@ -182,75 +218,63 @@ static int assemble_general_io_operand(const char *operand, uint32_t *res) {
 	} else if (!strcmp (operand, "sreg") || !strcmp (operand, "0x3f")) {
 		*res = 0x3f;
 		ret = 0;
-	}/* else {
-		*res = getnum (operand); // return pure number
-		ret = 0;
-	}*/
+	}
 
 	return ret;
 }
 
 // assembles instruction argument (operand) based on its type
-int assemble_operand(ut64 pc, const char *operand, int type, uint32_t *res) {
-	int ret = -1;
-	int temp;
-
+int assemble_operand(ut64 pc, const char *operand, int type, st64 *res) {
+	st64 value;
 	switch (type) {
 	case OPERAND_REGISTER_EVEN_PAIR:
-		*res = parse_registerpair(operand);
-		if (*res > 0) {
-			ret = 0;
+		value = parse_registerpair (operand);
+		if (value < 0) {
+			return -1;
 		}
 		break;
 	case OPERAND_REGISTER_EVEN_PAIR_STARTR24:
-		*res = parse_registerpair(operand);
-		// encoding in 2 bits for r25:r24 and upper pairs
-		if (*res >= 12) {
-			*res -= 12;
-			ret = 0;
+		value = parse_registerpair (operand);
+		if (value < 12) {
+			return -1;
 		}
+		value -= 12;
 		break;
 	case OPERAND_BRANCH_ADDRESS:
-	case OPERAND_RELATIVE_ADDRESS: // TODO: <-- check for negative (should be correct, but...)
-		temp = getnum (operand); // return pure number
-		/* the argument could be:
-		- target address (will be calculated in according to current pc of assemble), ex: 0x4, 200, 0x1000
-		or
-		- relative address, ex: +2, -1, +60, -49 */
-		if (pc || (operand[0] != '+' && operand[0] != '-')) { // for series of commands
-			/* +2 from documentation:
-			If Rd != Rr (Z = 0) then PC <- PC + k + 1, else PC <- PC + 1 */
-			temp -= pc + 2;
+	case OPERAND_RELATIVE_ADDRESS:
+		if (!getnum (operand, &value)) {
+			return -1;
 		}
-		temp /= 2; // in WORDs
-		if (temp >= -64 && temp <= 63) {
-			ret = 0;
+		// An explicit sign denotes a displacement; otherwise this is a target address.
+		if (operand[0] != '+' && operand[0] != '-') {
+			if (value < 0 || pc > ST64_MAX - 2) {
+				return -1;
+			}
+			value -= (st64)pc + 2;
 		}
-		*res = temp;
+		if (value & 1) {
+			return -1;
+		}
+		value /= 2;
 		break;
 	case OPERAND_IO_REGISTER:
-		if (assemble_general_io_operand (operand, res) == 0) {
-			ret = 0;
-		} else if (isdigit ((ut8)*operand)) {
-			char *end;
-			ut64 value = strtoull (operand, &end, 0);
-			if (!*end && value <= 0x3f) {
-				*res = value;
-				ret = 0;
-			}
+		if (assemble_general_io_operand (operand, &value) < 0 && !getnum (operand, &value)) {
+			return -1;
 		}
 		break;
 	case OPERAND_BIT:
 	case OPERAND_DES_ROUND:
 	case OPERAND_LONG_ABSOLUTE_ADDRESS:
 	case OPERAND_DATA:
-		*res = getnum (operand); // return pure number
-		ret = 0;
+		if (!getnum (operand, &value)) {
+			return -1;
+		}
 		break;
 	case OPERAND_COMPLEMENTED_DATA:
-		*res = getnum (operand); // return pure number
-		*res = ~(*res) & 0xFF; // complement it
-		ret = 0;
+		if (!getnum (operand, &value) || value < -128 || value > 0xff) {
+			return -1;
+		}
+		value = ~value & 0xff;
 		break;
 	case OPERAND_MX:
 	case OPERAND_X:
@@ -261,42 +285,31 @@ int assemble_operand(ut64 pc, const char *operand, int type, uint32_t *res) {
 	case OPERAND_MZ:
 	case OPERAND_Z:
 	case OPERAND_ZP:
-		*res = 0; //do nothing, operand is already encoded in opcode
-		ret = 0;
+		value = 0;
 		break;
 	case OPERAND_YPQ:
 	case OPERAND_ZPQ:
-		if (strlen (operand) > 2) {
-			/* return argument after '+' sign
-			   we've already checked presence of '+' in parse_specialreg */
-			*res = getnum (operand + 2);
-			ret = 0;
+		if (strlen (operand) <= 2 || !getnum (operand + 2, &value)) {
+			return -1;
 		}
 		break;
 	case OPERAND_REGISTER:
-		if (strlen (operand) > 1) {
-			// returns register number (r__)
-			*res = getnum (operand + 1);
-			if (*res <= 32) {
-				ret = 0;
-			}
-		}
-		break;
 	case OPERAND_REGISTER_STARTR16:
-		if (strlen (operand) > 1) {
-			// returns register number (r__)
-			*res = getnum (operand + 1);
-			if (*res >= 16 && *res <= 32) {
-				*res -= 16;
-				ret = 0;
+		if (*operand != 'r' || !getnum (operand + 1, &value)) {
+			return -1;
+		}
+		if (type == OPERAND_REGISTER_STARTR16) {
+			if (value < 16) {
+				return -1;
 			}
+			value -= 16;
 		}
 		break;
 	default:
-		ret = -1;
+		return -1;
 	}
-
-	return ret;
+	*res = value;
+	return 0;
 }
 
 // Packs certain bits of data according to mask, used to pack operands by their encoding in the opcode.
@@ -325,7 +338,8 @@ uint16_t packDataByMask(uint16_t data, uint16_t mask) {
  * (see avr_disasm.h for more info)
  * returns index of the instruction in the table */
 static int search_instruction(RArchSession *as, AvrToken *tok, int args) {
-	int i, op1 = 0, op2 = 0;
+	int i;
+	st64 address, reg;
 
 	for (i = 0; i < AVR_TOTAL_INSTRUCTIONS - 1; i++) {
 		// check instruction mnemonic
@@ -355,12 +369,9 @@ static int search_instruction(RArchSession *as, AvrToken *tok, int args) {
 					&& instructionSet[i].mnemonic[1] == 'd'
 					&& instructionSet[i].mnemonic[2] == 's'
 					&& instructionSet[i].operandTypes[1] == OPERAND_LONG_ABSOLUTE_ADDRESS) {
-					// ineffective, but needed for lds/sts and other cases
-					if (strlen (tok->ens[2]) > 0) {
-						op2 = getnum (tok->ens[2]);
-						if (op2 > 127) {
-							return i;
-						}
+					if (!getnum (tok->ens[2], &address) || address < 0x40 || address > 0xbf ||
+						assemble_operand (0, tok->ens[1], OPERAND_REGISTER_STARTR16, &reg) < 0 || reg < 0 || reg > 15) {
+						return i;
 					}
 				// handling st & std instruction with 2 args
 				} else if (instructionSet[i].mnemonic[0] == 's'
@@ -375,12 +386,9 @@ static int search_instruction(RArchSession *as, AvrToken *tok, int args) {
 					&& instructionSet[i].mnemonic[1] == 't'
 					&& instructionSet[i].mnemonic[2] == 's'
 					&& instructionSet[i].operandTypes[0] == OPERAND_LONG_ABSOLUTE_ADDRESS) {
-					// same for 1st operand of sts
-					if (strlen (tok->ens[1]) > 0) {
-						op1 = getnum (tok->ens[1]);
-						if (op1 > 127) {
-							return i;
-						}
+					if (!getnum (tok->ens[1], &address) || address < 0x40 || address > 0xbf ||
+						assemble_operand (0, tok->ens[2], OPERAND_REGISTER_STARTR16, &reg) < 0 || reg < 0 || reg > 15) {
+						return i;
 					}
 				} else {
 					return i; // it's not st/ld/lpm-like instruction with 2 args

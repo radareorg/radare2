@@ -86,3 +86,67 @@ a "in r1, 63" 1fb6
 ad "in r1, sph" 1eb6
 a "sbi 31, 1" f99a
 ad "cbi 0x1f, 7" ff98
+a "ldi r16, -1" 0fef
+a "ldi r16, -128" 00e8
+a "cpi r20, -2" 4e3f
+a "subi r16, -1" 0f5f
+a "rjmp -4" fecf
+a "brne -2" f9f7
+a "rcall -2" ffdf
+a "ldi r16, 255" 0fef
+a "adiw r24, 63" cf96
+a "ldd r1, Y+63" 1fac
+a "des 15" fb94
+a "lds r16, 0xffff" 0091ffff
+a "ldi r16, $-1" 0fef
+a "cbr r16, -128" 0f77
+a "cbr r16, 255" 0070
+a "mov r31, r31" ff2f
+a "clr r31" ff27
+a "fmul r23, r23" 7f03
+a "muls r31, r31" ff02
+a "movw r0, r2" 0101
+a "movw r30, r0" f001
+a "adiw r30, 63" ff96
+a "rjmp -4" fecf 4
+a "rjmp +128" 40c0
+a "rjmp +128" 40c0 4
+a "rjmp -4096" 00c8 4
+a "rjmp +4094" ffc7 4
+a "rcall -4096" 00d8 4
+a "rcall +4094" ffd7 4
+a "rcall +128" 40d0 4
+a "brne -2" f9f7 4
+a "brne -128" 01f6 4
+a "brne +126" f9f5 4
+a "brbc 7, -128" 07f6 4
+a "brbs 0, +126" f8f1 4
+a "rjmp 0" fdcf 4
+a "brne 0" e9f7 4
+a "rjmp 0x1006" 00c0 0x1004
+a "rjmp 0x6" 00c8 0x1004
+a "rjmp 0x2004" ffc7 0x1004
+a "brne 0x1006" 01f4 0x1004
+a "brne 0xf86" 01f6 0x1004
+a "brne 0x1084" f9f5 0x1004
+a "jmp 0" 0c940000
+a "jmp 0x7ffffe" fd95ffff
+a "call 0x7ffffe" ff95ffff
+a "lds r16, 0x3f" 00913f00
+a "lds r16, 0x40" 00a4
+a "lds r31, 0x7f" ffa7
+a "lds r31, 0x80" f0a0
+a "lds r16, 0xbf" 0fa3
+a "lds r16, 0xc0" 0091c000
+a "lds r0, 0x40" 00904000
+a "sts 0x0f, r16" 00930f00
+a "sts 0x3f, r16" 00933f00
+a "sts 0x40, r16" 00ac
+a "sts 0x7f, r31" ffaf
+a "sts 0x80, r31" f0a8
+a "sts 0xbf, r16" 0fab
+a "sts 0xc0, r16" 0093c000
+a "sts 0x40, r0" 00924000
+a "sts 0x8000, r16" 00930080
+a "sts 0xffff, r31" f093ffff
+a "cbr r16, -1" 0070

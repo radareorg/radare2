@@ -809,3 +809,233 @@ ERROR: Cannot assemble 'ldm r5!, {r0, r5}' at line 1
 ERROR: Cannot assemble 'ldm r5!, {r5, r8}' at line 1
 EOF
 RUN
+
+NAME=pa avr rejects out of range immediates
+FILE=-
+CMDS=<<EOF
+e asm.arch=avr
+pa ldi r16, 256
+pa ldi r16, -129
+pa cpi r25, 256
+pa adiw r24, 64
+pa ldd r1, Y+64
+pa std Z+64, r1
+pa sbrc r1, 8
+pa bset 8
+pa des 16
+pa cbr r16, 256
+pa lds r16, 0x10000
+pa jmp 0x800000
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'ldi r16, 256' at line 1
+ERROR: Cannot assemble 'ldi r16, -129' at line 1
+ERROR: Cannot assemble 'cpi r25, 256' at line 1
+ERROR: Cannot assemble 'adiw r24, 64' at line 1
+ERROR: Cannot assemble 'ldd r1, Y+64' at line 1
+ERROR: Cannot assemble 'std Z+64, r1' at line 1
+ERROR: Cannot assemble 'sbrc r1, 8' at line 1
+ERROR: Cannot assemble 'bset 8' at line 1
+ERROR: Cannot assemble 'des 16' at line 1
+ERROR: Cannot assemble 'cbr r16, 256' at line 1
+ERROR: Cannot assemble 'lds r16, 0x10000' at line 1
+ERROR: Cannot assemble 'jmp 0x800000' at line 1
+EOF
+RUN
+
+NAME=pa avr rejects malformed and oversized numbers
+FILE=-
+CMDS=<<EOF
+e asm.arch=avr
+s 4
+pa ldi r16, 0x100000001
+pa ldi r16, -1junk
+pa ldi r16, 0xffffffff
+pa ldi r16, -2147483648
+pa ldi r16, -4294967297
+pa ldi r16, 9223372036854775808
+pa ldi r16, -9223372036854775809
+pa ldi r16, -9223372036854775808
+pa ldi r16, 1junk
+pa ldi r16, nope
+pa ldi r16, 0x
+pa cbr r16, 0x100000001
+pa cbr r16, -129
+pa adiw r24, -1
+pa ldd r1, Y+-1
+pa lds r16, 0x100000040
+pa sts 0x100000040, r16
+pa lds r16, -1
+pa sts -1, r16
+pa sts 0x10000, r16
+pa jmp 0x100000000
+pa jmp -2
+pa in r1, 0x100000001
+pa in r1, -1
+pa in r1, 1junk
+pa out 64, r1
+pa sbi 32, 0
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'ldi r16, 0x100000001' at line 1
+ERROR: Cannot assemble 'ldi r16, -1junk' at line 1
+ERROR: Cannot assemble 'ldi r16, 0xffffffff' at line 1
+ERROR: Cannot assemble 'ldi r16, -2147483648' at line 1
+ERROR: Cannot assemble 'ldi r16, -4294967297' at line 1
+ERROR: Cannot assemble 'ldi r16, 9223372036854775808' at line 1
+ERROR: Cannot assemble 'ldi r16, -9223372036854775809' at line 1
+ERROR: Cannot assemble 'ldi r16, -9223372036854775808' at line 1
+ERROR: Cannot assemble 'ldi r16, 1junk' at line 1
+ERROR: Cannot assemble 'ldi r16, nope' at line 1
+ERROR: Cannot assemble 'ldi r16, 0x' at line 1
+ERROR: Cannot assemble 'cbr r16, 0x100000001' at line 1
+ERROR: Cannot assemble 'cbr r16, -129' at line 1
+ERROR: Cannot assemble 'adiw r24, -1' at line 1
+ERROR: Cannot assemble 'ldd r1, Y+-1' at line 1
+ERROR: Cannot assemble 'lds r16, 0x100000040' at line 1
+ERROR: Cannot assemble 'sts 0x100000040, r16' at line 1
+ERROR: Cannot assemble 'lds r16, -1' at line 1
+ERROR: Cannot assemble 'sts -1, r16' at line 1
+ERROR: Cannot assemble 'sts 0x10000, r16' at line 1
+ERROR: Cannot assemble 'jmp 0x100000000' at line 1
+ERROR: Cannot assemble 'jmp -2' at line 1
+ERROR: Cannot assemble 'in r1, 0x100000001' at line 1
+ERROR: Cannot assemble 'in r1, -1' at line 1
+ERROR: Cannot assemble 'in r1, 1junk' at line 1
+ERROR: Cannot assemble 'out 64, r1' at line 1
+ERROR: Cannot assemble 'sbi 32, 0' at line 1
+EOF
+RUN
+
+NAME=pa avr rejects misaligned and out of range branches
+FILE=-
+CMDS=<<EOF
+e asm.arch=avr
+s 4
+pa rjmp -4098
+pa rjmp +4096
+pa rcall -4098
+pa rcall +4096
+pa brne -130
+pa brne +128
+pa brbc 0, -130
+pa brbs 0, +128
+pa rjmp -1
+pa rjmp +1
+pa rcall +3
+pa brne -1
+pa brbc 0, +1
+pa rjmp 3
+pa rcall 3
+pa brne 3
+pa jmp 3
+pa call 3
+pa call 0x800000
+pa rjmp 0x100000004
+pa brne -1junk
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'rjmp -4098' at line 1
+ERROR: Cannot assemble 'rjmp +4096' at line 1
+ERROR: Cannot assemble 'rcall -4098' at line 1
+ERROR: Cannot assemble 'rcall +4096' at line 1
+ERROR: Cannot assemble 'brne -130' at line 1
+ERROR: Cannot assemble 'brne +128' at line 1
+ERROR: Cannot assemble 'brbc 0, -130' at line 1
+ERROR: Cannot assemble 'brbs 0, +128' at line 1
+ERROR: Cannot assemble 'rjmp -1' at line 1
+ERROR: Cannot assemble 'rjmp +1' at line 1
+ERROR: Cannot assemble 'rcall +3' at line 1
+ERROR: Cannot assemble 'brne -1' at line 1
+ERROR: Cannot assemble 'brbc 0, +1' at line 1
+ERROR: Cannot assemble 'rjmp 3' at line 1
+ERROR: Cannot assemble 'rcall 3' at line 1
+ERROR: Cannot assemble 'brne 3' at line 1
+ERROR: Cannot assemble 'jmp 3' at line 1
+ERROR: Cannot assemble 'call 3' at line 1
+ERROR: Cannot assemble 'call 0x800000' at line 1
+ERROR: Cannot assemble 'rjmp 0x100000004' at line 1
+ERROR: Cannot assemble 'brne -1junk' at line 1
+EOF
+RUN
+
+NAME=pa avr rejects invalid registers and extra tokens
+FILE=-
+CMDS=<<EOF
+e asm.arch=avr
+s 4
+pa mov r32, r1
+pa mov r1, r32
+pa clr r32
+pa ldi r32, 1
+pa ldi r15, 1
+pa mov r-1, r1
+pa mov r4294967296, r1
+pa mov r1junk, r1
+pa mov x1, r1
+pa fmul r24, r16
+pa fmul r16, r24
+pa mulsu r24, r16
+pa adiw bad, 1
+pa adiw r22, 1
+pa adiw r32, 1
+pa movw bad, r0
+pa lds r32, 0x40
+pa sts 0x40, r32
+pa ldi r16, 1 extra
+pa nop extra
+pa mov r1, r2, r3
+pa ldi r16, 00000000000000000000000000000001junk
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'mov r32, r1' at line 1
+ERROR: Cannot assemble 'mov r1, r32' at line 1
+ERROR: Cannot assemble 'clr r32' at line 1
+ERROR: Cannot assemble 'ldi r32, 1' at line 1
+ERROR: Cannot assemble 'ldi r15, 1' at line 1
+ERROR: Cannot assemble 'mov r-1, r1' at line 1
+ERROR: Cannot assemble 'mov r4294967296, r1' at line 1
+ERROR: Cannot assemble 'mov r1junk, r1' at line 1
+ERROR: Cannot assemble 'mov x1, r1' at line 1
+ERROR: Cannot assemble 'fmul r24, r16' at line 1
+ERROR: Cannot assemble 'fmul r16, r24' at line 1
+ERROR: Cannot assemble 'mulsu r24, r16' at line 1
+ERROR: Cannot assemble 'adiw bad, 1' at line 1
+ERROR: Cannot assemble 'adiw r22, 1' at line 1
+ERROR: Cannot assemble 'adiw r32, 1' at line 1
+ERROR: Cannot assemble 'movw bad, r0' at line 1
+ERROR: Cannot assemble 'lds r32, 0x40' at line 1
+ERROR: Cannot assemble 'sts 0x40, r32' at line 1
+ERROR: Cannot assemble 'ldi r16, 1 extra' at line 1
+ERROR: Cannot assemble 'nop extra' at line 1
+ERROR: Cannot assemble 'mov r1, r2, r3' at line 1
+ERROR: Cannot assemble 'ldi r16, 00000000000000000000000000000001junk' at line 1
+EOF
+RUN
+
+NAME=pa avr rejects absolute branch targets outside range at a nonzero origin
+FILE=-
+ARGS=-a avr
+CMDS=<<EOF
+s 0x1004
+pa rjmp 0x4
+pa rjmp 0x2006
+pa rcall 0x4
+pa rcall 0x2006
+pa brne 0xf84
+pa brne 0x1086
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'rjmp 0x4' at line 1
+ERROR: Cannot assemble 'rjmp 0x2006' at line 1
+ERROR: Cannot assemble 'rcall 0x4' at line 1
+ERROR: Cannot assemble 'rcall 0x2006' at line 1
+ERROR: Cannot assemble 'brne 0xf84' at line 1
+ERROR: Cannot assemble 'brne 0x1086' at line 1
+EOF
+RUN
