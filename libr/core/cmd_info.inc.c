@@ -409,6 +409,9 @@ static void cmd_info_demangle(RCore *core, const char *input, PJ *pj, int mode) 
 		}
 		text = args;
 	}
+	// the @ of the msvc symbols is the temporal seek of the command line, so they
+	// come quoted or escaped like "?f@A@@QAEXXZ" or ?f\@A\@\@QAEXXZ
+	r_str_trim_args (text);
 	RBinLanguage lang_type = r_bin_demangle_type (lang);
 	if (lang_type == R_BIN_LANG_NONE) {
 		if (!pj) {
