@@ -18,15 +18,27 @@ typedef int (* TMS_ANAL_OP_FN)(RArchSession *as, RAnalOp *op, ut64 addr, const u
 static int tms320_c54x_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask);
 static int tms320_c55x_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask);
 
+static bool c55x_plus_is_qualifier(ut8 opcode) {
+	switch (opcode) {
+	case 0x24:
+	case 0x25:
+	case 0x26:
+	case 0x28:
+	case 0x29:
+	case 0x2a:
+	case 0x2b:
+	case 0x2d:
+	case 0x2e:
+	case 0x2f:
+		return true;
+	}
+	return false;
+}
+
 static int tms320_c55x_plus_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *_buf, int len, RAnalOpMask mask) {
 	if (!_buf || len < 1) {
 		return 0;
 	}
-	ut8 buf[16] = {0};
-	memcpy (buf, _buf, R_MIN (len, sizeof (buf)));
-	ut16 _ins = r_read_le16 (buf);
-	ut16 *ins = &_ins;
-
 	op->size = 1;
 
 	tms320_dasm_t *engine = tms320_engine_for_session (as);
@@ -39,56 +51,119 @@ static int tms320_c55x_plus_op(RArchSession *as, RAnalOp *op, ut64 addr, const u
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = strdup (engine->syntax);
 	}
+	if (engine->status & TMS320_S_INVAL) {
+		op->type = R_ANAL_OP_TYPE_ILL;
+		return op->size;
+	}
+	op->type = R_ANAL_OP_TYPE_UNK;
 
-	if (ins_len == 1) {
-		if (*ins == 0x20) {
+	ut8 buf[8] = {0};
+	memcpy (buf, _buf, R_MIN (len, sizeof (buf)));
+	const ut8 *ins = buf;
+	int size = ins_len;
+	if (size > 1 && c55x_plus_is_qualifier (ins[0])) {
+		ins++;
+		size--;
+	}
+	const ut64 next = addr + ins_len;
+	switch (ins[0]) {
+	case 0x20:
+		op->type = R_ANAL_OP_TYPE_NOP;
+		break;
+	case 0x21:
+		op->type = R_ANAL_OP_TYPE_RET;
+		break;
+	case 0x00:
+		switch (ins[1] >> 4) {
+		case 0x0: // nop_16
 			op->type = R_ANAL_OP_TYPE_NOP;
-		} else if (*ins == 0x21) {
+			break;
+		case 0xc: // reti
+		case 0xd: // fret
 			op->type = R_ANAL_OP_TYPE_RET;
+			break;
 		}
-	} else if (ins_len >= 4 && buf[0] == 0xD8) {
-		//  BCC conditional absolute jump
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = (buf[1] << 16) | (buf[2] << 8) | buf[3];
-	} else if (ins_len >= 2 && buf[0] == 0x6A) {
-		//  BCC conditional relative jump
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = addr + ((st8)buf[1]) + ins_len;
-	} else if (ins_len >= 3 && buf[0] == 0x9A) {
-		// BCC conditional relative jump
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = addr + (st16)((buf[1] << 8) | buf[2]) + ins_len;
-	} else if (ins_len >= 4 && buf[0] == 0x9C) {
-		// B unconditional absolute jump
+		break;
+	case 0x02: // b ACx, call ACx
+		if (ins[1] & 0x80) {
+			op->type = R_ANAL_OP_TYPE_UCALL;
+			op->fail = next;
+		} else {
+			op->type = R_ANAL_OP_TYPE_UJMP;
+		}
+		break;
+	case 0x03:
+		switch (ins[1] >> 6) {
+		case 0:
+			op->type = R_ANAL_OP_TYPE_SWI;
+			op->val = ins[1] & 0x1f;
+			break;
+		case 1:
+			op->type = R_ANAL_OP_TYPE_TRAP;
+			op->val = ins[1] & 0x1f;
+			break;
+		}
+		break;
+	case 0x08: // retcc
+		op->type = R_ANAL_OP_TYPE_CRET;
+		op->fail = next;
+		break;
+	case 0x68: // b rel16
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = (buf[1] << 16) | (buf[2] << 8) | buf[3];
-	} else if (ins_len >= 3 && buf[0] == 0x68) {
-		// B unconditional relative jump
+		op->jump = next + (st16)r_read_be16 (ins + 1);
+		break;
+	case 0x69: // call rel16
+		op->type = R_ANAL_OP_TYPE_CALL;
+		op->jump = next + (st16)r_read_be16 (ins + 1);
+		op->fail = next;
+		break;
+	case 0x6a: // bcc rel8
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = next + (st8)ins[1];
+		op->fail = next;
+		break;
+	case 0x9a: // bcc rel16
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = next + (st16)r_read_be16 (ins + 1);
+		op->fail = next;
+		break;
+	case 0x9b: // callcc rel16
+		op->type = R_ANAL_OP_TYPE_CCALL;
+		op->jump = next + (st16)r_read_be16 (ins + 1);
+		op->fail = next;
+		break;
+	case 0x9c: // b abs24
+	case 0x9e: // far b abs24
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = addr + (st16)((buf[1] << 8) | buf[2]) + ins_len;
- 	} else if (ins_len == 2 && buf[0] == 0x02) {
-		// CALL unconditional absolute call with acumulator register ACx
-
-		op->type = R_ANAL_OP_TYPE_UCALL;
-		op->fail = addr + ins_len;
- 	} else if (ins_len >= 3 && buf[0] == 0x69) {
-		// CALL unconditional relative call
+		op->jump = r_read_be24 (ins + 1);
+		break;
+	case 0x9d: // call abs24
+	case 0x9f: // far call abs24
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = addr + (st16)((buf[1] << 8) | buf[2]) + ins_len;
- 	} else if (ins_len >= 3 && buf[0] == 0x9D) {
-		// CALL unconditional absolute call
-		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = (buf[1] << 16) | (buf[2] << 8) | buf[3];
- 	} else if (ins_len >= 3 && buf[0] == 0x9B) {
-		// CALLCC conditional relative call
-		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = addr + (st16)((buf[1] << 8) | buf[2]) + ins_len;
- 	} else if (ins_len >= 4 && buf[0] == 0xD9) {
-		// CALLCC conditional absolute call
-		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = (buf[1] << 16) | (buf[2] << 8) | buf[3];
-	} else {
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->jump = r_read_be24 (ins + 1);
+		op->fail = next;
+		break;
+	case 0xb0: // bcc rel16, Smem != #0
+	case 0xda: // compare and branch
+	case 0xdb:
+	case 0xdc:
+	case 0xdd:
+	case 0xde:
+	case 0xdf:
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = next + (st16)r_read_be16 (ins + 3);
+		op->fail = next;
+		break;
+	case 0xd8: // bcc abs24
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = r_read_be24 (ins + 1);
+		op->fail = next;
+		break;
+	case 0xd9: // callcc abs24
+		op->type = R_ANAL_OP_TYPE_CCALL;
+		op->jump = r_read_be24 (ins + 1);
+		op->fail = next;
+		break;
 	}
 	return op->size;
 }
