@@ -113,8 +113,8 @@ CMDS=<<EOF
 !rabin2 -D msvc "??_SFoo@@6B@"
 EOF
 EXPECT=<<EOF
-public virtual: void * __thiscall Foo::`scalar deleting dtor'(unsigned int)
-public virtual: void * __thiscall Foo::`vector deleting dtor'(unsigned int)
+public: virtual void * __thiscall Foo::`scalar deleting dtor'(unsigned int)
+public: virtual void * __thiscall Foo::`vector deleting dtor'(unsigned int)
 public: void __thiscall Foo::`vbase dtor'(void)
 void __stdcall `eh vector ctor iterator'(void *, unsigned int, int, void (__thiscall *)(void *))
 const Foo::`local vftable'
@@ -149,6 +149,24 @@ void __cdecl f<-11>(void)
 EOF
 RUN
 
+NAME=msvc virtual member functions and their thunks
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc '?speak@Animal@@UAEXXZ'
+!rabin2 -D msvc '?f@A@@MAEXXZ'
+!rabin2 -D msvc '?f@A@@EAEXXZ'
+!rabin2 -D msvc '??_ECollectible@sim@@WBA@AEPAXI@Z'
+!rabin2 -D msvc '?f@A@@OBA@AEXXZ'
+EOF
+EXPECT=<<EOF
+public: virtual void __thiscall Animal::speak(void)
+protected: virtual void __thiscall A::f(void)
+private: virtual void __thiscall A::f(void)
+[thunk]: public: virtual void * __thiscall sim::Collectible::`vector deleting dtor'`adjustor{16}'(unsigned int)
+[thunk]: protected: virtual void __thiscall A::f`adjustor{16}'(void)
+EOF
+RUN
+
 NAME=msvc vtordisp thunks
 FILE=-
 CMDS=<<EOF
@@ -157,9 +175,9 @@ CMDS=<<EOF
 !rabin2 -D msvc '?f@A@@$R4BA@A@PPPPPPPM@7AEXXZ'
 EOF
 EXPECT=<<EOF
-[thunk]:public virtual: void __thiscall Dog::sound`vtordisp{-4,0}'(void)const
-[thunk]:private virtual: void __thiscall A::f`vtordisp{-4,4}'(void)
-[thunk]:public virtual: void __thiscall A::f`vtordispex{16,0,-4,8}'(void)
+[thunk]: public: virtual void __thiscall Dog::sound`vtordisp{-4,0}'(void)const
+[thunk]: private: virtual void __thiscall A::f`vtordisp{-4,4}'(void)
+[thunk]: public: virtual void __thiscall A::f`vtordispex{16,0,-4,8}'(void)
 EOF
 RUN
 

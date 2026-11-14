@@ -3767,11 +3767,11 @@ int __clrcall test(struct V * __ptr64 % __ptr64)
 EOF
 RUN
 
-NAME=[thunk]:public virtual: unsigned long int __cdecl NetworkUX::View::__CFEWiFiWCNComboActivationFactory::[Platform::Object]::__abi_Release`adjustor{8}'(void) __ptr64
+NAME=[thunk]: public: virtual unsigned long int __cdecl NetworkUX::View::__CFEWiFiWCNComboActivationFactory::[Platform::Object]::__abi_Release`adjustor{8}'(void) __ptr64
 FILE=-
 CMDS="!rabin2 -D msvc ?__abi_Release@?QObject@Platform@@__CFEWiFiWCNComboActivationFactory@View@NetworkUX@@W7E\$AAAKXZ"
 EXPECT=<<EOF
-[thunk]:public virtual: unsigned long int __cdecl NetworkUX::View::__CFEWiFiWCNComboActivationFactory::[Platform::Object]::__abi_Release`adjustor{8}'(void) __ptr64
+[thunk]: public: virtual unsigned long int __cdecl NetworkUX::View::__CFEWiFiWCNComboActivationFactory::[Platform::Object]::__abi_Release`adjustor{8}'(void) __ptr64
 EOF
 RUN
 
@@ -3823,11 +3823,11 @@ public: bool __cdecl wil::unique_any_t<class wil::semaphore_t<class wil::details
 EOF
 RUN
 
-NAME=public virtual: void * __ptr64 __cdecl wistd::__function::__func<class lambda, long int (__cdecl*)(class Windows::Internal::PlatformExtensions::Details::ExtensionRegistration const * __ptr64, bool, bool * __ptr64)>::`scalar deleting dtor'(unsigned int) __ptr64
+NAME=public: virtual void * __ptr64 __cdecl wistd::__function::__func<class lambda, long int (__cdecl*)(class Windows::Internal::PlatformExtensions::Details::ExtensionRegistration const * __ptr64, bool, bool * __ptr64)>::`scalar deleting dtor'(unsigned int) __ptr64
 FILE=-
 CMDS="!rabin2 -D msvc ??_G?\$__func@Vlambda@@\$\$A6AJPEBVExtensionRegistration@Details@PlatformExtensions@Internal@Windows@@_NPEA_N@Z@__function@wistd@@UEAAPEAXI@Z"
 EXPECT=<<EOF
-public virtual: void * __ptr64 __cdecl wistd::__function::__func<class lambda, long int (__cdecl *)(class Windows::Internal::PlatformExtensions::Details::ExtensionRegistration const * __ptr64, bool, bool * __ptr64)>::`scalar deleting dtor'(unsigned int) __ptr64
+public: virtual void * __ptr64 __cdecl wistd::__function::__func<class lambda, long int (__cdecl *)(class Windows::Internal::PlatformExtensions::Details::ExtensionRegistration const * __ptr64, bool, bool * __ptr64)>::`scalar deleting dtor'(unsigned int) __ptr64
 EOF
 RUN
 
