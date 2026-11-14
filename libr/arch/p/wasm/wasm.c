@@ -993,7 +993,7 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 					op->len += n;
 				}
 				n = read_u32_leb128 (buf + op->len, buf + buf_len, &def);
-				if (!(n > 0 && n + op->len < buf_len)) {
+				if (!(n > 0 && op->len + n <= buf_len)) {
 					goto beach;
 				}
 				op->len += n;

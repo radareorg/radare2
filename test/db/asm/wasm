@@ -143,3 +143,5 @@ d "call 4294967295" 10ffffffff0f
 d "get_local 2147483648" 208080808008
 d "i64.load 2 4294967295" 2902ffffffff0f
 d "call_indirect 2147483648 0" 11808080800800
+d "brtable 2 0 1 2" 0e02000102
+d "brtable 0 0" 0e0000
