@@ -433,6 +433,8 @@ static bool tms320_init(RArchSession *as) {
 
 	if (!tms320_dasm_init (&pd->engine)) {
 		R_LOG_ERROR ("Cannot initialize tms320 engine");
+		cs_close (&pd->cpd.cs_handle);
+		R_FREE (as->data);
 		return false;
 	}
 
@@ -450,9 +452,7 @@ static bool tms320_fini(RArchSession *as) {
 	PluginData *pd = as->data;
 	cs_close (&pd->cpd.cs_handle);
 
-	if (!tms320_dasm_fini (&pd->engine)) {
-		R_LOG_ERROR ("Cannot shutdown tms320 engine");
-	}
+	tms320_dasm_fini (&pd->engine);
 
 	R_FREE (as->data);
 	return true;
