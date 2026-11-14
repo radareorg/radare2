@@ -1303,3 +1303,26 @@ ERROR: Cannot assemble 'ldpsw s0, s1, [x2]' at line 1
 ERROR: Cannot assemble 'ldpsw x0, x1, [x2, 6]' at line 1
 EOF
 RUN
+
+NAME=pa riscv rejects out of range lui and auipc values and register numbers
+FILE=-
+CMDS=<<EOF
+e asm.arch=riscv
+e asm.bits=64
+pa lui a0, 0x100000
+pa lui a0, -1
+pa auipc a0, 0x100000
+pa lui 40, 1
+pa addi a0, 40, 1
+pa sw 40, 0(a0)
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'lui a0, 0x100000' at line 1
+ERROR: Cannot assemble 'lui a0, -1' at line 1
+ERROR: Cannot assemble 'auipc a0, 0x100000' at line 1
+ERROR: Cannot assemble 'lui 40, 1' at line 1
+ERROR: Cannot assemble 'addi a0, 40, 1' at line 1
+ERROR: Cannot assemble 'sw 40, 0(a0)' at line 1
+EOF
+RUN

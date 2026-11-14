@@ -126,6 +126,9 @@ static struct {
 
 // lui
 static int riscv_ri(ut8 *b, int op, int rt, int imm) {
+	if (rt < 0 || rt > 31 || imm < 0 || imm > 0xfffff) {
+		return -1;
+	}
 	ut32 *insn = (ut32 *)b;
 	*insn |= op;
 	*insn |= (rt << 7);
@@ -134,7 +137,7 @@ static int riscv_ri(ut8 *b, int op, int rt, int imm) {
 }
 
 static int riscv_rri(ut8 *b, ut32 op, int rs, int rt, int imm) {
-	if (rs < 0 || rt < 0 || imm < -2048 || imm > 2047) {
+	if (rs < 0 || rs > 31 || rt < 0 || rt > 31 || imm < -2048 || imm > 2047) {
 		return -1;
 	}
 	ut32 *insn = (ut32 *)b;
@@ -147,7 +150,7 @@ static int riscv_rri(ut8 *b, ut32 op, int rs, int rt, int imm) {
 
 // sw rs2, imm(rs1)
 static int riscv_store(ut8 *b, ut32 op, int rs1, int rs2, int imm) {
-	if (rs1 < 0 || rs2 < 0 || imm < -2048 || imm > 2047) {
+	if (rs1 < 0 || rs1 > 31 || rs2 < 0 || rs2 > 31 || imm < -2048 || imm > 2047) {
 		return -1;
 	}
 	ut32 *insn = (ut32 *)b;

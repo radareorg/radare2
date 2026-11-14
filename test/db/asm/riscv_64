@@ -1,5 +1,7 @@
 ad "nop" 13000000
 ad "auipc t0, 0x280" 97022800
+a "lui a0, 0xfffff" 37f5ffff
+a "auipc a0, 0" 17050000
 # ad "lui sp, 0x8" 37810000
 # ad "addi s0, sp, 16" 13040101
 ad "sw a1, 8(sp)" 2324b100
