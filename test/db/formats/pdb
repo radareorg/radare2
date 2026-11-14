@@ -165,9 +165,43 @@ idp bins/pdb/Project1.pdb
 afl~0x00011005,0x00012f10,0x000113e0
 EOF
 EXPECT=<<EOF
-0x00012f10    1      1 pdb.__setdefaultprecision
 0x00011005    1      5 j.pdb.__setdefaultprecision
+0x00012f10    1      1 pdb.__setdefaultprecision
 0x000113e0    1      5 pdb.int___cdecl_r2_test_func_int__int_
+EOF
+EXPECT_ERR=<<EOF
+WARN: Cannot find base address, flags will probably be misplaced
+EOF
+RUN
+
+NAME=idpi* flags the incremental linking thunks after their target
+FILE=--
+CMDS=<<EOF
+e bin.baddr=0
+idpi* bins/pdb/Project1.pdb~j.pdb.__setdefaultprecision,j.pdb.__setargv
+EOF
+EXPECT=<<EOF
+'@0x11005'f j.pdb.__setdefaultprecision
+'@0x1100a'f j.pdb.__setargv
+EOF
+RUN
+
+NAME=idp names a thunk jumped into from a PDB function analyzed through a tail call
+FILE=malloc://0x20000
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx c3 @ 0x12830
+wx e921180000 @ 0x1100a
+wx e9f5e0ffff @ 0x12f10
+wx e9061f0000 @ 0x11005
+idp bins/pdb/Project1.pdb
+afl~0x00011005,0x00012f10,0x0001100a,0x00012830
+EOF
+EXPECT=<<EOF
+0x0001100a    1      5 j.pdb.__setargv
+0x00012830    1      1 pdb.__setargv
+0x00012f10    1      5 pdb.__setdefaultprecision
+0x00011005    1      5 j.pdb.__setdefaultprecision
 EOF
 EXPECT_ERR=<<EOF
 WARN: Cannot find base address, flags will probably be misplaced
