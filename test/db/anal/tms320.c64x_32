@@ -214,3 +214,24 @@ b16 = b2 - 4
 a0 = (half)*-a0[a5]
 EOF
 RUN
+
+NAME=320c64 register branches
+REQUIRE=cs5
+FILE=-
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.cpu=c64x
+ao 1 @x:000c0362~opcode,type,jump
+ao 1 @x:00100362~opcode,type,jump
+ao 1 @x:0041bd10~opcode,type,jump
+EOF
+EXPECT=<<EOF
+opcode: b b3
+type: ret
+opcode: b b4
+type: ujmp
+opcode: b 0x20de8
+type: jmp
+jump: 0x00020de8
+EOF
+RUN

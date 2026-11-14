@@ -205,7 +205,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 				break;
 			case TMS320C64X_OP_MEM:
 				pj_ks (pj, "type", "mem");
-				if (op->mem.base != SPARC_REG_INVALID) {
+				if (op->mem.base != TMS320C64X_REG_INVALID) {
 					pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
 				}
 				pj_kN (pj, "disp", (st64)op->mem.disp);
@@ -249,10 +249,6 @@ static csh cs_handle_for_session(RArchSession *as) {
 static int tms320c64x_analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	csh handle = cs_handle_for_session (as);
 	if (handle == 0) {
-		return -1;
-	}
-	int ret = cs_open (CS_ARCH_TMS320C64X, CS_MODE_BIG_ENDIAN, &handle);
-	if (ret != CS_ERR_OK) {
 		return -1;
 	}
 	RArchCSInsn csi;
@@ -304,7 +300,6 @@ static int tms320c64x_analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8
 			break;
 		case TMS320C64X_INS_SWAP2:
 		case TMS320C64X_INS_SWAP4:
-		op->type = R_ANAL_OP_TYPE_MOV;
 			op->type = R_ANAL_OP_TYPE_MOV;
 			break;
 		case TMS320C64X_INS_BNOP:
@@ -323,8 +318,11 @@ static int tms320c64x_analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8
 			break;
 		case TMS320C64X_INS_B:
 			op->type = R_ANAL_OP_TYPE_JMP;
-			// higher 32bits of the 64bit address is lost, lets clone
-			if (insn->detail) {
+			if (insn->detail && INSOP(0).type == TMS320C64X_OP_REG) {
+				// b3 holds the return address
+				op->type = (INSOP(0).reg == TMS320C64X_REG_B3)? R_ANAL_OP_TYPE_RET: R_ANAL_OP_TYPE_UJMP;
+			} else if (insn->detail) {
+				// higher 32bits of the 64bit address is lost, lets clone
 				op->jump = INSOP(0).imm + (addr & 0xFFFFFFFF00000000);
 			}
 			break;
