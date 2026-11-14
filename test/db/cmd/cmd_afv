@@ -80,14 +80,17 @@ CMDS=<<EOF
 wx 5589e5518b4508c9c3
 af
 afc thiscall
-afvr ecx arg1 int32_t
-"Ct arg1" @ 3
+afvR arg1
+"Ct arg1" @ 7
 "Ct int32_t arg_8h" @ 4
 afvn this arg1
 Ct. @ 3
+Ct. @ 7
 Ct. @ 4
 EOF
 EXPECT=<<EOF
+      arg1  0x3
+this
 this
 int32_t arg_8h
 EOF
