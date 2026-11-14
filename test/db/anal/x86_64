@@ -4032,12 +4032,12 @@ aa
 pd 19
 EOF
 EXPECT=<<EOF
-/ 512: fcn.00000000 (int64_t arg_8h, int64_t arg_bh, int64_t arg_ch);
+/ 512: fcn.00000000 (int64_t arg_8h, int64_t arg_bh, int64_t arg_4h);
 |           ; arg int64_t arg_8h @ rbp+0x8
 |           ; arg int64_t arg_bh @ rbp+0xb
 |           ; var int64_t var_8h @ rbp-0x8
 |           ; var int64_t var_bh @ rbp-0xb
-|           ; arg int64_t arg_ch @ rsp+0xc
+|           ; arg int64_t arg_4h @ rsp+0xc
 |           ; var int64_t var_4h @ rsp+0x4
 |           0x00000000      54             push rsp
 |           0x00000001      4889e5         mov rbp, rsp
@@ -4052,7 +4052,7 @@ EXPECT=<<EOF
 |           0x00000027      488d041b       lea rax, [rbx + rbx]
 |           0x0000002b      488d441b0a     lea rax, [rbx + rbx + 0xa]
 |           0x00000030      488d430a       lea rax, [rbx + 0xa]
-|           0x00000034      488d44240c     lea rax, [arg_ch]
+|           0x00000034      488d44240c     lea rax, [arg_4h]
 |           0x00000039      488d450b       lea rax, [arg_bh]
 |           0x0000003d      488d45f5       lea rax, [var_bh]
 |           0x00000041      488d442404     lea rax, [var_4h]
@@ -4074,12 +4074,12 @@ aa
 pd 19
 EOF
 EXPECT=<<EOF
-/ 512: fcn.00000000 (int64_t arg_8h, int64_t arg_bh, int64_t arg_ch);
+/ 512: fcn.00000000 (int64_t arg_8h, int64_t arg_bh, int64_t arg_4h);
 |           ; arg int64_t arg_8h @ rbp+0x8
 |           ; arg int64_t arg_bh @ rbp+0xb
 |           ; var int64_t var_8h @ rbp-0x8
 |           ; var int64_t var_bh @ rbp-0xb
-|           ; arg int64_t arg_ch @ rsp+0xc
+|           ; arg int64_t arg_4h @ rsp+0xc
 |           ; var int64_t var_4h @ rsp+0x4
 |           0x00000000      54             push (rsp)
 |           0x00000001      4889e5         rbp = rsp
@@ -4094,7 +4094,7 @@ EXPECT=<<EOF
 |           0x00000027      488d041b       rax = rbx + rbx
 |           0x0000002b      488d441b0a     rax = rbx + rbx + 0xa
 |           0x00000030      488d430a       rax = rbx + 0xa
-|           0x00000034      488d44240c     rax = arg_ch
+|           0x00000034      488d44240c     rax = arg_4h
 |           0x00000039      488d450b       rax = arg_bh
 |           0x0000003d      488d45f5       rax = var_bh
 |           0x00000041      488d442404     rax = var_4h
@@ -4479,7 +4479,7 @@ afv @ 0
 EOF
 EXPECT=<<EOF
 var int64_t var_8h @ rsp+0x8
-arg int64_t arg_8h @ rsp+0x20
+arg int64_t arg_0h @ rsp+0x20
 EOF
 RUN
 
@@ -4627,5 +4627,34 @@ a:callargs 0x10000143e
 EOF
 EXPECT=<<EOF
 char *sym.imp.getenv(name @ 0x100004b34 #="COLUMNS" /*0x100004b31*/)
+EOF
+RUN
+
+NAME=ms x64 stack args are named after their offset at the entry, and the home area is a local
+FILE=malloc://0x100
+ARGS=-a x86 -b 64 -e anal.cc=ms
+CMDS=<<EOF
+wx 535657415441564157 4883ec58 4d8bf1 4d8bf8 4c63e2 488bf9 4c89742420 398424b0000000 4889842490000000 4883c458 415f415e415c5f5e5bc3
+wx 48894c2408 4883ec48 488b4c2450 c744242000000000 4883c448 c3 @ 0x80
+af
+afs
+afv
+af @ 0x80
+afs @ 0x80
+afv @ 0x80
+EOF
+EXPECT=<<EOF
+void fcn.00000000 (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int32_t arg_28h);
+arg int64_t arg1 @ rcx
+arg int64_t arg2 @ rdx
+arg int64_t arg3 @ r8
+arg int64_t arg4 @ r9
+arg int32_t arg_28h @ rsp+0xb0
+var int64_t var_20h @ rsp+0x20
+var int64_t var_90h @ rsp+0x90
+void fcn.00000080 (int64_t arg1);
+arg int64_t arg1 @ rcx
+var int32_t var_20h @ rsp+0x20
+var int64_t var_8h @ rsp+0x50
 EOF
 RUN
