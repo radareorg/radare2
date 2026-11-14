@@ -1029,6 +1029,9 @@ char *get_opers(ut8 oper_byte) {
 		ut8 oper_type = oper_byte >> 5;
 		if (oper_type != 6) {
 			char *reg_name = get_reg_name_4 (oper_byte & 0x1F);
+			if (!reg_name) {
+				return NULL;
+			}
 			switch (oper_type) {
 			case 1u:
 				return strcat_dup (reg_name, " != #0", 1);
@@ -1048,6 +1051,9 @@ char *get_opers(ut8 oper_byte) {
 			}
 		}
 		char *reg_name = get_reg_name_1 ((oper_byte & 0xF) + 128);
+		if (!reg_name) {
+			return NULL;
+		}
 		oper_type = (oper_byte >> 4) - 12;
 		if (oper_type) {
 			if (oper_type != 1) {
