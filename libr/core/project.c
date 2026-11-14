@@ -448,6 +448,24 @@ static void flush(RCore *core, RStrBuf *sb) {
 	}
 }
 
+// f* leaves out the real name (the demangled one of the PDB symbols) and the color,
+// so reopening the project showed the flag name instead
+static bool project_save_flag_names(RFlagItem *fi, void *user) {
+	RCore *core = user;
+	if (fi->realname && strcmp (fi->realname, fi->name)) {
+		char *b64 = r_base64_encode_dyn ((const ut8 *)fi->realname, -1);
+		if (b64) {
+			r_cons_printf (core->cons, "'fN %s base64:%s\n", fi->name, b64);
+			free (b64);
+		}
+	}
+	RFlagItemMeta *fim = r_flag_get_meta (core->flags, fi->id);
+	if (fim && R_STR_ISNOTEMPTY (fim->color)) {
+		r_cons_printf (core->cons, "'fc %s=%s\n", fi->name, fim->color);
+	}
+	return true;
+}
+
 static bool project_save_script(RCore *core, const char *file, int opts, const char *prj_name) {
 	RConfig *config = prj_name? r_config_clone (core->config): core->config;
 	if (!config) {
@@ -510,6 +528,7 @@ static bool project_save_script(RCore *core, const char *file, int opts, const c
 		char *s = r_flag_list (core->flags, true, NULL);
 		r_cons_printf (cons, "%s", s);
 		free (s);
+		r_flag_foreach (core->flags, project_save_flag_names, core);
 		r_flag_space_pop (core->flags);
 		flush (core, sb);
 		r_core_cmd (core, "fz*", 0);

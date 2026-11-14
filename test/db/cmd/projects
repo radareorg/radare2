@@ -1069,3 +1069,26 @@ var int64_t var_20h @ rsp+0x20
 var int64_t var_90h @ rsp+0x90
 EOF
 RUN
+
+NAME=P* saves the real name and the color of the flags
+FILE=malloc://512
+CMDS=<<EOF
+f pdb.Punto::inicializar_int__int_ 4 @ 0x10
+'fN pdb.Punto::inicializar_int__int_ public: void __thiscall Punto::inicializar(int, int)
+fc pdb.Punto::inicializar_int__int_=red > /dev/null
+P*~^'fN
+P*~^'fc
+P* > .tmp/prj-realname.r2
+f-*
+. .tmp/prj-realname.r2 > /dev/null
+rm .tmp/prj-realname.r2
+fd.j @ 0x10
+fc*
+EOF
+EXPECT=<<EOF
+'fN pdb.Punto::inicializar_int__int_ base64:cHVibGljOiB2b2lkIF9fdGhpc2NhbGwgUHVudG86OmluaWNpYWxpemFyKGludCwgaW50KQ==
+'fc pdb.Punto::inicializar_int__int_=red
+[{"name":"pdb.Punto::inicializar_int__int_","realname":"public: void __thiscall Punto::inicializar(int, int)"}]
+'fc pdb.Punto::inicializar_int__int_=red
+EOF
+RUN
