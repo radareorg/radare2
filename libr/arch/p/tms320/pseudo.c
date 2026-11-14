@@ -33,11 +33,14 @@ static char *replace(int argc, const char *argv[]) {
 		{2, "mvklh", "2 = (half) 1" },// mvk 1, a0 -> a0 = 1
 		{3, "band", "3 = 1 & 2" },   //
 		{1, "zero", "1 = zero" },
-		{3, "andn", "3 = 1 ~ 2" }, //
+		{3, "and", "3 = 1 & 2" },
+		{3, "xor", "3 = 1 ^ 2" },
+		{3, "andn", "3 = 1 & ~2" }, //
 		{3, "cmpgtu", "3 = 1 cmpgtu 2" }, //
 		{3, "cmpeq", "3 = 1 == 2" }, //
 		{3, "cmpge", "3 = 1 >= 2" }, //
-		{3, "cmplt", "3 = 1 <= 2" }, //
+		{3, "cmplt", "3 = 1 < 2" }, //
+		{3, "cmpgt", "3 = 1 > 2" },
 		{3, "smpylh", "3 = 1 * 2" }, //
 		{3, "smpy", "3 = 1 * 2" }, //
 		{3, "smpyh", "3 = 1 * 2" }, //
@@ -67,10 +70,10 @@ static char *replace(int argc, const char *argv[]) {
 		{3, "mpyhir", "3 = 1 * 2" }, //
 		{3, "mpyli", "3 = 1 * 2" }, //
 		{3, "mpylir", "3 = 1 * 2" }, //
-		{4, "ext", "4 = 2 ext 1 .. 3" },  //
-		{4, "extu", "4 = 2 ext 1 .. 3" },  //
+		{4, "ext", "4 = 1 ext 2 .. 3" },  //
+		{4, "extu", "4 = 1 ext 2 .. 3" },  //
 		{0, "reti", "ret" },         // reti -> ret
-		{2, "lddw", "2 = (word)1" }, // lddw
+		{2, "lddw", "2 = (dword)1" }, // lddw
 		{2, "ldhu", "2 = (half)1" }, // ldhu
 		{2, "ldb", "2 = (byte)1" },  // ldb
 		{2, "ldbu", "2 = (byte)1" }, // ldbu
@@ -82,16 +85,15 @@ static char *replace(int argc, const char *argv[]) {
 		{2, "stw", "2 = (word)1" },  // stw
 		{2, "sth", "2 = (half)1" },  // stw
 		{2, "stnw", "2 = (word)1" },  // stw
-		{2, "stdw", "2 = (half)1" }, // stw
-		{2, "stndw", "2 = (half)1" }, // stw
+		{2, "stdw", "2 = (dword)1" },
+		{2, "stndw", "2 = (dword)1" },
 		{3, "or", "3 = 2 | 1" },
-		{3, "shl", "3 = (2 & Oxffffff) << 1" },
-		{3, "shr", "3 = (2 & Oxffffff) << 1" },
-		{3, "shlmb", "3 = << 1" },
-		{4, "set", "4 = 2 .bitset 1 .. 2" }, // set a29,0x1a, 1, a19
-		{4, "clr", "4 = 2 .bitclear 1 .. 2" }, // clr a29,0x1a, 1, a19
-		{0, "invalid", "" },
-		{0, "nop", "" },
+		{3, "shl", "3 = 1 << 2" },
+		{3, "shr", "3 = 1 >> 2" },
+		{3, "shru", "3 = 1 >> 2" },
+		{3, "shlmb", "3 = 1 shlmb 2" },
+		{4, "set", "4 = 1 .bitset 2 .. 3" }, // set a29,0x1a, 1, a19
+		{4, "clr", "4 = 1 .bitclear 2 .. 3" }, // clr a29,0x1a, 1, a19
 		{0, NULL}
 	};
 	RStrBuf *sb = r_strbuf_new ("");
@@ -120,8 +122,10 @@ static char *replace(int argc, const char *argv[]) {
 		}
 	}
 	for (i = 0; i < argc; i++) {
+		if (i > 0) {
+			r_strbuf_append (sb, (i == 1)? " ": ", ");
+		}
 		r_strbuf_append (sb, argv[i]);
-		r_strbuf_append (sb, (i == 0 || i == argc - 1) ? " " : ",");
 	}
 	return r_strbuf_drain (sb);
 }
@@ -145,13 +149,15 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 	if (sp) {
 		*sp++ = 0;
 		list = r_str_split_list (sp, ",", 0);
+		if (r_list_length (list) > 4) {
+			// no template takes that many operands, keep them all
+			r_list_free (list);
+			free (buf);
+			return strdup (data);
+		}
 		char *w;
 		r_list_foreach (list, iter, w) {
-			wa[nw] = w;
-			nw++;
-			if (nw == 5) {
-				break;
-			}
+			wa[nw++] = w;
 		}
 	}
 	char *str = replace (nw, wa);

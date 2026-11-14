@@ -297,3 +297,20 @@ other
 type: unk
 EOF
 RUN
+
+NAME=C55x+ pseudo keeps every operand
+FILE=-
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.cpu=c55x+
+e asm.pseudo=true
+pi 1 @x:25e23a3c6fec0c8384dcba60
+pi 1 @x:770030
+pi 1 @x:21
+EOF
+EXPECT=<<EOF
+macr uns (lock(*ar10(t1))), uns (lo(lock(*ar12-))), ac28 >> #16 :: macr uns (lock(*ar10(t1))), uns (hi(lock(*ar12-))), ac15 >> #16
+mov t0, ac0
+ret
+EOF
+RUN
