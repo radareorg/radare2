@@ -5207,7 +5207,7 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 #endif
 		bool is_vaddr = false;
 		bool is_imported = new_symbol.st_shndx == STN_UNDEF;
-		int tsize = 0;
+		ut64 tsize = 0;
 		ut64 toffset = 0;
 		// Zero symbol is always empty
 		// Examine entry and maybe store
@@ -5558,6 +5558,7 @@ static void set_special_by_ord(ELFOBJ *eo, const RBinElfSymbol *symbol) {
 	}
 	RBinElfSpecialSym *ss = R_NEW (RBinElfSpecialSym);
 	ss->value = symbol->st_value;
+	ss->size = symbol->size;
 	ss->common = common;
 	if (!eo->special_by_ord || !ht_up_update (eo->special_by_ord, symbol->ordinal, ss)) {
 		free (ss);
@@ -5917,7 +5918,7 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 		ut8 s[sizeof (Elf_(Sym))] = {0};
 		Elf_(Sym) sym = {0};
 		ut64 toffset;
-		int tsize;
+		ut64 tsize;
 		ut64 sym_addr = sh->sh_offset + (k * sizeof (Elf_(Sym)));
 		int r = r_buf_read_at (eo->b, sym_addr, s, sizeof (Elf_(Sym)));
 		if (r < 1) {
@@ -5944,7 +5945,7 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 		bool is_imported = sym.st_shndx == STN_UNDEF;
 		ut64 offset = 0;
 
-		if (type == R_BIN_ELF_IMPORT_SYMBOLS) {
+		if (type == R_BIN_ELF_IMPORT_SYMBOLS && is_imported) {
 			if (sym.st_value) {
 				toffset = sym.st_value;
 			} else if ((toffset = Elf_(plt_get_import_addr) (eo, k)) == UT64_MAX) {
