@@ -89,8 +89,9 @@ static void free_module_proc(void *ptr) {
 static void parse_module_stream(STpiStream *ss, void *stream, R_STREAM_FILE *stream_file) {
 	SModuleStream *module = (SModuleStream *)stream;
 	module->procs = r_list_newf (free_module_proc);
+	module->labels = r_list_newf (free_module_proc);
 	const ut32 size = module->sym_size;
-	if (!module->procs || size < 4 || size > stream_file->end - stream_file->pos) {
+	if (!module->procs || !module->labels || size < 4 || size > stream_file->end - stream_file->pos) {
 		return;
 	}
 	ut8 *data = malloc (size);
@@ -104,6 +105,8 @@ static void parse_module_stream(STpiStream *ss, void *stream, R_STREAM_FILE *str
 		free (data);
 		return;
 	}
+	// stream offset of the S_END closing the current top level procedure
+	ut32 proc_end = 0;
 	// skip the CV_SIGNATURE_C13 signature
 	ut32 i = 4;
 	while (i + 4 <= size) {
@@ -131,6 +134,23 @@ static void parse_module_stream(STpiStream *ss, void *stream, R_STREAM_FILE *str
 				break;
 			}
 			r_list_append (module->procs, proc);
+			if (i >= proc_end) {
+				proc_end = r_read_le32 (rec + 2 + 4);
+			}
+		} else if (kind == PDB_S_LABEL32 && len > 9) {
+			// offset, segment, flags, name
+			char *name = r_str_ndup ((const char *)rec + 9, len - 9);
+			// skip the $LN line labels of the compiler, they name nothing
+			if (R_STR_ISEMPTY (name) || r_str_startswith (name, "$LN")) {
+				free (name);
+			} else {
+				SModuleProc *label = R_NEW0 (SModuleProc);
+				label->offset = r_read_le32 (rec + 2);
+				label->segment = r_read_le16 (rec + 6);
+				label->nested = i < proc_end;
+				label->name = name;
+				r_list_append (module->labels, label);
+			}
 		}
 		i += 2 + len;
 	}
@@ -140,4 +160,5 @@ static void parse_module_stream(STpiStream *ss, void *stream, R_STREAM_FILE *str
 static void free_module_stream(STpiStream *ss, void *stream) {
 	SModuleStream *module = (SModuleStream *)stream;
 	r_list_free (module->procs);
+	r_list_free (module->labels);
 }
