@@ -482,6 +482,243 @@ static WasmOpDef opcodes_simd[256] = {
 	[WASM_OP_I16X8ABS] = { "i16x8.abs", 2, 6 },
 };
 
+static bool wasm_put_uleb(ut8 *buf, int *len, int buf_len, ut64 v) {
+	do {
+		if (*len >= buf_len) {
+			return false;
+		}
+		const ut8 b = v & 0x7f;
+		v >>= 7;
+		buf[(*len)++] = v? b | 0x80: b;
+	} while (v);
+	return true;
+}
+
+static bool wasm_put_sleb(ut8 *buf, int *len, int buf_len, st64 v) {
+	bool more = true;
+	while (more) {
+		if (*len >= buf_len) {
+			return false;
+		}
+		const ut8 b = v & 0x7f;
+		v >>= 7;
+		more = !((v == 0 && !(b & 0x40)) || (v == -1 && (b & 0x40)));
+		buf[(*len)++] = more? b | 0x80: b;
+	}
+	return true;
+}
+
+// reads the next number of the operand list
+static bool wasm_next_num(const char **p, st64 *out) {
+	const char *s = r_str_trim_head_ro (*p);
+	const bool neg = *s == '-';
+	const char *digits = neg? s + 1: s;
+	char *end = NULL;
+	if (!isdigit ((ut8)*digits)) {
+		return false;
+	}
+	const ut64 v = strtoull (digits, &end, 0);
+	if (end == digits || (*end && !isspace ((ut8)*end))) {
+		return false;
+	}
+	*out = neg? -(st64)v: (st64)v;
+	*p = end;
+	return true;
+}
+
+static bool wasm_next_index(const char **p, ut8 *buf, int *len, int buf_len) {
+	st64 v = 0;
+	return wasm_next_num (p, &v) && v >= 0 && v <= UT32_MAX && wasm_put_uleb (buf, len, buf_len, v);
+}
+
+static bool wasm_next_blocktype(const char **p, ut8 *buf, int *len, int buf_len) {
+	const char *names[] = { "i32", "i64", "f32", "f64", "v128", NULL };
+	const ut8 types[] = {
+		R_BIN_WASM_VALUETYPE_i32, R_BIN_WASM_VALUETYPE_i64, R_BIN_WASM_VALUETYPE_f32,
+		R_BIN_WASM_VALUETYPE_f64, R_BIN_WASM_VALUETYPE_v128
+	};
+	const char *s = r_str_trim_head_ro (*p);
+	ut8 type = R_BIN_WASM_VALUETYPE_VOID;
+	if (*s) {
+		int i;
+		if (!r_str_startswith (s, "(result ")) {
+			return false;
+		}
+		s += strlen ("(result ");
+		for (i = 0; names[i]; i++) {
+			const size_t n = strlen (names[i]);
+			if (!strncmp (s, names[i], n) && s[n] == ')') {
+				type = types[i];
+				s += n + 1;
+				break;
+			}
+		}
+		if (!names[i]) {
+			return false;
+		}
+	}
+	if (*len >= buf_len) {
+		return false;
+	}
+	buf[(*len)++] = type;
+	*p = s;
+	return true;
+}
+
+// encodes the immediates that follow the opcode, the same way wasm_dis reads them
+static int wasm_asm_imm(int id, const char *args, ut8 *buf, int len, int buf_len) {
+	const char *p = args;
+	st64 v = 0;
+	switch (id) {
+	case WASM_OP_BLOCK:
+	case WASM_OP_LOOP:
+	case WASM_OP_IF:
+	case WASM_OP_TRY:
+		if (!wasm_next_blocktype (&p, buf, &len, buf_len)) {
+			return -1;
+		}
+		break;
+	case WASM_OP_BR:
+	case WASM_OP_BRIF:
+	case WASM_OP_BRONNULL:
+	case WASM_OP_BRONNONNULL:
+	case WASM_OP_CALL:
+	case WASM_OP_RETURNCALL:
+	case WASM_OP_THROW:
+	case WASM_OP_RETHROW:
+	case WASM_OP_CATCH:
+	case WASM_OP_DELEGATE:
+	case WASM_OP_REFFUNC:
+	case WASM_OP_TABLEGET:
+	case WASM_OP_TABLESET:
+	case WASM_OP_GETLOCAL:
+	case WASM_OP_SETLOCAL:
+	case WASM_OP_TEELOCAL:
+	case WASM_OP_GETGLOBAL:
+	case WASM_OP_SETGLOBAL:
+		if (!wasm_next_index (&p, buf, &len, buf_len)) {
+			return -1;
+		}
+		break;
+	case WASM_OP_CURRENTMEMORY:
+	case WASM_OP_GROWMEMORY:
+		if (*r_str_trim_head_ro (p)) {
+			if (!wasm_next_num (&p, &v) || v != 0) {
+				return -1;
+			}
+		}
+		if (!wasm_put_uleb (buf, &len, buf_len, 0)) {
+			return -1;
+		}
+		break;
+	case WASM_OP_BRTABLE:
+		{
+			st64 count = 0;
+			if (!wasm_next_num (&p, &count) || count < 0 || count >= 0xffff || !wasm_put_uleb (buf, &len, buf_len, count)) {
+				return -1;
+			}
+			// the targets and then the default one
+			for (v = 0; v <= count; v++) {
+				if (!wasm_next_index (&p, buf, &len, buf_len)) {
+					return -1;
+				}
+			}
+		}
+		break;
+	case WASM_OP_CALLINDIRECT:
+	case WASM_OP_RETURNCALLINDIRECT:
+	case WASM_OP_I32LOAD:
+	case WASM_OP_I64LOAD:
+	case WASM_OP_F32LOAD:
+	case WASM_OP_F64LOAD:
+	case WASM_OP_I32LOAD8S:
+	case WASM_OP_I32LOAD8U:
+	case WASM_OP_I32LOAD16S:
+	case WASM_OP_I32LOAD16U:
+	case WASM_OP_I64LOAD8S:
+	case WASM_OP_I64LOAD8U:
+	case WASM_OP_I64LOAD16S:
+	case WASM_OP_I64LOAD16U:
+	case WASM_OP_I64LOAD32S:
+	case WASM_OP_I64LOAD32U:
+	case WASM_OP_I32STORE:
+	case WASM_OP_I64STORE:
+	case WASM_OP_F32STORE:
+	case WASM_OP_F64STORE:
+	case WASM_OP_I32STORE8:
+	case WASM_OP_I32STORE16:
+	case WASM_OP_I64STORE8:
+	case WASM_OP_I64STORE16:
+	case WASM_OP_I64STORE32:
+		// type and table index , or alignment and offset
+		if (!wasm_next_index (&p, buf, &len, buf_len) || !wasm_next_index (&p, buf, &len, buf_len)) {
+			return -1;
+		}
+		break;
+	case WASM_OP_I32CONST:
+		if (!wasm_next_num (&p, &v) || v < ST32_MIN || v > UT32_MAX || !wasm_put_sleb (buf, &len, buf_len, (st32)(ut32)v)) {
+			return -1;
+		}
+		break;
+	case WASM_OP_I64CONST:
+		if (!wasm_next_num (&p, &v) || !wasm_put_sleb (buf, &len, buf_len, v)) {
+			return -1;
+		}
+		break;
+	case WASM_OP_F32CONST:
+	case WASM_OP_F64CONST:
+		{
+			const char *s = r_str_trim_head_ro (p);
+			char *end = NULL;
+			const double d = strtod (s, &end);
+			const int size = (id == WASM_OP_F32CONST)? 4: 8;
+			if (end == s || len + size > buf_len) {
+				return -1;
+			}
+			if (size == 4) {
+				union {
+					ut32 v;
+					float f;
+				} u = { .f = (float)d };
+				r_write_le32 (buf + len, u.v);
+			} else {
+				union {
+					ut64 v;
+					double f;
+				} u = { .f = d };
+				r_write_le64 (buf + len, u.v);
+			}
+			len += size;
+			p = end;
+		}
+		break;
+	case WASM_OP_REFNULL:
+		{
+			const char *s = r_str_trim_head_ro (p);
+			if (len >= buf_len) {
+				return -1;
+			}
+			if (r_str_startswith (s, "funcref")) {
+				buf[len++] = 0x70;
+				p = s + strlen ("funcref");
+			} else if (r_str_startswith (s, "externref")) {
+				buf[len++] = 0x6f;
+				p = s + strlen ("externref");
+			} else {
+				return -1;
+			}
+		}
+		break;
+	case WASM_OP_SELECTT:
+	case WASM_OP_TRYTABLE:
+		// immediates not supported yet
+		return -1;
+	default:
+		break;
+	}
+	return *r_str_trim_head_ro (p)? -1: len;
+}
+
 // assembles the given line of wasm assembly.
 R_IPI int wasm_asm(const char *str, ut8 *buf, int buf_len) {
 	int i = 0, len = 0;
@@ -495,17 +732,9 @@ R_IPI int wasm_asm(const char *str, ut8 *buf, int buf_len) {
 	// Find opcode
 	for (i = 0; i < 0xff; i++) {
 		opdef = &opcodes[i];
-		if (opdef->txt) {
-			if (!strcmp (opdef->txt, tmp)) {
-				buf[len++] = i;
-				if (opdef->min > 1) {
-					for (i = 1; i < opdef->min; i++) {
-						const char *arg = str + strlen (tmp);
-						buf[len++] = r_num_get (NULL, arg);
-					}
-				}
-				break;
-			}
+		if (opdef->txt && !strcmp (opdef->txt, tmp)) {
+			buf[len++] = i;
+			return wasm_asm_imm (i, str + strlen (tmp), buf, len, buf_len);
 		}
 	}
 	// Check extensions

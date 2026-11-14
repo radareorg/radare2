@@ -1,11 +1,11 @@
 d "trap" 00
 d "nop" 01
-d "block" 0240
-d "block (result i32)" 027f
-d "loop" 0340
-d "loop (result i64)" 037e
-d "if" 0440
-d "if (result f32)" 047d
+ad "block" 0240
+ad "block (result i32)" 027f
+ad "loop" 0340
+ad "loop (result i64)" 037e
+ad "if" 0440
+ad "if (result f32)" 047d
 d "else" 05
 d "end" 0b
 d "br 0" 0c00
@@ -15,12 +15,22 @@ d "call_indirect 0 0" 110000
 d "drop" 1a
 d "select" 1b
 d "get_local 7" 2007
-d "call 1881" 10d90e
+ad "call 1881" 10d90e
 d "get_local 0" 2000
 d "get_local 1" 2001
 d "get_local 2" 2002
 d "i64.const 32" 4220
-aB "i64.const 32" 4220
+a "i64.const 32" 4220
+ad "i32.const -1" 417f
+a "i32.const 0xffffffff" 417f
+ad "i32.const 64" 41c000
+ad "i64.const -129" 42ff7e
+a "brtable 2 0 1 2" 0e02000102
+ad "i64.load 3 256" 29038002
+ad "call_indirect 1 0" 110100
+ad "get_local 300" 20ac02
+ad "f32.const 1.500000" 430000c03f
+ad "ref.null funcref" d070
 d "v128.load o:4 a:2^1" fd000401
 d "i16x8.load8x8_s o:4 a:2^1" fd010401
 d "i16x8.load8x8_u o:4 a:2^1" fd020401
