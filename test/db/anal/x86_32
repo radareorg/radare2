@@ -3992,3 +3992,33 @@ ucomisd xmm0, qword [arg_10h]
 type: cmp
 EOF
 RUN
+
+NAME=x86_32 scalar sse and x87 memory operands are stack variables
+FILE=malloc://128
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 558bec83ec20f20f5c4508f30f5e4510f20f51451cf20f5f4520f20f2a4524f20f2c4528f30f5a452cc5fb5c4530dd45f8dd5df0db45ecdb7de0df4dd8dc5d188be55dc3
+af
+pi 14 @ 6
+afvW~0x
+EOF
+EXPECT=<<EOF
+subsd xmm0, qword [arg_8h]
+divss xmm0, dword [arg_10h]
+sqrtsd xmm0, qword [arg_1ch]
+maxsd xmm0, qword [arg_20h]
+cvtsi2sd xmm0, dword [arg_24h]
+cvttsd2si eax, qword [arg_28h]
+cvtss2sd xmm0, dword [arg_2ch]
+vsubsd xmm0, xmm0, qword [arg_30h]
+fld qword [var_8h]
+fstp qword [var_10h]
+fild dword [var_14h]
+fstp xword [var_20h]
+fisttp word [var_28h]
+fcomp qword [arg_18h]
+   var_10h  0x31
+   var_20h  0x37
+   var_28h  0x3a
+EOF
+RUN
