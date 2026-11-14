@@ -1994,13 +1994,14 @@ static EDemanglerErr parse_function(SDemangler *sd, const char *sym, STypeCodeSt
 		copy_string (&func_str, " ", 0);
 	}
 
-	if (storage_class_code_for_ret) {
-		copy_string (&func_str, storage_class_code_for_ret, 0);
+	if (ret_type) {
+		copy_string (&func_str, ret_type, 0);
 		copy_string (&func_str, " ", 0);
 	}
 
-	if (ret_type) {
-		copy_string (&func_str, ret_type, 0);
+	// the qualifiers of the returned type go after it, like in the arguments
+	if (storage_class_code_for_ret) {
+		copy_string (&func_str, storage_class_code_for_ret, 0);
 		copy_string (&func_str, " ", 0);
 	}
 
