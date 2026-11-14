@@ -1123,7 +1123,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 				}
 				ut64 addr = core->io->va? s->vaddr: s->paddr;
 				ut64 size = core->io->va? s->vsize: s->size;
-				if (R_BETWEEN (addr, core->addr, addr + size)) {
+				if (core->addr >= addr && core->addr < addr + size) {
 					append_bound (list, core->io, search_itv, addr, size, s->perm);
 				}
 			}
@@ -1138,7 +1138,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 				}
 				ut64 addr = core->io->va? s->vaddr: s->paddr;
 				ut64 size = core->io->va? s->vsize: s->size;
-				if (R_BETWEEN (addr, core->addr, addr + size)) {
+				if (core->addr >= addr && core->addr < addr + size) {
 					append_bound (list, core->io, search_itv, addr, size, s->perm);
 				}
 			}
