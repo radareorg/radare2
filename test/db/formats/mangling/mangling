@@ -3799,11 +3799,11 @@ const NetworkUX::OOBEMainPage::vftable{for `__abi_IUnknown's `Platform::Details:
 EOF
 RUN
 
-NAME=class Microsoft::WRL::Details::StaticStorage<class Platform::Details::InProcModule, 0, int> Microsoft::WRL::Details::StaticStorage<class Platform::Details::InProcModule, 0, int>::instance_
+NAME=private: static class Microsoft::WRL::Details::StaticStorage<class Platform::Details::InProcModule, 0, int> Microsoft::WRL::Details::StaticStorage<class Platform::Details::InProcModule, 0, int>::instance_
 FILE=-
 CMDS="!rabin2 -D msvc ?instance_@?\$StaticStorage@VInProcModule@Details@Platform@@\$0A@H@Details@WRL@Microsoft@@0V1234@A"
 EXPECT=<<EOF
-class Microsoft::WRL::Details::StaticStorage<class Platform::Details::InProcModule, 0, int> Microsoft::WRL::Details::StaticStorage<class Platform::Details::InProcModule, 0, int>::instance_
+private: static class Microsoft::WRL::Details::StaticStorage<class Platform::Details::InProcModule, 0, int> Microsoft::WRL::Details::StaticStorage<class Platform::Details::InProcModule, 0, int>::instance_
 EOF
 RUN
 
