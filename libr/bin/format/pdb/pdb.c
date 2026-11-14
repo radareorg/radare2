@@ -1430,9 +1430,13 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	}
 	char sname[PDB_SIZEOF_SECTION_NAME + 1];
 	SOmapStream *omap_stream = omap? omap->stream: NULL;
-	if (gsym_data_stream) {
+	// the scalar (??_G) and vector (??_E) deleting destructors of a class without arrays
+	// share their address: the first flag names the function, so ??_E comes after every
+	// other public instead of in the hash order of the stream, like ghidra names it
+	int pass;
+	for (pass = 0; gsym_data_stream && pass < 2; pass++) {
 		r_list_foreach (gsym_data_stream->globals_list, it, gdata) {
-			if (R_STR_ISEMPTY (gdata->name.name)) {
+			if (R_STR_ISEMPTY (gdata->name.name) || r_str_startswith (gdata->name.name, "??_E") != (pass == 1)) {
 				continue;
 			}
 			sctn_header = pdb_pe_section (pe_stream, gdata->segment - 1);
