@@ -24,6 +24,7 @@ typedef struct rtti_class_hierarchy_descriptor_t {
 } rtti_class_hierarchy_descriptor;
 
 typedef struct rtti_base_class_descriptor_t {
+	ut64 addr;                  // where the descriptor was read from
 	ut32 type_descriptor_addr;  // only a relative offset for 64bit
 	ut32 num_contained_bases;
 	struct {
@@ -195,6 +196,7 @@ static bool rtti_msvc_read_base_class_descriptor(RVTableContext *context, ut64 a
 		return false;
 	}
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (context->anal->config);
+	bcd->addr = addr;
 	ut32 (*read_at_32)(const void *src, size_t offset) = be? r_read_at_be32 : r_read_at_le32;
 	int typeDescriptorAddrSize = R_MIN (context->word_size, 4);
 	bcd->type_descriptor_addr = (ut32) r_read_ble (buf, be, typeDescriptorAddrSize * 8);
@@ -314,30 +316,55 @@ static bool rtti_msvc_read_type_descriptor(RVTableContext *context, ut64 addr, r
 	return td->name != NULL;
 }
 
-static void rtti_msvc_print_complete_object_locator(RStrBuf *sb, rtti_complete_object_locator *col, ut64 addr, const char *prefix) {
+/*
+ * 32bit RTTI stores absolute addresses, 64bit RTTI stores offsets relative
+ * to the image base (RVAs). For relative fields print the resolved virtual
+ * address followed by the raw RVA; base is UT64_MAX if the image base is unknown.
+ */
+static void rtti_msvc_print_addr(RStrBuf *sb, const char *prefix, const char *name, ut32 field, bool rel, ut64 base) {
+	if (!rel) {
+		r_strbuf_appendf (sb, "%s\t%s: 0x%08"PFMT32x"\n", prefix, name, field);
+	} else if (base == UT64_MAX) {
+		r_strbuf_appendf (sb, "%s\t%s: 0x%08"PFMT32x" (rva)\n", prefix, name, field);
+	} else {
+		r_strbuf_appendf (sb, "%s\t%s: 0x%08"PFMT64x" (rva 0x%08"PFMT32x")\n", prefix, name, base + field, field);
+	}
+}
+
+static void rtti_msvc_json_addr(PJ *pj, const char *name, const char *rva_name, ut32 field, bool rel, ut64 base) {
+	if (!rel) {
+		pj_kn (pj, name, field);
+		return;
+	}
+	if (base != UT64_MAX) {
+		pj_kn (pj, name, base + field);
+	}
+	pj_kn (pj, rva_name, field);
+}
+
+static void rtti_msvc_print_complete_object_locator(RStrBuf *sb, rtti_complete_object_locator *col, ut64 addr, bool rel, ut64 base, const char *prefix) {
 	r_strbuf_appendf (sb, "%sComplete Object Locator at 0x%08"PFMT64x":\n"
 				   "%s\tsignature: %#x\n"
 				   "%s\tvftableOffset: %#x\n"
-				   "%s\tcdOffset: %#x\n"
-				   "%s\ttypeDescriptorAddr: 0x%08"PFMT32x"\n"
-				   "%s\tclassDescriptorAddr: 0x%08"PFMT32x"\n",
+				   "%s\tcdOffset: %#x\n",
 				   prefix, addr,
 				   prefix, col->signature,
 				   prefix, col->vtable_offset,
-				   prefix, col->cd_offset,
-				   prefix, col->type_descriptor_addr,
-				   prefix, col->class_descriptor_addr);
-	r_strbuf_appendf (sb, "%s\tobjectBase: 0x%08"PFMT32x"\n\n",
-				   prefix, col->object_base);
+				   prefix, col->cd_offset);
+	rtti_msvc_print_addr (sb, prefix, "typeDescriptorAddr", col->type_descriptor_addr, rel, base);
+	rtti_msvc_print_addr (sb, prefix, "classDescriptorAddr", col->class_descriptor_addr, rel, base);
+	rtti_msvc_print_addr (sb, prefix, "objectBase", col->object_base, rel, base);
+	r_strbuf_append (sb, "\n");
 }
 
-static void rtti_msvc_print_complete_object_locator_json(PJ *pj, rtti_complete_object_locator *col) {
+static void rtti_msvc_print_complete_object_locator_json(PJ *pj, rtti_complete_object_locator *col, ut64 addr, bool rel, ut64 base) {
 	pj_o (pj);
+	pj_kn (pj, "addr", addr);
 	pj_kn (pj, "signature", col->signature);
 	pj_kn (pj, "vftable_offset", col->vtable_offset);
 	pj_kn (pj, "cd_offset", col->cd_offset);
-	pj_kn (pj, "type_desc_addr", col->type_descriptor_addr);
-	pj_kn (pj, "class_desc_addr", col->class_descriptor_addr);
+	rtti_msvc_json_addr (pj, "type_desc_addr", "type_desc_rva", col->type_descriptor_addr, rel, base);
+	rtti_msvc_json_addr (pj, "class_desc_addr", "class_desc_rva", col->class_descriptor_addr, rel, base);
 	pj_kn (pj, "object_base", col->object_base);
 	pj_end (pj);
 }
@@ -353,47 +380,47 @@ static void rtti_msvc_print_type_descriptor(RStrBuf *sb, rtti_type_descriptor *t
 				   prefix, td->name);
 }
 
-static void rtti_msvc_print_type_descriptor_json(PJ *pj, rtti_type_descriptor *td) {
+static void rtti_msvc_print_type_descriptor_json(PJ *pj, rtti_type_descriptor *td, ut64 addr) {
 	pj_o (pj);
+	pj_kn (pj, "addr", addr);
 	pj_kn (pj, "vtable_addr", td->vtable_addr);
 	pj_kn (pj, "spare", td->spare);
 	pj_ks (pj, "name", td->name);
 	pj_end (pj);
 }
 
-static void rtti_msvc_print_class_hierarchy_descriptor(RStrBuf *sb, rtti_class_hierarchy_descriptor *chd, ut64 addr, const char *prefix) {
+static void rtti_msvc_print_class_hierarchy_descriptor(RStrBuf *sb, rtti_class_hierarchy_descriptor *chd, ut64 addr, bool rel, ut64 base, const char *prefix) {
 	r_strbuf_appendf (sb, "%sClass Hierarchy Descriptor at 0x%08"PFMT64x":\n"
 				   "%s\tsignature: %#x\n"
 				   "%s\tattributes: %#x\n"
-				   "%s\tnumBaseClasses: %#x\n"
-				   "%s\tbaseClassArrayAddr: 0x%08"PFMT32x"\n\n",
+				   "%s\tnumBaseClasses: %#x\n",
 				   prefix, addr,
 				   prefix, chd->signature,
 				   prefix, chd->attributes,
-				   prefix, chd->num_base_classes,
-				   prefix, chd->base_class_array_addr);
+				   prefix, chd->num_base_classes);
+	rtti_msvc_print_addr (sb, prefix, "baseClassArrayAddr", chd->base_class_array_addr, rel, base);
+	r_strbuf_append (sb, "\n");
 }
 
-static void rtti_msvc_print_class_hierarchy_descriptor_json(PJ *pj, rtti_class_hierarchy_descriptor *chd) {
+static void rtti_msvc_print_class_hierarchy_descriptor_json(PJ *pj, rtti_class_hierarchy_descriptor *chd, ut64 addr, bool rel, ut64 base) {
 	pj_o (pj);
+	pj_kn (pj, "addr", addr);
 	pj_kn (pj, "signature", chd->signature);
 	pj_kn (pj, "attributes", chd->attributes);
 	pj_kn (pj, "num_base_classes", chd->num_base_classes);
-	pj_kn (pj, "base_class_array_addr", chd->base_class_array_addr);
+	rtti_msvc_json_addr (pj, "base_class_array_addr", "base_class_array_rva", chd->base_class_array_addr, rel, base);
 	pj_end (pj);
 }
 
-static void rtti_msvc_print_base_class_descriptor(RStrBuf *sb, rtti_base_class_descriptor *bcd, const char *prefix) {
-	r_strbuf_appendf (sb, "%sBase Class Descriptor:\n"
-				   "%s\ttypeDescriptorAddr: 0x%08"PFMT32x"\n"
-				   "%s\tnumContainedBases: %#x\n"
+static void rtti_msvc_print_base_class_descriptor(RStrBuf *sb, rtti_base_class_descriptor *bcd, bool rel, ut64 base, const char *prefix) {
+	r_strbuf_appendf (sb, "%sBase Class Descriptor at 0x%08"PFMT64x":\n", prefix, bcd->addr);
+	rtti_msvc_print_addr (sb, prefix, "typeDescriptorAddr", bcd->type_descriptor_addr, rel, base);
+	r_strbuf_appendf (sb, "%s\tnumContainedBases: %#x\n"
 				   "%s\twhere:\n"
 				   "%s\t\tmdisp: %d\n"
 				   "%s\t\tpdisp: %d\n"
 				   "%s\t\tvdisp: %d\n"
 				   "%s\tattributes: %#x\n\n",
-				   prefix,
-				   prefix, bcd->type_descriptor_addr,
 				   prefix, bcd->num_contained_bases,
 				   prefix,
 				   prefix, bcd->where.mdisp,
@@ -402,9 +429,10 @@ static void rtti_msvc_print_base_class_descriptor(RStrBuf *sb, rtti_base_class_d
 				   prefix, bcd->attributes);
 }
 
-static void rtti_msvc_print_base_class_descriptor_json(PJ *pj, rtti_base_class_descriptor *bcd) {
+static void rtti_msvc_print_base_class_descriptor_json(PJ *pj, rtti_base_class_descriptor *bcd, bool rel, ut64 base) {
 	pj_o (pj);
-	pj_kn (pj, "type_desc_addr", bcd->type_descriptor_addr);
+	pj_kn (pj, "addr", bcd->addr);
+	rtti_msvc_json_addr (pj, "type_desc_addr", "type_desc_rva", bcd->type_descriptor_addr, rel, base);
 	pj_kn (pj, "num_contained_bases", bcd->num_contained_bases);
 	pj_ko (pj, "where");
 	pj_ki (pj, "mdisp", bcd->where.mdisp);
@@ -486,12 +514,11 @@ R_IPI bool r_anal_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 atAddr
 		return false;
 	}
 
-	ut64 base = chd.base_class_array_addr;
-	ut32 baseClassArrayOffset = 0;
-	if (context->word_size == 8) {
-		base = colAddr - col.object_base;
-		baseClassArrayOffset = chd.base_class_array_addr;
-	}
+	// 64bit descriptors hold offsets from the image base, 32bit ones absolute addresses
+	const bool rel = context->word_size == 8;
+	const ut64 imageBase = rel? colAddr - col.object_base: 0;
+	ut64 base = rel? imageBase: chd.base_class_array_addr;
+	ut32 baseClassArrayOffset = rel? chd.base_class_array_addr: 0;
 
 	RList *baseClassArray = rtti_msvc_read_base_class_array (context, chd.num_base_classes, base, baseClassArrayOffset);
 	if (!baseClassArray) {
@@ -506,16 +533,16 @@ R_IPI bool r_anal_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 atAddr
 	if (pj) {
 		pj_o (pj);
 		pj_k (pj, "complete_object_locator");
-		rtti_msvc_print_complete_object_locator_json (pj, &col);
+		rtti_msvc_print_complete_object_locator_json (pj, &col, colAddr, rel, imageBase);
 		pj_k (pj, "type_desc");
-		rtti_msvc_print_type_descriptor_json (pj, &td);
+		rtti_msvc_print_type_descriptor_json (pj, &td, typeDescriptorAddr);
 		pj_k (pj, "class_hierarchy_desc");
-		rtti_msvc_print_class_hierarchy_descriptor_json (pj, &chd);
+		rtti_msvc_print_class_hierarchy_descriptor_json (pj, &chd, classHierarchyDescriptorAddr, rel, imageBase);
 		pj_ka (pj, "base_classes");
 	} else {
-		rtti_msvc_print_complete_object_locator (sb, &col, colAddr, "");
+		rtti_msvc_print_complete_object_locator (sb, &col, colAddr, rel, imageBase, "");
 		rtti_msvc_print_type_descriptor (sb, &td, typeDescriptorAddr, "\t");
-		rtti_msvc_print_class_hierarchy_descriptor (sb, &chd, classHierarchyDescriptorAddr, "\t");
+		rtti_msvc_print_class_hierarchy_descriptor (sb, &chd, classHierarchyDescriptorAddr, rel, imageBase, "\t");
 	}
 
 
@@ -526,9 +553,9 @@ R_IPI bool r_anal_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 atAddr
 		if (pj) {
 			pj_o (pj);
 			pj_k (pj, "desc");
-			rtti_msvc_print_base_class_descriptor_json (pj, bcd);
+			rtti_msvc_print_base_class_descriptor_json (pj, bcd, rel, imageBase);
 		} else {
-			rtti_msvc_print_base_class_descriptor (sb, bcd, "\t\t");
+			rtti_msvc_print_base_class_descriptor (sb, bcd, rel, imageBase, "\t\t");
 		}
 
 		ut64 baseTypeDescriptorAddr = rtti_msvc_addr (context, colAddr, col.object_base, bcd->type_descriptor_addr);
@@ -536,7 +563,7 @@ R_IPI bool r_anal_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 atAddr
 		if (rtti_msvc_read_type_descriptor (context, baseTypeDescriptorAddr, &btd)) {
 			if (pj) {
 				pj_k (pj, "type_desc");
-				rtti_msvc_print_type_descriptor_json (pj, &btd);
+				rtti_msvc_print_type_descriptor_json (pj, &btd, baseTypeDescriptorAddr);
 			} else {
 				rtti_msvc_print_type_descriptor (sb, &btd, baseTypeDescriptorAddr, "\t\t\t");
 			}
