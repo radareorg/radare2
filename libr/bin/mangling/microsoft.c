@@ -1263,7 +1263,15 @@ static inline void parse_type_modifier(SDemangler *sd, SStateInfo *state, STypeC
 		copy_string (type_code_str, "cli::pin_ptr<", 0);
 	}
 	copy_string (type_code_str, tmp, 0);
-	copy_string (type_code_str, tmp_str.type_str, tmp_str.curr_pos);
+	const char *suffix = tmp_str.type_str;
+	size_t suffix_len = tmp_str.curr_pos;
+	const size_t tmp_len = strlen (tmp);
+	if (suffix_len > 0 && *suffix == ' ' && tmp_len > 0 && (tmp[tmp_len - 1] == '*' || tmp[tmp_len - 1] == '&')) {
+		// pointers to pointers are int ** and int *const *, like llvm-undname prints them
+		suffix++;
+		suffix_len--;
+	}
+	copy_string (type_code_str, suffix, suffix_len);
 	if (is_pin_ptr) {
 		copy_string (type_code_str, ">", 0);
 	}
@@ -1276,7 +1284,7 @@ MODIFIER_err:
 }
 
 DEF_STATE_ACTION(S) {
-	parse_type_modifier (sd, state, type_code_str, "* const volatile");
+	parse_type_modifier (sd, state, type_code_str, "*const volatile");
 }
 
 static inline const char *get_calling_convention(char calling_convention) {
@@ -1485,11 +1493,11 @@ DEF_STATE_ACTION(P) {
 }
 
 DEF_STATE_ACTION(R) {
-	PARSE_POINTER ("* volatile");
+	PARSE_POINTER ("*volatile");
 }
 
 DEF_STATE_ACTION(Q) {
-	PARSE_POINTER ("* const");
+	PARSE_POINTER ("*const");
 }
 
 DEF_STATE_ACTION(A) {
@@ -2152,7 +2160,11 @@ static EDemanglerErr parse_microsoft_mangled_name(SDemangler *sd, const char *sy
 		curr_pos += len;
 		*demangled_name = NULL;
 		if (data_type.left) {
-			*demangled_name = r_str_newf ("%s%s ", member_access, data_type.left);
+			// pointer variables are int *x, like llvm-undname prints them
+			const char *left = data_type.left;
+			const size_t left_len = strlen (left);
+			const bool glued = left_len > 0 && (left[left_len - 1] == '*' || left[left_len - 1] == '&');
+			*demangled_name = r_str_newf ("%s%s%s", member_access, left, glued? "": " ");
 		}
 		*demangled_name = r_str_append (*demangled_name, type_code_str.type_str);
 		*demangled_name = r_str_append (*demangled_name, data_type.right);
