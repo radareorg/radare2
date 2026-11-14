@@ -1447,6 +1447,29 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 			print_gvar (&out, addr, PDB_PUBSYM_FUNCTION, proc->size, sname, proc->name, true);
 		}
 	}
+	// code labels outside every procedure, like the __ehhandler$ and __unwindfunclet$ stubs
+	// of the C++ exceptions, are only reached through data: they become functions
+	r_list_foreach (pdb->pdb_streams2, it, tmp) {
+		if (tmp->type != ePDB_STREAM_MODULE || !tmp->stream) {
+			continue;
+		}
+		SModuleStream *module = (SModuleStream *)tmp->stream;
+		SModuleProc *label;
+		RListIter *iter;
+		r_list_foreach (module->labels, iter, label) {
+			sctn_header = pdb_pe_section (pe_stream, label->segment - 1);
+			ut64 addr;
+			if (!pdb_symbol_address (sctn_header, omap_stream, label->offset, img_base, &addr)
+					|| set_u_contains (out.fcn_addrs, addr)) {
+				continue;
+			}
+			const ut32 symtype = (!label->nested && (sctn_header->charactestics & PDB_SCN_MEM_EXECUTE))
+				? PDB_PUBSYM_FUNCTION: 0;
+			r_str_ncpy (sname, sctn_header->name, sizeof (sname));
+			r_str_sanitize (sname);
+			print_gvar (&out, addr, symtype, 0, sname, label->name, true);
+		}
+	}
 	set_u_free (out.fcn_addrs);
 	ht_su_free (out.names);
 	if (format == 'j') {

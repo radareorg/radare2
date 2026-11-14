@@ -126,6 +126,33 @@ EXPECT=<<EOF
 0x004010e0 75 pdb.pre_cpp_init
 EOF
 RUN
+NAME=idp flags the code labels of the module symbols
+FILE=bins/pdb/SimplePDB.exe
+CMDS=<<EOF
+idpi* bins/pdb/SimplePDB.pdb~0x401022
+idp bins/pdb/SimplePDB.pdb
+f~pdb.failure
+afi.@0x401022
+EOF
+EXPECT=<<EOF
+'@0x401022'f pdb.failure
+0x00401022 1 pdb.failure
+pdb.___security_check_cookie_4
+EOF
+RUN
+
+NAME=idp keeps the PDB entry point of a function starting with nops
+FILE=bins/pdb/SimplePDB.exe
+ARGS=-e io.cache=true
+CMDS=<<EOF
+wx 909033c0c3 @ 0x401010
+idp bins/pdb/SimplePDB.pdb
+afl~pdb._main$
+EOF
+EXPECT=<<EOF
+0x00401010    1      5 pdb._main
+EOF
+RUN
 NAME=idp and baddr
 FILE=-
 CMDS=<<EOF
