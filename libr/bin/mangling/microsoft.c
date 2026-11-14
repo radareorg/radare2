@@ -2166,7 +2166,11 @@ static EDemanglerErr parse_microsoft_mangled_name(SDemangler *sd, const char *sy
 	// TODO: __based()
 	curr_pos = r_str_skip_prefix (curr_pos, "_");
 
-	if (isdigit ((unsigned char)*curr_pos)) {
+	if (*curr_pos == '9') {
+		// the extern "C" functions, that only get a mangled name for their local static variables
+		*demangled_name = r_str_newf ("extern \"C\" %s", type_code_str.type_str);
+		curr_pos++;
+	} else if (isdigit ((unsigned char)*curr_pos)) {
 		// 0, 1 and 2 are the private, protected and public static data members
 		static const char *const access[] = { "private: static ", "protected: static ", "public: static " };
 		const char *member_access = (*curr_pos <= '2')? access[*curr_pos - '0']: "";
