@@ -384,3 +384,15 @@ void *`RTTI Type Descriptor'
 struct Animal `RTTI Type Descriptor'
 EOF
 RUN
+
+NAME=msvc SIMD unions and their back references
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc '?compare_equals@?$__crt_simd_traits@$0A@E@@SA?AT__m128i@@T2@0@Z'
+!rabin2 -D msvc '?f@@YAXU__m128d@@@Z'
+EOF
+EXPECT=<<EOF
+public: static union __m128i __cdecl __crt_simd_traits<0, unsigned char>::compare_equals(union __m128i, union __m128i)
+void __cdecl f(struct __m128d)
+EOF
+RUN

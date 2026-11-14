@@ -981,58 +981,17 @@ DEF_STATE_ACTION(_) {
 	} \
 }
 
+// the __m64, __m128... SIMD types are unions and structs like any other, also for the back references
 DEF_STATE_ACTION(T) {
-#define PROCESS_CASE(case_string, type_str) { \
-	check_len = strlen (case_string); \
-	if ((check_len < buff_len) && \
-		(strncmp (state->buff_for_parsing, case_string, check_len) == 0)) { \
-		copy_string (type_code_str, type_str, 0); \
-		state->buff_for_parsing += check_len; \
-		state->amount_of_read_chars += check_len; \
-		return; \
-	} \
-}
-
-	size_t buff_len = strlen (state->buff_for_parsing);
 	size_t check_len = 0;
-
 	state->state = eTCStateEnd;
-
-	PROCESS_CASE ("__m64@@", "__m64");
-	PROCESS_CASE ("__m128@@", "__m128");
-	PROCESS_CASE ("__m128i@@", "__m128i");
-	PROCESS_CASE ("__m256@@", "__m256");
-	PROCESS_CASE ("__m256i@@", "__m256i");
-	PROCESS_CASE ("__m512@@", "__m512");
-	PROCESS_CASE ("__m512i@@", "__m512i");
-
 	GET_USER_DEF_TYPE_NAME ("union ");
-#undef PROCESS_CASE
 }
 
 DEF_STATE_ACTION(U) {
-#define PROCESS_CASE(case_string, type_str) { \
-	check_len = strlen (case_string); \
-	if ((check_len < buff_len) && \
-		(strncmp (state->buff_for_parsing, case_string, check_len) == 0)) { \
-		copy_string (type_code_str, type_str, 0); \
-		state->amount_of_read_chars += check_len; \
-		state->buff_for_parsing += check_len; \
-		return; \
-	} \
-}
-
-	const size_t buff_len = strlen (state->buff_for_parsing);
 	size_t check_len = 0;
-
 	state->state = eTCStateEnd;
-
-	PROCESS_CASE ("__m128d@@", "__m128d");
-	PROCESS_CASE ("__m256d@@", "__m256d");
-	PROCESS_CASE ("__m512d@@", "__m512d");
-
 	GET_USER_DEF_TYPE_NAME ("struct ");
-#undef PROCESS_CASE
 }
 
 DEF_STATE_ACTION(W) {
