@@ -1624,3 +1624,5 @@ ad "cwde" 98
 ad "cqo" 4899
 ad "pushfq" 9c
 ad "popfq" 9d
+d "push 0xffffffffffffffff" 6aff
+d "push 0xffff" 666aff
