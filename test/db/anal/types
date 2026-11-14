@@ -1903,3 +1903,28 @@ ERROR: at line 1: Unclosed comment
 ERROR: at line 1: Unclosed comment
 EOF
 RUN
+
+NAME=aaft types the args of a call through a j. thunk with the target prototype
+FILE=malloc://128
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 5589e5ff7508e81500000083c4045dc3
+wx e91b000000 @ 0x20
+wx c3 @ 0x40
+af pdb._malloc @ 0x40
+af @ 0x20
+af @ 0
+aei
+aeim
+aaft
+afl~j.
+pd 2 @ 3~push,call
+afs @ 0
+EOF
+EXPECT=<<EOF
+0x00000020    1      5 j.pdb._malloc
+|           0x00000003      ff7508         push dword [size]           ; size_t size
+|           0x00000006      e815000000     call j.pdb._malloc          ;  void *malloc(size_t size)
+void fcn.00000000 (size_t size);
+EOF
+RUN
