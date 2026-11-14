@@ -719,7 +719,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		algolist (cons, rad);
 		ret (0);
 	}
-	algo = r_list_empty (algos)? strdup ("sha1"): r_str_list_join (algos, ",");
+	algo = r_list_empty (algos)? strdup ("sha256"): r_str_list_join (algos, ",");
 	if (compareStr) {
 		int compareBin_len;
 		if (bsize && !ro->incremental) {
