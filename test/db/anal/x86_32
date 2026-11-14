@@ -3952,3 +3952,25 @@ EXPECT=<<EOF
 name: target
 EOF
 RUN
+
+NAME=x86_32 negative push and enter immediates sized by the operand
+FILE=malloc://16
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 6aff666afe6a80c8fefefe
+e asm.syntax=intel
+pi 4
+e asm.syntax=att
+pi 4
+EOF
+EXPECT=<<EOF
+push 0xffffffff
+push 0xfffe
+push 0xffffff80
+enter 0xfefe, 0xfe
+pushl $0xffffffff
+pushw $0xfffe
+pushl $0xffffff80
+enter $0xfefe, $0xfe
+EOF
+RUN
