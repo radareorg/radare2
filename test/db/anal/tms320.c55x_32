@@ -1,0 +1,96 @@
+NAME=C55x branch and call targets
+FILE=-
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.cpu=c55x
+s 0x1000
+?e bcc L8;ao 1 @x:0400f0~opcode,type,jump,fail
+?e b L16;ao 1 @x:060010~opcode,type,jump,fail
+?e call L16;ao 1 @x:08fff0~opcode,type,jump,fail
+?e b L7;ao 1 @x:4a7f~opcode,type,jump,fail
+?e b L7 fwd;ao 1 @x:4a10~opcode,type,jump,fail
+?e b P24;ao 1 @x:6a123456~opcode,type,jump,fail
+?e call P24;ao 1 @x:6c123456~opcode,type,jump,fail
+?e bcc l4;ao 1 @x:6780~opcode,type,jump,fail
+?e bcc L16;ao 1 @x:6d00fff0~opcode,type,jump,fail
+?e bcc P24;ao 1 @x:6800123456~opcode,type,jump,fail
+?e bcc L8 cmp;ao 1 @x:6f001122~opcode,type,jump,fail
+?e callcc P24;ao 1 @x:6900123456~opcode,type,jump,fail
+?e callcc L16;ao 1 @x:6e000010~opcode,type,jump,fail
+?e b ac0;ao 1 @x:9100~opcode,type,jump,fail
+?e call ac0;ao 1 @x:9200~opcode,type,jump,fail
+?e ret;ao 1 @x:4804~opcode,type,jump,fail
+EOF
+EXPECT=<<EOF
+bcc L8
+opcode: bcc 0xF0, ac0 == 0
+type: cjmp
+jump: 0x00000ff3
+fail: 0x00001003
+b L16
+opcode: b 0x0010
+type: jmp
+jump: 0x00001013
+call L16
+opcode: call 0xFFF0
+type: call
+jump: 0x00000ff3
+fail: 0x00001003
+b L7
+opcode: b 0x7F
+type: jmp
+jump: 0x00001001
+b L7 fwd
+opcode: b 0x10
+type: jmp
+jump: 0x00001012
+b P24
+opcode: b 0x123456
+type: jmp
+jump: 0x00123456
+call P24
+opcode: call 0x123456
+type: call
+jump: 0x00123456
+fail: 0x00001004
+bcc l4
+opcode: bcc 0xF, ac0 == 0
+type: cjmp
+jump: 0x00001011
+fail: 0x00001002
+bcc L16
+opcode: bcc 0xFFF0, ac0 == 0
+type: cjmp
+jump: 0x00000ff4
+fail: 0x00001004
+bcc P24
+opcode: bcc 0x123456, ac0 == 0
+type: cjmp
+jump: 0x00123456
+fail: 0x00001005
+bcc L8 cmp
+opcode: bcc 0x22, ac0 == 0x11
+type: cjmp
+jump: 0x00001026
+fail: 0x00001004
+callcc P24
+opcode: callcc 0x123456, ac0 == 0
+type: ccall
+jump: 0x00123456
+fail: 0x00001005
+callcc L16
+opcode: callcc 0x0010, ac0 == 0
+type: ccall
+jump: 0x00001014
+fail: 0x00001004
+b ac0
+opcode: b ac0
+type: ujmp
+call ac0
+opcode: call ac0
+type: ucall
+ret
+opcode: ret
+type: ret
+EOF
+RUN

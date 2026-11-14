@@ -7,6 +7,7 @@
  */
 
 #include <r_arch.h>
+#include "tms320_p.h"
 #include "tms320_dasm.h"
 
 typedef struct plugin_data_t PluginData;
@@ -396,6 +397,27 @@ static int tms320_c54x_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *b
 	return op->size;
 }
 
+static void c55x_branch_target(tms320_dasm_t *engine, RAnalOp *op, ut64 addr) {
+	const ut64 next = addr + op->size;
+	if (field_valid (engine, P24)) {
+		op->jump = be24 (field_value (engine, P24));
+	} else if (field_valid (engine, L16)) {
+		op->jump = next + (st16)be16 (field_value (engine, L16));
+	} else if (field_valid (engine, L8)) {
+		op->jump = next + (st8)field_value (engine, L8);
+	} else if (field_valid (engine, L7)) {
+		const int offset = field_value (engine, L7);
+		op->jump = next + ((offset & 0x40)? offset - 0x80: offset);
+	} else if (field_valid (engine, l1) && field_valid (engine, l3)) {
+		op->jump = next + ((field_value (engine, l3) << 1) | field_value (engine, l1));
+	} else {
+		return;
+	}
+	if (op->type != R_ANAL_OP_TYPE_JMP) {
+		op->fail = next;
+	}
+}
+
 static int tms320_c55x_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	tms320_dasm_t *engine = tms320_engine_for_session (as);
 	const char *str = engine->syntax;
@@ -448,6 +470,14 @@ static int tms320_c55x_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *b
 		op->type = R_ANAL_OP_TYPE_TRAP;
 	} else if (match (str, "INVALID")) {
 		op->type = R_ANAL_OP_TYPE_UNK;
+	}
+	switch (op->type) {
+	case R_ANAL_OP_TYPE_JMP:
+	case R_ANAL_OP_TYPE_CJMP:
+	case R_ANAL_OP_TYPE_CALL:
+	case R_ANAL_OP_TYPE_CCALL:
+		c55x_branch_target (engine, op, addr);
+		break;
 	}
 
 	return op->size;
