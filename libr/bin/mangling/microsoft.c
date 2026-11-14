@@ -1809,30 +1809,30 @@ static EDemanglerErr parse_function_type(const char *sym, SDataType *data_type, 
 
 	/* Functions */
 	switch (*curr_pos++) {
-	SET_ACCESS_MODIFIER ('A', implicit_this, "private");
-	SET_ACCESS_MODIFIER ('B', implicit_this, "private");
+	SET_ACCESS_MODIFIER ('A', implicit_this, "private:");
+	SET_ACCESS_MODIFIER ('B', implicit_this, "private:");
 	SET_ACCESS_MODIFIER ('C', is_static, "private: static");
 	SET_ACCESS_MODIFIER ('D', is_static, "private: static");
-	SET_ACCESS_MODIFIER ('E', implicit_this, "private virtual");
-	SET_ACCESS_MODIFIER ('F', implicit_this, "private virtual");
-	SET_THUNK_MODIFIER ('G', "[thunk]:private virtual");
-	SET_THUNK_MODIFIER ('H', "[thunk]:private virtual");
-	SET_ACCESS_MODIFIER ('I', implicit_this, "protected");
-	SET_ACCESS_MODIFIER ('J', implicit_this, "protected");
+	SET_ACCESS_MODIFIER ('E', implicit_this, "private: virtual");
+	SET_ACCESS_MODIFIER ('F', implicit_this, "private: virtual");
+	SET_THUNK_MODIFIER ('G', "[thunk]: private: virtual");
+	SET_THUNK_MODIFIER ('H', "[thunk]: private: virtual");
+	SET_ACCESS_MODIFIER ('I', implicit_this, "protected:");
+	SET_ACCESS_MODIFIER ('J', implicit_this, "protected:");
 	SET_ACCESS_MODIFIER ('K', is_static, "protected: static");
 	SET_ACCESS_MODIFIER ('L', is_static, "protected: static");
-	SET_ACCESS_MODIFIER ('M', implicit_this, "protected virtual");
-	SET_ACCESS_MODIFIER ('N', implicit_this, "protected virtual");
-	SET_THUNK_MODIFIER ('O', "[thunk]:protected virtual");
-	SET_THUNK_MODIFIER ('P', "[thunk]:protected virtual");
-	SET_ACCESS_MODIFIER ('Q', implicit_this, "public");
-	SET_ACCESS_MODIFIER ('R', implicit_this, "public");
+	SET_ACCESS_MODIFIER ('M', implicit_this, "protected: virtual");
+	SET_ACCESS_MODIFIER ('N', implicit_this, "protected: virtual");
+	SET_THUNK_MODIFIER ('O', "[thunk]: protected: virtual");
+	SET_THUNK_MODIFIER ('P', "[thunk]: protected: virtual");
+	SET_ACCESS_MODIFIER ('Q', implicit_this, "public:");
+	SET_ACCESS_MODIFIER ('R', implicit_this, "public:");
 	SET_ACCESS_MODIFIER ('S', is_static, "public: static");
 	SET_ACCESS_MODIFIER ('T', is_static, "public: static");
-	SET_ACCESS_MODIFIER ('U', implicit_this, "public virtual");
-	SET_ACCESS_MODIFIER ('V', implicit_this, "public virtual");
-	SET_THUNK_MODIFIER ('W', "[thunk]:public virtual");
-	SET_THUNK_MODIFIER ('X', "[thunk]:public virtual");
+	SET_ACCESS_MODIFIER ('U', implicit_this, "public: virtual");
+	SET_ACCESS_MODIFIER ('V', implicit_this, "public: virtual");
+	SET_THUNK_MODIFIER ('W', "[thunk]: public: virtual");
+	SET_THUNK_MODIFIER ('X', "[thunk]: public: virtual");
 	case '$': {
 		// vtordisp thunks: $0-$5 {vtordisp, adjustor}, $R0-$R5 {vbptr, vbindex, vtordisp, adjustor}
 		const bool ex = *curr_pos == 'R';
@@ -1842,7 +1842,7 @@ static EDemanglerErr parse_function_type(const char *sym, SDataType *data_type, 
 		if (*curr_pos < '0' || *curr_pos > '5') {
 			return eDemanglerErrUncorrectMangledSymbol;
 		}
-		static char *const access[] = { "[thunk]:private virtual", "[thunk]:protected virtual", "[thunk]:public virtual" };
+		static char *const access[] = { "[thunk]: private: virtual", "[thunk]: protected: virtual", "[thunk]: public: virtual" };
 		data_type->left = access[(*curr_pos++ - '0') / 2];
 		RStrBuf *sb = r_strbuf_new (ex? "`vtordispex{": "`vtordisp{");
 		if (!sb) {
@@ -1976,11 +1976,7 @@ static EDemanglerErr parse_function(SDemangler *sd, const char *sym, STypeCodeSt
 
 	if (*data_type.left) {
 		copy_string (&func_str, data_type.left, 0);
-		if (!strstr (data_type.left, "static")) {
-			copy_string (&func_str, ": ", 0);
-		} else {
-			copy_string (&func_str, " ", 0);
-		}
+		copy_string (&func_str, " ", 0);
 	}
 
 	if (storage_class_code_for_ret) {
