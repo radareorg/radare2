@@ -206,7 +206,10 @@ static char *decode_regis(char *reg_arg, st32 hash_code, ut32 ins_bits,
 		res = NULL;
 		break;
 	}
-
+	// only the optional dbl() wrappers may decode to nothing
+	if (!res && reg_type != 'd' && reg_type != ')') {
+		*err_code = -1;
+	}
 	return res;
 }
 
@@ -532,7 +535,12 @@ static char* get_token_decoded(st32 hash_code, const char *ins_token, ut32 ins_t
 		break;
 	case 35: res = ins_bits? strdup (" || far()") : NULL; break;
 	case 36: res = ins_bits? strdup (" || local()") : NULL; break;
-	case 37: res = get_opers (ins_bits); break;
+	case 37:
+		res = get_opers (ins_bits);
+		if (!res) {
+			*err_code = -1;
+		}
+		break;
 	case 38:
 		res = ins_bits? "lo" : "hi";
 		res = strdup (res);
@@ -549,6 +557,9 @@ static char* get_token_decoded(st32 hash_code, const char *ins_token, ut32 ins_t
 		if (reg_arg) {
 			if (*reg_arg == '!') {
 				res = get_reg_pair (ins_bits);
+				if (!res) {
+					*err_code = -1;
+				}
 				break;
 			} else if (!r_str_ncasecmp (reg_arg, "ST", 2)) {
 				res = get_status_regs_and_bits (reg_arg, ins_bits);

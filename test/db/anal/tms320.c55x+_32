@@ -127,3 +127,35 @@ ret
 ret
 EOF
 RUN
+
+NAME=C55x+ rejects unknown registers and conditions
+FILE=-
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.cpu=c55x+
+pi 1 @x:77eb7a
+pi 1 @x:7b3cef
+pi 1 @x:adfd87bb6d
+pi 1 @x:a43d750c
+pi 1 @x:0e97
+pi 1 @x:046d
+pi 1 @x:6a272f
+pi 1 @x:0380
+pi 1 @x:770030
+pi 1 @x:0464
+pi 1 @x:0381
+EOF
+EXPECT=<<EOF
+invalid
+invalid
+invalid
+invalid
+invalid
+invalid
+invalid
+invalid
+mov t0, ac0
+xcc ac4 >= #0
+swap ac0, ac2
+EOF
+RUN
