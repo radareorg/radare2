@@ -191,6 +191,22 @@ EXPECT_ERR=<<EOF
 WARN: Cannot find base address, flags will probably be misplaced
 EOF
 RUN
+
+NAME=idp names the shared deleting destructor after the scalar one
+FILE=malloc://0x40000
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx c3 @ 0x18054
+idp bins/pdb/ghidra_rust_pdb_bug.pdb
+afl~&0x00018054,scalar_deleting_dtor[0]
+EOF
+EXPECT=<<EOF
+0x00018054
+EOF
+EXPECT_ERR=<<EOF
+WARN: Cannot find base address, flags will probably be misplaced
+EOF
+RUN
 NAME=idp and baddr
 FILE=-
 CMDS=<<EOF
