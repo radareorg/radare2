@@ -1,6 +1,7 @@
 d "add t1, ac1" 740131
 d "add #0x1 << #0xe, ac1, ac1" c261410001
-d "amar *ar+2, *ar+4, *ar15" ea928014c03f
+d "amar *ar2+, *ar4+, *ar15" ea928014c03f
+d "amar *ar2-, *ar4-, *ar15" ea828004c03f
 d "amar *ar2+" 621200
 d "asub #0xb, xar1" ae21000b
 d "bclr st0_acov0, st0_55" 0a0a

@@ -64,10 +64,10 @@ char *get_AR_regs_class1(ut32 ins_bits) {
 	}
 	switch (op) {
 	case 0:
-		sprintf(res, "*ar-%ld", (long int)ins_bits & 0xF);
+		sprintf (res, "*ar%ld-", (long int)ins_bits & 0xF);
 		break;
 	case 1:
-		sprintf(res, "*ar+%ld", (long int)ins_bits & 0xF);
+		sprintf (res, "*ar%ld+", (long int)ins_bits & 0xF);
 		break;
 	case 2:
 		sprintf(res, "*ar%ld(t0)", (long int)ins_bits & 0xF);
