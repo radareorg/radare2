@@ -18,6 +18,20 @@ public: __thiscall DName::DName(class UnDecorator *, __int64)
 EOF
 RUN
 
+NAME=msvc x64 names without __ptr64
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc '?process@@YAXPEBD@Z'
+!rabin2 -D msvc '?getValue@Counter@@QEBAHXZ'
+!rabin2 -D msvc '??_GAnimal@@UEAAPEAXI@Z'
+EOF
+EXPECT=<<EOF
+void __cdecl process(char const *)
+public: int __cdecl Counter::getValue(void) const
+public: virtual void * __cdecl Animal::`scalar deleting dtor'(unsigned int)
+EOF
+RUN
+
 NAME=Namespaced / Class Methods
 FILE=-
 CMDS="!rabin2 -D msvc \"?DoWork@Worker@@QAEXH@Z\""
