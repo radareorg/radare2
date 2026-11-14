@@ -3215,7 +3215,7 @@ NAME=void bin mangling rust swift parsing test
 FILE=-
 CMDS="!rabin2 -D msvc ?var_voidptr@@3PEAXA"
 EXPECT=<<EOF
-void * var_voidptr
+void *var_voidptr
 EOF
 RUN
 
@@ -3343,7 +3343,7 @@ NAME=int bin mangling rust swift parsing test
 FILE=-
 CMDS="!rabin2 -D msvc ?var_int_ptr@@3PEAHA"
 EXPECT=<<EOF
-int * var_int_ptr
+int *var_int_ptr
 EOF
 RUN
 
@@ -3351,7 +3351,7 @@ NAME=const int bin mangling rust swift const parsing test
 FILE=-
 CMDS="!rabin2 -D msvc ?var_const_int_ptr@@3PEBHEB"
 EXPECT=<<EOF
-int const * var_const_int_ptr
+int const *var_const_int_ptr
 EOF
 RUN
 
@@ -3359,7 +3359,7 @@ NAME=int volatile bin mangling rust swift volatile const parsing test
 FILE=-
 CMDS="!rabin2 -D msvc ?var_volatile_int_ptr@@3PECHEC"
 EXPECT=<<EOF
-int volatile * var_volatile_int_ptr
+int volatile *var_volatile_int_ptr
 EOF
 RUN
 
@@ -3367,7 +3367,7 @@ NAME=int const volatile bin mangling rust swift const volatile parsing test
 FILE=-
 CMDS="!rabin2 -D msvc ?var_const_volatile_int_ptr@@3PEDHED"
 EXPECT=<<EOF
-int const volatile * var_const_volatile_int_ptr
+int const volatile *var_const_volatile_int_ptr
 EOF
 RUN
 
@@ -3375,7 +3375,7 @@ NAME=int bin mangling rust swift volatile parsing test
 FILE=-
 CMDS="!rabin2 -D msvc ?var_int_ptr_volatile@@3REAHEA"
 EXPECT=<<EOF
-int * volatile var_int_ptr_volatile
+int *volatile var_int_ptr_volatile
 EOF
 RUN
 
@@ -3383,7 +3383,7 @@ NAME=arr parsing test
 FILE=-
 CMDS="!rabin2 -D msvc ?arr@@3PAHA"
 EXPECT=<<EOF
-int * arr
+int *arr
 EOF
 RUN
 
@@ -3455,7 +3455,7 @@ NAME=ptr with namespace parsing test
 FILE=-
 CMDS="!rabin2 -D msvc ?var_ptr_with_namespace@TEST_NAMESPACE@@3PEAUSTRUCT_TEST@@EA"
 EXPECT=<<EOF
-struct STRUCT_TEST * TEST_NAMESPACE::var_ptr_with_namespace
+struct STRUCT_TEST *TEST_NAMESPACE::var_ptr_with_namespace
 EOF
 RUN
 
@@ -3707,7 +3707,7 @@ NAME=public: void __cdecl ABC::operator()<char>(char const * __ptr64 const)const
 FILE=-
 CMDS="!rabin2 -D msvc ??\$?RD@ABC@@QEBAXQEBD@Z"
 EXPECT=<<EOF
-public: void __cdecl ABC::operator()<char>(char const * const) const
+public: void __cdecl ABC::operator()<char>(char const *const) const
 EOF
 RUN
 
@@ -3759,11 +3759,11 @@ int __clrcall test(struct V %)
 EOF
 RUN
 
-NAME=int __clrcall test(struct V * %)
+NAME=int __clrcall test(struct V *%)
 FILE=-
 CMDS="!rabin2 -D msvc ?test@@YMHAE\$CAPEAUV@@@Z"
 EXPECT=<<EOF
-int __clrcall test(struct V * %)
+int __clrcall test(struct V *%)
 EOF
 RUN
 
@@ -3835,7 +3835,7 @@ NAME=void __cdecl wistd::invoke<void (__cdecl*)(void * __ptr64), void * __ptr64 
 FILE=-
 CMDS="!rabin2 -D msvc ??\$invoke@P6AXPEAX@ZAEAPEAX@wistd@@YAX\$\$REAP6AXPEAX@ZAEAPEAX@Z"
 EXPECT=<<EOF
-void __cdecl wistd::invoke<void (__cdecl *)(void *), void * &>(void (__cdecl *)(void *) && volatile, void * &)
+void __cdecl wistd::invoke<void (__cdecl *)(void *), void *&>(void (__cdecl *)(void *) && volatile, void *&)
 EOF
 RUN
 
@@ -3851,7 +3851,7 @@ NAME=public: void __cdecl cask::PoolingFwdFP16x2Shader::constructor(class cask::
 FILE=-
 CMDS="!rabin2 -D msvc ??0PoolingFwdFP16x2Shader@cask@@QEAA@PEBVKernelInfo@1@Q6A?AV?\$SafeEnum@UErrorEnum@cask@@@1@AEAUpoolingDescription@PoolingOperation@1@PEBXPEAXPEAUCUstream_st@@AEAW4cudaError@@@Z@Z"
 EXPECT=<<EOF
-public: __cdecl cask::PoolingFwdFP16x2Shader::PoolingFwdFP16x2Shader(class cask::KernelInfo const *, class cask::SafeEnum<struct cask::ErrorEnum> (__cdecl * const)(struct cask::PoolingOperation::poolingDescription &, void const *, void *, struct CUstream_st *, enum cudaError &))
+public: __cdecl cask::PoolingFwdFP16x2Shader::PoolingFwdFP16x2Shader(class cask::KernelInfo const *, class cask::SafeEnum<struct cask::ErrorEnum> (__cdecl *const)(struct cask::PoolingOperation::poolingDescription &, void const *, void *, struct CUstream_st *, enum cudaError &))
 EOF
 RUN
 
@@ -3918,7 +3918,7 @@ CMDS=<<EOF
 'iD msvc ?f@@YAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAPAHXZ
 EOF
 EXPECT=<<EOF
-int * * __cdecl f(void)
+int ** __cdecl f(void)
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Cannot demangle string

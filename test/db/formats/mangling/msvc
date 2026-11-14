@@ -317,10 +317,26 @@ CMDS=<<EOF
 !rabin2 -D msvc '?_Psave@?$_Facetptr@V?$codecvt@DDU_Mbstatet@@@std@@@std@@2PBVfacet@locale@2@B'
 EOF
 EXPECT=<<EOF
-int const * x
-int const * const x
-void __cdecl f(int * const &)
-void __cdecl f(int * volatile *)
-public: static class std::locale::facet const * std::_Facetptr<class std::codecvt<char, char, struct _Mbstatet>>::_Psave
+int const *x
+int const *const x
+void __cdecl f(int *const &)
+void __cdecl f(int *volatile *)
+public: static class std::locale::facet const *std::_Facetptr<class std::codecvt<char, char, struct _Mbstatet>>::_Psave
+EOF
+RUN
+
+NAME=msvc pointer spacing
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc '??$_Adl_verify_range@PAPADPAPAD@std@@YAXABQAPAD0@Z'
+!rabin2 -D msvc '?__construct_from_string_literal@__non_rtti_object@std@@SA?AV12@QBD@Z'
+!rabin2 -D msvc '?_Ptr_wclog@std@@3PAV?$basic_ostream@_WU?$char_traits@_W@std@@@1@A'
+!rabin2 -D msvc '?f@@YAXQ6AXXZ@Z'
+EOF
+EXPECT=<<EOF
+void __cdecl std::_Adl_verify_range<char **, char **>(char **const &, char **const &)
+public: static class std::__non_rtti_object __cdecl std::__non_rtti_object::__construct_from_string_literal(char const *const)
+class std::basic_ostream<wchar_t, struct std::char_traits<wchar_t>> *std::_Ptr_wclog
+void __cdecl f(void (__cdecl *const)(void))
 EOF
 RUN
