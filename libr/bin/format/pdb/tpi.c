@@ -138,6 +138,79 @@ static STypeInfo parse_simple_type(ut32 idx) {
 		simple_type->type = strdup ("wchar_t *");
 		break;
 
+	case eT_CHAR16:
+		simple_type->size = 2;
+		simple_type->type = strdup ("char16_t");
+		break;
+	case eT_PCHAR16:
+		simple_type->size = 2;
+		simple_type->type = strdup ("char16_t *");
+		break;
+	case eT_PFCHAR16:
+	case eT_PHCHAR16:
+	case eT_32PCHAR16:
+	case eT_32PFCHAR16:
+		simple_type->size = 4;
+		simple_type->type = strdup ("char16_t *");
+		break;
+	case eT_64PCHAR16:
+		simple_type->size = 8;
+		simple_type->type = strdup ("char16_t *");
+		break;
+
+	case eT_CHAR32:
+		simple_type->size = 4;
+		simple_type->type = strdup ("char32_t");
+		break;
+	case eT_PCHAR32:
+		simple_type->size = 2;
+		simple_type->type = strdup ("char32_t *");
+		break;
+	case eT_PFCHAR32:
+	case eT_PHCHAR32:
+	case eT_32PCHAR32:
+	case eT_32PFCHAR32:
+		simple_type->size = 4;
+		simple_type->type = strdup ("char32_t *");
+		break;
+	case eT_64PCHAR32:
+		simple_type->size = 8;
+		simple_type->type = strdup ("char32_t *");
+		break;
+
+	case eT_CHAR8:
+		simple_type->size = 1;
+		simple_type->type = strdup ("char8_t");
+		break;
+	case eT_PCHAR8:
+		simple_type->size = 2;
+		simple_type->type = strdup ("char8_t *");
+		break;
+	case eT_PFCHAR8:
+	case eT_PHCHAR8:
+	case eT_32PCHAR8:
+	case eT_32PFCHAR8:
+		simple_type->size = 4;
+		simple_type->type = strdup ("char8_t *");
+		break;
+	case eT_64PCHAR8:
+		simple_type->size = 8;
+		simple_type->type = strdup ("char8_t *");
+		break;
+
+	case eT_HRESULT:
+		simple_type->size = 4;
+		simple_type->type = strdup ("HRESULT");
+		break;
+	case eT_32PHRESULT:
+		simple_type->size = 4;
+		simple_type->type = strdup ("HRESULT *");
+		break;
+	case eT_64PHRESULT:
+		simple_type->size = 8;
+		simple_type->type = strdup ("HRESULT *");
+		break;
+
 	case eT_BYTE:
 		simple_type->size = 1;
 		simple_type->type = strdup ("char");
