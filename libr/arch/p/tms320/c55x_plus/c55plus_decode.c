@@ -101,7 +101,6 @@ static bool check_arg(ut32 ins_bits, int *err_code) {
 	} else if (ins_bits >= 32 && ins_bits <= 252) {
 		res = false;
 	} else {
-		R_LOG_ERROR ("Invalid arg: %u", ins_bits);
 		*err_code = -1;
 	}
 
@@ -237,8 +236,7 @@ static char *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_le
 	*reg_len_dec = 0;
 	// get pseudo instruction
 	ins = ins_str[1 + 2 + hash_code * 4];
-	if (!ins /*|| ins_str[4 * hash_code] == 0*/) {
-		R_LOG_ERROR ("Invalid instruction /hash %x", hash_code);
+	if (!ins) {
 		*err_code = -1;
 		return NULL;
 	}
