@@ -1201,6 +1201,13 @@ static inline void parse_type_modifier(SDemangler *sd, SStateInfo *state, STypeC
 		copy_string (&tmp_str, mod2.right, 0);
 	}
 
+	if (!*modifier_str) {
+		// the cv-qualified types like $$CBH have no pointer after the qualifiers
+		while (tmp_str.curr_pos > 0 && tmp_str.type_str[tmp_str.curr_pos - 1] == ' ') {
+			tmp_str.type_str[--tmp_str.curr_pos] = '\0';
+		}
+	}
+
 	if (r_str_startswith (state->buff_for_parsing, "__Z")) {
 		// TODO: no idea what this means
 		state->buff_for_parsing += 3;
