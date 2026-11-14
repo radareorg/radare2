@@ -72,3 +72,23 @@ EXPECT=<<EOF
 var int64_t var_8h_7998 @ rsp+0x10
 EOF
 RUN
+
+NAME=afvn relabels the var comments even without known accesses
+FILE=malloc://64
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 5589e5518b4508c9c3
+af
+afc thiscall
+afvr ecx arg1 int32_t
+"Ct arg1" @ 3
+"Ct int32_t arg_8h" @ 4
+afvn this arg1
+Ct. @ 3
+Ct. @ 4
+EOF
+EXPECT=<<EOF
+this
+int32_t arg_8h
+EOF
+RUN

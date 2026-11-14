@@ -790,6 +790,25 @@ R_API bool r_anal_var_rename(RAnal *anal, RAnalVar *var, const char *new_name) {
 			r_meta_set_string (anal, R_META_TYPE_VARTYPE, addr, new_name);
 		}
 	}
+	if (RVecAnalVarAccess_empty (&var->accesses)) {
+		// no accesses known (e.g. not restored by a project), look the comments up in the blocks
+		RAnalBlock **bbit;
+		R_VEC_FOREACH (&var->fcn->bbs, bbit) {
+			RAnalBlock *bb = *bbit;
+			RVecIntervalNodePtr *metas = r_meta_get_all_intersect (anal, bb->addr, bb->size, R_META_TYPE_VARTYPE);
+			if (!metas) {
+				continue;
+			}
+			RIntervalNode **it;
+			R_VEC_FOREACH (metas, it) {
+				RAnalMetaItem *mi = (*it)->data;
+				if (mi->str && !strcmp (mi->str, var->name)) {
+					r_meta_set_string (anal, R_META_TYPE_VARTYPE, (*it)->start, new_name);
+				}
+			}
+			RVecIntervalNodePtr_free (metas);
+		}
+	}
 	free (var->name);
 	var->name = nn;
 	r_anal_function_bump_dirty_epoch (var->fcn);
