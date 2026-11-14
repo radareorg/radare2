@@ -191,6 +191,84 @@ zmq::io_thread_t:
 EOF
 RUN
 
+NAME=avrr msvc twice
+FILE=bins/pe/libzmq-v100-mt-4_0_4.dll
+CMDS=<<EOF
+aar
+avrr
+acl~?
+avrr
+acl~?
+acl~io_thread_t
+acv zmq::io_thread_t
+EOF
+EXPECT=<<EOF
+69
+69
+zmq::io_thread_t: zmq::object_t, zmq::i_poll_events
+zmq::io_thread_t:
+     0 vtable 0x10064f34 @ +0x0 size:+0x44
+     1 vtable 0x10064f7c @ +0xc size:+0x10
+EOF
+RUN
+
+NAME=avrr msvc fills in a replayed acl* script
+FILE=bins/pe/cpp-msvc-x86.exe
+CMDS=<<EOF
+aar
+'ac InAbsentia
+'ac type_info
+'ac Album
+'acb InAbsentia Album 0
+'acv InAbsentia 0x4121a4 0
+'acm InAbsentia virtual_0 0x401088 0 0x4121a4
+'acm InAbsentia virtual_4 0x4010b3 4 0x4121a4
+'acv type_info 0x4121fc 0
+'acm type_info virtual_0 0x401136 0 0x4121fc
+'acv Album 0x412164 0
+'acm Album play 0x40105d 0 0x412164
+'acm Album virtual_4 0x4010a7 4 0x412164
+avrr
+acl*
+f~vtable.
+EOF
+EXPECT=<<EOF
+'ac InAbsentia
+'ac type_info
+'ac Album
+'acb InAbsentia Album 0
+'acv InAbsentia 0x4121a4 0 8
+'acm InAbsentia virtual_0 0x401088 0 0x4121a4
+'acm InAbsentia virtual_4 0x4010b3 4 0x4121a4
+'acv type_info 0x4121fc 0 4
+'acm type_info virtual_0 0x401136 0 0x4121fc
+'acv Album 0x412164 0 8
+'acm Album play 0x40105d 0 0x412164
+'acm Album virtual_4 0x4010a7 4 0x412164
+0x00412164 8 vtable.Album.0
+0x004121a4 8 vtable.InAbsentia.0
+0x004121fc 4 vtable.type_info.0
+EOF
+RUN
+
+NAME=avrr msvc after restoring the classes
+FILE=bins/pe/cpp-msvc-x86.exe
+CMDS=<<EOF
+aar
+ac Album
+acv Album 0x412164 0
+ac InAbsentia
+acv InAbsentia 0x4121a4 0
+avrr
+acl
+EOF
+EXPECT=<<EOF
+Album
+InAbsentia: Album
+type_info
+EOF
+RUN
+
 NAME=avraj msvc x86
 FILE=bins/pe/cpp-msvc-x86.exe
 CMDS=<<EOF
