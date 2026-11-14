@@ -3,5 +3,5 @@ url = https://github.com/capstone-engine/capstone.git
 revision = 1549a0e927a6e77c4f9e4ed07e872a3c0a1ee754
 patch_directory = capstone-v5
 directory = capstone-v5
-diff_files = capstone-v5/capstone-patches/fix-x86-16.patch, capstone-v5/capstone-patches/fix-arm-post-index.patch, capstone-v5/capstone-patches/fix-x86-att-detail.patch, capstone-v5/capstone-patches/fix-sh-unistd-collision.patch, capstone-v5/capstone-patches/fix-x86-rotate-mem-access.patch, capstone-v5/capstone-patches/fix-x86-unsigned-imm-size.patch
+diff_files = capstone-v5/capstone-patches/fix-x86-16.patch, capstone-v5/capstone-patches/fix-arm-post-index.patch, capstone-v5/capstone-patches/fix-x86-att-detail.patch, capstone-v5/capstone-patches/fix-sh-unistd-collision.patch, capstone-v5/capstone-patches/fix-x86-rotate-mem-access.patch, capstone-v5/capstone-patches/fix-x86-unsigned-imm-size.patch, capstone-v5/capstone-patches/fix-x86-comisd-mem-size.patch
 depth = 1

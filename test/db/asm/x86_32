@@ -740,7 +740,7 @@ d "movntpd xmmword [eax], xmm0" 660f2b00
 d "ucomiss xmm0, dword [eax]" 0f2e00
 d "comiss xmm0, dword [eax]" 0f2f00
 d "ucomisd xmm0, qword [eax]" 660f2e00
-d "comisd xmm0, xmmword [eax]" 660f2f00
+d "comisd xmm0, qword [eax]" 660f2f00
 d "psubb mm0, qword [eax]" 0ff800
 d "psubw mm0, qword [eax]" 0ff900
 d "psubd mm0, qword [eax]" 0ffa00
@@ -1073,7 +1073,7 @@ aB "cmpxchg16b [eax]" 67480f0c70
 aB "cmpxchg8b dword [eax]" 0fc7c0
 a "cmpxchg byte [eax], al" 0fb000
 a "cmpxchg dword [eax], eax" 0fb100
-aB "comisd xmm0, xmmword [eax]" 660f2f00
+aB "comisd xmm0, qword [eax]" 660f2f00
 aB "comiss xmm0, dword [eax]" 0f2f00
 ad "cpuid" 0fa2
 aB "crc32 eax, byte [eax]" f20f38f0
