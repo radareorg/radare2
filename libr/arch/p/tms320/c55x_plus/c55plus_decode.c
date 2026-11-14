@@ -687,6 +687,12 @@ static char* get_token_decoded(st32 hash_code, const char *ins_token, ut32 ins_t
 			return NULL;
 		}
 		break;
+	case 51:
+		if (reg_arg && *reg_arg == '1') {
+			ins_bits >>= 1;
+		}
+		res = strdup ((ins_bits & 1)? "tc2": "carry");
+		break;
 	case 52:
 		if (ins_bits == 0) {
 			break;

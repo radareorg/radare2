@@ -59,3 +59,11 @@ d "mov ac0.l, *ar2 || mov *(ar1+t0b) << t3, ac1" 395102a0b411414033
 d "add *abs16(#0x1234) << #16, ac0, ac4" 90a164001234
 d "add *(#0x123456) << #16, ac0, ac4" 90e16400123456
 d ".byte 0xff" ff
+d "ror carry, ac17, carry, ac24" a8189100
+d "ror carry, ac17, tc2, ac24" a8189101
+d "ror tc2, ac17, carry, ac24" a8189102
+d "ror tc2, ac17, tc2, ac24" a8189103
+d "rol carry, ac17, carry, ac24" a8181100
+d "rol tc2, ac17, carry, ac24" a8181101
+d "rol carry, ac17, tc2, ac24" a8181102
+d "rol tc2, ac17, tc2, ac24" a8181103
