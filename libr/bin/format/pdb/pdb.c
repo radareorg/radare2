@@ -1260,6 +1260,7 @@ static char *print_types(const RBinPdb *pdb, PJ *pj, const int mode) {
 
 typedef struct {
 	RStrBuf sb;
+	RStrBuf thunks;
 	RStrBuf fcns;
 	PJ *pj;
 	int format;
@@ -1398,6 +1399,7 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 		return NULL;
 	}
 	r_strbuf_init (&out.sb);
+	r_strbuf_init (&out.thunks);
 	r_strbuf_init (&out.fcns);
 	if (format == 'j') {
 		pj_ka (pj, "gvars");
@@ -1451,7 +1453,8 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	}
 	// the jmp thunks of incremental linking to the functions above; the ones only reached
 	// through data, like a pointer to member function, are not found by the analysis.
-	// analyzed after their targets so the lone jmp is named j.<target>
+	// analyzed before every other function: the function flag of the target ends the lone
+	// jmp, named j.<target>, and a function jumping into one, like a vtordisp thunk, ends there
 	if (format == 'r' || format == '*' || format == 1) {
 		r_list_foreach (pdb->pdb_streams2, it, tmp) {
 			if (tmp->type != ePDB_STREAM_MODULE || !tmp->stream) {
@@ -1468,7 +1471,7 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 				}
 				if (set_u_contains (out.fcn_addrs, target) && !set_u_contains (out.fcn_addrs, thunk)) {
 					set_u_add (out.fcn_addrs, thunk);
-					r_strbuf_appendf (&out.fcns, "'@0x%" PFMT64x "'af\n", thunk);
+					r_strbuf_appendf (&out.thunks, "'@0x%" PFMT64x "'af\n", thunk);
 				}
 			}
 		}
@@ -1501,6 +1504,7 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	if (format == 'j') {
 		pj_end (pj);
 		r_strbuf_fini (&out.sb);
+		r_strbuf_fini (&out.thunks);
 		r_strbuf_fini (&out.fcns);
 		return NULL;
 	}
@@ -1508,7 +1512,9 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 		r_strbuf_append (&out.sb, "fs-\n");
 	}
 	// functions are analyzed after every flag is set, so jumps into them are seen as tail calls
+	r_strbuf_append (&out.sb, r_strbuf_get (&out.thunks));
 	r_strbuf_append (&out.sb, r_strbuf_get (&out.fcns));
+	r_strbuf_fini (&out.thunks);
 	r_strbuf_fini (&out.fcns);
 	return r_strbuf_drain_nofree (&out.sb);
 }
