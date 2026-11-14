@@ -726,25 +726,46 @@ RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *cont
 	return td;
 }
 
-static char *unique_class_name(RAnal *anal, const char *original_name) {
-	if (!r_anal_class_exists (anal, original_name)) {
-		return strdup (original_name);
+// whether the class holds a vtable of the type descriptor (recovered by a previous avrr)
+static bool class_has_td_vtable(RRTTIMSVCAnalContext *context, const char *class_name, RecoveryTypeDescriptor *td) {
+	RVecAnalVTable *vtables = r_anal_class_vtable_get_all (context->vt_context->anal, class_name);
+	if (!vtables) {
+		return false;
 	}
+	bool found = false;
+	RAnalVTable *vtable;
+	R_VEC_FOREACH (vtables, vtable) {
+		RecoveryCompleteObjectLocator **col_it;
+		R_VEC_FOREACH (&context->complete_object_locators, col_it) {
+			RecoveryCompleteObjectLocator *col = *col_it;
+			if (col->td == td && col->vtable && col->vtable->saddr == vtable->addr) {
+				found = true;
+				break;
+			}
+		}
+		if (found) {
+			break;
+		}
+	}
+	RVecAnalVTable_free (vtables);
+	return found;
+}
 
-	char *name = NULL;
-	if (anal->verbose) {
-		R_LOG_WARN ("class name %s already taken!", original_name);
-	}
+// the class already recovered for the type descriptor, or a new unique class name
+static char *recovery_class_name(RRTTIMSVCAnalContext *context, const char *original_name, RecoveryTypeDescriptor *td) {
+	RAnal *anal = context->vt_context->anal;
+	char *name = strdup (original_name);
 	int i = 1;
-
-	do {
+	while (name && r_anal_class_exists (anal, name)) {
+		if (class_has_td_vtable (context, name, td)) {
+			return name;
+		}
+		if (anal->verbose) {
+			R_LOG_WARN ("class name %s already taken!", name);
+		}
 		free (name);
 		name = r_str_newf ("%s.%d", original_name, i++);
-		if (!name) {
-			return NULL;
-		}
-	} while (r_anal_class_exists (anal, name));
-
+	}
 	return name;
 }
 
@@ -847,7 +868,7 @@ static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *
 	}
 
 	char *tmp = name;
-	name = unique_class_name (anal, name);
+	name = recovery_class_name (context, name, col->td);
 	free (tmp);
 	if (!name) {
 		return NULL;

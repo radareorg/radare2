@@ -191,6 +191,45 @@ zmq::io_thread_t:
 EOF
 RUN
 
+NAME=avrr msvc twice
+FILE=bins/pe/libzmq-v100-mt-4_0_4.dll
+CMDS=<<EOF
+aar
+avrr
+acl~?
+avrr
+acl~?
+acl~io_thread_t
+acv zmq::io_thread_t
+EOF
+EXPECT=<<EOF
+69
+69
+zmq::io_thread_t: zmq::object_t, zmq::i_poll_events
+zmq::io_thread_t:
+     0 vtable 0x10064f34 @ +0x0 size:+0x44
+     1 vtable 0x10064f7c @ +0xc size:+0x10
+EOF
+RUN
+
+NAME=avrr msvc after restoring the classes
+FILE=bins/pe/cpp-msvc-x86.exe
+CMDS=<<EOF
+aar
+ac Album
+acv Album 0x412164 0
+ac InAbsentia
+acv InAbsentia 0x4121a4 0
+avrr
+acl
+EOF
+EXPECT=<<EOF
+Album
+InAbsentia: Album
+type_info
+EOF
+RUN
+
 NAME=avraj msvc x86
 FILE=bins/pe/cpp-msvc-x86.exe
 CMDS=<<EOF
