@@ -56,7 +56,7 @@ CMDS=<<EOF
 EOF
 EXPECT=<<EOF
 public: class Vector2D __thiscall Vector2D::operator+(class Vector2D const &) const
-public: const class Y __thiscall X::f(void)
+public: class Y const __thiscall X::f(void)
 EOF
 RUN
 
