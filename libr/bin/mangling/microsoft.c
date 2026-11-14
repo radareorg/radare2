@@ -2075,6 +2075,9 @@ static EDemanglerErr parse_microsoft_mangled_name(SDemangler *sd, const char *sy
 	curr_pos = r_str_skip_prefix (curr_pos, "_");
 
 	if (isdigit ((unsigned char)*curr_pos)) {
+		// 0, 1 and 2 are the private, protected and public static data members
+		static const char *const access[] = { "private: static ", "protected: static ", "public: static " };
+		const char *member_access = (*curr_pos <= '2')? access[*curr_pos - '0']: "";
 		err = parse_data_type (sd, curr_pos, &data_type, &len);
 		if (err != eDemanglerErrOK) {
 			goto parse_microsoft_mangled_name_err;
@@ -2082,7 +2085,7 @@ static EDemanglerErr parse_microsoft_mangled_name(SDemangler *sd, const char *sy
 		curr_pos += len;
 		*demangled_name = NULL;
 		if (data_type.left) {
-			*demangled_name = r_str_newf ("%s ", data_type.left);
+			*demangled_name = r_str_newf ("%s%s ", member_access, data_type.left);
 		}
 		*demangled_name = r_str_append (*demangled_name, type_code_str.type_str);
 		*demangled_name = r_str_append (*demangled_name, data_type.right);
