@@ -652,7 +652,7 @@ static char* get_token_decoded(st32 hash_code, const char *ins_token, ut32 ins_t
 				aux = strcat_dup ("port(", aux, 2);
 			} else if (
 			((magic_value & 0x40) && strchr (reg_arg, 'r')) ||
-			((magic_value & 0x80000000) && strchr (reg_arg, 'w'))) {
+			((magic_value & 0x80) && strchr (reg_arg, 'w'))) {
 
 				aux = strcat_dup (aux, ")", 1);
 				aux = strcat_dup ("volatile(", aux, 2);
@@ -746,11 +746,11 @@ static char* get_token_decoded(st32 hash_code, const char *ins_token, ut32 ins_t
 			  ) {
 
 				aux = strcat_dup (aux, ")", 1);
-				aux = strcat_dup ("port (", aux, 2);
+				aux = strcat_dup ("port(", aux, 2);
 			} else if (
 			((magic_value & 0x40) && *ins_token == 'X' && strchr (reg_arg, 'r'))
 			    ||
-			   ((magic_value & 0x80000000) && *ins_token == 'Y' && strchr (reg_arg, 'w'))
+			   ((magic_value & 0x80) && *ins_token == 'Y' && strchr (reg_arg, 'w'))
 
 			) {
 				aux = strcat_dup (aux, ")", 1);
