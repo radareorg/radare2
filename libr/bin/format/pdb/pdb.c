@@ -1255,6 +1255,7 @@ typedef struct {
 	PJ *pj;
 	int format;
 	HtSU *names;
+	SetU *fcn_addrs;
 	bool function_space;
 } GVarsOutput;
 
@@ -1281,7 +1282,7 @@ static void print_gvar(GVarsOutput *out, ut64 addr, ut32 symtype, ut32 size, con
 		char *filtered_name = r_name_filter_dup (r_str_trim_head_ro (name));
 		if (R_STR_ISEMPTY (filtered_name)) {
 			free (filtered_name);
-			break;
+			return;
 		}
 		bool found = false;
 		ht_su_find (out->names, filtered_name, &found);
@@ -1309,7 +1310,9 @@ static void print_gvar(GVarsOutput *out, ut64 addr, ut32 symtype, ut32 size, con
 			free (realname);
 		}
 		if (symtype & PDB_PUBSYM_FUNCTION) {
-			r_strbuf_appendf (&out->fcns, "'@0x%" PFMT64x "'af\n", addr);
+			if (!set_u_contains (out->fcn_addrs, addr)) {
+				r_strbuf_appendf (&out->fcns, "'@0x%" PFMT64x "'af\n", addr);
+			}
 			// x86-32 MSVC member functions: this in ecx and the callee cleans the stack
 			if (strstr (name, "__thiscall")) {
 				r_strbuf_appendf (&out->fcns, "'@0x%" PFMT64x "'afc thiscall\n", addr);
@@ -1324,6 +1327,23 @@ static void print_gvar(GVarsOutput *out, ut64 addr, ut32 symtype, ut32 size, con
 		r_strbuf_appendf (&out->sb, "0x%08" PFMT64x "  %d  %s  %s\n", addr, symtype, sname, name);
 		break;
 	}
+	if (symtype & PDB_PUBSYM_FUNCTION) {
+		set_u_add (out->fcn_addrs, addr);
+	}
+}
+
+static bool pdb_symbol_address(const SIMAGE_SECTION_HEADER *section, SOmapStream *omap, ut32 offset, ut64 base, ut64 *address) {
+	ut32 rva;
+	if (!section || r_add_overflow_ut32 (section->virtual_address, offset, &rva)) {
+		return false;
+	}
+	if (omap) {
+		rva = (ut32)omap_remap (omap, rva);
+		if (!rva || rva == UT32_MAX) {
+			return false;
+		}
+	}
+	return !r_add_overflow_ut64 (base, rva, address);
 }
 
 static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
@@ -1362,11 +1382,10 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	if (!pe_stream) {
 		return NULL;
 	}
-	GVarsOutput out = { .pj = pj, .format = format, .names = ht_su_new0 () };
-	SetU *fcn_addrs = set_u_new ();
-	if (!out.names || !fcn_addrs) {
+	GVarsOutput out = { .pj = pj, .format = format, .names = ht_su_new0 (), .fcn_addrs = set_u_new () };
+	if (!out.names || !out.fcn_addrs) {
 		ht_su_free (out.names);
-		set_u_free (fcn_addrs);
+		set_u_free (out.fcn_addrs);
 		return NULL;
 	}
 	r_strbuf_init (&out.sb);
@@ -1379,25 +1398,22 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 		r_strbuf_append (&out.sb, "fs+symbols\n");
 	}
 	char sname[PDB_SIZEOF_SECTION_NAME + 1];
+	SOmapStream *omap_stream = omap? omap->stream: NULL;
 	if (gsym_data_stream) {
 		r_list_foreach (gsym_data_stream->globals_list, it, gdata) {
 			if (R_STR_ISEMPTY (gdata->name.name)) {
 				continue;
 			}
 			sctn_header = pdb_pe_section (pe_stream, gdata->segment - 1);
-			if (!sctn_header) {
-				R_LOG_DEBUG ("Skipping %s, segment %d does not exist", gdata->name.name, (gdata->segment - 1));
+			ut64 addr;
+			if (!pdb_symbol_address (sctn_header, omap_stream, gdata->offset, img_base, &addr)) {
 				continue;
 			}
 			r_str_ncpy (sname, sctn_header->name, sizeof (sname));
 			r_str_sanitize (sname);
 			name = r_bin_demangle_msvc (gdata->name.name);
 			name = (name)? name: strdup (gdata->name.name);
-			ut64 addr = img_base + omap_remap ((omap)? (omap->stream): 0, gdata->offset + sctn_header->virtual_address);
 			print_gvar (&out, addr, gdata->symtype, 0, sname, name, false);
-			if (gdata->symtype & PDB_PUBSYM_FUNCTION) {
-				set_u_add (fcn_addrs, addr);
-			}
 			free (name);
 		}
 	}
@@ -1411,20 +1427,20 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 		RListIter *iter;
 		r_list_foreach (module->procs, iter, proc) {
 			sctn_header = pdb_pe_section (pe_stream, proc->segment - 1);
-			if (!sctn_header || R_STR_ISEMPTY (proc->name)) {
+			ut64 addr;
+			if (R_STR_ISEMPTY (proc->name)
+					|| !pdb_symbol_address (sctn_header, omap_stream, proc->offset, img_base, &addr)) {
 				continue;
 			}
-			ut64 addr = img_base + omap_remap ((omap)? (omap->stream): 0, proc->offset + sctn_header->virtual_address);
-			if (set_u_contains (fcn_addrs, addr)) {
+			if (set_u_contains (out.fcn_addrs, addr)) {
 				continue;
 			}
-			set_u_add (fcn_addrs, addr);
 			r_str_ncpy (sname, sctn_header->name, sizeof (sname));
 			r_str_sanitize (sname);
 			print_gvar (&out, addr, PDB_PUBSYM_FUNCTION, proc->size, sname, proc->name, true);
 		}
 	}
-	set_u_free (fcn_addrs);
+	set_u_free (out.fcn_addrs);
 	ht_su_free (out.names);
 	if (format == 'j') {
 		pj_end (pj);

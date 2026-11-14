@@ -581,3 +581,38 @@ WARN: Cannot find base address, flags will probably be misplaced
 WARN: Cannot find base address, flags will probably be misplaced
 EOF
 RUN
+
+NAME=idpi script analyzes each aliased PDB address once
+FILE=--
+TIMEOUT=10
+CMDS=<<END
+e bin.baddr=0x400000
+idpi* bins/pdb/omap-last-entry.pdb~af$
+END
+EXPECT=<<END
+'@0x406000'af
+END
+RUN
+
+NAME=PDB public and module addresses skip invalid OMAP results and preserve aliases
+FILE=--
+CMDS=<<END
+e bin.baddr=0x400000
+idpi* bins/pdb/omap-symbol-addresses.pdb~f pdb.
+idpi* bins/pdb/omap-symbol-addresses.pdb~af$
+e bin.baddr=0xfffffffffffff000
+idpi bins/pdb/omap-symbol-addresses.pdb~?
+END
+EXPECT=<<END
+'@0x402000'f pdb.valid
+'@0x402000'f pdb.alias
+'@0x80400000'f pdb.high
+'@0x403000'f pdb.module_valid 6
+'@0x80401000'f pdb.module_high 6
+'@0x402000'af
+'@0x80400000'af
+'@0x403000'af
+'@0x80401000'af
+0
+END
+RUN
