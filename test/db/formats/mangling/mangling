@@ -3215,7 +3215,7 @@ NAME=void bin mangling rust swift parsing test
 FILE=-
 CMDS="!rabin2 -D msvc ?var_voidptr@@3PEAXA"
 EXPECT=<<EOF
-void * __ptr64 var_voidptr
+void * var_voidptr
 EOF
 RUN
 
@@ -3343,7 +3343,7 @@ NAME=int bin mangling rust swift parsing test
 FILE=-
 CMDS="!rabin2 -D msvc ?var_int_ptr@@3PEAHA"
 EXPECT=<<EOF
-int * __ptr64 var_int_ptr
+int * var_int_ptr
 EOF
 RUN
 
@@ -3351,7 +3351,7 @@ NAME=const int bin mangling rust swift const parsing test
 FILE=-
 CMDS="!rabin2 -D msvc ?var_const_int_ptr@@3PEBHEB"
 EXPECT=<<EOF
-int const * __ptr64 const __ptr64 var_const_int_ptr
+int const * const var_const_int_ptr
 EOF
 RUN
 
@@ -3359,7 +3359,7 @@ NAME=int volatile bin mangling rust swift volatile const parsing test
 FILE=-
 CMDS="!rabin2 -D msvc ?var_volatile_int_ptr@@3PECHEC"
 EXPECT=<<EOF
-int volatile * __ptr64 volatile __ptr64 var_volatile_int_ptr
+int volatile * volatile var_volatile_int_ptr
 EOF
 RUN
 
@@ -3367,7 +3367,7 @@ NAME=int const volatile bin mangling rust swift const volatile parsing test
 FILE=-
 CMDS="!rabin2 -D msvc ?var_const_volatile_int_ptr@@3PEDHED"
 EXPECT=<<EOF
-int const volatile * __ptr64 const volatile __ptr64 var_const_volatile_int_ptr
+int const volatile * const volatile var_const_volatile_int_ptr
 EOF
 RUN
 
@@ -3375,7 +3375,7 @@ NAME=int bin mangling rust swift volatile parsing test
 FILE=-
 CMDS="!rabin2 -D msvc ?var_int_ptr_volatile@@3REAHEA"
 EXPECT=<<EOF
-int * volatile __ptr64 __ptr64 var_int_ptr_volatile
+int * volatile var_int_ptr_volatile
 EOF
 RUN
 
@@ -3455,7 +3455,7 @@ NAME=ptr with namespace parsing test
 FILE=-
 CMDS="!rabin2 -D msvc ?var_ptr_with_namespace@TEST_NAMESPACE@@3PEAUSTRUCT_TEST@@EA"
 EXPECT=<<EOF
-struct STRUCT_TEST * __ptr64 __ptr64 TEST_NAMESPACE::var_ptr_with_namespace
+struct STRUCT_TEST * TEST_NAMESPACE::var_ptr_with_namespace
 EOF
 RUN
 
@@ -3463,7 +3463,7 @@ NAME=copy constructor demangler test
 FILE=-
 CMDS="!rabin2 -D msvc ??0TEST_CLASS@@QEAA@AEBV0@@Z"
 EXPECT=<<EOF
-public: __cdecl TEST_CLASS::TEST_CLASS(class TEST_CLASS const & __ptr64) __ptr64
+public: __cdecl TEST_CLASS::TEST_CLASS(class TEST_CLASS const &)
 EOF
 RUN
 
@@ -3471,7 +3471,7 @@ NAME=constructor demangler test
 FILE=-
 CMDS="!rabin2 -D msvc ??0TEST_CLASS@@QEAA@H@Z"
 EXPECT=<<EOF
-public: __cdecl TEST_CLASS::TEST_CLASS(int) __ptr64
+public: __cdecl TEST_CLASS::TEST_CLASS(int)
 EOF
 RUN
 
@@ -3479,7 +3479,7 @@ NAME=destructor demangler test
 FILE=-
 CMDS="!rabin2 -D msvc ??1TEST_CLASS@@QEAA@XZ"
 EXPECT=<<EOF
-public: __cdecl TEST_CLASS::~TEST_CLASS(void) __ptr64
+public: __cdecl TEST_CLASS::~TEST_CLASS(void)
 EOF
 RUN
 
@@ -3487,7 +3487,7 @@ NAME=operator= demangler test
 FILE=-
 CMDS="!rabin2 -D msvc ??4TEST_CLASS@@QEAAAEAV0@AEBV0@@Z "
 EXPECT=<<EOF
-public: class TEST_CLASS & __ptr64 __cdecl TEST_CLASS::operator=(class TEST_CLASS const & __ptr64) __ptr64
+public: class TEST_CLASS & __cdecl TEST_CLASS::operator=(class TEST_CLASS const &)
 EOF
 RUN
 
@@ -3495,7 +3495,7 @@ NAME=operator+ demangler test
 FILE=-
 CMDS="!rabin2 -D msvc ??HTEST_CLASS@@QEAA?AV0@AEBV0@@Z "
 EXPECT=<<EOF
-public: class TEST_CLASS __cdecl TEST_CLASS::operator+(class TEST_CLASS const & __ptr64) __ptr64
+public: class TEST_CLASS __cdecl TEST_CLASS::operator+(class TEST_CLASS const &)
 EOF
 RUN
 
@@ -3503,7 +3503,7 @@ NAME=public function demangler test
 FILE=-
 CMDS="!rabin2 -D msvc ?public_func@TEST_CLASS@@QEAAHXZ"
 EXPECT=<<EOF
-public: int __cdecl TEST_CLASS::public_func(void) __ptr64
+public: int __cdecl TEST_CLASS::public_func(void)
 EOF
 RUN
 
@@ -3519,7 +3519,7 @@ NAME=private function demangler test
 FILE=-
 CMDS="!rabin2 -D msvc ?private_func@TEST_CLASS@@AEAAXXZ"
 EXPECT=<<EOF
-private: void __cdecl TEST_CLASS::private_func(void) __ptr64
+private: void __cdecl TEST_CLASS::private_func(void)
 EOF
 RUN
 
@@ -3527,7 +3527,7 @@ NAME=Abbreviation Of Repetead Types demangler test
 FILE=-
 CMDS="!rabin2 -D msvc ?AbbreviationOfRepeteadTypes@@YA_NPEAHHH0_N1PEA_N@Z"
 EXPECT=<<EOF
-bool __cdecl AbbreviationOfRepeteadTypes(int * __ptr64, int, int, int * __ptr64, bool, bool, bool * __ptr64)
+bool __cdecl AbbreviationOfRepeteadTypes(int *, int, int, int *, bool, bool, bool *)
 EOF
 RUN
 
@@ -3535,7 +3535,7 @@ NAME=Abbreviation Of Repetead Names demangler test
 FILE=-
 CMDS="!rabin2 -D msvc ?AbbreviationOfRepeteadNames@@YAPEAVTEST_CLASS@@PEAV1@00AEAV1@@Z"
 EXPECT=<<EOF
-class TEST_CLASS * __ptr64 __cdecl AbbreviationOfRepeteadNames(class TEST_CLASS * __ptr64, class TEST_CLASS * __ptr64, class TEST_CLASS * __ptr64, class TEST_CLASS & __ptr64)
+class TEST_CLASS * __cdecl AbbreviationOfRepeteadNames(class TEST_CLASS *, class TEST_CLASS *, class TEST_CLASS *, class TEST_CLASS &)
 EOF
 RUN
 
@@ -3575,7 +3575,7 @@ NAME=Function pointer with abbreviation of types demangler test 2
 FILE=-
 CMDS="!rabin2 -D msvc ?Fxyxy_i_x64@@YAHP6AHPEAH0H@ZP6AH0H0@ZP6AHH@ZP6AHF@Z@Z"
 EXPECT=<<EOF
-int __cdecl Fxyxy_i_x64(int (__cdecl *)(int * __ptr64, int * __ptr64, int), int (__cdecl *)(int * __ptr64, int, int * __ptr64), int (__cdecl *)(int), int (__cdecl *)(short))
+int __cdecl Fxyxy_i_x64(int (__cdecl *)(int *, int *, int), int (__cdecl *)(int *, int, int *), int (__cdecl *)(int), int (__cdecl *)(short))
 EOF
 RUN
 
@@ -3707,15 +3707,15 @@ NAME=public: void __cdecl ABC::operator()<char>(char const * __ptr64 const)const
 FILE=-
 CMDS="!rabin2 -D msvc ??\$?RD@ABC@@QEBAXQEBD@Z"
 EXPECT=<<EOF
-public: void __cdecl ABC::operator()<char>(char const * const __ptr64) const __ptr64
+public: void __cdecl ABC::operator()<char>(char const * const) const
 EOF
 RUN
 
-NAME=public: bool __cdecl ABC<char, struct DEF>::operator bool(void) const __ptr64
+NAME=public: bool __cdecl ABC<char, struct DEF>::operator bool(void) const
 FILE=-
 CMDS="!rabin2 -D msvc ??B?\$ABC@DUDEF@@@@QEBA_NXZ"
 EXPECT=<<EOF
-public: bool __cdecl ABC<char, struct DEF>::operator bool(void) const __ptr64
+public: bool __cdecl ABC<char, struct DEF>::operator bool(void) const
 EOF
 RUN
 
@@ -3727,59 +3727,59 @@ class Class::Template<struct UnnamedStruct, &struct StructType1 const StructName
 EOF
 RUN
 
-NAME=public: __cdecl Platform::Delegate::Delegate(void) __ptr64
+NAME=public: __cdecl Platform::Delegate::Delegate(void)
 FILE=-
 CMDS="!rabin2 -D msvc ??0Delegate@Platform@@QE\$AAA@XZ"
 EXPECT=<<EOF
-public: __cdecl Platform::Delegate::Delegate(void) __ptr64
+public: __cdecl Platform::Delegate::Delegate(void)
 EOF
 RUN
 
-NAME=class Platform::String ^ __ptr64 __cdecl Platform::Delegate(bool, class Platform::Object ^ __ptr64)
+NAME=class Platform::String ^ __cdecl Platform::Delegate(bool, class Platform::Object ^)
 FILE=-
 CMDS="!rabin2 -D msvc ?Delegate@Platform@@YAPE\$AAVString@Platform@@_NPE\$AAVObject@3@@Z"
 EXPECT=<<EOF
-class Platform::String ^ __ptr64 __cdecl Platform::Delegate(bool, class Platform::Object ^ __ptr64)
+class Platform::String ^ __cdecl Platform::Delegate(bool, class Platform::Object ^)
 EOF
 RUN
 
-NAME=int __clrcall test(struct V ^ __ptr64)
+NAME=int __clrcall test(struct V ^)
 FILE=-
 CMDS="!rabin2 -D msvc ?test@@\$\$FYMHPE\$AA__ZUV@@@Z"
 EXPECT=<<EOF
-int __clrcall test(struct V ^ __ptr64)
+int __clrcall test(struct V ^)
 EOF
 RUN
 
-NAME=int __clrcall test(struct V % __ptr64)
+NAME=int __clrcall test(struct V %)
 FILE=-
 CMDS="!rabin2 -D msvc ?test@@\$\$FYMHPE\$CA__ZUV@@@Z"
 EXPECT=<<EOF
-int __clrcall test(struct V % __ptr64)
+int __clrcall test(struct V %)
 EOF
 RUN
 
-NAME=int __clrcall test(struct V * __ptr64 % __ptr64)
+NAME=int __clrcall test(struct V * %)
 FILE=-
 CMDS="!rabin2 -D msvc ?test@@YMHAE\$CAPEAUV@@@Z"
 EXPECT=<<EOF
-int __clrcall test(struct V * __ptr64 % __ptr64)
+int __clrcall test(struct V * %)
 EOF
 RUN
 
-NAME=[thunk]: public: virtual unsigned long __cdecl NetworkUX::View::__CFEWiFiWCNComboActivationFactory::[Platform::Object]::__abi_Release`adjustor{8}'(void) __ptr64
+NAME=[thunk]: public: virtual unsigned long __cdecl NetworkUX::View::__CFEWiFiWCNComboActivationFactory::[Platform::Object]::__abi_Release`adjustor{8}'(void)
 FILE=-
 CMDS="!rabin2 -D msvc ?__abi_Release@?QObject@Platform@@__CFEWiFiWCNComboActivationFactory@View@NetworkUX@@W7E\$AAAKXZ"
 EXPECT=<<EOF
-[thunk]: public: virtual unsigned long __cdecl NetworkUX::View::__CFEWiFiWCNComboActivationFactory::[Platform::Object]::__abi_Release`adjustor{8}'(void) __ptr64
+[thunk]: public: virtual unsigned long __cdecl NetworkUX::View::__CFEWiFiWCNComboActivationFactory::[Platform::Object]::__abi_Release`adjustor{8}'(void)
 EOF
 RUN
 
-NAME=public: __cdecl std::_Func_class<void, enum Windows::System::LaunchUriStatus, struct std::_Nil, struct std::_Nil>::~_Func_class<void, enum Windows::System::LaunchUriStatus, struct std::_Nil, struct std::_Nil>(void) __ptr64
+NAME=public: __cdecl std::_Func_class<void, enum Windows::System::LaunchUriStatus, struct std::_Nil, struct std::_Nil>::~_Func_class<void, enum Windows::System::LaunchUriStatus, struct std::_Nil, struct std::_Nil>(void)
 FILE=-
 CMDS="!rabin2 -D msvc ??1?\$_Func_class@XW4LaunchUriStatus@System@Windows@@U_Nil@std@@U45@@std@@QEAA@XZ"
 EXPECT=<<EOF
-public: __cdecl std::_Func_class<void, enum Windows::System::LaunchUriStatus, struct std::_Nil, struct std::_Nil>::~_Func_class<void, enum Windows::System::LaunchUriStatus, struct std::_Nil, struct std::_Nil>(void) __ptr64
+public: __cdecl std::_Func_class<void, enum Windows::System::LaunchUriStatus, struct std::_Nil, struct std::_Nil>::~_Func_class<void, enum Windows::System::LaunchUriStatus, struct std::_Nil, struct std::_Nil>(void)
 EOF
 RUN
 
@@ -3819,7 +3819,7 @@ NAME=public: bool __cdecl wil::unique_any_t<class wil::semaphore_t<class wil::de
 FILE=-
 CMDS="!rabin2 -D msvc ??B?\$unique_any_t@V?\$semaphore_t@V?\$unique_storage@U?\$resource_policy@PEAXP6AXPEAX@Z\$1?CloseHandle@details@wil@@YAX0@ZU?\$integral_constant@_K\$0A@@wistd@@PEAXPEAX\$0A@\$\$T@details@wil@@@details@wil@@Uerr_returncode_policy@3@@wil@@@wil@@QEBA_NXZ"
 EXPECT=<<EOF
-public: bool __cdecl wil::unique_any_t<class wil::semaphore_t<class wil::details::unique_storage<struct wil::details::resource_policy<void * __ptr64, void (__cdecl *)(void * __ptr64), &void __cdecl wil::details::CloseHandle(void * __ptr64), struct wistd::integral_constant<unsigned __int64, 0>, void * __ptr64, void * __ptr64, 0, std::nullptr_t>>, struct wil::err_returncode_policy>>::operator bool(void) const __ptr64
+public: bool __cdecl wil::unique_any_t<class wil::semaphore_t<class wil::details::unique_storage<struct wil::details::resource_policy<void *, void (__cdecl *)(void *), &void __cdecl wil::details::CloseHandle(void *), struct wistd::integral_constant<unsigned __int64, 0>, void *, void *, 0, std::nullptr_t>>, struct wil::err_returncode_policy>>::operator bool(void) const
 EOF
 RUN
 
@@ -3827,7 +3827,7 @@ NAME=public: virtual void * __ptr64 __cdecl wistd::__function::__func<class lamb
 FILE=-
 CMDS="!rabin2 -D msvc ??_G?\$__func@Vlambda@@\$\$A6AJPEBVExtensionRegistration@Details@PlatformExtensions@Internal@Windows@@_NPEA_N@Z@__function@wistd@@UEAAPEAXI@Z"
 EXPECT=<<EOF
-public: virtual void * __ptr64 __cdecl wistd::__function::__func<class lambda, long (__cdecl *)(class Windows::Internal::PlatformExtensions::Details::ExtensionRegistration const * __ptr64, bool, bool * __ptr64)>::`scalar deleting dtor'(unsigned int) __ptr64
+public: virtual void * __cdecl wistd::__function::__func<class lambda, long (__cdecl *)(class Windows::Internal::PlatformExtensions::Details::ExtensionRegistration const *, bool, bool *)>::`scalar deleting dtor'(unsigned int)
 EOF
 RUN
 
@@ -3835,7 +3835,7 @@ NAME=void __cdecl wistd::invoke<void (__cdecl*)(void * __ptr64), void * __ptr64 
 FILE=-
 CMDS="!rabin2 -D msvc ??\$invoke@P6AXPEAX@ZAEAPEAX@wistd@@YAX\$\$REAP6AXPEAX@ZAEAPEAX@Z"
 EXPECT=<<EOF
-void __cdecl wistd::invoke<void (__cdecl *)(void * __ptr64), void * __ptr64 & __ptr64>(void (__cdecl *)(void * __ptr64) && volatile __ptr64, void * __ptr64 & __ptr64)
+void __cdecl wistd::invoke<void (__cdecl *)(void *), void * &>(void (__cdecl *)(void *) && volatile, void * &)
 EOF
 RUN
 
@@ -3851,23 +3851,23 @@ NAME=public: void __cdecl cask::PoolingFwdFP16x2Shader::constructor(class cask::
 FILE=-
 CMDS="!rabin2 -D msvc ??0PoolingFwdFP16x2Shader@cask@@QEAA@PEBVKernelInfo@1@Q6A?AV?\$SafeEnum@UErrorEnum@cask@@@1@AEAUpoolingDescription@PoolingOperation@1@PEBXPEAXPEAUCUstream_st@@AEAW4cudaError@@@Z@Z"
 EXPECT=<<EOF
-public: __cdecl cask::PoolingFwdFP16x2Shader::PoolingFwdFP16x2Shader(class cask::KernelInfo const * __ptr64, class cask::SafeEnum<struct cask::ErrorEnum> (__cdecl * const)(struct cask::PoolingOperation::poolingDescription & __ptr64, void const * __ptr64, void * __ptr64, struct CUstream_st * __ptr64, enum cudaError & __ptr64)) __ptr64
+public: __cdecl cask::PoolingFwdFP16x2Shader::PoolingFwdFP16x2Shader(class cask::KernelInfo const *, class cask::SafeEnum<struct cask::ErrorEnum> (__cdecl * const)(struct cask::PoolingOperation::poolingDescription &, void const *, void *, struct CUstream_st *, enum cudaError &))
 EOF
 RUN
 
-NAME=class Concurrency::details::_CancellationTokenCallback<class `public: void __cdecl Concurrency::details::_Task_impl_base::_RegisterCancellation(class std::weak_ptr<struct Concurrency::details::_Task_impl_base>) __ptr64'::`2'::lambda_1>
+NAME=class Concurrency::details::_CancellationTokenCallback<class `public: void __cdecl Concurrency::details::_Task_impl_base::_RegisterCancellation(class std::weak_ptr<struct Concurrency::details::_Task_impl_base>)'::`2'::lambda_1>
 FILE=-
 CMDS="!rabin2 -D msvc .?AV?\$_CancellationTokenCallback@Vlambda_1@?1??_RegisterCancellation@_Task_impl_base@details@Concurrency@@QEAAXV?\$weak_ptr@U_Task_impl_base@details@Concurrency@@@std@@@Z@@details@Concurrency@@"
 EXPECT=<<EOF
-class Concurrency::details::_CancellationTokenCallback<class `public: void __cdecl Concurrency::details::_Task_impl_base::_RegisterCancellation(class std::weak_ptr<struct Concurrency::details::_Task_impl_base>) __ptr64'::`2'::lambda_1>
+class Concurrency::details::_CancellationTokenCallback<class `public: void __cdecl Concurrency::details::_Task_impl_base::_RegisterCancellation(class std::weak_ptr<struct Concurrency::details::_Task_impl_base>)'::`2'::lambda_1>
 EOF
 RUN
 
-NAME=struct `private: void __cdecl wil::ActivityBase<class NetworkFlyoutLogging, 1, 0, 5, 0, struct _TlgReflectorTag_Param0IsProviderType>::ReportStopActivity(long) __ptr64'::`12'::unnamed-type-_tlgEvent const `private: void __cdecl wil::ActivityBase<class NetworkFlyoutLogging, 1, 0, 5, 0, struct _TlgReflectorTag_Param0IsProviderType>::ReportStopActivity(long) __ptr64'::`12'::_tlgEvent
+NAME=struct `private: void __cdecl wil::ActivityBase<class NetworkFlyoutLogging, 1, 0, 5, 0, struct _TlgReflectorTag_Param0IsProviderType>::ReportStopActivity(long)'::`12'::unnamed-type-_tlgEvent const `private: void __cdecl wil::ActivityBase<class NetworkFlyoutLogging, 1, 0, 5, 0, struct _TlgReflectorTag_Param0IsProviderType>::ReportStopActivity(long)'::`12'::_tlgEvent
 FILE=-
 CMDS="!rabin2 -D msvc ?_tlgEvent@?M@??ReportStopActivity@?\$ActivityBase@VNetworkFlyoutLogging@@\$00\$0A@\$04\$0A@U_TlgReflectorTag_Param0IsProviderType@@@wil@@AEAAXJ@Z@4Uunnamed-type-_tlgEvent@?M@??123@AEAAXJ@Z@B"
 EXPECT=<<EOF
-struct `private: void __cdecl wil::ActivityBase<class NetworkFlyoutLogging, 1, 0, 5, 0, struct _TlgReflectorTag_Param0IsProviderType>::ReportStopActivity(long) __ptr64'::`12'::unnamed-type-_tlgEvent const `private: void __cdecl wil::ActivityBase<class NetworkFlyoutLogging, 1, 0, 5, 0, struct _TlgReflectorTag_Param0IsProviderType>::ReportStopActivity(long) __ptr64'::`12'::_tlgEvent
+struct `private: void __cdecl wil::ActivityBase<class NetworkFlyoutLogging, 1, 0, 5, 0, struct _TlgReflectorTag_Param0IsProviderType>::ReportStopActivity(long)'::`12'::unnamed-type-_tlgEvent const `private: void __cdecl wil::ActivityBase<class NetworkFlyoutLogging, 1, 0, 5, 0, struct _TlgReflectorTag_Param0IsProviderType>::ReportStopActivity(long)'::`12'::_tlgEvent
 EOF
 RUN
 
@@ -3875,7 +3875,7 @@ NAME=Very long one with member functions
 FILE=-
 CMDS="iD msvc ??_G?$impl@V?$binder2@V?$io_op@V?$basic_stream_socket@Vtcp@ip@asio@boost@@V?$any_executor@U?$context_as_t@AEAVexecution_context@asio@boost@@@execution@asio@boost@@U?$never_t@$0A@@blocking@detail@234@U?$prefer_only@U?$possibly_t@$0A@@blocking@detail@execution@asio@boost@@@234@U?$prefer_only@U?$tracked_t@$0A@@outstanding_work@detail@execution@asio@boost@@@234@U?$prefer_only@U?$untracked_t@$0A@@outstanding_work@detail@execution@asio@boost@@@234@U?$prefer_only@U?$fork_t@$0A@@relationship@detail@execution@asio@boost@@@234@U?$prefer_only@U?$continuation_t@$0A@@relationship@detail@execution@asio@boost@@@234@@execution@34@@asio@boost@@V?$read_op@Vmutable_buffers_1@asio@boost@@@detail@ssl@23@V?$read_op@V?$stream@V?$basic_stream_socket@Vtcp@ip@asio@boost@@V?$any_executor@U?$context_as_t@AEAVexecution_context@asio@boost@@@execution@asio@boost@@U?$never_t@$0A@@blocking@detail@234@U?$prefer_only@U?$possibly_t@$0A@@blocking@detail@execution@asio@boost@@@234@U?$prefer_only@U?$tracked_t@$0A@@outstanding_work@detail@execution@asio@boost@@@234@U?$prefer_only@U?$untracked_t@$0A@@outstanding_work@detail@execution@asio@boost@@@234@U?$prefer_only@U?$fork_t@$0A@@relationship@detail@execution@asio@boost@@@234@U?$prefer_only@U?$continuation_t@$0A@@relationship@detail@execution@asio@boost@@@234@@execution@34@@asio@boost@@@ssl@asio@boost@@Vmutable_buffers_1@34@PEBVmutable_buffer@34@Vtransfer_at_least_t@detail@34@V?$wrapped_handler@Vstrand@io_context@asio@boost@@V?$custom_alloc_handler@V?$_Binder@U_Unforced@std@@P8?$connection@Utransport_config@asio_tls@config@websocketpp@@@asio@transport@websocketpp@@EAAXV?$function@$$A6AXAEBVerror_code@std@@_K@Z@2@AEBVerror_code@system@boost@@_K@ZV?$shared_ptr@V?$connection@Utransport_config@asio_tls@config@websocketpp@@@asio@transport@websocketpp@@@2@AEAV72@AEBU?$_Ph@$00@2@AEBU?$_Ph@$01@2@@std@@@3transport@websocketpp@@Uis_continuation_if_running@detail@34@@834@@523@@detail@ssl@asio@boost@@Verror_code@system@5@_K@detail@asio@boost@@V?$allocator@X@std@@@executor_function@detail@asio@boost@@QEAAPEAXI@Z"
 EXPECT=<<EOF
-public: void * __ptr64 __cdecl boost::asio::detail::executor_function::impl<class boost::asio::detail::binder2<class boost::asio::ssl::detail::io_op<class boost::asio::basic_stream_socket<class boost::asio::ip::tcp, class boost::asio::execution::any_executor<struct boost::asio::execution::context_as_t<class boost::asio::execution_context & __ptr64>, struct boost::asio::execution::detail::blocking::never_t<0>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::blocking::possibly_t<0>>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::outstanding_work::tracked_t<0>>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::outstanding_work::untracked_t<0>>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::relationship::fork_t<0>>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::relationship::continuation_t<0>>>>, class boost::asio::ssl::detail::read_op<class boost::asio::mutable_buffers_1>, class boost::asio::detail::read_op<class boost::asio::ssl::stream<class boost::asio::basic_stream_socket<class boost::asio::ip::tcp, class boost::asio::execution::any_executor<struct boost::asio::execution::context_as_t<class boost::asio::execution_context & __ptr64>, struct boost::asio::execution::detail::blocking::never_t<0>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::blocking::possibly_t<0>>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::outstanding_work::tracked_t<0>>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::outstanding_work::untracked_t<0>>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::relationship::fork_t<0>>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::relationship::continuation_t<0>>>>>, class boost::asio::mutable_buffers_1, class boost::asio::mutable_buffer const * __ptr64, class boost::asio::detail::transfer_at_least_t, class boost::asio::detail::wrapped_handler<class boost::asio::io_context::strand, class websocketpp::transport::asio::custom_alloc_handler<class std::_Binder<struct std::_Unforced, void & (__thiscall websocketpp::transport::asio::connection<struct websocketpp::config::asio_tls::transport_config>::*)(class std::function<void (__cdecl *)(class std::error_code const & __ptr64, unsigned __int64)>, class boost::system::error_code const & __ptr64, unsigned __int64), class std::shared_ptr<class websocketpp::transport::asio::connection<struct websocketpp::config::asio_tls::transport_config>>, class std::function<void (__cdecl *)(class std::error_code const & __ptr64, unsigned __int64)> & __ptr64, struct std::_Ph<1> const & __ptr64, struct std::_Ph<2> const & __ptr64>>, struct boost::asio::detail::is_continuation_if_running>>>, class boost::system::error_code, unsigned __int64>, class std::allocator<void>>::`scalar deleting dtor'(unsigned int) __ptr64
+public: void * __cdecl boost::asio::detail::executor_function::impl<class boost::asio::detail::binder2<class boost::asio::ssl::detail::io_op<class boost::asio::basic_stream_socket<class boost::asio::ip::tcp, class boost::asio::execution::any_executor<struct boost::asio::execution::context_as_t<class boost::asio::execution_context &>, struct boost::asio::execution::detail::blocking::never_t<0>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::blocking::possibly_t<0>>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::outstanding_work::tracked_t<0>>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::outstanding_work::untracked_t<0>>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::relationship::fork_t<0>>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::relationship::continuation_t<0>>>>, class boost::asio::ssl::detail::read_op<class boost::asio::mutable_buffers_1>, class boost::asio::detail::read_op<class boost::asio::ssl::stream<class boost::asio::basic_stream_socket<class boost::asio::ip::tcp, class boost::asio::execution::any_executor<struct boost::asio::execution::context_as_t<class boost::asio::execution_context &>, struct boost::asio::execution::detail::blocking::never_t<0>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::blocking::possibly_t<0>>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::outstanding_work::tracked_t<0>>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::outstanding_work::untracked_t<0>>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::relationship::fork_t<0>>, struct boost::asio::execution::prefer_only<struct boost::asio::execution::detail::relationship::continuation_t<0>>>>>, class boost::asio::mutable_buffers_1, class boost::asio::mutable_buffer const *, class boost::asio::detail::transfer_at_least_t, class boost::asio::detail::wrapped_handler<class boost::asio::io_context::strand, class websocketpp::transport::asio::custom_alloc_handler<class std::_Binder<struct std::_Unforced, void & (__thiscall websocketpp::transport::asio::connection<struct websocketpp::config::asio_tls::transport_config>::*)(class std::function<void (__cdecl *)(class std::error_code const &, unsigned __int64)>, class boost::system::error_code const &, unsigned __int64), class std::shared_ptr<class websocketpp::transport::asio::connection<struct websocketpp::config::asio_tls::transport_config>>, class std::function<void (__cdecl *)(class std::error_code const &, unsigned __int64)> &, struct std::_Ph<1> const &, struct std::_Ph<2> const &>>, struct boost::asio::detail::is_continuation_if_running>>>, class boost::system::error_code, unsigned __int64>, class std::allocator<void>>::`scalar deleting dtor'(unsigned int)
 EOF
 RUN
 
@@ -3907,7 +3907,7 @@ NAME=msvc single letter class constructor
 FILE=-
 CMDS="!rabin2 -D msvc ??0a@@QEAA@XZ"
 EXPECT=<<EOF
-public: __cdecl a::a(void) __ptr64
+public: __cdecl a::a(void)
 EOF
 RUN
 
