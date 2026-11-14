@@ -1155,28 +1155,22 @@ static void session_list(RCore *core, int mode) {
 	free (tmpdir);
 }
 
-static RCmdResult cmd_http(RCmdContext *ctx) {
-	RCore *core = ctx->user;
-	const char *mode = ctx->handler_user;
-	const char *input = ctx->subcmd.a;
-	if (*input == '?') {
-		r_cons_cmd_help (ctx->cons, help_msg_equalh);
-	} else {
-		const char *path = *mode == 'H'? r_str_trim_head_ro (input): input;
-		r_core_rtr_http (core, getArg (*input, *mode), *mode, path);
-	}
-	return (RCmdResult) { 0 };
+static bool cmd_http(RCmdContext *ctx) {
+	const RCmdRow *row = ctx->handler_user;
+	const char mode = row->name[1];
+	const char *input = ctx->subcmd.b;
+	const char *path = mode == 'H'? r_str_trim_head_ro (input): input;
+	r_core_rtr_http (ctx->user, getArg (*input, mode), mode, path);
+	return true;
 }
 
 static bool r_core_cmd_http_init(RCmd *cmd) {
-	if (!r_cmd_register_args (cmd, "=h", cmd_http, "h", R_CMD_ARGS_VERBATIM)) {
-		return false;
-	}
-	if (!r_cmd_register_args (cmd, "=H", cmd_http, "H", R_CMD_ARGS_VERBATIM)) {
-		r_cmd_unregister (cmd, "=h");
-		return false;
-	}
-	return true;
+	static const RCmdRow rows[] = {
+		{ "=H", cmd_http, "[&] [port]", help_msg_equalh, 0, 0, R_CMD_ARGS_ATTACHED | R_CMD_ARGS_VERBATIM },
+		{ "=h", cmd_http, "[-*&] [port]", help_msg_equalh, 0, 0, R_CMD_ARGS_ATTACHED | R_CMD_ARGS_VERBATIM },
+	};
+	static const RCmdTable table = { help_msg_equalh, rows, R_ARRAY_SIZE (rows) };
+	return r_cmd_register_table (cmd, "=H", &table) && r_cmd_register_table (cmd, "=h", &table);
 }
 
 static int cmd_rap(void *data, const char *input) {

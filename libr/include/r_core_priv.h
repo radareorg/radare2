@@ -67,6 +67,31 @@ typedef enum {
 } RCmdArgFlags;
 
 R_IPI bool r_cmd_register_args(RCmd *cmd, const char *name, RCmdCtxCb callback, void *user, RCmdArgFlags flags);
+
+typedef enum {
+	R_CMD_ROW_ARGS_MASK = 3, // RCmdArgFlags bits
+	R_CMD_ROW_SETS_VALUE = 4, // run owns $?: successful calls leave it untouched
+} RCmdRowFlags;
+
+// One command of a statically allocated table, reached through ctx->handler_user
+typedef struct r_cmd_row_t {
+	const char *name; // complete command name: "ytf"
+	bool (*run)(RCmdContext *ctx);
+	const char *usage; // argument synopsis printed after the name on usage errors
+	const char * const *help; // printed on "name?"; NULL matches name in the table help
+	ut8 min_args;
+	ut8 max_args; // UT8_MAX for no limit
+	ut8 flags; // RCmdRowFlags
+} RCmdRow;
+
+typedef struct r_cmd_table_t {
+	const char * const *help;
+	const RCmdRow *rows;
+	size_t count;
+} RCmdTable;
+
+// One trie entry dispatches every row starting with key; rows are matched by longest name
+R_IPI bool r_cmd_register_table(RCmd *cmd, const char *key, const RCmdTable *table);
 R_IPI RCmdResult r_cmd_call_result(RCmd *cmd, RCmdContext *parent, const char *input, bool raw);
 R_IPI int r_cmd_call_context(RCmd *cmd, RCmdContext *parent, const char *input, bool raw);
 

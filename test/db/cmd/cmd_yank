@@ -177,9 +177,9 @@ y*
 EOF
 EXPECT=<<EOF
 | yt 64 0x200  copy 64 bytes from current seek to 0x200
-| ytf file  dump the clipboard to given file
+| ytf file     dump the clipboard to given file
 | y8  print contents of clipboard in hexpairs
-0x2
+0x1
 0x1
 0x1
 0x0

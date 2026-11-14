@@ -45,61 +45,39 @@ static void echo_append_args(RCmdContext *ctx, size_t first, bool newline) {
 	r_strbuf_fini (&output);
 }
 
-static RCmdResult echo_base64(RCmdContext *ctx) {
-	RStrs arg = r_cmdctx_arg (ctx, 0);
-	if (!arg.a || r_cmdctx_argc (ctx) != 1) {
-		return (RCmdResult) { .status = 2 };
-	}
-	char *input = r_strs_tostring (arg);
+static bool echo_base64(RCmdContext *ctx) {
+	char *input = r_strs_tostring (r_cmdctx_arg (ctx, 0));
 	int size = 0;
 	ut8 *decoded = input? r_base64_decode_dyn (input, -1, &size, true): NULL;
 	free (input);
-	if (!decoded || size < 1) {
+	const bool ok = decoded && size > 0;
+	if (ok) {
+		r_cons_println (ctx->cons, (const char *)decoded);
+	} else {
 		R_LOG_ERROR ("Invalid base64 string");
-		free (decoded);
-		return (RCmdResult) { .status = 1 };
 	}
-	r_cons_println (ctx->cons, (const char *)decoded);
 	free (decoded);
-	return (RCmdResult) { 0 };
+	return ok;
 }
 
-static RCmdResult echo_callback(RCmdContext *ctx) {
-	RCore *core = ctx->user;
-	const bool exact = r_strs_empty (ctx->subcmd);
+static bool echo_run(RCmdContext *ctx) {
 	const size_t argc = r_cmdctx_argc (ctx);
 	RStrs arg = r_cmdctx_arg (ctx, 0);
-	if (r_cmdctx_help (ctx)
-			|| (exact && argc == 1 && r_strs_equals_str (arg, "-h"))) {
+	if (argc == 1 && r_strs_equals_str (arg, "-h")) {
 		r_cons_cmd_help (ctx->cons, help_msg_echo);
-		return (RCmdResult) { 0 };
-	}
-	if (r_strs_equals_str (ctx->subcmd, "64")) {
-		return echo_base64 (ctx);
-	}
-	if (!exact) {
-		r_core_return_invalid_command (core, "echo", *ctx->subcmd.a);
-		return (RCmdResult) { .status = 1 };
+		return true;
 	}
 	if (!argc) {
-		return (RCmdResult) { 0 };
+		return true;
 	}
-	size_t i = 0;
-	bool newline = true;
-	if (r_strs_equals_str (arg, "-n")) {
-		newline = false;
-		i++;
-	}
+	const bool newline = !r_strs_equals_str (arg, "-n");
 	if (ctx->raw) {
 		const char *input = r_str_trim_head_ro (ctx->subcmd.b);
-		if (!newline) {
-			input = r_str_trim_head_ro (input + 2);
-		}
-		echo_print (ctx, input, newline);
-		return (RCmdResult) { 0 };
+		echo_print (ctx, newline? input: r_str_trim_head_ro (input + 2), newline);
+	} else {
+		echo_append_args (ctx, newline? 0: 1, newline);
 	}
-	echo_append_args (ctx, i, newline);
-	return (RCmdResult) { 0 };
+	return true;
 }
 
 static RCmdResult question_echo_callback(RCmdContext *ctx) {
@@ -123,7 +101,12 @@ static RCmdResult question_echo_callback(RCmdContext *ctx) {
 }
 
 static bool r_core_cmd_echo_init(RCmd *cmd) {
-	if (!r_cmd_register (cmd, "echo", echo_callback, NULL)) {
+	static const RCmdRow rows[] = {
+		{ "echo", echo_run, " [-n] [arg ...]", help_msg_echo, 0, UT8_MAX, R_CMD_ROW_SETS_VALUE },
+		{ "echo64", echo_base64, " base64", help_msg_echo, 1, 1, R_CMD_ROW_SETS_VALUE },
+	};
+	static const RCmdTable table = { help_msg_echo, rows, R_ARRAY_SIZE (rows) };
+	if (!r_cmd_register_table (cmd, "echo", &table)) {
 		return false;
 	}
 	if (!r_cmd_register (cmd, "?e", question_echo_callback, NULL)) {

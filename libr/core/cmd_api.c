@@ -12,6 +12,8 @@ typedef struct {
 	void *user;
 	size_t active_calls;
 	RCmdArgFlags flags;
+	const RCmdTable *table; // sorted rows dispatched by cmd_table_call
+	size_t row_maxlen; // longest table row name
 } RCmdHandler;
 
 typedef struct r_cmd_handler_frame_t {
@@ -289,13 +291,87 @@ R_API void r_cmd_set_data(RCmd *cmd, void *data) {
 	cmd->data = data;
 }
 
+static const RCmdRow *cmd_table_find(const RCmdTable *table, RStrs name) {
+	const size_t len = r_strs_len (name);
+	size_t lo = 0;
+	size_t hi = table->count;
+	while (lo < hi) {
+		const size_t mid = lo + (hi - lo) / 2;
+		const char *row = table->rows[mid].name;
+		int cmp = strncmp (row, name.a, len);
+		if (!cmp && row[len]) {
+			cmp = 1;
+		}
+		if (!cmp) {
+			return &table->rows[mid];
+		}
+		if (cmp < 0) {
+			lo = mid + 1;
+		} else {
+			hi = mid;
+		}
+	}
+	return NULL;
+}
+
+// Longest row prefixing the command token: exact match first, then shorter prefixes
+static const RCmdRow *cmd_table_row(const RCmdHandler *handler, RStrs input) {
+	RStrs name = input;
+	name.b = name.a;
+	while (name.b < input.b && !isspace ((ut8)*name.b) && r_strs_len (name) < handler->row_maxlen) {
+		name.b++;
+	}
+	for (; !r_strs_empty (name); name.b--) {
+		const RCmdRow *row = cmd_table_find (handler->table, name);
+		if (row) {
+			return row;
+		}
+	}
+	return NULL;
+}
+
+// Shared policy for table rows: help, invalid subcommands, argument counts and $?
+static RCmdResult cmd_table_call(RCmdContext *ctx) {
+	const RCmdRow *row = ctx->handler_user;
+	const RCmdTable *table = current_handler_frame->handler->table;
+	RCore *core = ctx->user;
+	const size_t argc = r_cmdctx_argc (ctx);
+	int rc = 0;
+	if (r_strs_equals_str (ctx->subcmd, "?")) {
+		if (row->help) {
+			r_cons_cmd_help (ctx->cons, row->help);
+		} else if (!r_cons_cmd_help_prefix (ctx->cons, table->help, row->name)) {
+			r_cons_cmd_help (ctx->cons, table->help);
+		}
+	} else if (!r_strs_empty (ctx->subcmd)) {
+		// "b64?" shows the help entries starting with "b64" even without such a row
+		const int typed_len = (int)r_strs_len (ctx->subcmd) - 1;
+		char *typed = r_cmdctx_help (ctx)? r_str_newf ("%s%.*s", row->name, typed_len, ctx->subcmd.a): NULL;
+		const bool shown = typed && r_cons_cmd_help_prefix (ctx->cons, table->help, typed);
+		free (typed);
+		if (!shown) {
+			r_core_return_invalid_command (core, row->name, r_strs_at (ctx->subcmd, 0));
+			return (RCmdResult) { .status = 1 };
+		}
+	} else if (argc < row->min_args || (row->max_args != UT8_MAX && argc > row->max_args) || (row->min_args && !*r_cmdctx_arg (ctx, 0).a)) {
+		R_LOG_ERROR ("Usage: %s%s", row->name, row->usage);
+		rc = 1;
+	} else {
+		rc = row->run (ctx)? 0: 1;
+		if (row->flags & R_CMD_ROW_SETS_VALUE) {
+			return (RCmdResult) { .status = rc };
+		}
+	}
+	r_core_return_value (core, rc);
+	return (RCmdResult) { .status = rc };
+}
+
 R_API bool r_cmd_register(RCmd *cmd, const char *name, RCmdCtxCb callback, void *handler_user) {
 	R_RETURN_VAL_IF_FAIL (cmd && name && callback, false);
 	return r_cmd_register_args (cmd, name, callback, handler_user, R_CMD_ARGS_DEFAULT);
 }
 
-R_IPI bool r_cmd_register_args(RCmd *cmd, const char *name, RCmdCtxCb callback, void *handler_user, RCmdArgFlags flags) {
-	R_RETURN_VAL_IF_FAIL (cmd && name && callback, false);
+static bool cmd_handler_insert(RCmd *cmd, const char *name, RCmdCtxCb callback, void *handler_user, RCmdArgFlags flags, const RCmdTable *table) {
 	RStrs key = r_strs_from (name);
 	r_th_lock_enter (cmd->handlers_lock);
 	if (r_strs_empty (key) || r_trie_find (cmd->handlers, key)) {
@@ -307,6 +383,19 @@ R_IPI bool r_cmd_register_args(RCmd *cmd, const char *name, RCmdCtxCb callback, 
 	handler->user = handler_user;
 	handler->active_calls = 0;
 	handler->flags = flags;
+	handler->table = table;
+	handler->row_maxlen = 0;
+	size_t i;
+	for (i = 0; table && i < table->count; i++) {
+		const char *name = table->rows[i].name;
+		if (i && strcmp (table->rows[i - 1].name, name) >= 0) {
+			R_LOG_ERROR ("Command table row '%s' is not sorted after '%s'", name, table->rows[i - 1].name);
+			r_th_lock_leave (cmd->handlers_lock);
+			free (handler);
+			return false;
+		}
+		handler->row_maxlen = R_MAX (handler->row_maxlen, strlen (name));
+	}
 	if (!r_trie_insert (cmd->handlers, key, handler)) {
 		r_th_lock_leave (cmd->handlers_lock);
 		free (handler);
@@ -314,6 +403,16 @@ R_IPI bool r_cmd_register_args(RCmd *cmd, const char *name, RCmdCtxCb callback, 
 	}
 	r_th_lock_leave (cmd->handlers_lock);
 	return true;
+}
+
+R_IPI bool r_cmd_register_args(RCmd *cmd, const char *name, RCmdCtxCb callback, void *handler_user, RCmdArgFlags flags) {
+	R_RETURN_VAL_IF_FAIL (cmd && name && callback, false);
+	return cmd_handler_insert (cmd, name, callback, handler_user, flags, NULL);
+}
+
+R_IPI bool r_cmd_register_table(RCmd *cmd, const char *key, const RCmdTable *table) {
+	R_RETURN_VAL_IF_FAIL (cmd && key && table && table->rows, false);
+	return cmd_handler_insert (cmd, key, cmd_table_call, NULL, R_CMD_ARGS_DEFAULT, table);
 }
 
 R_API bool r_cmd_unregister(RCmd *cmd, const char *name) {
@@ -404,24 +503,60 @@ R_API size_t r_cmd_unregister_prefix(RCmd *cmd, const char *prefix) {
 }
 
 typedef struct {
+	const RCmd *cmd;
 	RCmdForeachCb callback;
 	void *user;
+	RStrs prefix;
 } RCmdForeachContext;
+
+// Rows under key matching the prefix, skipping names owned by another handler
+static bool cmd_foreach_rows(RCmdForeachContext *context, RStrs key, const RCmdTable *table) {
+	size_t i;
+	for (i = 0; i < table->count; i++) {
+		RStrs name = r_strs_from (table->rows[i].name);
+		if (!r_strs_startswith_strs (name, key) || !r_strs_startswith_strs (name, context->prefix)
+				|| (!r_strs_equals (name, key) && r_trie_find (context->cmd->handlers, name))) {
+			continue;
+		}
+		if (!context->callback (name, context->user)) {
+			return false;
+		}
+	}
+	return true;
+}
 
 static bool cmd_foreach_handler(RStrs name, void *value, void *user) {
 	RCmdForeachContext *context = user;
-	(void)value;
-	return context->callback (name, context->user);
+	const RCmdHandler *handler = value;
+	return handler->table
+		? cmd_foreach_rows (context, name, handler->table)
+		: context->callback (name, context->user);
 }
 
 R_API bool r_cmd_foreach_prefix(const RCmd *cmd, const char *prefix, RCmdForeachCb callback, void *user) {
 	R_RETURN_VAL_IF_FAIL (cmd && prefix && callback, false);
-	r_th_lock_enter (cmd->handlers_lock);
 	RCmdForeachContext context = {
+		.cmd = cmd,
 		.callback = callback,
-		.user = user
+		.user = user,
+		.prefix = r_strs_from (prefix),
 	};
-	const bool res = r_trie_foreach_prefix (cmd->handlers, r_strs_from (prefix), cmd_foreach_handler, &context);
+	r_th_lock_enter (cmd->handlers_lock);
+	bool res = true;
+	RStrs lookup = context.prefix;
+	size_t matched = 0;
+	// tables under a key shorter than prefix can still hold matching rows
+	while (res && !r_strs_empty (lookup)) {
+		const RCmdHandler *handler = r_trie_find_longest_prefix (cmd->handlers, lookup, &matched);
+		if (!handler || !matched) {
+			break;
+		}
+		if (handler->table && matched < r_strs_len (context.prefix)) {
+			res = cmd_foreach_rows (&context, r_strs_sub (context.prefix, 0, matched), handler->table);
+		}
+		lookup.b = lookup.a + matched - 1;
+	}
+	res = res && r_trie_foreach_prefix (cmd->handlers, context.prefix, cmd_foreach_handler, &context);
 	r_th_lock_leave (cmd->handlers_lock);
 	return res;
 }
@@ -610,10 +745,18 @@ static RCmdResult cmd_call_registered(RCmd *cmd, RCmdContext *parent, RStrs inpu
 		RCmdArgFlags flags = R_CMD_ARGS_DEFAULT;
 		r_th_lock_enter (cmd->handlers_lock);
 		RCmdHandler *handler = r_trie_find_longest_prefix (cmd->handlers, lookup, &matched);
+		const RCmdRow *row = (handler && handler->table)? cmd_table_row (handler, lookup): NULL;
+		if (handler && handler->table && !row) {
+			// no row under this key, retry the shorter registered prefixes
+			r_th_lock_leave (cmd->handlers_lock);
+			lookup.b = lookup.a + matched - 1;
+			continue;
+		}
 		if (handler && matched) {
 			callback = handler->callback;
-			handler_user = handler->user;
-			flags = handler->flags;
+			handler_user = row? (void *)row: handler->user;
+			flags = row? (row->flags & R_CMD_ROW_ARGS_MASK): handler->flags;
+			matched = row? strlen (row->name): matched;
 			handler->active_calls++;
 		}
 		r_th_lock_leave (cmd->handlers_lock);

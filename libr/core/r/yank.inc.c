@@ -35,17 +35,9 @@ static RCoreHelpMessage help_msg_y = {
 
 // clang-format on
 
-typedef struct {
-	const char *name;
-	bool (*run)(RCore *core, RCmdContext *ctx);
-	const char *usage;
-	ut8 min_args;
-	ut8 max_args;
-} YankCommand;
-
 // Output mode is the registered name suffix: "y*" -> '*', "y" -> 0
 static char yank_mode(RCmdContext *ctx) {
-	const YankCommand *command = ctx->handler_user;
+	const RCmdRow *command = ctx->handler_user;
 	return command->name[1];
 }
 
@@ -99,7 +91,8 @@ static bool yank_hexpairs(RCore *core, const char *hex) {
 	return ok;
 }
 
-static bool yank_dump(RCore *core, RCmdContext *ctx) {
+static bool yank_dump(RCmdContext *ctx) {
+	RCore *core = ctx->user;
 	const char mode = yank_mode (ctx);
 	if (mode == 'j' && !r_buf_size (core->yank_buf)) {
 		r_cons_println (ctx->cons, "{}");
@@ -129,7 +122,8 @@ static bool yank_dump(RCore *core, RCmdContext *ctx) {
 	return true;
 }
 
-static bool yank_print(RCore *core, RCmdContext *ctx) {
+static bool yank_print(RCmdContext *ctx) {
+	RCore *core = ctx->user;
 	const char mode = yank_mode (ctx);
 	ut64 pos = 0;
 	size_t len = 0;
@@ -150,7 +144,8 @@ static bool yank_print(RCore *core, RCmdContext *ctx) {
 	return true;
 }
 
-static bool yank_edit(RCore *core, RCmdContext *ctx) {
+static bool yank_edit(RCmdContext *ctx) {
+	RCore *core = ctx->user;
 	size_t len = 0;
 	ut8 *buf = r_buf_size (core->yank_buf)? yank_bytes (core, 0, &len): NULL;
 	char *hex = buf? r_hex_bin2strdup (buf, len): strdup ("10203040");
@@ -165,7 +160,8 @@ static bool yank_edit(RCore *core, RCmdContext *ctx) {
 	return ok;
 }
 
-static bool yank_to_file(RCore *core, RCmdContext *ctx) {
+static bool yank_to_file(RCmdContext *ctx) {
+	RCore *core = ctx->user;
 	const char *file = r_cmdctx_arg (ctx, 0).a;
 	size_t len = 0;
 	ut8 *buf = yank_bytes (core, 0, &len);
@@ -199,9 +195,10 @@ static bool yank_len(RCore *core, RCmdContext *ctx, size_t index, ut64 *len) {
 	return true;
 }
 
-static bool yank_range(RCore *core, RCmdContext *ctx) {
+static bool yank_range(RCmdContext *ctx) {
+	RCore *core = ctx->user;
 	if (!r_cmdctx_argc (ctx)) {
-		return yank_dump (core, ctx);
+		return yank_dump (ctx);
 	}
 	ut64 len;
 	ut64 addr = core->addr;
@@ -209,7 +206,8 @@ static bool yank_range(RCore *core, RCmdContext *ctx) {
 		&& r_core_yank (core, addr, len);
 }
 
-static bool yank_to(RCore *core, RCmdContext *ctx) {
+static bool yank_to(RCmdContext *ctx) {
+	RCore *core = ctx->user;
 	ut64 len;
 	ut64 addr = 0;
 	return yank_len (core, ctx, 0, &len) && r_cmdctx_num (ctx, 1, core->num, &addr)
@@ -243,15 +241,17 @@ static bool yank_file_range(RCore *core, ut64 offset, ut64 len, const char *file
 	return ok;
 }
 
-static bool yank_file(RCore *core, RCmdContext *ctx) {
+static bool yank_file(RCmdContext *ctx) {
+	RCore *core = ctx->user;
 	ut64 len = 0;
 	ut64 offset = 0;
 	return r_cmdctx_num (ctx, 0, core->num, &len) && r_cmdctx_num (ctx, 1, core->num, &offset)
 		&& yank_file_range (core, offset, len, r_cmdctx_arg (ctx, 2).a);
 }
 
-static bool yank_joined(RCore *core, RCmdContext *ctx) {
-	const YankCommand *command = ctx->handler_user;
+static bool yank_joined(RCmdContext *ctx) {
+	RCore *core = ctx->user;
+	const RCmdRow *command = ctx->handler_user;
 	RStrBuf *sb = yank_text (ctx);
 	const char *text = r_strbuf_get (sb);
 	bool ok;
@@ -266,13 +266,15 @@ static bool yank_joined(RCore *core, RCmdContext *ctx) {
 	return ok;
 }
 
-static bool yank_paste(RCore *core, RCmdContext *ctx) {
+static bool yank_paste(RCmdContext *ctx) {
+	RCore *core = ctx->user;
 	ut64 addr = core->addr;
 	return r_cmdctx_num (ctx, 0, core->num, &addr) && r_core_yank_paste (core, addr, 0);
 }
 
 // Yanks the NUL-terminated string at the current seek, clamped to [len] or the block size
-static bool yank_string(RCore *core, RCmdContext *ctx) {
+static bool yank_string(RCmdContext *ctx) {
+	RCore *core = ctx->user;
 	ut64 max = 0;
 	const ut32 bsize = ctx->blocksize;
 	ut8 *buf = r_cmdctx_num (ctx, 0, core->num, &max)? calloc (1, bsize + 1): NULL;
@@ -286,82 +288,48 @@ static bool yank_string(RCore *core, RCmdContext *ctx) {
 	return ok;
 }
 
-static bool yank_unset(RCore *core, RCmdContext *ctx) {
+static bool yank_unset(RCmdContext *ctx) {
+	RCore *core = ctx->user;
 	core->yank_addr = UT64_MAX;
 	return r_buf_resize (core->yank_buf, 0);
 }
 
-static bool yank_length(RCore *core, RCmdContext *ctx) {
+static bool yank_length(RCmdContext *ctx) {
+	RCore *core = ctx->user;
 	r_core_return_value (core, r_buf_size (core->yank_buf));
 	return true;
 }
 
-static bool yank_yara(RCore *core, RCmdContext *ctx) {
+static bool yank_yara(RCmdContext *ctx) {
 	R_LOG_ERROR ("Missing plugin. Run: r2pm -ci r2yara");
 	return false;
 }
 
-static RCmdResult yank_result(RCore *core, int rc) {
-	r_core_return_value (core, rc);
-	return (RCmdResult) { .status = rc };
-}
-
-static RCmdResult yank_callback(RCmdContext *ctx) {
-	const YankCommand *command = ctx->handler_user;
-	RCore *core = ctx->user;
-	const size_t argc = r_cmdctx_argc (ctx);
-	if (r_strs_equals_str (ctx->subcmd, "?")) {
-		if (!strcmp (command->name, "y") || !r_cons_cmd_help_match (ctx->cons, help_msg_y, command->name, 0, false)) {
-			r_cons_cmd_help (ctx->cons, help_msg_y);
-		}
-		return yank_result (core, 0);
-	}
-	if (!r_strs_empty (ctx->subcmd)) {
-		r_core_return_invalid_command (core, command->name, r_strs_at (ctx->subcmd, 0));
-		return (RCmdResult) { .status = 1 };
-	}
-	if (argc < command->min_args || argc > command->max_args) {
-		R_LOG_ERROR ("Usage: %s%s", command->name, command->usage);
-		return yank_result (core, 2);
-	}
-	const int rc = command->run (core, ctx)? 0: 1;
-	// "yl" reports the clipboard length in $?
-	return command->run == yank_length? (RCmdResult) { 0 }: yank_result (core, rc);
-}
-
 static bool r_core_cmd_yank_init(RCmd *cmd) {
-	static const YankCommand commands[] = {
-		{ "y", yank_range, " [len] [addr]", 0, 2 },
-		{ "y*", yank_dump, "", 0, 0 },
-		{ "yj", yank_dump, "", 0, 0 },
-		{ "y8", yank_dump, "", 0, 0 },
-		{ "y-", yank_unset, "", 0, 0 },
-		{ "y!", yank_edit, "", 0, 0 },
-		{ "yl", yank_length, "", 0, 0 },
-		{ "yr", yank_yara, "", 0, UT8_MAX },
-		{ "yy", yank_paste, " [addr]", 0, 1 },
-		{ "yx", yank_print, " [pos]", 0, 1 },
-		{ "yp", yank_print, " [pos]", 0, 1 },
-		{ "ys", yank_print, " [pos]", 0, 1 },
-		{ "yz", yank_string, " [len]", 0, 1 },
-		{ "yw", yank_joined, " [text]", 1, UT8_MAX },
-		{ "ywx", yank_joined, " [hexpairs]", 1, UT8_MAX },
-		{ "yfx", yank_joined, " [hexpairs]", 1, UT8_MAX },
-		{ "yfa", yank_joined, " [file]", 1, UT8_MAX },
-		{ "yf", yank_file, " [len] [offset] [file]", 3, 3 },
-		{ "yt", yank_to, " [len] [addr]", 2, 2 },
-		{ "ytf", yank_to_file, " [file|$alias]", 1, 1 },
+	static const RCmdRow rows[] = {
+		{ "y", yank_range, " [len] [addr]", help_msg_y, 0, 2 },
+		{ "y!", yank_edit, "", NULL, 0, 0 },
+		{ "y*", yank_dump, "", NULL, 0, 0 },
+		{ "y-", yank_unset, "", NULL, 0, 0 },
+		{ "y8", yank_dump, "", NULL, 0, 0 },
+		{ "yf", yank_file, " [len] [offset] [file]", NULL, 3, 3 },
+		{ "yfa", yank_joined, " [file]", NULL, 1, UT8_MAX },
+		{ "yfx", yank_joined, " [hexpairs]", NULL, 1, UT8_MAX },
+		{ "yj", yank_dump, "", NULL, 0, 0 },
+		{ "yl", yank_length, "", NULL, 0, 0, R_CMD_ROW_SETS_VALUE },
+		{ "yp", yank_print, " [pos]", NULL, 0, 1 },
+		{ "yr", yank_yara, "", NULL, 0, UT8_MAX },
+		{ "ys", yank_print, " [pos]", NULL, 0, 1 },
+		{ "yt", yank_to, " [len] [addr]", NULL, 2, 2 },
+		{ "ytf", yank_to_file, " [file|$alias]", NULL, 1, 1 },
+		{ "yw", yank_joined, " [text]", NULL, 1, UT8_MAX },
+		{ "ywx", yank_joined, " [hexpairs]", NULL, 1, UT8_MAX },
+		{ "yx", yank_print, " [pos]", NULL, 0, 1 },
+		{ "yy", yank_paste, " [addr]", NULL, 0, 1 },
+		{ "yz", yank_string, " [len]", NULL, 0, 1 },
 	};
-	size_t i;
-	for (i = 0; i < R_ARRAY_SIZE (commands); i++) {
-		if (!r_cmd_register (cmd, commands[i].name, yank_callback, (void *)&commands[i])) {
-			while (i > 0) {
-				r_cmd_unregister (cmd, commands[--i].name);
-			}
-			return false;
-		}
-	}
-	return true;
+	static const RCmdTable table = { help_msg_y, rows, R_ARRAY_SIZE (rows) };
+	return r_cmd_register_table (cmd, "y", &table);
 }
 
 #endif

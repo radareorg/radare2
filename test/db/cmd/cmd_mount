@@ -16,7 +16,7 @@ EXPECT=<<EOF2
 EOF2
 EXPECT_ERR=<<EOF2
 ERROR: Usage: mc [filename]
-ERROR: Usage: mc [filename]
+ERROR: Invalid `x` subcommand, try `mc?`
 ERROR: Cannot open /tmp/missing
 EOF2
 RUN
@@ -61,7 +61,7 @@ EXPECT=<<EOF2
 | mc [file]  cat: Show the contents of the given file
 0x0
 | mg /foo [offset [size]]  dump file to disk; size 0 reads to EOF (supports base64:)
-| mg /directory  recursively dump a directory into the current directory
+| mg /directory            recursively dump a directory into the current directory
 0x0
 EOF2
 EXPECT_ERR=

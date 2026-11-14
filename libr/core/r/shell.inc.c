@@ -2,13 +2,6 @@
 
 #if R_INCLUDE_BEGIN
 
-typedef struct {
-	const char *name;
-	int (*run)(RCmdContext *ctx);
-	const char *const *help;
-	RCmdArgFlags flags;
-} ShellCommand;
-
 static RCoreHelpMessage help_msg_mkdir = {
 	"Usage:", "mkdir [-p] [directory]", "Create a directory on the host filesystem",
 	"mkdir", " [directory]", "create a directory",
@@ -17,14 +10,9 @@ static RCoreHelpMessage help_msg_mkdir = {
 };
 
 // R2R test/db/cmd/posixshell
-static int mkdir_run(RCmdContext *ctx) {
+static bool mkdir_run(RCmdContext *ctx) {
 	const char *args[2];
 	r_cmdctx_args (ctx, args, R_ARRAY_SIZE (args));
-	const size_t argc = r_cmdctx_argc (ctx);
-	if (argc < 1 || argc > 2 || !*args[0]) {
-		R_LOG_ERROR ("Usage: mkdir [-p] [directory]");
-		return 1;
-	}
 	const bool parents = !strcmp (args[0], "-p");
 	const char *path = args[parents? 1: 0];
 	bool ok = false;
@@ -36,7 +24,7 @@ static int mkdir_run(RCmdContext *ctx) {
 	} else {
 		R_LOG_INFO ("Usage: mkdir [-p] [directory]");
 	}
-	return ok? 0: 1;
+	return ok;
 }
 
 static RCoreHelpMessage help_msg_mktemp = {
@@ -47,19 +35,14 @@ static RCoreHelpMessage help_msg_mktemp = {
 };
 
 // R2R test/db/cmd/cmd_mount
-static int mktemp_run(RCmdContext *ctx) {
+static bool mktemp_run(RCmdContext *ctx) {
 	const char *args[2];
 	r_cmdctx_args (ctx, args, R_ARRAY_SIZE (args));
-	const size_t argc = r_cmdctx_argc (ctx);
-	if (argc < 1 || argc > 2 || !*args[0]) {
-		R_LOG_ERROR ("Usage: mktemp [-d] [file|directory]");
-		return 1;
-	}
 	const bool dir = !strcmp (args[0], "-d");
 	const char *path = args[dir? 1: 0];
 	if (R_STR_ISEMPTY (path) || (!dir && args[1])) {
 		R_LOG_INFO ("Usage: mktemp [-d] [file|directory]");
-		return 1;
+		return false;
 	}
 	char *name = NULL;
 	int fd = r_file_mkstemp (path, &name);
@@ -76,7 +59,7 @@ static int mktemp_run(RCmdContext *ctx) {
 		R_LOG_ERROR ("Cannot create '%s'", path);
 	}
 	free (name);
-	return ok? 0: 1;
+	return ok;
 }
 
 static RCoreHelpMessage help_msg_man = {
@@ -281,28 +264,25 @@ static char *man_read(RCmdContext *ctx, const char *page) {
 }
 
 // R2R test/db/cmd/posixshell
-static int man_run(RCmdContext *ctx) {
-	const ShellCommand *spec = ctx->handler_user;
-	const char *command = spec->name;
-	const bool list = !strcmp (command, "mal");
-	const size_t argc = r_cmdctx_argc (ctx);
-	RStrs arg = r_cmdctx_arg (ctx, 0);
-	if (argc != (list? 0: 1) || (!list && !r_strs_at (arg, 0))) {
-		R_LOG_ERROR ("Usage: %s%s", command, list? "": " [page]");
-		return 1;
-	}
-	if (list) {
+static bool man_run(RCmdContext *ctx) {
+	const RCmdRow *row = ctx->handler_user;
+	if (!strcmp (row->name, "mal")) {
 		man_read (ctx, "?");
-		return 0;
+		return true;
 	}
-	char *text = man_read (ctx, arg.a);
+	char *text = man_read (ctx, r_cmdctx_arg (ctx, 0).a);
 	if (text) {
 		r_cons_less_str (ctx->cons, text, NULL);
 		free (text);
 	} else {
 		R_LOG_ERROR ("Cannot find manpage");
 	}
-	return 0;
+	return true;
+}
+
+static bool man_group_help(RCmdContext *ctx) {
+	r_cons_cmd_help_match (ctx->cons, help_msg_man, "ma", 0, false);
+	return true;
 }
 
 static RCoreHelpMessage help_msg_make = {
@@ -311,9 +291,11 @@ static RCoreHelpMessage help_msg_make = {
 	NULL
 };
 
-static int make_run(RCmdContext *ctx) {
+static bool make_run(RCmdContext *ctx) {
 	// Pass shell syntax through to make.
-	return r_sys_cmdf ("make%s", ctx->subcmd.b);
+	const int rc = r_sys_cmdf ("make%s", ctx->subcmd.b);
+	r_core_return_value ((RCore *)ctx->user, rc);
+	return !rc;
 }
 
 static RCoreHelpMessage help_msg_mv = {
@@ -323,60 +305,28 @@ static RCoreHelpMessage help_msg_mv = {
 };
 
 // R2R test/db/cmd/cmd_mount
-static int mv_run(RCmdContext *ctx) {
-	if (r_cmdctx_argc (ctx) != 2 || !*r_cmdctx_arg (ctx, 0).a) {
-		R_LOG_ERROR ("Usage: mv [src] [dst]");
-		return 1;
-	}
+static bool mv_run(RCmdContext *ctx) {
 	bool ok = r_file_move (r_cmdctx_arg (ctx, 0).a, r_cmdctx_arg (ctx, 1).a);
 	if (!ok) {
 		R_LOG_ERROR ("Cannot move file");
 	}
-	return ok? 0: 1;
-}
-
-static RCmdResult shell_callback(RCmdContext *ctx) {
-	const ShellCommand *command = ctx->handler_user;
-	int rc = 0;
-	if (r_strs_equals_str (ctx->subcmd, "?") || !strcmp (command->name, "ma?")) {
-		if (command->help == help_msg_man) {
-			bool group = !strcmp (command->name, "ma?");
-			r_cons_cmd_help_match (ctx->cons, command->help, group? "ma": command->name, 0, !group);
-		} else {
-			r_cons_cmd_help (ctx->cons, command->help);
-		}
-	} else if (!r_strs_empty (ctx->subcmd)) {
-		r_core_return_invalid_command (ctx->user, command->name, r_strs_at (ctx->subcmd, 0));
-		rc = 1;
-	} else {
-		rc = command->run (ctx);
-	}
-	RCore *core = ctx->user;
-	r_core_return_value (core, rc);
-	return (RCmdResult) { .status = rc };
+	return ok;
 }
 
 static bool r_core_cmd_shell_init(RCmd *cmd) {
-	static const ShellCommand commands[] = {
-		{ "mkdir", mkdir_run, help_msg_mkdir, 0 },
-		{ "mktemp", mktemp_run, help_msg_mktemp, 0 },
-		{ "man", man_run, help_msg_man, 0 },
-		{ "mal", man_run, help_msg_man, 0 },
-		{ "ma?", man_run, help_msg_man, 0 },
-		{ "make", make_run, help_msg_make, R_CMD_ARGS_VERBATIM },
-		{ "mv", mv_run, help_msg_mv, 0 },
+	static const RCmdRow rows[] = {
+		{ "ma?", man_group_help, "", NULL, 0, 0 },
+		{ "make", make_run, " [arguments]", help_msg_make, 0, 0, R_CMD_ARGS_VERBATIM | R_CMD_ROW_SETS_VALUE },
+		{ "mal", man_run, "", NULL, 0, 0 },
+		{ "man", man_run, " [page]", NULL, 1, 1 },
+		{ "mkdir", mkdir_run, " [-p] [directory]", help_msg_mkdir, 1, 2 },
+		{ "mktemp", mktemp_run, " [-d] [file|directory]", help_msg_mktemp, 1, 2 },
+		{ "mv", mv_run, " [src] [dst]", help_msg_mv, 2, 2 },
 	};
-	size_t i;
-	for (i = 0; i < R_ARRAY_SIZE (commands); i++) {
-		const ShellCommand *command = &commands[i];
-		if (!r_cmd_register_args (cmd, command->name, shell_callback, (void *)command, command->flags)) {
-			while (i > 0) {
-				r_cmd_unregister (cmd, commands[--i].name);
-			}
-			return false;
-		}
-	}
-	return true;
+	static const RCmdTable table = { help_msg_man, rows, R_ARRAY_SIZE (rows) };
+	return r_cmd_register_table (cmd, "mk", &table)
+		&& r_cmd_register_table (cmd, "ma", &table)
+		&& r_cmd_register_table (cmd, "mv", &table);
 }
 
 #endif

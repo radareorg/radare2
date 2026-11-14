@@ -8,7 +8,17 @@ EOF
 EXPECT=<<EOF
 prj
 b
+b*
+b+
+b-
+b64:
+b=
+bf
+bg
+bj
+bm
 echo
+echo64
 ?e
 EOF
 RUN

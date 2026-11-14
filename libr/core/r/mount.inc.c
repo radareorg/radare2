@@ -62,15 +62,6 @@ static const char *mount_file_type(const char ch) {
 	return "unknown";
 }
 
-typedef struct {
-	const char *name;
-	bool (*run)(RCmdContext *ctx);
-	const char *usage;
-	size_t min_args;
-	size_t max_args;
-	RCmdArgFlags flags;
-} MountCommand;
-
 static char *mount_path(RCmdContext *ctx) {
 	const char *path = r_cmdctx_arg (ctx, 0).a;
 	if (!path || !r_str_startswith (path, "base64:")) {
@@ -88,7 +79,7 @@ static char *mount_path(RCmdContext *ctx) {
 
 static bool mount_ls(RCmdContext *ctx) {
 	RCore *core = ctx->user;
-	const MountCommand *command = ctx->handler_user;
+	const RCmdRow *command = ctx->handler_user;
 	const char *modes = command->name + 2;
 	const bool is_json = strchr (modes, 'j');
 	const bool long_format = strchr (modes, 'd');
@@ -419,7 +410,7 @@ static bool mount_list(RCmdContext *ctx) {
 	RCore *core = ctx->user;
 	RListIter *iter;
 	RFSRoot *root;
-	const MountCommand *command = ctx->handler_user;
+	const RCmdRow *command = ctx->handler_user;
 	const char mode = command->name[1];
 	PJ *pj = NULL;
 	if (mode == 'j') {
@@ -471,7 +462,7 @@ static bool mount_list(RCmdContext *ctx) {
 
 static bool mount_plugins(RCmdContext *ctx) {
 	RCore *core = ctx->user;
-	const MountCommand *command = ctx->handler_user;
+	const RCmdRow *command = ctx->handler_user;
 	const char mode = command->name[strlen (command->name) - 1];
 	const bool names = !strcmp (command->name, "mLL") || mode == ':';
 	PJ *pj = mode == 'j'? r_core_pj_new (core): NULL;
@@ -606,7 +597,7 @@ static void mount_print_paths(RCmdContext *ctx, RList *R_OWNED list, bool escape
 static bool mount_info(RCmdContext *ctx) {
 	RCore *core = ctx->user;
 	const char *path = r_cmdctx_arg (ctx, 0).a;
-	const MountCommand *command = ctx->handler_user;
+	const RCmdRow *command = ctx->handler_user;
 	const char mode = command->name[2];
 	if (mode == 'x' || (!mode && (r_str_isnumber (path) || r_str_startswith (path, "0x")))) {
 		ut64 off = 0;
@@ -639,7 +630,7 @@ static bool mount_info(RCmdContext *ctx) {
 
 static bool mount_find(RCmdContext *ctx) {
 	RCore *core = ctx->user;
-	const MountCommand *command = ctx->handler_user;
+	const RCmdRow *command = ctx->handler_user;
 	const char *args[2];
 	r_cmdctx_args (ctx, args, R_ARRAY_SIZE (args));
 	ut64 offset = 0;
@@ -684,7 +675,7 @@ static bool mount_open(RCmdContext *ctx) {
 
 static bool mount_write(RCmdContext *ctx) {
 	RCore *core = ctx->user;
-	const MountCommand *command = ctx->handler_user;
+	const RCmdRow *command = ctx->handler_user;
 	const bool from_file = !strcmp (command->name, "mwf");
 	const char *path = r_cmdctx_arg (ctx, from_file? 1: 0).a;
 	char *buffer = NULL;
@@ -765,91 +756,56 @@ static bool mount_command(RCmdContext *ctx) {
 	return r_fs_cmd (core->fs, input.a);
 }
 
-static bool mount_help(RCmdContext *ctx) {
-	const MountCommand *command = ctx->handler_user;
-	if (!strcmp (command->name, "mf")) {
-		r_cons_cmd_help (ctx->cons, help_msg_mf);
-	} else if (!strcmp (command->name, "m:")) {
-		r_cons_cmd_help (ctx->cons, help_msg_mcolon);
-	} else if (!strcmp (command->name, "m")) {
-		r_cons_cmd_help (ctx->cons, help_msg_m);
-	} else {
-		bool exact = strcmp (command->name, "md") && strcmp (command->name, "mw");
-		if (!r_cons_cmd_help_match (ctx->cons, help_msg_m, command->name, 0, exact)) {
-			r_cons_cmd_help (ctx->cons, help_msg_m);
-		}
-	}
+static bool mount_help_mf(RCmdContext *ctx) {
+	r_cons_cmd_help (ctx->cons, help_msg_mf);
 	return true;
 }
 
-static RCmdResult mount_callback(RCmdContext *ctx) {
-	const MountCommand *command = ctx->handler_user;
-	const size_t argc = r_cmdctx_argc (ctx);
-	bool ok = false;
-	if (!strcmp (command->name, "m") && r_strs_startswith (ctx->subcmd, "mc")) {
-		R_LOG_ERROR ("The mmc core plugin is not compiled in or loaded");
-	} else if (r_cmdctx_help (ctx)) {
-		ok = mount_help (ctx);
-	} else if (!r_strs_empty (ctx->subcmd) || argc < command->min_args || argc > command->max_args
-			|| (argc && !*r_cmdctx_arg (ctx, 0).a)) {
-		R_LOG_ERROR ("Usage: %s", command->usage);
-	} else {
-		ok = command->run (ctx);
-	}
-	int rc = ok? 0: 1;
-	RCore *core = ctx->user;
-	r_core_return_value (core, rc);
-	return (RCmdResult) { .status = rc };
+static bool mount_mmc_missing(RCmdContext *ctx) {
+	R_LOG_ERROR ("The mmc core plugin is not compiled in or loaded");
+	return false;
 }
 
 static bool r_core_cmd_mount_init(RCmd *cmd) {
-	static const MountCommand commands[] = {
-		{ "m", mount_list, "m [mountpoint] [fstype] [offset] [options]", 0, 4, 0 },
-		{ "m*", mount_list, "m*", 0, 0, 0 },
-		{ "mj", mount_list, "mj", 0, 0, 0 },
-		{ "m-", mount_umount, "m- [mountpoint]", 1, 1, R_CMD_ARGS_ATTACHED },
-		{ "mL", mount_plugins, "mL", 0, 0, 0 },
-		{ "mLL", mount_plugins, "mLL", 0, 0, 0 },
-		{ "mLj", mount_plugins, "mLj", 0, 0, 0 },
-		{ "mc", mount_cat, "mc [filename]", 1, 1, 0 },
-		{ "mg", mount_get, "mg [filename] [offset [size]]", 1, 3, 0 },
-		{ "mn", mount_details, "mn [mountpoint]", 0, 1, 0 },
-		{ "md", mount_ls, "md [path]", 0, 1, 0 },
-		{ "mdt", mount_tree, "mdt [path] [depth]", 0, 2, 0 },
-		{ "mdj", mount_ls, "mdj [path]", 0, 1, 0 },
-		{ "mdd", mount_ls, "mdd [path]", 0, 1, 0 },
-		{ "mdq", mount_ls, "mdq [path]", 0, 1, 0 },
-		{ "mdx", mount_ls, "mdx [path]", 0, 1, 0 },
-		{ "mddx", mount_ls, "mddx [path]", 0, 1, 0 },
-		{ "mddq", mount_ls, "mddq [path]", 0, 1, 0 },
-		{ "mdxq", mount_ls, "mdxq [path]", 0, 1, 0 },
-		{ "mddxq", mount_ls, "mddxq [path]", 0, 1, 0 },
-		{ "md+", mount_mkdir, "md+ /path", 1, 1, 0 },
-		{ "mp", mount_partitions, "mp [type] [offset]", 0, 2, 0 },
-		{ "mi", mount_info, "mi [path|offset]", 1, 1, 0 },
-		{ "mis", mount_info, "mis [path]", 1, 1, 0 },
-		{ "mix", mount_info, "mix 0xOFFSET", 1, 1, 0 },
-		{ "mfn", mount_find, "mfn [path] [pattern]", 2, 2, 0 },
-		{ "mfo", mount_find, "mfo [path] [offset]", 2, 2, 0 },
-		{ "mo", mount_open, "mo [path]", 1, 1, 0 },
-		{ "mw", mount_write, "mw [file] [data]", 1, 2, 0 },
-		{ "mwf", mount_write, "mwf [diskfile] [r2filepath]", 2, 2, 0 },
-		{ "my", mount_yank, "my [file]", 1, 1, 0 },
-		{ "ms", mount_shell, "ms [path]", 0, 1, 0 },
-		{ "mf", mount_help, "mf[no] [path] [name|offset]", 0, 0, 0 },
-		{ "m:", mount_command, "m:[plugin-command]", 0, 0, R_CMD_ARGS_ATTACHED | R_CMD_ARGS_VERBATIM },
+	static const RCmdRow rows[] = {
+		{ "m", mount_list, " [mountpoint] [fstype] [offset] [options]", help_msg_m, 0, 4 },
+		{ "m*", mount_list, "", NULL, 0, 0 },
+		{ "m-", mount_umount, " [mountpoint]", NULL, 1, 1, R_CMD_ARGS_ATTACHED },
+		{ "m:", mount_command, "[plugin-command]", help_msg_mcolon, 0, 0, R_CMD_ARGS_ATTACHED | R_CMD_ARGS_VERBATIM },
+		{ "mL", mount_plugins, "", NULL, 0, 0 },
+		{ "mLL", mount_plugins, "", NULL, 0, 0 },
+		{ "mLj", mount_plugins, "", NULL, 0, 0 },
+		{ "mc", mount_cat, " [filename]", NULL, 1, 1 },
+		{ "md", mount_ls, " [path]", NULL, 0, 1 },
+		{ "md+", mount_mkdir, " /path", NULL, 1, 1 },
+		{ "mdd", mount_ls, " [path]", NULL, 0, 1 },
+		{ "mddq", mount_ls, " [path]", NULL, 0, 1 },
+		{ "mddx", mount_ls, " [path]", NULL, 0, 1 },
+		{ "mddxq", mount_ls, " [path]", NULL, 0, 1 },
+		{ "mdj", mount_ls, " [path]", NULL, 0, 1 },
+		{ "mdq", mount_ls, " [path]", NULL, 0, 1 },
+		{ "mdt", mount_tree, " [path] [depth]", NULL, 0, 2 },
+		{ "mdx", mount_ls, " [path]", NULL, 0, 1 },
+		{ "mdxq", mount_ls, " [path]", NULL, 0, 1 },
+		{ "mf", mount_help_mf, "[no] [path] [name|offset]", help_msg_mf, 0, 0 },
+		{ "mfn", mount_find, " [path] [pattern]", NULL, 2, 2 },
+		{ "mfo", mount_find, " [path] [offset]", NULL, 2, 2 },
+		{ "mg", mount_get, " [filename] [offset [size]]", NULL, 1, 3 },
+		{ "mi", mount_info, " [path|offset]", NULL, 1, 1 },
+		{ "mis", mount_info, " [path]", NULL, 1, 1 },
+		{ "mix", mount_info, " 0xOFFSET", NULL, 1, 1 },
+		{ "mj", mount_list, "", NULL, 0, 0 },
+		{ "mmc", mount_mmc_missing, "", NULL, 0, UT8_MAX },
+		{ "mn", mount_details, " [mountpoint]", NULL, 0, 1 },
+		{ "mo", mount_open, " [path]", NULL, 1, 1 },
+		{ "mp", mount_partitions, " [type] [offset]", NULL, 0, 2 },
+		{ "ms", mount_shell, " [path]", NULL, 0, 1 },
+		{ "mw", mount_write, " [file] [data]", NULL, 1, 2 },
+		{ "mwf", mount_write, " [diskfile] [r2filepath]", NULL, 2, 2 },
+		{ "my", mount_yank, " [file]", NULL, 1, 1 },
 	};
-	size_t i;
-	for (i = 0; i < R_ARRAY_SIZE (commands); i++) {
-		const MountCommand *command = &commands[i];
-		if (!r_cmd_register_args (cmd, command->name, mount_callback, (void *)command, command->flags)) {
-			while (i > 0) {
-				r_cmd_unregister (cmd, commands[--i].name);
-			}
-			return false;
-		}
-	}
-	return true;
+	static const RCmdTable table = { help_msg_m, rows, R_ARRAY_SIZE (rows) };
+	return r_cmd_register_table (cmd, "m", &table);
 }
 
 #endif

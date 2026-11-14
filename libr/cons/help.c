@@ -56,8 +56,8 @@ R_API void r_cons_cmd_help_json(RCons *cons, RCoreHelpMessage help) {
 	}
 }
 
-/* Print a coloured help message */
-R_API void r_cons_cmd_help(RCons *cons, RCoreHelpMessage help) {
+// Entry 0 is a title unless rows were filtered, so it only counts for alignment then
+static void help_print(RCons *cons, RCoreHelpMessage help, bool filtered) {
 	R_RETURN_IF_FAIL (cons && cons->context && help);
 	const bool use_color = cons->context->color_mode != COLOR_MODE_DISABLED;
 	const char *pal_input_color = use_color ? cons->context->pal.input : "";
@@ -87,7 +87,7 @@ R_API void r_cons_cmd_help(RCons *cons, RCoreHelpMessage help) {
 
 		int len_cmd = strlen (help_cmd);
 		int len_args = strlen (help_args);
-		if (i) {
+		if (i || filtered) {
 			max_length = R_MAX (max_length, len_cmd + len_args);
 		}
 	}
@@ -124,15 +124,18 @@ R_API void r_cons_cmd_help(RCons *cons, RCoreHelpMessage help) {
 	}
 }
 
-/* See r_cons_cmd_help().
- * This version will only print help for a specific command.
- * Will append spec to cmd before looking for a match, if spec != 0.
- *
- * If exact is false, will match any command that contains the search text.
- * For example, ("pd", 'r', false) matches both `pdr` and `pdr.`.
- */
-R_API int r_cons_cmd_help_match(RCons *cons, RCoreHelpMessage help, const char * R_NONNULL cmd, char spec, bool exact) {
-	R_RETURN_VAL_IF_FAIL (cons && cons->context && help && cmd, 0);
+/* Print a coloured help message */
+R_API void r_cons_cmd_help(RCons *cons, RCoreHelpMessage help) {
+	help_print (cons, help, false);
+}
+
+typedef enum {
+	HELP_MATCH_SUBSTR,
+	HELP_MATCH_EXACT,
+	HELP_MATCH_PREFIX,
+} HelpMatch;
+
+static int help_match(RCons *cons, RCoreHelpMessage help, const char *cmd, char spec, HelpMatch mode) {
 	RVecInt *match_indices = RVecInt_new ();
 	int *current_index_ptr;
 	size_t matches_copied;
@@ -141,7 +144,10 @@ R_API int r_cons_cmd_help_match(RCons *cons, RCoreHelpMessage help, const char *
 
 	/* Collect matching indices */
 	for (i = 0; help[i]; i += 3) {
-		if (exact? (bool)!strcmp (help[i], search_cmd): (bool)strstr (help[i], search_cmd)) {
+		const bool match = mode == HELP_MATCH_EXACT? !strcmp (help[i], search_cmd)
+			: mode == HELP_MATCH_PREFIX? r_str_startswith (help[i], search_cmd)
+			: (bool)strstr (help[i], search_cmd);
+		if (match) {
 			int index = (int)i;
 			RVecInt_push_back (match_indices, &index);
 		}
@@ -160,10 +166,28 @@ R_API int r_cons_cmd_help_match(RCons *cons, RCoreHelpMessage help, const char *
 			}
 		}
 		matches[matches_copied] = NULL;
-		r_cons_cmd_help (cons, (const char * const *)matches);
+		help_print (cons, (const char * const *)matches, true);
 	}
 	free (matches);
 	RVecInt_free (match_indices);
 	free (search_cmd);
 	return num_matches;
+}
+
+/* See r_cons_cmd_help().
+ * This version will only print help for a specific command.
+ * Will append spec to cmd before looking for a match, if spec != 0.
+ *
+ * If exact is false, will match any command that contains the search text.
+ * For example, ("pd", 'r', false) matches both `pdr` and `pdr.`.
+ */
+R_API int r_cons_cmd_help_match(RCons *cons, RCoreHelpMessage help, const char * R_NONNULL cmd, char spec, bool exact) {
+	R_RETURN_VAL_IF_FAIL (cons && cons->context && help && cmd, 0);
+	return help_match (cons, help, cmd, spec, exact? HELP_MATCH_EXACT: HELP_MATCH_SUBSTR);
+}
+
+// Prints the help entries whose command starts with cmd: "yt" matches "yt" and "ytf"
+R_API int r_cons_cmd_help_prefix(RCons *cons, RCoreHelpMessage help, const char * R_NONNULL cmd) {
+	R_RETURN_VAL_IF_FAIL (cons && cons->context && help && cmd, 0);
+	return help_match (cons, help, cmd, 0, HELP_MATCH_PREFIX);
 }
