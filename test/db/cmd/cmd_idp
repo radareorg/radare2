@@ -164,3 +164,46 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=idp forward thunk boundaries do not depend on public record order
+FILE=bins/pdb/SimplePDB.exe
+CMDS=<<END
+e io.cache=true
+e anal.slow=false
+wx e90b000000 @ 0x401000
+wx b82a000000c3 @ 0x401010
+idp bins/pdb/SimplePDB-thunk-first.pdb
+afl~0x00401000,0x00401010
+axf @ 0x401000
+af-*
+f-*
+idp bins/pdb/SimplePDB.pdb
+afl~0x00401000,0x00401010
+axf @ 0x401000
+END
+EXPECT=<<END
+0x00401010    1      6 pdb._main
+0x00401000    1      5 pdb.void___cdecl_SomeCoolFunction_void_
+JUMP 0x401010 pdb._main
+0x00401010    1      6 pdb._main
+0x00401000    1      5 pdb.void___cdecl_SomeCoolFunction_void_
+JUMP 0x401010 pdb._main
+END
+RUN
+
+NAME=PDB data flags do not mark function boundaries
+FILE=bins/pdb/SimplePDB.exe
+CMDS=<<END
+e io.cache=true
+e anal.slow=false
+wx e90b000000 @ 0x401000
+wx b82a000000c3 @ 0x401010
+fs+symbols
+f pdb.data 1 0x401010
+fs-
+af @ 0x401000
+afbj @ 0x401000
+END
+EXPECT=<<END
+[{"addr":4198400,"size":5,"jump":4198416,"opaddr":4198400,"inputs":0,"outputs":1,"ninstr":1,"instrs":[4198400],"traced":0},{"addr":4198416,"size":6,"opaddr":18446744073709551615,"inputs":1,"outputs":0,"ninstr":2,"instrs":[4198416,4198421],"traced":0}]
+END
+RUN

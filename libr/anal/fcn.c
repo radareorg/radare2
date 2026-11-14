@@ -1886,11 +1886,13 @@ noskip:
 				goto beach;
 			}
 			// TAILCALL CHECKS BELOW
-			{ // an existing function or a prelude marks a tail call
+			{ // An existing function, function flag or prelude marks a tail call.
 				ut8 buf[32];
 				const int nread = anal->iob.read_at (anal->iob.io, op->jump, (ut8 *)buf, sizeof (buf));
 				RAnalFunction *nfcn = r_anal_get_function_at (anal, op->jump);
-				if (nfcn || (nread > 0 && r_anal_is_prelude (anal, op->jump, buf, nread))) {
+				RFlagItem *flag = anal->flag_get? anal->flag_get (anal->flb.f, false, op->jump): NULL;
+				bool function_flag = flag && flag->space && !strcmp (flag->space->name, R_FLAGS_FS_FUNCTIONS);
+				if (nfcn || function_flag || (nread > 0 && r_anal_is_prelude (anal, op->jump, buf, nread))) {
 					R_LOG_DEBUG ("tail call jump found at 0x%08"PFMT64x, op->addr);
 					// XXX using type-jump wont analyze the destination as a function
 					// walking it from here wont make it analyze it either

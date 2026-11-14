@@ -1255,6 +1255,7 @@ typedef struct {
 	PJ *pj;
 	int format;
 	HtSU *names;
+	bool function_space;
 } GVarsOutput;
 
 static void print_gvar(GVarsOutput *out, ut64 addr, ut32 symtype, ut32 size, const char *sname, const char *name, bool unique) {
@@ -1291,6 +1292,11 @@ static void print_gvar(GVarsOutput *out, ut64 addr, ut32 symtype, ut32 size, con
 			filtered_name = suffixed;
 		}
 		ht_su_update (out->names, filtered_name, addr);
+		bool is_function = symtype & PDB_PUBSYM_FUNCTION;
+		if (out->function_space != is_function) {
+			r_strbuf_appendf (&out->sb, "fs %s\n", is_function? "functions": "symbols");
+			out->function_space = is_function;
+		}
 		if (size) {
 			r_strbuf_appendf (&out->sb, "'@0x%" PFMT64x "'f pdb.%s %u\n", addr, filtered_name, size);
 		} else {
@@ -1369,7 +1375,7 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 		pj_ka (pj, "gvars");
 	}
 	if (format == 'r' || format == '*' || format == 1) {
-		// in the symbols space they name functions before the section flags at the same address
+		// Function flags mark entrypoints before any function is analyzed.
 		r_strbuf_append (&out.sb, "fs+symbols\n");
 	}
 	char sname[PDB_SIZEOF_SECTION_NAME + 1];
