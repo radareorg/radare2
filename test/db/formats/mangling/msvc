@@ -358,3 +358,13 @@ L"australian"
 U"a"
 EOF
 RUN
+
+NAME=msvc back references of the template arguments
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc '??$f@P6AXPAH@Z@@YAXPAD0@Z'
+EOF
+EXPECT=<<EOF
+void __cdecl f<void (__cdecl *)(int *)>(char *, char *)
+EOF
+RUN

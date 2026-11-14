@@ -563,6 +563,8 @@ static size_t get_template(SDemangler *sd, const char *buf, SStrInfo *str_info, 
 	sd->depth++;
 	RList *saved_abbr_names = sd->abbr_names;
 	RList *new_abbr_names = r_list_newf (free);
+	RList *saved_abbr_types = sd->abbr_types;
+	RList *new_abbr_types = NULL;
 
 	if (!init_type_code_str_struct(&type_code_str)) {
 		goto get_template_err;
@@ -605,7 +607,10 @@ static size_t get_template(SDemangler *sd, const char *buf, SStrInfo *str_info, 
 		copy_string (&type_code_str, "<", 0);
 	}
 
+	// the template arguments have their own back references, for names and for argument types
 	sd->abbr_names = new_abbr_names;
+	new_abbr_types = r_list_newf (free);
+	sd->abbr_types = new_abbr_types;
 
 	// get identifier
 	size_t i = 0;
@@ -643,6 +648,8 @@ static size_t get_template(SDemangler *sd, const char *buf, SStrInfo *str_info, 
 get_template_err:
 	r_list_free (new_abbr_names);
 	sd->abbr_names = saved_abbr_names; // restore global list with name abbr.
+	r_list_free (new_abbr_types);
+	sd->abbr_types = saved_abbr_types;
 
 	if (memorize && type_code_str.type_str) {
 		char *s = strdup (type_code_str.type_str);
