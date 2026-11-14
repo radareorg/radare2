@@ -1105,3 +1105,19 @@ EXPECT=<<EOF
 0x00401000    1      5 j.sym.target
 EOF
 RUN
+
+NAME=afb+ keeps the entry of a function starting with nops
+FILE=malloc://0x100
+ARGS=-a x86 -b 32 -e anal.nopskip=true
+CMDS=<<EOF
+wx 909031c0c3
+af+ 0 foo f n
+afb+ 0 0 5
+afl
+afb
+EOF
+EXPECT=<<EOF
+0x00000000    1      5 foo
+0x00000000 0x00000005 00:0000 5
+EOF
+RUN

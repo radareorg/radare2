@@ -2551,8 +2551,9 @@ static int fcn_walk(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, bool f
 		.flagends = anal->opt.flagends,
 		.flagbounds = anal->opt.flagbounds,
 		.propagate_noreturn = anal->opt.propagate_noreturn,
-		// the entry point of a function flag is kept, like the nops starting a PDB __ehhandler$ stub
-		.nopskip = anal->opt.nopskip && r_arch_info (anal->arch, R_ARCH_INFO_ISVM) != R_ARCH_INFO_ISVM
+		// blocks added by hand (afb+, projects) keep the entry point they are given, and so
+		// does a function flag, like the nops starting a PDB __ehhandler$ stub
+		.nopskip = follow && anal->opt.nopskip && r_arch_info (anal->arch, R_ARCH_INFO_ISVM) != R_ARCH_INFO_ISVM
 			&& !is_function_flag_at (anal, fcn->addr),
 		.follow = follow,
 	};
