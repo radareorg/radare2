@@ -3351,7 +3351,7 @@ NAME=const int bin mangling rust swift const parsing test
 FILE=-
 CMDS="!rabin2 -D msvc ?var_const_int_ptr@@3PEBHEB"
 EXPECT=<<EOF
-int const * const var_const_int_ptr
+int const * var_const_int_ptr
 EOF
 RUN
 
@@ -3359,7 +3359,7 @@ NAME=int volatile bin mangling rust swift volatile const parsing test
 FILE=-
 CMDS="!rabin2 -D msvc ?var_volatile_int_ptr@@3PECHEC"
 EXPECT=<<EOF
-int volatile * volatile var_volatile_int_ptr
+int volatile * var_volatile_int_ptr
 EOF
 RUN
 
@@ -3367,7 +3367,7 @@ NAME=int const volatile bin mangling rust swift const volatile parsing test
 FILE=-
 CMDS="!rabin2 -D msvc ?var_const_volatile_int_ptr@@3PEDHED"
 EXPECT=<<EOF
-int const volatile * const volatile var_const_volatile_int_ptr
+int const volatile * var_const_volatile_int_ptr
 EOF
 RUN
 
