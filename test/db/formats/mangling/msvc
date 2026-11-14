@@ -306,3 +306,21 @@ void __cdecl f(char16_t, char32_t, char8_t)
 unsigned int __cdecl __crt_mbstring::__c16rtomb_utf8(char *, char16_t, struct _Mbstatet *, class __crt_cached_ptd_host &)
 EOF
 RUN
+
+NAME=msvc pointer qualifiers are not repeated
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc '?x@@3PAHB'
+!rabin2 -D msvc '?x@@3QAHB'
+!rabin2 -D msvc '?f@@YAXABQAH@Z'
+!rabin2 -D msvc '?f@@YAXPCRAH@Z'
+!rabin2 -D msvc '?_Psave@?$_Facetptr@V?$codecvt@DDU_Mbstatet@@@std@@@std@@2PBVfacet@locale@2@B'
+EOF
+EXPECT=<<EOF
+int const * x
+int const * const x
+void __cdecl f(int * const &)
+void __cdecl f(int * volatile *)
+public: static class std::locale::facet const * std::_Facetptr<class std::codecvt<char, char, struct _Mbstatet>>::_Psave
+EOF
+RUN
