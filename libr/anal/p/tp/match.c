@@ -303,6 +303,61 @@ static RAnalFunction *tp_thunk_target(RAnal *anal, RAnalFunction *fcn) {
 	return fcn;
 }
 
+static int tp_var_delta_cmp(RAnalVar * const *a, RAnalVar * const *b) {
+	return ((*a)->delta > (*b)->delta) - ((*a)->delta < (*b)->delta);
+}
+
+// A tail jump hands the args of the function over to its target untouched, like operator
+// new[] jumping to operator new: the default named stack args take the target prototype
+static void tp_tailcall_args(RAnal *anal, RAnalFunction *fcn) {
+	RAnalFunction *target = NULL;
+	RAnalBlock **bbit;
+	R_VEC_FOREACH (&fcn->bbs, bbit) {
+		RAnalBlock *bb = *bbit;
+		if (bb->jump != UT64_MAX && bb->fail == UT64_MAX && !r_anal_function_contains (fcn, bb->jump)) {
+			RAnalFunction *f = r_anal_get_function_at (anal, bb->jump);
+			target = f? tp_thunk_target (anal, f): NULL;
+			break;
+		}
+	}
+	if (!target || target == fcn || !fcn->callconv || !target->callconv || strcmp (fcn->callconv, target->callconv)) {
+		return;
+	}
+	Sdb *TDB = anal->sdb_types;
+	char *key = r_type_func_key (TDB, target->name);
+	const char *tname = key? key: target->name;
+	int argc = 0;
+	if (!r_type_func_args_count (TDB, tname, &argc)) {
+		// a user function declares no prototype, but its args were recovered
+		argc = (int)sdb_num_getf (TDB, NULL, "func.%s.args", tname);
+	}
+	RVecAnalVarPtr *vars = argc > 0
+		? r_anal_var_vec (anal, fcn, fcn->bp_frame? R_ANAL_VAR_KIND_BPV: R_ANAL_VAR_KIND_SPV): NULL;
+	if (vars) {
+		RVecAnalVarPtr_sort (vars, tp_var_delta_cmp);
+		int i = 0;
+		RAnalVar **it;
+		R_VEC_FOREACH (vars, it) {
+			RAnalVar *var = *it;
+			if (!var->isarg) {
+				continue;
+			}
+			if (i >= argc) {
+				break;
+			}
+			const char *name = r_type_func_args_name (TDB, tname, i);
+			char *type = r_type_func_args_type (TDB, tname, i);
+			if (r_str_startswith (var->name, "arg_") && name && type && r_anal_var_rename (anal, var, name)) {
+				r_anal_var_set_type (anal, var, type);
+			}
+			free (type);
+			i++;
+		}
+		RVecAnalVarPtr_free (vars);
+	}
+	free (key);
+}
+
 // the called function/import name for a call op, plus its RAnalFunction when direct
 const char *tp_call_target_name(RAnal *anal, RAnalOp *aop, ut32 type, RAnalFunction **fcn_call) {
 	*fcn_call = NULL;
@@ -776,6 +831,7 @@ R_API void r_anal_type_match(RAnal *anal, RAnalFunction *fcn) {
 		}
 	}
 	RVecAnalVarPtr_free (rvars);
+	tp_tailcall_args (anal, fcn);
 beach:
 	tp_state_fini (&ctx.tp);
 	tps_fini (tps);

@@ -1955,3 +1955,26 @@ EXPECT=<<EOF
 |           0x0000000d      e81e000000     call j.helper
 EOF
 RUN
+
+NAME=aaft types the args a stub hands over through a tail jump after its target
+FILE=malloc://128
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 6a14e81900000083c404c3
+wx 5589e55de917000000 @ 0x20
+wx 5589e58b45085dc3 @ 0x40
+af malloc @ 0x40
+af @ 0x20
+af @ 0
+afva @ 0x20
+aei
+aeim
+aaft
+afs @ 0x20
+pd 1~push
+EOF
+EXPECT=<<EOF
+void fcn.00000020 (size_t size);
+|           0x00000000      6a14           push 0x14                   ; size_t size
+EOF
+RUN
