@@ -57,6 +57,207 @@ x0 = puts ("a (b), \" ; // c") // user's note
 EOF
 RUN
 
+# 0x4 starts fcn.00000004, so it is not a block of fcn.00000000 (afb)
+NAME=pdc linear walk does not step onto a block of another function
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e pdc.structured=false
+wx 85ff750c31c0ffc0c3 @ 0
+wx ffc7ebec @ 0x10
+af @ 4
+af @ 0
+afb @ 0
+pdc @ 0~loc_
+EOF
+EXPECT=<<EOF
+0x00000000 0x00000004 00:0000 4 j 0x00000010 f 0x00000004
+0x00000010 0x00000014 00:0000 4 j 0x00000000
+    loc_0x00000000:
+        if (v) goto loc_0x10 // unlikely
+    loc_0x00000010:
+        goto loc_0    // fcn.00000000(0x1)
+EOF
+EXPECT_ERR=
+RUN
+
+# 0x4 starts fcn.00000004 (eax = 1; return), whose body must not show in fcn.00000000
+NAME=pdc linear walk renders no body of another function
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e pdc.structured=false
+wx 85ff750c31c0ffc0c3 @ 0
+wx ffc7ebec @ 0x10
+af @ 4
+af @ 0
+pdc @ 0
+EOF
+EXPECT=<<EOF
+// callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
+void fcn.00000000 (int64_t arg1) {
+    loc_0x00000000:
+        // CODE XREF from fcn.00000000 @ 0x12(x)
+        v = edi & edi // arg1
+        if (v) goto loc_0x10 // unlikely
+        return rax;
+        
+    loc_0x00000010:
+        edi++         // arg1
+        goto loc_0    // fcn.00000000(0x1)
+}
+
+EOF
+EXPECT_ERR=
+RUN
+
+# afbe 4 0x10 makes block 0x4 of fcn.00000004 a switch; fcn.00000000 does not own it
+NAME=pdco switch lookahead skips a block of another function
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 85ff750c31c0ffc0c3 @ 0
+wx ffc7ebec @ 0x10
+af @ 4
+af @ 0
+afbe 4 0x10
+pdco @ 0~switch
+e pdc.structured=false
+pdco @ 0~switch
+EOF
+EXPECT=
+EXPECT_ERR=
+RUN
+
+# fcn.0 loops over 0x2..0x10; block 0x2 falls through to 0x6, a switch block of fcn.6
+NAME=pdc loop switch lookahead skips a block of another function
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e pdc.structured=false
+wx eb0e85ff750affc0c3 @ 0
+wx ffcf75eec3 @ 0x10
+af+ 6 fcn.6
+afb+ 6 6 2 8
+afb+ 6 8 1
+afbe 6 8
+af+ 0 fcn.0
+afb+ 0 0 2 0x10
+afb+ 0 2 4 0x10 6
+afb+ 0 0x10 4 2 0x14
+afb+ 0 0x14 1
+pdc @ 0
+EOF
+EXPECT=<<EOF
+// callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
+void fcn.0 (void) {
+        
+    while (v) {
+        v = edi & edi
+    }
+    loc_0x00000014:
+        return
+}
+
+EOF
+RUN
+
+# fcn.0 owns [0x8, 0x10) and falls through to 0xc, where fcn.c owns its own block
+NAME=pdc linear walk skips an overlapping block of another function
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e pdc.structured=false
+wx 85ff751c @ 0
+wx 90909090ffc79090 @ 8
+wx c3 @ 0x20
+af+ 0xc fcn.c
+afb+ 0xc 0xc 4
+af+ 0 fcn.0
+afb+ 0 0 4 0x20 0xc
+afb+ 0 8 8
+afb+ 0 0x20 1
+pdc @ 0~loc_
+EOF
+EXPECT=<<EOF
+        if (v) goto loc_0x20 // unlikely
+        goto loc_0x0000000c;
+    loc_0x00000020:
+EOF
+EXPECT_ERR=
+RUN
+
+# 0x8 starts fcn.00000008, so the fall-through of block 0x4 is not a block of fcn.00000000 (afb)
+NAME=pdc linear walk does not step onto another function from an analyzed block
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e pdc.structured=false
+wx 85ff750c85f6751831c0c3 @ 0
+wx ebf2 @ 0x10
+wx c3 @ 0x20
+af @ 8
+af @ 0
+afb @ 0
+pdc @ 0~loc_
+EOF
+EXPECT=<<EOF
+0x00000000 0x00000004 00:0000 4 j 0x00000010 f 0x00000004
+0x00000004 0x00000008 00:0000 4 j 0x00000020 f 0x00000008
+0x00000010 0x00000012 00:0000 2 j 0x00000004
+0x00000020 0x00000021 00:0000 1
+        if (v) goto loc_0x10 // unlikely
+        goto loc_0x00000004;
+    loc_0x00000010:
+        goto loc_4
+            goto loc_0x00000004;
+    loc_0x00000004:
+        if (v) goto loc_0x20 // unlikely
+    loc_0x00000020:
+EOF
+EXPECT_ERR=
+RUN
+
+# 0x4 starts fcn.00000004; block 0x0 loops on itself (jne 0)
+NAME=pdc linear walk does not fall into another function after a self-loop
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e pdc.structured=false
+wx 85ff75fc31c0c3 @ 0
+af @ 4
+af @ 0
+afb @ 0
+pdc @ 0~loc_
+EOF
+EXPECT=<<EOF
+0x00000000 0x00000004 00:0000 4 j 0x00000000 f 0x00000004
+    loc_0x00000000:
+        if (v) goto loc_0 // unlikely
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=pdc linear walk keeps the fall-through block of the same function
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e pdc.structured=false
+wx 85ff750c31c0ffc0c3 @ 0
+wx ffc7ebec @ 0x10
+af @ 0
+pdc @ 0~loc_
+EOF
+EXPECT=<<EOF
+    loc_0x00000000:
+        if (v) goto loc_0x10 // unlikely
+    loc_0x00000010:
+        goto loc_0    // fcn.00000000(0x1)
+            goto loc_0x00000004;
+    loc_0x00000004:
+EOF
+RUN
+
 NAME=pdc assigns floating return registers and omits void assignments
 FILE=malloc://4096
 ARGS=-a arm -b 64
@@ -2028,6 +2229,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# ffunc only covers 0x40 through its block 0x30; the block at 0x40 is gfunc's entry
 NAME=pdc structured keeps loc where the same rendering prints the label
 FILE=malloc://0x200
 ARGS=-a x86 -b 64 -e pdc.structured=1
@@ -2054,8 +2256,8 @@ afb+ 0x190 0x190 6
 pdc @ 0x180~goto
 EOF
 EXPECT=<<EOF
-        goto loc_0x00000040;
-        loc_0x00000040:
+        goto gfunc;
+        goto gfunc;
         goto hfun;
 EOF
 RUN
