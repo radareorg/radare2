@@ -323,7 +323,7 @@ static RCoreHelpMessage help_msg_ac = {
 	"acvf", " [offset] ([class name])", "lookup function address on vtable offset",
 	"acv-", " [class name] [vtable id]", "delete vtable by id (from acv [class name])",
 	"acb", " [class name]", "list bases of class",
-	"acb", " [class name] [base class name] ([offset])", "add base class",
+	"acb", " [class name] [base class name] ([offset]) ([vbptr off] [vbtable off])", "add base class (virtual if vbptr given)",
 	"acb-", " [class name] [base class id]", "delete base by id (from acb [class name])",
 	"acm", " [class name] [method name] [offset] ([vtable offset]) ([vtable addr])", "add/edit method",
 	"acm-", " [class name] [method name]", "delete method",
@@ -16536,7 +16536,18 @@ static void cmd_acb(RCore *core, const char *input) {
 			.class_name = base_str
 		};
 		if (end) {
-			base.offset = r_num_get (core->num, end + 1);
+			// ([offset]) ([vbptr offset] [vbtable offset]) for virtual bases
+			RList *args = r_str_split_list (end + 1, " ", 0);
+			const int nargs = r_list_length (args);
+			base.offset = r_num_get (core->num, r_list_get_n (args, 0));
+			if (nargs > 1) {
+				base.is_virtual = true;
+				base.vbptr_offset = (st64)r_num_get (core->num, r_list_get_n (args, 1));
+				if (nargs > 2) {
+					base.vbtable_offset = (st64)r_num_get (core->num, r_list_get_n (args, 2));
+				}
+			}
+			r_list_free (args);
 		}
 		err = r_anal_class_base_set (core->anal, cstr, &base);
 		free (base.id);

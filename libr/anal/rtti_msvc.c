@@ -825,9 +825,15 @@ static void recovery_apply_bases(RRTTIMSVCAnalContext *context, const char *clas
 			continue;
 		}
 
-		RAnalBaseClass base;
-		base.id = NULL;
-		base.offset = (ut64)base_desc->bcd->where.mdisp;
+		const rtti_base_class_descriptor *bcd = base_desc->bcd;
+		RAnalBaseClass base = {0};
+		base.offset = (ut64)bcd->where.mdisp;
+		// virtual bases have a vbtable displacement and no fixed offset
+		if (bcd->where.pdisp != -1) {
+			base.is_virtual = true;
+			base.vbptr_offset = bcd->where.pdisp;
+			base.vbtable_offset = bcd->where.vdisp;
+		}
 		base.class_name = strdup (base_class_name);
 		r_anal_class_base_set (context->vt_context->anal, class_name, &base);
 		r_anal_class_base_fini (&base);

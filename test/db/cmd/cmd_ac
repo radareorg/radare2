@@ -612,3 +612,36 @@ EXPECT=<<EOF
 'acm Ex5_1 virtual_8_0 0x20 0 0x10
 EOF
 RUN
+
+NAME=acb virtual base
+FILE=-
+CMDS=<<EOF
+ac Animal
+ac Mascota
+ac Perro
+acb Perro Mascota
+acb Perro Animal 0 0 4
+acb Mascota Animal 8 0x4 0x8
+acb Perro
+acb Mascota
+acl
+acl*~acb
+aclj~{[0].bases[1]}
+aclj~{[1].bases[0]}
+EOF
+EXPECT=<<EOF
+Perro:
+     0 Mascota @ +0x0
+     1 Animal @ virtual (vbptr +0x0, vbtable +0x4)
+Mascota:
+     0 Animal @ virtual (vbptr +0x4, vbtable +0x8) +0x8
+Animal
+Mascota: virtual Animal
+Perro: Mascota, virtual Animal
+'acb Perro Mascota 0
+'acb Perro Animal 0 0 4
+'acb Mascota Animal 8 4 8
+{"id":"1","name":"Animal","offset":0,"virtual":true,"vbptr_offset":0,"vbtable_offset":4}
+{"id":"0","name":"Animal","offset":8,"virtual":true,"vbptr_offset":4,"vbtable_offset":8}
+EOF
+RUN
