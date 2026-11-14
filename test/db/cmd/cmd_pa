@@ -754,3 +754,22 @@ ERROR: Cannot assemble 'brtable 2 0 1' at line 1
 ERROR: Cannot assemble 'i32.load 2' at line 1
 EOF
 RUN
+
+NAME=pa thumb rejects out of range shift amounts
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+pa lsls r0, r2, 32
+pa lsrs r0, r2, 0
+pa asrs r0, r2, 0
+pa asrs r0, r2, 33
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'lsls r0, r2, 32' at line 1
+ERROR: Cannot assemble 'lsrs r0, r2, 0' at line 1
+ERROR: Cannot assemble 'asrs r0, r2, 0' at line 1
+ERROR: Cannot assemble 'asrs r0, r2, 33' at line 1
+EOF
+RUN

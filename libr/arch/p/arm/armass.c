@@ -1696,7 +1696,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			ut8 reg1 = getreg (ao->a[0]);
 			ut8 reg2 = getreg (ao->a[1]);
 			ut32 imm = getnum (ao->a[2]);
-			if (((int)imm < 1) && ((int)imm > 32)) {
+			if (imm < 1 || imm > 32) {
 				return -1;
 			}
 			ao->o = 0x0010;
@@ -2925,7 +2925,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			ut8 reg1 = getreg (ao->a[0]);
 			ut8 reg2 = getreg (ao->a[1]);
 			ut32 num = getnum (ao->a[2]);
-			if (num > 32) {
+			if (num > 31) {
 				return -1;
 			}
 			ao->o = 0x0000;
@@ -2968,9 +2968,10 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			ut8 reg1 = getreg (ao->a[0]);
 			ut8 reg2 = getreg (ao->a[1]);
 			ut32 num = getnum (ao->a[2]);
-			if (num > 32) {
+			if (num < 1 || num > 32) {
 				return -1;
 			}
+			num &= 0x1f; // a shift of 32 is encoded as 0
 			ao->o = 0x0008;
 			if (std_16bit_2reg (ao, m)) {
 				ao->o |= (num & 0x03) << 14;

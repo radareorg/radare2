@@ -1130,3 +1130,7 @@ ad "wfi" 30bf
 ad "wfi.w" aff30380
 ad "yield" 10bf
 ad "yield.w" aff30180
+a "lsrs r0, r2, 32" 1008
+a "asrs r0, r2, 32" 1010
+a "lsr.w r8, r9, 32" 4fea1908
+a "asr.w r8, r9, 32" 4fea2908
