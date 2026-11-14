@@ -609,17 +609,22 @@ static size_t get_template(SDemangler *sd, const char *buf, SStrInfo *str_info, 
 
 	// get identifier
 	size_t i = 0;
+	bool first = true;
 	while (*buf != '@') {
-		if (i) {
-			copy_string (&type_code_str, ", ", 0);
-		}
 		if (get_type_code_string (sd, buf, &i, &str_type_code) != eDemanglerErrOK) {
 			if (get_template_params (sd, buf, &i, &str_type_code) != eDemanglerErrOK) {
 				len = 0;
 				goto get_template_err;
 			}
 		}
-		copy_string (&type_code_str, str_type_code, 0);
+		// the empty parameter packs $$V and $$Z print nothing
+		if (*str_type_code) {
+			if (!first) {
+				copy_string (&type_code_str, ", ", 0);
+			}
+			copy_string (&type_code_str, str_type_code, 0);
+			first = false;
+		}
 		buf = str_skip_report (buf, &len, i);
 		R_FREE (str_type_code);
 	}
