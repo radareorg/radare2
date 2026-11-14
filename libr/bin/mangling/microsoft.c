@@ -179,6 +179,7 @@ static inline size_t get_ptr_modifier(const char encoded, SDataType *ptr_modifie
 static EDemanglerErr parse_function(SDemangler *sd, const char *sym, STypeCodeStr *type_code_str, char **demangled_function, size_t *chars_read);
 static EDemanglerErr parse_microsoft_mangled_name(SDemangler *sd, const char *sym, char **demangled_name, size_t *chars_read);
 static EDemanglerErr parse_microsoft_rtti_mangled_name(SDemangler *sd, const char *sym, char **demangled_name, size_t *chars_read);
+static void pf(SDemangler *sd, SStateInfo *state, STypeCodeStr *type_code_str, const char *pointer_str);
 
 static const char *str_skip_report(const char *s, size_t * R_NULLABLE len, size_t n) {
 	size_t i;
@@ -1173,7 +1174,8 @@ static inline void parse_type_modifier(SDemangler *sd, SStateInfo *state, STypeC
 	state->buff_for_parsing++;
 	state->amount_of_read_chars++;
 
-	if (*state->buff_for_parsing == 'Y') {
+	const bool is_array = *state->buff_for_parsing == 'Y';
+	if (is_array) {
 		char *n1;
 		int num;
 
@@ -1237,6 +1239,19 @@ static inline void parse_type_modifier(SDemangler *sd, SStateInfo *state, STypeC
 		// TODO: no idea what this means
 		state->buff_for_parsing += 3;
 		state->amount_of_read_chars += 3;
+	}
+
+	const char *fp = state->buff_for_parsing;
+	if (!is_array && !clr_type && !is_pin_ptr && !*mod.left && !*mod.right && *modifier_str && fp[0] && strchr ("PQRS", fp[0]) && fp[1] == '6') {
+		// pointers and references to function pointers go in its parentheses, like void (__cdecl *&&)(int *)
+		static const char *const inner[] = { "*", "*const", "*volatile", "*const volatile" };
+		const char *in = inner[fp[0] - 'P'];
+		char *ptr = r_str_newf ("%s%s%s", in, isalnum ((ut8)in[strlen (in) - 1])? " ": "", r_str_trim_head_ro (tmp_str.type_str));
+		state->buff_for_parsing += 2;
+		state->amount_of_read_chars++;
+		pf (sd, state, type_code_str, ptr);
+		free (ptr);
+		goto MODIFIER_err;
 	}
 
 	err = get_type_code_string (sd, state->buff_for_parsing, &i, &tmp);

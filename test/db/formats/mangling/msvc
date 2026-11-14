@@ -438,3 +438,15 @@ EXPECT=<<EOF
 unsigned __int64 `extern "C" __local_stdio_printf_options'::`2'::_OptionsStorage
 EOF
 RUN
+
+NAME=msvc pointers and references to function pointers
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc '??$?0P6AXPAH@Z$0A@@?$unique_ptr@HP6AXPAH@Z@std@@QAE@PAH$$QAP6AX0@Z@Z'
+!rabin2 -D msvc '??$?RP6AXXZ@__crt_internal_free_policy@@QBEXQBQ6AXXZ@Z'
+EOF
+EXPECT=<<EOF
+public: __thiscall std::unique_ptr<int, void (__cdecl *)(int *)>::unique_ptr<int, void (__cdecl *)(int *)><void (__cdecl *)(int *), 0>(int *, void (__cdecl *&&)(int *))
+public: void __thiscall __crt_internal_free_policy::operator()<void (__cdecl *)(void)>(void (__cdecl *const *const)(void)) const
+EOF
+RUN
