@@ -159,3 +159,21 @@ xcc ac4 >= #0
 swap ac0, ac2
 EOF
 RUN
+
+NAME=C55x+ rejects reserved and unknown mmap operands
+FILE=-
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.cpu=c55x+
+pi 1 @x:2461e548
+pi 1 @x:2461e5c8
+pi 1 @x:2461e600
+pi 1 @x:2461e508
+EOF
+EXPECT=<<EOF
+invalid
+invalid
+invalid
+pop mmap(@st1_55)
+EOF
+RUN

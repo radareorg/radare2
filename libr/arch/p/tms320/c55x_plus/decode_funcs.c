@@ -1097,6 +1097,9 @@ char *get_sim_reg (char *reg_arg, ut32 ins_bits) {
 			}
 		}
 		aux = get_reg_name_1 (ins_bits >> 2);
+		if (!aux) {
+			return NULL;
+		}
 		res = strcat_dup ("@", aux, 2);
 		break;
 	case 2:
@@ -1104,12 +1107,8 @@ char *get_sim_reg (char *reg_arg, ut32 ins_bits) {
 		if (!aux) {
 			return NULL;
 		}
-		sprintf (aux, "@#0x%x", code);
+		sprintf (aux, "@#0x%x", ins_bits >> 2);
 		res = aux;
-		break;
-	case 1:
-	case 3:
-		res = strdup ("<reserved>");
 		break;
 	}
 	return res;

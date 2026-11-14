@@ -68,3 +68,6 @@ d "rol carry, ac17, carry, ac24" a8181100
 d "rol tc2, ac17, carry, ac24" a8181101
 d "rol carry, ac17, tc2, ac24" a8181102
 d "rol tc2, ac17, tc2, ac24" a8181103
+d "pop mmap(@#0xe5)" 2461e588
+d "psh mmap(@#0x12)" 24611280
+d "psh mmap(@#0xff)" 2461ff80
