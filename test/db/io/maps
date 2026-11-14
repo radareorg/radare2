@@ -243,6 +243,228 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=-w read-modify-writes refuse a section mapped without read perm
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w
+CMDS=<<EOF
+wox ff @ section..comment!0x12
+wB 0xff @ section..comment
+?v $?
+wB 1 @ section..rodata
+wi1+1 @ section..comment+1
+wi4+1 @ section..rodata+4
+woE aes-ecb 000102030405060708090a0b0c0d0e0f @ section..comment!0x10
+woE aes-ecb 000102030405060708090a0b0c0d0e0f @ section..rodata!0x10
+woD aes-ecb 000102030405060708090a0b0c0d0e0f @ section..comment!0x10
+woD aes-ecb 000102030405060708090a0b0c0d0e0f @ section..rodata!0x10
+woS ed25519 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f @ section..rodata!0x10
+woe 1 5 1 @ section..comment!4
+wow @ section..comment!4
+wx 4 @ section..comment+1
+wb 0100000101 @ section..comment+5
+wfx section..rodata 4 @ section..comment
+wfx section..comment 4 @ section..rodata
+wfx section..eh_frame 4 @ section..rodata+4
+wd section..comment 4 @ section..rodata
+wd section..rodata+4 4 @ section..eh_frame
+wf section..comment 4 @ section..rodata
+wf section..rodata+4 4 @ section..eh_frame
+y 8 @ section..rodata
+yz @ section..comment
+yt 4 section..rodata @ section..comment
+wow @ section..rodata!4
+wox ff @ section..rodata!0x20
+wox 0f @ section..rodata!6
+wow 41 @ section..comment+2!2
+wx 41 @ section..comment
+wb 01000010 @ section..comment+4
+p8 2 @ section..comment
+ompg+r
+wox ff @ section..comment+0x11!1
+e io.va=false
+p8 0x18 @ 0x5b
+EOF
+EXPECT=<<EOF
+0x1
+ffff
+476a6363600f41474141422028474e552920342e392e32ff
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot use unreadable bytes at 0x08000061, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x08000061, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x08000061, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x08000062, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x08000061, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x08000061, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x08000061, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x08000061, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x08000061, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x08000061, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x08000061, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x08000061, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x08000062, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x08000067, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x08000061, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x08000061, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x08000061, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x08000061, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x08000061, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x08000061, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x08000061, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x08000061, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x08000061, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x08000061, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x08000061, narrow the range or make the map readable with omp
+EOF
+RUN
+
+NAME=-w with io.cache caches no 0xff from a map without read perm
+FILE=slurp://bins/elf/analysis/test.obj
+ARGS=-w -e io.cache=true
+CMDS=<<EOF
+wox 00 @ section..comment!4
+wci
+e io.va=false
+p8 4 @ 0x61
+EOF
+EXPECT=<<EOF
+00474343
+EOF
+RUN
+
+NAME=read-modify-writes run under io.va=false over a map without read perm
+FILE=slurp://bins/coff/tif_dir.obj
+ARGS=-w
+CMDS=<<EOF
+p8 4 @ 0x10
+e io.va=false
+p8 4 @ 0x10
+wox ff @ 0x10!4
+p8 4 @ 0x10
+EOF
+EXPECT=<<EOF
+ffffffff
+00000000
+ffffffff
+EOF
+RUN
+
+NAME=unreadable maps refuse swaps, copies, shifts, yz past them and io.mask aliases
+FILE=malloc://32
+CMDS=<<EOF
+wx 1011121314151617
+wx 41424300 @ 0x10
+wx 51005354 @ 0x18
+om 3 2 2 2 --- x
+om 3 0x104 1 4 --- alias
+om 3 0x11 1 0x11 -w- past
+om 3 0x1a 1 0x1a -w- after
+wox ff @ 0!6
+wo2 @ 1!2
+wd 2 1 @ 8
+wow 41 @ 0!4
+wes 2 -2 2
+e io.mask=0xff
+wd 0x102 1 @ 8
+wd 0x104 1 @ 9
+e io.mask=0x1f
+wd 0x1a 8 @ 0xc
+wd 0x1e 6 @ 0xc
+wd 0x1e 4 @ 0xc
+e io.mask=0
+wd 0xfffffffffffffffe 6 @ 0xc
+y 2 @ 0x1e
+yz 3 @ 0x10
+y8
+yz @ 0x10
+y8
+yz @ 0x18
+y8
+b 2
+yz 4 @ 0x18
+y8
+e io.va=false
+p8 6 @ 0
+p8 2 @ 8
+p8 4 @ 0xc
+EOF
+EXPECT=<<EOF
+0000
+0000
+51
+5100
+414112131415
+0014
+00004141
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot use unreadable bytes at 0x00000002, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x00000002, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x00000002, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x00000002, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x00000002, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x0000001a, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x00000002, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x00000002, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x00000011, narrow the range or make the map readable with omp
+ERROR: Cannot use unreadable bytes at 0x00000011, narrow the range or make the map readable with omp
+EOF
+RUN
+
+NAME=wfx still swaps the bytes a partial write reached
+FILE=malloc://32
+CMDS=<<EOF
+wx 0102030405060708
+wx 1112131415161718 @ 0x10
+om 3 4 4 4 r-- ro
+wfx 0x10 8 @ 0
+e io.va=false
+p8 8 @ 0
+p8 8 @ 0x10
+EOF
+EXPECT=<<EOF
+1112131405060708
+0102030405060708
+EOF
+EXPECT_ERR=<<EOF
+ERROR: write failed at 0x00000000
+EOF
+RUN
+
+NAME=yz of an empty string is not refused for a map elsewhere
+FILE=malloc://32
+ARGS=-e io.0xff=0
+CMDS=<<EOF
+om 3 8 1 8 -w- elsewhere
+wx 41 @ 0x10
+y 1 @ 0x10
+yz @ 0x100
+y8
+EOF
+EXPECT=<<EOF
+41
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=a read-only session still reads an unreadable map and refuses to yank it
+FILE=bins/elf/analysis/test.obj
+CMDS=<<EOF
+p8 4 @ section..comment
+y 4 @ section..comment
+y 4 @ section..text
+y8
+EOF
+EXPECT=<<EOF
+ffffffff
+554889e5
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot use unreadable bytes at 0x08000061, narrow the range or make the map readable with omp
+EOF
+RUN
+
 NAME=map names cannot carry commands into om* and om**
 FILE=-
 CMDS=<<EOF

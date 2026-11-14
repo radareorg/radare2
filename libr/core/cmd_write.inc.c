@@ -247,6 +247,9 @@ R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 		if (len < 0) {
 			len = -len;
 			if (!masked) {
+				if (!core_check_readable (core, addr + len - 1, 1)) {
+					goto beach;
+				}
 				ut8 byte = 0;
 				if (r_io_read_at (core->io, addr + len - 1, &byte, 1)) {
 					buf[len - 1] |= byte & 0xf;
@@ -289,6 +292,9 @@ beach:
 }
 
 static void write_encrypted_block(RCore *core, const char *algo, const char *key, int direction, const char *iv) {
+	if (!core_check_readable (core, core->addr, core->blocksize)) {
+		return;
+	}
 	int keylen = 0;
 	ut8 *binkey = NULL;
 	if (r_str_startswith (key, "s:")) {
@@ -343,6 +349,9 @@ static void write_encrypted_block(RCore *core, const char *algo, const char *key
 }
 
 static void write_block_signature(RCore *core, const char *algo, const char *key) {
+	if (!core_check_readable (core, core->addr, core->blocksize)) {
+		return;
+	}
 	int keylen = 0;
 	ut8 *binkey = NULL;
 	if (r_str_startswith (key, "s:")) {
@@ -387,6 +396,9 @@ static void write_block_signature(RCore *core, const char *algo, const char *key
 
 static void cmd_write_bits(RCore *core, int set, ut64 val) {
 	ut8 buf[sizeof (ut64)] = { 0 };
+	if (!core_check_readable (core, core->addr, sizeof (buf))) {
+		return;
+	}
 	// used to set/unset bit in current address
 	if (!r_io_read_at (core->io, core->addr, buf, sizeof (buf))) {
 		cmd_write_fail (core);
@@ -401,6 +413,9 @@ static void cmd_write_bits(RCore *core, int set, ut64 val) {
 }
 
 static void cmd_write_inc(RCore *core, int size, st64 num) {
+	if (!core_check_readable (core, core->addr, size)) {
+		return;
+	}
 	const bool be = r_config_get_b (core->config, "cfg.bigendian");
 	ut8 *b = core->block;
 	switch (size) {
@@ -789,7 +804,7 @@ static bool cmd_wff(RCore *core, const char *input) {
 
 static bool ioMemcpy(RCore *core, ut64 dst, ut64 src, int len) {
 	bool ret = false;
-	if (len > 0) {
+	if (len > 0 && core_check_readable (core, src, len)) {
 		ut8 * buf = calloc (1, len);
 		if (buf) {
 			if (r_io_read_at (core->io, src, buf, len)) {
@@ -826,7 +841,7 @@ static bool cmd_wfx(RCore *core, const char *input) {
 		free (args);
 		return false;
 	}
-	if (len > 0) {
+	if (len > 0 && core_check_readable (core, dst, len) && core_check_readable (core, src, len)) {
 		// cache dest, memcpy, write cache
 		ut8 *buf = calloc (1, len);
 		if (buf) {
@@ -2387,6 +2402,7 @@ static int cmd_wb(void *data, const char *input) {
 	}
 
 	// Check that user input only contains binary data
+	int nbits = 0;
 	for (i = 0; i < uil; i++) {
 		c = input[i];
 		// Ignore whitespaces
@@ -2398,6 +2414,11 @@ static int cmd_wb(void *data, const char *input) {
 			R_LOG_ERROR ("wb operates only on binary data");
 			return 0;
 		}
+		nbits++;
+	}
+	// a trailing partial byte keeps the bits it reads
+	if ((nbits % 8) && !core_check_readable (core, core->addr + (nbits / 8), 1)) {
+		return 0;
 	}
 
 	// Iterate user input bitwise and write output every 8 bits
@@ -2517,7 +2538,8 @@ static int cmd_wd(void *data, const char *input) {
 			*arg++ = 0;
 			ut64 addr, len;
 			if (!write_num (core, inp, &addr, UT64_MAX)
-				|| !write_num (core, arg, &len, 0xfffff) || !len) {
+				|| !write_num (core, arg, &len, 0xfffff) || !len
+				|| !core_check_readable (core, addr, len)) {
 				free (inp);
 				return 0;
 			}

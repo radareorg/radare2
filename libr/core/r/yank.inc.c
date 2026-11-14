@@ -281,7 +281,7 @@ static bool yank_string(RCore *core, RCmdContext *ctx) {
 	}
 	r_io_read_at (core->io, core->addr, buf, bsize);
 	const ut32 len = max? R_MIN (max, bsize): r_str_nlen ((const char *)buf, bsize);
-	const bool ok = r_core_yank_set (core, core->addr, buf, len);
+	const bool ok = core_check_readable (core, core->addr, len) && r_core_yank_set (core, core->addr, buf, len);
 	free (buf);
 	return ok;
 }
