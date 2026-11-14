@@ -340,3 +340,21 @@ class std::basic_ostream<wchar_t, struct std::char_traits<wchar_t>> *std::_Ptr_w
 void __cdecl f(void (__cdecl *const)(void))
 EOF
 RUN
+
+NAME=msvc string literals
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc '??_C@_0BH@ADHIKLDE@?5?5is?5a?5Dog?0?5and?5says?3?5@'
+!rabin2 -D msvc '??_C@_02IMAAIBEM@E?6@'
+!rabin2 -D msvc '??_C@_1BG@GKAGPCGG@?$AAa?$AAu?$AAs?$AAt?$AAr?$AAa?$AAl?$AAi?$AAa?$AAn@'
+!rabin2 -D msvc '??_C@_0BA@ABC@?$AA?a?Z?9?$PP?$IA@'
+!rabin2 -D msvc '??_C@_07ABC@a?$AA?$AA?$AAb?$AA?$AA?$AA?$AA?$AA@'
+EOF
+EXPECT=<<EOF
+"  is a Dog, and says: "...
+"E\n"...
+L"australian"
+"\0\xE1\xDA-\xFF\x80"...
+U"a"
+EOF
+RUN
