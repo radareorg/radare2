@@ -1307,6 +1307,7 @@ static void print_gvar(GVarsOutput *out, ut64 addr, ut32 symtype, ut32 size, con
 			// x86-32 MSVC member functions: this in ecx and the callee cleans the stack
 			if (strstr (name, "__thiscall")) {
 				r_strbuf_appendf (&out->fcns, "'@0x%" PFMT64x "'afc thiscall\n", addr);
+				r_strbuf_appendf (&out->fcns, "'@0x%" PFMT64x "'afva\n", addr);
 			}
 		}
 		free (filtered_name);

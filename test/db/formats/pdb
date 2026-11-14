@@ -80,10 +80,17 @@ RUN
 NAME=idp applies thiscall from a demangled PDB public symbol
 FILE=bins/pdb/SimplePDB.exe
 CMDS=<<EOF
+e io.cache=true
+wx 8bc1c3 @ 0x401000
 idpi* bins/pdb/SimplePDB-thiscall.pdb~afc
+idp bins/pdb/SimplePDB-thiscall.pdb
+afc @ 0x401000
+afvr @ 0x401000
 EOF
 EXPECT=<<EOF
 '@0x401000'afc thiscall
+thiscall
+arg int32_t arg1 @ ecx
 EOF
 RUN
 NAME=idp adds the static functions of the module symbols
