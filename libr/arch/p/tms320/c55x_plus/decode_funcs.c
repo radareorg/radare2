@@ -13,7 +13,6 @@ char *get_tc2_tc1(ut32 ins_bits) {
 	char *res = "tc1";
 	if (ins_bits) {
 		if (ins_bits != 1) {
-			fprintf(stderr, "Invalid instruction TC2 or TC1 (%d)\n", ins_bits);
 			return NULL;
 		}
 		res = "tc2";
@@ -49,9 +48,6 @@ char *get_trans_reg(ut32 ins_bits) {
 	case 1:
 		res = "trn7";
 		break;
-
-	default:
-		fprintf (stderr, "Invalid transaction instruction 0x%x\n", ins_bits);
 	}
 	return res? strdup (res): NULL;
 }
