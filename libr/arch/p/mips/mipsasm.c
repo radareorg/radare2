@@ -48,13 +48,13 @@ static struct {
 	{ "xor", 'R', 3, 38, 0 },
 	{ "and", 'R', 3, 36, 0 },
 	{ "sll", 'R', -3, 0, 0 },
-	{ "sllv", 'R', 3, 4, 0 },
+	{ "sllv", 'R', -3, -4, 0 },
 	{ "slt", 'R', 3, 42, 0 },
 	{ "sltu", 'R', 3, 43, 0 },
 	{ "sra", 'R', -3, 3, 0 },
 	{ "srl", 'R', -3, 2, 0 },
-	{ "srlv", 'R', 3, 6, 0 },
-	{ "srav", 'R', 3, 7, 0 },
+	{ "srlv", 'R', -3, -6, 0 },
+	{ "srav", 'R', -3, -7, 0 },
 	{ "add", 'R', 3, 32, 0 },
 	{ "move", 'R', -2, 32, 0 },
 	{ "addu", 'R', 3, 33, 0 },
@@ -64,8 +64,8 @@ static struct {
 	{ "multu", 'R', 2, 25, 0 },
 	{ "div", 'R', 2, 26, 0 },
 	{ "divu", 'R', 2, 27, 0 },
-	{ "mfhi", 'R', 1, 16, 0 },
-	{ "mflo", 'R', 1, 18, 0 },
+	{ "mfhi", 'R', -1, 16, 0 },
+	{ "mflo", 'R', -1, 18, 0 },
 	{ "mthi", 'R', 1, 17, 0 },
 	{ "mtlo", 'R', 1, 19, 0 },
 	{ "jalr", 'R', -2, 9, 0 },
@@ -162,11 +162,11 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 	*w2 = 0;
 	*w3 = 0;
 
-	if (!strncmp (s, "jalr", 4) && !strchr (s, ',')) {
+	if (!strncmp (s, "jalr", 4) && !strchr (str, ',')) {
 		char opstr[32];
 		const char *arg = strchr (s, ' ');
 		if (arg) {
-			snprintf (opstr, sizeof (opstr), "jalr ra ra %s", arg + 1);
+			snprintf (opstr, sizeof (opstr), "jalr ra %s", arg + 1);
 			free (s);
 			s = strdup (opstr);
 			if (!s) {
