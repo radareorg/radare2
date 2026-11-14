@@ -529,7 +529,7 @@ EXPECT=<<EOF
 'ac Album
 'acb Deadwing PorcupineTreeAlbum 8
 'acb PorcupineTreeAlbum Album 0
-'acv PorcupineTreeAlbum 0x1337 66
+'acv PorcupineTreeAlbum 0x1337 66 0
 'acm PorcupineTreeAlbum Listen 0xdeadbeef -1
 EOF
 RUN
@@ -592,5 +592,23 @@ EOF
 EXPECT=<<EOF
 Sandstorm: Flatline
   Darude @ 0x1337 (vtable + 0x42)
+EOF
+RUN
+
+NAME=acl* vtable size and sanitized class flags
+FILE=malloc://0x100
+CMDS=<<EOF
+ac Ex5.1
+acv Ex5.1 0x10 8 0x8
+acm Ex5.1 virtual_8_0 0x20 0 0x10
+f~Ex5
+acl*
+EOF
+EXPECT=<<EOF
+0x00000010 8 vtable.Ex5_1.0
+0x00000020 0 method.Ex5_1.virtual_8_0
+'ac Ex5_1
+'acv Ex5_1 0x10 8 8
+'acm Ex5_1 virtual_8_0 0x20 0 0x10
 EOF
 RUN
