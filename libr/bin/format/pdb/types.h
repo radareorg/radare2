@@ -1262,8 +1262,10 @@ typedef struct {
 #define PDB_S_LABEL32 0x1105
 #define PDB_S_LPROC32 0x110F
 #define PDB_S_GPROC32 0x1110
+#define PDB_S_TRAMPOLINE 0x112C
 #define PDB_S_LPROC32_ID 0x1146
 #define PDB_S_GPROC32_ID 0x1147
+#define PDB_TRAMP_INCREMENTAL 0 // trampIncremental in S_TRAMPOLINE
 
 // procedures (S_*PROC32) and code labels (S_LABEL32)
 typedef struct {
@@ -1274,10 +1276,19 @@ typedef struct {
 	char *name;
 } SModuleProc;
 
+// incremental linking thunks (S_TRAMPOLINE): a jmp at the thunk to the target
+typedef struct {
+	ut32 thunk_offset;
+	ut32 target_offset;
+	ut16 thunk_segment;
+	ut16 target_segment;
+} SModuleTrampoline;
+
 typedef struct {
 	ut32 sym_size;
 	RList *procs;
 	RList *labels;
+	RList *trampolines;
 } SModuleStream;
 // end GDATA structures
 
