@@ -92,3 +92,19 @@ this
 int32_t arg_8h
 EOF
 RUN
+
+NAME=afva keeps the args a tail jump hands over but not the locals of its target
+FILE=malloc://128
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 2b49fce918000000
+wx e91b000000 @ 0x20
+wx 5589e551894dfc8b4508c9c20400 @ 0x40
+f fcn.thunk @ 0
+aaa
+afv @ 0
+EOF
+EXPECT=<<EOF
+arg int32_t arg_8h @ ebp+0x8
+EOF
+RUN

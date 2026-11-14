@@ -4037,6 +4037,29 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 	return true;
 }
 
+// the walk follows a tail jump into the blocks of its target: their arg accesses are the
+// args the function hands over, but their locals belong to the target frame
+static void drop_tail_target_locals(RCore *core, RAnalFunction *fcn) {
+	size_t i = RVecAnalVarPtr_length (&fcn->vars);
+	while (i > 0) {
+		RAnalVar *var = *RVecAnalVarPtr_at (&fcn->vars, --i);
+		if (var->isarg || RVecAnalVarAccess_empty (&var->accesses)) {
+			continue;
+		}
+		bool own = false;
+		RAnalVarAccess *acc;
+		R_VEC_FOREACH (&var->accesses, acc) {
+			if (r_anal_function_contains (fcn, fcn->addr + acc->offset)) {
+				own = true;
+				break;
+			}
+		}
+		if (!own) {
+			r_anal_var_delete (core->anal, var);
+		}
+	}
+}
+
 R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 	R_RETURN_IF_FAIL (core && core->anal && fcn);
 
@@ -4074,6 +4097,7 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 		r_unref (ctx.arg_regs[i]);
 	}
 	fcn->stack = saved_stack;
+	drop_tail_target_locals (core, fcn);
 	r_anal_function_rename_default_args (fcn);
 }
 
