@@ -1955,3 +1955,213 @@ EXPECT=<<EOF
 |           0x0000000d      e81e000000     call j.helper
 EOF
 RUN
+
+NAME=aaft types the args a stub hands over through a tail jump after its target
+FILE=malloc://128
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 6a14e81900000083c404c3
+wx 5589e55de917000000 @ 0x20
+wx 5589e58b45085dc3 @ 0x40
+af malloc @ 0x40
+af @ 0
+af @ 0x20
+afva @ 0x20
+aei
+aeim
+aaft
+afs @ 0x20
+pd 1~push
+EOF
+EXPECT=<<EOF
+void fcn.00000020 (size_t size);
+|           0x00000000      6a14           push 0x14                   ; size_t size
+EOF
+RUN
+
+NAME=aaft tail-call aggregate retyping drops interior vars safely
+FILE=malloc://128
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 5589e58b45088b550c8b4d105de92e000000
+wx c3 @ 0x40
+"td struct Pair { int x; int y; };"
+af target @ 0x40
+afs int target(struct Pair pair, int n) @ 0x40
+af wrapper @ 0
+aei
+aeim
+aaft
+afv @ 0
+EOF
+EXPECT=<<EOF
+arg struct Pair pair @ ebp+0x8
+arg int n @ ebp+0x10
+EOF
+RUN
+
+NAME=aaft tail-call slots include unused earlier arguments
+FILE=malloc://128
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 5589e58b450c5de934000000
+wx c3 @ 0x40
+af target @ 0x40
+afs int target(char *first, int second) @ 0x40
+af wrapper @ 0
+aei
+aeim
+aaft
+afv @ 0
+EOF
+EXPECT=<<EOF
+arg int second @ ebp+0xc
+EOF
+RUN
+
+NAME=aaft tail-call slots include the width of unused earlier arguments
+FILE=malloc://128
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 5589e58b45105de934000000
+wx c3 @ 0x40
+af target @ 0x40
+afs int target(uint64_t wide, char *second) @ 0x40
+af wrapper @ 0
+aei
+aeim
+aaft
+afv @ 0
+EOF
+EXPECT=<<EOF
+arg char * second @ ebp+0x10
+EOF
+RUN
+
+NAME=aaft tail-call frameless MS x64 slots follow register args and shadow space
+FILE=malloc://128
+ARGS=-a x86 -b 64 -e anal.cc=ms
+CMDS=<<EOF
+wx 488b442428e936000000
+wx c3 @ 0x40
+af target @ 0x40
+afs int target(int a, int b, int c, int d, char *fifth) @ 0x40
+af wrapper @ 0
+aei
+aeim
+aaft
+afv @ 0
+EOF
+EXPECT=<<EOF
+arg int a @ rcx
+arg int b @ rdx
+arg int c @ r8
+arg int d @ r9
+arg char * fifth @ rsp+0x28
+EOF
+RUN
+
+NAME=aaft tail-call MS x64 BP slots include the saved frame pointer
+FILE=malloc://128
+ARGS=-a x86 -b 64 -e anal.cc=ms
+CMDS=<<EOF
+wx 554889e5488b45305de932000000
+wx c3 @ 0x40
+af target @ 0x40
+afs int target(int a, int b, int c, int d, char *fifth) @ 0x40
+af wrapper @ 0
+aei
+aeim
+aaft
+afv @ 0
+EOF
+EXPECT=<<EOF
+arg int a @ rcx
+arg int b @ rdx
+arg int c @ r8
+arg int d @ r9
+arg char * fifth @ rbp+0x30
+EOF
+RUN
+
+NAME=aaft does not inherit a tail-call prototype after rewriting a stack argument
+FILE=malloc://128
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 5589e58b4508c74508000000005de92d000000
+wx c3 @ 0x40
+af target @ 0x40
+afs int target(char *first) @ 0x40
+af wrapper @ 0
+aei
+aeim
+aaft
+afv @ 0
+EOF
+EXPECT=<<EOF
+arg int32_t arg_8h @ ebp+0x8
+EOF
+RUN
+
+NAME=aaft does not inherit a tail-call prototype after writing an argument register alias
+FILE=malloc://128
+ARGS=-a x86 -b 64 -e anal.cc=ms
+CMDS=<<EOF
+wx 488b442428b901000000e931000000
+wx c3 @ 0x40
+af target @ 0x40
+afs int target(int a, int b, int c, int d, char *fifth) @ 0x40
+af wrapper @ 0
+aei
+aeim
+aaft
+afv @ 0
+EOF
+EXPECT=<<EOF
+arg int b @ rdx
+arg int c @ r8
+arg int d @ r9
+arg int64_t arg_28h @ rsp+0x28
+EOF
+RUN
+
+NAME=aaft does not inherit a tail-call prototype with an unbalanced frame
+FILE=malloc://128
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 5589e58b4508e935000000
+wx c3 @ 0x40
+af target @ 0x40
+afs int target(char *first) @ 0x40
+af wrapper @ 0
+aei
+aeim
+aaft
+afv @ 0
+EOF
+EXPECT=<<EOF
+arg int32_t arg_8h @ ebp+0x8
+EOF
+RUN
+
+NAME=aaft does not inherit the first of multiple tail-call prototypes
+FILE=malloc://128
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 5589e58b450885c074065de9300000005de94a000000
+wx c3 @ 0x40
+wx c3 @ 0x60
+af other @ 0x60
+afs int other(int count) @ 0x60
+af target @ 0x40
+afs int target(char *first) @ 0x40
+af wrapper @ 0
+aei
+aeim
+aaft
+afv @ 0
+EOF
+EXPECT=<<EOF
+arg int32_t arg_8h @ ebp+0x8
+EOF
+RUN

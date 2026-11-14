@@ -303,6 +303,161 @@ static RAnalFunction *tp_thunk_target(RAnal *anal, RAnalFunction *fcn) {
 	return fcn;
 }
 
+static bool tp_tailcall_reg_overlaps(RAnal *anal, const RRegItem *reg, const char *loc) {
+	if (R_STR_ISEMPTY (loc) || *loc == '^') {
+		return false;
+	}
+	if (*loc == '{') {
+		return true;
+	}
+	RRegItem *other = r_reg_get (anal->reg, loc, -1);
+	const bool overlaps = other && other->arena == reg->arena
+		&& reg->offset < other->offset + other->size && other->offset < reg->offset + reg->size;
+	r_unref (other);
+	return overlaps;
+}
+
+static bool tp_tailcall_scratch_reg(RAnal *anal, const char *cc, const char *name) {
+	RRegItem *reg = r_reg_get (anal->reg, name, -1);
+	if (!reg) {
+		return false;
+	}
+	bool scratch = reg->type == R_REG_TYPE_GPR;
+	int i;
+	for (i = 0; scratch && i < R_ANAL_CC_MAXARG * 2; i++) {
+		scratch = !tp_tailcall_reg_overlaps (anal, reg, r_anal_cc_argloc (anal, cc, i, 0, -1));
+	}
+	const char *protected[] = {
+		r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP),
+		r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP),
+		r_reg_alias_getname (anal->reg, R_REG_ALIAS_PC),
+		r_anal_cc_roleloc (anal, cc, "self"),
+		r_anal_cc_roleloc (anal, cc, "error"),
+	};
+	for (i = 0; scratch && i < R_ARRAY_SIZE (protected); i++) {
+		scratch = !tp_tailcall_reg_overlaps (anal, reg, protected[i]);
+	}
+	r_unref (reg);
+	return scratch;
+}
+
+// Only a straight x86 stub with unchanged argument homes and a balanced BP save forwards its frame.
+static RAnalFunction *tp_tailcall_target(TPState *tps, RAnalFunction *fcn) {
+	RAnal *anal = tps->anal;
+	if (strcmp (anal->config->arch, "x86") || !fcn->callconv || RVecAnalBlockPtr_length (&fcn->bbs) != 1) {
+		return NULL;
+	}
+	RAnalBlock *bb = *RVecAnalBlockPtr_at (&fcn->bbs, 0);
+	if (bb->addr != fcn->addr || bb->jump == UT64_MAX || bb->fail != UT64_MAX
+			|| r_anal_function_contains (fcn, bb->jump) || bb->ninstr > TYPE_MATCH_MAX_BACKTRACE) {
+		return NULL;
+	}
+	const char *bp = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
+	const char *sp = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
+	if (!bp || !sp) {
+		return NULL;
+	}
+	const int word = anal->config->bits / 8;
+	int frame = 0;
+	ut64 offset = 0;
+	int n;
+	for (n = 0; offset < bb->size && n < TYPE_MATCH_MAX_BACKTRACE; n++) {
+		RAnalOp *op = tp_op_at (tps, bb->addr + offset, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL);
+		if (!op || op->size <= 0 || op->size > bb->size - offset) {
+			return NULL;
+		}
+		const RArchValue *dst = RVecRArchValue_at (&op->dsts, 0);
+		const RArchValue *src = RVecRArchValue_at (&op->srcs, 0);
+		switch (op->type) {
+		case R_ANAL_OP_TYPE_NOP:
+			break;
+		case R_ANAL_OP_TYPE_RPUSH:
+			if (frame || !src || src->memref || !src->reg || strcmp (src->reg, bp) || op->stackptr != word) {
+				return NULL;
+			}
+			frame = 1;
+			break;
+		case R_ANAL_OP_TYPE_MOV:
+			if (!dst || dst->memref || !dst->reg) {
+				return NULL;
+			}
+			if (frame == 1 && !strcmp (dst->reg, bp) && src && !src->memref && src->reg && !strcmp (src->reg, sp)) {
+				frame = 2;
+			} else if (!tp_tailcall_scratch_reg (anal, fcn->callconv, dst->reg)) {
+				return NULL;
+			}
+			break;
+		case R_ANAL_OP_TYPE_POP:
+			if ((frame != 1 && frame != 2) || !dst || dst->memref || !dst->reg || strcmp (dst->reg, bp) || op->stackptr != -word) {
+				return NULL;
+			}
+			frame = 3;
+			break;
+		case R_ANAL_OP_TYPE_JMP:
+			if ((frame && frame != 3) || offset + op->size != bb->size || op->jump != bb->jump) {
+				return NULL;
+			}
+			return r_anal_get_function_at (anal, bb->jump);
+		default:
+			return NULL;
+		}
+		offset += op->size;
+	}
+	return NULL;
+}
+
+static void tp_tailcall_args(TPState *tps, RAnalFunction *fcn) {
+	RAnal *anal = tps->anal;
+	RAnalFunction *target = tp_tailcall_target (tps, fcn);
+	target = target? tp_thunk_target (anal, target): NULL;
+	if (!target || target == fcn || !target->callconv || strcmp (fcn->callconv, target->callconv)) {
+		return;
+	}
+	Sdb *TDB = anal->sdb_types;
+	char *key = r_type_func_key (TDB, target->name);
+	const char *tname = key? key: target->name;
+	int argc = 0;
+	if (!r_type_func_args_count (TDB, tname, &argc)) {
+		argc = (int)sdb_num_getf (TDB, NULL, "func.%s.args", tname);
+	}
+	const char *cc = fcn->callconv;
+	const bool reverse = r_anal_cc_stack_rev (anal, cc);
+	TPArgSeq seq;
+	tp_argseq_init (anal, cc, r_type_func_ret (TDB, tname), &seq);
+	seq.leading_fp = tp_fparg_prefix (anal, cc, tname, argc);
+	st64 stack_offset = 0;
+	int i;
+	for (i = 0; i < argc; i++) {
+		const int n = reverse? argc - i - 1: i;
+		char *type = r_type_func_args_type (TDB, tname, n);
+		const char *name = r_type_func_args_name (TDB, tname, n);
+		const int argno = tp_argseq_next (anal, cc, &seq, type, n);
+		RAnalCCArgSlot slot;
+		if (!type || !r_anal_cc_argslot (anal, cc, argno, argc, true, &slot)) {
+			free (type);
+			break;
+		}
+		if (!slot.reg) {
+			stack_offset = slot.fixed? slot.off: R_MAX (stack_offset, slot.off);
+			const st64 delta = stack_offset - fcn->reg_save_area;
+			// Retyping an aggregate deletes interior vars, so look up each ABI location afresh.
+			const char kinds[] = { R_ANAL_VAR_KIND_BPV, R_ANAL_VAR_KIND_SPV };
+			size_t k;
+			for (k = 0; k < R_ARRAY_SIZE (kinds); k++) {
+				RAnalVar *var = delta >= ST32_MIN && delta <= ST32_MAX
+					? r_anal_function_get_var (fcn, kinds[k], (int)delta): NULL;
+				if (var && var->isarg && r_str_startswith (var->name, "arg_") && name && r_anal_var_rename (anal, var, name)) {
+					r_anal_var_set_type (anal, var, type);
+				}
+			}
+			const ut64 bits = r_anal_type_bitsize (anal, type);
+			stack_offset += R_ROUND (R_MAX ((bits + 7) / 8, slot.size), slot.size);
+		}
+		free (type);
+	}
+	free (key);
+}
+
 // the called function/import name for a call op, plus its RAnalFunction when direct
 const char *tp_call_target_name(RAnal *anal, RAnalOp *aop, ut32 type, RAnalFunction **fcn_call) {
 	*fcn_call = NULL;
@@ -776,6 +931,7 @@ R_API void r_anal_type_match(RAnal *anal, RAnalFunction *fcn) {
 		}
 	}
 	RVecAnalVarPtr_free (rvars);
+	tp_tailcall_args (tps, fcn);
 beach:
 	tp_state_fini (&ctx.tp);
 	tps_fini (tps);
