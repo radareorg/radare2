@@ -301,6 +301,32 @@ s-
 s 0x100000da0
 'afvr rdi arg1 int64_t
 s-
+'@0x100000da0'afvW 0x100000da4 rbp -16 var_10h
+'@0x100000da0'afvR 0x100000de4 rbp -16 var_10h
+'@0x100000da0'afvR 0x100000e00 rbp -16 var_10h
+'@0x100000da0'afvR 0x100000e2a rbp -16 var_10h
+'@0x100000da0'afvR 0x100000e54 rbp -16 var_10h
+'@0x100000da0'afvR 0x100000e64 rbp -16 var_10h
+'@0x100000da0'afvR 0x100000e9e rbp -16 var_10h
+'@0x100000da0'afvW 0x100000ea9 rbp -16 var_10h
+'@0x100000da0'afvW 0x100000da8 rbp -20 var_14h
+'@0x100000da0'afvR 0x100000db6 rbp -20 var_14h
+'@0x100000da0'afvW 0x100000df4 rbp -20 var_14h
+'@0x100000da0'afvW 0x100000e10 rbp -20 var_14h
+'@0x100000da0'afvW 0x100000e3a rbp -20 var_14h
+'@0x100000da0'afvR 0x100000e74 rbp -20 var_14h
+'@0x100000da0'afvW 0x100000e7a rbp -20 var_14h
+'@0x100000da0'afvW 0x100000daf rbp -24 var_18h
+'@0x100000da0'afvW 0x100000dc2 rbp -32 var_20h
+'@0x100000da0'afvR 0x100000dd7 rbp -32 var_20h
+'@0x100000da0'afvW 0x100000dc6 rbp -40 var_28h
+'@0x100000da0'afvW 0x100000e1c rbp -1 var_1h
+'@0x100000da0'afvW 0x100000e46 rbp -1 var_1h
+'@0x100000da0'afvW 0x100000e82 rbp -1 var_1h
+'@0x100000da0'afvW 0x100000e90 rbp -1 var_1h
+'@0x100000da0'afvW 0x100000eb6 rbp -1 var_1h
+'@0x100000da0'afvR 0x100000eba rbp -1 var_1h
+'@0x100000da0'afvR 0x100000da4 rdi 0 arg1
 'axd 0x100000ec0 0x100000dd0
 'axc 0x100000de4 0x100000de2
 'axc 0x100000e00 0x100000de2

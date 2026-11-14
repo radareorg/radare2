@@ -429,8 +429,11 @@ static void r_anal_xrefs_list_json(RAnal *anal, RStrBuf *sb, RVecAnalRef *anal_r
 static void r_anal_xrefs_list_hex(RStrBuf *sb, RVecAnalRef *anal_refs) {
 	RAnalRef *ref;
 	R_VEC_FOREACH (anal_refs, ref) {
-		const int t = R_ANAL_REF_TYPE_MASK (ref->type);
-		// TODO: export/import the read-write-exec information
+		int t = R_ANAL_REF_TYPE_MASK (ref->type);
+		// axd restores a read, the default perm; axw keeps the write of a data ref
+		if (t == R_ANAL_REF_TYPE_DATA && (ref->type & R_ANAL_REF_TYPE_WRITE) && !(ref->type & R_ANAL_REF_TYPE_READ)) {
+			t = 'w';
+		}
 		r_strbuf_appendf (sb, "ax%c 0x%"PFMT64x" 0x%"PFMT64x"\n", t? t: ' ', ref->addr, ref->at);
 	}
 }
