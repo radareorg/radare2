@@ -616,3 +616,29 @@ EXPECT=<<END
 0
 END
 RUN
+
+NAME=PDB module stream parsers are indexed by stream number
+FILE=--
+TIMEOUT=10
+CMDS=<<END
+e bin.baddr=0
+idpi bins/pdb/many-module-streams.pdb~?
+idpi bins/pdb/many-module-streams.pdb~:16383
+END
+EXPECT=<<END
+16384
+0x00040ff0  2  .text  module_16383
+END
+RUN
+
+NAME=PDB parser indices keep the first duplicate and skip out of range streams
+FILE=--
+CMDS=<<END
+e bin.baddr=0
+idpi bins/pdb/module-parser-indices.pdb
+END
+EXPECT=<<END
+0x00001000  2  .text  public
+0x00001010  2  .text  first
+END
+RUN

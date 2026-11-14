@@ -362,19 +362,6 @@ static void fill_list_for_stream_parsing(RList *l, RBinPdb *pdb, SDbiStream *dbi
 }
 
 
-static void find_indx_in_list(RList *l, int index, SStreamParseFunc **res) {
-	SStreamParseFunc *stream_parse_func;
-	RListIter *it;
-	*res = NULL;
-	r_list_foreach (l, it, stream_parse_func) {
-		if (index == stream_parse_func->indx) {
-			*res = stream_parse_func;
-			return;
-		}
-	}
-}
-
-
 static int pdb_read_root(RBinPdb *pdb) {
 	int i = 0;
 	RList *pList = pdb->pdb_streams;
@@ -386,6 +373,7 @@ static int pdb_read_root(RBinPdb *pdb) {
 	RListIter *it;
 	SPage *page = NULL;
 	SStreamParseFunc *stream_parse_func = NULL;
+	SStreamParseFunc **stream_parsers = NULL;
 
 	r_list_foreach (root_stream->streams_list, it, page) {
 		if (page->stream_pages == NULL) {
@@ -409,7 +397,7 @@ static int pdb_read_root(RBinPdb *pdb) {
 			if (!parse_tpi_stream (ss, &stream_file)) {
 				r_list_free (ss->types);
 				free (ss);
-				return 0;
+				goto error;
 			}
 			r_list_append (pList, ss);
 			break;
@@ -421,13 +409,29 @@ static int pdb_read_root(RBinPdb *pdb) {
 				r_list_append (pList, dbi_stream);
 				pdb->pdb_streams2 = r_list_newf (free_stream_parse_func_cb);
 				if (!pdb->pdb_streams2) {
-					return 0;
+					goto error;
 				}
 				fill_list_for_stream_parsing (pdb->pdb_streams2, pdb, dbi_stream);
+				size_t index_size;
+				if (r_mul_overflow_size_t (root_stream->num_streams, sizeof (*stream_parsers), &index_size)) {
+					goto error;
+				}
+				stream_parsers = calloc (1, index_size);
+				if (!stream_parsers) {
+					goto error;
+				}
+				RListIter *parser_it;
+				SStreamParseFunc *parser;
+				r_list_foreach (pdb->pdb_streams2, parser_it, parser) {
+					int index = parser->indx;
+					if (index >= 0 && index < root_stream->num_streams && !stream_parsers[index]) {
+						stream_parsers[index] = parser;
+					}
+				}
 				break;
 			}
 		default:
-			find_indx_in_list (pdb->pdb_streams2, i, &stream_parse_func);
+			stream_parse_func = stream_parsers? stream_parsers[i]: NULL;
 			if (stream_parse_func && stream_parse_func->parse_stream) {
 				stream_parse_func->parse_stream (ss, stream_parse_func->stream, &stream_file);
 				r_list_append (pList, NULL);
@@ -440,11 +444,15 @@ static int pdb_read_root(RBinPdb *pdb) {
 			break;
 		}
 		if (stream_file.error) {
-			return 0;
+			goto error;
 		}
 		i++;
 	}
+	free (stream_parsers);
 	return 1;
+error:
+	free (stream_parsers);
+	return 0;
 }
 
 static bool pdb7_parse(RBinPdb *pdb) {
