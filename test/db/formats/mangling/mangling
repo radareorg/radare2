@@ -3783,19 +3783,19 @@ public: __cdecl std::_Func_class<void, enum Windows::System::LaunchUriStatus, st
 EOF
 RUN
 
-NAME=const NetworkUXViewProviderImpl::vftable{for `IWeakReferenceSource'}
+NAME=const NetworkUXViewProviderImpl::`vftable'{for `IWeakReferenceSource'}
 FILE=-
 CMDS="!rabin2 -D msvc ??_7NetworkUXViewProviderImpl@@6BIWeakReferenceSource@@@"
 EXPECT=<<EOF
-const NetworkUXViewProviderImpl::vftable{for `IWeakReferenceSource'}
+const NetworkUXViewProviderImpl::`vftable'{for `IWeakReferenceSource'}
 EOF
 RUN
 
-NAME=const NetworkUX::OOBEMainPage::vftable{for `__abi_IUnknown's `Platform::Details::IWeakReferenceSource'}
+NAME=const NetworkUX::OOBEMainPage::`vftable'{for `__abi_IUnknown's `Platform::Details::IWeakReferenceSource'}
 FILE=-
 CMDS="!rabin2 -D msvc ??_7OOBEMainPage@NetworkUX@@6B__abi_IUnknown@@IWeakReferenceSource@Details@Platform@@@"
 EXPECT=<<EOF
-const NetworkUX::OOBEMainPage::vftable{for `__abi_IUnknown's `Platform::Details::IWeakReferenceSource'}
+const NetworkUX::OOBEMainPage::`vftable'{for `__abi_IUnknown's `Platform::Details::IWeakReferenceSource'}
 EOF
 RUN
 
@@ -3807,11 +3807,11 @@ private: static class Microsoft::WRL::Details::StaticStorage<class Platform::Det
 EOF
 RUN
 
-NAME=const std::_Func_impl<struct std::_Callable_obj<class lambda, 0>, class std::allocator<class std::_Func_class<void, struct std::_Nil, struct std::_Nil>>, void, struct std::_Nil, struct std::_Nil>::vftable
+NAME=const std::_Func_impl<struct std::_Callable_obj<class lambda, 0>, class std::allocator<class std::_Func_class<void, struct std::_Nil, struct std::_Nil>>, void, struct std::_Nil, struct std::_Nil>::`vftable'
 FILE=-
 CMDS="!rabin2 -D msvc ??_7?\$_Func_impl@U?\$_Callable_obj@Vlambda@@\$0A@@std@@V?\$allocator@V?\$_Func_class@XU_Nil@std@@U12@@std@@@2@XU_Nil@2@U42@@std@@6B@"
 EXPECT=<<EOF
-const std::_Func_impl<struct std::_Callable_obj<class lambda, 0>, class std::allocator<class std::_Func_class<void, struct std::_Nil, struct std::_Nil>>, void, struct std::_Nil, struct std::_Nil>::vftable
+const std::_Func_impl<struct std::_Callable_obj<class lambda, 0>, class std::allocator<class std::_Func_class<void, struct std::_Nil, struct std::_Nil>>, void, struct std::_Nil, struct std::_Nil>::`vftable'
 EOF
 RUN
 
