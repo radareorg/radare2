@@ -57,7 +57,9 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 		R_LOG_WARN ("Missing function definition for '%s'", fcn_name + 8);
 	}
 	if (!r_type_func_args_count (TDB, fcn_name, &max)) {
-		max = stack_cc? DEFAULT_MAX: r_anal_cc_max_arg (anal, cc);
+		// a user function declares no prototype, but its args were recovered
+		const int recovered = userfnc? (int)sdb_num_getf (TDB, NULL, "func.%s.args", fcn_name): 0;
+		max = (recovered > 0)? recovered: stack_cc? DEFAULT_MAX: r_anal_cc_max_arg (anal, cc);
 	}
 	// TODO: if function takes more than 7 args is usually bad analysis
 	if (max > 7) {
@@ -284,11 +286,29 @@ typedef struct {
 	bool be;
 } TypeMatchCtx;
 
+// a lone jmp thunk (j.*) hands the call over to its target untouched
+static RAnalFunction *tp_thunk_target(RAnal *anal, RAnalFunction *fcn) {
+	int depth;
+	for (depth = 0; depth < 4 && RVecAnalBlockPtr_length (&fcn->bbs) == 1; depth++) {
+		RAnalBlock *bb = *RVecAnalBlockPtr_at (&fcn->bbs, 0);
+		if (bb->ninstr != 1 || bb->jump == UT64_MAX || bb->fail != UT64_MAX) {
+			break;
+		}
+		RAnalFunction *target = r_anal_get_function_at (anal, bb->jump);
+		if (!target || target == fcn) {
+			break;
+		}
+		fcn = target;
+	}
+	return fcn;
+}
+
 // the called function/import name for a call op, plus its RAnalFunction when direct
 const char *tp_call_target_name(RAnal *anal, RAnalOp *aop, ut32 type, RAnalFunction **fcn_call) {
 	*fcn_call = NULL;
 	if (type == R_ANAL_OP_TYPE_CALL) {
-		*fcn_call = r_anal_get_fcn_in (anal, aop->jump, -1);
+		RAnalFunction *callee = r_anal_get_fcn_in (anal, aop->jump, -1);
+		*fcn_call = callee? tp_thunk_target (anal, callee): NULL;
 		return *fcn_call? (*fcn_call)->name: NULL;
 	}
 	if (aop->ptr != UT64_MAX && anal->flb.f) {

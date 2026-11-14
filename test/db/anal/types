@@ -1928,3 +1928,30 @@ EXPECT=<<EOF
 void fcn.00000000 (size_t size);
 EOF
 RUN
+
+NAME=aaft labels every recovered arg of a user function called through a j. thunk
+FILE=malloc://128
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 5589e56a056a046a036a026a01e81e00000083c4145dc3
+wx e90b000000 @ 0x30
+wx 5589e58b450803450c0345100345140345185dc3 @ 0x40
+af helper @ 0x40
+af @ 0x30
+af @ 0
+aei
+aeim
+aaft
+afl~j.
+pd 6 @ 3~push,call
+EOF
+EXPECT=<<EOF
+0x00000030    1      5 j.helper
+|           0x00000003      6a05           push 5                      ; int32_t arg_18h
+|           0x00000005      6a04           push 4                      ; int32_t arg_14h
+|           0x00000007      6a03           push 3                      ; int32_t arg_10h
+|           0x00000009      6a02           push 2                      ; int32_t arg_ch
+|           0x0000000b      6a01           push 1                      ; int32_t arg_8h
+|           0x0000000d      e81e000000     call j.helper
+EOF
+RUN
