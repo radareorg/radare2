@@ -368,3 +368,19 @@ EXPECT=<<EOF
 void __cdecl f<void (__cdecl *)(int *)>(char *, char *)
 EOF
 RUN
+
+NAME=msvc RTTI type descriptors of types that are not classes
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc '??_R0H@8'
+!rabin2 -D msvc '??_R0PAD@8'
+!rabin2 -D msvc '??_R0PEAX@8'
+!rabin2 -D msvc '??_R0?AUAnimal@@@8'
+EOF
+EXPECT=<<EOF
+int `RTTI Type Descriptor'
+char *`RTTI Type Descriptor'
+void *`RTTI Type Descriptor'
+struct Animal `RTTI Type Descriptor'
+EOF
+RUN
