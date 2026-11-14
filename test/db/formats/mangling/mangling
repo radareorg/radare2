@@ -3835,7 +3835,7 @@ NAME=void __cdecl wistd::invoke<void (__cdecl*)(void * __ptr64), void * __ptr64 
 FILE=-
 CMDS="!rabin2 -D msvc ??\$invoke@P6AXPEAX@ZAEAPEAX@wistd@@YAX\$\$REAP6AXPEAX@ZAEAPEAX@Z"
 EXPECT=<<EOF
-void __cdecl wistd::invoke<void (__cdecl *)(void *), void *&>(void (__cdecl *)(void *) && volatile, void *&)
+void __cdecl wistd::invoke<void (__cdecl *)(void *), void *&>(void (__cdecl *&& volatile)(void *), void *&)
 EOF
 RUN
 
