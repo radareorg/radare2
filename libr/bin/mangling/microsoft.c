@@ -491,13 +491,23 @@ static size_t get_operator_code(SDemangler *sd, const char *buf, RList *names_l,
 			buf++;
 			switch (*buf) {
 			case '0': {
-				size_t len;
+				size_t len = 0;
 				char *str = NULL;
-				if (parse_microsoft_rtti_mangled_name (sd, str_skip_n (buf, 2), &str, &len) != eDemanglerErrOK) {
-					return 0;
+				if (buf[1] == '?') {
+					if (parse_microsoft_rtti_mangled_name (sd, str_skip_n (buf, 2), &str, &len) != eDemanglerErrOK) {
+						return 0;
+					}
+					read_len += len + 2;
+				} else {
+					// the types that are not classes, like the char * of a catch, come without ?A
+					if (get_type_code_string (sd, buf + 1, &len, &str) != eDemanglerErrOK) {
+						return 0;
+					}
+					read_len += len + 1;
 				}
-				read_len += len + 2;
-				str = r_str_append (str, " `RTTI Type Descriptor'");
+				const size_t str_len = strlen (str);
+				const bool glued = str_len > 0 && (str[str_len - 1] == '*' || str[str_len - 1] == '&');
+				str = r_str_append (str, glued? "`RTTI Type Descriptor'": " `RTTI Type Descriptor'");
 				SET_OPERATOR_CODE (str);
 				free (str);
 				break;
