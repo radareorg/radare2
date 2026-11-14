@@ -290,3 +290,19 @@ void __cdecl f<>(void)
 void __cdecl f<int>(void)
 EOF
 RUN
+
+NAME=msvc auto and charN_t types
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc '?f@@YA?A_TXZ'
+!rabin2 -D msvc '?f@@YA?A_PXZ'
+!rabin2 -D msvc '?f@@YAX_S_U_Q@Z'
+!rabin2 -D msvc '?__c16rtomb_utf8@__crt_mbstring@@YAIPAD_SPAU_Mbstatet@@AAV__crt_cached_ptd_host@@@Z'
+EOF
+EXPECT=<<EOF
+decltype(auto) __cdecl f(void)
+auto __cdecl f(void)
+void __cdecl f(char16_t, char32_t, char8_t)
+unsigned int __cdecl __crt_mbstring::__c16rtomb_utf8(char *, char16_t, struct _Mbstatet *, class __crt_cached_ptd_host &)
+EOF
+RUN
