@@ -90,8 +90,9 @@ static void parse_module_stream(STpiStream *ss, void *stream, R_STREAM_FILE *str
 	SModuleStream *module = (SModuleStream *)stream;
 	module->procs = r_list_newf (free_module_proc);
 	module->labels = r_list_newf (free_module_proc);
+	module->trampolines = r_list_newf (free);
 	const ut32 size = module->sym_size;
-	if (!module->procs || !module->labels || size < 4 || size > stream_file->end - stream_file->pos) {
+	if (!module->procs || !module->labels || !module->trampolines || size < 4 || size > stream_file->end - stream_file->pos) {
 		return;
 	}
 	ut8 *data = malloc (size);
@@ -151,6 +152,14 @@ static void parse_module_stream(STpiStream *ss, void *stream, R_STREAM_FILE *str
 				label->name = name;
 				r_list_append (module->labels, label);
 			}
+		} else if (kind == PDB_S_TRAMPOLINE && len >= 18 && r_read_le16 (rec + 2) == PDB_TRAMP_INCREMENTAL) {
+			// type, thunk size, thunk offset, target offset, thunk section, target section
+			SModuleTrampoline *tramp = R_NEW0 (SModuleTrampoline);
+			tramp->thunk_offset = r_read_le32 (rec + 6);
+			tramp->target_offset = r_read_le32 (rec + 10);
+			tramp->thunk_segment = r_read_le16 (rec + 14);
+			tramp->target_segment = r_read_le16 (rec + 16);
+			r_list_append (module->trampolines, tramp);
 		}
 		i += 2 + len;
 	}
@@ -161,4 +170,5 @@ static void free_module_stream(STpiStream *ss, void *stream) {
 	SModuleStream *module = (SModuleStream *)stream;
 	r_list_free (module->procs);
 	r_list_free (module->labels);
+	r_list_free (module->trampolines);
 }
