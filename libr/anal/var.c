@@ -1460,6 +1460,9 @@ static void extract_arg_at(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const c
 	} else {
 		frame_off = ptr - fcn->bp_off;
 	}
+	// sp moves inside the function, so a stack arg is named after its offset from the entry sp,
+	// the one its caller stores it at, not after the sp relative one of the access
+	const st64 nameoff = (isarg && type == R_ANAL_VAR_KIND_SPV)? frame_off + fcn->reg_save_area: ptr;
 	const st64 maxargoff = 1024 * 8;
 	if (frame_off > maxargoff || frame_off < -R_MAX (fcn->maxstack, maxargoff)) {
 		return;
@@ -1476,7 +1479,7 @@ static void extract_arg_at(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const c
 			return;
 		}
 		const char *deftype = int_type (inferred_var_size (access_size, var_size));
-		r_strf_var (autoname, 32, "arg_%" PFMT64x "h", R_ABS (anal->opt.varname_stack? frame_off: ptr));
+		r_strf_var (autoname, 32, "arg_%" PFMT64x "h", R_ABS (anal->opt.varname_stack? frame_off: nameoff));
 		if (!deftype || strcmp (var->type, deftype) || strcmp (var->name, autoname)) {
 			return;
 		}
@@ -1536,7 +1539,7 @@ static void extract_arg_at(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const c
 		if (anal->opt.varname_stack) {
 			varname = r_str_newf ("%s_%" PFMT64x "h", pfx, R_ABS (frame_off));
 		} else {
-			varname = r_anal_function_autoname_var (fcn, type, pfx, ptr);
+			varname = r_anal_function_autoname_var (fcn, type, pfx, nameoff);
 		}
 	}
 	if (varname) {
