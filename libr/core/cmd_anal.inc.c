@@ -1425,6 +1425,22 @@ static bool is_default_local(RAnalVar *var, const char *type) {
 	return !*p;
 }
 
+static void reanalyze_fcn_vars(RCore *core, RAnalFunction *fcn) {
+	if (!has_function_signature (fcn)) {
+		r_anal_function_delete_all_vars (fcn);
+	} else if (sdb_const_getf (core->anal->sdb_types, NULL, "fcnlink.%08" PFMT64x, fcn->addr)) {
+		r_strf_var (type, 16, "int%d_t", fcn->bits? fcn->bits: core->anal->config->bits);
+		size_t i = RVecAnalVarPtr_length (&fcn->vars);
+		while (i > 0) {
+			RAnalVar *var = *RVecAnalVarPtr_at (&fcn->vars, --i);
+			if (is_default_local (var, type)) {
+				r_anal_var_delete (core->anal, var);
+			}
+		}
+	}
+	r_core_recover_vars (core, fcn, false);
+}
+
 // function argument types and names into anal/types
 static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 	char *type_name = r_type_func_key (core->anal->sdb_types, fcn->name);
@@ -2168,19 +2184,7 @@ static int cmd_afv(RCore *core, const char *str) {
 		}
 	case 'a': // "afva"
 		if (fcn) {
-			if (!has_function_signature (fcn)) {
-				r_anal_function_delete_all_vars (fcn);
-			} else if (sdb_const_getf (core->anal->sdb_types, NULL, "fcnlink.%08" PFMT64x, fcn->addr)) {
-				r_strf_var (type, 16, "int%d_t", fcn->bits? fcn->bits: core->anal->config->bits);
-				size_t i = RVecAnalVarPtr_length (&fcn->vars);
-				while (i > 0) {
-					RAnalVar *var = *RVecAnalVarPtr_at (&fcn->vars, --i);
-					if (is_default_local (var, type)) {
-						r_anal_var_delete (core->anal, var);
-					}
-				}
-			}
-			r_core_recover_vars (core, fcn, false);
+			reanalyze_fcn_vars (core, fcn);
 			free (p);
 			return true;
 		}
@@ -7022,9 +7026,13 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 		case ' ': { // "afc "
 			char *cc = r_str_trim_dup (input + 3);
+			const char *old_cc = fcn->callconv;
 			if (!r_anal_function_set_callconv (core->anal, fcn, cc)) {
 				const char *asmOs = r_config_get (core->config, "asm.os");
 				R_LOG_ERROR ("afc: Unknown calling convention '%s' for '%s'. See afcl for available types", cc, asmOs);
+			} else if (fcn->callconv != old_cc && core->anal->opt.vars && !RVecAnalBlockPtr_empty (&fcn->bbs)) {
+				// the arguments depend on the convention
+				reanalyze_fcn_vars (core, fcn);
 			}
 			free (cc);
 		}

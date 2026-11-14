@@ -772,6 +772,24 @@ ERROR: Cannot add dupped function 'func' at 0x00001337
 EOF
 RUN
 
+NAME=afc reanalyzes the arguments of an analyzed function when the convention changes
+FILE=malloc://0x100
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 89c8c3 @ 0x10
+af @ 0x10
+s 0x10
+afvr
+afc thiscall
+afvr
+afc cdecl
+afvr
+EOF
+EXPECT=<<EOF
+arg int32_t arg1 @ ecx
+EOF
+RUN
+
 NAME=function naming
 FILE=-
 CMDS=<<EOF
