@@ -1447,6 +1447,30 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 			print_gvar (&out, addr, PDB_PUBSYM_FUNCTION, proc->size, sname, proc->name, true);
 		}
 	}
+	// the jmp thunks of incremental linking to the functions above; the ones only reached
+	// through data, like a pointer to member function, are not found by the analysis.
+	// analyzed after their targets so the lone jmp is named j.<target>
+	if (format == 'r' || format == '*' || format == 1) {
+		r_list_foreach (pdb->pdb_streams2, it, tmp) {
+			if (tmp->type != ePDB_STREAM_MODULE || !tmp->stream) {
+				continue;
+			}
+			SModuleStream *module = (SModuleStream *)tmp->stream;
+			SModuleTrampoline *tramp;
+			RListIter *iter;
+			r_list_foreach (module->trampolines, iter, tramp) {
+				ut64 thunk, target;
+				if (!pdb_symbol_address (pdb_pe_section (pe_stream, tramp->thunk_segment - 1), omap_stream, tramp->thunk_offset, img_base, &thunk)
+						|| !pdb_symbol_address (pdb_pe_section (pe_stream, tramp->target_segment - 1), omap_stream, tramp->target_offset, img_base, &target)) {
+					continue;
+				}
+				if (set_u_contains (out.fcn_addrs, target) && !set_u_contains (out.fcn_addrs, thunk)) {
+					set_u_add (out.fcn_addrs, thunk);
+					r_strbuf_appendf (&out.fcns, "'@0x%" PFMT64x "'af\n", thunk);
+				}
+			}
+		}
+	}
 	// code labels outside every procedure, like the __ehhandler$ and __unwindfunclet$ stubs
 	// of the C++ exceptions, are only reached through data: they become functions
 	r_list_foreach (pdb->pdb_streams2, it, tmp) {
