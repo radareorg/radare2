@@ -170,6 +170,27 @@ type_info
 EOF
 RUN
 
+NAME=avrr msvc secondary vtables
+FILE=bins/pe/libzmq-v100-mt-4_0_4.dll
+CMDS=<<EOF
+aar
+avrr
+acl~?
+acl~io_thread_t
+acv zmq::io_thread_t
+f~vtable.zmq::io_thread_t
+EOF
+EXPECT=<<EOF
+69
+zmq::io_thread_t: zmq::object_t, zmq::i_poll_events
+zmq::io_thread_t:
+     0 vtable 0x10064f34 @ +0x0 size:+0x44
+     1 vtable 0x10064f7c @ +0xc size:+0x10
+0x10064f34 68 vtable.zmq::io_thread_t.0
+0x10064f7c 16 vtable.zmq::io_thread_t.1
+EOF
+RUN
+
 NAME=avraj msvc x86
 FILE=bins/pe/cpp-msvc-x86.exe
 CMDS=<<EOF
