@@ -71,3 +71,11 @@ d "rol tc2, ac17, tc2, ac24" a8181103
 d "pop mmap(@#0xe5)" 2461e588
 d "psh mmap(@#0x12)" 24611280
 d "psh mmap(@#0xff)" 2461ff80
+d "mov ac0.l, volatile(*ar2)" 2b5102a0
+d "mov ac0.l, port(*ar2)" 295102a0
+d "mov volatile(@#0x7a), ac27.l" 2a5b7adb
+d "mov port(@#0x7a), ac27.l" 285b7adb
+d "amar port(*ar2+), *ar4+, *ar15" 28ea928014c03f
+d "amar volatile(*ar2+), *ar4+, *ar15" 2aea928014c03f
+d "mov ac22, *ar2+, port(*ar11+)" 29a012161b
+d "mov ac22, *ar2+, volatile(*ar11+)" 2ba012161b
