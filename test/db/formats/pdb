@@ -380,6 +380,28 @@ struct R2_TEST_STRUCT {
 };
 EOF
 RUN
+
+NAME=idp keeps the members after the vtable pointer of a class
+FILE=-
+CMDS=<<EOF
+idp bins/pdb/r_bp.pdb
+tsc std::exception
+tsc type_info
+EOF
+EXPECT=<<EOF
+struct std::exception {
+  void** __vfptr;
+  struct __std_exception_data _Data;
+};
+struct type_info {
+  void** __vfptr;
+  struct __std_type_info_data _Data;
+};
+EOF
+EXPECT_ERR=<<EOF
+WARN: Cannot find base address, flags will probably be misplaced
+EOF
+RUN
 NAME=PDB rejects a zero page size before counting pages
 FILE=hex://4d6963726f736f667420432f432b2b204d534620372e30300d0a1a44530000000000000000000000010000004000000000000000
 CMDS=<<EOF
