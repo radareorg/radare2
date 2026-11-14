@@ -998,6 +998,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=P* saves the vtable sizes and the virtual bases
+FILE=malloc://512
+CMDS=<<EOF
+ac Animal
+ac Dog
+acb Dog Animal 0 0 4
+acv Dog 0x10 16 8
+P*~^'ac
+EOF
+EXPECT=<<EOF
+'ac Dog
+'ac Animal
+'acb Dog Animal 0 0 4
+'acv Dog 0x10 16 8
+EOF
+RUN
+
 NAME=P* restores the selected flag space
 FILE=malloc://512
 CMDS=<<EOF

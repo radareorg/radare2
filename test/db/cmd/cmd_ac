@@ -627,3 +627,66 @@ EXPECT=<<EOF
 'acv Gadget 0x10 0 8
 EOF
 RUN
+
+NAME=acb virtual base
+FILE=-
+CMDS=<<EOF
+ac Animal
+ac Pet
+ac Dog
+acb Dog Pet
+acb Dog Animal 0 0 4
+acb Pet Animal 8 0x4 0x8
+acb Dog
+acb Pet
+acl
+acl*~acb
+aclj~{[0].bases[1]}
+aclj~{[1].bases[0]}
+EOF
+EXPECT=<<EOF
+Dog:
+     0 Pet @ +0x0
+     1 Animal @ virtual (vbptr +0x0, vbtable +0x4)
+Pet:
+     0 Animal @ virtual (vbptr +0x4, vbtable +0x8) +0x8
+Animal
+Dog: Pet, virtual Animal
+Pet: virtual Animal
+'acb Dog Pet 0
+'acb Dog Animal 0 0 4
+'acb Pet Animal 8 4 8
+{"id":"1","name":"Animal","offset":0,"virtual":true,"vbptr_offset":0,"vbtable_offset":4}
+{"id":"0","name":"Animal","offset":8,"virtual":true,"vbptr_offset":4,"vbtable_offset":8}
+EOF
+RUN
+
+NAME=acb with extra spaces and incomplete virtual offsets
+FILE=-
+CMDS=<<EOF
+ac Animal
+ac Dog
+ac Cat
+acb Dog Animal  8
+acb Cat Animal 0 4
+acb Cat Animal 0 4 8 12
+acb Cat
+acb Cat Animal  0  0x4   0x8
+acb Dog
+acb Cat
+acl*~acb
+EOF
+EXPECT=<<EOF
+Cat:
+Dog:
+     0 Animal @ +0x8
+Cat:
+     0 Animal @ virtual (vbptr +0x4, vbtable +0x8)
+'acb Dog Animal 8
+'acb Cat Animal 0 4 8
+EOF
+EXPECT_ERR=<<EOF
+ERROR: A virtual base needs its offset, vbptr offset and vbtable offset
+ERROR: A virtual base needs its offset, vbptr offset and vbtable offset
+EOF
+RUN

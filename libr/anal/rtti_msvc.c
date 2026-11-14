@@ -833,6 +833,34 @@ static void recovery_apply_vtable(RAnal *anal, const char *class_name, RecoveryC
 	RVecAnalMethod_free (methods);
 }
 
+// a reused class may hold the base already: an older script or project lacks the vbtable displacements
+static void recovery_set_base(RAnal *anal, const char *class_name, RAnalBaseClass *base) {
+	char *base_name = r_str_sanitize_sdb_key (base->class_name);
+	if (!base_name) {
+		return;
+	}
+	bool skip = false;
+	RVecAnalBaseClass *bases = r_anal_class_base_get_all (anal, class_name);
+	if (bases) {
+		RAnalBaseClass *existing;
+		R_VEC_FOREACH (bases, existing) {
+			if (!strcmp (existing->class_name, base_name)) {
+				if (base->is_virtual && !existing->is_virtual) {
+					base->id = strdup (existing->id);
+				} else {
+					skip = true;
+				}
+				break;
+			}
+		}
+		RVecAnalBaseClass_free (bases);
+	}
+	free (base_name);
+	if (!skip) {
+		r_anal_class_base_set (anal, class_name, base);
+	}
+}
+
 static void recovery_apply_bases(RRTTIMSVCAnalContext *context, const char *class_name, RVecRecoveryBaseDescriptor *base_descs) {
 	RecoveryBaseDescriptor *base_desc;
 	R_VEC_FOREACH (base_descs, base_desc) {
@@ -859,11 +887,17 @@ static void recovery_apply_bases(RRTTIMSVCAnalContext *context, const char *clas
 			continue;
 		}
 
-		RAnalBaseClass base;
-		base.id = NULL;
-		base.offset = (ut64)base_desc->bcd->where.mdisp;
+		const rtti_base_class_descriptor *bcd = base_desc->bcd;
+		RAnalBaseClass base = {0};
+		base.offset = (ut64)bcd->where.mdisp;
+		// virtual bases have a vbtable displacement and no fixed offset
+		if (bcd->where.pdisp != -1) {
+			base.is_virtual = true;
+			base.vbptr_offset = bcd->where.pdisp;
+			base.vbtable_offset = bcd->where.vdisp;
+		}
 		base.class_name = strdup (base_class_name);
-		r_anal_class_base_set (context->vt_context->anal, class_name, &base);
+		recovery_set_base (context->vt_context->anal, class_name, &base);
 		r_anal_class_base_fini (&base);
 	}
 }

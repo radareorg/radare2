@@ -269,6 +269,54 @@ type_info
 EOF
 RUN
 
+NAME=avrr msvc virtual bases
+FILE=bins/pe/rev.exe
+CMDS=<<EOF
+aar
+avrr
+acl~ostringstream
+acb std::basic_ostringstream_char__struct_std::char_traits_char___class_std::allocator_char__
+aclj~{[0].bases[1]}
+EOF
+EXPECT=<<EOF
+std::basic_ostringstream_char__struct_std::char_traits_char___class_std::allocator_char__: std::basic_ostream_char__struct_std::char_traits_char__, virtual std::basic_ios_char__struct_std::char_traits_char__, virtual std::ios_base, virtual std::_Iosb_int_
+std::basic_ostringstream_char__struct_std::char_traits_char___class_std::allocator_char__:
+     0 std::basic_ostream_char__struct_std::char_traits_char__ @ +0x0
+     1 std::basic_ios_char__struct_std::char_traits_char__ @ virtual (vbptr +0x0, vbtable +0x4)
+     2 std::ios_base @ virtual (vbptr +0x0, vbtable +0x4)
+     3 std::_Iosb_int_ @ virtual (vbptr +0x0, vbtable +0x4) +0x8
+{"id":"1","name":"std::basic_ios_char__struct_std::char_traits_char__","offset":0,"virtual":true,"vbptr_offset":0,"vbtable_offset":4}
+EOF
+RUN
+
+NAME=avrr msvc turns the bases of a replayed acl* script virtual
+FILE=bins/pe/rev.exe
+CMDS=<<EOF
+aar
+'ac std::basic_ostringstream_char__struct_std::char_traits_char___class_std::allocator_char__
+'ac std::basic_ios_char__struct_std::char_traits_char__
+'ac std::ios_base
+'ac std::_Iosb_int_
+'ac std::basic_ostream_char__struct_std::char_traits_char__
+'acb std::basic_ostringstream_char__struct_std::char_traits_char___class_std::allocator_char__ std::basic_ostream_char__struct_std::char_traits_char__ 0
+'acb std::basic_ostringstream_char__struct_std::char_traits_char___class_std::allocator_char__ std::basic_ios_char__struct_std::char_traits_char__ 0
+'acb std::basic_ostringstream_char__struct_std::char_traits_char___class_std::allocator_char__ std::ios_base 0
+'acb std::basic_ostringstream_char__struct_std::char_traits_char___class_std::allocator_char__ std::_Iosb_int_ 8
+'acv std::basic_ostringstream_char__struct_std::char_traits_char___class_std::allocator_char__ 0x405490 80
+avrr
+acl~?
+acb std::basic_ostringstream_char__struct_std::char_traits_char___class_std::allocator_char__
+EOF
+EXPECT=<<EOF
+12
+std::basic_ostringstream_char__struct_std::char_traits_char___class_std::allocator_char__:
+     0 std::basic_ostream_char__struct_std::char_traits_char__ @ +0x0
+     1 std::basic_ios_char__struct_std::char_traits_char__ @ virtual (vbptr +0x0, vbtable +0x4)
+     2 std::ios_base @ virtual (vbptr +0x0, vbtable +0x4)
+     3 std::_Iosb_int_ @ virtual (vbptr +0x0, vbtable +0x4) +0x8
+EOF
+RUN
+
 NAME=avraj msvc x86
 FILE=bins/pe/cpp-msvc-x86.exe
 CMDS=<<EOF
