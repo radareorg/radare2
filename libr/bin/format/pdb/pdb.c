@@ -1269,6 +1269,26 @@ typedef struct {
 	bool function_space;
 } GVarsOutput;
 
+// r_name_filter turns the dash-like chars into _ and drops the rest, so the sign of a
+// number is lost: `vtordisp{-4,0}' and `vtordisp{4,0}' become vtordisp_4_0 and vtordisp4_0.
+// the minus sign is written _n, like a negative number in an identifier: vtordisp_n4_0
+static char *pdb_name_filter(const char *name) {
+	RStrBuf sb;
+	r_strbuf_init (&sb);
+	const char *p;
+	for (p = name; *p; p++) {
+		if (*p == '-' && isdigit ((ut8)p[1]) && (p == name || (!isalnum ((ut8)p[-1]) && p[-1] != '_'))) {
+			r_strbuf_append (&sb, "_n");
+		} else {
+			r_strbuf_append_n (&sb, p, 1);
+		}
+	}
+	char *s = r_strbuf_drain_nofree (&sb);
+	char *filtered = r_name_filter_dup (s);
+	free (s);
+	return filtered;
+}
+
 static void print_gvar(GVarsOutput *out, ut64 addr, ut32 symtype, ut32 size, const char *sname, const char *name, bool unique) {
 	if (R_STR_ISEMPTY (name)) {
 		return;
@@ -1289,7 +1309,7 @@ static void print_gvar(GVarsOutput *out, ut64 addr, ut32 symtype, ut32 size, con
 	case 1:
 	case '*':
 	case 'r': { // r2 script
-		char *filtered_name = r_name_filter_dup (r_str_trim_head_ro (name));
+		char *filtered_name = pdb_name_filter (r_str_trim_head_ro (name));
 		if (R_STR_ISEMPTY (filtered_name)) {
 			free (filtered_name);
 			return;
