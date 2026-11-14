@@ -3159,7 +3159,7 @@ NAME=m128 parsing test
 FILE=-
 CMDS="!rabin2 -D msvc ?var__m128@@3T__m128@@A"
 EXPECT=<<EOF
-__m128 var__m128
+union __m128 var__m128
 EOF
 RUN
 
@@ -3167,7 +3167,7 @@ NAME=m64 parsing test
 FILE=-
 CMDS="!rabin2 -D msvc ?var__m64@@3T__m64@@A"
 EXPECT=<<EOF
-__m64 var__m64
+union __m64 var__m64
 EOF
 RUN
 
@@ -3175,7 +3175,7 @@ NAME=m128d parsing test
 FILE=-
 CMDS="!rabin2 -D msvc ?var__m128d@@3U__m128d@@A"
 EXPECT=<<EOF
-__m128d var__m128d
+struct __m128d var__m128d
 EOF
 RUN
 
@@ -3183,7 +3183,7 @@ NAME=m128i parsing test
 FILE=-
 CMDS="!rabin2 -D msvc ?var__m128i@@3T__m128i@@A"
 EXPECT=<<EOF
-__m128i var__m128i
+union __m128i var__m128i
 EOF
 RUN
 
@@ -3191,7 +3191,7 @@ NAME=m256 parsing test
 FILE=-
 CMDS="!rabin2 -D msvc ?var__m256@@3T__m256@@A"
 EXPECT=<<EOF
-__m256 var__m256
+union __m256 var__m256
 EOF
 RUN
 
@@ -3199,7 +3199,7 @@ NAME=m256d parsing test
 FILE=-
 CMDS="!rabin2 -D msvc ?var__m256d@@3U__m256d@@A"
 EXPECT=<<EOF
-__m256d var__m256d
+struct __m256d var__m256d
 EOF
 RUN
 
@@ -3207,7 +3207,7 @@ NAME=m256i parsing test
 FILE=-
 CMDS="!rabin2 -D msvc ?var__m256i@@3T__m256i@@A"
 EXPECT=<<EOF
-__m256i var__m256i
+union __m256i var__m256i
 EOF
 RUN
 
