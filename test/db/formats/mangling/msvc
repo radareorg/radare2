@@ -46,7 +46,23 @@ NAME=NAME=Templates Methods
 FILE=-
 CMDS="!rabin2 -D msvc \"?instance@Singleton@@0V1@A\""
 EXPECT=<<EOF
-class Singleton Singleton::instance
+private: static class Singleton Singleton::instance
+EOF
+RUN
+
+NAME=msvc static data members
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc '?totalInstancias@Contador@@0HA'
+!rabin2 -D msvc '?x@A@@1HB'
+!rabin2 -D msvc '?id@?$ctype@D@std@@2V0locale@2@A'
+!rabin2 -D msvc '?g@@3HA'
+EOF
+EXPECT=<<EOF
+private: static int Contador::totalInstancias
+protected: static int const A::x
+public: static class std::locale::id std::ctype<char>::id
+int g
 EOF
 RUN
 
