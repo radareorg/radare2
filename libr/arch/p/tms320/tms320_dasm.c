@@ -1171,7 +1171,7 @@ bool tms320_dasm_init(tms320_dasm_t *dasm) {
 	return true;
 }
 
-int tms320_dasm_fini(tms320_dasm_t *dasm) {
+void tms320_dasm_fini(tms320_dasm_t *dasm) {
 	if (dasm) {
 		if (dasm->map) {
 			ht_up_free (dasm->map);
@@ -1179,5 +1179,4 @@ int tms320_dasm_fini(tms320_dasm_t *dasm) {
 		/* avoid double free */
 		memset (dasm, 0, sizeof (tms320_dasm_t));
 	}
-	return 0;
 }
