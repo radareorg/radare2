@@ -1528,7 +1528,8 @@ static void get_union_print_type(STpiStream *ss, void *type, char **name) {
 }
 
 static void get_vtshape_print_type(STpiStream *ss, void *type, char **name) {
-	*name = strdup ("vtshape");
+	// the virtual function table is an array of function pointers, __vfptr is a void **
+	*name = strdup ("void*");
 }
 
 static void get_enumerate_print_type(STpiStream *ss, void *type, char **name) {
@@ -1925,6 +1926,98 @@ static void init_stype_info(STypeInfo *type_info) {
 		r_list_append (lf_fieldlist->substructs, type_info); \
 	}
 
+// bytes of a numeric leaf, values below LF_CHAR are stored in the leaf itself
+static ut32 numeric_leaf_size(const ut8 *leaf_data, ut32 pos, ut32 len) {
+	if (!can_read (pos, 2, len)) {
+		return 0;
+	}
+	switch (r_read_le16 (leaf_data)) {
+	case eLF_CHAR: return 3;
+	case eLF_SHORT: case eLF_USHORT: return 4;
+	case eLF_LONG: case eLF_ULONG: return 6;
+	case eLF_QUADWORD: case eLF_UQUADWORD: return 10;
+	default:
+		return (r_read_le16 (leaf_data) < eLF_CHAR)? 2: 0;
+	}
+}
+
+// skips the subfield records that hold no data member, so the members after them are parsed
+static int skip_lf_subfield(ut16 leaf_type, const ut8 *leaf_data, ut32 *read_bytes, ut32 len) {
+	const ut32 start = *read_bytes;
+	ut32 fixed_size;
+	int numerics = 0;
+	bool has_name = false;
+	switch (leaf_type) {
+	case eLF_BCLASS: // attributes, base class, offset
+		fixed_size = 6;
+		numerics = 1;
+		break;
+	case eLF_VBCLASS: // attributes, virtual base class, vbptr type, vbptr offset, vbtable index
+	case eLF_IVBCLASS:
+		fixed_size = 10;
+		numerics = 2;
+		break;
+	case eLF_STMEMBER: // attributes, type, name
+	case eLF_FRIENDFCN: // pad, type, name
+		fixed_size = 6;
+		has_name = true;
+		break;
+	case eLF_FRIENDCLS: // pad, type
+		fixed_size = 6;
+		break;
+	case eLF_VFUNCOFF: // pad, type, offset
+		fixed_size = 10;
+		break;
+	default:
+		return 0;
+	}
+	if (!can_read (*read_bytes, fixed_size, len)) {
+		return 0;
+	}
+	ut8 *p = (ut8 *)leaf_data + fixed_size;
+	*read_bytes += fixed_size;
+	for (; numerics > 0; numerics--) {
+		const ut32 size = numeric_leaf_size (p, *read_bytes, len);
+		if (!size || !can_read (*read_bytes, size, len)) {
+			return 0;
+		}
+		p += size;
+		*read_bytes += size;
+	}
+	if (has_name) {
+		SCString name;
+		const ut32 before = *read_bytes;
+		if (!parse_sctring (&name, p, read_bytes, len)) {
+			return 0;
+		}
+		deinit_scstring (&name);
+		p += *read_bytes - before;
+	}
+	if (len > *read_bytes && !pad_align (p[0], &p, read_bytes, len)) {
+		return 0;
+	}
+	return *read_bytes - start;
+}
+
+// the pointer to the virtual function table, MSVC places it at the start of the object
+static int parse_lf_vfunctab(SLF_MEMBER *lf_member, const ut8 *leaf_data, ut32 *read_bytes, ut32 len) {
+	const ut32 start = *read_bytes;
+	const ut32 fixed_size = 6;
+	if (!can_read (*read_bytes, fixed_size, len)) {
+		return 0;
+	}
+	lf_member->index = r_read_le32 (leaf_data + 2);
+	lf_member->offset.value = 0;
+	init_scstring (&lf_member->offset.name, sizeof ("__vfptr"), "__vfptr");
+	ut8 *p = (ut8 *)leaf_data + fixed_size;
+	*read_bytes += fixed_size;
+	lf_member->pad = (len > *read_bytes)? p[0]: 0;
+	if (!pad_align (lf_member->pad, &p, read_bytes, len)) {
+		return 0;
+	}
+	return *read_bytes - start;
+}
+
 static int parse_lf_fieldlist(SLF_FIELDLIST *lf_fieldlist, const ut8 *leaf_data, ut32 *read_bytes, ut32 len) {
 	int curr_read_bytes = 0;
 	const ut8 *p = leaf_data;
@@ -1949,8 +2042,21 @@ static int parse_lf_fieldlist(SLF_FIELDLIST *lf_fieldlist, const ut8 *leaf_data,
 		case eLF_MEMBER:
 			PARSE_LF2 (SLF_MEMBER, lf_member, eLF_MEMBER);
 			break;
+		case eLF_VFUNCTAB:
+			// listed as a member so the layout of the class keeps it
+			PARSE_LF2 (SLF_MEMBER, lf_vfunctab, eLF_MEMBER);
+			break;
 		case eLF_ONEMETHOD:
 			PARSE_LF2 (SLF_ONEMETHOD, lf_onemethod, eLF_ONEMETHOD);
+			break;
+		case eLF_BCLASS:
+		case eLF_VBCLASS:
+		case eLF_IVBCLASS:
+		case eLF_STMEMBER:
+		case eLF_FRIENDFCN:
+		case eLF_FRIENDCLS:
+		case eLF_VFUNCOFF:
+			curr_read_bytes = skip_lf_subfield (leaf_type, p, read_bytes, len);
 			break;
 		default:
 			return 0;
