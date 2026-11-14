@@ -2212,12 +2212,184 @@ static EDemanglerErr parse_microsoft_rtti_mangled_name(SDemangler *sd, const cha
 	return err;
 }
 
+// one byte of a string literal: itself, ?$ and two hex digits from A to P,
+// ?0 to ?9 for punctuation, or ?a to ?z and ?A to ?Z for accented letters
+static int string_literal_byte(const char **s) {
+	const char *p = *s;
+	if (*p != '?') {
+		if (!*p) {
+			return -1;
+		}
+		*s = p + 1;
+		return (ut8)*p;
+	}
+	p++;
+	if (*p == '$') {
+		if (p[1] < 'A' || p[1] > 'P' || p[2] < 'A' || p[2] > 'P') {
+			return -1;
+		}
+		*s = p + 3;
+		return ((p[1] - 'A') << 4) | (p[2] - 'A');
+	}
+	if (isdigit ((ut8)*p)) {
+		*s = p + 1;
+		return (ut8)",/\\:. \n\t'-"[*p - '0'];
+	}
+	if (*p >= 'a' && *p <= 'z') {
+		*s = p + 1;
+		return 0xe1 + *p - 'a';
+	}
+	if (*p >= 'A' && *p <= 'Z') {
+		*s = p + 1;
+		return 0xc1 + *p - 'A';
+	}
+	return -1;
+}
+
+static void string_literal_char(RStrBuf *sb, ut32 c) {
+	switch (c) {
+	case '\0': r_strbuf_append (sb, "\\0"); return;
+	case '\'': r_strbuf_append (sb, "\\'"); return;
+	case '"': r_strbuf_append (sb, "\\\""); return;
+	case '\\': r_strbuf_append (sb, "\\\\"); return;
+	case '\a': r_strbuf_append (sb, "\\a"); return;
+	case '\b': r_strbuf_append (sb, "\\b"); return;
+	case '\f': r_strbuf_append (sb, "\\f"); return;
+	case '\n': r_strbuf_append (sb, "\\n"); return;
+	case '\r': r_strbuf_append (sb, "\\r"); return;
+	case '\t': r_strbuf_append (sb, "\\t"); return;
+	case '\v': r_strbuf_append (sb, "\\v"); return;
+	}
+	if (c > 0x1f && c < 0x7f) {
+		r_strbuf_appendf (sb, "%c", (char)c);
+		return;
+	}
+	// pairs of uppercase hex digits, like llvm-undname
+	char hex[9];
+	int pos = sizeof (hex) - 1;
+	hex[pos] = '\0';
+	while (c && pos > 1) {
+		hex[--pos] = "0123456789ABCDEF"[c % 16];
+		c /= 16;
+		hex[--pos] = "0123456789ABCDEF"[c % 16];
+		c /= 16;
+	}
+	r_strbuf_appendf (sb, "\\x%s", hex + pos);
+}
+
+// the mangled narrow literals do not say their char size, guess it from the nulls like llvm-undname
+static size_t string_literal_char_size(const ut8 *bytes, size_t n, ut64 size) {
+	size_t i, nulls = 0;
+	if (size % 2) {
+		return 1;
+	}
+	if (size < 32) {
+		// the whole string is there, look at its terminator
+		while (nulls < n && !bytes[n - 1 - nulls]) {
+			nulls++;
+		}
+		if (nulls >= 4 && size % 4 == 0) {
+			return 4;
+		}
+		return (nulls >= 2)? 2: 1;
+	}
+	for (i = 0; i < n; i++) {
+		if (!bytes[i]) {
+			nulls++;
+		}
+	}
+	if (nulls >= 2 * n / 3 && size % 4 == 0) {
+		return 4;
+	}
+	return (nulls >= n / 3)? 2: 1;
+}
+
+// ??_C@_ <0 for char, 1 for wchar_t> <length in bytes> <crc> @ <bytes> @
+static EDemanglerErr parse_microsoft_string_literal(const char *sym, char **demangled_name) {
+	const bool wide = *sym == '1';
+	if (*sym != '0' && !wide) {
+		return eDemanglerErrUncorrectMangledSymbol;
+	}
+	SStateInfo state;
+	init_state_struct (&state, sym + 1);
+	char *num = get_num (&state);
+	if (!num || *num == '-') {
+		free (num);
+		return eDemanglerErrUncorrectMangledSymbol;
+	}
+	ut64 size = strtoull (num, NULL, 10);
+	free (num);
+	const char *p = strchr (state.buff_for_parsing, '@');
+	if (size < (wide? 2: 1) || !p || !p[1]) {
+		return eDemanglerErrUncorrectMangledSymbol;
+	}
+	p++;
+	RStrBuf *sb = r_strbuf_new (NULL);
+	if (!sb) {
+		return eDemanglerErrMemoryAllocation;
+	}
+	const char *prefix = "";
+	bool truncated = false;
+	if (wide) {
+		prefix = "L";
+		truncated = size > 64;
+		while (*p != '@') {
+			const int hi = string_literal_byte (&p);
+			const int lo = (hi < 0)? -1: string_literal_byte (&p);
+			if (lo < 0) {
+				goto fail;
+			}
+			// the last two bytes are the terminator of a complete string
+			if (size != 2 || truncated) {
+				string_literal_char (sb, (hi << 8) | lo);
+			}
+			size -= 2;
+		}
+	} else {
+		ut8 bytes[128];
+		size_t i, k, n = 0;
+		while (*p != '@') {
+			const int b = string_literal_byte (&p);
+			if (b < 0 || n >= sizeof (bytes)) {
+				goto fail;
+			}
+			bytes[n++] = b;
+		}
+		truncated = size > n;
+		const size_t char_size = string_literal_char_size (bytes, n, size);
+		prefix = (char_size == 4)? "U": (char_size == 2)? "u": "";
+		const size_t nchars = n / char_size;
+		for (i = 0; i < nchars; i++) {
+			ut32 c = 0;
+			for (k = 0; k < char_size; k++) {
+				c |= (ut32)bytes[i * char_size + k] << (8 * k);
+			}
+			// the last char is the terminator of a complete string
+			if (i + 1 < nchars || truncated) {
+				string_literal_char (sb, c);
+			}
+		}
+	}
+	if (p[1]) {
+		goto fail;
+	}
+	*demangled_name = r_str_newf ("%s\"%s\"%s", prefix, r_strbuf_get (sb), truncated? "...": "");
+	r_strbuf_free (sb);
+	return eDemanglerErrOK;
+fail:
+	r_strbuf_free (sb);
+	return eDemanglerErrUncorrectMangledSymbol;
+}
+
 EDemanglerErr microsoft_demangle(SDemangler *sd, char **demangled_name) {
 	if (!sd || !demangled_name) {
 		return eDemanglerErrMemoryAllocation;
 	}
 	if (r_str_startswith (sd->symbol, ".?")) {
 		return parse_microsoft_rtti_mangled_name (sd, sd->symbol + 2, demangled_name, NULL);
+	}
+	if (r_str_startswith (sd->symbol, "??_C@_")) {
+		return parse_microsoft_string_literal (sd->symbol + 6, demangled_name);
 	}
 	return parse_microsoft_mangled_name (sd, sd->symbol + 1, demangled_name, NULL);
 }
