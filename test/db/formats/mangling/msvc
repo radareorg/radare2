@@ -418,3 +418,13 @@ EXPECT=<<EOF
 [thunk]: __cdecl WithVirtual::`vcall'{8, {flat}}
 EOF
 RUN
+
+NAME=msvc literal operators
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc '??__K_l@@YA?AUStringLiteral@@PBDI@Z'
+EOF
+EXPECT=<<EOF
+struct StringLiteral __cdecl operator ""_l(char const *, unsigned int)
+EOF
+RUN
