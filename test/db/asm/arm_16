@@ -283,7 +283,7 @@ a "ldmea r9!, {r0, r6-r8, r11, r15}" 39e9c189
 d "ldm r6!, {r1, r3, r4, r5}" 3ace
 a "ldm r6!, {r1, r3-r5}" 3ace
 d "ldm r3, {r0, r1, r2, r3, r7}" 8fcb
-a "ldm r3, {r0-r2, r7}" 8fcb
+a "ldm r3, {r0-r3, r7}" 8fcb
 d "ldm.w r8, {sb, sl, ip}" 98e80016
 a "ldm r8, {r9-r10, r12}" 98e80016
 d "ldm.w r2!, {r3, r4, r5, r6, r7, r8, sb, sl, ip}" b2e8f817
