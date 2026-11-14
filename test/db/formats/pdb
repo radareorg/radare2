@@ -153,6 +153,26 @@ EXPECT_ERR=<<EOF
 WARN: Cannot find base address, flags will probably be misplaced
 EOF
 RUN
+
+NAME=idp ends a PDB function at the jmp into an incremental linking thunk
+FILE=malloc://0x20000
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx c3 @ 0x12f10
+wx e9061f0000 @ 0x11005
+wx e920fcffff @ 0x113e0
+idp bins/pdb/Project1.pdb
+afl~0x00011005,0x00012f10,0x000113e0
+EOF
+EXPECT=<<EOF
+0x00012f10    1      1 pdb.__setdefaultprecision
+0x00011005    1      5 j.pdb.__setdefaultprecision
+0x000113e0    1      5 pdb.int___cdecl_r2_test_func_int__int_
+EOF
+EXPECT_ERR=<<EOF
+WARN: Cannot find base address, flags will probably be misplaced
+EOF
+RUN
 NAME=idp and baddr
 FILE=-
 CMDS=<<EOF
