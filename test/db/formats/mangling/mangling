@@ -3707,15 +3707,15 @@ NAME=public: void __cdecl ABC::operator()<char>(char const * __ptr64 const)const
 FILE=-
 CMDS="!rabin2 -D msvc ??\$?RD@ABC@@QEBAXQEBD@Z"
 EXPECT=<<EOF
-public: void __cdecl ABC::operator()<char>(char const * const __ptr64)const __ptr64
+public: void __cdecl ABC::operator()<char>(char const * const __ptr64) const __ptr64
 EOF
 RUN
 
-NAME=public: bool __cdecl ABC<char, struct DEF>::operator bool(void)const __ptr64
+NAME=public: bool __cdecl ABC<char, struct DEF>::operator bool(void) const __ptr64
 FILE=-
 CMDS="!rabin2 -D msvc ??B?\$ABC@DUDEF@@@@QEBA_NXZ"
 EXPECT=<<EOF
-public: bool __cdecl ABC<char, struct DEF>::operator bool(void)const __ptr64
+public: bool __cdecl ABC<char, struct DEF>::operator bool(void) const __ptr64
 EOF
 RUN
 
@@ -3819,7 +3819,7 @@ NAME=public: bool __cdecl wil::unique_any_t<class wil::semaphore_t<class wil::de
 FILE=-
 CMDS="!rabin2 -D msvc ??B?\$unique_any_t@V?\$semaphore_t@V?\$unique_storage@U?\$resource_policy@PEAXP6AXPEAX@Z\$1?CloseHandle@details@wil@@YAX0@ZU?\$integral_constant@_K\$0A@@wistd@@PEAXPEAX\$0A@\$\$T@details@wil@@@details@wil@@Uerr_returncode_policy@3@@wil@@@wil@@QEBA_NXZ"
 EXPECT=<<EOF
-public: bool __cdecl wil::unique_any_t<class wil::semaphore_t<class wil::details::unique_storage<struct wil::details::resource_policy<void * __ptr64, void (__cdecl *)(void * __ptr64), &void __cdecl wil::details::CloseHandle(void * __ptr64), struct wistd::integral_constant<unsigned long long(unsigned __int64), 0>, void * __ptr64, void * __ptr64, 0, std::nullptr_t>>, struct wil::err_returncode_policy>>::operator bool(void)const __ptr64
+public: bool __cdecl wil::unique_any_t<class wil::semaphore_t<class wil::details::unique_storage<struct wil::details::resource_policy<void * __ptr64, void (__cdecl *)(void * __ptr64), &void __cdecl wil::details::CloseHandle(void * __ptr64), struct wistd::integral_constant<unsigned long long(unsigned __int64), 0>, void * __ptr64, void * __ptr64, 0, std::nullptr_t>>, struct wil::err_returncode_policy>>::operator bool(void) const __ptr64
 EOF
 RUN
 

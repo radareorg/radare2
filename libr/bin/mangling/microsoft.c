@@ -2006,6 +2006,7 @@ static EDemanglerErr parse_function(SDemangler *sd, const char *sym, STypeCodeSt
 	free (demangled_args);
 
 	if (memb_func_access_code) {
+		copy_string (&func_str, " ", 0);
 		copy_string (&func_str, memb_func_access_code, 0);
 	}
 

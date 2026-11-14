@@ -29,8 +29,24 @@ CMDS=<<EOF
 !rabin2 -D msvc "?f@X@@QAE?BVY@@XZ"
 EOF
 EXPECT=<<EOF
-public: class Vector2D __thiscall Vector2D::operator+(class Vector2D const &)const
+public: class Vector2D __thiscall Vector2D::operator+(class Vector2D const &) const
 public: const class Y __thiscall X::f(void)
+EOF
+RUN
+
+NAME=msvc const and volatile member functions
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc '?obtenerValor@Contador@@QBEHXZ'
+!rabin2 -D msvc '?mostrar@?$Contenedor@H@@UBEXXZ'
+!rabin2 -D msvc '?f@A@@QCEXXZ'
+!rabin2 -D msvc '?f@A@@QDEXXZ'
+EOF
+EXPECT=<<EOF
+public: int __thiscall Contador::obtenerValor(void) const
+public: virtual void __thiscall Contenedor<int>::mostrar(void) const
+public: void __thiscall A::f(void) volatile
+public: void __thiscall A::f(void) const volatile
 EOF
 RUN
 
@@ -205,7 +221,7 @@ CMDS=<<EOF
 !rabin2 -D msvc '?f@A@@$R4BA@A@PPPPPPPM@7AEXXZ'
 EOF
 EXPECT=<<EOF
-[thunk]: public: virtual void __thiscall Perro::sonido`vtordisp{-4,0}'(void)const
+[thunk]: public: virtual void __thiscall Perro::sonido`vtordisp{-4,0}'(void) const
 [thunk]: private: virtual void __thiscall A::f`vtordisp{-4,4}'(void)
 [thunk]: public: virtual void __thiscall A::f`vtordispex{16,0,-4,8}'(void)
 EOF
