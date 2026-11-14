@@ -976,6 +976,9 @@ void decode_addressing_modes(tms320_dasm_t *dasm) {
 }
 
 void decode_qualifiers(tms320_dasm_t *dasm) {
+	if (dasm->length >= sizeof (dasm->stream)) {
+		return;
+	}
 	switch (dasm->stream[dasm->length]) {
 	case 0x98:
 		// 1001 1000 - mmap
@@ -1006,11 +1009,12 @@ static insn_item_t *finalize(tms320_dasm_t *dasm) {
 
 	// add some qualifiers
 
+	char *mnemonic = r_str_startswith (dasm->syntax, "|| ")? dasm->syntax + 3: dasm->syntax;
 	if (field_value (dasm, q_lr)) {
-		replace (dasm->syntax, " ", ".lr ");
+		replace (mnemonic, " ", ".lr ");
 	}
 	if (field_value (dasm, q_cr)) {
-		replace (dasm->syntax, " ", ".cr ");
+		replace (mnemonic, " ", ".cr ");
 	}
 
 	return dasm->insn;
@@ -1024,7 +1028,6 @@ insn_item_t *decode_insn(tms320_dasm_t *dasm) {
 
 	decode_bits (dasm);
 	decode_braces (dasm);
-	decode_qualifiers (dasm);
 
 	decode_constants (dasm);
 	decode_addresses (dasm);
@@ -1035,6 +1038,8 @@ insn_item_t *decode_insn(tms320_dasm_t *dasm) {
 
 	decode_registers (dasm);
 	decode_addressing_modes (dasm);
+	// qualifiers follow the Smem extension bytes
+	decode_qualifiers (dasm);
 
 	return finalize (dasm);
 }
