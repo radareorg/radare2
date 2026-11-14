@@ -473,7 +473,7 @@ static size_t get_operator_code(SDemangler *sd, const char *buf, RList *names_l,
 		case '6': SET_OPERATOR_CODE ("operator^="); break;
 		case '7': SET_OPERATOR_CODE ("`vftable'"); break;
 		case '8': SET_OPERATOR_CODE ("`vbtable'"); break;
-		case '9': SET_OPERATOR_CODE ("vcall"); break;
+		case '9': SET_OPERATOR_CODE ("`vcall'"); break;
 		case 'A': SET_OPERATOR_CODE ("typeof"); break;
 		case 'B': SET_OPERATOR_CODE ("`local static guard'"); break;
 		case 'C': SET_OPERATOR_CODE ("string"); break;
@@ -1969,6 +1969,24 @@ static EDemanglerErr parse_function(SDemangler *sd, const char *sym, STypeCodeSt
 	if (r_str_startswith (curr_pos, "$$F")) {
 		// Managed function (Managed C++ or C++/CLI)
 		curr_pos += 3;
+	}
+
+	if (r_str_startswith (curr_pos, "$B")) {
+		// vcall thunks: $B, the vftable offset, A for the flat model and the calling convention
+		SStateInfo state;
+		init_state_struct (&state, curr_pos + 2);
+		char *num = get_num (&state);
+		curr_pos += 2 + state.amount_of_read_chars;
+		call_conv = (num && *curr_pos == 'A')? get_calling_convention (curr_pos[1]): NULL;
+		if (!call_conv) {
+			free (num);
+			err = eDemanglerErrUncorrectMangledSymbol;
+			goto parse_function_err;
+		}
+		curr_pos += 2;
+		*demangled_function = r_str_newf ("[thunk]: %s %s{%s, {flat}}", call_conv, type_code_str->type_str, num);
+		free (num);
+		goto parse_function_err;
 	}
 
 	err = parse_function_type (curr_pos, &data_type, &len, &is_static, &implicit_this);
