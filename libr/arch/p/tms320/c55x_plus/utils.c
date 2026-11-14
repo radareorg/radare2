@@ -5,7 +5,7 @@
 #include <string.h>
 #include "utils.h"
 
-static char hex_str[] = "01234567890abcdef";
+static const char hex_str[] = "0123456789abcdef";
 
 // TODO: Add in a Coverity modelling file
 char *strcat_dup(char *s1, char *s2, st32 n_free) {

@@ -1,0 +1,129 @@
+NAME=C55x+ rejects reserved Smem modes before wrapping operands
+FILE=-
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.cpu=c55x+
+pi 1 @x:624240
+pi 1 @x:625240
+pi 1 @x:626240
+pi 1 @x:62f240
+pi 1 @x:25625240
+pi 1 @x:26625240
+pi 1 @x:60f240
+pi 1 @x:b0f2405678
+pi 1 @x:620280
+EOF
+EXPECT=<<EOF
+invalid
+invalid
+invalid
+invalid
+invalid
+invalid
+invalid
+invalid
+amar *ar2
+EOF
+RUN
+
+NAME=C55x+ rejects truncated instructions and Smem extensions
+FILE=-
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.cpu=c55x+
+pi 1 @x:90a164
+pi 1 @x:90a16400
+pi 1 @x:90a1640012
+pi 1 @x:90e16400
+pi 1 @x:90e1640012
+pi 1 @x:90e164001234
+pi 1 @x:24
+pi 1 @x:25
+pi 1 @x:38
+pi 1 @x:3820
+EOF
+EXPECT=<<EOF
+invalid
+invalid
+invalid
+invalid
+invalid
+invalid
+invalid
+invalid
+invalid
+invalid
+EOF
+RUN
+
+NAME=C55x+ Smem extensions preserve instruction boundaries
+FILE=-
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.cpu=c55x+
+pi 2 @x:90a16400123421
+pi 2 @x:90e1640012345621
+pi 2 @x:2590a16400123421
+pi 2 @x:60a240123421
+pi 2 @x:b0a2405678123421
+aoj 1 @x:90a164001234~{0.size}
+aoj 1 @x:90e16400123456~{0.size}
+EOF
+EXPECT=<<EOF
+add *abs16(#0x1234) << #16, ac0, ac4
+ret
+add *(#0x123456) << #16, ac0, ac4
+ret
+add lock(*abs16(#0x1234)) << #16, ac0, ac4
+ret
+delay *abs16(#0x1234)
+ret
+bcc #0x005678, *abs16(#0x1234) != #0
+ret
+6
+7
+EOF
+RUN
+
+NAME=C55x+ parallel packets include Smem extensions in either instruction
+FILE=-
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.cpu=c55x+
+pi 2 @x:3890a1640012342021
+pi 2 @x:382090a16400123421
+pi 2 @x:3325b4e0404032123456b4e1414033789abc21
+aoj 1 @x:3325b4e0404032123456b4e1414033789abc~{0.size}
+pi 1 @x:3790a16400123420
+pi 1 @x:3890a164001234
+pi 1 @x:382090a1640012
+EOF
+EXPECT=<<EOF
+add *abs16(#0x1234) << #16, ac0, ac4 || nop
+ret
+nop || add *abs16(#0x1234) << #16, ac0, ac4
+ret
+mov lock(*(#0x123456)) << t2, ac0 || mov *(#0x789abc) << t3, ac1
+ret
+18
+invalid
+invalid
+invalid
+EOF
+RUN
+
+NAME=C55x+ byte fallback prints the byte after a qualifier
+FILE=-
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.cpu=c55x+
+pi 2 @x:ff21
+pi 2 @x:24ff21
+EOF
+EXPECT=<<EOF
+.byte 0xff
+ret
+.byte 0xff
+ret
+EOF
+RUN

@@ -222,7 +222,16 @@ static char *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_le
 	char *aux = NULL;
 
 	// get instruction length
+	if (ins_pos >= ins_buff_len || ins_off >= ins_buff_len - ins_pos) {
+		*err_code = -1;
+		return NULL;
+	}
 	ins_len = get_ins_len (get_ins_part (ins_pos + ins_off, 1));
+	if (ins_len > ins_buff_len - ins_pos - ins_off) {
+		*err_code = -1;
+		return NULL;
+	}
+	*reg_len_dec = 0;
 	// get pseudo instruction
 	ins = ins_str[1 + 2 + hash_code * 4];
 	if (!ins /*|| ins_str[4 * hash_code] == 0*/) {
@@ -230,14 +239,6 @@ static char *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_le
 		*err_code = -1;
 		return NULL;
 	}
-	if (hash_code == 0x19C) {
-		res_decode = get_token_decoded (hash_code, "MMMMxxxxmm", 10, NULL, ret_ins_bits,
-			reg_len_dec, magic_value, ins_pos + ins_off, ins_len, two_ins, err_code);
-		if (*err_code < 0) {
-			return NULL;
-		}
-	}
-
 	pos = ins;
 	// instruction length
 	*ins_len_dec = ins_len;
@@ -275,6 +276,7 @@ static char *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_le
 			aux = get_token_decoded (hash_code, token_aux, len, reg, ret_ins_bits,
 				reg_len_dec, magic_value, ins_pos + ins_off, ins_len, two_ins, err_code);
 			if (*err_code < 0) {
+				free (res_decode);
 				return NULL;
 			}
 			res_decode = strcat_dup (res_decode, aux, 3);
@@ -358,6 +360,10 @@ static char *do_decode(ut32 ins_off, ut32 ins_pos, ut32 two_ins, ut32 *next_ins_
 	ut32 magic_value = 0x800;
 
 	*next_ins_pos = 0;
+	if (ins_pos >= ins_buff_len || ins_off >= ins_buff_len - ins_pos) {
+		*err_code = -1;
+		return NULL;
+	}
 
 	reg_len_dec = 0;
 	ret_ins_bits = 0;
@@ -367,6 +373,10 @@ static char *do_decode(ut32 ins_off, ut32 ins_pos, ut32 two_ins, ut32 *next_ins_
 	if (is_hash (hash_code)) {
 		hash_aux = hash_code;
 		ins_off++;
+		if (ins_off >= ins_buff_len - ins_pos) {
+			*err_code = -1;
+			return NULL;
+		}
 		set_magic_value (&magic_value, hash_code, err_code);
 		if (*err_code < 0) {
 			return NULL;
@@ -392,8 +402,8 @@ static char *do_decode(ut32 ins_off, ut32 ins_pos, ut32 two_ins, ut32 *next_ins_
 
 	if (hash_code == 0x223) {
 		ins_res = strcat_dup (ins_aux, ".byte 0x", 1);
-		ins_aux = get_hex_str (get_ins_part(ins_pos, 1));
-		ins_res = strcat_dup (ins_res, ins_aux, 2);
+		ins_aux = get_hex_str (get_ins_part (ins_pos + ins_off, 1));
+		ins_res = strcat_dup (ins_res, ins_aux, 3);
 		*next_ins_pos = *next_ins_pos + 1;
 	} else {
 		free (ins_aux);
@@ -404,9 +414,7 @@ static char *do_decode(ut32 ins_off, ut32 ins_pos, ut32 two_ins, ut32 *next_ins_
 			return NULL;
 		}
 		ins_res = strcat_dup (ins_aux, ins_res, 1);
-		//printf ("NEXT POS %d %d\n", ins_len_dec, reg_len_dec);
-		//getchar ();
-		*next_ins_pos += ins_len_dec; // reg_len_dec;
+		*next_ins_pos += ins_len_dec + reg_len_dec;
 	}
 
 	return ins_res;
@@ -496,7 +504,6 @@ static char* get_token_decoded(st32 hash_code, const char *ins_token, ut32 ins_t
 	ut32 ret_len = 0, flag;
 
 	*ret_ins_bits = 0;
-	*ret_reg_len = 0;
 
 	ins_bits = get_ins_bits (hash_code, ins_pos, ins_token, ins_token_len, magic_value, err_code);
 	if (*err_code < 0) {
@@ -596,8 +603,8 @@ static char* get_token_decoded(st32 hash_code, const char *ins_token, ut32 ins_t
 		}
 		if (magic_value & 1) {
 			aux = get_sim_reg (reg_arg, ins_bits);
-		} else if (reg_arg) {
-			switch (*reg_arg) {
+		} else {
+			switch (reg_arg? *reg_arg: '\0') {
 			case 'b':
 			case 'd':
 				reg_arg++;
@@ -608,7 +615,11 @@ static char* get_token_decoded(st32 hash_code, const char *ins_token, ut32 ins_t
 				//ins_bits2 = get_ins_bits (hash_code, ins_pos, buff_aux, 8);
 				break;
 			}
-			aux = get_AR_regs_class2(ins_bits, &ret_len, ins_len + ins_pos, 1);
+			aux = get_AR_regs_class2 (ins_bits, &ret_len, ins_len + ins_pos, 1);
+		}
+		if (!aux) {
+			*err_code = -1;
+			return NULL;
 		}
 		if (magic_value & 1) {
 			aux = strcat_dup (aux, ")", 1);
@@ -641,8 +652,8 @@ static char* get_token_decoded(st32 hash_code, const char *ins_token, ut32 ins_t
 			res = strcat_dup ("t3 = ", aux, 2);
 		} else {
 			res = aux;
-			*ret_reg_len = ret_len;
 		}
+		*ret_reg_len = ret_len;
 		break;
 	case 79:
 		res = get_trans_reg (ins_bits);

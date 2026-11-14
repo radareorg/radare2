@@ -30,7 +30,7 @@ static int tms320_c55x_plus_op(RArchSession *as, RAnalOp *op, ut64 addr, const u
 	op->size = 1;
 
 	tms320_dasm_t *engine = tms320_engine_for_session (as);
-	int ins_len = tms320_dasm (engine, buf, len);
+	int ins_len = tms320_dasm (engine, _buf, len);
 	if (ins_len <= 0) {
 		return 0;
 	}
@@ -464,17 +464,17 @@ static char *mnemonics(RArchSession *s, int id, bool json) {
 }
 
 static int archinfo(RArchSession *as, ut32 q) {
+	const bool c55x_plus = as->config->cpu && !r_str_casecmp (as->config->cpu, "c55x+");
 	switch (q) {
 	case R_ARCH_INFO_DATA_ALIGN:
 		return 2;
 	case R_ARCH_INFO_CODE_ALIGN:
-		return 2;
+		return c55x_plus? 1: 2;
 	case R_ARCH_INFO_MAXOP_SIZE:
-		return 8;
+		return c55x_plus? 18: 8;
 	case R_ARCH_INFO_INVOP_SIZE:
-		return 2;
 	case R_ARCH_INFO_MINOP_SIZE:
-		return 2;
+		return c55x_plus? 1: 2;
 	}
 	return 4;
 }

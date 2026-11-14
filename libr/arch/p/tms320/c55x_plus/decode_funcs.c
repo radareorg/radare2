@@ -7,6 +7,8 @@
 #include "ins.h"
 #include "utils.h"
 
+extern ut32 ins_buff_len;
+
 char *get_tc2_tc1(ut32 ins_bits) {
 	char *res = "tc1";
 	if (ins_bits) {
@@ -91,6 +93,7 @@ char *get_AR_regs_class1(ut32 ins_bits) {
 
 char *get_AR_regs_class2(ut32 ins_bits, ut32 *ret_len, ut32 ins_pos, ut32 idx) {
 	ut8 op, op2, reg_num, type;
+	ut32 displacement;
 	char *res = NULL;
 
 	op = ins_bits >> 6;
@@ -99,8 +102,6 @@ char *get_AR_regs_class2(ut32 ins_bits, ut32 *ret_len, ut32 ins_pos, ut32 idx) {
 	if (ret_len) {
 		*ret_len = 0;
 	}
-	//printf("OP1 %x OP2 0x%x %x\n", op, op2, reg_num);
-	// addressing modes without a case below leave the operand empty
 	res = calloc (1, 50);
 	if (!res) {
 		return NULL;
@@ -119,8 +120,8 @@ char *get_AR_regs_class2(ut32 ins_bits, ut32 *ret_len, ut32 ins_pos, ut32 idx) {
 		} else if (type == 7) {
 			sprintf(res, "*sp(#0x%lx)", (long int)idx * (reg_num | 16 * (op & 7)));
 		} else {
-			type = idx | 16 * op;
-			switch(type) {
+			type = op | (op2 << 4);
+			switch (type) {
 			case 0:
 				sprintf(res, "*ar%ld-", (long int)reg_num);
 				break;
@@ -189,45 +190,56 @@ char *get_AR_regs_class2(ut32 ins_bits, ut32 *ret_len, ut32 ins_pos, ut32 idx) {
 			case 25:
 			case 26:
 			case 27:
-				idx = get_ins_part(ins_pos, 2);
+				if (ins_pos > ins_buff_len || ins_buff_len - ins_pos < 2) {
+					free (res);
+					return NULL;
+				}
+				displacement = get_ins_part (ins_pos, 2);
 				if (ret_len) {
 					*ret_len = 2;
 				}
 				switch (type) {
 				case 24:
-					sprintf(res, "*ar%ld(#%ld)", (long int)reg_num, (long int)op * idx);
+					sprintf (res, "*ar%ld(#%ld)", (long int)reg_num, (long int)idx * displacement);
 					break;
 				case 25:
-					sprintf(res, "*+ar%ld(#%ld)", (long int)reg_num, (long int)op * idx);
+					sprintf (res, "*+ar%ld(#%ld)", (long int)reg_num, (long int)idx * displacement);
 					break;
 				case 26:
-					sprintf(res, "*abs16(#0x%lx)", (long int)idx);
+					sprintf (res, "*abs16(#0x%lx)", (long int)displacement);
 					break;
 				default:
-					sprintf(res, "*port(#0x%lx)",  (long int)idx);
+					sprintf (res, "*port(#0x%lx)", (long int)displacement);
 					break;
 				}
 				break;
 			case 28:
 			case 29:
 			case 30:
-				idx = get_ins_part(ins_pos, 3);
+				if (ins_pos > ins_buff_len || ins_buff_len - ins_pos < 3) {
+					free (res);
+					return NULL;
+				}
+				displacement = get_ins_part (ins_pos, 3);
 				if (ret_len) {
 					*ret_len = 3;
 				}
 				switch (type) {
 				case 28:
-					sprintf(res, "*ar%ld(#0x%lx)", (long int)reg_num, (long int)idx * op);
+					sprintf (res, "*ar%ld(#0x%lx)", (long int)reg_num, (long int)idx * displacement);
 					break;
 				case 29:
-					sprintf(res, "*+ar%ld(#0x%lx)", (long int)reg_num, (long int)idx * op);
+					sprintf (res, "*+ar%ld(#0x%lx)", (long int)reg_num, (long int)idx * displacement);
 					break;
 				default:
-					sprintf(res, "*(#0x%lx)", (long int)idx);
+					sprintf (res, "*(#0x%lx)", (long int)displacement);
 					break;
 				}
 
 				break;
+			default:
+				free (res);
+				return NULL;
 			}
 		}
 	}
