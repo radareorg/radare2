@@ -529,7 +529,7 @@ EXPECT=<<EOF
 'ac Album
 'acb Deadwing PorcupineTreeAlbum 8
 'acb PorcupineTreeAlbum Album 0
-'acv PorcupineTreeAlbum 0x1337 66
+'acv PorcupineTreeAlbum 0x1337 66 0
 'acm PorcupineTreeAlbum Listen 0xdeadbeef -1
 EOF
 RUN
@@ -592,5 +592,38 @@ EOF
 EXPECT=<<EOF
 Sandstorm: Flatline
   Darude @ 0x1337 (vtable + 0x42)
+EOF
+RUN
+
+NAME=acl* vtable size and sanitized class flags
+FILE=malloc://0x100
+CMDS=<<EOF
+ac Widget.1
+acv Widget.1 0x10 8 0x8
+acm Widget.1 virtual_8_0 0x20 0 0x10
+f~Widget
+acl*
+EOF
+EXPECT=<<EOF
+0x00000010 8 vtable.Widget_1.0
+0x00000020 0 method.Widget_1.virtual_8_0
+'ac Widget_1
+'acv Widget_1 0x10 8 8
+'acm Widget_1 virtual_8_0 0x20 0 0x10
+EOF
+RUN
+
+NAME=acn keeps the vtable flag size
+FILE=malloc://0x100
+CMDS=<<EOF
+ac Widget
+acv Widget 0x10 0 0x8
+acn Widget Gadget
+f~vtable.
+acl*~acv
+EOF
+EXPECT=<<EOF
+0x00000010 8 vtable.Gadget.0
+'acv Gadget 0x10 0 8
 EOF
 RUN

@@ -808,8 +808,11 @@ static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *
 
 	RAnal *anal = context->vt_context->anal;
 
-	const char *existing = ht_up_find (context->col_td_classes, col->addr, NULL);
+	// every complete object locator of a class points to its type descriptor:
+	// the secondary vtables (multiple inheritance) belong to the same class
+	const char *existing = ht_up_find (context->col_td_classes, col->td->addr, NULL);
 	if (existing) {
+		recovery_apply_vtable (anal, existing, col->vtable, col->col.vtable_offset);
 		return existing;
 	}
 
@@ -832,7 +835,7 @@ static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *
 	}
 
 	r_anal_class_create (anal, name);
-	ht_up_insert (context->col_td_classes, col->addr, name);
+	ht_up_insert (context->col_td_classes, col->td->addr, name);
 
 	recovery_apply_vtable (anal, name, col->vtable, col->col.vtable_offset);
 	recovery_apply_bases (context, name, &col->base_td);
