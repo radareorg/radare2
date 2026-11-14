@@ -1088,6 +1088,30 @@ static char *get_num(SStateInfo *state) {
 	return ptr;
 }
 
+// const is 1 and volatile is 2, like the A, B, C and D storage classes
+static int cv_bits(const char *cv) {
+	if (!cv) {
+		return 0;
+	}
+	return (strstr (cv, "const")? 1: 0) | (strstr (cv, "volatile")? 2: 0);
+}
+
+static const char *cv_string(int bits) {
+	static const char *const cv[] = { NULL, "const", "volatile", "const volatile" };
+	return cv[bits & 3];
+}
+
+// qualifiers of the pointer itself in the * const of Q, the * volatile of R...
+static int pointer_cv_bits(char code) {
+	switch (code) {
+	case 'Q': return 1;
+	case 'R': return 2;
+	case 'S': return 3;
+	case 'B': return 2;
+	default: return 0;
+	}
+}
+
 static inline void parse_type_modifier(SDemangler *sd, SStateInfo *state, STypeCodeStr *type_code_str, const char *modifier_str) {
 	size_t i = 0;
 	EDemanglerErr err = eDemanglerErrOK;
@@ -1147,6 +1171,10 @@ static inline void parse_type_modifier(SDemangler *sd, SStateInfo *state, STypeC
 	if (get_storage_class (*state->buff_for_parsing, &storage_class) != eDemanglerErrOK) {
 		state->err = eTCStateMachineErrUnsupportedTypeCode;
 		goto MODIFIER_err;
+	}
+	if (storage_class) {
+		// a pointer pointee carries its own qualifiers, do not repeat them
+		storage_class = cv_string (cv_bits (storage_class) & ~pointer_cv_bits (state->buff_for_parsing[1]));
 	}
 	if (storage_class) {
 		copy_string (&modifier, storage_class, 0);
@@ -1731,6 +1759,33 @@ static EDemanglerErr parse_data_type(SDemangler *sd, const char *sym, SDataType 
 		if (get_storage_class (*curr_pos, &storage_class) != eDemanglerErrOK) {
 			free (tmp);
 			return eDemanglerErrUncorrectMangledSymbol;
+		}
+		if (sym[1] && strchr ("PQRSAB", sym[1])) {
+			// the qualifiers after a pointer variable are the ones of its pointee
+			const char *type = sym + 1;
+			size_t pos = 1;
+			while (type[pos] == 'E' || type[pos] == 'F' || type[pos] == 'I') {
+				pos++;
+			}
+			const char *pointee_cv = NULL;
+			if (storage_class && pos < i && type[pos] >= 'A' && type[pos] <= 'D') {
+				get_storage_class (type[pos], &pointee_cv);
+				const char merged = 'A' + (cv_bits (pointee_cv) | cv_bits (storage_class));
+				if (merged != type[pos]) {
+					char *patched = r_str_ndup (type, i);
+					char *patched_type = NULL;
+					size_t patched_len = 0;
+					if (patched) {
+						patched[pos] = merged;
+						if (get_type_code_string (sd, patched, &patched_len, &patched_type) == eDemanglerErrOK) {
+							free (tmp);
+							tmp = patched_type;
+						}
+						free (patched);
+					}
+				}
+			}
+			storage_class = NULL;
 		}
 		curr_pos++;
 
