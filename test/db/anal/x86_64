@@ -4658,3 +4658,22 @@ var int32_t var_20h @ rsp+0x20
 var int64_t var_8h @ rsp+0x50
 EOF
 RUN
+
+NAME=aaft types the call args with the final signature of the callee, whatever the analysis order
+FILE=malloc://0x100
+ARGS=-a x86 -b 64 -e anal.cc=ms
+CMDS=<<EOF
+wx 4883ec38 c744242000000000 31c9 31d2 4531c0 4531c9 e825000000 4883c438 c3
+wx 535657415441564157 4883ec58 4d8bf1 4d8bf8 4c63e2 488bf9 4c89742420 398424b0000000 4889842490000000 4883c458 415f415e415c5f5e5bc3 @ 0x40
+e asm.bytes=false
+af @ 0x40
+af
+aaft
+afs @ 0x40
+pd 1 @ 4~arg_28h
+EOF
+EXPECT=<<EOF
+void fcn.00000040 (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, uint32_t arg_28h);
+|           0x00000004      mov dword [var_20h], 0                     ; uint32_t arg_28h
+EOF
+RUN
