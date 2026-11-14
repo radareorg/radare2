@@ -1712,24 +1712,9 @@ R_API RList *r_anal_vtable_search(RVTableContext *context);
 R_API char *r_anal_vtables_list(RAnal *anal, int rad);
 
 /* rtti */
-R_API char *r_anal_rtti_msvc_demangle_class_name(RVTableContext *context, const char *name);
-R_API void r_anal_rtti_msvc_print_complete_object_locator(RVTableContext *context, ut64 addr, int mode);
-R_API void r_anal_rtti_msvc_print_type_descriptor(RVTableContext *context, ut64 addr, int mode);
-R_API void r_anal_rtti_msvc_print_class_hierarchy_descriptor(RVTableContext *context, ut64 addr, int mode);
-R_API void r_anal_rtti_msvc_print_base_class_descriptor(RVTableContext *context, ut64 addr, int mode);
-R_API bool r_anal_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr, int mode, bool strict);
-R_API void r_anal_rtti_msvc_recover_all(RVTableContext *vt_context, RList *vtables);
-
-R_API char *r_anal_rtti_itanium_demangle_class_name(RVTableContext *context, const char *name);
-R_API void r_anal_rtti_itanium_print_class_type_info(RVTableContext *context, ut64 addr, int mode);
-R_API void r_anal_rtti_itanium_print_si_class_type_info(RVTableContext *context, ut64 addr, int mode);
-R_API void r_anal_rtti_itanium_print_vmi_class_type_info(RVTableContext *context, ut64 addr, int mode);
-R_API bool r_anal_rtti_itanium_print_at_vtable(RVTableContext *context, ut64 addr, int mode);
-R_API void r_anal_rtti_itanium_recover_all(RVTableContext *vt_context, RList *vtables);
-
 R_API char *r_anal_rtti_demangle_class_name(RAnal *anal, const char *name);
-R_API void r_anal_rtti_print_at_vtable(RAnal *anal, ut64 addr, int mode);
-R_API void r_anal_rtti_print_all(RAnal *anal, int mode);
+R_API R_OWNED char *r_anal_rtti_print_at_vtable(RAnal *anal, ut64 addr, int mode);
+R_API R_OWNED char *r_anal_rtti_print_all(RAnal *anal, int mode);
 R_API void r_anal_rtti_recover_all(RAnal *anal);
 
 

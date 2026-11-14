@@ -9,6 +9,7 @@ if get_option('enable_tests')
     'anal_function',
     'anal_hints',
     'anal_meta',
+    'anal_rtti',
     'anal_types',
     'anal_var',
     'anal_xrefs',

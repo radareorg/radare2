@@ -16236,14 +16236,23 @@ static void cmd_anal_rtti(RCore *core, const char *input) {
 	switch (input[0]) {
 	case '\0': // "avr"
 	case 'j': // "avrj"
-		r_anal_rtti_print_at_vtable (core->anal, core->addr, input[0]);
+	case 'a': { // "avra"
+		r_cons_break_push (core->cons, NULL, NULL);
+		char *rtti = input[0] == 'a'
+			? r_anal_rtti_print_all (core->anal, input[1])
+			: r_anal_rtti_print_at_vtable (core->anal, core->addr, input[0]);
+		r_cons_break_pop (core->cons);
+		if (rtti) {
+			r_cons_print (core->cons, rtti);
+			free (rtti);
+		}
 		break;
-	case 'a': // "avra"
-		r_anal_rtti_print_all (core->anal, input[1]);
-		break;
+	}
 	case 'r': // "avrr"
 		r_core_anal_objc_recover_classes (core);
+		r_cons_break_push (core->cons, NULL, NULL);
 		r_anal_rtti_recover_all (core->anal);
+		r_cons_break_pop (core->cons);
 		break;
 	case 'D': // "avrD"
 		{
@@ -16351,7 +16360,9 @@ static void cmd_anal_virtual_functions(RCore *core, const char* input) {
 	case '*': // "av*"
 	case 'j': // "avj"
 		{
+			r_cons_break_push (core->cons, NULL, NULL);
 			char *s = r_anal_vtables_list (core->anal, input[0]);
+			r_cons_break_pop (core->cons);
 			if (input[0] == 'j') {
 				r_cons_println (core->cons, s);
 			} else {

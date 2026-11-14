@@ -1,7 +1,13 @@
 /* radare - LGPL - Copyright 2009-2025 - pancake, maijin, thestr4ng3r */
 
 #include <r_anal.h>
-#include <r_core.h>
+
+R_IPI char *r_anal_rtti_msvc_demangle_class_name(RVTableContext *context, const char *name);
+R_IPI char *r_anal_rtti_itanium_demangle_class_name(RVTableContext *context, const char *name);
+R_IPI bool r_anal_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr, RStrBuf *sb, PJ *pj, bool strict);
+R_IPI bool r_anal_rtti_itanium_print_at_vtable(RVTableContext *context, ut64 addr, RStrBuf *sb, PJ *pj);
+R_IPI void r_anal_rtti_msvc_recover_all(RVTableContext *context, RList *vtables);
+R_IPI void r_anal_rtti_itanium_recover_all(RVTableContext *context, RList *vtables);
 
 R_API char *r_anal_rtti_demangle_class_name(RAnal *anal, const char *name) {
 	RVTableContext context;
@@ -12,85 +18,68 @@ R_API char *r_anal_rtti_demangle_class_name(RAnal *anal, const char *name) {
 	return r_anal_rtti_itanium_demangle_class_name (&context, name);
 }
 
-R_API void r_anal_rtti_print_at_vtable(RAnal *anal, ut64 addr, int mode) {
-	bool use_json = mode == 'j';
-	RCore *core = anal->coreb.core;
-	RCons *cons = core->cons;
-	if (use_json) {
-		r_cons_print (cons, "[");
+static bool rtti_print_at_vtable(RVTableContext *context, ut64 addr, RStrBuf *sb, PJ *pj, bool strict) {
+	if (context->abi == R_ANAL_CPP_ABI_MSVC) {
+		return r_anal_rtti_msvc_print_at_vtable (context, addr, sb, pj, strict);
 	}
-
-	RVTableContext context;
-	r_anal_vtable_begin (anal, &context);
-	if (context.abi == R_ANAL_CPP_ABI_MSVC) {
-		r_anal_rtti_msvc_print_at_vtable (&context, addr, mode, false);
-	} else {
-		r_anal_rtti_itanium_print_at_vtable (&context, addr, mode);
-	}
-
-	if (use_json) {
-		r_cons_print (cons, "]\n");
-	}
+	return r_anal_rtti_itanium_print_at_vtable (context, addr, sb, pj);
 }
 
-R_API void r_anal_rtti_print_all(RAnal *anal, int mode) {
+R_API R_OWNED char *r_anal_rtti_print_at_vtable(RAnal *anal, ut64 addr, int mode) {
+	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	RVTableContext context;
 	r_anal_vtable_begin (anal, &context);
-	RCore *core = anal->coreb.core;
-	RCons *cons = core->cons;
+	RStrBuf sb;
+	r_strbuf_init (&sb);
+	PJ *pj = mode == 'j'? pj_new (): NULL;
+	if (pj) {
+		pj_a (pj);
+	}
+	rtti_print_at_vtable (&context, addr, &sb, pj, false);
+	if (pj) {
+		pj_end (pj);
+		pj_raw (pj, "\n");
+		return pj_drain (pj);
+	}
+	return r_strbuf_drain_nofree (&sb);
+}
 
-	bool use_json = mode == 'j';
-	if (use_json) {
-		r_cons_print (cons, "[");
+R_API R_OWNED char *r_anal_rtti_print_all(RAnal *anal, int mode) {
+	R_RETURN_VAL_IF_FAIL (anal, NULL);
+	RVTableContext context;
+	r_anal_vtable_begin (anal, &context);
+	RStrBuf sb;
+	r_strbuf_init (&sb);
+	PJ *pj = mode == 'j'? pj_new (): NULL;
+	if (pj) {
+		pj_a (pj);
 	}
 
-	r_cons_break_push (cons, NULL, NULL);
 	RList *vtables = r_anal_vtable_search (&context);
-	RListIter *vtableIter;
+	RListIter *vtable_iter;
 	RVTableInfo *table;
-
-	if (vtables) {
-		bool comma = false;
-		bool success = false;
-		r_list_foreach (vtables, vtableIter, table) {
-			if (r_cons_is_breaked (cons)) {
-				break;
-			}
-			if (use_json && success) {
-				r_cons_print (cons, ",");
-				comma = true;
-			}
-			if (context.abi == R_ANAL_CPP_ABI_MSVC) {
-				success = r_anal_rtti_msvc_print_at_vtable (&context, table->saddr, mode, true);
-			} else {
-				success = r_anal_rtti_itanium_print_at_vtable (&context, table->saddr, mode);
-			}
-			if (success) {
-				comma = false;
-				if (!use_json) {
-					r_cons_print (cons, "\n");
-				}
-			}
+	r_list_foreach (vtables, vtable_iter, table) {
+		if (r_print_is_interrupted (anal->print)) {
+			break;
 		}
-		if (use_json && !success && comma) {
-			// drop last comma if necessary
-			r_cons_drop (cons, 1);
+		if (rtti_print_at_vtable (&context, table->saddr, &sb, pj, true) && !pj) {
+			r_strbuf_append (&sb, "\n");
 		}
 	}
 	r_list_free (vtables);
-	if (use_json) {
-		r_cons_print (cons, "]\n");
+	if (pj) {
+		pj_end (pj);
+		pj_raw (pj, "\n");
+		return pj_drain (pj);
 	}
-	r_cons_break_pop (cons);
+	return r_strbuf_drain_nofree (&sb);
 }
 
 R_API void r_anal_rtti_recover_all(RAnal *anal) {
+	R_RETURN_IF_FAIL (anal);
 	RVTableContext context;
 	r_anal_vtable_begin (anal, &context);
 
-	RCore *core = anal->coreb.core;
-	RCons *cons = core->cons;
-	r_cons_break_push (cons, NULL, NULL);
 	RList *vtables = r_anal_vtable_search (&context);
 	if (vtables) {
 		if (context.abi == R_ANAL_CPP_ABI_MSVC) {
@@ -100,5 +89,4 @@ R_API void r_anal_rtti_recover_all(RAnal *anal) {
 		}
 	}
 	r_list_free (vtables);
-	r_cons_break_pop (cons);
 }

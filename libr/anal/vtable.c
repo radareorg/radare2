@@ -2,7 +2,6 @@
 
 #include "r_util.h"
 #include "r_anal.h"
-#include <r_core.h>
 #include <r_vec.h>
 
 #define VTABLE_BUFF_SIZE 10
@@ -241,8 +240,6 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 		return NULL;
 	}
 	RAnal *anal = context->anal;
-	RCore *core = anal->coreb.core;
-	RCons *cons = core->cons;
 
 	RList *vtables = r_list_newf ((RListFree)r_anal_vtable_info_free);
 	if (!vtables) {
@@ -259,11 +256,9 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 		return NULL;
 	}
 
-	r_cons_break_push (cons, NULL, NULL);
-
 	RBinSection *section;
 	R_VEC_FOREACH (sections, section) {
-		if (r_cons_is_breaked (cons)) {
+		if (r_print_is_interrupted (anal->print)) {
 			break;
 		}
 
@@ -278,7 +273,7 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 			break;
 		}
 		while (startAddress <= endAddress) {
-			if (r_cons_is_breaked (cons)) {
+			if (r_print_is_interrupted (anal->print)) {
 				break;
 			}
 			if (!anal->iob.is_valid_offset (anal->iob.io, startAddress, 0)) {
@@ -303,8 +298,6 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 			startAddress += context->word_size;
 		}
 	}
-
-	r_cons_break_pop (cons);
 
 	if (r_list_empty (vtables)) {
 		// stripped binary?
