@@ -1260,14 +1260,18 @@ static char *print_types(const RBinPdb *pdb, PJ *pj, const int mode) {
 
 typedef struct {
 	RStrBuf sb;
-	RStrBuf thunks;
 	RStrBuf fcns;
 	PJ *pj;
 	int format;
 	HtSU *names;
+	HtUP *fcn_names; // first flag name of each function, the target of the thunks
 	SetU *fcn_addrs;
 	bool function_space;
 } GVarsOutput;
+
+static void free_fcn_name(HtUPKv *kv) {
+	free (kv->value);
+}
 
 // r_name_filter turns the dash-like chars into _ and drops the rest, so the sign of a
 // number is lost: `vtordisp{-4,0}' and `vtordisp{4,0}' become vtordisp_4_0 and vtordisp4_0.
@@ -1340,6 +1344,9 @@ static void print_gvar(GVarsOutput *out, ut64 addr, ut32 symtype, ut32 size, con
 			free (realname);
 		}
 		if (symtype & PDB_PUBSYM_FUNCTION) {
+			if (!ht_up_find (out->fcn_names, addr, NULL)) {
+				ht_up_insert (out->fcn_names, addr, strdup (filtered_name));
+			}
 			if (!set_u_contains (out->fcn_addrs, addr)) {
 				r_strbuf_appendf (&out->fcns, "'@0x%" PFMT64x "'af\n", addr);
 			}
@@ -1412,14 +1419,17 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	if (!pe_stream) {
 		return NULL;
 	}
-	GVarsOutput out = { .pj = pj, .format = format, .names = ht_su_new0 (), .fcn_addrs = set_u_new () };
-	if (!out.names || !out.fcn_addrs) {
+	GVarsOutput out = {
+		.pj = pj, .format = format, .names = ht_su_new0 (),
+		.fcn_names = ht_up_new (NULL, free_fcn_name, NULL), .fcn_addrs = set_u_new ()
+	};
+	if (!out.names || !out.fcn_names || !out.fcn_addrs) {
 		ht_su_free (out.names);
+		ht_up_free (out.fcn_names);
 		set_u_free (out.fcn_addrs);
 		return NULL;
 	}
 	r_strbuf_init (&out.sb);
-	r_strbuf_init (&out.thunks);
 	r_strbuf_init (&out.fcns);
 	if (format == 'j') {
 		pj_ka (pj, "gvars");
@@ -1477,8 +1487,9 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	}
 	// the jmp thunks of incremental linking to the functions above; the ones only reached
 	// through data, like a pointer to member function, are not found by the analysis.
-	// analyzed before every other function: the function flag of the target ends the lone
-	// jmp, named j.<target>, and a function jumping into one, like a vtordisp thunk, ends there
+	// analyzed after their targets; a function flag named j.<target> marks each one before
+	// any function is analyzed: it names the lone jmp, and a function jumping into one, like
+	// a vtordisp thunk or a PDB function analyzed through a tail call, ends there
 	if (format == 'r' || format == '*' || format == 1) {
 		r_list_foreach (pdb->pdb_streams2, it, tmp) {
 			if (tmp->type != ePDB_STREAM_MODULE || !tmp->stream) {
@@ -1495,7 +1506,15 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 				}
 				if (set_u_contains (out.fcn_addrs, target) && !set_u_contains (out.fcn_addrs, thunk)) {
 					set_u_add (out.fcn_addrs, thunk);
-					r_strbuf_appendf (&out.thunks, "'@0x%" PFMT64x "'af\n", thunk);
+					const char *target_name = ht_up_find (out.fcn_names, target, NULL);
+					if (target_name) {
+						if (!out.function_space) {
+							r_strbuf_append (&out.sb, "fs functions\n");
+							out.function_space = true;
+						}
+						r_strbuf_appendf (&out.sb, "'@0x%" PFMT64x "'f j.pdb.%s\n", thunk, target_name);
+					}
+					r_strbuf_appendf (&out.fcns, "'@0x%" PFMT64x "'af\n", thunk);
 				}
 			}
 		}
@@ -1525,10 +1544,10 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	}
 	set_u_free (out.fcn_addrs);
 	ht_su_free (out.names);
+	ht_up_free (out.fcn_names);
 	if (format == 'j') {
 		pj_end (pj);
 		r_strbuf_fini (&out.sb);
-		r_strbuf_fini (&out.thunks);
 		r_strbuf_fini (&out.fcns);
 		return NULL;
 	}
@@ -1536,9 +1555,7 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 		r_strbuf_append (&out.sb, "fs-\n");
 	}
 	// functions are analyzed after every flag is set, so jumps into them are seen as tail calls
-	r_strbuf_append (&out.sb, r_strbuf_get (&out.thunks));
 	r_strbuf_append (&out.sb, r_strbuf_get (&out.fcns));
-	r_strbuf_fini (&out.thunks);
 	r_strbuf_fini (&out.fcns);
 	return r_strbuf_drain_nofree (&out.sb);
 }
