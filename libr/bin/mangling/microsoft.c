@@ -471,8 +471,8 @@ static size_t get_operator_code(SDemangler *sd, const char *buf, RList *names_l,
 		case '4': SET_OPERATOR_CODE ("operator&="); break;
 		case '5': SET_OPERATOR_CODE ("operator|="); break;
 		case '6': SET_OPERATOR_CODE ("operator^="); break;
-		case '7': SET_OPERATOR_CODE ("vftable"); break;
-		case '8': SET_OPERATOR_CODE ("vbtable"); break;
+		case '7': SET_OPERATOR_CODE ("`vftable'"); break;
+		case '8': SET_OPERATOR_CODE ("`vbtable'"); break;
 		case '9': SET_OPERATOR_CODE ("vcall"); break;
 		case 'A': SET_OPERATOR_CODE ("typeof"); break;
 		case 'B': SET_OPERATOR_CODE ("`local static guard'"); break;

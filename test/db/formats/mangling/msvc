@@ -151,6 +151,20 @@ const Ex5::`RTTI Complete Object Locator'{for `Ex2'}
 EOF
 RUN
 
+NAME=msvc virtual tables
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc '??_7Animal@@6B@'
+!rabin2 -D msvc '??_8Dog@@7B@'
+!rabin2 -D msvc '??_7Ex5@@6BEx2@@@'
+EOF
+EXPECT=<<EOF
+const Animal::`vftable'
+const Dog::`vbtable'
+const Ex5::`vftable'{for `Ex2'}
+EOF
+RUN
+
 NAME=msvc negative numbers
 FILE=-
 CMDS=<<EOF
