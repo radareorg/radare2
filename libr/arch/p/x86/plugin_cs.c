@@ -3901,10 +3901,13 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		}
 		break;
 	// comiss
+	case X86_INS_COMISD:
 	case X86_INS_COMISS:
 	case X86_INS_UCOMISD:
 	case X86_INS_UCOMISS:
+	case X86_INS_VCOMISD:
 	case X86_INS_VCOMISS:
+	case X86_INS_VUCOMISD:
 	case X86_INS_VUCOMISS:
 		op->family = R_ANAL_OP_FAMILY_SIMD;
 		op->type = R_ANAL_OP_TYPE_CMP;
