@@ -2410,6 +2410,37 @@ type: store
 EOF
 RUN
 
+# MD00086 LL: GPR[rt] <- word at GPR[base]+offset; ll t0, 0(a0) is c0880000
+NAME=mips.gnu ll loads a word like the capstone plugin
+FILE=malloc://16
+ARGS=-a mips.gnu -b 32
+CMDS=<<EOF
+wx 000088c0
+ao~mnemonic,type,esil:
+EOF
+EXPECT=<<EOF
+mnemonic: ll
+type: load
+esil: 0,a0,+,[4],t0,=
+EOF
+RUN
+
+# MD00086 GPR[0] is hardwired to zero; ll zero, 0(a0) is c0800000 and reads the word c0800000
+NAME=mips.gnu loads into zero keep zero at zero
+FILE=malloc://16
+ARGS=-a mips.gnu -b 32
+CMDS=<<EOF
+wx 000080c0
+aei
+aer a0=0
+aes
+aer zero
+EOF
+EXPECT=<<EOF
+0x00000000
+EOF
+RUN
+
 NAME=mips.gnu rotr and rotrv rotate instead of shifting
 FILE=malloc://32
 ARGS=-a mips.gnu -b 32
