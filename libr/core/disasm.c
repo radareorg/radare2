@@ -5293,7 +5293,8 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refadd
 	if (flag_len == len && ds->strenc == R_STRING_ENC_GUESS) {
 		const char *meta_str = r_meta_get_string (ds->core->anal, R_META_TYPE_STRING, refaddr);
 		if (R_STR_ISNOTEMPTY (meta_str)) {
-			escstr = strdup (meta_str);
+			// a raw \n in the meta string would split the line; the bin strings come escaped already
+			escstr = r_str_escape_utf8_keep_printable (meta_str, ds->show_asciidot, false);
 		}
 	}
 	if (!escstr) {
