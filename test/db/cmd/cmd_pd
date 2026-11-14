@@ -693,7 +693,7 @@ EXPECT=<<EOF
             0x140001004      488d05f54f..   lea rax, str._tANSIesc:_e_33m_r_n ; section..data
                                                                        ; 0x140016000 ; "\tANSI\\esc: \e[33m\r\n"
             0x140001010      488d050150..   lea rax, str._twideesc:_e_0m ; 0x140016018 ; "\twide\\esc: \e[0m"
-            0x14000101c      488d051d50..   lea rax, str._wide__in_Arabic: ; 0x140016040 ; ""wide" in Arabic:"
+            0x14000101c      488d051d50..   lea rax, str._wide__in_Arabic: ; 0x140016040 ; "\"wide\" in Arabic:"
             ; section..data
             ; 0x140016000
             ; "\tANSI\\esc: \e[33m\r\n"
@@ -702,7 +702,7 @@ EXPECT=<<EOF
             ; "\twide\\esc: \e[0m"
             0x140001010      488d050150..   lea rax, str._twideesc:_e_0m
             ; 0x140016040
-            ; ""wide" in Arabic:"
+            ; "\"wide\" in Arabic:"
             0x14000101c      488d051d50..   lea rax, str._wide__in_Arabic:
 EOF
 RUN
@@ -906,6 +906,22 @@ pd 1
 EOF
 EXPECT=<<EOF
             0x00000000  ~   short_binstring "A\x00B\x00\x00\x00"       ; str.AB_wide ; 0x2 ; u"AB"
+EOF
+RUN
+
+NAME=string comment of a meta string escapes its newlines
+FILE=malloc://64
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 6820000000c3
+wz val=%d\n\tok\r @ 0x20
+Cs 12 @ 0x20
+f str.val @ 0x20
+e asm.bytes=false
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      push str.val                               ; 0x20 ; "val=%d\n\tok\r"
 EOF
 RUN
 
