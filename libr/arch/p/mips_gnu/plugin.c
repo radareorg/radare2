@@ -772,13 +772,16 @@ typedef struct gnu_insn {
 // shift amount: the rs register for the v-forms, else the sa immediate
 #define R_SHAMT (R_REG (rs)? R_REG (rs): R_REG (sa))
 
+// a load into zero still reads memory but discards the value
+#define ESIL_LOAD_DEST (strcmp (I_REG (rt), "zero")? I_REG (rt): ""), (strcmp (I_REG (rt), "zero")? ",=": "POP")
+
 #define ESIL_LOAD(size) \
-	r_strbuf_appendf (&op->esil, "%s,%s,+,["size"],%s,=",\
-		I_REG (imm), I_REG (rs), I_REG (rt))
+	r_strbuf_appendf (&op->esil, "%s,%s,+,["size"],%s%s",\
+		I_REG (imm), I_REG (rs), ESIL_LOAD_DEST)
 
 #define ESIL_LOAD_SIGNED(size, sbits) \
-	r_strbuf_appendf (&op->esil, sbits",%s,%s,+,["size"],~,%s,=",\
-		I_REG (imm), I_REG (rs), I_REG (rt))
+	r_strbuf_appendf (&op->esil, sbits",%s,%s,+,["size"],~,%s%s",\
+		I_REG (imm), I_REG (rs), ESIL_LOAD_DEST)
 
 /* Return a mapping from the register number i.e. $0 .. $31 to string name */
 static const char *mips_reg_decode(ut32 reg_num) {
@@ -1940,6 +1943,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 					mips_fill_load_dst_value (op, rt);
 				}
 			}
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			break;
+		case 48: // ll
+		case 52: // lld
+		case 39: // lwu
+			insn.id = (optype == 48)? MIPS_INS_LL: (optype == 52)? MIPS_INS_LLD: MIPS_INS_LWU;
+			op->refptr = (optype == 52)? 8: 4;
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
 		case 36: // lbu
