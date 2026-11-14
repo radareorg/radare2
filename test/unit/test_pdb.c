@@ -43,6 +43,21 @@ int pdb_info_save_types(RAnal *anal, const char *file, RBinPdb *pdb) {
 	return true;
 }
 
+bool test_pdb_guid_age(void) {
+	RBinPdb pdb = {0};
+	mu_assert_true (pdb_info ("bins/pdb/SimplePDB.pdb", &pdb), "parse PDB identity");
+	char *guid = r_bin_pdb_guid (&pdb);
+	mu_assert_streq (guid, "1516D2A3E6864C06BD82C50FBE6152363", "GUID includes age");
+	free (guid);
+	SPDBInfoStream *info = r_list_get_n (pdb.pdb_streams, ePDB_STREAM_PDB);
+	info->age = 0x10;
+	guid = r_bin_pdb_guid (&pdb);
+	mu_assert_streq (guid, "1516D2A3E6864C06BD82C50FBE61523610", "age uses hexadecimal");
+	free (guid);
+	pdb.finish_pdb_parse (&pdb);
+	mu_end;
+}
+
 bool test_pdb_tpi_cpp(void) {
 	RBinPdb pdb = {0};
 	mu_assert_true (pdb_info ("bins/pdb/Project1.pdb", &pdb), "pdb parsing failed");
@@ -630,6 +645,7 @@ bool test_pdb_page_bounds(void) {
 bool all_tests(void) {
 #if R_SYS_ENDIAN == 0
 	mu_run_test (test_pdb_tpi_cpp);
+	mu_run_test (test_pdb_guid_age);
 	mu_run_test (test_pdb_tpi_rust);
 	mu_run_test (test_pdb_type_save);
 	mu_run_test (test_pdb_enum_modified_utype);

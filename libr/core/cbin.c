@@ -1534,7 +1534,7 @@ static bool bin_addrline(RCore *core, PJ *pj, int mode) {
 	return bin_addrline_maybe (core, pj, mode, false);
 }
 
-R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
+R_IPI bool bin_pdb_info(RCore *core, const char *file, PJ *pj, int mode, bool require_match) {
 	R_RETURN_VAL_IF_FAIL (core && file, false);
 
 	bool jsonmode = (mode & R_MODE_JSON) && pj;
@@ -1549,7 +1549,7 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 	RBinPdb pdb = { 0 };
 
 	if (!r_bin_pdb_parser (&pdb, file)) {
-		if (jsonmode) {
+		if (jsonmode && !require_match) {
 			pj_o (pj);
 			pj_end (pj);
 		}
@@ -1558,7 +1558,7 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 	if (!pdb.pdb_parse (&pdb)) {
 		R_LOG_ERROR ("pdb was not parsed");
 		pdb.finish_pdb_parse (&pdb);
-		if (jsonmode) {
+		if (jsonmode && !require_match) {
 			pj_o (pj);
 			pj_end (pj);
 		}
@@ -1566,11 +1566,15 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 	}
 	RBinInfo *info = r_bin_get_info (core->bin);
 	char *pdb_guid = r_bin_pdb_guid (&pdb);
-	if (info && pdb_guid && info->guid && (strlen (info->guid) < strlen (pdb_guid)
-			|| r_str_ncasecmp (info->guid, pdb_guid, strlen (pdb_guid)))) {
-		R_LOG_WARN ("%s does not belong to this binary (PDB GUID %s, binary %s)", file, pdb_guid, info->guid);
+	bool matches = info && pdb_guid && info->guid && !r_str_casecmp (info->guid, pdb_guid);
+	if (info && pdb_guid && info->guid && !matches) {
+		R_LOG_WARN ("%s does not belong to this binary (PDB GUID+age %s, binary %s)", file, pdb_guid, info->guid);
 	}
 	free (pdb_guid);
+	if (require_match && !matches) {
+		pdb.finish_pdb_parse (&pdb);
+		return false;
+	}
 
 	int fmt_mode = 'd'; // default
 	if (jsonmode) {
@@ -1613,6 +1617,10 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 	}
 
 	return true;
+}
+
+R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
+	return bin_pdb_info (core, file, pj, mode, false);
 }
 
 static RList *bin_source_files(RCore *core) {

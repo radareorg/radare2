@@ -2686,44 +2686,29 @@ static void cmd_idp(RCore *core, PJ *pj, const char *input, bool is_array, int m
 			filename = strdup (arg + 1);
 			file_found = r_file_exists (filename);
 		} else {
-			/* Autodetect local file */
-			if (!info || !info->debug_file_name) {
+			if (!info || !info->debug_file_name || !info->guid) {
 				R_LOG_ERROR ("Cannot get file's debug information");
 				break;
 			}
-			// next to the binary first: a same-named PDB in cwd may be another build
 			const char *basename = r_file_basename (info->debug_file_name);
 			char *dir = r_file_dirname (core->bin->cur->file);
-			filename = r_str_newf ("%s" R_SYS_DIR "%s", dir, basename);
+			const char *symstore = r_config_get (core->config, "pdb.symstore");
+			char *candidates[] = {
+				r_str_newf ("%s" R_SYS_DIR "%s", dir, basename),
+				strdup (info->debug_file_name),
+				strdup (basename),
+				r_str_newf ("%s" R_SYS_DIR "%s" R_SYS_DIR "%s" R_SYS_DIR "%s",
+					symstore, basename, info->guid, basename)
+			};
 			free (dir);
-			file_found = r_file_exists (filename);
-			if (!file_found) {
-				free (filename);
-				filename = strdup (info->debug_file_name);
-				file_found = r_file_exists (filename);
-			}
-			if (!file_found) {
-				free (filename);
-				filename = strdup (basename);
-				file_found = r_file_exists (filename);
-			}
-
-			// Last chance: Check if file is in downstream symbol store
-			if (!file_found) {
-				const char *symstore_path = r_config_get (core->config, "pdb.symstore");
-				const char *base_file = r_file_basename (info->debug_file_name);
-				char *pdb_path = r_str_newf ("%s" R_SYS_DIR "%s" R_SYS_DIR "%s" R_SYS_DIR "%s",
-					symstore_path,
-					base_file,
-					info->guid,
-					base_file);
-				file_found = r_file_exists (pdb_path);
-				if (file_found) {
-					free (filename);
-					filename = pdb_path;
-				} else {
-					free (pdb_path);
+			file_found = false;
+			filename = NULL;
+			size_t i;
+			for (i = 0; i < R_ARRAY_SIZE (candidates); i++) {
+				if (!file_found && candidates[i] && r_file_exists (candidates[i])) {
+					file_found = bin_pdb_info (core, candidates[i], pj, mode, true);
 				}
+				free (candidates[i]);
 			}
 		}
 		if (!file_found) {
@@ -2737,7 +2722,9 @@ static void cmd_idp(RCore *core, PJ *pj, const char *input, bool is_array, int m
 			free (filename);
 			break;
 		}
-		r_core_pdb_info (core, filename, pj, mode);
+		if (arg) {
+			r_core_pdb_info (core, filename, pj, mode);
+		}
 		free (filename);
 		break;
 	case '?':

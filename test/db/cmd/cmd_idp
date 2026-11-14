@@ -207,3 +207,46 @@ EXPECT=<<END
 [{"addr":4198400,"size":5,"jump":4198416,"opaddr":4198400,"inputs":0,"outputs":1,"ninstr":1,"instrs":[4198400],"traced":0},{"addr":4198416,"size":6,"opaddr":18446744073709551615,"inputs":1,"outputs":0,"ninstr":2,"instrs":[4198416,4198421],"traced":0}]
 END
 RUN
+NAME=idp autodetect skips the wrong PDB age and tries the symbol store
+FILE=bins/pdb/SimplePDB-age4.exe
+CMDS=<<END
+e pdb.symstore=bins/pdb/symbols
+idp
+afl~SomeCoolFunction
+END
+EXPECT=<<END
+0x00401000    1     13 pdb.void___cdecl_SomeCoolFunction_void_
+END
+EXPECT_ERR=<<END
+WARN: bins/pdb/SimplePDB.pdb does not belong to this binary (PDB GUID+age 1516D2A3E6864C06BD82C50FBE6152363, binary 1516D2A3E6864C06BD82C50FBE6152364)
+END
+RUN
+
+NAME=idp autodetect never imports a mismatched PDB
+FILE=bins/pdb/SimplePDB-age4.exe
+CMDS=<<END
+e pdb.symstore=bins/pdb/no-symbol-store
+idp
+f~pdb.
+afl
+END
+EXPECT=
+EXPECT_ERR=<<END
+WARN: bins/pdb/SimplePDB.pdb does not belong to this binary (PDB GUID+age 1516D2A3E6864C06BD82C50FBE6152363, binary 1516D2A3E6864C06BD82C50FBE6152364)
+ERROR: File 'SimplePDB.pdb' not found in file directory or symbol store
+END
+RUN
+
+NAME=idp explicit file overrides a mismatched PDB age
+FILE=bins/pdb/SimplePDB-age4.exe
+CMDS=<<END
+idp bins/pdb/SimplePDB.pdb
+afl~SomeCoolFunction
+END
+EXPECT=<<END
+0x00401000    1     13 pdb.void___cdecl_SomeCoolFunction_void_
+END
+EXPECT_ERR=<<END
+WARN: bins/pdb/SimplePDB.pdb does not belong to this binary (PDB GUID+age 1516D2A3E6864C06BD82C50FBE6152363, binary 1516D2A3E6864C06BD82C50FBE6152364)
+END
+RUN

@@ -10,5 +10,6 @@ R_IPI bool bin_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 co
 R_IPI bool bin_raw_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 count, int type_filter);
 R_IPI void bin_trycatch_flag(RCore *core, const RBinTrycatch *tc, size_t index, bool set);
 R_IPI int bin_trycatch_json(PJ *pj, RBinFile *bf, ut64 source);
+R_IPI bool bin_pdb_info(RCore *core, const char *file, PJ *pj, int mode, bool require_match);
 
 #endif
