@@ -358,3 +358,5 @@ d "mov.lr abs16(0x1234), ac0" a01112349c
 d "mov.cr abs16(0x9C12), ac0" a0119c129d
 d "and.cr 0xB3, ar7, ac3" 18b33f9d
 d "|| or.lr 0x2A, ar7, t2" 1b2a6f9c
+d "mov *(0x22C4F6), ac2" a23122c4f6
+d "mov *(0x22C476), ac2" a231a2c476
