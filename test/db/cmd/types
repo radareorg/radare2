@@ -1958,7 +1958,7 @@ var int64_t wstatus @ rbp-0x14cc
 var int32_t var_14d4h @ rbp-0x14d4
 var char ** var_14e0h @ rbp-0x14e0
 arg signed int arg1 @ rdi
-arg char * arg2 @ rsi
+arg char ** arg2 @ rsi
 var int64_t var_8h @ rbp-0x8
 var int64_t var_18h @ rbp-0x18
 var char * var_20h @ rbp-0x20
@@ -1987,7 +1987,7 @@ var int32_t var_98h @ rbp-0x98
 var uint32_t var_9ch @ rbp-0x9c
 var signed int var_a0h @ rbp-0xa0
 var signed int var_a4h @ rbp-0xa4
-var char * str @ rbp-0xb0
+var char ** str @ rbp-0xb0
 EOF
 RUN
 

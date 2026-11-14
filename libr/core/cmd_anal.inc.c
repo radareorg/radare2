@@ -1513,10 +1513,69 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 	r_anal_function_vars_cache_fini (&cache);
 }
 
-static bool cmd_anal_aaft(RCore *core) {
+typedef struct {
+	ut64 addr;
+	RVecAnalRef *refs;
+	ut64 next;
+} AaftFrame;
+
+R_VEC_TYPE (RVecAaftFrame, AaftFrame);
+R_VEC_TYPE (RVecAaftAddr, ut64);
+
+// the callee a call or a tail jump (like the j.* thunks) of the frame enters, when not seen yet
+static ut64 aaft_next_callee(RCore *core, AaftFrame *frame, SetU *seen) {
+	while (frame->refs && frame->next < RVecAnalRef_length (frame->refs)) {
+		const RAnalRef *ref = RVecAnalRef_at (frame->refs, frame->next++);
+		const int type = R_ANAL_REF_TYPE_MASK (ref->type);
+		if (type != R_ANAL_REF_TYPE_CALL && type != R_ANAL_REF_TYPE_CODE) {
+			continue;
+		}
+		// a jump inside the function lands on one of its blocks, not on a function entry
+		if (!set_u_contains (seen, ref->addr) && r_anal_get_function_at (core->anal, ref->addr)) {
+			return ref->addr;
+		}
+	}
+	return UT64_MAX;
+}
+
+// A call types its args with the signature its callee has at that moment, and the callee
+// refines it (int32_t to uint32_t) when its own turn comes, so the callees go first: the
+// types do not depend on the order the functions were found in. Addresses, not pointers,
+// because a:tp can delete functions.
+static void aaft_order(RCore *core, RVecAaftAddr *order) {
+	SetU *seen = set_u_new ();
+	RVecAaftFrame stack;
+	RVecAaftFrame_init (&stack);
 	RListIter *it;
-	r_core_anal_type_init (core);
 	RAnalFunction *fcn;
+	r_list_foreach_prev (core->anal->fcns, it, fcn) {
+		if (set_u_contains (seen, fcn->addr)) {
+			continue;
+		}
+		set_u_add (seen, fcn->addr);
+		AaftFrame root = { fcn->addr, r_anal_function_get_refs (fcn), 0 };
+		RVecAaftFrame_push_back (&stack, &root);
+		while (!RVecAaftFrame_empty (&stack)) {
+			AaftFrame *top = RVecAaftFrame_last (&stack);
+			const ut64 callee = aaft_next_callee (core, top, seen);
+			if (callee != UT64_MAX) {
+				set_u_add (seen, callee);
+				AaftFrame frame = { callee, r_anal_function_get_refs (r_anal_get_function_at (core->anal, callee)), 0 };
+				RVecAaftFrame_push_back (&stack, &frame);
+				continue;
+			}
+			RVecAaftAddr_push_back (order, &top->addr);
+			RVecAnalRef_free (top->refs);
+			RVecAaftFrame_pop_back (&stack);
+		}
+	}
+	RVecAaftFrame_fini (&stack);
+	set_u_free (seen);
+}
+
+static bool cmd_anal_aaft(RCore *core) {
+	ut64 *addr;
+	r_core_anal_type_init (core);
 	ut64 seek;
 	const char *io_cache_key = "io.pcache.write";
 	bool io_cache = r_config_get_b (core->config, io_cache_key);
@@ -1536,9 +1595,12 @@ static bool cmd_anal_aaft(RCore *core) {
 	r_core_call (core, "aeim");
 	int saved_arena_size = 0;
 	ut8 *saved_arena = r_reg_arena_peek (core->anal->reg, &saved_arena_size);
-	// Iterating Reverse so that we get function in top-bottom call order
-	r_list_foreach_prev (core->anal->fcns, it, fcn) {
-		if (!r_core_seek (core, fcn->addr, true)) {
+	RVecAaftAddr order;
+	RVecAaftAddr_init (&order);
+	aaft_order (core, &order);
+	R_VEC_FOREACH (&order, addr) {
+		RAnalFunction *fcn = r_anal_get_function_at (core->anal, *addr);
+		if (!fcn || !r_core_seek (core, fcn->addr, true)) {
 			continue;
 		}
 		r_reg_arena_poke (core->anal->reg, saved_arena, saved_arena_size);
@@ -1551,6 +1613,7 @@ static bool cmd_anal_aaft(RCore *core) {
 		}
 		__add_vars_sdb (core, fcn);
 	}
+	RVecAaftAddr_fini (&order);
 	r_config_set_b (core->config, "io.va", iova);
 	r_core_seek (core, seek, true);
 	r_reg_arena_pop (core->anal->reg);
