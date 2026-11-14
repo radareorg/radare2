@@ -11,7 +11,12 @@
 typedef struct {
 	RAnal *anal;
 	RAnalFunction *fcn;
-	HtUU *idom;	// block addr => immediate dominator addr (entry => UT64_MAX)
+	RGraph *cfg;
+	RGraphNode *entry;
+	RGraph *dom_tree; // owned; built on the first CFG back edge
+	HtUU *dom_pre; // lazily built dominator-tree DFS entry time
+	HtUU *dom_post; // dominator-tree DFS exit time
+	ut64 dom_tick;
 	HtUU *ipdom;	// block addr => immediate post-dominator addr (UT64_MAX => exit)
 	HtUP *loops;	// natural-loop header addr => HtUU* member set
 	HtUU *cur_loop;	// members of the innermost loop being walked (NULL outside one)
@@ -70,21 +75,30 @@ static ut64 htuu_get(HtUU *m, ut64 key, ut64 dflt) {
 	return found? v: dflt;
 }
 
-// a is on the dominator chain of b (inclusive)
+static void ensure_dom_intervals(PdcCtx *ctx);
+
+// DFS intervals make each nontrivial dominance query constant time.
 static bool dominates(PdcCtx *ctx, ut64 a, ut64 b) {
-	ut64 x = b;
-	int guard = ctx->cap;
-	while (x != UT64_MAX && guard-- > 0) {
-		if (x == a) {
-			return true;
-		}
-		x = htuu_get (ctx->idom, x, UT64_MAX);
+	// Every node dominates itself; the entry dominates every reachable node.
+	if (a == b || a == ctx->fcn->addr) {
+		return true;
 	}
-	return false;
+	if (!ctx->dom_pre) {
+		ensure_dom_intervals (ctx);
+	}
+	if (!ctx->dom_pre || !ctx->dom_post) {
+		return false;
+	}
+	const ut64 ap = htuu_get (ctx->dom_pre, a, UT64_MAX);
+	const ut64 bp = htuu_get (ctx->dom_pre, b, UT64_MAX);
+	if (ap == UT64_MAX || bp == UT64_MAX) {
+		return false;
+	}
+	return ap <= bp && htuu_get (ctx->dom_post, b, UT64_MAX) <= htuu_get (ctx->dom_post, a, 0);
 }
 
 // grow the natural loop of a dominating header: header plus every node that
-// reaches the latch without passing through the header (needs idom filled)
+// reaches the latch without passing through the header
 static void back_edge_cb(const RGraphEdge *e, RGraphVisitor *vis) {
 	PdcCtx *ctx = vis->data;
 	RAnalBlock *hb = e->to? e->to->data: NULL;
@@ -127,6 +141,47 @@ static bool free_loop_set_cb(void *user, const ut64 k, const void *v) {
 static RAnalBlock *treenode_block(RGraphNode *tn) {
 	RGraphNode *cnode = tn? (RGraphNode *)tn->data: NULL;
 	return cnode? (RAnalBlock *)cnode->data: NULL;
+}
+
+static void mark_dom_enter(RGraphNode *n, RGraphVisitor *vis) {
+	PdcCtx *ctx = vis->data;
+	RAnalBlock *bb = treenode_block (n);
+	if (bb) {
+		ht_uu_update (ctx->dom_pre, bb->addr, ++ctx->dom_tick);
+	}
+}
+
+static void mark_dom_leave(RGraphNode *n, RGraphVisitor *vis) {
+	PdcCtx *ctx = vis->data;
+	RAnalBlock *bb = treenode_block (n);
+	if (bb) {
+		ht_uu_update (ctx->dom_post, bb->addr, ++ctx->dom_tick);
+	}
+}
+
+// No interval index is needed in an acyclic function.
+static void ensure_dom_intervals(PdcCtx *ctx) {
+	if (!ctx->dom_tree) {
+		ctx->dom_tree = r_graph_dom_tree (ctx->cfg, ctx->entry);
+		if (!ctx->dom_tree) {
+			return;
+		}
+	}
+	ctx->dom_pre = ht_uu_new0 ();
+	ctx->dom_post = ht_uu_new0 ();
+	if (!ctx->dom_pre || !ctx->dom_post) {
+		return;
+	}
+	RGraphVisitor dom_vis = { .discover_node = mark_dom_enter,
+		.finish_node = mark_dom_leave, .data = ctx };
+	RListIter *it;
+	RGraphNode *n;
+	r_list_foreach (ctx->dom_tree->nodes, it, n) {
+		if (RVecGraphNodePtr_empty (&n->in_nodes)) {
+			r_graph_dfs_node (ctx->dom_tree, n, &dom_vis);
+			break;
+		}
+	}
 }
 
 // fill dst[block addr] = tree-parent block addr (UT64_MAX for the root / sink)
@@ -396,17 +451,17 @@ PdcPlan *pdc_plan_build(RCore *core, RAnalFunction *fcn) {
 	PdcCtx ctx = {
 		.anal = core->anal,
 		.fcn = fcn,
-		.idom = ht_uu_new0 (),
+		.cfg = g,
+		.entry = entry,
+		.dom_pre = NULL,
+		.dom_post = NULL,
 		.ipdom = ht_uu_new0 (),
 		.loops = ht_up_new0 (),
 		.emitted = ht_uu_new0 (),
 		.cap = 4 * (int)RVecAnalBlockPtr_length (&fcn->bbs) + 64
 	};
 
-	RGraph *dt = r_graph_dom_tree (g, entry);
-	if (dt) {
-		collect_idom (ctx.idom, dt);
-	}
+	// Acyclic CFGs never need a dominator tree for natural-loop detection.
 	RGraphVisitor vis = { .back_edge = back_edge_cb, .data = &ctx };
 	r_graph_dfs_node (g, entry, &vis);
 
@@ -457,9 +512,10 @@ PdcPlan *pdc_plan_build(RCore *core, RAnalFunction *fcn) {
 		}
 	}
 
-	r_graph_free (dt);
+	r_graph_free (ctx.dom_tree);
 	r_graph_free (g);
-	ht_uu_free (ctx.idom);
+	ht_uu_free (ctx.dom_pre);
+	ht_uu_free (ctx.dom_post);
 	ht_uu_free (ctx.ipdom);
 	ht_up_foreach (ctx.loops, free_loop_set_cb, NULL);
 	ht_up_free (ctx.loops);
