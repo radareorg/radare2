@@ -1647,7 +1647,7 @@ static inline size_t get_ptr_modifier(const char encoded, SDataType *ptr_modifie
 		break;
 
 	switch (encoded) {
-	SET_PTR_MODIFIER ('E', "", " __ptr64")
+	SET_PTR_MODIFIER ('E', "", "") // __ptr64, hidden like llvm-undname does
 	SET_PTR_MODIFIER ('F', "__unaligned ", "")
 	SET_PTR_MODIFIER ('G', "", " &")
 	SET_PTR_MODIFIER ('H', "", " &&")
@@ -1892,7 +1892,6 @@ static EDemanglerErr parse_function(SDemangler *sd, const char *sym, STypeCodeSt
 	char *ret_type = NULL;
 	const char *curr_pos = sym;
 	SDataType data_type = { "", "" };
-	const char *__64ptr = NULL;
 	size_t len;
 
 	STypeCodeStr func_str;
@@ -1913,8 +1912,8 @@ static EDemanglerErr parse_function(SDemangler *sd, const char *sym, STypeCodeSt
 
 	curr_pos += len;
 
+	// the __ptr64 this pointer of the x64 member functions, hidden like llvm-undname does
 	if (*curr_pos == 'E') {
-		__64ptr = "__ptr64";
 		curr_pos++;
 	}
 
@@ -2008,11 +2007,6 @@ static EDemanglerErr parse_function(SDemangler *sd, const char *sym, STypeCodeSt
 	if (memb_func_access_code) {
 		copy_string (&func_str, " ", 0);
 		copy_string (&func_str, memb_func_access_code, 0);
-	}
-
-	if (__64ptr) {
-		copy_string (&func_str, " ", 0);
-		copy_string (&func_str, __64ptr, 0);
 	}
 
 	if (func_str.overflow) {
