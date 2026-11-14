@@ -675,6 +675,10 @@ static char *orphan_tag(RCore *core, ut64 addr) {
 	return r_str_newf ("case %s", val);
 }
 
+static inline RAnalBlock *fcn_block(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
+	return addr != UT64_MAX? r_anal_function_bbget_at (anal, fcn, addr): NULL;
+}
+
 static bool pdc_is_ret_only_bb(RCore *core, ut64 addr) {
 	RAnalBlock *bb = addr != UT64_MAX? r_anal_bb_from_offset (core->anal, addr): NULL;
 	if (!bb || bb->jump != UT64_MAX || bb->fail != UT64_MAX) {
@@ -688,8 +692,7 @@ static bool pdc_is_ret_only_bb(RCore *core, ut64 addr) {
 // emitters (regions and the orphan pass) label block starts the function contains
 static char *goto_str(PDCState *state, ut64 addr) {
 	RAnal *anal = state->core->anal;
-	const bool labeled = r_anal_get_block_at (anal, addr)
-		&& r_anal_function_contains (state->fcn, addr);
+	const bool labeled = fcn_block (anal, state->fcn, addr);
 	if (state->named_gotos && valid_addr (addr) && !labeled) {
 		RAnalFunction *f = r_anal_get_function_at (anal, addr);
 		// a loc is a jump table case body, named by its case label
@@ -1823,7 +1826,7 @@ static RAnalBlock *render_loop_while(PDCState *state, RAnalBlock *test_bb, RList
 				continue;
 			}
 			if (b->fail != UT64_MAX) {
-				RAnalBlock *fb = r_anal_bb_from_offset (state->core->anal, b->fail);
+				RAnalBlock *fb = fcn_block (state->core->anal, state->fcn, b->fail);
 				if (fb && fb->switch_op) {
 					emit_bb_body_no_back_jump (state, b, test_bb->addr, indent + 1);
 					mark_bb_visited (state, visited, b);
@@ -2381,10 +2384,6 @@ static bool pdc_structured_body(PDCState *state, int indent) {
 	return reducible;
 }
 
-static inline RAnalBlock *fcn_block(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
-	return r_anal_function_contains (fcn, addr)? r_anal_bb_from_offset (anal, addr): NULL;
-}
-
 static bool pdc_decompile_function(RCore *core, const char *input, PDCState *parent, const char *inline_prefix, char **inline_output) {
 	RCons *cons = r_core_get_cons (core);
 	bool show_c_headers = *input == 'c';
@@ -2635,8 +2634,8 @@ static bool pdc_decompile_function(RCore *core, const char *input, PDCState *par
 			RAnalBlock *sw_bb = NULL;
 			if (bb->switch_op) {
 				sw_bb = bb;
-			} else if (bb->fail != UT64_MAX) {
-				RAnalBlock *fb = r_anal_bb_from_offset (core->anal, bb->fail);
+			} else {
+				RAnalBlock *fb = fcn_block (core->anal, state.fcn, bb->fail);
 				if (fb && fb->switch_op) {
 					sw_bb = fb;
 				}
@@ -2718,35 +2717,29 @@ static bool pdc_decompile_function(RCore *core, const char *input, PDCState *par
 				int swap = 1;
 				ut64 jump = swap? bb->jump: bb->fail;
 				ut64 fail = swap? bb->fail: bb->jump;
-				const bool jump_in_fcn = jump != UT64_MAX && r_anal_function_contains (state.fcn, jump);
-				if (!jump_in_fcn) {
+				RAnalBlock *jump_bb = fcn_block (core->anal, state.fcn, jump);
+				RAnalBlock *fail_bb = fcn_block (core->anal, state.fcn, fail);
+				if (!jump_bb) {
 					NEWLINE (jump, indent);
 					PRINTF ("// chop");
-					const bool fail_in_fcn = fail != UT64_MAX && r_anal_function_contains (state.fcn, fail);
-					if (fail_in_fcn) {
-						jump = fail;
-						fail = UT64_MAX;
-					} else {
+					if (!fail_bb) {
 						break;
 					}
+					jump = fail;
+					jump_bb = fail_bb;
+					fail_bb = NULL;
 				}
-				if (fail != UT64_MAX && !r_anal_function_contains (state.fcn, fail)) {
-					fail = UT64_MAX;
-				}
+				fail = fail_bb? fail: UT64_MAX;
 				if (sdb_const_getf (state.db, 0, "loc.%" PFMT64x, jump)) {
-					if (fail != UT64_MAX && !sdb_const_getf (state.db, 0, "loc.%" PFMT64x, fail)) {
-						bb = r_anal_bb_from_offset (core->anal, fail);
+					if (fail_bb && !sdb_const_getf (state.db, 0, "loc.%" PFMT64x, fail)) {
+						bb = fail_bb;
 					} else if (fail == UT64_MAX) {
 						resume_from_indent = true;
 					} else {
 						R_LOG_ERROR ("pdc: unknown branch from 0x%08" PFMT64x, jump);
 					}
 				} else {
-					bb = r_anal_bb_from_offset (core->anal, jump);
-					if (!bb) {
-						R_LOG_ERROR ("Failed to retrieve block at 0x%" PFMT64x, jump);
-						break;
-					}
+					bb = jump_bb;
 					if (fail != UT64_MAX) {
 						indent++;
 						if (sdb_const_getf (state.db, 0, "loc.%" PFMT64x, bb->fail)) {

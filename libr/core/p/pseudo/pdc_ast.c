@@ -244,9 +244,9 @@ static PdcRegion *build_region(PdcCtx *ctx, ut64 cur, ut64 stop, ut64 *next) {
 	if (++ctx->build_calls > ctx->cap || htuu_get (ctx->emitted, cur, 0)) {
 		return region_new (PDC_R_GOTO, cur);
 	}
-	RAnalBlock *bb = r_anal_get_block_at (ctx->anal, cur);
 	// a tail call or a jump into a neighbour would splice its blocks in here
-	if (!bb || !r_anal_function_contains (ctx->fcn, cur)) {
+	RAnalBlock *bb = r_anal_function_bbget_at (ctx->anal, ctx->fcn, cur);
+	if (!bb) {
 		return region_new (PDC_R_GOTO, cur);
 	}
 	ht_uu_update (ctx->emitted, cur, 1);
