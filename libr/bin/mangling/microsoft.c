@@ -517,7 +517,7 @@ static size_t get_operator_code(SDemangler *sd, const char *buf, RList *names_l,
 					return 0;
 				}
 				read_len += state.amount_of_read_chars + 1;
-				char *str = r_str_newf ("`RTTI Base Class Descriptor at (%s,%s,%s,%s)'", a, b, c, d);
+				char *str = r_str_newf ("`RTTI Base Class Descriptor at (%s, %s, %s, %s)'", a, b, c, d);
 				free (a);
 				free (b);
 				free (c);
@@ -1859,7 +1859,7 @@ static EDemanglerErr parse_function_type(const char *sym, SDataType *data_type, 
 				return eDemanglerErrUncorrectMangledSymbol;
 			}
 			// the offsets are signed 32-bit values
-			r_strbuf_appendf (sb, "%s%d", i? ",": "", (int)(ut32)strtoul (num, NULL, 10));
+			r_strbuf_appendf (sb, "%s%d", i? ", ": "", (int)(ut32)strtoul (num, NULL, 10));
 			free (num);
 			curr_pos += state.amount_of_read_chars;
 		}
