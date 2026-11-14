@@ -589,7 +589,7 @@ static SimpleTypeMode get_simple_type_mode(PDB_SIMPLE_TYPES type) {
 	|+32                        |+12   |+8        |+0
 	 */
 	// because mode is only number between 0-7, 1 byte is enough
-	return (value & 0x00000000F0000);
+	return (value >> 8) & 0xF;
 }
 
 static SimpleTypeKind get_simple_type_kind(PDB_SIMPLE_TYPES type) {
@@ -610,10 +610,10 @@ static int direct_type_to_format(ut32 simple_type, char **member_format) {
 	case PDB_NONE:
 	case PDB_VOID:
 	case PDB_NOT_TRANSLATED:
-	case PDB_HRESULT:
 		return -1;
 	case PDB_SIGNED_CHAR:
 	case PDB_NARROW_CHAR:
+	case PDB_CHAR8:
 		*member_format = "c";
 		break;
 	case PDB_UNSIGNED_CHAR:
@@ -639,6 +639,7 @@ static int direct_type_to_format(ut32 simple_type, char **member_format) {
 		break;
 	case PDB_INT32_LONG:
 	case PDB_INT32:
+	case PDB_HRESULT:
 		*member_format = "n4";
 		break;
 	case PDB_UINT32_LONG:

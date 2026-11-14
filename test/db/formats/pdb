@@ -438,6 +438,19 @@ EXPECT_ERR=<<EOF
 WARN: Cannot find base address, flags will probably be misplaced
 EOF
 RUN
+
+NAME=idp formats the members of simple pointer types as pointers
+FILE=-
+CMDS=<<EOF
+idpi* bins/pdb/Project1.pdb~pf._iobuf
+EOF
+EXPECT=<<EOF
+pf._iobuf p4n4p4n4n4n4n4p4 _ptr _cnt _base _flag _file _charbuf _bufsiz _tmpfname 
+EOF
+EXPECT_ERR=<<EOF
+WARN: Cannot find base address, flags will probably be misplaced
+EOF
+RUN
 NAME=PDB rejects a zero page size before counting pages
 FILE=hex://4d6963726f736f667420432f432b2b204d534620372e30300d0a1a44530000000000000000000000010000004000000000000000
 CMDS=<<EOF

@@ -92,6 +92,7 @@ typedef enum {
 	PDB_WIDE_CHAR = 0x0071, // wide char
 	PDB_CHAR16 = 0x007a, // char16_t
 	PDB_CHAR32 = 0x007b, // char32_t
+	PDB_CHAR8 = 0x007c, // char8_t
 
 	PDB_SBYTE = 0x0068, // 8 bit signed int
 	PDB_BYTE = 0x0069, // 8 bit unsigned int
@@ -191,6 +192,30 @@ typedef enum {
 	eT_32PWCHAR =             0x00000471,
 	eT_32PFWCHAR =            0x00000571,
 	eT_64PWCHAR =             0x00000671,
+
+	eT_CHAR16 =               0x0000007a, // char16_t
+	eT_PCHAR16 =              0x0000017a,
+	eT_PFCHAR16 =             0x0000027a,
+	eT_PHCHAR16 =             0x0000037a,
+	eT_32PCHAR16 =            0x0000047a,
+	eT_32PFCHAR16 =           0x0000057a,
+	eT_64PCHAR16 =            0x0000067a,
+
+	eT_CHAR32 =               0x0000007b, // char32_t
+	eT_PCHAR32 =              0x0000017b,
+	eT_PFCHAR32 =             0x0000027b,
+	eT_PHCHAR32 =             0x0000037b,
+	eT_32PCHAR32 =            0x0000047b,
+	eT_32PFCHAR32 =           0x0000057b,
+	eT_64PCHAR32 =            0x0000067b,
+
+	eT_CHAR8 =                0x0000007c, // char8_t
+	eT_PCHAR8 =               0x0000017c,
+	eT_PFCHAR8 =              0x0000027c,
+	eT_PHCHAR8 =              0x0000037c,
+	eT_32PCHAR8 =             0x0000047c,
+	eT_32PFCHAR8 =            0x0000057c,
+	eT_64PCHAR8 =             0x0000067c,
 
 	eT_BYTE =                 0x00000068,
 	eT_PBYTE =                0x00000168,
