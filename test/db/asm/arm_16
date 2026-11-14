@@ -1134,3 +1134,6 @@ a "lsrs r0, r2, 32" 1008
 a "asrs r0, r2, 32" 1010
 a "lsr.w r8, r9, 32" 4fea1908
 a "asr.w r8, r9, 32" 4fea2908
+a "sub sp, 508" ffb0
+a "sub sp, 512" adf5007d
+a "sub sp, 1024" adf5806d
