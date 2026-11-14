@@ -3276,6 +3276,32 @@ static inline bool is_stackrel_memref(cs_insn* insn, int x) {
 			|| INSOP (x).mem.base == X86_REG_EBP);
 }
 
+// Capstone marks the memory operand of most x87 stores as read, so go by the instruction
+static bool load_store_writes_mem(cs_insn *insn) {
+	switch (insn->id) {
+	case X86_INS_FST:
+	case X86_INS_FSTP:
+	case X86_INS_FIST:
+	case X86_INS_FISTP:
+	case X86_INS_FISTTP:
+	case X86_INS_FBSTP:
+	case X86_INS_FNSTCW:
+	case X86_INS_FNSTSW:
+	case X86_INS_FNSTENV:
+	case X86_INS_FNSAVE:
+	case X86_INS_FXSAVE:
+	case X86_INS_FXSAVE64:
+	case X86_INS_STOSB:
+	case X86_INS_STOSW:
+	case X86_INS_STOSD:
+	case X86_INS_STOSQ:
+	case X86_INS_SIDT:
+		return true;
+	default:
+		return false;
+	}
+}
+
 static void op_fillval(RArchSession *a, RAnalOp *op, csh handle, cs_insn *insn, int mode) {
 	RAnalValue *dst, *src0, *src1, *src2;
 	set_access_info (a, op, handle, insn, mode);
@@ -3299,6 +3325,7 @@ static void op_fillval(RArchSession *a, RAnalOp *op, csh handle, cs_insn *insn, 
 	case R_ANAL_OP_TYPE_POP:
 	case R_ANAL_OP_TYPE_NOT:
 	case R_ANAL_OP_TYPE_ACMP:
+	case R_ANAL_OP_TYPE_CAST:
 		CREATE_SRC_DST (op);
 		set_src_dst (a, dst, handle, insn, 0);
 		set_src_dst (a, src0, handle, insn, 1);
@@ -3319,11 +3346,24 @@ static void op_fillval(RArchSession *a, RAnalOp *op, csh handle, cs_insn *insn, 
 			CREATE_SRC_DST (op);
 			set_src_dst (a, src0, handle, insn, 1);
 		}
+		// VEX three-operand version, INSOP (2) is the source.
+		else if (INSOPS > 2 && is_stackrel_memref (insn, 2)) {
+			CREATE_SRC_DST (op);
+			set_src_dst (a, src0, handle, insn, 2);
+		}
 		break;
 	case R_ANAL_OP_TYPE_UPUSH:
 		if (op->type & R_ANAL_OP_TYPE_REG || is_stackrel_memref (insn, 0)) {
 			CREATE_SRC_DST (op);
 			set_src_dst (a, src0, handle, insn, 0);
+		}
+		break;
+	case R_ANAL_OP_TYPE_LOAD:
+	case R_ANAL_OP_TYPE_STORE:
+		// x87 loads and stores take the memory operand alone
+		if (is_stackrel_memref (insn, 0)) {
+			CREATE_SRC_DST (op);
+			set_src_dst (a, load_store_writes_mem (insn)? dst: src0, handle, insn, 0);
 		}
 		break;
 	default:
@@ -3473,6 +3513,12 @@ static void set_opdir(RAnalOp *op, cs_insn *insn) {
 			break;
 		}
 		break;
+	case R_ANAL_OP_TYPE_LOAD:
+	case R_ANAL_OP_TYPE_STORE:
+		if (INSOPS > 0 && ISMEM (0)) {
+			op->direction = load_store_writes_mem (insn)? R_ANAL_OP_DIR_WRITE: R_ANAL_OP_DIR_READ;
+		}
+		break;
 	case R_ANAL_OP_TYPE_LEA:
 		op->direction = R_ANAL_OP_DIR_REF;
 		break;
@@ -3585,8 +3631,6 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case X86_INS_FDECSTP:
 	case X86_INS_FEMMS:
 	case X86_INS_FFREE:
-	case X86_INS_FICOM:
-	case X86_INS_FICOMP:
 	case X86_INS_FNCLEX:
 	case X86_INS_FNINIT:
 	case X86_INS_FPATAN:
@@ -3613,6 +3657,10 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case X86_INS_FUCOMPP:
 	case X86_INS_FUCOMP:
 	case X86_INS_FUCOM:
+	case X86_INS_FCOM:
+	case X86_INS_FCOMP:
+	case X86_INS_FICOM:
+	case X86_INS_FICOMP:
 		op->family = R_ANAL_OP_FAMILY_FPU;
 		op->type = R_ANAL_OP_TYPE_CMP;
 		break;
@@ -3826,6 +3874,7 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case X86_INS_VMOVSS:
 	case X86_INS_VMOVUPD:
 	case X86_INS_VMOVUPS:
+	case X86_INS_VLDDQU:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->family = R_ANAL_OP_FAMILY_VEC;
 		switch (INSOP(1).type) {
@@ -3899,6 +3948,11 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case X86_INS_MOVDQU:
 	case X86_INS_MOVDQA:
 	case X86_INS_MOVDQ2Q:
+	case X86_INS_MOVUPD:
+	case X86_INS_MOVDDUP:
+	case X86_INS_MOVSHDUP:
+	case X86_INS_MOVSLDUP:
+	case X86_INS_LDDQU:
 		{
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->sign = insn->id == X86_INS_MOVSX || insn->id == X86_INS_MOVSXD;
@@ -4446,6 +4500,10 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case X86_INS_MULPS:
 	case X86_INS_MULSD:
 	case X86_INS_MULSS:
+	case X86_INS_VMULPD:
+	case X86_INS_VMULPS:
+	case X86_INS_VMULSD:
+	case X86_INS_VMULSS:
 		op->type = R_ANAL_OP_TYPE_MUL;
 		break;
 	case X86_INS_PACKSSDW:
@@ -4469,6 +4527,7 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		op->family = R_ANAL_OP_FAMILY_CPU;
 		break;
 	case X86_INS_FADD:
+	case X86_INS_FIADD:
 #if CS_API_MAJOR == 4
 	case X86_INS_FADDP:
 #endif
@@ -4476,6 +4535,8 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		op->type = R_ANAL_OP_TYPE_ADD;
 		break;
 	case X86_INS_ADDPS:
+	case X86_INS_HADDPS:
+	case X86_INS_HADDPD:
 	case X86_INS_ADDSD:
 	case X86_INS_ADDSS:
 	case X86_INS_ADDSUBPD:
@@ -4507,8 +4568,115 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case X86_INS_STD:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
-	case X86_INS_SUBSD:    //cvtss2sd
-	case X86_INS_CVTSS2SD: //cvtss2sd
+	case X86_INS_VADDSS:
+	case X86_INS_VADDSD:
+	case X86_INS_VADDPS:
+	case X86_INS_VADDPD:
+	case X86_INS_VHADDPS:
+	case X86_INS_VHADDPD:
+		op->type = R_ANAL_OP_TYPE_ADD;
+		break;
+	case X86_INS_SUBSS:
+	case X86_INS_SUBSD:
+	case X86_INS_SUBPS:
+	case X86_INS_SUBPD:
+	case X86_INS_HSUBPS:
+	case X86_INS_HSUBPD:
+	case X86_INS_VSUBSS:
+	case X86_INS_VSUBSD:
+	case X86_INS_VSUBPS:
+	case X86_INS_VSUBPD:
+	case X86_INS_VHSUBPS:
+	case X86_INS_VHSUBPD:
+		op->type = R_ANAL_OP_TYPE_SUB;
+		break;
+	case X86_INS_DIVSS:
+	case X86_INS_DIVSD:
+	case X86_INS_DIVPS:
+	case X86_INS_DIVPD:
+	case X86_INS_VDIVSS:
+	case X86_INS_VDIVSD:
+	case X86_INS_VDIVPS:
+	case X86_INS_VDIVPD:
+		op->type = R_ANAL_OP_TYPE_DIV;
+		break;
+	case X86_INS_MINSS:
+	case X86_INS_MINSD:
+	case X86_INS_MINPS:
+	case X86_INS_MINPD:
+	case X86_INS_MAXSS:
+	case X86_INS_MAXSD:
+	case X86_INS_MAXPS:
+	case X86_INS_MAXPD:
+	case X86_INS_VMINSS:
+	case X86_INS_VMINSD:
+	case X86_INS_VMINPS:
+	case X86_INS_VMINPD:
+	case X86_INS_VMAXSS:
+	case X86_INS_VMAXSD:
+	case X86_INS_VMAXPS:
+	case X86_INS_VMAXPD:
+		// dst keeps itself or takes src depending on their comparison
+		op->type = R_ANAL_OP_TYPE_CMOV;
+		break;
+	case X86_INS_SQRTSS:
+	case X86_INS_SQRTSD:
+	case X86_INS_SQRTPS:
+	case X86_INS_SQRTPD:
+	case X86_INS_RSQRTSS:
+	case X86_INS_RSQRTPS:
+	case X86_INS_RCPSS:
+	case X86_INS_RCPPS:
+	case X86_INS_VSQRTSS:
+	case X86_INS_VSQRTSD:
+	case X86_INS_VSQRTPS:
+	case X86_INS_VSQRTPD:
+	case X86_INS_VRSQRTSS:
+	case X86_INS_VRSQRTPS:
+	case X86_INS_VRCPSS:
+	case X86_INS_VRCPPS:
+		// dst = f (src)
+		op->type = R_ANAL_OP_TYPE_MOV;
+		break;
+	case X86_INS_CVTDQ2PD:
+	case X86_INS_CVTDQ2PS:
+	case X86_INS_CVTPD2DQ:
+	case X86_INS_CVTPD2PI:
+	case X86_INS_CVTPD2PS:
+	case X86_INS_CVTPI2PD:
+	case X86_INS_CVTPI2PS:
+	case X86_INS_CVTPS2DQ:
+	case X86_INS_CVTPS2PD:
+	case X86_INS_CVTPS2PI:
+	case X86_INS_CVTSD2SI:
+	case X86_INS_CVTSD2SS:
+	case X86_INS_CVTSI2SD:
+	case X86_INS_CVTSI2SS:
+	case X86_INS_CVTSS2SD:
+	case X86_INS_CVTSS2SI:
+	case X86_INS_CVTTPD2DQ:
+	case X86_INS_CVTTPD2PI:
+	case X86_INS_CVTTPS2DQ:
+	case X86_INS_CVTTPS2PI:
+	case X86_INS_CVTTSD2SI:
+	case X86_INS_CVTTSS2SI:
+	case X86_INS_VCVTDQ2PD:
+	case X86_INS_VCVTDQ2PS:
+	case X86_INS_VCVTPD2DQ:
+	case X86_INS_VCVTPD2PS:
+	case X86_INS_VCVTPS2DQ:
+	case X86_INS_VCVTPS2PD:
+	case X86_INS_VCVTSD2SI:
+	case X86_INS_VCVTSD2SS:
+	case X86_INS_VCVTSI2SD:
+	case X86_INS_VCVTSI2SS:
+	case X86_INS_VCVTSS2SD:
+	case X86_INS_VCVTSS2SI:
+	case X86_INS_VCVTTPD2DQ:
+	case X86_INS_VCVTTPS2DQ:
+	case X86_INS_VCVTTSD2SI:
+	case X86_INS_VCVTTSS2SI:
+		op->type = R_ANAL_OP_TYPE_CAST;
 		break;
 	}
 	if (cs_insn_group (*handle, insn, X86_GRP_MMX)) {
