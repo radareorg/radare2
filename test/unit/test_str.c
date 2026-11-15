@@ -973,6 +973,20 @@ bool test_r_str_len_utf8_ansi_truncated_utf8_tail(void) {
 	mu_end;
 }
 
+bool test_r_str_is_printable_limited_utf8(void) {
+	// exact size heap copy, so reading past the multibyte char is caught by ASan
+	char *s = r_mem_dup ("\xc3\xa9", 2);
+	mu_assert_true (r_str_is_printable_limited (s, 2), "utf8 char filling the buffer");
+	free (s);
+	s = r_mem_dup ("A\xc3\xa9", 3);
+	mu_assert_true (r_str_is_printable_limited (s, 3), "ascii and utf8 filling the buffer");
+	free (s);
+	mu_assert_true (r_str_is_printable_limited ("\xc3\xa9\x01", 2), "bytes after the limit are ignored");
+	mu_assert_false (r_str_is_printable_limited ("\xc3\xa9\x01", 3), "non printable byte within the limit");
+	mu_assert_false (r_str_is_printable_limited ("\xc3", 1), "truncated utf8 char");
+	mu_end;
+}
+
 bool test_r_str_unicode_width(void) {
 	const struct {
 		const char *text;
@@ -1675,6 +1689,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_ansi_len);
 	mu_run_test (test_r_str_len_utf8_ansi);
 	mu_run_test (test_r_str_len_utf8_ansi_truncated_utf8_tail);
+	mu_run_test (test_r_str_is_printable_limited_utf8);
 	mu_run_test (test_r_str_unicode_width);
 	mu_run_test (test_r_str_utf16_to_utf8);
 	mu_run_test (test_r_str_uri_decode);
