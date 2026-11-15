@@ -8970,12 +8970,31 @@ static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const ch
 				r_anal_op_fini (&aop);
 				break;
 			}
+			// For conditional ARM instructions, evaluate all NZCV combinations so the
+			// access sets reflect both paths (e.g. moveq/movne with flags zeroed).
+			const char *arch_name = r_config_get (core->config, "asm.arch");
+			const bool is_arm = arch_name && r_str_startswith (arch_name, "arm");
+			const bool has_cond = is_arm && esilstr && strstr (esilstr, "?{");
 			const char *rep_goto = (cfg_r2wars && (aop.prefix & R_ANAL_OP_PREFIX_REP))
 				? strstr (esilstr, ",0,GOTO"): NULL;
 			char *rep_esil = rep_goto? r_str_ndup (esilstr, rep_goto - esilstr): NULL;
-			r_esil_parse (esil, rep_esil? rep_esil: esilstr);
+			if (has_cond) {
+				r_reg_arena_push (core->anal->reg);
+				int combo;
+				for (combo = 0; combo < 16; combo++) {
+					r_reg_setv (core->anal->reg, "nf", (combo & 1)? 1: 0);
+					r_reg_setv (core->anal->reg, "zf", (combo & 2)? 1: 0);
+					r_reg_setv (core->anal->reg, "cf", (combo & 4)? 1: 0);
+					r_reg_setv (core->anal->reg, "vf", (combo & 8)? 1: 0);
+					r_esil_parse (esil, rep_esil? rep_esil: esilstr);
+					r_esil_stack_free (esil);
+				}
+				r_reg_arena_pop (core->anal->reg);
+			} else {
+				r_esil_parse (esil, rep_esil? rep_esil: esilstr);
+				r_esil_stack_free (esil);
+			}
 			free (rep_esil);
-			r_esil_stack_free (esil);
 		}
 		if (esilexpr) {
 			break;

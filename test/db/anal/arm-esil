@@ -267,3 +267,42 @@ EXPECT=<<EOF
                               sym.caller 0x8000034 > CALL:--x > 0x800003c sym.tf
 EOF
 RUN
+
+
+NAME=arm aea reports both conditional paths of moveq
+FILE=malloc://32
+ARGS=-a arm -b 32 -e scr.color=0
+CMDS=<<EOF
+wx 0100a001
+aei
+aeim
+aea 1
+EOF
+EXPECT=<<EOF
+ I: zf r1
+ A: zf r1 r0
+ R: zf r1
+ W: r0
+ V: 0
+ N: zf r1
+EOF
+RUN
+
+NAME=arm aea reports both conditional paths of bxeq
+FILE=malloc://32
+ARGS=-a arm -b 32 -e scr.color=0
+CMDS=<<EOF
+wx 1effa001
+aei
+aeim
+aea 1
+EOF
+EXPECT=<<EOF
+ I: zf pc lr
+ A: zf pc lr
+ R: zf pc lr
+ W: pc
+ V: 0
+ N: zf lr
+EOF
+RUN
