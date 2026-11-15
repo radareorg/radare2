@@ -1,0 +1,5 @@
+# MIPS32 Vol. II (MD00086): ROTR rs=00001 funct=000010, ROTRV sa=00001 funct=000110
+dB "rotr t0, t1, 0x4" 00294102 0x0
+dB "rotrv t0, t1, t2" 01494046 0x0
+dB "srl t0, t1, 0x4" 00094102 0x0
+dB "srlv t0, t1, t2" 01494006 0x0

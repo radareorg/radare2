@@ -1811,7 +1811,9 @@ const struct mips_opcode mips_builtin_opcodes[] =
 { "rotl",		"d,v,I",	0,    (int) M_ROL_I,	INSN_MACRO,		0,		I33,		SMT,	0 },
 { "rotr",		"d,v,t",	0,    (int) M_ROR,	INSN_MACRO,		0,		I33,		SMT,	0 },
 { "rotr",		"d,v,I",	0,    (int) M_ROR_I,	INSN_MACRO,		0,		I33,		SMT,	0 },
-{ "rotrv",		"d,t,s",	0x00000046, 0xfc0007ff,	WR_1|RD_2|RD_3,		0,		I33,		SMT,	0 },
+/* reserved before R2, so decode them on every cpu */
+{ "rotr",		"d,w,<",	0x00200002, 0xffe0003f,	WR_1|RD_2,		0,		I1,		0,	0 },
+{ "rotrv",		"d,t,s",	0x00000046, 0xfc0007ff,	WR_1|RD_2|RD_3,		0,		I1,		0,	0 },
 { "round.l.d",		"D,S",		0x46200008, 0xffff003f, WR_1|RD_2|FP_D,		0,		I3_33,		0,	0 },
 { "round.l.s",		"D,S",		0x46000008, 0xffff003f, WR_1|RD_2|FP_S|FP_D,	0,		I3_33,		0,	0 },
 { "round.w.d",		"D,S",		0x4620000c, 0xffff003f, WR_1|RD_2|FP_S|FP_D,	0,		I2,		0,	SF },
