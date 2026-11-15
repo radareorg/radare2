@@ -90,23 +90,35 @@ R_API ut64 r_bin_dwarf_line_size(RBinFile *bf, const char **section_name) {
 		*section_name = section->name;
 	}
 	const bool is_elf = dwarf_is_elf (bf);
-	if (is_elf && dwarf_section_is_compressed (bf, section)) {
-		const bool is64 = r_buf_read8_at (bf->buf, EI_CLASS) == ELFCLASS64;
-		const bool be = r_bin_is_big_endian (bf->rbin);
-		const ut64 at = r_bin_file_get_buffer_offset (bf, section->paddr);
-		return is64? r_buf_read_ble64_at (bf->buf, at + 8, be): r_buf_read_ble32_at (bf->buf, at + 4, be);
+	if (!dwarf_section_is_compressed (bf, section)) {
+		return section->size;
 	}
-	return section->size;
+	const bool is64 = is_elf && r_buf_read8_at (bf->buf, EI_CLASS) == ELFCLASS64;
+	const size_t header_size = is64? 24: 12;
+	ut8 header[24];
+	const ut64 at = r_bin_file_get_buffer_offset (bf, section->paddr);
+	// a header that does not fit in the section, or the section in the file, states no size
+	const ut64 file_size = r_buf_size (bf->buf);
+	if (section->size < header_size || at > file_size || section->size > file_size - at
+		|| r_buf_read_at (bf->buf, at, header, header_size) != header_size) {
+		return 0;
+	}
+	if (is_elf) {
+		const bool be = r_bin_is_big_endian (bf->rbin);
+		return is64? r_read_ble64 (header + 8, be): r_read_ble32 (header + 4, be);
+	}
+	return r_read_be64 (header + 4);
 }
 
 // this function caches full section data in section->bytes
 // compiler generated debug sections inflate 2-10x, a run of identical bytes about 1000x
 #define DWARF_MAX_INFLATE_RATIO 64
 
-// inflate an ELF compressed section, NULL when invalid or a decompression bomb
-static ut8 *dwarf_inflate(RBinFile *bf, RBinSection *section, ut64 offset, int *dst_len) {
+// inflate a compressed section, an Elf_Chdr for ELF, Go's "ZLIB" + be64 size otherwise
+// NULL when invalid or a decompression bomb
+static ut8 *dwarf_inflate(RBinFile *bf, RBinSection *section, ut64 offset, bool is_elf, int *dst_len) {
 	const ut64 raw_size = section->size;
-	const bool is64 = r_buf_read8_at (bf->buf, EI_CLASS) == ELFCLASS64;
+	const bool is64 = is_elf && r_buf_read8_at (bf->buf, EI_CLASS) == ELFCLASS64;
 	const size_t header_size = is64? 24: 12;
 	if (raw_size <= header_size || raw_size > ST32_MAX) {
 		return NULL;
@@ -116,11 +128,18 @@ static ut8 *dwarf_inflate(RBinFile *bf, RBinSection *section, ut64 offset, int *
 		free (rawbuf);
 		return NULL;
 	}
-	const bool be = r_bin_is_big_endian (bf->rbin);
-	// Elf64_Chdr: type, reserved, size, align. Elf32_Chdr: type, size, align. Only zlib (1)
-	const ut32 ch_type = r_read_ble32 (rawbuf, be);
-	const ut64 ch_size = is64? r_read_ble64 (rawbuf + 8, be): r_read_ble32 (rawbuf + 4, be);
-	ut8 *decomp = (ch_type == 1 && ch_size / DWARF_MAX_INFLATE_RATIO <= raw_size)
+	bool valid_type;
+	ut64 ch_size;
+	if (is_elf) {
+		const bool be = r_bin_is_big_endian (bf->rbin);
+		// Elf64_Chdr: type, reserved, size, align. Elf32_Chdr: type, size, align. Only zlib (1)
+		valid_type = r_read_ble32 (rawbuf, be) == 1;
+		ch_size = is64? r_read_ble64 (rawbuf + 8, be): r_read_ble32 (rawbuf + 4, be);
+	} else {
+		valid_type = !memcmp (rawbuf, "ZLIB", 4);
+		ch_size = r_read_be64 (rawbuf + 4);
+	}
+	ut8 *decomp = (valid_type && ch_size / DWARF_MAX_INFLATE_RATIO <= raw_size)
 		? r_inflate (rawbuf + header_size, (int)(raw_size - header_size), NULL, dst_len): NULL;
 	free (rawbuf);
 	if (decomp && (ut64)*dst_len / DWARF_MAX_INFLATE_RATIO > raw_size) {
@@ -146,7 +165,7 @@ R_IPI const ut8 *dwarf_get_section_bytes(RBinFile *bf, RBinSection *section) {
 	const bool is_elf = dwarf_is_elf (bf);
 	if (dwarf_section_is_compressed (bf, section)) {
 		int dst_len = 0;
-		ut8 *decomp = is_elf? dwarf_inflate (bf, section, offset, &dst_len): NULL;
+		ut8 *decomp = dwarf_inflate (bf, section, offset, is_elf, &dst_len);
 		if (!decomp) {
 			// inflating again on every lookup would be as expensive as the first time
 			static const ut8 failed = 0;

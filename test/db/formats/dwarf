@@ -5488,3 +5488,78 @@ EXPECT=<<EOF
 done
 EOF
 RUN
+
+NAME=mach0: Go ZLIB __zdebug_line inflates
+FILE=bins/mach0/zdebug-line-zlib.o
+CMDS=CL~line
+EXPECT=<<EOF
+line: 1
+line: 2
+line: 2
+line: 2
+EOF
+RUN
+
+# zdebug-line-zlib.o with the "ZLIB" magic (0x189) 'Z' -> 0, the section is not inflated
+NAME=mach0: __zdebug_line without the ZLIB magic is ignored
+FILE=malloc://480
+CMDS=<<EOF
+wff bins/mach0/zdebug-line-zlib.o
+wx 00 @ 0x189
+oba 0
+CL~line
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+# zdebug-line-zlib.o with the ZLIB size (0x191) 0 -> 1, stating 0x100003d bytes, above the 16 MiB startup limit
+NAME=mach0: a __zdebug_line ZLIB header states its inflated size
+FILE=malloc://480
+CMDS=<<EOF
+wff bins/mach0/zdebug-line-zlib.o
+wx 01 @ 0x191
+oba 0
+id~?
+EOF
+EXPECT=<<EOF
+0
+EOF
+EXPECT_ERR=<<EOF
+WARN: Loading large DWARF 1..__zdebug_line section (16MB). The `id` command can produce several GB of output; consider `idx` for source files or `e bin.dbginfo=false` when debug info is not needed
+EOF
+RUN
+
+# zdebug-line-zlib.o with __zdebug_line size (0xe0) 0x3e -> 4 and the ZLIB size byte past it (0x18d) 0 -> 0xff
+NAME=mach0: a __zdebug_line too short for its header states no size
+FILE=malloc://480
+CMDS=<<EOF
+wff bins/mach0/zdebug-line-zlib.o
+wx 04 @ 0xe0
+wx ff @ 0x18d
+oba 0
+id~?
+EOF
+EXPECT=<<EOF
+0
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+# zdebug-line-zlib.o with __zdebug_line size (0xe0) 0x3e -> 0x1000 past EOF and its ZLIB size (0x18d) 0 -> 0xff
+NAME=mach0: a __zdebug_line past EOF states no size
+FILE=malloc://480
+CMDS=<<EOF
+wff bins/mach0/zdebug-line-zlib.o
+wx 0010 @ 0xe0
+wx ff @ 0x18d
+oba 0
+id~?
+EOF
+EXPECT=<<EOF
+0
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
