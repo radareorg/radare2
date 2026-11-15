@@ -245,6 +245,11 @@ static inline void es_add_ck(RAnalOp *op, const char *a1, const char *a2, const 
 			ARG(1), REG(0));\
 	}
 
+// dsp indexed loads: rd, index(base)
+#define ESIL_LOAD_INDEXED(size, sbits) \
+	r_strbuf_appendf (&op->esil, sbits"%s,%s,+,["size"],%s%s,=",\
+		REG(1), REG(2), *sbits? "~,": "", REG(0))
+
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	PJ *pj = pj_new ();
@@ -908,11 +913,19 @@ static int analop_esil(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 				break;
 
 			case MIPS_INS_LH:
-			case MIPS_INS_LHX:
 				op->sign = true;
 				ESIL_LOAD_SIGNED ("2", "16");
 				break;
+			case MIPS_INS_LBUX:
+				ESIL_LOAD_INDEXED ("1", "");
+				break;
+			case MIPS_INS_LHX:
+				op->sign = true;
+				ESIL_LOAD_INDEXED ("2", "16,");
+				break;
 			case MIPS_INS_LWX:
+				ESIL_LOAD_INDEXED ("4", "");
+				break;
 			case MIPS_INS_LHU:
 				ESIL_LOAD ("2");
 				break;
