@@ -1,0 +1,12 @@
+NAME=dalvik.ns const-string/jumbo string name
+FILE=bins/dex/Hello.dex
+CMDS=<<EOF
+e asm.arch=dalvik.ns
+e io.cache=true
+wx 1b0001000000 @ 0x1c0
+pi 1 @ 0x1c0
+EOF
+EXPECT=<<EOF
+const-string/jumbo v0, str.Hello_
+EOF
+RUN

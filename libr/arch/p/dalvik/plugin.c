@@ -13,10 +13,9 @@ static inline ut64 _anal_get_offset(RArch *a, int type, int idx) {
 	return UT64_MAX;
 }
 
-static inline char *_anal_get_name(RArch *a, int type, int idx) {
+static inline const char *_anal_get_name(RArch *a, int type, int idx) {
 	if (a && a->binb.bin && a->binb.get_name) {
-		const char *name = a->binb.get_name (a->binb.bin, type, idx, false);
-		return name? strdup (name): NULL;
+		return a->binb.get_name (a->binb.bin, type, idx, false);
 				// (bool)a->coreb.cfggeti (a->coreb.core, "asm.pseudo"));
 	}
 	return NULL;
@@ -429,7 +428,7 @@ static int dalvik_disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut
 
 	int vA, vB, vC, vD, vE, vF, vG, vH, payload = 0;
 	char str[1024], *strasm = NULL;
-	char *flag_str = NULL;
+	const char *flag_str = NULL;
 	ut64 offset;
 	ut8 opcode = buf[0];
 
@@ -885,7 +884,6 @@ static int dalvik_disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut
 			} else {
 				strasm = r_str_appendf (strasm, ", method+%i", vB);
 			}
-			R_FREE (flag_str);
 
 			flag_str = _anal_get_name (a, 'p', vH);
 			if (flag_str) {
@@ -906,7 +904,6 @@ static int dalvik_disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut
 				snprintf (str, sizeof (str), " {v%i..v%i}, method+%i", vC, vC + vA - 1, vB);
 			}
 			strasm = r_str_append (strasm, str);
-			R_FREE (flag_str);
 
 			flag_str = _anal_get_name (a, 'p', vH);
 			if (flag_str) {
@@ -938,7 +935,6 @@ static int dalvik_disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut
 	}
 
 	free (strasm);
-	free (flag_str);
 
 	return size;
 }

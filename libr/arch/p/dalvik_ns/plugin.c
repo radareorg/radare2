@@ -193,6 +193,7 @@ static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 			op->mnemonic = strdup ("invalid");
 		}
 		op->size = 0;
+		r_unref (buf);
 		return true;
 	}
 	op->id = instr.op;
