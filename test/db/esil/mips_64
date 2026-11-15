@@ -227,6 +227,41 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# MD00087: ll sign-extends the word, lwu zero-extends it, lld loads the doubleword; GPR[0] stays zero
+NAME=mips.gnu 64-bit ll, lwu and lld extend the loaded word and lb leaves zero as is
+FILE=malloc://32
+ARGS=-a mips.gnu -b 64
+CMDS=<<EOF
+wx 80ffffff11223344 @ 0x10
+aei
+wx 000088c0
+aer a0=0x10
+aer pc=0
+aes
+aer t0
+wx 0000889c
+aer pc=0
+aes
+aer t0
+wx 000088d0
+aer pc=0
+aes
+aer t0
+wx 00008080
+aer pc=0
+ao~esil:
+aes
+aer zero
+EOF
+EXPECT=<<EOF
+0xffffffffffffff80
+0xffffff80
+0x44332211ffffff80
+esil: 8,0,a0,+,[1],~,POP
+0x00000000
+EOF
+RUN
+
 NAME=mips64 ldl and ldr merge the addressed bytes into the register
 FILE=malloc://0x200
 ARGS=-a mips -b 64 -e cfg.bigendian=true
