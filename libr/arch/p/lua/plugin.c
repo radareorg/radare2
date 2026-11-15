@@ -13,14 +13,19 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 	if (parseNextInstruction (pd, op->mnemonic) < 0) {
 		return false;
 	}
-
-	free (op->bytes);
-	op->size = 4;
-	op->bytes = malloc (4);
-	if (!op->bytes) {
+	// one word, or two for LOADKX with its EXTRAARG
+	const int size = pd->current_write_index * 4;
+	ut8 *bytes = malloc (size);
+	if (!bytes) {
 		return false;
 	}
-	setInstruction (pd->instructions[0], op->bytes);
+	ut32 i;
+	for (i = 0; i < pd->current_write_index; i++) {
+		setInstruction (pd->instructions[i], bytes + i * 4);
+	}
+	free (op->bytes);
+	op->bytes = bytes;
+	op->size = size;
 	return true;
 }
 
@@ -46,7 +51,12 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	if (GET_OPCODE (instruction) > OP_EXTRAARG) {
 		return op->size;
 	}
-	op->mnemonic = strdup (instruction_names[GET_OPCODE (instruction)]);
+	if (mask & R_ARCH_OP_MASK_DISASM) {
+		PluginData *pd = as->data;
+		(void)lua53dissasm (pd, op, data, len);
+	} else {
+		op->mnemonic = strdup (instruction_names[GET_OPCODE (instruction)]);
+	}
 	switch (GET_OPCODE (instruction)) {
 	case OP_MOVE:	/*   A B     R(A) := R(B)              */
 		op->type = R_ANAL_OP_TYPE_MOV;

@@ -1437,3 +1437,22 @@ ERROR: Cannot assemble 'jmp 0 131073' at line 1
 ERROR: Cannot assemble 'move 0 99999999999999999999' at line 1
 EOF
 RUN
+
+NAME=lua: pa reads K, Kst and KPROTO only where the disassembler prints them
+FILE=-
+CMDS=<<EOF
+e log.level=1
+e asm.arch=lua
+"pa call 1 K(2) 3"
+"pa loadk 1 KPROTO(0)"
+"pa gettabup 1 0 K(256)"
+"pa loadk 1 Kst(262144)"
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'call 1 K(2) 3' at line 1
+ERROR: Cannot assemble 'loadk 1 KPROTO(0)' at line 1
+ERROR: Cannot assemble 'gettabup 1 0 K(256)' at line 1
+ERROR: Cannot assemble 'loadk 1 Kst(262144)' at line 1
+EOF
+RUN
