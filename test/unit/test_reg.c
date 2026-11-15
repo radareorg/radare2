@@ -1121,6 +1121,19 @@ bool test_r_reg_next_diff_bounds(void) {
 	mu_end;
 }
 
+bool test_r_reg_get_bytes_empty_gpr(void) {
+	RReg *reg = r_reg_new ();
+	r_reg_set_profile_string (reg, "fpu st0 .80 0 0\n");
+	// drop the placeholder pushed by the profile so the empty gpr arena is current
+	r_reg_arena_pop (reg);
+	int size = 0;
+	ut8 *buf = r_reg_get_bytes (reg, R_REG_TYPE_ALL, &size);
+	mu_assert_eq (size, 10, "only the 10-byte fpu arena");
+	free (buf);
+	r_reg_free (reg);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_reg_value_hex);
 	mu_run_test (test_r_reg_next_diff_bounds);
@@ -1128,6 +1141,7 @@ int all_tests(void) {
 	mu_run_test (test_r_reg_checked_lanes);
 	mu_run_test (test_r_reg_profile_to_cc);
 	mu_run_test (test_r_reg_x87_multi_offset);
+	mu_run_test (test_r_reg_get_bytes_empty_gpr);
 	mu_run_test (test_r_reg_vbank);
 	mu_run_test (test_r_reg_vector_bank);
 	mu_run_test (test_r_reg_vector_alias_endian);
