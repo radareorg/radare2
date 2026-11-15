@@ -1,0 +1,56 @@
+# Minimal UFS1 image written into malloc:// with only the fields the grub
+# driver reads: 4 KB blocks, inodes at block 4, the root directory in block 5.
+# /big is 1038 blocks long: blocks 0 to 11 are direct, 12 to 19 come from the
+# single indirect block 26, 1036 and 1037 from the double indirect blocks 27
+# and 28, and everything else is a hole. Each mapped block starts with BLKnnnn.
+
+NAME=ufs reads blocks through the indirect pointers
+FILE=malloc://0x1f000
+CMDS=<<EOF
+wx 04000000 @ 0x2010
+wx 00100000 @ 0x2030
+wx 03000000 @ 0x2064
+wx 2000000000040000 @ 0x20b8
+wx 54190100 @ 0x255c
+wx ed410100 @ 0x4100
+wx 0010000000000000 @ 0x4108
+wx 05000000 @ 0x4128
+wx a4810100 @ 0x4180
+wx 00e0400000000000 @ 0x4188
+wx 060000000700000008000000090000000a0000000b0000000c0000000d0000000e0000000f00000010000000110000001a0000001b000000 @ 0x41a8
+wx 020000000c0001002e @ 0x5000
+wx 020000000c0002002e2e @ 0x500c
+wx 03000000e80f0300626967 @ 0x5018
+wx 1200000013000000140000001500000016000000170000001800000019000000 @ 0x1a000
+wx 1c000000 @ 0x1b000
+wx 1d0000001e000000 @ 0x1c000
+w BLK0011 @ 0x11000
+w BLK0012 @ 0x12000
+w BLK0014 @ 0x14000
+w BLK0019 @ 0x19000
+w BLK1036 @ 0x1d000
+w BLK1037 @ 0x1e000
+m /mnt ufs 0
+md /mnt
+mo /mnt/big
+ps 7 @ 0xb000
+ps 7 @ 0xc000
+ps 7 @ 0xe000
+ps 7 @ 0x13000
+p8 4 @ 0x100000
+ps 7 @ 0x40c000
+ps 7 @ 0x40d000
+EOF
+EXPECT=<<EOF
+d .
+d ..
+f big
+BLK0011
+BLK0012
+BLK0014
+BLK0019
+00000000
+BLK1036
+BLK1037
+EOF
+RUN

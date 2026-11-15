@@ -462,11 +462,7 @@ grub_xfs_iterate_dir(grub_fshelp_node_t dir,
 				}
 
 				inopos = (((char *)de) + sizeof (struct grub_xfs_dir_entry) + de->len - 1);
-#ifndef _MSC_VER
-				char name[de->len + 1];
-#else
-				char *name = grub_malloc (de->len + 1);
-#endif
+				char name[UT8_MAX + 1]; // de->len is a ut8
 				if (smallino) {
 					ino = r_read_be32 (inopos);
 					ino = grub_cpu_to_be64 (ino);
