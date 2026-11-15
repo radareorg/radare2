@@ -842,7 +842,7 @@ static RBinInfo *info(RBinFile *bf) {
 	h->type = "sha1";
 	h->len = 20;
 	h->addr = 12;
-	h->from = 12;
+	h->from = 32;
 	h->to = r_buf_size (bf->buf) - 32;
 	r_buf_read_at (bf->buf, 12, h->buf, 20);
 	h = &ret->sum[1];
@@ -851,7 +851,7 @@ static RBinInfo *info(RBinFile *bf) {
 	h->addr = 8;
 	h->from = 12;
 	h->to = r_buf_size (bf->buf) - h->from;
-	r_buf_read_at (bf->buf, 8, h->buf, 12);
+	r_buf_read_at (bf->buf, 8, h->buf, 4);
 	h = &ret->sum[2];
 	h->type = 0;
 	r_buf_read_at (bf->buf, 8, h->buf, 4);
