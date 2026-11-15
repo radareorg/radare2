@@ -181,3 +181,70 @@ EXPECT=<<EOF
 0x60000000
 EOF
 RUN
+
+NAME=decimal exponent
+FILE=-
+CMDS=<<EOF
+?v 1e10
+?v 2e-3
+?v 1.5e3
+?v 1e+2
+?v 1E2
+?v 1E-2
+?v 1e2+3
+?v 1e2-3
+?v 1e2*3
+?v 1e-2+3
+?v 1e-2-3
+?v 1e-2*3
+?v 1e-2f
+?v 0x1e-2
+?v 0x1e+2
+?v 1e5h
+?v 2e3h
+EOF
+EXPECT=<<EOF
+0x2540be400
+0x0
+0x5dc
+0x64
+0x64
+0x0
+0x67
+0x61
+0x12c
+0x3
+0xfffffffffffffffd
+0x0
+0x0
+0x1c
+0x20
+0x1e5
+0x2e3
+EOF
+RUN
+
+NAME=decimal exponent with nothing after it
+FILE=-
+CMDS=<<EOF
+?v 1e+
+?v 1e--2
+?v 1e
+?v 1.5e
+?v 1e2z
+EOF
+EXPECT=<<EOF
+0x0
+0x0
+0x0
+0x0
+0x0
+EOF
+EXPECT_ERR=<<EOF
+ERROR: invalid float
+ERROR: invalid float
+ERROR: invalid float
+ERROR: invalid float
+ERROR: invalid float
+EOF
+RUN
