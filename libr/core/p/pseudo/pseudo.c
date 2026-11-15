@@ -2675,7 +2675,7 @@ static bool pdc_decompile_function(RCore *core, const char *input, PDCState *par
 					sdb_setf (state.goto_cache, "1", 0, "return.%" PFMT64x, bb->addr);
 				}
 				RAnalBlock *nbb = fcn_block (core->anal, state.fcn, bb->fail);
-				if (!nbb || r_list_contains (visited, nbb)) {
+				if (bb->fail != UT64_MAX && (!nbb || r_list_contains (visited, nbb))) {
 					nbb = fcn_block (core->anal, state.fcn, bb->jump);
 					if (!nbb) {
 						break;

@@ -57,7 +57,7 @@ x0 = puts ("a (b), \" ; // c") // user's note
 EOF
 RUN
 
-# 0x4 starts fcn.00000004, so it is not a block of fcn.00000000 (afb)
+# 0x4 starts fcn.00000004 (eax = 1; return), so it is not a block of fcn.00000000 (afb) and its body must not show
 NAME=pdc linear walk does not step onto a block of another function
 FILE=malloc://64
 ARGS=-a x86 -b 64
@@ -68,32 +68,11 @@ wx ffc7ebec @ 0x10
 af @ 4
 af @ 0
 afb @ 0
-pdc @ 0~loc_
+pdc @ 0
 EOF
 EXPECT=<<EOF
 0x00000000 0x00000004 00:0000 4 j 0x00000010 f 0x00000004
 0x00000010 0x00000014 00:0000 4 j 0x00000000
-    loc_0x00000000:
-        if (v) goto loc_0x10 // unlikely
-    loc_0x00000010:
-        goto loc_0    // fcn.00000000(0x1)
-EOF
-EXPECT_ERR=
-RUN
-
-# 0x4 starts fcn.00000004 (eax = 1; return), whose body must not show in fcn.00000000
-NAME=pdc linear walk renders no body of another function
-FILE=malloc://64
-ARGS=-a x86 -b 64
-CMDS=<<EOF
-e pdc.structured=false
-wx 85ff750c31c0ffc0c3 @ 0
-wx ffc7ebec @ 0x10
-af @ 4
-af @ 0
-pdc @ 0
-EOF
-EXPECT=<<EOF
 // callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
 void fcn.00000000 (int64_t arg1) {
     loc_0x00000000:
@@ -216,6 +195,94 @@ EXPECT=<<EOF
     loc_0x00000020:
 EOF
 EXPECT_ERR=
+RUN
+
+# block 0x4 (jmp 0x20) has no fall-through; revisited by an indent pop, the walk stops there
+NAME=pdc linear walk stops at an analyzed block without fall-through
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e pdc.structured=false
+wx 85ff750ceb1a @ 0
+wx ebf2 @ 0x10
+wx c3 @ 0x20
+af @ 0
+afb @ 0
+pdc @ 0
+EOF
+EXPECT=<<EOF
+0x00000000 0x00000004 00:0000 4 j 0x00000010 f 0x00000004
+0x00000004 0x00000006 00:0000 2 j 0x00000020
+0x00000010 0x00000012 00:0000 2 j 0x00000004
+0x00000020 0x00000021 00:0000 1
+// callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
+void fcn.00000000 (int64_t arg1) {
+        v = edi & edi // arg1
+        if (v) goto loc_0x10 // unlikely
+        goto loc_0x00000004;
+    loc_0x00000010:
+        goto loc_4
+            goto loc_0x00000004;
+    loc_0x00000004:
+        // CODE XREF from fcn.00000000 @ 0x10(x)
+        goto loc_0x20
+    loc_0x00000020: // orphan
+        // CODE XREF from fcn.00000000 @ 0x4(x)
+        return
+
+}
+
+EOF
+EXPECT_ERR=
+RUN
+
+# afm adds block 0x4 of fcn.00000004 to fcn.00000000 too, so both functions own it
+NAME=pdc renders a block shared by two functions from each owner
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e pdc.structured=false
+wx 85ff750c31c0ffc0c3 @ 0
+wx ffc7ebec @ 0x10
+af @ 4
+af @ 0
+afm 4 @ 0
+abl @ 4
+pdc @ 0
+pdc @ 4
+EOF
+EXPECT=<<EOF
+0x00000000 jump=0x00000010 fail=0x00000004 xref=0x00000012 func=0x0 size=4
+0x00000004 func=0x4 func=0x0 size=5
+0x00000010 jump=0x00000000 func=0x0 size=4
+// callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
+void fcn.00000000 (int64_t arg1) {
+    loc_0x00000000:
+        // CODE XREF from fcn.00000000 @ 0x12(x)
+        v = edi & edi // arg1
+        if (v) goto loc_0x10 // unlikely
+        return rax;
+    loc_0x00000010:
+        edi++         // arg1
+        goto loc_0    // fcn.00000000(0x1)
+            goto loc_0x00000004;
+    loc_0x00000004:
+        eax = 0
+        eax++
+        return
+}
+
+// callconv: rax amd64 (rdi, rsi, rdx, rcx, r8, r9, stack);
+void fcn.00000004 (void) {
+        eax = 0
+        eax++
+        return
+}
+
+EOF
+EXPECT_ERR=<<EOF
+INFO: Merge 0x00000000 into 0x00000004
+EOF
 RUN
 
 # 0x4 starts fcn.00000004; block 0x0 loops on itself (jne 0)
