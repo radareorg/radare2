@@ -129,6 +129,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pFa OCTET_STRING with utf8 ignores the bytes after it
+FILE=-
+CMDS=<<EOF
+b 6
+wx 0402c3a90000
+pFaj
+wx 0402c3a94141
+pFaj
+wx 0403c3a901
+pFaj
+EOF
+EXPECT=<<EOF
+{"offset":0,"length":2,"form":"prim","name":"OCTET_STRING","value":".."}
+{"offset":0,"length":2,"form":"prim","name":"OCTET_STRING","value":".."}
+{"offset":0,"length":3,"form":"prim","name":"OCTET_STRING","value":"c3a901"}
+EOF
+RUN
+
 NAME=pFa stops at the asn1 nesting limit on deep indefinite-length sequences
 FILE=malloc://200004
 TIMEOUT=30
