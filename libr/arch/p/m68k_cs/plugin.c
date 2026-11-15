@@ -108,6 +108,9 @@ static int get_capstone_mode (RArchSession *as) {
 typedef struct plugin_data_t {
 	CapstonePluginData cpd;
 	RRegItem reg;
+	char *cpu;
+	int cs_mode;
+	bool bigendian;
 } PluginData;
 
 #define OPERAND(x) insn->detail->m68k.operands[x]
@@ -237,8 +240,34 @@ static void op_fillval(PluginData *pd, RAnalOp *op, csh handle, cs_insn *insn) {
 
 static inline csh cs_handle_for_session(RArchSession *as) {
 	R_RETURN_VAL_IF_FAIL (as && as->data, 0);
-	CapstonePluginData *pd = as->data;
-	return pd->cs_handle;
+	PluginData *pd = as->data;
+	const char *cpu = as->config->cpu;
+	const bool bigendian = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
+	if (pd->cpd.cs_handle && bigendian == pd->bigendian
+			&& (cpu? pd->cpu && !strcmp (cpu, pd->cpu): !pd->cpu)) {
+		return pd->cpd.cs_handle;
+	}
+	const int mode = get_capstone_mode (as);
+	char *new_cpu = cpu? strdup (cpu): NULL;
+	if (cpu && !new_cpu) {
+		return 0;
+	}
+	if (!pd->cpd.cs_handle || mode != pd->cs_mode) {
+		// Capstone ignores CS_OPT_MODE for m68k.
+		csh handle = 0;
+		r_arch_cs_init (as, &handle);
+		if (!handle) {
+			free (new_cpu);
+			return 0;
+		}
+		cs_close (&pd->cpd.cs_handle);
+		pd->cpd.cs_handle = handle;
+		pd->cs_mode = mode;
+	}
+	free (pd->cpu);
+	pd->cpu = new_cpu;
+	pd->bigendian = bigendian;
+	return pd->cpd.cs_handle;
 }
 
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
@@ -879,20 +908,17 @@ static bool init(RArchSession *s) {
 
 	s->data = R_NEW0 (PluginData);
 
-	PluginData *pd = s->data;
-	if (!r_arch_cs_init (s, &pd->cpd.cs_handle)) {
-		R_LOG_ERROR ("Cannot initialize capstone");
-		R_FREE (s->data);
-		return false;
-	}
-	return true;
+	return cs_handle_for_session (s) != 0;
 }
 
 static bool fini(RArchSession *s) {
 	R_RETURN_VAL_IF_FAIL (s, false);
-	CapstonePluginData *cpd = s->data;
-	cs_close (&cpd->cs_handle);
-	R_FREE (s->data);
+	PluginData *pd = s->data;
+	if (pd) {
+		cs_close (&pd->cpd.cs_handle);
+		free (pd->cpu);
+		R_FREE (s->data);
+	}
 	return true;
 }
 
