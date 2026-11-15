@@ -1425,17 +1425,28 @@ static bool is_default_local(RAnalVar *var, const char *type) {
 	return !*p;
 }
 
-static void reanalyze_fcn_vars(RCore *core, RAnalFunction *fcn) {
-	if (!has_function_signature (fcn)) {
-		r_anal_function_delete_all_vars (fcn);
-	} else if (sdb_const_getf (core->anal->sdb_types, NULL, "fcnlink.%08" PFMT64x, fcn->addr)) {
-		r_strf_var (type, 16, "int%d_t", fcn->bits? fcn->bits: core->anal->config->bits);
-		size_t i = RVecAnalVarPtr_length (&fcn->vars);
-		while (i > 0) {
-			RAnalVar *var = *RVecAnalVarPtr_at (&fcn->vars, --i);
-			if (is_default_local (var, type)) {
-				r_anal_var_delete (core->anal, var);
-			}
+static bool is_inferred_reg_arg(RAnalVar *var) {
+	if (!var->isarg || var->kind != R_ANAL_VAR_KIND_REG || var->comment
+			|| !RVecAnalVarConstraint_empty (&var->constraints) || !r_str_startswith (var->name, "arg")) {
+		return false;
+	}
+	const char *p = var->name + 3;
+	if (!isdigit ((ut8)*p)) {
+		return false;
+	}
+	while (isdigit ((ut8)*p)) {
+		p++;
+	}
+	return !*p;
+}
+
+// The convention only moves the register arguments: drop the ones r2 inferred and keep the user edits
+static void refresh_inferred_args(RCore *core, RAnalFunction *fcn) {
+	size_t i = RVecAnalVarPtr_length (&fcn->vars);
+	while (i > 0) {
+		RAnalVar *var = *RVecAnalVarPtr_at (&fcn->vars, --i);
+		if (is_inferred_reg_arg (var)) {
+			r_anal_var_delete (core->anal, var);
 		}
 	}
 	r_core_recover_vars (core, fcn, false);
@@ -2184,7 +2195,19 @@ static int cmd_afv(RCore *core, const char *str) {
 		}
 	case 'a': // "afva"
 		if (fcn) {
-			reanalyze_fcn_vars (core, fcn);
+			if (!has_function_signature (fcn)) {
+				r_anal_function_delete_all_vars (fcn);
+			} else if (sdb_const_getf (core->anal->sdb_types, NULL, "fcnlink.%08" PFMT64x, fcn->addr)) {
+				r_strf_var (type, 16, "int%d_t", fcn->bits? fcn->bits: core->anal->config->bits);
+				size_t i = RVecAnalVarPtr_length (&fcn->vars);
+				while (i > 0) {
+					RAnalVar *var = *RVecAnalVarPtr_at (&fcn->vars, --i);
+					if (is_default_local (var, type)) {
+						r_anal_var_delete (core->anal, var);
+					}
+				}
+			}
+			r_core_recover_vars (core, fcn, false);
 			free (p);
 			return true;
 		}
@@ -7031,8 +7054,7 @@ static int cmd_af(RCore *core, const char *input) {
 				const char *asmOs = r_config_get (core->config, "asm.os");
 				R_LOG_ERROR ("afc: Unknown calling convention '%s' for '%s'. See afcl for available types", cc, asmOs);
 			} else if (fcn->callconv != old_cc && core->anal->opt.vars && !RVecAnalBlockPtr_empty (&fcn->bbs)) {
-				// the arguments depend on the convention
-				reanalyze_fcn_vars (core, fcn);
+				refresh_inferred_args (core, fcn);
 			}
 			free (cc);
 		}

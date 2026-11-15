@@ -790,6 +790,40 @@ arg int32_t arg1 @ ecx
 EOF
 RUN
 
+NAME=afc refreshes the inferred args and keeps the renamed vars
+FILE=malloc://0x100
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 5589e583ec04894dfc8b45fc01d0034508c9c3
+af
+afc fastcall
+afv
+?e --
+afvn self arg1
+afvn count var_4h
+afc cdecl
+afv
+?e --
+afc fastcall
+afv
+EOF
+EXPECT=<<EOF
+arg int32_t arg1 @ ecx
+arg int32_t arg2 @ edx
+arg int32_t arg_8h @ ebp+0x8
+var int32_t var_4h @ ebp-0x4
+--
+arg int32_t self @ ecx
+arg int32_t arg_8h @ ebp+0x8
+var int32_t count @ ebp-0x4
+--
+arg int32_t self @ ecx
+arg int32_t arg2 @ edx
+arg int32_t arg_8h @ ebp+0x8
+var int32_t count @ ebp-0x4
+EOF
+RUN
+
 NAME=function naming
 FILE=-
 CMDS=<<EOF
