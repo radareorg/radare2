@@ -1,0 +1,65 @@
+
+NAME=DWARF: an IPA-SRA clone does not inherit its origin's prototype and keeps a in rsi
+FILE=bins/elf/x86_64-isra-clone-prototype
+CMDS=<<EOF
+aaa
+?e link_f=`k anal/types/fcnlink.00401000`
+?e link_use=`k anal/types/fcnlink.00401010`
+afn @ 0x401000
+afs @ 0x401010
+afvr @ 0x401000
+EOF
+EXPECT=<<EOF
+link_f=
+link_use=use
+sym.f.isra.0
+long int dbg.use (long int x, long int y);
+arg long int arg1 @ rdi
+arg long int a @ rsi
+EOF
+RUN
+
+NAME=DWARF: a one-argument IPA-SRA clone does not inherit its origin's prototype
+FILE=bins/elf/x86_64-isra-one-arg
+CMDS=<<EOF
+aaa
+?e link_load=`k anal/types/fcnlink.00401000`
+?e link_use=`k anal/types/fcnlink.00401010`
+afn @ 0x401000
+EOF
+EXPECT=<<EOF
+link_load=
+link_use=use
+sym.load.isra.0
+EOF
+RUN
+
+NAME=DWARF: a constprop clone with a constant formal does not inherit its origin's prototype
+FILE=bins/elf/x86_64-constprop-const-value
+CMDS=<<EOF
+aaa
+?e link_scale=`k anal/types/fcnlink.00401000`
+afn @ 0x401000
+afvr @ 0x401000
+EOF
+EXPECT=<<EOF
+link_scale=
+sym.scale.constprop.0
+arg long int a @ rdi
+EOF
+RUN
+
+NAME=DWARF: a clone beside its origin leaves the origin's prototype alone
+FILE=bins/elf/x86_64-clone-beside-origin
+CMDS=<<EOF
+aaa
+?e link_clone=`k anal/types/fcnlink.00401000`
+afn @ 0x401000
+afs @ 0x401070
+EOF
+EXPECT=<<EOF
+link_clone=
+sym.mix.constprop.0.isra.0
+long int dbg.mix (S *p, long int a, long int k);
+EOF
+RUN
