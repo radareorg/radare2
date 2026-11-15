@@ -1,0 +1,5 @@
+ad "loadbool 0 0 0" 03000000
+ad "move 0 1" 00008000
+ad "call 1 2 3" 64c00001
+d "loadk 0 Kst(0)" 01000000
+d "gettabup 1 0 K(0)" 46004000

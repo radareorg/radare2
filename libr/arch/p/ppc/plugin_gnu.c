@@ -62,7 +62,6 @@ static int disassemble(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	} else {
 		op->size = print_insn_little_powerpc ((bfd_vma)addr, &disasm_obj);
 	}
-	free (disasm_obj.private_data);
 	if (op->size == -1) {
 		op->mnemonic = strdup ("invalid");
 		r_strbuf_free (sb);
