@@ -1403,3 +1403,37 @@ ERROR: Cannot assemble 'chkfeat x0' at line 1
 ERROR: Cannot assemble 'chkfeat w16' at line 1
 EOF
 RUN
+
+NAME=lua: pa does not keep the fields of the previous instruction
+FILE=-
+CMDS=<<EOF
+e asm.arch=lua
+pa call 1 2 3
+pa move 0 1
+pa loadkx 0
+EOF
+EXPECT=<<EOF
+64c00001
+00008000
+02000000
+EOF
+RUN
+
+NAME=lua: pa rejects operands that do not fit their field
+FILE=-
+CMDS=<<EOF
+e log.level=1
+e asm.arch=lua
+pa move 256 0
+pa loadk 1 262144
+pa jmp 0 131073
+pa move 0 99999999999999999999
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'move 256 0' at line 1
+ERROR: Cannot assemble 'loadk 1 262144' at line 1
+ERROR: Cannot assemble 'jmp 0 131073' at line 1
+ERROR: Cannot assemble 'move 0 99999999999999999999' at line 1
+EOF
+RUN

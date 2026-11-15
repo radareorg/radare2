@@ -9,9 +9,10 @@
 static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 	PluginData *pd = as->data;
 
-	int parsed = 0;
 	pd->current_write_index = 0;
-	doParse0 (pd, parsed, parseNextInstruction, op->mnemonic);
+	if (parseNextInstruction (pd, op->mnemonic) < 0) {
+		return false;
+	}
 
 	free (op->bytes);
 	op->size = 4;
@@ -20,8 +21,6 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 		return false;
 	}
 	setInstruction (pd->instructions[0], op->bytes);
-
-	R_LOG_DEBUG ("parsed: %d instruction: %d", parsed, pd->instructions[0]);
 	return true;
 }
 
