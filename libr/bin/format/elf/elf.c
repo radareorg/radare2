@@ -6040,6 +6040,40 @@ static RVecRBinElfSymbol *load_primary_symbols_from_phdr(ELFOBJ *eo, int type) {
 	return ret;
 }
 
+// reloc->sym indexes DT_SYMTAB, so a section-less dynsym takes its ordinals from the phdrs
+static void load_symbols_by_ord_from_phdr(ELFOBJ *eo) {
+	RVecRBinElfSymbol *dynsyms = load_symbols_from_phdr (eo, R_BIN_ELF_ALL_SYMBOLS);
+	if (!dynsyms) {
+		return;
+	}
+	const size_t ord_size = (size_t)_find_max_symbol_ordinal (dynsyms) + 1;
+	RBinSymbol **sbo = calloc (ord_size, sizeof (RBinSymbol *));
+	if (!sbo) {
+		RVecRBinElfSymbol_free (dynsyms);
+		return;
+	}
+	size_t i;
+	for (i = 0; i < eo->symbols_by_ord_size; i++) {
+		r_bin_symbol_free (eo->symbols_by_ord[i]);
+	}
+	free (eo->symbols_by_ord);
+	ht_up_free (eo->special_by_ord);
+	eo->special_by_ord = NULL;
+	eo->symbols_by_ord = sbo;
+	eo->symbols_by_ord_size = ord_size;
+	RBinElfSymbol *symbol;
+	R_VEC_FOREACH (dynsyms, symbol) {
+		if (symbol->st_shndx == SHN_UNDEF || symbol->ordinal >= ord_size || sbo[symbol->ordinal]) {
+			continue;
+		}
+		RBinSymbol *sym = R_NEW0 (RBinSymbol);
+		fill_symbol (eo, symbol, sym);
+		sbo[symbol->ordinal] = sym;
+		set_special_by_ord (eo, symbol);
+	}
+	RVecRBinElfSymbol_free (dynsyms);
+}
+
 // TODO: return RList<RBinSymbol*> .. or run a callback with that symbol constructed, so we don't have to do it twice
 static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 	R_RETURN_VAL_IF_FAIL (eo, NULL);
@@ -6065,12 +6099,16 @@ static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 	int i;
 	size_t shnum = eo->shnum;
 	ut64 symtabs_size = 0;
+	bool has_dynsym_section = false;
 	for (i = 0; i < shnum; i++) {
 		if (!section_matters (eo, i, type, shdr_size)) {
 			continue;
 		}
-		// sections do not overlap in the file, so all the symbol tables fit in it
 		const Elf_(Shdr) *sh = &eo->shdr[i];
+		if (sh->sh_type == SHT_DYNSYM) {
+			has_dynsym_section = true;
+		}
+		// sections do not overlap in the file, so all the symbol tables fit in it
 		if (sh->sh_offset < eo->size) {
 			symtabs_size += R_MIN (sh->sh_size, eo->size - sh->sh_offset);
 		}
@@ -6115,7 +6153,9 @@ static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 		RVecRBinElfSymbol_free (ret);
 		return res;
 	}
-
+	if (type == R_BIN_ELF_ALL_SYMBOLS && !has_dynsym_section) {
+		load_symbols_by_ord_from_phdr (eo);
+	}
 	return ret;
 }
 
