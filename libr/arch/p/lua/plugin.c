@@ -31,6 +31,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	}
 	const ut8 *data = op->bytes;
 	const int len = op->size;
+	if (len < 4) {
+		op->type = R_ANAL_OP_TYPE_ILL;
+		if (mask & R_ARCH_OP_MASK_DISASM) {
+			op->mnemonic = strdup ("truncated");
+		}
+		return false;
+	}
 
 	const ut32 instruction = getInstruction (data);
 	ut32 extraArg = 0;
@@ -55,9 +62,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	case OP_LOADKX:	/*   A       R(A) := Kst(extra arg)    */
 		op->type = R_ANAL_OP_TYPE_LOAD;
-		extraArg = getInstruction (data + 4);
-		if (GET_OPCODE (extraArg) == OP_EXTRAARG) {
-			op->size = 8;
+		if (len >= 8) {
+			extraArg = getInstruction (data + 4);
+			if (GET_OPCODE (extraArg) == OP_EXTRAARG) {
+				op->size = 8;
+			}
 		}
 		break;
 	case OP_LOADBOOL:/*  A B C   R(A) := (Bool)B; if (C) pc++  */

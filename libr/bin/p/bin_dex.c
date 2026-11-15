@@ -2131,17 +2131,24 @@ static const char *get_cc(RBinFile *bf, ut64 vaddr) {
 static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
 	RBinDexObj *dex = bf->bo->bin_obj;
 	dex->simplifiedDemangling = sd;
+	char *name = NULL;
 	switch (type) {
 	case 'm': // methods
-		return dex_method_fullname (dex, idx);
+		name = dex_method_fullname (dex, idx);
+		break;
 	case 'c': // classes
-		return dex_class_name_byid (dex, idx);
+		name = dex_class_name_byid (dex, idx);
+		break;
 	case 'f': // fields
-		return dex_field_name (dex, idx);
+		name = dex_field_name (dex, idx);
+		break;
 	case 'p': // proto
 		return dex_get_proto (dex, idx);
 	}
-	return NULL;
+	// the caller borrows the name, like the proto names above
+	const char *res = r_str_constpool_get (&dex->names, name);
+	free (name);
+	return res;
 }
 
 typedef struct {

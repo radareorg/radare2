@@ -25,7 +25,7 @@ static bool as_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 		// TODO the R2_PPC_AS arg should be removed
 		const int res = binutils_assemble (s, op, op->mnemonic, gas, "R2_PPC_AS", "", cmd_opt);
 		free (gas);
-		return res;
+		return res > 0;
 #if __linux__
 	} else if (!strcmp (cpu, "arm")) {
 		const int bits = s->config->bits;
@@ -37,7 +37,7 @@ static bool as_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 			bits == 64 ? ASSEMBLER64 : ASSEMBLER32,
 			bits <= 32 ? ".syntax unified\n" : "", cmd_opt);
 		free (gas);
-		return res;
+		return res > 0;
 #endif
 	} else if (!strcmp (cpu, "gas")) { // x86 alternative
 		char *cmd = r_str_newf (
@@ -67,7 +67,7 @@ static bool as_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 			syntaxstr, s->config->bits);
 		const int res = binutils_assemble (s, op, op->mnemonic, gas, NULL, header, "");
 		free (gas);
-		return res;
+		return res > 0;
 	} else {
 		// macos-arm64  YES
 		char *cmd = r_str_newf (

@@ -10,7 +10,7 @@ int binutils_assemble(RArchSession *arch, RAnalOp *op, const char *buf, const ch
 	if (R_STR_ISEMPTY (as)) {
 		R_LOG_ERROR ("Please set %s env to define a %s assembler program", env, arch->config->arch);
 		free (user_as);
-		return 1;
+		return -1;
 	}
 
 	char *ipath, *opath;

@@ -1,0 +1,30 @@
+NAME=lua: loadkx reads its extra argument only when it is there
+FILE=malloc://8
+CMDS=<<EOF
+e asm.arch=lua
+wx 020000002e000000
+b 6
+ao 1~size
+b 8
+ao 1~size
+EOF
+EXPECT=<<EOF
+size: 4
+size: 8
+EOF
+RUN
+
+NAME=lua: instruction shorter than 4 bytes
+FILE=malloc://8
+CMDS=<<EOF
+e asm.arch=lua
+wx 03
+b 1
+pi 1
+ao 1~type
+EOF
+EXPECT=<<EOF
+invalid
+type: ill
+EOF
+RUN

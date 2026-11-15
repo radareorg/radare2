@@ -45,13 +45,13 @@ static inline void append_offset(RStrBuf *sb, RArch *arch, int type, int idx) {
 }
 #endif
 
-static inline char *get_name(RArch *arch, int type, int idx) {
+static inline const char *get_name(RArch *arch, int type, int idx) {
 	R_RETURN_VAL_IF_FAIL (arch && arch->binb.bin && arch->binb.get_name, NULL);
-	return (char *)arch->binb.get_name (arch->binb.bin, type, idx, false);
+	return arch->binb.get_name (arch->binb.bin, type, idx, false);
 }
 
 static inline void append_name(RStrBuf *sb, RArch *arch, int type, int idx) {
-	char *flag = get_name (arch, 'c', idx);
+	const char *flag = get_name (arch, 'c', idx);
 	switch (idx) {
 	case 's':
 		if (flag == NULL) {
