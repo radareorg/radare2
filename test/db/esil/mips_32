@@ -2241,6 +2241,41 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# MIPS32 DSP ASE: lwx/lhx/lbux rd, index(base) load from GPR[base] + GPR[index]
+NAME=dsp indexed loads lwx lhx lbux add base and index
+FILE=malloc://0x200
+ARGS=-a mips -b 32
+CMDS=<<EOF
+wx 8493a2b1 @ 0x100
+wx 0a10857c0a11857c8a11857c0a00857c
+ao 1~^esil:
+pd 1 @ 12~lwx
+ao 1 @ 12~^esil:
+aei
+aeim
+ar a0=0xf0
+ar a1=0x10
+ar pc=0
+aes
+ar v0
+aes
+ar v0
+aes
+ar v0
+aes
+ar zero
+EOF
+EXPECT=<<EOF
+esil: a1,a0,+,[4],v0,=
+            0x0000000c      0a00857c       lwx zero, a1(a0)
+esil: a1,a0,+,[4],zero,=
+0xb1a29384
+0xffff9384
+0x00000084
+0x00000000
+EOF
+RUN
+
 NAME=mips.gnu lh reads a halfword and not a byte
 FILE=malloc://0x200
 ARGS=-a mips.gnu -b 32
