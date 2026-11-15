@@ -587,17 +587,11 @@ grub_vsnprintf_real(char *str, grub_size_t max_len, const char *fmt, va_list arg
 			}
 
 			if (p > fmt) {
-#ifndef _MSC_VER
-				char s[p - fmt + 1];
-#else
-				char *s = grub_malloc (p - fmt + 1);
-#endif
-				grub_strncpy (s, fmt, p - fmt);
-				s[p - fmt] = 0;
-				if (s[0] == '0') {
+				if (*fmt == '0') {
 					zerofill = '0';
 				}
-				format1 = grub_strtoul (s, 0, 10);
+				// the digits end at p, so strtoul stops there
+				format1 = grub_strtoul (fmt, 0, 10);
 				fmt = p;
 			}
 
@@ -609,14 +603,7 @@ grub_vsnprintf_real(char *str, grub_size_t max_len, const char *fmt, va_list arg
 				}
 
 				if (p > fmt) {
-#ifndef _MSC_VER
-					char fstr[p - fmt + 1];
-#else
-					char *fstr = grub_malloc (p - fmt + 1);
-#endif
-					grub_strncpy (fstr, fmt, p - fmt);
-					fstr[p - fmt] = 0;
-					format2 = grub_strtoul (fstr, 0, 10);
+					format2 = grub_strtoul (fmt, 0, 10);
 					fmt = p;
 				}
 			}

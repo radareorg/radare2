@@ -34,6 +34,7 @@
 #define GRUB_MINIX_MAX_SYMLNK_CNT 8
 #define GRUB_MINIX_MAX_SYMLNK_LEN 4096
 #define GRUB_MINIX_SBLOCK 2
+#define GRUB_MINIX_MAX_FILENAME 30
 
 #define GRUB_MINIX_IFDIR 0040000U
 #define GRUB_MINIX_IFLNK 0120000U
@@ -466,11 +467,7 @@ grub_minix_dir(grub_device_t device, const char *path, int(*hook)(const char *fi
 	if (hook) {
 		while (pos < GRUB_MINIX_INODE_SIZE (data)) {
 			grub_uint16_t ino;
-#ifndef _MSC_VER
-			char filename[data->filename_size + 1];
-#else
-			char *filename = grub_malloc (data->filename_size + 1);
-#endif
+			char filename[GRUB_MINIX_MAX_FILENAME + 1];
 			int dirino = data->ino;
 			struct grub_dirhook_info info;
 			grub_memset (&info, 0, sizeof (info));

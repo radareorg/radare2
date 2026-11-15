@@ -228,6 +228,23 @@ grub_num_to_cpu64(grub_uint64_t num, int be) {
 static grub_err_t grub_ufs_find_file(struct grub_ufs_data *data,
 	const char *path);
 
+// read one pointer of an indirect block, a zero block number is a hole
+static grub_disk_addr_t grub_ufs_indir_entry(struct grub_ufs_data *data, grub_disk_addr_t blknr, unsigned int idx, int log2_blksz) {
+#ifdef MODE_UFS2
+	grub_uint64_t entry = 0;
+#else
+	grub_uint32_t entry = 0;
+#endif
+	if (!blknr || grub_disk_read (data->disk, blknr << log2_blksz, (grub_off_t)idx * sizeof (entry), sizeof (entry), &entry)) {
+		return 0;
+	}
+#ifdef MODE_UFS2
+	return grub_num_to_cpu64 (entry, data->be);
+#else
+	return grub_num_to_cpu32 (entry, data->be);
+#endif
+}
+
 static grub_disk_addr_t
 grub_ufs_get_file_block(struct grub_ufs_data *data, unsigned int blk) {
 	int blksz = UFS_BLKSZ (data);
@@ -246,49 +263,14 @@ grub_ufs_get_file_block(struct grub_ufs_data *data, unsigned int blk) {
 	indirsz = blksz / INODE_BLKSZ;
 	/* Single indirect block.  */
 	if (blk < indirsz) {
-#ifdef MODE_UFS2
-#ifndef _MSC_VER
-		grub_uint64_t indir[blksz / sizeof (grub_uint64_t)];
-#else
-		grub_uint64_t *indir = grub_malloc (blksz / sizeof (grub_uint64_t));
-#endif
-#else
-#ifndef _MSC_VER
-		grub_uint32_t indir[blksz / sizeof (grub_uint32_t)];
-#else
-		grub_uint32_t *indir = grub_malloc (blksz / sizeof (grub_uint32_t));
-#endif
-#endif
-		grub_disk_read (data->disk, INODE_INDIRBLOCKS (data, 0) << log2_blksz, 0, sizeof (indir), indir);
-		return indir[blk];
+		return grub_ufs_indir_entry (data, INODE_INDIRBLOCKS (data, 0), blk, log2_blksz);
 	}
 	blk -= indirsz;
 
 	/* Double indirect block.  */
 	if (blk < indirsz * indirsz) {
-#ifdef MODE_UFS2
-#ifndef _MSC_VER
-		grub_uint64_t indir[blksz / sizeof (grub_uint64_t)];
-#else
-		grub_uint64_t *indir = grub_malloc (blksz / sizeof (grub_uint64_t));
-#endif
-#else
-#ifndef _MSC_VER
-		grub_uint32_t indir[blksz / sizeof (grub_uint32_t)];
-#else
-		grub_uint32_t *indir = grub_malloc (blksz / sizeof (grub_uint32_t));
-#endif
-#endif
-
-		grub_disk_read (data->disk, INODE_INDIRBLOCKS (data, 1) << log2_blksz, 0, sizeof (indir), indir);
-		grub_disk_read (data->disk,
-			(indir[blk / indirsz])
-				<< log2_blksz,
-			0,
-			sizeof (indir),
-			indir);
-
-		return indir[blk % indirsz];
+		const grub_disk_addr_t indir = grub_ufs_indir_entry (data, INODE_INDIRBLOCKS (data, 1), blk / indirsz, log2_blksz);
+		return grub_ufs_indir_entry (data, indir, blk % indirsz, log2_blksz);
 	}
 
 	grub_error (GRUB_ERR_NOT_IMPLEMENTED_YET,
@@ -325,7 +307,7 @@ grub_ufs_read_file(struct grub_ufs_data *data,
 	blockcnt = (len + pos + blksz - 1) / blksz;
 
 	for (i = pos / blksz; i < blockcnt; i++) {
-		int blknr;
+		grub_disk_addr_t blknr;
 		int blockoff = pos % blksz;
 		int blockend = blksz;
 
