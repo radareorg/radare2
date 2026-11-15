@@ -17,7 +17,7 @@ static bool xxhash_update(RMutaSession *ms, const ut8 *buf, int len) {
 RMutaPlugin r_muta_plugin_xxhash = {
 	.meta = {
 		.name = "xxhash",
-		.desc = "xxHash fast hash algorithm",
+		.desc = "xxHash fast hash algorithm (XXH32)",
 		.author = "Yann Collet",
 		.license = "BSD-2-Clause",
 	},

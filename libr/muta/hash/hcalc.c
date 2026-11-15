@@ -54,7 +54,7 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 	}
 	if (algobit & R_HASH_XXHASH) {
 		ut32 res = r_hash_xxhash (buf, len);
-		r_write_le32 (ctx->digest, res);
+		r_write_be32 (ctx->digest, res);
 		return R_HASH_SIZE_XXHASH;
 	}
 	if (algobit & R_HASH_FLETCHER8) {
