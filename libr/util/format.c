@@ -645,66 +645,47 @@ static int pf_string(RPrintFormat *pf, ut64 seeki, ut64 addr64, ut64 addr, int i
 
 static void pf_time(RPrintFormat *pf, const char *setval, ut64 seeki, ut8 *buf, int i, int size) {
 	const RPrint *p = pf->p;
-	const int endian = pf->endian;
 	const int mode = pf->mode;
-	ut64 addr;
-	struct tm timestruct;
 	int elem;
 	PF_EXTRACT_ELEM (elem, size);
-	updateAddr (buf + i, size - i, endian, &addr, NULL);
 	if (MUSTSET) {
-		pf_set_num (pf, seeki + ((elem >= 0)? elem * 4: 0), setval, 4);
-	} else if (MUSTSEE) {
-		char *timestr = malloc (ASCTIME_BUF_MAXLEN);
-		if (!timestr) {
-			return;
-		}
-		r_asctime_r (gmtime_r ((time_t *)&addr, &timestruct), timestr);
-		*(timestr + 24) = '\0';
-		if (!SEEVALUE && !ISQUIET) {
-			pf_print_addr (p, seeki + ((elem >= 0)? elem * 4: 0));
-		}
-		if (size == -1) {
-			r_print_printf (p, "%s", timestr);
-		} else {
-			if (!SEEVALUE) {
+		pf_set_num (pf, seeki + ((elem >= 0)? elem * sizeof (ut32): 0), setval, sizeof (ut32));
+	} else if (MUSTSEE || MUSTSEEJSON || MUSTSEESTRUCT) {
+		const bool array = size != -1;
+		if (MUSTSEE) {
+			if (!SEEVALUE && !ISQUIET) {
+				pf_print_addr (p, seeki + ((elem >= 0)? elem * sizeof (ut32): 0));
+			}
+			if (array && !SEEVALUE) {
 				r_print_printf (p, "[ ");
 			}
-			while (size--) {
-				updateAddr (buf + i, size - i, endian, &addr, NULL);
-				r_asctime_r (gmtime_r ((time_t *)&addr, &timestruct), timestr);
-				timestr[24] = 0;
+		} else if (array) {
+			pj_a (pf->pj);
+		}
+		int count = array? size: 1;
+		while (count--) {
+			time_t timestamp = r_read_ble32 (buf + i, pf->endian);
+			struct tm timestruct;
+			char tstr[ASCTIME_BUF_MAXLEN];
+			r_asctime_r (gmtime_r (&timestamp, &timestruct), tstr);
+			tstr[sizeof (tstr) - 2] = '\0';
+			if (MUSTSEE) {
 				if (PF_ELEM_SHOULD_PRINT (elem)) {
-					r_print_printf (p, "%s", timestr);
+					r_print_printf (p, "%s", tstr);
 				}
 				PF_ELEM_ADVANCE (elem);
-				PF_PRINT_SEPARATOR (p, size, elem);
-				i += 4;
-			}
-			if (!SEEVALUE) {
-				r_print_printf (p, " ]");
-			}
-		}
-		free (timestr);
-	} else if (MUSTSEEJSON || MUSTSEESTRUCT) {
-		char *timestr = malloc (ASCTIME_BUF_MAXLEN);
-		if (timestr) {
-			if (size == -1) {
-				r_asctime_r (gmtime_r ((time_t *)&addr, &timestruct), timestr);
-				timestr[24] = 0;
-				pj_ks (pf->pj, "value", timestr);
+				PF_PRINT_SEPARATOR (p, count, elem);
+			} else if (array) {
+				pj_s (pf->pj, tstr);
 			} else {
-				pj_a (pf->pj);
-				while (size--) {
-					updateAddr (buf + i, size - i, endian, &addr, NULL);
-					r_asctime_r (gmtime_r ((time_t *)&addr, &timestruct), timestr);
-					timestr[24] = '\0';
-					pj_s (pf->pj, timestr);
-					i += 4;
-				}
-				pj_end (pf->pj);
+				pj_ks (pf->pj, "value", tstr);
 			}
-			free (timestr);
+			i += sizeof (ut32);
+		}
+		if (array && !MUSTSEE) {
+			pj_end (pf->pj);
+		} else if (array && !SEEVALUE) {
+			r_print_printf (p, " ]");
 		}
 	}
 }
@@ -2648,7 +2629,7 @@ R_API int r_print_format_internal(RPrint *p, RPrintFormat *pf, ut64 seek, const 
 					break;
 				case 't':
 					pf_time (pf, setval, seeki, buf, i, size);
-					i += (size == -1)? 4: 4 * size;
+					i += ((size == -1)? 1: size) * sizeof (ut32);
 					break;
 				case 'P':
 					{

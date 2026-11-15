@@ -31,6 +31,17 @@ Thu Jan  1 00:00:00 1970
 EOF
 RUN
 
+NAME=ptn skips dates past year 9999
+FILE=malloc://16
+CMDS=<<EOF
+wx 0000056936c0d501ffffffffffffffff
+ptn 16
+EOF
+EXPECT=<<EOF
+Wed Jan  1 00:00:00 2020
+EOF
+RUN
+
 NAME=pve step smaller than byteorder digits
 FILE=malloc://16
 CMDS=<<EOF

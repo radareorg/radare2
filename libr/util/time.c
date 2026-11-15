@@ -65,7 +65,7 @@ R_API R_MUSTUSE char *r_time_secs_tostring(time_t ts) {
 	struct tm *tminfo = localtime (&rawtime);
 	// struct tm *tminfo = gmtime (&rawtime);
 	char buf[ASCTIME_BUF_MAXLEN];
-	errno_t err = asctime_s (buf, ASCTIME_BUF_MAXLEN, tminfo);
+	errno_t err = asctime_s (buf, sizeof (buf), tminfo);
 	return err? NULL: strdup (buf);
 #else
 	struct my_timezone {
@@ -78,12 +78,12 @@ R_API R_MUSTUSE char *r_time_secs_tostring(time_t ts) {
 	}
 	int gmtoff = (int) (tz.tz_minuteswest * 60); // in seconds
 	ts += (time_t)gmtoff;
-	char *res = malloc (ASCTIME_BUF_MAXLEN);
-	if (res) {
-		ctime_r (&ts, res);
-		r_str_trim (res);
+	char buf[ASCTIME_BUF_MAXLEN];
+	// Dates past year 9999 make ctime_r fail without writing to buf.
+	if (!ctime_r (&ts, buf)) {
+		return NULL;
 	}
-	return res;
+	return r_str_trim_dup (buf);
 #endif
 }
 
@@ -201,7 +201,11 @@ R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len) {
 		l = (l > L ? l-L : 0); // isValidUnixTime?
 		time_t t = (time_t) l; // TODO limit above!
 		if (p->datefmt[0]) {
-			r_print_printf (p, "%s\n", r_time_secs_tostring (t));
+			char *datestr = r_time_secs_tostring (t);
+			if (datestr) {
+				r_print_printf (p, "%s\n", datestr);
+				free (datestr);
+			}
 			ret = sizeof (time_t);
 		}
 	}
