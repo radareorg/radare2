@@ -65,6 +65,8 @@ d "mfc3 zero, $0" 0000004c 0x4
 d "nop" 00000000 0x4
 d "ori zero, t0, 0x0" 00000035 0x4
 d "paddsh $f0, $f0, $f0" 0000004b 0x4
+d "rotr t0, t1, 0x4" 02412900 0x4
+d "rotrv t0, t1, t2" 46404901 0x4
 d "sb zero, 0(zero)" 000000a0 0x4
 d "sc zero, 0(zero)" 000000e0 0x4
 d "scd zero, 0(zero)" 000000f0 0x4
@@ -74,6 +76,8 @@ d "sdc2 $0, 0(zero)" 000000f8 0x4
 d "sdl zero, 0(zero)" 000000b0 0x4
 d "sdr zero, 0(zero)" 000000b4 0x4
 d "sh zero, 0(zero)" 000000a4 0x4
+d "srl t0, t1, 0x4" 02410900 0x4
+d "srlv t0, t1, t2" 06404901 0x4
 d "slti zero, zero, 0" 00000028 0x4
 d "sltiu zero, zero, 0" 0000002c 0x4
 d "sw zero, 0(zero)" 000000ac 0x4
