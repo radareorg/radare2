@@ -40,6 +40,29 @@ static bool test_new_free_lifecycle(void) {
 	mu_end;
 }
 
+static bool test_charset_parse_default_unterminated(void) {
+	char token[8];
+	char *exact = r_mem_dup ("AAAA", 4);
+	const char *end = exact + 4;
+	const char *ptr = exact;
+	int tokens = 0;
+	while (ptr < end) {
+		int consumed = r_muta_charset_parse_default (ptr, end, token, sizeof (token));
+		mu_assert_eq (consumed, 1, "ascii token length");
+		ptr += consumed;
+		tokens++;
+	}
+	mu_assert_eq (tokens, 4, "ascii token count");
+	free (exact);
+	exact = r_mem_dup ("\xc3\xa9\xe2\x82", 4);
+	end = exact + 4;
+	mu_assert_eq (r_muta_charset_parse_default (exact, end, token, sizeof (token)), 2, "complete utf8 token");
+	mu_assert_eq (r_muta_charset_parse_default (exact + 2, end, token, sizeof (token)), 2, "truncated utf8 token");
+	mu_assert_eq (r_muta_charset_parse_default (exact + 3, end, token, sizeof (token)), 1, "trailing continuation byte");
+	free (exact);
+	mu_end;
+}
+
 static bool test_strict_charset_table(void) {
 	const RMutaCharsetMap table[] = {
 		{ "A", { 0x80 }, 1 },
@@ -173,6 +196,7 @@ static bool test_literal_encoders(void) {
 int all_tests(void) {
 	mu_run_test (test_new_free_lifecycle);
 	mu_run_test (test_sha2_unaligned_input);
+	mu_run_test (test_charset_parse_default_unterminated);
 	mu_run_test (test_strict_charset_table);
 	mu_run_test (test_pokered_encode);
 	mu_run_test (test_literal_encoders);

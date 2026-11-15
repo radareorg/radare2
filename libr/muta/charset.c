@@ -89,12 +89,12 @@ R_API int r_muta_charset_parse_default(const char *str, const char *end, char *t
 		}
 	}
 
-	size_t ulen = r_str_utf8_charsize (str);
-	if (ulen < 1) {
-		ulen = 1;
+	size_t ulen = 1;
+	while ((int)ulen < left && ulen < 5 && (str[ulen] & 0xc0) == 0x80) {
+		ulen++;
 	}
-	if ((int)ulen > left) {
-		ulen = (size_t)left;
+	if (ulen > 4) {
+		ulen = 1;
 	}
 	if ((int)ulen >= token_max) {
 		ulen = (size_t) (token_max - 1);
