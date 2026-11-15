@@ -1481,5 +1481,37 @@ ERROR: Cannot perform operation
 EOF
 RUN
 
-
-
+NAME=rabin2 -I dex
+CMDS=rabin2 -I bins/dex/Hello.dex
+EXPECT=<<EOF
+arch     dalvik
+baddr    0x0
+binsz    1000
+bintype  class
+bits     32
+canary   false
+injprot  false
+retguard false
+class    035
+crypto   false
+endian   little
+havecode true
+laddr    0x0
+lang     dalvik
+linenum  false
+lsyms    false
+machine  Dalvik VM
+nx       false
+os       linux
+pic      false
+relocs   false
+sanitize false
+static   true
+stripped false
+uncaps   false
+subsys   java
+va       true
+sha1  32-1000c  3c99817dcd0cc2d8e87b30c4935949c532997f13
+adler32  12-1000c  b5791f1b
+EOF
+RUN
