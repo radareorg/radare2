@@ -756,7 +756,7 @@ static int dalvik_disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut
 			break;
 		case fmtopvAAtBBBBBBBB:
 			vA = (int) buf[1];
-			vB = (st32)r_read_be32 (buf + 2);
+			vB = (st32)r_read_le32 (buf + 2);
 			offset = _anal_get_offset (a, 's', vB);
 			if (offset == UT64_MAX) {
 				snprintf (str, sizeof (str), " v%i, string+%i", vA, vB);

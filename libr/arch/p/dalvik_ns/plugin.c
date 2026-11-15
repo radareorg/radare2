@@ -8,10 +8,11 @@
 #include "dalvik.h"
 #include "dalvik.c"
 
-#if 0
 static inline ut64 get_offset(RArch *arch, int type, int idx) {
-	R_RETURN_VAL_IF_FAIL (arch && arch->binb.bin && arch->binb.get_offset, UT64_MAX);
-	return arch->binb.get_offset (arch->binb.bin, type, idx);
+	if (arch && arch->binb.bin && arch->binb.get_offset) {
+		return arch->binb.get_offset (arch->binb.bin, type, idx);
+	}
+	return UT64_MAX;
 }
 
 static inline void append_offset(RStrBuf *sb, RArch *arch, int type, int idx) {
@@ -36,56 +37,6 @@ static inline void append_offset(RStrBuf *sb, RArch *arch, int type, int idx) {
 			r_strbuf_appendf (sb, "thing+%i", idx);
 		} else {
 			r_strbuf_appendf (sb, "0x%"PFMT64x, off);
-		}
-		break;
-	default:
-		// unreachable
-		break;
-	}
-}
-#endif
-
-static inline const char *get_name(RArch *arch, int type, int idx) {
-	R_RETURN_VAL_IF_FAIL (arch && arch->binb.bin && arch->binb.get_name, NULL);
-	return arch->binb.get_name (arch->binb.bin, type, idx, false);
-}
-
-static inline void append_name(RStrBuf *sb, RArch *arch, int type, int idx) {
-	const char *flag = get_name (arch, 'c', idx);
-	switch (idx) {
-	case 's':
-		if (flag == NULL) {
-			r_strbuf_appendf (sb, "class+%i", idx);
-		} else {
-			r_strbuf_appendf (sb, "%s", flag);
-		}
-		break;
-	case 'f':
-		if (flag == NULL) {
-			r_strbuf_appendf (sb, "field+%i", idx);
-		} else {
-			r_strbuf_appendf (sb, "%s", flag);
-		}
-		break;
-	case 'c':
-		if (flag == NULL) {
-			r_strbuf_appendf (sb, "class+%i", idx);
-		} else {
-			r_strbuf_appendf (sb, "%s", flag);
-		}
-		break;
-	case 'm':
-		if (flag == NULL) {
-			r_strbuf_appendf (sb, "method+%i", idx);
-		} else {
-			r_strbuf_appendf (sb, "%s", flag);
-		}
-		break;
-	case 'p':
-		if (flag == NULL) {
-			r_strbuf_appendf (sb, "proto+%i", idx);
-		} else {
-			r_strbuf_appendf (sb, "%s", flag);
 		}
 		break;
 	default:
@@ -191,7 +142,7 @@ static char *mnemonic(RArch *arch, ut64 addr, struct dalvik_instr *instr) {
 		break;
 	case DALVIK_FMT_31C:
 		r_strbuf_appendf (sb, " v%u, ", instr->f31i.a);
-		append_name (sb, arch, 's', instr->f31i.b);
+		append_offset (sb, arch, 's', instr->f31i.b);
 		break;
 	case DALVIK_FMT_35C:
 		// TODO:
