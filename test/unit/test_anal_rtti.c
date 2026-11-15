@@ -125,10 +125,16 @@ static bool test_rtti_empty_output(void) {
 	mu_end;
 }
 
+static bool rtti_test_is_breaked(RCons *cons) {
+	return cons->context->breaked;
+}
+
 static bool test_rtti_interrupted(void) {
 	RCore *core = rtti_test_core_new (false);
 	mu_assert_notnull (core, "create RTTI memory image");
-	r_cons_break (core->cons);
+	// Console break polling is disabled with --with-checks-level=0.
+	core->print->consb.is_breaked = rtti_test_is_breaked;
+	r_cons_context_break (core->cons->context);
 	char *json = r_anal_rtti_print_all (core->anal, 'j');
 	mu_assert_streq (json, "[]\n", "interrupted search returns a complete JSON array");
 	mu_assert_streq (r_cons_get_buffer (core->cons, NULL), "existing output", "interrupted search leaves console untouched");
