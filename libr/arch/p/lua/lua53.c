@@ -115,6 +115,7 @@ static int parseNextInstruction(PluginData *state, const char *str) {
 			chars_skipped += j;
 			R_LOG_DEBUG ("Opcode %i Instruction %s", i, instruction_names[i]);
 
+			state->instructions[state->current_write_index] = 0;	// do not keep fields of the previous instruction
 			SET_OPCODE (state->instructions[state->current_write_index], i);	// sets the opcode
 
 			doParse1 (state, chars_skipped, parseParameters, str, i);	// Parse parameters
@@ -215,6 +216,9 @@ static int parseParameters(PluginData *state, const char *str, OpCode opCode) {
 
 static int parseParameter(PluginData *state, const char *str, Parameter parameter) {
 	int skipped_chars = findNextWordStart (state, str);
+	if (skipped_chars < 0) {
+		return -1;
+	}
 	int resultingNumber = 0;
 	bool negative = false;
 	if (str[skipped_chars] == '-') {
@@ -226,13 +230,37 @@ static int parseParameter(PluginData *state, const char *str, Parameter paramete
 		return -1;
 	}
 	while (isNumeric (c)) {
+		if (resultingNumber > MAXARG_Ax) {	// larger than any operand
+			return -1;
+		}
 		resultingNumber *= 10;
 		resultingNumber += c - '0';
 		c = str[++skipped_chars];
 	}
 	resultingNumber = negative? resultingNumber * (-1): resultingNumber;
 	R_LOG_DEBUG ("Parsed Parameter %i", resultingNumber);
-	if (parameter != PARAMETER_sBx && resultingNumber < 0) {
+	int min = 0;
+	int max = 0;
+	switch (parameter) {
+	case PARAMETER_A:
+		max = MAXARG_A;
+		break;
+	case PARAMETER_B:
+	case PARAMETER_C:
+		max = MAXARG_B;
+		break;
+	case PARAMETER_Ax:
+		max = MAXARG_Ax;
+		break;
+	case PARAMETER_Bx:
+		max = MAXARG_Bx;
+		break;
+	case PARAMETER_sBx:
+		min = -MAXARG_sBx;
+		max = MAXARG_Bx - MAXARG_sBx;
+		break;
+	}
+	if (resultingNumber < min || resultingNumber > max) {
 		return -1;
 	}
 	switch (parameter) {
