@@ -1273,3 +1273,18 @@ EXPECT=<<EOF
 [{"name":"sha1","hash":"52fdb9f68c503e11d168fe52035901864c0a4861"},{"name":"sha256","hash":"c0509a487a18b003ba05e505419ebb63e57a29158073e381f57160b5c5b86426"}]
 EOF
 RUN
+
+NAME=rahash2 -S seed read errors
+FILE=-
+CMDS=<<EOF
+'rahash2 -a sha256 -S @missing -s 123
+'rahash2 -a sha256 -S @missing bins/other/admin.txt
+!rahash2 -a sha256 -S - <&-
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot read seed file 'missing'
+ERROR: Cannot read seed file 'missing'
+ERROR: Cannot read seed from stdin
+EOF
+RUN

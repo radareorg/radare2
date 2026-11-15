@@ -48,27 +48,37 @@ static void compare_hashes(const RHash *ctx, RahashOptions *ro, const ut8 *compa
 	}
 }
 
-static void do_hash_seed(RahashOptions *ro, const char *seed) {
+static bool do_hash_seed(RahashOptions *ro, const char *seed) {
 	const char *sptr = seed;
 	if (!seed) {
 		ro->_s = NULL;
-		return;
+		return true;
 	}
 	ro->_s = &ro->s;
 	if (!strcmp (seed, "-")) {
 		ro->s.buf = (ut8 *)r_stdin_slurp (&ro->s.len);
-		return;
+		if (!ro->s.buf) {
+			R_LOG_ERROR ("Cannot read seed from stdin");
+			ro->_s = NULL;
+			return false;
+		}
+		return true;
 	}
 	if (seed[0] == '@') {
 		size_t len;
 		ro->s.buf = (ut8 *)r_file_slurp (seed + 1, &len);
+		if (!ro->s.buf) {
+			R_LOG_ERROR ("Cannot read seed file '%s'", seed + 1);
+			ro->_s = NULL;
+			return false;
+		}
 		ro->s.len = (size_t)len;
-		return;
+		return true;
 	}
 	ro->s.buf = (ut8 *)malloc (strlen (seed) + 128);
 	if (!ro->s.buf) {
 		ro->_s = NULL;
-		return;
+		return false;
 	}
 	if (*seed == '^') {
 		ro->s.prefix = 1;
@@ -93,6 +103,7 @@ static void do_hash_seed(RahashOptions *ro, const char *seed) {
 			// assuming a string, prefix it with 's:' to skip this message");
 		}
 	}
+	return true;
 }
 
 static void do_hash_strprint(RCons *cons, const char *s, PJ *pj, int rad) {
@@ -789,7 +800,9 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			}
 		}
 	}
-	do_hash_seed (ro, seed);
+	if (!do_hash_seed (ro, seed)) {
+		ret (1);
+	}
 	if (hashstr) {
 #define INSIZE 32768
 		_ret = 0;
