@@ -37,7 +37,13 @@ typedef enum {
 	PARAMETER_C,
 	PARAMETER_Ax,
 	PARAMETER_Bx,
-	PARAMETER_sBx
+	PARAMETER_sBx,
+	// operands the disassembler decorates
+	PARAMETER_RKB,	// B, or K(n) for constant n
+	PARAMETER_RKC,	// C, or K(n) for constant n
+	PARAMETER_KAx,	// Ax, also as Kst(n)
+	PARAMETER_KBx,	// Bx, also as Kst(n)
+	PARAMETER_PBx	// Bx, also as KPROTO(n)
 } Parameter;
 
 static int parseParameters(PluginData *state, const char *str, OpCode opCode);
@@ -138,12 +144,26 @@ static int parseWhitespaces(PluginData *state, const char *str){
 	return skipped_whitespace;
 }
 
+static bool hasParameter(const char *str) {
+	while (isWhitespace (*str)) {
+		str++;
+	}
+	return isAlpha (*str) || isNumeric (*str);
+}
+
 static int parseParameters(PluginData *state, const char *str, OpCode opCode) {
 	int chars_skipped = 0;
 	doParse0 (state, chars_skipped, parseWhitespaces, str);
 	switch (opCode) {
 	case OP_LOADKX:		/*  A       R(A) := Kst(extra arg)                          */
 		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_A);
+		if (hasParameter (str + chars_skipped)) {
+			// the constant index goes in the EXTRAARG that follows
+			state->current_write_index++;
+			state->instructions[state->current_write_index] = 0;
+			SET_OPCODE (state->instructions[state->current_write_index], OP_EXTRAARG);
+			doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_KAx);
+		}
 		break;
 	case OP_MOVE:		/*  A B     R(A) := R(B)                                    */
 	case OP_LOADNIL:	/*  A B     R(A), R(A+1), ..., R(A+B) := nil                */
@@ -164,17 +184,33 @@ static int parseParameters(PluginData *state, const char *str, OpCode opCode) {
 		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_C);
 		break;
 	case OP_LOADK:		/*  A Bx    R(A) := Kst(Bx)                                 */
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_A);
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_KBx);
+		break;
 	case OP_CLOSURE:	/*  A Bx    R(A) := closure(KPROTO[Bx])                     */
 		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_A);
-		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_Bx);
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_PBx);
 		break;
 	case OP_LOADBOOL:	/*  A B C   R(A) := (Bool)B; if (C) pc++                    */
+	case OP_NEWTABLE:	/*  A B C   R(A) := {} (size = B,C)                         */
+	case OP_CONCAT:		/*  A B C   R(A) := R(B).. ... ..R(C)                       */
+	case OP_TESTSET:	/*  A B C   if (R(B) <=> C) then R(A) := R(B) else pc++     */
+	case OP_CALL:		/*  A B C   R(A), ... ,R(A+C-2) := R(A)(R(A+1), ... ,R(A+B-1)) */
+	case OP_TAILCALL:	/*  A B C   return R(A)(R(A+1), ... ,R(A+B-1))              */
+	case OP_SETLIST:	/*  A B C   R(A)[(C-1)*FPF+i] := R(A+i), 1 <= i <= B        */
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_A);
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_B);
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_C);
+		break;
 	case OP_GETTABUP:	/*  A B C   R(A) := UpValue[B][RK(C)]                       */
 	case OP_GETTABLE:	/*  A B C   R(A) := R(B)[RK(C)]                             */
+	case OP_SELF:		/*  A B C   R(A+1) := R(B); R(A) := R(B)[RK(C)]             */
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_A);
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_B);
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_RKC);
+		break;
 	case OP_SETTABUP:	/*  A B C   UpValue[A][RK(B)] := RK(C)                      */
 	case OP_SETTABLE:	/*  A B C   R(A)[RK(B)] := RK(C)                            */
-	case OP_NEWTABLE:	/*  A B C   R(A) := {} (size = B,C)                         */
-	case OP_SELF:		/*  A B C   R(A+1) := R(B); R(A) := R(B)[RK(C)]             */
 	case OP_ADD:		/*  A B C   R(A) := RK(B) + RK(C)                           */
 	case OP_SUB:		/*  A B C   R(A) := RK(B) - RK(C)                           */
 	case OP_MUL:		/*  A B C   R(A) := RK(B) * RK(C)                           */
@@ -187,17 +223,12 @@ static int parseParameters(PluginData *state, const char *str, OpCode opCode) {
 	case OP_BXOR:		/*  A B C   R(A) := RK(B) ~ RK(C)                           */
 	case OP_SHL:		/*  A B C   R(A) := RK(B) << RK(C)                          */
 	case OP_SHR:		/*  A B C   R(A) := RK(B) >> RK(C)                          */
-	case OP_CONCAT:		/*  A B C   R(A) := R(B).. ... ..R(C)                       */
 	case OP_EQ:		/*  A B C   if ((RK(B) == RK(C)) ~= A) then pc++            */
 	case OP_LT:		/*  A B C   if ((RK(B) <  RK(C)) ~= A) then pc++            */
 	case OP_LE:		/*  A B C   if ((RK(B) <= RK(C)) ~= A) then pc++            */
-	case OP_TESTSET:	/*  A B C   if (R(B) <=> C) then R(A) := R(B) else pc++     */
-	case OP_CALL:		/*  A B C   R(A), ... ,R(A+C-2) := R(A)(R(A+1), ... ,R(A+B-1)) */
-	case OP_TAILCALL:	/*  A B C   return R(A)(R(A+1), ... ,R(A+B-1))              */
-	case OP_SETLIST:	/*  A B C   R(A)[(C-1)*FPF+i] := R(A+i), 1 <= i <= B        */
 		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_A);
-		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_B);
-		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_C);
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_RKB);
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_RKC);
 		break;
 	case OP_JMP:		/*       A sBx   pc+=sBx; if (A) close all upvalues >= R(A - 1)  */
 	case OP_FORLOOP:	/*   A sBx   R(A)+=R(A+2);
@@ -208,7 +239,7 @@ static int parseParameters(PluginData *state, const char *str, OpCode opCode) {
 		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_sBx);
 		break;
 	case OP_EXTRAARG:	/*   Ax      extra (larger) argument for previous opcode     */
-		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_Ax);
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_KAx);
 		break;
 	}
 	return chars_skipped;
@@ -218,6 +249,27 @@ static int parseParameter(PluginData *state, const char *str, Parameter paramete
 	int skipped_chars = findNextWordStart (state, str);
 	if (skipped_chars < 0) {
 		return -1;
+	}
+	// what the disassembler puts around this operand (r_asm passes it in lowercase)
+	const char *wrap = NULL;
+	switch (parameter) {
+	case PARAMETER_RKB:
+	case PARAMETER_RKC:
+		wrap = "K(";
+		break;
+	case PARAMETER_KAx:
+	case PARAMETER_KBx:
+		wrap = "Kst(";
+		break;
+	case PARAMETER_PBx:
+		wrap = "KPROTO(";
+		break;
+	default:
+		break;
+	}
+	const bool wrapped = wrap && !r_str_ncasecmp (str + skipped_chars, wrap, strlen (wrap));
+	if (wrapped) {
+		skipped_chars += strlen (wrap);
 	}
 	int resultingNumber = 0;
 	bool negative = false;
@@ -239,6 +291,12 @@ static int parseParameter(PluginData *state, const char *str, Parameter paramete
 	}
 	resultingNumber = negative? resultingNumber * (-1): resultingNumber;
 	R_LOG_DEBUG ("Parsed Parameter %i", resultingNumber);
+	if (wrapped) {
+		if (str[skipped_chars] != ')') {
+			return -1;
+		}
+		skipped_chars++;
+	}
 	int min = 0;
 	int max = 0;
 	switch (parameter) {
@@ -249,10 +307,17 @@ static int parseParameter(PluginData *state, const char *str, Parameter paramete
 	case PARAMETER_C:
 		max = MAXARG_B;
 		break;
+	case PARAMETER_RKB:
+	case PARAMETER_RKC:
+		max = wrapped? 0xFF: MAXARG_B;
+		break;
 	case PARAMETER_Ax:
+	case PARAMETER_KAx:
 		max = MAXARG_Ax;
 		break;
 	case PARAMETER_Bx:
+	case PARAMETER_KBx:
+	case PARAMETER_PBx:
 		max = MAXARG_Bx;
 		break;
 	case PARAMETER_sBx:
@@ -263,20 +328,28 @@ static int parseParameter(PluginData *state, const char *str, Parameter paramete
 	if (resultingNumber < min || resultingNumber > max) {
 		return -1;
 	}
+	if (wrapped && (parameter == PARAMETER_RKB || parameter == PARAMETER_RKC)) {
+		resultingNumber |= 0x100;	// K(n) is constant n
+	}
 	switch (parameter) {
 	case PARAMETER_A:
 		SETARG_A (state->instructions[state->current_write_index], resultingNumber);
 		break;
 	case PARAMETER_B:
+	case PARAMETER_RKB:
 		SETARG_B (state->instructions[state->current_write_index], resultingNumber);
 		break;
 	case PARAMETER_C:
+	case PARAMETER_RKC:
 		SETARG_C (state->instructions[state->current_write_index], resultingNumber);
 		break;
 	case PARAMETER_Ax:
+	case PARAMETER_KAx:
 		SETARG_Ax (state->instructions[state->current_write_index], resultingNumber);
 		break;
 	case PARAMETER_Bx:
+	case PARAMETER_KBx:
+	case PARAMETER_PBx:
 		SETARG_Bx (state->instructions[state->current_write_index], resultingNumber);
 		break;
 	case PARAMETER_sBx:
@@ -318,7 +391,12 @@ int lua53dissasm(PluginData *state, RAnalOp *op, const ut8 *buf, int len) {
 	switch (operator) {
 	case OP_LOADKX:		/*  A       R(A) := Kst(extra arg)                          */
 		free (op->mnemonic);
-		op->mnemonic = r_str_newf ("%s %i", instruction_names[GET_OPCODE (instruction)], GETARG_A (instruction));
+		if (len >= 8 && GET_OPCODE (getInstruction (buf + 4)) == OP_EXTRAARG) {
+			// decode() takes the EXTRAARG with it, so show its constant index here
+			op->mnemonic = r_str_newf ("%s %i Kst(%i)", instruction_names[GET_OPCODE (instruction)], GETARG_A (instruction), GETARG_Ax (getInstruction (buf + 4)));
+		} else {
+			op->mnemonic = r_str_newf ("%s %i", instruction_names[GET_OPCODE (instruction)], GETARG_A (instruction));
+		}
 		break;
 	case OP_MOVE:		/*  A B     R(A) := R(B)                                    */
 	case OP_LOADNIL:	/*  A B     R(A), R(A+1), ..., R(A+B) := nil                */

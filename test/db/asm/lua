@@ -1,0 +1,14 @@
+ad "move 0 1" 00008000
+ad "loadk 1 Kst(0)" 41000000
+ad "loadk 255 Kst(262143)" c1ffffff
+ad "loadkx 0" 02000000
+ad "loadkx 0 Kst(5)" 020000006e010000
+ad "loadbool 0 0 0" 03000000
+ad "gettabup 1 0 K(0)" 46004000
+ad "settabup 0 K(0) K(1)" 08404080
+ad "add 0 K(1) K(2)" 0d80c080
+ad "eq 1 K(255) 2" 5f8080ff
+ad "closure 0 KPROTO(3)" 2cc00000
+ad "jmp 0 -2" 1e40ff7f
+ad "call 1 2 3" 64c00001
+ad "extraarg Kst(5)" 6e010000
