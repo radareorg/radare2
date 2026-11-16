@@ -160,3 +160,67 @@ EXPECT=<<EOF
 0xe0000000
 EOF
 RUN
+
+NAME=dalvik int-to-float 1
+FILE=malloc://0x200
+ARGS=-a dalvik
+CMDS=<<EOF
+wx 8210
+aei
+ar v1=0x1
+aes
+ar v0
+EOF
+EXPECT=<<EOF
+0x3f800000
+EOF
+RUN
+
+NAME=dalvik int-to-double 1
+FILE=malloc://0x200
+ARGS=-a dalvik
+CMDS=<<EOF
+wx 8320
+aei
+ar v2=0x1
+aes
+ar v0
+ar v1
+EOF
+EXPECT=<<EOF
+0x00000000
+0x3ff00000
+EOF
+RUN
+
+NAME=dalvik int-to-float -1
+FILE=malloc://0x200
+ARGS=-a dalvik
+CMDS=<<EOF
+wx 8210
+aei
+ar v1=0xffffffff
+aes
+ar v0
+EOF
+EXPECT=<<EOF
+0xbf800000
+EOF
+RUN
+
+NAME=dalvik int-to-double -1
+FILE=malloc://0x200
+ARGS=-a dalvik
+CMDS=<<EOF
+wx 8320
+aei
+ar v2=0xffffffff
+aes
+ar v0
+ar v1
+EOF
+EXPECT=<<EOF
+0x00000000
+0xbff00000
+EOF
+RUN
