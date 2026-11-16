@@ -1540,3 +1540,93 @@ pFp@16845!8
 ERROR: Unknown operation. use -O help
 EOF
 RUN
+
+NAME=rabin2 -O c verifies sha384 code signature hashes
+FILE=bins/mach0/codesign-sha384
+CMDS=!rabin2 -O c ${R2_FILE}
+EXPECT_ERR=<<EOF
+INFO: Offset: 0x000040d4
+Version: 20400
+Flags: 2
+Length: 296
+PageSize: 14
+hashOffset: 200
+codeLimit: 16560
+hashSize: 48
+hashType: 4
+Identity: codesign-sha384
+TeamID: (null)
+CodeSlots: 2
+ph sha384 @ 0x40d4!296
+ComputedCDHash: 3255e5158d697908a4c0cd527e68025beafff96733ff92811c2e99ec1c3a97c2b853f05b2526d91128b91fbd3bbfe0a3
+Hashed region: 0x00000000 - 0x000040b0
+0x0000419c  1d85ac600d0b7e1b21cc592b431deab7542fcad05b31db2ca312f5490c064e43455d52b63629728d363b239ea282aec2  OK
+0x000041cc  042053f5edc65f15a4e7c8905f3f98f23411acc36ce4b68c91ff85df7822e7efe6ab94969a1ad7a5b51f913781077df5  OK
+Magic: 10bdefa
+wtf DUMP @16912!8
+openssl pkcs7 -print_certs -text -inform der -in DUMP
+openssl asn1parse -offset 16912 -length 8 -inform der -in /mo/ls
+pFp@16912!8
+ERROR: Unknown operation. use -O help
+EOF
+RUN
+
+NAME=rabin2 -O c verifies truncated sha256 code signature hashes
+FILE=bins/mach0/codesign-sha256t
+CMDS=!rabin2 -O c ${R2_FILE}
+EXPECT_ERR=<<EOF
+INFO: Offset: 0x000040d4
+Version: 20400
+Flags: 2
+Length: 185
+PageSize: 14
+hashOffset: 145
+codeLimit: 16560
+hashSize: 20
+hashType: 3
+Identity: codesign-sha256t
+TeamID: (null)
+CodeSlots: 2
+ph sha256 @ 0x40d4!185
+ComputedCDHash: 3be4d4d859013b4add7a1c51d8a6c23d0af062aaaf01746df714f3c169b768eb
+Hashed region: 0x00000000 - 0x000040b0
+0x00004165  5312d1268edb8b607ee3c3801f07c2abd4e24e94  OK
+0x00004179  663227137079294b7b1c835397b1da09de2e9815  OK
+Magic: 10bdefa
+wtf DUMP @16801!8
+openssl pkcs7 -print_certs -text -inform der -in DUMP
+openssl asn1parse -offset 16801 -length 8 -inform der -in /mo/ls
+pFp@16801!8
+ERROR: Unknown operation. use -O help
+EOF
+RUN
+
+NAME=rabin2 -O c verifies sha512 code signature hashes
+FILE=bins/mach0/codesign-sha512-synthetic
+CMDS=!rabin2 -O c ${R2_FILE}
+EXPECT_ERR=<<EOF
+INFO: Offset: 0x000040d4
+Version: 20400
+Flags: 2
+Length: 357
+PageSize: 14
+hashOffset: 229
+codeLimit: 16560
+hashSize: 64
+hashType: 5
+Identity: codesign-16k
+TeamID: (null)
+CodeSlots: 2
+ph sha512 @ 0x40d4!357
+ComputedCDHash: 76896a13019190cd4d3603c25818a9aec16b94d55997e89fedf405d844b691e112206046ce7fdcbd427ee22cd7504c86a02e0751661c9a2625b6ab69ec42bf6d
+Hashed region: 0x00000000 - 0x000040b0
+0x000041b9  2220752e6e059d59d22b819e05e17ed066c3e1c63bd300a198e858aca4de7198704ea39a9220673a34c216e5c0776e3a1fca5562ebc7535f5546323000e1c4d3  OK
+0x000041f9  7e02fc1336c76047f690a64ebbaf265fdd74fa1c21ba8d2dcdef307fa9d6c7e8b6d80a76a2c64c91437f7a83684178eee802a0ebb30e88bcd63d4ccc761c675a  OK
+Magic: 10bdefa
+wtf DUMP @16973!8
+openssl pkcs7 -print_certs -text -inform der -in DUMP
+openssl asn1parse -offset 16973 -length 8 -inform der -in /mo/ls
+pFp@16973!8
+ERROR: Unknown operation. use -O help
+EOF
+RUN

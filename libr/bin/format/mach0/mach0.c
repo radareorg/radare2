@@ -904,6 +904,9 @@ static void parseCodeDirectory(RMutaBind *mb, RBuffer *b, int offset, ut32 datas
 	case 4:
 		hashName = "sha384";
 		break;
+	case 5:
+		hashName = "sha512";
+		break;
 	}
 	const int hashSize = cscd.hashSize;
 	// computed cdhash
