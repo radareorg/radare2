@@ -2269,7 +2269,7 @@ iIj~{checksums}
 EOF
 EXPECT=<<EOF
 sha1  32-174c  e584a8de197385d697b0814424c2570b43339125
-adler32  12-174c  00000000
+adler32  12-174c  00000000  mismatch
 {"sha1":{"hex":"e584a8de197385d697b0814424c2570b43339125","valid":true},"adler32":{"hex":"00000000","valid":false}}
 EOF
 RUN

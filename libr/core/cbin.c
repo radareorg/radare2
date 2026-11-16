@@ -1149,9 +1149,6 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 		for (i = 0; info->sum[i].type; i++) {
 			RBinHash *h = &info->sum[i];
 			const bool valid = bin_hash_matches (core, bf, h);
-			if (!valid) {
-				R_LOG_WARN ("%s checksum does not match the data at %" PFMT64u "-%" PFMT64u, h->type, h->from, h->to + h->from);
-			}
 			if (IS_MODE_JSON (mode)) {
 				pj_ko (pj, h->type);
 				char *buf = malloc (2 * h->len + 1);
@@ -1170,7 +1167,7 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 				for (j = 0; j < h->len; j++) {
 					r_cons_printf (core->cons, "%02x", h->buf[j]);
 				}
-				r_cons_newline (core->cons);
+				r_cons_println (core->cons, valid? "": "  mismatch");
 			}
 		}
 		if (IS_MODE_JSON (mode)) {
