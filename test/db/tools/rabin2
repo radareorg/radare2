@@ -1668,6 +1668,25 @@ pe 0x000000d0 e3241200 ok
 EOF
 RUN
 
+NAME=rabin2 -O c/fix rewrites the snes rom checksum
+FILE=bins/snes/speed_test_v51.sfc
+CMDS=<<EOF
+mkdir .tmp
+rmrf .tmp/rabin2-csum-sfc
+!rabin2 -O c ${R2_FILE}
+!rabin2 -O c bins/snes/speed_test_v51-headered.smc
+!rabin2 -O c/fix -o .tmp/rabin2-csum-sfc ${R2_FILE}
+!rabin2 -O c .tmp/rabin2-csum-sfc
+rmrf .tmp/rabin2-csum-sfc
+EOF
+EXPECT=<<EOF
+sfc 0x00007fdc 0000ffff bad e67c1983
+sfc 0x000081dc 0000ffff bad e67c1983
+sfc 0x00007fdc e67c1983 fixed
+sfc 0x00007fdc e67c1983 ok
+EOF
+RUN
+
 NAME=rabin2 -O c on a format without checksums
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=!rabin2 -O c ${R2_FILE}

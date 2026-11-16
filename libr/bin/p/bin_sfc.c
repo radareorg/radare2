@@ -5,72 +5,64 @@
 #include "sfc/sfc_specs.h"
 #include <r_endian.h>
 
-static bool check(RBinFile *bf, RBuffer *b) {
-	ut16 cksum1, cksum2;
-	ut64 length = r_buf_size (b);
-	// FIXME: this was commented out because it always evaluates to false.
-	//        Need to be fixed by someone with SFC knowledge
-	// if ((length & 0x8000) == 0x200) {
-	// 	buf_hdr += 0x200;
-	// }
-	if (length < 0x8000) {
-		return false;
-	}
-	//determine if ROM is headered, and add a 0x200 gap if so.
-	cksum1 = r_buf_read_le16_at (b, 0x7fdc);
-	cksum2 = r_buf_read_le16_at (b, 0x7fde);
+typedef struct {
+	sfc_int_hdr hdr;
+	ut64 hdr_paddr;
+	ut64 rom_paddr; // 0x200 when a copier header precedes the rom
+	bool is_hirom;
+} SfcLayout;
 
-	if (cksum1 == (ut16)~cksum2) {
-		return true;
-	}
-	if (length < 0xffee) {
+static bool sfc_read_header(RBuffer *b, ut64 paddr, sfc_int_hdr *hdr) {
+	if (r_buf_read_at (b, paddr, (ut8 *)hdr, SFC_HDR_SIZE) != SFC_HDR_SIZE) {
 		return false;
 	}
-	cksum1 = r_buf_read_le16_at (b, 0xffdc);
-	cksum2 = r_buf_read_le16_at (b, 0xffde);
-	return (cksum1 == (ut16)~cksum2);
+	return r_read_le16 (&hdr->comp_check) == (ut16)~r_read_le16 (&hdr->checksum);
+}
+
+// the low nibble of the map mode is 1 for HiROM and 5 for ExHiROM, LoROM, S-DD1 and SA-1 use 0, 2 and 3
+static bool sfc_map_mode_is_hirom(const sfc_int_hdr *hdr) {
+	const ut8 mode = hdr->rom_setup & 0xf;
+	return mode == 1 || mode == 5;
+}
+
+static bool sfc_layout(RBuffer *b, SfcLayout *layout) {
+	const ut64 length = r_buf_size (b);
+	// copiers prepend 512 bytes to a rom that is otherwise a multiple of 1KB
+	const ut64 rom_paddr = (length % 0x400 == 0x200)? 0x200: 0;
+	if (length < rom_paddr + LOROM_PAGE_SIZE) {
+		return false;
+	}
+	sfc_int_hdr lorom, hirom;
+	const bool has_lorom = sfc_read_header (b, rom_paddr + LOROM_HDR_LOC, &lorom);
+	const bool has_hirom = sfc_read_header (b, rom_paddr + HIROM_HDR_LOC, &hirom);
+	if (!has_lorom && !has_hirom) {
+		return false;
+	}
+	// when both locations look valid, trust the one whose map mode agrees with it
+	const bool is_hirom = has_hirom && (!has_lorom || sfc_map_mode_is_hirom (&hirom));
+	layout->hdr = is_hirom? hirom: lorom;
+	layout->hdr_paddr = rom_paddr + (is_hirom? HIROM_HDR_LOC: LOROM_HDR_LOC);
+	layout->rom_paddr = rom_paddr;
+	layout->is_hirom = is_hirom;
+	return true;
+}
+
+static bool check(RBinFile *bf, RBuffer *b) {
+	SfcLayout layout;
+	return sfc_layout (b, &layout);
 }
 
 static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	return check (bf, b);
 }
 
-static bool sfc_header_valid(const sfc_int_hdr *hdr, bool is_hirom) {
-	ut16 comp_check = r_read_le16 (&hdr->comp_check);
-	ut16 checksum = r_read_le16 (&hdr->checksum);
-	return comp_check == (ut16)~checksum && (hdr->rom_setup & 1) == (is_hirom? 1: 0);
-}
-
-static RBinInfo* info(RBinFile *bf) {
-	sfc_int_hdr sfchdr = {{0}};
-	RBinInfo *ret = NULL;
-	int hdroffset = 0;
-#if THIS_IS_ALWAYS_FALSE_WTF
-	if ((bf->size & 0x8000) == 0x200) {
-		hdroffset = 0x200;
-	}
-#endif
-	int reat = r_buf_read_at (bf->buf, 0x7FC0 + hdroffset,
-		(ut8*)&sfchdr, SFC_HDR_SIZE);
-	if (reat != SFC_HDR_SIZE) {
+static RBinInfo *info(RBinFile *bf) {
+	SfcLayout layout;
+	if (!sfc_layout (bf->buf, &layout)) {
 		R_LOG_ERROR ("Unable to read SFC/SNES header");
 		return NULL;
 	}
-
-	if (!sfc_header_valid (&sfchdr, false)) {
-		// if the fixed 0x33 byte or the LoROM indication are not found, then let's try interpreting the ROM as HiROM
-		reat = r_buf_read_at (bf->buf, 0xFFC0 + hdroffset, (ut8*)&sfchdr, SFC_HDR_SIZE);
-		if (reat != SFC_HDR_SIZE) {
-			R_LOG_ERROR ("Unable to read SFC/SNES header");
-			return NULL;
-		}
-		if (!sfc_header_valid (&sfchdr, true)) {
-			R_LOG_WARN ("Cannot determine if this is a LoROM or HiROM file");
-			// return NULL;
-		}
-	}
-
-	ret = R_NEW0 (RBinInfo);
+	RBinInfo *ret = R_NEW0 (RBinInfo);
 	ret->file = strdup (bf->file);
 	ret->type = strdup ("ROM");
 	ret->machine = strdup ("Super NES / Super Famicom");
@@ -103,36 +95,14 @@ static void addsym(RList *ret, const char *name, ut64 addr, ut32 size) {
 #endif
 
 static bool sections_vec(RBinFile *bf) {
-	int hdroffset = 0;
-	bool is_hirom = false;
-	int i;
-#if THIS_IS_ALWAYS_FALSE_WTF
-	if ((bf->size & 0x8000) == 0x200) {
-		hdroffset = 0x200;
-	}
-#endif
-	sfc_int_hdr sfchdr = {{0}};
-
-	int reat = r_buf_read_at (bf->buf, 0x7FC0 + hdroffset, (ut8*)&sfchdr, SFC_HDR_SIZE);
-	if (reat != SFC_HDR_SIZE) {
+	SfcLayout layout;
+	if (!sfc_layout (bf->buf, &layout)) {
 		R_LOG_ERROR ("Unable to read SFC/SNES header");
 		return false;
 	}
-
-	if (!sfc_header_valid (&sfchdr, false)) {
-		// if the fixed 0x33 byte or the LoROM indication are not found, then let's try interpreting the ROM as HiROM
-		reat = r_buf_read_at (bf->buf, 0xFFC0 + hdroffset, (ut8*)&sfchdr, SFC_HDR_SIZE);
-		if (reat != SFC_HDR_SIZE) {
-			R_LOG_ERROR ("Unable to read SFC/SNES header");
-			return false;
-		}
-
-		if (!sfc_header_valid (&sfchdr, true)) {
-			R_LOG_WARN ("Cannot determine if this is a LoROM or HiROM file");
-		}
-		is_hirom = true;
-	}
-
+	const int hdroffset = layout.rom_paddr;
+	const bool is_hirom = layout.is_hirom;
+	int i;
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 	if (is_hirom) {
 		for (i = 0; i < ((bf->size - hdroffset) / 0x8000) ; i++) {
@@ -231,6 +201,52 @@ static RList* entries(RBinFile *bf) { //Should be 3 offsets pointed by NMI, RESE
 	return ret;
 }
 
+// sum every rom byte, counting the complement and checksum fields as ff ff 00 00
+static ut16 sfc_rom_checksum(const ut8 *rom, ut64 size, ut64 hdr_offset) {
+	// a rom that is not a power of two repeats its tail to fill the next one
+	ut64 base = 1;
+	while (base * 2 <= size) {
+		base *= 2;
+	}
+	const ut64 tail = size - base;
+	const ut64 repeats = tail? base / tail: 0;
+	ut32 sum = 0;
+	ut64 i;
+	for (i = 0; i < base; i++) {
+		sum += rom[i];
+	}
+	ut32 tail_sum = 0;
+	for (i = base; i < size; i++) {
+		tail_sum += rom[i];
+	}
+	const ut64 fields = hdr_offset + r_offsetof (sfc_int_hdr, comp_check);
+	ut32 *fields_sum = fields < base? &sum: &tail_sum;
+	for (i = fields; i < fields + 4; i++) {
+		*fields_sum -= rom[i];
+	}
+	*fields_sum += 0xff * 2;
+	return sum + tail_sum * repeats;
+}
+
+static int checksum(RBinFile *bf, RStrBuf *report, bool fix) {
+	SfcLayout layout;
+	ut64 size = 0;
+	const ut8 *data = r_buf_data (bf->buf, &size);
+	if (!data || !sfc_layout (bf->buf, &layout) || layout.hdr_paddr + SFC_HDR_SIZE > size) {
+		return -1;
+	}
+	const ut16 sum = sfc_rom_checksum (data + layout.rom_paddr, size - layout.rom_paddr, layout.hdr_paddr - layout.rom_paddr);
+	ut8 computed[4];
+	r_write_le16 (computed, ~sum);
+	r_write_le16 (computed + 2, sum);
+	const ut64 paddr = layout.hdr_paddr + r_offsetof (sfc_int_hdr, comp_check);
+	return !r_bin_wr_checksum_update (bf->buf, report, "sfc", paddr, computed, sizeof (computed), fix);
+}
+
+static RBinWrite r_bin_write_sfc = {
+	.checksum = &checksum,
+};
+
 RBinPlugin r_bin_plugin_sfc = {
 	.meta = {
 		.name = "sfc",
@@ -245,6 +261,7 @@ RBinPlugin r_bin_plugin_sfc = {
 	.sections_vec = &sections_vec,
 	.info = &info,
 	.mem = &mem,
+	.write = &r_bin_write_sfc,
 };
 
 #ifndef R2_PLUGIN_INCORE

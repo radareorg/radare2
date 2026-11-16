@@ -49,16 +49,16 @@ maxopsz 3
 invopsz 1
 dtalign 1
 codealign 1
-0x00400000
-0x00400039
-0x00408399
-0x0040839c
-0x0040839f
-0x004083a2
-0x004083a5
-0x004083a8
-0x004083ab
-0x004083ae
+0x00008000
+0x00008039
+0x00008399
+0x00008d22
+0x000086e5
+0x00008708
+0x00008727
+0x00008737
+0x00008747
+0x00008748
 EOF
 RUN
 
@@ -69,6 +69,28 @@ aac
 aflc
 EOF
 EXPECT=<<EOF
-21
+23
+EOF
+RUN
+
+NAME=snes: SA-1 rom is mapped as LoROM
+FILE=bins/snes/speed_test_v51.sfc
+CMDS=<<EOF
+iS,vaddr/cols/paddr/size/name,:quiet
+pi 1 @ 0x8000
+EOF
+EXPECT=<<EOF
+0x00008000 0x00000000  0x8000 ROM_00
+0x00018000 0x00008000  0x8000 ROM_01
+sei
+EOF
+RUN
+
+NAME=snes: rom with a 512 byte copier header
+FILE=bins/snes/speed_test_v51-headered.smc
+CMDS=iS,vaddr/cols/paddr/size/name,:quiet
+EXPECT=<<EOF
+0x00008000 0x00000200  0x8000 ROM_00
+0x00018000 0x00008200  0x8000 ROM_01
 EOF
 RUN
