@@ -272,3 +272,74 @@ static int rpath_del(RBinFile *bf) {
 static bool chentry(RBinFile *bf, ut64 addr) {
 	return Elf_(entry_write) (bf, addr);
 }
+
+// DT_CHECKSUM is the folded byte sum of the allocated sections, as computed by gelf_checksum
+static bool dt_checksum(RBinFile *bf, struct Elf_(obj_t) *eo, ut16 *checksum) {
+	const ut64 size = r_buf_size (bf->buf);
+	ut8 block[4096];
+	ut32 sum = 0;
+	ut64 i;
+	for (i = 0; i < eo->ehdr.e_shnum; i++) {
+		Elf_(Shdr) *sh = &eo->shdr[i];
+		const ut32 type = sh->sh_type;
+		if (!(sh->sh_flags & SHF_ALLOC) || type == SHT_DYNSYM || type == SHT_DYNAMIC || type == SHT_NOBITS) {
+			continue;
+		}
+		if (sh->sh_offset > size || sh->sh_size > size - sh->sh_offset) {
+			return false;
+		}
+		ut64 done = 0;
+		while (done < sh->sh_size) {
+			const ut64 len = R_MIN (sh->sh_size - done, sizeof (block));
+			if (r_buf_read_at (bf->buf, sh->sh_offset + done, block, len) != len) {
+				return false;
+			}
+			ut64 j;
+			for (j = 0; j < len; j++) {
+				sum += block[j];
+			}
+			done += len;
+		}
+	}
+	sum = (sum & 0xffff) + (sum >> 16);
+	*checksum = sum + (sum >> 16);
+	return true;
+}
+
+static int checksum(RBinFile *bf, RStrBuf *report, bool fix) {
+	struct Elf_(obj_t) *eo = R_UNWRAP3 (bf, bo, bin_obj);
+	if (!eo || !eo->phdr || !eo->shdr) {
+		return -1;
+	}
+	const bool be = Elf_(is_big_endian) (eo);
+	ut64 i;
+	for (i = 0; i < eo->phnum; i++) {
+		Elf_(Phdr) *ph = &eo->phdr[i];
+		if (ph->p_type != PT_DYNAMIC) {
+			continue;
+		}
+		ut64 at;
+		for (at = 0; at + sizeof (Elf_(Dyn)) <= ph->p_filesz; at += sizeof (Elf_(Dyn))) {
+			ut8 tag[R_BIN_ELF_WORDSIZE];
+			if (r_buf_read_at (bf->buf, ph->p_offset + at, tag, sizeof (tag)) != sizeof (tag)) {
+				return -1;
+			}
+			const ut64 dt = r_read_ble (tag, be, R_BIN_ELF_WORDSIZE * 8);
+			if (dt == DT_NULL) {
+				break;
+			}
+			if (dt != DT_CHECKSUM) {
+				continue;
+			}
+			ut16 sum;
+			if (!dt_checksum (bf, eo, &sum)) {
+				return -1;
+			}
+			ut8 computed[R_BIN_ELF_WORDSIZE];
+			r_write_ble (computed, sum, be, R_BIN_ELF_WORDSIZE * 8);
+			const ut64 paddr = ph->p_offset + at + R_BIN_ELF_WORDSIZE;
+			return !r_bin_wr_checksum_update (bf->buf, report, "elf", paddr, computed, sizeof (computed), fix);
+		}
+	}
+	return -1;
+}

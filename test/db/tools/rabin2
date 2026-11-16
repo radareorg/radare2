@@ -1481,6 +1481,26 @@ ERROR: Cannot perform operation
 EOF
 RUN
 
+NAME=rabin2 -O c verifies the DT_CHECKSUM of a solaris ELF
+FILE=bins/elf/elf-solaris-sparc-ls
+CMDS=<<EOF
+!rabin2 -O c ${R2_FILE}
+EOF
+EXPECT=<<EOF
+elf 0x0001ff4c 0000a6e0 ok
+EOF
+RUN
+
+NAME=rabin2 -O c without a DT_CHECKSUM in the ELF
+FILE=bins/elf/hello.ppc
+CMDS=<<EOF
+!rabin2 -O c ${R2_FILE}
+EOF
+EXPECT_ERR=<<EOF
+ERROR: No checksums to verify in this file
+EOF
+RUN
+
 NAME=rabin2 -O c verifies code signature hashes of 16K pages
 FILE=bins/mach0/codesign-16k-pages
 CMDS=<<EOF

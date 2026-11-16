@@ -11,4 +11,5 @@ RBinWrite r_bin_write_elf64 = {
 	.entry = &chentry,
 	.addlib = &addlib,
 	.symbol_weak = &symbol_weak,
+	.checksum = &checksum,
 };
