@@ -1480,3 +1480,63 @@ ERROR: Cannot patch section '.data' permissions (unsupported or not found)
 ERROR: Cannot perform operation
 EOF
 RUN
+
+NAME=rabin2 -O c verifies code signature hashes of 16K pages
+FILE=bins/mach0/codesign-16k-pages
+CMDS=!rabin2 -O c ${R2_FILE}
+EXPECT_ERR=<<EOF
+INFO: Offset: 0x000040d4
+Version: 20400
+Flags: 2
+Length: 229
+PageSize: 14
+hashOffset: 165
+codeLimit: 16560
+hashSize: 32
+hashType: 2
+Identity: codesign-16k
+TeamID: (null)
+CodeSlots: 2
+ph sha256 @ 0x40d4!229
+ComputedCDHash: 4de4e7860b4e23f2f987b18815fab9728f3617e1cf7b92aa75add5f45d9047e0
+Hashed region: 0x00000000 - 0x000040b0
+0x00004179  f5d10d8633936dc435113b2852d3df6d6ebe009a5bcf36602a686aca4b8c8912  OK
+0x00004199  663227137079294b7b1c835397b1da09de2e9815a8bb2c87eceb2255cae60c40  OK
+Magic: 10bdefa
+wtf DUMP @16845!8
+openssl pkcs7 -print_certs -text -inform der -in DUMP
+openssl asn1parse -offset 16845 -length 8 -inform der -in /mo/ls
+pFp@16845!8
+ERROR: Unknown operation. use -O help
+EOF
+RUN
+
+NAME=rabin2 -O c reports the page hash that does not match
+FILE=bins/mach0/codesign-16k-pages-tampered
+CMDS=!rabin2 -O c ${R2_FILE}
+EXPECT_ERR=<<EOF
+INFO: Offset: 0x000040d4
+Version: 20400
+Flags: 2
+Length: 229
+PageSize: 14
+hashOffset: 165
+codeLimit: 16560
+hashSize: 32
+hashType: 2
+Identity: codesign-16k
+TeamID: (null)
+CodeSlots: 2
+ph sha256 @ 0x40d4!229
+ComputedCDHash: 4de4e7860b4e23f2f987b18815fab9728f3617e1cf7b92aa75add5f45d9047e0
+Hashed region: 0x00000000 - 0x000040b0
+0x00004179  f5d10d8633936dc435113b2852d3df6d6ebe009a5bcf36602a686aca4b8c8912  OK
+0x00004199  663227137079294b7b1c835397b1da09de2e9815a8bb2c87eceb2255cae60c40  wx 132041fffd763b3318fa00ac3ec1e992f6863e5ade9dac70b4ce5f40f5cf1e96
+Magic: 10bdefa
+wtf DUMP @16845!8
+openssl pkcs7 -print_certs -text -inform der -in DUMP
+openssl asn1parse -offset 16845 -length 8 -inform der -in /mo/ls
+pFp@16845!8
+ERROR: Unknown operation. use -O help
+EOF
+RUN

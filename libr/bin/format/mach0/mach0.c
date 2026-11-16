@@ -872,12 +872,12 @@ static void parseCodeDirectory(RMutaBind *mb, RBuffer *b, int offset, ut32 datas
 	READFIELD (identOffset);
 	READFIELD (nSpecialSlots);
 	READFIELD (nCodeSlots);
-	READFIELD (hashSize);
+	READFIELD8 (hashSize);
 	if (cscd.version >= 0x20200) {
 		READFIELD (teamIDOffset);
 	}
 	READFIELD8 (hashType);
-	READFIELD (pageSize);
+	READFIELD8 (pageSize);
 	READFIELD (codeLimit);
 	eprintf ("Version: %x\n", cscd.version);
 	eprintf ("Flags: %x\n", cscd.flags);
@@ -895,19 +895,17 @@ static void parseCodeDirectory(RMutaBind *mb, RBuffer *b, int offset, ut32 datas
 	free (identity);
 	free (teamId);
 
-	int hashSize = 20; // SHA1 is default
 	const char *hashName = "sha1";
 	switch (cscd.hashType) {
-	case 0: // SHA1 == 20 bytes
-	case 1: // SHA1 == 20 bytes
-		hashSize = 20;
-		hashName = "sha1";
-		break;
-	case 2: // SHA256 == 32 bytes
-		hashSize = 32;
+	case 2: // SHA256
+	case 3: // SHA256 truncated to 20 bytes
 		hashName = "sha256";
 		break;
+	case 4:
+		hashName = "sha384";
+		break;
 	}
+	const int hashSize = cscd.hashSize;
 	// computed cdhash
 	int fofsz = cscd.length;
 	if (fofsz > 0 && fofsz < (r_buf_size (b) - off)) {
@@ -922,7 +920,7 @@ static void parseCodeDirectory(RMutaBind *mb, RBuffer *b, int offset, ut32 datas
 				eprintf ("ph %s @ 0x%" PFMT64x "!%d\n", hashName, off, fofsz);
 				eprintf ("ComputedCDHash: ");
 				int i;
-				for (i = 0; i < hashSize; i++) {
+				for (i = 0; i < outlen; i++) {
 					eprintf ("%02x", digest[i]);
 				}
 				eprintf ("\n");
@@ -931,46 +929,54 @@ static void parseCodeDirectory(RMutaBind *mb, RBuffer *b, int offset, ut32 datas
 			free (fofbuf);
 		}
 	}
-	/* At the moment the code in parse_signature guarantees that datasize > hashSize. Leaving this as a safeguard
-	   against future refactorings */
-	if (datasize < hashSize) {
-		R_LOG_WARN ("Code directory size is smaller than hashSize")
+	// pageSize is log2 of the page size, zero means a single hash for the whole image
+	const ut64 pageSize = cscd.pageSize? 1ULL << cscd.pageSize: cscd.codeLimit;
+	const bool validSizes = hashSize > 0 && hashSize <= datasize && cscd.hashOffset <= datasize - hashSize
+		&& cscd.pageSize < 32 && pageSize <= r_buf_size (b);
+	ut8 *page = validSizes? malloc (pageSize): NULL;
+	if (!page) {
+		R_LOG_WARN ("Invalid hash or page size in code directory");
+		goto beach;
 	}
 	// show and check the rest of hashes
-	ut8 *hash = p + cscd.hashOffset;
-	int j;
+	const ut8 *hash = p + cscd.hashOffset;
+	const ut8 *lastHash = p + datasize - hashSize;
+	ut32 j;
 	eprintf ("Hashed region: 0x%08" PFMT64x " - 0x%08" PFMT64x "\n", (ut64)0, (ut64)cscd.codeLimit);
 	for (j = 0; j < cscd.nCodeSlots; j++) {
-		eprintf ("0x%08" PFMT64x "  ", off + cscd.hashOffset + j * hashSize);
-		if ((size_t) hash > (size_t)p + datasize - hashSize) {
+		const ut64 pageOffset = j * pageSize;
+		if (hash > lastHash) {
 			R_LOG_WARN ("Hash points outside of allocated memory. Exiting");
-			goto beach;
+			break;
 		}
-		int fof = 4096 * j;
+		if (pageOffset >= cscd.codeLimit) {
+			R_LOG_WARN ("Code slot beyond the code limit");
+			break;
+		}
+		eprintf ("0x%08" PFMT64x "  ", off + cscd.hashOffset + (ut64)j * hashSize);
 		int k;
 		for (k = 0; k < hashSize; k++) {
 			eprintf ("%02x", hash[k]);
 		}
-		ut8 fofbuf[4096];
-		int fofsz = R_MIN (sizeof (fofbuf), cscd.codeLimit - fof);
-		r_buf_read_at (b, fof, fofbuf, sizeof (fofbuf));
+		const ut64 pageLength = R_MIN (pageSize, cscd.codeLimit - pageOffset);
 		int outlen = 0;
-		ut8 *digest = mb->hash (mb, hashName, fofbuf, fofsz, &outlen);
-		if (digest) {
+		ut8 *digest = (r_buf_read_at (b, pageOffset, page, pageLength) == pageLength)
+			? mb->hash (mb, hashName, page, pageLength, &outlen): NULL;
+		if (digest && outlen >= hashSize) {
 			if (memcmp (hash, digest, hashSize)) {
 				eprintf ("  wx ");
-				int i;
-				for (i = 0; i < hashSize; i++) {
-					eprintf ("%02x", digest[i]);
+				for (k = 0; k < hashSize; k++) {
+					eprintf ("%02x", digest[k]);
 				}
 			} else {
 				eprintf ("  OK");
 			}
-			free (digest);
 		}
+		free (digest);
 		eprintf ("\n");
 		hash += hashSize;
 	}
+	free (page);
 beach:
 	free (p);
 }
