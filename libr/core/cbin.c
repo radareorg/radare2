@@ -887,6 +887,23 @@ static void set_library_types(RCore *core, RBinObject *obj) {
 	priv->types_dirty = true;
 }
 
+static bool bin_hash_matches(RCore *core, RBinFile *bf, const RBinHash *h) {
+	RMutaBind *mb = &core->bin->mb;
+	ut8 *data = mb->hash? R_NEWS (ut8, h->to): NULL;
+	if (!data) {
+		return false;
+	}
+	bool matches = false;
+	if (r_buf_read_at (bf->buf, h->from, data, h->to) == h->to) {
+		int digest_len = 0;
+		ut8 *digest = mb->hash (mb, h->type, data, h->to, &digest_len);
+		matches = digest && digest_len == h->len && !memcmp (digest, h->buf, h->len);
+		free (digest);
+	}
+	free (data);
+	return matches;
+}
+
 static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 	int i, j, v;
 	char str[32];
@@ -1126,18 +1143,10 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 		}
 		for (i = 0; info->sum[i].type; i++) {
 			RBinHash *h = &info->sum[i];
-			ut8 *tmp = R_NEWS (ut8, h->to);
-			if (!tmp) {
-				return false;
+			const bool valid = bin_hash_matches (core, bf, h);
+			if (!valid) {
+				R_LOG_WARN ("%s checksum does not match the data at %" PFMT64u "-%" PFMT64u, h->type, h->from, h->to + h->from);
 			}
-			r_buf_read_at (bf->buf, h->from, tmp, h->to);
-			int outlen = 0;
-			ut8 *digest = core->bin->mb.hash (&core->bin->mb, h->type, tmp, h->to, &outlen);
-			free (tmp);
-			if (!digest || outlen < 1) {
-				R_LOG_ERROR ("Invalid checksum length");
-			}
-			free (digest);
 			if (IS_MODE_JSON (mode)) {
 				pj_ko (pj, h->type);
 				char *buf = malloc (2 * h->len + 1);
@@ -1148,6 +1157,7 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 					snprintf (buf + 2 * j, 3, "%02x", h->buf[j]);
 				}
 				pj_ks (pj, "hex", buf);
+				pj_kb (pj, "valid", valid);
 				free (buf);
 				pj_end (pj);
 			} else {
