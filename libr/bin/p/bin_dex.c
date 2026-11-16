@@ -2442,6 +2442,36 @@ static ut64 baddr(RBinFile *bf) {
 	return 0;
 }
 
+static int checksum(RBinFile *bf, RStrBuf *report, bool fix) {
+	RMutaBind *mb = &bf->rbin->mb;
+	ut64 size = 0;
+	const ut8 *data = r_buf_data (bf->buf, &size);
+	if (!data || size <= 32 || size - 12 > ST32_MAX || !mb->hash) {
+		return -1;
+	}
+	int digest_len = 0;
+	ut8 *sha1 = mb->hash (mb, "sha1", data + 32, size - 32, &digest_len);
+	if (!sha1 || digest_len != 20) {
+		free (sha1);
+		return -1;
+	}
+	int mismatches = !r_bin_wr_checksum_update (bf->buf, report, "sha1", 12, sha1, 20, fix);
+	free (sha1);
+	// the adler32 covers the sha1 field, so it must be computed after fixing it
+	data = r_buf_data (bf->buf, &size);
+	if (!data || size <= 32) {
+		return -1;
+	}
+	ut8 adler32[4];
+	r_write_le32 (adler32, __adler32 (data + 12, size - 12));
+	mismatches += !r_bin_wr_checksum_update (bf->buf, report, "adler32", 8, adler32, sizeof (adler32), fix);
+	return mismatches;
+}
+
+static RBinWrite r_bin_write_dex = {
+	.checksum = &checksum,
+};
+
 RBinPlugin r_bin_plugin_dex = {
 	.meta = {
 		.name = "dex",
@@ -2469,6 +2499,7 @@ RBinPlugin r_bin_plugin_dex = {
 	.get_name = &getname,
 	.get_cc = &get_cc,
 	.cmd = &dex_cmd,
+	.write = &r_bin_write_dex,
 //	.dbginfo = &r_bin_dbginfo_dex,
 };
 

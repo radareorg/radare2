@@ -14,4 +14,5 @@ RBinWrite r_bin_write_mach064 = {
 	.addlib = &addlib,
 	.lib_weak = &lib_weak,
 	.symbol_weak = &symbol_weak,
+	.checksum = &checksum,
 };

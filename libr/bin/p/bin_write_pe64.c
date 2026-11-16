@@ -4,5 +4,6 @@
 #include "bin_write_pe.c"
 
 RBinWrite r_bin_write_pe64 = {
-	.scn_perms = &scn_perms
+	.scn_perms = &scn_perms,
+	.checksum = &checksum,
 };

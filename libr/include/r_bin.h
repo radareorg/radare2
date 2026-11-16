@@ -632,7 +632,6 @@ typedef struct r_bin_options_t {
 	bool demangle_usecmd;
 	bool demangle_trylib;
 	bool verbose;
-	bool show_codesign; // dump Mach-O code signature details at parse time
 	bool use_xtr; // use extract plugins when loading a file?
 	bool use_ldr; // use loader plugins when loading a file?
 	bool debase64;
@@ -922,6 +921,8 @@ typedef bool (*RBinWriteScnPerms)(RBinFile *bf, const char *name, int perms);
 typedef bool (*RBinWriteSegPerms)(RBinFile *bf, const char *name, int perms);
 typedef bool (*RBinWriteEntry)(RBinFile *bf, ut64 addr);
 typedef int (*RBinWriteRpathDel)(RBinFile *bf);
+// returns how many checksums do not match (rewritten when fix is set), or -1 if there are none to check
+typedef int (*RBinWriteChecksum)(RBinFile *bf, RStrBuf *report, bool fix);
 typedef struct r_bin_write_t {
 	RBinWriteScnResize scn_resize;
 	RBinWriteScnPerms scn_perms;
@@ -931,6 +932,7 @@ typedef struct r_bin_write_t {
 	RBinWriteAddLib addlib;
 	RBinWriteLibWeak lib_weak;
 	RBinWriteSymbolWeak symbol_weak;
+	RBinWriteChecksum checksum;
 } RBinWrite;
 
 typedef int (*RBinGetOffset)(RBin *bin, int type, int idx);
@@ -1171,6 +1173,8 @@ R_API bool r_bin_wr_seg_perms(RBin *bin, const char *name, int perms);
 R_API bool r_bin_wr_rpath_del(RBin *bin);
 R_API bool r_bin_wr_entry(RBin *bin, ut64 addr);
 R_API bool r_bin_wr_output(RBin *bin, const char *filename);
+R_API int r_bin_wr_checksum(RBin *bin, RStrBuf *report, bool fix);
+R_API bool r_bin_wr_checksum_update(RBuffer *b, RStrBuf *report, const char *name, ut64 paddr, const ut8 *computed, int len, bool fix);
 
 R_API const char *r_bin_lang_tostring(RBinLanguage type);
 R_API RBinLanguage r_bin_lang_fromstring(const char *name);

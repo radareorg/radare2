@@ -91,3 +91,37 @@ R_API bool r_bin_wr_symbol_weak(RBin *bin, const char *symbol, bool weak) {
 	RBinWriteSymbolWeak symbol_weak = R_UNWRAP3 (plugin, write, symbol_weak);
 	return symbol_weak? symbol_weak (bf, symbol, weak): false;
 }
+
+R_API int r_bin_wr_checksum(RBin *bin, RStrBuf *report, bool fix) {
+	R_RETURN_VAL_IF_FAIL (bin && report, -1);
+	RBinFile *bf = r_bin_cur (bin);
+	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
+	RBinWriteChecksum checksum = R_UNWRAP3 (plugin, write, checksum);
+	return checksum? checksum (bf, report, fix): -1;
+}
+
+// compare the checksum stored at paddr with the computed one, rewriting it when fix is set
+R_API bool r_bin_wr_checksum_update(RBuffer *b, RStrBuf *report, const char *name, ut64 paddr, const ut8 *computed, int len, bool fix) {
+	R_RETURN_VAL_IF_FAIL (b && report && name && computed && len > 0, false);
+	ut8 *stored = malloc (len);
+	if (!stored) {
+		return false;
+	}
+	bool matches = false;
+	if (r_buf_read_at (b, paddr, stored, len) == len) {
+		matches = !memcmp (stored, computed, len);
+		char *stored_hex = r_hex_bin2strdup (stored, len);
+		char *computed_hex = r_hex_bin2strdup (computed, len);
+		if (matches) {
+			r_strbuf_appendf (report, "%s 0x%08" PFMT64x " %s ok\n", name, paddr, stored_hex);
+		} else if (fix && r_buf_write_at (b, paddr, computed, len) == len) {
+			r_strbuf_appendf (report, "%s 0x%08" PFMT64x " %s fixed\n", name, paddr, computed_hex);
+		} else {
+			r_strbuf_appendf (report, "%s 0x%08" PFMT64x " %s bad %s\n", name, paddr, stored_hex, computed_hex);
+		}
+		free (stored_hex);
+		free (computed_hex);
+	}
+	free (stored);
+	return matches;
+}

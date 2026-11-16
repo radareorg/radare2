@@ -351,7 +351,77 @@ static bool __dumpSections(RCons *cons, RBin *bin, const char *scnname, const ch
 	return true;
 }
 
-static int rabin_do_operation(RCons *cons, RBin *bin, const char *op, int rad, const char *output, const char *file) {
+// check the checksums of the binary found at offset inside data, returns the mismatches or -1
+static int rabin_checksum_slice(RBin *bin, RStrBuf *report, ut8 *data, ut64 offset, ut64 size, bool fix) {
+	RBuffer *slice = r_buf_new_with_bytes (data + offset, size);
+	if (!slice) {
+		return -1;
+	}
+	RBinFile *cur = r_bin_cur (bin);
+	int mismatches = -1;
+	RBinFileOptions opt;
+	r_bin_file_options_init (&opt, -1, 0, 0, false);
+	if (r_bin_open_buf (bin, slice, &opt)) {
+		mismatches = r_bin_wr_checksum (bin, report, fix);
+		if (mismatches > 0 && fix) {
+			r_buf_read_at (slice, 0, data + offset, size);
+		}
+		r_bin_file_delete (bin, r_bin_cur (bin)->id);
+		r_bin_file_set_cur_binfile (bin, cur);
+	}
+	r_unref (slice);
+	return mismatches;
+}
+
+static bool rabin_checksums(RCons *cons, RBin *bin, bool fix, bool all_archs, const char *output, const char *file) {
+	RBinFile *bf = r_bin_cur (bin);
+	size_t file_size = 0;
+	ut8 *data = (ut8 *)r_file_slurp (file, &file_size);
+	if (!bf || !data) {
+		R_LOG_ERROR ("Cannot read '%s'", file);
+		free (data);
+		return false;
+	}
+	const ut64 selected = bf->bo? bf->bo->boffset: 0;
+	RStrBuf *report = r_strbuf_new ("");
+	int mismatches = -1;
+	if (r_list_empty (bf->xtr_data)) {
+		mismatches = rabin_checksum_slice (bin, report, data, 0, file_size, fix);
+	} else {
+		RListIter *iter;
+		RBinXtrData *xtr;
+		r_list_foreach (bf->xtr_data, iter, xtr) {
+			RBinXtrMetadata *meta = xtr->metadata;
+			const bool is_fat = meta && meta->xtr_type && !strcmp (meta->xtr_type, "fatmacho");
+			if (!is_fat || xtr->offset > file_size || xtr->size > file_size - xtr->offset) {
+				R_LOG_ERROR ("Only fat Mach-O containers are supported");
+				mismatches = -1;
+				break;
+			}
+			if (!all_archs && xtr->offset != selected) {
+				continue;
+			}
+			r_strbuf_appendf (report, "slice 0x%08" PFMT64x " %s_%d\n", xtr->offset, r_str_get (meta->arch), meta->bits);
+			const int bad = rabin_checksum_slice (bin, report, data, xtr->offset, xtr->size, fix);
+			if (bad >= 0) {
+				mismatches = R_MAX (mismatches, 0) + bad;
+			}
+		}
+	}
+	r_cons_print (cons, r_strbuf_get (report));
+	r_cons_flush (cons);
+	r_strbuf_free (report);
+	bool rc = !mismatches;
+	if (mismatches < 0) {
+		R_LOG_ERROR ("No checksums to verify in this file");
+	} else if (mismatches > 0 && fix) {
+		rc = r_file_dump (output, data, file_size, 0);
+	}
+	free (data);
+	return rc;
+}
+
+static int rabin_do_operation(RCons *cons, RBin *bin, const char *op, int rad, const char *output, const char *file, bool all_archs) {
 	char *arg = NULL, *ptr = NULL, *ptr2 = NULL;
 	bool rc = true;
 
@@ -452,6 +522,15 @@ static int rabin_do_operation(RCons *cons, RBin *bin, const char *op, int rad, c
 	case 'R':
 		r_bin_wr_rpath_del (bin);
 		rc = r_bin_wr_output (bin, output);
+		break;
+	case 'c':
+		if (ptr && strcmp (ptr, "fix")) {
+			goto _rabin_do_operation_error;
+		}
+		rc = rabin_checksums (cons, bin, ptr != NULL, all_archs, output, file);
+		if (!rc) {
+			goto error;
+		}
 		break;
 	case 'C':
 		{
@@ -920,9 +999,6 @@ static int rabin2_main(RCons *cons, int argc, const char **argv) {
 		case 'O':
 			op = opt.arg;
 			set_action (R_BIN_REQ_OPERATION);
-			if (*op == 'c') {
-				bin->options.show_codesign = true;
-			}
 			if (isBinopHelp (op)) {
 				r_cons_printf (cons, "Usage: iO [expression]:\n"
 				" e/0x8048000       change entrypoint\n"
@@ -937,7 +1013,8 @@ static int rabin2_main(RCons *cons, int argc, const char **argv) {
 				" w/symstrong/NAME  restore a required ELF or Mach-O import\n"
 				" p/.data/rwx       change section permissions\n"
 				" P/LOAD0/rwx       change segment permissions (elf: LOAD0, GNU_STACK, PHDR, ...; mach-o: __TEXT, __DATA, ...)\n"
-				" c                 show Codesign data\n"
+				" c                 verify checksums and code signature hashes (dex, pe, mach-o)\n"
+				" c/fix             rewrite the checksums that do not match\n"
 				" C                 show LDID entitlements\n");
 				rabin_core_fini (&core, core_cons);
 				free (state.stdin_buf);
@@ -1433,7 +1510,7 @@ static int rabin2_main(RCons *cons, int argc, const char **argv) {
 		}
 	}
 	if (op && action & R_BIN_REQ_OPERATION) {
-		if (!rabin_do_operation (cons, bin, op, rad, output, file)) {
+		if (!rabin_do_operation (cons, bin, op, rad, output, file, !arch && !arch_name && !bits)) {
 			retval = 1;
 		}
 	}

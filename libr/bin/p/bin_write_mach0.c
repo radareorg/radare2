@@ -774,6 +774,133 @@ static bool seg_perms(RBinFile *bf, const char *name, int perms) {
 	return false;
 }
 
+static bool is_code_directory_slot(ut32 type) {
+	return type == CSSLOT_CODEDIRECTORY || (type >= CSSLOT_ALTERNATE_CODEDIRECTORIES && type < CSSLOT_ALTERNATE_CODEDIRECTORY_LIMIT);
+}
+
+static const char *code_directory_hash_name(ut8 hash_type) {
+	switch (hash_type) {
+	case 2: // SHA256
+	case 3: // SHA256 truncated to 20 bytes
+		return "sha256";
+	case 4:
+		return "sha384";
+	case 5:
+		return "sha512";
+	}
+	return "sha1";
+}
+
+// check the hash of every code page listed by the code directory blob found at paddr
+static int code_directory_checksum(RBinFile *bf, RBuffer *b, RStrBuf *report, ut64 paddr, ut32 blob_size, bool fix) {
+	RMutaBind *mb = &bf->rbin->mb;
+	ut8 header[sizeof (CS_CodeDirectory)] = {0};
+	if (blob_size < 44 || r_buf_read_at (b, paddr, header, R_MIN (blob_size, sizeof (header))) < 44) {
+		return -1;
+	}
+	const ut32 length = r_read_be32 (header + r_offsetof (CS_CodeDirectory, length));
+	const ut32 version = r_read_be32 (header + r_offsetof (CS_CodeDirectory, version));
+	const ut32 flags = r_read_be32 (header + r_offsetof (CS_CodeDirectory, flags));
+	const ut32 hash_offset = r_read_be32 (header + r_offsetof (CS_CodeDirectory, hashOffset));
+	const ut32 ident_offset = r_read_be32 (header + r_offsetof (CS_CodeDirectory, identOffset));
+	const ut32 code_slots = r_read_be32 (header + r_offsetof (CS_CodeDirectory, nCodeSlots));
+	const ut32 code_limit = r_read_be32 (header + r_offsetof (CS_CodeDirectory, codeLimit));
+	const ut8 hash_size = header[r_offsetof (CS_CodeDirectory, hashSize)];
+	const ut8 hash_type = header[r_offsetof (CS_CodeDirectory, hashType)];
+	const ut8 page_shift = header[r_offsetof (CS_CodeDirectory, pageSize)];
+	// a zero page shift means a single hash for the whole image
+	const ut64 page_size = page_shift? 1ULL << page_shift: code_limit;
+	const bool valid = r_read_be32 (header) == CSMAGIC_CODEDIRECTORY && length <= blob_size
+		&& hash_size > 0 && hash_size <= length && hash_offset <= length - hash_size
+		&& page_shift < 32 && page_size > 0 && page_size <= r_buf_size (b);
+	ut8 *page = valid? malloc (page_size): NULL;
+	if (!page) {
+		return -1;
+	}
+	const char *hash_name = code_directory_hash_name (hash_type);
+	char *ident = ident_offset < length? r_buf_get_string (b, paddr + ident_offset): NULL;
+	if (ident) {
+		r_str_filter (ident, -1);
+	}
+	r_strbuf_appendf (report, "codedirectory 0x%08" PFMT64x " version=0x%x flags=0x%x ident=%s hash=%s pagesize=%" PFMT64u " codelimit=0x%x\n",
+		paddr, version, flags, r_str_get (ident), hash_name, page_size, code_limit);
+	free (ident);
+	int mismatches = 0;
+	ut32 slot;
+	for (slot = 0; slot < code_slots; slot++) {
+		const ut64 page_offset = slot * page_size;
+		const ut64 hash_at = hash_offset + (ut64)slot * hash_size;
+		if (hash_at > length - hash_size || page_offset >= code_limit) {
+			R_LOG_WARN ("Code slot %u is out of bounds", slot);
+			mismatches++;
+			break;
+		}
+		const ut64 page_length = R_MIN (page_size, code_limit - page_offset);
+		int digest_len = 0;
+		ut8 *digest = (r_buf_read_at (b, page_offset, page, page_length) == page_length)
+			? mb->hash (mb, hash_name, page, page_length, &digest_len): NULL;
+		if (!digest || digest_len < hash_size) {
+			free (digest);
+			mismatches++;
+			break;
+		}
+		mismatches += !r_bin_wr_checksum_update (b, report, hash_name, paddr + hash_at, digest, hash_size, fix);
+		free (digest);
+	}
+	free (page);
+	// the cdhash identifies the signed code, so it changes whenever a slot is fixed
+	ut8 *blob = malloc (length);
+	if (blob && r_buf_read_at (b, paddr, blob, length) == length) {
+		int digest_len = 0;
+		ut8 *digest = mb->hash (mb, hash_name, blob, length, &digest_len);
+		if (digest && digest_len > 0) {
+			char *cdhash = r_hex_bin2strdup (digest, digest_len);
+			r_strbuf_appendf (report, "cdhash 0x%08" PFMT64x " %s\n", paddr, cdhash);
+			free (cdhash);
+		}
+		free (digest);
+	}
+	free (blob);
+	return mismatches;
+}
+
+static int checksum(RBinFile *bf, RStrBuf *report, bool fix) {
+	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
+	if (!mo || !mo->cs_present || !bf->rbin->mb.hash) {
+		return -1;
+	}
+	// mo->b keeps the bytes as they are on disk, bf->buf may have chained fixups applied
+	RBuffer *b = mo->b;
+	const ut64 base = mo->cs_paddr;
+	ut8 super[sizeof (struct super_blob_t)];
+	if (mo->cs_size < sizeof (super) || r_buf_read_at (b, base, super, sizeof (super)) != sizeof (super)) {
+		return -1;
+	}
+	const ut32 super_length = r_read_be32 (super + 4);
+	if (r_read_be32 (super) != CSMAGIC_EMBEDDED_SIGNATURE || super_length < sizeof (super) || super_length > mo->cs_size) {
+		return -1;
+	}
+	const ut32 max_blobs = (super_length - sizeof (super)) / sizeof (struct blob_index_t);
+	const ut32 blobs = R_MIN (r_read_be32 (super + 8), max_blobs);
+	int mismatches = -1;
+	ut32 i;
+	for (i = 0; i < blobs; i++) {
+		ut8 index[sizeof (struct blob_index_t)];
+		if (r_buf_read_at (b, base + sizeof (super) + i * sizeof (index), index, sizeof (index)) != sizeof (index)) {
+			break;
+		}
+		const ut32 blob_offset = r_read_be32 (index + 4);
+		if (!is_code_directory_slot (r_read_be32 (index)) || blob_offset >= super_length) {
+			continue;
+		}
+		const int bad = code_directory_checksum (bf, b, report, base + blob_offset, super_length - blob_offset, fix);
+		if (bad >= 0) {
+			mismatches = R_MAX (mismatches, 0) + bad;
+		}
+	}
+	return mismatches;
+}
+
 #if !R_BIN_MACH064
 RBinWrite r_bin_write_mach0 = {
 #if 0
@@ -786,5 +913,6 @@ RBinWrite r_bin_write_mach0 = {
 	.addlib = &addlib,
 	.lib_weak = &lib_weak,
 	.symbol_weak = &symbol_weak,
+	.checksum = &checksum,
 };
 #endif

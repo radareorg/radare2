@@ -846,144 +846,6 @@ static bool parse_dysymtab(struct MACH0_(obj_t) * mo, ut64 off) {
 	return true;
 }
 
-static char *readString(ut8 *p, int off, int len) {
-	if (off < 0 || off >= len) {
-		return NULL;
-	}
-	return r_str_ndup ((const char *)p + off, len - off);
-}
-
-static void parseCodeDirectory(RMutaBind *mb, RBuffer *b, int offset, ut32 datasize) {
-	ut64 off = offset;
-	// pad to the full struct so fixed-offset field reads stay in bounds on short blobs
-	ut8 *p = calloc (1, R_MAX (datasize, sizeof (CS_CodeDirectory)));
-	if (!p) {
-		return;
-	}
-	R_LOG_INFO ("Offset: 0x%08" PFMT64x, off);
-	r_buf_read_at (b, off, p, datasize);
-	CS_CodeDirectory cscd = { 0 };
-#define READFIELD(x) cscd.x = r_read_ble32(p + r_offsetof(CS_CodeDirectory, x), 1)
-#define READFIELD8(x) cscd.x = p[r_offsetof(CS_CodeDirectory, x)]
-	READFIELD (length);
-	READFIELD (version);
-	READFIELD (flags);
-	READFIELD (hashOffset);
-	READFIELD (identOffset);
-	READFIELD (nSpecialSlots);
-	READFIELD (nCodeSlots);
-	READFIELD8 (hashSize);
-	if (cscd.version >= 0x20200) {
-		READFIELD (teamIDOffset);
-	}
-	READFIELD8 (hashType);
-	READFIELD8 (pageSize);
-	READFIELD (codeLimit);
-	eprintf ("Version: %x\n", cscd.version);
-	eprintf ("Flags: %x\n", cscd.flags);
-	eprintf ("Length: %d\n", cscd.length);
-	eprintf ("PageSize: %d\n", cscd.pageSize);
-	eprintf ("hashOffset: %d\n", cscd.hashOffset);
-	eprintf ("codeLimit: %d\n", cscd.codeLimit);
-	eprintf ("hashSize: %d\n", cscd.hashSize);
-	eprintf ("hashType: %d\n", cscd.hashType);
-	char *identity = readString (p, cscd.identOffset, datasize);
-	eprintf ("Identity: %s\n", identity);
-	char *teamId = cscd.teamIDOffset? readString (p, cscd.teamIDOffset, datasize): NULL;
-	eprintf ("TeamID: %s\n", teamId);
-	eprintf ("CodeSlots: %d\n", cscd.nCodeSlots);
-	free (identity);
-	free (teamId);
-
-	const char *hashName = "sha1";
-	switch (cscd.hashType) {
-	case 2: // SHA256
-	case 3: // SHA256 truncated to 20 bytes
-		hashName = "sha256";
-		break;
-	case 4:
-		hashName = "sha384";
-		break;
-	case 5:
-		hashName = "sha512";
-		break;
-	}
-	const int hashSize = cscd.hashSize;
-	// computed cdhash
-	int fofsz = cscd.length;
-	if (fofsz > 0 && fofsz < (r_buf_size (b) - off)) {
-		ut8 *fofbuf = calloc (fofsz, 1);
-		if (fofbuf) {
-			if (r_buf_read_at (b, off, fofbuf, fofsz) != fofsz) {
-				R_LOG_WARN ("Invalid cdhash offset/length values");
-			}
-			int outlen = 0;
-			ut8 *digest = mb->hash (mb, hashName, fofbuf, fofsz, &outlen);
-			if (digest) {
-				eprintf ("ph %s @ 0x%" PFMT64x "!%d\n", hashName, off, fofsz);
-				eprintf ("ComputedCDHash: ");
-				int i;
-				for (i = 0; i < outlen; i++) {
-					eprintf ("%02x", digest[i]);
-				}
-				eprintf ("\n");
-				free (digest);
-			}
-			free (fofbuf);
-		}
-	}
-	// pageSize is log2 of the page size, zero means a single hash for the whole image
-	const ut64 pageSize = cscd.pageSize? 1ULL << cscd.pageSize: cscd.codeLimit;
-	const bool validSizes = hashSize > 0 && hashSize <= datasize && cscd.hashOffset <= datasize - hashSize
-		&& cscd.pageSize < 32 && pageSize <= r_buf_size (b);
-	ut8 *page = validSizes? malloc (pageSize): NULL;
-	if (!page) {
-		R_LOG_WARN ("Invalid hash or page size in code directory");
-		goto beach;
-	}
-	// show and check the rest of hashes
-	const ut8 *hash = p + cscd.hashOffset;
-	const ut8 *lastHash = p + datasize - hashSize;
-	ut32 j;
-	eprintf ("Hashed region: 0x%08" PFMT64x " - 0x%08" PFMT64x "\n", (ut64)0, (ut64)cscd.codeLimit);
-	for (j = 0; j < cscd.nCodeSlots; j++) {
-		const ut64 pageOffset = j * pageSize;
-		if (hash > lastHash) {
-			R_LOG_WARN ("Hash points outside of allocated memory. Exiting");
-			break;
-		}
-		if (pageOffset >= cscd.codeLimit) {
-			R_LOG_WARN ("Code slot beyond the code limit");
-			break;
-		}
-		eprintf ("0x%08" PFMT64x "  ", off + cscd.hashOffset + (ut64)j * hashSize);
-		int k;
-		for (k = 0; k < hashSize; k++) {
-			eprintf ("%02x", hash[k]);
-		}
-		const ut64 pageLength = R_MIN (pageSize, cscd.codeLimit - pageOffset);
-		int outlen = 0;
-		ut8 *digest = (r_buf_read_at (b, pageOffset, page, pageLength) == pageLength)
-			? mb->hash (mb, hashName, page, pageLength, &outlen): NULL;
-		if (digest && outlen >= hashSize) {
-			if (memcmp (hash, digest, hashSize)) {
-				eprintf ("  wx ");
-				for (k = 0; k < hashSize; k++) {
-					eprintf ("%02x", digest[k]);
-				}
-			} else {
-				eprintf ("  OK");
-			}
-		}
-		free (digest);
-		eprintf ("\n");
-		hash += hashSize;
-	}
-	free (page);
-beach:
-	free (p);
-}
-
 static void set_malformed_entitlement(struct MACH0_(obj_t) * mo) {
 	free (mo->signature);
 	mo->signature = (ut8 *)strdup ("Malformed entitlement");
@@ -1057,7 +919,6 @@ static bool parse_signature(struct MACH0_(obj_t) * mo, ut64 off) {
 	ut64 max_slots = (super.blob.length - sizeof (struct super_blob_t)) / sizeof (struct blob_index_t);
 	ut32 slots = (ut32)R_MIN ((ut64)super.count, max_slots);
 	mo->cs_present = true;
-	const bool show_codesign = mo->options.show_codesign;
 	// to dump all certificates
 	// [0x00053f75]> b 5K;/x 30800609;wtf @@ hit*
 	// then do this:
@@ -1094,16 +955,6 @@ static bool parse_signature(struct MACH0_(obj_t) * mo, ut64 off) {
 				ut8 platform = 0;
 				if (r_buf_read_at (mo->b, slot_off + 38, &platform, 1) == 1) {
 					mo->cs_platform = platform;
-				}
-			}
-			if (show_codesign) {
-				RBinFile *bf = mo->options.bf;
-				if (slot_ok) {
-					if (bf && bf->rbin && bf->rbin->mb.hash) {
-						parseCodeDirectory (&bf->rbin->mb, mo->b, slot_off, slot_size);
-					}
-				} else if (mo->verbose) {
-					R_LOG_DEBUG ("Invalid CodeDirectory slot size");
 				}
 			}
 			continue;
@@ -1156,38 +1007,6 @@ static bool parse_signature(struct MACH0_(obj_t) * mo, ut64 off) {
 					mo->cs_has_cms = true;
 					mo->cert_paddr = slot_off;
 					mo->cert_size = sig_length;
-				}
-			}
-			if (show_codesign) {
-				ut8 header[8] = { 0 };
-				if (r_buf_read_at (mo->b, slot_off, header, sizeof (header)) != sizeof (header)) {
-					break;
-				}
-				ut32 length = R_MIN (UT16_MAX, r_read_ble32 (header + 4, 1));
-				if (!length || length > super.blob.length || idx.offset > super.blob.length - length) {
-					break;
-				}
-				ut8 *p = calloc (length, 1);
-				if (p) {
-					if (r_buf_read_at (mo->b, slot_off, p, length) < (int)length) {
-						free (p);
-						break;
-					}
-					if (length >= sizeof (ut32)) {
-						ut32 *words = (ut32 *)p;
-						eprintf ("Magic: %x\n", words[0]);
-					}
-					eprintf ("wtf DUMP @%d!%d\n",
-						(int)data + idx.offset + 8,
-						(int)length);
-					eprintf ("openssl pkcs7 -print_certs -text -inform der -in DUMP\n");
-					eprintf ("openssl asn1parse -offset %d -length %d -inform der -in /mo/ls\n",
-						(int)data + idx.offset + 8,
-						(int)length);
-					eprintf ("pFp@%d!%d\n",
-						(int)data + idx.offset + 8,
-						(int)length);
-					free (p);
 				}
 			}
 			break;
@@ -2714,7 +2533,6 @@ void MACH0_(opts_set_default)(struct MACH0_(opts_t) * options, RBinFile *bf) {
 	options->header_at = 0;
 	options->symbols_off = 0;
 	options->verbose = bf->rbin->options.verbose;
-	options->show_codesign = bf->rbin->options.show_codesign;
 	options->maxsymlen = bf->rbin->options.maxsymlen;
 	options->parse_start_symbols = false;
 	options->load_unnamed = bf->rbin->options.load_unnamed;
