@@ -1013,7 +1013,7 @@ static int rabin2_main(RCons *cons, int argc, const char **argv) {
 				" w/symstrong/NAME  restore a required ELF or Mach-O import\n"
 				" p/.data/rwx       change section permissions\n"
 				" P/LOAD0/rwx       change segment permissions (elf: LOAD0, GNU_STACK, PHDR, ...; mach-o: __TEXT, __DATA, ...)\n"
-				" c                 verify checksums and code signature hashes (dex, pe, mach-o, snes)\n"
+				" c                 verify checksums and code signature hashes (dex, pe, mach-o, snes, smd)\n"
 				" c/fix             rewrite the checksums that do not match\n"
 				" C                 show LDID entitlements\n");
 				rabin_core_fini (&core, core_cons);

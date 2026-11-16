@@ -227,6 +227,36 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
+// the checksum is the sum of the big endian words that follow the 512 byte header
+static int checksum(RBinFile *bf, RStrBuf *report, bool fix) {
+	const ut64 hdr = sizeof (SMD_Vectors);
+	const ut64 rom_start = hdr + sizeof (SMD_Header);
+	ut64 size = 0;
+	const ut8 *data = r_buf_data (bf->buf, &size);
+	if (!data || size <= rom_start) {
+		return -1;
+	}
+	// RomEnd is the last valid address, some roms store the size instead
+	const ut64 rom_end = (ut64)r_read_be32 (data + hdr + r_offsetof (SMD_Header, RomEnd)) + 1;
+	const ut64 end = (rom_end > rom_start && rom_end < size)? rom_end: size;
+	ut16 sum = 0;
+	ut64 i;
+	for (i = rom_start; i + 1 < end; i += 2) {
+		sum += r_read_be16 (data + i);
+	}
+	if (i < end) {
+		sum += data[i] << 8;
+	}
+	ut8 computed[2];
+	r_write_be16 (computed, sum);
+	const ut64 paddr = hdr + r_offsetof (SMD_Header, CheckSum);
+	return !r_bin_wr_checksum_update (bf->buf, report, "smd", paddr, computed, sizeof (computed), fix);
+}
+
+static RBinWrite r_bin_write_smd = {
+	.checksum = &checksum,
+};
+
 RBinPlugin r_bin_plugin_smd = {
 	.meta = {
 		.name = "smd",
@@ -241,6 +271,7 @@ RBinPlugin r_bin_plugin_smd = {
 	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
 	.info = &info,
+	.write = &r_bin_write_smd,
 	.minstrlen = 10,
 	.strfilter = 'U'
 };
