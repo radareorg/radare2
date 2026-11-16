@@ -2733,7 +2733,7 @@ RVecSegment *MACH0_(get_segments_vec)(RBinFile *bf, struct MACH0_(obj_t) * mo) {
 				}
 
 				char *section_name = r_str_ndup (sect->sectname, 16);
-				char *segment_name = r_str_newf ("%u.%s", (ut32)i, mo->segs[segment_index].segname);
+				char *segment_name = r_str_newf ("%u.%.16s", (ut32)i, mo->segs[segment_index].segname);
 				s->name = r_str_newf ("%s.%s", segment_name, section_name);
 				if (strstr (s->name, "__const")) {
 					s->format = r_str_newf ("Cd %d %" PFMT64d, ws, s->size / ws);

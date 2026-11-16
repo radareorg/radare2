@@ -891,6 +891,60 @@ bool test_r_bin_te_bounds(void) {
 	mu_end;
 }
 
+bool test_r_bin_mach0_full_segname(void) {
+	ut8 macho[256] = {0};
+	r_write_le32 (macho, 0xfeedfacf);
+	r_write_le32 (macho + 4, 0x01000007); // x86_64
+	r_write_le32 (macho + 8, 3);
+	r_write_le32 (macho + 12, 2); // MH_EXECUTE
+	r_write_le32 (macho + 16, 1); // ncmds
+	r_write_le32 (macho + 20, 152); // sizeofcmds
+	ut8 *seg = macho + 32;
+	r_write_le32 (seg, 0x19); // LC_SEGMENT_64
+	r_write_le32 (seg + 4, 152);
+	memcpy (seg + 8, "__SIXTEENCHARSEG", 16); // segname without null terminator
+	r_write_le64 (seg + 24, 0x4141414141414141ULL); // vmaddr right after segname
+	r_write_le64 (seg + 32, 0x1000); // vmsize
+	r_write_le64 (seg + 48, sizeof (macho)); // filesize
+	r_write_le32 (seg + 56, 7); // maxprot
+	r_write_le32 (seg + 60, 5); // initprot
+	r_write_le32 (seg + 64, 1); // nsects
+	ut8 *sect = seg + 72;
+	memcpy (sect, "__text", 6);
+	memcpy (sect + 16, "__SIXTEENCHARSEG", 16);
+	r_write_le64 (sect + 32, 0x4141414141414141ULL); // addr
+	r_write_le64 (sect + 40, 0x10); // size
+	r_write_le32 (sect + 48, 184); // offset
+
+	RBuffer *buf = r_buf_new_with_bytes (macho, sizeof (macho));
+	mu_assert_notnull (buf, "mach0 buffer creation");
+
+	RBin *bin = r_bin_new ();
+	RIO *io = r_io_new ();
+	r_io_bind (io, &bin->iob);
+
+	RBinFileOptions opt = {0};
+	bool res = r_bin_open_buf (bin, buf, &opt);
+	mu_assert_true (res, "mach0 binary opened successfully");
+
+	RVecRBinSection *sections = r_bin_get_sections_vec (bin);
+	mu_assert_notnull (sections, "sections vector retrieved");
+	bool found = false;
+	RBinSection *s;
+	R_VEC_FOREACH (sections, s) {
+		if (!s->is_segment) {
+			mu_assert_streq (s->name, "0.__SIXTEENCHARSEG.__text", "segment name bounded to 16 bytes");
+			found = true;
+		}
+	}
+	mu_assert_true (found, "section parsed");
+
+	r_bin_free (bin);
+	r_io_free (io);
+	r_unref (buf);
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_bin_string_charset);
 	mu_run_test(test_r_bin);
@@ -911,6 +965,7 @@ bool all_tests(void) {
 	mu_run_test(test_r_bin_cmd);
 	mu_run_test(test_r_bin_elf_pn_xnum_phdr);
 	mu_run_test(test_r_bin_te_bounds);
+	mu_run_test(test_r_bin_mach0_full_segname);
 	return tests_passed != tests_run;
 }
 
