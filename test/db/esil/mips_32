@@ -2490,13 +2490,13 @@ type: load
 esil: -16,a1,+,[4],f2,=
 mnemonic: ldc1
 type: load
-esil: 16,a1,+,[8],f4,=
+esil: 16,a1,+,[4],f4,=,4,16,a1,+,+,[4],f5,=
 mnemonic: swc1
 type: store
 esil: f2,-8,a1,+,=[4]
 mnemonic: sdc1
 type: store
-esil: f4,16,a1,+,=[8]
+esil: f4,16,a1,+,=[4],f5,4,16,a1,+,+,=[4]
 mnemonic: beql
 type: cjmp
 esil: $ds,!,!,?{,0x10,1,TRAP,BREAK,},at,v0,^,!,?{,0x20,SETJT,1,SETD,}{,pc,4,+,pc,:=,}
@@ -2534,14 +2534,128 @@ aes
 aes
 ar f2
 ar f4
+ar f5
 p8 4 @ 0x48
 p8 8 @ 0x50
 EOF
 EXPECT=<<EOF
 0x44332211
-0x8877665544332211
+0x44332211
+0x88776655
 11223344
 1122334455667788
+EOF
+RUN
+
+# FR=0: ldc1 f4, 0(a1); swc1 f5, 4(a2); sdc1 f4, 8(a1). The even FPR holds the low word in both endians
+NAME=mips.gnu ldc1 and sdc1 use the even/odd fpr pair
+FILE=malloc://128
+ARGS=-a mips.gnu -b 32
+CMDS=<<EOF
+aei
+wx 1122334455667788 @ 0x40
+ar a1=0x40
+ar a2=0x60
+wx 0000a4d40400c5e40800a4f4
+ar pc=0
+3aes
+ar f4
+ar f5
+p8 4 @ 0x64
+p8 8 @ 0x48
+e cfg.bigendian=true
+wx d4a40000e4c50004f4a40008
+wx 0000000000000000 @ 0x48
+ar a1=0x40
+ar a2=0x60
+ar pc=0
+3aes
+ar f4
+ar f5
+p8 4 @ 0x64
+p8 8 @ 0x48
+ao 1 @ 0~esil:
+EOF
+EXPECT=<<EOF
+0x44332211
+0x88776655
+55667788
+1122334455667788
+0x55667788
+0x11223344
+11223344
+1122334455667788
+esil: 0,a1,+,[4],f5,=,4,0,a1,+,+,[4],f4,=
+EOF
+RUN
+
+NAME=mips.gnu ldc1 and sdc1 use a single fpr in 64 bits
+FILE=malloc://128
+ARGS=-a mips.gnu -b 64
+CMDS=<<EOF
+aei
+wx 0000a4d40800a4f4
+wx 1122334455667788 @ 0x40
+ar a1=0x40
+ar pc=0
+2aes
+ar f4
+p8 8 @ 0x48
+EOF
+EXPECT=<<EOF
+0x8877665544332211
+1122334455667788
+EOF
+RUN
+
+# microMIPS li, j, jal share their first bytes with classic beql, ldc1, sdc1
+NAME=mips.gnu classic analysis stays away from microMIPS
+FILE=malloc://64
+ARGS=-a mips.gnu -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+e asm.cpu=micro
+wx 50200003d4000000f4000000
+ao 3~mnemonic,type,esil:
+EOF
+EXPECT=<<EOF
+mnemonic: li
+type: unk
+mnemonic: j
+type: unk
+mnemonic: jal
+type: unk
+EOF
+RUN
+
+# beql and ldc1 are MIPS II, lwc1 and beq are MIPS I; blezl and bgtzl need rt to be zero
+NAME=mips.gnu likely branches and ldc1 respect the isa and reserved fields
+FILE=malloc://64
+ARGS=-a mips.gnu -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 580100035c01000358000003
+ao 3~mnemonic,type,esil:
+e asm.cpu=mips1
+wx 50220003d4a40010c4a2fff010220003
+ao 4~mnemonic,type,esil:
+EOF
+EXPECT=<<EOF
+mnemonic: 0x58010003
+type: unk
+mnemonic: 0x5c010003
+type: unk
+mnemonic: blezl
+type: cjmp
+esil: $ds,!,!,?{,0x8,1,TRAP,BREAK,},0,zero,<=,?{,0x18,SETJT,1,SETD,}{,pc,4,+,pc,:=,}
+mnemonic: 0x50220003
+type: unk
+mnemonic: 0xd4a40010
+type: unk
+mnemonic: lwc1
+type: load
+esil: -16,a1,+,[4],f2,=
+mnemonic: beq
+type: cjmp
+esil: $ds,!,!,?{,0xc,1,TRAP,BREAK,},at,v0,^,!,?{,0x1c,SETJT,1,SETD,}
 EOF
 RUN
 

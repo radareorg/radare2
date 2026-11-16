@@ -759,6 +759,7 @@ struct gnu_ireg {
 typedef struct gnu_insn {
 	ut8 optype;
 	ut32 id;
+	const char *fpr_pair; // FPR holding the second word of a paired ldc1/sdc1
 	union {
 		struct gnu_rreg r_reg;
 		struct gnu_ireg i_reg;
@@ -783,7 +784,7 @@ typedef struct gnu_insn {
 	r_strbuf_appendf (&op->esil, sbits",%s,%s,+,["size"],~,%s%s",\
 		I_REG (imm), I_REG (rs), ESIL_LOAD_DEST)
 
-static const char *mips_fpr_names[32] = {
+static const char *const mips_fpr_names[32] = {
 	"f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7",
 	"f8", "f9", "f10", "f11", "f12", "f13", "f14", "f15",
 	"f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23",
@@ -873,8 +874,14 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 			I_REG (rt), I_REG (imm), I_REG (rs));
 		break;
 	case MIPS_INS_SDC1:
-		r_strbuf_appendf (&op->esil, "%s,%s,%s,+,=[8]",
-			I_REG (rt), I_REG (imm), I_REG (rs));
+		if (insn->fpr_pair) {
+			r_strbuf_appendf (&op->esil, "%s,%s,%s,+,=[4],%s,4,%s,%s,+,+,=[4]",
+				I_REG (rt), I_REG (imm), I_REG (rs),
+				insn->fpr_pair, I_REG (imm), I_REG (rs));
+		} else {
+			r_strbuf_appendf (&op->esil, "%s,%s,%s,+,=[8]",
+				I_REG (rt), I_REG (imm), I_REG (rs));
+		}
 		break;
 	case MIPS_INS_SB:
 		r_strbuf_appendf (&op->esil, "%s,%s,%s,+,=[1]",
@@ -1176,12 +1183,18 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 		}
 		break;
 	case MIPS_INS_LWC1:
-	case MIPS_INS_LWC2:
 	case MIPS_INS_LWU:
 		ESIL_LOAD ("4");
 		break;
 	case MIPS_INS_LDC1:
-	case MIPS_INS_LDC2:
+		if (insn->fpr_pair) {
+			r_strbuf_appendf (&op->esil, "%s,%s,+,[4],%s,=,4,%s,%s,+,+,[4],%s,=",
+				I_REG (imm), I_REG (rs), I_REG (rt),
+				I_REG (imm), I_REG (rs), insn->fpr_pair);
+		} else {
+			ESIL_LOAD ("8");
+		}
+		break;
 	case MIPS_INS_LLD:
 	case MIPS_INS_LD:
 		ESIL_LOAD ("8");
@@ -1401,7 +1414,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	if (!op) {
 		return false; // XXX true?
 	}
-	if (as->config->cpu && !strcmp (as->config->cpu, "micro")) {
+	const char *cpu = as->config->cpu;
+	const bool micro = cpu && !strcmp (cpu, "micro");
+	// branch-likely and the 64-bit cop1 moves are MIPS II and up
+	const bool mips1 = cpu && !strcmp (cpu, "mips1");
+	if (micro) {
 		if (len < 2) {
 			return false;
 		}
@@ -1430,6 +1447,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = oplen;
 	op->addr = addr;
+	if (micro) {
+		// the analysis below only knows the classic 32-bit encodings
+		return true;
+	}
 	// Be endian aware
 	if (len >= 4) {
 #if R_SYS_ENDIAN
@@ -1766,12 +1787,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				op->type = R_ANAL_OP_TYPE_CJMP;
 				break;
 			case 2: // bltzl
-				insn.id = MIPS_INS_BLTZL;
-				op->type = R_ANAL_OP_TYPE_CJMP;
-				break;
 			case 3: // bgezl
-				insn.id = MIPS_INS_BGEZL;
-				op->type = R_ANAL_OP_TYPE_CJMP;
+				if (!mips1) {
+					insn.id = (rt == 2)? MIPS_INS_BLTZL: MIPS_INS_BGEZL;
+					op->type = R_ANAL_OP_TYPE_CJMP;
+				}
 				break;
 			case 16: // bltzal
 				insn.id = MIPS_INS_BLTZAL;
@@ -1817,6 +1837,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case 21: // bnel
 		case 22: // blezl
 		case 23: // bgtzl
+			// blezl and bgtzl are reserved encodings unless rt is zero
+			if (optype >= 20 && (mips1 || (optype >= 22 && rt))) {
+				break;
+			}
 			if (!insn.id) {
 				const int likely_ids[] = { MIPS_INS_BEQL, MIPS_INS_BNEL, MIPS_INS_BLEZL, MIPS_INS_BGTZL };
 				insn.id = likely_ids[optype - 20];
@@ -2044,10 +2068,19 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			{
 				const bool store = optype == 57 || optype == 61;
 				const bool wide = optype == 53 || optype == 61;
+				if (wide && mips1) {
+					break;
+				}
 				insn.id = store
 					? (wide? MIPS_INS_SDC1: MIPS_INS_SWC1)
 					: (wide? MIPS_INS_LDC1: MIPS_INS_LWC1);
 				insn.i_reg.rt = mips_fpr_names[rt];
+				if (wide && as->config->bits != 64) {
+					// FR=0: a double lives in an even/odd pair, low word in the even one
+					const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
+					insn.i_reg.rt = mips_fpr_names[be? rt | 1: rt & ~1];
+					insn.fpr_pair = mips_fpr_names[be? rt & ~1: rt | 1];
+				}
 				op->refptr = wide? 8: 4;
 				op->type = store? R_ANAL_OP_TYPE_STORE: R_ANAL_OP_TYPE_LOAD;
 			}
@@ -2203,9 +2236,8 @@ static char *regs(RArchSession *as) {
 	for (i = 0; i < R_ARRAY_SIZE (names); i++) {
 		r_strbuf_appendf (sb, "gpr	%s	.%d	%d	0\n", names[i], bits, (int)i * (bits / 8));
 	}
-	const int fpr_base = (int)R_ARRAY_SIZE (names) * (bits / 8);
 	for (i = 0; i < R_ARRAY_SIZE (mips_fpr_names); i++) {
-		r_strbuf_appendf (sb, "fpu	%s	.64	%d	0\n", mips_fpr_names[i], fpr_base + (int)i * 8);
+		r_strbuf_appendf (sb, "fpu	%s	.%d	%d	0\n", mips_fpr_names[i], bits, (int)i * (bits / 8));
 	}
 	return r_strbuf_drain (sb);
 }
