@@ -8,79 +8,113 @@ static inline void str_op(char *c) {
 	}
 }
 
-static int gb_reg_idx(char r) {
-	const char rstr[] = "bcdehl a";
-	const char *ptr = strchr (rstr, r);
-	return ptr && r && r != ' '? (int)(size_t)(ptr - rstr): -1;
+static int gb_reg_idx(const char *operand) {
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (cb_regs); i++) {
+		if (!r_str_casecmp (operand, cb_regs[i])) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+static char *gb_split_operands(char *operands) {
+	char *src = strchr (operands, ',');
+	if (src) {
+		*src++ = 0;
+		r_str_trim (operands);
+		r_str_trim (src);
+	}
+	return src;
+}
+
+static bool gb_parse_number(const char *operand, ut64 *value) {
+	// RNum accepts partial expressions, so validate the complete operand first.
+	const char *p = operand;
+	int depth = 0;
+	bool need_number = true;
+	while (*(p = r_str_trim_head_ro (p))) {
+		if (need_number) {
+			if (*p == '(') {
+				if (++depth > 32) {
+					return false;
+				}
+				p++;
+				continue;
+			}
+			if (*p == '-' || *p == '~' || *p == '!') {
+				p++;
+				continue;
+			}
+			const char *digits = "0123456789";
+			if (*p == '0' && p[1]) {
+				switch (p[1]) {
+				case 'x': case 'X': digits = "0123456789abcdefABCDEF"; p += 2; break;
+				case 'b': case 'B': digits = "01"; p += 2; break;
+				case 'o': case 'O': digits = "01234567"; p += 2; break;
+				}
+			}
+			size_t len = strspn (p, digits);
+			if (!len) {
+				return false;
+			}
+			p += len;
+			need_number = false;
+		} else if (*p == ')' && depth) {
+			depth--;
+			p++;
+		} else if (r_num_is_op (*p) || *p == '<' || *p == '>') {
+			char op = *p++;
+			if (*p == op && (op == '<' || op == '>' || op == '&' || op == '|' || op == '^')) {
+				p++;
+				if (*p == op && (op == '<' || op == '>')) {
+					p++;
+				}
+			}
+			need_number = true;
+		} else {
+			return false;
+		}
+	}
+	if (need_number || depth) {
+		return false;
+	}
+	RNum num = {0};
+	const char *error = NULL;
+	*value = r_num_math_err (&num, operand, &error);
+	return !error && !num.dbz;
 }
 
 static bool gb_parse_cb1(ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
-// minlen varries between 4 and 6
-	int i;
-	size_t j;
-	if (strlen (buf_asm) < minlen || minlen < 1) {
+	if (strlen (buf_asm) < minlen) {
 		return false;
 	}
-	buf[0] = base;
-	char *ptr_asm = buf_asm + minlen - 1;
-	j = strlen (ptr_asm);
-	r_str_replace_in (ptr_asm, (ut32)j + 1, "[ ", "[", true);
-	r_str_replace_in (ptr_asm, (ut32)j + 1, " ]", "]", true);
-	r_str_do_until_token (str_op, buf_asm, ' ');
-	i = gb_reg_idx (buf_asm[minlen - 1]);
-	if (i != (-1)) {
-		buf[0] |= (ut8)i;
-		return true;
+	char *operand = buf_asm + minlen - 1;
+	r_str_trim (operand);
+	int reg = gb_reg_idx (operand);
+	if (reg < 0) {
+		return false;
 	}
-	if (!strncmp (&buf_asm[minlen - 1], "[hl]", 4)) {
-		buf[0] |= 6;
-		return true;
-	}
-	return false;
+	buf[0] = base | reg;
+	return true;
 }
 
 static bool gb_parse_cb2(ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
-	ut64 num;
-	int i;
-	char *p, *q;
-	if ((i = strlen (buf_asm)) < minlen) {
+	if (strlen (buf_asm) < minlen) {
 		return false;
 	}
-	r_str_replace_in (buf_asm, (ut32)i + 1, "[ ", "[", true);
-	r_str_replace_in (buf_asm, (ut32)i + 1, " ]", "]", true);
-	r_str_replace_in (buf_asm, (ut32)i + 1, ", ", ",", true);
-	p = strchr (buf_asm, (int)' ');
-	if (!p) {
+	char *bit = buf_asm + 4;
+	char *operand = gb_split_operands (bit);
+	ut64 number;
+	if (!operand || !gb_parse_number (bit, &number) || number > 7) {
 		return false;
 	}
-	q = strchr (p, (int)',');
-	if (!q) {
+	int reg = gb_reg_idx (operand);
+	if (reg < 0) {
 		return false;
 	}
-	q[0] = '\0';
-	if (p[1] == '\0' || q[1] == '\0') {
-		q[0] = ',';
-		return false;
-	}
-	num = r_num_math (NULL, &p[1]);
-	q[0] = ',';
-	if (num > 7) {
-		return false;
-	}
-	buf[0] = base + (ut8)num * 8;
-	i = gb_reg_idx (q[1]);
-	if (i != -1) {
-		buf[0] |= (ut8)i;
-		return true;
-	}
-	if (strlen (q + 1) < 4) {
-		return false;
-	}
-	if (!strncmp (q + 1, "[hl]", 4)) {
-		buf[0] |= 6;
-		return true;
-	}
-	return false;
+	buf[0] = base | (number << 3) | reg;
+	return true;
 }
 
 static int gb_parse_arith1(ut8 *buf, const int minlen, char *buf_asm, ut8 base, ut8 alt) {
@@ -89,171 +123,129 @@ static int gb_parse_arith1(ut8 *buf, const int minlen, char *buf_asm, ut8 base, 
 	}
 	char *operand = buf_asm + minlen - 1;
 	r_str_trim (operand);
-	if (r_str_startswith (operand, "a,")) {
+	if (!r_str_ncasecmp (operand, "a,", 2)) {
 		operand += 2;
 		r_str_trim (operand);
 	}
-	if (!*operand) {
+	int reg = gb_reg_idx (operand);
+	if (reg >= 0) {
+		buf[0] = base | reg;
+		return 1;
+	}
+	ut64 number;
+	if (!gb_parse_number (operand, &number)) {
 		return 0;
 	}
-	int reg = gb_reg_idx (*operand);
-	if (reg >= 0 && !operand[1]) {
-		buf[0] = base | reg;
-	} else if (!strcmp (operand, "[hl]")) {
-		buf[0] = base | 6;
-	} else {
-		buf[0] = alt;
-		buf[1] = (ut8)r_num_math (NULL, operand);
+	buf[0] = alt;
+	buf[1] = number;
+	return 2;
+}
+
+static int gb_parse_ld(ut8 *buf, char *dst, bool high) {
+	static const char *const pairs[] = { "bc", "de", "hl", "sp" };
+	static const struct {
+		const char *name;
+		ut8 store;
+		ut8 load;
+	} mem_ops[] = {
+		{ "bc", 0x02, 0x0a }, { "de", 0x12, 0x1a },
+		{ "hl+", 0x22, 0x2a }, { "hl-", 0x32, 0x3a }, { "c", 0xe2, 0xf2 }
+	};
+	char *src = gb_split_operands (dst);
+	if (!src) {
+		return 0;
+	}
+	r_str_case (dst, false);
+	r_str_case (src, false);
+	int dst_reg = gb_reg_idx (dst);
+	int src_reg = gb_reg_idx (src);
+	ut64 number;
+	if (!high) {
+		if (dst_reg >= 0 && src_reg >= 0) {
+			if (dst_reg == 6 && src_reg == 6) {
+				return 0;
+			}
+			buf[0] = 0x40 | (dst_reg << 3) | src_reg;
+			return 1;
+		}
+		if (dst_reg >= 0 && gb_parse_number (src, &number)) {
+			buf[0] = 0x06 | (dst_reg << 3);
+			buf[1] = number;
+			return 2;
+		}
+		if (!strcmp (dst, "sp") && !strcmp (src, "hl")) {
+			buf[0] = 0xf9;
+			return 1;
+		}
+		if (!strcmp (dst, "hl") && r_str_startswith (src, "sp")) {
+			const char *offset = r_str_trim_head_ro (src + 2);
+			if (*offset == '+' && gb_parse_number (offset + 1, &number)) {
+				buf[0] = 0xf8;
+				buf[1] = number;
+				return 2;
+			}
+			return 0;
+		}
+		int i;
+		for (i = 0; i < R_ARRAY_SIZE (pairs); i++) {
+			if (!strcmp (dst, pairs[i]) && gb_parse_number (src, &number)) {
+				buf[0] = 0x01 | (i << 4);
+				r_write_le16 (buf + 1, number);
+				return 3;
+			}
+		}
+	}
+	bool load = !strcmp (dst, "a");
+	bool accumulator = load || !strcmp (src, "a");
+	char *mem = load? src: dst;
+	if ((!accumulator && (high || strcmp (src, "sp")))
+			|| *mem != '[' || !r_str_endswith (mem, "]")) {
+		return 0;
+	}
+	mem[strlen (mem) - 1] = 0;
+	r_str_trim (++mem);
+	char *offset = strrchr (mem, '+');
+	if (offset && !strcmp (r_str_trim_head_ro (offset + 1), "c")) {
+		*offset = 0;
+		if (!gb_parse_number (mem, &number) || number != 0xff00) {
+			return 0;
+		}
+		mem = "c";
+	}
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (mem_ops); i++) {
+		if (!strcmp (mem, mem_ops[i].name)) {
+			if (!accumulator || (high && strcmp (mem, "c"))) {
+				return 0;
+			}
+			buf[0] = load? mem_ops[i].load: mem_ops[i].store;
+			return 1;
+		}
+	}
+	if (*mem == 'r') {
+		for (i = 0; i < R_ARRAY_SIZE (gb_io_regs); i++) {
+			if (gb_io_regs[i] && !r_str_casecmp (mem, gb_io_regs[i])) {
+				number = 0xff00 + i;
+				break;
+			}
+		}
+		if (i == R_ARRAY_SIZE (gb_io_regs)) {
+			return 0;
+		}
+	} else if (!gb_parse_number (mem, &number)) {
+		return 0;
+	}
+	if (high) {
+		if (number > 0xff && (number < 0xff00 || number > 0xffff)) {
+			return 0;
+		}
+		buf[0] = load? 0xf0: 0xe0;
+		buf[1] = number;
 		return 2;
 	}
-	return 1;
-}
-
-static int gb_parse_ldmem(ut8 *buf, const char *buf_asm) {
-	char *operands = strdup (buf_asm + 3);
-	if (!operands) {
-		return 0;
-	}
-	r_str_replace_in (operands, strlen (operands) + 1, " ", "", true);
-	char *src = strchr (operands, ',');
-	int len = 0;
-	if (!src) {
-		free (operands);
-		return 0;
-	}
-	*src++ = 0;
-	char *dst = operands;
-	bool load = !strcmp (dst, "a");
-	char *mem = load? src: dst;
-	if (!strcmp (dst, "sp") && !strcmp (src, "hl")) {
-		buf[0] = 0xf9;
-		len = 1;
-	} else if (!strcmp (dst, "hl") && r_str_startswith (src, "sp+")) {
-		buf[0] = 0xf8;
-		buf[1] = (ut8)r_num_math (NULL, src + 3);
-		len = 2;
-	} else if ((load || !strcmp (src, "a") || !strcmp (src, "sp"))
-			&& *mem == '[' && r_str_endswith (mem, "]")) {
-		mem[strlen (mem) - 1] = 0;
-		mem++;
-		if (!strcmp (mem, "bc") || !strcmp (mem, "de")) {
-			if (load || !strcmp (src, "a")) {
-				buf[0] = (!strcmp (mem, "bc")? 0x02: 0x12) | (load? 8: 0);
-				len = 1;
-			}
-		} else if (!strcmp (mem, "hl+") || !strcmp (mem, "hl-")) {
-			if (load || !strcmp (src, "a")) {
-				buf[0] = (!strcmp (mem, "hl+")? 0x22: 0x32) | (load? 8: 0);
-				len = 1;
-			}
-		} else if (!strcmp (mem, "c") || !strcmp (mem, "0xff00+c") || !strcmp (mem, "$ff00+c")) {
-			// ld [0xff00 + c], a and ld a, [0xff00 + c]
-			if (load || !strcmp (src, "a")) {
-				buf[0] = load? 0xf2: 0xe2;
-				len = 1;
-			}
-		} else if (strcmp (mem, "hl")) {
-			ut64 address = r_num_math (NULL, mem);
-			buf[0] = load? 0xfa: !strcmp (src, "sp")? 0x08: 0xea;
-			r_write_le16 (buf + 1, address);
-			len = 3;
-		}
-	}
-	free (operands);
-	return len;
-}
-
-static int gb_parse_ld1(ut8 *buf, const int minlen, char *buf_asm) {
-	int i;
-	r_str_replace_in (buf_asm, strlen (buf_asm) + 1, ", ", ",", true);
-	if (strlen (buf_asm) < minlen) {
-		return false;
-	}
-	r_str_do_until_token (str_op, buf_asm, '\0');
-	if (buf_asm[4] == ',') {
-		i = gb_reg_idx (buf_asm[3]);
-		if (i == (-1)) {
-			return false;
-		}
-		buf[0] = (ut8)(0x40 + (i * 8));
-		i = gb_reg_idx (buf_asm[5]);
-		if (i == -1) {
-			if (strcmp (buf_asm + 5, "[hl]")) {
-				return false;
-			}
-			i = 6;
-		}
-		buf[0] |= (ut8)i;
-		return 1;
-	}
-	if (r_str_startswith (buf_asm + 3, "[hl],")) {
-		if ((i = gb_reg_idx (buf_asm[8])) == -1) {
-			// 'ld [hl], [hl]' does not exist
-			return false;
-		}
-		buf[0] = 0x70 | (ut8)i;
-		return 1;
-	}
-	return 0;
-}
-
-static bool gb_parse_ld2(ut8 *buf, char *buf_asm) {
-	int i;
-	ut64 num;
-	if (strlen (buf_asm) < 6) {
-		return false;
-	}
-	if (buf_asm[4] == ',') {
-		if ((i = gb_reg_idx (buf_asm[3])) == -1) {
-			return false;
-		}
-		if (buf_asm[5] == '[') {
-			// no 8-bit register but a takes a memory operand other than [hl]
-			return false;
-		}
-		buf[0] = 0x6 + (ut8)(i * 8);
-		num = r_num_math (NULL, buf_asm + 5);
-		buf[1] = (ut8)(num & 0xff);
-		return true;
-	} else if (!strncmp (buf_asm + 3, "[hl],", 5) && buf_asm[8] != '[') {
-		buf[0] = 0x36;
-		num = r_num_math (NULL, buf_asm + 8);
-		buf[1] = (ut8)(num & 0xff);
-		return true;
-	}
-	return false;
-}
-
-static bool gb_parse_ld3(ut8 *buf, char *buf_asm) {
-	if (strlen (buf_asm) < 7) {
-		return false;
-	}
-	if (buf_asm[5] != ',' || buf_asm[6] == '[') {
-		return false;
-	}
-
-	const ut16 reg = (buf_asm[3] << 8) | buf_asm[4];
-	switch (reg) {
-	case 0x6263:	//bc
-		buf[0] = 0x01;
-		break;
-	case 0x6465:	//de
-		buf[0] = 0x11;
-		break;
-	case 0x686c:	//hl
-		buf[0] = 0x21;
-		break;
-	case 0x7370:	//sp
-		buf[0] = 0x31;
-		break;
-	default:
-		return false;
-	}
-
-	const ut64 num = r_num_math (NULL, buf_asm + 6);
-	buf[1] = num & 0xff;
-	buf[2] = (num & 0xff00) >> 8;
-	return true;
+	buf[0] = load? 0xfa: accumulator? 0xea: 0x08;
+	r_write_le16 (buf + 1, number);
+	return 3;
 }
 
 static int gbAsm(const char *buf, ut8 **outbuf) {
@@ -269,11 +261,17 @@ static int gbAsm(const char *buf, ut8 **outbuf) {
 	if (!buf_asm) {
 		return 0;
 	}
-	ut32 buf_len = strlen (buf);
+	buf_asm = r_str_replace (buf_asm, "$", "0x", true);
+	if (!buf_asm) {
+		return 0;
+	}
+	ut32 buf_len = strlen (buf_asm);
 	while (strstr (buf_asm, "  ")) {
 		r_str_replace_in (buf_asm, buf_len + 1, "  ", " ", true);
 	}
 	r_str_replace_in (buf_asm, buf_len + 1, " ,", ",", true);
+	r_str_replace_in (buf_asm, buf_len + 1, "[ ", "[", true);
+	r_str_replace_in (buf_asm, buf_len + 1, " ]", "]", true);
 	mn_len = r_str_do_until_token (str_op, buf_asm, ' ');
 	if (mn_len < 2 || mn_len > 4) {
 		free (buf_asm);
@@ -291,8 +289,6 @@ static int gbAsm(const char *buf, ut8 **outbuf) {
 			free (buf_asm);
 			return 0;
 		}
-		r_str_replace_in (buf_asm, (ut32)i + 1, "[ ", "[", true);
-		r_str_replace_in (buf_asm, (ut32)i + 1, " ]", "]", true);
 		r_str_do_until_token (str_op, buf_asm + 4, '\0');
 		if (buf_asm[4] == 'b') {
 			opbuf[0] = (buf_asm[5] == 'c')? 3: 4;
@@ -321,8 +317,6 @@ static int gbAsm(const char *buf, ut8 **outbuf) {
 			free (buf_asm);
 			return 0;
 		}
-		r_str_replace_in (buf_asm, (ut32)i + 1, "[ ", "[", true);
-		r_str_replace_in (buf_asm, (ut32)i + 1, " ]", "]", true);
 		r_str_do_until_token (str_op, &buf_asm[4], '\0');
 		switch (buf_asm[4]) {
 		case 'b':
@@ -386,9 +380,11 @@ static int gbAsm(const char *buf, ut8 **outbuf) {
 			&& buf_asm[6] == ','
 			&& buf_asm[7] != '\0') {
 			opbuf[0] = 0xe8;
-			num = r_num_math (NULL, buf_asm + 7);
-			opbuf[1] = (ut8)(num & 0xff);
-			len = 2;
+			len = 0;
+			if (gb_parse_number (buf_asm + 7, &num)) {
+				opbuf[1] = num;
+				len = 2;
+			}
 		} else if (!strcmp (buf_asm + 4, "hl,bc")) {
 			opbuf[0] = 0x09;
 		} else if (!strcmp (buf_asm + 4, "hl,de")) {
@@ -476,21 +472,9 @@ static int gbAsm(const char *buf, ut8 **outbuf) {
 	case 0x6569: // "ei"
 		opbuf[0] = 0xfb;
 		break;
-	case 0x6c64: // "ld"
-		i = strlen (buf_asm);
-		r_str_replace_in (buf_asm, (ut32)i + 1, "[ ", "[", true);
-		r_str_replace_in (buf_asm, (ut32)i + 1, " ]", "]", true);
-		len = gb_parse_ldmem (opbuf, buf_asm);
-		if (len < 1) {
-			len = gb_parse_ld1 (opbuf, 6, buf_asm);
-		}
-		if (len < 1) {
-			if (gb_parse_ld2 (opbuf, buf_asm)) {
-				len = 2;
-			} else if (gb_parse_ld3 (opbuf, buf_asm)) {
-				len = 3;
-			}
-		}
+	case 0x6c64: // ld
+	case 0x6c6468: // ldh
+		len = buf_asm[mn_len]? gb_parse_ld (opbuf, buf_asm + mn_len + 1, mn == 0x6c6468): 0;
 		break;
 	case 0x727374: //rst
 		if (strlen (buf_asm) < 5) {

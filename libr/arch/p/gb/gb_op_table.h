@@ -20,6 +20,66 @@ static const char *cb_ops[] = {
 
 static const char *cb_regs[]= { "b", "c", "d", "e", "h", "l", "[hl]", "a" };
 
+static const char *const gb_io_regs[256] = {
+	[0x00] = "rP1",
+	[0x01] = "rSB",
+	[0x02] = "rSC",
+	[0x04] = "rDIV",
+	[0x05] = "rTIMA",
+	[0x06] = "rTMA",
+	[0x07] = "rTAC",
+	[0x0f] = "rIF",
+	[0x10] = "rAUD1SWEEP",
+	[0x11] = "rAUD1LEN",
+	[0x12] = "rAUD1ENV",
+	[0x13] = "rAUD1LOW",
+	[0x14] = "rAUD1HIGH",
+	[0x16] = "rAUD2LEN",
+	[0x17] = "rAUD2ENV",
+	[0x18] = "rAUD2LOW",
+	[0x19] = "rAUD2HIGH",
+	[0x1a] = "rAUD3ENA",
+	[0x1b] = "rAUD3LEN",
+	[0x1c] = "rAUD3LEVEL",
+	[0x1d] = "rAUD3LOW",
+	[0x1e] = "rAUD3HIGH",
+	[0x20] = "rAUD4LEN",
+	[0x21] = "rAUD4ENV",
+	[0x22] = "rAUD4POLY",
+	[0x23] = "rAUD4GO",
+	[0x24] = "rAUDVOL",
+	[0x25] = "rAUDTERM",
+	[0x26] = "rAUDENA",
+	[0x40] = "rLCDC",
+	[0x41] = "rSTAT",
+	[0x42] = "rSCY",
+	[0x43] = "rSCX",
+	[0x44] = "rLY",
+	[0x45] = "rLYC",
+	[0x46] = "rDMA",
+	[0x47] = "rBGP",
+	[0x48] = "rOBP0",
+	[0x49] = "rOBP1",
+	[0x4a] = "rWY",
+	[0x4b] = "rWX",
+	[0x4d] = "rKEY1",
+	[0x4f] = "rVBK",
+	[0x51] = "rHDMA1",
+	[0x52] = "rHDMA2",
+	[0x53] = "rHDMA3",
+	[0x54] = "rHDMA4",
+	[0x55] = "rHDMA5",
+	[0x56] = "rRP",
+	[0x68] = "rBCPS",
+	[0x69] = "rBCPD",
+	[0x6a] = "rOCPS",
+	[0x6b] = "rOCPD",
+	[0x70] = "rSVBK",
+	[0x76] = "rPCM12",
+	[0x77] = "rPCM34",
+	[0xff] = "rIE",
+};
+
 static gb_opcode gb_op[] = {
 	{ "nop", GB_8BIT }, //0x00
 	{ "ld bc, 0x%04x", GB_8BIT + ARG_16},
@@ -258,7 +318,7 @@ static gb_opcode gb_op[] = {
 	{ "sbc 0x%02x", GB_8BIT+ARG_8 },
 	{ "rst 24", GB_8BIT },
 
-	{ "ld [%s], a"		,GB_8BIT+ARG_8+GB_IO },	//0xe0
+	{ "ldh [%s], a"		,GB_8BIT+ARG_8+GB_IO },	//0xe0
 	{ "pop hl", GB_8BIT },
 	{ "ld [0xff00 + c], a"	,GB_8BIT },
 	{ "invalid", GB_8BIT },
@@ -275,7 +335,7 @@ static gb_opcode gb_op[] = {
 	{ "xor 0x%02x", GB_8BIT+ARG_8 },
 	{ "rst 40", GB_8BIT },
 
-	{ "ld a, [%s]"	,GB_8BIT+ARG_8+GB_IO },	//0xf0
+	{ "ldh a, [%s]"	,GB_8BIT+ARG_8+GB_IO },	//0xf0
 	{ "pop af", GB_8BIT },
 	{ "ld a, [0xff00 + c]"	,GB_8BIT },
 	{ "di", GB_8BIT },

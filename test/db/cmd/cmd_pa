@@ -1152,3 +1152,137 @@ ERROR: Cannot assemble 'ld [hl], [bc]' at line 1
 ERROR: Cannot assemble 'ld bc, [0x1234]' at line 1
 EOF
 RUN
+
+NAME=pa gb validates complete operands
+FILE=-
+ARGS=-a gb
+CMDS=<<EOF
+pa ld a, [0xff01+c]
+pa ld [0xff01+c], a
+pa ld a, [0xff00+bc]
+pa ld a, [0x ff00+c]
+pa ld [0x ff00+c], a
+pa ld b, [c]
+pa ld [c], b
+pa ld b, [0xff00+c]
+pa ld [0xff00+c], b
+pa ld [c], sp
+pa ld [0xff00+c], sp
+pa ld [0xff01+c], sp
+pa ld b, ([bc])
+pa ld b, bogus
+pa ld bogus, b
+pa ld [hl], bogus
+pa ld [hl], [hl]
+pa ld a, [0xff00 junk]
+pa ld [0xff00 junk], a
+pa ld b, 0junk
+pa ld b, 0 1
+pa ld b, (0) 1
+pa ld b, 0)
+pa ld b, (0
+pa ld b, 0+
+pa ld b, 0/0
+pa ld bc, bogus
+pa ld hl, sp+bogus
+pa ld a, [c junk]
+pa ldh a, [0x100]
+pa ldh a, [0x10000]
+pa ldh [c], sp
+pa ldh [0xff00], sp
+pa ldh a, [bc]
+pa ldh a, [0xff01+c]
+pa ldh a, [rUnknown]
+pa ldh b, [rSB]
+pa add a, [bc]
+pa adc a, ([hl])
+pa sub bogus
+pa sbc a, 0 junk
+pa and [bc]
+pa xor bc
+pa or bogus
+pa cp 0junk
+pa add sp, bogus
+pa bit bogus, a
+pa bit 0 junk, a
+pa bit 8, a
+pa bit 0, bogus
+pa res 0, bc
+pa set 0, [hl]junk
+pa rlc bc
+pa rlc bogus
+pa rr [hl]junk
+pa rlc
+pa bit
+pa ld
+pa ldh
+pa ld a,
+pa ld ,a
+pa ld a, b, c
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'ld a, [0xff01+c]' at line 1
+ERROR: Cannot assemble 'ld [0xff01+c], a' at line 1
+ERROR: Cannot assemble 'ld a, [0xff00+bc]' at line 1
+ERROR: Cannot assemble 'ld a, [0x ff00+c]' at line 1
+ERROR: Cannot assemble 'ld [0x ff00+c], a' at line 1
+ERROR: Cannot assemble 'ld b, [c]' at line 1
+ERROR: Cannot assemble 'ld [c], b' at line 1
+ERROR: Cannot assemble 'ld b, [0xff00+c]' at line 1
+ERROR: Cannot assemble 'ld [0xff00+c], b' at line 1
+ERROR: Cannot assemble 'ld [c], sp' at line 1
+ERROR: Cannot assemble 'ld [0xff00+c], sp' at line 1
+ERROR: Cannot assemble 'ld [0xff01+c], sp' at line 1
+ERROR: Cannot assemble 'ld b, ([bc])' at line 1
+ERROR: Cannot assemble 'ld b, bogus' at line 1
+ERROR: Cannot assemble 'ld bogus, b' at line 1
+ERROR: Cannot assemble 'ld [hl], bogus' at line 1
+ERROR: Cannot assemble 'ld [hl], [hl]' at line 1
+ERROR: Cannot assemble 'ld a, [0xff00 junk]' at line 1
+ERROR: Cannot assemble 'ld [0xff00 junk], a' at line 1
+ERROR: Cannot assemble 'ld b, 0junk' at line 1
+ERROR: Cannot assemble 'ld b, 0 1' at line 1
+ERROR: Cannot assemble 'ld b, (0) 1' at line 1
+ERROR: Cannot assemble 'ld b, 0)' at line 1
+ERROR: Cannot assemble 'ld b, (0' at line 1
+ERROR: Cannot assemble 'ld b, 0+' at line 1
+ERROR: Cannot assemble 'ld b, 0/0' at line 1
+ERROR: Cannot assemble 'ld bc, bogus' at line 1
+ERROR: Cannot assemble 'ld hl, sp+bogus' at line 1
+ERROR: Cannot assemble 'ld a, [c junk]' at line 1
+ERROR: Cannot assemble 'ldh a, [0x100]' at line 1
+ERROR: Cannot assemble 'ldh a, [0x10000]' at line 1
+ERROR: Cannot assemble 'ldh [c], sp' at line 1
+ERROR: Cannot assemble 'ldh [0xff00], sp' at line 1
+ERROR: Cannot assemble 'ldh a, [bc]' at line 1
+ERROR: Cannot assemble 'ldh a, [0xff01+c]' at line 1
+ERROR: Cannot assemble 'ldh a, [rUnknown]' at line 1
+ERROR: Cannot assemble 'ldh b, [rSB]' at line 1
+ERROR: Cannot assemble 'add a, [bc]' at line 1
+ERROR: Cannot assemble 'adc a, ([hl])' at line 1
+ERROR: Cannot assemble 'sub bogus' at line 1
+ERROR: Cannot assemble 'sbc a, 0 junk' at line 1
+ERROR: Cannot assemble 'and [bc]' at line 1
+ERROR: Cannot assemble 'xor bc' at line 1
+ERROR: Cannot assemble 'or bogus' at line 1
+ERROR: Cannot assemble 'cp 0junk' at line 1
+ERROR: Cannot assemble 'add sp, bogus' at line 1
+ERROR: Cannot assemble 'bit bogus, a' at line 1
+ERROR: Cannot assemble 'bit 0 junk, a' at line 1
+ERROR: Cannot assemble 'bit 8, a' at line 1
+ERROR: Cannot assemble 'bit 0, bogus' at line 1
+ERROR: Cannot assemble 'res 0, bc' at line 1
+ERROR: Cannot assemble 'set 0, [hl]junk' at line 1
+ERROR: Cannot assemble 'rlc bc' at line 1
+ERROR: Cannot assemble 'rlc bogus' at line 1
+ERROR: Cannot assemble 'rr [hl]junk' at line 1
+ERROR: Cannot assemble 'rlc' at line 1
+ERROR: Cannot assemble 'bit' at line 1
+ERROR: Cannot assemble 'ld' at line 1
+ERROR: Cannot assemble 'ldh' at line 1
+ERROR: Cannot assemble 'ld a,' at line 1
+ERROR: Cannot assemble 'ld ,a' at line 1
+ERROR: Cannot assemble 'ld a, b, c' at line 1
+EOF
+RUN
