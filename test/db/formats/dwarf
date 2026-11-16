@@ -5530,6 +5530,23 @@ WARN: Loading large DWARF 1..__zdebug_line section (16MB). The `id` command can 
 EOF
 RUN
 
+# zdebug-line-zlib.o with the "ZLIB" magic (0x189) 'Z' -> 0 and the size (0x191) 0 -> 1, no magic states no size
+NAME=mach0: a __zdebug_line without the ZLIB magic states no size
+FILE=malloc://480
+CMDS=<<EOF
+wff bins/mach0/zdebug-line-zlib.o
+wx 00 @ 0x189
+wx 01 @ 0x191
+oba 0
+id~?
+EOF
+EXPECT=<<EOF
+0
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
 # zdebug-line-zlib.o with __zdebug_line size (0xe0) 0x3e -> 4 and the ZLIB size byte past it (0x18d) 0 -> 0xff
 NAME=mach0: a __zdebug_line too short for its header states no size
 FILE=malloc://480

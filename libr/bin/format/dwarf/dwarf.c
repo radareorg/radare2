@@ -107,7 +107,7 @@ R_API ut64 r_bin_dwarf_line_size(RBinFile *bf, const char **section_name) {
 		const bool be = r_bin_is_big_endian (bf->rbin);
 		return is64? r_read_ble64 (header + 8, be): r_read_ble32 (header + 4, be);
 	}
-	return r_read_be64 (header + 4);
+	return memcmp (header, "ZLIB", 4)? 0: r_read_be64 (header + 4);
 }
 
 // this function caches full section data in section->bytes
