@@ -55,3 +55,13 @@ cmp.csum 0x0000836c
 hdr.csum 0x00000000
 EOF
 RUN
+
+NAME=PE: checksum with the header at an unaligned offset
+FILE=bins/pe/a-unaligned-header.exe
+CMDS=i~csum
+EXPECT=<<EOF
+cmp.csum 0x000083c0
+csum.ok  true
+hdr.csum 0x000083c0
+EOF
+RUN
