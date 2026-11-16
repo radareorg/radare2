@@ -1,10 +1,16 @@
-NAME=sBPF: Correct sBPFv3 identification and disassembly
+NAME=sBPF: Identify sBPFv3 and honor runtime CPU changes
 FILE=bins/elf/sbpf_example_v3.so
 ARGS=-B 0x100000000
 CMDS=<<EOF
 s 0x100007528; pd 1
+e asm.cpu=sbpfv0
+pd 1
+e asm.cpu=sbpfv3
+pd 1
 EOF
 EXPECT=<<EOF
+            0x100007528      9d00000000..   return
+            0x100007528      9d00000000..   invalid
             0x100007528      9d00000000..   return
 EOF
 RUN

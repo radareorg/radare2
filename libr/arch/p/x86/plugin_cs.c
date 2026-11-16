@@ -43,11 +43,7 @@ call = 4
 
 typedef struct plugin_data_t {
 	CapstonePluginData cpd;
-	int bits;
-	int syntax;
 	int omode; // XXX unused?
-	int cs_mode; // cached CS_MODE value
-// 	char *cpu;
 } PluginData;
 
 static bool init(RArchSession *as) {
@@ -57,37 +53,26 @@ static bool init(RArchSession *as) {
 		return false;
 	}
 	PluginData *pd = R_NEW0 (PluginData);
-	// pd->cpu = as->config->cpu? strdup (as->config->cpu): NULL;
-	if (!r_arch_cs_init (as, &pd->cpd.cs_handle)) {
-		R_LOG_ERROR ("Cannot initialize capstone");
+	as->data = pd;
+	if (!r2cs_handle (as, &pd->cpd)) {
 		R_FREE (as->data);
 		return false;
 	}
-	pd->bits = as->config->bits;
-	pd->syntax = as->config->syntax;
-	switch (as->config->bits) {
-	case 16: pd->cs_mode = CS_MODE_16; break;
-	case 32: pd->cs_mode = CS_MODE_32; break;
-	case 64: pd->cs_mode = CS_MODE_64; break;
-	default: pd->cs_mode = 0; break;
-	}
-	cs_option (pd->cpd.cs_handle, CS_OPT_DETAIL, CS_OPT_ON);
-	as->data = pd;
 	return true;
 }
 
 static bool fini(RArchSession *as) {
 	R_RETURN_VAL_IF_FAIL (as, false);
 	PluginData *pd = as->data;
-	cs_close (&pd->cpd.cs_handle);
+	r2cs_fini (pd? &pd->cpd: NULL);
 	R_FREE (as->data);
 	return true;
 }
 
 static csh cs_handle_for_session(RArchSession *as) {
 	R_RETURN_VAL_IF_FAIL (as && as->data, 0);
-	CapstonePluginData *pd = as->data;
-	return pd->cs_handle;
+	PluginData *pd = as->data;
+	return r2cs_handle (as, &pd->cpd);
 }
 
 static inline RAnalValue * R_NONNULL newvalue(int type, int access, const char *regname, int delta, int memref) {
@@ -4530,28 +4515,13 @@ static inline int cs_pfxlen(uint8_t *item) {
 	return (item[0] != 0) + (item[1] != 0) + (item[2] != 0) + (item[3] != 0);
 }
 
-static bool plugin_changed(RArchSession *as) {
-	PluginData *cpd = as->data;
-	if (as->config->bits != cpd->bits) {
-		return true;
-	}
-	if (as->config->syntax != cpd->syntax) {
-		return true;
-	}
-	return false;
-}
-
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	csh handle = cs_handle_for_session (as);
 	if (handle == 0) {
 		return false;
 	}
-	if (plugin_changed (as)) {
-		fini (as);
-		init (as);
-		handle = cs_handle_for_session (as);
-	}
-	const int mode = ((PluginData *)as->data)->cs_mode;
+	PluginData *pd = as->data;
+	const int mode = pd->cpd.cs_mode;
 
 #if GHOSTOPS
 	if (op->size >= 2 && op->bytes[0] == 0x0f) {
@@ -4572,7 +4542,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const int len = op->size;
 	ut64 naddr = addr;
 	size_t size = len;
-	bool ok = r_arch_cs_disasm (handle, (const uint8_t **)&buf, &size, (uint64_t *)&naddr, &csi);
+	bool ok = r2cs_disasm (handle, (const uint8_t **)&buf, &size, (uint64_t *)&naddr, &csi);
 	cs_insn *insn = &csi.insn;
 	//XXX: capstone lcall seg:off workaround, remove when capstone will be fixed
 	if (ok && mode == CS_MODE_16 && r_str_startswith (insn->mnemonic, "lcall")) {
@@ -4791,7 +4761,7 @@ static RList *anal_preludes(RArchSession *as) {
 static char *mnemonics(RArchSession *as, int id, bool json) {
 	R_RETURN_VAL_IF_FAIL (as && as->data, NULL);
 	CapstonePluginData *cpd = as->data;
-	return r_arch_cs_mnemonics (as, cpd->cs_handle, id, json);
+	return r2cs_mnemonics (as, r2cs_handle (as, cpd), id, json);
 }
 #include <r_core.h>
 

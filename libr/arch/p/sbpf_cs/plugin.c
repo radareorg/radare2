@@ -104,12 +104,6 @@
 
 #if CS_API_MAJOR >= 5
 
-typedef struct {
-	csh cs_handle;
-	ut32 sbpf_version;
-	bool version_detected;
-} SbpfPluginData;
-
 #define CSINC BPF
 #define CSINC_MODE get_capstone_mode(as)
 
@@ -122,6 +116,11 @@ static int get_capstone_mode(RArchSession *as) {
 }
 
 #include "../capstone.inc.c"
+
+typedef struct {
+	CapstonePluginData cpd;
+	ut32 sbpf_version;
+} SbpfPluginData;
 
 #define OP(n) insn->detail->bpf.operands[n]
 // the "& 0xffffffff" is for some weird CS bug in JMP
@@ -177,59 +176,35 @@ static const char *get_syscall_name(ut32 hash) {
 	return NULL;
 }
 
-static void print_sbpf_version(ut32 sbpf_version) {
-	const char *version_str = "unknown";
-	switch (sbpf_version) {
-	case SBPF_V0: version_str = "V0"; break;
-	case SBPF_V1: version_str = "V1"; break;
-	case SBPF_V2: version_str = "V2"; break;
-	case SBPF_V3: version_str = "V3"; break;
+static csh sbpf_handle(RArchSession *as, SbpfPluginData *spd) {
+	bool config_changed;
+	csh handle = r2cs_update_handle (as, &spd->cpd, &config_changed);
+	if (handle && config_changed) {
+		const char *cpu = as->config->cpu;
+		spd->sbpf_version = cpu && r_str_startswith (cpu, "sbpfv")
+			? atoi (cpu + strlen ("sbpfv")): SBPF_V0;
 	}
-	R_LOG_INFO ("[sBPF] Detected sBPF version: %s", version_str);
-}
-
-static ut32 detect_sbpf_version(RArchSession *a) {
-	if (!a || !a->data) {
-		return SBPF_V0;
-	}
-	SbpfPluginData *spd = (SbpfPluginData*)a->data;
-
-	if (spd->version_detected) {
-		return spd->sbpf_version;
-	}
-
-	const char *cpu = a->config ? a->config->cpu : NULL;
-
-	if (R_STR_ISEMPTY (cpu)) {
-		spd->sbpf_version = SBPF_V0;
-	} else if (r_str_startswith (cpu, "sbpfv")) {
-		spd->sbpf_version = atoi (cpu + strlen ("sbpfv"));
-	} else {
-		// Default to v0 for unknown CPU string
-		spd->sbpf_version = SBPF_V0;
-	}
-
-	spd->version_detected = true;
-	print_sbpf_version (spd->sbpf_version);
-
-	return spd->sbpf_version;
+	return handle;
 }
 
 static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr);
 
 static char *mnemonics(RArchSession *s, int id, bool json) {
 	SbpfPluginData *spd = (SbpfPluginData*)s->data;
-	return r_arch_cs_mnemonics (s, spd->cs_handle, id, json);
+	return r2cs_mnemonics (s, sbpf_handle (s, spd), id, json);
 }
 
 static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	SbpfPluginData *spd = (SbpfPluginData*)a->data;
+	csh handle = sbpf_handle (a, spd);
+	if (!handle) {
+		return false;
+	}
 	const ut8 *buf = op->bytes;
 	const int len = op->size;
 	op->size = 8;
 
-	// Detect sBPF version once at the start
-	ut32 sbpf_version = detect_sbpf_version (a);
+	ut32 sbpf_version = spd->sbpf_version;
 
 	ut8 opcode = buf[0];
 	ut8 dst_reg = buf[1] & 0x0F;
@@ -238,7 +213,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	st32 imm = r_read_le32 (buf + 4);
 
 	RArchCSInsn csi;
-	bool ok = r_arch_cs_disasm_iter (spd->cs_handle, buf, len, op->addr, &csi);
+	bool ok = r2cs_disasm_iter (handle, buf, len, op->addr, &csi);
 	cs_insn *insn = &csi.insn;
 	if (!ok) {
 		// Check for instructions that Capstone doesn't decode correctly
@@ -1683,10 +1658,7 @@ static bool init(RArchSession *s) {
 	}
 	s->data = R_NEW0 (SbpfPluginData);
 	SbpfPluginData *spd = (SbpfPluginData*)s->data;
-	spd->sbpf_version = SBPF_V0;
-	spd->version_detected = false;
-	if (!r_arch_cs_init (s, &spd->cs_handle)) {
-		R_LOG_ERROR ("Cannot initialize capstone");
+	if (!sbpf_handle (s, spd)) {
 		R_FREE (s->data);
 		return false;
 	}
@@ -1696,7 +1668,7 @@ static bool init(RArchSession *s) {
 static bool fini(RArchSession *s) {
 	R_RETURN_VAL_IF_FAIL (s, false);
 	SbpfPluginData *spd = (SbpfPluginData*)s->data;
-	cs_close (&spd->cs_handle);
+	r2cs_fini (spd? &spd->cpd: NULL);
 	R_FREE (s->data);
 	return true;
 }

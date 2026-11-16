@@ -17,7 +17,7 @@
 
 typedef struct {
 	Sdb *pushs_db;
-	csh cs_handle;
+	CapstonePluginData cpd;
 } EvmPluginData;
 
 static void set_opdir(RAnalOp *op) {
@@ -102,7 +102,11 @@ static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	op->size = 1;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	RArchCSInsn csi;
-	bool ok = r_arch_cs_disasm_iter (epd->cs_handle, buf, len, addr, &csi);
+	csh handle = r2cs_handle (s, &epd->cpd);
+	if (!handle) {
+		return false;
+	}
+	bool ok = r2cs_disasm_iter (handle, buf, len, addr, &csi);
 	cs_insn *insn = &csi.insn;
 	opsize = 1;
 	if (!ok || insn->size < 1) {
@@ -375,8 +379,7 @@ static bool init(RArchSession *s) {
 	}
 	s->data = R_NEW0 (EvmPluginData);
 	EvmPluginData *epd = (EvmPluginData *)s->data;
-	if (!r_arch_cs_init (s, &epd->cs_handle)) {
-		R_LOG_ERROR ("Cannot initialize capstone");
+	if (!r2cs_handle (s, &epd->cpd)) {
 		R_FREE (s->data);
 		return false;
 	}
@@ -387,8 +390,11 @@ static bool init(RArchSession *s) {
 static bool fini(RArchSession *s) {
 	R_RETURN_VAL_IF_FAIL (s, false);
 	EvmPluginData *epd = (EvmPluginData *)s->data;
+	if (!epd) {
+		return true;
+	}
 	sdb_free (epd->pushs_db);
-	cs_close (&epd->cs_handle);
+	r2cs_fini (&epd->cpd);
 	R_FREE (s->data);
 	return true;
 }
@@ -407,7 +413,7 @@ static int archinfo(RArchSession *a, ut32 q) {
 
 static char *mnemonics(RArchSession *s, int id, bool json) {
 	EvmPluginData *epd = (EvmPluginData *)s->data;
-	return r_arch_cs_mnemonics (s, epd->cs_handle, id, json);
+	return r2cs_mnemonics (s, r2cs_handle (s, &epd->cpd), id, json);
 }
 
 const RArchPlugin r_arch_plugin_evm = {

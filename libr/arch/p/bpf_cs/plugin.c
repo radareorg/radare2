@@ -27,14 +27,10 @@ static int get_capstone_mode(RArchSession *as) {
 
 typedef struct plugin_data_t {
 	CapstonePluginData cpd;
-	int bits;
-	int endian;
-	char *cpu;
 } PluginData;
 
 static bool init(RArchSession *s);
 static bool fini(RArchSession *s);
-static bool plugin_changed(RArchSession *s);
 
 #define OP(n) insn->detail->bpf.operands[n]
 // the "& 0xffffffff" is for some weird CS bug in JMP
@@ -59,7 +55,7 @@ static ut64 ebpf_jump(RAnalOp *op, cs_insn *insn) {
 
 static char *mnemonics(RArchSession *s, int id, bool json) {
 	PluginData *pd = (PluginData *)s->data;
-	return r_arch_cs_mnemonics (s, pd->cpd.cs_handle, id, json);
+	return r2cs_mnemonics (s, r2cs_handle (s, &pd->cpd), id, json);
 }
 
 /* Assembler integration (classic + extended via shared parser) */
@@ -364,23 +360,19 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 }
 
 static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
-	if (plugin_changed (a)) {
-		if (a->data) {
-			fini (a);
-		}
-		if (!init (a)) {
-			return false;
-		}
-	}
 	PluginData *pd = (PluginData *)a->data;
 	if (!pd) {
+		return false;
+	}
+	csh handle = r2cs_handle (a, &pd->cpd);
+	if (!handle) {
 		return false;
 	}
 	const ut8 *buf = op->bytes;
 	const int len = op->size;
 	op->size = 8;
 	RArchCSInsn csi;
-	bool ok = r_arch_cs_disasm_iter (pd->cpd.cs_handle, buf, len, op->addr, &csi);
+	bool ok = r2cs_disasm_iter (handle, buf, len, op->addr, &csi);
 	cs_insn *insn = &csi.insn;
 	if (!ok) {
 		op->type = R_ANAL_OP_TYPE_ILL;
@@ -1015,27 +1007,6 @@ static int archinfo(RArchSession *as, ut32 q) {
 	return 0;
 }
 
-static bool plugin_changed(RArchSession *s) {
-	R_RETURN_VAL_IF_FAIL (s, true);
-	PluginData *pd = (PluginData *)s->data;
-	if (!pd) {
-		return true;
-	}
-	if (s->config->bits != pd->bits) {
-		return true;
-	}
-	if (s->config->endian != pd->endian) {
-		return true;
-	}
-	const char *cpu = s->config->cpu;
-	if (pd->cpu || cpu) {
-		if (!pd->cpu || !cpu || strcmp (pd->cpu, cpu)) {
-			return true;
-		}
-	}
-	return false;
-}
-
 static bool init(RArchSession *s) {
 	R_RETURN_VAL_IF_FAIL (s, false);
 	if (s->data) {
@@ -1043,12 +1014,7 @@ static bool init(RArchSession *s) {
 		return false;
 	}
 	PluginData *pd = R_NEW0 (PluginData);
-	pd->bits = s->config->bits;
-	pd->endian = s->config->endian;
-	pd->cpu = s->config->cpu? strdup (s->config->cpu): NULL;
-	if (!r_arch_cs_init (s, &pd->cpd.cs_handle)) {
-		R_LOG_ERROR ("Cannot initialize capstone");
-		R_FREE (pd->cpu);
+	if (!r2cs_handle (s, &pd->cpd)) {
 		R_FREE (pd);
 		return false;
 	}
@@ -1062,10 +1028,7 @@ static bool fini(RArchSession *s) {
 	if (!pd) {
 		return true;
 	}
-	R_FREE (pd->cpu);
-	if (pd->cpd.cs_handle) {
-		cs_close (&pd->cpd.cs_handle);
-	}
+	r2cs_fini (&pd->cpd);
 	R_FREE (s->data);
 	return true;
 }

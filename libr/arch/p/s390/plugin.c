@@ -58,7 +58,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 
 static char *mnemonics(RArchSession *s, int id, bool json) {
 	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
-	return r_arch_cs_mnemonics (s, cpd->cs_handle, id, json);
+	return r2cs_mnemonics (s, r2cs_handle (s, cpd), id, json);
 }
 
 static bool init(RArchSession *s) {
@@ -69,8 +69,7 @@ static bool init(RArchSession *s) {
 	}
 	s->data = R_NEW0 (CapstonePluginData);
 	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
-	if (!r_arch_cs_init (s, &cpd->cs_handle)) {
-		R_LOG_ERROR ("Cannot initialize capstone");
+	if (!r2cs_handle (s, cpd)) {
 		R_FREE (s->data);
 		return false;
 	}
@@ -79,7 +78,10 @@ static bool init(RArchSession *s) {
 
 static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	CapstonePluginData *cpd = (CapstonePluginData*)a->data;
-// static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	csh handle = r2cs_handle (a, cpd);
+	if (!handle) {
+		return false;
+	}
 	const ut8 *buf = op->bytes;
 	size_t len = op->size;
 	ut64 addr = op->addr;
@@ -87,7 +89,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	op->addr = addr;
 
 	RArchCSInsn csi;
-	bool ok = r_arch_cs_disasm_iter (cpd->cs_handle, buf, len, addr, &csi);
+	bool ok = r2cs_disasm_iter (handle, buf, len, addr, &csi);
 	cs_insn *insn = &csi.insn;
 	if (!ok) {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
@@ -355,7 +357,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 static bool fini(RArchSession *s) {
 	R_RETURN_VAL_IF_FAIL (s, false);
 	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
-	cs_close (&cpd->cs_handle);
+	r2cs_fini (cpd);
 	R_FREE (s->data);
 	return true;
 }
