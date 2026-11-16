@@ -761,16 +761,37 @@ CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
 pa lsls r0, r2, 32
+pa lsls r0, r2, 4294967296
 pa lsrs r0, r2, 0
+pa lsrs r0, r2, 4294967328
 pa asrs r0, r2, 0
 pa asrs r0, r2, 33
+pa asrs r0, r2, 4294967296
 EOF
 EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Cannot assemble 'lsls r0, r2, 32' at line 1
+ERROR: Cannot assemble 'lsls r0, r2, 4294967296' at line 1
 ERROR: Cannot assemble 'lsrs r0, r2, 0' at line 1
+ERROR: Cannot assemble 'lsrs r0, r2, 4294967328' at line 1
 ERROR: Cannot assemble 'asrs r0, r2, 0' at line 1
 ERROR: Cannot assemble 'asrs r0, r2, 33' at line 1
+ERROR: Cannot assemble 'asrs r0, r2, 4294967296' at line 1
+EOF
+RUN
+
+NAME=pa thumb rejects oversized sub sp immediates
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+pa sub sp, 4294967296
+pa sub sp, 4294967808
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'sub sp, 4294967296' at line 1
+ERROR: Cannot assemble 'sub sp, 4294967808' at line 1
 EOF
 RUN
 
