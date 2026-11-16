@@ -5,7 +5,7 @@
 #include "te.h"
 
 static ut64 r_bin_te_get_stripped_delta(struct r_bin_te_obj_t *bin) {
-	if (bin && bin->header) {
+	if (bin && bin->header && bin->header->StrippedSize >= sizeof (TE_image_file_header)) {
 		return bin->header->StrippedSize - sizeof (TE_image_file_header);
 	}
 	return 0LL;
@@ -326,14 +326,18 @@ struct r_bin_te_section_t* r_bin_te_get_sections(struct r_bin_te_obj_t* bin) {
 		r_sys_perror ("malloc (sections)");
 		return NULL;
 	}
+	ut64 delta = r_bin_te_get_stripped_delta (bin);
 	for (i = 0; i < sections_count; i++) {
 		memcpy (sections[i].name, shdr[i].Name, TE_IMAGE_SIZEOF_NAME);
-		// not a null terminated string if len==buflen
-		//sections[i].name[TE_IMAGE_SIZEOF_NAME] = '\0';
-		sections[i].vaddr = shdr[i].VirtualAddress - r_bin_te_get_stripped_delta (bin);
+		sections[i].name[TE_IMAGE_SIZEOF_NAME] = '\0';
+		sections[i].vaddr = (shdr[i].VirtualAddress >= delta)
+			? shdr[i].VirtualAddress - delta
+			: shdr[i].VirtualAddress;
 		sections[i].size = shdr[i].SizeOfRawData;
 		sections[i].vsize = shdr[i].VirtualSize;
-		sections[i].paddr = shdr[i].PointerToRawData - r_bin_te_get_stripped_delta (bin);
+		sections[i].paddr = (shdr[i].PointerToRawData >= delta)
+			? shdr[i].PointerToRawData - delta
+			: shdr[i].PointerToRawData;
 		sections[i].flags = shdr[i].Characteristics;
 		sections[i].last = 0;
 	}

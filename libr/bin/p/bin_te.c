@@ -62,13 +62,16 @@ static bool sections_vec(RBinFile *bf) {
 	struct r_bin_te_section_t *sections = NULL;
 	int i;
 
+	if (!bf || !bf->bo) {
+		return false;
+	}
 	if (!(sections = r_bin_te_get_sections (bf->bo->bin_obj))) {
 		return false;
 	}
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 	for (i = 0; !sections[i].last; i++) {
 		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		ptr->name = strdup ((char*)sections[i].name);
+		ptr->name = r_str_ndup ((const char *)sections[i].name, TE_IMAGE_SIZEOF_NAME);
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
 		ptr->paddr = sections[i].paddr;
@@ -89,7 +92,7 @@ static bool sections_vec(RBinFile *bf) {
 		}
 		/* All TE files have _TEXT_RE section, which is 16-bit, because of
 		 * CPU start in this mode */
-		if (!strncmp (ptr->name, "_TEXT_RE", 8)) {
+		if (ptr->name && !strncmp (ptr->name, "_TEXT_RE", 8)) {
 			ptr->bits = R_SYS_BITS_PACK (16);
 		}
 	}

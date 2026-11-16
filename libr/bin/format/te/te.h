@@ -15,7 +15,7 @@
 #define R_BIN_TE_SCN_IS_WRITABLE(x)        x & TE_IMAGE_SCN_MEM_WRITE
 
 struct r_bin_te_section_t {
-	ut8  name[TE_IMAGE_SIZEOF_NAME];
+	ut8  name[TE_IMAGE_SIZEOF_NAME + 1];
 	ut64 size;
 	ut64 vsize;
 	ut64 vaddr;
