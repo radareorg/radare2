@@ -2,6 +2,7 @@
 
 #include <r_arch.h>
 #include "opcode.h"
+#include "../esil_float_mod.inc.c"
 
 #define GETWIDE "32,v%u,<<,v%u,|"
 #define SETWIDE "DUP,v%u,=,32,SWAP,>>,v%u,="
@@ -375,7 +376,7 @@ static void unresolved_call(RAnalOp *op) {
 
 #define OPCALL(x, y, z) dalvik_math_op(op, data, len, mask, x, y, z)
 static void dalvik_float_mod(RAnalOp *op, ut32 vA, ut32 vB, ut32 vC, bool wide) {
-	char dividend[64], divisor[64], magnitude[96];
+	char dividend[64], divisor[64];
 	if (wide) {
 		snprintf (dividend, sizeof (dividend), GETWIDE, vB + 1, vB);
 		snprintf (divisor, sizeof (divisor), GETWIDE, vC + 1, vC);
@@ -383,22 +384,7 @@ static void dalvik_float_mod(RAnalOp *op, ut32 vA, ut32 vB, ut32 vC, bool wide) 
 		snprintf (dividend, sizeof (dividend), "32,v%u,F2D", vB);
 		snprintf (divisor, sizeof (divisor), "32,v%u,F2D", vC);
 	}
-	snprintf (magnitude, sizeof (magnitude), "0x7fffffffffffffff,%s,&", divisor);
-	r_strbuf_setf (&op->esil,
-		"%s,NAN,%s,NAN,|,0x7ff0000000000000,0x7fffffffffffffff,%s,&,F==,|,0,%s,F==,|,"
-		"?{,0x7ff8000000000000,}{,0x7ff0000000000000,%s,F==,0,%s,F==,|,?{,%s,}{,"
-		"0x7fffffffffffffff,%s,&,",
-		dividend, divisor, dividend, divisor, magnitude, dividend, dividend, dividend);
-	size_t loop = r_str_char_count (r_strbuf_get (&op->esil), ',');
-	r_strbuf_appendf (&op->esil, "DUP,%s,F<=,?{,", magnitude);
-	// Scale the divisor to keep the quotient finite and exactly representable.
-	r_strbuf_appendf (&op->esil,
-		"DUP,LOG2,FLOOR,%s,LOG2,FLOOR,SWAP,F-,0x4040000000000000,SWAP,F-,"
-		"DUP,0,SWAP,F<,?{,POP,0,},%s,FSCALE,DUP,ROT,DUP,ROT,DUP,ROT,F/,FLOOR,-F,F*+,"
-		// Fused subtraction avoids cancellation; correct a quotient rounded up by division.
-		"DUP,0,SWAP,F<,?{,F+,}{,SWAP,POP,},%zu,GOTO,},"
-		"0x8000000000000000,%s,&,|,},}",
-		magnitude, magnitude, loop, dividend);
+	esil_float_mod (&op->esil, dividend, divisor);
 	if (wide) {
 		r_strbuf_appendf (&op->esil, "," SETWIDE, vA, vA + 1);
 	} else {

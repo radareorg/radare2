@@ -6,6 +6,8 @@
 #include <r_java/code.h>
 #include <r_java/ops.h>
 
+#include "../esil_float_mod.inc.c"
+
 static inline ut64 java_get_method_start(void) {
 	return 0;
 }
@@ -240,6 +242,23 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	//eprintf ("op_eob: 0x%02x.\n", op->eob);
 	//eprintf ("op_byte @ 0: 0x%02x op_byte @ 0x%04x: 0x%02x.\n", data[0], addr, data[addr]);
 #endif
+
+	if (op_byte == 0x72 || op_byte == 0x73) {
+		bool wide = op_byte == 0x73;
+		op->family = R_ANAL_OP_FAMILY_FPU;
+		op->direction = R_ANAL_OP_DIR_EXEC;
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = wide? 8: 4;
+		if (mask & R_ARCH_OP_MASK_ESIL) {
+			// The operand stack grows down in 32-bit slots; doubles use two slots.
+			esil_float_mod (&op->esil,
+				wide? "8,sp,+,[8]": "32,4,sp,+,[4],F2D",
+				wide? "sp,[8]": "32,sp,[4],F2D");
+			r_strbuf_append (&op->esil, wide
+				? ",8,sp,+=,sp,=[8]"
+				: ",4,sp,+=,32,SWAP,D2F,sp,=[4]");
+		}
+	}
 
 	if (len < 4) {
 		// incomplete analysis here

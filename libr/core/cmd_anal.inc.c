@@ -456,6 +456,7 @@ static RCoreHelpMessage help_detail_ae = {
 	"D2IS", "", "double to signed, saturating to a bit width",
 	"D2US", "", "double to unsigned, saturating to a bit width",
 	"F==", "", "float comparison",
+	"F%", "", "float remainder with a truncated quotient",
 	"CEIL", "", "float ceil",
 	"FLOOR", "", "float floor",
 	"ROUND", "", "float round",

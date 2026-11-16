@@ -295,6 +295,12 @@ double to a signed or unsigned integer, returning zero for values outside their
 width (1 to 64 bits), with NaN producing zero. `D2IS` sign-extends its result
 to 64 bits.
 
+`divisor,dividend,F%` computes the floating-point remainder using `fmod`, with
+the implied quotient truncated toward zero. The result keeps the dividend's
+sign, including negative zero. A NaN operand, an infinite dividend or a zero
+divisor produces a canonical quiet NaN. A finite dividend with an infinite
+divisor returns the dividend.
+
 `value,LOG2` computes the base-2 logarithm and `value,EXP2` computes 2 raised
 to the given power. Both consume one double and push one double. They follow
 the host math library for NaN, infinity, overflow and underflow. For example,
