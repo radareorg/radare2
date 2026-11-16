@@ -374,6 +374,38 @@ static void unresolved_call(RAnalOp *op) {
 }
 
 #define OPCALL(x, y, z) dalvik_math_op(op, data, len, mask, x, y, z)
+static void dalvik_float_mod(RAnalOp *op, ut32 vA, ut32 vB, ut32 vC, bool wide) {
+	char dividend[64], divisor[64], magnitude[96];
+	if (wide) {
+		snprintf (dividend, sizeof (dividend), GETWIDE, vB + 1, vB);
+		snprintf (divisor, sizeof (divisor), GETWIDE, vC + 1, vC);
+	} else {
+		snprintf (dividend, sizeof (dividend), "32,v%u,F2D", vB);
+		snprintf (divisor, sizeof (divisor), "32,v%u,F2D", vC);
+	}
+	snprintf (magnitude, sizeof (magnitude), "0x7fffffffffffffff,%s,&", divisor);
+	r_strbuf_setf (&op->esil,
+		"%s,NAN,%s,NAN,|,0x7ff0000000000000,0x7fffffffffffffff,%s,&,F==,|,0,%s,F==,|,"
+		"?{,0x7ff8000000000000,}{,0x7ff0000000000000,%s,F==,0,%s,F==,|,?{,%s,}{,"
+		"0x7fffffffffffffff,%s,&,",
+		dividend, divisor, dividend, divisor, magnitude, dividend, dividend, dividend);
+	size_t loop = r_str_char_count (r_strbuf_get (&op->esil), ',');
+	r_strbuf_appendf (&op->esil, "DUP,%s,F<=,?{,", magnitude);
+	// Scale the divisor to keep the quotient finite and exactly representable.
+	r_strbuf_appendf (&op->esil,
+		"DUP,LOG2,FLOOR,%s,LOG2,FLOOR,SWAP,F-,0x4040000000000000,SWAP,F-,"
+		"DUP,0,SWAP,F<,?{,POP,0,},%s,FSCALE,DUP,ROT,DUP,ROT,DUP,ROT,F/,FLOOR,-F,F*+,"
+		// Fused subtraction avoids cancellation; correct a quotient rounded up by division.
+		"DUP,0,SWAP,F<,?{,F+,}{,SWAP,POP,},%zu,GOTO,},"
+		"0x8000000000000000,%s,&,|,},}",
+		magnitude, magnitude, loop, dividend);
+	if (wide) {
+		r_strbuf_appendf (&op->esil, "," SETWIDE, vA, vA + 1);
+	} else {
+		r_strbuf_appendf (&op->esil, ",32,SWAP,D2F,v%u,=", vA);
+	}
+}
+
 static void dalvik_math_op(RAnalOp* op, const ut8* data, int len, RAnalOpMask mask, char* operation, unsigned int optype, OperandType ot) {
 	ut32 vA = 0, vB = 0, vC = 0;
 	op->type = optype;
@@ -415,6 +447,8 @@ static void dalvik_math_op(RAnalOp* op, const ut8* data, int len, RAnalOpMask ma
 		} else if (ot == OP_LONG_SHFT) {
 			esilprintf (op, "v%u," GETWIDE ",%s," SETWIDE,
 				vC, vB+1, vB, operation, vA, vA+1);
+		} else if ((ot == OP_FLOAT || ot == OP_DOUBLE) && optype == R_ANAL_OP_TYPE_MOD) {
+			dalvik_float_mod (op, vA, vB, vC, ot == OP_DOUBLE);
 		} else if (ot == OP_FLOAT) {
 			esilprintf (op, "32,32,v%u,F2D,32,v%u,F2D,F%s,D2F,v%u,=", vC, vB, operation, vA);
 		} else if (ot == OP_DOUBLE) {
@@ -1797,8 +1831,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	case 0xaa: // rem-float
 	case 0xca:
-		op->type = R_ANAL_OP_TYPE_MOD;
-		op->family = R_ANAL_OP_FAMILY_FPU;
+		OPCALL ("%", R_ANAL_OP_TYPE_MOD, OP_FLOAT);
 		break;
 	case 0xab: // add-double
 	case 0xcb:
@@ -1818,8 +1851,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	case 0xaf: // rem-double
 	case 0xcf:
-		op->type = R_ANAL_OP_TYPE_MOD;
-		op->family = R_ANAL_OP_FAMILY_FPU;
+		OPCALL ("%", R_ANAL_OP_TYPE_MOD, OP_DOUBLE);
 		break;
 
 	case 0xec: // breakpoint
