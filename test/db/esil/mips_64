@@ -227,6 +227,143 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# MIPS32 PRM LL/LWU/LLD: ll sign-extends the loaded word, lwu zero-extends it and
+# lld loads a full doubleword. The high half of the destination must be replaced,
+# not merged, so a dirty register shows the extension rule in one read
+NAME=mips.gnu 64-bit ll, lwu and lld extend the loaded word
+FILE=malloc://32
+ARGS=-a mips.gnu -b 64
+CMDS=<<EOF
+wx 80ffffff11223344 @ 0x10
+aei
+wx 000088c0
+aer a0=0x10
+aer t0=0xa5a5a5a5a5a5a5a5
+aer pc=0
+aes
+aer t0
+wx 0000889c
+aer t0=0xa5a5a5a5a5a5a5a5
+aer pc=0
+aes
+aer t0
+wx 000088d0
+aer t0=0xa5a5a5a5a5a5a5a5
+aer pc=0
+aes
+aer t0
+EOF
+EXPECT=<<EOF
+0xffffffffffffff80
+0xffffff80
+0x44332211ffffff80
+EOF
+RUN
+
+# MIPS32 PRM: writes to GPR[0] are discarded. The load into zero emits a POP that
+# drops the loaded value, so zero keeps whatever it had and the loads differ only in
+# the ESIL shape they generate ([1] + ~ for lb, [4] for lwu, [8] for lld)
+NAME=mips.gnu 64-bit loads into zero never write it
+FILE=malloc://32
+ARGS=-a mips.gnu -b 64
+CMDS=<<EOF
+wx 80ffffff11223344 @ 0x10
+aei
+wx 00008080
+aer a0=0x10
+aer zero=0xffffffffffffffff
+aer pc=0
+ao~esil:
+aes
+aer zero
+wx 0000809c
+aer zero=0xffffffffffffffff
+aer pc=0
+ao~esil:
+aes
+aer zero
+wx 000080dc
+aer zero=0xffffffffffffffff
+aer pc=0
+ao~esil:
+aes
+aer zero
+EOF
+EXPECT=<<EOF
+esil: 8,0,a0,+,[1],~,POP
+0xffffffffffffffff
+esil: 0,a0,+,[4],POP
+0xffffffffffffffff
+esil: 0,a0,+,[8],POP
+0xffffffffffffffff
+EOF
+RUN
+
+# MIPS32 PRM: lw/lwu and lb/lbu differ only in width and sign extension
+NAME=mips.gnu 64-bit lw lwu lb lbu widths
+FILE=malloc://32
+ARGS=-a mips.gnu -b 64
+CMDS=<<EOF
+wx 84ffffff @ 0x10
+aei
+wx 0000888c
+aer a0=0x10
+aer t0=0xa5a5a5a5a5a5a5a5
+aer pc=0
+aes
+aer t0
+wx 0000889c
+aer t0=0xa5a5a5a5a5a5a5a5
+aer pc=0
+aes
+aer t0
+wx 00008880
+aer t0=0xa5a5a5a5a5a5a5a5
+aer pc=0
+aes
+aer t0
+wx 00008890
+aer t0=0xa5a5a5a5a5a5a5a5
+aer pc=0
+aes
+aer t0
+EOF
+EXPECT=<<EOF
+0xffffffffffffff84
+0xffffff84
+0xffffffffffffff84
+0x00000084
+EOF
+RUN
+
+NAME=mips.gnu dadd and daddu keep all 64 bits
+FILE=malloc://32
+ARGS=-a mips.gnu -b 64
+CMDS=<<EOF
+aei
+wx 2c402a01
+ar t0=0xa5a5000300000000
+ar t1=0x100000000
+ar t2=1
+ar pc=0
+s 0
+aes
+ar t0
+wx 2d402a01
+ar t0=0xa5a5000300000000
+ar t1=0x100000000
+ar t2=2
+ar pc=0
+s 0
+aes
+ar t0
+EOF
+EXPECT=<<EOF
+0x100000001
+0x100000002
+EOF
+RUN
+
 NAME=mips64 ldl and ldr merge the addressed bytes into the register
 FILE=malloc://0x200
 ARGS=-a mips -b 64 -e cfg.bigendian=true

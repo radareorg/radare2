@@ -36,6 +36,102 @@ d0 == 0
 EOF
 RUN
 
+# M68000 PRM 4-3: ADDI, SUBI, ADDA and SUBA all write their destination operand
+NAME=m68k pseudo addi subi adda
+FILE=malloc://16
+ARGS=-a m68k
+CMDS=<<EOF
+wx 064100109240d3c0
+e asm.pseudo=true
+pi 3
+EOF
+EXPECT=<<EOF
+d1 += 0x10
+d1 -= d0
+a1 += d0
+EOF
+RUN
+
+# M68000 PRM 4-5/4-6: SUBQ has a pseudo row, ADDQ still falls through to the raw syntax
+NAME=m68k pseudo addq subq
+FILE=malloc://16
+ARGS=-a m68k
+CMDS=<<EOF
+wx 5241 5381 5c41 5941
+e asm.pseudo=true
+pi 4
+EOF
+EXPECT=<<EOF
+addq 0x1, d1
+d1 -= 0x1
+addq 0x6, d1
+d1 -= 0x4
+EOF
+RUN
+
+# M68000 PRM: ANDI/ORI write the destination, EORI/SUBI have no pseudo row yet
+NAME=m68k pseudo andi ori
+FILE=malloc://16
+ARGS=-a m68k
+CMDS=<<EOF
+wx 0241 00ff 0041 00f0
+e asm.pseudo=true
+pi 2
+EOF
+EXPECT=<<EOF
+d1 &= 0xff
+d1 |= 0xf0
+EOF
+RUN
+
+# M68000 PRM 4-10: LSL/LSR shift the destination operand by the data register count
+NAME=m68k pseudo lsl lsr
+FILE=malloc://16
+ARGS=-a m68k
+CMDS=<<EOF
+wx e369 e269 e169 e069
+e asm.pseudo=true
+pi 4
+EOF
+EXPECT=<<EOF
+d1 <<= d1
+d1 >>= d1
+d1 <<= d0
+d1 >>= d0
+EOF
+RUN
+
+# M68000 PRM 4-7: MOVEQ, LEA and MOVE write the destination operand
+NAME=m68k pseudo move moveq lea
+FILE=malloc://32
+ARGS=-a m68k
+CMDS=<<EOF
+wx 7042 41f80010 2249 224b
+e asm.pseudo=true
+pi 4
+EOF
+EXPECT=<<EOF
+d0 = 0x42
+a0 = 0x10
+a1 = a1
+a1 = a3
+EOF
+RUN
+
+# MOVEM keeps the register list as the source: 'register list = destination'
+NAME=m68k pseudo movem
+FILE=malloc://16
+ARGS=-a m68k
+CMDS=<<EOF
+wx 48e7c0c0
+e asm.pseudo=true
+pi 1
+EOF
+EXPECT=<<EOF
+-(a7) = d0-d1/a0-a1
+EOF
+RUN
+
 # LINK.L An,#disp32 (0x4808|An) exists on 68020 and later per the M68000 PRM
 NAME="m68k: runtime asm.cpu switch toggles link.l"
 FILE=malloc://16
