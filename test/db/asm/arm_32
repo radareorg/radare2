@@ -32,7 +32,7 @@ a "ldmeq r6, {r0, r1}" 03009608
 aB "ldrbeq r5, [r7, -1]" 01505705
 aB "ldrne r2, [r3, ip]" dc208311
 a "ldreq r0, [fp, -180]" b4001b05
-aB "ldrheq r0, [r3, r0]" b0009301
+a "ldrheq r0, [r3, r0]" b0009301
 aB "ldrex r0, [r3]" 9f0f93e1
 aB "lslne r1, r1, 2" 0111a011
 aB "lsreq r0, r0, 16" 2008a001
@@ -78,8 +78,8 @@ aB "strdeq r2, [r4]" f020c401
 aB "strdeq r4, [r8, 80]" f045c801
 a "streq r3, [r5, -4]" 04300505
 a "streq r1, [fp, -304]" 30110b05
-aB "strhne r3, [fp, -50]" b2334b11
-aB "strheq r3, [fp, -56]" b8334b01
+a "strhne r3, [fp, -50]" b2334b11
+a "strheq r3, [fp, -56]" b8334b01
 a "strheq r1, [r0]" b010c001
 a "strhne r1, [r2,r3]" b3108211
 a "strex r1, r2, [r5]" 921f85e1
@@ -253,9 +253,9 @@ a "ldmeq r3, {r0, r1, r2, r3}" 0f009308
 a "ldmeq r5, {r0, r1, r2}" 07009508
 a "ldmeq r6, {r0, r1}" 03009608
 aB "ldrbeq r5, [r7, -1]" 01505705
-aB "ldrdne r2, r3, [r3, ip]" dc208311
+a "ldrdne r2, r3, [r3, ip]" dc208311
 a "ldreq r0, [fp, -0xb4]" b4001b05
-aB "ldrheq r0, [r3, r0]" b0009301
+a "ldrheq r0, [r3, r0]" b0009301
 aB "lslne r1, r1, 2" 0111a011
 aB "lsreq r0, r0, 0x10" 2008a001
 aB "lsrne r0, r0, 9" a004a011
@@ -302,8 +302,27 @@ a "strdeq r2, r3, [r4]" f020c401
 a "strdeq r4, r5, [r8, 0x50]" f045c801
 a "streq r3, [r5, -4]" 04300505
 a "streq r1, [fp, -0x130]" 30110b05
-aB "strhne r3, [fp, -0x32]" b2334b11
-aB "strheq r3, [fp, -0x38]" b8334b01
+a "strhne r3, [fp, -0x32]" b2334b11
+a "strheq r3, [fp, -0x38]" b8334b01
+ad "strh r3, [fp, 0x32]" b233cbe1
+ad "ldrh r3, [fp, -0x32]" b2335be1
+ad "ldrsh r3, [r1, 2]" f230d1e1
+ad "ldrsb r3, [r1], -1" d13051e0
+ad "strh r3, [r1, 4]!" b430e1e1
+ad "ldrh r0, [r1, -r2]" b20011e1
+ad "strd r0, r1, [r2, -8]" f80042e1
+ad "ldrd r0, r1, [r2, 8]" d800c2e1
+ad "ldrd r2, r3, [r4, -r5]!" d52024e1
+ad "ldrsbeq r0, [r1], r2" d2009100
+a "strh r0, [r1]!" b000e1e1
+a "ldrh r0, [r1]!" b000f1e1
+a "ldrsh r0, [r1]!" f000f1e1
+a "ldrsb r0, [r1]!" d000f1e1
+a "strd r0, r1, [r2]!" f000e2e1
+a "ldrd r0, r1, [r2]!" d000e2e1
+a "strh r0, [r1], 0000000000000000000000000000000010" b800c1e0
+a "strh r0, [r1, 0000000000000000000000000000000010]" b800c1e1
+a "strh r0, [r1, - r2]" b20001e1
 a "strheq r1, [r0]" b010c001
 a "strhne r1, [r2, r3]" b3108211
 a "subeq ip, r0, 0x20" 20c04002
