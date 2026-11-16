@@ -4,6 +4,7 @@ ARGS=-A
 CMDS=i~csum
 EXPECT=<<EOF
 cmp.csum 0x00005ee2
+csum.ok  true
 hdr.csum 0x00005ee2
 EOF
 RUN
@@ -14,6 +15,7 @@ ARGS=-A
 CMDS=i~csum
 EXPECT=<<EOF
 cmp.csum 0x000079a3
+csum.ok  true
 hdr.csum 0x000079a3
 EOF
 RUN
@@ -24,6 +26,32 @@ ARGS=-A
 CMDS=i~csum
 EXPECT=<<EOF
 cmp.csum 0x0003881f
+csum.ok  true
 hdr.csum 0x0003881f
+EOF
+RUN
+
+NAME=PE: checksum in the header does not match the computed one
+FILE=bins/pe/notputty.exe
+CMDS=<<EOF
+i~csum
+iIj~{}~csum
+EOF
+EXPECT=<<EOF
+cmp.csum 0x001224e3
+csum.ok  false
+hdr.csum 0x001236c2
+  "cmp.csum": "0x001224e3",
+  "csum.ok": false,
+  "hdr.csum": "0x001236c2",
+EOF
+RUN
+
+NAME=PE: unset header checksum is not reported as a mismatch
+FILE=bins/pe/96emptysections.exe
+CMDS=i~csum
+EXPECT=<<EOF
+cmp.csum 0x0000836c
+hdr.csum 0x00000000
 EOF
 RUN

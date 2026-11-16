@@ -1069,6 +1069,11 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 		if (info->actual_checksum) {
 			/* computed checksum */
 			pair_str (core, pj, "cmp.csum", info->actual_checksum);
+			// a zero header checksum means the linker did not set it
+			const ut64 claimed = info->claimed_checksum? r_num_get (NULL, info->claimed_checksum): 0;
+			if (claimed) {
+				pair_bool (core, pj, "csum.ok", claimed == r_num_get (NULL, info->actual_checksum));
+			}
 		}
 		pair_str (core, pj, "compiled", compiled);
 		pair_str (core, pj, "compiler", info->compiler);
