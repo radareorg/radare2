@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2025 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2007-2026 - pancake, thestr4ng3r */
 
 #if defined(__sun)
 #define _POSIX_PTHREAD_SEMANTICS
@@ -60,13 +60,12 @@ R_API ut64 r_time_now_mono(void) {
 }
 
 R_API R_MUSTUSE char *r_time_secs_tostring(time_t ts) {
-#if R2__WINDOWS__
-	time_t rawtime = (time_t)ts;
-	struct tm *tminfo = localtime (&rawtime);
-	// struct tm *tminfo = gmtime (&rawtime);
 	char buf[ASCTIME_BUF_MAXLEN];
-	errno_t err = asctime_s (buf, sizeof (buf), tminfo);
-	return err? NULL: strdup (buf);
+#if R2__WINDOWS__
+	struct tm *tminfo = localtime (&ts);
+	if (!tminfo || asctime_s (buf, sizeof (buf), tminfo)) {
+		return NULL;
+	}
 #else
 	struct my_timezone {
 		int tz_minuteswest;     /* minutes west of Greenwich */
@@ -76,15 +75,15 @@ R_API R_MUSTUSE char *r_time_secs_tostring(time_t ts) {
 	if (gettimeofday (&tv, (void*) &tz) == -1) {
 		return NULL;
 	}
-	int gmtoff = (int) (tz.tz_minuteswest * 60); // in seconds
-	ts += (time_t)gmtoff;
-	char buf[ASCTIME_BUF_MAXLEN];
+	// signed: tz_minuteswest is negative east of Greenwich
+	ts += (time_t)tz.tz_minuteswest * 60;
 	// Dates past year 9999 make ctime_r fail without writing to buf.
 	if (!ctime_r (&ts, buf)) {
 		return NULL;
 	}
-	return r_str_trim_dup (buf);
 #endif
+	// asctime and ctime append a newline that callers do not expect
+	return r_str_trim_dup (buf);
 }
 
 // TODO: honor timezone instead of depending on mktime
