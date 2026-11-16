@@ -984,6 +984,28 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# Hide DT_RELA so the section pass reads .rela.dyn with .symtab indices shifted by one
+NAME=ELF: section relocs use .symtab ordinals when .dynsym loses its type
+FILE=malloc://2264
+CMDS=<<EOF
+wff bins/elf/x86_64-abs-sym-dynsym-progbits.so
+wx 0000007000000000 @ 0x350
+wx 0b000000 @ 0x6c0
+wx 0100000002000000 @ 0x2f8
+wx 0100000003000000 @ 0x310
+wx 0100000004000000 @ 0x328
+wx 0100000005000000 @ 0x340
+oba 0
+ir~ADD_64
+EOF
+EXPECT=<<EOF
+0x000033f0 0x000003f0 ADD_64 1     absval
+0x000033f8 0x000003f8 ADD_64 1     abshit
+0x00003400 0x00000400 ADD_64 1     abszero
+0x00003408 0x00000408 ADD_64 1     here
+EOF
+RUN
+
 NAME=ELF: ET_REL absolute symbols are not placed at the base
 FILE=bins/elf/x86_64-abs-sym.o
 ARGS=-e bin.relocs.apply=true

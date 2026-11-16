@@ -1902,6 +1902,9 @@ static bool elf_init(ELFOBJ *eo) {
 	eo->imports_by_ord = NULL;
 	eo->symbols_by_ord_size = 0;
 	eo->symbols_by_ord = NULL;
+	eo->section_symbols_by_ord_size = 0;
+	eo->section_symbols_by_ord = NULL;
+	eo->section_special_by_ord = NULL;
 	(void) _load_elf_sections (eo);
 	eo->boffset = Elf_(get_boffset) (eo);
 	eo->rel_cache = ht_uu_new0 ();
@@ -4313,6 +4316,7 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, RVecElfOff *starts
 					RVecRBinElfReloc_pop_back (&eo->g_relocs);
 					break;
 				}
+				reloc->uses_section_symtab = section->link < eo->shnum && eo->shdr[section->link].sh_type == SHT_SYMTAB;
 
 				rel_cache_add (eo, reloc);
 				if (is_bin_etrel (eo)) {
@@ -4349,6 +4353,7 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, RVecElfOff *starts
 					RVecRBinElfReloc_pop_back (&eo->g_relocs);
 					break;
 				}
+				reloc->uses_section_symtab = section->link < eo->shnum && eo->shdr[section->link].sh_type == SHT_SYMTAB;
 
 				rel_cache_add (eo, reloc);
 				fix_rva_and_offset (eo, reloc, i);
@@ -6040,8 +6045,38 @@ static RVecRBinElfSymbol *load_primary_symbols_from_phdr(ELFOBJ *eo, int type) {
 	return ret;
 }
 
+static void load_section_symbols_by_ord(ELFOBJ *eo, RVecRBinElfSymbol *symbols, size_t start, size_t end) {
+	if (start == end) {
+		return;
+	}
+	size_t ord_size = 1;
+	size_t i;
+	for (i = start; i < end; i++) {
+		RBinElfSymbol *symbol = RVecRBinElfSymbol_at (symbols, i);
+		ord_size = R_MAX (ord_size, (size_t)symbol->ordinal + 1);
+	}
+	RBinSymbol **sbo = calloc (ord_size, sizeof (RBinSymbol *));
+	if (!sbo) {
+		return;
+	}
+	for (i = start; i < end; i++) {
+		RBinElfSymbol *symbol = RVecRBinElfSymbol_at (symbols, i);
+		if (sbo[symbol->ordinal]) {
+			continue;
+		}
+		RBinSymbol *sym = R_NEW0 (RBinSymbol);
+		fill_symbol (eo, symbol, sym);
+		sbo[symbol->ordinal] = sym;
+		set_special_by_ord (eo, symbol);
+	}
+	eo->section_symbols_by_ord = sbo;
+	eo->section_symbols_by_ord_size = ord_size;
+	eo->section_special_by_ord = eo->special_by_ord;
+	eo->special_by_ord = NULL;
+}
+
 // reloc->sym indexes DT_SYMTAB, so a section-less dynsym takes its ordinals from the phdrs
-static void load_symbols_by_ord_from_phdr(ELFOBJ *eo) {
+static void load_symbols_by_ord_from_phdr(ELFOBJ *eo, RVecRBinElfSymbol *symbols, size_t symtab_start, size_t symtab_end) {
 	RVecRBinElfSymbol *dynsyms = load_symbols_from_phdr (eo, R_BIN_ELF_ALL_SYMBOLS);
 	if (!dynsyms) {
 		return;
@@ -6052,6 +6087,7 @@ static void load_symbols_by_ord_from_phdr(ELFOBJ *eo) {
 		RVecRBinElfSymbol_free (dynsyms);
 		return;
 	}
+	load_section_symbols_by_ord (eo, symbols, symtab_start, symtab_end);
 	size_t i;
 	for (i = 0; i < eo->symbols_by_ord_size; i++) {
 		r_bin_symbol_free (eo->symbols_by_ord[i]);
@@ -6100,6 +6136,8 @@ static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 	size_t shnum = eo->shnum;
 	ut64 symtabs_size = 0;
 	bool has_dynsym_section = false;
+	size_t symtab_start = 0;
+	size_t symtab_end = 0;
 	for (i = 0; i < shnum; i++) {
 		if (!section_matters (eo, i, type, shdr_size)) {
 			continue;
@@ -6122,10 +6160,15 @@ static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 			.ret_ctr = &ret_ctr,
 			.import_ret_ctr = &import_ret_ctr,
 		};
+		const size_t section_start = ret? RVecRBinElfSymbol_length (ret): 0;
 		if (!_process_symbols_and_imports_in_section (eo, type, &state)) {
 			R_LOG_ERROR ("failed parsing imports in section");
 			RVecRBinElfSymbol_free (ret);
 			return NULL;
+		}
+		if (sh->sh_type == SHT_SYMTAB && symtab_start == symtab_end) {
+			symtab_start = section_start;
+			symtab_end = RVecRBinElfSymbol_length (ret);
 		}
 
 		if (type == R_BIN_ELF_IMPORT_SYMBOLS) {
@@ -6154,7 +6197,7 @@ static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 		return res;
 	}
 	if (type == R_BIN_ELF_ALL_SYMBOLS && !has_dynsym_section) {
-		load_symbols_by_ord_from_phdr (eo);
+		load_symbols_by_ord_from_phdr (eo, ret, symtab_start, symtab_end);
 	}
 	return ret;
 }
@@ -6340,6 +6383,14 @@ void Elf_(free)(ELFOBJ* eo) {
 		}
 		free (eo->symbols_by_ord);
 	}
+	if (eo->section_symbols_by_ord) {
+		size_t i;
+		for (i = 0; i < eo->section_symbols_by_ord_size; i++) {
+			r_bin_symbol_free (eo->section_symbols_by_ord[i]);
+		}
+		free (eo->section_symbols_by_ord);
+	}
+	ht_up_free (eo->section_special_by_ord);
 	free (eo->osabi);
 	free (eo->phdr);
 	free (eo->shdr);

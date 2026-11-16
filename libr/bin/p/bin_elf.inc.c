@@ -118,23 +118,35 @@ static bool sections_vec(RBinFile *bf) {
 	return true;
 }
 
+static inline bool reloc_uses_section_symtab(ELFOBJ *eo, const RBinElfReloc *rel) {
+	return eo->section_symbols_by_ord && rel->uses_section_symtab;
+}
+
+static inline RBinSymbol *reloc_symbol(ELFOBJ *eo, const RBinElfReloc *rel) {
+	const bool section = reloc_uses_section_symtab (eo, rel);
+	RBinSymbol **symbols = section? eo->section_symbols_by_ord: eo->symbols_by_ord;
+	const size_t size = section? eo->section_symbols_by_ord_size: eo->symbols_by_ord_size;
+	return rel->sym && rel->sym < size? symbols[rel->sym]: NULL;
+}
+
 static inline bool reloc_is_import(ELFOBJ *eo, const RBinElfReloc *rel) {
-	return rel->sym && rel->sym < eo->imports_by_ord_size && eo->imports_by_ord[rel->sym];
+	return !reloc_uses_section_symtab (eo, rel) && rel->sym && rel->sym < eo->imports_by_ord_size && eo->imports_by_ord[rel->sym];
 }
 
 // a common symbol has no address until link time, so it gets a slot too
-static inline const RBinElfSpecialSym *special_sym(ELFOBJ *eo, ut64 ord) {
-	return eo->special_by_ord? ht_up_find (eo->special_by_ord, ord, NULL): NULL;
+static inline const RBinElfSpecialSym *special_sym(ELFOBJ *eo, const RBinElfReloc *rel) {
+	HtUP *special = reloc_uses_section_symtab (eo, rel)? eo->section_special_by_ord: eo->special_by_ord;
+	return special? ht_up_find (special, rel->sym, NULL): NULL;
 }
 
 static inline bool reloc_has_slot(ELFOBJ *eo, const RBinElfReloc *rel) {
-	const RBinElfSpecialSym *ss = special_sym (eo, rel->sym);
+	const RBinElfSpecialSym *ss = special_sym (eo, rel);
 	return reloc_is_import (eo, rel) || (ss && ss->common);
 }
 
 // a tls symbol's value is an offset in the thread block, not an address
 static inline bool reloc_sym_is_tls(ELFOBJ *eo, const RBinElfReloc *rel) {
-	const RBinSymbol *sym = (rel->sym < eo->symbols_by_ord_size)? eo->symbols_by_ord[rel->sym]: NULL;
+	const RBinSymbol *sym = reloc_symbol (eo, rel);
 	const char *type = sym? sym->type: reloc_is_import (eo, rel)? eo->imports_by_ord[rel->sym]->type: NULL;
 	return type && !strcmp (type, R_BIN_TYPE_TLS_STR);
 }
@@ -183,8 +195,9 @@ static char *swift_elf_slot(void *user, ut64 va, ut64 *target) {
 			if (reloc_is_import (eo, rel)) {
 				return strdup (r_bin_name_tostring2 (eo->imports_by_ord[rel->sym]->name, 'o'));
 			}
-			if (rel->sym < eo->symbols_by_ord_size && eo->symbols_by_ord[rel->sym]) {
-				return strdup (r_bin_name_tostring2 (eo->symbols_by_ord[rel->sym]->name, 'o'));
+			RBinSymbol *sym = reloc_symbol (eo, rel);
+			if (sym) {
+				return strdup (r_bin_name_tostring2 (sym->name, 'o'));
 			}
 		}
 		if (rel->laddr) {
@@ -551,8 +564,8 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr, RV
 	}
 	if (reloc_is_import (eo, rel)) {
 		r->import = r_bin_import_clone (eo->imports_by_ord[rel->sym]);
-	} else if (rel->sym && rel->sym < eo->symbols_by_ord_size && eo->symbols_by_ord[rel->sym]) {
-		r->symbol = eo->symbols_by_ord[rel->sym];
+	} else if (reloc_symbol (eo, rel)) {
+		r->symbol = reloc_symbol (eo, rel);
 	}
 
 	ut64 sym_vaddr = r->symbol ? r->symbol->vaddr : (rel->sym ? rel->rva : 0);
@@ -1170,10 +1183,10 @@ static ut64 elf_io_addr(RBinFile *bf, ELFOBJ *eo, ut64 v) {
 
 // the defined symbol of the given state a reloc targets at io address L
 static const RBinSymbol *arm_reloc_sym(ELFOBJ *eo, const RBinElfReloc *rel, ut64 L, int bits) {
-	if (!L || L == UT64_MAX || !rel->sym || reloc_is_import (eo, rel) || rel->sym >= eo->symbols_by_ord_size) {
+	if (!L || L == UT64_MAX || !rel->sym || reloc_is_import (eo, rel)) {
 		return NULL;
 	}
-	const RBinSymbol *sym = eo->symbols_by_ord[rel->sym];
+	const RBinSymbol *sym = reloc_symbol (eo, rel);
 	return (sym && sym->bits == bits && sym->type)? sym: NULL;
 }
 
@@ -2067,8 +2080,8 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 					}
 				}
 				// Then check symbols
-				else if (rel->sym < bo->symbols_by_ord_size && bo->symbols_by_ord[rel->sym]) {
-					RBinSymbol *symbol = bo->symbols_by_ord[rel->sym];
+				else if (reloc_symbol (bo, rel)) {
+					RBinSymbol *symbol = reloc_symbol (bo, rel);
 					if (symbol && symbol->name) {
 						sym_name = r_bin_name_tostring (symbol->name);
 						sym_addr = symbol->vaddr;
@@ -2323,7 +2336,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		ut64 plt_entry_addr = vaddr;
 		ut64 sym_addr = UT64_MAX;
 		const bool has_slot = reloc_has_slot (eo, reloc);
-		const RBinElfSpecialSym *ss = special_sym (eo, reloc->sym);
+		const RBinElfSpecialSym *ss = special_sym (eo, reloc);
 		bool is_abs = false;
 
 		if (has_slot) {
@@ -2332,9 +2345,9 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 			if (found) {
 				plt_entry_addr = sym_addr;
 			}
-		} else if (reloc->sym && reloc->sym < eo->symbols_by_ord_size && eo->symbols_by_ord[reloc->sym]) {
+		} else if (reloc_symbol (eo, reloc)) {
 			is_abs = ss && !ss->common;
-			RBinSymbol *sym = eo->symbols_by_ord[reloc->sym];
+			RBinSymbol *sym = reloc_symbol (eo, reloc);
 			sym_addr = is_abs? ss->value: sym->vaddr;
 			if (!is_abs && !reloc_sym_is_tls (eo, reloc) && sym_addr && sym_addr != UT64_MAX) {
 				sym_addr = elf_io_addr (bf, eo, sym_addr);
@@ -2364,7 +2377,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		const bool skip = offset && (!offset_fits (a) || (flags & SLOT_CRAMPED));
 		if (skip && !(flags & SLOT_WARNED)) {
 			RBinImport *imp = reloc_is_import (eo, reloc)? eo->imports_by_ord[reloc->sym]: NULL;
-			RBinSymbol *sym = (!imp && reloc->sym < eo->symbols_by_ord_size)? eo->symbols_by_ord[reloc->sym]: NULL;
+			RBinSymbol *sym = !imp? reloc_symbol (eo, reloc): NULL;
 			RBinName *name = imp? imp->name: sym? sym->name: NULL;
 			R_LOG_WARN ("No .got.r2 room for %s%+"PFMT64d" at 0x%"PFMT64x", reloc left unpatched",
 				name? r_bin_name_tostring (name): "?", a, reloc->rva);
@@ -2379,7 +2392,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 			_patch_reloc (bf, eo, eo->ehdr.e_machine, &b->iob, reloc,
 				elf_io_addr (bf, eo, reloc->rva), raddr, bias, plt_entry_addr, toc_base, arm_arch);
 		}
-		RBinSymbol *csym = (takes_slot && ss && ss->common)? eo->symbols_by_ord[reloc->sym]: NULL;
+		RBinSymbol *csym = (takes_slot && ss && ss->common)? reloc_symbol (eo, reloc): NULL;
 		if (csym) {
 			csym->vaddr = slot - shift;
 			csym->paddr = Elf_(v2p) (eo, csym->vaddr);
