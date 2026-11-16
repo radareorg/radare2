@@ -212,7 +212,7 @@ static RBinAddr *r_xcoff_get_entry(RBinCoffObj *obj) {
 	if (obj->x_ldsyms) {
 		int i;
 		for (i = 0; i < obj->x_ldhdr.l_nsyms; i++) {
-			if (!strcmp (obj->x_ldsyms[i].l_name, "__start")) {
+			if (!strncmp (obj->x_ldsyms[i].l_name, "__start", sizeof (obj->x_ldsyms[i].l_name))) {
 				ptr_scnum = obj->x_ldsyms[i].l_scnum;
 				ptr_vaddr = obj->x_ldsyms[i].l_value;
 				break;

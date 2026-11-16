@@ -15,9 +15,10 @@ static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 		return false;
 	}
 	struct r_bin_te_obj_t *res = r_bin_te_new_buf (b);
-	if (res) {
-		sdb_ns_set (bf->sdb, "info", res->kv);
+	if (!res) {
+		return false;
 	}
+	sdb_ns_set (bf->sdb, "info", res->kv);
 	bf->bo->bin_obj = res;
 	return true;
 }

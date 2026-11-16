@@ -23,7 +23,7 @@ static int r_bin_te_init_hdr(struct r_bin_te_obj_t *bin) {
 	if (!(bin->header = malloc (sizeof (TE_image_file_header)))) {
 		return false;
 	}
-	if (r_buf_read_at (bin->b, 0, (ut8*)bin->header, sizeof (TE_image_file_header)) == -1) {
+	if (r_buf_read_at (bin->b, 0, (ut8*)bin->header, sizeof (TE_image_file_header)) != sizeof (TE_image_file_header)) {
 		return false;
 	}
 	if (!bin->kv) {
@@ -111,7 +111,7 @@ static bool r_bin_te_init_sections(struct r_bin_te_obj_t* bin) {
 		return false;
 	}
 	if (r_buf_read_at (bin->b, sizeof (TE_image_file_header),
-				(ut8*)bin->section_header, sections_size) == -1) {
+				(ut8*)bin->section_header, sections_size) != sections_size) {
 		R_LOG_ERROR ("read (sections headers)");
 		return false;
 	}

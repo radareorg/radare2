@@ -945,6 +945,26 @@ bool test_r_bin_mach0_full_segname(void) {
 	mu_end;
 }
 
+bool test_r_bin_te_truncated(void) {
+	const ut8 te[] = { 'V', 'Z', 0x4c, 0x01, 0xff };
+	RBuffer *buf = r_buf_new_with_bytes (te, sizeof (te));
+	mu_assert_notnull (buf, "TE buffer creation");
+
+	RBin *bin = r_bin_new ();
+	RIO *io = r_io_new ();
+	r_io_bind (io, &bin->iob);
+
+	RBinFileOptions opt = {0};
+	r_bin_open_buf (bin, buf, &opt);
+	RBinPlugin *plugin = r_bin_file_cur_plugin (r_bin_cur (bin));
+	mu_assert_true (!plugin || strcmp (plugin->meta.name, "te"), "truncated header is not loaded as TE");
+
+	r_bin_free (bin);
+	r_io_free (io);
+	r_unref (buf);
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_bin_string_charset);
 	mu_run_test(test_r_bin);
@@ -965,6 +985,7 @@ bool all_tests(void) {
 	mu_run_test(test_r_bin_cmd);
 	mu_run_test(test_r_bin_elf_pn_xnum_phdr);
 	mu_run_test(test_r_bin_te_bounds);
+	mu_run_test(test_r_bin_te_truncated);
 	mu_run_test(test_r_bin_mach0_full_segname);
 	return tests_passed != tests_run;
 }
