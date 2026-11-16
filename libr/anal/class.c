@@ -416,7 +416,7 @@ static char *flagname_attr(const char *attr_type, const char *class_name, const 
 		free (class_name_sanitized);
 		return NULL;
 	}
-	char *r = r_str_newf ("%s.%s.%s", attr_type, class_name, attr_id);
+	char *r = r_str_newf ("%s.%s.%s", attr_type, class_name_sanitized, attr_id_sanitized);
 	free (class_name_sanitized);
 	free (attr_id_sanitized);
 	return r;
@@ -445,8 +445,9 @@ static void r_anal_class_rename_flag(RAnal *anal, const char *old_name, const ch
 	RFlagItem *fi = anal->flg_class_get (anal->flb.f, old_name);
 	if (fi) {
 		const ut64 addr = fi->addr;
+		const ut32 size = (ut32)fi->size;
 		anal->flb.unset (anal->flb.f, fi);
-		anal->flg_class_set (anal->flb.f, new_name, addr, 0);
+		anal->flg_class_set (anal->flb.f, new_name, addr, size);
 	}
 }
 
@@ -1104,7 +1105,7 @@ static void print_class(RAnal *anal, RStrBuf *sb, const char *class_name) {
 	if (vtables) {
 		RAnalVTable *vtable;
 		R_VEC_FOREACH (vtables, vtable) {
-			r_strbuf_appendf (sb, "'acv %s 0x%"PFMT64x" %"PFMT64u"\n", class_name, vtable->addr, vtable->offset);
+			r_strbuf_appendf (sb, "'acv %s 0x%"PFMT64x" %"PFMT64u" %"PFMT64u"\n", class_name, vtable->addr, vtable->offset, vtable->size);
 		}
 		RVecAnalVTable_free (vtables);
 	}

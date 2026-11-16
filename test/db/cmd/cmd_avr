@@ -58,7 +58,7 @@ Complete Object Locator at 0x00417860:
 		numBaseClasses: 0x1
 		baseClassArrayAddr: 0x00417884
 
-		Base Class Descriptor:
+		Base Class Descriptor at 0x0041788c:
 			typeDescriptorAddr: 0x004198b0
 			numContainedBases: 0
 			where:
@@ -92,7 +92,7 @@ Complete Object Locator at 0x004178a8:
 		numBaseClasses: 0x2
 		baseClassArrayAddr: 0x004178cc
 
-		Base Class Descriptor:
+		Base Class Descriptor at 0x004178d8:
 			typeDescriptorAddr: 0x004198c4
 			numContainedBases: 0x1
 			where:
@@ -106,7 +106,7 @@ Complete Object Locator at 0x004178a8:
 				spare: 0x00000000
 				name: .?AVInAbsentia@@
 
-		Base Class Descriptor:
+		Base Class Descriptor at 0x0041788c:
 			typeDescriptorAddr: 0x004198b0
 			numContainedBases: 0
 			where:
@@ -140,7 +140,7 @@ Complete Object Locator at 0x004178f4:
 		numBaseClasses: 0x1
 		baseClassArrayAddr: 0x00417918
 
-		Base Class Descriptor:
+		Base Class Descriptor at 0x00417920:
 			typeDescriptorAddr: 0x004198e0
 			numContainedBases: 0
 			where:
@@ -170,6 +170,27 @@ type_info
 EOF
 RUN
 
+NAME=avrr msvc secondary vtables
+FILE=bins/pe/libzmq-v100-mt-4_0_4.dll
+CMDS=<<EOF
+aar
+avrr
+acl~?
+acl~io_thread_t
+acv zmq::io_thread_t
+f~vtable.zmq::io_thread_t
+EOF
+EXPECT=<<EOF
+69
+zmq::io_thread_t: zmq::object_t, zmq::i_poll_events
+zmq::io_thread_t:
+     0 vtable 0x10064f34 @ +0x0 size:+0x44
+     1 vtable 0x10064f7c @ +0xc size:+0x10
+0x10064f34 68 vtable.zmq::io_thread_t.0
+0x10064f7c 16 vtable.zmq::io_thread_t.1
+EOF
+RUN
+
 NAME=avraj msvc x86
 FILE=bins/pe/cpp-msvc-x86.exe
 CMDS=<<EOF
@@ -177,7 +198,7 @@ aar
 avraj
 EOF
 EXPECT=<<EOF
-[{"complete_object_locator":{"signature":0,"vftable_offset":0,"cd_offset":0,"type_desc_addr":4298928,"class_desc_addr":4290676,"object_base":0},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVAlbum@@"},"class_hierarchy_desc":{"signature":0,"attributes":0,"num_base_classes":1,"base_class_array_addr":4290692},"base_classes":[{"desc":{"type_desc_addr":4298928,"num_contained_bases":0,"where":{"mdisp":0,"pdisp":-1,"vdisp":0},"attributes":64},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVAlbum@@"}}]},{"complete_object_locator":{"signature":0,"vftable_offset":0,"cd_offset":0,"type_desc_addr":4298948,"class_desc_addr":4290748,"object_base":0},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVInAbsentia@@"},"class_hierarchy_desc":{"signature":0,"attributes":0,"num_base_classes":2,"base_class_array_addr":4290764},"base_classes":[{"desc":{"type_desc_addr":4298948,"num_contained_bases":1,"where":{"mdisp":0,"pdisp":-1,"vdisp":0},"attributes":64},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVInAbsentia@@"}},{"desc":{"type_desc_addr":4298928,"num_contained_bases":0,"where":{"mdisp":0,"pdisp":-1,"vdisp":0},"attributes":64},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVAlbum@@"}}]},{"complete_object_locator":{"signature":0,"vftable_offset":0,"cd_offset":0,"type_desc_addr":4298976,"class_desc_addr":4290824,"object_base":0},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVtype_info@@"},"class_hierarchy_desc":{"signature":0,"attributes":0,"num_base_classes":1,"base_class_array_addr":4290840},"base_classes":[{"desc":{"type_desc_addr":4298976,"num_contained_bases":0,"where":{"mdisp":0,"pdisp":-1,"vdisp":0},"attributes":64},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVtype_info@@"}}]}]
+[{"complete_object_locator":{"addr":4290656,"signature":0,"vftable_offset":0,"cd_offset":0,"type_desc_addr":4298928,"class_desc_addr":4290676,"object_base":0},"type_desc":{"addr":4298928,"vtable_addr":4268540,"spare":0,"name":".?AVAlbum@@"},"class_hierarchy_desc":{"addr":4290676,"signature":0,"attributes":0,"num_base_classes":1,"base_class_array_addr":4290692},"base_classes":[{"desc":{"addr":4290700,"type_desc_addr":4298928,"num_contained_bases":0,"where":{"mdisp":0,"pdisp":-1,"vdisp":0},"attributes":64},"type_desc":{"addr":4298928,"vtable_addr":4268540,"spare":0,"name":".?AVAlbum@@"}}]},{"complete_object_locator":{"addr":4290728,"signature":0,"vftable_offset":0,"cd_offset":0,"type_desc_addr":4298948,"class_desc_addr":4290748,"object_base":0},"type_desc":{"addr":4298948,"vtable_addr":4268540,"spare":0,"name":".?AVInAbsentia@@"},"class_hierarchy_desc":{"addr":4290748,"signature":0,"attributes":0,"num_base_classes":2,"base_class_array_addr":4290764},"base_classes":[{"desc":{"addr":4290776,"type_desc_addr":4298948,"num_contained_bases":1,"where":{"mdisp":0,"pdisp":-1,"vdisp":0},"attributes":64},"type_desc":{"addr":4298948,"vtable_addr":4268540,"spare":0,"name":".?AVInAbsentia@@"}},{"desc":{"addr":4290700,"type_desc_addr":4298928,"num_contained_bases":0,"where":{"mdisp":0,"pdisp":-1,"vdisp":0},"attributes":64},"type_desc":{"addr":4298928,"vtable_addr":4268540,"spare":0,"name":".?AVAlbum@@"}}]},{"complete_object_locator":{"addr":4290804,"signature":0,"vftable_offset":0,"cd_offset":0,"type_desc_addr":4298976,"class_desc_addr":4290824,"object_base":0},"type_desc":{"addr":4298976,"vtable_addr":4268540,"spare":0,"name":".?AVtype_info@@"},"class_hierarchy_desc":{"addr":4290824,"signature":0,"attributes":0,"num_base_classes":1,"base_class_array_addr":4290840},"base_classes":[{"desc":{"addr":4290848,"type_desc_addr":4298976,"num_contained_bases":0,"where":{"mdisp":0,"pdisp":-1,"vdisp":0},"attributes":64},"type_desc":{"addr":4298976,"vtable_addr":4268540,"spare":0,"name":".?AVtype_info@@"}}]}]
 EOF
 RUN
 
@@ -243,5 +264,87 @@ Type Info at 0x00000200:
 -- flagged typeinfo, max accepted
   Type Info type: __vmi_class_type_info
   Count of base classes: 0x40
+EOF
+RUN
+
+NAME=avr msvc x64 prints virtual addresses
+FILE=malloc://0x1000
+ARGS=-m 0x140000000
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e anal.cxxabi=msvc
+wv8 0x140000200 @ 0x1400000f8
+wv4 1 @ 0x140000200
+wv4 0x300 @ 0x14000020c
+wv4 0x240 @ 0x140000210
+wv4 0x200 @ 0x140000214
+wv4 2 @ 0x140000248
+wv4 0x260 @ 0x14000024c
+wv4 0x280 @ 0x140000260
+wv4 0x2a0 @ 0x140000264
+wv4 0x300 @ 0x140000280
+wv4 1 @ 0x140000284
+wv4 0xffffffff @ 0x14000028c
+wv4 0x40 @ 0x140000294
+wv4 0x320 @ 0x1400002a0
+wv4 0xffffffff @ 0x1400002ac
+wv4 0x40 @ 0x1400002b4
+wv8 0x140000500 @ 0x140000300
+wx 2e3f4156424040 @ 0x140000310
+wv8 0x140000500 @ 0x140000320
+wx 2e3f4156414040 @ 0x140000330
+avr @ 0x140000100
+avrj @ 0x140000100
+EOF
+EXPECT=<<EOF
+Complete Object Locator at 0x140000200:
+	signature: 0x1
+	vftableOffset: 0
+	cdOffset: 0
+	typeDescriptorAddr: 0x140000300 (rva 0x00000300)
+	classDescriptorAddr: 0x140000240 (rva 0x00000240)
+	objectBase: 0x140000200 (rva 0x00000200)
+
+	Type Descriptor at 0x140000300:
+		vtableAddr: 0x140000500
+		spare: 0x00000000
+		name: .?AVB@@
+
+	Class Hierarchy Descriptor at 0x140000240:
+		signature: 0
+		attributes: 0
+		numBaseClasses: 0x2
+		baseClassArrayAddr: 0x140000260 (rva 0x00000260)
+
+		Base Class Descriptor at 0x140000280:
+			typeDescriptorAddr: 0x140000300 (rva 0x00000300)
+			numContainedBases: 0x1
+			where:
+				mdisp: 0
+				pdisp: -1
+				vdisp: 0
+			attributes: 0x40
+
+			Type Descriptor at 0x140000300:
+				vtableAddr: 0x140000500
+				spare: 0x00000000
+				name: .?AVB@@
+
+		Base Class Descriptor at 0x1400002a0:
+			typeDescriptorAddr: 0x140000320 (rva 0x00000320)
+			numContainedBases: 0
+			where:
+				mdisp: 0
+				pdisp: -1
+				vdisp: 0
+			attributes: 0x40
+
+			Type Descriptor at 0x140000320:
+				vtableAddr: 0x140000500
+				spare: 0x00000000
+				name: .?AVA@@
+
+[{"complete_object_locator":{"addr":5368709632,"signature":1,"vftable_offset":0,"cd_offset":0,"type_desc_addr":768,"type_desc_va":5368709888,"class_desc_addr":576,"class_desc_va":5368709696,"object_base":512},"type_desc":{"addr":5368709888,"vtable_addr":5368710400,"spare":0,"name":".?AVB@@"},"class_hierarchy_desc":{"addr":5368709696,"signature":0,"attributes":0,"num_base_classes":2,"base_class_array_addr":608,"base_class_array_va":5368709728},"base_classes":[{"desc":{"addr":5368709760,"type_desc_addr":768,"type_desc_va":5368709888,"num_contained_bases":1,"where":{"mdisp":0,"pdisp":-1,"vdisp":0},"attributes":64},"type_desc":{"addr":5368709888,"vtable_addr":5368710400,"spare":0,"name":".?AVB@@"}},{"desc":{"addr":5368709792,"type_desc_addr":800,"type_desc_va":5368709920,"num_contained_bases":0,"where":{"mdisp":0,"pdisp":-1,"vdisp":0},"attributes":64},"type_desc":{"addr":5368709920,"vtable_addr":5368710400,"spare":0,"name":".?AVA@@"}}]}]
 EOF
 RUN
