@@ -1706,6 +1706,23 @@ smd 0x0000018e 28c9 ok
 EOF
 RUN
 
+NAME=rabin2 -O c/fix rewrites the master system rom checksum
+FILE=bins/sms/demo.sms
+CMDS=<<EOF
+mkdir .tmp
+rmrf .tmp/rabin2-csum-sms
+!rabin2 -O c ${R2_FILE} 2>/dev/null
+!rabin2 -O c/fix -o .tmp/rabin2-csum-sms ${R2_FILE} 2>/dev/null
+!rabin2 -O c .tmp/rabin2-csum-sms 2>/dev/null
+rmrf .tmp/rabin2-csum-sms
+EOF
+EXPECT=<<EOF
+sms 0x00007ffa 0000 bad 8c92
+sms 0x00007ffa 8c92 fixed
+sms 0x00007ffa 8c92 ok
+EOF
+RUN
+
 NAME=rabin2 -O c on a format without checksums
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=!rabin2 -O c ${R2_FILE}

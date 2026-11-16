@@ -28,6 +28,21 @@ static ut32 get_buffer(RBinFile *bf, RBuffer *b) {
 	return UT32_MAX;
 }
 
+static int sms_rom_kilobytes(ut8 size_code) {
+	switch (size_code & 0xf) {
+	case 0xa: return 8;
+	case 0xb: return 16;
+	case 0xc: return 32;
+	case 0xd: return 48;
+	case 0xe: return 64;
+	case 0xf: return 128;
+	case 0x0: return 256;
+	case 0x1: return 512;
+	case 0x2: return 1024;
+	}
+	return 0;
+}
+
 static bool check(RBinFile *bf, RBuffer *b) {
 	ut32 res = get_buffer (bf, b);
 	return res != UT32_MAX;
@@ -85,21 +100,36 @@ static RBinInfo *info(RBinFile *bf) {
 		R_LOG_INFO ("Region: International");
 		break;
 	}
-	int romsize = 0;
-	switch (hdr.RegionRomSize & 0xf) {
-	case 0xa: romsize = 8; break;
-	case 0xb: romsize = 16; break;
-	case 0xc: romsize = 32; break;
-	case 0xd: romsize = 48; break;
-	case 0xe: romsize = 64; break;
-	case 0xf: romsize = 128; break;
-	case 0x0: romsize = 256; break;
-	case 0x1: romsize = 512; break;
-	case 0x2: romsize = 1024; break;
-	}
-	R_LOG_INFO ("RomSize: %dKB", romsize);
+	R_LOG_INFO ("RomSize: %dKB", sms_rom_kilobytes (hdr.RegionRomSize));
 	return ret;
 }
+
+// the checksum is the sum of the rom bytes declared by the header, skipping the header itself
+static int checksum(RBinFile *bf, RStrBuf *report, bool fix) {
+	const ut64 hdr = get_buffer (bf, bf->buf);
+	ut64 size = 0;
+	const ut8 *data = r_buf_data (bf->buf, &size);
+	if (!data || hdr == UT32_MAX || hdr + sizeof (SMS_Header) > size || memcmp (data + hdr, "TMR SEGA", 8)) {
+		return -1;
+	}
+	const ut64 declared = sms_rom_kilobytes (data[hdr + r_offsetof (SMS_Header, RegionRomSize)]) * 1024ULL;
+	const ut64 rom_size = (declared && declared < size)? declared: size;
+	ut16 sum = 0;
+	ut64 i;
+	for (i = 0; i < rom_size; i++) {
+		if (i < hdr || i >= hdr + sizeof (SMS_Header)) {
+			sum += data[i];
+		}
+	}
+	ut8 computed[2];
+	r_write_le16 (computed, sum);
+	const ut64 paddr = hdr + r_offsetof (SMS_Header, CheckSum);
+	return !r_bin_wr_checksum_update (bf->buf, report, "sms", paddr, computed, sizeof (computed), fix);
+}
+
+static RBinWrite r_bin_write_sms = {
+	.checksum = &checksum,
+};
 
 RBinPlugin r_bin_plugin_sms = {
 	.meta = {
@@ -111,6 +141,7 @@ RBinPlugin r_bin_plugin_sms = {
 	.load = &load,
 	.check = &check,
 	.info = &info,
+	.write = &r_bin_write_sms,
 	.minstrlen = 10,
 	.strfilter = 'U'
 };
