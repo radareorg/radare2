@@ -68,7 +68,7 @@ static bool sections_vec(RBinFile *bf) {
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 	for (i = 0; !sections[i].last; i++) {
 		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		ptr->name = strdup ((char*)sections[i].name);
+		ptr->name = r_str_ndup ((const char *)sections[i].name, TE_IMAGE_SIZEOF_NAME);
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
 		ptr->paddr = sections[i].paddr;

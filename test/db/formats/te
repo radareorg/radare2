@@ -1,0 +1,14 @@
+NAME=TE: te-havoc4 section underflow regression
+FILE=bins/fuzzed/te-havoc4
+CMDS=<<EOF
+iI~class,bintype
+iS~:3
+iS~?0xffffffffffff
+EOF
+EXPECT=<<EOF
+bintype  te
+class    TE
+1   0x00000440        0x39 0x00000270        0xf4 ---- 0x0   ----
+0
+EOF
+RUN

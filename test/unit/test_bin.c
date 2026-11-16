@@ -850,6 +850,47 @@ bool test_r_bin_string_charset(void) {
 	mu_end;
 }
 
+bool test_r_bin_te_bounds(void) {
+	ut8 te[80] = {0};
+	r_write_le16 (te, 0x5a56); // "VZ" signature
+	r_write_le16 (te + 2, 0x014c); // Machine
+	te[4] = 1; // NumberOfSections = 1
+	r_write_le16 (te + 6, 0xffff); // StrippedSize: delta larger than the section addresses
+	r_write_le32 (te + 8, 0x1000); // AddressOfEntryPoint
+	// Section header at offset 40
+	memcpy (te + 40, "_TEXT_RE", 8); // 8-byte non-null-terminated name
+	r_write_le32 (te + 48, 0x01020304); // VirtualSize
+	r_write_le32 (te + 52, 0x1000); // VirtualAddress
+	r_write_le32 (te + 56, 0x01020304); // SizeOfRawData
+	r_write_le32 (te + 60, 0x50); // PointerToRawData
+	r_write_le32 (te + 76, 0x60000020); // Characteristics
+
+	RBuffer *buf = r_buf_new_with_bytes (te, sizeof (te));
+	mu_assert_notnull (buf, "TE buffer creation");
+
+	RBin *bin = r_bin_new ();
+	RIO *io = r_io_new ();
+	r_io_bind (io, &bin->iob);
+
+	RBinFileOptions opt = {0};
+	bool res = r_bin_open_buf (bin, buf, &opt);
+	mu_assert_true (res, "TE binary opened successfully");
+
+	RVecRBinSection *sections = r_bin_get_sections_vec (bin);
+	mu_assert_notnull (sections, "sections vector retrieved");
+	mu_assert_eq (RVecRBinSection_length (sections), 1, "exactly 1 section parsed");
+
+	RBinSection *s = RVecRBinSection_at (sections, 0);
+	mu_assert_notnull (s, "section 0 retrieved");
+	mu_assert_streq (s->name, "_TEXT_RE", "section name preserved without over-read");
+	mu_assert_eq (s->paddr, 0x50, "paddr bounded without underflow");
+
+	r_bin_free (bin);
+	r_io_free (io);
+	r_unref (buf);
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_bin_string_charset);
 	mu_run_test(test_r_bin);
@@ -869,6 +910,7 @@ bool all_tests(void) {
 	mu_run_test(test_r_bin_resource_raw_extraction);
 	mu_run_test(test_r_bin_cmd);
 	mu_run_test(test_r_bin_elf_pn_xnum_phdr);
+	mu_run_test(test_r_bin_te_bounds);
 	return tests_passed != tests_run;
 }
 
