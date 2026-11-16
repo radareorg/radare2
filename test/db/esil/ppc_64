@@ -2918,3 +2918,45 @@ EXPECT=<<EOF
 0x00000000
 EOF
 RUN
+
+NAME=ppc modsw uses only the low word
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 7c642e16
+aei
+ar pc=0; ar r4=0x11; ar r5=0x5; aes; ?v r3&0xffffffff
+ar pc=0; ar r4=0xffffffffffffffef; ar r5=0x5; aes; ?v r3&0xffffffff
+ar pc=0; ar r4=0x11; ar r5=0xfffffffffffffffb; aes; ?v r3&0xffffffff
+ar pc=0; ar r4=0xffffffffffffffef; ar r5=0xfffffffffffffffb; aes; ?v r3&0xffffffff
+ar pc=0; ar r4=0x12345678ffffffef; ar r5=0xabcdef0100000005; aes; ?v r3&0xffffffff
+ar pc=0; ar r4=0x80000000; ar r5=0xffffffff; aes; ?v r3&0xffffffff
+EOF
+EXPECT=<<EOF
+0x2
+0xfffffffe
+0x2
+0xfffffffe
+0xfffffffe
+0x0
+EOF
+RUN
+
+NAME=ppc moduw uses only the low word
+FILE=malloc://32
+ARGS=-a ppc -b 64 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 7c642a16
+aei
+ar pc=0; ar r4=0x11; ar r5=0x5; aes; ?v r3&0xffffffff
+ar pc=0; ar r4=0xffffffff; ar r5=0x80000000; aes; ?v r3&0xffffffff
+ar pc=0; ar r4=0xfffffffe; ar r5=0xffffffff; aes; ?v r3&0xffffffff
+ar pc=0; ar r4=0x1234567800000011; ar r5=0xabcdef0100000005; aes; ?v r3&0xffffffff
+EOF
+EXPECT=<<EOF
+0x2
+0x7fffffff
+0xfffffffe
+0x2
+EOF
+RUN

@@ -521,3 +521,113 @@ EXPECT=<<EOF
 0xffffffff80000000
 EOF
 RUN
+
+NAME=loongarch mod.w operand order signedness and width
+FILE=malloc://32
+ARGS=-a loongarch -b 64
+CMDS=<<EOF
+wx 86942000
+aei
+ar pc=0; ar a0=0x11; ar a1=0x5; aes; ar a2
+ar pc=0; ar a0=0xffffffffffffffef; ar a1=0x5; aes; ar a2
+ar pc=0; ar a0=0x11; ar a1=0xfffffffffffffffb; aes; ar a2
+ar pc=0; ar a0=0xffffffffffffffef; ar a1=0xfffffffffffffffb; aes; ar a2
+ar pc=0; ar a0=0x12345678ffffffef; ar a1=0xabcdef0100000005; aes; ar a2
+ar pc=0; ar a0=0x80000000; ar a1=0xffffffff; aes; ar a2
+EOF
+EXPECT=<<EOF
+0x00000002
+0xfffffffffffffffe
+0x00000002
+0xfffffffffffffffe
+0xfffffffffffffffe
+0x00000000
+EOF
+RUN
+
+NAME=loongarch mod.wu operand order signedness and width
+FILE=malloc://32
+ARGS=-a loongarch -b 64
+CMDS=<<EOF
+wx 86942100
+aei
+ar pc=0; ar a0=0x11; ar a1=0x5; aes; ar a2
+ar pc=0; ar a0=0xffffffff; ar a1=0x80000000; aes; ar a2
+ar pc=0; ar a0=0xfffffffe; ar a1=0xffffffff; aes; ar a2
+ar pc=0; ar a0=0x1234567800000011; ar a1=0xabcdef0100000005; aes; ar a2
+EOF
+EXPECT=<<EOF
+0x00000002
+0x7fffffff
+0xfffffffffffffffe
+0x00000002
+EOF
+RUN
+
+NAME=loongarch mod.d operand order signedness and width
+FILE=malloc://32
+ARGS=-a loongarch -b 64
+CMDS=<<EOF
+wx 86942200
+aei
+ar pc=0; ar a0=0x11; ar a1=0x5; aes; ar a2
+ar pc=0; ar a0=0xffffffffffffffef; ar a1=0x5; aes; ar a2
+ar pc=0; ar a0=0x11; ar a1=0xfffffffffffffffb; aes; ar a2
+ar pc=0; ar a0=0xffffffffffffffef; ar a1=0xfffffffffffffffb; aes; ar a2
+ar pc=0; ar a0=0x8000000000000000; ar a1=0xffffffffffffffff; aes; ar a2
+EOF
+EXPECT=<<EOF
+0x00000002
+0xfffffffffffffffe
+0x00000002
+0xfffffffffffffffe
+0x00000000
+EOF
+RUN
+
+NAME=loongarch mod.du operand order signedness and width
+FILE=malloc://32
+ARGS=-a loongarch -b 64
+CMDS=<<EOF
+wx 86942300
+aei
+ar pc=0; ar a0=0x11; ar a1=0x5; aes; ar a2
+ar pc=0; ar a0=0xffffffffffffffff; ar a1=0xfffffffffffffffe; aes; ar a2
+ar pc=0; ar a0=0xfffffffffffffffe; ar a1=0xffffffffffffffff; aes; ar a2
+EOF
+EXPECT=<<EOF
+0x00000002
+0x00000001
+0xfffffffffffffffe
+EOF
+RUN
+
+NAME=loongarch mod.d aliases source r4
+FILE=malloc://32
+ARGS=-a loongarch -b 64
+CMDS=<<EOF
+wx 84942200
+aei
+ar pc=0; ar a0=0xffffffffffffffef; ar a1=0x5; aes; ar a0
+ar pc=0; ar a0=0x11; ar a1=0xfffffffffffffffb; aes; ar a0
+EOF
+EXPECT=<<EOF
+0xfffffffffffffffe
+0x00000002
+EOF
+RUN
+
+NAME=loongarch mod.d aliases source r5
+FILE=malloc://32
+ARGS=-a loongarch -b 64
+CMDS=<<EOF
+wx 85942200
+aei
+ar pc=0; ar a0=0xffffffffffffffef; ar a1=0x5; aes; ar a1
+ar pc=0; ar a0=0x11; ar a1=0xfffffffffffffffb; aes; ar a1
+EOF
+EXPECT=<<EOF
+0xfffffffffffffffe
+0x00000002
+EOF
+RUN

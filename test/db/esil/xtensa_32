@@ -616,3 +616,83 @@ EXPECT=<<EOF2
 0x00000009 31,a3,&,1,<<,a2,&,0,==,$z,!,?{,0x12,pc,=,}
 EOF2
 RUN
+
+NAME=xtensa rems sign extension destination a2
+FILE=malloc://32
+ARGS=-a xtensa -b 32
+CMDS=<<EOF
+wx 4023f2
+aei
+ar pc=0; ar a3=0x11; ar a4=0x5; aes; ar a2
+ar pc=0; ar a3=0xffffffef; ar a4=0x5; aes; ar a2
+ar pc=0; ar a3=0x11; ar a4=0xfffffffb; aes; ar a2
+ar pc=0; ar a3=0xffffffef; ar a4=0xfffffffb; aes; ar a2
+ar pc=0; ar a3=0x80000000; ar a4=0xffffffff; aes; ar a2
+EOF
+EXPECT=<<EOF
+0x00000002
+0xfffffffe
+0x00000002
+0xfffffffe
+0x00000000
+EOF
+RUN
+
+NAME=xtensa rems sign extension destination a3
+FILE=malloc://32
+ARGS=-a xtensa -b 32
+CMDS=<<EOF
+wx 4033f2
+aei
+ar pc=0; ar a3=0x11; ar a4=0x5; aes; ar a3
+ar pc=0; ar a3=0xffffffef; ar a4=0x5; aes; ar a3
+ar pc=0; ar a3=0x11; ar a4=0xfffffffb; aes; ar a3
+ar pc=0; ar a3=0xffffffef; ar a4=0xfffffffb; aes; ar a3
+ar pc=0; ar a3=0x80000000; ar a4=0xffffffff; aes; ar a3
+EOF
+EXPECT=<<EOF
+0x00000002
+0xfffffffe
+0x00000002
+0xfffffffe
+0x00000000
+EOF
+RUN
+
+NAME=xtensa rems sign extension destination a4
+FILE=malloc://32
+ARGS=-a xtensa -b 32
+CMDS=<<EOF
+wx 4043f2
+aei
+ar pc=0; ar a3=0x11; ar a4=0x5; aes; ar a4
+ar pc=0; ar a3=0xffffffef; ar a4=0x5; aes; ar a4
+ar pc=0; ar a3=0x11; ar a4=0xfffffffb; aes; ar a4
+ar pc=0; ar a3=0xffffffef; ar a4=0xfffffffb; aes; ar a4
+ar pc=0; ar a3=0x80000000; ar a4=0xffffffff; aes; ar a4
+EOF
+EXPECT=<<EOF
+0x00000002
+0xfffffffe
+0x00000002
+0xfffffffe
+0x00000000
+EOF
+RUN
+
+NAME=xtensa remu treats the high bit as unsigned
+FILE=malloc://32
+ARGS=-a xtensa -b 32
+CMDS=<<EOF
+wx 4023e2
+aei
+ar pc=0; ar a3=0xffffffff; ar a4=5; aes; ar a2
+ar pc=0; ar a3=0xfffffffe; ar a4=0xffffffff; aes; ar a2
+ar pc=0; ar a3=17; ar a4=5; aes; ar a2
+EOF
+EXPECT=<<EOF
+0x00000000
+0xfffffffe
+0x00000002
+EOF
+RUN

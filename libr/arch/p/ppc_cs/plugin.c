@@ -2842,12 +2842,19 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			op->type = R_ANAL_OP_TYPE_DIV;
 			break;
 		case PPC_INS_MODSW:
+			op->sign = true;
+			op->type = R_ANAL_OP_TYPE_MOD;
+			esilprintf (op, "32,%s,~,32,%s,~,~%%,%s,=", ARG (2), ARG (1), ARG (0));
+			break;
 		case PPC_INS_MODSD:
 			op->sign = true;
 			op->type = R_ANAL_OP_TYPE_MOD;
 			esilprintf (op, "%s,%s,~%%,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
 		case PPC_INS_MODUW:
+			op->type = R_ANAL_OP_TYPE_MOD;
+			esilprintf (op, "0xffffffff,%s,&,0xffffffff,%s,&,%%,%s,=", ARG (2), ARG (1), ARG (0));
+			break;
 		case PPC_INS_MODUD:
 			op->type = R_ANAL_OP_TYPE_MOD;
 			esilprintf (op, "%s,%s,%%,%s,=", ARG (2), ARG (1), ARG (0));

@@ -1041,8 +1041,16 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut32 opcode) {
 		r_strbuf_appendf (&op->esil, ES_W("%s")","ES_W("%s")",/,%s,=", LA_RJ(), LA_RK(), LA_RD());
 		break;
 	case LA_INS_MOD_WU:
+		r_strbuf_appendf (&op->esil, ES_SX32(ES_W("%s")","ES_W("%s")",%%")",%s,=", LA_RK(), LA_RJ(), LA_RD());
+		break;
 	case LA_INS_MOD_W:
-		r_strbuf_appendf (&op->esil, ES_SX32(ES_W("%s")","ES_W("%s")",%%")",%s,=", LA_RJ(), LA_RK(), LA_RD());
+		r_strbuf_appendf (&op->esil, ES_SX32(ES_SX32("%s")","ES_SX32("%s")",~%%")",%s,=", LA_RK(), LA_RJ(), LA_RD());
+		break;
+	case LA_INS_MOD_DU:
+		r_strbuf_appendf (&op->esil, "%s,%s,%%,%s,=", LA_RK(), LA_RJ(), LA_RD());
+		break;
+	case LA_INS_MOD_D:
+		r_strbuf_appendf (&op->esil, "%s,%s,~%%,%s,=", LA_RK(), LA_RJ(), LA_RD());
 		break;
 	case LA_INS_SLL_W:
 		r_strbuf_appendf (&op->esil, ES_SX32("0x1f,%s,&,"ES_W("%s")",<<")",%s,=", LA_RK(), LA_RJ(), LA_RD());

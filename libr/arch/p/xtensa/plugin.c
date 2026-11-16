@@ -1605,9 +1605,11 @@ static void esil_integer_op(xtensa_isa isa, xtensa_opcode opcode, xtensa_format 
 		r_strbuf_appendf (&op->esil,
 			"0x%x,a%d,+,[4],DUP,scompare1,==,$z,?{,a%d,0x%x,a%d,+,=[4],},a%d,=",
 			right << 2, left, dst, right << 2, left, dst);
+	} else if (opcode == 460) {
+		r_strbuf_appendf (&op->esil, "32,a%d,~,32,a%d,~,~%%,a%d,=", right, left, dst);
 	} else {
 		const char *operation = opcode == 457 ? "/" : opcode == 458 ? "~/"
-			: opcode == 459 ? "%" : opcode == 460 ? "~%" : "*";
+			: opcode == 459 ? "%" : "*";
 		if (opcode == 296) {
 			r_strbuf_appendf (&op->esil, "0xffff,a%d,&,0xffff,a%d,&,", right, left);
 		} else if (opcode == 297) {

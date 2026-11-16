@@ -522,7 +522,7 @@ e cfg.bigendian=true
 EOF
 EXPECT=<<EOF
 modsw r3, r4, r3
-0x00000000 r3,r4,~%,r3,=
+0x00000000 32,r3,~,32,r4,~,~%,r3,=
 EOF
 RUN
 
