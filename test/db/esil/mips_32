@@ -2441,6 +2441,108 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# MD00086 opcodes: lwc1 0x31, ldc1 0x35, swc1 0x39, sdc1 0x3d, beql 0x14, bnel 0x15, blezl 0x16, bgtzl 0x17, REGIMM bltzl rt=2, bgezl rt=3
+NAME=mips.gnu cop1 loads and stores and likely branches have esil
+FILE=malloc://64
+ARGS=-a mips.gnu -b 32
+CMDS=<<EOF
+wx f0ffa2c41000a4d4f8ffa2e41000a4f40300225003002254020040580200405c0200420402004304
+ao 10~mnemonic,type,esil:
+EOF
+EXPECT=<<EOF
+mnemonic: lwc1
+type: load
+esil: -16,a1,+,[4],f2,=
+mnemonic: ldc1
+type: load
+esil: 16,a1,+,[8],f4,=
+mnemonic: swc1
+type: store
+esil: f2,-8,a1,+,=[4]
+mnemonic: sdc1
+type: store
+esil: f4,16,a1,+,=[8]
+mnemonic: beql
+type: cjmp
+esil: $ds,!,!,?{,0x10,1,TRAP,BREAK,},at,v0,^,!,?{,0x20,SETJT,1,SETD,}{,pc,4,+,pc,:=,}
+mnemonic: bnel
+type: cjmp
+esil: $ds,!,!,?{,0x14,1,TRAP,BREAK,},at,v0,^,?{,0x24,SETJT,1,SETD,}{,pc,4,+,pc,:=,}
+mnemonic: blezl
+type: cjmp
+esil: $ds,!,!,?{,0x18,1,TRAP,BREAK,},0,v0,<=,?{,0x24,SETJT,1,SETD,}{,pc,4,+,pc,:=,}
+mnemonic: bgtzl
+type: cjmp
+esil: $ds,!,!,?{,0x1c,1,TRAP,BREAK,},0,v0,>,?{,0x28,SETJT,1,SETD,}{,pc,4,+,pc,:=,}
+mnemonic: bltzl
+type: cjmp
+esil: $ds,!,!,?{,0x20,1,TRAP,BREAK,},1,v0,ROL,1,&,?{,0x2c,SETJT,1,SETD,}{,pc,4,+,pc,:=,}
+mnemonic: bgezl
+type: cjmp
+esil: $ds,!,!,?{,0x24,1,TRAP,BREAK,},1,v0,ROL,1,&,!,?{,0x30,SETJT,1,SETD,}{,pc,4,+,pc,:=,}
+EOF
+RUN
+
+# MD00086 LWC1/LDC1 load FPR[ft] from memory, SWC1/SDC1 store it back
+NAME=mips.gnu cop1 loads and stores move fpr data
+FILE=malloc://128
+ARGS=-a mips.gnu -b 32
+CMDS=<<EOF
+aei
+wx f0ffa2c4f0ffa4d4f8ffa2e40000a4f4
+wx 1122334455667788 @ 0x40
+ar a1=0x50
+ar pc=0
+aes
+aes
+aes
+aes
+ar f2
+ar f4
+p8 4 @ 0x48
+p8 8 @ 0x50
+EOF
+EXPECT=<<EOF
+0x44332211
+0x8877665544332211
+11223344
+1122334455667788
+EOF
+RUN
+
+# MD00086 a likely branch not taken nullifies its delay slot; beql at, v0, 0x10 then bnel at, v0, 0x10
+NAME=mips.gnu likely branches skip the delay slot when not taken
+FILE=malloc://64
+ARGS=-a mips.gnu -b 32
+CMDS=<<EOF
+aei
+wx 03002250
+ar at=1
+ar v0=1
+ar pc=0
+aes
+ar pc
+ar v0=2
+ar pc=0
+aes
+ar pc
+wx 03002254
+ar pc=0
+aes
+ar pc
+ar v0=1
+ar pc=0
+aes
+ar pc
+EOF
+EXPECT=<<EOF
+0x00000010
+0x00000008
+0x00000010
+0x00000008
+EOF
+RUN
+
 NAME=mips.gnu rotr and rotrv rotate instead of shifting
 FILE=malloc://32
 ARGS=-a mips.gnu -b 32

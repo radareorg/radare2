@@ -783,6 +783,13 @@ typedef struct gnu_insn {
 	r_strbuf_appendf (&op->esil, sbits",%s,%s,+,["size"],~,%s%s",\
 		I_REG (imm), I_REG (rs), ESIL_LOAD_DEST)
 
+static const char *mips_fpr_names[32] = {
+	"f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7",
+	"f8", "f9", "f10", "f11", "f12", "f13", "f14", "f15",
+	"f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23",
+	"f24", "f25", "f26", "f27", "f28", "f29", "f30", "f31"
+};
+
 /* Return a mapping from the register number i.e. $0 .. $31 to string name */
 static const char *mips_reg_decode(ut32 reg_num) {
 	/* See page 36 of "See Mips Run Linux, 2e, D. Sweetman, 2007"*/
@@ -862,7 +869,12 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn)
 			I_REG (rt), I_REG (imm), I_REG (rs));
 		break;
 	case MIPS_INS_SWC1:
-	case MIPS_INS_SWC2:
+		r_strbuf_appendf (&op->esil, "%s,%s,%s,+,=[4]",
+			I_REG (rt), I_REG (imm), I_REG (rs));
+		break;
+	case MIPS_INS_SDC1:
+		r_strbuf_appendf (&op->esil, "%s,%s,%s,+,=[8]",
+			I_REG (rt), I_REG (imm), I_REG (rs));
 		break;
 	case MIPS_INS_SB:
 		r_strbuf_appendf (&op->esil, "%s,%s,%s,+,=[1]",
@@ -1753,6 +1765,14 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				insn.id = MIPS_INS_BGEZ;
 				op->type = R_ANAL_OP_TYPE_CJMP;
 				break;
+			case 2: // bltzl
+				insn.id = MIPS_INS_BLTZL;
+				op->type = R_ANAL_OP_TYPE_CJMP;
+				break;
+			case 3: // bgezl
+				insn.id = MIPS_INS_BGEZL;
+				op->type = R_ANAL_OP_TYPE_CJMP;
+				break;
 			case 16: // bltzal
 				insn.id = MIPS_INS_BLTZAL;
 				op->type = R_ANAL_OP_TYPE_CALL;
@@ -1791,6 +1811,15 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			// XXX: use imm here
 			if (!insn.id) {
 				insn.id = MIPS_INS_BGTZ;
+			}
+			/* fallthrough */
+		case 20: // beql
+		case 21: // bnel
+		case 22: // blezl
+		case 23: // bgtzl
+			if (!insn.id) {
+				const int likely_ids[] = { MIPS_INS_BEQL, MIPS_INS_BNEL, MIPS_INS_BLEZL, MIPS_INS_BGTZL };
+				insn.id = likely_ids[optype - 20];
 			}
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->jump = addr + ((ut64)imm << 2) + 4;
@@ -2009,7 +2038,19 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			op->type = R_ANAL_OP_TYPE_STORE;
 			break;
 		case 49: // lwc1
+		case 53: // ldc1
 		case 57: // swc1
+		case 61: // sdc1
+			{
+				const bool store = optype == 57 || optype == 61;
+				const bool wide = optype == 53 || optype == 61;
+				insn.id = store
+					? (wide? MIPS_INS_SDC1: MIPS_INS_SWC1)
+					: (wide? MIPS_INS_LDC1: MIPS_INS_LWC1);
+				insn.i_reg.rt = mips_fpr_names[rt];
+				op->refptr = wide? 8: 4;
+				op->type = store? R_ANAL_OP_TYPE_STORE: R_ANAL_OP_TYPE_LOAD;
+			}
 			break;
 		case 29: // jalx
 			insn.id = MIPS_INS_JALX;
@@ -2161,6 +2202,10 @@ static char *regs(RArchSession *as) {
 	size_t i;
 	for (i = 0; i < R_ARRAY_SIZE (names); i++) {
 		r_strbuf_appendf (sb, "gpr	%s	.%d	%d	0\n", names[i], bits, (int)i * (bits / 8));
+	}
+	const int fpr_base = (int)R_ARRAY_SIZE (names) * (bits / 8);
+	for (i = 0; i < R_ARRAY_SIZE (mips_fpr_names); i++) {
+		r_strbuf_appendf (sb, "fpu	%s	.64	%d	0\n", mips_fpr_names[i], fpr_base + (int)i * 8);
 	}
 	return r_strbuf_drain (sb);
 }
