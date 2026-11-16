@@ -6311,7 +6311,7 @@ static int analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 	}
 #endif
 	RArchCSInsn csi;
-	bool ok = r_arch_cs_disasm_iter (*cs_handle, buf, len, addr, &csi);
+	bool ok = r2cs_disasm_iter (*cs_handle, buf, len, addr, &csi);
 	cs_insn *insn = &csi.insn;
 	if (ok && is_valid_mnemonic (insn->mnemonic)) {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
@@ -6372,7 +6372,7 @@ static int analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 
 static bool plugin_changed(RArchSession *as) {
 	PluginData *pd = as->data;
-	if (as->config->bits != pd->bits) {
+	if (!pd || as->config->bits != pd->bits) {
 		return true;
 	}
 	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config) != pd->bigendian) {
@@ -6390,7 +6390,9 @@ static bool fini(RArchSession *as);
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	if (plugin_changed (as)) {
 		fini (as);
-		init (as);
+		if (!init (as)) {
+			return false;
+		}
 	}
 	csh *handle = cs_handle_for_session (as);
 	PluginData *pd = as->data;
@@ -6428,6 +6430,9 @@ extern char *r_arm64_cs_mnemonics(RArchSession *as, csh *cs_handle, int id, bool
 
 static char *arm_mnemonics(RArchSession *as, int id, bool json) {
 	csh *cs_handle = cs_handle_for_session (as);
+	if (!cs_handle) {
+		return NULL;
+	}
 	if (as->config->bits == 64) {
 		return r_arm64_cs_mnemonics (as, cs_handle, id, json);
 	}
@@ -6487,6 +6492,9 @@ static bool fini(RArchSession *as) {
 	R_RETURN_VAL_IF_FAIL (as, false);
 
 	PluginData *pd = (PluginData*) as->data;
+	if (!pd) {
+		return true;
+	}
 	ht_uu_free (pd->ht_itblock);
 	ht_uu_free (pd->ht_it);
 	free (pd->cpu);

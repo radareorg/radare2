@@ -28,9 +28,9 @@ static inline int cs_mode_for_session(RArchSession *as) {
 }
 
 bool r_arm_arch_cs_init(RArchSession *as, csh *cs_handle) {
-	return r_arch_cs_init (as, cs_handle);
+	return r2cs_open (as, CSINC_MODE, cs_handle);
 }
 
 char *r_arm_cs_mnemonics(RArchSession *as, csh *cs_handle, int id, bool json) {
-	return r_arch_cs_mnemonics(as, *cs_handle, id, json);
+	return r2cs_mnemonics(as, *cs_handle, id, json);
 }

@@ -127,8 +127,8 @@ static void op_fillval(PluginData *pd, RAnalOp *op, csh handle, cs_insn *insn) {
 
 static csh cs_handle_for_session(RArchSession *as) {
 	R_RETURN_VAL_IF_FAIL (as && as->data, 0);
-	CapstonePluginData *pd = as->data;
-	return pd->cs_handle;
+	PluginData *pd = as->data;
+	return r2cs_handle (as, &pd->cpd);
 }
 
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
@@ -153,7 +153,7 @@ performed in big-endian byte order.
 
 	// capstone-next
 	RArchCSInsn csi;
-	bool ok = r_arch_cs_disasm_iter (handle, (const ut8 *)&lbuf, sizeof (lbuf), addr, &csi);
+	bool ok = r2cs_disasm_iter (handle, (const ut8 *)&lbuf, sizeof (lbuf), addr, &csi);
 	cs_insn *insn = &csi.insn;
 	if (!ok) {
 		op->type = R_ANAL_OP_TYPE_ILL;
@@ -482,8 +482,7 @@ static bool init(RArchSession *as) {
 	}
 	as->data = R_NEW0 (PluginData);
 	CapstonePluginData *cpd = as->data;
-	if (!r_arch_cs_init (as, &cpd->cs_handle)) {
-		R_LOG_ERROR ("Cannot initialize capstone");
+	if (!r2cs_handle (as, cpd)) {
 		R_FREE (as->data);
 		return false;
 	}
@@ -493,7 +492,7 @@ static bool init(RArchSession *as) {
 static bool fini(RArchSession *as) {
 	R_RETURN_VAL_IF_FAIL (as, false);
 	PluginData *pd = as->data;
-	cs_close (&pd->cpd.cs_handle);
+	r2cs_fini (pd? &pd->cpd: NULL);
 	R_FREE (as->data);
 	return true;
 }
@@ -501,7 +500,7 @@ static bool fini(RArchSession *as) {
 static char *mnemonics(RArchSession *as, int id, bool json) {
 	R_RETURN_VAL_IF_FAIL (as && as->data, NULL);
 	CapstonePluginData *cpd = as->data;
-	return r_arch_cs_mnemonics (as, cpd->cs_handle, id, json);
+	return r2cs_mnemonics (as, r2cs_handle (as, cpd), id, json);
 }
 
 const RArchPlugin r_arch_plugin_sparc_cs = {

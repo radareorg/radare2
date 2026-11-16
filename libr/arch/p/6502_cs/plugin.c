@@ -22,7 +22,7 @@ typedef struct plugin_data_t {
 static inline csh cs_handle_for_session(RArchSession *as) {
 	R_RETURN_VAL_IF_FAIL (as, 0);
 	CapstonePluginData *cpd = as->data;
-	return cpd->cs_handle;
+	return r2cs_handle (as, cpd);
 }
 
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
@@ -36,7 +36,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 
 	op->cycles = 1; // aprox
 	RArchCSInsn csi;
-	bool ok = r_arch_cs_disasm_iter (handle, buf, len, addr, &csi);
+	bool ok = r2cs_disasm_iter (handle, buf, len, addr, &csi);
 	cs_insn *insn = &csi.insn;
 	if (!ok) {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
@@ -194,7 +194,7 @@ static char *regs(RArchSession *as) {
 
 static char *mnemonics(RArchSession *as, int id, bool json) {
 	CapstonePluginData *cpd = as->data;
-	return r_arch_cs_mnemonics (as, cpd->cs_handle, id, json);
+	return r2cs_mnemonics (as, r2cs_handle (as, cpd), id, json);
 }
 
 static bool init(RArchSession *s) {
@@ -205,8 +205,7 @@ static bool init(RArchSession *s) {
 	}
 	s->data = R_NEW0 (PluginData);
 	PluginData *pd = s->data;
-	if (!r_arch_cs_init (s, &pd->cpd.cs_handle)) {
-		R_LOG_ERROR ("Cannot initialize capstone");
+	if (!r2cs_handle (s, &pd->cpd)) {
 		R_FREE (s->data);
 		return false;
 	}
@@ -216,7 +215,7 @@ static bool init(RArchSession *s) {
 static bool fini(RArchSession *s) {
 	R_RETURN_VAL_IF_FAIL (s, false);
 	PluginData *pd = s->data;
-	cs_close (&pd->cpd.cs_handle);
+	r2cs_fini (pd? &pd->cpd: NULL);
 	R_FREE (s->data);
 	return true;
 }

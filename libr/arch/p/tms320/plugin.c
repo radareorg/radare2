@@ -242,8 +242,8 @@ static tms320_dasm_t *tms320_engine_for_session(RArchSession *as) {
 
 static csh cs_handle_for_session(RArchSession *as) {
 	R_RETURN_VAL_IF_FAIL (as && as->data, 0);
-	CapstonePluginData *pd = as->data;
-	return pd->cs_handle;
+	PluginData *pd = as->data;
+	return r2cs_handle (as, &pd->cpd);
 }
 
 static int tms320c64x_analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
@@ -254,7 +254,7 @@ static int tms320c64x_analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8
 	RArchCSInsn csi;
 	cs_insn *insn = &csi.insn;
 	cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
-	bool ok = r_arch_cs_disasm_iter (handle, buf, len, addr, &csi);
+	bool ok = r2cs_disasm_iter (handle, buf, len, addr, &csi);
 	if (!ok) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		if (mask & R_ARCH_OP_MASK_DISASM) {
@@ -528,15 +528,14 @@ static bool tms320_init(RArchSession *as) {
 
 	as->data = R_NEW0 (PluginData);
 	PluginData *pd = as->data;
-	if (!r_arch_cs_init (as, &pd->cpd.cs_handle)) {
-		R_LOG_ERROR ("Cannot initialize capstone");
+	if (!r2cs_handle (as, &pd->cpd)) {
 		R_FREE (as->data);
 		return false;
 	}
 
 	if (!tms320_dasm_init (&pd->engine)) {
 		R_LOG_ERROR ("Cannot initialize tms320 engine");
-		cs_close (&pd->cpd.cs_handle);
+		r2cs_fini (&pd->cpd);
 		R_FREE (as->data);
 		return false;
 	}
@@ -553,7 +552,7 @@ static bool tms320_fini(RArchSession *as) {
 	R_RETURN_VAL_IF_FAIL (as && as->data, false);
 
 	PluginData *pd = as->data;
-	cs_close (&pd->cpd.cs_handle);
+	r2cs_fini (&pd->cpd);
 
 	tms320_dasm_fini (&pd->engine);
 
@@ -563,7 +562,7 @@ static bool tms320_fini(RArchSession *as) {
 
 static char *mnemonics(RArchSession *s, int id, bool json) {
 	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
-	return r_arch_cs_mnemonics (s, cpd->cs_handle, id, json);
+	return r2cs_mnemonics (s, r2cs_handle (s, cpd), id, json);
 }
 
 static int archinfo(RArchSession *as, ut32 q) {

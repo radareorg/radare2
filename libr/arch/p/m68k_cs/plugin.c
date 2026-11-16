@@ -108,9 +108,6 @@ static int get_capstone_mode (RArchSession *as) {
 typedef struct plugin_data_t {
 	CapstonePluginData cpd;
 	RRegItem reg;
-	char *cpu;
-	int cs_mode;
-	bool bigendian;
 } PluginData;
 
 #define OPERAND(x) insn->detail->m68k.operands[x]
@@ -241,33 +238,7 @@ static void op_fillval(PluginData *pd, RAnalOp *op, csh handle, cs_insn *insn) {
 static inline csh cs_handle_for_session(RArchSession *as) {
 	R_RETURN_VAL_IF_FAIL (as && as->data, 0);
 	PluginData *pd = as->data;
-	const char *cpu = as->config->cpu;
-	const bool bigendian = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
-	if (pd->cpd.cs_handle && bigendian == pd->bigendian
-			&& (cpu? pd->cpu && !strcmp (cpu, pd->cpu): !pd->cpu)) {
-		return pd->cpd.cs_handle;
-	}
-	const int mode = get_capstone_mode (as);
-	char *new_cpu = cpu? strdup (cpu): NULL;
-	if (cpu && !new_cpu) {
-		return 0;
-	}
-	if (!pd->cpd.cs_handle || mode != pd->cs_mode) {
-		// Capstone ignores CS_OPT_MODE for m68k.
-		csh handle = 0;
-		r_arch_cs_init (as, &handle);
-		if (!handle) {
-			free (new_cpu);
-			return 0;
-		}
-		cs_close (&pd->cpd.cs_handle);
-		pd->cpd.cs_handle = handle;
-		pd->cs_mode = mode;
-	}
-	free (pd->cpu);
-	pd->cpu = new_cpu;
-	pd->bigendian = bigendian;
-	return pd->cpd.cs_handle;
+	return r2cs_handle (as, &pd->cpd);
 }
 
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
@@ -287,7 +258,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	cs_detail *detail;
 
 	op->size = 4;
-	bool ok = r_arch_cs_disasm_iter (handle, buf, len, addr, &csi);
+	bool ok = r2cs_disasm_iter (handle, buf, len, addr, &csi);
 	if (!ok || !strncmp (insn->mnemonic, "dc.w", 4)) {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
@@ -896,7 +867,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 
 static char *mnemonics(RArchSession *s, int id, bool json) {
 	CapstonePluginData *cpd = s->data;
-	return r_arch_cs_mnemonics (s, cpd->cs_handle, id, json);
+	return r2cs_mnemonics (s, r2cs_handle (s, cpd), id, json);
 }
 
 static bool init(RArchSession *s) {
@@ -915,8 +886,7 @@ static bool fini(RArchSession *s) {
 	R_RETURN_VAL_IF_FAIL (s, false);
 	PluginData *pd = s->data;
 	if (pd) {
-		cs_close (&pd->cpd.cs_handle);
-		free (pd->cpu);
+		r2cs_fini (&pd->cpd);
 		R_FREE (s->data);
 	}
 	return true;

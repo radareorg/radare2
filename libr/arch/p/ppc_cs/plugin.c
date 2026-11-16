@@ -793,7 +793,6 @@ static char *shrink(char *op) {
 
 typedef struct plugin_data_t {
 	CapstonePluginData cpd;
-	int bits;
 	char cspr[16];
 	char words[8][64];
 	// PPC64 ELFv1 TOC base per GPR: addis rX,r2,HA stores gp+(HA<<16); a later ld/addi/st rY,LO(rX) resolves op->ptr/val (0 = no pending value)
@@ -1542,8 +1541,8 @@ static int decompile_ps(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf
 
 static csh cs_handle_for_session(RArchSession *as) {
 	R_RETURN_VAL_IF_FAIL (as && as->data, 0);
-	CapstonePluginData *pd = as->data;
-	return pd->cs_handle;
+	PluginData *pd = as->data;
+	return r2cs_handle (as, &pd->cpd);
 }
 
 static void swap4(ut8 *buf) {
@@ -1561,17 +1560,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const int len = op->size;
 	char cmaskbuf[cmaskbuf_SIZEOF] = {0};
 	PluginData *pd = as->data;
-	if (pd->bits != as->config->bits) {
-#if CS_API_MAJOR >= 6
-		// capstone v6 ORs CS_OPT_MODE into the current mode; reopen
-		cs_close (&pd->cpd.cs_handle);
-		r_arch_cs_init (as, &pd->cpd.cs_handle);
-		pd->bits = pd->cpd.cs_handle? as->config->bits: 0;
-#else
-		cs_option (pd->cpd.cs_handle, CS_OPT_MODE, CSINC_MODE);
-		pd->bits = as->config->bits;
-#endif
-	}
 	csh handle = cs_handle_for_session (as);
 	if (handle == 0 || len < 4) {
 		return false;
@@ -1593,7 +1581,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	}
 	// capstone-next
 	RArchCSInsn csi;
-	bool ok = r_arch_cs_disasm_iter (handle, csbuf, len, addr, &csi);
+	bool ok = r2cs_disasm_iter (handle, csbuf, len, addr, &csi);
 	cs_insn *insn = &csi.insn;
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		ret = -1;
@@ -3114,7 +3102,7 @@ static RList *preludes(RArchSession *as) {
 
 static char *mnemonics(RArchSession *as, int id, bool json) {
 	CapstonePluginData *cpd = as->data;
-	return r_arch_cs_mnemonics (as, cpd->cs_handle, id, json);
+	return r2cs_mnemonics (as, r2cs_handle (as, cpd), id, json);
 }
 
 static bool init(RArchSession *as) {
@@ -3125,8 +3113,7 @@ static bool init(RArchSession *as) {
 	}
 	as->data = R_NEW0 (PluginData);
 	PluginData *pd = as->data;
-	if (!r_arch_cs_init (as, &pd->cpd.cs_handle)) {
-		R_LOG_ERROR ("Cannot initialize capstone");
+	if (!r2cs_handle (as, &pd->cpd)) {
 		R_FREE (as->data);
 		return false;
 	}
@@ -3135,8 +3122,8 @@ static bool init(RArchSession *as) {
 
 static bool fini(RArchSession *as) {
 	R_RETURN_VAL_IF_FAIL (as, false);
-	CapstonePluginData *cpd = as->data;
-	cs_close (&cpd->cs_handle);
+	PluginData *pd = as->data;
+	r2cs_fini (pd? &pd->cpd: NULL);
 	R_FREE (as->data);
 	return true;
 }

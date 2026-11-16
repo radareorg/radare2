@@ -1183,12 +1183,8 @@ static int get_capstone_mode(RArchSession *as) {
 typedef struct plugin_data_t {
 	CapstonePluginData cpd;
 	RRegItem reg;
-	char *cpu;
-	int bits;
 	ut64 t9_pre;
 	ut64 t9_adj;
-	bool bigendian;
-	int last_syntax;
 } PluginData;
 
 
@@ -1203,24 +1199,18 @@ static bool init(RArchSession *as) {
 	PluginData *pd = R_NEW0 (PluginData);
 	pd->t9_pre = UT64_MAX;
 	pd->t9_adj = UT64_MAX;
-	pd->bigendian = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
-	pd->cpu = as->config->cpu? strdup (as->config->cpu): NULL;
-	pd->bits = as->config->bits;
-	if (!r_arch_cs_init (as, &pd->cpd.cs_handle)) {
-		R_LOG_ERROR ("Cannot initialize capstone");
+	as->data = pd;
+	if (!r2cs_handle (as, &pd->cpd)) {
 		R_FREE (as->data);
 		return false;
 	}
-
-	as->data = pd;
 	return true;
 }
 
 static bool fini(RArchSession *as) {
 	R_RETURN_VAL_IF_FAIL (as, false);
 	PluginData *pd = as->data;
-	R_FREE (pd->cpu);
-	cs_close (&pd->cpd.cs_handle);
+	r2cs_fini (pd? &pd->cpd: NULL);
 	R_FREE (as->data);
 	return true;
 }
@@ -1235,22 +1225,13 @@ static bool reset(RArchSession *as) {
 
 static csh cs_handle_for_session(RArchSession *as) {
 	R_RETURN_VAL_IF_FAIL (as && as->data, 0);
-	CapstonePluginData *pd = as->data;
-	return pd->cs_handle;
-}
-
-static bool plugin_changed(RArchSession *as) {
-	PluginData *cpd = as->data;
-	if (!cpd) {
-		return true;
+	PluginData *pd = as->data;
+	bool config_changed;
+	csh handle = r2cs_update_handle (as, &pd->cpd, &config_changed);
+	if (handle && config_changed) {
+		reset (as);
 	}
-	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config) != cpd->bigendian) {
-		return true;
-	}
-	if (as->config->bits != cpd->bits) {
-		return true;
-	}
-	return strcmp (r_str_get (cpd->cpu), r_str_get (as->config->cpu)) != 0;
+	return handle;
 }
 
 // t9_pre only survives writes the decoder models (gp-load set, addiu lo-adjust); any other write to t9 stales it
@@ -1359,24 +1340,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const int len = op->size;
 	const bool stateful = mask & R_ARCH_OP_MASK_STATEFUL;
 	csh handle = cs_handle_for_session (as);
-	PluginData *pd;
-	if (plugin_changed (as)) {
-		fini (as);
-		init (as);
-		handle = cs_handle_for_session (as);
-	}
-	pd = as->data;
-	if (pd && as->config->syntax != pd->last_syntax) {
-		pd->last_syntax = as->config->syntax;
-		if (as->config->syntax == R_ARCH_SYNTAX_REGNUM) {
-			cs_option (handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
-		} else {
-			cs_option (handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
-		}
-	}
-	if (!pd || handle == 0) {
+	if (!handle) {
 		return false;
 	}
+	PluginData *pd = as->data;
 
 // XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	op->addr = addr;
@@ -1385,7 +1352,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		*op->mnemonic = 0;
 	}
 	RArchCSInsn csi;
-	bool ok = r_arch_cs_disasm_iter (handle, buf, len, addr, &csi);
+	bool ok = r2cs_disasm_iter (handle, buf, len, addr, &csi);
 	cs_insn *insn = &csi.insn;
 	if (!ok || insn->size < 1) {
 		op->size = mips_archinfo (as, R_ARCH_INFO_INVOP_SIZE);
@@ -1906,9 +1873,7 @@ static char *get_reg_profile(RArchSession * as) {
 }
 
 static char *mnemonics(RArchSession *as, int id, bool json) {
-	R_RETURN_VAL_IF_FAIL (as && as->data, NULL);
-	CapstonePluginData *cpd = as->data;
-	return r_arch_cs_mnemonics (as, cpd->cs_handle, id, json);
+	return r2cs_mnemonics (as, cs_handle_for_session (as), id, json);
 }
 
 static RList *preludes(RArchSession *as) {

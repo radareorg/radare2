@@ -263,9 +263,13 @@ static void set_opdir(RAnalOp *op) {
 
 static bool riscv_decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	CapstonePluginData *cpd = (CapstonePluginData*)a->data;
+	csh handle = r2cs_handle (a, cpd);
+	if (!handle) {
+		return false;
+	}
 	bool res = false;
 	RArchCSInsn csi;
-	bool ok = r_arch_cs_disasm_iter (cpd->cs_handle, op->bytes, op->size, op->addr, &csi);
+	bool ok = r2cs_disasm_iter (handle, op->bytes, op->size, op->addr, &csi);
 	cs_insn *insn = &csi.insn;
 	if (!ok) {
 		op->type = R_ANAL_OP_TYPE_ILL;
@@ -313,11 +317,11 @@ static bool riscv_decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 			}
 			set_opdir (op);
 			if (insn && mask & R_ARCH_OP_MASK_OPEX) {
-				opex (&op->opex, cpd->cs_handle, insn);
+				opex (&op->opex, handle, insn);
 			}
 #if 0
 			if (mask & R_ARCH_OP_MASK_ESIL) {
-				if (analop_esil (a, op, op->addr, buf, len, cpd->cs_handle, insn) != 0) {
+				if (analop_esil (a, op, op->addr, buf, len, handle, insn) != 0) {
 					r_strbuf_fini (&op->esil);
 				}
 			}
@@ -623,9 +627,8 @@ static bool init(RArchSession *s) {
 		return false;
 	}
 	s->data = R_NEW0 (CapstonePluginData);
-	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
-	if (!r_arch_cs_init (s, &cpd->cs_handle)) {
-		R_LOG_ERROR ("Cannot initialize capstone");
+	CapstonePluginData *cpd = s->data;
+	if (!r2cs_handle (s, cpd)) {
 		R_FREE (s->data);
 		return false;
 	}
@@ -634,15 +637,15 @@ static bool init(RArchSession *s) {
 
 static bool fini(RArchSession *s) {
 	R_RETURN_VAL_IF_FAIL (s, false);
-	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
-	cs_close (&cpd->cs_handle);
+	CapstonePluginData *cpd = s->data;
+	r2cs_fini (cpd);
 	R_FREE (s->data);
 	return true;
 }
 
 static char *mnemonics(RArchSession *s, int id, bool json) {
 	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
-	return r_arch_cs_mnemonics (s, cpd->cs_handle, id, json);
+	return r2cs_mnemonics (s, r2cs_handle (s, cpd), id, json);
 }
 
 const RArchPlugin r_arch_plugin_riscv_cs = {
