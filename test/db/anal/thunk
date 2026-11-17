@@ -4,10 +4,14 @@ CMDS=<<EOF
 aa
 afiaq @ sym.imp.getenv
 afia @ main~thunk
+afl,attrs/str/T~?
+afl,attrs/nostr/T~?
 EOF
 EXPECT=<<EOF
 TE
   T thunk       false
+114
+62
 EOF
 RUN
 

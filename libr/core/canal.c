@@ -2668,10 +2668,11 @@ static char *fcn_attrs_tostring(RAnalFunction *fcn) {
 	return r_anal_function_attrs_tostring (fcn->attrs, false);
 }
 
-#define FCN_LIST_VERBOSE_ENTRY "%s0x%0*"PFMT64x" %5d %4"PFMT64d" %5d %5d %5d %4d 0x%0*"PFMT64x" %5"PFMT64d" 0x%0*"PFMT64x" %5"PFMT64u" %4d %6d %4"PFMT64u" %5d %s%s%s%s\n"
+#define FCN_LIST_VERBOSE_ENTRY "%s0x%0*"PFMT64x" %4"PFMT64d" %5d %5d %5d %4d 0x%0*"PFMT64x" %5"PFMT64d" 0x%0*"PFMT64x" %5"PFMT64u" %4d %6d %4"PFMT64u" %5d %-5s %s%s%s%s\n"
 
 static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 	char *name = r_core_anal_fcn_name (core, fcn);
+	char *attrs = fcn_attrs_tostring (fcn);
 	int ebbs = 0;
 	int addrwidth = 8;
 	const char *color = "";
@@ -2694,7 +2695,7 @@ static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 	}
 
 	r_cons_printf (core->cons, FCN_LIST_VERBOSE_ENTRY, color,
-			addrwidth, fcn->addr, !!(fcn->attrs & R_ANAL_FCN_ATTR_NORETURN),
+			addrwidth, fcn->addr,
 			r_anal_function_realsize (fcn),
 			(int)RVecAnalBlockPtr_length (&fcn->bbs),
 			r_anal_function_count_edges (fcn, &ebbs),
@@ -2708,10 +2709,12 @@ static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 			r_anal_var_count_args (fcn),
 			r_anal_function_count_xrefs (fcn, R_ANAL_REF_TYPE_ANY),
 			fcn->maxstack,
+			*attrs? attrs: "-",
 			fcn->pin? fcn->pin: "",
 			fcn->pin? " ": "",
 			name,
 			color_end);
+	free (attrs);
 	free (name);
 	return 0;
 }
@@ -2750,11 +2753,11 @@ static int fcn_list_verbose(RCore *core, RList *fcns, const char *sortby) {
 	}
 
 	// TODO: add ninstr and islineal?
-	r_cons_printf (core->cons, "%-*s %5s %4s %5s %5s %5s %4s %*s range %-*s %s %s %s %s %s %s\n",
-			headeraddr_width, "address", "noret", "size", "nbbs", "edges", "cc", "cost",
+	r_cons_printf (core->cons, "%-*s %4s %5s %5s %5s %4s %*s range %-*s %s %s %s %s %s %s %s\n",
+			headeraddr_width, "address", "size", "nbbs", "edges", "cc", "cost",
 			headeraddr_width, "min bound", headeraddr_width, "max bound", "calls",
-			"locals", "args", "xref", "frame", "name");
-	r_cons_printf (core->cons, "%s ===== ===== ===== ===== ===== ==== %s ===== %s ===== ====== ==== ==== ===== ====\n",
+			"locals", "args", "xref", "frame", "attrs", "name");
+	r_cons_printf (core->cons, "%s ===== ===== ===== ===== ==== %s ===== %s ===== ====== ==== ==== ===== ===== ====\n",
 			headeraddr, headeraddr, headeraddr);
 	RListIter *iter;
 	RAnalFunction *fcn;
@@ -3599,7 +3602,7 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 	r_table_add_column (t, typeNumber, "addr", 0);
 	r_table_add_column (t, typeNumber, "size", 0);
 	r_table_add_column (t, typeString, "name", 0);
-	r_table_add_column (t, typeNumber, "noret", 0);
+	r_table_add_column (t, typeString, "attrs", 0);
 	r_table_add_column (t, typeNumber, "nbbs", 0);
 	r_table_add_column (t, typeNumber, "nins", 0);
 	r_table_add_column (t, typeNumber, "refs", 0);
@@ -3618,7 +3621,7 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 		r_strf_var (fcnSize, 32, "%"PFMT64u, r_anal_function_linear_size (fcn)); // r_anal_function_size (fcn));
 		r_strf_var (nbbs, 32, "%d", (int)RVecAnalBlockPtr_length (&fcn->bbs));
 		r_strf_var (nins, 32, "%d", r_anal_function_instrcount (fcn));
-		r_strf_var (noret, 32, "%d", !!(fcn->attrs & R_ANAL_FCN_ATTR_NORETURN));
+		char *attrs = fcn_attrs_tostring (fcn);
 
 		// TODO: feels wasteful, maybe we should have functions that return just the amount?
 		RVecAnalRef *xrefs = r_anal_function_get_refs (fcn);
@@ -3650,15 +3653,16 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 		double _maxbbins = maxbbins (fcn);
 		double _midbbins = midbbins (fcn);
 		double _ratbbins = _maxbbins / _midbbins;
-		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, noret, nbbs,
+		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, attrs, nbbs,
 				nins, refs, xref, axref, castr,
 				_maxbbins, _midbbins, _ratbbins,
 				ccstr, file, NULL);
 #else
-		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, noret, nbbs,
+		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, attrs, nbbs,
 				nins, refs, xref, axref, castr,
 				ccstr, file, NULL);
 #endif
+		free (attrs);
 		free (file);
 	}
 	if (r_table_query (t, q)) {

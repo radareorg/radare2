@@ -1259,9 +1259,9 @@ EXPECT=<<EOF
 push.w {r7, fp, lr}
 pop.w {r7, fp, lr}
 bx lr
-address    noret size  nbbs edges    cc cost  min bound range max bound  calls locals args xref frame name
-========== ===== ===== ===== ===== ===== ==== ========== ===== ========== ===== ====== ==== ==== ===== ====
-0x00000000     0   10     1     0     1    7 0x00000000    10 0x0000000a     0    0      0    0    12 fcn.00000000
+address    size  nbbs edges    cc cost  min bound range max bound  calls locals args xref frame attrs name
+========== ===== ===== ===== ===== ==== ========== ===== ========== ===== ====== ==== ==== ===== ===== ====
+0x00000000   10     1     0     1    7 0x00000000    10 0x0000000a     0    0      0    0    12 E     fcn.00000000
 EOF
 RUN
 

@@ -166,11 +166,11 @@ ARGS=-a x86 -b 64
 CMDS=<<EOF
 wx 554889e5e800000000c3
 af
-afll~^0x[10]
+afll~^0x[9]
 axC 0x20 @ 0x1
-afll~^0x[10]
+afll~^0x[9]
 ax- 0x20 @ 0x1
-afll~^0x[10]
+afll~^0x[9]
 EOF
 EXPECT=<<EOF
 1
@@ -184,9 +184,9 @@ FILE=malloc://64
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 af+ 0x20 foo
-afll~^0x[13]
+afll~^0x[12]
 axC 0x20 @ 0x1
-afll~^0x[13]
+afll~^0x[12]
 EOF
 EXPECT=<<EOF
 0
@@ -201,9 +201,9 @@ CMDS=<<EOF
 wx c3 @ 0
 wx e8ebffffffc3 @ 0x10
 af @ 0
-afll~^0x0000000000000000[13]
+afll~^0x0000000000000000[12]
 af @ 0x10
-afll~^0x0000000000000000[13]
+afll~^0x0000000000000000[12]
 EOF
 EXPECT=<<EOF
 0
@@ -217,10 +217,10 @@ ARGS=-a x86 -b 64
 CMDS=<<EOF
 wx 554889e5e800000000c3
 af
-afll~^0x[10]
+afll~^0x[9]
 ax-*
 axd 0x21 @ 0x1
-afll~^0x[10]
+afll~^0x[9]
 EOF
 EXPECT=<<EOF
 1
@@ -235,10 +235,10 @@ CMDS=<<EOF
 wx e80b000000c3 @ 0x20
 af+ 0x20 foo
 axC 0x30 @ 0x20
-afll~^0x[10]
+afll~^0x[9]
 afb+ 0x20 0x20 6
 axC 0x30 @ 0x20
-afll~^0x[10]
+afll~^0x[9]
 EOF
 EXPECT=<<EOF
 0
