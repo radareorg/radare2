@@ -2068,19 +2068,47 @@ EXPECT=<<EOF
 0x080004a2 0x08000661
 0x08000668
 0x00000000080004e2
-0x000000000800064a
+0x0000000000000000
 EOF
 EXPECT_ERR=<<EOF
+WARN: No .got.r2 room for ext_6+64 at 0x8000069, reloc left unpatched
 WARN: No .got.r2 room for ext_7+64 at 0x8000071, reloc left unpatched
 WARN: No .got.r2 room for ext_8+64 at 0x8000079, reloc left unpatched
-WARN: No .got.r2 room for ext_9 (8 bytes), relocs left unpatched
-WARN: No .got.r2 room for ext_10 (8 bytes), relocs left unpatched
-WARN: No .got.r2 room for ext_11 (8 bytes), relocs left unpatched
-WARN: No .got.r2 room for ext_12 (8 bytes), relocs left unpatched
-WARN: No .got.r2 room for ext_13 (8 bytes), relocs left unpatched
-WARN: No .got.r2 room for ext_14 (8 bytes), relocs left unpatched
-WARN: No .got.r2 room for ext_15 (8 bytes), relocs left unpatched
-WARN: No .got.r2 room for ext_16 (8 bytes), relocs left unpatched
+WARN: No .got.r2 room for ext_9+64 at 0x8000081, reloc left unpatched
+WARN: No .got.r2 room for ext_10+64 at 0x8000089, reloc left unpatched
+WARN: No .got.r2 room for ext_11+64 at 0x8000091, reloc left unpatched
+WARN: No .got.r2 room for ext_12+64 at 0x8000099, reloc left unpatched
+WARN: No .got.r2 room for ext_13+64 at 0x80000a1, reloc left unpatched
+WARN: No .got.r2 room for ext_14+64 at 0x80000a9, reloc left unpatched
+WARN: No .got.r2 room for ext_15+64 at 0x80000b1, reloc left unpatched
+WARN: No .got.r2 room for ext_16+64 at 0x80000b9, reloc left unpatched
+EOF
+RUN
+
+NAME=ELF: ET_REL addend padding leaves a slot for a later plain import
+FILE=bins/elf/x86_64-etrel-late-slot.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+om~.got.r2[5,7]
+pv8 @ section..data+0x80
+EOF
+EXPECT=<<EOF
+0x080004df 0x08000666
+0x000000000800065f
+EOF
+EXPECT_ERR=<<EOF
+WARN: No .got.r2 room for ext_5+64 at 0x8000061, reloc left unpatched
+WARN: No .got.r2 room for ext_6+64 at 0x8000069, reloc left unpatched
+WARN: No .got.r2 room for ext_7+64 at 0x8000071, reloc left unpatched
+WARN: No .got.r2 room for ext_8+64 at 0x8000079, reloc left unpatched
+WARN: No .got.r2 room for ext_9+64 at 0x8000081, reloc left unpatched
+WARN: No .got.r2 room for ext_10+64 at 0x8000089, reloc left unpatched
+WARN: No .got.r2 room for ext_11+64 at 0x8000091, reloc left unpatched
+WARN: No .got.r2 room for ext_12+64 at 0x8000099, reloc left unpatched
+WARN: No .got.r2 room for ext_13+64 at 0x80000a1, reloc left unpatched
+WARN: No .got.r2 room for ext_14+64 at 0x80000a9, reloc left unpatched
+WARN: No .got.r2 room for ext_15+64 at 0x80000b1, reloc left unpatched
+WARN: No .got.r2 room for ext_16+64 at 0x80000b9, reloc left unpatched
 EOF
 RUN
 

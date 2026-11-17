@@ -2199,7 +2199,7 @@ static bool offset_addend(RBinFile *bf, ELFOBJ *eo, RIOBind *iob, const RBinElfR
 	return true;
 }
 
-enum { SLOT_CRAMPED = 1, SLOT_WARNED = 2, SLOT_LISTED = 4, SLOT_NAMED = 8, SLOT_NOSPACE = 16 };
+enum { SLOT_CRAMPED = 1, SLOT_WARNED = 2, SLOT_LISTED = 4, SLOT_NAMED = 8, SLOT_NOSPACE = 16, SLOT_PENDING = 32 };
 
 static inline bool offset_fits(st64 a, const RBinElfSpecialSym *ss) {
 	return (a > -GOTR2_ADDEND_MAX && a < GOTR2_ADDEND_MAX)
@@ -2306,11 +2306,17 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		return NULL;
 	}
 	RBinElfReloc *reloc;
+	ut64 pending = 0;
 	R_VEC_FOREACH (relocs, reloc) {
 		if (reloc->laddr) {
 			ht_uu_update (slot_flags, reloc->sym, ht_uu_find (slot_flags, reloc->sym, NULL) | SLOT_NAMED);
 		}
 		const RBinElfSpecialSym *ss = special_sym (eo, reloc);
+		const ut64 seen = ht_uu_find (slot_flags, reloc->sym, NULL);
+		if (reloc->sym && !(seen & SLOT_PENDING) && reloc_has_slot (eo, reloc, ss) && !reloc_sym_is_tls (eo, reloc)) {
+			ht_uu_update (slot_flags, reloc->sym, seen | SLOT_PENDING);
+			pending++;
+		}
 		st64 a;
 		if (!reloc_has_slot (eo, reloc, ss) || !offset_addend (bf, eo, &b->iob, reloc, &a) || !offset_fits (a, ss)) {
 			continue;
@@ -2322,7 +2328,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		}
 	}
 	const ut64 limit = slot_limit (b, bank, n_vaddr);
-	// One pointer per slot is reserved; all additional bytes share this budget.
+	// addend padding leaves room for one pointer per pending slot; all extra bytes share this budget
 	ut64 budget = GOTR2_GROWTH_MAX;
 	ut64 vaddr = n_vaddr;
 	ut64 toc_base = UT64_MAX;
@@ -2373,8 +2379,11 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 			const ut64 lead = R_ROUND (ht_uu_find (lead_by_sym, reloc->sym, NULL), cdsz);
 			const ut64 tail = R_ROUND (ht_uu_find (tail_by_sym, reloc->sym, NULL), cdsz);
 			const ut64 size = tail? R_MAX (slot_size, tail + cdsz): slot_size;
+			pending -= pending > 0;
+			const ut64 reserve = pending * cdsz;
+			const ut64 padded_limit = (limit > reserve)? limit - reserve: 0;
 			ut64 end;
-			if (!place_slot (vaddr, size, align, lead, limit, budget + cdsz, &slot, &end)) {
+			if (!place_slot (vaddr, size, align, lead, padded_limit, budget + cdsz, &slot, &end)) {
 				flags |= SLOT_CRAMPED;
 				if (!place_slot (vaddr, slot_size, align, 0, limit, budget + cdsz, &slot, &end)) {
 					flags |= SLOT_NOSPACE;
