@@ -1,0 +1,9 @@
+d "jmp [0x1234]" 6e9f1234
+d "jsr [0x1234]" ad9f1234
+d "lda [0x1234]" a69f1234
+d "ldx [0x1234]" ae9f1234
+d "anda [0x1234]" a49f1234
+d "jmp [, x]" 6e94
+d "lda [, x]" a694
+d "lda [0x1234]" b61234
+d "ldx [0x1234]" be1234
