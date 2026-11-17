@@ -6801,6 +6801,13 @@ static int cmd_af(RCore *core, const char *input) {
 				r_core_anal_fcn_list (core, NULL, input + 2);
 			}
 			break;
+		case 'n': // "afln"
+			if (input[3] == '?') {
+				r_cons_cmd_help_match (core->cons, help_msg_afl, "afln", 0, true);
+			} else {
+				r_core_anal_fcn_list (core, NULL, input + 2);
+			}
+			break;
 		case ',': // "afl,"
 			if (input[3] == '?') {
 				r_cons_cmd_help (core->cons, help_msg_aflt);
@@ -6814,7 +6821,6 @@ static int cmd_af(RCore *core, const char *input) {
 		case 'j': // "aflj"
 		case 'q': // "aflq"
 		case 'm': // "aflm"
-		case 'n': // "afln"
 		case '+': // "afl+"
 		case '=': // "afl="
 		case '*': // "afl*"
