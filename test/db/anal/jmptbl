@@ -963,6 +963,66 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=unbounded jump table stops at an adjacent table discovered by a case
+FILE=malloc://4096
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 488d3df9090000488d15f2000000486304824801d0ffe0 @ 0x100
+wx 488d15e1000000486304824801d0ffe0 @ 0x120
+wx 9090909090909090eb1e @ 0x138
+wx 9090909090909090eb0e @ 0x148
+wx c3 @ 0x160
+wx 20ffffff50ffffff38ffffff48ffffff @ 0x200
+wx 60f6ffff @ 0xb00
+af @ 0x100
+afbi @ 0x115~cases:,switch_at,case.
+afbi @ 0x12e~cases:,switch_at,case.
+CC. @ 0x115
+CC. @ 0x12e
+EOF
+EXPECT=<<EOF
+cases: 2
+switch_at: 0x00000115
+case.0: 0x00000120
+case.1: 0x00000150
+cases: 2
+switch_at: 0x0000012e
+case.0: 0x00000140
+case.1: 0x00000150
+switch table (2 cases) at 0x200
+switch table (2 cases) at 0x208
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=bounded jump table respects maxcases and ignores interior references
+FILE=malloc://4096
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e anal.jmptbl.maxcases=2
+wx 83f803774b488d15f4000000486304824801d0ffe0 @ 0x100
+wx c3 @ 0x120
+wx c3 @ 0x130
+wx c3 @ 0x140
+wx c3 @ 0x150
+wx 20ffffff30ffffff40ffffff50ffffff @ 0x200
+axd 0x204 0x180
+af @ 0x100
+afbi @ 0x113~cases:,switch_at,case.
+CC. @ 0x113
+EOF
+EXPECT=<<EOF
+cases: 2
+switch_at: 0x00000113
+case.0: 0x00000120
+case.1: 0x00000130
+switch table (2 cases) at 0x200
+EOF
+EXPECT_ERR=<<EOF
+WARN: Limiting jump table at 0x00000113 to 2 cases
+EOF
+RUN
+
 NAME=afbt keeps switch cases after a case deletes the dispatch block
 FILE=malloc://1024
 ARGS=-a x86 -b 64

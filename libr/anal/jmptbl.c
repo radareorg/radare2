@@ -998,7 +998,29 @@ static bool jmptbl_ref_is_table(RAnal *anal, const JmptblArch *a, ut64 ref, ut64
 		return false;
 	}
 	ut64 jmpptr = switch_read_entry (buf, (ut8)sz, false);
+	if (!jmpptr || jmpptr == UT32_MAX || jmpptr == UT64_MAX) {
+		return false;
+	}
 	return jmptbl_fixup_jmpptr (anal, a, ref, sz, ref, &jmpptr);
+}
+
+static bool jmptbl_has_table_ref(RAnal *anal, const JmptblArch *a, ut64 ref, ut64 sz) {
+	if (!r_anal_xrefs_has_xrefs_at (anal, ref)) {
+		return false;
+	}
+	RVecAnalRef *refs = r_anal_xrefs_get (anal, ref);
+	RAnalRef *xref;
+	bool found = false;
+	if (refs) {
+		R_VEC_FOREACH (refs, xref) {
+			if (R_ANAL_REF_TYPE_MASK (xref->type) == R_ANAL_REF_TYPE_DATA) {
+				found = jmptbl_ref_is_table (anal, a, ref, sz);
+				break;
+			}
+		}
+	}
+	RVecAnalRef_free (refs);
+	return found;
 }
 
 static void jmptbl_update_next_ref(RAnal *anal, const JmptblArch *a, ut64 jmptbl_loc, ut64 sz, ut64 ref, ut64 *next) {
@@ -1183,8 +1205,9 @@ R_API bool r_anal_jmptbl_walk(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block
 	// jmptbl_size can not always be determined
 	if (jmptbl_size == 0) {
 		jmptbl_size = jmptbl_size_from_next_ref (anal, &a, jmptbl_loc, sz);
+		// The next reference is an upper bound, not a known case count.
 		jmptbl_size = jmptbl_size
-			? jmptbl_limit_cases (anal, jmptbl_size, ip)
+			? R_MIN (jmptbl_size, jmptbl_maxcases (anal))
 			: jmptbl_maxcases (anal);
 	} else {
 		jmptbl_size = jmptbl_limit_cases (anal, jmptbl_size, ip);
@@ -1693,6 +1716,10 @@ static bool switch_cursor_legacy_next(RAnalSwitchCursor *c, ut64 *target) {
 			case_loc = t->loc == t->off? t->casetbl_loc + i: t->loc + entry_off;
 		} else {
 			const ut64 offs = i * t->sz;
+			// Case analysis can discover an adjacent table after this walk starts.
+			if (t->autosize && i > 0 && jmptbl_has_table_ref (anal, &t->a, t->loc + offs, t->sz)) {
+				break;
+			}
 			jmpptr = switch_read_entry (t->table + offs, (ut8)t->sz, false);
 			meta_loc = case_loc = t->loc + offs;
 			meta_sz = case_sz = t->sz;
