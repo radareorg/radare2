@@ -1,3 +1,21 @@
+NAME="m68k: data alignment for empty, 68000 and 68030 cpu"
+ARGS=-a m68k
+FILE=malloc://16
+CMDS=<<EOF
+e asm.cpu=
+aia~dtalign
+e asm.cpu=68000
+aia~dtalign
+e asm.cpu=68030
+aia~dtalign
+EOF
+EXPECT=<<EOF
+dtalign 2
+dtalign 2
+dtalign 1
+EOF
+RUN
+
 NAME="m68k: m68k filter"
 CMDS=<<EOF
 e asm.arch=m68k

@@ -856,7 +856,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 	case R_ARCH_INFO_DATA_ALIGN:
 		{
 		const char *cpu = as->config->cpu;
-		if (strstr (cpu, "68030") || strstr (cpu, "68040") || strstr (cpu, "68060")) {
+		if (R_STR_ISNOTEMPTY (cpu) && (strstr (cpu, "68030") || strstr (cpu, "68040") || strstr (cpu, "68060"))) {
 			return 1;
 		}
 		return 2;
