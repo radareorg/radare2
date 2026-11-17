@@ -32,7 +32,7 @@ jmp $-0x0004
 addr: 0x00004438
 name: main
 size: 62
-is-pure: true
+is-pure: false
 realsz: 62
 stackframe: 0
 callconv: reg

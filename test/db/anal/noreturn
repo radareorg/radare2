@@ -19,8 +19,8 @@ FILE=bins/elf/pigz
 CMDS=<<EOF
 e anal.vars=false
 aaa
-afij @ sym.fail~{0.noreturn}
-afij @ sym.join_~{0.noreturn}
+afi @ sym.fail~^noreturn[1]
+afi @ sym.join_~^noreturn[1]
 abj @ 0x404bc5~{0.size}
 abj @ 0x404bca~{0.addr}
 afij @ sym.load.part.6~{0.realsz}
