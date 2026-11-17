@@ -313,7 +313,7 @@ char *MACH0_(get_cpusubtype)(struct MACH0_(obj_t) *bin);
 char *MACH0_(get_cpusubtype_from_hdr)(struct MACH0_(mach_header) *hdr);
 char *MACH0_(get_filetype)(struct MACH0_(obj_t) *bin);
 char *MACH0_(get_filetype_from_hdr)(struct MACH0_(mach_header) *hdr);
-ut64 MACH0_(get_main)(struct MACH0_(obj_t) *mo);
+ut64 MACH0_(get_main)(struct MACH0_(obj_t) *mo, R_OUT ut64 * R_NULLABLE offset);
 const char *MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) *hdr);
 int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header) *hdr);
 struct MACH0_(mach_header) *MACH0_(get_hdr)(RBuffer *buf);

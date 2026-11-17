@@ -214,10 +214,9 @@ static ut64 addr_to_offset(struct MACH0_(obj_t) * mo, ut64 addr) {
 		size_t i;
 		for (i = 0; i < mo->nsegs; i++) {
 			struct MACH0_(segment_command) *seg = &mo->segs[i];
-			const ut64 segment_base = (ut64)seg->vmaddr;
-			const ut64 segment_size = (ut64)seg->vmsize;
-			if (addr >= segment_base && addr < segment_base + segment_size) {
-				return seg->fileoff + (addr - segment_base);
+			ut64 filebacked_size;
+			if (addr >= seg->vmaddr && segment_filebacked_size (mo, i, &filebacked_size) && addr - seg->vmaddr < filebacked_size) {
+				return seg->fileoff + (addr - seg->vmaddr);
 			}
 		}
 	}
@@ -5000,7 +4999,7 @@ char *MACH0_(get_filetype)(struct MACH0_(obj_t) * mo) {
 	return mo? MACH0_(get_filetype_from_hdr) (&mo->hdr): strdup ("Unknown");
 }
 
-ut64 MACH0_(get_main)(struct MACH0_(obj_t) * mo) {
+static ut64 main_vaddr(struct MACH0_(obj_t) * mo) {
 	ut64 addr = UT64_MAX;
 	int i;
 
@@ -5045,6 +5044,18 @@ ut64 MACH0_(get_main)(struct MACH0_(obj_t) * mo) {
 		}
 	}
 	return mo->main_addr = addr;
+}
+
+ut64 MACH0_(get_main)(struct MACH0_(obj_t) * mo, R_OUT ut64 * R_NULLABLE offset) {
+	ut64 addr = main_vaddr (mo);
+	if (addr && addr != UT64_MAX && mo->hdr.cputype == CPU_TYPE_ARM) {
+		addr &= ~1ULL;
+	}
+	if (offset) {
+		ut64 off = addr_to_offset (mo, addr);
+		*offset = off? off: UT64_MAX;
+	}
+	return addr;
 }
 
 typedef struct {
