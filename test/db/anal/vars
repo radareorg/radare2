@@ -730,6 +730,52 @@ void sym.top_set ();
 EOF
 RUN
 
+# 0: cbz x9, 0x40; 0x4..0x18 read x0..x7; 0x40: bl 0x80 forwards x0; 0x80: add x0, x0, 1
+NAME=arm64 a register forwarded by a call in a sibling block is counted once
+FILE=malloc://256
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 090200b40a00018b4a00038b8a00058bca00068bea00078bc0035fd6
+wx 10000094c0035fd6 @ 0x40
+wx 00040091c0035fd6 @ 0x80
+af @ 0x80
+af @ 0
+afvr @ 0
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ x0
+arg int64_t arg2 @ x1
+arg int64_t arg3 @ x2
+arg int64_t arg4 @ x3
+arg int64_t arg5 @ x4
+arg int64_t arg6 @ x5
+arg int64_t arg7 @ x6
+arg int64_t arg8 @ x7
+EOF
+RUN
+
+# same as above with the bl at 0x40 replaced by a nop
+NAME=arm64 x0..x7 reads without a forwarding call give eight args
+FILE=malloc://256
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 090200b40a00018b4a00038b8a00058bca00068bea00078bc0035fd6
+wx 1f2003d5c0035fd6 @ 0x40
+af @ 0
+afvr @ 0
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ x0
+arg int64_t arg2 @ x1
+arg int64_t arg3 @ x2
+arg int64_t arg4 @ x3
+arg int64_t arg5 @ x4
+arg int64_t arg6 @ x5
+arg int64_t arg7 @ x6
+arg int64_t arg8 @ x7
+EOF
+RUN
+
 NAME=the signature and the variable list agree no matter which one is read first
 FILE=malloc://64
 ARGS=-a x86 -b 64
