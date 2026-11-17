@@ -20,6 +20,9 @@ R_API ut8 *r_reg_get_bytes(RReg *reg, int type, int *size) {
 		}
 		for (i = 0; i < R_REG_TYPE_LAST; i++) {
 			arena = reg->regset[i].arena;
+			if (arena->size < 1) {
+				continue;
+			}
 			sz += arena->size;
 			newbuf = realloc (buf, sz);
 			if (!newbuf) {
