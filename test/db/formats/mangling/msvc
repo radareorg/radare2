@@ -498,3 +498,41 @@ public: __thiscall std::unique_ptr<int, void (__cdecl *)(int *)>::unique_ptr<int
 public: void __thiscall __crt_internal_free_policy::operator()<void (__cdecl *)(void)>(void (__cdecl *const *const)(void)) const
 EOF
 RUN
+
+NAME=msvc recursive function pointer declarators
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc '?f@@YAXPEAPEAP6AXXZ@Z'
+!rabin2 -D msvc '?p3@@YAXPAPAPAP6AXPAH@Z@Z'
+!rabin2 -D msvc '?p3@@YAXPEAPEAPEAP6AXPEAH@Z@Z'
+!rabin2 -D msvc '?r2@@YAXAEAPEAPEAP6AXPEAH@Z@Z'
+!rabin2 -D msvc '?rr2@@YAX$$QEAPEAPEAP6AXPEAH@Z@Z'
+!rabin2 -D msvc '?c2@@YAXAEBQEAPEAP6AXPEAH@Z@Z'
+!rabin2 -D msvc '?cv2@@YAXAEDSEAPEAP6AXPEAH@Z@Z'
+!rabin2 -D msvc '?mix1@@YAXPEBQEBQ6AXPEAH@Z@Z'
+!rabin2 -D msvc '?mix2@@YAXPEBQECR6AXPEAH@Z@Z'
+!rabin2 -D msvc '?mix3@@YAXPECREDS6AXPEAH@Z@Z'
+!rabin2 -D msvc '?many@@YAXP6AXPEAH@ZPEAP6AX0@ZPEAPEAP6AX0@Z23@Z'
+!rabin2 -D msvc '??$type@PEAPEAP6AXPEAH@Z@@YAXXZ'
+!rabin2 -D msvc '??$type@AEBQEAPEAP6AXPEAH@Z@@YAXXZ'
+!rabin2 -D msvc '?f@@YAXPAPAP6@Z'
+!rabin2 -D msvc '?f@@YAXPEAPEAP6AXX@Z'
+EOF
+EXPECT=<<EOF
+void __cdecl f(void (__cdecl ***)(void))
+void __cdecl p3(void (__cdecl ****)(int *))
+void __cdecl p3(void (__cdecl ****)(int *))
+void __cdecl r2(void (__cdecl ***&)(int *))
+void __cdecl rr2(void (__cdecl ***&&)(int *))
+void __cdecl c2(void (__cdecl ***const &)(int *))
+void __cdecl cv2(void (__cdecl ***const volatile &)(int *))
+void __cdecl mix1(void (__cdecl *const *const *)(int *))
+void __cdecl mix2(void (__cdecl *volatile *const *)(int *))
+void __cdecl mix3(void (__cdecl *const volatile *volatile *)(int *))
+void __cdecl many(void (__cdecl *)(int *), void (__cdecl **)(int *), void (__cdecl ***)(int *), void (__cdecl **)(int *), void (__cdecl ***)(int *))
+void __cdecl type<void (__cdecl ***)(int *)>(void)
+void __cdecl type<void (__cdecl ***const &)(int *)>(void)
+?f@@YAXPAPAP6@Z
+?f@@YAXPEAPEAP6AXX@Z
+EOF
+RUN

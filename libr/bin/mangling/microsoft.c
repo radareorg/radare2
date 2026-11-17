@@ -66,6 +66,7 @@ typedef struct STypeCodeStr {
 	char *type_str;
 	size_t type_str_len;
 	size_t curr_pos;
+	size_t declarator_pos; // 0 when there is no function pointer declarator
 	bool overflow;
 } STypeCodeStr;
 
@@ -167,7 +168,7 @@ static state_func const state_table[eTCStateMax] = {
 ///////////////////////////////////////////////////////////////////////////////
 
 static void init_state_struct(SStateInfo *state, const char *buff_for_parsing);
-static EDemanglerErr get_type_code_string(SDemangler *sd, const char *sym, size_t *amount_of_read_chars, char **str_type_code);
+static EDemanglerErr get_type_code_string(SDemangler *sd, const char *sym, size_t *amount_of_read_chars, char **str_type_code, size_t *declarator_pos);
 static bool init_type_code_str_struct(STypeCodeStr *type_coder_str);
 static void free_type_code_str_struct(STypeCodeStr *type_code_str);
 static size_t get_template(SDemangler *sd, const char *buf, SStrInfo *str_info, bool memorize);
@@ -501,7 +502,7 @@ static size_t get_operator_code(SDemangler *sd, const char *buf, RList *names_l,
 					read_len += len + 2;
 				} else {
 					// the types that are not classes, like the char * of a catch, come without ?A
-					if (get_type_code_string (sd, buf + 1, &len, &str) != eDemanglerErrOK) {
+					if (get_type_code_string (sd, buf + 1, &len, &str, NULL) != eDemanglerErrOK) {
 						return 0;
 					}
 					read_len += len + 1;
@@ -639,7 +640,7 @@ static size_t get_template(SDemangler *sd, const char *buf, SStrInfo *str_info, 
 	size_t i = 0;
 	bool first = true;
 	while (*buf != '@') {
-		if (get_type_code_string (sd, buf, &i, &str_type_code) != eDemanglerErrOK) {
+		if (get_type_code_string (sd, buf, &i, &str_type_code, NULL) != eDemanglerErrOK) {
 			if (get_template_params (sd, buf, &i, &str_type_code) != eDemanglerErrOK) {
 				len = 0;
 				goto get_template_err;
@@ -1241,20 +1242,8 @@ static inline void parse_type_modifier(SDemangler *sd, SStateInfo *state, STypeC
 		state->amount_of_read_chars += 3;
 	}
 
-	const char *fp = state->buff_for_parsing;
-	if (!is_array && !clr_type && !is_pin_ptr && !*mod.left && !*mod.right && *modifier_str && fp[0] && strchr ("PQRS", fp[0]) && fp[1] == '6') {
-		// pointers and references to function pointers go in its parentheses, like void (__cdecl *&&)(int *)
-		static const char *const inner[] = { "*", "*const", "*volatile", "*const volatile" };
-		const char *in = inner[fp[0] - 'P'];
-		char *ptr = r_str_newf ("%s%s%s", in, isalnum ((ut8)in[strlen (in) - 1])? " ": "", r_str_trim_head_ro (tmp_str.type_str));
-		state->buff_for_parsing += 2;
-		state->amount_of_read_chars++;
-		pf (sd, state, type_code_str, ptr);
-		free (ptr);
-		goto MODIFIER_err;
-	}
-
-	err = get_type_code_string (sd, state->buff_for_parsing, &i, &tmp);
+	size_t declarator_pos = 0;
+	err = get_type_code_string (sd, state->buff_for_parsing, &i, &tmp, &declarator_pos);
 	if (err != eDemanglerErrOK) {
 		state->err = eTCStateMachineErrUnsupportedTypeCode;
 		goto MODIFIER_err;
@@ -1265,20 +1254,26 @@ static inline void parse_type_modifier(SDemangler *sd, SStateInfo *state, STypeC
 	if (is_pin_ptr) {
 		copy_string (type_code_str, "cli::pin_ptr<", 0);
 	}
-	copy_string (type_code_str, tmp, 0);
+	const bool function_pointer = declarator_pos && !is_array && !clr_type && !is_pin_ptr;
+	const size_t prefix_len = function_pointer? declarator_pos: strlen (tmp);
 	const char *suffix = tmp_str.type_str;
 	size_t suffix_len = tmp_str.curr_pos;
-	const size_t tmp_len = strlen (tmp);
-	if (suffix_len > 0 && *suffix == ' ' && tmp_len > 0 && (tmp[tmp_len - 1] == '*' || tmp[tmp_len - 1] == '&')) {
+	if (suffix_len > 0 && *suffix == ' ' && prefix_len > 0 && (tmp[prefix_len - 1] == '*' || tmp[prefix_len - 1] == '&')) {
 		// pointers to pointers are int ** and int *const *, like llvm-undname prints them
 		suffix++;
 		suffix_len--;
 	}
+	copy_string (type_code_str, tmp, prefix_len);
 	copy_string (type_code_str, suffix, suffix_len);
 	if (is_pin_ptr) {
 		copy_string (type_code_str, ">", 0);
 	}
 	copy_string (type_code_str, mod.right, 0);
+	if (function_pointer) {
+		// keep each outer pointer or reference inside the function declarator
+		type_code_str->declarator_pos = type_code_str->curr_pos;
+		copy_string (type_code_str, tmp + declarator_pos, 0);
+	}
 
 MODIFIER_err:
 	R_FREE (tmp);
@@ -1325,7 +1320,7 @@ static EDemanglerErr parse_function_args(SDemangler *sd, const char *sym, char *
 			if (len) {
 				copy_string (&func_str, ", ", 0);
 			}
-			err = get_type_code_string (sd, curr_pos, &len, &tmp);
+			err = get_type_code_string (sd, curr_pos, &len, &tmp, NULL);
 			if (err != eDemanglerErrOK) {
 				// abbreviation of type processing
 				if ((*curr_pos >= '0') && (*curr_pos <= '9')) {
@@ -1420,7 +1415,7 @@ static void pf(SDemangler *sd, SStateInfo *state, STypeCodeStr *type_code_str, c
 		state->buff_for_parsing++;
 		state->amount_of_read_chars += 2;
 	}
-	err = get_type_code_string (sd, state->buff_for_parsing, &i, &ret_type);
+	err = get_type_code_string (sd, state->buff_for_parsing, &i, &ret_type, NULL);
 	if (err != eDemanglerErrOK) {
 		state->err = eTCStateMachineErrUnsupportedTypeCode;
 		return;
@@ -1437,6 +1432,7 @@ static void pf(SDemangler *sd, SStateInfo *state, STypeCodeStr *type_code_str, c
 		copy_string (type_code_str, call_conv, 0);
 		copy_string (type_code_str, " ", 1);
 		copy_string (type_code_str, pointer_str, 0);
+		type_code_str->declarator_pos = type_code_str->curr_pos;
 		copy_string (type_code_str, ")", 1);
 	} else {
 		// function types, like the $$A6AHH@Z of std::function<int __cdecl(int)>
@@ -1638,6 +1634,7 @@ static bool init_type_code_str_struct(STypeCodeStr *type_code_str) {
 	type_code_str->type_str = calloc (len, 1);
 	type_code_str->type_str_len = type_code_str->type_str? len: 0;
 	type_code_str->curr_pos = 0;
+	type_code_str->declarator_pos = 0;
 	type_code_str->overflow = false;
 	return type_code_str->type_str != NULL;
 }
@@ -1653,11 +1650,14 @@ static void free_type_code_str_struct(STypeCodeStr *type_code_str) {
 // End of machine functions for parsing type codes
 ///////////////////////////////////////////////////////////////////////////////
 
-static EDemanglerErr get_type_code_string(SDemangler *sd, const char *sym, size_t *amount_of_read_chars, char **str_type_code) {
+static EDemanglerErr get_type_code_string(SDemangler *sd, const char *sym, size_t *amount_of_read_chars, char **str_type_code, size_t *declarator_pos) {
 	EDemanglerErr err = eDemanglerErrOK;
 	STypeCodeStr type_code_str;
 	SStateInfo state;
 
+	if (declarator_pos) {
+		*declarator_pos = 0;
+	}
 	if (sd->depth > MICROSOFT_MAX_DEPTH) {
 		*str_type_code = NULL;
 		*amount_of_read_chars = 0;
@@ -1695,6 +1695,8 @@ static EDemanglerErr get_type_code_string(SDemangler *sd, const char *sym, size_
 	*amount_of_read_chars = state.amount_of_read_chars;
 	if (!*str_type_code) {
 		err = eDemanglerErrMemoryAllocation;
+	} else if (declarator_pos) {
+		*declarator_pos = type_code_str.declarator_pos;
 	}
 
 get_type_code_string_err:
@@ -1771,7 +1773,7 @@ static EDemanglerErr parse_data_type(SDemangler *sd, const char *sym, SDataType 
 	case '4': // Normal variable
 	case '5': // Normal variable
 		i = 0;
-		err = get_type_code_string (sd, curr_pos, &i, &tmp);
+		err = get_type_code_string (sd, curr_pos, &i, &tmp, NULL);
 		if (err != eDemanglerErrOK) {
 			return err;
 		}
@@ -1800,7 +1802,7 @@ static EDemanglerErr parse_data_type(SDemangler *sd, const char *sym, SDataType 
 					size_t patched_len = 0;
 					if (patched) {
 						patched[pos] = merged;
-						if (get_type_code_string (sd, patched, &patched_len, &patched_type) == eDemanglerErrOK) {
+						if (get_type_code_string (sd, patched, &patched_len, &patched_type, NULL) == eDemanglerErrOK) {
 							free (tmp);
 							tmp = patched_type;
 						}
@@ -2069,7 +2071,7 @@ static EDemanglerErr parse_function(SDemangler *sd, const char *sym, STypeCodeSt
 	if (*curr_pos == '@') {
 		curr_pos++;
 	} else {
-		err = get_type_code_string (sd, curr_pos, &len, &ret_type);
+		err = get_type_code_string (sd, curr_pos, &len, &ret_type, NULL);
 		if (err != eDemanglerErrOK) {
 			err = eDemanglerErrUncorrectMangledSymbol;
 			goto parse_function_err;
@@ -2233,7 +2235,7 @@ static EDemanglerErr parse_microsoft_rtti_mangled_name(SDemangler *sd, const cha
 		return err;
 	}
 	size_t len;
-	err = get_type_code_string (sd, sym, &len, &type);
+	err = get_type_code_string (sd, sym, &len, &type, NULL);
 	if (err != eDemanglerErrOK) {
 		return err;
 	}
