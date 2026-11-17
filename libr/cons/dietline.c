@@ -1790,8 +1790,7 @@ static bool __vi_mode(RCons *cons) {
 	return false;
 }
 
-static void dietline_print_risprompt(const char *gcomp_line) {
-	RCons *cons = r_cons_singleton ();
+static void dietline_print_risprompt(RCons *cons, const char *gcomp_line) {
 	RLine *line = cons->line;
 	r_cons_clear_line (cons, false, false);
 	if (cons->context->color_mode && *gcomp_line && line->state.buffer.length > 0) {
@@ -2602,7 +2601,7 @@ repeat:
 						}
 					}
 				}
-				dietline_print_risprompt (gcomp_line);
+				dietline_print_risprompt (cons, gcomp_line);
 			} else {
 				__print_prompt (cons);
 			}
