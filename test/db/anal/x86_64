@@ -4565,6 +4565,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=x86_64 comisd memory operand is a qword
+FILE=malloc://16
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 660f2f00
+aoj~{[0].opex.operands[1].size}
+EOF
+EXPECT=<<EOF
+8
+EOF
+RUN
+
 NAME=Analysis stops at nonexecutable ELF section inside executable map
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF

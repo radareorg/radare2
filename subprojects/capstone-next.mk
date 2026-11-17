@@ -4,7 +4,7 @@ WRAP_wrap_git_url:=https://github.com/capstone-engine/capstone.git
 WRAP_wrap_git_revision:=04fd70b5456c20fc27d1f2b62d6ed0820fc6b081
 WRAP_wrap_git_patch_directory:=capstone-next
 WRAP_wrap_git_directory:=capstone-next
-WRAP_wrap_git_diff_files:=capstone-next/capstone-patches/fix-x86-16.patch
+WRAP_wrap_git_diff_files:=capstone-next/capstone-patches/fix-x86-16.patch,capstone-next/capstone-patches/fix-x86-unsigned-imm-size.patch,capstone-next/capstone-patches/fix-x86-16-mandatory-66.patch,capstone-next/capstone-patches/fix-x86-adsize-variant.patch,capstone-next/capstone-patches/fix-x86-reserved-nop.patch
 WRAP_wrap_git_depth:=1
 
 .PHONY: capstone-next capstone-next_clean capstone-next_all
@@ -17,7 +17,7 @@ capstone-next_all:
 	cd capstone-next && git fetch --depth=1 origin 04fd70b5456c20fc27d1f2b62d6ed0820fc6b081:refs/acr-wrap/04fd70b5456c20fc27d1f2b62d6ed0820fc6b081
 	cd capstone-next && git checkout FETCH_HEAD
 	cp -rf packagefiles/capstone-next/* capstone-next
-	for a in capstone-next/capstone-patches/fix-x86-16.patch ; do echo "patch -d capstone-next -p1 < $$a" ; patch -d capstone-next -p1 < $$a ; done
+	for a in capstone-next/capstone-patches/fix-x86-16.patch capstone-next/capstone-patches/fix-x86-unsigned-imm-size.patch capstone-next/capstone-patches/fix-x86-16-mandatory-66.patch capstone-next/capstone-patches/fix-x86-adsize-variant.patch capstone-next/capstone-patches/fix-x86-reserved-nop.patch ; do echo "patch -d capstone-next -p1 < $$a" ; patch -d capstone-next -p1 < $$a ; done
 
 capstone-next_clean:
 	rm -rf capstone-next

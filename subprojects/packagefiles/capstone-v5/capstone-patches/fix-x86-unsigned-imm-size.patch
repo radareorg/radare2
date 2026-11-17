@@ -1,43 +1,14 @@
-diff --git a/arch/X86/X86IntelInstPrinter.c b/arch/X86/X86IntelInstPrinter.c
---- a/arch/X86/X86IntelInstPrinter.c
-+++ b/arch/X86/X86IntelInstPrinter.c
-@@ -842,7 +840,12 @@ static void printOperand(MCInst *MI, unsigned OpNo, SStream *O)
- 		// printf(">>> id = %u\n", MI->flat_insn->id);
- 		switch(MI->flat_insn->id) {
- 			default:
--				printImm(MI, O, imm, MI->csh->imm_unsigned);
-+				if (MI->csh->imm_unsigned && imm < 0 && (opsize == 2 || opsize == 4))
-+					// mask by the immediate size, like the AT&T printer:
-+					// "push -1" has no previous operand to size it
-+					printImm(MI, O, imm & arch_masks[opsize], true);
-+				else
-+					printImm(MI, O, imm, MI->csh->imm_unsigned);
- 				break;
- 
- 			case X86_INS_MOVABS:
-@@ -859,6 +862,12 @@ static void printOperand(MCInst *MI, unsigned OpNo, SStream *O)
- 				printImm(MI, O, imm, true);
- 				break;
- 
-+			case X86_INS_ENTER:
-+				// ENTER imm16, imm8: both are unsigned
-+				imm = imm & (OpNo == 0 ? 0xffff : 0xff);
-+				printImm(MI, O, imm, true);
-+				break;
-+
- 			case X86_INS_LCALL:
- 			case X86_INS_LJMP:
- 			case X86_INS_JMP:
 diff --git a/arch/X86/X86ATTInstPrinter.c b/arch/X86/X86ATTInstPrinter.c
 --- a/arch/X86/X86ATTInstPrinter.c
 +++ b/arch/X86/X86ATTInstPrinter.c
-@@ -646,6 +646,15 @@ static void printOperand(MCInst *MI, unsigned OpNo, SStream *O)
+@@ -642,6 +642,16 @@ static void printOperand(MCInst *MI, unsigned OpNo, SStream *O)
  				}
  				break;
  
 +			case X86_INS_ENTER:
 +				// ENTER imm16, imm8: both are unsigned
-+				imm = imm & (OpNo == 0 ? 0xffff : 0xff);
++				opsize = encsize = OpNo == 0 ? 2 : 1;
++				imm &= arch_masks[opsize];
 +				if (imm > HEX_THRESHOLD)
 +					SStream_concat(O, "$0x%"PRIx64, imm);
 +				else
@@ -47,3 +18,66 @@ diff --git a/arch/X86/X86ATTInstPrinter.c b/arch/X86/X86ATTInstPrinter.c
  			case X86_INS_LCALL:
  			case X86_INS_LJMP:
  			case X86_INS_JMP:
+@@ -650,7 +660,9 @@ static void printOperand(MCInst *MI, unsigned OpNo, SStream *O)
+ 					imm = imm & 0xffff;
+ 					opsize = 2;
+ 				} else
+-					opsize = 4;
++					opsize = MI->imm_size;
++				// the encoded immediate is the selector, read last
++				encsize = 2;
+ 				SStream_concat(O, "$0x%"PRIx64, imm);
+ 				break;
+ 
+@@ -863,7 +875,8 @@ void X86_ATT_printInst(MCInst *MI, SStream *OS, void *info)
+ 	if (MI->has_imm) {
+ 		// if op_count > 1, then this operand's size is taken from the destination op
+ 		if (MI->flat_insn->detail->x86.op_count > 1) {
+-			if (MI->flat_insn->id != X86_INS_LCALL && MI->flat_insn->id != X86_INS_LJMP && MI->flat_insn->id != X86_INS_JMP) {
++			if (MI->flat_insn->id != X86_INS_LCALL && MI->flat_insn->id != X86_INS_LJMP && MI->flat_insn->id != X86_INS_JMP &&
++					MI->flat_insn->id != X86_INS_ENTER) {
+ 				for (i = 0; i < MI->flat_insn->detail->x86.op_count; i++) {
+ 					if (MI->flat_insn->detail->x86.operands[i].type == X86_OP_IMM)
+ 						MI->flat_insn->detail->x86.operands[i].size =
+diff --git a/arch/X86/X86IntelInstPrinter.c b/arch/X86/X86IntelInstPrinter.c
+--- a/arch/X86/X86IntelInstPrinter.c
++++ b/arch/X86/X86IntelInstPrinter.c
+@@ -839,7 +838,12 @@ static void printOperand(MCInst *MI, unsigned OpNo, SStream *O)
+ 		// printf(">>> id = %u\n", MI->flat_insn->id);
+ 		switch(MI->flat_insn->id) {
+ 			default:
+-				printImm(MI, O, imm, MI->csh->imm_unsigned);
++				// mask by the immediate size like the AT&T printer does:
++				// "push -1" has no previous operand to size it
++				if (MI->csh->imm_unsigned && imm < 0 && (opsize == 2 || opsize == 4))
++					printImm(MI, O, imm & arch_masks[opsize], true);
++				else
++					printImm(MI, O, imm, MI->csh->imm_unsigned);
+ 				break;
+ 
+ 			case X86_INS_MOVABS:
+@@ -856,6 +860,13 @@ static void printOperand(MCInst *MI, unsigned OpNo, SStream *O)
+ 				printImm(MI, O, imm, true);
+ 				break;
+ 
++			case X86_INS_ENTER:
++				// ENTER imm16, imm8: both are unsigned
++				opsize = encsize = OpNo == 0 ? 2 : 1;
++				imm &= arch_masks[opsize];
++				printImm(MI, O, imm, true);
++				break;
++
+ 			case X86_INS_LCALL:
+ 			case X86_INS_LJMP:
+ 			case X86_INS_JMP:
+@@ -864,7 +875,9 @@ static void printOperand(MCInst *MI, unsigned OpNo, SStream *O)
+ 					imm = imm & 0xffff;
+ 					opsize = 2;
+ 				} else
+-					opsize = 4;
++					opsize = MI->imm_size;
++				// the encoded immediate is the selector, read last
++				encsize = 2;
+ 				printImm(MI, O, imm, true);
+ 				break;
+ 

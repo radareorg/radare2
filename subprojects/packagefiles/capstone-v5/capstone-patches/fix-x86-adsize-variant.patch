@@ -1,0 +1,22 @@
+diff --git a/arch/X86/X86DisassemblerDecoder.c b/arch/X86/X86DisassemblerDecoder.c
+--- a/arch/X86/X86DisassemblerDecoder.c
++++ b/arch/X86/X86DisassemblerDecoder.c
+@@ -1215,6 +1252,18 @@ static int getID(struct InternalInstruction *insn)
+ 			return -1;
+ 		}
+ 
++		// the address size only selects a variant (umonitor): it must
++		// neither make an invalid encoding valid (66 0F AE /4 is no
++		// xsave) nor drop one without such variant (16-bit ptwrite)
++		if (attrMask & ATTR_ADSIZE) {
++			uint16_t instructionIDWithoutAdSize;
++
++			if (getIDWithAttrMask(&instructionIDWithoutAdSize, insn, attrMask & ~ATTR_ADSIZE))
++				return -1;
++			if (!instructionIDWithoutAdSize || !instructionID)
++				instructionID = instructionIDWithoutAdSize;
++		}
++
+ 		insn->instructionID = instructionID;
+ 		insn->spec = specifierForUID(instructionID);
+ 

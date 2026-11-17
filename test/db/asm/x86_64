@@ -1626,3 +1626,6 @@ ad "pushfq" 9c
 ad "popfq" 9d
 d "push 0xffffffffffffffff" 6aff
 d "push 0xffff" 666aff
+d "push 0xffffffffffffffff" 68ffffffff
+d "comisd xmm0, qword [rax]" 660f2f00
+d "nop qword [rax]" 480f1d00

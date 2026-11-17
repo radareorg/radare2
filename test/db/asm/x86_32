@@ -275,6 +275,10 @@ d "prefetchnta byte [eax]" 0f1800
 d "prefetcht0 byte [eax]" 0f1808
 d "prefetcht1 byte [eax]" 0f1810
 d "prefetcht2 byte [eax]" 0f1818
+d "nop dword [eax]" 0f1c08
+d "nop eax" 0f18c0
+d "cldemote byte [eax]" 0f1c00
+d "nop dword [eax]" f30f1c00
 d "psrad mm0, 0" 0f72e000
 d "psrad mm0, qword [eax]" 0fe200
 d "psrad xmm0, 0" 660f72e000
@@ -294,6 +298,7 @@ d "push 0xffffffff" 6aff
 d "push 0xfffffffe" 6afe
 d "push 0xffffff80" 6a80
 d "push 0xffff" 666aff
+d "push 0xffffffff" 68ffffffff
 d "enter 0xfefe, 0xfe" c8fefefe
 d "enter 8, 0" c8080000
 d "push cs" 0E

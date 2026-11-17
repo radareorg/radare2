@@ -30,3 +30,11 @@ a "movzx ax, bl" 0fb6c3
 a "movsx eax, bl" 660fbec3
 d "push 0xffff" 6aff
 d "push 0xffffffff" 666aff
+d "comisd xmm0, qword [bx + si]" 660f2f00
+d "cmpeqpd xmm0, xmm0" 660fc2c000
+d "pxor xmm0, xmm0" 660fefc0
+d "bswap eax" 660fc8
+d "ptwrite dword [bx + si]" f30fae20
+d "nop word [bx + si]" 0f1820
+d "nop dword [bx + si]" 660f1c00
+d "cmovo ax, word [bx + si]" f30f4000

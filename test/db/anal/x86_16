@@ -391,3 +391,19 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=x86-16 66 does not turn 0F AE into xsave
+FILE=malloc://16
+ARGS=-a x86 -b 16
+CMDS=<<EOF
+wx 660fae20
+pi 1
+e asm.bits=32
+wx 67660fae20
+pi 1
+EOF
+EXPECT=<<EOF
+invalid
+invalid
+EOF
+RUN
