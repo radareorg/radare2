@@ -531,6 +531,11 @@ static void check_purity(HtUP *ht, RAnalFunction *fcn) {
 			{
 				RAnalFunction *called_fcn = r_anal_get_fcn_in (fcn->anal, ref->addr, 0);
 				if (!called_fcn) {
+					if (rt == R_ANAL_REF_TYPE_CALL) {
+						fcn->attrs &= ~R_ANAL_FCN_ATTR_PURE;
+						RVecAnalRef_free (refs);
+						return;
+					}
 					continue;
 				}
 				if (!purity_checked (ht, called_fcn)) {
