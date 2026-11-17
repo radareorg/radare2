@@ -1665,6 +1665,20 @@ static bool esil_float_div(REsil *esil) {
 	return ret;
 }
 
+static bool esil_float_mod(REsil *esil) {
+	double divisor, dividend;
+	const RStrs dst = r_esil_pop (esil);
+	const RStrs src = r_esil_pop (esil);
+	if (!esil_get_parm_float_strs (esil, src, &divisor) || !esil_get_parm_float_strs (esil, dst, &dividend)) {
+		R_LOG_DEBUG ("esil_float_mod: invalid parameters");
+		return false;
+	}
+	if (isnan (divisor) || isnan (dividend) || isinf (dividend) || divisor == 0.0) {
+		return r_esil_pushnum (esil, 0x7ff8000000000000ULL);
+	}
+	return esil_pushnum_float (esil, fmod (dividend, divisor));
+}
+
 static bool esil_float_neg(REsil *esil) {
 	bool ret = false;
 	double s;
@@ -1990,6 +2004,7 @@ R_API bool r_esil_setup_ops(REsil *esil) {
 	ret &= OP ("F*", esil_float_mul, 1, 2, OT_MATH);
 	ret &= OP ("F*+", esil_float_muladd, 1, 3, OT_MATH);
 	ret &= OP ("F/", esil_float_div, 1, 2, OT_MATH);
+	ret &= OP2 ("F%", esil_float_mod, 1, 2, OT_MATH, "divisor,dividend,F% pushes the floating-point remainder with a truncated quotient");
 	ret &= OP ("-F", esil_float_neg, 1, 1, OT_MATH);
 	ret &= OP ("CEIL", esil_float_ceil, 1, 1, OT_MATH);
 	ret &= OP ("FLOOR", esil_float_floor, 1, 1, OT_MATH);

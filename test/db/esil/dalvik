@@ -224,3 +224,225 @@ EXPECT=<<EOF
 0xbff00000
 EOF
 RUN
+
+NAME=dalvik rem-float(7.25, 3.0)=1.25
+FILE=-
+ARGS=-a dalvik
+CMDS=<<EOF
+wx aa000102
+aei
+ar v1=0x40e80000
+ar v2=0x40400000
+aes
+ar v0
+EOF
+EXPECT=<<EOF
+0x3fa00000
+EOF
+RUN
+
+NAME=dalvik rem-float(7.25, 0.0)=nan
+FILE=-
+ARGS=-a dalvik
+CMDS=<<EOF
+wx aa000102
+aei
+ar v1=0x40e80000
+ar v2=0x00000000
+aes
+ar v0
+EOF
+EXPECT=<<EOF
+0x7fc00000
+EOF
+RUN
+
+NAME=dalvik rem-double(7.25, 3.0)=1.25
+FILE=-
+ARGS=-a dalvik
+CMDS=<<EOF
+wx af040002
+aei
+ar v0=0x00000000
+ar v1=0x401d0000
+ar v2=0x00000000
+ar v3=0x40080000
+aes
+ar v4
+ar v5
+EOF
+EXPECT=<<EOF
+0x00000000
+0x3ff40000
+EOF
+RUN
+
+NAME=dalvik rem-double(7.25, 0.0)=nan
+FILE=-
+ARGS=-a dalvik
+CMDS=<<EOF
+wx af040002
+aei
+ar v0=0x00000000
+ar v1=0x401d0000
+ar v2=0x00000000
+ar v3=0x00000000
+aes
+ar v4
+ar v5
+EOF
+EXPECT=<<EOF
+0x00000000
+0x7ff80000
+EOF
+RUN
+
+NAME=dalvik rem-float signs zero infinity and NaN
+FILE=malloc://32
+ARGS=-a dalvik
+CMDS=<<EOF
+wx aa000102
+aei
+ar ip=0; ar v1=0xc0e80000; ar v2=0x40400000; aes; ar v0
+ar ip=0; ar v1=0x40e80000; ar v2=0xc0400000; aes; ar v0
+ar ip=0; ar v1=0xc0e80000; ar v2=0xc0400000; aes; ar v0
+ar ip=0; ar v1=0xc0c00000; ar v2=0x40400000; aes; ar v0
+ar ip=0; ar v1=0x80000000; ar v2=0x40400000; aes; ar v0
+ar ip=0; ar v1=0x40000000; ar v2=0x40400000; aes; ar v0
+ar ip=0; ar v1=0x40e80000; ar v2=0x7f800000; aes; ar v0
+ar ip=0; ar v1=0x40e80000; ar v2=0xff800000; aes; ar v0
+ar ip=0; ar v1=0x7f800000; ar v2=0x40400000; aes; ar v0
+ar ip=0; ar v1=0x7fc00000; ar v2=0x40400000; aes; ar v0
+ar ip=0; ar v1=0x40400000; ar v2=0x7fc00000; aes; ar v0
+EOF
+EXPECT=<<EOF
+0xbfa00000
+0x3fa00000
+0xbfa00000
+0x80000000
+0x80000000
+0x40000000
+0x40e80000
+0x40e80000
+0x7fc00000
+0x7fc00000
+0x7fc00000
+EOF
+RUN
+
+NAME=dalvik rem-double signs zero infinity and NaN
+FILE=malloc://32
+ARGS=-a dalvik
+CMDS=<<EOF
+wx af000204
+aei
+ar ip=0; ar v2=0x0; ar v4=0x0; ar v3=0xc01d0000; ar v5=0x40080000; aes; ar v0; ar v1
+ar ip=0; ar v2=0x0; ar v4=0x0; ar v3=0x401d0000; ar v5=0xc0080000; aes; ar v0; ar v1
+ar ip=0; ar v2=0x0; ar v4=0x0; ar v3=0xc01d0000; ar v5=0xc0080000; aes; ar v0; ar v1
+ar ip=0; ar v2=0x0; ar v4=0x0; ar v3=0xc0180000; ar v5=0x40080000; aes; ar v0; ar v1
+ar ip=0; ar v2=0x0; ar v4=0x0; ar v3=0x80000000; ar v5=0x40080000; aes; ar v0; ar v1
+ar ip=0; ar v2=0x0; ar v4=0x0; ar v3=0x40000000; ar v5=0x40080000; aes; ar v0; ar v1
+ar ip=0; ar v2=0x0; ar v4=0x0; ar v3=0x401d0000; ar v5=0x7ff00000; aes; ar v0; ar v1
+ar ip=0; ar v2=0x0; ar v4=0x0; ar v3=0x401d0000; ar v5=0xfff00000; aes; ar v0; ar v1
+ar ip=0; ar v2=0x0; ar v4=0x0; ar v3=0x7ff00000; ar v5=0x40080000; aes; ar v0; ar v1
+ar ip=0; ar v2=0x0; ar v4=0x0; ar v3=0x7ff80000; ar v5=0x40080000; aes; ar v0; ar v1
+ar ip=0; ar v2=0x0; ar v4=0x0; ar v3=0x40080000; ar v5=0x7ff80000; aes; ar v0; ar v1
+EOF
+EXPECT=<<EOF
+0x00000000
+0xbff40000
+0x00000000
+0x3ff40000
+0x00000000
+0xbff40000
+0x00000000
+0x80000000
+0x00000000
+0x80000000
+0x00000000
+0x40000000
+0x00000000
+0x401d0000
+0x00000000
+0x401d0000
+0x00000000
+0x7ff80000
+0x00000000
+0x7ff80000
+0x00000000
+0x7ff80000
+EOF
+RUN
+
+NAME=dalvik rem-32/2addr preserves overlapping operands
+FILE=malloc://32
+ARGS=-a dalvik
+CMDS=<<EOF
+wx ca10
+aei
+ar ip=0; ar v0=0xc0e80000; ar v1=0x40400000; aes; ar v0
+ar ip=0; ar v0=0x40e80000; ar v1=0xc0400000; aes; ar v0
+ar ip=0; ar v0=0xc0c00000; ar v1=0x40400000; aes; ar v0
+ar ip=0; ar v0=0x0; ar v1=0x40400000; aes; ar v0
+ar ip=0; ar v0=0x40e80000; ar v1=0x0; aes; ar v0
+EOF
+EXPECT=<<EOF
+0xbfa00000
+0x3fa00000
+0x80000000
+0x00000000
+0x7fc00000
+EOF
+RUN
+
+NAME=dalvik rem-64/2addr preserves overlapping operands
+FILE=malloc://32
+ARGS=-a dalvik
+CMDS=<<EOF
+wx cf20
+aei
+ar ip=0; ar v0=0x0; ar v2=0x0; ar v1=0xc01d0000; ar v3=0x40080000; aes; ar v0; ar v1
+ar ip=0; ar v0=0x0; ar v2=0x0; ar v1=0x401d0000; ar v3=0xc0080000; aes; ar v0; ar v1
+ar ip=0; ar v0=0x0; ar v2=0x0; ar v1=0xc0180000; ar v3=0x40080000; aes; ar v0; ar v1
+ar ip=0; ar v0=0x0; ar v2=0x0; ar v1=0x0; ar v3=0x40080000; aes; ar v0; ar v1
+ar ip=0; ar v0=0x0; ar v2=0x0; ar v1=0x401d0000; ar v3=0x0; aes; ar v0; ar v1
+EOF
+EXPECT=<<EOF
+0x00000000
+0xbff40000
+0x00000000
+0x3ff40000
+0x00000000
+0x80000000
+0x00000000
+0x00000000
+0x00000000
+0x7ff80000
+EOF
+RUN
+
+NAME=dalvik rem-double scaled quotients and subnormal operands
+FILE=malloc://32
+ARGS=-a dalvik
+CMDS=<<EOF
+wx af000204
+aei
+ar ip=0; ar v2=0x0; ar v4=0x9999999a; ar v3=0x408f4000; ar v5=0x3fb99999; aes; ar v0; ar v1
+ar ip=0; ar v2=0x78b58c40; ar v4=0x0; ar v3=0x4415af1d; ar v5=0x40080000; aes; ar v0; ar v1
+ar ip=0; ar v2=0xffffffff; ar v4=0x0; ar v3=0x7fefffff; ar v5=0x40080000; aes; ar v0; ar v1
+ar ip=0; ar v2=0xffffffff; ar v4=0x3; ar v3=0x7fefffff; ar v5=0x0; aes; ar v0; ar v1
+ar ip=0; ar v2=0x7; ar v4=0x3; ar v3=0x0; ar v5=0x0; aes; ar v0; ar v1
+EOF
+EXPECT=<<EOF
+0x999989fa
+0x3fb99999
+0x00000000
+0x3ff00000
+0x00000000
+0x40000000
+0x00000002
+0x00000000
+0x00000001
+0x00000000
+EOF
+RUN
