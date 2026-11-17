@@ -1525,7 +1525,7 @@ R_API ut64 r_bin_file_get_symbol_vaddr(RBinFile *bf, const RBinSymbol *sym) {
 		return sym->vaddr;
 	}
 	// an unplaced symbol has no address, so the load bias must not move it
-	if (sym->vaddr == UT64_MAX) {
+	if (sym->vaddr == UT64_MAX && sym->paddr == UT64_MAX) {
 		return UT64_MAX;
 	}
 	return r_bin_file_get_vaddr (bf, sym->paddr, sym->vaddr);
