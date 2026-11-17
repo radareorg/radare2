@@ -969,13 +969,13 @@ EXPECT=<<EOF
   I inline      false
   N noreturn    true
   I inline      true
-{"attrs":"NIPE","noreturn":true,"inline":true,"pure":true,"variadic":false,"thunk":false,"library":false,"static":false,"constructor":false,"destructor":false,"naked":false,"interrupt":false,"lineal":true,"recursive":false,"method":false}
+{"attrs":"NIPE"}
   I inline      false
   N noreturn    false
 EOF
 RUN
 
-NAME=aflj reports inline per function after setting and clearing
+NAME=aflj reports inline in attrs per function after setting and clearing
 FILE=malloc://256
 ARGS=-a arm -b 64
 CMDS=<<EOF
@@ -984,20 +984,20 @@ afb+ 0x10 0x10 8
 af+ 0x20 fcn.two
 afb+ 0x20 0x20 8
 s 0x20
-aflj~{[0].inline}
-aflj~{[1].inline}
+aflj~{[0].attrs}
+aflj~{[1].attrs}
 afia+ inline @ 0x10
-aflj~{[0].inline}
-aflj~{[1].inline}
+aflj~{[0].attrs}
+aflj~{[1].attrs}
 afia- inline @ 0x10
-aflj~{[0].inline}
+aflj~{[0].attrs}
 EOF
 EXPECT=<<EOF
-false
-false
-true
-false
-false
+PE
+PE
+IPE
+PE
+PE
 EOF
 RUN
 

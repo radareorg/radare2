@@ -770,7 +770,7 @@ static RCoreHelpMessage help_msg_afi = {
 static RCoreHelpMessage help_msg_afia = {
 	"Usage:", "afia[?][jq+-=]", "show or modify attributes of the current function",
 	"afia", "", "list the function attributes, their letters and values",
-	"afiaj", "", "list the function attributes in JSON",
+	"afiaj", "", "show the attribute letters in JSON (attrs)",
 	"afiaq", "", "show the attribute letters (NIPVTLSCDKQERM, see afia)",
 	"afia+", " [attr ...]", "enable attributes by name or letters (afia+ noreturn,thunk | afia+ NT)",
 	"afia-", " [attr ...]", "disable attributes by name or letters",
@@ -5703,9 +5703,6 @@ static void cmd_afia(RCore *core, const char *input) {
 			PJ *pj = r_core_pj_new (core);
 			pj_o (pj);
 			pj_ks (pj, "attrs", letters);
-			for (i = 0; (ai = r_anal_function_attr_info (i)); i++) {
-				pj_kb (pj, ai->name, fcn->attrs & ai->bit);
-			}
 			pj_end (pj);
 			char *s = pj_drain (pj);
 			r_cons_println (core->cons, s);

@@ -55,7 +55,7 @@ def measure(prefix, binary, phase, timeout, setup="", aanr_setup="aa"):
         command(proc, phase, timeout)
         wall_s = time.perf_counter() - before
         functions = json.loads(command(proc, 'aflj', timeout))
-        summary = sorted((f['addr'], f['size'], f['nbbs'], f['ninstrs'], f['noreturn'])
+        summary = sorted((f['addr'], f['size'], f['nbbs'], f['ninstrs'], 'N' in f['attrs'])
                          for f in functions)
         fingerprint = hashlib.sha256(json.dumps(summary).encode()).hexdigest()
         proc.stdin.write(b'q!\n')
@@ -69,7 +69,7 @@ def measure(prefix, binary, phase, timeout, setup="", aanr_setup="aa"):
                     process_s=f'{time.perf_counter() - started:.9f}',
                     peak_rss_mib=f'{rss_bytes / 1048576:.3f}', functions=len(functions),
                     blocks=sum(f['nbbs'] for f in functions),
-                    noreturn_functions=sum(bool(f['noreturn']) for f in functions),
+                    noreturn_functions=sum('N' in f['attrs'] for f in functions),
                     analysis_sha256=fingerprint)
     finally:
         if proc.returncode is None:

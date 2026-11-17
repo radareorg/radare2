@@ -36,3 +36,7 @@ and when printing function references. Method is set when assigning a calling
 convention with a `T` role in dyncc or a `self` role in a static profile.
 The receiver position is defined by the convention: `!T0`, `!T1` and `!Tx20`
 all mark methods. See [Dynamic calling conventions](dyncc.md).
+
+JSON consumers migrating from the previous output must read `attrs` instead
+of `is-pure`, `is-lineal`, `noreturn`, `inline`, `thunk` and `recursive` in
+`afij`/`aflj`. `afiaj` now contains only `attrs`, without duplicate booleans.

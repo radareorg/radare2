@@ -3651,18 +3651,25 @@ R_API const RAnalFcnAttrInfo *r_anal_function_attr_info(size_t idx) {
 }
 
 R_API char *r_anal_function_attrs_tostring(ut32 attrs, bool verbose) {
-	RStrBuf *sb = r_strbuf_new ("");
 	size_t i;
+	if (!verbose) {
+		char letters[R_ARRAY_SIZE (fcn_attrs) + 1];
+		size_t length = 0;
+		for (i = 0; i < R_ARRAY_SIZE (fcn_attrs); i++) {
+			if (attrs & fcn_attrs[i].bit) {
+				letters[length++] = fcn_attrs[i].letter;
+			}
+		}
+		letters[length] = 0;
+		return strdup (letters);
+	}
+	RStrBuf *sb = r_strbuf_new ("");
 	for (i = 0; i < R_ARRAY_SIZE (fcn_attrs); i++) {
 		const RAnalFcnAttrInfo *ai = &fcn_attrs[i];
 		if (!(attrs & ai->bit)) {
 			continue;
 		}
-		if (!verbose) {
-			r_strbuf_append_n (sb, &ai->letter, 1);
-		} else {
-			r_strbuf_appendf (sb, "%s%s", r_strbuf_is_empty (sb)? "": ",", ai->name);
-		}
+		r_strbuf_appendf (sb, "%s%s", r_strbuf_is_empty (sb)? "": ",", ai->name);
 	}
 	return r_strbuf_drain (sb);
 }

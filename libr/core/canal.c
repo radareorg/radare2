@@ -3061,15 +3061,9 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 		pj_ks (pj, "pin", fcn->pin);
 	}
 	pj_kn (pj, "size", r_anal_function_linear_size (fcn));
-	pj_ks (pj, "is-pure", r_str_bool (r_anal_function_purity (fcn)));
+	r_anal_function_purity (fcn);
+	r_anal_function_islineal (fcn);
 	pj_kn (pj, "realsz", r_anal_function_realsize (fcn));
-	pj_kb (pj, "noreturn", fcn->attrs & R_ANAL_FCN_ATTR_NORETURN);
-	pj_kb (pj, "inline", fcn->attrs & R_ANAL_FCN_ATTR_INLINE);
-	pj_kb (pj, "thunk", fcn->attrs & R_ANAL_FCN_ATTR_THUNK);
-	char *attrs = fcn_attrs_tostring (fcn);
-	pj_ks (pj, "attrs", attrs);
-	free (attrs);
-	pj_kb (pj, "recursive", fcn->attrs & R_ANAL_FCN_ATTR_RECURSIVE);
 	pj_ki (pj, "stackframe", fcn->maxstack);
 	{
 		const char *fcncc = r_anal_function_cc (fcn);
@@ -3097,7 +3091,6 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 	pj_ks (pj, "type", r_anal_functiontype_tostring (fcn->type));
 	pj_ki (pj, "nbbs", (int)RVecAnalBlockPtr_length (&fcn->bbs));
 	pj_ki (pj, "tracecov", r_anal_function_coverage(fcn));
-	pj_kb (pj, "is-lineal", r_anal_function_islineal (fcn));
 	pj_ki (pj, "ninstrs", r_anal_function_instrcount (fcn));
 	pj_ki (pj, "edges", r_anal_function_count_edges (fcn, &ebbs));
 	pj_ki (pj, "ebbs", ebbs);
@@ -3122,6 +3115,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 	int outdegree = 0;
 	int indegree = 0;
 	if (dorefs) {
+		fcn->attrs &= ~R_ANAL_FCN_ATTR_RECURSIVE;
 		RVecAnalRef *refs = r_anal_function_get_refs (fcn);
 		if (refs && !RVecAnalRef_empty (refs)) {
 			RAnalRef *refi;
@@ -3131,6 +3125,9 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 				int rt = R_ANAL_REF_TYPE_MASK (refi->type);
 				if (rt == R_ANAL_REF_TYPE_CALL) {
 					outdegree++;
+					if (refi->addr == fcn->addr) {
+						fcn->attrs |= R_ANAL_FCN_ATTR_RECURSIVE;
+					}
 				}
 				if (rt == R_ANAL_REF_TYPE_CODE || rt == R_ANAL_REF_TYPE_CALL) {
 					pj_o (pj);
@@ -3205,17 +3202,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 		}
 		RVecAnalRef_free (xrefs);
 	} else {
-		RVecAnalRef *refs = r_anal_function_get_refs (fcn);
-		if (refs) {
-			RAnalRef *refi;
-			R_VEC_FOREACH (refs, refi) {
-				int rt = R_ANAL_REF_TYPE_MASK (refi->type);
-				if (rt == R_ANAL_REF_TYPE_CALL) {
-					outdegree++;
-				}
-			}
-		}
-		RVecAnalRef_free (refs);
+		outdegree = r_anal_function_count_refs (fcn, R_ANAL_REF_TYPE_CALL);
 
 		RVecAnalRef *xrefs = r_anal_function_get_xrefs (fcn);
 		if (xrefs) {
@@ -3230,6 +3217,9 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 		RVecAnalRef_free (xrefs);
 	}
 
+	char *attrs = r_anal_function_attrs_tostring (fcn->attrs, false);
+	pj_ks (pj, "attrs", attrs);
+	free (attrs);
 	pj_ki (pj, "indegree", indegree);
 	pj_ki (pj, "outdegree", outdegree);
 
