@@ -3104,7 +3104,7 @@ static bool emit_inline_call(PDCState *state, ut64 addr, int indent, const char 
 		&& !op->delay && op->jump != UT64_MAX
 		? r_anal_get_function_at (core->anal, op->jump): NULL;
 	r_anal_op_free (op);
-	if (!callee || !r_anal_function_is_inline (callee) || RVecAnalBlockPtr_empty (&callee->bbs)) {
+	if (!callee || !(callee->attrs & R_ANAL_FCN_ATTR_INLINE) || RVecAnalBlockPtr_empty (&callee->bbs)) {
 		return false;
 	}
 	PDCState *ancestor, *root = state;

@@ -224,15 +224,14 @@ static ut32 rprj_color_index(RVecPrjColor *colors, RColor *color) {
 static ut32 rprj_fcn_attr_intern(RPrjCursor *cur, RVecPrjFunctionAttr *attrs, RAnalFunction *fcn) {
 	const ut32 type = (ut32)fcn->type;
 	const ut32 bits = (ut32)fcn->bits;
-	const ut32 flags = (fcn->is_noreturn? RPRJ_FUNC_ATTR_NORETURN: 0)
-		| (fcn->is_inline? RPRJ_FUNC_ATTR_INLINE: 0);
+	const ut32 saved_attrs = fcn->attrs & RPRJ_FUNC_ATTRS;
 	const ut64 stack = (ut64)fcn->maxstack;
 	const char *cc = R_STR_ISNOTEMPTY (fcn->callconv)? fcn->callconv: NULL;
 	ut32 idx = 0;
 	R2ProjectFunctionAttr *it;
 	R_VEC_FOREACH (attrs, it) {
 		const char *itcc = it->cc != UT32_MAX? rprj_st_get (cur->st, it->cc): NULL;
-		if (it->type == type && it->bits == bits && it->flags == flags
+		if (it->type == type && it->bits == bits && it->attrs == saved_attrs
 				&& it->stack == stack
 				&& !strcmp (r_str_get (itcc), r_str_get (cc))) {
 			return idx;
@@ -243,7 +242,7 @@ static ut32 rprj_fcn_attr_intern(RPrjCursor *cur, RVecPrjFunctionAttr *attrs, RA
 	slot->cc = cc? rprj_st_append (cur->st, cc): UT32_MAX;
 	slot->type = type;
 	slot->bits = bits;
-	slot->flags = flags;
+	slot->attrs = saved_attrs;
 	slot->stack = stack;
 	return idx;
 }
@@ -329,7 +328,7 @@ static void rprj_function_write(RPrjCursor *cur) {
 		rprj_write_le32 (cur->b, attr->cc);
 		rprj_write_le32 (cur->b, attr->type);
 		rprj_write_le32 (cur->b, attr->bits);
-		rprj_write_le32 (cur->b, attr->flags);
+		rprj_write_le32 (cur->b, attr->attrs);
 		rprj_write_le64 (cur->b, attr->stack);
 	}
 	const ut64 count_at = rprj_le32_reserve (cur->b);

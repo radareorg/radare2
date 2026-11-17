@@ -436,7 +436,7 @@ bool test_r_core_anal_fcn_variadic_marker_requires_unclobbered_al(void) {
 	RAnalFunction *clobbered = r_anal_get_function_at (core->anal, addr);
 	mu_assert_notnull (clobbered, "analysis creates clobbered marker function");
 	mu_assert_streq (clobbered->callconv, "amd64", "clobbered marker uses amd64 calling convention");
-	mu_assert_false (clobbered->is_variadic,
+	mu_assert_false (clobbered->attrs & R_ANAL_FCN_ATTR_VARIADIC,
 		"writing eax invalidates the incoming al variadic marker");
 
 	const ut64 preserved_addr = addr + 6;
@@ -445,7 +445,7 @@ bool test_r_core_anal_fcn_variadic_marker_requires_unclobbered_al(void) {
 	RAnalFunction *preserved = r_anal_get_function_at (core->anal, preserved_addr);
 	mu_assert_notnull (preserved, "analysis creates preserved marker function");
 	mu_assert_streq (preserved->callconv, "amd64", "preserved marker uses amd64 calling convention");
-	mu_assert_true (preserved->is_variadic,
+	mu_assert_true (preserved->attrs & R_ANAL_FCN_ATTR_VARIADIC,
 		"an unclobbered test of al remains a variadic marker");
 
 	r_core_free (core);
@@ -615,7 +615,7 @@ bool test_r_anal_function_set_signature_uses_canonical_type_name(void) {
 	mu_assert_notnull (signature, "typed overwrite signature read");
 	mu_assert_streq (signature->ret_type, "void", "typed overwrite return type");
 	mu_assert_streq (signature->callconv, "cdecl", "typed overwrite callconv");
-	mu_assert_true (f->is_noreturn, "typed overwrite noreturn");
+	mu_assert_true (f->attrs & R_ANAL_FCN_ATTR_NORETURN, "typed overwrite noreturn");
 	mu_assert_eq ((int)r_list_length (signature->params), 0, "typed overwrite clears params");
 	r_anal_function_signature_free (signature);
 

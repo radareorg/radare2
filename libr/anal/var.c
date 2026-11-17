@@ -2028,7 +2028,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 					}
 				}
 			}
-		} else if (!f->is_variadic && fcn->callconv && f->callconv && !strcmp (fcn->callconv, f->callconv)) {
+		} else if (!(f->attrs & R_ANAL_FCN_ATTR_VARIADIC) && fcn->callconv && f->callconv && !strcmp (fcn->callconv, f->callconv)) {
 			callee = r_type_func_guess (TDB, f->name);
 			if (callee) {
 				callee_rargs = func_fixed_args (TDB, callee);

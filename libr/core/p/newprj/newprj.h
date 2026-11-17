@@ -50,10 +50,8 @@ enum {
 #define RPRJ_SIGNAL_SIZE 8
 #define RPRJ_SDB_ADDR_SIZE (8 + RPRJ_ADDR_SIZE)
 
-enum {
-	RPRJ_FUNC_ATTR_NORETURN = 1 << 0,
-	RPRJ_FUNC_ATTR_INLINE = 1 << 1,
-};
+// the RAnalFcnAttr bits a project keeps, the others are derived by the analysis
+#define RPRJ_FUNC_ATTRS (R_ANAL_FCN_ATTR_NORETURN | R_ANAL_FCN_ATTR_INLINE)
 
 enum {
 	RPRJ_BREAKPOINT_TRACE = 1 << 0,
@@ -208,7 +206,7 @@ typedef struct {
 	ut32 cc;
 	ut32 type;
 	ut32 bits;
-	ut32 flags;
+	ut32 attrs;
 	ut64 stack;
 } R2ProjectFunctionAttr;
 

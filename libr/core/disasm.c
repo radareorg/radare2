@@ -2553,9 +2553,11 @@ static void ds_show_functions(RDisasmState *ds) {
 				r_cons_printf (cons, "%s ", f->pin);
 			}
 			r_cons_print (cons, sig);
-			if (f->is_noreturn || f->is_inline) {
-				r_cons_printf (cons, " // %s%s%s", f->is_noreturn? "noreturn": "",
-					f->is_noreturn && f->is_inline? " ": "", f->is_inline? "inline": "");
+			const bool noreturn = f->attrs & R_ANAL_FCN_ATTR_NORETURN;
+			const bool inlined = f->attrs & R_ANAL_FCN_ATTR_INLINE;
+			if (noreturn || inlined) {
+				r_cons_printf (cons, " // %s%s%s", noreturn? "noreturn": "",
+					noreturn && inlined? " ": "", inlined? "inline": "");
 			}
 			free (sig);
 		}

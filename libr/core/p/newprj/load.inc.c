@@ -423,10 +423,10 @@ static void rprj_function_attr_load(RPrjCursor *cur, RAnalFunction *fcn, R2Proje
 		if (R_STR_ISNOTEMPTY (cc)) {
 			r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'afc %s\n", va, cc);
 		}
-		if (attr->flags & RPRJ_FUNC_ATTR_NORETURN) {
+		if (attr->attrs & R_ANAL_FCN_ATTR_NORETURN) {
 			r_strbuf_appendf (cur->out, "'tn 0x%08"PFMT64x"\n", va);
 		}
-		if (attr->flags & RPRJ_FUNC_ATTR_INLINE) {
+		if (attr->attrs & R_ANAL_FCN_ATTR_INLINE) {
 			r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'afia+ inline\n", va);
 		}
 	}
@@ -439,11 +439,10 @@ static void rprj_function_attr_load(RPrjCursor *cur, RAnalFunction *fcn, R2Proje
 			// saved value is restored rather than validated away
 			r_anal_function_store_callconv (cur->core->anal, fcn, cc);
 		}
-		fcn->is_noreturn = attr->flags & RPRJ_FUNC_ATTR_NORETURN;
-		if (fcn->is_noreturn) {
+		fcn->attrs = (fcn->attrs & ~RPRJ_FUNC_ATTRS) | (attr->attrs & RPRJ_FUNC_ATTRS);
+		if (fcn->attrs & R_ANAL_FCN_ATTR_NORETURN) {
 			r_anal_noreturn_add (cur->core->anal, name, va);
 		}
-		fcn->is_inline = attr->flags & RPRJ_FUNC_ATTR_INLINE;
 	}
 }
 
@@ -715,10 +714,10 @@ static void rprj_print_function_attrs(RPrjCursor *cur, RAnalFunction *fcn) {
 	}
 	// always emitted, even for an empty frame, because the afv[bs] offsets are relative to it
 	r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'afS %d\n", fcn->addr, fcn->maxstack);
-	if (fcn->is_noreturn) {
+	if (fcn->attrs & R_ANAL_FCN_ATTR_NORETURN) {
 		r_strbuf_appendf (cur->out, "'tn 0x%08"PFMT64x"\n", fcn->addr);
 	}
-	if (fcn->is_inline) {
+	if (fcn->attrs & R_ANAL_FCN_ATTR_INLINE) {
 		r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'afia+ inline\n", fcn->addr);
 	}
 }
@@ -782,7 +781,7 @@ static void rprj_diff_function_blocks(RPrjCursor *cur, RAnalFunction *fcn, RList
 
 static void rprj_diff_function_attrs(RPrjCursor *cur, RAnalFunction *fcn, R2ProjectFunctionAttr *attr) {
 	const char *cc = attr && attr->cc != UT32_MAX? rprj_st_get (cur->st, attr->cc): NULL;
-	const bool noret = attr && (attr->flags & RPRJ_FUNC_ATTR_NORETURN);
+	const ut32 changed = ((attr? attr->attrs: 0) ^ fcn->attrs) & RPRJ_FUNC_ATTRS;
 	const st64 stack = attr? (st64)attr->stack: 0;
 	if (strcmp (r_str_get (cc), r_str_get (fcn->callconv))) {
 		if (R_STR_ISNOTEMPTY (fcn->callconv)) {
@@ -792,14 +791,13 @@ static void rprj_diff_function_attrs(RPrjCursor *cur, RAnalFunction *fcn, R2Proj
 	if (stack != fcn->maxstack) {
 		r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'afS %d\n", fcn->addr, fcn->maxstack);
 	}
-	if (noret != fcn->is_noreturn) {
-		r_strbuf_appendf (cur->out, fcn->is_noreturn
+	if (changed & R_ANAL_FCN_ATTR_NORETURN) {
+		r_strbuf_appendf (cur->out, fcn->attrs & R_ANAL_FCN_ATTR_NORETURN
 			? "'tn 0x%08"PFMT64x"\n"
 			: "'tn- 0x%08"PFMT64x"\n", fcn->addr);
 	}
-	const bool inl = attr && (attr->flags & RPRJ_FUNC_ATTR_INLINE);
-	if (inl != fcn->is_inline) {
-		r_strbuf_appendf (cur->out, fcn->is_inline
+	if (changed & R_ANAL_FCN_ATTR_INLINE) {
+		r_strbuf_appendf (cur->out, fcn->attrs & R_ANAL_FCN_ATTR_INLINE
 			? "'0x%08"PFMT64x"'afia+ inline\n"
 			: "'0x%08"PFMT64x"'afia- inline\n", fcn->addr);
 	}

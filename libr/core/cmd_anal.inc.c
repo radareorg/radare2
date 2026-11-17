@@ -1376,7 +1376,7 @@ static ut64 faddr(RCore *core, ut64 addr, bool *nr) {
 		RListIter *iter;
 		RAnalFunction *fcn;
 		r_list_foreach (fcns, iter, fcn) {
-			if (nr && fcn->is_noreturn) {
+			if (nr && (fcn->attrs & R_ANAL_FCN_ATTR_NORETURN)) {
 				*nr = true;
 			}
 			return fcn->addr;
@@ -5688,11 +5688,11 @@ static const FcnAttrInfo *fcn_attr_find(const char *name) {
 
 static bool fcn_attr_get(RAnalFunction *fcn, const char *name, bool *value) {
 	if (!strcmp (name, "noreturn")) {
-		*value = fcn->is_noreturn;
+		*value = fcn->attrs & R_ANAL_FCN_ATTR_NORETURN;
 		return true;
 	}
 	if (!strcmp (name, "inline")) {
-		*value = r_anal_function_is_inline (fcn);
+		*value = fcn->attrs & R_ANAL_FCN_ATTR_INLINE;
 		return true;
 	}
 	if (!strcmp (name, "pure")) {
@@ -5700,7 +5700,7 @@ static bool fcn_attr_get(RAnalFunction *fcn, const char *name, bool *value) {
 		return true;
 	}
 	if (!strcmp (name, "variadic")) {
-		*value = fcn->is_variadic;
+		*value = fcn->attrs & R_ANAL_FCN_ATTR_VARIADIC;
 		return true;
 	}
 	return false;
@@ -5713,14 +5713,14 @@ static bool fcn_attr_set(RCore *core, RAnalFunction *fcn, const char *name, bool
 		}
 		r_strf_var (addrstr, 32, "0x%08"PFMT64x, fcn->addr);
 		r_anal_noreturn_drop (core->anal, addrstr);
-		if (fcn->is_noreturn) {
-			fcn->is_noreturn = false;
+		if (fcn->attrs & R_ANAL_FCN_ATTR_NORETURN) {
+			fcn->attrs &= ~R_ANAL_FCN_ATTR_NORETURN;
 			R_DIRTY_SET (core->anal);
 		}
 		return true;
 	}
 	if (!strcmp (name, "inline")) {
-		return r_anal_function_set_inline (fcn, value);
+		return r_anal_function_set_attr (fcn, R_ANAL_FCN_ATTR_INLINE, value);
 	}
 	return false;
 }
@@ -6704,7 +6704,7 @@ static int cmd_af(RCore *core, const char *input) {
 					if (r_anal_function_islineal (fcn)) {
 						r_cons_print (cons, "lineal");
 					}
-					if (fcn->is_noreturn) {
+					if (fcn->attrs & R_ANAL_FCN_ATTR_NORETURN) {
 						r_cons_print (cons, "noreturn");
 					}
 					r_cons_newline (cons);

@@ -194,6 +194,14 @@ enum {
 	R_ANAL_FCN_TYPE_ANY = -1       /* all the bits set */
 };
 
+// values are stored in projects, append only
+typedef enum {
+	R_ANAL_FCN_ATTR_NORETURN = 1 << 0,
+	R_ANAL_FCN_ATTR_INLINE = 1 << 1, // inlined at its call sites, user-set only
+	R_ANAL_FCN_ATTR_PURE = 1 << 2, // computed by r_anal_function_purity
+	R_ANAL_FCN_ATTR_VARIADIC = 1 << 3,
+} RAnalFcnAttr;
+
 #define RAnalBlock struct r_anal_bb_t
 
 R_VEC_TYPE (RVecAnalBlockPtr, RAnalBlock *);
@@ -296,13 +304,6 @@ typedef struct r_anal_diff_t {
 	double dist;
 	char *name;
 } RAnalDiff;
-typedef struct r_anal_attr_t RAnalAttr;
-struct r_anal_attr_t {
-	char *key;
-	long value;
-	RAnalAttr *next;
-};
-
 typedef struct r_anal_var_t RAnalVar;
 
 /* Stores useful function metadata */
@@ -345,13 +346,10 @@ typedef struct r_anal_function_t {
 	int stack_pop; // PRIVATE, inferred callee-popped argument bytes
 	int ninstr;
 	bool folded;
-	bool is_pure;
-	bool is_variadic;
+	ut32 attrs; // RAnalFcnAttr bits
 	bool has_changed; // true if function may have changed since last anaysis TODO: set this attribute where necessary
 	bool bp_frame;
 	bool bp_from_sp; // a prologue copied SP into BP, so BP really is the frame base
-	bool is_noreturn; // true if function does not return
-	bool is_inline; // true if function is inlined at its call sites
 	bool bbs_sorted; // PRIVATE, invalidated by out-of-order additions and afbs
 	ut8 swift_roles; // R_BIN_SWIFT_ROLE_* bits the linkage name gives, UT8_MAX until asked
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
@@ -1282,8 +1280,7 @@ R_API RAnalBlock *r_anal_function_bbget_at(RAnal *anal, RAnalFunction *fcn, ut64
 R_API bool r_anal_function_bbadd(RAnalFunction *fcn, RAnalBlock *bb);
 R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize);
 R_API bool r_anal_function_purity(RAnalFunction *fcn);
-R_API bool r_anal_function_is_inline(RAnalFunction *fcn);
-R_API bool r_anal_function_set_inline(RAnalFunction *fcn, bool is_inline);
+R_API bool r_anal_function_set_attr(RAnalFunction *fcn, RAnalFcnAttr attr, bool enable);
 R_API int r_anal_function_instrcount(RAnalFunction *fcn);
 R_API bool r_anal_function_islineal(RAnalFunction *fcn);
 R_API const char *r_anal_pin_get(RAnal *a, const char *name);

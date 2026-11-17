@@ -506,14 +506,14 @@ static bool purity_checked(HtUP *ht, RAnalFunction *fcn) {
 }
 
 /*
- * Checks whether a given function is pure and sets its 'is_pure' field.
+ * Checks whether a given function is pure and sets its pure attribute.
  * This function marks fcn 'not pure' if fcn, or any function called by fcn, accesses data
  * from outside, even if it only READS it.
  * Probably worth changing it in the future, so that it marks fcn 'impure' only when it
  * (or any function called by fcn) MODIFIES external data.
  */
 static void check_purity(HtUP *ht, RAnalFunction *fcn) {
-	fcn->is_pure = true;
+	fcn->attrs |= R_ANAL_FCN_ATTR_PURE;
 	ht_up_insert (ht, fcn->addr, NULL);
 
 	RVecAnalRef *refs = r_anal_function_get_refs (fcn);
@@ -536,15 +536,15 @@ static void check_purity(HtUP *ht, RAnalFunction *fcn) {
 				if (!purity_checked (ht, called_fcn)) {
 					check_purity (ht, called_fcn);
 				}
-				if (!called_fcn->is_pure) {
-					fcn->is_pure = false;
+				if (!(called_fcn->attrs & R_ANAL_FCN_ATTR_PURE)) {
+					fcn->attrs &= ~R_ANAL_FCN_ATTR_PURE;
 					RVecAnalRef_free (refs);
 					return;
 				}
 			}
 			break;
 		case R_ANAL_REF_TYPE_DATA:
-			fcn->is_pure = false;
+			fcn->attrs &= ~R_ANAL_FCN_ATTR_PURE;
 			RVecAnalRef_free (refs);
 			return;
 		}
@@ -2080,7 +2080,7 @@ noskip:
 			if (propagate_noreturn && r_anal_noreturn_at (anal, op->ptr)) {
 				RAnalFunction *f = r_anal_get_function_at (anal, op->ptr);
 				if (f) {
-					f->is_noreturn = true;
+					f->attrs |= R_ANAL_FCN_ATTR_NORETURN;
 				}
 				gotoBeach (R_ANAL_RET_END);
 			}
@@ -2094,7 +2094,7 @@ noskip:
 			if (propagate_noreturn && r_anal_noreturn_at (anal, op->jump)) {
 				RAnalFunction *f = r_anal_get_function_at (anal, op->jump);
 				if (f) {
-					f->is_noreturn = true;
+					f->attrs |= R_ANAL_FCN_ATTR_NORETURN;
 				}
 				gotoBeach (R_ANAL_RET_END);
 			}
@@ -2450,7 +2450,7 @@ analopfinish:
 		if (is_arm && op->type != R_ANAL_OP_TYPE_MOV) {
 			last_is_mov_lr_pc = false;
 		}
-		if (has_variadic_reg && !fcn->is_variadic) {
+		if (has_variadic_reg && !(fcn->attrs & R_ANAL_FCN_ATTR_VARIADIC)) {
 			variadic_reg = "rax";
 #if 1
 			// XXX arm_cs plugin
@@ -2486,7 +2486,7 @@ analopfinish:
 				has_variadic_reg = false;
 			} else if (op_is_cmp) {
 				if (dst_is_variadic && src0 && src0->reg && (dst->reg == src0->reg)) {
-					fcn->is_variadic = true;
+					fcn->attrs |= R_ANAL_FCN_ATTR_VARIADIC;
 				}
 			}
 		}
@@ -3278,7 +3278,7 @@ static void function_signature_sync(RAnalFunction *fcn, const RAnalFunctionSigna
 	R_RETURN_IF_FAIL (fcn && fcn->anal && signature);
 	callconv = signature->callconv? signature->callconv: r_anal_cc_default (fcn->anal);
 	r_anal_function_store_callconv (fcn->anal, fcn, callconv);
-	fcn->is_noreturn = signature->noreturn;
+	R_MASK_SET (fcn->attrs, R_ANAL_FCN_ATTR_NORETURN, signature->noreturn);
 }
 
 static bool function_signature_set_attrs(RAnal *anal, const char *type_name, const char *callconv, bool noreturn) {
@@ -3374,7 +3374,7 @@ R_API RAnalFunctionSignature *r_anal_function_get_signature(RAnalFunction *funct
 			goto beach;
 		}
 	}
-	signature->noreturn = function_signature_is_noreturn (anal->sdb_types, type_name, function->is_noreturn);
+	signature->noreturn = function_signature_is_noreturn (anal->sdb_types, type_name, function->attrs & R_ANAL_FCN_ATTR_NORETURN);
 	free (type_name);
 	return signature;
 
@@ -3621,19 +3621,14 @@ R_API bool r_anal_function_purity(RAnalFunction *fcn) {
 			ht_up_free (ht);
 		}
 	}
-	return fcn->is_pure;
+	return fcn->attrs & R_ANAL_FCN_ATTR_PURE;
 }
 
-// User-set attribute, unlike purity it is never recomputed by the analysis.
-R_API bool r_anal_function_is_inline(RAnalFunction *fcn) {
+R_API bool r_anal_function_set_attr(RAnalFunction *fcn, RAnalFcnAttr attr, bool enable) {
 	R_RETURN_VAL_IF_FAIL (fcn, false);
-	return fcn->is_inline;
-}
-
-R_API bool r_anal_function_set_inline(RAnalFunction *fcn, bool is_inline) {
-	R_RETURN_VAL_IF_FAIL (fcn, false);
-	if (fcn->is_inline != is_inline) {
-		fcn->is_inline = is_inline;
+	const ut32 attrs = fcn->attrs;
+	R_MASK_SET (fcn->attrs, attr, enable);
+	if (fcn->attrs != attrs) {
 		r_anal_function_bump_dirty_epoch (fcn);
 		if (fcn->anal) {
 			R_DIRTY_SET (fcn->anal);

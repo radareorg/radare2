@@ -69,7 +69,6 @@ R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 	fcn->has_changed = true;
 	fcn->bp_frame = true;
 	fcn->swift_roles = UT8_MAX;
-	fcn->is_noreturn = false;
 	fcn->meta._min = UT64_MAX;
 	fcn->stack_pop = R_ANAL_CC_STACK_POP_UNKNOWN;
 	fcn->meta.numrefs = -1;
@@ -153,7 +152,7 @@ R_API bool r_anal_add_function(RAnal *anal, RAnalFunction *fcn) {
 	if (anal->flg_fcn_set) {
 		anal->flg_fcn_set (anal->flb.f, fcn->name, fcn->addr, r_anal_function_size_from_entry (fcn));
 	}
-	fcn->is_noreturn = r_anal_noreturn_at_addr (anal, fcn->addr);
+	R_MASK_SET (fcn->attrs, R_ANAL_FCN_ATTR_NORETURN, r_anal_noreturn_at_addr (anal, fcn->addr));
 	r_list_append (anal->fcns, fcn);
 	ht_pp_insert (anal->ht_name_fun, fcn->name, fcn);
 	ht_up_insert (anal->ht_addr_fun, fcn->addr, fcn);

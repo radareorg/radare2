@@ -804,7 +804,7 @@ bool test_r_anal_block_chop_noreturn(void) {
 	r_anal_function_add_block (fa, c);
 
 	RAnalFunction *fb = r_anal_create_function (anal, "fcn2", 0x130, R_ANAL_FCN_TYPE_FCN, NULL);
-	fb->is_noreturn = true;
+	fb->attrs |= R_ANAL_FCN_ATTR_NORETURN;
 
 	r_anal_block_chop_noreturn (b, 0x111);
 

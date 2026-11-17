@@ -291,7 +291,7 @@ static bool rprj_function_attr_read(RBuffer *b, R2ProjectFunctionAttr *attr) {
 	attr->cc = r_read_le32 (buf);
 	attr->type = r_read_le32 (buf + 4);
 	attr->bits = r_read_le32 (buf + 8);
-	attr->flags = r_read_le32 (buf + 12);
+	attr->attrs = r_read_le32 (buf + 12);
 	attr->stack = r_read_le64 (buf + 16);
 	return true;
 }

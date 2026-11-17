@@ -2635,7 +2635,7 @@ static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 	}
 
 	r_cons_printf (core->cons, FCN_LIST_VERBOSE_ENTRY, color,
-			addrwidth, fcn->addr, fcn->is_noreturn,
+			addrwidth, fcn->addr, !!(fcn->attrs & R_ANAL_FCN_ATTR_NORETURN),
 			r_anal_function_realsize (fcn),
 			(int)RVecAnalBlockPtr_length (&fcn->bbs),
 			r_anal_function_count_edges (fcn, &ebbs),
@@ -3018,8 +3018,8 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 	pj_kn (pj, "size", r_anal_function_linear_size (fcn));
 	pj_ks (pj, "is-pure", r_str_bool (r_anal_function_purity (fcn)));
 	pj_kn (pj, "realsz", r_anal_function_realsize (fcn));
-	pj_kb (pj, "noreturn", fcn->is_noreturn);
-	pj_kb (pj, "inline", r_anal_function_is_inline (fcn));
+	pj_kb (pj, "noreturn", fcn->attrs & R_ANAL_FCN_ATTR_NORETURN);
+	pj_kb (pj, "inline", fcn->attrs & R_ANAL_FCN_ATTR_INLINE);
 	pj_kb (pj, "recursive", is_recursive (core, fcn));
 	pj_ki (pj, "stackframe", fcn->maxstack);
 	{
@@ -3281,7 +3281,7 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	if (fcn->folded) {
 		r_cons_printf (cons, "afF @ 0x%08"PFMT64x"\n", fcn->addr);
 	}
-	if (fcn->is_inline) {
+	if (fcn->attrs & R_ANAL_FCN_ATTR_INLINE) {
 		r_cons_printf (cons, "'0x%08"PFMT64x"'afia+ inline\n", fcn->addr);
 	}
 	// afS goes first, the afv[bs] offsets that follow are relative to the frame size
@@ -3468,7 +3468,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn, bool dorefs) {
 	r_cons_printf (cons, "\nmidbbins: %.02f", b);
 	double ratbins = b? ((double)a / b): 0;
 	r_cons_printf (cons, "\nratbbins: %.02f", ratbins);
-	r_cons_printf (cons, "\nnoreturn: %s", r_str_bool (fcn->is_noreturn));
+	r_cons_printf (cons, "\nnoreturn: %s", r_str_bool (fcn->attrs & R_ANAL_FCN_ATTR_NORETURN));
 	r_cons_printf (cons, "\nrecursive: %s", r_str_bool (is_recursive (core, fcn)));
 	r_cons_printf (cons, "\nin-degree: %d", indegree);
 	r_cons_printf (cons, "\nout-degree: %d", outdegree);
@@ -3553,7 +3553,7 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 		r_strf_var (fcnSize, 32, "%"PFMT64u, r_anal_function_linear_size (fcn)); // r_anal_function_size (fcn));
 		r_strf_var (nbbs, 32, "%d", (int)RVecAnalBlockPtr_length (&fcn->bbs));
 		r_strf_var (nins, 32, "%d", r_anal_function_instrcount (fcn));
-		r_strf_var (noret, 32, "%d", fcn->is_noreturn);
+		r_strf_var (noret, 32, "%d", !!(fcn->attrs & R_ANAL_FCN_ATTR_NORETURN));
 
 		// TODO: feels wasteful, maybe we should have functions that return just the amount?
 		RVecAnalRef *xrefs = r_anal_function_get_refs (fcn);
@@ -6010,7 +6010,7 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 	RListIter *iter;
 	RAnalFunction *f;
 	r_list_foreach (core->anal->fcns, iter, f) {
-		if (f->is_noreturn) {
+		if (f->attrs & R_ANAL_FCN_ATTR_NORETURN) {
 			ut64 *n = ut64_new (f->addr);
 			r_list_append (todo, n);
 		}
@@ -6094,7 +6094,7 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 				RListIter *fit;
 				r_list_foreach (block_fcns, fit, f) {
 					if (f->addr && !r_bitset_test (done, f->addr) && analyze_noreturn_function (core, f)) {
-						f->is_noreturn = true;
+						f->attrs |= R_ANAL_FCN_ATTR_NORETURN;
 						r_anal_noreturn_add (core->anal, NULL, f->addr);
 						ut64 *n = malloc (sizeof (ut64));
 						*n = f->addr;
