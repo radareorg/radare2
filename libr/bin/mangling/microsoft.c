@@ -1286,10 +1286,6 @@ MODIFIER_err:
 	free_type_code_str_struct (&modifier);
 }
 
-DEF_STATE_ACTION(S) {
-	parse_type_modifier (sd, state, type_code_str, "*const volatile");
-}
-
 static inline const char *get_calling_convention(char calling_convention) {
 	switch (calling_convention) {
 	case 'A': return "__cdecl";
@@ -1506,6 +1502,10 @@ DEF_STATE_ACTION(R) {
 
 DEF_STATE_ACTION(Q) {
 	PARSE_POINTER ("*const");
+}
+
+DEF_STATE_ACTION(S) {
+	PARSE_POINTER ("*const volatile");
 }
 
 DEF_STATE_ACTION(A) {

@@ -367,6 +367,28 @@ void __cdecl f(void (__cdecl *const)(void))
 EOF
 RUN
 
+NAME=msvc const volatile function pointers
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc '?p@@3S6AXXZEA'
+!rabin2 -D msvc '?f@@YAXS6AXXZ@Z'
+!rabin2 -D msvc '??$f@S6AXXZ@@YAXXZ'
+!rabin2 -D msvc '?p@@3SAHEA'
+!rabin2 -D msvc '?f@@YAXS6@Z'
+!rabin2 -D msvc '?f@@YAXS6AXX@Z'
+!rabin2 -D msvc '?p@@3S6'
+EOF
+EXPECT=<<EOF
+void (__cdecl *const volatile)(void) p
+void __cdecl f(void (__cdecl *const volatile)(void))
+void __cdecl f<void (__cdecl *const volatile)(void)>(void)
+int *const volatile p
+?f@@YAXS6@Z
+?f@@YAXS6AXX@Z
+?p@@3S6
+EOF
+RUN
+
 NAME=msvc string literals
 FILE=-
 CMDS=<<EOF
