@@ -1,0 +1,426 @@
+NAME=cmd.esil.trap returning zero stops the raw expression
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e cmd.esil.trap=?v 0
+aer rax=0x11
+ae 2,1,TRAP,0x42,rax,=
+aer rax
+ae*
+EOF
+EXPECT=<<EOF
+0x0
+0x00000011
+trap: 1
+trap-code: 2
+EOF
+RUN
+
+NAME=cmd.esil.trap returning one resumes successive raw traps
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e cmd.esil.trap=?v 1
+ae 2,1,TRAP,0x41,rax,=,4,2,TRAP,rax,1,+,rax,=
+aer rax
+ae*
+EOF
+EXPECT=<<EOF
+0x1
+0x1
+0x00000042
+trap: 2
+trap-code: 4
+EOF
+RUN
+
+NAME=cmd.esil.trap patches registers before raw continuation
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+"e cmd.esil.trap=aer rbx=0x41;?=1"
+aeq 2,1,TRAP,rbx,1,+,rax,=
+aer rbx
+aer rax
+EOF
+EXPECT=<<EOF
+0x00000041
+0x00000042
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=cmd.esil.trap receives raw type and code for every trap type
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e cmd.esil.trap=?e trap
+aeq 0,0,TRAP
+aeq 0x11,1,TRAP
+aeq 0x22,2,TRAP
+aeq 0x33,3,TRAP
+aeq 0x44,4,TRAP
+aeq 0x55,5,TRAP
+aeq 0x66,6,TRAP
+aeq 0x77,7,TRAP
+aeq 0x88,8,TRAP
+aeq 0x99,9,TRAP
+aeq 0xaa,10,TRAP
+EOF
+EXPECT=<<EOF
+trap 0 0
+trap 1 17
+trap 2 34
+trap 3 51
+trap 4 68
+trap 5 85
+trap 6 102
+trap 7 119
+trap 8 136
+trap 9 153
+trap 10 170
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=cmd.esil.trap captures raw crashlogs and registers in memory
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+aer rax=0x1337
+"e cmd.esil.trap=aer rax >$registers;ae* >$crashlog;?=0"
+aeq 2,1,TRAP,0x42,rax,=
+$registers
+$crashlog
+aer rax
+EOF
+EXPECT=<<EOF
+0x00001337
+trap: 1
+trap-code: 2
+0x00001337
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=cmd.esil.trap can be replaced cleared and restored
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e cmd.esil.trap=?e first
+aeq 2,1,TRAP
+e cmd.esil.trap=?e second
+aeq 4,2,TRAP
+e cmd.esil.trap=
+aeq 6,3,TRAP,0x42,rax,=
+aer rax
+e cmd.esil.trap=?e restored
+aeq 8,4,TRAP
+EOF
+EXPECT=<<EOF
+first 1 2
+second 2 4
+0x00000000
+restored 4 8
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=cmd.esil.trap reports missing and invalid raw operands
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+s 0x10
+e cmd.esil.trap=?e invalid
+aeq TRAP,0x42,rax,=
+aeq 2,TRAP,0x42,rax,=
+aeq nope,1,TRAP,0x42,rax,=
+aeq 2,nope,TRAP,0x42,rax,=
+aer rax
+EOF
+EXPECT=<<EOF
+invalid 16 7
+invalid 16 7
+invalid 16 7
+invalid 16 7
+0x00000000
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=cmd.esil.trap receives step PC and full read fault address
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b00 @ 0x10
+aer rip=0x10
+aer rax=0x100000005
+e cmd.esil.trap=?e read
+aes
+ae*
+EOF
+EXPECT=<<EOF
+read 16 4294967301
+trap: 5
+trap-code: 0
+trap-addr: 0x100000005
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000010: read error (read-err at 0x100000005)
+EOF
+RUN
+
+NAME=cmd.esil.trap receives full write fault address after rollback
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8900 @ 0x10
+aer rip=0x10
+aer rax=0x100000007
+e esil.traprevert=true
+e cmd.esil.trap=?e write
+aes
+ae*
+EOF
+EXPECT=<<EOF
+write 16 4294967303
+trap: 4
+trap-code: 0
+trap-addr: 0x100000007
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000010: write error (write-err at 0x100000007)
+EOF
+RUN
+
+NAME=cmd.esil.trap receives divide by zero event
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 90 @ 0x10
+ahe 0,42,/ @ 0x10
+aer rip=0x10
+e cmd.esil.trap=?e divbyzero
+aes
+ae*
+EOF
+EXPECT=<<EOF
+divbyzero 16 0
+trap: 3
+trap-code: 0
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000010: divbyzero (divbyzero)
+EOF
+RUN
+
+NAME=cmd.esil.trap receives non-executable instruction address
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 90 @ 0x10
+omp 1 rw
+e esil.exectrap=true
+aer rip=0x10
+e cmd.esil.trap=?e noexec
+aes
+ae*
+EOF
+EXPECT=<<EOF
+noexec 16 16
+trap: 6
+trap-code: 0
+trap-addr: 0x10
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000010: execute error (execute-err at 0x00000010)
+EOF
+RUN
+
+NAME=cmd.esil.trap receives unaligned instruction address
+FILE=malloc://64
+ARGS=-a arm -b 64
+CMDS=<<EOF
+aer pc=0x11
+e cmd.esil.trap=?e unaligned
+aes
+ae*
+EOF
+EXPECT=<<EOF
+unaligned 17 17
+trap: 8
+trap-code: 0
+trap-addr: 0x11
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000011: unaligned instruction (unaligned at 0x00000011)
+EOF
+RUN
+
+NAME=cmd.esil.trap repairs emulated state for the next step
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 8b00 @ 0x10
+wv4 0x1337 @ 0x20
+aer rip=0x10
+aer rax=0x100000005
+"e cmd.esil.trap=aer rax=0x20;?=0"
+aes
+aer rax
+aer rip=0x10
+aes
+aer rax
+ae*
+EOF
+EXPECT=<<EOF
+0x00000020
+0x00001337
+trap: 0
+trap-code: 0
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000010: read error (read-err at 0x100000005)
+EOF
+RUN
+
+# PR #27426: dispatch step traps once with PC/code, rather than type/code then PC/code.
+NAME=cmd.esil.trap fires once for a valid TRAP hint
+FILE=malloc://64
+ARGS=-a x86 -b 64
+BROKEN=1
+CMDS=<<EOF
+wx 90 @ 0x10
+ahe 2,1,TRAP @ 0x10
+aer rip=0x10
+e cmd.esil.trap=?e trap
+aes
+ae*
+EOF
+EXPECT=<<EOF
+trap 16 2
+trap: 1
+trap-code: 2
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000010: unhandled (unhandled)
+EOF
+RUN
+
+# Malformed TRAP must record invalid, and report the instruction PC.
+NAME=cmd.esil.trap records invalid TRAP hints
+FILE=malloc://64
+ARGS=-a x86 -b 64
+BROKEN=1
+CMDS=<<EOF
+wx 90 @ 0x10
+e esil.breakoninvalid=true
+e cmd.esil.trap=?e invalid
+ahe TRAP @ 0x10
+aer rip=0x10
+aes
+ae*
+ahe 2,TRAP @ 0x10
+aer rip=0x10
+aes
+ae*
+ahe nope,1,TRAP @ 0x10
+aer rip=0x10
+aes
+ae*
+ahe 2,nope,TRAP @ 0x10
+aer rip=0x10
+aes
+ae*
+EOF
+EXPECT=<<EOF
+invalid 16 7
+trap: 7
+trap-code: 7
+invalid 16 7
+trap: 7
+trap-code: 7
+invalid 16 7
+trap: 7
+trap-code: 7
+invalid 16 7
+trap: 7
+trap-code: 7
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000010: invalid instruction (invalid)
+ERROR: ESIL stopped at 0x00000010: invalid instruction (invalid)
+ERROR: ESIL stopped at 0x00000010: invalid instruction (invalid)
+ERROR: ESIL stopped at 0x00000010: invalid instruction (invalid)
+EOF
+RUN
+
+# The legacy VM currently receives the trap record after the crashlog hook runs.
+NAME=cmd.esil.trap crashlogs contain the current step fault
+FILE=malloc://64
+ARGS=-a x86 -b 64
+BROKEN=1
+CMDS=<<EOF
+wx 8b008900 @ 0x10
+aer rip=0x10
+aer rax=0x100000005
+"e cmd.esil.trap=ae* >$crashlog;?=0"
+aes
+$crashlog
+aer rip=0x12
+aer rax=0x100000007
+aes
+$crashlog
+EOF
+EXPECT=<<EOF
+trap: 5
+trap-code: 0
+trap-addr: 0x100000005
+trap: 4
+trap-code: 0
+trap-addr: 0x100000007
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000010: read error (read-err at 0x100000005)
+ERROR: ESIL stopped at 0x00000012: write error (write-err at 0x100000007)
+EOF
+RUN
+
+# AArch64 BRK must emit breakpoint type 2, with the immediate as its code.
+NAME=cmd.esil.trap receives AArch64 brk zero once
+FILE=malloc://64
+ARGS=-a arm -b 64
+BROKEN=1
+CMDS=<<EOF
+wx 000020d4 @ 0x10
+aer pc=0x10
+e cmd.esil.trap=?e breakpoint
+aes
+ae*
+EOF
+EXPECT=<<EOF
+breakpoint 16 0
+trap: 2
+trap-code: 0
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=cmd.esil.trap receives AArch64 brk immediate once
+FILE=malloc://64
+ARGS=-a arm -b 64
+BROKEN=1
+CMDS=<<EOF
+wx 400520d4 @ 0x10
+aer pc=0x10
+e cmd.esil.trap=?e breakpoint
+aes
+ae*
+EOF
+EXPECT=<<EOF
+breakpoint 16 42
+trap: 2
+trap-code: 42
+EOF
+EXPECT_ERR=
+RUN
