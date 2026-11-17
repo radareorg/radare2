@@ -689,3 +689,107 @@ type: jmp
 pc = 0x100003a90
 EOF
 RUN
+
+NAME=ao decodes Thumb IT blocks once in text and ESIL output
+FILE=malloc://64
+ARGS=-a arm -b 16
+CMDS=<<EOF
+wx 8cbf08461046
+ao 3~opcode
+aoe 3
+EOF
+EXPECT=<<EOF
+opcode: ite hi
+opcode: movhi r0, r1
+opcode: movls r0, r2
+0x00000000 cf,zf,!,&,?{,0x2,pc,:=,}
+0x00000002 cf,zf,!,&,?{,r1,r0,=,}
+0x00000004 cf,!,zf,|,?{,r2,r0,=,}
+EOF
+RUN
+
+NAME=ao respects opcode and ESIL hints
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 90909090
+ahd replacement
+ahe 1,rax,=
+ao~opcode,ophint
+aoj~{0.opcode}
+aoj~{0.ophint}
+aoeq
+wx ffffffffffffffff
+ahs 4
+aoj~{0.opcode}
+aoj~{0.size}
+EOF
+EXPECT=<<EOF
+opcode: replacement
+ophint: replacement
+replacement
+replacement
+1,rax,=
+replacement
+4
+EOF
+RUN
+
+NAME=ao preserves pseudo disassembly from the analyzed opcode
+FILE=malloc://64
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 0100a0e1
+ao~opcode
+e asm.pseudo=true
+ao~opcode
+aoj~{0.opcode}
+EOF
+EXPECT=<<EOF
+opcode: mov r0, r1
+opcode: r0 = r1
+r0 = r1
+EOF
+RUN
+
+NAME=ao and pi share invalid and unaligned opcode formatting
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx ffffffffffffffff
+e asm.invhex=true
+ao~opcode
+aoj~{0.opcode}
+pi 1
+e asm.bits=32
+ao~opcode
+aoj~{0.opcode}
+pi 1
+e asm.bits=16
+ao~opcode
+aoj~{0.opcode}
+pi 1
+b 1
+ao~opcode
+aoj~{0.opcode}
+e arch.codealign=4
+s 1
+ao~opcode
+aoj~{0.opcode}
+EOF
+EXPECT=<<EOF
+opcode: .qword 0xffffffffffffffff
+.qword 0xffffffffffffffff
+.qword 0xffffffffffffffff
+opcode: .dword 0xffffffff
+.dword 0xffffffff
+.dword 0xffffffff
+opcode: .word 0xffff
+.word 0xffff
+.word 0xffff
+opcode: invalid
+invalid
+opcode: unaligned
+unaligned
+EOF
+RUN

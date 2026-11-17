@@ -103,7 +103,7 @@ typedef enum {
 	R_ARCH_OP_MASK_VAL   = 2, // fills RAnalop->dst/src info
 	R_ARCH_OP_MASK_HINT  = 4, // calls r_anal_op_hint to override anal options
 	R_ARCH_OP_MASK_OPEX  = 8, // fills RAnalop->opex info
-	R_ARCH_OP_MASK_DISASM = 16, // fills RAnalop->mnemonic // should be RAnalOp->disasm // only from r_core_anal_op()
+	R_ARCH_OP_MASK_DISASM = 16, // fills mnemonic, including the invalid-instruction fallback
 	R_ARCH_OP_MASK_STATEFUL = 32, // let arch plugins keep cross-insn states. useful for linear code. not included in MASK_ALL
 	R_ARCH_OP_MASK_ALL   = 1 | 2 | 4 | 8 | 16
 } RAnalOpMask;

@@ -772,11 +772,6 @@ R_API int r_asm_set_pc(RAsm *a, ut64 pc) {
 	return true;
 }
 
-static bool is_invalid(RAnalOp *op) {
-	const char *text = op->mnemonic;
-	return (text && !strcmp (text, "invalid"));
-}
-
 static int r_asm_disassemble_do(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 	r_anal_op_init (op);
 	if (len < 1 || !a->dcur) {
@@ -804,32 +799,6 @@ static int r_asm_disassemble_do(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 	}
 	if (ret < 0) {
 		ret = 0;
-	}
-#if 0
-	if (op->bitsize > 0) {
-		op->size = op->bitsize / 8;
-		a->config->bitshift += op->bitsize % 8;
-		int count = a->config->bitshift / 8;
-		if (count > 0) {
-			op->size = op->size + count;
-			a->config->bitshift %= 8;
-		}
-	}
-#endif
-	if (op->size < 1 || !op->mnemonic || is_invalid (op)) {
-		if (a->config->invhex) {
-			r_strf_buffer (32);
-			if (a->config->bits == 16) {
-				ut16 b = r_read_le16 (buf);
-				r_anal_op_set_mnemonic (op, op->addr, r_strf (".word 0x%04x", b));
-			} else {
-				ut32 b = r_read_le32 (buf);
-				r_anal_op_set_mnemonic (op, op->addr, r_strf (".dword 0x%08x", b));
-			}
-			// TODO: something for 64bits too?
-		} else {
-			r_anal_op_set_mnemonic (op, op->addr, "invalid");
-		}
 	}
 	if (a->pseudo) {
 		char *newtext = r_asm_parse_pseudo (a, op->mnemonic);

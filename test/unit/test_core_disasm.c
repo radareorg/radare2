@@ -191,7 +191,83 @@ bool test_disasm_flag_byte_colors(void) {
 	mu_end;
 }
 
+bool test_decode_invalid_mnemonic(void) {
+	const struct {
+		int bits;
+		int len;
+		bool bigendian;
+		int mask;
+		const char *text;
+	} cases[] = {
+		{ 8, 1, false, R_ARCH_OP_MASK_DISASM, ".byte 0x01" },
+		{ 16, 2, false, R_ARCH_OP_MASK_DISASM, ".word 0x0201" },
+		{ 32, 4, false, R_ARCH_OP_MASK_DISASM, ".dword 0x04030201" },
+		{ 64, 8, false, R_ARCH_OP_MASK_DISASM, ".qword 0x0807060504030201" },
+		{ 16, 2, true, R_ARCH_OP_MASK_DISASM, ".word 0x0102" },
+		{ 32, 4, true, R_ARCH_OP_MASK_DISASM, ".dword 0x01020304" },
+		{ 64, 8, true, R_ARCH_OP_MASK_DISASM, ".qword 0x0102030405060708" },
+		{ 16, 1, false, R_ARCH_OP_MASK_DISASM, "invalid" },
+		{ 32, 3, false, R_ARCH_OP_MASK_DISASM, "invalid" },
+		{ 64, 7, false, R_ARCH_OP_MASK_DISASM, "invalid" },
+		{ 64, 8, false, R_ARCH_OP_MASK_ESIL, "invalid" },
+	};
+	const ut8 bytes[] = { 1, 2, 3, 4, 5, 6, 7, 8 };
+	VisualDecodeFixture fixture = { .size = 1 };
+	RArchConfig config = { .invhex = true };
+	RArchSession session = { .config = &config, .plugin = &visual_test_plugin, .data = &fixture };
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (cases); i++) {
+		config.bits = cases[i].bits;
+		config.endian = cases[i].bigendian? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE;
+		RAnalOp op = {0};
+		r_anal_op_set_bytes (&op, 0, bytes, cases[i].len);
+		mu_assert_false (r_arch_session_decode (&session, &op, cases[i].mask), "invalid instruction remains a decode failure");
+		mu_assert_streq (op.mnemonic, cases[i].text, "shared disassembly fallback");
+		r_anal_op_fini (&op);
+	}
+	mu_end;
+}
+
+static int ao_decode_count;
+static RArchDecodeMask ao_decode_mask;
+
+static bool ao_test_decode(RArchSession *session, RAnalOp *op, RArchDecodeMask mask) {
+	ao_decode_count++;
+	ao_decode_mask = mask;
+	op->size = 1;
+	op->type = R_ANAL_OP_TYPE_NOP;
+	r_anal_op_set_mnemonic (op, op->addr, "nop");
+	return true;
+}
+
+static RArchPlugin ao_test_plugin = {
+	.meta = { .name = "ao-test" },
+	.arch = "x86",
+	.bits = R_SYS_BITS_PACK2 (32, 64),
+	.decode = ao_test_decode,
+};
+
+bool test_ao_single_decode(void) {
+	const char *commands[] = { "ao 3", "aoj 3", "aoe 3", "aoeq 3", "aos 3" };
+	RCore *core = r_core_new ();
+	r_core_cmd0 (core, "o malloc://16; e arch.codealign=1; e anal.mask=false");
+	mu_assert_true (r_arch_plugin_add (core->anal->arch, &ao_test_plugin), "register counting decoder");
+	mu_assert_true (r_arch_use (core->anal->arch, core->anal->config, "ao-test"), "select counting decoder");
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (commands); i++) {
+		ao_decode_count = 0;
+		char *output = r_core_cmd_str (core, commands[i]);
+		free (output);
+		mu_assert_eq (ao_decode_count, 3, commands[i]);
+		mu_assert_true (ao_decode_mask & R_ARCH_OP_MASK_HINT, "analysis applies hints");
+	}
+	r_core_free (core);
+	mu_end;
+}
+
 int all_tests(void) {
+	mu_run_test (test_decode_invalid_mnemonic);
+	mu_run_test (test_ao_single_decode);
 	mu_run_test (test_visual_disasm_invalid_sizes);
 	mu_run_test (test_visual_disasm_unmapped);
 	mu_run_test (test_disasm_without_decoder);

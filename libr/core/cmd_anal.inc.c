@@ -2779,6 +2779,19 @@ static void esilmemrefs(RCore *core, const char *expr) {
 	r_esil_free (e);
 }
 
+static char *anal_op_mask(int size, int prefix) {
+	ut8 *mask = size > 0? r_mem_set (0xff, size): NULL;
+	if (!mask) {
+		return NULL;
+	}
+	if (prefix > 0 && prefix < size) {
+		memset (mask + prefix, 0, size - prefix);
+	}
+	char *text = r_hex_bin2strdup (mask, size);
+	free (mask);
+	return text;
+}
+
 static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int fmt) {
 	r_core_seek_arch_bits (core, core->addr);
 	if (!core->anal->arch->session) {
@@ -2811,24 +2824,19 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		r_arch_session_reset (core->anal->arch->session);
 	}
 	for (i = idx = ret = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
-		RAnalOp asmop = {0};
 		addr = core->addr + idx;
 		r_asm_set_pc (core->rasm, addr);
 		hint = r_anal_hint_get (core->anal, addr);
 		ret = r_anal_op (core->anal, &op, addr, buf + idx, len - idx, opmask);
-		if (fmt == 'j' && ret > 0 && R_STR_ISNOTEMPTY (op.mnemonic)) {
-			// A second decode would advance Thumb IT state again.
-			asmop.size = op.size;
-			asmop.mnemonic = core->rasm->pseudo? r_asm_parse_pseudo (core->rasm, op.mnemonic): NULL;
-			if (!asmop.mnemonic) {
-				asmop.mnemonic = strdup (op.mnemonic);
-			}
-		} else {
-			(void)r_asm_disassemble (core->rasm, &asmop, buf + idx, len - idx);
+		const int disasm_size = op.size;
+		const int mask_prefix = (op.ptr != UT64_MAX || op.jump != UT64_MAX)? op.nopcode: 0;
+		char *opcode = core->rasm->pseudo? r_asm_parse_pseudo (core->rasm, op.mnemonic): NULL;
+		if (!opcode) {
+			opcode = strdup (r_str_get (op.mnemonic));
 		}
 		esilstr = R_STRBUF_SAFEGET (&op.esil);
 		opexstr = R_STRBUF_SAFEGET (&op.opex);
-		char *mnem = strdup (r_str_get (asmop.mnemonic));
+		char *mnem = strdup (r_str_get (opcode));
 		char *sp = strchr (mnem, ' ');
 		if (sp) {
 			*sp = 0;
@@ -2842,22 +2850,12 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				mnem = arg;
 			}
 		}
-		if (ret < 1 && fmt != 'd') {
-			ret = op.size;
-#if 0
-			RStrBuf *sb = r_strbuf_new ("");
-			for (i = idx, j = 0; i < core->blocksize && j < 3; i++, j++) {
-				r_strbuf_appendf (sb, "%02x ", buf[i]);
-			}
-			R_LOG_ERROR ("Oops at 0x%08" PFMT64x " (%s...)", core->addr + idx, r_strbuf_get (sb));
-			r_strbuf_free (sb);
-			free (mnem);
-			break;
-#endif
+		if (ret < 1) {
+			ret = R_MAX (1, op.size);
 		}
 		size = op.size;
 		if (fmt == 'd') {
-			char *opname = strdup (asmop.mnemonic);
+			char *opname = strdup (opcode);
 			if (opname) {
 				r_str_split (opname, ' ');
 				char *d = r_asm_describe (core->rasm, opname);
@@ -2888,7 +2886,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		} else if (fmt == 'j') {
 			// pc+33
 			char *strsub = r_asm_parse_subvar (core->rasm, NULL,
-				core->addr + idx, asmop.size, asmop.mnemonic);
+				core->addr + idx, disasm_size, opcode);
 			ut64 killme = UT64_MAX;
 			ut64 osubreladdr = core->rasm->parse->subrel_addr;
 
@@ -2904,14 +2902,14 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				}
 			}
 			pj_o (pj);
-			pj_ks (pj, "opcode", asmop.mnemonic);
+			pj_ks (pj, "opcode", opcode);
 			if (!strsub) {
-				strsub = strdup (asmop.mnemonic);
+				strsub = strdup (opcode);
 			}
 			{
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 				if (fcn) {
-					char *res2 = r_asm_parse_subvar (core->rasm, fcn, addr, asmop.size, strsub);
+					char *res2 = r_asm_parse_subvar (core->rasm, fcn, addr, disasm_size, strsub);
 					if (res2) {
 						free (strsub);
 						strsub = res2;
@@ -2970,14 +2968,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				free (maskstr);
 			} else {
 				const int instlen = R_MIN (size, len - idx);
-				ut8 *mask = instlen > 0? r_mem_set (0xff, instlen): NULL;
-				if (mask) {
-					if ((op.ptr != UT64_MAX || op.jump != UT64_MAX) && op.nopcode > 0 && op.nopcode < instlen) {
-						memset (mask + op.nopcode, 0, instlen - op.nopcode);
-					}
-					char *maskstr = r_hex_bin2strdup (mask, instlen);
+				char *maskstr = anal_op_mask (instlen, mask_prefix);
+				if (maskstr) {
 					pj_ks (pj, "mask", maskstr);
-					free (mask);
 					free (maskstr);
 				}
 			}
@@ -3095,7 +3088,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				// ignored/skipped eprintf ("No esil for '%s'\n", op.mnemonic);
 			}
 		} else {
-			char *text = asmop.mnemonic;
+			char *text = opcode;
 			if (!text) {
 				R_LOG_ERROR ("invalid");
 				break;
@@ -3103,7 +3096,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			ut64 osubreladdr = core->rasm->parse->subrel_addr;
 			char *disasm = r_asm_parse_subvar (core->rasm, NULL,
 				core->addr + idx,
-				asmop.size, text);
+				disasm_size, text);
 			if (!disasm) {
 				disasm = strdup (text);
 			}
@@ -3129,14 +3122,14 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		if (fmt) r_cons_printf (core->cons, fmt, arg);\
 	}
 			printline ("address", "0x%" PFMT64x "\n", core->addr + idx);
-			printline ("opcode", "%s\n", asmop.mnemonic);
+			printline ("opcode", "%s\n", opcode);
 			if (!disasm) {
-				disasm = strdup (asmop.mnemonic);
+				disasm = strdup (opcode);
 			}
 			{
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 				if (fcn) {
-					char *disasm2 = r_asm_parse_subvar (core->rasm, fcn, addr, asmop.size, disasm);
+					char *disasm2 = r_asm_parse_subvar (core->rasm, fcn, addr, disasm_size, disasm);
 					if (disasm2) {
 						free (disasm);
 						disasm = disasm2;
@@ -3181,12 +3174,10 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 						printline ("mask", "%s\n", maskstr);
 						free (maskstr);
 					} else {
-						ut8 *mask = r_anal_mask (core->anal, instlen, buf + idx, core->addr + idx);
-						if (mask) {
-							char *maskstr = r_hex_bin2strdup (mask, instlen);
+						char *maskstr = anal_op_mask (instlen, mask_prefix);
+						if (maskstr) {
 							printline ("mask", "%s\n", maskstr);
 							free (maskstr);
-							free (mask);
 						}
 					}
 				} else {
@@ -3300,7 +3291,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		free (mnem);
 		r_anal_hint_free (hint);
 		r_anal_op_fini (&op);
-		r_anal_op_fini (&asmop);
+		free (opcode);
 	}
 	r_anal_op_fini (&op);
 	if (fmt == 's') {

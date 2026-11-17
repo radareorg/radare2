@@ -192,9 +192,14 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	} else {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	}
-	if (!op->mnemonic && (mask & R_ARCH_OP_MASK_DISASM)) {
-		if (anal->verbose) {
-			R_LOG_WARN ("unhandled R_ARCH_OP_MASK_DISASM in r_anal_op");
+	if (ret == -1) {
+		if (!(mask & R_ARCH_OP_MASK_DISASM) || !op->mnemonic) {
+			r_anal_op_set_mnemonic (op, addr, "invalid");
+		}
+		op->size = r_arch_info (anal->arch, R_ARCH_INFO_MINOP_SIZE);
+		ut64 nextpc = op->addr + op->size;
+		if (codealign > 1) {
+			op->size += (nextpc % codealign);
 		}
 	}
 	if (mask & R_ARCH_OP_MASK_HINT) {
@@ -202,16 +207,6 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		if (hint) {
 			r_anal_op_hint (op, hint);
 			r_anal_hint_free (hint);
-		}
-	}
-	if (ret == -1) {
-		free (op->mnemonic);
-		op->mnemonic = strdup ("invalid");
-		int minop = r_arch_info (anal->arch, R_ARCH_INFO_MINOP_SIZE);
-		op->size = minop;
-		ut64 nextpc = op->addr + op->size;
-		if (codealign > 1) {
-			op->size += (nextpc % codealign);
 		}
 	}
 	return ret;

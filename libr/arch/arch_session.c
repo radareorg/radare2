@@ -38,10 +38,28 @@ R_API RArchSession *r_arch_session(RArch *arch, RArchConfig *cfg, RArchPlugin *a
 R_API bool r_arch_session_decode(RArchSession *ai, RAnalOp *op, RArchDecodeMask mask) {
 	R_RETURN_VAL_IF_FAIL (ai && op, false);
 	RArchPluginDecodeCallback decode = R_UNWRAP3 (ai, plugin, decode);
-	if (decode != NULL) {
-		return decode (ai, op, mask);
+	if (!(mask & R_ARCH_OP_MASK_DISASM)) {
+		return decode && decode (ai, op, mask);
 	}
-	return false;
+	const RArchConfig *config = ai->config;
+	ut8 bytes[8];
+	const int len = op->bytes? R_MIN (op->size, (int)sizeof (bytes)): 0;
+	if (config->invhex && len > 0) {
+		memcpy (bytes, op->bytes, len);
+	}
+	bool ret = decode && decode (ai, op, mask);
+	if (!ret || op->size < 1 || !op->mnemonic || !strcmp (op->mnemonic, "invalid")) {
+		const int bits = config->bits;
+		const char *directive = bits == 8? "byte": bits == 16? "word": bits == 64? "qword": "dword";
+		const int width = bits == 8 || bits == 16 || bits == 64? bits: 32;
+		char *text = config->invhex && len >= width / 8
+			? r_str_newf (".%s 0x%0*"PFMT64x, directive, width / 4,
+				r_read_ble (bytes, R_ARCH_CONFIG_IS_BIG_ENDIAN (config), width))
+			: strdup ("invalid");
+		free (op->mnemonic);
+		op->mnemonic = text;
+	}
+	return ret;
 }
 
 // NULL session or missing callback is a no-op, so callers can reset unconditionally
