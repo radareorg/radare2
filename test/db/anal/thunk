@@ -8,7 +8,7 @@ afl,attrs/str/T~?
 afl,attrs/nostr/T~?
 EOF
 EXPECT=<<EOF
-TE
+TKE
   T thunk       false
 114
 62
@@ -22,7 +22,7 @@ aa
 afiaq @ sym.imp.puts
 EOF
 EXPECT=<<EOF
-TE
+TKE
 EOF
 RUN
 
@@ -34,7 +34,7 @@ afiaq @ sym.imp.__error
 afiaq @ main
 EOF
 EXPECT=<<EOF
-TE
+TKE
 NE
 EOF
 RUN
@@ -46,7 +46,7 @@ aa
 afiaq @ sym.imp.puts
 EOF
 EXPECT=<<EOF
-PTE
+PTKE
 EOF
 RUN
 
@@ -57,7 +57,7 @@ aa
 afiaq @ sym.imp.abort
 EOF
 EXPECT=<<EOF
-PTE
+PTKE
 EOF
 RUN
 
@@ -68,7 +68,7 @@ aa
 afiaq @ sym.imp.__libc_init
 EOF
 EXPECT=<<EOF
-E
+KE
 EOF
 RUN
 
@@ -85,7 +85,7 @@ af @ 0x401020
 afia @ 0x401020~thunk
 EOF
 EXPECT=<<EOF
-PTE
+PTKE
   T thunk       false
 EOF
 RUN

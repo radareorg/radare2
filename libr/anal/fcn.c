@@ -1608,6 +1608,7 @@ noskip:
 			// a load or store through sp names sp as a base; only a register move makes bp the frame pointer
 			if (op_is_set_bp (anal, op_dst, op_src) && !dst->memref && !src0->memref) {
 				fcn->bp_off = fcn->stack;
+				fcn->bp_from_sp = true;
 			}
 			// Is this a mov of immediate value into a register?
 			if (dst && dst->reg && op->val > 0 && op->val != UT64_MAX) {
@@ -1672,6 +1673,7 @@ noskip:
 			}
 			if (op_is_set_bp (anal, op_dst, op_src)) {
 				fcn->bp_off = fcn->stack - src0->delta;
+				fcn->bp_from_sp = true;
 			}
 			if (dst && dst->reg && op->ptr > 0 && op->ptr != UT64_MAX) {
 				last_reg_mov_lea_name = dst->reg;
@@ -2438,6 +2440,7 @@ analopfinish:
 		if (op_dst_writeonly && src1 && (optype == R_ANAL_OP_TYPE_ADD || optype == R_ANAL_OP_TYPE_SUB)
 				&& op_is_set_bp (anal, op_dst, op_src) && !dst->memref && !src0->memref) {
 			fcn->bp_off = (optype == R_ANAL_OP_TYPE_ADD)? fcn->stack - src1->imm: fcn->stack + src1->imm;
+			fcn->bp_from_sp = true;
 		}
 #if 0
 		if (anal->opt.vars && !varset) {
@@ -2752,6 +2755,9 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, int reftyp
 	}
 	// Notify plugins after all basic blocks are analyzed
 	if (ret >= 0 || ret == R_ANAL_RET_END) {
+		const bool naked = !RVecAnalBlockPtr_empty (&fcn->bbs)
+			&& (ut64)fcn->maxstack == fcn->reg_save_area && !fcn->bp_from_sp && !fcn->bp_off;
+		R_MASK_SET (fcn->attrs, R_ANAL_FCN_ATTR_NAKED, naked);
 		r_anal_plugin_action (anal, R_ANAL_PLUGIN_ACTION_ANALYZE_FCN, fcn);
 		r_anal_function_sort_blocks (fcn);
 	}

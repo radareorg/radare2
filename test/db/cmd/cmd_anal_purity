@@ -28,7 +28,7 @@ afiaq @ 0x20
 EOF
 EXPECT=<<EOF
 PE
-PE
+PKE
 EOF
 RUN
 
@@ -48,6 +48,6 @@ afiaq @ 0x20
 EOF
 EXPECT=<<EOF
 E
-E
+KE
 EOF
 RUN

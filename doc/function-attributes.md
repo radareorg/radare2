@@ -34,6 +34,15 @@ Entry-point analysis (`aa` and `aaa`) sets constructor and destructor attributes
 from the RBin entries shown by `iee`. Init and preinit entries set constructor;
 fini entries set destructor. These attributes remain editable through `afia`.
 
+Function analysis sets naked from its existing stack and frame tracking on all
+architectures: the maximum stack depth must equal the calling convention's
+preset save area, with no frame-pointer setup or recorded BP offset. The check
+does not decode or scan any instructions. A balanced prologue and epilogue still
+leave a nonzero maximum depth, while incoming stack arguments and locals in a
+red zone can exist without allocating a frame. This is a heuristic, not proof
+of a source-level `naked` annotation. The attribute remains editable through
+`afia`.
+
 Recursive describes a direct self-call, not a loop back to the entry or an
 indirect cycle through other functions. It is refreshed with reference counts
 and when printing function references. Method is set when assigning a calling

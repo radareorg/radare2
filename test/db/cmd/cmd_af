@@ -975,6 +975,147 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=af detects naked functions from the tracked stack frame
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx b801000000c3 @ 0
+wx 5058c3 @ 0x10
+wx 4883ec204883c420c3 @ 0x20
+wx 554889e5c9c3 @ 0x30
+wx 48894424f8c3 @ 0x40
+wx e80b000000c3 @ 0x50
+wx c3 @ 0x60
+af @ 0
+af @ 0x10
+af @ 0x20
+af @ 0x30
+af @ 0x40
+af @ 0x50
+afia @ 0~naked
+afia @ 0x10~naked
+afia @ 0x20~naked
+afia @ 0x30~naked
+afia @ 0x40~naked
+afia @ 0x50~naked
+afiaj @ 0
+afia- naked @ 0
+afia @ 0~naked
+afia+ naked @ 0x20
+afia @ 0x20~naked
+EOF
+EXPECT=<<EOF
+  K naked       true
+  K naked       false
+  K naked       false
+  K naked       false
+  K naked       true
+  K naked       true
+{"attrs":"PKE"}
+  K naked       false
+  K naked       true
+EOF
+RUN
+
+NAME=af detects MIPS naked functions from the tracked stack frame
+FILE=malloc://64
+ARGS=-a mips -b 32
+CMDS=<<EOF
+wx 0800e00300000000 @ 0
+wx f0ffbd271000bd270800e00300000000 @ 0x20
+af @ 0
+af @ 0x20
+afia @ 0~naked
+afia @ 0x20~naked
+afi @ 0x20~stackframe
+EOF
+EXPECT=<<EOF
+  K naked       true
+  K naked       false
+stackframe: 16
+EOF
+RUN
+
+NAME=af detects ARM naked functions without variable analysis
+FILE=malloc://96
+ARGS=-a arm -b 32 -e anal.vars=false
+CMDS=<<EOF
+wx 1eff2fe1 @ 0
+wx 10d04de210d08de21eff2fe1 @ 0x20
+wx 0db0a0e11eff2fe1 @ 0x40
+af @ 0
+af @ 0x20
+af @ 0x40
+afia @ 0~naked
+afia @ 0x20~naked
+afia @ 0x40~naked
+afi @ 0x20~stackframe
+EOF
+EXPECT=<<EOF
+  K naked       true
+  K naked       false
+  K naked       false
+stackframe: 16
+EOF
+RUN
+
+NAME=af detects ARM64 naked functions without variable analysis
+FILE=malloc://96
+ARGS=-a arm -b 64 -e anal.vars=false
+CMDS=<<EOF
+wx c0035fd6 @ 0
+wx ff4300d1ff430091c0035fd6 @ 0x20
+wx fd030091c0035fd6 @ 0x40
+af @ 0
+af @ 0x20
+af @ 0x40
+afia @ 0~naked
+afia @ 0x20~naked
+afia @ 0x40~naked
+afi @ 0x20~stackframe
+EOF
+EXPECT=<<EOF
+  K naked       true
+  K naked       false
+  K naked       false
+stackframe: 16
+EOF
+RUN
+
+NAME=af detects RISC-V naked functions from the tracked stack frame
+FILE=malloc://64
+ARGS=-a riscv -b 64
+CMDS=<<EOF
+wx 67800000 @ 0
+wx 130101ff1301010167800000 @ 0x20
+af @ 0
+af @ 0x20
+afia @ 0~naked
+afia @ 0x20~naked
+afi @ 0x20~stackframe
+EOF
+EXPECT=<<EOF
+  K naked       true
+  K naked       false
+stackframe: 16
+EOF
+RUN
+
+NAME=naked detection discounts the preset calling convention save area
+FILE=malloc://16
+ARGS=-a x86 -b 64 -e anal.cc=ms
+CMDS=<<EOF
+wx c3
+af
+afia~naked
+afi~stackframe
+EOF
+EXPECT=<<EOF
+  K naked       true
+stackframe: 40
+EOF
+RUN
+
 NAME=aflj reports inline in attrs per function after setting and clearing
 FILE=malloc://256
 ARGS=-a arm -b 64
@@ -1050,17 +1191,17 @@ axC 0x10 0x11
 aflj~{[0].attrs}
 EOF
 EXPECT=<<EOF
-PER
-PER
-PER
-PERM
-PERM
+PKER
+PKER
+PKER
+PKERM
+PKERM
 T: rsi
-PERM
-PER
-E
-E
-PER
+PKERM
+PKER
+KE
+KE
+PKER
 EOF
 RUN
 
