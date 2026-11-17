@@ -144,10 +144,12 @@ wx c3 @ 0x12f10
 wx e9061f0000 @ 0x11005
 idp bins/pdb/Project1.pdb
 afl~0x00011005,0x00012f10
+afia @ 0x11005~thunk
 EOF
 EXPECT=<<EOF
 0x00012f10    1      1 pdb.__setdefaultprecision
 0x00011005    1      5 j.pdb.__setdefaultprecision
+  T thunk       true
 EOF
 EXPECT_ERR=<<EOF
 WARN: Cannot find base address, flags will probably be misplaced
@@ -494,10 +496,10 @@ RUN
 NAME=idp formats the members of simple pointer types as pointers
 FILE=-
 CMDS=<<EOF
-idpi* bins/pdb/Project1.pdb~pf._iobuf
+idpi* bins/pdb/Project1.pdb~pf._iobuf[0-9]
 EOF
 EXPECT=<<EOF
-pf._iobuf p4n4p4n4n4n4n4p4 _ptr _cnt _base _flag _file _charbuf _bufsiz _tmpfname 
+pf._iobuf p4n4p4n4n4n4n4p4 _ptr _cnt _base _flag _file _charbuf _bufsiz _tmpfname
 EOF
 EXPECT_ERR=<<EOF
 WARN: Cannot find base address, flags will probably be misplaced
@@ -737,10 +739,10 @@ FILE=--
 TIMEOUT=10
 CMDS=<<END
 e bin.baddr=0x400000
-idpi* bins/pdb/omap-last-entry.pdb~af$
+idpi* bins/pdb/omap-last-entry.pdb~^af @
 END
 EXPECT=<<END
-'@0x406000'af
+af @ 0x406000 @e:anal.nopskip=false
 END
 RUN
 
@@ -749,7 +751,7 @@ FILE=--
 CMDS=<<END
 e bin.baddr=0x400000
 idpi* bins/pdb/omap-symbol-addresses.pdb~f pdb.
-idpi* bins/pdb/omap-symbol-addresses.pdb~af$
+idpi* bins/pdb/omap-symbol-addresses.pdb~^af @
 e bin.baddr=0xfffffffffffff000
 idpi bins/pdb/omap-symbol-addresses.pdb~?
 END
@@ -759,10 +761,10 @@ EXPECT=<<END
 '@0x80400000'f pdb.high
 '@0x403000'f pdb.module_valid 6
 '@0x80401000'f pdb.module_high 6
-'@0x402000'af
-'@0x80400000'af
-'@0x403000'af
-'@0x80401000'af
+af @ 0x402000 @e:anal.nopskip=false
+af @ 0x80400000 @e:anal.nopskip=false
+af @ 0x403000 @e:anal.nopskip=false
+af @ 0x80401000 @e:anal.nopskip=false
 0
 END
 RUN
@@ -791,4 +793,39 @@ EXPECT=<<END
 0x00001000  2  .text  public
 0x00001010  2  .text  first
 END
+RUN
+
+NAME=function flags preserve normal nopskip behavior
+FILE=malloc://256
+ARGS=-a x86 -b 32 -e anal.nopskip=true
+CMDS=<<EOF
+wx ccc3 @ 0x50
+wx ccc3 @ 0x60
+fs functions
+f test.function @ 0x50
+fs symbols
+f test.symbol @ 0x60
+af @ 0x50
+af @ 0x60
+aflq
+EOF
+EXPECT=<<EOF
+0x00000051
+0x00000061
+EOF
+RUN
+
+NAME=idpi script preserves PDB entrypoints and restores nopskip
+FILE=bins/pdb/SimplePDB.exe
+ARGS=-e io.cache=true -e anal.nopskip=true
+CMDS=<<EOF
+wx 909033c0c3 @ 0x401010
+.idpi* bins/pdb/SimplePDB.pdb
+afl~pdb._main$
+e anal.nopskip
+EOF
+EXPECT=<<EOF
+0x00401010    1      5 pdb._main
+true
+EOF
 RUN
