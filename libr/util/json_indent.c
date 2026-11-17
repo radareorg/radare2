@@ -256,6 +256,14 @@ R_API char *r_print_json_indent(const char *s, bool color, const char *tab, cons
 	bool isValue = false;
 	char *o, *tmp;
 	const char **colors = palette? palette: origColors;
+	// each step may emit one color escape, theme palettes can be longer than the 10 spare bytes
+	size_t esc_max = 0;
+	if (color) {
+		int i;
+		for (i = JC_FALSE; i <= JC_RESET; i++) {
+			esc_max = R_MAX (esc_max, strlen (colors[i]));
+		}
+	}
 	size_t osz = (1 + strlen (s)) * 20;
 	if (osz < 1) {
 		return NULL;
@@ -267,9 +275,9 @@ R_API char *r_print_json_indent(const char *s, bool color, const char *tab, cons
 	}
 	char *OE = O + osz;
 	for (o = O; *s; s++) {
-		if (o + (indent * indentSize) + 10 > OE) {
+		if (o + (indent * indentSize) + esc_max + 10 > OE) {
 			int delta = o - O;
-			osz += 0x1000 + (indent * indentSize);
+			osz += 0x1000 + (indent * indentSize) + esc_max;
 			if (osz < 1) {
 				free (O);
 				return NULL;

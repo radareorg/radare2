@@ -1069,3 +1069,14 @@ string:
 end[33m"[0m
 EOF
 RUN
+
+NAME=json indent with a truecolor palette
+FILE=-
+CMDS=<<EOF
+e scr.color=3
+?e '{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":1}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}},"AA":1}'~{}~AA
+EOF
+EXPECT=<<EOF
+  "AA": 1
+EOF
+RUN
