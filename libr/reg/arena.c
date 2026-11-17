@@ -33,7 +33,7 @@ R_API ut8 *r_reg_get_bytes(RReg *reg, int type, int *size) {
 			osize = sz;
 		}
 		if (size) {
-			*size = sz;
+			*size = osize;
 		}
 		return buf;
 	}
@@ -60,15 +60,19 @@ R_API bool r_reg_read_regs(RReg *reg, ut8 *buf, const int len) {
 	int i, off = 0;
 	RRegArena *arena;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		if (reg->regset[i].arena) {
-			arena = reg->regset[i].arena;
-		} else {
-			arena = reg->regset[i].arena = R_NEW0 (RRegArena);
+		arena = reg->regset[i].arena;
+		if (!arena) {
+			arena = R_NEW0 (RRegArena);
 			arena->size = len;
 			arena->bytes = calloc (1, len);
 			if (!arena->bytes) {
 				r_reg_arena_free (arena);
 				return false;
+			}
+			reg->regset[i].arena = arena;
+			if (reg->regset[i].pool) {
+				r_list_push (reg->regset[i].pool, arena);
+				reg->regset[i].cur = reg->regset[i].pool->tail;
 			}
 		}
 		if (!arena->bytes) {
@@ -115,26 +119,13 @@ R_API bool r_reg_set_bytes(RReg *reg, int type, const ut8 *buf, const int len) {
 		arena->size = maxsz;
 		arena->shared = false;
 	}
-	if (arena->size != maxsz) {
-		// not shared: reallocated above or sizes matched (no-op branch)
-		ut8 *tmp = realloc (arena->bytes, maxsz);
-		if (!tmp) {
-			R_LOG_WARN ("Error resizing arena to %d", len);
-			return false;
-		}
-		arena->size = maxsz;
-		arena->bytes = tmp;
+	r_reg_arena_materialize (arena);
+	if (!arena->bytes) {
+		return false;
 	}
-	if (arena->bytes) {
-		r_reg_arena_materialize (arena);
-		if (!arena->bytes) {
-			return false;
-		}
-		memset (arena->bytes, 0, arena->size);
-		memcpy (arena->bytes, buf, minsz);
-		return true;
-	}
-	return false;
+	memset (arena->bytes, 0, arena->size);
+	memcpy (arena->bytes, buf, minsz);
+	return true;
 }
 
 R_API void r_reg_fit_arena(RReg *reg) {
@@ -187,7 +178,7 @@ R_API void r_reg_fit_arena(RReg *reg) {
 				arena->bytes = buf;
 				memset (arena->bytes, 0, arena->size);
 			} else {
-				arena->bytes = NULL;
+				R_FREE (arena->bytes);
 				arena->size = 0;
 			}
 		}
@@ -256,7 +247,7 @@ R_API void r_reg_arena_swap(RReg *reg, int copy) {
 			continue;
 		}
 		if (r_list_length (reg->regset[i].pool) <= 1) {
-			break;
+			continue;
 		}
 		RListIter *ia = reg->regset[i].cur;
 		RListIter *ib = reg->regset[i].pool->head;
@@ -357,6 +348,9 @@ R_API void r_reg_arena_zero(RReg *reg) {
 
 R_API ut8 *r_reg_arena_peek(RReg *reg, int *size) {
 	R_RETURN_VAL_IF_FAIL (reg, NULL);
+	if (size) {
+		*size = 0;
+	}
 	RRegSet *regset = r_reg_regset_get (reg, R_REG_TYPE_GPR);
 	if (!regset || !regset->arena || (regset->arena->size < 1)) {
 		return NULL;
