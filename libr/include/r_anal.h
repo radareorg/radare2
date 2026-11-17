@@ -1734,8 +1734,11 @@ typedef struct r_anal_method_t {
 
 typedef struct r_anal_base_class_t {
 	char *id; // id to identify the class attr
-	ut64 offset; // offset of the base class inside the derived class
+	ut64 offset; // offset of the base class inside the derived class (inside the virtual base if is_virtual)
 	char *class_name;
+	bool is_virtual; // the base offset depends on the most derived class, read it from the vbtable
+	st64 vbptr_offset; // offset of the vbtable pointer inside the derived class (MSVC pdisp)
+	st64 vbtable_offset; // offset of the base displacement inside the vbtable (MSVC vdisp)
 } RAnalBaseClass;
 
 typedef struct r_anal_vtable_t {

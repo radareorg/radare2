@@ -416,7 +416,7 @@ static char *flagname_attr(const char *attr_type, const char *class_name, const 
 		free (class_name_sanitized);
 		return NULL;
 	}
-	char *r = r_str_newf ("%s.%s.%s", attr_type, class_name, attr_id);
+	char *r = r_str_newf ("%s.%s.%s", attr_type, class_name_sanitized, attr_id_sanitized);
 	free (class_name_sanitized);
 	free (attr_id_sanitized);
 	return r;
@@ -445,8 +445,9 @@ static void r_anal_class_rename_flag(RAnal *anal, const char *old_name, const ch
 	RFlagItem *fi = anal->flg_class_get (anal->flb.f, old_name);
 	if (fi) {
 		const ut64 addr = fi->addr;
+		const ut32 size = (ut32)fi->size;
 		anal->flb.unset (anal->flb.f, fi);
-		anal->flg_class_set (anal->flb.f, new_name, addr, 0);
+		anal->flg_class_set (anal->flb.f, new_name, addr, size);
 	}
 }
 
@@ -690,9 +691,24 @@ R_API RAnalClassErr r_anal_class_base_get(RAnal *anal, const char *class_name, c
 		free (base->class_name);
 		return R_ANAL_CLASS_ERR_OTHER;
 	}
-	sdb_anext (cur, NULL);
+	sdb_anext (cur, &next);
 
 	base->offset = r_num_math (NULL, cur);
+
+	// virtual bases: name,offset,vbptr_offset,vbtable_offset
+	base->is_virtual = false;
+	base->vbptr_offset = 0;
+	base->vbtable_offset = 0;
+	cur = next;
+	if (cur) {
+		sdb_anext (cur, &next);
+		base->is_virtual = true;
+		base->vbptr_offset = (st64)r_num_math (NULL, cur);
+		if (next) {
+			sdb_anext (next, NULL);
+			base->vbtable_offset = (st64)r_num_math (NULL, next);
+		}
+	}
 
 	free (content);
 
@@ -744,7 +760,10 @@ R_API RVecAnalBaseClass *r_anal_class_base_get_all(RAnal *anal, const char *clas
 }
 
 static RAnalClassErr r_anal_class_base_set_raw(RAnal *anal, const char *class_name, RAnalBaseClass *base, const char *base_class_name_sanitized) {
-	char *content = r_str_newf ("%s" SDB_SS "%"PFMT64u, base_class_name_sanitized, base->offset);
+	char *content = base->is_virtual
+		? r_str_newf ("%s" SDB_SS "%"PFMT64u SDB_SS "%"PFMT64d SDB_SS "%"PFMT64d, base_class_name_sanitized,
+			base->offset, base->vbptr_offset, base->vbtable_offset)
+		: r_str_newf ("%s" SDB_SS "%"PFMT64u, base_class_name_sanitized, base->offset);
 	RAnalClassErr err;
 	if (base->id) {
 		err = r_anal_class_set_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_BASE,
@@ -762,6 +781,7 @@ static RAnalClassErr r_anal_class_base_set_raw(RAnal *anal, const char *class_na
 	return err;
 }
 
+// a base with an id updates that base, one without it adds a new base
 R_API RAnalClassErr r_anal_class_base_set(RAnal *anal, const char *class_name, RAnalBaseClass *base) {
 	R_RETURN_VAL_IF_FAIL (anal && class_name && base, R_ANAL_CLASS_ERR_OTHER);
 	char *base_class_name_sanitized = r_str_sanitize_sdb_key (base->class_name);
@@ -777,7 +797,8 @@ R_API RAnalClassErr r_anal_class_base_set(RAnal *anal, const char *class_name, R
 	if (bases) {
 		RAnalBaseClass *existing_base;
 		R_VEC_FOREACH (bases, existing_base) {
-			if (!strcmp (existing_base->class_name, base_class_name_sanitized)) {
+			if (!strcmp (existing_base->class_name, base_class_name_sanitized)
+					&& (!base->id || strcmp (existing_base->id, base->id))) {
 				free (base_class_name_sanitized);
 				RVecAnalBaseClass_free (bases);
 				return R_ANAL_CLASS_ERR_OTHER;
@@ -931,38 +952,39 @@ R_API RVecAnalVTable *r_anal_class_vtable_get_all(RAnal *anal, const char *class
 	return vec;
 }
 
-static bool vtable_exists_at(RAnal *anal, const char *class_name, ut64 addr) {
+// whether another vtable than the one with the given id (if any) is at addr
+static bool vtable_exists_at(RAnal *anal, const char *class_name, ut64 addr, const char *id) {
+	bool found = false;
 	RVecAnalVTable *vtables = r_anal_class_vtable_get_all (anal, class_name);
 	if (vtables) {
 		RAnalVTable *existing_vtable;
 		R_VEC_FOREACH (vtables, existing_vtable) {
-			if (addr == existing_vtable->addr) {
-				RVecAnalVTable_free (vtables);
-				return true;
+			if (addr == existing_vtable->addr && (!id || strcmp (id, existing_vtable->id))) {
+				found = true;
+				break;
 			}
 		}
 	}
 	RVecAnalVTable_free (vtables);
-	return false;
+	return found;
 }
 
+// a vtable with an id updates that vtable (and its flag), one without it adds a new vtable
 R_API RAnalClassErr r_anal_class_vtable_set(RAnal *anal, const char *class_name, RAnalVTable *vtable) {
 	R_RETURN_VAL_IF_FAIL (anal && class_name && vtable, R_ANAL_CLASS_ERR_OTHER);
-	if (vtable_exists_at (anal, class_name, vtable->addr)) {
+	if (vtable_exists_at (anal, class_name, vtable->addr, vtable->id)) {
 		return R_ANAL_CLASS_ERR_OTHER;
 	}
 	char *content = r_str_newf ("0x%"PFMT64x SDB_SS "%"PFMT64u SDB_SS "%"PFMT64u, vtable->addr, vtable->offset, vtable->size);
+	RAnalClassErr err;
 	if (vtable->id) {
-		RAnalClassErr err = r_anal_class_set_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_VTABLE, vtable->id, content);
-		free (content);
-		return err;
+		err = r_anal_class_set_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_VTABLE, vtable->id, content);
+	} else {
+		vtable->id = malloc (16);
+		err = vtable->id
+			? r_anal_class_add_attr_unique (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_VTABLE, content, vtable->id, 16)
+			: R_ANAL_CLASS_ERR_OTHER;
 	}
-	vtable->id = malloc (16);
-	if (!vtable->id) {
-		free (content);
-		return R_ANAL_CLASS_ERR_OTHER;
-	}
-	RAnalClassErr err = r_anal_class_add_attr_unique (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_VTABLE, content, vtable->id, 16);
 	free (content);
 	if (err != R_ANAL_CLASS_ERR_SUCCESS) {
 		return err;
@@ -1050,6 +1072,9 @@ R_API char *r_anal_class_print(RAnal *anal, const char *class_name, bool detaile
 			} else {
 				r_strbuf_append (sb, ", ");
 			}
+			if (base->is_virtual) {
+				r_strbuf_append (sb, "virtual ");
+			}
 			r_strbuf_append (sb, base->class_name);
 		}
 		RVecAnalBaseClass_free (bases);
@@ -1095,7 +1120,11 @@ static void print_class(RAnal *anal, RStrBuf *sb, const char *class_name) {
 	if (bases) {
 		RAnalBaseClass *base;
 		R_VEC_FOREACH (bases, base) {
-			r_strbuf_appendf (sb, "'acb %s %s %"PFMT64u"\n", class_name, base->class_name, base->offset);
+			r_strbuf_appendf (sb, "'acb %s %s %"PFMT64u, class_name, base->class_name, base->offset);
+			if (base->is_virtual) {
+				r_strbuf_appendf (sb, " %"PFMT64d" %"PFMT64d, base->vbptr_offset, base->vbtable_offset);
+			}
+			r_strbuf_append (sb, "\n");
 		}
 		RVecAnalBaseClass_free (bases);
 	}
@@ -1104,7 +1133,7 @@ static void print_class(RAnal *anal, RStrBuf *sb, const char *class_name) {
 	if (vtables) {
 		RAnalVTable *vtable;
 		R_VEC_FOREACH (vtables, vtable) {
-			r_strbuf_appendf (sb, "'acv %s 0x%"PFMT64x" %"PFMT64u"\n", class_name, vtable->addr, vtable->offset);
+			r_strbuf_appendf (sb, "'acv %s 0x%"PFMT64x" %"PFMT64u" %"PFMT64u"\n", class_name, vtable->addr, vtable->offset, vtable->size);
 		}
 		RVecAnalVTable_free (vtables);
 	}
@@ -1137,6 +1166,11 @@ R_API void r_anal_class_json(RAnal *anal, PJ *j, const char *class_name) {
 			pj_ks (j, "id", base->id);
 			pj_ks (j, "name", base->class_name);
 			pj_kn (j, "offset", base->offset);
+			if (base->is_virtual) {
+				pj_kb (j, "virtual", true);
+				pj_kN (j, "vbptr_offset", base->vbptr_offset);
+				pj_kN (j, "vbtable_offset", base->vbtable_offset);
+			}
 			pj_end (j);
 		}
 		RVecAnalBaseClass_free (bases);
@@ -1254,7 +1288,16 @@ R_API char *r_anal_class_list_bases(RAnal *anal, const char *class_name) {
 	if (bases) {
 		RAnalBaseClass *base;
 		R_VEC_FOREACH (bases, base) {
-			r_strbuf_appendf (sb, "  %4s %s @ +0x%"PFMT64x"\n", base->id, base->class_name, base->offset);
+			if (base->is_virtual) {
+				r_strbuf_appendf (sb, "  %4s %s @ virtual (vbptr +0x%"PFMT64x", vbtable +0x%"PFMT64x")",
+					base->id, base->class_name, base->vbptr_offset, base->vbtable_offset);
+				if (base->offset) {
+					r_strbuf_appendf (sb, " +0x%"PFMT64x, base->offset);
+				}
+				r_strbuf_append (sb, "\n");
+			} else {
+				r_strbuf_appendf (sb, "  %4s %s @ +0x%"PFMT64x"\n", base->id, base->class_name, base->offset);
+			}
 		}
 		RVecAnalBaseClass_free (bases);
 	}
