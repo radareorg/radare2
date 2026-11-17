@@ -2165,12 +2165,15 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				var = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG,
 					type? type: argreg? fparg_type (fpbits): deftype, argreg? BITS2BYTES (fpbits): regsize, true, vname);
 			}
+			// a var numbered below *count was already counted, e.g. by a forwarding call
 			if (var && var->argnum < 0) {
 				var->argnum = *count;
 			}
+			if (!var || var->argnum >= *count) {
+				(*count)++;
+			}
 			free (name);
 			free (type);
-			(*count)++;
 		} else if (!is_arg) {
 			if (!partial && (in_src || in_dst)) {
 				reg_set[slot] = 2;
