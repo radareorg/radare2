@@ -371,8 +371,15 @@ CMDS=<<EOF
 e asm.arch=v850
 e asm.cpu=e1
 pad 80073b00~^truncated
+pad 80073b007856~^truncated:0
+pad 80070b00~^truncated
+e asm.invhex=true
+pad 80073b00~^truncated
 EOF
 EXPECT=<<EOF
+truncated from 8 to 4
+truncated from 8 to 6
+truncated from 6 to 4
 truncated from 8 to 4
 EOF
 RUN

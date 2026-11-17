@@ -48,7 +48,7 @@ R_API bool r_arch_session_decode(RArchSession *ai, RAnalOp *op, RArchDecodeMask 
 		memcpy (bytes, op->bytes, len);
 	}
 	bool ret = decode && decode (ai, op, mask);
-	if (!ret || op->size < 1 || !op->mnemonic || !strcmp (op->mnemonic, "invalid")) {
+	if (op->size < 1 || !op->mnemonic || !strcmp (op->mnemonic, "invalid")) {
 		const int bits = config->bits;
 		const char *directive = bits == 8? "byte": bits == 16? "word": bits == 64? "qword": "dword";
 		const int width = bits == 8 || bits == 16 || bits == 64? bits: 32;

@@ -211,6 +211,7 @@ CMDS=<<EOF
 CL 0x0000a24e
 ?e --
 is~main[1]
+iMj
 EOF
 EXPECT=<<EOF
 file: /Users/ftamagni/src/TestRTTI/TestRTTI/TestRTTI.cpp
@@ -219,6 +220,7 @@ colu: 0
 addr: 0x0000a24e
 --
 0x00006376
+{"vaddr":41846,"paddr":18446744073709551615}
 EOF
 RUN
 

@@ -8,13 +8,14 @@ typedef struct {
 	int maxsize;
 	int step;
 	int available;
+	const char *mnemonic;
 } VisualDecodeFixture;
 
 static bool visual_test_decode(RArchSession *session, RAnalOp *op, RArchDecodeMask mask) {
 	VisualDecodeFixture *fixture = session->data;
 	fixture->available = op->size;
 	op->size = fixture->size;
-	r_anal_op_set_mnemonic (op, op->addr, "invalid");
+	r_anal_op_set_mnemonic (op, op->addr, fixture->mnemonic? fixture->mnemonic: "invalid");
 	return fixture->decoded;
 }
 
@@ -223,6 +224,16 @@ bool test_decode_invalid_mnemonic(void) {
 		r_anal_op_set_bytes (&op, 0, bytes, cases[i].len);
 		mu_assert_false (r_arch_session_decode (&session, &op, cases[i].mask), "invalid instruction remains a decode failure");
 		mu_assert_streq (op.mnemonic, cases[i].text, "shared disassembly fallback");
+		r_anal_op_fini (&op);
+	}
+	fixture.mnemonic = "truncated from 8 to 4";
+	config.bits = 32;
+	for (i = 0; i < 2; i++) {
+		config.invhex = i;
+		RAnalOp op = {0};
+		r_anal_op_set_bytes (&op, 0, bytes, 4);
+		mu_assert_false (r_arch_session_decode (&session, &op, R_ARCH_OP_MASK_DISASM), "diagnostic still reports decode failure");
+		mu_assert_streq (op.mnemonic, fixture.mnemonic, "preserve decoder diagnostic");
 		r_anal_op_fini (&op);
 	}
 	mu_end;

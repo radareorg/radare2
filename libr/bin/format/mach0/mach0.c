@@ -209,13 +209,15 @@ static ut64 entry_to_vaddr(struct MACH0_(obj_t) * bin) {
 	}
 }
 
-static ut64 addr_to_offset(struct MACH0_(obj_t) * mo, ut64 addr) {
+static ut64 addr_to_offset(struct MACH0_(obj_t) * mo, ut64 addr, bool filebacked) {
 	if (mo->segs) {
 		size_t i;
 		for (i = 0; i < mo->nsegs; i++) {
 			struct MACH0_(segment_command) *seg = &mo->segs[i];
-			ut64 filebacked_size;
-			if (addr >= seg->vmaddr && segment_filebacked_size (mo, i, &filebacked_size) && addr - seg->vmaddr < filebacked_size) {
+			ut64 segment_size = seg->vmsize;
+			if (addr >= seg->vmaddr
+					&& (!filebacked || segment_filebacked_size (mo, i, &segment_size))
+					&& addr - seg->vmaddr < segment_size) {
 				return seg->fileoff + (addr - seg->vmaddr);
 			}
 		}
@@ -3472,7 +3474,7 @@ static bool parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 				RBinSymbol *sym = RVecRBinSymbol_emplace_back (mo->symbols_vec);
 				memset (sym, 0, sizeof (RBinSymbol));
 				sym->vaddr = vaddr;
-				sym->paddr = addr_to_offset (mo, sym->vaddr) + obj->boffset;
+				sym->paddr = addr_to_offset (mo, sym->vaddr, false) + obj->boffset;
 				sym->attr.size = 0; /* TODO: Is it anywhere? */
 				sym->bits = nl->n_desc & N_ARM_THUMB_DEF? 16: bits;
 				sym->is_imported = false;
@@ -3602,7 +3604,7 @@ static bool parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 			memset (sym, 0, sizeof (RBinSymbol));
 			sym->name = r_bin_name_new_from (sym_name);
 			sym->vaddr = vaddr;
-			sym->paddr = addr_to_offset (mo, vaddr) + obj->boffset;
+			sym->paddr = addr_to_offset (mo, vaddr, false) + obj->boffset;
 			sym->type = (st->n_type & N_EXT)? "EXT": "LOCAL";
 			sym->ordinal = ordinal++;
 
@@ -4594,7 +4596,7 @@ struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) * mo) {
 	}
 	struct addr_t *entry = R_NEW0 (struct addr_t);
 	entry->addr = ea;
-	entry->offset = addr_to_offset (mo, entry->addr);
+	entry->offset = addr_to_offset (mo, entry->addr, false);
 	entry->haddr = sdb_num_get (mo->kv, "mach0.entry.offset", 0);
 	// the load command holding the entry is mapped with the header in __TEXT
 	entry->hvaddr = entry->haddr? offset_to_vaddr (mo, entry->haddr): 0;
@@ -5023,7 +5025,7 @@ static ut64 main_vaddr(struct MACH0_(obj_t) * mo) {
 
 	if (!addr) {
 		ut8 b[128];
-		ut64 entry = addr_to_offset (mo, mo->entry);
+		ut64 entry = addr_to_offset (mo, mo->entry, true);
 		// XXX: X86 only and hacky!
 		if (entry > mo->size || entry + sizeof (b) > mo->size) {
 			return UT64_MAX;
@@ -5052,7 +5054,7 @@ ut64 MACH0_(get_main)(struct MACH0_(obj_t) * mo, R_OUT ut64 * R_NULLABLE offset)
 		addr &= ~1ULL;
 	}
 	if (offset) {
-		ut64 off = addr_to_offset (mo, addr);
+		ut64 off = addr_to_offset (mo, addr, true);
 		*offset = off? off: UT64_MAX;
 	}
 	return addr;
