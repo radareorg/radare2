@@ -403,6 +403,24 @@ static void rprj_maps_write(RPrjCursor *cur) {
 	}
 }
 
+static RIOPlugin *rprj_map_plugin(RIO *io, const char *uri) {
+	const bool has_scheme = strstr (uri, "://") != NULL;
+	if (has_scheme && !R_STR_STARTSWITH_ANY (uri,
+			"malloc://", "hex://", "null://", "sparse://", "ihex://", "xalz://", "zip://")) {
+		return NULL;
+	}
+	RIOPlugin *plugin = r_io_plugin_resolve (io, uri, false);
+	if (!has_scheme || !plugin) {
+		return plugin;
+	}
+	const char *name = plugin->meta.name;
+	if (name && ((r_str_startswith (uri, name) && r_str_startswith (uri + strlen (name), "://"))
+			|| (!strcmp (name, "malloc") && r_str_startswith (uri, "hex://")))) {
+		return plugin;
+	}
+	return NULL;
+}
+
 static void rprj_maps_restore(RPrjCursor *cur) {
 	RCore *core = cur->core;
 	RBuffer *b = cur->b;
@@ -416,10 +434,15 @@ static void rprj_maps_restore(RPrjCursor *cur) {
 		if (!uri) {
 			continue;
 		}
+		RIOPlugin *plugin = rprj_map_plugin (core->io, uri);
+		if (!plugin) {
+			R_LOG_WARN ("Skipping project map with disallowed URI handler");
+			continue;
+		}
 		const int perm = map.perm & R_PERM_RWX;
 		RIODesc *d = r_io_desc_get_byuri (core->io, uri);
 		if (!d) {
-			d = r_io_open_nomap (core->io, uri, perm? perm: R_PERM_R, 0644);
+			d = r_io_desc_open_plugin (core->io, plugin, uri, perm? perm: R_PERM_R, 0644);
 		}
 		if (!d) {
 			continue;

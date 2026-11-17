@@ -1468,3 +1468,93 @@ EXPECT=<<EOF
   I inline      false
 EOF
 RUN
+
+NAME=newprj issue 27494 direct opening restores allowed memory and local file maps
+FILE=bins/prj/map-uri-safe.rprj
+ARGS=-e prj.sandbox=false
+CMDS=<<END
+omj
+p8 4 @ 0x1000
+p8 4 @ 0x2000
+p8 4 @ 0x3000
+p8 4 @ 0x4000
+p8 8 @ 0x5000
+END
+EXPECT=<<END
+[{"map":5,"fd":7,"delta":0,"from":20480,"to":20487,"perm":"r--","sperm":"r--","name":"local"},{"map":4,"fd":6,"delta":0,"from":16384,"to":16399,"perm":"rw-","sperm":"rw-","name":"sparse"},{"map":3,"fd":5,"delta":0,"from":12288,"to":12303,"perm":"r--","sperm":"r--","name":"zero"},{"map":2,"fd":4,"delta":0,"from":8192,"to":8195,"perm":"r--","sperm":"r--","name":"bytes"},{"map":1,"fd":3,"delta":0,"from":4096,"to":4111,"perm":"rw-","sperm":"rw-","name":"heap"}]
+00000000
+41424344
+00000000
+00000000
+5250524a06000000
+END
+EXPECT_ERR=<<END
+END
+RUN
+
+NAME=newprj issue 27494 direct opening a bin rejects r2pipe and restores the following map
+FILE=bins/prj/map-uri-r2pipe.bin
+ARGS=-e prj.sandbox=false
+TIMEOUT=5
+CMDS=<<END
+omj
+p8 4 @ 0x2000
+END
+EXPECT=<<END
+[{"map":1,"fd":3,"delta":0,"from":8192,"to":8195,"perm":"r--","sperm":"r--","name":"after"}]
+41424344
+END
+EXPECT_ERR=<<END
+WARN: Skipping project map with disallowed URI handler
+END
+RUN
+
+NAME=newprj issue 27494 explicit open rejects r2pipe and restores the following map
+FILE=malloc://16
+ARGS=-e prj.sandbox=false
+TIMEOUT=5
+CMDS=<<END
+prj open bins/prj/map-uri-r2pipe.bin
+omj
+p8 4 @ 0x2000
+END
+EXPECT=<<END
+[{"map":1,"fd":3,"delta":0,"from":8192,"to":8195,"perm":"r--","sperm":"r--","name":"after"}]
+41424344
+END
+EXPECT_ERR=<<END
+WARN: Skipping project map with disallowed URI handler
+END
+RUN
+
+NAME=newprj nested RPRJ map is read as data without loading its project maps
+FILE=bins/prj/map-nested.rprj
+ARGS=-e prj.sandbox=false
+TIMEOUT=5
+CMDS=<<END
+omj
+p8 8 @ 0x6000
+END
+EXPECT=<<END
+[{"map":1,"fd":3,"delta":0,"from":24576,"to":24583,"perm":"r--","sperm":"r--","name":"nested"}]
+5250524a06000000
+END
+EXPECT_ERR=<<END
+END
+RUN
+
+NAME=newprj self-referencing RPRJ map does not recurse or crash
+FILE=bins/prj/map-self.rprj
+ARGS=-e prj.sandbox=false
+TIMEOUT=5
+CMDS=<<END
+omj
+p8 8 @ 0x7000
+END
+EXPECT=<<END
+[{"map":1,"fd":3,"delta":0,"from":28672,"to":28679,"perm":"r--","sperm":"r--","name":"self"}]
+5250524a06000000
+END
+EXPECT_ERR=<<END
+END
+RUN
