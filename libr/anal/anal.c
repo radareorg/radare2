@@ -638,7 +638,7 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char * R_NULLABLE name, ut64 a
 		if (sdb_bool_set (TDB, K_NORET_ADDR (addr), true, 0)) {
 			RAnalFunction *fcn = r_anal_get_function_at (anal, addr);
 			if (fcn) {
-				fcn->attrs |= R_ANAL_FCN_ATTR_NORETURN;
+				r_anal_function_set_attr (fcn, R_ANAL_FCN_ATTR_NORETURN, true);
 			}
 			return true;
 		}
@@ -654,10 +654,7 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char * R_NULLABLE name, ut64 a
 		}
 		tmp_name = fcn ? fcn->name: fi->name;
 		if (fcn) {
-			if (!(fcn->attrs & R_ANAL_FCN_ATTR_NORETURN)) {
-				fcn->attrs |= R_ANAL_FCN_ATTR_NORETURN;
-				R_DIRTY_SET (anal);
-			}
+			r_anal_function_set_attr (fcn, R_ANAL_FCN_ATTR_NORETURN, true);
 		}
 	}
 	if (r_type_func_exist (TDB, tmp_name)) {

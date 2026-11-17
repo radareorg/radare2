@@ -86,19 +86,11 @@ bool test_r_anal_function_relocate(void) {
 	assert_invariants (anal);
 	mu_assert_false (success, "failed relocate");
 	mu_assert_eq (fa->addr, 0x1337, "failed relocate addr");
-	ut64 revision_epoch = r_anal_function_dirty_epoch (fa);
 
 	success = r_anal_function_relocate (fa, 0x1234);
 	assert_invariants (anal);
 	mu_assert_true (success, "successful relocate");
 	mu_assert_eq (fa->addr, 0x1234, "successful relocate addr");
-	mu_assert_neq (r_anal_function_dirty_epoch (fa), revision_epoch,
-		"relocation bumps the function revision epoch");
-	revision_epoch = r_anal_function_dirty_epoch (fa);
-	mu_assert_true (r_anal_function_rename (fa, "relocated_function"),
-		"rename relocated function");
-	mu_assert_neq (r_anal_function_dirty_epoch (fa), revision_epoch,
-		"rename bumps the function revision epoch");
 
 	RAnalFunction *pending = r_anal_function_new (anal);
 	pending->addr = fa->addr;
@@ -627,6 +619,14 @@ bool test_r_anal_function_set_signature_uses_canonical_type_name(void) {
 	mu_assert_streq (signature->callconv, "cdecl", "alias callconv must refresh after overwrite");
 	mu_assert_eq ((int)r_list_length (signature->params), 0, "alias params must refresh after overwrite");
 	r_anal_function_signature_free (signature);
+	r_anal_function_set_attr (alias, R_ANAL_FCN_ATTR_NORETURN, true);
+	input.noreturn = false;
+	mu_assert_true (r_anal_function_set_signature (anal, f, &input), "clear a previous noreturn signature");
+	mu_assert_false (f->attrs & R_ANAL_FCN_ATTR_NORETURN, "returning signature clears the live attribute");
+	signature = r_anal_function_get_signature (alias);
+	mu_assert_notnull (signature, "read the returning signature");
+	mu_assert_false (signature->noreturn, "explicit false overrides the previous noreturn attribute");
+	r_anal_function_signature_free (signature);
 	free (typed_name);
 
 	r_anal_free (anal);
@@ -762,9 +762,7 @@ bool test_r_anal_function_callconv_resolves_when_assigned(void) {
 	mu_assert_notnull (known, "Couldn't create function with a per-function convention");
 	mu_assert_streq (r_anal_function_cc (known), "amd64",
 		"a dyncc default resolves when the function is created");
-	ut64 epoch = r_anal_function_dirty_epoch (known);
 	mu_assert_streq (r_anal_function_cc (known), "amd64", "reading the convention again returns the same");
-	mu_assert_eq (r_anal_function_dirty_epoch (known), epoch, "reading the convention changes nothing");
 
 	RAnalFunction *unknown = r_anal_create_function (anal, "unknown", 0x3000, 0, NULL);
 	mu_assert_notnull (unknown, "Couldn't create function without a per-function convention");
@@ -795,8 +793,8 @@ bool test_r_anal_function_get_signature_reports_origin_and_only_reads(void) {
 	r_anal_function_signature_free (signature);
 
 	mu_assert_true (r_type_set_link (anal->sdb_types, "by_link", f->addr), "link a prototype to the address");
-	ut64 function_epoch = r_anal_function_dirty_epoch (f);
-	ut64 types_epoch = r_anal_types_dirty_epoch (anal);
+	ut32 attrs = f->attrs;
+	const char *callconv = f->callconv;
 	signature = r_anal_function_get_signature (f);
 	mu_assert_notnull (signature, "address-linked signature must be readable");
 	mu_assert_eq (signature->origin, R_ANAL_FUNCTION_SIGNATURE_ORIGIN_ADDRESS, "a prototype linked to the address");
@@ -805,8 +803,8 @@ bool test_r_anal_function_get_signature_reports_origin_and_only_reads(void) {
 	signature = r_anal_function_get_signature (f);
 	mu_assert_notnull (signature, "the signature reads again");
 	r_anal_function_signature_free (signature);
-	mu_assert_eq (r_anal_function_dirty_epoch (f), function_epoch, "reading a signature leaves the function epoch alone");
-	mu_assert_eq (r_anal_types_dirty_epoch (anal), types_epoch, "reading a signature leaves the type epoch alone");
+	mu_assert_eq (f->attrs, attrs, "reading a signature leaves function attributes alone");
+	mu_assert_ptreq (f->callconv, callconv, "reading a signature leaves the convention alone");
 
 	RAnalFunction *vars = r_anal_create_function (anal, "from_vars", 0x4000, 0, NULL);
 	mu_assert_notnull (vars, "Couldn't create function for variable origin");
@@ -881,7 +879,7 @@ static bool switch_ownership_probe(RAnalFunction *fcn, RAnalBlock *block,
 }
 
 // the walk reaches the indirect jump twice; the second arrival must not publish the switch on the start block
-bool test_r_anal_function_overlapped_walk_keeps_one_switch_owner(void) {
+bool test_switch_owner(void) {
 	const ut64 addr = 0x1000;
 	const char *hex =
 		"554889e54883fe040f82990000004889f148c1e9024883f901750431c0eb644883e1fe31c066662e0f1f8400000000004469"
@@ -973,7 +971,7 @@ int all_tests(void) {
 	mu_run_test (test_r_anal_function_get_signature_origin_of_a_zero_argument_prototype);
 	mu_run_test (test_r_anal_function_callconv_store_keeps_an_undefined_name);
 	mu_run_test (test_r_anal_function_switches_foreach);
-	mu_run_test (test_r_anal_function_overlapped_walk_keeps_one_switch_owner);
+	mu_run_test (test_switch_owner);
 	return tests_passed != tests_run;
 }
 

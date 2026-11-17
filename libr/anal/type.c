@@ -182,7 +182,6 @@ R_API void r_anal_types_prepare(RAnal *anal) {
 	load_types_from (anal, "types-%s-%s-%d", arch, os, bits);
 	priv->types_dirty = false;
 	priv->types_loaded_bits = bits;
-	r_anal_types_bump_dirty_epoch (anal);
 }
 
 R_API void r_anal_types_reload(RAnal *anal, const char *dir_prefix, const char *os, const char *subsystem) {
@@ -235,7 +234,6 @@ R_API void r_anal_types_reload(RAnal *anal, const char *dir_prefix, const char *
 	load_types_from (anal, "types-%s-%s-%d", arch, os, bits);
 	priv->types_dirty = false;
 	priv->types_loaded_bits = bits;
-	r_anal_types_bump_dirty_epoch (anal);
 }
 
 R_API void r_anal_types_load_sdb(RAnal *anal, const char *name) {
@@ -249,7 +247,6 @@ R_API void r_anal_types_load_sdb(RAnal *anal, const char *name) {
 	} else {
 		load_types_from (anal, "%s", name);
 	}
-	r_anal_types_bump_dirty_epoch (anal);
 }
 
 // Measure pointer elements using the current target word size.
@@ -291,7 +288,6 @@ R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name) {
 	}
 	// r_type_del drops the subkeys of the type, sweeping the whole database for them was quadratic
 	r_type_del (TDB, name);
-	r_anal_types_bump_dirty_epoch (anal);
 }
 
 // RENAME TO r_anal_types_save(); // parses the string and imports the types
@@ -320,7 +316,6 @@ R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed) {
 
 	// Now add the type to sdb.
 	sdb_query_lines (anal->sdb_types, parsed);
-	r_anal_types_bump_dirty_epoch (anal);
 }
 
 R_API bool r_anal_import_c_decls(RAnal *anal, const char *decls, char **errmsg) {
@@ -679,45 +674,19 @@ static void save_composite(const RAnal *anal, const RAnalBaseType *type) {
 	free (sname);
 }
 
-R_API ut64 r_anal_types_dirty_epoch(const RAnal *anal) {
-	R_RETURN_VAL_IF_FAIL (anal, 0);
-	return anal->type_dirty_epoch;
-}
-
-R_API ut64 r_anal_types_bump_dirty_epoch(RAnal *anal) {
-	R_RETURN_VAL_IF_FAIL (anal, 0);
-	anal->type_dirty_epoch++;
-	if (!anal->type_dirty_epoch) {
-		anal->type_dirty_epoch++;
-	}
-	return anal->type_dirty_epoch;
-}
-
 R_API bool r_anal_types_set_link(RAnal *anal, const char *type, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && R_STR_ISNOTEMPTY (type), false);
-	if (r_type_set_link (anal->sdb_types, type, addr) <= 0) {
-		return false;
-	}
-	r_anal_types_bump_dirty_epoch (anal);
-	return true;
+	return r_type_set_link (anal->sdb_types, type, addr) > 0;
 }
 
 R_API bool r_anal_types_set_link_offset(RAnal *anal, const char *type, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && R_STR_ISNOTEMPTY (type), false);
-	if (r_type_link_offset (anal->sdb_types, type, addr) <= 0) {
-		return false;
-	}
-	r_anal_types_bump_dirty_epoch (anal);
-	return true;
+	return r_type_link_offset (anal->sdb_types, type, addr) > 0;
 }
 
 R_API bool r_anal_types_unlink(RAnal *anal, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types, false);
-	if (r_type_unlink (anal->sdb_types, addr) <= 0) {
-		return false;
-	}
-	r_anal_types_bump_dirty_epoch (anal);
-	return true;
+	return r_type_unlink (anal->sdb_types, addr) > 0;
 }
 
 static void save_enum(const RAnal *anal, const RAnalBaseType *type) {
@@ -890,5 +859,4 @@ R_API void r_anal_save_base_type(const RAnal *anal, const RAnalBaseType *type) {
 	default:
 		break;
 	}
-	r_anal_types_bump_dirty_epoch ((RAnal *)anal);
 }

@@ -228,7 +228,6 @@ R_API bool r_anal_function_relocate(RAnalFunction *fcn, ut64 addr) {
 	}
 	fcn->addr = addr;
 	fcn->meta.numrefs = -1;
-	r_anal_function_bump_dirty_epoch (fcn);
 	return true;
 }
 
@@ -252,7 +251,6 @@ R_API bool r_anal_function_rename(RAnalFunction *fcn, const char *name) {
 		ht_pp_insert (anal->ht_name_fun, newname, fcn);
 	}
 	fcn->name = newname;
-	r_anal_function_bump_dirty_epoch (fcn);
 	REventFunction event = { .addr = fcn->addr, .fcn = fcn };
 	r_event_send (anal->ev, R_EVENT_FUNCTION_RENAMED, &event);
 	if (registered && anal->cb.on_fcn_rename) {
@@ -461,21 +459,6 @@ R_API int r_anal_function_coverage(RAnalFunction *fcn) {
 	return (traced * 100) / total;
 }
 
-R_API ut64 r_anal_function_dirty_epoch(const RAnalFunction *fcn) {
-	R_RETURN_VAL_IF_FAIL (fcn, 0);
-	return fcn->dirty_epoch;
-}
-
-R_API ut64 r_anal_function_bump_dirty_epoch(RAnalFunction *fcn) {
-	R_RETURN_VAL_IF_FAIL (fcn, 0);
-	fcn->dirty_epoch++;
-	if (!fcn->dirty_epoch) {
-		fcn->dirty_epoch++;
-	}
-	fcn->has_changed = true;
-	return fcn->dirty_epoch;
-}
-
 // The convention a bare "dyncc" stands for: what the bin plugin says about the
 // function's address, or "reg" when nothing does. Only once the address is known.
 static const char *resolved_callconv(RAnal *anal, RAnalFunction *fcn, const char *callconv) {
@@ -502,7 +485,6 @@ R_API bool r_anal_function_store_callconv(RAnal *anal, RAnalFunction *fcn, const
 		return true;
 	}
 	fcn->callconv = pooled;
-	r_anal_function_bump_dirty_epoch (fcn);
 	return true;
 }
 

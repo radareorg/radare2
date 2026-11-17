@@ -43,9 +43,6 @@ static void rprj_type_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 	if (rprj_entry_remaining (b, next_entry)) {
 		R_LOG_WARN ("Truncated type record");
 	}
-	if (mode & R_CORE_NEWPRJ_MODE_LOAD) {
-		r_anal_types_bump_dirty_epoch (cur->core->anal);
-	}
 }
 
 static void rprj_sdb_addr_load(RPrjCursor *cur, int mode, ut64 next_entry, bool global) {

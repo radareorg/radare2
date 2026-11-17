@@ -2986,7 +2986,6 @@ R_API bool r_anal_function_del_signature(RAnal *a, const char *name) {
 	free (sdb_noreturn);
 	free (sdb_args);
 	free (sdb_func);
-	r_anal_types_bump_dirty_epoch (a);
 	return true;
 }
 
@@ -3278,7 +3277,7 @@ static void function_signature_sync(RAnalFunction *fcn, const RAnalFunctionSigna
 	R_RETURN_IF_FAIL (fcn && fcn->anal && signature);
 	callconv = signature->callconv? signature->callconv: r_anal_cc_default (fcn->anal);
 	r_anal_function_store_callconv (fcn->anal, fcn, callconv);
-	R_MASK_SET (fcn->attrs, R_ANAL_FCN_ATTR_NORETURN, signature->noreturn);
+	r_anal_function_set_attr (fcn, R_ANAL_FCN_ATTR_NORETURN, signature->noreturn);
 }
 
 static bool function_signature_set_attrs(RAnal *anal, const char *type_name, const char *callconv, bool noreturn) {
@@ -3298,11 +3297,7 @@ static bool function_signature_set_attrs(RAnal *anal, const char *type_name, con
 	} else {
 		sdb_unset (anal->sdb_types, cc_key, 0);
 	}
-	if (noreturn) {
-		sdb_set (anal->sdb_types, noreturn_key, "true", 0);
-	} else {
-		sdb_unset (anal->sdb_types, noreturn_key, 0);
-	}
+	sdb_set (anal->sdb_types, noreturn_key, noreturn? "true": "false", 0);
 	free (cc_key);
 	free (noreturn_key);
 	return true;
@@ -3423,18 +3418,13 @@ R_API bool r_anal_function_set_signature(RAnal *anal, RAnalFunction *fcn, const 
 			ok = function_signature_set_attrs (anal, type_name, resolved_callconv, signature->noreturn);
 		}
 	}
+	if (ok) {
+		r_anal_function_store_callconv (anal, fcn, function_signature_callconv (anal, fcn, type_name));
+		r_anal_function_set_attr (fcn, R_ANAL_FCN_ATTR_NORETURN, signature->noreturn);
+	}
 	free (decl);
 	free (resolved_callconv);
 	free (type_name);
-	if (ok) {
-		RAnalFunctionSignature *signature = r_anal_function_get_signature (fcn);
-		if (signature) {
-			function_signature_sync (fcn, signature);
-			r_anal_function_signature_free (signature);
-		}
-		r_anal_types_bump_dirty_epoch (anal);
-		r_anal_function_bump_dirty_epoch (fcn);
-	}
 	return ok;
 }
 
@@ -3628,11 +3618,8 @@ R_API bool r_anal_function_set_attr(RAnalFunction *fcn, RAnalFcnAttr attr, bool 
 	R_RETURN_VAL_IF_FAIL (fcn, false);
 	const ut32 attrs = fcn->attrs;
 	R_MASK_SET (fcn->attrs, attr, enable);
-	if (fcn->attrs != attrs) {
-		r_anal_function_bump_dirty_epoch (fcn);
-		if (fcn->anal) {
-			R_DIRTY_SET (fcn->anal);
-		}
+	if (fcn->attrs != attrs && fcn->anal) {
+		R_DIRTY_SET (fcn->anal);
 	}
 	return true;
 }

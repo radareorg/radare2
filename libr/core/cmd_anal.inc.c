@@ -7172,7 +7172,6 @@ static int cmd_af(RCore *core, const char *input) {
 			if (fcn) { // bits = 0 means unset
 				int nbits = atoi (input + 3);
 				int obits = core->anal->config->bits;
-				int oldbits = fcn->bits;
 				if (nbits > 0) {
 					r_anal_hint_set_bits (core->anal, r_anal_function_min_addr (fcn), nbits);
 					r_anal_hint_set_bits (core->anal, r_anal_function_max_addr (fcn), obits);
@@ -7180,9 +7179,6 @@ static int cmd_af(RCore *core, const char *input) {
 				} else {
 					r_anal_hint_unset_bits (core->anal, r_anal_function_min_addr (fcn));
 					fcn->bits = 0;
-				}
-				if (oldbits != fcn->bits) {
-					r_anal_function_bump_dirty_epoch (fcn);
 				}
 			} else {
 				R_LOG_ERROR ("afB: Cannot find function to set bits at 0x%08"PFMT64x, core->addr);
@@ -7280,10 +7276,7 @@ static int cmd_af(RCore *core, const char *input) {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, -1);
 			if (fcn) {
 				st64 maxstack = r_num_math (core->num, input + 3);
-				if (fcn->maxstack != maxstack) {
-					fcn->maxstack = maxstack;
-					r_anal_function_bump_dirty_epoch (fcn);
-				}
+				fcn->maxstack = maxstack;
 			} else {
 				R_LOG_ERROR ("Cannot find function at 0x%08"PFMT64x, core->addr);
 			}

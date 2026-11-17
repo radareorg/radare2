@@ -339,7 +339,6 @@ typedef struct r_anal_function_t {
 	HtPP/*<char *, ut64 *>*/ *label_addrs;
 	HtUP/*<st64, RVecAnalVarPtr *>*/ *inst_vars; // offset of instructions => the variables they access
 	ut64 reg_save_area; // size of stack area pre-reserved for saving registers
-	ut64 dirty_epoch; // incremented when typed function metadata changes
 	st64 bp_off; // offset of bp inside owned stack frame
 	st64 stack;  // stack frame size
 	int maxstack;
@@ -543,7 +542,6 @@ typedef struct r_anal_t {
 	Sdb *sdb_cc; // calling conventions
 	Sdb *sdb_classes;
 	Sdb *sdb_classes_attrs;
-	ut64 type_dirty_epoch; // incremented when global typed metadata changes
 	RAnalCallbacks cb;
 	RAnalOptions opt;
 	RList *reflines;
@@ -1266,8 +1264,6 @@ R_API void r_anal_function_signature_free(RAnalFunctionSignature *signature);
 R_API char *r_anal_function_get_signature_string(RAnalFunction *function);
 R_API bool r_anal_function_set_signature(RAnal *anal, RAnalFunction *fcn, const RAnalFunctionSignature *signature);
 R_API bool r_anal_function_del_signature(RAnal *a, const char *name);
-R_API ut64 r_anal_function_dirty_epoch(const RAnalFunction *fcn);
-R_API ut64 r_anal_function_bump_dirty_epoch(RAnalFunction *fcn);
 // The convention a user named; it must be one the target defines.
 R_API bool r_anal_function_set_callconv(RAnal *anal, RAnalFunction *fcn, const char *callconv);
 // The convention the analysis or a project decided on, kept as given. A bare
@@ -1822,8 +1818,6 @@ R_API bool r_anal_esil_dfg_reg_is_const(RAnalEsilDFG *dfg, const char *reg);
 R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn);
 
 R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name);
-R_API ut64 r_anal_types_dirty_epoch(const RAnal *anal);
-R_API ut64 r_anal_types_bump_dirty_epoch(RAnal *anal);
 R_API bool r_anal_types_set_link(RAnal *anal, const char *type, ut64 addr);
 R_API bool r_anal_types_set_link_offset(RAnal *anal, const char *type, ut64 addr);
 R_API bool r_anal_types_unlink(RAnal *anal, ut64 addr);

@@ -285,6 +285,12 @@ bool test_r_anal_var(void) {
 	mu_end;
 }
 
+static void type_event(REvent *ev, int type, void *user, void *data) {
+	REventVariable *event = data;
+	RAnalVar *var = event->var;
+	*(bool *)user = event->type == var->type;
+}
+
 bool test_r_anal_var_rename_meta(void) {
 	RAnal *anal = r_anal_new ();
 	r_anal_use (anal, "x86");
@@ -294,6 +300,13 @@ bool test_r_anal_var_rename_meta(void) {
 	mu_assert_notnull (fcn, "create function");
 	RAnalVar *var = r_anal_function_set_var (fcn, -8, R_ANAL_VAR_KIND_BPV, "int64_t", 8, true, "arg7");
 	mu_assert_notnull (var, "create variable to rename");
+	bool current_type = false;
+	anal->ev = r_event_new (NULL);
+	r_event_hook (anal->ev, R_EVENT_VARIABLE_TYPE_CHANGED, type_event, &current_type);
+	r_anal_var_set_type (anal, var, var->type);
+	r_event_free (anal->ev);
+	anal->ev = NULL;
+	mu_assert_true (current_type, "type event uses the stored type when the input aliases it");
 	RAnalVar *collision = r_anal_function_set_var (fcn, -16, R_ANAL_VAR_KIND_BPV, "int64_t", 8, true, "arg1");
 	mu_assert_notnull (collision, "create variable with conflicting name");
 
