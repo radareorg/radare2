@@ -585,7 +585,7 @@ static bool __nonreturn_print_commands(void *p, const char *k, const char *v) {
 
 static bool __nonreturn_print(void *p, const char *k, const char *v) {
 	NoreturnListCtx *ctx = p;
-	if (r_str_startswith (k, "func.") && strstr (k, ".noreturn")) {
+	if (r_str_startswith (k, "func.") && strstr (k, ".noreturn") && r_str_is_true (v)) {
 		char *s = strdup (k + 5);
 		char *d = strchr (s, '.');
 		if (d) {

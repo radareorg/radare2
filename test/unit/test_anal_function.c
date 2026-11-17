@@ -627,6 +627,20 @@ bool test_r_anal_function_set_signature_uses_canonical_type_name(void) {
 	mu_assert_notnull (signature, "read the returning signature");
 	mu_assert_false (signature->noreturn, "explicit false overrides the previous noreturn attribute");
 	r_anal_function_signature_free (signature);
+	mu_assert_true (r_anal_noreturn_add (anal, NULL, f->addr), "mark the function noreturn by address");
+	signature = r_anal_function_get_signature (f);
+	mu_assert_notnull (signature, "read the address-marked signature");
+	mu_assert_true (signature->noreturn, "address override takes precedence over an explicit false prototype");
+	r_anal_function_signature_free (signature);
+	signature = r_anal_function_get_signature (alias);
+	mu_assert_notnull (signature, "read the unmarked alias signature");
+	mu_assert_false (signature->noreturn, "address override does not affect an alias sharing the prototype");
+	r_anal_function_signature_free (signature);
+	r_anal_noreturn_drop (anal, "0x3000");
+	signature = r_anal_function_get_signature (f);
+	mu_assert_notnull (signature, "read the signature after dropping the address override");
+	mu_assert_false (signature->noreturn, "dropping the address override restores the explicit false prototype");
+	r_anal_function_signature_free (signature);
 	free (typed_name);
 
 	r_anal_free (anal);

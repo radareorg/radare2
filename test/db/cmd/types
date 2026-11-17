@@ -2294,6 +2294,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=tn excludes explicit false prototypes
+FILE=-
+CMDS=<<EOF
+k anal/types/func.probe_returns.noreturn=false
+k anal/types/func.probe_exits.noreturn=true
+tn~probe_
+EOF
+EXPECT=<<EOF
+probe_exits
+EOF
+RUN
+
 NAME=tn common
 FILE=bins/pe/pe.exe
 CMDS=<<EOF

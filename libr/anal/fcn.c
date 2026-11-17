@@ -3111,13 +3111,18 @@ static const char *function_signature_callconv(RAnal *anal, RAnalFunction *fcn, 
 	return callconv;
 }
 
-static bool function_signature_is_noreturn(Sdb *types, const char *type_name, bool fallback) {
-	R_RETURN_VAL_IF_FAIL (types, fallback);
-	if (R_STR_ISEMPTY (type_name)) {
-		return fallback;
+static bool function_signature_is_noreturn(RAnalFunction *fcn, const char *type_name) {
+	RAnal *anal = fcn->anal;
+	if (r_anal_noreturn_at_addr (anal, fcn->addr)) {
+		return true;
 	}
-	const char *value = sdb_const_getf (types, NULL, "func.%s.noreturn", type_name);
-	return value? r_str_is_true (value): fallback;
+	if (R_STR_ISNOTEMPTY (type_name)) {
+		const char *value = sdb_const_getf (anal->sdb_types, NULL, "func.%s.noreturn", type_name);
+		if (value) {
+			return r_str_is_true (value);
+		}
+	}
+	return (fcn->attrs & R_ANAL_FCN_ATTR_NORETURN) != 0;
 }
 
 static void function_param_free(RAnalFunctionParam *param) {
@@ -3369,7 +3374,7 @@ R_API RAnalFunctionSignature *r_anal_function_get_signature(RAnalFunction *funct
 			goto beach;
 		}
 	}
-	signature->noreturn = function_signature_is_noreturn (anal->sdb_types, type_name, function->attrs & R_ANAL_FCN_ATTR_NORETURN);
+	signature->noreturn = function_signature_is_noreturn (function, type_name);
 	free (type_name);
 	return signature;
 
