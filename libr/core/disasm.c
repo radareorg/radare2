@@ -1174,9 +1174,9 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds, bool print_color
 	if (!ds->show_color) {
 		return strdup (source);
 	}
-	// When scr.color.ops is false, only colorize if scr.color.regs is enabled
+	// When scr.color.ops is false, only colorize if scr.color.regs or scr.color.args is enabled
 	bool colorize_regs = r_config_get_b (core->config, "scr.color.regs");
-	if (!ds->colorop && !colorize_regs) {
+	if (!ds->colorop && !colorize_regs && !ds->show_color_args) {
 		return strdup (source);
 	}
 
