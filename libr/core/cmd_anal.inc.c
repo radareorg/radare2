@@ -497,7 +497,7 @@ static RCoreHelpMessage help_detail_ae = {
 
 static RCoreHelpMessage help_msg_aea = {
 	"Examples:", "aea", " show regs and memory accesses used in a range",
-	"aea", "  [ops]", "show regs/memory accesses used in N instructions",
+	"aea", "  [ops]", "show accesses for the current register state; see aoj",
 	"aeae", "  [esil]", "show regs/memory accesses used the given expression",
 	"aea*", " [ops]", "create mem.* flags for memory accesses",
 	"aeab", "", "show regs used in current basic block",
@@ -1146,7 +1146,7 @@ static RCoreHelpMessage help_msg_ao = {
 	"aoem", " N", "display memory references from esil emulation of N opcode",
 	"aoef", " expr", "filter esil expression of opcode by given output",
 	"aoeq", " N", "display only the esil expression of N opcodes",
-	"aoj", " N", "display opcode analysis information in JSON for N opcodes",
+	"aoj", " N", "opcode JSON with possible register accesses",
 	"aom", "[?] [id]", "list current or all mnemonics for current arch",
 	"aor", " [N]", "run N esil instructions + esil.dumpstack",
 	"aos", " N", "display size of N opcodes",
@@ -2748,6 +2748,18 @@ static void val_tojson(PJ *pj, RAnalValue *val) {
 	pj_end (pj);
 }
 
+static void op_regs_tojson(PJ *pj, RList *access, const char *key, int perm) {
+	pj_ka (pj, key);
+	RListIter *iter;
+	RAnalValue *value;
+	r_list_foreach (access, iter, value) {
+		if (value->type == R_ANAL_VAL_REG && (value->access & perm) && value->reg) {
+			pj_s (pj, value->reg);
+		}
+	}
+	pj_end (pj);
+}
+
 static void mw2(void *null, ut64 addr, const ut8 *old, const ut8 *buf, int len) {
 	R_LOG_INFO ("WRITE 0x%08"PFMT64x" %d", addr, len);
 }
@@ -2804,7 +2816,16 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		r_asm_set_pc (core->rasm, addr);
 		hint = r_anal_hint_get (core->anal, addr);
 		ret = r_anal_op (core->anal, &op, addr, buf + idx, len - idx, opmask);
-		(void)r_asm_disassemble (core->rasm, &asmop, buf + idx, len - idx);
+		if (fmt == 'j' && ret > 0 && R_STR_ISNOTEMPTY (op.mnemonic)) {
+			// A second decode would advance Thumb IT state again.
+			asmop.size = op.size;
+			asmop.mnemonic = core->rasm->pseudo? r_asm_parse_pseudo (core->rasm, op.mnemonic): NULL;
+			if (!asmop.mnemonic) {
+				asmop.mnemonic = strdup (op.mnemonic);
+			}
+		} else {
+			(void)r_asm_disassemble (core->rasm, &asmop, buf + idx, len - idx);
+		}
 		esilstr = R_STRBUF_SAFEGET (&op.esil);
 		opexstr = R_STRBUF_SAFEGET (&op.opex);
 		char *mnem = strdup (r_str_get (asmop.mnemonic));
@@ -2920,6 +2941,10 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				free (opname);
 			}
 
+			if (op.access) {
+				op_regs_tojson (pj, op.access, "regs_read", R_PERM_R);
+				op_regs_tojson (pj, op.access, "regs_write", R_PERM_W);
+			}
 			if (RVecRArchValue_length (&op.srcs) > 0) {
 				pj_ka (pj, "srcs");
 				RAnalValue *val;
@@ -2945,8 +2970,11 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				free (maskstr);
 			} else {
 				const int instlen = R_MIN (size, len - idx);
-				ut8 *mask = r_anal_mask (core->anal, instlen, buf + idx, core->addr + idx);
+				ut8 *mask = instlen > 0? r_mem_set (0xff, instlen): NULL;
 				if (mask) {
+					if ((op.ptr != UT64_MAX || op.jump != UT64_MAX) && op.nopcode > 0 && op.nopcode < instlen) {
+						memset (mask + op.nopcode, 0, instlen - op.nopcode);
+					}
 					char *maskstr = r_hex_bin2strdup (mask, instlen);
 					pj_ks (pj, "mask", maskstr);
 					free (mask);

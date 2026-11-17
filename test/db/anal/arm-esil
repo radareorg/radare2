@@ -267,3 +267,38 @@ EXPECT=<<EOF
                               sym.caller 0x8000034 > CALL:--x > 0x800003c sym.tf
 EOF
 RUN
+
+NAME=arm aea preserves conditional execution and incoming registers
+FILE=malloc://64
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 2010a003002091e5
+aei
+aeim
+aer r1=0x10
+aer zf=1
+aeaj 2
+aer zf=0
+aeaj 2
+EOF
+EXPECT=<<EOF
+{"A":["zf","r1","r2"],"I":["zf"],"R":["zf","r1"],"W":["r1","r2"],"V":["32","0"],"N":["zf"],"@R":[32]}
+{"A":["zf","r1","r2"],"I":["zf","r1"],"R":["zf","r1"],"W":["r2"],"V":["0"],"N":["zf","r1"],"@R":[16]}
+EOF
+RUN
+
+NAME=arm aea executes a conditional increment once
+FILE=malloc://64
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 01008002
+aei
+aeim
+aer r0=0
+aer zf=1
+aeaj 1
+EOF
+EXPECT=<<EOF
+{"A":["zf","r0"],"I":["zf","r0"],"R":["zf","r0"],"W":["r0"],"V":["1"],"N":["zf"]}
+EOF
+RUN

@@ -1431,3 +1431,73 @@ r0 = r1 & r2
 r0 &= r1
 EOF2
 RUN
+
+NAME=arm conditional register accesses are independent of ESIL flags
+FILE=malloc://64
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 0100a0010100a0111eff2f01
+ar zf=0
+aoj 3~{0.regs_read}
+aoj 3~{0.regs_write}
+aoj 3~{1.regs_read}
+aoj 3~{1.regs_write}
+aoj 3~{2.regs_read}
+aoj 3~{2.regs_write}
+ar zf=1
+aoj 3~{0.regs_read}
+aoj 3~{0.regs_write}
+ar zf
+EOF
+EXPECT=<<EOF
+["r1","zf"]
+["r0"]
+["r1","zf"]
+["r0"]
+["lr","zf"]
+["pc"]
+["r1","zf"]
+["r0"]
+0x00000001
+EOF
+RUN
+
+NAME=arm compound condition register accesses
+FILE=malloc://64
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 0100a0810100a0c1
+aoj 2~{0.regs_read}
+aoj 2~{0.regs_write}
+aoj 2~{1.regs_read}
+aoj 2~{1.regs_write}
+EOF
+EXPECT=<<EOF
+["r1","cf","zf"]
+["r0"]
+["r1","zf","nf","vf"]
+["r0"]
+EOF
+RUN
+
+NAME=thumb IT block register accesses
+FILE=malloc://64
+ARGS=-a arm -b 16
+CMDS=<<EOF
+wx 8cbf08461046
+aoj 3~{1.opcode}
+aoj 3~{1.regs_read}
+aoj 3~{1.regs_write}
+aoj 3~{2.opcode}
+aoj 3~{2.regs_read}
+aoj 3~{2.regs_write}
+EOF
+EXPECT=<<EOF
+movhi r0, r1
+["r1","cf","zf"]
+["r0"]
+movls r0, r2
+["r2","cf","zf"]
+["r0"]
+EOF
+RUN

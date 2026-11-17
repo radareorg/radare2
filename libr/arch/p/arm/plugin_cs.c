@@ -6293,6 +6293,105 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 	}
 }
 
+static void add_reg_access(RList *access, const char *name, int perm) {
+	RAnalValue *value = r_arch_value_new_reg (name);
+	value->type = R_ANAL_VAL_REG;
+	value->access = perm;
+	r_list_append (access, value);
+}
+
+static void access32(RAnalOp *op, csh handle, cs_insn *insn) {
+	cs_regs reads, writes;
+	ut8 read_count, write_count;
+	if (cs_regs_access (handle, insn, reads, &read_count, writes, &write_count) != CS_ERR_OK) {
+		return;
+	}
+	RList *access = r_list_newf ((RListFree)r_anal_value_free);
+	if (!access) {
+		return;
+	}
+	ut8 perms[ARM_REG_ENDING] = {0};
+	int i;
+	for (i = 0; i < read_count; i++) {
+		if (reads[i] < ARM_REG_ENDING) {
+			perms[reads[i]] |= R_PERM_R;
+		}
+	}
+	for (i = 0; i < write_count; i++) {
+		if (writes[i] < ARM_REG_ENDING) {
+			perms[writes[i]] |= R_PERM_W;
+		}
+	}
+	const cs_arm *arm = &insn->detail->arm;
+	if (arm->update_flags) {
+		perms[ARM_REG_CPSR] |= R_PERM_W;
+	}
+	for (i = 0; i < arm->op_count; i++) {
+		const cs_arm_op *operand = &arm->operands[i];
+		// Capstone omits register-controlled shifts from cs_regs_access().
+		if (SHIFTTYPEREG (i) && operand->shift.value < ARM_REG_ENDING) {
+			perms[operand->shift.value] |= R_PERM_R;
+		}
+	}
+	// Some Capstone versions omit the explicit branch target read.
+	switch (insn->id) {
+	case ARM_INS_BX:
+	case ARM_INS_BXJ:
+	case ARM_INS_BLX:
+		if (arm->op_count && arm->operands[0].type == ARM_OP_REG
+				&& arm->operands[0].reg > ARM_REG_INVALID && arm->operands[0].reg < ARM_REG_ENDING) {
+			perms[arm->operands[0].reg] |= R_PERM_R;
+		}
+		break;
+	default:
+		break;
+	}
+	for (i = 1; i < ARM_REG_ENDING; i++) {
+		if (perms[i]) {
+			add_reg_access (access, cs_reg_name (handle, i), perms[i]);
+		}
+	}
+	op->access = access;
+	// IT records a condition; only its governed instructions read flags.
+	if (insn->id == ARM_INS_IT) {
+		return;
+	}
+	switch (arm->cc) {
+	case ARM_CC_EQ:
+	case ARM_CC_NE:
+		add_reg_access (access, "zf", R_PERM_R);
+		break;
+	case ARM_CC_HS:
+	case ARM_CC_LO:
+		add_reg_access (access, "cf", R_PERM_R);
+		break;
+	case ARM_CC_MI:
+	case ARM_CC_PL:
+		add_reg_access (access, "nf", R_PERM_R);
+		break;
+	case ARM_CC_VS:
+	case ARM_CC_VC:
+		add_reg_access (access, "vf", R_PERM_R);
+		break;
+	case ARM_CC_HI:
+	case ARM_CC_LS:
+		add_reg_access (access, "cf", R_PERM_R);
+		add_reg_access (access, "zf", R_PERM_R);
+		break;
+	case ARM_CC_GT:
+	case ARM_CC_LE:
+		add_reg_access (access, "zf", R_PERM_R);
+		// fall through
+	case ARM_CC_GE:
+	case ARM_CC_LT:
+		add_reg_access (access, "nf", R_PERM_R);
+		add_reg_access (access, "vf", R_PERM_R);
+		break;
+	default:
+		break;
+	}
+}
+
 static inline bool is_valid_mnemonic(const char *m) {
 	return !r_str_startswith (m, "hint") && !r_str_startswith (m, "udf");
 }
@@ -6336,6 +6435,9 @@ static int analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 			}
 		} else {
 			anop32 (as, *cs_handle, op, insn, thumb, (ut8*)buf, len);
+			if (mask & (R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_OPEX)) {
+				access32 (op, *cs_handle, insn);
+			}
 			if (mask & R_ARCH_OP_MASK_OPEX) {
 				opex (&op->opex, *cs_handle, insn);
 			}
