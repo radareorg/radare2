@@ -57,28 +57,14 @@ static bfd_vma __bfd_getl32(const void *p) {
   return v;
 }
 
-struct dis_private
-{
-  /* Stash the result of parsing disassembler_options here.  */
-  ppc_cpu_t dialect;
-};
-
-#define POWERPC_DIALECT(INFO) \
-  (((struct dis_private *) ((INFO)->private_data))->dialect)
-
 /* Determine which set of machines to disassemble for.  PPC403/601 or
    BookE.  For convenience, also disassemble instructions supported
    by the AltiVec vector unit.  */
 
-static int
-powerpc_init_dialect (struct disassemble_info *info)
+static ppc_cpu_t
+powerpc_dialect (struct disassemble_info *info)
 {
   ppc_cpu_t dialect = PPC_OPCODE_PPC;
-  struct dis_private *priv = calloc (sizeof (*priv), 1);
-
-  if (priv == NULL) {
-	  return FALSE;
-  }
 
   if (BFD_DEFAULT_TARGET_SIZE == 64) {
 	  dialect |= PPC_OPCODE_64;
@@ -139,10 +125,7 @@ powerpc_init_dialect (struct disassemble_info *info)
 	  }
     }
 
-  info->private_data = priv;
-  POWERPC_DIALECT(info) = dialect;
-
-  return TRUE;
+  return dialect;
 }
 
 /* Print a big endian PowerPC instruction.  */
@@ -150,10 +133,7 @@ powerpc_init_dialect (struct disassemble_info *info)
 int
 print_insn_big_powerpc (bfd_vma memaddr, struct disassemble_info *info)
 {
-	if (info->private_data == NULL && !powerpc_init_dialect (info)) {
-		return -1;
-	}
-	return print_insn_powerpc (memaddr, info, 1, POWERPC_DIALECT (info));
+	return print_insn_powerpc (memaddr, info, 1, powerpc_dialect (info));
 }
 
 /* Print a little endian PowerPC instruction.  */
@@ -161,10 +141,7 @@ print_insn_big_powerpc (bfd_vma memaddr, struct disassemble_info *info)
 int
 print_insn_little_powerpc (bfd_vma memaddr, struct disassemble_info *info)
 {
-	if (info->private_data == NULL && !powerpc_init_dialect (info)) {
-		return -1;
-	}
-	return print_insn_powerpc (memaddr, info, 0, POWERPC_DIALECT (info));
+	return print_insn_powerpc (memaddr, info, 0, powerpc_dialect (info));
 }
 
 /* Print a POWER (RS/6000) instruction.  */

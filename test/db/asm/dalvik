@@ -52,6 +52,7 @@ d "const v0, 0x00bc614e" 14004E61BC00
 d "const-class v0, class+1" 1C000100
 d "const-string v8, string+0" 1A080000
 d "const-string/jumbo v8, string+0" 1B0800000000
+d "const-string/jumbo v0, string+5" 1b0005000000
 d "const-wide v2:v3, 0x2bdc545d6b4b87" 1802874b6b5d54dc2b00
 d "const-wide/16 v0, 0000" 16000000
 d "const-wide/32 v2:v3, 0x00bc614e" 17024e61bc00

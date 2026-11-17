@@ -23,7 +23,9 @@ static bool as_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 		snprintf (cmd_opt, sizeof (cmd_opt), "-mregnames -a%d %s", s->config->bits,
 			R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config) ? "-be" : "-le");
 		// TODO the R2_PPC_AS arg should be removed
-		return binutils_assemble (s, op, op->mnemonic, gas, "R2_PPC_AS", "", cmd_opt);
+		const int res = binutils_assemble (s, op, op->mnemonic, gas, "R2_PPC_AS", "", cmd_opt);
+		free (gas);
+		return res > 0;
 #if __linux__
 	} else if (!strcmp (cpu, "arm")) {
 		const int bits = s->config->bits;
@@ -31,9 +33,11 @@ static bool as_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 		snprintf (cmd_opt, sizeof (cmd_opt), "%s %s",
 			bits == 16 ? "-mthumb" : "",
 			R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config) ? "-EB" : "-EL");
-		return binutils_assemble (s, op, op->mnemonic, gas,
+		const int res = binutils_assemble (s, op, op->mnemonic, gas,
 			bits == 64 ? ASSEMBLER64 : ASSEMBLER32,
 			bits <= 32 ? ".syntax unified\n" : "", cmd_opt);
+		free (gas);
+		return res > 0;
 #endif
 	} else if (!strcmp (cpu, "gas")) { // x86 alternative
 		char *cmd = r_str_newf (
@@ -45,6 +49,7 @@ static bool as_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 			r_anal_op_set_bytes (op, op->addr, out, len);
 			free (out);
 		}
+		free (cmd);
 		op->size = len;
 	} else if (!strcmp (cpu, "x86")) {
 		// macos-arm64  NO
@@ -60,7 +65,9 @@ static bool as_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 		char header[4096];
 		snprintf (header, sizeof (header), "%s.code%i\n", // .org 0x%"PFMT64x"\n"
 			syntaxstr, s->config->bits);
-		return binutils_assemble (s, op, op->mnemonic, gas, NULL, header, "");
+		const int res = binutils_assemble (s, op, op->mnemonic, gas, NULL, header, "");
+		free (gas);
+		return res > 0;
 	} else {
 		// macos-arm64  YES
 		char *cmd = r_str_newf (
@@ -74,6 +81,7 @@ static bool as_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 		}
 		free (cmd);
 	}
+	free (gas);
 	op->size = len;
 	return len > 0;
 }

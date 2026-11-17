@@ -325,11 +325,13 @@ int lua53dissasm(PluginData *state, RAnalOp *op, const ut8 *buf, int len) {
 	case OP_CALL:		/*  A B C   R(A), ... ,R(A+C-2) := R(A)(R(A+1), ... ,R(A+B-1)) */
 	case OP_TAILCALL:	/*  A B C   return R(A)(R(A+1), ... ,R(A+B-1))              */
 	case OP_SETLIST:	/*  A B C   R(A)[(C-1)*FPF+i] := R(A+i), 1 <= i <= B        */
+		free (op->mnemonic);
 		op->mnemonic = r_str_newf ("%s %i %i %i", instruction_names[GET_OPCODE (instruction)], GETARG_A (instruction), GETARG_B (instruction), GETARG_C (instruction));
 		break;
 	case OP_SELF:		/*  A B C   R(A+1) := R(B); R(A) := R(B)[RK(C)]   */
 	case OP_GETTABUP:	/*  A B C   R(A) := UpValue[B][RK(C)]             */
 	case OP_GETTABLE:	/*  A B C   R(A) := R(B)[RK(C)]                   */
+		free (op->mnemonic);
 		if (GETARG_C (instruction) & 0x100) {
 			op->mnemonic = r_str_newf ("%s %i %i K(%i)", instruction_names[GET_OPCODE (instruction)], GETARG_A (instruction), GETARG_B (instruction), GETARG_C (instruction) & 0xFF);
 		} else {
