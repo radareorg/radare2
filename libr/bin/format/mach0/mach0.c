@@ -2953,6 +2953,11 @@ static bool is_defined_symbol(bool is_object, const struct MACH0_(nlist) *nl) {
 	return nl->n_value >= 100;
 }
 
+// a common symbol is an undefined external whose value is its size
+static bool is_common_symbol(const struct MACH0_(nlist) *nl) {
+	return !(nl->n_type & N_STAB) && (nl->n_type & N_TYPE) == N_UNDF && (nl->n_type & N_EXT) && nl->n_value;
+}
+
 static bool is_unnamed_symbol_name(const char *name) {
 	return R_STR_ISEMPTY (name) || !strcmp (name, "???");
 }
@@ -3488,6 +3493,30 @@ static bool parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 				}
 			}
 		}
+	}
+
+	for (i = 0; is_object && i < mo->nsymtab && j < symbols_count; i++) {
+		struct MACH0_(nlist) *nl = &mo->symtab[i];
+		if (!is_common_symbol (nl)) {
+			continue;
+		}
+		char *sym_name = get_name (mo, nl->n_strx, false);
+		if (!sym_name) {
+			continue;
+		}
+		RBinSymbol *sym = RVecRBinSymbol_emplace_back (mo->symbols_vec);
+		memset (sym, 0, sizeof (RBinSymbol));
+		sym->vaddr = UT64_MAX;
+		sym->paddr = UT64_MAX;
+		sym->attr.size = nl->n_value;
+		sym->bits = bits;
+		sym->name = r_bin_name_new (sym_name);
+		free (sym_name);
+		sym->type = R_BIN_TYPE_OBJECT_STR;
+		sym->bind = R_BIN_BIND_GLOBAL_STR;
+		sym->forwarder = "NONE";
+		sym->ordinal = ordinal++;
+		j++;
 	}
 
 	to = R_MIN ((ut32)mo->nsymtab, ds->iundefsym + ds->nundefsym);
