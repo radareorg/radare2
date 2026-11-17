@@ -1,0 +1,53 @@
+NAME=afcr exposes dynamic arguments returns and receiver roles
+FILE=malloc://256
+ARGS=-a arm -b 64
+CMDS=<<EOF
+af+ 0x10 sample
+afb+ 0x10 0x10 4
+afc dyncc:x1,x2:x3!T0!E1 @ 0x10
+afcrj @ 0x10
+afcr @ 0x10
+EOF
+EXPECT=<<EOF
+{"ret":"x3","args":["x1","x2"],"self":"x1","error":"x2"}
+cc.dyncc:x1,x2:x3!T0!E1.ret0: x3
+cc.dyncc:x1,x2:x3!T0!E1.arg0: x1
+cc.dyncc:x1,x2:x3!T0!E1.arg1: x2
+cc.dyncc:x1,x2:x3!T0!E1.self: x1
+cc.dyncc:x1,x2:x3!T0!E1.error: x2
+EOF
+RUN
+
+NAME=afcr does not fabricate absent dynamic slots or roles
+FILE=malloc://256
+ARGS=-a arm -b 64
+CMDS=<<EOF
+af+ 0x10 sample
+afb+ 0x10 0x10 4
+afc dyncc::x0 @ 0x10
+afcrj @ 0x10
+afc dyncc:x1: @ 0x10
+afcrj @ 0x10
+afc dyncc:: @ 0x10
+afcrj @ 0x10
+EOF
+EXPECT=<<EOF
+{"ret":"x0","args":[]}
+{"args":["x1"]}
+{"args":[]}
+EOF
+RUN
+
+NAME=afcr preserves named calling convention registers
+FILE=malloc://256
+ARGS=-a arm -b 64
+CMDS=<<EOF
+af+ 0x10 sample
+afb+ 0x10 0x10 4
+afc arm64 @ 0x10
+afcrj @ 0x10
+EOF
+EXPECT=<<EOF
+{"ret":"x0","args":["x0","x1","x2","x3","x4","x5","x6","x7"]}
+EOF
+RUN

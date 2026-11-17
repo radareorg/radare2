@@ -7016,11 +7016,12 @@ static int cmd_af(RCore *core, const char *input) {
 			int i;
 			PJ *pj = NULL;
 			bool json = input[3] == 'j';
+			const bool is_dyncc = fcn->callconv && r_str_startswith (fcn->callconv, "dyncc:");
 			if (json) {
 				pj = r_core_pj_new (core);
 				pj_o (pj);
 			}
-			const char *regname = sdb_const_getf (core->anal->sdb_cc, NULL, "cc.%s.ret0", fcn->callconv);
+			const char *regname = r_anal_cc_ret (core->anal, fcn->callconv, 0);
 			if (regname) {
 				if (json) {
 					pj_ks (pj, "ret", regname);
@@ -7031,8 +7032,9 @@ static int cmd_af(RCore *core, const char *input) {
 			if (json) {
 				pj_ka (pj, "args");
 			}
-			for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
-				regname = sdb_const_getf (core->anal->sdb_cc, NULL, "cc.%s.arg%d", fcn->callconv, i);
+			const int max_args = r_anal_cc_max_arg (core->anal, fcn->callconv);
+			for (i = 0; i < max_args; i++) {
+				regname = r_anal_cc_argloc (core->anal, fcn->callconv, i, 0, -1);
 				if (regname) {
 					if (json) {
 						pj_s (pj, regname);
@@ -7044,7 +7046,7 @@ static int cmd_af(RCore *core, const char *input) {
 			if (json) {
 				pj_end (pj);
 			}
-			regname = sdb_const_getf (core->anal->sdb_cc, NULL, "cc.%s.self", fcn->callconv);
+			regname = r_anal_cc_roleloc (core->anal, fcn->callconv, is_dyncc? "T": "self");
 			if (regname) {
 				if (json) {
 					pj_ks (pj, "self", regname);
@@ -7052,7 +7054,7 @@ static int cmd_af(RCore *core, const char *input) {
 					r_cons_printf (core->cons, "cc.%s.self: %s\n", fcn->callconv, regname);
 				}
 			}
-			regname = sdb_const_getf (core->anal->sdb_cc, NULL, "cc.%s.error", fcn->callconv);
+			regname = r_anal_cc_roleloc (core->anal, fcn->callconv, is_dyncc? "E": "error");
 			if (regname) {
 				if (json) {
 					pj_ks (pj, "error", regname);
