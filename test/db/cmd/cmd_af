@@ -897,6 +897,7 @@ o malloc://512 0x10000
 e scr.null=false
 s 0x10000
 wx 554889e5c3
+e log.hints=true
 af
 afl~?
 ompg +x
@@ -907,7 +908,10 @@ EXPECT=<<EOF
 0
 1
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+HINT: Analysis skipped on non-executable map at 0x00010000
+HINT: Fix perms with 'ompg +x' or ignore them with 'e anal.in=io.maps'
+EOF
 RUN
 
 NAME=af analyzes non-executable map with anal.in=io.maps

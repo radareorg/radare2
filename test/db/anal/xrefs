@@ -24,6 +24,52 @@ axd 0x20000 0x3ffe
 EOF
 RUN
 
+NAME=aarr filters non-executable references in a binary with a known architecture
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+o malloc://512 0x10000 rw
+o malloc://512 0x20000 rwx
+wx b800000000c39090909090909090 @ 0x10000
+wx b800000000c39090909090909090 @ 0x20000
+ob 0
+af+ 0x8048300 seed
+afb+ 0x8048300 0x8048300 2
+axd 0x10000 0x8048300
+axd 0x20000 0x8048300
+e log.hints=true
+aarr
+aflq
+EOF
+EXPECT=<<EOF
+0x08048300
+0x00020000
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=aarr uses executable maps without binary sections
+FILE=-
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+o malloc://512 0x10000 rw
+o malloc://512 0x20000 rwx
+wx b800000000c39090909090909090 @ 0x10000
+wx c3 @ 0x20000
+wx b800000000c39090909090909090 @ 0x20020
+af @ 0x20000
+axd 0x10000 0x20000
+axd 0x20020 0x20000
+e log.hints=true
+aarr
+aflq
+EOF
+EXPECT=<<EOF
+0x00020000
+0x00020020
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=axt creates
 FILE=bins/mach0/hello-aae
 CMDS=<<EOF

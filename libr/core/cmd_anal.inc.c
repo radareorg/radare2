@@ -15048,26 +15048,12 @@ static bool is_valid_code(RCore *core, ut64 addr, int n) {
 }
 
 static bool is_executable(RCore *core, ut64 addr) {
-	RBinObject *obj = r_bin_cur_object (core->bin);
-	RBinSection* sec;
-	if (obj) {
-		if (obj->info && obj->info->arch) {
-			return true;
-		}
-		R_VEC_FOREACH (&obj->sections_vec, sec) {
-			ut64 vaddr_end = sec->vaddr + sec->vsize;
-			if (addr >= sec->vaddr && addr < vaddr_end) {
-				if (sec->perm & R_PERM_X) {
-					return true;
-				}
-			}
-		}
+	if (!r_io_is_valid_offset (core->io, addr, R_PERM_X)) {
+		return false;
 	}
-	RIOMap *map = r_io_map_get_at (core->io, addr);
-	if (map && map->perm & R_PERM_X) {
-		return true;
-	}
-	return false;
+	RBinObject *obj = core->io->va? r_bin_cur_object (core->bin): NULL;
+	RBinSection *section = obj? r_bin_get_section_at (obj, addr, true): NULL;
+	return !section || (section->perm & R_PERM_X);
 }
 
 static bool strnullpad_check(const ut8 *buf, int len, int inc, bool be) {
