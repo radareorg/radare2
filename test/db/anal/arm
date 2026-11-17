@@ -1431,3 +1431,31 @@ r0 = r1 & r2
 r0 &= r1
 EOF2
 RUN
+
+NAME=arm pld from pc states the address it prefetches
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+wx 01f0dff7 04f0dff5 04f05ff5
+ao 1~ptr
+ao 1 @ 4~ptr
+ao 1 @ 8~ptr
+pd 3
+e asm.bits=16
+wx 9ff804f0 1ff804f0 00bf 9ff804f0
+ao 1~ptr
+ao 1 @ 4~ptr
+ao 1 @ 0xa~ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x00000010
+ptr: 0x0000000c
+            0x00000000      01f0dff7       pld [pc, r1]
+            0x00000004      04f0dff5       pld [0x00000010]
+            0x00000008      04f05ff5       pld [0x0000000c]
+ptr: 0x00000008
+ptr: 0x00000004
+ptr: 0x00000010
+EOF
+RUN
