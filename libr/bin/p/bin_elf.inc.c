@@ -1577,7 +1577,7 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 		break;
 	case EM_AARCH64: {
 		int word = 0;
-		// only a slotted symbol has a GOT entry; S is its .got.r2 slot
+		// only a slotted symbol has a GOT entry; S is its .got.r2 slot or a common's pointer to it
 		if (aarch64_got_reloc (rel->type)) {
 			if (!reloc_has_slot (bo, rel, special_sym (bo, rel))) {
 				R_LOG_DEBUG ("unpatched aarch64 got reloc %d at 0x%"PFMT64x, rel->type, rel->rva);
@@ -2199,7 +2199,27 @@ static bool offset_addend(RBinFile *bf, ELFOBJ *eo, RIOBind *iob, const RBinElfR
 	return true;
 }
 
-enum { SLOT_CRAMPED = 1, SLOT_WARNED = 2, SLOT_LISTED = 4, SLOT_NAMED = 8, SLOT_NOSPACE = 16, SLOT_PENDING = 32 };
+enum { SLOT_CRAMPED = 1, SLOT_WARNED = 2, SLOT_LISTED = 4, SLOT_NAMED = 8, SLOT_NOSPACE = 16, SLOT_PENDING = 32, SLOT_GOTPTR = 64 };
+
+typedef struct {
+	RIOBind *iob;
+	HtUU *storage_by_sym;
+	bool be;
+	int size;
+} GotEntryWriter;
+
+// a GOT entry holds the address of the common storage it points to
+static bool write_got_entry(void *user, const ut64 sym, const ut64 entry) {
+	GotEntryWriter *w = user;
+	ut8 buf[8];
+	r_write_ble (buf, ht_uu_find (w->storage_by_sym, sym, NULL), w->be, w->size * 8);
+	w->iob->overlay_write_at (w->iob->io, entry, buf, w->size);
+	return true;
+}
+
+static inline bool common_got_reloc(ELFOBJ *eo, const RBinElfReloc *rel, const RBinElfSpecialSym *ss) {
+	return ss && ss->common && eo->ehdr.e_machine == EM_AARCH64 && aarch64_got_reloc (rel->type);
+}
 
 static inline bool offset_fits(st64 a, const RBinElfSpecialSym *ss) {
 	return (a > -GOTR2_ADDEND_MAX && a < GOTR2_ADDEND_MAX)
@@ -2296,7 +2316,9 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	HtUU *tail_by_sym = ht_uu_new0 ();
 	HtUU *slot_flags = ht_uu_new0 ();
 	HtUU *listed_slots = ht_uu_new0 ();
-	if (!relocs_by_sym || !lead_by_sym || !tail_by_sym || !slot_flags || !listed_slots) {
+	HtUU *got_by_sym = ht_uu_new0 ();
+	if (!relocs_by_sym || !lead_by_sym || !tail_by_sym || !slot_flags || !listed_slots || !got_by_sym) {
+		ht_uu_free (got_by_sym);
 		ht_uu_free (relocs_by_sym);
 		ht_uu_free (lead_by_sym);
 		ht_uu_free (tail_by_sym);
@@ -2313,9 +2335,17 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		}
 		const RBinElfSpecialSym *ss = special_sym (eo, reloc);
 		const ut64 seen = ht_uu_find (slot_flags, reloc->sym, NULL);
-		if (reloc->sym && !(seen & SLOT_PENDING) && reloc_has_slot (eo, reloc, ss) && !reloc_sym_is_tls (eo, reloc)) {
-			ht_uu_update (slot_flags, reloc->sym, seen | SLOT_PENDING);
+		ut64 pend = seen;
+		if (reloc->sym && !(pend & SLOT_PENDING) && reloc_has_slot (eo, reloc, ss) && !reloc_sym_is_tls (eo, reloc)) {
+			pend |= SLOT_PENDING;
 			pending++;
+		}
+		if (!(pend & SLOT_GOTPTR) && common_got_reloc (eo, reloc, ss)) {
+			pend |= SLOT_GOTPTR;
+			pending++;
+		}
+		if (pend != seen) {
+			ht_uu_update (slot_flags, reloc->sym, pend);
 		}
 		st64 a;
 		if (!reloc_has_slot (eo, reloc, ss) || !offset_addend (bf, eo, &b->iob, reloc, &a) || !offset_fits (a, ss)) {
@@ -2397,9 +2427,22 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 				plt_entry_addr = slot;
 			}
 		}
+		const bool common_got = common_got_reloc (eo, reloc, ss);
+		bool got_found = false;
+		ut64 got_entry = common_got? ht_uu_find (got_by_sym, reloc->sym, &got_found): 0;
+		if (common_got && !got_found && ht_uu_find (relocs_by_sym, reloc->sym, NULL)) {
+			pending -= pending > 0;
+			ut64 end;
+			got_found = place_slot (vaddr, cdsz, cdsz, 0, limit, budget + cdsz, &got_entry, &end);
+			if (got_found) {
+				budget -= (end - vaddr) - cdsz;
+				vaddr = end;
+				ht_uu_insert (got_by_sym, reloc->sym, got_entry);
+			}
+		}
 		st64 a = 0;
 		const bool offset = has_slot && offset_addend (bf, eo, &b->iob, reloc, &a) && a;
-		const bool skip = (flags & SLOT_NOSPACE) || (offset && (!offset_fits (a, ss)
+		const bool skip = (flags & SLOT_NOSPACE) || (common_got && !got_found) || (offset && (!offset_fits (a, ss)
 			|| ((flags & SLOT_CRAMPED) && (a < 0 || (ut64)a + cdsz > slot_size))));
 		if (skip && !(flags & SLOT_WARNED)) {
 			RBinImport *imp = reloc_is_import (eo, reloc)? eo->imports_by_ord[reloc->sym]: NULL;
@@ -2418,10 +2461,10 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 			ht_uu_update (slot_flags, reloc->sym, flags);
 		}
 		// symbol-less relocs have S = 0 (gABI); a tls value is no address
-		const ut64 raddr = resolved? sym_addr: addressable? slot: 0;
+		const ut64 raddr = common_got? got_entry: resolved? sym_addr: addressable? slot: 0;
 		if (!skip) {
 			_patch_reloc (bf, eo, eo->ehdr.e_machine, &b->iob, reloc,
-				elf_io_addr (bf, eo, reloc->rva), raddr, bias, plt_entry_addr, toc_base, arm_arch);
+				elf_io_addr (bf, eo, reloc->rva), raddr, bias, common_got? got_entry: plt_entry_addr, toc_base, arm_arch);
 		}
 		RBinSymbol *csym = (takes_slot && common)? reloc_symbol (eo, reloc): NULL;
 		if (csym) {
@@ -2458,7 +2501,6 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		}
 	}
 	ht_uu_free (listed_slots);
-	ht_uu_free (relocs_by_sym);
 	ht_uu_free (lead_by_sym);
 	ht_uu_free (tail_by_sym);
 	ht_uu_free (slot_flags);
@@ -2469,9 +2511,13 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 			if (gotr2map) {
 				gotr2map->name = strdup (".got.r2");
 			}
+			GotEntryWriter w = { &b->iob, relocs_by_sym, eo->endian, (int)cdsz };
+			ht_uu_foreach (got_by_sym, write_got_entry, &w);
 		}
 		free (muri);
 	}
+	ht_uu_free (relocs_by_sym);
+	ht_uu_free (got_by_sym);
 	return ret;
 }
 

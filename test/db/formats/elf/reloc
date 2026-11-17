@@ -1401,10 +1401,12 @@ ARGS=-e bin.relocs.apply=true
 CMDS=<<EOF
 om~.got.r2[5,7]
 p8 20 @ section..text
+pv8 @ 0x080001a0
 EOF
 EXPECT=<<EOF
-0x08000190 0x080001a7
-00000090004006910100009021cc40f954000094
+0x08000190 0x080001af
+00000090004006910100009021d040f956000094
+0x0000000008000198
 EOF
 RUN
 
@@ -1447,18 +1449,20 @@ call 0x80001d0
 EOF
 RUN
 
-NAME=ELF: aarch64 GOT relocs against a common symbol load its slot
+NAME=ELF: aarch64 GOT relocs against a common symbol load its address from a GOT entry
 FILE=bins/elf/aarch64-common-got.o
 ARGS=-e bin.relocs.apply=true -e asm.sub.names=false
 CMDS=<<EOF
 pi 4 @ 0x08000040
+pv8 @ 0x08000160
 irj~{}~sym_va
 EOF
 EXPECT=<<EOF
 adrp x0, 0x8000000
-ldr x0, [x0, 0x158]
+ldr x0, [x0, 0x160]
 adrp x1, 0x8000000
-ldr x1, [x1, 0x160]
+ldr x1, [x1, 0x168]
+0x0000000008000158
     "sym_va": 134218072,
     "sym_va": 134218072,
     "sym_va": 134218072,
