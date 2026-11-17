@@ -2816,3 +2816,56 @@ efcdab89674523011032547698badcfe
 0xfedcba98765432100123456789abcdef
 EOF
 RUN
+
+NAME=enter without nesting level x86-32
+FILE=-
+CMDS=<<EOF
+e io.va=true
+e asm.arch=x86
+e asm.bits=32
+aei
+aeim
+aer esp=0x00108000
+aer ebp=0x00109000
+.aer*
+"wx c8080000"
+aes
+aer?ebp
+aer?esp
+pv @ 0x00107ffc
+EOF
+EXPECT=<<EOF
+0x00107ffc
+0x00107ff4
+0x00109000
+EOF
+RUN
+
+NAME=enter copies the frame pointers of the nesting level x86-32
+FILE=-
+CMDS=<<EOF
+e io.va=true
+e asm.arch=x86
+e asm.bits=32
+aei
+aeim
+aer esp=0x00108000
+aer ebp=0x00108010
+.aer*
+wv4 0x1234 @ 0x0010800c
+"wx c8100002"
+aes
+aer?ebp
+aer?esp
+pv @ 0x00107ffc
+pv @ 0x00107ff8
+pv @ 0x00107ff4
+EOF
+EXPECT=<<EOF
+0x00107ffc
+0x00107fe4
+0x00108010
+0x00001234
+0x00107ffc
+EOF
+RUN

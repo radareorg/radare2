@@ -3999,6 +3999,26 @@ type: cmp
 EOF
 RUN
 
+NAME=x86_32 enter reserves its frame on the stack
+FILE=malloc://0x200
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx c8000100c9c3
+ao~type,stackptr
+af
+afi~stackframe
+axf
+wx c8100002 @ 0x10
+ao @ 0x10~stackptr
+EOF
+EXPECT=<<EOF
+type: upush
+stackptr: 260
+stackframe: 260
+stackptr: 28
+EOF
+RUN
+
 NAME=x86_32 far jmp offset sized by the operand size
 FILE=malloc://16
 ARGS=-a x86 -b 32
