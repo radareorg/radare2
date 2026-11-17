@@ -30,6 +30,10 @@ string. `afia+ NT` and `afia+ noreturn,thunk` enable the same attributes;
 `afia-` clears them, and `afia=` replaces the settable attributes. Pure,
 variadic, lineal, recursive and method are derived and cannot be set by `afia`.
 
+Entry-point analysis (`aa` and `aaa`) sets constructor and destructor attributes
+from the RBin entries shown by `iee`. Init and preinit entries set constructor;
+fini entries set destructor. These attributes remain editable through `afia`.
+
 Recursive describes a direct self-call, not a loop back to the entry or an
 indirect cycle through other functions. It is refreshed with reference counts
 and when printing function references. Method is set when assigning a calling

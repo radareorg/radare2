@@ -15406,6 +15406,14 @@ static bool cmd_aa(RCore *core, bool aaa) {
 			ut64 addr = r_bin_get_vaddr (core->bin, entry->paddr, entry->vaddr);
 			if (addr != UT64_MAX) {
 				r_core_af (core, addr, NULL, anal_calls);
+				RAnalFunction *fcn = r_anal_get_function_at (core->anal, addr);
+				if (fcn) {
+					if (entry->type == R_BIN_ENTRY_TYPE_INIT || entry->type == R_BIN_ENTRY_TYPE_PREINIT) {
+						r_anal_function_set_attr (fcn, R_ANAL_FCN_ATTR_CONSTRUCTOR, true);
+					} else if (entry->type == R_BIN_ENTRY_TYPE_FINI) {
+						r_anal_function_set_attr (fcn, R_ANAL_FCN_ATTR_DESTRUCTOR, true);
+					}
+				}
 			}
 		}
 	}

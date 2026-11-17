@@ -70,6 +70,94 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=aa sets constructor and destructor attributes from bin entries
+FILE=bins/elf/before-after-main
+CMDS=<<EOF
+af @ entry.init1
+afn custom_init @ entry.init1
+aa
+afia @ entry.preinit0~ctor
+afia @ entry.init1~ctor
+afia @ entry.init4~ctor
+afia @ entry.fini1~ctor
+afia @ entry.fini4~ctor
+afia @ entry0~ctor
+afia @ main~ctor
+afia- constructor @ entry.init1
+afia @ entry.init1~ctor
+EOF
+EXPECT=<<EOF
+  C constructor true
+  D destructor  false
+  C constructor true
+  D destructor  false
+  C constructor true
+  D destructor  false
+  C constructor false
+  D destructor  true
+  C constructor false
+  D destructor  true
+  C constructor false
+  D destructor  false
+  C constructor false
+  D destructor  false
+  C constructor false
+  D destructor  false
+EOF
+RUN
+
+NAME=aaa sets constructor and destructor attributes with a rebased binary
+FILE=bins/elf/before-after-main
+ARGS=-B 0x100000
+CMDS=<<EOF
+aaa
+afia @ entry.preinit1~ctor
+afia @ entry.init1~ctor
+afia @ entry.fini1~ctor
+afia @ entry0~ctor
+EOF
+EXPECT=<<EOF
+  C constructor true
+  D destructor  false
+  C constructor true
+  D destructor  false
+  C constructor false
+  D destructor  true
+  C constructor false
+  D destructor  false
+EOF
+RUN
+
+NAME=aa sets constructor and destructor attributes from 64-bit bin entries
+FILE=bins/elf/analysis/ls-linux64
+CMDS=<<EOF
+aa
+afia @ entry.init0~ctor
+afia @ entry.fini0~ctor
+afia @ entry0~ctor
+EOF
+EXPECT=<<EOF
+  C constructor true
+  D destructor  false
+  C constructor false
+  D destructor  true
+  C constructor false
+  D destructor  false
+EOF
+RUN
+
+NAME=aa sets constructor attributes from Mach-O bin entries
+FILE=bins/mach0/hellocxx-osx-fat-intel
+CMDS=<<EOF
+aa
+afia @ entry.init0~ctor
+EOF
+EXPECT=<<EOF
+  C constructor true
+  D destructor  false
+EOF
+RUN
+
 NAME=auto entry (lib)
 ARGS=-e io.cache=true
 FILE=bins/elf/libverifyPass.so
