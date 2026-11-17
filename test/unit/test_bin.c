@@ -6,6 +6,24 @@
 
 //TODO test r_str_chop_path
 
+bool test_r_bin_symbol_physical_fallback(void) {
+	RBinInfo info = {0};
+	RBinObject object = {0};
+	RBinFile file = {0};
+	RBinSymbol symbol = {0};
+	object.info = &info;
+	file.bo = &object;
+	symbol.vaddr = UT64_MAX;
+	symbol.paddr = 0xf8;
+	mu_assert_eq (r_bin_file_get_symbol_vaddr (&file, &symbol), 0xf8, "physical-only symbol keeps its file offset");
+	symbol.paddr = UT64_MAX;
+	object.baddr = 0x1000;
+	object.baddr_shift = 0x1000 - 0x08000000;
+	info.has_va = true;
+	mu_assert_eq (r_bin_file_get_symbol_vaddr (&file, &symbol), UT64_MAX, "unplaced symbol stays addressless under a load bias");
+	mu_end;
+}
+
 bool test_r_bin(void) {
 	RBin *bin = r_bin_new ();
 	RIO *io = r_io_new ();
@@ -851,6 +869,7 @@ bool test_r_bin_string_charset(void) {
 }
 
 bool all_tests(void) {
+	mu_run_test (test_r_bin_symbol_physical_fallback);
 	mu_run_test (test_r_bin_string_charset);
 	mu_run_test(test_r_bin);
 	mu_run_test(test_r_bin_plan9_symbol_names);
