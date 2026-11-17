@@ -80,7 +80,8 @@ static char *filter_intel_syntax (char *mnemonic) {
 	mnemonic = r_str_replace (mnemonic, "and ", "and [", true);
 	mnemonic = r_str_replace (mnemonic, "ora ", "ora [", true);
 	mnemonic = r_str_replace (mnemonic, " [#", " ", true);
-	if (strstr (mnemonic, "[")) {
+	mnemonic = r_str_replace (mnemonic, " [[", " [", true);
+	if (strchr (mnemonic, '[') && !strchr (mnemonic, ']')) {
 		mnemonic = r_str_append (mnemonic, "]");
 	}
 	return mnemonic;

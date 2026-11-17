@@ -77,7 +77,7 @@ EXPECT=<<EOF
     "opcode": "jsr , x",
     "fail": 4,
     "type": "rcall",
-    "opcode": "jmp [0x1234]]",
+    "opcode": "jmp [0x1234]",
     "ptr": 4660,
     "type": "ujmp",
     "opcode": "lbsr 0x0027",
