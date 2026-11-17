@@ -109,10 +109,24 @@ wx 7c64281e7c64289e7c642a9e7c60281e
 pi 4
 EOF
 EXPECT=<<EOF
-r3 = select(cr0lt, r4, r5)
-r3 = select(cr0eq, r4, r5)
-r3 = select(cr2eq, r4, r5)
-r3 = select(cr0lt, 0, r5)
+r3 = (cr0lt)? r4 : r5
+r3 = (cr0eq)? r4 : r5
+r3 = (cr2eq)? r4 : r5
+r3 = (cr0lt)? 0 : r5
+EOF
+RUN
+
+# isel r7, r8, r9, 4*cr1+gt (0x7ce8495e): RT = CR[BC] ? RA : RB per Power ISA 3.3.11
+NAME=PPC32 pseudo isel renders as a ternary
+FILE=malloc://16
+ARGS=-a ppc -b 32 -e cfg.bigendian=true -e asm.pseudo=true
+CMDS=<<EOF
+wx 7ce8495e7c64289e
+pi 2
+EOF
+EXPECT=<<EOF
+r7 = (cr1gt)? r8 : r9
+r3 = (cr0eq)? r4 : r5
 EOF
 RUN
 
