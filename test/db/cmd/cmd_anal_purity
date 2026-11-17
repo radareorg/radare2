@@ -1,0 +1,53 @@
+NAME=unresolved direct calls cannot establish function purity
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx e80b000000c3 @ 0x10
+af+ 0x10 wrapper
+afb+ 0x10 0x10 6
+axC 0x20 0x10
+afiaq @ 0x10
+EOF
+EXPECT=<<EOF
+E
+EOF
+RUN
+
+NAME=known pure callees preserve caller purity
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx e80b000000c3 @ 0x10
+wx c3 @ 0x20
+af @ 0x20
+af+ 0x10 wrapper
+afb+ 0x10 0x10 6
+axC 0x20 0x10
+afiaq @ 0x10
+afiaq @ 0x20
+EOF
+EXPECT=<<EOF
+PE
+PE
+EOF
+RUN
+
+NAME=known impure callees keep caller impurity
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx e80b000000c3 @ 0x10
+wx c3 @ 0x20
+af @ 0x20
+axd 0x80 0x20
+af+ 0x10 wrapper
+afb+ 0x10 0x10 6
+axC 0x20 0x10
+afiaq @ 0x10
+afiaq @ 0x20
+EOF
+EXPECT=<<EOF
+E
+E
+EOF
+RUN
