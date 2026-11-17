@@ -126,24 +126,19 @@ static void string_set_addrs(RBinString *bs, ut64 str_start, ut64 pdelta, ut64 v
 	bs->vaddr = addr;
 }
 
-/*
- * A short run of printable bytes filling a pointer-aligned slot whose value
- * points into the binary is an address, not a string: 64bit pointers into
- * images loaded above 4GB (0x140000000 for PE) decode as 4 printable chars
- * ending in '@' followed by \x01. A real NUL-terminated string cannot make
- * such a value, the terminator lands in its high bytes.
- */
-static bool string_is_pointer(RBinFile *bf, const ut8 *buf, ut64 from, ut64 to, ut64 str_start, ut64 size) {
+// 64bit pointers into images above 4GB decode as short printable runs (0x140000000 -> "...@\x01")
+static bool string_is_pointer(RBinFile *bf, ut64 to, ut64 str_start, ut64 size) {
 	RBinObject *bo = bf->bo;
-	if (!bo || !bo->info) {
+	if (!bo || !bo->info || bo->info->bits != 64) {
 		return false;
 	}
-	const ut64 ws = bo->info->bits / 8;
-	if ((ws != 4 && ws != 8) || size > ws || str_start % ws || str_start + ws > to) {
+	if (size > 8 || str_start % 8 || str_start + 8 > to) {
 		return false;
 	}
-	ut64 ptr = r_read_ble (buf + str_start - from, bo->info->big_endian, ws * 8);
-	return ptr && r_bin_get_section_at (bo, ptr, true);
+	// read the raw bytes, buf may be charset decoded
+	ut64 ptr = r_buf_read_ble64_at (bf->buf, str_start, bo->info->big_endian);
+	// stored pointers use the file base, sections are reported rebased
+	return ptr && r_bin_get_section_at (bo, ptr + bo->baddr_shift, true);
 }
 
 // TODO: this code must be implemented in RSearch as options for the strings mode
@@ -394,7 +389,7 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 					continue;
 				}
 			}
-			if (string_is_pointer (bf, buf, from, to, str_start, needle - str_start)) {
+			if (string_is_pointer (bf, to, str_start, needle - str_start)) {
 				continue;
 			}
 			RBinString bs = { 0 };
