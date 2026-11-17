@@ -3,5 +3,5 @@ url = https://github.com/capstone-engine/capstone.git
 revision = 04fd70b5456c20fc27d1f2b62d6ed0820fc6b081
 patch_directory = capstone-next
 directory = capstone-next
-diff_files = capstone-next/capstone-patches/fix-x86-16.patch
+diff_files = capstone-next/capstone-patches/fix-x86-16.patch, capstone-next/capstone-patches/fix-x86-unsigned-imm-size.patch, capstone-next/capstone-patches/fix-x86-16-mandatory-66.patch, capstone-next/capstone-patches/fix-x86-adsize-variant.patch, capstone-next/capstone-patches/fix-x86-reserved-nop.patch
 depth = 1

@@ -1712,10 +1712,22 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		break;
 	case X86_INS_ENTER:
 		{
-			dst = getarg (&gop, 0, 0, NULL, NULL);
-			esilprintf (op, "%s,%d,%s,-,=[%d],%d,%s,-=",
-				r_str_get_fail (dst, "eax"), rs, sp, rs, rs, sp);
-			free (dst);
+			// push bp, copy level - 1 frame pointers, push the new frame pointer
+			const ut64 size = INSOP (0).imm & UT16_MAX;
+			const int level = INSOP (1).imm & 0x1f;
+			int i;
+			esilprintf (op, "%s,%d,%s,-,=[%d],%d,%s,-=", bp, rs, sp, rs, rs, sp);
+			if (level > 0) {
+				for (i = 1; i < level; i++) {
+					r_strbuf_appendf (&op->esil, ",%d,%s,-=,%s,[%d],%d,%s,-,=[%d],%d,%s,-=",
+						rs, bp, bp, rs, rs, sp, rs, rs, sp);
+				}
+				r_strbuf_appendf (&op->esil, ",%d,%s,+,%d,%s,-,=[%d],%d,%s,-=,%d,%s,+,%s,=",
+					(level - 1) * rs, sp, rs, sp, rs, rs, sp, level * rs, sp, bp);
+			} else {
+				r_strbuf_appendf (&op->esil, ",%s,%s,=", sp, bp);
+			}
+			r_strbuf_appendf (&op->esil, ",%" PFMT64u ",%s,-=", size, sp);
 		}
 		break;
 	case X86_INS_PUSH:
@@ -4037,6 +4049,15 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		op->stackptr = regsz * 8;
 		break;
 	case X86_INS_ENTER:
+		{
+			// pushes bp, the frame pointers of the nesting level and the new one
+			const int level = INSOP (1).imm & 0x1f;
+			op->type = R_ANAL_OP_TYPE_UPUSH;
+			op->cycles = CYCLE_REG + CYCLE_MEM;
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = regsz * (level? level + 1: 1) + (INSOP (0).imm & UT16_MAX);
+		}
+		break;
 	case X86_INS_PUSH:
 	case X86_INS_PUSHF:
 	case X86_INS_PUSHFD:

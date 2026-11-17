@@ -1,0 +1,59 @@
+diff --git a/arch/X86/X86DisassemblerDecoder.c b/arch/X86/X86DisassemblerDecoder.c
+--- a/arch/X86/X86DisassemblerDecoder.c
++++ b/arch/X86/X86DisassemblerDecoder.c
+@@ -953,6 +953,43 @@ static bool is16BitEquivalent(unsigned orig, unsigned equiv)
+ 	return false;
+ }
+ 
++/*
++ * isMandatoryOpSize16 - Determines whether 0x66 in 16-bit mode is the
++ * mandatory prefix of another instruction (comisd) instead of an operand size
++ * override. F2/F3 take precedence as mandatory prefixes.
++ *
++ * @param id         - The instruction ID decoded without ATTR_OPSIZE
++ * @param withOpSize - The instruction ID decoded with ATTR_OPSIZE
++ */
++static bool isMandatoryOpSize16(const struct InternalInstruction *insn,
++		uint16_t attrMask, uint16_t id, uint16_t withOpSize)
++{
++	const struct OperandSpecifier *ops, *opsWithOpSize;
++	unsigned int i, j;
++
++	if (insn->mode != MODE_16BIT || !insn->hasOpSize ||
++			insn->opcodeType == ONEBYTE || (attrMask & (ATTR_XS | ATTR_XD)))
++		return false;
++
++	i = find_insn(id);
++	j = find_insn(withOpSize);
++	if (i == -1 || j == -1 || insns[i].mapid != insns[j].mapid)
++		return true;
++
++	// with the same mnemonic only the operand size may differ (bswap),
++	// unless it is an SSE instruction (cmppd) or the register class
++	// changes (pshufb mm/xmm)
++	ops = x86OperandSets[specifierForUID(id)->operands];
++	opsWithOpSize = x86OperandSets[specifierForUID(withOpSize)->operands];
++	for (i = 0; i < X86_MAX_OPERANDS; i++) {
++		if (ops[i].type != opsWithOpSize[i].type ||
++				ops[i].type == TYPE_XMM || ops[i].type == TYPE_MM64)
++			return true;
++	}
++
++	return false;
++}
++
+ /*
+  * is64Bit - Determines whether this instruction is a 64-bit instruction.
+  *
+@@ -1251,8 +1300,9 @@ static int getID(struct InternalInstruction *insn)
+ 			return 0;
+ 		}
+ 
+-		if (is16BitEquivalent(instructionID, instructionIDWithOpsize) &&
+-				(insn->mode == MODE_16BIT) ^ insn->hasOpSize) {
++		if (is16BitEquivalent(instructionID, instructionIDWithOpsize) ?
++				(insn->mode == MODE_16BIT) ^ insn->hasOpSize :
++				isMandatoryOpSize16(insn, attrMask, instructionID, instructionIDWithOpsize)) {
+ 			insn->instructionID = instructionIDWithOpsize;
+ 			insn->spec = specifierForUID(instructionIDWithOpsize);
+ 		} else {
