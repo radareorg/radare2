@@ -550,6 +550,9 @@ R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt) {
 	}
 	if (!buf) {
 		buf = r_buf_new_with_io (&bin->iob, opt->fd);
+		if (is_debugger) {
+			opt->inmem = true;
+		}
 	}
 	if (!buf) {
 		return false;

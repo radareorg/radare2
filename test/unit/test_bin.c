@@ -835,16 +835,152 @@ bool test_r_bin_elf_pn_xnum_phdr(void) {
 }
 
 
+static const RBufferMethods *string_buffer_methods;
+static int string_buffer_reads;
+static ut64 string_buffer_read_limit;
+
+static st64 string_buffer_read(RBuffer *buf, ut8 *bytes, ut64 size) {
+	string_buffer_reads++;
+	return string_buffer_methods->read (buf, bytes, R_MIN (size, string_buffer_read_limit));
+}
+
+static RIODescInfo string_debug_desc_info(RIODesc *desc) {
+	RIODescInfo info = r_io_desc_info (desc);
+	info.isdbg = true;
+	return info;
+}
+
+bool test_r_bin_debugger_buffer_layout(void) {
+	const char *files[] = { "malloc://16", "bins/elf/ioli/crackme0x00" };
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (files); i++) {
+		RBin *bin = r_bin_new ();
+		RIO *io = r_io_new ();
+		r_io_bind (io, &bin->iob);
+		bin->iob.desc_info = string_debug_desc_info;
+		RIODesc *desc = r_io_open (io, files[i], R_PERM_R, 0);
+		mu_assert_notnull (desc, "debugger test descriptor");
+		RBinFileOptions options;
+		r_bin_file_options_init (&options, desc->fd, UT64_MAX, 0, 0);
+		options.pluginname = "null";
+		options.inmem = i != 0;
+		mu_assert_true (r_bin_open_io (bin, &options), "load debugger binary information");
+		RBinFile *bf = r_bin_cur (bin);
+		mu_assert_notnull (bf, "debugger binary file");
+		mu_assert_eq (bf->inmem, i == 0, "only process-backed buffers use memory layout");
+		r_bin_free (bin);
+		r_io_free (io);
+	}
+	mu_end;
+}
+
+bool test_r_bin_string_pointers(void) {
+	const struct {
+		const char *name;
+		ut64 pointer, vaddr, native_base, vsize;
+		st64 shift;
+		int bits;
+		bool big_endian, inmem, segment, loaded, overlap;
+		ut8 offset, size, read_limit;
+		const char *expected;
+	} cases[] = {
+		{ .name = "native little-endian pointer" },
+		{ .name = "rebased disk pointer", .shift = 0x40000000 },
+		{ .name = "disk pointer with negative load bias", .shift = -0x100000000 },
+		{ .name = "relocated live pointer", .pointer = 0x150414141, .inmem = true, .shift = 0x10000000, .vaddr = 0x140414000 },
+		{ .name = "live pointer with negative load bias", .inmem = true, .shift = -0x10000000, .native_base = 0x150000000, .vaddr = 0x150414000 },
+		{ .name = "big-endian pointer suffix", .big_endian = true, .pointer = 0x0000014041414243 },
+		{ .name = "canonical big-endian live pointer", .big_endian = true, .inmem = true,
+			.pointer = 0xffff804041414243ULL, .vaddr = 0x141414000,
+			.shift = (st64)(0xffff804040000000ULL - 0x140000000ULL) },
+		{ .name = "low-address 64bit string", .pointer = 0x41414241, .expected = "ABAA" },
+		{ .name = "low-address big-endian string", .big_endian = true, .pointer = 0x41414243, .expected = "AABC" },
+		{ .name = "32bit string", .bits = 32, .expected = "AAA@" },
+		{ .name = "unaligned string", .offset = 1, .expected = "AAA@" },
+		{ .name = "truncated little-endian slot", .size = 7, .expected = "AAA@" },
+		{ .name = "truncated big-endian slot", .big_endian = true, .pointer = 0x0000014041414243, .size = 7, .expected = "@AAB" },
+		{ .name = "complete big-endian slot at buffer end", .big_endian = true, .pointer = 0x0000014041414243, .size = 8 },
+		{ .name = "short backend read", .read_limit = 5, .expected = "AAA@" },
+		{ .name = "pointer at exclusive range end", .vaddr = 0x140413141, .expected = "AAA@" },
+		{ .name = "overflowing address range", .vsize = UT64_MAX, .expected = "AAA@" },
+		{ .name = "loadable segment pointer", .segment = true, .loaded = true, .inmem = true },
+		{ .name = "unmapped segment string", .segment = true, .expected = "AAA@" },
+		{ .name = "overlapping pointer ranges", .overlap = true },
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (cases); i++) {
+		ut8 bytes[16] = {0};
+		const ut64 pointer = cases[i].pointer? cases[i].pointer: 0x140414141;
+		r_write_ble64 (bytes + cases[i].offset, pointer, cases[i].big_endian);
+		const ut64 size = cases[i].size? cases[i].size: sizeof (bytes);
+		RBuffer *buf = r_buf_new_with_bytes (bytes, size);
+		RBufferMethods methods = *buf->methods;
+		string_buffer_methods = buf->methods;
+		string_buffer_reads = 0;
+		string_buffer_read_limit = cases[i].read_limit? cases[i].read_limit: UT64_MAX;
+		methods.read = string_buffer_read;
+		buf->methods = &methods;
+		RBin *bin = r_bin_new ();
+		RIO *io = r_io_new ();
+		r_io_bind (io, &bin->iob);
+		RBinInfo info = { .bits = cases[i].bits? cases[i].bits: 64, .big_endian = cases[i].big_endian, .has_va = true };
+		const ut64 native_base = cases[i].native_base? cases[i].native_base: 0x140000000;
+		RBinObject object = { .info = &info, .baddr = native_base + (ut64)cases[i].shift, .baddr_shift = cases[i].shift };
+		RVecRBinSection_init (&object.sections_vec);
+		RBinSection *section = RVecRBinSection_emplace_back (&object.sections_vec);
+		*section = (RBinSection) {0};
+		section->vaddr = cases[i].vaddr? cases[i].vaddr: pointer & ~0xfffULL;
+		section->vsize = cases[i].vsize? cases[i].vsize: 0x1000;
+		section->size = size;
+		section->is_segment = cases[i].segment;
+		section->add = cases[i].loaded;
+		if (cases[i].overlap) {
+			RBinSection copy = *section;
+			section = RVecRBinSection_emplace_back (&object.sections_vec);
+			*section = copy;
+			section->vaddr -= 0x1000;
+			section->vsize += 0x2000;
+		}
+		RBinFile file = { .rbin = bin, .bo = &object, .buf = buf, .size = size, .inmem = cases[i].inmem };
+		RVecRBinString *strings = r_bin_raw_strings (&file, 4);
+		mu_assert_notnull (strings, cases[i].name);
+		mu_assert_eq (RVecRBinString_length (strings), cases[i].expected? 1: 0, cases[i].name);
+		if (cases[i].expected) {
+			mu_assert_streq (RVecRBinString_at (strings, 0)->string, cases[i].expected, cases[i].name);
+		}
+		mu_assert_eq (string_buffer_reads, 1, "pointer filtering reuses the scan snapshot");
+		RVecRBinString_free (strings);
+		RVecRBinSection_fini (&object.sections_vec);
+		buf->methods = string_buffer_methods;
+		r_unref (buf);
+		r_bin_free (bin);
+		r_io_free (io);
+	}
+	mu_end;
+}
+
 bool test_r_bin_string_charset(void) {
-	const ut8 bytes[] = { 0xc8, 0xc5, 0xd3, 0xd3, 0xd6, 0 };
+	const ut8 bytes[] = { 0xc8, 0xc5, 0xd3, 0xd3, 0xd6, 0, 0, 0 };
 	RBin *bin = r_bin_new ();
 	RIO *io = r_io_new ();
 	r_io_bind (io, &bin->iob);
 	RMuta *muta = r_muta_new ();
 	r_muta_bind (muta, &bin->mb);
 	RBuffer *buf = r_buf_new_with_bytes (bytes, sizeof (bytes));
-	RBinInfo info = { .charset = "ebcdic37" };
+	RBufferMethods methods = *buf->methods;
+	string_buffer_methods = buf->methods;
+	string_buffer_reads = 0;
+	string_buffer_read_limit = UT64_MAX;
+	methods.read = string_buffer_read;
+	buf->methods = &methods;
+	RBinInfo info = { .bits = 64, .charset = "ebcdic37" };
 	RBinObject object = { .info = &info };
+	RVecRBinSection_init (&object.sections_vec);
+	RBinSection *section = RVecRBinSection_emplace_back (&object.sections_vec);
+	*section = (RBinSection) {0};
+	section->vaddr = 0x4f4c4c4500;
+	section->vsize = 0x100;
+	section->size = sizeof (bytes);
 	RBinFile file = { .rbin = bin, .bo = &object, .buf = buf, .size = sizeof (bytes) };
 	char *old_charset = r_sys_getenv ("RABIN2_CHARSET");
 	r_sys_setenv ("RABIN2_CHARSET", NULL);
@@ -854,6 +990,7 @@ bool test_r_bin_string_charset(void) {
 	mu_assert_notnull (strings, "plugin charset strings");
 	mu_assert_eq (RVecRBinString_length (strings), 1, "plugin charset string count");
 	mu_assert_streq (RVecRBinString_at (strings, 0)->string, "HELLO", "plugin charset used without core settings");
+	mu_assert_eq (string_buffer_reads, 1, "charset pointer filtering reuses raw scan bytes");
 	RVecRBinString_free (strings);
 	sdb_set (bin->sdb, "bin.charset", "ascii", 0);
 	strings = r_bin_raw_strings (&file, 4);
@@ -861,6 +998,8 @@ bool test_r_bin_string_charset(void) {
 	mu_assert_eq (RVecRBinString_length (strings), 1, "explicit charset string count");
 	mu_assert ("explicit charset overrides plugin default", strcmp (RVecRBinString_at (strings, 0)->string, "HELLO"));
 	RVecRBinString_free (strings);
+	RVecRBinSection_fini (&object.sections_vec);
+	buf->methods = string_buffer_methods;
 	r_unref (buf);
 	r_bin_free (bin);
 	r_muta_free (muta);
@@ -985,6 +1124,8 @@ bool test_r_bin_te_truncated(void) {
 
 bool all_tests(void) {
 	mu_run_test (test_r_bin_symbol_physical_fallback);
+	mu_run_test (test_r_bin_debugger_buffer_layout);
+	mu_run_test (test_r_bin_string_pointers);
 	mu_run_test (test_r_bin_string_charset);
 	mu_run_test(test_r_bin);
 	mu_run_test(test_r_bin_plan9_symbol_names);

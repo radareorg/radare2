@@ -191,6 +191,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rabin2 -z skips 64bit pointers into the image
+FILE=bins/pe/dhcpssvc.dll
+CMDS=!!rabin2 -z ${R2_FILE}~?
+EXPECT=<<EOF
+469
+EOF
+RUN
+
 NAME=rabin2 -zz pe
 FILE=bins/pe/ioli/w32/crackme0x00.exe
 CMDS=!rabin2 -zz ${R2_FILE} | grep "Password:"

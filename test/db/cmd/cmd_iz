@@ -810,3 +810,77 @@ EXPECT=<<EOF
 1   0x00000045 0x00001005 13  14   .data   ascii second string
 EOF
 RUN
+
+NAME=iz skips 64bit pointers into the image
+FILE=bins/pe/dhcpssvc.dll
+CMDS=<<EOF
+pv8 @ 0x7ff5d4a12a0
+iz~0x7ff5d4a12a0
+iz~?
+EOF
+EXPECT=<<EOF
+0x000007ff5d424e40
+469
+EOF
+RUN
+
+NAME=iz skips 64bit pointers into the rebased image
+FILE=bins/pe/dhcpssvc.dll
+ARGS=-B 0x10000000
+CMDS=<<EOF
+iz~?
+EOF
+EXPECT=<<EOF
+469
+EOF
+RUN
+
+NAME=iz keeps short aligned strings in 64bit images
+FILE=bins/pe/dhcpssvc.dll
+CMDS=<<EOF
+iz~QISKNU,CRIM
+iz~0x000aa850
+EOF
+EXPECT=<<EOF
+10  0x000a30b0 0x7ff5d4a42b0 7   8    .data   ascii   QISKNU?
+55  0x000aa6a8 0x7ff5d5044a8 4   5    .rsrc   ascii   CRIM
+63  0x000aa850 0x7ff5d504650 5   6    .rsrc   ascii   TEMPD
+EOF
+RUN
+
+NAME=iz keeps short aligned strings in 0x140000000 images
+FILE=bins/pe/testx64.exe
+CMDS=<<EOF
+iz~r2rulez
+EOF
+EXPECT=<<EOF
+1   0x00001630 0x140002230 7   8    .rdata  ascii r2rulez
+EOF
+RUN
+
+NAME=iz keeps short aligned strings in rebased 64bit images
+FILE=bins/pe/testx64.exe
+ARGS=-B 0x7ff5d4000000
+CMDS=<<EOF
+iz~r2rulez
+EOF
+EXPECT=<<EOF
+1   0x00001630 0x7ff5d4002230 7   8    .rdata  ascii r2rulez
+EOF
+RUN
+
+NAME=iz pointer filter is per binary with multiple files mapped
+FILE=bins/pe/dhcpssvc.dll
+CMDS=<<EOF
+o bins/pe/testx64.exe 0x7ff5d4a00000
+iz~?
+iz~r2rulez
+ob 0
+iz~?
+EOF
+EXPECT=<<EOF
+93
+1   0x00001630 0x7ff5d4a02230 7   8    .rdata  ascii r2rulez
+469
+EOF
+RUN
