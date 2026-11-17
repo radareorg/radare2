@@ -200,6 +200,7 @@ typedef enum {
 	R_ANAL_FCN_ATTR_INLINE = 1 << 1, // inlined at its call sites, user-set only
 	R_ANAL_FCN_ATTR_PURE = 1 << 2, // computed by r_anal_function_purity
 	R_ANAL_FCN_ATTR_VARIADIC = 1 << 3,
+	R_ANAL_FCN_ATTR_THUNK = 1 << 4, // only computes a target and jumps to it
 	R_ANAL_FCN_ATTR_LIBRARY = 1 << 5, // import stub or statically linked library code
 	R_ANAL_FCN_ATTR_STATIC = 1 << 6, // internal linkage, not exported
 	R_ANAL_FCN_ATTR_CONSTRUCTOR = 1 << 7, // runs before main (init_array, ctors, DT_INIT)

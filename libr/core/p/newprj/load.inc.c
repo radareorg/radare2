@@ -443,7 +443,7 @@ static void rprj_function_attr_load(RPrjCursor *cur, RAnalFunction *fcn, R2Proje
 			// saved value is restored rather than validated away
 			r_anal_function_store_callconv (cur->core->anal, fcn, cc);
 		}
-		fcn->attrs = (fcn->attrs & ~RPRJ_FUNC_ATTRS) | (attr->attrs & RPRJ_FUNC_ATTRS);
+		fcn->attrs = attr->attrs;
 		if (fcn->attrs & R_ANAL_FCN_ATTR_NORETURN) {
 			r_anal_noreturn_add (cur->core->anal, name, va);
 		}
@@ -721,7 +721,7 @@ static void rprj_print_function_attrs(RPrjCursor *cur, RAnalFunction *fcn) {
 	if (fcn->attrs & R_ANAL_FCN_ATTR_NORETURN) {
 		r_strbuf_appendf (cur->out, "'tn 0x%08"PFMT64x"\n", fcn->addr);
 	}
-	rprj_print_attrs (cur, fcn->addr, '+', fcn->attrs & RPRJ_FUNC_ATTRS);
+	rprj_print_attrs (cur, fcn->addr, '+', fcn->attrs);
 }
 
 static void rprj_print_function_script(RPrjCursor *cur, RAnalFunction *fcn) {
@@ -783,7 +783,7 @@ static void rprj_diff_function_blocks(RPrjCursor *cur, RAnalFunction *fcn, RList
 
 static void rprj_diff_function_attrs(RPrjCursor *cur, RAnalFunction *fcn, R2ProjectFunctionAttr *attr) {
 	const char *cc = attr && attr->cc != UT32_MAX? rprj_st_get (cur->st, attr->cc): NULL;
-	const ut32 changed = ((attr? attr->attrs: 0) ^ fcn->attrs) & RPRJ_FUNC_ATTRS;
+	const ut32 changed = (attr? attr->attrs: 0) ^ fcn->attrs;
 	const st64 stack = attr? (st64)attr->stack: 0;
 	if (strcmp (r_str_get (cc), r_str_get (fcn->callconv))) {
 		if (R_STR_ISNOTEMPTY (fcn->callconv)) {

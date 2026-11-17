@@ -50,8 +50,6 @@ enum {
 #define RPRJ_SIGNAL_SIZE 8
 #define RPRJ_SDB_ADDR_SIZE (8 + RPRJ_ADDR_SIZE)
 
-// the RAnalFcnAttr bits a project keeps, the others are derived by the analysis
-#define RPRJ_FUNC_ATTRS (R_ANAL_FCN_ATTR_NORETURN | R_ANAL_FCN_ATTR_INLINE)
 
 enum {
 	RPRJ_BREAKPOINT_TRACE = 1 << 0,

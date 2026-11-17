@@ -224,7 +224,7 @@ static ut32 rprj_color_index(RVecPrjColor *colors, RColor *color) {
 static ut32 rprj_fcn_attr_intern(RPrjCursor *cur, RVecPrjFunctionAttr *attrs, RAnalFunction *fcn) {
 	const ut32 type = (ut32)fcn->type;
 	const ut32 bits = (ut32)fcn->bits;
-	const ut32 saved_attrs = fcn->attrs & RPRJ_FUNC_ATTRS;
+	const ut32 saved_attrs = fcn->attrs;
 	const ut64 stack = (ut64)fcn->maxstack;
 	const char *cc = R_STR_ISNOTEMPTY (fcn->callconv)? fcn->callconv: NULL;
 	ut32 idx = 0;

@@ -603,6 +603,57 @@ static const char *trampoline_target_name(RCore *core, ut64 addr) {
 	return NULL;
 }
 
+#define THUNK_MAXINSTR 4
+
+static bool is_thunk_jump(RAnalFunction *fcn, RAnalOp *op) {
+	switch (op->type) {
+	case R_ANAL_OP_TYPE_JMP:
+		return op->jump != UT64_MAX && !r_anal_function_contains (fcn, op->jump);
+	case R_ANAL_OP_TYPE_UJMP:
+	case R_ANAL_OP_TYPE_RJMP:
+	case R_ANAL_OP_TYPE_IJMP:
+	case R_ANAL_OP_TYPE_IRJMP:
+	case R_ANAL_OP_TYPE_MJMP:
+		return true;
+	}
+	return false;
+}
+
+// a thunk only materializes its target before an unconditional jump out:
+// plt and macho stubs, ppc/arm glue and msvc incremental linking jumps
+static bool is_thunk(RCore *core, RAnalFunction *fcn) {
+	if (RVecAnalBlockPtr_length (&fcn->bbs) != 1) {
+		return false;
+	}
+	RAnalBlock *bb = *RVecAnalBlockPtr_at (&fcn->bbs, 0);
+	if (bb->ninstr < 1 || bb->ninstr > THUNK_MAXINSTR + 1) {
+		return false;
+	}
+	int setup = 0;
+	bool thunk = false;
+	int i;
+	for (i = 0; i < bb->ninstr; i++) {
+		RAnalOp *op = r_core_anal_op (core, r_anal_bb_opaddr_i (bb, i), R_ARCH_OP_MASK_BASIC);
+		if (!op) {
+			return false;
+		}
+		const ut32 type = op->type;
+		if (i == bb->ninstr - 1) {
+			// a direct jump with setup before it is a tail call, not a thunk
+			thunk = is_thunk_jump (fcn, op) && (type != R_ANAL_OP_TYPE_JMP || !setup);
+		} else if (type != R_ANAL_OP_TYPE_NOP && type != R_ANAL_OP_TYPE_NULL) { // endbr64 decodes as null
+			setup++;
+			if (setup >= THUNK_MAXINSTR || (type != R_ANAL_OP_TYPE_LEA && type != R_ANAL_OP_TYPE_ADD
+					&& type != R_ANAL_OP_TYPE_LOAD && type != R_ANAL_OP_TYPE_MOV)) {
+				r_anal_op_free (op);
+				return false;
+			}
+		}
+		r_anal_op_free (op);
+	}
+	return thunk;
+}
+
 static void autoname_imp_trampoline(RCore *core, RAnalFunction *fcn) {
 	if (RVecAnalBlockPtr_length (&fcn->bbs) == 1 && (*RVecAnalBlockPtr_at (&fcn->bbs, 0))->ninstr == 1) {
 		// TODO seems wasteful, maybe we should add a function to only retrieve the first?
@@ -893,6 +944,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 				r_anal_xrefs_set (core->anal, from, fcn->addr, ref_type | R_ANAL_REF_TYPE_EXEC);
 			}
 			core_anal_fcn_trycatch (core, fcn);
+			R_MASK_SET (fcn->attrs, R_ANAL_FCN_ATTR_THUNK, is_thunk (core, fcn));
 			if (!r_anal_add_function (core->anal, fcn)) {
 				r_anal_function_free (fcn);
 				fcn = NULL;
@@ -969,6 +1021,7 @@ error:
 				r_flag_space_pop (core->flags);
 			}
 			core_anal_fcn_trycatch (core, fcn);
+			R_MASK_SET (fcn->attrs, R_ANAL_FCN_ATTR_THUNK, is_thunk (core, fcn));
 			if (!r_anal_add_function (core->anal, fcn)) {
 				r_anal_function_free (fcn);
 				fcn = NULL;
@@ -2609,6 +2662,12 @@ R_API char *r_core_anal_fcn_name(RCore *core, RAnalFunction *fcn) {
 	return name;
 }
 
+// refresh the derived lineal bit before printing the attribute letters
+static char *fcn_attrs_tostring(RAnalFunction *fcn) {
+	r_anal_function_islineal (fcn);
+	return r_anal_function_attrs_tostring (fcn->attrs, false);
+}
+
 #define FCN_LIST_VERBOSE_ENTRY "%s0x%0*"PFMT64x" %5d %4"PFMT64d" %5d %5d %5d %4d 0x%0*"PFMT64x" %5"PFMT64d" 0x%0*"PFMT64x" %5"PFMT64u" %4d %6d %4"PFMT64u" %5d %s%s%s%s\n"
 
 static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
@@ -3020,6 +3079,10 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 	pj_kn (pj, "realsz", r_anal_function_realsize (fcn));
 	pj_kb (pj, "noreturn", fcn->attrs & R_ANAL_FCN_ATTR_NORETURN);
 	pj_kb (pj, "inline", fcn->attrs & R_ANAL_FCN_ATTR_INLINE);
+	pj_kb (pj, "thunk", fcn->attrs & R_ANAL_FCN_ATTR_THUNK);
+	char *attrs = fcn_attrs_tostring (fcn);
+	pj_ks (pj, "attrs", attrs);
+	free (attrs);
 	pj_kb (pj, "recursive", is_recursive (core, fcn));
 	pj_ki (pj, "stackframe", fcn->maxstack);
 	{

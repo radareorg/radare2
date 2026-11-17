@@ -963,19 +963,19 @@ bool test_r_anal_function_switches_foreach(void) {
 }
 
 static bool test_r_anal_function_attrs_string(void) {
-	const ut32 ni = R_ANAL_FCN_ATTR_NORETURN | R_ANAL_FCN_ATTR_INLINE;
-	mu_assert_streq_free (r_anal_function_attrs_tostring (ni, false), "NI", "letters follow bit order");
-	mu_assert_streq_free (r_anal_function_attrs_tostring (ni, true), "noreturn,inline", "verbose names");
+	const ut32 nt = R_ANAL_FCN_ATTR_NORETURN | R_ANAL_FCN_ATTR_THUNK;
+	mu_assert_streq_free (r_anal_function_attrs_tostring (nt, false), "NT", "letters follow bit order");
+	mu_assert_streq_free (r_anal_function_attrs_tostring (nt, true), "noreturn,thunk", "verbose names");
 	mu_assert_streq_free (r_anal_function_attrs_tostring (0, false), "", "no attributes");
 	ut32 attrs = 0;
-	mu_assert_true (r_anal_function_attrs_fromstring ("IN", &attrs), "letters parse");
-	mu_assert_eq (attrs, ni, "letters map to bits");
-	mu_assert_true (r_anal_function_attrs_fromstring ("inline, noreturn", &attrs), "names parse");
-	mu_assert_eq (attrs, ni, "names map to bits");
-	mu_assert_true (r_anal_function_attrs_fromstring ("inline P", &attrs), "names and letters mix");
-	mu_assert_eq (attrs, R_ANAL_FCN_ATTR_INLINE | R_ANAL_FCN_ATTR_PURE, "mixed input maps to bits");
-	mu_assert_false (r_anal_function_attrs_fromstring ("inline,bogus", &attrs), "unknown name fails");
-	mu_assert_eq (attrs, R_ANAL_FCN_ATTR_INLINE, "known names still parse");
+	mu_assert_true (r_anal_function_attrs_fromstring ("TN", &attrs), "letters parse");
+	mu_assert_eq (attrs, nt, "letters map to bits");
+	mu_assert_true (r_anal_function_attrs_fromstring ("thunk, noreturn", &attrs), "names parse");
+	mu_assert_eq (attrs, nt, "names map to bits");
+	mu_assert_true (r_anal_function_attrs_fromstring ("inline L", &attrs), "names and letters mix");
+	mu_assert_eq (attrs, R_ANAL_FCN_ATTR_INLINE | R_ANAL_FCN_ATTR_LIBRARY, "mixed input maps to bits");
+	mu_assert_false (r_anal_function_attrs_fromstring ("thunk,bogus", &attrs), "unknown name fails");
+	mu_assert_eq (attrs, R_ANAL_FCN_ATTR_THUNK, "known names still parse");
 	mu_assert_false (r_anal_function_attrs_fromstring ("NZ", &attrs), "unknown letter fails");
 	mu_end;
 }

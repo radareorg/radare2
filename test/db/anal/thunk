@@ -1,0 +1,158 @@
+NAME=thunk x86-64 plt stubs
+FILE=bins/elf/analysis/ls-linux-x86_64-zlul
+CMDS=<<EOF
+aa
+afiaq @ sym.imp.getenv
+afia @ main~thunk
+EOF
+EXPECT=<<EOF
+TE
+  T thunk       false
+EOF
+RUN
+
+NAME=thunk x86-64 cet plt.sec stub with endbr64
+FILE=bins/elf/analysis/calls_x64-jammy
+CMDS=<<EOF
+aa
+afiaq @ sym.imp.puts
+EOF
+EXPECT=<<EOF
+TE
+EOF
+RUN
+
+NAME=thunk arm64 macho auth stubs
+FILE=bins/mach0/cat-macos-arm64
+CMDS=<<EOF
+aa
+afiaq @ sym.imp.__error
+afiaq @ main
+EOF
+EXPECT=<<EOF
+TE
+NE
+EOF
+RUN
+
+NAME=thunk arm32 plt stub
+FILE=bins/elf/analysis/hello-arm32
+CMDS=<<EOF
+aa
+afiaq @ sym.imp.puts
+EOF
+EXPECT=<<EOF
+PTE
+EOF
+RUN
+
+NAME=thunk ppc plt stub
+FILE=bins/elf/analysis/elf-ppc-execstack
+CMDS=<<EOF
+aa
+afiaq @ sym.imp.abort
+EOF
+EXPECT=<<EOF
+PTE
+EOF
+RUN
+
+NAME=thunk mips lazy stubs call the resolver
+FILE=bins/elf/analysis/mips-hello
+CMDS=<<EOF
+aa
+afiaq @ sym.imp.__libc_init
+EOF
+EXPECT=<<EOF
+E
+EOF
+RUN
+
+NAME=thunk lone direct jmp and tail call with setup
+FILE=bins/pdb/SimplePDB.exe
+ARGS=-e io.cache=true
+CMDS=<<EOF
+wx e90b000000 @ 0x401000
+f sym.target @ 0x401010
+af @ 0x401000
+afiaq @ 0x401000
+wx bf05000000e906000000 @ 0x401020
+af @ 0x401020
+afia @ 0x401020~thunk
+EOF
+EXPECT=<<EOF
+PTE
+  T thunk       false
+EOF
+RUN
+
+NAME=afia letters, exact set and afl script
+FILE=malloc://256
+ARGS=-a arm -b 64
+CMDS=<<EOF
+af+ 0x10 fcn.attr
+afb+ 0x10 0x10 8
+s 0x10
+afia+ NT
+afiaq
+afia- T
+afiaq
+afia= IL
+afiaq
+afia+ thunk,static
+afl*~afia
+afia=
+afiaq
+EOF
+EXPECT=<<EOF
+NPTE
+NPE
+IPLE
+'0x00000010'afia+ ITLS
+PE
+EOF
+RUN
+
+NAME=afia rejects unknown letters and computed attributes
+FILE=malloc://256
+ARGS=-a arm -b 64
+CMDS=<<EOF
+af+ 0x10 fcn.attr
+afb+ 0x10 0x10 8
+s 0x10
+"afia+ E"
+"afia+ TZ"
+afiaq
+EOF
+EXPECT=<<EOF
+PE
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Attribute 'lineal' is read-only: the function blocks are contiguous (computed)
+ERROR: Unknown function attribute letter 'Z'
+EOF
+RUN
+
+NAME=newprj saves and replays thunk
+FILE=malloc://256
+ARGS=-a arm -b 64
+CMDS=<<EOF
+mkdir .tmp
+af+ 0x10 fcn.one
+afb+ 0x10 0x10 4
+afia+ thunk,library @ 0x10
+prj save .tmp/newprj-thunk.prj > /dev/null
+afia= @ 0x10
+prj load .tmp/newprj-thunk.prj > /dev/null
+afiaq @ 0x10
+prj r2 .tmp/newprj-thunk.prj~afia
+afia- L @ 0x10
+prj diff .tmp/newprj-thunk.prj~afia
+rm .tmp/newprj-thunk.prj
+EOF
+EXPECT=<<EOF
+PTLE
+'0x00000010'afia+ TL
+'0x00000010'afia- L
+EOF
+RUN

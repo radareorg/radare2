@@ -3634,6 +3634,7 @@ static const RAnalFcnAttrInfo fcn_attrs[] = {
 	{ R_ANAL_FCN_ATTR_INLINE, 'I', "inline", "the function is inlined at its call sites" },
 	{ R_ANAL_FCN_ATTR_PURE, 'P', "pure", "the function does not read or write outside state (computed)" },
 	{ R_ANAL_FCN_ATTR_VARIADIC, 'V', "variadic", "the function takes a variable number of arguments (see afs)" },
+	{ R_ANAL_FCN_ATTR_THUNK, 'T', "thunk", "the function only jumps to another one" },
 	{ R_ANAL_FCN_ATTR_LIBRARY, 'L', "library", "the function is an import stub or library code" },
 	{ R_ANAL_FCN_ATTR_STATIC, 'S', "static", "the function has internal linkage and is not exported" },
 	{ R_ANAL_FCN_ATTR_CONSTRUCTOR, 'C', "constructor", "the function runs before main" },
