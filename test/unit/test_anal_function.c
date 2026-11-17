@@ -962,6 +962,24 @@ bool test_r_anal_function_switches_foreach(void) {
 	mu_end;
 }
 
+static bool test_r_anal_function_attrs_string(void) {
+	const ut32 ni = R_ANAL_FCN_ATTR_NORETURN | R_ANAL_FCN_ATTR_INLINE;
+	mu_assert_streq_free (r_anal_function_attrs_tostring (ni, false), "NI", "letters follow bit order");
+	mu_assert_streq_free (r_anal_function_attrs_tostring (ni, true), "noreturn,inline", "verbose names");
+	mu_assert_streq_free (r_anal_function_attrs_tostring (0, false), "", "no attributes");
+	ut32 attrs = 0;
+	mu_assert_true (r_anal_function_attrs_fromstring ("IN", &attrs), "letters parse");
+	mu_assert_eq (attrs, ni, "letters map to bits");
+	mu_assert_true (r_anal_function_attrs_fromstring ("inline, noreturn", &attrs), "names parse");
+	mu_assert_eq (attrs, ni, "names map to bits");
+	mu_assert_true (r_anal_function_attrs_fromstring ("inline P", &attrs), "names and letters mix");
+	mu_assert_eq (attrs, R_ANAL_FCN_ATTR_INLINE | R_ANAL_FCN_ATTR_PURE, "mixed input maps to bits");
+	mu_assert_false (r_anal_function_attrs_fromstring ("inline,bogus", &attrs), "unknown name fails");
+	mu_assert_eq (attrs, R_ANAL_FCN_ATTR_INLINE, "known names still parse");
+	mu_assert_false (r_anal_function_attrs_fromstring ("NZ", &attrs), "unknown letter fails");
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_anal_function_relocate);
 	mu_run_test (test_r_anal_function_filtered_name_collision);
@@ -986,6 +1004,7 @@ int all_tests(void) {
 	mu_run_test (test_r_anal_function_callconv_store_keeps_an_undefined_name);
 	mu_run_test (test_r_anal_function_switches_foreach);
 	mu_run_test (test_switch_owner);
+	mu_run_test (test_r_anal_function_attrs_string);
 	return tests_passed != tests_run;
 }
 

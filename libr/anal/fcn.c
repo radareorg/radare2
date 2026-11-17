@@ -3629,6 +3629,84 @@ R_API bool r_anal_function_set_attr(RAnalFunction *fcn, RAnalFcnAttr attr, bool 
 	return true;
 }
 
+static const RAnalFcnAttrInfo fcn_attrs[] = {
+	{ R_ANAL_FCN_ATTR_NORETURN, 'N', "noreturn", "the function never returns to its caller" },
+	{ R_ANAL_FCN_ATTR_INLINE, 'I', "inline", "the function is inlined at its call sites" },
+	{ R_ANAL_FCN_ATTR_PURE, 'P', "pure", "the function does not read or write outside state (computed)" },
+	{ R_ANAL_FCN_ATTR_VARIADIC, 'V', "variadic", "the function takes a variable number of arguments (see afs)" },
+};
+
+R_API const RAnalFcnAttrInfo *r_anal_function_attr_info(size_t idx) {
+	return idx < R_ARRAY_SIZE (fcn_attrs)? &fcn_attrs[idx]: NULL;
+}
+
+R_API char *r_anal_function_attrs_tostring(ut32 attrs, bool verbose) {
+	RStrBuf *sb = r_strbuf_new ("");
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (fcn_attrs); i++) {
+		const RAnalFcnAttrInfo *ai = &fcn_attrs[i];
+		if (!(attrs & ai->bit)) {
+			continue;
+		}
+		if (!verbose) {
+			r_strbuf_append_n (sb, &ai->letter, 1);
+		} else {
+			r_strbuf_appendf (sb, "%s%s", r_strbuf_is_empty (sb)? "": ",", ai->name);
+		}
+	}
+	return r_strbuf_drain (sb);
+}
+
+static const RAnalFcnAttrInfo *fcn_attr_find(const char *name, char letter) {
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (fcn_attrs); i++) {
+		if (name? !strcmp (fcn_attrs[i].name, name): fcn_attrs[i].letter == letter) {
+			return &fcn_attrs[i];
+		}
+	}
+	return NULL;
+}
+
+R_API bool r_anal_function_attrs_fromstring(const char *str, ut32 *attrs) {
+	R_RETURN_VAL_IF_FAIL (str && attrs, false);
+	char *words = strdup (str);
+	r_str_replace_char (words, ',', ' ');
+	RList *list = r_str_split_list (words, " ", 0);
+	RListIter *iter;
+	const char *word;
+	ut32 mask = 0;
+	bool ok = true;
+	r_list_foreach (list, iter, word) {
+		if (!*word) {
+			continue;
+		}
+		if (!isupper ((ut8)*word)) {
+			const RAnalFcnAttrInfo *ai = fcn_attr_find (word, 0);
+			if (!ai) {
+				R_LOG_ERROR ("Unknown function attribute '%s'", word);
+				ok = false;
+				continue;
+			}
+			mask |= ai->bit;
+			continue;
+		}
+		const char *c;
+		for (c = word; *c; c++) {
+			const RAnalFcnAttrInfo *ai = fcn_attr_find (NULL, *c);
+			if (!ai) {
+				R_LOG_ERROR ("Unknown function attribute letter '%c'", *c);
+				ok = false;
+				continue;
+			}
+			mask |= ai->bit;
+		}
+	}
+	r_list_free (list);
+	free (words);
+	*attrs = mask;
+	return ok;
+}
+
 static bool can_affect_bp(RAnal *anal, RAnalOp *op) {
 	const char *bpreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
 	if (!bpreg) {

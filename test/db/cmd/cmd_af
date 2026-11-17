@@ -965,13 +965,13 @@ afia- noreturn
 afia~noreturn
 EOF
 EXPECT=<<EOF
-  noreturn  false
-  inline    false
-  noreturn  true
-  inline    true
-{"noreturn":true,"inline":true,"pure":true,"variadic":false}
-  inline    false
-  noreturn  false
+  N noreturn    false
+  I inline      false
+  N noreturn    true
+  I inline      true
+{"attrs":"NIP","noreturn":true,"inline":true,"pure":true,"variadic":false}
+  I inline      false
+  N noreturn    false
 EOF
 RUN
 
@@ -1039,8 +1039,8 @@ afia @ 0x20~inline
 rm .tmp/afia-legacy.r2
 EOF
 EXPECT=<<EOF
-  inline    true
-  inline    false
+  I inline      true
+  I inline      false
 EOF
 RUN
 

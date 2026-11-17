@@ -3281,9 +3281,11 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	if (fcn->folded) {
 		r_cons_printf (cons, "afF @ 0x%08"PFMT64x"\n", fcn->addr);
 	}
-	if (fcn->attrs & R_ANAL_FCN_ATTR_INLINE) {
-		r_cons_printf (cons, "'0x%08"PFMT64x"'afia+ inline\n", fcn->addr);
+	char *attrs = r_anal_function_attrs_tostring (fcn->attrs & ~R_ANAL_FCN_ATTR_COMPUTED, false);
+	if (*attrs) {
+		r_cons_printf (cons, "'0x%08"PFMT64x"'afia+ %s\n", fcn->addr, attrs);
 	}
+	free (attrs);
 	// afS goes first, the afv[bs] offsets that follow are relative to the frame size
 	r_cons_printf (cons, "'0x%"PFMT64x"'afS %d\n", fcn->addr, fcn->maxstack);
 	r_core_cmdf (core, "afvb* @ 0x%"PFMT64x, fcn->addr);

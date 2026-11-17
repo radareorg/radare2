@@ -1417,10 +1417,10 @@ rm .tmp/newprj-inline.prj
 rm .tmp/newprj-inline.r2
 EOF
 EXPECT=<<EOF
-  inline    true
-  inline    false
-  inline    true
-  inline    false
+  I inline      true
+  I inline      false
+  I inline      true
+  I inline      false
 EOF
 RUN
 
@@ -1460,11 +1460,11 @@ rm .tmp/newprj-inline-diff.prj
 rm .tmp/newprj-inline-diff.r2
 EOF
 EXPECT=<<EOF
-  inline    true
-  inline    false
-  inline    false
-  inline    false
-  inline    true
-  inline    false
+  I inline      true
+  I inline      false
+  I inline      false
+  I inline      false
+  I inline      true
+  I inline      false
 EOF
 RUN

@@ -202,6 +202,16 @@ typedef enum {
 	R_ANAL_FCN_ATTR_VARIADIC = 1 << 3,
 } RAnalFcnAttr;
 
+// derived by the analysis, afia cannot set them
+#define R_ANAL_FCN_ATTR_COMPUTED (R_ANAL_FCN_ATTR_PURE | R_ANAL_FCN_ATTR_VARIADIC)
+
+typedef struct {
+	RAnalFcnAttr bit;
+	char letter;
+	const char *name;
+	const char *desc;
+} RAnalFcnAttrInfo;
+
 #define RAnalBlock struct r_anal_bb_t
 
 R_VEC_TYPE (RVecAnalBlockPtr, RAnalBlock *);
@@ -1277,6 +1287,12 @@ R_API bool r_anal_function_bbadd(RAnalFunction *fcn, RAnalBlock *bb);
 R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize);
 R_API bool r_anal_function_purity(RAnalFunction *fcn);
 R_API bool r_anal_function_set_attr(RAnalFunction *fcn, RAnalFcnAttr attr, bool enable);
+// NULL once idx is past the last attribute
+R_API const RAnalFcnAttrInfo *r_anal_function_attr_info(size_t idx);
+// one letter per attribute ("NT") or comma separated names ("noreturn,thunk")
+R_API char *r_anal_function_attrs_tostring(ut32 attrs, bool verbose);
+// takes names separated by commas or spaces, or a word of uppercase letters
+R_API bool r_anal_function_attrs_fromstring(const char *str, ut32 *attrs);
 R_API int r_anal_function_instrcount(RAnalFunction *fcn);
 R_API bool r_anal_function_islineal(RAnalFunction *fcn);
 R_API const char *r_anal_pin_get(RAnal *a, const char *name);

@@ -411,6 +411,15 @@ static void rprj_block_load(RPrjCursor *cur, RAnalFunction *fcn, R2ProjectBlock 
 	}
 }
 
+// noreturn is emitted as tn by the callers, it also updates the noreturn database
+static void rprj_print_attrs(RPrjCursor *cur, ut64 va, char op, ut32 attrs) {
+	char *letters = r_anal_function_attrs_tostring (attrs & ~(R_ANAL_FCN_ATTR_NORETURN | R_ANAL_FCN_ATTR_COMPUTED), false);
+	if (*letters) {
+		r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'afia%c %s\n", va, op, letters);
+	}
+	free (letters);
+}
+
 static void rprj_function_attr_load(RPrjCursor *cur, RAnalFunction *fcn, R2ProjectFunctionAttr *attr, const char *name, ut64 va, int mode) {
 	if (!attr) {
 		return;
@@ -423,9 +432,7 @@ static void rprj_function_attr_load(RPrjCursor *cur, RAnalFunction *fcn, R2Proje
 		if (attr->attrs & R_ANAL_FCN_ATTR_NORETURN) {
 			r_strbuf_appendf (cur->out, "'tn 0x%08"PFMT64x"\n", va);
 		}
-		if (attr->attrs & R_ANAL_FCN_ATTR_INLINE) {
-			r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'afia+ inline\n", va);
-		}
+		rprj_print_attrs (cur, va, '+', attr->attrs);
 	}
 	if ((mode & R_CORE_NEWPRJ_MODE_LOAD) && fcn) {
 		fcn->type = attr->type;
@@ -714,9 +721,7 @@ static void rprj_print_function_attrs(RPrjCursor *cur, RAnalFunction *fcn) {
 	if (fcn->attrs & R_ANAL_FCN_ATTR_NORETURN) {
 		r_strbuf_appendf (cur->out, "'tn 0x%08"PFMT64x"\n", fcn->addr);
 	}
-	if (fcn->attrs & R_ANAL_FCN_ATTR_INLINE) {
-		r_strbuf_appendf (cur->out, "'0x%08"PFMT64x"'afia+ inline\n", fcn->addr);
-	}
+	rprj_print_attrs (cur, fcn->addr, '+', fcn->attrs & RPRJ_FUNC_ATTRS);
 }
 
 static void rprj_print_function_script(RPrjCursor *cur, RAnalFunction *fcn) {
@@ -793,11 +798,8 @@ static void rprj_diff_function_attrs(RPrjCursor *cur, RAnalFunction *fcn, R2Proj
 			? "'tn 0x%08"PFMT64x"\n"
 			: "'tn- 0x%08"PFMT64x"\n", fcn->addr);
 	}
-	if (changed & R_ANAL_FCN_ATTR_INLINE) {
-		r_strbuf_appendf (cur->out, fcn->attrs & R_ANAL_FCN_ATTR_INLINE
-			? "'0x%08"PFMT64x"'afia+ inline\n"
-			: "'0x%08"PFMT64x"'afia- inline\n", fcn->addr);
-	}
+	rprj_print_attrs (cur, fcn->addr, '+', changed & fcn->attrs);
+	rprj_print_attrs (cur, fcn->addr, '-', changed & ~fcn->attrs);
 }
 
 static void rprj_diff_function_vars(RPrjCursor *cur, RAnalFunction *fcn, RList *pvars) {
