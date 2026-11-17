@@ -2161,20 +2161,24 @@ static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
 
 // gcc names a clone <name>.isra.N or, when a formal became a constant, <name>.constprop.N
 static const char *clone_symbol_name(const RAnal *anal, ut64 addr, bool has_const_formal) {
-	if (!anal->binb.bin || !anal->binb.get_symbol_at) {
+	RBin *bin = anal->binb.bin;
+	if (!bin || !anal->binb.get_symbol_at) {
 		return NULL;
 	}
-	RIOBind *iob = &anal->binb.bin->iob;
+	RIOBind *iob = &bin->iob;
 	if (iob->io && !iob->io->va) {
 		// DWARF addresses stay virtual, but the symbol lookup follows io.va.
-		RBinObject *obj = r_bin_cur_object (anal->binb.bin);
-		RBinSection *section = obj? r_bin_get_section_at (obj, addr, true): NULL;
+		RBinObject *obj = bin->cur? bin->cur->bo: NULL;
+		if (!obj || !anal->binb.get_vsect_at) {
+			return NULL;
+		}
+		RBinSection *section = anal->binb.get_vsect_at (bin, addr);
 		if (!section) {
 			return NULL;
 		}
 		addr = section->paddr + (addr - section->vaddr - (ut64)obj->baddr_shift);
 	}
-	RBinSymbol *sym = anal->binb.get_symbol_at (anal->binb.bin, addr);
+	RBinSymbol *sym = anal->binb.get_symbol_at (bin, addr);
 	if (!sym || !sym->name) {
 		return NULL;
 	}
