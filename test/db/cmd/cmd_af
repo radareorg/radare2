@@ -969,7 +969,7 @@ EXPECT=<<EOF
   I inline      false
   N noreturn    true
   I inline      true
-{"attrs":"NIP","noreturn":true,"inline":true,"pure":true,"variadic":false}
+{"attrs":"NIP","noreturn":true,"inline":true,"pure":true,"variadic":false,"library":false,"static":false,"constructor":false,"destructor":false,"naked":false,"interrupt":false}
   I inline      false
   N noreturn    false
 EOF

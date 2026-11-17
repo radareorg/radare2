@@ -200,6 +200,12 @@ typedef enum {
 	R_ANAL_FCN_ATTR_INLINE = 1 << 1, // inlined at its call sites, user-set only
 	R_ANAL_FCN_ATTR_PURE = 1 << 2, // computed by r_anal_function_purity
 	R_ANAL_FCN_ATTR_VARIADIC = 1 << 3,
+	R_ANAL_FCN_ATTR_LIBRARY = 1 << 5, // import stub or statically linked library code
+	R_ANAL_FCN_ATTR_STATIC = 1 << 6, // internal linkage, not exported
+	R_ANAL_FCN_ATTR_CONSTRUCTOR = 1 << 7, // runs before main (init_array, ctors, DT_INIT)
+	R_ANAL_FCN_ATTR_DESTRUCTOR = 1 << 8, // runs at exit (fini_array, dtors, DT_FINI)
+	R_ANAL_FCN_ATTR_NAKED = 1 << 9, // no compiler prologue or epilogue
+	R_ANAL_FCN_ATTR_INTERRUPT = 1 << 10, // interrupt handler, may not follow the calling convention
 } RAnalFcnAttr;
 
 // derived by the analysis, afia cannot set them
