@@ -1254,7 +1254,7 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 WARN: No .got.r2 room for big2m (2097152 bytes), relocs left unpatched
-WARN: No .got.r2 room for align2m (8 bytes), relocs left unpatched
+WARN: No .got.r2 room for align2m (align 0x200000), relocs left unpatched
 WARN: No .got.r2 room for wrap32 (4294967312 bytes), relocs left unpatched
 EOF
 RUN
@@ -1421,7 +1421,7 @@ EXPECT=<<EOF
 0x0000000000000000
 EOF
 EXPECT_ERR=<<EOF
-WARN: No .got.r2 room for aligned (64 bytes), relocs left unpatched
+WARN: No .got.r2 room for aligned (align 0x100000), relocs left unpatched
 EOF
 RUN
 

@@ -2404,6 +2404,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		bool takes_slot = addressable && eo->ehdr.e_machine != EM_SBPF && !(flags & SLOT_NOSPACE);
 		const ut64 slot_size = (common && ss->size)? ss->size: cdsz;
 		ut64 slot = vaddr;
+		ut64 misaligned = 0;
 		if (takes_slot) {
 			const ut64 align = common? R_MAX (slot_align, ss->value): slot_align;
 			const ut64 lead = R_ROUND (ht_uu_find (lead_by_sym, reloc->sym, NULL), cdsz);
@@ -2418,6 +2419,10 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 				if (!place_slot (vaddr, slot_size, align, 0, limit, budget + cdsz, &slot, &end)) {
 					flags |= SLOT_NOSPACE;
 					takes_slot = false;
+					ut64 unaligned_slot, unaligned_end;
+					if (align > 1 && place_slot (vaddr, slot_size, 1, 0, limit, budget + cdsz, &unaligned_slot, &unaligned_end)) {
+						misaligned = align;
+					}
 				}
 			}
 			if (takes_slot) {
@@ -2448,7 +2453,10 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 			RBinImport *imp = reloc_is_import (eo, reloc)? eo->imports_by_ord[reloc->sym]: NULL;
 			RBinSymbol *sym = !imp? reloc_symbol (eo, reloc): NULL;
 			RBinName *name = imp? imp->name: sym? sym->name: NULL;
-			if (flags & SLOT_NOSPACE) {
+			if (misaligned) {
+				R_LOG_WARN ("No .got.r2 room for %s (align 0x%"PFMT64x"), relocs left unpatched",
+					name? r_bin_name_tostring (name): "?", misaligned);
+			} else if (flags & SLOT_NOSPACE) {
 				R_LOG_WARN ("No .got.r2 room for %s (%"PFMT64u" bytes), relocs left unpatched",
 					name? r_bin_name_tostring (name): "?", slot_size);
 			} else {
