@@ -126,3 +126,16 @@ jump: 0x00000036
 fail: 0x00000044
 EOF
 RUN
+
+NAME=wasm physical-only global symbols retain their addresses
+FILE=bins/wasm/sections.wasm
+ARGS=-e io.va=true
+CMDS=<<EOF
+isq~global.0
+is.q @ 0xf8
+EOF
+EXPECT=<<EOF
+0x000000f8 4 global.0
+0x000000f8 4 global.0
+EOF
+RUN
