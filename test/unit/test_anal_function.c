@@ -977,6 +977,32 @@ static bool test_r_anal_function_attrs_string(void) {
 	mu_assert_false (r_anal_function_attrs_fromstring ("thunk,bogus", &attrs), "unknown name fails");
 	mu_assert_eq (attrs, R_ANAL_FCN_ATTR_THUNK, "known names still parse");
 	mu_assert_false (r_anal_function_attrs_fromstring ("NZ", &attrs), "unknown letter fails");
+	const ut32 rm = R_ANAL_FCN_ATTR_RECURSIVE | R_ANAL_FCN_ATTR_METHOD;
+	mu_assert_true (r_anal_function_attrs_fromstring ("method,recursive", &attrs), "recursive and method names parse");
+	mu_assert_eq (attrs, rm, "recursive and method map to bits");
+	mu_assert_streq_free (r_anal_function_attrs_tostring (rm, false), "RM", "new letters follow bit order");
+	mu_assert_streq_free (r_anal_function_attrs_tostring (rm, true), "recursive,method", "new verbose names");
+	mu_end;
+}
+
+static bool test_r_anal_function_method_attr(void) {
+	RAnal *anal = r_anal_new ();
+	RAnalFunction *fcn = r_anal_create_function (anal, "method", 0x1000, R_ANAL_FCN_TYPE_FCN, NULL);
+	const char *conventions[] = { "dyncc:rdi:rax!T0", "dyncc:rdi,rsi:rax!T1", "dyncc::rax!Tx20" };
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (conventions); i++) {
+		mu_assert_true (r_anal_function_set_callconv (anal, fcn, conventions[i]), "set receiver convention");
+		mu_assert_true (fcn->attrs & R_ANAL_FCN_ATTR_METHOD, "receiver role marks method regardless of position");
+	}
+	mu_assert_true (r_anal_function_set_callconv (anal, fcn, "dyncc:rdi:rax"), "set convention without receiver");
+	mu_assert_false (fcn->attrs & R_ANAL_FCN_ATTR_METHOD, "removing receiver clears method");
+	r_anal_cc_set (anal, "rax member (rdi);");
+	r_anal_cc_set_self (anal, "member", "rdi");
+	mu_assert_true (r_anal_function_set_callconv (anal, fcn, "member"), "set static receiver convention");
+	mu_assert_true (fcn->attrs & R_ANAL_FCN_ATTR_METHOD, "static self role marks method");
+	mu_assert_true (r_anal_function_store_callconv (anal, fcn, NULL), "clear convention");
+	mu_assert_false (fcn->attrs & R_ANAL_FCN_ATTR_METHOD, "clearing convention clears method");
+	r_anal_free (anal);
 	mu_end;
 }
 
@@ -1005,6 +1031,7 @@ int all_tests(void) {
 	mu_run_test (test_r_anal_function_switches_foreach);
 	mu_run_test (test_switch_owner);
 	mu_run_test (test_r_anal_function_attrs_string);
+	mu_run_test (test_r_anal_function_method_attr);
 	return tests_passed != tests_run;
 }
 

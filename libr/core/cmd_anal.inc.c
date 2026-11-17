@@ -771,7 +771,7 @@ static RCoreHelpMessage help_msg_afia = {
 	"Usage:", "afia[?][jq+-=]", "show or modify attributes of the current function",
 	"afia", "", "list the function attributes, their letters and values",
 	"afiaj", "", "list the function attributes in JSON",
-	"afiaq", "", "show the attribute letters (NIPVTLSCDKQ, see afia)",
+	"afiaq", "", "show the attribute letters (NIPVTLSCDKQERM, see afia)",
 	"afia+", " [attr ...]", "enable attributes by name or letters (afia+ noreturn,thunk | afia+ NT)",
 	"afia-", " [attr ...]", "disable attributes by name or letters",
 	"afia=", " [attr ...]", "set the exact settable attributes, clearing the rest",
@@ -5692,6 +5692,7 @@ static void cmd_afia(RCore *core, const char *input) {
 	}
 	r_anal_function_purity (fcn);
 	r_anal_function_islineal (fcn);
+	r_anal_function_count_refs (fcn, R_ANAL_REF_TYPE_CALL);
 	const RAnalFcnAttrInfo *ai;
 	size_t i;
 	if (!mode || mode == 'j' || mode == 'q') {

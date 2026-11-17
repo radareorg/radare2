@@ -2662,9 +2662,9 @@ R_API char *r_core_anal_fcn_name(RCore *core, RAnalFunction *fcn) {
 	return name;
 }
 
-// refresh the derived lineal bit before printing the attribute letters
 static char *fcn_attrs_tostring(RAnalFunction *fcn) {
 	r_anal_function_islineal (fcn);
+	r_anal_function_count_refs (fcn, R_ANAL_REF_TYPE_CALL);
 	return r_anal_function_attrs_tostring (fcn->attrs, false);
 }
 
@@ -3046,23 +3046,6 @@ static char *filename(RCore *core, ut64 addr) {
 	return NULL;
 }
 
-static bool is_recursive(RCore *core, RAnalFunction *fcn) {
-	bool res = false;
-	RVecAnalRef *refs = r_core_anal_fcn_get_calls (core, fcn);
-	if (refs && !RVecAnalRef_empty (refs)) {
-		RAnalRef *refi;
-		ut64 at = fcn->addr;
-		R_VEC_FOREACH (refs, refi) {
-			if (at == refi->addr) {
-				res = true;
-				break;
-			}
-		}
-	}
-	RVecAnalRef_free (refs);
-	return res;
-}
-
 static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) {
 	if (!pj) {
 		return -1;
@@ -3086,7 +3069,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 	char *attrs = fcn_attrs_tostring (fcn);
 	pj_ks (pj, "attrs", attrs);
 	free (attrs);
-	pj_kb (pj, "recursive", is_recursive (core, fcn));
+	pj_kb (pj, "recursive", fcn->attrs & R_ANAL_FCN_ATTR_RECURSIVE);
 	pj_ki (pj, "stackframe", fcn->maxstack);
 	{
 		const char *fcncc = r_anal_function_cc (fcn);
@@ -3409,6 +3392,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn, bool dorefs) {
 	r_cons_printf (cons, "#\naddr: 0x%08"PFMT64x"\nname: %s\nsize: %"PFMT64u,
 			fcn->addr, name, r_anal_function_linear_size (fcn));
 	free (name);
+	r_anal_function_count_refs (fcn, R_ANAL_REF_TYPE_CALL);
 	r_cons_printf (cons, "\nis-pure: %s", r_str_bool (r_anal_function_purity (fcn)));
 	r_cons_printf (cons, "\nrealsz: %" PFMT64d, r_anal_function_realsize (fcn));
 	r_cons_printf (cons, "\nstackframe: %d", fcn->maxstack);
@@ -3537,7 +3521,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn, bool dorefs) {
 	double ratbins = b? ((double)a / b): 0;
 	r_cons_printf (cons, "\nratbbins: %.02f", ratbins);
 	r_cons_printf (cons, "\nnoreturn: %s", r_str_bool (fcn->attrs & R_ANAL_FCN_ATTR_NORETURN));
-	r_cons_printf (cons, "\nrecursive: %s", r_str_bool (is_recursive (core, fcn)));
+	r_cons_printf (cons, "\nrecursive: %s", r_str_bool (fcn->attrs & R_ANAL_FCN_ATTR_RECURSIVE));
 	r_cons_printf (cons, "\nin-degree: %d", indegree);
 	r_cons_printf (cons, "\nout-degree: %d", outdegree);
 

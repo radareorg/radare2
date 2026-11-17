@@ -969,7 +969,7 @@ EXPECT=<<EOF
   I inline      false
   N noreturn    true
   I inline      true
-{"attrs":"NIPE","noreturn":true,"inline":true,"pure":true,"variadic":false,"thunk":false,"library":false,"static":false,"constructor":false,"destructor":false,"naked":false,"interrupt":false,"lineal":true}
+{"attrs":"NIPE","noreturn":true,"inline":true,"pure":true,"variadic":false,"thunk":false,"library":false,"static":false,"constructor":false,"destructor":false,"naked":false,"interrupt":false,"lineal":true,"recursive":false,"method":false}
   I inline      false
   N noreturn    false
 EOF
@@ -1010,13 +1010,57 @@ af+ 0x10 fcn.attr
 afb+ 0x10 0x10 8
 s 0x10
 "afia+ pure"
+"afia+ recursive,method"
 "afia+ bogus"
 EOF
 EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Attribute 'pure' is read-only: the function does not read or write outside state (computed)
+ERROR: Attribute 'recursive' is read-only: the function calls itself directly (computed)
+ERROR: Attribute 'method' is read-only: the calling convention defines a receiver/self role (computed)
 ERROR: Unknown function attribute 'bogus'
+EOF
+RUN
+
+NAME=function attrs encode recursion and dyncc receiver roles
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e anal.nopskip=false
+wx 90e8faffffffc3 @ 0x10
+af @ 0x10
+s 0x10
+afij~{[0].attrs}
+aflj~{[0].attrs}
+afiaj~{attrs}
+afc dyncc:rdi:rax!T0
+afij~{[0].attrs}
+afc dyncc:rdi,rsi:rax!T1
+aflj~{[0].attrs}
+afch~T:
+afc dyncc::rax!Tx20
+afiaq
+afc dyncc:rdi:rax
+afij~{[0].attrs}
+axd 0x10 0x11
+afij~{[0].attrs}
+aflj~{[0].attrs}
+axC 0x10 0x11
+aflj~{[0].attrs}
+EOF
+EXPECT=<<EOF
+PER
+PER
+PER
+PERM
+PERM
+T: rsi
+PERM
+PER
+E
+E
+PER
 EOF
 RUN
 

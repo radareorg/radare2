@@ -481,6 +481,8 @@ R_API bool r_anal_function_store_callconv(RAnal *anal, RAnalFunction *fcn, const
 			return false;
 		}
 	}
+	const char *self = pooled? r_anal_cc_roleloc (anal, pooled, r_str_startswith (pooled, "dyncc:")? "T": "self"): NULL;
+	R_MASK_SET (fcn->attrs, R_ANAL_FCN_ATTR_METHOD, R_STR_ISNOTEMPTY (self));
 	if (fcn->callconv == pooled) {
 		return true;
 	}

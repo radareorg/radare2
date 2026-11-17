@@ -600,27 +600,8 @@ R_API RVecAnalRef *r_anal_function_get_all_xrefs(RAnalFunction *fcn) {
 	return fcn_get_all_refs (fcn, fcn->anal->rm, ref_manager_get_xrefs);
 }
 
-// Helper function to count refs without allocating
-typedef ut64 (*CountFn)(RefManager *rm, ut64 addr, RAnalRefType type_filter);
-
 static inline bool ref_matches_type(const RAnalRef *ref, RAnalRefType type_filter) {
 	return type_filter == R_ANAL_REF_TYPE_ANY || R_ANAL_REF_TYPE_MASK (ref->type) == type_filter;
-}
-
-static ut64 ref_manager_count_refs_filtered(RefManager *rm, ut64 addr, RAnalRefType type_filter) {
-	RVecAnalRef *refs = ref_manager_get_refs (rm, addr);
-	if (!refs) {
-		return 0;
-	}
-	ut64 count = 0;
-	RAnalRef *ref;
-	R_VEC_FOREACH (refs, ref) {
-		if (ref_matches_type (ref, type_filter)) {
-			count++;
-		}
-	}
-	RVecAnalRef_free (refs);
-	return count;
 }
 
 static ut64 ref_manager_count_xrefs_filtered(RefManager *rm, ut64 addr, RAnalRefType type_filter) {
@@ -639,8 +620,9 @@ static ut64 ref_manager_count_xrefs_filtered(RefManager *rm, ut64 addr, RAnalRef
 	return count;
 }
 
-static ut64 fcn_count_refs(RAnalFunction *fcn, RefManager *rm, CountFn count_refs, RAnalRefType type_filter) {
+static ut64 fcn_count_refs(RAnalFunction *fcn, RefManager *rm, RAnalRefType type_filter) {
 	ut64 total = 0;
+	bool recursive = false;
 	RAnalBlock **iter;
 	RAnalBlock *bb;
 	R_VEC_FOREACH (&fcn->bbs, iter) {
@@ -648,9 +630,24 @@ static ut64 fcn_count_refs(RAnalFunction *fcn, RefManager *rm, CountFn count_ref
 		int i;
 		for (i = 0; i < bb->ninstr; i++) {
 			ut64 addr = bb->addr + r_anal_bb_offset_inst (bb, i);
-			total += count_refs (rm, addr, type_filter);
+			AdjacencyList_CIter refs = AdjacencyList_cfind (&rm->refs, &addr);
+			const AdjacencyList_Entry *entry = AdjacencyList_CIter_get (&refs);
+			if (!entry) {
+				continue;
+			}
+			const Edges_Entry *edge;
+			R_EDGES_FOREACH (entry->val, edge) {
+				const RAnalRefType type = R_ANAL_REF_TYPE_MASK (edge->val);
+				if (type_filter == R_ANAL_REF_TYPE_ANY || type == type_filter) {
+					total++;
+				}
+				if (type == R_ANAL_REF_TYPE_CALL && edge->key == fcn->addr) {
+					recursive = true;
+				}
+			}
 		}
 	}
+	R_MASK_SET (fcn->attrs, R_ANAL_FCN_ATTR_RECURSIVE, recursive);
 	return total;
 }
 
@@ -671,7 +668,7 @@ R_API ut64 r_anal_function_count_refs(RAnalFunction *fcn, RAnalRefType type) {
 	if (type == R_ANAL_REF_TYPE_CALL && fcn->meta.numcallrefs != -1) {
 		return fcn->meta.numcallrefs;
 	}
-	ut64 count = fcn_count_refs (fcn, fcn->anal->rm, ref_manager_count_refs_filtered, type);
+	ut64 count = fcn_count_refs (fcn, fcn->anal->rm, type);
 	if (type == R_ANAL_REF_TYPE_CALL) {
 		fcn->meta.numcallrefs = count;
 	}

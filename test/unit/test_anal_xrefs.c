@@ -180,6 +180,39 @@ bool test_r_anal_function_count_xrefs_follows_relocate(void) {
 	mu_end;
 }
 
+bool test_r_anal_function_recursive_attr(void) {
+	RAnal *anal = r_anal_new ();
+	RAnalFunction *fcn = r_anal_create_function (anal, "recursive", 0x1000, R_ANAL_FCN_TYPE_FCN, NULL);
+	RAnalBlock *bb = r_anal_create_block (anal, 0x1000, 8);
+	bb->ninstr = 2;
+	r_anal_bb_set_offset (bb, 1, 4);
+	r_anal_function_add_block (fcn, bb);
+	r_anal_xrefs_set (anal, 0x2000, 0x1000, R_ANAL_REF_TYPE_CALL);
+	r_anal_xrefs_set (anal, 0x1004, 0x1000, R_ANAL_REF_TYPE_DATA);
+	mu_assert_eq (r_anal_function_count_refs (fcn, R_ANAL_REF_TYPE_ANY), 1, "data ref counted");
+	mu_assert_false (fcn->attrs & R_ANAL_FCN_ATTR_RECURSIVE, "data refs and external callers are not recursion");
+	r_anal_xrefs_set (anal, 0x1004, 0x1000, R_ANAL_REF_TYPE_CODE);
+	mu_assert_eq (r_anal_function_count_refs (fcn, R_ANAL_REF_TYPE_CALL), 0, "jump to entry is not a call");
+	mu_assert_false (fcn->attrs & R_ANAL_FCN_ATTR_RECURSIVE, "loop is not recursion");
+	r_anal_xrefs_set (anal, 0x1004, 0x1000, R_ANAL_REF_TYPE_CALL);
+	mu_assert_eq (r_anal_function_count_refs (fcn, R_ANAL_REF_TYPE_CALL), 1, "self call counted");
+	mu_assert_true (fcn->attrs & R_ANAL_FCN_ATTR_RECURSIVE, "self call sets recursive");
+	mu_assert_eq (r_anal_function_count_refs (fcn, R_ANAL_REF_TYPE_CALL), 1, "cached self call count");
+	mu_assert_true (fcn->attrs & R_ANAL_FCN_ATTR_RECURSIVE, "cached count keeps recursive");
+	r_anal_function_remove_block (fcn, bb);
+	mu_assert_eq (r_anal_function_count_refs (fcn, R_ANAL_REF_TYPE_CALL), 0, "removed block no longer calls itself");
+	mu_assert_false (fcn->attrs & R_ANAL_FCN_ATTR_RECURSIVE, "block removal clears recursive");
+	r_anal_function_add_block (fcn, bb);
+	mu_assert_eq (r_anal_function_count_refs (fcn, R_ANAL_REF_TYPE_CALL), 1, "reattached block calls itself");
+	mu_assert_true (fcn->attrs & R_ANAL_FCN_ATTR_RECURSIVE, "block addition restores recursive");
+	r_anal_xref_del (anal, 0x1004, 0x1000);
+	mu_assert_eq (r_anal_function_count_refs (fcn, R_ANAL_REF_TYPE_CALL), 0, "deleted self call is gone");
+	mu_assert_false (fcn->attrs & R_ANAL_FCN_ATTR_RECURSIVE, "xref deletion clears recursive");
+	r_unref (bb);
+	r_anal_free (anal);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_anal_xrefs_count);
 	mu_run_test (test_r_anal_purge_clears_xrefs);
@@ -188,6 +221,7 @@ int all_tests(void) {
 	mu_run_test (test_r_anal_xrefs_init_keeps_counts_stale);
 	mu_run_test (test_r_anal_function_count_refs_sees_added_block);
 	mu_run_test (test_r_anal_function_count_refs_follows_block_changes);
+	mu_run_test (test_r_anal_function_recursive_attr);
 	mu_run_test (test_r_anal_function_count_xrefs_follows_relocate);
 	return tests_passed != tests_run;
 }

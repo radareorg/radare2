@@ -208,10 +208,12 @@ typedef enum {
 	R_ANAL_FCN_ATTR_NAKED = 1 << 9, // no compiler prologue or epilogue
 	R_ANAL_FCN_ATTR_INTERRUPT = 1 << 10, // interrupt handler, may not follow the calling convention
 	R_ANAL_FCN_ATTR_LINEAL = 1 << 11, // blocks are contiguous, computed by r_anal_function_islineal
+	R_ANAL_FCN_ATTR_RECURSIVE = 1 << 12, // calls itself directly
+	R_ANAL_FCN_ATTR_METHOD = 1 << 13, // calling convention defines a receiver/self role
 } RAnalFcnAttr;
 
 // derived by the analysis, afia cannot set them
-#define R_ANAL_FCN_ATTR_COMPUTED (R_ANAL_FCN_ATTR_PURE | R_ANAL_FCN_ATTR_VARIADIC | R_ANAL_FCN_ATTR_LINEAL)
+#define R_ANAL_FCN_ATTR_COMPUTED (R_ANAL_FCN_ATTR_PURE | R_ANAL_FCN_ATTR_VARIADIC | R_ANAL_FCN_ATTR_LINEAL | R_ANAL_FCN_ATTR_RECURSIVE | R_ANAL_FCN_ATTR_METHOD)
 
 typedef struct {
 	RAnalFcnAttr bit;

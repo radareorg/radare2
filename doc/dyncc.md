@@ -163,6 +163,11 @@ receiver/self role, while `!t...` marks runtime thread state.
 There is no separate static/instance mode. Instance-ness is represented by the
 presence of the `T` role.
 
+Assigning a convention with a receiver sets the function's `method` attribute
+(`M` in `attrs`; see [Function attributes](function-attributes.md)). The receiver
+location always comes from `T`; the method attribute does not imply logical
+argument zero.
+
 Role names in dyncc syntax are one-character tags only. Old word names are not
 accepted.
 

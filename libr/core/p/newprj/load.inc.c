@@ -438,12 +438,12 @@ static void rprj_function_attr_load(RPrjCursor *cur, RAnalFunction *fcn, R2Proje
 		fcn->type = attr->type;
 		fcn->bits = attr->bits;
 		fcn->maxstack = (int)(st64)attr->stack;
+		fcn->attrs = attr->attrs;
 		if (R_STR_ISNOTEMPTY (cc)) {
 			// the project saves the name but not a custom definition, so the
 			// saved value is restored rather than validated away
 			r_anal_function_store_callconv (cur->core->anal, fcn, cc);
 		}
-		fcn->attrs = attr->attrs;
 		if (fcn->attrs & R_ANAL_FCN_ATTR_NORETURN) {
 			r_anal_noreturn_add (cur->core->anal, name, va);
 		}

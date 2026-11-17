@@ -137,7 +137,7 @@ ERROR: Unknown function attribute letter 'Z'
 EOF
 RUN
 
-NAME=newprj saves and replays thunk
+NAME=newprj saves and replays thunk and method
 FILE=malloc://256
 ARGS=-a arm -b 64
 CMDS=<<EOF
@@ -145,8 +145,10 @@ mkdir .tmp
 af+ 0x10 fcn.one
 afb+ 0x10 0x10 4
 afia+ thunk,library @ 0x10
+afc dyncc:x0:x0!T0 @ 0x10
 prj save .tmp/newprj-thunk.prj > /dev/null
 afia= @ 0x10
+afc dyncc:x0:x0 @ 0x10
 prj load .tmp/newprj-thunk.prj > /dev/null
 afiaq @ 0x10
 prj r2 .tmp/newprj-thunk.prj~afia
@@ -155,7 +157,7 @@ prj diff .tmp/newprj-thunk.prj~afia
 rm .tmp/newprj-thunk.prj
 EOF
 EXPECT=<<EOF
-PTLE
+PTLEM
 '0x00000010'afia+ TL
 '0x00000010'afia- L
 EOF
