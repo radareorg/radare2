@@ -1928,7 +1928,19 @@ enum {
 static size_t str_ansi_length(const char *s, size_t left) {
 	size_t i = 1;
 	if (*s == 0x1b) {
-		if (i < left && s[i] == '[') {
+		if (i < left && s[i] == ']') {
+			i++;
+			while (i < left && s[i]) {
+				if (s[i] == '\a') {
+					return i + 1;
+				}
+				if (s[i] == 0x1b && i + 1 < left && s[i + 1] == '\\') {
+					return i + 2;
+				}
+				i++;
+			}
+			return i;
+		} else if (i < left && s[i] == '[') {
 			i++;
 			while (i < left && s[i] && s[i] != 'J' && s[i] != 'm' && s[i] != 'H' && s[i] != 'K') {
 				i++;

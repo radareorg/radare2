@@ -49,16 +49,34 @@ static char *md_wrap_text(const char *text, int width) {
 	}
 	RStrBuf *out = r_strbuf_new ("");
 	int style = 0;
+	const char *hyperlink = NULL;
+	size_t hyperlink_len = 0;
 	p = wrapped;
 	while (*p) {
 		if (*p == '\n') {
+			if (hyperlink) {
+				r_strbuf_append (out, "\x1b]8;;\x1b\\");
+			}
 			if (style) {
 				r_strbuf_append (out, Color_RESET);
 			}
 			r_strbuf_append (out, "\n");
 			md_style (out, style);
+			if (hyperlink) {
+				r_strbuf_append_n (out, hyperlink, hyperlink_len);
+			}
 			p++;
 			continue;
+		}
+		if (r_str_startswith (p, "\x1b]8;;")) {
+			const char *close = strstr (p + 5, "\x1b\\");
+			if (close) {
+				hyperlink_len = close + 2 - p;
+				hyperlink = close > p + 5? p: NULL;
+				r_strbuf_append_n (out, p, hyperlink_len);
+				p += hyperlink_len;
+				continue;
+			}
 		}
 		if (*p == '\x1b') {
 			static const struct {
@@ -588,9 +606,23 @@ static const char *md_closing_marker(const char *b, const char *end, int count) 
 	return NULL;
 }
 
-static void md_inline(RStrBuf *sb, const char *text, const char *end, bool color, int style, int depth);
+static void md_inline(RStrBuf *sb, const char *text, const char *end, bool color, bool osc8, int style, int depth);
 
-static const char *md_link(RStrBuf *sb, const char *b, const char *end, bool color, int style, int depth) {
+static void md_link_url(RStrBuf *sb, const char *url, const char *end, bool osc8) {
+	while (url < end) {
+		if (md_escaped (url)) {
+			url++;
+		}
+		ut8 ch = (ut8)*url++;
+		if (osc8 && (ch <= ' ' || ch >= 0x7f)) {
+			r_strbuf_appendf (sb, "%%%02X", ch);
+		} else {
+			r_strbuf_append_n (sb, (const char *)&ch, 1);
+		}
+	}
+}
+
+static const char *md_link(RStrBuf *sb, const char *b, const char *end, bool color, bool osc8, int style, int depth) {
 	const char *label = b + 1;
 	const char *p = label;
 	int brackets = 1;
@@ -669,21 +701,24 @@ static const char *md_link(RStrBuf *sb, const char *b, const char *end, bool col
 	if (p == end || *p != ')' || parentheses) {
 		return NULL;
 	}
-	md_inline (sb, label, label_end, color, style, depth + 1);
-	if (url_end > url && (label_end - label != url_end - url || memcmp (label, url, url_end - url))) {
+	bool hyperlink = osc8 && url_end > url;
+	if (hyperlink) {
+		r_strbuf_append (sb, "\x1b]8;;");
+		md_link_url (sb, url, url_end, true);
+		r_strbuf_append (sb, "\x1b\\");
+	}
+	md_inline (sb, label, label_end, color, false, style, depth + 1);
+	if (hyperlink) {
+		r_strbuf_append (sb, "\x1b]8;;\x1b\\");
+	} else if (url_end > url && (label_end - label != url_end - url || memcmp (label, url, url_end - url))) {
 		r_strbuf_append (sb, " (");
-		while (url < url_end) {
-			if (md_escaped (url)) {
-				url++;
-			}
-			r_strbuf_append_n (sb, url++, 1);
-		}
+		md_link_url (sb, url, url_end, false);
 		r_strbuf_append (sb, ")");
 	}
 	return p + 1;
 }
 
-static void md_inline(RStrBuf *sb, const char *text, const char *end, bool color, int style, int depth) {
+static void md_inline(RStrBuf *sb, const char *text, const char *end, bool color, bool osc8, int style, int depth) {
 	const char *b = text;
 	while (b < end) {
 		if (md_escaped (b)) {
@@ -692,7 +727,7 @@ static void md_inline(RStrBuf *sb, const char *text, const char *end, bool color
 			continue;
 		}
 		if (*b == '[' && depth < 32) {
-			const char *next = md_link (sb, b, end, color, style, depth);
+			const char *next = md_link (sb, b, end, color, osc8, style, depth);
 			if (next) {
 				b = next;
 				continue;
@@ -713,7 +748,7 @@ static void md_inline(RStrBuf *sb, const char *text, const char *end, bool color
 					md_style (sb, attr);
 				}
 				if (emphasis) {
-					md_inline (sb, b + count, close, color, style | attr, depth + 1);
+					md_inline (sb, b + count, close, color, osc8, style | attr, depth + 1);
 				} else {
 					r_strbuf_append_n (sb, b + count, close - b - count);
 				}
@@ -748,7 +783,7 @@ static void md_inline(RStrBuf *sb, const char *text, const char *end, bool color
 
 static char *md_render_inline(const char *b, const RMarkdownOptions *options) {
 	RStrBuf *sb = r_strbuf_new ("");
-	md_inline (sb, b, b + strlen (b), options->color, 0, 0);
+	md_inline (sb, b, b + strlen (b), options->color, options->osc8, 0, 0);
 	return r_strbuf_drain (sb);
 }
 
@@ -837,7 +872,7 @@ static bool md_render_title(const char *b, RStrBuf *sb, const RMarkdownOptions *
 			if (usecolor) {
 				r_strbuf_append (title_buf, Color_BOLD);
 			}
-			md_inline (title_buf, title, trimmed_end, usecolor, MD_BOLD, 0);
+			md_inline (title_buf, title, trimmed_end, usecolor, options->osc8, MD_BOLD, 0);
 			if (usecolor) {
 				r_strbuf_append (title_buf, Color_RESET);
 			}

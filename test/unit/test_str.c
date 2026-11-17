@@ -283,6 +283,68 @@ bool test_r_str_md2txt_rendering(void) {
 	mu_end;
 }
 
+bool test_r_str_md2txt_osc8(void) {
+	RMarkdownOptions options = { .osc8 = true };
+	const char *md = "[radare2](https://rada.re)\n";
+	char *s = r_str_md2txt (md, NULL);
+	mu_assert_streq (s, "  radare2 (https://rada.re)\n", "links remain plain by default");
+	free (s);
+	s = r_str_md2txt (md, &options);
+	mu_assert_streq (s, "  \x1b]8;;https://rada.re\x1b\\radare2\x1b]8;;\x1b\\\n", "OSC 8 works without color");
+	mu_assert_eq (r_str_ansi_len (s), 10, "hyperlinks have no display width");
+	r_str_ansi_strip (s);
+	mu_assert_streq (s, "  radare2\n", "stripping OSC 8 keeps the label");
+	free (s);
+
+	s = r_str_md2txt ("[https://rada.re](https://rada.re) [empty]()\n", &options);
+	mu_assert_streq (s, "  \x1b]8;;https://rada.re\x1b\\https://rada.re\x1b]8;;\x1b\\ empty\n", "matching labels and empty destinations");
+	free (s);
+
+	s = r_str_md2txt ("[x](<https://e/a\\(b\\) c\a\x1bZ>)\n", &options);
+	mu_assert_streq (s, "  \x1b]8;;https://e/a(b)%20c%07%1BZ\x1b\\x\x1b]8;;\x1b\\\n", "destinations unescape Markdown and encode controls");
+	free (s);
+
+	s = r_str_md2txt_width ("[hello world](https://rada.re)\n", &options, 7);
+	mu_assert_streq (s, "  \x1b]8;;https://rada.re\x1b\\hello\x1b]8;;\x1b\\\n"
+		"  \x1b]8;;https://rada.re\x1b\\world\x1b]8;;\x1b\\\n", "wrapped links close and reopen on each line");
+	free (s);
+
+	options.color = true;
+	s = r_str_md2txt ("[**bold**](https://rada.re)\n", &options);
+	mu_assert_eq (count_substr (s, "\x1b]8;;https://rada.re\x1b\\" Color_BOLD "bold" Color_BOLD_RESET "\x1b]8;;\x1b\\"), 1, "hyperlink labels retain formatting");
+	free (s);
+
+	options.color = false;
+	s = r_str_md2txt_width ("| link |\n| --- |\n| [hello world](https://rada.re) |\n", &options, 12);
+	char *plain = r_str_md2txt_width ("| link |\n| --- |\n| hello world |\n", NULL, 12);
+	mu_assert_eq (count_substr (s, "\x1b]8;;https://rada.re\x1b\\"), 2, "table links wrap across rows");
+	r_str_ansi_strip (s);
+	mu_assert_streq (s, plain, "hyperlinks preserve table layout");
+	free (s);
+	free (plain);
+	s = r_str_md2txt ("## [title](https://rada.re)\n", &options);
+	mu_assert_streq (s, "## \x1b]8;;https://rada.re\x1b\\title\x1b]8;;\x1b\\\n", "headings honor the hyperlink option");
+	free (s);
+	mu_end;
+}
+
+bool test_r_str_osc(void) {
+	const char *link = "\x1b]8;;https://rada.re\ahello world\x1b]8;;\a";
+	mu_assert_eq (r_str_ansi_len (link), 11, "BEL terminates OSC sequences");
+	char *s = r_str_wrap (link, 5);
+	mu_assert_streq (s, "\x1b]8;;https://rada.re\ahello\nworld\x1b]8;;\a", "wrapping skips OSC payloads");
+	r_str_ansi_filter (s, NULL, NULL, -1);
+	mu_assert_streq (s, "hello\nworld", "filter removes OSC sequences");
+	free (s);
+	const char truncated[] = { 'a', 0x1b, ']', '8', ';', ';', 0x1b };
+	mu_assert_eq (r_str_ansi_nlen (truncated, sizeof (truncated)), 1, "bounded width handles truncated OSC");
+	s = strdup ("before\x1b]8;;unterminated\x1b");
+	r_str_ansi_strip (s);
+	mu_assert_streq (s, "before", "stripping handles unterminated OSC");
+	free (s);
+	mu_end;
+}
+
 bool test_r_str_md2txt_tables_and_titles(void) {
 	char *s = r_str_md2txt_width (
 		"| left | center | right |\n| :--- | :---: | ---: |\n"
@@ -1657,6 +1719,8 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_any_against_loops);
 	mu_run_test (test_r_mem_mem);
 	mu_run_test (test_r_str_md2txt_rendering);
+	mu_run_test (test_r_str_md2txt_osc8);
+	mu_run_test (test_r_str_osc);
 	mu_run_test (test_r_str_md2txt_tables_and_titles);
 	mu_run_test (test_r_str_md2txt_emoji_table);
 	mu_run_test (test_r_str_md2txt_codeblocks);

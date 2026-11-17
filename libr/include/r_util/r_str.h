@@ -68,6 +68,7 @@ typedef struct r_markdown_options_t {
 	bool utf8;
 	bool utf8_curvy;
 	bool slide_titles;
+	bool osc8; // Render links as OSC 8 hyperlinks instead of label (URL).
 } RMarkdownOptions;
 
 #define R_STR_ISEMPTY(x) (!(x) || !*(x))
