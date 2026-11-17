@@ -1639,19 +1639,19 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 					esilprintf (op, GETWIDE ",I2D," SETWIDE, vB+1, vB, vA, vA+1);
 					break;
 				case 0x87:
-					esilprintf (op, "32,v%u,F2D,D2I,v%u,=", vB, vA);
+					esilprintf (op, "32,v%u,F2D,32,D2IS,v%u,=", vB, vA);
 					break;
 				case 0x88:
-					esilprintf (op, "32,v%u,F2D,D2I," SETWIDE, vB, vA, vA+1);
+					esilprintf (op, "32,v%u,F2D,64,D2IS," SETWIDE, vB, vA, vA+1);
 					break;
 				case 0x89:
 					esilprintf (op, "32,v%u,F2D," SETWIDE, vB, vA, vA + 1);
 					break;
 				case 0x8a:
-					esilprintf (op, GETWIDE ",D2I,v%u,=", vB+1, vB, vA);
+					esilprintf (op, GETWIDE ",32,D2IS,v%u,=", vB+1, vB, vA);
 					break;
 				case 0x8b:
-					esilprintf (op, GETWIDE ",D2I," SETWIDE, vB+1, vB, vA, vA+1);
+					esilprintf (op, GETWIDE ",64,D2IS," SETWIDE, vB+1, vB, vA, vA+1);
 					break;
 				case 0x8c:
 					esilprintf (op, "32," GETWIDE ",D2F,v%u,=", vB+1, vB, vA);

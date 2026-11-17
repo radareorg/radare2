@@ -224,3 +224,135 @@ EXPECT=<<EOF
 0xbff00000
 EOF
 RUN
+
+NAME=dalvik float-to-int 3e9f saturates to max
+FILE=malloc://0x200
+ARGS=-a dalvik
+CMDS=<<EOF
+wx 8710
+aei
+ar v1=0x4f32d05e
+aes
+ar v0
+EOF
+EXPECT=<<EOF
+0x7fffffff
+EOF
+RUN
+
+NAME=dalvik float-to-int -inf saturates to min
+FILE=malloc://0x200
+ARGS=-a dalvik
+CMDS=<<EOF
+wx 8710
+aei
+ar v1=0xff800000
+aes
+ar v0
+EOF
+EXPECT=<<EOF
+0x80000000
+EOF
+RUN
+
+NAME=dalvik float-to-long 1e19f saturates to max
+FILE=malloc://0x200
+ARGS=-a dalvik
+CMDS=<<EOF
+wx 8820
+aei
+ar v2=0x5f0ac723
+aes
+ar v0
+ar v1
+EOF
+EXPECT=<<EOF
+0xffffffff
+0x7fffffff
+EOF
+RUN
+
+NAME=dalvik float-to-long -inf saturates to min
+FILE=malloc://0x200
+ARGS=-a dalvik
+CMDS=<<EOF
+wx 8820
+aei
+ar v2=0xff800000
+aes
+ar v0
+ar v1
+EOF
+EXPECT=<<EOF
+0x00000000
+0x80000000
+EOF
+RUN
+
+NAME=dalvik double-to-int 3e9 saturates to max
+FILE=malloc://0x200
+ARGS=-a dalvik
+CMDS=<<EOF
+wx 8a20
+aei
+ar v2=0xc0000000
+ar v3=0x41e65a0b
+aes
+ar v0
+EOF
+EXPECT=<<EOF
+0x7fffffff
+EOF
+RUN
+
+NAME=dalvik double-to-int -3e9 saturates to min
+FILE=malloc://0x200
+ARGS=-a dalvik
+CMDS=<<EOF
+wx 8a20
+aei
+ar v2=0xc0000000
+ar v3=0xc1e65a0b
+aes
+ar v0
+EOF
+EXPECT=<<EOF
+0x80000000
+EOF
+RUN
+
+NAME=dalvik double-to-long 1e19 saturates to max
+FILE=malloc://0x200
+ARGS=-a dalvik
+CMDS=<<EOF
+wx 8b20
+aei
+ar v2=0x60913d00
+ar v3=0x43e158e4
+aes
+ar v0
+ar v1
+EOF
+EXPECT=<<EOF
+0xffffffff
+0x7fffffff
+EOF
+RUN
+
+NAME=dalvik double-to-long -inf saturates to min
+FILE=malloc://0x200
+ARGS=-a dalvik
+CMDS=<<EOF
+wx 8b20
+aei
+ar v2=0
+ar v3=0xfff00000
+aes
+ar v0
+ar v1
+EOF
+EXPECT=<<EOF
+0x00000000
+0x80000000
+EOF
+RUN
