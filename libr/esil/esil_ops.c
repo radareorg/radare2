@@ -1665,6 +1665,20 @@ static bool esil_float_div(REsil *esil) {
 	return ret;
 }
 
+static bool esil_float_mod(REsil *esil) {
+	bool ret = false;
+	double s, d;
+	const RStrs dst = r_esil_pop (esil);
+	const RStrs src = r_esil_pop (esil);
+
+	if (esil_get_parm_float_strs (esil, src, &s) && esil_get_parm_float_strs (esil, dst, &d)) {
+		ret = esil_pushnum_float (esil, fmod (d, s));
+	} else {
+		R_LOG_DEBUG ("esil_float_mod: invalid parameters");
+	}
+	return ret;
+}
+
 static bool esil_float_neg(REsil *esil) {
 	bool ret = false;
 	double s;
@@ -1990,6 +2004,7 @@ R_API bool r_esil_setup_ops(REsil *esil) {
 	ret &= OP ("F*", esil_float_mul, 1, 2, OT_MATH);
 	ret &= OP ("F*+", esil_float_muladd, 1, 3, OT_MATH);
 	ret &= OP ("F/", esil_float_div, 1, 2, OT_MATH);
+	ret &= OP ("F%", esil_float_mod, 1, 2, OT_MATH);
 	ret &= OP ("-F", esil_float_neg, 1, 1, OT_MATH);
 	ret &= OP ("CEIL", esil_float_ceil, 1, 1, OT_MATH);
 	ret &= OP ("FLOOR", esil_float_floor, 1, 1, OT_MATH);

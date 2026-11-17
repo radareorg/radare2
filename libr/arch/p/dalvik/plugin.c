@@ -1797,8 +1797,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	case 0xaa: // rem-float
 	case 0xca:
-		op->type = R_ANAL_OP_TYPE_MOD;
-		op->family = R_ANAL_OP_FAMILY_FPU;
+		OPCALL ("%", R_ANAL_OP_TYPE_MOD, OP_FLOAT);
 		break;
 	case 0xab: // add-double
 	case 0xcb:
@@ -1818,8 +1817,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	case 0xaf: // rem-double
 	case 0xcf:
-		op->type = R_ANAL_OP_TYPE_MOD;
-		op->family = R_ANAL_OP_FAMILY_FPU;
+		OPCALL ("%", R_ANAL_OP_TYPE_MOD, OP_DOUBLE);
 		break;
 
 	case 0xec: // breakpoint
