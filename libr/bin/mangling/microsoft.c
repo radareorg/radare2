@@ -1790,7 +1790,8 @@ static EDemanglerErr parse_data_type(SDemangler *sd, const char *sym, SDataType 
 				pos++;
 			}
 			const char *pointee_cv = NULL;
-			if (storage_class && pos < i && type[pos] >= 'A' && type[pos] <= 'D') {
+			// array element qualifiers are encoded after their dimensions
+			if (storage_class && pos < i && type[pos] >= 'A' && type[pos] <= 'D' && type[pos + 1] != 'Y') {
 				get_storage_class (type[pos], &pointee_cv);
 				const char merged = 'A' + (cv_bits (pointee_cv) | cv_bits (storage_class));
 				if (merged != type[pos]) {

@@ -325,6 +325,32 @@ public: static class std::locale::facet const *std::_Facetptr<class std::codecvt
 EOF
 RUN
 
+NAME=msvc cv-qualified array pointers and references
+FILE=-
+CMDS=<<EOF
+!rabin2 -D msvc '?a@@3PEAY01$$CBHEB'
+!rabin2 -D msvc '?b@@3PEAY01$$CCHEC'
+!rabin2 -D msvc '?c@@3PEAY01$$CDHED'
+!rabin2 -D msvc '?d@@3QEAY01$$CBHEB'
+!rabin2 -D msvc '?e@@3PEAY01HEA'
+!rabin2 -D msvc '?m@@3PEAY112$$CBHEB'
+!rabin2 -D msvc '?r@@3AEAY01$$CBHEB'
+!rabin2 -D msvc '?x@@3PAY01$$CBHB'
+!rabin2 -D msvc '?y@@3PAY112$$CDHD'
+EOF
+EXPECT=<<EOF
+int const (*)[2] a
+int volatile (*)[2] b
+int const volatile (*)[2] c
+int const (*const)[2] d
+int (*)[2] e
+int const (*)[2][3] m
+int const (&)[2] r
+int const (*)[2] x
+int const volatile (*)[2][3] y
+EOF
+RUN
+
 NAME=msvc pointer spacing
 FILE=-
 CMDS=<<EOF
