@@ -2,6 +2,7 @@
 #include "minunit.h"
 #include <r_anal.h>
 #include <r_bin.h>
+#include <r_core.h>
 #include <r_bin_dwarf.h>
 #include "../../libr/bin/format/pdb/types.h"
 #include "../../libr/bin/format/pdb/tpi.h"
@@ -642,6 +643,166 @@ bool test_pdb_page_bounds(void) {
 	mu_end;
 }
 
+static bool pdb_info_tpi(RBinPdb *pdb, const char *records, ut32 count, ut32 continuation) {
+	ut8 data[3072] = "Microsoft C/C++ MSF 7.00\r\n\x1a" "DS\0\0\0";
+	if (strlen (records) > 2 * (512 - 56)) {
+		return false;
+	}
+	int size = r_hex_str2bin (records, data + 2560 + 56);
+	if (size < 0) {
+		return false;
+	}
+	r_write_le32 (data + 32, 512);
+	r_write_le32 (data + 40, 6);
+	r_write_le32 (data + 44, 28);
+	r_write_le32 (data + 52, 1);
+	r_write_le32 (data + 512, 2);
+	r_write_le32 (data + 1024, 3);
+	r_write_le32 (data + 1028, 4);
+	r_write_le32 (data + 1032, 32);
+	r_write_le32 (data + 1036, 56 + size);
+	r_write_le32 (data + 1040, 3);
+	r_write_le32 (data + 1044, 4);
+	r_write_le32 (data + 1048, 5);
+	r_write_le32 (data + 2560, 20040203);
+	r_write_le32 (data + 2564, 56);
+	r_write_le32 (data + 2568, 0x1000);
+	r_write_le32 (data + 2572, 0x1000 + count);
+	r_write_le32 (data + 2576, size);
+	if (continuation != UT32_MAX) {
+		r_write_le32 (data + 2560 + 56 + 20, continuation);
+	}
+	return r_bin_pdb_parser_with_buf (pdb, r_buf_new_with_bytes (data, sizeof (data)))
+		&& pdb->pdb_parse (pdb);
+}
+
+bool test_pdb_fieldlist_continuation(void) {
+	const char *records =
+		"160003120d15030074000000000061000414000001100000"
+		"0e0003120d1503007400000004006200"
+		"1a000515020000000010000000000000000000000800436861696e00";
+	const ut32 indices[] = { 0x1001, 0x1000, 0x1002, 0x1999, 0x74, 0 };
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (indices); i++) {
+		RBinPdb pdb = {0};
+		mu_assert_true (pdb_info_tpi (&pdb, records, 3, indices[i]), "parse chained field list");
+		STpiStream *ss = r_list_get_n (pdb.pdb_streams, ePDB_STREAM_TPI);
+		mu_assert_notnull (ss, "TPI stream present");
+		SType *type = r_list_get_n (ss->types, 2);
+		RList *members = NULL;
+		type->type_data.get_members (ss, &type->type_data, &members);
+		mu_assert_eq (r_list_length (members), i? 1: 2, "continuation members or bounded invalid link");
+		RList *cached = NULL;
+		type->type_data.get_members (ss, &type->type_data, &cached);
+		mu_assert_ptreq (members, cached, "member list is cached");
+		char *format = pdb.print_types (&pdb, NULL, 'r');
+		mu_assert_streq (format, i? "": "pf.Chain n4n4 a b \n", "complete layouts only");
+		free (format);
+		if (!i) {
+			RAnal *anal = r_anal_new ();
+			r_parse_pdb_types (anal, &pdb);
+			check_kv ("struct.Chain.b", "int32_t,4,0");
+			r_anal_free (anal);
+		}
+		pdb.finish_pdb_parse (&pdb);
+	}
+	mu_end;
+}
+
+bool test_pdb_fieldlist_invalid_continuation(void) {
+	const char *records[] = {
+		"160003120d15030074000000000061000414000001100000"
+		"160003120d15030074000000040062000414000000100000"
+		"1a000515020000000010000000000000000000000800436861696e00",
+		"120003120d150300740000000000610004140000"
+		"0e0003120d1503007400000004006200"
+		"1a000515020000000010000000000000000000000800436861696e00"
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (records); i++) {
+		RBinPdb pdb = {0};
+		mu_assert_true (pdb_info_tpi (&pdb, records[i], 3, UT32_MAX), "parse cyclic or truncated continuation");
+		STpiStream *ss = r_list_get_n (pdb.pdb_streams, ePDB_STREAM_TPI);
+		mu_assert_notnull (ss, "TPI stream present");
+		SType *type = r_list_get_n (ss->types, 2);
+		RList *members = NULL;
+		type->type_data.get_members (ss, &type->type_data, &members);
+		mu_assert_eq (r_list_length (members), i? 1: 2, "do not duplicate members on a cycle");
+		char *format = pdb.print_types (&pdb, NULL, 'r');
+		mu_assert_streq (format, "", "incomplete field list has no format");
+		free (format);
+		pdb.finish_pdb_parse (&pdb);
+	}
+	mu_end;
+}
+
+bool test_pdb_base_class_layout(void) {
+	const char *records =
+		"160003120d15030074000000000061000414000001100000"
+		"0e0003120d1503007400000004006200"
+		"1a000515020000000010000000000000000000000800436861696e00"
+		"1e00031200140300021000000000f2f10d15030074000000040076616c756500"
+		"1e0005150200000003100000000000000000000008004465726976656400f2f1";
+	RBinPdb pdb = {0};
+	mu_assert_true (pdb_info_tpi (&pdb, records, 5, 0x1001), "parse base class and member");
+	char *listing = pdb.print_types (&pdb, NULL, 'd');
+	mu_assert_notnull (strstr (listing, "int32_t value; // offset +0x4"), "retain recorded member offset");
+	free (listing);
+	char *format = pdb.print_types (&pdb, NULL, 'r');
+	mu_assert_null (strstr (format, "pf.Derived"), "do not format skipped base as offset zero");
+	mu_assert_notnull (strstr (format, "pf.Chain"), "representable format retained");
+	free (format);
+	pdb.finish_pdb_parse (&pdb);
+	mu_end;
+}
+
+bool test_pdb_duplicate_thunks(void) {
+	size_t size;
+	ut8 *data = (ut8 *)r_file_slurp ("bins/pdb/Project1.pdb", &size);
+	mu_assert_notnull (data, "read thunk fixture");
+	mu_assert_true (size >= 0x1f164, "thunk records fit in fixture");
+	ut8 *first = data + 0x1f13c;
+	ut8 *second = data + 0x1f150;
+	mu_assert_eq (r_read_le16 (first + 2), PDB_S_TRAMPOLINE, "first trampoline record");
+	mu_assert_eq (r_read_le16 (second + 2), PDB_S_TRAMPOLINE, "second trampoline record");
+	r_write_le32 (second + 12, r_read_le32 (first + 12));
+	r_write_le16 (second + 18, r_read_le16 (first + 18));
+	RBuffer *buf = r_buf_new_with_bytes (data, size);
+	free (data);
+	RBinPdb pdb = {0};
+	mu_assert_true (r_bin_pdb_parser_with_buf (&pdb, buf), "open modified thunk fixture");
+	mu_assert_true (pdb.pdb_parse (&pdb), "parse duplicate thunks");
+	char *script = pdb.print_gvars (&pdb, 0, NULL, 'r');
+	mu_assert_notnull (strstr (script, "'@0x11005'f j.pdb.__setdefaultprecision\n"), "first thunk flag");
+	mu_assert_notnull (strstr (script, "'@0x1100a'f j.pdb.__setdefaultprecision_1100a\n"), "unique second thunk flag");
+	mu_assert_notnull (strstr (script, "'@0x1100a'afia+ thunk\n"), "native thunk attribute");
+	RCore *core = r_core_new ();
+	r_config_set (core->config, "asm.arch", "x86");
+	r_config_set_i (core->config, "asm.bits", 32);
+	RIODesc *file = r_core_file_open (core, "malloc://0x20000", R_PERM_RWX, 0);
+	mu_assert_notnull (file, "open thunk code");
+	mu_assert_notnull (r_io_map_add (core->io, file->fd, R_PERM_RWX, 0, 0, 0x20000), "map thunk code");
+	r_core_cmd0 (core, "wx c3 @ 0x12f10");
+	r_core_cmd0 (core, "wx e9061f0000e9011f0000 @ 0x11005");
+	r_core_cmd0 (core, "wx e920fcffff @ 0x113e0");
+	r_core_cmd_lines (core, script);
+	free (script);
+	RFlagItem *flag = r_flag_get (core->flags, "j.pdb.__setdefaultprecision");
+	mu_assert_notnull (flag, "first flag survives replay");
+	mu_assert_eq (flag->addr, 0x11005, "first flag does not move");
+	RAnalFunction *caller = r_anal_get_function_at (core->anal, 0x113e0);
+	mu_assert_notnull (caller, "tail caller analyzed");
+	mu_assert_eq (RVecAnalBlockPtr_length (&caller->bbs), 1, "tail call does not absorb thunk");
+	mu_assert_eq (r_anal_function_realsize (caller), 5, "tail caller size");
+	RAnalFunction *thunk = r_anal_get_function_at (core->anal, 0x1100a);
+	mu_assert_notnull (thunk, "duplicate thunk analyzed");
+	mu_assert_true (thunk->attrs & R_ANAL_FCN_ATTR_THUNK, "native thunk attribute retained");
+	mu_assert_true (r_config_get_b (core->config, "anal.nopskip"), "PDB analysis restores nopskip");
+	r_core_free (core);
+	pdb.finish_pdb_parse (&pdb);
+	mu_end;
+}
+
 bool all_tests(void) {
 #if R_SYS_ENDIAN == 0
 	mu_run_test (test_pdb_tpi_cpp);
@@ -651,6 +812,10 @@ bool all_tests(void) {
 	mu_run_test (test_pdb_enum_modified_utype);
 	mu_run_test (test_pdb_stream_file_size);
 	mu_run_test (test_pdb_page_bounds);
+	mu_run_test (test_pdb_fieldlist_continuation);
+	mu_run_test (test_pdb_fieldlist_invalid_continuation);
+	mu_run_test (test_pdb_base_class_layout);
+	mu_run_test (test_pdb_duplicate_thunks);
 #endif
 	return tests_passed != tests_run;
 }

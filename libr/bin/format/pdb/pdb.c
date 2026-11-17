@@ -1153,6 +1153,21 @@ static void print_types_json(const RBinPdb *pdb, PJ *pj, STpiStream *ss, const R
 	pj_end (pj);
 }
 
+static bool has_unsupported_layout(STpiStream *ss, STypeInfo *type) {
+	if (!type->type_info) {
+		return true;
+	}
+	ut32 index = type->leaf_type == eLF_UNION
+		? ((SLF_UNION *)type->type_info)->field_list
+		: ((SLF_STRUCTURE *)type->type_info)->field_list;
+	if (index < ss->ctx.base_idx) {
+		return true;
+	}
+	SType *fields = r_list_get_n (ss->ctx.types_list, index - ss->ctx.base_idx);
+	return !fields || fields->type_data.leaf_type != eLF_FIELDLIST || !fields->type_data.type_info
+		|| ((SLF_FIELDLIST *)fields->type_data.type_info)->unsupported_layout;
+}
+
 static void print_types_format(STpiStream *ss, const RList *types, RStrBuf *sb) {
 	if (!types || !sb) {
 		return;
@@ -1189,6 +1204,12 @@ static void print_types_format(STpiStream *ss, const RList *types, RStrBuf *sb) 
 		RList *members = NULL;
 		if (type_info->get_members) {
 			type_info->get_members (ss, type_info, &members);
+		}
+		if (has_unsupported_layout (ss, type_info)) {
+			if (owned_name) {
+				free (name);
+			}
+			continue;
 		}
 		RStrBuf format;
 		r_strbuf_init (&format);
@@ -1273,24 +1294,21 @@ static void free_fcn_name(HtUPKv *kv) {
 	free (kv->value);
 }
 
-// r_name_filter turns the dash-like chars into _ and drops the rest, so the sign of a
-// number is lost: `vtordisp{-4,0}' and `vtordisp{4,0}' become vtordisp_4_0 and vtordisp4_0.
-// the minus sign is written _n, like a negative number in an identifier: vtordisp_n4_0
-static char *pdb_name_filter(const char *name) {
-	RStrBuf sb;
-	r_strbuf_init (&sb);
-	const char *p;
-	for (p = name; *p; p++) {
-		if (*p == '-' && isdigit ((ut8)p[1]) && (p == name || (!isalnum ((ut8)p[-1]) && p[-1] != '_'))) {
-			r_strbuf_append (&sb, "_n");
-		} else {
-			r_strbuf_append_n (&sb, p, 1);
-		}
+static char *unique_gvar_name(GVarsOutput *out, char *name, ut64 addr, bool unique) {
+	if (!name) {
+		return NULL;
 	}
-	char *s = r_strbuf_drain_nofree (&sb);
-	char *filtered = r_name_filter_dup (s);
-	free (s);
-	return filtered;
+	bool found = false;
+	ht_su_find (out->names, name, &found);
+	if (found && unique) {
+		char *suffixed = r_str_newf ("%s_%" PFMT64x, name, addr);
+		free (name);
+		name = suffixed;
+	}
+	if (name) {
+		ht_su_update (out->names, name, addr);
+	}
+	return name;
 }
 
 static void print_gvar(GVarsOutput *out, ut64 addr, ut32 symtype, ut32 size, const char *sname, const char *name, bool unique) {
@@ -1313,20 +1331,15 @@ static void print_gvar(GVarsOutput *out, ut64 addr, ut32 symtype, ut32 size, con
 	case 1:
 	case '*':
 	case 'r': { // r2 script
-		char *filtered_name = pdb_name_filter (r_str_trim_head_ro (name));
+		char *filtered_name = r_name_filter_dup (r_str_trim_head_ro (name));
 		if (R_STR_ISEMPTY (filtered_name)) {
 			free (filtered_name);
 			return;
 		}
-		bool found = false;
-		ht_su_find (out->names, filtered_name, &found);
-		if (found && unique) {
-			// static functions of different modules can share a name
-			char *suffixed = r_str_newf ("%s_%" PFMT64x, filtered_name, addr);
-			free (filtered_name);
-			filtered_name = suffixed;
+		filtered_name = unique_gvar_name (out, filtered_name, addr, unique);
+		if (!filtered_name) {
+			return;
 		}
-		ht_su_update (out->names, filtered_name, addr);
 		bool is_function = symtype & PDB_PUBSYM_FUNCTION;
 		if (out->function_space != is_function) {
 			r_strbuf_appendf (&out->sb, "fs %s\n", is_function? "functions": "symbols");
@@ -1348,7 +1361,7 @@ static void print_gvar(GVarsOutput *out, ut64 addr, ut32 symtype, ut32 size, con
 				ht_up_insert (out->fcn_names, addr, strdup (filtered_name));
 			}
 			if (!set_u_contains (out->fcn_addrs, addr)) {
-				r_strbuf_appendf (&out->fcns, "'@0x%" PFMT64x "'af\n", addr);
+				r_strbuf_appendf (&out->fcns, "af @ 0x%" PFMT64x " @e:anal.nopskip=false\n", addr);
 			}
 			// x86-32 MSVC member functions: this in ecx and the callee cleans the stack
 			if (strstr (name, "__thiscall")) {
@@ -1440,9 +1453,7 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	}
 	char sname[PDB_SIZEOF_SECTION_NAME + 1];
 	SOmapStream *omap_stream = omap? omap->stream: NULL;
-	// the scalar (??_G) and vector (??_E) deleting destructors of a class without arrays
-	// share their address: the first flag names the function, so ??_E comes after every
-	// other public instead of in the hash order of the stream, like ghidra names it
+	// Prefer the scalar deleting destructor when ??_G and ??_E share an address.
 	int pass;
 	for (pass = 0; gsym_data_stream && pass < 2; pass++) {
 		r_list_foreach (gsym_data_stream->globals_list, it, gdata) {
@@ -1485,11 +1496,7 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 			print_gvar (&out, addr, PDB_PUBSYM_FUNCTION, proc->size, sname, proc->name, true);
 		}
 	}
-	// the jmp thunks of incremental linking to the functions above; the ones only reached
-	// through data, like a pointer to member function, are not found by the analysis.
-	// analyzed after their targets; a function flag named j.<target> marks each one before
-	// any function is analyzed: it names the lone jmp, and a function jumping into one, like
-	// a vtordisp thunk or a PDB function analyzed through a tail call, ends there
+	// Mark ILT entrypoints before analysis and analyze the thunks after their targets.
 	if (format == 'r' || format == '*' || format == 1) {
 		r_list_foreach (pdb->pdb_streams2, it, tmp) {
 			if (tmp->type != ePDB_STREAM_MODULE || !tmp->stream) {
@@ -1512,15 +1519,22 @@ static char *print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 							r_strbuf_append (&out.sb, "fs functions\n");
 							out.function_space = true;
 						}
-						r_strbuf_appendf (&out.sb, "'@0x%" PFMT64x "'f j.pdb.%s\n", thunk, target_name);
+						char *thunk_name = unique_gvar_name (&out, r_str_newf ("j.pdb.%s", target_name), thunk, true);
+						if (!thunk_name) {
+							continue;
+						}
+						r_strbuf_appendf (&out.sb, "'@0x%" PFMT64x "'f %s\n", thunk, thunk_name);
+						free (thunk_name);
 					}
-					r_strbuf_appendf (&out.fcns, "'@0x%" PFMT64x "'af\n", thunk);
+					r_strbuf_appendf (&out.fcns, "af @ 0x%" PFMT64x " @e:anal.nopskip=false\n", thunk);
+					// Missing code may leave the entrypoint without a function.
+					r_strbuf_appendf (&out.fcns, "?= `afi. @ 0x%" PFMT64x "~?`\n", thunk);
+					r_strbuf_appendf (&out.fcns, "'?+ '@0x%" PFMT64x "'afia+ thunk\n", thunk);
 				}
 			}
 		}
 	}
-	// code labels outside every procedure, like the __ehhandler$ and __unwindfunclet$ stubs
-	// of the C++ exceptions, are only reached through data: they become functions
+	// Exception handler labels outside procedures become functions.
 	r_list_foreach (pdb->pdb_streams2, it, tmp) {
 		if (tmp->type != ePDB_STREAM_MODULE || !tmp->stream) {
 			continue;

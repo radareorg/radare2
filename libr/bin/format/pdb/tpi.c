@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2014-2025 - inisider, pancake */
 
+#include <sdb/set.h>
+
 #include "types.h"
 #include "tpi.h"
 #include "stream_file.h"
@@ -1110,54 +1112,78 @@ static int get_enum_utype(STpiStream *ss, void *type, void **ret_type) {
 }
 
 static void get_fieldlist_members(STpiStream *ss, void *type, RList **l) {
-	STypeInfo *t = (STypeInfo *)type;
-	SLF_FIELDLIST *lf_fieldlist = (SLF_FIELDLIST *)t->type_info;
+	STypeInfo *t = type;
+	SLF_FIELDLIST *first = t->type_info;
+	if (!first->continuation) {
+		*l = first->substructs;
+		return;
+	}
+	if (!first->members) {
+		first->members = r_list_new ();
+		SetU *visited = set_u_new ();
+		if (!first->members || !visited) {
+			r_list_free (first->members);
+			first->members = NULL;
+			set_u_free (visited);
+			*l = NULL;
+			return;
+		}
+		SLF_FIELDLIST *field = first;
+		while (field) {
+			STypeInfo *member;
+			RListIter *it;
+			r_list_foreach (field->substructs, it, member) {
+				r_list_append (first->members, member);
+			}
+			first->unsupported_layout |= field->unsupported_layout;
+			ut32 index = field->continuation;
+			if (!index) {
+				break;
+			}
+			if (index < ss->ctx.base_idx || set_u_contains (visited, index)) {
+				first->unsupported_layout = true;
+				break;
+			}
+			set_u_add (visited, index);
+			SType *next = r_list_get_n (ss->ctx.types_list, index - ss->ctx.base_idx);
+			if (!next || next->type_data.leaf_type != eLF_FIELDLIST
+					|| !next->type_data.type_info || next->type_data.type_info == first) {
+				first->unsupported_layout = true;
+				break;
+			}
+			field = next->type_data.type_info;
+		}
+		set_u_free (visited);
+	}
+	*l = first->members;
+}
 
-	*l = lf_fieldlist->substructs;
+static void get_members_by_index(STpiStream *ss, ut32 index, RList **l) {
+	*l = NULL;
+	if (index >= ss->ctx.base_idx) {
+		SType *type = r_list_get_n (ss->ctx.types_list, index - ss->ctx.base_idx);
+		if (type && type->type_data.leaf_type == eLF_FIELDLIST && type->type_data.type_info) {
+			get_fieldlist_members (ss, &type->type_data, l);
+		}
+	}
 }
 
 static void get_union_members(STpiStream *ss, void *type, RList **l) {
-	STypeInfo *t = (STypeInfo *)type;
-	SLF_UNION *lf_union = (SLF_UNION *)t->type_info;
-	unsigned int indx = 0;
-
-	if (!lf_union || lf_union->field_list == 0) {
-		*l = 0;
-	} else {
-		indx = lf_union->field_list - ss->ctx.base_idx;
-		SType *tmp = (SType *)r_list_get_n (ss->ctx.types_list, indx);
-		*l = (tmp && tmp->type_data.leaf_type == eLF_FIELDLIST)
-			? ((SLF_FIELDLIST *)tmp->type_data.type_info)->substructs : NULL;
-	}
+	STypeInfo *t = type;
+	SLF_UNION *lf = t->type_info;
+	get_members_by_index (ss, lf? lf->field_list: 0, l);
 }
 
 static void get_struct_class_members(STpiStream *ss, void *type, RList **l) {
-	STypeInfo *t = (STypeInfo *)type;
-	SLF_STRUCTURE *lf = (SLF_STRUCTURE *)t->type_info;
-	unsigned int indx = 0;
-
-	if (!lf || lf->field_list == 0) {
-		*l = 0;
-	} else {
-		indx = lf->field_list - ss->ctx.base_idx;
-		SType *tmp = (SType *)r_list_get_n (ss->ctx.types_list, indx);
-	    *l = (tmp && tmp->type_data.leaf_type == eLF_FIELDLIST)
-			? ((SLF_FIELDLIST *)tmp->type_data.type_info)->substructs : NULL;
-	}
+	STypeInfo *t = type;
+	SLF_STRUCTURE *lf = t->type_info;
+	get_members_by_index (ss, lf? lf->field_list: 0, l);
 }
 
 static void get_enum_members(STpiStream *ss, void *type, RList **l) {
-	STypeInfo *t = (STypeInfo *)type;
-	SLF_ENUM *lf = (SLF_ENUM *)t->type_info;
-
-	if (!lf || lf->field_list == 0) {
-		*l = 0;
-	} else {
-		unsigned int indx = lf->field_list - ss->ctx.base_idx;
-		SType *tmp = (SType *)r_list_get_n (ss->ctx.types_list, indx);
-	    *l = (tmp && tmp->type_data.leaf_type == eLF_FIELDLIST)
-			? ((SLF_FIELDLIST *)tmp->type_data.type_info)->substructs : NULL;
-	}
+	STypeInfo *t = type;
+	SLF_ENUM *lf = t->type_info;
+	get_members_by_index (ss, lf? lf->field_list: 0, l);
 }
 
 static void get_sval_val(const SVal *val, R_OUT int *res) {
@@ -1378,6 +1404,7 @@ static void free_lf_fieldlist(STpiStream *ss, void *type) {
 		free (type_info);
 	}
 	r_list_free (lf_fieldlist->substructs);
+	r_list_free (lf_fieldlist->members);
 }
 
 static void free_lf_class(STpiStream *ss, void *type) {
@@ -2095,8 +2122,9 @@ static int parse_lf_fieldlist(SLF_FIELDLIST *lf_fieldlist, const ut8 *leaf_data,
 	int curr_read_bytes = 0;
 	const ut8 *p = leaf_data;
 	lf_fieldlist->substructs = r_list_new ();
-	while (*read_bytes <= len) {
+	while (*read_bytes < len) {
 		if (!can_read (*read_bytes, 2, len)) {
+			lf_fieldlist->unsupported_layout = true;
 			return 0;
 		}
 		ut16 leaf_type = r_read_le16 (p);
@@ -2122,19 +2150,32 @@ static int parse_lf_fieldlist(SLF_FIELDLIST *lf_fieldlist, const ut8 *leaf_data,
 		case eLF_ONEMETHOD:
 			PARSE_LF2 (SLF_ONEMETHOD, lf_onemethod, eLF_ONEMETHOD);
 			break;
+		case eLF_INDEX:
+			if (!can_read (*read_bytes, 6, len)) {
+				lf_fieldlist->unsupported_layout = true;
+				return 0;
+			}
+			lf_fieldlist->continuation = r_read_le32 (p + 2);
+			lf_fieldlist->unsupported_layout |= !lf_fieldlist->continuation;
+			*read_bytes += 6;
+			return 0;
 		case eLF_BCLASS:
 		case eLF_VBCLASS:
 		case eLF_IVBCLASS:
+		case eLF_VFUNCOFF:
+			lf_fieldlist->unsupported_layout = true;
+			// fall through
 		case eLF_STMEMBER:
 		case eLF_FRIENDFCN:
 		case eLF_FRIENDCLS:
-		case eLF_VFUNCOFF:
 			curr_read_bytes = skip_lf_subfield (leaf_type, p, read_bytes, len);
 			break;
 		default:
+			lf_fieldlist->unsupported_layout = true;
 			return 0;
 		}
 		if (curr_read_bytes == 0) {
+			lf_fieldlist->unsupported_layout = true;
 			break;
 		}
 		p += curr_read_bytes;

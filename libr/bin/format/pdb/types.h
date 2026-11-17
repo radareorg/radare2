@@ -836,8 +836,10 @@ typedef struct {
 }) SLF_ONEMETHOD;
 
 typedef struct {
-//	ELeafType leaf_type;
 	RList *substructs;
+	RList *members; // borrowed entries from this list and its continuations
+	ut32 continuation;
+	bool unsupported_layout;
 } SLF_FIELDLIST;
 
 typedef struct {
