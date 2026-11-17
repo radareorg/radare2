@@ -384,3 +384,28 @@ EXPECT=<<EOF
 36
 EOF
 RUN
+
+NAME=ET_REL NOBITS symbols have no file offset and keep their rebased address
+FILE=bins/elf/random_39855/random_39855.oo
+ARGS=-B 0x1000 -e bin.relocs.apply=true
+CMDS=<<EOF
+is,name/eq/crc32_tab,paddr/cols/vaddr/type/name,:csv
+is,name/eq/platform_main_begin,paddr/cols/vaddr/type/name,:csv
+EOF
+EXPECT=<<EOF
+paddr,vaddr,type,name
+----------,0x00013af8,OBJ,crc32_tab
+paddr,vaddr,type,name
+0x000000c8,0x000010c8,FUNC,platform_main_begin
+EOF
+RUN
+
+NAME=ET_REL x86 NOBITS symbols keep their virtual address without reloc patching
+FILE=bins/elf/radare2.c.obj
+ARGS=-B 0x1000
+CMDS=is,name/eq/rabin_cmd,paddr/cols/vaddr/type/name,:csv
+EXPECT=<<EOF
+paddr,vaddr,type,name
+----------,0x00041e40,OBJ,rabin_cmd
+EOF
+RUN
