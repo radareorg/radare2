@@ -15,6 +15,7 @@ typedef struct {
 	RBinFile *bf;
 	RVecRBinString *strings;
 	HtUP *strings_index;
+	RIntervalTree *pointer_ranges;
 	RStrBuf *output;
 	int min, raw;
 } RBinStringScanOptions;
@@ -126,19 +127,53 @@ static void string_set_addrs(RBinString *bs, ut64 str_start, ut64 pdelta, ut64 v
 	bs->vaddr = addr;
 }
 
-// 64bit pointers into images above 4GB decode as short printable runs (0x140000000 -> "...@\x01")
-static bool string_is_pointer(RBinFile *bf, ut64 to, ut64 str_start, ut64 size) {
+static void string_pointer_ranges_init(RBinFile *bf, RIntervalTree *ranges) {
 	RBinObject *bo = bf->bo;
+	r_interval_tree_init (ranges, NULL);
 	if (!bo || !bo->info || bo->info->bits != 64) {
+		return;
+	}
+	const ut64 file_baddr = bo->baddr - (ut64)bo->baddr_shift;
+	RBinSection *section;
+	R_VEC_FOREACH (&bo->sections_vec, section) {
+		if (!section->vsize || (section->is_segment && !section->add)) {
+			continue;
+		}
+		ut64 start = section->vaddr, end;
+		if (bf->inmem && (start < file_baddr ||
+				r_add_overflow (bo->baddr, start - file_baddr, &start))) {
+			continue;
+		}
+		if (r_add_overflow (start, section->vsize - 1, &end)) {
+			continue;
+		}
+		if (!r_interval_tree_insert (ranges, start, end, NULL)) {
+			r_interval_tree_fini (ranges);
+			r_interval_tree_init (ranges, NULL);
+			return;
+		}
+	}
+}
+
+static bool string_pointer_range_found(RIntervalNode *node, void *user) {
+	return false;
+}
+
+static bool string_is_pointer(const RBinStringScanOptions *options, const ut8 *buf, ut64 from, ut64 to, ut64 str_start, ut64 size) {
+	if (!options->pointer_ranges->root || !size) {
 		return false;
 	}
-	if (size > 8 || str_start % 8 || str_start + 8 > to) {
+	const bool big_endian = options->bf->bo->info->big_endian;
+	const ut64 slot = str_start & ~7ULL;
+	const ut64 offset = str_start - slot;
+	if ((!big_endian && offset) || slot < from || slot > to || to - slot < 8 ||
+			size > 8 - offset + (big_endian? 1: 0)) {
 		return false;
 	}
-	// read the raw bytes, buf may be charset decoded
-	ut64 ptr = r_buf_read_ble64_at (bf->buf, str_start, bo->info->big_endian);
-	// stored pointers use the file base, sections are reported rebased
-	return ptr && r_bin_get_section_at (bo, ptr + bo->baddr_shift, true);
+	ut64 ptr = r_read_ble64 (buf + slot - from, big_endian);
+	// Low addresses are indistinguishable from ordinary short terminated strings.
+	return ptr > UT32_MAX && !r_interval_tree_all_in (options->pointer_ranges,
+		ptr, true, string_pointer_range_found, NULL);
 }
 
 // TODO: this code must be implemented in RSearch as options for the strings mode
@@ -186,7 +221,9 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 		pj = pj_new ();
 		pj_a (pj);
 	}
-	r_buf_read_at (bf->buf, from, buf, len);
+	st64 bytes_read = r_buf_read_at (bf->buf, from, buf, len);
+	const ut64 raw_to = from + (bytes_read > 0? R_MIN ((ut64)bytes_read, (ut64)len): 0);
+	ut8 *raw_buf = NULL;
 	const char *charset = sdb_const_get (bin->sdb, "bin.charset", NULL);
 	if (R_STR_ISEMPTY (charset)) {
 		charset = getenv ("RABIN2_CHARSET");
@@ -207,7 +244,11 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 				if (out) {
 					int cpy = R_MIN ((int)len, outlen);
 					memcpy (out, obuf, cpy);
-					free (buf);
+					if (options->pointer_ranges->root) {
+						raw_buf = buf;
+					} else {
+						free (buf);
+					}
 					buf = out;
 				}
 			}
@@ -389,7 +430,7 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 					continue;
 				}
 			}
-			if (string_is_pointer (bf, to, str_start, needle - str_start)) {
+			if (string_is_pointer (options, raw_buf? raw_buf: buf, from, raw_to, str_start, needle - str_start)) {
 				continue;
 			}
 			RBinString bs = { 0 };
@@ -470,6 +511,7 @@ static void string_scan_range(const RBinStringScanOptions *options, const ut64 f
 		}
 		ascii_only = false;
 	}
+	free (raw_buf);
 	free (buf);
 	if (pj) {
 		pj_end (pj);
@@ -1172,10 +1214,13 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RSt
 	RVecRBinString *ret = output? NULL: RVecRBinString_new ();
 	const bool has_sections = !raw && bo && !RVecRBinSection_empty (&bo->sections_vec);
 	HtUP *strings_index = ret && has_sections? ht_up_new0 (): NULL;
+	RIntervalTree pointer_ranges;
+	string_pointer_ranges_init (bf, &pointer_ranges);
 	RBinStringScanOptions options = {
 		.bf = bf,
 		.strings = ret,
 		.strings_index = strings_index,
+		.pointer_ranges = &pointer_ranges,
 		.output = output,
 		.min = min,
 		.raw = raw,
@@ -1206,6 +1251,7 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RSt
 		}
 	} else {
 		get_strings_range (&options, 0, bf->size, NULL);
+		r_interval_tree_fini (&pointer_ranges);
 		ht_up_free (strings_index);
 		return ret;
 	}
@@ -1272,6 +1318,7 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int raw, RSt
 			free (sbuf);
 		}
 	}
+	r_interval_tree_fini (&pointer_ranges);
 	ht_up_free (strings_index);
 	return ret;
 }
