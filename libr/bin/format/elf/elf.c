@@ -4316,7 +4316,7 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, RVecElfOff *starts
 					RVecRBinElfReloc_pop_back (&eo->g_relocs);
 					break;
 				}
-				reloc->uses_section_symtab = section->link < eo->shnum && eo->shdr[section->link].sh_type == SHT_SYMTAB;
+				reloc->uses_section_symtab = eo->shdr && section->link < eo->shnum && eo->shdr[section->link].sh_type == SHT_SYMTAB;
 
 				rel_cache_add (eo, reloc);
 				if (is_bin_etrel (eo)) {
@@ -4353,7 +4353,7 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, RVecElfOff *starts
 					RVecRBinElfReloc_pop_back (&eo->g_relocs);
 					break;
 				}
-				reloc->uses_section_symtab = section->link < eo->shnum && eo->shdr[section->link].sh_type == SHT_SYMTAB;
+				reloc->uses_section_symtab = eo->shdr && section->link < eo->shnum && eo->shdr[section->link].sh_type == SHT_SYMTAB;
 
 				rel_cache_add (eo, reloc);
 				fix_rva_and_offset (eo, reloc, i);
