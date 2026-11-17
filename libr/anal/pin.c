@@ -13,7 +13,7 @@ R_API int r_anal_function_instrcount(RAnalFunction *fcn) {
 	return amount;
 }
 
-R_API bool r_anal_function_islineal(RAnalFunction *fcn) {
+static bool function_islineal(RAnalFunction *fcn) {
 	if (r_anal_function_linear_size (fcn) != r_anal_function_realsize (fcn)) {
 		return false;
 	}
@@ -37,6 +37,11 @@ R_API bool r_anal_function_islineal(RAnalFunction *fcn) {
 		at = bb->addr + bb->size - 1;
 	}
 	return true;
+}
+
+R_API bool r_anal_function_islineal(RAnalFunction *fcn) {
+	R_MASK_SET (fcn->attrs, R_ANAL_FCN_ATTR_LINEAL, function_islineal (fcn));
+	return fcn->attrs & R_ANAL_FCN_ATTR_LINEAL;
 }
 
 // pin.c

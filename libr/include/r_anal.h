@@ -206,10 +206,11 @@ typedef enum {
 	R_ANAL_FCN_ATTR_DESTRUCTOR = 1 << 8, // runs at exit (fini_array, dtors, DT_FINI)
 	R_ANAL_FCN_ATTR_NAKED = 1 << 9, // no compiler prologue or epilogue
 	R_ANAL_FCN_ATTR_INTERRUPT = 1 << 10, // interrupt handler, may not follow the calling convention
+	R_ANAL_FCN_ATTR_LINEAL = 1 << 11, // blocks are contiguous, computed by r_anal_function_islineal
 } RAnalFcnAttr;
 
 // derived by the analysis, afia cannot set them
-#define R_ANAL_FCN_ATTR_COMPUTED (R_ANAL_FCN_ATTR_PURE | R_ANAL_FCN_ATTR_VARIADIC)
+#define R_ANAL_FCN_ATTR_COMPUTED (R_ANAL_FCN_ATTR_PURE | R_ANAL_FCN_ATTR_VARIADIC | R_ANAL_FCN_ATTR_LINEAL)
 
 typedef struct {
 	RAnalFcnAttr bit;

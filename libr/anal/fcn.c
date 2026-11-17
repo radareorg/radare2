@@ -3640,6 +3640,7 @@ static const RAnalFcnAttrInfo fcn_attrs[] = {
 	{ R_ANAL_FCN_ATTR_DESTRUCTOR, 'D', "destructor", "the function runs at exit" },
 	{ R_ANAL_FCN_ATTR_NAKED, 'K', "naked", "the function has no compiler prologue or epilogue" },
 	{ R_ANAL_FCN_ATTR_INTERRUPT, 'Q', "interrupt", "the function is an interrupt handler" },
+	{ R_ANAL_FCN_ATTR_LINEAL, 'E', "lineal", "the function blocks are contiguous (computed)" },
 };
 
 R_API const RAnalFcnAttrInfo *r_anal_function_attr_info(size_t idx) {

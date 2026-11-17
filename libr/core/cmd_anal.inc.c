@@ -5691,6 +5691,7 @@ static void cmd_afia(RCore *core, const char *input) {
 		return;
 	}
 	r_anal_function_purity (fcn);
+	r_anal_function_islineal (fcn);
 	const RAnalFcnAttrInfo *ai;
 	size_t i;
 	if (!mode || mode == 'j' || mode == 'q') {
@@ -6628,14 +6629,10 @@ static int cmd_af(RCore *core, const char *input) {
 						(int)RVecAnalBlockPtr_length (&fcn->bbs), edges, ebbs, nins);
 					r_cons_printf (cons, "  cost:  %d complexity:%d\n",
 						r_anal_function_cost (fcn), r_anal_function_complexity (fcn));
-					r_cons_printf (cons, "  attr:  ");
-					if (r_anal_function_islineal (fcn)) {
-						r_cons_print (cons, "lineal");
-					}
-					if (fcn->attrs & R_ANAL_FCN_ATTR_NORETURN) {
-						r_cons_print (cons, "noreturn");
-					}
-					r_cons_newline (cons);
+					r_anal_function_islineal (fcn);
+					char *attrs = r_anal_function_attrs_tostring (fcn->attrs, true);
+					r_cons_printf (cons, "  attr:  %s\n", attrs);
+					free (attrs);
 				}
 			}
 			break;
