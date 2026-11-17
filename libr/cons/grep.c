@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2026 - pancake, nibble */
 
 #include <r_cons.h>
 #include <r_util/r_print.h>
@@ -8,8 +8,6 @@
 #include "private.h"
 
 // R2R db/cmd/cons_grep
-
-#define I(x) r_cons_singleton ()->x
 
 static char *strchr_ns(char *s, const char ch) {
 	if (!s) {
@@ -431,7 +429,7 @@ R_API char *r_cons_grep_strip(char *cmd, const char *quotestr) {
 	return ptr;
 }
 
-static int cmp(const void *a, const void *b) {
+static int cmp(const void *a, const void *b, void *user) {
 	char *da = NULL;
 	char *db = NULL;
 	if (!a || !b) {
@@ -446,7 +444,7 @@ static int cmp(const void *a, const void *b) {
 	}
 	const char *ca = r_str_trim_head_ro (a);
 	const char *cb = r_str_trim_head_ro (b);
-	RCons *cons = r_cons_singleton ();
+	RCons *cons = (RCons*)user;
 	RConsContext *ctx = cons->context;
 	if (ctx->sorted_column > 0) {
 		da = strdup (ca);
@@ -723,7 +721,7 @@ R_API void r_cons_grepbuf(RCons *cons) {
 				free (sbuf);
 				return;
 			}
-			char *nres = r_print_json_indent (res, I(context->color_mode), "  ", NULL);
+			char *nres = r_print_json_indent (res, cons->context->color_mode, "  ", NULL);
 			free (res);
 			free (sbuf);
 			cons_buffer_set (cons->context, nres? r_str_append (nres, "\n"): strdup (""));
@@ -799,7 +797,7 @@ R_API void r_cons_grepbuf(RCons *cons) {
 			r_str_ansi_filter (bb, NULL, NULL, -1);
 			char *out = (cons->context->grep.human)
 				? r_print_json_human (bb)
-				: r_print_json_indent (bb, I (context->color_mode), "  ", palette);
+				: r_print_json_indent (bb, cons->context->color_mode, "  ", palette);
 			free (bb);
 			if (!out) {
 				return;
@@ -986,7 +984,7 @@ continuation:
 
 		if (ctx->sorted_lines) {
 			if (grep->sort != -1) {
-				r_list_sort (ctx->sorted_lines, cmp);
+				r_list_sort_with_user (ctx->sorted_lines, cmp, cons);
 			}
 			if (grep->sort_invert) {
 				r_list_reverse (ctx->sorted_lines);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2025 - pancake */
+/* radare - LGPL - Copyright 2007-2026 - pancake */
 /* dietline is a lightweight and portable library similar to GNU readline */
 
 #include "r_util/r_str_util.h"
@@ -1826,7 +1826,6 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 	int ch = 0, key, i = 0; /* grep completion */
 	char *tmp_ed_cmd, prev = 0;
 	int prev_buflen = -1;
-	// RCons *cons = r_cons_singleton ();
 
 	if (!line->hud || (line->hud && !line->hud->activate)) {
 		line->state.buffer.index = line->state.buffer.length = 0;
