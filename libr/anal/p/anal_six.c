@@ -73,20 +73,30 @@ static int six_cmp_addr(const void *a, const void *b) {
 	return (x > y) - (x < y);
 }
 
-static inline void six_call_ref(const SixScan *ss, ut32 v, ut64 addr) {
+// b and bl: branch target, and the ref type (bl is a call, b a jump)
+static inline bool six_is_branch(ut32 v, ut64 addr, ut64 *dst, RAnalRefType *type) {
 	if ((v & 0x7c000000) != 0x14000000) {
+		return false;
+	}
+	*dst = addr + (((st64)((ut64)(v & 0x3ffffff) << 38)) >> 36);
+	*type = (v & 0x80000000)? R_ANAL_REF_TYPE_CALL: R_ANAL_REF_TYPE_JUMP;
+	return true;
+}
+
+static inline void six_call_ref(const SixScan *ss, ut32 v, ut64 addr) {
+	ut64 dst;
+	RAnalRefType type;
+	if (!six_is_branch (v, addr, &dst, &type)) {
 		return;
 	}
-	const bool is_bl = (v & 0x80000000) != 0;
 	// tail calls only count against explicit targets, otherwise every jump would be a ref
-	if (!is_bl && !ss->ntargets) {
+	if (type != R_ANAL_REF_TYPE_CALL && !ss->ntargets) {
 		return;
 	}
-	ut64 dst = addr + (((st64)((ut64)(v & 0x3ffffff) << 38)) >> 36);
 	if (ss->ntargets && !bsearch (&dst, ss->targets, ss->ntargets, sizeof (ut64), six_cmp_addr)) {
 		return;
 	}
-	addref (ss->anal, addr, dst, is_bl? R_ANAL_REF_TYPE_CALL: R_ANAL_REF_TYPE_JUMP);
+	addref (ss->anal, addr, dst, type);
 }
 
 static const char *lookup_inst_name(uint32_t opc_size) {
@@ -174,6 +184,8 @@ static void siguza_xrefs_chunked(const SixScan *ss, const ut8 *mem, ut64 addr, i
 	const ut8 *p = mem;
 	const ut8 *e = mem + (mem_len & ~3);
 	const ut8 *pe = mem + (process_len & ~3);
+	ut64 dst;
+	RAnalRefType type;
 
 	for (; p < pe; p += 4, addr += 4) {
 		ut32 v = r_read_le32 (p);
@@ -286,13 +298,11 @@ static void siguza_xrefs_chunked(const SixScan *ss, const ut8 *mem, ut64 addr, i
 				bool is_64bit = (v & 0x40000000) != 0 && !is_ldrsw;
 				r_strbuf_appendf (sb, "%#" PFMT64x ": %s %s%u, %#" PFMT64x "\n", addr, is_ldrsw? "ldrsw": "ldr", is_64bit? "x": "w", reg, search);
 			}
-		} else if ((v & 0x7c000000) == 0x14000000) { // b and bl
-			int64_t off = (int64_t) ((uint64_t) (v & 0x3ffffff) << 38) >> 36;
-			bool is_bl = (v & 0x80000000) != 0;
+		} else if (six_is_branch (v, addr, &dst, &type)) { // b and bl
 			if (register_refs) {
-				addref (anal, addr, addr + off, is_bl? R_ANAL_REF_TYPE_CODE: R_ANAL_REF_TYPE_CALL);
-			} else if (addr + off == search) {
-				r_strbuf_appendf (sb, "%#" PFMT64x ": %s %#" PFMT64x "\n", addr, is_bl? "bl": "b", search);
+				addref (anal, addr, dst, type);
+			} else if (dst == search) {
+				r_strbuf_appendf (sb, "%#" PFMT64x ": %s %#" PFMT64x "\n", addr, type == R_ANAL_REF_TYPE_CALL? "bl": "b", search);
 			}
 		} else if ((v & 0xff000010) == 0x54000000) { // b.cond
 			int64_t off = (int64_t) ((uint64_t) ((v >> 5) & 0x7ffff) << 45) >> 43;
