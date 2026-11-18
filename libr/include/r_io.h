@@ -226,6 +226,12 @@ typedef struct r_io_plugin_t {
 	const char *binuris; // comma-separated URI prefixes accepted from bin redirects
 } RIOPlugin;
 
+// Optional content:// resolver in RIOPlugin.data. open transfers an owned fd, or returns -1.
+typedef struct {
+	int (*open)(void *user, const char *uri, int perm);
+	void *user;
+} RIOContent;
+
 #define	R_IO_MAP_TIE_FLG_BACK	1		//ties a map so that it resizes when the desc resizes
 #define	R_IO_MAP_TIE_FLG_FORTH	(1 << 1)	//ties a map so that the desc resizes when the map resizes
 
@@ -697,6 +703,7 @@ extern RIOPlugin r_io_plugin_serial;
 extern RIOPlugin r_io_plugin_cyclic;
 extern RIOPlugin r_io_plugin_uf2;
 extern RIOPlugin r_io_plugin_tap;
+extern RIOPlugin r_io_plugin_content;
 
 #if __cplusplus
 }

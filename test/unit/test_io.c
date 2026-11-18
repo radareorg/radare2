@@ -2,6 +2,101 @@
 #include <r_util.h>
 #include "minunit.h"
 
+#if R2__UNIX__ && !__wasi__
+typedef struct {
+	const char *path;
+	const char *uri;
+	int fd;
+	bool stream;
+} ContentFixture;
+
+static int content_fixture_open(void *user, const char *uri, int perm) {
+	ContentFixture *fixture = user;
+	if (strcmp (uri, fixture->uri)) {
+		return -1;
+	}
+	if (fixture->stream) {
+		int fds[2];
+		if (pipe (fds) < 0) {
+			return -1;
+		}
+		write (fds[1], "stream", 6);
+		close (fds[1]);
+		fixture->fd = fds[0];
+	} else {
+		fixture->fd = open (fixture->path, (perm & R_PERM_W)? O_RDWR: O_RDONLY);
+	}
+	return fixture->fd;
+}
+
+bool test_r_io_content(void) {
+	char *path = NULL;
+	int fd = r_file_mkstemp ("r2-content-test", &path);
+	mu_assert ("create content fixture", fd >= 0);
+	mu_assert_eq (write (fd, "binary", 6), 6, "write fixture");
+	close (fd);
+	const char *uri = "content://com.termux.documents/document/%2Fdata%2Fbinary%25";
+	ContentFixture fixture = { .path = path, .uri = uri, .fd = -1 };
+	RIOContent resolver = { .open = content_fixture_open, .user = &fixture };
+	RIO *io = r_io_new ();
+	RIOPlugin *builtin = r_io_plugin_resolve (io, uri, false);
+	mu_assert_streq (builtin->meta.name, "content", "select content plugin");
+	RIOPlugin plugin = *builtin;
+	plugin.data = &resolver;
+	mu_assert_true (r_libstore_remove (io->libstore, builtin), "remove default resolver");
+	mu_assert_true (r_libstore_add (io->libstore, &plugin), "install per-IO resolver");
+	RIO *other = r_io_new ();
+	mu_assert_null (r_io_plugin_resolve (other, uri, false)->data, "resolver is isolated from other IO instances");
+	r_io_free (other);
+	mu_assert_null (r_io_open_nomap (io, "content://denied", R_PERM_R, 0), "propagate resolver failure");
+	r_sandbox_enable (true);
+	RIODesc *sandboxed = r_io_open_nomap (io, uri, R_PERM_R, 0);
+	r_sandbox_disable (true);
+	mu_assert_null (sandboxed, "sandbox blocks content opens");
+	mu_assert_eq (fixture.fd, -1, "sandbox does not invoke app resolver");
+	RIODesc *desc = r_io_open_nomap (io, uri, R_PERM_R, 0);
+	mu_assert_notnull (desc, "open encoded URI unchanged");
+	mu_assert_streq (desc->uri, uri, "preserve URI for reopening");
+	mu_assert_eq (r_io_desc_size (desc), 6, "content size");
+	ut8 buf[8] = {0};
+	mu_assert_eq (r_io_desc_read_at (desc, 2, buf, 4), 4, "seek and read");
+	mu_assert_memeq (buf, "nary", 4, "content bytes");
+	mu_assert_eq (r_io_desc_read_at (desc, 5, buf, 4), 1, "short read at EOF");
+	mu_assert_eq (r_io_desc_write_at (desc, 0, (const ut8 *)"x", 1), 0, "read-only descriptor rejects writes");
+	int owned = fixture.fd;
+	mu_assert_true (r_io_desc_close (desc), "close content");
+	mu_assert_eq (fcntl (owned, F_GETFD), -1, "close transferred fd");
+	desc = r_io_open_nomap (io, uri, R_PERM_RW, 0);
+	mu_assert_notnull (desc, "reopen writable provider");
+	mu_assert_eq (r_io_desc_write_at (desc, 0, (const ut8 *)"B", 1), 1, "write through provider fd");
+	mu_assert_eq (r_io_desc_read_at (desc, 0, buf, 6), 6, "read changed provider");
+	mu_assert_memeq (buf, "Binary", 6, "persist write to original");
+	r_io_desc_close (desc);
+	fd = open (path, O_WRONLY | O_TRUNC);
+	mu_assert ("truncate fixture", fd >= 0);
+	close (fd);
+	desc = r_io_open_nomap (io, uri, R_PERM_R, 0);
+	mu_assert_notnull (desc, "open empty document");
+	mu_assert_eq (r_io_desc_size (desc), 0, "empty document size");
+	r_io_desc_close (desc);
+	fixture.stream = true;
+	desc = r_io_open_nomap (io, uri, R_PERM_R, 0);
+	mu_assert_notnull (desc, "snapshot nonseekable content");
+	mu_assert_eq (r_io_desc_size (desc), 6, "stream snapshot size");
+	mu_assert_eq (r_io_desc_read_at (desc, 3, buf, 3), 3, "seek snapshot");
+	mu_assert_memeq (buf, "eam", 3, "stream bytes");
+	mu_assert_eq (r_io_desc_read_at (desc, 0, buf, 3), 3, "seek backwards in snapshot");
+	mu_assert_memeq (buf, "str", 3, "snapshot beginning");
+	r_io_desc_close (desc);
+	mu_assert_null (r_io_open_nomap (io, uri, R_PERM_RW, 0), "reject writable stream instead of editing a snapshot");
+	mu_assert_eq (fcntl (fixture.fd, F_GETFD), -1, "close rejected stream");
+	r_io_free (io);
+	r_file_rm (path);
+	free (path);
+	mu_end;
+}
+#endif
+
 bool test_r_io_ar_member_uri(void) {
 	const char archive[] =
 		"!<arch>\n"
@@ -483,6 +578,9 @@ bool test_r_io_overlay(void) {
 }
 
 int all_tests(void) {
+#if R2__UNIX__ && !__wasi__
+	mu_run_test (test_r_io_content);
+#endif
 	mu_run_test (test_r_io_ar_member_uri);
 	mu_run_test (test_seek_history_mapped);
 	mu_run_test(test_r_io_cache);
